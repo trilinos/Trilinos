@@ -80,6 +80,7 @@ using Teuchos::Comm;
 using Teuchos::DefaultComm;
 using Teuchos::GlobalMPISession;
 using Teuchos::defaultSmallNumber;
+using Teuchos::outArg;
 
 
 bool testMpi = true;
@@ -302,7 +303,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, ReadySend1, Ordinal, Packet )
 
   // All procs fail if any proc fails
   int globalSuccess_int = -1;
-  reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+  reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
   TEST_EQUALITY_CONST( globalSuccess_int, 0 );
 }
 
@@ -431,7 +432,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, ReadySend, Ordinal, Packet )
 
   // All procs fail if any proc fails
   int globalSuccess_int = -1;
-  reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+  reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
   TEST_EQUALITY_CONST( globalSuccess_int, 0 );
 }
 
@@ -509,7 +510,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceive, Ordin
 
   // All procs fail if any proc fails
   int globalSuccess_int = -1;
-  reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+  reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
   TEST_EQUALITY_CONST( globalSuccess_int, 0 );
 
 }
@@ -633,7 +634,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Or
 
   // All procs fail if any proc fails
   int globalSuccess_int = -1;
-  reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+  reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
   TEST_EQUALITY_CONST( globalSuccess_int, 0 );
 
 }

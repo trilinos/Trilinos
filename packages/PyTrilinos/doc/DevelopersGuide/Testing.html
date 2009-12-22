@@ -9,8 +9,8 @@
 /*
 :Author: David Goodger
 :Contact: goodger@users.sourceforge.net
-:Date: $Date$
-:Revision: $Revision$
+:Date: $Date: 2005-12-18 01:56:14 +0100 (Sun, 18 Dec 2005) $
+:Revision: $Revision: 4224 $
 :Copyright: This stylesheet has been placed in the public domain.
 
 Default cascading style sheet for the HTML output of Docutils.
@@ -321,42 +321,30 @@ description can be omitted.</p>
 </div>
 <div class="section">
 <h1><a id="build-system" name="build-system">Build System</a></h1>
-<p>Running <tt class="docutils literal"><span class="pre">make</span></tt> in either the <tt class="docutils literal"><span class="pre">example</span></tt> or <tt class="docutils literal"><span class="pre">test</span></tt> directories
-simply copies the test scripts from the source directory to the build
-directory.  Autotools requires that the source and build names be
-different, to support building in the source directory.  To meet this
-requirement, the source files have the suffix <tt class="docutils literal"><span class="pre">.src</span></tt> and the build
-files have the suffix <tt class="docutils literal"><span class="pre">.py</span></tt>.</p>
-<p>The <tt class="docutils literal"><span class="pre">Makefile</span></tt> in the test directories control which scripts get
-copied to the build directory, via the <tt class="docutils literal"><span class="pre">PACKAGE_TESTS</span></tt> and
-<tt class="docutils literal"><span class="pre">PACKAGE_EXAMPLES</span></tt> variables defined in <tt class="docutils literal"><span class="pre">test/Makefile.am</span></tt> and
-<tt class="docutils literal"><span class="pre">example/Makefile.am</span></tt>, respectively, where <tt class="docutils literal"><span class="pre">PACKAGE</span></tt> is replaced
-by the names of all the packages with python wrappers.  The values of
-these variables should be conditional based on what packages are
-enabled.  If a test imports a given PyTrilinos package, then it should
-be conditionally enabled based on the value of
-<tt class="docutils literal"><span class="pre">HAVE_PYTRILINOS_PACKAGE</span></tt>, where <tt class="docutils literal"><span class="pre">PACKAGE</span></tt> is replaced by the name
-of the package.</p>
+<p>Running <tt class="docutils literal"><span class="pre">make</span></tt> in either the top, <tt class="docutils literal"><span class="pre">example</span></tt> or <tt class="docutils literal"><span class="pre">test</span></tt> build
+directories simply copies the test scripts from the source directory
+to the build directory.  For historical reasons, the source files have
+the suffix <tt class="docutils literal"><span class="pre">.src</span></tt> and the build files have the suffix <tt class="docutils literal"><span class="pre">.py</span></tt>.</p>
+<p>The <tt class="docutils literal"><span class="pre">CMakeLists.txt</span></tt> files in the <tt class="docutils literal"><span class="pre">test</span></tt> and <tt class="docutils literal"><span class="pre">example</span></tt>
+directories control which scripts get copied to the build directory.
+Each test script, or group of related test scripts, should be
+protected with <tt class="docutils literal"><span class="pre">IF()</span></tt> statements, depending on which PyTrilinos
+modules need to be present for the script to run.</p>
 </div>
 <div class="section">
 <h1><a id="running-all-tests" name="running-all-tests">Running All Tests</a></h1>
-<p>To run all of the enabled tests, first make sure they are all
-up-to-date:</p>
+<p>To run all of the enabled tests, first make sure PyTrilinos and all
+tests and examples are up-to-date:</p>
 <pre class="literal-block">
 $ cd BUILD/packages/PyTrilinos
-$ make tests examples
+$ make
 </pre>
-<p>Then you can use the test harness <tt class="docutils literal"><span class="pre">make</span></tt> target to run all of the
-tests:</p>
+<p>Then you can use the CMake <tt class="docutils literal"><span class="pre">ctest</span></tt> program to run all of the tests:</p>
 <pre class="literal-block">
-$ make runtests-serial
+$ ctest -W 10
 </pre>
-<p>or:</p>
-<pre class="literal-block">
-$ make runtests-mpi
-</pre>
-<p>The results of all of the tests can be found in
-<tt class="docutils literal"><span class="pre">test/runtests-results</span></tt> directory.</p>
+<p>The results of all of the tests can be found in the <tt class="docutils literal"><span class="pre">Testing</span></tt>
+directory, present in the directory from which <tt class="docutils literal"><span class="pre">ctest</span></tt> was run.</p>
 </div>
 <div class="section">
 <h1><a id="test-script-conventions" name="test-script-conventions">Test Script Conventions</a></h1>
@@ -385,8 +373,17 @@ import Epetra
 from PyTrilinos import Teuchos
 from PyTrilinos import Epetra
 </pre>
-<p>See any test script for examples and how the <tt class="docutils literal"><span class="pre">-t</span></tt> option is
-enforced.</p>
+<p>the <tt class="docutils literal"><span class="pre">-t</span></tt> option is enforced in test scripts with the followning
+python code:</p>
+<pre class="literal-block">
+parser = OptionParser()
+parser.add_option(&quot;-t&quot;, &quot;--testharness&quot;, action=&quot;store_true&quot;,
+                  dest=&quot;testharness&quot;, default=False,
+                  help=&quot;test local build modules; prevent loading system-installed modules&quot;)
+options,args = parser.parse_args()
+from testutil import fromPyTrilinosImport
+Epetra = fromPyTrilinosImport('Epetra', options.testharness)
+</pre>
 <p>Test scripts shall run in both serial or parallel.  You may use
 either:</p>
 <pre class="literal-block">
@@ -445,7 +442,7 @@ with unit test output whenever possible.</p>
 </div>
 <div class="footer">
 <hr class="footer" />
-Generated on: 2007-12-31 15:45 UTC.
+Generated on: 2009-12-20 18:13 UTC.
 Generated by <a class="reference" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>

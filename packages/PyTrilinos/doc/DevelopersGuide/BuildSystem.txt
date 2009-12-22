@@ -1,213 +1,126 @@
 The PyTrilinos Build System
 ===========================
 
-PyTrilinos is a package within Trilinos, and Trilinos uses the
-autotools suite (autoconf, automake, etc.) to generate a
-Makefile-based system.  The resulting configure scripts and Makefiles
-provide a high degree of portability.  However, building Trilinos
-still remains a non-trivial exercise.
+The move by Trilinos to the CMake build system has had many advantages
+for PyTrilinos.  The two primary advantages being that shared
+libraries and python extension libraries can now both be built
+automatically by the host build system.  Previously, shared libraries
+were built by the PyTrilinos package in an ad-hoc manner, and the
+python extension libraries were built using the python distutils
+module, which has some reports of portability issues.  The move to
+CMake has improved the reliability and robustness of the PyTrilinos
+build system.
 
-One of the configuration tasks performed by the Trilinos build system
-is determination of which Trilinos packages are enabled and disabled.
-This task is crucial for the PyTrilinos build system, and is reason
-enough to adopt the Trilinos autotools-based build system.  Another is
-the seamless integration provided by the top-level configure script.
+From a build-system point of view, there are two types of Trilinos
+packages that are supported by PyTrilinos: those that are contained
+within a single namespace, like Teuchos, Epetra and AztecOO; and those
+that are contained within nested namespaces, such as NOX.  These two
+types are detailed below, in addition to the ``pytrilinos`` library
+and package-specific configuration options.
 
-PyTrilinos therefore uses the Trilinos build system.  In the main
-PyTrilinos directory, you will find the familiar ``configure`` script,
-``configure.ac``, ``Makefile.am`` and ``Makefile.in``, ``aclocal.m4``,
-the ``bootstrap`` shell script and the ``config`` subdirectory.
-Subdirectories ``src``, ``test`` and ``example`` (as well as the
-currently experimental ``src-boost``) all have their own
-``Makefile.am`` and ``Makefile.in`` files.
-
-But the PyTrilinos build system is different from other Trilinos
-packages.  Because the purpose of PyTrilinos is to compile extension
-modules that can be imported into python, it is important to compile
-these modules in a way that is compatible with the chosen python
-executable.  The python module ``distutils`` is perfect for this task.
-Thus in ``src`` (as well as ``src-boost``), you will find a
-conventionally-named ``setup.py`` script that imports various
-components of the ``distutils`` module and calls the versatile
-``setup()`` function.  The ``Makefile.am`` (and resulting
-``Makefile.in`` and ultimately the ``Makefile`` itself) in these
-source directories ultimately hand off the compilation of the
-extension modules to the ``setup.py`` script.
-
-There are a variety of other python scripts and modules that aid in
-the process of creating wrappers to the enormously complex Trilinos
-project.  This document will describe the PyTrilinos build system,
-with special focus on its many unconventional aspects.
-
-The ``configure.ac`` file
+Single Namespace Packages
 -------------------------
 
-The ``configure.ac`` file is fairly standard.  In fact, it performs
-fewer checks that the standard Trilinos package ``configure.ac``.  Its
-most important functions are determining what relevant Trilinos
-packages are enabled and disabled and checking the python
-prerequisites: python existence and version, swig (simple wrapper and
-interface generator) existence and version, and numpy (numerical
-python) existence and version.
+All supported packages must be listed in the
+``LIB_OPTIONAL_DEP_PACKAGES`` variable in the
+``cmake/Dependencies.cmake`` file, and they should be listed in build
+order.
 
-Because of the non-conventional build system, some subdirectories that
-would normally get built automatically by ``configure`` have to be
-"tricked" into being made here.  For example a ``src/PyTrilinos``
-directory is needed for storing python proxy files for the extension
-modules.  The way this is accomplished is that an empty file called
-``src/PyTrilinos/.dummy`` is created, thus forcing the creation of the
-subdirectory.  This requires the existence of an empty file called
-``src/PyTrilinos/.dummy.in``.
+The PyTrilinos build system maintains two variables,
+``PyTrilnos_PACKAGES`` and ``PyTrilinos_MODULES``, both set in the
+top-level ``CMakeLists.txt`` file, to keep track of what to build.
+(Note that these variables are referenced as
+``${PACKAGE_NAME}_PACKAGES`` and ``${PACKAGE_NAME}_MODULES`` within
+``CMakeLists.txt``.)  For single namespace packages, the entries in
+these two variables is the same.  For example, ::
 
-The ``Makefile.am`` file
-------------------------
+    IF(PyTrilinos_ENABLE_Teuchos)
+      APPEND_SET(${PACKAGE_NAME}_PACKAGES Teuchos)
+      APPEND_SET(${PACKAGE_NAME}_MODULES  Teuchos)
+    ENDIF(PyTrilinos_ENABLE_Teuchos)
 
-The ``Makefile.am`` file is pretty standard for a Trilinos package.
-There are ``runtests-serial`` and ``runtests-mpi`` targets, used by
-the nightly test harness, as well as ``run-tests`` and run-examples``
-targets that are slightly more convenient for developer testing.
+In this instance, the build system now expects to find a SWIG
+interface file in the source directory ``src/Teuchos.i`` that defines
+module ``PyTrilinos.Teuchos``.  The end products will be placed in the
+build directory ``src/PyTrilinos``::
 
-The ``util/MakefileVariables.py.in`` file
------------------------------------------
+    src/PyTrilinos/Teuchos.py
+    src/PyTrilinos/Teuchos.pyc
+    src/PyTrilinos/_Teuchos.so
 
-The ``src/setup.py`` script needs to extract all of the build data
-obtained through the configuration process, such as include
-directories, library directories, etc.  This is accomplished by the
-``util/MakefileVariables.py`` script/module generated in the build
-directory by autotools.  This file has many python functions, but the
-most important function is ``processMakefile()``.  This function takes
-as its argument a string name of a Makefile.  It traverses any
-``include`` statements recursively and then evaluates and substitutes
-(also recursively) all of the make variables.  It returns a dictionary
-in which the keys are all of the make variable names and the
-corresponding values are string representations of the make variable
-values.  This function is used by ``PyTrilinosExtension.py``,
-``SharedUtils.py``, ``pkg_info.py``, and of course ``setup.py``.  It
-is the mechanism by which the autotools configuration information is
-transferred to the python-based portions of the build system.
-
-When several Trilinos packages are enabled, evaluation of all of the
-make variable values can become quite time-consuming.  For this
-reason, the results are cached internally and subsequent calls to
-``processMakefile()`` use the cached information rather than actually
-processing the given Makefile.  The result is that within a single
-python script, the lengthy evaluation process is only executed once.
-This happens once in the shared subdirectory and once in the src
-directory.
-
-The ``util/PyTrilinosExtension.py.in`` file
--------------------------------------------
-
-The ``src/setup.py`` script ends by calling the ``setup()`` function,
-and arguably the most important argument to this function is the
-``ext_modules`` keyword argument.  This argument is a list of
-``distutils.core.Extension`` instances, one or more for each enabled
-Trilinos package.  The purpose of the ``util/PyTrilinosExtension.py``
-python module is to provide a function,
-``makePyTrilinosExtensions()``, that takes a Trilinos package name as
-its argument and returns a list of associated ``Extension`` objects
-(typically a list of length one, but not always).  Each ``Extension``
-object is an encapsulation of its name, list of source files, ``-D``
-command line macros, include directories, library directories and
-libraries, plus any additional compile or link arguments that are
-needed.  The ``makePyTrilinosExtensions()`` function automates as much
-of this as is possible, but the intent is that for special cases,
-specific checks and assignments can be implemented within the
-function.
-
-The ``util/SharedUtils.py.in`` file
------------------------------------
-
-PyTrilinos is now required to link against shared versions of the
-Trilinos libraries.  Since Trilinos does not yet support shared
-libraries, the ``util/SharedUtils.py`` file was written to convert
-existing libraries from static to shared.  The primary mechanism for
-this is the ``SharedTrilinosBuilder`` class, which is constructed with
-a package name.  The methods intended for public use are
-``buildShared()``, ``clean()``, ``install()`` and ``uninstall()``.
-These methods are called by the ``setup.py`` script, depending on what
-command is supplied by the ``Makefile``.  Currently, re-linking
-Trilinos libraries as shared is only supported on Linux and Darwin
-operating systems.
-
-The shared libraries are built by changing directory to the package
-``src`` directory within the build tree, and linking all of the object
-files into a dynamic library.  This library is then moved back to the
-``PyTrilinos/shared`` directory within the build tree, where it is
-picked up by the linker when creating the PyTrilinos extension
-modules.
-
-The ``util/pkg_info.py.in`` file
---------------------------------
-
-The ``src/pkg_info.py`` file is for extracting package information
-from a swig interface file.  It can be imported as a module, and its
-``extractPackageNames()`` function called, or it can be run as a
-script.  The ``util/PyTrilinosExtension.py`` module uses
-``pkg_info.py`` to determine the full module name for each sub-module.
-The ``Makefile`` uses ``pkg_info.py`` to provide command-line
-arguments to swig: the list of include directories and the ouptut
-directory for the python proxy file.
-
-The ``src/Makefile.am`` file
-----------------------------
-
-The ``src/Makefile.am`` file is where the make system hands off to the
-python ``distutils`` system.  First the ``ENABLE_PACKAGE`` variable is
-set to ``true`` or null for all of the supported packages.  Then the
-appropriate export Makefile is included and ``PACKAGE_INTERFACES`` and
-``PACKAGE_PROXIES`` variables are set for all of the enabled packages.
-By including the export Makefiles, this Makefile will obtain all of
-the needed build information for all of the Trilinos packages.  The
-individual interface and proxy variables are then combined into
-comprehensive ``INTERFACES`` and ``PROXIES`` variables.  Targets are
-provided that convert swig interface files to C++ wrapper code and
-python proxy files.  At the end of this file, the build, clean,
-install and uninstall targets are implemented by calling the
-``setup.py`` script.
-
-The ``src/UserArray.patch`` file
---------------------------------
-
-The ``src/UserArray.patch`` file is to fix a bug that is present in
-numpy version 0.9.8.  If the configuration system finds a numpy of a
-different version, this file is not used.
-
-The ``src/setup.py`` file
+Nested Namespace Packages
 -------------------------
 
-The ``src/setup.py`` file is central to building PyTrilinos using the
-``distutils`` module.  In addition to calling ``setup()`` as most
-``setup.py`` scripts do to build, clean and install the extension
-modules, this script is also responsible for building, cleaning,
-installing and uninstalling the shared Trilinos libraries; and
-building, cleaning, and uninstalling the ``PyTrilinos/__init__.py``
-file.
+Using ``NOX`` as an example, the ``LIB_OPTIONAL_DEP_PACKAGES``
+variable in the ``cmake/Dependencies.cmake`` file should contain the
+entry ``NOX`` and it should be listed in build order.
 
-The ``test/Makefile.am`` file
------------------------------
+In the top-level ``CMakeLists.txt`` file, the variable
+``PyTrilinos_PACKAGES`` should be appended as before, with a single
+entry.  But ``PyTrilinos_MODULES`` should contain an entry for each
+nested namespace::
 
-PyTrilinos tests are scripts, so rather than being built, they are
-simply copied from the source tree to the build tree.  To account for
-the case where someone builds within the source tree, and to avoid
-copying test scripts that are concurrent between the source and build
-trees, the most efficient method was for the Makefile to create a
-short python script in the ``test`` directory called
-``should_copy.py``.  In the source tree, it always returns ``false``.
-In the build directory, it returns ``true`` if the test script does
-not exist or if it does exist and the source tree version is newer;
-else it returns ``false``.  By this method, test scripts are copied
-from the source tree to the build tree.
+    IF(PyTrilinos_ENABLE_NOX)
+      APPEND_SET(${PACKAGE_NAME}_PACKAGES NOX)
+      APPEND_SET(${PACKAGE_NAME}_MODULES  NOX.__init__  )
+      APPEND_SET(${PACKAGE_NAME}_MODULES  NOX.Abstract  )
+      APPEND_SET(${PACKAGE_NAME}_MODULES  NOX.StatusTest)
+      APPEND_SET(${PACKAGE_NAME}_MODULES  NOX.Solver    )
+      IF(NOX_ENABLE_Epetra)
+        APPEND_SET(${PACKAGE_NAME}_MODULES NOX.Epetra.__init__ )
+        APPEND_SET(${PACKAGE_NAME}_MODULES NOX.Epetra.Interface)
+      ENDIF(NOX_ENABLE_Epetra)
+    ENDIF(PyTrilinos_ENABLE_NOX)
 
-All of the test scripts import a python module contained in
-``setpath.py``.  This python script is also copied from the source
-tree to the build tree, using the same checks as the test scripts.
+For every entry in ``PyTrilnos_MODULES``, there should be a
+corresponding SWIG file in the source directory::
 
-The test scripts themselves are only copied over if all of the
-PyTrilinos modules they use are enabled.
+    src/NOX.__init__.i
+    src/NOX.Abstract.i
+    src/NOX.StatusTest.i
+    src/NOX.Solver.i
+    src/NOX.Epetra.__init__.i
+    src/NOX.Epetra.Interface.i
 
-The ``example/Makefile.am`` file
---------------------------------
+which will produce the following build products::
 
-This Makefile works in the same manner as the one in the ``test``
-directory.
+    src/PyTrilinos/NOX/__init__.py
+    src/PyTrilinos/NOX/__init__.pyc
+    src/PyTrilinos/NOX/___init__.so
+    src/PyTrilinos/NOX/Abstract.py
+    src/PyTrilinos/NOX/Abstract.pyc
+    src/PyTrilinos/NOX/_Abstract.so
+    src/PyTrilinos/NOX/StatusTest.py
+    src/PyTrilinos/NOX/StatusTest.pyc
+    src/PyTrilinos/NOX/_StatusTest.so
+    src/PyTrilinos/NOX/Solver.py
+    src/PyTrilinos/NOX/Solver.pyc
+    src/PyTrilinos/NOX/_Solver.so
+    src/PyTrilinos/NOX/Epetra/__init__.py
+    src/PyTrilinos/NOX/Epetra/__init__.pyc
+    src/PyTrilinos/NOX/Epetra/___init__.so
+    src/PyTrilinos/NOX/Epetra/Interface.py
+    src/PyTrilinos/NOX/Epetra/Interface.pyc
+    src/PyTrilinos/NOX/Epetra/_Interface.so
+
+The ``pytrilinos`` Library
+--------------------------
+
+If you develop a module that requires compiled code not generated by
+SWIG, it should be put in the ``pytrilinos`` library.  Simply append
+entries the the ``HEADERS`` and ``SOURCES`` variables in
+``src/CMakeLists.txt`` file.
+
+Package-Specific Configuration Options
+--------------------------------------
+
+If you need package-specific configuration options set, they should be
+done so in ``src/CMakeLists.txt`` prior tothe call the call to
+``PACKAGE_CONFIGURE_FILE()``.  Currently, the following variable are
+set depending upon the top-level Trilinos configuration::
+
+    HAVE_EPETRA
+    HAVE_TEUCHOS
+    HAVE_NOX_EPETRA
+    HAVE_NOX_EPETRAEXT
+    HAVE_MPI

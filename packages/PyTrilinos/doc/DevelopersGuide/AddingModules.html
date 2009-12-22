@@ -9,8 +9,8 @@
 /*
 :Author: David Goodger
 :Contact: goodger@users.sourceforge.net
-:Date: $Date$
-:Revision: $Revision$
+:Date: $Date: 2005-12-18 01:56:14 +0100 (Sun, 18 Dec 2005) $
+:Revision: $Revision: 4224 $
 :Copyright: This stylesheet has been placed in the public domain.
 
 Default cascading style sheet for the HTML output of Docutils.
@@ -294,129 +294,68 @@ ul.auto-toc {
 <p>If you want to add a Trilinos package as a new module in PyTrilinos,
 here are the necessary steps.</p>
 <ol class="arabic">
-<li><p class="first">Add the package to the configure script so that PyTrilinos
-recognizes that it can use it.  Within <tt class="docutils literal"><span class="pre">configure.ac</span></tt>, copy and
-paste one of the</p>
-<pre class="literal-block">
-TAC_ARG_ENABLE_CAN_USE_PACKAGE
-</pre>
-<p>macros, and modify the arguments for your package.</p>
+<li><p class="first">Add the package name to the <tt class="docutils literal"><span class="pre">cmake/Dependencies.cmake</span></tt> file, where
+variable <tt class="docutils literal"><span class="pre">LIB_OPTIONAL_DEP_PACKAGES</span></tt> is set.  It is important
+that packages be listed in build order.</p>
 </li>
 <li><p class="first">If your package uses nested namespaces, then the python interface
 should use corresponding nested modules.  To partially facilitate
-this, within the <tt class="docutils literal"><span class="pre">src/PyTrilinos</span></tt> (and/or the
-<tt class="docutils literal"><span class="pre">src-boost/PyTrilinos</span></tt>) directory, make a directory with your
-package name.  Within that directory, create an empty file (via
-<tt class="docutils literal"><span class="pre">touch</span></tt>, for example) named <tt class="docutils literal"><span class="pre">.dummy.in</span></tt>.  At the end of
-<tt class="docutils literal"><span class="pre">configure.ac</span></tt>, modify the</p>
+this, within the <tt class="docutils literal"><span class="pre">src/PyTrilinos</span></tt> directory, make a directory with your
+package name.  Repeat for nested namespaces.</p>
+<p>In <tt class="docutils literal"><span class="pre">src/PyTrilinos/CMakeLists.txt</span></tt>, you will find logic such as:</p>
 <pre class="literal-block">
-AC_CONFIG_FILES
+# The NOX module employs namespaces, so include the NOX directory
+IF(${PACKAGE_NAME}_ENABLE_NOX)
+  ADD_SUBDIRECTORY(NOX)
+ENDIF(${PACKAGE_NAME}_ENABLE_NOX)
 </pre>
-<p>macro to include the argument</p>
-<pre class="literal-block">
-src/PyTrilinos/PACKAGE/.dummy
-</pre>
-<p>where <tt class="docutils literal"><span class="pre">PACKAGE</span></tt> is the name of your package (and <tt class="docutils literal"><span class="pre">src</span></tt> could be
-<tt class="docutils literal"><span class="pre">src-boost</span></tt> if appropriate).  This may need to be repeated for
-more deeply nested namespaces (such as <tt class="docutils literal"><span class="pre">NOX/Epetra</span></tt>, for
-example).</p>
+<p>Add similar logic for your code.  In each nested directory, create
+a new <tt class="docutils literal"><span class="pre">CMakeLists.txt</span></tt> file and provide similar logic.</p>
 </li>
-<li><p class="first">Tell the <tt class="docutils literal"><span class="pre">Makefile</span></tt> in the source directory (either <tt class="docutils literal"><span class="pre">src</span></tt> or
-<tt class="docutils literal"><span class="pre">src-boost</span></tt>) to optionally enable the package.  Within
-<tt class="docutils literal"><span class="pre">src/Makefile.am</span></tt>, you will find a series of <tt class="docutils literal"><span class="pre">automake</span></tt>
-directives that look like</p>
+<li><p class="first">In the top-level <tt class="docutils literal"><span class="pre">CMakeLists.txt</span></tt> file, you will find a series of
+if-blocks that look like this:</p>
 <pre class="literal-block">
-&#64;HAVE_PYTRILINOS_TEUCHOS_TRUE&#64;ENABLE_TEUCHOS=true
-&#64;HAVE_PYTRILINOS_TEUCHOS_FALSE&#64;ENABLE_TEUCHOS=
+IF(PyTrilinos_ENABLE_Teuchos)
+  APPEND_SET(${PACKAGE_NAME}_PACKAGES Teuchos)
+  APPEND_SET(${PACKAGE_NAME}_MODULES  Teuchos)
+ENDIF(PyTrilinos_ENABLE_Teuchos)
 </pre>
-<p>Copy and paste one of these sets and change (in this example) the
-four occurences of <tt class="docutils literal"><span class="pre">TEUCHOS</span></tt> to the (all-caps version of the)
-name of your package.</p>
+<p>Add a similar if-block for your new package, making sure it is
+placed in build-order relative to the other packages.  See the
+logic for the <tt class="docutils literal"><span class="pre">NOX</span></tt> package if your package supports nested
+namespaces (sub-modules).</p>
 </li>
-<li><p class="first">Gain access to the exported variables of the package's Makefile.
-Within this same source directory <tt class="docutils literal"><span class="pre">Makefile.am</span></tt>, include the
-package export Makefile.  For example, for Teuchos, you will see</p>
-<pre class="literal-block">
-# Teuchos
-if HAVE_PYTRILINOS_TEUCHOS
-include $(top_builddir)/../teuchos/Makefile.export.teuchos
-...
-endif
-</pre>
-<p>Change the case-sensitive Teuchos package names to your
-case-sensitive package names.</p>
+<li><p class="first">If your package will require compiled code that will be archived in
+the pytrilinos shared library, add the headers and sources to
+<tt class="docutils literal"><span class="pre">src/CMakeLists.txt</span></tt>, using the existing if-blocks as a guide.</p>
 </li>
-<li><p class="first">Within this same <tt class="docutils literal"><span class="pre">if</span></tt> block within this <tt class="docutils literal"><span class="pre">Makefile.am</span></tt>, set up
-the build variables.  Within the <tt class="docutils literal"><span class="pre">src</span></tt> directory, these variables
-are</p>
+<li><p class="first">If your package supports nested namespaces (sub-modules), then in
+<tt class="docutils literal"><span class="pre">src/CMakeLists.txt</span></tt>, find the loop prefaced with the comment:</p>
 <pre class="literal-block">
-PACKAGE_INTERFACES = ...
-PACKAGE_PROXIES    = ...
+# Loop over the PyTrilinos-enabled Trilinos modules and define the
+# swig-generated PyTrilinos extension modules
 </pre>
-<p>and in the <tt class="docutils literal"><span class="pre">src-boost</span></tt> directory, they are</p>
-<pre class="literal-block">
-PACKAGE_WRAPPERS = ...
-PACKAGE_PROXIES  = ...
-</pre>
-<p>where <tt class="docutils literal"><span class="pre">PACKAGE</span></tt> is the (all-caps version of the) name of your
-package.  <tt class="docutils literal"><span class="pre">PACKAGE_INTERFACES</span></tt> should be a space-delimited list
-of swig interface files.  <tt class="docutils literal"><span class="pre">PACKAGE_PROXIES</span></tt> should be a list of
-python proxy files, each with <tt class="docutils literal"><span class="pre">PyTrilinos/</span></tt> directory prefix.
-<tt class="docutils literal"><span class="pre">PACKAGE_WRAPPERS</span></tt> should be a list of boost C++ wrapper files
-that implement the BOOST_PYTHON_MODULE macro.</p>
-<p>Typically, you will have a single swig interface file named after
-your package with a <tt class="docutils literal"><span class="pre">.i</span></tt> extension; a single python proxy file
-named after you package with a <tt class="docutils literal"><span class="pre">.py</span></tt> extension; and a single
-boost C++ wrapper named after your package with a <tt class="docutils literal"><span class="pre">_wrap.cpp</span></tt>
-suffix.  In <tt class="docutils literal"><span class="pre">src</span></tt> you will need to create the <tt class="docutils literal"><span class="pre">.i</span></tt> file; in
-<tt class="docutils literal"><span class="pre">src-boost</span></tt>, you will have to create both the <tt class="docutils literal"><span class="pre">_wrap.cpp</span></tt> and
-<tt class="docutils literal"><span class="pre">.py</span></tt> files.</p>
+<p>Use the existing if-blocks to add logic to support your
+sub-modules.</p>
 </li>
-<li><p class="first">Again, within this same <tt class="docutils literal"><span class="pre">Makefile.am</span></tt>, after these
-package-specific definitions, you will find, for example</p>
+<li><p class="first">Add your package by writing the required SWIG interface files.  For
+a standard PACKAGE, it will be in the file</p>
+<blockquote>
+<p><tt class="docutils literal"><span class="pre">PACKAGE.i</span></tt></p>
+</blockquote>
+<p>For a package that supports nested namespaces, the primary SWIG
+interface file will be named:</p>
 <pre class="literal-block">
-PROXIES = ...
+``PACKAGE/__init__.i``
 </pre>
-<p>where the right-hand side is a list of all of the individual
-package <tt class="docutils literal"><span class="pre">_PROXIES</span></tt> variables.  Add you package to this and other
-related lists.</p>
-</li>
-<li><p class="first">Alter <tt class="docutils literal"><span class="pre">src/setup.py</span></tt> to include the new module.  In this file,
-the first non-commented line of code is to define the list of
-strings in a variable called <tt class="docutils literal"><span class="pre">modules</span></tt>.  Add the name of your
-package to this list.  Note that the order of the list should be
-the Trilinos build order.  This order can be obtained from the
-top-level Trilinos <tt class="docutils literal"><span class="pre">Makefile.am</span></tt> file.</p>
-</li>
-<li><p class="first">Create a swig interface file, using an existing swig interface file
-as a template.  Start with the <tt class="docutils literal"><span class="pre">%module</span></tt> directive and limit your
-first cut to including the package configuration definitions:</p>
-<pre class="literal-block">
-%include &quot;Komplex_config.h&quot;
-</pre>
-</li>
-<li><p class="first">This should be sufficient for getting started.  From the
-<tt class="docutils literal"><span class="pre">PyTrilinos</span></tt> main directory, run the <tt class="docutils literal"><span class="pre">bootstrap</span></tt> command to
-generate the <tt class="docutils literal"><span class="pre">configure</span></tt> and <tt class="docutils literal"><span class="pre">Makefile.in</span></tt> files that will be
-used by the top-level <tt class="docutils literal"><span class="pre">configure</span></tt> script.  From your top-level
-build directory, run your <tt class="docutils literal"><span class="pre">configure</span></tt> script and <tt class="docutils literal"><span class="pre">make</span></tt> to
-build your first cut.  To test it, do the following:</p>
-<pre class="literal-block">
-$ cd packages/PyTrilinos/test
-$ make
-$ python
-&gt;&gt;&gt; import setpath
-&gt;&gt;&gt; setpath.setpath()
-&gt;&gt;&gt; import Package    # where Package is your package name
-&gt;&gt;&gt; dir(Package)
-</pre>
-<p>You should have some simple items defined within your Package.</p>
+<p>In both cases, of course, <tt class="docutils literal"><span class="pre">PACKAGE</span></tt> will be replaced with your
+package name.</p>
 </li>
 </ol>
 </div>
 <div class="footer">
 <hr class="footer" />
-Generated on: 2009-01-07 21:49 UTC.
+Generated on: 2009-12-20 17:49 UTC.
 Generated by <a class="reference" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>

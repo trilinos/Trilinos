@@ -297,6 +297,7 @@ namespace Tpetra {
 
   //////////////////////////////////////////////////////////////////////////////////////////
   size_t Distributor::createFromSends(const Teuchos::ArrayView<const int> &exportNodeIDs) {
+    using Teuchos::outArg;
     numExports_ = exportNodeIDs.size();
 
     const int myImageID = comm_->getRank();
@@ -368,7 +369,7 @@ namespace Tpetra {
     }
     {
       int gbl_badID;
-      Teuchos::reduceAll(*comm_,Teuchos::REDUCE_MAX,badID,&gbl_badID);
+      Teuchos::reduceAll(*comm_,Teuchos::REDUCE_MAX,badID,outArg(gbl_badID));
       TEST_FOR_EXCEPTION(gbl_badID >= 0, std::runtime_error,
           Teuchos::typeName(*this) << "::createFromSends(): bad node id listed on node " << gbl_badID << ".");
     }

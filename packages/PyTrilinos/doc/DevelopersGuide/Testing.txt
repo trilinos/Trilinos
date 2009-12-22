@@ -35,44 +35,32 @@ description can be omitted.
 Build System
 ------------
 
-Running ``make`` in either the ``example`` or ``test`` directories
-simply copies the test scripts from the source directory to the build
-directory.  Autotools requires that the source and build names be
-different, to support building in the source directory.  To meet this
-requirement, the source files have the suffix ``.src`` and the build
-files have the suffix ``.py``.
+Running ``make`` in either the top, ``example`` or ``test`` build
+directories simply copies the test scripts from the source directory
+to the build directory.  For historical reasons, the source files have
+the suffix ``.src`` and the build files have the suffix ``.py``.
 
-The ``Makefile`` in the test directories control which scripts get
-copied to the build directory, via the ``PACKAGE_TESTS`` and
-``PACKAGE_EXAMPLES`` variables defined in ``test/Makefile.am`` and
-``example/Makefile.am``, respectively, where ``PACKAGE`` is replaced
-by the names of all the packages with python wrappers.  The values of
-these variables should be conditional based on what packages are
-enabled.  If a test imports a given PyTrilinos package, then it should
-be conditionally enabled based on the value of
-``HAVE_PYTRILINOS_PACKAGE``, where ``PACKAGE`` is replaced by the name
-of the package.
+The ``CMakeLists.txt`` files in the ``test`` and ``example``
+directories control which scripts get copied to the build directory.
+Each test script, or group of related test scripts, should be
+protected with ``IF()`` statements, depending on which PyTrilinos
+modules need to be present for the script to run.
 
 Running All Tests
 -----------------
 
-To run all of the enabled tests, first make sure they are all
-up-to-date::
+To run all of the enabled tests, first make sure PyTrilinos and all
+tests and examples are up-to-date::
 
     $ cd BUILD/packages/PyTrilinos
-    $ make tests examples
+    $ make
 
-Then you can use the test harness ``make`` target to run all of the
-tests::
+Then you can use the CMake ``ctest`` program to run all of the tests::
 
-    $ make runtests-serial
+    $ ctest -W 10
 
-or::
-
-    $ make runtests-mpi
-
-The results of all of the tests can be found in
-``test/runtests-results`` directory.
+The results of all of the tests can be found in the ``Testing``
+directory, present in the directory from which ``ctest`` was run.
 
 Test Script Conventions
 -----------------------
@@ -103,8 +91,16 @@ while system-installed modules are imported like this::
     from PyTrilinos import Teuchos
     from PyTrilinos import Epetra
 
-See any test script for examples and how the ``-t`` option is
-enforced.
+the ``-t`` option is enforced in test scripts with the followning
+python code::
+
+    parser = OptionParser()
+    parser.add_option("-t", "--testharness", action="store_true",
+                      dest="testharness", default=False,
+                      help="test local build modules; prevent loading system-installed modules")
+    options,args = parser.parse_args()
+    from testutil import fromPyTrilinosImport
+    Epetra = fromPyTrilinosImport('Epetra', options.testharness)
 
 Test scripts shall run in both serial or parallel.  You may use
 either::

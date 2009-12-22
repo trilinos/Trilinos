@@ -144,6 +144,7 @@ private:
   static int A_g_on_delete_;
 public:
   void set_A(const Teuchos::RCP<A> &a ) { a_ = a; }
+  Teuchos::RCP<A> get_A() { return a_; }
 };
 
 

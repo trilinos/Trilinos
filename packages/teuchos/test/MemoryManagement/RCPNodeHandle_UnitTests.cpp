@@ -125,17 +125,41 @@ TEUCHOS_UNIT_TEST( RCPNodeHandle, add_New_RCPNode_basic )
 }
 
 
-TEUCHOS_UNIT_TEST( RCPNodeHandle, add_New_RCPNode_add_twice_error )
+TEUCHOS_UNIT_TEST( RCPNodeHandle, add_New_RCPNode_add_owning_twice_error )
 {
   SET_RCPNODE_TRACING();
-  RCPNode *node = basicRCPNode<A>(true);
+  A *a_ptr = new A;
+  RCPNode *node1 = basicRCPNodeNoAlloc<A>(a_ptr, true);
   const int numActiveNodesBase = numActiveRCPNodes();
-  ECHO(add_new_RCPNode(node, "dummy"));
+  ECHO(add_new_RCPNode(node1, "dummy1"));
   TEST_EQUALITY(numActiveRCPNodes(), numActiveNodesBase+1);
-  TEST_THROW(add_new_RCPNode(node, "dummy"), DuplicateOwningRCPError);
-  ECHO(remove_RCPNode(node));
+  RCPNode *node2 = basicRCPNodeNoAlloc<A>(a_ptr, true);
+  TEST_THROW(add_new_RCPNode(node2, "dummy2"), DuplicateOwningRCPError);
+  ECHO(remove_RCPNode(node1));
+  deleteRCPNode(&node1);
   TEST_EQUALITY(numActiveRCPNodes(), numActiveNodesBase);
-  deleteRCPNode(&node);
+  node2->has_ownership(false);
+  deleteRCPNode(&node2);
+}
+
+
+TEUCHOS_UNIT_TEST( RCPNodeHandle, add_New_RCPNode_add_nonowning_twice_okay )
+{
+  SET_RCPNODE_TRACING();
+  A *a_ptr = new A;
+  RCPNode *node1 = basicRCPNodeNoAlloc<A>(a_ptr, true);
+  const int numActiveNodesBase = numActiveRCPNodes();
+  ECHO(add_new_RCPNode(node1, "dummy1"));
+  TEST_EQUALITY(numActiveRCPNodes(), numActiveNodesBase+1);
+  RCPNode *node2 = basicRCPNodeNoAlloc<A>(a_ptr, false);
+  ECHO(add_new_RCPNode(node2, "dummy2"));
+  TEST_EQUALITY(numActiveRCPNodes(), numActiveNodesBase+2);
+  ECHO(remove_RCPNode(node2));
+  deleteRCPNode(&node2);
+  TEST_EQUALITY(numActiveRCPNodes(), numActiveNodesBase+1);
+  ECHO(remove_RCPNode(node1));
+  deleteRCPNode(&node1);
+  TEST_EQUALITY(numActiveRCPNodes(), numActiveNodesBase);
 }
 
 

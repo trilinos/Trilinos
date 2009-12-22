@@ -9,8 +9,8 @@
 /*
 :Author: David Goodger
 :Contact: goodger@users.sourceforge.net
-:Date: $Date$
-:Revision: $Revision$
+:Date: $Date: 2005-12-18 01:56:14 +0100 (Sun, 18 Dec 2005) $
+:Revision: $Revision: 4224 $
 :Copyright: This stylesheet has been placed in the public domain.
 
 Default cascading style sheet for the HTML output of Docutils.
@@ -291,200 +291,129 @@ ul.auto-toc {
 <body>
 <div class="document" id="the-pytrilinos-build-system">
 <h1 class="title">The PyTrilinos Build System</h1>
-<p>PyTrilinos is a package within Trilinos, and Trilinos uses the
-autotools suite (autoconf, automake, etc.) to generate a
-Makefile-based system.  The resulting configure scripts and Makefiles
-provide a high degree of portability.  However, building Trilinos
-still remains a non-trivial exercise.</p>
-<p>One of the configuration tasks performed by the Trilinos build system
-is determination of which Trilinos packages are enabled and disabled.
-This task is crucial for the PyTrilinos build system, and is reason
-enough to adopt the Trilinos autotools-based build system.  Another is
-the seamless integration provided by the top-level configure script.</p>
-<p>PyTrilinos therefore uses the Trilinos build system.  In the main
-PyTrilinos directory, you will find the familiar <tt class="docutils literal"><span class="pre">configure</span></tt> script,
-<tt class="docutils literal"><span class="pre">configure.ac</span></tt>, <tt class="docutils literal"><span class="pre">Makefile.am</span></tt> and <tt class="docutils literal"><span class="pre">Makefile.in</span></tt>, <tt class="docutils literal"><span class="pre">aclocal.m4</span></tt>,
-the <tt class="docutils literal"><span class="pre">bootstrap</span></tt> shell script and the <tt class="docutils literal"><span class="pre">config</span></tt> subdirectory.
-Subdirectories <tt class="docutils literal"><span class="pre">src</span></tt>, <tt class="docutils literal"><span class="pre">test</span></tt> and <tt class="docutils literal"><span class="pre">example</span></tt> (as well as the
-currently experimental <tt class="docutils literal"><span class="pre">src-boost</span></tt>) all have their own
-<tt class="docutils literal"><span class="pre">Makefile.am</span></tt> and <tt class="docutils literal"><span class="pre">Makefile.in</span></tt> files.</p>
-<p>But the PyTrilinos build system is different from other Trilinos
-packages.  Because the purpose of PyTrilinos is to compile extension
-modules that can be imported into python, it is important to compile
-these modules in a way that is compatible with the chosen python
-executable.  The python module <tt class="docutils literal"><span class="pre">distutils</span></tt> is perfect for this task.
-Thus in <tt class="docutils literal"><span class="pre">src</span></tt> (as well as <tt class="docutils literal"><span class="pre">src-boost</span></tt>), you will find a
-conventionally-named <tt class="docutils literal"><span class="pre">setup.py</span></tt> script that imports various
-components of the <tt class="docutils literal"><span class="pre">distutils</span></tt> module and calls the versatile
-<tt class="docutils literal"><span class="pre">setup()</span></tt> function.  The <tt class="docutils literal"><span class="pre">Makefile.am</span></tt> (and resulting
-<tt class="docutils literal"><span class="pre">Makefile.in</span></tt> and ultimately the <tt class="docutils literal"><span class="pre">Makefile</span></tt> itself) in these
-source directories ultimately hand off the compilation of the
-extension modules to the <tt class="docutils literal"><span class="pre">setup.py</span></tt> script.</p>
-<p>There are a variety of other python scripts and modules that aid in
-the process of creating wrappers to the enormously complex Trilinos
-project.  This document will describe the PyTrilinos build system,
-with special focus on its many unconventional aspects.</p>
+<p>The move by Trilinos to the CMake build system has had many advantages
+for PyTrilinos.  The two primary advantages being that shared
+libraries and python extension libraries can now both be built
+automatically by the host build system.  Previously, shared libraries
+were built by the PyTrilinos package in an ad-hoc manner, and the
+python extension libraries were built using the python distutils
+module, which has some reports of portability issues.  The move to
+CMake has improved the reliability and robustness of the PyTrilinos
+build system.</p>
+<p>From a build-system point of view, there are two types of Trilinos
+packages that are supported by PyTrilinos: those that are contained
+within a single namespace, like Teuchos, Epetra and AztecOO; and those
+that are contained within nested namespaces, such as NOX.  These two
+types are detailed below, in addition to the <tt class="docutils literal"><span class="pre">pytrilinos</span></tt> library
+and package-specific configuration options.</p>
 <div class="section">
-<h1><a id="the-configure-ac-file" name="the-configure-ac-file">The <tt class="docutils literal"><span class="pre">configure.ac</span></tt> file</a></h1>
-<p>The <tt class="docutils literal"><span class="pre">configure.ac</span></tt> file is fairly standard.  In fact, it performs
-fewer checks that the standard Trilinos package <tt class="docutils literal"><span class="pre">configure.ac</span></tt>.  Its
-most important functions are determining what relevant Trilinos
-packages are enabled and disabled and checking the python
-prerequisites: python existence and version, swig (simple wrapper and
-interface generator) existence and version, and numpy (numerical
-python) existence and version.</p>
-<p>Because of the non-conventional build system, some subdirectories that
-would normally get built automatically by <tt class="docutils literal"><span class="pre">configure</span></tt> have to be
-&quot;tricked&quot; into being made here.  For example a <tt class="docutils literal"><span class="pre">src/PyTrilinos</span></tt>
-directory is needed for storing python proxy files for the extension
-modules.  The way this is accomplished is that an empty file called
-<tt class="docutils literal"><span class="pre">src/PyTrilinos/.dummy</span></tt> is created, thus forcing the creation of the
-subdirectory.  This requires the existence of an empty file called
-<tt class="docutils literal"><span class="pre">src/PyTrilinos/.dummy.in</span></tt>.</p>
+<h1><a id="single-namespace-packages" name="single-namespace-packages">Single Namespace Packages</a></h1>
+<p>All supported packages must be listed in the
+<tt class="docutils literal"><span class="pre">LIB_OPTIONAL_DEP_PACKAGES</span></tt> variable in the
+<tt class="docutils literal"><span class="pre">cmake/Dependencies.cmake</span></tt> file, and they should be listed in build
+order.</p>
+<p>The PyTrilinos build system maintains two variables,
+<tt class="docutils literal"><span class="pre">PyTrilnos_PACKAGES</span></tt> and <tt class="docutils literal"><span class="pre">PyTrilinos_MODULES</span></tt>, both set in the
+top-level <tt class="docutils literal"><span class="pre">CMakeLists.txt</span></tt> file, to keep track of what to build.
+(Note that these variables are referenced as
+<tt class="docutils literal"><span class="pre">${PACKAGE_NAME}_PACKAGES</span></tt> and <tt class="docutils literal"><span class="pre">${PACKAGE_NAME}_MODULES</span></tt> within
+<tt class="docutils literal"><span class="pre">CMakeLists.txt</span></tt>.)  For single namespace packages, the entries in
+these two variables is the same.  For example,</p>
+<pre class="literal-block">
+IF(PyTrilinos_ENABLE_Teuchos)
+  APPEND_SET(${PACKAGE_NAME}_PACKAGES Teuchos)
+  APPEND_SET(${PACKAGE_NAME}_MODULES  Teuchos)
+ENDIF(PyTrilinos_ENABLE_Teuchos)
+</pre>
+<p>In this instance, the build system now expects to find a SWIG
+interface file in the source directory <tt class="docutils literal"><span class="pre">src/Teuchos.i</span></tt> that defines
+module <tt class="docutils literal"><span class="pre">PyTrilinos.Teuchos</span></tt>.  The end products will be placed in the
+build directory <tt class="docutils literal"><span class="pre">src/PyTrilinos</span></tt>:</p>
+<pre class="literal-block">
+src/PyTrilinos/Teuchos.py
+src/PyTrilinos/Teuchos.pyc
+src/PyTrilinos/_Teuchos.so
+</pre>
 </div>
 <div class="section">
-<h1><a id="the-makefile-am-file" name="the-makefile-am-file">The <tt class="docutils literal"><span class="pre">Makefile.am</span></tt> file</a></h1>
-<p>The <tt class="docutils literal"><span class="pre">Makefile.am</span></tt> file is pretty standard for a Trilinos package.
-There are <tt class="docutils literal"><span class="pre">runtests-serial</span></tt> and <tt class="docutils literal"><span class="pre">runtests-mpi</span></tt> targets, used by
-the nightly test harness, as well as <tt class="docutils literal"><span class="pre">run-tests</span></tt> and run-examples``
-targets that are slightly more convenient for developer testing.</p>
+<h1><a id="nested-namespace-packages" name="nested-namespace-packages">Nested Namespace Packages</a></h1>
+<p>Using <tt class="docutils literal"><span class="pre">NOX</span></tt> as an example, the <tt class="docutils literal"><span class="pre">LIB_OPTIONAL_DEP_PACKAGES</span></tt>
+variable in the <tt class="docutils literal"><span class="pre">cmake/Dependencies.cmake</span></tt> file should contain the
+entry <tt class="docutils literal"><span class="pre">NOX</span></tt> and it should be listed in build order.</p>
+<p>In the top-level <tt class="docutils literal"><span class="pre">CMakeLists.txt</span></tt> file, the variable
+<tt class="docutils literal"><span class="pre">PyTrilinos_PACKAGES</span></tt> should be appended as before, with a single
+entry.  But <tt class="docutils literal"><span class="pre">PyTrilinos_MODULES</span></tt> should contain an entry for each
+nested namespace:</p>
+<pre class="literal-block">
+IF(PyTrilinos_ENABLE_NOX)
+  APPEND_SET(${PACKAGE_NAME}_PACKAGES NOX)
+  APPEND_SET(${PACKAGE_NAME}_MODULES  NOX.__init__  )
+  APPEND_SET(${PACKAGE_NAME}_MODULES  NOX.Abstract  )
+  APPEND_SET(${PACKAGE_NAME}_MODULES  NOX.StatusTest)
+  APPEND_SET(${PACKAGE_NAME}_MODULES  NOX.Solver    )
+  IF(NOX_ENABLE_Epetra)
+    APPEND_SET(${PACKAGE_NAME}_MODULES NOX.Epetra.__init__ )
+    APPEND_SET(${PACKAGE_NAME}_MODULES NOX.Epetra.Interface)
+  ENDIF(NOX_ENABLE_Epetra)
+ENDIF(PyTrilinos_ENABLE_NOX)
+</pre>
+<p>For every entry in <tt class="docutils literal"><span class="pre">PyTrilnos_MODULES</span></tt>, there should be a
+corresponding SWIG file in the source directory:</p>
+<pre class="literal-block">
+src/NOX.__init__.i
+src/NOX.Abstract.i
+src/NOX.StatusTest.i
+src/NOX.Solver.i
+src/NOX.Epetra.__init__.i
+src/NOX.Epetra.Interface.i
+</pre>
+<p>which will produce the following build products:</p>
+<pre class="literal-block">
+src/PyTrilinos/NOX/__init__.py
+src/PyTrilinos/NOX/__init__.pyc
+src/PyTrilinos/NOX/___init__.so
+src/PyTrilinos/NOX/Abstract.py
+src/PyTrilinos/NOX/Abstract.pyc
+src/PyTrilinos/NOX/_Abstract.so
+src/PyTrilinos/NOX/StatusTest.py
+src/PyTrilinos/NOX/StatusTest.pyc
+src/PyTrilinos/NOX/_StatusTest.so
+src/PyTrilinos/NOX/Solver.py
+src/PyTrilinos/NOX/Solver.pyc
+src/PyTrilinos/NOX/_Solver.so
+src/PyTrilinos/NOX/Epetra/__init__.py
+src/PyTrilinos/NOX/Epetra/__init__.pyc
+src/PyTrilinos/NOX/Epetra/___init__.so
+src/PyTrilinos/NOX/Epetra/Interface.py
+src/PyTrilinos/NOX/Epetra/Interface.pyc
+src/PyTrilinos/NOX/Epetra/_Interface.so
+</pre>
 </div>
 <div class="section">
-<h1><a id="the-util-makefilevariables-py-in-file" name="the-util-makefilevariables-py-in-file">The <tt class="docutils literal"><span class="pre">util/MakefileVariables.py.in</span></tt> file</a></h1>
-<p>The <tt class="docutils literal"><span class="pre">src/setup.py</span></tt> script needs to extract all of the build data
-obtained through the configuration process, such as include
-directories, library directories, etc.  This is accomplished by the
-<tt class="docutils literal"><span class="pre">util/MakefileVariables.py</span></tt> script/module generated in the build
-directory by autotools.  This file has many python functions, but the
-most important function is <tt class="docutils literal"><span class="pre">processMakefile()</span></tt>.  This function takes
-as its argument a string name of a Makefile.  It traverses any
-<tt class="docutils literal"><span class="pre">include</span></tt> statements recursively and then evaluates and substitutes
-(also recursively) all of the make variables.  It returns a dictionary
-in which the keys are all of the make variable names and the
-corresponding values are string representations of the make variable
-values.  This function is used by <tt class="docutils literal"><span class="pre">PyTrilinosExtension.py</span></tt>,
-<tt class="docutils literal"><span class="pre">SharedUtils.py</span></tt>, <tt class="docutils literal"><span class="pre">pkg_info.py</span></tt>, and of course <tt class="docutils literal"><span class="pre">setup.py</span></tt>.  It
-is the mechanism by which the autotools configuration information is
-transferred to the python-based portions of the build system.</p>
-<p>When several Trilinos packages are enabled, evaluation of all of the
-make variable values can become quite time-consuming.  For this
-reason, the results are cached internally and subsequent calls to
-<tt class="docutils literal"><span class="pre">processMakefile()</span></tt> use the cached information rather than actually
-processing the given Makefile.  The result is that within a single
-python script, the lengthy evaluation process is only executed once.
-This happens once in the shared subdirectory and once in the src
-directory.</p>
+<h1><a id="the-pytrilinos-library" name="the-pytrilinos-library">The <tt class="docutils literal"><span class="pre">pytrilinos</span></tt> Library</a></h1>
+<p>If you develop a module that requires compiled code not generated by
+SWIG, it should be put in the <tt class="docutils literal"><span class="pre">pytrilinos</span></tt> library.  Simply append
+entries the the <tt class="docutils literal"><span class="pre">HEADERS</span></tt> and <tt class="docutils literal"><span class="pre">SOURCES</span></tt> variables in
+<tt class="docutils literal"><span class="pre">src/CMakeLists.txt</span></tt> file.</p>
 </div>
 <div class="section">
-<h1><a id="the-util-pytrilinosextension-py-in-file" name="the-util-pytrilinosextension-py-in-file">The <tt class="docutils literal"><span class="pre">util/PyTrilinosExtension.py.in</span></tt> file</a></h1>
-<p>The <tt class="docutils literal"><span class="pre">src/setup.py</span></tt> script ends by calling the <tt class="docutils literal"><span class="pre">setup()</span></tt> function,
-and arguably the most important argument to this function is the
-<tt class="docutils literal"><span class="pre">ext_modules</span></tt> keyword argument.  This argument is a list of
-<tt class="docutils literal"><span class="pre">distutils.core.Extension</span></tt> instances, one or more for each enabled
-Trilinos package.  The purpose of the <tt class="docutils literal"><span class="pre">util/PyTrilinosExtension.py</span></tt>
-python module is to provide a function,
-<tt class="docutils literal"><span class="pre">makePyTrilinosExtensions()</span></tt>, that takes a Trilinos package name as
-its argument and returns a list of associated <tt class="docutils literal"><span class="pre">Extension</span></tt> objects
-(typically a list of length one, but not always).  Each <tt class="docutils literal"><span class="pre">Extension</span></tt>
-object is an encapsulation of its name, list of source files, <tt class="docutils literal"><span class="pre">-D</span></tt>
-command line macros, include directories, library directories and
-libraries, plus any additional compile or link arguments that are
-needed.  The <tt class="docutils literal"><span class="pre">makePyTrilinosExtensions()</span></tt> function automates as much
-of this as is possible, but the intent is that for special cases,
-specific checks and assignments can be implemented within the
-function.</p>
-</div>
-<div class="section">
-<h1><a id="the-util-sharedutils-py-in-file" name="the-util-sharedutils-py-in-file">The <tt class="docutils literal"><span class="pre">util/SharedUtils.py.in</span></tt> file</a></h1>
-<p>PyTrilinos is now required to link against shared versions of the
-Trilinos libraries.  Since Trilinos does not yet support shared
-libraries, the <tt class="docutils literal"><span class="pre">util/SharedUtils.py</span></tt> file was written to convert
-existing libraries from static to shared.  The primary mechanism for
-this is the <tt class="docutils literal"><span class="pre">SharedTrilinosBuilder</span></tt> class, which is constructed with
-a package name.  The methods intended for public use are
-<tt class="docutils literal"><span class="pre">buildShared()</span></tt>, <tt class="docutils literal"><span class="pre">clean()</span></tt>, <tt class="docutils literal"><span class="pre">install()</span></tt> and <tt class="docutils literal"><span class="pre">uninstall()</span></tt>.
-These methods are called by the <tt class="docutils literal"><span class="pre">setup.py</span></tt> script, depending on what
-command is supplied by the <tt class="docutils literal"><span class="pre">Makefile</span></tt>.  Currently, re-linking
-Trilinos libraries as shared is only supported on Linux and Darwin
-operating systems.</p>
-<p>The shared libraries are built by changing directory to the package
-<tt class="docutils literal"><span class="pre">src</span></tt> directory within the build tree, and linking all of the object
-files into a dynamic library.  This library is then moved back to the
-<tt class="docutils literal"><span class="pre">PyTrilinos/shared</span></tt> directory within the build tree, where it is
-picked up by the linker when creating the PyTrilinos extension
-modules.</p>
-</div>
-<div class="section">
-<h1><a id="the-util-pkg-info-py-in-file" name="the-util-pkg-info-py-in-file">The <tt class="docutils literal"><span class="pre">util/pkg_info.py.in</span></tt> file</a></h1>
-<p>The <tt class="docutils literal"><span class="pre">src/pkg_info.py</span></tt> file is for extracting package information
-from a swig interface file.  It can be imported as a module, and its
-<tt class="docutils literal"><span class="pre">extractPackageNames()</span></tt> function called, or it can be run as a
-script.  The <tt class="docutils literal"><span class="pre">util/PyTrilinosExtension.py</span></tt> module uses
-<tt class="docutils literal"><span class="pre">pkg_info.py</span></tt> to determine the full module name for each sub-module.
-The <tt class="docutils literal"><span class="pre">Makefile</span></tt> uses <tt class="docutils literal"><span class="pre">pkg_info.py</span></tt> to provide command-line
-arguments to swig: the list of include directories and the ouptut
-directory for the python proxy file.</p>
-</div>
-<div class="section">
-<h1><a id="the-src-makefile-am-file" name="the-src-makefile-am-file">The <tt class="docutils literal"><span class="pre">src/Makefile.am</span></tt> file</a></h1>
-<p>The <tt class="docutils literal"><span class="pre">src/Makefile.am</span></tt> file is where the make system hands off to the
-python <tt class="docutils literal"><span class="pre">distutils</span></tt> system.  First the <tt class="docutils literal"><span class="pre">ENABLE_PACKAGE</span></tt> variable is
-set to <tt class="docutils literal"><span class="pre">true</span></tt> or null for all of the supported packages.  Then the
-appropriate export Makefile is included and <tt class="docutils literal"><span class="pre">PACKAGE_INTERFACES</span></tt> and
-<tt class="docutils literal"><span class="pre">PACKAGE_PROXIES</span></tt> variables are set for all of the enabled packages.
-By including the export Makefiles, this Makefile will obtain all of
-the needed build information for all of the Trilinos packages.  The
-individual interface and proxy variables are then combined into
-comprehensive <tt class="docutils literal"><span class="pre">INTERFACES</span></tt> and <tt class="docutils literal"><span class="pre">PROXIES</span></tt> variables.  Targets are
-provided that convert swig interface files to C++ wrapper code and
-python proxy files.  At the end of this file, the build, clean,
-install and uninstall targets are implemented by calling the
-<tt class="docutils literal"><span class="pre">setup.py</span></tt> script.</p>
-</div>
-<div class="section">
-<h1><a id="the-src-userarray-patch-file" name="the-src-userarray-patch-file">The <tt class="docutils literal"><span class="pre">src/UserArray.patch</span></tt> file</a></h1>
-<p>The <tt class="docutils literal"><span class="pre">src/UserArray.patch</span></tt> file is to fix a bug that is present in
-numpy version 0.9.8.  If the configuration system finds a numpy of a
-different version, this file is not used.</p>
-</div>
-<div class="section">
-<h1><a id="the-src-setup-py-file" name="the-src-setup-py-file">The <tt class="docutils literal"><span class="pre">src/setup.py</span></tt> file</a></h1>
-<p>The <tt class="docutils literal"><span class="pre">src/setup.py</span></tt> file is central to building PyTrilinos using the
-<tt class="docutils literal"><span class="pre">distutils</span></tt> module.  In addition to calling <tt class="docutils literal"><span class="pre">setup()</span></tt> as most
-<tt class="docutils literal"><span class="pre">setup.py</span></tt> scripts do to build, clean and install the extension
-modules, this script is also responsible for building, cleaning,
-installing and uninstalling the shared Trilinos libraries; and
-building, cleaning, and uninstalling the <tt class="docutils literal"><span class="pre">PyTrilinos/__init__.py</span></tt>
-file.</p>
-</div>
-<div class="section">
-<h1><a id="the-test-makefile-am-file" name="the-test-makefile-am-file">The <tt class="docutils literal"><span class="pre">test/Makefile.am</span></tt> file</a></h1>
-<p>PyTrilinos tests are scripts, so rather than being built, they are
-simply copied from the source tree to the build tree.  To account for
-the case where someone builds within the source tree, and to avoid
-copying test scripts that are concurrent between the source and build
-trees, the most efficient method was for the Makefile to create a
-short python script in the <tt class="docutils literal"><span class="pre">test</span></tt> directory called
-<tt class="docutils literal"><span class="pre">should_copy.py</span></tt>.  In the source tree, it always returns <tt class="docutils literal"><span class="pre">false</span></tt>.
-In the build directory, it returns <tt class="docutils literal"><span class="pre">true</span></tt> if the test script does
-not exist or if it does exist and the source tree version is newer;
-else it returns <tt class="docutils literal"><span class="pre">false</span></tt>.  By this method, test scripts are copied
-from the source tree to the build tree.</p>
-<p>All of the test scripts import a python module contained in
-<tt class="docutils literal"><span class="pre">setpath.py</span></tt>.  This python script is also copied from the source
-tree to the build tree, using the same checks as the test scripts.</p>
-<p>The test scripts themselves are only copied over if all of the
-PyTrilinos modules they use are enabled.</p>
-</div>
-<div class="section">
-<h1><a id="the-example-makefile-am-file" name="the-example-makefile-am-file">The <tt class="docutils literal"><span class="pre">example/Makefile.am</span></tt> file</a></h1>
-<p>This Makefile works in the same manner as the one in the <tt class="docutils literal"><span class="pre">test</span></tt>
-directory.</p>
+<h1><a id="package-specific-configuration-options" name="package-specific-configuration-options">Package-Specific Configuration Options</a></h1>
+<p>If you need package-specific configuration options set, they should be
+done so in <tt class="docutils literal"><span class="pre">src/CMakeLists.txt</span></tt> prior tothe call the call to
+<tt class="docutils literal"><span class="pre">PACKAGE_CONFIGURE_FILE()</span></tt>.  Currently, the following variable are
+set depending upon the top-level Trilinos configuration:</p>
+<pre class="literal-block">
+HAVE_EPETRA
+HAVE_TEUCHOS
+HAVE_NOX_EPETRA
+HAVE_NOX_EPETRAEXT
+HAVE_MPI
+</pre>
 </div>
 </div>
 <div class="footer">
 <hr class="footer" />
-Generated on: 2007-12-15 23:03 UTC.
+Generated on: 2009-12-20 17:49 UTC.
 Generated by <a class="reference" href="http://docutils.sourceforge.net/">Docutils</a> from <a class="reference" href="http://docutils.sourceforge.net/rst.html">reStructuredText</a> source.
 
 </div>
