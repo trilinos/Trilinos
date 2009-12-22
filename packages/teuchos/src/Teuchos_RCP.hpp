@@ -293,6 +293,14 @@ Ptr<T> RCP<T>::ptr() const
 
 template<class T>
 inline
+Ptr<T> RCP<T>::operator()() const
+{
+  return ptr();
+}
+
+
+template<class T>
+inline
 RCP<const T> RCP<T>::getConst() const
 {
   return rcp_implicit_cast<const T>(*this);

@@ -369,7 +369,7 @@ public:
   /** \brief Return a raw pointer to beginning of array or NULL if unsized. */
   inline T* getRawPtr();
 
-  /** \brief Return a raw pointer to beginning of array or NULL if unsized. */
+  /** \brief Return a const raw pointer to beginning of array or NULL if unsized. */
   inline const T* getRawPtr() const;
 
   //@}
@@ -478,8 +478,8 @@ private:
 };
 
 
-/** \brief Wrap an <tt>Array<T></tt> object as an
- * <tt>ArrayRCP<T></tt> object.
+/** \brief Wrap an <tt>RCP<Array<T> ></tt> object as an <tt>ArrayRCP<T></tt>
+ * object.
  *
  * \relates ArrayRCP
  */
@@ -495,7 +495,7 @@ ArrayRCP<T> arcp( const RCP<Array<T> > &v )
 }
 
 
-/** \brief Wrap a <tt>const Array<T></tt> object as an
+/** \brief Wrap a <tt>RCP<const Array<T> ></tt> object as an
  * <tt>ArrayRCP<const T></tt> object.
  *
  * \relates ArrayRCP
@@ -509,6 +509,42 @@ ArrayRCP<const T> arcp( const RCP<const Array<T> > &v )
     &(*v)[0], 0, v->size(),
     v, false
     );
+}
+
+
+/** \brief Wrap an <tt>Array<T></tt> object as a non-owning
+ * <tt>ArrayRCP<T></tt> object.
+ *
+ * \relates ArrayRCP
+ */
+template<class T>
+ArrayRCP<T> arcp( Array<T> &a )
+{
+  if (a.size() == 0)
+    return null;
+#ifdef TEUCHOS_DEBUG
+  return a.begin(); // Catch dangling reference!
+#else
+  return arcp(a.getRawPtr(), 0, a.size(), false);
+#endif
+}
+
+
+/** \brief Wrap a <tt>const Array<T></tt> object as a non-owning
+ * <tt>ArrayRCP<T></tt> object.
+ *
+ * \relates ArrayRCP
+ */
+template<class T>
+ArrayRCP<const T> arcp( const Array<T> &a )
+{
+  if (a.size() == 0)
+    return null;
+#ifdef TEUCHOS_DEBUG
+  return a.begin(); // Catch dangling reference!
+#else
+  return arcp(a.getRawPtr(), 0, a.size(), false);
+#endif
 }
 
 

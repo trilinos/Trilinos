@@ -483,7 +483,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCP, weakDelete, T )
   TEST_THROW( rcp_weak1.create_weak(), DanglingReferenceError );
   TEST_THROW( rcp_weak1.get(), DanglingReferenceError );
   TEST_THROW( rcp_weak1.getRawPtr(), DanglingReferenceError );
-  TEST_THROW( rcp_weak1.ptr(), DanglingReferenceError );
+  TEST_THROW( rcp_weak1(), DanglingReferenceError );
   TEST_THROW( rcp_weak1.release(), DanglingReferenceError );
 #endif // TEUCHOS_DEBUG
 
@@ -513,7 +513,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCP, weakDelete, T )
   TEST_THROW( rcp_weak2.create_weak(), DanglingReferenceError );
   TEST_THROW( rcp_weak2.get(), DanglingReferenceError );
   TEST_THROW( rcp_weak2.getRawPtr(), DanglingReferenceError );
-  TEST_THROW( rcp_weak2.ptr(), DanglingReferenceError );
+  TEST_THROW( rcp_weak2(), DanglingReferenceError );
   TEST_THROW( rcp_weak2.release(), DanglingReferenceError );
 #endif // TEUCHOS_DEBUG
 
@@ -674,7 +674,7 @@ TEUCHOS_UNIT_TEST( RCP, circularReference_self )
 TEUCHOS_UNIT_TEST( RCP, danglingPtr )
 {
   ECHO(RCP<A> a_rcp = rcp(new A));
-  ECHO(Ptr<A> a_ptr = a_rcp.ptr());
+  ECHO(Ptr<A> a_ptr = a_rcp());
   ECHO(A *badPtr = a_rcp.getRawPtr());
   ECHO(a_rcp = null);
 #ifdef TEUCHOS_DEBUG

@@ -611,6 +611,9 @@ public:
   /** \brief Get a safer wrapper raw C++ pointer to the underlying object. */
   Ptr<T> ptr() const;
 
+  /** \brief Shorthand for ptr(). */
+  Ptr<T> operator()() const;
+
   /** \brief Return an RCP<const T> version of *this. */
   RCP<const T> getConst() const;
 
