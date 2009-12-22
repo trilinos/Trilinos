@@ -98,6 +98,10 @@ computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType fillFlag)
       x_dot = new Epetra_Vector(x.Map());
     inargs.set_x_dot(Teuchos::rcp(x_dot, false));
   }
+  if (inargs.supports(EpetraExt::ModelEvaluator::IN_ARG_alpha))
+    inargs.set_alpha(0.0);
+  if (inargs.supports(EpetraExt::ModelEvaluator::IN_ARG_beta))
+    inargs.set_beta(1.0);
 
   // Create outargs
   EpetraExt::ModelEvaluator::OutArgs outargs = model_->createOutArgs();
