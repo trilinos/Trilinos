@@ -35,6 +35,7 @@
 #include <Teuchos_Comm.hpp> 
 #include <Teuchos_TypeNameTraits.hpp>
 #include <string>
+#include <csdtio> // for std::sscanf
 
 #include <Kokkos_SerialNode.hpp>
 #ifdef HAVE_KOKKOS_TBB
@@ -85,8 +86,9 @@ namespace Tpetra {
     private:
       HybridPlatform(const HybridPlatform &platform); // not supported
       const Teuchos::RCP<const Teuchos::Comm<int> > comm_;
-      mutable Teuchos::ParameterList sublist;
+      Teuchos::ParameterList instList_;
       Teuchos::RCP<Kokkos::SerialNode>    serialNode_;
+      bool nodeCreated_;
 #ifdef HAVE_KOKKOS_TBB
       Teuchos::RCP<Kokkos::TBBNode>       tbbNode_;
 #endif
@@ -106,23 +108,92 @@ namespace Tpetra {
         , TPINODE
 #endif        
 #ifdef HAVE_KOKKOS_THRUST
-        , THRUSTNODE
+        , THRUSTGPUNODE
 #endif        
       } nodeType_;
   };
 
   HybridPlatform::HybridPlatform(const Teuchos::RCP<const Teuchos::Comm<int> > &comm, Teuchos::ParameterList &pl)
   : comm_(comm)
+  , nodeCreated_(false)
   , nodeType_(SERIALNODE)
   {
-    // FINISH: process the parameter list
-    switch (comm_->getRank()) {
-    case 0:
+    // ParameterList format:
+    // Root ParameterList contains sublists, of two types:
+    // Node designation sublists
+    // Node instantiation sublists
+    // 
+    // A node instantiation sublist has a name beginning with an alphabetic character
+    // It is passed to the constructor of the Node, in order to initialize the Node according to the machine file instructions.
+    //
+    // Node designation sublists have a name beginning with one of the following: % = [
+    // and satisfying the following format:
+    //   %M=N    is satisfied if mod(myrank,M) == N
+    //   =N      is satisfied if myrank == N
+    //   [M,N]   is satisfied if myrank \in [M,N]
+    // 
+    // A node designation sublist must have a parameter entry of type std::string named "NodeType". The value indicates the type of the Node.
+    // If the node designation sublist contains a parameter entry of type std::string named "Settings" and the value refers to a node instantiation
+    // sublist of the root ParameterList, then this node instantiation sublist will be used to instantiate the node object for this process. Otherwise, 
+    // the activated node designation sublist will serve as the node instantiation sublist.
+    // 
+    // For example:
+    // "%2=0"  ->  
+    //    NodeType     = "Kokkos::ThrustGPUNode"
+    //    Settings     = "FirstCUDADevice"
+    // "%2=1"  ->
+    //    NodeType     = "Kokkos::TPINode"
+    //    NumThreads   = 8
+    // "FirstCUDADevice"
+    //    DeviceNumber = 0
+    //    Verbose      = 1
+    // 
+    // In this scenario, nodes that are equivalent to zero module 2, i.e., even nodes, will be selected to use ThrustGPUNode objects
+    // and initialized with the parameter list containing
+    //    DeviceNumber = 0
+    //    Verbose      = 1
+    // Nodes that are equivalent to one modulo 2, i.e., odd nodes, will be selected to use TPINode objects and initialized with the 
+    // parameter list containing 
+    //    NodeType   = "Kokkos::TPINode"
+    //    NumThreads = 8
+    // 
+    // If multiple node designation sublists match the processor rank, then the first enounctered node designation will be used.
+    // I don't know if ParameterList respects any ordering, therefore, multiple matching designations are to be avoided.
+
+    const int myrank = comm_->getRank();
+    std::string desigNode("");
+    for (Teuchos::ParameterList::ConstIterator it = pl.begin(); it != pl.end(); ++it) {
+      if (it->second.isList()) {
+        const std::string &name = it->first;
+        if (matches) { 
+          // FINISH
+          parse; // use std::sscanf()
+          assign desigNode;
+          select and assign instList_;
+          break;
+        }
+      }
+    }
+    if (desigNode == "Kokkos::SerialNode") {
       nodeType_ = SERIALNODE;
-      break;
-    case 1:
+    }
+#ifdef HAVE_KOKKOS_THREADPOOL
+    else if (desigNode == "Kokkos::TPINode") {
       nodeType_ = TPINODE;
-      break;
+    }
+#endif
+#ifdef HAVE_KOKKOS_TBB
+    else if (desigNode == "Kokkos::TBBNode") {
+      nodeType_ = TBBNODE;
+    }
+#endif
+#ifdef HAVE_KOKKOS_THRUST
+    else if (desigNode == "Kokkos::ThrustGPUNode") {
+      nodeType_ = THRUSTGPUNODE;
+    }
+#endif
+    else {
+      TEST_FOR_EXCEPTION(true, std::runtime_error, "No matching node type on rank " << myrank);
     }
   } 
 
@@ -134,8 +205,38 @@ namespace Tpetra {
     return comm_;
   }
 
+  void HybridPlatform::createNode() {
+    using Teuchos::rcp;
+    if (nodeCreated_) return;
+    switch (nodeType_) {
+      case SERIALNODE:
+        serialNode_ = rcp(new Kokkos::SerialNode(instList_));
+        break;
+#ifdef HAVE_KOKKOS_TBB
+      case TBBNODE:
+        tbbNode_ = rcp(new Kokkos::TBBNode(instList_));
+        break;
+#endif        
+#ifdef HAVE_KOKKOS_THREADPOOL
+      case TPINODE:
+        tpiNode_  = rcp(new Kokkos::TPINode(instList_));
+        break;
+#endif        
+#ifdef HAVE_KOKKOS_THRUST
+      case THRUSTGPUNODE:
+        thrustNode_ = rcp(new Kokkos::ThrustGPUNode(instList_));
+        break;
+#endif        
+      default:
+        TEST_FOR_EXCEPTION(true, std::runtime_error, 
+            Teuchos::typeName(*this) << "::runUserCode(): Invalid node type." << std::endl);
+    } // end of switch
+    nodeCreated_ = true;
+  }
+
   template<template<class Node> class UserCode>
   void HybridPlatform::runUserCode() {
+    createNode();
     switch (nodeType_) {
       case SERIALNODE:
         UserCode<Kokkos::SerialNode>::run(comm_, serialNode_);
@@ -151,7 +252,7 @@ namespace Tpetra {
         break;
 #endif        
 #ifdef HAVE_KOKKOS_THRUST
-      case THRUSTNODE:
+      case THRUSTGPUNODE:
         UserCode<Kokkos::ThrustGPUNode>::run(comm_, thrustNode_);
         break;
 #endif        
