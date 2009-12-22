@@ -51,7 +51,7 @@ TEUCHOS_UNIT_TEST( ArrayView, av_const_cast_null )
 TEUCHOS_UNIT_TEST( ArrayView, av_const_cast )
 {
   ArrayRCP<const int> arcp_int = arcp<int>(n);
-  ArrayView<const int> av_int1 = arcp_int;
+  ArrayView<const int> av_int1 = arcp_int();
   ArrayView<int> av_int2 = av_const_cast<int>(av_int1);
   TEST_ASSERT(nonnull(av_int2));
   TEST_EQUALITY(av_int1.getRawPtr(), av_int2.getRawPtr());
@@ -192,7 +192,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayView, danglingView_rcp_std_vector, T )
   ArrayView<T> av;
   {
     ArrayRCP<T> ap = arcp(rcp(new std::vector<T>(n)));
-    av = ap;
+    av = ap();
   }
 #ifdef TEUCHOS_DEBUG
   TEST_THROW(av.getRawPtr(), DanglingReferenceError);

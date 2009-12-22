@@ -29,7 +29,7 @@
 #ifndef THYRA_SPMD_MULTI_VECTOR_BASE_DECL_HPP
 #define THYRA_SPMD_MULTI_VECTOR_BASE_DECL_HPP
 
-#include "Thyra_MultiVectorDefaultBaseDecl.hpp"
+#include "Thyra_MultiVectorDefaultBase_decl.hpp"
 #include "Thyra_SingleScalarEuclideanLinearOpBaseDecl.hpp"
 #include "Teuchos_BLAS.hpp"
 
@@ -96,8 +96,8 @@ template<class Scalar> class SpmdVectorSpaceBase;
  */
 template<class Scalar>
 class SpmdMultiVectorBase
-  : virtual public MultiVectorDefaultBase<Scalar>
-  , virtual public SingleScalarEuclideanLinearOpBase<Scalar>
+  : virtual public MultiVectorDefaultBase<Scalar>,
+    virtual public SingleScalarEuclideanLinearOpBase<Scalar>
 {
 public:
 
@@ -146,22 +146,9 @@ public:
    * The function <tT>commitLocalData()</tt> must be called to
    * commit changes to the data.
    */
-  virtual void getLocalData( Scalar **localValues, Index *leadingDim ) = 0;
-
-  /** \brief Commit view of local data that was gotten from <tt>getLocalData()</tt>.
-   *
-   * @param  localValues [in/out] On input <tt>localValues</tt> must be the pointer set
-   *                     by <tt>getLocalData()</tt>.
-   *
-   * Preconditions:<ul>
-   * <li> <tt>localValues!=NULL</tt>
-   * </ul>
-   *
-   * Preconditions:<ul>
-   * <li> <tt>*this</tt> will be updated to the entries in <tt>*localValues</tt>.
-   * </ul>
-   */
-  virtual void commitLocalData( Scalar *localValues ) = 0;
+  virtual void getNonconstLocalData(
+    const Ptr<ArrayRCP<Scalar> > &localValues, const Ptr<Index> &leadingDim
+    ) = 0;
 
   /** \brief Returns a <tt>const</tt> pointer to a Fortran-style view of the
    * local multi-vector data.
@@ -185,24 +172,8 @@ public:
    * </ul>
    */
   virtual void getLocalData(
-    const Scalar **localValues, Index *leadingDim
+    const Ptr<ArrayRCP<const Scalar> > &localValues, const Ptr<Index> &leadingDim
     ) const = 0;
-
-  /** \brief Free view of local data that was gotten from <tt>getLocalData()</tt>.
-   *
-   * @param  localValues
-   *           [in/out] On input <tt>localValues</tt> must be the pointer set
-   *           by <tt>getLocalData()</tt>.
-   *
-   * Preconditions:<ul>
-   * <li> <tt>localValues!=NULL</tt>
-   * </ul>
-   *
-   * Preconditions:<ul>
-   * <li> <tt>*this</tt> will be updated to the entries in <tt>*localValues</tt>.
-   * </ul>
-   */
-  virtual void freeLocalData( const Scalar *localValues ) const = 0;
 
   //@}
 
@@ -264,6 +235,44 @@ public:
   void commitNonconstDetachedMultiVectorViewImpl(
     RTOpPack::SubMultiVectorView<Scalar>* sub_mv
     );
+  //@}
+
+  /** \name Deprecated. */
+  //@{
+
+  /** \brief Deprecated. */
+  THYRA_DEPRECATED virtual void getLocalData( Scalar **localValues_out, Index *leadingDim_out )
+    {
+      using Teuchos::outArg;
+      ArrayRCP<Scalar> localValues;
+      this->getNonconstLocalData(outArg(localValues), outArg(*leadingDim_out));
+      *localValues_out = localValues.getRawPtr();
+    }
+  
+  /** \brief Deprecated. */
+  THYRA_DEPRECATED virtual void commitLocalData( Scalar *localValues )
+    {
+      // Do nothing!
+    }
+
+  /** \brief Deprecated. */
+  THYRA_DEPRECATED virtual void getLocalData(
+    const Scalar **localValues_out, Index *leadingDim_out
+    ) const
+    {
+      using Teuchos::outArg;
+      ArrayRCP<const Scalar> localValues;
+      this->getLocalData(outArg(localValues), outArg(*leadingDim_out));
+      *localValues_out = localValues.getRawPtr();
+
+    }
+
+  /** \brief Deprecated. */
+  THYRA_DEPRECATED virtual void freeLocalData( const Scalar *localValues ) const
+    {
+      // Do nothing!
+    }
+
   //@}
 
 protected:
@@ -333,9 +342,6 @@ private:
   Index  localOffset_;
   Index  localSubDim_;
   Index  numCols_;
-
-  mutable Scalar *nonconstLocalValuesViewPtr_;
-  mutable const Scalar *localValuesViewPtr_;
   
 }; // end class SpmdMultiVectorBase
 

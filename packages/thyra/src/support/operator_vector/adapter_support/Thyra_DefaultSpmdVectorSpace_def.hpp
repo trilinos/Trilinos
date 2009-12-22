@@ -31,6 +31,7 @@
 
 #include "Thyra_DefaultSpmdVectorSpace_decl.hpp"
 #include "Thyra_SpmdVectorSpaceDefaultBase.hpp"
+#include "Thyra_VectorSpaceFactoryBase.hpp"
 #include "Thyra_DefaultSpmdMultiVector.hpp"
 #include "Thyra_DefaultSpmdVector.hpp"
 #include "Teuchos_CommHelpers.hpp"

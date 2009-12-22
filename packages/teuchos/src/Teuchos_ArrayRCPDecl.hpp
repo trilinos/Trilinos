@@ -501,11 +501,6 @@ public:
   //! @name Implicit conversions
   //@{
 
-  /** \brief Perform an implicit conversion to a ArrayView<T> (calls
-   * operator()()).
-   */
-  operator ArrayView<T>() const;
-
   /** \brief Convert from ArrayRCP<T> to ArrayRCP<const T>. */
   operator ArrayRCP<const T>() const;
 
@@ -764,6 +759,15 @@ private:
     }
 
 public:
+
+  /** \name Deprecated. */
+  //@{
+
+  /** \brief Deprecated.
+   */
+  TEUCHOS_DEPRECATED operator ArrayView<T>() const;
+
+  //@}
 
 #ifndef DOXYGEN_COMPILE
   // These constructors should be private but I have not had good luck making

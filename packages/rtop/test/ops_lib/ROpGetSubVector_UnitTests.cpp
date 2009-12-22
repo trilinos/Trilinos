@@ -92,6 +92,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpGetSubVector, reductObjState, Scalar )
 {
 
   using Teuchos::Array;
+  using Teuchos::outArg;
   typedef ScalarTraits<Scalar> ST;
   typedef RTOpPack::PrimitiveTypeTraits<Scalar,Scalar> PTT;
 
@@ -103,7 +104,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpGetSubVector, reductObjState, Scalar )
   
   int num_values = -1, num_indexes = -1, num_chars = -1;
   rtopt(op).get_reduct_type_num_entries(
-    &num_values, &num_indexes, &num_chars );
+    outArg(num_values), outArg(num_indexes), outArg(num_chars) );
 
   Array<typename PTT::primitiveType> value_data(num_values);
   Array<index_type> index_data(num_indexes);
@@ -115,19 +116,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpGetSubVector, reductObjState, Scalar )
     null, outArg(*reduct_obj_0) );
 
   rtopt(op).extract_reduct_obj_state(
-    *reduct_obj_0,
-    num_values, value_data.getRawPtr(),
-    num_indexes, index_data.getRawPtr(),
-    num_chars, char_data.getRawPtr()
-    );
+    *reduct_obj_0, value_data(), index_data(), char_data() );
 
   RCP<ReductTarget> reduct_obj_1 = rtopt(op).reduct_obj_create();
 
   rtopt(op).load_reduct_obj_state(
-    num_values, value_data.getRawPtr(),
-    num_indexes, index_data.getRawPtr(),
-    num_chars, char_data.getRawPtr(),
-    &*reduct_obj_1
+    value_data(), index_data(), char_data(),
+    reduct_obj_1()
     );
   
   const ConstSubVectorView<Scalar> sv1 = op(*reduct_obj_1);

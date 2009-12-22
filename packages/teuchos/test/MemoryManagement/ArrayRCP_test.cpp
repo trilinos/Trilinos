@@ -292,13 +292,13 @@ bool test_ArrayRCP(
 
   {
     out << "\nTest implicit conversion from ArrayRCP<T> to ArrayView<T> ...\n";
-    const ArrayView<T> av2 = ptr;
+    const ArrayView<T> av2 = ptr();
     TEST_COMPARE_ARRAYS( av2, ptr );
   }
 
   {
     out << "\nTest implicit conversion from ArrayRCP<const T> to ArrayView<const T> ...\n";
-    const ArrayView<const T> av2 = ptr.getConst();
+    const ArrayView<const T> av2 = ptr.getConst()();
     TEST_COMPARE_ARRAYS( av2, ptr );
   }
 
@@ -322,7 +322,7 @@ bool test_ArrayRCP(
 
   {
     out << "\nTest clone of ArrayPtr<const T> to ArrayRCP<T> ...\n";
-    const ArrayRCP<T> ptr2 = Teuchos::arcpClone<T>(ptr.getConst());
+    const ArrayRCP<T> ptr2 = Teuchos::arcpClone<T>(ptr.getConst()());
     TEST_COMPARE_ARRAYS( ptr2, ptr );
   }
   {

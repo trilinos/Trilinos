@@ -320,10 +320,10 @@ void SpmdVectorBase<Scalar>::acquireDetachedVectorViewImpl(
   if( rng_in == Range1D::Invalid ) {
     // Just return an null view
     sub_vec->initialize(
-      rng_in.lbound()    // globalOffset
-      ,0                 // subDim
-      ,0                 // values
-      ,1                 // stride
+      rng_in.lbound(), // globalOffset
+      0, // subDim
+      Teuchos::null, // values
+      1 // stride
       );
     return;
   }
@@ -341,7 +341,7 @@ void SpmdVectorBase<Scalar>::acquireDetachedVectorViewImpl(
   // rng consists of all local data so get it!
   const Scalar *localValues = NULL;
   Index stride = 0;
-  this->getLocalData(&localValues,&stride);
+  this->getLocalData(&localValues, &stride);
   sub_vec->initialize(
     rng.lbound()                               // globalOffset
     ,rng.size()                                // subDim

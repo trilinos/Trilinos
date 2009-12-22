@@ -15,6 +15,7 @@ using Teuchos::Array;
 using Teuchos::ArrayView;
 using Teuchos::ArrayRCP;
 using Teuchos::arcp;
+using Teuchos::arcpFromArray;
 using Teuchos::as;
 using Teuchos::getConst;
 using Teuchos::DanglingReferenceError;
@@ -176,7 +177,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, RCPconstArray_to_ArrayRCP, T )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, Array_to_ArrayRCP_null, T )
 {
   Array<T> a;
-  const ArrayRCP<T> a_arcp = arcp(a);
+  const ArrayRCP<T> a_arcp = arcpFromArray(a);
   TEST_ASSERT(a_arcp == null);
 }
 
@@ -184,7 +185,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, Array_to_ArrayRCP_null, T )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, constArray_to_ArrayRCP_null, T )
 {
   const Array<T> a;
-  const ArrayRCP<const T> a_arcp = arcp(a);
+  const ArrayRCP<const T> a_arcp = arcpFromArray(a);
   TEST_ASSERT(a_arcp == null);
 }
 
@@ -192,7 +193,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, constArray_to_ArrayRCP_null, T )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, Array_to_ArrayRCP, T )
 {
   Array<T> a = generateArray<T>(n);
-  const ArrayRCP<T> a_arcp = arcp(a);
+  const ArrayRCP<T> a_arcp = arcpFromArray(a);
   TEST_COMPARE_ARRAYS( a(), a_arcp() );
 }
 
@@ -200,7 +201,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, Array_to_ArrayRCP, T )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, constArray_to_ArrayRCP, T )
 {
   const Array<T> a = generateArray<T>(n);
-  const ArrayRCP<const T> a_arcp = arcp(a);
+  const ArrayRCP<const T> a_arcp = arcpFromArray(a);
   TEST_COMPARE_ARRAYS( a(), a_arcp() );
 }
 
@@ -210,7 +211,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, Array_to_ArrayRCP_dangling, T )
   ArrayRCP<T> a_arcp;
   {
     Array<T> a = generateArray<T>(n);
-    a_arcp = arcp(a);
+    a_arcp = arcpFromArray(a);
   }
 #ifdef TEUCHOS_DEBUG
   TEST_THROW(a_arcp[0], DanglingReferenceError);
@@ -223,7 +224,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, constArray_to_ArrayRCP_dangling, T )
   ArrayRCP<const T> a_arcp;
   {
     const Array<T> a = generateArray<T>(n);
-    a_arcp = arcp(a);
+    a_arcp = arcpFromArray(a);
   }
 #ifdef TEUCHOS_DEBUG
   TEST_THROW(a_arcp[0], DanglingReferenceError);

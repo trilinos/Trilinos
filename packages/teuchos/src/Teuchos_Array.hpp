@@ -518,7 +518,7 @@ ArrayRCP<const T> arcp( const RCP<const Array<T> > &v )
  * \relates ArrayRCP
  */
 template<class T>
-ArrayRCP<T> arcp( Array<T> &a )
+ArrayRCP<T> arcpFromArray( Array<T> &a )
 {
   if (a.size() == 0)
     return null;
@@ -536,7 +536,7 @@ ArrayRCP<T> arcp( Array<T> &a )
  * \relates ArrayRCP
  */
 template<class T>
-ArrayRCP<const T> arcp( const Array<T> &a )
+ArrayRCP<const T> arcpFromArray( const Array<T> &a )
 {
   if (a.size() == 0)
     return null;

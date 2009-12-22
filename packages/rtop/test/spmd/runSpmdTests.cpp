@@ -88,10 +88,10 @@ bool testRTOp(
   Teuchos::Array<Scalar>
     _x(localDim);
 
-  std::fill_n(&_x[0],localDim,Scalar(1.0));
+  std::fill_n(&_x[0], localDim, Scalar(1.0));
 
   RTOpPack::SubVectorView<Scalar>
-    x(localOffset,localDim,&_x[0],1);
+    x(localOffset, localDim, Teuchos::arcpFromArray(_x), 1);
 
   *out << "\nComputing the sum of x ...\n";
 
@@ -108,7 +108,7 @@ bool testRTOp(
   RCP<RTOpPack::ReductTarget>
     sumTarget2 = sumOp.reduct_obj_create();
   if(procRank==0)
-    sumOp.reduce_reduct_objs(*sumTarget,&*sumTarget2);
+    sumOp.reduce_reduct_objs(*sumTarget, sumTarget2());
  
   RTOpPack::ReductTargetSerializer<Scalar>
     sumTargetSerializer(Teuchos::rcp(&sumOp,false));

@@ -29,7 +29,7 @@
 #ifndef TSF_MULTI_VECTOR_COlS_DECL_HPP
 #define TSF_MULTI_VECTOR_COlS_DECL_HPP
 
-#include "Thyra_MultiVectorDefaultBaseDecl.hpp"
+#include "Thyra_MultiVectorDefaultBase_decl.hpp"
 #include "Thyra_VectorSpaceBase_decl.hpp"
 #include "Thyra_VectorBaseDecl.hpp"
 #include "Thyra_SingleRhsLinearOpBaseDecl.hpp"

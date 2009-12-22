@@ -30,7 +30,7 @@
 #define THYRA_VECTOR_DEFAULT_BASE_DECL_HPP
 
 #include "Thyra_VectorBaseDecl.hpp"
-#include "Thyra_MultiVectorDefaultBaseDecl.hpp"
+#include "Thyra_MultiVectorDefaultBase_decl.hpp"
 #include "Thyra_SingleRhsLinearOpBaseDecl.hpp"
 
 namespace Thyra {

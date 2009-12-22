@@ -29,7 +29,7 @@
 #ifndef THYRA_Spmd_MULTI_VECTOR_STD_DECL_HPP
 #define THYRA_Spmd_MULTI_VECTOR_STD_DECL_HPP
 
-#include "Thyra_SpmdMultiVectorBaseDecl.hpp"
+#include "Thyra_SpmdMultiVectorBase_decl.hpp"
 
 
 namespace Thyra {
@@ -171,13 +171,13 @@ public:
   /** \brief . */
   RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const;
   /** \brief . */
-  void getLocalData( Scalar **localValues, Index *leadingDim );
+  void getNonconstLocalData(
+    const Ptr<ArrayRCP<Scalar> > &localValues, const Ptr<Index> &leadingDim
+    );
   /** \brief . */
-  void commitLocalData( Scalar *localValues );
-  /** \brief . */
-  void getLocalData( const Scalar **localValues, Index *leadingDim ) const;
-  /** \brief . */
-  void freeLocalData( const Scalar *localValues ) const;
+  void getLocalData(
+    const Ptr<ArrayRCP<const Scalar> > &localValues, const Ptr<Index> &leadingDim
+    ) const;
   //@}
   
 private:

@@ -32,6 +32,7 @@
 #include "Thyra_DefaultSpmdVector.hpp"
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_DetachedMultiVectorView.hpp"
+#include "Thyra_VectorSpaceFactoryBase.hpp"
 #include "Thyra_ProductVectorSpaceBase.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_dyn_cast.hpp"

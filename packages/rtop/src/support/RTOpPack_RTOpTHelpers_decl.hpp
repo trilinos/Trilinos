@@ -53,7 +53,7 @@ namespace RTOpPack { extern bool rtop_helpers_dump_all; }
 namespace RTOpPack {
 
 
-/** \brief Simple struct for a Scalar and an Index object.
+/** \brief Simple struct for a Scalar and an Ordinal object.
  *
  * \ingroup RTOpPack_RTOpTHelpers_grp
  */
@@ -62,9 +62,9 @@ struct ScalarIndex {
   /** \brief. */
   Scalar scalar;
   /** \brief. */
-  Index  index;
+  Ordinal  index;
   /** \brief. */
-  ScalarIndex( const Scalar &_scalar, const Index &_index )
+  ScalarIndex( const Scalar &_scalar, const Ordinal &_index )
     : scalar(_scalar), index(_index)
     {}
   /** \brief. */
