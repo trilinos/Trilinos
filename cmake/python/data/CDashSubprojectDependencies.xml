@@ -784,4 +784,29 @@
       <Email address="mesquite-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
+  <SubProject name="Stalix">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="ThreadPool" type="ILO"/>
+    <Dependency name="RTOp" type="ILO"/>
+    <Dependency name="Kokkos" type="ILR"/>
+    <Dependency name="Epetra" type="ILO"/>
+    <Dependency name="Zoltan" type="ILO"/>
+    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="Tpetra" type="LR"/>
+    <Dependency name="EpetraExt" type="ILO"/>
+    <Dependency name="Thyra" type="ILO"/>
+    <Dependency name="Isorropia" type="ILO"/>
+    <Dependency name="AztecOO" type="ILO"/>
+    <Dependency name="Galeri" type="ILO"/>
+    <Dependency name="Amesos" type="ILO"/>
+    <Dependency name="Ifpack" type="ILO"/>
+    <Dependency name="ML" type="ILO"/>
+    <Dependency name="Anasazi" type="ILO"/>
+    <Dependency name="TriKota" type="ILO"/>
+    <Dependency name="Stokhos" type="ILO"/>
+    <Dependency name="Sacado" type="LR"/>
+    <EmailAddresses>
+      <Email address="stalix-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </SubProject>
 </Project>

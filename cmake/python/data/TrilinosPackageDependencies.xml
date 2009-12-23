@@ -755,4 +755,18 @@
       <Regression address="mesquite-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
+  <Package name="Stalix" dir="stalix">
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Sacado,Tpetra"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS value="Boost"/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Checkin address="stalix-checkins@software.sandia.gov"/>
+      <Regression address="stalix-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </Package>
 </PackageDependencies>
