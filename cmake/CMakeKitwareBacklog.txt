@@ -28,9 +28,12 @@ CMAKE_<compiler>_FLAGS variable internally are sufficient fixes for this.
 (*) [CTest] [P2] Get updated files info attached to every build row for each
 package (e.g. Label).  Currently, it is very hard to track down what files
 where updated when you are querying individual tests with queryTests.php or
-individual builds with index.php?project=Trilinos&subproject=Zoltan.  Only the
-first package in the build sequence shows updated files.  All the packages
-(i.e. Labels) in a build sequence need to show the updated files.
+individual builds with index.php?project=Trilinos&subproject=Zoltan (in
+general, we need to get from the individual results pages to the page
+summarizing the whole build of all Trilinos packages, even if we arrived at
+the page through a search, rather than starting from the build summary page).
+Only the first package in the build sequence shows updated files.  All the
+packages (i.e. Labels) in a build sequence need to show the updated files.
 
 
 (*) [CTest] [P2] EPIC Create a robust system to handle the overall testing
