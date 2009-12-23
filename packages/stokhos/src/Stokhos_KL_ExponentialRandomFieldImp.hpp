@@ -61,7 +61,8 @@ ExponentialRandomField(Teuchos::ParameterList& solverParams)
   }
 
   // Compute all possible tensor product combinations of 1-D eigenfunctions
-  int num_prod = std::pow(num_KL, dim);
+  int num_prod = static_cast<int>(std::pow(static_cast<double>(num_KL), 
+					   static_cast<double>(dim)));
   product_eig_pairs.resize(num_prod);
   Teuchos::Array<int> index(dim, 0);
   int cnt = 0;
