@@ -460,10 +460,15 @@ int main(int argc, char *argv[]) {
     std::cout << "sz2 = " << sz2 << std::endl;
 
     // Compute new block vectors
+#ifdef HAVE_MPI
     Teuchos::RCP<EpetraExt::MultiComm> multiComm =
       Teuchos::rcp(new EpetraExt::MultiMpiComm(MPI_COMM_WORLD, 
 					       Comm->NumProc(), 
 					       sz2));
+#else
+    Teuchos::RCP<EpetraExt::MultiComm> multiComm =
+      Teuchos::rcp(new EpetraExt::MultiSerialComm(sz2));
+#endif
     int myBlockRows  =  multiComm->NumTimeStepsOnDomain();
     int myFirstBlockRow = multiComm->FirstTimeStepOnDomain();
     std::vector<int> rowIndex(myBlockRows);
