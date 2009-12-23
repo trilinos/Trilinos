@@ -4,6 +4,9 @@ rem Call this script and pass in the base directory for the dashboard
 rem save state before changing anything
 setlocal
 
+rem Setting the path to have git on it.
+set PATH=%PATH%;C:\Program Files (x86)\Git\cmd
+
 rem GIT needs to know how to use ssh
 set GIT_SSH=C:\Users\bmpersc\Documents\plink_wrap.bat
 
