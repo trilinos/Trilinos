@@ -47,12 +47,13 @@ IF (Piro_ENABLE_Rythmos)
                      epetra/Piro_Epetra_InvertMassMatrixDecorator.cpp)
 ENDIF()
 # Optional StochasticGalerkin capability, dependion upon Stokhos and NOX
-IF (Piro_ENABLE_Stokhos AND Piro_ENABLE_NOX) 
-  APPEND_SET(HEADERS epetra/Piro_Epetra_StokhosNOXSolver.hpp
-                     epetra/Piro_Epetra_StokhosNOXObserver.hpp) 
-  APPEND_SET(SOURCES epetra/Piro_Epetra_StokhosNOXSolver.cpp
-                     epetra/Piro_Epetra_StokhosNOXObserver.cpp)
-ENDIF()
+#IF (Piro_ENABLE_Stokhos AND Piro_ENABLE_NOX) 
+#  APPEND_SET(HEADERS epetra/Piro_Epetra_StokhosNOXSolver.hpp
+#                     epetra/Piro_Epetra_StokhosNOXObserver.hpp) 
+#  APPEND_SET(SOURCES epetra/Piro_Epetra_StokhosNOXSolver.cpp
+#                     epetra/Piro_Epetra_StokhosNOXObserver.cpp)
+#ENDIF()
+#
 
 #
 # B.2) thyra directory
