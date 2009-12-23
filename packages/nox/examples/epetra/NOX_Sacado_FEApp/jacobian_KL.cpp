@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
   double leftBC = 0.0;
   double rightBC = 0.1;
   unsigned int numalpha = 3;
-  unsigned int p = 9;
+  unsigned int p = 7;
 
   int MyPID;
 
@@ -278,10 +278,10 @@ int main(int argc, char *argv[]) {
       bases[i] = Teuchos::rcp(new basis_type(p));
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
-    // Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
-    //   Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
     Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
-      Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(basis, p));
+      Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
+    // Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
+    //   Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(basis, p));
     unsigned int sz = basis->size();
     Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
       Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,double>(basis, 
@@ -441,10 +441,10 @@ int main(int argc, char *argv[]) {
     }
 
     // Compute Stieltjes-Gram-Schmidt basis for KL expansion
-    // Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad2 = 
-    //   Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
     Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad2 = 
-      Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(basis,p));
+      Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
+    // Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad2 = 
+    //   Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(basis,p));
     //int p2 = p;
     unsigned int p2 = 2;
     if (p2 > p)
