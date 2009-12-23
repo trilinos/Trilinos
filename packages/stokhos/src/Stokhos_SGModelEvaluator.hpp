@@ -42,22 +42,9 @@
 #include "Stokhos_OrthogPolyBasis.hpp"
 #include "Stokhos_VectorOrthogPoly.hpp"
 #include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
+#include "Stokhos_PreconditionerFactory.hpp"
 
 namespace Stokhos {
-
-  //! A class to represent a generic preconditioner factory.
-  /*!
-   * This is a temporary hack for stochastic Galerkin methods that need to
-   * deal more directly with preconditioners, but allows Stokhos to be 
-   * independent of any preconditioner code.  A better solution will be to use 
-   * Thyra.
-   */
-  class PreconditionerFactory {
-  public:
-    PreconditionerFactory() {}
-    virtual ~PreconditionerFactory() {}
-    virtual Teuchos::RCP<Epetra_Operator> compute(const Teuchos::RCP<Epetra_Operator>& mat) = 0;
-  };
 
   //! Nonlinear, stochastic Galerkin ModelEvaluator
   /*!
@@ -91,9 +78,10 @@ namespace Stokhos {
       const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
       const Teuchos::Array<int>& sg_p_index,
       const Teuchos::Array<int>& sg_g_index,
-      const Teuchos::Array< Teuchos::Array< Teuchos::RCP<Epetra_Vector> > >& initial_p_sg_coeffs_,
-      const Teuchos::RCP<Teuchos::ParameterList>& params_,
-      const Teuchos::RCP<const Epetra_Comm>& comm);
+      const Teuchos::RCP<Teuchos::ParameterList>& params,
+      const Teuchos::RCP<const Epetra_Comm>& comm,
+      const Teuchos::Array< Stokhos::VectorOrthogPoly<Epetra_Vector> >& initial_p_sg,
+      const Stokhos::VectorOrthogPoly<Epetra_Vector>* initial_x_sg = NULL);
 
     /** \name Overridden from EpetraExt::ModelEvaluator . */
     //@{
@@ -224,6 +212,7 @@ namespace Stokhos {
     //! Method for creating block Jacobian
     enum EJacobianMethod {
       MATRIX_FREE,
+      KL_REDUCED_MATRIX_FREE,
       FULLY_ASSEMBLED
     };
 

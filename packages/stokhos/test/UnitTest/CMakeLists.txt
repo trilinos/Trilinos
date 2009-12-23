@@ -62,3 +62,10 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   STANDARD_PASS_OUTPUT
   )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  ExponentialRandomFieldUnitTest
+  SOURCES Stokhos_ExponentialRandomFieldUnitTest.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )

@@ -35,23 +35,13 @@
 
 namespace Stokhos {
 
-  //! Legendre polynomial basis
+  //! Legendre polynomial basis using Clenshaw-Curtis quadrature points
   /*!
-   * Legendre polynomials are defined by the recurrence relationship
-   * \f[
-   *   \psi_{k+1}(x) = \frac{2k+1}{k+1}x\psi_{k}(x) - \frac{k}{k+1}\psi_{k-1}(x)
-   * \f]
-   * with \f$\psi_{-1}(x) = 0\f$ and \f$\psi_{0}(x) = 1\f$.  The corresponding
-   * density function is 
-   * \f[
-   *   \rho(x) = \frac{1}{2}, \quad x\in[-1,1].
-   * \f]
-   *
-   * This class implements computeRecurrenceCoefficients() using the
-   * above formula.
+   * This is the same as Stokhos::LegendreBasis, but uses Clenshaw-Curtis
+   * quadrature points (instead of Gauss-Legendre) for sparse grids only.
    */
   template <typename ordinal_type, typename value_type>
-  class LegendreBasis : 
+  class ClenshawCurtisLegendreBasis : 
     public RecurrenceBasis<ordinal_type, value_type> {
   public:
 
@@ -60,10 +50,10 @@ namespace Stokhos {
      * \param p order of the basis
      * \param normalize whether polynomials should be given unit norm
      */
-    LegendreBasis(ordinal_type p, bool normalize = false);
+    ClenshawCurtisLegendreBasis(ordinal_type p, bool normalize = false);
 
     //! Destructor
-    ~LegendreBasis();
+    ~ClenshawCurtisLegendreBasis();
 
     //! \name Implementation of Stokhos::OneDOrthogPolyBasis methods
     //@{ 
@@ -73,7 +63,7 @@ namespace Stokhos {
      * This method is needed for building Smolyak sparse grids out of this 
      * basis.
      */
-    virtual ordinal_type getRule() const { return 4; }
+    virtual ordinal_type getRule() const { return 1; }
 
     //! Get quadrature weight factor as defined by Dakota's \c webbur package
     /*!
@@ -108,16 +98,16 @@ namespace Stokhos {
   private:
 
     // Prohibit copying
-    LegendreBasis(const LegendreBasis&);
+    ClenshawCurtisLegendreBasis(const ClenshawCurtisLegendreBasis&);
 
     // Prohibit Assignment
-    LegendreBasis& operator=(const LegendreBasis& b);
+    ClenshawCurtisLegendreBasis& operator=(const ClenshawCurtisLegendreBasis& b);
 
-  }; // class LegendreBasis
+  }; // class ClenshawCurtisLegendreBasis
 
 } // Namespace Stokhos
 
 // Include template definitions
-#include "Stokhos_LegendreBasisImp.hpp"
+#include "Stokhos_ClenshawCurtisLegendreBasisImp.hpp"
 
 #endif

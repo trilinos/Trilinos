@@ -1,5 +1,5 @@
-// $Id$ 
-// $Source$ 
+// $Id: Stokhos_MatrixFreeEpetraOp.hpp,v 1.7 2009/09/14 18:35:48 etphipp Exp $ 
+// $Source: /space/CVS/Trilinos/packages/stokhos/src/Stokhos_MatrixFreeEpetraOp.hpp,v $ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -28,38 +28,51 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_MEAN_EPETRA_OP_HPP
-#define STOKHOS_MEAN_EPETRA_OP_HPP
+#ifndef STOKHOS_KL_REDUCED_MATRIX_FREE_EPETRA_OP_HPP
+#define STOKHOS_KL_REDUCED_MATRIX_FREE_EPETRA_OP_HPP
 
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_Array.hpp"
+#include "Teuchos_Time.hpp"
 
 #include "Epetra_Operator.h"
 #include "Epetra_Map.h"
+#include "Epetra_Comm.h"
+#include "Epetra_MultiVector.h"
+#include "Stokhos_OrthogPolyBasis.hpp"
+#include "Stokhos_Sparse3Tensor.hpp"
+#include "Stokhos_VectorOrthogPoly.hpp"
+#include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
 
 namespace Stokhos {
     
   /*! 
-   * \brief An Epetra operator representing applying the mean in a block
-   * stochastic Galerkin expansion.
+   * \brief An Epetra operator representing the block stochastic Galerkin
+   * operator.
    */
-  class MeanEpetraOp : public Epetra_Operator {
+  class KLReducedMatrixFreeEpetraOp : public Epetra_Operator {
       
   public:
 
     //! Constructor 
-    MeanEpetraOp(const Teuchos::RCP<const Epetra_Map>& base_map,
-                 const Teuchos::RCP<const Epetra_Map>& sg_map,
-                 unsigned int num_blocks,
-                 const Teuchos::RCP<Epetra_Operator>& mean_op);
+    KLReducedMatrixFreeEpetraOp(
+     const Teuchos::RCP<const Epetra_Map>& base_map,
+     const Teuchos::RCP<const Epetra_Map>& sg_map,
+     const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
+     const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk,
+     const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops,
+     int num_KL);
     
     //! Destructor
-    virtual ~MeanEpetraOp();
+    virtual ~KLReducedMatrixFreeEpetraOp();
 
-    // Set mean operator
-    void setMeanOperator(const Teuchos::RCP<Epetra_Operator>& op);
+    //! Reset operator blocks
+    virtual void 
+    reset(const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops);
 
-    //! Get mean operator
-    Teuchos::RCP<Epetra_Operator> getMeanOperator();
+    //! Get operator blocks
+    virtual const Stokhos::VectorOrthogPoly<Epetra_Operator>&
+    getOperatorBlocks();
     
     //! Set to true if the transpose of the operator is requested
     virtual int SetUseTranspose(bool UseTranspose);
@@ -111,13 +124,25 @@ namespace Stokhos {
      */
     virtual const Epetra_Map& OperatorRangeMap () const;
 
+    /*!
+     * \brief Returns the time spent applying this operator
+     */
+    virtual const double ApplyTime() const{
+      return this->ApplyTimer->totalElapsedTime(false);
+    };
+
+  protected:
+
+    //! Setup KL blocks
+    void setup();
+
   private:
     
     //! Private to prohibit copying
-    MeanEpetraOp(const MeanEpetraOp&);
+    KLReducedMatrixFreeEpetraOp(const KLReducedMatrixFreeEpetraOp&);
     
     //! Private to prohibit copying
-    MeanEpetraOp& operator=(const MeanEpetraOp&);
+    KLReducedMatrixFreeEpetraOp& operator=(const KLReducedMatrixFreeEpetraOp&);
     
   protected:
     
@@ -130,17 +155,56 @@ namespace Stokhos {
     //! Stores SG map
     Teuchos::RCP<const Epetra_Map> sg_map;
 
-    //! Stores mean operator
-    Teuchos::RCP<Epetra_Operator> mean_op;
+    //! Stochastic Galerking basis
+    Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > sg_basis;
+
+    //! Stores triple product tensor
+    Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
+
+    //! Stores operators
+    Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> > block_ops;
 
     //! Flag indicating whether transpose was selected
     bool useTranspose;
 
     //! Number of blocks
-    unsigned int num_blocks;
+    int num_blocks;
 
-  }; // class MeanEpetraOp
+    //! MultiVectors for each block for Apply() input
+    mutable Teuchos::Array< Teuchos::RCP<const Epetra_MultiVector> > input_block;
+
+    //! MultiVectors for each block for Apply() result
+    mutable Teuchos::Array< Teuchos::RCP<Epetra_MultiVector> > result_block;
+
+    //! Temporary multivector
+    mutable Teuchos::RCP<Epetra_MultiVector> tmp;
+
+    //! Temporary multivector
+    mutable Teuchos::RCP<Epetra_MultiVector> tmp2;
+
+    //! Operation Timer
+    Teuchos::RCP<Teuchos::Time> ApplyTimer;
+
+    //! Number of KL terms
+    int num_KL;
+
+    //! Number of computed KL terms
+    int num_KL_computed;
+
+    //! Mean block
+    Teuchos::RCP<Epetra_CrsMatrix> mean;
+
+    //! Dot products of KL eigenvectors and Jacobian blocks
+    Teuchos::Array< Teuchos::Array<double> > dot_products;
+
+    //! KL coefficients
+    Teuchos::Array< Teuchos::Array< Teuchos::Array<double> > > kl_coeffs;
+
+    //! KL blocks
+    Teuchos::Array< Teuchos::RCP<Epetra_CrsMatrix> > kl_blocks;
+
+  }; // class KLReducedMatrixFreeEpetraOp
   
 } // namespace Stokhos
 
-#endif // STOKHOS_MEAN_EPETRA_OP_HPP
+#endif // STOKHOS_KL_REDUCED_MATRIX_FREE_EPETRA_OP_HPP

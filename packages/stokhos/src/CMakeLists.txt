@@ -49,6 +49,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_RysBasis.hpp
   Stokhos_LegendreBasis.hpp
   Stokhos_LegendreBasisImp.hpp
+  Stokhos_ClenshawCurtisLegendreBasis.hpp
+  Stokhos_ClenshawCurtisLegendreBasisImp.hpp
   Stokhos_StieltjesPCEBasis.hpp
   Stokhos_StieltjesPCEBasisImp.hpp
   Stokhos_OrthogPolyBasis.hpp
@@ -80,15 +82,29 @@ SET(HEADERS ${HEADERS}
   Stokhos_DerivOrthogPolyExpansionImp.hpp
   Stokhos_ForUQTKOrthogPolyExpansion.hpp
   Stokhos_ForUQTKOrthogPolyExpansionImp.hpp
+  Stokhos_StieltjesGramSchmidtBuilder.hpp
+  Stokhos_StieltjesGramSchmidtBuilderImp.hpp
   Stokhos_MatrixFreeEpetraOp.hpp
   Stokhos_KLMatrixFreeEpetraOp.hpp
   Stokhos_MeanEpetraOp.hpp
+  Stokhos_PreconditionerFactory.hpp
+  Stokhos_IfpackPreconditionerFactory.hpp
+  Stokhos_MLPreconditionerFactory.hpp
   Stokhos_MLPrecOp.hpp
   Stokhos_SGModelEvaluator.hpp
   Stokhos_SGQuadModelEvaluator.hpp
   Stokhos_VectorOrthogPoly.hpp
   Stokhos_VectorOrthogPolyImp.hpp
   Stokhos_VectorOrthogPolyTraitsEpetra.hpp
+  Stokhos_PCECovarianceOp.hpp
+  Stokhos_PCEAnasaziKL.hpp
+  Stokhos_KL_OneDEigenPair.hpp
+  Stokhos_KL_ProductEigenPair.hpp
+  Stokhos_KL_OneDExponentialCovarianceFunction.hpp
+  Stokhos_KL_OneDExponentialCovarianceFunctionImp.hpp
+  Stokhos_KL_ExponentialRandomField.hpp
+  Stokhos_KL_ExponentialRandomFieldImp.hpp
+  Stokhos_KLReducedMatrixFreeEpetraOp.hpp
   )
 
 SET(SOURCES ${SOURCES}
@@ -97,9 +113,14 @@ SET(SOURCES ${SOURCES}
   Stokhos_MatrixFreeEpetraOp.cpp
   Stokhos_KLMatrixFreeEpetraOp.cpp
   Stokhos_MeanEpetraOp.cpp
+  Stokhos_IfpackPreconditionerFactory.cpp
+  Stokhos_MLPreconditionerFactory.cpp
   Stokhos_MLPrecOp.cpp
   Stokhos_SGModelEvaluator.cpp
   Stokhos_SGQuadModelEvaluator.cpp
+  Stokhos_PCECovarianceOp.cpp
+  Stokhos_PCEAnasaziKL.cpp
+  Stokhos_KLReducedMatrixFreeEpetraOp.cpp
   )
 
 #

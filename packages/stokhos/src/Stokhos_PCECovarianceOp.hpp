@@ -1,5 +1,5 @@
-// $Id$ 
-// $Source$ 
+// $Id: Stokhos_MatrixFreeEpetraOp.hpp,v 1.7 2009/09/14 18:35:48 etphipp Exp $ 
+// $Source: /space/CVS/Trilinos/packages/stokhos/src/Stokhos_MatrixFreeEpetraOp.hpp,v $ 
 // @HEADER
 // ***********************************************************************
 // 
@@ -28,38 +28,44 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_MEAN_EPETRA_OP_HPP
-#define STOKHOS_MEAN_EPETRA_OP_HPP
+#ifndef STOKHOS_PCE_COVARIANCE_OP_HPP
+#define STOKHOS_PCE_COVARIANCE_OP_HPP
 
 #include "Teuchos_RCP.hpp"
-
+#include "Teuchos_Array.hpp"
 #include "Epetra_Operator.h"
-#include "Epetra_Map.h"
+#include "EpetraExt_BlockVector.h"
+#include "Stokhos_VectorOrthogPoly.hpp"
+#include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
 
 namespace Stokhos {
     
   /*! 
-   * \brief An Epetra operator representing applying the mean in a block
-   * stochastic Galerkin expansion.
+   * \brief An Epetra operator representing the covariance operator of a
+   * polynomial chaos expansion.
    */
-  class MeanEpetraOp : public Epetra_Operator {
-      
+  /*!
+   * If X is the matrix whose columns are the coefficients of a given
+   * polynomial chaos expansion, starting at order 1 (not including mean term),
+   * and S is a diagonal matrix whose entries are given by the norm-squared
+   * of the basis polynomials, then the covariance operator is A = X*S*X^T.
+   */
+  class PCECovarianceOp : public Epetra_Operator {
   public:
 
-    //! Constructor 
-    MeanEpetraOp(const Teuchos::RCP<const Epetra_Map>& base_map,
-                 const Teuchos::RCP<const Epetra_Map>& sg_map,
-                 unsigned int num_blocks,
-                 const Teuchos::RCP<Epetra_Operator>& mean_op);
+    //! Constructor with polynomial X
+    PCECovarianceOp(const Stokhos::VectorOrthogPoly<Epetra_Vector>& X_poly);
+
+    //! Constructor with block-vector X
+    PCECovarianceOp(const Teuchos::RCP<const EpetraExt::BlockVector>& X,
+		    const Stokhos::OrthogPolyBasis<int,double>& basis);
+
+    //! Constructor with multi-vector X
+    PCECovarianceOp(const Teuchos::RCP<const Epetra_MultiVector>& X,
+		    const Stokhos::OrthogPolyBasis<int,double>& basis);
     
     //! Destructor
-    virtual ~MeanEpetraOp();
-
-    // Set mean operator
-    void setMeanOperator(const Teuchos::RCP<Epetra_Operator>& op);
-
-    //! Get mean operator
-    Teuchos::RCP<Epetra_Operator> getMeanOperator();
+    virtual ~PCECovarianceOp();
     
     //! Set to true if the transpose of the operator is requested
     virtual int SetUseTranspose(bool UseTranspose);
@@ -111,36 +117,39 @@ namespace Stokhos {
      */
     virtual const Epetra_Map& OperatorRangeMap () const;
 
+    //! Returns PCE coefficient map
+    const Epetra_BlockMap& CoeffMap() const;
+
   private:
     
     //! Private to prohibit copying
-    MeanEpetraOp(const MeanEpetraOp&);
+    PCECovarianceOp(const PCECovarianceOp&);
     
     //! Private to prohibit copying
-    MeanEpetraOp& operator=(const MeanEpetraOp&);
+    PCECovarianceOp& operator=(const PCECovarianceOp&);
     
   protected:
     
     //! Label for operator
-    std::string label;
-    
-    //! Stores base map
-    Teuchos::RCP<const Epetra_Map> base_map;
+    string label;
 
-    //! Stores SG map
-    Teuchos::RCP<const Epetra_Map> sg_map;
+    //! Multivector X defining A = X*S*X^T
+    Teuchos::RCP<const Epetra_MultiVector> X;
 
-    //! Stores mean operator
-    Teuchos::RCP<Epetra_Operator> mean_op;
+    //! Scaling vector in A = X*S*X^T
+    Teuchos::Array<double> s;
 
     //! Flag indicating whether transpose was selected
     bool useTranspose;
 
-    //! Number of blocks
-    unsigned int num_blocks;
+    //! Map needed for temporary vector
+    Teuchos::RCP<Epetra_Map> tmp_map;
 
-  }; // class MeanEpetraOp
+    //! Temporary vector needed for apply
+    mutable Teuchos::RCP<Epetra_MultiVector> tmp;
+
+  }; // class PCECovarianceOp
   
 } // namespace Stokhos
 
-#endif // STOKHOS_MEAN_EPETRA_OP_HPP
+#endif // STOKHOS_PCE_COVARIANCE_OP_HPP

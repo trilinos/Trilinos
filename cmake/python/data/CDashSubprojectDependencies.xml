@@ -334,18 +334,22 @@
   </SubProject>
   <SubProject name="Stokhos">
     <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="RTOp" type="ILO"/>
+    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="LR"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LR"/>
     <Dependency name="Thyra" type="ILO"/>
     <Dependency name="Isorropia" type="ILO"/>
     <Dependency name="AztecOO" type="ILO"/>
     <Dependency name="Galeri" type="ILO"/>
     <Dependency name="Amesos" type="ILO"/>
-    <Dependency name="Ifpack" type="ILO"/>
+    <Dependency name="Ifpack" type="LO"/>
     <Dependency name="ML" type="LO"/>
+    <Dependency name="Anasazi" type="LO"/>
     <Dependency name="TriKota" type="LO"/>
     <EmailAddresses>
       <Email address="stokhos-regression@software.sandia.gov"/>
@@ -372,10 +376,13 @@
   </SubProject>
   <SubProject name="Sacado">
     <Dependency name="Teuchos" type="LO"/>
+    <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="RTOp" type="ILO"/>
+    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="LO"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="LO"/>
     <Dependency name="Thyra" type="ILO"/>
     <Dependency name="Isorropia" type="ILO"/>
@@ -384,6 +391,7 @@
     <Dependency name="Amesos" type="ILO"/>
     <Dependency name="Ifpack" type="ILO"/>
     <Dependency name="ML" type="ILO"/>
+    <Dependency name="Anasazi" type="ILO"/>
     <Dependency name="TriKota" type="ILO"/>
     <Dependency name="Stokhos" type="LO"/>
     <EmailAddresses>
@@ -392,11 +400,14 @@
   </SubProject>
   <SubProject name="Intrepid">
     <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="RTOp" type="ILO"/>
+    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="TO"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Shards" type="LR"/>
     <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="TO"/>
     <Dependency name="Thyra" type="ILO"/>
     <Dependency name="Isorropia" type="ILO"/>
@@ -406,6 +417,7 @@
     <Dependency name="Pamgen" type="TO"/>
     <Dependency name="Ifpack" type="ILO"/>
     <Dependency name="ML" type="ILO"/>
+    <Dependency name="Anasazi" type="ILO"/>
     <Dependency name="TriKota" type="ILO"/>
     <Dependency name="Stokhos" type="ILO"/>
     <Dependency name="Sacado" type="LR"/>
@@ -415,14 +427,14 @@
   </SubProject>
   <SubProject name="Phalanx">
     <Dependency name="Teuchos" type="LR"/>
-    <Dependency name="ThreadPool" type="ITO"/>
+    <Dependency name="ThreadPool" type="ILO"/>
     <Dependency name="RTOp" type="ILO"/>
-    <Dependency name="Kokkos" type="ITO"/>
+    <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="TO"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Shards" type="LR"/>
     <Dependency name="Triutils" type="ILO"/>
-    <Dependency name="Tpetra" type="ITO"/>
+    <Dependency name="Tpetra" type="ILO"/>
     <Dependency name="EpetraExt" type="ILO"/>
     <Dependency name="Thyra" type="ILO"/>
     <Dependency name="Isorropia" type="ILO"/>
@@ -432,6 +444,7 @@
     <Dependency name="Ifpack" type="TO"/>
     <Dependency name="ML" type="ILO"/>
     <Dependency name="Belos" type="TO"/>
+    <Dependency name="Anasazi" type="ILO"/>
     <Dependency name="TriKota" type="ILO"/>
     <Dependency name="Stokhos" type="ILO"/>
     <Dependency name="Sacado" type="LR"/>
