@@ -87,7 +87,7 @@ color is implicitly zero, unless specified differently at the time of constructi
 
 */
 
-class Epetra_MapColoring: public Epetra_DistObject {
+class EPETRA_LIB_DLL_EXPORT Epetra_MapColoring: public Epetra_DistObject {
     
   public:
 

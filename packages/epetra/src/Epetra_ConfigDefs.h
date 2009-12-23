@@ -305,4 +305,6 @@ const int DefaultTracebackMode = 1;
                       return(a); \
                    }
 
+#include "Epetra_DLLExportMacro.h"
+
 #endif /* EPETRA_CONFIGDEFS_H */

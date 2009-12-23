@@ -431,7 +431,6 @@ public:
 
 };
 
-
 /** \brief Templated implementation class of <tt>RCPNode</tt> that has the
  * responsibility for deleting the reference-counted object.
  *
@@ -648,7 +647,7 @@ namespace Teuchos {
  *
  * \ingroup teuchos_mem_mng_grp 
  */
-class RCPNodeHandle {
+class TEUCHOS_LIB_DLL_EXPORT RCPNodeHandle {
 public:
   /** \brief . */
   RCPNodeHandle(ENull null_arg = null)

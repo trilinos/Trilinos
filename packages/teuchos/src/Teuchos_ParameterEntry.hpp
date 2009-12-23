@@ -51,7 +51,7 @@ class ParameterList; // another parameter type (forward declaration)
     parameter (isUsed, isDefault, etc.).  The type of parameter is chosen through the
     templated Set/Get methods.
 */
-class ParameterEntry {
+class TEUCHOS_LIB_DLL_EXPORT ParameterEntry {
 public:
 
   //! @name Constructors/Destructor 
@@ -209,7 +209,11 @@ private:
   std::string  docString_;
 
   //! Optional validator object
+//use pragmas to disable some false positive warnings for windows sharedlib export
+#pragma warning(push)
+#pragma warning(disable:4251)
   RCP<const ParameterEntryValidator> validator_;
+#pragma warning(pop)
 
 };
 

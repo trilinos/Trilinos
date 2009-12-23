@@ -49,9 +49,10 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
     LAPACK are only specified for serial execution (or shared memory parallel).
 */
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Object.h"
 
-class Epetra_LAPACK {
+class EPETRA_LIB_DLL_EXPORT Epetra_LAPACK {
     
   public:
     //! @name Constructors/destructors

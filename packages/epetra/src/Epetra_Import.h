@@ -47,7 +47,7 @@ class Epetra_Distributor;
     second map specifies the global IDs that are owned by the calling processor.  
 */
 
-class Epetra_Import: public Epetra_Object {
+class EPETRA_LIB_DLL_EXPORT Epetra_Import: public Epetra_Object {
     
   public:
 

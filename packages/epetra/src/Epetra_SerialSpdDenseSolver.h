@@ -132,7 +132,7 @@ Examples using Epetra_SerialSpdDenseSolver can be found in the Epetra test direc
 */
 
 //=========================================================================
-class Epetra_SerialSpdDenseSolver : public Epetra_SerialDenseSolver {
+class EPETRA_LIB_DLL_EXPORT Epetra_SerialSpdDenseSolver : public Epetra_SerialDenseSolver {
 
  public:
    //! @name Constructor/Destructor Methods

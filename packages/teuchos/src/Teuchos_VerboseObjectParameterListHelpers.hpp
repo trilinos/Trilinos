@@ -44,7 +44,7 @@ namespace Teuchos {
  *
  * \relates VerboseObject
  */
-RCP<const ParameterList> getValidVerboseObjectSublist();
+TEUCHOS_LIB_DLL_EXPORT RCP<const ParameterList> getValidVerboseObjectSublist();
 
 
 /** \brief Setup a sublist called "VerboseObject" in the given parameter list.
@@ -59,7 +59,7 @@ RCP<const ParameterList> getValidVerboseObjectSublist();
  *
  * \relates VerboseObject
  */
-void setupVerboseObjectSublist( ParameterList* paramList );
+TEUCHOS_LIB_DLL_EXPORT void setupVerboseObjectSublist( ParameterList* paramList );
 
 /** \brief Read the parameters in the "VerboseObject" sublist and set them on
  * the given VerboseObject.
@@ -84,7 +84,7 @@ void setupVerboseObjectSublist( ParameterList* paramList );
  *
  * \relates VerboseObject
  */
-void readVerboseObjectSublist(
+TEUCHOS_LIB_DLL_EXPORT void readVerboseObjectSublist(
   ParameterList* paramList,
   RCP<FancyOStream> *oStream, EVerbosityLevel *verbLevel
   );

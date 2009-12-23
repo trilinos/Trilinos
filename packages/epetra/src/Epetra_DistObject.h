@@ -31,6 +31,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 
 #ifndef EPETRA_DISTOBJECT_H
 #define EPETRA_DISTOBJECT_H
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Object.h"
 #include "Epetra_SrcDistObject.h"
 #include "Epetra_BlockMap.h"
@@ -64,7 +65,7 @@ class Epetra_OffsetIndex;
 */
 
 //==========================================================================
-class Epetra_DistObject: public Epetra_Object, public virtual Epetra_SrcDistObject {
+class EPETRA_LIB_DLL_EXPORT Epetra_DistObject: public Epetra_Object, public virtual Epetra_SrcDistObject {
 
   public:
     //! @name Constructors/Destructor

@@ -42,7 +42,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
     functionality is also available.
 */    
 
-class Epetra_FEVbrMatrix: public Epetra_VbrMatrix {
+class EPETRA_LIB_DLL_EXPORT Epetra_FEVbrMatrix: public Epetra_VbrMatrix {
  public:
 
    //! @name Constructors/Destructor

@@ -49,7 +49,7 @@
 
 namespace Teuchos
 {
-class CompObject
+class TEUCHOS_LIB_DLL_EXPORT CompObject
 {
 
   public:

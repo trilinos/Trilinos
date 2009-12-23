@@ -31,6 +31,9 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 
 #ifndef EPETRA_SRCDISTOBJECT_H
 #define EPETRA_SRCDISTOBJECT_H
+
+#include "Epetra_ConfigDefs.h"
+
 class Epetra_BlockMap;
 
 
@@ -45,7 +48,7 @@ class Epetra_BlockMap;
 */
 
 //==========================================================================
-class Epetra_SrcDistObject {
+class EPETRA_LIB_DLL_EXPORT Epetra_SrcDistObject {
 
   public:
     //! @name Destructor

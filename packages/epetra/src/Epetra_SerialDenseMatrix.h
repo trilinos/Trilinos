@@ -32,6 +32,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #ifndef EPETRA_SERIALDENSEMATRIX_H
 #define EPETRA_SERIALDENSEMATRIX_H
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Object.h" 
 #include "Epetra_CompObject.h"
 #include "Epetra_BLAS.h"
@@ -91,7 +92,7 @@ method in the Epetra_CompObject base class.
 
 
 //=========================================================================
-class Epetra_SerialDenseMatrix : public Epetra_CompObject, public Epetra_Object, public Epetra_SerialDenseOperator, public Epetra_BLAS {
+class EPETRA_LIB_DLL_EXPORT Epetra_SerialDenseMatrix : public Epetra_CompObject, public Epetra_Object, public Epetra_SerialDenseOperator, public Epetra_BLAS {
 
   public:
   

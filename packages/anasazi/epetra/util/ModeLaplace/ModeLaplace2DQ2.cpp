@@ -28,12 +28,12 @@
 
 #include "ModeLaplace2DQ2.h"
 #include "Teuchos_TestForException.hpp"
+#include "AnasaziConfigDefs.hpp"
 
-
-const int ModeLaplace2DQ2::dofEle = 9;
-const int ModeLaplace2DQ2::maxConnect = 25;
+ANASAZIEPETRA_MODELAPLACE_LIB_DLL_EXPORT const int ModeLaplace2DQ2::dofEle = 9;
+ANASAZIEPETRA_MODELAPLACE_LIB_DLL_EXPORT const int ModeLaplace2DQ2::maxConnect = 25;
 #ifndef M_PI
-const double ModeLaplace2DQ2::M_PI = 3.14159265358979323846;
+ANASAZIEPETRA_MODELAPLACE_LIB_DLL_EXPORT const double ModeLaplace2DQ2::M_PI = 3.14159265358979323846;
 #endif
 
 

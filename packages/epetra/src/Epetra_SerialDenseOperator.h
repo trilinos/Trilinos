@@ -25,6 +25,7 @@
 #ifndef _EPETRA_SERIALDENSEOPERATOR_H_
 #define _EPETRA_SERIALDENSEOPERATOR_H_
 
+#include "Epetra_ConfigDefs.h"
 class Epetra_SerialDenseMatrix;
 
 //! Epetra_SerialDenseOperator: A pure virtual class for using real-valued double-precision operators.
@@ -35,7 +36,7 @@ class Epetra_SerialDenseMatrix;
    
 */    
 
-class Epetra_SerialDenseOperator {
+class EPETRA_LIB_DLL_EXPORT Epetra_SerialDenseOperator {
       
  public:
 

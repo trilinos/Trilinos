@@ -47,7 +47,7 @@ class Epetra_Distributor;
     the global IDs of elements that we want to export to later.
 */
 
-class Epetra_Export: public Epetra_Object {
+class EPETRA_LIB_DLL_EXPORT Epetra_Export: public Epetra_Object {
     
   public:
 

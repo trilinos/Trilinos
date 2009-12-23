@@ -32,6 +32,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #ifndef EPETRA_CRSGRAPH_H
 #define EPETRA_CRSGRAPH_H
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_DistObject.h" 
 #include "Epetra_CrsGraphData.h"
 class Epetra_BlockMap;
@@ -197,7 +198,7 @@ FillComplete must then be called again to restore the graph to a consistent stat
 
 */    
 
-class Epetra_CrsGraph: public Epetra_DistObject {
+class EPETRA_LIB_DLL_EXPORT Epetra_CrsGraph: public Epetra_DistObject {
       
  public:
 

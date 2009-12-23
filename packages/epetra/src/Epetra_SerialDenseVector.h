@@ -80,7 +80,7 @@ numbers.
 
 
 //=========================================================================
-class Epetra_SerialDenseVector : public Epetra_SerialDenseMatrix{
+class EPETRA_LIB_DLL_EXPORT Epetra_SerialDenseVector : public Epetra_SerialDenseMatrix{
 
   public:
   

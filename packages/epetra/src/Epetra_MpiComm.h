@@ -46,7 +46,7 @@ class Epetra_BlockMap;
   information and services needed for other Epetra classes to run on a parallel computer using MPI.
 */
 
-class Epetra_MpiComm: public Epetra_Object, public virtual Epetra_Comm {
+class EPETRA_LIB_DLL_EXPORT Epetra_MpiComm: public Epetra_Object, public virtual Epetra_Comm {
     
   public:
 

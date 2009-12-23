@@ -43,7 +43,7 @@ class Epetra_Export;
 	  object and (optionally) redistribute it across a parallel distributed memory machine.
 */
 
-class Epetra_RowMatrixTransposer {
+class EPETRA_LIB_DLL_EXPORT Epetra_RowMatrixTransposer {
     
   public:
 

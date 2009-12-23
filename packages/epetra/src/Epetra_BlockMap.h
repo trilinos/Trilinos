@@ -32,6 +32,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #ifndef EPETRA_BLOCKMAP_H
 #define EPETRA_BLOCKMAP_H
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Object.h"
 #include "Epetra_BlockMapData.h"
 
@@ -178,7 +179,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 
 */
 
-class Epetra_BlockMap: public Epetra_Object {
+class EPETRA_LIB_DLL_EXPORT Epetra_BlockMap: public Epetra_Object {
   friend class Epetra_Directory;
   friend class Epetra_LocalMap;
  public:

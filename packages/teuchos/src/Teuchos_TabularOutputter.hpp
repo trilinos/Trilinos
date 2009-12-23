@@ -45,7 +45,7 @@ namespace Teuchos {
  * of output.
  *
  */
-class TabularOutputter {
+class TEUCHOS_LIB_DLL_EXPORT TabularOutputter {
 public:
 
   /** \name Public types */
@@ -142,9 +142,13 @@ private:
 
   static const std::string fieldSpacer_;
 
+//use pragmas to disable some false-positive warnings for windows sharedlibs export
+#pragma warning(push)
+#pragma warning(disable:4251)
   Array<FieldSpec> fieldSpecs_;
   RCP<FancyOStream> out_;
   Tuple<int,numFieldTypes> fieldTypePrecision_;
+#pragma warning(pop)
 
   int currFieldIdx_;
 

@@ -29,9 +29,11 @@
 #ifndef ANASAZI_MODAL_PROBLEM_H
 #define ANASAZI_MODAL_PROBLEM_H
 
+#include "Anasaziepetra_ModeLaplace_DLLExportMacro.h"
+
 class Epetra_MultiVector;
 
-class ModalProblem {
+class ANASAZIEPETRA_MODELAPLACE_LIB_DLL_EXPORT ModalProblem {
 
   public:
 

@@ -47,7 +47,7 @@ class EmptyXMLError : public std::runtime_error
  * \brief Representation of an XML data tree. XMLObject is a ref-counted
  * handle to a XMLObjectImplem object, allowing storage by reference.
  */
-class XMLObject
+class TEUCHOS_LIB_DLL_EXPORT XMLObject
 {
 public:
 
@@ -168,7 +168,11 @@ public:
   //@}
 
 private:
+//use pragmas to disable some false-positive warnings for windows sharedlibs export
+#pragma warning(push)
+#pragma warning(disable:4251)
   RCP<XMLObjectImplem> ptr_;
+#pragma warning(pop)
 };
 
 /** \relates XMLObject 

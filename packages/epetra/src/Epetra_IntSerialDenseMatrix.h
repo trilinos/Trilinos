@@ -102,7 +102,7 @@ the object.  Specifically:
 
 
 //=========================================================================
-class Epetra_IntSerialDenseMatrix : public Epetra_Object {
+class EPETRA_LIB_DLL_EXPORT Epetra_IntSerialDenseMatrix : public Epetra_Object {
 
   public:
   

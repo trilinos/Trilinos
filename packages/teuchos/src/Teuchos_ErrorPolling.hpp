@@ -67,7 +67,7 @@ namespace Teuchos
    * operations in pollForFailures() will hang because some processors cannot be 
    * contacted. 
    */
-  class ErrorPolling
+  class TEUCHOS_LIB_DLL_EXPORT ErrorPolling
   {
   public:
     /** Call this function upon catching an std::exception in order to

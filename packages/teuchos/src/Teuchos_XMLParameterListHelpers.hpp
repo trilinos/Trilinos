@@ -54,7 +54,7 @@ namespace Teuchos {
  *
  * \ingroup XML
  */
-void updateParametersFromXmlFile(
+TEUCHOS_LIB_DLL_EXPORT void updateParametersFromXmlFile(
   const std::string &xmlFileName,
   Teuchos::ParameterList *paramList
   );
@@ -82,7 +82,7 @@ RCP<ParameterList> getParametersFromXmlFile( const std::string &xmlFileName );
  *
  * \ingroup XML
  */
-void updateParametersFromXmlString(
+TEUCHOS_LIB_DLL_EXPORT void updateParametersFromXmlString(
   const std::string &xmlStr,
   Teuchos::ParameterList *paramList
   );
@@ -107,7 +107,7 @@ RCP<ParameterList> getParametersFromXmlString( const std::string &xmlStr );
  *
  * \ingroup XML
  */
-void writeParameterListToXmlOStream(
+TEUCHOS_LIB_DLL_EXPORT void writeParameterListToXmlOStream(
   const Teuchos::ParameterList &paramList,
   std::ostream &xmlOut
   );
@@ -123,7 +123,7 @@ void writeParameterListToXmlOStream(
  *
  * \ingroup XML
  */
-void writeParameterListToXmlFile(
+TEUCHOS_LIB_DLL_EXPORT void writeParameterListToXmlFile(
   const Teuchos::ParameterList &paramList,
   const std::string &xmlFileName
   );

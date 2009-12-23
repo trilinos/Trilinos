@@ -44,7 +44,7 @@ namespace Teuchos
 	 * \brief Writes an XML object to a parameter list
 	 */
 
-	class XMLParameterListReader
+	class TEUCHOS_LIB_DLL_EXPORT XMLParameterListReader
 		{
 		public:
       //! @name Constructors 

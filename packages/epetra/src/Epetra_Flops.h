@@ -28,9 +28,10 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 ************************************************************************
 */
 //@HEADER
-
 #ifndef EPETRA_FLOPS_H
 #define EPETRA_FLOPS_H
+
+#include "Epetra_ConfigDefs.h"
 
 //! Epetra_Flops:  The Epetra Floating Point Operations Class.
 /*! The Epetra_Flops class provides basic support and consistent interfaces
@@ -41,7 +42,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
   
 */
 
-class Epetra_Flops {
+class EPETRA_LIB_DLL_EXPORT Epetra_Flops {
     
   public:
   //! Epetra_Flops Constructor.

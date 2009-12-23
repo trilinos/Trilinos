@@ -32,6 +32,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #ifndef EPETRA_OPERATOR_H
 #define EPETRA_OPERATOR_H
 
+#include "Epetra_ConfigDefs.h"
 class Epetra_MultiVector;
 class Epetra_Map;
 class Epetra_Comm;
@@ -44,7 +45,7 @@ class Epetra_Comm;
    
 */    
 
-class Epetra_Operator {
+class EPETRA_LIB_DLL_EXPORT Epetra_Operator {
       
  public:
 

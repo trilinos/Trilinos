@@ -46,7 +46,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
   non-local graph rows to the appropriate 'owning' processors (an owning
   processor is a processor which has the row in its row-map).
  */
-class Epetra_FECrsGraph : public Epetra_CrsGraph {
+class EPETRA_LIB_DLL_EXPORT Epetra_FECrsGraph : public Epetra_CrsGraph {
   public:
 
   /** Constructor */

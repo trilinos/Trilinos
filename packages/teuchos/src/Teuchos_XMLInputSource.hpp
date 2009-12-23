@@ -55,7 +55,7 @@ namespace Teuchos
    * <tt>--enable-expat</tt>.
    *	</ul>
    */
-  class XMLInputSource
+  class TEUCHOS_LIB_DLL_EXPORT XMLInputSource
     {
     public:
       /** \brief Empty constructor */

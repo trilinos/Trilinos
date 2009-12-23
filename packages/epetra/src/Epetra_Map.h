@@ -101,9 +101,10 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 
 */
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_BlockMap.h"
 
-class Epetra_Map : public Epetra_BlockMap {
+class EPETRA_LIB_DLL_EXPORT Epetra_Map : public Epetra_BlockMap {
     
   public:
 

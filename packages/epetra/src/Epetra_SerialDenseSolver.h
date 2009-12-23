@@ -117,8 +117,9 @@ Examples using Epetra_SerialDenseSolver can be found in the Epetra test director
 */
 
 //=========================================================================
-class Epetra_SerialDenseSolver : public Epetra_CompObject, public Epetra_BLAS,
-				 public Epetra_LAPACK, public Epetra_Object    {
+class EPETRA_LIB_DLL_EXPORT Epetra_SerialDenseSolver : 
+  public Epetra_CompObject, public Epetra_BLAS,
+  public Epetra_LAPACK, public Epetra_Object    {
   public:
   
     //! @name Constructor/Destructor Methods

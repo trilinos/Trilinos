@@ -116,7 +116,7 @@ namespace Teuchos {
  *
  * \note Teuchos::TimeMonitor uses the Teuchos::Time class internally.
  */
-class TimeMonitor : public PerformanceMonitorBase<Time>
+class TEUCHOS_LIB_DLL_EXPORT TimeMonitor : public PerformanceMonitorBase<Time>
 {
 public:
 

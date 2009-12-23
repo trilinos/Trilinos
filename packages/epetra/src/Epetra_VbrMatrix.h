@@ -31,6 +31,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #ifndef EPETRA_VBRMATRIX_H
 #define EPETRA_VBRMATRIX_H
 
+#include <Epetra_ConfigDefs.h>
 #include <Epetra_DistObject.h> 
 #include <Epetra_CompObject.h> 
 #include <Epetra_BLAS.h>
@@ -144,7 +145,7 @@ numbers.  The ResetFlops() function resets the floating point counter.
 
 */    
 
-class Epetra_VbrMatrix : public Epetra_DistObject,
+class EPETRA_LIB_DLL_EXPORT Epetra_VbrMatrix : public Epetra_DistObject,
 		      public Epetra_CompObject,
 		      public Epetra_BLAS,
 		      public virtual Epetra_RowMatrix {

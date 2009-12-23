@@ -108,7 +108,7 @@ There are two Extract functions:
 */
 
 //=========================================================================
-class Epetra_IntVector : public Epetra_DistObject {
+class EPETRA_LIB_DLL_EXPORT Epetra_IntVector : public Epetra_DistObject {
 
   public:
 

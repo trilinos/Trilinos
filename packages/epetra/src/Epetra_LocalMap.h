@@ -71,9 +71,10 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
   \internal In the current implementation, Epetra_Map is the base class for Epetra_LocalMap.
 
 */
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Map.h"
 
-class Epetra_LocalMap : public Epetra_Map {
+class EPETRA_LIB_DLL_EXPORT Epetra_LocalMap : public Epetra_Map {
     
   public:
   //! Epetra_LocalMap constructor for a user-defined replicate distribution of elements.

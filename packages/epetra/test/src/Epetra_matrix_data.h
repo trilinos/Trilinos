@@ -29,6 +29,8 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #ifndef EPETRA_MATRIX_DATA_H
 #define EPETRA_MATRIX_DATA_H
 
+#include "Epetra_ConfigDefs.h"
+
 class Epetra_CrsMatrix;
 
 namespace epetra_test {
@@ -38,7 +40,7 @@ namespace epetra_test {
     of full (global) size on each processor, then fills the local portion of
     the test matrix from the appropriate section of the data in this class.
 */
-class matrix_data {
+class EPETRA_LIB_DLL_EXPORT matrix_data {
  public:
   matrix_data(int num_rows, int* rowlengths, int blocksize=1);
   matrix_data(int num_rows, int num_cols, int num_off_diagonals, int blocksize);

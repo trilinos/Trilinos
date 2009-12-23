@@ -30,6 +30,7 @@
 #define ANASAZI_BLOCK_PCG_SOLVER_H
 
 #include "Epetra_ConfigDefs.h"
+#include "Anasazi_ModeLaplace_DLLExportMacro.h"
 
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
@@ -41,7 +42,7 @@
 #include "Teuchos_BLAS.hpp"
 #include "Teuchos_LAPACK.hpp"
 
-class BlockPCGSolver : public virtual Epetra_Operator {
+class ANASAZI_MODELAPLACE_LIB_DLL_EXPORT BlockPCGSolver : public virtual Epetra_Operator {
 
   private:
 

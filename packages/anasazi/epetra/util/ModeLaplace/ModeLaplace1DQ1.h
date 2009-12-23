@@ -30,6 +30,7 @@
 #define ANASAZI_MODE_LAPLACE_1D_Q1_H
 
 #include "Epetra_ConfigDefs.h"
+#include "Anasaziepetra_ModeLaplace_DLLExportMacro.h"
 
 #include "Epetra_Comm.h"
 #include "Epetra_CrsMatrix.h"
@@ -40,7 +41,7 @@
 #include "ModeLaplace.h"
 #include "SortingTools.h"
 
-class ModeLaplace1DQ1 : public ModeLaplace {
+class ANASAZIEPETRA_MODELAPLACE_LIB_DLL_EXPORT ModeLaplace1DQ1 : public ModeLaplace {
 
   private:
 

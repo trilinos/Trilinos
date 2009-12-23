@@ -332,7 +332,7 @@ struct ScalarTraits<long long int>
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
 #ifndef __sun
-extern const float flt_nan;
+extern TEUCHOS_LIB_DLL_EXPORT const float flt_nan;
 #endif
  
 template<>
@@ -427,7 +427,7 @@ struct ScalarTraits<float>
 };
 
 #ifndef __sun
-extern const double dbl_nan;
+extern TEUCHOS_LIB_DLL_EXPORT const double dbl_nan;
 #endif
  
 template<>

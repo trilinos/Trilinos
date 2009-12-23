@@ -42,7 +42,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
     enum types.
   
 */
-class Epetra_Object {
+class EPETRA_LIB_DLL_EXPORT Epetra_Object {
     
   public:
     //! @name Constructors/destructor

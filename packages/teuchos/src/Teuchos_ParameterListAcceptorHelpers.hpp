@@ -42,7 +42,7 @@ class ParameterListAcceptor;
 /** \brief Pretty print the valid parameters from a ParameterListAccpetor
  * object.
  */
-void printValidParameters( const ParameterListAcceptor &paramListAccpetor,
+TEUCHOS_LIB_DLL_EXPORT void printValidParameters( const ParameterListAcceptor &paramListAccpetor,
   std::ostream &out, const bool showDoc = true );
 
 

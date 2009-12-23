@@ -50,7 +50,7 @@ namespace Teuchos
    * At present, groups are not implemented so the only communicator
    * is MPI_COMM_WORLD.
    */
-  class MPIComm
+  class TEUCHOS_LIB_DLL_EXPORT MPIComm
     {
     public:
 

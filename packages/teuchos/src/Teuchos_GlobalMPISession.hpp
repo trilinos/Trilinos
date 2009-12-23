@@ -49,7 +49,7 @@ namespace Teuchos {
  *
  * ToDo: Give examples!
  */
-class GlobalMPISession
+class TEUCHOS_LIB_DLL_EXPORT GlobalMPISession
 {
 public:
   

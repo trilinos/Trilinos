@@ -3,6 +3,10 @@
 # Setup direct dependencies
 SET(DIRECT_DEPS Anasazi)
 
+SET(CURRENT_PACKAGE ANASAZI_MODELAPLACE)
+CONFIGURE_FILE("${TRILINOS_HOME_DIR}/packages/Trilinos_DLLExportMacro.h.in"
+  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_ModeLaplace_DLLExportMacro.h)
+
 # Setup directories based on current directory
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
@@ -29,6 +33,10 @@ SET(HEADERS
 	SortingTools.h
   )
 
+APPEND_SET(HEADERS
+  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_ModeLaplace_DLLExportMacro.h
+  )
+
 # Set headers
 SET(SOURCES
 	BlockPCGSolver.cpp 
@@ -43,7 +51,7 @@ SET(SOURCES
   )
 
 # Target library setup
-ADD_LIBRARY(anasazi-mode-laplace ${HEADERS} ${SOURCES})
+ADD_LIBRARY(anasazi-mode-laplace ${HEADERS} ${SOURCES} -DANASAZI_MODELAPLACE_LIB_EXPORTS_MODE)
 LIST(APPEND TARGET_LIBS anasazi-mode-laplace)
 LIST(APPEND LIB_DEPS epetra teuchos)
 TARGET_LINK_LIBRARIES(anasazi-mode-laplace ${LIB_DEPS})

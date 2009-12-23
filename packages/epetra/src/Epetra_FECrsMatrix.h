@@ -94,7 +94,7 @@ class Epetra_SerialDenseMatrix;
     </ul>
     </ol>
 */
-class Epetra_FECrsMatrix : public Epetra_CrsMatrix {
+class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
   public:
   /** Constructor. */
    Epetra_FECrsMatrix(Epetra_DataAccess CV,

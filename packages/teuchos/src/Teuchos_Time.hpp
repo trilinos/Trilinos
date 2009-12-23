@@ -77,7 +77,7 @@ namespace Teuchos {
  * </ul>
  */ 
 
-class Time
+class TEUCHOS_LIB_DLL_EXPORT Time
 {
 
 public:

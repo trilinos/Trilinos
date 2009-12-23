@@ -40,6 +40,7 @@ class Epetra_Export;
 class Epetra_Distributor;
 class Epetra_Vector;
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_DistObject.h"
 #include "Epetra_CompObject.h"
 #include "Epetra_BLAS.h"
@@ -168,7 +169,7 @@ class Epetra_Vector;
 */
 
 //==========================================================================
-class Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, public Epetra_BLAS {
+class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public Epetra_CompObject, public Epetra_BLAS {
 
  public:
 

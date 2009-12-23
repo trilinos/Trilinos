@@ -32,6 +32,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #ifndef EPETRA_VECTOR_H
 #define EPETRA_VECTOR_H
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_MultiVector.h"
 class Epetra_Map;
 
@@ -126,7 +127,7 @@ numbers.
 */
 
 //=========================================================================
-class Epetra_Vector : public Epetra_MultiVector {
+class EPETRA_LIB_DLL_EXPORT Epetra_Vector : public Epetra_MultiVector {
 
   public:
 

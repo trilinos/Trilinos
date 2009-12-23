@@ -38,10 +38,11 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
     mechanisms and interface specifications for floating point operations using Epetra_Flops objects.
 
 */
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Object.h"
 #include "Epetra_Flops.h"
 //==========================================================================
-class Epetra_CompObject {
+class EPETRA_LIB_DLL_EXPORT Epetra_CompObject {
 
   public:
 

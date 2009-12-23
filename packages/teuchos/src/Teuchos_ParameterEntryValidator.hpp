@@ -47,7 +47,7 @@ class ParameterEntry;
  * Not only can a validator validate and entry but it can also help to set
  * and/or adjust the default value.
  */
-class ParameterEntryValidator {
+class TEUCHOS_LIB_DLL_EXPORT ParameterEntryValidator {
 public:
 
   /** \brief . */

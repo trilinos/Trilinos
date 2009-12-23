@@ -43,6 +43,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
   the specifics of timing across a variety of platforms.
 */
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Object.h"
 #include "Epetra_Comm.h"
 
@@ -59,7 +60,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #endif
 #endif
 
-class Epetra_Time: public Epetra_Object {
+class EPETRA_LIB_DLL_EXPORT Epetra_Time: public Epetra_Object {
     
   public:
   //! Epetra_Time Constructor.

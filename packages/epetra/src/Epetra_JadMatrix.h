@@ -53,7 +53,7 @@ class Epetra_Export;
     
 */    
 
-class Epetra_JadMatrix: public Epetra_BasicRowMatrix {
+class EPETRA_LIB_DLL_EXPORT Epetra_JadMatrix: public Epetra_BasicRowMatrix {
       
  public:
 

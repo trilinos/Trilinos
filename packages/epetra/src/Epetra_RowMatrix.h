@@ -37,6 +37,7 @@ class Epetra_Import;
 class Epetra_Export;
 class Epetra_Vector;
 class Epetra_MultiVector;
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Operator.h"
 #include "Epetra_SrcDistObject.h"
 
@@ -52,7 +53,7 @@ class Epetra_MultiVector;
 */    
 
 
-class Epetra_RowMatrix: public virtual Epetra_Operator, public virtual Epetra_SrcDistObject {
+class EPETRA_LIB_DLL_EXPORT Epetra_RowMatrix: public virtual Epetra_Operator, public virtual Epetra_SrcDistObject {
       
  public:
    //! @name Destructor

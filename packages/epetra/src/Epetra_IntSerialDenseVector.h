@@ -72,7 +72,7 @@ Once a Epetra_IntSerialDenseVector is constructed, it is possible to view the da
 
 
 //=========================================================================
-class Epetra_IntSerialDenseVector : public Epetra_IntSerialDenseMatrix{
+class EPETRA_LIB_DLL_EXPORT Epetra_IntSerialDenseVector : public Epetra_IntSerialDenseMatrix{
 
   public:
   

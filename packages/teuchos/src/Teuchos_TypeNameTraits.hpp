@@ -50,7 +50,7 @@ namespace  Teuchos {
  *
  * \ingroup teuchos_language_support_grp
  */
-std::string demangleName( const std::string &mangledName );
+TEUCHOS_LIB_DLL_EXPORT std::string demangleName( const std::string &mangledName );
 
 
 /** \brief Default traits class that just returns <tt>typeid(T).name()</tt>.
@@ -120,7 +120,7 @@ std::string concreteTypeName( const T &t )
 
 #define TEUCHOS_TYPE_NAME_TRAITS_BUILTIN_TYPE_SPECIALIZATION(TYPE) \
 template<> \
-class TypeNameTraits<TYPE> { \
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<TYPE> { \
 public: \
   static std::string name() { return (#TYPE); } \
   static std::string concreteName(const TYPE&) { return name(); } \
@@ -136,7 +136,7 @@ TEUCHOS_TYPE_NAME_TRAITS_BUILTIN_TYPE_SPECIALIZATION(double);
 
 
 template<typename T>
-class TypeNameTraits<T*> {
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<T*> {
 public:
   typedef T* T_ptr;
   static std::string name() { return TypeNameTraits<T>::name() + "*"; }
@@ -145,7 +145,7 @@ public:
 
 
 template<>
-class TypeNameTraits<std::string> {
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<std::string> {
 public:
   static std::string name() { return "string"; }
   static std::string concreteName(const std::string&)
@@ -154,7 +154,7 @@ public:
 
 
 template<>
-class TypeNameTraits<void*> {
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<void*> {
 public:
   static std::string name() { return "void*"; }
   static std::string concreteName(const std::string&) { return name(); }
@@ -165,7 +165,7 @@ public:
 
 
 template<typename T>
-class TypeNameTraits<std::complex<T> > {
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<std::complex<T> > {
 public:
   static std::string name()
     { return "complex<"+TypeNameTraits<T>::name()+">"; }

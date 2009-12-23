@@ -50,7 +50,7 @@ class CommandLineProcessor;
 
 
 /** \brief Singleton unit testing repository. */
-class UnitTestRepository {
+class TEUCHOS_LIB_DLL_EXPORT UnitTestRepository {
 public:
 
   /** \brief . */

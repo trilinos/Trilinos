@@ -84,7 +84,7 @@ enum EValidateDefaults {
           <li> Both char* and std::string std::map to are stored as strings internally. 
 	  </ul>
 */
-class ParameterList {
+class TEUCHOS_LIB_DLL_EXPORT ParameterList {
 
   //! Parameter container typedef
   typedef Teuchos::map<std::string, ParameterEntry> Map;
@@ -559,8 +559,14 @@ private: // Data members
 
   //! Name of the (sub)list
   std::string name_;
+
   //! Parameter list
+//use pragmas to disable some false-positive warnings for windows sharedlibs export
+#pragma warning(push)
+#pragma warning(disable:4251)
   Map params_;
+#pragma warning(pop)
+
   //! Validate into list or not
   bool disableRecursiveValidation_;
 
@@ -596,7 +602,7 @@ RCP<ParameterList> parameterList(const ParameterList& source)
  * \relates ParameterList
  */
 template<>
-class TypeNameTraits<ParameterList> {
+class TEUCHOS_LIB_DLL_EXPORT TypeNameTraits<ParameterList> {
 public:
   static std::string name() { return "ParameterList"; }
   static std::string concreteName( const ParameterList& /*t2*/ )
@@ -607,7 +613,7 @@ public:
  *
  * \relates ParameterList
  */
-bool operator==( const ParameterList& list1, const ParameterList& list2 );
+TEUCHOS_LIB_DLL_EXPORT bool operator==( const ParameterList& list1, const ParameterList& list2 );
 
 /** \brief Returns true if two parameter lists are <b>not</tt> the same.
  *
@@ -627,7 +633,7 @@ bool operator!=( const ParameterList& list1, const ParameterList& list2 )
  *
  * \relates ParameterList
  */
-bool haveSameValues( const ParameterList& list1, const ParameterList& list2 );
+TEUCHOS_LIB_DLL_EXPORT bool haveSameValues( const ParameterList& list1, const ParameterList& list2 );
 
 // /////////////////////////////////////////////////////
 // Inline and Template Function Definitions

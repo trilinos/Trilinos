@@ -41,13 +41,13 @@
 //@{
 
 /** \brief Increment the throw number. */
-void TestForException_incrThrowNumber();
+TEUCHOS_LIB_DLL_EXPORT void TestForException_incrThrowNumber();
 
 /** \brief Increment the throw number. */
-int TestForException_getThrowNumber();
+TEUCHOS_LIB_DLL_EXPORT int TestForException_getThrowNumber();
 
 /** \brief The only purpose for this function is to set a breakpoint. */
-void TestForException_break( const std::string &msg );
+TEUCHOS_LIB_DLL_EXPORT void TestForException_break( const std::string &msg );
 
 /** \brief Macro for throwing an exception with breakpointing to ease debugging
  *

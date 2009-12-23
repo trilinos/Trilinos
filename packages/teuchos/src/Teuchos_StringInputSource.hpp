@@ -46,7 +46,7 @@ namespace Teuchos
   /** \ingroup XML
    * \brief Instantiation of XMLInputSource class for reading XML from a std::string
    */
-  class StringInputSource : public XMLInputSource
+  class TEUCHOS_LIB_DLL_EXPORT StringInputSource : public XMLInputSource
     {
     public:
       /** \brief Constructor */

@@ -94,7 +94,7 @@ An example of how to provide an adapter for Epetra_BasicRowMatrix can be found b
 
 */    
 
-class Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, public virtual Epetra_RowMatrix  {
+class EPETRA_LIB_DLL_EXPORT Epetra_BasicRowMatrix: public Epetra_CompObject, public Epetra_Object, public virtual Epetra_RowMatrix  {
       
  public:
 

@@ -53,7 +53,7 @@
 namespace Teuchos
 {
 
-class Object
+class TEUCHOS_LIB_DLL_EXPORT Object
 {
   public:
   //! @name Constructors/Destructor.

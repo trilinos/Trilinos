@@ -50,7 +50,7 @@ namespace Teuchos {
  * The output stream type is <tt>FancyOStream</tt> which allows for automated
  * indentation (using the <tt>OSTab</tt> class) and has other useful features.
  */
-class VerboseObjectBase {
+class TEUCHOS_LIB_DLL_EXPORT VerboseObjectBase {
 public:
 
   //! @name Public static member functions 
@@ -164,9 +164,14 @@ protected:
 
 private:
 
+  std::string thisLinePrefix_;
+
+//use pragmas to disable some false-positive warnings for windows sharedlibs export
+#pragma warning(push)
+#pragma warning(disable:4251)
   mutable RCP<FancyOStream> thisOStream_;
   mutable RCP<FancyOStream> thisOverridingOStream_;
-  std::string thisLinePrefix_;
+#pragma warning(pop)
 
   static RCP<FancyOStream>& privateDefaultOStream();
 

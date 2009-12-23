@@ -29,6 +29,8 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #ifndef EPETRA_TEST_FUNCTIONS_H
 #define EPETRA_TEST_FUNCTIONS_H
 
+#include "Epetra_ConfigDefs.h"
+
 class Epetra_Comm;
 class Epetra_CrsMatrix;
 
@@ -38,18 +40,18 @@ namespace epetra_test {
     on proc 0. Case-sensitive search.
    return true on all procs if flag occurs in strargs, false on all procs if not.
 */
-bool global_check_for_flag_on_proc_0(const char* flag,
+EPETRA_LIB_DLL_EXPORT bool global_check_for_flag_on_proc_0(const char* flag,
                                      int numargs, char** strargs,
                                      const Epetra_Comm& comm);
 
 /** If macro EPETRA_MPI is defined, call MPI_Init and then return new Epetra_MpiComm.
     Otherwise, return new Epetra_SerialComm.
 */
-Epetra_Comm* create_comm(int argc, char** argv);
+EPETRA_LIB_DLL_EXPORT Epetra_Comm* create_comm(int argc, char** argv);
 
 /** Check whether the two CrsMatrix arguments have the same size, structure and coefs.
 */
-bool compare_matrices(const Epetra_CrsMatrix& A, const Epetra_CrsMatrix& B);
+EPETRA_LIB_DLL_EXPORT bool compare_matrices(const Epetra_CrsMatrix& A, const Epetra_CrsMatrix& B);
 
 }//namespace epetra_test
 

@@ -53,7 +53,7 @@ class Epetra_SerialDenseVector;
   Epetra_FEVector is constructed with.
 */
 
-class Epetra_FEVector : public Epetra_MultiVector {
+class EPETRA_LIB_DLL_EXPORT Epetra_FEVector : public Epetra_MultiVector {
  public:
    /** Constructor that requires a map specifying a non-overlapping
       data layout.

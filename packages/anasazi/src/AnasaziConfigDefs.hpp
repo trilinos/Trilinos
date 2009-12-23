@@ -132,11 +132,13 @@
 #  endif
 #endif
 
+#include "Anasazi_DLLExportMacro.h"
+
 /*
  * Anasazi_Version() method 
  */
 namespace Anasazi {
-  std::string Anasazi_Version();
+  ANASAZI_LIB_DLL_EXPORT std::string Anasazi_Version();
 }
 
 #endif /*ANASAZI_CONFIGDEFS_HPP*/

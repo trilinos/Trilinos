@@ -5,6 +5,10 @@ INCLUDE(PackageLibraryMacros)
 # A) Package-specific configuration options
 #
 
+SET(CURRENT_PACKAGE ANASAZIEPETRA_MODELAPLACE)
+CONFIGURE_FILE("${TRILINOS_HOME_DIR}/packages/Trilinos_DLLExportMacro.h.in"
+  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}epetra_ModeLaplace_DLLExportMacro.h)
+
 #
 # B) Define the header and source files (and directories)
 #
@@ -17,6 +21,9 @@ SET(HEADERS "")
 SET(SOURCES "")
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+APPEND_SET(HEADERS
+  ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}epetra_ModeLaplace_DLLExportMacro.h
+  )
 
 #
 # Core Files
@@ -59,4 +66,5 @@ PACKAGE_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   DEPLIBS anasazi
+  DEFINES -DANASAZIEPETRA_MODELAPLACE_LIB_EXPORTS_MODE
   )

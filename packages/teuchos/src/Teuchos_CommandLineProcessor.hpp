@@ -60,7 +60,7 @@ namespace Teuchos {
  * <tt>this->addOutputSetupOptions()==true</tt>
  *
  */
-class CommandLineProcessor {
+class TEUCHOS_LIB_DLL_EXPORT CommandLineProcessor {
 public:
 
   //! @name Public types 
@@ -427,9 +427,14 @@ private:
   bool                             recogniseAllOptions_;
   bool                             addOutputSetupOptions_;
   std::string                      doc_string_;
+
+  //use pragmas to disable some false positive warnings in windows sharedlib exports
+#pragma warning(push)
+#pragma warning(disable:4251)
   mutable options_list_t           options_list_;
   options_documentation_list_t     options_documentation_list_;
   enum_opt_data_list_t             enum_opt_data_list_;
+#pragma warning(pop)
 
   bool  output_all_front_matter_;
   bool  output_show_line_prefix_;

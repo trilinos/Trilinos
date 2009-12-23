@@ -45,7 +45,7 @@ namespace Teuchos
    * parsing the XML and using a TreeBuildingXMLHandler to construct an
    * XMLObject.
    */
-  class XMLParser
+  class TEUCHOS_LIB_DLL_EXPORT XMLParser
     {
     public:
      
@@ -58,8 +58,12 @@ namespace Teuchos
       /** \brief Consume the XMLInputStream to build an XMLObject. */
       XMLObject parse();
     private:
+//use pragmas to disable some false-positive warnings for windows sharedlibs export
+#pragma warning(push)
+#pragma warning(disable:4251)
       RCP<XMLInputStream> _is;
       Teuchos::map<std::string,string> _entities;
+#pragma warning(pop)
       
       /** \brief Determine whether \c c matches the <tt>Letter</tt> production according to the XML specification.*/
       inline static bool isLetter(unsigned char c);

@@ -43,7 +43,7 @@ namespace Teuchos
 {
   using std::string;
 
-  class Utils
+  class TEUCHOS_LIB_DLL_EXPORT Utils
     {
     public:
 

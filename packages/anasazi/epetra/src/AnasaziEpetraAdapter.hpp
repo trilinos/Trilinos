@@ -34,6 +34,7 @@
 #define ANASAZI_EPETRA_ADAPTER_HPP
 
 #include "AnasaziConfigDefs.hpp"
+#include "Anasaziepetra_DLLExportMacro.h"
 #include "AnasaziTypes.hpp"
 #include "AnasaziMultiVec.hpp"
 #include "AnasaziOperator.hpp"
@@ -79,7 +80,7 @@ namespace Anasazi {
     \note The Epetra package performs double-precision arithmetic, so the use of Epetra with Anasazi will
     only provide a double-precision eigensolver.
   */
-  class EpetraMultiVec : public MultiVec<double>, public Epetra_MultiVector {
+  class ANASAZIEPETRA_LIB_DLL_EXPORT EpetraMultiVec : public MultiVec<double>, public Epetra_MultiVector {
   public:
     //! @name Constructors/Destructors
     //@{ 
@@ -269,7 +270,7 @@ namespace Anasazi {
     \note The Epetra package performs double-precision arithmetic, so the use of Epetra with Anasazi will
     only provide a double-precision eigensolver.
   */
-  class EpetraOp : public virtual Operator<double> {
+  class ANASAZIEPETRA_LIB_DLL_EXPORT EpetraOp : public virtual Operator<double> {
   public:
     //! @name Constructor/Destructor
     //@{ 
@@ -291,7 +292,12 @@ namespace Anasazi {
     //@} 
     
   private:
+//use pragmas to disable some false-positive warnings for windows 
+// sharedlibs export
+#pragma warning(push)
+#pragma warning(disable:4251)
     Teuchos::RCP<Epetra_Operator> Epetra_Op;
+#pragma warning(pop)
   };
   //-------------------------------------------------------------
 
@@ -314,7 +320,7 @@ namespace Anasazi {
     only provide a double-precision eigensolver.
   */
 
-  class EpetraGenOp : public virtual Operator<double>, public virtual Epetra_Operator {
+  class ANASAZIEPETRA_LIB_DLL_EXPORT EpetraGenOp : public virtual Operator<double>, public virtual Epetra_Operator {
   public:
     //! Basic constructor for applying operator \f$A^{-1}M\f$ [default] or \f$AM\f$.
     /*! If \c isAInverse is true this operator will apply \f$A^{-1}M\f$, else
@@ -368,8 +374,14 @@ namespace Anasazi {
 
   private:
     bool isAInverse;
+
+//use pragmas to disable some false-positive warnings for windows 
+// sharedlibs export
+#pragma warning(push)
+#pragma warning(disable:4251)
     Teuchos::RCP<Epetra_Operator> Epetra_AOp;
     Teuchos::RCP<Epetra_Operator> Epetra_MOp;
+#pragma warning(pop)
   };
   
   ///////////////////////////////////////////////////////////////
@@ -390,7 +402,7 @@ namespace Anasazi {
     only provide a double-precision eigensolver.
   */
 
-  class EpetraSymOp : public virtual Operator<double>, public virtual Epetra_Operator {
+  class ANASAZIEPETRA_LIB_DLL_EXPORT EpetraSymOp : public virtual Operator<double>, public virtual Epetra_Operator {
   public:
     //! Basic constructor for applying operator \f$A^TA\f$ [default] or \f$AA^T\f$.
     /*! If \c isTrans is false this operator will apply \f$A^TA\f$, else it will apply \f$AA^T\f$.
@@ -441,7 +453,13 @@ namespace Anasazi {
     const Epetra_Map& OperatorRangeMap() const { return Epetra_Op->OperatorRangeMap(); };
 
   private:
+
+//use pragmas to disable false-positive warnings in generating windows sharedlib exports
+#pragma warning(push)
+#pragma warning(disable:4251)
     Teuchos::RCP<Epetra_Operator> Epetra_Op;
+#pragma warning(pop)
+
     bool isTrans_;
   };
 
@@ -464,7 +482,7 @@ namespace Anasazi {
     only provide a double-precision eigensolver.
   */
 
-  class EpetraSymMVOp : public virtual Operator<double> {
+  class ANASAZIEPETRA_LIB_DLL_EXPORT EpetraSymMVOp : public virtual Operator<double> {
   public:
     //! Basic constructor for applying operator \f$A^TA\f$ [default] or \f$AA^T\f$.
     /*! If \c isTrans is false this operator will apply \f$A^TA\f$, else it will apply \f$AA^T\f$.
@@ -481,9 +499,16 @@ namespace Anasazi {
     void Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const; 
 
   private:
+
+//use pragmas to disable some false-positive warnings for windows 
+// sharedlibs export
+#pragma warning(push)
+#pragma warning(disable:4251)
     Teuchos::RCP<const Epetra_MultiVector> Epetra_MV;
     Teuchos::RCP<const Epetra_Map> MV_localmap;
     Teuchos::RCP<const Epetra_BlockMap> MV_blockmap;
+#pragma warning(pop)
+
     bool isTrans_;
   };
 
@@ -505,7 +530,7 @@ namespace Anasazi {
     only provide a double-precision eigensolver.
   */
 
-  class EpetraWSymMVOp : public virtual Operator<double> {
+  class ANASAZIEPETRA_LIB_DLL_EXPORT EpetraWSymMVOp : public virtual Operator<double> {
   public:
     //! Basic constructor for applying operator \f$A^T*W*A\f$.
     EpetraWSymMVOp(const Teuchos::RCP<const Epetra_MultiVector> &MV, 
@@ -520,11 +545,16 @@ namespace Anasazi {
     void Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const; 
 
   private:
+//use pragmas to disable some false-positive warnings for windows 
+// sharedlibs export
+#pragma warning(push)
+#pragma warning(disable:4251)
     Teuchos::RCP<const Epetra_MultiVector> Epetra_MV;
     Teuchos::RCP<Epetra_Operator> Epetra_OP;
     Teuchos::RCP<Epetra_MultiVector> Epetra_WMV;
     Teuchos::RCP<const Epetra_Map> MV_localmap;
     Teuchos::RCP<const Epetra_BlockMap> MV_blockmap;
+#pragma warning(pop)
   };
 
   //////////////////////////////////////////////////////////////////
@@ -545,7 +575,7 @@ namespace Anasazi {
     only provide a double-precision eigensolver.
   */
 
-  class EpetraW2SymMVOp : public virtual Operator<double> {
+  class ANASAZIEPETRA_LIB_DLL_EXPORT EpetraW2SymMVOp : public virtual Operator<double> {
   public:
     //! Basic constructor for applying operator \f$A^T*W*A\f$.
     EpetraW2SymMVOp(const Teuchos::RCP<const Epetra_MultiVector> &MV, 
@@ -560,11 +590,16 @@ namespace Anasazi {
     void Apply ( const MultiVec<double>& X, MultiVec<double>& Y ) const; 
 
   private:
+//use pragmas to disable some false-positive warnings for windows 
+// sharedlibs export
+#pragma warning(push)
+#pragma warning(disable:4251)
     Teuchos::RCP<const Epetra_MultiVector> Epetra_MV;
     Teuchos::RCP<Epetra_Operator> Epetra_OP;
     Teuchos::RCP<Epetra_MultiVector> Epetra_WMV;
     Teuchos::RCP<const Epetra_Map> MV_localmap;
     Teuchos::RCP<const Epetra_BlockMap> MV_blockmap;
+#pragma warning(pop)
   };
 
   

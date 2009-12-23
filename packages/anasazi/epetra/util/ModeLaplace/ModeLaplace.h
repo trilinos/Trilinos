@@ -30,8 +30,9 @@
 #define ANASAZI_MODE_LAPLACE_H
 
 #include "ModalProblem.h"
+#include "Anasaziepetra_ModeLaplace_DLLExportMacro.h"
 
-class ModeLaplace : public ModalProblem {
+class ANASAZIEPETRA_MODELAPLACE_LIB_DLL_EXPORT ModeLaplace : public ModalProblem {
 
   public:
 

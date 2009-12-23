@@ -115,7 +115,7 @@ method in the Epetra_CompObject base class.
 */
 
 //=========================================================================
-class Epetra_SerialSymDenseMatrix : public Epetra_SerialDenseMatrix {
+class EPETRA_LIB_DLL_EXPORT Epetra_SerialSymDenseMatrix : public Epetra_SerialDenseMatrix {
 
  public:
    //! @name Constructor/Destructor Methods

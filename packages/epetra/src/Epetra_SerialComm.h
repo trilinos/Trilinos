@@ -32,6 +32,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #ifndef EPETRA_SERIALCOMM_H
 #define EPETRA_SERIALCOMM_H
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Object.h"
 #include "Epetra_Comm.h"
 #include "Epetra_SerialCommData.h"
@@ -42,7 +43,7 @@ class Epetra_Distributor;
   information and services needed for other Epetra classes to run on a serial computer.
 */
 
-class Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
+class EPETRA_LIB_DLL_EXPORT Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
     
   public:
     //! @name Constructor/Destructor Methods

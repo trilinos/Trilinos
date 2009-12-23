@@ -64,7 +64,7 @@ namespace Teuchos {
  *
  * \ingroup teuchos_outputting_grp
  */
-class Describable : virtual public LabeledObject {
+class TEUCHOS_LIB_DLL_EXPORT Describable : virtual public LabeledObject {
 public:
 
   /// Default value for <tt>verLevel</tt> in <tt>description()</tt>

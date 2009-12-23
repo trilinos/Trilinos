@@ -32,6 +32,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #ifndef EPETRA_BLAS_H
 #define EPETRA_BLAS_H
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Object.h"
 
 //! Epetra_BLAS:  The Epetra BLAS Wrapper Class.
@@ -54,7 +55,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 */
 
 
-class Epetra_BLAS {
+class EPETRA_LIB_DLL_EXPORT Epetra_BLAS {
     
   public:
     //! @name Constructors/Destructor

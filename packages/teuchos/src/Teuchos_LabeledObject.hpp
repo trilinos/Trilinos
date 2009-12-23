@@ -52,7 +52,7 @@ namespace Teuchos {
  *
  * \ingroup teuchos_outputting_grp
  */
-class LabeledObject {
+class TEUCHOS_LIB_DLL_EXPORT LabeledObject {
 public:
   /** \brief Construct with an empty label. */
   LabeledObject();

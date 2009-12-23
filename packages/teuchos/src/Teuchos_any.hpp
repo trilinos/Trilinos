@@ -40,7 +40,7 @@ namespace Teuchos {
 /** \brief Modified boost::any class, which is a container for a templated
  * value.
  */
-class any
+class TEUCHOS_LIB_DLL_EXPORT any
 {
 public:
   //! Empty constructor

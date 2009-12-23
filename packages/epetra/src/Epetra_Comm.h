@@ -32,6 +32,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #ifndef EPETRA_COMM_H
 #define EPETRA_COMM_H
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Object.h"
 
 class Epetra_Distributor;
@@ -57,7 +58,7 @@ class Epetra_BlockMap;
     generating an Epetra_Distributor and Epetra_Directory object.
 */
 
-class Epetra_Comm {
+class EPETRA_LIB_DLL_EXPORT Epetra_Comm {
     
   public:
     //! @name Constructor / Destructor

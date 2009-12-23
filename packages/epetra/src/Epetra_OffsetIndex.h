@@ -44,7 +44,7 @@ class Epetra_Distributor;
  for Import/Export operations on Epetra_CrsGraph based objects such as Epetra_CrsMatrix.
 */
 
-class Epetra_OffsetIndex: public Epetra_Object {
+class EPETRA_LIB_DLL_EXPORT Epetra_OffsetIndex: public Epetra_Object {
     
  public:
 

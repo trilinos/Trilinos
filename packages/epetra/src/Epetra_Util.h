@@ -32,6 +32,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #ifndef EPETRA_UTIL_H
 #define EPETRA_UTIL_H
 
+#include "Epetra_ConfigDefs.h"
 #include "Epetra_Object.h"
 class Epetra_Map;
 class Epetra_BlockMap;
@@ -61,7 +62,7 @@ appear on multiple processors.
   Epetra_Util is a serial interface only.  This is appropriate since the standard 
   utilities are only specified for serial execution (or shared memory parallel).
 */
-class Epetra_Util {
+class EPETRA_LIB_DLL_EXPORT Epetra_Util {
     
   public:
   //! Epetra_Util Constructor.

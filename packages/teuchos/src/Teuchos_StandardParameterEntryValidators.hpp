@@ -424,7 +424,7 @@ verbosityLevelParameterEntryValidator(std::string const& defaultParameterName);
  * Having a single definition for the types of valids input and outputs for a
  * parameter value makes it easier to write error-free validated code.
  */
-class AnyNumberParameterEntryValidator : public ParameterEntryValidator {
+class TEUCHOS_LIB_DLL_EXPORT AnyNumberParameterEntryValidator : public ParameterEntryValidator {
 public:
 
   /** \name Public types */
@@ -573,8 +573,13 @@ private:
   // Private data members
 
   EPreferredType preferredType_;
-  const AcceptedTypes acceptedTypes_;
   std::string acceptedTypesString_;
+
+//use pragmas to disable some false-positive warnings for windows sharedlibs export
+#pragma warning(push)
+#pragma warning(disable:4251)
+  const AcceptedTypes acceptedTypes_;
+#pragma warning(pop)
 
   // ////////////////////////////
   // Private member functions
@@ -597,7 +602,7 @@ private:
  *
  * \relates AnyNumberParameterEntryValidator
  */
-RCP<AnyNumberParameterEntryValidator>
+TEUCHOS_LIB_DLL_EXPORT RCP<AnyNumberParameterEntryValidator>
 anyNumberParameterEntryValidator(
   AnyNumberParameterEntryValidator::EPreferredType const preferredType,
   AnyNumberParameterEntryValidator::AcceptedTypes const& acceptedTypes
@@ -609,7 +614,7 @@ anyNumberParameterEntryValidator(
  *
  * \relates ParameterList
  */
-void setIntParameter(
+TEUCHOS_LIB_DLL_EXPORT void setIntParameter(
   std::string const& paramName,
   int const value, std::string const& docString,
   ParameterList *paramList,
@@ -623,7 +628,7 @@ void setIntParameter(
  *
  * \relates ParameterList
  */
-void setDoubleParameter(
+TEUCHOS_LIB_DLL_EXPORT void setDoubleParameter(
   std::string const& paramName,
   double const& value, std::string const& docString,
   ParameterList *paramList,
@@ -637,7 +642,7 @@ void setDoubleParameter(
  *
  * \relates ParameterList
  */
-void setNumericStringParameter(
+TEUCHOS_LIB_DLL_EXPORT void setNumericStringParameter(
   std::string const& paramName,
   std::string const& value, std::string const& docString,
   ParameterList *paramList,
@@ -660,7 +665,7 @@ void setNumericStringParameter(
  *
  * \relates ParameterList
  */
-int getIntParameter(
+TEUCHOS_LIB_DLL_EXPORT int getIntParameter(
   ParameterList const& paramList, std::string const& paramName
   );
 
@@ -679,7 +684,7 @@ int getIntParameter(
  *
  * \relates ParameterList
  */
-double getDoubleParameter(
+TEUCHOS_LIB_DLL_EXPORT double getDoubleParameter(
   ParameterList const& paramList,
   std::string const& paramName
   );
@@ -699,7 +704,7 @@ double getDoubleParameter(
  *
  * \relates ParameterList
  */
-std::string getNumericStringParameter(
+TEUCHOS_LIB_DLL_EXPORT std::string getNumericStringParameter(
   ParameterList const& paramList,
   std::string const& paramName
   );
