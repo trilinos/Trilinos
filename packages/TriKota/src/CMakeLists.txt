@@ -39,12 +39,16 @@ FILE(MAKE_DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota)
 IF(NOT ${PACKAGE_NAME}_ENABLE_DakotaReconfigure 
   AND EXISTS ${PACKAGE_BINARY_DIR}/Dakota/dakota_config.h)
 
+SET(TriKota_Rebuild_Dakota OFF)
+
 EXECUTE_PROCESS(
   COMMAND echo "   TriKota: Dakota already configured, skipping reconfigure."
   WORKING_DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota
 )
 
 ELSE()
+
+SET(TriKota_Rebuild_Dakota ON)
 
 EXECUTE_PROCESS(
   COMMAND echo "-->TriKota: Launching Dakota configure script -- takes several minutes."
@@ -78,6 +82,8 @@ ENDIF()
 #   have been causing problems by being launched within
 #   another make -j 4 at the Trilinos level
 
+IF(TriKota_Rebuild_Dakota)
+
 ADD_CUSTOM_TARGET( TriKota_Dakota_libs ALL
    COMMAND make -j4
    WORKING_DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota
@@ -90,6 +96,8 @@ ADD_CUSTOM_TARGET( TriKota_Dakota_install ALL
 
 ## Make must finish before make install, for ampl
 ADD_DEPENDENCIES(TriKota_Dakota_install  TriKota_Dakota_libs)
+
+ENDIF()
 
 #
 # Build the TriKota library
@@ -146,7 +154,12 @@ PACKAGE_ADD_LIBRARY(
   SOURCES ${SOURCES}
   IMPORTEDLIBS ${DAKOTA_LIBS}
   )
+
+IF(TriKota_Rebuild_Dakota)
+
 ADD_DEPENDENCIES(trikota TriKota_Dakota_install)
+
+ENDIF()
 
 # Custom "make install" command to copy contents of Dakota lib&include
 INSTALL(DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota/install/lib/ DESTINATION lib)
