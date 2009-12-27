@@ -154,7 +154,7 @@ bool operator>=( const Array<T> &a1, const Array<T> &a2 );
  * Array derive from ArrayView results in faster and simpler code at the
  * expense of the compiler refusing the make implicit conversions in some
  * cases when calling template functions.  Such conversion problems can always
- * be dealt with by using explicit templat arguments.
+ * be dealt with by using explicit template arguments.
  *
  * \ingroup teuchos_mem_mng_grp
  */
