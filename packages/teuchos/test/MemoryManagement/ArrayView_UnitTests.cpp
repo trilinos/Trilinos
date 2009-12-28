@@ -54,8 +54,8 @@ TEUCHOS_UNIT_TEST( ArrayView, av_const_cast )
   ArrayView<const int> av_int1 = arcp_int();
   ArrayView<int> av_int2 = av_const_cast<int>(av_int1);
   TEST_ASSERT(nonnull(av_int2));
-  TEST_EQUALITY(av_int1.getRawPtr(), av_int2.getRawPtr());
-  TEST_COMPARE_ARRAYS(av_int2, arcp_int);
+  TEST_EQUALITY(av_int2.getRawPtr(), av_int1.getRawPtr());
+  TEST_EQUALITY(av_int2.getRawPtr(), arcp_int.getRawPtr());
 }
 
 
