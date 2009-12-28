@@ -23,6 +23,10 @@ been changed to Teuchos_Ordinal to be consistent with Teuchos::Array.
 - The size_type typedef in Teuchos::Range1D has been changed to
 Teuchos_Ordinal.
 
+- Removed Teuchos_exit.h with the TEUCHOS_EXIT(...) macros.  These were a bad
+idea and where never used in Trilinos.  Hopefully no external Trilinos user
+made use of these either.
+
 
 Trilinos 10.0:
 --------------
