@@ -766,6 +766,44 @@ TEUCHOS_UNIT_TEST( RCP, invertObjectOwnership_remove_A )
 }
 
 
+RCP<A> createRCPWithBadDealloc()
+{
+  return rcp(new A[1]); // Will use delete but should use delete []!
+}
+
+
+template<typename T>
+class DeallocArrayDeleteExtraData {
+public:
+  static RCP<DeallocArrayDeleteExtraData<T> > create(T *ptr)
+    { return rcp(new DeallocArrayDeleteExtraData(ptr)); }
+  ~DeallocArrayDeleteExtraData() { delete [] ptr_; }
+private:
+  T *ptr_;
+  DeallocArrayDeleteExtraData(T *ptr) : ptr_(ptr) {}
+  // Not defined!
+  DeallocArrayDeleteExtraData();
+  DeallocArrayDeleteExtraData(const DeallocArrayDeleteExtraData&);
+  DeallocArrayDeleteExtraData& operator=(const DeallocArrayDeleteExtraData&);
+};
+
+
+// This unit test shows how you can use extra data to fix a bad deallocation
+// policy
+TEUCHOS_UNIT_TEST( RCP, Fix_createRCPWithBadDealloc )
+{
+  using Teuchos::inOutArg;
+  using Teuchos::set_extra_data;
+  // Create object with bad deallocator
+  RCP<A> a = createRCPWithBadDealloc();
+  TEST_ASSERT(nonnull(a));
+  // Disable default (incorrect) dealloc and set a new deallocation policy as extra data!
+  a.release();
+  set_extra_data( DeallocArrayDeleteExtraData<A>::create(a.getRawPtr()), "dealloc",
+    inOutArg(a));
+}
+
+
 //
 // Template Instantiations
 //
