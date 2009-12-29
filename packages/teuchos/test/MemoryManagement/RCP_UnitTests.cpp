@@ -33,6 +33,7 @@ using Teuchos::DuplicateOwningRCPError;
 using Teuchos::RCP_STRONG;
 using Teuchos::RCP_WEAK;
 using Teuchos::RCP_STRENGTH_INVALID;
+using Teuchos::RCPNodeTracer;
 
 
 TEUCHOS_UNIT_TEST( DeallocNull, free )
@@ -102,7 +103,7 @@ TEUCHOS_UNIT_TEST( RCP, rcpFromRef_from_rcp )
   RCP<A> a_rcp1 = rcp<A>(new A);
   RCP<A> a_rcp2 = rcpFromRef(*a_rcp1);
   TEST_EQUALITY(a_rcp2.getRawPtr(), a_rcp1.getRawPtr());
-  if (Teuchos::isTracingActiveRCPNodes())
+  if (RCPNodeTracer::isTracingActiveRCPNodes())
   {
     TEST_EQUALITY_CONST(a_rcp2.strong_count(), 1);
     TEST_EQUALITY_CONST(a_rcp2.weak_count(), 1);

@@ -48,9 +48,9 @@ Teuchos::rcp( const boost::shared_ptr<T> &sptr )
     // Second, see if the an RCP node pointing to this type already exists
     // from being wrapped already from a prior call to this function where the
     // add_new_RCPNode(...) function could have been called already!.
-    RCPNode* existing_RCPNode = get_existing_RCPNode(sptr.get());
-    if (existing_RCPNode) {
-      return RCP<T>(sptr.get(), RCPNodeHandle(existing_RCPNode, RCP_STRONG, false));
+    RCPNode* existingRCPNode = RCPNodeTracer::getExistingRCPNode(sptr.get());
+    if (existingRCPNode) {
+      return RCP<T>(sptr.get(), RCPNodeHandle(existingRCPNode, RCP_STRONG, false));
     }
 #endif
     // Lastly, we just create a new RCP and RCPNode ...

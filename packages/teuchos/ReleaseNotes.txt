@@ -27,6 +27,11 @@ Teuchos_Ordinal.
 idea and where never used in Trilinos.  Hopefully no external Trilinos user
 made use of these either.
 
+- Non-member functions related to RCPNode tracing have been collected into a
+new static class Teuchos::RCPNodeTracer.  Given that no user code should ever
+be calling these functions in production code this should not affect most
+users.
+
 
 Trilinos 10.0:
 --------------

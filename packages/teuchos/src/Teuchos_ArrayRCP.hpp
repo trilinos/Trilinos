@@ -99,7 +99,7 @@ ArrayRCP<T>::ArrayRCP(
   if (p) {
     RCPNode* existing_RCPNode = 0;
     if (!has_ownership_in) {
-      existing_RCPNode = get_existing_RCPNode(p);
+      existing_RCPNode = RCPNodeTracer::getExistingRCPNode(p);
     }
     if (existing_RCPNode) {
       // Will not call add_new_RCPNode(...)

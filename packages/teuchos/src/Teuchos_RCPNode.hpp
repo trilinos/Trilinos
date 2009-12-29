@@ -66,7 +66,11 @@ enum ERCPStrength { RCP_STRENGTH_INVALID=0, RCP_STRONG, RCP_WEAK };
 // uninitialized memory that just happens to be zero! (see Code Complete: 2nd
 // Edition)
 
-
+/** \brief Traits class specialization for <tt>toString(...)</tt> function for
+ * converting from <tt>ERCPStrength</tt> to <tt>std::string</tt>.
+ *
+ * \ingroup teuchos_mem_mng_grp 
+ */
 template<>
 class TEUCHOS_LIB_DLL_EXPORT ToStringTraits<ERCPStrength> {
 public:
@@ -240,191 +244,154 @@ private:
 };
 
 
-/** \brief Deletes and RCPNode and its object in case of a throw.
- *
- * This class is used in contexts where add_new_RCPNode(...) might thrown an
- * exception for a duplicate node being added.  The assumption is that there
- * must already be an owning (or non-owning) RCP object that will delete the
- * underlying object and therefore this class should *not* call delete_obj()!
- */
-class TEUCHOS_LIB_DLL_EXPORT RCPNodeThrowDeleter {
-public:
-  /** \brief . */
-  RCPNodeThrowDeleter(RCPNode *node)
-    : node_(node)
-    {}
-  /** \brief Called with node_!=0 when an exception is thrown.
-   *
-   * When an exception is not thrown, the client should have called release()
-   * before this function is called.
-   */
-  ~RCPNodeThrowDeleter()
-    {
-      if (node_) {
-        node_->has_ownership(false); // Avoid actually deleting ptr_
-        node_->delete_obj(); // Sets the pointer ptr_=0 to allow RCPNode delete
-        delete node_;
-      }
-    }
-  /** \brief . */
-  RCPNode* get() const
-    {
-      return node_;
-    }
-  /** \brief Releaes the RCPNode pointer before the destructor is called. */
-  void release()
-    {
-      node_ = 0;
-    }
-private:
-  RCPNode *node_;
-  RCPNodeThrowDeleter(); // Not defined
-  RCPNodeThrowDeleter(const RCPNodeThrowDeleter&); // Not defined
-  RCPNodeThrowDeleter& operator=(const RCPNodeThrowDeleter&); // Not defined
-};
-
-
-/** \brief get the const void* key for an RCPNode given its embedded object
- * typed pointer.
- *
- * \returns 0 of p == 0
+/** \brief Throw that a pointer passed into an RCP object is null.
  *
  * \relates RCPNode
  */
-template<class T>
-const void* getRCPNodeBaseObjMapKeyVoidPtr(T *p)
-{
+void throw_null_ptr_error( const std::string &type_name );
+
+
+/** \brief Debug-mode RCPNode tracing class.
+ *
+ * This is a static class that is used to trace all RCP nodes that are created
+ * and destroyed and to look-up RCPNodes given an an object's address.  This
+ * database is used for several different types of debug-mode runtime checking
+ * including a) the detection of cicular references, b) detecting the creation
+ * of duplicate owning RCPNode objects for the same reference-counted object,
+ * and c) to create weak RCP objects for existing RCPNode objects.
+ *
+ * This is primarily an internal implementation class but there are a few
+ * functions (maked as such below) that can be called by general users to turn
+ * on and off node tracing and to print the active RCPNode objects at any
+ * time.
+ *
+ * \ingroup teuchos_mem_mng_grp 
+ */
+class RCPNodeTracer {
+public:
+
+  /** \name General user functions (can be called by any client) */
+  //@{
+
+  /** \brief Return if we are tracing active nodes or not.
+   *
+   * NOTE: This will always return <tt>false</tt> when <tt>TEUCHOS_DEBUG</tt> is
+   * not defined.
+   */
+  static TEUCHOS_LIB_DLL_EXPORT bool isTracingActiveRCPNodes();
+
+#if defined(TEUCHOS_DEBUG) && !defined(HAVE_TEUCHOS_DEBUG_RCP_NODE_TRACING)
+  /** \brief Set if will be tracing active RCP nodes.
+   *
+   * This will only cause tracing of RCPNode-based objects that are created
+   * after this has been called with <tt>true</tt>.  This function can later be
+   * called with <tt>false</tt> to turn off tracing RCPNode objects.  This can
+   * allow the client to keep track of RCPNode objects that get created in
+   * specific blocks of code and can help as a debugging aid.
+   *
+   * NOTE: This function call will not even compile unless
+   * <tt>defined(TEUCHOS_DEBUG) &&
+   * !defined(HAVE_TEUCHOS_DEBUG_RCP_NODE_TRACING)<tt>.  This occurs when
+   * Teuchos is configured with <tt>Teuchos_ENABLE_DEBUG=ON</tt> but with
+   * <tt>Teuchos_ENABLE_DEBUG_RCP_NODE_TRACING=OFF</tt>.  The motivation for
+   * this logic is that if debug support is not enabled, then node tracing can
+   * not be enbled.  If node tracing is turned on at configure time then there
+   * is no sense in trying to turn it on or off.
+   */
+  static void TEUCHOS_LIB_DLL_EXPORT setTracingActiveRCPNodes(bool tracingActiveNodes);
+#endif
+
+  /** \brief Print the number of active RCPNode objects being tracked. */
+  static int TEUCHOS_LIB_DLL_EXPORT numActiveRCPNodes();
+
+  /** \brief Print the list of currently active RCP nodes.
+   *
+   * When the macro <tt>TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE</tt> is
+   * defined, this function will print out all of the RCP nodes that are
+   * currently active.  This function can be called at any time during a
+   * program.
+   *
+   * When the macro <tt>TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE</tt> is
+   * defined this function will get called automatically after the program ends
+   * and all of the local and global RCP objects have been destroyed.  If any
+   * RCP nodes are printed at that time, then this is an indication that there
+   * may be some circular references that will caused memory leaks.  You memory
+   * checking tool such as valgrind or purify should complain about this!
+   */
+  static TEUCHOS_LIB_DLL_EXPORT void printActiveRCPNodes(std::ostream &out);
+
+  //@}
+
+  /** \name Internal implementation functions (not to be called by general
+   * clients).
+   */
+  //@{
+
+  /** \brief Add new RCPNode to the global list.
+   *
+   * Only gets called when RCPNode tracing has been activated.
+   */
+  static TEUCHOS_LIB_DLL_EXPORT void addNewRCPNode(RCPNode* rcp_node,
+    const std::string &info );
+
+  /** \brief Remove an RCPNode from global list.
+   *
+   * Always gets called in a debug build (<tt>TEUCHOS_DEBUG</tt> defined) when
+   * node tracing is enabled.
+   */
+  static TEUCHOS_LIB_DLL_EXPORT void removeRCPNode( RCPNode* rcp_node );
+
+  /** \brief Get a <tt>const void*</tt> address to be used as the lookup key
+   * for an RCPNode given its embedded object's typed pointer.
+   *
+   * This only returns the base address reliabily for all types if
+   * <tt>HAS_TEUCHOS_GET_BASE_OBJ_VOID_PTR</tt> is defined.
+   *
+   * \returns <tt>0</tt> if <tt>p == 0</tt>.
+   */
+  template<class T>
+  static const void* getRCPNodeBaseObjMapKeyVoidPtr(T *p)
+    {
 #ifdef HAS_TEUCHOS_GET_BASE_OBJ_VOID_PTR
-  return getBaseObjVoidPtr(p);
+      return getBaseObjVoidPtr(p);
 #else
       // This will not return the base address for polymorphic types if
       // multiple inheritance and/or virtual bases are used but returning the
       // static_cast should be okay in how it is used.  It is just that the
       // RCPNode tracing support will not always be able to figure out if two
       // pointers of different type are pointing to the same object or not.
-  return static_cast<const void*>(p);
+      return static_cast<const void*>(p);
 #endif
-}
+    }
 
+  /** \brief Return a raw pointer to an existing RCPNode given its lookup key.
+   *
+   * \returns <tt>returnVal != 0</tt> if exists, <tt>0</tt> otherwsise.
+   */
+  static TEUCHOS_LIB_DLL_EXPORT RCPNode* getExistingRCPNodeGivenLookupKey(
+    const void* lookupKey);
 
-/** \brief Add new RCP to global list.
- *
- * Only gets called when RCPNode tracing has been activated.
- *
- * \relates RCPNode
- */
-TEUCHOS_LIB_DLL_EXPORT void add_new_RCPNode( RCPNode* rcp_node, const std::string &info );
+  /** \brief Return a raw pointer to an existing RCPNode given object if it
+   * exits.
+   *
+   * \returns <tt>returnVal != 0</tt> if exists, <tt>0</tt> otherwsise.
+   */
+  template<class T>
+  static RCPNode* getExistingRCPNode(T *p)
+    {
+      return getExistingRCPNodeGivenLookupKey(getRCPNodeBaseObjMapKeyVoidPtr(p));
+    }
 
+  /** \brief Exposed to be used in unit testing. */
+  static TEUCHOS_LIB_DLL_EXPORT int getAddNewRCPNodeCallNumber();
 
-TEUCHOS_LIB_DLL_EXPORT int get_add_new_RCPNode_call_number();
+  //@}
 
-
-/** \brief Remove RCP from global list.
- *
- * Always gets called in a debug build (TEUCHOS_DEBUG defined).
- *
- * \relates RCPNode
- */
-TEUCHOS_LIB_DLL_EXPORT void remove_RCPNode( RCPNode* rcp_node );
-
-
-/** \brief Return an raw existing RCPNode for a given its lookup key.
- *
- * \returns returnVal != 0 if exists, 0 otherwsise.
- *
- * \relates RCPNode
- */
-TEUCHOS_LIB_DLL_EXPORT RCPNode* get_existing_RCPNodeGivenLookupKey(const void* lookupKey);
-
-
-/** \brief Return an raw existing RCPNode for a given object if it exits.
- *
- * \returns returnVal != 0 if exists, 0 otherwsise.
- *
- * \relates RCPNode
- */
-template<class T>
-RCPNode* get_existing_RCPNode(T *p)
-{
-  return get_existing_RCPNodeGivenLookupKey(getRCPNodeBaseObjMapKeyVoidPtr(p));
-}
-
-
-/** \brief Print global list on destruction.
- *
- * \ingroup teuchos_mem_mng_grp
- */
-class TEUCHOS_LIB_DLL_EXPORT ActiveRCPNodesSetup {
-public:
-  /** \brief . */
-  ActiveRCPNodesSetup();
-  /** \brief . */
-  ~ActiveRCPNodesSetup();
-  /** \brief . */
-  void foo();
-private:
-  static int count_;
 };
 
 
-/** \brief Return if we are tracing active nodes or not.
- *
- * NOTE: This will always return <tt>false</tt> when <tt>TEUCHOS_DEBUG</tt> is
- * not defined.
- *
- * \relates RCPNode
- */
-TEUCHOS_LIB_DLL_EXPORT bool isTracingActiveRCPNodes();
-
-
-#ifdef TEUCHOS_DEBUG
-
-/** \brief Set if we should be tracing active RCP nodes.
- *
- * This will only cause tracing of RCPNode-based objects that are created
- * after this has been called with <tt>true</tt>.  This function can later be
- * called with <tt>false</tt> to turn off tracing RCPNode objects.  This can
- * allow the client to keep track of RCPNode objects that get created in
- * specific blocks of code and can help as a debugging aid.
- *
- * NOTE: This function call will not even compile unless
- * <tt>TEUCHOS_DEBUG</tt> is defined!
- *
- * \relates RCPNode
- */
-void TEUCHOS_LIB_DLL_EXPORT setTracingActiveRCPNodes(bool tracingActiveNodes);
-
-#endif // TEUCHOS_DEBUG
-
-
-/** \brief Print the number of active RCPNode objects being tracked. */
-int TEUCHOS_LIB_DLL_EXPORT numActiveRCPNodes();
-
-
-/** \brief Print the list of currently active RCP nodes.
- *
- * When the macro <tt>TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE</tt> is
- * defined, this function will print out all of the RCP nodes that are
- * currently active.  This function can be called at any time during a
- * program.
- *
- * When the macro <tt>TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE</tt> is
- * defined this function will get called automatically after the program ends
- * and all of the local and global RCP objects have been destroyed.  If any
- * RCP nodes are printed at that time, then this is an indication that there
- * may be some circular references that will caused memory leaks.  You memory
- * checking tool such as valgrind or purify should complain about this!
- *
- * \relates RCPNode
- */
-TEUCHOS_LIB_DLL_EXPORT void printActiveRCPNodes(std::ostream &out);
-
-
-/** \brief Throw that a pointer passed into an RCP object is null. */
-void throw_null_ptr_error( const std::string &type_name );
-
-
-/** \brief Implementation class for actually deleting the object.
+/** \brief Templated implementation class of <tt>RCPNode</tt> that has the
+ * responsibility for deleting the reference-counted object.
  *
  * \ingroup teuchos_mem_mng_grp 
  */
@@ -435,7 +402,7 @@ public:
   RCPNodeTmpl(T* p, Dealloc_T dealloc, bool has_ownership_in)
     : RCPNode(has_ownership_in), ptr_(p),
 #ifdef TEUCHOS_DEBUG
-      base_obj_map_key_void_ptr_(getRCPNodeBaseObjMapKeyVoidPtr(p)),
+      base_obj_map_key_void_ptr_(RCPNodeTracer::getRCPNodeBaseObjMapKeyVoidPtr(p)),
       deleted_ptr_(0),
 #endif
       dealloc_(dealloc)
@@ -586,14 +553,36 @@ private:
 }; // end class RCPNodeTmpl<T>
 
 
+/** \brief Sets up node tracing and prints remaining RCPNodes on destruction.
+ *
+ * This class is used by automataic code that sets up support for RCPNode
+ * tracing and for printing of remaining nodes on destruction.
+ *
+ * \ingroup teuchos_mem_mng_grp
+ */
+class TEUCHOS_LIB_DLL_EXPORT ActiveRCPNodesSetup {
+public:
+  /** \brief . */
+  ActiveRCPNodesSetup();
+  /** \brief . */
+  ~ActiveRCPNodesSetup();
+  /** \brief . */
+  void foo();
+private:
+  static int count_;
+};
+
+
 } // namespace Teuchos
 
 
 namespace {
-// This static variable should be delcared before all other static variables
-// that depend on RCP or other classes. Therefore, this static varaible should
-// be deleted *after* all of these other static variables that depend on RCP
-// or created classes go away!
+// This static variable is delcared before all other static variables that
+// depend on RCP or other classes. Therefore, this static varaible will be
+// deleted *after* all of these other static variables that depend on RCP or
+// created classes go away!  This ensures that the node tracing machinery is
+// setup and torn down correctly (this is the same trick used by the standard
+// stream objects in many compiler implementations).
 Teuchos::ActiveRCPNodesSetup local_activeRCPNodesSetup;
 } // namespace
 
@@ -613,6 +602,8 @@ namespace Teuchos {
  * the wrapped RCPNode pointer is null.  Secound, I can't use one of the
  * smart-pointer classes because this class is used to implement all of those
  * smart-pointer classes!
+ *
+ * \ingroup teuchos_mem_mng_grp 
  */
 class RCPNodeHandle {
 public:
@@ -634,12 +625,12 @@ public:
       // Add the node if this is the first RCPNodeHandle to get it.  We have
       // to add it because unbind() will call the remove_RCPNode(...) function
       // and it needs to match when node tracing is on from the beginning.
-      if (isTracingActiveRCPNodes() && newNode)
+      if (RCPNodeTracer::isTracingActiveRCPNodes() && newNode)
       {
         std::ostringstream os;
         os << "{T=Unknown, ConcreteT=Unknown, p=Unknown,"
            << " has_ownership="<<node_->has_ownership()<<"}";
-        add_new_RCPNode(node_, os.str());
+        RCPNodeTracer::addNewRCPNode(node_, os.str());
       }
 #endif
     }
@@ -655,12 +646,12 @@ public:
       TEUCHOS_ASSERT(strength_in == RCP_STRONG); // Can't handle weak yet!
       TEUCHOS_ASSERT(node_);
       bind();
-      if (isTracingActiveRCPNodes()) {
+      if (RCPNodeTracer::isTracingActiveRCPNodes()) {
         std::ostringstream os;
         os << "{T="<<T_name<<", ConcreteT="<< ConcreteT_name
            <<", p="<<static_cast<const void*>(p)
            <<", has_ownership="<<has_ownership_in<<"}";
-        add_new_RCPNode(node_, os.str());
+        RCPNodeTracer::addNewRCPNode(node_, os.str());
       }
     }
 #endif // TEUCHOS_DEBUG
@@ -868,9 +859,54 @@ private:
 inline
 std::ostream& operator<<(std::ostream& out, const RCPNodeHandle& node)
 {
-  out << node.node_ptr();
-  return out;
+  return (out << node.node_ptr());
 }
+
+
+/** \brief Deletes a (non-owning) RCPNode but not it's underlying object in
+ * case of a throw.
+ *
+ * This class is used in contexts where RCPNodeTracer::addNewRCPNode(...) 
+ * might thrown an exception for a duplicate node being added.  The assumption
+ * is that there must already be an owning (or non-owning) RCP object that
+ * will delete the underlying object and therefore this class should *not*
+ * call delete_obj()!
+ */
+class TEUCHOS_LIB_DLL_EXPORT RCPNodeThrowDeleter {
+public:
+  /** \brief . */
+  RCPNodeThrowDeleter(RCPNode *node)
+    : node_(node)
+    {}
+  /** \brief Called with node_!=0 when an exception is thrown.
+   *
+   * When an exception is not thrown, the client should have called release()
+   * before this function is called.
+   */
+  ~RCPNodeThrowDeleter()
+    {
+      if (node_) {
+        node_->has_ownership(false); // Avoid actually deleting ptr_
+        node_->delete_obj(); // Sets the pointer ptr_=0 to allow RCPNode delete
+        delete node_;
+      }
+    }
+  /** \brief . */
+  RCPNode* get() const
+    {
+      return node_;
+    }
+  /** \brief Releaes the RCPNode pointer before the destructor is called. */
+  void release()
+    {
+      node_ = 0;
+    }
+private:
+  RCPNode *node_;
+  RCPNodeThrowDeleter(); // Not defined
+  RCPNodeThrowDeleter(const RCPNodeThrowDeleter&); // Not defined
+  RCPNodeThrowDeleter& operator=(const RCPNodeThrowDeleter&); // Not defined
+};
 
 
 //
@@ -878,22 +914,23 @@ std::ostream& operator<<(std::ostream& out, const RCPNodeHandle& node)
 //
 
 
-#ifdef TEUCHOS_DEBUG
+#if defined(TEUCHOS_DEBUG) && !defined(HAVE_TEUCHOS_DEBUG_RCP_NODE_TRACING)
+
 class SetTracingActiveNodesStack {
 public: 
   SetTracingActiveNodesStack()
-    {setTracingActiveRCPNodes(true);}
+    {RCPNodeTracer::setTracingActiveRCPNodes(true);}
   ~SetTracingActiveNodesStack()
-    {setTracingActiveRCPNodes(false);}
+    {RCPNodeTracer::setTracingActiveRCPNodes(false);}
 };
-#endif // TEUCHOS_DEBUG
 
-
-#if defined(TEUCHOS_DEBUG) && !defined(HAVE_TEUCHOS_DEBUG_RCP_NODE_TRACING)
 #  define SET_RCPNODE_TRACING() Teuchos::SetTracingActiveNodesStack setTracingActiveNodesStack;
+
 #else
+
 #  define SET_RCPNODE_TRACING() (void)0
-#endif
+
+#endif //  defined(TEUCHOS_DEBUG) && !defined(HAVE_TEUCHOS_DEBUG_RCP_NODE_TRACING)
 
 
 } // end namespace Teuchos

@@ -74,7 +74,7 @@ RCP<T>::RCP( T* p, ERCPWeakNoDealloc )
 {
 #ifdef TEUCHOS_DEBUG
   if (p) {
-    RCPNode* existing_RCPNode = get_existing_RCPNode(p);
+    RCPNode* existing_RCPNode = RCPNodeTracer::getExistingRCPNode(p);
     if (existing_RCPNode) {
       // Will not call add_new_RCPNode(...)
       node_ = RCPNodeHandle(existing_RCPNode, RCP_WEAK, false);
@@ -112,7 +112,7 @@ RCP<T>::RCP( T* p, bool has_ownership_in )
   if (p) {
     RCPNode* existing_RCPNode = 0;
     if (!has_ownership_in) {
-      existing_RCPNode = get_existing_RCPNode(p);
+      existing_RCPNode = RCPNodeTracer::getExistingRCPNode(p);
     }
     if (existing_RCPNode) {
       // Will not call add_new_RCPNode(...)
