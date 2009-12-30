@@ -292,15 +292,24 @@ void RCPNodeTracer::addNewRCPNode( RCPNode* rcp_node, const std::string &info )
     typedef std::pair<itr_t, itr_t> itr_itr_t;
     const itr_itr_t itr_itr = rcp_node_list->equal_range(map_key_void_ptr);
     const bool rcp_node_already_exists = itr_itr.first != itr_itr.second;
+    RCPNode *previous_rcp_node = 0;
+    bool previous_rcp_node_has_ownership = false;
+    for (itr_t itr = itr_itr.first; itr != itr_itr.second; ++itr) {
+      previous_rcp_node = itr->second.nodePtr;
+      if (previous_rcp_node->has_ownership()) {
+        previous_rcp_node_has_ownership = true;
+        break;
+      }
+    }
     TEST_FOR_EXCEPTION(
-      rcp_node_already_exists && rcp_node->has_ownership(),
+      rcp_node_already_exists && rcp_node->has_ownership() && previous_rcp_node_has_ownership,
       DuplicateOwningRCPError,
       "RCPNodeTracer::addNewRCPNode(node_ptr): Error, the client is trying to create a new\n"
       "RCPNode object to an existing managed object in another RCPNode:\n"
       "\n"
       "  New " << convertRCPNodeToString(rcp_node) << "\n"
       "\n"
-      "  Existing " << convertRCPNodeToString(itr_itr.first->second.nodePtr) << "\n"
+      "  Existing " << convertRCPNodeToString(previous_rcp_node) << "\n"
       "\n"
       "  Number current nodes = " << rcp_node_list->size() << "\n"
       "\n"
@@ -400,8 +409,12 @@ RCPNode* RCPNodeTracer::getExistingRCPNodeGivenLookupKey(const void* p)
   if (!p)
     return 0;
   const itr_itr_t itr_itr = rcp_node_list->equal_range(p);
-  if (itr_itr.first != itr_itr.second)
-    return itr_itr.first->second.nodePtr;
+  for (itr_t itr = itr_itr.first; itr != itr_itr.second; ++itr) {
+    RCPNode* rcpNode = itr->second.nodePtr;
+    if (rcpNode->has_ownership()) {
+      return rcpNode;
+    }
+  }
   return 0;
   // NOTE: Above, we return the first RCPNode added that has the given key
   // value.  

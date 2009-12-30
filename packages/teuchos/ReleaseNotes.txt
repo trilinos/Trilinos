@@ -7,6 +7,12 @@ Release Notes for Trilinos Package Teuchos
 Trilinos 10.2:
 --------------
 
+
+(*) Default debug enable of RCP node tracing: Setting Teuchos_ENABLE_DEBUG=ON
+now sets Teuchos_ENABLE_DEBUG_RCP_NODE_TRACING=ON by default.  This is a more
+strict type of checking that will catch more errors.
+
+
 (*) Known breaks in backward compatibility:
 
 - The type Teuchos_Ordinal has been changed from int to ptrdiff_t by default.

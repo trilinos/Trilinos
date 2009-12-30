@@ -141,7 +141,7 @@ TEUCHOS_UNIT_TEST( RCPNodeHandle, add_New_RCPNode_add_owning_twice_error )
 }
 
 
-TEUCHOS_UNIT_TEST( RCPNodeHandle, add_New_RCPNode_add_nonowning_twice_okay )
+TEUCHOS_UNIT_TEST( RCPNodeHandle, add_New_RCPNode_add_nonowning_twice_okay_1 )
 {
   SET_RCPNODE_TRACING();
   A *a_ptr = new A;
@@ -152,6 +152,28 @@ TEUCHOS_UNIT_TEST( RCPNodeHandle, add_New_RCPNode_add_nonowning_twice_okay )
   RCPNode *node2 = basicRCPNodeNoAlloc<A>(a_ptr, false);
   ECHO(RCPNodeTracer::addNewRCPNode(node2, "dummy2"));
   TEST_EQUALITY(RCPNodeTracer::numActiveRCPNodes(), numActiveNodesBase+2);
+  TEST_EQUALITY(RCPNodeTracer::getExistingRCPNode(a_ptr), node1);
+  ECHO(RCPNodeTracer::removeRCPNode(node2));
+  deleteRCPNode(&node2);
+  TEST_EQUALITY(RCPNodeTracer::numActiveRCPNodes(), numActiveNodesBase+1);
+  ECHO(RCPNodeTracer::removeRCPNode(node1));
+  deleteRCPNode(&node1);
+  TEST_EQUALITY(RCPNodeTracer::numActiveRCPNodes(), numActiveNodesBase);
+}
+
+
+TEUCHOS_UNIT_TEST( RCPNodeHandle, add_New_RCPNode_add_nonowning_twice_okay_2 )
+{
+  SET_RCPNODE_TRACING();
+  A *a_ptr = new A;
+  RCPNode *node1 = basicRCPNodeNoAlloc<A>(a_ptr, false);
+  const int numActiveNodesBase = RCPNodeTracer::numActiveRCPNodes();
+  ECHO(RCPNodeTracer::addNewRCPNode(node1, "dummy1"));
+  TEST_EQUALITY(RCPNodeTracer::numActiveRCPNodes(), numActiveNodesBase+1);
+  RCPNode *node2 = basicRCPNodeNoAlloc<A>(a_ptr, true);
+  ECHO(RCPNodeTracer::addNewRCPNode(node2, "dummy2"));
+  TEST_EQUALITY(RCPNodeTracer::numActiveRCPNodes(), numActiveNodesBase+2);
+  TEST_EQUALITY(RCPNodeTracer::getExistingRCPNode(a_ptr), node2);
   ECHO(RCPNodeTracer::removeRCPNode(node2));
   deleteRCPNode(&node2);
   TEST_EQUALITY(RCPNodeTracer::numActiveRCPNodes(), numActiveNodesBase+1);

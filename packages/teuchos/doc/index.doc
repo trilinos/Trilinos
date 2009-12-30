@@ -108,11 +108,15 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
   allocated array memory.  This is a general replacement for a raw C++ pointer
   to handle an array.  This is only for persisting relationships.
 
-  <li> Teuchos::Array: is a templated array class similar to the STL vector,
-  but with optional very strong debug-mode runtime checking.
+  <li> Teuchos::ArrayView: Light-weight replacement for raw pointers for
+  passing arrays into functions.  This is only for non-persisting
+  relationships.
 
-  <li> Teuchos::ArrayView: A light-weight replacement for raw pointers for passing
-  arrays into functions.  This is only for non-persisting relationships.
+  <li> Teuchos::Array: Templated array class idential to the STL vector,
+  but with optional very strong debug-mode runtime checking and full
+  integration with other array types.
+
+  <li> Teuchos::Tuple: Compile-time sized array class.
 
   <li> Teuchos::ConstNonconstObjectContainer: A simple wrapper class for
   implementing the "runtime protection of const" idiom.
@@ -124,7 +128,9 @@ Teuchos must be configured with <i>--enable-teuchos-complex</i>.
   checking of reference counting including detection of circular RCPs,
   detection of duplicate owning RCPs, and detection of dangling non-owning RCPs
   can be turned on by also configuring with
-  <tt>-DTeuchos_ENABLE_DEBUG_RCP_NODE_TRACING:BOOL=ON</tt>.  Without these
+  <tt>-DTeuchos_ENABLE_DEBUG_RCP_NODE_TRACING:BOOL=ON</tt>.  Support for boost
+  must also be enabled with <tt>-DTeuchos_ENABLE_BOOST=ON</tt> in order to get
+  the strongest debug-mode runtime checking. Without these
   configure options, all of these classes are configured by default to
   be as efficient as possible.
 

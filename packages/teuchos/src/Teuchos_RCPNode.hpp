@@ -364,17 +364,20 @@ public:
 #endif
     }
 
-  /** \brief Return a raw pointer to an existing RCPNode given its lookup key.
+  /** \brief Return a raw pointer to an existing owning RCPNode given its
+   * lookup key.
    *
-   * \returns <tt>returnVal != 0</tt> if exists, <tt>0</tt> otherwsise.
+   * \returns <tt>returnVal != 0</tt> if an owning RCPNode exists, <tt>0</tt>
+   * otherwsise.
    */
   static TEUCHOS_LIB_DLL_EXPORT RCPNode* getExistingRCPNodeGivenLookupKey(
     const void* lookupKey);
 
-  /** \brief Return a raw pointer to an existing RCPNode given object if it
-   * exits.
+  /** \brief Return a raw pointer to an existing owning RCPNode given the
+   * address to the underlying object if it exits.
    *
-   * \returns <tt>returnVal != 0</tt> if exists, <tt>0</tt> otherwsise.
+   * \returns <tt>returnVal != 0</tt> if an owning RCPNode exists, <tt>0</tt>
+   * otherwsise.
    */
   template<class T>
   static RCPNode* getExistingRCPNode(T *p)
