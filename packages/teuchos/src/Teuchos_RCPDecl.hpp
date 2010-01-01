@@ -442,7 +442,7 @@ public:
    \endcode
    * and construct to <tt>NULL</tt>
    */
-  RCP( ENull null_arg = null );
+  inline RCP(ENull null_arg = null);
 
   /** \brief Construct from a raw pointer.
    *
@@ -464,7 +464,7 @@ public:
    * but only through a type-specific non-member constructor function or at
    * least through the general non-member <tt>rcp()</tt> function.
    */
-  explicit RCP( T* p, bool has_ownership = true );
+  inline explicit RCP( T* p, bool has_ownership = true );
 
   /** \brief Construct from a raw pointer and a custom deallocator.
    *
@@ -488,7 +488,7 @@ public:
    * </ul>
    */
   template<class Dealloc_T>
-  RCP( T* p, Dealloc_T dealloc, bool has_ownership );
+  inline RCP(T* p, Dealloc_T dealloc, bool has_ownership);
 
   /** \brief Initialize from another <tt>RCP<T></tt> object.
    *
@@ -507,7 +507,7 @@ public:
    * <li> If <tt>r_ptr.get() != NULL</tt> then <tt>r_ptr.strong_count()</tt> is incremented by 1
    * </ul>
    */
-  RCP(const RCP<T>& r_ptr);
+  inline RCP(const RCP<T>& r_ptr);
 
   /** \brief Initialize from another <tt>RCP<T2></tt> object (implicit conversion only).
    *
@@ -523,7 +523,7 @@ public:
    * </ul>
    */
   template<class T2>
-  RCP(const RCP<T2>& r_ptr);
+  inline RCP(const RCP<T2>& r_ptr);
 
   /** \brief Removes a reference to a dynamically allocated object and possibly deletes
    * the object if owned.
@@ -536,7 +536,7 @@ public:
    * for this shared object is deincremented by one.  If <tt>this->get() ==
    * NULL</tt> then nothing happens.
    */
-  ~RCP();
+  inline ~RCP();
 
   /** \brief Copy the pointer to the referenced object and increment the
    * reference count.
@@ -557,7 +557,7 @@ public:
    *
    * Provides the "strong guarantee" in a debug build!
    */
-  RCP<T>& operator=(const RCP<T>& r_ptr);
+  inline RCP<T>& operator=(const RCP<T>& r_ptr);
 
   /** \brief Reset the raw pointer with default ownership to delete.
    *
@@ -570,7 +570,7 @@ public:
    \endcode
    */
   template<class T2>
-  void reset(T2* p, bool has_ownership = true);
+  inline void reset(T2* p, bool has_ownership = true);
 
   //@}
 
@@ -578,7 +578,7 @@ public:
   //@{
 
   /** \brief Returns true if the underlying pointer is null. */
-  bool is_null() const;
+  inline bool is_null() const;
 
   /** \brief Pointer (<tt>-></tt>) access to members of underlying object.
    *
@@ -586,7 +586,7 @@ public:
    * <li> <tt>this->get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
    * </ul>
    */
-  T* operator->() const;
+  inline T* operator->() const;
 
   /** \brief Dereference the underlying object.
    *
@@ -594,28 +594,28 @@ public:
    * <li> <tt>this->get() != NULL</tt> (throws <tt>NullReferenceError</tt>)
    * </ul>
    */
-  T& operator*() const;
+  inline T& operator*() const;
 
   /** \brief Get the raw C++ pointer to the underlying object.
    *
    * NOTE: Prefer to get the safer Ptr<T> object from <tt>this->ptr()</tt>!
    */
-  T* get() const;
+  inline T* get() const;
 
   /** \brief Get the raw C++ pointer to the underlying object.
    *
    * NOTE: Prefer to get the safer Ptr<T> object from <tt>this->ptr()</tt>!
    */
-  T* getRawPtr() const;
+  inline T* getRawPtr() const;
 
   /** \brief Get a safer wrapper raw C++ pointer to the underlying object. */
-  Ptr<T> ptr() const;
+  inline Ptr<T> ptr() const;
 
   /** \brief Shorthand for ptr(). */
-  Ptr<T> operator()() const;
+  inline Ptr<T> operator()() const;
 
   /** \brief Return an RCP<const T> version of *this. */
-  RCP<const T> getConst() const;
+  inline RCP<const T> getConst() const;
 
   //@}
 
@@ -633,7 +633,7 @@ public:
    *     is null.
    * </ul>
    */
-  ERCPStrength strength() const;
+  inline ERCPStrength strength() const;
 
   /** \brief Return if the underlying object pointer is still valid or not.
    *
@@ -644,24 +644,24 @@ public:
    * non-null object and it is valid then <tt>!is_null() &&
    * is_valid_ptr()</tt> will be <tt>true</tt>.
    */
-  bool is_valid_ptr() const;
+  inline bool is_valid_ptr() const;
 
   /** \brief Return the number of active <tt>RCP<></tt> objects that have a
    * "strong" reference to the underlying reference-counted object.
    *
    * \return If <tt>this->get() == NULL</tt> then this function returns 0.
    */
-  int strong_count() const;
+  inline int strong_count() const;
 
   /** \brief Return the number of active <tt>RCP<></tt> objects that have a
    * "weak" reference to the underlying reference-counted object.
    *
    * \return If <tt>this->get() == NULL</tt> then this function returns 0.
    */
-  int weak_count() const;
+  inline int weak_count() const;
 
   /** \brief Total count (strong_count() + weak_count()). */
-  int total_count() const;
+  inline int total_count() const;
 
   /** \brief Give <tt>this</tt> and other <tt>RCP<></tt> objects ownership 
    * of the referenced object <tt>this->get()</tt>.
@@ -681,7 +681,7 @@ public:
    *   </ul>
    * </ul>
    */
-  void set_has_ownership();
+  inline void set_has_ownership();
 
   /** \brief Returns true if <tt>this</tt> has ownership of object pointed to
    * by <tt>this->get()</tt> in order to delete it.
@@ -693,7 +693,7 @@ public:
    * on which function was called most recently, if any; set_has_ownership()
    * (<tt>true</tt>) or release() (<tt>false</tt>).
    */
-  bool has_ownership() const;
+  inline bool has_ownership() const;
 
   /** \brief Release the ownership of the underlying dynamically allocated
    * object.
@@ -726,7 +726,7 @@ public:
    *
    * @return Returns the value of <tt>this->get()</tt>
    */
-  Ptr<T> release();
+  inline Ptr<T> release();
 
   /** \brief Create a new weak RCP object from another (strong) RCP object.
    *
@@ -744,7 +744,7 @@ public:
    * <li> <tt>returnVal.has_ownership() == this->has_ownership()</tt>
    * </ul>
    */
-  RCP<T> create_weak() const;
+  inline RCP<T> create_weak() const;
 
   /** \brief Create a new strong RCP object from another (weak) RCP object.
    *
@@ -762,7 +762,7 @@ public:
    * <li> <tt>returnVal.has_ownership() == this->has_ownership()</tt>
    * </ul>
    */
-  RCP<T> create_strong() const;
+  inline RCP<T> create_strong() const;
 
   /** \brief Returns true if the smart pointers share the same underlying
    * reference-counted object.
@@ -772,7 +772,7 @@ public:
    * same.
    */
   template<class T2>
-  bool shares_resource(const RCP<T2>& r_ptr) const;
+  inline bool shares_resource(const RCP<T2>& r_ptr) const;
 
   //@}
 
@@ -782,7 +782,7 @@ public:
   /** \brief Throws <tt>NullReferenceError</tt> if <tt>this->get()==NULL</tt>,
    * otherwise returns reference to <tt>*this</tt>.
    */
-  const RCP<T>& assert_not_null() const;
+  inline const RCP<T>& assert_not_null() const;
 
   /** \brief If the object pointer is non-null, assert that it is still valid.
    *
@@ -793,7 +793,7 @@ public:
    *
    * In this context, null is a valid object.
    */
-  const RCP<T>& assert_valid_ptr() const;
+  inline const RCP<T>& assert_valid_ptr() const;
 
   //@}
 
@@ -801,7 +801,7 @@ public:
   //@{
 
   /** \brief Returns <tt>strong_count()</tt> [deprecated]. */
-  int count() const;
+  inline int count() const;
 
   //@}
 
@@ -813,7 +813,7 @@ private:
   T *ptr_; // NULL if this pointer is null
   RCPNodeHandle node_; // NULL if this pointer is null
 
-  const RCP<T>& debug_assert_not_null() const
+  inline const RCP<T>& debug_assert_not_null() const
     {
 #ifdef TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL
       assert_not_null();
@@ -821,7 +821,7 @@ private:
       return *this;
     }
 
-  const RCP<T>& debug_assert_valid_ptr() const
+  inline const RCP<T>& debug_assert_valid_ptr() const
     {
 #ifdef TEUCHOS_DEBUG
       assert_valid_ptr();
@@ -845,7 +845,7 @@ public: // Bad bad bad
    * but only through a type-specific non-member constructor function or at
    * least through the general non-member <tt>rcpFromRef()</tt> function.
    */
-  explicit RCP( T* p, ERCPWeakNoDealloc );
+  inline explicit RCP(T* p, ERCPWeakNoDealloc);
 
   /** \brief Construct a non-owning RCP from a raw pointer to a type that is
    * *not* defined.
@@ -857,7 +857,7 @@ public: // Bad bad bad
    * but only through a type-specific non-member constructor function or at
    * least through the general non-member <tt>rcpFromUndefRef()</tt> function.
    */
-  explicit RCP( T* p, ERCPUndefinedWeakNoDealloc );
+  inline explicit RCP(T* p, ERCPUndefinedWeakNoDealloc);
 
   /** \brief Construct from a raw pointer and a custom deallocator for an
    * undefined type.
@@ -866,15 +866,16 @@ public: // Bad bad bad
    * would fail due to the type being undefined.
    */
   template<class Dealloc_T>
-  RCP( T* p, Dealloc_T dealloc, ERCPUndefinedWithDealloc, bool has_ownership = true );
+  inline RCP(T* p, Dealloc_T dealloc, ERCPUndefinedWithDealloc,
+    bool has_ownership = true);
 
 #ifndef DOXYGEN_COMPILE
 
   // WARNING: A general user should *never* call these functions!
-  RCP( T* p, const RCPNodeHandle &node);
-  T* access_private_ptr() const; // Does not throw
-  RCPNodeHandle& nonconst_access_private_node(); // Does not thorw
-  const RCPNodeHandle& access_private_node() const; // Does not thorw
+  inline RCP(T* p, const RCPNodeHandle &node);
+  inline T* access_private_ptr() const; // Does not throw
+  inline RCPNodeHandle& nonconst_access_private_node(); // Does not thorw
+  inline const RCPNodeHandle& access_private_node() const; // Does not thorw
 
 #endif
 
@@ -1105,8 +1106,8 @@ embeddedObjDeallocArrayDelete(const Embedded &embedded, EPrePostDestruction preP
  *
  * \relates RCP
  */
-template<class T>
-RCP<T> rcp( T* p, bool owns_mem = true );
+template<class T> inline
+RCP<T> rcp(T* p, bool owns_mem = true);
 
 
 /** \brief Initialize from a raw pointer with a deallocation policy.
@@ -1152,12 +1153,12 @@ RCP<T> rcp( T* p, bool owns_mem = true );
  *
  * \relates RCP
  */
-template<class T, class Dealloc_T>
-RCP<T> rcpWithDealloc( T* p, Dealloc_T dealloc, bool owns_mem = true );
+template<class T, class Dealloc_T> inline
+RCP<T> rcpWithDealloc(T* p, Dealloc_T dealloc, bool owns_mem=true);
 
 
 /** \brief Deprecated. */
-template<class T, class Dealloc_T>
+template<class T, class Dealloc_T> inline
 RCP<T> rcp( T* p, Dealloc_T dealloc, bool owns_mem )
 {
   return rcpWithDealloc(p, dealloc, owns_mem);
@@ -1175,8 +1176,8 @@ RCP<T> rcp( T* p, Dealloc_T dealloc, bool owns_mem )
  *
  * \relates RCP
  */
-template<class T, class Dealloc_T>
-RCP<T> rcpWithDeallocUndef( T* p, Dealloc_T dealloc, bool owns_mem = true );
+template<class T, class Dealloc_T> inline
+RCP<T> rcpWithDeallocUndef(T* p, Dealloc_T dealloc, bool owns_mem=true);
 
 
 /** \brief Return a non-owning weak RCP object from a raw object reference for
@@ -1188,8 +1189,8 @@ RCP<T> rcpWithDeallocUndef( T* p, Dealloc_T dealloc, bool owns_mem = true );
  *
  * \relates RCP
  */
-template<class T>
-Teuchos::RCP<T> rcpFromRef( T& r );
+template<class T> inline
+RCP<T> rcpFromRef(T& r);
 
 
 /** \brief Return a non-owning weak RCP object from a raw object reference for
@@ -1201,8 +1202,8 @@ Teuchos::RCP<T> rcpFromRef( T& r );
  *
  * \relates RCP
  */
-template<class T>
-Teuchos::RCP<T> rcpFromUndefRef( T& r );
+template<class T> inline
+RCP<T> rcpFromUndefRef(T& r);
 
 
 /* \brief Create an RCP with and also put in an embedded object.
@@ -1215,7 +1216,7 @@ Teuchos::RCP<T> rcpFromUndefRef( T& r );
  *
  * \relates RCP
  */
-template<class T, class Embedded>
+template<class T, class Embedded> inline
 RCP<T>
 rcpWithEmbeddedObjPreDestroy( T* p, const Embedded &embedded, bool owns_mem = true );
 
@@ -1230,7 +1231,7 @@ rcpWithEmbeddedObjPreDestroy( T* p, const Embedded &embedded, bool owns_mem = tr
  *
  * \relates RCP
  */
-template<class T, class Embedded>
+template<class T, class Embedded> inline
 RCP<T>
 rcpWithEmbeddedObjPostDestroy( T* p, const Embedded &embedded, bool owns_mem = true );
 
@@ -1246,7 +1247,7 @@ rcpWithEmbeddedObjPostDestroy( T* p, const Embedded &embedded, bool owns_mem = t
  *
  * \relates RCP
  */
-template<class T, class Embedded>
+template<class T, class Embedded> inline
 RCP<T>
 rcpWithEmbeddedObj( T* p, const Embedded &embedded, bool owns_mem = true );
 
@@ -1260,7 +1261,7 @@ rcpWithEmbeddedObj( T* p, const Embedded &embedded, bool owns_mem = true );
  *
  * \relates RCP
  */
-template<class T>
+template<class T> inline
 bool is_null( const RCP<T> &p );
 
 
@@ -1268,7 +1269,7 @@ bool is_null( const RCP<T> &p );
  *
  * \relates RCP
  */
-template<class T>
+template<class T> inline
 bool nonnull( const RCP<T> &p );
 
 
@@ -1276,7 +1277,7 @@ bool nonnull( const RCP<T> &p );
  *
  * \relates RCP
  */
-template<class T>
+template<class T> inline
 bool operator==( const RCP<T> &p, ENull );
 
 
@@ -1284,7 +1285,7 @@ bool operator==( const RCP<T> &p, ENull );
  *
  * \relates RCP
  */
-template<class T>
+template<class T> inline
 bool operator!=( const RCP<T> &p, ENull );
 
 
@@ -1293,7 +1294,7 @@ bool operator!=( const RCP<T> &p, ENull );
  *
  * \relates RCP
  */
-template<class T1, class T2>
+template<class T1, class T2> inline
 bool operator==( const RCP<T1> &p1, const RCP<T2> &p2 );
 
 
@@ -1302,7 +1303,7 @@ bool operator==( const RCP<T1> &p1, const RCP<T2> &p2 );
  *
  * \relates RCP
  */
-template<class T1, class T2>
+template<class T1, class T2> inline
 bool operator!=( const RCP<T1> &p1, const RCP<T2> &p2 );
 
 
@@ -1315,7 +1316,7 @@ bool operator!=( const RCP<T1> &p1, const RCP<T2> &p2 );
  *
  * \relates RCP
  */
-template<class T2, class T1>
+template<class T2, class T1> inline
 RCP<T2> rcp_implicit_cast(const RCP<T1>& p1);
 
 
@@ -1329,7 +1330,7 @@ RCP<T2> rcp_implicit_cast(const RCP<T1>& p1);
  *
  * \relates RCP
  */
-template<class T2, class T1>
+template<class T2, class T1> inline
 RCP<T2> rcp_static_cast(const RCP<T1>& p1);
 
 
@@ -1339,7 +1340,7 @@ RCP<T2> rcp_static_cast(const RCP<T1>& p1);
  *
  * \relates RCP
  */
-template<class T2, class T1>
+template<class T2, class T1> inline
 RCP<T2> rcp_const_cast(const RCP<T1>& p1);
 
 
@@ -1366,7 +1367,7 @@ RCP<T2> rcp_const_cast(const RCP<T1>& p1);
  *
  * \relates RCP
  */
-template<class T2, class T1>
+template<class T2, class T1> inline
 RCP<T2> rcp_dynamic_cast(
   const RCP<T1>& p1, bool throw_on_fail = false
   );

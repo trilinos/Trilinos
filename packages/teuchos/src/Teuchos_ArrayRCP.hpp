@@ -43,8 +43,7 @@ namespace Teuchos {
 // Helper functions
 
 
-template<class T>
-inline
+template<class T> inline
 RCPNode* ArrayRCP_createNewRCPNodeRawPtr( T* p, bool has_ownership_in )
 {
   return new RCPNodeTmpl<T,DeallocArrayDelete<T> >(
@@ -66,15 +65,13 @@ RCPNode* ArrayRCP_createNewDeallocRCPNodeRawPtr(
 // Constructors/Destructors/Initializers 
 
 
-template<class T>
-inline
+template<class T> inline
 ArrayRCP<T>::ArrayRCP( ENull )
   : ptr_(NULL), lowerOffset_(0), upperOffset_(-1)
 {}
 
 
-template<class T>
-inline
+template<class T> inline
 ArrayRCP<T>::ArrayRCP(size_type n, const T& val)
   : ptr_(0), lowerOffset_(0), upperOffset_(-1)
 {
@@ -83,8 +80,7 @@ ArrayRCP<T>::ArrayRCP(size_type n, const T& val)
 }
 
 
-template<class T>
-inline
+template<class T> inline
 ArrayRCP<T>::ArrayRCP(
   T* p, size_type lowerOffset_in, size_type upperOffset_in, bool has_ownership_in
   )
@@ -121,8 +117,8 @@ ArrayRCP<T>::ArrayRCP(
 
 
 template<class T>
-REFCOUNTPTR_INLINE
 template<class Dealloc_T>
+inline
 ArrayRCP<T>::ArrayRCP(
   T* p, size_type lowerOffset_in, size_type upperOffset_in,
   Dealloc_T dealloc, bool has_ownership_in
@@ -147,8 +143,7 @@ ArrayRCP<T>::ArrayRCP(
 }
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 ArrayRCP<T>::ArrayRCP(const ArrayRCP<T>& r_ptr)
   :ptr_(r_ptr.ptr_),
    node_(r_ptr.node_),
@@ -157,14 +152,12 @@ ArrayRCP<T>::ArrayRCP(const ArrayRCP<T>& r_ptr)
 {}
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 ArrayRCP<T>::~ArrayRCP()
 {}
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 ArrayRCP<T>& ArrayRCP<T>::operator=(const ArrayRCP<T>& r_ptr)
 {
   if( this == &r_ptr )
@@ -182,16 +175,14 @@ ArrayRCP<T>& ArrayRCP<T>::operator=(const ArrayRCP<T>& r_ptr)
 // Object/Pointer Access Functions
 
 
-template<class T>
-inline
+template<class T> inline
 bool ArrayRCP<T>::is_null() const
 {
   return ptr_ == 0;
 }
 
 
-template<class T>
-inline
+template<class T> inline
 T* ArrayRCP<T>::operator->() const
 {
   debug_assert_valid_ptr();
@@ -200,8 +191,7 @@ T* ArrayRCP<T>::operator->() const
 }
 
 
-template<class T>
-inline
+template<class T> inline
 T& ArrayRCP<T>::operator*() const
 {
   debug_assert_valid_ptr();
@@ -210,8 +200,7 @@ T& ArrayRCP<T>::operator*() const
 }
 
 
-template<class T>
-inline
+template<class T> inline
 T* ArrayRCP<T>::get() const
 {
   if(ptr_) {
@@ -222,16 +211,14 @@ T* ArrayRCP<T>::get() const
 }
 
 
-template<class T>
-inline
+template<class T> inline
 T* ArrayRCP<T>::getRawPtr() const
 {
   return this->get();
 }
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 T& ArrayRCP<T>::operator[](size_type offset) const
 {
   debug_assert_valid_ptr();
@@ -243,22 +230,18 @@ T& ArrayRCP<T>::operator[](size_type offset) const
 // Pointer Arithmetic Functions
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 ArrayRCP<T>& ArrayRCP<T>::operator++()
 {
-  if(ptr_) {
-    debug_assert_valid_ptr();
-    ++ptr_;
-    --lowerOffset_;
-    --upperOffset_;
-  }
+  debug_assert_valid_ptr();
+  ++ptr_;
+  --lowerOffset_;
+  --upperOffset_;
   return *this;
 }
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 ArrayRCP<T> ArrayRCP<T>::operator++(int)
 {
   debug_assert_valid_ptr();
@@ -268,22 +251,18 @@ ArrayRCP<T> ArrayRCP<T>::operator++(int)
 }
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 ArrayRCP<T>& ArrayRCP<T>::operator--()
 {
-  if(ptr_) {
-    debug_assert_valid_ptr();
-    --ptr_;
-    ++lowerOffset_;
-    ++upperOffset_;
-  }
+  debug_assert_valid_ptr();
+  --ptr_;
+  ++lowerOffset_;
+  ++upperOffset_;
   return *this;
 }
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 ArrayRCP<T> ArrayRCP<T>::operator--(int)
 {
   debug_assert_valid_ptr();
@@ -293,36 +272,29 @@ ArrayRCP<T> ArrayRCP<T>::operator--(int)
 }
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 ArrayRCP<T>& ArrayRCP<T>::operator+=(size_type offset)
 {
-  if(ptr_) {
-    debug_assert_valid_ptr();
-    ptr_ += offset;
-    lowerOffset_ -= offset;
-    upperOffset_ -= offset;
-  }
+  debug_assert_valid_ptr();
+  ptr_ += offset;
+  lowerOffset_ -= offset;
+  upperOffset_ -= offset;
   return *this;
 }
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 ArrayRCP<T>& ArrayRCP<T>::operator-=(size_type offset)
 {
-  if(ptr_) {
-    debug_assert_valid_ptr();
-    ptr_ -= offset;
-    lowerOffset_ += offset;
-    upperOffset_ += offset;
-  }
+  debug_assert_valid_ptr();
+  ptr_ -= offset;
+  lowerOffset_ += offset;
+  upperOffset_ += offset;
   return *this;
 }
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 ArrayRCP<T> ArrayRCP<T>::operator+(size_type offset) const
 {
   ArrayRCP<T> r_ptr = *this;
@@ -331,8 +303,7 @@ ArrayRCP<T> ArrayRCP<T>::operator+(size_type offset) const
 }
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 ArrayRCP<T> ArrayRCP<T>::operator-(size_type offset) const
 {
   ArrayRCP<T> r_ptr = *this;
@@ -344,8 +315,7 @@ ArrayRCP<T> ArrayRCP<T>::operator-(size_type offset) const
 // Standard Container-Like Functions
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 typename ArrayRCP<T>::iterator ArrayRCP<T>::begin() const
 {
   debug_assert_valid_ptr();
@@ -357,8 +327,7 @@ typename ArrayRCP<T>::iterator ArrayRCP<T>::begin() const
 }
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 typename ArrayRCP<T>::iterator ArrayRCP<T>::end() const
 {
   debug_assert_valid_ptr();
@@ -373,8 +342,7 @@ typename ArrayRCP<T>::iterator ArrayRCP<T>::end() const
 // ArrayRCP Views 
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 ArrayRCP<const T> ArrayRCP<T>::getConst() const
 {
   if (ptr_) {
@@ -386,8 +354,7 @@ ArrayRCP<const T> ArrayRCP<T>::getConst() const
 }
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 ArrayRCP<T>
 ArrayRCP<T>::persistingView( size_type lowerOffset_in, size_type size_in ) const
 {
@@ -404,8 +371,7 @@ ArrayRCP<T>::persistingView( size_type lowerOffset_in, size_type size_in ) const
 // Size and extent query functions
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 typename ArrayRCP<T>::size_type
 ArrayRCP<T>::lowerOffset() const
 {
@@ -414,8 +380,7 @@ ArrayRCP<T>::lowerOffset() const
 }
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 typename ArrayRCP<T>::size_type
 ArrayRCP<T>::upperOffset() const
 {
@@ -424,8 +389,7 @@ ArrayRCP<T>::upperOffset() const
 }
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 typename ArrayRCP<T>::size_type
 ArrayRCP<T>::size() const
 {
@@ -489,8 +453,7 @@ ArrayRCP<T>::operator ArrayRCP<const T>() const
 // std::vector like functions
 
 
-template<class T>
-inline
+template<class T> inline
 void ArrayRCP<T>::assign(size_type n, const T &val)
 {
   *this = arcp<T>(n);
@@ -510,8 +473,7 @@ void ArrayRCP<T>::assign(Iter first, Iter last)
 }
 
 
-template<class T>
-inline
+template<class T> inline
 void ArrayRCP<T>::resize(const size_type n, const T &val)
 {
 #ifdef TEUCHOS_DEBUG
@@ -535,8 +497,7 @@ void ArrayRCP<T>::resize(const size_type n, const T &val)
 }
 
 
-template<class T>
-inline
+template<class T> inline
 void ArrayRCP<T>::clear()
 {
   *this = null;
@@ -545,8 +506,7 @@ void ArrayRCP<T>::clear()
 
 // Misc functions
 
-template<class T>
-inline
+template<class T> inline
 void ArrayRCP<T>::deepCopy(const ArrayView<const T>& av)
 {
   if (av.size() == 0) {
@@ -560,16 +520,14 @@ void ArrayRCP<T>::deepCopy(const ArrayView<const T>& av)
 // Reference counting
 
 
-template<class T>
-inline
+template<class T> inline
 ERCPStrength ArrayRCP<T>::strength() const
 {
   return node_.strength();
 }
 
 
-template<class T>
-inline
+template<class T> inline
 bool ArrayRCP<T>::is_valid_ptr() const
 {
   if (ptr_)
@@ -578,48 +536,42 @@ bool ArrayRCP<T>::is_valid_ptr() const
 }
 
 
-template<class T>
-inline
+template<class T> inline
 int ArrayRCP<T>::strong_count() const
 {
   return node_.strong_count();
 }
 
 
-template<class T>
-inline
+template<class T> inline
 int ArrayRCP<T>::weak_count() const
 {
   return node_.weak_count();
 }
 
 
-template<class T>
-inline
+template<class T> inline
 int ArrayRCP<T>::total_count() const
 {
   return node_.total_count();
 }
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 void ArrayRCP<T>::set_has_ownership()
 {
   node_.has_ownership(true);
 }
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 bool ArrayRCP<T>::has_ownership() const
 {
   return node_.has_ownership();
 }
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 T* ArrayRCP<T>::release()
 {
   debug_assert_valid_ptr();
@@ -628,8 +580,7 @@ T* ArrayRCP<T>::release()
 }
 
 
-template<class T>
-inline
+template<class T> inline
 ArrayRCP<T> ArrayRCP<T>::create_weak() const
 {
   debug_assert_valid_ptr();
@@ -637,8 +588,7 @@ ArrayRCP<T> ArrayRCP<T>::create_weak() const
 }
 
 
-template<class T>
-inline
+template<class T> inline
 ArrayRCP<T> ArrayRCP<T>::create_strong() const
 {
   debug_assert_valid_ptr();
@@ -647,8 +597,8 @@ ArrayRCP<T> ArrayRCP<T>::create_strong() const
 
 
 template<class T>
-REFCOUNTPTR_INLINE
 template <class T2>
+inline
 bool ArrayRCP<T>::shares_resource(const ArrayRCP<T2>& r_ptr) const
 {
   return node_.same_node(r_ptr.access_private_node());
@@ -661,8 +611,7 @@ bool ArrayRCP<T>::shares_resource(const ArrayRCP<T2>& r_ptr) const
 // Assertion Functions
 
 
-template<class T>
-inline
+template<class T> inline
 const ArrayRCP<T>&
 ArrayRCP<T>::assert_not_null() const
 {
@@ -672,8 +621,7 @@ ArrayRCP<T>::assert_not_null() const
 }
 
 
-template<class T>
-inline
+template<class T> inline
 const ArrayRCP<T>& ArrayRCP<T>::assert_valid_ptr() const
 {
   if (ptr_)
@@ -682,8 +630,7 @@ const ArrayRCP<T>& ArrayRCP<T>::assert_valid_ptr() const
 }
 
 
-template<class T>
-inline
+template<class T> inline
 const ArrayRCP<T>&
 ArrayRCP<T>::assert_in_range( size_type lowerOffset_in, size_type size_in ) const
 {
@@ -707,8 +654,7 @@ ArrayRCP<T>::assert_in_range( size_type lowerOffset_in, size_type size_in ) cons
 // Deprecated
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 int ArrayRCP<T>::count() const {
   return node_.count();
 }
@@ -717,8 +663,7 @@ int ArrayRCP<T>::count() const {
 // very bad public functions
 
 
-template<class T>
-inline
+template<class T> inline
 ArrayRCP<T>::ArrayRCP(
   T* p, size_type lowerOffset_in, size_type upperOffset_in,
   const RCPNodeHandle& node
@@ -730,24 +675,21 @@ ArrayRCP<T>::ArrayRCP(
 {}
 
 
-template<class T>
-inline
+template<class T> inline
 T* ArrayRCP<T>::access_private_ptr() const
 {
   return ptr_;
 }
 
 
-template<class T>
-inline
+template<class T> inline
 RCPNodeHandle& ArrayRCP<T>::nonconst_access_private_node()
 {
   return node_;
 }
 
 
-template<class T>
-inline
+template<class T> inline
 const RCPNodeHandle& ArrayRCP<T>::access_private_node() const
 {
   return node_;
@@ -779,8 +721,7 @@ inline void assert_shares_resource(
 } // namespace Teuchos
 
 
-template<class T>
-inline
+template<class T> inline
 Teuchos::ArrayRCP<T>
 Teuchos::arcp(
 T* p, typename ArrayRCP<T>::size_type lowerOffset
@@ -805,8 +746,7 @@ T* p, typename ArrayRCP<T>::size_type lowerOffset
 }
 
 
-template<class T>
-inline
+template<class T> inline
 Teuchos::ArrayRCP<T>
 Teuchos::arcp( typename ArrayRCP<T>::size_type size )
 {
@@ -819,8 +759,7 @@ Teuchos::arcp( typename ArrayRCP<T>::size_type size )
 }
 
 
-template<class T>
-inline
+template<class T> inline
 Teuchos::ArrayRCP<T>
 Teuchos::arcpClone( const ArrayView<const T> &v )
 {
@@ -881,8 +820,7 @@ Teuchos::arcpWithEmbeddedObj(
 }
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 Teuchos::ArrayRCP<T>
 Teuchos::arcp( const RCP<std::vector<T> > &v )
 {
@@ -895,8 +833,7 @@ Teuchos::arcp( const RCP<std::vector<T> > &v )
 }
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 Teuchos::ArrayRCP<const T>
 Teuchos::arcp( const RCP<const std::vector<T> > &v )
 {
@@ -909,8 +846,7 @@ Teuchos::arcp( const RCP<const std::vector<T> > &v )
 }
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 Teuchos::ArrayRCP<T>
 Teuchos::arcpFromArrayView(const ArrayView<T> &av)
 {
@@ -922,8 +858,7 @@ Teuchos::arcpFromArrayView(const ArrayView<T> &av)
 }
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 Teuchos::RCP<std::vector<T> >
 Teuchos::get_std_vector( const ArrayRCP<T> &ptr )
 {
@@ -931,8 +866,7 @@ Teuchos::get_std_vector( const ArrayRCP<T> &ptr )
 }
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 Teuchos::RCP<const std::vector<T> >
 Teuchos::get_std_vector( const ArrayRCP<const T> &ptr )
 {
@@ -940,32 +874,28 @@ Teuchos::get_std_vector( const ArrayRCP<const T> &ptr )
 }
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 bool Teuchos::is_null( const ArrayRCP<T> &p )
 {
   return p.is_null();
 }
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 bool Teuchos::nonnull( const ArrayRCP<T> &p )
 {
   return !p.is_null();
 }
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 bool Teuchos::operator==( const ArrayRCP<T> &p, ENull )
 {
   return p.is_null();
 }
 
 
-template<class T>
-REFCOUNTPTR_INLINE
+template<class T> inline
 bool Teuchos::operator!=( const ArrayRCP<T> &p, ENull )
 {
   return !p.is_null();
@@ -973,7 +903,7 @@ bool Teuchos::operator!=( const ArrayRCP<T> &p, ENull )
 
 
 template<class T1, class T2>
-REFCOUNTPTR_INLINE
+inline
 bool Teuchos::operator==( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 )
 {
   return p1.access_private_ptr() == p2.access_private_ptr();
@@ -981,7 +911,7 @@ bool Teuchos::operator==( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 )
 
 
 template<class T1, class T2>
-REFCOUNTPTR_INLINE
+inline
 bool Teuchos::operator!=( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 )
 {
   return p1.access_private_ptr() != p2.access_private_ptr();
@@ -989,7 +919,7 @@ bool Teuchos::operator!=( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 )
 
 
 template<class T1, class T2>
-REFCOUNTPTR_INLINE
+inline
 bool Teuchos::operator<( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 )
 {
   return p1.access_private_ptr() < p2.access_private_ptr();
@@ -997,7 +927,7 @@ bool Teuchos::operator<( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 )
 
 
 template<class T1, class T2>
-REFCOUNTPTR_INLINE
+inline
 bool Teuchos::operator<=( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 )
 {
   Utilities::assert_shares_resource(p1,p2);
@@ -1006,7 +936,7 @@ bool Teuchos::operator<=( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 )
 
 
 template<class T1, class T2>
-REFCOUNTPTR_INLINE
+inline
 bool Teuchos::operator>( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 )
 {
   Utilities::assert_shares_resource(p1,p2);
@@ -1015,7 +945,7 @@ bool Teuchos::operator>( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 )
 
 
 template<class T1, class T2>
-REFCOUNTPTR_INLINE
+inline
 bool Teuchos::operator>=( const ArrayRCP<T1> &p1, const ArrayRCP<T2> &p2 )
 {
   Utilities::assert_shares_resource(p1,p2);
@@ -1033,7 +963,7 @@ Teuchos::operator-( const ArrayRCP<T> &p1, const ArrayRCP<T> &p2 )
 
 
 template<class T2, class T1>
-REFCOUNTPTR_INLINE
+inline
 Teuchos::ArrayRCP<T2>
 Teuchos::arcp_reinterpret_cast(const ArrayRCP<T1>& p1)
 {
@@ -1052,7 +982,7 @@ Teuchos::arcp_reinterpret_cast(const ArrayRCP<T1>& p1)
 
 
 template<class T2, class T1>
-REFCOUNTPTR_INLINE
+inline
 Teuchos::ArrayRCP<T2>
 Teuchos::arcp_const_cast(const ArrayRCP<T1>& p1)
 {
@@ -1067,7 +997,7 @@ Teuchos::arcp_const_cast(const ArrayRCP<T1>& p1)
 
 
 template<class T2, class T1>
-REFCOUNTPTR_INLINE
+inline
 Teuchos::ArrayRCP<T2>
 Teuchos::arcp_implicit_cast(const ArrayRCP<T1>& p1)
 {
@@ -1082,7 +1012,7 @@ Teuchos::arcp_implicit_cast(const ArrayRCP<T1>& p1)
 
 
 template<class T1, class T2>
-REFCOUNTPTR_INLINE
+inline
 void Teuchos::set_extra_data(
   const T1 &extra_data, const std::string& name,
   const Ptr<ArrayRCP<T2> > &p, EPrePostDestruction destroy_when,
@@ -1096,7 +1026,7 @@ void Teuchos::set_extra_data(
 
 
 template<class T1, class T2>
-REFCOUNTPTR_INLINE
+inline
 T1& Teuchos::get_extra_data( ArrayRCP<T2>& p, const std::string& name )
 {
   p.assert_not_null();
@@ -1109,7 +1039,7 @@ T1& Teuchos::get_extra_data( ArrayRCP<T2>& p, const std::string& name )
 
 
 template<class T1, class T2>
-REFCOUNTPTR_INLINE
+inline
 const T1& Teuchos::get_extra_data( const ArrayRCP<T2>& p, const std::string& name )
 {
   p.assert_not_null();
@@ -1122,7 +1052,7 @@ const T1& Teuchos::get_extra_data( const ArrayRCP<T2>& p, const std::string& nam
 
 
 template<class T1, class T2>
-REFCOUNTPTR_INLINE
+inline
 T1* Teuchos::get_optional_extra_data( ArrayRCP<T2>& p, const std::string& name )
 {
   p.assert_not_null();
@@ -1134,7 +1064,7 @@ T1* Teuchos::get_optional_extra_data( ArrayRCP<T2>& p, const std::string& name )
 
 
 template<class T1, class T2>
-REFCOUNTPTR_INLINE
+inline
 const T1* Teuchos::get_optional_extra_data( const ArrayRCP<T2>& p, const std::string& name )
 {
   p.assert_not_null();
@@ -1146,7 +1076,7 @@ const T1* Teuchos::get_optional_extra_data( const ArrayRCP<T2>& p, const std::st
 
 
 template<class Dealloc_T, class T>
-REFCOUNTPTR_INLINE
+inline
 const Dealloc_T&
 Teuchos::get_dealloc( const ArrayRCP<T>& p )
 {
@@ -1177,7 +1107,7 @@ Teuchos::get_nonconst_dealloc( const Teuchos::ArrayRCP<T>& p )
 
 
 template<class Dealloc_T, class T>
-REFCOUNTPTR_INLINE
+inline
 const Dealloc_T*
 Teuchos::get_optional_dealloc( const ArrayRCP<T>& p )
 {

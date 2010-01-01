@@ -127,7 +127,7 @@ public:
    \endcode
    * and construct to <tt>NULL</tt>
    */
-  ArrayRCP( ENull null_arg = null );
+  inline ArrayRCP( ENull null_arg = null );
 
   /** \brief Construct from a raw pointer and a valid range.
    *
@@ -141,7 +141,7 @@ public:
    * WARNING!  You should avoid manipulating raw pointers and use other
    * methods to construct an ArrayRCP object instead!
    */
-  ArrayRCP( T* p, size_type lowerOffset, size_type upperOffset, bool has_ownership );
+  inline ArrayRCP( T* p, size_type lowerOffset, size_type upperOffset, bool has_ownership );
 
   /** \brief Construct from a raw pointer, a valid range, and a deallocator.
    *
@@ -156,7 +156,7 @@ public:
    * methods to construct an ArrayRCP object instead!
    */
   template<class Dealloc_T>
-  ArrayRCP( T* p, size_type lowerOffset, size_type upperOffset, Dealloc_T dealloc,
+  inline ArrayRCP( T* p, size_type lowerOffset, size_type upperOffset, Dealloc_T dealloc,
     bool has_ownership );
 
   /** \brief Construct allocating an array of size n and filling.
@@ -167,7 +167,7 @@ public:
    * <li><tt>this->has_ownership() == true</tt>
    * </ul>
    */
-  explicit ArrayRCP( size_type lowerOffset, const T& val = T() );
+  inline explicit ArrayRCP( size_type lowerOffset, const T& val = T() );
 
   /** \brief Initialize from another <tt>ArrayRCP<T></tt> object.
    *
@@ -186,7 +186,7 @@ public:
    * <li> If <tt>r_ptr.get() != NULL</tt> then <tt>r_ptr.count()</tt> is incremented by 1
    * </ul>
    */
-  ArrayRCP(const ArrayRCP<T>& r_ptr);
+  inline ArrayRCP(const ArrayRCP<T>& r_ptr);
 
   /** \brief Removes a reference to a dynamically allocated array and possibly deletes
    * the array if owned.
@@ -200,7 +200,7 @@ public:
    * deincremented by one. If <tt>this->get() == NULL</tt> then nothing
    * happens.
    */
-  ~ArrayRCP();
+  inline ~ArrayRCP();
 
   /** \brief Copy the pointer to the referenced array and increment the
    * reference count.
@@ -219,7 +219,7 @@ public:
    * <li> If <tt>r_ptr.get() != NULL</tt> then <tt>r_ptr.count()</tt> is incremented by 1
    * </ul>
    */
-  ArrayRCP<T>& operator=(const ArrayRCP<T>& r_ptr);
+  inline ArrayRCP<T>& operator=(const ArrayRCP<T>& r_ptr);
 
   //@}
 
@@ -227,7 +227,7 @@ public:
   //@{
 
   /** \brief Returns true if the underlying pointer is null. */
-  bool is_null() const;
+  inline bool is_null() const;
 
   /** \brief Pointer (<tt>-></tt>) access to members of underlying object for
    * current position.
@@ -238,7 +238,7 @@ public:
    * <li><tt>this->upperOffset() >= 0</tt>
    * </ul>
    */
-  T* operator->() const;
+  inline T* operator->() const;
 
   /** \brief Dereference the underlying object for the current pointer
    * position.
@@ -249,7 +249,7 @@ public:
    * <li><tt>this->upperOffset() >= 0</tt>
    * </ul>
    */
-  T& operator*() const;
+  inline T& operator*() const;
 
   /** \brief Get the raw C++ pointer to the underlying object.
    *
@@ -258,7 +258,7 @@ public:
    * <li>[<tt>*this != null</tt>] <tt>this->upperOffset() >= 0</tt>
    * </ul>
    */
-  T* get() const;
+  inline T* get() const;
 
   /** \brief Get the raw C++ pointer to the underlying object.
    *
@@ -267,7 +267,7 @@ public:
    * <li>[<tt>*this != null</tt>] <tt>this->upperOffset() >= 0</tt>
    * </ul>
    */
-  T* getRawPtr() const;
+  inline T* getRawPtr() const;
 
   /** \brief Random object access.
    *
@@ -276,7 +276,7 @@ public:
    * <li><tt>this->lowerOffset() <= offset && offset <= this->upperOffset()</tt>
    * </ul>
    */
-  T& operator[](size_type offset) const;
+  inline T& operator[](size_type offset) const;
 
   //@}
 
@@ -293,7 +293,7 @@ public:
    * <li>[<tt>this->get()!=NULL</tt>] <tt>this->upperOffset()</tt> is deincremented by <tt>1</tt>
    * </ul>
    */
-  ArrayRCP<T>& operator++();
+  inline ArrayRCP<T>& operator++();
 
   /** \brief Postfix increment of pointer (i.e. ptr++).
    *
@@ -305,7 +305,7 @@ public:
    * <li><tt>this->upperOffset()</tt> is deincremented by <tt>1</tt>
    * </ul>
    */
-  ArrayRCP<T> operator++(int);
+  inline ArrayRCP<T> operator++(int);
 
   /** \brief Prefix deincrement of pointer (i.e. --ptr).
    *
@@ -317,7 +317,7 @@ public:
    * <li>[<tt>this->get()!=NULL</tt>] <tt>this->upperOffset()</tt> is incremented by <tt>1</tt>
    * </ul>
    */
-  ArrayRCP<T>& operator--();
+  inline ArrayRCP<T>& operator--();
 
   /** \brief Postfix deincrement of pointer (i.e. ptr--).
    *
@@ -329,7 +329,7 @@ public:
    * <li><tt>this->upperOffset()</tt> is incremented by <tt>1</tt>
    * </ul>
    */
-  ArrayRCP<T> operator--(int);
+  inline ArrayRCP<T> operator--(int);
 
   /** \brief Pointer integer increment (i.e. ptr+=offset).
    *
@@ -341,7 +341,7 @@ public:
    * <li>[<tt>this->get()!=NULL</tt>] <tt>this->upperOffset()</tt> is deincremented by <tt>offset</tt>
    * </ul>
    */
-  ArrayRCP<T>& operator+=(size_type offset);
+  inline ArrayRCP<T>& operator+=(size_type offset);
 
   /** \brief Pointer integer increment (i.e. ptr-=offset).
    *
@@ -353,7 +353,7 @@ public:
    * <li>[<tt>this->get()!=NULL</tt>] <tt>this->upperOffset()</tt> is incremented by <tt>offset</tt>
    * </ul>
    */
-  ArrayRCP<T>& operator-=(size_type offset);
+  inline ArrayRCP<T>& operator-=(size_type offset);
 
   /** \brief Pointer integer increment (i.e. ptr+offset).
    *
@@ -369,7 +369,7 @@ public:
    * objects is not allowed that it does not help at all to make this function
    * into a non-member function.
    */
-  ArrayRCP<T> operator+(size_type offset) const;
+  inline ArrayRCP<T> operator+(size_type offset) const;
 
   /** \brief Pointer integer deincrement (i.e. ptr-offset).
    *
@@ -385,7 +385,7 @@ public:
    * objects is not allowed that it does not help at all to make this function
    * into a non-member function.
    */
-  ArrayRCP<T> operator-(size_type offset) const;
+  inline ArrayRCP<T> operator-(size_type offset) const;
 
   //@}
 
@@ -404,7 +404,7 @@ public:
    * <li>[<tt>this->get()==NULL</tt>] <tt>return == (null or NULL)</tt>
    * </ul>
    */
-  iterator begin() const;
+  inline iterator begin() const;
 
   /** \brief Return an iterator to past the end of the array of data.
    *
@@ -418,7 +418,7 @@ public:
    * <li>[<tt>this->get()==NULL</tt>] <tt>return == (null or NULL)</tt>
    * </ul>
    */
-  iterator end() const;
+  inline iterator end() const;
 
   //@}
 
@@ -430,7 +430,7 @@ public:
    * This function should only compile successfully if the type <tt>T</tt> is
    * not already declared <tt>const</tt>!
    */
-  ArrayRCP<const T> getConst() const;
+  inline ArrayRCP<const T> getConst() const;
 
   /** \brief Return a persisting view of a contiguous range of elements.
    *
@@ -446,7 +446,7 @@ public:
    * <li><tt>return->upperOffset() == size-1</tt>
    * </ul>
    */
-  ArrayRCP<T> persistingView( size_type lowerOffset, size_type size ) const;
+  inline ArrayRCP<T> persistingView( size_type lowerOffset, size_type size ) const;
 
   //@}
 
@@ -454,15 +454,15 @@ public:
   //@{
 
   /** \brief Return the lower offset to valid data. */
-  size_type lowerOffset() const;
+  inline size_type lowerOffset() const;
 
   /** \brief Return the upper offset to valid data. */
-  size_type upperOffset() const;
+  inline size_type upperOffset() const;
 
   /** \brief The total number of items in the managed array
    * (i.e. <tt>upperOffset()-lowerOffset()+1</tt>).
    */
-  size_type size() const;
+  inline size_type size() const;
 
   //@}
 
@@ -483,18 +483,18 @@ public:
    * <li><tt>return->upperOffset() == size-1</tt>
    * </ul>
    */
-  ArrayView<T> view( size_type lowerOffset, size_type size ) const;
+  inline ArrayView<T> view( size_type lowerOffset, size_type size ) const;
 
   /** \brief Return a view of a contiguous range of elements (calls
    * view(offset,size)).
    */
-  ArrayView<T> operator()( size_type lowerOffset, size_type size ) const;
+  inline ArrayView<T> operator()( size_type lowerOffset, size_type size ) const;
 
   /** \brief Return an ArrayView of *this.
    *
    * NOTE: This will return a null ArrayView if this->size() == 0.
    */
-  ArrayView<T> operator()() const;
+  inline ArrayView<T> operator()() const;
 
   //@}
 
@@ -502,7 +502,7 @@ public:
   //@{
 
   /** \brief Convert from ArrayRCP<T> to ArrayRCP<const T>. */
-  operator ArrayRCP<const T>() const;
+  inline operator ArrayRCP<const T>() const;
 
   //@}
 
@@ -513,7 +513,7 @@ public:
    *
    * \postconditions <tt>size() == n</tt>
    */
-  void assign(size_type n, const T &val);
+  inline void assign(size_type n, const T &val);
 
   /** \brief Resize and assign to iterator sequence [first, last)
    *
@@ -523,25 +523,25 @@ public:
    * change.
    */
   template<class Iter>
-  void assign(Iter first, Iter last);
+  inline void assign(Iter first, Iter last);
 
   /** \brief Deep copy the elements from one ArrayView object into this
    * object.
    *
    * Simply calls <tt>assign(av.begin(), av.end())</tt>
    */
-  void deepCopy(const ArrayView<const T>& av);
+  inline void deepCopy(const ArrayView<const T>& av);
 
   /** \brief Resize and append new elements if enlarging.
    *
    */
-  void resize(const size_type n, const T &val = T());
+  inline void resize(const size_type n, const T &val = T());
 
   /** \brief Resize to zero..
    *
    * \postconditions <tt>size()==0</tt>
    */
-  void clear();
+  inline void clear();
 
   //@}
 
@@ -559,7 +559,7 @@ public:
    *     is null.
    * </ul>
    */
-  ERCPStrength strength() const;
+  inline ERCPStrength strength() const;
 
   /** \brief Return if the underlying object pointer is still valid or not.
    *
@@ -570,24 +570,24 @@ public:
    * non-null object and it is valid then <tt>!is_null() &&
    * is_valid_ptr()</tt> will be <tt>true</tt>.
    */
-  bool is_valid_ptr() const;
+  inline bool is_valid_ptr() const;
 
   /** \brief Return the number of active <tt>RCP<></tt> objects that have a
    * "strong" reference to the underlying reference-counted object.
    *
    * \return If <tt>this->get() == NULL</tt> then this function returns 0.
    */
-  int strong_count() const;
+  inline int strong_count() const;
 
   /** \brief Return the number of active <tt>RCP<></tt> objects that have a
    * "weak" reference to the underlying reference-counted object.
    *
    * \return If <tt>this->get() == NULL</tt> then this function returns 0.
    */
-  int weak_count() const;
+  inline int weak_count() const;
 
   /** \brief Total count (strong_count() + weak_count()). */
-  int total_count() const;
+  inline int total_count() const;
 
   /** \brief Give <tt>this</tt> and other <tt>ArrayRCP<></tt> objects
    * ownership of the underlying referenced array to delete it.
@@ -606,7 +606,7 @@ public:
    * </ul>
    * </ul>
    */
-  void set_has_ownership();
+  inline void set_has_ownership();
 
   /** \brief Returns true if <tt>this</tt> has ownership of object pointed to
    * by <tt>this->get()</tt> in order to delete it.
@@ -619,7 +619,7 @@ public:
    * <tt>set_has_ownership()</tt> (<tt>true</tt>) or <tt>release()</tt>
    * (<tt>false</tt>).
    */
-  bool has_ownership() const;
+  inline bool has_ownership() const;
 
   /** \brief Release the ownership of the underlying array.
    *
@@ -641,7 +641,7 @@ public:
    *
    * \returns Returns the value of <tt>this->get()</tt>
    */
-  T* release();
+  inline T* release();
 
   /** \brief Create a new weak RCP object from another (strong) RCP object.
    *
@@ -659,7 +659,7 @@ public:
    * <li> <tt>returnVal.has_ownership() == this->has_ownership()</tt>
    * </ul>
    */
-  ArrayRCP<T> create_weak() const;
+  inline ArrayRCP<T> create_weak() const;
 
   /** \brief Create a new strong RCP object from another (weak) RCP object.
    *
@@ -677,7 +677,7 @@ public:
    * <li> <tt>returnVal.has_ownership() == this->has_ownership()</tt>
    * </ul>
    */
-  ArrayRCP<T> create_strong() const;
+  inline ArrayRCP<T> create_strong() const;
 
   /** \brief Returns true if the smart pointers share the same underlying reference-counted object.
    *
@@ -686,7 +686,7 @@ public:
    * same.
    */
   template<class T2>
-  bool shares_resource(const ArrayRCP<T2>& r_ptr) const;
+  inline bool shares_resource(const ArrayRCP<T2>& r_ptr) const;
 
   //@}
 
@@ -696,14 +696,14 @@ public:
   /** \brief Throws <tt>NullReferenceError</tt> if <tt>this->get()==NULL</tt>,
    * otherwise returns reference to <tt>*this</tt>.
    */
-  const ArrayRCP<T>& assert_not_null() const;
+  inline const ArrayRCP<T>& assert_not_null() const;
 
   /** \brief Throws <tt>NullReferenceError</tt> if <tt>this->get()==NULL</tt>
    * or<tt>this->get()!=NULL</tt>, throws <tt>RangeError</tt> if
    * <tt>(lowerOffset < this->lowerOffset() || this->upperOffset() <
    * upperOffset</tt>, otherwise returns reference to <tt>*this</tt>
    */
-  const ArrayRCP<T>& assert_in_range( size_type lowerOffset, size_type size ) const;
+  inline const ArrayRCP<T>& assert_in_range( size_type lowerOffset, size_type size ) const;
 
   /** \brief If the object pointer is non-null, assert that it is still valid.
    *
@@ -714,7 +714,7 @@ public:
    *
    * In this context, null is a valid object.
    */
-  const ArrayRCP<T>& assert_valid_ptr() const;
+  inline const ArrayRCP<T>& assert_valid_ptr() const;
 
   //@}
 
@@ -722,7 +722,7 @@ public:
   //@{
 
   /** \brief Returns <tt>strong_count()</tt> [deprecated]. */
-  int count() const;
+  inline int count() const;
 
   //@}
 
@@ -736,14 +736,15 @@ private:
   size_type lowerOffset_; // 0 if this pointer is null
   size_type upperOffset_; // -1 if this pointer is null
 
-  void debug_assert_not_null() const
+  inline void debug_assert_not_null() const
     {
 #ifdef TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL
       assert_not_null();
 #endif
     }
 
-  void debug_assert_in_range( size_type lowerOffset_in, size_type size_in ) const
+  inline void debug_assert_in_range( size_type lowerOffset_in,
+    size_type size_in ) const
     {
       (void)lowerOffset_in; (void)size_in;
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
@@ -751,7 +752,7 @@ private:
 #endif
     }
 
-  void debug_assert_valid_ptr() const
+  inline void debug_assert_valid_ptr() const
     {
 #ifdef TEUCHOS_DEBUG
       assert_valid_ptr();
