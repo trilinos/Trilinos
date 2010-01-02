@@ -15,7 +15,7 @@ using Teuchos::TabularOutputter;
 
 double relCpuSpeed = 1e-2;
 int maxArraySize = 10000;
-double maxArrayBracketRatio = 10.0;
+double maxArrayBracketRatio = 30.0;
 double maxArrayIterRatio = 50.0;
 double maxArrayRCPSelfIterRatio =50.0;
 
