@@ -34,6 +34,7 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_Assert.hpp"
+#include "Teuchos_Time.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
 
@@ -187,6 +188,13 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
 
   typedef InstanceData::unitTests_t unitTests_t;
 
+  using std::setprecision;
+
+  Time overallTimer("overallTimer", true);
+  Time timer("timer");
+
+  const int timerPrec = 3;
+
   out << "\n***\n*** Unit test suite ...\n***\n\n";
 
   InstanceData &data = getData();
@@ -203,8 +211,11 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
 
   try {
     
-    out << "\nSorting tests by group name then by test name ...\n";
+    out << "\nSorting tests by group name then by test name ...";
+    timer.start(true);
     std::sort( data.unitTests.begin(), data.unitTests.end() );
+    timer.stop();
+    out << " (time = "<<setprecision(timerPrec)<<timer.totalElapsedTime()<<")\n";
 
     out << "\nRunning unit tests ...\n\n";
     unitTests_t::iterator iter = data.unitTests.begin();
@@ -258,7 +269,9 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
 
           if (!data.noOp) {
 
+            timer.start(true);
             const bool result = utd.unitTest->runUnitTest(*localOut);
+            timer.stop();
 
             if (!result) {
 
@@ -273,8 +286,9 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
                 out << oss->str();
               
               out
-                << "[FAILED] " << unitTestName << "\n"
-                << "Location: "<<utd.unitTest->unitTestFile()<<":"
+                <<"[FAILED] "<<unitTestName
+                <<setprecision(timerPrec)<<timer.totalElapsedTime()<< " sec\n"
+                <<"Location: "<<utd.unitTest->unitTestFile()<<":"
                 <<utd.unitTest->unitTestFileLineNumber()<<"\n";
               
               if (!is_null(oss))
@@ -288,7 +302,8 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
             else {
               
               if (showTestNames)
-                out << "[Passed]\n";
+                out << "[Passed] "
+                    << setprecision(timerPrec) << timer.totalElapsedTime() << " sec\n";
               
               if (showAll && data.showSrcLocation)
                 out
@@ -321,6 +336,10 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
     for (Teuchos_Ordinal i = 0; i < failedTests.size(); ++i)
       out << "    " << failedTests[i] << "\n";
   }
+
+  overallTimer.stop();
+  out << "\nTotal Time: " << setprecision(timerPrec)
+      << overallTimer.totalElapsedTime() << " sec\n";
 
   out
     << "\nSummary: total = " << testCounter
