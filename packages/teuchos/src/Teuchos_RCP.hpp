@@ -213,7 +213,7 @@ template<class T>
 inline
 RCP<T>& RCP<T>::operator=(const RCP<T>& r_ptr)
 {
-  if( this == &r_ptr )
+  if (this == &r_ptr)
     return *this; // Assignment to self
   node_ = r_ptr.access_private_node(); // May throw in debug mode!
   ptr_ = r_ptr.ptr_;
