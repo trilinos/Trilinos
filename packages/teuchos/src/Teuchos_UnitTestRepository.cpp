@@ -29,6 +29,7 @@
 
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_UnitTestBase.hpp"
+#include "Teuchos_TestingHelpers.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_VerboseObject.hpp"
@@ -155,6 +156,7 @@ public:
   CommandLineProcessor clp;
   EShowTestDetails showTestDetails;
   bool showSrcLocation;
+  bool showFailSrcLocation;
   bool noOp;
   std::string groupName;
   std::string testName;
@@ -166,6 +168,7 @@ public:
     :clp(false),
      showTestDetails(SHOW_TEST_DETAILS_TEST_NAMES),
      showSrcLocation(false),
+     showFailSrcLocation(true),
      noOp(false),
      testOrdering(false),
      testCounter(0)
@@ -201,6 +204,8 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
 
   const bool showAll = data.showTestDetails == SHOW_TEST_DETAILS_ALL;
   const bool showTestNames = data.showTestDetails == SHOW_TEST_DETAILS_TEST_NAMES || showAll;
+
+  showTestFailureLocation(data.showFailSrcLocation);
 
   bool success = true;
   int testCounter = 0;
@@ -286,8 +291,9 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
                 out << oss->str();
               
               out
-                <<"[FAILED] "<<unitTestName
-                <<setprecision(timerPrec)<<timer.totalElapsedTime()<< " sec\n"
+                <<"[FAILED] "
+                <<" "<<setprecision(timerPrec)<<"("<<timer.totalElapsedTime()<< " sec)"
+                <<" "<<unitTestName<<"\n"
                 <<"Location: "<<utd.unitTest->unitTestFile()<<":"
                 <<utd.unitTest->unitTestFileLineNumber()<<"\n";
               
@@ -303,7 +309,7 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
               
               if (showTestNames)
                 out << "[Passed] "
-                    << setprecision(timerPrec) << timer.totalElapsedTime() << " sec\n";
+                    << setprecision(timerPrec)<<"("<<timer.totalElapsedTime()<<" sec)\n";
               
               if (showAll && data.showSrcLocation)
                 out
@@ -374,7 +380,6 @@ int UnitTestRepository::runUnitTestsFromMain( int argc, char* argv[] )
     *out << "\nEnd Result: TEST FAILED" << std::endl;
     return parse_return;
   }
-
 
   const bool success = runUnitTests(*out);
 
@@ -450,6 +455,11 @@ void UnitTestRepository::setUpCLP(const Ptr<CommandLineProcessor>& clp)
     "show-src-location", "no-show-src-location", &getData().showSrcLocation,
     "If true, then the location of the unit test source code is shown."
     "  Only meaningfull if --show-test-details=ALL."
+    );
+
+  clp->setOption(
+    "show-fail-src-location", "no-show-fail-src-location", &getData().showFailSrcLocation,
+    "If true, then the location of every failed unit test check is printed."
     );
 
   clp->setOption(

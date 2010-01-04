@@ -203,6 +203,7 @@ APPEND_SET(SOURCES
   Teuchos_TableFormat.cpp
   Teuchos_TabularOutputter.cpp
   Teuchos_TestForException.cpp
+  Teuchos_TestingHelpers.cpp
   Teuchos_Time.cpp
   Teuchos_TimeMonitor.cpp
   Teuchos_TypeNameTraits.cpp

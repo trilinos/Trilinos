@@ -50,11 +50,33 @@ namespace Teuchos {
 inline void updateSuccess(const bool result, bool &success);
 
 
-/** \brief Return "passed" for "failed".
+/** \brief Return "passed" or "failed".
  *
  * \ingroup teuchos_testing_grp
  */
 inline const std::string passfail(const bool result);
+
+
+/** \brief Helper function for TEUCHOS_PASS_FAIL(...).
+ *
+ * \ingroup teuchos_testing_grp
+ */
+const std::string passfail_with_location(const bool result,
+  const std::string &file, const int lineNumber);
+
+
+/** \brief Set if TEUCHOS_PASS_FAIL(...) should print test failure location.
+ *
+ * \ingroup teuchos_testing_grp
+ */
+void showTestFailureLocation(bool);
+
+
+/** \brief Return if TEUCHOS_PASS_FAIL(...) should print test failure location.
+ *
+ * \ingroup teuchos_testing_grp
+ */
+bool showTestFailureLocation();
 
 
 /** \brief .
@@ -185,6 +207,18 @@ bool compareFloatingArrays(
 } // namespace Teuchos
 
 
+/** \brief Macro that prints "passed" or "failed" and optionally prints the
+ * file name and line number as well.
+ *
+ * Only prints the file name and line number if
+ * Teuchos::showTestFailureLocation() == true.
+ *
+ * \ingroup teuchos_testing_grp
+ */
+#define TEUCHOS_PASS_FAIL(RESULT) \
+  Teuchos::passfail_with_location((RESULT), __FILE__, __LINE__)
+
+
 /** \brief Echo a statement and then invoke it.
  *
  * This macro is not complicated so take a look for yourself!
@@ -205,7 +239,7 @@ bool compareFloatingArrays(
   { \
     (out) << #v1" = "<<Teuchos::toString(v1)<<" == "<<Teuchos::toString(v2)<<" : "; \
     const bool l_result = (v1) == (v2); \
-    (out) << Teuchos::passfail(l_result) << "\n"; \
+    (out) << TEUCHOS_PASS_FAIL(l_result) << "\n"; \
     if (!l_result) (success) = false; \
   }
 
@@ -230,7 +264,7 @@ bool compareFloatingArrays(
     (out) << #v1" = "<<Teuchos::toString(v1)<<" == "#v2" = "<<Teuchos::toString(v2)<<" : "; \
     const bool l_result = (v1) == (v2); \
     if (!l_result) (success) = false; \
-    (out) << Teuchos::passfail(l_result) << "\n"; \
+    (out) << TEUCHOS_PASS_FAIL(l_result) << "\n"; \
   }
 
 
@@ -244,7 +278,7 @@ bool compareFloatingArrays(
   { \
     (out) << #v1" = "<<Teuchos::toString(v1)<<" != "<<Teuchos::toString(v2)<<" : "; \
     const bool l_result = (v1) != (v2); \
-    (out) << Teuchos::passfail(l_result) << "\n"; \
+    (out) << TEUCHOS_PASS_FAIL(l_result) << "\n"; \
     if (!l_result) (success) = false; \
   }
 
@@ -260,7 +294,7 @@ bool compareFloatingArrays(
     (out) << #v1" = "<<Teuchos::toString(v1)<<" != "#v2" = "<<Teuchos::toString(v2)<<" : "; \
     const bool l_result = (v1) != (v2); \
     if (!l_result) (success) = false; \
-    (out) << Teuchos::passfail(l_result) << "\n"; \
+    (out) << TEUCHOS_PASS_FAIL(l_result) << "\n"; \
   }
 
 
@@ -292,7 +326,7 @@ bool compareFloatingArrays(
     (out) << #iter1" == "#iter2" =  : "; \
     const bool l_result = (iter1) == (iter2); \
     if (!l_result) (success) = false; \
-    (out) << Teuchos::passfail(l_result) << "\n"; \
+    (out) << TEUCHOS_PASS_FAIL(l_result) << "\n"; \
   }
 
 
@@ -308,7 +342,7 @@ bool compareFloatingArrays(
     if (!l_result) (success) = false; \
     if (printPass || !(l_result)) { \
       out << #a"["<<i<<"] = " << Teuchos::toString((a)[i]) << " == "#val" = " << Teuchos::toString(val) \
-          << " : " << Teuchos::passfail(l_result) << "\n"; \
+          << " : " << TEUCHOS_PASS_FAIL(l_result) << "\n"; \
     } \
   }
 
@@ -325,7 +359,7 @@ bool compareFloatingArrays(
     if (!l_result) (success) = false; \
     if (printPass || !(l_result)) { \
       out << #a"["<<i<<"] = " << Teuchos::toString((a)[i]) << " != "#val" = " << Teuchos::toString(val) \
-          << " : " << Teuchos::passfail(l_result) << "\n"; \
+          << " : " << TEUCHOS_PASS_FAIL(l_result) << "\n"; \
     } \
   }
 
@@ -360,7 +394,7 @@ bool compareFloatingArrays(
     if (!l_result) (success) = false; \
     if (printPass || !(l_result)) { \
       out << #a"("<<i<<","<<j<<") = " << (a)(i,j) << " == "#val" = " << (val) \
-          << " : " << Teuchos::passfail(l_result) << "\n"; \
+          << " : " << TEUCHOS_PASS_FAIL(l_result) << "\n"; \
     } \
   }
 
@@ -376,7 +410,7 @@ bool compareFloatingArrays(
     out << #v1" = "<<(v1)<<" "#comp" "#v2" = "<<(v2)<<" : "; \
     const bool l_result = (v1) comp (v2); \
     if (!l_result) (success) = false; \
-    (out) << Teuchos::passfail(l_result) << "\n"; \
+    (out) << TEUCHOS_PASS_FAIL(l_result) << "\n"; \
   }
 
 
@@ -439,7 +473,7 @@ const std::string
 Teuchos::passfail(const bool result)
 {
   if (!result)
-    return "failed";
+    return "FAILED";
   return "passed";
 }
 
