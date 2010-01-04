@@ -28,14 +28,14 @@ NeumannSeriesPreconditionerFactory<ScalarT>::NeumannSeriesPreconditionerFactory(
 
 //! is this operator compatiable with the preconditioner factory?
 template <typename ScalarT>
-bool NeumannSeriesPreconditionerFactory<ScalarT>::isCompatible(const Thyra::LinearOpSourceBase<double> &fwdOpSrc) const
+bool NeumannSeriesPreconditionerFactory<ScalarT>::isCompatible(const Thyra::LinearOpSourceBase<ScalarT> &fwdOpSrc) const
 {
    return true;
 }
 
 //! create an instance of the preconditioner
 template <typename ScalarT>
-RCP<Thyra::PreconditionerBase<double> > NeumannSeriesPreconditionerFactory<ScalarT>::createPrec() const
+RCP<Thyra::PreconditionerBase<ScalarT> > NeumannSeriesPreconditionerFactory<ScalarT>::createPrec() const
 {
    return rcp(new Thyra::DefaultPreconditioner<ScalarT>()); 
 }
@@ -49,8 +49,8 @@ RCP<Thyra::PreconditionerBase<double> > NeumannSeriesPreconditionerFactory<Scala
   * \param[in] supportSolveUse Thyra information (?)
   */
 template <typename ScalarT>
-void NeumannSeriesPreconditionerFactory<ScalarT>::initializePrec(const RCP<const Thyra::LinearOpSourceBase<double> > & fwdOpSrc,
-                    Thyra::PreconditionerBase<double> * prec,
+void NeumannSeriesPreconditionerFactory<ScalarT>::initializePrec(const RCP<const Thyra::LinearOpSourceBase<ScalarT> > & fwdOpSrc,
+                    Thyra::PreconditionerBase<ScalarT> * prec,
                     const Thyra::ESupportSolveUse supportSolveUse) const
 {
    using Thyra::scale;
@@ -94,8 +94,8 @@ void NeumannSeriesPreconditionerFactory<ScalarT>::initializePrec(const RCP<const
 
 //! wipe clean a already initialized preconditioner object
 template <typename ScalarT>
-void NeumannSeriesPreconditionerFactory<ScalarT>::uninitializePrec(Thyra::PreconditionerBase<double> * prec, 
-                      RCP<const Thyra::LinearOpSourceBase<double> > * fwdOpSrc,
+void NeumannSeriesPreconditionerFactory<ScalarT>::uninitializePrec(Thyra::PreconditionerBase<ScalarT> * prec, 
+                      RCP<const Thyra::LinearOpSourceBase<ScalarT> > * fwdOpSrc,
                       Thyra::ESupportSolveUse *supportSolveUse) const
 {
    Thyra::DefaultPreconditioner<ScalarT> & dPrec = Teuchos::dyn_cast<Thyra::DefaultPreconditioner<ScalarT> >(*prec);

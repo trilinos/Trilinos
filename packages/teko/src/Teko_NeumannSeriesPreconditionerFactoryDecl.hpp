@@ -21,10 +21,10 @@ public:
    NeumannSeriesPreconditionerFactory();
 
    //! is this operator compatiable with the preconditioner factory?
-   bool isCompatible(const Thyra::LinearOpSourceBase<double> &fwdOpSrc) const;
+   bool isCompatible(const Thyra::LinearOpSourceBase<ScalarT> &fwdOpSrc) const;
 
    //! create an instance of the preconditioner
-   RCP<Thyra::PreconditionerBase<double> > createPrec() const;
+   RCP<Thyra::PreconditionerBase<ScalarT> > createPrec() const;
 
    /** \brief initialize a newly created preconditioner object
      *
@@ -36,9 +36,9 @@ public:
      * \param[in,out] precOp Return location for the preconditioner
      * \param[in] supportSolveUse Thyra information (?)
      */
-   void initializePrec(const RCP<const Thyra::LinearOpSourceBase<double> > & fwdOpSrc,
-                       const RCP<const Thyra::MultiVectorBase<double> > & solnVec,
-                       Thyra::PreconditionerBase<double> * precOp,
+   void initializePrec(const RCP<const Thyra::LinearOpSourceBase<ScalarT> > & fwdOpSrc,
+                       const RCP<const Thyra::MultiVectorBase<ScalarT> > & solnVec,
+                       Thyra::PreconditionerBase<ScalarT> * precOp,
                        const Thyra::ESupportSolveUse supportSolveUse) const;
 
    /** \brief initialize a newly created preconditioner object
@@ -49,13 +49,13 @@ public:
      * \param[in,out] precOp Return location for the preconditioner
      * \param[in] supportSolveUse Thyra information (?)
      */
-   void initializePrec(const RCP<const Thyra::LinearOpSourceBase<double> > & fwdOpSrc,
-                       Thyra::PreconditionerBase<double> * precOp,
+   void initializePrec(const RCP<const Thyra::LinearOpSourceBase<ScalarT> > & fwdOpSrc,
+                       Thyra::PreconditionerBase<ScalarT> * precOp,
                        const Thyra::ESupportSolveUse supportSolveUse) const;
 
    //! wipe clean a already initialized preconditioner object
-   void uninitializePrec(Thyra::PreconditionerBase<double> * prec, 
-                         RCP<const Thyra::LinearOpSourceBase<double> > * fwdOpSrc,
+   void uninitializePrec(Thyra::PreconditionerBase<ScalarT> * prec, 
+                         RCP<const Thyra::LinearOpSourceBase<ScalarT> > * fwdOpSrc,
                          Thyra::ESupportSolveUse *supportSolveUse) const;
 
    /** @name Overridden from Teuchos::ParameterListAcceptor */
