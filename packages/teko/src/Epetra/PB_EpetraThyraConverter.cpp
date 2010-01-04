@@ -7,6 +7,7 @@
 #include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_DefaultProductMultiVector.hpp"
 #include "Thyra_SpmdMultiVectorBase.hpp"
+#include "Thyra_SpmdVectorSpaceBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 
 #include <iostream>

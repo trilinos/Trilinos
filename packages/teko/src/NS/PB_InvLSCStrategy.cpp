@@ -13,6 +13,7 @@
 #include "EpetraExt_VectorOut.h"
 
 #include "Teuchos_Time.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 // Teko includes
 #include "PB_Utilities.hpp"
