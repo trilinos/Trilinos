@@ -195,6 +195,12 @@ private:
   for ( int k = 0; k < (NUMLOOPS); ++k )
 
 
+/** \brief Start a timer block using a TabularOutputter object . */
+#define TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(OUTPUTTER, NUMLOOPS, NUMINNERLOOPS) \
+  (OUTPUTTER).startTimer((NUMLOOPS)*(NUMINNERLOOPS)); \
+  for ( int k = 0; k < (NUMLOOPS); ++k )
+
+
 /** \brief End a timer block, output the time field to a TabularOutputter
  * object, and set a variable with the time.
  */
