@@ -56,15 +56,27 @@ namespace Teuchos {
  */
 enum EPrePostDestruction { PRE_DESTROY, POST_DESTROY };
 
-
 /** \brief Used to specify if the pointer is weak or strong.
  *
- * \ingroup teuchos_mem_mng_grp 
+ * \ingroup teuchos_mem_mng_grp
  */
-enum ERCPStrength { RCP_STRENGTH_INVALID=0, RCP_STRONG, RCP_WEAK };
-// Above: Making RCP_STRENGTH_INVALID=0 helps to avoid problems with
-// uninitialized memory that just happens to be zero! (see Code Complete: 2nd
-// Edition)
+enum ERCPStrength { RCP_STRENGTH_INVALID=-1, RCP_STRONG=0, RCP_WEAK=1 };
+
+
+inline void debugAssertStrength(ERCPStrength strength)
+{
+#ifdef TEUCHOS_DEBUG
+  switch (strength) {
+    case RCP_STRONG:
+      // fall through
+    case RCP_WEAK:
+      return; // Fine
+    case RCP_STRENGTH_INVALID:
+    default:
+      TEST_FOR_EXCEPT(true);
+  }
+#endif
+}
 
 /** \brief Traits class specialization for <tt>toString(...)</tt> function for
  * converting from <tt>ERCPStrength</tt> to <tt>std::string</tt>.
@@ -113,9 +125,11 @@ class TEUCHOS_LIB_DLL_EXPORT RCPNode {
 public:
   /** \brief . */
   RCPNode(bool has_ownership_in)
-    : strong_count_(0), weak_count_(0), has_ownership_(has_ownership_in),
-      extra_data_map_(NULL)
-    {}
+    : has_ownership_(has_ownership_in), extra_data_map_(NULL)
+    {
+      count_[RCP_STRONG] = 0;
+      count_[RCP_WEAK] = 0;
+    }
   /** \brief . */
   virtual ~RCPNode()
     {
@@ -125,40 +139,30 @@ public:
   /** \brief . */
   int strong_count() const
     {
-      return strong_count_; 
+      return count_[RCP_STRONG]; 
     }
   /** \brief . */
   int weak_count() const
     {
-      return weak_count_; 
+      return count_[RCP_WEAK];
+    }
+  /** \brief . */
+  int count( const ERCPStrength strength )
+    {
+      debugAssertStrength(strength);
+      return count_[strength];
     }
   /** \brief . */
   int incr_count( const ERCPStrength strength )
     {
-      switch (strength) {
-        case RCP_STRONG:
-          return ++strong_count_;
-        case RCP_WEAK:
-          return ++weak_count_;
-        case RCP_STRENGTH_INVALID:
-        default:
-          TEST_FOR_EXCEPT(true);
-      }
-      return 0; // Never be called!
+      debugAssertStrength(strength);
+      return ++count_[strength];
     }
   /** \brief . */
   int deincr_count( const ERCPStrength strength )
     {
-      switch (strength) {
-        case RCP_STRONG:
-          return --strong_count_;
-        case RCP_WEAK:
-          return --weak_count_;
-        case RCP_STRENGTH_INVALID:
-        default:
-          TEST_FOR_EXCEPT(true);
-      }
-      return 0; // Never be called!
+      debugAssertStrength(strength);
+      return --count_[strength];
     }
   /** \brief . */
   void has_ownership(bool has_ownership_in)
@@ -228,8 +232,7 @@ private:
     EPrePostDestruction destroy_when;
   }; 
   typedef Teuchos::map<std::string,extra_data_entry_t> extra_data_map_t;
-  int strong_count_;
-  int weak_count_;
+  int count_[2];
   bool has_ownership_;
   extra_data_map_t *extra_data_map_;
   // Above is made a pointer to reduce overhead for the general case when this
@@ -611,7 +614,7 @@ namespace Teuchos {
 class RCPNodeHandle {
 public:
   /** \brief . */
-  RCPNodeHandle( ENull null_arg = null )
+  RCPNodeHandle(ENull null_arg = null)
     : node_(0), strength_(RCP_STRENGTH_INVALID)
     {(void)null_arg;}
   /** \brief . */
@@ -640,7 +643,7 @@ public:
 #ifdef TEUCHOS_DEBUG
   /** \brief Only gets called in debug mode. */
   template<typename T>
-  RCPNodeHandle( RCPNode* node, T *p, const std::string &T_name,
+  RCPNodeHandle(RCPNode* node, T *p, const std::string &T_name,
     const std::string &ConcreteT_name, const bool has_ownership_in,
     ERCPStrength strength_in = RCP_STRONG
     )
@@ -659,17 +662,17 @@ public:
     }
 #endif // TEUCHOS_DEBUG
   /** \brief . */
-  RCPNodeHandle( const RCPNodeHandle& node_ref )
+  RCPNodeHandle(const RCPNodeHandle& node_ref)
     : node_(node_ref.node_), strength_(node_ref.strength_)
     {
       bind();
     }
   /** \brief (Strong guarantee). */
-  RCPNodeHandle& operator=( const RCPNodeHandle& node_ref )
+  RCPNodeHandle& operator=(const RCPNodeHandle& node_ref)
     {
-      // Assignment to self check
-      if ( this == &node_ref )
-        return *this;
+      // Assignment to self check: Note, We don't need to do an assigment to
+      // self check here because such a check is already done in the RCP and
+      // ArrayRCP classes.
       // Take care of this's existing node and object
       unbind(); // May throw in some cases
       // Assign the new node
@@ -845,12 +848,26 @@ public:
 private:
   RCPNode *node_;
   ERCPStrength strength_;
-  void bind()
+  inline void bind()
     {
       if (node_)
         node_->incr_count(strength_);
     }
-  void unbind(); // Provides the "strong" guarantee!
+  inline void unbind() 
+    {
+      // Optimize this implementation for count > 1
+      if (node_ && node_->deincr_count(strength_)==0) {
+        // If we get here, the reference count has gone to 0 and something
+        // interesting is going to happen.  In this case, we need to
+        // reincrement the count back to 1 and call the more complex function
+        // that will either delete the object or delete the node.
+        node_->incr_count(strength_);
+        unbindOne();
+      }
+      // If we get here, either node_==0 or the count is still greater than 0.
+      // In this case, nothing interesting is going to happen so we are done!
+    }
+  void unbindOne(); // Provides the "strong" guarantee!
 
 };
 

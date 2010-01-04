@@ -475,7 +475,7 @@ int Teuchos::ActiveRCPNodesSetup::count_ = 0;
 //
 
 
-void RCPNodeHandle::unbind()
+void RCPNodeHandle::unbindOne()
 {
   if (node_) {
     // NOTE: We only deincrement the reference count after
