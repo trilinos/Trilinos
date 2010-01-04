@@ -40,6 +40,11 @@ TEUCHOS_STATIC_SETUP()
     " to the std::vector braket operator."
     );
   clp.setOption(
+    "max-array-iter-ratio", &maxArrayIterRatio,
+    "The max allowed CPU timing ratio of the Array[RCP,View] iterators relative"
+    " to using raw pointers as iterators."
+    );
+  clp.setOption(
     "max-arrayrcp-self-iter-ratio", &maxArrayRCPSelfIterRatio,
     "The max allowed CPU timing ratio of the ArrayrCP as a self iterator relative"
     " to raw pointer arithmetic."
@@ -105,7 +110,7 @@ TEUCHOS_UNIT_TEST( Array, braketOperatorOverhead )
 
     // raw ptr
     double *p_raw = &vec[0];
-    TEUCHOS_START_PERF_OUTPUT_TIMER(outputter, numActualLoops)
+    TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
     {
       for (int i=0; i < arraySize; ++i)
         p_raw[i] = i;
@@ -113,7 +118,7 @@ TEUCHOS_UNIT_TEST( Array, braketOperatorOverhead )
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, rawPtrTime);
 
     // vector
-    TEUCHOS_START_PERF_OUTPUT_TIMER(outputter, numActualLoops)
+    TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
     {
       for (int i=0; i < arraySize; ++i)
         vec[i] = i;
@@ -122,7 +127,7 @@ TEUCHOS_UNIT_TEST( Array, braketOperatorOverhead )
 
     // Array
     Teuchos::Array<double> a(arraySize);
-    TEUCHOS_START_PERF_OUTPUT_TIMER(outputter, numActualLoops)
+    TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
     {
       for (int i=0; i < arraySize; ++i)
         a[i] = i;
@@ -207,7 +212,7 @@ TEUCHOS_UNIT_TEST( ArrayView, braketOperatorOverhead )
 
     // raw ptr
     double *p_raw = &vec[0];
-    TEUCHOS_START_PERF_OUTPUT_TIMER(outputter, numActualLoops)
+    TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
     {
       for (int i=0; i < arraySize; ++i)
         p_raw[i] = i;
@@ -217,7 +222,7 @@ TEUCHOS_UNIT_TEST( ArrayView, braketOperatorOverhead )
     // ArrayView
     Teuchos::Array<double> a(arraySize);
     Teuchos::ArrayView<double> av = a;
-    TEUCHOS_START_PERF_OUTPUT_TIMER(outputter, numActualLoops)
+    TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
     {
       for (int i=0; i < arraySize; ++i)
         av[i] = i;
@@ -298,7 +303,7 @@ TEUCHOS_UNIT_TEST( ArrayRCP, braketOperatorOverhead )
 
     // raw ptr
     double *p_raw = &vec[0];
-    TEUCHOS_START_PERF_OUTPUT_TIMER(outputter, numActualLoops)
+    TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
     {
       for (int i=0; i < arraySize; ++i)
         p_raw[i] = i;
@@ -307,7 +312,7 @@ TEUCHOS_UNIT_TEST( ArrayRCP, braketOperatorOverhead )
 
     // ArrayRCP
     Teuchos::ArrayRCP<double> arcp = Teuchos::arcp<double>(arraySize);
-    TEUCHOS_START_PERF_OUTPUT_TIMER(outputter, numActualLoops)
+    TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
     {
       for (int i=0; i < arraySize; ++i)
         arcp[i] = i;
@@ -389,7 +394,7 @@ TEUCHOS_UNIT_TEST( Array, iteratorOverhead )
     std::vector<double> vec(arraySize);
 
     // raw ptr
-    TEUCHOS_START_PERF_OUTPUT_TIMER(outputter, numActualLoops)
+    TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
     {
       double
         *p_raw_itr = &vec[0],
@@ -400,7 +405,7 @@ TEUCHOS_UNIT_TEST( Array, iteratorOverhead )
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, rawPtrTime);
 
     // vector
-    TEUCHOS_START_PERF_OUTPUT_TIMER(outputter, numActualLoops)
+    TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
     {
       std::vector<double>::iterator
         vec_itr = vec.begin(),
@@ -412,7 +417,7 @@ TEUCHOS_UNIT_TEST( Array, iteratorOverhead )
 
     // Array
     Teuchos::Array<double> a(arraySize);
-    TEUCHOS_START_PERF_OUTPUT_TIMER(outputter, numActualLoops)
+    TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
     {
       Teuchos::Array<double>::iterator
         a_itr = a.begin(),
@@ -499,7 +504,7 @@ TEUCHOS_UNIT_TEST( ArrayView, iteratorOverhead )
     std::vector<double> vec(arraySize);
 
     // raw ptr
-    TEUCHOS_START_PERF_OUTPUT_TIMER(outputter, numActualLoops)
+    TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
     {
       double
         *p_raw_itr = &vec[0],
@@ -512,7 +517,7 @@ TEUCHOS_UNIT_TEST( ArrayView, iteratorOverhead )
     // ArrayView
     Teuchos::Array<double> a(arraySize);
     Teuchos::ArrayView<double> av = a;
-    TEUCHOS_START_PERF_OUTPUT_TIMER(outputter, numActualLoops)
+    TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
     {
       Teuchos::ArrayView<double>::iterator
         av_itr = av.begin(),
@@ -595,7 +600,7 @@ TEUCHOS_UNIT_TEST( ArrayRCP, iteratorOverhead )
     std::vector<double> vec(arraySize);
 
     // raw ptr
-    TEUCHOS_START_PERF_OUTPUT_TIMER(outputter, numActualLoops)
+    TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
     {
       double
         *p_raw_itr = &vec[0],
@@ -607,7 +612,7 @@ TEUCHOS_UNIT_TEST( ArrayRCP, iteratorOverhead )
 
     // ArrayRCP
     Teuchos::ArrayRCP<double> ap = Teuchos::arcp<double>(arraySize);
-    TEUCHOS_START_PERF_OUTPUT_TIMER(outputter, numActualLoops)
+    TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
     {
       Teuchos::ArrayRCP<double>::iterator
         ap_itr = ap.begin(),
@@ -690,7 +695,7 @@ TEUCHOS_UNIT_TEST( ArrayRCP, selfIteratorOverhead )
     std::vector<double> vec(arraySize);
 
     // raw ptr
-    TEUCHOS_START_PERF_OUTPUT_TIMER(outputter, numActualLoops)
+    TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
     {
       double
         *p_raw_itr = &vec[0],
@@ -702,7 +707,7 @@ TEUCHOS_UNIT_TEST( ArrayRCP, selfIteratorOverhead )
 
     // ArrayRCP
     Teuchos::ArrayRCP<double> ap = Teuchos::arcp<double>(arraySize);
-    TEUCHOS_START_PERF_OUTPUT_TIMER(outputter, numActualLoops)
+    TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
     {
       Teuchos::ArrayRCP<double>
         ap_itr = ap,

@@ -19,11 +19,10 @@ PACKAGE_ADD_EXECUTABLE(
 # basically
 PACKAGE_ADD_TEST(
   RCP_PerformanceTests
-  NAME RCP_PerformanceTests_base
   NUM_MPI_PROCS 1
   COMM serial mpi
-    ARGS
-      "--show-test-details=ALL --max-array-size=16384"
+  POSTFIX_AND_ARGS_0 base
+    --show-test-details=ALL --max-array-size=100000
   STANDARD_PASS_OUTPUT
   )
 
@@ -31,11 +30,13 @@ IF (${PACKAGE_NAME}_ENABLE_PERFORMANCE_TESTS)
 
   PACKAGE_ADD_TEST(
     RCP_PerformanceTests
-    NAME RCP_PerformanceTests_performance
     NUM_MPI_PROCS 1
     COMM serial mpi
-    ARGS
-      "--show-test-details=ALL --max-array-size=262144 --rel-cpu-speed=1e+2 --max-rcp-create-destroy-ratio=1.50 --max-rcp-adjust-ref-count-ratio=1.10"
+    POSTFIX_AND_ARGS_0 performance
+      --show-test-details=ALL --max-array-size=100000 --rel-cpu-speed=1e+3
+      --max-rcp-create-destroy-ratio=1.05
+      --max-rcp-raw-adjust-ref-count-ratio=30.0 --max-rcp-sp-adjust-ref-count-ratio=2.2
+      --max-rcp-raw-obj-access-ratio=1.05
     HOST godel.sandia.gov gabriel.sandia.gov
     STANDARD_PASS_OUTPUT
     )
@@ -58,11 +59,10 @@ PACKAGE_ADD_EXECUTABLE(
 # basically
 PACKAGE_ADD_TEST(
   Array_PerformanceTests
-  NAME Array_PerformanceTests_base
   NUM_MPI_PROCS 1
   COMM serial mpi
-    ARGS
-      "--show-test-details=ALL --max-array-size=16384"
+  POSTFIX_AND_ARGS_0 base
+    --show-test-details=ALL --max-array-size=100000
   STANDARD_PASS_OUTPUT
   )
 
@@ -70,11 +70,12 @@ IF (${PACKAGE_NAME}_ENABLE_PERFORMANCE_TESTS)
 
   PACKAGE_ADD_TEST(
     Array_PerformanceTests
-    NAME Array_PerformanceTests_performance
     NUM_MPI_PROCS 1
     COMM serial mpi
-    ARGS
-      "--details=ALL --max-array-size=262144 --rel-cpu-speed=1e+3 --max-array-bracket-ratio=1.02 --max-arrayrcp-self-iter-ratio=1.5"
+    POSTFIX_AND_ARGS_0 performance
+      --details=ALL --max-array-size=100000 --rel-cpu-speed=1e+3
+      --max-array-bracket-ratio=1.02 --max-array-iter-ratio=1.02
+      --max-arrayrcp-self-iter-ratio=1.5
     HOST godel.sandia.gov gabriel.sandia.gov
     STANDARD_PASS_OUTPUT
     )
