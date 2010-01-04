@@ -356,7 +356,15 @@ TEUCHOS_UNIT_TEST( RCP, getOptionalEmbeddedObj_default )
 }
 
 
-TEUCHOS_UNIT_TEST( RCP, reset )
+TEUCHOS_UNIT_TEST( RCP, reset_null )
+{
+  RCP<A> a_rcp = rcp(new A);
+  a_rcp.reset();
+  TEST_ASSERT(is_null(a_rcp));
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, reset_nonnull )
 {
   RCP<A> a_rcp = rcp(new A);
   C* c_rawp = new C;

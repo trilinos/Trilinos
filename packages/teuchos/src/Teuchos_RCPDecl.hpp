@@ -559,19 +559,6 @@ public:
    */
   inline RCP<T>& operator=(const RCP<T>& r_ptr);
 
-  /** \brief Reset the raw pointer with default ownership to delete.
-   *
-   * Equivalent to calling:
-   
-   \code
-
-     r_rcp = rcp(p)
-
-   \endcode
-   */
-  template<class T2>
-  inline void reset(T2* p, bool has_ownership = true);
-
   //@}
 
   /** \name Object/Pointer Access Functions */
@@ -797,8 +784,24 @@ public:
 
   //@}
 
-  /** \name Deprecated */
+  /** \name boost::shared_ptr compatiblity funtions. */
   //@{
+
+  /** \brief Reset to null. */
+  inline void reset();
+
+  /** \brief Reset the raw pointer with default ownership to delete.
+   *
+   * Equivalent to calling:
+   
+   \code
+
+     r_rcp = rcp(p)
+
+   \endcode
+   */
+  template<class T2>
+  inline void reset(T2* p, bool has_ownership = true);
 
   /** \brief Returns <tt>strong_count()</tt> [deprecated]. */
   inline int count() const;

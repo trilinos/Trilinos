@@ -223,15 +223,6 @@ RCP<T>& RCP<T>::operator=(const RCP<T>& r_ptr)
 }
 
 
-template<class T>
-template<class T2>
-inline
-void RCP<T>::reset(T2* p, bool has_ownership_in)
-{
-  *this = rcp(p, has_ownership_in);
-}
-
-
 // Object query and access functions
 
 
@@ -431,7 +422,25 @@ const RCP<T>& RCP<T>::assert_valid_ptr() const
 }
 
 
-// Deprecated
+// boost::shared_ptr compatiblity funtions
+
+
+template<class T>
+inline
+void RCP<T>::reset()
+{
+  node_ = RCPNodeHandle();
+  ptr_ = 0;
+}
+
+
+template<class T>
+template<class T2>
+inline
+void RCP<T>::reset(T2* p, bool has_ownership_in)
+{
+  *this = rcp(p, has_ownership_in);
+}
 
 
 template<class T>
