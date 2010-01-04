@@ -70,6 +70,8 @@ ZHG *zhg;                     /* Temporary pointer to Zoltan_HGraph. */
 HGraph *phgraph;             /* Temporary pointer to HG field */
 int ierr = ZOLTAN_OK;
 char *yo = "Zoltan_PHG_Build_Hypergraph";
+char *input_object = "hypergraph";
+char msg[128];
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -82,10 +84,15 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
 
   Zoltan_Input_HG_Init(zhg);
 
+  if (zz->LB.Method == GRAPH){
+    input_object = "graph";
+  }
+
   ierr = Zoltan_Get_Hypergraph_From_Queries(zz, hgp, zz->LB.Method, zhg);
 
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error getting hypergraph from application");
+    sprintf(msg,"Error getting %s from application",input_object);
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
     goto End;
   }
 
@@ -100,7 +107,8 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
 
   ierr = Zoltan_PHG_Fill_Hypergraph(zz, zhg, hgp, input_parts);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building hypergraph");
+    sprintf(msg,"Error building hypergraph from data supplied by your %d queries",input_object);
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
     goto End;
   }
 
