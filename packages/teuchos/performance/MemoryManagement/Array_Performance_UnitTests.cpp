@@ -21,6 +21,8 @@ double maxArrayRCPSelfIterRatio =50.0;
 
 const int minArraySize = 100;
 const int maxLoopIters = 1000;
+const int intPrec = 8;
+const int dblPrec = 6;
 
 TEUCHOS_STATIC_SETUP()
 {
@@ -69,8 +71,8 @@ TEUCHOS_UNIT_TEST( Array, braketOperatorOverhead )
       << "\n";
 
   TabularOutputter outputter(out);
-  outputter.setFieldTypePrecision(TO::DOUBLE, 8);
-  outputter.setFieldTypePrecision(TO::INT, 8);
+  outputter.setFieldTypePrecision(TO::DOUBLE, dblPrec);
+  outputter.setFieldTypePrecision(TO::INT, intPrec);
 
   outputter.pushFieldSpec("array dim", TO::INT);
   outputter.pushFieldSpec("num loops", TO::INT);
@@ -173,8 +175,8 @@ TEUCHOS_UNIT_TEST( ArrayView, braketOperatorOverhead )
       << "\n";
 
   TabularOutputter outputter(out);
-  outputter.setFieldTypePrecision(TO::DOUBLE, 8);
-  outputter.setFieldTypePrecision(TO::INT, 8);
+  outputter.setFieldTypePrecision(TO::DOUBLE, dblPrec);
+  outputter.setFieldTypePrecision(TO::INT, intPrec);
 
   outputter.pushFieldSpec("array dim", TO::INT);
   outputter.pushFieldSpec("num loops", TO::INT);
@@ -264,8 +266,8 @@ TEUCHOS_UNIT_TEST( ArrayRCP, braketOperatorOverhead )
       << "\n";
 
   TabularOutputter outputter(out);
-  outputter.setFieldTypePrecision(TO::DOUBLE, 8);
-  outputter.setFieldTypePrecision(TO::INT, 8);
+  outputter.setFieldTypePrecision(TO::DOUBLE, dblPrec);
+  outputter.setFieldTypePrecision(TO::INT, intPrec);
 
   outputter.pushFieldSpec("array dim", TO::INT);
   outputter.pushFieldSpec("num loops", TO::INT);
@@ -354,8 +356,8 @@ TEUCHOS_UNIT_TEST( Array, iteratorOverhead )
       << "\n";
 
   TabularOutputter outputter(out);
-  outputter.setFieldTypePrecision(TO::DOUBLE, 8);
-  outputter.setFieldTypePrecision(TO::INT, 8);
+  outputter.setFieldTypePrecision(TO::DOUBLE, dblPrec);
+  outputter.setFieldTypePrecision(TO::INT, intPrec);
 
   outputter.pushFieldSpec("array dim", TO::INT);
   outputter.pushFieldSpec("num loops", TO::INT);
@@ -466,8 +468,8 @@ TEUCHOS_UNIT_TEST( ArrayView, iteratorOverhead )
       << "\n";
 
   TabularOutputter outputter(out);
-  outputter.setFieldTypePrecision(TO::DOUBLE, 8);
-  outputter.setFieldTypePrecision(TO::INT, 8);
+  outputter.setFieldTypePrecision(TO::DOUBLE, dblPrec);
+  outputter.setFieldTypePrecision(TO::INT, intPrec);
 
   outputter.pushFieldSpec("array dim", TO::INT);
   outputter.pushFieldSpec("num loops", TO::INT);
@@ -562,8 +564,8 @@ TEUCHOS_UNIT_TEST( ArrayRCP, iteratorOverhead )
       << "\n";
 
   TabularOutputter outputter(out);
-  outputter.setFieldTypePrecision(TO::DOUBLE, 8);
-  outputter.setFieldTypePrecision(TO::INT, 8);
+  outputter.setFieldTypePrecision(TO::DOUBLE, dblPrec);
+  outputter.setFieldTypePrecision(TO::INT, intPrec);
 
   outputter.pushFieldSpec("array dim", TO::INT);
   outputter.pushFieldSpec("num loops", TO::INT);
@@ -657,8 +659,8 @@ TEUCHOS_UNIT_TEST( ArrayRCP, selfIteratorOverhead )
       << "\n";
 
   TabularOutputter outputter(out);
-  outputter.setFieldTypePrecision(TO::DOUBLE, 8);
-  outputter.setFieldTypePrecision(TO::INT, 8);
+  outputter.setFieldTypePrecision(TO::DOUBLE, dblPrec);
+  outputter.setFieldTypePrecision(TO::INT, intPrec);
 
   outputter.pushFieldSpec("array dim", TO::INT);
   outputter.pushFieldSpec("num loops", TO::INT);
