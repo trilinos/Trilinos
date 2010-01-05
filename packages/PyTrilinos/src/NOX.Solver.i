@@ -136,6 +136,11 @@ using Teuchos::RCP;
   {
     SWIG_fail;
   }
+  catch(const char* e)
+  {
+    PyErr_SetString(PyExc_RuntimeError, e);
+    SWIG_fail;
+  }
   SWIG_CATCH_STDEXCEPT
   catch(...)
   {
