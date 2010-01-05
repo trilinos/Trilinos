@@ -214,6 +214,8 @@ inline
 RCP<T>& RCP<T>::operator=(const RCP<T>& r_ptr)
 {
 #ifdef TEUCHOS_DEBUG
+  if (this == &r_ptr)
+    return *this;
   reset(); // Force delete first in debug mode!
 #endif
   RCP<T>(r_ptr).swap(*this);

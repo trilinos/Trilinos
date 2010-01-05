@@ -43,11 +43,21 @@ TEUCHOS_UNIT_TEST( DeallocNull, free )
 }
 
 
-TEUCHOS_UNIT_TEST( RCP, assignSelf )
+TEUCHOS_UNIT_TEST( RCP, assignSelf_null )
 {
   RCP<A> a_rcp;
   a_rcp = a_rcp;
   TEST_ASSERT(is_null(a_rcp));
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, assignSelf_nonnull )
+{
+  RCP<A> a_rcp(new A);
+  A *a_raw_ptr = a_rcp.getRawPtr(); 
+  a_rcp = a_rcp;
+  TEST_ASSERT(nonnull(a_rcp));
+  TEST_EQUALITY(a_rcp.getRawPtr(), a_raw_ptr);
 }
 
 
