@@ -213,13 +213,29 @@ template<class T>
 inline
 RCP<T>& RCP<T>::operator=(const RCP<T>& r_ptr)
 {
-  if (this == &r_ptr)
-    return *this; // Assignment to self
-  node_ = r_ptr.access_private_node(); // May throw in debug mode!
-  ptr_ = r_ptr.ptr_;
+#ifdef TEUCHOS_DEBUG
+  reset(); // Force delete first in debug mode!
+#endif
+  RCP<T>(r_ptr).swap(*this);
   return *this;
-  // NOTE: It is critical that the assignment of ptr_ come *after* the
-  // assignment of node_ since node_ might throw an exception!
+}
+
+
+template<class T>
+inline
+RCP<T>& RCP<T>::operator=(ENull)
+{
+  reset();
+  return *this;
+}
+
+
+template<class T>
+inline
+void RCP<T>::swap(RCP<T> &r_ptr)
+{
+  std::swap(r_ptr.ptr_, ptr_);
+  node_.swap(r_ptr.node_);
 }
 
 
@@ -429,7 +445,11 @@ template<class T>
 inline
 void RCP<T>::reset()
 {
+#ifdef TEUCHOS_DEBUG
   node_ = RCPNodeHandle();
+#else
+  RCPNodeHandle().swap(node_);
+#endif
   ptr_ = 0;
 }
 

@@ -35,7 +35,7 @@ IF (${PACKAGE_NAME}_ENABLE_PERFORMANCE_TESTS)
     POSTFIX_AND_ARGS_0 performance
       --show-test-details=ALL --max-array-size=100000 --rel-cpu-speed=1e+3
       --max-rcp-create-destroy-ratio=1.05
-      --max-rcp-raw-adjust-ref-count-ratio=22.0 --max-rcp-sp-adjust-ref-count-ratio=1.2
+      --max-rcp-raw-adjust-ref-count-ratio=20.0 --max-rcp-sp-adjust-ref-count-ratio=1.7
       --max-rcp-raw-obj-access-ratio=1.02
     HOST godel.sandia.gov gabriel.sandia.gov
     STANDARD_PASS_OUTPUT

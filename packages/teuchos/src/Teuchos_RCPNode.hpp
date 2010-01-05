@@ -667,6 +667,12 @@ public:
     {
       bind();
     }
+  /** \brief . */
+  void swap( RCPNodeHandle& node_ref )
+    {
+      std::swap(node_ref.node_, node_);
+      std::swap(node_ref.strength_, strength_);
+    }
   /** \brief (Strong guarantee). */
   RCPNodeHandle& operator=(const RCPNodeHandle& node_ref)
     {

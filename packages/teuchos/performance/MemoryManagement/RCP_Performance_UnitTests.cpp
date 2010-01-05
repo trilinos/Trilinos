@@ -192,7 +192,7 @@ TEUCHOS_UNIT_TEST( RCP, referenceCountManipulationOverhead )
 
   typedef Teuchos::TabularOutputter TO;
 
-  const double relTestCost = 1e-4;
+  const double relTestCost = 5e-3;
   const int maxLoopIters = 1000;
   const double numInnerLoops = relCpuSpeed / relTestCost;
 
@@ -249,7 +249,6 @@ TEUCHOS_UNIT_TEST( RCP, referenceCountManipulationOverhead )
       {
         for (int i=0; i < arraySize; ++i) {
           p_raw_vec[i] = &dummy_char;
-          //p_raw_vec[i] = 0;
         }
       }
     }
@@ -265,7 +264,6 @@ TEUCHOS_UNIT_TEST( RCP, referenceCountManipulationOverhead )
       {
         for (int i=0; i < arraySize; ++i) {
           sp_vec[i] = sp;
-          //sp_vec[i].reset();
         }
       }
     }
@@ -282,7 +280,9 @@ TEUCHOS_UNIT_TEST( RCP, referenceCountManipulationOverhead )
       {
         for (int i=0; i < arraySize; ++i) {
           p_vec[i] = p;
-          //p_vec[i].reset();
+          // NOTE: This assignment operation tests the copy constructor and
+          // the swap function.  This calls both bind() and unbind()
+          // underneath.
         }
       }
     }

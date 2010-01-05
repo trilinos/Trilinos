@@ -559,6 +559,23 @@ public:
    */
   inline RCP<T>& operator=(const RCP<T>& r_ptr);
 
+  /** \brief Assign to null.
+   *
+   * If <tt>this->has_ownership() == true</tt> and <tt>this->strong_count() == 1</tt>
+   * before this operation is called, then the object pointed to by
+   * <tt>this->get()</tt> will be deleted (usually using <tt>delete</tt>)
+   * prior to binding to the pointer (possibly <tt>NULL</tt>) pointed to in
+   * <tt>r_ptr</tt>.
+   *
+   * <b>Postconditons:</b><ul>
+   * <li> See <tt>RCP(ENull)</tt>
+   * </ul>
+   */
+  inline RCP<T>& operator=(ENull);
+
+  /** \brief Swap the contents with some other RCP object. */
+  inline void swap(RCP<T> &r_ptr);
+
   //@}
 
   /** \name Object/Pointer Access Functions */
