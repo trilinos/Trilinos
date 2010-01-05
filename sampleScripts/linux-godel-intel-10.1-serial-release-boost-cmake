@@ -1,0 +1,27 @@
+EXTRA_ARGS=$@
+
+
+# This is a script that I get to build (at least part) of Trilinos
+# with the Intel C++/C compilers on godel.  NOTE: You need to pass in
+# the options for the packages that you want to enable.
+
+cmake \
+-D CMAKE_BUILD_TYPE:STRING=NONE \
+-D CMAKE_C_COMPILER:FILEPATH=/opt/intel/cc/10.1.015/bin/icc \
+-D CMAKE_CXX_COMPILER:FILEPATH=/opt/intel/cc/10.1.015/bin/icpc \
+-D CMAKE_CXX_FLAGS:STRING="-DBOOST_SP_DISABLE_THREADS -O3" \
+-D TPL_ENABLE_Boost:BOOL=ON \
+-D Boost_INCLUDE_DIRS:PATH=$HOME/PROJECTS/boost.base/boost-1.40.0.cmake2 \
+-D Trilinos_ENABLE_Fortran:BOOL=OFF \
+-D MEMORYCHECK_COMMAND:FILEPATH=/usr/bin/valgrind \
+-D DART_TESTING_TIMEOUT:STRING=600 \
+-D CMAKE_LIBRARY_PATH:PATH=/usr/lib64 \
+-D Trilinos_ENABLE_TESTS:BOOL=ON \
+$EXTRA_ARGS \
+../../Trilinos
+
+#-D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+#-D CMAKE_Fortran_COMPILER:FILEPATH=/usr/bin/f77 \
+#-D CMAKE_CXX_FLAGS:STRING="-diag-disable 597" \
+#-D BLAS_LIBRARY_DIRS:PATH="/opt/intel/mkl/10.0.3.020/lib/64" \
+#-D BLAS_LIBRARY_NAMES:STRING="mkl_intel_lp64;mkl_intel_thread;mkl_core;guide;pthread" \
