@@ -6,9 +6,15 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_TestForException.hpp"
 
+#include "Piro_ConfigDefs.hpp"
+
+#ifdef Piro_ENABLE_NOX
 #include "Piro_Epetra_NOXSolver.hpp"
 #include "Piro_Epetra_LOCASolver.hpp"
+#endif
+#ifdef Piro_ENABLE_Rythmos
 #include "Piro_Epetra_RythmosSolver.hpp"
+#endif
 
 
 int main(int argc, char *argv[]) {
@@ -42,13 +48,18 @@ int main(int argc, char *argv[]) {
     RCP<EpetraExt::ModelEvaluator> piro;
 
     std::string& solver = piroParams->get("Piro Solver","NOX");
+#ifdef Piro_ENABLE_NOX
     if (solver=="NOX")
       piro = rcp(new Piro::Epetra::NOXSolver(piroParams, Model));
     else if (solver=="LOCA")
       piro = rcp(new Piro::Epetra::LOCASolver(piroParams, Model));
-    else if (solver=="Rythmos")
+    else
+#endif
+#ifdef Piro_ENABLE_Rythmos
+    if (solver=="Rythmos")
       piro = rcp(new Piro::Epetra::RythmosSolver(piroParams, Model));
     else 
+#endif
       TEST_FOR_EXCEPTION(true, std::logic_error,
         "Error: Unknown Piro Solver : " << solver);
 

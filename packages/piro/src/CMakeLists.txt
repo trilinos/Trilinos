@@ -21,7 +21,8 @@ SET(HEADERS ${HEADERS}
 #
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/utilities)
 SET(HEADERS utilities/Piro_ValidPiroParameters.hpp
-            utilities/Piro_Version.hpp)
+            utilities/Piro_Version.hpp
+            utilities/Piro_ConfigDefs.hpp)
 SET(SOURCES utilities/Piro_ValidPiroParameters.cpp
             utilities/Piro_Version.cpp)
 
