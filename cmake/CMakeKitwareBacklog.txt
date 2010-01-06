@@ -58,7 +58,11 @@ email addresses list (e.g. trilinos-framework) stating that the tests where
 killed. Alternatively or in addition to limiting the total time for all tests,
 the time could be limited for each build.
 
-C) Send email to some list of email addresses when the tests finish. 
+C) Send email to some list of email addresses when the tests finish.  Emails
+should also be sent when an expected build is not registered, when a machine
+cannot submit to the main dashboard, and when any catastrophic failure occurs.
+When a testing machine has no network connectivity at the beginning or end of
+a testing attempt, an easily accessible log should be left on the machine. 
 
 D) Support parallel build tracks. If there are enough cores available,
 multiple test builds should be done at the same time. For example, dev builds
