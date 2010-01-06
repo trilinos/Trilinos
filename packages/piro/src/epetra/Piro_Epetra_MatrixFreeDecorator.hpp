@@ -54,6 +54,8 @@ class MatrixFreeDecorator
   Teuchos::RCP<const Epetra_Vector> get_p_init(int l) const;
   /** \brief . */
   Teuchos::RCP<Epetra_Operator> create_W() const;
+ /** \brief . */
+  Teuchos::RCP<Epetra_Operator> create_M() const;
   /** \brief . */
   EpetraExt::ModelEvaluator::InArgs createInArgs() const;
   /** \brief . */

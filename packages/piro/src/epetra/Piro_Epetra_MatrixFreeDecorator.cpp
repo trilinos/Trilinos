@@ -57,6 +57,11 @@ Teuchos::RCP<Epetra_Operator> Piro::Epetra::MatrixFreeDecorator::create_W() cons
   return Teuchos::rcp(new Piro::Epetra::MatrixFreeOperator(model, lambda));
 }
 
+Teuchos::RCP<Epetra_Operator> Piro::Epetra::MatrixFreeDecorator::create_M() const
+{
+  return model->create_M();
+}
+
 EpetraExt::ModelEvaluator::InArgs Piro::Epetra::MatrixFreeDecorator::createInArgs() const
 {
   return model->createInArgs();
