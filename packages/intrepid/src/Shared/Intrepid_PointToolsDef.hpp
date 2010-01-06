@@ -94,6 +94,23 @@ namespace Intrepid {
     return;
   }
 
+  template<class Scalar, class ArrayType>
+  void PointTools::getGaussPoints( ArrayType &pts ,
+				   const int order )
+  {
+
+    Scalar *z = new Scalar[order+1];
+    Scalar *w = new Scalar[order+1];
+
+    IntrepidPolylib::zwgj( z , w , order + 1 , 0.0 , 0.0 );
+    for (int i=0;i<order+1;i++) {
+      pts(i) = z[i];
+    }
+
+    delete []z;
+    delete []w;
+  }
+
   
   template<class Scalar, class ArrayType>
   void PointTools::getEquispacedLattice(const shards::CellTopology& cellType ,

@@ -225,6 +225,17 @@ Gauss-Lobatto points on the line).
                             const int offset = 0 ,
                             const EPointType pointType = POINTTYPE_EQUISPACED );
 
+    /** Retrieves the Gauss-Legendre points from PolyLib, but lets us
+	do it in an arbitrary ArrayType.
+	\param  pts         [out] - Output array of point coords (P,)
+	\param  order       [out] - number of Gauss points - 1
+    */
+ 
+    template<class Scalar, class ArrayType>
+    static void getGaussPoints( ArrayType &pts ,
+				const int order );
+
+
   private:
     /** \brief Converts Cartesian coordinates to barycentric coordinates
               on a batch of triangles.  
