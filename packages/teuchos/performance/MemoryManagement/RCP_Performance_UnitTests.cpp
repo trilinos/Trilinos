@@ -64,21 +64,35 @@ TEUCHOS_STATIC_SETUP()
 }
 
 
+template<typename T>
+struct DeleteDeleter {
+  void operator()(T* ptr) { delete ptr; }
+};
+
+
 TEUCHOS_UNIT_TEST( RCP, _sizeofObjects )
 {
   out << "\nPrinting the size the RCP and RCPNodeImpl objects ...\n";
   TEST_INEQUALITY_CONST(sizeof(bool), 0);
-  TEST_INEQUALITY_CONST(sizeof(int*), 0);
   TEST_INEQUALITY_CONST(sizeof(double), 0);
+  TEST_INEQUALITY_CONST(sizeof(double*), 0);
+  TEST_INEQUALITY_CONST(sizeof(std::vector<double>), 0);
   TEST_INEQUALITY_CONST(sizeof(Teuchos::RCPNode*), 0);
   TEST_INEQUALITY_CONST(sizeof(Teuchos::ERCPStrength), 0);
   TEST_INEQUALITY_CONST(sizeof(Teuchos::RCPNodeHandle), 0);
-  TEST_INEQUALITY_CONST(sizeof(Teuchos::RCP<int>), 0);
-  TEST_INEQUALITY_CONST(sizeof(Teuchos::RCPNodeTmpl<int, Teuchos::DeallocNull<int> >), 0);
+  TEST_INEQUALITY_CONST(sizeof(Teuchos::RCP<std::vector<double> >), 0);
+  TEST_INEQUALITY_CONST(
+    sizeof(Teuchos::RCPNodeTmpl<std::vector<double>,
+      Teuchos::DeallocDelete<std::vector<double> > >),
+    0);
 #ifdef HAVE_TEUCHOS_BOOST
   TEST_INEQUALITY_CONST(sizeof(boost::detail::shared_count), 0);
-  TEST_INEQUALITY_CONST(sizeof(boost::shared_ptr<int>), 0);
-  TEST_INEQUALITY_CONST(sizeof(boost::detail::sp_counted_impl_p<int>), 0);
+  TEST_INEQUALITY_CONST(sizeof(boost::shared_ptr<std::vector<double> >), 0);
+  TEST_INEQUALITY_CONST(sizeof(boost::detail::sp_counted_impl_p<std::vector<double> >), 0);
+  TEST_INEQUALITY_CONST(
+    sizeof(boost::detail::sp_counted_impl_pd<std::vector<double>,
+      DeleteDeleter<std::vector<double> > >),
+    0);
 #endif
 }
 
