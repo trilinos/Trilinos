@@ -1,8 +1,10 @@
+// $Id$ 
+// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
-//                    Teuchos: Common Tools Package
-//                 Copyright (2004) Sandia Corporation
+//                           Stokhos Package
+//                 Copyright (2009) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -21,38 +23,35 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
 // 
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_exit.h"
-#include "Teuchos_StandardCatchMacros.hpp"
-#include "some_c_func.h"
+#ifndef STOKHOS_PRECONDITIONER_FACTORY_HPP
+#define STOKHOS_PRECONDITIONER_FACTORY_HPP
 
-int main( int argc, char* argv[] ) {
+#include "Teuchos_RCP.hpp"
+#include "Epetra_Operator.h"
 
-  bool result, success = true;
+namespace Stokhos {
 
-  result = true;
-	try {
-    std::cerr << "\nCall a C function that call TEUCHOS_EXIT(...) ...\n";
-    some_c_func();
-	}
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, result);
-  if (result) success = false;
-  
-  result = true;
-  try {
-    std::cerr << "\nRaise an std::exception with TEUCHOS_MSG_EXIT(...) right here in C++ code with a message ...\n";
-    TEUCHOS_MSG_EXIT("This std::exception is raised from C++ code!",1);
-	}
-  TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, result);
-  if (result) success = false;
-  
-  if(success)
-    std::cerr << "\nEnd Result: TEST PASSED" << std::endl;	
-  
-  return ( success ? 0 : 1 );
-  
-}
+  //! An abstract class to represent a generic preconditioner factory.
+  class PreconditionerFactory {
+  public:
+
+    //! Constructor
+    PreconditionerFactory() {}
+
+    //! Destructor
+    virtual ~PreconditionerFactory() {}
+
+    //! Compute precconditioner operator
+    virtual Teuchos::RCP<Epetra_Operator> 
+    compute(const Teuchos::RCP<Epetra_Operator>& mat) = 0;
+
+  }; // class PreconditionerFactory
+
+} // namespace Stokhos
+
+#endif // STOKHOS_PRECONDITIONER_FACTORY_HPP

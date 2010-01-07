@@ -70,6 +70,8 @@ ZHG *zhg;                     /* Temporary pointer to Zoltan_HGraph. */
 HGraph *phgraph;             /* Temporary pointer to HG field */
 int ierr = ZOLTAN_OK;
 char *yo = "Zoltan_PHG_Build_Hypergraph";
+char *input_object = "hypergraph";
+char msg[128];
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -82,10 +84,15 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
 
   Zoltan_Input_HG_Init(zhg);
 
+  if (zz->LB.Method == GRAPH){
+    input_object = "graph";
+  }
+
   ierr = Zoltan_Get_Hypergraph_From_Queries(zz, hgp, zz->LB.Method, zhg);
 
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error getting hypergraph from application");
+    sprintf(msg,"Error getting %s from application",input_object);
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
     goto End;
   }
 
@@ -100,7 +107,8 @@ char *yo = "Zoltan_PHG_Build_Hypergraph";
 
   ierr = Zoltan_PHG_Fill_Hypergraph(zz, zhg, hgp, input_parts);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error building hypergraph");
+    sprintf(msg,"Error building hypergraph from data supplied by your %d queries",input_object);
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
     goto End;
   }
 
@@ -588,7 +596,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
 
   /*  Send edge weights, if any */
 
-  dim = zz->Edge_Weight_Dim;
+  dim = zhg->edgeWeightDim;
   if (method_repart && (!dim))
     dim = 1; /* Need edge weights for REPARTITION; force malloc of ewgt array */
   phg->EdgeWeightDim = dim;
@@ -600,7 +608,10 @@ int nRepartEdge = 0, nRepartVtx = 0;
 
     if (nwgt && (!phg->ewgt || !tmpwgts)) MEMORY_ERROR;
 
-    if (zz->Edge_Weight_Dim) {  /* Edge weights provided by application */
+    if (zhg->edgeWeightDim) { 
+      /* 
+       * Edge weights provided by application or set in Zoltan_Get_Hypergraph_From_Queries
+       */
       if (phg->comm->nProc_y == 1) {
         for (i = 0; i < nLocalEdges; i++) {
           idx = edgeGNO[i];
@@ -685,7 +696,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
         CHECK_FOR_MPI_ERROR(rc);
       }
     }
-    else { /* dim > 0 but zz->Edge_Weight_Dim == 0 */
+    else { /* dim > 0 but zhg->edgeWeightDim == 0 */
       /* Edge weights are needed for REPARTITION but are not provided by app */
       /* Set the edge weights for input vertices to 1. */
       for (i = 0; i < phg->nEdge; i++) phg->ewgt[i] = 1.;
@@ -923,7 +934,7 @@ float ewgt;
       parts[pin_parts[cnt]] = i+1;
       cnt++;
     }
-    ewgt = (zhg->Ewgt ? zhg->Ewgt[i*zz->Edge_Weight_Dim] : 1.);
+    ewgt = (zhg->Ewgt ? zhg->Ewgt[i*zhg->edgeWeightDim] : 1.);
     if (nparts > 1) {
       loccuts[0] += (nparts-1) * ewgt;
       loccuts[1] += ewgt;
@@ -1434,7 +1445,7 @@ int myProc_y = phg->comm->myProc_y;
     phg->nEdge -= phg->nRepartEdge;
     phg->nPins -= phg->nRepartPin;
 
-    if (zz->Edge_Weight_Dim) {
+    if (zhg->edgeWeightDim) {
       /* Remove the RepartMultiplier from edge weights */
       for (i = 0; i < phg->nEdge; i++)
         phg->ewgt[i] /= hgp->RepartMultiplier;
@@ -1483,7 +1494,7 @@ static int remove_dense_edges(ZZ *zz,
 char *yo = "remove_dense_edges";
 int ierr = ZOLTAN_OK;
 int i, w, esize, k, l, kpin, lpin, pin;
-int ew_dim = zz->Edge_Weight_Dim;
+int ew_dim = zhg->edgeWeightDim;
 int global_nremove = 0; 
 int global_nremove_pins = 0; 
 int nremove = 0;

@@ -4,6 +4,7 @@
 #include "Teuchos_RefCountPtr.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosPseudoBlockCGSolMgr.hpp"
+#include "BelosPseudoBlockGmresSolMgr.hpp"
 #include "BelosBlockGmresSolMgr.hpp"
 #include "BelosTFQMRSolMgr.hpp"
 
@@ -26,6 +27,9 @@ build_solver(Teuchos::ParameterList& test_params,
   if (solver_type == "PseudoBlockCG") {
     solver = Teuchos::rcp(new Belos::PseudoBlockCGSolMgr<Scalar,MV,OP>(problem,rcpparams));
   }
+  else if (solver_type == "PseudoBlockGmres") {
+    solver = Teuchos::rcp(new Belos::PseudoBlockGmresSolMgr<Scalar,MV,OP>(problem,rcpparams));
+  }
   else if (solver_type == "BlockGmres") {
     solver = Teuchos::rcp(new Belos::BlockGmresSolMgr<Scalar,MV,OP>(problem,rcpparams));
   }
@@ -38,7 +42,7 @@ build_solver(Teuchos::ParameterList& test_params,
   else {
     std::ostringstream os;
     os << "Error in build_solver: solver_type ("<<solver_type<<") not recognized.";
-    os << "\nTifpack's test-driver recognizes these solvers: PseudoBlockCG, BlockGmres, TFQMR.";
+    os << "\nTifpack's test-driver recognizes these solvers: PseudoBlockCG, PesudoBlockGmres, BlockGmres, TFQMR.";
     std::string str = os.str();
     throw std::runtime_error(str);
   }

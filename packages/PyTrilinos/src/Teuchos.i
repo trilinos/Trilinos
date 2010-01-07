@@ -107,6 +107,9 @@ using std::string;
 using Teuchos::RCP;
 %}
 
+// Configuration macros for SWIG
+%include "Teuchos_config.h"
+
 // Namespace flattening
 using std::string;
 using Teuchos::RCP;

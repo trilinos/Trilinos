@@ -594,6 +594,8 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       Zoltan_Map_Destroy(zz, map1);
     }
 
+    zhg->edgeWeightDim = ew_dim;
+
     if (ew_dim && zz->Get_HG_Size_Edge_Wts && zz->Get_HG_Edge_Wts){
 
       /* Get edge weights */
@@ -1006,14 +1008,10 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     /************************************************************************* 
      * Convert the graph edges to hyperedges.
      */
-  
-    if (ew_dim == 0){
-      /* 
-       * If there are no graph edge weights, we will assign each hyperedge
-       * a weight of 1.0.  
-       */
-      ew_dim = zz->Edge_Weight_Dim = 1;
-    }
+
+    zhg->edgeWeightDim = ((ew_dim > 0) ? ew_dim : 1);
+
+    ew_dim = zhg->edgeWeightDim;
 
     if (use_all_neighbors){
       /* 

@@ -122,7 +122,7 @@ namespace Stokhos {
   protected:
     
     //! Label for operator
-    string label;
+    std::string label;
     
     //! Stores base map
     Teuchos::RCP<const Epetra_Map> base_map;

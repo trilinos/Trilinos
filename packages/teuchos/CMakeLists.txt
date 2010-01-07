@@ -81,7 +81,7 @@ ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_DEBUG_RCP_NODE_TRACING
   HAVE_TEUCHOS_DEBUG_RCP_NODE_TRACING
   "At compile time, enable debug-mode RCP node tracing which can't be turned off."
-  OFF
+  ${${PACKAGE_NAME}_ENABLE_DEBUG}
   )
 
 ADD_OPTION_AND_DEFINE(

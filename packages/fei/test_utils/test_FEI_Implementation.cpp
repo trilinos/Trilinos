@@ -6,6 +6,7 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
+#include <string.h>
 
 #include <fei_macros.hpp>
 #include <fei_sstream.hpp>

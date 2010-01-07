@@ -1,8 +1,10 @@
-/* @HEADER
+// $Id$ 
+// $Source$ 
+// @HEADER
 // ***********************************************************************
 // 
-//                    Teuchos: Common Tools Package
-//                 Copyright (2004) Sandia Corporation
+//                           Stokhos Package
+//                 Copyright (2009) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -21,16 +23,41 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
 // 
 // ***********************************************************************
 // @HEADER
-*/
 
-#include "some_c_func.h"
-#include "Teuchos_exit.h"
+#ifndef STOKHOS_ML_PRECONDITIONER_FACTORY_HPP
+#define STOKHOS_ML_PRECONDITIONER_FACTORY_HPP
 
-void some_c_func()
-{
-  TEUCHOS_EXIT(5);
-}
+#include "Teuchos_ParameterList.hpp"
+
+#include "Stokhos_PreconditionerFactory.hpp"
+
+namespace Stokhos {
+
+  //! A factory for building ML preconditioners
+  class MLPreconditionerFactory : public Stokhos::PreconditionerFactory {
+  public:
+
+    //! Constructor
+    MLPreconditionerFactory(const Teuchos::RCP<Teuchos::ParameterList>& p);
+
+    //! Destructor
+    virtual ~MLPreconditionerFactory() {}
+
+    //! Compute preconditioner
+    virtual Teuchos::RCP<Epetra_Operator> 
+    compute(const Teuchos::RCP<Epetra_Operator>& op);
+
+  protected:
+
+    //! Preconditioner parameters
+    Teuchos::RCP<Teuchos::ParameterList> precParams;
+
+  }; // class MLPreconditionerFactory
+
+} // namespace Stokhos
+
+#endif // STOKHOS_ML_PRECONDITIONER_FACTORY_HPP

@@ -51,66 +51,73 @@ namespace Tifpack {
 template<class Scalar,class GlobalOrdinal>
 class DenseRow {
 public:
-  /** Specify the range of indices that will be used to access the
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+
+  /** Specify the max index that will be used to access the
    * contents of the row. The DenseRow object allocates memory of
-   * length last_index-first_index+1 to hold the row's coefficients.
+   * length max_index+1 to hold the row's coefficients.
    */
-  DenseRow(GlobalOrdinal first_index, GlobalOrdinal last_index);
+  DenseRow(GlobalOrdinal last_index);
 
   /** Destructor */
   ~DenseRow();
 
   /** Access the scalar corresponding to column 'idx'.
-   * (Internally returns m_values[idx - first_index].)
    */
   Scalar& operator[](GlobalOrdinal idx);
   /** Access the scalar corresponding to column 'idx'.
-   * (Internally returns m_values[idx - first_index].)
    */
   const Scalar& operator[](GlobalOrdinal idx) const;
 
-  /** Return the number of distinct entries that have been referenced
-   * by 'operator[]'.
+  /** Return the number of non-zero entries.
    */
   size_t getNumEntries() const;
 
-  /** Set all internal values to 0, and flag them as unused.
+  /** Set all internal values to 0.
    */
   void reset();
 
-  /** Copy indices and values to arrays.
-   * (Only copies the ones that have been referenced using the
-   *  'operator[]' accessor.)
+  /** reduce indices and values to arrays.
+   * (Discards values to satisfy fill (maxlen) and drop-tolerance)
    */
-  void copyToArrays(Teuchos::Array<GlobalOrdinal>& indices,
-                    Teuchos::Array<Scalar>& values) const;
+  void reduceToArraysL(
+           Teuchos::Array<magnitudeType>& magRow,
+           int maxlen,
+           const magnitudeType& dropTol,
+           GlobalOrdinal diag,
+           Teuchos::Array<GlobalOrdinal>& indices,
+           Teuchos::Array<Scalar>& values) const;
+
+  /** reduce indices and values to arrays.
+   * (Discards values to satisfy fill (maxlen) and drop-tolerance)
+   */
+  Scalar reduceToArraysU(
+           Teuchos::Array<magnitudeType>& magRow,
+           int maxlen,
+           const magnitudeType& dropTol,
+           GlobalOrdinal diag,
+           Teuchos::Array<GlobalOrdinal>& indices,
+           Teuchos::Array<Scalar>& values) const;
 
 private:
-  GlobalOrdinal m_first_index;
   GlobalOrdinal m_last_index;
   Teuchos::Array<Scalar> m_values;
   typedef typename Teuchos::Array<Scalar>::size_type tsize_t;
-  bool* m_used;
+  Scalar m_zero;
 };//class DenseRow
 
 
 template<class Scalar,class GlobalOrdinal>
-DenseRow<Scalar,GlobalOrdinal>::DenseRow(GlobalOrdinal first_index, GlobalOrdinal last_index)
- : m_first_index(first_index),
-   m_last_index(last_index),
-   m_values(last_index-first_index+1, 0),
-   m_used(NULL)
+DenseRow<Scalar,GlobalOrdinal>::DenseRow(GlobalOrdinal last_index)
+ : m_last_index(last_index),
+   m_values(last_index+1, 0),
+   m_zero(Teuchos::ScalarTraits<Scalar>::zero())
 {
-  m_used = new bool[m_values.size()];
-  for(tsize_t i=0; i<m_values.size(); ++i) {
-    m_used[i] = false;
-  }
 }
 
 template<class Scalar,class GlobalOrdinal>
 DenseRow<Scalar,GlobalOrdinal>::~DenseRow()
 {
-  delete [] m_used; m_used = NULL;
 }
 
 template<class Scalar,class GlobalOrdinal>
@@ -118,19 +125,16 @@ inline Scalar&
 DenseRow<Scalar,GlobalOrdinal>::operator[](GlobalOrdinal idx)
 {
 #ifdef HAVE_TIFPACK_ARRAY_BOUNDSCHECK
-  if (idx < m_first_index || idx > m_last_index) {
+  if (idx > m_last_index) {
     std::ostringstream os;
     os << "Tifpack::DenseRow ERROR, input idx("<<idx<<") is outside "
-       << "the bounds m_first_index("<<m_first_index<<") .. m_last_index("
-       << m_last_index << ").";
+       << "the bounds m_last_index(" << m_last_index << ").";
     std::string str = os.str();
     throw std::runtime_error(str);
   }
 #endif
 
-  GlobalOrdinal offset = idx-m_first_index;
-  m_used[offset] = true;
-  return m_values[offset];
+  return m_values[idx];
 }
 
 template<class Scalar,class GlobalOrdinal>
@@ -138,27 +142,25 @@ inline const Scalar&
 DenseRow<Scalar,GlobalOrdinal>::operator[](GlobalOrdinal idx) const
 {
 #ifdef HAVE_TIFPACK_ARRAY_BOUNDSCHECK
-  if (idx < m_first_index || idx > m_last_index) {
+  if (idx > m_last_index) {
     std::ostringstream os;
     os << "Tifpack::DenseRow ERROR, input idx("<<idx<<") is outside "
-       << "the bounds m_first_index("<<m_first_index<<") .. m_last_index("
-       << m_last_index << ").";
+       << "the bounds m_last_index(" << m_last_index << ").";
     std::string str = os.str();
     throw std::runtime_error(str);
   }
 #endif
 
-  GlobalOrdinal offset = idx-m_first_index;
-  m_used[offset] = true;
-  return m_values[offset];
+  return m_values[idx];
 }
 
 template<class Scalar,class GlobalOrdinal>
 size_t DenseRow<Scalar,GlobalOrdinal>::getNumEntries() const
 {
   size_t num_entries = 0;
-  for(tsize_t i=0; i<m_values.size(); ++i) {
-    if (m_used[i]) ++num_entries;
+  tsize_t len = m_values.size();
+  for(tsize_t i=0; i<len; ++i) {
+    if (m_values[i] != m_zero) ++num_entries;
   }
   return num_entries;
 }
@@ -166,26 +168,88 @@ size_t DenseRow<Scalar,GlobalOrdinal>::getNumEntries() const
 template<class Scalar,class GlobalOrdinal>
 void DenseRow<Scalar,GlobalOrdinal>::reset()
 {
-  for(tsize_t i=0; i<m_values.size(); ++i) {
-    m_values[i] = Teuchos::ScalarTraits<Scalar>::zero();
-    m_used[i] = false;
+  tsize_t len = m_values.size();
+  for(tsize_t i=0; i<len; ++i) {
+    m_values[i] = m_zero;
   }
 }
 
 template<class Scalar,class GlobalOrdinal>
-void DenseRow<Scalar,GlobalOrdinal>::copyToArrays(Teuchos::Array<GlobalOrdinal>& indices,
-                    Teuchos::Array<Scalar>& values) const
+void DenseRow<Scalar,GlobalOrdinal>::reduceToArraysL(
+           Teuchos::Array<magnitudeType>& magRow,
+           int maxlen,
+           const magnitudeType& dropTol,
+           GlobalOrdinal diag,
+           Teuchos::Array<GlobalOrdinal>& indices,
+           Teuchos::Array<Scalar>& values) const
 {
-  size_t num_entries = getNumEntries();
-  indices.resize(num_entries);
-  values.resize(num_entries);
-  tsize_t offset = 0;
-  for(tsize_t i=0; i<m_values.size(); ++i) {
-    if (m_used[i]) {
-      values[offset] = m_values[i];
-      indices[offset++] = m_first_index+i;
-    }
+  magRow.resize(0);
+  tsize_t len = diag;
+  for(tsize_t i=0; i<len; ++i) {
+    magnitudeType mag = Teuchos::ScalarTraits<Scalar>::magnitude(m_values[i]);
+    if (mag > dropTol) magRow.push_back(mag);
   }
+
+  magnitudeType cutoff = dropTol;
+
+  if (magRow.size() > maxlen) {
+    std::nth_element(magRow.begin(), magRow.begin()+maxlen, magRow.begin()+magRow.size(), std::greater<magnitudeType>());
+    cutoff = magRow[maxlen];
+  }
+
+
+  indices.resize(0);
+  values.resize(0);
+  for(tsize_t i=0; i<len; ++i) {
+    magnitudeType mag = Teuchos::ScalarTraits<Scalar>::magnitude(m_values[i]);
+    if (mag >= cutoff) {
+      values.push_back(m_values[i]);
+      indices.push_back(i);
+    }
+    //else: should discarded values be added to the diagonal?
+    //in Ifpack's ILUT, discarded values are added to the diagonal.
+  }
+}
+
+template<class Scalar,class GlobalOrdinal>
+Scalar DenseRow<Scalar,GlobalOrdinal>::reduceToArraysU(
+           Teuchos::Array<magnitudeType>& magRow,
+           int maxlen,
+           const magnitudeType& dropTol,
+           GlobalOrdinal diag,
+           Teuchos::Array<GlobalOrdinal>& indices,
+           Teuchos::Array<Scalar>& values) const
+{
+  magRow.resize(0);
+  tsize_t len = m_values.size();
+  for(tsize_t i=diag; i<len; ++i) {
+    magnitudeType mag = Teuchos::ScalarTraits<Scalar>::magnitude(m_values[i]);
+    if (mag > dropTol) magRow.push_back(mag);
+  }
+
+  magnitudeType cutoff = dropTol;
+
+  if (magRow.size() > maxlen) {
+    std::nth_element(magRow.begin(), magRow.begin()+maxlen, magRow.begin()+magRow.size(), std::greater<magnitudeType>());
+    cutoff = magRow[maxlen];
+  }
+
+
+  indices.resize(0);
+  values.resize(0);
+  values.push_back(m_values[diag]);
+  indices.push_back(diag);
+  for(tsize_t i=diag+1; i<len; ++i) {
+    magnitudeType mag = Teuchos::ScalarTraits<Scalar>::magnitude(m_values[i]);
+    if (mag >= cutoff) {
+      values.push_back(m_values[i]);
+      indices.push_back(i);
+    }
+    //else: should discarded values be added to the diagonal?
+    //in Ifpack's ILUT, discarded values are added to the diagonal.
+  }
+
+  return m_values[diag];
 }
 
 }//namespace Tifpack

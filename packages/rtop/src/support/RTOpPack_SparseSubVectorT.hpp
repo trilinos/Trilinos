@@ -259,7 +259,7 @@ private:
   bool isSorted_;
 public:
   /** \brief Deprecated. */
-  SparseSubVectorT(
+  RTOP_DEPRECATED SparseSubVectorT(
     Teuchos_Index globalOffset_in, Teuchos_Index subDim_in, Teuchos_Index subNz_in,
     const Scalar values_in[], ptrdiff_t valuesStride_in,
     const Teuchos_Index indices_in[], ptrdiff_t indicesStride_in,
@@ -270,7 +270,7 @@ public:
         indices, indicesStride, localOffset, isSorted);
     }
   /** \brief Deprecated. */
-  SparseSubVectorT(
+  RTOP_DEPRECATED SparseSubVectorT(
     Teuchos_Index globalOffset_in, Teuchos_Index subDim_in,
     const Scalar values_in[], ptrdiff_t valuesStride_in
     )
@@ -278,7 +278,7 @@ public:
       initialize(globalOffset_in, subDim_in, values_in, valuesStride_in);
     }
   /** \brief Deprecated. */
-  void initialize(
+  RTOP_DEPRECATED void initialize(
     Teuchos_Index globalOffset_in, Teuchos_Index subDim_in, Teuchos_Index subNz_in,
     const Scalar values_in[], ptrdiff_t valuesStride_in,
     const Teuchos_Index indices_in[], ptrdiff_t indicesStride_in,
@@ -291,7 +291,7 @@ public:
         localOffset_in, isSorted_in);
     }
   /** \brief Deprecated. */
-  void initialize(
+  RTOP_DEPRECATED void initialize(
     Teuchos_Index globalOffset_in, Teuchos_Index subDim_in,
     const Scalar values_in[], ptrdiff_t valuesStride_in
     )
@@ -301,7 +301,7 @@ public:
         valuesStride_in);
     }
   /** \brief Deprecated. */
-  void set_uninitialized()
+  RTOP_DEPRECATED void set_uninitialized()
     { uninitialize(); }
 };
 

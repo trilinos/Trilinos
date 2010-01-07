@@ -1,4 +1,4 @@
-/* @HEADER
+// @HEADER
 // ***********************************************************************
 // 
 //                    Teuchos: Common Tools Package
@@ -25,19 +25,44 @@
 // 
 // ***********************************************************************
 // @HEADER
-*/
 
-#ifndef SOME_C_FUNC_H
-#define SOME_C_FUNC_H
+#include "Teuchos_TestingHelpers.hpp"
+#include "Teuchos_toString.hpp"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 
-void some_c_func();
+namespace {
 
-#ifdef __cplusplus
+
+// Make sure this is initialized whenever needed before main starts!
+bool& showTestFailureLocationImpl()
+{
+  static bool showTFL = false;
+  return showTFL;
 }
-#endif
 
-#endif /* SOME_C_FUNC_H */
+
+} // namespace
+
+
+const std::string
+Teuchos::passfail_with_location(const bool result,
+  const std::string &file, const int lineNumber)
+{
+  std::string rtn = passfail(result);
+  if (!result && showTestFailureLocation()) {
+    rtn += " ==> "+file+":"+toString(lineNumber);
+  }
+  return rtn;
+}
+
+
+void Teuchos::showTestFailureLocation(bool showTFL)
+{
+  showTestFailureLocationImpl() = showTFL;
+}
+
+
+bool Teuchos::showTestFailureLocation()
+{
+  return showTestFailureLocationImpl();
+}

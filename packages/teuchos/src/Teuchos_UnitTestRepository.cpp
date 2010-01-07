@@ -29,11 +29,13 @@
 
 #include "Teuchos_UnitTestRepository.hpp"
 #include "Teuchos_UnitTestBase.hpp"
+#include "Teuchos_TestingHelpers.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_Assert.hpp"
+#include "Teuchos_Time.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
 
@@ -154,6 +156,7 @@ public:
   CommandLineProcessor clp;
   EShowTestDetails showTestDetails;
   bool showSrcLocation;
+  bool showFailSrcLocation;
   bool noOp;
   std::string groupName;
   std::string testName;
@@ -165,6 +168,7 @@ public:
     :clp(false),
      showTestDetails(SHOW_TEST_DETAILS_TEST_NAMES),
      showSrcLocation(false),
+     showFailSrcLocation(true),
      noOp(false),
      testOrdering(false),
      testCounter(0)
@@ -187,12 +191,21 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
 
   typedef InstanceData::unitTests_t unitTests_t;
 
+  using std::setprecision;
+
+  Time overallTimer("overallTimer", true);
+  Time timer("timer");
+
+  const int timerPrec = 3;
+
   out << "\n***\n*** Unit test suite ...\n***\n\n";
 
   InstanceData &data = getData();
 
   const bool showAll = data.showTestDetails == SHOW_TEST_DETAILS_ALL;
   const bool showTestNames = data.showTestDetails == SHOW_TEST_DETAILS_TEST_NAMES || showAll;
+
+  showTestFailureLocation(data.showFailSrcLocation);
 
   bool success = true;
   int testCounter = 0;
@@ -203,8 +216,11 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
 
   try {
     
-    out << "\nSorting tests by group name then by test name ...\n";
+    out << "\nSorting tests by group name then by test name ...";
+    timer.start(true);
     std::sort( data.unitTests.begin(), data.unitTests.end() );
+    timer.stop();
+    out << " (time = "<<setprecision(timerPrec)<<timer.totalElapsedTime()<<")\n";
 
     out << "\nRunning unit tests ...\n\n";
     unitTests_t::iterator iter = data.unitTests.begin();
@@ -258,7 +274,9 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
 
           if (!data.noOp) {
 
+            timer.start(true);
             const bool result = utd.unitTest->runUnitTest(*localOut);
+            timer.stop();
 
             if (!result) {
 
@@ -273,8 +291,10 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
                 out << oss->str();
               
               out
-                << "[FAILED] " << unitTestName << "\n"
-                << "Location: "<<utd.unitTest->unitTestFile()<<":"
+                <<"[FAILED] "
+                <<" "<<setprecision(timerPrec)<<"("<<timer.totalElapsedTime()<< " sec)"
+                <<" "<<unitTestName<<"\n"
+                <<"Location: "<<utd.unitTest->unitTestFile()<<":"
                 <<utd.unitTest->unitTestFileLineNumber()<<"\n";
               
               if (!is_null(oss))
@@ -288,7 +308,8 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
             else {
               
               if (showTestNames)
-                out << "[Passed]\n";
+                out << "[Passed] "
+                    << setprecision(timerPrec)<<"("<<timer.totalElapsedTime()<<" sec)\n";
               
               if (showAll && data.showSrcLocation)
                 out
@@ -321,6 +342,10 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
     for (Teuchos_Ordinal i = 0; i < failedTests.size(); ++i)
       out << "    " << failedTests[i] << "\n";
   }
+
+  overallTimer.stop();
+  out << "\nTotal Time: " << setprecision(timerPrec)
+      << overallTimer.totalElapsedTime() << " sec\n";
 
   out
     << "\nSummary: total = " << testCounter
@@ -355,7 +380,6 @@ int UnitTestRepository::runUnitTestsFromMain( int argc, char* argv[] )
     *out << "\nEnd Result: TEST FAILED" << std::endl;
     return parse_return;
   }
-
 
   const bool success = runUnitTests(*out);
 
@@ -431,6 +455,11 @@ void UnitTestRepository::setUpCLP(const Ptr<CommandLineProcessor>& clp)
     "show-src-location", "no-show-src-location", &getData().showSrcLocation,
     "If true, then the location of the unit test source code is shown."
     "  Only meaningfull if --show-test-details=ALL."
+    );
+
+  clp->setOption(
+    "show-fail-src-location", "no-show-fail-src-location", &getData().showFailSrcLocation,
+    "If true, then the location of every failed unit test check is printed."
     );
 
   clp->setOption(

@@ -51,8 +51,8 @@ namespace RTOpPack {
 
 /** \brief . */
 typedef Teuchos_Ordinal Ordinal;
-/** \brief Deprecated . */
-typedef Teuchos_Index Index;
+/** \brief Deprecated (Use Ordinal instead) . */
+RTOP_DEPRECATED typedef Teuchos_Index Index;
 /** \brief . */
 using Teuchos::Ptr;
 /** \brief . */
@@ -209,13 +209,13 @@ private:
     } 
 public:
   /** \brief Deprecated. */
-  ConstSubVectorView(Ordinal globalOffset_in, Ordinal subDim_in,
+  RTOP_DEPRECATED ConstSubVectorView(Ordinal globalOffset_in, Ordinal subDim_in,
     const Scalar values_in[], ptrdiff_t stride_in)
     :globalOffset_(globalOffset_in), subDim_(subDim_in),
      values_(values_in,0,subDim_in*stride_in,false), stride_(stride_in) 
     {}
   /** \brief Deprecated. */
-  void initialize(Ordinal globalOffset_in, Ordinal subDim_in,
+  RTOP_DEPRECATED void initialize(Ordinal globalOffset_in, Ordinal subDim_in,
     const Scalar values_in[], ptrdiff_t stride_in)
     {
       globalOffset_=globalOffset_in; subDim_=subDim_in;
@@ -224,7 +224,7 @@ public:
       stride_=stride_in;
     }
   /** \brief Deprecated. */
-  void set_uninitialized()
+  RTOP_DEPRECATED void set_uninitialized()
     { uninitialize(); }
 };
 
@@ -283,12 +283,12 @@ public:
   Scalar& operator()(Ordinal i) const { return (*this)[i]; }
 public:
   /** \brief Deprecated. */
-  SubVectorView(Ordinal globalOffset_in, Ordinal subDim_in,
+  RTOP_DEPRECATED SubVectorView(Ordinal globalOffset_in, Ordinal subDim_in,
     Scalar values_in[], ptrdiff_t stride_in)
     :ConstSubVectorView<Scalar>(globalOffset_in, subDim_in, values_in, stride_in)
     {}
   /** \brief Deprecated. */
-  void initialize(Ordinal globalOffset_in, Ordinal subDim_in,
+  RTOP_DEPRECATED void initialize(Ordinal globalOffset_in, Ordinal subDim_in,
     Scalar values_in[], ptrdiff_t stride_in)
     { ConstSubVectorView<Scalar>::initialize(globalOffset_in, subDim_in, values_in, stride_in); }
 };
@@ -464,7 +464,7 @@ private:
   Ordinal leadingDim_;
 public:
   /** \brief Deprecated. */
-  ConstSubMultiVectorView(
+  RTOP_DEPRECATED ConstSubMultiVectorView(
     Ordinal globalOffset_in, Ordinal subDim_in,
     Ordinal colOffset_in, Ordinal numSubCols_in,
     const Scalar values_in[], Ordinal leadingDim_in
@@ -475,7 +475,7 @@ public:
      leadingDim_(leadingDim_in)
     {}
   /** \brief Deprecated. */
-  void initialize(
+  RTOP_DEPRECATED void initialize(
     Ordinal globalOffset_in, Ordinal subDim_in,
     Ordinal colOffset_in, Ordinal numSubCols_in,
     const Scalar values_in[], Ordinal leadingDim_in
@@ -487,7 +487,7 @@ public:
       leadingDim_=leadingDim_in;
     }
   /** \brief Deprecated. */
-  void set_uninitialized()
+  RTOP_DEPRECATED void set_uninitialized()
     { uninitialize(); }
 };
 
@@ -567,7 +567,7 @@ public:
     }
 public:
   /** \brief Deprecated. */
-  SubMultiVectorView(
+  RTOP_DEPRECATED SubMultiVectorView(
     Ordinal globalOffset_in, Ordinal subDim_in,
     Ordinal colOffset_in, Ordinal numSubCols_in,
     Scalar values_in[], Ordinal leadingDim_in
@@ -576,7 +576,7 @@ public:
        colOffset_in, numSubCols_in, values_in, leadingDim_in)
     {}
   /** \brief Deprecated. */
- void initialize(
+ RTOP_DEPRECATED void initialize(
    Ordinal globalOffset_in, Ordinal subDim_in,
    Ordinal colOffset_in, Ordinal numSubCols_in,
    Scalar values_in[], Ordinal leadingDim_in

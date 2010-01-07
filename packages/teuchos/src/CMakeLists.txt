@@ -163,7 +163,6 @@ APPEND_SET(HEADERS
   Teuchos_as.hpp
   Teuchos_basic_oblackholestream.hpp
   Teuchos_dyn_cast.hpp
-  Teuchos_exit.h
   Teuchos_getBaseObjVoidPtr.hpp
   Teuchos_getConst.hpp
   Teuchos_implicit_cast.hpp
@@ -204,6 +203,7 @@ APPEND_SET(SOURCES
   Teuchos_TableFormat.cpp
   Teuchos_TabularOutputter.cpp
   Teuchos_TestForException.cpp
+  Teuchos_TestingHelpers.cpp
   Teuchos_Time.cpp
   Teuchos_TimeMonitor.cpp
   Teuchos_TypeNameTraits.cpp
@@ -216,7 +216,6 @@ APPEND_SET(SOURCES
   Teuchos_VerbosityLevelCommandLineProcessorHelpers.cpp
   Teuchos_Workspace.cpp
   Teuchos_dyn_cast.cpp
-  Teuchos_exit.cpp
   )
 
 # Set addition headers and source based on package-specific

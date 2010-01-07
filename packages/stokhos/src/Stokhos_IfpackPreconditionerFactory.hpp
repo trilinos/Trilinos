@@ -1,8 +1,10 @@
+// $Id$ 
+// $Source$ 
 // @HEADER
 // ***********************************************************************
 // 
-//                    Teuchos: Common Tools Package
-//                 Copyright (2004) Sandia Corporation
+//                           Stokhos Package
+//                 Copyright (2009) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -21,34 +23,41 @@
 // License along with this library; if not, write to the Free Software
 // Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 // USA
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
+// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
 // 
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_exit.h"
-#include "Teuchos_TestForException.hpp"
-#include "Teuchos_VerboseObject.hpp"
+#ifndef STOKHOS_IFPACK_PRECONDITIONER_FACTORY_HPP
+#define STOKHOS_IFPACK_PRECONDITIONER_FACTORY_HPP
 
-void Teuchos_exit_helper(
-  const char file[],
-  int line,
-  const char msg[],
-  int error_code
-  )
-{
-  std::ostringstream omsg;
-  omsg << file << ":" << line << ": error code = " << error_code;
-  if (msg) {
-    omsg << ": " << msg;
-  }
-  const std::string &omsgstr = omsg.str();
-  TestForException_break(omsgstr); // Allows us to set a breakpoint!
-#ifdef HAVE_TEUCHOS_C_EXCEPTIONS
-  throw std::logic_error(omsgstr);
-#else
-  *Teuchos::VerboseObjectBase::getDefaultOStream()
-    << omsg.str() << "\n" << std::flush;
-  std::exit(error_code);
-#endif
-}
+#include "Teuchos_ParameterList.hpp"
+
+#include "Stokhos_PreconditionerFactory.hpp"
+
+namespace Stokhos {
+
+  //! A factory for building Ifpack preconditioners
+  class IfpackPreconditionerFactory : public Stokhos::PreconditionerFactory {
+  public:
+
+    //! Constructor
+    IfpackPreconditionerFactory(const Teuchos::RCP<Teuchos::ParameterList>& p);
+
+    //! Destructor
+    virtual ~IfpackPreconditionerFactory() {}
+
+    //! Compute preconditioner
+    virtual Teuchos::RCP<Epetra_Operator> 
+    compute(const Teuchos::RCP<Epetra_Operator>& op);
+
+  protected:
+
+    //! Preconditioner parameters
+    Teuchos::RCP<Teuchos::ParameterList> precParams;
+
+  }; // class IfpackPreconditionerFactory
+
+} // namespace Stokhos
+
+#endif // STOKHOS_IFPACK_PRECONDITIONER_FACTORY_HPP

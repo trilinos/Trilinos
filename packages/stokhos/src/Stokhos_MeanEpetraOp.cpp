@@ -37,13 +37,17 @@ Stokhos::MeanEpetraOp::MeanEpetraOp(
    const Teuchos::RCP<const Epetra_Map>& sg_map_,
    unsigned int num_blocks_,
    const Teuchos::RCP<Epetra_Operator>& mean_op_) :
-  label("Stokhos::MeanEpetraOp"),
+  label("Stokhos Mean Preconditioner"),
   base_map(base_map_),
   sg_map(sg_map_),
   mean_op(mean_op_),
   useTranspose(false),
   num_blocks(num_blocks_)
 {
+  if (mean_op != Teuchos::null)
+    label = std::string("Stokhos Mean Preconditioner:\n") + 
+      std::string("		***** ") + 
+      std::string(mean_op->Label());
 }
 
 Stokhos::MeanEpetraOp::~MeanEpetraOp()
@@ -54,6 +58,9 @@ void
 Stokhos::MeanEpetraOp::setMeanOperator(const Teuchos::RCP<Epetra_Operator>& op)
 {
   mean_op = op;
+  label = std::string("Stokhos Mean Preconditioner:\n") + 
+    std::string("		***** ") + 
+    std::string(mean_op->Label());
 }
 
 Teuchos::RCP<Epetra_Operator>

@@ -73,7 +73,7 @@ namespace Stokhos {
      * This method is needed for building Smolyak sparse grids out of this 
      * basis.
      */
-    virtual ordinal_type getRule() const { return 1; }
+    virtual ordinal_type getRule() const { return 4; }
 
     //! Get quadrature weight factor as defined by Dakota's \c webbur package
     /*!

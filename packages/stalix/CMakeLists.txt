@@ -1,0 +1,1 @@
+../../preCopyrightTrilinos/stalix/CMakeLists.txt

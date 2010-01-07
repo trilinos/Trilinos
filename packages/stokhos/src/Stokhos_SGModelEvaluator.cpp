@@ -42,15 +42,19 @@
 #include "EpetraExt_BlockMultiVector.h"
 #include "Stokhos_MatrixFreeEpetraOp.hpp"
 #include "Stokhos_MeanEpetraOp.hpp"
+#include "Stokhos_KLReducedMatrixFreeEpetraOp.hpp"
+#include "Stokhos_IfpackPreconditionerFactory.hpp"
+#include "Stokhos_MLPreconditionerFactory.hpp"
 
 Stokhos::SGModelEvaluator::SGModelEvaluator(
-     const Teuchos::RCP<EpetraExt::ModelEvaluator>& me_,
-     const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis_,
-     const Teuchos::Array<int>& sg_p_index_,
-     const Teuchos::Array<int>& sg_g_index_,
-     const Teuchos::Array< Teuchos::Array< Teuchos::RCP<Epetra_Vector> > >& initial_p_sg_coeffs_,
-     const Teuchos::RCP<Teuchos::ParameterList>& params_,
-     const Teuchos::RCP<const Epetra_Comm>& comm) 
+  const Teuchos::RCP<EpetraExt::ModelEvaluator>& me_,
+  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis_,
+  const Teuchos::Array<int>& sg_p_index_,
+  const Teuchos::Array<int>& sg_g_index_,
+  const Teuchos::RCP<Teuchos::ParameterList>& params_,
+  const Teuchos::RCP<const Epetra_Comm>& comm,
+  const Teuchos::Array< Stokhos::VectorOrthogPoly<Epetra_Vector> >& initial_p_sg,
+  const Stokhos::VectorOrthogPoly<Epetra_Vector>* initial_x_sg) 
   : me(me_),
     sg_basis(sg_basis_),
     sg_p_index(sg_p_index_),
@@ -142,6 +146,8 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
     std::string method = params->get("Jacobian Method", "Matrix Free");
     if (method == "Matrix Free")
       jacobianMethod = MATRIX_FREE;
+    else if (method == "KL Reduced Matrix Free")
+      jacobianMethod = KL_REDUCED_MATRIX_FREE;
     else if (method == "Fully Assembled")
       jacobianMethod = FULLY_ASSEMBLED;
     else
@@ -185,7 +191,7 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
      sg_p_init[i] = 
        Teuchos::rcp(new EpetraExt::BlockVector(*p_map, *sg_p_map[i]));
      for (unsigned int j=0; j<num_sg_blocks; j++)
-       sg_p_init[i]->LoadBlockValues(*(initial_p_sg_coeffs_[i][j]), j);
+       sg_p_init[i]->LoadBlockValues(initial_p_sg[i][j], j);
 
      // Create p SG blocks
      p_sg_blocks[i] = 
@@ -225,16 +231,33 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
    if (supports_x) {
      // Create initial x
      sg_x_init = Teuchos::rcp(new EpetraExt::BlockVector(*x_map, *sg_x_map));
-     Teuchos::RCP<const Epetra_Vector> xinit = me->get_x_init();
-     sg_x_init->LoadBlockValues(*xinit, 0);
-     // for (int d=0; d<sg_basis->dimension(); d++)
-     //   (*(sg_x_init->GetBlock(d+1)))[d] = 1.0;
-     // for (int d=0; d<sg_basis->dimension(); d++)
-     //   sg_x_init->GetBlock(d+1)->PutScalar(1.0);
+     if (initial_x_sg == NULL) {
+       Teuchos::RCP<const Epetra_Vector> xinit = me->get_x_init();
+       sg_x_init->LoadBlockValues(*xinit, 0);
+     }
+     else {
+       for (unsigned int i=0; i<num_sg_blocks; i++)
+	 sg_x_init->LoadBlockValues((*initial_x_sg)[i], i);
+     }
 
      // Get preconditioner factory for matrix-free
-     if (jacobianMethod == MATRIX_FREE)
-       precFactory = params->get< Teuchos::RCP<Stokhos::PreconditionerFactory> >("Preconditioner Factory");
+     if (jacobianMethod == MATRIX_FREE || 
+	 jacobianMethod == KL_REDUCED_MATRIX_FREE) {
+       std::string prec_name = 
+	 params->get("Mean Preconditioner Type", "Ifpack");
+       Teuchos::RCP<Teuchos::ParameterList> precParams = 
+	 Teuchos::rcp(&params->sublist("Preconditioner Parameters"),false);
+       if (prec_name == "Ifpack")
+	 precFactory = 
+	   Teuchos::rcp(new Stokhos::IfpackPreconditionerFactory(precParams));
+       else if (prec_name == "ML")
+	 precFactory = 
+	   Teuchos::rcp(new Stokhos::MLPreconditionerFactory(precParams));
+       else
+	 TEST_FOR_EXCEPTION(true, std::logic_error,
+			    "Error!  Unknown preconditioner type " << prec_name
+			    << ".  Valid choices are \"Ifpack\" and \"ML\".")
+     }
    }
 
    eval_W_with_f = params->get("Evaluate W with F", false);
@@ -320,6 +343,12 @@ Stokhos::SGModelEvaluator::create_W() const
       my_W = Teuchos::rcp(new Stokhos::MatrixFreeEpetraOp(x_map, sg_x_map, 
 							  sg_basis, Cijk, 
 							  W_sg_blocks));
+    else if (jacobianMethod == KL_REDUCED_MATRIX_FREE) {
+      int num_KL = params->get<int>("Number of KL Terms");
+      my_W = Teuchos::rcp(new Stokhos::KLReducedMatrixFreeEpetraOp(
+			    x_map, sg_x_map, sg_basis, Cijk, W_sg_blocks,
+			    num_KL));
+    }
     else if (jacobianMethod == FULLY_ASSEMBLED) {
       Teuchos::RCP<Epetra_Operator> W = me->create_W();
       Teuchos::RCP<Epetra_RowMatrix> W_row = 
@@ -339,7 +368,8 @@ Teuchos::RCP<Epetra_Operator>
 Stokhos::SGModelEvaluator::create_M() const
 {
   if (supports_x) {
-    if (jacobianMethod == MATRIX_FREE)
+    if (jacobianMethod == MATRIX_FREE || 
+	jacobianMethod == KL_REDUCED_MATRIX_FREE)
       return Teuchos::rcp(new Stokhos::MeanEpetraOp(x_map, sg_x_map, 
 						    num_sg_blocks, 
 						    Teuchos::null));
@@ -386,7 +416,8 @@ Stokhos::SGModelEvaluator::createOutArgs() const
   outArgs.setSupports(OUT_ARG_f, me_outargs.supports(OUT_ARG_f));
   outArgs.setSupports(OUT_ARG_W, me_outargs.supports(OUT_ARG_W));
   // Preconditioner computed for MF mode from W of underlying me
-  if (jacobianMethod == MATRIX_FREE)
+  if (jacobianMethod == MATRIX_FREE ||
+      jacobianMethod == KL_REDUCED_MATRIX_FREE)
     outArgs.setSupports(OUT_ARG_M, me_outargs.supports(OUT_ARG_W));
   for (int i=0; i<me_outargs.Ng(); i++)
     for (int j=0; j<me_outargs.Np(); j++)
@@ -413,11 +444,11 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
 
   // Check if we are using the "matrix-free" method for W and we are 
   // computing a preconditioner.  
-  bool eval_mean = (M_out != Teuchos::null);
+  bool eval_mean = (W_out == Teuchos::null && M_out != Teuchos::null);
 
   // Here we are assuming a full W fill occurred previously which we can use
   // for the preconditioner.  Given the expense of computing the SG W blocks
-  // this saves signfifcant computational cost
+  // this saves significant computational cost
   if (eval_mean) {
     Teuchos::RCP<Stokhos::MeanEpetraOp> W_mean = 
       Teuchos::rcp_dynamic_cast<Stokhos::MeanEpetraOp>(M_out, true);
@@ -552,10 +583,27 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
       W = W_out;
     else
       W = my_W;
-    if (jacobianMethod == MATRIX_FREE) {
-      Teuchos::RCP<Stokhos::MatrixFreeEpetraOp> W_mf = 
-	Teuchos::rcp_dynamic_cast<Stokhos::MatrixFreeEpetraOp>(W, true);
-      W_mf->reset(W_sg_blocks);
+    if (jacobianMethod == MATRIX_FREE ||
+	jacobianMethod == KL_REDUCED_MATRIX_FREE) {
+      if (jacobianMethod == MATRIX_FREE) {
+	Teuchos::RCP<Stokhos::MatrixFreeEpetraOp> W_mf = 
+	  Teuchos::rcp_dynamic_cast<Stokhos::MatrixFreeEpetraOp>(W, true);
+	W_mf->reset(W_sg_blocks);
+      }
+      else if (jacobianMethod == KL_REDUCED_MATRIX_FREE) {
+	Teuchos::RCP<Stokhos::KLReducedMatrixFreeEpetraOp> W_mf = 
+	  Teuchos::rcp_dynamic_cast<Stokhos::KLReducedMatrixFreeEpetraOp>(W, 
+									  true);
+	W_mf->reset(W_sg_blocks);
+      }
+
+      if (M_out != Teuchos::null) {
+	Teuchos::RCP<Stokhos::MeanEpetraOp> W_mean = 
+	  Teuchos::rcp_dynamic_cast<Stokhos::MeanEpetraOp>(M_out, true);
+	Teuchos::RCP<Epetra_Operator> prec = 
+	  precFactory->compute(W_sg_blocks->getCoeffPtr(0));    
+	W_mean->setMeanOperator(prec);
+      }
     }
     else if (jacobianMethod == FULLY_ASSEMBLED) {
       Teuchos::RCP<EpetraExt::BlockCrsMatrix> W_sg = 

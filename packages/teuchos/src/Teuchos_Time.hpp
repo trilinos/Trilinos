@@ -52,82 +52,84 @@
 #endif
 #endif
 
-namespace Teuchos 
+
+namespace Teuchos {
+
+
+/** \brief Basic wall-clock timer class. 
+ *
+ *  To time a section of code, place it in between calls to start() and stop(). 
+ *
+ *  \note For std::exception safety and correct behavior in reentrant code, this class should
+ * generally be used only through the Teuchos::TimeMonitor mechanism. 
+ *
+ */
+
+/* ADDITIONAL COMMENTS:
+ * Initial version by Mike Heroux and Kris Kampshoff. 
+ * Modified as follows by Kevin Long, 9/29/03:
+ * <ul>
+ * <li> There is no need to define explicit copy ctor and dtor for this class.
+ * <li> The wallTime() method returns the same value for every instance of this class, so
+ * it would be best to make it a static method.
+ * <li> Removed the communicator data member. Cross-processor comparisons of timings
+ * can be done by the TimeMonitor.
+ * </ul>
+ */ 
+
+class Time
 {
 
-  /** \brief Basic wall-clock timer class. 
-   *
-   *  To time a section of code, place it in between calls to start() and stop(). 
-   *
-   *  \note For std::exception safety and correct behavior in reentrant code, this class should
-   * generally be used only through the Teuchos::TimeMonitor mechanism. 
-   *
-   */
-
-  /* ADDITIONAL COMMENTS:
-   * Initial version by Mike Heroux and Kris Kampshoff. 
-   * Modified as follows by Kevin Long, 9/29/03:
-   * <ul>
-   * <li> There is no need to define explicit copy ctor and dtor for this class.
-   * <li> The wallTime() method returns the same value for every instance of this class, so
-   * it would be best to make it a static method.
-   * <li> Removed the communicator data member. Cross-processor comparisons of timings
-   * can be done by the TimeMonitor.
-   * </ul>
-   */ 
-
-  class Time
-  {
-
-  public:
-    /** \brief Construct with a descriptive name */
-    Time(const std::string& name, bool start = false);
+public:
+  /** \brief Construct with a descriptive name */
+  Time(const std::string& name, bool start = false);
   
-    /** \brief Returns current wall-clock time in seconds.*/
-    static double wallTime();
+  /** \brief Returns current wall-clock time in seconds.*/
+  static double wallTime();
   
-    /** \brief Starts the timer */
-    void start(bool reset = false);
+  /** \brief Starts the timer */
+  void start(bool reset = false);
 
-    /** \brief Stops the timer */
-    double stop();
+  /** \brief Stops the timer */
+  double stop();
 
-    /** \brief Returns the total time accumulated by this timer. <b>This should be called
-     * only when the clock is stopped.</b> */
-    double totalElapsedTime(bool readCurrentTime = false) const;
+  /** \brief Returns the total time (in seconds) accumulated by this timer.
+   *
+   * <b>This should be called only when the clock is stopped.</b> */
+  double totalElapsedTime(bool readCurrentTime = false) const;
 
-    /** \brief Resets the cummulative time and number of times this timer
-     * has been called.  Does not affect any other state. */
-    void reset() {totalTime_ = 0; numCalls_ = 0;}
+  /** \brief Resets the cummulative time and number of times this timer
+   * has been called.  Does not affect any other state. */
+  void reset() {totalTime_ = 0; numCalls_ = 0;}
 
-    /** \brief Indicates if this timer is currently running, i.e., if it has been started but
-     * not yet stopped. 
-     *
-     *	It is necessary to know if a timer is running to avoid incorrectly starting or 
-     *  stopping in reentrant code. */
-    bool isRunning() const {return isRunning_;}
+  /** \brief Indicates if this timer is currently running, i.e., if it has been started but
+   * not yet stopped. 
+   *
+   *	It is necessary to know if a timer is running to avoid incorrectly starting or 
+   *  stopping in reentrant code. */
+  bool isRunning() const {return isRunning_;}
 
-    /** \brief Return the name of this timer */
-    const std::string& name() const {return name_;}
+  /** \brief Return the name of this timer */
+  const std::string& name() const {return name_;}
 
-    /** \brief Increment the number of times this timer has been called */
-    void incrementNumCalls() {numCalls_++;}
+  /** \brief Increment the number of times this timer has been called */
+  void incrementNumCalls() {numCalls_++;}
 
-    /** \brief Return the number of times this timer has been called */
-    int numCalls() const {return numCalls_;}
+  /** \brief Return the number of times this timer has been called */
+  int numCalls() const {return numCalls_;}
 
-  private:
-    double startTime_;
+private:
 
-    double totalTime_;
+  double startTime_;
+  double totalTime_;
+  bool isRunning_;
+  std::string name_;
+  int numCalls_;
 
-    bool isRunning_;
+};
 
-    std::string name_;
-
-    int numCalls_;
-  };
 
 } // namespace Teuchos
+
 
 #endif // TEUCHOS_TIME_HPP_

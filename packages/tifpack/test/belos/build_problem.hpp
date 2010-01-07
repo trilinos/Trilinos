@@ -6,6 +6,7 @@
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_Time.hpp"
 #include "Teuchos_Comm.hpp"
 
 #include "Tifpack_Preconditioner.hpp"
@@ -62,6 +63,7 @@ Teuchos::RCP<
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
   typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>    TOP;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>   TCRS;
+  typedef Belos::LinearProblem<Scalar,TMV,TOP>                        BLinProb;
 
   Teuchos::RCP<const TCRS> A;
 
@@ -77,14 +79,19 @@ Teuchos::RCP<
     A = read_matrix_mm<Scalar,LocalOrdinal,GlobalOrdinal,Node>(mm_file, comm);
   }
   else if (hb_file != "not specified") {
+    if (comm->getRank() == 0) {
+      std::cout << "Harwell-Boeing file: " << hb_file << std::endl;
+    }
+//    problem = build_problem_hb(hb_file);
     throw std::runtime_error("Harwell-Boeing not yet supported by test driver.");
-    std::cout << "Harwell-Boeing file: " << hb_file << std::endl;
   }
   else {
     throw std::runtime_error("No matrix file specified.");
   }
 
-  return build_problem_mm<Scalar,LocalOrdinal,GlobalOrdinal,Node>(test_params, A);
+  Teuchos::RCP<BLinProb> problem = build_problem_mm<Scalar,LocalOrdinal,GlobalOrdinal,Node>(test_params, A);
+
+  return problem;
 }
 
 

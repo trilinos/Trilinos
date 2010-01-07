@@ -15,6 +15,7 @@ using Teuchos::Array;
 using Teuchos::ArrayView;
 using Teuchos::ArrayRCP;
 using Teuchos::arcp;
+using Teuchos::arcpFromArray;
 using Teuchos::as;
 using Teuchos::getConst;
 using Teuchos::DanglingReferenceError;
@@ -139,6 +140,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, danglingArrayViewIter_before_block_end
 }
 
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, RCPArray_to_ArrayRCP_null, T )
+{
+  const RCP<Array<T> > a_rcp = null;
+  const ArrayRCP<T> a_arcp = arcp(a_rcp);
+  TEST_ASSERT( a_arcp == null );
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, RCPconstArray_to_ArrayRCP_null, T )
+{
+  const RCP<const Array<T> > a_rcp = null;
+  const ArrayRCP<const T> a_arcp = arcp(a_rcp);
+  TEST_ASSERT( a_arcp == null );
+}
+
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, RCPArray_to_ArrayRCP, T )
 {
@@ -149,11 +165,70 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, RCPArray_to_ArrayRCP, T )
 }
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, RCPArray_to_ArrayRCP_null, T )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, RCPconstArray_to_ArrayRCP, T )
 {
-  const RCP<Array<T> > a_rcp = null;
-  const ArrayRCP<T> a_arcp = arcp(a_rcp);
-  TEST_ASSERT( a_arcp == null );
+  const Array<T> a_const = generateArray<T>(n);
+  const RCP<const Array<T> > a_rcp = Teuchos::rcp( new  Array<T>(a_const));
+  const ArrayRCP<const T> a_arcp = arcp(a_rcp);
+  TEST_COMPARE_ARRAYS( a_const(), a_arcp() );
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, Array_to_ArrayRCP_null, T )
+{
+  Array<T> a;
+  const ArrayRCP<T> a_arcp = arcpFromArray(a);
+  TEST_ASSERT(a_arcp == null);
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, constArray_to_ArrayRCP_null, T )
+{
+  const Array<T> a;
+  const ArrayRCP<const T> a_arcp = arcpFromArray(a);
+  TEST_ASSERT(a_arcp == null);
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, Array_to_ArrayRCP, T )
+{
+  Array<T> a = generateArray<T>(n);
+  const ArrayRCP<T> a_arcp = arcpFromArray(a);
+  TEST_COMPARE_ARRAYS( a(), a_arcp() );
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, constArray_to_ArrayRCP, T )
+{
+  const Array<T> a = generateArray<T>(n);
+  const ArrayRCP<const T> a_arcp = arcpFromArray(a);
+  TEST_COMPARE_ARRAYS( a(), a_arcp() );
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, Array_to_ArrayRCP_dangling, T )
+{
+  ArrayRCP<T> a_arcp;
+  {
+    Array<T> a = generateArray<T>(n);
+    a_arcp = arcpFromArray(a);
+  }
+#ifdef TEUCHOS_DEBUG
+  TEST_THROW(a_arcp[0], DanglingReferenceError);
+#endif
+}
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, constArray_to_ArrayRCP_dangling, T )
+{
+  ArrayRCP<const T> a_arcp;
+  {
+    const Array<T> a = generateArray<T>(n);
+    a_arcp = arcpFromArray(a);
+  }
+#ifdef TEUCHOS_DEBUG
+  TEST_THROW(a_arcp[0], DanglingReferenceError);
+#endif
 }
 
 
@@ -339,8 +414,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( Array, structuralChangeArrayView_const, T )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, operatorBracket, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, constAt, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, danglingArrayViewIter_before_block_end, T ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, RCPArray_to_ArrayRCP, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, RCPArray_to_ArrayRCP_null, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, RCPconstArray_to_ArrayRCP_null, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, RCPArray_to_ArrayRCP, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, RCPconstArray_to_ArrayRCP, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, Array_to_ArrayRCP_null, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, constArray_to_ArrayRCP_null, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, Array_to_ArrayRCP, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, constArray_to_ArrayRCP, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, Array_to_ArrayRCP_dangling, T ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, constArray_to_ArrayRCP_dangling, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, toVector, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, toVector_empty, T ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( Array, view_empty, T ) \

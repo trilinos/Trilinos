@@ -57,32 +57,9 @@
 #include "Stokhos_SGQuadModelEvaluator.hpp"
 #include "Stokhos_SparseGridQuadrature.hpp"
 #include "Sacado_PCE_OrthogPoly.hpp"
-#include "Ifpack.h"
 #include "Teuchos_TimeMonitor.hpp"
 
-// The preconditioner we will use for PCE
-class IfpackPreconditionerFactory : public Stokhos::PreconditionerFactory {
-public:
-  IfpackPreconditionerFactory(const Teuchos::RCP<Teuchos::ParameterList>& p) :
-    precParams(p) {}
-  virtual ~IfpackPreconditionerFactory() {}
-  virtual Teuchos::RCP<Epetra_Operator> 
-  compute(const Teuchos::RCP<Epetra_Operator>& op) {
-    Teuchos::RCP<Epetra_RowMatrix> mat = 
-      Teuchos::rcp_dynamic_cast<Epetra_RowMatrix>(op, true);
-    Ifpack Factory;
-    std::string prec = precParams->get("Ifpack Preconditioner", "ILU");
-    int overlap = precParams->get("Overlap", 0);
-    ifpackPrec = Teuchos::rcp(Factory.Create(prec, mat.get(), overlap));
-    ifpackPrec->SetParameters(*precParams);
-    int err = ifpackPrec->Initialize();   
-    err = ifpackPrec->Compute();
-    return ifpackPrec;
-  }
-protected:
-  Teuchos::RCP<Teuchos::ParameterList> precParams;
-  Teuchos::RCP<Ifpack_Preconditioner> ifpackPrec;
-};
+#include "Stokhos_PCEAnasaziKL.hpp"
 
 enum SG_METHOD {
   SG_AD,
@@ -97,7 +74,7 @@ int main(int argc, char *argv[]) {
   double alpha = 2.0;
   double leftBC = 0.0;
   double rightBC = 0.1;
-  unsigned int numalpha = 2;
+  unsigned int numalpha = 3;
   unsigned int p = 5;
 
   bool do_pce = true;
@@ -262,7 +239,7 @@ int main(int argc, char *argv[]) {
     normWRMS.set("Absolute Tolerance", 1e-8);
     Teuchos::ParameterList& maxIters = statusParams.sublist("Test 1");
     maxIters.set("Test Type", "MaxIters");
-    maxIters.set("Maximum Iterations", 10);
+    maxIters.set("Maximum Iterations", 15);
 
     // Create application
     Teuchos::RCP<FEApp::Application> app = 
@@ -334,6 +311,8 @@ int main(int argc, char *argv[]) {
         Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
       Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
         Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
+       // Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
+       // 	 Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(basis, p));
       unsigned int sz = basis->size();
       Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
       	Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,double>(basis, 
@@ -359,14 +338,12 @@ int main(int argc, char *argv[]) {
 						finalSolution.get()));
 
       // Set up stochastic parameters
-      Teuchos::Array< Teuchos::Array< Teuchos::RCP<Epetra_Vector> > > sg_p(1);
-      sg_p[0].resize(sz);
+      Teuchos::Array< Stokhos::VectorOrthogPoly<Epetra_Vector> > sg_p(1);
       Epetra_LocalMap p_sg_map(d, 0, *Comm);
-      for (unsigned int i=0; i<sz; i++)
-	sg_p[0][i] = Teuchos::rcp(new Epetra_Vector(p_sg_map));
+      sg_p[0].reset(basis, Stokhos::EpetraVectorCloner(p_sg_map));
       for (unsigned int i=0; i<d; i++) {
-	(*(sg_p[0][0]))[i] = 2.0;
-	(*(sg_p[0][i+1]))[i] = 1.0;
+	sg_p[0].term(i,0)[i] = 2.0;
+	sg_p[0].term(i,1)[i] = 1.0;
       }
       Teuchos::RefCountPtr< Teuchos::Array<std::string> > sg_param_names =
 	Teuchos::rcp(new Teuchos::Array<std::string>);
@@ -410,30 +387,32 @@ int main(int argc, char *argv[]) {
 	Teuchos::rcp(&(appParams->sublist("SG Parameters")),false);
       if (SG_Method != SG_NI) {
 	sgParams->set("Jacobian Method", "Matrix Free");
+	//sgParams->set("Jacobian Method", "KL Reduced Matrix Free");
 	//sgParams->set("Jacobian Method", "Fully Assembled");
-	Teuchos::RCP<Teuchos::ParameterList> precParams = 
-	  Teuchos::rcp(&(sgParams->sublist("SG Preconditioner")),false);
-	precParams->set("Ifpack Preconditioner", "ILU");
-	precParams->set("Overlap", 0);
-	Teuchos::RCP<Stokhos::PreconditionerFactory> sg_prec = 
-	  Teuchos::rcp(new IfpackPreconditionerFactory(precParams));
-	sgParams->set("Preconditioner Factory", sg_prec);
+	sgParams->set("Number of KL Terms", 3);
+	Teuchos::ParameterList& precParams = 
+	  sgParams->sublist("Preconditioner Parameters");
+	// sgParams->set("Mean Preconditioner Type", "Ifpack");
+	// precParams.set("Ifpack Preconditioner", "ILU");
+	// precParams.set("Overlap", 0);
+	sgParams->set("Mean Preconditioner Type", "ML");
+	ML_Epetra::SetDefaults("DD", precParams);
 	sgParams->set("Evaluate W with F", false);
       }
       Teuchos::Array<int> sg_g_index(1);
       sg_g_index[0] = 0;
       Teuchos::RCP<Stokhos::SGModelEvaluator> sg_model =
 	Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, sg_p_index,
-						   sg_g_index,
-						   sg_p, sgParams,
-						   Comm));
+						   sg_g_index, sgParams,
+						   Comm, sg_p));
 
       // Create SG NOX solver
       Teuchos::RCP<EpetraExt::ModelEvaluator> sg_solver;
       if (SG_Method != SG_NI) {
 	Teuchos::RCP<Epetra_Operator> M;
 	std::string jac_method = sgParams->get<std::string>("Jacobian Method");
-	if (jac_method == "Matrix Free")
+	if (jac_method == "Matrix Free" || 
+	    jac_method == "KL Reduced Matrix Free")
 	  M = sg_model->create_M();
 	
 	sg_solver = Teuchos::rcp(new ENAT::NOXSolver(appParams, sg_model, M));
@@ -448,11 +427,14 @@ int main(int argc, char *argv[]) {
       Teuchos::RCP<const Epetra_Vector> sg_p_init = sg_solver->get_p_init(0);
       Teuchos::RCP<Epetra_Vector> sg_g = 
 	Teuchos::rcp(new Epetra_Vector(*(sg_solver->get_g_map(0))));
+      Teuchos::RCP<Epetra_Vector> sg_u = 
+	Teuchos::rcp(new Epetra_Vector(*(sg_solver->get_g_map(1))));
       Teuchos::RCP<Epetra_MultiVector> sg_dgdp = 
 	Teuchos::rcp(new Epetra_MultiVector(*(sg_solver->get_g_map(0)),
 					    p_init->MyLength()));
       sg_inArgs.set_p(0, sg_p_init);
       sg_outArgs.set_g(0, sg_g);
+      sg_outArgs.set_g(1, sg_u);
       if (SG_Method == SG_NI)
 	sg_outArgs.set_DgDp(0, 0, sg_dgdp);
       sg_solver->evalModel(sg_inArgs, sg_outArgs);
@@ -473,6 +455,70 @@ int main(int argc, char *argv[]) {
       if (SG_Method == SG_NI)
 	sg_dgdp->Print(std::cout);
 
+#ifdef HAVE_STOKHOS_ANASAZI
+      // Compute KL expansion of solution sg_u
+      Teuchos::RCP<EpetraExt::BlockVector> X = 
+	Teuchos::rcp(new EpetraExt::BlockVector(View, finalSolution->Map(),
+						*sg_u));
+      Teuchos::RCP<const EpetraExt::BlockVector> cX = X;
+      Stokhos::PCEAnasaziKL pceKL(cX, *basis, 3);
+      Teuchos::ParameterList anasazi_params = pceKL.getDefaultParams();
+      //anasazi_params.set("Num Blocks", 10);
+      //anasazi_params.set("Step Size", 50);
+      anasazi_params.set("Verbosity",  
+      			 Anasazi::FinalSummary + 
+      			 //Anasazi::StatusTestDetails + 
+      			 //Anasazi::IterationDetails + 
+      			 Anasazi::Errors + 
+      			 Anasazi::Warnings);
+      bool result = pceKL.computeKL(anasazi_params);
+      if (!result)
+	utils.out() << "KL Eigensolver did not converge!" << std::endl;
+      Teuchos::Array<double> evals = pceKL.getEigenvalues();
+      utils.out() << "KL eigenvalues = " << std::endl;
+      for (unsigned int i=0; i<evals.size(); i++)
+	utils.out() << std::sqrt(evals[i]) << std::endl;
+
+      // Evaluate expansion at a point
+      Teuchos::Array<double> point(d);
+      for (unsigned int i=0; i<d; i++)
+	point[i] = 0.5;
+      Teuchos::Array<double> basis_vals(sz);
+      basis->evaluateBases(point, basis_vals);
+
+      Teuchos::RCP<Epetra_MultiVector> evecs = pceKL.getEigenvectors();
+      Teuchos::Array< Stokhos::OrthogPolyApprox<int,double> > rvs(evals.size());
+      Teuchos::Array<double> val_rvs(evals.size());
+      for (unsigned int i=0; i<evals.size(); i++) {
+      	rvs[i].reset(basis);
+	rvs[i][0] = 0.0;
+      	for (int j=1; j<sz; j++)
+      	  X->GetBlock(j)->Dot(*((*evecs)(i)), &(rvs[i][j]));
+	val_rvs[i] = rvs[i].evaluate(point, basis_vals);
+      }
+      
+      Epetra_Vector val_kl(finalSolution->Map());
+      val_kl.Update(1.0, *(X->GetBlock(0)), 0.0);
+      for (unsigned int i=0; i<evals.size(); i++)
+	val_kl.Update(val_rvs[i], *((*evecs)(i)), 1.0);
+
+      Stokhos::VectorOrthogPoly<Epetra_Vector> sg_u_poly(basis);
+      for (unsigned int i=0; i<sz; i++)
+	sg_u_poly.setCoeffPtr(i, X->GetBlock(i));
+      Epetra_Vector val(finalSolution->Map());
+      sg_u_poly.evaluate(basis_vals, val);
+
+      // val.Print(std::cout);
+      // val_kl.Print(std::cout);
+
+      val.Update(-1.0, val_kl, 1.0);
+      // val.Print(std::cout);
+
+      double diff;
+      val.NormInf(&diff);
+      std::cout << "Infinity norm of difference = " << diff << std::endl;
+#endif
+      
       NOX::StatusTest::StatusType status = NOX::StatusTest::Converged;
       // if (SG_Method != SG_NI)
       // 	status = Teuchos::rcp_dynamic_cast<ENAT::NOXSolver>(sg_solver)->getSolverStatus();

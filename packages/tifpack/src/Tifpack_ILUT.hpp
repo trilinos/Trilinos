@@ -68,7 +68,7 @@ public:
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
 
   // @{ Constructors and Destructors
-  //! ILUT constuctor with variable number of indices per row.
+  //! ILUT constuctor with RowMatrix input
   ILUT(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A);
   
   //! ILUT Destructor
@@ -228,22 +228,6 @@ public:
     return(ApplyInverseTime_);
   }
 
-  //! Returns the number of flops in the initialization phase.
-  virtual double InitializeFlops() const
-  {
-    return(0.0);
-  }
-
-  virtual double ComputeFlops() const
-  {
-    return(ComputeFlops_);
-  }
-
-  virtual double ApplyInverseFlops() const
-  {
-    return(ApplyInverseFlops_);
-  }
-
   inline double LevelOfFill() const {
     return(LevelOfFill_);
   }
@@ -339,10 +323,6 @@ private:
   double ComputeTime_;
   //! Contains the time for all successful calls to applyInverse().
   mutable double ApplyInverseTime_;
-  //! Contains the number of flops for Compute().
-  double ComputeFlops_;
-  //! Contain sthe number of flops for applyInverse().
-  mutable double ApplyInverseFlops_;
   //! Used for timing purposes
   mutable Teuchos::Time Time_;
   //! Global number of nonzeros in L and U factors
@@ -369,8 +349,6 @@ ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ILUT(const Teuchos::RCP<const Tpet
   InitializeTime_(0.0),
   ComputeTime_(0.0),
   ApplyInverseTime_(0.0),
-  ComputeFlops_(0.0),
-  ApplyInverseFlops_(0.0),
   Time_("Tifpack::ILUT"),
   GlobalNonzeros_(0)
 {
@@ -444,9 +422,6 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Initialize()
 }
 
 //==========================================================================
-// MS // completely rewritten the algorithm on 25-Jan-05, using more STL
-// MS // and in a nicer and cleaner way. Also, it is more efficient.
-// MS // WARNING: Still not fully tested!
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
 void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
 {
@@ -459,111 +434,96 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
 
   NumMyRows_ = A_->getNodeNumRows();
   size_t Length = A_->getNodeMaxNumRowEntries();
-  Teuchos::Array<GlobalOrdinal>    RowIndicesL(Length);
+  Teuchos::Array<LocalOrdinal>    RowIndicesL(Length);
   Teuchos::Array<Scalar> RowValuesL(Length);
-  Teuchos::Array<GlobalOrdinal>    RowIndicesU(Length);
+  Teuchos::Array<LocalOrdinal>    RowIndicesU(Length);
   Teuchos::Array<Scalar> RowValuesU(Length);
-  bool distributed = (Comm().getSize() > 1) ? true : false;
 
   size_t RowNnzU;
 
-  L_ = Teuchos::rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A_->getRowMap(), 0));
-  U_ = Teuchos::rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A_->getRowMap(), 0));
+  L_ = Teuchos::rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A_->getRowMap(), A_->getColMap(), 0));
+  U_ = Teuchos::rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A_->getRowMap(), A_->getColMap(), 0));
 
   TEST_FOR_EXCEPTION(L_ == Teuchos::null || U_ == Teuchos::null, std::runtime_error,
      "Tifpack::ILUT::Compute ERROR, failed to allocate L_ or U_");
 
+  Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+  Scalar one  = Teuchos::ScalarTraits<Scalar>::one();
+
+  Teuchos::Array<Scalar> DiagU(NumMyRows_,zero);
+
+  Teuchos::Array<Teuchos::Array<LocalOrdinal> > Uindices(NumMyRows_);
+  Teuchos::Array<Teuchos::Array<Scalar> > Ucoefs(NumMyRows_);
+
   // insert first row in U_ and L_
   LocalOrdinal lrow0 = 0;
-  A_->getGlobalRowCopy(lrow0, RowIndicesU(), RowValuesU(), RowNnzU);
+  A_->getLocalRowCopy(lrow0, RowIndicesU(), RowValuesU(), RowNnzU);
 
-  if (distributed)
-  {
-    int count = 0;
-    for (size_t i = 0 ;i < RowNnzU ; ++i)
-    {
-      if (RowIndicesU[i] < NumMyRows_){
-        RowIndicesU[count] = RowIndicesU[i];
-        RowValuesU[count] = RowValuesU[i];
-        ++count;
-      }
-      else
-        continue;
-    }
-    RowNnzU = count;
-  }
-
-  // modify diagonal
+  int count = 0;
   for (size_t i = 0 ;i < RowNnzU ; ++i) {
-    if (RowIndicesU[i] == 0) {
-      Scalar& v = RowValuesU[i];
-      v = AbsoluteThreshold() * TIFPACK_SGN(v) + RelativeThreshold() * v;
-      break;
+    if (RowIndicesU[i] < NumMyRows_){
+      if (RowIndicesU[i] == 0) {
+        Scalar& v = RowValuesU[i];
+        v = AbsoluteThreshold() * TIFPACK_SGN(v) + RelativeThreshold() * v;
+        DiagU[0] = v;
+      }
+      Uindices[lrow0].push_back(RowIndicesU[i]);
+      Ucoefs[lrow0].push_back(RowValuesU[i]);
+      ++count;
     }
   }
 
-  GlobalOrdinal grow0 = 0;
-  U_->insertGlobalValues(grow0,RowIndicesU(), RowValuesU());
-
-   // FIXME: DOES IT WORK IN PARALLEL ??
-  RowValuesU[0] = 1.0;
+  RowValuesU[0] = one;
   RowIndicesU[0] = 0;
-  L_->insertGlobalValues(grow0,RowIndicesU(0,1), RowValuesU(0,1));
+  L_->insertLocalValues(0,RowIndicesU(0,1), RowValuesU(0,1));
 
-  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > colmap =
-    A_->getColMap();
+  LocalOrdinal max_col = NumMyRows_;
 
-  GlobalOrdinal min_col = colmap->getMinGlobalIndex();
-  GlobalOrdinal max_col = colmap->getMaxGlobalIndex();
-  Tifpack::DenseRow<Scalar,GlobalOrdinal> SingleRowU(min_col, max_col);
-  Tifpack::DenseRow<Scalar,GlobalOrdinal> SingleRowL(min_col, max_col);
-
-  Teuchos::Array<GlobalOrdinal> keys;
-  Teuchos::Array<Scalar> values;
   Teuchos::Array<magnitudeType> AbsRow;
+
+  Teuchos::Array<LocalOrdinal> tmp_idx;
+  Teuchos::Array<Scalar> tmpv;
 
   // =================== //
   // start factorization //
   // =================== //
 
-  double this_proc_flops = 0.0;
-
-  for (GlobalOrdinal row_i = 1 ; row_i < NumMyRows_ ; ++row_i)
+  for (LocalOrdinal row_i = 1 ; row_i < NumMyRows_ ; ++row_i)
   {
-    // get row `row_i' of the matrix, store in U pointers
-    A_->getGlobalRowCopy(row_i, RowIndicesU(), RowValuesU(), RowNnzU);
+    Teuchos::ArrayRCP<const LocalOrdinal> ColIndices;
+    Teuchos::ArrayRCP<const Scalar> ColValues;
 
-    if (distributed)
-    {
-      size_t count = 0;
-      for (size_t i = 0 ;i < RowNnzU ; ++i)
-      {
-        if (RowIndicesU[i] < NumMyRows_){
-          RowIndicesU[count] = RowIndicesU[i];
-          RowValuesU[count] = RowValuesU[i];
-          ++count;
-        }
-        else
-          continue;
-      }
-      RowNnzU = count;
-    }
+    A_->getLocalRowView(row_i, ColIndices, ColValues);
+    RowNnzU = ColIndices.size();
+
+    Tifpack::DenseRow<Scalar,LocalOrdinal> SingleRowU(max_col);
 
     size_t NnzLower = 0;
     size_t NnzUpper = 0;
 
-    for (size_t i = 0 ;i < RowNnzU ; ++i) {
-      if (RowIndicesU[i] < row_i)
-        NnzLower++;
-      else if (RowIndicesU[i] == row_i) {
-        // add threshold
-        NnzUpper++;
-        Scalar& v = RowValuesU[i];
-        v = AbsoluteThreshold() * TIFPACK_SGN(v) + RelativeThreshold() * v;
+    LocalOrdinal start_col = ColIndices[0];
+
+    size_t count = 0;
+    for(size_t i=0; i<RowNnzU; ++i) {
+      if (ColIndices[i] < NumMyRows_) {
+        Scalar v = ColValues[i];
+        if (ColIndices[i] < row_i)
+          NnzLower++;
+        else if (ColIndices[i] == row_i) {
+          // add threshold
+          NnzUpper++;
+          v = AbsoluteThreshold() * TIFPACK_SGN(v) + RelativeThreshold() * v;
+        }
+        else
+          NnzUpper++;
+
+        if (ColIndices[i] < start_col) start_col = ColIndices[i];
+
+        SingleRowU[ColIndices[i]] = v;
+        ++count;
       }
-      else
-        NnzUpper++;
     }
+    RowNnzU = count;
 
     //Can magnitudeType always be assign-converted to double?
     double lof = LevelOfFill();
@@ -573,148 +533,53 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
     if (FillL == 0) FillL = 1;
     if (FillU == 0) FillU = 1;
 
-    // convert line `row_i' into STL map for fast access
-    SingleRowU.reset();
-
-    for (size_t i = 0 ; i < RowNnzU ; ++i) {
-        SingleRowU[RowIndicesU[i]] = RowValuesU[i];
-    }
-
     // for the multipliers
-    SingleRowL.reset();
+    Tifpack::DenseRow<Scalar,LocalOrdinal> SingleRowL(max_col);
 
-    GlobalOrdinal start_col = NumMyRows_;
-    for (size_t i = 0 ; i < RowNnzU ; ++i)
-      start_col = std::min(start_col, RowIndicesU[i]);
-
-    int flops = 0;
-
-    for (GlobalOrdinal col_k = start_col ; col_k < row_i ; ++col_k) {
-
-      Teuchos::ArrayRCP<const GlobalOrdinal>    ColIndicesK;
-      Teuchos::ArrayRCP<const Scalar> ColValuesK;
-
-      U_->getGlobalRowView(col_k, ColIndicesK, ColValuesK);
-      size_t ColNnzK = ColIndicesK.size();
-
-      // FIXME: can keep trace of diagonals
-      Scalar DiagonalValueK = 0.0;
-      for (size_t i = 0 ; i < ColNnzK ; ++i) {
-        if (ColIndicesK[i] == col_k) {
-          DiagonalValueK = ColValuesK[i];
-          break;
-        }
-      }
-
-      // FIXME: this should never happen!
-      if (DiagonalValueK == 0.0)
-        DiagonalValueK = AbsoluteThreshold();
+    for (LocalOrdinal col_k = start_col ; col_k < row_i ; ++col_k) {
 
       Scalar xxx = SingleRowU[col_k];
-      if (Teuchos::ScalarTraits<Scalar>::magnitude(xxx) > DropTolerance()) {
-        SingleRowL[col_k] = xxx / DiagonalValueK;
-        ++flops;
+      if (Teuchos::ScalarTraits<Scalar>::magnitude(xxx) <= DropTolerance()) continue;
 
+      Teuchos::Array<LocalOrdinal>& ColIndices = Uindices[col_k];
+      Teuchos::Array<Scalar>& ColValues = Ucoefs[col_k];
+      size_t ColNnzK = ColIndices.size();
+
+      Scalar DiagonalValueK = DiagU[col_k];
+
+      // FIXME: this should never happen!
+      if (DiagonalValueK == zero)
+        DiagonalValueK = AbsoluteThreshold();
+
+      Scalar yyy = xxx / DiagonalValueK;
+
+      if (yyy !=  zero) {
+        SingleRowL[col_k] = yyy;
         for (size_t j = 0 ; j < ColNnzK ; ++j) {
-          GlobalOrdinal col_j = ColIndicesK[j];
-
-          if (col_j < col_k) continue;
-
-          Scalar yyy = SingleRowL[col_k];
-          if (yyy !=  0.0)
-            SingleRowU[col_j] += -yyy * ColValuesK[j];
-          flops += 2;
+          SingleRowU[ColIndices[j]] += -yyy * ColValues[j];
         }
       }
     }
 
-    this_proc_flops += 1.0 * flops;
-
-    magnitudeType cutoff = DropTolerance();
-    Teuchos::Array<Scalar> DiscardedElements(1,0);
-    int count;
 
     // drop elements to satisfy LevelOfFill(), start with L
-    count = 0;
-    int sizeL = SingleRowL.getNumEntries();
-    keys.resize(sizeL);
-    values.resize(sizeL);
 
-    AbsRow.resize(sizeL);
+    SingleRowL.reduceToArraysL( AbsRow, FillL, DropTolerance(), row_i, tmp_idx, tmpv );
 
-    SingleRowL.copyToArrays( keys, values );
-    for (int i = 0; i < sizeL; ++i) {
-      if (Teuchos::ScalarTraits<Scalar>::magnitude(values[i]) > DropTolerance()) {
-        AbsRow[count++] = Teuchos::ScalarTraits<Scalar>::magnitude(values[i]);
-      }
-    }
+    tmp_idx.push_back(row_i);
+    tmpv.push_back(one);
 
-    if (count > FillL) {
-      std::nth_element(AbsRow.begin(), AbsRow.begin() + FillL, AbsRow.begin() + count,
-                  std::greater<magnitudeType>());
-      cutoff = AbsRow[FillL];
-    }
-
-    for (int i = 0; i < sizeL; ++i) {
-      if (Teuchos::ScalarTraits<Scalar>::magnitude(values[i]) >= cutoff) {
-        L_->insertGlobalValues(row_i, keys(i,1), values(i,1));
-      }
-      else
-        DiscardedElements[0] += values[i];
-    }
-
-    // FIXME: DOES IT WORK IN PARALLEL ???
-    // add 1 to the diagonal
-    Teuchos::Array<GlobalOrdinal> di(1,row_i);
-    Teuchos::Array<Scalar> dtmp(1,1);
-    L_->insertGlobalValues(row_i, di(), dtmp());
+    L_->insertLocalValues(row_i, tmp_idx(), tmpv());
 
     // same business with U_
-    count = 0;
-    size_t sizeU = SingleRowU.getNumEntries();
-    AbsRow.resize(sizeU);
 
-    SingleRowU.copyToArrays(keys, values);
-
-    for (size_t i = 0; i < sizeU; ++i) {
-      if (keys[i] >= row_i && Teuchos::ScalarTraits<Scalar>::magnitude(values[i]) > DropTolerance())
-      {
-        AbsRow[count++] = Teuchos::ScalarTraits<Scalar>::magnitude(values[i]);
-      }
-    }
-
-    if (count > FillU) {
-      std::nth_element(AbsRow.begin(), AbsRow.begin() + FillU, AbsRow.begin() + count,
-                  std::greater<magnitudeType>());
-      cutoff = AbsRow[FillU];
-    }
-
-    // sets the factors in U_
-    for (size_t i = 0; i < sizeU; ++i)
-    {
-      di[0] = keys[i];
-      dtmp[0] = values[i];
-
-      if (di[0] >= row_i) {
-        if (Teuchos::ScalarTraits<Scalar>::magnitude(dtmp[0]) >= cutoff || row_i == di[0]) {
-          U_->insertGlobalValues(row_i, di(), dtmp());
-        }
-        else
-          DiscardedElements[0] += dtmp[0];
-      }
-    }
-
-    // FIXME: not so sure of that!
-    if (RelaxValue() != 0.0) {
-      DiscardedElements[0] *= RelaxValue();
-      di[0] = row_i;
-      U_->insertGlobalValues(row_i, di(), DiscardedElements());
-    }
+    DiagU[row_i] =
+     SingleRowU.reduceToArraysU(AbsRow, FillU, DropTolerance(), row_i, Uindices[row_i], Ucoefs[row_i]);
   }
 
-  double tf;
-  Teuchos::reduceAll(Comm(), Teuchos::REDUCE_SUM, 1, &this_proc_flops, &tf);
-  ComputeFlops_ += tf;
+  for(LocalOrdinal i=0; i<NumMyRows_; ++i) {
+    U_->insertLocalValues(i, Uindices[i](), Ucoefs[i]() );
+  }
 
   L_->fillComplete();
   U_->fillComplete();
@@ -766,7 +631,6 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse(
   }
 
   ++NumApplyInverse_;
-  ApplyInverseFlops_ += X.getNumVectors() * 2 * GlobalNonzeros_;
   Time_.stop();
   ApplyInverseTime_ += Time_.totalElapsedTime();
 }
@@ -828,19 +692,7 @@ ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Print(std::ostream& os) const
        << "  " << std::setw(15) << InitializeTime()
        << "               0.0            0.0" << std::endl;
     os << "Compute()       "   << std::setw(5) << NumCompute()
-       << "  " << std::setw(15) << ComputeTime()
-       << "  " << std::setw(15) << 1.0e-6 * ComputeFlops();
-    if (ComputeTime() != 0.0)
-      os << "  " << std::setw(15) << 1.0e-6 * ComputeFlops() / ComputeTime() << std::endl;
-    else
-      os << "  " << std::setw(15) << 0.0 << std::endl;
-    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse()
-       << "  " << std::setw(15) << ApplyInverseTime()
-       << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops();
-    if (ApplyInverseTime() != 0.0)
-      os << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops() / ApplyInverseTime() << std::endl;
-    else
-      os << "  " << std::setw(15) << 0.0 << std::endl;
+       << "  " << std::setw(15) << ComputeTime();
     os << "================================================================================" << std::endl;
     os << std::endl;
   }

@@ -33,6 +33,7 @@ using Teuchos::DuplicateOwningRCPError;
 using Teuchos::RCP_STRONG;
 using Teuchos::RCP_WEAK;
 using Teuchos::RCP_STRENGTH_INVALID;
+using Teuchos::RCPNodeTracer;
 
 
 TEUCHOS_UNIT_TEST( DeallocNull, free )
@@ -42,11 +43,21 @@ TEUCHOS_UNIT_TEST( DeallocNull, free )
 }
 
 
-TEUCHOS_UNIT_TEST( RCP, assignSelf )
+TEUCHOS_UNIT_TEST( RCP, assignSelf_null )
 {
   RCP<A> a_rcp;
   a_rcp = a_rcp;
   TEST_ASSERT(is_null(a_rcp));
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, assignSelf_nonnull )
+{
+  RCP<A> a_rcp(new A);
+  A *a_raw_ptr = a_rcp.getRawPtr(); 
+  a_rcp = a_rcp;
+  TEST_ASSERT(nonnull(a_rcp));
+  TEST_EQUALITY(a_rcp.getRawPtr(), a_raw_ptr);
 }
 
 
@@ -102,7 +113,7 @@ TEUCHOS_UNIT_TEST( RCP, rcpFromRef_from_rcp )
   RCP<A> a_rcp1 = rcp<A>(new A);
   RCP<A> a_rcp2 = rcpFromRef(*a_rcp1);
   TEST_EQUALITY(a_rcp2.getRawPtr(), a_rcp1.getRawPtr());
-  if (Teuchos::isTracingActiveRCPNodes())
+  if (RCPNodeTracer::isTracingActiveRCPNodes())
   {
     TEST_EQUALITY_CONST(a_rcp2.strong_count(), 1);
     TEST_EQUALITY_CONST(a_rcp2.weak_count(), 1);
@@ -355,7 +366,15 @@ TEUCHOS_UNIT_TEST( RCP, getOptionalEmbeddedObj_default )
 }
 
 
-TEUCHOS_UNIT_TEST( RCP, reset )
+TEUCHOS_UNIT_TEST( RCP, reset_null )
+{
+  RCP<A> a_rcp = rcp(new A);
+  a_rcp.reset();
+  TEST_ASSERT(is_null(a_rcp));
+}
+
+
+TEUCHOS_UNIT_TEST( RCP, reset_nonnull )
 {
   RCP<A> a_rcp = rcp(new A);
   C* c_rawp = new C;
@@ -483,7 +502,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCP, weakDelete, T )
   TEST_THROW( rcp_weak1.create_weak(), DanglingReferenceError );
   TEST_THROW( rcp_weak1.get(), DanglingReferenceError );
   TEST_THROW( rcp_weak1.getRawPtr(), DanglingReferenceError );
-  TEST_THROW( rcp_weak1.ptr(), DanglingReferenceError );
+  TEST_THROW( rcp_weak1(), DanglingReferenceError );
   TEST_THROW( rcp_weak1.release(), DanglingReferenceError );
 #endif // TEUCHOS_DEBUG
 
@@ -513,7 +532,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCP, weakDelete, T )
   TEST_THROW( rcp_weak2.create_weak(), DanglingReferenceError );
   TEST_THROW( rcp_weak2.get(), DanglingReferenceError );
   TEST_THROW( rcp_weak2.getRawPtr(), DanglingReferenceError );
-  TEST_THROW( rcp_weak2.ptr(), DanglingReferenceError );
+  TEST_THROW( rcp_weak2(), DanglingReferenceError );
   TEST_THROW( rcp_weak2.release(), DanglingReferenceError );
 #endif // TEUCHOS_DEBUG
 
@@ -674,7 +693,7 @@ TEUCHOS_UNIT_TEST( RCP, circularReference_self )
 TEUCHOS_UNIT_TEST( RCP, danglingPtr )
 {
   ECHO(RCP<A> a_rcp = rcp(new A));
-  ECHO(Ptr<A> a_ptr = a_rcp.ptr());
+  ECHO(Ptr<A> a_ptr = a_rcp());
   ECHO(A *badPtr = a_rcp.getRawPtr());
   ECHO(a_rcp = null);
 #ifdef TEUCHOS_DEBUG
@@ -763,6 +782,44 @@ TEUCHOS_UNIT_TEST( RCP, invertObjectOwnership_remove_A )
   TEST_EQUALITY_CONST( c->get_A(), null );
   TEST_EQUALITY( a->A_g(), A_g_return );
   TEST_EQUALITY( c->C_g(), C_g_return );
+}
+
+
+RCP<A> createRCPWithBadDealloc()
+{
+  return rcp(new A[1]); // Will use delete but should use delete []!
+}
+
+
+template<typename T>
+class DeallocArrayDeleteExtraData {
+public:
+  static RCP<DeallocArrayDeleteExtraData<T> > create(T *ptr)
+    { return rcp(new DeallocArrayDeleteExtraData(ptr)); }
+  ~DeallocArrayDeleteExtraData() { delete [] ptr_; }
+private:
+  T *ptr_;
+  DeallocArrayDeleteExtraData(T *ptr) : ptr_(ptr) {}
+  // Not defined!
+  DeallocArrayDeleteExtraData();
+  DeallocArrayDeleteExtraData(const DeallocArrayDeleteExtraData&);
+  DeallocArrayDeleteExtraData& operator=(const DeallocArrayDeleteExtraData&);
+};
+
+
+// This unit test shows how you can use extra data to fix a bad deallocation
+// policy
+TEUCHOS_UNIT_TEST( RCP, Fix_createRCPWithBadDealloc )
+{
+  using Teuchos::inOutArg;
+  using Teuchos::set_extra_data;
+  // Create object with bad deallocator
+  RCP<A> a = createRCPWithBadDealloc();
+  TEST_ASSERT(nonnull(a));
+  // Disable default (incorrect) dealloc and set a new deallocation policy as extra data!
+  a.release();
+  set_extra_data( DeallocArrayDeleteExtraData<A>::create(a.getRawPtr()), "dealloc",
+    inOutArg(a));
 }
 
 

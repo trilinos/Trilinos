@@ -353,7 +353,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, ReadySend, Ordinal, Packet )
     origSendData[j] = PT::random();
     origRecvData[j] = PT::random();
   }
-  broadcast<Ordinal, Packet>( *comm, 0, origSendData );
+  broadcast<Ordinal, Packet>( *comm, 0, origSendData() );
 
   const ArrayRCP<Packet> sendData = arcpClone<Packet>(origSendData());
   const ArrayRCP<Packet> recvData = arcpClone<Packet>(origRecvData());

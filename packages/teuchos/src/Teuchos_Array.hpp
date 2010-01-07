@@ -154,7 +154,7 @@ bool operator>=( const Array<T> &a1, const Array<T> &a2 );
  * Array derive from ArrayView results in faster and simpler code at the
  * expense of the compiler refusing the make implicit conversions in some
  * cases when calling template functions.  Such conversion problems can always
- * be dealt with by using explicit templat arguments.
+ * be dealt with by using explicit template arguments.
  *
  * \ingroup teuchos_mem_mng_grp
  */
@@ -244,25 +244,24 @@ public:
   /** \name All constructors */
   //@{
 
-
   /** \brief . */
-  Array();
+  inline Array();
   /** \brief . */
-  explicit Array(size_type n, const value_type& value = value_type());
+  inline explicit Array(size_type n, const value_type& value = value_type());
   /** \brief . */
-  Array(const Array<T>& x);
+  inline Array(const Array<T>& x);
   /** \brief . */
   template<typename InputIterator>
-  Array(InputIterator first, InputIterator last);
+  inline Array(InputIterator first, InputIterator last);
   /** \brief . */
-  Array(const ArrayView<const T>& a);
+  inline Array(const ArrayView<const T>& a);
   /** \brief . */
   template<int N>
-  Array(const Tuple<T,N>& t);
+  inline Array(const Tuple<T,N>& t);
   /** \brief . */
-  ~Array();
+  inline ~Array();
   /** \brief . */
-  Array& operator=(const Array<T>& a);
+  inline Array& operator=(const Array<T>& a);
 
   //@}
 
@@ -270,73 +269,73 @@ public:
   //@{
 
   /** \brief . */
-  void assign(size_type n, const value_type& val);
+  inline void assign(size_type n, const value_type& val);
   /** \brief . */
   template<typename InputIterator>
-  void assign(InputIterator first, InputIterator last);
+  inline void assign(InputIterator first, InputIterator last);
   /** \brief . */
-  iterator begin();
+  inline iterator begin();
   /** \brief . */
-  iterator end();
+  inline iterator end();
   /** \brief . */
-  const_iterator begin() const;
+  inline const_iterator begin() const;
   /** \brief . */
-  const_iterator end() const;
+  inline const_iterator end() const;
   /** \brief . */
-  reverse_iterator rbegin();
+  inline reverse_iterator rbegin();
   /** \brief . */
-  reverse_iterator rend();
+  inline reverse_iterator rend();
   /** \brief . */
-  const_reverse_iterator rbegin() const;
+  inline const_reverse_iterator rbegin() const;
   /** \brief . */
-  const_reverse_iterator rend() const;
+  inline const_reverse_iterator rend() const;
   /** \brief . */
-  size_type size() const;
+  inline size_type size() const;
   /** \brief . */
-  size_type max_size() const;
+  inline size_type max_size() const;
   /** \brief . */
-  void resize(size_type new_size, const value_type& x = value_type());
+  inline void resize(size_type new_size, const value_type& x = value_type());
   /** \brief . */
-  size_type capacity() const;
+  inline size_type capacity() const;
   /** \brief . */
-  bool empty() const;
+  inline bool empty() const;
   /** \brief . */
-  void reserve(size_type n);
+  inline void reserve(size_type n);
   /** \brief . */
-  reference operator[](size_type i);
+  inline reference operator[](size_type i);
   /** \brief . */
-  const_reference operator[](size_type i) const;
+  inline const_reference operator[](size_type i) const;
   /** \brief . */
-  reference at(size_type i);
+  inline reference at(size_type i);
   /** \brief . */
-  const_reference at(size_type i) const;
+  inline const_reference at(size_type i) const;
   /** \brief . */
-  reference front();
+  inline reference front();
   /** \brief . */
-  const_reference front() const;
+  inline const_reference front() const;
   /** \brief . */
-  reference back();
+  inline reference back();
   /** \brief . */
-  const_reference back() const;
+  inline const_reference back() const;
   /** \brief . */
-  void push_back(const value_type& x);
+  inline void push_back(const value_type& x);
   /** \brief . */
-  void pop_back();
+  inline void pop_back();
   /** \brief . */
-  iterator insert(iterator position, const value_type& x);
+  inline iterator insert(iterator position, const value_type& x);
   /** \brief . */
-  void insert(iterator position, size_type n, const value_type& x);
+  inline void insert(iterator position, size_type n, const value_type& x);
   /** \brief . */
   template<typename InputIterator>
-  void insert(iterator position, InputIterator first, InputIterator last);
+  inline void insert(iterator position, InputIterator first, InputIterator last);
   /** \brief . */
-  iterator erase(iterator position);
+  inline iterator erase(iterator position);
   /** \brief . */
-  iterator erase(iterator first, iterator last);
+  inline iterator erase(iterator first, iterator last);
   /** \brief . */
-  void swap(Array& x);
+  inline void swap(Array& x);
   /** \brief . */
-  void clear();
+  inline void clear();
 
   //@}
 
@@ -347,12 +346,12 @@ public:
    *
    * Resize to allow space for the new entry.
    */
-  Array<T>& append(const T& x);
+  inline Array<T>& append(const T& x);
 
   /** \brief Remove the i-th element from the array, with optional
    * boundschecking.
    */
-  void remove(int i);
+  inline void remove(int i);
 
   /** \brief Return number of elements in the array.
    *
@@ -369,7 +368,7 @@ public:
   /** \brief Return a raw pointer to beginning of array or NULL if unsized. */
   inline T* getRawPtr();
 
-  /** \brief Return a raw pointer to beginning of array or NULL if unsized. */
+  /** \brief Return a const raw pointer to beginning of array or NULL if unsized. */
   inline const T* getRawPtr() const;
 
   //@}
@@ -378,13 +377,13 @@ public:
   //@{
 
   /** \brief Copy constructor from an std::vector. */
-  Array( const std::vector<T> &v );
+  inline Array( const std::vector<T> &v );
 
   /** \brief Explicit copy conversion to an std::vector. */
-  std::vector<T> toVector() const;
+  inline std::vector<T> toVector() const;
 
   /** \brief Assignment operator for std::vector. */
-  Array& operator=( const std::vector<T> &v );
+  inline Array& operator=( const std::vector<T> &v );
 
   //@}
 
@@ -402,7 +401,7 @@ public:
    * <li><tt>returnVal.size() == size</tt>
 	 * </ul>
    */
-	ArrayView<T> view( size_type offset, size_type size );
+	inline ArrayView<T> view( size_type offset, size_type size );
 
 	/** \brief Return const view of a contiguous range of elements.
 	 *
@@ -415,39 +414,39 @@ public:
    * <li><tt>returnVal.size() == size</tt>
 	 * </ul>
    */
-	ArrayView<const T> view( size_type offset, size_type size ) const;
+	inline ArrayView<const T> view( size_type offset, size_type size ) const;
 
 	/** \brief Return a non-const view of a contiguous range of elements (calls
    * view(offset,size)).
    */
-	ArrayView<T> operator()( size_type offset, size_type size );
+	inline ArrayView<T> operator()( size_type offset, size_type size );
 
 	/** \brief Return a non-const view of a contiguous range of elements (calls
    * view(offset,size)).
    */
-	ArrayView<const T> operator()( size_type offset, size_type size ) const;
+	inline ArrayView<const T> operator()( size_type offset, size_type size ) const;
 
 	/** \brief Return an non-const ArrayView of *this.
    *
    * NOTE: This will return a null ArrayView if this->size() == 0.
    */
-	ArrayView<T> operator()();
+	inline ArrayView<T> operator()();
 
 	/** \brief Return an const ArrayView of *this.
    *
    * NOTE: This will return a null ArrayView if this->size() == 0.
    */
-	ArrayView<const T> operator()() const;
+	inline ArrayView<const T> operator()() const;
 
   /** \brief Perform an implicit conversion to a non-const ArrayView (calls
    * operator()()).
    */
-	operator ArrayView<T>();
+	inline operator ArrayView<T>();
 
   /** \brief Perform an implicit conversion to a non-const ArrayView (calls
    * operator()()).
    */
-	operator ArrayView<const T>() const;
+	inline operator ArrayView<const T>() const;
 
   //@}
 
@@ -478,8 +477,8 @@ private:
 };
 
 
-/** \brief Wrap an <tt>Array<T></tt> object as an
- * <tt>ArrayRCP<T></tt> object.
+/** \brief Wrap an <tt>RCP<Array<T> ></tt> object as an <tt>ArrayRCP<T></tt>
+ * object.
  *
  * \relates ArrayRCP
  */
@@ -495,7 +494,7 @@ ArrayRCP<T> arcp( const RCP<Array<T> > &v )
 }
 
 
-/** \brief Wrap a <tt>const Array<T></tt> object as an
+/** \brief Wrap a <tt>RCP<const Array<T> ></tt> object as an
  * <tt>ArrayRCP<const T></tt> object.
  *
  * \relates ArrayRCP
@@ -509,6 +508,42 @@ ArrayRCP<const T> arcp( const RCP<const Array<T> > &v )
     &(*v)[0], 0, v->size(),
     v, false
     );
+}
+
+
+/** \brief Wrap an <tt>Array<T></tt> object as a non-owning
+ * <tt>ArrayRCP<T></tt> object.
+ *
+ * \relates ArrayRCP
+ */
+template<class T>
+ArrayRCP<T> arcpFromArray( Array<T> &a )
+{
+  if (a.size() == 0)
+    return null;
+#ifdef TEUCHOS_DEBUG
+  return a.begin(); // Catch dangling reference!
+#else
+  return arcp(a.getRawPtr(), 0, a.size(), false);
+#endif
+}
+
+
+/** \brief Wrap a <tt>const Array<T></tt> object as a non-owning
+ * <tt>ArrayRCP<T></tt> object.
+ *
+ * \relates ArrayRCP
+ */
+template<class T>
+ArrayRCP<const T> arcpFromArray( const Array<T> &a )
+{
+  if (a.size() == 0)
+    return null;
+#ifdef TEUCHOS_DEBUG
+  return a.begin(); // Catch dangling reference!
+#else
+  return arcp(a.getRawPtr(), 0, a.size(), false);
+#endif
 }
 
 

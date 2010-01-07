@@ -101,6 +101,7 @@ void RTOpPack::serialize(
   char reduct_obj_ext[]
   )
 {
+  using Teuchos::arrayView;
   typedef typename RTOpT<Scalar>::primitive_value_type primitive_value_type;
   typedef Teuchos::SerializationTraits<Ordinal, primitive_value_type> PVTST;
   typedef Teuchos::SerializationTraits<Ordinal, index_type> ITST;
@@ -120,10 +121,10 @@ void RTOpPack::serialize(
   ITST::serialize(1, &num_indexes, index_type_size, &reduct_obj_ext[num_indexes_off]);
   ITST::serialize(1, &num_chars, index_type_size, &reduct_obj_ext[num_chars_off]);
   op.extract_reduct_obj_state(
-    reduct_obj
-    ,num_values, num_values ? PVTST::convertFromCharPtr(&reduct_obj_ext[values_off]) : 0
-    ,num_indexes, num_indexes ? ITST::convertFromCharPtr(&reduct_obj_ext[indexes_off]) : 0
-    ,num_chars, num_chars ? CTST::convertFromCharPtr(&reduct_obj_ext[chars_off]) : 0
+    reduct_obj,
+    arrayView(PVTST::convertFromCharPtr(&reduct_obj_ext[values_off]), num_values),
+    arrayView(ITST::convertFromCharPtr(&reduct_obj_ext[indexes_off]), num_indexes),
+    arrayView(CTST::convertFromCharPtr(&reduct_obj_ext[chars_off]), num_chars)
     );
   // ToDo: Change above implementation to only require indirect serialization!
 }
@@ -139,6 +140,7 @@ void RTOpPack::deserialize(
   ReductTarget *reduct_obj
   )
 {
+  using Teuchos::arrayView;
   typedef typename RTOpT<Scalar>::primitive_value_type primitive_value_type;
   typedef Teuchos::SerializationTraits<int,primitive_value_type> PVTST;
   typedef Teuchos::SerializationTraits<int,index_type> ITST;
@@ -166,11 +168,10 @@ void RTOpPack::deserialize(
     );
 #endif
   op.load_reduct_obj_state(
-    num_values_in, 
-    num_values_in ? PVTST::convertFromCharPtr(&reduct_obj_ext[values_off]) : 0
-    ,num_indexes_in, num_indexes_in ? ITST::convertFromCharPtr(&reduct_obj_ext[indexes_off]) : 0
-    ,num_chars_in, num_chars_in ? CTST::convertFromCharPtr(&reduct_obj_ext[chars_off]) : 0
-    ,reduct_obj
+    arrayView(PVTST::convertFromCharPtr(&reduct_obj_ext[values_off]), num_values_in),
+    arrayView(ITST::convertFromCharPtr(&reduct_obj_ext[indexes_off]), num_indexes_in),
+    arrayView(CTST::convertFromCharPtr(&reduct_obj_ext[chars_off]), num_chars_in),
+    Teuchos::ptr(reduct_obj)
     );
   // ToDo: Change above implementation to only require indirect serialization!
 }
@@ -190,12 +191,12 @@ ReductTargetSerializer<Scalar>::ReductTargetSerializer(
   )
   :op_(op.assert_not_null())
 {
+  using Teuchos::outArg;
   typedef typename RTOpT<Scalar>::primitive_value_type PrimitiveScalar;
   op_->get_reduct_type_num_entries(
-    &num_values_,&num_indexes_,&num_chars_
-    );
-  reduct_obj_ext_size_
-    = serializedSize<PrimitiveScalar>(num_values_,num_indexes_,num_chars_);
+    outArg(num_values_), outArg(num_indexes_), outArg(num_chars_) );
+  reduct_obj_ext_size_ =
+    serializedSize<PrimitiveScalar>(num_values_,num_indexes_,num_chars_);
 }
 
 
@@ -277,13 +278,13 @@ ReductTargetReductionOp<Scalar>::ReductTargetReductionOp(
  
 template<class Scalar>
 void ReductTargetReductionOp<Scalar>::reduce(
-  const Ordinal count
-  ,const ReductTarget*const inBuffer[]
-  ,ReductTarget*const inoutBuffer[]
+  const Ordinal count,
+  const ReductTarget*const inBuffer[],
+  ReductTarget*const inoutBuffer[]
   ) const
 {
   for( Ordinal i = 0; i < count; ++i )
-    op_->reduce_reduct_objs( *inBuffer[i], inoutBuffer[i] );
+    op_->reduce_reduct_objs( *inBuffer[i], Teuchos::ptr(inoutBuffer[i]) );
 }
 
 
@@ -311,14 +312,14 @@ void RTOpPack::SPMD_all_reduce(
     _i_i_reduct_objs[kc] = &*i_i_reduct_objs[kc];
   }
   ReductTargetSerializer<Scalar>
-    serializer(Teuchos::rcp(&op,false));
+    serializer(Teuchos::rcpFromRef(op));
   ReductTargetReductionOp<Scalar>
-    reductOp(Teuchos::rcp(&op,false));
+    reductOp(Teuchos::rcpFromRef(op));
   reduceAll<Ordinal>(
     *comm, serializer, reductOp,
     num_cols, &i_reduct_objs[0], &_i_i_reduct_objs[0]);
   for( int kc = 0; kc < num_cols; ++kc ) {
-    op.reduce_reduct_objs(*_i_i_reduct_objs[kc],reduct_objs[kc]);
+    op.reduce_reduct_objs(*_i_i_reduct_objs[kc], Teuchos::ptr(reduct_objs[kc]));
   }
 }
 
@@ -355,6 +356,7 @@ void RTOpPack::SPMD_apply_op(
   RTOpPack::ReductTarget*const reduct_objs[]
   )
 {
+  using Teuchos::arcp;
   using Teuchos::Workspace;
   Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
   int k, j, off;
@@ -363,7 +365,8 @@ void RTOpPack::SPMD_apply_op(
     for( off = 0, j = 0; j < num_cols; ++j ) {
       for( k = 0; k < num_multi_vecs; ++k ) {
         const ConstSubMultiVectorView<Scalar> &mv = sub_multi_vecs[k];
-        c_sub_vecs[off++].initialize(mv.globalOffset(),mv.subDim(),&mv(0,j),1);
+        c_sub_vecs[off++].initialize(mv.globalOffset(), mv.subDim(),
+          arcp(&mv(0,j), 0, mv.subDim(), false), 1);
       }
     }
   }
@@ -372,7 +375,8 @@ void RTOpPack::SPMD_apply_op(
     for( off = 0, j = 0; j < num_cols; ++j ) {
       for( k = 0; k < num_targ_multi_vecs; ++k ) {
         const SubMultiVectorView<Scalar> &mv = targ_sub_multi_vecs[k];
-        c_targ_sub_vecs[off++].initialize(mv.globalOffset(),mv.subDim(),&mv(0,j),1);
+        c_targ_sub_vecs[off++].initialize(mv.globalOffset(), mv.subDim(),
+          arcp(&mv(0,j), 0, mv.subDim(), false), 1);
       }
     }
   }
@@ -397,6 +401,7 @@ void RTOpPack::SPMD_apply_op(
   ReductTarget*const reduct_objs[]
   )
 {
+  using Teuchos::arrayView;
 #ifdef RTOPPACK_DEBUG
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
@@ -458,8 +463,9 @@ void RTOpPack::SPMD_apply_op(
       if( ( sub_vecs || sub_targ_vecs ) && localSubDim ) {
         for( int kc = 0; kc < num_cols; ++kc ) {
           op.apply_op(
-            num_vecs,sub_vecs+kc*num_vecs,num_targ_vecs,sub_targ_vecs+kc*num_targ_vecs
-            ,reduct_objs ? reduct_objs[kc] : NULL
+            arrayView(sub_vecs+kc*num_vecs, num_vecs),
+            arrayView(sub_targ_vecs+kc*num_targ_vecs, num_targ_vecs),
+            reduct_objs ? Teuchos::ptr(reduct_objs[kc]) : Teuchos::null
             );
         }
       }
@@ -486,8 +492,9 @@ void RTOpPack::SPMD_apply_op(
         i_reduct_objs[kc] = op.reduct_obj_create();
         if( ( sub_vecs || sub_targ_vecs ) && localSubDim ) {
           op.apply_op(
-            num_vecs, sub_vecs+kc*num_vecs, num_targ_vecs, sub_targ_vecs+kc*num_targ_vecs
-            ,&*i_reduct_objs[kc]
+            arrayView(sub_vecs+kc*num_vecs, num_vecs),
+            arrayView(sub_targ_vecs+kc*num_targ_vecs, num_targ_vecs),
+            i_reduct_objs[kc].ptr()
             );
         }
       }

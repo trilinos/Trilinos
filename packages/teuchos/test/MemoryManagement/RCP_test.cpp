@@ -436,7 +436,7 @@ int main( int argc, char* argv[] ) {
       out << "\nCreate a circular reference that will cause a memory leak! ...\n";
 #  if !defined(HAVE_TEUCHOS_DEBUG_RCP_NODE_TRACING)
       // Only trun on tracing if you have to
-      Teuchos::setTracingActiveRCPNodes(true);
+      Teuchos::RCPNodeTracer::setTracingActiveRCPNodes(true);
 #  endif
       RCP<A> a = rcp(new A());
       RCP<C> c2 = rcp(new C());
@@ -503,9 +503,9 @@ int main( int argc, char* argv[] ) {
     // around!
     if (createCircRefs) {
       out << "\nPrinting the active nodes just to see them!\n";
-      Teuchos::printActiveRCPNodes(out);
+      Teuchos::RCPNodeTracer::printActiveRCPNodes(out);
 #if defined(TEUCHOS_DEBUG) && !defined(HAVE_TEUCHOS_DEBUG_RCP_NODE_TRACING)
-      TEUCHOS_ASSERT_EQUALITY( 2, Teuchos::numActiveRCPNodes() );
+      TEUCHOS_ASSERT_EQUALITY( 2, Teuchos::RCPNodeTracer::numActiveRCPNodes() );
 #endif
     }
   } // end try

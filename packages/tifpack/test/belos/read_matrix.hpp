@@ -1,8 +1,10 @@
 #ifndef _read_matrix_hpp_
 #define _read_matrix_hpp_
 
+#include <iostream>
 #include <fstream>
 
+#include "Teuchos_Time.hpp"
 #include "Teuchos_CommHelpers.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
@@ -14,6 +16,9 @@ Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 read_matrix_mm(const std::string& mm_file,
                const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 {
+  Teuchos::Time timer("read_matrix");
+  timer.start();
+
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>   TCRS;
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                TMap;
  
@@ -84,6 +89,11 @@ read_matrix_mm(const std::string& mm_file,
   }
 
   A->fillComplete();
+
+  timer.stop();
+  if (my_proc==0) {
+    std::cout << "proc 0 time to read and fill matrix: " << timer.totalElapsedTime() << std::endl;
+  }
 
   return A;
 }

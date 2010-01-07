@@ -29,6 +29,7 @@
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_SpmdMultiVectorBase.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_AssertOp.hpp"
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_TestForException.hpp"

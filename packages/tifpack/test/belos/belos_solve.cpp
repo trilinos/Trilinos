@@ -32,6 +32,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_ParameterXMLFileReader.hpp"
 #include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_Time.hpp"
 #include "Teuchos_Comm.hpp"
 
 #include "Tifpack_Parameters.hpp"
@@ -45,6 +46,9 @@ void process_command_line(int argc, char*argv[], std::string& xml_params_file);
 
 int main(int argc, char*argv[])
 {
+  Teuchos::Time timer("total");
+  timer.start();
+
   Teuchos::GlobalMPISession mpisess(&argc,&argv,&std::cout);
 
   Tpetra::DefaultPlatform::DefaultPlatformType& platform = Tpetra::DefaultPlatform::getDefaultPlatform();
@@ -124,6 +128,12 @@ int main(int argc, char*argv[])
               <<expected_iters<<"), or resid-norm(" << norms[0] << ") >= 1.e-7"<<std::endl;
       }
     }
+  }
+
+  timer.stop();
+  if (comm->getRank() == 0) {
+    std::cout << "proc 0 total program time: " << timer.totalElapsedTime()
+       << std::endl;
   }
 
   return 0;

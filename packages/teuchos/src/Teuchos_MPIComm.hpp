@@ -125,25 +125,25 @@ namespace Teuchos
       //! @name Data types
       //@{ 
       //! Integer data type
-      const static int INT;
+      static const int INT;
       //! Float data type
-      const static int FLOAT;
+      static const int FLOAT;
       //! Double data type
-      const static int DOUBLE;
+      static const int DOUBLE;
       //! Character data type
-      const static int CHAR;
+      static const int CHAR;
       //@}
 
       //! @name Operations
       //@{ 
       //! Summation operation
-      const static int SUM;
+      static const int SUM;
       //! Minimize operation
-      const static int MIN;
+      static const int MIN;
       //! Maximize operation
-      const static int MAX;
+      static const int MAX;
       //! Dot-product (Multiplication) operation
-      const static int PROD;
+      static const int PROD;
       //@}
 
       // errCheck() checks the return value of an MPI call and throws

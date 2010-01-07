@@ -18,5 +18,11 @@
 /* Define if Fortran UQTK is enabled */
 #cmakedefine HAVE_STOKHOS_FORUQTK
 
+/* Define if Ifpack is enabled */
+#cmakedefine HAVE_STOKHOS_IFPACK
+
 /* Define if ML is enabled */
 #cmakedefine HAVE_STOKHOS_ML
+
+/* Define if Anasazi is enabled */
+#cmakedefine HAVE_STOKHOS_ANASAZI

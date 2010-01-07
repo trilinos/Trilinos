@@ -390,7 +390,7 @@ public:
   //@{
 
   /** \brief Deprecated */
-  void get_reduct_type_num_entries(
+  RTOP_DEPRECATED void get_reduct_type_num_entries(
     int* num_values, int* num_indexes, int* num_chars
     ) const
     {
@@ -400,7 +400,7 @@ public:
     }
 
   /** \brief Deprecated */
-  void reduce_reduct_objs(
+  RTOP_DEPRECATED void reduce_reduct_objs(
     const ReductTarget& in_reduct_obj, ReductTarget* inout_reduct_obj
     ) const
     {
@@ -408,13 +408,13 @@ public:
     }
 
   /** \brief Deprecated */
-  void reduct_obj_reinit( ReductTarget* reduct_obj ) const
+  RTOP_DEPRECATED void reduct_obj_reinit( ReductTarget* reduct_obj ) const
     {
       reduct_obj_reinit_impl(Teuchos::ptr(reduct_obj));
     }
 
   /** \brief Deprecated */
-  void extract_reduct_obj_state(
+  RTOP_DEPRECATED void extract_reduct_obj_state(
     const ReductTarget &reduct_obj,
     int num_values, primitive_value_type value_data[],
     int num_indexes, index_type index_data[],
@@ -428,7 +428,7 @@ public:
     }
 
   /** \brief Deprecated */
-  void load_reduct_obj_state(
+  RTOP_DEPRECATED void load_reduct_obj_state(
     int num_values, const primitive_value_type value_data[],
     int num_indexes, const index_type index_data[],
     int num_chars, const char_type char_data[],
@@ -442,7 +442,7 @@ public:
     }
 
   /** \brief Deprecated */
-  void apply_op(
+  RTOP_DEPRECATED void apply_op(
     const int num_vecs, const ConstSubVectorView<Scalar> sub_vecs[],
     const int num_targ_vecs, const SubVectorView<Scalar> targ_sub_vecs[],
     ReductTarget *reduct_obj

@@ -25,34 +25,56 @@ verify CXX test. Being able to pass in the options to use or using the
 CMAKE_<compiler>_FLAGS variable internally are sufficient fixes for this.
 
 
-(*) [CTest] [P2] Modify the core Trilinos CTest driver to handle
-looping for continuous integration testing.  Assist in getting 
-continuous integration testing set up on trilinos-test.sandia.gov.
-
-
 (*) [CTest] [P2] Get updated files info attached to every build row for each
 package (e.g. Label).  Currently, it is very hard to track down what files
 where updated when you are querying individual tests with queryTests.php or
-individual builds with index.php?project=Trilinos&subproject=Zoltan.  Only the
-first package in the build sequence shows updated files.  All the packages
-(i.e. Labels) in a build sequence need to show the updated files.
+individual builds with index.php?project=Trilinos&subproject=Zoltan (in
+general, we need to get from the individual results pages to the page
+summarizing the whole build of all Trilinos packages, even if we arrived at
+the page through a search, rather than starting from the build summary page).
+Only the first package in the build sequence shows updated files.  All the
+packages (i.e. Labels) in a build sequence need to show the updated files.
 
 
-(*) [CTest] [P2] Create a robust system to handle the overall testing process
-driving different CTest scripts on a machine that has the following
+(*) [CTest] [P2] EPIC Create a robust system to handle the overall testing
+process driving different CTest scripts on a machine that has the following
 properties:
 
-a) Automatically updates all of the scripts and CMake/CDash code needed to
-perform the tests (including upgrading CMake/CTest if necessary)
+This epic has been broken down into the following items:
 
-b) Put a time limit (or max date stamp) on the full set of tests so that they
-will get killed after that point.  For example, you might say that if the full
+A) Automatically updates all of the scripts and CMake/CDash code needed to
+perform the tests (including upgrading CMake/CTest if necessary). Some nightly
+tests should use the current CMake release version, some should use a dev
+version that has gone through a verification process, and one should use the
+latest nightly snapshot of CMake and conduct a verification process on that
+version. If the version is verified to work, it should become the new verified
+dev version for the next day.
+
+B) Put a time limit (or max date stamp) on the full set of tests so that they
+will get killed after that point. For example, you might say that if the full
 set of tests takes longer than 8 hours, then the current CTest script and all
 remaiming scripts should be killed and an email should be sent to some list of
-email addresses list (e.g.  trilinos-framework) stating that the tests where
-killed.
+email addresses list (e.g. trilinos-framework) stating that the tests where
+killed. Alternatively or in addition to limiting the total time for all tests,
+the time could be limited for each build.
 
-c) Send email to some list of email addresses when the tests finish.
+C) Send email to some list of email addresses when the tests finish.  Emails
+should also be sent when an expected build is not registered, when a machine
+cannot submit to the main dashboard, and when any catastrophic failure occurs.
+When a testing machine has no network connectivity at the beginning or end of
+a testing attempt, an easily accessible log should be left on the machine. 
+
+D) Support parallel build tracks. If there are enough cores available,
+multiple test builds should be done at the same time. For example, dev builds
+could be done on one track and release on another, or a more sophisticated
+system could be developed similar to a queuing system on a cluster. Having
+ctest manage the tracks may be appropriate as it is able to run tests in
+parallel already.
+
+E) Make the continuous integration testing process more robust. See bugzilla
+bug 4681: https://software.sandia.gov/bugzilla/show_bug.cgi?id=4681. Some of
+the tasks overlap with other items from the robust testing system epic, but
+should be verified to work for CI testing.
 
 These capabilities are critical for the robustness and maintainability of the
 automated testing system run by CTest.
@@ -77,7 +99,7 @@ may look similar to the CSE that was set up for another Kitware customer.
 This will allow reliably killing timed-out tests.
 
 
-(*) [CDash] [P3] Add general query filters to the test results pages.
+(*) [CDash] [P2] Add general query filters to the test results pages.
 This would allow you to search over multiple Trilinos packages over
 multiple platforms and days all in one place.
 
@@ -505,6 +527,10 @@ run in dasbhaord mode, not when it is run in regular command-line mode.  This
 is very bad because it will not timeout tests in our checkin-test.py script
 (or when run manually by Trilinos developers).  We just need some way to set a
 timeout when running ctest like 'ctest -jN'.
+
+(*) [CTest] [P2] Modify the core Trilinos CTest driver to handle
+looping for continuous integration testing.  Assist in getting
+continuous integration testing set up on trilinos-test.sandia.gov.
 
 (*) [CTest] [P2] By default, automatically widen the main summary
 output to show the full test names: Currently, only the first 30

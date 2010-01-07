@@ -8,3 +8,7 @@
 #cmakedefine HAVE_THYRA_FLOAT
 
 #cmakedefine HAVE_THYRA_COMPLEX
+
+#cmakedefine HAVE_THYRA_DEBUG
+
+@THYRA_DEPRECATED_DECLARATIONS@

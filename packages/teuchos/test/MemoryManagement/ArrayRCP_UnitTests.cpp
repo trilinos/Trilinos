@@ -536,7 +536,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, weakDelete, T )
   TEST_THROW( arcp_weak1.view(0,n), DanglingReferenceError );
   TEST_THROW( arcp_weak1(0,n), DanglingReferenceError );
   TEST_THROW( arcp_weak1(), DanglingReferenceError );
-  TEST_THROW( {ArrayView<T> av = arcp_weak1;}, DanglingReferenceError );
+  TEST_THROW( {ArrayView<T> av = arcp_weak1();}, DanglingReferenceError );
   TEST_THROW( {ArrayRCP<const T> ap = getConst(arcp_weak1);},
     DanglingReferenceError );
   TEST_THROW( arcp_weak1.release(), DanglingReferenceError );

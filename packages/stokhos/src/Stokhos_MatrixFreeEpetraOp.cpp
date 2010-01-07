@@ -38,7 +38,7 @@ Stokhos::MatrixFreeEpetraOp::MatrixFreeEpetraOp(
  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis_,
  const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk_,
  const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops_) 
-  : label("Stokhos::MatrixFreeEpetraOp"),
+  : label("Stokhos Matrix Free Operator"),
     base_map(base_map_),
     sg_map(sg_map_),
     sg_basis(sg_basis_),

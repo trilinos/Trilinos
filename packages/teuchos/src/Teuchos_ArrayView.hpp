@@ -357,6 +357,8 @@ template<class T> inline
 Teuchos::ArrayView<T>
 Teuchos::arrayView( T* p, typename ArrayView<T>::size_type size )
 {
+  if (size == 0)
+    return null;
   return ArrayView<T>(p, size);
 }
 
@@ -364,6 +366,8 @@ Teuchos::arrayView( T* p, typename ArrayView<T>::size_type size )
 template<class T> inline
 Teuchos::ArrayView<T> Teuchos::arrayViewFromVector( std::vector<T>& vec )
 {
+  if (vec.size() == 0)
+    return null;
   return ArrayView<T>(vec);
 }
 
@@ -371,6 +375,8 @@ Teuchos::ArrayView<T> Teuchos::arrayViewFromVector( std::vector<T>& vec )
 template<class T> inline
 Teuchos::ArrayView<const T> Teuchos::arrayViewFromVector( const std::vector<T>& vec )
 {
+  if (vec.size() == 0)
+    return null;
   return ArrayView<const T>(vec);
 }
 

@@ -6,6 +6,7 @@
 #include <iostream>
 #include <sstream>
 #include <algorithm>
+#include <string.h>
 
 #include <stk_util/util/SimpleArrayOps.hpp>
 #include <stk_util/util/string_case_compare.hpp>

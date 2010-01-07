@@ -47,7 +47,7 @@ int i, k;
 void print_hypergraph(ZZ *zz, ZHG *zhg, int sumWeight)
 {
   int i, j, npins;
-  int ewdim = zz->Edge_Weight_Dim;
+  int ewdim = zhg->edgeWeightDim;
   int vwdim = zhg->objWeightDim;
   float sum;
   float *wgt, *vwgt;

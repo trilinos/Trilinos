@@ -1,11 +1,11 @@
-#ifndef _build_problem_hpp_
-#define _build_problem_hpp_
 
 #include <string>
 #include <sstream>
+#include <iostream>
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_Time.hpp"
 #include "Teuchos_Comm.hpp"
 
 #include "Epetra_Comm.h"
@@ -38,6 +38,9 @@ Teuchos::RCP< Epetra_LinearProblem >
 build_problem(Teuchos::ParameterList& test_params,
               const Epetra_Comm& comm)
 {
+  Teuchos::Time timer("build_problem");
+  timer.start();
+
   Epetra_CrsMatrix* A;
 
   std::string mm_file("not specified");
@@ -59,9 +62,13 @@ build_problem(Teuchos::ParameterList& test_params,
     throw std::runtime_error("No matrix file specified.");
   }
 
-  return build_problem_mm(test_params, A);
+  Teuchos::RCP<Epetra_LinearProblem> problem = build_problem_mm(test_params, A);
+  timer.stop();
+  if (comm.MyPID() == 0) {
+    std::cout << "proc 0 time to read matrix & create problem: " << timer.totalElapsedTime()
+      << std::endl;
+  }
+
+  return problem;
 }
-
-
-#endif
 

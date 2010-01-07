@@ -59,24 +59,54 @@ namespace Stokhos {
     //! Typename of ordinals
     typedef typename traits_type::ordinal_type ordinal_type;
 
+    //! Constructor with no basis
+    /*!
+     * Use with care!  Generally you will want to call reset() before using
+     * any of the methods on this class.
+     */
+    VectorOrthogPoly();
+
     /*! 
      * \brief Create a polynomial for basis \c basis with empty 
      * coefficients
      */
-    VectorOrthogPoly(const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis,
-		     const Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >& quad = Teuchos::null);
+    VectorOrthogPoly(
+      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis,
+      const Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >& quad = Teuchos::null);
 
     /*! 
      * \brief Create a polynomial for basis \c basis where each coefficient is 
      * generated through a clone operation as implemented by the traits class
      * for the coefficient.
      */
-    VectorOrthogPoly(const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis,
-		     const typename traits_type::cloner_type& cloner,
-		     const Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >& quad = Teuchos::null);
+    VectorOrthogPoly(
+      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis,
+      const typename traits_type::cloner_type& cloner,
+      const Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >& quad = Teuchos::null);
+
+    //! Copy constructor
+    /*!
+     * NOTE:  This is a shallow copy
+     */
+    VectorOrthogPoly(const VectorOrthogPoly&);
 
     //! Destructor
     ~VectorOrthogPoly();
+
+    //! Assignment
+    /*!
+     * NOTE:  This is a shallow copy
+     */
+    VectorOrthogPoly& operator=(const VectorOrthogPoly&);
+
+    //! Reset to a new basis
+    /*!
+     * This resizes array to fit new basis.
+     */
+    void reset(
+      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& new_basis,
+      const typename traits_type::cloner_type& cloner,
+      const Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >& quad = Teuchos::null);
 
     //! Resize to size \c sz
     /*!
@@ -136,14 +166,6 @@ namespace Stokhos {
 			 const Teuchos::Array<value_type>& basis_values, 
 			 const Teuchos::Array<value_type>& basis_norms,
 			 const coeff_type& vec);
-
-  private:
-
-    //! Prohibit copying
-    VectorOrthogPoly(const VectorOrthogPoly&);
-
-    //! Prohibit copying
-    VectorOrthogPoly& operator=(const VectorOrthogPoly&);
 
   protected:
 

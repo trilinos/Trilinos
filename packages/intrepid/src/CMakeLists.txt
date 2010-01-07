@@ -98,6 +98,8 @@ APPEND_SET(HEADERS
   Discretization/Basis/Intrepid_HGRAD_LINE_C1_FEMDef.hpp
   Discretization/Basis/Intrepid_HGRAD_LINE_Cn_FEM_JACOBI.hpp
   Discretization/Basis/Intrepid_HGRAD_LINE_Cn_FEM_JACOBIDef.hpp
+  Discretization/Basis/Intrepid_HGRAD_LINE_Cn_FEM.hpp
+  Discretization/Basis/Intrepid_HGRAD_LINE_Cn_FEMDef.hpp
   Discretization/Basis/Intrepid_HGRAD_QUAD_C1_FEM.hpp
   Discretization/Basis/Intrepid_HGRAD_QUAD_C1_FEMDef.hpp
   Discretization/Basis/Intrepid_HGRAD_QUAD_C2_FEM.hpp

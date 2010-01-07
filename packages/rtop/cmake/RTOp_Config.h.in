@@ -1,3 +1,5 @@
 #cmakedefine HAVE_MPI
 
 #cmakedefine RTOPPACK_DEBUG
+
+@RTOP_DEPRECATED_DECLARATIONS@

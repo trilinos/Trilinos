@@ -627,6 +627,7 @@ void Zoltan_Input_HG_Init(ZHG *zhg)
   zhg->globalHedges = 0;
   zhg->edgeGNO = NULL;
   zhg->Esize = NULL;
+  zhg->edgeWeightDim = 0;
   zhg->Ewgt = NULL;
   zhg->pinGNO = NULL;
   zhg->Pin_Procs = NULL;

@@ -9,6 +9,7 @@
 #include <sstream>
 #include <algorithm>
 #include <assert.h>
+#include <string.h>
 
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>

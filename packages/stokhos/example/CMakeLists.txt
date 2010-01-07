@@ -35,6 +35,12 @@ PACKAGE_ADD_EXECUTABLE(
   COMM serial mpi
   )
 
+PACKAGE_ADD_EXECUTABLE(
+  random_field_example
+  SOURCES random_field_example.cpp
+  COMM serial mpi
+  )
+
 IF(Stokhos_ENABLE_TriKota)
 
   IF(Stokhos_ENABLE_ML)
