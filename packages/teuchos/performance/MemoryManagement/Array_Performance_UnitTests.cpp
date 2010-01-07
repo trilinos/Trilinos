@@ -423,16 +423,14 @@ TEUCHOS_UNIT_TEST( Array, iteratorOverhead )
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, vectorTime);
 
     // Array
+    Teuchos::Array<double> a(arraySize);
+    TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
     {
-      Teuchos::Array<double> a(arraySize);
-      TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
-      {
-        Teuchos::Array<double>::iterator
-          a_itr = a.begin(),
-          a_end = a.end();
-        for ( ; a_itr < a_end; ++a_itr)
-          *a_itr = 0.0;
-      }
+      Teuchos::Array<double>::iterator
+        a_itr = a.begin(),
+        a_end = a.end();
+      for ( ; a_itr < a_end; ++a_itr)
+        *a_itr = 0.0;
     }
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, arrayTime);
 
