@@ -11,6 +11,7 @@ using Teuchos::null;
 using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::TabularOutputter;
+using Teuchos::Ordinal;
 
 
 double relCpuSpeed = 1e-2;
@@ -87,7 +88,7 @@ TEUCHOS_UNIT_TEST( Array, braketOperatorOverhead )
   // Start out really big to make sure it fails if not set correctly!
   double finalArrayBraketRatio = 100000.0;
 
-  int arraySize = minArraySize;
+  Ordinal arraySize = minArraySize;
   for (int test_case_k = 0;
     test_case_k < maxLoopIters && arraySize <= maxArraySize;
     ++test_case_k
@@ -111,28 +112,32 @@ TEUCHOS_UNIT_TEST( Array, braketOperatorOverhead )
     std::vector<double> vec(arraySize);
 
     // raw ptr
-    double *p_raw = &vec[0];
-    TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
     {
-      for (int i=0; i < arraySize; ++i)
-        p_raw[i] = i;
+      double *p_raw = &vec[0];
+      TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
+      {
+        for (Ordinal i=0; i < arraySize; ++i)
+          p_raw[i] = 0.0;
+      }
     }
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, rawPtrTime);
 
     // vector
     TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
     {
-      for (int i=0; i < arraySize; ++i)
-        vec[i] = i;
+      for (Ordinal i=0; i < arraySize; ++i)
+        vec[i] = 0.0;
     }
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, vectorTime);
 
     // Array
-    Teuchos::Array<double> a(arraySize);
-    TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
     {
-      for (int i=0; i < arraySize; ++i)
-        a[i] = i;
+      Teuchos::Array<double> a(arraySize);
+      TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
+      {
+        for (Ordinal i=0; i < arraySize; ++i)
+          a[i] = 0.0;
+      }
     }
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, arrayTime);
 
@@ -189,7 +194,7 @@ TEUCHOS_UNIT_TEST( ArrayView, braketOperatorOverhead )
   // Start out really big to make sure it fails if not set correctly!
   double finalArrayViewBraketRatio = 100000.0;
 
-  int arraySize = minArraySize;
+  Ordinal arraySize = minArraySize;
   for (int test_case_k = 0;
     test_case_k < maxLoopIters && arraySize <= maxArraySize;
     ++test_case_k
@@ -216,8 +221,8 @@ TEUCHOS_UNIT_TEST( ArrayView, braketOperatorOverhead )
     double *p_raw = &vec[0];
     TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
     {
-      for (int i=0; i < arraySize; ++i)
-        p_raw[i] = i;
+      for (Ordinal i=0; i < arraySize; ++i)
+        p_raw[i] = 0.0;
     }
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, rawPtrTime);
 
@@ -226,8 +231,8 @@ TEUCHOS_UNIT_TEST( ArrayView, braketOperatorOverhead )
     Teuchos::ArrayView<double> av = a;
     TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
     {
-      for (int i=0; i < arraySize; ++i)
-        av[i] = i;
+      for (Ordinal i=0; i < arraySize; ++i)
+        av[i] = 0.0;
     }
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, arrayviewTime);
 
@@ -280,7 +285,7 @@ TEUCHOS_UNIT_TEST( ArrayRCP, braketOperatorOverhead )
   // Start out really big to make sure it fails if not set correctly!
   double finalArrayRCPBraketRatio = 100000.0;
 
-  int arraySize = minArraySize;
+  Ordinal arraySize = minArraySize;
   for (int test_case_k = 0;
     test_case_k < maxLoopIters && arraySize <= maxArraySize;
     ++test_case_k
@@ -307,8 +312,8 @@ TEUCHOS_UNIT_TEST( ArrayRCP, braketOperatorOverhead )
     double *p_raw = &vec[0];
     TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
     {
-      for (int i=0; i < arraySize; ++i)
-        p_raw[i] = i;
+      for (Ordinal i=0; i < arraySize; ++i)
+        p_raw[i] = 0.0;
     }
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, rawPtrTime);
 
@@ -316,8 +321,8 @@ TEUCHOS_UNIT_TEST( ArrayRCP, braketOperatorOverhead )
     Teuchos::ArrayRCP<double> arcp = Teuchos::arcp<double>(arraySize);
     TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
     {
-      for (int i=0; i < arraySize; ++i)
-        arcp[i] = i;
+      for (Ordinal i=0; i < arraySize; ++i)
+        arcp[i] = 0.0;
     }
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, arrayrcpTime);
 
@@ -372,7 +377,7 @@ TEUCHOS_UNIT_TEST( Array, iteratorOverhead )
   // Start out really big to make sure it fails if not set correctly!
   double finalArrayIterRatio = 100000.0;
 
-  int arraySize = minArraySize;
+  Ordinal arraySize = minArraySize;
   for (int test_case_k = 0;
     test_case_k < maxLoopIters && arraySize <= maxArraySize;
     ++test_case_k
@@ -418,14 +423,16 @@ TEUCHOS_UNIT_TEST( Array, iteratorOverhead )
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, vectorTime);
 
     // Array
-    Teuchos::Array<double> a(arraySize);
-    TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
     {
-      Teuchos::Array<double>::iterator
-        a_itr = a.begin(),
-        a_end = a.end();
-      for ( ; a_itr < a_end; ++a_itr)
-        *a_itr = 0.0;
+      Teuchos::Array<double> a(arraySize);
+      TEUCHOS_START_PERF_OUTPUT_TIMER_INNERLOOP(outputter, numActualLoops, arraySize)
+      {
+        Teuchos::Array<double>::iterator
+          a_itr = a.begin(),
+          a_end = a.end();
+        for ( ; a_itr < a_end; ++a_itr)
+          *a_itr = 0.0;
+      }
     }
     TEUCHOS_END_PERF_OUTPUT_TIMER(outputter, arrayTime);
 
@@ -482,7 +489,7 @@ TEUCHOS_UNIT_TEST( ArrayView, iteratorOverhead )
   // Start out really big to make sure it fails if not set correctly!
   double finalArrayViewIterRatio = 100000.0;
 
-  int arraySize = minArraySize;
+  Ordinal arraySize = minArraySize;
   for (int test_case_k = 0;
     test_case_k < maxLoopIters && arraySize <= maxArraySize;
     ++test_case_k
@@ -578,7 +585,7 @@ TEUCHOS_UNIT_TEST( ArrayRCP, iteratorOverhead )
   // Start out really big to make sure it fails if not set correctly!
   double finalArrayRCPIterRatio = 100000.0;
 
-  int arraySize = minArraySize;
+  Ordinal arraySize = minArraySize;
   for (int test_case_k = 0;
     test_case_k < maxLoopIters && arraySize <= maxArraySize;
     ++test_case_k
@@ -673,7 +680,7 @@ TEUCHOS_UNIT_TEST( ArrayRCP, selfIteratorOverhead )
   // Start out really big to make sure it fails if not set correctly!
   double finalArrayRCPIterRatio = 100000.0;
 
-  int arraySize = minArraySize;
+  Ordinal arraySize = minArraySize;
   for (int test_case_k = 0;
     test_case_k < maxLoopIters && arraySize <= maxArraySize;
     ++test_case_k
