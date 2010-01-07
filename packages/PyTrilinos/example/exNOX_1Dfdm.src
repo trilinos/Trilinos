@@ -131,6 +131,7 @@ class MyInterface(NOX.Epetra.Interface.Required):
     def initializeMesh(self, xmin, xmax):
         x = xmin + numpy.array(self.__stdMap.MyGlobalElements()) * \
             (xmax-xmin) / (self.__numElem-1.0)
+        print "Proc", self.__myPID, "x =", x
         self.__x = Epetra.Vector(self.__stdMap, x)
         self.__h = (xmax - xmin) / (self.__numElem - 1.0)
 
@@ -165,6 +166,17 @@ class MyInterface(NOX.Epetra.Interface.Required):
     def getGraph(self):
         return self.__graph
 
+    def initializeSlice(self):
+        if self.__haveBC0:
+            f0 = 1
+        else:
+            f0 = None
+        if self.__haveBC1:
+            f1 = -1
+        else:
+            f1 = None
+        self.__slice = slice(f0, f1)
+
     def importVector(self, overlapVector, stdVector):
         """
         Import data into the overlap vector from the standard vector.  The data
@@ -188,17 +200,6 @@ class MyInterface(NOX.Epetra.Interface.Required):
         for i in range(index, 0, -1):
             overlapVector[i] = overlapVector[i-1]
         overlapVector[0] = left
-
-    def initializeSlice(self):
-        if self.__haveBC0:
-            f0 = 1
-        else:
-            f0 = None
-        if self.__haveBC1:
-            f1 = -1
-        else:
-            f1 = None
-        self.__slice = slice(f0, f1)
 
     def computeF(self, u, F, flag):
         """
@@ -278,10 +279,6 @@ def main():
 
     ### End Nonlinear Solve ###
 
-    # Obtain the final solution
-    finalGroup = solver.getSolutionGroup()
-    finalSoln  = finalGroup.getX()
-
     # Output the parameter list
     if options.verbosity:
         if myPID == 0:
@@ -302,19 +299,27 @@ def main():
         else:
             print "End Result: TEST FAILED"
 
+    # Obtain a view of the plot data
+    x = interface.getMesh()
+    finalGroup = solver.getSolutionGroup()
+    u = finalGroup.getX()
+
     # Plot the results
     if options.plot:
-        if myPID == 0: print "Plotting results..."
-        #noxInitGuess.update(1.0,finalSoln)        # Copy the final solution into a NOX.Epetra.Vector
-        #f1 = noxInitGuess.getEpetraVector()       # Obtain the underlying Epetra.Epetra_Vector
-        #f2 = Epetra.Vector(Epetra.View,f1,0)      # Convert to Epetra.Vector
-        u = interface.getSolution()
-        x = interface.getMesh()
-        mp.plot(x,u)
-        mp.title("exNOX_1Dfdm Problem Solution, k = %d" % options.k)
-        mp.xlabel("x")
-        mp.ylabel("u(x)")
-        mp.show()
+        stdMap   = interface.getMap()
+        rootMap  = Epetra.Util_Create_Root_Map(stdMap)
+        importer = Epetra.Import(rootMap, stdMap)
+        xplot    = Epetra.Vector(rootMap)
+        uplot    = Epetra.Vector(rootMap)
+        xplot.Import(x, importer, Epetra.Insert)
+        uplot.Import(u, importer, Epetra.Insert)
+        if myPID == 0:
+            print "Plotting results..."
+            mp.plot(xplot,uplot)
+            mp.title("exNOX_1Dfdm Problem Solution, k = %d" % options.k)
+            mp.xlabel("x")
+            mp.ylabel("u(x)")
+            mp.show()
 
     return status
 
