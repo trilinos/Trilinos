@@ -76,6 +76,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
 enum EMethod { METHOD_FE, METHOD_BE, METHOD_ERK, METHOD_BDF, METHOD_IRK };
 enum STEP_METHOD { STEP_METHOD_FIXED, STEP_METHOD_VARIABLE };
@@ -114,6 +115,7 @@ int main(int argc, char *argv[])
     int maxOrder = 5;
     int outputLevel = 2; // outputLevel is used to control Rythmos verbosity
     bool useNOX = false;
+    std::string extraLSParamsFile = "";
 
     // Parse the command-line options:
     Teuchos::CommandLineProcessor  clp(false); // Don't throw exceptions
@@ -133,6 +135,7 @@ int main(int argc, char *argv[])
     clp.setOption( "version", "run", &version, "Version of this code" );
     clp.setOption( "outputLevel", &outputLevel, "Debug Level for Rythmos" );
     clp.setOption( "useNOX", "noNOX", &useNOX, "Use NOX as nonlinear solver" );
+    clp.setOption( "extra-linear-solver-params-file", &extraLSParamsFile, "File containing extra linear solver parameters in XML format.");
 
 
     Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
@@ -142,6 +145,8 @@ int main(int argc, char *argv[])
     outputLevel = min(max(outputLevel,-1),4);
 
     lowsfCreator.readParameters(out.get());
+    if(extraLSParamsFile.length())
+      Teuchos::updateParametersFromXmlFile( "./"+extraLSParamsFile, &*lowsfCreator.getNonconstParameterList() );
     *out << "\nThe parameter list after being read in:\n";
     lowsfCreator.getParameterList()->print(*out,2,true,false);
 

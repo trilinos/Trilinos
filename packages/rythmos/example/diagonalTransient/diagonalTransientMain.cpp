@@ -146,6 +146,9 @@ int main(int argc, char *argv[])
     clp.setOption( "extra-params", &extraParamsString,
       "Extra XML parameters" );
 
+    std::string extraParamsFile = "";
+    clp.setOption( "extra-params-file", &extraParamsFile, "File containing extra parameters in XML format.");
+
     double maxStateError = 1e-6;
     clp.setOption( "max-state-error", &maxStateError,
       "The maximum allowed error in the integrated state in relation to the exact state solution" );
@@ -215,6 +218,8 @@ int main(int argc, char *argv[])
       paramList = Teuchos::parameterList();
     if (paramsFileName.length())
       updateParametersFromXmlFile( paramsFileName, &*paramList );
+    if(extraParamsFile.length())
+      Teuchos::updateParametersFromXmlFile( "./"+extraParamsFile, &*paramList );
     if (extraParamsString.length())
       updateParametersFromXmlString( extraParamsString, &*paramList );
 

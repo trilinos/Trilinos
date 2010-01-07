@@ -43,7 +43,7 @@ IF (${PACKAGE_NAME}_ENABLE_Amesos)
     NAME simple_stratimikos_example_amesos
     ARGS 
       "--linear-solver-params-file=amesos.klu.xml --matrix-file=FourByFour.mtx --tol=1e-13"
-      "--extra-linear-solver-params=\"<ParameterList><Parameter name='Linear Solver Type' type='string' value='Amesos'/></ParameterList>\" --matrix-file=FourByFour.mtx --tol=1e-10 --linear-solver-params-used-file=lowsf.amesos.used.xml"
+      "--extra-params-file=ExtraAmesosParams.xml --matrix-file=FourByFour.mtx --tol=1e-10 --linear-solver-params-used-file=lowsf.amesos.used.xml"
     COMM serial mpi
     NUM_MPI_PROCS 1
     )
@@ -61,7 +61,7 @@ IF (${PACKAGE_NAME}_ENABLE_AztecOO)
       NAME simple_stratimikos_example_aztecoo_ifpack
       ARGS 
         "--linear-solver-params-file=aztecoo.ifpack.xml --matrix-file=FourByFour.mtx --tol=1e-13"
-        "--extra-linear-solver-params=\"<ParameterList><Parameter name='Linear Solver Type' type='string' value='AztecOO'/></ParameterList>\" --matrix-file=FourByFour.mtx --tol=1e-10 --linear-solver-params-used-file=lowsf.aztecoo.used.xml"
+        "--extra-params-file=ExtraAztecOOParams.xml --matrix-file=FourByFour.mtx --tol=1e-10 --linear-solver-params-used-file=lowsf.aztecoo.used.xml"
       COMM serial mpi
       NUM_MPI_PROCS 1
       )
@@ -158,6 +158,8 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyExampleMOPBPFiles
     M12.mtx
     M21.mtx
     M22.mtx
+    ExtraAmesosParams.xml
+    ExtraAztecOOParams.xml
   SOURCE_PREFIX "_"
   EXEDEPS MixedOrderPhysicsBasedPreconditioner
   )

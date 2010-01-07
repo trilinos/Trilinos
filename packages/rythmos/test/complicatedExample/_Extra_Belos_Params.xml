@@ -1,0 +1,13 @@
+<ParameterList>
+  <Parameter name='Linear Solver Type' type='string' value='Belos'/>
+  <ParameterList name='Linear Solver Types'>
+    <ParameterList name='Belos'>
+      <Parameter name='Solver Type' type='string' value='Block GMRES'/>
+      <ParameterList name='Solver Types'>
+        <ParameterList name='Block GMRES'>
+          <Parameter name='Convergence Tolerance' type='double' value='1e-12'/>
+        </ParameterList>
+      </ParameterList>
+    </ParameterList>
+  </ParameterList>
+</ParameterList>

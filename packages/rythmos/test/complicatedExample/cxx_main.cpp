@@ -83,6 +83,7 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
 enum EMethod { METHOD_FE, METHOD_BE, METHOD_ERK, METHOD_BDF };
 enum EStepMethod { STEP_TYPE_FIXED, STEP_TYPE_VARIABLE };
@@ -134,6 +135,7 @@ int main(int argc, char *argv[])
     int maxOrder = 5;
     bool useIntegrator = false;
     int buffersize = 100;
+    std::string extraLSParamsFile = "";
     Teuchos::EVerbosityLevel verbLevel = Teuchos::VERB_LOW;
 
     // Parse the command-line options:
@@ -163,6 +165,7 @@ int main(int argc, char *argv[])
     clp.setOption( "useintegrator", "normal", &useIntegrator, "Use DefaultIntegrator as integrator" );
     clp.setOption( "buffersize", &buffersize, "Number of solutions to store in InterpolationBuffer" );
     clp.setOption( "useNOX", "noNOX", &useNOX, "Use NOX as the nonlinear solver" );
+    clp.setOption( "extra-linear-solver-params-file", &extraLSParamsFile, "File containing extra linear solver parameters in XML format.");
     setVerbosityLevelOption( "verb-level", &verbLevel, "Overall verbosity level.", &clp );
 
     Teuchos::CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
@@ -170,6 +173,8 @@ int main(int argc, char *argv[])
 
 #ifdef HAVE_RYTHMOS_STRATIMIKOS
     lowsfCreator.readParameters(out.get());
+    if(extraLSParamsFile.length())
+      Teuchos::updateParametersFromXmlFile( "./"+extraLSParamsFile, &*lowsfCreator.getNonconstParameterList() );
     *out << "\nThe parameter list after being read in:\n";
     lowsfCreator.getParameterList()->print(*out,2,true,false);
 #endif

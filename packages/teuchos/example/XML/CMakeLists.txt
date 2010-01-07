@@ -7,8 +7,8 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SOURCES XmlToParameterList.cpp
   ARGS
     "--xml-in-file=Example1.xml"
-    "--xml-in-file=Example1.xml --extra-xml=\"<ParameterList><ParameterList name='Direction'><ParameterList name='Newton'><ParameterList name='Linear Solver'><Parameter name='Tol' type='double' value='1e-2'/></ParameterList></ParameterList></ParameterList></ParameterList>\""
-    "--extra-xml=\"<ParameterList/>\""
+    "--xml-in-file=Example1.xml --extra-xml-file=ExtraXML1.txt"
+    "--extra-xml-file=ExtraXML2.txt"
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
@@ -18,14 +18,14 @@ PACKAGE_ADD_TEST(
   NAME XmlToParameterList_empty
   ARGS
     "--xml-in-file=Example2.xml"
-    "--extra-xml=\" \""
+    "--extra-xml-file=EmptyXML.txt"
   COMM serial mpi
   NUM_MPI_PROCS 1
   PASS_REGULAR_EXPRESSION "EmptyXMLError"
   )
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyExampleXmlFiles
-  DEST_FILES Example1.xml Example2.xml
+  DEST_FILES Example1.xml Example2.xml ExtraXML1.txt ExtraXML2.txt EmptyXML.txt
   SOURCE_PREFIX "_"
   EXEDEPS XmlToParameterList
   )

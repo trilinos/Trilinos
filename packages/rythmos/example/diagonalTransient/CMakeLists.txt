@@ -30,20 +30,7 @@ IF (Stratimikos_ENABLE_Amesos)
     )
 
   MULTILINE_SET(ARGS
-    " --extra-params=\""
-    "   <ParameterList>"
-    "     <ParameterList name='Stratimikos'>"
-    "       <Parameter name='Linear Solver Type' type='string' value='Amesos'/>"
-    "     </ParameterList>"
-    "     <ParameterList name='DiagonalTransientModel'>"
-    "       <Parameter name='NumElements' type='int' value='2'/>"
-    "     </ParameterList>"
-    "     <ParameterList name='Rythmos Stepper'>"
-    "       <ParameterList name='VerboseObject'>"
-    "         <Parameter name='Verbosity Level' type='string' value='none'/>"
-    "       </ParameterList>"
-    "     </ParameterList>"
-    "   </ParameterList>\""
+    " --extra-params-file=ExtraParams2.xml"
     " --final-time=1e-3 --num-time-steps=10 --verb-level=VERB_MEDIUM "
     )
   PACKAGE_ADD_TEST(
@@ -54,21 +41,7 @@ IF (Stratimikos_ENABLE_Amesos)
     )
     
   MULTILINE_SET(ARGS
-    " --extra-params=\""
-    "    <ParameterList>"
-    "      <ParameterList name='Stratimikos'>"
-    "        <Parameter name='Linear Solver Type' type='string' value='Amesos'/>"
-    "      </ParameterList>"
-    "      <ParameterList name='DiagonalTransientModel'>"
-    "        <Parameter name='NumElements' type='int' value='2'/>"
-    "        <Parameter name='Coeff_s' type='string' value='{ 31.4159 }'/>"
-    "      </ParameterList>"
-    "      <ParameterList name='Rythmos Stepper'>"
-    "        <ParameterList name='VerboseObject'>"
-    "          <Parameter name='Verbosity Level' type='string' value='none'/>"
-    "        </ParameterList>"
-    "      </ParameterList>"
-    "    </ParameterList>\""
+    " --extra-params-file=ExtraParams1.xml"
     "  --final-time=1e-3 "
     "  --num-time-steps=10 "
     "  --verb-level=VERB_MEDIUM "
@@ -180,6 +153,7 @@ IF (Stratimikos_ENABLE_Amesos)
 
   PACKAGE_COPY_FILES_TO_BINARY_DIR(Example_diagonalTransient_Amesos_CopyFiles
     DEST_FILES
+      ExtraParams1.xml
       diagonalTransient.amesos.fwd-sens-solve.n16.p4.xml
       diagonalTransient.amesos.fwd-sens-solve.n1.p1.xml
       diagonalTransient.amesos.fwd-sens-solve.n5.p1.xml
@@ -219,6 +193,7 @@ IF (Stratimikos_ENABLE_AztecOO)
 
   PACKAGE_COPY_FILES_TO_BINARY_DIR(Example_diagonalTransient_AztecOO_CopyFiles
     DEST_FILES
+      ExtraParams2.xml
       diagonalTransient_aztecoo.xml
     SOURCE_PREFIX "_"
     EXEDEPS diagonalTransient

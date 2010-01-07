@@ -76,17 +76,7 @@ IF (Stratimikos_ENABLE_AztecOO)
 
   MULTILINE_SET(ARGS
     " --verbose "
-    " --extra-linear-solver-params=\""
-    "   <ParameterList> "
-    "     <Parameter name='Linear Solver Type' type='string' value='AztecOO'/> "
-    "     <ParameterList name ='Linear Solver Types'> "
-    "       <ParameterList name='AztecOO'> "
-    "         <ParameterList name='Forward Solve'> "
-    "           <Parameter name='Tolerance' type='double' value='1e-12'/> "
-    "         </ParameterList> "
-    "       </ParameterList> "
-    "     </ParameterList> "
-    "   </ParameterList> \"" 
+    " --extra-linear-solver-params-file=Extra_AztecOO_Params.xml"
     " --linear-solver-params-used-file=lowsf.aztecoo.used.xml "
     " --echo-command-line "
     )
@@ -101,17 +91,7 @@ IF (Stratimikos_ENABLE_AztecOO)
   MULTILINE_SET(ARGS
     " --verbose "
     " --method=BDF "
-    " --extra-linear-solver-params=\""
-    "   <ParameterList> "
-    "     <Parameter name='Linear Solver Type' type='string' value='AztecOO'/> "
-    "     <ParameterList name ='Linear Solver Types'> "
-    "       <ParameterList name='AztecOO'> "
-    "         <ParameterList name='Forward Solve'> "
-    "           <Parameter name='Tolerance' type='double' value='1e-12'/> "
-    "         </ParameterList> "
-    "       </ParameterList> "
-    "     </ParameterList> "
-    "   </ParameterList> \"" 
+    " --extra-linear-solver-params-file=Extra_AztecOO_Params.xml"
     " --linear-solver-params-used-file=lowsf.aztecoo.used.xml "
     " --echo-command-line "
     )
@@ -127,17 +107,7 @@ IF (Stratimikos_ENABLE_AztecOO)
     " --verbose "
     " --method=IRK "
     " --numsteps=5 "
-    " --extra-linear-solver-params=\""
-    "   <ParameterList> "
-    "     <Parameter name='Linear Solver Type' type='string' value='AztecOO'/> "
-    "     <ParameterList name ='Linear Solver Types'> "
-    "       <ParameterList name='AztecOO'> "
-    "         <ParameterList name='Forward Solve'> "
-    "           <Parameter name='Tolerance' type='double' value='1e-12'/> "
-    "         </ParameterList> "
-    "       </ParameterList> "
-    "     </ParameterList> "
-    "   </ParameterList> \"" 
+    " --extra-linear-solver-params-file=Extra_AztecOO_Params.xml"
     " --linear-solver-params-used-file=lowsf.aztecoo.used.xml "
     " --echo-command-line "
     )
@@ -153,17 +123,7 @@ IF (Stratimikos_ENABLE_AztecOO)
     " --verbose "
     " --method=BDF "
     " --useNOX "
-    " --extra-linear-solver-params=\""
-    "   <ParameterList> "
-    "     <Parameter name='Linear Solver Type' type='string' value='AztecOO'/> "
-    "     <ParameterList name ='Linear Solver Types'> "
-    "       <ParameterList name='AztecOO'> "
-    "         <ParameterList name='Forward Solve'> "
-    "           <Parameter name='Tolerance' type='double' value='1e-12'/> "
-    "         </ParameterList> "
-    "       </ParameterList> "
-    "     </ParameterList> "
-    "   </ParameterList> \"" 
+    " --extra-linear-solver-params-file=Extra_AztecOO_Params.xml"
     " --linear-solver-params-used-file=lowsf.aztecoo.used.xml "
     " --echo-command-line "
     )
@@ -175,6 +135,13 @@ IF (Stratimikos_ENABLE_AztecOO)
     ${STANDARD_TEST_CONFIG}
     )
 
+  PACKAGE_COPY_FILES_TO_BINARY_DIR(Example_1DfemTransient_AztecOO_CopyFiles
+    DEST_FILES
+      Extra_AztecOO_Params.xml
+      Extra_Belos_Params.xml
+    SOURCE_PREFIX "_"
+    EXEDEPS 1DfemTransient
+    )
 ENDIF()
 
 
@@ -189,20 +156,7 @@ IF (Stratimikos_ENABLE_Belos)
 
   MULTILINE_SET(ARGS
     " --verbose "
-    " --extra-linear-solver-params=\""
-    "   <ParameterList> "
-    "     <Parameter name='Linear Solver Type' type='string' value='Belos'/> "
-    "     <ParameterList name='Linear Solver Types'> "
-    "       <ParameterList name='Belos'> "
-    "         <Parameter name='Solver Type' type='string' value='Block GMRES'/> "
-    "         <ParameterList name='Solver Types'> "
-    "           <ParameterList name='Block GMRES'> "
-    "             <Parameter name='Convergence Tolerance' type='double' value='1e-12'/> "
-    "           </ParameterList> "
-    "         </ParameterList> "
-    "       </ParameterList> "
-    "     </ParameterList> "
-    "   </ParameterList> \""
+    " --extra-linear-solver-params-file=Extra_Belos_Params.xml"
     "  --linear-solver-params-used-file=lowsf.belos.used.xml "
     )
   PACKAGE_ADD_TEST(
@@ -215,20 +169,7 @@ IF (Stratimikos_ENABLE_Belos)
   MULTILINE_SET(ARGS
     " --verbose "
     " --method=BDF "
-    " --extra-linear-solver-params=\""
-    "   <ParameterList> "
-    "     <Parameter name='Linear Solver Type' type='string' value='Belos'/> "
-    "     <ParameterList name='Linear Solver Types'> "
-    "       <ParameterList name='Belos'> "
-    "         <Parameter name='Solver Type' type='string' value='Block GMRES'/> "
-    "         <ParameterList name='Solver Types'> "
-    "           <ParameterList name='Block GMRES'> "
-    "             <Parameter name='Convergence Tolerance' type='double' value='1e-12'/> "
-    "           </ParameterList> "
-    "         </ParameterList> "
-    "       </ParameterList> "
-    "     </ParameterList> "
-    "   </ParameterList> \""
+    " --extra-linear-solver-params-file=Extra_Belos_Params.xml"
     "  --linear-solver-params-used-file=lowsf.belos.used.xml "
     )
   PACKAGE_ADD_TEST(
@@ -242,20 +183,7 @@ IF (Stratimikos_ENABLE_Belos)
     " --verbose "
     " --method=BDF "
     " --useNOX "
-    " --extra-linear-solver-params=\""
-    "   <ParameterList> "
-    "     <Parameter name='Linear Solver Type' type='string' value='Belos'/> "
-    "     <ParameterList name='Linear Solver Types'> "
-    "       <ParameterList name='Belos'> "
-    "         <Parameter name='Solver Type' type='string' value='Block GMRES'/> "
-    "         <ParameterList name='Solver Types'> "
-    "           <ParameterList name='Block GMRES'> "
-    "             <Parameter name='Convergence Tolerance' type='double' value='1e-12'/> "
-    "           </ParameterList> "
-    "         </ParameterList> "
-    "       </ParameterList> "
-    "     </ParameterList> "
-    "   </ParameterList> \""
+    " --extra-linear-solver-params-file=Extra_Belos_Params.xml"
     "  --linear-solver-params-used-file=lowsf.belos.used.xml "
     )
   PACKAGE_ADD_TEST(

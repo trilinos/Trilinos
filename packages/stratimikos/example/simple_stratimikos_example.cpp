@@ -82,6 +82,7 @@ int main(int argc, char* argv[])
     //
     
     std::string     matrixFile             = "";
+    std::string     extraParamsFile        = "";
     double          tol                    = 1e-5;
     bool            onlyPrintOptions       = false;
     bool            printXmlFormat         = false;
@@ -97,6 +98,7 @@ int main(int argc, char* argv[])
     clp.setOption( "matrix-file", &matrixFile
                    ,"Defines the matrix and perhaps the RHS and LHS for a linear system to be solved." );
     clp.setOption( "tol", &tol, "Tolerance to check against the scaled residual norm." );
+    clp.setOption( "extra-params-file", &extraParamsFile, "File containing extra parameters in XML format.");
     clp.setOption( "only-print-options", "continue-after-printing-options", &onlyPrintOptions
                    ,"Only print options and stop or continue on" );
     clp.setOption( "print-xml-format", "print-readable-format", &printXmlFormat
@@ -211,6 +213,10 @@ int main(int argc, char* argv[])
     // the command line.  This was setup by the command-line options
     // set by the setupCLP(...) function above.
     linearSolverBuilder.readParameters(out.get());
+
+    // Augment parameters if appropriate
+    if(extraParamsFile.length())
+      Teuchos::updateParametersFromXmlFile( "./"+extraParamsFile, &*linearSolverBuilder.getNonconstParameterList() );
 
     // Create a linear solver factory given information read from the
     // parameter list.

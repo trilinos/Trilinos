@@ -33,6 +33,8 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLParameterListHelpers.hpp"
 
+#include <fstream>
+
 int main( int argc, char* argv[] )
 {
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
@@ -44,12 +46,12 @@ int main( int argc, char* argv[] )
   try {
 
     std::string    xmlInFileName = "";
-    std::string    extraXmlStr = "";
+    std::string    extraXmlFile = "";
     std::string    xmlOutFileName = "paramList.out";
 
     Teuchos::CommandLineProcessor  clp(false); // Don't throw exceptions
     clp.setOption("xml-in-file",&xmlInFileName,"The XML file to read into a parameter list");
-    clp.setOption("extra-xml",&extraXmlStr,"Extra XML that will modify the initial XML read in");
+    clp.setOption("extra-xml-file",&extraXmlFile,"File with extra XML text that will modify the initial XML read in");
     clp.setOption("xml-out-file",&xmlOutFileName,"The XML file to write the final parameter list to");
     clp.setDocString(
       "This example program shows how to read in a parameter list from an"
@@ -74,9 +76,17 @@ int main( int argc, char* argv[] )
       paramList.print(std::cout,2,true,true);
     }
     
-    if(extraXmlStr.length()) {
-      std::cout << "\nUpdating the parameter list given the extra XML std::string:\n\n"<<extraXmlStr<<"\n";
-      Teuchos::updateParametersFromXmlString(extraXmlStr,&paramList);
+    std::string line("");
+    if(extraXmlFile.length()) {
+      std::ifstream myfile(extraXmlFile.c_str());
+      if (myfile.is_open())
+      {
+        getline (myfile,line);
+        std::cout << line << "\n";
+        myfile.close();
+      }
+      std::cout << "\nUpdating the parameter list given the extra XML std::string:\n\n"<<line<<"\n";
+      Teuchos::updateParametersFromXmlString(line,&paramList);
       std::cout << "\nParameter list after ammending extra XML std::string:\n\n";
       paramList.print(std::cout,2,true,true);
     }
