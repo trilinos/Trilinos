@@ -418,7 +418,7 @@ public:
     {
       SHARDS_REQUIRE( requireCell() );
       SHARDS_REQUIRE( requireDimension(subcell_dim) );
-      return m_cell->subcell_homogeneity[subcell_dim] ;
+      return 0 != m_cell->subcell_homogeneity[subcell_dim] ;
     }
   
         
