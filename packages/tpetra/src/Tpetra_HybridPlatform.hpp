@@ -167,13 +167,13 @@ namespace Tpetra {
           }
         }
         parsedLen = 0;
-        if (std::scanf(name.c_str(),"=%d%n",&N,&parsedLen) == 1 && (size_t)parsedLen == name.length()) {
+        if (std::sscanf(name.c_str(),"=%d%n",&N,&parsedLen) == 1 && (size_t)parsedLen == name.length()) {
           if (myrank == N) {
             matchFound = true;
           }
         }
         parsedLen = 0;
-        if (std::scanf(name.c_str(),"[%d,%d]%n",&M,&N,&parsedLen) == 2 && (size_t)parsedLen == name.length()) {
+        if (std::sscanf(name.c_str(),"[%d,%d]%n",&M,&N,&parsedLen) == 2 && (size_t)parsedLen == name.length()) {
           if (M <= myrank && myrank <= N) {
             matchFound = true;
           }
