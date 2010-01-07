@@ -116,6 +116,7 @@ IF (Anasazi_ENABLE_Thyra)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../thyra/src)
   APPEND_SET(HEADERS
     ../thyra/src/AnasaziThyraAdapter.hpp
+    ../thyra/src/AnasaziThyraDebugAdapter.hpp
     )
 ENDIF()
 

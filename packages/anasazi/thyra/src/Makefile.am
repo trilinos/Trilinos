@@ -43,7 +43,8 @@
 #
 #np# Make sure to list all source files in one of the following categories.
 CORE_H = \
-	$(srcdir)/AnasaziThyraAdapter.hpp 
+	$(srcdir)/AnasaziThyraAdapter.hpp \
+	$(srcdir)/AnasaziThyraDebugAdapter.hpp 
 
 CORE = 
 

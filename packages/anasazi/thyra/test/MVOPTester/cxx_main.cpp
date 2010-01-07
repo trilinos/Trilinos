@@ -50,6 +50,7 @@
 
 #ifdef HAVE_EPETRA_THYRA
 #include "AnasaziThyraAdapter.hpp"
+#include "AnasaziThyraDebugAdapter.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #endif
@@ -175,6 +176,8 @@ int main(int argc, char *argv[])
 #ifdef HAVE_EPETRA_THYRA
   typedef Thyra::MultiVectorBase<double> TMVB;
   typedef Thyra::LinearOpBase<double>    TLOB;
+  typedef Anasazi::MultiVec<double>      AMV;
+  typedef Anasazi::Operator<double>      AOP;
   // create thyra objects from the epetra objects
 
   // first, a Thyra::VectorSpaceBase
@@ -188,7 +191,6 @@ int main(int argc, char *argv[])
   // then, a LinearOpBase (from the Epetra_CrsMatrix)
   Teuchos::RCP<const Thyra::LinearOpBase<double> > thyra_op = 
     Thyra::epetraLinearOp(A);
-
 
   // test the Thyra adapter multivector
   ierr = Anasazi::TestMultiVecTraits<double,TMVB>(MyOM,thyra_ivec);
@@ -209,6 +211,30 @@ int main(int argc, char *argv[])
   else {
     MyOM->stream(Anasazi::Warnings) << "*** ThyraAdapter FAILED TestOperatorTraits() ***" << endl << endl;
   }
+
+  // test the Thyra debug adapter, ThyraMultiVec
+  Teuchos::RCP<AMV> thyraMultiVec = Teuchos::rcp( new Anasazi::ThyraMultiVec<double>( thyra_ivec ) );
+  ierr = Anasazi::TestMultiVecTraits<double,AMV>(MyOM,thyraMultiVec);
+  gerr |= ierr;
+  if (ierr) {
+    MyOM->stream(Anasazi::Warnings) << "*** ThyraDebugAdapter PASSED TestMultiVecTraits()" << endl;
+  }
+  else {
+    MyOM->stream(Anasazi::Warnings) << "*** ThyraDebugAdapter FAILED TestMultiVecTraits() ***" << endl << endl;
+  }
+
+  // test the Thyra debug adapter, ThyraOp
+  Teuchos::RCP<AOP> thyraOp = Teuchos::rcp( new Anasazi::ThyraOp<double>( thyra_op ) );
+  ierr = Anasazi::TestOperatorTraits<double,AMV,AOP>(MyOM,thyraMultiVec,thyraOp);
+  gerr |= ierr;
+  if (ierr) {
+    MyOM->stream(Anasazi::Warnings) << "*** ThyraDebugAdapter PASSED TestOperatorTraits()" << endl;
+  }
+  else {
+    MyOM->stream(Anasazi::Warnings) << "*** ThyraDebugAdapter FAILED TestOperatorTraits() ***" << endl << endl;
+  }
+
+  Teuchos::TimeMonitor::summarize(MyOM->stream(Anasazi::Warnings));
 #endif
 
 #ifdef HAVE_MPI
