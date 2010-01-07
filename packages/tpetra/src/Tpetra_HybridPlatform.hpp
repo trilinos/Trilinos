@@ -35,7 +35,7 @@
 #include <Teuchos_Comm.hpp> 
 #include <Teuchos_TypeNameTraits.hpp>
 #include <string>
-#include <csdtio> // for std::sscanf
+#include <cstdio> // for std::sscanf
 
 #include <Kokkos_SerialNode.hpp>
 #ifdef HAVE_KOKKOS_TBB
@@ -119,13 +119,7 @@ namespace Tpetra {
   , nodeType_(SERIALNODE)
   {
     // ParameterList format:
-    // Root ParameterList contains sublists, of two types:
-    // Node designation sublists
-    // Node instantiation sublists
     // 
-    // A node instantiation sublist has a name beginning with an alphabetic character
-    // It is passed to the constructor of the Node, in order to initialize the Node according to the machine file instructions.
-    //
     // Node designation sublists have a name beginning with one of the following: % = [
     // and satisfying the following format:
     //   %M=N    is satisfied if mod(myrank,M) == N
@@ -133,23 +127,20 @@ namespace Tpetra {
     //   [M,N]   is satisfied if myrank \in [M,N]
     // 
     // A node designation sublist must have a parameter entry of type std::string named "NodeType". The value indicates the type of the Node.
-    // If the node designation sublist contains a parameter entry of type std::string named "Settings" and the value refers to a node instantiation
-    // sublist of the root ParameterList, then this node instantiation sublist will be used to instantiate the node object for this process. Otherwise, 
-    // the activated node designation sublist will serve as the node instantiation sublist.
+    // The activated node designation sublist will be passed to the Node constructor.
     // 
     // For example:
     // "%2=0"  ->  
     //    NodeType     = "Kokkos::ThrustGPUNode"
-    //    Settings     = "FirstCUDADevice"
+    //    DeviceNumber = 0
+    //    Verbose      = 1
     // "%2=1"  ->
     //    NodeType     = "Kokkos::TPINode"
     //    NumThreads   = 8
-    // "FirstCUDADevice"
-    //    DeviceNumber = 0
-    //    Verbose      = 1
     // 
     // In this scenario, nodes that are equivalent to zero module 2, i.e., even nodes, will be selected to use ThrustGPUNode objects
     // and initialized with the parameter list containing
+    //    NodeType   = "Kokkos::ThrustGPUNode"
     //    DeviceNumber = 0
     //    Verbose      = 1
     // Nodes that are equivalent to one modulo 2, i.e., odd nodes, will be selected to use TPINode objects and initialized with the 
@@ -162,38 +153,72 @@ namespace Tpetra {
 
     const int myrank = comm_->getRank();
     std::string desigNode("");
+    bool matchFound = false;
     for (Teuchos::ParameterList::ConstIterator it = pl.begin(); it != pl.end(); ++it) {
       if (it->second.isList()) {
+        int parsedLen, M, N;
         const std::string &name = it->first;
-        if (matches) { 
-          // FINISH
-          parse; // use std::sscanf()
-          assign desigNode;
-          select and assign instList_;
-          break;
+        const Teuchos::ParameterList &sublist = Teuchos::getValue<Teuchos::ParameterList>(it->second);
+        // select and assign instList_;
+        parsedLen = 0;
+        if (std::sscanf(name.c_str(),"%%%d=%d%n",&M,&N,&parsedLen) == 2 && (size_t)parsedLen == name.length()) {
+          if ((myrank % M) == N) {
+            matchFound = true;
+          }
+        }
+        parsedLen = 0;
+        if (std::scanf(name.c_str(),"=%d%n",&N,&parsedLen) == 1 && (size_t)parsedLen == name.length()) {
+          if (myrank == N) {
+            matchFound = true;
+          }
+        }
+        parsedLen = 0;
+        if (std::scanf(name.c_str(),"[%d,%d]%n",&M,&N,&parsedLen) == 2 && (size_t)parsedLen == name.length()) {
+          if (M <= myrank && myrank <= N) {
+            matchFound = true;
+          }
+        }
+        if (matchFound) {
+          try {
+            desigNode = sublist.get<std::string>("NodeType");
+          }
+          catch (Teuchos::Exceptions::InvalidParameterName &e) {
+            TEST_FOR_EXCEPTION_PURE_MSG(true, std::runtime_error, 
+              std::endl << Teuchos::typeName(*this) << ": Invalid machine file." << std::endl 
+              << "Missing parameter \"NodeType\" on Node " << myrank << " for Node designator " << "\"" << name << "\":" << std::endl 
+              << sublist << std::endl);
+          }
+          if (desigNode == "Kokkos::SerialNode") {
+            nodeType_ = SERIALNODE;
+          }
+#ifdef HAVE_KOKKOS_THREADPOOL
+          else if (desigNode == "Kokkos::TPINode") {
+            nodeType_ = TPINODE;
+          }
+#endif
+#ifdef HAVE_KOKKOS_TBB
+          else if (desigNode == "Kokkos::TBBNode") {
+            nodeType_ = TBBNODE;
+          }
+#endif
+#ifdef HAVE_KOKKOS_THRUST
+          else if (desigNode == "Kokkos::ThrustGPUNode") {
+            nodeType_ = THRUSTGPUNODE;
+          }
+#endif
+          else {
+            matchFound = false;
+          }
+          if (matchFound) {
+            instList_ = sublist;
+            break;
+          }
         }
       }
     }
-    if (desigNode == "Kokkos::SerialNode") {
-      nodeType_ = SERIALNODE;
-    }
-#ifdef HAVE_KOKKOS_THREADPOOL
-    else if (desigNode == "Kokkos::TPINode") {
-      nodeType_ = TPINODE;
-    }
-#endif
-#ifdef HAVE_KOKKOS_TBB
-    else if (desigNode == "Kokkos::TBBNode") {
-      nodeType_ = TBBNODE;
-    }
-#endif
-#ifdef HAVE_KOKKOS_THRUST
-    else if (desigNode == "Kokkos::ThrustGPUNode") {
-      nodeType_ = THRUSTGPUNODE;
-    }
-#endif
-    else {
-      TEST_FOR_EXCEPTION(true, std::runtime_error, "No matching node type on rank " << myrank);
+    if (!matchFound) {
+      TEST_FOR_EXCEPTION_PURE_MSG(true, std::runtime_error, 
+          Teuchos::typeName(*this) << ": No matching node type on rank " << myrank);
     }
   } 
 

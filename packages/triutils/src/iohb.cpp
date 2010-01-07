@@ -255,7 +255,7 @@ int readHB_info(const char* filename, int* M, int* N, int* nz, char** Type,
     char Ptrfmt[17], Indfmt[17], Valfmt[21], Rhsfmt[21];
 
     mat_type = (char *) malloc(4);
-    if ( mat_type == NULL ) IOHBTerminate("Insufficient memory for mat_typen");
+    if ( mat_type == NULL ) IOHBTerminate("Insufficient memory for mat_type\n");
     
     if ( (in_file = std::fopen( filename, "r")) == NULL ) {
        std::fprintf(stderr,"Error: Cannot open file: %s\n",filename);

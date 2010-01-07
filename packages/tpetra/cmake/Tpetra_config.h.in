@@ -3,9 +3,6 @@
 /* define if new form of std::count is supported */
 #cmakedefine HAVE_STD_NEW_COUNT_SYNTAX
 
-/* Define if want to build with triutils enabled */
-#cmakedefine HAVE_TPETRA_TRIUTILS
-
 /* Define if want to build with epetra enabled */
 #cmakedefine HAVE_TPETRA_EPETRA
 

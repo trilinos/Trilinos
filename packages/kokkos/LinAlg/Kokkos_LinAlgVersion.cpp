@@ -1,7 +1,8 @@
 #include "Kokkos_LinAlgVersion.hpp"
+#include "Trilinos_version.h"
 
 namespace Kokkos {
   std::string LinAlgVersion() { 
-		return("Kokkos Linear Algebra Version 1.0d - 10/14/2009"); 
+		return("Kokkos Linear Algebra in Trilinos " TRILINOS_VERSION_STRING);
 	}
 }

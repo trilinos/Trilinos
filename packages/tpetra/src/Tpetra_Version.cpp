@@ -27,11 +27,12 @@
 // @HEADER
 
 #include "Tpetra_Version.hpp"
+#include "Trilinos_version.h"
 
 namespace Tpetra {
 
 	std::string version() {
-		return("Tpetra Version 2.0d - 10/14/2009"); 
+		return("Tpetra in Trilinos " TRILINOS_VERSION_STRING);
 	}
 
 } // namespace Tpetra

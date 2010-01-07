@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
     if (verbose) {
       std::cout << "Usage: " << argv[0] << " number_of_equations" << std::endl;
     }
-    std::exit(1);
+    return -1;
   }
   const global_size_t numGlobalElements = std::atoi(argv[1]);
 
@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
       std::cout << "numGlobalBlocks = " << numGlobalElements 
                 << " cannot be less than the number of processors = " << numProc << std::endl;
     }
-    std::exit(1);
+    return -1;
   }
 
   // Construct a Map that puts approximately the same number of 

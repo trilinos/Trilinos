@@ -11,11 +11,6 @@
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_CrsGraph.hpp"
 
-#ifdef HAVE_TPETRA_TRIUTILS
-#include <iohb.h>
-#endif
-
-
 namespace {
 
   using Teuchos::as;

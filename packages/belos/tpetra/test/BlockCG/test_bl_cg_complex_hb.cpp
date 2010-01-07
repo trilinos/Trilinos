@@ -37,14 +37,15 @@
 #include "BelosTpetraAdapter.hpp"
 #include "BelosBlockCGSolMgr.hpp"
 
-// I/O for Harwell-Boeing files
-#include <iohb.h>
+#define HIDE_TPETRA_INOUT_IMPLEMENTATIONS
+#include <Tpetra_MatrixIO.hpp>
 
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_CrsMatrix.hpp>
+#include <Kokkos_DefaultNode.hpp>
 
 using namespace Teuchos;
 using Tpetra::DefaultPlatform;
@@ -57,6 +58,8 @@ using std::endl;
 using std::cout;
 using std::vector;
 using Teuchos::tuple;
+
+typedef Kokkos::DefaultNode::DefaultNodeType Node;
 
 int main(int argc, char *argv[]) {
 
@@ -78,6 +81,7 @@ int main(int argc, char *argv[]) {
 
   RCP<const Platform<int> > platform = DefaultPlatform<int>::getPlatform();
   RCP<const Comm<int> > comm = platform->getComm();
+  RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
 
   //
   // Get test parameters from command-line processor
@@ -115,6 +119,12 @@ int main(int argc, char *argv[]) {
   if (proc_verbose) {
     std::cout << Belos::Belos_Version() << std::endl << std::endl;
   }
+
+  //
+  // Get the data from the HB file and build the Map,Matrix
+  //
+  Teuchos::RCP< Tpetra::CrsMatrix<float,int,int,Node> > A;
+  Tpetra::readMatrixMarketFile(filename,comm,node,A);
 
   //
   // Get the data from the HB file and build the Map,Matrix

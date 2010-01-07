@@ -1,9 +1,10 @@
 #include "Kokkos_Version.hpp"
+#include "Trilinos_version.h"
 
 namespace Kokkos {
 
   std::string Kokkos_Version() { 
-    return("Kokkos Version 2.0d - 10/14/2009"); 
+		return("Kokkos in Trilinos " TRILINOS_VERSION_STRING);
   }
 
 } // namespace Kokkos 

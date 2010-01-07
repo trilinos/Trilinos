@@ -1,7 +1,8 @@
 #include "Kokkos_NodeAPIVersion.hpp"
+#include "Trilinos_version.h"
 
 namespace Kokkos {
   std::string NodeAPIVersion() { 
-		return("Kokkos Node API Version 1.0d - 12/07/2009"); 
+		return("Kokkos Node API in Trilinos " TRILINOS_VERSION_STRING);
 	}
 }

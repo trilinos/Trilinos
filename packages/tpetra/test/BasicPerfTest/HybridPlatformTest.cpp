@@ -11,7 +11,10 @@
 #include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_DefaultMpiComm.hpp>
 
-// #include <iohb.h>
+#define HIDE_TPETRA_INOUT_IMPLEMENTATIONS
+#include <Tpetra_MatrixIO.hpp>
+
+std::string fnMatrix("bcsstk17.rsa");
 
 template <class Node>
 class runTest {
@@ -20,6 +23,11 @@ class runTest {
     using std::cout; 
     using std::endl;
     cout << "Running test with Node==" << Teuchos::typeName(*node) << " on rank " << comm->getRank() << endl;
+    //
+    // Get the data from the HB file and build the Map,Matrix
+    //
+    Teuchos::RCP< Tpetra::CrsMatrix<float,int,int,Node> > A;
+    Tpetra::Utils::readHBMatrix(fnMatrix,comm,node,A);
   }
 };
 
@@ -42,7 +50,6 @@ int main(int argc, char **argv) {
   // Get test parameters from command-line processor
   //  
   Teuchos::CommandLineProcessor cmdp(false,true);
-  string fnMatrix("bcsstk17.rsa");
   string fnMachine("machine.xml");
   cmdp.setOption("matrix-file",&fnMatrix,"Filename for Harwell-Boeing test matrix.");
   cmdp.setOption("machine-file",&fnMachine,"Filename for XML machine description file.");
@@ -60,6 +67,6 @@ int main(int argc, char **argv) {
   Tpetra::HybridPlatform platform(comm,machPL);
   platform.runUserCode<runTest>();
 
+  cout << "End Result: TEST PASSED" << endl;
   return 0;
 }
-
