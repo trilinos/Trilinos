@@ -37,10 +37,11 @@ include $(top_builddir)/Makefile.export.sacado
 
 EXEEXT = .exe
 
-noinst_PROGRAMS = hesopcheck
+noinst_PROGRAMS = hesopcheck hesopcheck_ADC
 
 testall : $(noinst_PROGRAMS) tradoptest.exe
 	./hesopcheck.exe
+	./hesopcheck_ADC.exe
 	for i in `ls tradoptest_*.exe`; do ./$$i; done
 
 INCLUDES = $(SACADO_INCLUDES)
@@ -48,6 +49,10 @@ hesopcheck_SOURCES = hesopcheck.cpp
 hesopcheck_CXXFLAGS =
 hesopcheck_DEPENDENCIES = $(top_builddir)/src/libsacado.a tradoptest.exe
 hesopcheck_LDADD = $(SACADO_LIBS)
+hesopcheck_ADC_SOURCES = hesopcheck.cpp $(top_builddir)/src/Sacado_radops2.cpp
+hesopcheck_ADC_CXXFLAGS = -DRAD_AUTO_AD_Const
+hesopcheck_ADC_DEPENDENCIES = $(top_builddir)/src/libsacado.a tradoptest.exe
+hesopcheck_ADC_LDADD = $(SACADO_LIBS)
 
 # If we are configured with --with-gnumake, use GNU's extensions to make
 # to compile all of the tradoptests a lot faster if using -j xx for

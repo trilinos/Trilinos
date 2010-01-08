@@ -246,17 +246,17 @@ ADcontext::Weighted_Gradcomp(int n, ADvar **v, double *w)
 
 IndepADvar::IndepADvar(double d)
 {
-	cv = new ADvari(Hv_const, this, d);
+	cv = new ADvari(this, d);
 	}
 
 IndepADvar::IndepADvar(int d)
 {
-	cv = new ADvari(Hv_const, this, (double)d);
+	cv = new ADvari(this, (double)d);
 	}
 
 IndepADvar::IndepADvar(long d)
 {
-	cv = new ADvari(Hv_const, this, (double)d);
+	cv = new ADvari(this, (double)d);
 	}
 
 #else /*!RAD_AUTO_AD_Const*/
@@ -285,7 +285,7 @@ IndepADvar::IndepADvar(long d)
 ADvar::ADvar_ctr(double d)
 {
 #ifdef RAD_AUTO_AD_Const
-	ADvari *x = new ADvari(Hv_const, this, d);
+	ADvari *x = new ADvari(this, d);
 #else
 	ADvari *x = ConstADvari::cadc.fpval_implies_const
 		? new ConstADvari(d)
@@ -384,7 +384,7 @@ IndepADvar::operator=(double d)
 #ifdef RAD_AUTO_AD_Const
 	if (cv)
 		cv->padv = 0;
-	cv = new ADvari(Hv_const, this,d);
+	cv = new ADvari(this,d);
 #else
 	cv = new ADvari(Hv_const, d);
 #endif
@@ -397,7 +397,7 @@ ADvar::operator=(double d)
 #ifdef RAD_AUTO_AD_Const
 	if (cv)
 		cv->padv = 0;
-	cv = new ADvari(Hv_const, this,d);
+	cv = new ADvari(this, d);
 #else
 	cv = ConstADvari::cadc.fpval_implies_const
 		? new ConstADvari(d)
