@@ -3,7 +3,7 @@
 *.pyc
 \#*#
 .#*
-checkin_message
-flat_headers/
-TAGS
-preCopyrightTrilinos/
+/checkin_message
+/flat_headers/
+/TAGS
+/preCopyrightTrilinos/
