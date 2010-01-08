@@ -22,7 +22,10 @@ dirs = {}.fromkeys(dirschanged, 1)
 # Create a list of (regex, email) in the order they are in the file.  That
 # way, the first regex that matches will be used to select the email address.
 
-f = open(os.path.join(os.path.dirname(sys.argv[0]),'dirs_to_emails'), 'r')
+#print "sys.argv =", sys.argv
+dirs_to_email_file = os.path.join(os.path.dirname(sys.argv[0]),'dirs_to_emails')
+#print "dirs_to_email_file =", dirs_to_email_file
+f = open(dirs_to_email_file, 'r')
 
 emails = []
 
