@@ -171,6 +171,7 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
     domMap = Teuchos::rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>((global_size_t)numCols,(GlobalOrdinal)0,comm,GloballyDistributed,node));
   }
   A = rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowMap,myNNZ,Tpetra::StaticProfile));
+  // free this locally, A will keep it allocated as long as it is needed by A (up until allocation of nonzeros)
   myNNZ = Teuchos::null;
   if (myRank == 0 && numNZ > 0) {
     for (int r=0; r < numRows; ++r) {
@@ -182,6 +183,10 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
       }
     }
   }
+  // don't need these anymore
+  colinds = Teuchos::null;
+  svals   = Teuchos::null;
+  rowptrs = Teuchos::null;
   A->fillComplete(domMap,rowMap,Tpetra::DoOptimizeStorage);
 }
 

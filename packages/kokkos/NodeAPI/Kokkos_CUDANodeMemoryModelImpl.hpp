@@ -70,7 +70,7 @@ namespace Kokkos {
     Teuchos::ArrayRCP<T> hostBuff;
     if (size != 0) {
       hostBuff = Teuchos::arcp<T>(size);
-      this->template copyFromBuffer<T>(size,buff,hostBuff);
+      this->template copyFromBuffer<T>(size,buff,hostBuff());
     }
     return hostBuff;
   }
@@ -82,7 +82,7 @@ namespace Kokkos {
     CUDANodeCopyBackDeallocator<T> dealloc(buff.getRawPtr(), size);
     Teuchos::ArrayRCP<T> hostBuff = dealloc.alloc();
     if (rw == ReadWrite) {
-      this->template copyFromBuffer<T>(size, buff, hostBuff);
+      this->template copyFromBuffer<T>(size, buff, hostBuff());
     }  
     // else rw == WriteOnly, and we need no copy
     return hostBuff;

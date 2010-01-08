@@ -42,10 +42,10 @@ EXP_INST_NODE_ORDINAL(Kokkos::TPINode,int)
 
 #ifdef HAVE_KOKKOS_THRUST
 #ifdef HAVE_KOKKOS_CUDA_DOUBLE
-EXP_INST_NODE_SCALAR_ORDINAL(Kokkos::ThrustGPUNode,double,ORDINAL)
+EXP_INST_NODE_SCALAR_ORDINAL(Kokkos::ThrustGPUNode,double,int)
 #endif
 #ifdef HAVE_KOKKOS_CUDA_FLOAT
-EXP_INST_NODE_SCALAR_ORDINAL(Kokkos::ThrustGPUNode,float ,ORDINAL)
+EXP_INST_NODE_SCALAR_ORDINAL(Kokkos::ThrustGPUNode,float ,int)
 #endif
 #endif
 

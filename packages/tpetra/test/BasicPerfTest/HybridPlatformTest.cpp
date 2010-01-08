@@ -15,6 +15,46 @@
 #include <Tpetra_MatrixIO.hpp>
 
 std::string fnMatrix("bcsstk17.rsa");
+bool testPassed;
+
+template <class Node, class Scalar, class Ordinal>
+Scalar power_method(const Teuchos::RCP<const Tpetra::Operator<Scalar,Ordinal,Ordinal,Node> > &A, size_t niters, typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance, bool verbose) {
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Magnitude;
+  // create three vectors; do not bother initializing them to zero
+  Tpetra::Vector<Scalar,Ordinal,Ordinal,Node> q(A->getRangeMap(), false);
+  Tpetra::Vector<Scalar,Ordinal,Ordinal,Node> z(A->getRangeMap(), false);
+  Tpetra::Vector<Scalar,Ordinal,Ordinal,Node> resid(A->getRangeMap(), false);
+
+  // Fill z with random numbers
+  z.randomize();
+
+  // Variables needed for iteration
+  Scalar lambda = static_cast<Scalar>(0.0);
+  Magnitude normz, residual = static_cast<Magnitude>(0.0);
+
+  const Scalar one  = Teuchos::ScalarTraits<Scalar>::one();
+  const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+
+  for (size_t iter = 0; iter < niters; ++iter) {
+    normz = z.norm2();                            // Compute 2-norm of z
+    q.scale(one/normz, z);                        // Set q = z / normz
+    A->apply(q, z);                               // Compute z = A*q
+    lambda = q.dot(z);                            // Approximate maximum eigenvalue: lamba = dot(q,z)
+    if ( iter % 100 == 0 || iter + 1 == niters ) {
+      resid.update(one, z, -lambda, q, zero);     // Compute A*q - lambda*q
+      residual = Teuchos::ScalarTraits<Scalar>::magnitude(resid.norm2() / lambda);
+      if (verbose) {
+        std::cout << "Iter = " << iter << "  Lambda = " << lambda 
+                  << "  Residual of A*q - lambda*q = " 
+                  << residual << std::endl;
+      }
+    } 
+    if (residual < tolerance) {
+      break;
+    }
+  }
+  return lambda;
+}
 
 template <class Node>
 class runTest {
@@ -27,7 +67,18 @@ class runTest {
     // Get the data from the HB file and build the Map,Matrix
     //
     Teuchos::RCP< Tpetra::CrsMatrix<float,int,int,Node> > A;
-    Tpetra::Utils::readHBMatrix(fnMatrix,comm,node,A);
+    try {
+      Tpetra::Utils::readHBMatrix(fnMatrix,comm,node,A);
+    }
+    catch (std::runtime_error &e) {
+      if (comm->getRank() == 0) {
+        cout << "Tpetra::Utils::readHBMatrix() threw exception: " << endl << e.what() << endl;
+      }
+      testPassed = false;      
+      return;
+    }
+    (void)power_method<Node,float,int>(A,10000,1e-4f,comm->getRank() == 0);
+    testPassed = true;
   }
 };
 
@@ -67,6 +118,15 @@ int main(int argc, char **argv) {
   Tpetra::HybridPlatform platform(comm,machPL);
   platform.runUserCode<runTest>();
 
-  cout << "End Result: TEST PASSED" << endl;
+  if (testPassed == false) {
+    if (comm->getRank() == 0) {
+      cout << "End Result: TEST FAILED" << endl;
+      return -1;
+    }
+  }
+
+  if (comm->getRank() == 0) {
+    cout << "End Result: TEST PASSED" << endl;
+  }
   return 0;
 }

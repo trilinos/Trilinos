@@ -24,7 +24,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(Tpetra_HybridPlatformTest_Files1
   SOURCE_DIR ${CMAKE_SOURCE_DIR}/packages/tpetra/test/BasicPerfTest
-  SOURCE_FILES machine.xml
+  SOURCE_FILES hybrid.xml machine.xml mpionly.xml threaded.xml
 )
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(Tpetra_HybridPlatformTest_Files2
