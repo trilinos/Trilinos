@@ -60,9 +60,13 @@ ENDIF()
 # B.2) thyra directory
 #
 
+IF (Piro_ENABLE_TriKota)
+  ADD_DEFINITIONS(-DHAVE_CONFIG_H)
+ENDIF() 
+
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/thyra)
-  APPEND_SET(HEADERS "") 
-  APPEND_SET(SOURCES "")
+  APPEND_SET(HEADERS thyra/Piro_Thyra_PerformAnalysis.hpp) 
+  APPEND_SET(SOURCES thyra/Piro_Thyra_PerformAnalysis.cpp)
 
 #
 # C) Define the targets for package's library(s)

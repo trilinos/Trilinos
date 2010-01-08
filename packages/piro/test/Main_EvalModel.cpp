@@ -77,12 +77,12 @@ int main(int argc, char *argv[]) {
     x->Print(cout << "\nSolution vector! {3,3,3,3}\n");
     if (num_p>0) p1->Print(cout << "\nParameters! {1,1}\n");
     f->Print(cout << "\nResidual! {8,5,0,-7}\n");
-    if (num_g>0) g1->Print(cout << "\nResponses! {10}\n");
+    if (num_g>0) g1->Print(cout << "\nResponses! {2}\n");
     RCP<Epetra_CrsMatrix> W = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(W_op, true);
     W->Print(cout << "\nJacobian! {6 on diags}\n");
     dfdp->Print(cout << "\nDfDp sensitivity MultiVector! {-1,0,0,0}{0,-4,-6,-8}\n");
-    dgdp->Print(cout << "\nDgDp response sensitivity MultiVector!{-1,-1}\n");
-    dgdx->Print(cout << "\nDgDx^T response gradient MultiVector! {1,1,1,1}\n");
+    dgdp->Print(cout << "\nDgDp response sensitivity MultiVector!{2,2}\n");
+    dgdx->Print(cout << "\nDgDx^T response gradient MultiVector! {-2,-2,-2,-2}\n");
 
     if (Proc == 0)
      cout <<

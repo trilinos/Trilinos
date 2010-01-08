@@ -94,10 +94,10 @@ int main(int argc, char *argv[]) {
            << std::setprecision(9) << endl;
 
     p1->Print(cout << "\nParameters! {1,1}\n");
-    g1->Print(cout << "\nResponses! {8}\n");
+    g1->Print(cout << "\nResponses! {8.0}\n");
     gx->Print(cout << "\nSolution! {1,2,3,4}\n");
     if (computeSens)
-      dgdp->Print(cout <<"\nSensitivities {-0.5, 2.0}\n");
+      dgdp->Print(cout <<"\nSensitivities {2.0, -8.0}\n");
 
     if (Proc == 0)
       cout <<

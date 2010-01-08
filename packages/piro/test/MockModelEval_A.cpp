@@ -209,19 +209,24 @@ void MockModelEval_A::evalModel( const InArgs& inArgs,
     }
   }
 
+  // ObjFn = 0.5*(Sum(x)-Sum(p)-12)^2 + 0.5*(p0-1)^2:  min at 1,3
+
+  double term1, term2;
+  x_in->MeanValue(&term1); 
+  term1 =  vecLength * term1 - ((*p_in)[0] + (*p_in)[1]) - 12.0;
+  term2 = (*p_in)[0] - 1.0;
+  
   if (!is_null(g_out)) {
-    double mean;
-    x_in->MeanValue(&mean); 
-    (*g_out)[0] = vecLength * mean - ((*p_in)[0] + (*p_in)[1]);
+    (*g_out)[0] = 0.5*term1*term1 + 0.5*term2*term2;
   }
 
   if (dgdx_out != Teuchos::null) {
-     dgdx_out->PutScalar(1.0);
+     dgdx_out->PutScalar(term1);
    }
   if (dgdp_out != Teuchos::null) {
      dgdp_out->PutScalar(0.0);
-     (*dgdp_out)[0][0] = -1.0;
-     (*dgdp_out)[0][1] = -1.0;
+     (*dgdp_out)[0][0] = -term1 + term2;
+     (*dgdp_out)[0][1] = -term1;
    }
 
   // Modify for time dependent (implicit timeintegration or eigensolves

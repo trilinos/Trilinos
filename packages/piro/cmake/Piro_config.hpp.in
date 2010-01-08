@@ -21,7 +21,7 @@
 #cmakedefine Piro_ENABLE_MOOCHO
 #cmakedefine Piro_ENABLE_Stokhos
 #cmakedefine Piro_ENABLE_TriKota
-#cmakedefine Piro_ENABLE_Optipack
+#cmakedefine Piro_ENABLE_OptiPack
 
 /* Define to the address where bug reports for this package should be sent. */
 #cmakedefine PACKAGE_BUGREPORT
