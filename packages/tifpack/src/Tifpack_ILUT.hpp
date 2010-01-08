@@ -27,13 +27,24 @@
 //@HEADER
 */
 
+//-----------------------------------------------------
+// Tifpack::ILUT is a translation of the Aztec ILUT
+// implementation. The Aztec ILUT implementation was
+// written by Ray Tuminaro.
+// See notes below, in the Tifpack::ILUT::Compute method.
+// ABW.
+//------------------------------------------------------
+
 #ifndef TIFPACK_ILUT_HPP
 #define TIFPACK_ILUT_HPP
+
+#include <cmath>
+#include <algorithm>
 
 #include "Tifpack_ConfigDefs.hpp"
 #include "Tifpack_CondestType.hpp"
 #include "Tifpack_Condest.hpp"
-#include "Tifpack_DenseRow.hpp"
+#include "Tifpack_Heap.hpp"
 #include "Tifpack_ScalingType.hpp"
 #include "Tifpack_Parameters.hpp"
 #include "Tpetra_CrsMatrix.hpp"
@@ -66,6 +77,8 @@ class ILUT: public Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Nod
       
 public:
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+  typedef typename Teuchos::Array<LocalOrdinal>::size_type      Tsize_t;
+  typedef typename Teuchos::Array<Scalar>::size_type            Tsize_t_S;
 
   // @{ Constructors and Destructors
   //! ILUT constuctor with RowMatrix input
@@ -394,10 +407,18 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::SetParameters(Teuchos::Parame
   TEST_FOR_EXCEPTION(LevelOfFill_ <= 0.0, std::runtime_error,
     "Tifpack::ILUT::SetParameters ERROR, level-of-fill must be >= 0.");
 
-  Tifpack::GetParameter(params, "fact: absolute threshold", Athresh_);
-  Tifpack::GetParameter(params, "fact: relative threshold", Rthresh_);
-  Tifpack::GetParameter(params, "fact: relax value", RelaxValue_);
-  Tifpack::GetParameter(params, "fact: drop tolerance", DropTolerance_);
+  double tmp = -1;
+  Tifpack::GetParameter(params, "fact: absolute threshold", tmp);
+  if (tmp != -1) Athresh_ = tmp;
+  tmp = -1;
+  Tifpack::GetParameter(params, "fact: relative threshold", tmp);
+  if (tmp != -1) Rthresh_ = tmp;
+  tmp = -1;
+  Tifpack::GetParameter(params, "fact: relax value", tmp);
+  if (tmp != -1) RelaxValue_ = tmp;
+  tmp = -1;
+  Tifpack::GetParameter(params, "fact: drop tolerance", tmp);
+  if (tmp != -1) DropTolerance_ = tmp;
 }
 
 //==========================================================================
@@ -421,25 +442,47 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Initialize()
   InitializeTime_ += Time_.totalElapsedTime();
 }
 
+template<class Scalar>
+Scalar scalar_mag(const Scalar& s)
+{
+  return Teuchos::ScalarTraits<Scalar>::magnitude(s);
+}
+
 //==========================================================================
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
 void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
 {
+//--------------------------------------------------------------------------
+// Tifpack::ILUT is a translation of the Aztec ILUT implementation. The Aztec
+// ILUT implementation was written by Ray Tuminaro.
+//
+// This is isn't an exact translation of the Aztec ILUT algorithm, for the
+// following reasons:
+// 1. Minor differences result from the fact that Aztec factors a MSR format
+// matrix in place, while the code below factors an input CrsMatrix which
+// remains untouched and stores the resulting factors in separate L and U
+// CrsMatrix objects.
+// Also, the Aztec code begins by shifting the matrix pointers back
+// by one, and the pointer contents back by one, and then using 1-based
+// Fortran-style indexing in the algorithm. This Tifpack code uses C-style
+// 0-based indexing throughout.
+// 2. Aztec stores the L and U factors together in the MSR format, and the
+// diagonal of L is not stored, and the inverse of the diagonal of U is
+// stored. This Tifpack code explicitly stores 1 on L's diagonal, and the
+// diagonal of U is stored without being inverted. This is necessary since
+// the triangular solves (in Tifpack::ILUT::applyInverse) are performed by
+// calling the Tpetra::CrsMatrix::solve method on the L and U objects.
+//
+// ABW.
+//--------------------------------------------------------------------------
+
   if (!IsInitialized()) {
     Initialize();
   }
 
   Time_.start(true);
-  IsComputed_ = false;
 
   NumMyRows_ = A_->getNodeNumRows();
-  size_t Length = A_->getNodeMaxNumRowEntries();
-  Teuchos::Array<LocalOrdinal>    RowIndicesL(Length);
-  Teuchos::Array<Scalar> RowValuesL(Length);
-  Teuchos::Array<LocalOrdinal>    RowIndicesU(Length);
-  Teuchos::Array<Scalar> RowValuesU(Length);
-
-  size_t RowNnzU;
 
   L_ = Teuchos::rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A_->getRowMap(), A_->getColMap(), 0));
   U_ = Teuchos::rcp(new Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A_->getRowMap(), A_->getColMap(), 0));
@@ -450,142 +493,261 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
   Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
   Scalar one  = Teuchos::ScalarTraits<Scalar>::one();
 
-  Teuchos::Array<Scalar> DiagU(NumMyRows_,zero);
+  //We will store ArrayRCP objects that are views of the rows of U, so that
+  //we don't have to repeatedly retrieve the view for each row. These will
+  //be populated row by row as the factorization proceeds.
+  Teuchos::Array<Teuchos::ArrayRCP<const LocalOrdinal> > Uindices(NumMyRows_);
+  Teuchos::Array<Teuchos::ArrayRCP<const Scalar> > Ucoefs(NumMyRows_);
 
-  Teuchos::Array<Teuchos::Array<LocalOrdinal> > Uindices(NumMyRows_);
-  Teuchos::Array<Teuchos::Array<Scalar> > Ucoefs(NumMyRows_);
+//If this macro is defined, files containing the L and U factors
+//will be written. DON'T CHECK IN THE CODE WITH THIS MACRO ENABLED!!!
+// #define TIFPACK_WRITE_FACTORS
+#ifdef TIFPACK_WRITE_FACTORS
+  std::ofstream ofsL("L.tif.mtx", std::ios::out);
+  std::ofstream ofsU("U.tif.mtx", std::ios::out);
+#endif
 
-  // insert first row in U_ and L_
-  LocalOrdinal lrow0 = 0;
-  A_->getLocalRowCopy(lrow0, RowIndicesU(), RowValuesU(), RowNnzU);
+  //Calculate how much fill will be allowed in addition to the space that
+  //corresponds to the input matrix entries.
+  double local_nnz = static_cast<double>(A_->getNodeNumEntries());
+  double fill = ((LevelOfFill()-1)*local_nnz)/(2*NumMyRows_);
 
-  int count = 0;
-  for (size_t i = 0 ;i < RowNnzU ; ++i) {
-    if (RowIndicesU[i] < NumMyRows_){
-      if (RowIndicesU[i] == 0) {
-        Scalar& v = RowValuesU[i];
-        v = AbsoluteThreshold() * TIFPACK_SGN(v) + RelativeThreshold() * v;
-        DiagU[0] = v;
-      }
-      Uindices[lrow0].push_back(RowIndicesU[i]);
-      Ucoefs[lrow0].push_back(RowValuesU[i]);
-      ++count;
-    }
-  }
+  //std::ceil gives the smallest integer larger than the argument.
+  //this may give a slightly different result than Aztec's fill value in
+  //some cases.
+  double fill_ceil=std::ceil(fill);
 
-  RowValuesU[0] = one;
-  RowIndicesU[0] = 0;
-  L_->insertLocalValues(0,RowIndicesU(0,1), RowValuesU(0,1));
+  //Similarly to Aztec, we will allow the same amount of fill for each
+  //row, half in L and half in U.
+  Tsize_t fillL = static_cast<Tsize_t>(fill_ceil);
+  Tsize_t fillU = static_cast<Tsize_t>(fill_ceil);
 
-  LocalOrdinal max_col = NumMyRows_;
-
-  Teuchos::Array<magnitudeType> AbsRow;
+  Teuchos::Array<Scalar> InvDiagU(NumMyRows_,zero);
 
   Teuchos::Array<LocalOrdinal> tmp_idx;
   Teuchos::Array<Scalar> tmpv;
+
+  enum { UNUSED, ORIG, FILL };
+  LocalOrdinal max_col = NumMyRows_;
+
+  Teuchos::Array<int> pattern(max_col, UNUSED);
+  Teuchos::Array<Scalar> cur_row(max_col, zero);
+  Teuchos::Array<magnitudeType> unorm(max_col);
+  magnitudeType rownorm;
+  Teuchos::Array<LocalOrdinal> L_cols_heap;
+  Teuchos::Array<LocalOrdinal> U_cols;
+  Teuchos::Array<LocalOrdinal> L_vals_heap;
+  Teuchos::Array<LocalOrdinal> U_vals_heap;
+
+  //A comparison object which will be used to create 'heaps' of indices
+  //that are ordered according to the corresponding values in the
+  //'cur_row' array.
+  greater_indirect<Scalar,LocalOrdinal> vals_comp(cur_row);
 
   // =================== //
   // start factorization //
   // =================== //
 
-  for (LocalOrdinal row_i = 1 ; row_i < NumMyRows_ ; ++row_i)
-  {
-    Teuchos::ArrayRCP<const LocalOrdinal> ColIndices;
-    Teuchos::ArrayRCP<const Scalar> ColValues;
+  for (LocalOrdinal row_i = 0 ; row_i < NumMyRows_ ; ++row_i) {
+    Teuchos::ArrayRCP<const LocalOrdinal> ColIndicesA;
+    Teuchos::ArrayRCP<const Scalar> ColValuesA;
 
-    A_->getLocalRowView(row_i, ColIndices, ColValues);
-    RowNnzU = ColIndices.size();
+    A_->getLocalRowView(row_i, ColIndicesA, ColValuesA);
+    size_t RowNnz = ColIndicesA.size();
 
-    Tifpack::DenseRow<Scalar,LocalOrdinal> SingleRowU(max_col);
+    //Always include the diagonal in the U factor. The value should get
+    //set in the next loop below.
+    U_cols.push_back(row_i);
+    cur_row[row_i] = zero;
+    pattern[row_i] = ORIG;
 
-    size_t NnzLower = 0;
-    size_t NnzUpper = 0;
-
-    LocalOrdinal start_col = ColIndices[0];
-
-    size_t count = 0;
-    for(size_t i=0; i<RowNnzU; ++i) {
-      if (ColIndices[i] < NumMyRows_) {
-        Scalar v = ColValues[i];
-        if (ColIndices[i] < row_i)
-          NnzLower++;
-        else if (ColIndices[i] == row_i) {
-          // add threshold
-          NnzUpper++;
-          v = AbsoluteThreshold() * TIFPACK_SGN(v) + RelativeThreshold() * v;
+    Tsize_t L_cols_heaplen = 0;
+    rownorm = (magnitudeType)0;
+    for(size_t i=0; i<RowNnz; ++i) {
+      if (ColIndicesA[i] < NumMyRows_) {
+        if (ColIndicesA[i] < row_i) {
+          add_to_heap(ColIndicesA[i], L_cols_heap, L_cols_heaplen);
         }
-        else
-          NnzUpper++;
-
-        if (ColIndices[i] < start_col) start_col = ColIndices[i];
-
-        SingleRowU[ColIndices[i]] = v;
-        ++count;
-      }
-    }
-    RowNnzU = count;
-
-    //Can magnitudeType always be assign-converted to double?
-    double lof = LevelOfFill();
-
-    int FillL = (int)(lof * NnzLower);
-    int FillU = (int)(lof * NnzUpper);
-    if (FillL == 0) FillL = 1;
-    if (FillU == 0) FillU = 1;
-
-    // for the multipliers
-    Tifpack::DenseRow<Scalar,LocalOrdinal> SingleRowL(max_col);
-
-    for (LocalOrdinal col_k = start_col ; col_k < row_i ; ++col_k) {
-
-      Scalar xxx = SingleRowU[col_k];
-      if (Teuchos::ScalarTraits<Scalar>::magnitude(xxx) <= DropTolerance()) continue;
-
-      Teuchos::Array<LocalOrdinal>& ColIndices = Uindices[col_k];
-      Teuchos::Array<Scalar>& ColValues = Ucoefs[col_k];
-      size_t ColNnzK = ColIndices.size();
-
-      Scalar DiagonalValueK = DiagU[col_k];
-
-      // FIXME: this should never happen!
-      if (DiagonalValueK == zero)
-        DiagonalValueK = AbsoluteThreshold();
-
-      Scalar yyy = xxx / DiagonalValueK;
-
-      if (yyy !=  zero) {
-        SingleRowL[col_k] = yyy;
-        for (size_t j = 0 ; j < ColNnzK ; ++j) {
-          SingleRowU[ColIndices[j]] += -yyy * ColValues[j];
+        else if (ColIndicesA[i] > row_i) {
+          U_cols.push_back(ColIndicesA[i]);
         }
+
+        cur_row[ColIndicesA[i]] = ColValuesA[i];
+        pattern[ColIndicesA[i]] = ORIG;
+        rownorm += scalar_mag(ColValuesA[i]);
       }
     }
 
+    //Alter the diagonal according to the absolute-threshold and
+    //relative-threshold values. If not set, those values default
+    //to zero and one respectively.
+    const Scalar& v = cur_row[row_i];
+    cur_row[row_i] = AbsoluteThreshold()*TIFPACK_SGN(v) + RelativeThreshold()*v;
 
-    // drop elements to satisfy LevelOfFill(), start with L
+    Tsize_t orig_U_len = U_cols.size();
+    RowNnz = L_cols_heap.size() + orig_U_len;
+    rownorm = DropTolerance() * rownorm/RowNnz;
 
-    SingleRowL.reduceToArraysL( AbsRow, FillL, DropTolerance(), row_i, tmp_idx, tmpv );
+    //The following while loop corresponds to the 'L30' goto's in Aztec.
+    Tsize_t L_vals_heaplen = 0;
+    while(L_cols_heaplen > 0) {
+      LocalOrdinal row_k = L_cols_heap.front();
 
+      Scalar multiplier = cur_row[row_k] * InvDiagU[row_k];
+      cur_row[row_k] = multiplier;
+      magnitudeType mag_mult = scalar_mag(multiplier);
+      if (mag_mult*unorm[row_k] < rownorm) {
+        pattern[row_k] = UNUSED;
+        rm_heap_root(L_cols_heap, L_cols_heaplen);
+        continue;
+      }
+      if (pattern[row_k] != ORIG) {
+        if (L_vals_heaplen < fillL) {
+          add_to_heap(row_k, L_vals_heap, L_vals_heaplen, vals_comp);
+        }
+        else if (L_vals_heaplen==0 ||
+                 mag_mult < scalar_mag(cur_row[L_vals_heap.front()])) {
+          pattern[row_k] = UNUSED;
+          rm_heap_root(L_cols_heap, L_cols_heaplen);
+          continue;
+        }
+        else {
+          pattern[L_vals_heap.front()] = UNUSED;
+          rm_heap_root(L_vals_heap, L_vals_heaplen, vals_comp);
+          add_to_heap(row_k, L_vals_heap, L_vals_heaplen, vals_comp);
+        }
+      }
+
+      /* Reduce current row */
+
+      Teuchos::ArrayRCP<const LocalOrdinal>& ColIndicesU = Uindices[row_k];
+      Teuchos::ArrayRCP<const Scalar>& ColValuesU = Ucoefs[row_k];
+      Tsize_t ColNnzU = ColIndicesU.size();
+
+      for(Tsize_t j=0; j<ColNnzU; ++j) {
+        if (ColIndicesU[j] > row_k) {
+          Scalar tmp = multiplier * ColValuesU[j];
+          LocalOrdinal col_j = ColIndicesU[j];
+          if (pattern[col_j] != UNUSED) {
+            cur_row[col_j] -= tmp;
+          }
+          else if (scalar_mag(tmp) >= rownorm) {
+            cur_row[col_j] = -tmp;
+            pattern[col_j] = FILL;
+            if (col_j >= row_i) {
+              U_cols.push_back(col_j);
+            }
+            else {
+              add_to_heap(col_j, L_cols_heap, L_cols_heaplen);
+            }
+          }
+        }
+      }
+
+      rm_heap_root(L_cols_heap, L_cols_heaplen);
+    }//end of while(L_cols_heaplen) loop
+
+
+    //Put indices and values for L into arrays and then into the L_ matrix.
+
+    //   first, the original entries from the L section of A:
+    for(size_t i=0; i<RowNnz; ++i) {
+      if (ColIndicesA[i] < row_i) {
+        tmp_idx.push_back(ColIndicesA[i]);
+        tmpv.push_back(cur_row[ColIndicesA[i]]);
+        pattern[ColIndicesA[i]] = UNUSED;
+      }
+    }
+
+    //   next, the L entries resulting from fill:
+    for(Tsize_t j=0; j<L_vals_heaplen; ++j) {
+      tmp_idx.push_back(L_vals_heap[j]);
+      tmpv.push_back(cur_row[L_vals_heap[j]]);
+      pattern[L_vals_heap[j]] = UNUSED;
+    }
+
+    //L has a one on the diagonal:
     tmp_idx.push_back(row_i);
     tmpv.push_back(one);
 
     L_->insertLocalValues(row_i, tmp_idx(), tmpv());
+#ifdef TIFPACK_WRITE_FACTORS
+    for(Tsize_t ii=0; ii<tmp_idx.size(); ++ii) {
+      ofsL << row_i << " " << tmp_idx[ii] << " " << tmpv[ii] << std::endl;
+    }
+#endif
 
-    // same business with U_
+    tmp_idx.clear();
+    tmpv.clear();
 
-    DiagU[row_i] =
-     SingleRowU.reduceToArraysU(AbsRow, FillU, DropTolerance(), row_i, Uindices[row_i], Ucoefs[row_i]);
-  }
+    //Pick out the diagonal element, store its reciprocal.
+    if (cur_row[row_i] == zero) {
+      std::cerr << "Tifpack::ILUT::Compute: zero pivot encountered! Replacing with rownorm and continuing..." << std::endl;
+      cur_row[row_i] = rownorm;
+    }
+    InvDiagU[row_i] = one / cur_row[row_i];
 
-  for(LocalOrdinal i=0; i<NumMyRows_; ++i) {
-    U_->insertLocalValues(i, Uindices[i](), Ucoefs[i]() );
-  }
+    //Non-inverted diagonal is stored for U:
+    tmp_idx.push_back(row_i);
+    tmpv.push_back(cur_row[row_i]);
+    unorm[row_i] = scalar_mag(cur_row[row_i]);
+    pattern[row_i] = UNUSED;
+
+    //Now put indices and values for U into arrays and then into the U_ matrix.
+    //The first entry in U_cols is the diagonal, which we just handled, so we'll
+    //start our loop at j=1.
+
+    Tsize_t U_vals_heaplen = 0;
+    for(Tsize_t j=1; j<U_cols.size(); ++j) {
+      LocalOrdinal col = U_cols[j];
+      if (pattern[col] != ORIG) {
+        if (U_vals_heaplen < fillU) {
+          add_to_heap(col, U_vals_heap, U_vals_heaplen, vals_comp);
+        }
+        else if (U_vals_heaplen!=0 && scalar_mag(cur_row[col]) >
+                 scalar_mag(cur_row[U_vals_heap.front()])) {
+          rm_heap_root(U_vals_heap, U_vals_heaplen, vals_comp);
+          add_to_heap(col, U_vals_heap, U_vals_heaplen, vals_comp);
+        }
+      }
+      else {
+        tmp_idx.push_back(col);
+        tmpv.push_back(cur_row[col]);
+        unorm[row_i] += scalar_mag(cur_row[col]);
+      }
+      pattern[col] = UNUSED;
+    }
+
+    for(Tsize_t j=0; j<U_vals_heaplen; ++j) {
+      tmp_idx.push_back(U_vals_heap[j]);
+      tmpv.push_back(cur_row[U_vals_heap[j]]);
+      unorm[row_i] += scalar_mag(cur_row[U_vals_heap[j]]);
+    }
+
+    unorm[row_i] /= (double)(orig_U_len + U_vals_heaplen + 1);
+
+    U_->insertLocalValues(row_i, tmp_idx(), tmpv() );
+#ifdef TIFPACK_WRITE_FACTORS
+    for(int ii=0; ii<tmp_idx.size(); ++ii) {
+      ofsU <<row_i<< " " <<tmp_idx[ii]<< " " <<tmpv[ii]<< std::endl;
+    }
+#endif
+    tmp_idx.clear();
+    tmpv.clear();
+
+    U_->getLocalRowView(row_i, Uindices[row_i], Ucoefs[row_i] );
+
+    L_cols_heap.clear();
+    U_cols.clear();
+    L_vals_heap.clear();
+    U_vals_heap.clear();
+  }//end of for(row_i) loop
 
   L_->fillComplete();
   U_->fillComplete();
 
   size_t MyNonzeros = L_->getGlobalNumEntries() + U_->getGlobalNumEntries();
-  Teuchos::reduceAll(Comm(), Teuchos::REDUCE_SUM, 1, &MyNonzeros, &GlobalNonzeros_);
+  Teuchos::reduceAll(Comm(),Teuchos::REDUCE_SUM,1,&MyNonzeros,&GlobalNonzeros_);
 
   IsComputed_ = true;
 
@@ -609,6 +771,7 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse(
 
   Time_.start(true);
 
+  //The following comment is from Ifpack's code. Leave it in Tifpack for now...
   // AztecOO gives X and Y pointing to the same memory location,
   // need to create an auxiliary vector, Xcopy
   Teuchos::RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Xcopy;

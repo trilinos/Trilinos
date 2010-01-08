@@ -11,6 +11,8 @@ Teuchos::RCP<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 build_precond(Teuchos::ParameterList& test_params,
               const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A)
 {
+  Teuchos::Time timer("precond");
+
   typedef Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tprec;
   Teuchos::RCP<Tprec> prec;
   Tifpack::Factory<Scalar,LocalOrdinal,GlobalOrdinal,Node> factory;
@@ -31,10 +33,12 @@ build_precond(Teuchos::ParameterList& test_params,
 
   prec->SetParameters(tif_params);
   prec->Initialize();
+  timer.start();
   prec->Compute();
+  timer.stop();
 
   if (A->getRowMap()->getComm()->getRank() == 0) {
-    std::cout << "... Finished Computing Tifpack preconditioner."
+    std::cout << "... Finished Computing Tifpack preconditioner (time: "<<timer.totalElapsedTime() << "s)"
        << std::endl;
   }
 

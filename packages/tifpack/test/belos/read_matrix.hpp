@@ -86,6 +86,8 @@ read_matrix_mm(const std::string& mm_file,
 
       A->insertGlobalValues(g_row, col(), coef() );
     }
+
+    delete infile;
   }
 
   A->fillComplete();

@@ -42,7 +42,7 @@
 #include "build_problem.hpp"
 #include "build_solver.hpp"
 
-void process_command_line(int argc, char*argv[], std::string& xml_params_file);
+void process_command_line(int argc, char*argv[], std::string& xml_file);
 
 int main(int argc, char*argv[])
 {
@@ -66,8 +66,8 @@ int main(int argc, char*argv[])
   //Just get one parameter from the command-line: the name of an xml file
   //to get parameters from.
 
-  std::string xml_params_file("calore1_mm.xml");
-  process_command_line(argc, argv, xml_params_file);
+  std::string xml_file("calore1_mm.xml");
+  process_command_line(argc, argv, xml_file);
 
   //Read the contents of the xml file into a ParameterList. That parameter list
   //should specify a matrix-file and optionally which Belos solver to use, and
@@ -75,10 +75,10 @@ int main(int argc, char*argv[])
   //for Belos and Tifpack, those will be passed to the respective destinations
   //from within the build_problem and build_solver functions.
 
-  std::cout << "Every proc reading parameters from xml_params_file: "
-            << xml_params_file << std::endl;
+  std::cout << "Every proc reading parameters from xml_file: "
+            << xml_file << std::endl;
   Teuchos::ParameterList test_params =
-      Teuchos::ParameterXMLFileReader(xml_params_file).getParameters();
+      Teuchos::ParameterXMLFileReader(xml_file).getParameters();
 
   //The build_problem function is located in build_problem.hpp.
   //Note that build_problem calls build_precond and sets a preconditioner on the
@@ -139,10 +139,10 @@ int main(int argc, char*argv[])
   return 0;
 }
 
-void process_command_line(int argc, char*argv[], std::string& xml_params_file)
+void process_command_line(int argc, char*argv[], std::string& xml_file)
 {
   Teuchos::CommandLineProcessor cmdp(false,true);
-  cmdp.setOption("xml_params_file", &xml_params_file, "XML Parameters file");
+  cmdp.setOption("xml_file", &xml_file, "XML Parameters file");
   if (cmdp.parse(argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
     throw std::runtime_error("Error parsing command-line.");
   }

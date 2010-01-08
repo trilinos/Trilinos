@@ -16,5 +16,5 @@
     <Parameter name="fact: drop tolerance" type="double" value="0.0"/>
   </ParameterList>
 
-  <Parameter name="expectNumIters" type="int" value="13"/>
+  <Parameter name="expectNumIters" type="int" value="12"/>
 </ParameterList>

@@ -51,7 +51,7 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(TifpackBelosCopyFiles
 PACKAGE_ADD_TEST(
   tif_belos TifpackBelosCopyFiles
   NAME small_gmres_belos
-  ARGS "--xml_params_file=test_gmres_small_sym_mm.xml"
+  ARGS "--xml_file=test_gmres_small_sym_mm.xml"
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
@@ -60,7 +60,7 @@ PACKAGE_ADD_TEST(
 PACKAGE_ADD_TEST(
   tif_belos TifpackBelosCopyFiles
   NAME small_pseudoblkcg_belos
-  ARGS "--xml_params_file=test_pseudoblockcg_small_sym_mm.xml"
+  ARGS "--xml_file=test_pseudoblockcg_small_sym_mm.xml"
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
@@ -69,7 +69,7 @@ PACKAGE_ADD_TEST(
 PACKAGE_ADD_TEST(
   tif_belos TifpackBelosCopyFiles
   NAME PtJacobi_belos
-  ARGS "--xml_params_file=test_PtJacobi_calore1_mm.xml"
+  ARGS "--xml_file=test_PtJacobi_calore1_mm.xml"
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
@@ -79,7 +79,7 @@ IF(Tifpack_ENABLE_QD)
   PACKAGE_ADD_TEST(
     tif_extprec_belos TifpackBelosCopyFiles
     NAME small_qd_tfqmr_belos
-    ARGS "--xml_params_file=test_tfqmr_small_sym_mm.xml"
+    ARGS "--xml_file=test_tfqmr_small_sym_mm.xml"
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
@@ -90,7 +90,7 @@ IF(Tifpack_ENABLE_QD)
   PACKAGE_ADD_TEST(
     tif_extprec_belos TifpackBelosCopyFiles
     NAME small_qd_GS_tfqmr_belos
-    ARGS "--xml_params_file=test_GS_tfqmr_small_sym_mm.xml"
+    ARGS "--xml_file=test_GS_tfqmr_small_sym_mm.xml"
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
@@ -101,7 +101,7 @@ IF(Tifpack_ENABLE_QD)
   PACKAGE_ADD_TEST(
     tif_extprec_belos TifpackBelosCopyFiles
     NAME small_qd_ILUT_tfqmr_belos
-    ARGS "--xml_params_file=test_ILUT_tfqmr_small_sym_mm.xml"
+    ARGS "--xml_file=test_ILUT_tfqmr_small_sym_mm.xml"
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
@@ -112,7 +112,7 @@ IF(Tifpack_ENABLE_QD)
   PACKAGE_ADD_TEST(
     tif_extprec_belos TifpackBelosCopyFiles
     NAME qd_ILUT_tfqmr_belos
-    ARGS "--xml_params_file=test_ILUT_tfqmr_calore1_mm.xml"
+    ARGS "--xml_file=test_ILUT_tfqmr_calore1_mm.xml"
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT
@@ -122,7 +122,7 @@ ENDIF()
 PACKAGE_ADD_TEST(
   tif_belos TifpackBelosCopyFiles
   NAME PtJacobi_belos
-  ARGS "--xml_params_file=test_PtJacobi_calore1_mm.xml"
+  ARGS "--xml_file=test_PtJacobi_calore1_mm.xml"
   COMM serial mpi
   NUM_MPI_PROCS 2
   STANDARD_PASS_OUTPUT
@@ -131,7 +131,7 @@ PACKAGE_ADD_TEST(
 PACKAGE_ADD_TEST(
   tif_belos TifpackBelosCopyFiles
   NAME GS_belos
-  ARGS "--xml_params_file=test_GS_calore1_mm.xml"
+  ARGS "--xml_file=test_GS_calore1_mm.xml"
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
@@ -140,7 +140,7 @@ PACKAGE_ADD_TEST(
 PACKAGE_ADD_TEST(
   tif_belos TifpackBelosCopyFiles
   NAME SGS_belos
-  ARGS "--xml_params_file=test_SGS_calore1_mm.xml"
+  ARGS "--xml_file=test_SGS_calore1_mm.xml"
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
@@ -149,7 +149,7 @@ PACKAGE_ADD_TEST(
 PACKAGE_ADD_TEST(
   tif_belos TifpackBelosCopyFiles
   NAME ILUT_belos
-  ARGS "--xml_params_file=test_ILUT_calore1_mm.xml"
+  ARGS "--xml_file=test_ILUT_calore1_mm.xml"
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT

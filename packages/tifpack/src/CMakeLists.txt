@@ -30,7 +30,7 @@ SET(HEADERS ${HEADERS}
   Tifpack_ConfigDefs.hpp
   Tifpack_Condest.hpp
   Tifpack_CondestType.hpp
-  Tifpack_DenseRow.hpp
+  Tifpack_Heap.hpp
   Tifpack_ILUT.hpp
   Tifpack_IlukGraph.hpp
   Tifpack_Parameters.hpp
