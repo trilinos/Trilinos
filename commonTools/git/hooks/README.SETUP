@@ -1,0 +1,45 @@
+-----------------------------------
+Set up email notification hooks
+------------------------------------
+
+1) Create symbolic links to the static driver files
+
+  $ cd GIT_REPO_BASE_DIR
+  $ ln -s THIS_DIR/post-receive .
+  $ ln -s THIS_DIR/post-receive-email .
+  $ ln -s THIS_DIR/get_recipients.py .
+
+2) Copy configure file and customize:
+
+  $ cd GIT_REPO_BASE_DIR
+  $ ln -s THIS_DIR/config .
+  $ eg config --add hooks.mailinglist "defaultemail@something.com"
+  $ eg config --add hooks.emailprefix "[Something]"
+
+3) Create a dirs_to_emails file and fill out with mapping:
+
+  $ cd GIT_REPO_BASE_DIR
+  $ echo "
+    base_dir_1/subdir email1@somthing.com
+    base_dir_1 email2@something.com
+    ...
+    ^ defaultemail@something.com
+
+  NOTE: You want to sort the directories in the order that you want the
+  matches to take place with the default match '^' coming at the very end.
+  The default match is optional and if not specified then the config
+  value hooks.mailinglist will be used instead.
+
+  NOTE: If you only want to send to the default email address you can leave
+  the dirs_to_emails file empty.
+
+4) Test the mappings:
+
+  $ cd GIT_REPO_BASE_DIR
+  $ ./hooks/get_recipients.py OLD_REV NEW_REV # Prints out email list
+  $ ./hooks/post-receive-email OLD_REV NEW_REV refs/heads/master  # Sends email
+
+With all of this done, your email notifications should work great.  Note that
+you should keep your dirs_to_emails file under version control and just create
+a symbolic link in order to allow anyone with access to your repository to
+change the mappings.
