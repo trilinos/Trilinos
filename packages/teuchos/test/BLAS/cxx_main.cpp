@@ -74,6 +74,7 @@ using Teuchos::ScalarTraits;
 #define SCALARMAX  10
 // These define the number of tests to be run for each individual BLAS routine.
 #define ROTGTESTS  5
+#define ROTTESTS   10
 #define ASUMTESTS  5
 #define AXPYTESTS  5
 #define COPYTESTS  5
@@ -151,7 +152,7 @@ int main(int argc, char *argv[])
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
   bool verbose = 0;
-  bool debug = 0;
+  bool debug = 1;
   bool matlab = 0;
   bool InvalidCmdLineArgs = 0;
   OType i, j, k;
@@ -284,6 +285,75 @@ int main(int argc, char *argv[])
   if(debug) std::cout << std::endl;
   //--------------------------------------------------------------------------------
   // End ROTG Tests
+  //--------------------------------------------------------------------------------
+
+  //--------------------------------------------------------------------------------
+  // Begin ROT Tests
+  //--------------------------------------------------------------------------------
+  typedef Teuchos::ScalarTraits<SType1>::magnitudeType MType1;
+  typedef Teuchos::ScalarTraits<SType2>::magnitudeType MType2;
+  GoodTestSubcount = 0;
+  for(i = 0; i < ROTTESTS; i++)
+  {
+    incx = GetRandom(-5,5);
+    incy = GetRandom(-5,5);
+    if (incx == 0) incx = 1;
+    if (incy == 0) incy = 1;
+    M = GetRandom(MVMIN, MVMIN+8);
+    Mx = M*std::abs(incx);
+    My = M*std::abs(incy);
+    if (Mx == 0) { Mx = 1; }
+    if (My == 0) { My = 1; }
+    SType1x = new SType1[Mx];
+    SType1y = new SType1[My];
+    SType2x = new SType2[Mx];
+    SType2y = new SType2[My]; 
+    for(j = 0; j < Mx; j++)
+    {
+      SType1x[j] = GetRandom(-SCALARMAX, SCALARMAX);
+      SType2x[j] = ConvertType(SType1x[j], convertTo);
+    }
+    for(j = 0; j < My; j++)
+    {
+      SType1y[j] = GetRandom(-SCALARMAX, SCALARMAX);
+      SType2y[j] = ConvertType(SType1y[j], convertTo);
+    }
+    MType1 c1 = Teuchos::ScalarTraits<SType1>::magnitude(cos(GetRandom(-SCALARMAX,SCALARMAX)));
+    MType2 c2 = ConvertType(c1, convertTo);
+    SType1 s1 = sin(GetRandom(-SCALARMAX,SCALARMAX));
+    SType2 s2 = ConvertType(s1, convertTo);
+    if(debug)
+    {
+      std::cout << "Test #" << TotalTestCount << " --" << std::endl;
+      std::cout << "c1 = "  << c1 << ", s1 = " << s1 << std::endl;
+      std::cout << "c2 = " << c2 << ", s2 = " << s2 << std::endl;
+      std::cout << "incx = " << incx << ", incy = " << incy << std::endl;
+      PrintVector(SType1x, Mx, "SType1x", matlab);
+      PrintVector(SType1y, My, "SType1y_before_operation", matlab);
+      PrintVector(SType2x, Mx, "SType2x", matlab);
+      PrintVector(SType2y, My, "SType2y_before_operation",  matlab);
+    }
+    TotalTestCount++;
+    TotalTestCount++;
+    SType1BLAS.ROT(M, SType1x, incx, SType1y, incy, &c1, &s1);
+    SType2BLAS.ROT(M, SType2x, incx, SType2y, incy, &c2, &s2);
+    if(debug)
+    {
+      PrintVector(SType1y, My, "SType1y_after_operation", matlab);
+      PrintVector(SType2y, My, "SType2y_after_operation", matlab);
+    }
+    GoodTestSubcount += CompareVectors(SType1x, SType2x, Mx, TOL);
+    GoodTestSubcount += CompareVectors(SType1y, SType2y, My, TOL);
+    delete [] SType1x;
+    delete [] SType1y;
+    delete [] SType2x;
+    delete [] SType2y;
+  }
+  GoodTestCount += GoodTestSubcount;
+  if(verbose || debug) std::cout << "ROT: " << GoodTestSubcount << " of " << ROTTESTS << " tests were successful." << std::endl;
+  if(debug) std::cout << std::endl;
+  //--------------------------------------------------------------------------------
+  // End ROT Tests
   //--------------------------------------------------------------------------------
 
   //--------------------------------------------------------------------------------

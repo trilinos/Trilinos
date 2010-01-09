@@ -285,7 +285,27 @@ namespace Teuchos
   template<typename OrdinalType, typename ScalarType>
   void DefaultBLASImpl<OrdinalType,ScalarType>::ROT(const OrdinalType n, ScalarType* dx, const OrdinalType incx, ScalarType* dy, const OrdinalType incy, MagnitudeType* c, ScalarType* s) const
   {
-    // ToDo:  Implement this.
+    ScalarType sconj = Teuchos::ScalarTraits<ScalarType>::conjugate(*s);
+    if (n <= 0) return;
+    if (incx==1 && incy==1) {
+      for(OrdinalType i=0; i<n; ++i) {
+        ScalarType temp = *c*dx[i] + sconj*dy[i];
+        dy[i] = *c*dy[i] - sconj*dx[i];
+        dx[i] = temp;
+      }
+    }
+    else {
+      OrdinalType ix = 0, iy = 0;
+      if (incx < 0) ix = (-n+1)*incx;
+      if (incy < 0) iy = (-n+1)*incy;
+      for(OrdinalType i=0; i<n; ++i) {
+        ScalarType temp = *c*dx[ix] + sconj*dy[iy];
+        dy[iy] = *c*dy[iy] - sconj*dx[ix];
+        dx[ix] = temp;
+        ix += incx;
+        iy += incy;
+      }
+    }
   }
 
   template<typename OrdinalType, typename ScalarType>
