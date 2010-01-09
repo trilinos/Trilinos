@@ -67,9 +67,11 @@ read_matrix_mm(const std::string& mm_file,
   Teuchos::RCP<TCRS> A = Teuchos::rcp(new TCRS(rowmap, nnz_per_row));
 
   if (my_proc == 0) {
-    Teuchos::Array<GlobalOrdinal> col(1,0);
-    Teuchos::Array<Scalar> coef(1,0);
+    Teuchos::Array<GlobalOrdinal> col;
+    Teuchos::Array<Scalar> coef;
 
+    GlobalOrdinal g_row=0;
+    int last_row=-1;
     int irow=0, icol=0;
     double val=0;
 
@@ -80,10 +82,20 @@ read_matrix_mm(const std::string& mm_file,
       std::istringstream isstr(line);
       isstr >> irow >> icol >> val;
     
-      GlobalOrdinal g_row = irow-1;
-      col[0] = icol-1;
-      coef[0] = val;
+      g_row = irow-1;
+      if (g_row != last_row) {
+        if (col.size() > 0) {
+          A->insertGlobalValues(last_row, col(), coef() );
+          col.clear();
+          coef.clear();
+        }
+        last_row = g_row;
+      }
+      col.push_back(icol-1);
+      coef.push_back(val);
+    }
 
+    if (col.size() > 0) {
       A->insertGlobalValues(g_row, col(), coef() );
     }
 

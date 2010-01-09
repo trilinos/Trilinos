@@ -456,7 +456,7 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
 // Tifpack::ILUT is a translation of the Aztec ILUT implementation. The Aztec
 // ILUT implementation was written by Ray Tuminaro.
 //
-// This is isn't an exact translation of the Aztec ILUT algorithm, for the
+// This isn't an exact translation of the Aztec ILUT algorithm, for the
 // following reasons:
 // 1. Minor differences result from the fact that Aztec factors a MSR format
 // matrix in place, while the code below factors an input CrsMatrix which
@@ -466,12 +466,11 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
 // by one, and the pointer contents back by one, and then using 1-based
 // Fortran-style indexing in the algorithm. This Tifpack code uses C-style
 // 0-based indexing throughout.
-// 2. Aztec stores the L and U factors together in the MSR format, and the
-// diagonal of L is not stored, and the inverse of the diagonal of U is
-// stored. This Tifpack code explicitly stores 1 on L's diagonal, and the
-// diagonal of U is stored without being inverted. This is necessary since
-// the triangular solves (in Tifpack::ILUT::applyInverse) are performed by
-// calling the Tpetra::CrsMatrix::solve method on the L and U objects.
+// 2. Aztec stores the inverse of the diagonal of U. This Tifpack code
+// stores the non-inverted diagonal in U.
+// The triangular solves (in Tifpack::ILUT::applyInverse) are performed by
+// calling the Tpetra::CrsMatrix::solve method on the L and U objects, and
+// this requires U to contain the non-inverted diagonal.
 //
 // ABW.
 //--------------------------------------------------------------------------
@@ -631,10 +630,10 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
           if (pattern[col_j] != UNUSED) {
             cur_row[col_j] -= tmp;
           }
-          else if (scalar_mag(tmp) >= rownorm) {
+          else if (scalar_mag(tmp) > rownorm) {
             cur_row[col_j] = -tmp;
             pattern[col_j] = FILL;
-            if (col_j >= row_i) {
+            if (col_j > row_i) {
               U_cols.push_back(col_j);
             }
             else {
@@ -666,9 +665,10 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
       pattern[L_vals_heap[j]] = UNUSED;
     }
 
-    //L has a one on the diagonal:
-    tmp_idx.push_back(row_i);
-    tmpv.push_back(one);
+    //L has a one on the diagonal, but we don't explicitly store it.
+    //If we don't store it, then the Tpetra/Kokkos kernel which performs
+    //the triangular solve can assume a unit diagonal, take a short-cut
+    //and perform faster.
 
     L_->insertLocalValues(row_i, tmp_idx(), tmpv());
 #ifdef TIFPACK_WRITE_FACTORS
@@ -724,7 +724,7 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
       unorm[row_i] += scalar_mag(cur_row[U_vals_heap[j]]);
     }
 
-    unorm[row_i] /= (double)(orig_U_len + U_vals_heaplen + 1);
+    unorm[row_i] /= (orig_U_len + U_vals_heaplen);
 
     U_->insertLocalValues(row_i, tmp_idx(), tmpv() );
 #ifdef TIFPACK_WRITE_FACTORS
