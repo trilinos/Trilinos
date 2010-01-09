@@ -542,14 +542,16 @@ namespace Belos {
                                 << lclDim << std::endl << "The block size however is only " << 1 << std::endl
                                 << "The last " << lclDim - 1 << " vectors will be discarded." << std::endl;
         }
-	std::vector<int> nevind(curDim_+1);
-	for (int j=0; j<curDim_+1; j++) nevind[j] = j;
-	Teuchos::RCP<const MV> newV = MVT::CloneView( *newstate.V[i], nevind );
-	Teuchos::RCP<MV> lclV = MVT::CloneView( *V_[i], nevind );
-	MVT::MvAddMv( 1.0, *newV, 0.0, *newV, *lclV );
-	
-	// Done with local pointers
-	lclV = Teuchos::null;
+        std::vector<int> nevind(curDim_+1);
+        for (int j=0; j<curDim_+1; j++) nevind[j] = j;
+        Teuchos::RCP<const MV> newV = MVT::CloneView( *newstate.V[i], nevind );
+        Teuchos::RCP<MV> lclV = MVT::CloneView( *V_[i], nevind );
+        const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
+        const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
+        MVT::MvAddMv( one, *newV, zero, *newV, *lclV );
+
+        // Done with local pointers
+        lclV = Teuchos::null;
       }
     }
 
