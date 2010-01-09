@@ -1,0 +1,22 @@
+<ParameterList name="test_params">
+  <Parameter name="mm_file" type="string" value="5w.mtx"/>
+
+  <Parameter name="solver_type" type="string" value="PseudoBlockGmres"/>
+  <ParameterList name="Belos">
+    <!-- "Num Blocks" is the krylov subspace size, or iters-per-restart. -->
+    <Parameter name="Num Blocks" type="int" value="3"/>
+    <Parameter name="Verbosity" type="int" value="33"/>
+    <Parameter name="Maximum Iterations" type="int" value="300"/>
+    <Parameter name="Orthogonalization" type="string" value="ICGS"/>
+    <Parameter name="Output Style" type="int" value="1"/>
+    <Parameter name="Output Frequency" type="int" value="1"/>
+  </ParameterList>
+
+  <Parameter name="Tifpack::Preconditioner" type="string" value="ILUT"/>
+  <ParameterList name="Tifpack">
+    <Parameter name="fact: ilut level-of-fill" type="double" value="2.0"/>
+    <Parameter name="fact: drop tolerance" type="double" value="0.0"/>
+  </ParameterList>
+
+  <Parameter name="expectNumIters" type="int" value="3"/>
+</ParameterList>
