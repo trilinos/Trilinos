@@ -65,10 +65,6 @@ RCPNodeHandle basicRCPNodeHandle(const bool has_ownership, T **p_out = 0)
 
 TEUCHOS_STATIC_SETUP()
 {
-  // Set the ordering of the tests to make sure the run in the specified order.
-  // This is important because we want to build up tests from basic to more
-  // advanced in order to catch errors.
-  UnitTestRepository::setTestOrdering(true);
 }
 
 
@@ -112,14 +108,62 @@ TEUCHOS_UNIT_TEST( RCPNodeHandle, defaultConstruct)
 
 TEUCHOS_UNIT_TEST( RCPNodeHandle, add_New_RCPNode_basic )
 {
+
+  typedef RCPNodeTracer::RCPNodeStatistics RCPNodeStatistics;
+
   SET_RCPNODE_TRACING();
+
   RCPNode *node = basicRCPNode<A>(true);
+
   const int numActiveNodesBase = RCPNodeTracer::numActiveRCPNodes();
+  const RCPNodeStatistics rcpNodeStatisticsBefore = RCPNodeTracer::getRCPNodeStatistics();
+
+  out << std::endl;
   ECHO(RCPNodeTracer::addNewRCPNode(node, "dummy"));
+
+  out << std::endl;
   TEST_EQUALITY(RCPNodeTracer::numActiveRCPNodes(), numActiveNodesBase+1);
+
+  out << std::endl;
+  const RCPNodeStatistics rcpNodeStatistics1 = RCPNodeTracer::getRCPNodeStatistics();
+  TEST_COMPARE(rcpNodeStatistics1.maxNumRCPNodes, >=,
+    rcpNodeStatisticsBefore.maxNumRCPNodes);
+  TEST_EQUALITY(rcpNodeStatistics1.totalNumRCPNodeAllocations,
+    rcpNodeStatisticsBefore.totalNumRCPNodeAllocations+1);
+  TEST_EQUALITY(rcpNodeStatistics1.totalNumRCPNodeDeletions,
+    rcpNodeStatisticsBefore.totalNumRCPNodeDeletions);
+
+  out << std::endl;
   ECHO(RCPNodeTracer::removeRCPNode(node));
+
+  out << std::endl;
   TEST_EQUALITY(RCPNodeTracer::numActiveRCPNodes(), numActiveNodesBase);
+
+  out << std::endl;
+  const RCPNodeStatistics rcpNodeStatistics2 = RCPNodeTracer::getRCPNodeStatistics();
+  TEST_COMPARE(rcpNodeStatistics2.maxNumRCPNodes, >=,
+    rcpNodeStatisticsBefore.maxNumRCPNodes);
+  TEST_EQUALITY(rcpNodeStatistics2.totalNumRCPNodeAllocations,
+    rcpNodeStatisticsBefore.totalNumRCPNodeAllocations+1);
+  TEST_EQUALITY(rcpNodeStatistics2.totalNumRCPNodeDeletions,
+    rcpNodeStatisticsBefore.totalNumRCPNodeDeletions+1);
+
+  out << std::endl;
+  std::ostringstream statsOut_oss;
+  RCPNodeTracer::printRCPNodeStatistics(rcpNodeStatistics2, statsOut_oss);
+  std::ostringstream expectedStatsOut_oss;
+  expectedStatsOut_oss
+    << "\n***"
+    << "\n*** RCPNode Tracing statistics:"
+    << "\n**\n"
+    << "\n    maxNumRCPNodes             = "<<rcpNodeStatistics2.maxNumRCPNodes
+    << "\n    totalNumRCPNodeAllocations = "<<rcpNodeStatistics2.totalNumRCPNodeAllocations
+    << "\n    totalNumRCPNodeDeletions   = "<<rcpNodeStatistics2.totalNumRCPNodeDeletions
+    << "\n";
+  TEST_EQUALITY(statsOut_oss.str(), expectedStatsOut_oss.str());
+
   deleteRCPNode(&node);
+
 }
 
 
@@ -354,7 +398,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, weakPtr_basic_2, T )
 #ifdef DO_RCPNODE_TRACING_TESTS
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, debugWithNodeTracing, T )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, debugWithNodeTracingPrint, T )
 {
 
   TEST_EQUALITY_CONST(RCPNodeTracer::isTracingActiveRCPNodes(), false);
@@ -423,7 +467,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, debugWithNodeTracing, T )
 }
 
 
-TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, debugWithoutNodeTracing, T )
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, debugWithoutNodeTracingPrint, T )
 {
 
   TEST_EQUALITY_CONST(RCPNodeTracer::isTracingActiveRCPNodes(), false);
@@ -441,7 +485,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, debugWithoutNodeTracing, T )
 
   TEST_EQUALITY_CONST(RCPNodeTracer::numActiveRCPNodes(), 0);
   
-  out << "\nMake sure not output is printed when there is an active node without tracing ...\n";
+  out << "\nMake sure no output is printed when there are no active nodes without tracing ...\n";
   const std::string expendedOutput = "";
   std::ostringstream printActiveRCPNodes_out;
   RCPNodeTracer::printActiveRCPNodes(printActiveRCPNodes_out);
@@ -598,8 +642,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, extraData_failed_const, T )
 #ifdef DO_RCPNODE_TRACING_TESTS
 
 #  define DEBUG_UNIT_TEST_GROUP( T ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( RCPNodeHandle, debugWithNodeTracing, T ) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( RCPNodeHandle, debugWithoutNodeTracing, T )
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( RCPNodeHandle, debugWithNodeTracingPrint, T ) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( RCPNodeHandle, debugWithoutNodeTracingPrint, T )
 
 #else
 

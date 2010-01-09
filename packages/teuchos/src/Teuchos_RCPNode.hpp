@@ -273,6 +273,22 @@ void throw_null_ptr_error( const std::string &type_name );
 class RCPNodeTracer {
 public:
 
+  /** \name Public types. */
+  //@{
+
+  /** \brief RCP statistics struct. */
+  struct RCPNodeStatistics {
+    RCPNodeStatistics()
+      : maxNumRCPNodes(0), totalNumRCPNodeAllocations(0),
+        totalNumRCPNodeDeletions(0)
+      {}
+    long int maxNumRCPNodes;
+    long int totalNumRCPNodeAllocations;
+    long int totalNumRCPNodeDeletions;
+  };
+
+  //@}
+
   /** \name General user functions (can be called by any client) */
   //@{
 
@@ -301,11 +317,20 @@ public:
    * not be enbled.  If node tracing is turned on at configure time then there
    * is no sense in trying to turn it on or off.
    */
-  static void TEUCHOS_LIB_DLL_EXPORT setTracingActiveRCPNodes(bool tracingActiveNodes);
+  static TEUCHOS_LIB_DLL_EXPORT void setTracingActiveRCPNodes(bool tracingActiveNodes);
 #endif
 
-  /** \brief Print the number of active RCPNode objects being tracked. */
-  static int TEUCHOS_LIB_DLL_EXPORT numActiveRCPNodes();
+  /** \brief Print the number of active RCPNode objects currently being
+   * tracked.
+   */
+  static TEUCHOS_LIB_DLL_EXPORT int numActiveRCPNodes();
+
+  /** \brief Return the statistics on RCPNode allocations. */
+  static TEUCHOS_LIB_DLL_EXPORT RCPNodeStatistics getRCPNodeStatistics() ;
+
+  /** \brief Print the RCPNode allocation statistics. */
+  static TEUCHOS_LIB_DLL_EXPORT void printRCPNodeStatistics(
+    const RCPNodeStatistics& rcpNodeStatistics, std::ostream &out);
 
   /** \brief Print the list of currently active RCP nodes.
    *

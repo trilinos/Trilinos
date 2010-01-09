@@ -81,6 +81,9 @@ bool loc_isTracingActiveRCPNodes =
 int loc_addNewRCPNodeCallNumber = -1;
 
 
+Teuchos::RCPNodeTracer::RCPNodeStatistics loc_rcpNodeStatistics;
+
+
 // This function returns the const void* value that is used as the key to look
 // up an RCPNode object that has been stored.  If the RCPNode is holding a
 // non-null reference, then we use that object address as the key.  That way,
@@ -230,6 +233,26 @@ int RCPNodeTracer::numActiveRCPNodes()
 }
 
 
+RCPNodeTracer::RCPNodeStatistics
+RCPNodeTracer::getRCPNodeStatistics()
+{
+  return loc_rcpNodeStatistics;
+}
+
+void RCPNodeTracer::printRCPNodeStatistics(
+    const RCPNodeStatistics& rcpNodeStatistics, std::ostream &out)
+{
+  out
+    << "\n***"
+    << "\n*** RCPNode Tracing statistics:"
+    << "\n**\n"
+    << "\n    maxNumRCPNodes             = "<<rcpNodeStatistics.maxNumRCPNodes
+    << "\n    totalNumRCPNodeAllocations = "<<rcpNodeStatistics.totalNumRCPNodeAllocations
+    << "\n    totalNumRCPNodeDeletions   = "<<rcpNodeStatistics.totalNumRCPNodeDeletions
+    << "\n";
+}
+
+
 void RCPNodeTracer::printActiveRCPNodes(std::ostream &out)
 {
 #ifdef TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
@@ -335,6 +358,9 @@ void RCPNodeTracer::addNewRCPNode( RCPNode* rcp_node, const std::string &info )
     // value, this iterator itr_itr.second will point to one after the found
     // range.  I suspect that this might also ensure that the elements are
     // sorted in natural order.
+    ++loc_rcpNodeStatistics.totalNumRCPNodeAllocations;
+    loc_rcpNodeStatistics.maxNumRCPNodes =
+      TEUCHOS_MAX(loc_rcpNodeStatistics.maxNumRCPNodes, numActiveRCPNodes());
   }
 }
 
@@ -391,6 +417,7 @@ void RCPNodeTracer::removeRCPNode( RCPNode* rcp_node )
     for(itr_t itr = itr_itr.first; itr != itr_itr.second; ++itr) {
       if (itr->second.nodePtr == rcp_node) {
         rcp_node_list->erase(itr);
+        ++loc_rcpNodeStatistics.totalNumRCPNodeDeletions;
         foundRCPNode = true;
         break;
       }
@@ -454,6 +481,9 @@ ActiveRCPNodesSetup::~ActiveRCPNodesSetup()
 #endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
     std::cout << std::flush;
     TEST_FOR_EXCEPT(0==rcp_node_list);
+    RCPNodeTracer::RCPNodeStatistics rcpNodeStatistics = RCPNodeTracer::getRCPNodeStatistics();
+    if (rcpNodeStatistics.maxNumRCPNodes)
+      RCPNodeTracer::printRCPNodeStatistics(rcpNodeStatistics, std::cout);
     RCPNodeTracer::printActiveRCPNodes(std::cerr);
     delete rcp_node_list;
   }
