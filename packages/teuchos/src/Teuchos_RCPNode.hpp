@@ -537,12 +537,13 @@ public:
         "  RCP ptr address:      " << rcp_obj_ptr << "\n"
         "  Concrete ptr address: " << deleted_ptr << "\n"
         "\n"
-        "Hint: Open your debugger and set conditional breakpoints in the various\n"
-        "routines involved where this node object is first created with this\n"
-        "concrete object and in all of the RCP objects of the type given above\n"
-        "use this node object.  Debugging an error like this may take a little work\n"
-        "setting up your debugging session but at least you don't have to try to\n"
-        "track down a segfault that would occur otherwise!"
+        "Hint: Open your debugger, run the program again (which will result in\n"
+        "new pointer addresses) and then set conditional breakpoints using these\n"
+        "pointer addresses in the various routines involved where this node object\n"
+        "is first created with this concrete object and in all of the RCP objects\n"
+        "of the type given above use this node object.  Debugging an error like this\n"
+        "may take a little work in setting up your debugging session but at least\n"
+        "you don't have to try to track down a segfault that would occur otherwise!"
         );
       // 2008/09/22: rabartl: Above, we do not provide the concreate object
       // type or the concrete object address.  In the case of the concrete
