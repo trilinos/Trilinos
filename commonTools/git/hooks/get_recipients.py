@@ -13,7 +13,7 @@ newrev=sys.argv[2]
 
 output=commands.getoutput("git diff --name-only %s %s" % (oldrev, newrev))
 dirschanged = [os.path.dirname(filename) for filename in output.splitlines()]
-defaultEmail = commands.getoutput("eg config --get hooks.mailinglist").strip()
+defaultEmail = commands.getoutput("git config --get hooks.mailinglist").strip()
 #print "defaultEmail =", defaultEmail
 
 dirs = {}.fromkeys(dirschanged, 1)
