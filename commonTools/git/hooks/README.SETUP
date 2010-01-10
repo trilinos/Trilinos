@@ -12,7 +12,7 @@ Set up email notification hooks
 2) Copy configure file and customize:
 
   $ cd GIT_REPO_BASE_DIR
-  $ ln -s THIS_DIR/config .
+  $ cp THIS_DIR/config .
   $ eg config --add hooks.mailinglist "defaultemail@something.com"
   $ eg config --add hooks.emailprefix "[Something]"
 
