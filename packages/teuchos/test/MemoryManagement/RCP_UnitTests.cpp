@@ -745,16 +745,13 @@ RCP<C> createCAFactory()
 RCP<A> createACFactory()
 {
   RCP<C> c = createCAFactory();
-  return rcpWithEmbeddedObj(c->get_A().getRawPtr(),
-    std::make_pair(c->get_A(), c), false);
+  return Teuchos::rcpWithInvertedObjOwnership(c->get_A(), c);
 }
 
 
 RCP<C> extractCFromA(const RCP<A> &a)
 {
-  typedef std::pair<RCP<A>, RCP<C> > ACPair_t;
-  ACPair_t acPair = getEmbeddedObj<A, ACPair_t>(a);
-  return acPair.second;
+  return Teuchos::getInvertedObjOwnershipParent<C>(a);
 }
 
 

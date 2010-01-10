@@ -1277,6 +1277,17 @@ rcpWithEmbeddedObj( T* p, const Embedded &embedded, bool owns_mem = true );
 // deallocator!
 
 
+/** \brief Create a new RCP that inverts the ownership of parent and child.
+ *
+ * This implements the "inverted object ownership" idiom.
+ *
+ * NOTE: The parent can be retrieved using the function
+ * <tt>getInvertedObjOwnershipParent(...)</tt>.
+ */
+template<class T, class ParentT>
+RCP<T> rcpWithInvertedObjOwnership(const RCP<T> &child, const RCP<ParentT> &parent);
+
+
 /** \brief Returns true if <tt>p.get()==NULL</tt>.
  *
  * \relates RCP
@@ -1662,6 +1673,15 @@ Ptr<const Embedded> getOptionalEmbeddedObj( const RCP<T>& p );
  */
 template<class TOrig, class Embedded, class T>
 Ptr<Embedded> getOptionalNonconstEmbeddedObj( const RCP<T>& p );
+
+
+/** \brief Get the parent back from an inverted ownership RCP.
+ *
+ * Retrieves the RCP<ParentT> object set through
+ * <tt>rcpWithInvertedObjOwnership()</tt>.
+ */
+template<class ParentT, class T>
+RCP<ParentT> getInvertedObjOwnershipParent(const RCP<T> &invertedChild);
 
 
 /** \brief Output stream inserter.

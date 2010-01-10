@@ -625,6 +625,17 @@ Teuchos::rcpWithEmbeddedObj( T* p, const Embedded &embedded, bool owns_mem )
 }
 
 
+template<class T, class ParentT>
+Teuchos::RCP<T>
+Teuchos::rcpWithInvertedObjOwnership(const RCP<T> &child,
+  const RCP<ParentT> &parent)
+{
+  using std::make_pair;
+  typedef std::pair<RCP<T>, RCP<ParentT> > Pair_t;
+  return rcpWithEmbeddedObj(child.getRawPtr(), make_pair(child, parent), false);
+}
+
+
 template<class T>
 inline
 bool Teuchos::is_null( const RCP<T> &p )
@@ -885,6 +896,16 @@ Teuchos::getOptionalNonconstEmbeddedObj( const RCP<T>& p )
     return ptr(&dealloc->getNonconstObj());
   }
   return null;
+}
+
+
+template<class ParentT, class T>
+Teuchos::RCP<ParentT>
+Teuchos::getInvertedObjOwnershipParent(const RCP<T> &invertedChild)
+{
+  typedef std::pair<RCP<T>, RCP<ParentT> > Pair_t;
+  Pair_t pair = getEmbeddedObj<T, Pair_t>(invertedChild);
+  return pair.second;
 }
 
 
