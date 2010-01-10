@@ -72,7 +72,7 @@ public:
     const RCP<const SpmdVectorSpaceBase<Scalar> > &spmdRangeSpace,
     const RCP<const ScalarProdVectorSpaceBase<Scalar> > &domainSpace,
     const ArrayRCP<Scalar> &localValues,
-    const Index leadingDim
+    const Ordinal leadingDim = -1
     );
 
   /** \brief Initialize only with vector spaces where storage is allocated
@@ -113,7 +113,8 @@ public:
    * <tt>i=0...spmdSpace()->localSubDim()-1</tt> and
    * <tt>j=0...domainSpace->dim()-1</tt>.
    *
-   * \param leadingDim [in] The leading dimension of the multi-vector.
+   * \param leadingDim [in] The leading dimension of the multi-vector.  If -1,
+   * then is taken to be localValues.size().
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>spmdRangeSpace.get()!=NULL</tt>
@@ -126,7 +127,7 @@ public:
     const RCP<const SpmdVectorSpaceBase<Scalar> > &spmdRangeSpace,
     const RCP<const ScalarProdVectorSpaceBase<Scalar> > &domainSpace,
     const ArrayRCP<Scalar> &localValues,
-    const Index leadingDim
+    const Ordinal leadingDim = -1
     );
 
   /** \brief Set to an uninitialized state.
@@ -138,7 +139,7 @@ public:
     RCP<const SpmdVectorSpaceBase<Scalar> > *spmdRangeSpace = NULL,
     RCP<const ScalarProdVectorSpaceBase<Scalar> > *domainSpace = NULL,
     ArrayRCP<Scalar> *localValues = NULL,
-    Index *leadingDim = NULL
+    Ordinal *leadingDim = NULL
     );
 
   //@}
@@ -155,7 +156,7 @@ protected:
   /** @name Overridden from MultiVectorBase */
   //@{
   /** \brief . */
-  RCP<VectorBase<Scalar> > nonconstColImpl(Index j);
+  RCP<VectorBase<Scalar> > nonconstColImpl(Ordinal j);
   /** \brief . */
   RCP<MultiVectorBase<Scalar> >
   nonconstContigSubViewImpl( const Range1D& colRng );
@@ -190,7 +191,7 @@ private:
   RCP<const SpmdVectorSpaceBase<Scalar> > spmdRangeSpace_;
   RCP<const ScalarProdVectorSpaceBase<Scalar> > domainSpace_;
   ArrayRCP<Scalar> localValues_;
-  Index leadingDim_;
+  Ordinal leadingDim_;
   
   // ///////////////////////////////////////
   // Private member functions
