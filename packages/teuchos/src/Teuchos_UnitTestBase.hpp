@@ -50,7 +50,7 @@ public:
   UnitTestBase(const std::string groupName, std::string testName);
 
   /** \brief . */
-  bool runUnitTest( FancyOStream &out ) const;
+  bool runUnitTest(FancyOStream &out) const;
 
   /** \brief . */
   virtual std::string unitTestFile() const = 0;
@@ -61,7 +61,7 @@ public:
 protected:
 
   /** \brief . */
-  virtual void runUnitTestImpl( FancyOStream &out, bool &success ) const = 0;
+  virtual void runUnitTestImpl(FancyOStream &out, bool &success) const = 0;
 
 };
 

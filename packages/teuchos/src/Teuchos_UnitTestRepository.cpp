@@ -44,13 +44,18 @@ namespace Teuchos {
 
 struct UnitTestData {
 
-  Teuchos::UnitTestBase *unitTest;
+  const Teuchos::UnitTestBase * unitTest;
   std::string groupName;
   std::string testName;
+  int insertionIndex;
 
-  UnitTestData(Teuchos::UnitTestBase *unitTest_in,
-    const std::string groupName_in, const std::string testName_in)
-    :unitTest(unitTest_in), groupName(groupName_in), testName(testName_in)
+  UnitTestData(
+    Teuchos::UnitTestBase *unitTest_in,
+    const std::string groupName_in,
+    const std::string testName_in
+    )
+    : unitTest(unitTest_in), groupName(groupName_in), testName(testName_in),
+      insertionIndex(insersionIndexCounter_++)
     {
 #ifdef TEUCHOS_DEBUG
       TEUCHOS_ASSERT(unitTest_in);
@@ -59,8 +64,11 @@ struct UnitTestData {
 
 private:
   UnitTestData(); // Not defined!
+  static int insersionIndexCounter_;
 };
 
+
+int UnitTestData::insersionIndexCounter_ = 0;
 
 
 bool operator<(const UnitTestData &a, const UnitTestData &b)
@@ -71,7 +79,7 @@ bool operator<(const UnitTestData &a, const UnitTestData &b)
   else if (a.groupName > b.groupName) {
     return false;
   }
-  return a.testName < b.testName;
+  return a.insertionIndex < b.insertionIndex;
 }
 
 
@@ -161,7 +169,6 @@ public:
   std::string groupName;
   std::string testName;
   std::string notUnitTestName;
-  bool testOrdering;
   int testCounter;
 
   InstanceData()
@@ -170,7 +177,6 @@ public:
      showSrcLocation(false),
      showFailSrcLocation(true),
      noOp(false),
-     testOrdering(false),
      testCounter(0)
     {}
 
@@ -216,7 +222,7 @@ bool UnitTestRepository::runUnitTests(FancyOStream &out)
 
   try {
     
-    out << "\nSorting tests by group name then by test name ...";
+    out << "\nSorting tests by group name then by the order they where added ...";
     timer.start(true);
     std::sort( data.unitTests.begin(), data.unitTests.end() );
     timer.stop();
@@ -393,26 +399,11 @@ int UnitTestRepository::runUnitTestsFromMain( int argc, char* argv[] )
 }
 
 
-void UnitTestRepository::setTestOrdering(bool testOrdering)
-{
-  getData().testOrdering = testOrdering;
-  if (testOrdering) {
-    getData().testCounter = 0;
-  }
-}
-
-
 void UnitTestRepository::addUnitTest( UnitTestBase *unitTest,
   const std::string groupName, const std::string testName_in )
 {
   InstanceData &data = getData();
   std::string testName = testName_in;
-  if (data.testOrdering) {
-    std::ostringstream oss;
-    oss << std::setw(4) << std::setfill('0') << std::right << data.testCounter << testName_in;
-    testName = oss.str();
-    ++data.testCounter;
-  }
   data.unitTests.push_back(UnitTestData(unitTest, groupName, testName));
 }
 
