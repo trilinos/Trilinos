@@ -264,7 +264,7 @@ Section H: Dashboard testing
     options use:
   
       -D CMAKE_BUILD_TYPE:STRING=NONE \
-      -D CMAKE_C_FLAGS:STRING="-04 -funrool-loops" \
+      -D CMAKE_C_FLAGS:STRING="-04 -funroll-loops" \
       -D CMAKE_CXX_FLAGS:STRING="-03 -fexceptions"
   
     where LANGUAGE = C, CXX, Fortran, etc.
@@ -298,7 +298,7 @@ Section H: Dashboard testing
       -D CMAKE_BUILD_TYPE:STRING=NONE \
       -D Trilinos_ENABLE_STRONG_C_COMPILE_WARNINGS:BOOL=OFF \
       -D Trilinos_ENABLE_STRONG_CXX_COMPILE_WARNINGS:BOOL=OFF \
-      -D CMAKE_C_FLAGS:STRING="-04 -funrool-loops" \
+      -D CMAKE_C_FLAGS:STRING="-04 -funroll-loops" \
       -D CMAKE_CXX_FLAGS:STRING="-03 -fexceptions" \
 
   f) Enable and disable shadowing warnings for all Trilinos packages:
