@@ -52,7 +52,6 @@ using namespace Teuchos;
 using Tpetra::Operator;
 using Tpetra::CrsMatrix;
 using Tpetra::MultiVector;
-using Tpetra::Map;
 using std::endl;
 using std::cout;
 using std::vector;
@@ -124,7 +123,7 @@ int main(int argc, char *argv[]) {
   //
   RCP<CrsMatrix<ST,int> > A;
   Tpetra::Utils::readHBMatrix(filename,comm,node,A);
-  RCP<const Map<int> > map = A->getDomainMap();
+  RCP<const Tpetra::Map<int> > map = A->getDomainMap();
 
   // Create initial vectors
   RCP<MultiVector<ST,int> > B, X;
