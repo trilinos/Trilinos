@@ -114,6 +114,17 @@ public:
    virtual int cloneCount() const
    { return parentClones_.size(); }
 
+   /** Get the label for all clones in this <code>CloneFactory</code>.
+     *
+     * \param[in,out] names Destination vector for the the clone names
+     */
+   void getCloneNames(std::vector<std::string> & names) const
+   {
+      std::map<std::string,Teuchos::RCP<const Cloneable> >::const_iterator itr;
+      for(itr=parentClones_.begin();itr!=parentClones_.end();++itr)
+         names.push_back(itr->first);
+   }
+
 protected:
    //! stores the clonable objects
    std::map<std::string,Teuchos::RCP<const Cloneable> > parentClones_;

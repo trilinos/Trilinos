@@ -23,6 +23,7 @@ public:
 
    // non-member tests
    bool test_diagonal(int verbosity,std::ostream & os);
+   bool test_diagonalNotSym(int verbosity,std::ostream & os);
    bool test_strategy(int verbosity,std::ostream & os);
 
 protected:

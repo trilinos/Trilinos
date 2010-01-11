@@ -372,6 +372,10 @@ public:
      */
    static void addPreconditionerFactory(const std::string & name,const RCP<Cloneable> & clone);
 
+   /** \brief Get the names of the block preconditioner factories
+     */
+   static void getPreconditionerFactoryNames(std::vector<std::string> & names);
+
 private:
 
    //! for creating the preconditioner factories objects

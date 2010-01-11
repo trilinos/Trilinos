@@ -41,6 +41,7 @@ InverseLibrary::InverseLibrary()
    stratValidPrecond_.push_back("Neumann Series"); 
 
    // set valid Teko preconditioner factory names
+/*
    blockValidPrecond_.push_back("Block LU2x2"); 
    blockValidPrecond_.push_back("Block Jacobi"); 
    blockValidPrecond_.push_back("Block Gauss-Seidel"); 
@@ -48,6 +49,8 @@ InverseLibrary::InverseLibrary()
    blockValidPrecond_.push_back("Block Multiply"); 
    blockValidPrecond_.push_back("NS LSC");
    blockValidPrecond_.push_back("NS SIMPLE");
+*/
+   BlockPreconditionerFactory::getPreconditionerFactoryNames(blockValidPrecond_);
 }
 
 //! add an unspecified inverse to the library

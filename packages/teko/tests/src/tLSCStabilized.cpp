@@ -1,6 +1,8 @@
 #include "tLSCStabilized.hpp"
 #include "NS/PB_LSCPreconditionerFactory.hpp"
 #include "NS/PB_InvLSCStrategy.hpp"
+#include "PB_InverseLibrary.hpp"
+#include "PB_InverseFactory.hpp"
 
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
@@ -127,6 +129,123 @@ bool tLSCStabilized::test_diagonal(int verbosity,std::ostream & os)
  
    const RCP<const Thyra::PreconditionerFactoryBase<double> > precFactory 
          = rcp(new LSCPreconditionerFactory(iF,iBBt,aiD,Teuchos::null));
+   RCP<Thyra::PreconditionerBase<double> > prec = Thyra::prec<double>(*precFactory,A);
+
+   // build linear operator
+   RCP<const Thyra::LinearOpBase<double> > precOp = prec->getUnspecifiedPrecOp(); 
+
+   const RCP<Epetra_Map> map = rcp(new Epetra_Map(2,0,*comm));
+   // construct a couple of vectors
+   Epetra_Vector ea(*map),eb(*map);
+   Epetra_Vector ef(*map),eg(*map);
+   const RCP<const Thyra::VectorBase<double> > x = BlockVector(ea,eb,A->domain());
+   const RCP<const Thyra::VectorBase<double> > z = BlockVector(ef,eg,A->domain());
+   const RCP<Thyra::VectorBase<double> > y = Thyra::createMember(A->range()); 
+
+   // now checks of the preconditioner (should be exact!)
+   /////////////////////////////////////////////////////////////////////////
+
+   // test vector [0 1 1 3]
+   ea[0] = 0.0; ea[1] = 1.0; eb[0] = 1.0; eb[1] = 3.0;
+   ef[0] =  0.407268709825528; ef[1] =  1.560553633217993;
+   eg[0] = -0.058181244260790; eg[1] = -0.265138408304498;
+   Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
+   TEST_ASSERT((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_,
+               "   tLSCStabilized::test_diagonal " << toString(status) << ":(y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
+            << diff << " <= " << tolerance_ << ")\n"
+            << "      " << Print("x",x) 
+            << "      " << Print("y",y) 
+            << "      " << Print("z",z));
+
+   // test vector [-2 4 7 9]
+   ea[0] =-2.0; ea[1] = 4.0; eb[0] = 7.0; eb[1] = 9.0;
+   ef[0] =  0.850880968778696; ef[1] =  5.181660899653979;
+   eg[0] = -0.407268709825528; eg[1] = -0.795415224913495;
+   Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
+   TEST_ASSERT((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_,
+               "   tLSCStabilized::test_diagonal " << toString(status) << ":(y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
+            << diff << " <= " << tolerance_ << ")\n"
+            << "      " << Print("x",x) 
+            << "      " << Print("y",y) 
+            << "      " << Print("z",z));
+
+   // test vector [1 0 0 -5]
+   ea[0] = 1.0; ea[1] = 0.0; eb[0] = 0.0; eb[1] =-5.0;
+   ef[0] =  1.000000000000000; ef[1] = -1.767589388696655;
+   eg[0] =  0.000000000000000; eg[1] =  0.441897347174164;
+   Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
+   TEST_ASSERT((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_,
+               "   tLSCStabilized::test_diagonal " << toString(status) << ":(y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
+            << diff << " <= " << tolerance_ << ")\n"
+            << "      " << Print("x",x) 
+            << "      " << Print("y",y) 
+            << "      " << Print("z",z));
+
+   // test vector [4 -4 6 12]
+   ea[0] = 4.0; ea[1] =-4.0; eb[0] = 6.0; eb[1] =12.0;
+   ef[0] =  6.443612258953168; ef[1] =  2.242214532871971;
+   eg[0] = -0.349087465564738; eg[1] = -1.060553633217993;
+   Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
+   TEST_ASSERT((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_,
+               "   tLSCStabilized::test_diagonal " << toString(status) << ":(y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
+            << diff << " <= " << tolerance_ << ")\n"
+            << "      " << Print("x",x) 
+            << "      " << Print("y",y) 
+            << "      " << Print("z",z));
+
+   return allPassed;
+}
+
+bool tLSCStabilized::test_diagonalNotSym(int verbosity,std::ostream & os)
+{
+   // make sure the preconditioner is working by testing against the identity matrix
+   typedef RCP<const Thyra::VectorBase<double> > Vector;
+   typedef RCP<const Thyra::VectorSpaceBase<double> > VectorSpace;
+   typedef RCP<const Thyra::LinearOpBase<double> > LinearOp;
+
+   bool status = false;
+   bool allPassed = true;
+   double vec[2];
+   double diff = 0.0;
+
+   // build 4x4 matrix with block 2x2 diagonal subblocks
+   //
+   //            [ 1 0 7 0 ]
+   // [ F G ] =  [ 0 2 0 8 ]
+   // [ D C ]    [ 5 0 3 0 ]
+   //            [ 0 6 0 4 ]
+   //
+
+   vec[0] = 1.0; vec[1] = 2.0;
+   LinearOp F = Teko::Test::DiagMatrix(2,vec);
+
+   vec[0] = 7.0; vec[1] = 8.0;
+   LinearOp G = Teko::Test::DiagMatrix(2,vec);
+
+   vec[0] = 5.0; vec[1] = 6.0;
+   LinearOp D = Teko::Test::DiagMatrix(2,vec);
+
+   vec[0] = 3.0; vec[1] = 4.0;
+   LinearOp C = Teko::Test::DiagMatrix(2,vec);
+
+   vec[0] = 1.0; vec[1] = 0.5;
+   LinearOp iF = Teko::Test::DiagMatrix(2,vec);
+
+   vec[0] = 0.030303030303030; vec[1] = 0.02205882352941;
+   LinearOp iBBt = Teko::Test::DiagMatrix(2,vec);
+
+   vec[0] = 0.026041666666667; vec[1] = 0.041666666666667;
+   LinearOp aiD = Teko::Test::DiagMatrix(2,vec);
+
+   LinearOp A = Thyra::block2x2(F,G,D,C);
+
+   RCP<InverseLibrary> invLib = InverseLibrary::buildFromStratimikos();
+   RCP<InverseFactory> invFact = invLib->getInverseFactory("Amesos");
+ 
+   RCP<InvLSCStrategy> lscStrat = rcp(new InvLSCStrategy(invFact));
+   // lscStrat->setSymmetric(false);
+   const RCP<const Thyra::PreconditionerFactoryBase<double> > precFactory 
+         = rcp(new LSCPreconditionerFactory(lscStrat));
    RCP<Thyra::PreconditionerBase<double> > prec = Thyra::prec<double>(*precFactory,A);
 
    // build linear operator

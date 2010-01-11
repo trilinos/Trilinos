@@ -262,4 +262,11 @@ void BlockPreconditionerFactory::initializePrecFactoryBuilder()
    precFactoryBuilder_.addClone("NS SIMPLE",clone);
 }
 
+void BlockPreconditionerFactory::getPreconditionerFactoryNames(std::vector<std::string> & names)
+{ 
+   // initialize the defaults if necessary
+   if(precFactoryBuilder_.cloneCount()==0) initializePrecFactoryBuilder();
+   precFactoryBuilder_.getCloneNames(names); 
+}
+
 } // end namespace Teko

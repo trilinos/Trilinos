@@ -94,6 +94,7 @@ int main(int argc,char * argv[])
 
    // gdbIn();
 
+   // Teko_ADD_UNIT_TEST(Teko::Test::tLSCStabilized,LSCStabilized);
    Teko_ADD_UNIT_TEST(Teko::Test::tLU2x2PreconditionerFactory,LU2x2PreconditionerFactory);
    Teko_ADD_UNIT_TEST(Teko::Test::tLSCStablePreconditionerFactory,LSCStablePreconditionerFactory);
    Teko_ADD_UNIT_TEST(Teko::Test::tLSCStabilized,LSCStabilized);
