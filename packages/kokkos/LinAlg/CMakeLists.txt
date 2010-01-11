@@ -46,6 +46,8 @@ APPEND_SET(HEADERS
     Kokkos_DefaultArithmetic.hpp
     Kokkos_DefaultSparseMultiply.hpp
     Kokkos_DefaultSparseSolve.hpp
+    Kokkos_DefaultRelaxation.hpp
+    Kokkos_DefaultRelaxationKernelOps.hpp
   )
 
 APPEND_SET(SOURCES
