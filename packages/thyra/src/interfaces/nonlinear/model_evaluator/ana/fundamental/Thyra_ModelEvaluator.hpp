@@ -944,6 +944,21 @@ public:
    * be unaffected by evaluations at previous points.  This greatly simplifies
    * software maintenance and makes data dependences explicit.
    *
+   * <b>WARNING:</b> The implementation of this function must not create any
+   * persisting associations involving any of the input or output objects
+   * (even though these are returned through RCP objects).  This includes not
+   * embedding any of the input objects in the created output objects.  One
+   * reason for this requirement is that the RCP objects may not be strong
+   * owning RCPs in which case the objects may not stay around.  This will
+   * likely result in a dangling reference exception in a debug-mode bulid (or
+   * a segfault in a non-debug build).  Also, even if the objects do stay
+   * around, the implementation of <tt>evalModel(...)</tt> can not assume that
+   * the objects will not be further modified by the client after
+   * <tt>evalModel(...)</tt> is called.  For example, the value of the vector
+   * returned from <tt>*inArgs.get_x()</tt> may changed by the client just
+   * after this function finishes which would invalidate any objects that
+   * might have expected it to not change.
+   *
    * TODO: Define behavior for state-full models!
    */
   virtual void evalModel(
