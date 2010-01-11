@@ -61,7 +61,6 @@ ModelEvaluatorInterface(const
 // *****************************************************************
 NOX::Epetra::ModelEvaluatorInterface::~ModelEvaluatorInterface()
 {
-
 }
 
 // *****************************************************************
@@ -72,7 +71,7 @@ computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType fillFlag)
   EpetraExt::ModelEvaluator::OutArgs outargs = model_->createOutArgs();
 
   inargs_.set_x( Teuchos::rcp(&x, false) );
-
+ 
   Teuchos::RCP<Epetra_Vector> f = Teuchos::rcp(&F, false);
 
   if (fillFlag == NOX::Epetra::Interface::Required::Residual)
@@ -86,6 +85,8 @@ computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType fillFlag)
 
   model_->evalModel(inargs_, outargs);
 
+  inargs_.set_x(Teuchos::null);
+ 
   return true;
 }
    
@@ -100,6 +101,8 @@ computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jaco)
   outargs.set_W( Teuchos::rcp(&Jaco, false) );
 
   model_->evalModel(inargs_, outargs);
+
+  inargs_.set_x(Teuchos::null);
 
   return true;
 }
@@ -117,6 +120,8 @@ computePreconditioner(const Epetra_Vector& x,
   outargs.set_M( Teuchos::rcp(&M, false) );
 
   model_->evalModel(inargs_, outargs);
+
+  inargs_.set_x(Teuchos::null);
 
   return true;
 }

@@ -117,6 +117,7 @@ computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType fillFlag)
 
   model_->evalModel(inargs, outargs);
 
+  inargs.set_x(Teuchos::null);
   return true;
 }
    
@@ -148,6 +149,7 @@ computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
 
   model_->evalModel(inargs, outargs);
 
+  inargs.set_x(Teuchos::null);
   return true;
 }
 
@@ -183,6 +185,7 @@ computePreconditioner(const Epetra_Vector& x,
 
   model_->evalModel(inargs, outargs);
 
+  inargs.set_x(Teuchos::null);
   return true;
 }
 
@@ -224,6 +227,7 @@ computeShiftedMatrix(double alpha, double beta, const Epetra_Vector& x,
 
   model_->evalModel(inargs, outargs);
 
+  inargs.set_x(Teuchos::null);
   return true;
 }
 
@@ -312,5 +316,6 @@ computeDfDp(LOCA::MultiContinuation::AbstractGroup& grp,
 
   model_->evalModel(inargs, outargs);
 
+  inargs.set_x(Teuchos::null);
   return NOX::Abstract::Group::Ok;
 }
