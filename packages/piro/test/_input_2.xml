@@ -53,7 +53,7 @@
             <Parameter name="Throw Error on Prec Failure" type="bool" value="1"/>
             <Parameter name="Tolerance" type="double" value="0.0001"/>
             <Parameter name="Zero Initial Guess" type="bool" value="0"/>
-            <Parameter name="Jacobian Operator" type="string" value="Matrix-Free"/>
+            <!--Parameter name="Jacobian Operator" type="string" value="Matrix-Free"/-->
           </ParameterList>
           <Parameter name="Rescue Bad Newton Solve" type="bool" value="1"/>
         </ParameterList>

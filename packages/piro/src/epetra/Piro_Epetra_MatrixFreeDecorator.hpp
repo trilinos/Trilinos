@@ -103,7 +103,7 @@ class MatrixFreeOperator
 
   //@}
 
-  ~MatrixFreeOperator() {};
+  ~MatrixFreeOperator() { modelInArgs.set_x(Teuchos::null); modelInArgs.set_p(0,Teuchos::null); };
 
   //!  Method to save base solution and residual
   void setBase(const EpetraExt::ModelEvaluator::InArgs modelInArgs_,

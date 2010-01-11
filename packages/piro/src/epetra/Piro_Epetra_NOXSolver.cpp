@@ -404,4 +404,9 @@ void Piro::Epetra::NOXSolver::evalModel(const InArgs& inArgs,
   // return the final solution as an additional g-vector, if requested
   Teuchos::RCP<Epetra_Vector> gx_out = outArgs.get_g(num_g); 
   if (gx_out != Teuchos::null)  *gx_out = *finalSolution; 
+
+  // Clear RCPs to parameter vectors
+  for (int i=0; i<num_p; i++)
+    interface->inargs_set_p(Teuchos::null, i); 
+ 
 }

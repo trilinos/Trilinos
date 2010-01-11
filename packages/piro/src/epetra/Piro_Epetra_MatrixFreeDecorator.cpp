@@ -169,7 +169,14 @@ void Piro::Epetra::MatrixFreeDecorator::evalModel( const InArgs& inArgs,
     if (f_out != Teuchos::null) *f_out = *fBase;
 
     // Save unperturbed solution (deep copy inArgs, shallow f)
-    W_mfo->setBase(inArgs, fBase);
+    InArgs clonedInArgs = inArgs;
+    for (int l = 0; l < inArgs.Np(); ++l) {
+      const RCP<const Epetra_Vector> p_l = inArgs.get_p(l);
+      if (nonnull(p_l))
+        clonedInArgs.set_p(l, Teuchos::rcp(new Epetra_Vector(*p_l)));
+    }
+    clonedInArgs.set_x(Teuchos::rcp(new Epetra_Vector(*inArgs.get_x())));
+    W_mfo->setBase(clonedInArgs, fBase);
   }
 }
 

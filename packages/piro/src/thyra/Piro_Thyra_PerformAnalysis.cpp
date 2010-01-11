@@ -103,11 +103,10 @@ Piro::Thyra::PerformAnalysis(
     const RCP< ::Thyra::VectorBase<double> > p =
       ::Thyra::createMember(piroModel.get_p_space(0));
 
-cout << "AGS DEBUG: RCP to p vec after being created: \n" << p << endl;
+    RCP<const ::Thyra::VectorBase<double> > p_init = piroModel.getNominalValues().get_p(0);
 
-    ::Thyra::copy(*(piroModel.getNominalValues().get_p(0)), p.ptr());
+    ::Thyra::copy(*p_init, p.ptr());
 
-{ // added bracket to make cg solver go out of scope before p
     const RCP<OptiPack::NonlinearCG<double> > cgSolver =
       OptiPack::nonlinearCG<double>(rcp(&piroModel,false), 0, 0, linesearch);
 
@@ -132,9 +131,6 @@ cout << "AGS DEBUG: RCP to p vec after being created: \n" << p << endl;
     cout << "\nAfter OptiPack optimization of " << numIters 
          << "  iterations \n\tg = " << g_opt << "\n\tp = " << 
            Teuchos::describe(*p, Teuchos::VERB_EXTREME ) << endl;
-
-} // added bracket to make cg solver go out of scope before p
-cout << "AGS DEBUG: RCP to p vec after Optimization: \n" << p << endl;
 
   } else
 #endif
