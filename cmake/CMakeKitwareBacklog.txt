@@ -486,6 +486,13 @@ post-process the output from a test (both the console and any output
 files): Workaround: This is already supported through the cmake
 function PACKAGE_ADD_ADVANCED_TEST(...).
 
+(*) Show aggregate Trilinos coverage stats on the front results page, rather
+than one package to run for the coverage run.  Right now, for each coverage
+build, one Trilinos package's coverage stats are displayed on the front page.
+A summary of all Trilinos coverage, and the ability to click through to the
+package breakdown would be more useful.  Right now, we have to find the
+coverage build in the nightly category, click into that, and scroll to the
+bottom for package coverage numbers.
 
 Done:
 -----
