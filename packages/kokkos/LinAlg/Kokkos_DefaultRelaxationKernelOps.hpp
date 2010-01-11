@@ -234,6 +234,84 @@ namespace Kokkos {
       xj[row]+=damping_factor*tmp/diag[row];
     }
   };
+
+
+  /************************************************************************************/
+  /************************ Coarse-Grain Gauss-Seidel Kernels *************************/
+  /************************************************************************************/
+
+  // Coarse-grain "hybrid" Gauss-Seidel for Type 1 storage.
+  // Note: This is actually real Gauss-Seidel for a serial node, and hybrid for almost any other kind of node.
+  template <class Scalar, class Ordinal>
+  struct DefaultCoarseGrainHybridGaussSeidelOp1 {
+    const size_t  *offsets;
+    const Ordinal *inds;
+    const Scalar  *vals;
+    const Scalar  *diag;
+    size_t numRows;
+    size_t numChunks;
+    // vector data (including multiple rhs)
+    Scalar       *x;
+    const Scalar *b;
+    Scalar damping_factor;
+    size_t xstride, bstride;
+
+    inline KERNEL_PREFIX void execute(size_t i) {
+#define MIN(x,y) (((x)<(y))?(x):(y))
+      const size_t chunk = i % numChunks;
+      const size_t rhs = (i - chunk) / numChunks;
+      const size_t start_r = chunk * numRows / numChunks;
+      const size_t stop_r  = MIN((chunk+1)*numRows/numChunks,numRows);
+      Scalar       *xj = x + rhs * xstride;
+      const Scalar *bj = b + rhs * bstride;
+      for (size_t row=start_r;row<stop_r;row++){
+	Scalar tmp = bj[row];
+	for (size_t c=offsets[row];c<offsets[row+1];c++) {
+	  tmp -= vals[c] * xj[inds[c]];
+	}
+	xj[row]+=damping_factor*tmp/diag[row];
+      }
+    }
+  };
+
+
+  // Coarse-grain "hybrid" Gauss-Seidel for Type 2 storage.
+  // Note: This is actually real Gauss-Seidel for a serial node, and hybrid for almost any other kind of node.
+  template <class Scalar, class Ordinal>
+  struct DefaultCoarseGrainHybridGaussSeidelOp2 {
+    // mat data
+    const Ordinal * const * inds_beg;
+    const Scalar  * const * vals_beg;
+    const size_t  *         numEntries;
+    const Scalar  *diag;
+    size_t numRows;
+    size_t numChunks;
+    // vector data (including multiple rhs)    
+    Scalar        *x;
+    const Scalar  *b;
+    Scalar damping_factor;
+    size_t xstride, bstride;
+
+    inline KERNEL_PREFIX void execute(size_t i) {
+#define MIN(x,y) (((x)<(y))?(x):(y))
+      const size_t chunk = i % numChunks;
+      const size_t rhs = (i - chunk) / numChunks;
+      const size_t start_r = chunk * numRows / numChunks;
+      const size_t stop_r  = MIN((chunk+1)*numRows/numChunks,numRows);
+      Scalar       *xj = x + rhs * xstride;
+      const Scalar *bj = b + rhs * bstride;
+      for (size_t row=start_r;row<stop_r;row++){
+	Scalar tmp = bj[row];
+	const Scalar  *curval = vals_beg[row];
+	const Ordinal *curind = inds_beg[row];
+	for (size_t j=0; j!=numEntries[row];j++) {
+	  tmp -= (curval[j]) * xj[curind[j]];
+	}
+	xj[row]+=damping_factor*tmp/diag[row];
+      }
+    }
+  };
+ 
 }// namespace Kokkos
 
 #endif /* KOKKOS_DEFAULTRELAXATION_KERNELOPS_HPP */

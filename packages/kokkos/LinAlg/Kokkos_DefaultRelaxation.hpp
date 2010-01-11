@@ -114,7 +114,7 @@ namespace Kokkos {
     void sweep_fine_hybrid(Scalar dampingFactor_, MultiVector<Scalar,Node> &X, const MultiVector<Scalar,Node> &B) const;
 
     //! Applies a sweep of coarse-grain Hybrid Gauss-Seidel
-    void sweep_coarse_hybrid(Scalar dampingFactor_, MultiVector<Scalar,Node> &X, const MultiVector<Scalar,Node> &B) const;
+    void sweep_coarse_hybrid(Scalar dampingFactor_, size_t num_chunks, MultiVector<Scalar,Node> &X, const MultiVector<Scalar,Node> &B) const;
 
 
     //@}
@@ -336,7 +336,6 @@ namespace Kokkos {
   }
 
   /**********************************************************************/
-  // NTS: This guy needs to get fixed and replaced...
   template <class Scalar, class Ordinal, class Node>
   void DefaultRelaxation<Scalar,Ordinal,Node>::sweep_fine_hybrid(Scalar dampingFactor_,
 						 MultiVector<Scalar,Node> &X, const MultiVector<Scalar,Node> &B) const{
@@ -385,6 +384,62 @@ namespace Kokkos {
       rbh.end();
       const size_t numRHS = X.getNumCols();
       node_->template parallel_for<Op2D>(0,numRows_*numRHS,wdp);
+    }
+    return;
+  }
+
+  /**********************************************************************/
+  template <class Scalar, class Ordinal, class Node>
+  void DefaultRelaxation<Scalar,Ordinal,Node>::sweep_coarse_hybrid(Scalar dampingFactor_,size_t num_chunks,
+						 MultiVector<Scalar,Node> &X, const MultiVector<Scalar,Node> &B) const{
+    typedef DefaultCoarseGrainHybridGaussSeidelOp1<Scalar,Ordinal>  Op1D;
+    typedef DefaultCoarseGrainHybridGaussSeidelOp2<Scalar,Ordinal>  Op2D;
+
+
+    TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
+        Teuchos::typeName(*this) << "::sweep_fine_hybrid(): operation not fully initialized.");
+    TEST_FOR_EXCEPT(X.getNumCols() != B.getNumCols());
+    ReadyBufferHelper<Node> rbh(node_);   
+
+    if (isEmpty_ == true) {
+      // This makes no sense to try to call ...
+      TEST_FOR_EXCEPT(true);
+    }
+    else if (isPacked_ == true) {
+      Op1D wdp;
+      rbh.begin();
+      wdp.numRows = numRows_;
+      wdp.numChunks = num_chunks;
+      wdp.offsets = rbh.template addConstBuffer<size_t>(pbuf_offsets1D_);
+      wdp.inds    = rbh.template addConstBuffer<Ordinal>(pbuf_inds1D_);
+      wdp.vals    = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
+      wdp.x       = rbh.template addNonConstBuffer<Scalar>(X.getValuesNonConst());
+      wdp.b       = rbh.template addConstBuffer<Scalar>(B.getValues());
+      wdp.diag    = rbh.template addConstBuffer<Scalar>(diagonal_);
+      wdp.damping_factor = dampingFactor_;
+      wdp.xstride = X.getStride();
+      wdp.bstride = B.getStride();
+      rbh.end();
+      const size_t numRHS = X.getNumCols();
+      node_->template parallel_for<Op1D>(0,num_chunks*numRHS,wdp);
+    }
+    else {
+      Op2D wdp;
+      rbh.begin();
+      wdp.numRows = numRows_;
+      wdp.numChunks = num_chunks;
+      wdp.numEntries = rbh.template addConstBuffer<size_t>(pbuf_numEntries_);
+      wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(pbuf_inds2D_);
+      wdp.vals_beg   = rbh.template addConstBuffer<const Scalar *>(pbuf_vals2D_);
+      wdp.x       = rbh.template addNonConstBuffer<Scalar>(X.getValuesNonConst());
+      wdp.b       = rbh.template addConstBuffer<Scalar>(B.getValues());
+      wdp.diag    = rbh.template addConstBuffer<Scalar>(diagonal_);
+      wdp.damping_factor = dampingFactor_;
+      wdp.xstride = X.getStride();
+      wdp.bstride = B.getStride();
+      rbh.end();
+      const size_t numRHS = X.getNumCols();
+      node_->template parallel_for<Op2D>(0,num_chunks*numRHS,wdp);
     }
     return;
   }

@@ -226,6 +226,19 @@ namespace {
       printf("[%3d] ||x0|| = %22.16e\n",i,(double)norms/norm0);
     }
 
+    // Set starting vector & run Coarse Hybrid
+    Teuchos::ScalarTraits<Scalar>::seedrandom(24601);
+    DefaultArithmetic<MV>::Random(X0);
+    DefaultArithmetic<MV>::Init(RHS,0);
+    norms=-666;norm0=DefaultArithmetic<MV>::Norm2Squared(X0);
+    int num_chunks=2;
+    printf("*** Coarse Hybrid (%d chunks) ***\n",num_chunks);
+    for(int i=0;i<100;i++){
+      dj.sweep_coarse_hybrid((Scalar)1.0,(size_t)num_chunks,X0,RHS);
+      norms=DefaultArithmetic<MV>::Norm2Squared(X0);
+      printf("[%3d] ||x0|| = %22.16e\n",i,(double)norms/norm0);
+    }
+
     // Set starting vector & run Jacobi
     Teuchos::ScalarTraits<Scalar>::seedrandom(24601);
     DefaultArithmetic<MV>::Random(X0);
