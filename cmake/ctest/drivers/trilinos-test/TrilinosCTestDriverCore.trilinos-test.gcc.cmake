@@ -48,7 +48,7 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       "-DTPL_ENABLE_MPI:BOOL=ON"
       "-D MPIEXEC_MAX_NUMPROCS:STRING=2"
       )
-#      "-DMPI_BASE_DIR:PATH=/usr/lib64/openmpi/1.2.7-gcc"
+#      "-DMPI_BASE_DIR:PATH=/home/trilinos/openmpi-1.4"
 #      )
 
     SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS
