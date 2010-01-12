@@ -1,4 +1,5 @@
-#if defined (_WIN32) && defined (BUILD_SHARED_LIBS)
+#cmakedefine TRILINOS_BUILD_SHARED_LIBS
+#if defined (_WIN32) && defined (TRILINOS_BUILD_SHARED_LIBS)
 #  if defined(@CURRENT_PACKAGE@_LIB_EXPORTS_MODE)
 #    define @CURRENT_PACKAGE@_LIB_DLL_EXPORT __declspec(dllexport)
 #  else

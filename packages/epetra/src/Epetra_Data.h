@@ -32,6 +32,8 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #ifndef EPETRA_DATA_H
 #define EPETRA_DATA_H
 
+#include "Epetra_ConfigDefs.h"
+
 //! Epetra_Data:  The Epetra Base Data Class.
 /*! The Epetra_Data class is a base class for all Epetra Data Classes.
 	  It provides a mechanism so that one data object can be shared by multiple
@@ -56,7 +58,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 		construction or assignment, or that it will perform as expected. 
 */
 
-class Epetra_Data {
+class EPETRA_LIB_DLL_EXPORT Epetra_Data {
  protected:
    //! @name Constructor/Destructor Methods
   //@{ 

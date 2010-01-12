@@ -130,6 +130,7 @@ ADVANCED_SET(Trilinos_DEPS_HTML_OUTPUT_FILE
   CACHE STRING
   "HTML Trilinos dependenices file that will be written to (if not empty)." )
 
+SET(TRILINOS_BUILD_SHARED_LIBS "@BUILD_SHARED_LIBS@")
 
 #
 # C) Define the list of all Trilinos packages and TPLs
