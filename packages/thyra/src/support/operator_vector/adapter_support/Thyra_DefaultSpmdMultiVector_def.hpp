@@ -315,12 +315,12 @@ DefaultSpmdMultiVector<Scalar>::spmdSpace() const
 
 
 template<class Scalar>
-void DefaultSpmdMultiVector<Scalar>::getNonconstLocalData(
+void DefaultSpmdMultiVector<Scalar>::getNonconstLocalDataImpl(
     const Ptr<ArrayRCP<Scalar> > &localValues, const Ptr<Index> &leadingDim
   )
 {
 #ifdef THYRA_DEFAULT_SPMD_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT
-  std::cerr << "\nSpmdMultiVectorStd<Scalar>::getLocalData() called!\n";
+  std::cerr << "\nSpmdMultiVectorStd<Scalar>::getLocalDataImpl() called!\n";
 #endif
   *localValues = localValues_;
   *leadingDim = leadingDim_;
@@ -328,7 +328,7 @@ void DefaultSpmdMultiVector<Scalar>::getNonconstLocalData(
 
 
 template<class Scalar>
-void DefaultSpmdMultiVector<Scalar>::getLocalData(
+void DefaultSpmdMultiVector<Scalar>::getLocalDataImpl(
   const Ptr<ArrayRCP<const Scalar> > &localValues, const Ptr<Index> &leadingDim
   ) const
 {

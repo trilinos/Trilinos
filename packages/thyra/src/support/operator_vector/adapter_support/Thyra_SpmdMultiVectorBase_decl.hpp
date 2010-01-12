@@ -125,13 +125,12 @@ public:
   /** \brief Returns a non-<tt>const</tt> pointer to a Fortran-style view of
    * the local multi-vector data.
    *
-   * @param  localValues
-   *           [out] On output <tt>*localValues</tt> will point to the first
-   *           element in the first column of the local multi-vector stored as
-   *           a column-major dense Fortran-style matrix.
-   * @param  leadingDim
-   *           [out] On output <tt>*leadingDim</tt> gives the leading
-   *           dimension of the Fortran-style local multi-vector.
+   * \param localValues [out] On output <tt>*localValues</tt> will point to
+   * the first element in the first column of the local multi-vector stored as
+   * a column-major dense Fortran-style matrix.
+   *
+   * \param leadingDim [out] On output <tt>*leadingDim</tt> gives the leading
+   * dimension of the Fortran-style local multi-vector.
    *
    * Preconditions:<ul>
    * <li> <tt>localValues!=NULL</tt>
@@ -146,20 +145,22 @@ public:
    * The function <tT>commitLocalData()</tt> must be called to
    * commit changes to the data.
    */
-  virtual void getNonconstLocalData(
+  void getNonconstLocalData(
     const Ptr<ArrayRCP<Scalar> > &localValues, const Ptr<Index> &leadingDim
-    ) = 0;
+    )
+    {
+      getNonconstLocalDataImpl(localValues, leadingDim);
+    }
 
   /** \brief Returns a <tt>const</tt> pointer to a Fortran-style view of the
    * local multi-vector data.
    *
-   * @param  localValues
-   *           [out] On output <tt>*localValues</tt> will point to the first
-   *           element in the first column of the local multi-vector stored as
-   *           a column-major dense Fortran-style matrix.
-   * @param  leadingDim
-   *           [out] On output <tt>*leadingDim</tt> gives the leading
-   *           dimension of the Fortran-style local multi-vector.
+   * \param localValues [out] On output <tt>*localValues</tt> will point to
+   * the first element in the first column of the local multi-vector stored as
+   * a column-major dense Fortran-style matrix.
+   *
+   * \param leadingDim [out] On output <tt>*leadingDim</tt> gives the leading
+   * dimension of the Fortran-style local multi-vector.
    *
    * Preconditions:<ul>
    * <li> <tt>localValues!=NULL</tt>
@@ -171,9 +172,12 @@ public:
    * <li> <tt>*leadingDim!=0</tt>
    * </ul>
    */
-  virtual void getLocalData(
+  void getLocalData(
     const Ptr<ArrayRCP<const Scalar> > &localValues, const Ptr<Index> &leadingDim
-    ) const = 0;
+    ) const
+    {
+      getLocalDataImpl(localValues, leadingDim);
+    }
 
   //@}
 
@@ -240,8 +244,8 @@ public:
   /** \name Deprecated. */
   //@{
 
-  /** \brief Deprecated. */
-  THYRA_DEPRECATED virtual void getLocalData( Scalar **localValues_out, Index *leadingDim_out )
+  /** \brief Deprecated (use ArrayRCP version of getLocalData(...). */
+  THYRA_DEPRECATED void getLocalData( Scalar **localValues_out, Index *leadingDim_out )
     {
       using Teuchos::outArg;
       ArrayRCP<Scalar> localValues;
@@ -250,13 +254,13 @@ public:
     }
   
   /** \brief Deprecated. */
-  THYRA_DEPRECATED virtual void commitLocalData( Scalar *localValues )
+  THYRA_DEPRECATED void commitLocalData( Scalar *localValues )
     {
       // Do nothing!
     }
 
   /** \brief Deprecated. */
-  THYRA_DEPRECATED virtual void getLocalData(
+  THYRA_DEPRECATED void getLocalData(
     const Scalar **localValues_out, Index *leadingDim_out
     ) const
     {
@@ -268,7 +272,7 @@ public:
     }
 
   /** \brief Deprecated. */
-  THYRA_DEPRECATED virtual void freeLocalData( const Scalar *localValues ) const
+  THYRA_DEPRECATED void freeLocalData( const Scalar *localValues ) const
     {
       // Do nothing!
     }
@@ -276,6 +280,21 @@ public:
   //@}
 
 protected:
+
+  /** @name Virtual functions to be overridden by sublcasses. */
+  //@{
+
+  /** \brief Virtual implementation for getNonconstLocalData(). */
+  virtual void getNonconstLocalDataImpl(
+    const Ptr<ArrayRCP<Scalar> > &localValues, const Ptr<Index> &leadingDim
+    ) = 0;
+
+  /** \brief Virtual implementation for getLocalData(). */
+  virtual void getLocalDataImpl(
+    const Ptr<ArrayRCP<const Scalar> > &localValues, const Ptr<Index> &leadingDim
+    ) const = 0;
+
+  //@}
 
   /** @name Overridden from SingleScalarEuclideanLinearOpBase */
   //@{

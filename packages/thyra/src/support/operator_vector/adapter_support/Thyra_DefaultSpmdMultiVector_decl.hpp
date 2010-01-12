@@ -78,13 +78,12 @@ public:
   /** \brief Initialize only with vector spaces where storage is allocated
    * internally..
    *
-   * \param  spmdRangeSpace
-   *           [in] Smart pointer to <tt>SpmdVectorSpaceBase</tt> object
-   *           that defines the data distribution for <tt>spmdSpace()</tt>
-   *           and <tt>range()</tt>.
-   * \param  domainSpace
-   *           [in] Smart pointer to <tt>VectorSpaceBase</tt> object
-   *           that defines <tt>domain()</tt> space.
+   * \param spmdRangeSpace [in] Smart pointer to <tt>SpmdVectorSpaceBase</tt>
+   * object that defines the data distribution for <tt>spmdSpace()</tt> and
+   * <tt>range()</tt>.
+   *
+   * \param domainSpace [in] Smart pointer to <tt>VectorSpaceBase</tt> object
+   * that defines <tt>domain()</tt> space.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>spmdRangeSpace.get()!=NULL</tt>
@@ -98,22 +97,23 @@ public:
 
   /** \brief Initialize using externally allocated storage.
    *
-   * \param  spmdRangeSpace
-   *           [in] Smart pointer to <tt>SpmdVectorSpaceBase</tt> object
-   *           that defines the data distribution for <tt>spmdSpace()</tt>
-   *           and <tt>range()</tt>.
-   * \param  domainSpace
-   *           [in] Smart pointer to <tt>VectorSpaceBase</tt> object
-   *           that defines <tt>domain()</tt> space.
-   * \param  localValues
-   *           [in] Smart pointer to beginning of Fortran-style column-major
-   *           array that defines the local localValues in the multi-vector.
-   *           This array must be at least of dimension <tt>spmdRangeSpace->localSubDim()*domainSpace->dim()</tt>
-   *           and <tt>(&*localValues)[ i + j*leadingDim ]</tt> gives the local value
-   *           of the zero-based entry <tt>(i,j)</tt> where <tt>i=0...spmdSpace()->localSubDim()-1</tt>
-   *           and <tt>j=0...domainSpace->dim()-1</tt>.
-   * \param  leadingDim
-   *           [in] The leading dimension of the multi-vector.
+   * \param spmdRangeSpace [in] Smart pointer to <tt>SpmdVectorSpaceBase</tt>
+   * object that defines the data distribution for <tt>spmdSpace()</tt> and
+   * <tt>range()</tt>.
+   *
+   * \param domainSpace [in] Smart pointer to <tt>VectorSpaceBase</tt> object
+   * that defines <tt>domain()</tt> space.
+   *
+   * \param localValues [in] Smart pointer to beginning of Fortran-style
+   * column-major array that defines the local localValues in the
+   * multi-vector.  This array must be at least of dimension
+   * <tt>spmdRangeSpace->localSubDim()*domainSpace->dim()</tt> and
+   * <tt>(&*localValues)[ i + j*leadingDim ]</tt> gives the local value of the
+   * zero-based entry <tt>(i,j)</tt> where
+   * <tt>i=0...spmdSpace()->localSubDim()-1</tt> and
+   * <tt>j=0...domainSpace->dim()-1</tt>.
+   *
+   * \param leadingDim [in] The leading dimension of the multi-vector.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>spmdRangeSpace.get()!=NULL</tt>
@@ -150,6 +150,8 @@ public:
   domainScalarProdVecSpc() const;
   //@}
 
+protected:
+
   /** @name Overridden from MultiVectorBase */
   //@{
   /** \brief . */
@@ -165,17 +167,17 @@ public:
   nonconstNonContigSubViewImpl( const ArrayView<const int> &cols );
   //@}
 
-  /** @name Overridden from SpmdMultiVectorBase */
+  /** @name Overridden protected functions from SpmdMultiVectorBase */
   //@{
 
   /** \brief . */
   RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const;
   /** \brief . */
-  void getNonconstLocalData(
+  void getNonconstLocalDataImpl(
     const Ptr<ArrayRCP<Scalar> > &localValues, const Ptr<Index> &leadingDim
     );
   /** \brief . */
-  void getLocalData(
+  void getLocalDataImpl(
     const Ptr<ArrayRCP<const Scalar> > &localValues, const Ptr<Index> &leadingDim
     ) const;
   //@}
