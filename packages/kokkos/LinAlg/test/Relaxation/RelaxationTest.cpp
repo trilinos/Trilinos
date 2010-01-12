@@ -52,7 +52,7 @@
 #include "Kokkos_ThrustGPUNode.hpp"
 #endif
 
-
+#define TPI_CHUNKS 4
 
 namespace {
 
@@ -123,7 +123,7 @@ namespace {
   RCP<TPINode> getNode<TPINode>() {
     if (tpinode == null) {
       Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
+      pl.set<int>("Num Threads",TPI_CHUNKS);
       tpinode = rcp(new TPINode(pl));
     }
     return tpinode;
@@ -201,6 +201,8 @@ namespace {
 
     printf("\n");
 
+    int its=100;
+
     // Allocate Relaxation Object
     DefaultRelaxation<Scalar,Ordinal,Node> dj(node);
     dj.initializeStructure(G,Teuchos::View);
@@ -220,24 +222,37 @@ namespace {
     DefaultArithmetic<MV>::Init(RHS,0);
     norms=-666;norm0=DefaultArithmetic<MV>::Norm2Squared(X0);
     printf("*** Fine Hybrid ***\n");
-    for(int i=0;i<100;i++){
+    for(int i=0;i<its;i++){
       dj.sweep_fine_hybrid((Scalar)1.0,X0,RHS);
-      norms=DefaultArithmetic<MV>::Norm2Squared(X0);
-      printf("[%3d] ||x0|| = %22.16e\n",i,(double)norms/norm0);
     }
+    norms=DefaultArithmetic<MV>::Norm2Squared(X0);
+    printf("[%3d] ||x0|| = %22.16e\n",its,(double)norms/norm0);
 
-    // Set starting vector & run Coarse Hybrid
+
+    // Set starting vector & run Coarse Hybrid (2)
     Teuchos::ScalarTraits<Scalar>::seedrandom(24601);
     DefaultArithmetic<MV>::Random(X0);
     DefaultArithmetic<MV>::Init(RHS,0);
     norms=-666;norm0=DefaultArithmetic<MV>::Norm2Squared(X0);
-    int num_chunks=2;
-    printf("*** Coarse Hybrid (%d chunks) ***\n",num_chunks);
-    for(int i=0;i<100;i++){
-      dj.sweep_coarse_hybrid((Scalar)1.0,(size_t)num_chunks,X0,RHS);
-      norms=DefaultArithmetic<MV>::Norm2Squared(X0);
-      printf("[%3d] ||x0|| = %22.16e\n",i,(double)norms/norm0);
+    printf("*** Coarse Hybrid (%d chunks) ***\n",2);
+    for(int i=0;i<its;i++){
+      dj.sweep_coarse_hybrid((Scalar)1.0,2,X0,RHS);
     }
+    norms=DefaultArithmetic<MV>::Norm2Squared(X0);
+    printf("[%3d] ||x0|| = %22.16e\n",its,(double)norms/norm0);
+
+    // Set starting vector & run Coarse Hybrid (N)
+    Teuchos::ScalarTraits<Scalar>::seedrandom(24601);
+    DefaultArithmetic<MV>::Random(X0);
+    DefaultArithmetic<MV>::Init(RHS,0);
+    norms=-666;norm0=DefaultArithmetic<MV>::Norm2Squared(X0);
+    int num_chunks=TPI_CHUNKS;
+    printf("*** Coarse Hybrid (%d chunks) ***\n",num_chunks);
+    for(int i=0;i<its;i++){
+      dj.sweep_coarse_hybrid((Scalar)1.0,(size_t)num_chunks,X0,RHS);
+    }
+    norms=DefaultArithmetic<MV>::Norm2Squared(X0);
+    printf("[%3d] ||x0|| = %22.16e\n",its,(double)norms/norm0);
 
     // Set starting vector & run Jacobi
     Teuchos::ScalarTraits<Scalar>::seedrandom(24601);
@@ -245,11 +260,11 @@ namespace {
     DefaultArithmetic<MV>::Init(RHS,0);
     norms=-666;norm0=DefaultArithmetic<MV>::Norm2Squared(X0);
     printf("*** Jacobi ***\n");
-    for(int i=0;i<100;i++){
+    for(int i=0;i<its;i++){
       dj.sweep_jacobi((Scalar)1.0,X0,RHS);
-      norms=DefaultArithmetic<MV>::Norm2Squared(X0);
-      printf("[%3d] ||x0|| = %22.16e\n",i,(double)norms/norm0);
     }
+    norms=DefaultArithmetic<MV>::Norm2Squared(X0);
+    printf("[%3d] ||x0|| = %22.16e\n",its,(double)norms/norm0);
 
 
     x0dat = null;
