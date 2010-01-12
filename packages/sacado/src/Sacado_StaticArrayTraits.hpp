@@ -71,7 +71,8 @@ namespace Sacado {
     
     //! Zero out array \c dest of length \c sz
     static inline void zero(T* dest, int sz) {
-      std::memset(dest,0,sz*sizeof(T));
+      if (sz > 0)
+	std::memset(dest,0,sz*sizeof(T));
     }
 
   };

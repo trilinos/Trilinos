@@ -128,9 +128,13 @@ namespace Sacado {
 
     //! Get memory for new array of length \c sz and fill with zeros
     static inline T* get_and_fill(int sz) {
-      T* m = static_cast<T* >(operator new(sz*sizeof(T)));
-      std::memset(m,0,sz*sizeof(T));
-      return m;
+      if (sz > 0) {
+	T* m = static_cast<T* >(operator new(sz*sizeof(T)));
+	std::memset(m,0,sz*sizeof(T));
+	return m;
+      }
+      else
+	return NULL;
     }
 
     /*! 
@@ -172,7 +176,8 @@ namespace Sacado {
 
     //! Zero out array \c dest of length \c sz
     static inline void zero(T* dest, int sz) {
-      std::memset(dest,0,sz*sizeof(T));
+      if (sz > 0)
+	std::memset(dest,0,sz*sizeof(T));
     }
 
     //! Zero out array \c dest of length \c sz
