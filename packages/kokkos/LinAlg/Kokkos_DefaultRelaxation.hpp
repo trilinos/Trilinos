@@ -48,6 +48,11 @@
 
 namespace Kokkos {
 
+  /*!
+    \class DefaultRelaxation
+    \brief Various relaxation methods.
+  */
+
   template <class Scalar, class Ordinal, class Node = DefaultNode::DefaultNodeType>
   class DefaultRelaxation {
   public:
