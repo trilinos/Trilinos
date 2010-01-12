@@ -745,7 +745,7 @@ ADvar: public IndepADvar<Double> {	// an "active" variable
 			x = new ADVari((IndepADVar*)this, d);
 			x->ADvari_padv(this);
 #else
-			x = new ADVari(d);
+			x = new ADVari(Hv_const, d);
 #endif
 			}
 		this->cv = x;
