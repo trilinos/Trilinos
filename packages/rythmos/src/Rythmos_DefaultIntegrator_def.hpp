@@ -606,7 +606,6 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
 
   RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
-  Teuchos::OSTab tab(out);
 
   if (!is_null(integrationControlStrategy_)) {
     integrationControlStrategy_->setOStream(out);
@@ -649,7 +648,6 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
     if ( includesVerbLevel(verbLevel,Teuchos::VERB_LOW) )
       *out << "\nTake step:  current_stepper_t = " << currStepperTimeRange.upper()
            << ", currTimeStepIndex = " << currTimeStepIndex_ << endl;
-    Teuchos::OSTab tab(out);
 
     //
     // A) Reinitialize if a hard breakpoint was reached on the last time step

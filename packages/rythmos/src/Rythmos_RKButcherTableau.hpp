@@ -188,10 +188,10 @@ class RKButcherTableauDefaultBase :
     void setMyDescription(std::string longDescription) { longDescription_ = longDescription; }
     const std::string& getMyDescription() const { return longDescription_; }
 
-    void setMy_A(const Teuchos::SerialDenseMatrix<int,Scalar>& A) { A_ = A; }
-    void setMy_b(const Teuchos::SerialDenseVector<int,Scalar>& b) { b_ = b; }
-    void setMy_c(const Teuchos::SerialDenseVector<int,Scalar>& c) { c_ = c; }
-    void setMy_order(const int& order) { order_ = order; }
+    void setMy_A(const Teuchos::SerialDenseMatrix<int,Scalar>& new_A) { A_ = new_A; }
+    void setMy_b(const Teuchos::SerialDenseVector<int,Scalar>& new_b) { b_ = new_b; }
+    void setMy_c(const Teuchos::SerialDenseVector<int,Scalar>& new_c) { c_ = new_c; }
+    void setMy_order(const int& new_order) { order_ = new_order; }
 
     void setMyValidParameterList( const RCP<ParameterList> validPL ) { validPL_ = validPL; }
     RCP<ParameterList> getMyNonconstValidParameterList() { return validPL_; }

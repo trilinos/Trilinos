@@ -76,24 +76,24 @@ bool RKButcherTableauBase<Scalar>::operator== (const RKButcherTableauBase<Scalar
   }
   int N = rkbt.numStages();
   // Check b and c first:
-  const Teuchos::SerialDenseVector<int,Scalar> b = this->b();
-  const Teuchos::SerialDenseVector<int,Scalar> c = this->c();
+  const Teuchos::SerialDenseVector<int,Scalar> b_ = this->b();
+  const Teuchos::SerialDenseVector<int,Scalar> c_ = this->c();
   const Teuchos::SerialDenseVector<int,Scalar> other_b = rkbt.b();
   const Teuchos::SerialDenseVector<int,Scalar> other_c = rkbt.c();
   for (int i=0 ; i<N ; ++i) {
-    if (b(i) != other_b(i)) {
+    if (b_(i) != other_b(i)) {
       return false;
     }
-    if (c(i) != other_c(i)) {
+    if (c_(i) != other_c(i)) {
       return false;
     }
   }
   // Then check A:
-  const Teuchos::SerialDenseMatrix<int,Scalar>& A = this->A();
+  const Teuchos::SerialDenseMatrix<int,Scalar>& A_ = this->A();
   const Teuchos::SerialDenseMatrix<int,Scalar>& other_A = rkbt.A();
   for (int i=0 ; i<N ; ++i) {
     for (int j=0 ; j<N ; ++j) {
-      if (A(i,j) != other_A(i,j)) {
+      if (A_(i,j) != other_A(i,j)) {
         return false;
       }
     } 

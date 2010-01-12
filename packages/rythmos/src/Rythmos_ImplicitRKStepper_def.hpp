@@ -555,7 +555,6 @@ void ImplicitRKStepper<Scalar>::describe(
 {
   using std::endl;
   using Teuchos::as;
-  Teuchos::OSTab tab(out);
   if (!isInitialized_) {
     out << this->description() << " : This stepper is not initialized yet" << std::endl;
     return;

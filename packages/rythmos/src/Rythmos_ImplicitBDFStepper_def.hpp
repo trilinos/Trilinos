@@ -294,7 +294,7 @@ Scalar ImplicitBDFStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepType)
   using Teuchos::as;
   using Teuchos::incrVerbLevel;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag ScalarMag;
+  typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag TScalarMag;
   typedef Thyra::NonlinearSolverBase<Scalar> NSB;
   typedef Teuchos::VerboseObjectTempState<NSB> VOTSNSB;
 
@@ -379,7 +379,7 @@ Scalar ImplicitBDFStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepType)
     /* // Rythmos::TimeStepNonlinearSolver uses a built in solveCriteria, so you can't pass one in.
     // I believe this is the correct solveCriteria for IDA though.
     Thyra::SolveMeasureType nonlinear_solve_measure_type(Thyra::SOLVE_MEASURE_NORM_RESIDUAL,Thyra::SOLVE_MEASURE_ONE); 
-    ScalarMag tolerance = relErrTol_/ScalarMag(10.0); // This should be changed to match the condition in IDA
+    TScalarMag tolerance = relErrTol_/TScalarMag(10.0); // This should be changed to match the condition in IDA
     Thyra::SolveCriteria<Scalar> nonlinearSolveCriteria(nonlinear_solve_measure_type, tolerance);
     Thyra::SolveStatus<Scalar> nonlinearSolveStatus = solver_->solve( &*xn0_, &nonlinearSolveCriteria, &*delta_ ); 
     */
@@ -539,7 +539,7 @@ void ImplicitBDFStepper<Scalar>::getPoints(
   using Teuchos::null;
   using Teuchos::ptr;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef typename ST::magnitudeType ScalarMag;
+  typedef typename ST::magnitudeType mScalarMag;
 
   TEUCHOS_ASSERT(haveInitialCondition_);
   // Only do this if we're being called pre-initialization to get the IC.
@@ -567,7 +567,7 @@ void ImplicitBDFStepper<Scalar>::getPoints(
       x_temp = createMember(xn0_->space());
     RCP<Thyra::VectorBase<Scalar> >
       xdot_temp = createMember(xn0_->space());
-    ScalarMag accuracy = -ST::zero();
+    mScalarMag accuracy = -ST::zero();
     interpolateSolution_(
       time_vec[i], &*x_temp, &*xdot_temp,
       accuracy_vec ? &accuracy : 0

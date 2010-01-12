@@ -111,9 +111,9 @@ void BackwardEulerStepper<Scalar>::defaultInitializeAll_()
   t_old_ = ST::nan();
   dt_ = ST::nan();
   numSteps_ = -1;
-  RCP<Rythmos::SingleResidualModelEvaluator<Scalar> >  neModel_ = Teuchos::null;
-  RCP<Teuchos::ParameterList> parameterList_ = Teuchos::null;
-  RCP<InterpolatorBase<Scalar> > interpolator_ = Teuchos::null;
+  neModel_ = Teuchos::null;
+  parameterList_ = Teuchos::null;
+  interpolator_ = Teuchos::null;
 }
 
 // Overridden from InterpolatorAcceptingObjectBase

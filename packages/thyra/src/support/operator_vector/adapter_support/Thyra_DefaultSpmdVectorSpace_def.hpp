@@ -271,11 +271,11 @@ DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace(
 template<class Scalar>
 DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace(
   const RCP<const Teuchos::Comm<Index> > &comm,
-  const Index localSubDim, const Index globalDim
+  const Index my_localSubDim, const Index globalDim
   )
   :localSubDim_(-1), numProc_(-1), procRank_(-1)
 {
-  initialize(comm, localSubDim, globalDim);
+  initialize(comm, my_localSubDim, globalDim);
   weakSelfPtr_ = Teuchos::rcpFromRef(*this);
 }
 

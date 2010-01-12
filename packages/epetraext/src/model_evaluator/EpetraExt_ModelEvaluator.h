@@ -979,21 +979,21 @@ double ModelEvaluator::InArgs::get_beta() const
 { assert_supports(IN_ARG_beta); return beta_; }
 
 inline
-void ModelEvaluator::InArgs::_setModelEvalDescription( const std::string &modelEvalDescription )
+void ModelEvaluator::InArgs::_setModelEvalDescription( const std::string &new_modelEvalDescription )
 {
-  modelEvalDescription_ = modelEvalDescription;
+  modelEvalDescription_ = new_modelEvalDescription;
 }
 
 inline
-void ModelEvaluator::InArgs::_set_Np(int Np)
+void ModelEvaluator::InArgs::_set_Np(int new_Np)
 {
-  p_.resize(Np);
+  p_.resize(new_Np);
 }
 
 inline
-void ModelEvaluator::InArgs::_set_Np_sg(int Np)
+void ModelEvaluator::InArgs::_set_Np_sg(int new_Np)
 {
-  p_sg_.resize(Np);
+  p_sg_.resize(new_Np);
 }
 
 //
@@ -1226,64 +1226,64 @@ ModelEvaluator::OutArgs::sg_operator_t ModelEvaluator::OutArgs::get_W_sg() const
 //
 
 inline
-void ModelEvaluator::InArgsSetup::setModelEvalDescription( const std::string &modelEvalDescription )
+void ModelEvaluator::InArgsSetup::setModelEvalDescription( const std::string &new_modelEvalDescription )
 {
-  this->_setModelEvalDescription(modelEvalDescription);
+  this->_setModelEvalDescription(new_modelEvalDescription);
 }
 
 inline
-void ModelEvaluator::InArgsSetup::set_Np(int Np)
-{ this->_set_Np(Np); }
+void ModelEvaluator::InArgsSetup::set_Np(int new_Np)
+{ this->_set_Np(new_Np); }
 
 inline
-void ModelEvaluator::InArgsSetup::set_Np_sg(int Np)
-{ this->_set_Np_sg(Np); }
+void ModelEvaluator::InArgsSetup::set_Np_sg(int new_Np)
+{ this->_set_Np_sg(new_Np); }
 
 inline
-void ModelEvaluator::InArgsSetup::setSupports( EInArgsMembers arg, bool supports )
-{ this->_setSupports(arg,supports); }
+void ModelEvaluator::InArgsSetup::setSupports( EInArgsMembers arg, bool new_supports )
+{ this->_setSupports(arg,new_supports); }
 
 //
 // ModelEvaluator::OutArgsSetup
 //
 
 inline
-void ModelEvaluator::OutArgsSetup::setModelEvalDescription( const std::string &modelEvalDescription )
+void ModelEvaluator::OutArgsSetup::setModelEvalDescription( const std::string &new_modelEvalDescription )
 {
-  this->_setModelEvalDescription(modelEvalDescription);
+  this->_setModelEvalDescription(new_modelEvalDescription);
 }
 
 inline
-void ModelEvaluator::OutArgsSetup::set_Np_Ng(int Np, int Ng)
-{ this->_set_Np_Ng(Np,Ng); }
+void ModelEvaluator::OutArgsSetup::set_Np_Ng(int new_Np, int new_Ng)
+{ this->_set_Np_Ng(new_Np,new_Ng); }
 
 inline
-void ModelEvaluator::OutArgsSetup::set_Np_Ng_sg(int Np_sg, int Ng_sg)
-{ this->_set_Np_Ng_sg(Np_sg, Ng_sg); }
+void ModelEvaluator::OutArgsSetup::set_Np_Ng_sg(int new_Np_sg, int new_Ng_sg)
+{ this->_set_Np_Ng_sg(new_Np_sg, new_Ng_sg); }
 
 inline
-void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsMembers arg, bool supports )
-{ this->_setSupports(arg,supports); }
+void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsMembers arg, bool new_supports )
+{ this->_setSupports(arg,new_supports); }
 
 inline
-void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsDfDp arg, int l, const DerivativeSupport& supports )
-{ this->_setSupports(arg,l,supports); }
+void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsDfDp arg, int l, const DerivativeSupport& new_supports )
+{ this->_setSupports(arg,l,new_supports); }
 
 inline
-void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsDgDx_dot arg, int j, const DerivativeSupport& supports )
-{ this->_setSupports(arg,j,supports); }
+void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsDgDx_dot arg, int j, const DerivativeSupport& new_supports )
+{ this->_setSupports(arg,j,new_supports); }
 
 inline
-void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsDgDx arg, int j, const DerivativeSupport& supports )
-{ this->_setSupports(arg,j,supports); }
+void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsDgDx arg, int j, const DerivativeSupport& new_supports )
+{ this->_setSupports(arg,j,new_supports); }
 
 inline
-void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsDgDp arg, int j, int l, const DerivativeSupport& supports )
-{ this->_setSupports(arg,j,l,supports); }
+void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsDgDp arg, int j, int l, const DerivativeSupport& new_supports )
+{ this->_setSupports(arg,j,l,new_supports); }
 
 inline
-void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsDgDp_sg arg, int j, int l, const DerivativeSupport& supports )
-{ this->_setSupports(arg,j,l,supports); }
+void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsDgDp_sg arg, int j, int l, const DerivativeSupport& new_supports )
+{ this->_setSupports(arg,j,l,new_supports); }
 
 inline
 void ModelEvaluator::OutArgsSetup::set_W_properties( const DerivativeProperties &properties )

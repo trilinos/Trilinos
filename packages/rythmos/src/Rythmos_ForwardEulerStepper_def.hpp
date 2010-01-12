@@ -340,15 +340,13 @@ template<class Scalar>
 ForwardEulerStepper<Scalar>::ForwardEulerStepper()
 {
   this->defaultInitializAll_();
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  dt_ = ST::zero();
+  dt_ = Teuchos::ScalarTraits<Scalar>::zero();
   numSteps_ = 0;
 }
 
 template<class Scalar>
 void ForwardEulerStepper<Scalar>::defaultInitializAll_()
 {
-  typedef Teuchos::ScalarTraits<Scalar> ST;
   model_ = Teuchos::null;
   solution_vector_ = Teuchos::null;
   residual_vector_ = Teuchos::null;
@@ -396,7 +394,6 @@ Scalar ForwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
   this->initialize_();
   if (flag == STEP_TYPE_VARIABLE) { 
     // print something out about this method not supporting automatic variable step-size
-    typedef Teuchos::ScalarTraits<Scalar> ST;
     return(-ST::one());
   }
   //Thyra::eval_f<Scalar>(*model_,*solution_vector_,t_+dt,&*residual_vector_);
@@ -417,7 +414,6 @@ Scalar ForwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
 template<class Scalar>
 const StepStatus<Scalar> ForwardEulerStepper<Scalar>::getStepStatus() const
 {
-  typedef Teuchos::ScalarTraits<Scalar> ST;
   StepStatus<Scalar> stepStatus;
 
   if (!haveInitialCondition_) {
@@ -713,7 +709,6 @@ void ForwardEulerStepper<Scalar>::checkConsistentState_()
     TEUCHOS_ASSERT( !Teuchos::is_null(residual_vector_) );
   }
   if (haveInitialCondition_) {
-    typedef Teuchos::ScalarTraits<Scalar> ST;
     TEUCHOS_ASSERT( !ST::isnaninf(t_) );
     TEUCHOS_ASSERT( !ST::isnaninf(t_old_) );
     TEUCHOS_ASSERT( !Teuchos::is_null(solution_vector_) );

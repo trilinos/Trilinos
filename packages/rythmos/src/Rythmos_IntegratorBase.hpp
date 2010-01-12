@@ -44,7 +44,7 @@ namespace Exceptions {
  * return given time points.
  */
 class GetFwdPointsFailed : public ::Rythmos::Exceptions::ExceptionBase
-{public: GetFwdPointsFailed(const std::string &what):ExceptionBase(what) {}};
+{public: GetFwdPointsFailed(const std::string &my_what):ExceptionBase(my_what) {}};
 
 
 } // namespace Exceptions

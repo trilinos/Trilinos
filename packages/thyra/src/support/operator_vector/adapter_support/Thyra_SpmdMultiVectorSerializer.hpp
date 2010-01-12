@@ -38,9 +38,9 @@ namespace Thyra {
 
 template<class Scalar>
 SpmdMultiVectorSerializer<Scalar>::SpmdMultiVectorSerializer(
-  const bool  binaryMode
+  const bool  my_binaryMode
   )
-  :binaryMode_(binaryMode)
+  :binaryMode_(my_binaryMode)
 {}
 
 template<class Scalar>

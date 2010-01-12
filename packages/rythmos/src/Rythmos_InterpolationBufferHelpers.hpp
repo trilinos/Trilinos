@@ -311,25 +311,27 @@ bool Rythmos::getCurrentPoints(
     // Load a temp array with all of the current time points that fall in the
     // current time range.
     Array<Scalar> current_time_vec;
-    int i;
-    for ( i = 0; i < numTotalTimePoints-nextTimePointIndex; ++i ) {
-      const Scalar t = time_vec[nextTimePointIndex];
+    { // scope for i to remove shadow warning.
+      int i;
+      for ( i = 0; i < numTotalTimePoints-nextTimePointIndex; ++i ) {
+        const Scalar t = time_vec[nextTimePointIndex];
 #ifdef RYTHMOS_DEBUG
-      TEUCHOS_ASSERT( t >= currentTimeRange.lower() );
+        TEUCHOS_ASSERT( t >= currentTimeRange.lower() );
 #endif // RYTHMOS_DEBUG
-      if ( currentTimeRange.isInRange(t) ) {
-        ++nextTimePointIndex;
-        current_time_vec.push_back(t);
+        if ( currentTimeRange.isInRange(t) ) {
+          ++nextTimePointIndex;
+          current_time_vec.push_back(t);
+        }
+        else {
+          break;
+        }
       }
-      else {
-        break;
-      }
-    }
 #ifdef RYTHMOS_DEBUG
-    // Here I am just checking that the loop worked as expected with the data
-    // in the current time range all comming first.
-    TEUCHOS_ASSERT( nextTimePointIndex-initNextTimePointIndex == i );
+      // Here I am just checking that the loop worked as expected with the data
+      // in the current time range all comming first.
+      TEUCHOS_ASSERT( nextTimePointIndex-initNextTimePointIndex == i );
 #endif
+    }
 
     // Get points in current time range if any such points exist
 

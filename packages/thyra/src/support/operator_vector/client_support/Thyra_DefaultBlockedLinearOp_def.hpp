@@ -77,15 +77,15 @@ void DefaultBlockedLinearOp<Scalar>::beginBlockFill(
 
 template<class Scalar>
 void DefaultBlockedLinearOp<Scalar>::beginBlockFill(
-  const RCP<const ProductVectorSpaceBase<Scalar> > &productRange
-  ,const RCP<const ProductVectorSpaceBase<Scalar> > &productDomain
+  const RCP<const ProductVectorSpaceBase<Scalar> > &new_productRange
+  ,const RCP<const ProductVectorSpaceBase<Scalar> > &new_productDomain
   )
 {
   using Teuchos::rcp_dynamic_cast;
   assertBlockFillIsActive(false);
   uninitialize();
-  productRange_ = productRange.assert_not_null();
-  productDomain_ = productDomain.assert_not_null();
+  productRange_ = new_productRange.assert_not_null();
+  productDomain_ = new_productDomain.assert_not_null();
   defaultProductRange_ =
     rcp_dynamic_cast<const DefaultProductVectorSpace<Scalar> >(productRange_);
   defaultProductDomain_ =
@@ -350,7 +350,7 @@ void DefaultBlockedLinearOp<Scalar>::describe(
   using Teuchos::OSTab;
   assertBlockFillIsActive(false);
   RCP<FancyOStream> out = rcpFromRef(out_arg);
-  OSTab tab(out);
+  OSTab tab1(out);
   switch(verbLevel) {
     case Teuchos::VERB_DEFAULT:
     case Teuchos::VERB_LOW:
@@ -367,11 +367,11 @@ void DefaultBlockedLinearOp<Scalar>::describe(
         << ",numRowBlocks=" << numRowBlocks_
         << ",numColBlocks=" << numColBlocks_
         << "}\n";
-      OSTab tab(out);
+      OSTab tab2(out);
       *out
         << "Constituent LinearOpBase objects for M = [ Op[0,0] ..."
         << " ; ... ; ... Op[numRowBlocks-1,numColBlocks-1] ]:\n";
-      tab.incrTab();
+      tab2.incrTab();
       for( int i = 0; i < numRowBlocks_; ++i ) {
         for( int j = 0; j < numColBlocks_; ++j ) {
           *out << "Op["<<i<<","<<j<<"] = ";
@@ -402,16 +402,16 @@ bool DefaultBlockedLinearOp<Scalar>::opSupported(
   EOpTransp M_trans
   ) const
 {
-  bool opSupported = true;
+  bool supported = true;
   for( int i = 0; i < numRowBlocks_; ++i ) {
     for( int j = 0; j < numColBlocks_; ++j ) {
       RCP<const LinearOpBase<Scalar> >
         block_i_j = getBlock(i,j);
       if( block_i_j.get() && !Thyra::opSupported(*block_i_j,M_trans) )
-        opSupported = false;
+        supported = false;
     }
   }
-  return opSupported;
+  return supported;
 }
 
 
@@ -509,11 +509,11 @@ void DefaultBlockedLinearOp<Scalar>::resetStorage(
 
 template<class Scalar>
 void DefaultBlockedLinearOp<Scalar>::assertBlockFillIsActive(
-  bool blockFillIsActive
+  bool wantedValue
   ) const
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(!(blockFillIsActive_==blockFillIsActive));
+  TEST_FOR_EXCEPT(!(blockFillIsActive_==wantedValue));
 #endif
 }
 

@@ -506,54 +506,54 @@ namespace Rythmos {
       Scalar rho = estimateLogRadius_();
 
       // Set step size
-      Scalar dt = std::exp(linc_ - rho);
+      Scalar shadowed_dt = std::exp(linc_ - rho);
 
       // If step size is too big, reduce
-      if (dt > max_step_size_) {
-        dt = max_step_size_;
+      if (shadowed_dt > max_step_size_) {
+        shadowed_dt = max_step_size_;
       }
 
       // If step goes past t_final_, reduce
-      if (t_+dt > t_final_) {
-        dt = t_final_-t_;
+      if (t_+shadowed_dt > t_final_) {
+        shadowed_dt = t_final_-t_;
       }
 
       ScalarMag local_error;
 
       do {
 
-        // compute x(t_+dt), xdot(t_+dt)
-        x_poly_->evaluate(dt, x_vector_.get(), x_dot_vector_.get());
+        // compute x(t_+shadowed_dt), xdot(t_+shadowed_dt)
+        x_poly_->evaluate(shadowed_dt, x_vector_.get(), x_dot_vector_.get());
 
-        // compute f( x(t_+dt), t_+dt )
-        eval_model_explicit<Scalar>(*model_,basePoint_,*x_vector_,t_+dt,Teuchos::outArg(*f_vector_));
+        // compute f( x(t_+shadowed_dt), t_+shadowed_dt )
+        eval_model_explicit<Scalar>(*model_,basePoint_,*x_vector_,t_+shadowed_dt,Teuchos::outArg(*f_vector_));
 
-        // compute || xdot(t_+dt) - f( x(t_+dt), t_+dt ) ||
+        // compute || xdot(t_+shadowed_dt) - f( x(t_+shadowed_dt), t_+shadowed_dt ) ||
         Thyra::Vp_StV(x_dot_vector_.get(), -ST::one(),
           *f_vector_);
         local_error = norm_inf(*x_dot_vector_);
 
         if (local_error > local_error_tolerance_) {
-          dt *= 0.7;
+          shadowed_dt *= 0.7;
         }
 
-      } while (local_error > local_error_tolerance_ && dt > min_step_size_);
+      } while (local_error > local_error_tolerance_ && shadowed_dt > min_step_size_);
 
       // Check if minimum step size was reached
-      TEST_FOR_EXCEPTION(dt < min_step_size_, 
+      TEST_FOR_EXCEPTION(shadowed_dt < min_step_size_, 
             std::runtime_error,
             "ExplicitTaylorPolynomialStepper<Scalar>::takeStep(): " 
             << "Step size reached minimum step size " 
             << min_step_size_ << ".  Failing step." );
 
       // Increment t_
-      t_ += dt;
+      t_ += shadowed_dt;
 
       numSteps_++;
 
-      dt_ = dt;
+      dt_ = shadowed_dt;
 
-      return dt;
+      return shadowed_dt;
 
     } else {
 

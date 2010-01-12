@@ -83,13 +83,15 @@
  
 */
 #define TEUCHOS_FUNC_TIME_MONITOR( FUNCNAME ) \
+  { \
   static Teuchos::RCP<Teuchos::Time> blabla_localTimer; \
   if(!blabla_localTimer.get()) { \
     std::ostringstream oss; \
     oss << FUNCNAME; \
     blabla_localTimer = Teuchos::TimeMonitor::getNewCounter(oss.str()); \
   } \
-  Teuchos::TimeMonitor blabla_localTimeMonitor(*blabla_localTimer)
+  Teuchos::TimeMonitor blabla_localTimeMonitor(*blabla_localTimer); \
+  }
 
 
 namespace Teuchos {

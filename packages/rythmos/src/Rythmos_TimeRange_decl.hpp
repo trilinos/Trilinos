@@ -75,8 +75,8 @@ public:
     : lower_(0.0), upper_(-1.0)
     {}
   /** \brief Construct a valid range. */
-  TimeRange( const TimeType &lower, const TimeType &upper )
-    : lower_(lower), upper_(upper)
+  TimeRange( const TimeType &my_lower, const TimeType &my_upper )
+    : lower_(my_lower), upper_(my_upper)
     {
     }
   /** \brief Copy constructor. */

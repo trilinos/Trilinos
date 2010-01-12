@@ -264,8 +264,8 @@ void ImplicitBDFStepperStepControl<Scalar>::getFirstTimeStep_(const StepperBase<
   Teuchos::OSTab ostab(out,1,"getFirstTimeStep_");
 
   const ImplicitBDFStepper<Scalar>& implicitBDFStepper = Teuchos::dyn_cast<const ImplicitBDFStepper<Scalar> >(stepper);
-  const Thyra::VectorBase<Scalar>& xHistory = implicitBDFStepper.getxHistory(0);
-  errWtVecCalc_->errWtVecSet(&*errWtVec_,xHistory,relErrTol_,absErrTol_);
+  const Thyra::VectorBase<Scalar>& xHistory0 = implicitBDFStepper.getxHistory(0);
+  errWtVecCalc_->errWtVecSet(&*errWtVec_,xHistory0,relErrTol_,absErrTol_);
 
   // Choose initial step-size
   Scalar time_to_stop = stopTime_ - time_;
@@ -276,8 +276,8 @@ void ImplicitBDFStepperStepControl<Scalar>::getFirstTimeStep_(const StepperBase<
     //currentTimeStep = std::min(hh_, currentTimeStep);
   } else {
     // compute an initial step-size based on rate of change in the solution initially
-    const Thyra::VectorBase<Scalar>& xHistory = implicitBDFStepper.getxHistory(1);
-    Scalar ypnorm = wRMSNorm_(*errWtVec_,xHistory);
+    const Thyra::VectorBase<Scalar>& xHistory1 = implicitBDFStepper.getxHistory(1);
+    Scalar ypnorm = wRMSNorm_(*errWtVec_,xHistory1);
     if (ypnorm > zero) { // time-dependent DAE
       currentTimeStep = std::min(h0_max_factor_*std::abs(time_to_stop),std::sqrt(2.0)/(h0_safety_*ypnorm));
     } else { // non-time-dependent DAE
@@ -702,8 +702,8 @@ Scalar ImplicitBDFStepperStepControl<Scalar>::checkReduceOrder_(const StepperBas
     *out << "enorm = " << enorm << std::endl;
   }
   if (currentOrder_>1) {
-    const Thyra::VectorBase<Scalar>& xHistory = implicitBDFStepper.getxHistory(currentOrder_);
-    V_VpV(&*delta_,xHistory,*ee_);
+    const Thyra::VectorBase<Scalar>& xHistoryCur = implicitBDFStepper.getxHistory(currentOrder_);
+    V_VpV(&*delta_,xHistoryCur,*ee_);
     Ekm1_ = sigma_[currentOrder_-1]*wRMSNorm_(*errWtVec_,*delta_);
     Tkm1_ = currentOrder_*Ekm1_;
     if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
@@ -711,8 +711,8 @@ Scalar ImplicitBDFStepperStepControl<Scalar>::checkReduceOrder_(const StepperBas
       *out << "Tkm1_ = " << Tkm1_ << std::endl;
     }
     if (currentOrder_>2) {
-      const Thyra::VectorBase<Scalar>& xHistory = implicitBDFStepper.getxHistory(currentOrder_-1);
-      Vp_V(&*delta_,xHistory);
+      const Thyra::VectorBase<Scalar>& xHistoryPrev = implicitBDFStepper.getxHistory(currentOrder_-1);
+      Vp_V(&*delta_,xHistoryPrev);
       Ekm2_ = sigma_[currentOrder_-2]*wRMSNorm_(*errWtVec_,*delta_);
       Tkm2_ = (currentOrder_-1)*Ekm2_;
       if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {

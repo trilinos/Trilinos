@@ -176,7 +176,7 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > ExplicitRKStepper<Scalar>::g
 template<class Scalar>
 Scalar ExplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
 {
-  typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag ScalarMag;
+  typedef typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag TScalarMag;
   this->initialize_();
 #ifdef RYTHMOS_DEBUG
     TEST_FOR_EXCEPTION( flag == STEP_TYPE_VARIABLE, std::logic_error,
@@ -204,7 +204,7 @@ Scalar ExplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
         Thyra::Vp_StV(&*ktemp_vector_, A(s,j), *k_vector_[j]); // ktemp = ktemp + a_{s+1,j+1}*k_{j+1}
       }
     }
-    ScalarMag ts = t_ + c(s)*dt;
+    TScalarMag ts = t_ + c(s)*dt;
     eval_model_explicit<Scalar>(*model_,basePoint_,*ktemp_vector_,ts,Teuchos::outArg(*k_vector_[s]));
     Thyra::Vt_S(&*k_vector_[s],dt); // k_s = k_s*dt
   } 
@@ -420,7 +420,6 @@ void ExplicitRKStepper<Scalar>::setInitialCondition(
   )
 {
 
-  typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef Thyra::ModelEvaluatorBase MEB;
 
   basePoint_ = initialCondition;

@@ -432,13 +432,13 @@ void ImplicitRKModelEvaluator<Scalar>::evalModelImpl(
     // B.4) Evaluate the rest of the W_op_bar(i,j=1...numStages-1) ...
     if (!is_null(W_op_bar)) {
       for ( int j = 1; j < numStages; ++j ) {
-        Scalar alpha = ST::zero();
+        alpha = ST::zero();
         if (i == j) {
           alpha = ST::one();
         } else {
           alpha = ST::zero();
         }
-        Scalar beta = delta_t_ * irkButcherTableau_->A()(i,j);
+        beta = delta_t_ * irkButcherTableau_->A()(i,j);
         daeInArgs.set_alpha( alpha );
         daeInArgs.set_beta( beta );
         daeOutArgs.set_W_op(W_op_bar->getNonconstBlock(i,j));
