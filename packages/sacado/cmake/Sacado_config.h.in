@@ -4,6 +4,9 @@
 /* Define if ADOL-C is enabled */
 #cmakedefine HAVE_ADOLC
 
+/* Define if ADIC is enabled */
+#cmakedefine HAVE_ADIC
+
 /* define if we want to use MPI */
 #cmakedefine HAVE_MPI
 

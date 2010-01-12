@@ -61,6 +61,7 @@ SET(Trilinos_TPLS_AND_CLASSIFICATIONS
   PaToH          SS
   CppUnit        SS
   ADOLC          SS
+  ADIC           EX
   TVMET          SS
   MF             SS
   ExodusII       SS

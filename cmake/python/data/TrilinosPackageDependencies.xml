@@ -483,7 +483,7 @@
     <LIB_REQUIRED_DEP_TPLS/>
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS value="ADOLC,CppUnit"/>
+    <TEST_OPTIONAL_DEP_TPLS value="ADOLC,ADIC,CppUnit"/>
     <EmailAddresses>
       <Checkin address="sacado-checkins@software.sandia.gov"/>
       <Regression address="sacado-regression@software.sandia.gov"/>

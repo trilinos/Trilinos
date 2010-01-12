@@ -36,6 +36,11 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_ADOLC
   "Enable ADOLC support for optional sacado tests"
   OFF )
 
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_ADIC
+  HAVE_ADIC
+  "Enable ADIC support for optional sacado tests"
+  OFF )
+
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_RAD_NO_USING_STDCC
   RAD_NO_USING_STDCC
   "Enable if the compiler is confused by std::sin, etc., within namespace"

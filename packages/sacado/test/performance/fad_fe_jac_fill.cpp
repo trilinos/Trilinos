@@ -62,11 +62,31 @@
 #ifdef VERSION
 #undef VERSION
 #endif
-#define ADOLC_TAPELESS
+//#define ADOLC_TAPELESS
 #define NUMBER_DIRECTIONS 100
 #include "adolc/adouble.h"
 #include "adolc/drivers/drivers.h"
 #include "adolc/interfaces.h"
+#endif
+
+#ifdef HAVE_ADIC
+// We have included an ADIC differentiated version of the element fill 
+// routine to compare the speed of operator overloading to source
+// transformation.  To run this code, all that is necessary is to turn
+// on the ADIC TPL.  However to modify the code, it is necessary to
+// re-run the ADIC source transformation tool.  To do so, first update
+// the changes to adic_element_fill.c.  Then set the following environment
+// variables:
+//     export ADIC_ARCH=linux
+//     export ADIC=/home/etphipp/AD_libs/adic
+// Next run ADIC via in the tests/performance source directory:
+//     ${ADIC}/bin/linux/adiC -vd gradient -i adic_element_fill.init
+// Finally, copy the resulting differentiated function in adic_element_fill.ad.c
+// back into this file.  The function will need to be edited by changing
+// the allocation of s to a std::vector<DERIV_TYPE> (the compiler 
+// doesn't seem to like malloc), and commenting out the g_filenum lines.
+#define ad_GRAD_MAX 100
+#include "ad_deriv.h"
 #endif
 
 // A performance test that computes a finite-element-like Jacobian using
@@ -155,6 +175,25 @@ void adolc_tapeless_init_fill(const ElemData& e,
 #endif
 #endif
 
+#ifdef HAVE_ADIC
+void adic_init_fill(const ElemData& e,
+		    unsigned int neqn,
+		    const std::vector<double>& x, 
+		    std::vector<DERIV_TYPE>& x_fad) {
+  static bool first = true;
+  for (unsigned int node=0; node<e.nnode; node++)
+    for (unsigned int eqn=0; eqn<neqn; eqn++) {
+      x_fad[node*neqn+eqn].value = x[e.gid[node]*neqn+eqn];
+      if (first)
+	ad_AD_SetIndep(x_fad[node*neqn+eqn]);
+    }
+  if (first) {
+    ad_AD_SetIndepDone();
+    first = false;
+  }
+}
+#endif
+
 void analytic_init_fill(const ElemData& e,
 			unsigned int neqn,
 			const std::vector<double>& x, 
@@ -210,6 +249,151 @@ void template_element_fill(const ElemData& e,
     }
   }
 }
+
+#ifdef HAVE_ADIC
+/************************** DISCLAIMER ********************************/
+/*                                                                    */
+/*   This file was generated on 01/12/10 10:38:06 by the version of   */
+/*   ADIC compiled on  08/30/00 16:47:46                              */
+/*                                                                    */
+/*   ADIC was prepared as an account of work sponsored by an          */
+/*   agency of the United States Government and the University of     */
+/*   Chicago.  NEITHER THE AUTHOR(S), THE UNITED STATES GOVERNMENT    */
+/*   NOR ANY AGENCY THEREOF, NOR THE UNIVERSITY OF CHICAGO, INCLUDING */
+/*   ANY OF THEIR EMPLOYEES OR OFFICERS, MAKES ANY WARRANTY, EXPRESS  */
+/*   OR IMPLIED, OR ASSUMES ANY LEGAL LIABILITY OR RESPONSIBILITY FOR */
+/*   THE ACCURACY, COMPLETENESS, OR USEFULNESS OF ANY INFORMATION OR  */
+/*   PROCESS DISCLOSED, OR REPRESENTS THAT ITS USE WOULD NOT INFRINGE */
+/*   PRIVATELY OWNED RIGHTS.                                          */
+/*                                                                    */
+/**********************************************************************/
+void   adic_element_fill(ElemData  *e,unsigned int  neqn,DERIV_TYPE  *x,DERIV_TYPE  *u,DERIV_TYPE  *du,DERIV_TYPE  *f) {
+unsigned int  ad_var_0, ad_var_1, ad_var_2, ad_var_3, ad_var_4, ad_var_5, ad_var_6, ad_var_7, ad_var_8;
+DERIV_TYPE  ad_var_9;
+double  ad_adji_0;
+    double  ad_loc_0;
+    double  ad_loc_1;
+    double  ad_loc_2;
+    double  ad_loc_3;
+    double  ad_loc_4;
+    double  ad_loc_5;
+    double  ad_loc_6;
+    double  ad_loc_7;
+    double  ad_loc_8;
+    double  ad_loc_9;
+    double  ad_loc_10;
+    double  ad_loc_11;
+    double  ad_adj_0;
+    double  ad_adj_1;
+    double  ad_adj_2;
+    double  ad_adj_3;
+    double  ad_adj_4;
+
+        // static int g_filenum = 0;
+        // if (g_filenum == 0) {
+        //     adintr_ehsfid(&g_filenum, __FILE__, "ad_c_element_residual_fill");
+        // }
+            for (unsigned int  qp = 0;     qp < e->nqp;     )    {
+        for (unsigned int  eqn = 0;         eqn < neqn;         )        {
+            {
+                ad_grad_axpy_0(&(u[qp * neqn + eqn]));
+                DERIV_val(u[qp * neqn + eqn]) = 0.0;
+            }
+            {
+                ad_grad_axpy_0(&(du[qp * neqn + eqn]));
+                DERIV_val(du[qp * neqn + eqn]) = 0.0;
+            }
+            for (unsigned int  node = 0;             node < e->nnode;             )            {
+                {
+                    ad_loc_0 = DERIV_val(x[node * neqn + eqn]) * e->phi[qp][node];
+                    ad_loc_1 = DERIV_val(u[qp * neqn + eqn]) + ad_loc_0;
+                    ad_grad_axpy_2(&(u[qp * neqn + eqn]), 1.000000000000000e+00, &(u[qp * neqn + eqn]), e->phi[qp][node], &(x[node * neqn + eqn]));
+                    DERIV_val(u[qp * neqn + eqn]) = ad_loc_1;
+                }
+                {
+                    ad_loc_0 = DERIV_val(x[node * neqn + eqn]) * e->dphi[qp][node];
+                    ad_loc_1 = DERIV_val(du[qp * neqn + eqn]) + ad_loc_0;
+                    ad_grad_axpy_2(&(du[qp * neqn + eqn]), 1.000000000000000e+00, &(du[qp * neqn + eqn]), e->dphi[qp][node], &(x[node * neqn + eqn]));
+                    DERIV_val(du[qp * neqn + eqn]) = ad_loc_1;
+                }
+                ad_var_2 = node++;
+            }
+            ad_var_1 = eqn++;
+        }
+        ad_var_0 = qp++;
+    }
+	    std::vector<DERIV_TYPE> s(e->nqp * neqn);
+    for (unsigned int  qp = 0;     qp < e->nqp;     )    {
+        for (unsigned int  eqn = 0;         eqn < neqn;         )        {
+            {
+                ad_grad_axpy_0(&(s[qp * neqn + eqn]));
+                DERIV_val(s[qp * neqn + eqn]) = 0.0;
+            }
+            for (unsigned int  j = 0;             j < neqn;             )            {
+                if (j != eqn)                 {
+                    {
+                        ad_loc_0 = DERIV_val(s[qp * neqn + eqn]) + DERIV_val(u[qp * neqn + j]);
+                        ad_grad_axpy_2(&(s[qp * neqn + eqn]), 1.000000000000000e+00, &(s[qp * neqn + eqn]), 1.000000000000000e+00, &(u[qp * neqn + j]));
+                        DERIV_val(s[qp * neqn + eqn]) = ad_loc_0;
+                    }
+                }
+                ad_var_5 = j++;
+            }
+            ad_var_4 = eqn++;
+        }
+        ad_var_3 = qp++;
+    }
+    for (unsigned int  node = 0;     node < e->nnode;     )    {
+        for (unsigned int  eqn = 0;         eqn < neqn;         )        {
+unsigned int  row = node * neqn + eqn;
+            {
+                ad_grad_axpy_0(&(f[row]));
+                DERIV_val(f[row]) = 0.0;
+            }
+            for (unsigned int  qp = 0;             qp < e->nqp;             )            {
+     DERIV_val(ad_var_9) = exp(( DERIV_val(u[qp * neqn + eqn])));  /*exp*/
+      ad_adji_0 = DERIV_val(ad_var_9);
+                {
+                    ad_grad_axpy_1(&(ad_var_9), ad_adji_0, &(u[qp * neqn + eqn]));
+                }
+                {
+                    ad_loc_0 = e->w[qp] * e->jac[qp];
+                    ad_loc_1 = e->jac[qp] * e->jac[qp];
+                    ad_loc_2 = 1.0 / ad_loc_1;
+                    ad_loc_3 =  -ad_loc_2;
+                    ad_loc_4 = ad_loc_3 * DERIV_val(du[qp * neqn + eqn]);
+                    ad_loc_5 = ad_loc_4 * e->dphi[qp][node];
+                    ad_loc_6 = DERIV_val(u[qp * neqn + eqn]) * DERIV_val(s[qp * neqn + eqn]);
+                    ad_loc_7 = DERIV_val(ad_var_9) + ad_loc_6;
+                    ad_loc_8 = e->phi[qp][node] * ad_loc_7;
+                    ad_loc_9 = ad_loc_5 + ad_loc_8;
+                    ad_loc_10 = ad_loc_0 * ad_loc_9;
+                    ad_loc_11 = DERIV_val(f[row]) + ad_loc_10;
+                    ad_adj_0 = e->phi[qp][node] * ad_loc_0;
+                    ad_adj_1 = DERIV_val(u[qp * neqn + eqn]) * ad_adj_0;
+                    ad_adj_2 = DERIV_val(s[qp * neqn + eqn]) * ad_adj_0;
+                    ad_adj_3 = e->dphi[qp][node] * ad_loc_0;
+                    ad_adj_4 = ad_loc_3 * ad_adj_3;
+                    ad_grad_axpy_5(&(f[row]), 1.000000000000000e+00, &(f[row]), ad_adj_4, &(du[qp * neqn + eqn]), ad_adj_0, &(ad_var_9), ad_adj_2, &(u[qp * neqn + eqn]), ad_adj_1, &(s[qp * neqn + eqn]));
+                    DERIV_val(f[row]) = ad_loc_11;
+                }
+                ad_var_8 = qp++;
+            }
+            ad_var_7 = eqn++;
+        }
+        ad_var_6 = node++;
+    }
+    //free(s);
+}
+void   AD_Init(int  arg0) {
+    ad_AD_GradInit(arg0);
+
+}
+void   AD_Final() {
+    ad_AD_GradFinal();
+
+}
+#endif
 
 void analytic_element_fill(const ElemData& e, 
 			   unsigned int neqn,
@@ -359,6 +543,29 @@ void adolc_tapeless_process_fill(const ElemData& e,
   }
 }
 #endif
+#endif
+
+#ifdef HAVE_ADIC
+void adic_process_fill(const ElemData& e,
+		       unsigned int neqn,
+		       const std::vector<DERIV_TYPE>& f_fad, 
+		       std::vector<double>& f,
+		       std::vector< std::vector<double> >& jac) {
+  for (unsigned int eqn_row=0; eqn_row<neqn; eqn_row++) {
+    f[e.gid[0]*neqn+eqn_row] += f_fad[0*neqn+eqn_row].value;
+    f[e.gid[1]*neqn+eqn_row] += f_fad[1*neqn+eqn_row].value;
+    for (unsigned int node_col=0; node_col<e.nnode; node_col++) {
+      for (unsigned int eqn_col=0; eqn_col<neqn; eqn_col++) {
+	unsigned int col = node_col*neqn+eqn_col;
+	unsigned int next_col = (node_col+1)*neqn+eqn_col;
+	jac[e.gid[0]*neqn+eqn_row][next_col] += 
+	  f_fad[0*neqn+eqn_row].grad[col];
+	jac[e.gid[1]*neqn+eqn_row][col] += 
+	  f_fad[1*neqn+eqn_row].grad[col];
+      }
+    }
+  }
+}
 #endif
 
 void analytic_process_fill(const ElemData& e,
@@ -651,6 +858,63 @@ double adolc_tapeless_jac_fill(unsigned int num_nodes, unsigned int num_eqns,
 #endif
 #endif
 
+#ifdef HAVE_ADIC
+double adic_jac_fill(unsigned int num_nodes, unsigned int num_eqns,
+			 double mesh_spacing) {
+  AD_Init(0);
+  ElemData e(mesh_spacing);
+
+  // Solution vector, residual, jacobian
+  std::vector<double> x(num_nodes*num_eqns), f(num_nodes*num_eqns);
+  std::vector< std::vector<double> > jac(num_nodes*num_eqns);
+  for (unsigned int node_row=0; node_row<num_nodes; node_row++) {
+    for (unsigned int eqn_row=0; eqn_row<num_eqns; eqn_row++) { 
+      unsigned int row = node_row*num_eqns + eqn_row;
+      x[row] = (mesh_spacing*node_row - 0.5)*(mesh_spacing*node_row - 0.5);
+      f[row] = 0.0;
+      jac[row] = std::vector<double>((e.nnode+1)*num_eqns);
+      for (unsigned int node_col=0; node_col<e.nnode+1; node_col++) {
+	for (unsigned int eqn_col=0; eqn_col<num_eqns; eqn_col++) { 
+	  unsigned int col = node_col*num_eqns + eqn_col;
+	  jac[row][col] = 0.0;
+	}
+      }
+    }
+  }
+
+  Teuchos::Time timer("FE ADIC Jacobian Fill", false);
+  timer.start(true);
+  std::vector<DERIV_TYPE> x_fad(e.nnode*num_eqns), f_fad(e.nnode*num_eqns);
+  std::vector<DERIV_TYPE> u(e.nqp*num_eqns), du(e.nqp*num_eqns);
+  for (unsigned int i=0; i<num_nodes-1; i++) {
+    e.gid[0] = i;
+    e.gid[1] = i+1;
+    
+    adic_init_fill(e, num_eqns, x, x_fad);
+    adic_element_fill(&e, num_eqns, &x_fad[0], &u[0], &du[0], &f_fad[0]);
+    adic_process_fill(e, num_eqns, f_fad, f, jac);
+  }
+  timer.stop();
+  AD_Final();
+
+  // std::cout.precision(8);
+  // std::cout << "ADIC Residual = " << std::endl;
+  // for (unsigned int i=0; i<num_nodes*num_eqns; i++)
+  //   std::cout << "\t" << f[i] << std::endl;
+
+  // std::cout.precision(8);
+  // std::cout << "ADIC Jacobian = " << std::endl;
+  // for (unsigned int i=0; i<num_nodes*num_eqns; i++) {
+  //   std::cout << "\t";
+  //   for (unsigned int j=0; j<(e.nnode+1)*num_eqns; j++)
+  //     std::cout << jac[i][j] << "\t";
+  //   std::cout << std::endl;
+  // }
+
+  return timer.totalElapsedTime();
+}
+#endif
+
 double analytic_jac_fill(unsigned int num_nodes, unsigned int num_eqns,
 			 double mesh_spacing) {
   ElemData e(mesh_spacing);
@@ -806,6 +1070,11 @@ int main(int argc, char* argv[]) {
     t = adolc_tapeless_jac_fill(num_nodes, num_eqns, mesh_spacing);
     std::cout << "ADOL-C(tl):" << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
 #endif
+#endif
+
+#ifdef HAVE_ADIC
+    t = adic_jac_fill(num_nodes, num_eqns, mesh_spacing);
+    std::cout << "ADIC:      " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
 #endif
 
     if (num_eqns*2 == 4) {
