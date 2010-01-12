@@ -251,7 +251,7 @@ private:
  *
  * \relates RCPNode
  */
-void throw_null_ptr_error( const std::string &type_name );
+TEUCHOS_LIB_DLL_EXPORT void throw_null_ptr_error( const std::string &type_name );
 
 
 /** \brief Debug-mode RCPNode tracing class.

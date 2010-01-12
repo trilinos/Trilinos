@@ -318,9 +318,9 @@ int main(int argc, char *argv[])
       SType1y[j] = GetRandom(-SCALARMAX, SCALARMAX);
       SType2y[j] = ConvertType(SType1y[j], convertTo);
     }
-    MType1 c1 = Teuchos::ScalarTraits<SType1>::magnitude(cos(GetRandom(-SCALARMAX,SCALARMAX)));
+    MType1 c1 = Teuchos::ScalarTraits<SType1>::magnitude(cos(static_cast<double>(GetRandom(-SCALARMAX,SCALARMAX))));
     MType2 c2 = ConvertType(c1, convertTo);
-    SType1 s1 = sin(GetRandom(-SCALARMAX,SCALARMAX));
+    SType1 s1 = sin(static_cast<double>(GetRandom(-SCALARMAX,SCALARMAX)));
     SType2 s2 = ConvertType(s1, convertTo);
     if(debug)
     {

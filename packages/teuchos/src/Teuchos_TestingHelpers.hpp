@@ -35,6 +35,7 @@
 */
 
 
+#include "Teuchos_ConfigDefs.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Teuchos_FancyOStream.hpp"
@@ -61,9 +62,7 @@ inline const std::string passfail(const bool result);
  *
  * \ingroup teuchos_testing_grp
  */
-const std::string passfail_with_location(const bool result,
-  const std::string &file, const int lineNumber);
-
+TEUCHOS_LIB_DLL_EXPORT const std::string passfail_with_location(const bool result, const std::string &file, const int lineNumber);
 
 /** \brief Set if TEUCHOS_PASS_FAIL(...) should print test failure location.
  *

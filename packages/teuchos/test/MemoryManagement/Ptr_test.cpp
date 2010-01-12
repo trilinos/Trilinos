@@ -254,7 +254,7 @@ int main( int argc, char* argv[] ) {
         TEST_FOR_EXCEPTION( true, std::logic_error,
           "If you get here then the test failed!" );
       }
-      catch ( const Teuchos::m_bad_cast &execpt ) {
+      catch ( const Teuchos::m_bad_cast &except ) {
         // Test passed!
       }
     }
