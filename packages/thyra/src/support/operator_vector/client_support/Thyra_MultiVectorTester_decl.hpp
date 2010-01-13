@@ -31,6 +31,7 @@
 
 #include "Thyra_OperatorVectorTypes.hpp"
 #include "Thyra_LinearOpTester.hpp"
+#include "Teuchos_Describable.hpp"
 
 
 namespace Thyra {
@@ -43,7 +44,7 @@ namespace Thyra {
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 template<class Scalar>
-class MultiVectorTester {
+class MultiVectorTester : public Teuchos::Describable {
 public:
 
   /** \brief Local typedef for scalar magnitude */
@@ -142,12 +143,16 @@ public:
    * </ul>
    */
   MultiVectorTester(
-    const ScalarMag     warning_tol            = 1e-13
-    ,const ScalarMag    error_tol              = 1e-10
-    ,const int          num_random_vectors     = 1
-    ,const bool         show_all_tests         = false
-    ,const bool         dump_all               = false
+    const ScalarMag warning_tol = 1e-13,
+    const ScalarMag error_tol = 1e-10,
+    const int num_random_vectors = 1,
+    const bool show_all_tests = false,
+    const bool dump_all = false
     );
+
+  /** \brief Check a multi-vector as created by a VectorSpaceBase object. */
+  bool checkMultiVector(const VectorSpaceBase<Scalar> &vs,
+    const Ptr<Teuchos::FancyOStream> &out) const;
 
   /** \brief Check a multi-vector object in a set of comprehensive teats.
    *
@@ -181,20 +186,35 @@ public:
    * clicking on the following link to the source code:
    */
   bool check(
-    const MultiVectorBase<Scalar>  &mv
-    ,Teuchos::FancyOStream         *out
+    const MultiVectorBase<Scalar> &mv,
+    const Ptr<Teuchos::FancyOStream> &out
     ) const;
+
+  /** \name Depreicated. */
+  //@{
+
+  /** \brief Deprecated. */
+  THYRA_DEPRECATED bool check(
+    const MultiVectorBase<Scalar>  &mv,
+    Teuchos::FancyOStream *out
+    ) const
+    {
+      return check(mv, Teuchos::ptr(out));
+    }
+
+  //@}
+
 
 private:
 
   LinearOpTester<Scalar> linearOpTester_;
 
-  ScalarMag    warning_tol_;
-  ScalarMag    error_tol_;
-  int          num_random_vectors_;
-  bool         show_all_tests_;
-  bool         dump_all_;
-
+  ScalarMag warning_tol_;
+  ScalarMag error_tol_;
+  int num_random_vectors_;
+  bool show_all_tests_;
+  bool dump_all_;
+  
 }; // class MultiVectorTester
 
 

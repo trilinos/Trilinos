@@ -76,6 +76,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   DefaultSpmdVectorSpaceUnitTests
   SOURCES
     DefaultSpmdVectorSpace_UnitTests.cpp
+    DefaultSpmdMultiVector_UnitTests.cpp
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   STANDARD_PASS_OUTPUT
   )
