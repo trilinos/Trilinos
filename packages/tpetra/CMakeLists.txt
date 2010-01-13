@@ -6,8 +6,16 @@ INCLUDE(AddOptionAndDefine)
 # A) Define the package
 #
 
-# ENABLE_SHADOWING_WARNINGS  not possible, because of TBB
-PACKAGE( Tpetra CLEANED )
+ASSERT_DEFINED(Kokkos_ENABLE_TBB)
+IF (Kokkos_ENABLE_TBB)
+  # ENABLE_SHADOWING_WARNINGS not possible, because of TBB
+  PACKAGE( Tpetra CLEANED )
+ELSE()
+  # ToDo: Enable this once Kokkos headers and Tpetra have shadowing
+  # warnings cleaned.
+  #PACKAGE( Tpetra ENABLE_SHADOWING_WARNINGS CLEANED )
+  PACKAGE( Tpetra CLEANED )
+ENDIF()
 
 #
 # B) Set up package-specific options

@@ -187,21 +187,21 @@ namespace Kokkos {
           rowvals = vals_beg[row];
           rowinds = inds_beg[row];
           xj[row] = yj[row];
-          Scalar dval = rowvals[0];
+          Scalar dval_inner = rowvals[0];
           for (size_t j=1; j < nE; ++j) {
             xj[row] -= rowvals[j] * xj[rowinds[j]];
           }
-          xj[row] /= dval;
+          xj[row] /= dval_inner;
         }
         nE = numEntries[0];
         rowvals = vals_beg[0];
         rowinds = inds_beg[0];
         xj[0] = yj[0];
-        Scalar dval = rowvals[0];
+        Scalar dval_inner = rowvals[0];
         for (size_t j=1; j < nE; ++j) {
           xj[0] -= rowvals[j] * xj[rowinds[j]];
         }
-        xj[0] /= dval;
+        xj[0] /= dval_inner;
       }
       else if (!upper && unitDiag) {
         // lower + unit
