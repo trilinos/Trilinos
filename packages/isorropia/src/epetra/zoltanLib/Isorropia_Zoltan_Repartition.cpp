@@ -201,6 +201,7 @@ load_balance(MPI_Comm &comm,
   }
 
   // Set the query functions
+  // M.M.W. do we need to support hierarchical partitioning here?
 
   zz->Set_Num_Obj_Fn(QueryObject::Number_Objects, (void *)&queryObject);
   zz->Set_Obj_List_Fn(QueryObject::Object_List, (void *)&queryObject);
@@ -216,6 +217,8 @@ load_balance(MPI_Comm &comm,
     zz->Set_Num_Edges_Multi_Fn(QueryObject::Number_Edges_Multi, (void *)&queryObject);
     zz->Set_Edge_List_Multi_Fn(QueryObject::Edge_List_Multi, (void *)&queryObject);
   }
+
+
 
   //Generate Load Balance
   int changes, num_gid_entries, num_lid_entries, num_import, num_export;

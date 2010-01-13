@@ -66,8 +66,10 @@ QueryObject::QueryObject( Teuchos::RCP<const Epetra_CrsGraph> graph,
   myProc_ = graph->Comm().MyPID();
   base_ = rowMap_->IndexBase();
   int rc = 0;
- 
-  if (input_type_ == graph_input_){
+
+  // If graph
+  if (input_type_ == graph_input_)
+  {
 
     // graph queries need to know processes owning my column entries
     fill_procmap();
@@ -112,8 +114,9 @@ QueryObject::QueryObject( Teuchos::RCP<const Epetra_RowMatrix> matrix,
   myProc_ = matrix->Comm().MyPID();
   base_ = rowMap_->IndexBase();
 
-  if (input_type_ == graph_input_){
-
+  // If graph or hierarchical with graph and hypergraph 
+  if (input_type_ == graph_input_ || input_type_ == hgraph_graph_input_)
+  {
     // graph queries need to know processes owning my column entries
     fill_procmap();
 
@@ -136,11 +139,13 @@ QueryObject::QueryObject( Teuchos::RCP<const Epetra_RowMatrix> matrix,
       }
     }
   }
-  else{
+  else  // otherwise must be hypergraph
+  {
     input_type_ = hgraph_input_;
   }
 }
 
+// For geometric partitioning
 QueryObject::QueryObject( Teuchos::RCP<const Epetra_MultiVector> coords,
                           Teuchos::RCP<const Epetra_MultiVector> weights)
   : haveGraph_(false),
@@ -155,6 +160,105 @@ QueryObject::QueryObject( Teuchos::RCP<const Epetra_MultiVector> coords,
   base_ = rowMap_->IndexBase();
   input_type_ = geometric_input_;
 }
+
+////////////////////////////////////////////////////////////////////////////////
+// For hierarchical with graph or hgraph and geometric
+////////////////////////////////////////////////////////////////////////////////
+QueryObject::QueryObject(Teuchos::RCP<const Epetra_CrsGraph> graph,
+	                 Teuchos::RCP<const Isorropia::Epetra::CostDescriber> costs, 
+                         Teuchos::RCP<const Epetra_MultiVector> coords,
+                         Teuchos::RCP<const Epetra_MultiVector> weights, int inputType)
+: haveGraph_(true) ,
+  graph_(graph),
+  matrix_(0),
+  coords_(coords),
+  rowMap_(&(graph->RowMap())),
+  colMap_(&(graph->ColMap())),
+  costs_(costs),
+  weights_(weights),
+  input_type_(inputType) 
+{
+  myProc_ = graph->Comm().MyPID();
+  base_ = rowMap_->IndexBase();
+  int rc = 0;
+
+  // if graph
+  if (input_type_ == graph_geometric_input_ ||
+      input_type_ == hgraph_graph_geometric_input_)
+  {
+
+    // graph queries need to know processes owning my column entries
+    fill_procmap();
+
+    if (graph->NumMyDiagonals() > 0){
+      // In graph partitioning, we need to omit graph diagonal entries
+      // (self edges) from the query functions.
+
+      int nRows = rowMap_->NumMyElements();
+      int *rowGIDs = rowMap_->MyGlobalElements();
+
+      for (int i=0; i < nRows; i++){
+
+	int numEntries;
+	int *idx;
+
+	rc = graph->ExtractMyRowView(i, numEntries, idx);
+
+	for (int j=0; j<numEntries; j++){
+	  if (rowGIDs[i] == colMap_->GID(idx[j])){
+	    graph_self_edges_.insert(rowGIDs[i]);
+	  }
+	}
+      }
+    }
+  }
+}
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+// For hierarchical with graph or hgraph and geometric
+////////////////////////////////////////////////////////////////////////////////
+QueryObject::QueryObject(Teuchos::RCP<const Epetra_RowMatrix> matrix,
+	                 Teuchos::RCP<const Isorropia::Epetra::CostDescriber> costs,
+                         Teuchos::RCP<const Epetra_MultiVector> coords,
+                         Teuchos::RCP<const Epetra_MultiVector> weights,
+                         int inputType) 
+  : haveGraph_(false),graph_(0), matrix_(matrix),coords_(coords),
+    rowMap_((const Epetra_BlockMap*)&(matrix->RowMatrixRowMap())),
+    colMap_((const Epetra_BlockMap*)&(matrix->RowMatrixColMap())),
+    costs_(costs), weights_(weights), input_type_(inputType) 
+{
+  myProc_ = matrix->Comm().MyPID();
+  base_ = rowMap_->IndexBase();
+
+  // If graph or hierarchical with graph and hypergraph 
+  if (input_type_ == graph_geometric_input_ || input_type_ == hgraph_graph_geometric_input_)
+  {
+    // graph queries need to know processes owning my column entries
+    fill_procmap();
+
+    if (matrix->NumMyDiagonals() > 0){
+      // In graph partitioning, we need to omit graph diagonal entries
+      // (self edges) from the query functions.
+
+      int *rowGIDs;
+      int nRows;
+
+      Epetra_Vector diagonal(matrix->RowMatrixRowMap());
+      nRows = rowMap_->NumMyElements();
+      rowGIDs = rowMap_->MyGlobalElements();
+      matrix->ExtractDiagonalCopy(diagonal);
+
+      for (int i=0; i < nRows; i++){
+	if (diagonal[i] != 0){
+	  graph_self_edges_.insert(rowGIDs[i]);
+	}
+      }
+    }
+  }
+}
+////////////////////////////////////////////////////////////////////////////////
+
 
 QueryObject::~QueryObject()
 {
@@ -389,11 +493,14 @@ void QueryObject::My_Object_List(int num_gid_entries, int num_lid_entries,
   *ierr = ZOLTAN_OK;
   int ngids = 0;
 
-  if (input_type_ == geometric_input_){
+  //M.M.W. hierarchical
+  if (input_type_ == geometric_input_)
+  {
     ngids = rowMap_->NumMyElements();
     rowMap_->MyGlobalElements( ((int *) global_ids) );
   }
-  else if ((input_type_ == hgraph_input_) || (input_type_ == graph_input_)){
+  else if ((input_type_ == hgraph_input_) || (input_type_ == graph_input_)) // not sure why this can't be merged into above if?
+  {
     ngids = rowMap_->NumMyElements();
     rowMap_->MyGlobalElements( ((int *) global_ids) );
   }
@@ -432,7 +539,7 @@ void QueryObject::My_Object_List(int num_gid_entries, int num_lid_entries,
 	delete [] tmprowVals;
       }
     }
-    else // graph
+    else // graph    
     {
       int ngids = 0;
       for (int rowNum=0; rowNum<numRows; rowNum++)
@@ -860,6 +967,8 @@ void QueryObject::My_Geom_Multi(int num_gid_entries, int num_lid_entries,
     *ierr = ZOLTAN_FATAL;
   }
 }
+
+//M.M.W. need to add some query functions
 
 } // end namespace ZoltanLib
 } // end namespace Epetra

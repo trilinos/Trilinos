@@ -61,13 +61,21 @@ class Library {
 public:
 
   Library(Teuchos::RCP<const Epetra_CrsGraph> input_graph, int itype = unspecified_input_);
+  Library(Teuchos::RCP<const Epetra_CrsGraph> input_graph, Teuchos::RCP<const Epetra_MultiVector> input_coords,
+          int itype = unspecified_input_);
   Library(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 	  Teuchos::RCP<CostDescriber> costs, int itype = unspecified_input_);
-
+  Library(Teuchos::RCP<const Epetra_CrsGraph> input_graph, Teuchos::RCP<CostDescriber> costs, 
+	  Teuchos::RCP<const Epetra_MultiVector> input_coords, Teuchos::RCP<const Epetra_MultiVector> weights,
+          int itype = unspecified_input_);
   Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, int itype = unspecified_input_);
+  Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, Teuchos::RCP<const Epetra_MultiVector> input_coords,
+          int itype = unspecified_input_);
   Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
  	  Teuchos::RCP<CostDescriber> costs, int itype = unspecified_input_);
-
+  Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, Teuchos::RCP<CostDescriber> costs, 
+	  Teuchos::RCP<const Epetra_MultiVector> input_coords, Teuchos::RCP<const Epetra_MultiVector> weights,
+          int itype = unspecified_input_);
   Library(Teuchos::RCP<const Epetra_MultiVector> input_coords, int itype = unspecified_input_);
   Library(Teuchos::RCP<const Epetra_MultiVector> input_coords,
           Teuchos::RCP<const Epetra_MultiVector> weights, int itype = unspecified_input_);
@@ -116,10 +124,39 @@ public:
     */
   static const int geometric_input_ = 4;
 
+  /** input_type_ == hgraph_graph_input_
+      This indicates that the Epetra_MultiVector represents a hypergraph
+      and graph (see above).  This is necessary for hierarchical partitioning
+      with both hypergraph and graph methods.
+    */
+  static const int hgraph_graph_input_ = 5;
+
+  /** input_type_ == hgraph_geom_input_
+      This indicates that the Epetra_MultiVector represents a hypergraph
+      and graph (see above).  This is necessary for hierarchical partitioning
+      with both hypergraph and geometric methods.
+    */
+  static const int hgraph_geometric_input_ = 6;
+
+  /** input_type_ == graph_geom_input_
+      This indicates that the Epetra_MultiVector represents a hypergraph
+      and graph (see above).  This is necessary for hierarchical partitioning
+      with both graph and geometric methods.
+    */
+  static const int graph_geometric_input_ = 7;
+
+  /** input_type_ == hgraph_graph_geom_input_
+      This indicates that the Epetra_MultiVector represents a hypergraph
+      and graph (see above).  This is necessary for hierarchical partitioning
+      using hypergraph, graph, and geometric methods.
+    */
+  static const int hgraph_graph_geometric_input_ = 8;
+
   /** input_type_ == unspecified_input_ 
       This value is the "unset" state for the input_type_ instance variable.
     */
-  static const int unspecified_input_ = 5;
+
+  static const int unspecified_input_ = 9;
 
   int input_type_;
 

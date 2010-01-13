@@ -90,10 +90,72 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
 }
 
 Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+			 Teuchos::RCP<const Epetra_MultiVector> coords,
+			 bool compute_partitioning_now):
+  Operator (input_graph, coords, 0),
+  partGIDs(NULL), partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+
+Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+			 Teuchos::RCP<const Epetra_MultiVector> coords,
+			 bool compute_partitioning_now):
+  Operator (input_matrix, coords, 0) ,
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+
+Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
   Operator (input_graph, paramlist, 0),
   partGIDs(NULL), partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+
+Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+			 const Teuchos::ParameterList& paramlist,
+			 bool compute_partitioning_now):
+  Operator (input_matrix, paramlist, 0) ,
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+
+Partitioner::Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
+			 const Teuchos::ParameterList& paramlist,
+			 bool compute_partitioning_now):
+  Operator (coords, paramlist, 0) ,
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+
+Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+                         Teuchos::RCP<const Epetra_MultiVector> coords,
+			 const Teuchos::ParameterList& paramlist,
+			 bool compute_partitioning_now):
+  Operator (input_graph, coords, paramlist, 0),
+  partGIDs(NULL), partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+
+Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+                         Teuchos::RCP<const Epetra_MultiVector> coords,
+			 const Teuchos::ParameterList& paramlist,
+			 bool compute_partitioning_now):
+  Operator (input_matrix, coords, paramlist, 0) ,
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
 {
   if (compute_partitioning_now)
     partition(true);
@@ -111,16 +173,6 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 }
 
 Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
-			 const Teuchos::ParameterList& paramlist,
-			 bool compute_partitioning_now):
-  Operator (input_matrix, paramlist, 0) ,
-  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
-{
-  if (compute_partitioning_now)
-    partition(true);
-}
-
-Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 			 Teuchos::RCP<CostDescriber> costs,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
@@ -132,20 +184,36 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 }
 
 Partitioner::Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
+                         Teuchos::RCP<const Epetra_MultiVector> weights,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
-  Operator (coords, paramlist, 0) ,
+  Operator (coords, weights, paramlist, 0) ,
   partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
 {
   if (compute_partitioning_now)
     partition(true);
 }
 
-Partitioner::Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
+Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+			 Teuchos::RCP<CostDescriber> costs,
+                         Teuchos::RCP<const Epetra_MultiVector> coords,
                          Teuchos::RCP<const Epetra_MultiVector> weights,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
-  Operator (coords, weights, paramlist, 0) ,
+  Operator (input_graph, costs, coords, weights, paramlist, 0) ,
+  partGIDs(NULL), partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+
+Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+			 Teuchos::RCP<CostDescriber> costs,
+                         Teuchos::RCP<const Epetra_MultiVector> coords,
+                         Teuchos::RCP<const Epetra_MultiVector> weights,
+			 const Teuchos::ParameterList& paramlist,
+			 bool compute_partitioning_now):
+  Operator (input_matrix, costs, coords, weights, paramlist, 0) ,
   partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
 {
   if (compute_partitioning_now)
@@ -204,7 +272,29 @@ partition(bool force_repartitioning)
     throw Isorropia::Exception("Partitioner::partition - Only Zoltan Partitionner is now supported.");
   }
 
-  if (input_graph_.get() != 0)
+  if (input_graph_.get() != 0 && input_coords_.get() != 0)
+  {
+    if (weights_.get())
+    {
+      lib_ = Teuchos::rcp(new ZoltanLibClass(input_graph_,costs_,input_coords_, weights_));
+    }
+    else
+    {
+      lib_ = Teuchos::rcp(new ZoltanLibClass(input_graph_,input_coords_));
+    }
+  }
+  else if (input_matrix_.get() != 0 && input_coords_.get() != 0)
+  {
+    if (weights_.get())
+    {
+      lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix_,costs_,input_coords_, weights_));
+    }
+    else
+    {
+      lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix_,input_coords_));
+    }
+  }
+  else if (input_graph_.get() != 0)
     lib_ = Teuchos::rcp(new ZoltanLibClass(input_graph_, costs_));
   else if (input_matrix_.get() != 0)
     lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix_, costs_));
@@ -228,26 +318,55 @@ partition(bool force_repartitioning)
   Teuchos::ParameterList sublist = paramlist_.sublist(zoltan);
   // TODO: Add "block" and "random" partitioning.
 
-  if (partitioning_method == "UNSPECIFIED" && sublist.isParameter("LB_METHOD")) {
+  if (partitioning_method == "UNSPECIFIED" && sublist.isParameter("LB_METHOD")) 
+  {
     throw Isorropia::Exception("Isorropia \"PARTITIONING METHOD\" as to be set\n"
 			       "ZOLTAN/LB_METHOD is no longer supported.\n"
                                "See readme and release notes for details.");
   }
 
-  if (input_coords_.get() != 0){
+  if (input_coords_.get() != 0)
+  {
     if (partitioning_method == "UNSPECIFIED")
+    {
       sublist.set("LB_METHOD", "RCB");
+      input_type = Library::geometric_input_;
+    }
+    else if (partitioning_method == "HIER_GRAPH_GEOM") // Can perhaps simply this partitioning method name by using another parameter
+    {
+      sublist.set("LB_METHOD", "HIER");
+      input_type = Library::graph_geometric_input_;
+    }
+    else if (partitioning_method == "HIER_HGRAPH_GEOM") // Can perhaps simply this partitioning method name by using another parameter
+    {
+      sublist.set("LB_METHOD", "HIER");
+      input_type = Library::hgraph_geometric_input_;
+    }
+    else if (partitioning_method == "HIER_HGRAPH_GRAPH_GEOM") // Can perhaps simply this partitioning method name by using another parameter
+    {
+      sublist.set("LB_METHOD", "HIER");
+      input_type = Library::hgraph_graph_geometric_input_;
+    }
     else
+    {
       sublist.set("LB_METHOD", partitioning_method);
-    input_type = Library::geometric_input_;
+      input_type = Library::geometric_input_;
+    }
   }
-  else{
-    if (partitioning_method == "GRAPH"){
+  else
+  {
+    if (partitioning_method == "GRAPH")
+    {
       input_type = Library::graph_input_;
       sublist.set("LB_METHOD", "GRAPH");
     }
-    else // if (lb_meth == "HYPERGRAPH")  // Hypergraph by default
-      {
+    else if (partitioning_method == "HIER_HGRAPH_GRAPH") // Can perhaps simply this partitioning method name by using another parameter
+    {
+      sublist.set("LB_METHOD", "HIER");
+      input_type = Library::hgraph_graph_input_;
+    }
+    else //Hypergraph by default
+    {
       input_type = Library::hgraph_input_;
       sublist.set("LB_METHOD", "HYPERGRAPH");
     }

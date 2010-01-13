@@ -68,7 +68,23 @@ Library(Teuchos::RCP<const Epetra_CrsGraph> input_graph, int itype)
     partSizes(NULL),
     input_graph_(input_graph),
     input_matrix_(0),
-    input_coords_(0),
+    input_coords_(),
+    costs_(0),
+    weights_(0)
+{
+  input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
+}
+
+Library::
+Library(Teuchos::RCP<const Epetra_CrsGraph> input_graph, 
+	Teuchos::RCP<const Epetra_MultiVector> input_coords, int itype)
+  : input_type_(itype),
+    numPartSizes(0),
+    partGIDs(NULL),
+    partSizes(NULL),
+    input_graph_(input_graph),
+    input_matrix_(0),
+    input_coords_(input_coords),
     costs_(0),
     weights_(0)
 {
@@ -92,6 +108,23 @@ Library(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 }
 
 Library::
+Library(Teuchos::RCP<const Epetra_CrsGraph> input_graph, Teuchos::RCP<CostDescriber> costs, 
+	Teuchos::RCP<const Epetra_MultiVector> input_coords, Teuchos::RCP<const Epetra_MultiVector> weights,
+        int itype)
+  : input_type_(itype),
+    numPartSizes(0),
+    partGIDs(NULL),
+    partSizes(NULL),
+    input_graph_(input_graph),
+    input_matrix_(0),
+    input_coords_(input_coords),
+    costs_(costs),
+    weights_(weights)
+{
+  input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
+}
+
+Library::
 Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, int itype)
   : input_type_(itype),
     numPartSizes(0),
@@ -100,6 +133,22 @@ Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, int itype)
     input_graph_(0),
     input_matrix_(input_matrix),
     input_coords_(0),
+    costs_(0),
+    weights_(0)
+{
+  input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()),false);
+}
+
+Library::
+Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, 
+	Teuchos::RCP<const Epetra_MultiVector> input_coords,int itype)
+  : input_type_(itype),
+    numPartSizes(0),
+    partGIDs(NULL),
+    partSizes(NULL),
+    input_graph_(0),
+    input_matrix_(input_matrix),
+    input_coords_(input_coords),
     costs_(0),
     weights_(0)
 {
@@ -118,6 +167,24 @@ Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
     input_coords_(0),
     costs_(costs),
     weights_(0)
+{
+  input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()),false);
+}
+
+////////////////////////////////////////////////////////////////////////////////
+Library::
+Library(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, Teuchos::RCP<CostDescriber> costs, 
+        Teuchos::RCP<const Epetra_MultiVector> input_coords, Teuchos::RCP<const Epetra_MultiVector> weights,
+        int itype)
+  : input_type_(itype),
+    numPartSizes(0),
+    partGIDs(NULL),
+    partSizes(NULL),
+    input_graph_(0),
+    input_matrix_(input_matrix),
+    input_coords_(input_coords),
+    costs_(costs),
+    weights_(weights)
 {
   input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()),false);
 }
@@ -175,7 +242,12 @@ int Library::precompute()
     throw Isorropia::Exception(str1+str2);
   }
 
-  if (input_type_ == graph_input_) {
+  ///////////////////////////////////
+  // If graph info is needed
+  ///////////////////////////////////
+  if (input_type_ == graph_input_ || input_type_ == hgraph_graph_input_ ||
+      input_type_ == graph_geometric_input_ || input_type_ == hgraph_graph_geometric_input_) 
+  {
     bool square = false;
     bool symmetric = true;  // no easy way to test for this ?? TODO
     if (input_graph_.get() != 0){
@@ -203,15 +275,27 @@ int Library::precompute()
       return (-1);
     }
   }
-  else if ((input_type_ == hgraph_input_) || (input_type_ == hgraph2d_finegrain_input_)){
 
-    if ((input_graph_.get() == 0) && (input_matrix_.get() == 0)){
+  ///////////////////////////////////
+  // If hypergraph info is needed
+  ///////////////////////////////////
+  if (input_type_ == hgraph_input_       || input_type_ == hgraph2d_finegrain_input_ ||
+      input_type_ == hgraph_graph_input_ || input_type_ == hgraph_geometric_input_ ||
+      input_type_ == hgraph_graph_geometric_input_)
+  {
+    if ((input_graph_.get() == 0) && (input_matrix_.get() == 0))
+    {
       str2 = "Library requires graph or matrix input";
       throw Isorropia::Exception(str1+str2);
     }
   }
-  else if (input_type_ == geometric_input_){
 
+  ///////////////////////////////////
+  // If geometric info is needed
+  ///////////////////////////////////
+  if (input_type_ == geometric_input_ || input_type_ == hgraph_geometric_input_ ||
+      input_type_ == graph_geometric_input_ || input_type_ == hgraph_graph_geometric_input_)
+  {
     if ((input_coords_.get() == 0) ||
         (input_coords_->NumVectors() < 1) || (input_coords_->NumVectors() > 3)){
       str2 = "Operation requires 1, 2 or 3 dimensional coordinate input";

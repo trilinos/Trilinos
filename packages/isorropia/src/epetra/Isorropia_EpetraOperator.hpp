@@ -68,6 +68,13 @@ public:
 
   Operator(Teuchos::RCP<const Epetra_MultiVector> input_coords, int base);
 
+  Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph, 
+	   Teuchos::RCP<const Epetra_MultiVector> input_coords, int base);
+
+  Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, 
+	   Teuchos::RCP<const Epetra_MultiVector> input_coords, int base);
+
+
   /** Constructor that accepts an Epetra_CrsGraph object
 
      \param input_graph Matrix-graph object for which a new operation
@@ -84,7 +91,32 @@ public:
   Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
               const Teuchos::ParameterList& paramlist, int base);
 
-  /** Constructor that accepts an Epetra_CrsGraph object and a CostDescriber
+
+  /** Constructor that accepts an Epetra_CrsGraph object
+      and an Epetra_MultiVector object of coordinates
+
+     \param input_graph Matrix-graph object for which a new operation
+        is to be computed. 
+
+     \param coords The input geometric coordinates (represented in a
+                    multivector)
+
+     \param paramlist Teuchos::ParameterList which will be copied to an
+        internal ParameterList attribute. 
+
+  If the ParameterList object contains a sublist named "Zoltan", then
+  the Zoltan library is used to perform the operation. Also, any
+  parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
+  */
+
+  Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+	   Teuchos::RCP<const Epetra_MultiVector> input_coords,
+           const Teuchos::ParameterList& paramlist, int base);
+
+
+  /** Constructor that accepts an Epetra_CrsGraph object, a CostDescriber,
+      an Epetra_MultiVector object of coordinates, and an 
+      Epetra_MultiVector object of coordinate weights.
 
      \param input_graph Matrix-graph object for which a new operation
         is to be computed. 
@@ -100,8 +132,39 @@ public:
   parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
   */
   Operator (Teuchos::RCP<const Epetra_CrsGraph> input_graph,
-              Teuchos::RCP<CostDescriber> costs,
+            Teuchos::RCP<CostDescriber> costs,
               const Teuchos::ParameterList& paramlist, int base);
+
+
+  /** Constructor that accepts an Epetra_CrsGraph object, a CostDescriber,
+      an Epetra_MultiVector object of coordinates, and an 
+      Epetra_MultiVector object of coordinate weights.
+
+     \param input_graph Matrix-graph object for which a new operation
+        is to be computed. 
+
+     \param costs CostDescriber object which allows for user-specified
+       weights 
+
+     \param coords The input geometric coordinates (represented in a
+                    multivector)
+
+     \param weights A one or more dimensional weight for each of the
+                    The input geometric coordinates
+
+     \param paramlist Teuchos::ParameterList which will be copied to an
+        internal ParameterList attribute. 
+
+  If the ParameterList object contains a sublist named "Zoltan", then
+  the Zoltan library is used to perform the operation. Also, any
+  parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
+  */
+  Operator (Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+            Teuchos::RCP<CostDescriber> costs,
+	    Teuchos::RCP<const Epetra_MultiVector> coords,
+	    Teuchos::RCP<const Epetra_MultiVector> weights,
+              const Teuchos::ParameterList& paramlist, int base);
+
 
   /**
      Constructor that accepts an Epetra_RowMatrix object.
@@ -118,6 +181,29 @@ public:
   */
   Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 	   const Teuchos::ParameterList& paramlist, int base);
+
+
+  /**
+     Constructor that accepts an Epetra_RowMatrix object and an 
+     Epetra_MultiVector object of coordinates.
+
+     \param input_matrix Matrix object for which a new operation is
+        to be computed. 
+
+     \param coords The input geometric coordinates (represented in a
+                    multivector)
+
+     \param paramlist Teuchos::ParameterList which will be copied to an
+        internal ParameterList attribute. 
+
+  If the ParameterList object contains a sublist named "Zoltan", then
+  the Zoltan library is used to perform the operation. Also, any
+  parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
+  */
+  Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+	   Teuchos::RCP<const Epetra_MultiVector> coords,
+	   const Teuchos::ParameterList& paramlist, int base);
+
 
   /**
      Constructor that accepts an Epetra_RowMatrix object and a
@@ -139,6 +225,38 @@ public:
   Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 	   Teuchos::RCP<CostDescriber> costs,
 	   const Teuchos::ParameterList& paramlist, int base);
+
+
+  /**
+     Constructor that accepts an Epetra_RowMatrix object, a
+     CostDescriber, an Epetra_MultiVector object of coordinates, 
+     and an Epetra_MultiVector object of coordinate weights.
+
+     \param input_matrix Matrix object for which a new operation is
+        to be computed. 
+
+     \param costs CostDescriber object which allows for user-specified
+       weights 
+
+     \param coords The input geometric coordinates (represented in a                
+                    multivector)
+
+     \param weights A one or more dimensional weight for each of the                
+                    The input geometric coordinates
+
+     \param paramlist Teuchos::ParameterList which will be copied to an
+        internal ParameterList attribute. 
+
+  If the ParameterList object contains a sublist named "Zoltan", then
+  the Zoltan library is used to perform the operation. Also, any
+  parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
+  */
+  Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+	   Teuchos::RCP<CostDescriber> costs,
+	   Teuchos::RCP<const Epetra_MultiVector> coords,
+	   Teuchos::RCP<const Epetra_MultiVector> weights,
+	   const Teuchos::ParameterList& paramlist, int base);
+
 
   /**
      Constructor that accepts an Epetra_MultiVector object and a

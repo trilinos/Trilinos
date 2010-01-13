@@ -76,10 +76,31 @@ ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 }
 
 ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+                               Teuchos::RCP<const Epetra_MultiVector> input_coords, int inputType):
+  Library(input_graph, input_coords, inputType)
+{
+}
+
+ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 			  Teuchos::RCP<CostDescriber> costs,
                           int inputType):
   Library(input_graph, costs, inputType)
 {
+}
+
+ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+			       Teuchos::RCP<CostDescriber> costs,
+			       Teuchos::RCP<const Epetra_MultiVector> input_coords,
+                               Teuchos::RCP<const Epetra_MultiVector> weights, int inputType):
+  Library(input_graph, costs, input_coords, weights, inputType)
+{
+  int weightDim = weights->NumVectors();
+
+  if (weightDim > 1){
+    if (input_coords->Comm().MyPID() == 0){
+      std::cout << "WARNING: Zoltan will only use the first weight of the "<< weightDim << " supplied for each object" << std::endl;
+    }
+  }
 }
 
 ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
@@ -89,10 +110,31 @@ ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_RowMatrix> input_matrix
 }
 
 ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
-			  Teuchos::RCP<CostDescriber> costs,
-                          int inputType):
+			       Teuchos::RCP<const Epetra_MultiVector> input_coords,
+                               int inputType):
+  Library(input_matrix, input_coords, inputType)
+{
+}
+
+ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+			  Teuchos::RCP<CostDescriber> costs, int inputType):
   Library(input_matrix, costs, inputType)
 {
+}
+
+ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+			       Teuchos::RCP<CostDescriber> costs,
+			       Teuchos::RCP<const Epetra_MultiVector> input_coords,
+                               Teuchos::RCP<const Epetra_MultiVector> weights, int inputType):
+  Library(input_matrix, costs, input_coords, weights, inputType)
+{
+  int weightDim = weights->NumVectors();
+
+  if (weightDim > 1){
+    if (input_coords->Comm().MyPID() == 0){
+      std::cout << "WARNING: Zoltan will only use the first weight of the "<< weightDim << " supplied for each object" << std::endl;
+    }
+  }
 }
 
 ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_MultiVector> input_coords,
@@ -123,7 +165,8 @@ int ZoltanLibClass::precompute()
 
   Library::precompute(); // assumes input_type_ is set
 
-  if (input_graph_.get() || input_matrix_.get()){
+  if (input_graph_.get() || input_matrix_.get())
+  {
     if (input_type_ != hgraph2d_finegrain_input_){
       computeCost();     // graph or hypergraph weights
     }
@@ -137,10 +180,38 @@ int ZoltanLibClass::precompute()
     itype = ZoltanLib::QueryObject::hgraph2d_finegrain_input_;
   else if (input_type_ == geometric_input_)
     itype = ZoltanLib::QueryObject::geometric_input_;
+  else if (input_type_ == hgraph_graph_input_)                 // hierarchical partitioning
+    itype = ZoltanLib::QueryObject::hgraph_graph_input_;
+  else if (input_type_ == hgraph_geometric_input_)             // hierarchical partitioning
+    itype = ZoltanLib::QueryObject::hgraph_geometric_input_;
+  else if (input_type_ == graph_geometric_input_)              // hierarchical partitioning
+    itype = ZoltanLib::QueryObject::graph_geometric_input_;
+  else if (input_type_ == hgraph_graph_geometric_input_)       // hierarchical partitioning
+    itype = ZoltanLib::QueryObject::hgraph_graph_geometric_input_;
   else
     itype = ZoltanLib::QueryObject::unspecified_input_;
 
-  if (input_graph_.get() != 0) {
+
+  if (input_graph_.get() !=0 && input_coords_.get()!=0) //geometric and graph inputs
+  {
+    queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_graph_, costs_, input_coords_, weights_, itype));
+#ifdef HAVE_MPI
+    const  Epetra_Comm &ecomm = input_graph_->RowMap().Comm();
+    const Epetra_MpiComm &empicomm = dynamic_cast<const Epetra_MpiComm &>(ecomm);
+    mpicomm = empicomm.Comm();
+#endif
+  }
+  else if (input_matrix_.get() !=0 && input_coords_.get()!=0) //geometric and matrix inputs
+  {
+    queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_matrix_, costs_, input_coords_, weights_, itype));
+#ifdef HAVE_MPI
+    const Epetra_Comm &ecomm = input_matrix_->RowMatrixRowMap().Comm();
+    const Epetra_MpiComm &empicomm = dynamic_cast<const Epetra_MpiComm &>(ecomm);
+    mpicomm = empicomm.Comm();
+#endif
+  }
+  else if (input_graph_.get() != 0) 
+  {
     queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_graph_, costs_, itype));
 #ifdef HAVE_MPI
     const  Epetra_Comm &ecomm = input_graph_->RowMap().Comm();
@@ -148,7 +219,8 @@ int ZoltanLibClass::precompute()
     mpicomm = empicomm.Comm();
 #endif
   }
-  else if (input_matrix_.get() != 0){
+  else if (input_matrix_.get() != 0)
+  {
     queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_matrix_, costs_, itype));
 #ifdef HAVE_MPI
     const Epetra_Comm &ecomm = input_matrix_->RowMatrixRowMap().Comm();
@@ -156,7 +228,8 @@ int ZoltanLibClass::precompute()
     mpicomm = empicomm.Comm();
 #endif
   }
-  else{
+  else
+  {
     queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_coords_, weights_));
 #ifdef HAVE_MPI
     const Epetra_Comm &ecomm = input_coords_->Map().Comm();
@@ -182,50 +255,68 @@ int ZoltanLibClass::precompute()
     return (-1);
   }
 
+  //////////////////////////
   // set problem parameters
+  //////////////////////////
 
   std::string dbg_level_str("DEBUG_LEVEL");
-  if (!zoltanParamList_.isParameter(dbg_level_str)) {
+  if (!zoltanParamList_.isParameter(dbg_level_str)) 
+  {
     zoltanParamList_.set(dbg_level_str, "0");
   }
 
-  if (!zoltanParamList_.isParameter(lb_method_str)) {
-    if (input_type_ == graph_input_){
+  if (!zoltanParamList_.isParameter(lb_method_str)) 
+  {
+    if (input_type_ == graph_input_)
+    {
       zoltanParamList_.set(lb_method_str, "GRAPH");
     }
-    else if (input_type_ == geometric_input_){
-      if (!zoltanParamList_.isParameter(lb_method_str))
+    else if (input_type_ == geometric_input_)
+    {
+      if (!zoltanParamList_.isParameter(lb_method_str))  //MMW: Don't think this if is needed 
 	zoltanParamList_.set(lb_method_str, "RCB");
     }
-    else{
+    else if (input_type_ == hgraph_graph_input_    || input_type_ == hgraph_geometric_input_ ||
+             input_type_ == graph_geometric_input_ || input_type_ == hgraph_graph_geometric_input_ )
+    {
+      zoltanParamList_.set(lb_method_str, "HIER");
+    }
+    else
+    {
       zoltanParamList_.set(lb_method_str, "HYPERGRAPH");
     }
   }
 
-  if ((input_type_ == hgraph_input_) || (input_type_ == hgraph2d_finegrain_input_)){
+  if ((input_type_ == hgraph_input_) || (input_type_ == hgraph2d_finegrain_input_))
+  {
     std::string lb_approach_str("LB_APPROACH");
     if (!zoltanParamList_.isParameter(lb_approach_str)) {
       zoltanParamList_.set(lb_approach_str, "PARTITION");
     }
   }
 
-  // For fine-grain hypergraph, we don't want obj or (hyper)edge weights
-  if (input_type_ == hgraph2d_finegrain_input_){
+    // For fine-grain hypergraph, we don't want obj or (hyper)edge weights
+  if (input_type_ == hgraph2d_finegrain_input_)
+  {
     zoltanParamList_.set("OBJ_WEIGHT_DIM", "0");
     zoltanParamList_.set("EDGE_WEIGHT_DIM", "0");
   }
-  else if (input_type_ == geometric_input_){
+  else if (input_type_ == geometric_input_)
+  {
     // We always overwrite user choice.
-//     if (!zoltanParamList_.isParameter("OBJ_WEIGHT_DIM")) {
-      if (weights_.get()){
+    // if (!zoltanParamList_.isParameter("OBJ_WEIGHT_DIM")) {
+      if (weights_.get())
+      {
         zoltanParamList_.set("OBJ_WEIGHT_DIM", "1");
       }
-      else{
+      else
+      {
         zoltanParamList_.set("OBJ_WEIGHT_DIM", "0");
       }
-//     }
+    //}
   }
-  else {
+  else  //graph or hypergraph 
+  {
     if (queryObject_->haveVertexWeights()) 
     {
       if (!zoltanParamList_.isParameter("OBJ_WEIGHT_DIM")) 
@@ -235,8 +326,10 @@ int ZoltanLibClass::precompute()
     }
 
     if (queryObject_->haveGraphEdgeWeights() ||
-        queryObject_->haveHypergraphEdgeWeights()) {
-      if (!zoltanParamList_.isParameter("EDGE_WEIGHT_DIM")) {
+        queryObject_->haveHypergraphEdgeWeights()) 
+    {
+      if (!zoltanParamList_.isParameter("EDGE_WEIGHT_DIM")) 
+      {
         zoltanParamList_.set("EDGE_WEIGHT_DIM", "1");
       }
     }
@@ -245,7 +338,8 @@ int ZoltanLibClass::precompute()
   // For fine-grain hypergraph, we will use (row, col) of nz for
   // vertex GIDs.  Don't need LIDs.
 
-  if (input_type_ == hgraph2d_finegrain_input_){
+  if (input_type_ == hgraph2d_finegrain_input_)
+  {
     zoltanParamList_.set("NUM_GID_ENTRIES", "2");
     zoltanParamList_.set("NUM_LID_ENTRIES", "0");
   }
@@ -268,22 +362,30 @@ int ZoltanLibClass::precompute()
   int ierr;
   num_obj_ = ZoltanLib::QueryObject::Number_Objects((void *)queryObject_.get(), &ierr);
 
-  if (input_type_ == hgraph2d_finegrain_input_){
+
+  if (input_type_ == hgraph2d_finegrain_input_)
+  {
     zz_->Set_HG_Size_CS_Fn(ZoltanLib::QueryObject::HG_Size_CS, (void *)queryObject_.get());
     zz_->Set_HG_CS_Fn(ZoltanLib::QueryObject::HG_CS, (void *)queryObject_.get());
   }
-  else if (input_type_ == hgraph_input_){
+  if (input_type_ == hgraph_input_           || input_type_ == hgraph_graph_input_ ||
+      input_type_ == hgraph_geometric_input_ || input_type_ == hgraph_graph_geometric_input_)
+  {
     zz_->Set_HG_Size_CS_Fn(ZoltanLib::QueryObject::HG_Size_CS, (void *)queryObject_.get());
     zz_->Set_HG_CS_Fn(ZoltanLib::QueryObject::HG_CS, (void *)queryObject_.get());
     zz_->Set_HG_Size_Edge_Wts_Fn(ZoltanLib::QueryObject::HG_Size_Edge_Weights,
 				 (void *)queryObject_.get());
     zz_->Set_HG_Edge_Wts_Fn(ZoltanLib::QueryObject::HG_Edge_Weights, (void *)queryObject_.get());
   }
-  else if (input_type_ == graph_input_){
+  if (input_type_ == graph_input_ || input_type_ == hgraph_graph_input_ ||
+      input_type_ == graph_geometric_input_ || input_type_ == hgraph_graph_geometric_input_)
+  {
     zz_->Set_Num_Edges_Multi_Fn(ZoltanLib::QueryObject::Number_Edges_Multi, (void *)queryObject_.get());
     zz_->Set_Edge_List_Multi_Fn(ZoltanLib::QueryObject::Edge_List_Multi, (void *)queryObject_.get());
   }
-  else{
+  if (input_type_ == geometric_input_ || input_type_ == hgraph_geometric_input_ ||
+      input_type_ == graph_geometric_input_ || input_type_ == hgraph_graph_geometric_input_)
+  {
     zz_->Set_Num_Geom_Fn(ZoltanLib::QueryObject::Number_Geom, (void *)queryObject_.get());
     zz_->Set_Geom_Multi_Fn(ZoltanLib::QueryObject::Geom_Multi, (void *)queryObject_.get());
   }
@@ -320,14 +422,16 @@ void ZoltanLibClass::computeCost()
   int myRows = input_map_->NumMyElements();
   int globalNumRows = input_map_->NumGlobalElements();
 
-  if (input_graph_.get() == 0) {
+  if (input_graph_.get() == 0) 
+  {
     myNZ = input_matrix_->NumMyNonzeros();
     mySelfEdges = input_matrix_->NumMyDiagonals();
     globalNZ = input_matrix_->NumGlobalNonzeros();
     globalSelfEdges = input_matrix_->NumGlobalDiagonals();
     globalNumCols = input_matrix_->NumGlobalCols();
   }
-  else{
+  else
+  {
     myNZ = input_graph_->NumMyNonzeros();
     mySelfEdges = input_graph_->NumMyDiagonals();
     globalNZ = input_graph_->NumGlobalNonzeros();
@@ -335,7 +439,8 @@ void ZoltanLibClass::computeCost()
     globalNumCols = input_graph_->NumGlobalCols();
   }
 
-  if (costs_.get() != 0) {
+  if (costs_.get() != 0) 
+  {
 
     numMyVWeights = costs_->getNumVertices();
 
