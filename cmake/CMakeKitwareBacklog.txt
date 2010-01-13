@@ -43,12 +43,15 @@ properties:
 This epic has been broken down into the following items:
 
 A) Automatically updates all of the scripts and CMake/CDash code needed to
-perform the tests (including upgrading CMake/CTest if necessary). Some nightly
-tests should use the current CMake release version, some should use a dev
-version that has gone through a verification process, and one should use the
-latest nightly snapshot of CMake and conduct a verification process on that
-version. If the version is verified to work, it should become the new verified
-dev version for the next day.
+perform the tests (including upgrading CMake/CTest if necessary). A mirror
+CDash server should be set up to make updates safer. Submissions should be
+sent to both servers, but kept on the mirror for only 1 week. All emails for
+mirror server should go to a single list to avoid duplication, but insure that
+sending mail works. Some nightly tests should use the current CMake release
+version, some should use a dev version that has gone through a verification
+process, and one should use the latest nightly snapshot of CMake and conduct a
+verification process on that version. If the version is verified to work, it
+should become the new verified dev version for the next day.
 
 B) Put a time limit (or max date stamp) on the full set of tests so that they
 will get killed after that point. For example, you might say that if the full
