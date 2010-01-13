@@ -46,6 +46,8 @@
 // implementation of an RTOp. However, this is better than a dependency on
 // Thyra_[Multi]VectorStdOps.hpp!  I don't know of a better alternative at
 // this point.
+// 2010/01/13: rabartl: I could just write a simple RTOp implementation to
+// assgin to null to remove this dependency.
 #endif // THYRA_INITIALIZE_VECS_MULTIVECS_WITH_NANS
 
 
