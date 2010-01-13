@@ -293,9 +293,6 @@ Common Use Cases (examples):
 
     ../checkin-test.py --enable-packages=Blah --without-serial-release --push
 
-  NOTE: If you did not commit the first time, then you can commit the second
-  time along with the push by adding the --commit argument.
-
   NOTE: This is a common use case when some tests are failing and the initial
   push failed but you determine it is okay to push anyway and do so with
   --force-commit-and-push.

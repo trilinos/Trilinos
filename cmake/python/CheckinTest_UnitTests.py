@@ -651,7 +651,7 @@ class test_checkin_test(unittest.TestCase):
       +g_expectedCommonOptionsSummary \
       +"=> A COMMIT IS OKAY TO BE PERFORMED!\n" \
       +"A current successful pull does \*not\* exist => Not ready for final push!\n" \
-      +"Explanation: In order to safely push, the local working directory needs to be up-to-date\n" \
+      +"Explanation: In order to safely push, the local working directory needs\n" \
       +"A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       +"^NOT READY TO PUSH: Trilinos:\n" \
       +"Not executing final command (ssh -q godel /some/dir/some_command.sh &) since a push is not okay to be performed!\n" \

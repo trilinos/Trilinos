@@ -1685,9 +1685,9 @@ def checkinTest(inOptions):
         else:
           commitEmailBodyExtra += \
              "\nA current successful pull does *not* exist => Not ready for final push!\n" \
-             "\nExplanation: In order to safely push, the local working directory needs" \
-             " to be up-to-date with the global repo or a full integration has not been" \
-             " performed!\n"
+             "\nExplanation: In order to safely push, the local working directory needs\n" \
+             "to be up-to-date with the global repo or a full integration has not been\n" \
+             "performed!\n"
           print commitEmailBodyExtra
           okayToPush = False
           abortedCommitPush = True
@@ -1747,9 +1747,9 @@ def checkinTest(inOptions):
 
       else:
 
-        print "\nExplanation: In order to push, the local repo needs to be up-to-date" \
-          " with the global repo or the push will not be allowed.  Therefore, a pull" \
-          " before the push must be performed if there are updates in the global reop" \
+        print "\nExplanation: In order to push, the local repo needs to be up-to-date\n" \
+          " with the global repo or the push will not be allowed.  Therefore, a pull\n" \
+          " before the push must be performed if there are updates in the global reop\n" \
           " regardless if --pull was specified or not.\n"
 
         (update2Rtn, update2Time) = \
