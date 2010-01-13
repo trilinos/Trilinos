@@ -144,16 +144,22 @@ public:
 
   //@}
 
-  /** @name Overridden from EuclideanLinearOpBase */
+  /** @name Overridden public functions from EuclideanLinearOpBase */
   //@{
   /** \brief . */
   RCP< const ScalarProdVectorSpaceBase<Scalar> >
   domainScalarProdVecSpc() const;
   //@}
 
+  /** @name Overridden public functions from SpmdMultiVectorBase */
+  //@{
+  /** \brief . */
+  RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const;
+  //@}
+
 protected:
 
-  /** @name Overridden from MultiVectorBase */
+  /** @name Overridden protected functions from MultiVectorBase */
   //@{
   /** \brief . */
   RCP<VectorBase<Scalar> > nonconstColImpl(Ordinal j);
@@ -170,9 +176,6 @@ protected:
 
   /** @name Overridden protected functions from SpmdMultiVectorBase */
   //@{
-
-  /** \brief . */
-  RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace() const;
   /** \brief . */
   void getNonconstLocalDataImpl(
     const Ptr<ArrayRCP<Scalar> > &localValues, const Ptr<Index> &leadingDim

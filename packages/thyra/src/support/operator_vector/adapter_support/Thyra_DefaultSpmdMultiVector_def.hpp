@@ -186,7 +186,7 @@ void DefaultSpmdMultiVector<Scalar>::uninitialize(
 }
 
 
-// Overridden from EuclideanLinearOpBase
+// Overridden public functions from EuclideanLinearOpBase
 
 
 template<class Scalar>
@@ -200,7 +200,21 @@ DefaultSpmdMultiVector<Scalar>::domainScalarProdVecSpc() const
 }
 
 
-// Overridden from MultiVectorBase
+// Overridden public functions from SpmdMultiVectorBase
+
+
+template<class Scalar>
+RCP<const SpmdVectorSpaceBase<Scalar> >
+DefaultSpmdMultiVector<Scalar>::spmdSpace() const
+{
+#ifdef THYRA_DEFAULT_SPMD_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT
+  std::cerr << "\nSpmdMultiVectorStd<Scalar>::spmdSpace() const called!\n";
+#endif
+  return spmdRangeSpace_;
+}
+
+
+// Overridden protected functions from MultiVectorBase
 
 
 template<class Scalar>
@@ -315,18 +329,7 @@ DefaultSpmdMultiVector<Scalar>::nonconstNonContigSubViewImpl(
 }
 
 
-// Overridden from SpmdMultiVectorBase
-
-
-template<class Scalar>
-RCP<const SpmdVectorSpaceBase<Scalar> >
-DefaultSpmdMultiVector<Scalar>::spmdSpace() const
-{
-#ifdef THYRA_DEFAULT_SPMD_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT
-  std::cerr << "\nSpmdMultiVectorStd<Scalar>::spmdSpace() const called!\n";
-#endif
-  return spmdRangeSpace_;
-}
+// Overridden protected members from SpmdMultiVectorBase
 
 
 template<class Scalar>

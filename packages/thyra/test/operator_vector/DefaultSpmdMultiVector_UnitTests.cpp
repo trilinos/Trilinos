@@ -20,10 +20,12 @@ using Teuchos::as;
 using Teuchos::null;
 using Teuchos::RCP;
 using Teuchos::rcp;
+using Teuchos::rcp_dynamic_cast;
 using Teuchos::inOutArg;
 using Thyra::VectorSpaceBase;
 using Thyra::MultiVectorBase;
 using Thyra::createMembers;
+using Thyra::DefaultSpmdMultiVector;
 using Thyra::DefaultSpmdVectorSpace;
 using Thyra::defaultSpmdVectorSpace;
 typedef Thyra::Ordinal Ordinal;
@@ -66,6 +68,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdMultiVector, defaultConstruct,
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdMultiVector,
   defaultConstruct )
+
+
+// Make sure the currect public member access protections are in place
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdMultiVector, memberAccess,
+  Scalar )
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  RCP<const VectorSpaceBase<Scalar> > vs = createSpmdVectorSpace<Scalar>(g_localDim);
+  RCP<MultiVectorBase<Scalar> > mv = createMembers(vs, g_numCols);
+  Thyra::assign<Scalar>(mv.ptr(), ST::zero());
+  RCP<DefaultSpmdMultiVector<Scalar> > spmdMv = 
+    rcp_dynamic_cast<DefaultSpmdMultiVector<Scalar> >(mv);
+  TEST_ASSERT(nonnull(spmdMv->spmdSpace()));
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdMultiVector,
+  memberAccess )
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdMultiVector, defaultTester,
