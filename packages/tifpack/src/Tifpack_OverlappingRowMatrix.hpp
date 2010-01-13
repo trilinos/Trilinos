@@ -53,10 +53,10 @@ public:
 
   //@{ Constructors/Destructors
 # ifdef TIFPACK_NODE_AWARE_CODE
-  Tifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Tpetra_RowMatrix>& Matrix_in,
+  Tifpack_OverlappingRowMatrix(const Teuchos::RCP<const Tpetra_RowMatrix>& Matrix_in,
                               int OverlapLevel_in, int myNodeID);
 # endif
-  Tifpack_OverlappingRowMatrix(const Teuchos::RefCountPtr<const Tpetra_RowMatrix>& Matrix_in,
+  Tifpack_OverlappingRowMatrix(const Teuchos::RCP<const Tpetra_RowMatrix>& Matrix_in,
                               int OverlapLevel_in);
 
   ~Tifpack_OverlappingRowMatrix() {};
@@ -124,20 +124,20 @@ public:
 
     \return Integer error code, set to 0 if successful.
     */
-  virtual int Multiply(bool TransA, const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const;
+  virtual int Multiply(bool TransA, const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
   //! Returns result of a local-only solve using a triangular Tpetra_RowMatrix with Tpetra_MultiVectors X and Y (NOT IMPLEMENTED).
-  virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Tpetra_MultiVector& X, 
-		    Tpetra_MultiVector& Y) const
+  virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+		    Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
   {
     TIFPACK_RETURN(-1); // not implemented 
   }
 
-  virtual int Apply(const Tpetra_MultiVector& X,
-		    Tpetra_MultiVector& Y) const;
+  virtual int Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+		    Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  virtual int ApplyInverse(const Tpetra_MultiVector& X,
-			   Tpetra_MultiVector& Y) const;
+  virtual int ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+			   Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
   //! Computes the sum of absolute values of the rows of the Tpetra_RowMatrix, results returned in x (NOT IMPLEMENTED).
   virtual int InvRowSums(Tpetra_Vector& x) const
   {
@@ -331,12 +331,12 @@ int OverlapLevel() const
   return(OverlapLevel_);
 }
 
-int ImportMultiVector(const Tpetra_MultiVector& X,
-                      Tpetra_MultiVector& OvX,
+int ImportMultiVector(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+                      Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& OvX,
                       Tpetra_CombineMode CM = Insert);
 
-int ExportMultiVector(const Tpetra_MultiVector& OvX,
-                      Tpetra_MultiVector& X,
+int ExportMultiVector(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& OvX,
+                      Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
                       Tpetra_CombineMode CM = Add);
 #ifdef TIFPACK_NODE_AWARE_CODE
   inline const Tpetra_RowMatrix& A() const 
@@ -374,17 +374,17 @@ private:
 
   bool UseTranspose_;
 
-  Teuchos::RefCountPtr<const Tpetra_Map> Map_;
+  Teuchos::RCP<const Tpetra_Map> Map_;
 # ifdef TIFPACK_NODE_AWARE_CODE
-  Teuchos::RefCountPtr<const Tpetra_Map> colMap_;
+  Teuchos::RCP<const Tpetra_Map> colMap_;
 
 # endif
-  Teuchos::RefCountPtr<const Tpetra_Import> Importer_;
+  Teuchos::RCP<const Tpetra_Import> Importer_;
 
-  Teuchos::RefCountPtr<const Tpetra_RowMatrix> Matrix_;
-  Teuchos::RefCountPtr<Tpetra_CrsMatrix> ExtMatrix_;
-  Teuchos::RefCountPtr<Tpetra_Map> ExtMap_;
-  Teuchos::RefCountPtr<Tpetra_Import> ExtImporter_;
+  Teuchos::RCP<const Tpetra_RowMatrix> Matrix_;
+  Teuchos::RCP<Tpetra_CrsMatrix> ExtMatrix_;
+  Teuchos::RCP<Tpetra_Map> ExtMap_;
+  Teuchos::RCP<Tpetra_Import> ExtImporter_;
 
   int OverlapLevel_;
   string Label_;

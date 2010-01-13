@@ -69,8 +69,8 @@ class Tifpack_ReorderFilter : public virtual Tpetra_RowMatrix {
 
 public:
   // Constructor.
-  Tifpack_ReorderFilter(const Teuchos::RefCountPtr<Tpetra_RowMatrix>& Matrix_in,
-		       const Teuchos::RefCountPtr<Tifpack_Reordering>& Reordering_in);
+  Tifpack_ReorderFilter(const Teuchos::RCP<Tpetra_RowMatrix>& Matrix_in,
+		       const Teuchos::RCP<Tifpack_Reordering>& Reordering_in);
 
   //! Copy constructor.
   Tifpack_ReorderFilter(const Tifpack_ReorderFilter& RHS);
@@ -100,21 +100,21 @@ public:
   virtual int ExtractDiagonalCopy(Tpetra_Vector & Diagonal) const;
 
   //! Multiplies multi-vector X with the reordered matrix, returns result in Y.
-  virtual int Multiply(bool TransA, const Tpetra_MultiVector& X, 
-		       Tpetra_MultiVector& Y) const;
+  virtual int Multiply(bool TransA, const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+		       Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
   //! Solve, not implemented.
   virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, 
-		    const Tpetra_MultiVector& X,
-		    Tpetra_MultiVector& Y) const;
+		    const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+		    Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
   //! Applies the reordered matrix to multi-vector X, returns the result in Y.
-  virtual int Apply(const Tpetra_MultiVector& X,
-		    Tpetra_MultiVector& Y) const;
+  virtual int Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+		    Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
   //! Applies the inverse of \c this operator (not implemented).
-  virtual int ApplyInverse(const Tpetra_MultiVector& X,
-			   Tpetra_MultiVector& Y) const
+  virtual int ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+			   Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
   {
     return(-1);
   }
@@ -287,21 +287,21 @@ public:
   }
 
   //! Returns a reference-counted pointer to the internally stored pointer to Tpetra_RowMatrix.
-  inline Teuchos::RefCountPtr<Tpetra_RowMatrix> Matrix() const {
+  inline Teuchos::RCP<Tpetra_RowMatrix> Matrix() const {
     return(A_);
   }
 
   //! Returns a reference-counted pointer to the internally stored pointer to Tifpack_Reordering..
-  inline Teuchos::RefCountPtr<Tifpack_Reordering> Reordering() const {
+  inline Teuchos::RCP<Tifpack_Reordering> Reordering() const {
     return(Reordering_);
   }
 
 private:
 
   //! Pointer to the matrix to be preconditioned.
-  Teuchos::RefCountPtr<Tpetra_RowMatrix> A_;
+  Teuchos::RCP<Tpetra_RowMatrix> A_;
   //! Pointer to the reordering to be used (already constructed).
-  Teuchos::RefCountPtr<Tifpack_Reordering> Reordering_;
+  Teuchos::RCP<Tifpack_Reordering> Reordering_;
 
   //! Number of local rows of A_.
   int NumMyRows_;

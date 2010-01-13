@@ -37,7 +37,7 @@
 #include "Tpetra_Vector.hpp"
 
 //==============================================================================
-Tifpack_SparsityFilter::Tifpack_SparsityFilter(const Teuchos::RefCountPtr<Tpetra_RowMatrix>& Matrix,
+Tifpack_SparsityFilter::Tifpack_SparsityFilter(const Teuchos::RCP<Tpetra_RowMatrix>& Matrix,
 					     int AllowedEntries, 
 					     int AllowedBandwidth) :
   A_(Matrix),
@@ -164,8 +164,8 @@ ExtractDiagonalCopy(Tpetra_Vector & Diagonal) const
 
 //==============================================================================
 int Tifpack_SparsityFilter::
-Multiply(bool TransA, const Tpetra_MultiVector& X, 
-	 Tpetra_MultiVector& Y) const
+Multiply(bool TransA, const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+	 Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
 
   int NumVectors = X.NumVectors();
@@ -206,21 +206,21 @@ Multiply(bool TransA, const Tpetra_MultiVector& X,
 //==============================================================================
 int Tifpack_SparsityFilter::
 Solve(bool Upper, bool Trans, bool UnitDiagonal, 
-      const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
+      const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   TIFPACK_CHK_ERR(-98);
 }
 
 //==============================================================================
 int Tifpack_SparsityFilter::
-Apply(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
+Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   TIFPACK_RETURN(Multiply(UseTranspose(),X,Y));
 }
 
 //==============================================================================
 int Tifpack_SparsityFilter::
-ApplyInverse(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
+ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   TIFPACK_CHK_ERR(-98); 
 }

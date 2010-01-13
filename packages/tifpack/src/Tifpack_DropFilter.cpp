@@ -37,7 +37,7 @@
 #include "Tpetra_Vector.hpp"
 
 //==============================================================================
-Tifpack_DropFilter::Tifpack_DropFilter(const Teuchos::RefCountPtr<Tpetra_RowMatrix>& Matrix,
+Tifpack_DropFilter::Tifpack_DropFilter(const Teuchos::RCP<Tpetra_RowMatrix>& Matrix,
 				     double DropTol) :
   A_(Matrix),
   DropTol_(DropTol),
@@ -126,8 +126,8 @@ ExtractDiagonalCopy(Tpetra_Vector & Diagonal) const
 
 //==============================================================================
 int Tifpack_DropFilter::
-Multiply(bool TransA, const Tpetra_MultiVector& X, 
-	 Tpetra_MultiVector& Y) const
+Multiply(bool TransA, const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+	 Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   // NOTE: I suppose that the matrix has been localized,
   // hence all maps are trivial.
@@ -169,21 +169,21 @@ Multiply(bool TransA, const Tpetra_MultiVector& X,
 //==============================================================================
 int Tifpack_DropFilter::
 Solve(bool Upper, bool Trans, bool UnitDiagonal, 
-      const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
+      const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   TIFPACK_CHK_ERR(-99);
 }
 
 //==============================================================================
 int Tifpack_DropFilter::
-Apply(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
+Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   TIFPACK_RETURN(Multiply(UseTranspose(),X,Y));
 }
 
 //==============================================================================
 int Tifpack_DropFilter::
-ApplyInverse(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
+ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   TIFPACK_CHK_ERR(-99);
 }

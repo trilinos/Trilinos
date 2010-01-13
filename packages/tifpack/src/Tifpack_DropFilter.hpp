@@ -47,7 +47,7 @@ absolute value is below a specified threshold.
 
 A typical use is as follows:
 \code
-Teuchos::RefCountPtr<Tpetra_RowMatrix> A;
+Teuchos::RCP<Tpetra_RowMatrix> A;
 // first localize the matrix
 Tifpack_LocalFilter LocalA(A);
 // drop all elements below this value
@@ -69,7 +69,7 @@ class Tifpack_DropFilter : public virtual Tpetra_RowMatrix {
 
 public:
   //! Constructor.
-  Tifpack_DropFilter(const Teuchos::RefCountPtr<Tpetra_RowMatrix>& Matrix,
+  Tifpack_DropFilter(const Teuchos::RCP<Tpetra_RowMatrix>& Matrix,
 		    double DropTol);
 
   //! Destructor.
@@ -92,18 +92,18 @@ public:
 
   virtual int ExtractDiagonalCopy(Tpetra_Vector & Diagonal) const;
 
-  virtual int Multiply(bool TransA, const Tpetra_MultiVector& X, 
-		       Tpetra_MultiVector& Y) const;
+  virtual int Multiply(bool TransA, const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+		       Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
   virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, 
-		    const Tpetra_MultiVector& X,
-		    Tpetra_MultiVector& Y) const;
+		    const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+		    Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  virtual int Apply(const Tpetra_MultiVector& X,
-		    Tpetra_MultiVector& Y) const;
+  virtual int Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+		    Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  virtual int ApplyInverse(const Tpetra_MultiVector& X,
-			   Tpetra_MultiVector& Y) const;
+  virtual int ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+			   Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
   virtual int InvRowSums(Tpetra_Vector& x) const;
 
@@ -241,7 +241,7 @@ public:
 private:
 
   //! Pointer to the matrix to be preconditioned.
-  Teuchos::RefCountPtr<Tpetra_RowMatrix> A_;
+  Teuchos::RCP<Tpetra_RowMatrix> A_;
   //! Drop tolerance.
   double DropTol_;
   //! Maximum entries in each row.

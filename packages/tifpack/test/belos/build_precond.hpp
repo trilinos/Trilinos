@@ -42,6 +42,13 @@ build_precond(Teuchos::ParameterList& test_params,
        << std::endl;
   }
 
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+  magnitudeType condest = prec->Condest(Tifpack::Cheap);
+  if (A->getRowMap()->getComm()->getRank() == 0) {
+    std::cout << "Condition estimate(cheap) for preconditioner on proc 0: "
+        << condest << std::endl;
+  }
+
   Teuchos::RCP<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec_op =
     Teuchos::rcp(new Tpetra::FlipOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>(prec));
   return prec_op;

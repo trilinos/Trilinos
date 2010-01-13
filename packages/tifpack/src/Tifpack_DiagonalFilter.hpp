@@ -49,7 +49,7 @@ Tifpack_DiagonalFilter modifies the elements on the diagonal.
 
 A typical use is as follows:
 \code
-Teuchos::RefCountPtr<Tpetra_RowMatrix> A;
+Teuchos::RCP<Tpetra_RowMatrix> A;
 // creates a matrix B such that
 // B(i,i) = AbsoluteThreshold * sgn(B(i,i)) + 
 //          RelativeThreshold * B(i,i)
@@ -68,7 +68,7 @@ class Tifpack_DiagonalFilter : public virtual Tpetra_RowMatrix {
 
 public:
   //! Constructor.
-  Tifpack_DiagonalFilter(const Teuchos::RefCountPtr<Tpetra_RowMatrix>& Matrix,
+  Tifpack_DiagonalFilter(const Teuchos::RCP<Tpetra_RowMatrix>& Matrix,
                         double AbsoluteThreshold,
                         double RelativeThreshold);
   
@@ -95,24 +95,24 @@ public:
     TIFPACK_RETURN(A_->ExtractDiagonalCopy(Diagonal));
   }
 
-  virtual int Multiply(bool TransA, const Tpetra_MultiVector& X, 
-		       Tpetra_MultiVector& Y) const;
+  virtual int Multiply(bool TransA, const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+		       Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
   virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, 
-		    const Tpetra_MultiVector& X,
-		    Tpetra_MultiVector& Y) const
+		    const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+		    Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
   {
     TIFPACK_CHK_ERR(-1);
   }
 
-  virtual int Apply(const Tpetra_MultiVector& X,
-		    Tpetra_MultiVector& Y) const
+  virtual int Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+		    Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
   {
     TIFPACK_RETURN(Multiply(UseTranspose(),X,Y));
   }
 
-  virtual int ApplyInverse(const Tpetra_MultiVector& X,
-			   Tpetra_MultiVector& Y) const
+  virtual int ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+			   Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
   {
     TIFPACK_CHK_ERR(-1);
   }
@@ -262,7 +262,7 @@ public:
 private:
 
   //! Pointer to the matrix to be filtered
-  Teuchos::RefCountPtr<Tpetra_RowMatrix> A_;
+  Teuchos::RCP<Tpetra_RowMatrix> A_;
   //! This value (times the sgn(A(i,i)) is added to the diagonal elements
   double AbsoluteThreshold_;
   //! Multiplies A(i,i) by this value.

@@ -38,8 +38,8 @@
 #include "Tpetra_Vector.hpp"
 
 //==============================================================================
-Tifpack_ReorderFilter::Tifpack_ReorderFilter(const Teuchos::RefCountPtr<Tpetra_RowMatrix>& Matrix_in,
-                                           const Teuchos::RefCountPtr<Tifpack_Reordering>& Reordering_in) :
+Tifpack_ReorderFilter::Tifpack_ReorderFilter(const Teuchos::RCP<Tpetra_RowMatrix>& Matrix_in,
+                                           const Teuchos::RCP<Tifpack_Reordering>& Reordering_in) :
   A_(Matrix_in),
   Reordering_(Reordering_in),
   NumMyRows_(Matrix_in->NumMyRows()),
@@ -105,8 +105,8 @@ ExtractDiagonalCopy(Tpetra_Vector & Diagonal) const
 
 //==============================================================================
 int Tifpack_ReorderFilter::
-Multiply(bool TransA, const Tpetra_MultiVector& X, 
-         Tpetra_MultiVector& Y) const
+Multiply(bool TransA, const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+         Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   // need two additional vectors
   Tpetra_MultiVector Xtilde(X.Map(),X.NumVectors());
@@ -125,14 +125,14 @@ Multiply(bool TransA, const Tpetra_MultiVector& X,
 //==============================================================================
 int Tifpack_ReorderFilter::
 Solve(bool Upper, bool Trans, bool UnitDiagonal, 
-      const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
+      const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   TIFPACK_CHK_ERR(-98);
 }
 
 //==============================================================================
 int Tifpack_ReorderFilter::
-Apply(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
+Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   TIFPACK_RETURN(Multiply(UseTranspose(),X,Y));
 }

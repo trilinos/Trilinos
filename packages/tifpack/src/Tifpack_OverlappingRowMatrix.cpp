@@ -1012,7 +1012,7 @@ ExtractDiagonalCopy(Tpetra_Vector & Diagonal) const
 
 // ======================================================================
 int Tifpack_OverlappingRowMatrix::
-Multiply(bool TransA, const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
+Multiply(bool TransA, const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   int NumVectors = X.NumVectors();
   vector<int> Ind(MaxNumEntries_);
@@ -1048,7 +1048,7 @@ Multiply(bool TransA, const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
 
 // ======================================================================
 int Tifpack_OverlappingRowMatrix::
-Apply(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
+Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   TIFPACK_CHK_ERR(Multiply(UseTranspose(),X,Y));
   return(0);
@@ -1056,7 +1056,7 @@ Apply(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
 
 // ======================================================================
 int Tifpack_OverlappingRowMatrix::
-ApplyInverse(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
+ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   TIFPACK_CHK_ERR(-1);
 }
@@ -1076,7 +1076,7 @@ const Tpetra_BlockMap& Tifpack_OverlappingRowMatrix::Map() const
 
 // ======================================================================
 int Tifpack_OverlappingRowMatrix::
-ImportMultiVector(const Tpetra_MultiVector& X, Tpetra_MultiVector& OvX,
+ImportMultiVector(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& OvX,
                   Tpetra_CombineMode CM)
 {
   OvX.Import(X,*Importer_,CM);
@@ -1085,7 +1085,7 @@ ImportMultiVector(const Tpetra_MultiVector& X, Tpetra_MultiVector& OvX,
 
 // ======================================================================
 int Tifpack_OverlappingRowMatrix::
-ExportMultiVector(const Tpetra_MultiVector& OvX, Tpetra_MultiVector& X,
+ExportMultiVector(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& OvX, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
                   Tpetra_CombineMode CM)
 {
   X.Export(OvX,*Importer_,CM);

@@ -68,10 +68,10 @@ string Tifpack_toString(const double& x);
 
 //! Prints on cout the true residual.
 int Tifpack_PrintResidual(char* Label,  const Tpetra_RowMatrix& A,
-                         const Tpetra_MultiVector& X, const Tpetra_MultiVector&Y);
+                         const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&Y);
 
 int Tifpack_PrintResidual(const int iter, const Tpetra_RowMatrix& A,
-                         const Tpetra_MultiVector& X, const Tpetra_MultiVector&Y);
+                         const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&Y);
 
 void Tifpack_PrintSparsity_Simple(const Tpetra_RowMatrix& A);
 

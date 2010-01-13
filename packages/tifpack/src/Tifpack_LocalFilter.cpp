@@ -37,7 +37,7 @@
 #include "Tifpack_LocalFilter.hpp"
 
 //==============================================================================
-Tifpack_LocalFilter::Tifpack_LocalFilter(const Teuchos::RefCountPtr<const Tpetra_RowMatrix>& Matrix) :
+Tifpack_LocalFilter::Tifpack_LocalFilter(const Teuchos::RCP<const Tpetra_RowMatrix>& Matrix) :
   Matrix_(Matrix),
   NumRows_(0),
   NumNonzeros_(0),
@@ -158,8 +158,8 @@ int Tifpack_LocalFilter::ExtractDiagonalCopy(Tpetra_Vector & Diagonal) const
 }
 
 //==============================================================================
-int Tifpack_LocalFilter::Apply(const Tpetra_MultiVector& X,
-	  Tpetra_MultiVector& Y) const 
+int Tifpack_LocalFilter::Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+	  Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const 
 {
 
   // skip expensive checks, I suppose input data are ok
@@ -191,8 +191,8 @@ int Tifpack_LocalFilter::Apply(const Tpetra_MultiVector& X,
 }
 
 //==============================================================================
-int Tifpack_LocalFilter::ApplyInverse(const Tpetra_MultiVector& X,
-		 Tpetra_MultiVector& Y) const
+int Tifpack_LocalFilter::ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+		 Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   TIFPACK_CHK_ERR(-1); // not implemented
 }

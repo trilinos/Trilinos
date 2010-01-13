@@ -206,8 +206,8 @@ int Tifpack_AMDReordering::InvReorder(const int i) const
   return(InvReorder_[i]);
 }
 //==============================================================================
-int Tifpack_AMDReordering::P(const Tpetra_MultiVector& Xorig,
-			    Tpetra_MultiVector& X) const
+int Tifpack_AMDReordering::P(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xorig,
+			    Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X) const
 {  
   int NumVectors = X.NumVectors();
 
@@ -222,8 +222,8 @@ int Tifpack_AMDReordering::P(const Tpetra_MultiVector& Xorig,
 }
 
 //==============================================================================
-int Tifpack_AMDReordering::Pinv(const Tpetra_MultiVector& Xorig,
-			       Tpetra_MultiVector& X) const
+int Tifpack_AMDReordering::Pinv(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xorig,
+			       Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X) const
 {
   int NumVectors = X.NumVectors();
 

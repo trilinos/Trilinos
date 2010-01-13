@@ -248,8 +248,8 @@ int Tifpack_SPARSKIT::Compute()
 
 //=============================================================================
 // This function finds Y such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
-int Tifpack_SPARSKIT::ApplyInverse(const Tpetra_MultiVector& X, 
-                                  Tpetra_MultiVector& Y) const
+int Tifpack_SPARSKIT::ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+                                  Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   if (!IsComputed())
     TIFPACK_CHK_ERR(-3); // compute preconditioner first

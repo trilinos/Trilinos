@@ -117,12 +117,12 @@ public:
   virtual int InvReorder(const int i) const = 0;
 
   //! Applies reordering to multivector Xorig, whose local length equals the number of local rows, stores reordered vector in X.
-  virtual int P(const Tpetra_MultiVector& Xorig,
-		Tpetra_MultiVector& X) const = 0;
+  virtual int P(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xorig,
+		Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X) const = 0;
 
   //! Applies inverse reordering to multivector Xorig, whose local length equals the number of local rows, stores inverse reordered vector in X.
-  virtual int Pinv(const Tpetra_MultiVector& Xorig,
-		   Tpetra_MultiVector& X) const = 0;
+  virtual int Pinv(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xorig,
+		   Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X) const = 0;
 
   //! Prints basic information on iostream. This function is used by operator<<.
   virtual ostream& Print(std::ostream& os) const = 0;

@@ -53,7 +53,7 @@ class Tifpack_Graph_Tpetra_RowMatrix : public Tifpack_Graph {
 public:
     
   //! Constructor.
-  Tifpack_Graph_Tpetra_RowMatrix(const Teuchos::RefCountPtr<const Tpetra_RowMatrix>& RowMatrix);
+  Tifpack_Graph_Tpetra_RowMatrix(const Teuchos::RCP<const Tpetra_RowMatrix>& RowMatrix);
 
   //! Destructor.
   virtual ~Tifpack_Graph_Tpetra_RowMatrix() {};
@@ -129,7 +129,7 @@ private:
   //! Maximum number of indices per row.
   int MaxNumIndices_;
   //! Pointer to the wrapped Tpetra_CrsGraph.
-  Teuchos::RefCountPtr<const Tpetra_RowMatrix> RowMatrix_;
+  Teuchos::RCP<const Tpetra_RowMatrix> RowMatrix_;
   //! Vectors that can be used in calls to ExtractMyRowView of the Row matrix.
   mutable std::vector<double> Values_;
 };

@@ -37,7 +37,7 @@
 #include "Tpetra_Vector.hpp"
 
 //==============================================================================
-Tifpack_DiagonalFilter::Tifpack_DiagonalFilter(const Teuchos::RefCountPtr<Tpetra_RowMatrix>& Matrix,
+Tifpack_DiagonalFilter::Tifpack_DiagonalFilter(const Teuchos::RCP<Tpetra_RowMatrix>& Matrix,
 					     double AbsoluteThreshold,
 					     double RelativeThreshold) :
   A_(Matrix),
@@ -90,8 +90,8 @@ ExtractMyRowCopy(int MyRow, int Length, int& NumEntries,
 
 //==============================================================================
 int Tifpack_DiagonalFilter::
-Multiply(bool TransA, const Tpetra_MultiVector& X, 
-	 Tpetra_MultiVector& Y) const
+Multiply(bool TransA, const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+	 Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
 
   if (X.NumVectors() != Y.NumVectors())

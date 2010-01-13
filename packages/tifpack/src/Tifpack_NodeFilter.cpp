@@ -297,8 +297,8 @@ int Tifpack_NodeFilter::ExtractDiagonalCopy(Tpetra_Vector & Diagonal) const
 //==============================================================================
 /*
 //old Apply (no communication)
-int Tifpack_NodeFilter::Apply(const Tpetra_MultiVector& X,
-	  Tpetra_MultiVector& Y) const 
+int Tifpack_NodeFilter::Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+	  Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const 
 {
 
   // skip expensive checks, I suppose input data are ok
@@ -329,7 +329,7 @@ int Tifpack_NodeFilter::Apply(const Tpetra_MultiVector& X,
   return(0);
 }
 */
-int Tifpack_NodeFilter::Apply(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const {
+int Tifpack_NodeFilter::Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const {
   //
   // This function forms the product Y = A * X.
   //
@@ -481,8 +481,8 @@ void Tifpack_NodeFilter::UpdateExportVector(int NumVectors) const {
 }
 
 //=======================================================================================================
-int Tifpack_NodeFilter::ApplyInverse(const Tpetra_MultiVector& X,
-		 Tpetra_MultiVector& Y) const
+int Tifpack_NodeFilter::ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+		 Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   TIFPACK_CHK_ERR(-1); // not implemented
 }

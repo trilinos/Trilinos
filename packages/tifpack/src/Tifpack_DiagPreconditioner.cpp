@@ -52,13 +52,13 @@ Tifpack_DiagPreconditioner::~Tifpack_DiagPreconditioner()
 
 
 // ============================================================================ 
-int Tifpack_DiagPreconditioner::Apply(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
+int Tifpack_DiagPreconditioner::Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   TIFPACK_RETURN(-1); // not defined
 }
 
 // ============================================================================ 
- int Tifpack_DiagPreconditioner::ApplyInverse(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
+ int Tifpack_DiagPreconditioner::ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   if (X.NumVectors() != Y.NumVectors())
     TIFPACK_CHK_ERR(-1); 

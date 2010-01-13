@@ -400,8 +400,8 @@ int Tifpack_ICT::Compute()
 }
 
 //=============================================================================
-int Tifpack_ICT::ApplyInverse(const Tpetra_MultiVector& X, 
-			     Tpetra_MultiVector& Y) const
+int Tifpack_ICT::ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+			     Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
 
   if (!IsComputed())
@@ -414,7 +414,7 @@ int Tifpack_ICT::ApplyInverse(const Tpetra_MultiVector& X,
 
   // AztecOO gives X and Y pointing to the same memory location,
   // need to create an auxiliary vector, Xcopy
-  Teuchos::RefCountPtr<const Tpetra_MultiVector> Xcopy;
+  Teuchos::RCP<const Tpetra_MultiVector> Xcopy;
   if (X.Pointers()[0] == Y.Pointers()[0])
     Xcopy = Teuchos::rcp( new Tpetra_MultiVector(X) );
   else
@@ -437,8 +437,8 @@ int Tifpack_ICT::ApplyInverse(const Tpetra_MultiVector& X,
 }
 //=============================================================================
 // This function finds X such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
-int Tifpack_ICT::Apply(const Tpetra_MultiVector& X, 
-		      Tpetra_MultiVector& Y) const 
+int Tifpack_ICT::Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+		      Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const 
 {
 
   TIFPACK_CHK_ERR(-98);

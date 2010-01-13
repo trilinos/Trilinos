@@ -38,7 +38,7 @@
 #include "Tpetra_Import.hpp"
 
 //==============================================================================
-Tifpack_SingletonFilter::Tifpack_SingletonFilter(const Teuchos::RefCountPtr<Tpetra_RowMatrix>& Matrix) :
+Tifpack_SingletonFilter::Tifpack_SingletonFilter(const Teuchos::RCP<Tpetra_RowMatrix>& Matrix) :
   A_(Matrix),
   NumSingletons_(0),
   NumRows_(0),
@@ -163,8 +163,8 @@ ExtractDiagonalCopy(Tpetra_Vector & Diagonal) const
 
 //==============================================================================
 int Tifpack_SingletonFilter::
-Multiply(bool TransA, const Tpetra_MultiVector& X, 
-	 Tpetra_MultiVector& Y) const
+Multiply(bool TransA, const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+	 Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
 
   int NumVectors = X.NumVectors();
@@ -211,14 +211,14 @@ Multiply(bool TransA, const Tpetra_MultiVector& X,
 //==============================================================================
 int Tifpack_SingletonFilter::
 Solve(bool Upper, bool Trans, bool UnitDiagonal, 
-      const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
+      const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   return(-1);
 }
 
 //==============================================================================
 int Tifpack_SingletonFilter::
-Apply(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
+Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   TIFPACK_CHK_ERR(Multiply(false,X,Y));
   return(0);
@@ -226,15 +226,15 @@ Apply(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
 
 //==============================================================================
 int Tifpack_SingletonFilter::
-ApplyInverse(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
+ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   return(-1); // NOT IMPLEMENTED AT THIS STAGE
 }
 
 //==============================================================================
 int Tifpack_SingletonFilter::
-SolveSingletons(const Tpetra_MultiVector& RHS, 
-		Tpetra_MultiVector& LHS)
+SolveSingletons(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& RHS, 
+		Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& LHS)
 {
   for (int i = 0 ; i < NumSingletons_ ; ++i) {
     int ii = SingletonIndex_[i];
@@ -255,9 +255,9 @@ SolveSingletons(const Tpetra_MultiVector& RHS,
 
 //==============================================================================
 int Tifpack_SingletonFilter::
-CreateReducedRHS(const Tpetra_MultiVector& LHS,
-		 const Tpetra_MultiVector& RHS, 
-		 Tpetra_MultiVector& ReducedRHS)
+CreateReducedRHS(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& LHS,
+		 const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& RHS, 
+		 Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& ReducedRHS)
 {
   int NumVectors = LHS.NumVectors();
 
@@ -283,8 +283,8 @@ CreateReducedRHS(const Tpetra_MultiVector& LHS,
 
 //==============================================================================
 int Tifpack_SingletonFilter::
-UpdateLHS(const Tpetra_MultiVector& ReducedLHS,
-	  Tpetra_MultiVector& LHS)
+UpdateLHS(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& ReducedLHS,
+	  Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& LHS)
 {
   for (int i = 0 ; i < NumRows_ ; ++i)
     for (int k = 0 ; k < LHS.NumVectors() ; ++k)

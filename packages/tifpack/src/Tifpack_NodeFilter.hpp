@@ -166,7 +166,7 @@ public:
 
     \return Integer error code, set to 0 if successful.
     */
-  virtual int Multiply(bool TransA, const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
+  virtual int Multiply(bool TransA, const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
   {
     if (TransA == true) {
       TIFPACK_CHK_ERR(-1);
@@ -177,17 +177,17 @@ public:
   }
 
   //! Returns result of a local-only solve using a triangular Tpetra_RowMatrix with Tpetra_MultiVectors X and Y (NOT IMPLEMENTED).
-  virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Tpetra_MultiVector& X, 
-		    Tpetra_MultiVector& Y) const
+  virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+		    Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
   {
     TIFPACK_RETURN(-1); // not implemented 
   }
 
-  virtual int Apply(const Tpetra_MultiVector& X,
-		    Tpetra_MultiVector& Y) const;
+  virtual int Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+		    Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  virtual int ApplyInverse(const Tpetra_MultiVector& X,
-			   Tpetra_MultiVector& Y) const;
+  virtual int ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+			   Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
   //! Computes the sum of absolute values of the rows of the Tpetra_RowMatrix, results returned in x (NOT IMPLEMENTED).
   virtual int InvRowSums(Tpetra_Vector& x) const
   {

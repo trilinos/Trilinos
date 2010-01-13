@@ -216,7 +216,7 @@ int Tifpack_Amesos::SetUseTranspose(bool UseTranspose_in)
 
 //==============================================================================
 int Tifpack_Amesos::
-Apply(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
+Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   // check for maps ???
   TIFPACK_CHK_ERR(Matrix_->Apply(X,Y));
@@ -225,7 +225,7 @@ Apply(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
 
 //==============================================================================
 int Tifpack_Amesos::
-ApplyInverse(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
+ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
 
   if (IsComputed() == false)
@@ -238,7 +238,7 @@ ApplyInverse(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
 
   // AztecOO gives X and Y pointing to the same memory location,
   // need to create an auxiliary vector, Xcopy
-  Teuchos::RefCountPtr<const Tpetra_MultiVector> Xcopy;
+  Teuchos::RCP<const Tpetra_MultiVector> Xcopy;
   if (X.Pointers()[0] == Y.Pointers()[0])
     Xcopy = Teuchos::rcp( new Tpetra_MultiVector(X) );
   else

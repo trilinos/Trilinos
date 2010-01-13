@@ -147,8 +147,8 @@ public:
 
     \return Integer error code, set to 0 if successful.
     */
-  virtual int Apply(const Tpetra_MultiVector& X, 
-		    Tpetra_MultiVector& Y) const;
+  virtual int Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+		    Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
   //! Applies the block Jacobi preconditioner to X, returns the result in Y.
   /*! 
@@ -160,8 +160,8 @@ public:
     \return Integer error code, set to 0 if successful.
 
     */
-  virtual int ApplyInverse(const Tpetra_MultiVector& X, 
-			   Tpetra_MultiVector& Y) const;
+  virtual int ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+			   Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
   //! Returns the infinity norm of the global matrix (not implemented)
   virtual double NormInf() const
@@ -335,24 +335,24 @@ private:
     return(*this);
   }
 
-  virtual int ApplyInverseJacobi(const Tpetra_MultiVector& X, 
-                                 Tpetra_MultiVector& Y) const;
+  virtual int ApplyInverseJacobi(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+                                 Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  virtual int DoJacobi(const Tpetra_MultiVector& X, 
-                                  Tpetra_MultiVector& Y) const;
+  virtual int DoJacobi(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+                                  Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  virtual int ApplyInverseGS(const Tpetra_MultiVector& X, 
-                             Tpetra_MultiVector& Y) const;
+  virtual int ApplyInverseGS(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+                             Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  virtual int DoGaussSeidel(Tpetra_MultiVector& X, 
-                            Tpetra_MultiVector& Y) const;
+  virtual int DoGaussSeidel(Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+                            Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  virtual int ApplyInverseSGS(const Tpetra_MultiVector& X, 
-                              Tpetra_MultiVector& Y) const;
+  virtual int ApplyInverseSGS(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+                              Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  virtual int DoSGS(const Tpetra_MultiVector& X,
-                    Tpetra_MultiVector& Xtmp,
-                    Tpetra_MultiVector& Y) const;
+  virtual int DoSGS(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+                    Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xtmp,
+                    Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
   int ExtractSubmatrices();
 
@@ -396,24 +396,24 @@ private:
   // @{ Other data
   //! Containers_[i] contains all the necessary information to solve on each subblock.
   //! Pointers to the matrix to be preconditioned.
-  Teuchos::RefCountPtr< const Tpetra_RowMatrix > Matrix_;
-  mutable std::vector<Teuchos::RefCountPtr<T> > Containers_;
+  Teuchos::RCP< const Tpetra_RowMatrix > Matrix_;
+  mutable std::vector<Teuchos::RCP<T> > Containers_;
   //! Contains information about non-overlapping partitions.
-  Teuchos::RefCountPtr<Tifpack_Partitioner> Partitioner_;
+  Teuchos::RCP<Tifpack_Partitioner> Partitioner_;
   string PartitionerType_;
   int PrecType_;
   //! Label for \c this object
   string Label_;
   //! If \c true, starting solution is the zero vector.
   bool ZeroStartingSolution_;
-  Teuchos::RefCountPtr<Tifpack_Graph> Graph_;
+  Teuchos::RCP<Tifpack_Graph> Graph_;
   //! Weights for overlapping Jacobi only.
-  Teuchos::RefCountPtr<Tpetra_Vector> W_;
+  Teuchos::RCP<Tpetra_Vector> W_;
   // Level of overlap among blocks (for Jacobi only).
   int OverlapLevel_;
   mutable Tpetra_Time Time_;
   bool IsParallel_;
-  Teuchos::RefCountPtr<Tpetra_Import> Importer_;
+  Teuchos::RCP<Tpetra_Import> Importer_;
   // @}
   
 }; // class Tifpack_BlockRelaxation
@@ -464,7 +464,7 @@ const char* Tifpack_BlockRelaxation<T>::Label() const
 //==============================================================================
 template<typename T>
 int Tifpack_BlockRelaxation<T>::
-Apply(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
+Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   TIFPACK_RETURN(Matrix().Apply(X,Y));
 }
@@ -569,7 +569,7 @@ int Tifpack_BlockRelaxation<T>::Compute()
 //==============================================================================
 template<typename T>
 int Tifpack_BlockRelaxation<T>::
-ApplyInverse(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
+ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   if (!IsComputed())
     TIFPACK_CHK_ERR(-3);
@@ -581,7 +581,7 @@ ApplyInverse(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
 
   // AztecOO gives X and Y pointing to the same memory location,
   // need to create an auxiliary vector, Xcopy
-  Teuchos::RefCountPtr< const Tpetra_MultiVector > Xcopy;
+  Teuchos::RCP< const Tpetra_MultiVector > Xcopy;
   if (X.Pointers()[0] == Y.Pointers()[0])
     Xcopy = Teuchos::rcp( new Tpetra_MultiVector(X) );
   else
@@ -611,8 +611,8 @@ ApplyInverse(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
 //
 template<typename T>
 int Tifpack_BlockRelaxation<T>::
-ApplyInverseJacobi(const Tpetra_MultiVector& X, 
-                   Tpetra_MultiVector& Y) const
+ApplyInverseJacobi(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+                   Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
 
   if (ZeroStartingSolution_)
@@ -641,7 +641,7 @@ ApplyInverseJacobi(const Tpetra_MultiVector& X,
 //==============================================================================
 template<typename T>
 int Tifpack_BlockRelaxation<T>::
-DoJacobi(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
+DoJacobi(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   int NumVectors = X.NumVectors();
 
@@ -724,8 +724,8 @@ DoJacobi(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
 //==============================================================================
 template<typename T>
 int Tifpack_BlockRelaxation<T>::
-ApplyInverseGS(const Tpetra_MultiVector& X, 
-               Tpetra_MultiVector& Y) const
+ApplyInverseGS(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+               Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
 
   if (ZeroStartingSolution_)
@@ -745,7 +745,7 @@ ApplyInverseGS(const Tpetra_MultiVector& X,
 //==============================================================================
 template<typename T>
 int Tifpack_BlockRelaxation<T>::
-DoGaussSeidel(Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
+DoGaussSeidel(Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
 
   // cycle over all local subdomains
@@ -760,7 +760,7 @@ DoGaussSeidel(Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
   // an additonal vector is needed by parallel computations
   // (note that applications through Tifpack_AdditiveSchwarz
   // are always seen are serial)
-  Teuchos::RefCountPtr< Tpetra_MultiVector > Y2;
+  Teuchos::RCP< Tpetra_MultiVector > Y2;
   if (IsParallel_)
     Y2 = Teuchos::rcp( new Tpetra_MultiVector(Importer_->TargetMap(), NumVectors) );
   else
@@ -841,7 +841,7 @@ DoGaussSeidel(Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
 //==============================================================================
 template<typename T>
 int Tifpack_BlockRelaxation<T>::
-ApplyInverseSGS(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
+ApplyInverseSGS(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
 
   if (ZeroStartingSolution_)
@@ -859,8 +859,8 @@ ApplyInverseSGS(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
 //==============================================================================
 template<typename T>
 int Tifpack_BlockRelaxation<T>::
-DoSGS(const Tpetra_MultiVector& X, Tpetra_MultiVector& Xcopy, 
-      Tpetra_MultiVector& Y) const
+DoSGS(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xcopy, 
+      Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
 
   int NumMyRows = Matrix().NumMyRows();
@@ -875,7 +875,7 @@ DoSGS(const Tpetra_MultiVector& X, Tpetra_MultiVector& Xcopy,
   // an additonal vector is needed by parallel computations
   // (note that applications through Tifpack_AdditiveSchwarz
   // are always seen are serial)
-  Teuchos::RefCountPtr< Tpetra_MultiVector > Y2;
+  Teuchos::RCP< Tpetra_MultiVector > Y2;
   if (IsParallel_)
     Y2 = Teuchos::rcp( new Tpetra_MultiVector(Importer_->TargetMap(), NumVectors) );
   else

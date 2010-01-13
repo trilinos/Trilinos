@@ -41,7 +41,7 @@
 #include "Tpetra_Util.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
-using Teuchos::RefCountPtr;
+using Teuchos::RCP;
 using Teuchos::rcp;
 
 //==============================================================================
@@ -279,8 +279,8 @@ int Tifpack_IC::Compute() {
 
 //=============================================================================
 // This function finds Y such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
-int Tifpack_IC::ApplyInverse(const Tpetra_MultiVector& X, 
-			    Tpetra_MultiVector& Y) const
+int Tifpack_IC::ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+			    Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   
   if (!IsComputed())
@@ -313,8 +313,8 @@ int Tifpack_IC::ApplyInverse(const Tpetra_MultiVector& X,
 
 //=============================================================================
 // This function finds X such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
-int Tifpack_IC::Apply(const Tpetra_MultiVector& X, 
-		      Tpetra_MultiVector& Y) const 
+int Tifpack_IC::Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+		      Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const 
 {
 
   if (X.NumVectors() != Y.NumVectors()) 

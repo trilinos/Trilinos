@@ -157,9 +157,9 @@ class Tifpack_IC: public Tifpack_Preconditioner {
     
     \return Integer error code, set to 0 if successful.
   */
-  int ApplyInverse(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const;
+  int ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  int Apply(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const;
+  int Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
   //! Returns the maximum over all the condition number estimate for each local ILU set of factors.
   /*! This functions computes a local condition number estimate on each processor and return the
@@ -321,10 +321,10 @@ class Tifpack_IC: public Tifpack_Preconditioner {
     return(Droptol_);
   }
 
-  Teuchos::RefCountPtr<Tpetra_RowMatrix> A_;
+  Teuchos::RCP<Tpetra_RowMatrix> A_;
   const Tpetra_Comm & Comm_;
-  Teuchos::RefCountPtr<Tpetra_CrsMatrix> U_;
-  Teuchos::RefCountPtr<Tpetra_Vector> D_;
+  Teuchos::RCP<Tpetra_CrsMatrix> U_;
+  Teuchos::RCP<Tpetra_Vector> D_;
   bool UseTranspose_;
 
   double Condest_;

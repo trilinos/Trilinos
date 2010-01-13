@@ -284,8 +284,8 @@ int Tifpack_IKLU::Compute()
 }
   
 //=============================================================================
-int Tifpack_IKLU::ApplyInverse(const Tpetra_MultiVector& X, 
-			     Tpetra_MultiVector& Y) const
+int Tifpack_IKLU::ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+			     Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   if (!IsComputed())
     TIFPACK_CHK_ERR(-2); // compute preconditioner first
@@ -308,8 +308,8 @@ int Tifpack_IKLU::ApplyInverse(const Tpetra_MultiVector& X,
     invq[ cssS_->q[i] ] = i;
   }
 
-  Teuchos::RefCountPtr<Tpetra_MultiVector> Xcopy = Teuchos::rcp( new Tpetra_MultiVector(X.Map(),X.NumVectors()), false );
-  Teuchos::RefCountPtr<Tpetra_MultiVector> Ytemp = Teuchos::rcp( new Tpetra_MultiVector(Y.Map(),Y.NumVectors()) );
+  Teuchos::RCP<Tpetra_MultiVector> Xcopy = Teuchos::rcp( new Tpetra_MultiVector(X.Map(),X.NumVectors()), false );
+  Teuchos::RCP<Tpetra_MultiVector> Ytemp = Teuchos::rcp( new Tpetra_MultiVector(Y.Map(),Y.NumVectors()) );
 
   for (int i=0; i<NumMyRows_; ++i) {
     for (int j=0; j<X.NumVectors(); ++j) {
@@ -346,8 +346,8 @@ int Tifpack_IKLU::ApplyInverse(const Tpetra_MultiVector& X,
 }
 //=============================================================================
 // This function finds X such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
-int Tifpack_IKLU::Apply(const Tpetra_MultiVector& X, 
-		      Tpetra_MultiVector& Y) const 
+int Tifpack_IKLU::Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+		      Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const 
 {
 
   return(-98);

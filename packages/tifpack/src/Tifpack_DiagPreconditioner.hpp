@@ -71,9 +71,9 @@ class Tifpack_DiagPreconditioner : public Tpetra_Operator
       return(0);
     }
 
-    int Apply(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const;
+    int Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-    int ApplyInverse(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const;
+    int ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
     double NormInf() const
     {

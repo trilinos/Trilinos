@@ -226,7 +226,7 @@ string Tifpack_toString(const double& x)
 
 //============================================================================
 int Tifpack_PrintResidual(char* Label, const Tpetra_RowMatrix& A,
-                         const Tpetra_MultiVector& X, const Tpetra_MultiVector&Y)
+                         const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&Y)
 {
   if (X.Comm().MyPID() == 0) {
     cout << "***** " << Label << endl;
@@ -238,7 +238,7 @@ int Tifpack_PrintResidual(char* Label, const Tpetra_RowMatrix& A,
 
 //============================================================================
 int Tifpack_PrintResidual(const int iter, const Tpetra_RowMatrix& A,
-                         const Tpetra_MultiVector& X, const Tpetra_MultiVector&Y)
+                         const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&Y)
 {
   Tpetra_MultiVector RHS(X);
   std::vector<double> Norm2;

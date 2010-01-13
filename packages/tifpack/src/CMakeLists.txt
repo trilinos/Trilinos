@@ -28,6 +28,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(HEADERS ${HEADERS}
   Tifpack_ConfigDefs.hpp
+  Tifpack_Chebyshev.hpp
   Tifpack_Condest.hpp
   Tifpack_CondestType.hpp
   Tifpack_Heap.hpp

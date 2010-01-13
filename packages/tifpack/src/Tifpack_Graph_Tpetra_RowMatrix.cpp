@@ -35,7 +35,7 @@
 #include "Tpetra_RowMatrix.hpp"
 
 //==============================================================================
-Tifpack_Graph_Tpetra_RowMatrix::Tifpack_Graph_Tpetra_RowMatrix(const Teuchos::RefCountPtr<const Tpetra_RowMatrix>& RowMatrix) :
+Tifpack_Graph_Tpetra_RowMatrix::Tifpack_Graph_Tpetra_RowMatrix(const Teuchos::RCP<const Tpetra_RowMatrix>& RowMatrix) :
 RowMatrix_(RowMatrix)
 {
   NumMyRows_ = RowMatrix_->NumMyRows();

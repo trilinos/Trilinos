@@ -125,9 +125,9 @@ public:
     
     \return Integer error code, set to 0 if successful.
   */
-  int ApplyInverse(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const;
+  int ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  int Apply(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const;
+  int Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
   //! Computed the estimated condition number and returns the value.
   double Condest(const Tifpack_CondestType CT = Tifpack_Cheap, 
@@ -318,9 +318,9 @@ private:
   //! Reference to the communicator object.
   const Tpetra_Comm& Comm_;
   //! L factor
-  Teuchos::RefCountPtr<Tpetra_CrsMatrix> L_;
+  Teuchos::RCP<Tpetra_CrsMatrix> L_;
   //! U factor
-  Teuchos::RefCountPtr<Tpetra_CrsMatrix> U_;
+  Teuchos::RCP<Tpetra_CrsMatrix> U_;
   //! Condition number estimate.
   double Condest_;
   //! relaxation value
@@ -365,8 +365,8 @@ private:
   mutable Tpetra_Time Time_;
   //! Global number of nonzeros in L and U factors
   int GlobalNonzeros_;
-  Teuchos::RefCountPtr<Tpetra_SerialComm> SerialComm_;
-  Teuchos::RefCountPtr<Tpetra_Map> SerialMap_;
+  Teuchos::RCP<Tpetra_SerialComm> SerialComm_;
+  Teuchos::RCP<Tpetra_Map> SerialMap_;
 
   //! Containers for the matrix storage and permutation
   csr* csrA_;

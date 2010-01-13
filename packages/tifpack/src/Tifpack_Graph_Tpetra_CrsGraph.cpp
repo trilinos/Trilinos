@@ -35,7 +35,7 @@
 
 //==============================================================================
 Tifpack_Graph_Tpetra_CrsGraph::
-Tifpack_Graph_Tpetra_CrsGraph(const Teuchos::RefCountPtr<const Tpetra_CrsGraph>& CrsGraph) :
+Tifpack_Graph_Tpetra_CrsGraph(const Teuchos::RCP<const Tpetra_CrsGraph>& CrsGraph) :
 CrsGraph_(CrsGraph)
 {
   NumMyRows_ = CrsGraph_->NumMyRows();

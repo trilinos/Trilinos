@@ -113,7 +113,7 @@ public:
 
     \return Integer error code, set to 0 if successful.
     */
-    virtual int Apply(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const;
+    virtual int Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
     //! Applies the preconditioner to X, returns the result in Y.
   /*! 
@@ -127,7 +127,7 @@ public:
     \warning In order to work with AztecOO, any implementation of this method 
     must support the case where X and Y are the same object.
     */
-    virtual int ApplyInverse(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const;
+    virtual int ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
     //! Returns the infinity norm of the global matrix (not implemented)
     virtual double NormInf() const;
@@ -358,12 +358,12 @@ protected:
 private:
 
   //! Pointers to the matrix to be preconditioned.
-  Teuchos::RefCountPtr<const Tpetra_RowMatrix> Matrix_;
+  Teuchos::RCP<const Tpetra_RowMatrix> Matrix_;
 
   //! Linear problem required by Solver_.
-  Teuchos::RefCountPtr<Tpetra_LinearProblem> Problem_;
+  Teuchos::RCP<Tpetra_LinearProblem> Problem_;
   //! Amesos solver, use to apply the inverse of the local matrix.
-  Teuchos::RefCountPtr<Amesos_BaseSolver> Solver_;
+  Teuchos::RCP<Amesos_BaseSolver> Solver_;
   //! Contains a copy of the input parameter list.
   Teuchos::ParameterList List_;
 
@@ -390,7 +390,7 @@ private:
   //! Contains the time for all successful calls to ApplyInverse().
   mutable double ApplyInverseTime_;
   //! Time object.
-  Teuchos::RefCountPtr<Tpetra_Time> Time_;
+  Teuchos::RCP<Tpetra_Time> Time_;
 
   //! Contains the number of flops for Compute().
   double ComputeFlops_;

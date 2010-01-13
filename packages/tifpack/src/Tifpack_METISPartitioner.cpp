@@ -69,10 +69,10 @@ int Tifpack_METISPartitioner::ComputePartitions()
   int edgecut;
 #endif
 
-  Teuchos::RefCountPtr<Tpetra_CrsGraph> SymGraph ;
-  Teuchos::RefCountPtr<Tpetra_Map> SymMap;
-  Teuchos::RefCountPtr<Tifpack_Graph_Tpetra_CrsGraph> SymTIFPACKGraph;
-  Teuchos::RefCountPtr<Tifpack_Graph> TIFPACKGraph = Teuchos::rcp( (Tifpack_Graph*)Graph_, false );
+  Teuchos::RCP<Tpetra_CrsGraph> SymGraph ;
+  Teuchos::RCP<Tpetra_Map> SymMap;
+  Teuchos::RCP<Tifpack_Graph_Tpetra_CrsGraph> SymTIFPACKGraph;
+  Teuchos::RCP<Tifpack_Graph> TIFPACKGraph = Teuchos::rcp( (Tifpack_Graph*)Graph_, false );
 
   int Length = 2 * MaxNumEntries();
   int NumIndices;

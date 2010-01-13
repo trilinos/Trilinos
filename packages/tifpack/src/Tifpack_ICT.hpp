@@ -141,9 +141,9 @@ class Tifpack_ICT: public Tifpack_Preconditioner {
     
     \return Integer error code, set to 0 if successful.
   */
-  int ApplyInverse(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const;
+  int ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  int Apply(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const;
+  int Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
   //! Returns the maximum over all the condition number estimate for each local ILU set of factors.
   /*! This functions computes a local condition number estimate on each processor and return the
@@ -332,7 +332,7 @@ private:
   //! Reference to the communicator.
   const Tpetra_Comm& Comm_;
   //! Contains the Cholesky factorization.
-  Teuchos::RefCountPtr<Tpetra_CrsMatrix> H_;
+  Teuchos::RCP<Tpetra_CrsMatrix> H_;
   //! Contains the estimate of the condition number, if -1.0 if not computed.
   double Condest_;
   //! Absolute threshold.
@@ -375,8 +375,8 @@ private:
   mutable Tpetra_Time Time_;
   //! Global number of nonzeros in L and U factors
   int GlobalNonzeros_;
-  Teuchos::RefCountPtr<Tpetra_SerialComm> SerialComm_;
-  Teuchos::RefCountPtr<Tpetra_Map> SerialMap_;
+  Teuchos::RCP<Tpetra_SerialComm> SerialComm_;
+  Teuchos::RCP<Tpetra_Map> SerialMap_;
 };
 
 #endif /* TIFPACK_ICT_HPP */

@@ -86,12 +86,12 @@ public:
   virtual inline int InvReorder(const int i) const;
 
   //! Applies reordering to multivector X, whose local length equals the number of local rows.
-  virtual int P(const Tpetra_MultiVector& Xorig,
-		Tpetra_MultiVector& Xreord) const;
+  virtual int P(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xorig,
+		Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xreord) const;
 
   //! Applies inverse reordering to multivector X, whose local length equals the number of local rows.
-  virtual int Pinv(const Tpetra_MultiVector& Xorig,
-		   Tpetra_MultiVector& Xinvreord) const;
+  virtual int Pinv(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xorig,
+		   Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xinvreord) const;
 
   
   //! Prints basic information on iostream. This function is used by operator<<.

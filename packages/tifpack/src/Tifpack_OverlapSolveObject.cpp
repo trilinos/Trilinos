@@ -69,8 +69,8 @@ Tifpack_OverlapSolveObject::~Tifpack_OverlapSolveObject(){
 }
 //==============================================================================
 //=============================================================================
-int Tifpack_OverlapSolveObject::Solve(bool Trans, const Tpetra_MultiVector& X, 
-				Tpetra_MultiVector& Y) const {
+int Tifpack_OverlapSolveObject::Solve(bool Trans, const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+				Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const {
 //
 // This function finds Y such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
 //
@@ -101,8 +101,8 @@ int Tifpack_OverlapSolveObject::Solve(bool Trans, const Tpetra_MultiVector& X,
   return(0);
 }
 //=============================================================================
-int Tifpack_OverlapSolveObject::Multiply(bool Trans, const Tpetra_MultiVector& X, 
-				Tpetra_MultiVector& Y) const {
+int Tifpack_OverlapSolveObject::Multiply(bool Trans, const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+				Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const {
 //
 // This function finds X such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
 //
@@ -135,7 +135,7 @@ int Tifpack_OverlapSolveObject::Multiply(bool Trans, const Tpetra_MultiVector& X
 } 
 //=========================================================================
 int Tifpack_OverlapSolveObject::SetupXY(bool Trans, 
-				       const Tpetra_MultiVector& Xin, const Tpetra_MultiVector& Yin,
+				       const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xin, const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Yin,
 				       Tpetra_MultiVector * & Xout, Tpetra_MultiVector * & Yout) const {
 
   // Generate an X and Y suitable for performing Solve() and Multiply() methods

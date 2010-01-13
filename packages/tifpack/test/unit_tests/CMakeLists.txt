@@ -21,6 +21,7 @@ SET(SOURCES "")
 APPEND_SET(SOURCES
 Tifpack_UnitTestMain.cpp
 Tifpack_UnitTestTemplate.cpp
+Tifpack_UnitTestChebyshev.cpp
 Tifpack_UnitTestCreateOverlapGraph.cpp
 Tifpack_UnitTestHeap.cpp
 Tifpack_UnitTestOverlapGraph.cpp

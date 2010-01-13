@@ -46,7 +46,7 @@ class Tifpack_SingletonFilter : public virtual Tpetra_RowMatrix {
 
 public:
   //! Constructor.
-  Tifpack_SingletonFilter(const Teuchos::RefCountPtr<Tpetra_RowMatrix>& Matrix);
+  Tifpack_SingletonFilter(const Teuchos::RCP<Tpetra_RowMatrix>& Matrix);
 
   //! Destructor.
   virtual ~Tifpack_SingletonFilter() {};
@@ -67,18 +67,18 @@ public:
 
   virtual int ExtractDiagonalCopy(Tpetra_Vector & Diagonal) const;
 
-  virtual int Multiply(bool TransA, const Tpetra_MultiVector& X, 
-		       Tpetra_MultiVector& Y) const;
+  virtual int Multiply(bool TransA, const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+		       Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
   virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, 
-		    const Tpetra_MultiVector& X,
-		    Tpetra_MultiVector& Y) const;
+		    const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+		    Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  virtual int Apply(const Tpetra_MultiVector& X,
-		    Tpetra_MultiVector& Y) const;
+  virtual int Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+		    Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  virtual int ApplyInverse(const Tpetra_MultiVector& X,
-			   Tpetra_MultiVector& Y) const;
+  virtual int ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+			   Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
   virtual int InvRowSums(Tpetra_Vector& x) const
   {
@@ -219,20 +219,20 @@ public:
     return(Label_);
   }
 
-  int SolveSingletons(const Tpetra_MultiVector& RHS, 
-		      Tpetra_MultiVector& LHS);
+  int SolveSingletons(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& RHS, 
+		      Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& LHS);
 
-  int CreateReducedRHS(const Tpetra_MultiVector& LHS,
-		       const Tpetra_MultiVector& RHS, 
-		       Tpetra_MultiVector& ReducedRHS);
+  int CreateReducedRHS(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& LHS,
+		       const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& RHS, 
+		       Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& ReducedRHS);
 
-  int UpdateLHS(const Tpetra_MultiVector& ReducedLHS,
-		Tpetra_MultiVector& LHS);
+  int UpdateLHS(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& ReducedLHS,
+		Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& LHS);
 
 private:
 
   //! Pointer to the matrix to be preconditioned.
-  Teuchos::RefCountPtr<Tpetra_RowMatrix> A_;
+  Teuchos::RCP<Tpetra_RowMatrix> A_;
 
   //! Used in ExtractMyRowCopy, to avoid allocation each time.
   mutable std::vector<int> Indices_;
@@ -254,9 +254,9 @@ private:
   int MaxNumEntries_;
   int MaxNumEntriesA_;
   int NumNonzeros_;
-  Teuchos::RefCountPtr<Tpetra_Map> Map_;
+  Teuchos::RCP<Tpetra_Map> Map_;
   
-  Teuchos::RefCountPtr<Tpetra_Vector> Diagonal_;
+  Teuchos::RCP<Tpetra_Vector> Diagonal_;
 
 };
 

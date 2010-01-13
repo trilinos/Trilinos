@@ -829,8 +829,8 @@ int ILU::Compute()
 
 //=============================================================================
 // This function finds Y such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
-int ILU::Solve(bool Trans, const Tpetra::MultiVector& X, 
-			   Tpetra::MultiVector& Y) const 
+int ILU::Solve(bool Trans, const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+			   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const 
 {
 	
 #ifdef ENABLE_TIFPACK_ILU_TEUCHOS_TIMERS
@@ -864,8 +864,8 @@ int ILU::Solve(bool Trans, const Tpetra::MultiVector& X,
 
 //=============================================================================
 // This function finds X such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
-int ILU::Multiply(bool Trans, const Tpetra::MultiVector& X, 
-				  Tpetra::MultiVector& Y) const 
+int ILU::Multiply(bool Trans, const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+				  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const 
 {
 	
 #ifdef ENABLE_TIFPACK_ILU_TEUCHOS_TIMERS
@@ -904,8 +904,8 @@ int ILU::Multiply(bool Trans, const Tpetra::MultiVector& X,
 
 //=============================================================================
 // This function finds X such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
-int ILU::ApplyInverse(const Tpetra::MultiVector& X, 
-					  Tpetra::MultiVector& Y) const
+int ILU::ApplyInverse(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+					  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
 	
 #ifdef ENABLE_TIFPACK_ILU_TEUCHOS_TIMERS

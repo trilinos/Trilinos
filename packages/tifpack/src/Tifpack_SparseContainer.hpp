@@ -267,13 +267,13 @@ private:
   //! Number of vectors in the local linear system.
   int NumVectors_; 
   //! Linear map on which the local matrix is based.
-  Teuchos::RefCountPtr<Tpetra_Map> Map_;
+  Teuchos::RCP<Tpetra_Map> Map_;
   //! Pointer to the local matrix.
-  Teuchos::RefCountPtr<Tpetra_CrsMatrix> Matrix_;
+  Teuchos::RCP<Tpetra_CrsMatrix> Matrix_;
   //! Solution vector.
-  Teuchos::RefCountPtr<Tpetra_MultiVector> LHS_;
+  Teuchos::RCP<Tpetra_MultiVector> LHS_;
   //! right-hand side for local problems.
-  Teuchos::RefCountPtr<Tpetra_MultiVector> RHS_;
+  Teuchos::RCP<Tpetra_MultiVector> RHS_;
   //! Contains the subrows/subcols of A that will be inserted in Matrix_.
   Tpetra_IntSerialDenseVector GID_;
   //! If \c true, the container has been successfully initialized.
@@ -281,9 +281,9 @@ private:
   //! If \c true, the container has been successfully computed.
   bool IsComputed_;
   //! Serial communicator (containing only MPI_COMM_SELF if MPI is used).
-  Teuchos::RefCountPtr<Tpetra_Comm> SerialComm_;
+  Teuchos::RCP<Tpetra_Comm> SerialComm_;
   //! Pointer to an Tifpack_Preconditioner object whose ApplyInverse() defined the action of the inverse of the local matrix.
-  Teuchos::RefCountPtr<T> Inverse_;
+  Teuchos::RCP<T> Inverse_;
   //! Label for \c this object
   string Label_;
   Teuchos::ParameterList List_;

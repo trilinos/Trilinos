@@ -45,7 +45,7 @@ class Tpetra_BlockMap;
 class Tifpack_SparsityFilter : public virtual Tpetra_RowMatrix {
 
 public:
-  Tifpack_SparsityFilter(const Teuchos::RefCountPtr<Tpetra_RowMatrix>& Matrix,
+  Tifpack_SparsityFilter(const Teuchos::RCP<Tpetra_RowMatrix>& Matrix,
 			int AllowedNumEntries,
 			int AllowedBandwidth = -1);
 
@@ -66,18 +66,18 @@ public:
 
   virtual int ExtractDiagonalCopy(Tpetra_Vector & Diagonal) const;
 
-  virtual int Multiply(bool TransA, const Tpetra_MultiVector& X, 
-		       Tpetra_MultiVector& Y) const;
+  virtual int Multiply(bool TransA, const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+		       Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
   virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, 
-		    const Tpetra_MultiVector& X,
-		    Tpetra_MultiVector& Y) const;
+		    const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+		    Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  virtual int Apply(const Tpetra_MultiVector& X,
-		    Tpetra_MultiVector& Y) const;
+  virtual int Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+		    Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  virtual int ApplyInverse(const Tpetra_MultiVector& X,
-			   Tpetra_MultiVector& Y) const;
+  virtual int ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+			   Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
   virtual int InvRowSums(Tpetra_Vector& x) const
   {
@@ -221,7 +221,7 @@ public:
 private:
 
   //! Pointer to the matrix to be preconditioned.
-  Teuchos::RefCountPtr<Tpetra_RowMatrix> A_;
+  Teuchos::RCP<Tpetra_RowMatrix> A_;
   //! Maximum entries in each row.
   int MaxNumEntries_;
   int MaxNumEntriesA_;

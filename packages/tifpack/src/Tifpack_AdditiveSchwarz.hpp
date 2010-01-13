@@ -171,7 +171,7 @@ public:
 
     \return Integer error code, set to 0 if successful.
     */
-    virtual int Apply(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const;
+    virtual int Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
     //! Applies the preconditioner to X, returns the result in Y.
   /*! 
@@ -185,7 +185,7 @@ public:
     \warning In order to work with AztecOO, any implementation of this method 
     must support the case where X and Y are the same object.
     */
-    virtual int ApplyInverse(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const;
+    virtual int ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
     //! Returns the infinity norm of the global matrix (not implemented)
     virtual double NormInf() const;
@@ -370,14 +370,14 @@ protected:
   // @{ Internal data.
   
   //! Pointers to the matrix to be preconditioned.
-  Teuchos::RefCountPtr<const Tpetra_RowMatrix> Matrix_;
+  Teuchos::RCP<const Tpetra_RowMatrix> Matrix_;
   //! Pointers to the overlapping matrix.
-  Teuchos::RefCountPtr<Tifpack_OverlappingRowMatrix> OverlappingMatrix_;
+  Teuchos::RCP<Tifpack_OverlappingRowMatrix> OverlappingMatrix_;
   //! Localized version of Matrix_ or OverlappingMatrix_.
 # ifdef TIFPACK_NODE_AWARE_CODE
-  Teuchos::RefCountPtr<Tifpack_NodeFilter> LocalizedMatrix_;
+  Teuchos::RCP<Tifpack_NodeFilter> LocalizedMatrix_;
 # else
-  Teuchos::RefCountPtr<Tifpack_LocalFilter> LocalizedMatrix_;
+  Teuchos::RCP<Tifpack_LocalFilter> LocalizedMatrix_;
 # endif
   //! Contains the label of \c this object.
   string Label_;
@@ -404,13 +404,13 @@ protected:
   //! Type of reordering of the local matrix.
   string ReorderingType_;
   //! Pointer to a reordering object.
-  Teuchos::RefCountPtr<Tifpack_Reordering> Reordering_;
+  Teuchos::RCP<Tifpack_Reordering> Reordering_;
   //! Pointer to the reorderd matrix.
-  Teuchos::RefCountPtr<Tifpack_ReorderFilter> ReorderedLocalizedMatrix_;
+  Teuchos::RCP<Tifpack_ReorderFilter> ReorderedLocalizedMatrix_;
   //! Filter for singletons.
   bool FilterSingletons_;
   //! filtering object.
-  Teuchos::RefCountPtr<Tifpack_SingletonFilter> SingletonFilter_;
+  Teuchos::RCP<Tifpack_SingletonFilter> SingletonFilter_;
   //! Contains the number of successful calls to Initialize().
   int NumInitialize_;
   //! Contains the number of successful call to Compute().
@@ -430,9 +430,9 @@ protected:
   //! Contain sthe number of flops for ApplyInverse().
   mutable double ApplyInverseFlops_;
   //! Object used for timing purposes.
-  Teuchos::RefCountPtr<Tpetra_Time> Time_;
+  Teuchos::RCP<Tpetra_Time> Time_;
   //! Pointer to the local solver.
-  Teuchos::RefCountPtr<T> Inverse_;
+  Teuchos::RCP<T> Inverse_;
 
 }; // class Tifpack_AdditiveSchwarz<T>
 
@@ -791,7 +791,7 @@ int Tifpack_AdditiveSchwarz<T>::SetUseTranspose(bool UseTranspose_in)
 //==============================================================================
 template<typename T>
 int Tifpack_AdditiveSchwarz<T>::
-Apply(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
+Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   TIFPACK_CHK_ERR(Matrix_->Apply(X,Y));
   return(0);
@@ -849,7 +849,7 @@ const Tpetra_Map & Tifpack_AdditiveSchwarz<T>::OperatorRangeMap() const
 //==============================================================================
 template<typename T>
 int Tifpack_AdditiveSchwarz<T>::
-ApplyInverse(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
+ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   // compute the preconditioner is not done by the user
   if (!IsComputed())
@@ -862,9 +862,9 @@ ApplyInverse(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
 
   Time_->ResetStartTime();
 
-  Teuchos::RefCountPtr<Tpetra_MultiVector> OverlappingX;
-  Teuchos::RefCountPtr<Tpetra_MultiVector> OverlappingY;
-  Teuchos::RefCountPtr<Tpetra_MultiVector> Xtmp;
+  Teuchos::RCP<Tpetra_MultiVector> OverlappingX;
+  Teuchos::RCP<Tpetra_MultiVector> OverlappingY;
+  Teuchos::RCP<Tpetra_MultiVector> Xtmp;
 
   // for flop count, see bottom of this function
   double pre_partial = Inverse_->ApplyInverseFlops();

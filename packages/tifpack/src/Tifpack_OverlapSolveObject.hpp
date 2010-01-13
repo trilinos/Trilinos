@@ -81,7 +81,7 @@ class Tifpack_OverlapSolveObject: public virtual Tpetra_Operator {
     
     \return Integer error code, set to 0 if successful.
   */
-  int Solve(bool Trans, const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const;
+  int Solve(bool Trans, const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
   //! Returns the result of multiplying U, D and L in that order on an Tpetra_MultiVector X in Y.
   /*! 
@@ -94,7 +94,7 @@ class Tifpack_OverlapSolveObject: public virtual Tpetra_Operator {
     
     \return Integer error code, set to 0 if successful.
   */
-  int Multiply(bool Trans, const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const;
+  int Multiply(bool Trans, const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
   //! Returns the maximum over all the condition number estimate for each local ILU set of factors.
   /*! This functions computes a local condition number estimate on each processor and return the
@@ -163,7 +163,7 @@ class Tifpack_OverlapSolveObject: public virtual Tpetra_Operator {
 
     \return Integer error code, set to 0 if successful.
   */
-  int Apply(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const {
+  int Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const {
     return(Multiply(Tifpack_OverlapSolveObject::UseTranspose(), X, Y));};
 
     //! Returns the result of a Tpetra_Operator inverse applied to an Tpetra_MultiVector X in Y.
@@ -180,7 +180,7 @@ class Tifpack_OverlapSolveObject: public virtual Tpetra_Operator {
 
     \return Integer error code, set to 0 if successful.
   */
-  int ApplyInverse(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const {
+  int ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const {
     return(Solve(Tifpack_OverlapSolveObject::UseTranspose(), X, Y));};
 
     //! Returns 0.0 because this class cannot compute Inf-norm.
@@ -204,7 +204,7 @@ class Tifpack_OverlapSolveObject: public virtual Tpetra_Operator {
 
  protected:
     virtual int SetupXY(bool Trans, 
-			const Tpetra_MultiVector& Xin, const Tpetra_MultiVector& Yin,
+			const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xin, const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Yin,
 			Tpetra_MultiVector * & Xout, Tpetra_MultiVector * & Yout) const=0;
  private:
   char * Label_;

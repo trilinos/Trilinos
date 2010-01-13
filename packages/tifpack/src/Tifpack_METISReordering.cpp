@@ -71,10 +71,10 @@ int Tifpack_METISReordering::Compute(const Tifpack_Graph& Graph)
 
   int ierr;
 
-  Teuchos::RefCountPtr<Tpetra_CrsGraph> SymGraph;
-  Teuchos::RefCountPtr<Tpetra_Map> SymMap;
-  Teuchos::RefCountPtr<Tifpack_Graph_Tpetra_CrsGraph> SymTIFPACKGraph;
-  Teuchos::RefCountPtr<Tifpack_Graph> TIFPACKGraph = Teuchos::rcp( (Tifpack_Graph*)&Graph, false );
+  Teuchos::RCP<Tpetra_CrsGraph> SymGraph;
+  Teuchos::RCP<Tpetra_Map> SymMap;
+  Teuchos::RCP<Tifpack_Graph_Tpetra_CrsGraph> SymTIFPACKGraph;
+  Teuchos::RCP<Tifpack_Graph> TIFPACKGraph = Teuchos::rcp( (Tifpack_Graph*)&Graph, false );
 
   int Length = 2 * Graph.MaxMyNumEntries();
   int NumIndices;
@@ -202,8 +202,8 @@ int Tifpack_METISReordering::InvReorder(const int i) const
   return(InvReorder_[i]);
 }
 //==============================================================================
-int Tifpack_METISReordering::P(const Tpetra_MultiVector& Xorig,
-			    Tpetra_MultiVector& X) const
+int Tifpack_METISReordering::P(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xorig,
+			    Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X) const
 {  
   int NumVectors = X.NumVectors();
 
@@ -218,8 +218,8 @@ int Tifpack_METISReordering::P(const Tpetra_MultiVector& Xorig,
 }
 
 //==============================================================================
-int Tifpack_METISReordering::Pinv(const Tpetra_MultiVector& Xorig,
-				 Tpetra_MultiVector& X) const
+int Tifpack_METISReordering::Pinv(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xorig,
+				 Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X) const
 {
   int NumVectors = X.NumVectors();
 

@@ -434,25 +434,25 @@ class CrsRiluk: public virtual Tpetra::Preconditioner<Scalar,LocalOrdinal,Global
   int AllocateCrs();
   int AllocateVbr();
   int InitAllValues(const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & A, int MaxNumEntries);
-  int BlockMap2PointMap(const Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal,Node> & BlockMap, Teuchos::RefCountPtr<Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal,Node> >* PointMap);
+  int BlockMap2PointMap(const Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal,Node> & BlockMap, Teuchos::RCP<Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal,Node> >* PointMap);
   int GenerateXY(bool Trans, 
 		 const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xin, const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Yin,
-		 Teuchos::RefCountPtr<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >* Xout, 
-                 Teuchos::RefCountPtr<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >* Yout) const;
+		 Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >* Xout, 
+                 Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >* Yout) const;
   bool UserMatrixIsVbr_;
   bool UserMatrixIsCrs_;
   bool IsOverlapped_;
   const Tifpack_IlukGraph & Graph_;
-  Teuchos::RefCountPtr<Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal,Node> > IlukRowMap_;
-  Teuchos::RefCountPtr<Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal,Node> > IlukDomainMap_;
-  Teuchos::RefCountPtr<Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal,Node> > IlukRangeMap_;
-  Teuchos::RefCountPtr<const Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal,Node> > U_DomainMap_;
-  Teuchos::RefCountPtr<const Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal,Node> > L_RangeMap_;
-  Teuchos::RefCountPtr<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > L_;
-  Teuchos::RefCountPtr<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > U_;
-  Teuchos::RefCountPtr<Tpetra::CrsGraph<Scalar,LocalOrdinal,GlobalOrdinal,Node> > L_Graph_;
-  Teuchos::RefCountPtr<Tpetra::CrsGraph<Scalar,LocalOrdinal,GlobalOrdinal,Node> > U_Graph_;
-  Teuchos::RefCountPtr<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > D_;
+  Teuchos::RCP<Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal,Node> > IlukRowMap_;
+  Teuchos::RCP<Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal,Node> > IlukDomainMap_;
+  Teuchos::RCP<Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal,Node> > IlukRangeMap_;
+  Teuchos::RCP<const Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal,Node> > U_DomainMap_;
+  Teuchos::RCP<const Tpetra::Map<Scalar,LocalOrdinal,GlobalOrdinal,Node> > L_RangeMap_;
+  Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > L_;
+  Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > U_;
+  Teuchos::RCP<Tpetra::CrsGraph<Scalar,LocalOrdinal,GlobalOrdinal,Node> > L_Graph_;
+  Teuchos::RCP<Tpetra::CrsGraph<Scalar,LocalOrdinal,GlobalOrdinal,Node> > U_Graph_;
+  Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > D_;
   bool UseTranspose_;
 
   int NumMyDiagonals_;
@@ -464,10 +464,10 @@ class CrsRiluk: public virtual Tpetra::Preconditioner<Scalar,LocalOrdinal,Global
   double Rthresh_;
   mutable double Condest_;
 
-  mutable Teuchos::RefCountPtr<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > OverlapX_;
-  mutable Teuchos::RefCountPtr<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > OverlapY_;
-  mutable Teuchos::RefCountPtr<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > VbrX_;
-  mutable Teuchos::RefCountPtr<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > VbrY_;
+  mutable Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > OverlapX_;
+  mutable Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > OverlapY_;
+  mutable Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > VbrX_;
+  mutable Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > VbrY_;
   Tpetra::CombineMode OverlapMode_;
 
 

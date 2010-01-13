@@ -58,7 +58,7 @@ class Tpetra_BlockMap;
  \code
  #include "Tifpack_LocalFilter.hpp"
  ...
- Teuchos::RefCountPtr<Tpetra_RowMatrix> A;             // fill the elements of A,
+ Teuchos::RCP<Tpetra_RowMatrix> A;             // fill the elements of A,
  A->FillComplete();
 
  Tifpack_LocalFilter LocalA(A);
@@ -87,7 +87,7 @@ class Tifpack_LocalFilter : public virtual Tpetra_RowMatrix {
 public:
   //@{ \name Constructor.
   //! Constructor
-  Tifpack_LocalFilter(const Teuchos::RefCountPtr<const Tpetra_RowMatrix>& Matrix);
+  Tifpack_LocalFilter(const Teuchos::RCP<const Tpetra_RowMatrix>& Matrix);
 
   //@}
   //@{ \name Destructor.
@@ -159,7 +159,7 @@ public:
 
     \return Integer error code, set to 0 if successful.
     */
-  virtual int Multiply(bool TransA, const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
+  virtual int Multiply(bool TransA, const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
   {
     if (TransA == true) {
       TIFPACK_CHK_ERR(-1);
@@ -170,17 +170,17 @@ public:
   }
 
   //! Returns result of a local-only solve using a triangular Tpetra_RowMatrix with Tpetra_MultiVectors X and Y (NOT IMPLEMENTED).
-  virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Tpetra_MultiVector& X, 
-		    Tpetra_MultiVector& Y) const
+  virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+		    Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
   {
     TIFPACK_RETURN(-1); // not implemented 
   }
 
-  virtual int Apply(const Tpetra_MultiVector& X,
-		    Tpetra_MultiVector& Y) const;
+  virtual int Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+		    Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
-  virtual int ApplyInverse(const Tpetra_MultiVector& X,
-			   Tpetra_MultiVector& Y) const;
+  virtual int ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+			   Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
   //! Computes the sum of absolute values of the rows of the Tpetra_RowMatrix, results returned in x (NOT IMPLEMENTED).
   virtual int InvRowSums(Tpetra_Vector& x) const
   {
@@ -368,16 +368,16 @@ const char* Label() const{
 private:
 
   //! Pointer to the matrix to be preconditioned.
-  Teuchos::RefCountPtr<const Tpetra_RowMatrix> Matrix_;
+  Teuchos::RCP<const Tpetra_RowMatrix> Matrix_;
 #ifdef HAVE_MPI
   //! Communicator containing this process only.
-  Teuchos::RefCountPtr<Tpetra_MpiComm> SerialComm_;
+  Teuchos::RCP<Tpetra_MpiComm> SerialComm_;
 #else
   //! Communicator containing this process only.
-  Teuchos::RefCountPtr<Tpetra_SerialComm> SerialComm_;
+  Teuchos::RCP<Tpetra_SerialComm> SerialComm_;
 #endif
   //! Map based on SerialComm_, containing the local rows only.
-  Teuchos::RefCountPtr<Tpetra_Map> Map_;
+  Teuchos::RCP<Tpetra_Map> Map_;
   //! Number of rows in the local matrix.
   int NumRows_;
   //! Number of nonzeros in the local matrix.
@@ -396,7 +396,7 @@ private:
   bool UseTranspose_;
   //! Label for \c this object.
   char Label_[80];
-  Teuchos::RefCountPtr<Tpetra_Vector> Diagonal_;
+  Teuchos::RCP<Tpetra_Vector> Diagonal_;
   double NormOne_;
   double NormInf_;
 

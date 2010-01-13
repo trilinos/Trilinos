@@ -227,7 +227,7 @@ public:
     return(IsComputed_);
   }
 
-  //! Computes the preconditioners.
+  //! Computes the preconditioner.
   void Compute();
 
   //@}

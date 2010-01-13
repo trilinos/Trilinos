@@ -165,7 +165,7 @@ const Tpetra_Map& Tifpack_Chebyshev::OperatorRangeMap() const
 
 //==============================================================================
 int Tifpack_Chebyshev::
-Apply(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
+Apply(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   if (IsComputed() == false)
     TIFPACK_CHK_ERR(-3);
@@ -344,7 +344,7 @@ void Tifpack_Chebyshev::SetLabel()
 
 //==============================================================================
 int Tifpack_Chebyshev::
-ApplyInverse(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
+ApplyInverse(const Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, Tpetra_MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
   if (!IsComputed())
     TIFPACK_CHK_ERR(-3);
@@ -361,7 +361,7 @@ ApplyInverse(const Tpetra_MultiVector& X, Tpetra_MultiVector& Y) const
 
   // AztecOO gives X and Y pointing to the same memory location,
   // need to create an auxiliary vector, Xcopy
-  Teuchos::RefCountPtr<const Tpetra_MultiVector> Xcopy;
+  Teuchos::RCP<const Tpetra_MultiVector> Xcopy;
   if (X.Pointers()[0] == Y.Pointers()[0])
     Xcopy = Teuchos::rcp( new Tpetra_MultiVector(X) );
   else

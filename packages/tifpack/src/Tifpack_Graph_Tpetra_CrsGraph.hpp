@@ -50,7 +50,7 @@ class Tifpack_Graph_Tpetra_CrsGraph : public Tifpack_Graph {
 public:
     
   //! Constructor.
-  Tifpack_Graph_Tpetra_CrsGraph(const Teuchos::RefCountPtr<const Tpetra_CrsGraph>& CrsGraph);
+  Tifpack_Graph_Tpetra_CrsGraph(const Teuchos::RCP<const Tpetra_CrsGraph>& CrsGraph);
 
   //! Destructor.
   virtual ~Tifpack_Graph_Tpetra_CrsGraph() {};
@@ -126,7 +126,7 @@ private:
   //! Maximum number of indices per row.
   int MaxNumIndices_;
   //! Pointer to the wrapped Tpetra_CrsGraph.
-  Teuchos::RefCountPtr<const Tpetra_CrsGraph> CrsGraph_;
+  Teuchos::RCP<const Tpetra_CrsGraph> CrsGraph_;
 };
 
 #endif
