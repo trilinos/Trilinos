@@ -184,7 +184,7 @@ Thyra::createMembers(
   const std::string &label
   )
 {
-  return createMembers(Teuchos::rcp(&vs,false),numMembers,label);
+  return createMembers(Teuchos::rcp(&vs,false), numMembers, label);
 }
 
 
