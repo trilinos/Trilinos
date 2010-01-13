@@ -116,6 +116,11 @@ namespace Kokkos {
     //! Applies a sweep of coarse-grain Hybrid Gauss-Seidel
     void sweep_coarse_hybrid(Scalar dampingFactor_, size_t num_chunks, MultiVector<Scalar,Node> &X, const MultiVector<Scalar,Node> &B) const;
 
+    //! Does setup for Chebyshev
+    void setup_chebyshev(const Scalar lambda_max, const Scalar lambda_min);
+
+    //! Applies a sweep of Chebyshev iteration
+    void sweep_chebyshev(MultiVector<Scalar,Node> &X, const MultiVector<Scalar,Node> &B) const;
 
     //@}
 
@@ -123,11 +128,15 @@ namespace Kokkos {
     //! Copy constructor (protected and unimplemented)
     DefaultRelaxation(const DefaultRelaxation& source);
 
-
     //! Extract the diagonal from the matrix, if the user hasn't set it already.
     // NTS: This should eventually disappear into some other Kokkos class...
     void ExtractDiagonal();    
 
+    // Update the temp vector size
+    bool UpdateJacobiTemp(size_t num_vectors) const;
+    bool UpdateChebyTemp(size_t num_vectors) const;
+
+    // My node
     Teuchos::RCP<Node> node_;
 
     // we do this one of two ways: 
@@ -143,6 +152,20 @@ namespace Kokkos {
     // Array containing matrix diagonal for easy access
     Teuchos::ArrayRCP<Scalar> diagonal_;
 
+    // Array containing a temp vector for Jacobi
+    mutable Teuchos::ArrayRCP<Scalar> tempJacobiVector_;
+    mutable size_t lastNumJacobiVectors_;
+
+    // Arrays containing temp vectors for Chebyshev
+    mutable Teuchos::ArrayRCP<Scalar> tempChebyVectorX_;
+    mutable Teuchos::ArrayRCP<Scalar> tempChebyVectorW_;
+    mutable size_t lastNumChebyVectors_;
+    mutable bool cheby_setup_done_;
+    mutable bool first_cheby_iteration_;
+
+    // Constants for Chebyshev
+    mutable Scalar lmin_,lmax_,delta_,s1_,oneOverTheta_,rho_,rho_new_,dtemp1_,dtemp2_;
+
     size_t numRows_;
     bool indsInit_, valsInit_, isPacked_, isEmpty_;
   };
@@ -152,16 +175,22 @@ namespace Kokkos {
   template<class Scalar, class Ordinal, class Node>
   DefaultRelaxation<Scalar,Ordinal,Node>::DefaultRelaxation(const Teuchos::RCP<Node> &node)
   : node_(node)
+  , lastNumJacobiVectors_(0)
+  , lastNumChebyVectors_(0)
+  , cheby_setup_done_(false)
+  , first_cheby_iteration_(false)  
   , indsInit_(false)
   , valsInit_(false)
   , isPacked_(false) 
-  , isEmpty_(false) {
+  , isEmpty_(false)
+  {
+    lmin_=lmax_=delta_=s1_=oneOverTheta_=rho_=rho_new_=dtemp1_=dtemp2_=Teuchos::ScalarTraits<Scalar>::zero();
   }
 
   /**********************************************************************/
   template<class Scalar, class Ordinal, class Node>
   DefaultRelaxation<Scalar,Ordinal,Node>::~DefaultRelaxation() {
-    diagonal_        = Teuchos::null;    
+    clear();
   }
 
   /**********************************************************************/
@@ -267,17 +296,22 @@ namespace Kokkos {
   /**********************************************************************/
   template <class Scalar, class Ordinal, class Node>
   void DefaultRelaxation<Scalar,Ordinal,Node>::clear() {
-    pbuf_inds1D_     = Teuchos::null;
-    pbuf_offsets1D_  = Teuchos::null;
-    pbuf_vals1D_     = Teuchos::null;
-    pbuf_inds2D_     = Teuchos::null;
-    pbuf_vals2D_     = Teuchos::null;
-    pbuf_numEntries_ = Teuchos::null;
-    diagonal_        = Teuchos::null;
+    pbuf_inds1D_      = Teuchos::null;
+    pbuf_offsets1D_   = Teuchos::null;
+    pbuf_vals1D_      = Teuchos::null;
+    pbuf_inds2D_      = Teuchos::null;
+    pbuf_vals2D_      = Teuchos::null;
+    pbuf_numEntries_  = Teuchos::null;
+    diagonal_         = Teuchos::null;
+    tempJacobiVector_ = Teuchos::null;
+    tempChebyVectorW_ = Teuchos::null;
+    tempChebyVectorX_ = Teuchos::null;
     indsInit_ = false;
     valsInit_ = false;
     isPacked_ = false;
     isEmpty_  = false;
+    lastNumJacobiVectors_=0;
+    lastNumChebyVectors_=0;
   }
 
   /**********************************************************************/
@@ -334,6 +368,34 @@ namespace Kokkos {
       
     }
   }
+  /**********************************************************************/
+  template <class Scalar, class Ordinal, class Node>
+  bool DefaultRelaxation<Scalar,Ordinal,Node>::UpdateJacobiTemp(size_t num_vectors) const{
+    // Re-allocate memory if needed
+    if(num_vectors > lastNumJacobiVectors_){
+      tempJacobiVector_=Teuchos::null;
+      lastNumJacobiVectors_=num_vectors;
+      tempJacobiVector_ = node_->template allocBuffer<Scalar>(numRows_*lastNumJacobiVectors_); 
+      return true;
+    }
+    return false;
+  }
+
+  /**********************************************************************/
+  template <class Scalar, class Ordinal, class Node>
+  bool DefaultRelaxation<Scalar,Ordinal,Node>::UpdateChebyTemp(size_t num_vectors) const{
+    // Re-allocate memory if needed
+    if(num_vectors > lastNumChebyVectors_){
+      tempChebyVectorW_=Teuchos::null;
+      tempChebyVectorX_=Teuchos::null;
+      lastNumChebyVectors_=num_vectors;
+      tempChebyVectorW_ = node_->template allocBuffer<Scalar>(numRows_*lastNumChebyVectors_); 
+      tempChebyVectorX_ = node_->template allocBuffer<Scalar>(numRows_*lastNumChebyVectors_); 
+      return true;
+    }
+    return false;
+  }
+
 
   /**********************************************************************/
   template <class Scalar, class Ordinal, class Node>
@@ -458,11 +520,11 @@ namespace Kokkos {
     TEST_FOR_EXCEPT(X.getNumCols() != B.getNumCols());
     ReadyBufferHelper<Node> rbh(node_);
 
-    // Copy x 
+    // Copy x over to the temp vector
     // NTS: The MultiVector copy constructor is a View. We need to do this the hard way.
-    MultiVector<Scalar,Node> X0(B.getNode());
-    Teuchos::ArrayRCP<Scalar> x0dat = node_->template allocBuffer<Scalar>(numRows_);    
-    X0.initializeValues(numRows_,B.getNumCols(),x0dat,B.getStride());
+    MultiVector<Scalar,Node> X0(X.getNode());
+    UpdateJacobiTemp(X.getNumCols());
+    X0.initializeValues(numRows_,B.getNumCols(),tempJacobiVector_,B.getStride());
     DefaultArithmetic<MultiVector<Scalar,Node> >::Assign(X0,X);
 
     if (isEmpty_ == true) {
@@ -506,11 +568,110 @@ namespace Kokkos {
       node_->template parallel_for<Op2D>(0,numRows_*numRHS,wdp);
     }
     return;
+  }
 
-    x0dat=Teuchos::null;
+  /********************************************************************/
+  template <class Scalar, class Ordinal, class Node>
+  void DefaultRelaxation<Scalar,Ordinal,Node>::setup_chebyshev(const Scalar lambda_max, const Scalar lambda_min){
+    lmax_=lambda_max;
+    lmin_=lambda_min;
+
+    Scalar alpha = lmin_;
+    Scalar beta  = 1.1*lmax_;
+    delta_ = 2.0 / (beta-alpha);
+    Scalar theta_ = 0.5 * (beta+alpha);
+    s1_    = theta_ * delta_;
+    oneOverTheta_=1.0 / theta_;
+    rho_=1.0/s1_;
+
+    first_cheby_iteration_=true;
+    cheby_setup_done_=true;
   }
 
 
+  /********************************************************************/
+  template <class Scalar, class Ordinal, class Node>
+  void DefaultRelaxation<Scalar,Ordinal,Node>::sweep_chebyshev(MultiVector<Scalar,Node> &X, const MultiVector<Scalar,Node> &B) const{
+    typedef DefaultChebyshevOp1<Scalar,Ordinal>  Op1D;
+    //    typedef DefaultChebyOp2<Scalar,Ordinal>  Op2D;
+    
+    TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
+		       Teuchos::typeName(*this) << "::sweep_jacobi(): operation not fully initialized.");
+    TEST_FOR_EXCEPT(X.getNumCols() != B.getNumCols());
+    TEST_FOR_EXCEPT(X.getStride() != B.getStride());
+    TEST_FOR_EXCEPT(cheby_setup_done_ == false);
+    
+    ReadyBufferHelper<Node> rbh(node_);
+    
+    // If the number of multivectors has changed, we need to run Cheby from scratch
+    first_cheby_iteration_= UpdateChebyTemp(X.getNumCols()) || first_cheby_iteration_;
+    
+    // Copy X to X0 so we get the matvec correct
+    MultiVector<Scalar,Node> X0(X.getNode());
+    X0.initializeValues(numRows_,X.getNumCols(),tempChebyVectorX_,X.getStride());
+    DefaultArithmetic<MultiVector<Scalar,Node> >::Assign(X0,X);
+
+    // Update Scalars 
+    if(!first_cheby_iteration_){
+      rho_new_ = 1.0 / (2.0*s1_ - rho_);
+      dtemp1_=rho_*rho_new_;
+      dtemp2_=2*rho_new_*delta_;
+      rho_=rho_new_;
+    }    
+    //    printf("    rho = %6.4e rho_new = %6.4e dtemp1=%6.4e dtemp2=%6.4e\n",rho_,rho_new_,dtemp1_,dtemp2_);
+
+
+    
+    if (isEmpty_ == true) {
+      // This makes no sense to try to call ...
+      TEST_FOR_EXCEPT(true);
+    }
+    else if (isPacked_ == true) {
+      Op1D wdp;
+      rbh.begin();
+      wdp.numRows = numRows_;
+      wdp.offsets = rbh.template addConstBuffer<size_t>(pbuf_offsets1D_);
+      wdp.inds    = rbh.template addConstBuffer<Ordinal>(pbuf_inds1D_);
+      wdp.vals    = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
+      wdp.x       = rbh.template addNonConstBuffer<Scalar>(X.getValuesNonConst());
+      wdp.x0      = rbh.template addConstBuffer<Scalar>(tempChebyVectorX_);
+      wdp.w       = rbh.template addNonConstBuffer<Scalar>(tempChebyVectorW_);
+      wdp.b       = rbh.template addConstBuffer<Scalar>(B.getValues());
+      wdp.diag    = rbh.template addConstBuffer<Scalar>(diagonal_);
+      wdp.stride = X.getStride();
+      wdp.first_step=first_cheby_iteration_;
+      wdp.zero_initial_guess=false;//HAQ Fix me later
+      wdp.oneOverTheta = oneOverTheta_;
+      wdp.dtemp1 = dtemp1_;
+      wdp.dtemp2 = dtemp2_;
+      
+      rbh.end();    
+      const size_t numRHS = X.getNumCols();
+      node_->template parallel_for<Op1D>(0,numRows_*numRHS,wdp);
+    }
+    else {
+      /*      Op2D wdp;
+	      rbh.begin();
+	      wdp.numRows = numRows_;
+	      wdp.numEntries = rbh.template addConstBuffer<size_t>(pbuf_numEntries_);
+	      wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(pbuf_inds2D_);
+	      wdp.vals_beg   = rbh.template addConstBuffer<const Scalar *>(pbuf_vals2D_);
+	      wdp.x       = rbh.template addNonConstBuffer<Scalar>(X.getValuesNonConst());
+	      wdp.x0      = rbh.template addConstBuffer<Scalar>(X0.getValues());
+	      wdp.b       = rbh.template addConstBuffer<Scalar>(B.getValues());
+	      wdp.diag    = rbh.template addConstBuffer<Scalar>(diagonal_);
+	      wdp.damping_factor = dampingFactor_;
+	      wdp.xstride = X.getStride();
+	      wdp.bstride = B.getStride();
+	      rbh.end();
+	      const size_t numRHS = X.getNumCols();
+	      node_->template parallel_for<Op2D>(0,numRows_*numRHS,wdp);
+      */
+    }
+    
+    first_cheby_iteration_=false;
+    return;
+  }
 
 } // namespace Kokkos
 

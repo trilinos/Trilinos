@@ -83,7 +83,7 @@ namespace {
   RCP<ThrustGPUNode> thrustnode;
 #endif
 
-  int N = 1000;
+  int N = 10;
 
   TEUCHOS_STATIC_SETUP()
   {
@@ -201,7 +201,7 @@ namespace {
 
     printf("\n");
 
-    int its=100;
+    int its=10;
 
     // Allocate Relaxation Object
     DefaultRelaxation<Scalar,Ordinal,Node> dj(node);
@@ -267,6 +267,24 @@ namespace {
     printf("[%3d] ||x0|| = %22.16e\n",its,(double)norms/norm0);
 
 
+    // Set starting vector & run Chebyshev
+    Teuchos::ScalarTraits<Scalar>::seedrandom(24601);
+    DefaultArithmetic<MV>::Random(X0);
+    DefaultArithmetic<MV>::Init(RHS,0);
+    norms=-666;norm0=DefaultArithmetic<MV>::Norm2Squared(X0);    
+    /*    FILE *f=fopen("x.dat","w");
+    for(int i=0;i<N;i++)
+      fprintf(f,"%22.16e\n",x0dat[i]);
+      fclose(f);*/      
+    printf("*** Chebyshev ***\n");
+    for(int i=0;i<its;i++){
+      // NTS: Runs 1st degree polynomials, because higher degree isn't correct
+      dj.setup_chebyshev((Scalar)2.0,(Scalar) 2.0e-6);    
+      dj.sweep_chebyshev(X0,RHS);
+    }
+    norms=DefaultArithmetic<MV>::Norm2Squared(X0);
+    printf("[%3d] ||x0|| = %22.16e\n",its,(double)norms/norm0);
+
     x0dat = null;
     rhsdat= null;
   }
@@ -299,10 +317,11 @@ namespace {
 #endif
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
-        UNIT_TEST_SERIALNODE( ORDINAL, SCALAR ) \
-        UNIT_TEST_TBBNODE( ORDINAL, SCALAR ) \
-        UNIT_TEST_TPINODE( ORDINAL, SCALAR ) \
-        UNIT_TEST_THRUSTGPUNODE( ORDINAL, SCALAR )
+     UNIT_TEST_SERIALNODE( ORDINAL, SCALAR ) \
+     UNIT_TEST_TBBNODE( ORDINAL, SCALAR ) \
+     UNIT_TEST_TPINODE( ORDINAL, SCALAR ) \
+     UNIT_TEST_THRUSTGPUNODE( ORDINAL, SCALAR )
+
 
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
         UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, double) \
