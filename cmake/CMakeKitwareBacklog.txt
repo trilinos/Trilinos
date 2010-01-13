@@ -18,13 +18,6 @@ Prioritized Backlog Items:
 4511.
 
 
-(*) [CMake] [P2] Need to pass compile options to configure time tests. We made
-an effort to do this for the Trilinos created configure time tests, but not all
-of the CMake given ones allow us to to that right now. Most promenently is the
-verify CXX test. Being able to pass in the options to use or using the
-CMAKE_<compiler>_FLAGS variable internally are sufficient fixes for this.
-
-
 (*) [CTest] [P2] Get updated files info attached to every build row for each
 package (e.g. Label).  Currently, it is very hard to track down what files
 where updated when you are querying individual tests with queryTests.php or
@@ -550,6 +543,12 @@ hassle and does not interact well with MS Visual C++ projects.
 
 (*) [CMake] [P2] Native and mixed-language support for Fortran 2003
 (and some 2008): Collaborate with Damian Rouson on this.
+
+(*) [CMake] [P2] Need to pass compile options to configure time tests. We made
+an effort to do this for the Trilinos created configure time tests, but not
+all of the CMake given ones allow us to to that right now. Most promenently is
+the verify CXX test. Being able to pass in the options to use or using the
+CMAKE_<compiler>_FLAGS variable internally are sufficient fixes for this.
 
 (*) [CDash] [P3] Append all query fields when going from 'collapsed'
 view page to 'non-collapsed' view page: Currently, if you create a
