@@ -61,6 +61,7 @@ const bool  CommandLineProcessor::output_show_line_prefix_default_(false);
 const bool  CommandLineProcessor::output_show_tab_count_default_(false);
 const bool  CommandLineProcessor::output_show_proc_rank_default_(false);
 const int   CommandLineProcessor::output_to_root_rank_only_default_(0);
+const bool  CommandLineProcessor::print_rcpnode_statistics_on_exit_default_(false);
 
 CommandLineProcessor::CommandLineProcessor(
   bool   throwExceptions_in
@@ -75,6 +76,7 @@ CommandLineProcessor::CommandLineProcessor(
   ,output_show_tab_count_(output_show_tab_count_default_)
   ,output_show_proc_rank_(output_show_proc_rank_default_)
   ,output_to_root_rank_only_(output_to_root_rank_only_default_)
+  ,print_rcpnode_statistics_on_exit_(print_rcpnode_statistics_on_exit_default_)
   ,added_extra_output_setup_options_(false)
   ,in_add_extra_output_setup_options_(false)
 {}
@@ -100,7 +102,9 @@ void CommandLineProcessor::setOption(
   options_list_[std::string(option_false)]
     = opt_val_val_t(OPT_BOOL_FALSE,any(option_val),false);
   options_documentation_list_.push_back(
-    opt_doc_t(OPT_BOOL_TRUE,option_true,option_false,std::string(documentation?documentation:""),any(option_val)) );
+    opt_doc_t(OPT_BOOL_TRUE, option_true, option_false,
+      std::string(documentation?documentation:""), any(option_val)) 
+    );
 }
 
 void CommandLineProcessor::setOption(
@@ -115,7 +119,9 @@ void CommandLineProcessor::setOption(
   options_list_[std::string(option_name)]
     = opt_val_val_t(OPT_INT,any(option_val),required);
   options_documentation_list_.push_back(
-    opt_doc_t(OPT_INT,option_name,"",std::string(documentation?documentation:""),any(option_val)) );
+    opt_doc_t(OPT_INT, option_name, "", std::string(documentation?documentation:""),
+      any(option_val))
+    );
 }
 
 void CommandLineProcessor::setOption(
@@ -130,7 +136,9 @@ void CommandLineProcessor::setOption(
   options_list_[std::string(option_name)]
     = opt_val_val_t(OPT_DOUBLE,any(option_val),required);
   options_documentation_list_.push_back(
-    opt_doc_t(OPT_DOUBLE,option_name,"",std::string(documentation?documentation:""),any(option_val)) );
+    opt_doc_t(OPT_DOUBLE, option_name, "", std::string(documentation?documentation:""),
+      any(option_val))
+    );
 }
 
 void CommandLineProcessor::setOption(
@@ -145,7 +153,9 @@ void CommandLineProcessor::setOption(
   options_list_[std::string(option_name)]
     = opt_val_val_t(OPT_STRING,any(option_val),required);
   options_documentation_list_.push_back(
-    opt_doc_t(OPT_STRING,option_name,"",std::string(documentation?documentation:""),any(option_val)) );
+    opt_doc_t(OPT_STRING, option_name, "", std::string(documentation?documentation:""),
+      any(option_val))
+    );
 }
 
 // Parse command line
@@ -231,8 +241,11 @@ CommandLineProcessor::parse(
         *(any_cast<std::string*>(opt_val_val.opt_val)) = remove_quotes(opt_val_str);
         break;
       case OPT_ENUM_INT:
-        if( !set_enum_value( i, argv, opt_name, any_cast<int>(opt_val_val.opt_val), remove_quotes(opt_val_str), errout ) )
+        if( !set_enum_value( i, argv, opt_name, any_cast<int>(opt_val_val.opt_val),
+            remove_quotes(opt_val_str), errout ) )
+        {
           return PARSE_UNRECOGNIZED_OPTION;
+        }
         break;
       default:
         TEST_FOR_EXCEPT(true); // Local programming error only
@@ -257,22 +270,24 @@ CommandLineProcessor::parse(
   // Set the options of a default stream exists and if we are asked to
   RCP<FancyOStream>
     defaultOut = VerboseObjectBase::getDefaultOStream();
-  if( defaultOut.get() && addOutputSetupOptions_ ) {
-    if( output_all_front_matter_ != output_all_front_matter_default_ )
+  if (defaultOut.get() && addOutputSetupOptions_) {
+    if (output_all_front_matter_ != output_all_front_matter_default_)
       defaultOut->setShowAllFrontMatter(output_all_front_matter_);
-    if( output_show_line_prefix_ != output_show_line_prefix_default_ )
+    if (output_show_line_prefix_ != output_show_line_prefix_default_)
       defaultOut->setShowLinePrefix(output_show_line_prefix_);
-    if( output_show_tab_count_ != output_show_tab_count_default_ )
+    if (output_show_tab_count_ != output_show_tab_count_default_)
       defaultOut->setShowTabCount(output_show_tab_count_);
-    if( output_show_proc_rank_ != output_show_proc_rank_default_ )
+    if (output_show_proc_rank_ != output_show_proc_rank_default_)
       defaultOut->setShowProcRank(output_show_proc_rank_);
-    if( output_to_root_rank_only_ != output_to_root_rank_only_default_ )
+    if (output_to_root_rank_only_ != output_to_root_rank_only_default_)
       defaultOut->setOutputToRootOnly(output_to_root_rank_only_);
+    RCPNodeTracer::setPrintRCPNodeStatisticsOnExit(print_rcpnode_statistics_on_exit_);
   }
   return PARSE_SUCCESSFUL;
 }
 
-void CommandLineProcessor::printHelpMessage( const char program_name[], std::ostream &out ) const
+void CommandLineProcessor::printHelpMessage( const char program_name[],
+  std::ostream &out ) const
 {
   add_extra_output_setup_options();
   int procRank = GlobalMPISession::getRank();
@@ -286,7 +301,12 @@ void CommandLineProcessor::printHelpMessage( const char program_name[], std::ost
     // Get the maximum length of an option name
     int opt_name_w = 19; // For the 'pause-for-debugging' option
     options_documentation_list_t::const_iterator itr;
-    for( itr = options_documentation_list_.begin(); itr != options_documentation_list_.end(); ++itr ) {
+    for (
+      itr = options_documentation_list_.begin();
+      itr != options_documentation_list_.end();
+      ++itr
+      )
+    {
       opt_name_w = my_max(opt_name_w,itr->opt_name.length());
       if( itr->opt_type )
         opt_name_w = my_max(opt_name_w,itr->opt_name_false.length());
@@ -377,7 +397,8 @@ void CommandLineProcessor::printHelpMessage( const char program_name[], std::ost
         << "(default: ";
       switch( itr->opt_type ) {
         case OPT_BOOL_TRUE:
-          out << "--" << ( (*(any_cast<bool*>(itr->default_val))) ? itr->opt_name : itr->opt_name_false );
+          out << "--" << ( (*(any_cast<bool*>(itr->default_val))) ?
+            itr->opt_name : itr->opt_name_false );
           break;
         case OPT_INT:
         case OPT_DOUBLE:
@@ -401,7 +422,8 @@ void CommandLineProcessor::printHelpMessage( const char program_name[], std::ost
           out <<  "=" << add_quotes(*(any_cast<std::string*>(itr->default_val)));
           break;
         case OPT_ENUM_INT:
-          out <<  "=" << add_quotes(enum_opt_default_val_name(itr->opt_name,any_cast<int>(itr->default_val),&out));
+          out <<  "=" << add_quotes(
+            enum_opt_default_val_name(itr->opt_name,any_cast<int>(itr->default_val),&out));
           break;
         default:
           TEST_FOR_EXCEPT(true); // Local programming error only
@@ -421,11 +443,14 @@ void CommandLineProcessor::printHelpMessage( const char program_name[], std::ost
 void CommandLineProcessor::add_extra_output_setup_options() const
 {
   if(
-    in_add_extra_output_setup_options_ // Are we in this function already and calling it recursively?
+    // Are we in this function already and calling it recursively?
+    in_add_extra_output_setup_options_
     ||
-    added_extra_output_setup_options_  // Have we already setup these options?
+    // Have we already setup these options?
+    added_extra_output_setup_options_
     ||
-    !addOutputSetupOptions_            // Are we not supposed to setup these options?
+    // Are we not supposed to setup these options?
+    !addOutputSetupOptions_
     )
   {
     return; // If any of the above is true, we need to return right away!
@@ -454,6 +479,14 @@ void CommandLineProcessor::add_extra_output_setup_options() const
     "output-to-root-rank-only",&clp->output_to_root_rank_only_
     ,"Set which processor (the root) gets the output.  If < 0, then all processors get output."
     );
+  clp->setOption(
+    "print-rcpnode-statistics-on-exit", "no-print-rcpnode-statistics-on-exit",
+    &clp->print_rcpnode_statistics_on_exit_,
+    "Set if the RCPNode usage statistics will be printed on exit or not.  Warning,"
+    " this prints to std::cerr or every process so do not turn this on for very large"
+    " parallel runs."
+    );
+
   clp->added_extra_output_setup_options_ = true;
   clp->in_add_extra_output_setup_options_ = false;
 }
@@ -482,7 +515,8 @@ void CommandLineProcessor::setEnumOption(
   options_list_[std::string(enum_option_name)]
     = opt_val_val_t(OPT_ENUM_INT,any(opt_id),required);
   options_documentation_list_.push_back(
-    opt_doc_t(OPT_ENUM_INT,enum_option_name,"",std::string(documentation?documentation:""),any(opt_id))
+    opt_doc_t(OPT_ENUM_INT,enum_option_name, "",
+      std::string(documentation?documentation:""), any(opt_id))
     );
 }
 
@@ -531,7 +565,12 @@ void CommandLineProcessor::print_enum_opt_names(
     &enum_opt_data = enum_opt_data_list_.at(enum_id);
   typedef std::vector<std::string>::const_iterator itr_t;
   out << "Valid options:";
-  for( itr_t itr = enum_opt_data.enum_opt_names.begin(); itr != enum_opt_data.enum_opt_names.end() ; ++itr ) {
+  for(
+    itr_t itr = enum_opt_data.enum_opt_names.begin();
+    itr != enum_opt_data.enum_opt_names.end();
+    ++itr
+    )
+  {
     if( itr != enum_opt_data.enum_opt_names.begin() ) out << ",";
     out << " " << add_quotes(*itr);
   }

@@ -332,6 +332,17 @@ public:
   static TEUCHOS_LIB_DLL_EXPORT void printRCPNodeStatistics(
     const RCPNodeStatistics& rcpNodeStatistics, std::ostream &out);
 
+  /** \brief Set if RCPNode usage statistics will be printed when the program
+   * ends or not.
+   */
+  static TEUCHOS_LIB_DLL_EXPORT void setPrintRCPNodeStatisticsOnExit(
+    bool printRCPNodeStatisticsOnExit);
+
+  /** \brief Reteurn if RCPNode usage statistics will be printed when the
+   * program ends or not.
+   */
+  static TEUCHOS_LIB_DLL_EXPORT bool getPrintRCPNodeStatisticsOnExit();
+
   /** \brief Print the list of currently active RCP nodes.
    *
    * When the macro <tt>TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE</tt> is

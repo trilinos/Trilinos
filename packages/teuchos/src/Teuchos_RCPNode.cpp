@@ -35,6 +35,11 @@
 //#define RCP_NODE_DEBUG_TRACE_PRINT
 
 
+//
+// Internal implementatation stuff
+//
+
+
 namespace {
 
 
@@ -82,6 +87,9 @@ int loc_addNewRCPNodeCallNumber = -1;
 
 
 Teuchos::RCPNodeTracer::RCPNodeStatistics loc_rcpNodeStatistics;
+
+
+bool loc_printRCPNodeStatisticsOnExit = false;
 
 
 // This function returns the const void* value that is used as the key to look
@@ -250,6 +258,19 @@ void RCPNodeTracer::printRCPNodeStatistics(
     << "\n    totalNumRCPNodeAllocations = "<<rcpNodeStatistics.totalNumRCPNodeAllocations
     << "\n    totalNumRCPNodeDeletions   = "<<rcpNodeStatistics.totalNumRCPNodeDeletions
     << "\n";
+}
+
+
+void RCPNodeTracer::setPrintRCPNodeStatisticsOnExit(
+  bool printRCPNodeStatisticsOnExit)
+{
+  loc_printRCPNodeStatisticsOnExit = printRCPNodeStatisticsOnExit;
+}
+
+
+bool RCPNodeTracer::getPrintRCPNodeStatisticsOnExit()
+{
+  return loc_printRCPNodeStatisticsOnExit;
 }
 
 
@@ -481,9 +502,13 @@ ActiveRCPNodesSetup::~ActiveRCPNodesSetup()
 #endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
     std::cout << std::flush;
     TEST_FOR_EXCEPT(0==rcp_node_list);
-    RCPNodeTracer::RCPNodeStatistics rcpNodeStatistics = RCPNodeTracer::getRCPNodeStatistics();
-    if (rcpNodeStatistics.maxNumRCPNodes)
+    RCPNodeTracer::RCPNodeStatistics rcpNodeStatistics =
+      RCPNodeTracer::getRCPNodeStatistics();
+    if (rcpNodeStatistics.maxNumRCPNodes
+      && RCPNodeTracer::getPrintRCPNodeStatisticsOnExit())
+    {
       RCPNodeTracer::printRCPNodeStatistics(rcpNodeStatistics, std::cout);
+    }
     RCPNodeTracer::printActiveRCPNodes(std::cerr);
     delete rcp_node_list;
   }

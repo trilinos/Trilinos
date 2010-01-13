@@ -423,7 +423,7 @@ private:
   // /////////////////////////////////
   // Private data members
 
-  bool                              throwExceptions_;
+  bool                             throwExceptions_;
   bool                             recogniseAllOptions_;
   bool                             addOutputSetupOptions_;
   std::string                      doc_string_;
@@ -436,6 +436,7 @@ private:
   bool  output_show_tab_count_;
   bool  output_show_proc_rank_;
   int   output_to_root_rank_only_;
+  bool  print_rcpnode_statistics_on_exit_;
 
   bool  added_extra_output_setup_options_;
   bool  in_add_extra_output_setup_options_;
@@ -445,6 +446,7 @@ private:
   static const bool  output_show_tab_count_default_;
   static const bool  output_show_proc_rank_default_;
   static const int   output_to_root_rank_only_default_;
+  static const bool  print_rcpnode_statistics_on_exit_default_;
 
   // /////////////////////////////////
   // Private member functions
