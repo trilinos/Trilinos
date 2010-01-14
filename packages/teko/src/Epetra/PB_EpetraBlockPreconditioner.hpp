@@ -123,6 +123,9 @@ public:
    virtual Teuchos::RCP<const BlockPreconditionerState> getPreconditionerState() const;
 
 protected:
+   Teuchos::RCP<const Thyra::LinearOpBase<double> > extractLinearOp(const Epetra_Operator & A) const;
+   Teuchos::RCP<const MappingStrategy> extractMappingStrategy(const Epetra_Operator & A) const;
+
    EpetraBlockPreconditioner(); 
    EpetraBlockPreconditioner(const EpetraBlockPreconditioner &); 
 

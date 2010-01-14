@@ -17,7 +17,8 @@ OBJS = PB_EpetraHelpers.o \
        PB_ReorderedMappingStrategy.o \
        PB_EpetraBlockPreconditioner.o \
        PB_BlockedMappingStrategy.o \
-       PB_BlockedEpetraOperator.o
+       PB_BlockedEpetraOperator.o \
+       Teko_BasicMappingStrategy.o
 
 all: $(OBJS)
 
