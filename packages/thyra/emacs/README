@@ -74,7 +74,8 @@ opened.  Therefore, this means that one can not simply set the style in one's
 C) GTags
 
 The program GNU Global tags is a replacement for ctags and etags which is
-still under active development.
+still under active development.  Once you produce a GTAGS database file, you
+can search through source code *very* fast.
 
 1) Install the program run:
 
@@ -111,17 +112,25 @@ The program 'global' can be used to search for tags in source code very
 quickly.  You must be in the base directory of the source code to run
 'global'.
 
-a) Find all files where symbol is initially defined
+a) Find all locations where symbol is initially defined
 
-  $ global -e SYMBOL
+  $ global -x -e SYMBOL
 
-b) Find all files that use a symbol
+  NOTE: This gives the fine name and line number.  Other ouptut formats can be
+  selected with the --format option.
 
-  $ global -se SYMBOL
+  NOTE: You can pipe this into grep where you can further refine your search.
+
+  NOTE: If you only want to search the local directory and below you can
+  specify -l.
+
+b) Find all locations where a symbol is used
+
+  $ global -sx -g SYMBOL
 
 c) Find all symbols that match a regular expression
 
-  $ global -ce PARTIAL_SYMBOL
+  $ global -c -e PARTIAL_SYMBOL
 
 
 
