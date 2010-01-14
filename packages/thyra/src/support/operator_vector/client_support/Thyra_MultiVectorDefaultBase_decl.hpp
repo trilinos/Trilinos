@@ -206,4 +206,29 @@ protected:
 } // namespace Thyra
 
 
+#define THYRA_ASSERT_MV_COLS(FUNCNAME, cols) \
+  { \
+    const int numCols = cols.size(); \
+    const Thyra::Ordinal dimDomain = this->domain()->dim(); \
+    const std::string msgErr = this->description()+"::"+FUNCNAME; \
+    TEST_FOR_EXCEPTION( !( 1 <= numCols && numCols <= dimDomain ), \
+      std::invalid_argument, msgErr<<"Error!"); \
+    for (int k = 0; k < numCols; ++k) { \
+      const int col_k = cols[k]; \
+      TEST_FOR_EXCEPTION( \
+        !( 0<= col_k && col_k < dimDomain ), std::out_of_range, \
+        msgErr<<": col["<<k<<"] = " << col_k \
+        << " is not in the range [0,"<<(dimDomain-1)<<"]!" \
+        ); \
+    } \
+  } \
+  typedef int THYRA_ASSERT_MV_COLS_t 
+
+#ifdef THYRA_DEBUG
+#  define THYRA_DEBUG_ASSERT_MV_COLS(FUNCNAME, cols) \
+  THYRA_ASSERT_MV_COLS(FUNCNAME, cols)
+#else
+#  define THYRA_DEBUG_ASSERT_MV_COLS(FUNCNAME, cols)
+#endif
+
 #endif // THYRA_MULTI_VECTOR_DEFAULT_BASE_DECL_HPP

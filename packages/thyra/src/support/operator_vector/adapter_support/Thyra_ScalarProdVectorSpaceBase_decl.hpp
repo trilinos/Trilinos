@@ -155,6 +155,22 @@ private:
 };
 
 
+/** \brief Create a small vector space casted to ScalarProdVectorSpaceBase.
+ *
+ * \relates ScalarProdVectorSpaceBase
+ */
+template<class Scalar>
+RCP<const ScalarProdVectorSpaceBase<Scalar> >
+createSmallScalarProdVectorSpaceBase(
+  const RCP<const VectorSpaceBase<Scalar> > &vs,
+  const Ordinal dim
+  )
+{
+  return Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(
+    vs->smallVecSpcFcty()->createVecSpc(dim), true);
+}
+
+
 } // end namespace Thyra
 
 

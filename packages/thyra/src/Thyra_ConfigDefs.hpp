@@ -69,6 +69,10 @@
 
 #include <Thyra_Config.h>
 
+#if defined(HAVE_THYRA_DEBUG) && !defined(THYRA_DEBUG)
+#  define THYRA_DEBUG
+#endif
+
 #if !defined(HAVE_THYRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TEUCHOS_EXPLICIT_INSTANTIATION)
 #  define HAVE_THYRA_EXPLICIT_INSTANTIATION
 #endif

@@ -373,7 +373,7 @@ void SpmdVectorBase<Scalar>::releaseDetachedVectorViewImpl(
     return;
   }
   // Nothing to deallocate!
-  sub_vec->set_uninitialized();
+  sub_vec->uninitialize();
 }
 
 
@@ -438,7 +438,7 @@ void SpmdVectorBase<Scalar>::commitNonconstDetachedVectorViewImpl(
     VectorDefaultBase<Scalar>::commitNonconstDetachedVectorViewImpl(sub_vec);
     return;
   }
-  sub_vec->set_uninitialized();  // Nothing to deallocate!
+  sub_vec->uninitialize();  // Nothing to deallocate!
 }
 
 

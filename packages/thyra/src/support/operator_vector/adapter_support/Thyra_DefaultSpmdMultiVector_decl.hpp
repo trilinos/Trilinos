@@ -199,11 +199,26 @@ private:
   // ///////////////////////////////////////
   // Private member functions
 
-  ArrayRCP<Scalar> createContiguousCopy(
-    const ArrayView<const int> &cols
-    ) const;
+  ArrayRCP<Scalar> createContiguousCopy(const ArrayView<const int> &cols) const;
   
 }; // end class DefaultSpmdMultiVector
+
+
+template<class Scalar>
+RCP<DefaultSpmdMultiVector<Scalar> >
+defaultSpmdMultiVector(
+  const RCP<const SpmdVectorSpaceBase<Scalar> > &spmdRangeSpace,
+  const RCP<const ScalarProdVectorSpaceBase<Scalar> > &domainSpace,
+  const ArrayRCP<Scalar> &localValues,
+  const Ordinal leadingDim = -1
+  )
+{
+  return Teuchos::rcp(
+    new DefaultSpmdMultiVector<Scalar>(
+      spmdRangeSpace, domainSpace, localValues, leadingDim
+      )
+    );
+}
 
 
 } // end namespace Thyra

@@ -52,40 +52,54 @@ class CopyBackSpmdMultiVectorEntries {
 public:
   CopyBackSpmdMultiVectorEntries(
     const ArrayView<const int> &cols,
-    const Scalar *localValuesView, const Ordinal localSubDim,
-    Scalar *localValues, const Ordinal leadingDim
+    const ArrayRCP<const Scalar> &localValuesView, const Ordinal localSubDim,
+    const ArrayRCP<Scalar> &localValues, const Ordinal leadingDim
     )
     : cols_(cols), localValuesView_(localValuesView), localSubDim_(localSubDim),
       localValues_(localValues), leadingDim_(leadingDim)
     {}
   ~CopyBackSpmdMultiVectorEntries()
     {
-      //std::cout << "\nEntering CopyBackSpmdMultiVectorEntries::~CopyBackSpmdMultiVectorEntries()...\n";
+      typedef typename ArrayRCP<const Scalar>::const_iterator const_itr_t;
+      typedef typename ArrayRCP<Scalar>::iterator itr_t;
       // Copy from contiguous storage column by column
       const int numCols = cols_.size();
-      const Scalar *lvv = &*localValuesView_;
-      Scalar *lv = &*localValues_;
-      for( int k = 0; k < numCols; ++k ) {
+      const const_itr_t lvv = localValuesView_.begin();
+      const itr_t lv = localValues_.begin();
+      for (int k = 0; k < numCols; ++k) {
         const int col_k = cols_[k];
-        const Scalar *lvv_k = lvv + localSubDim_*k;
-        Scalar *lv_k = lv + leadingDim_*col_k;
-        //std::cout << "\nlvv_k = ["; for( int j = 0; j < localSubDim_; ++j ) std::cout << lvv_k[j] << ","; std::cout << "]\n";
+        const const_itr_t lvv_k = lvv + localSubDim_*k;
+        const itr_t lv_k = lv + leadingDim_*col_k;
         std::copy( lvv_k, lvv_k + localSubDim_, lv_k );
-        //std::cout << "\nlv_k = ["; for( int j = 0; j < localSubDim_; ++j ) std::cout << lv_k[j] << ","; std::cout << "]\n";
       }
-      //std::cout << "\nLeaving CopyBackSpmdMultiVectorEntries::~CopyBackSpmdMultiVectorEntries()\n";
     }
 private:
   Array<int> cols_;
-  const Scalar *localValuesView_;
+  ArrayRCP<const Scalar> localValuesView_;
   Ordinal localSubDim_;
-  Scalar *localValues_;
+  ArrayRCP<Scalar> localValues_;
   Ordinal leadingDim_;
   // Not defined and not to be called
   CopyBackSpmdMultiVectorEntries();
   CopyBackSpmdMultiVectorEntries(const CopyBackSpmdMultiVectorEntries&);
   CopyBackSpmdMultiVectorEntries& operator=(const CopyBackSpmdMultiVectorEntries&);
 };
+
+
+template<class Scalar>
+RCP<CopyBackSpmdMultiVectorEntries<Scalar> >
+copyBackSpmdMultiVectorEntries(
+  const ArrayView<const int> &cols,
+  const ArrayRCP<const Scalar> &localValuesView, const Ordinal localSubDim,
+  const ArrayRCP<Scalar> &localValues, const Ordinal leadingDim
+  )
+{
+  return Teuchos::rcp(
+    new CopyBackSpmdMultiVectorEntries<Scalar>(
+      cols, localValuesView, localSubDim, localValues, leadingDim
+      )
+    );
+}
 
 
 //
@@ -268,64 +282,39 @@ DefaultSpmdMultiVector<Scalar>::nonContigSubViewImpl(
   const ArrayView<const int> &cols
   ) const
 {
+  THYRA_DEBUG_ASSERT_MV_COLS("nonContigSubViewImpl(cols)", cols);
   const int numCols = cols.size();
   const ArrayRCP<Scalar> localValuesView = createContiguousCopy(cols);
-  return 
-    Teuchos::rcp(
-      new DefaultSpmdMultiVector<Scalar>(
-        spmdRangeSpace_,
-        Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(
-          spmdRangeSpace_->smallVecSpcFcty()->createVecSpc(numCols)
-          ,true),
-        localValuesView,
-        spmdRangeSpace_->localSubDim()
-        )
-      );
+  return defaultSpmdMultiVector<Scalar>(
+    spmdRangeSpace_,
+    createSmallScalarProdVectorSpaceBase<Scalar>(spmdRangeSpace_, numCols),
+    localValuesView,
+    spmdRangeSpace_->localSubDim()
+    );
 }
 
 
 template<class Scalar>
 RCP<MultiVectorBase<Scalar> >
 DefaultSpmdMultiVector<Scalar>::nonconstNonContigSubViewImpl(
-  const ArrayView<const int> &cols
-  )
+  const ArrayView<const int> &cols )
 {
+  THYRA_DEBUG_ASSERT_MV_COLS("nonContigSubViewImpl(cols)", cols);
   const int numCols = cols.size();
   const ArrayRCP<Scalar> localValuesView = createContiguousCopy(cols);
   const Ordinal localSubDim = spmdRangeSpace_->localSubDim();
   RCP<CopyBackSpmdMultiVectorEntries<Scalar> > copyBackView =
-    Teuchos::rcp(
-      new CopyBackSpmdMultiVectorEntries<Scalar>(
-        cols, &*localValuesView, localSubDim, &*localValues_, leadingDim_
-        )
-      );
+    copyBackSpmdMultiVectorEntries<Scalar>(cols, localValuesView.getConst(), localSubDim,
+      localValues_, leadingDim_);
   RCP<MultiVectorBase<Scalar> > view =
     Teuchos::rcpWithEmbeddedObjPreDestroy(
       new DefaultSpmdMultiVector<Scalar>(
         spmdRangeSpace_,
-        Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(
-          spmdRangeSpace_->smallVecSpcFcty()->createVecSpc(numCols), true),
+        createSmallScalarProdVectorSpaceBase<Scalar>(spmdRangeSpace_, numCols),
         localValuesView),
       copyBackView
       );
   return view;
-
-  // ToDo: Create the function createScalarProdVectorSpace(...) that takes in
-  // a VectorSpaceBaseBase factory and a size and returns an
-  // RCP<ScalarProdVectorSpaceBase> object.  That will make the above code
-  // much cleaner.
-
-  // ToDo: Refactor the CopyBackSpmdMultiVectorEntries class to use a
-  // non-member constructor and to not use raw pointers (use ArrayRCP instead).
-
-  // ToDo: Use non-member constructor for DefaultSpmdMultiVector.
-
-  // ToDo: Create and call macro THYRA_DEBUG_VALIDATE_MULTVEC_COLS(mv, cols)
-  // to validate a list of column indexes passed to a multi-vector.  Use the
-  // code from createContiguousCopy(...).
-
-  // ToDo: Refactor nonContigSubViewImpl(...) likewise.
-
 }
 
 
@@ -364,42 +353,23 @@ void DefaultSpmdMultiVector<Scalar>::getLocalDataImpl(
 template<class Scalar>
 ArrayRCP<Scalar>
 DefaultSpmdMultiVector<Scalar>::createContiguousCopy(
-  const ArrayView<const int> &cols
-  ) const
+  const ArrayView<const int> &cols ) const
 {
+  typedef typename ArrayRCP<Scalar>::const_iterator const_itr_t;
+  typedef typename ArrayRCP<Scalar>::iterator itr_t;
   const int numCols = cols.size();
-#ifdef TEUCHOS_DEBUG
-  const VectorSpaceBase<Scalar> &domain = *domainSpace_;
-  const Ordinal dimDomain = domain.dim();
-  const char msg_err[] = "MultiVectorDefaultBase<Scalar>::subView(numCols,cols[]): Error!";
-  TEST_FOR_EXCEPTION( numCols < 1 || dimDomain < numCols, std::invalid_argument, msg_err );
-#endif
   const Ordinal localSubDim = spmdRangeSpace_->localSubDim();
   ArrayRCP<Scalar> localValuesView = Teuchos::arcp<Scalar>(numCols*localSubDim);
   // Copy to contiguous storage column by column
-  const Scalar *lv = &*localValues_;
-  Scalar *lvv = &*localValuesView;
-  for( int k = 0; k < numCols; ++k ) {
+  const const_itr_t lv = localValues_.begin();
+  const itr_t lvv = localValuesView.begin();
+  for (int k = 0; k < numCols; ++k) {
     const int col_k = cols[k];
-#ifdef TEUCHOS_DEBUG
-    TEST_FOR_EXCEPTION(
-      !( 0<= col_k && col_k < dimDomain ), std::invalid_argument
-      ,msg_err << " col["<<k<<"] = " << col_k
-      << " is not in the range [0,"<<(dimDomain-1)<<"]!"
-      );
-#endif
-    const Scalar *lv_k = lv + leadingDim_*col_k;
-    Scalar *lvv_k = lvv + localSubDim*k;
-    std::copy( lv_k, lv_k + localSubDim, lvv_k );
+    const const_itr_t lv_k = lv + leadingDim_*col_k;
+    const itr_t lvv_k = lvv + localSubDim*k;
+    std::copy(lv_k, lv_k+localSubDim, lvv_k);
   }
   return localValuesView;
-
-  // ToDo: Refactor to not use RCP instead of raw pointers (make efficient by
-  // exposing iterator and not direct indexing).
-
-  // ToDo: Remove the above debug-mode checks once we have removed raw
-  // pointers.
-
 }
 
 
