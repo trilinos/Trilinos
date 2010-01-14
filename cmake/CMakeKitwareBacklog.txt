@@ -76,14 +76,10 @@ These capabilities are critical for the robustness and maintainability of the
 automated testing system run by CTest.
 
 
-(*) [CTest] [P2] Take over administration of Sandia nightly test machines
-where possible.  (See 2010 contract SOW.)
+(*) [CTest] [P2] Write a unit testing harness for the Trilinos CTest Driver.
 
 
-(*) [CMake] [P2] Establish an official current version of the CMake suite of
-tools for Trilinos developers.  Provide a simple and automatic delivery 
-vehicle to get updated versions to Trilinos developers (see Trilinos Developer
-toolset item).
+(*) [CTest] [P2] Unit test the TrilinosCTestDriverCore.cmake script.
 
 
 (*) [General] [P2] Help set up an Official Trilinos Development Toolset that
@@ -93,11 +89,6 @@ may look similar to the CSE that was set up for another Kitware customer.
 
 (*) [CTest] [P2] Use set_pgroups to allow killing all children that get run.
 This will allow reliably killing timed-out tests.
-
-
-(*) [CDash] [P2] Add general query filters to the test results pages.
-This would allow you to search over multiple Trilinos packages over
-multiple platforms and days all in one place.
 
 
 (*) [CDash] [P3] Line wrap all warning and error messages in CDash output.
@@ -120,23 +111,6 @@ include remembering what tests are most expensive and launching them
 first.  Note that this will be sufficient for serial runs but when
 running with MPI, we need to consider the numbers of processes a test
 is using (see below).
-
-
-(*) [CTest] [P3] Define the number of processors to be used when
-running a parallel test: Currently, ctest has no way of knowing how
-many processors a test will use when it runs.  For example, it has no
-way of knowing that an MPI run will use 8 processors.  This is
-important information for ctest to know if it is going to be doing a
-good job of launching tests to run on multiple processors at the same
-time (a new feature being implemented in the development branch).  The
-optimal job scheduling would be difficult but all we need is some
-basic non-optimal logic to do a good job of using the machine to its
-fullest when running lots of test simultaneously.  This is an issue in
-fully utilizing our overloaded testing machines.  Workaround: Set up
-testing to run only single-process jobs in parallel first, then MPI
-jobs sequentially that use all of the processes.  We would have to
-provide a tool on top of ctest to make this easy to use.  This is
-related to the above item when running with MPI.
 
 
 (*) [CDash] [P3] Support for user-defined configure, build, and test
@@ -549,6 +523,26 @@ an effort to do this for the Trilinos created configure time tests, but not
 all of the CMake given ones allow us to to that right now. Most promenently is
 the verify CXX test. Being able to pass in the options to use or using the
 CMAKE_<compiler>_FLAGS variable internally are sufficient fixes for this.
+
+(*) [CDash] [P2] Add general query filters to the test results pages.
+This would allow you to search over multiple Trilinos packages over
+multiple platforms and days all in one place.
+
+(*) [CTest] [P3] Define the number of processors to be used when
+running a parallel test: Currently, ctest has no way of knowing how
+many processors a test will use when it runs.  For example, it has no
+way of knowing that an MPI run will use 8 processors.  This is
+important information for ctest to know if it is going to be doing a
+good job of launching tests to run on multiple processors at the same
+time (a new feature being implemented in the development branch).  The
+optimal job scheduling would be difficult but all we need is some
+basic non-optimal logic to do a good job of using the machine to its
+fullest when running lots of test simultaneously.  This is an issue in
+fully utilizing our overloaded testing machines.  Workaround: Set up
+testing to run only single-process jobs in parallel first, then MPI
+jobs sequentially that use all of the processes.  We would have to
+provide a tool on top of ctest to make this easy to use.  This is
+related to the above item when running with MPI.
 
 (*) [CDash] [P3] Append all query fields when going from 'collapsed'
 view page to 'non-collapsed' view page: Currently, if you create a
