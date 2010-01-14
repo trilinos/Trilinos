@@ -223,6 +223,7 @@ example subdirectory of the PyTrilinos package:
 #undef  PACKAGE_VERSION
 %ignore PACKAGE_VERSION;
 %include "ml_config.h"
+%include "ml_common.h"
 
 /////////////////////////////
 // MLAPI_Workspace support //
