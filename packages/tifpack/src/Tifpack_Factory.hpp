@@ -33,6 +33,7 @@
 #include "Tifpack_ConfigDefs.hpp"
 #include "Tifpack_Preconditioner.hpp"
 #include "Tifpack_PointRelaxation.hpp"
+#include "Tifpack_Chebyshev.hpp"
 #include "Tifpack_ILUT.hpp"
 
 namespace Tifpack {
@@ -43,36 +44,22 @@ bool supportsUnsymmetric(const std::string& prec_type);
 
 //! Tifpack::Factory a factory class to create Tifpack preconditioners.
 /*!
-Class Tifpack::Factory is a function class, that contains just one method:
-Create(). Using Create(), users can easily define a variety of 
-Tifpack preconditioners. 
+Class Tifpack::Factory contains just one method: Create().
+Using Create(), users can easily create a variety of Tifpack preconditioners. 
 
 Create requires 3 arguments:
 - a string, indicating the preconditioner to be built;
 - a pointer to a Tpetra::RowMatrix, representing the matrix
   to be used to define the preconditioner;
-- an integer (defaulted to 0), that specifies the amount of
+- an optional integer (defaulted to 0), that specifies the amount of
   overlap among the processes.
 
 The first argument can assume the following values:
-- \c "point relaxation" : returns an instance of Tifpack_AdditiveSchwarz<Tifpack_PointRelaxation>
-- \c "point relaxation stand-alone" : returns an instance of Tifpack_PointRelaxation (value of overlap is ignored).
-- \c "block relaxation" : returns an instance of Tifpack_AdditiveSchwarz<Tifpack_BlockRelaxation>
-- \c "block relaxation stand-alone)" : returns an instance of Tifpack_BlockRelaxation.
-- \c "Amesos" : returns an instance of Tifpack_AdditiveSchwarz<Tifpack_Amesos>.
-- \c "Amesos" : returns an instance of Tifpack_Amesos.
-- \c "IC" : returns an instance of Tifpack_AdditiveSchwarz<Tifpack_IC>.
-- \c "IC stand-alone" : returns an instance of Tifpack_AdditiveSchwarz<Tifpack_IC>.
-- \c "ICT" : returns an instance of Tifpack_AdditiveSchwarz<Tifpack_ICT>.
-- \c "ICT stand-alone" : returns an instance of Tifpack_ICT.
-- \c "ILU" : returns an instance of Tifpack_AdditiveSchwarz<Tifpack_ILU>.
-- \c "ILU stand-alone" : returns an instance of Tifpack_ILU.
-- \c "ILUT" : returns an instance of Tifpack_AdditiveSchwarz<Tifpack_ILUT>.
-- \c "ILUT stand-alone" : returns an instance of Tifpack_ILUT.
-- otherwise, Create() returns 0.
+- \c "POINT_RELAXATION" : returns an instance of Tifpack::PointRelaxation.
+- \c "CHEBYSHEV"        : returns an instance of Tifpack::Chebyshev (overlap is ignored).
+- \c "ILUT"             : returns an instance of Tifpack::ILUT.
+- otherwise, Create() returns Teuchos::null.
 
-\note Objects in stand-alone mode cannot use reordering, variable overlap, and singleton filters.
-However, their construction can be slightly faster than the non stand-alone counterpart. 
 
 <P> The following fragment of code shows the
 basic usage of this class.
@@ -80,44 +67,33 @@ basic usage of this class.
 #include "Tifpack_Factory.hpp"
 
 ...
+typedef double Scalar;
+typedef int    LocalOrdinal;
+typedef int    GlobalOrdinal;
+typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
+typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> TCrsMatrix;
+typedef Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> TPrecond;
+...
+Tifpack::Factory<Scalar,LocalOrdinal,GlobalOrdinal,Node> Factory;
 
-Tifpack::Factory Factory;
-
-Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>* A; // A is FillComplete()'d.
-string PrecType = "ILU"; // use incomplete LU on each process
-int OverlapLevel = 1; // one row of overlap among the processes
-Teuchos::RCP<Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>*> Prec =
-     Factory.Create(PrecType, A, OverlapLevel);
+Teuchos::RCP<TCrsMatrix> A; // A is fillComplete()'d.
+std::string PrecType = "ILUT"; // use incomplete LU on each process
+Teuchos::RCP<TPrecond> Prec = Factory.Create(PrecType, A);
 assert (Prec != Teuchos::null);
 
 Teuchos::ParameterList List;
-List.set("fact: level-of-fill", 5); // use ILU(5)
+List.set("fact: level-of-fill", 5.0); // use ILUT(fill=5, drop=0)
 
 Prec->SetParameters(List);
 Prec->Initialize();
 Prec->Compute();
 
-// now Prec can be used as AztecOO preconditioner
-// like for instance
-AztecOO AztecOOSolver(*Problem);
+// now Prec can be used as a preconditioner
+// (Note that if you wish to use it with Belos, you must wrap it in
+//  a Tpetra::FlipOp adaptor.)
 
-// specify solver
-AztecOOSolver.SetAztecOption(AZ_solver,AZ_gmres);
-AztecOOSolver.SetAztecOption(AZ_output,32);
-
-// Set Prec as preconditioning operator
-AztecOOSolver.SetPrecOperator(Prec);
-
-// Call the solver
-AztecOOSolver.Iterate(1550,1e-8);
-
-// print information on stdout
-std::cout << *Prec;
 \endcode
 
-\author Michael Heroux, (formally) SNL org. 1416
-
-\date Last updated on Dec-01-2009.
 */
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
 class Factory {
@@ -143,17 +119,6 @@ public:
          const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix,
          const int overlap = 0);
 
-  /** \brief Sets the options in List from the command line.
-   *
-   * Note: If you want full support for all parameters, consider reading in a
-   * parameter list from an XML file as supported by the Teuchos helper
-   * function <tt>Teuchos::updateParametersFromXmlFile()</tt> or
-   * <tt>Teuchos::updateParametersFromXmlStream()</tt>.
-   */
-//  int SetParameters(int argc, char* argv[],
-//                    Teuchos::ParameterList& List, string& PrecType,
-//                    int& Overlap);
-
 };
 
 /////////////////////////////////////////////
@@ -169,6 +134,9 @@ Factory<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Create(const std::string& prec_
 
   if (prec_type == "POINT_RELAXATION") {
     prec = Teuchos::rcp(new Tifpack::PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Matrix));
+  }
+  else if (prec_type == "CHEBYSHEV") {
+    prec = Teuchos::rcp(new Tifpack::ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Matrix));
   }
   else if (prec_type == "ILUT") {
     prec = Teuchos::rcp(new Tifpack::ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Matrix));
