@@ -1,6 +1,6 @@
-(2007/01/11)
+(2010/01/14)
 
-A) Introduction:
+A) Introduction to (X)Emacs C++ styles
 
 Here is defined an (x)emacs style for the recommended Thyra coding style in
 the ./elisp/cpp-thyra-styles.el file.  This coding style is largely based on
@@ -63,10 +63,65 @@ Note that it will overwrite any $HOME/.emacs file that you might already have
 so you might want to move it out of the way before you run this script, just
 in case.
 
-B) Problems with using customized styles
+B) Problems with using customized C++ styles
 
 If one looks at the ./elisp/cpp-thyra-styles.el file one will see that a style
 is only added when the editor enters 'cc-mode (i.e. C or C++).  What this
 means is that a user-defined style is not added until a C/C++ file is actually
 opened.  Therefore, this means that one can not simply set the style in one's
 .emacs file using 'c-default-style'.
+
+C) GTags
+
+The program GNU Global tags is a replacement for ctags and etags which is
+still under active development.
+
+1) Install the program run:
+
+  $ cd SOME_BASE_DIR
+  $ tar -xzvf THIS_DIR/gnu-global-5.7.7.tar.gz
+  $ cd global-5.7.7
+  $ ./configure && make
+  $ sudo make install
+  
+2) Set up (X)Emacs for using gtags, you must set up your ~/.emacs file with:
+
+;;; Load GNU global
+;;;(require 'gtags)
+(autoload 'gtags-mode "gtags" "" t)
+(setq c-mode-hook
+          '(lambda ()
+              (gtags-mode 1)
+      ))
+
+3) Create (or update) the GTAGS database do:
+
+  $ cd Trilinos
+  $ gtags
+
+4) Using gtags from (X)Emacs:
+
+If you are not already in gtags mode run M-x gtags-mode.
+
+You can see all the gtags commands by running M-x gtags-[TAB]
+
+5) Using gtags from the command-line
+
+The program 'global' can be used to search for tags in source code very
+quickly.  You must be in the base directory of the source code to run
+'global'.
+
+a) Find all files where symbol is initially defined
+
+  $ global -e SYMBOL
+
+b) Find all files that use a symbol
+
+  $ global -se SYMBOL
+
+c) Find all symbols that match a regular expression
+
+  $ global -ce PARTIAL_SYMBOL
+
+
+

@@ -7,3 +7,9 @@
 /flat_headers/
 /TAGS
 /preCopyrightTrilinos/
+
+# Ignore gtags generated files
+/GPATH
+/GRTAGS
+/GSYMS
+/GTAGS

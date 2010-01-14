@@ -1,15 +1,23 @@
 ;;; Emacs initialization file for Roscoe Bartlett (rabartl)
 
-;; Load custom Thyra C++ styles
 (add-to-list 'load-path (expand-file-name "~/elisp/"))
+
+;; Load custom Thyra C++ styles
 (require 'cpp-thyra-styles)
 
 ;; Set my style to the Thyra style!
 (setq c-set-style "thyra")
 
-;;; Load the C++ function menue
-(add-to-list 'load-path (expand-file-name "~/elisp/"))
+;;; Load the C++ function menu
 (require 'cpp-func-menu)
+
+;;; Load GNU global
+;;;(require 'gtags)
+(autoload 'gtags-mode "gtags" "" t)
+(setq c-mode-hook
+          '(lambda ()
+              (gtags-mode 1)
+      ))
 
 ;; Set up the keyboard so the delete key on both the regular keyboard
 ;; and the keypad delete the character under the cursor and to the right
