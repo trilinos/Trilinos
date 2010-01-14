@@ -25,6 +25,172 @@
 #include "ml_qr_fix.h"
 #endif
 
+/**************************************************************************
+   2010 rst comments while trying to extract useful things into MueLoo
+
+
+MIS/phase2_3 partially explained:
+
+The standard MIS code first makes a bunch of root nodes that
+have a distance of a least 3 from any other root node. This is
+done via ML_Aggregate_LabelVertices(). Next, we expand root
+nodes into aggregates. There is some encoding/decoding here
+(-2-aggr_index). I think this is needed because the array
+that keeps the root points (aggr_index) and the array used to 
+mark aggregates is the same. Thus, as we scan the array to 
+define aggregates, we need to distinguish between root nodes
+and nonroot-aggregated nodes. I believe at this point the processor
+owning the aggregate has also marked ghost nodes as belonging to
+the aggregate. This information needs to be communicated to
+other processors which is done via ML_aggr_index_communicate().
+The main trick with this communication is that is that any
+processor (but only one due to the MIS roots) might have marked 
+a vertex. This means that we must communicate both the send
+and receive lists to see who might have marked this vertex.
+One issue is that ML_aggr_index_communicate() usually needs
+to be done twice.  For example, assume Proc7 sends the same node
+to Proc2 and Proc9. Now suppose that Proc2 changes this node.
+In the first communication, Proc7/Proc2 exchange information. Now 
+Proc7 has the same thing as Proc2. Another communication is needed 
+to guarantee that all processors including Proc9 are in sync. 
+What's weird is that ML_aggr_index_communicate() is usually done
+twice in the code, but not after completing phase 1 aggregation.
+I'm pretty sure that this is a bit of a bug. One other confusing
+thing is that we need to somehow distinguish which aggregate ids
+are local and which ones really reside on another processor.  I believe 
+dofs associated with remote aggregates are encoded with -100-ProcId
+in aggr_index. This allows us to check if something is <= -100
+and to get the owning processor. I'm guessing that we don't actually
+need to know the aggregate id on that processor.  I'm also guessing
+that by looking at send and receive lists for the node, we could
+communicate information back and forth.  Thus, we can send null space
+info to a processor owning any remote aggregates. The remote 
+processor can figure out which aggregates these go to within its local
+numbering. It can do the QR (perhaps indicating which columns are
+distinct) and send the results back to us. All we need to do is stuff 
+the Q business in the right spot? 
+
+Note: What would really be nice instead of ML_aggr_index_communicate() is 
+      something more general which would guarantee that everybody shared
+      is in sync. A shared node would be anybody who appears on any processor
+      in a send list or a receive list that corresponds to the same dof.
+      Ideally, this more general communication routine which I will call
+      ArbitrateAndSyncSharedValues() would do a few things:
+          a) Be given as input the status of a dof (whether it has been changed
+             locally by a processor).
+          b) Be given as input a weight function to arbitrate when 2 processors
+             have changed the same dof. If they have the same weight, random 
+             could be used to arbitrate. weights could be incremented by 
+             epsilon*rand() so that equal weights almost never occur.
+          c) Return to all processors the id of the winning processor.
+             That is, the processor whose copy of the dof is used within
+             other processors. 
+
+Phase2_3_Cleanup follows next. 
+
+   Step 1:  Try to create new aggregates if it looks like there are some
+            root node candidates which have lots of unaggregated neighbors.
+            This decision is made based on only local information and
+            only local aggregates are made.
+
+            Note: if we had ArbitrateAndSyncSharedValues(), it would be 
+                  possible to create new aggregates which span processors.
+                  The arbitration takes care of two procs trying to aggregate 
+                  the same point. The only bad thing would be if after the
+                  arbitration we ended up with a singleton. We could add a
+                  rule that a new aggregate is only created if there are
+                  some minimum number of local dofs.
+                  
+   Step 2:  Try to sweep unaggregated dofs into an existing local aggregate.
+            To decide which aggregate gets a particular dof, a score is
+            computed. This score is based on the following:
+                 a) the sum of weighted connections between this dof
+                    and a candidate aggregate. 
+                 b) the number of times an aggregate has already been 
+                    incremented in this phase.
+
+            Connection weights are based on dofs within aggregates. In 
+            particular, if an aggregate's dof was assigned to the aggregate 
+            during phase 1 or step 1, it has a weight of 100. If an aggregate's
+            dof was assigned in step 2, its weight is based on the 
+            max(weighted connections) used to add it to the dof minus the
+            number 10. This is a little sloppy and should be done a little
+            better in MueLoo. By the way, I believe the line
+                  number_connections[current_agg] = 0;
+            is a bug as it sets this weight back to zero too early. It should
+            be done in a separate loop.
+ 
+            Note: if we had ArbitrateAndSyncSharedValues(), it might be 
+            possible to sweep ghost dofs into local aggregates. We could 
+            link the arbitration weight to the score used in Step 2. The main
+            worry would be if things went poorly in the arbitration we
+            could end up with a disconnected aggregate. This would occur
+            if DofA is added to an aggregate. Then, DofB is added
+            to the same aggregate based only on its connection to DofA.
+            In the arbitration, DofA is is removed from the aggregate
+            while DofB remains. This could perhaps be avoided by 
+            only adding DofB to an aggregate if either it has a Phase1/step1 
+            connection or it has at least one nonghost-phase2 connection.
+            It might also be possible to loop over Step2 so that DofB
+            could be added in a later iteration of the loop. That is,
+            if DofA has been accepted already during the arbitration,
+            it is now possible to add DofB.  I should say that it's not 
+            clear how bad disconnected aggregates would be if they don't 
+            happen very often. One final note is that it might be worthwhile 
+            to consider aggregate sizes in the score. This might be a little 
+            tricky to implement as we might need to communicate aggregate 
+            sizes. We could use ArbitrateAndSyncSharedValues() if we are 
+            willing to store the aggregate size for every dof (as opposed 
+            to storing just one number for the aggregate).
+
+   After step 2 there is another communication phase to put things in sync.
+   This is only done once but that might be sufficient given that only
+   local things were done in Step 1 and Step 2. This one communication
+   might help rectify the bug in that only one communication was done at
+   the end of phase 1.
+
+
+   Step 3:  Try to sweep unaggregated dofs to any existing nonlocal aggregate.
+             a) Create temp_aggr_index so that it is equal to aggr_index except
+                for points assisgned to remote aggregtes. As mentioned above, 
+                aggr_index is actually set by ML_aggr_index_communicate() to
+                -100-ProcId for dofs within remote aggregates. We now want
+                temp_aggr_index to actually have the local agg id on the remote 
+                processor.
+             b) For any locally unaggregated point check its neighbors to
+                see if they are assigned to a remote aggregate (i.e., 
+                aggr_index < -1 and temp_aggr_index >= 0). If so, find
+                if it is in my sendlist with that processor, and then
+                set the locally unaggregated point to the same aggr_index
+                value as the neighbor (which should be -100-ProcId). It also
+                looks like temp_aggr_index is encoded with a negative number.
+                I guess this is so that it later fails the test in this step.
+                Finally, we set a flag so that no more neighbors of this
+                particular point are checked (as it is now in an aggregate).
+                
+     Communication occurs for both aggr_index and temp_aggr_index. It
+     kind of looks like even though aggr_index has the -100-ProcId stuff
+     it is actually local. That is, ProcId == comm->ML_mypid. In this case,
+     we use temp_aggr_index to decode what the actual local aggregate id is.
+     I'm not exactly sure how this could happen, because it would seem
+     that anybody associated with a local aggregate wold not have -100-ProcId.
+     There is some chance that before  ML_aggr_index_communicate() would
+     have a -1 where the dof-owning proc would have the -100-ProcId stuff.
+     Then, after ML_aggr_index_communicate() the aggregate-owning proc
+     would have a -100-ProcId.  Still not really sure how this would happen.
+
+   Step 4:  Desperately try to avoid singletons. For each unaggregated
+            point try to find any unaggregated local neighbor and make
+            an aggregate out of these two points. If we can't do this,
+            look to see if the nullspace > 1 and if there is any other
+            aggregate on this processor. If so, shove this dof into the
+            aggregate with local id = 0, otherwise create a singleton.
+                
+            Note: it looks like there is some code to update the 
+                  connect_type. I don't think this is used later on.
+ 
+**************************************************************************/
+
 /* ******************************************************************** */
 /* variables used for parallel debugging  (Ray)                         */
 /* -------------------------------------------------------------------- */
