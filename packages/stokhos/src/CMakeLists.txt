@@ -21,8 +21,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 # Add path to Dakota headers: TODO: make conditional on TriKota?
 IF (${PACKAGE_NAME}_ENABLE_TriKota)
 INCLUDE_DIRECTORIES(
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../TriKota/Dakota/packages/quadrature/rules
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../TriKota/Dakota/packages/quadrature/sparse_grid
+    ${CMAKE_CURRENT_SOURCE_DIR}/../../TriKota/Dakota/packages/Pecos/packages/VPISparseGrid/src/
   )
 ENDIF()
 

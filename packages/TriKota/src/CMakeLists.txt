@@ -137,7 +137,7 @@ APPEND_SET(SOURCES
 SET(DAKOTA_LIBS
     dakota pecos lhs surfpack conmin
     ddace fsudace jega nlpql npsol opt
-    psuade newmat ncsuopt quadrature coliny colin
+    psuade newmat ncsuopt sparsegrid coliny colin
     pebbl utilib 3po nappspack appspack conveyor
     shared cdd cport amplsolver lhs
   )
