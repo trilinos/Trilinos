@@ -288,8 +288,7 @@ DefaultSpmdMultiVector<Scalar>::nonContigSubViewImpl(
   return defaultSpmdMultiVector<Scalar>(
     spmdRangeSpace_,
     createSmallScalarProdVectorSpaceBase<Scalar>(spmdRangeSpace_, numCols),
-    localValuesView,
-    spmdRangeSpace_->localSubDim()
+    localValuesView
     );
 }
 
@@ -304,17 +303,15 @@ DefaultSpmdMultiVector<Scalar>::nonconstNonContigSubViewImpl(
   const ArrayRCP<Scalar> localValuesView = createContiguousCopy(cols);
   const Ordinal localSubDim = spmdRangeSpace_->localSubDim();
   RCP<CopyBackSpmdMultiVectorEntries<Scalar> > copyBackView =
-    copyBackSpmdMultiVectorEntries<Scalar>(cols, localValuesView.getConst(), localSubDim,
-      localValues_, leadingDim_);
-  RCP<MultiVectorBase<Scalar> > view =
-    Teuchos::rcpWithEmbeddedObjPreDestroy(
-      new DefaultSpmdMultiVector<Scalar>(
-        spmdRangeSpace_,
-        createSmallScalarProdVectorSpaceBase<Scalar>(spmdRangeSpace_, numCols),
-        localValuesView),
-      copyBackView
-      );
-  return view;
+    copyBackSpmdMultiVectorEntries<Scalar>(cols, localValuesView.getConst(),
+      localSubDim, localValues_, leadingDim_);
+  return Teuchos::rcpWithEmbeddedObjPreDestroy(
+    new DefaultSpmdMultiVector<Scalar>(
+      spmdRangeSpace_,
+      createSmallScalarProdVectorSpaceBase<Scalar>(spmdRangeSpace_, numCols),
+      localValuesView),
+    copyBackView
+    );
 }
 
 
