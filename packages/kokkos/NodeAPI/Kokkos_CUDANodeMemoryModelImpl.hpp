@@ -41,7 +41,7 @@ namespace Kokkos {
   template <class T> inline
   void CUDANodeMemoryModel::copyFromBuffer(size_t size, const Teuchos::ArrayRCP<const T> &buffSrc, const Teuchos::ArrayView<T> &hostDest) {
     CHECK_COMPUTE_BUFFER(buffSrc);
-    TEST_FOR_EXCEPTION( buffSrc.size() < size || hostDest.size() < size, std::runtime_error,
+    TEST_FOR_EXCEPTION( (size_t)buffSrc.size() < size || (size_t)hostDest.size() < size, std::runtime_error,
         "CUDANode::copyFromBuffer: invalid copy.");
     cutilSafeCallNoSync( cudaMemcpy( hostDest.getRawPtr(), buffSrc.getRawPtr(), size*sizeof(T), cudaMemcpyDeviceToHost) );
   }
@@ -79,7 +79,9 @@ namespace Kokkos {
   Teuchos::ArrayRCP<T> 
   CUDANodeMemoryModel::viewBufferNonConst(ReadWriteOption rw, size_t size, const Teuchos::ArrayRCP<T> &buff) {
     CHECK_COMPUTE_BUFFER(buff);
-    CUDANodeCopyBackDeallocator<T> dealloc(buff.getRawPtr(), size);
+    // create a copy-back deallocator that copies back to "buff"
+    CUDANodeCopyBackDeallocator<T> dealloc(buff.persistingView(0,size));
+    // it allocates a host buffer with the appropriate deallocator embedded
     Teuchos::ArrayRCP<T> hostBuff = dealloc.alloc();
     if (rw == ReadWrite) {
       this->template copyFromBuffer<T>(size, buff, hostBuff());

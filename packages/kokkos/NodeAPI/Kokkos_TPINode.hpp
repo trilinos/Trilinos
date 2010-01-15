@@ -2,6 +2,7 @@
 #define KOKKOS_TPINODE_HPP_
 
 #include "Kokkos_StandardNodeMemoryModel.hpp"
+#include "Kokkos_NodeHelpers.hpp"
 
 #include <Teuchos_ParameterList.hpp>
 #include <TPI.h>
@@ -129,6 +130,8 @@ class TPINode : public StandardNodeMemoryModel {
   private:
     int curNumThreads_;
 };
+
+template <> class ArrayOfViewsHelper<TPINode> : public ArrayOfViewsHelperTrivialImpl<TPINode> {};
 
 } // end namespace Kokkos
 

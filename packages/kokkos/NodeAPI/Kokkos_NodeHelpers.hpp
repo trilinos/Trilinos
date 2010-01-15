@@ -1,7 +1,7 @@
 #ifndef KOKKOS_NODE_HELPERS_HPP_
 #define KOKKOS_NODE_HELPERS_HPP_
 
-#include <Kokkos_ConfigDefs.hpp>
+#include <Kokkos_NodeAPIConfigDefs.hpp>
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ArrayRCP.hpp"
 
@@ -70,6 +70,56 @@ namespace Kokkos {
   template <class Node>
   void ReadyBufferHelper<Node>::end() {
     node_->readyBuffers(cbufs_(), ncbufs_());  
+  }
+
+  /*! A class to efficient get an array of views */
+  template <class Node>
+  class ArrayOfViewsHelper {
+    public:
+      template <class T>
+      static Teuchos::ArrayRCP<Teuchos::ArrayRCP<T> > getArrayOfNonConstViews(const Teuchos::RCP<Node> &node, ReadWriteOption rw, const Teuchos::ArrayRCP<Teuchos::ArrayRCP<T> > &arrayOfBuffers);
+    private:
+      /*! Cannot allocate object; all static */
+      ArrayOfViewsHelper();
+      ~ArrayOfViewsHelper();
+  };
+
+  template <class Node>
+  template <class T>
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<T> > 
+  ArrayOfViewsHelper<Node>::getArrayOfNonConstViews(const Teuchos::RCP<Node> &node, ReadWriteOption rw, const Teuchos::ArrayRCP<Teuchos::ArrayRCP<T> > &arrayOfBuffers) {
+    Teuchos::ArrayRCP< Teuchos::ArrayRCP<T> > arrayofviews;
+    const size_t numBufs = arrayOfBuffers.size();
+    if (numBufs > 0) {
+      arrayofviews = Teuchos::arcp< Teuchos::ArrayRCP<T> >(numBufs);
+      for (size_t i=0; i < numBufs; ++i) {
+        if (arrayOfBuffers[i].size() > 0) {
+          arrayofviews[i] = node->template viewBufferNonConst<T>(rw,arrayOfBuffers[i].size(),arrayOfBuffers[i]);
+        }
+      }
+    }
+    return arrayofviews;
+  }
+
+  /* A trivial implementation of ArrayOfViewsHelper, for CPU-only nodes. */
+  template <class Node>
+  class ArrayOfViewsHelperTrivialImpl {
+    public:
+      template <class T>
+      static Teuchos::ArrayRCP<Teuchos::ArrayRCP<T> > getArrayOfNonConstViews(const Teuchos::RCP<Node> &node, ReadWriteOption rw, const Teuchos::ArrayRCP<Teuchos::ArrayRCP<T> > &arrayOfBuffers);
+    private:
+      /*! Cannot allocate object; all static */
+      ArrayOfViewsHelperTrivialImpl();
+      ~ArrayOfViewsHelperTrivialImpl();
+  };
+
+  template <class Node>
+  template <class T>
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<T> > 
+  ArrayOfViewsHelperTrivialImpl<Node>::getArrayOfNonConstViews(const Teuchos::RCP<Node> &node, ReadWriteOption rw, const Teuchos::ArrayRCP<Teuchos::ArrayRCP<T> > &arrayOfBuffers) {
+    (void)node;
+    (void)rw;
+    return arrayOfBuffers;
   }
 
 } // end of namespace Kokkos

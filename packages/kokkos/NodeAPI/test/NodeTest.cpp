@@ -29,6 +29,7 @@ namespace {
   using Teuchos::ParameterList;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::arcp;
   using Teuchos::ArrayRCP;
   using Teuchos::Array;
   using Teuchos::Time;
@@ -36,6 +37,7 @@ namespace {
   using Teuchos::TimeMonitor;
   using Kokkos::SerialNode;
   using Kokkos::ReadyBufferHelper;
+  using Kokkos::ArrayOfViewsHelper;
   using Teuchos::tuple;
 
   int N = 100;
@@ -151,7 +153,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NodeAPI, MemoryInitTest, NODE )
   {
     out << "Testing " << Teuchos::TypeNameTraits<NODE>::name() << std::endl;
-    Teuchos::ArrayRCP<int> x, y;
+    ArrayRCP<int> x, y;
     RCP<NODE> node = getNode<NODE>();
     ReadyBufferHelper<NODE> rbh(node);
     const unsigned int N = 4096;
@@ -214,6 +216,35 @@ namespace {
     // free the allocations
     x = Teuchos::null;
     y = Teuchos::null;
+  }
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NodeAPI, ArrayOfViewsHelper, NODE )
+  {
+    RCP<NODE> node = getNode<NODE>();
+    const int N = 5;
+    ArrayRCP< ArrayRCP<int> > bufs, views;
+    bufs = arcp< ArrayRCP<int> >(N);
+    for (size_t i=0; i < N; ++i) {
+      bufs[i] = node->template allocBuffer<int>(i+1);
+    }
+    // get views, set data, delete them
+    views = ArrayOfViewsHelper<NODE>::template getArrayOfNonConstViews<int>(node, Kokkos::WriteOnly, bufs);
+    TEST_EQUALITY_CONST( (unsigned int)views.size(), N );
+    for (size_t i=0; i < N; ++i) {
+      TEST_EQUALITY( (unsigned int)views[i].size(), i+1 );
+      std::fill( views[i].begin(), views[i].end(), i+1 );
+    }
+    views = Teuchos::null; 
+    // get views, verify data, delete them
+    views = ArrayOfViewsHelper<NODE>::template getArrayOfNonConstViews<int>(node, Kokkos::ReadWrite, bufs);
+    TEST_EQUALITY_CONST( (unsigned int)views.size(), N );
+    for (size_t i=0; i < N; ++i) {
+      TEST_EQUALITY( (unsigned int)views[i].size(), i+1 );
+      Array<int> exp(i+1,i+1);      
+      TEST_COMPARE_ARRAYS( (views[i])(), exp() ); 
+    }
+    views = Teuchos::null; 
   }
 
   ////
@@ -326,17 +357,21 @@ namespace {
   UNIT_TEST_GROUP_SCALAR(float)
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( NodeAPI, TimeTest, SerialNode )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( NodeAPI, MemoryInitTest, SerialNode )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( NodeAPI, ArrayOfViewsHelper, SerialNode )
 #ifdef HAVE_KOKKOS_TBB
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( NodeAPI, TimeTest, TBBNode )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( NodeAPI, MemoryInitTest, TBBNode )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( NodeAPI, ArrayOfViewsHelper, TBBNode )
 #endif
 #ifdef HAVE_KOKKOS_THREADPOOL
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( NodeAPI, TimeTest, TPINode )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( NodeAPI, MemoryInitTest, TPINode )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( NodeAPI, ArrayOfViewsHelper, TPINode )
 #endif
 #ifdef HAVE_KOKKOS_CUDA
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( NodeAPI, TimeTest, ThrustGPUNode )
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( NodeAPI, MemoryInitTest, ThrustGPUNode )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( NodeAPI, ArrayOfViewsHelper, ThrustGPUNode )
 #endif
 
 }

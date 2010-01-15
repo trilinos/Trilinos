@@ -2,6 +2,7 @@
 #define KOKKOS_TBBNODE_HPP_
 
 #include "Kokkos_StandardNodeMemoryModel.hpp"
+#include "Kokkos_NodeHelpers.hpp"
 
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>
@@ -87,6 +88,8 @@ class TBBNode : public StandardNodeMemoryModel {
     tbb::task_scheduler_init tsi_;
 
 };
+
+template <> class ArrayOfViewsHelper<TBBNode> : public ArrayOfViewsHelperTrivialImpl<TBBNode> {};
 
 }
 

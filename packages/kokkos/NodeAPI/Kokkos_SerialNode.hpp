@@ -3,6 +3,7 @@
 
 #include <Teuchos_ParameterList.hpp>
 #include <Kokkos_StandardNodeMemoryModel.hpp>
+#include "Kokkos_NodeHelpers.hpp"
 
 namespace Kokkos {
 
@@ -28,6 +29,8 @@ class SerialNode : public StandardNodeMemoryModel {
     }
 
 };
+
+template <> class ArrayOfViewsHelper<SerialNode> : public ArrayOfViewsHelperTrivialImpl<SerialNode> {};
 
 }
 

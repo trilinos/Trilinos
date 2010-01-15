@@ -22,23 +22,23 @@ namespace Kokkos {
   template <class T>
   class CUDANodeCopyBackDeallocator {
     public:
-      CUDANodeCopyBackDeallocator(T *devPtr, unsigned int size);
+      CUDANodeCopyBackDeallocator(const Teuchos::ArrayRCP<T> &buffer);
 
       //! Allocate the buffer, returning a Teuchos::ArrayRCP of the requested type, with the 
       Teuchos::ArrayRCP<T> alloc()const ;
 
       void free(void *ptr) const;
     private:
-      const unsigned int size_;
-      T * const devptr_;
+      // we have to keep a copy of this ArrayRCP, to know whether the underlying memory was deleted
+      const Teuchos::ArrayRCP<T> devbuf_;
 #ifdef HAVE_KOKKOS_DEBUG
       mutable T * originalHostPtr_;
 #endif
   };
 
   template <class T>
-  CUDANodeCopyBackDeallocator<T>::CUDANodeCopyBackDeallocator(T *devPtr, unsigned int size) 
-  : devptr_(devPtr), size_(size)
+  CUDANodeCopyBackDeallocator<T>::CUDANodeCopyBackDeallocator(const Teuchos::ArrayRCP<T> &buffer)
+  : devbuf_(buffer.create_weak())
   { 
 #ifdef HAVE_KOKKOS_DEBUG
     originalHostPtr_ = NULL;
@@ -54,24 +54,27 @@ namespace Kokkos {
 #endif
     T *hostPtr = NULL;
     // alloc page-locked ("pinned") memory on the host
-    cutilSafeCallNoSync( cudaHostAlloc( (void**)&hostPtr, size_*sizeof(T), cudaHostAllocDefault) );
+    cutilSafeCallNoSync( cudaHostAlloc( (void**)&hostPtr, devbuf_.size()*sizeof(T), cudaHostAllocDefault) );
 #ifdef HAVE_KOKKOS_DEBUG
     // save the allocated address for debug checking
     originalHostPtr_ = hostPtr; 
 #endif
     // create an ARCP<T> owning this memory, with a copy of *this for the deallocator
     const bool OwnsMem = true;
-    return Teuchos::arcp<T>( hostPtr, 0, size_, *this, OwnsMem );
+    return Teuchos::arcp<T>( hostPtr, 0, devbuf_.size(), *this, OwnsMem );
   }
 
   template <class T>
   void CUDANodeCopyBackDeallocator<T>::free(void *hostPtr) const {
 #ifdef HAVE_KOKKOS_DEBUG
     TEST_FOR_EXCEPTION( hostPtr != originalHostPtr_, std::logic_error,
-        Teuchos::typeName(*this) << "::free(): pointer to free does not originally allocated pointer." );
+        Teuchos::typeName(*this) << "::free(): pointer to free not consistent with originally allocated pointer." );
     orginalHostPtr_ = NULL;
 #endif
-    cutilSafeCallNoSync( cudaMemcpy( devptr_, hostPtr, size_*sizeof(T), cudaMemcpyHostToDevice) );
+    // only perform the cop back if the device ptr is still valid
+    if (devbuf_.is_valid_ptr()) {
+      cutilSafeCallNoSync( cudaMemcpy( devbuf_.getRawPtr(), hostPtr, devbuf_.size()*sizeof(T), cudaMemcpyHostToDevice) );
+    }
     cutilSafeCallNoSync( cudaFreeHost( (void**)hostPtr ) );
   }
 

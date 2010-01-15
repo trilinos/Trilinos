@@ -34,11 +34,14 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_SET(CUDA_HEADERS
     Kokkos_CUDA_util_inline_runtime.h
     Kokkos_CUDA_util_sharedmem.cuh
+    Kokkos_CUDANodeMemoryModel.hpp
+    Kokkos_CUDANodeMemoryModelImpl.hpp
     Kokkos_ThrustGPUNode.cuh
     Kokkos_ThrustGPUNode.hpp
     Kokkos_CUDANodeUtils.hpp
 )
 APPEND_SET(CUDA_SOURCES
+    Kokkos_CUDANodeMemoryModel.cpp
     Kokkos_ThrustGPUNode.cpp
     Kokkos_CUDANodeUtils.cpp
 )

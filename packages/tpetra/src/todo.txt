@@ -1,0 +1,19 @@
+* Kill Tpetra::InverseOperator
+  Doing this will damage backwards compatibility. 
+
+? Remove Tpetra::Operator from hierarchy
+  Is it useful to have Tpetra::CrsMatrix/Tpetra::RowMatrix enjoy inheritance from Operator, with default implementations? it avoids a simple decorator call.
+  Doing this will damage backwards compatibility. 
+
+? Decide whether Tpetra::Operator should have two scalar types (range, domain) or one (range=domain)
+  Default argument preserves backwards compatibility.
+
+* Create decorators for CrsMatrix (and RowMatrix), and non-member constructors for these decorators
+  - MultiplyOpDecorator<OpScalar,Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> 
+       is a: Operator<OpScalar,LocalOrdinal,GlobalOrdinal,Node>
+      has a: CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>
+      apply(X,Y,trans) calls multiply<OpScalar,OpScalar>(X,Y,trans)
+  - SolveOpDecorator<OpScalar,Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> 
+       is a: Operator<OpScalar,LocalOrdinal,GlobalOrdinal,Node>
+      has a: CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>
+      apply(X,Y,trans) calls solve<OpScalar,OpScalar>(X,Y,trans)

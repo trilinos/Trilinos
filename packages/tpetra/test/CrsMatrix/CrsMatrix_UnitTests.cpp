@@ -27,6 +27,7 @@
 
 // TODO: add test where some nodes have zero rows
 // TODO: add test where non-"zero" graph is used to build matrix; if no values are added to matrix, the operator effect should be zero. This tests that matrix values are initialized properly.
+// TODO: add test where dynamic profile initially has no allocation, then entires are added. this will test new view functionality.
 
 namespace Teuchos {
   template <>

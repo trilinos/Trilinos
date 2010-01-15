@@ -17,6 +17,12 @@ namespace Kokkos {
     public:
       typedef unsigned long int size_t;
 
+      //@{ Default Constructor 
+
+      CUDANodeMemoryModel();
+
+      //@}
+
       //@{ Memory management
 
       /*! \brief Allocate a parallel buffer, returning it as a pointer ecnapsulated in an ArrayRCP.
@@ -83,6 +89,16 @@ namespace Kokkos {
       inline void readyBuffers(Teuchos::ArrayView<Teuchos::ArrayRCP<const char> > buffers, Teuchos::ArrayView<Teuchos::ArrayRCP<char> > ncBuffers);
 
       //@}
+
+      //@{ Book-keeping information
+
+      void printStatistics() const;
+
+      //@}
+
+    private:
+      size_t numCopiesD2H_, numCopiesH2D_, numCopiesD2D_;
+      size_t bytesCopiedD2H_, bytesCopiedH2D_, bytesCopiedD2D_;
   };
 
 } // end of namespace Kokkos

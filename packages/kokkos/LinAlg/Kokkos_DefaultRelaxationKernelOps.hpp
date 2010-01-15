@@ -29,24 +29,8 @@
 #ifndef KOKKOS_DEFAULTRELAXATION_KERNELOPS_HPP
 #define KOKKOS_DEFAULTRELAXATION_KERNELOPS_HPP
 
-#include <Teuchos_ArrayRCP.hpp>
-#include <Teuchos_DataAccess.hpp>
-#include <Teuchos_TestForException.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-#include <stdexcept>
-
-#include "Kokkos_ConfigDefs.hpp"
-#include "Kokkos_CrsMatrix.hpp" 
-#include "Kokkos_CrsGraph.hpp" 
-#include "Kokkos_MultiVector.hpp"
-#include "Kokkos_NodeHelpers.hpp"
-#include "Kokkos_DefaultArithmetic.hpp"
-
-#include <stdio.h>
-
 #ifndef KERNEL_PREFIX
-  #define KERNEL_PREFIX
+#define KERNEL_PREFIX
 #endif
 
 #ifdef __CUDACC__
@@ -55,9 +39,7 @@
 #include <Teuchos_ScalarTraits.hpp>
 #endif
 
-
 // NTS: Need to remove Scalar divisions and replace with appropriate inverse listed in Traits
-
 
 namespace Kokkos {
 
@@ -75,10 +57,10 @@ namespace Kokkos {
 
     inline KERNEL_PREFIX void execute(size_t row) {
       for (size_t c=offsets[row];c<offsets[row+1];c++) {
-	if(row==(size_t)inds[c]) {
-	  diag[row]=vals[c];
-	  break;
-	}
+        if(row==(size_t)inds[c]) {
+          diag[row]=vals[c];
+          break;
+        }
       }
     }
   };
@@ -98,10 +80,10 @@ namespace Kokkos {
       const Scalar  *curval = vals_beg[row];
       const Ordinal *curind = inds_beg[row];
       for (size_t j=0;j<numEntries[row];j++) {
-	if(row==(size_t)curind[j]){
-	  diag[row]=curval[j];
-	  break;
-	}
+        if(row==(size_t)curind[j]){
+          diag[row]=curval[j];
+          break;
+        }
       }
     }
   };
@@ -134,7 +116,7 @@ namespace Kokkos {
 
       Scalar tmp = bj[row];
       for (size_t c=offsets[row];c<offsets[row+1];c++) {
-	tmp -= vals[c] * x0j[inds[c]];
+        tmp -= vals[c] * x0j[inds[c]];
       }
       xj[row]=x0j[row]+damping_factor*tmp/diag[row];
     }
@@ -199,7 +181,7 @@ namespace Kokkos {
       const Scalar *bj = b + rhs * bstride;
       Scalar tmp = bj[row];
       for (size_t c=offsets[row];c<offsets[row+1];c++) {
-	tmp -= vals[c] * xj[inds[c]];
+        tmp -= vals[c] * xj[inds[c]];
       }
       xj[row]+=damping_factor*tmp/diag[row];
     }
@@ -267,11 +249,11 @@ namespace Kokkos {
       Scalar       *xj = x + rhs * xstride;
       const Scalar *bj = b + rhs * bstride;
       for (size_t row=start_r;row<stop_r;row++){
-	Scalar tmp = bj[row];
-	for (size_t c=offsets[row];c<offsets[row+1];c++) {
-	  tmp -= vals[c] * xj[inds[c]];
-	}
-	xj[row]+=damping_factor*tmp/diag[row];
+        Scalar tmp = bj[row];
+        for (size_t c=offsets[row];c<offsets[row+1];c++) {
+          tmp -= vals[c] * xj[inds[c]];
+        }
+        xj[row]+=damping_factor*tmp/diag[row];
       }
     }
   };
@@ -303,13 +285,13 @@ namespace Kokkos {
       Scalar       *xj = x + rhs * xstride;
       const Scalar *bj = b + rhs * bstride;
       for (size_t row=start_r;row<stop_r;row++){
-	Scalar tmp = bj[row];
-	const Scalar  *curval = vals_beg[row];
-	const Ordinal *curind = inds_beg[row];
-	for (size_t j=0; j!=numEntries[row];j++) {
-	  tmp -= (curval[j]) * xj[curind[j]];
-	}
-	xj[row]+=damping_factor*tmp/diag[row];
+        Scalar tmp = bj[row];
+        const Scalar  *curval = vals_beg[row];
+        const Ordinal *curind = inds_beg[row];
+        for (size_t j=0; j!=numEntries[row];j++) {
+          tmp -= (curval[j]) * xj[curind[j]];
+        }
+        xj[row]+=damping_factor*tmp/diag[row];
       }
     }
   };
