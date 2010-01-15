@@ -67,6 +67,29 @@ double cms_compute_residual(const Epetra_Operator * op,const Epetra_MultiVector&
 }
 
 
+
+// ============================================================================
+int* FindLocalDiricheltAndInflowRowsFromOnesAndZeros(const Epetra_CrsMatrix & Matrix, int &numBCRows){
+  int *dirichletRows = new int[Matrix.NumMyRows()];
+  numBCRows = 0;
+  for (int i=0; i<Matrix.NumMyRows(); i++) {
+    int numEntries, *cols;
+    double *vals;
+    int ierr = Matrix.ExtractMyRowView(i,numEntries,vals,cols);
+    if (ierr == 0) {
+      int nz=0;
+      for (int j=0; j<numEntries; j++) if (vals[j] != 0.0) nz++;
+      if (nz == 1) dirichletRows[numBCRows++] = i;      
+
+      // EXPERIMENTAL: Treat Special Inflow Boundaries as Dirichlet Boundaries
+      if(nz==2) dirichletRows[numBCRows++] = i;  
+	
+    }/*end if*/
+  }/*end fpr*/
+  return dirichletRows;
+}/*end FindLocalDiricheltRowsFromOnesAndZeros*/
+
+
 // ================================================ ====== ==== ==== == = 
 ML_Epetra::RefMaxwellPreconditioner::RefMaxwellPreconditioner(const Epetra_CrsMatrix& SM_Matrix,      //S+M
                                                               const Epetra_CrsMatrix& D0_Clean_Matrix,//T or D0 w/ nothing zero'd
@@ -164,7 +187,8 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
    if(IsComputePreconditionerOK_) DestroyPreconditioner();
 
   /* Find the Dirichlet Rows (using SM_Matrix_) and columns (using D0_Clean_Matrix_) */
-  BCrows=FindLocalDiricheltRowsFromOnesAndZeros(*SM_Matrix_,numBCrows);
+   //  BCrows=FindLocalDiricheltRowsFromOnesAndZeros(*SM_Matrix_,numBCrows);
+  BCrows=FindLocalDiricheltAndInflowRowsFromOnesAndZeros(*SM_Matrix_,numBCrows);
   Epetra_IntVector * BCnodes=FindLocalDirichletColumnsFromRows(BCrows,numBCrows,*D0_Clean_Matrix_);   
   int Nn=BCnodes->MyLength();
   int numBCnodes=0;
