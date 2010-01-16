@@ -63,15 +63,22 @@ public:
       typedef typename ArrayRCP<const Scalar>::const_iterator const_itr_t;
       typedef typename ArrayRCP<Scalar>::iterator itr_t;
       // Copy from contiguous storage column by column
-      const int numCols = cols_.size();
-      const const_itr_t lvv = localValuesView_.begin();
-      const itr_t lv = localValues_.begin();
-      for (int k = 0; k < numCols; ++k) {
-        const int col_k = cols_[k];
-        const const_itr_t lvv_k = lvv + localSubDim_*k;
-        const itr_t lv_k = lv + leadingDim_*col_k;
-        std::copy( lvv_k, lvv_k + localSubDim_, lv_k );
+      if (localValues_.strong_count()) {
+        const int numCols = cols_.size();
+        const const_itr_t lvv = localValuesView_.begin();
+        const itr_t lv = localValues_.begin();
+        for (int k = 0; k < numCols; ++k) {
+          const int col_k = cols_[k];
+          const const_itr_t lvv_k = lvv + localSubDim_*k;
+          const itr_t lv_k = lv + leadingDim_*col_k;
+          std::copy( lvv_k, lvv_k + localSubDim_, lv_k );
+        }
       }
+#ifdef THYRA_DEBUG
+      else {
+        ++DefaultSpmdMultiVector<Scalar>::numSkipCopyBack;
+      }
+#endif // THYRA_DEBUG
     }
 private:
   Array<int> cols_;
@@ -105,6 +112,12 @@ copyBackSpmdMultiVectorEntries(
 //
 // DefaultSpmdMultiVector
 //
+
+
+#ifdef THYRA_DEBUG
+template<class Scalar>
+int DefaultSpmdMultiVector<Scalar>::numSkipCopyBack(0);
+#endif
 
 
 // Constructors/initializers/accessors
@@ -304,7 +317,7 @@ DefaultSpmdMultiVector<Scalar>::nonconstNonContigSubViewImpl(
   const Ordinal localSubDim = spmdRangeSpace_->localSubDim();
   RCP<CopyBackSpmdMultiVectorEntries<Scalar> > copyBackView =
     copyBackSpmdMultiVectorEntries<Scalar>(cols, localValuesView.getConst(),
-      localSubDim, localValues_, leadingDim_);
+      localSubDim, localValues_.create_weak(), leadingDim_);
   return Teuchos::rcpWithEmbeddedObjPreDestroy(
     new DefaultSpmdMultiVector<Scalar>(
       spmdRangeSpace_,

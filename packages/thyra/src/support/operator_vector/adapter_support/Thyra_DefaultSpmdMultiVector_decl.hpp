@@ -200,6 +200,13 @@ private:
   // Private member functions
 
   ArrayRCP<Scalar> createContiguousCopy(const ArrayView<const int> &cols) const;
+
+public:
+
+#ifdef THYRA_DEBUG
+  // Unit testing sensing varaible
+  static int numSkipCopyBack;
+#endif
   
 }; // end class DefaultSpmdMultiVector
 
