@@ -26,7 +26,7 @@ commit/push:
 
   $ cd $TRILINOS_HOME
   $ eg status                                # Look at state of working dir
-  $ eg diff --name-status                    # Look at the files that have changed
+  $ eg diff --name-status origin             # Look at the files that have changed
   $ eg log --oneline --name-status origin..  # [optional] Look at the local commits
 
   NOTE: If you see any files/directories that are listed as 'unknown' returned
