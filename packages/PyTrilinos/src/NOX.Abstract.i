@@ -123,18 +123,18 @@ NOX.Abstract provides the following user-level classes:
 // Downcast NOX::Abstract::Vector return arguments to Epetra.Vectors,
 // if possible
 #ifdef HAVE_NOX_EPETRA
-%typemap(out) NOX::Abstract::Vector &
+%typemap(out) NOX::Abstract::Vector & (NOX::Epetra::Vector* nevResult=NULL,
+				       Epetra_NumPyVector* enpvResult=NULL)
 %{
-  NOX::Epetra::Vector* nevResult = dynamic_cast<NOX::Epetra::Vector*>($1);
+  nevResult = dynamic_cast<NOX::Epetra::Vector*>($1);
   if (nevResult == NULL)
   {
-    // If we cannot upcast, then return the NOX::Abstract::Vector
+    // If we cannot downcast, then return the NOX::Abstract::Vector
     $result = SWIG_NewPointerObj((void*)&$1, $descriptor, 1);
   }
   else
   {
-    Epetra_NumPyVector * enpvResult = 
-      new Epetra_NumPyVector(View, nevResult->getEpetraVector(), 0);
+    enpvResult = new Epetra_NumPyVector(View, nevResult->getEpetraVector(), 0);
     $result = SWIG_NewPointerObj((void*)enpvResult, $descriptor(Epetra_NumPyVector*), 1);
   }
 %}
