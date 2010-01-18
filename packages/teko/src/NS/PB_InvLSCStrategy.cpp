@@ -441,6 +441,8 @@ void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & 
    //    useLumping_ = pl.get<bool>("Use Lumping");
    if(pl.isParameter("Use W-Scaling"))
       useWScaling_ = pl.get<bool>("Use W-Scaling");
+   if(pl.isParameter("Eigen Solver Iterations"))
+      eigSolveParam_ = pl.get<int>("Eigen Solver Iterations");
    if(pl.isParameter("Scaling Type")) {
       scaleType_ = getDiagonalType(pl.get<std::string>("Scaling Type"));
       TEST_FOR_EXCEPT(scaleType_==NotDiag);
