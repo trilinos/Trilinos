@@ -429,12 +429,16 @@ private:
   std::string                      doc_string_;
 
   //use pragmas to disable some false positive warnings in windows sharedlib exports
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4251)
+#endif
   mutable options_list_t           options_list_;
   options_documentation_list_t     options_documentation_list_;
   enum_opt_data_list_t             enum_opt_data_list_;
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
   bool  output_all_front_matter_;
   bool  output_show_line_prefix_;

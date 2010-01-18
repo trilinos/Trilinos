@@ -294,10 +294,14 @@ namespace Anasazi {
   private:
 //use pragmas to disable some false-positive warnings for windows 
 // sharedlibs export
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4251)
+#endif
     Teuchos::RCP<Epetra_Operator> Epetra_Op;
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
   };
   //-------------------------------------------------------------
 
@@ -377,11 +381,15 @@ namespace Anasazi {
 
 //use pragmas to disable some false-positive warnings for windows 
 // sharedlibs export
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4251)
+#endif
     Teuchos::RCP<Epetra_Operator> Epetra_AOp;
     Teuchos::RCP<Epetra_Operator> Epetra_MOp;
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
   };
   
   ///////////////////////////////////////////////////////////////
@@ -455,10 +463,14 @@ namespace Anasazi {
   private:
 
 //use pragmas to disable false-positive warnings in generating windows sharedlib exports
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4251)
+#endif
     Teuchos::RCP<Epetra_Operator> Epetra_Op;
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
     bool isTrans_;
   };
@@ -502,12 +514,16 @@ namespace Anasazi {
 
 //use pragmas to disable some false-positive warnings for windows 
 // sharedlibs export
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4251)
+#endif
     Teuchos::RCP<const Epetra_MultiVector> Epetra_MV;
     Teuchos::RCP<const Epetra_Map> MV_localmap;
     Teuchos::RCP<const Epetra_BlockMap> MV_blockmap;
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
     bool isTrans_;
   };
@@ -547,14 +563,18 @@ namespace Anasazi {
   private:
 //use pragmas to disable some false-positive warnings for windows 
 // sharedlibs export
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4251)
+#endif
     Teuchos::RCP<const Epetra_MultiVector> Epetra_MV;
     Teuchos::RCP<Epetra_Operator> Epetra_OP;
     Teuchos::RCP<Epetra_MultiVector> Epetra_WMV;
     Teuchos::RCP<const Epetra_Map> MV_localmap;
     Teuchos::RCP<const Epetra_BlockMap> MV_blockmap;
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
   };
 
   //////////////////////////////////////////////////////////////////
@@ -592,14 +612,18 @@ namespace Anasazi {
   private:
 //use pragmas to disable some false-positive warnings for windows 
 // sharedlibs export
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4251)
+#endif
     Teuchos::RCP<const Epetra_MultiVector> Epetra_MV;
     Teuchos::RCP<Epetra_Operator> Epetra_OP;
     Teuchos::RCP<Epetra_MultiVector> Epetra_WMV;
     Teuchos::RCP<const Epetra_Map> MV_localmap;
     Teuchos::RCP<const Epetra_BlockMap> MV_blockmap;
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
   };
 
   

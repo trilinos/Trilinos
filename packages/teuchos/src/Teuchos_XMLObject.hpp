@@ -169,10 +169,14 @@ public:
 
 private:
 //use pragmas to disable some false-positive warnings for windows sharedlibs export
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4251)
+#endif
   RCP<XMLObjectImplem> ptr_;
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 };
 
 /** \relates XMLObject 

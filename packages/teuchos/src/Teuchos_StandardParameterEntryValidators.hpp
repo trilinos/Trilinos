@@ -576,10 +576,14 @@ private:
   std::string acceptedTypesString_;
 
 //use pragmas to disable some false-positive warnings for windows sharedlibs export
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4251)
+#endif
   const AcceptedTypes acceptedTypes_;
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
   // ////////////////////////////
   // Private member functions

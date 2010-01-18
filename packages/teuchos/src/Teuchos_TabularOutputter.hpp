@@ -143,12 +143,16 @@ private:
   static const std::string fieldSpacer_;
 
 //use pragmas to disable some false-positive warnings for windows sharedlibs export
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4251)
+#endif
   Array<FieldSpec> fieldSpecs_;
   RCP<FancyOStream> out_;
   Tuple<int,numFieldTypes> fieldTypePrecision_;
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
   int currFieldIdx_;
 

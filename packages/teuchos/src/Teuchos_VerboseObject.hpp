@@ -167,11 +167,15 @@ private:
   std::string thisLinePrefix_;
 
 //use pragmas to disable some false-positive warnings for windows sharedlibs export
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4251)
+#endif
   mutable RCP<FancyOStream> thisOStream_;
   mutable RCP<FancyOStream> thisOverridingOStream_;
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif 
 
   static RCP<FancyOStream>& privateDefaultOStream();
 

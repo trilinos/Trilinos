@@ -210,10 +210,14 @@ private:
 
   //! Optional validator object
 //use pragmas to disable some false positive warnings for windows sharedlib export
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4251)
+#endif
   RCP<const ParameterEntryValidator> validator_;
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
 };
 

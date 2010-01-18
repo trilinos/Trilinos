@@ -562,10 +562,14 @@ private: // Data members
 
   //! Parameter list
 //use pragmas to disable some false-positive warnings for windows sharedlibs export
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4251)
+#endif
   Map params_;
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
 
   //! Validate into list or not
   bool disableRecursiveValidation_;

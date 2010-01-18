@@ -59,11 +59,15 @@ namespace Teuchos
       XMLObject parse();
     private:
 //use pragmas to disable some false-positive warnings for windows sharedlibs export
+#ifdef _MSC_VER
 #pragma warning(push)
 #pragma warning(disable:4251)
+#endif
       RCP<XMLInputStream> _is;
       Teuchos::map<std::string,string> _entities;
+#ifdef _MSC_VER
 #pragma warning(pop)
+#endif
       
       /** \brief Determine whether \c c matches the <tt>Letter</tt> production according to the XML specification.*/
       inline static bool isLetter(unsigned char c);
