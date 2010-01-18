@@ -101,7 +101,7 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> appPar
                   lsParams, iJac, A, iPrec, M, *currentSolution));
     shiftedLinSys =
       Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams,
-                                lsParams, iReq, iJac, A, *currentSolution));
+							lsParams, iJac, A, iPrec, M,*currentSolution));
   }
   else {
      linsys =
@@ -168,6 +168,7 @@ Teuchos::RCP<const Epetra_Map> Piro::Epetra::LOCASolver::get_g_map(int j) const
 
   if      (j < num_g) return model->get_g_map(j);
   else if (j == num_g) return model->get_x_map();
+  return Teuchos::null;
 }
 
 Teuchos::RCP<const Epetra_Vector> Piro::Epetra::LOCASolver::get_x_init() const
