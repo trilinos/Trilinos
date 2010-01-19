@@ -460,8 +460,8 @@ namespace Tpetra
       // these are parallel compute buffers, not host memory. therefore, in general, they cannot be dereferenced in host cost.
       // 1D == StaticAllocation, 2D == DynamicAllocation
       // The allocation always matches that of graph_
-      Teuchos::ArrayRCP<Scalar>                       pbuf_values1D_;
-      Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >   pbuf_values2D_;
+      Teuchos::ArrayRCP<Scalar>                       pbuf_values1D_, view_values1D_;
+      Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >   pbuf_values2D_, view_values2D_;
 
       // multivectors used for import/export dest/source in apply()
       mutable Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > importMV_, exportMV_;
@@ -827,27 +827,39 @@ namespace Tpetra
     // do we even have anything to allocate?
     if (nta > 0) {
       Teuchos::RCP<Node> node = lclMatrix_.getNode();
-      Kokkos::ReadyBufferHelper<Node> rbh(node);
       ////////////////////////////////////////
       if (getProfileType() == StaticProfile) {
-        // allocate values
+        //
+        //  STATIC ALLOCATION PROFILE
+        //
+        // determine how many entries to allocate and setup offsets into 1D arrays
         pbuf_values1D_ = node->template allocBuffer<Scalar>(nta);
-        // init values in parallel, if the graph already has valid entries
+        // init values if the graph already has valid entries
         if (numEntries > 0) {
+          Kokkos::ReadyBufferHelper<Node> rbh(node);
           Kokkos::InitOp<Scalar> wdp;
           wdp.alpha = alpha;
           rbh.begin();
           wdp.x   = rbh.addNonConstBuffer(pbuf_values1D_);
           rbh.end();
           node->template parallel_for<Kokkos::InitOp<Scalar> >(0,nta,wdp);
+          view_values1D_ = node->template viewBufferNonConst<Scalar>(Kokkos::ReadWrite,nta,pbuf_values1D_);
+        }
+        else {
+          // a simple WriteOnly view will suffice
+          view_values1D_ = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly,nta,pbuf_values1D_);
         }
       }
-      ///////////////////////////////////////////////
-      else { // if getProfileType() == DynamicProfile
+      else {
+        //
+        //  DYNAMIC ALLOCATION PROFILE
+        //
         Kokkos::InitOp<Scalar> wdp;
         wdp.alpha = alpha;
         // allocate array of buffers
         pbuf_values2D_ = Teuchos::arcp< Teuchos::ArrayRCP<Scalar> >(nlrs);
+        bool someRowWasInitialized = false;
+        Kokkos::ReadyBufferHelper<Node> rbh(node);
         for (size_t r=0; r<nlrs; ++r) {
           // this call to getNumAllocatedEntries() is cheap for the DynamicProfile case
           const size_t ntarow = graph_->getNumAllocatedEntriesInLocalRow(r),
@@ -861,11 +873,19 @@ namespace Tpetra
               wdp.x   = rbh.addNonConstBuffer(pbuf_values2D_[r]);
               rbh.end();
               node->template parallel_for<Kokkos::InitOp<Scalar> >(0,ntarow,wdp);
+              someRowWasInitialized = true;
             }
           }
         }
+        // ufortunately, all or none; if any row was initialized, we must 
+        if (someRowWasInitialized) {
+          view_values2D_ = Kokkos::ArrayOfViewsHelper<Node>::template getArrayOfNonConstViews<Scalar>(node, Kokkos::ReadWrite, pbuf_values2D_);
+        }
+        else {
+          view_values2D_ = Kokkos::ArrayOfViewsHelper<Node>::template getArrayOfNonConstViews<Scalar>(node, Kokkos::WriteOnly, pbuf_values2D_);
+        }
       }
-    }
+    } // num to allocate > 0
     valuesAreAllocated_ = true;
   }
 
@@ -894,6 +914,11 @@ namespace Tpetra
     TEST_FOR_EXCEPTION( storageOptimized_ == true && fillComplete_ == false,                           std::logic_error, err );
     // if matrix is storage optimized, it should have a 1D allocation 
     TEST_FOR_EXCEPTION( storageOptimized_ == true && pbuf_values2D_ != Teuchos::null,                  std::logic_error, err );
+    // if values are not allocated, then views should be null
+    TEST_FOR_EXCEPTION( valuesAreAllocated_ == false && (view_values1D_ != null || view_values2D_ != null), std::logic_error, err );
+    // no view should be present in the absence of a buffer
+    TEST_FOR_EXCEPTION( (pbuf_values1D_ == Teuchos::null && view_values1D_ != Teuchos::null) ||
+                        (pbuf_values2D_ == Teuchos::null && view_values2D_ != Teuchos::null), std::logic_error, err );
     // if matrix/graph are static profile, then 2D allocation should not be present
     TEST_FOR_EXCEPTION( graph_->getProfileType() == StaticProfile  && pbuf_values2D_ != Teuchos::null, std::logic_error, err );
     // if matrix/graph are dynamic profile, then 1D allocation should not be present
@@ -950,10 +975,20 @@ namespace Tpetra
     if (sizeInfo.allocSize > 0 && valuesAreAllocated_) {
       Teuchos::RCP<Node> node = getNode();
       if (graph_->getProfileType() == StaticProfile) {
-        values = node->template viewBuffer<Scalar>(sizeInfo.allocSize, pbuf_values1D_ + sizeInfo.offset1D);
+        if (view_values1D_ == Teuchos::null) {
+          values = node->template viewBuffer<Scalar>(sizeInfo.allocSize, pbuf_values1D_ + sizeInfo.offset1D);
+        }
+        else {
+          values = view_values1D_.persistingView(sizeInfo.offset1D,sizeInfo.allocSize);
+        }
       }
       else {  // dynamic profile
-        values = node->template viewBuffer<Scalar>(sizeInfo.allocSize, pbuf_values2D_[myRow]);
+        if (view_values2D_ == Teuchos::null) {
+          values = node->template viewBuffer<Scalar>(sizeInfo.allocSize, pbuf_values2D_[myRow]);
+        }
+        else {
+          values = view_values2D_[myRow];
+        }
       }
     }
 #ifdef HAVE_TPETRA_DEBUG
@@ -979,10 +1014,20 @@ namespace Tpetra
       // if there are no valid entries, then this view can be constructed WriteOnly
       Kokkos::ReadWriteOption rw = (sizeInfo.numEntries == 0 ? Kokkos::WriteOnly : Kokkos::ReadWrite);
       if (graph_->getProfileType() == StaticProfile) {
-        values = node->template viewBufferNonConst<Scalar>(rw, sizeInfo.allocSize, pbuf_values1D_ + sizeInfo.offset1D);
+        if (view_values1D_ == Teuchos::null) {
+          values = node->template viewBufferNonConst<Scalar>(rw, sizeInfo.allocSize, pbuf_values1D_ + sizeInfo.offset1D);
+        }
+        else {
+          values = view_values1D_.persistingView(sizeInfo.offset1D,sizeInfo.allocSize);
+        }
       }
       else {  // dynamic profile
-        values = node->template viewBufferNonConst<Scalar>(rw, sizeInfo.allocSize, pbuf_values2D_[myRow]);
+        if (view_values2D_ == Teuchos::null) {
+          values = node->template viewBufferNonConst<Scalar>(rw, sizeInfo.allocSize, pbuf_values2D_[myRow]);
+        }
+        else {
+          values = view_values2D_[myRow];
+        }
       }
     }
 #ifdef HAVE_TPETRA_DEBUG
@@ -999,22 +1044,44 @@ namespace Tpetra
     using Teuchos::ArrayRCP;
     Teuchos::RCP<Node> node = getNode();
     RowInfo sizeInfo = graph_->getRowInfo(lrow);
+    // allocate a larger space for row "lrow"
+    // copy any existing data from previous allocation to new allocation
+    // update sizes
+    // 
+    // if we already have views of the data, we will create a new view and do the copy on the host
+    // otherwise, don't create a view, and do the copy on the device
+    // 
     if (pbuf_values2D_ == Teuchos::null) {
       pbuf_values2D_ = Teuchos::arcp< ArrayRCP<Scalar> >(getNodeNumRows());
+      // if this is our initial allocation (pbuf_values1D_ == null)
+      // then go ahead and create views; this is ur one chance to do it efficiently (i.e., WriteOnly)
+      view_values2D_ = Kokkos::ArrayOfViewsHelper<Node>::template getArrayOfNonConstViews<Scalar>(node, Kokkos::WriteOnly, pbuf_values2D_);
     }
 #ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPT( getRowMap()->isNodeLocalElement(lrow) == false );
     TEST_FOR_EXCEPT( pbuf_values2D_[lrow] != Teuchos::null && allocSize < static_cast<size_t>(pbuf_values2D_[lrow].size()) );
     TEST_FOR_EXCEPT( allocSize == 0 );
 #endif
-    ArrayRCP<Scalar> old_row, new_row;
-    old_row = pbuf_values2D_[lrow];
-    new_row = node->template allocBuffer<Scalar>(allocSize);
-    if (sizeInfo.numEntries) {
-      node->template copyBuffers<Scalar>(sizeInfo.numEntries,old_row,new_row);
+    ArrayRCP<Scalar> old_alloc, new_row;
+    old_alloc = pbuf_values2D_[lrow];
+    pbuf_values2D_[lrow] = node->template allocBuffer<Scalar>(allocSize);
+    if (view_values2D_ == Teuchos::null) {
+      // no views
+      if (sizeInfo.numEntries) {
+        node->template copyBuffers<Scalar>(sizeInfo.numEntries,old_alloc,pbuf_values2D_[lrow]);
+      }
+      old_alloc = Teuchos::null;
     }
-    old_row = Teuchos::null;
-    pbuf_values2D_[lrow] = new_row;
+    else {
+      // delete the buffer early, this will prevent a copy-back that we neither need nor want to pay for
+      old_alloc = Teuchos::null;
+      // use the views to copy the data
+      ArrayRCP<Scalar> old_view;
+      old_view = view_values2D_[lrow];
+      view_values2D_[lrow] = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly, allocSize, pbuf_values2D_[lrow]);
+      std::copy( old_view.begin(), old_view.begin() + sizeInfo.numEntries, view_values2D_[lrow].begin() );
+      old_view = Teuchos::null;
+    }
   }
 
 
@@ -1022,6 +1089,10 @@ namespace Tpetra
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::fillLocalMatrix() {
+#ifdef HAVE_TPETRA_DEBUG
+    TEST_FOR_EXCEPTION( view_values1D_ != Teuchos::null || view_values2D_ != Teuchos::null, std::logic_error, 
+        Teuchos::typeName(*this) << "::fillLocalMatrix(): Internal logic error. Please contact Tpetra team.");
+#endif
     lclMatrix_.clear();
     if (storageOptimized_) {
       // fill packed matrix; it is okay for pbuf_values1D_ to be null; the matrix will flag itself as empty
@@ -1578,6 +1649,10 @@ namespace Tpetra
       // do nothing
     }
     else {
+      // clear the views
+      view_values1D_ = Teuchos::null;
+      view_values2D_ = Teuchos::null;
+      // do the scale in parallel
       Teuchos::RCP<Node> node = lclMatrix_.getNode();
       Kokkos::ReadyBufferHelper<Node> rbh(node);
       Kokkos::SingleScaleOp<Scalar> wdp;
@@ -1622,6 +1697,10 @@ namespace Tpetra
       allocateValues(alpha);
     }
     else {
+      // clear the views
+      view_values1D_ = Teuchos::null;
+      view_values2D_ = Teuchos::null;
+      // set the values in parallel
       Teuchos::RCP<Node> node = lclMatrix_.getNode();
       Kokkos::ReadyBufferHelper<Node> rbh(node);
       Kokkos::InitOp<Scalar> wdp;
@@ -1978,13 +2057,17 @@ namespace Tpetra
     fillComplete_ = true;
 
     if (os == DoOptimizeStorage) {
-      // this will call optimizeStorage() on the graph as well, if isStaticGraph() == false
-      // these routines will fill the local graph and local matrix
+      // this will also:
+      // * call optimizeStorage() on the graph as well, if isStaticGraph() == false
+      // * fill the local graph and local matrix
       optimizeStorage();
     }
     else { 
+      // clear all views, so that changes can be written
       // local graph already filled.
       // fill the local matrix.
+      view_values1D_ = Teuchos::null;
+      view_values2D_ = Teuchos::null;
       fillLocalMatrix();
     }
 
@@ -2075,8 +2158,8 @@ namespace Tpetra
         Teuchos::typeName(*this) << "::optimizeStorage(): optimizeStorage() already called on graph, but not on matrix.");
     // 
     Teuchos::RCP<Node> node = lclMatrix_.getNode();
-    const size_t nlrs = getNodeNumRows(),
-           numEntries = graph_->getNodeNumEntries();
+    const size_t       nlrs = getNodeNumRows(),
+                 numEntries = graph_->getNodeNumEntries();
     if (nlrs > 0) {
       if (valuesAreAllocated_ == false) {
         // haven't even allocated values yet. allocate to optimal size and fill with zero
@@ -2096,6 +2179,8 @@ namespace Tpetra
       }
       else if (graph_->getProfileType() == DynamicProfile) {
         // allocate a single memory block
+        // changes to the values must be committed before the copyBuffers() calls below
+        view_values2D_ = Teuchos::null;
         if (numEntries > 0) {
           // numEntries > 0  =>  allocSize > 0  =>  pbuf_values2D_ != Teuchos::null
 #ifdef HAVE_TPETRA_DEBUG
@@ -2115,9 +2200,12 @@ namespace Tpetra
           TEST_FOR_EXCEPTION(sofar != numEntries, std::logic_error, err);
 #endif
         }
+        // done with 2D allocation
         pbuf_values2D_ = Teuchos::null;
       }
       else {
+        // any changes to the values need to be comitted before the copyBuffers() calls below
+        view_values1D_ = Teuchos::null;
         // storage is already allocated; just need to pack
         if (numEntries > 0) {
 #ifdef HAVE_TPETRA_DEBUG

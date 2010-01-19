@@ -633,23 +633,21 @@ namespace Tpetra
         //
         // determine how many entries to allocate and setup offsets into 1D arrays
         pbuf_rowOffsets_ = node->template allocBuffer<size_t>(numRows+1);
-        {
-          view_rowOffsets_ = node->template viewBufferNonConst<size_t>(Kokkos::WriteOnly,numRows+1,pbuf_rowOffsets_);
-          if (numAllocPerRow_ != null) {
-            // allocate offsets, get host view
-            nodeNumAllocated_ = 0;
-            for (size_t i=0; i < numRows; ++i) {
-              view_rowOffsets_[i] = nodeNumAllocated_;
-              nodeNumAllocated_ += numAllocPerRow_[i];
-            }
-            view_rowOffsets_[numRows] = nodeNumAllocated_;
+        view_rowOffsets_ = node->template viewBufferNonConst<size_t>(Kokkos::WriteOnly,numRows+1,pbuf_rowOffsets_);
+        if (numAllocPerRow_ != null) {
+          // allocate offsets, get host view
+          nodeNumAllocated_ = 0;
+          for (size_t i=0; i < numRows; ++i) {
+            view_rowOffsets_[i] = nodeNumAllocated_;
+            nodeNumAllocated_ += numAllocPerRow_[i];
           }
-          else {
-            nodeNumAllocated_ = numAllocForAllRows_ * numRows;
-            view_rowOffsets_[0] = 0;
-            for (size_t i=1; i <= numRows; ++i) {
-              view_rowOffsets_[i] = view_rowOffsets_[i-1] + numAllocForAllRows_;
-            }
+          view_rowOffsets_[numRows] = nodeNumAllocated_;
+        }
+        else {
+          nodeNumAllocated_ = numAllocForAllRows_ * numRows;
+          view_rowOffsets_[0] = 0;
+          for (size_t i=1; i <= numRows; ++i) {
+            view_rowOffsets_[i] = view_rowOffsets_[i-1] + numAllocForAllRows_;
           }
         }
         // in hind-sight, we know nodeNumAllocated_ and whether pbuf_rowOffsets_ is needed at all
@@ -1292,8 +1290,8 @@ namespace Tpetra
     // 
     if (pbuf_lclInds2D_ == Teuchos::null) {
       pbuf_lclInds2D_ = Teuchos::arcp< ArrayRCP<LocalOrdinal> >(getNodeNumRows());
-      // if this is our initial allocation (pbuf_lclInds2D_ == null). 
-      // go ahead and create views; this is our one chance to do it efficiently (i.e., WriteOnly)
+      // if this is our initial allocation (pbuf_lclInds2D_ == null)
+      // then go ahead and create views; this is our one chance to do it efficiently (i.e., WriteOnly)
       view_lclInds2D_ = Kokkos::ArrayOfViewsHelper<Node>::template getArrayOfNonConstViews<LocalOrdinal>(node, Kokkos::WriteOnly, pbuf_lclInds2D_);
     }
     ArrayRCP<LocalOrdinal> old_alloc;
@@ -1598,7 +1596,7 @@ namespace Tpetra
 #ifdef HAVE_TPETRA_DEBUG
     TEST_FOR_EXCEPTION( view_lclInds1D_ != Teuchos::null || view_lclInds2D_ != Teuchos::null || view_rowOffsets_ != Teuchos::null ||
                         view_gblInds1D_ != Teuchos::null || view_gblInds2D_ != Teuchos::null, std::logic_error, 
-        Teuchos::typeName(*this) << "::getLocalRowCopy(): Internal logic error. Please contact Tpetra team.");
+        Teuchos::typeName(*this) << "::fillLocalGraph(): Internal logic error. Please contact Tpetra team.");
 #endif
     lclGraph_.clear();
     if (storageOptimized_) {
@@ -2655,7 +2653,6 @@ namespace Tpetra
 
     Teuchos::RCP<Node> node = lclGraph_.getNode();
 
-
     const size_t nlrs = getNodeNumRows();
     if (nlrs > 0 && nodeNumAllocated_ > 0) {
       if (getProfileType() == DynamicProfile) {
@@ -2689,7 +2686,7 @@ namespace Tpetra
         // done with this buffer; we are 1D now
         pbuf_lclInds2D_ = Teuchos::null;
       }
-      else {
+      else {  // StaticProfile
         // any changes to the local indices must be committed before the copyBuffers() calls below
         view_lclInds1D_ = Teuchos::null;
         // storage is already allocated; just need to pack
