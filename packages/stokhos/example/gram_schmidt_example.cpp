@@ -79,9 +79,13 @@ int main(int argc, char **argv)
     // Tensor product quadrature
     Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
       Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
+
+    // Triple product tensor
+    Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk =
+      basis->computeTripleProductTensor(basis->size());
     
     // Quadrature expansion
-    Stokhos::QuadOrthogPolyExpansion<int,double> quad_exp(basis, quad);
+    Stokhos::QuadOrthogPolyExpansion<int,double> quad_exp(basis, Cijk, quad);
     
     // Compute PCE via quadrature expansion
     quad_exp.sin(u,x);
@@ -138,9 +142,14 @@ int main(int argc, char **argv)
       Teuchos::rcp(new Stokhos::UserDefinedQuadrature<int,double>(gs_basis,
 								  points,
 								  weights));
+
+    // Triple product tensor
+    Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > gs_Cijk =
+      gs_basis->computeTripleProductTensor(gs_basis->size());
     
     // Gram-Schmidt quadrature expansion
     Stokhos::QuadOrthogPolyExpansion<int,double> gs_quad_exp(gs_basis, 
+							     gs_Cijk,
 							     gs_quad);
     
     Stokhos::OrthogPolyApprox<int,double>  u_gs(gs_basis), v_gs(gs_basis), 
@@ -157,12 +166,17 @@ int main(int argc, char **argv)
     pce_quad_func gs_func(w_gs, *gs_basis);
     quad_exp.binary_op(gs_func, w2, u, v);
 
+    // Triple product tensor
+    Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > st_Cijk =
+      st_basis->computeTripleProductTensor(st_basis->size());
+
     // Stieltjes quadrature expansion
     Teuchos::RCP<const Stokhos::Quadrature<int,double> > st_quad = 
       Teuchos::rcp(new Stokhos::UserDefinedQuadrature<int,double>(st_basis,
 								  points,
 								  weights));
-    Stokhos::QuadOrthogPolyExpansion<int,double> st_quad_exp(st_basis, 
+    Stokhos::QuadOrthogPolyExpansion<int,double> st_quad_exp(st_basis,
+							     st_Cijk,
 							     st_quad);
     
     // Compute w_st = u_st*v_st in Stieltjes basis

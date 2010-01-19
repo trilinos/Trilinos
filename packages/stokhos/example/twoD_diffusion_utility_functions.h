@@ -36,7 +36,7 @@ void generateRHS(double (*rhs_function)(double, double, int), Teuchos::Array<dou
   int N_xi = basis->size();
   int N_x = mesh.size();
   int d = basis->dimension();
-  const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk = basis->getLowOrderTripleProductTensor(d);
+  Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk = basis->computeTripleProductTensor(d);
   RHS.PutScalar(0);
 
   double doubleProd;
@@ -116,8 +116,8 @@ void computeMeanSolution(const Epetra_Vector& u, Epetra_Vector& Eofu, Teuchos::R
   Epetra_MultiVector uBlock(Map,N_xi);
   
   //Get the triple product tensor.
-  Teuchos::RCP< const Stokhos::Sparse3Tensor<int, double> > Cijk; 
-  Cijk = basis->getTripleProductTensor();
+  Teuchos::RCP< const Stokhos::Sparse3Tensor<int, double> > Cijk = 
+    basis->computeTripleProductTensor(basis->size());
   double val;
   int i, j;
   int n = Cijk->num_values(0);

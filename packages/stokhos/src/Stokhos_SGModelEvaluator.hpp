@@ -76,6 +76,7 @@ namespace Stokhos {
     SGModelEvaluator(
       const Teuchos::RCP<EpetraExt::ModelEvaluator>& me,
       const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
+      const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk,
       const Teuchos::Array<int>& sg_p_index,
       const Teuchos::Array<int>& sg_g_index,
       const Teuchos::RCP<Teuchos::ParameterList>& params,
@@ -152,6 +153,12 @@ namespace Stokhos {
     //! Number of stochastic blocks
     unsigned int num_sg_blocks;
 
+    //! Number of W stochastic blocks (may be smaller than num_sg_blocks)
+    unsigned int num_W_blocks;
+
+    //! Number of p stochastic blocks (may be smaller than num_sg_blocks)
+    unsigned int num_p_blocks;
+
     //! Whether we support x (and thus f and W)
     bool supports_x;
 
@@ -212,6 +219,7 @@ namespace Stokhos {
     //! Method for creating block Jacobian
     enum EJacobianMethod {
       MATRIX_FREE,
+      KL_MATRIX_FREE,
       KL_REDUCED_MATRIX_FREE,
       FULLY_ASSEMBLED
     };

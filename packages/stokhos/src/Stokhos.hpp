@@ -44,6 +44,7 @@
 // Expansion methods
 #include "Stokhos_OrthogPolyApprox.hpp"
 #include "Stokhos_ConstantOrthogPolyExpansion.hpp"
+#include "Stokhos_AlgebraicOrthogPolyExpansion.hpp"
 #include "Stokhos_QuadOrthogPolyExpansion.hpp"
 #include "Stokhos_DerivOrthogPolyExpansion.hpp"
 #include "Stokhos_ForUQTKOrthogPolyExpansion.hpp"
@@ -63,5 +64,9 @@
 #include "Stokhos_MatrixFreeEpetraOp.hpp"
 #include "Stokhos_MeanEpetraOp.hpp"
 #include "Stokhos_KLMatrixFreeEpetraOp.hpp"
+
+// Model Evaluators
+#include "Stokhos_SGModelEvaluator.hpp"
+#include "Stokhos_SGQuadModelEvaluator.hpp"
 
 #endif // STOKHOS_HPP 

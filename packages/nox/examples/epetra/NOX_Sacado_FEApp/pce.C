@@ -314,8 +314,11 @@ int main(int argc, char *argv[]) {
        // Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
        // 	 Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(basis, p));
       unsigned int sz = basis->size();
+      Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk =
+	basis->computeTripleProductTensor(sz);
       Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
       	Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,double>(basis, 
+								      Cijk,
       								      quad));
      // Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
      // 	Teuchos::rcp(new Stokhos::ForUQTKOrthogPolyExpansion<int,double>(basis, 
@@ -402,9 +405,9 @@ int main(int argc, char *argv[]) {
       Teuchos::Array<int> sg_g_index(1);
       sg_g_index[0] = 0;
       Teuchos::RCP<Stokhos::SGModelEvaluator> sg_model =
-	Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, sg_p_index,
-						   sg_g_index, sgParams,
-						   Comm, sg_p));
+	Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, Cijk, 
+						   sg_p_index, sg_g_index, 
+						   sgParams, Comm, sg_p));
 
       // Create SG NOX solver
       Teuchos::RCP<EpetraExt::ModelEvaluator> sg_solver;

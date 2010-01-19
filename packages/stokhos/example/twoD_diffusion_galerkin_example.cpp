@@ -148,7 +148,7 @@ for (int i = 0; i< d; i++){
 
 Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis =
   Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
-const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk = basis->getLowOrderTripleProductTensor(d+1);
+Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk = basis->computeTripleProductTensor(d+1);
 
 
 
@@ -169,6 +169,7 @@ generateExponentialRF(d, 1,lambda, alpha, omega, xind, yind);
 ////////////////////////////////////////////////////////////////////// 
 
 Teuchos::Array<Teuchos::RCP<Epetra_CrsMatrix> > A_k(d+1);
+Teuchos::Array<Teuchos::RCP<Epetra_Operator> > A_k_op(d+1);
 const Teuchos::RCP<const Epetra_Map> StochMap = Teuchos::rcp(new Epetra_Map(n*n*basis->size(),0,Comm));
 const Teuchos::RCP<const Epetra_Map> BaseMap = Teuchos::rcp(new Epetra_Map(n*n,0,Comm));
 int NumMyElements = (*BaseMap).NumMyElements();
@@ -200,6 +201,7 @@ for(int k = 0; k<=d; k++){
     }
   }
   A_k[k] = Teuchos::rcp(new Epetra_CrsMatrix(Copy,*BaseMap,NumNz));
+  A_k_op[k] = A_k[k];
   for( int i=0 ; i<NumMyElements; ++i ) {
     if (bcIndices[i] == 1 && k == 0) two = 1; //Enforce BC in mean matrix
     if (bcIndices[i] == 0) {
@@ -227,7 +229,7 @@ for(int k = 0; k<=d; k++){
 
 //Construct the implicit operator.
 Teuchos::RCP<Stokhos::KLMatrixFreeEpetraOp> MatFreeOp = 
-   Teuchos::rcp(new Stokhos::KLMatrixFreeEpetraOp(BaseMap, StochMap, basis, Cijk, A_k)); 
+   Teuchos::rcp(new Stokhos::KLMatrixFreeEpetraOp(BaseMap, StochMap, basis, Cijk, A_k_op)); 
 EpetraExt::Epetra_Timed_Operator system(MatFreeOp);
 
 //Construct the RHS vector.

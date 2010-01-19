@@ -89,13 +89,14 @@ namespace Stokhos {
     //! Compute triple product tensor
     /*!
      * The \f$(i,j,k)\f$ entry of the tensor \f$C_{ijk}\f$ is given by
-     * \f$C_{ijk} = \langle\psi_i\psi_j\psi_k\rangle\f$ where \f$\psi_l\f$
-     * represents basis polynomial \f$l\f$ and \f$i,j,k=0,\dots,P\f$ where
-     * \f$P\f$ is the order of the basis.
+     * \f$C_{ijk} = \langle\Psi_i\Psi_j\Psi_k\rangle\f$ where \f$\Psi_l\f$
+     * represents basis polynomial \f$l\f$ and \f$i,j=0,\dots,P\f$ where
+     * \f$P\f$ is size()-1 and \f$k=0,\dots,p\f$ where \f$p\f$
+     * is the supplied \c order.
      */
     virtual 
-    Teuchos::RCP< const Stokhos::Dense3Tensor<ordinal_type, value_type> > 
-    getTripleProductTensor() const = 0;
+    Teuchos::RCP< Stokhos::Dense3Tensor<ordinal_type, value_type> > 
+    computeTripleProductTensor() const = 0;
 
     //! Compute derivative double product tensor
     /*!
@@ -105,8 +106,8 @@ namespace Stokhos {
      * \f$P\f$ is the order of the basis.
      */
     virtual 
-    Teuchos::RCP< const Teuchos::SerialDenseMatrix<ordinal_type, value_type> > 
-    getDerivDoubleProductTensor() const = 0;
+    Teuchos::RCP< Teuchos::SerialDenseMatrix<ordinal_type, value_type> > 
+    computeDerivDoubleProductTensor() const = 0;
 
     //! Evaluate each basis polynomial at given point \c point
     /*!

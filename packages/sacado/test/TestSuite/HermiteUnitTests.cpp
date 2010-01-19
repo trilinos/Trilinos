@@ -39,7 +39,13 @@ HermiteUnitTest::HermiteUnitTest() :
   bases[0] = Teuchos::rcp(new basis_type(0));
   Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
     Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
-  expansion = Teuchos::rcp(new exp_type(basis));
+  Teuchos::RCP<Teuchos::SerialDenseMatrix<int,double> > Bij =
+    basis->computeDerivDoubleProductTensor();
+  Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk =
+    basis->computeTripleProductTensor(basis->size());
+  Teuchos::RCP<Stokhos::Dense3Tensor<int,double> > Dijk =
+    basis->computeDerivTripleProductTensor(Bij, Cijk);
+  expansion = Teuchos::rcp(new exp_type(basis, Bij, Cijk, Dijk));
 }
 
 HermiteUnitTest::HermiteUnitTest(double absolute_tolerance, 

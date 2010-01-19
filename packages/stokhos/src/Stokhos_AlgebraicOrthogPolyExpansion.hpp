@@ -28,35 +28,35 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_QUADORTHOGPOLYEXPANSION_HPP
-#define STOKHOS_QUADORTHOGPOLYEXPANSION_HPP
+#ifndef STOKHOS_ALGEBRAICORTHOGPOLYEXPANSION_HPP
+#define STOKHOS_ALGEBRAICORTHOGPOLYEXPANSION_HPP
 
 #include "Stokhos_OrthogPolyExpansion.hpp"
-#include "Stokhos_Quadrature.hpp"
 
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_Array.hpp"
-#include "Teuchos_SerialDenseMatrix.hpp"
-#include "Teuchos_SerialDenseVector.hpp"
-#include "Teuchos_BLAS.hpp"
 
 namespace Stokhos {
 
-  //! Orthogonal polynomial expansions based on numerical quadrature
+  //! Orthogonal polynomial expansions limited to algebraic operations
+  /*!
+   * Implements +, -, *, / (with constant denominator), and other operations
+   * with constant arguments.  Useful for problems that only involve
+   * algebraic operations, or constant non-algebraic operations in that it
+   * doesn't require creation of additional data structures (like sparse
+   * quadrature grids) that may take significant computational time.
+   */
   template <typename ordinal_type, typename value_type> 
-  class QuadOrthogPolyExpansion : 
+  class AlgebraicOrthogPolyExpansion : 
     public OrthogPolyExpansion<ordinal_type, value_type> {
   public:
 
     //! Constructor
-    QuadOrthogPolyExpansion(
-    const Teuchos::RCP<const OrthogPolyBasis<ordinal_type, value_type> >& basis,
-    const Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk,
-    const Teuchos::RCP<const Quadrature<ordinal_type, value_type> >& quad,
-    bool use_quad_for_times = false);
+    AlgebraicOrthogPolyExpansion(
+      const Teuchos::RCP<const OrthogPolyBasis<ordinal_type, value_type> >& basis,
+      const Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk);
 
     //! Destructor
-    virtual ~QuadOrthogPolyExpansion() {}
+    virtual ~AlgebraicOrthogPolyExpansion() {}
 
     //! Get expansion size
     ordinal_type size() const { return sz; }
@@ -200,10 +200,10 @@ namespace Stokhos {
   private:
 
     // Prohibit copying
-    QuadOrthogPolyExpansion(const QuadOrthogPolyExpansion&);
+    AlgebraicOrthogPolyExpansion(const AlgebraicOrthogPolyExpansion&);
 
     // Prohibit Assignment
-    QuadOrthogPolyExpansion& operator=(const QuadOrthogPolyExpansion& b);
+    AlgebraicOrthogPolyExpansion& operator=(const AlgebraicOrthogPolyExpansion& b);
 
   protected:
 
@@ -213,203 +213,13 @@ namespace Stokhos {
     //! Triple-product tensor
     Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk;
 
-    //! Quadrature routine
-    Teuchos::RCP<const Quadrature<ordinal_type, value_type> > quad;
-
-    //! Use quadrature for times functions
-    bool use_quad_for_times;
-
     //! Expansions size
     ordinal_type sz;
     
-    //! BLAS wrappers
-    Teuchos::BLAS<ordinal_type,value_type> blas;
-
-    //! Array of Quad points
-    const Teuchos::Array< Teuchos::Array<value_type> >& quad_points;
-
-    //! Array of Quad weights
-    const Teuchos::Array<value_type>& quad_weights;
-
-    //! Values of basis at Quad points
-    const Teuchos::Array< Teuchos::Array<value_type> >& quad_values;
-
-    //! Norms of basis vectors
-    const Teuchos::Array<value_type>& norms;
-
-    //! Number of Quad points
-    ordinal_type nqp;
-
-    //! Temporary array for values of first argument at quad points
-    Teuchos::Array<value_type> avals;
-
-    //! Temporary array for values of second argument at quad points
-    Teuchos::Array<value_type> bvals;
-
-    //! Temporary array for values of operation at quad points
-    Teuchos::Array<value_type> fvals;
-
-    //! Reshaped quad values into 1D array
-    Teuchos::Array<double> qv;
-
-    //! Quad values scaled by norms
-    Teuchos::Array<double> sqv;
-
-  public:
-
-    //! Nonlinear unary function
-    template <typename FuncT>
-    void unary_op(const FuncT& func,
-                  OrthogPolyApprox<ordinal_type, value_type>& c, 
-                  const OrthogPolyApprox<ordinal_type, value_type>& a);
-
-    //! Nonlinear binary function
-    template <typename FuncT>
-    void binary_op(const FuncT& func,
-                   OrthogPolyApprox<ordinal_type, value_type>& c, 
-                   const OrthogPolyApprox<ordinal_type, value_type>& a, 
-                   const OrthogPolyApprox<ordinal_type, value_type>& b);
-
-    //! Nonlinear binary function
-    template <typename FuncT>
-    void binary_op(const FuncT& func,
-                   OrthogPolyApprox<ordinal_type, value_type>& c, 
-                   const value_type& a, 
-                   const OrthogPolyApprox<ordinal_type, value_type>& b);
-
-    //! Nonlinear binary function
-    template <typename FuncT>
-    void binary_op(const FuncT& func,
-                   OrthogPolyApprox<ordinal_type, value_type>& c, 
-                   const OrthogPolyApprox<ordinal_type, value_type>& a, 
-                   const value_type& b);
-
-  protected:
-
-    struct times_quad_func { 
-      value_type operator() (const value_type& a, const value_type& b) const { 
-        return a * b; 
-      } 
-    };
-
-    struct div_quad_func { 
-      value_type operator() (const value_type& a, const value_type& b) const { 
-        return a / b; 
-      } 
-    };
-
-    struct exp_quad_func { 
-      value_type operator() (const value_type& a) const { 
-        return std::exp(a); 
-      } 
-    };
-
-    struct log_quad_func { 
-      value_type operator() (const value_type& a) const { 
-        return std::log(a); 
-      } 
-    };
-
-    struct log10_quad_func { 
-      value_type operator() (const value_type& a) const { 
-        return std::log10(a); 
-      } 
-    };
-    
-    struct sqrt_quad_func { 
-      value_type operator() (const value_type& a) const { 
-        return std::sqrt(a); 
-      } 
-    };
-
-    struct pow_quad_func { 
-      value_type operator() (const value_type& a, const value_type& b) const { 
-        return std::pow(a,b); 
-      } 
-    };
-
-    struct cos_quad_func { 
-      value_type operator() (const value_type& a) const { 
-        return std::cos(a); 
-      } 
-    };
-
-    struct sin_quad_func { 
-      value_type operator() (const value_type& a) const { 
-        return std::sin(a); 
-      } 
-    };
-
-    struct tan_quad_func { 
-      value_type operator() (const value_type& a) const { 
-        return std::tan(a); 
-      } 
-    };
-
-    struct cosh_quad_func { 
-      value_type operator() (const value_type& a) const { 
-        return std::cosh(a); 
-      } 
-    };
-
-    struct sinh_quad_func { 
-      value_type operator() (const value_type& a) const { 
-        return std::sinh(a); 
-      } 
-    };
-
-    struct tanh_quad_func { 
-      value_type operator() (const value_type& a) const { 
-        return std::tanh(a); 
-      } 
-    };
-
-    struct acos_quad_func { 
-      value_type operator() (const value_type& a) const { 
-        return std::acos(a); 
-      } 
-    };
-
-    struct asin_quad_func { 
-      value_type operator() (const value_type& a) const { 
-        return std::asin(a); 
-      } 
-    };
-
-    struct atan_quad_func { 
-      value_type operator() (const value_type& a) const { 
-        return std::atan(a); 
-      } 
-    };
-
-    struct atan2_quad_func { 
-      value_type operator() (const value_type& a, const value_type& b) const { 
-        return std::atan2(a,b); 
-      } 
-    };
-
-    struct acosh_quad_func { 
-      value_type operator() (const value_type & a) const { 
-        return std::log(a+std::sqrt(a*a-value_type(1.0))); 
-      }
-    };
-
-    struct asinh_quad_func { 
-      value_type operator() (const value_type& a) const { 
-        return std::log(a+std::sqrt(a*a+value_type(1.0))); 
-      }
-    };
-
-    struct atanh_quad_func { 
-      value_type operator() (const value_type& a) const { 
-        return 0.5*std::log((value_type(1.0)+a)/(value_type(1.0)-a)); 
-      } 
-    };
-    
-  }; // class QuadOrthogPolyExpansion
+  }; // class AlgebraicOrthogPolyExpansion
 
 } // namespace Stokhos
 
-#include "Stokhos_QuadOrthogPolyExpansionImp.hpp"
+#include "Stokhos_AlgebraicOrthogPolyExpansionImp.hpp"
 
-#endif // STOKHOS_QUADORTHOGPOLYEXPANSION_HPP
+#endif // STOKHOS_ALGEBRAICORTHOGPOLYEXPANSION_HPP

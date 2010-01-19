@@ -146,7 +146,7 @@ namespace Sacado {
       bool hasFastAccess() const { return this->size()!=0; }
 
       //! Returns true if derivative array is empty
-      bool isPassive() const { return this->size()!=0; }
+      bool isPassive() const { return this->size()==0; }
       
       //! Set whether variable is constant
       void setIsConstant(bool is_const) { 

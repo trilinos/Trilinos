@@ -38,14 +38,32 @@ ExponentialRandomField(Teuchos::ParameterList& solverParams)
 {
   // Get required parameters
   num_KL = solverParams.get<int>("Number of KL Terms");
-  domain_upper_bound = 
-    solverParams.get< Teuchos::Array<value_type> >("Domain Upper Bounds");
-  domain_lower_bound = 
-    solverParams.get< Teuchos::Array<value_type> >("Domain Lower Bounds");
-  correlation_length = 
-    solverParams.get< Teuchos::Array<value_type> >("Correlation Lengths");
   mean = solverParams.get<value_type>("Mean");
   std_dev = solverParams.get<value_type>("Standard Deviation");
+  if (solverParams.isType<std::string>("Domain Upper Bounds"))
+    domain_upper_bound = 
+      Teuchos::getArrayFromStringParameter<double>(
+	solverParams, "Domain Upper Bounds");
+  else
+    domain_upper_bound = 
+      solverParams.get< Teuchos::Array<value_type> >("Domain Upper Bounds");
+    
+  if (solverParams.isType<std::string>("Domain Lower Bounds"))
+    domain_lower_bound = 
+      Teuchos::getArrayFromStringParameter<double>(
+	solverParams, "Domain Lower Bounds");
+  else
+    domain_lower_bound = 
+      solverParams.get< Teuchos::Array<value_type> >("Domain Lower Bounds");
+
+  if (solverParams.isType<std::string>("Correlation Lengths"))
+    correlation_length = 
+      Teuchos::getArrayFromStringParameter<double>(
+	solverParams, "Correlation Lengths");
+  else
+    correlation_length = 
+      solverParams.get< Teuchos::Array<value_type> >("Correlation Lengths");
+  
 
   // Compute 1-D eigenfunctions for each dimension
   dim = domain_upper_bound.size();
@@ -97,10 +115,11 @@ evaluate(const Teuchos::Array<value_type>& point,
 {
   typedef typename Teuchos::PromotionTraits<rvar_type, value_type>::promote result_type;
   result_type result = 0.0;
-  for (int i=0; i<num_KL; i++)
+  for (int i=0; i<num_KL; i++) {
     result += 
       random_variables[i]*std::sqrt(product_eig_pairs[i].eig_val)*
       product_eig_pairs[i].evalEigenfunction(point);
+  }
   result = mean + std_dev*result;
   return result;
 }

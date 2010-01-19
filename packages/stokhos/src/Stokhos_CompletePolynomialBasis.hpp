@@ -106,23 +106,13 @@ namespace Stokhos {
     /*!
      * The \f$(i,j,k)\f$ entry of the tensor \f$C_{ijk}\f$ is given by
      * \f$C_{ijk} = \langle\Psi_i\Psi_j\Psi_k\rangle\f$ where \f$\Psi_l\f$
-     * represents basis polynomial \f$l\f$ and \f$i,j,k=0,\dots,P\f$ where
-     * \f$P\f$ is size()-1 of the basis.
-     */
-    virtual 
-    Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> > 
-    getTripleProductTensor() const;
-
-    /*!
-     * The \f$(i,j,k)\f$ entry of the tensor \f$C_{ijk}\f$ is given by
-     * \f$C_{ijk} = \langle\Psi_i\Psi_j\Psi_k\rangle\f$ where \f$\Psi_l\f$
      * represents basis polynomial \f$l\f$ and \f$i,j=0,\dots,P\f$ where
      * \f$P\f$ is size()-1 and \f$k=0,\dots,p\f$ where \f$p\f$
      * is the supplied \c order.
      */
     virtual 
-    Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> > 
-    getLowOrderTripleProductTensor(ordinal_type order) const;
+    Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > 
+    computeTripleProductTensor(ordinal_type order) const;
 
     //! Evaluate basis polynomial \c i at zero
     virtual value_type evaluateZero(ordinal_type i) const;
@@ -186,8 +176,11 @@ namespace Stokhos {
      * constructor argument.
      */
     virtual 
-    Teuchos::RCP< const Stokhos::Dense3Tensor<ordinal_type, value_type> > 
-    getDerivTripleProductTensor() const;
+    Teuchos::RCP< Stokhos::Dense3Tensor<ordinal_type, value_type> > 
+    computeDerivTripleProductTensor(
+      const Teuchos::RCP< const Teuchos::SerialDenseMatrix<ordinal_type, value_type> >& Bij,
+      const Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk
+      ) const;
 
     /*! 
      * \brief Compute double product tensor 
@@ -199,8 +192,8 @@ namespace Stokhos {
      * constructor argument.
      */
     virtual 
-    Teuchos::RCP< const Teuchos::SerialDenseMatrix<ordinal_type, value_type> > 
-    getDerivDoubleProductTensor() const;
+    Teuchos::RCP< Teuchos::SerialDenseMatrix<ordinal_type, value_type> > 
+    computeDerivDoubleProductTensor() const;
 
     //@}
 
@@ -263,21 +256,6 @@ namespace Stokhos {
 
     //! 2-D array of basis terms
     Teuchos::Array< Teuchos::Array<ordinal_type> > terms;
-
-    //! Array of Triple products for computing product projections
-    mutable Teuchos::Array< Teuchos::RCP<const Dense3Tensor<ordinal_type,value_type> > > Cijk_1d;
-
-    //! Array of double products for computing derivative projections
-    mutable Teuchos::Array< Teuchos::RCP<const Teuchos::SerialDenseMatrix<ordinal_type,value_type> > > Bij_1d;
-
-    //! Triple product 3 tensor
-    mutable Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk;
-
-    //! Derivative triple product 3 tensor
-    mutable Teuchos::RCP< Stokhos::Dense3Tensor<ordinal_type, value_type> > Dijk;
-
-    //! Derivative double product 2 tensor
-    mutable Teuchos::RCP< Teuchos::SerialDenseMatrix<ordinal_type, value_type> > Bij;
 
     //! Temporary array used in basis evaluation
     mutable Teuchos::Array< Teuchos::Array<value_type> > basis_eval_tmp;

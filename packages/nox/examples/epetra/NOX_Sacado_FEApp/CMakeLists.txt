@@ -25,6 +25,24 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_Sacado AND
       PASS_REGULAR_EXPRESSION "Test Passed"
       )
 
+    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+      Sacado_FEApp_Linear_Diffusion_PCE_Example
+      SOURCES linear_diffusion_pce.C ENAT_NOXSolver.hpp ENAT_NOXSolver.cpp
+      COMM serial mpi
+      NUM_MPI_PROCS 2
+      ARGS
+      PASS_REGULAR_EXPRESSION "Test Passed"
+      )
+
+    PACKAGE_ADD_EXECUTABLE_AND_TEST(
+      Sacado_FEApp_Linear_Diffusion_PCE_NOX_Example
+      SOURCES linear_diffusion_pce_nox.C ENAT_NOXSolver.hpp ENAT_NOXSolver.cpp
+      COMM serial mpi
+      NUM_MPI_PROCS 2
+      ARGS
+      PASS_REGULAR_EXPRESSION "Test Passed"
+      )
+
     IF(Stokhos_ENABLE_Anasazi)	
       PACKAGE_ADD_EXECUTABLE(
         Sacado_FEApp_PCE_KL_Example

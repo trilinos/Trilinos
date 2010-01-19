@@ -44,6 +44,9 @@ namespace DerivExpansionUnitTest {
     ValueType rtol, atol;
     OrdinalType sz;
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<OrdinalType,ValueType> > basis;
+    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,double> > Bij;
+    Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk;
+    Teuchos::RCP<Stokhos::Dense3Tensor<int,double> > Dijk;
     Teuchos::RCP<const Stokhos::Quadrature<OrdinalType,ValueType> > quad;
     Teuchos::RCP< Stokhos::DerivOrthogPolyExpansion<OrdinalType,ValueType> > exp;
     Stokhos::OrthogPolyApprox<OrdinalType,ValueType> x, y, u, u2;
@@ -67,10 +70,15 @@ namespace DerivExpansionUnitTest {
       // Tensor product quadrature
       quad = 
 	Teuchos::rcp(new Stokhos::TensorProductQuadrature<OrdinalType,ValueType>(basis));
+
+      // Triple product tensor
+      Bij = basis->computeDerivDoubleProductTensor();
+      Cijk = basis->computeTripleProductTensor(basis->size());
+      Dijk = basis->computeDerivTripleProductTensor(Bij, Cijk);
       
-    // Quadrature expansion
+      // Quadrature expansion
       exp = 
-	Teuchos::rcp(new Stokhos::DerivOrthogPolyExpansion<OrdinalType,ValueType>(basis));
+	Teuchos::rcp(new Stokhos::DerivOrthogPolyExpansion<OrdinalType,ValueType>(basis, Bij, Cijk, Dijk));
       
       // Create approximation
       sz = basis->size();

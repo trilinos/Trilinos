@@ -112,6 +112,23 @@ reset(const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type
   coeff_.resize(basis_->size());
 }
 
+template <typename ordinal_type, typename value_type>
+void
+Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+reset(const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& new_basis, ordinal_type sz)
+{
+  basis_ = new_basis;
+  coeff_.resize(sz);
+}
+
+template <typename ordinal_type, typename value_type>
+void
+Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+resize(ordinal_type sz)
+{
+  coeff_.resize(sz);
+}
+
 template <typename ordinal_type, typename value_type> 
 ordinal_type
 Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
@@ -125,7 +142,12 @@ value_type*
 Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
 coeff() 
 { 
-  return &coeff_[0]; 
+#ifdef STOKHOS_DEBUG
+  TEST_FOR_EXCEPTION(coeff_.size() == 0, std::logic_error,
+		     "Stokhos::OrthogPolyApprox::coeff():  " <<
+		     "Coefficient array is empty!");
+#endif
+  return coeff_.getRawPtr(); 
 }
 
 template <typename ordinal_type, typename value_type> 
@@ -133,7 +155,12 @@ const value_type*
 Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
 coeff() const 
 { 
-  return &coeff_[0]; 
+#ifdef STOKHOS_DEBUG
+  TEST_FOR_EXCEPTION(coeff_.size() == 0, std::logic_error,
+		     "Stokhos::OrthogPolyApprox::coeff():  " <<
+		     "Coefficient array is empty!");
+#endif
+  return coeff_.getRawPtr();
 }
 
 template <typename ordinal_type, typename value_type> 
@@ -178,6 +205,16 @@ term(ordinal_type dimension, ordinal_type order) const
   term[dimension] = order;
   ordinal_type index = product_basis->getIndex(term);
   return coeff_[index];
+}
+
+template <typename ordinal_type, typename value_type>
+Teuchos::Array<ordinal_type> 
+Stokhos::OrthogPolyApprox<ordinal_type, value_type>::
+order(ordinal_type term) const
+{
+  Teuchos::RCP< const Stokhos::ProductBasis<ordinal_type, value_type> > 
+    product_basis = Teuchos::rcp_dynamic_cast< const Stokhos::ProductBasis<ordinal_type, value_type> >(basis_, true);
+  return product_basis->getTerm(term);
 }
 
 template <typename ordinal_type, typename value_type> 

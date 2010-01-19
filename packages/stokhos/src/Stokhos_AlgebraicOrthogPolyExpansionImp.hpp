@@ -30,212 +30,21 @@
 
 #include "Teuchos_TestForException.hpp"
 #include "Stokhos_DynamicArrayTraits.hpp"
-#include "Teuchos_TimeMonitor.hpp"
 
 template <typename ordinal_type, typename value_type> 
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
-QuadOrthogPolyExpansion(
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
+AlgebraicOrthogPolyExpansion(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis_,
-  const Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk_,
-  const Teuchos::RCP<const Quadrature<ordinal_type, value_type> >& quad_,
-  bool use_quad_for_times_) :
+  const Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk_) :
   basis(basis_),
   Cijk(Cijk_),
-  quad(quad_),
-  use_quad_for_times(use_quad_for_times_),
-  sz(basis->size()),
-  blas(),
-  quad_points(quad->getQuadPoints()),
-  quad_weights(quad->getQuadWeights()),
-  quad_values(quad->getBasisAtQuadPoints()),
-  norms(basis->norm_squared()),
-  nqp(quad_points.size()),
-  avals(nqp),
-  bvals(nqp),
-  fvals(nqp),
-  qv(nqp*sz),
-  sqv(nqp*sz)
+  sz(basis->size())
 {
-  for (ordinal_type qp=0; qp<nqp; qp++)
-    for (ordinal_type i=0; i<sz; i++) {
-      qv[qp*sz+i] = quad_values[qp][i];
-      sqv[qp*sz+i] = quad_values[qp][i]/norms[i];
-    }
-}
-
-template <typename ordinal_type, typename value_type> 
-template <typename FuncT>
-void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
-unary_op(const FuncT& func,
-         OrthogPolyApprox<ordinal_type, value_type>& c, 
-         const OrthogPolyApprox<ordinal_type, value_type>& a)
-{
-  ordinal_type pa = a.size();
-  ordinal_type pc = sz;
-  if (c.size() != pc)
-    c.resize(pc);
-
-  {
-  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- Unary Polynomial Evaluation");
-
-  // Evaluate input
-  blas.GEMV(Teuchos::TRANS, pa, nqp, 1.0, &qv[0], sz, a.coeff(), 1, 0.0,
-            &avals[0], 1);
-
-  }
-
-  {
-  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- Unary Function Evaluation");
-
-    // Evaluate function
-  for (ordinal_type qp=0; qp<nqp; qp++)
-    fvals[qp] = func(avals[qp])*quad_weights[qp];
-
-  }
-
-  {
-  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- Unary Polynomial Integration");
-
-  // Integrate
-  blas.GEMV(Teuchos::NO_TRANS, pc, nqp, 1.0, &sqv[0], sz, &fvals[0], 1, 0.0,
-            c.coeff(), 1);
-
-  }
-}
-
-template <typename ordinal_type, typename value_type> 
-template <typename FuncT>
-void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
-binary_op(const FuncT& func,
-          OrthogPolyApprox<ordinal_type, value_type>& c, 
-          const OrthogPolyApprox<ordinal_type, value_type>& a, 
-          const OrthogPolyApprox<ordinal_type, value_type>& b)
-{
-  ordinal_type pa = a.size();
-  ordinal_type pb = b.size();
-  ordinal_type pc = sz;
-  if (c.size() != pc)
-    c.resize(pc);
-
-  {
-  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- PP Binary Polynomial Evaluation");
-
-  // Evaluate input
-  blas.GEMV(Teuchos::TRANS, pa, nqp, 1.0, &qv[0], sz, a.coeff(), 1, 0.0,
-            &avals[0], 1);
-  blas.GEMV(Teuchos::TRANS, pb, nqp, 1.0, &qv[0], sz, b.coeff(), 1, 0.0,
-            &bvals[0], 1);
-
-  }
-
-  {
-  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- PP Binary Function Evaluation");
-
-    // Evaluate function
-  for (ordinal_type qp=0; qp<nqp; qp++)
-    fvals[qp] = func(avals[qp], bvals[qp])*quad_weights[qp];
-
-  }
-
-  {
-  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- PP Binary Polynomial Integration");
-
-  // Integrate
-  blas.GEMV(Teuchos::NO_TRANS, pc, nqp, 1.0, &sqv[0], sz, &fvals[0], 1, 0.0,
-            c.coeff(), 1);
-
-  }
-}
-
-template <typename ordinal_type, typename value_type> 
-template <typename FuncT>
-void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
-binary_op(const FuncT& func,
-          OrthogPolyApprox<ordinal_type, value_type>& c, 
-          const value_type& a, 
-          const OrthogPolyApprox<ordinal_type, value_type>& b)
-{
-  ordinal_type pb = b.size();
-  ordinal_type pc = sz;
-  if (c.size() != pc)
-    c.resize(pc);
-
-  {
-  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- CP Binary Polynomial Evaluation");
-
-  // Evaluate input
-  blas.GEMV(Teuchos::TRANS, pb, nqp, 1.0, &qv[0], sz, b.coeff(), 1, 0.0,
-            &bvals[0], 1);
-
-  }
-
-  {
-  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- CP Binary Function Evaluation");
-
-    // Evaluate function
-  for (ordinal_type qp=0; qp<nqp; qp++)
-    fvals[qp] = func(a, bvals[qp])*quad_weights[qp];
-
-  }
-
-  {
-  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- CP Binary Polynomial Integration");
-
-  // Integrate
-  blas.GEMV(Teuchos::NO_TRANS, pc, nqp, 1.0, &sqv[0], sz, &fvals[0], 1, 0.0,
-            c.coeff(), 1);
-
-  }
-}
-
-template <typename ordinal_type, typename value_type> 
-template <typename FuncT>
-void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
-binary_op(const FuncT& func,
-          OrthogPolyApprox<ordinal_type, value_type>& c, 
-          const OrthogPolyApprox<ordinal_type, value_type>& a,
-          const value_type& b)
-{
-  ordinal_type pa = a.size();
-  ordinal_type pc = sz;
-  if (c.size() != pc)
-    c.resize(pc);
-
-  {
-  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- PC Binary Polynomial Evaluation");
-
-  // Evaluate input
-  blas.GEMV(Teuchos::TRANS, pa, nqp, 1.0, &qv[0], sz, a.coeff(), 1, 0.0,
-            &avals[0], 1);
-
-  }
-
-  {
-  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- PC Binary Function Evaluation");
-
-    // Evaluate function
-  for (ordinal_type qp=0; qp<nqp; qp++)
-    fvals[qp] = func(avals[qp], b)*quad_weights[qp];
-
-  }
-
-  {
-  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- PC Binary Polynomial Integration");
-
-  // Integrate
-  blas.GEMV(Teuchos::NO_TRANS, pc, nqp, 1.0, &sqv[0], sz, &fvals[0], 1, 0.0,
-            c.coeff(), 1);
-
-  }
 }
 
 template <typename ordinal_type, typename value_type> 
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 unaryMinus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
 	   const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
 {
@@ -252,7 +61,7 @@ unaryMinus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 
 template <typename ordinal_type, typename value_type> 
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 plusEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
 	  const value_type& val)
 {
@@ -261,7 +70,7 @@ plusEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 
 template <typename ordinal_type, typename value_type> 
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 minusEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
 	   const value_type& val)
 {
@@ -270,7 +79,7 @@ minusEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 
 template <typename ordinal_type, typename value_type> 
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 timesEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
 	   const value_type& val)
 {
@@ -282,7 +91,7 @@ timesEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 
 template <typename ordinal_type, typename value_type> 
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 divideEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
 	    const value_type& val)
 {
@@ -294,7 +103,7 @@ divideEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 
 template <typename ordinal_type, typename value_type> 
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 plusEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
           const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& x)
 {
@@ -310,7 +119,7 @@ plusEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 
 template <typename ordinal_type, typename value_type> 
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 minusEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
            const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& x)
 {
@@ -326,15 +135,10 @@ minusEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 
 template <typename ordinal_type, typename value_type> 
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 timesEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
            const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& x)
 {
-  if (use_quad_for_times) {
-    binary_op(times_quad_func(), c, c, x);
-    return;
-  }
-
   ordinal_type p = c.size();
   ordinal_type xp = x.size();
   ordinal_type pc;
@@ -380,18 +184,21 @@ timesEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 
 template <typename ordinal_type, typename value_type> 
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 divideEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
             const Stokhos::OrthogPolyApprox<ordinal_type, value_type >& x)
 {
-  //Stokhos::OrthogPolyApprox<ordinal_type, value_type> cc(c);
-  //divide(c,cc,x);
-  binary_op(div_quad_func(), c, c, x);
+  if (x.size() == 1)
+    divideEqual(c, x[0]);
+  else
+    TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Stokhos::ForUQTKOrthogPolyExpansion::divideEqual()" 
+		       << ":  Method not implemented!");
 }
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 plus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a, 
      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
@@ -422,7 +229,7 @@ plus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 plus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
      const value_type& a, 
      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
@@ -441,7 +248,7 @@ plus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 plus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a, 
      const value_type& b)
@@ -460,7 +267,7 @@ plus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 minus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
       const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a, 
       const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
@@ -491,7 +298,7 @@ minus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 minus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
       const value_type& a, 
       const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
@@ -510,7 +317,7 @@ minus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 minus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
       const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a, 
       const value_type& b)
@@ -529,16 +336,11 @@ minus(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 times(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
       const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a, 
       const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
 {
-  if (use_quad_for_times) {
-    binary_op(times_quad_func(), c, a, b);
-    return;
-  }
-
   ordinal_type pa = a.size();
   ordinal_type pb = b.size();
   ordinal_type pc;
@@ -582,7 +384,7 @@ times(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 times(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
       const value_type& a, 
       const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
@@ -600,7 +402,7 @@ times(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 times(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
       const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a, 
       const value_type& b)
@@ -618,27 +420,40 @@ times(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
        const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a, 
        const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
 {
-  binary_op(div_quad_func(), c, a, b);
+  if (b.size() == 1)
+    divide(c, a, b[0]);
+  else
+    TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Stokhos::ForUQTKOrthogPolyExpansion::divide()" 
+		       << ":  Method not implemented!");
 }
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
        const value_type& a, 
        const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
 {
-  binary_op(div_quad_func(), c, a, b);
+  if (b.size() == 1) {
+    if (c.size() != 1)
+      c.resize(1);
+    c[0] = a / b[0];
+  }
+  else
+    TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Stokhos::ForUQTKOrthogPolyExpansion::divide()" 
+		       << ":  Method not implemented!");
 }
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
        const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a, 
        const value_type& b)
@@ -656,211 +471,387 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 exp(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
 {
-  unary_op(exp_quad_func(), c, a);
+  if (a.size() == 1) {
+    if (c.size() != 1)
+      c.resize(1);
+    c[0] = std::exp(a[0]);
+  }
+  else
+    TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Stokhos::ForUQTKOrthogPolyExpansion::exp()" 
+		       << ":  Method not implemented!");
 }
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 log(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
 {
-  unary_op(log_quad_func(), c, a);
+  if (a.size() == 1) {
+    if (c.size() != 1)
+      c.resize(1);
+    c[0] = std::log(a[0]);
+  }
+  else
+    TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Stokhos::ForUQTKOrthogPolyExpansion::log()" 
+		       << ":  Method not implemented!");
 }
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 log10(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
       const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
 {
-  unary_op(log10_quad_func(), c, a);
+  if (a.size() == 1) {
+    if (c.size() != 1)
+      c.resize(1);
+    c[0] = std::log10(a[0]);
+  }
+  else
+    TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Stokhos::ForUQTKOrthogPolyExpansion::log10()" 
+		       << ":  Method not implemented!");
 }
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 sqrt(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
 {
-  unary_op(sqrt_quad_func(), c, a);
+  if (a.size() == 1) {
+    if (c.size() != 1)
+      c.resize(1);
+    c[0] = std::sqrt(a[0]);
+  }
+  else
+    TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Stokhos::ForUQTKOrthogPolyExpansion::sqrt()" 
+		       << ":  Method not implemented!");
 }
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 pow(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a,
     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
 {
-  binary_op(pow_quad_func(), c, a, b);
+  if (a.size() == 1 && b.size() == 1) {
+    if (c.size() != 1)
+      c.resize(1);
+    c[0] = std::pow(a[0], b[0]);
+  }
+  else
+    TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Stokhos::ForUQTKOrthogPolyExpansion::pow()" 
+		       << ":  Method not implemented!");
 }
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 pow(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
     const value_type& a, 
     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
 {
-  binary_op(pow_quad_func(), c, a, b);
+  if (b.size() == 1) {
+    if (c.size() != 1)
+      c.resize(1);
+    c[0] = std::pow(a, b[0]);
+  }
+  else
+    TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Stokhos::ForUQTKOrthogPolyExpansion::pow()" 
+		       << ":  Method not implemented!");
 }
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 pow(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a, 
     const value_type& b)
 {
-  binary_op(pow_quad_func(), c, a, b);
+  if (a.size() == 1) {
+    if (c.size() != 1)
+      c.resize(1);
+    c[0] = std::pow(a[0], b);
+  }
+  else
+    TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Stokhos::ForUQTKOrthogPolyExpansion::pow()" 
+		       << ":  Method not implemented!");
 }
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 sin(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& s, 
     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
 {
-  unary_op(sin_quad_func(), s, a);
+  if (a.size() == 1) {
+    if (s.size() != 1)
+      s.resize(1);
+    s[0] = std::sin(a[0]);
+  }
+  else
+    TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Stokhos::ForUQTKOrthogPolyExpansion::sin()" 
+		       << ":  Method not implemented!");
 }
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 cos(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
 {
-  unary_op(cos_quad_func(), c, a);
+  if (a.size() == 1) {
+    if (c.size() != 1)
+      c.resize(1);
+    c[0] = std::cos(a[0]);
+  }
+  else
+    TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Stokhos::ForUQTKOrthogPolyExpansion::cos()" 
+		       << ":  Method not implemented!");
 }
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 tan(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& t, 
     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
 {
-  unary_op(tan_quad_func(), t, a);
+  if (a.size() == 1) {
+    if (t.size() != 1)
+      t.resize(1);
+    t[0] = std::tan(a[0]);
+  }
+  else
+    TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Stokhos::ForUQTKOrthogPolyExpansion::tan()" 
+		       << ":  Method not implemented!");
 }
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 sinh(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& s, 
      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
 {
-  unary_op(sinh_quad_func(), s, a);
+  if (a.size() == 1) {
+    if (s.size() != 1)
+      s.resize(1);
+    s[0] = std::sinh(a[0]);
+  }
+  else
+    TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Stokhos::ForUQTKOrthogPolyExpansion::sinh()" 
+		       << ":  Method not implemented!");
 }
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 cosh(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
 {
-  unary_op(cosh_quad_func(), c, a);
+  if (a.size() == 1) {
+    if (c.size() != 1)
+      c.resize(1);
+    c[0] = std::cosh(a[0]);
+  }
+  else
+    TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Stokhos::ForUQTKOrthogPolyExpansion::cosh()" 
+		       << ":  Method not implemented!");
 }
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 tanh(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& t, 
      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
 {
-  unary_op(tanh_quad_func(), t, a);
+  if (a.size() == 1) {
+    if (t.size() != 1)
+      t.resize(1);
+    t[0] = std::tanh(a[0]);
+  }
+  else
+    TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Stokhos::ForUQTKOrthogPolyExpansion::tanh()" 
+		       << ":  Method not implemented!");
 }
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 acos(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
 {
-  unary_op(acos_quad_func(), c, a);
+  if (a.size() == 1) {
+    if (c.size() != 1)
+      c.resize(1);
+    c[0] = std::acos(a[0]);
+  }
+  else
+    TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Stokhos::ForUQTKOrthogPolyExpansion::acos()" 
+		       << ":  Method not implemented!");
 }
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 asin(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
 {
-  unary_op(asin_quad_func(), c, a);
+  if (a.size() == 1) {
+    if (c.size() != 1)
+      c.resize(1);
+    c[0] = std::asin(a[0]);
+  }
+  else
+    TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Stokhos::ForUQTKOrthogPolyExpansion::asin()" 
+		       << ":  Method not implemented!");
 }
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 atan(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
 {
-  unary_op(atan_quad_func(), c, a);
+  if (a.size() == 1) {
+    if (c.size() != 1)
+      c.resize(1);
+    c[0] = std::atan(a[0]);
+  }
+  else
+    TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Stokhos::ForUQTKOrthogPolyExpansion::atan()" 
+		       << ":  Method not implemented!");
 }
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 atan2(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
       const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a,
       const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
 {
-  binary_op(atan2_quad_func(), c, a, b);
+  if (a.size() == 1 && b.size() == 1) {
+    if (c.size() != 1)
+      c.resize(1);
+    c[0] = std::atan2(a[0], b[0]);
+  }
+  else
+    TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Stokhos::ForUQTKOrthogPolyExpansion::atan2()" 
+		       << ":  Method not implemented!");
 }
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 atan2(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
       const value_type& a, 
       const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
 {
-  binary_op(atan2_quad_func(), c, a, b);
+  if (b.size() == 1) {
+    if (c.size() != 1)
+      c.resize(1);
+    c[0] = std::atan2(a, b[0]);
+  }
+  else
+    TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Stokhos::ForUQTKOrthogPolyExpansion::atan2()" 
+		       << ":  Method not implemented!");
 }
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 atan2(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
       const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a, 
       const value_type& b)
 {
-  binary_op(atan2_quad_func(), c, a, b);
+  if (a.size() == 1) {
+    if (c.size() != 1)
+      c.resize(1);
+    c[0] = std::atan2(a[0], b);
+  }
+  else
+    TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Stokhos::ForUQTKOrthogPolyExpansion::atan2()" 
+		       << ":  Method not implemented!");
 }
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 acosh(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
       const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
 {
-  unary_op(acosh_quad_func(), c, a);
+  if (a.size() == 1) {
+    if (c.size() != 1)
+      c.resize(1);
+    c[0] = std::log(a[0]+std::sqrt(a[0]*a[0]-value_type(1.0)));
+  }
+  else
+    TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Stokhos::ForUQTKOrthogPolyExpansion::acosh()" 
+		       << ":  Method not implemented!");
 }
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 asinh(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
       const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
 {
-  unary_op(asinh_quad_func(), c, a);
+  if (a.size() == 1) {
+    if (c.size() != 1)
+      c.resize(1);
+    c[0] = std::log(a[0]+std::sqrt(a[0]*a[0]+value_type(1.0)));
+  }
+  else
+    TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Stokhos::ForUQTKOrthogPolyExpansion::asinh()" 
+		       << ":  Method not implemented!");
 }
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 atanh(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
       const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
 {
-  unary_op(atanh_quad_func(), c, a);
+  if (a.size() == 1) {
+    if (c.size() != 1)
+      c.resize(1);
+    c[0] = 0.5*std::log((value_type(1.0)+a[0])/(value_type(1.0)-a[0]));
+  }
+  else
+    TEST_FOR_EXCEPTION(true, std::logic_error,
+		       "Stokhos::ForUQTKOrthogPolyExpansion::atanh()" 
+		       << ":  Method not implemented!");
 }
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 fabs(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
      const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
 {
@@ -872,7 +863,7 @@ fabs(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 abs(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a)
 {
@@ -884,7 +875,7 @@ abs(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 max(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a,
     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
@@ -897,7 +888,7 @@ max(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 max(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
     const value_type& a, 
     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
@@ -912,7 +903,7 @@ max(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 max(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a, 
     const value_type& b)
@@ -927,7 +918,7 @@ max(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 min(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a,
     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
@@ -940,7 +931,7 @@ min(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 min(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
     const value_type& a, 
     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
@@ -955,7 +946,7 @@ min(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
 
 template <typename ordinal_type, typename value_type>
 void
-Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
+Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type, value_type>::
 min(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
     const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a, 
     const value_type& b)

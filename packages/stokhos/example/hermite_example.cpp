@@ -62,8 +62,12 @@ int main(int argc, char **argv)
     Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
         Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
 
+    // Triple product tensor
+    Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk =
+      basis->computeTripleProductTensor(basis->size());
+
     // Expansion method
-    Stokhos::QuadOrthogPolyExpansion<int,double> expn(basis, quad);
+    Stokhos::QuadOrthogPolyExpansion<int,double> expn(basis, Cijk, quad);
 
     // Polynomial expansions
     Stokhos::OrthogPolyApprox<int,double> u(basis), v(basis), w(basis);

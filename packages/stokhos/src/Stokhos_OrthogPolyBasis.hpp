@@ -89,23 +89,13 @@ namespace Stokhos {
     /*!
      * The \f$(i,j,k)\f$ entry of the tensor \f$C_{ijk}\f$ is given by
      * \f$C_{ijk} = \langle\Psi_i\Psi_j\Psi_k\rangle\f$ where \f$\Psi_l\f$
-     * represents basis polynomial \f$l\f$ and \f$i,j,k=0,\dots,P\f$ where
-     * \f$P\f$ is size()-1 of the basis.
-     */
-    virtual 
-    Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> > 
-    getTripleProductTensor() const = 0;
-
-    /*!
-     * The \f$(i,j,k)\f$ entry of the tensor \f$C_{ijk}\f$ is given by
-     * \f$C_{ijk} = \langle\Psi_i\Psi_j\Psi_k\rangle\f$ where \f$\Psi_l\f$
      * represents basis polynomial \f$l\f$ and \f$i,j=0,\dots,P\f$ where
      * \f$P\f$ is size()-1 and \f$k=0,\dots,p\f$ where \f$p\f$
      * is the supplied \c order.
      */
     virtual 
-    Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> > 
-    getLowOrderTripleProductTensor(ordinal_type order) const = 0;
+    Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > 
+    computeTripleProductTensor(ordinal_type order) const = 0;
 
     //! Evaluate basis polynomial \c i at zero
     virtual value_type evaluateZero(ordinal_type i) const = 0;

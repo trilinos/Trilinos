@@ -53,6 +53,18 @@ VectorOrthogPoly(
 template <typename coeff_type>
 Stokhos::VectorOrthogPoly<coeff_type>::
 VectorOrthogPoly(
+  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis,
+  ordinal_type sz,
+  const Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >& quad) :
+  basis_(basis),
+  quad_(quad),
+  coeff_(sz)
+{
+}
+
+template <typename coeff_type>
+Stokhos::VectorOrthogPoly<coeff_type>::
+VectorOrthogPoly(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis, 
   const typename traits_type::cloner_type& cloner,
   const Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >& quad)
@@ -61,6 +73,21 @@ VectorOrthogPoly(
     coeff_(basis->size())
 {
   ordinal_type sz = basis_->size();
+  for (ordinal_type i=0; i<sz; i++)
+    coeff_[i] = cloner.clone(i);
+}
+
+template <typename coeff_type>
+Stokhos::VectorOrthogPoly<coeff_type>::
+VectorOrthogPoly(
+  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis, 
+  const typename traits_type::cloner_type& cloner,
+  ordinal_type sz,
+  const Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >& quad)
+  : basis_(basis),
+    quad_(quad),
+    coeff_(sz)
+{
   for (ordinal_type i=0; i<sz; i++)
     coeff_[i] = cloner.clone(i);
 }
@@ -147,6 +174,22 @@ Stokhos::VectorOrthogPoly<coeff_type>::
 quadrature() const 
 {
   return quad_;
+}
+
+template <typename coeff_type>
+const Teuchos::Array<Teuchos::RCP<coeff_type> >&
+Stokhos::VectorOrthogPoly<coeff_type>::
+getCoefficients() const
+{
+  return coeff_;
+}
+
+template <typename coeff_type>
+Teuchos::Array<Teuchos::RCP<coeff_type> >&
+Stokhos::VectorOrthogPoly<coeff_type>::
+getCoefficients()
+{
+  return coeff_;
 }
 
 template <typename coeff_type>

@@ -45,6 +45,7 @@ namespace QuadExpansionUnitTest {
     OrdinalType sz;
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<OrdinalType,ValueType> > basis;
     Teuchos::RCP<const Stokhos::Quadrature<OrdinalType,ValueType> > quad;
+    Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk;
     Teuchos::RCP< Stokhos::QuadOrthogPolyExpansion<OrdinalType,ValueType> > exp;
     Stokhos::OrthogPolyApprox<OrdinalType,ValueType> x, y, u, u2;
     ValueType a;
@@ -67,10 +68,13 @@ namespace QuadExpansionUnitTest {
       // Tensor product quadrature
       quad = 
 	Teuchos::rcp(new Stokhos::TensorProductQuadrature<OrdinalType,ValueType>(basis));
+
+      // Triple product tensor
+      Cijk = basis->computeTripleProductTensor(basis->size());
       
     // Quadrature expansion
       exp = 
-	Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<OrdinalType,ValueType>(basis, quad));
+	Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<OrdinalType,ValueType>(basis, Cijk, quad));
       
       // Create approximation
       sz = basis->size();

@@ -34,6 +34,7 @@
 #include "Stokhos_VectorOrthogPoly.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Epetra_Vector.h"
+#include "EpetraExt_BlockVector.h"
 #include "Epetra_Operator.h"
 #include "Epetra_CrsMatrix.h"
 #include "EpetraExt_ModelEvaluator.h"
@@ -43,17 +44,25 @@ namespace Stokhos {
   //! Cloner for Epetra_Vector coefficients
   class EpetraVectorCloner {
   public:
-    EpetraVectorCloner(const Epetra_BlockMap& map_) : map(&map_), vec(NULL) {}
-    EpetraVectorCloner(const Epetra_Vector& vec_) : map(NULL), vec(&vec_) {}
+    EpetraVectorCloner(const Epetra_BlockMap& map_) : 
+      map(&map_), vec(NULL), block_vec(NULL) {}
+    EpetraVectorCloner(const Epetra_Vector& vec_) : 
+      map(NULL), vec(&vec_), block_vec(NULL) {}
+    EpetraVectorCloner(EpetraExt::BlockVector& block_vec_) : 
+      map(NULL), vec(NULL), block_vec(&block_vec_) {}
     Teuchos::RCP<Epetra_Vector> clone(int i) const {
       if (map) 
 	return Teuchos::rcp(new Epetra_Vector(*map));
-      else 
+      else if (vec)
 	return Teuchos::rcp(new Epetra_Vector(*vec));
+      else
+	return block_vec->GetBlock(i);
     }
   protected:
     const Epetra_BlockMap* map;
     const Epetra_Vector* vec;
+    EpetraExt::BlockVector *block_vec;
+    bool view;
   };
 
   //! Cloner for Epetra_MultiVector coefficients

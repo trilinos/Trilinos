@@ -50,7 +50,13 @@ int main(int argc, char **argv)
     bases[0] = Teuchos::rcp(new Stokhos::HermiteBasis<int,double>(d));
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
-    Stokhos::DerivOrthogPolyExpansion<int,double> expn(basis);
+    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,double> > Bij =
+      basis->computeDerivDoubleProductTensor();
+    Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk =
+      basis->computeTripleProductTensor(basis->size());
+    Teuchos::RCP<Stokhos::Dense3Tensor<int,double> > Dijk =
+      basis->computeDerivTripleProductTensor(Bij, Cijk);
+    Stokhos::DerivOrthogPolyExpansion<int,double> expn(basis, Bij, Cijk, Dijk);
     Stokhos::OrthogPolyApprox<int,double> u(basis),v(basis),w(basis);
     u[0] = 1.0;
     u[1] = 0.4;

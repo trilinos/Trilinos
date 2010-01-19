@@ -158,7 +158,10 @@ namespace Stokhos {
     //! Flag indicating whether transpose was selected
     bool useTranspose;
 
-    //! Number of blocks
+    //! Number of terms in expansion
+    unsigned int expansion_size;
+
+    //! Number of Jacobian blocks (not necessarily equal to expansion_size)
     unsigned int num_blocks;
 
     //! MultiVectors for each block for Apply() input

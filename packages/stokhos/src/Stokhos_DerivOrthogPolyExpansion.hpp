@@ -48,7 +48,11 @@ namespace Stokhos {
   public:
 
     //! Constructor
-    DerivOrthogPolyExpansion(const Teuchos::RCP<const DerivBasis<ordinal_type, value_type> >& basis);
+    DerivOrthogPolyExpansion(
+      const Teuchos::RCP<const DerivBasis<ordinal_type, value_type> >& basis,
+      const Teuchos::RCP<const Teuchos::SerialDenseMatrix<ordinal_type, value_type> >& Bij,
+      const Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk,
+      const Teuchos::RCP<const Stokhos::Dense3Tensor<ordinal_type, value_type> >& Dijk);
 
     //! Destructor
     virtual ~DerivOrthogPolyExpansion() {}

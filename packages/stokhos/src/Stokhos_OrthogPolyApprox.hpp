@@ -86,6 +86,15 @@ namespace Stokhos {
      */
     void reset(const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& new_basis);
 
+    //! Reset to a new basis and size
+    /*!
+     * Coefficients are preserved.
+     */
+    void reset(const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& new_basis, ordinal_type sz);
+
+    //! Resize coefficient array (coefficients are preserved)
+    void resize(ordinal_type sz);
+
     //! Return size
     ordinal_type size() const;
 
@@ -106,6 +115,9 @@ namespace Stokhos {
 
     //! Get coefficient term for given dimension and order
     const value_type& term(ordinal_type dimension, ordinal_type order) const;
+
+    //! Get orders for a given term
+    Teuchos::Array<ordinal_type> order(ordinal_type term) const;
 
     //! Evaluate polynomial approximation at a point
     value_type evaluate(const Teuchos::Array<value_type>& point) const;

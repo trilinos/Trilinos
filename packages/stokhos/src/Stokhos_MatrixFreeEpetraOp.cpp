@@ -45,13 +45,14 @@ Stokhos::MatrixFreeEpetraOp::MatrixFreeEpetraOp(
     Cijk(Cijk_),
     block_ops(ops_),
     useTranspose(false),
+    expansion_size(sg_basis->size()),
     num_blocks(block_ops->size()),
-    input_block(num_blocks),
-    result_block(num_blocks),
+    input_block(expansion_size),
+    result_block(expansion_size),
     tmp(),
     tmp2()
 {
-  tmp2 = Teuchos::rcp(new Epetra_MultiVector(*base_map, num_blocks));
+  tmp2 = Teuchos::rcp(new Epetra_MultiVector(*base_map, expansion_size));
 }
 
 Stokhos::MatrixFreeEpetraOp::~MatrixFreeEpetraOp()
@@ -105,16 +106,16 @@ Stokhos::MatrixFreeEpetraOp::Apply(const Epetra_MultiVector& Input,
   // Extract blocks
   EpetraExt::BlockMultiVector sg_input(View, *base_map, *input);
   EpetraExt::BlockMultiVector sg_result(View, *base_map, Result);
-  for (unsigned int i=0; i<num_blocks; i++) {
+  for (unsigned int i=0; i<expansion_size; i++) {
     input_block[i] = sg_input.GetBlock(i);
     result_block[i] = sg_result.GetBlock(i);
   }
 
   // Apply block SG operator via
   // w_i = 
-  //    \sum_{j=0}^P \sum_{k=0}^P J_k v_j < \psi_i \psi_j \psi_k > / <\psi_i^2>
-  // for i=0,...,P where P = num_blocks w_j is the jth input block, w_i
-  // is the ith result block, and J_k is the kth block operator
+  //    \sum_{j=0}^P \sum_{k=0}^L J_k v_j < \psi_i \psi_j \psi_k > / <\psi_i^2>
+  // for i=0,...,P where P = expansion_size, L = num_blocks, w_j is the jth 
+  // input block, w_i is the ith result block, and J_k is the kth block operator
   const Teuchos::Array<double>& norms = sg_basis->norm_squared();
   for (unsigned int k=0; k<num_blocks; k++) {
     unsigned int nj = Cijk->num_j(k);
@@ -136,7 +137,7 @@ Stokhos::MatrixFreeEpetraOp::Apply(const Epetra_MultiVector& Input,
   }
 
   // Destroy blocks
-  for (unsigned int i=0; i<num_blocks; i++) {
+  for (unsigned int i=0; i<expansion_size; i++) {
     input_block[i] = Teuchos::null;
     result_block[i] = Teuchos::null;
   }

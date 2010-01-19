@@ -97,6 +97,13 @@ namespace Sacado {
        */
       OrthogPoly(const Teuchos::RCP<expansion_type>& expansion);
 
+      //! Constructor with expansion \c expansion and specified size \c sz
+      /*!
+       * Creates array of size \c sz and initializes coeffiencts to 0.
+       */
+      OrthogPoly(const Teuchos::RCP<expansion_type>& expansion,
+		 ordinal_type sz);
+
       //! Copy constructor
       OrthogPoly(const OrthogPoly& x);
 
@@ -108,6 +115,13 @@ namespace Sacado {
        * May change size of array.  Coefficients are preserved.  
        */
       void reset(const Teuchos::RCP<expansion_type>& expansion);
+
+      //! Reset expansion and size
+      /*!
+       * Coefficients are preserved.  
+       */
+      void reset(const Teuchos::RCP<expansion_type>& expansion,
+		 ordinal_type sz);
 
       //! Prepare polynomial for writing 
       /*!
@@ -122,11 +136,20 @@ namespace Sacado {
       void copyForWrite() { th.makeOwnCopy(); }
 
       //! Evaluate polynomial approximation at a point
-      value_type evaluate(const std::vector<value_type>& point) const;
+      value_type evaluate(const Teuchos::Array<value_type>& point) const;
 
       //! Evaluate polynomial approximation at a point with given basis values
-      value_type evaluate(const std::vector<value_type>& point,
-                          const std::vector<value_type>& bvals) const;
+      value_type evaluate(const Teuchos::Array<value_type>& point,
+                          const Teuchos::Array<value_type>& bvals) const;
+
+      //! Compute mean of expansion
+      value_type mean() const {return th->mean(); }
+
+      //! Compute standard deviation of expansion
+      value_type standard_deviation() const { return th->standard_deviation(); }
+
+      //! Print approximation in basis
+      std::ostream& print(std::ostream& os) const { return th->print(os); }
 
       /*!
        * @name Assignment operators
@@ -193,6 +216,18 @@ namespace Sacado {
 
       //! Returns degree \c i term without bounds checking
       value_type fastAccessCoeff(ordinal_type i) const { return (*th)[i];}
+
+      //! Get coefficient term for given dimension and order
+      value_type& term(ordinal_type dimension, ordinal_type order) {
+	return th->term(dimension, order); }
+
+      //! Get coefficient term for given dimension and order
+      const value_type& term(ordinal_type dimension, ordinal_type order) const {
+	return th->term(dimension, order); }
+
+      //! Get orders for a given term
+      Teuchos::Array<ordinal_type> order(ordinal_type term) const {
+	return th->order(term); }
     
       //@}
 

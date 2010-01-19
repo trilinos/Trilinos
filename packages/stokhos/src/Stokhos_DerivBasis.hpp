@@ -61,8 +61,10 @@ namespace Stokhos {
      * The definition of \f$v\f$ is defined by the derived class implementation.
      */
     virtual 
-    Teuchos::RCP< const Stokhos::Dense3Tensor<ordinal_type, value_type> > 
-    getDerivTripleProductTensor() const = 0;
+    Teuchos::RCP< Stokhos::Dense3Tensor<ordinal_type, value_type> > 
+    computeDerivTripleProductTensor(
+      const Teuchos::RCP< const Teuchos::SerialDenseMatrix<ordinal_type, value_type> >& Bij,
+      const Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk) const = 0;
 
     /*! 
      * \brief Compute double product tensor 
@@ -73,8 +75,8 @@ namespace Stokhos {
      * The definition of \f$v\f$ is defined by the derived class implementation.
      */
     virtual 
-    Teuchos::RCP< const Teuchos::SerialDenseMatrix<ordinal_type, value_type> > 
-    getDerivDoubleProductTensor() const = 0;
+    Teuchos::RCP< Teuchos::SerialDenseMatrix<ordinal_type, value_type> > 
+    computeDerivDoubleProductTensor() const = 0;
 
   private:
 

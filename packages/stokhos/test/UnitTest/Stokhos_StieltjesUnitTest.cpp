@@ -95,9 +95,13 @@ struct Stieltjes_PCE_Setup {
     // Tensor product quadrature
     Teuchos::RCP<const Stokhos::Quadrature<OrdinalType,ValueType> > quad = 
       Teuchos::rcp(new Stokhos::TensorProductQuadrature<OrdinalType,ValueType>(basis, 4*p));
+
+    // Triple product tensor
+    Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk =
+      basis->computeTripleProductTensor(basis->size());
     
     // Quadrature expansion
-    exp = Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<OrdinalType,ValueType>(basis, quad));
+    exp = Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<OrdinalType,ValueType>(basis, Cijk, quad));
     
     // Compute PCE via quadrature expansion
     u.reset(basis);
@@ -121,9 +125,14 @@ struct Stieltjes_PCE_Setup {
     // Tensor product quadrature
     st_quad = 
       Teuchos::rcp(new Stokhos::TensorProductQuadrature<OrdinalType,ValueType>(st_basis));
+
+    // Triple product tensor
+    Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > st_Cijk =
+      st_basis->computeTripleProductTensor(st_basis->size());
     
     // Quadrature expansion
     Stokhos::QuadOrthogPolyExpansion<OrdinalType,ValueType> st_exp(st_basis, 
+								   st_Cijk,
 								   st_quad);
     
     st_exp.times(v_st, u_st, u_st);

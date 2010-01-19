@@ -85,8 +85,8 @@ namespace LegendreBasisUnitTest {
   }
 
   TEUCHOS_UNIT_TEST( Stokhos_LegendreBasis, TripleProduct ) {
-    Teuchos::RCP< const Stokhos::Dense3Tensor<int, double> > Cijk = 
-      setup.basis.getTripleProductTensor();
+    Teuchos::RCP< Stokhos::Dense3Tensor<int, double> > Cijk = 
+      setup.basis.computeTripleProductTensor();
     
     Teuchos::Array<double> x, w;
     Teuchos::Array< Teuchos::Array<double> > v;
@@ -111,8 +111,8 @@ namespace LegendreBasisUnitTest {
   }
 
   TEUCHOS_UNIT_TEST( Stokhos_LegendreBasis, DerivDoubleProduct ) {
-    Teuchos::RCP< const Teuchos::SerialDenseMatrix<int, double> > Bij = 
-      setup.basis.getDerivDoubleProductTensor();
+    Teuchos::RCP< Teuchos::SerialDenseMatrix<int, double> > Bij = 
+      setup.basis.computeDerivDoubleProductTensor();
     
     Teuchos::Array<double> x, w;
     Teuchos::Array< Teuchos::Array<double> > v, val, deriv;
@@ -142,8 +142,8 @@ namespace LegendreBasisUnitTest {
   }
 
   TEUCHOS_UNIT_TEST( Stokhos_LegendreBasis, DerivDoubleProduct2 ) {
-    Teuchos::RCP< const Teuchos::SerialDenseMatrix<int, double> > Bij = 
-      setup.basis.getDerivDoubleProductTensor();
+    Teuchos::RCP< Teuchos::SerialDenseMatrix<int, double> > Bij = 
+      setup.basis.computeDerivDoubleProductTensor();
     const Teuchos::Array<double>& n = setup.basis.norm_squared();
     
     Teuchos::Array< Teuchos::Array<double> > deriv_coeffs(setup.p+1);

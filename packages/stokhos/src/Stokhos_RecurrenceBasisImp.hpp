@@ -41,9 +41,7 @@ RecurrenceBasis(const std::string& name_, ordinal_type p_, bool normalize_) :
   beta(p+1, value_type(0.0)),
   delta(p+1, value_type(0.0)),
   gamma(p+1, value_type(0.0)),
-  norms(p+1, value_type(0.0)),
-  Cijk(),
-  Bij()
+  norms(p+1, value_type(0.0))
 {
 }
 
@@ -108,29 +106,28 @@ norm_squared(ordinal_type i) const
 }
 
 template <typename ordinal_type, typename value_type>
-Teuchos::RCP< const Stokhos::Dense3Tensor<ordinal_type, value_type> >
+Teuchos::RCP< Stokhos::Dense3Tensor<ordinal_type, value_type> >
 Stokhos::RecurrenceBasis<ordinal_type, value_type>::
-getTripleProductTensor() const
+computeTripleProductTensor() const
 {
   // Compute Cijk = < \Psi_i \Psi_j \Psi_k >
-  if (Cijk == Teuchos::null) {
-    Teuchos::Array<value_type> points, weights;
-    Teuchos::Array< Teuchos::Array<value_type> > values;
-    getQuadPoints(3*p, points, weights, values);
-    ordinal_type sz = size();
-    Cijk = Teuchos::rcp(new Dense3Tensor<ordinal_type, value_type>(sz));
-    
-    for (ordinal_type i=0; i<sz; i++) {
-      for (ordinal_type j=0; j<sz; j++) {
-	for (ordinal_type k=0; k<sz; k++) {
-          value_type triple_product = 0;
-	  for (ordinal_type l=0; l<static_cast<ordinal_type>(points.size());
-	       l++){
-	    triple_product += 
-	      weights[l]*(values[l][i])*(values[l][j])*(values[l][k]);
-          }
-          (*Cijk)(i,j,k) = triple_product;
+  ordinal_type sz = size();
+  Teuchos::RCP< Stokhos::Dense3Tensor<ordinal_type, value_type> > Cijk = 
+    Teuchos::rcp(new Dense3Tensor<ordinal_type, value_type>(sz));
+  Teuchos::Array<value_type> points, weights;
+  Teuchos::Array< Teuchos::Array<value_type> > values;
+  getQuadPoints(3*p, points, weights, values);
+
+  for (ordinal_type i=0; i<sz; i++) {
+    for (ordinal_type j=0; j<sz; j++) {
+      for (ordinal_type k=0; k<sz; k++) {
+	value_type triple_product = 0;
+	for (ordinal_type l=0; l<static_cast<ordinal_type>(points.size());
+	     l++){
+	  triple_product += 
+	    weights[l]*(values[l][i])*(values[l][j])*(values[l][k]);
 	}
+	(*Cijk)(i,j,k) = triple_product;
       }
     }
   }
@@ -139,30 +136,29 @@ getTripleProductTensor() const
 }
 
 template <typename ordinal_type, typename value_type>
-Teuchos::RCP< const Teuchos::SerialDenseMatrix<ordinal_type, value_type> >
+Teuchos::RCP< Teuchos::SerialDenseMatrix<ordinal_type, value_type> >
 Stokhos::RecurrenceBasis<ordinal_type, value_type>::
-getDerivDoubleProductTensor() const
+computeDerivDoubleProductTensor() const
 {
   // Compute Bij = < \Psi_i' \Psi_j >
-  if (Bij == Teuchos::null) {
-    Teuchos::Array<value_type> points, weights;
-    Teuchos::Array< Teuchos::Array<value_type> > values, derivs;
-    getQuadPoints(2*p, points, weights, values);
-    ordinal_type nqp = weights.size();
-    derivs.resize(nqp);
-    ordinal_type sz = size();
-    for (ordinal_type i=0; i<nqp; i++) {
-      derivs[i].resize(sz);
-      evaluateBasesAndDerivatives(points[i], values[i], derivs[i]);
-    }
-    Bij = Teuchos::rcp(new Teuchos::SerialDenseMatrix<ordinal_type, value_type>(sz,sz));
-    for (ordinal_type i=0; i<sz; i++) {
-      for (ordinal_type j=0; j<sz; j++) {
-	value_type b = value_type(0.0);
-	for (int qp=0; qp<nqp; qp++)
-	  b += weights[qp]*derivs[qp][i]*values[qp][j];
-	(*Bij)(i,j) = b;
-      }
+  Teuchos::Array<value_type> points, weights;
+  Teuchos::Array< Teuchos::Array<value_type> > values, derivs;
+  getQuadPoints(2*p, points, weights, values);
+  ordinal_type nqp = weights.size();
+  derivs.resize(nqp);
+  ordinal_type sz = size();
+  for (ordinal_type i=0; i<nqp; i++) {
+    derivs[i].resize(sz);
+    evaluateBasesAndDerivatives(points[i], values[i], derivs[i]);
+  }
+  Teuchos::RCP< Teuchos::SerialDenseMatrix<ordinal_type, value_type> > Bij = 
+    Teuchos::rcp(new Teuchos::SerialDenseMatrix<ordinal_type, value_type>(sz,sz));
+  for (ordinal_type i=0; i<sz; i++) {
+    for (ordinal_type j=0; j<sz; j++) {
+      value_type b = value_type(0.0);
+      for (int qp=0; qp<nqp; qp++)
+	b += weights[qp]*derivs[qp][i]*values[qp][j];
+      (*Bij)(i,j) = b;
     }
   }
 

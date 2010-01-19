@@ -283,8 +283,11 @@ int main(int argc, char *argv[]) {
     // Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
     //   Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(basis, p));
     unsigned int sz = basis->size();
+    Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk =
+      basis->computeTripleProductTensor(sz);
     Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
       Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,double>(basis, 
+								    Cijk,
 								    quad));
     // Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
     // 	Teuchos::rcp(new Stokhos::ForUQTKOrthogPolyExpansion<int,double>(basis, 
@@ -334,7 +337,7 @@ int main(int argc, char *argv[]) {
     Teuchos::Array<int> sg_g_index(1);
     sg_g_index[0] = 0;
     Teuchos::RCP<Stokhos::SGModelEvaluator> sg_model =
-      Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, sg_p_index,
+      Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, Cijk, sg_p_index,
 						 sg_g_index, sgParams,
 						 Comm, sg_p));
   
@@ -549,13 +552,12 @@ int main(int argc, char *argv[]) {
     //   base_f_map, sg_model->get_f_map(),
     //   kl_basis, kl_basis->getTripleProductTensor(), 
     //   Teuchos::rcp(&sg_J_kl_poly,false));
-    Teuchos::Array<Teuchos::RCP<Epetra_CrsMatrix> > sg_J_kl_mats(num_KL+1);
+    Teuchos::Array<Teuchos::RCP<Epetra_Operator> > sg_J_kl_mats(num_KL+1);
     for (int coeff=0; coeff < num_KL + 1; coeff++)
-      sg_J_kl_mats[coeff] = 
-	Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(sg_J_kl_poly.getCoeffPtr(coeff));
+      sg_J_kl_mats[coeff] = sg_J_kl_poly.getCoeffPtr(coeff);
      Stokhos::KLMatrixFreeEpetraOp kl_jac_op(
       base_x_map, sg_x_kl_map,
-      kl_basis, kl_basis->getLowOrderTripleProductTensor(num_KL+1), 
+      kl_basis, kl_basis->computeTripleProductTensor(num_KL+1), 
       sg_J_kl_mats);
     Teuchos::RCP<Epetra_Operator> kl_mean_prec = 
       sg_prec->compute(sg_J_kl_poly.getCoeffPtr(0));

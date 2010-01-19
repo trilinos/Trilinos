@@ -75,6 +75,15 @@ namespace Stokhos {
       const Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >& quad = Teuchos::null);
 
     /*! 
+     * \brief Create a polynomial for basis \c basis with empty 
+     * coefficients of size sz
+     */
+    VectorOrthogPoly(
+      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis,
+      ordinal_type sz,
+      const Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >& quad = Teuchos::null);
+
+    /*! 
      * \brief Create a polynomial for basis \c basis where each coefficient is 
      * generated through a clone operation as implemented by the traits class
      * for the coefficient.
@@ -82,6 +91,17 @@ namespace Stokhos {
     VectorOrthogPoly(
       const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis,
       const typename traits_type::cloner_type& cloner,
+      const Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >& quad = Teuchos::null);
+
+    /*! 
+     * \brief Create a polynomial for basis \c basis where each coefficient is 
+     * generated through a clone operation as implemented by the traits class
+     * for the coefficient.
+     */
+    VectorOrthogPoly(
+      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis,
+      const typename traits_type::cloner_type& cloner,
+      ordinal_type sz,
       const Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >& quad = Teuchos::null);
 
     //! Copy constructor
@@ -130,6 +150,14 @@ namespace Stokhos {
     //! Get quadrature
     Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> > 
     quadrature() const;
+
+    //! Return array of coefficients
+    const Teuchos::Array<Teuchos::RCP<coeff_type> >&
+    getCoefficients() const;
+
+    //! Return array of coefficients
+    Teuchos::Array<Teuchos::RCP<coeff_type> >&
+    getCoefficients();
 
     //! Return ref-count pointer to coefficient \c i
     Teuchos::RCP<coeff_type>

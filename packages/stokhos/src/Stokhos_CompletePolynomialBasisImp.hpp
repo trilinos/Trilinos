@@ -130,62 +130,27 @@ norm_squared(ordinal_type i) const
 }
 
 template <typename ordinal_type, typename value_type>
-Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> >
+Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> >
 Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
-getTripleProductTensor() const
-{ 
-  // Compute Cijk = < \Psi_i \Psi_j \Psi_k >
-  if (Cijk == Teuchos::null) {
-    Cijk = Teuchos::rcp(new Sparse3Tensor<ordinal_type, value_type>(sz));
-
-    // Create 1-D triple products
-    if (Cijk_1d.size() == 0) {
-      Cijk_1d.resize(d);
-      for (ordinal_type i=0; i<d; i++)
-	Cijk_1d[i] = bases[i]->getTripleProductTensor();
-    }
-
-    for (ordinal_type j=0; j<sz; j++) {
-      for (ordinal_type i=0; i<sz; i++) {
-	for (ordinal_type k=0; k<sz; k++) {
-	  value_type c = value_type(1.0);
-	  for (ordinal_type l=0; l<d; l++)
-	    c *= (*Cijk_1d[l])(terms[i][l],terms[j][l],terms[k][l]);
-	  if (std::abs(c) > sparse_tol)
-	    Cijk->add_term(i,j,k,c);
-	}
-      }
-    }
-  }
-
-  return Cijk; 
-}
-
-template <typename ordinal_type, typename value_type>
-Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> >
-Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
-getLowOrderTripleProductTensor(ordinal_type order) const
+computeTripleProductTensor(ordinal_type order) const
 {
   // Compute Cijk = < \Psi_i \Psi_j \Psi_k >
-  if (Cijk == Teuchos::null) {
-    Cijk = Teuchos::rcp(new Sparse3Tensor<ordinal_type, value_type>(sz));
+  Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk = 
+    Teuchos::rcp(new Sparse3Tensor<ordinal_type, value_type>(sz));
 
-    // Create 1-D triple products
-    if (Cijk_1d.size() == 0) {
-      Cijk_1d.resize(d);
-      for (ordinal_type i=0; i<d; i++)
-	Cijk_1d[i] = bases[i]->getTripleProductTensor();
-    }
+  // Create 1-D triple products
+  Teuchos::Array< Teuchos::RCP<Dense3Tensor<ordinal_type,value_type> > > Cijk_1d(d);
+  for (ordinal_type i=0; i<d; i++)
+    Cijk_1d[i] = bases[i]->computeTripleProductTensor();
 
-    for (ordinal_type j=0; j<sz; j++) {
-      for (ordinal_type i=0; i<sz; i++) {
-	for (ordinal_type k=0; k<order; k++) {
-	  value_type c = value_type(1.0);
-	  for (ordinal_type l=0; l<d; l++)
-	    c *= (*Cijk_1d[l])(terms[i][l],terms[j][l],terms[k][l]);
-	  if (std::abs(c) > sparse_tol)
-	    Cijk->add_term(i,j,k,c);
-	}
+  for (ordinal_type j=0; j<sz; j++) {
+    for (ordinal_type i=0; i<sz; i++) {
+      for (ordinal_type k=0; k<order; k++) {
+	value_type c = value_type(1.0);
+	for (ordinal_type l=0; l<d; l++)
+	  c *= (*Cijk_1d[l])(terms[i][l],terms[j][l],terms[k][l]);
+	if (std::abs(c) > sparse_tol)
+	  Cijk->add_term(i,j,k,c);
       }
     }
   }
@@ -195,32 +160,28 @@ getLowOrderTripleProductTensor(ordinal_type order) const
 }
 
 template <typename ordinal_type, typename value_type>
-Teuchos::RCP< const Stokhos::Dense3Tensor<ordinal_type, value_type> >
+Teuchos::RCP< Stokhos::Dense3Tensor<ordinal_type, value_type> >
 Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
-getDerivTripleProductTensor() const
+computeDerivTripleProductTensor(
+  const Teuchos::RCP< const Teuchos::SerialDenseMatrix<ordinal_type, value_type> >& Bij,
+  const Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk) const
 {
   // Compute Dijk = < \Psi_i \Psi_j \Psi_k' >
-  if (Dijk == Teuchos::null) {
+  Teuchos::RCP< Stokhos::Dense3Tensor<ordinal_type, value_type> > Dijk = 
+    Teuchos::rcp(new Dense3Tensor<ordinal_type, value_type>(sz));
+  for (ordinal_type i=0; i<sz; i++)
+    for (ordinal_type j=0; j<sz; j++)
+      for (ordinal_type k=0; k<sz; k++)
+	(*Dijk)(i,j,k) = value_type(0.0);
 
-    // Compute Cijk & Bij
-    getTripleProductTensor();
-    getDerivDoubleProductTensor();
-
-    Dijk = Teuchos::rcp(new Dense3Tensor<ordinal_type, value_type>(sz));
-    for (ordinal_type i=0; i<sz; i++)
-      for (ordinal_type j=0; j<sz; j++)
-	for (ordinal_type k=0; k<sz; k++)
-	  (*Dijk)(i,j,k) = value_type(0.0);
-
-    ordinal_type i,j;
-    value_type c;
-    for (ordinal_type k=0; k<sz; k++) {
-      for (ordinal_type m=0; m<sz; m++) {
-	ordinal_type n = Cijk->num_values(m);
-	for (ordinal_type l=0; l<n; l++) {
-	  Cijk->value(m,l,i,j,c);
-	  (*Dijk)(i,j,k) += (*Bij)(m,k)*c/norms[m];
-	}
+  ordinal_type i,j;
+  value_type c;
+  for (ordinal_type k=0; k<sz; k++) {
+    for (ordinal_type m=0; m<sz; m++) {
+      ordinal_type n = Cijk->num_values(m);
+      for (ordinal_type l=0; l<n; l++) {
+	Cijk->value(m,l,i,j,c);
+	(*Dijk)(i,j,k) += (*Bij)(m,k)*c/norms[m];
       }
     }
   }
@@ -229,40 +190,36 @@ getDerivTripleProductTensor() const
 }
 
 template <typename ordinal_type, typename value_type>
-Teuchos::RCP< const Teuchos::SerialDenseMatrix<ordinal_type, value_type> >
+Teuchos::RCP< Teuchos::SerialDenseMatrix<ordinal_type, value_type> >
 Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
-getDerivDoubleProductTensor() const
+computeDerivDoubleProductTensor() const
 {
   // Compute Bij = < \Psi_i \Psi_j' >
-  if (Bij == Teuchos::null) {
-    Bij = 
-      Teuchos::rcp(new Teuchos::SerialDenseMatrix<ordinal_type,value_type>(sz,
-									   sz));
-
-    // Create products
-    if (Bij_1d.size() == 0) {
-      Bij_1d.resize(d);
-      for (ordinal_type i=0; i<d; i++)
-	Bij_1d[i] = bases[i]->getDerivDoubleProductTensor();
-    }
-
-    for (ordinal_type i=0; i<sz; i++) {
-      for (ordinal_type k=0; k<sz; k++) {
-	value_type t = value_type(1.0);
-	value_type c = value_type(0.0);
-	for (ordinal_type j=0; j<d; j++) {
-	  bool is_zero = false;
-	  for (ordinal_type l=0; l<d; l++) {
-	    if (l != j && terms[i][l] != terms[k][l])
-	      is_zero = true;
-	    if (l != j)
-	      t *= bases[l]->norm_squared(terms[k][l]);
-	  }
-	  if (!is_zero)
-	    c += t*(*deriv_coeffs)[j]*(*Bij_1d[j])(terms[k][j],terms[i][j]);
+  Teuchos::RCP< Teuchos::SerialDenseMatrix<ordinal_type, value_type> > Bij = 
+    Teuchos::rcp(new Teuchos::SerialDenseMatrix<ordinal_type,value_type>(sz,
+									 sz));
+  
+  // Create products
+  Teuchos::Array< Teuchos::RCP<const Teuchos::SerialDenseMatrix<ordinal_type,value_type> > > Bij_1d(d);
+  for (ordinal_type i=0; i<d; i++)
+    Bij_1d[i] = bases[i]->computeDerivDoubleProductTensor();
+  
+  for (ordinal_type i=0; i<sz; i++) {
+    for (ordinal_type k=0; k<sz; k++) {
+      value_type t = value_type(1.0);
+      value_type c = value_type(0.0);
+      for (ordinal_type j=0; j<d; j++) {
+	bool is_zero = false;
+	for (ordinal_type l=0; l<d; l++) {
+	  if (l != j && terms[i][l] != terms[k][l])
+	    is_zero = true;
+	  if (l != j)
+	    t *= bases[l]->norm_squared(terms[k][l]);
 	}
-	(*Bij)(i,k) = c;
+	if (!is_zero)
+	  c += t*(*deriv_coeffs)[j]*(*Bij_1d[j])(terms[k][j],terms[i][j]);
       }
+      (*Bij)(i,k) = c;
     }
   }
 

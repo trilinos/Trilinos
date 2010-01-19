@@ -37,7 +37,7 @@ Stokhos::KLMatrixFreeEpetraOp::KLMatrixFreeEpetraOp(
  const Teuchos::RCP<const Epetra_Map>& sg_map_,
  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis_,
  const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk_,
- const Teuchos::Array<Teuchos::RCP<Epetra_CrsMatrix> >& ops_) 
+ const Teuchos::Array<Teuchos::RCP<Epetra_Operator> >& ops_) 
   : label("Stokhos::MatrixFreeEpetraOp"),
     base_map(base_map_),
     sg_map(sg_map_),
@@ -58,12 +58,12 @@ Stokhos::KLMatrixFreeEpetraOp::~KLMatrixFreeEpetraOp()
 
 void 
 Stokhos::KLMatrixFreeEpetraOp::reset(
-   const Teuchos::Array<Teuchos::RCP<Epetra_CrsMatrix> >& ops)
+   const Teuchos::Array<Teuchos::RCP<Epetra_Operator> >& ops)
 {
   block_ops = ops;
 }
 
-const Teuchos::Array<Teuchos::RCP<Epetra_CrsMatrix> >&
+const Teuchos::Array<Teuchos::RCP<Epetra_Operator> >&
 Stokhos::KLMatrixFreeEpetraOp::getOperatorBlocks()
 {
   return block_ops;

@@ -88,8 +88,8 @@ namespace HermiteBasisUnitTest {
   }
 
   TEUCHOS_UNIT_TEST( Stokhos_HermiteBasis, TripleProduct ) {
-    Teuchos::RCP< const Stokhos::Dense3Tensor<int, double> > Cijk = 
-      setup.basis.getTripleProductTensor();
+    Teuchos::RCP< Stokhos::Dense3Tensor<int, double> > Cijk = 
+      setup.basis.computeTripleProductTensor();
     
     Teuchos::Array<double> x, w;
     Teuchos::Array< Teuchos::Array<double> > v;
@@ -114,8 +114,8 @@ namespace HermiteBasisUnitTest {
   }
 
   TEUCHOS_UNIT_TEST( Stokhos_HermiteBasis, DerivDoubleProduct ) {
-    Teuchos::RCP< const Teuchos::SerialDenseMatrix<int, double> > Bij = 
-      setup.basis.getDerivDoubleProductTensor();
+    Teuchos::RCP< Teuchos::SerialDenseMatrix<int, double> > Bij = 
+      setup.basis.computeDerivDoubleProductTensor();
     
     Teuchos::Array<double> x, w;
     Teuchos::Array< Teuchos::Array<double> > v, val, deriv;
@@ -145,8 +145,8 @@ namespace HermiteBasisUnitTest {
   }
 
   TEUCHOS_UNIT_TEST( Stokhos_HermiteBasis, DerivDoubleProduct2 ) {
-    Teuchos::RCP< const Teuchos::SerialDenseMatrix<int, double> > Bij = 
-      setup.basis.getDerivDoubleProductTensor();
+    Teuchos::RCP< Teuchos::SerialDenseMatrix<int, double> > Bij = 
+      setup.basis.computeDerivDoubleProductTensor();
     const Teuchos::Array<double>& n = setup.basis.norm_squared();
 
     success = true;

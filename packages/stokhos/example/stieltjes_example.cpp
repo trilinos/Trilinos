@@ -91,8 +91,13 @@ int main(int argc, char **argv)
 	//   Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(basis,
 	// 							     p+1));
 
+	// Triple product tensor
+	Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk =
+	  basis->computeTripleProductTensor(basis->size());
+
 	// Quadrature expansion
-	Stokhos::QuadOrthogPolyExpansion<int,double> quad_exp(basis, quad);
+        Stokhos::QuadOrthogPolyExpansion<int,double> quad_exp(basis, Cijk, 
+							      quad);
 
 	// Compute PCE via quadrature expansion
 	//quad_exp.sinh(u,x);
@@ -113,6 +118,10 @@ int main(int argc, char **argv)
 	Stokhos::OrthogPolyApprox<int,double>  u_st(st_basis), v_st(st_basis);
 	u_st.term(0, 0) = u.mean();
 	u_st.term(0, 1) = 1.0;
+
+	// Triple product tensor
+	Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > st_Cijk =
+	  st_basis->computeTripleProductTensor(st_basis->size());
 	
         // Tensor product quadrature
 	Teuchos::RCP<const Stokhos::Quadrature<int,double> > st_quad = 
@@ -120,6 +129,7 @@ int main(int argc, char **argv)
 
 	// Quadrature expansion
 	Stokhos::QuadOrthogPolyExpansion<int,double> st_quad_exp(st_basis, 
+								 st_Cijk,
 								 st_quad);
 	
 	//st_quad_exp.sin(v_st, u_st);

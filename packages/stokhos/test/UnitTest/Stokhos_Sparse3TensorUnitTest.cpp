@@ -45,7 +45,7 @@ namespace Sparse3TensorUnitTest {
     OrdinalType sz;
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<OrdinalType,ValueType> > basis;
     Teuchos::RCP<const Stokhos::Quadrature<OrdinalType,ValueType> > quad;
-    Teuchos::RCP<const Stokhos::Sparse3Tensor<OrdinalType,ValueType> > Cijk;
+    Teuchos::RCP<Stokhos::Sparse3Tensor<OrdinalType,ValueType> > Cijk;
     
     UnitTestSetup() {
       rtol = 1e-12;
@@ -68,7 +68,7 @@ namespace Sparse3TensorUnitTest {
       
       
       // Triple product tensor
-      Cijk = basis->getTripleProductTensor();
+      Cijk = basis->computeTripleProductTensor(sz);
     }
     
   };

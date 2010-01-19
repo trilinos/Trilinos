@@ -106,9 +106,13 @@ struct GramSchmidt_PCE_Setup {
     // Tensor product quadrature
     Teuchos::RCP<const Stokhos::Quadrature<OrdinalType,ValueType> > quad = 
       Teuchos::rcp(new Stokhos::TensorProductQuadrature<OrdinalType,ValueType>(basis));
+
+    // Triple product tensor
+    Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk =
+      basis->computeTripleProductTensor(basis->size());
     
     // Quadrature expansion
-    exp = Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<OrdinalType,ValueType>(basis, quad, true));
+    exp = Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<OrdinalType,ValueType>(basis, Cijk, quad, true));
     
     // Compute PCE via quadrature expansion
     u.reset(basis);
@@ -153,6 +157,10 @@ struct GramSchmidt_PCE_Setup {
     gs_basis = Teuchos::rcp(new Stokhos::GramSchmidtBasis<OrdinalType,ValueType>(st_basis, *st_points, *st_weights, 1e-15));
     gs_sz = gs_basis->size();
 
+    // Triple product tensor
+    Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > gs_Cijk =
+      gs_basis->computeTripleProductTensor(gs_basis->size());
+
     // Create quadrature for Gram-Schmidt basis using quad points and 
     // and weights from original basis mapped to Stieljtes basis
     Teuchos::RCP< const Teuchos::Array< Teuchos::Array<ValueType> > > points =
@@ -162,6 +170,7 @@ struct GramSchmidt_PCE_Setup {
     
     // Gram-Schmidt quadrature expansion
     Stokhos::QuadOrthogPolyExpansion<OrdinalType,ValueType> gs_exp(gs_basis, 
+								   gs_Cijk,
 								   gs_quad,
 								   true);
     

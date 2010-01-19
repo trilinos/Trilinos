@@ -161,77 +161,23 @@ norm_squared(ordinal_type i) const
 }
 
 template <typename ordinal_type, typename value_type>
-Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> >
+Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> >
 Stokhos::GramSchmidtBasis<ordinal_type, value_type>::
-getTripleProductTensor() const
-{ 
-  // Compute Cijk = < \Psi_i \Psi_j \Psi_k >
-  if (Cijk == Teuchos::null) {
-    Cijk = Teuchos::rcp(new Sparse3Tensor<ordinal_type, value_type>(sz));
-    // Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> > cijk 
-    //   = basis->getTripleProductTensor();
-    // for (ordinal_type j=0; j<sz; j++) {
-    //   for (ordinal_type i=0; i<sz; i++) {
-    // 	for (ordinal_type k=0; k<sz; k++) {
-    // 	  value_type t = 0.0;
-    // 	  for (ordinal_type n=0; n<=k; n++) {
-    // 	    //ordinal_type num_m = Cijk->num_j(n);
-    // 	    const Teuchos::Array<ordinal_type>& m_indices = cijk->Jindices(n);
-    // 	    ordinal_type num_m = m_indices.size();
-    // 	    for (ordinal_type midx=0; midx<num_m; midx++) {
-    // 	      ordinal_type m = m_indices[midx];
-    // 	      //ordinal_type m = cijk->j_index(n,midx);
-    // 	      const Teuchos::Array<ordinal_type>& l_indices = 
-    // 		cijk->Iindices(n,midx);
-    // 	      ordinal_type num_l = l_indices.size();
-    // 	      const Teuchos::Array<value_type>& vals = cijk->values(n,midx);
-    // 	      for (ordinal_type lidx=0; lidx<num_l; lidx++) {
-    // 		ordinal_type l = l_indices[lidx];
-    // 		t += gs_mat(i,l)*gs_mat(j,m)*gs_mat(k,n)*vals[lidx];
-    // 	      }
-    // 	    }
-    // 	  }
-    // 	  //if (t > sparse_tol)
-    // 	    Cijk->add_term(i,j,k,t);
-    // 	}
-    //   }
-    // }
-
-    ordinal_type nqp = weights.size();
-    for (ordinal_type j=0; j<sz; j++) {
-      for (ordinal_type i=0; i<sz; i++) {
-    	for (ordinal_type k=0; k<sz; k++) {
-	  value_type t = 0.0;
-	  for (ordinal_type l=0; l<nqp; l++)
-	    t += weights[l]*basis_values[l][i]*basis_values[l][j]*basis_values[l][k];
-	  if (std::abs(t) > sparse_tol)
-	    Cijk->add_term(i,j,k,t);
-	}
-      }
-    }
-  }
-
-  return Cijk;
-}
-
-template <typename ordinal_type, typename value_type>
-Teuchos::RCP< const Stokhos::Sparse3Tensor<ordinal_type, value_type> >
-Stokhos::GramSchmidtBasis<ordinal_type, value_type>::
-getLowOrderTripleProductTensor(ordinal_type order) const
+computeTripleProductTensor(ordinal_type order) const
 
 {
-  if (Cijk == Teuchos::null) {
-    Cijk = Teuchos::rcp(new Sparse3Tensor<ordinal_type, value_type>(sz));
-    ordinal_type nqp = weights.size();
-    for (ordinal_type j=0; j<sz; j++) {
-      for (ordinal_type i=0; i<sz; i++) {
-    	for (ordinal_type k=0; k<order; k++) {
-	  value_type t = 0.0;
-	  for (ordinal_type l=0; l<nqp; l++)
-	    t += weights[l]*basis_values[l][i]*basis_values[l][j]*basis_values[l][k];
-	  if (std::abs(t) > sparse_tol)
-	    Cijk->add_term(i,j,k,t);
-	}
+  Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk = 
+    Teuchos::rcp(new Sparse3Tensor<ordinal_type, value_type>(sz));
+  ordinal_type nqp = weights.size();
+  for (ordinal_type j=0; j<sz; j++) {
+    for (ordinal_type i=0; i<sz; i++) {
+      for (ordinal_type k=0; k<order; k++) {
+	value_type t = 0.0;
+	for (ordinal_type l=0; l<nqp; l++)
+	  t += 
+	    weights[l]*basis_values[l][i]*basis_values[l][j]*basis_values[l][k];
+	if (std::abs(t) > sparse_tol)
+	  Cijk->add_term(i,j,k,t);
       }
     }
   }

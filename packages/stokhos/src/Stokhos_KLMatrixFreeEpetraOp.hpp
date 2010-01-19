@@ -59,17 +59,17 @@ namespace Stokhos {
      const Teuchos::RCP<const Epetra_Map>& sg_map,
      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
      const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk,
-     const Teuchos::Array<Teuchos::RCP<Epetra_CrsMatrix> >& ops);
+     const Teuchos::Array<Teuchos::RCP<Epetra_Operator> >& ops);
     
     //! Destructor
     virtual ~KLMatrixFreeEpetraOp();
 
     //! Reset operator blocks
     virtual void 
-    reset(const Teuchos::Array<Teuchos::RCP<Epetra_CrsMatrix> >& ops);
+    reset(const Teuchos::Array<Teuchos::RCP<Epetra_Operator> >& ops);
 
     //! Get operator blocks
-    virtual const Teuchos::Array<Teuchos::RCP<Epetra_CrsMatrix> >&
+    virtual const Teuchos::Array<Teuchos::RCP<Epetra_Operator> >&
     getOperatorBlocks();
     
     //! Set to true if the transpose of the operator is requested
@@ -149,7 +149,7 @@ namespace Stokhos {
     Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
 
     //! Stores operators
-    Teuchos::Array<Teuchos::RCP<Epetra_CrsMatrix> > block_ops;
+    Teuchos::Array<Teuchos::RCP<Epetra_Operator> > block_ops;
 
     //! Flag indicating whether transpose was selected
     bool useTranspose;
