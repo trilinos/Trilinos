@@ -5,6 +5,7 @@
 #include "Kokkos_DefaultRelaxationKernelOps.hpp"
 
 #define INSTANTIATE_SPARSEMULTIPLY_ORDINAL_SCALAR(ORDINAL, SCALAR) \
+  template void Kokkos::ThrustGPUNode::parallel_for<Kokkos::DefaultChebyshevOp1<SCALAR, ORDINAL>                    >(int, int, Kokkos::DefaultChebyshevOp1<SCALAR, ORDINAL>                   ); \
   template void Kokkos::ThrustGPUNode::parallel_for<Kokkos::DefaultJacobiOp1<SCALAR, ORDINAL>                       >(int, int, Kokkos::DefaultJacobiOp1<SCALAR, ORDINAL>                      ); \
   template void Kokkos::ThrustGPUNode::parallel_for<Kokkos::DefaultJacobiOp2<SCALAR, ORDINAL>                       >(int, int, Kokkos::DefaultJacobiOp2<SCALAR, ORDINAL>                      ); \
   template void Kokkos::ThrustGPUNode::parallel_for<Kokkos::DefaultCoarseGrainHybridGaussSeidelOp1<SCALAR, ORDINAL> >(int, int, Kokkos::DefaultCoarseGrainHybridGaussSeidelOp1<SCALAR, ORDINAL>); \
