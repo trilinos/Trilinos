@@ -138,7 +138,7 @@ Scalar power_method(const Teuchos::RCP<const Tpetra::Operator<Scalar,Ordinal> > 
   Scalar lambda = static_cast<Scalar>(0.0);
   Magnitude normz, residual = static_cast<Magnitude>(0.0);
   // power iteration
-  for (size_t iter = 0; iter < niters; ++iter) {
+  for (int iter = 0; iter < niters; ++iter) {
     normz = z.norm2();                            // Compute 2-norm of z
     q.scale(ONE/normz, z);                        // Set q = z / normz
     A->apply(q, z);                               // Compute z = A*q
