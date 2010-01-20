@@ -5,9 +5,12 @@ include ./make.include
 all: subdirs $(PB_DIR)/lib/libpb.a
 
 $(PB_DIR)/lib/libpb.a:
+	mkdir -p lib
 	ar rcs $(PB_DIR)/lib/libpb.a $(PB_DIR)/objs/*.o
 
 subdirs:
+	mkdir -p objs
+	mkdir -p lib
 	make -C src/
 	ar rcs $(PB_DIR)/lib/libpb.a $(PB_DIR)/objs/*.o
 	make -C tests/
