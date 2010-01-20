@@ -1,5 +1,0 @@
-<ParameterList>
-  <ParameterList name="%1=0">
-    <Parameter name="NodeType"     type="string" value="Kokkos::SerialNode"/>
-  </ParameterList>
-</ParameterList>
