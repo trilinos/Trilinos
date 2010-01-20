@@ -86,9 +86,7 @@ void fillDefaultSpmdMultiVector(Teuchos::RCP<Thyra::DefaultSpmdMultiVector<doubl
                                 Teuchos::RCP<Epetra_MultiVector> & epetraMV)
 {
    // first get desired range and domain
-   // const RCP<const Thyra::SpmdVectorSpaceBase<double> > range  = spmdMV->spmdSpace();
-   const RCP<const Thyra::SpmdVectorSpaceBase<double> > range  
-         = rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<double> >(spmdMV->range());
+   const RCP<const Thyra::SpmdVectorSpaceBase<double> > range  = spmdMV->spmdSpace();
    const RCP<const Thyra::ScalarProdVectorSpaceBase<double> > domain 
          = rcp_dynamic_cast<const Thyra::ScalarProdVectorSpaceBase<double> >(spmdMV->domain());
 

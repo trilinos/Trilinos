@@ -1,0 +1,51 @@
+# Trilinos Development
+# make.include.tridev
+
+DOXYGEN = /Applications/Doxygen.app/Contents/Resources/doxygen
+
+PB_DIR=/Users/eccyr/PB/PB-Package
+PB_LIBDIR = $(PB_DIR)/lib
+PB_INCLUDE = $(PB_DIR)/src
+PB_TESTS_INCLUDE = $(PB_DIR)/tests
+
+TRILINOS_DIR=/Users/eccyr/Packages/Trilinos/install/dev/mpi-debug
+TRILINOS_INCLUDE=$(TRILINOS_DIR)/include
+TRILINOS_LIB=$(TRILINOS_DIR)/lib
+TRILINOS_LIBRARIES= -lstratimikos \
+    -lstratimikosbelos \
+    -lstratimikosaztecoo \
+    -lstratimikosamesos \
+    -lstratimikosml\
+    -lstratimikosifpack\
+    -lbelos\
+    -lanasazi\
+    -lgaleri\
+    -lisorropia\
+    -lzoltan\
+    -lFEApp\
+    -llocaepetra\
+    -llocathyra\
+    -lloca\
+    -lnoxepetra\
+    -lnoxthyra\
+    -lnox\
+    -lsacado\
+    -lml\
+    -lifpack\
+    -laztecoo\
+    -lamesos\
+    -lthyraepetraext\
+    -lthyraepetra\
+    -lthyra\
+    -lepetraext\
+    -ltriutils\
+    -lepetra\
+    -lrtop\
+    -lteuchos\
+    -llapack -lblas -lzoltan
+
+#    -lepetra_fortran\
+
+DEBUG_FLAGS = -fexceptions -Wno-long-long -g -O0  -fPIC -DSTUPID_EPETRA_ERRS_OFF
+
+CC = /usr/local/openmpi/bin/mpicxx
