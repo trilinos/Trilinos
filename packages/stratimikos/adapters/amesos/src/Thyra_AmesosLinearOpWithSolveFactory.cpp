@@ -206,7 +206,8 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
     RCP<Amesos_BaseSolver>
       amesosSolver;
     {
-      TEUCHOS_FUNC_TIME_MONITOR("AmesosLOWSF:InitConstruct");
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF("AmesosLOWSF:InitConstruct",
+        InitConstruct);
       switch(solverType_) {
         case Thyra::Amesos::LAPACK :
           amesosSolver = Teuchos::rcp(new Amesos_Lapack(*epetraLP));
@@ -277,14 +278,14 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
     if(paramList_.get()) amesosSolver->SetParameters(paramList_->sublist("Amesos Settings"));
     // Do the initial factorization
     {
-      TEUCHOS_FUNC_TIME_MONITOR("AmesosLOWSF:Symbolic");
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF("AmesosLOWSF:Symbolic", Symbolic);
       const int err = amesosSolver->SymbolicFactorization();
       TEST_FOR_EXCEPTION( 0!=err, CatastrophicSolveFailure,
         "Error, SymbolicFactorization() on amesos solver of type \'"<<Teuchos::typeName(*amesosSolver)<<"\'\n"
         "returned error code "<<err<<"!" );
     }
     {
-      TEUCHOS_FUNC_TIME_MONITOR("AmesosLOWSF:Factor");
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF("AmesosLOWSF:Factor", Factor);
       const int err = amesosSolver->NumericFactorization();
       TEST_FOR_EXCEPTION( 0!=err, CatastrophicSolveFailure,
         "Error, NumericFactorization() on amesos solver of type \'"<<Teuchos::typeName(*amesosSolver)<<"\'\n"
@@ -311,14 +312,14 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
     if(paramList_.get()) amesosSolver->SetParameters(paramList_->sublist(Amesos_Settings_name));
     // Repivot if asked
     if(refactorizationPolicy_==Amesos::REPIVOT_ON_REFACTORIZATION) {
-      TEUCHOS_FUNC_TIME_MONITOR("AmesosLOWSF:Symbolic");
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF("AmesosLOWSF:Symbolic", Symbolic);
       const int err = amesosSolver->SymbolicFactorization();
       TEST_FOR_EXCEPTION( 0!=err, CatastrophicSolveFailure,
         "Error, SymbolicFactorization() on amesos solver of type \'"<<Teuchos::typeName(*amesosSolver)<<"\'\n"
         "returned error code "<<err<<"!" );
     }
     {
-      TEUCHOS_FUNC_TIME_MONITOR("AmesosLOWSF::Factor");
+      TEUCHOS_FUNC_TIME_MONITOR_DIFF("AmesosLOWSF::Factor", Factor);
       const int err = amesosSolver->NumericFactorization();
       TEST_FOR_EXCEPTION( 0!=err, CatastrophicSolveFailure,
         "Error, NumericFactorization() on amesos solver of type \'"<<Teuchos::typeName(*amesosSolver)<<"\'\n"

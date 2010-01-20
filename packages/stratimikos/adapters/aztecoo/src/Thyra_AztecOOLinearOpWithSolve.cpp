@@ -626,7 +626,7 @@ void AztecOOLinearOpWithSolve::solve(
 
   for( int j = 0; j < m; ++j ) {
 
-    TEUCHOS_FUNC_TIME_MONITOR("AztecOOLOWS:SingleSolve");
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF("AztecOOLOWS:SingleSolve", SingleSolve);
 
     //
     // Get Epetra_Vector views of B(:,j) and X(:,j)

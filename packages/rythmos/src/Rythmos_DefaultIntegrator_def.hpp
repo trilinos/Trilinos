@@ -378,7 +378,8 @@ void DefaultIntegrator<Scalar>::getFwdPoints(
 {
 
 #ifdef ENABLE_RYTHMOS_TIMERS
-  TEUCHOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::getFwdPoints");
+  TEUCHOS_FUNC_TIME_MONITOR_DIFF("Rythmos:DefaultIntegrator::getFwdPoints",
+    TopLevel);
 #endif
 
   using Teuchos::incrVerbLevel;
@@ -592,7 +593,8 @@ bool DefaultIntegrator<Scalar>::advanceStepperToTime( const Scalar& advance_to_t
 {
 
 #ifdef ENABLE_RYTHMOS_TIMERS
-  TEUCHOS_FUNC_TIME_MONITOR("Rythmos:DefaultIntegrator::advanceStepperToTime");
+  TEUCHOS_FUNC_TIME_MONITOR_DIFF("Rythmos:DefaultIntegrator::advanceStepperToTime",
+    TopLevel);
 #endif
 
   using std::endl;

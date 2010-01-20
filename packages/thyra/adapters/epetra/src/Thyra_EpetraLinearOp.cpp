@@ -350,8 +350,8 @@ void EpetraLinearOp::euclideanApply(
   RCP<Epetra_MultiVector> Y;
   {
 #ifdef EPETRA_THYRA_TEUCHOS_TIMERS
-    TEUCHOS_FUNC_TIME_MONITOR(
-      "Thyra::EpetraLinearOp::euclideanApply: Convert MultiVectors");
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+      "Thyra::EpetraLinearOp::euclideanApply: Convert MultiVectors", MultiVectors);
 #endif
     // X
     X = get_Epetra_MultiVector(
@@ -380,22 +380,24 @@ void EpetraLinearOp::euclideanApply(
   //
   {
 #ifdef EPETRA_THYRA_TEUCHOS_TIMERS
-    TEUCHOS_FUNC_TIME_MONITOR(
-      "Thyra::EpetraLinearOp::euclideanApply: Apply");
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+      "Thyra::EpetraLinearOp::euclideanApply: Apply", Apply);
 #endif
     if( beta == 0.0 ) {
       // Y = M * X
       if( applyAs_ == EPETRA_OP_APPLY_APPLY ) {
 #ifdef EPETRA_THYRA_TEUCHOS_TIMERS
-        TEUCHOS_FUNC_TIME_MONITOR(
-          "Thyra::EpetraLinearOp::euclideanApply: Apply(beta==0): Apply");
+        TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+          "Thyra::EpetraLinearOp::euclideanApply: Apply(beta==0): Apply",
+          ApplyApply);
 #endif
         op_->Apply( *X, *Y );
       }
       else if( applyAs_ == EPETRA_OP_APPLY_APPLY_INVERSE ) {
 #ifdef EPETRA_THYRA_TEUCHOS_TIMERS
-        TEUCHOS_FUNC_TIME_MONITOR(
-          "Thyra::EpetraLinearOp::euclideanApply: Apply(beta==0): ApplyInverse");
+        TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+          "Thyra::EpetraLinearOp::euclideanApply: Apply(beta==0): ApplyInverse",
+          ApplyApplyInverse);
 #endif
         op_->ApplyInverse( *X, *Y );
       }
@@ -407,8 +409,9 @@ void EpetraLinearOp::euclideanApply(
       // Y = alpha * Y
       if( alpha != 1.0 ) {
 #ifdef EPETRA_THYRA_TEUCHOS_TIMERS
-        TEUCHOS_FUNC_TIME_MONITOR(
-          "Thyra::EpetraLinearOp::euclideanApply: Apply(beta==0): Scale Y");
+        TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+          "Thyra::EpetraLinearOp::euclideanApply: Apply(beta==0): Scale Y",
+          Scale);
 #endif
         Y->Scale(alpha);
       }
@@ -417,15 +420,17 @@ void EpetraLinearOp::euclideanApply(
       // Y_inout = beta * Y_inout
       if(beta != 0.0) {
 #ifdef EPETRA_THYRA_TEUCHOS_TIMERS
-        TEUCHOS_FUNC_TIME_MONITOR(
-          "Thyra::EpetraLinearOp::euclideanApply: Apply(beta!=0): Scale Y");
+        TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+          "Thyra::EpetraLinearOp::euclideanApply: Apply(beta!=0): Scale Y",
+          Scale);
 #endif
         scale( beta, Y_inout );
       }
       else {
 #ifdef EPETRA_THYRA_TEUCHOS_TIMERS
-        TEUCHOS_FUNC_TIME_MONITOR(
-          "Thyra::EpetraLinearOp::euclideanApply: Apply(beta!=0): Y=0");
+        TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+          "Thyra::EpetraLinearOp::euclideanApply: Apply(beta!=0): Y=0",
+          Apply);
 #endif
         assign( Y_inout, 0.0 );
       }
@@ -436,15 +441,17 @@ void EpetraLinearOp::euclideanApply(
       // UseTranspose flag correctly.
       if( applyAs_ == EPETRA_OP_APPLY_APPLY ) {
 #ifdef EPETRA_THYRA_TEUCHOS_TIMERS
-        TEUCHOS_FUNC_TIME_MONITOR(
-          "Thyra::EpetraLinearOp::euclideanApply: Apply(beta!=0): Apply");
+        TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+          "Thyra::EpetraLinearOp::euclideanApply: Apply(beta!=0): Apply",
+          Apply);
 #endif
         op_->Apply( *X, T );
       }
       else if( applyAs_ == EPETRA_OP_APPLY_APPLY_INVERSE ) {
 #ifdef EPETRA_THYRA_TEUCHOS_TIMERS
-        TEUCHOS_FUNC_TIME_MONITOR(
-          "Thyra::EpetraLinearOp::euclideanApply: Apply(beta!=0): ApplyInverse");
+        TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+          "Thyra::EpetraLinearOp::euclideanApply: Apply(beta!=0): ApplyInverse",
+          ApplyInverse);
 #endif
         op_->ApplyInverse( *X, T );
       }
@@ -456,8 +463,9 @@ void EpetraLinearOp::euclideanApply(
       // Y_inout += alpha * T
       {
 #ifdef EPETRA_THYRA_TEUCHOS_TIMERS
-        TEUCHOS_FUNC_TIME_MONITOR(
-          "Thyra::EpetraLinearOp::euclideanApply: Apply(beta!=0): Update Y");
+        TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+          "Thyra::EpetraLinearOp::euclideanApply: Apply(beta!=0): Update Y",
+          Update);
 #endif
         update(
           alpha,

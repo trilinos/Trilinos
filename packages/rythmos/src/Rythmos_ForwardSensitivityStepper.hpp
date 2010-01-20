@@ -1367,7 +1367,8 @@ Scalar ForwardSensitivityStepper<Scalar>::takeSyncedStep(
 {
 
 #ifdef ENABLE_RYTHMOS_TIMERS
-  TEUCHOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityStepper::takeStep: synced");
+  TEUCHOS_FUNC_TIME_MONITOR_DIFF("Rythmos:ForwardSensitivityStepper::takeStep: synced",
+    TopLevel);
 #endif
 
   using Teuchos::as;

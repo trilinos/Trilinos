@@ -55,6 +55,21 @@
       Teuchos::TimeMonitor::getNewCounter(strName); return *rtn;}
 
 
+/** \brief Defines a timer for a specific function (with differentiator).
+ *
+ * Same as TEUCHOS_FUNC_TIME_MONITOR(...) except required when used more than
+ * once in the same function (like a block of code).
+ */
+#define TEUCHOS_FUNC_TIME_MONITOR_DIFF( FUNCNAME, DIFF ) \
+  static Teuchos::RCP<Teuchos::Time> DIFF ## blabla_localTimer; \
+  if(!DIFF ## blabla_localTimer.get()) { \
+    std::ostringstream oss; \
+    oss << FUNCNAME; \
+    DIFF ## blabla_localTimer = Teuchos::TimeMonitor::getNewCounter(oss.str()); \
+  } \
+  Teuchos::TimeMonitor DIFF ## blabla_localTimeMonitor(*DIFF ## blabla_localTimer)
+
+
 /** \brief Defines a timer for a specific function.
  *
  * Note that the name of the timer can be formated with stream inserts.
@@ -83,15 +98,7 @@
  
 */
 #define TEUCHOS_FUNC_TIME_MONITOR( FUNCNAME ) \
-  { \
-  static Teuchos::RCP<Teuchos::Time> blabla_localTimer; \
-  if(!blabla_localTimer.get()) { \
-    std::ostringstream oss; \
-    oss << FUNCNAME; \
-    blabla_localTimer = Teuchos::TimeMonitor::getNewCounter(oss.str()); \
-  } \
-  Teuchos::TimeMonitor blabla_localTimeMonitor(*blabla_localTimer); \
-  }
+  TEUCHOS_FUNC_TIME_MONITOR_DIFF( FUNCNAME, main )
 
 
 namespace Teuchos {

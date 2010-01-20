@@ -303,75 +303,77 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
     for (unsigned int qp=0; qp<quad_points.size(); qp++) {
 
       {
-      TEUCHOS_FUNC_TIME_MONITOR("SGQuadModelEvaluator -- Polynomial Evaluation");
+        TEUCHOS_FUNC_TIME_MONITOR_DIFF("SGQuadModelEvaluator -- Polynomial Evaluation",
+          PolyEvaluation);
 
-      // Evaluate inputs at quadrature points
-      if (x_sg != Teuchos::null) {
-	TEUCHOS_FUNC_TIME_MONITOR("SGQuadModelEvaluator -- X Evaluation");
-	x_sg->evaluate(quad_values[qp], *x_qp);
-	me_inargs.set_x(x_qp);
-      }
-      if (x_dot_sg != Teuchos::null) {
-	TEUCHOS_FUNC_TIME_MONITOR("SGQuadModelEvaluator -- X_dot Evaluation");
-	x_dot_sg->evaluate(quad_values[qp], *x_dot_qp);
-	me_inargs.set_x_dot(x_qp);
-      }
-      for (int i=0; i<inArgs.Np_sg(); i++) {
-	if (p_sg[i] != Teuchos::null) {
-	  TEUCHOS_FUNC_TIME_MONITOR("SGQuadModelEvaluator -- P Evaluation");
-	  p_sg[i]->evaluate(quad_values[qp], *(p_qp[sg_p_index[i]]));
-	  me_inargs.set_p(sg_p_index[i], p_qp[sg_p_index[i]]);
-	}
-      }
-      if (f_sg != Teuchos::null)
-	me_outargs.set_f(f_qp);
-      if (W_sg != Teuchos::null)
-	me_outargs.set_W(W_qp);
-      for (int i=0; i<outArgs.Ng_sg(); i++) {
-	me_outargs.set_g(sg_g_index[i], g_qp[i]);
-	for (int j=0; j<outArgs.Np_sg(); j++)
-	  if (!outArgs.supports(OUT_ARG_DgDp, sg_g_index[i], j).none())
-	    me_outargs.set_DgDp(sg_g_index[i], j, dgdp_qp[i][j]);
-      }
-
-      }
-
-      {
-      TEUCHOS_FUNC_TIME_MONITOR("SGQuadModelEvaluator -- Model Evaluation");
-
-      // Evaluate model at quadrature points
-      me->evalModel(me_inargs, me_outargs);
+        // Evaluate inputs at quadrature points
+        if (x_sg != Teuchos::null) {
+          TEUCHOS_FUNC_TIME_MONITOR("SGQuadModelEvaluator -- X Evaluation");
+          x_sg->evaluate(quad_values[qp], *x_qp);
+          me_inargs.set_x(x_qp);
+        }
+        if (x_dot_sg != Teuchos::null) {
+          TEUCHOS_FUNC_TIME_MONITOR("SGQuadModelEvaluator -- X_dot Evaluation");
+          x_dot_sg->evaluate(quad_values[qp], *x_dot_qp);
+          me_inargs.set_x_dot(x_qp);
+        }
+        for (int i=0; i<inArgs.Np_sg(); i++) {
+          if (p_sg[i] != Teuchos::null) {
+            TEUCHOS_FUNC_TIME_MONITOR("SGQuadModelEvaluator -- P Evaluation");
+            p_sg[i]->evaluate(quad_values[qp], *(p_qp[sg_p_index[i]]));
+            me_inargs.set_p(sg_p_index[i], p_qp[sg_p_index[i]]);
+          }
+        }
+        if (f_sg != Teuchos::null)
+          me_outargs.set_f(f_qp);
+        if (W_sg != Teuchos::null)
+          me_outargs.set_W(W_qp);
+        for (int i=0; i<outArgs.Ng_sg(); i++) {
+          me_outargs.set_g(sg_g_index[i], g_qp[i]);
+          for (int j=0; j<outArgs.Np_sg(); j++)
+            if (!outArgs.supports(OUT_ARG_DgDp, sg_g_index[i], j).none())
+              me_outargs.set_DgDp(sg_g_index[i], j, dgdp_qp[i][j]);
+        }
 
       }
 
       {
-      TEUCHOS_FUNC_TIME_MONITOR("SGQuadModelEvaluator -- Polynomial Integration");
+        TEUCHOS_FUNC_TIME_MONITOR("SGQuadModelEvaluator -- Model Evaluation");
 
-      // Sum in results
-      if (f_sg != Teuchos::null) {
-	TEUCHOS_FUNC_TIME_MONITOR("SGQuadModelEvaluator -- F Integration");
-	f_sg->sumIntoAllTerms(quad_weights[qp], quad_values[qp], basis_norms,
+        // Evaluate model at quadrature points
+        me->evalModel(me_inargs, me_outargs);
+
+      }
+
+      {
+        TEUCHOS_FUNC_TIME_MONITOR_DIFF("SGQuadModelEvaluator -- Polynomial Integration",
+          Integration);
+
+        // Sum in results
+        if (f_sg != Teuchos::null) {
+          TEUCHOS_FUNC_TIME_MONITOR("SGQuadModelEvaluator -- F Integration");
+          f_sg->sumIntoAllTerms(quad_weights[qp], quad_values[qp], basis_norms,
 			      *f_qp);
-      }
-      if (W_sg != Teuchos::null) {
-	TEUCHOS_FUNC_TIME_MONITOR("SGQuadModelEvaluator -- W Integration");
-	W_sg->sumIntoAllTerms(quad_weights[qp], quad_values[qp], basis_norms,
+        }
+        if (W_sg != Teuchos::null) {
+          TEUCHOS_FUNC_TIME_MONITOR("SGQuadModelEvaluator -- W Integration");
+          W_sg->sumIntoAllTerms(quad_weights[qp], quad_values[qp], basis_norms,
 			      *W_qp);
-      }
-      for (int i=0; i<outArgs.Ng_sg(); i++) {
-	if (g_sg[i] != Teuchos::null) {
-	  TEUCHOS_FUNC_TIME_MONITOR("SGQuadModelEvaluator -- G Integration");
-	  g_sg[i]->sumIntoAllTerms(quad_weights[qp], quad_values[qp], 
-				   basis_norms, *g_qp[i]);
-	}
-	for (int j=0; j<outArgs.Np_sg(); j++) {
-	  if (dgdp_sg[i][j] != Teuchos::null) {
-	    TEUCHOS_FUNC_TIME_MONITOR("SGQuadModelEvaluator -- dg/dp Integration");
-	    dgdp_sg[i][j]->sumIntoAllTerms(quad_weights[qp], quad_values[qp], 
-					   basis_norms, dgdp_qp[i][j]);
-	  }
-	}
-      }
+        }
+        for (int i=0; i<outArgs.Ng_sg(); i++) {
+          if (g_sg[i] != Teuchos::null) {
+            TEUCHOS_FUNC_TIME_MONITOR("SGQuadModelEvaluator -- G Integration");
+            g_sg[i]->sumIntoAllTerms(quad_weights[qp], quad_values[qp], 
+              basis_norms, *g_qp[i]);
+          }
+          for (int j=0; j<outArgs.Np_sg(); j++) {
+            if (dgdp_sg[i][j] != Teuchos::null) {
+              TEUCHOS_FUNC_TIME_MONITOR("SGQuadModelEvaluator -- dg/dp Integration");
+              dgdp_sg[i][j]->sumIntoAllTerms(quad_weights[qp], quad_values[qp], 
+                basis_norms, dgdp_qp[i][j]);
+            }
+          }
+        }
 
       }
     }
