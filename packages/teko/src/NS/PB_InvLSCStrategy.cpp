@@ -334,9 +334,6 @@ void InvLSCStrategy::initializeState(const BlockedLinearOp & A,LSCPrecondState *
       BHBtmC = BQBtmC;
    else {
       BHBtmC = explicitAdd(state->BHBt_,scale(-state->gamma_,stabMatrix),BHBtmC);
-
-      RCP<const Epetra_RowMatrix> row = rcp_dynamic_cast<const Epetra_RowMatrix>(Thyra::get_Epetra_Operator(*BHBtmC));
-      EpetraExt::RowMatrixToMatrixMarketFile("bhbtmc.mm",*row);
    }
    state->addInverse("BHBtmC",BHBtmC);
 

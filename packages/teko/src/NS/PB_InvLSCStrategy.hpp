@@ -210,6 +210,8 @@ protected:
    // scaling operator parameters
    bool useMass_;
    DiagonalType scaleType_; 
+private:
+   InvLSCStrategy(const InvLSCStrategy &);
 };
 
 } // end namespace NS

@@ -64,7 +64,7 @@ LinearOp LSCPreconditionerFactory::buildPreconditionerOperator(BlockedLinearOp &
    LinearOp Bt = blockOp->getBlock(0,1);
 
    if(not isSymmetric_)
-      Bt = adjoint(B);
+      Bt = scale(-1.0,adjoint(B));
 
    // build what is neccessary for the state object
    Teko_DEBUG_EXPR(timer.start(true));
@@ -132,8 +132,8 @@ void LSCPreconditionerFactory::initializeFromParameterList(const Teuchos::Parame
 
    RCP<const InverseLibrary> invLib = getInverseLibrary();
 
-   // if(pl.isParameter("Is Symmetric"))
-   //    isSymmetric_ = pl.get<bool>("Is Symmetric");
+   if(pl.isParameter("Is Symmetric"))
+      isSymmetric_ = pl.get<bool>("Is Symmetric");
 
    std::string name = "Basic Inverse";
    if(pl.isParameter("Strategy Name"))
