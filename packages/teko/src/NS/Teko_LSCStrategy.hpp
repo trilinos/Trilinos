@@ -1,5 +1,5 @@
-#ifndef __PB_LSCStrategy_hpp__
-#define __PB_LSCStrategy_hpp__
+#ifndef __Teko_LSCStrategy_hpp__
+#define __Teko_LSCStrategy_hpp__
 
 #include "Teuchos_RCP.hpp"
 

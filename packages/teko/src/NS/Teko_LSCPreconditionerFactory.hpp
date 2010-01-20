@@ -1,8 +1,8 @@
-#ifndef __PB_LSCPreconditionerFactory_hpp__
-#define __PB_LSCPreconditionerFactory_hpp__
+#ifndef __Teko_LSCPreconditionerFactory_hpp__
+#define __Teko_LSCPreconditionerFactory_hpp__
 
 #include "PB_BlockPreconditionerFactory.hpp"
-#include "PB_LSCStrategy.hpp"
+#include "NS/Teko_LSCStrategy.hpp"
 
 namespace Teko {
 namespace NS { // Navier-Stokes specialization

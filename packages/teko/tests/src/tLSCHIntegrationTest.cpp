@@ -17,8 +17,8 @@
 // Teko-Package includes
 #include "Epetra/PB_EpetraHelpers.hpp"
 #include "Epetra/PB_EpetraBlockPreconditioner.hpp"
-#include "NS/PB_LSCPreconditionerFactory.hpp"
-#include "NS/PB_InvLSCStrategy.hpp"
+#include "NS/Teko_LSCPreconditionerFactory.hpp"
+#include "NS/Teko_InvLSCStrategy.hpp"
 #include "PB_Utilities.hpp"
 
 #include "Thyra_EpetraLinearOp.hpp"

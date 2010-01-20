@@ -41,7 +41,7 @@ TRILINOS_LIBRARIES= -lstratimikos \
     -lteuchos\
     -llapack -lblas -lzoltan
 
-PB_DIR=/home/eccyr/PB/PB-Package
+PB_DIR=/home/eccyr/Teko
 PB_LIBDIR = $(PB_DIR)/lib
 PB_INCLUDE = $(PB_DIR)/src
 PB_TESTS_INCLUDE = $(PB_DIR)/tests

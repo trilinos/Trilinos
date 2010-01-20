@@ -1,4 +1,4 @@
-#include "PB_LSCPreconditionerFactory.hpp"
+#include "Teko_LSCPreconditionerFactory.hpp"
 
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_DefaultAddedLinearOp.hpp"
@@ -9,8 +9,8 @@
 #include "PB_LU2x2InverseOp.hpp"
 #include "PB_Utilities.hpp"
 #include "PB_BlockUpperTriInverseOp.hpp"
-#include "PB_StaticLSCStrategy.hpp"
-#include "PB_InvLSCStrategy.hpp"
+#include "Teko_StaticLSCStrategy.hpp"
+#include "Teko_InvLSCStrategy.hpp"
 
 #include "EpetraExt_RowMatrixOut.h"
 

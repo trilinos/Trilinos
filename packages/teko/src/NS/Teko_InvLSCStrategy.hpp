@@ -1,7 +1,7 @@
-#ifndef __PB_InvLSCStrategy_hpp__
-#define __PB_InvLSCStrategy_hpp__
+#ifndef __Teko_InvLSCStrategy_hpp__
+#define __Teko_InvLSCStrategy_hpp__
 
-#include "NS/PB_LSCStrategy.hpp"
+#include "NS/Teko_LSCStrategy.hpp"
 
 namespace Teko {
 namespace NS {

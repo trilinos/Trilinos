@@ -1,4 +1,4 @@
-#include "PB_SIMPLEPreconditionerFactory.hpp"
+#include "Teko_SIMPLEPreconditionerFactory.hpp"
 
 #include "PB_Utilities.hpp"
 #include "PB_InverseFactory.hpp"

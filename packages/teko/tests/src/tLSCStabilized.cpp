@@ -1,6 +1,6 @@
 #include "tLSCStabilized.hpp"
-#include "NS/PB_LSCPreconditionerFactory.hpp"
-#include "NS/PB_InvLSCStrategy.hpp"
+#include "NS/Teko_LSCPreconditionerFactory.hpp"
+#include "NS/Teko_InvLSCStrategy.hpp"
 #include "PB_InverseLibrary.hpp"
 #include "PB_InverseFactory.hpp"
 

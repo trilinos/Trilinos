@@ -6,8 +6,8 @@
 #include "PB_AddPreconditionerFactory.hpp"
 #include "PB_MultPreconditionerFactory.hpp"
 #include "PB_LU2x2PreconditionerFactory.hpp"
-#include "NS/PB_LSCPreconditionerFactory.hpp"
-#include "NS/PB_SIMPLEPreconditionerFactory.hpp"
+#include "NS/Teko_LSCPreconditionerFactory.hpp"
+#include "NS/Teko_SIMPLEPreconditionerFactory.hpp"
 
 #include "Thyra_DefaultPreconditioner.hpp"
 

@@ -1,4 +1,4 @@
-#include "NS/PB_StaticLSCStrategy.hpp"
+#include "NS/Teko_StaticLSCStrategy.hpp"
 
 #include "Thyra_DefaultDiagonalLinearOp.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
