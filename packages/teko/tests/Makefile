@@ -19,6 +19,7 @@ all: subdirs $(OBJS) libpbtests.a $(DRIVERS)
 preproc: $(PREC)
 
 subdirs: $(OBJS)
+	mkdir -p objs
 	make -C src/
 	ar rcs libpbtests.a $(PB_DIR)/tests/objs/*.o
 	cp libpbtests.a $(PB_DIR)/lib/libpbtests.a
