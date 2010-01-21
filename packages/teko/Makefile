@@ -2,17 +2,17 @@
 
 include ./make.include
 
-all: subdirs $(PB_DIR)/lib/libpb.a
+all: subdirs $(Teko_DIR)/lib/libteko.a
 
-$(PB_DIR)/lib/libpb.a:
+$(Teko_DIR)/lib/libteko.a:
 	mkdir -p lib
-	ar rcs $(PB_DIR)/lib/libpb.a $(PB_DIR)/objs/*.o
+	ar rcs $(Teko_DIR)/lib/libteko.a $(Teko_DIR)/objs/*.o
 
 subdirs:
 	mkdir -p objs
 	mkdir -p lib
 	make -C src/
-	ar rcs $(PB_DIR)/lib/libpb.a $(PB_DIR)/objs/*.o
+	ar rcs $(Teko_DIR)/lib/libteko.a $(Teko_DIR)/objs/*.o
 	make -C tests/
 
 linecount:
@@ -27,7 +27,7 @@ doc:
 clean:
 	make -C tests/ clean
 	make -C src/ clean
-	-rm -f $(PB_DIR)/lib/libpb.a
+	-rm -f $(Teko_DIR)/lib/libteko.a
 	-rm -f objs/*.o
 	-rm -f lib/*.a
 

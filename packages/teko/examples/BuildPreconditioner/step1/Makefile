@@ -1,8 +1,8 @@
 include ../../../make.include
 
-INCLUDE = -I$(TRILINOS_INCLUDE) -I$(PB_INCLUDE)
-LDDIR = -L$(TRILINOS_LIB) -L$(PB_LIBDIR)
-LDLIB = -lpb $(TRILINOS_LIBRARIES)
+INCLUDE = -I$(TRILINOS_INCLUDE) -I$(Teko_INCLUDE)
+LDDIR = -L$(TRILINOS_LIB) -L$(Teko_LIBDIR)
+LDLIB = -lteko $(TRILINOS_LIBRARIES)
 CPPFLAGS=-DHAVE_CONFIG_H $(DEBUG_FLAGS)
 
 OBJS = ExamplePreconditionerFactory.o
@@ -16,4 +16,4 @@ $(OBJS): %.o : %.cpp
 	$(CC) -c $(INCLUDE) $(CPPFLAGS) $< -o $@
 
 clean:
-	-rm $(OBJS)
+	-rm $(OBJS) example-test

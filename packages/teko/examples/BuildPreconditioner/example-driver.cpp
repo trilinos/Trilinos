@@ -17,13 +17,14 @@
 #include "EpetraExt_VectorIn.h"
 
 // Teko-Package includes
-#include "PB_Utilities.hpp"
-#include "PB_InverseFactory.hpp"
-#include "PB_InverseLibrary.hpp"
-#include "Epetra/PB_StridedEpetraOperator.hpp"
-#include "Epetra/PB_EpetraBlockPreconditioner.hpp"
-#include "NS/PB_LSCPreconditionerFactory.hpp"
-#include "NS/PB_SIMPLEPreconditionerFactory.hpp"
+#include "Teko_Utilities.hpp"
+#include "Teko_InverseFactory.hpp"
+#include "Teko_InverseLibrary.hpp"
+#include "Epetra/Teko_StridedEpetraOperator.hpp"
+#include "Epetra/Teko_EpetraBlockPreconditioner.hpp"
+#include "NS/Teko_LSCPreconditionerFactory.hpp"
+#include "NS/Teko_InvLSCStrategy.hpp"
+#include "NS/Teko_SIMPLEPreconditionerFactory.hpp"
 
 // Aztec includes
 #include "AztecOO.h"
@@ -71,7 +72,7 @@ int main(int argc,char * argv[])
    RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos(); /*@ \label{lned:define-inv-params} @*/
    
    // build the inverse factory needed by the example preconditioner
-   RCP<const Teko::InverseFactory> inverse  /*@ \label{lned:define-inv-fact} @*/
+   RCP<Teko::InverseFactory> inverse  /*@ \label{lned:define-inv-fact} @*/
          = invLib->getInverseFactory("Amesos");
 
    // build the preconditioner factory

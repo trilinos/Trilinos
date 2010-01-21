@@ -1,15 +1,15 @@
-include ../../../make.include
+include ../../make.include
 
-INCLUDE = -I$(TRILINOS_INCLUDE) -I$(PB_INCLUDE)
-LDDIR = -L$(TRILINOS_LIB) -L$(PB_LIBDIR) 
-LDLIB = -lpb $(TRILINOS_LIBRARIES)
+INCLUDE = -I$(TRILINOS_INCLUDE) -I$(Teko_INCLUDE)
+LDDIR = -L$(TRILINOS_LIB) -L$(Teko_LIBDIR) 
+LDLIB = -lteko $(TRILINOS_LIBRARIES)
 CPPFLAGS=-DHAVE_CONFIG_H $(DEBUG_FLAGS)
 
 OBJS = 
 
 all: $(OBJS) example-driver
 
-example-driver: example-driver.cpp $(PB_LIBDIR)/libpb.a
+example-driver: example-driver.cpp $(Teko_LIBDIR)/libteko.a
 	$(CC) $(INCLUDE) $(CPPFLAGS) example-driver.cpp $(LDDIR) -o $@ $(LDLIB)
 
 $(OBJS): %.o : %.cpp

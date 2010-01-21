@@ -43,17 +43,17 @@
 #include "Thyra_DefaultBlockedLinearOp.hpp"
 
 // Teko-Package includes
-#include "PB_Utilities.hpp"
-#include "PB_InverseFactory.hpp"
-#include "PB_JacobiPreconditionerFactory.hpp"
-#include "PB_GaussSeidelPreconditionerFactory.hpp"
-#include "PB_BlockInvDiagonalStrategy.hpp"
-#include "NS/PB_SIMPLEPreconditionerFactory.hpp"
-#include "NS/PB_LSCPreconditionerFactory.hpp"
-#include "Epetra/PB_StridedEpetraOperator.hpp"
-#include "Epetra/PB_EpetraBlockPreconditioner.hpp"
-#include "PB_AddPreconditionerFactory.hpp"
-#include "PB_MultPreconditionerFactory.hpp"
+#include "Teko_Utilities.hpp"
+#include "Teko_InverseFactory.hpp"
+#include "Teko_JacobiPreconditionerFactory.hpp"
+#include "Teko_GaussSeidelPreconditionerFactory.hpp"
+#include "Teko_BlockInvDiagonalStrategy.hpp"
+#include "NS/Teko_SIMPLEPreconditionerFactory.hpp"
+#include "NS/Teko_LSCPreconditionerFactory.hpp"
+#include "Epetra/Teko_StridedEpetraOperator.hpp"
+#include "Epetra/Teko_EpetraBlockPreconditioner.hpp"
+#include "Teko_AddPreconditionerFactory.hpp"
+#include "Teko_MultPreconditionerFactory.hpp"
 
 // Aztec includes
 #include "AztecOO.h"

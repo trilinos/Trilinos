@@ -16,11 +16,11 @@
 #include "Epetra_LinearProblem.h"
 
 // Teko-Package includes
-#include "PB_Utilities.hpp"
-#include "PB_InverseFactory.hpp"
-#include "PB_InverseLibrary.hpp"
-#include "Epetra/PB_EpetraOperatorWrapper.hpp"
-#include "Epetra/PB_EpetraBlockPreconditioner.hpp"
+#include "Teko_Utilities.hpp"
+#include "Teko_InverseFactory.hpp"
+#include "Teko_InverseLibrary.hpp"
+#include "Epetra/Teko_EpetraOperatorWrapper.hpp"
+#include "Epetra/Teko_EpetraBlockPreconditioner.hpp"
 
 #include "ExamplePreconditionerFactory.cpp"
 

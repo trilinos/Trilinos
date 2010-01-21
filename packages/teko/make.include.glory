@@ -1,10 +1,10 @@
 # Trilinos Development
 # make.include.glory
 
-PB_DIR=/projects/charon/people/eccyr/PB/PB-Package
-PB_LIBDIR = $(PB_DIR)/lib
-PB_INCLUDE = $(PB_DIR)/src
-PB_TESTS_INCLUDE = $(PB_DIR)/tests
+Teko_DIR=/projects/charon/people/eccyr/Teko
+Teko_LIBDIR = $(Teko_DIR)/lib
+Teko_INCLUDE = $(Teko_DIR)/src
+Teko_TESTS_INCLUDE = $(Teko_DIR)/tests
 
 TRILINOS_DIR=/projects/charon/people/eccyr/Packages/Trilinos/install/dev/mpi-debug-pb
 TRILINOS_INCLUDE=$(TRILINOS_DIR)/include

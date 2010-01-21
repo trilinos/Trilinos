@@ -41,10 +41,10 @@ TRILINOS_LIBRARIES= -lstratimikos \
     -lteuchos\
     -llapack -lblas -lzoltan
 
-PB_DIR=/home/eccyr/Teko
-PB_LIBDIR = $(PB_DIR)/lib
-PB_INCLUDE = $(PB_DIR)/src
-PB_TESTS_INCLUDE = $(PB_DIR)/tests
+Teko_DIR=/home/eccyr/Teko
+Teko_LIBDIR = $(Teko_DIR)/lib
+Teko_INCLUDE = $(Teko_DIR)/src
+Teko_TESTS_INCLUDE = $(Teko_DIR)/tests
 
 DEBUG_FLAGS = -fexceptions -Wno-long-long -g -O0  -fPIC -DSTUPID_EPETRA_ERRS_OFF
 

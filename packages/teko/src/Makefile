@@ -3,7 +3,7 @@
 include ../make.include
 
 #INCLUDE = $(shell perl $(TRILINOS_INCLUDE)/strip_dup_incl_paths.pl -I$(TRILINOS_INCLUDE))
-INCLUDE = -I$(PB_INCLUDE) -I$(TRILINOS_INCLUDE)
+INCLUDE = -I$(Teko_INCLUDE) -I$(TRILINOS_INCLUDE)
 CPPFLAGS=-DHAVE_CONFIG_H $(THYRA_CXXFLAGS) $(DEBUG_FLAGS)
 
 OBJS = Teko_Utilities.o Teko_BlockPreconditionerFactory.o \
@@ -20,9 +20,9 @@ all: $(OBJS)
 
 $(OBJS): %.o : %.cpp %.hpp
 	$(CC) -c $(INCLUDE) $(CPPFLAGS) $< -o $@
-	cp $@ $(PB_DIR)/objs/$@
+	cp $@ $(Teko_DIR)/objs/$@
 
 clean:
-	-rm -f $(OBJS) $(OBJS:%=$(PB_DIR)/objs/%)
+	-rm -f $(OBJS) $(OBJS:%=$(Teko_DIR)/objs/%)
 	make -C ./NS clean
 	make -C ./Epetra clean
