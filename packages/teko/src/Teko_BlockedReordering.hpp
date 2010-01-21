@@ -1,5 +1,5 @@
-#ifndef __PB_BlockedReordering_hpp__
-#define __PB_BlockedReordering_hpp__
+#ifndef __Teko_BlockedReordering_hpp__
+#define __Teko_BlockedReordering_hpp__
 
 #include <string>
 #include <vector>

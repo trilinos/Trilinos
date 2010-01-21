@@ -9,7 +9,7 @@
 #include <string>
 
 #include "Test_Utils.hpp"
-#include "PB_InverseFactory.hpp"
+#include "Teko_InverseFactory.hpp"
 
 namespace Teko {
 namespace Test {

@@ -1,7 +1,7 @@
 #ifndef __Teko_PCDStrategy_hpp__
 #define __Teko_PCDStrategy_hpp__
 
-#include "PB_LU2x2Strategy.hpp"
+#include "Teko_LU2x2Strategy.hpp"
 
 // Teuchos includes
 #include "Teuchos_Time.hpp"

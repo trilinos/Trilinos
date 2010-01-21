@@ -1,6 +1,6 @@
 #include "Epetra/Teko_ReorderedMappingStrategy.hpp"
 
-#include "PB_BlockedReordering.hpp"
+#include "Teko_BlockedReordering.hpp"
 
 using Teuchos::RCP;
 using Teuchos::rcp;

@@ -1,11 +1,11 @@
-#ifndef __PB_GaussSeidelPreconditionerFactory_hpp__
-#define __PB_GaussSeidelPreconditionerFactory_hpp__
+#ifndef __Teko_GaussSeidelPreconditionerFactory_hpp__
+#define __Teko_GaussSeidelPreconditionerFactory_hpp__
 
 #include "Teuchos_RCP.hpp"
 
-#include "PB_BlockPreconditionerFactory.hpp"
-#include "PB_BlockInvDiagonalStrategy.hpp"
-#include "PB_Utilities.hpp"
+#include "Teko_BlockPreconditionerFactory.hpp"
+#include "Teko_BlockInvDiagonalStrategy.hpp"
+#include "Teko_Utilities.hpp"
 
 namespace Teko {
 

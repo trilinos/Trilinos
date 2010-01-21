@@ -1,7 +1,7 @@
-#ifndef __PB_BlockImplicitLinearOp_hpp__
-#define __PB_BlockImplicitLinearOp_hpp__
+#ifndef __Teko_BlockImplicitLinearOp_hpp__
+#define __Teko_BlockImplicitLinearOp_hpp__
 
-#include "PB_Utilities.hpp"
+#include "Teko_Utilities.hpp"
 
 namespace Teko {
 

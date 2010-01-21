@@ -10,7 +10,7 @@
 #include "Thyra_LinearOpBase.hpp"
 
 // Teko includes
-#include "PB_BlockedReordering.hpp"
+#include "Teko_BlockedReordering.hpp"
 #include "Epetra/Teko_EpetraOperatorWrapper.hpp"
 #include "Epetra/Teko_BlockedMappingStrategy.hpp"
 

@@ -6,9 +6,9 @@
 #include "Thyra_DefaultZeroLinearOp.hpp"
 #include "Thyra_get_Epetra_Operator.hpp"
 
-#include "PB_LU2x2InverseOp.hpp"
-#include "PB_Utilities.hpp"
-#include "PB_BlockUpperTriInverseOp.hpp"
+#include "Teko_LU2x2InverseOp.hpp"
+#include "Teko_Utilities.hpp"
+#include "Teko_BlockUpperTriInverseOp.hpp"
 #include "Teko_StaticLSCStrategy.hpp"
 #include "Teko_InvLSCStrategy.hpp"
 

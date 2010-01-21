@@ -10,7 +10,7 @@
 #include "Epetra_Vector.h"
 
 // Teko includes
-#include "PB_Utilities.hpp"
+#include "Teko_Utilities.hpp"
 
 #include <string>
 

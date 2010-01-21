@@ -20,7 +20,7 @@
 
 // Teko includes
 #include "Teko_EpetraOperatorWrapper.hpp"
-#include "PB_Utilities.hpp"
+#include "Teko_Utilities.hpp"
 
 using Teuchos::RCP;
 using Teuchos::rcp;

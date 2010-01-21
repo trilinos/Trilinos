@@ -1,7 +1,7 @@
-#ifndef __PB_InverseLibrary_hpp__
-#define __PB_InverseLibrary_hpp__
+#ifndef __Teko_InverseLibrary_hpp__
+#define __Teko_InverseLibrary_hpp__
 
-#include "PB_InverseFactory.hpp"
+#include "Teko_InverseFactory.hpp"
 
 // Teuchos includes
 #include "Teuchos_ParameterList.hpp"

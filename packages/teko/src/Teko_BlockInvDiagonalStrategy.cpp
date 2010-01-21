@@ -1,4 +1,4 @@
-#include "PB_BlockInvDiagonalStrategy.hpp"
+#include "Teko_BlockInvDiagonalStrategy.hpp"
 
 namespace Teko {
 

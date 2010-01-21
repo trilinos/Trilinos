@@ -1,11 +1,11 @@
-#include "PB_LU2x2PreconditionerFactory.hpp"
+#include "Teko_LU2x2PreconditionerFactory.hpp"
 
 // Teko includes
-#include "PB_LU2x2InverseOp.hpp"
-#include "PB_BlockUpperTriInverseOp.hpp"
+#include "Teko_LU2x2InverseOp.hpp"
+#include "Teko_BlockUpperTriInverseOp.hpp"
 
 // default strategies
-#include "PB_LU2x2DiagonalStrategy.hpp"
+#include "Teko_LU2x2DiagonalStrategy.hpp"
 #include "NS/Teko_PCDStrategy.hpp"
 
 using Teuchos::rcp;

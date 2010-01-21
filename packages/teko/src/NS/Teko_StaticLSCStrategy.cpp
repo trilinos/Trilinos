@@ -14,7 +14,7 @@
 #include "Teuchos_Time.hpp"
 
 // Teko includes
-#include "PB_Utilities.hpp"
+#include "Teko_Utilities.hpp"
 
 using Teuchos::RCP;
 using Teuchos::rcp_dynamic_cast;

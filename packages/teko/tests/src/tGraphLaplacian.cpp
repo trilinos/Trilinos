@@ -3,7 +3,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_Map.h"
 
-#include "PB_Utilities.hpp"
+#include "Teko_Utilities.hpp"
 
 using Teuchos::RCP;
 using Teuchos::rcp;

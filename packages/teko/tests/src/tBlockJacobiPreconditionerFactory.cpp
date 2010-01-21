@@ -1,5 +1,5 @@
 #include "tBlockJacobiPreconditionerFactory.hpp"
-#include "PB_JacobiPreconditionerFactory.hpp"
+#include "Teko_JacobiPreconditionerFactory.hpp"
 
 // Teuchos includes
 #include "Teuchos_RCP.hpp"

@@ -1,4 +1,4 @@
-#include "PB_LU2x2DiagonalStrategy.hpp"
+#include "Teko_LU2x2DiagonalStrategy.hpp"
 
 #include "Teuchos_TimeMonitor.hpp"
 

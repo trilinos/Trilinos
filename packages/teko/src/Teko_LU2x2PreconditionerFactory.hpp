@@ -1,10 +1,10 @@
-#ifndef __PB_LU2x2PreconditionerFactory_hpp__
-#define __PB_LU2x2PreconditionerFactory_hpp__
+#ifndef __Teko_LU2x2PreconditionerFactory_hpp__
+#define __Teko_LU2x2PreconditionerFactory_hpp__
 
 #include "Teuchos_RCP.hpp"
 
-#include "PB_BlockPreconditionerFactory.hpp"
-#include "PB_LU2x2Strategy.hpp"
+#include "Teko_BlockPreconditionerFactory.hpp"
+#include "Teko_LU2x2Strategy.hpp"
 
 namespace Teko {
 

@@ -1,7 +1,7 @@
 #ifndef __Teko_LSCPreconditionerFactory_hpp__
 #define __Teko_LSCPreconditionerFactory_hpp__
 
-#include "PB_BlockPreconditionerFactory.hpp"
+#include "Teko_BlockPreconditionerFactory.hpp"
 #include "NS/Teko_LSCStrategy.hpp"
 
 namespace Teko {

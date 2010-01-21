@@ -1,8 +1,8 @@
 #ifndef __Teko_SIMPLEPreconditionerFactory_hpp__
 #define __Teko_SIMPLEPreconditionerFactory_hpp__
 
-#include "PB_BlockPreconditionerFactory.hpp"
-#include "PB_InverseFactory.hpp"
+#include "Teko_BlockPreconditionerFactory.hpp"
+#include "Teko_InverseFactory.hpp"
 
 namespace Teko {
 namespace NS {

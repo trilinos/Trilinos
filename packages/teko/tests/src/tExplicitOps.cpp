@@ -11,7 +11,7 @@
 #include "EpetraExt_VectorIn.h"
 
 // Teko-Package includes
-#include "PB_Utilities.hpp"
+#include "Teko_Utilities.hpp"
 
 // Thyra includes
 #include "Thyra_EpetraLinearOp.hpp"

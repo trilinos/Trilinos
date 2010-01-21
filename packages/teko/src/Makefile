@@ -6,13 +6,13 @@ include ../make.include
 INCLUDE = -I$(PB_INCLUDE) -I$(TRILINOS_INCLUDE)
 CPPFLAGS=-DHAVE_CONFIG_H $(THYRA_CXXFLAGS) $(DEBUG_FLAGS)
 
-OBJS = PB_Utilities.o PB_BlockPreconditionerFactory.o \
-       PB_JacobiPreconditionerFactory.o PB_LU2x2PreconditionerFactory.o \
-       PB_BlockImplicitLinearOp.o PB_LU2x2InverseOp.o PB_BlockInvDiagonalStrategy.o \
-       PB_BlockUpperTriInverseOp.o PB_GaussSeidelPreconditionerFactory.o \
-       PB_BlockLowerTriInverseOp.o PB_BlockedReordering.o \
-       PB_InverseFactory.o PB_AddPreconditionerFactory.o PB_MultPreconditionerFactory.o \
-       PB_InverseLibrary.o PB_LU2x2DiagonalStrategy.o Teko_ImplicitLinearOp.o
+OBJS = Teko_Utilities.o Teko_BlockPreconditionerFactory.o \
+       Teko_JacobiPreconditionerFactory.o Teko_LU2x2PreconditionerFactory.o \
+       Teko_BlockImplicitLinearOp.o Teko_LU2x2InverseOp.o Teko_BlockInvDiagonalStrategy.o \
+       Teko_BlockUpperTriInverseOp.o Teko_GaussSeidelPreconditionerFactory.o \
+       Teko_BlockLowerTriInverseOp.o Teko_BlockedReordering.o \
+       Teko_InverseFactory.o Teko_AddPreconditionerFactory.o Teko_MultPreconditionerFactory.o \
+       Teko_InverseLibrary.o Teko_LU2x2DiagonalStrategy.o Teko_ImplicitLinearOp.o
 
 all: $(OBJS)
 	make -C ./NS

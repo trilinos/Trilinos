@@ -1,7 +1,7 @@
-#include "PB_GaussSeidelPreconditionerFactory.hpp"
+#include "Teko_GaussSeidelPreconditionerFactory.hpp"
 
-#include "PB_BlockUpperTriInverseOp.hpp"
-#include "PB_BlockLowerTriInverseOp.hpp"
+#include "Teko_BlockUpperTriInverseOp.hpp"
+#include "Teko_BlockLowerTriInverseOp.hpp"
 
 using Teuchos::rcp;
 using Teuchos::RCP;

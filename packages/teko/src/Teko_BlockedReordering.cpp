@@ -3,8 +3,8 @@
 #include <vector>
 #include <stack>
 
-#include "PB_BlockedReordering.hpp"
-#include "PB_Utilities.hpp"
+#include "Teko_BlockedReordering.hpp"
+#include "Teko_Utilities.hpp"
 
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_RCP.hpp"

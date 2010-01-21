@@ -6,8 +6,8 @@
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
 
-#include "PB_Utilities.hpp"
-#include "PB_BlockLowerTriInverseOp.hpp"
+#include "Teko_Utilities.hpp"
+#include "Teko_BlockLowerTriInverseOp.hpp"
 
 namespace Teko {
 namespace Test {

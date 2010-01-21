@@ -19,7 +19,7 @@
 #include "Epetra/Teko_EpetraBlockPreconditioner.hpp"
 #include "NS/Teko_LSCPreconditionerFactory.hpp"
 #include "NS/Teko_InvLSCStrategy.hpp"
-#include "PB_Utilities.hpp"
+#include "Teko_Utilities.hpp"
 
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
@@ -35,7 +35,7 @@
 // Test-rig
 #include "Test_Utils.hpp"
 
-#include "PB_InverseFactory.hpp"
+#include "Teko_InverseFactory.hpp"
 
 namespace Teko {
 namespace Test {

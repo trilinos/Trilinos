@@ -1,4 +1,4 @@
-/** \file PB_Utilities.hpp
+/** \file Teko_Utilities.hpp
   *
   * This file contains a number of useful functions and classes
   * used in Teko. They are distinct from the core functionality of
@@ -6,8 +6,8 @@
   * to construction of the preconditioners themselves.
   */
 
-#ifndef __PB_Utilities_hpp__
-#define __PB_Utilities_hpp__
+#ifndef __Teko_Utilities_hpp__
+#define __Teko_Utilities_hpp__
 
 #include "Epetra_CrsMatrix.h"
 

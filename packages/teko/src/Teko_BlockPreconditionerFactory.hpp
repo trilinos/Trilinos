@@ -1,5 +1,5 @@
-#ifndef __PB_BlockPreconditionerFactory_hpp__
-#define __PB_BlockPreconditionerFactory_hpp__
+#ifndef __Teko_BlockPreconditionerFactory_hpp__
+#define __Teko_BlockPreconditionerFactory_hpp__
 
 #include "Teuchos_ParameterListAcceptor.hpp"
 
@@ -11,9 +11,9 @@
 #include "Thyra_DefaultPreconditioner.hpp"
 
 // Teko includes
-#include "PB_Utilities.hpp"
-#include "PB_InverseLibrary.hpp"
-#include "PB_CloneFactory.hpp"
+#include "Teko_Utilities.hpp"
+#include "Teko_InverseLibrary.hpp"
+#include "Teko_CloneFactory.hpp"
 
 namespace Teko {
 

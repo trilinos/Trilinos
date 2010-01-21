@@ -1,4 +1,4 @@
-#include "PB_JacobiPreconditionerFactory.hpp"
+#include "Teko_JacobiPreconditionerFactory.hpp"
 
 using Teuchos::rcp;
 

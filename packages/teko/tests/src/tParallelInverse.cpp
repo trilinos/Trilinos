@@ -11,9 +11,9 @@
 #include "EpetraExt_VectorIn.h"
 
 // Teko-Package includes
-#include "PB_Utilities.hpp"
-#include "PB_InverseFactory.hpp"
-#include "PB_InverseLibrary.hpp"
+#include "Teko_Utilities.hpp"
+#include "Teko_InverseFactory.hpp"
+#include "Teko_InverseLibrary.hpp"
 #include "Epetra/Teko_StridedEpetraOperator.hpp"
 
 #include "Thyra_EpetraLinearOp.hpp"

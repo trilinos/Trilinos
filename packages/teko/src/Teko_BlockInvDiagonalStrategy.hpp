@@ -1,5 +1,5 @@
-#ifndef __PB_BlockInvDiagonalStrategy_hpp__
-#define __PB_BlockInvDiagonalStrategy_hpp__
+#ifndef __Teko_BlockInvDiagonalStrategy_hpp__
+#define __Teko_BlockInvDiagonalStrategy_hpp__
 
 #include <vector>
 
@@ -10,9 +10,9 @@
 #include "Thyra_LinearOpBase.hpp"
 
 // Teko includes
-#include "PB_Utilities.hpp"
-#include "PB_InverseFactory.hpp"
-#include "PB_BlockPreconditionerFactory.hpp"
+#include "Teko_Utilities.hpp"
+#include "Teko_InverseFactory.hpp"
+#include "Teko_BlockPreconditionerFactory.hpp"
 
 namespace Teko {
 

@@ -5,9 +5,9 @@
 
 #include "Thyra_LinearOpBase.hpp"
 
-#include "PB_Utilities.hpp"
-#include "PB_InverseFactory.hpp"
-#include "PB_BlockPreconditionerFactory.hpp"
+#include "Teko_Utilities.hpp"
+#include "Teko_InverseFactory.hpp"
+#include "Teko_BlockPreconditionerFactory.hpp"
 
 namespace Teko {
 namespace NS {

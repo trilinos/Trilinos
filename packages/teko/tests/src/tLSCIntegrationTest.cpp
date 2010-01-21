@@ -32,8 +32,8 @@
 // Test-rig
 #include "Test_Utils.hpp"
 
-#include "PB_InverseFactory.hpp"
-#include "PB_Utilities.hpp"
+#include "Teko_InverseFactory.hpp"
+#include "Teko_Utilities.hpp"
 
 namespace Teko {
 namespace Test {

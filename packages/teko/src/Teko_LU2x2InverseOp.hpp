@@ -1,13 +1,13 @@
-/** \file PB_LU2x2InverseOp.hpp
+/** \file Teko_LU2x2InverseOp.hpp
   * 
   * File that implements the inverse of a block 2x2 LU decomposition.
   */
 
-#ifndef __PB_LU2x2InverseOp_hpp__
-#define __PB_LU2x2InverseOp_hpp__
+#ifndef __Teko_LU2x2InverseOp_hpp__
+#define __Teko_LU2x2InverseOp_hpp__
 
-#include "PB_Utilities.hpp"
-#include "PB_BlockImplicitLinearOp.hpp"
+#include "Teko_Utilities.hpp"
+#include "Teko_BlockImplicitLinearOp.hpp"
 
 namespace Teko {
 

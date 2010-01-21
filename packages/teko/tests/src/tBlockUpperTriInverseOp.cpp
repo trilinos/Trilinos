@@ -8,8 +8,8 @@
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
-#include "PB_Utilities.hpp"
-#include "PB_BlockUpperTriInverseOp.hpp"
+#include "Teko_Utilities.hpp"
+#include "Teko_BlockUpperTriInverseOp.hpp"
 
 namespace Teko {
 namespace Test {

@@ -7,7 +7,7 @@
 #include "Thyra_PreconditionerFactoryBase.hpp"
 
 // Teko includes
-#include "PB_Utilities.hpp"
+#include "Teko_Utilities.hpp"
 
 namespace Teko {
 

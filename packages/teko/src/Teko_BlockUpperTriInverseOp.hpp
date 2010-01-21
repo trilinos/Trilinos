@@ -1,8 +1,8 @@
-#ifndef __PB_BlockUpperTriInverseOp_hpp__
-#define __PB_BlockUpperTriInverseOp_hpp__
+#ifndef __Teko_BlockUpperTriInverseOp_hpp__
+#define __Teko_BlockUpperTriInverseOp_hpp__
 
-#include "PB_Utilities.hpp"
-#include "PB_BlockImplicitLinearOp.hpp"
+#include "Teko_Utilities.hpp"
+#include "Teko_BlockImplicitLinearOp.hpp"
 
 namespace Teko {
 

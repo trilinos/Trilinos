@@ -11,8 +11,8 @@
 #include "EpetraExt_VectorIn.h"
 
 // Teko-Package includes
-#include "PB_Utilities.hpp"
-#include "PB_InverseLibrary.hpp"
+#include "Teko_Utilities.hpp"
+#include "Teko_InverseLibrary.hpp"
 #include "Teko_NeumannSeriesPreconditionerFactory.hpp"
 
 // Thyra includes

@@ -1,4 +1,4 @@
-#include "PB_InverseFactory.hpp"
+#include "Teko_InverseFactory.hpp"
 
 // Thyra includes
 #include "Thyra_DefaultLinearOpSource.hpp"
@@ -8,8 +8,8 @@
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
 // Teko includes
-#include "PB_Utilities.hpp"
-#include "PB_BlockPreconditionerFactory.hpp"
+#include "Teko_Utilities.hpp"
+#include "Teko_BlockPreconditionerFactory.hpp"
 #include "Teko_PreconditionerLinearOp.hpp"
 
 using Teuchos::rcp;

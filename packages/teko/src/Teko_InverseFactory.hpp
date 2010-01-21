@@ -1,5 +1,5 @@
-#ifndef __PB_InverseFactory_hpp__
-#define __PB_InverseFactory_hpp__
+#ifndef __Teko_InverseFactory_hpp__
+#define __Teko_InverseFactory_hpp__
 
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
@@ -8,7 +8,7 @@
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 #include "Thyra_PreconditionerFactoryBase.hpp"
 
-#include "PB_Utilities.hpp"
+#include "Teko_Utilities.hpp"
 
 namespace Teko {
 

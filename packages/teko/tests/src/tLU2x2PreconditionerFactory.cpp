@@ -1,5 +1,5 @@
 #include "tLU2x2PreconditionerFactory.hpp"
-#include "PB_LU2x2PreconditionerFactory.hpp"
+#include "Teko_LU2x2PreconditionerFactory.hpp"
 
 // Teuchos includes
 #include "Teuchos_RCP.hpp"

@@ -1,10 +1,10 @@
-#ifndef __PB_JacobiPreconditionerFactory_hpp__
-#define __PB_JacobiPreconditionerFactory_hpp__
+#ifndef __Teko_JacobiPreconditionerFactory_hpp__
+#define __Teko_JacobiPreconditionerFactory_hpp__
 
 #include "Teuchos_RCP.hpp"
 
-#include "PB_BlockPreconditionerFactory.hpp"
-#include "PB_BlockInvDiagonalStrategy.hpp"
+#include "Teko_BlockPreconditionerFactory.hpp"
+#include "Teko_BlockInvDiagonalStrategy.hpp"
 
 namespace Teko {
 

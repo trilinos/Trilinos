@@ -1,7 +1,7 @@
 #include "tSIMPLEPreconditionerFactory.hpp"
 #include "NS/Teko_SIMPLEPreconditionerFactory.hpp"
 #include "NS/Teko_LSCPreconditionerFactory.hpp"
-#include "PB_InverseLibrary.hpp"
+#include "Teko_InverseLibrary.hpp"
 
 // Teuchos includes
 #include "Teuchos_RCP.hpp"

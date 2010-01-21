@@ -11,7 +11,7 @@
 #include "EpetraExt_VectorIn.h"
 
 // Teko-Package includes
-#include "PB_Utilities.hpp"
+#include "Teko_Utilities.hpp"
 
 // Thyra includes
 #include "Thyra_EpetraLinearOp.hpp"
@@ -29,7 +29,7 @@
 
 // Teko includes
 #include "NS/Teko_PCDStrategy.hpp"
-#include "PB_InverseLibrary.hpp"
+#include "Teko_InverseLibrary.hpp"
 
 namespace Teko {
 namespace Test {
