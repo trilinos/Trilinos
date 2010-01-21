@@ -129,6 +129,10 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
   memset(&myHshEdges, 0, sizeof(zoltan_temp_edges));
   memset(&myHshVtxs, 0, sizeof(zoltan_temp_vertices));
 
+#ifdef CEDRIC_2D_PARTITIONS
+  zhg->ddHedge = NULL;
+#endif
+
   /* get parameters */
 
   randomizeInitDist = hgp->RandomizeInitDist;
@@ -395,6 +399,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     {
       int offset;
       int *egno = NULL;
+      *((int*)NULL) = 0;
       MPI_Scan(&zhg->nHedges, &offset, 1, MPI_INT, MPI_SUM, zz->Communicator);
       offset -= zhg->nHedges;
 #ifdef CEDRIC_PRINT
