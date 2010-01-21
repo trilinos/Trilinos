@@ -27,6 +27,7 @@ void LU2x2DiagonalStrategy::buildTimers()
 }
 
 LU2x2DiagonalStrategy::LU2x2DiagonalStrategy() 
+   : a00InverseType_(Diagonal)
 { 
    buildTimers();
 }
@@ -34,7 +35,7 @@ LU2x2DiagonalStrategy::LU2x2DiagonalStrategy()
 //! Constructor to set the inverse factories.
 LU2x2DiagonalStrategy::LU2x2DiagonalStrategy(const Teuchos::RCP<InverseFactory> & invFA,
                                              const Teuchos::RCP<InverseFactory> & invS)
-   : invFactoryA00_(invFA), invFactoryS_(invS) 
+   : invFactoryA00_(invFA), invFactoryS_(invS), a00InverseType_(Diagonal)
 {
    buildTimers();
 }
@@ -89,7 +90,7 @@ void LU2x2DiagonalStrategy::initializeState(const Teko::BlockedLinearOp & A,Bloc
       Teko_DEBUG_SCOPE("Building S",5);
       Teuchos::TimeMonitor timer(*opsTimer_,true);
 
-      LinearOp diagA00 = getInvDiagonalOp(A00);
+      LinearOp diagA00 = getInvDiagonalOp(A00,a00InverseType_);
    
       // build Schur-complement
       ModifiableLinearOp & triple = state.getModifiableOp("triple");
@@ -153,6 +154,12 @@ void LU2x2DiagonalStrategy::initializeFromParameterList(const Teuchos::Parameter
       invA00Str = pl.get<std::string>("Inverse A00 Type");
    if(pl.isParameter("Inverse Schur Type"))
       invSStr = pl.get<std::string>("Inverse Schur Type");
+   if(pl.isParameter("Diagonal Type")) {
+      std::string massInverseStr = pl.get<std::string>("Diagonal Type");
+
+      // build inverse types
+      a00InverseType_ = getDiagonalType(massInverseStr);
+   }
 
    // set defaults as needed
    if(invA00Str=="") invA00Str = invStr;
