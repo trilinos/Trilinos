@@ -1,4 +1,4 @@
-#include "PB_EpetraInverseOpWrapper.hpp"
+#include "Teko_EpetraInverseOpWrapper.hpp"
 
 using namespace Teuchos;
 

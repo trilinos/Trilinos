@@ -1,5 +1,5 @@
-#ifndef __PB_BlockedMappingStrategy_hpp__
-#define __PB_BlockedMappingStrategy_hpp__
+#ifndef __Teko_BlockedMappingStrategy_hpp__
+#define __Teko_BlockedMappingStrategy_hpp__
 
 // stl includes
 #include <vector>
@@ -21,8 +21,8 @@
 #include "Epetra_CrsMatrix.h"
 
 // Teko includes
-#include "Epetra/PB_EpetraOperatorWrapper.hpp"
-#include "Epetra/PB_BlockingEpetra.hpp"
+#include "Epetra/Teko_EpetraOperatorWrapper.hpp"
+#include "Epetra/Teko_BlockingEpetra.hpp"
 
 namespace Teko {
 namespace Epetra {

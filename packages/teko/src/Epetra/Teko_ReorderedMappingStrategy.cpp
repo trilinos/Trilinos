@@ -1,4 +1,4 @@
-#include "Epetra/PB_ReorderedMappingStrategy.hpp"
+#include "Epetra/Teko_ReorderedMappingStrategy.hpp"
 
 #include "PB_BlockedReordering.hpp"
 

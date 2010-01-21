@@ -32,7 +32,7 @@
 
 #include "tInterlacedEpetra.hpp"
 
-#include "Epetra/PB_InterlacedEpetra.hpp"
+#include "Epetra/Teko_InterlacedEpetra.hpp"
 
 using namespace Teko::Epetra;
 

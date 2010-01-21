@@ -1,8 +1,8 @@
-#ifndef __PB_EpetraBlockPreconditioner_hpp__
-#define __PB_EpetraBlockPreconditioner_hpp__
+#ifndef __Teko_EpetraBlockPreconditioner_hpp__
+#define __Teko_EpetraBlockPreconditioner_hpp__
 
 #include "PB_BlockPreconditionerFactory.hpp"
-#include "Epetra/PB_EpetraInverseOpWrapper.hpp"
+#include "Epetra/Teko_EpetraInverseOpWrapper.hpp"
 
 namespace Teko {
 namespace Epetra {

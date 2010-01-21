@@ -1,5 +1,5 @@
-#ifndef __PB_EpetraHelpers_hpp__
-#define __PB_EpetraHelpers_hpp__
+#ifndef __Teko_EpetraHelpers_hpp__
+#define __Teko_EpetraHelpers_hpp__
 
 // stl includes
 #include <string>

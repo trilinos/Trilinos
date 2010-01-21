@@ -1,4 +1,4 @@
-#include "PB_EpetraThyraConverter.hpp"
+#include "Teko_EpetraThyraConverter.hpp"
 
 // Teuchos includes
 #include "Teuchos_Array.hpp"

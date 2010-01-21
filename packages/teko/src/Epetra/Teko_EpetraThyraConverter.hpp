@@ -1,5 +1,5 @@
-#ifndef __PB_EpetraThyraConverter_hpp__
-#define __PB_EpetraThyraConverter_hpp__
+#ifndef __Teko_EpetraThyraConverter_hpp__
+#define __Teko_EpetraThyraConverter_hpp__
 
 // Teuchos includes
 #include "Teuchos_RCP.hpp"

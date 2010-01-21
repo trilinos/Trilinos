@@ -1,5 +1,5 @@
-#ifndef __PB_EpetraOperatorWrapper_hpp__
-#define __PB_EpetraOperatorWrapper_hpp__
+#ifndef __Teko_EpetraOperatorWrapper_hpp__
+#define __Teko_EpetraOperatorWrapper_hpp__
 
 #include "Thyra_LinearOpBase.hpp"
 #include "Epetra_Map.h"

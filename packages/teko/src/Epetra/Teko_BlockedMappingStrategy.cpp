@@ -1,6 +1,5 @@
-#include "Epetra/PB_StridedMappingStrategy.hpp"
-#include "Epetra/PB_InterlacedEpetra.hpp"
-#include "Epetra/PB_EpetraHelpers.hpp"
+#include "Epetra/Teko_BlockedMappingStrategy.hpp"
+#include "Epetra/Teko_EpetraHelpers.hpp"
 
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
@@ -27,8 +26,8 @@ namespace Epetra {
 //       map  - original Epetra_Map to be broken up
 //       comm - Epetra_Comm object related to the map
 //
-StridedMappingStrategy::StridedMappingStrategy(const std::vector<int> & vars,const RCP<const Epetra_Map> & map,
-                                               const Epetra_Comm & comm)
+BlockedMappingStrategy::BlockedMappingStrategy(const std::vector<std::vector<int> > & vars,
+             const Teuchos::RCP<const Epetra_Map> & map, const Epetra_Comm & comm)
 {
    rangeMap_ = map;
    domainMap_ = map;
@@ -45,7 +44,7 @@ StridedMappingStrategy::StridedMappingStrategy(const std::vector<int> & vars,con
 //      eow     - Operator that defines the transition...this may
 //                be removed in the future
 //
-void StridedMappingStrategy::copyEpetraIntoThyra(const Epetra_MultiVector& X,
+void BlockedMappingStrategy::copyEpetraIntoThyra(const Epetra_MultiVector& X,
                                                  const Teuchos::Ptr<Thyra::MultiVectorBase<double> > & thyra_X,
                                                  const Teko::Epetra::EpetraOperatorWrapper & eow) const
 {
@@ -54,10 +53,10 @@ void StridedMappingStrategy::copyEpetraIntoThyra(const Epetra_MultiVector& X,
    std::vector<RCP<Epetra_MultiVector> > subX;
 
    // allocate vectors to copy into
-   Strided::buildSubVectors(blockMaps_,subX,count);
+   Blocking::buildSubVectors(blockMaps_,subX,count);
 
    // copy source vector to X vector
-   Strided::one2many(subX,X,blockImport_);
+   Blocking::one2many(subX,X,blockImport_);
 
    // convert subX to an array of multi vectors
    Teuchos::Array<RCP<Thyra::MultiVectorBase<double> > > thyra_subX;
@@ -80,7 +79,7 @@ void StridedMappingStrategy::copyEpetraIntoThyra(const Epetra_MultiVector& X,
 //      eow     - Operator that defines the transition...this may
 //                be removed in the future
 //
-void StridedMappingStrategy::copyThyraIntoEpetra(const RCP<const Thyra::MultiVectorBase<double> > & thyra_Y,
+void BlockedMappingStrategy::copyThyraIntoEpetra(const RCP<const Thyra::MultiVectorBase<double> > & thyra_Y,
                                                  Epetra_MultiVector& Y,
                                                  const Teko::Epetra::EpetraOperatorWrapper & eow) const
 {
@@ -93,10 +92,10 @@ void StridedMappingStrategy::copyThyraIntoEpetra(const RCP<const Thyra::MultiVec
       subY.push_back(Thyra::get_Epetra_MultiVector(*blockMaps_[i].second,prod_Y->getMultiVectorBlock(i)));
 
    // endow the subVectors with required information about the maps
-   Strided::associateSubVectors(blockMaps_,subY);
+   // Blocking::associateSubVectors(blockMaps_,subY);
 
    // copy solution vectors to Y vector
-   Strided::many2one(Y,subY,blockExport_);
+   Blocking::many2one(Y,subY,blockExport_);
 }
 
 // this is the core routine that builds the maps
@@ -111,11 +110,19 @@ void StridedMappingStrategy::copyThyraIntoEpetra(const RCP<const Thyra::MultiVec
 //       baseMap - basic map to use in the transfers
 //       comm    - Epetra_Comm object
 //
-void StridedMappingStrategy::buildBlockTransferData(const std::vector<int> & vars,const Teuchos::RCP<const Epetra_Map> & baseMap, const Epetra_Comm & comm)
+void BlockedMappingStrategy::buildBlockTransferData(const std::vector<std::vector<int> > & vars,
+     const Teuchos::RCP<const Epetra_Map> & baseMap, const Epetra_Comm & comm)
 {
-   // build maps and exporters/importers
-   Strided::buildSubMaps(*baseMap,vars,comm,blockMaps_);
-   Strided::buildExportImport(*baseMap, blockMaps_, blockExport_,blockImport_);
+   // build block for each vector
+   for(int i=0;i<vars.size();i++) {
+      // build maps and exporters/importers
+      Blocking::MapPair mapPair = Blocking::buildSubMap(vars[i],comm);
+      Blocking::ImExPair iePair = Blocking::buildExportImport(*baseMap, mapPair);
+
+      blockMaps_.push_back(mapPair);
+      blockImport_.push_back(iePair.first);
+      blockExport_.push_back(iePair.second);
+   }
 }
 
 // Builds a blocked Thyra operator that uses the strided
@@ -129,7 +136,7 @@ void StridedMappingStrategy::buildBlockTransferData(const std::vector<int> & var
 //             defined by this mapping strategy
 //
 const Teuchos::RCP<Thyra::BlockedLinearOpBase<double> > 
-StridedMappingStrategy::buildBlockedThyraOp(const RCP<const Epetra_CrsMatrix> & crsContent,const std::string & label) const
+BlockedMappingStrategy::buildBlockedThyraOp(const RCP<const Epetra_CrsMatrix> & crsContent,const std::string & label) const
 {
    int dim = blockMaps_.size();
 
@@ -143,7 +150,8 @@ StridedMappingStrategy::buildBlockedThyraOp(const RCP<const Epetra_CrsMatrix> & 
          ss << label << "_" << i << "," << j;
 
          // build the blocks and place it the right location
-         A->setNonconstBlock(i,j,Thyra::nonconstEpetraLinearOp(Strided::buildSubBlock(i,j,*crsContent,blockMaps_),ss.str()));
+         RCP<Epetra_CrsMatrix> blk = Blocking::buildSubBlock(i,j,*crsContent,blockMaps_);
+         A->setNonconstBlock(i,j,Thyra::nonconstEpetraLinearOp(blk,ss.str()));
       }
    } // end for i
    A->endBlockFill();
@@ -161,7 +169,7 @@ StridedMappingStrategy::buildBlockedThyraOp(const RCP<const Epetra_CrsMatrix> & 
 //       A - Destination block linear op composed of blocks of
 //           Epetra_CrsMatrix at all relevant locations
 //
-void StridedMappingStrategy::rebuildBlockedThyraOp(const RCP<const Epetra_CrsMatrix> & crsContent,
+void BlockedMappingStrategy::rebuildBlockedThyraOp(const RCP<const Epetra_CrsMatrix> & crsContent,
                                                    const RCP<Thyra::BlockedLinearOpBase<double> > & A) const
 {
    int dim = blockMaps_.size();
@@ -173,7 +181,7 @@ void StridedMappingStrategy::rebuildBlockedThyraOp(const RCP<const Epetra_CrsMat
          RCP<Epetra_CrsMatrix> eAij = rcp_dynamic_cast<Epetra_CrsMatrix>(Thyra::get_Epetra_Operator(*Aij),true);
 
          // rebuild the blocks and place it the right location
-         Strided::rebuildSubBlock(i,j,*crsContent,blockMaps_,*eAij);
+         Blocking::rebuildSubBlock(i,j,*crsContent,blockMaps_,*eAij);
       }
    } // end for i
 }

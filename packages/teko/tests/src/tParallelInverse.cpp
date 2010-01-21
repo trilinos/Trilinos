@@ -14,7 +14,7 @@
 #include "PB_Utilities.hpp"
 #include "PB_InverseFactory.hpp"
 #include "PB_InverseLibrary.hpp"
-#include "Epetra/PB_StridedEpetraOperator.hpp"
+#include "Epetra/Teko_StridedEpetraOperator.hpp"
 
 #include "Thyra_EpetraLinearOp.hpp"
 

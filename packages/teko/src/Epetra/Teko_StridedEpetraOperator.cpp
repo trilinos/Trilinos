@@ -1,6 +1,6 @@
-#include "Epetra/PB_StridedEpetraOperator.hpp"
-#include "Epetra/PB_StridedMappingStrategy.hpp"
-#include "Epetra/PB_ReorderedMappingStrategy.hpp"
+#include "Epetra/Teko_StridedEpetraOperator.hpp"
+#include "Epetra/Teko_StridedMappingStrategy.hpp"
+#include "Epetra/Teko_ReorderedMappingStrategy.hpp"
 
 #include "Teuchos_VerboseObject.hpp"
 

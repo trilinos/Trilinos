@@ -1,4 +1,4 @@
-#include "PB_EpetraHelpers.hpp"
+#include "Teko_EpetraHelpers.hpp"
 
 // Thyra Includes
 #include "Thyra_EpetraLinearOp.hpp"
@@ -19,7 +19,7 @@
 #include "EpetraExt_MatrixMatrix.h"
 
 // Teko includes
-#include "PB_EpetraOperatorWrapper.hpp"
+#include "Teko_EpetraOperatorWrapper.hpp"
 #include "PB_Utilities.hpp"
 
 using Teuchos::RCP;

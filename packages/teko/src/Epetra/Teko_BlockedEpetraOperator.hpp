@@ -1,5 +1,5 @@
-#ifndef __PB_BlockedEpetraOperator_hpp__
-#define __PB_BlockedEpetraOperator_hpp__
+#ifndef __Teko_BlockedEpetraOperator_hpp__
+#define __Teko_BlockedEpetraOperator_hpp__
 
 // Epetra includes
 #include "Epetra_Operator.h"
@@ -11,8 +11,8 @@
 
 // Teko includes
 #include "PB_BlockedReordering.hpp"
-#include "Epetra/PB_EpetraOperatorWrapper.hpp"
-#include "Epetra/PB_BlockedMappingStrategy.hpp"
+#include "Epetra/Teko_EpetraOperatorWrapper.hpp"
+#include "Epetra/Teko_BlockedMappingStrategy.hpp"
 
 namespace Teko {
 namespace Epetra {

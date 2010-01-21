@@ -32,7 +32,7 @@
 
 #include "tBlockingEpetra.hpp"
 
-#include "Epetra/PB_BlockingEpetra.hpp"
+#include "Epetra/Teko_BlockingEpetra.hpp"
 
 using namespace Teko::Epetra;
 

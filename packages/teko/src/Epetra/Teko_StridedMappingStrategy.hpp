@@ -1,5 +1,5 @@
-#ifndef __PB_StridedMappingStrategy_hpp__
-#define __PB_StridedMappingStrategy_hpp__
+#ifndef __Teko_StridedMappingStrategy_hpp__
+#define __Teko_StridedMappingStrategy_hpp__
 
 // stl includes
 #include <vector>
@@ -21,7 +21,7 @@
 #include "Epetra_CrsMatrix.h"
 
 // Teko includes
-#include "Epetra/PB_EpetraOperatorWrapper.hpp"
+#include "Epetra/Teko_EpetraOperatorWrapper.hpp"
 
 namespace Teko {
 namespace Epetra {

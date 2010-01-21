@@ -32,7 +32,7 @@
 
 #include "tStridedEpetraOperator.hpp"
 
-#include "Epetra/PB_StridedEpetraOperator.hpp"
+#include "Epetra/Teko_StridedEpetraOperator.hpp"
 
 
 namespace Teko {

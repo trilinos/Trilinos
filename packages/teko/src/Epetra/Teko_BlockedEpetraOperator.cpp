@@ -1,6 +1,6 @@
-#include "Epetra/PB_BlockedEpetraOperator.hpp"
-#include "Epetra/PB_BlockedMappingStrategy.hpp"
-#include "Epetra/PB_ReorderedMappingStrategy.hpp"
+#include "Epetra/Teko_BlockedEpetraOperator.hpp"
+#include "Epetra/Teko_BlockedMappingStrategy.hpp"
+#include "Epetra/Teko_ReorderedMappingStrategy.hpp"
 
 #include "Teuchos_VerboseObject.hpp"
 

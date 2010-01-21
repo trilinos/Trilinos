@@ -15,8 +15,8 @@
 #include "ml_MultiLevelPreconditioner.h"
 
 // Teko-Package includes
-#include "Epetra/PB_EpetraHelpers.hpp"
-#include "Epetra/PB_EpetraBlockPreconditioner.hpp"
+#include "Epetra/Teko_EpetraHelpers.hpp"
+#include "Epetra/Teko_EpetraBlockPreconditioner.hpp"
 #include "NS/Teko_LSCPreconditionerFactory.hpp"
 #include "NS/Teko_InvLSCStrategy.hpp"
 

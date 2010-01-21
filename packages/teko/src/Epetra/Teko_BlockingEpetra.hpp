@@ -1,5 +1,5 @@
-#ifndef __PB_BlockingEpetra_hpp__
-#define __PB_BlockingEpetra_hpp__
+#ifndef __Teko_BlockingEpetra_hpp__
+#define __Teko_BlockingEpetra_hpp__
 
 #include "Teuchos_RCP.hpp"
 

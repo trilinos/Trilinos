@@ -1,4 +1,4 @@
-#include "PB_InterlacedEpetra.hpp"
+#include "Teko_InterlacedEpetra.hpp"
 
 #include <vector>
 

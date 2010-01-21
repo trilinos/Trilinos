@@ -1,4 +1,4 @@
-#include "PB_EpetraBlockPreconditioner.hpp"
+#include "Teko_EpetraBlockPreconditioner.hpp"
 
 // Thyra includes
 #include "Thyra_DefaultLinearOpSource.hpp"

@@ -18,8 +18,8 @@
 // Teko includes
 #include "PB_Utilities.hpp"
 #include "NS/Teko_LSCPreconditionerFactory.hpp"
-#include "Epetra/PB_EpetraHelpers.hpp"
-#include "Epetra/PB_EpetraOperatorWrapper.hpp"
+#include "Epetra/Teko_EpetraHelpers.hpp"
+#include "Epetra/Teko_EpetraOperatorWrapper.hpp"
 
 using Teuchos::RCP;
 using Teuchos::rcp_dynamic_cast;

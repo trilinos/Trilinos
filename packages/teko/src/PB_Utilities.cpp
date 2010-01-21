@@ -32,7 +32,7 @@
 #include "AnasaziStatusTestMaxIters.hpp"
 
 // Teko includes
-#include "Epetra/PB_EpetraHelpers.hpp"
+#include "Epetra/Teko_EpetraHelpers.hpp"
 
 #include <cmath>
 

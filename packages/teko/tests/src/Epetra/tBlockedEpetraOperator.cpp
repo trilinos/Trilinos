@@ -32,7 +32,7 @@
 
 #include "tBlockedEpetraOperator.hpp"
 
-#include "Epetra/PB_BlockedEpetraOperator.hpp"
+#include "Epetra/Teko_BlockedEpetraOperator.hpp"
 
 #include "EpetraExt_RowMatrixOut.h"
 

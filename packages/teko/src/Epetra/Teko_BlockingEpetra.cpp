@@ -1,4 +1,4 @@
-#include "PB_BlockingEpetra.hpp"
+#include "Teko_BlockingEpetra.hpp"
 
 #include "Epetra_IntVector.h"
 #include "Epetra_LocalMap.h"

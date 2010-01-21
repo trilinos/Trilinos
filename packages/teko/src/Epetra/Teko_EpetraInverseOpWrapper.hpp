@@ -1,7 +1,7 @@
-#ifndef __PB_EpetraInverseOpWrapper_hpp__
-#define __PB_EpetraInverseOpWrapper_hpp__
+#ifndef __Teko_EpetraInverseOpWrapper_hpp__
+#define __Teko_EpetraInverseOpWrapper_hpp__
 
-#include "PB_EpetraOperatorWrapper.hpp"
+#include "Teko_EpetraOperatorWrapper.hpp"
 
 namespace Teko {
 namespace Epetra {

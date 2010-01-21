@@ -1,5 +1,5 @@
-#ifndef __PB_InterlacedEpetra_hpp__
-#define __PB_InterlacedEpetra_hpp__
+#ifndef __Teko_InterlacedEpetra_hpp__
+#define __Teko_InterlacedEpetra_hpp__
 
 // Teuchos includes
 #include "Teuchos_RCP.hpp"

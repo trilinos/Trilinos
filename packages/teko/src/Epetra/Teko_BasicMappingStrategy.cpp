@@ -1,5 +1,5 @@
 #include "Epetra/Teko_BasicMappingStrategy.hpp"
-#include "Epetra/PB_EpetraHelpers.hpp"
+#include "Epetra/Teko_EpetraHelpers.hpp"
 
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_DefaultSpmdMultiVector.hpp"
