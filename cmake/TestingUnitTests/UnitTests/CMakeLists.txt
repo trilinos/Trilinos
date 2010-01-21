@@ -1,6 +1,7 @@
 INCLUDE(PackageAddTest)
 INCLUDE(PackageAddAdvancedTest)
 INCLUDE(UnitTestHelpers)
+INCLUDE(GlobalSet)
 
 
 #
@@ -22,6 +23,42 @@ FUNCTION(UNITEST_PACKAGE_ADD_TEST_BASIC)
   # Used locally
   SET(EXEN SomeExec)
   SET(PACKEXEN ${PACKAGE_NAME}_${EXEN})
+
+  MESSAGE("Test in HOST")
+  SET(${PROJECT_NAME}_HOSTNAME MyHost)
+  PACKAGE_ADD_TEST( ${EXEN} HOST MyHost )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN};${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe"
+    )
+
+  MESSAGE("Test not in HOST")
+  SET(${PROJECT_NAME}_HOSTNAME TheHost)
+  PACKAGE_ADD_TEST( ${EXEN} HOST MyHost )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    ""
+    )
+
+  # ToDo: Test XHOST
+
+  MESSAGE("Test in HOSTTYPE")
+  SET(CMAKE_HOST_SYSTEM_NAME MyHostType)
+  PACKAGE_ADD_TEST( ${EXEN} HOSTTYPE MyHostType )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN};${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe"
+    )
+
+  MESSAGE("Test not in HOSTTYPE")
+  SET(CMAKE_HOST_SYSTEM_NAME TheHostType)
+  PACKAGE_ADD_TEST( ${EXEN} HOSTTYPE MyHostType )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    ""
+    )
+
+  # ToDo: Test XHOSTTYPE
 
   MESSAGE("Add a single basic test with no arguments")
   GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT)
@@ -498,4 +535,4 @@ MESSAGE("*** Determine final result of all unit tests")
 MESSAGE("***\n")
 
 # Pass in the number of expected tests that must pass!
-UNITTEST_FINAL_RESULT(57)
+UNITTEST_FINAL_RESULT(61)

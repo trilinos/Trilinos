@@ -181,6 +181,8 @@ INCLUDE(PackageAddTestHelpers)
 #
 
 FUNCTION(PACKAGE_ADD_TEST EXE_NAME)
+
+  GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT "")
    
   #
   # A) Parse the input arguments
