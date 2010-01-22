@@ -60,7 +60,7 @@ class runTest {
   static void run(const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node) {
     using std::cout; 
     using std::endl;
-    cout << "Running test with Node==" << Teuchos::typeName(*node) << " on rank " << comm->getRank() << endl;
+    cout << "Running test with Node==" << Teuchos::typeName(*node) << " on rank " << comm->getRank() << "/" << comm->getSize() << endl;
     //
     // Get the data from the HB file and build the Map,Matrix
     //
