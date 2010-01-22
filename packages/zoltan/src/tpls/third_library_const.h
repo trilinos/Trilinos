@@ -65,6 +65,13 @@ extern "C" {
 #endif /*def indextype */
 #endif /* ZOLTAN_SCOTCH */
 
+#ifdef ZOLTAN_CCOLAMD
+#include <ccolamd.h>
+#ifndef indextype
+#define indextype UF_long
+#endif
+#endif /* ZOLTAN_CCOLAMD */
+
 #ifndef indextype
 #define indextype int
 #define weighttype int
