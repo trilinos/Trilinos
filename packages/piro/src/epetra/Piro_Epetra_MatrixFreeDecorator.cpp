@@ -176,6 +176,9 @@ void Piro::Epetra::MatrixFreeDecorator::evalModel( const InArgs& inArgs,
         clonedInArgs.set_p(l, Teuchos::rcp(new Epetra_Vector(*p_l)));
     }
     clonedInArgs.set_x(Teuchos::rcp(new Epetra_Vector(*inArgs.get_x())));
+    RCP<const Epetra_Vector> xdot = inArgs.get_x_dot();
+    if (nonnull(xdot))
+      clonedInArgs.set_x_dot(Teuchos::rcp(new Epetra_Vector(*inArgs.get_x_dot())));
     W_mfo->setBase(clonedInArgs, fBase);
   }
 }
@@ -189,13 +192,15 @@ Piro::Epetra::MatrixFreeOperator::MatrixFreeOperator(
   modelInArgs(model_->createInArgs()),
   solutionNorm(0.0),
   baseIsSet(false),
+  haveXdot(false),
   lambda(lambda_)
 {
   using Teuchos::rcp;
 
-  // Allocate perturbed solution and residuals
+  // Allocate space for perturbed solution and residuals
   xPert = rcp(new Epetra_Vector(*(model->get_x_map())));
   fPert = rcp(new Epetra_Vector(*(model->get_f_map())));
+  xdotPert = rcp(new Epetra_Vector(*(model->get_x_map())));
 }
 
 void Piro::Epetra::MatrixFreeOperator::setBase(
@@ -204,6 +209,7 @@ void Piro::Epetra::MatrixFreeOperator::setBase(
 {
   // Deep copy base solution, shallow copy residual base
   modelInArgs = modelInArgs_;
+  haveXdot = nonnull(modelInArgs.get_x_dot());
   fBase = fBase_;
   modelInArgs.get_x()->Norm2(&solutionNorm);
   baseIsSet = true;
@@ -220,6 +226,8 @@ int  Piro::Epetra::MatrixFreeOperator::Apply
   Teuchos::RCP<Epetra_Vector> v = Teuchos::rcp(new Epetra_Vector(View, V, 0));
   Teuchos::RCP<Epetra_Vector> y = Teuchos::rcp(new Epetra_Vector(Copy, Y, 0));
   Teuchos::RCP<const Epetra_Vector> xBase = modelInArgs.get_x();
+  Teuchos::RCP<const Epetra_Vector> xdotBase;
+  if (haveXdot) xdotBase = modelInArgs.get_x_dot();
   double vectorNorm;
   v->Norm2(&vectorNorm);
 
@@ -232,14 +240,20 @@ int  Piro::Epetra::MatrixFreeOperator::Apply
   double eta = lambda * (lambda + solutionNorm/vectorNorm);
 
   xPert->Update(1.0, *xBase, eta, *v, 0.0);
+  if (haveXdot)
+    xdotPert->Update(1.0, *xdotBase, eta, *v, 0.0);
   
   EpetraExt::ModelEvaluator::OutArgs modelOutArgs =
     model->createOutArgs();
 
   modelInArgs.set_x(xPert);
+  if (haveXdot) modelInArgs.set_x_dot(xdotPert);
   modelOutArgs.set_f(fPert);
+
   model->evalModel(modelInArgs, modelOutArgs);
+
   modelInArgs.set_x(xBase);
+  if (haveXdot) modelInArgs.set_x_dot(xdotBase);
   modelOutArgs.set_f(fBase);
 
   y->Update(1.0, *fPert, -1.0, *fBase, 0.0);

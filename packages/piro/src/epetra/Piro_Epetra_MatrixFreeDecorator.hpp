@@ -133,6 +133,8 @@ class MatrixFreeOperator
    mutable EpetraExt::ModelEvaluator::InArgs modelInArgs;
    // Storage for Perturbed solution vector for MatrixFree 
    Teuchos::RCP<Epetra_Vector> xPert;
+   // Storage for Perturbed solution vector for MatrixFree 
+   Teuchos::RCP<Epetra_Vector> xdotPert;
    // Storage for Base resid vector for MatrixFree 
    Teuchos::RCP<Epetra_Vector> fBase;
    // Storage for Perturbed resid vector for MatrixFree 
@@ -140,6 +142,7 @@ class MatrixFreeOperator
 
    double solutionNorm;
    bool  baseIsSet;
+   bool  haveXdot;
    const double lambda;
 
 };
