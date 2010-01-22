@@ -1,7 +1,7 @@
 * Kill Tpetra::InverseOperator
   Doing this will damage backwards compatibility. 
 
-? Remove Tpetra::Operator from hierarchy
+* Remove Tpetra::Operator from hierarchy
   Is it useful to have Tpetra::CrsMatrix/Tpetra::RowMatrix enjoy inheritance from Operator, with default implementations? it avoids a simple decorator call.
   Doing this will damage backwards compatibility. 
 
@@ -17,3 +17,7 @@
        is a: Operator<OpScalar,LocalOrdinal,GlobalOrdinal,Node>
       has a: CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>
       apply(X,Y,trans) calls solve<OpScalar,OpScalar>(X,Y,trans)
+
+* Add apply(X,Y) implementation to Tpetra::CrsMatrix, with "overwrite Y" semantics
+
+* Add apply(alpha,X,beta,Y) method to Tpetra::Operator
