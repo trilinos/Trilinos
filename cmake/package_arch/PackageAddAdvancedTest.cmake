@@ -53,6 +53,8 @@ INCLUDE(PrintVar)
 #        | STANDARD_PASS_OUTPUT
 #        ]
 #
+# ToDO: Add documnetation for [X]HOST[TYPE]
+#
 # Some overall arguments are:
 #
 #   <testName>
@@ -242,14 +244,23 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
      #prefix
      PARSE
      #lists
-     "${TEST_IDX_LIST};OVERALL_WORKING_DIRECTORY;KEYWORDS;COMM;OVERALL_NUM_MPI_PROCS;FINAL_PASS_REGULAR_EXPRESSION;FINAL_FAIL_REGULAR_EXPRESSION"
+     "${TEST_IDX_LIST};OVERALL_WORKING_DIRECTORY;KEYWORDS;COMM;OVERALL_NUM_MPI_PROCS;FINAL_PASS_REGULAR_EXPRESSION;HOST;XHOST;HOSTTYPE;XHOSTTYPE;FINAL_FAIL_REGULAR_EXPRESSION"
      #options
      "FAIL_FAST"
      ${ARGN}
      )
 
   #
-  # E) Determine if we will add the serial or MPI tests based on input COMM
+  # B) Determine to add or not based on [X]HOST[TYPE]
+
+  SET(ADD_THE_TEST TRUE)
+  PACKAGE_ADD_TEST_PROCESS_HOST_HOSTTYPE(ADD_THE_TEST)
+  IF (NOT ADD_THE_TEST)
+    RETURN()
+  ENDIF()
+
+  #
+  # C) Determine if we will add the serial or MPI tests based on input COMM
   # and TPL_ENABLE_MPI
   #
 
@@ -259,7 +270,7 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
   ENDIF()
 
   #
-  # B) Build the test script
+  # D) Build the test script
   #
 
   SET(ADD_THE_TEST TRUE)
@@ -495,7 +506,7 @@ FUNCTION(PACKAGE_ADD_ADVANCED_TEST TEST_NAME_IN)
   ENDIF()
 
   #
-  # C) Set the CTest test to run the new script
+  # F) Set the CTest test to run the new script
   #
 
   IF (ADD_THE_TEST AND NOT PACKAGE_ADD_ADVANCED_TEST_SKIP_SCRIPT)

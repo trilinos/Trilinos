@@ -40,8 +40,6 @@ FUNCTION(UNITEST_PACKAGE_ADD_TEST_BASIC)
     ""
     )
 
-  # ToDo: Test XHOST
-
   MESSAGE("Test in XHOST")
   SET(${PROJECT_NAME}_HOSTNAME MyHost)
   PACKAGE_ADD_TEST( ${EXEN} XHOST MyHost )
@@ -73,8 +71,6 @@ FUNCTION(UNITEST_PACKAGE_ADD_TEST_BASIC)
     PACKAGE_ADD_TEST_ADD_TEST_INPUT
     ""
     )
-
-  # ToDo: Test XHOSTTYPE
 
   MESSAGE("Test in XHOSTTYPE")
   SET(CMAKE_HOST_SYSTEM_NAME MyHostType)
@@ -440,6 +436,46 @@ FUNCTION(UNITEST_PACKAGE_ADD_ADVANCED_TEST_BASIC)
       "NUM_CMNDS 2"
     )
 
+  MESSAGE("***\n*** Add a single basic command matching HOST\n***")
+  SET(${PROJECT_NAME}_HOSTNAME MyHost)
+  PACKAGE_ADD_ADVANCED_TEST_UNITTEST_RESET()
+  PACKAGE_ADD_ADVANCED_TEST( PackageAddAdvancedTest_basic_host
+    TEST_0 CMND ${CMNDN}
+    HOST MyHost
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_CMND_ARRAY_0
+    "\"${CMNDN}\""
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_NUM_CMNDS
+    1
+    )
+  UNITTEST_FILE_REGEX(
+    "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_PackageAddAdvancedTest_basic_host.cmake"
+    REGEX_STRINGS
+      "TEST_0_CMND \"ls\""
+      "NUM_CMNDS 1"
+    )
+
+  MESSAGE("***\n*** Add a single basic command not matching HOST\n***")
+  SET(${PROJECT_NAME}_HOSTNAME MyHost)
+  PACKAGE_ADD_ADVANCED_TEST_UNITTEST_RESET()
+  PACKAGE_ADD_ADVANCED_TEST( PackageAddAdvancedTest_basic_host
+    TEST_0 CMND ${CMNDN}
+    HOST NotMyHost
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_CMND_ARRAY_0
+    ""
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_NUM_CMNDS
+    ""
+    )
+
+  # ToDo: Add 6 more tests testing XHOST, HOSTTYPE, and XHOSTTYPE
+
 ENDFUNCTION()
 
 
@@ -567,4 +603,4 @@ MESSAGE("*** Determine final result of all unit tests")
 MESSAGE("***\n")
 
 # Pass in the number of expected tests that must pass!
-UNITTEST_FINAL_RESULT(65)
+UNITTEST_FINAL_RESULT(71)
