@@ -27,9 +27,9 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   Intrepid_HGRAD_TRI_C1_FEM_Def.hpp
-    \brief  Definition file for FEM basis functions of degree 1 for H(grad) functions on TRI.
-    \author Created by P. Bochev and D. Ridzal.
+/** \file   Intrepid_HGRAD_LINE_Cn_FEM_JACOBIDef.hpp
+    \brief  Definition file for FEM basis functions of degree n for H(grad) orthogonal on LINE.
+    \author Created by P. Bochev and D. Ridzal and R. Kirby
  */
 
 namespace Intrepid {
@@ -110,8 +110,35 @@ void Basis_HGRAD_LINE_Cn_FEM_JACOBI<Scalar, ArrayScalar>::getValues(ArrayScalar 
     case OPERATOR_D8:
     case OPERATOR_D9:
     case OPERATOR_D10: {
-      TEST_FOR_EXCEPTION( 1, std::invalid_argument,
-                          ">>> ERROR (Basis_HGRAD_LINE_Cn_FEM_JACOBI): Higher-order (>1st) derivatives not implemented.");
+      int d_order = getOperatorOrder( operatorType );
+      // fill in derivatives of polynomials of degree 0 through d_order - 1  with 0
+      // e.g. D2 annhialates linears.
+      for (int p_order=0;p_order<d_order;p_order++) {
+	for (int pt=0;pt<numPoints;pt++) {
+	  outputValues(p_order,pt,0) = 0.0;
+	}
+      }
+      // fill in rest of derivatives with the differentiation rule for Jacobi polynomials
+      for (int p_order=d_order;p_order<=this->getDegree();p_order++) {
+	// calculate the scaling factor with a little loop.
+	Scalar scalefactor = 1.0;
+	for (int d=1;d<=d_order;d++) {
+	  scalefactor *= 0.5 * ( p_order + jacobiAlpha_ + jacobiBeta_ + d );
+	}
+
+	// put in the right call to IntrepidPolyLib
+        IntrepidPolylib::jacobfd(numPoints, &tmpPoints[0], 
+				 &jacobiPolyAtPoints[0], 
+				 (Scalar*)0, p_order-d_order, 
+				 jacobiAlpha_ + d_order, 
+				 jacobiBeta_ + d_order);
+        for (int pt = 0; pt < numPoints; pt++) {
+          // outputValues is a rank-3 array with dimensions (basisCardinality_, numPoints)
+          outputValues(p_order, pt,0) = scalefactor *jacobiPolyAtPoints[pt];
+        }
+	
+      }
+
     }
     break;
 

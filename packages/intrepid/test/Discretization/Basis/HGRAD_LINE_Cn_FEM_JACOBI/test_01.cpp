@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
     // exception #1: DIV cannot be applied to scalar functions
     // resize vals to rank-2 container with dimensions (num. points, num. basis functions)
     vals.resize(lineBasis.getCardinality(), lineNodes.dimension(0) );
-    //INTREPID_TEST_COMMAND( lineBasis.getValues(vals, lineNodes, OPERATOR_DIV), throwCounter, nException );
+    INTREPID_TEST_COMMAND( lineBasis.getValues(vals, lineNodes, OPERATOR_DIV), throwCounter, nException );
 
     // Exceptions 1-5: all bf tags/bf Ids below are wrong and should cause getDofOrdinal() and
     // getDofTag() to access invalid array elements thereby causing bounds check exception
@@ -179,10 +179,6 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> badVals5(lineBasis.getCardinality(), lineNodes.dimension(0), 2);
     INTREPID_TEST_COMMAND( lineBasis.getValues(badVals5, lineNodes, OPERATOR_GRAD), throwCounter, nException );
 
-    // exception #16: undefined operator
-    FieldContainer<double> goodVals1(lineBasis.getCardinality(), lineNodes.dimension(0), 1);
-    INTREPID_TEST_COMMAND( lineBasis.getValues(goodVals1, lineNodes, OPERATOR_D2), throwCounter, nException );
-
     // not an exception
     FieldContainer<double> goodVals2(lineBasis.getCardinality(), lineNodes.dimension(0));
     INTREPID_TEST_COMMAND( lineBasis.getValues(goodVals2, lineNodes, OPERATOR_VALUE), throwCounter, nException ); --nException;
@@ -206,7 +202,7 @@ int main(int argc, char *argv[]) {
   *outStream \
     << "\n"
     << "===============================================================================\n"\
-    << "| TEST 3: correctness of basis function values                                |\n"\
+    << "| TEST 3: orthogonality of basis functions                                    |\n"\
     << "===============================================================================\n";
 
   outStream -> precision(20);
@@ -287,6 +283,140 @@ int main(int argc, char *argv[]) {
     *outStream << err.what() << "\n\n";
     errorFlag = -1000;
   };
+
+  *outStream \
+    << "\n"
+    << "===============================================================================\n"\
+    << "| TEST 4: correctness of basis function derivatives                           |\n"\
+    << "===============================================================================\n";
+
+  outStream -> precision(20);
+
+  // function values stored by bf, then pt
+  double basisValues[] = {
+    1.000000000000000, 1.000000000000000, 1.000000000000000,	\
+    1.000000000000000, -1.000000000000000, -0.3333333333333333, \
+    0.3333333333333333, 1.000000000000000, 1.000000000000000,	\
+    -0.3333333333333333, -0.3333333333333333, 1.000000000000000,	\
+    -1.000000000000000, 0.4074074074074074, -0.4074074074074074,	\
+    1.000000000000000};
+
+  double basisD1Values[] = 
+    {0, 0, 0, 0, 1.000000000000000, 1.000000000000000, 1.000000000000000, \
+     1.000000000000000, -3.000000000000000, -1.000000000000000,		\
+     1.000000000000000, 3.000000000000000, 6.000000000000000,		\
+     -0.6666666666666667, -0.6666666666666667, 6.000000000000000};
+
+  double basisD2Values[] = 
+    {0, 0, 0, 0, 0, 0, 0, 0, 3.000000000000000, 3.000000000000000,	\
+     3.000000000000000, 3.000000000000000, -15.00000000000000,		\
+     -5.000000000000000, 5.000000000000000, 15.00000000000000};
+
+  double basisD3Values[] = 
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 15.00000000000000,		\
+     15.00000000000000, 15.00000000000000, 15.00000000000000};
+  
+
+
+  try {
+    Basis_HGRAD_LINE_Cn_FEM_JACOBI<double, FieldContainer<double> > lineBasis3(3, alpha, beta);
+    int numIntervals = 3;
+    FieldContainer<double> lineNodes3(numIntervals+1, 1);
+    FieldContainer<double> vals;
+    for (int i=0; i<numIntervals+1; i++) {
+      lineNodes3(i,0) = -1.0+(2.0*(double)i)/(double)numIntervals;
+    }
+    int numFields = lineBasis3.getCardinality();
+    int numPoints = lineNodes3.dimension(0);
+
+    // test basis values
+    vals.resize(numFields, numPoints);
+    lineBasis3.getValues(vals,lineNodes3,OPERATOR_VALUE);
+    for (int i = 0; i < numFields; i++) {
+      for (int j = 0; j < numPoints; j++) {
+        
+        // Compute offset for (F,P) container
+        int l =  j + i * numPoints;
+	if (std::abs(vals(i,j) - basisValues[l]) > INTREPID_TOL) {
+	  errorFlag++;
+	  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+	  
+	  // Output the multi-index of the value where the error is:
+	  *outStream << " At multi-index { ";
+	  *outStream << i << " ";*outStream << j << " ";
+	  *outStream << "}  computed value: " << vals(i,j)
+		     << " but reference value: " << basisValues[l] << "\n";
+	}
+      }
+    }
+
+    // test basis derivatives
+    vals.resize(numFields, numPoints,1);
+    lineBasis3.getValues(vals,lineNodes3,OPERATOR_D1);
+    for (int i = 0; i < numFields; i++) {
+      for (int j = 0; j < numPoints; j++) {
+        
+        // Compute offset for (F,P) container
+        int l =  j + i * numPoints;
+	if (std::abs(vals(i,j,0) - basisD1Values[l]) > INTREPID_TOL) {
+	  errorFlag++;
+	  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+	  
+	  // Output the multi-index of the value where the error is:
+	  *outStream << " At multi-index { ";
+	  *outStream << i << " ";*outStream << j << " ";
+	  *outStream << "}  computed value: " << vals(i,j,0)
+		     << " but reference value: " << basisD1Values[l] << "\n";
+	}
+      }
+    }
+
+    vals.resize(numFields, numPoints,1);
+    lineBasis3.getValues(vals,lineNodes3,OPERATOR_D2);
+    for (int i = 0; i < numFields; i++) {
+      for (int j = 0; j < numPoints; j++) {
+        
+        // Compute offset for (F,P) container
+        int l =  j + i * numPoints;
+	if (std::abs(vals(i,j,0) - basisD2Values[l]) > INTREPID_TOL) {
+	  errorFlag++;
+	  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+	  
+	  // Output the multi-index of the value where the error is:
+	  *outStream << " At multi-index { ";
+	  *outStream << i << " ";*outStream << j << " ";
+	  *outStream << "}  computed value: " << vals(i,j,0)
+		     << " but reference value: " << basisD2Values[l] << "\n";
+	}
+      }
+    }
+
+    vals.resize(numFields, numPoints,1);
+    lineBasis3.getValues(vals,lineNodes3,OPERATOR_D3);
+    for (int i = 0; i < numFields; i++) {
+      for (int j = 0; j < numPoints; j++) {
+        
+        // Compute offset for (F,P) container
+        int l =  j + i * numPoints;
+	if (std::abs(vals(i,j,0) - basisD3Values[l]) > INTREPID_TOL) {
+	  errorFlag++;
+	  *outStream << std::setw(70) << "^^^^----FAILURE!" << "\n";
+	  
+	  // Output the multi-index of the value where the error is:
+	  *outStream << " At multi-index { ";
+	  *outStream << i << " ";*outStream << j << " ";
+	  *outStream << "}  computed value: " << vals(i,j,0)
+		     << " but reference value: " << basisD3Values[l] << "\n";
+	}
+      }
+    }
+  }
+  // Catch unexpected errors
+  catch (std::logic_error err) {
+    *outStream << err.what() << "\n\n";
+    errorFlag = -1000;
+  };
+
 
   if (errorFlag != 0)
     std::cout << "End Result: TEST FAILED\n";
