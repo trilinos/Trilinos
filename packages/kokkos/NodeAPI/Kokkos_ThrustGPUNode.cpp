@@ -1,5 +1,5 @@
 #include "Kokkos_ThrustGPUNode.hpp"
-#include <stdexcept>
+#include <Teuchos_TestForException.hpp>
 #include <iostream>
 
 namespace Kokkos {
@@ -15,12 +15,12 @@ namespace Kokkos {
     int verbose = pl.get<int>("Verbose",0);
     // set device
     int deviceCount; cudaGetDeviceCount(&deviceCount); 
+    TEST_FOR_EXCEPTION(deviceCount == 0, std::runtime_error,
+        "ThrustGPUNode::ThrustGPUNode(): system has no CUDA devices.");
     if (device < 0 || device >= deviceCount) {
       cerr << "ThrustGPUNode::ThrustGPUNode(): specified device number not valid. Using device 0." << endl;
       device = 0;
     }
-    TEST_FOR_EXCEPTION(deviceCount == 0, std::runtime_error,
-        "ThrustGPUNode::ThrustGPUNode(): system has no CUDA devices.");
     cudaDeviceProp deviceProp; 
     cudaSetDevice(device);
     cudaGetDeviceProperties(&deviceProp, device); 

@@ -58,6 +58,9 @@ APPEND_SET(TBB_SOURCES
 APPEND_SET(TPI_HEADERS
     Kokkos_TPINode.hpp
 )
+APPEND_SET(TPI_SOURCES
+    Kokkos_TPINode.cpp
+)
 
 # general headers, sources
 APPEND_SET(HEADERS
@@ -89,6 +92,7 @@ ENDIF()
 ASSERT_DEFINED(Kokkos_ENABLE_ThreadPool)
 IF (Kokkos_ENABLE_ThreadPool)
   APPEND_SET(HEADERS ${TPI_HEADERS})
+  APPEND_SET(SOURCES ${TPI_SOURCES})
 ENDIF()
 
 #
