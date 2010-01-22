@@ -178,9 +178,6 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> badVals5(lineBasis.getCardinality(), lineNodes.dimension(0), 2);
     INTREPID_TEST_COMMAND( lineBasis.getValues(badVals5, lineNodes, OPERATOR_GRAD), throwCounter, nException );
 
-    // exception #14: undefined operator
-    FieldContainer<double> goodVals1(lineBasis.getCardinality(), lineNodes.dimension(0), 1);
-    INTREPID_TEST_COMMAND( lineBasis.getValues(goodVals1, lineNodes, OPERATOR_D2), throwCounter, nException );
     
     // not an exception
     FieldContainer<double> goodVals2(lineBasis.getCardinality(), lineNodes.dimension(0));
