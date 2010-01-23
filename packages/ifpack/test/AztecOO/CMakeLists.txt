@@ -31,7 +31,7 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(IfpackAztecOOCopyFiles
 PACKAGE_ADD_TEST(
   ifp_aztecoo IfpackAztecOOCopyFiles
   NAME small_gmres_az
-  ARGS "--xml_params_file=test_gmres_small_sym_mm.xml"
+  ARGS "--xml_file=test_gmres_small_sym_mm.xml"
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
@@ -40,7 +40,7 @@ PACKAGE_ADD_TEST(
 PACKAGE_ADD_TEST(
   ifp_aztecoo IfpackAztecOOCopyFiles
   NAME small_ILUT_tfqmr
-  ARGS "--xml_params_file=test_ILUT_tfqmr_small_sym_mm.xml"
+  ARGS "--xml_file=test_ILUT_tfqmr_small_sym_mm.xml"
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
