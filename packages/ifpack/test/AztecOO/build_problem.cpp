@@ -18,15 +18,17 @@
 #include "ParameterHelper.hpp"
 #include "read_matrix.hpp"
 
-Teuchos::RCP<Epetra_LinearProblem> build_problem_mm(Teuchos::ParameterList& test_params, Epetra_CrsMatrix* A)
+Teuchos::RCP<Epetra_LinearProblem> build_problem_mm(Teuchos::ParameterList& test_params, Epetra_CrsMatrix* A, Epetra_MultiVector* b)
 {
   const Epetra_Map& rowmap = A->RowMap();
 
   Epetra_MultiVector* x = new Epetra_MultiVector(rowmap, 1);
-  Epetra_MultiVector* b = new Epetra_MultiVector(rowmap, 1);
-  x->PutScalar(1);
+  if (b == NULL) {
+    b = new Epetra_MultiVector(rowmap, 1);
+    x->PutScalar(1);
 
-  A->Apply(*x, *b);
+    A->Apply(*x, *b);
+  }
   x->PutScalar(0);
 
   Teuchos::RCP<Epetra_LinearProblem> problem = Teuchos::rcp(new Epetra_LinearProblem(A,x,b));
@@ -42,9 +44,12 @@ build_problem(Teuchos::ParameterList& test_params,
   timer.start();
 
   Epetra_CrsMatrix* A;
+  Epetra_MultiVector* b = NULL;
 
   std::string mm_file("not specified");
+  std::string rhs_mm_file("not specified");
   helper::GetParameter(test_params, "mm_file", mm_file);
+  helper::GetParameter(test_params, "rhs_mm_file", rhs_mm_file);
   std::string hb_file("not specified");
   helper::GetParameter(test_params, "hb_file", hb_file);
 
@@ -53,6 +58,12 @@ build_problem(Teuchos::ParameterList& test_params,
       std::cout << "Matrix-Market file: " << mm_file << std::endl;
     }
     A = read_matrix_mm(mm_file, comm);
+    if (rhs_mm_file != "not specified") {
+      if (comm.MyPID() == 0) {
+        std::cout << "Matrix-Market file: " << rhs_mm_file << std::endl;
+      }
+      b = read_vector_mm(rhs_mm_file, comm);
+    }
   }
   else if (hb_file != "not specified") {
     throw std::runtime_error("Harwell-Boeing not yet supported by test driver.");
@@ -62,7 +73,7 @@ build_problem(Teuchos::ParameterList& test_params,
     throw std::runtime_error("No matrix file specified.");
   }
 
-  Teuchos::RCP<Epetra_LinearProblem> problem = build_problem_mm(test_params, A);
+  Teuchos::RCP<Epetra_LinearProblem> problem = build_problem_mm(test_params, A, b);
   timer.stop();
   if (comm.MyPID() == 0) {
     std::cout << "proc 0 time to read matrix & create problem: " << timer.totalElapsedTime()

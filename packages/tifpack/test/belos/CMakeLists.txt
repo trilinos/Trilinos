@@ -43,7 +43,7 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(TifpackBelosCopyFiles
   test_PtJacobi_small_sym_mm.xml small_sym.mtx test_gmres_small_sym_mm.xml
   test_GS_tfqmr_small_sym_mm.xml test_ILUT_tfqmr_small_sym_mm.xml
   test_tfqmr_small_sym_mm.xml test_ILUT_tfqmr_calore1_mm.xml
-  5w.mtx 5w_bel_tif_ILUT.xml
+  5w.mtx 5w.vec 5w_bel_tif_ILUT.xml
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
   EXEDEPS tif_belos
@@ -131,14 +131,14 @@ IF(Tifpack_ENABLE_QD)
   )
 ENDIF()
 
-PACKAGE_ADD_TEST(
-  tif_belos TifpackBelosCopyFiles
-  NAME PtJacobi_belos
-  ARGS "--xml_file=test_PtJacobi_calore1_mm.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 2
-  STANDARD_PASS_OUTPUT
-)
+# PACKAGE_ADD_TEST(
+#   tif_belos TifpackBelosCopyFiles
+#   NAME PtJacobi_belos
+#   ARGS "--xml_file=test_PtJacobi_calore1_mm.xml"
+#   COMM serial mpi
+#   NUM_MPI_PROCS 2
+#   STANDARD_PASS_OUTPUT
+# )
 
 PACKAGE_ADD_TEST(
   tif_belos TifpackBelosCopyFiles

@@ -18,7 +18,7 @@
 #include "build_precond.hpp"
 
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
-Teuchos::RCP<Belos::LinearProblem<Scalar,Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>,Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > > build_problem_mm(Teuchos::ParameterList& test_params, const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A)
+Teuchos::RCP<Belos::LinearProblem<Scalar,Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>,Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > > build_problem_mm(Teuchos::ParameterList& test_params, const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A, Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& b)
 {
   typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>    TOP;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>   TCRS;
@@ -31,11 +31,15 @@ Teuchos::RCP<Belos::LinearProblem<Scalar,Tpetra::MultiVector<Scalar,LocalOrdinal
   Teuchos::RCP<const TMap> rowmap = A->getRowMap();
 
   Teuchos::RCP<TMV> x = Teuchos::rcp(new TMV(rowmap, 1));
-  Teuchos::RCP<TMV> b = Teuchos::rcp(new TMV(rowmap, 1));
-  x->putScalar(1);
 
-  BOPT::Apply(*A, *x, *b);
-  BMVT::MvInit(*x, 0);
+  if (b == Teuchos::null) {
+    b = Teuchos::rcp(new TMV(rowmap, 1));
+    x->putScalar(1);
+
+    BOPT::Apply(*A, *x, *b);
+    BMVT::MvInit(*x, 0);
+  }
+  else x->putScalar(0);
 
   Teuchos::RCP<BLinProb> problem = Teuchos::rcp(new BLinProb(A,x,b));
 
@@ -66,9 +70,12 @@ Teuchos::RCP<
   typedef Belos::LinearProblem<Scalar,TMV,TOP>                        BLinProb;
 
   Teuchos::RCP<const TCRS> A;
+  Teuchos::RCP<TMV> b = Teuchos::null;
 
   std::string mm_file("not specified");
+  std::string rhs_mm_file("not specified");
   Tifpack::GetParameter(test_params, "mm_file", mm_file);
+  Tifpack::GetParameter(test_params, "rhs_mm_file", rhs_mm_file);
   std::string hb_file("not specified");
   Tifpack::GetParameter(test_params, "hb_file", hb_file);
 
@@ -77,6 +84,13 @@ Teuchos::RCP<
       std::cout << "Matrix-Market file: " << mm_file << std::endl;
     }
     A = read_matrix_mm<Scalar,LocalOrdinal,GlobalOrdinal,Node>(mm_file, comm);
+
+    if (rhs_mm_file != "not specified") {
+      if (comm->getRank() == 0) {
+        std::cout << "Right-hand-side Matrix-Market file: " << rhs_mm_file << std::endl;
+      }
+      b = read_vector_mm<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rhs_mm_file, comm);
+    }
   }
   else if (hb_file != "not specified") {
     if (comm->getRank() == 0) {
@@ -89,7 +103,7 @@ Teuchos::RCP<
     throw std::runtime_error("No matrix file specified.");
   }
 
-  Teuchos::RCP<BLinProb> problem = build_problem_mm<Scalar,LocalOrdinal,GlobalOrdinal,Node>(test_params, A);
+  Teuchos::RCP<BLinProb> problem = build_problem_mm<Scalar,LocalOrdinal,GlobalOrdinal,Node>(test_params, A, b);
 
   return problem;
 }

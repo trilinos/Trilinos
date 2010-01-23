@@ -10,5 +10,5 @@
     <Parameter name="AZ_output" type="int" value="1"/>
   </ParameterList>
 
-  <Parameter name="expectNumIters" type="int" value="20"/>
+  <Parameter name="expectNumIters" type="int" value="3"/>
 </ParameterList>

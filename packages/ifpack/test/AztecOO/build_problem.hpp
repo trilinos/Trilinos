@@ -8,7 +8,7 @@
 #include "Epetra_LinearProblem.h"
 
 Teuchos::RCP<Epetra_LinearProblem>
-build_problem_mm(Teuchos::ParameterList& test_params, const Epetra_CrsMatrix* A);
+build_problem_mm(Teuchos::ParameterList& test_params, const Epetra_CrsMatrix* A, Epetra_MultiVector* b);
 
 Teuchos::RCP< Epetra_LinearProblem >
 build_problem(Teuchos::ParameterList& test_params, const Epetra_Comm& comm);
