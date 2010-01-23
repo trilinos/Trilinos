@@ -123,7 +123,7 @@ namespace Intrepid {
 
     // now we check the points for association 
     if (latticePts_(0,0) == -1.0) {
-      tags[0] = 1;
+      tags[0] = 0;
       tags[1] = 0;
       tags[2] = 0;
       tags[3] = 1;
@@ -131,7 +131,7 @@ namespace Intrepid {
       internal_dof = n-1;
     }
     else {
-      tags[0] = 0;
+      tags[0] = 1;
       tags[1] = 0;
       tags[2] = 0;
       tags[3] = n+1;
@@ -139,19 +139,19 @@ namespace Intrepid {
       internal_dof = n+1;
     }
     for (int i=1;i<n;i++) {
-      tags[4*i] = 0;
+      tags[4*i] = 1;
       tags[4*i+1] = 0;
       tags[4*i+2] = -edge_dof + i;
       tags[4*i+3] = internal_dof;
     }
     if (latticePts_(n,0) == 1.0) {
-      tags[4*n] = 1;
+      tags[4*n] = 0;
       tags[4*n+1] = 1;
       tags[4*n+2] = 0;
       tags[4*n+3] = 1;
     }
     else {
-      tags[4*n] = 0;
+      tags[4*n] = 1;
       tags[4*n+1] = 0;
       tags[4*n+2] = n;
       tags[4*n+3] = n;
@@ -236,13 +236,13 @@ namespace Intrepid {
         break;
       default:
         TEST_FOR_EXCEPTION( true , std::invalid_argument,
-                            ">>> ERROR (Basis_HGRAD_LINE_Cn_FEM): Operator type not implemented");
+                            ">>> ERROR (Basis_HGRAD_LINE_Cn_FEM): Operator type not implemented" );
         break;
       }
     }
     catch (std::invalid_argument &exception){
       TEST_FOR_EXCEPTION( true , std::invalid_argument,
-                          ">>> ERROR (Basis_HGRAD_LINE_Cn_FEM): Operator type not implemented");    
+                          ">>> ERROR (Basis_HGRAD_LINE_Cn_FEM): Operator failed");    
     }
 
   }

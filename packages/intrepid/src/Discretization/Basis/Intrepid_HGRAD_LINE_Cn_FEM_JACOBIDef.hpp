@@ -74,8 +74,8 @@ void Basis_HGRAD_LINE_Cn_FEM_JACOBI<Scalar, ArrayScalar>::getValues(ArrayScalar 
     tmpPoints[i] = inputPoints(i, 0);
   }
 
-  switch (operatorType) {
-    
+  try {
+    switch (operatorType) {
     case OPERATOR_VALUE: {
       for (int ord = 0; ord < this -> basisCardinality_; ord++) {
         IntrepidPolylib::jacobfd(numPoints, &tmpPoints[0], &jacobiPolyAtPoints[0], (Scalar*)0, ord, jacobiAlpha_, jacobiBeta_);
@@ -86,7 +86,7 @@ void Basis_HGRAD_LINE_Cn_FEM_JACOBI<Scalar, ArrayScalar>::getValues(ArrayScalar 
       }
     }
     break;
-
+      
     case OPERATOR_GRAD:
     case OPERATOR_CURL:
     case OPERATOR_DIV:
@@ -113,7 +113,14 @@ void Basis_HGRAD_LINE_Cn_FEM_JACOBI<Scalar, ArrayScalar>::getValues(ArrayScalar 
       int d_order = getOperatorOrder( operatorType );
       // fill in derivatives of polynomials of degree 0 through d_order - 1  with 0
       // e.g. D2 annhialates linears.
-      for (int p_order=0;p_order<d_order;p_order++) {
+      int stop_order;
+      if (d_order > this->getDegree()) {
+	stop_order = this->getDegree();
+      }
+      else {
+	stop_order = d_order;
+      }
+      for (int p_order=0;p_order<stop_order;p_order++) {
 	for (int pt=0;pt<numPoints;pt++) {
 	  outputValues(p_order,pt,0) = 0.0;
 	}
@@ -145,6 +152,12 @@ void Basis_HGRAD_LINE_Cn_FEM_JACOBI<Scalar, ArrayScalar>::getValues(ArrayScalar 
     default:
       TEST_FOR_EXCEPTION( !( Intrepid::isValidOperator(operatorType) ), std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_LINE_Cn_FEM_JACOBI): Invalid operator type.");
+      break;
+    }
+  }
+  catch (std::invalid_argument &exception){
+    TEST_FOR_EXCEPTION( true , std::invalid_argument,
+			">>> ERROR (Basis_HGRAD_LINE_Cn_FEM_JACOBI): Operator failed");    
   }
 }
 
