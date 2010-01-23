@@ -480,7 +480,7 @@ int fei::MatrixGraph_Impl2::initConnectivity(int blockID,
                                   connectedIdentifiers, rlist) );
 
   for(int i=0; i<numIDs; ++i) {
-    rlist[i]->isInLocalSubdomain_ = true;
+    if(rlist[i] != NULL) rlist[i]->isInLocalSubdomain_ = true;
   }
 
   return(0);
@@ -641,13 +641,13 @@ int fei::MatrixGraph_Impl2::getConnectivityRecords(fei::Pattern* pattern,
     case fei::Pattern::SIMPLE:
       {
         CHK_ERR( vecSpace->addDOFs(fieldIDs[0], 1, idType,
-                                                numIDs, connectedIdentifiers,
-                                                recordList) );
+                                   numIDs, connectedIdentifiers,
+                                   recordList) );
       }
       break;
     case fei::Pattern::NO_FIELD:
       CHK_ERR( vecSpace->addDOFs(idType, numIDs,
-                                             connectedIdentifiers, recordList));
+                                 connectedIdentifiers, recordList));
       break;
     case fei::Pattern::GENERAL:
       //Include a stub for this case to avoid compiler warning...
@@ -2149,6 +2149,7 @@ int fei::MatrixGraph_Impl2::getConnectivityIndices_multiField(fei::Record<int>**
 
   for(int i=0; i<numRecords; ++i) {
     fei::Record<int>* record = records[i];
+    if (record==NULL) continue;
 
     if (blockEntryGraph_) {
       indices[numIndices++] = record->getNumber();

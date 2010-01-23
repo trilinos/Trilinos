@@ -18,8 +18,10 @@ fei_UBase_CommUtils.cpp
 fei_UBase_DirBC.cpp
 fei_UBase_DofMapper.cpp
 fei_UBase_LinearDecomposition.cpp
+fei_UBase_MatrixGraph.cpp
 fei_UBase_MatrixTraits.cpp
 fei_UBase_Params.cpp
+fei_UBase_Pattern.cpp
 fei_UBase_Reducer.cpp
 fei_UBase_ReverseMapper.cpp
 fei_UBase_exchangeCommMapData.cpp
