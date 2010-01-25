@@ -457,10 +457,8 @@ Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, int* perm_y)
 		    m->nY, NULL);
   }
 
-  memcpy (m->yGNO, perm_y, m->nY*sizeof(int));
-
   /* Get Informations about Y */
-  Zoltan_DD_Update (m->ddY, (ZOLTAN_ID_PTR)m->yGNO, yGID, (ZOLTAN_ID_PTR)ywgt, NULL,
+  Zoltan_DD_Update (m->ddY, (ZOLTAN_ID_PTR)perm_y, yGID, (ZOLTAN_ID_PTR)ywgt, NULL,
 		    m->nY);
   ZOLTAN_FREE (&yGID);
   ZOLTAN_FREE (&ywgt);
@@ -471,6 +469,7 @@ Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, int* perm_y)
   Zoltan_DD_Set_Neighbor_Hash_Fn1(dd, m->globalY/zz->Num_Proc);
 
   Zoltan_DD_Update (dd, (ZOLTAN_ID_PTR)m->yGNO, (ZOLTAN_ID_PTR)perm_y, NULL, NULL, m->nY);
+  memcpy (m->yGNO, perm_y, m->nY*sizeof(int));
 
   pinGNO = (int*)ZOLTAN_MALLOC(m->nPins*sizeof(int));
   if (m->nPins && pinGNO == NULL)
