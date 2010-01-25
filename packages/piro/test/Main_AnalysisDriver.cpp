@@ -23,6 +23,7 @@
 int main(int argc, char *argv[]) {
 
   int status=0; // 0 = pass, failures are incremented
+  int overall_status=0; // 0 = pass, failures are incremented over multiple tests
 
   // Initialize MPI and timer
   int Proc=0;
@@ -35,14 +36,39 @@ int main(int argc, char *argv[]) {
 
   using Teuchos::RCP;
   using Teuchos::rcp;
+
+  char* inputFile;
+  bool doAll = (argc==1);
+  if (argc>1) doAll = !strcmp(argv[1],"-v");
+
+
+ for (int iTest=0; iTest<3; iTest++) {
   
+ if (doAll) {
+   switch (iTest) {
+    case 0: inputFile="input_Analysis_Dakota.xml"; break;
+    case 1: inputFile="input_Analysis_OptiPack.xml"; break;
+    case 2: inputFile="input_Analysis_MOOCHO.xml"; break;
+    default : cout << "iTest logic error " << endl; exit(-1);
+   }
+ }
+ else {
+   inputFile=argv[1];
+   iTest = 999;
+ }
+
+  if (Proc==0) 
+   cout << "===================================================\n"
+        << "======  Running input file "<< iTest <<": "<< inputFile <<"\n"
+        << "===================================================\n"
+        << endl;
+
   try {
 
     // Create (1) a Model Evaluator and (2) a ParameterList
     RCP<EpetraExt::ModelEvaluator> Model = rcp(new MockModelEval_A(appComm));
 
     // BEGIN Builder
-    char* inputFile="input_2.xml";
     Teuchos::ParameterList appParams("Application Parameters");
     Teuchos::updateParametersFromXmlFile(inputFile, &appParams);
 
@@ -97,6 +123,9 @@ int main(int argc, char *argv[]) {
     status = 40;
   }
 
+  overall_status += status;
+ }  // End loop over tests
+
 #ifdef HAVE_MPI
   total_time +=  MPI_Wtime();
   MPI_Barrier(MPI_COMM_WORLD);
@@ -106,7 +135,7 @@ int main(int argc, char *argv[]) {
 #endif
 
   if (Proc==0) {
-    if (status==0) 
+    if (overall_status==0) 
       cout << "\nTEST PASSED\n" << endl;
     else 
       cout << "\nTEST Failed\n" << endl;

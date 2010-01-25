@@ -168,8 +168,6 @@ void MockModelEval_A::evalModel( const InArgs& inArgs,
 
   // Parse OutArgs
 
-cout << "XXX alpha beta " << inArgs.get_alpha() << "  " << inArgs.get_beta() << endl;
-
   RCP<Epetra_Vector> f_out = outArgs.get_f(); 
   RCP<Epetra_Vector> g_out = outArgs.get_g(0); 
   Teuchos::RCP<Epetra_Operator> W_out = outArgs.get_W();

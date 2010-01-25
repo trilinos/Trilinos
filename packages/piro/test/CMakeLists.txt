@@ -22,9 +22,9 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 
 IF (Piro_ENABLE_NOX) 
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    NOXSolve
+    Solver
     SOURCES 
-    Main_NOXSolve.cpp
+    Main_Solver.cpp
     MockModelEval_A.cpp
     MockModelEval_A.hpp
     COMM serial mpi
@@ -46,10 +46,14 @@ IF (Piro_ENABLE_NOX)
   )
 
   PACKAGE_COPY_FILES_TO_BINARY_DIR(copyTestInputFiles
-    DEST_FILES   input_1.xml input_2.xml dak.in
+    DEST_FILES   input_Solve_NOX_1.xml
+                 input_Solve_LOCA_1.xml
+                 input_Solve_Rythmos_1.xml
+          input_Analysis_Dakota.xml dak.in
+          input_Analysis_MOOCHO.xml input_Analysis_OptiPack.xml 
     SOURCE_DIR   ${PACKAGE_SOURCE_DIR}/test
     SOURCE_PREFIX "_"
-    EXEDEPS NOXSolve AnalysisDriver
+    EXEDEPS Solver AnalysisDriver
   )
 
 ENDIF()
