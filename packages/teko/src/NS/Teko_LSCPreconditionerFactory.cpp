@@ -11,6 +11,7 @@
 #include "Teko_BlockUpperTriInverseOp.hpp"
 #include "Teko_StaticLSCStrategy.hpp"
 #include "Teko_InvLSCStrategy.hpp"
+#include "Teko_PresLaplaceLSCStrategy.hpp"
 
 #include "EpetraExt_RowMatrixOut.h"
 
@@ -203,12 +204,13 @@ RCP<LSCStrategy> LSCPreconditionerFactory::buildStrategy(const std::string & nam
                                                              const Teuchos::ParameterList & settings,
                                                              const RCP<const InverseLibrary> & invLib)
 {
-   Teko_DEBUG_MSG("Begin LSCPreconditionerFactory::buildStrategy",10);
+   Teko_DEBUG_SCOPE("LSCPreconditionerFactory::buildStrategy",10);
 
    // initialize the defaults if necessary
    if(strategyBuilder_.cloneCount()==0) initializeStrategyBuilder();
 
    // request the preconditioner factory from the CloneFactory
+   Teko_DEBUG_MSG("Building LSC strategy \"" << name << "\"",1);
    RCP<LSCStrategy> strategy = strategyBuilder_.build(name);
 
    if(strategy==Teuchos::null) return Teuchos::null;
@@ -216,8 +218,6 @@ RCP<LSCStrategy> LSCPreconditionerFactory::buildStrategy(const std::string & nam
    // now that inverse library has been set,
    // pass in the parameter list
    strategy->initializeFromParameterList(settings,*invLib);
-
-   Teko_DEBUG_MSG("End LSCPreconditionerFactory::buildStrategy",10);
 
    return strategy;
 }
@@ -252,6 +252,10 @@ void LSCPreconditionerFactory::initializeStrategyBuilder()
    // add various strategies to the factory
    clone = rcp(new AutoClone<InvLSCStrategy>());
    strategyBuilder_.addClone("Basic Inverse",clone);
+
+   // add various strategies to the factory
+   clone = rcp(new AutoClone<PresLaplaceLSCStrategy>());
+   strategyBuilder_.addClone("Pressure Laplace",clone);
 }
 
 } // end namespace NS
