@@ -23,8 +23,8 @@ Scalar power_method(const Teuchos::RCP<const Tpetra::Operator<Scalar,Ordinal,Ord
   const bool NO_INITIALIZE_TO_ZERO = false;
   // create three vectors; do not bother initializing q to zero, as we will fill it with random below
   Tpetra::Vector<Scalar,Ordinal,Ordinal,Node> z(A->getRangeMap(), NO_INITIALIZE_TO_ZERO),
-                                              q(A->getRangeMap()),
-                                              r(A->getRangeMap());
+                                              q(A->getRangeMap(), NO_INITIALIZE_TO_ZERO),
+                                              r(A->getRangeMap(), NO_INITIALIZE_TO_ZERO);
   // Fill z with random numbers
   z.randomize();
   // Variables needed for iteration

@@ -2575,7 +2575,7 @@ namespace Tpetra
         lclY = &exportMV_->getLocalMVNonConst();
       }
       // Do actual computation
-      lclMatVec_.template multiply<Scalar,Scalar>(Teuchos::NO_TRANS, Teuchos::ScalarTraits<Scalar>::one(), *lclX, Teuchos::ScalarTraits<Scalar>::zero(), *lclY);
+      lclMatVec_.template multiply<Scalar,Scalar>(Teuchos::NO_TRANS, *lclX, *lclY);
 #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
       if (myImageID == 0) *out << "Matrix-MV product..." << std::endl;
       if (exportMV_ != null) {
@@ -2625,7 +2625,7 @@ namespace Tpetra
         lclY = &importMV_->getLocalMVNonConst();
       }
       // Do actual computation
-      lclMatVec_.template multiply<Scalar,Scalar>(Teuchos::CONJ_TRANS, Teuchos::ScalarTraits<Scalar>::one(), *lclX, Teuchos::ScalarTraits<Scalar>::zero(), *lclY);
+      lclMatVec_.template multiply<Scalar,Scalar>(Teuchos::CONJ_TRANS, *lclX, *lclY);
 #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
       if (myImageID == 0) *out << "Matrix-MV product..." << std::endl;
       if (importMV_ != null) {
