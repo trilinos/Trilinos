@@ -1,42 +1,42 @@
-#include "PB_BlockPreconditionerFactory.hpp"
-#include "PB_Utilities.hpp"
-#include "PB_InverseFactory.hpp"
-#include "PB_BlockLowerTriInverseOp.hpp"
-#include "PB_BlockUpperTriInverseOp.hpp"
+#include "Teko_BlockPreconditionerFactory.hpp"
+#include "Teko_Utilities.hpp"
+#include "Teko_InverseFactory.hpp"
+#include "Teko_BlockLowerTriInverseOp.hpp"
+#include "Teko_BlockUpperTriInverseOp.hpp"
 
 using Teuchos::RCP;
 
 // Declaration of the example preconditioner state
 class ExamplePreconditionerState /*@ \label{lne2:begin-decl-state} @*/
-   : public PB::BlockPreconditionerState {
+   : public Teko::BlockPreconditionerState {
 public:
    // Default constructor
    ExamplePreconditionerState() 
-      : PB::BlockPreconditionerState() {}
+      : Teko::BlockPreconditionerState() {}
 
    // class members
-   PB::LinearOp P_; // store P = A_00+\alpha A_01
+   Teko::LinearOp P_; // store P = A_00+\alpha A_01
    
 }; /*@ \label{lne2:end-decl-state} @*/
 
 // Declaration of the preconditioner factory
 class ExamplePreconditionerFactory /*@ \label{lne2:begin-decl} @*/
-   : public PB::BlockPreconditionerFactory {
+   : public Teko::BlockPreconditionerFactory {
 public:
    // Constructor
-   ExamplePreconditionerFactory(const RCP<const PB::InverseFactory> & inverse,
+   ExamplePreconditionerFactory(const RCP<const Teko::InverseFactory> & inverse,
                                 double alpha);
 
-   // Function inherited from PB::BlockPreconditionerFactory
-   PB::LinearOp buildPreconditionerOperator(PB::BlockedLinearOp & blo,
-                                            PB::BlockPreconditionerState & state) const;
+   // Function inherited from Teko::BlockPreconditionerFactory
+   Teko::LinearOp buildPreconditionerOperator(Teko::BlockedLinearOp & blo,
+                                            Teko::BlockPreconditionerState & state) const;
 
    // Function that returns the correct type of state object
-   virtual RCP<PB::BlockPreconditionerState> buildPreconditionerState() const;
+   virtual RCP<Teko::BlockPreconditionerState> buildPreconditionerState() const;
     
 protected:
    // class members
-   RCP<const PB::InverseFactory> inverse_;
+   RCP<const Teko::InverseFactory> inverse_;
    double alpha_;
    std::string invP_str_;
    
@@ -44,7 +44,7 @@ protected:
 
 // Constructor definition
 ExamplePreconditionerFactory /*@ \label{lne2:begin-constructor} @*/
-   ::ExamplePreconditionerFactory(const RCP<const PB::InverseFactory> & inverse,
+   ::ExamplePreconditionerFactory(const RCP<const Teko::InverseFactory> & inverse,
                                  double alpha)
    : inverse_(inverse), alpha_(alpha)
 { 
@@ -53,12 +53,12 @@ ExamplePreconditionerFactory /*@ \label{lne2:begin-constructor} @*/
 } /*@ \label{lne2:end-constructor} @*/
 
 // Use the factory to build the preconditioner (this is where the work goes)
-PB::LinearOp ExamplePreconditionerFactory /*@ \label{lne2:begin-bpo} @*/
-   ::buildPreconditionerOperator(PB::BlockedLinearOp & blockOp,
-                                 PB::BlockPreconditionerState & state) const
+Teko::LinearOp ExamplePreconditionerFactory /*@ \label{lne2:begin-bpo} @*/
+   ::buildPreconditionerOperator(Teko::BlockedLinearOp & blockOp,
+                                 Teko::BlockPreconditionerState & state) const
 {
-   int rows = PB::blockRowCount(blockOp); /*@ \label{lne2:begin-extraction} @*/
-   int cols = PB::blockColCount(blockOp);
+   int rows = Teko::blockRowCount(blockOp); /*@ \label{lne2:begin-extraction} @*/
+   int cols = Teko::blockColCount(blockOp);
  
    TEUCHOS_ASSERT(rows==2); // sanity checks
    TEUCHOS_ASSERT(cols==2);
@@ -68,34 +68,34 @@ PB::LinearOp ExamplePreconditionerFactory /*@ \label{lne2:begin-bpo} @*/
          = dynamic_cast<ExamplePreconditionerState &>(state);
 
    // extract subblocks
-   const PB::LinearOp A_00 = PB::getBlock(0,0,blockOp);
-   const PB::LinearOp A_01 = PB::getBlock(0,1,blockOp);
-   const PB::LinearOp A_10 = PB::getBlock(1,0,blockOp);
-   const PB::LinearOp A_11 = PB::getBlock(1,1,blockOp); /*@ \label{lne2:end-extraction} @*/
+   const Teko::LinearOp A_00 = Teko::getBlock(0,0,blockOp);
+   const Teko::LinearOp A_01 = Teko::getBlock(0,1,blockOp);
+   const Teko::LinearOp A_10 = Teko::getBlock(1,0,blockOp);
+   const Teko::LinearOp A_11 = Teko::getBlock(1,1,blockOp); /*@ \label{lne2:end-extraction} @*/
 
    // get inverse of diag(A11)
-   const PB::LinearOp invH = PB::getInvDiagonalOp(A_11); /*@ \label{lne2:invH} @*/
+   const Teko::LinearOp invH = Teko::getInvDiagonalOp(A_11); /*@ \label{lne2:invH} @*/
 
    // build or rebuild inverse P /*@ \label{lne2:invP} @*/
-   PB::InverseLinearOp invP = exampleState.getInverse(invP_str_);
+   Teko::InverseLinearOp invP = exampleState.getInverse(invP_str_);
    if(invP==Teuchos::null) {
       // build 0,0 block in the preconditioner
-      exampleState.P_ = PB::explicitAdd(A_00, PB::scale(alpha_,A_01)); /*@ \label{lne2:P} @*/
+      exampleState.P_ = Teko::explicitAdd(A_00, Teko::scale(alpha_,A_01)); /*@ \label{lne2:P} @*/
 
-      invP = PB::buildInverse(*inverse_,exampleState.P_); // build inverse P
+      invP = Teko::buildInverse(*inverse_,exampleState.P_); // build inverse P
       exampleState.addInverse(invP_str_,invP);  // add inverse operator to state
    } 
 
    // build lower triangular inverse matrix
-   PB::BlockedLinearOp L = PB::zeroBlockedOp(blockOp); /*@ \label{lne2:begin-trisolve} @*/
-   PB::setBlock(1,0,L,A_10);
-   PB::endBlockFill(L);
+   Teko::BlockedLinearOp L = Teko::zeroBlockedOp(blockOp); /*@ \label{lne2:begin-trisolve} @*/
+   Teko::setBlock(1,0,L,A_10);
+   Teko::endBlockFill(L);
 
-   std::vector<PB::LinearOp> invDiag(2); // vector storing inverses /*@ \label{lne2:begin-invdiags} @*/
+   std::vector<Teko::LinearOp> invDiag(2); // vector storing inverses /*@ \label{lne2:begin-invdiags} @*/
    invDiag[0] = invP;
    invDiag[1] = invH; /*@ \label{lne2:end-invdiags} @*/
 
-   PB::LinearOp invTildeA = PB::createBlockLowerTriInverseOp(L,invDiag); /*@ \label{lne2:invLower} @*/
+   Teko::LinearOp invTildeA = Teko::createBlockLowerTriInverseOp(L,invDiag); /*@ \label{lne2:invLower} @*/
 
    // tell the state object it has been initialized for this operator
    exampleState.setInitialized(true);
@@ -105,7 +105,7 @@ PB::LinearOp ExamplePreconditionerFactory /*@ \label{lne2:begin-bpo} @*/
 } /*@ \label{lne2:end-bpo} @*/
 
 // Function that returns the correct type of state object
-RCP<PB::BlockPreconditionerState> ExamplePreconditionerFactory /*@ \label{lne2:begin-bps} @*/
+RCP<Teko::BlockPreconditionerState> ExamplePreconditionerFactory /*@ \label{lne2:begin-bps} @*/
    ::buildPreconditionerState() const
 {
    // build the state object
