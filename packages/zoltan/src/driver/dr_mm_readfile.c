@@ -80,7 +80,7 @@ int error = 0;  /* flag to indicate status */
     *nVtx  = *nEdge  = *nPins = *vwgt_dim = *ewgt_dim = 0;
     *index = *vertex = *ch_start = *ch_adj = NULL;
     *vwgt = *ewgt = NULL;
-    *base = 1;   /* MatrixMarket is 1-based. */
+    *base = 0;   /* MatrixMarket is 1-based but I substract this 1 already */
 
 /*
 *  This code was adapted from NIST's MatrixMarket examples, see
@@ -212,6 +212,7 @@ int error = 0;  /* flag to indicate status */
               vtx = edge;
             }
             edge--;           /* so we can use it as array index */
+	    vtx--;            /* Want the same numbering, start from 0 */
             *inptr++ = edge;
             *inptr++ = vtx;
 
@@ -306,6 +307,7 @@ int error = 0;  /* flag to indicate status */
           myIJV[k].j = tmp;
         }
         --(myIJV[k].i);
+        --(myIJV[k].j); /* Want to start at 0 */
       }
       nz = gnz;
     }
@@ -328,7 +330,7 @@ int error = 0;  /* flag to indicate status */
       mm_write_banner(stdout, matcode);
       mm_write_mtx_crd_size(stdout, M, N, nz);
       for (k=0; k<nz; k++)
-          printf("%d %d %f\n", myIJV[k].i, myIJV[k].j, myIJV[k].v);
+          printf("%d %d %f\n", myIJV[k].i+1, myIJV[k].j+1, myIJV[k].v);
     }
 
     /************************/
@@ -418,14 +420,14 @@ int error = 0;  /* flag to indicate status */
       /* Count number of neighbors for each vertex */
       if (myIJV)
         for (k = 0,iptr=myIJV; k < nz; ++k, ++iptr) {
-          if (iptr->i+1 != iptr->j) { /* Don't include self-edges */
+          if (iptr->i != iptr->j) { /* Don't include self-edges */
             cnt[iptr->i]++;
             if (cnt[iptr->i] == 1) num_lone_vertices--;
           }
         }
       else /* chunky style, use myVals */
         for (k = 0,inptr=myVals; k < nz; ++k, inptr+=2) {
-          if (inptr[0]+1 != inptr[1]) { /* Don't include self-edges */
+          if (inptr[0] != inptr[1]) { /* Don't include self-edges */
             cnt[inptr[0]]++;
             if (cnt[inptr[0]] == 1) num_lone_vertices--;
           }
@@ -452,7 +454,7 @@ int error = 0;  /* flag to indicate status */
       }
       if (myIJV)
         for (k = 0,iptr=myIJV; k < nz; ++k, ++iptr) {
-          if (iptr->i+1 == iptr->j) { /* Diagonal entry */
+          if (iptr->i == iptr->j) { /* Diagonal entry */
             if (*vwgt_dim)
               vwgts[iptr->i] = iptr->v;
           }
@@ -465,7 +467,7 @@ int error = 0;  /* flag to indicate status */
         }
       else /* chunky style, use myVals */
         for (k = 0,inptr=myVals; k < nz; ++k, inptr+=2) {
-          if (inptr[0]+1 == inptr[1]) { /* Diagonal entry */
+          if (inptr[0] == inptr[1]) { /* Diagonal entry */
             /* ignore self edges */
           }
           else { /* Off-diagonal */
