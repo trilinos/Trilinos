@@ -399,7 +399,6 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     {
       int offset;
       int *egno = NULL;
-      *((int*)NULL) = 0;
       MPI_Scan(&zhg->nHedges, &offset, 1, MPI_INT, MPI_SUM, zz->Communicator);
       offset -= zhg->nHedges;
 #ifdef CEDRIC_PRINT

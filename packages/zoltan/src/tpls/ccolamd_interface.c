@@ -66,6 +66,7 @@ int Zoltan_CColAMD(
   ZZ *zz,               /* Zoltan structure */
   struct Zoltan_DD_Struct *dd_constraint,
   int *num_obj,
+  ZOLTAN_ID_PTR *gids,
   int **rank
 )
 {
@@ -85,6 +86,10 @@ int Zoltan_CColAMD(
   ZOLTAN_TRACE_ENTER(zz, yo);
   memset (&opt, 0, sizeof(Zoltan_matrix_options));
   opt.speed = MATRIX_NO_REDIST;
+
+  mtx.comm = (PHGComm*)ZOLTAN_MALLOC (sizeof(PHGComm));
+  if (mtx.comm == NULL) MEMORY_ERROR;
+  Zoltan_PHGComm_Init (mtx.comm);
 
   /* Construct a CSC matrix */
   /* TODO: take this in parameter instead */
@@ -106,9 +111,12 @@ int Zoltan_CColAMD(
 
   cmember = (int*) ZOLTAN_MALLOC(n_col * sizeof(int));
   if (n_col > 0 && cmember == NULL) MEMORY_ERROR;
+  (*gids) = ZOLTAN_MALLOC_GID_ARRAY(zz , n_col);
+  if (n_col > 0 && (*gids) == NULL) MEMORY_ERROR;
   ierr = Zoltan_DD_Find (dd_constraint, mtx.mtx.yGID, (ZOLTAN_ID_PTR)cmember, NULL, NULL,
 			 mtx.mtx.nY, NULL);
   CHECK_IERR;
+  memcpy ((*gids), mtx.mtx.yGID, n_col*sizeof(int)*zz->Num_GID);
 
   Alen = ccolamd_recommended (n_nnz, n_row, n_col);
   pins = (int*) ZOLTAN_MALLOC(Alen * sizeof(int));

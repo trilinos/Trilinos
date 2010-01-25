@@ -27,8 +27,18 @@ extern "C" {
 
 #define SIZE_PART 1000
 
+#ifndef SIMPLE_HUND
+int Zoltan_CColAMD(
+  ZZ *zz,               /* Zoltan structure */
+  struct Zoltan_DD_Struct *dd_constraint,
+  int *num_obj,
+  ZOLTAN_ID_PTR *gid,
+  int **rank
+  );
+#else /* SIMPLE_HUND */
 static int
 HUND_Order_simple(ZZ* zz, int num_local_gid, int* part, int numParts, int* sizeParts, int* dperm); /* result is stored into a DD */
+#endif
 
 int Zoltan_HUND(
   ZZ *zz,               /* Zoltan structure */
@@ -108,6 +118,16 @@ int Zoltan_HUND(
 
   /* Second compute ordering from partitioning */
   data = (Zoltan_PHG_LB_Data*)zz->LB.Data_Structure;
+  if (zz->Proc == 0) {
+    int i;
+    fprintf (stderr, "Block sizes (%d - %d)\n", data->numParts, numPart);
+    for (i = 1 ; (i <= data->numParts) && (i < 10) ; ++i) {
+      fprintf (stderr, "%d ", data->sizeParts[data->numParts-i]);
+    }
+    fprintf (stderr, "\n");
+  }
+
+#ifdef SIMPLE_HUND
   ierr = Zoltan_DD_GetLocalKeys(data->ddHedge, &local_gid, &num_local_gid);
   CHECK_IERR;
 
@@ -119,22 +139,17 @@ int Zoltan_HUND(
   dperm = (int*) ZOLTAN_MALLOC(num_local_gid*sizeof(int));
   if (num_local_gid && dperm == NULL) MEMORY_ERROR;
 
-  if (zz->Proc == 0) {
-    int i;
-    fprintf (stderr, "Block sizes (%d - %d)\n", data->numParts, numPart);
-    for (i = 1 ; (i <= data->numParts) && (i < 10) ; ++i) {
-      fprintf (stderr, "%d ", data->sizeParts[data->numParts-i]);
-    }
-    fprintf (stderr, "\n");
-  }
-
   ierr = HUND_Order_simple(zz,  num_local_gid, part, data->numParts, data->sizeParts, dperm);
+  CHECK_IERR;
+#else /* SIMPLE_HUND */
+  ierr = Zoltan_CColAMD(zz, data->ddHedge, &num_local_gid, &local_gid, &dperm);
+  CHECK_IERR;
+#endif /* SIMPLE_HUND */
 
   Zoltan_DD_Update (data->ddHedge, local_gid, (ZOLTAN_ID_PTR)dperm, NULL,  part, num_local_gid);
   ZOLTAN_FREE(&dperm);
   ZOLTAN_FREE(&part);
   ZOLTAN_FREE(&local_gid);
-
   Zoltan_DD_Find (data->ddHedge, gids, (ZOLTAN_ID_PTR)rank, NULL, NULL, num_obj, NULL);
 
   Zoltan_DD_Destroy(&data->ddHedge);
@@ -150,6 +165,7 @@ int Zoltan_HUND(
   return (ierr);
 }
 
+#ifdef SIMPLE_HUND
 static int
 HUND_Order_simple(ZZ* zz, int num_local_gid, int* part, int numParts, int* sizeParts, int* dperm) /* result is stored into a DD */
 {
@@ -199,7 +215,7 @@ HUND_Order_simple(ZZ* zz, int num_local_gid, int* part, int numParts, int* sizeP
   ZOLTAN_TRACE_EXIT(zz, yo);
   return (ierr);
 }
-
+#endif
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
