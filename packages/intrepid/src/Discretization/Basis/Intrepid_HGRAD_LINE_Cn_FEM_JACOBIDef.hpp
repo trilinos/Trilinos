@@ -88,8 +88,6 @@ void Basis_HGRAD_LINE_Cn_FEM_JACOBI<Scalar, ArrayScalar>::getValues(ArrayScalar 
     break;
       
     case OPERATOR_GRAD:
-    case OPERATOR_CURL:
-    case OPERATOR_DIV:
     case OPERATOR_D1: {
       for (int ord = 0; ord < this -> basisCardinality_; ord++) {
         IntrepidPolylib::jacobd(numPoints, &tmpPoints[0], &jacobiPolyAtPoints[0], ord, jacobiAlpha_, jacobiBeta_);
@@ -145,10 +143,14 @@ void Basis_HGRAD_LINE_Cn_FEM_JACOBI<Scalar, ArrayScalar>::getValues(ArrayScalar 
         }
 	
       }
-
+      
     }
     break;
-
+    case OPERATOR_DIV:
+    case OPERATOR_CURL:
+	TEST_FOR_EXCEPTION( !( Intrepid::isValidOperator(operatorType) ), std::invalid_argument,
+			    ">>> ERROR (Basis_HGRAD_LINE_Cn_FEM_JACOBI): Invalid operator type.");
+      break;
     default:
       TEST_FOR_EXCEPTION( !( Intrepid::isValidOperator(operatorType) ), std::invalid_argument,
                           ">>> ERROR (Basis_HGRAD_LINE_Cn_FEM_JACOBI): Invalid operator type.");
