@@ -148,7 +148,7 @@ namespace Kokkos {
     const Scalar *x;
     typedef  Magnitude ReductionType;
     inline static Magnitude identity() {return Teuchos::ScalarTraits<Magnitude>::zero();}
-    Magnitude reduce(Magnitude x, Magnitude y) {return x+y;}
+    inline static Magnitude reduce(Magnitude x, Magnitude y) {return x+y;}
     Magnitude generate(int i) {
       return SCT::magnitude((x[i]));
     }
@@ -161,7 +161,7 @@ namespace Kokkos {
     const Scalar *x, *w;
     typedef  Magnitude ReductionType;
     inline static Magnitude identity() {return Teuchos::ScalarTraits<Magnitude>::zero();}
-    Magnitude reduce(Magnitude x, Magnitude y) {return x+y;}
+    inline static Magnitude reduce(Magnitude x, Magnitude y) {return x+y;}
     Magnitude generate(int i) {
       Scalar tmp = x[i] / w[i];
       return SCT::real( SCT::conjugate(tmp)*tmp );
@@ -173,7 +173,7 @@ namespace Kokkos {
     const Scalar *x;
     typedef  Scalar ReductionType;
     inline static Scalar identity() {return Teuchos::ScalarTraits<Scalar>::zero();}
-    Scalar reduce(Scalar x, Scalar y) {return x+y;}
+    inline static Scalar reduce(Scalar x, Scalar y) {return x+y;}
     Scalar generate(int i) { return x[i]; }
   };
 
@@ -184,7 +184,7 @@ namespace Kokkos {
     const Scalar *x;
     typedef  Magnitude ReductionType;
     inline static Magnitude identity() {return Teuchos::ScalarTraits<Magnitude>::zero();}
-    Magnitude reduce(Magnitude x, Magnitude y) {return TEUCHOS_MAX(x,y);}
+    inline static Magnitude reduce(Magnitude x, Magnitude y) {return TEUCHOS_MAX(x,y);}
     Magnitude generate(int i) {
       return SCT::magnitude(x[i]);
     }
@@ -197,7 +197,7 @@ namespace Kokkos {
     const Scalar *x;
     typedef  Magnitude ReductionType;
     inline static Magnitude identity() {return Teuchos::ScalarTraits<Magnitude>::zero();}
-    Magnitude reduce(Magnitude x, Magnitude y) {return x+y;}
+    inline static Magnitude reduce(Magnitude x, Magnitude y) {return x+y;}
     Magnitude generate(int i) {
       Scalar xi = x[i]; 
       return SCT::real( SCT::conjugate(xi)*xi );
@@ -210,7 +210,7 @@ namespace Kokkos {
     const Scalar *x, *y;
     typedef  Scalar ReductionType;
     inline static Scalar identity() {return SCT::zero();}
-    Scalar reduce(Scalar x, Scalar y) {return x+y;}
+    inline static Scalar reduce(Scalar x, Scalar y) {return x+y;}
     Scalar generate(int i) {
       Scalar xi = x[i]; Scalar yi = y[i];
       return SCT::real( SCT::conjugate(xi)*yi );

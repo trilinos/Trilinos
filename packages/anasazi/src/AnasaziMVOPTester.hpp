@@ -52,7 +52,6 @@
 
 #include "Teuchos_RCP.hpp"
 
-
 namespace Anasazi {
 
 /*!  \brief This is a function to test the correctness of a MultiVecTraits
@@ -133,6 +132,9 @@ namespace Anasazi {
 
          MvInit 
              MV: Init(alpha) sets all elements to alpha
+
+         MvScale (two versions)
+             MV: scales multivector values
 
          MvPrint
              MV: routine does not modify vectors (not tested here)
@@ -280,6 +282,44 @@ namespace Anasazi {
           om->stream(Warnings)
             << "*** ERROR *** MutliVecTraits::MvRandom()." << endl
             << "Vectors not random enough." << endl;
+          return false;
+        }
+      }
+    }
+
+
+    /*********** MvRandom() and MvNorm() and MvScale() *******************
+       Verify:
+       1) Perform MvRandom. 
+       2) Verify that vectors aren't zero
+       3) Set vectors to zero via MvScale
+       4) Check that norm is zero
+    *********************************************************************/
+    {
+      Teuchos::RCP<MV> B = MVT::Clone(*A,numvecs);
+      std::vector<MagType> norms(numvecs);
+
+      MVT::MvRandom(*B);
+      MVT::MvScale(*B,SCT::zero());
+      MVT::MvNorm(*B, norms);
+      for (unsigned int i=0; i<numvecs; i++) {
+        if ( norms[i] != zero_mag ) {
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvScale(alpha) "
+            << "Supposedly zero vector has non-zero norm." << endl;
+          return false;
+        }
+      }
+
+      MVT::MvRandom(*B);
+      std::vector<ScalarType> zeros(numvecs,SCT::zero());
+      MVT::MvScale(*B,zeros);
+      MVT::MvNorm(*B, norms);
+      for (unsigned int i=0; i<numvecs; i++) {
+        if ( norms[i] != zero_mag ) {
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvScale(alphas) "
+            << "Supposedly zero vector has non-zero norm." << endl;
           return false;
         }
       }

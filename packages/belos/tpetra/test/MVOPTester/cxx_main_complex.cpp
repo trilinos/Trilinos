@@ -1,6 +1,6 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
-// #include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_CrsMatrix.hpp>
 
 #include "BelosConfigDefs.hpp"
 #include "BelosMVOPTester.hpp"
@@ -23,7 +23,7 @@ namespace {
   using Teuchos::ScalarTraits;
   using Teuchos::Comm;
   using Tpetra::MultiVector;
-  // using Tpetra::CrsMatrix;
+  using Tpetra::CrsMatrix;
   using std::endl;
   using Teuchos::Array;
   using Teuchos::ArrayView;
@@ -60,16 +60,16 @@ namespace {
     return rcp(new Teuchos::SerialComm<int>());
   }
 
-  //REFACTOR// template<class Scalar, class O1, class O2>
-  //REFACTOR// RCP<CrsMatrix<Scalar,O1,O2> > constructDiagMatrix(const Map<O1,O2> &map) 
-  //REFACTOR// {
-  //REFACTOR//   RCP<CrsMatrix<Scalar,O1,O2> > op = rcp( new CrsMatrix<Scalar,O1,O2>(map,1) );
-  //REFACTOR//   for (Teuchos_Ordinal i=0; i<map.getNumMyEntries(); ++i) {
-  //REFACTOR//     op->insertGlobalValues(map.getGlobalIndex(i),tuple(map.getGlobalIndex(i)), tuple(ScalarTraits<Scalar>::one()));
-  //REFACTOR//   }
-  //REFACTOR//   op->fillComplete();
-  //REFACTOR//   return op;
-  //REFACTOR// }
+  template<class Scalar, class O1, class O2>
+  RCP<CrsMatrix<Scalar,O1,O2,Node> > constructDiagMatrix(const RCP<const Map<O1,O2,Node> > &map) 
+  {
+    RCP<CrsMatrix<Scalar,O1,O2,Node> > op = rcp( new CrsMatrix<Scalar,O1,O2,Node>(map,1) );
+    for (size_t i=0; i<map->getNodeNumElements(); ++i) {
+      op->insertGlobalValues(map->getGlobalElement(i),tuple(map->getGlobalElement(i)), tuple(ScalarTraits<Scalar>::one()));
+    }
+    op->fillComplete();
+    return op;
+  }
 
   //
   // UNIT TESTS
@@ -117,57 +117,55 @@ namespace {
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
-  //REFACTOR// ////
-  //REFACTOR// TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, OPTestLocal, O1, O2, Scalar )
-  //REFACTOR// {
-  //REFACTOR//   typedef Tpetra::MultiVector<Scalar,O1,O2> MV;
-  //REFACTOR//   typedef Tpetra::Operator<Scalar,O1,O2>    OP;
-  //REFACTOR//   const O2 dim = 500;
-  //REFACTOR//   const Teuchos_Ordinal numVecs = 5;
-  //REFACTOR//   // Create an output manager to handle the I/O from the solver
-  //REFACTOR//   RCP<OutputManager<Scalar> > MyOM = rcp( new OutputManager<Scalar>(Warnings,rcp(&out,false)) );
-  //REFACTOR//   // get a comm and node
-  //REFACTOR//   RCP<const Comm<int> > comm = getDefaultComm();
-  //REFACTOR//   Node &node = getDefaultNode();
-  //REFACTOR//   // create a uniform contiguous map (local)
-  //REFACTOR//   Map<O1,O2> map(dim,0,comm,true);
-  //REFACTOR//   // create a CrsMatrix
-  //REFACTOR//   RCP<OP> op = constructDiagMatrix<Scalar,O1,O2>(map);
-  //REFACTOR//   // create a multivector
-  //REFACTOR//   RCP<MV> mvec = rcp( new MV(map,numVecs,true) );
-  //REFACTOR//   bool res = Belos::TestOperatorTraits<Scalar,MV,OP>(MyOM,mvec,op);
-  //REFACTOR//   TEST_EQUALITY_CONST(res,true);
-  //REFACTOR//   // All procs fail if any proc fails
-  //REFACTOR//   int globalSuccess_int = -1;
-  //REFACTOR//   reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
-  //REFACTOR//   TEST_EQUALITY_CONST( globalSuccess_int, 0 );
-  //REFACTOR// }
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, OPTestLocal, O1, O2, Scalar )
+  {
+    typedef Tpetra::MultiVector<Scalar,O1,O2> MV;
+    typedef Tpetra::Operator<Scalar,O1,O2>    OP;
+    const O2 dim = 500;
+    const Teuchos_Ordinal numVecs = 5;
+    // Create an output manager to handle the I/O from the solver
+    RCP<OutputManager<Scalar> > MyOM = rcp( new OutputManager<Scalar>(Warnings,rcp(&out,false)) );
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    // create a uniform contiguous map
+    RCP<Map<O1,O2,Node> > map = rcp(new Map<O1,O2,Node>(dim,0,comm,Tpetra::LocallyReplicated) );
+    // create a CrsMatrix
+    RCP<OP> op = constructDiagMatrix<Scalar,O1,O2>(map);
+    // create a multivector
+    RCP<MV> mvec = rcp( new MV(map,numVecs,true) );
+    bool res = Belos::TestOperatorTraits<Scalar,MV,OP>(MyOM,mvec,op);
+    TEST_EQUALITY_CONST(res,true);
+    // All procs fail if any proc fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
 
-  //REFACTOR// ////
-  //REFACTOR// TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, OPTestDist, O1, O2, Scalar )
-  //REFACTOR// {
-  //REFACTOR//   typedef Tpetra::MultiVector<Scalar,O1,O2> MV;
-  //REFACTOR//   typedef Tpetra::Operator<Scalar,O1,O2>    OP;
-  //REFACTOR//   const O2 dim = 500;
-  //REFACTOR//   const Teuchos_Ordinal numVecs = 5;
-  //REFACTOR//   // Create an output manager to handle the I/O from the solver
-  //REFACTOR//   RCP<OutputManager<Scalar> > MyOM = rcp( new OutputManager<Scalar>(Warnings,rcp(&out,false)) );
-  //REFACTOR//   // get a comm and node
-  //REFACTOR//   RCP<const Comm<int> > comm = getDefaultComm();
-  //REFACTOR//   Node &node = getDefaultNode();
-  //REFACTOR//   // create a uniform contiguous map
-  //REFACTOR//   Map<O1,O2> map(dim,0,comm);
-  //REFACTOR//   // create a CrsMatrix
-  //REFACTOR//   RCP<OP> op = constructDiagMatrix<Scalar,O1,O2>(map);
-  //REFACTOR//   // create a multivector
-  //REFACTOR//   RCP<MV> mvec = rcp( new MV(map,numVecs,true) );
-  //REFACTOR//   bool res = Belos::TestOperatorTraits<Scalar,MV,OP>(MyOM,mvec,op);
-  //REFACTOR//   TEST_EQUALITY_CONST(res,true);
-  //REFACTOR//   // All procs fail if any proc fails
-  //REFACTOR//   int globalSuccess_int = -1;
-  //REFACTOR//   reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
-  //REFACTOR//   TEST_EQUALITY_CONST( globalSuccess_int, 0 );
-  //REFACTOR// }
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, OPTestDist, O1, O2, Scalar )
+  {
+    typedef Tpetra::MultiVector<Scalar,O1,O2> MV;
+    typedef Tpetra::Operator<Scalar,O1,O2>    OP;
+    const O2 dim = 500;
+    const Teuchos_Ordinal numVecs = 5;
+    // Create an output manager to handle the I/O from the solver
+    RCP<OutputManager<Scalar> > MyOM = rcp( new OutputManager<Scalar>(Warnings,rcp(&out,false)) );
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    // create a uniform contiguous map
+    RCP<Map<O1,O2,Node> > map = rcp( new Map<O1,O2,Node>(dim,0,comm) );
+    // create a CrsMatrix
+    RCP<OP> op = constructDiagMatrix<Scalar,O1,O2>(map);
+    // create a multivector
+    RCP<MV> mvec = rcp( new MV(map,numVecs,true) );
+    bool res = Belos::TestOperatorTraits<Scalar,MV,OP>(MyOM,mvec,op);
+    TEST_EQUALITY_CONST(res,true);
+    // All procs fail if any proc fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
 
   //
   // INSTANTIATIONS
@@ -192,8 +190,8 @@ namespace {
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( O1, O2, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, MVTestDist, O1, O2, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, MVTestLocal, O1, O2, SCALAR ) \
-      /*TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, OPTestDist, O1, O2, SCALAR )*/ \
-      /*TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, OPTestLocal, O1, O2, SCALAR )*/
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, OPTestDist, O1, O2, SCALAR ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, OPTestLocal, O1, O2, SCALAR )
 
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
     UNIT_TEST_GROUP_ORDINAL_ORDINAL( ORDINAL, ORDINAL )

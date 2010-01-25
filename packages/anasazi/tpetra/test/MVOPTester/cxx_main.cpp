@@ -10,13 +10,11 @@
 namespace {
 
   using Teuchos::as;
-  using Teuchos::tuple;
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
   using Teuchos::rcp;
   using Tpetra::Map;
   using Tpetra::DefaultPlatform;
-  using Tpetra::Platform;
   using std::vector;
   using std::sort;
   using Teuchos::arrayViewFromVector;
@@ -35,6 +33,9 @@ namespace {
   using Anasazi::OutputManager;
   using Anasazi::BasicOutputManager;
   using Anasazi::Warnings;
+  using Teuchos::tuple;
+
+  typedef DefaultPlatform::DefaultPlatformType::NodeType Node;
 
   bool testMpi = true;
   double errorTolSlack = 1e+1;
@@ -52,21 +53,20 @@ namespace {
         "Slack off of machine epsilon used to check test results" );
   }
 
-  template<class Scalar>
-  RCP<const Platform<Scalar> > getDefaultPlatform()
+  RCP<const Comm<int> > getDefaultComm()
   {
     if (testMpi) {
-      return DefaultPlatform<Scalar>::getPlatform();
+      DefaultPlatform::getDefaultPlatform().getComm();
     }
-    return rcp(new Tpetra::SerialPlatform<Scalar>());
+    return rcp(new Teuchos::SerialComm<int>());
   }
 
   template<class Scalar, class O1, class O2>
-  RCP<CrsMatrix<Scalar,O1,O2> > constructDiagMatrix(const Map<O1,O2> &map) 
+  RCP<CrsMatrix<Scalar,O1,O2,Node> > constructDiagMatrix(const RCP<const Map<O1,O2,Node> > &map) 
   {
-    RCP<CrsMatrix<Scalar,O1,O2> > op = rcp( new CrsMatrix<Scalar,O1,O2>(map,1) );
-    for (Teuchos_Ordinal i=0; i<map.getNumMyEntries(); ++i) {
-      op->insertGlobalValues(map.getGlobalIndex(i),tuple(map.getGlobalIndex(i)), tuple(ScalarTraits<Scalar>::one()));
+    RCP<CrsMatrix<Scalar,O1,O2,Node> > op = rcp( new CrsMatrix<Scalar,O1,O2,Node>(map,1) );
+    for (size_t i=0; i<map->getNodeNumElements(); ++i) {
+      op->insertGlobalValues(map->getGlobalElement(i),tuple(map->getGlobalElement(i)), tuple(ScalarTraits<Scalar>::one()));
     }
     op->fillComplete();
     return op;
@@ -84,18 +84,16 @@ namespace {
     const Teuchos_Ordinal numVecs = 5;
     // Create an output manager to handle the I/O from the solver
     RCP<OutputManager<Scalar> > MyOM = rcp( new BasicOutputManager<Scalar>(Warnings,rcp(&out,false)) );
-    // create a platform  
-    const Platform<Scalar> & platform = *(getDefaultPlatform<Scalar>());
-    // create a comm  
-    RCP<const Comm<int> > comm = platform.getComm();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
     // create a uniform contiguous map
-    Map<O1,O2> map(dim,0,comm);
+    RCP<Map<O1,O2,Node> > map = rcp( new Map<O1,O2,Node>(dim,0,comm) );
     RCP<MV> mvec = rcp( new MV(map,numVecs,true) );
     bool res = Anasazi::TestMultiVecTraits<Scalar,MV>(MyOM,mvec);
     TEST_EQUALITY_CONST(res,true);
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -107,18 +105,16 @@ namespace {
     const Teuchos_Ordinal numVecs = 5;
     // Create an output manager to handle the I/O from the solver
     RCP<OutputManager<Scalar> > MyOM = rcp( new BasicOutputManager<Scalar>(Warnings,rcp(&out,false)) );
-    // create a platform  
-    const Platform<Scalar> & platform = *(getDefaultPlatform<Scalar>());
-    // create a comm  
-    RCP<const Comm<int> > comm = platform.getComm();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
     // create a uniform contiguous map
-    Map<O1,O2> map(dim,0,comm,true);
+    RCP<Map<O1,O2,Node> > map = rcp(new Map<O1,O2,Node>(dim,0,comm,Tpetra::LocallyReplicated) );
     RCP<MV> mvec = rcp( new MV(map,numVecs,true) );
     bool res = Anasazi::TestMultiVecTraits<Scalar,MV>(MyOM,mvec);
     TEST_EQUALITY_CONST(res,true);
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -131,12 +127,10 @@ namespace {
     const Teuchos_Ordinal numVecs = 5;
     // Create an output manager to handle the I/O from the solver
     RCP<OutputManager<Scalar> > MyOM = rcp( new BasicOutputManager<Scalar>(Warnings,rcp(&out,false)) );
-    // create a platform  
-    const Platform<Scalar> & platform = *(getDefaultPlatform<Scalar>());
-    // create a comm  
-    RCP<const Comm<int> > comm = platform.getComm();
-    // create a uniform contiguous map (local)
-    Map<O1,O2> map(dim,0,comm,true);
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    // create a uniform contiguous map
+    RCP<Map<O1,O2,Node> > map = rcp(new Map<O1,O2,Node>(dim,0,comm,Tpetra::LocallyReplicated) );
     // create a CrsMatrix
     RCP<OP> op = constructDiagMatrix<Scalar,O1,O2>(map);
     // create a multivector
@@ -145,7 +139,7 @@ namespace {
     TEST_EQUALITY_CONST(res,true);
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -158,12 +152,10 @@ namespace {
     const Teuchos_Ordinal numVecs = 5;
     // Create an output manager to handle the I/O from the solver
     RCP<OutputManager<Scalar> > MyOM = rcp( new BasicOutputManager<Scalar>(Warnings,rcp(&out,false)) );
-    // create a platform  
-    const Platform<Scalar> & platform = *(getDefaultPlatform<Scalar>());
-    // create a comm  
-    RCP<const Comm<int> > comm = platform.getComm();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
     // create a uniform contiguous map
-    Map<O1,O2> map(dim,0,comm);
+    RCP<Map<O1,O2,Node> > map = rcp( new Map<O1,O2,Node>(dim,0,comm) );
     // create a CrsMatrix
     RCP<OP> op = constructDiagMatrix<Scalar,O1,O2>(map);
     // create a multivector
@@ -172,7 +164,7 @@ namespace {
     TEST_EQUALITY_CONST(res,true);
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, &globalSuccess_int );
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, Teuchos::outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 

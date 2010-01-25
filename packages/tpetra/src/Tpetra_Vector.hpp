@@ -100,13 +100,13 @@ namespace Tpetra {
     TEST_FOR_EXCEPTION( this->getLocalLength() != a.getLocalLength(), std::runtime_error,
         "Tpetra::Vector::dots(): Vectors do not have the same local length.");
 #endif
-    Scalar dot;
-    dot = MVT::Dot(this->lclMV_,a.lclMV_);
+    Scalar gbldot;
+    gbldot = MVT::Dot(this->lclMV_,a.lclMV_);
     if (this->isDistributed()) {
-      Scalar lcl = dot;
-      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lcl,outArg(dot));
+      Scalar lcldot = gbldot;
+      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lcldot,outArg(gbldot));
     }
-    return dot;
+    return gbldot;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

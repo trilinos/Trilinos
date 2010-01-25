@@ -60,6 +60,8 @@ namespace Belos {
                 const Teuchos::RCP<OutputManager<ScalarType> > &om,
                 const Teuchos::RCP<const MV> &A ) {
 
+    using std::endl;
+
     /* MVT Contract:
 
          Clone(MV,int)
@@ -127,6 +129,9 @@ namespace Belos {
          MvInit 
              MV: Init(alpha) sets all elements to alpha
 
+         MvScale (two versions)
+             MV: scales multivector values
+
          MvPrint
              MV: routine does not modify vectors (not tested here)
     *********************************************************************/
@@ -167,8 +172,8 @@ namespace Belos {
     *********************************************************************/
     if ( MVT::GetNumberVecs(*A) <= 0 ) {
       om->stream(Warnings)
-        << "*** ERROR *** MultiVectorTraits::GetNumberVecs()." << std::endl
-        << "Returned <= 0." << std::endl;
+        << "*** ERROR *** MultiVectorTraits::GetNumberVecs()." << endl
+        << "Returned <= 0." << endl;
       return false;
     }
 
@@ -179,8 +184,8 @@ namespace Belos {
     *********************************************************************/
     if ( MVT::GetVecLength(*A) <= 0 ) {
       om->stream(Warnings)
-        << "*** ERROR *** MultiVectorTraits::GetVecLength()" << std::endl
-        << "Returned <= 0." << std::endl;
+        << "*** ERROR *** MultiVectorTraits::GetVecLength()" << endl
+        << "Returned <= 0." << endl;
       return false;
     }
 
@@ -198,28 +203,28 @@ namespace Belos {
       bool ResizeWarning = false;
       if ( MVT::GetNumberVecs(*B) != numvecs ) {
         om->stream(Warnings)
-          << "*** ERROR *** MultiVecTraits::Clone()." << std::endl
-          << "Did not allocate requested number of vectors." << std::endl;
+          << "*** ERROR *** MultiVecTraits::Clone()." << endl
+          << "Did not allocate requested number of vectors." << endl;
         return false;
       }
       if ( MVT::GetVecLength(*B) != MVT::GetVecLength(*A) ) {
         om->stream(Warnings)
-          << "*** ERROR *** MultiVecTraits::Clone()." << std::endl
-          << "Did not allocate requested number of vectors." << std::endl;
+          << "*** ERROR *** MultiVecTraits::Clone()." << endl
+          << "Did not allocate requested number of vectors." << endl;
         return false;
       }
       MVT::MvNorm(*B, norms);
       if ( norms.size() != 2*numvecs && ResizeWarning==false ) {
         om->stream(Warnings)
-          << "*** WARNING *** MultiVecTraits::MvNorm()." << std::endl
-          << "Method resized the output std::vector." << std::endl;
+          << "*** WARNING *** MultiVecTraits::MvNorm()." << endl
+          << "Method resized the output std::vector." << endl;
         ResizeWarning = true;
       }
       for (i=0; i<numvecs; i++) {
         if ( norms[i] < zero_mag ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::Clone()." << std::endl
-            << "Vector had negative norm." << std::endl;
+            << "*** ERROR *** MultiVecTraits::Clone()." << endl
+            << "Vector had negative norm." << endl;
           return false;
         }
       }
@@ -251,8 +256,8 @@ namespace Belos {
         if ( norms[i] != zero_mag ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvInit() "
-            << "and MultiVecTraits::MvNorm()" << std::endl
-            << "Supposedly zero std::vector has non-zero norm." << std::endl;
+            << "and MultiVecTraits::MvNorm()" << endl
+            << "Supposedly zero std::vector has non-zero norm." << endl;
           return false;
         }
       }
@@ -263,20 +268,58 @@ namespace Belos {
       for (i=0; i<numvecs; i++) {
         if ( norms[i] == zero_mag || norms2[i] == zero_mag ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvRandom()." << std::endl
-            << "Random std::vector was empty (very unlikely)." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvRandom()." << endl
+            << "Random std::vector was empty (very unlikely)." << endl;
           return false;
         }
         else if ( norms[i] < zero_mag || norms2[i] < zero_mag ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvRandom()." << std::endl
-            << "Vector had negative norm." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvRandom()." << endl
+            << "Vector had negative norm." << endl;
           return false;
         }
         else if ( norms[i] == norms2[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MutliVecTraits::MvRandom()." << std::endl
-            << "Vectors not random enough." << std::endl;
+            << "*** ERROR *** MutliVecTraits::MvRandom()." << endl
+            << "Vectors not random enough." << endl;
+          return false;
+        }
+      }
+    }
+
+
+    /*********** MvRandom() and MvNorm() and MvScale() *******************
+       Verify:
+       1) Perform MvRandom. 
+       2) Verify that vectors aren't zero
+       3) Set vectors to zero via MvScale
+       4) Check that norm is zero
+    *********************************************************************/
+    {
+      Teuchos::RCP<MV> B = MVT::Clone(*A,numvecs);
+      std::vector<MagType> norms(numvecs);
+
+      MVT::MvRandom(*B);
+      MVT::MvScale(*B,SCT::zero());
+      MVT::MvNorm(*B, norms);
+      for (int i=0; i<numvecs; i++) {
+        if ( norms[i] != zero_mag ) {
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvScale(alpha) "
+            << "Supposedly zero vector has non-zero norm." << endl;
+          return false;
+        }
+      }
+
+      MVT::MvRandom(*B);
+      std::vector<ScalarType> zeros(numvecs,SCT::zero());
+      MVT::MvScale(*B,zeros);
+      MVT::MvNorm(*B, norms);
+      for (int i=0; i<numvecs; i++) {
+        if ( norms[i] != zero_mag ) {
+          om->stream(Warnings)
+            << "*** ERROR *** MultiVecTraits::MvScale(alphas) "
+            << "Supposedly zero vector has non-zero norm." << endl;
           return false;
         }
       }
@@ -306,16 +349,16 @@ namespace Belos {
       for (i=0; i<numvecs; i++) {
         if ( norms[i] < zero_mag ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvRandom()." << std::endl
-            << "Vector had negative norm." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvRandom()." << endl
+            << "Vector had negative norm." << endl;
           return false;
         }
         else if ( norms[i] != SCT::squareroot(MVT::GetVecLength(*B)) && !BadNormWarning ) {
           om->stream(Warnings)
-            << std::endl
-            << "Warning testing MultiVecTraits::MvInit()." << std::endl
-            << "Ones std::vector should have norm std::sqrt(dim)." << std::endl
-            << "norms[i]: " << norms[i] << "\tdim: " << MVT::GetVecLength(*B) << std::endl << std::endl;
+            << endl
+            << "Warning testing MultiVecTraits::MvInit()." << endl
+            << "Ones std::vector should have norm std::sqrt(dim)." << endl
+            << "norms[i]: " << norms[i] << "\tdim: " << MVT::GetVecLength(*B) << endl << endl;
           BadNormWarning = true;
         }
       }
@@ -337,14 +380,14 @@ namespace Belos {
       for (i=0; i<numvecs; i++) {
         if ( norms[i] < zero_mag ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvInit()." << std::endl
-            << "Vector had negative norm." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvInit()." << endl
+            << "Vector had negative norm." << endl;
           return false;
         }
         else if ( norms[i] != zero_mag ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvInit()." << std::endl
-            << "Zero std::vector should have norm zero." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvInit()." << endl
+            << "Zero std::vector should have norm zero." << endl;
           return false;
         }
       }
@@ -367,22 +410,22 @@ namespace Belos {
       MVT::MvNorm(*C, norms2);
       if ( MVT::GetNumberVecs(*C) != numvecs_2 ) {
         om->stream(Warnings)
-          << "*** ERROR *** MultiVecTraits::CloneCopy(ind)." << std::endl
-          << "Wrong number of vectors." << std::endl;
+          << "*** ERROR *** MultiVecTraits::CloneCopy(ind)." << endl
+          << "Wrong number of vectors." << endl;
         return false;
       }
       if ( MVT::GetVecLength(*C) != MVT::GetVecLength(*B) ) {
         om->stream(Warnings)
-          << "*** ERROR *** MultiVecTraits::CloneCopy(ind)." << std::endl
-          << "Vector lengths don't match." << std::endl;
+          << "*** ERROR *** MultiVecTraits::CloneCopy(ind)." << endl
+          << "Vector lengths don't match." << endl;
         return false;
       }
       for (i=0; i<numvecs_2; i++) {
         if ( norms2[i] != norms[ind[i]] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::CloneCopy(ind)." << std::endl
+            << "*** ERROR *** MultiVecTraits::CloneCopy(ind)." << endl
             << "Copied vectors do not agree: " 
-            << norms2[i] << " != " << norms[ind[i]] << std::endl;
+            << norms2[i] << " != " << norms[ind[i]] << endl;
           MVT::MvPrint(*B,std::cout);
           MVT::MvPrint(*C,std::cout);
           return false;
@@ -393,8 +436,8 @@ namespace Belos {
       for (i=0; i<numvecs_2; i++) {
         if ( norms2[i] != norms[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::CloneCopy(ind)." << std::endl
-            << "Copied vectors were not independent." << std::endl;
+            << "*** ERROR *** MultiVecTraits::CloneCopy(ind)." << endl
+            << "Copied vectors were not independent." << endl;
           return false;
         }
       }
@@ -416,15 +459,15 @@ namespace Belos {
       MVT::MvNorm(*C, norms2);
       if ( MVT::GetNumberVecs(*C) != numvecs ) {
         om->stream(Warnings)
-          << "*** ERROR *** MultiVecTraits::CloneCopy()." << std::endl
-          << "Wrong number of vectors." << std::endl;
+          << "*** ERROR *** MultiVecTraits::CloneCopy()." << endl
+          << "Wrong number of vectors." << endl;
         return false;
       }
       for (i=0; i<numvecs; i++) {
         if ( norms2[i] != norms[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::CloneCopy()." << std::endl
-            << "Copied vectors do not agree." << std::endl;
+            << "*** ERROR *** MultiVecTraits::CloneCopy()." << endl
+            << "Copied vectors do not agree." << endl;
           return false;
         }
       }
@@ -433,8 +476,8 @@ namespace Belos {
       for (i=0; i<numvecs; i++) {
         if ( norms2[i] != norms[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::CloneCopy()." << std::endl
-            << "Copied vectors were not independent." << std::endl;
+            << "*** ERROR *** MultiVecTraits::CloneCopy()." << endl
+            << "Copied vectors were not independent." << endl;
           return false;
         }
       }
@@ -458,15 +501,15 @@ namespace Belos {
       MVT::MvNorm(*C, norms2);
       if ( MVT::GetNumberVecs(*C) != numvecs_2 ) {
         om->stream(Warnings)
-          << "*** ERROR *** MultiVecTraits::CloneView(ind)." << std::endl
-          << "Wrong number of vectors." << std::endl;
+          << "*** ERROR *** MultiVecTraits::CloneView(ind)." << endl
+          << "Wrong number of vectors." << endl;
         return false;
       }
       for (i=0; i<numvecs_2; i++) {
         if ( norms2[i] != norms[ind[i]] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::CloneView(ind)." << std::endl
-            << "Viewed vectors do not agree." << std::endl;
+            << "*** ERROR *** MultiVecTraits::CloneView(ind)." << endl
+            << "Viewed vectors do not agree." << endl;
           return false;
         }
       }
@@ -476,8 +519,8 @@ namespace Belos {
       for (i=0; i<numvecs_2; i++) {
         if ( norms2[i] != zero ) {
           if ( om->isVerbosityAndPrint(Warnings) ) {
-            out << "*** ERROR *** MultiVecTraits::CloneView(ind)." << std::endl
-                << "Copied vectors were not dependent." << std::endl;
+            out << "*** ERROR *** MultiVecTraits::CloneView(ind)." << endl
+                << "Copied vectors were not dependent." << endl;
           }
           return false;
         }
@@ -510,15 +553,15 @@ namespace Belos {
       MVT::MvNorm(*C, normsC);
       if ( MVT::GetNumberVecs(*C) != numvecs_2 ) {
         om->stream(Warnings)
-          << "*** ERROR *** const MultiVecTraits::CloneView(ind)." << std::endl
-          << "Wrong number of vectors." << std::endl;
+          << "*** ERROR *** const MultiVecTraits::CloneView(ind)." << endl
+          << "Wrong number of vectors." << endl;
         return false;
       }
       for (i=0; i<numvecs_2; i++) {
         if ( normsC[i] != normsB[ind[i]] ) {
           om->stream(Warnings)
-            << "*** ERROR *** const MultiVecTraits::CloneView(ind)." << std::endl
-            << "Viewed vectors do not agree." << std::endl;
+            << "*** ERROR *** const MultiVecTraits::CloneView(ind)." << endl
+            << "Viewed vectors do not agree." << endl;
           return false;
         }
       }
@@ -528,8 +571,8 @@ namespace Belos {
       for (i=0; i<numvecs_2; i++) {
         if ( normsB[ind[i]] != SCT::zero() ) {
           if ( om->isVerbosityAndPrint(Warnings) ) {
-            out << "*** ERROR *** const MultiVecTraits::CloneView(ind)." << std::endl
-                << "Copied vectors were not dependent." << std::endl;
+            out << "*** ERROR *** const MultiVecTraits::CloneView(ind)." << endl
+                << "Copied vectors were not dependent." << endl;
           }
           return false;
         }
@@ -574,8 +617,8 @@ namespace Belos {
       for (i=0; i<numvecs_2; i++) {
         if ( normsC1[i] != normsC2[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::SetBlock()." << std::endl
-            << "Operation modified source vectors." << std::endl;
+            << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
+            << "Operation modified source vectors." << endl;
           return false;
         }
       }
@@ -586,8 +629,8 @@ namespace Belos {
           // should be a std::vector from C
           if ( normsB2[i] != normsC1[i/2] ) {
             om->stream(Warnings)
-              << "*** ERROR *** MultiVecTraits::SetBlock()." << std::endl
-              << "Copied vectors do not agree." << std::endl;
+              << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
+              << "Copied vectors do not agree." << endl;
             return false;
           }
         }
@@ -595,8 +638,8 @@ namespace Belos {
           // should be an original std::vector
           if ( normsB1[i] != normsB2[i] ) {
             om->stream(Warnings)
-              << "*** ERROR *** MultiVecTraits::SetBlock()." << std::endl
-              << "Incorrect vectors were modified." << std::endl;
+              << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
+              << "Incorrect vectors were modified." << endl;
             return false;
           }
         }
@@ -607,8 +650,8 @@ namespace Belos {
       for (i=0; i<numvecs; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::SetBlock()." << std::endl
-            << "Copied vectors were not independent." << std::endl;
+            << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
+            << "Copied vectors were not independent." << endl;
           return false;
         }
       }
@@ -659,8 +702,8 @@ namespace Belos {
       for (i=0; i<CSize; i++) {
         if ( normsC1[i] != normsC2[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::SetBlock()." << std::endl
-            << "Operation modified source vectors." << std::endl;
+            << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
+            << "Operation modified source vectors." << endl;
           return false;
         }
       }
@@ -671,8 +714,8 @@ namespace Belos {
           // should be a std::vector from C
           if ( normsB2[i] != normsC1[i/2] ) {
             om->stream(Warnings)
-              << "*** ERROR *** MultiVecTraits::SetBlock()." << std::endl
-              << "Copied vectors do not agree." << std::endl;
+              << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
+              << "Copied vectors do not agree." << endl;
             return false;
           }
         }
@@ -680,8 +723,8 @@ namespace Belos {
           // should be an original std::vector
           if ( normsB1[i] != normsB2[i] ) {
             om->stream(Warnings)
-              << "*** ERROR *** MultiVecTraits::SetBlock()." << std::endl
-              << "Incorrect vectors were modified." << std::endl;
+              << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
+              << "Incorrect vectors were modified." << endl;
             return false;
           }
         }
@@ -692,8 +735,8 @@ namespace Belos {
       for (i=0; i<numvecs; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::SetBlock()." << std::endl
-            << "Copied vectors were not independent." << std::endl;
+            << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
+            << "Copied vectors were not independent." << endl;
           return false;
         }
       }
@@ -741,16 +784,16 @@ namespace Belos {
       // check the sizes: not allowed to have shrunk
       if ( SDM.numRows() != p || SDM.numCols() != q ) {
         om->stream(Warnings)
-          << "*** ERROR *** MultiVecTraits::MvTransMv()." << std::endl
-          << "Routine resized SerialDenseMatrix." << std::endl;
+          << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
+          << "Routine resized SerialDenseMatrix." << endl;
         return false;
       }
    
       // check that zero**A^H*B == zero
       if ( SDM.normOne() != zero ) {
         om->stream(Warnings)
-          << "*** ERROR *** MultiVecTraits::MvTransMv()." << std::endl
-          << "Scalar argument processed incorrectly." << std::endl;
+          << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
+          << "Scalar argument processed incorrectly." << endl;
         return false;
       }
    
@@ -764,12 +807,12 @@ namespace Belos {
           if (   SCT::magnitude(SDM(i,j)) 
                > SCT::magnitude(normsB[i]*normsC[j]) ) {
             om->stream(Warnings)
-              << "*** ERROR *** MultiVecTraits::MvTransMv()." << std::endl
+              << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
               << "Triangle inequality did not hold: " 
               << SCT::magnitude(SDM(i,j)) 
               << " > " 
               << SCT::magnitude(normsB[i]*normsC[j]) 
-              << std::endl;
+              << endl;
             return false;
           }
         }
@@ -781,8 +824,8 @@ namespace Belos {
         for (j=0; j<q; j++) {
           if ( SDM(i,j) != zero ) {
             om->stream(Warnings)
-              << "*** ERROR *** MultiVecTraits::MvTransMv()." << std::endl
-              << "Inner products not zero for C==0." << std::endl;
+              << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
+              << "Inner products not zero for C==0." << endl;
             return false;
           }
         }
@@ -794,8 +837,8 @@ namespace Belos {
         for (j=0; j<q; j++) {
           if ( SDM(i,j) != zero ) {
             om->stream(Warnings)
-              << "*** ERROR *** MultiVecTraits::MvTransMv()." << std::endl
-              << "Inner products not zero for B==0." << std::endl;
+              << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
+              << "Inner products not zero for B==0." << endl;
             return false;
           }
         }
@@ -826,16 +869,16 @@ namespace Belos {
       MVT::MvDot( *B, *C, iprods );
       if ( iprods.size() != p+q ) {
         om->stream(Warnings)
-          << "*** ERROR *** MultiVecTraits::MvDot." << std::endl
-          << "Routine resized results std::vector." << std::endl;
+          << "*** ERROR *** MultiVecTraits::MvDot." << endl
+          << "Routine resized results std::vector." << endl;
         return false;
       }
       for (i=0; i<BELOS_MIN(p,q); i++) {
         if ( SCT::magnitude(iprods[i]) 
              > SCT::magnitude(normsB[i]*normsC[i]) ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvDot()." << std::endl
-            << "Inner products not valid." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvDot()." << endl
+            << "Inner products not valid." << endl;
           return false;
         }
       }
@@ -845,8 +888,8 @@ namespace Belos {
       for (i=0; i<p; i++) {
         if ( iprods[i] != zero ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvDot()." << std::endl
-            << "Inner products not zero for B==0." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvDot()." << endl
+            << "Inner products not zero for B==0." << endl;
           return false;
         }
       }
@@ -856,8 +899,8 @@ namespace Belos {
       for (i=0; i<p; i++) {
         if ( iprods[i] != zero ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvDot()." << std::endl
-            << "Inner products not zero for C==0." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvDot()." << endl
+            << "Inner products not zero for C==0." << endl;
           return false;
         }
       }
@@ -897,20 +940,20 @@ namespace Belos {
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvAddMv()." << std::endl
-            << "Input arguments were modified." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
+            << "Input arguments were modified." << endl;
           return false;
         }
         else if ( normsC1[i] != normsC2[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvAddMv()." << std::endl
-            << "Input arguments were modified." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
+            << "Input arguments were modified." << endl;
           return false;
         }
         else if ( normsC1[i] != normsD1[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvAddMv()." << std::endl
-            << "Assignment did not work." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
+            << "Assignment did not work." << endl;
           return false;
         }
       }
@@ -923,20 +966,20 @@ namespace Belos {
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvAddMv()." << std::endl
-            << "Input arguments were modified." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
+            << "Input arguments were modified." << endl;
           return false;
         }
         else if ( normsC1[i] != normsC2[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvAddMv()." << std::endl
-            << "Input arguments were modified." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
+            << "Input arguments were modified." << endl;
           return false;
         }
         else if ( normsB1[i] != normsD1[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvAddMv()." << std::endl
-            << "Assignment did not work." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
+            << "Assignment did not work." << endl;
           return false;
         }
       }
@@ -952,14 +995,14 @@ namespace Belos {
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvAddMv()." << std::endl
-            << "Input arguments were modified." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
+            << "Input arguments were modified." << endl;
           return false;
         }
         else if ( normsC1[i] != normsC2[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvAddMv()." << std::endl
-            << "Input arguments were modified." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
+            << "Input arguments were modified." << endl;
           return false;
         }
       }
@@ -974,20 +1017,20 @@ namespace Belos {
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvAddMv()." << std::endl
-            << "Input arguments were modified." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
+            << "Input arguments were modified." << endl;
           return false;
         }
         else if ( normsC1[i] != normsC2[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvAddMv()." << std::endl
-            << "Input arguments were modified." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
+            << "Input arguments were modified." << endl;
           return false;
         }
         else if ( normsD1[i] != normsD2[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvAddMv()." << std::endl
-            << "Results varies depending on initial state of dest vectors." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
+            << "Results varies depending on initial state of dest vectors." << endl;
           return false;
         }
       }
@@ -1032,8 +1075,8 @@ namespace Belos {
       for (i=0; i<p; i++) {
         if ( normsB[i] != normsD[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvAddMv() #2" << std::endl
-            << "Assignment did not work." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvAddMv() #2" << endl
+            << "Assignment did not work." << endl;
           return false;
         }
       }
@@ -1044,8 +1087,8 @@ namespace Belos {
       for (i=0; i<p; i++) {
         if ( normsB[i] != normsD[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvAddMv() #2" << std::endl
-            << "Assignment did not work." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvAddMv() #2" << endl
+            << "Assignment did not work." << endl;
           return false;
         }
       }
@@ -1084,16 +1127,16 @@ namespace Belos {
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << std::endl
-            << "Input vectors were modified." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Input vectors were modified." << endl;
           return false;
         }
       }
       for (i=0; i<q; i++) {
         if ( normsC1[i] != normsC2[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << std::endl
-            << "Arithmetic test 1 failed." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Arithmetic test 1 failed." << endl;
           return false;
         }
       }
@@ -1110,20 +1153,20 @@ namespace Belos {
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << std::endl
-            << "Input vectors were modified." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Input vectors were modified." << endl;
           return false;
         }
       }
       for (i=0; i<q; i++) {
         if ( normsC2[i] != zero ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << std::endl
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
             << "Arithmetic test 2 failed: " 
             << normsC2[i] 
             << " != " 
             << zero 
-            << std::endl;
+            << endl;
           return false;
         }
       }
@@ -1144,20 +1187,20 @@ namespace Belos {
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << std::endl
-            << "Input vectors were modified." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Input vectors were modified." << endl;
           return false;
         }
       }
       for (i=0; i<q; i++) {
         if ( normsB1[i] != normsC2[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << std::endl
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
             << "Arithmetic test 3 failed: "
             << normsB1[i] 
             << " != "
             << normsC2[i]
-            << std::endl;
+            << endl;
           return false;
         }
       }
@@ -1174,16 +1217,16 @@ namespace Belos {
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << std::endl
-            << "Input vectors were modified." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Input vectors were modified." << endl;
           return false;
         }
       }
       for (i=0; i<q; i++) {
         if ( normsC1[i] != normsC2[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << std::endl
-            << "Arithmetic test 4 failed." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Arithmetic test 4 failed." << endl;
           return false;
         }
       }
@@ -1220,16 +1263,16 @@ namespace Belos {
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << std::endl
-            << "Input vectors were modified." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Input vectors were modified." << endl;
           return false;
         }
       }
       for (i=0; i<q; i++) {
         if ( normsC1[i] != normsC2[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << std::endl
-            << "Arithmetic test 5 failed." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Arithmetic test 5 failed." << endl;
           return false;
         }
       }
@@ -1246,20 +1289,20 @@ namespace Belos {
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << std::endl
-            << "Input vectors were modified." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Input vectors were modified." << endl;
           return false;
         }
       }
       for (i=0; i<q; i++) {
         if ( normsC2[i] != zero ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << std::endl
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
             << "Arithmetic test 6 failed: " 
             << normsC2[i] 
             << " != " 
             << zero 
-            << std::endl;
+            << endl;
           return false;
         }
       }
@@ -1279,24 +1322,24 @@ namespace Belos {
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << std::endl
-            << "Input vectors were modified." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Input vectors were modified." << endl;
           return false;
         }
       }
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsC2[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << std::endl
-            << "Arithmetic test 7 failed." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Arithmetic test 7 failed." << endl;
           return false;
         }
       }
       for (i=p; i<q; i++) {
         if ( normsC2[i] != zero ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << std::endl
-            << "Arithmetic test 7 failed." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Arithmetic test 7 failed." << endl;
           return false;
         }
       }
@@ -1313,16 +1356,16 @@ namespace Belos {
       for (i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << std::endl
-            << "Input vectors were modified." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Input vectors were modified." << endl;
           return false;
         }
       }
       for (i=0; i<q; i++) {
         if ( normsC1[i] != normsC2[i] ) {
           om->stream(Warnings)
-            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << std::endl
-            << "Arithmetic test 8 failed." << std::endl;
+            << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
+            << "Arithmetic test 8 failed." << endl;
           return false;
         }
       }
@@ -1344,6 +1387,8 @@ namespace Belos {
                 const Teuchos::RCP<OutputManager<ScalarType> > &om,
                 const Teuchos::RCP<const MV> &A,
                 const Teuchos::RCP<const OP> &M) {
+
+    using std::endl;
 
     /* OPT Contract:
        Apply()
@@ -1384,14 +1429,14 @@ namespace Belos {
     for (i=0; i<numvecs; i++) {
       if (normsB2[i] != normsB1[i]) {
         om->stream(Warnings)
-          << "*** ERROR *** OperatorTraits::Apply() [1]" << std::endl
-          << "Apply() modified the input vectors." << std::endl;
+          << "*** ERROR *** OperatorTraits::Apply() [1]" << endl
+          << "Apply() modified the input vectors." << endl;
         return false;
       }
       if (normsC2[i] != SCT::zero()) {
         om->stream(Warnings)
-          << "*** ERROR *** OperatorTraits::Apply() [1]" << std::endl
-          << "Operator applied to zero did not return zero." << std::endl;
+          << "*** ERROR *** OperatorTraits::Apply() [1]" << endl
+          << "Operator applied to zero did not return zero." << endl;
         return false;
       }
     }
@@ -1406,14 +1451,14 @@ namespace Belos {
     for (i=0; i<numvecs; i++) {
       if (normsB2[i] != normsB1[i]) {
         om->stream(Warnings)
-          << "*** ERROR *** OperatorTraits::Apply() [2]" << std::endl
-          << "Apply() modified the input vectors." << std::endl;
+          << "*** ERROR *** OperatorTraits::Apply() [2]" << endl
+          << "Apply() modified the input vectors." << endl;
         return false;
       }
       if (normsC2[i] == SCT::zero() && ZeroWarning==false ) {
         om->stream(Warnings)
-          << "*** ERROR *** OperatorTraits::Apply() [2]" << std::endl
-          << "Operator applied to random vectors returned zero." << std::endl;
+          << "*** ERROR *** OperatorTraits::Apply() [2]" << endl
+          << "Operator applied to random vectors returned zero." << endl;
         ZeroWarning = true;
       }
     }
@@ -1428,8 +1473,8 @@ namespace Belos {
     for (i=0; i<numvecs; i++) {
       if (normsB2[i] != normsB1[i]) {
         om->stream(Warnings)
-          << "*** ERROR *** OperatorTraits::Apply() [3]" << std::endl
-          << "Apply() modified the input vectors." << std::endl;
+          << "*** ERROR *** OperatorTraits::Apply() [3]" << endl
+          << "Apply() modified the input vectors." << endl;
         return false;
       }
     }
@@ -1447,15 +1492,15 @@ namespace Belos {
     for (i=0; i<numvecs; i++) {
       if (normsB2[i] != normsB1[i]) {
         om->stream(Warnings)
-          << "*** ERROR *** OperatorTraits::Apply() [4]" << std::endl
-          << "Apply() modified the input vectors." << std::endl;
+          << "*** ERROR *** OperatorTraits::Apply() [4]" << endl
+          << "Apply() modified the input vectors." << endl;
         return false;
       }
       if (normsC1[i] != normsC2[i] && !NonDeterministicWarning) {
         om->stream(Warnings)
-          << std::endl
-          << "*** WARNING *** OperatorTraits::Apply() [4]" << std::endl
-          << "Apply() returned two different results." << std::endl << std::endl;
+          << endl
+          << "*** WARNING *** OperatorTraits::Apply() [4]" << endl
+          << "Apply() returned two different results." << endl << endl;
         NonDeterministicWarning = true;
       }
     }
