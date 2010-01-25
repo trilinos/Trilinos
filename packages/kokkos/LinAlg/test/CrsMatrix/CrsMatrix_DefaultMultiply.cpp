@@ -207,15 +207,15 @@ namespace {
     X.initializeValues( N,1, xdat,N);
     AX.initializeValues(N,1,axdat,N);
     DefaultArithmetic<MV>::Init(X,1);
-    dsm.multiply(Teuchos::NO_TRANS,1.0,X,0.0,AX);
+    dsm.multiply(Teuchos::NO_TRANS,Teuchos::ScalarTraits<Scalar>::one(),X,Teuchos::ScalarTraits<Scalar>::zero(),AX);
     ArrayRCP<const Scalar> axview = node->template viewBuffer<Scalar>(N,axdat);
-    Scalar err = 0.0;
+    Scalar err = Teuchos::ScalarTraits<Scalar>::zero();
     for (int i=0; i<N; ++i) {
       err = axview[i] * axview[i];
     }
     axview = null;
     err = Teuchos::ScalarTraits<Scalar>::squareroot(err);
-    TEST_EQUALITY_CONST(err, 0.0);
+    TEST_EQUALITY_CONST(err, Teuchos::ScalarTraits<Scalar>::zero());
     xdat = null;
     axdat = null;
   }
