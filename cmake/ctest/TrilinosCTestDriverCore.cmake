@@ -318,7 +318,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
     IF(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}")
       MESSAGE("${CTEST_SOURCE_DIRECTORY} does not exist so setting up for an initial checkout")
       SET( CTEST_CHECKOUT_COMMAND
-        "${GIT_EXE} clone ${CTEST_UPDATE_ARGS} ${Trilinos_REPOSITORY_LOCATION}" )
+        "\"${GIT_EXE}\" clone ${CTEST_UPDATE_ARGS} ${Trilinos_REPOSITORY_LOCATION}" )
       MESSAGE("CTEST_CHECKOUT_COMMAND='${CTEST_CHECKOUT_COMMAND}'")
     ELSE()
       MESSAGE("${CTEST_SOURCE_DIRECTORY} exists so skipping the initial checkout.")
