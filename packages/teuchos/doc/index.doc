@@ -23,7 +23,7 @@ include BLAS/LAPACK wrappers, smart pointers, parameter lists, XML parsers, etc.
 The following people have contributed to the development of Teuchos:
 
 <ul>
-	<li> Chris Baker, Florida State University, cbaker@csit.fsu.edu
+	<li> Chris Baker, Oak Ridge National Lab, bakercg@ornl.gov
 	<li> Roscoe Bartlett, Sandia National Labs, rabartl@sandia.gov
 	<li> Michael Heroux, Sandia National Labs, maherou@sandia.gov
 	<li> Kris Kampshoff, University of Minnesota, kamp@cs.umn.edu
