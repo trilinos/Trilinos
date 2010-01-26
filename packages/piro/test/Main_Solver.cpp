@@ -38,116 +38,115 @@ int main(int argc, char *argv[]) {
   bool doAll = (argc==1);
   if (argc>1) doAll = !strcmp(argv[1],"-v");
  
- for (int iTest=0; iTest<3; iTest++) {
+  for (int iTest=0; iTest<3; iTest++) {
 
- if (doAll) {
-   switch (iTest) {
-    case 0: inputFile="input_Solve_NOX_1.xml"; break;
-    case 1: inputFile="input_Solve_LOCA_1.xml"; break;
-    case 2: inputFile="input_Solve_Rythmos_1.xml"; break;
-    default : cout << "iTest logic error " << endl; exit(-1);
-   }
- }
- else {
-   inputFile=argv[1];
-   iTest = 999;
- }
+    if (doAll) {
+      switch (iTest) {
+       case 0: inputFile="input_Solve_NOX_1.xml"; break;
+       case 1: inputFile="input_Solve_LOCA_1.xml"; break;
+       case 2: inputFile="input_Solve_Rythmos_1.xml"; break;
+       default : cout << "iTest logic error " << endl; exit(-1);
+      }
+    }
+     else {
+      inputFile=argv[1];
+      iTest = 999;
+    }
 
-  if (Proc==0)
-   cout << "===================================================\n"
-        << "======  Running input file "<< iTest <<": "<< inputFile <<"\n"
-        << "===================================================\n"
-        << endl;
-  
-  try {
+    if (Proc==0)
+     cout << "===================================================\n"
+          << "======  Running input file "<< iTest <<": "<< inputFile <<"\n"
+          << "===================================================\n"
+          << endl;
+    
+    try {
 
-    // Create (1) a Model Evaluator and (2) a ParameterList
-    RCP<EpetraExt::ModelEvaluator> Model = rcp(new MockModelEval_A(appComm));
+      // Create (1) a Model Evaluator and (2) a ParameterList
+      RCP<EpetraExt::ModelEvaluator> Model = rcp(new MockModelEval_A(appComm));
 
-    RCP<Teuchos::ParameterList> piroParams =
-       rcp(new Teuchos::ParameterList("Piro Parameters"));
-    Teuchos::updateParametersFromXmlFile(inputFile, piroParams.get());
+      RCP<Teuchos::ParameterList> piroParams =
+         rcp(new Teuchos::ParameterList("Piro Parameters"));
+      Teuchos::updateParametersFromXmlFile(inputFile, piroParams.get());
 
-    // Use these two objects to construct a Piro solved application 
-    //   EpetraExt::ModelEvaluator is  base class of all Piro::Epetra solvers
-    RCP<EpetraExt::ModelEvaluator> piro;
+      // Use these two objects to construct a Piro solved application 
+      //   EpetraExt::ModelEvaluator is  base class of all Piro::Epetra solvers
+      RCP<EpetraExt::ModelEvaluator> piro;
 
-    std::string& solver = piroParams->get("Piro Solver","NOX");
+      std::string& solver = piroParams->get("Piro Solver","NOX");
 #ifdef Piro_ENABLE_NOX
-    if (solver=="NOX")
-      piro = rcp(new Piro::Epetra::NOXSolver(piroParams, Model));
-    else if (solver=="LOCA")
-      piro = rcp(new Piro::Epetra::LOCASolver(piroParams, Model));
-    else
+      if (solver=="NOX")
+        piro = rcp(new Piro::Epetra::NOXSolver(piroParams, Model));
+      else if (solver=="LOCA")
+        piro = rcp(new Piro::Epetra::LOCASolver(piroParams, Model));
+      else
 #endif
 #ifdef Piro_ENABLE_Rythmos
-    if (solver=="Rythmos")
-      piro = rcp(new Piro::Epetra::RythmosSolver(piroParams, Model));
-    else 
+      if (solver=="Rythmos")
+        piro = rcp(new Piro::Epetra::RythmosSolver(piroParams, Model));
+      else 
 #endif
-      TEST_FOR_EXCEPTION(true, std::logic_error,
-        "Error: Unknown Piro Solver : " << solver);
+        TEST_FOR_EXCEPTION(true, std::logic_error,
+          "Error: Unknown Piro Solver : " << solver);
 
-    bool computeSens = piroParams->get("Compute Sensitivities", false);
+      bool computeSens = piroParams->get("Compute Sensitivities", false);
 
-    // Now the (somewhat cumbersome) setting of inputs and outputs
-    EpetraExt::ModelEvaluator::InArgs inArgs = piro->createInArgs();
-    int num_p = inArgs.Np();     // Number of *vectors* of parameters
-    RCP<Epetra_Vector> p1 = rcp(new Epetra_Vector(*(piro->get_p_init(0))));
-    int numParams = p1->MyLength(); // Number of parameters in p1 vector
-    inArgs.set_p(0,p1);
+      // Now the (somewhat cumbersome) setting of inputs and outputs
+      EpetraExt::ModelEvaluator::InArgs inArgs = piro->createInArgs();
+      int num_p = inArgs.Np();     // Number of *vectors* of parameters
+      RCP<Epetra_Vector> p1 = rcp(new Epetra_Vector(*(piro->get_p_init(0))));
+      int numParams = p1->MyLength(); // Number of parameters in p1 vector
+      inArgs.set_p(0,p1);
 
-    // Set output arguments to evalModel call
-    EpetraExt::ModelEvaluator::OutArgs outArgs = piro->createOutArgs();
-    int num_g = outArgs.Ng(); // Number of *vectors* of responses
-    RCP<Epetra_Vector> g1 = rcp(new Epetra_Vector(*(piro->get_g_map(0))));
-    outArgs.set_g(0,g1);
-    // Solution vector is returned as extra respons vector
-    RCP<Epetra_Vector> gx = rcp(new Epetra_Vector(*(piro->get_g_map(1))));
-    outArgs.set_g(1,gx);
+      // Set output arguments to evalModel call
+      EpetraExt::ModelEvaluator::OutArgs outArgs = piro->createOutArgs();
+      int num_g = outArgs.Ng(); // Number of *vectors* of responses
+      RCP<Epetra_Vector> g1 = rcp(new Epetra_Vector(*(piro->get_g_map(0))));
+      outArgs.set_g(0,g1);
+      // Solution vector is returned as extra respons vector
+      RCP<Epetra_Vector> gx = rcp(new Epetra_Vector(*(piro->get_g_map(1))));
+      outArgs.set_g(1,gx);
 
-    RCP<Epetra_MultiVector> dgdp = rcp(new Epetra_MultiVector(g1->Map(), numParams));
-    if (computeSens) outArgs.set_DgDp(0, 0, dgdp);
+      RCP<Epetra_MultiVector> dgdp = rcp(new Epetra_MultiVector(g1->Map(), numParams));
+      if (computeSens) outArgs.set_DgDp(0, 0, dgdp);
 
-    // Now, solve the problem and return the responses
-    piro->evalModel(inArgs, outArgs);
+      // Now, solve the problem and return the responses
+      piro->evalModel(inArgs, outArgs);
 
-    // Print out everything
-    if (Proc == 0)
-      cout << "Finished Model Evaluation: Printing everything {Exact in brackets}" 
-           << "\n-----------------------------------------------------------------"
-           << std::setprecision(9) << endl;
+      // Print out everything
+      if (Proc == 0)
+        cout << "Finished Model Evaluation: Printing everything {Exact in brackets}" 
+             << "\n-----------------------------------------------------------------"
+             << std::setprecision(9) << endl;
 
-    p1->Print(cout << "\nParameters! {1,1}\n");
-    g1->Print(cout << "\nResponses! {8.0}\n");
-    gx->Print(cout << "\nSolution! {1,2,3,4}\n");
-    if (computeSens)
-      dgdp->Print(cout <<"\nSensitivities {2.0, -8.0}\n");
+      p1->Print(cout << "\nParameters! {1,1}\n");
+      g1->Print(cout << "\nResponses! {8.0}\n");
+      gx->Print(cout << "\nSolution! {1,2,3,4}\n");
+      if (computeSens)
+        dgdp->Print(cout <<"\nSensitivities {2.0, -8.0}\n");
 
-    if (Proc == 0)
-      cout <<
-        "\n-----------------------------------------------------------------\n";
-  }
+      if (Proc == 0)
+        cout <<
+          "\n-----------------------------------------------------------------\n";
+    }
 
-  catch (std::exception& e) {
-    cout << e.what() << endl;
-    status = 10;
-  }
-  catch (string& s) {
-    cout << s << endl;
-    status = 20;
-  }
-  catch (char *s) {
-    cout << s << endl;
-    status = 30;
-  }
-  catch (...) {
-    cout << "Caught unknown exception!" << endl;
-    status = 40;
-  }
+    catch (std::exception& e) {
+      cout << e.what() << endl;
+      status = 10;
+    }
+    catch (string& s) {
+      cout << s << endl;
+      status = 20;
+    }
+    catch (char *s) {
+      cout << s << endl;
+      status = 30;
+    }
+    catch (...) {
+      cout << "Caught unknown exception!" << endl;
+      status = 40;
+    }
 
-  overall_status += status;
-
+    overall_status += status;
   }
 
 #ifdef HAVE_MPI
@@ -162,7 +161,7 @@ int main(int argc, char *argv[]) {
     if (overall_status==0) 
       cout << "\nTEST PASSED\n" << endl;
     else 
-      cout << "\nTEST Failed\n" << endl;
+      cout << "\nTEST Failed:  " << overall_status << endl;
   }
 
   return status;

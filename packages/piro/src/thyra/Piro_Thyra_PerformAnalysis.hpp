@@ -8,11 +8,26 @@
 namespace Piro {
   namespace Thyra {
 
-  void PerformAnalysis(
+  int PerformAnalysis(
      ::Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
      Teuchos::ParameterList& analysisParams
      );
 
+  int PerformMoochoAnalysis(
+     ::Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
+     Teuchos::ParameterList& moochoParams
+     );
+
+  int PerformDakotaAnalysis(
+     ::Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
+     Teuchos::ParameterList& dakotaParams
+     );
+
+  int PerformOptiPackAnalysis(
+     ::Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
+     Teuchos::ParameterList& optipackParams,
+     Teuchos::ParameterList& globipackParams
+     );
   }
 }
 
