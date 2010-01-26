@@ -4,7 +4,7 @@ Set up email notification hooks
 
 1) Create symbolic links to the static driver files
 
-  $ cd GIT_REPO_BASE_DIR
+  $ cd GIT_REPO_BASE_DIR/hooks
   $ ln -s THIS_DIR/post-receive .
   $ ln -s THIS_DIR/post-receive-email .
   $ ln -s THIS_DIR/get_recipients.py .
