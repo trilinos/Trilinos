@@ -67,14 +67,14 @@ PACKAGE_ADD_TEST(
   STANDARD_PASS_OUTPUT
 )
 
-PACKAGE_ADD_TEST(
-  tif_belos TifpackBelosCopyFiles
-  NAME PtJacobi_belos
-  ARGS "--xml_file=test_PtJacobi_calore1_mm.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  STANDARD_PASS_OUTPUT
-)
+# PACKAGE_ADD_TEST(
+#   tif_belos TifpackBelosCopyFiles
+#   NAME PtJacobi_belos
+#   ARGS "--xml_file=test_PtJacobi_calore1_mm.xml"
+#   COMM serial mpi
+#   NUM_MPI_PROCS 1
+#   STANDARD_PASS_OUTPUT
+# )
 
 IF(Tifpack_ENABLE_QD)
   PACKAGE_ADD_TEST(
@@ -140,23 +140,23 @@ ENDIF()
 #   STANDARD_PASS_OUTPUT
 # )
 
-PACKAGE_ADD_TEST(
-  tif_belos TifpackBelosCopyFiles
-  NAME GS_belos
-  ARGS "--xml_file=test_GS_calore1_mm.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  STANDARD_PASS_OUTPUT
-)
+# PACKAGE_ADD_TEST(
+#   tif_belos TifpackBelosCopyFiles
+#   NAME GS_belos
+#   ARGS "--xml_file=test_GS_calore1_mm.xml"
+#   COMM serial mpi
+#   NUM_MPI_PROCS 1
+#   STANDARD_PASS_OUTPUT
+# )
 
-PACKAGE_ADD_TEST(
-  tif_belos TifpackBelosCopyFiles
-  NAME SGS_belos
-  ARGS "--xml_file=test_SGS_calore1_mm.xml"
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  STANDARD_PASS_OUTPUT
-)
+# PACKAGE_ADD_TEST(
+#   tif_belos TifpackBelosCopyFiles
+#   NAME SGS_belos
+#   ARGS "--xml_file=test_SGS_calore1_mm.xml"
+#   COMM serial mpi
+#   NUM_MPI_PROCS 1
+#   STANDARD_PASS_OUTPUT
+# )
 
 PACKAGE_ADD_TEST(
   tif_belos TifpackBelosCopyFiles

@@ -12,6 +12,7 @@
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_CrsMatrixSolveOp.hpp"
 
 #include "Kokkos_SerialNode.hpp"
 #ifdef HAVE_KOKKOS_TBB
@@ -87,13 +88,13 @@ namespace {
   using Tpetra::Map;
   using Tpetra::MultiVector;
   using Tpetra::Vector;
-  using Tpetra::InverseOperator;
   using Tpetra::Operator;
   using Tpetra::CrsMatrix;
   using Tpetra::CrsGraph;
   using Tpetra::RowMatrix;
   using Tpetra::Import;
   using Tpetra::global_size_t;
+  using Tpetra::createCrsMatrixSolveOp;
   using Tpetra::DefaultPlatform;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
@@ -1033,7 +1034,6 @@ namespace {
     RCP<Node> node = getNode<Node>();
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef Operator<Scalar,LO,GO,Node>  OP;
-    typedef InverseOperator<Scalar,LO,GO,Node>  IOP;
     typedef ScalarTraits<Scalar> ST;
     typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
@@ -1056,7 +1056,7 @@ namespace {
     X.randomize();
     for (size_t tnum=0; tnum < 2; ++tnum) {
       ETransp trans     = ((tnum & 1) == 1 ? CONJ_TRANS        : NO_TRANS);
-      RCP<IOP> ZeroIOp;
+      RCP<OP> ZeroIOp;
       {
         RCP<MAT> ZeroMat;
         // must explicitly provide the column map for implicit diagonals
@@ -1065,11 +1065,11 @@ namespace {
         TEST_EQUALITY_CONST(ZeroMat->isUpperTriangular(), true);
         TEST_EQUALITY_CONST(ZeroMat->isLowerTriangular(), true);
         TEST_EQUALITY_CONST(ZeroMat->getGlobalNumDiags(), 0);
-        ZeroIOp = ZeroMat;
+        ZeroIOp = createCrsMatrixSolveOp<Scalar>(ZeroMat.getConst());
       }
       X = B;
       Xhat.randomize();
-      ZeroIOp->applyInverse(B,Xhat,trans);
+      ZeroIOp->apply(B,Xhat,trans);
       //
       Xhat.update(-ST::one(),X,ST::one());
       Array<Mag> errnrms(numVecs), normsB(numVecs), zeros(numVecs, MT::zero());
@@ -1087,7 +1087,6 @@ namespace {
     RCP<Node> node = getNode<Node>();
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef Operator<Scalar,LO,GO,Node>  OP;
-    typedef InverseOperator<Scalar,LO,GO,Node>  IOP;
     typedef ScalarTraits<Scalar> ST;
     typedef MultiVector<Scalar,LO,GO,Node> MV;
     typedef typename ST::magnitudeType Mag;
@@ -1131,7 +1130,7 @@ namespace {
       EDiag   diag      = ((tnum & 2) == 2 ? UNIT_DIAG         : NON_UNIT_DIAG);
       OptimizeOption os = ((tnum & 4) == 4 ? DoOptimizeStorage : DoNotOptimizeStorage);
       ETransp trans     = ((tnum & 8) == 8 ? CONJ_TRANS        : NO_TRANS);
-      RCP<IOP> AIOp;
+      RCP<OP> AIOp;
       {
         RCP<MAT> AMat;
         if (diag == UNIT_DIAG) {
@@ -1191,7 +1190,7 @@ namespace {
         TEST_EQUALITY(AMat->isUpperTriangular(), uplo == UPPER_TRI);
         TEST_EQUALITY(AMat->isLowerTriangular(), uplo == LOWER_TRI);
         TEST_EQUALITY(AMat->getGlobalNumDiags() == 0, diag == UNIT_DIAG);
-        AIOp = AMat;
+        AIOp = createCrsMatrixSolveOp<Scalar>(AMat.getConst());
       }
       B.randomize();
       AIOp->apply(X,B,trans);
@@ -1201,7 +1200,7 @@ namespace {
         B.update(ST::one(),X,ST::one());
       }
       Xhat.randomize();
-      AIOp->applyInverse(B,Xhat,trans);
+      AIOp->apply(B,Xhat,trans);
       //
       Xhat.update(-ST::one(),X,ST::one());
       Array<Mag> errnrms(numVecs), normsB(numVecs), zeros(numVecs, MT::zero());

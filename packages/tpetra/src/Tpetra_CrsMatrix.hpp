@@ -45,7 +45,6 @@
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 
-#include "Tpetra_InverseOperator.hpp"
 #include "Tpetra_RowMatrix.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Import.hpp"
@@ -105,7 +104,7 @@ namespace Tpetra
    *
    */
   template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatVec = Kokkos::DefaultSparseMultiply<Scalar,LocalOrdinal,Node>, class LocalMatSolve = Kokkos::DefaultSparseSolve<Scalar,LocalOrdinal,Node> >
-  class CrsMatrix : public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>, public InverseOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+  class CrsMatrix : public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
     public:
       //! @name Constructor/Destructor Methods
       //@{ 
@@ -363,17 +362,6 @@ namespace Tpetra
 
       //! Indicates whether this operator supports applying the adjoint operator.
       bool hasTransposeApply() const;
-
-      //@}
-
-      //! @name Methods implementing InverseOperator
-      //@{ 
-
-      //! Computes this matrix-vector multilication y = A x.
-      void applyInverse(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
-
-      //! Indicates whether this operator supports inverting the adjoint operator.
-      bool hasTransposeApplyInverse() const;
 
       //@}
 
@@ -792,10 +780,10 @@ namespace Tpetra
     return true;
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
-  bool CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::hasTransposeApplyInverse() const {
-    return true;
-  }
+  // template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+  // bool CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::hasTransposeApplyInverse() const {
+  //   return true;
+  // }
       
 
   /////////////////////////////////////////////////////////////////////////////
@@ -2241,13 +2229,13 @@ namespace Tpetra
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::applyInverse(
-                                    const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
-                                          MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
-                                          Teuchos::ETransp mode) const {
-    solve<Scalar,Scalar>(Y,X,mode);
-  }
+  // template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+  // void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::applyInverse(
+  //                                   const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
+  //                                         MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
+  //                                         Teuchos::ETransp mode) const {
+  //   solve<Scalar,Scalar>(Y,X,mode);
+  // }
 
 
   /////////////////////////////////////////////////////////////////////////////

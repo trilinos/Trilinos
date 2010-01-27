@@ -33,17 +33,22 @@
 #include "Tifpack_ConfigDefs.hpp"
 #include "Tifpack_CondestType.hpp"
 #include "Tifpack_Preconditioner.hpp"
+#include <Teuchos_Ptr.hpp>
 
 namespace Tifpack {
 
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal, class Node>
 Scalar Condest(const Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>& TIFP,
-		      const Tifpack::CondestType CT,
-		      const int MaxIters = 1550,
-		      const typename Teuchos::ScalarTraits<Scalar>::magnitudeType& Tol = 1e-9,
-		      Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>* Matrix = 0)
+		           const Tifpack::CondestType CT,
+               const int MaxIters = 1550,
+               const typename Teuchos::ScalarTraits<Scalar>::magnitudeType& Tol = 1e-9,
+               const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &matrix_in = Teuchos::null)
 {
   Scalar ConditionNumberEstimate = -1.0;
+  Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > matrix = matrix_in;
+  if (matrix_in == Teuchos::null) {
+    matrix = TIFP.getMatrix().ptr();
+  }
 
   if (CT == Tifpack::Cheap) {
 
@@ -53,7 +58,7 @@ Scalar Condest(const Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,N
     // Create the vector of results
     Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> OnesResult(TIFP.getRangeMap());
     // Compute the effect of the solve on the vector of ones
-    TIFP.applyInverse(Ones, OnesResult);
+    TIFP.apply(Ones, OnesResult);
     // Make all values non-negative
     OnesResult.abs(OnesResult);
     // Get the maximum value across all processors
@@ -65,15 +70,12 @@ Scalar Condest(const Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,N
 
 #ifdef HAVE_TIFPACK_AZTECOO
 this code not yet converted!!!
-    if (Matrix == 0)
-      Matrix = (Tpetra_RowMatrix*)&(IFP.Matrix());
-
     Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> LHS(IFP.getDomainMap());
     LHS.PutScalar(0.0);
     Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> RHS(IFP.getRangeMap());
     RHS.Random();
     Tpetra_LinearProblem Problem;
-    Problem.SetOperator(Matrix);
+    Problem.SetOperator(matrix);
     Problem.SetLHS(&LHS);
     Problem.SetRHS(&RHS);
 
@@ -90,15 +92,12 @@ this code not yet converted!!!
 
 #ifdef HAVE_TIFPACK_AZTECOO
 this code not yet converted!!!
-    if (Matrix == 0)
-      Matrix = (Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>*)&(IFP.Matrix());
-
     Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> LHS(IFP.getDomainMap());
     LHS.PutScalar(0.0);
     Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> RHS(IFP.getRangeMap());
     RHS.Random();
     Tpetra_LinearProblem Problem;
-    Problem.SetOperator(Matrix);
+    Problem.SetOperator(matrix);
     Problem.SetLHS(&LHS);
     Problem.SetRHS(&RHS);
 

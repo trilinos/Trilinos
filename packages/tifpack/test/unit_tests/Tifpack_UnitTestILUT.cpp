@@ -70,7 +70,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackILUT, Test0, Scalar, LocalOrdinal, Glob
   params.set("fact: ilut level-of-fill", 1.0);
   params.set("fact: drop tolerance", 0.0);
 
-  TEUCHOS_TEST_NOTHROW(prec.SetParameters(params), out, success);
+  TEUCHOS_TEST_NOTHROW(prec.setParameters(params), out, success);
 
   //trivial tests to insist that the preconditioner's domain/range maps are
   //identically those of the matrix:
@@ -83,13 +83,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackILUT, Test0, Scalar, LocalOrdinal, Glob
   TEUCHOS_TEST_EQUALITY( prec_dom_map_ptr, mtx_dom_map_ptr, out, success );
   TEUCHOS_TEST_EQUALITY( prec_rng_map_ptr, mtx_rng_map_ptr, out, success );
 
-  prec.Initialize();
-  prec.Compute();
+  prec.initialize();
+  prec.compute();
 
   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,2), y(rowmap,2);
   x.putScalar(1);
 
-  prec.applyInverse(x, y);
+  prec.apply(x, y);
 
   Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
 
@@ -121,16 +121,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackILUT, Test1, Scalar, LocalOrdinal, Glob
   params.set("fact: ilut level-of-fill", 6.0);
   params.set("fact: drop tolerance", 0.0);
 
-  TEUCHOS_TEST_NOTHROW(prec.SetParameters(params), out, success);
+  TEUCHOS_TEST_NOTHROW(prec.setParameters(params), out, success);
 
-  prec.Initialize();
-  prec.Compute();
+  prec.initialize();
+  prec.compute();
 
   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,2), y(rowmap,2);
   x.putScalar(1);
 
   crsmatrix->apply(x,y);
-  prec.applyInverse(y, x);
+  prec.apply(y, x);
 
   Teuchos::ArrayRCP<const Scalar> xview = x.get1dView();
 

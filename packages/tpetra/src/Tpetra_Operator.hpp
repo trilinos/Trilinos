@@ -38,42 +38,44 @@
 namespace Tpetra {
 
   //! \brief Abstract interface for linear operators accepting Tpetra MultiVector objects.
-  /*!
-     This class is templated on \c Scalar, \c LocalOrdinal, \c GlobalOrdinal and \c Node. 
+  /*!  This class is templated on \c Scalar, \c LocalOrdinal, \c GlobalOrdinal and \c Node. 
      The \c LocalOrdinal type, if omitted, defaults to \c int. The \c GlobalOrdinal 
      type, if omitted, defaults to the \c LocalOrdinal type  Node is by defult of type Kokkos::DefaultNode::DefaultNodeType.
-   
-	A companion class to Tpetra::Operator is Tpetra::InverseOperator.  Both classes support polymorphic behavior for abstract linear operators. 
-   However, Tpetra::Operator supports a "forward" operator, typically a matrix-vector multiplication, while Tpetra::InverseOperator supports an inversion
-   such as triangular solves or the application of a preconditioner.  Full-featured classes such as Tpetra::CrsMatrix will implement both interfaces.
-   Many user-defined classes will only implement one or the other, but there are important cases where both interfaces will be implemented by the same
-   derived class. Such is the case for sophisticated multiphysics preconditioners.
-   
+
+     A Operator object applies a linear operator to a MultiVector, storing the result in another MultiVector. The scalar type \c Scalar 
+     of the Operator specifies the scalar field of the input and output MultiVector objects, not that of the underlying linear operator. Operator is an 
+     abstract base class, and interfaces exist for this interface from numerous other classes, including sparse matrices, direct solvers, iterative solvers, 
+     and preconditioners.
    */
   template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
-	class Operator : virtual public Teuchos::Describable {
-	public:
+  class Operator : virtual public Teuchos::Describable {
+  public:
 
-		/** \name Pure virtual functions to be overridden by subclasses. */
+    /** \name Pure virtual functions to be overridden by subclasses. */
     //@{
 
-		//! Returns the Map associated with the domain of this operator, which must be compatible with X.getMap().
-		virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const = 0;
+    //! Returns the Map associated with the domain of this operator, which must be compatible with X.getMap().
+    virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const = 0;
 
-		//! Returns the Map associated with the range of this operator, which must be compatible with Y.getMap().
-		virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const = 0;
+    //! Returns the Map associated with the range of this operator, which must be compatible with Y.getMap().
+    virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const = 0;
 
-    //! Computes the operator-multivector multiplication \f$Y = A X\f$.
-		virtual void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
-						   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
-						   Teuchos::ETransp mode = Teuchos::NO_TRANS) const = 0;
+    //! Computes the operator-multivector multiplication \f$A X\f$ into \c Y, overwriting the previous contents of \c Y.
+    virtual void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
+               MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
+               Teuchos::ETransp mode = Teuchos::NO_TRANS) const = 0;
+
+    //! Computes the operator-multivector multiplication \f$Y = \alpha A X + \beta Y\f$.
+    // virtual void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
+    //         Scalar alpha, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
+    //         Scalar beta, Teuchos::ETransp mode = Teuchos::NO_TRANS) const = 0;
 
     //! Indicates whether this operator supports applying the adjoint operator.
     virtual bool hasTransposeApply() const;
 
     //@}
 
-	};
+  };
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>::hasTransposeApply() const {

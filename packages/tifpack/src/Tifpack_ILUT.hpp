@@ -38,19 +38,20 @@
 #ifndef TIFPACK_ILUT_HPP
 #define TIFPACK_ILUT_HPP
 
-#include <cmath>
-#include <algorithm>
-
 #include "Tifpack_ConfigDefs.hpp"
 #include "Tifpack_CondestType.hpp"
 #include "Tifpack_Condest.hpp"
 #include "Tifpack_Heap.hpp"
 #include "Tifpack_ScalingType.hpp"
 #include "Tifpack_Parameters.hpp"
-#include "Tpetra_CrsMatrix.hpp"
 #include "Tifpack_Preconditioner.hpp"
-#include "Teuchos_Time.hpp"
-#include "Teuchos_RCP.hpp"
+#include <Tpetra_CrsMatrix.hpp>
+#include <Teuchos_Time.hpp>
+#include <Teuchos_RCP.hpp>
+#include <Teuchos_TypeNameTraits.hpp>
+
+#include <cmath>
+#include <algorithm>
 
 namespace Teuchos {
   class ParameterList;
@@ -72,7 +73,7 @@ namespace Tifpack {
 
     \date Last modified on 22-Jan-05.
 */    
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
+template<class Scalar,class LocalOrdinal = int,class GlobalOrdinal = LocalOrdinal,class Node = Kokkos::DefaultNode::DefaultNodeType,class LocalMatVec = Kokkos::DefaultSparseMultiply<Scalar,LocalOrdinal,Node>,class LocalMatSolve = Kokkos::DefaultSparseSolve<Scalar,LocalOrdinal,Node> >
 class ILUT: public Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
       
 public:
@@ -80,9 +81,11 @@ public:
   typedef typename Teuchos::Array<LocalOrdinal>::size_type      Tsize_t;
   typedef typename Teuchos::Array<Scalar>::size_type            Tsize_t_S;
 
-  // @{ Constructors and Destructors
-  //! ILUT constuctor with RowMatrix input
-  ILUT(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A);
+  // \name Constructors and Destructors
+  // @{ 
+
+  //! ILUT explicit constuctor with RowMatrix input
+  explicit ILUT(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &A);
   
   //! ILUT Destructor
   virtual ~ILUT();
@@ -97,7 +100,7 @@ public:
      threshold entries must have type double and overlap_mode must have type
      Tpetra::CombineMode.
   */
-  void SetParameters(Teuchos::ParameterList& params);
+  void setParameters(Teuchos::ParameterList& params);
 
   //! Initialize L and U with values from user matrix A.
   /*! Copies values from the user's matrix into the nonzero pattern of L and U.
@@ -106,11 +109,10 @@ public:
     \warning The graph of A must be identical to the graph passed in to IlukGraph constructor.
              
    */
-  void Initialize();
+  void initialize();
 
   //! Returns \c true if the preconditioner has been successfully initialized.
-  bool IsInitialized() const
-  {
+  inline bool isInitialized() const {
     return(IsInitialized_);
   }
 
@@ -123,24 +125,16 @@ public:
     </ol>
     InitValues() must be called before the factorization can proceed.
    */
-  void Compute();
+  void compute();
 
   //! If factor is completed, this query returns true, otherwise it returns false.
-  bool IsComputed() const {return(IsComputed_);};
+  inline bool isComputed() const {
+    return(IsComputed_);
+  }
 
-  //! Returns the Tpetra::Map object associated with the domain of this operator.
-  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& getDomainMap() const;
+  //! @name Methods implementing Tpetra::Operator.
+  //@{ 
 
-  //! Returns the Tpetra::Map object associated with the range of this operator.
-  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& getRangeMap() const;
-
-  // Mathematical functions.
-  
-  void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-                   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-                   Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
-
-  //! Computed the estimated condition number and returns the value.
   //! Returns the result of a ILUT forward/back solve on a Tpetra::MultiVector X in Y.
   /*! 
     \param 
@@ -150,151 +144,126 @@ public:
     
     \return Integer error code, set to 0 if successful.
   */
-  void applyInverse(
+  void apply(
       const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
             Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
             Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
-  magnitudeType Condest(const CondestType CT = Cheap, 
-                 const LocalOrdinal MaxIters = 1550,
-                 const magnitudeType Tol = 1e-9,
-        Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>* Matrix_in = 0);
+  //! Returns the Tpetra::Map object associated with the domain of this operator.
+  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& getDomainMap() const;
+
+  //! Returns the Tpetra::Map object associated with the range of this operator.
+  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& getRangeMap() const;
+
+  bool hasTransposeApply() const;
+
+  //@}
+
+  // Mathematical functions.
+  
+  //! Computes the estimated condition number and returns the value.
+  magnitudeType computeCondEst(CondestType CT = Cheap, 
+                               LocalOrdinal MaxIters = 1550,
+                               magnitudeType Tol = 1e-9,
+                               const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &Matrix_in = Teuchos::null);
 
   //! Returns the computed estimated condition number, or -1.0 if no computed.
-  magnitudeType Condest() const
-  {
-    return(Condest_);
-  }
-
-  //! If set true, transpose of this operator will be applied.
-  /*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
-      affects only the apply() and applyInverse() methods.  If the implementation of this interface 
-      does not support transpose use, this method should return a value of -1.
-      
-     \param
-     UseTranspose_in - (In) If true, multiply by the transpose of operator, otherwise just use operator.
-
-     \return Always returns 0.
-  */
-  int SetUseTranspose(bool UseTranspose_in) {UseTranspose_ = UseTranspose_in; return(0);}
-
-  //! Returns 0.0 because this class cannot compute Inf-norm.
-  magnitudeType NormInf() const {return(0.0);}
-
-  //! Returns false because this class cannot compute an Inf-norm.
-  bool HasNormInf() const {return(false);}
-
-  //! Returns the current UseTranspose setting.
-  bool UseTranspose() const {return(UseTranspose_);}
+  magnitudeType getCondEst() const;
 
   //! Returns the Tpetra::BlockMap object associated with the range of this matrix operator.
-  const Teuchos::Comm<int> & Comm() const{return(*Comm_);}
+  const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
 
   //! Returns a reference to the matrix to be preconditioned.
-  const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Matrix() const
-  {
-    return(*A_);
-  }
+  Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getMatrix() const;
 
   //! Returns a reference to the L factor.
-  const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & L() const {return(*L_);}
+  const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> > & getL() const;
   
   //! Returns a reference to the U factor.
-  const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & U() const {return(*U_);}
+  const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> > & getU() const;
     
-  //! Prints basic information on iostream. This function is used by operator<<.
-  virtual std::ostream& Print(std::ostream& os) const;
-
   //! Returns the number of calls to Initialize().
-  virtual int NumInitialize() const
-  {
-    return(NumInitialize_);
-  }
+  int getNumInitialize() const;
 
   //! Returns the number of calls to Compute().
-  virtual int NumCompute() const
-  {
-    return(NumCompute_);
-  }
+  int getNumCompute() const;
 
-  //! Returns the number of calls to applyInverse().
-  virtual int NumApplyInverse() const
-  {
-    return(NumApplyInverse_);
-  }
+  //! Returns the number of calls to apply().
+  int getNumApply() const;
 
   //! Returns the time spent in Initialize().
-  virtual double InitializeTime() const
-  {
-    return(InitializeTime_);
-  }
+  double getInitializeTime() const;
 
   //! Returns the time spent in Compute().
-  virtual double ComputeTime() const
-  {
-    return(ComputeTime_);
-  }
+  double getComputeTime() const;
 
-  //! Returns the time spent in applyInverse().
-  virtual double ApplyInverseTime() const
-  {
-    return(ApplyInverseTime_);
-  }
+  //! Returns the time spent in apply().
+  double getApplyTime() const;
 
-  inline double LevelOfFill() const {
+  inline double getLevelOfFill() const {
     return(LevelOfFill_);
   }
 
   //! Get absolute threshold value
-  inline double AbsoluteThreshold() const
-  {
+  inline double getAbsoluteThreshold() const {
     return(Athresh_);
   }
 
   //! Get relative threshold value
-  inline double RelativeThreshold() const
-  {
+  inline double getRelativeThreshold() const {
     return(Rthresh_);
   }
 
   //! Get the relax value
-  inline magnitudeType RelaxValue() const
-  {
+  inline magnitudeType getRelaxValue() const {
     return(RelaxValue_);
   }
 
   //! Gets the dropping tolerance
-  inline magnitudeType DropTolerance() const
-  {
+  inline magnitudeType getDropTolerance() const {
     return(DropTolerance_);
   }
-    
+
   //! Returns the number of nonzero entries in the global graph.
-  int NumGlobalNonzeros() const {
-    // FIXME: diagonal of L_ should not be stored
-    return(L().getGlobalNumEntries() + U().getGlobalNumEntries() - L().getGlobalNumRows());
-  }
- 
+  global_size_t getGlobalNumEntries() const;
+
   //! Returns the number of nonzero entries in the local graph.
-  int NumMyNonzeros() const {
-    return(L().getNodeNumEntries() + U().getNodeNumEntries());
-  }
+  size_t getNodeNumEntries() const;
+
+  // @}
+
+  //! @name Overridden from Teuchos::Describable 
+  //@{
+
+  /** \brief Return a simple one-line description of this object. */
+  std::string description() const;
+
+  /** \brief Print the object with some verbosity level to an FancyOStream object. */
+  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+
+  //@}
+
 
 private:
   
-  // @}
   // @{ Internal methods
 
   //! Copy constructor (should never be used)
-  ILUT(const ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>& RHS);
+  ILUT(const ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>& RHS);
 
   //! operator= (should never be used)
-  ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>& operator=(const ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>& RHS);
+  ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>& operator=(const ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>& RHS);
+
+  inline Scalar scalar_mag(const Scalar& s)
+  {
+    return (Scalar)Teuchos::ScalarTraits<Scalar>::magnitude(s);
+  }
 
   //! Releases all allocated memory.
-  void Destroy();
+  void destroy();
 
   // @}
+
   // @{ Internal data
 
   //! reference to the matrix to be preconditioned.
@@ -320,30 +289,32 @@ private:
   bool IsInitialized_;
   //! \c true if \c this object has been computed
   bool IsComputed_;
-  //! \c true if transpose has to be used.
-  bool UseTranspose_;
   //! Number of local rows.
   GlobalOrdinal NumMyRows_;
   //! Contains the number of successful calls to Initialize().
   int NumInitialize_;
   //! Contains the number of successful call to Compute().
   int NumCompute_;
-  //! Contains the number of successful call to applyInverse().
-  mutable int NumApplyInverse_;
+  //! Contains the number of successful call to apply().
+  mutable int NumApply_;
   //! Contains the time for all successful calls to Initialize().
   double InitializeTime_;
   //! Contains the time for all successful calls to Compute().
   double ComputeTime_;
-  //! Contains the time for all successful calls to applyInverse().
-  mutable double ApplyInverseTime_;
+  //! Contains the time for all successful calls to apply().
+  mutable double ApplyTime_;
   //! Used for timing purposes
   mutable Teuchos::Time Time_;
   //! Global number of nonzeros in L and U factors
   size_t GlobalNonzeros_;
+
+  //@}
 }; // ILUT
 
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
-ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ILUT(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A) :
+
+//==============================================================================
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
+ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::ILUT(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A) :
   A_(A),
   Comm_(A->getRowMap()->getComm()),
   Condest_(-1.0),
@@ -354,55 +325,143 @@ ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::ILUT(const Teuchos::RCP<const Tpet
   DropTolerance_(1e-12),
   IsInitialized_(false),
   IsComputed_(false),
-  UseTranspose_(false),
   NumMyRows_(-1),
   NumInitialize_(0),
   NumCompute_(0),
-  NumApplyInverse_(0),
+  NumApply_(0),
   InitializeTime_(0.0),
   ComputeTime_(0.0),
-  ApplyInverseTime_(0.0),
+  ApplyTime_(0.0),
   Time_("Tifpack::ILUT"),
   GlobalNonzeros_(0)
-{
-  // do nothing here..
+{ 
+  TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error, 
+      Teuchos::typeName(*this) << "::ILUT(): input matrix reference was null.");
 }
 
 //==============================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
-const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >&
-ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getDomainMap() const
-{
-  return A_->getDomainMap();
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
+ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::~ILUT() {
+  destroy();
 }
 
 //==============================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
-const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >&
-ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getRangeMap() const
-{
-  return A_->getRangeMap();
-}
-
-//==============================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
-ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::~ILUT()
-{
-  Destroy();
-}
-
-//==============================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
-void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Destroy()
-{
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
+void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::destroy() {
+  // FINISH: destory doesn't actually destroy anything here.
   IsInitialized_ = false;
   IsComputed_ = false;
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
-void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::SetParameters(Teuchos::ParameterList& params)
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
+typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getCondEst() const {
+  return(Condest_);
+}
+
+//==========================================================================
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
+const Teuchos::RCP<const Teuchos::Comm<int> > & 
+ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getComm() const{
+  return(Comm_);
+}
+
+//==========================================================================
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
+Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getMatrix() const {
+  return(A_);
+}
+
+//==========================================================================
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
+const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> > & 
+ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getL() const {
+  return(L_);
+}
+
+//==========================================================================
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
+const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> > & 
+ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getU() const {
+  return(U_);
+}
+  
+//==========================================================================
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
+int ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getNumInitialize() const {
+  return(NumInitialize_);
+}
+
+//==========================================================================
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
+int ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getNumCompute() const {
+  return(NumCompute_);
+}
+
+//==========================================================================
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
+int ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getNumApply() const {
+  return(NumApply_);
+}
+
+//==========================================================================
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
+double ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getInitializeTime() const {
+  return(InitializeTime_);
+}
+
+//==========================================================================
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
+double ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getComputeTime() const {
+  return(ComputeTime_);
+}
+
+//==========================================================================
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
+double ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getApplyTime() const {
+  return(ApplyTime_);
+}
+
+//==========================================================================
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
+global_size_t ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getGlobalNumEntries() const { 
+  // FIXME: diagonal of L_ should not be stored
+  return(L_->getGlobalNumEntries() + U_->getGlobalNumEntries() - L_->getGlobalNumRows());
+}
+
+//==========================================================================
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
+size_t ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getNodeNumEntries() const {
+  return(L_->getNodeNumEntries() + U_->getNodeNumEntries());
+}
+
+//==============================================================================
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
+const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >&
+ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getDomainMap() const
 {
+  return A_->getDomainMap();
+}
+
+//==============================================================================
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
+bool ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::hasTransposeApply() const {
+  return true;
+}
+
+//==============================================================================
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
+const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >&
+ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getRangeMap() const
+{
+  return A_->getRangeMap();
+}
+
+//==========================================================================
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
+void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::setParameters(Teuchos::ParameterList& params) {
   Tifpack::GetParameter(params, "fact: ilut level-of-fill", LevelOfFill_);
   TEST_FOR_EXCEPTION(LevelOfFill_ <= 0.0, std::runtime_error,
     "Tifpack::ILUT::SetParameters ERROR, level-of-fill must be >= 0.");
@@ -422,18 +481,17 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::SetParameters(Teuchos::Parame
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
-void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Initialize()
-{
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
+void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::initialize() {
   // delete previously allocated factorization
-  Destroy();
+  destroy();
 
   Time_.start(true);
 
   // check only in serial
-  TEST_FOR_EXCEPTION(Comm().getSize() == 1 && Matrix().getNodeNumRows() != Matrix().getNodeNumCols(), std::runtime_error, "Tifpack::ILUT::Initialize ERROR, matrix must be square");
+  TEST_FOR_EXCEPTION(Comm_->getSize() == 1 && A_->getNodeNumRows() != A_->getNodeNumCols(), std::runtime_error, "Tifpack::ILUT::Initialize ERROR, matrix must be square");
 
-  NumMyRows_ = Matrix().getNodeNumRows();
+  NumMyRows_ = A_->getNodeNumRows();
 
   // nothing else to do here
   IsInitialized_ = true;
@@ -442,41 +500,34 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Initialize()
   InitializeTime_ += Time_.totalElapsedTime();
 }
 
-template<class Scalar>
-Scalar scalar_mag(const Scalar& s)
-{
-  return Teuchos::ScalarTraits<Scalar>::magnitude(s);
-}
-
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
-void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
-{
-//--------------------------------------------------------------------------
-// Tifpack::ILUT is a translation of the Aztec ILUT implementation. The Aztec
-// ILUT implementation was written by Ray Tuminaro.
-//
-// This isn't an exact translation of the Aztec ILUT algorithm, for the
-// following reasons:
-// 1. Minor differences result from the fact that Aztec factors a MSR format
-// matrix in place, while the code below factors an input CrsMatrix which
-// remains untouched and stores the resulting factors in separate L and U
-// CrsMatrix objects.
-// Also, the Aztec code begins by shifting the matrix pointers back
-// by one, and the pointer contents back by one, and then using 1-based
-// Fortran-style indexing in the algorithm. This Tifpack code uses C-style
-// 0-based indexing throughout.
-// 2. Aztec stores the inverse of the diagonal of U. This Tifpack code
-// stores the non-inverted diagonal in U.
-// The triangular solves (in Tifpack::ILUT::applyInverse) are performed by
-// calling the Tpetra::CrsMatrix::solve method on the L and U objects, and
-// this requires U to contain the non-inverted diagonal.
-//
-// ABW.
-//--------------------------------------------------------------------------
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
+void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::compute() {
+  //--------------------------------------------------------------------------
+  // Tifpack::ILUT is a translation of the Aztec ILUT implementation. The Aztec
+  // ILUT implementation was written by Ray Tuminaro.
+  //
+  // This isn't an exact translation of the Aztec ILUT algorithm, for the
+  // following reasons:
+  // 1. Minor differences result from the fact that Aztec factors a MSR format
+  // matrix in place, while the code below factors an input CrsMatrix which
+  // remains untouched and stores the resulting factors in separate L and U
+  // CrsMatrix objects.
+  // Also, the Aztec code begins by shifting the matrix pointers back
+  // by one, and the pointer contents back by one, and then using 1-based
+  // Fortran-style indexing in the algorithm. This Tifpack code uses C-style
+  // 0-based indexing throughout.
+  // 2. Aztec stores the inverse of the diagonal of U. This Tifpack code
+  // stores the non-inverted diagonal in U.
+  // The triangular solves (in Tifpack::ILUT::apply()) are performed by
+  // calling the Tpetra::CrsMatrix::solve method on the L and U objects, and
+  // this requires U to contain the non-inverted diagonal.
+  //
+  // ABW.
+  //--------------------------------------------------------------------------
 
-  if (!IsInitialized()) {
-    Initialize();
+  if (!isInitialized()) {
+    initialize();
   }
 
   Time_.start(true);
@@ -489,35 +540,35 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
   TEST_FOR_EXCEPTION(L_ == Teuchos::null || U_ == Teuchos::null, std::runtime_error,
      "Tifpack::ILUT::Compute ERROR, failed to allocate L_ or U_");
 
-  Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
-  Scalar one  = Teuchos::ScalarTraits<Scalar>::one();
+  const Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+  const Scalar one  = Teuchos::ScalarTraits<Scalar>::one();
 
-  //We will store ArrayRCP objects that are views of the rows of U, so that
-  //we don't have to repeatedly retrieve the view for each row. These will
-  //be populated row by row as the factorization proceeds.
+  // We will store ArrayRCP objects that are views of the rows of U, so that
+  // we don't have to repeatedly retrieve the view for each row. These will
+  // be populated row by row as the factorization proceeds.
   Teuchos::Array<Teuchos::ArrayRCP<const LocalOrdinal> > Uindices(NumMyRows_);
-  Teuchos::Array<Teuchos::ArrayRCP<const Scalar> > Ucoefs(NumMyRows_);
+  Teuchos::Array<Teuchos::ArrayRCP<const Scalar> >       Ucoefs(NumMyRows_);
 
-//If this macro is defined, files containing the L and U factors
-//will be written. DON'T CHECK IN THE CODE WITH THIS MACRO ENABLED!!!
-// #define TIFPACK_WRITE_FACTORS
+  // If this macro is defined, files containing the L and U factors
+  // will be written. DON'T CHECK IN THE CODE WITH THIS MACRO ENABLED!!!
+  // #define TIFPACK_WRITE_FACTORS
 #ifdef TIFPACK_WRITE_FACTORS
   std::ofstream ofsL("L.tif.mtx", std::ios::out);
   std::ofstream ofsU("U.tif.mtx", std::ios::out);
 #endif
 
-  //Calculate how much fill will be allowed in addition to the space that
-  //corresponds to the input matrix entries.
+  // Calculate how much fill will be allowed in addition to the space that
+  // corresponds to the input matrix entries.
   double local_nnz = static_cast<double>(A_->getNodeNumEntries());
-  double fill = ((LevelOfFill()-1)*local_nnz)/(2*NumMyRows_);
+  double fill = ((getLevelOfFill()-1)*local_nnz)/(2*NumMyRows_);
 
-  //std::ceil gives the smallest integer larger than the argument.
-  //this may give a slightly different result than Aztec's fill value in
-  //some cases.
+  // std::ceil gives the smallest integer larger than the argument.
+  // this may give a slightly different result than Aztec's fill value in
+  // some cases.
   double fill_ceil=std::ceil(fill);
 
-  //Similarly to Aztec, we will allow the same amount of fill for each
-  //row, half in L and half in U.
+  // Similarly to Aztec, we will allow the same amount of fill for each
+  // row, half in L and half in U.
   Tsize_t fillL = static_cast<Tsize_t>(fill_ceil);
   Tsize_t fillU = static_cast<Tsize_t>(fill_ceil);
 
@@ -538,9 +589,9 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
   Teuchos::Array<LocalOrdinal> L_vals_heap;
   Teuchos::Array<LocalOrdinal> U_vals_heap;
 
-  //A comparison object which will be used to create 'heaps' of indices
-  //that are ordered according to the corresponding values in the
-  //'cur_row' array.
+  // A comparison object which will be used to create 'heaps' of indices
+  // that are ordered according to the corresponding values in the
+  // 'cur_row' array.
   greater_indirect<Scalar,LocalOrdinal> vals_comp(cur_row);
 
   // =================== //
@@ -554,8 +605,8 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
     A_->getLocalRowView(row_i, ColIndicesA, ColValuesA);
     size_t RowNnz = ColIndicesA.size();
 
-    //Always include the diagonal in the U factor. The value should get
-    //set in the next loop below.
+    // Always include the diagonal in the U factor. The value should get
+    // set in the next loop below.
     U_cols.push_back(row_i);
     cur_row[row_i] = zero;
     pattern[row_i] = ORIG;
@@ -577,17 +628,17 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
       }
     }
 
-    //Alter the diagonal according to the absolute-threshold and
-    //relative-threshold values. If not set, those values default
-    //to zero and one respectively.
+    // Alter the diagonal according to the absolute-threshold and
+    // relative-threshold values. If not set, those values default
+    // to zero and one respectively.
     const Scalar& v = cur_row[row_i];
-    cur_row[row_i] = AbsoluteThreshold()*TIFPACK_SGN(v) + RelativeThreshold()*v;
+    cur_row[row_i] = getAbsoluteThreshold()*TIFPACK_SGN(v) + getRelativeThreshold()*v;
 
     Tsize_t orig_U_len = U_cols.size();
     RowNnz = L_cols_heap.size() + orig_U_len;
-    rownorm = DropTolerance() * rownorm/RowNnz;
+    rownorm = getDropTolerance() * rownorm/RowNnz;
 
-    //The following while loop corresponds to the 'L30' goto's in Aztec.
+    // The following while loop corresponds to the 'L30' goto's in Aztec.
     Tsize_t L_vals_heaplen = 0;
     while(L_cols_heaplen > 0) {
       LocalOrdinal row_k = L_cols_heap.front();
@@ -647,7 +698,7 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
     }//end of while(L_cols_heaplen) loop
 
 
-    //Put indices and values for L into arrays and then into the L_ matrix.
+    // Put indices and values for L into arrays and then into the L_ matrix.
 
     //   first, the original entries from the L section of A:
     for(size_t i=0; i<RowNnz; ++i) {
@@ -665,10 +716,10 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
       pattern[L_vals_heap[j]] = UNUSED;
     }
 
-    //L has a one on the diagonal, but we don't explicitly store it.
-    //If we don't store it, then the Tpetra/Kokkos kernel which performs
-    //the triangular solve can assume a unit diagonal, take a short-cut
-    //and perform faster.
+    // L has a one on the diagonal, but we don't explicitly store it.
+    // If we don't store it, then the Tpetra/Kokkos kernel which performs
+    // the triangular solve can assume a unit diagonal, take a short-cut
+    // and perform faster.
 
     L_->insertLocalValues(row_i, tmp_idx(), tmpv());
 #ifdef TIFPACK_WRITE_FACTORS
@@ -680,22 +731,22 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
     tmp_idx.clear();
     tmpv.clear();
 
-    //Pick out the diagonal element, store its reciprocal.
+    // Pick out the diagonal element, store its reciprocal.
     if (cur_row[row_i] == zero) {
       std::cerr << "Tifpack::ILUT::Compute: zero pivot encountered! Replacing with rownorm and continuing..." << std::endl;
       cur_row[row_i] = rownorm;
     }
     InvDiagU[row_i] = one / cur_row[row_i];
 
-    //Non-inverted diagonal is stored for U:
+    // Non-inverted diagonal is stored for U:
     tmp_idx.push_back(row_i);
     tmpv.push_back(cur_row[row_i]);
     unorm[row_i] = scalar_mag(cur_row[row_i]);
     pattern[row_i] = UNUSED;
 
-    //Now put indices and values for U into arrays and then into the U_ matrix.
-    //The first entry in U_cols is the diagonal, which we just handled, so we'll
-    //start our loop at j=1.
+    // Now put indices and values for U into arrays and then into the U_ matrix.
+    // The first entry in U_cols is the diagonal, which we just handled, so we'll
+    // start our loop at j=1.
 
     Tsize_t U_vals_heaplen = 0;
     for(Tsize_t j=1; j<U_cols.size(); ++j) {
@@ -741,13 +792,13 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
     U_cols.clear();
     L_vals_heap.clear();
     U_vals_heap.clear();
-  }//end of for(row_i) loop
+  } // end of for(row_i) loop
 
   L_->fillComplete();
   U_->fillComplete();
 
-  size_t MyNonzeros = L_->getGlobalNumEntries() + U_->getGlobalNumEntries();
-  Teuchos::reduceAll(Comm(),Teuchos::REDUCE_SUM,1,&MyNonzeros,&GlobalNonzeros_);
+  global_size_t MyNonzeros = L_->getGlobalNumEntries() + U_->getGlobalNumEntries();
+  Teuchos::reduceAll(*Comm_,Teuchos::REDUCE_SUM,1,&MyNonzeros,&GlobalNonzeros_);
 
   IsComputed_ = true;
 
@@ -757,17 +808,17 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Compute()
 }
 
 //=============================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
-void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse(
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
+void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::apply(
            const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
                  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
                  Teuchos::ETransp mode) const
 {
-  TEST_FOR_EXCEPTION(!IsComputed(), std::runtime_error,
-    "Tifpack::ILUT::applyInverse ERROR, Computed() hasn't been called yet.");
+  TEST_FOR_EXCEPTION(!isComputed(), std::runtime_error,
+    "Tifpack::ILUT::apply() ERROR, Computed() hasn't been called yet.");
 
   TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
-    "Tifpack::ILUT::applyInverse ERROR, X.getNumVectors() != Y.getNumVectors().");
+    "Tifpack::ILUT::apply() ERROR, X.getNumVectors() != Y.getNumVectors().");
 
   Time_.start(true);
 
@@ -783,8 +834,8 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse(
   if (mode == Teuchos::NO_TRANS)
   {
     // solves LU Y = X
-    L_->solve(*Xcopy,Y,mode);
-    U_->solve(Y,Y,mode);
+    L_->solve(*Xcopy,Y,Teuchos::NO_TRANS);
+    U_->solve(Y,Y,Teuchos::NO_TRANS);
   }
   else
   {
@@ -793,75 +844,104 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::applyInverse(
     L_->solve(Y,Y,mode);
   }
 
-  ++NumApplyInverse_;
+  ++NumApply_;
   Time_.stop();
-  ApplyInverseTime_ += Time_.totalElapsedTime();
-}
-//=============================================================================
-// This function finds X such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
-void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::apply(
-     const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-           Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-           Teuchos::ETransp mode) const
-{
-  throw std::runtime_error("Tifpack::ILUT::apply is not implemented. Do you mean 'applyInverse' instead?");
+  ApplyTime_ += Time_.totalElapsedTime();
 }
 
 //=============================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
-typename ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::magnitudeType
-ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Condest(const Tifpack::CondestType CT,
-                     const LocalOrdinal MaxIters, const magnitudeType Tol,
-          Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>* Matrix_in)
-{
-  if (!IsComputed()) // cannot compute right now
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
+typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::computeCondEst(
+                     CondestType CT,
+                     LocalOrdinal MaxIters, 
+                     magnitudeType Tol,
+                     const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &matrix) {
+  if (!isComputed()) { // cannot compute right now
     return(-1.0);
-
+  }
   // NOTE: this is computing the *local* condest
-  if (Condest_ == -1.0)
-    Condest_ = Tifpack::Condest(*this, CT, MaxIters, Tol, Matrix_in);
-
+  if (Condest_ == -1.0) {
+    Condest_ = Tifpack::Condest(*this, CT, MaxIters, Tol, matrix);
+  }
   return(Condest_);
 }
 
 //=============================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
-std::ostream&
-ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node>::Print(std::ostream& os) const
-{
-  if (!Comm().getRank()) {
-    os << std::endl;
-    os << "================================================================================" << std::endl;
-    os << "ILUT: " << std::endl;
-    os << "Level-of-fill      = " << LevelOfFill() << std::endl;
-    os << "Absolute threshold = " << AbsoluteThreshold() << std::endl;
-    os << "Relative threshold = " << RelativeThreshold() << std::endl;
-    os << "Relax value        = " << RelaxValue() << std::endl;
-    os << "Condition number estimate       = " << Condest() << std::endl;
-    os << "Global number of rows           = " << A_->getGlobalNumRows() << std::endl;
-    if (IsComputed_) {
-      os << "Number of nonzeros in A         = " << A_->getGlobalNumEntries() << std::endl;
-      os << "Number of nonzeros in L + U     = " << NumGlobalNonzeros()
-         << " ( = " << 100.0 * NumGlobalNonzeros() / A_->getGlobalNumEntries()
-         << " % of A)" << std::endl;
-      os << "nonzeros / rows                 = "
-        << 1.0 * NumGlobalNonzeros() / U_->getGlobalNumRows() << std::endl;
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+std::string ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::description() const {
+  std::ostringstream oss;
+  oss << Teuchos::Describable::description();
+  if (isInitialized()) {
+    if (isComputed()) {
+      oss << "{status = initialized, computed";
     }
-    os << std::endl;
-    os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << std::endl;
-    os << "-----           -------   --------------       ------------     --------" << std::endl;
-    os << "Initialize()    "   << std::setw(5) << NumInitialize()
-       << "  " << std::setw(15) << InitializeTime()
-       << "               0.0            0.0" << std::endl;
-    os << "Compute()       "   << std::setw(5) << NumCompute()
-       << "  " << std::setw(15) << ComputeTime();
-    os << "================================================================================" << std::endl;
-    os << std::endl;
+    else {
+      oss << "{status = initialized, not computed";
+    }
   }
-
-  return(os);
+  else {
+    oss << "{status = not initialized, not computed";
+  }
+  oss << ", global rows = " << A_->getGlobalNumRows()
+      << ", global cols = " << A_->getGlobalNumCols()
+      << "}";
+  return oss.str();
 }
+
+//=============================================================================
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
+  using std::endl;
+  using std::setw;
+  using Teuchos::VERB_DEFAULT;
+  using Teuchos::VERB_NONE;
+  using Teuchos::VERB_LOW;
+  using Teuchos::VERB_MEDIUM;
+  using Teuchos::VERB_HIGH;
+  using Teuchos::VERB_EXTREME;
+  Teuchos::EVerbosityLevel vl = verbLevel;
+  if (vl == VERB_DEFAULT) vl = VERB_LOW;
+  const int myImageID = Comm_->getRank();
+  Teuchos::OSTab tab(out);
+  //    none: print nothing
+  //     low: print O(1) info from node 0
+  //  medium: 
+  //    high: 
+  // extreme: 
+  if (vl != VERB_NONE && myImageID == 0) {
+    out << this->description() << endl;
+    out << endl;
+    out << "===============================================================================" << endl;
+    out << "ILUT: " << endl;
+    out << "Level-of-fill      = " << getLevelOfFill()       << endl;
+    out << "Absolute threshold = " << getAbsoluteThreshold() << endl;
+    out << "Relative threshold = " << getRelativeThreshold() << endl;
+    out << "Relax value        = " << getRelaxValue()        << endl;
+    if (Condest_ == -1.0) {
+      out << "Condition number estimate       = N/A" << endl;
+    }
+    else {
+      out << "Condition number estimate       = " << Condest_ << endl;
+    }
+    if (isComputed()) {
+      out << "Number of nonzeros in A         = " << A_->getGlobalNumEntries() << endl;
+      out << "Number of nonzeros in L + U     = " << getGlobalNumEntries()
+          << " ( = " << 100.0 * (double)getGlobalNumEntries() / (double)A_->getGlobalNumEntries() << " % of A)" << endl;
+      out << "nonzeros / rows                 = " << 1.0 * getGlobalNumEntries() / U_->getGlobalNumRows() << endl;
+    }
+    out << endl;
+    out << "Phase           # calls    Total Time (s)     Total MFlops      MFlops/s       " << endl;
+    out << "------------    -------    ---------------    ---------------   ---------------" << endl;
+    out << "Initialize()    " << setw(7) << getNumInitialize() << "    " << setw(15) << getInitializeTime()
+                                                      << "            0.0               0.0" << endl;
+    out << "Compute()       " << setw(7) << getNumCompute()    << "    " << setw(15) << getComputeTime()
+                                                      << "            0.0               0.0" << endl;
+    out << "===============================================================================" << endl;
+    out << endl;
+  }
+}
+
 
 }//namespace Tifpack
 

@@ -21,15 +21,15 @@ SET(SOURCES "")
 APPEND_SET(SOURCES
 Tifpack_UnitTestMain.cpp
 Tifpack_UnitTestTemplate.cpp
-Tifpack_UnitTestChebyshev.cpp
+#Tifpack_UnitTestChebyshev.cpp
 Tifpack_UnitTestCreateOverlapGraph.cpp
 Tifpack_UnitTestHeap.cpp
 Tifpack_UnitTestOverlapGraph.cpp
 Tifpack_UnitTestParameters.cpp
-Tifpack_UnitTestIlukGraph.cpp
+#Tifpack_UnitTestIlukGraph.cpp
 Tifpack_UnitTestILUT.cpp
 Tifpack_UnitTestFactory.cpp
-Tifpack_UnitTestPointRelaxation.cpp
+#Tifpack_UnitTestPointRelaxation.cpp
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(

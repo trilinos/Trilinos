@@ -1,0 +1,4 @@
+* Add templated operator methods to all Preconditioners
+  - add applyPrec<OpScalar> method to precs, which operates on MV<OpScalar> objects
+  - call this from apply()
+  - do this for all other operators 

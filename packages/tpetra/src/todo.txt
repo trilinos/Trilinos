@@ -1,23 +1,15 @@
-* Kill Tpetra::InverseOperator
-  Doing this will damage backwards compatibility. 
+* Add apply(alpha,X,beta,Y) method to Tpetra::Operator, CrsMatrix
+  - remove apply(X,Y), put documented conditional structure in apply(alpha,X,beta,Y)
 
-* Remove Tpetra::Operator from hierarchy
-  Is it useful to have Tpetra::CrsMatrix/Tpetra::RowMatrix enjoy inheritance from Operator, with default implementations? it avoids a simple decorator call.
-  Doing this will damage backwards compatibility. 
+* modify solve<DScalar,RScalar>, multiply<DScalar,RScalar> 
+  - ... to operate on pre-imported multivectors, returning un-exported multivectors
+  - add decorator class to import/apply/export
+  - use one of these decorators in apply()
+  - document well
 
-? Decide whether Tpetra::Operator should have two scalar types (range, domain) or one (range=domain)
-  Default argument preserves backwards compatibility.
+* Modify default implementation of sparse mat-vec/solve to work in RangeScalar precision.
 
-* Create decorators for CrsMatrix (and RowMatrix), and non-member constructors for these decorators
-  - MultiplyOpDecorator<OpScalar,Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> 
-       is a: Operator<OpScalar,LocalOrdinal,GlobalOrdinal,Node>
-      has a: CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>
-      apply(X,Y,trans) calls multiply<OpScalar,OpScalar>(X,Y,trans)
-  - SolveOpDecorator<OpScalar,Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> 
-       is a: Operator<OpScalar,LocalOrdinal,GlobalOrdinal,Node>
-      has a: CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>
-      apply(X,Y,trans) calls solve<OpScalar,OpScalar>(X,Y,trans)
+* Add Tpetra::MultiScalarOperator abstract interface.
 
-* Add apply(X,Y) implementation to Tpetra::CrsMatrix, with "overwrite Y" semantics
-
-* Add apply(alpha,X,beta,Y) method to Tpetra::Operator
+* Keep Tpetra::Operator in hierarchy of CrsMatrix
+  Add Operator wrappers for Tifpack::Preconditioner (forward/backward), CrsMatrix (single/multi-scalar solve, multi-scalar multiply).

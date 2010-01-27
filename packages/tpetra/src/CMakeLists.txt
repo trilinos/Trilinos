@@ -30,17 +30,16 @@ APPEND_SET(HEADERS
   Tpetra_ConfigDefs.hpp
   Tpetra_CrsGraph.hpp
   Tpetra_CrsMatrix.hpp
+  Tpetra_CrsMatrixSolveOp.hpp
   Tpetra_DefaultPlatform.hpp
   Tpetra_Directory.hpp
   Tpetra_DirectoryDecl.hpp
   Tpetra_DistObject.hpp
   Tpetra_Distributor.hpp
   Tpetra_Export.hpp
-  Tpetra_FlipOp.hpp
   Tpetra_HybridPlatform.hpp
   Tpetra_Import.hpp
   Tpetra_ImportExportData.hpp
-  Tpetra_InverseOperator.hpp
   Tpetra_Map.hpp
   Tpetra_MapDecl.hpp
   Tpetra_MultiVector.hpp

@@ -3,23 +3,22 @@
 
 #include <iostream>
 
-#include "Tpetra_FlipOp.hpp"
 #include "Tifpack_Factory.hpp"
 
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
 Teuchos::RCP<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 build_precond(Teuchos::ParameterList& test_params,
-              const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A)
+              const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> >& A)
 {
   Teuchos::Time timer("precond");
 
   typedef Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> Tprec;
   Teuchos::RCP<Tprec> prec;
-  Tifpack::Factory<Scalar,LocalOrdinal,GlobalOrdinal,Node> factory;
+  Tifpack::Factory factory;
 
   std::string prec_name("not specified");
   Tifpack::GetParameter(test_params, "Tifpack::Preconditioner", prec_name);
-  prec = factory.Create(prec_name, A);
+  prec = factory.create(prec_name, A);
 
   Teuchos::ParameterList tif_params;
   if (test_params.isSublist("Tifpack")) {
@@ -31,10 +30,10 @@ build_precond(Teuchos::ParameterList& test_params,
        << std::endl;
   }
 
-  prec->SetParameters(tif_params);
-  prec->Initialize();
+  prec->setParameters(tif_params);
+  prec->initialize();
   timer.start();
-  prec->Compute();
+  prec->compute();
   timer.stop();
 
   if (A->getRowMap()->getComm()->getRank() == 0) {
@@ -43,15 +42,12 @@ build_precond(Teuchos::ParameterList& test_params,
   }
 
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
-  magnitudeType condest = prec->Condest(Tifpack::Cheap);
+  magnitudeType condest = prec->computeCondEst(Tifpack::Cheap);
   if (A->getRowMap()->getComm()->getRank() == 0) {
     std::cout << "Condition estimate(cheap) for preconditioner on proc 0: "
-        << condest << std::endl;
+              << condest << std::endl;
   }
-
-  Teuchos::RCP<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec_op =
-    Teuchos::rcp(new Tpetra::FlipOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>(prec));
-  return prec_op;
+  return prec;
 }
 
 #endif

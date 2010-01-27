@@ -65,4 +65,9 @@
 
 #define TIFPACK_SGN(x) (((x) < 0.0) ? -1.0 : 1.0)  /* sign function */
 
+#include <Tpetra_ConfigDefs.hpp>
+namespace Tifpack {
+  typedef Tpetra::global_size_t global_size_t;
+}
+
 #endif /*_TIFPACK_CONFIGDEFS_HPP_*/
