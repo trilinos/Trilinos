@@ -23,7 +23,8 @@ def dotranslation(infile, outfile, offset):
         currline= re.split(' |\t',line)
         if (currline[0].isalpha()):
             continue
-        buff = buff = "%d\t%d\n" % (int(currline[0])-counteroffset, int(currline[2])+offset)
+        buff = buff = "%d\t%d\n" % (int(currline[0])+offset, int(currline[2])+offset)
+#        buff = buff = "%d\t%d\n" % (int(currline[0])-counteroffset, int(currline[2])+offset)
         outfile.write(buff)
 
 def computevertices(file):
@@ -90,7 +91,7 @@ def main(argv=None):
         print "Computing number of vertices ..."
 
     file = open("%s.out.%s.%d" % (filename, ("%d" %procnbr).zfill(digits), procnbr - 1))
-    vertices = computevertices(file)
+    vertices = computevertices(file) + 1
     outfile.write("%d\n" % vertices)
 
     if (verbose == True):

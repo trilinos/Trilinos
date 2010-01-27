@@ -27,6 +27,8 @@ extern "C" {
 
 #define SIZE_PART 1000
 
+/* #define SIMPLE_HUND */
+
 #ifndef SIMPLE_HUND
 int Zoltan_CColAMD(
   ZZ *zz,               /* Zoltan structure */
@@ -63,7 +65,7 @@ int Zoltan_HUND(
   int num_local_gid;
   ZOLTAN_ID_PTR gidImport, lidImport, gidExport, lidExport;
   int *procImport, *partImport, *procExport, *partExport;
-  int numPart = 4;
+  int numPart = 1;
   int numLocObj, numGlbObj;
   char partArg[MAX_PARAM_STRING_LEN];
 
@@ -84,7 +86,7 @@ int Zoltan_HUND(
   numPart |= numPart >> 8;
   numPart |= numPart >> 16;
 
-  numPart++;
+  numPart++; /* aprun -n 4 ./pddrive -r 1 -c 2 */
 
   /* First, we have to compute an hypergraph partitioning */
   Zoltan_Set_Param(zz, "LB_METHOD", "HYPERGRAPH");

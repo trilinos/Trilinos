@@ -132,7 +132,7 @@ int Zoltan_CColAMD(
 
   /* Compute ordering */
   /* Upon return, ystart is the invert permutation ... */
-  ccolamd (n_row, n_col, Alen, pins, ystart,
+  ierr = ccolamd (n_row, n_col, Alen, pins, ystart,
 	   knobs, stats, cmember);
 
   ZOLTAN_FREE(&pins);
@@ -144,6 +144,8 @@ int Zoltan_CColAMD(
   for (i = 0 ; i < n_col ; ++i) {
     (*rank)[ystart[i]] = i;
   }
+
+/*   memcpy ((*rank), ystart, n_col * sizeof(int)); */
 
  End:
   ZOLTAN_FREE(&pins);
