@@ -8,6 +8,8 @@
 #include "Epetra_Vector.h"
 #include "Epetra_LocalMap.h"
 #include "LOCA_Epetra_ModelEvaluatorInterface.H"
+#include "LOCA_SaveEigenData_AbstractStrategy.H"
+
 #include <NOX_Epetra_MultiVector.H>
 
 #ifdef HAVE_MPI
@@ -44,7 +46,8 @@ class LOCASolver
   /** \brief Takes the number of elements in the discretization . */
   LOCASolver(Teuchos::RCP<Teuchos::ParameterList> appParams,
             Teuchos::RCP<EpetraExt::ModelEvaluator> model,
-            Teuchos::RCP<NOXObserver> observer = Teuchos::null
+            Teuchos::RCP<NOXObserver> observer = Teuchos::null,
+            Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> saveEigData = Teuchos::null
             );
 
 
@@ -90,6 +93,7 @@ class LOCASolver
    mutable Teuchos::RCP<Teuchos::ParameterList> appParams;
    Teuchos::RCP<EpetraExt::ModelEvaluator> model;
    Teuchos::RCP<NOXObserver> observer;
+   Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> saveEigData;
    NOX::Utils utils;
 
    Teuchos::RCP<LOCA::Stepper> stepper;

@@ -2,6 +2,7 @@
 #include <string>
 
 #include "MockModelEval_A.hpp"
+#include "SaveEigenData_Epetra.hpp"
 
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_TestForException.hpp"
@@ -76,8 +77,12 @@ int main(int argc, char *argv[]) {
 #ifdef Piro_ENABLE_NOX
       if (solver=="NOX")
         piro = rcp(new Piro::Epetra::NOXSolver(piroParams, Model));
-      else if (solver=="LOCA")
-        piro = rcp(new Piro::Epetra::LOCASolver(piroParams, Model));
+      else if (solver=="LOCA") {
+        RCP<LOCA::SaveEigenData::AbstractStrategy> saveEigs =
+            rcp(new SaveEigenData_Epetra(piroParams->sublist("LOCA")));
+        piro = rcp(new Piro::Epetra::LOCASolver(
+                       piroParams, Model, Teuchos::null, saveEigs));
+      }
       else
 #endif
 #ifdef Piro_ENABLE_Rythmos

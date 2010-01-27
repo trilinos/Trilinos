@@ -27,6 +27,8 @@ IF (Piro_ENABLE_NOX)
     Main_Solver.cpp
     MockModelEval_A.cpp
     MockModelEval_A.hpp
+    SaveEigenData_Epetra.cpp
+    SaveEigenData_Epetra.hpp
     COMM serial mpi
     NUM_MPI_PROCS 1-4
     ARGS -v

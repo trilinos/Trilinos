@@ -5,11 +5,13 @@
 
 Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> appParams_,
                           Teuchos::RCP<EpetraExt::ModelEvaluator> model_,
-                          Teuchos::RCP<Piro::Epetra::NOXObserver> observer_
+                          Teuchos::RCP<Piro::Epetra::NOXObserver> observer_,
+                          Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> saveEigData_
 ) :
   appParams(appParams_),
   model(model_),
   observer(observer_),
+  saveEigData(saveEigData_),
   utils(appParams->sublist("NOX").sublist("Printing"))
 {
   appParams->validateParameters(*Piro::getValidPiroParameters(),0);
@@ -127,6 +129,16 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> appPar
     NOX::StatusTest::buildStatusTests(statusParams,
                                       *(globalData->locaUtils));
 
+  // Register SaveEigenData strategy if given
+
+  if (saveEigData != Teuchos::null) {
+    Teuchos::ParameterList& eigParams =
+      appParams->sublist("LOCA").sublist("Stepper").sublist("Eigensolver");
+    eigParams.set("User-Defined Save Eigen Data Name", "Charon Strategy");
+    eigParams.set( eigParams.get
+      ("User-Defined Save Eigen Data Name", "Piro Strategy"), saveEigData);
+  }
+   
   // Create the solver
   stepper = Teuchos::rcp(new LOCA::Stepper(globalData, grp, statusTests, appParams));
 }
