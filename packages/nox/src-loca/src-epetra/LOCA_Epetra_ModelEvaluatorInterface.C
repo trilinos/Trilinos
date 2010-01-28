@@ -57,6 +57,8 @@ ModelEvaluatorInterface(
   NOX::Epetra::ModelEvaluatorInterface(m),
   LOCA::DerivUtils(global_data, perturb),
   param_vec(*(m->get_p_init(0))),
+  alpha_prev(0),
+  beta_prev(1),
   loca_param_vec(),
   x_dot(NULL)
 {
@@ -117,7 +119,6 @@ computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType fillFlag)
 
   model_->evalModel(inargs, outargs);
 
-  inargs.set_x(Teuchos::null);
   return true;
 }
    
@@ -133,6 +134,7 @@ computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
     inargs.set_alpha(0.0);
   if (inargs.supports(EpetraExt::ModelEvaluator::IN_ARG_beta))
     inargs.set_beta(1.0);
+  alpha_prev = 0.0; beta_prev = 1.0; // prec must know alpha and beta
   inargs.set_p(0, Teuchos::rcp(&param_vec, false));
   if (inargs.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot)) {
     // Create x_dot, filled with zeros
@@ -149,7 +151,6 @@ computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jac)
 
   model_->evalModel(inargs, outargs);
 
-  inargs.set_x(Teuchos::null);
   return true;
 }
 
@@ -163,10 +164,15 @@ computePreconditioner(const Epetra_Vector& x,
   // Create inargs
   EpetraExt::ModelEvaluator::InArgs inargs = model_->createInArgs();
   inargs.set_x(Teuchos::rcp(&x, false));
+
+  // alpha and beta are stored from previous matrix computation
+  // which might have been computeJacobian or computeShiftedMatrix
+  // This is a state-full hack, but needed since this function
+  // does not take alpha and beta as arguments. [AGS 01/10]
   if (inargs.supports(EpetraExt::ModelEvaluator::IN_ARG_alpha))
-    inargs.set_alpha(0.0);
+    inargs.set_alpha(alpha_prev);
   if (inargs.supports(EpetraExt::ModelEvaluator::IN_ARG_beta))
-    inargs.set_beta(1.0);
+    inargs.set_beta(beta_prev);
   inargs.set_p(0, Teuchos::rcp(&param_vec, false));
   if (inargs.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot)) {
     // Create x_dot, filled with zeros
@@ -181,11 +187,10 @@ computePreconditioner(const Epetra_Vector& x,
   eval_f.reset(Teuchos::null, 
                EpetraExt::ModelEvaluator::EVAL_TYPE_VERY_APPROX_DERIV);
   outargs.set_f(eval_f);
-  outargs.set_M(Teuchos::rcp(&M, false));  
+  outargs.set_M(Teuchos::rcp(&M, false));
 
   model_->evalModel(inargs, outargs);
 
-  inargs.set_x(Teuchos::null);
   return true;
 }
 
@@ -211,6 +216,7 @@ computeShiftedMatrix(double alpha, double beta, const Epetra_Vector& x,
     inargs.set_alpha(-beta); // alpha and beta are switched between LOCA and Thyra
   if (inargs.supports(EpetraExt::ModelEvaluator::IN_ARG_beta))
     inargs.set_beta(alpha);
+  alpha_prev = -beta; beta_prev = alpha; // prec must know alpha and beta
   inargs.set_p(0, Teuchos::rcp(&param_vec, false));
   if (inargs.supports(EpetraExt::ModelEvaluator::IN_ARG_x_dot)) {
     // Create x_dot, filled with zeros
@@ -227,7 +233,6 @@ computeShiftedMatrix(double alpha, double beta, const Epetra_Vector& x,
 
   model_->evalModel(inargs, outargs);
 
-  inargs.set_x(Teuchos::null);
   return true;
 }
 
@@ -316,6 +321,5 @@ computeDfDp(LOCA::MultiContinuation::AbstractGroup& grp,
 
   model_->evalModel(inargs, outargs);
 
-  inargs.set_x(Teuchos::null);
   return NOX::Abstract::Group::Ok;
 }

@@ -126,6 +126,9 @@ namespace LOCA {
 
       //! Epetra vector storing x_dot, filled with zeros
       mutable Epetra_Vector *x_dot;
+
+      //! Stored values of alpha and beta parameters from previous call
+      double alpha_prev, beta_prev;
     
     };
 
