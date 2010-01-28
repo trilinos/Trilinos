@@ -69,7 +69,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackPointRelaxation, Test0, Scalar, LocalOr
   Teuchos::ParameterList params;
   params.set("relaxation: type", "Jacobi");
 
-  TEUCHOS_TEST_NOTHROW(prec.SetParameters(params), out, success);
+  TEUCHOS_TEST_NOTHROW(prec.setParameters(params), out, success);
 
   //trivial tests to insist that the preconditioner's domain/range maps are
   //identically those of the matrix:
@@ -82,13 +82,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackPointRelaxation, Test0, Scalar, LocalOr
   TEUCHOS_TEST_EQUALITY( prec_dom_map_ptr, mtx_dom_map_ptr, out, success );
   TEUCHOS_TEST_EQUALITY( prec_rng_map_ptr, mtx_rng_map_ptr, out, success );
 
-  prec.Initialize();
-  prec.Compute();
+  prec.initialize();
+  prec.compute();
 
   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,2), y(rowmap,2);
   x.putScalar(1);
 
-  prec.apply(x, y);
+  prec.applyMat(x, y);
 
   Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
 
@@ -99,7 +99,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackPointRelaxation, Test0, Scalar, LocalOr
 
   TEST_COMPARE_FLOATING_ARRAYS(yview, twos(), Teuchos::ScalarTraits<Scalar>::eps());
 
-  prec.applyInverse(x, y);
+  prec.apply(x, y);
 
   //y should be full of 0.5's now.
 

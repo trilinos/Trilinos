@@ -29,7 +29,7 @@ Tifpack_UnitTestParameters.cpp
 #Tifpack_UnitTestIlukGraph.cpp
 Tifpack_UnitTestILUT.cpp
 Tifpack_UnitTestFactory.cpp
-#Tifpack_UnitTestPointRelaxation.cpp
+Tifpack_UnitTestPointRelaxation.cpp
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
