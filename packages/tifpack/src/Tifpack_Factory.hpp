@@ -33,7 +33,7 @@
 #include "Tifpack_ConfigDefs.hpp"
 #include "Tifpack_Preconditioner.hpp"
 #include "Tifpack_PointRelaxation.hpp"
-// #include "Tifpack_Chebyshev.hpp"
+#include "Tifpack_Chebyshev.hpp"
 #include "Tifpack_ILUT.hpp"
 
 namespace Tifpack {
@@ -138,9 +138,9 @@ Factory::create(const std::string& prec_type,
   else if (prec_type == "POINT_RELAXATION") {
     prec = Teuchos::rcp(new Tifpack::PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>(matrix));
   }
-  // else if (prec_type == "CHEBYSHEV") {
-  //   prec = Teuchos::rcp(new Tifpack::Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Matrix));
-  // }
+  else if (prec_type == "CHEBYSHEV") {
+    prec = Teuchos::rcp(new Tifpack::Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>(matrix));
+  }
   else {
     std::ostringstream os;
     os << "Tifpack::Factory::Create ERROR, invalid preconditioner type ("

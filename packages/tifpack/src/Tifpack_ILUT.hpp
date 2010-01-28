@@ -54,6 +54,7 @@
 #include <Teuchos_ScalarTraits.hpp>
 
 #include <string>
+#include <sstream>
 #include <iostream>
 #include <cmath>
 
@@ -916,12 +917,8 @@ void ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::des
     out << "Absolute threshold = " << getAbsoluteThreshold() << endl;
     out << "Relative threshold = " << getRelativeThreshold() << endl;
     out << "Relax value        = " << getRelaxValue()        << endl;
-    if (Condest_ == -1.0) {
-      out << "Condition number estimate       = N/A" << endl;
-    }
-    else {
-      out << "Condition number estimate       = " << Condest_ << endl;
-    }
+    if   (Condest_ == -1.0) { out << "Condition number estimate       = N/A" << endl; }
+    else                    { out << "Condition number estimate       = " << Condest_ << endl; }
     if (isComputed()) {
       out << "Number of nonzeros in A         = " << A_->getGlobalNumEntries() << endl;
       out << "Number of nonzeros in L + U     = " << getGlobalNumEntries()

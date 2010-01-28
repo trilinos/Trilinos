@@ -68,7 +68,7 @@ enum PointRelaxationType {
   is derived from the Tifpack::Preconditioner class, which is itself derived
   from Tpetra::Operator.
   Therefore this object can be used as preconditioner everywhere an
-  ApplyInverse() method is required in the preconditioning step.
+  apply() method is required in the preconditioning step.
  
 This class enables the construction of the following simple preconditioners:
 - Jacobi;
@@ -139,24 +139,13 @@ public:
   virtual ~PointRelaxation();
 
   //@}
-  //@{ Construction methods
-  //! Set parameters using a Teuchos::ParameterList object.
-  /* This method is only available if the Teuchos package is enabled.
-     This method recognizes five parameter names: level_fill, drop_tolerance,
-     absolute_threshold, relative_threshold and overlap_mode. These names are
-     case insensitive. For level_fill the ParameterEntry must have type int, the 
-     threshold entries must have type double and overlap_mode must have type
-     Tpetra::CombineMode.
-  */
+
+  //@{ \name Preconditioner computation methods
+
+  //! Sets all the parameters for the preconditioner
   void setParameters(Teuchos::ParameterList& params);
 
-  //! Initialize L and U with values from user matrix A.
-  /*! Copies values from the user's matrix into the nonzero pattern of L and U.
-    \param In 
-           A - User matrix to be factored.
-    \warning The graph of A must be identical to the graph passed in to IlukGraph constructor.
-             
-   */
+  //! Initialize
   void initialize();
 
   //! Returns \c true if the preconditioner has been successfully initialized.
@@ -164,7 +153,7 @@ public:
     return(IsInitialized_);
   }
 
-  //! Compute IC factor U using the specified graph, diagonal perturbation thresholds and relaxation parameters.
+  //! compute IC factor U using the specified graph, diagonal perturbation thresholds and relaxation parameters.
   /*! This function computes the RILU(k) factors L and U using the current:
     <ol>
     <li> IlukGraph specifying the structure of L and U.
@@ -182,7 +171,7 @@ public:
 
   //@}
 
-  //! @name Methods implementing Tpetra::Operator.
+  //! @name Methods implementing a Tpetra::Operator interface.
   //@{ 
 
   //! Applies the preconditioner to X, returns the result in Y.
@@ -196,10 +185,9 @@ public:
 
     \warning This routine is NOT AztecOO compliant.
   */
-  void apply(
-      const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-            Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-            Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
+  void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
+             Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+             Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
   //! Returns the Tpetra::Map object associated with the domain of this operator.
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& getDomainMap() const;
@@ -209,29 +197,32 @@ public:
 
   bool hasTransposeApply() const;
 
-  //@}
-
-  //@{
-  //! \name Mathematical functions.
-
   //! Applies the matrix to a Tpetra::MultiVector.
   /*! 
     \param 
     X - (In) A Tpetra::MultiVector of dimension NumVectors to multiply with matrix.
     \param 
     Y - (Out) A Tpetra::MultiVector of dimension NumVectors containing the result.
-
-    \return Integer error code, set to 0 if successful.
     */
   void applyMat(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-                      Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+                Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
                 Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
+
+  //@}
+
+  //@{
+  //! \name Mathematical functions.
 
   //! Computes the estimated condition number and returns the value.
   magnitudeType computeCondEst(CondestType CT = Cheap, 
                                LocalOrdinal MaxIters = 1550,
                                magnitudeType Tol = 1e-9,
                                const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &matrix = Teuchos::null);
+
+  //@}
+
+  //@{ 
+  //! \name Attribute accessor methods
 
   //! Returns the computed estimated condition number, or -1.0 if no computed.
   magnitudeType getCondEst() const;
@@ -251,7 +242,7 @@ public:
   //! Returns the number of calls to initialize().
   int getNumInitialize() const;
 
-  //! Returns the number of calls to Compute().
+  //! Returns the number of calls to compute().
   int getNumCompute() const;
 
   //! Returns the number of calls to apply().
@@ -260,14 +251,13 @@ public:
   //! Returns the time spent in initialize().
   double getInitializeTime() const;
 
-  //! Returns the time spent in Compute().
+  //! Returns the time spent in compute().
   double getComputeTime() const;
 
   //! Returns the time spent in apply().
   double getApplyTime() const;
 
-
-  // @}
+  //@}
 
   //! @name Overridden from Teuchos::Describable 
   //@{
@@ -327,10 +317,12 @@ private:
 
   // @{ Internal data and parameters
 
-  //! reference to the matrix to be preconditioned.
+  //! reference to the matrix to be preconditioned
   const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A_;
-  //! Reference to the communicator object.
+  //! Reference to the communicator object
   const Teuchos::RCP<const Teuchos::Comm<int> > Comm_;
+  //! Time object to track timing.
+  Teuchos::RCP<Teuchos::Time> Time_;
   //! Importer for parallel GS and SGS
   Teuchos::RCP<Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > Importer_;
   //! Contains the diagonal elements of \c Matrix.
@@ -343,8 +335,6 @@ private:
   Scalar MinDiagonalValue_;
   //! Damping factor.
   double DampingFactor_;
-  //! Time object to track timing.
-  Teuchos::RCP<Teuchos::Time> Time_;
   //! If \c true, more than 1 processor is currently used.
   bool IsParallel_;
   //! If \c true, the starting solution is always the zero vector.
@@ -359,22 +349,22 @@ private:
   bool IsComputed_;
   //! Contains the number of successful calls to initialize().
   int NumInitialize_;
-  //! Contains the number of successful call to Compute().
+  //! Contains the number of successful call to compute().
   int NumCompute_;
   //! Contains the number of successful call to apply().
   mutable int NumApply_;
   //! Contains the time for all successful calls to initialize().
   double InitializeTime_;
-  //! Contains the time for all successful calls to Compute().
+  //! Contains the time for all successful calls to compute().
   double ComputeTime_;
   //! Contains the time for all successful calls to apply().
   mutable double ApplyTime_;
-  //! Contains the number of flops for Compute().
+  //! Contains the number of flops for compute().
   double ComputeFlops_;
-  //! Contain sthe number of flops for ApplyInverse().
+  //! Contain sthe number of flops for apply().
   mutable double ApplyFlops_;
   //! Number of local rows.
-  LocalOrdinal NumMyRows_;
+  size_t NumMyRows_;
   //! Number of global rows.
   global_size_t NumGlobalRows_;
   //! Number of global nonzeros.
@@ -385,16 +375,16 @@ private:
 }; //class PointRelaxation
 
 
-//==============================================================================
+//==========================================================================
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
 PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::PointRelaxation(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A)
 : A_(A),
   Comm_(A->getRowMap()->getComm()),
+  Time_( Teuchos::rcp( new Teuchos::Time("Tifpack::PointRelaxation") ) ),
   NumSweeps_(1),
   PrecType_(Tifpack::JACOBI),
   MinDiagonalValue_(0.0),
   DampingFactor_(1.0),
-  Time_( Teuchos::rcp( new Teuchos::Time("Tifpack::PointRelaxation") ) ),
   IsParallel_(false),
   ZeroStartingSolution_(true),
   DoBackwardGS_(false),
@@ -477,20 +467,18 @@ PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve
 //==========================================================================
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
 const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >&
-PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getDomainMap() const
-{
+PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getDomainMap() const {
   return A_->getDomainMap();
 }
 
 //==========================================================================
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
 const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >&
-PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getRangeMap() const
-{
+PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getRangeMap() const {
   return A_->getRangeMap();
 }
 
-//==============================================================================
+//==========================================================================
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
 bool PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::hasTransposeApply() const {
   return true;
@@ -553,7 +541,7 @@ PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve
 
 //==========================================================================
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-typename PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::magnitudeType
+typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::computeCondEst(
                      CondestType CT,
                      LocalOrdinal MaxIters, 
@@ -576,10 +564,10 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
                 Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
                 Teuchos::ETransp mode) const {
   TEST_FOR_EXCEPTION(isComputed() == false, std::runtime_error,
-     "Tifpack::PointRelaxation::applyInverse ERROR: isComputed() must be true prior to calling applyInverse.");
+     "Tifpack::PointRelaxation::apply ERROR: isComputed() must be true prior to calling apply.");
 
   TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
-     "Tifpack::PointRelaxation::applyInverse ERROR: X.getNumVectors() != Y.getNumVectors().");
+     "Tifpack::PointRelaxation::apply ERROR: X.getNumVectors() != Y.getNumVectors().");
 
   Time_->start(true);
 
@@ -606,7 +594,7 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
     ApplyInverseSGS(*Xcopy,Y);
     break;
   default:
-    throw std::runtime_error("Tifpack::PointRelaxation::applyInverse internal logic error.");
+    throw std::runtime_error("Tifpack::PointRelaxation::apply internal logic error.");
   }
 
   ++NumApply_;
@@ -622,11 +610,9 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
              Teuchos::ETransp mode) const
 {
   TEST_FOR_EXCEPTION(isComputed() == false, std::runtime_error,
-     "Tifpack::PointRelaxation::apply ERROR: isComputed() must be true prior to calling apply.");
-
+     "Tifpack::PointRelaxation::applyMat() ERROR: isComputed() must be true prior to calling applyMat().");
   TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
-     "Tifpack::PointRelaxation::apply ERROR: X.getNumVectors() != Y.getNumVectors().");
-
+     "Tifpack::PointRelaxation::applyMat() ERROR: X.getNumVectors() != Y.getNumVectors().");
   A_->apply(X, Y, mode);
 }
 
@@ -653,6 +639,7 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
     IsParallel_ = false;
 
   ++NumInitialize_;
+  Time_->stop();
   InitializeTime_ += Time_->totalElapsedTime();
   IsInitialized_ = true;
 }
@@ -661,8 +648,9 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
 void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::compute()
 {
-  if (!isInitialized())
+  if (!isInitialized()) {
     initialize();
+  }
 
   Time_->start(true);
 
@@ -1100,7 +1088,7 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
   ApplyFlops_ += NumVectors * (8 * NumGlobalRows_ + 4 * NumGlobalNonzeros_);
 }
 
-//=============================================================================
+//==========================================================================
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
 std::string PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::description() const {
   std::ostringstream oss;
@@ -1173,18 +1161,10 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
     if (PrecType_ == Tifpack::GS && DoBackwardGS_) {
       out << "Using backward mode (GS only)" << endl;
     }
-    if (ZeroStartingSolution_) {
-      out << "Using zero starting solution" << endl;
-    }
-    else {
-      out << "Using input starting solution" << endl;
-    }
-    if (Condest_ == -1.0) {
-      out << "Condition number estimate       = N/A" << endl;
-    }
-    else {
-      out << "Condition number estimate       = " << Condest_ << endl;
-    }
+    if   (ZeroStartingSolution_) { out << "Using zero starting solution" << endl; }
+    else                         { out << "Using input starting solution" << endl; }
+    if   (Condest_ == -1.0) { out << "Condition number estimate       = N/A" << endl; }
+    else                    { out << "Condition number estimate       = " << Condest_ << endl; }
     if (IsComputed_) {
       out << "Minimum value on stored diagonal = " << MinVal << endl;
       out << "Maximum value on stored diagonal = " << MaxVal << endl;
