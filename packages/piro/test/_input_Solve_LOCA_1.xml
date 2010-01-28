@@ -21,7 +21,6 @@
         <Parameter name="Num Blocks" type="int" value="3"/>
         <Parameter name="Num Eigenvalues" type="int" value="1"/>
         <Parameter name="Save Eigenvectors" type="int" value="1"/>
-        <Parameter name="Save Eigen Data Method" type="string" value="User-Defined"/>
         <Parameter name="Block Size" type="int" value="1"/>
         <Parameter name="Maximum Restarts" type="int" value="0"/>
         <Parameter name="Shift" type="double" value="8.001"/>
@@ -73,9 +72,8 @@
         <Parameter name="Error" type="bool" value="1"/>
         <Parameter name="Warning" type="bool" value="1"/>
         <Parameter name="Outer Iteration" type="bool" value="1"/>
-        <Parameter name="Inner Iteration" type="bool" value="1"/>
-        <Parameter name="Parameters" type="bool" value="1"/>
-        <Parameter name="Details" type="bool" value="1"/>
+        <Parameter name="Parameters" type="bool" value="0"/>
+        <Parameter name="Details" type="bool" value="0"/>
         <Parameter name="Linear Solver Details" type="bool" value="1"/>
         <Parameter name="Stepper Iteration" type="bool" value="1"/>
         <Parameter name="Stepper Details" type="bool" value="1"/>

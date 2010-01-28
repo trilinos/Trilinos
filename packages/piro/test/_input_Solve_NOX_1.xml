@@ -71,7 +71,6 @@
         <Parameter name="Error" type="bool" value="1"/>
         <Parameter name="Warning" type="bool" value="1"/>
         <Parameter name="Outer Iteration" type="bool" value="1"/>
-        <Parameter name="Inner Iteration" type="bool" value="1"/>
         <Parameter name="Parameters" type="bool" value="1"/>
         <Parameter name="Details" type="bool" value="1"/>
         <Parameter name="Linear Solver Details" type="bool" value="1"/>
