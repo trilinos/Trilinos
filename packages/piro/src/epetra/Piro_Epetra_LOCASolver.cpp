@@ -134,7 +134,8 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> appPar
   if (saveEigData != Teuchos::null) {
     Teuchos::ParameterList& eigParams =
       appParams->sublist("LOCA").sublist("Stepper").sublist("Eigensolver");
-    eigParams.set("User-Defined Save Eigen Data Name", "Charon Strategy");
+    eigParams.set("Save Eigen Data Method", "User-Defined");
+    eigParams.set("User-Defined Save Eigen Data Name", "Piro Strategy");
     eigParams.set( eigParams.get
       ("User-Defined Save Eigen Data Name", "Piro Strategy"), saveEigData);
   }
