@@ -74,31 +74,6 @@ LinearOp SIMPLEPreconditionerFactory
       fApproxStr = getDiagonalName(fInverseType_);
    }
 
-/*
-   if(fInverseType_==Diagonal) {
-      H = getInvDiagonalOp(matF);
-      fApproxStr = "Diagonal";
-   }
-   else if(fInverseType_==Lumped) {
-      H = getInvLumpedMatrix(matF);
-      fApproxStr = "Lumped";
-   }
-   else if(fInverseType_==AbsRowSum) {
-      H = getAbsRowSumInvMatrix(matF);
-      fApproxStr = "AbsRowSum";
-   }
-   else if(fInverseType_==Custom) {
-      H = buildInverse(*customHFactory_,matF);
-      fApproxStr = customHFactory_->toString();
-
-      // since H is now implicit, we must build an implicit Schur complement
-      buildExplicitSchurComplement = false;
-   }
-   else {
-      TEUCHOS_ASSERT(false);
-   }
-*/
-
    // adjust H for time scaling if it is a mass matrix
    if(useMass_) {
       RCP<const Teuchos::ParameterList> pl = state.getParameterList();
@@ -117,26 +92,41 @@ LinearOp SIMPLEPreconditionerFactory
    LinearOp HBt, hatS;
 
    if(buildExplicitSchurComplement) {
-      HBt = explicitMultiply(H,Bt);
-      hatS = explicitAdd(C,scale(-1.0,explicitMultiply(B,HBt)));
+      ModifiableLinearOp & mHBt = state.getModifiableOp("HBt");
+      ModifiableLinearOp & mhatS = state.getModifiableOp("hatS");
+      ModifiableLinearOp & BHBt = state.getModifiableOp("BHBt");
+
+      // build H*Bt
+      mHBt = explicitMultiply(H,Bt,mHBt);
+      HBt = mHBt;
+
+      // build B*H*Bt
+      BHBt = explicitMultiply(B,HBt,BHBt);
+
+      // build C-B*H*Bt
+      mhatS = explicitAdd(C,scale(-1.0,BHBt),mhatS);
+      hatS = mhatS;
    }
    else {
       // build an implicit Schur complement
       HBt = multiply(H,Bt);
+      
       hatS = add(C,scale(-1.0,multiply(B,HBt)));
    }
 
    // build the inverse for F 
-   InverseLinearOp invF = state.getInverse("invF");
-   if(invF==Teuchos::null) {
+   ModifiableLinearOp & invF = state.getModifiableOp("invF");
+   if(invF==Teuchos::null)
       invF = buildInverse(*invVelFactory_,F);
-      state.addInverse("invF",invF); 
-   } else {
+   else 
       rebuildInverse(*invVelFactory_,F,invF);
-   }
 
    // build the approximate Schur complement: This is inefficient! FIXME
-   const LinearOp invS = buildInverse(*invPrsFactory_,hatS);
+   ModifiableLinearOp & invS = state.getModifiableOp("invS");
+   if(invS==Teuchos::null)
+      invS = buildInverse(*invPrsFactory_,hatS);
+   else
+      rebuildInverse(*invPrsFactory_,hatS,invS);
 
    std::vector<LinearOp> invDiag(2); // vector storing inverses
 
@@ -192,30 +182,18 @@ void SIMPLEPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
       fInverseType_ = getDiagonalType(fInverseStr);
       if(fInverseType_==NotDiag)
          customHFactory_ = invLib->getInverseFactory(fInverseStr);
-
-      /*
-      if(fInverseStr=="Diagonal")
-         fInverseType_ = Diagonal;
-      else if(fInverseStr=="Lumped")
-         fInverseType_ = Lumped;
-      else if(fInverseStr=="AbsRowSum")
-         fInverseType_ = AbsRowSum;
-      else {
-         fInverseType_ = Custom;
-         customHFactory_ = invLib->getInverseFactory(fInverseStr);
-      } 
-      */
    }
    if(pl.isParameter("Use Mass Scaling"))
       useMass_ = pl.get<bool>("Use Mass Scaling");
 
    Teko_DEBUG_MSG_BEGIN(5)
       DEBUG_STREAM << "SIMPLE Parameters: " << std::endl;
-      DEBUG_STREAM << "   inv type   = \"" << invStr  << "\"" << std::endl;
-      DEBUG_STREAM << "   inv v type = \"" << invVStr << "\"" << std::endl;
-      DEBUG_STREAM << "   inv p type = \"" << invPStr << "\"" << std::endl;
-      DEBUG_STREAM << "   alpha      = " << alpha_ << std::endl;
-      DEBUG_STREAM << "   use mass   = " << useMass_ << std::endl;
+      DEBUG_STREAM << "   inv type    = \"" << invStr  << "\"" << std::endl;
+      DEBUG_STREAM << "   inv v type  = \"" << invVStr << "\"" << std::endl;
+      DEBUG_STREAM << "   inv p type  = \"" << invPStr << "\"" << std::endl;
+      DEBUG_STREAM << "   alpha       = " << alpha_ << std::endl;
+      DEBUG_STREAM << "   use mass    = " << useMass_ << std::endl;
+      DEBUG_STREAM << "   vel scaling = " << getDiagonalName(fInverseType_) << std::endl;
       DEBUG_STREAM << "SIMPLE Parameter list: " << std::endl;
       pl.print(DEBUG_STREAM);
    Teko_DEBUG_MSG_END()

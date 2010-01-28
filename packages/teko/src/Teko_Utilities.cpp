@@ -805,9 +805,14 @@ const ModifiableLinearOp explicitMultiply(const LinearOp & opl,const LinearOp & 
    // build implicit multiply
    const LinearOp implicitOp = Thyra::multiply(opl,opr);
 
-   // build transformer
-   const RCP<Thyra::LinearOpTransformerBase<double> > prodTrans =
-       Thyra::epetraExtDiagScaledMatProdTransformer();
+   // build a scaling transformer
+   RCP<Thyra::LinearOpTransformerBase<double> > prodTrans  
+         = Thyra::epetraExtDiagScalingTransformer();
+
+   // check to see if a scaling transformer works: if not use the 
+   // DiagScaledMatrixProduct transformer
+   if(not prodTrans->isCompatible(*implicitOp))
+       prodTrans = Thyra::epetraExtDiagScaledMatProdTransformer();
 
    // build operator destination operator
    ModifiableLinearOp explicitOp; 
