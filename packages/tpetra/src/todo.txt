@@ -7,9 +7,6 @@
   - use one of these decorators in apply()
   - document well
 
-* Modify default implementation of sparse mat-vec/solve to work in RangeScalar precision.
-
 * Add Tpetra::MultiScalarOperator abstract interface.
 
-* Keep Tpetra::Operator in hierarchy of CrsMatrix
-  Add Operator wrappers for Tifpack::Preconditioner (forward/backward), CrsMatrix (single/multi-scalar solve, multi-scalar multiply).
+* Add Operator wrappers for Tifpack::Preconditioner (forward/backward), CrsMatrix (single/multi-scalar solve, multi-scalar multiply).

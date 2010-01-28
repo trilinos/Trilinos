@@ -58,13 +58,13 @@ namespace Kokkos {
     inline KERNEL_PREFIX void execute(size_t i) {
       const size_t row = i % numRows;
       const size_t rhs = (i - row) / numRows;
-      Scalar tmp = Teuchos::ScalarTraits<Scalar>::zero();
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       const DomainScalar *xj = x + rhs * xstride;
       RangeScalar        *yj = y + rhs * ystride;
       for (size_t c=offsets[row]; c != offsets[row+1]; ++c) {
-        tmp += vals[c] * xj[inds[c]];
+        tmp += (RangeScalar)vals[c] * (RangeScalar)xj[inds[c]];
       }
-      Scalar tmp2 = beta * yj[row];
+      RangeScalar tmp2 = beta * yj[row];
       yj[row] = (RangeScalar)(alpha * tmp + tmp2);
     }
   };
@@ -94,7 +94,7 @@ namespace Kokkos {
       }
       for (size_t row=0; row < numRows; ++row) {
         for (size_t c=offsets[row]; c != offsets[row+1]; ++c) {
-          yj[inds[c]] += (RangeScalar)(alpha * Teuchos::ScalarTraits<Scalar>::conjugate(vals[c]) * xj[row]);
+          yj[inds[c]] += (RangeScalar)(alpha * Teuchos::ScalarTraits<RangeScalar>::conjugate(vals[c]) * (RangeScalar)xj[row]);
         }
       }
     }
@@ -118,16 +118,16 @@ namespace Kokkos {
     inline KERNEL_PREFIX void execute(size_t i) {
       const size_t row = i % numRows;
       const size_t rhs = (i - row) / numRows;
-      Scalar tmp = Teuchos::ScalarTraits<Scalar>::zero();
+      RangeScalar tmp = Teuchos::ScalarTraits<RangeScalar>::zero();
       const DomainScalar *xj = x + rhs * xstride;
       RangeScalar        *yj = y + rhs * ystride;
       const Scalar  *curval = vals_beg[row];
       const Ordinal *curind = inds_beg[row];
       for (size_t j=0; j != numEntries[row]; ++j) {
-        tmp += curval[j] * xj[curind[j]];
+        tmp += (RangeScalar)curval[j] * (RangeScalar)xj[curind[j]];
       }
-      Scalar tmp2 = beta * yj[row];
-      yj[row] = (Scalar)(alpha * tmp + tmp2);
+      RangeScalar tmp2 = beta * yj[row];
+      yj[row] = (RangeScalar)(alpha * tmp + tmp2);
     }
   };
 
@@ -158,7 +158,7 @@ namespace Kokkos {
         const Scalar  *rowval = vals_beg[row];
         const Ordinal *rowind = inds_beg[row];
         for (size_t j=0; j != numEntries[row]; ++j) {
-          yj[rowind[j]] += (RangeScalar)(alpha * Teuchos::ScalarTraits<Scalar>::conjugate(rowval[j]) * xj[row]);
+          yj[rowind[j]] += (RangeScalar)(alpha * Teuchos::ScalarTraits<RangeScalar>::conjugate(rowval[j]) * (RangeScalar)xj[row]);
         }
       }
     }
@@ -216,7 +216,7 @@ namespace Kokkos {
       }
       for (size_t row=0; row < numRows; ++row) {
         for (size_t c=offsets[row]; c != offsets[row+1]; ++c) {
-          yj[inds[c]] += (RangeScalar)(Teuchos::ScalarTraits<Scalar>::conjugate(vals[c]) * xj[row]);
+          yj[inds[c]] += Teuchos::ScalarTraits<RangeScalar>::conjugate(vals[c]) * (RangeScalar)xj[row];
         }
       }
     }
@@ -278,7 +278,7 @@ namespace Kokkos {
         const Scalar  *rowval = vals_beg[row];
         const Ordinal *rowind = inds_beg[row];
         for (size_t j=0; j != numEntries[row]; ++j) {
-          yj[rowind[j]] += (RangeScalar)(Teuchos::ScalarTraits<Scalar>::conjugate(rowval[j]) * xj[row]);
+          yj[rowind[j]] += Teuchos::ScalarTraits<RangeScalar>::conjugate(rowval[j]) * (RangeScalar)xj[row];
         }
       }
     }
