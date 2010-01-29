@@ -147,6 +147,7 @@ APPEND_SET(HEADERS
   Teuchos_Time.hpp
   Teuchos_TimeMonitor.hpp
   Teuchos_Tuple.hpp
+  Teuchos_TypeTraits.hpp
   Teuchos_TypeNameTraits.hpp
   Teuchos_UnitTestBase.hpp
   Teuchos_UnitTestHarness.hpp
