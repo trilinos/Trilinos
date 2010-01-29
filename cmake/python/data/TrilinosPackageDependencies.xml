@@ -769,4 +769,18 @@
       <Regression address="stalix-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
+  <Package name="Teko" dir="teko">
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,Thyra,EpetraExt,Stratimikos,AztecOO,Anasazi,ML,Ifpack,Amesos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Checkin address="teko-checkins@software.sandia.gov"/>
+      <Regression address="teko-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </Package>
 </PackageDependencies>

@@ -105,6 +105,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Optika		optika			       SS
   Mesquite              mesquite                       PS
   Stalix                stalix                         EX
+  Teko                  teko                           EX
   )
 
 
