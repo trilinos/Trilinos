@@ -23,7 +23,7 @@ Piro::Epetra::RythmosSolver::RythmosSolver(Teuchos::RCP<Teuchos::ParameterList> 
   appParams(appParams_),
   model(model_)
 {
-  appParams->validateParameters(*Piro::getValidPiroParameters(),0);
+  //appParams->validateParameters(*Piro::getValidPiroParameters(),0);
 
   using Teuchos::RCP;
   using Teuchos::rcp;

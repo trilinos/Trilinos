@@ -39,7 +39,7 @@ StokhosNOXSolver(const Teuchos::RCP<Teuchos::ParameterList>& appParams,
 	    const Teuchos::RCP<const Epetra_Comm>& comm,
             Teuchos::RCP<Piro::Epetra::NOXObserver> noxObserver)
 {
-  appParams->validateParameters(*Piro::getValidPiroParameters(),0);
+  //appParams->validateParameters(*Piro::getValidPiroParameters(),0);
 
   Teuchos::ParameterList& problemParams = appParams->sublist("Problem");
   Teuchos::ParameterList& sgParams =

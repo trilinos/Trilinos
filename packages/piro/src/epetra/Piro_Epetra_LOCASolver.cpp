@@ -14,7 +14,7 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> appPar
   saveEigData(saveEigData_),
   utils(appParams->sublist("NOX").sublist("Printing"))
 {
-  appParams->validateParameters(*Piro::getValidPiroParameters(),0);
+  //appParams->validateParameters(*Piro::getValidPiroParameters(),0);
 
   Teuchos::RCP<Teuchos::ParameterList> noxParams =
 	Teuchos::rcp(&(appParams->sublist("NOX")),false);

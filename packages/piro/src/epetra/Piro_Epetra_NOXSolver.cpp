@@ -11,7 +11,7 @@ Piro::Epetra::NOXSolver::NOXSolver(Teuchos::RCP<Teuchos::ParameterList> appParam
   observer(observer_),
   utils(appParams->sublist("NOX").sublist("Printing"))
 {
-  appParams->validateParameters(*Piro::getValidPiroParameters(),0);
+  //appParams->validateParameters(*Piro::getValidPiroParameters(),0);
 
   Teuchos::RCP<Teuchos::ParameterList> noxParams =
 	Teuchos::rcp(&(appParams->sublist("NOX")),false);
