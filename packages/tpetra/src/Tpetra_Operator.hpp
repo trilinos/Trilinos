@@ -60,15 +60,18 @@ namespace Tpetra {
     //! Returns the Map associated with the range of this operator, which must be compatible with Y.getMap().
     virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const = 0;
 
-    //! Computes the operator-multivector multiplication \f$A X\f$ into \c Y, overwriting the previous contents of \c Y.
+    //! \brief Computes the operator-multivector application.
+    /*! Loosely, performs \f$Y = \alpha A^{\textrm{mode}} X + \beta Y\f$. However, the details of operation
+        vary according to the values of \c alpha and \c beta. Specifically
+        - if <tt>beta = 0</tt>, apply() is required to overwrite \c Y, so that any values in \c Y (including NaNs) are ignored.
+        - if <tt>alpha = 0</tt>, apply() may short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
+        The behavior of the call varies according to the  \f$A X\f$ into \c Y, overwriting the previous contents of \c Y.
+     */
     virtual void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
                MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
-               Teuchos::ETransp mode = Teuchos::NO_TRANS) const = 0;
-
-    //! Computes the operator-multivector multiplication \f$Y = \alpha A X + \beta Y\f$.
-    // virtual void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
-    //         Scalar alpha, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
-    //         Scalar beta, Teuchos::ETransp mode = Teuchos::NO_TRANS) const = 0;
+               Teuchos::ETransp mode = Teuchos::NO_TRANS, 
+               Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+               Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const = 0;
 
     //! Indicates whether this operator supports applying the adjoint operator.
     virtual bool hasTransposeApply() const;

@@ -1,5 +1,8 @@
-* Add apply(alpha,X,beta,Y) method to Tpetra::Operator, CrsMatrix
-  - remove apply(X,Y), put documented conditional structure in apply(alpha,X,beta,Y)
+* Add support for alpha,beta in CrsMatrix::apply(alpha,X,beta,Y) 
+  - this will need to go all the way down to DefaultSparseMultiply
+  - implemented documented conditional structure in apply(alpha,X,beta,Y)
+
+* Decide whether RowMatrix should derive from Operator
 
 * modify solve<DScalar,RScalar>, multiply<DScalar,RScalar> 
   - ... to operate on pre-imported multivectors, returning un-exported multivectors

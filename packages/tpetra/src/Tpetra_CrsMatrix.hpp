@@ -356,6 +356,19 @@ namespace Tpetra
       //! @name Methods implementing Operator
       //@{ 
 
+      //! \brief Computes the sparse matrix-multivector multiplication.
+      /*! Performs \f$Y = \alpha A^{\textrm{mode}} X + \beta Y\f$, with one special exceptions:
+          - if <tt>beta = 0</tt>, apply() overwrites \c Y, so that any values in \c Y (including NaNs) are ignored.
+          The behavior of the call varies according to the  \f$A X\f$ into \c Y, overwriting the previous contents of \c Y.
+       */
+      void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
+                 Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                 Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+                 Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+
+      //! Indicates whether this operator supports applying the adjoint operator.
+      bool hasTransposeApply() const;
+
       //! \brief Returns the Map associated with the domain of this operator.
       //! This will be <tt>Teuchos::null</tt> until fillComplete() is called.
       const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
@@ -363,12 +376,6 @@ namespace Tpetra
       //! Returns the Map associated with the domain of this operator.
       //! This will be <tt>Teuchos::null</tt> until fillComplete() is called.
       const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
-
-      //! Computes this matrix-vector multilication y = A x.
-      void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
-
-      //! Indicates whether this operator supports applying the adjoint operator.
-      bool hasTransposeApply() const;
 
       //@}
 
@@ -2236,17 +2243,6 @@ namespace Tpetra
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
-  // template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
-  // void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::applyInverse(
-  //                                   const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
-  //                                         MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
-  //                                         Teuchos::ETransp mode) const {
-  //   solve<Scalar,Scalar>(Y,X,mode);
-  // }
-
-
-  /////////////////////////////////////////////////////////////////////////////
-  /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
   template <class DomainScalar, class RangeScalar>
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::solve(
@@ -2457,7 +2453,9 @@ namespace Tpetra
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::apply(
                                         const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
                                         MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
-                                        Teuchos::ETransp mode) const {
+                                        Teuchos::ETransp mode, Scalar alpha, Scalar beta) const {
+    TEST_FOR_EXCEPTION( alpha != Teuchos::ScalarTraits<Scalar>::one() || beta != Teuchos::ScalarTraits<Scalar>::zero(), std::runtime_error,
+        Teuchos::typeName(*this) << "::apply(): non-trivial alpha,beta not supported at this time.");
     multiply<Scalar,Scalar>(X,Y,mode);
   }
 
