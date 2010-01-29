@@ -7,6 +7,7 @@
 #include <Teuchos_FancyOStream.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_TypeTraits.hpp>
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
@@ -55,6 +56,7 @@ namespace {
 
   using std::string;
 
+  using Teuchos::TypeTraits::is_same;
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
   using Teuchos::rcp;
@@ -1365,6 +1367,22 @@ namespace {
     TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
   }
 
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, Typedefs, LO, GO, Scalar, Node )
+  {
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef typename MAT::scalar_type         scalar_type;
+    typedef typename MAT::local_ordinal_type  local_ordinal_type;
+    typedef typename MAT::global_ordinal_type global_ordinal_type;
+    typedef typename MAT::node_type           node_type;
+    typedef typename MAT::mat_vec_type        mat_vec_type;
+    typedef typename MAT::mat_solve_type      mat_solve_type;
+    TEST_EQUALITY_CONST( (is_same< scalar_type         , Scalar >::value) == true, true );
+    TEST_EQUALITY_CONST( (is_same< local_ordinal_type  , LO     >::value) == true, true );
+    TEST_EQUALITY_CONST( (is_same< global_ordinal_type , GO     >::value) == true, true );
+    TEST_EQUALITY_CONST( (is_same< node_type           , Node   >::value) == true, true );
+  }
+
 
 // 
 // INSTANTIATIONS
@@ -1390,7 +1408,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, MultipleFillCompletes, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, CopiesAndViews, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TriSolve, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, EmptyTriSolve, LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, EmptyTriSolve, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Typedefs,      LO, GO, SCALAR, NODE )
 
 
 #define UNIT_TEST_SERIALNODE(LO, GO, SCALAR) \

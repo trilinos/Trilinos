@@ -5,6 +5,7 @@
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_TypeTraits.hpp>
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
@@ -48,6 +49,7 @@ namespace {
   using std::ostream_iterator;
   using std::string;
 
+  using Teuchos::TypeTraits::is_same;
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
   using Teuchos::rcp;
@@ -1937,6 +1939,20 @@ namespace {
     TEST_THROW(m1n2.reciprocal(m2n2), std::runtime_error);
   }
 
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, Typedefs,        Ordinal, Scalar , Node )
+  {
+    typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
+    typedef typename MV::scalar_type scalar_type;
+    typedef typename MV::local_ordinal_type local_ordinal_type;
+    typedef typename MV::global_ordinal_type global_ordinal_type;
+    typedef typename MV::node_type node_type;
+    TEST_EQUALITY_CONST( (is_same< scalar_type         , Scalar  >::value) == true, true );
+    TEST_EQUALITY_CONST( (is_same< local_ordinal_type  , Ordinal >::value) == true, true );
+    TEST_EQUALITY_CONST( (is_same< global_ordinal_type , Ordinal >::value) == true, true );
+    TEST_EQUALITY_CONST( (is_same< node_type           , Node    >::value) == true, true );
+  }
+
 // 
 // INSTANTIATIONS
 //
@@ -1972,7 +1988,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, Multiply          , ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, ElementWiseMultiply,ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, NonContigView     , ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, Describable       , ORDINAL, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, Describable       , ORDINAL, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, Typedefs          , ORDINAL, SCALAR, NODE )
 
 #define UNIT_TEST_SERIALNODE(ORDINAL, SCALAR) \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, SerialNode )

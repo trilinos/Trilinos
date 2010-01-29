@@ -63,6 +63,10 @@ namespace Tpetra {
   class MultiVector : public DistObject<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
 
     public:
+      typedef Scalar        scalar_type;
+      typedef LocalOrdinal  local_ordinal_type;
+      typedef GlobalOrdinal global_ordinal_type;
+      typedef Node          node_type;
 
     //! @name Constructor/Destructor Methods
     //@{ 

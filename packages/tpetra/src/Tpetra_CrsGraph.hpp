@@ -73,6 +73,9 @@ namespace Tpetra
     friend class CrsMatrix;
 
     public: 
+      typedef LocalOrdinal  local_ordinal_type;
+      typedef GlobalOrdinal global_ordinal_type;
+      typedef Node          node_type;
 
       //! @name Constructor/Destructor Methods
       //@{ 

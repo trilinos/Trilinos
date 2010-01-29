@@ -6,6 +6,7 @@
 #include <Teuchos_FancyOStream.hpp>
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_as.hpp>
+#include <Teuchos_TypeTraits.hpp>
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
@@ -35,6 +36,7 @@ namespace {
   using std::min;
   using std::max;
   using Teuchos::Array;
+  using Teuchos::TypeTraits::is_same;
   using Teuchos::ArrayView;
   using Tpetra::CrsGraph;
   using Tpetra::RowGraph;
@@ -677,7 +679,17 @@ namespace {
     }
   }
 
-
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, Typedefs, LO, GO )
+  {
+    typedef CrsGraph<LO,GO,Node> GRAPH;
+    typedef typename GRAPH::local_ordinal_type  local_ordinal_type;
+    typedef typename GRAPH::global_ordinal_type global_ordinal_type;
+    typedef typename GRAPH::node_type           node_type;
+    TEST_EQUALITY_CONST( (is_same< local_ordinal_type  , LO >::value) == true, true );
+    TEST_EQUALITY_CONST( (is_same< global_ordinal_type , GO >::value) == true, true );
+    TEST_EQUALITY_CONST( (is_same< node_type           , Node    >::value) == true, true );
+  }
 
   // 
   // INSTANTIATIONS
@@ -698,22 +710,18 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, DottedDiag , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, WithStaticProfile , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, CopiesAndViews, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, Describable   , LO, GO )
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, Describable   , LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, Typedefs      , LO, GO )
 
-# ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
      UNIT_TEST_GROUP_LO_GO(int,int)
-# else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
-     UNIT_TEST_GROUP_LO_GO(short,int)
-     UNIT_TEST_GROUP_LO_GO(int,int)
-
-     typedef long int LongInt;
-     UNIT_TEST_GROUP_LO_GO(int,LongInt)
-#    ifdef HAVE_TEUCHOS_LONG_LONG_INT
+#ifndef FAST_DEVELOPMENT_UNIT_TEST_BUILD
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
         typedef long long int LongLongInt;
-        UNIT_TEST_GROUP_LO_GO(int,LongLongInt)
-#    endif
-
+        UNIT_TEST_GROUP_LO_GO(short,LongLongInt)
+#else
+        typedef long int LongInt;
+        UNIT_TEST_GROUP_LO_GO(short,LongInt)
+#endif
 # endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 }

@@ -106,6 +106,13 @@ namespace Tpetra
   template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatVec = Kokkos::DefaultSparseMultiply<Scalar,LocalOrdinal,Node>, class LocalMatSolve = Kokkos::DefaultSparseSolve<Scalar,LocalOrdinal,Node> >
   class CrsMatrix : public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
     public:
+      typedef Scalar        scalar_type;
+      typedef LocalOrdinal  local_ordinal_type;
+      typedef GlobalOrdinal global_ordinal_type;
+      typedef Node          node_type;
+      typedef LocalMatVec   mat_vec_type;
+      typedef LocalMatSolve mat_solve_type;
+
       //! @name Constructor/Destructor Methods
       //@{ 
 
