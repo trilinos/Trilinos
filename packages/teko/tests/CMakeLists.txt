@@ -1,47 +1,28 @@
+INCLUDE(PackageLibraryMacros)
 INCLUDE(PackageAddExecutableAndTest)
 INCLUDE(PackageCopyFilesToBinaryDir)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
+SET(HEADERS "")
+SET(SOURCES "")
+
+APPEND_GLOB( HEADERS 
+  ./src/Epetra/*.hpp
+  ./src/*.hpp
+)
+
+APPEND_GLOB( SOURCES 
+  ./src/Epetra/*.cpp
+  ./src/*.cpp
+)
+
+
 PACKAGE_ADD_EXECUTABLE(
   testdriver
   SOURCES
-      ./src/Epetra/tEpetraOperatorWrapper.cpp
-      ./src/Epetra/tEpetraOperatorWrapper.hpp
-      ./src/Epetra/tEpetraThyraConverter.cpp
-      ./src/Epetra/tEpetraThyraConverter.hpp
-      ./src/Epetra/tInterlacedEpetra.cpp
-      ./src/Epetra/tInterlacedEpetra.hpp
-      ./src/Epetra/tBlockingEpetra.cpp
-      ./src/Epetra/tBlockingEpetra.hpp
-      ./src/Epetra/tStridedEpetraOperator.cpp
-      ./src/Epetra/tStridedEpetraOperator.hpp
-      ./src/tBlockJacobiPreconditionerFactory.cpp
-      ./src/tBlockJacobiPreconditionerFactory.hpp
-      ./src/tBlockLowerTriInverseOp.cpp
-      ./src/tBlockLowerTriInverseOp.hpp
-      ./src/tBlockUpperTriInverseOp.cpp
-      ./src/tBlockUpperTriInverseOp.hpp
-      ./src/tExplicitOps.cpp
-      ./src/tExplicitOps.hpp
-      ./src/tGraphLaplacian.cpp
-      ./src/tGraphLaplacian.hpp
-      ./src/tJacobi2x2PreconditionerFactory.cpp
-      ./src/tJacobi2x2PreconditionerFactory.hpp
-      ./src/tLSCHIntegrationTest.cpp
-      ./src/tLSCHIntegrationTest.hpp
-      ./src/tLSCIntegrationTest.cpp
-      ./src/tLSCIntegrationTest.hpp
-      ./src/tLSCStabilized.cpp
-      ./src/tLSCStabilized.hpp
-      ./src/tLSCStablePreconditionerFactory.cpp
-      ./src/tLSCStablePreconditionerFactory.hpp
-      ./src/tLU2x2PreconditionerFactory.cpp
-      ./src/tLU2x2PreconditionerFactory.hpp
-      ./src/tParallelInverse.cpp
-      ./src/tParallelInverse.hpp
-      ./src/tSIMPLEPreconditionerFactory.cpp
-      ./src/tSIMPLEPreconditionerFactory.hpp
+      ${HEADERS}
+      ${SOURCES}
       ./Test_Utils.cpp
       ./Test_Utils.hpp
       ./testdriver.cpp
