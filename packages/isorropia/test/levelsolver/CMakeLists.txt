@@ -7,7 +7,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   ARGS
     "M01.mtx 4 10"
-  DEPLIBS kokkos kokkoslinalg kokkosnodeapi
+  DEPLIBS kokkos kokkoslinalg kokkosnodeapi tpetra
   )
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(TestLevelSolverCopyFiles

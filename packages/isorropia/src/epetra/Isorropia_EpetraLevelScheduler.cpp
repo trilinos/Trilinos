@@ -41,6 +41,9 @@ namespace Isorropia {
 namespace Epetra {
 
 
+LevelScheduler::~LevelScheduler() {}
+
+
 LevelScheduler::LevelScheduler(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 		 bool compute_now) : Operator(input_graph, 0)
 {

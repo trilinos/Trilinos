@@ -6,8 +6,18 @@
 #include <Epetra_Time.h>
 #include <vector>
 
+
+
 #include "LevelSolver.h"
 #include "TestUtils.h"
+
+
+//#include <Tpetra_MapDecl.hpp>
+//#include <Tpetra_ConfigDefs.hpp>
+
+#include <Teuchos_DefaultSerialComm.hpp>
+
+
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_MultiVector.hpp>
 #include <Kokkos_CrsMatrix.hpp>
@@ -22,7 +32,7 @@
 #include <Kokkos_TPINode.hpp>
 #endif
 
-#define USE_ISORROPIA
+//#define USE_ISORROPIA
 
 #ifdef USE_ISORROPIA
   #define FNARGS "[matrix filename]"
@@ -32,11 +42,7 @@
 
 #define PRINT_AND_EXIT() \
 { \
-    cout << "Usage: " << argv[0] << " " << FNARGS << " [thread args] [numTrials]" << endl \
-                      << "where [thread args] takes one of the following forms:" << endl \
-                      << " b:e+i    e.g., 1:5+1 runs 1,2,3,4,5 threads" << endl \
-                      << " b:e*m    e.g., 1:2:16 runs 1,2,4,8,16 threads" << endl \
-                      << " n[,n]*   e.g., 1,3,9,12 runs 1,3,9,12 threads" << endl; \
+    cout << "Usage: " << argv[0] << " " << FNARGS << " [numThreads] [numTrials]" << endl; \
     return -1; \
 }
 
@@ -51,6 +57,26 @@ using std::vector;
 using std::ifstream;
 using std::ofstream;
 
+template<class NodeT>
+void verify(const Epetra_CrsMatrix *L, const Epetra_LevelSolver<NodeT> &LS);
+
+
+
+template <class nodeT>
+void copyEpetravToTpetrav(const Epetra_Vector &evector,
+                          Tpetra::Vector<double,int,int,nodeT> &tvector);
+
+template <class nodeT>
+void copyTpetravToEpetrav(const Tpetra::Vector<double,int,int,nodeT> &tvector,
+                          const Epetra_Vector &evector);
+
+
+template<class NodeT>
+void timeLevelSolver(const Epetra_CrsMatrix *L, Epetra_LevelSolver<NodeT> &LS, int ntrials);
+
+void timeOrigSolver(const Epetra_CrsMatrix *L, int ntrials);
+
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 // main() routines for the test
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -61,26 +87,28 @@ int main(int argc, char *argv[])
 
   // cout << Epetra_Version() << endl << endl;
   string mfn;
-  vector<int> threads;
   int numTrials = 30;
+  int numThreads = 1;
 
 #ifndef USE_ISORROPIA
   string pfn;
   if (argc > 2) {
     mfn = argv[1];
     pfn = argv[2];
-    if (argc > 3) if ( parseNumThreads(argv[3],threads) != 0 ) PRINT_AND_EXIT();
+    if (argc > 3) if ( sscanf(argv[3],"%d",&numThreads) != 1 ) PRINT_AND_EXIT();
     if (argc > 4) if ( sscanf(argv[4],"%d",&numTrials)  != 1 ) PRINT_AND_EXIT();
   }
   else PRINT_AND_EXIT();
 #else
   if (argc > 2) {
     mfn = argv[1];
-    if (argc > 2) if ( parseNumThreads(argv[2],threads) != 0 ) PRINT_AND_EXIT();
+    if (argc > 2) if ( sscanf(argv[2],"%d",&numThreads) != 1 ) PRINT_AND_EXIT();
     if (argc > 3) if ( sscanf(argv[3],"%d",&numTrials)  != 1 ) PRINT_AND_EXIT();
   }
   else PRINT_AND_EXIT();
 #endif
+
+
   Epetra_CrsMatrix *L;
   int ierr = EpetraExt::MatrixMarketFileToCrsMatrix(mfn.c_str(),Comm,L,false,true); // transpose=false, verbose=true
   if (ierr) {
@@ -88,39 +116,29 @@ int main(int argc, char *argv[])
     return -1;
   }
 
-  //typedef Kokkos::TBBNode Node;
-  //Node node(threads[0]); threads.resize(1);
-  // typedef Kokkos::SerialNode Node;
-  // Node node;
   Teuchos::ParameterList pl;
-  pl.set("Num Threads",1);
+  pl.set("Num Threads",numThreads);
   typedef Kokkos::TPINode Node;
 
-  //RCP<C> c_ptr = rcp(new C);
-
   Teuchos::RCP<Node> node = Teuchos::rcp(new Node(pl));
-  //Teuchos::RCP<Kokkos::TPINode> node = Kokkos::TPINode(pl);
-  //  Node node(pl);
 
   //typedef Node::buffer<double>::buffer_t dbuffer;
-  Teuchos::ArrayRCP<double> dbuffer;
+  //Teuchos::ArrayRCP<double> dbuffer;
 
-  //  typedef Node::buffer<int>::buffer_t ibuffer;
   typedef Kokkos::MultiVector<double,Node> MV;
   typedef Kokkos::CrsMatrix<double,Node> MAT;
 
+  /////////////////////////////////////////////////////////////
   const int NLRs = L->RowMap().NumMyPoints();
-  //MMW const Kokkos::size_type NNZ = L->NumMyNonzeros(); 
-  size_t NNZ = L->NumMyNonzeros(); //MMW
-  //MMW Kokkos::size_type *NNZperRow = new Kokkos::size_type[NLRs];
+  size_t NNZ = L->NumMyNonzeros(); 
   size_t *NNZperRow = new size_t[NLRs];
   double stddev = 0;
   double mean = (double)(NNZ) / (double)(NLRs);
   for (int i=0; i<NLRs; ++i) 
   {
-    NNZperRow[i] = L->NumMyEntries(i);
-    double tmp = (NNZperRow[i] - mean);
-    stddev += (tmp*tmp);
+     NNZperRow[i] = L->NumMyEntries(i);
+     double tmp = (NNZperRow[i] - mean);
+     stddev += (tmp*tmp);
   }
   stddev = sqrt(stddev / NLRs);
 
@@ -146,196 +164,336 @@ int main(int argc, char *argv[])
   cout << "Number of non-zeros: " << NNZ << endl;
   cout << "Mean number of non-zeros per row: " << fixed << setprecision(1) << mean << endl;
   cout << "Std dev number of non-zeros per row: " << fixed << setprecision(2) << stddev << endl;
+  /////////////////////////////////////////////////////////////
 
   Epetra_LevelSolver<Node> LS(L->RowMap(),node);
 
 #define USE_ISORROPIA
 #ifndef USE_ISORROPIA
-  {
-    vector<int> pvec(L->NumMyRows());
-    int NumLevels;
-    vector<int> lsizes;
-    try {
+   vector<int> pvec(L->NumMyRows());
+   int NumLevels;
+   vector<int> lsizes;
+   try 
+   {
       ifstream Pfn;
       Pfn.exceptions(ifstream::eofbit | ifstream::failbit | ifstream::badbit ); 
       Pfn.open(pfn.c_str());
-      for (int i=0; i<L->NumMyRows(); ++i) {
-        Pfn >> pvec[i];
+      for (int i=0; i<L->NumMyRows(); ++i) 
+      {
+         Pfn >> pvec[i];
       }
       Pfn >> NumLevels;
       lsizes.resize(NumLevels);
-      for (int i=0; i<NumLevels; ++i) {
-        Pfn >> lsizes[i];
+      for (int i=0; i<NumLevels; ++i) 
+      {
+         Pfn >> lsizes[i];
       }
-    }
-    catch (ifstream::failure e) {
-      cout << "Exception opening/reading file " << pfn << endl;
-      return -1;
-    }
-    LS.SetLevelInfo(NumLevels,&lsizes[0],&pvec[0]); 
-  }
+   }
+   catch (ifstream::failure e) 
+   {
+       cout << "Exception opening/reading file " << pfn << endl;
+       return -1;
+   }
+   LS.SetLevelInfo(NumLevels,&lsizes[0],&pvec[0]); 
 #else
-  {
-    double time;
-    timer.ResetStartTime();
-    ierr = LS.Analyze(L->Graph()); 
-    time = timer.ElapsedTime();
-    cout << "\nLevelSolver::Analyze() time: " << time << endl;
-  }
-  if (ierr) 
-  {
-    cout << "LevelSolver::Analyze returned an error" << endl;
-    return -1;
-  }
+   {
+      double time;
+      timer.ResetStartTime();
+      ierr = LS.Analyze(L->Graph()); 
+      time = timer.ElapsedTime();
+      cout << "\nLevelSolver::Analyze() time: " << time << endl;
+   }
+   if (ierr) 
+   {
+      cout << "LevelSolver::Analyze returned an error" << endl;
+      return -1;
+   }
 #endif
-  {
-    double time;
-    timer.ResetStartTime();
-    LS.Setup(*L);
-    time = timer.ElapsedTime();
-    cout << "LevelSolver::Setup() time: " << time << endl;
-  }
-  cout << "\n*** LevelSolver statistics" << endl;
-  LS.Print(cout,1);
-  {
-    ofstream fout("levelinfo.dat");
-    LS.Print(fout,2);
-  }
+   {
+      double time;
+      timer.ResetStartTime();
+      LS.Setup(*L);
+      time = timer.ElapsedTime();
+      cout << "LevelSolver::Setup() time: " << time << endl;
+      cout << "\n*** LevelSolver statistics" << endl;
+   }
+   LS.Print(cout,1);
+   {
+     ofstream fout("levelinfo.dat");
+     LS.Print(fout,2);
+   }
 
-  ///////////////////////////////////////////////////////////////////
-  // test LevelSolver
-  ///////////////////////////////////////////////////////////////////
-  Epetra_Vector x(L->RowMap(),false); 
-  Epetra_Vector Lx(x);
+   // Verify that the level solver correctly solves the system
+   verify(L,LS);
 
-  cout << "\n*** Performing verification" << endl;
-  for (int t=0; t<4; ++t) 
-  {
-    x.SetSeed(static_cast<unsigned int>(100000*timer.WallTime()));
-    x.Random();
-    Lx.Random();
-    // cout << "Actual Solution: " << endl; x.Print(cout);
-    if ((t & 2) == 0) 
-    {
-      cout << "Applying L to x using CrsMatrix\n";
-      L->Apply(x,Lx);
-    }
-    else 
-    {
-      cout << "Applying L to x using LevelSolver\n";
-      Lx = x;
-      LS.ApplyInverse(Lx,Lx);
-    }
-    // cout << "RHS: " << endl; Lx.Print(cout);
-    if ((t & 1) == 0) 
-    {
-      cout << "Solving L*x using CrsMatrix\n";
-      L->Solve(false,false,false,Lx,Lx);
-    }
-    else 
-    {
-      cout << "Solving L*x using LevelSolver\n"; 
-      LS.Apply(Lx,Lx);
-    }
-    double errnrm, xnrm;
-    Lx.Update(-1.0,x,1.0);
-    Lx.Norm2(&errnrm);
-    x.Norm2(&xnrm);
-    cout << "||x - inv(L)*(L*x)||/||x||: " << setprecision(2) << scientific << errnrm/xnrm << "\n\n";
-  }
-  ///////////////////////////////////////////////////////////////////
+   // Time the level solver 
+//   timeLevelSolver(L,LS,numTrials);
 
-  // for timings, neglect diagonal of LS because the scaling routines are not parallelized
-  // LS.setUnitDiag(true);
-  LS.setIgnorePerm(true);
-
-  cout << "*** Timings over " << numTrials << " trials" << endl;
-  for (vector<int>::iterator nt=threads.begin(); nt != threads.end(); ++nt) 
-  {
-
-    //////////////////////////////
-    // Level Solver solve
-    //////////////////////////////
-    double time;
-    // node.init(*nt);
-    // LevelSolver inverse
-    timer.ResetStartTime();
-    for (int t=0; t<numTrials; ++t) 
-    {
-      LS.Apply(Lx,Lx);
-    }
-    time = timer.ElapsedTime();
-    cout << setw(20) << "LevelSolver  solve, " << setw(2) << *nt << " threads, "
-         << setprecision(2) << scientific << setw(11) << time           << " total, " 
-         << setprecision(2) << scientific << setw(11) << time/numTrials << " average" 
-         << endl;
-    //////////////////////////////
-
-    //////////////////////////////
-    // LevelSolver forward/apply
-    //////////////////////////////
-    // MMW -- commenting out these non solver steps
-    // timer.ResetStartTime();
-    //for (int t=0; t<numTrials; ++t) 
-    //{
-    //  LS.ApplyInverse(Lx,Lx);
-    //}
-    //time = timer.ElapsedTime();
-    //cout << setw(20) << "LevelSolver  apply, " << setw(2) << *nt << " threads, "
-    //     << setprecision(2) << scientific << setw(11) << time           << " total, " 
-    //     << setprecision(2) << scientific << setw(11) << time/numTrials << " average" 
-    //     << endl;
-    //////////////////////////////
-
-
-    //////////////////////////////
-    // Kokkos::CrsMatrix multiply
-    //////////////////////////////
-    //MV x(node), Lx(node);
-    //dbuffer vecbuf = node.allocBuffer<double>(2*NLRs);
-    //x.initializeValues(NLRs,1,vecbuf,NLRs);
-    //Lx.initializeValues(NLRs,1,vecbuf+NLRs,NLRs);
-    //timer.ResetStartTime();
-    //for (int t=0; t<numTrials; ++t) 
-    //{
-    //  DSMV.Apply(false,1.0,x,0.0,Lx);
-    //}
-    //time = timer.ElapsedTime();
-    //node.freeBuffer<double>(vecbuf);
-    //cout << setw(20) << "K::CrsMatrix apply, " << setw(2) << *nt << " threads, "
-    //     << setprecision(2) << scientific << setw(11) << time            << " total, " 
-    //     << setprecision(2) << scientific << setw(11) << time /numTrials << " average" 
-    //     << endl;
-    //////////////////////////////
-
-  }
-
-  //double time;
-  //// Epetra inverse
-  //timer.ResetStartTime();
-  //for (int t=0; t<numTrials; ++t) 
-  //{
-  //  L->Solve(false,false,false,Lx,Lx);
-  //}
-  //  time = timer.ElapsedTime();
-  //  cout << setw(20) << "Epetra_CrsMatrix solve,         "
-  //       << setprecision(2) << scientific << setw(11) << time            << " total, " 
-  //       << setprecision(2) << scientific << setw(11) << time /numTrials << " average" 
-  //       << endl;
-  //  // Epetra multiply
-  //  timer.ResetStartTime();
-  //  for (int t=0; t<numTrials; ++t) 
-  //  {
-  //    L->Apply(x,Lx);
-  //  }
-  //  time = timer.ElapsedTime();
-  //  cout << setw(20) << "Epetra_CrsMatrix apply,         "
-  //       << setprecision(2) << scientific << setw(11) << time            << " total, " 
-  //       << setprecision(2) << scientific << setw(11) << time /numTrials << " average" 
-  //       << endl;
+//   timeOrigSolver(L,numTrials);
 
 
   // delete manually allocated matrices
   delete L;
   return 0;
 }
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+template <class nodeT>
+void verify(const Epetra_CrsMatrix *L, const Epetra_LevelSolver<nodeT> &LS)
+{
+  Epetra_SerialComm Comm;
+  Epetra_Time timer(Comm);
+
+  ///////////////////////////////////////////////////////////////////
+  // Build Tpetra map from Epetra Map   ---- this needs to be stored globally in LevelSolver
+  ///////////////////////////////////////////////////////////////////
+  typedef Tpetra::Map<int, int, nodeT> tmap;
+
+  Teuchos::RCP< const Teuchos::Comm< int > > TCommRCP = Teuchos::rcp(new Teuchos::SerialComm<int>());
+
+
+  int *tmpElementList = new int[L->RowMap().NumGlobalElements()];
+
+  L->RowMap().MyGlobalElements(tmpElementList);
+
+  Teuchos::ArrayView<int> aview(tmpElementList,L->RowMap().NumGlobalElements());
+
+// MMW: map checks out for I16.mtx
+  Teuchos::RCP< const tmap > tmapRCP = Teuchos::rcp(new tmap(L->RowMap().NumGlobalElements(), aview, 0, TCommRCP,
+  							     LS.getNode())); 
+
+  delete [] tmpElementList; tmpElementList=0;  // not sure if this is good
+  ///////////////////////////////////////////////////////////////////
+
+//  tmapRCP->describe(*Teuchos::getFancyOStream(Teuchos::rcp(&std::cout,false)) , Teuchos::VERB_EXTREME  );
+
+
+  ///////////////////////////////////////////////////////////////////
+  // test LevelSolver
+  ///////////////////////////////////////////////////////////////////
+  Epetra_Vector x_e(L->RowMap(),false); 
+  Epetra_Vector x2_e(x_e); 
+  Epetra_Vector Lx_e(x_e);
+
+  typedef Tpetra::Vector<double,int,int,nodeT> TV;
+
+//MMW vectors seem to be correct for I16.mtx
+  TV x_t(tmapRCP,false); 
+  TV x2_t(x_t);
+  TV Lx_t(x_t);
+
+  cout << "\n*** Performing verification" << endl;
+
+  double errnrm, xnrm;
+  //////////////////////////////////////////////
+  // Test 1: Sanity Check
+  //////////////////////////////////////////////
+  cout << "Verification test 1" << std::endl;
+  x_e.SetSeed(static_cast<unsigned int>(100000*timer.WallTime()));
+  x_e.Random();
+  Lx_e.SetSeed(static_cast<unsigned int>(100000*timer.WallTime()));
+  Lx_e.Random();
+
+  cout << "Applying L to x using CrsMatrix\n";
+  L->Apply(x_e,Lx_e); // Lx = L * x
+
+  cout << "Solving L*x using CrsMatrix\n";
+  L->Solve(false,false,false,Lx_e,x2_e);      // Lx = L^-1 Lx = x
+          
+  x2_e.Update(-1.0,x_e,1.0);
+  x2_e.Norm2(&errnrm);
+  x_e.Norm2(&xnrm);
+  cout << "||x - inv(L)*(L*x)||/||x||: " << setprecision(2) << scientific << errnrm/xnrm << "\n\n";
+  //////////////////////////////////////////////
+
+  //////////////////////////////////////////////
+  // Test 2: Sanity Check 2
+  //////////////////////////////////////////////
+//   cout << "Verification test 2" << std::endl;
+//   x_t.randomize();
+//   Lx_t.randomize();
+
+//   cout << "Applying L to x using LevelSolver\n";
+//   LS.ApplyInverse(x_t,Lx_t); // Lx = L * x
+
+//   cout << "Solving L*x using LevelSolver\n"; // 
+//   LS.Apply(Lx_t,x2_t);   // Lx = L^-1 Lx = x
+
+//   x2_t.Update(-1.0,x_t,1.0);
+//   x2_t.Norm2(&errnrm);
+//   x_t.Norm2(&xnrm);
+//   cout << "||x - inv(L)*(L*x)||/||x||: " << setprecision(2) << scientific << errnrm/xnrm << "\n\n";
+  //////////////////////////////////////////////
+
+  //////////////////////////////////////////////
+  // Test 3: 
+  //////////////////////////////////////////////
+
+
+//Lx_t.putScalar(1.0);
+//Lx_t.print(std::cout);
+//Lx_t.describe(*Teuchos::getFancyOStream(Teuchos::rcp(&std::cout,false)) , Teuchos::VERB_EXTREME);
+//return;
+
+
+
+
+
+  cout << "Verification test 3" << std::endl;
+  x_e.Random();
+  Lx_e.Random();
+
+x_e.PutScalar(1.0);
+
+  cout << "Applying L to x using CrsMatrix\n";
+  L->Apply(x_e,Lx_e); // Lx = L * x
+
+Lx_e.Print(std::cout);
+
+  copyEpetravToTpetrav(Lx_e,Lx_t);
+  copyEpetravToTpetrav(x_e,x_t);
+
+
+//tpetra vectors seem to be fine
+//x_t.describe(*Teuchos::getFancyOStream(Teuchos::rcp(&std::cout,false)) , Teuchos::VERB_EXTREME);
+//Lx_t.describe(*Teuchos::getFancyOStream(Teuchos::rcp(&std::cout,false)) , Teuchos::VERB_EXTREME);
+//return;
+
+
+
+  cout << "Solving L*x using LevelSolver\n"; // 
+  LS.Apply(Lx_t,x2_t);   // Lx = L^-1 Lx = x
+
+  x2_t.update(-1.0,x_t,1.0);
+  errnrm = x2_t.norm2();
+  xnrm = x_t.norm2();
+  cout << "||x - inv(L)*(L*x)||/||x||: " << setprecision(2) << scientific << errnrm/xnrm << "\n\n";
+  //////////////////////////////////////////////
+
+  //////////////////////////////////////////////
+  // Test 4
+  //////////////////////////////////////////////
+//   cout << "Verification test 4" << std::endl;
+//   x_t.randomize();
+//   Lx_t.randomize();
+
+//   cout << "Applying L to x using LevelSolver\n";
+//   LS.ApplyInverse(x_t,Lx_t); // Lx = L * x
+
+//   copyTpetravToEpetrav(Lx_t,Lx_e);
+//   copyTpetravToEpetrav(x_t,x_e);
+
+//   cout << "Solving L*x using CrsMatrix\n";
+//   L->Solve(false,false,false,Lx_e,x2_e);      // Lx = L^-1 Lx = x
+
+//   x2_e.Update(-1.0,x_e,1.0);
+//   x2_e.Norm2(&errnrm);
+//   x_e.Norm2(&xnrm);
+//   cout << "||x - inv(L)*(L*x)||/||x||: " << setprecision(2) << scientific << errnrm/xnrm << "\n\n";
+  //////////////////////////////////////////////
+
+   ///////////////////////////////////////////////////////////////////
+}
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+template <class nodeT>
+void copyEpetravToTpetrav(const Epetra_Vector &evector, 
+                          Tpetra::Vector<double,int,int,nodeT> &tvector)
+{
+  for (int i=0; i< evector.MyLength(); i++)
+  {
+    tvector.replaceLocalValue(i,evector[i]);
+  }
+}
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+template <class nodeT>
+void copyTpetravToEpetrav(const Tpetra::Vector<double,int,int,nodeT> &tvector,
+		          const Epetra_Vector &evector)
+{
+  for (int i=0; i< tvector.getLocalLength(); i++)
+  {
+    evector[i] = tvector.get1dView()[i];
+  }
+}
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+template <class nodeT>
+void timeLevelSolver(const Epetra_CrsMatrix *L, Epetra_LevelSolver<nodeT> &LS, int numTrials)
+{
+  Epetra_SerialComm Comm;
+  Epetra_Time timer(Comm);
+
+  Epetra_Vector x(L->RowMap(),false);
+  Epetra_Vector Lx(x);
+
+  // for timings, neglect diagonal of LS because the scaling routines are not parallelized
+  // LS.setUnitDiag(true);
+  // MMW: Need to parallelize scaling routines
+  LS.setIgnorePerm(true);
+
+  cout << "*** Timings over " << numTrials << " trials" << endl;
+
+  //////////////////////////////
+  // Level Solver solve
+  //////////////////////////////
+  double time;
+  // node.init(*nt);
+  // LevelSolver inverse
+  timer.ResetStartTime();
+  for (int t=0; t<numTrials; ++t) 
+  {
+      LS.Apply(Lx,Lx);
+  }
+  time = timer.ElapsedTime();
+  cout << setw(20) << "LevelSolver  solve, " << setw(2) << 0 << " threads, "
+       << setprecision(2) << scientific << setw(11) << time           << " total, " 
+       << setprecision(2) << scientific << setw(11) << time/numTrials << " average" 
+       << endl;
+  //////////////////////////////
+}
+////////////////////////////////////////////////////////////////////////////////
+
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+void timeOrigSolver(const Epetra_CrsMatrix *L, int numTrials)
+{
+  Epetra_SerialComm Comm;
+  Epetra_Time timer(Comm);
+
+  Epetra_Vector x(L->RowMap(),false);
+  Epetra_Vector Lx(x);
+
+  // for timings, neglect diagonal of LS because the scaling routines are not parallelized
+
+  cout << "*** Timings over " << numTrials << " trials" << endl;
+
+
+  //////////////////////////////
+  // Original Epetra solver
+  //////////////////////////////
+  double time;
+  // Epetra inverse
+  timer.ResetStartTime();
+  for (int t=0; t<numTrials; ++t) 
+  {
+    L->Solve(false,false,false,Lx,Lx);
+  }
+  time = timer.ElapsedTime();
+  cout << setw(20) << "Epetra_CrsMatrix solve,         "
+       << setprecision(2) << scientific << setw(11) << time            << " total, " 
+       << setprecision(2) << scientific << setw(11) << time /numTrials << " average" 
+       << endl;
+  //////////////////////////////
+
+}
+////////////////////////////////////////////////////////////////////////////////

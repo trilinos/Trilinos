@@ -13,23 +13,22 @@
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_ScalarTraits.hpp>
-
-#include <Kokkos_MultiVector.hpp>
-#include <Kokkos_CrsMatrix.hpp>
-#include <Kokkos_DefaultSparseMultiply.hpp>
-#include <Kokkos_DefaultArithmetic.hpp>
-
-#include <Isorropia_LevelScheduler.hpp> 
-#include <Isorropia_EpetraLevelScheduler.hpp> 
-
-
-
-
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 #include <Teuchos_Time.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
+#include <Teuchos_DefaultSerialComm.hpp>
 
+#include <Isorropia_LevelScheduler.hpp> 
+#include <Isorropia_EpetraLevelScheduler.hpp> 
+
+#include <Tpetra_MultiVector.hpp>
+
+
+
+
+#include <Kokkos_MultiVector.hpp>
+#include <Kokkos_CrsMatrix.hpp>
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_DefaultArithmetic.hpp"
 #include "Kokkos_DefaultSparseMultiply.hpp"
@@ -45,7 +44,7 @@
 #include "Kokkos_ThrustGPUNode.hpp"
 #endif
 
-
+//typedef 
 
 
 // TODO: only one parallel compute buffer; triangular solve/apply should be in situ
@@ -56,16 +55,26 @@
 template <class Node> 
 class Epetra_LevelSolver : public virtual Epetra_Operator, public virtual Epetra_Object {
   public:
+
+  typedef Tpetra::MultiVector<double,int,int,Node> TMV;
+
   //Epetra_LevelSolver(const Epetra_Map &Map, Node &node);
   Epetra_LevelSolver(const Epetra_Map &Map, Teuchos::RCP<Kokkos::TPINode>& node);
 
-    virtual ~Epetra_LevelSolver();
+  virtual ~Epetra_LevelSolver();
     int Analyze(const Epetra_CrsGraph &G);
     int SetLevelInfo(int numLevels, const int *lsizes, const int *P);
     virtual int Setup(const Epetra_CrsMatrix &L);
     // Methods from Epetra_Operator
     int SetUseTranspose (bool UseTranspose);
-    int Apply(const Epetra_MultiVector &X, Epetra_MultiVector &Y) const;          // affect the solve
+    int Apply(const Epetra_MultiVector &X, Epetra_MultiVector &Y) const {std::cout << "Epetra_LevelSolver::Apply not implemented" << std::endl; return 1;}          // affect the solve
+    int Apply(const TMV &X, TMV &Y) const;          // affect the solve
+
+    //int Epetra_LevelSolver<Node>::Apply(const Tpetra::MultiVector<double,int,int,Node> &Y, 
+    //                                Epetra_MultiVector<double,int,int,Node> &X) const 
+
+
+
     int ApplyInverse(const Epetra_MultiVector &X, Epetra_MultiVector &Y) const;   // affect the multiplication
     double NormInf() const;
     const char *Label() const;
@@ -79,6 +88,9 @@ class Epetra_LevelSolver : public virtual Epetra_Operator, public virtual Epetra
     bool getUnitDiag() const;
     void setIgnorePerm(bool ip);
     bool getIgnorePerm() const;
+
+    Teuchos::RCP<Kokkos::TPINode> & getNode() const {return node_;}
+
   protected:
     //typedef typename Node::template buffer<double>::buffer_t  dbuf;
     //    typedef typename Node::template buffer<int>::buffer_t  obuf;
@@ -98,10 +110,11 @@ class Epetra_LevelSolver : public virtual Epetra_Operator, public virtual Epetra
     Teuchos::ArrayRCP<int> pinds_;
     Teuchos::Array<int> lsizes_;
     Teuchos::Array<double> Dblock_;
-    Teuchos::Array<Teuchos::RCP<Kokkos::DefaultSparseMultiply<Kokkos::CrsMatrix<double,Node>, Kokkos::MultiVector<double,Node> >  > > BblockOps_;
+    //    Teuchos::Array<Teuchos::RCP<Kokkos::DefaultSparseMultiply<Kokkos::CrsMatrix<double,Node>, Kokkos::MultiVector<double,Node> >  > > BblockOps_;
+    Teuchos::Array<Teuchos::RCP<Kokkos::DefaultSparseMultiply<double,int,Node> > > BblockOps_;
     Teuchos::RCP<Epetra_Import> importer_;
     // workspace
-    mutable Teuchos::RCP<Epetra_MultiVector> importMV_;
+    mutable Teuchos::RCP<TMV> importMV_;
     double meanLsize_, stddevLsize_, meanLnnz_, stddevLnnz_;
 };
 
@@ -177,26 +190,27 @@ int Epetra_LevelSolver<Node>::SetLevelInfo(int numLevels, const int *lsizes, con
 template <class Node>
 int Epetra_LevelSolver<Node>::Analyze(const Epetra_CrsGraph &g)
 {
-  if (g.NumMyRows() < 1){
-    return SetLevelInfo(0, NULL, NULL);
-  }
+   if (g.NumMyRows() < 1)
+   {
+      return SetLevelInfo(0, NULL, NULL); 
+   } 
 
-  Teuchos::RCP<const Epetra_CrsGraph> graph = Teuchos::rcp(&g);
+   Teuchos::RCP<const Epetra_CrsGraph> graph = Teuchos::rcp(&g); 
 
-  Isorropia::Epetra::LevelScheduler level(graph);
+   Isorropia::Epetra::LevelScheduler level(graph); 
 
-  graph.release();
+   graph.release(); 
 
-  int nlevels = level.numLevels();
+   int nlevels = level.numLevels(); 
 
-  int *levelSize = new int [nlevels];
-  int **rows = new int * [nlevels];
-  int *permutation = new int [g.NumMyRows()];
+   int *levelSize = new int [nlevels]; 
+   int **rows = new int * [nlevels]; 
+   int *permutation = new int [g.NumMyRows()];
 
-  if (!levelSize || !rows || !permutation)
-  {
-    return 1;
-  }
+   if (!levelSize || !rows || !permutation)
+   {
+      return 1;
+   }
 
   for (int i=0; i < nlevels; i++)
   {
@@ -209,7 +223,7 @@ int Epetra_LevelSolver<Node>::Analyze(const Epetra_CrsGraph &g)
   }
 
   // Create map from row r to row rNew, the row which will replace it
-
+  ///
   int nextRow = 0;
   for (int i=0; i < nlevels; i++)
   {
@@ -289,6 +303,7 @@ int Epetra_LevelSolver<Node>::Setup(const Epetra_CrsMatrix &L)
 
   typedef Kokkos::MultiVector<double,Node> MV;
   typedef Kokkos::CrsMatrix<double,Node> MAT;
+  typedef Kokkos::CrsGraph<int,Node> GRPH;
 
   //typedef Kokkos::DefaultSparseMultiply<MAT,MV> MATVEC;
 typedef Kokkos::DefaultSparseMultiply<double,int> MATVEC;
@@ -299,39 +314,77 @@ typedef Kokkos::DefaultSparseMultiply<double,int> MATVEC;
   int loffset = lsizes_[0];
   // we need to modify column indices, so create some storage to hold them
   const int MaxNumEntries = L.MaxNumEntries();
-  Teuchos::Array<double> vals(MaxNumEntries);
-  Teuchos::Array<   int> inds(MaxNumEntries);
+  Teuchos::Array<double> tmpvals(MaxNumEntries);
+  Teuchos::Array<   int> tmpinds(MaxNumEntries);
   stddevLnnz_ = 0.0;
 
+  int numRowsInLevel;
+  int nnzInLevel;
   for (int i=1; i<numLevels_; ++i) 
   {
-    // setup B block
-    MAT B(lsizes_[i],node_);
+    numRowsInLevel = lsizes_[i];
 
-    B.initializeProfile(lsizes_[i],&NEPR[loffset]);
+    // setup B block
+    MAT B(numRowsInLevel,node_);
+    GRPH G(numRowsInLevel,node_);
+
+    nnzInLevel=0;  // perhaps more efficient way to calculate
+    for(int r=0;r<numRowsInLevel;r++)
+    {
+      nnzInLevel += NEPR[loffset+r];
+    }
+
+    Teuchos::ArrayRCP<size_t> offsets = node_->template allocBuffer<size_t> (numRowsInLevel+1);
+    Teuchos::ArrayRCP<int>   inds = node_->template allocBuffer<int>(nnzInLevel);
+    Teuchos::ArrayRCP<double>    vals = node_->template allocBuffer<double>(nnzInLevel);
+
+
+    // hosts view of data
+    Teuchos::ArrayRCP<size_t>  offsets_h = node_->template viewBufferNonConst<size_t> (Kokkos::WriteOnly,numRowsInLevel+1,offsets);
+    Teuchos::ArrayRCP<int>    inds_h = node_->template viewBufferNonConst<int>(Kokkos::WriteOnly,nnzInLevel,inds);
+    Teuchos::ArrayRCP<double>     vals_h = node_->template viewBufferNonConst<double>(Kokkos::WriteOnly,nnzInLevel,vals);
+
+
+    //B.initializeProfile(lsizes_[i],&NEPR[loffset]);
     //    double tmp = B.getNumEntries() - meanLnnz_;
     //    stddevLnnz_ += tmp*tmp;
     // fill it
+    int startIndx=0;
+
+    offsets_h[startIndx]=0;
     for (int r=0; r<lsizes_[i]; ++r) 
     {
       // also check that the last element on the row is the diagonal
       int numentries;
       int GID = pinds_[loffset+r];
-      EPETRA_CHK_ERR( L.ExtractGlobalRowCopy(GID,MaxNumEntries,numentries,&vals[0],&inds[0]) );
-      if (inds[numentries-1] != GID) EPETRA_CHK_ERR(-8);
-      if (numentries > 1) {
+      EPETRA_CHK_ERR( L.ExtractGlobalRowCopy(GID,MaxNumEntries,numentries,&tmpvals[0],&tmpinds[0]) );
+      if (tmpinds[numentries-1] != GID) EPETRA_CHK_ERR(-8);
+      if (numentries > 1) 
+      {
         // permute column indices and transform to local
         for (int c=0; c<numentries-1; ++c) 
         {
-          inds[c] = pmap.LID(inds[c]);
+          inds_h[startIndx+c] = pmap.LID(tmpinds[c]);
+          vals_h[startIndx+c] = tmpvals[c];
         }
-        B.insertEntries(r,numentries-1,&inds[0],&vals[0]);
+        //B.insertEntries(r,numentries-1,&tmpinds[0],&tmpvals[0]);
+
+        startIndx += numentries-1;
       }
+      offsets_h[r+1]=startIndx;      
     }
+    offsets_h = Teuchos::null;
+    inds_h = Teuchos::null;
+    vals_h = Teuchos::null;
+
+    G.setPackedStructure(offsets,inds);
+    B.setPackedValues(vals);
+
+
     // pass matrix to matvec object
     BblockOps_[i-1] = Teuchos::rcp(new MATVEC(node_));
-    BblockOps_[i-1]->initializeStructure(B,false);
-    BblockOps_[i-1]->initializeValues(B,false);
+    BblockOps_[i-1]->initializeStructure(G,Teuchos::View);
+    BblockOps_[i-1]->initializeValues(B,Teuchos::View);
     loffset += lsizes_[i];
   }
   //  stddevLnnz_ = sqrt(stddevLnnz_ / (double)(numLevels_-1));
@@ -343,11 +396,14 @@ typedef Kokkos::DefaultSparseMultiply<double,int> MATVEC;
 }
 
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 template <class Node>
-int Epetra_LevelSolver<Node>::Apply(const Epetra_MultiVector &Y, Epetra_MultiVector &X) const 
+int Epetra_LevelSolver<Node>::Apply(const Tpetra::MultiVector<double,int,int,Node> &Y, 
+                                    Tpetra::MultiVector<double,int,int,Node> &X) const 
 {
-  typedef Kokkos::MultiVector<double,Node>   MV;
-  typedef Kokkos::DefaultArithmetic<MV>        DMVA;
+  typedef Kokkos::MultiVector<double,Node>   KMV;
+  typedef Kokkos::DefaultArithmetic<KMV> DMVA;
   if (numLevels_ == 0) return 0;
   // solve L*X = Y into X
   using std::endl;
@@ -360,17 +416,10 @@ int Epetra_LevelSolver<Node>::Apply(const Epetra_MultiVector &Y, Epetra_MultiVec
 /*   using Kokkos::DefaultArithmetic; */
 /*   using Kokkos::DefaultSparseMultiply; */
 /*   using Kokkos::SerialNode; */
-/*   using Teuchos::RCP; */
-/*   using Teuchos::rcp; */
-/*   using Teuchos::null; */
 
-
-
-
-
-  const int NumVectors = X.NumVectors();
+  const size_t NumVectors = X.getNumVectors();
   TEST_FOR_EXCEPT(NumVectors != 1); // FINISH: sparse mat-vec doesn't support this yet
-  if (NumVectors != Y.NumVectors()) EPETRA_CHK_ERR(-1);
+  if (NumVectors != Y.getNumVectors()) EPETRA_CHK_ERR(-1);
   //
   // if we require permutation, then we must have importMV
   // this is because permutation cannot be done in situ, and we are only allowed to write to X
@@ -380,38 +429,129 @@ int Epetra_LevelSolver<Node>::Apply(const Epetra_MultiVector &Y, Epetra_MultiVec
   // therefore, if X isn't strided, we must use some other writeable strided storage.
   // since we can't write to Y, this means temp storage.
   // 
-  bool Xstrided = X.ConstantStride();
-  bool XeqY     = (X.Values() == Y.Values()) && X.ConstantStride() && Y.ConstantStride();
+
+  const Kokkos::MultiVector<double,Node> *lclX = &(X.getLocalMV());
+  const Kokkos::MultiVector<double,Node> *lclY = &(Y.getLocalMV());
+  if(lclX==lclY)
+  {
+    std::cout << "Not handling case where X=Y Yet!!!" << std::endl;
+    return 0;
+  }
+
+
+std::cout <<"HERE1" << std::endl;
+
+
+  bool Xstrided = X.isConstantStride();
   bool needTmp  = (!Xstrided) || (!ignorePerm_);
 
-
-  //dbuf MVbuffer;
   ArrayRCP<double> MVbuffer;
-  //
-  //MVbuffer = node->template allocBuffer<Scalar>()
+  //MVbuffer = node_->template allocBuffer<double>(Y.LocalLength() * NumVectors);
 
-/*   int MVstride; */
-/*   if (needTmp) {                        // delete it if it is the wrong size */
-/*     if (importMV_ != Teuchos::null && (importMV_->NumVectors() != NumVectors)) { */
-/*       importMV_ == Teuchos::null; */
-/*     } */
-/*     if (importMV_ == Teuchos::null) {   // allocate it if it doesn't exist */
-/*       importMV_ = Teuchos::rcp(new Epetra_MultiVector(importer_->TargetMap(),NumVectors,false)); */
-/*     } */
-/*     if (!ignorePerm_) { */
-/*       EPETRA_CHK_ERR(importMV_->Import(Y,*importer_,Insert));     // we needed importMV to permute */
-/*     } */
-/*     else { */
-/*       (*importMV_) = Y;                                           // we needed importMV for strided workspace */
-/*     } */
-/*     MVbuffer = importMV_->Values(); */
-/*     MVstride = importMV_->Stride(); */
-/*   } */
-/*   else { */
-/*     if (!XeqY) X = Y;         // Need to put Y data into X */
-/*     MVbuffer = X.Values();    // X provides our strided workspace.  */
-/*     MVstride = X.Stride(); */
-/*   } */
+  KMV & Xb = X.getLocalMVNonConst();
+
+std::cout <<"HERE2" << std::endl;
+
+
+  Tpetra::Import< int, int, Node > *Timporter;
+
+   int MVstride;
+   if (needTmp) 
+   {                        
+std::cout <<"HERE3" << std::endl;
+
+     if (importMV_ != Teuchos::null && (importMV_->getNumVectors() != NumVectors)) // delete it if it is the wrong size 
+     { 
+std::cout <<"HERE4" << std::endl;
+
+       importMV_ = Teuchos::null; 
+     } 
+     if (importMV_ == Teuchos::null) // allocate it if it doesn't exist 
+     {   
+std::cout <<"HERE5" << std::endl;
+
+       ///////////////////////////////////////////////////////////////////
+       // Build Tpetra maps from Epetra Maps -- should be done in setup phase!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+       ///////////////////////////////////////////////////////////////////
+       typedef Tpetra::Map<int, int, Node> tmap;
+
+       Teuchos::RCP< const Teuchos::Comm< int > > TCommRCP = Teuchos::rcp(new Teuchos::SerialComm<int>());
+
+       // Build target map
+       int *tmpElementList = new int[importer_->TargetMap().NumGlobalElements()];
+
+       importer_->TargetMap().MyGlobalElements(tmpElementList);
+
+       Teuchos::ArrayView<int> aview(tmpElementList,importer_->TargetMap().NumGlobalElements());
+
+       Teuchos::RCP< const tmap > tmap_targRCP = Teuchos::rcp(new tmap(importer_->TargetMap().NumGlobalElements(), aview, 0, TCommRCP,
+       							          node_ ));
+
+       delete [] tmpElementList; tmpElementList=0;  // not sure if this is good
+
+
+       // Build source map
+       tmpElementList = new int[importer_->SourceMap().NumGlobalElements()];
+
+       importer_->SourceMap().MyGlobalElements(tmpElementList);
+
+       Teuchos::ArrayView<int> aview2(tmpElementList,importer_->SourceMap().NumGlobalElements());
+
+       Teuchos::RCP< const tmap > tmap_srcRCP = Teuchos::rcp(new tmap(importer_->SourceMap().NumGlobalElements(), aview, 0, TCommRCP,
+       							          node_ ));
+
+       delete [] tmpElementList; tmpElementList=0;  // not sure if this is good
+       ///////////////////////////////////////////////////////////////////
+
+       ///////////////////////////////////////////////////////////////////
+       // Build tpetra importer from epetra importer -- should be in setup
+       //////////////////////////////////////////////////////////////////
+       Timporter = new Tpetra::Import< int, int, Node >(tmap_srcRCP,tmap_targRCP);
+       ///////////////////////////////////////////////////////////////////
+
+       importMV_ = Teuchos::rcp(new TMV(tmap_targRCP,NumVectors,false)); 
+
+std::cout <<"HERE10" << std::endl;
+
+
+       //       importMV_ = Teuchos::rcp(new TMV(importer_->TargetMap(),NumVectors,false)); 
+     } 
+     if (!ignorePerm_) 
+     { 
+std::cout <<"HERE11" << std::endl;
+       //EPETRA_CHK_ERR(importMV_->Import(Y,*importer_,Insert));     // we needed importMV to permute 
+       importMV_->doImport(Y,*Timporter,Tpetra::INSERT);     // we needed importMV to permute 
+
+
+     } 
+     else 
+     { 
+std::cout <<"HERE12" << std::endl;
+       (*importMV_) = Y;                                           // we needed importMV for strided workspace 
+     } 
+
+std::cout <<"HERE16" << std::endl;
+
+     //MVbuffer = importMV_->Values(); 
+     MVstride = importMV_->getStride(); 
+     Xb = importMV_->getLocalMVNonConst(); // not sure if necessary
+   } 
+   else 
+   { 
+
+std::cout <<"HERE19" << std::endl;
+
+     X = Y;         // Need to put Y data into X 
+
+     //MVbuffer = X.Values();    // X provides our strided workspace.  
+     MVstride = X.getStride(); 
+     Xb = X.getLocalMVNonConst();
+   } 
+
+
+std::cout <<"HERE20" << std::endl;
+
+
   /* Example with four levels:
      [D1             ] [X1] = [Y1]
      [B2  D2         ] [X2]   [Y2]
@@ -433,53 +573,205 @@ int Epetra_LevelSolver<Node>::Apply(const Epetra_MultiVector &Y, Epetra_MultiVec
      created the B and D blocks.
      */
 
-/*   MV Xb(node_), Xd(node_), D(node_); */
-/*   Xb.initializeValues(numRows_,NumVectors,MVbuffer,MVstride); */
 
 
+   KMV Xd(node_), D(node_);
+     // KMV Xb(node_), Xd(node_), D(node_);
+     // Xb.initializeValues(numRows_,NumVectors,MVbuffer,MVstride);
 
+   ///////////////////////////////////////////////////////////////////////
+   ///////////////////////////////////////////////////////////////////////
+   Teuchos::ArrayRCP<double> offXbuf = Xb.getValuesNonConst();
+   Teuchos::ArrayRCP<double> offDbuf = Teuchos::arcp(const_cast<double *>(&Dblock_[0]),0,lsizes_[0]);
+   ///////////////////////////////////////////////////////////////////////
 
-/*   dbuf offXbuf = MVbuffer, */
-/*        offDbuf = const_cast<double *>(&Dblock_[0]); */
-/*   for (int i=0; i<numLevels_; ++i)  */
-/*   { */
+   ///////////////////////////////////////////////////////////////////////
+   ///////////////////////////////////////////////////////////////////////
+   //dbuf offXbuf = MVbuffer, 
+   //     offDbuf = const_cast<double *>(&Dblock_[0]); 
 
-/*     // point the vector/multivectors to the current diagonal blocks */
-/*     D.initializeValues(lsizes_[i],1,offDbuf,lsizes_[i]); */
-/*     Xd.initializeValues(lsizes_[i],NumVectors,offXbuf,MVstride); */
+   for (int i=0; i<numLevels_; ++i)  
+   { 
 
-/*     if (i != 0)  */
-/*     { */
-/*       BblockOps_[i-1]->Apply(false,-1.0,Xb,1.0,Xd);             // Xd -= B*Xb */
-/*     } */
+     // point the vector/multivectors to the current diagonal blocks 
+     D.initializeValues(lsizes_[i],1,offDbuf,lsizes_[i]); 
+     Xd.initializeValues(lsizes_[i],NumVectors,offXbuf,MVstride); 
 
-/*     // scale Xd by diagonal block */
-/*     if (unitDiag_ == false) { */
-/*       DMVA::Divide(Xd,(const MV&)D); */
-/*     } */
-/*     // increment the pointers for next Xd and D */
-/*     offXbuf = offXbuf + lsizes_[i]; */
-/*     offDbuf = offDbuf + lsizes_[i]; */
-/*   } */
+     if (i != 0)  
+     { 
+       BblockOps_[i-1]->multiply(Teuchos::NO_TRANS,-1.0,Xb,1.0,Xd);      // Xd -= B*Xb 
+     } 
 
+     // scale Xd by diagonal block 
+     if (unitDiag_ == false) 
+     { 
+       //DMVA::Divide(Xd,(const KMV&)D);         /// Assumes ones on diagonal for now
+     } 
+     // increment the pointers for next Xd and D 
+     offXbuf = offXbuf + lsizes_[i]; 
+     offDbuf = offDbuf + lsizes_[i]; 
+   }
+   ///////////////////////////////////////////////////////////////////////
 
-/*   if (needTmp)  */
-/*   { */
-/*     if (!ignorePerm_)  */
-/*     { */
-/*       EPETRA_CHK_ERR(X.Export(*importMV_,*importer_,Insert)); */
-/*     } */
-/*     else { */
-/*       X = (*importMV_); */
-/*     } */
-/*   } */
+  if (needTmp)
+  {
+    if (!ignorePerm_)
+    {
+      X.doExport(*importMV_,*Timporter,Tpetra::INSERT);
+    }
+    else {
+      X = (*importMV_);
+    }
+  }
+
+   delete Timporter;
   return 0;
 }
+////////////////////////////////////////////////////////////////////////////////
+
 
 
 /* template <class Node> */
-/* int Epetra_LevelSolver<Node>::ApplyInverse(const Epetra_MultiVector &X, Epetra_MultiVector &Y) const  */
+/* int Epetra_LevelSolver<Node>::Apply(const Epetra_MultiVector &Y, Epetra_MultiVector &X) const  */
 /* { */
+/*   typedef Kokkos::MultiVector<double,Node>   MV; */
+/*   typedef Kokkos::DefaultArithmetic<MV>        DMVA; */
+/*   if (numLevels_ == 0) return 0; */
+/*   // solve L*X = Y into X */
+/*   using std::endl; */
+/*   using std::cout; */
+/*   using Teuchos::ArrayRCP; */
+
+/* /\*   using Kokkos::MultiVector; *\/ */
+/* /\*   using Kokkos::CrsMatrix; *\/ */
+/* /\*   using Kokkos::CrsGraph; *\/ */
+/* /\*   using Kokkos::DefaultArithmetic; *\/ */
+/* /\*   using Kokkos::DefaultSparseMultiply; *\/ */
+/* /\*   using Kokkos::SerialNode; *\/ */
+/* /\*   using Teuchos::RCP; *\/ */
+/* /\*   using Teuchos::rcp; *\/ */
+/* /\*   using Teuchos::null; *\/ */
+
+
+/*   const int NumVectors = X.NumVectors(); */
+/*   TEST_FOR_EXCEPT(NumVectors != 1); // FINISH: sparse mat-vec doesn't support this yet */
+/*   if (NumVectors != Y.NumVectors()) EPETRA_CHK_ERR(-1); */
+/*   // */
+/*   // if we require permutation, then we must have importMV */
+/*   // this is because permutation cannot be done in situ, and we are only allowed to write to X */
+/*   // */
+/*   // if we don't require permutation, we may still require importMV (for temp storage) */
+/*   // this is because the Kokkos multivector must be strided. */
+/*   // therefore, if X isn't strided, we must use some other writeable strided storage. */
+/*   // since we can't write to Y, this means temp storage. */
+/*   //  */
+/*   bool Xstrided = X.ConstantStride(); */
+/*   bool XeqY     = (X.Values() == Y.Values()) && X.ConstantStride() && Y.ConstantStride(); */
+/*   bool needTmp  = (!Xstrided) || (!ignorePerm_); */
+
+
+/*   //dbuf MVbuffer; */
+/*   ArrayRCP<double> MVbuffer; */
+/*   // */
+
+/*   //  MVbuffer = node_->template allocBuffer<double>(Y.GlobalLength() * Y.NumVectors()); */
+
+/*    int MVstride; */
+/*    if (needTmp) // delete it if it is the wrong size  */
+/*    {                         */
+/*      if (importMV_ != Teuchos::null && (importMV_->NumVectors() != NumVectors))  */
+/*      {  */
+/*        importMV_ = Teuchos::null;  */
+/*      }  */
+/* /\*     if (importMV_ == Teuchos::null) {   // allocate it if it doesn't exist *\/ */
+/* /\*       importMV_ = Teuchos::rcp(new Epetra_MultiVector(importer_->TargetMap(),NumVectors,false)); *\/ */
+/* /\*     } *\/ */
+/* /\*     if (!ignorePerm_) { *\/ */
+/* /\*       EPETRA_CHK_ERR(importMV_->Import(Y,*importer_,Insert));     // we needed importMV to permute *\/ */
+/* /\*     } *\/ */
+/* /\*     else { *\/ */
+/* /\*       (*importMV_) = Y;                                           // we needed importMV for strided workspace *\/ */
+/* /\*     } *\/ */
+/* /\*     MVbuffer = importMV_->Values(); *\/ */
+/* /\*     MVstride = importMV_->Stride(); *\/ */
+/*    }  */
+/*    else  */
+/*    {  */
+/*      if (!XeqY) X = Y;         // Need to put Y data into X  */
+/* /\*     MVbuffer = X.Values();    // X provides our strided workspace.  *\/ */
+/*      MVstride = X.Stride();  */
+/*    }  */
+/*   /\* Example with four levels: */
+/*      [D1             ] [X1] = [Y1] */
+/*      [B2  D2         ] [X2]   [Y2] */
+/*      [   B3   D3     ] [X3]   [Y3] */
+/*      [       B4    D4] [X4]   [Y4] */
+
+/*      X1 = D1 \ Y1 */
+/*      X2 = D2 \ (Y2 - B2*[X1]      ) */
+/*      X3 = D3 \ (Y3 - B3*[X1;X2]   ) */
+/*      X4 = D4 \ (Y4 - B4*[X1;X2;X3]) */
+
+/*      The B blocks are CrsMatrix objects; the D blocks are Vector objects. */
+/*      There is one less B block than there are levels; index into this array is */
+/*      therefore decremented by one. */
+
+/*      The Xi,Yi are created using the pointers in Xptrs,Yptrs, which are updated at every step. */
+/*      The [X1:Xi-1] uses the pointers from importMV_ */
+/*      The maps for creating all of these are local maps with serial communicators, created when we */
+/*      created the B and D blocks. */
+/*      *\/ */
+
+/* /\*   MV Xb(node_), Xd(node_), D(node_); *\/ */
+/* /\*   Xb.initializeValues(numRows_,NumVectors,MVbuffer,MVstride); *\/ */
+
+
+
+
+/* /\*   dbuf offXbuf = MVbuffer, *\/ */
+/* /\*        offDbuf = const_cast<double *>(&Dblock_[0]); *\/ */
+/* /\*   for (int i=0; i<numLevels_; ++i)  *\/ */
+/* /\*   { *\/ */
+
+/* /\*     // point the vector/multivectors to the current diagonal blocks *\/ */
+/* /\*     D.initializeValues(lsizes_[i],1,offDbuf,lsizes_[i]); *\/ */
+/* /\*     Xd.initializeValues(lsizes_[i],NumVectors,offXbuf,MVstride); *\/ */
+
+/* /\*     if (i != 0)  *\/ */
+/* /\*     { *\/ */
+/* /\*       BblockOps_[i-1]->Apply(false,-1.0,Xb,1.0,Xd);             // Xd -= B*Xb *\/ */
+/* /\*     } *\/ */
+
+/* /\*     // scale Xd by diagonal block *\/ */
+/* /\*     if (unitDiag_ == false) { *\/ */
+/* /\*       DMVA::Divide(Xd,(const MV&)D); *\/ */
+/* /\*     } *\/ */
+/* /\*     // increment the pointers for next Xd and D *\/ */
+/* /\*     offXbuf = offXbuf + lsizes_[i]; *\/ */
+/* /\*     offDbuf = offDbuf + lsizes_[i]; *\/ */
+/* /\*   } *\/ */
+
+
+/* /\*   if (needTmp)  *\/ */
+/* /\*   { *\/ */
+/* /\*     if (!ignorePerm_)  *\/ */
+/* /\*     { *\/ */
+/* /\*       EPETRA_CHK_ERR(X.Export(*importMV_,*importer_,Insert)); *\/ */
+/* /\*     } *\/ */
+/* /\*     else { *\/ */
+/* /\*       X = (*importMV_); *\/ */
+/* /\*     } *\/ */
+/* /\*   } *\/ */
+/*   return 0; */
+/* } */
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+template <class Node> 
+int Epetra_LevelSolver<Node>::ApplyInverse(const Epetra_MultiVector &X, Epetra_MultiVector &Y) const  
+{
+  std::cout << "Epetra_LevelSolver::ApplyInverse currently not implemented" << std::endl;
+ 
 /*   typedef Kokkos::MultiVector<double,Node>   MV; */
 /*   typedef Kokkos::DefaultArithmetic<MV>        DMVA; */
 /*   if (numLevels_ == 0) return 0; */
@@ -564,8 +856,9 @@ int Epetra_LevelSolver<Node>::Apply(const Epetra_MultiVector &Y, Epetra_MultiVec
 /*       Y = (*importMV_); */
 /*     } */
 /*   } */
-/*   return 0; */
-/* } */
+   return 0; 
+}
+////////////////////////////////////////////////////////////////////////////////
 
 
 template <class Node>

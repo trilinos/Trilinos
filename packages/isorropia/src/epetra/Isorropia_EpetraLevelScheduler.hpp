@@ -69,7 +69,7 @@ public:
 	  bool compute_now=true);
 
   /** Destructor */
-  ~LevelScheduler() {} ;
+  ~LevelScheduler(); // {} ;
 
   /** Compute the scheduling if it has not already been computed, same effect as
        Isorropia::Epetra::LevelScheduler::compute

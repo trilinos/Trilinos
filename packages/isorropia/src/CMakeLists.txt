@@ -41,6 +41,7 @@ SET(HEADERS ${HEADERS}
   Isorropia_Exception.hpp
   Isorropia_ConfigDefs.hpp
   Isorropia_Version.hpp
+  Isorropia_LevelScheduler.hpp
   )
 
 SET(SOURCES ${SOURCES}
@@ -64,6 +65,7 @@ SET(HEADERS ${HEADERS}
   epetra/Isorropia_Epetra.hpp
   epetra/Isorropia_EpetraRedistributor.hpp
   epetra/Isorropia_EpetraLibrary.hpp
+  epetra/Isorropia_EpetraLevelScheduler.hpp
   )
 
 SET(SOURCES ${SOURCES}
@@ -76,6 +78,7 @@ SET(SOURCES ${SOURCES}
   epetra/Isorropia_Epetra.cpp
   epetra/Isorropia_EpetraRedistributor.cpp
   epetra/Isorropia_EpetraLibrary.cpp
+  epetra/Isorropia_EpetraLevelScheduler.cpp
   )
 
 # zoltan
