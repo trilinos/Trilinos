@@ -26,12 +26,15 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_SPMD_VECTOR_STD_DECL_HPP
-#define THYRA_SPMD_VECTOR_STD_DECL_HPP
+#ifndef THYRA_DEFAULT_SPMD_VECTOR_DECL_HPP
+#define THYRA_DEFAULT_SPMD_VECTOR_DECL_HPP
 
-#include "Thyra_SpmdVectorBaseDecl.hpp"
+
+#include "Thyra_SpmdVectorBase_decl.hpp"
+
 
 namespace Thyra {
+
 
 /** \brief Efficient concrete implementation subclass for SPMD vectors.
  *
@@ -196,4 +199,5 @@ Index DefaultSpmdVector<Scalar>::getStride() const
 
 } // end namespace Thyra
 
-#endif // THYRA_SPMD_VECTOR_STD_DECL_HPP
+
+#endif // THYRA_DEFAULT_SPMD_VECTOR_DECL_HPP
