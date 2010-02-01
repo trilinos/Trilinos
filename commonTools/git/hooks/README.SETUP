@@ -14,7 +14,8 @@ Set up email notification hooks
   $ cd GIT_REPO_BASE_DIR
   $ cp THIS_DIR/config .
   $ eg config --add hooks.mailinglist "defaultemail@something.com"
-  $ eg config --add hooks.emailprefix "[Something]"
+  $ eg config --add hooks.emailprefix "[Something] "
+  $ THIS_DIR/setup-shared-repo.sh GROUP_NAME
 
 3) Create a dirs_to_emails file and fill out with mapping:
 
