@@ -299,18 +299,26 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   #
 
   IF (CTEST_DO_UPDATES)
-    FIND_PROGRAM(GIT_EXECUTABLE NAMES eg)
-    MESSAGE("GIT_EXECUTABLE=${GIT_EXECUTABLE}")
+    IF(WIN32)
+      #Apparently FIND_PROGRAM looks for an exact match of the file name.
+      #So even though "git clone ..." is valid to use on windows we need to give the
+      #full name of the command we want to run.
+      SET(GIT_NAME git.cmd)
+    ELSE()
+      SET(GIT_NAME git)
+    ENDIF()
+    FIND_PROGRAM(GIT_EXE NAMES ${GIT_NAME})
+    MESSAGE("GIT_EXE=${GIT_EXE}")
 
     SET(UPDATE_TYPE "git")
     MESSAGE("UPDATE_TYPE = '${UPDATE_TYPE}'")
     
-    SET(CTEST_UPDATE_COMMAND "${GIT_EXECUTABLE}")
+    SET(CTEST_UPDATE_COMMAND "${GIT_EXE}")
     MESSAGE("CTEST_UPDATE_COMMAND='${CTEST_UPDATE_COMMAND}'")
     IF(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}")
       MESSAGE("${CTEST_SOURCE_DIRECTORY} does not exist so setting up for an initial checkout")
       SET( CTEST_CHECKOUT_COMMAND
-        "${GIT_EXECUTABLE} clone ${CTEST_UPDATE_ARGS} ${Trilinos_REPOSITORY_LOCATION}" )
+        "\"${GIT_EXE}\" clone ${CTEST_UPDATE_ARGS} ${Trilinos_REPOSITORY_LOCATION}" )
       MESSAGE("CTEST_CHECKOUT_COMMAND='${CTEST_CHECKOUT_COMMAND}'")
     ELSE()
       MESSAGE("${CTEST_SOURCE_DIRECTORY} exists so skipping the initial checkout.")
@@ -354,24 +362,35 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
     MESSAGE("CTEST_UPDATE(...) returned '${UPDATE_RETURN_VAL}'")
     
     #setting branch switch to success incase we are not doing a switch to a different branch.
-    SET(BRANCH_SUCCEEDED "0")
+    SET(GIT_CHECKOUT_RETURN_VAL "0")
     IF(Trilinos_BRANCH AND NOT "${UPDATE_RETURN_VAL}" LESS "0")
       MESSAGE("Doing switch to branch ${Trilinos_BRANCH}")
-      EXECUTE_PROCESS(COMMAND ${GIT_EXECUTABLE} switch ${Trilinos_BRANCH}
+
+      EXECUTE_PROCESS(COMMAND ${GIT_EXE} checkout ${Trilinos_BRANCH}
         WORKING_DIRECTORY ${CTEST_SOURCE_DIRECTORY}
-        RESULT_VARIABLE BRANCH_SUCCEEDED
+        RESULT_VARIABLE GIT_CHECKOUT_RETURN_VAL
         OUTPUT_VARIABLE BRANCH_OUTPUT
         ERROR_VARIABLE  BRANCH_ERROR
       )
-      IF(NOT "${BRANCH_SUCCEEDED}" EQUAL "0")
-        MESSAGE("Switch to branch ${Trilinos_BRANCH} failed with error code ${BRANCH_SUCCEEDED}")
+
+      IF(NOT "${GIT_CHECKOUT_RETURN_VAL}" EQUAL "0")
+        EXECUTE_PROCESS(COMMAND ${GIT_EXE} checkout --track origin/${Trilinos_BRANCH}
+          WORKING_DIRECTORY ${CTEST_SOURCE_DIRECTORY}
+          RESULT_VARIABLE GIT_CHECKOUT_RETURN_VAL
+          OUTPUT_VARIABLE BRANCH_OUTPUT
+          ERROR_VARIABLE  BRANCH_ERROR
+        )
+      ENDIF()
+
+      IF(NOT "${GIT_CHECKOUT_RETURN_VAL}" EQUAL "0")
+        MESSAGE("Switch to branch ${Trilinos_BRANCH} failed with error code ${GIT_CHECKOUT_RETURN_VAL}")
       ENDIF()
       #Apparently the successful branch switch is also written to stderr.
       MESSAGE("${BRANCH_ERROR}")
     ENDIF()
   ENDIF()
 
-  IF ("${UPDATE_RETURN_VAL}" LESS "0" OR NOT "${BRANCH_SUCCEEDED}" EQUAL "0")
+  IF ("${UPDATE_RETURN_VAL}" LESS "0" OR NOT "${GIT_CHECKOUT_RETURN_VAL}" EQUAL "0")
     MESSAGE("The VC update failed so submitting update and stopping ...") 
     IF (CTEST_DO_SUBMIT)
       CTEST_SUBMIT( PARTS update notes )
