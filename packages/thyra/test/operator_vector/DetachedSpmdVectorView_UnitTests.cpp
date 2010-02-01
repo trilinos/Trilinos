@@ -1,6 +1,7 @@
 
 #include "Thyra_DetachedSpmdVectorView.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
+#include "Thyra_VectorStdOps.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_DefaultComm.hpp"
 

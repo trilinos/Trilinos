@@ -40,10 +40,12 @@ namespace Thyra {
 
 // Constructors/initializers/accessors
 
+
 template<class Scalar>
 DefaultSpmdVector<Scalar>::DefaultSpmdVector()
   :stride_(0)
 {}
+
 
 template<class Scalar>
 DefaultSpmdVector<Scalar>::DefaultSpmdVector(
@@ -54,6 +56,7 @@ DefaultSpmdVector<Scalar>::DefaultSpmdVector(
 {
   initialize(spmdSpace_in, localValues, stride);
 }
+
 
 template<class Scalar>
 void DefaultSpmdVector<Scalar>::initialize(
@@ -73,6 +76,7 @@ void DefaultSpmdVector<Scalar>::initialize(
   this->updateSpmdSpace();
 }
 
+
 template<class Scalar>
 void DefaultSpmdVector<Scalar>::uninitialize(
   RCP<const SpmdVectorSpaceBase<Scalar> > *spmdSpace_in
@@ -91,7 +95,9 @@ void DefaultSpmdVector<Scalar>::uninitialize(
   this->updateSpmdSpace();
 }
 
+
 // Overridden from SpmdVectorBase
+
 
 template<class Scalar>
 RCP<const SpmdVectorSpaceBase<Scalar> >
@@ -100,50 +106,20 @@ DefaultSpmdVector<Scalar>::spmdSpace() const
   return spmdSpace_;
 }
 
-template<class Scalar>
-void DefaultSpmdVector<Scalar>::getLocalData(
-  Scalar** localValues, Index* stride
-  )
-{
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( localValues==NULL );
-  TEST_FOR_EXCEPT( stride==NULL );
-#endif
-  *localValues = &*localValues_;
-  *stride = stride_;
-}
 
 template<class Scalar>
-void DefaultSpmdVector<Scalar>::commitLocalData( Scalar* localValues )
+void DefaultSpmdVector<Scalar>::getNonconstLocalDataImpl(
+  const Ptr<ArrayRCP<Scalar> > &localValues )
 {
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( localValues!=&*localValues_ );
-#endif
-  // Nothing to commit!
+  *localValues = localValues_;
 }
 
-template<class Scalar>
-void DefaultSpmdVector<Scalar>::getLocalData(
-  const Scalar** localValues, Index* stride
-  ) const
-{
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( localValues==NULL );
-  TEST_FOR_EXCEPT( stride==NULL );
-#endif
-  *localValues = &*localValues_;
-  *stride = stride_;
-}
 
 template<class Scalar>
-void DefaultSpmdVector<Scalar>::freeLocalData(
-  const Scalar* localValues
-  ) const
+void DefaultSpmdVector<Scalar>::getLocalDataImpl(
+  const Ptr<ArrayRCP<const Scalar> > &localValues ) const
 {
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT( localValues!=&*localValues_ );
-#endif
-  // Nothing to free!
+  *localValues = localValues_;
 }
 
 

@@ -39,6 +39,7 @@
 #include "Teuchos_Workspace.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_dyn_cast.hpp"
+#include "Teuchos_Assert.hpp"
 
 
 #ifdef THYRA_SPMD_VECTOR_BASE_DUMP
@@ -49,6 +50,9 @@
 namespace Thyra {
 
 
+// Public interface functions
+
+
 template<class Scalar>
 SpmdVectorBase<Scalar>::SpmdVectorBase()
   :in_applyOpImpl_(false)
@@ -56,9 +60,6 @@ SpmdVectorBase<Scalar>::SpmdVectorBase()
   ,localOffset_(-1)
   ,localSubDim_(0)
 {}
-
-
-// Virtual methods with default implementations
 
 
 template<class Scalar>
@@ -98,20 +99,6 @@ SpmdVectorBase<Scalar>::getLocalSubVector() const
     1 // stride
     );
   // ToDo: Refactor to call this function directly!
-}
-
-
-template<class Scalar>
-void SpmdVectorBase<Scalar>::getLocalData( const Scalar** values, Index* stride ) const
-{
-  const_cast<SpmdVectorBase<Scalar>*>(this)->getLocalData(const_cast<Scalar**>(values),stride);
-}
-
-
-template<class Scalar>
-void SpmdVectorBase<Scalar>::freeLocalData( const Scalar* values ) const
-{
-  const_cast<SpmdVectorBase<Scalar>*>(this)->commitLocalData(const_cast<Scalar*>(values));
 }
 
 
@@ -287,6 +274,51 @@ Teuchos::RCP<const VectorSpaceBase<Scalar> >
 SpmdVectorBase<Scalar>::space() const
 {
   return spmdSpace();
+}
+
+
+// Deprecated
+
+
+template<class Scalar>
+void SpmdVectorBase<Scalar>::getLocalData( Scalar** localValues, Index* stride )
+{
+#ifdef THYRA_DEBUG
+  TEUCHOS_ASSERT(localValues);
+  TEUCHOS_ASSERT(stride);
+#endif
+  ArrayRCP<Scalar> localValues_arcp;
+  this->getNonconstLocalData(Teuchos::outArg(localValues_arcp));
+  *localValues = localValues_arcp.getRawPtr();
+  *stride = 1;
+}
+
+
+template<class Scalar>
+void SpmdVectorBase<Scalar>::commitLocalData( Scalar* localValues )
+{
+  // Nothing to do!
+}
+
+
+template<class Scalar>
+void SpmdVectorBase<Scalar>::getLocalData( const Scalar** localValues, Index* stride ) const
+{
+#ifdef THYRA_DEBUG
+  TEUCHOS_ASSERT(localValues);
+  TEUCHOS_ASSERT(stride);
+#endif
+  ArrayRCP<const Scalar> localValues_arcp;
+  this->getLocalData(Teuchos::outArg(localValues_arcp));
+  *localValues = localValues_arcp.getRawPtr();
+  *stride = 1;
+}
+
+
+template<class Scalar>
+void SpmdVectorBase<Scalar>::freeLocalData( const Scalar* values ) const
+{
+  // Nothing to do!
 }
 
 

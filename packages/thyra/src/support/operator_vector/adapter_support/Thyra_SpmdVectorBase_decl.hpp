@@ -105,11 +105,11 @@ template<class Scalar>
 class SpmdVectorBase : virtual public VectorDefaultBase<Scalar> {
 public:
 
+  /** @name Public interface functions */
+  //@{
+
   /** \brief . */
   SpmdVectorBase();
-
-  /** @name Pure virtual functions to be overridden by subclasses */
-  //@{
 
   /** \brief Returns the Spmd-based vector space object for <tt>*this</tt> vector.
    */
@@ -128,51 +128,24 @@ public:
   RTOpPack::ConstSubVectorView<Scalar> getLocalSubVector() const;
 
   /** \brief Returns a non-<tt>const</tt> pointer to the beginning of the
-   * local vector data (and its stride).
+   * local vector data.
    *
    * \param localValues [out] On output <tt>*localValues</tt> will point to an
    * array of the local values.
    *
-   * \param stride [out] On output <tt>*stride</tt> will be the stride between
-   * elements in <tt>(*localValues)[]</tt>
-   *
    * Preconditions:<ul>
-   * <li> <tt>localValues!=NULL</tt>
-   * <li> <tt>stride!=NULL</tt>
+   * <li> <tt>nonnull(localValues)==true</tt>
    * </ul>
    *
    * Postconditions:<ul>
-   * <li> <tt>*localValues!=NULL</tt>
-   * <li> <tt>*stride!=0</tt>
+   * <li> <tt>nonnull(*localValues)==true</tt>
    * </ul>
    *
-   * Note, the data view returned from this function must be committed
-   * back by a call to <tt>this->commitLocalData()</tt> in case dynamic
-   * memory allocation had to be used and therefore the pointer return
-   * does not point to internal storage.
+   * Note, the data view returned from this function must be freed by removing
+   * all of the <tt>ArrayRCP</tt> objects (or setting them to null).
    */
-  virtual void getLocalData( Scalar** localValues, Index* stride ) = 0;
-
-  /** \brief Commits updated local vector data that was accessed using
-   * <tt>this->getLocalData()</tt>.
-   *
-   * \param localValues [in/out] On input <tt>localValues</tt> must have been
-   * set by a previous call to <tt>this->getData()</tt>.
-   *
-   * Preconditions:<ul>
-   * <li> <tt>localValues!=NULL</tt>
-   * </ul>
-   *
-   * Preconditions:<ul>
-   * <li> <tt>*this</tt> will be updated to the entries in <tt>*localValues</tt>.
-   * </ul>
-   */
-  virtual void commitLocalData( Scalar* localValues ) = 0;
-
-  //@}
-
-  /** @name Virtual functions with default implementations. */
-  //@{
+  void getNonconstLocalData(const Ptr<ArrayRCP<Scalar> > &localValues)
+    { this->getNonconstLocalDataImpl(localValues); }
 
   /** \brief Returns a <tt>const</tt> pointer to the beginning of the local
    * vector data.
@@ -180,50 +153,21 @@ public:
    * \param localValues [out] On output <tt>*localValues</tt> will point to an
    * array of the local values.
    *
-   * \param stride [out] On output <tt>*stride</tt> will be the stride between
-   * elements in <tt>(*localValues)[]</tt>
-   *
    * Preconditions:<ul>
-   * <li> <tt>localValues!=NULL</tt>
-   * <li> <tt>stride!=NULL</tt>
+   * <li> <tt>nonnull(localValues)==true</tt>
    * </ul>
    *
    * Postconditions:<ul>
-   * <li> <tt>*localValues!=NULL</tt>
-   * <li> <tt>*stride!=0</tt>
+   * <li> <tt>nonnull(*localValues)==true</tt>
    * </ul>
    *
-   * Note, the data view returned from this function must be freed by a call
-   * to <tt>this->freeLocalData()</tt> in case dynamic memory allocation had
-   * to be used and therefore the pointer returned does not point to internal
-   * storage.
-   *
-   * The default implementation performs a <tt>const_cast</tt> of
-   * <tt>this</tt> and then calls the non-<tt>const</tt> version of this
-   * function.  An override of this function should only be provided if
-   * dynamic memory allocation is used and data copies have to be performed.
-   * If this function is overridden then the function <tt>freeLocalData()</tt>
-   * must be overridden as well!
+   * Note, the data view returned from this function must be freed by removing
+   * all of the <tt>ArrayRCP</tt> objects (or setting them to null).
    */
-  virtual void getLocalData( const Scalar** localValues, Index* stride ) const;
+  void getLocalData(const Ptr<ArrayRCP<const Scalar> > &localValues) const
+    { this->getLocalDataImpl(localValues); }
 
-  /** \brief Frees a <tt>const</tt> view of local vector data that was
-   * accessed using <tt>this->getLocalData()</tt>.
-   *
-   * \param localValues [in/out] On input <tt>localValues</tt> must have been
-   * set by a previous call to <tt>this->getLocalData()</tt>.
-   *
-   * Preconditions:<ul>
-   * <li> <tt>localValues!=NULL</tt>
-   * </ul>
-   *
-   * The default implementation performs a <tt>const_cast</tt> of
-   * <tt>this</tt> and then calls the non-<tt>const</tt> function
-   * <tt>this->commitLocalData()</tt>.  If the <tt>const</tt> version of the
-   * <tt>getData()</tt> function is overridden then this function must be
-   * overridden also.
-   */
-  virtual void freeLocalData( const Scalar* localValues ) const;
+  //@}
 
   /** \brief Implementation of applyOpImpl(...) that uses an input Comm.
    *
@@ -249,7 +193,7 @@ public:
   std::string description() const;
   //@}
 
-  /** @name Overridden from MultiVectorBase */
+  /** @name Overridden public functions from VectorBase */
   //@{
 
   /** \brief Returns <tt>this->spmdSpace()</tt>. */
@@ -257,13 +201,39 @@ public:
 
   //@}
 
+  /** @name Deprecated */
+  //@{
+
+  /** \brief Deprecated. */
+  void getLocalData( Scalar** localValues, Index* stride );
+  /** \brief Deprecated. */
+  void commitLocalData( Scalar* localValues );
+  /** \brief Deprecated. */
+  void getLocalData( const Scalar** localValues, Index* stride ) const;
+  /** \brief Deprecated. */
+  void freeLocalData( const Scalar* localValues ) const;
+
+  //@}
+
 protected:
+
+  /** \name Protected pure virtual functions to be overridden */
+  //@{
+
+  /** \brief Implementation of getNonconstLocalData() */
+  virtual void getNonconstLocalDataImpl(
+    const Ptr<ArrayRCP<Scalar> > &localValues) = 0;
+
+  /** \brief Implementation of getLocalData() */
+  virtual void getLocalDataImpl(
+    const Ptr<ArrayRCP<const Scalar> > &localValues) const = 0;
+
+  //@}
 
   /** \name Overridden protected functions from VectorBase */
   //@{
 
-  /** \brief Calls applyOpImplWithComm(null,op,...).
-   */
+  /** \brief Calls applyOpImplWithComm(null,op,...). */
   void applyOpImpl(
     const RTOpPack::RTOpT<Scalar> &op,
     const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
