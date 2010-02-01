@@ -28,8 +28,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_LEGENDREBASIS_HPP
-#define STOKHOS_LEGENDREBASIS_HPP
+#ifndef STOKHOS_CLENSHAWCURTISLEGENDREBASIS_HPP
+#define STOKHOS_CLENSHAWCURTISLEGENDREBASIS_HPP
 
 #include "Stokhos_RecurrenceBasis.hpp"
 

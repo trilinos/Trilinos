@@ -34,17 +34,19 @@
 
 #include "Stokhos.hpp"
 #include "Stokhos_StieltjesPCEBasis.hpp"
+#include "Stokhos_UserDefinedQuadrature.hpp"
 
 typedef Stokhos::LegendreBasis<int,double> basis_type;
 
-struct stieltjes_pce_quad_func {
-  stieltjes_pce_quad_func(
+struct pce_quad_func {
+  pce_quad_func(
    const Stokhos::OrthogPolyApprox<int,double>& pce_,
    const Stokhos::OrthogPolyBasis<int,double>& basis_) :
-    pce(pce_), basis(basis_), vec(1) {}
+    pce(pce_), basis(basis_), vec(2) {}
   
-  double operator() (const double& a) const {
+  double operator() (const double& a, const double& b) const {
     vec[0] = a;
+    vec[1] = b;
     return pce.evaluate(vec);
   }
   const Stokhos::OrthogPolyApprox<int,double>& pce;
@@ -52,111 +54,154 @@ struct stieltjes_pce_quad_func {
   mutable Teuchos::Array<double> vec;
 };
 
+double rel_err(double a, double b) {
+  return std::abs(a-b)/std::abs(b);
+}
+
 int main(int argc, char **argv)
 {
   try {
 
-    const unsigned int dmin = 1;
-    const unsigned int dmax = 1;
-    const unsigned int pmin = 5;
-    const unsigned int pmax = 5;
+    const unsigned int d = 1;
+    const unsigned int pmin = 1;
+    const unsigned int pmax = 12;
+    const unsigned int np = pmax-pmin+1;
+    bool use_pce_quad_points = true;
+    Teuchos::Array<double> mean(np), mean_st(np), std_dev(np), std_dev_st(np);
 
-    // Loop over dimensions
-    for (unsigned int d=dmin; d<=dmax; d++) {
+    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
+    
+    // Loop over orders
+    unsigned int n = 0;
+    for (unsigned int p=pmin; p<=pmax; p++) {
 
-      Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
-
-      // Loop over orders
-      for (unsigned int p=pmin; p<=pmax; p++) {
-
-	// Create product basis
-        for (unsigned int i=0; i<d; i++)
-          bases[i] = Teuchos::rcp(new basis_type(p));
-	Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
-	  Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
-	std::cout << *basis << std::endl;
-
-	// Create approximation
-	Stokhos::OrthogPolyApprox<int,double> x(basis), u(basis), v(basis), 
-	  v2(basis);
-	for (unsigned int i=0; i<d; i++) {
-	  x.term(i, 1) = 1.0;
-	}
-
-	// Tensor product quadrature
-	Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
-	  Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis,
-									4*p));
-	// Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
-	//   Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(basis,
-	// 							     p+1));
-
-	// Triple product tensor
-	Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk =
-	  basis->computeTripleProductTensor(basis->size());
-
-	// Quadrature expansion
-        Stokhos::QuadOrthogPolyExpansion<int,double> quad_exp(basis, Cijk, 
-							      quad);
-
-	// Compute PCE via quadrature expansion
-	//quad_exp.sinh(u,x);
-	quad_exp.cos(u,x);
-	//quad_exp.cosh(u,x);
-	//quad_exp.sin(v,u);
-	quad_exp.times(v,u,u);
-
-	// Compute Stieltjes basis
-	Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > st_bases(1);
-	st_bases[0] = 
-	  Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(p, u, *quad, 
-								  true));
-	Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > st_basis = 
-	  Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(st_bases));
-	std::cout << *st_basis << std::endl;
-
-	Stokhos::OrthogPolyApprox<int,double>  u_st(st_basis), v_st(st_basis);
-	u_st.term(0, 0) = u.mean();
-	u_st.term(0, 1) = 1.0;
-
-	// Triple product tensor
-	Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > st_Cijk =
-	  st_basis->computeTripleProductTensor(st_basis->size());
-	
-        // Tensor product quadrature
-	Teuchos::RCP<const Stokhos::Quadrature<int,double> > st_quad = 
-	 Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(st_basis));
-
-	// Quadrature expansion
-	Stokhos::QuadOrthogPolyExpansion<int,double> st_quad_exp(st_basis, 
-								 st_Cijk,
-								 st_quad);
-	
-	//st_quad_exp.sin(v_st, u_st);
-	st_quad_exp.times(v_st, u_st, u_st);
-
-	//std::cout << v_st << std::endl;
-
-	stieltjes_pce_quad_func func(v_st, *st_basis);
-	quad_exp.unary_op(func, v2, u);
-
-	std::cout.precision(12);
-	std::cout << v;
-	std::cout << v2;
-	std::cout << v_st;
-	
-	std::cout.setf(std::ios::scientific);
-	std::cout << "v.mean()       = " << v.mean() << std::endl
-		  << "v_st.mean()    = " << v_st.mean() << std::endl
-		  << "v2.mean()      = " << v2.mean() << std::endl
-		  << "v.std_dev()    = " << v.standard_deviation() << std::endl
-		  << "v_st.std_dev() = " << v_st.standard_deviation() 
-		  << std::endl
-		  << "v2.std_dev()   = " << v2.standard_deviation()
-		  << std::endl;
+      std::cout << "p = " << p << std::endl;
+      
+      // Create product basis
+      for (unsigned int i=0; i<d; i++)
+	bases[i] = Teuchos::rcp(new basis_type(p));
+      Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
+	Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
+      
+      // Create approximation
+      Stokhos::OrthogPolyApprox<int,double> x(basis), u(basis), v(basis), 
+	w(basis), w2(basis);
+      for (unsigned int i=0; i<d; i++) {
+	x.term(i, 1) = 1.0;
       }
       
+      // Tensor product quadrature
+      Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
+      	Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
+
+      // Triple product tensor
+      Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk =
+	basis->computeTripleProductTensor(basis->size());
+      
+      // Quadrature expansion
+      Stokhos::QuadOrthogPolyExpansion<int,double> quad_exp(basis, Cijk, quad);
+      
+      // Compute PCE via quadrature expansion
+      quad_exp.sin(u,x);
+      quad_exp.exp(v,x);
+      quad_exp.times(w,u,v);
+	
+      // Compute Stieltjes basis
+      Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > st_bases(2);
+      st_bases[0] = 
+	Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(
+		       p, u, *quad, use_pce_quad_points));
+      st_bases[1] = 
+	Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(
+		       p, v, *quad, use_pce_quad_points));
+      Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > 
+	st_basis = 
+	Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(st_bases));
+      //std::cout << *st_basis << std::endl;
+
+      Stokhos::OrthogPolyApprox<int,double>  u_st(st_basis), v_st(st_basis),
+	w_st(st_basis);
+      u_st.term(0, 0) = u.mean();
+      u_st.term(0, 1) = 1.0;
+      v_st.term(0, 0) = v.mean();
+      v_st.term(1, 1) = 1.0;
+      
+      // Triple product tensor
+      Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > st_Cijk =
+	st_basis->computeTripleProductTensor(st_basis->size());
+	
+      // Tensor product quadrature
+      Teuchos::RCP<const Stokhos::Quadrature<int,double> > st_quad;
+      if (!use_pce_quad_points)
+	st_quad = Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(st_basis));
+      else {
+	Teuchos::Array<double> st_points_0;
+	Teuchos::Array<double> st_weights_0;
+	Teuchos::Array< Teuchos::Array<double> > st_values_0;
+	st_bases[0]->getQuadPoints(p+1, st_points_0, st_weights_0, st_values_0);
+	Teuchos::Array<double> st_points_1;
+	Teuchos::Array<double> st_weights_1;
+	Teuchos::Array< Teuchos::Array<double> > st_values_1;
+	st_bases[1]->getQuadPoints(p+1, st_points_1, st_weights_1, st_values_1);
+	Teuchos::RCP< Teuchos::Array< Teuchos::Array<double> > > st_points =
+	  Teuchos::rcp(new Teuchos::Array< Teuchos::Array<double> >(st_points_0.size()));
+	for (unsigned int i=0; i<st_points_0.size(); i++) {
+	  (*st_points)[i].resize(2);
+	  (*st_points)[i][0] = st_points_0[i];
+	  (*st_points)[i][1] = st_points_1[i];
+	}
+	Teuchos::RCP< Teuchos::Array<double> > st_weights = 
+	  Teuchos::rcp(new Teuchos::Array<double>(st_weights_0));
+	Teuchos::RCP< const Stokhos::OrthogPolyBasis<int,double> > st_b = 
+	  st_basis;
+	st_quad = 
+	  Teuchos::rcp(new Stokhos::UserDefinedQuadrature<int,double>(st_b,
+								      st_points,
+								      st_weights));
+      }
+      
+      // Quadrature expansion
+      Stokhos::QuadOrthogPolyExpansion<int,double> st_quad_exp(st_basis, 
+							       st_Cijk,
+							       st_quad);
+      
+      // Compute w_st = u_st*v_st in Stieltjes basis
+      st_quad_exp.times(w_st, u_st, v_st);
+      
+      // Project w_st back to original basis
+      pce_quad_func st_func(w_st, *st_basis);
+      quad_exp.binary_op(st_func, w2, u, v);
+
+      // std::cout.precision(12);
+      // std::cout << w;
+      // std::cout << w2;
+      // std::cout << w_st;
+      mean[n] = w.mean();
+      mean_st[n] = w2.mean();
+      std_dev[n] = w.standard_deviation();
+      std_dev_st[n] = w2.standard_deviation();
+      n++;
     }
+
+    n = 0;
+    std::cout << "Statistical error:" << std::endl;
+    std::cout << "p\t" 
+	      << std::setw(10) << "mean" << "\t" 
+	      << std::setw(10) << "mean_st" << "\t"
+	      << std::setw(10) << "std_dev" << "\t"
+	      << std::setw(10) << "std_dev_st" << std::endl;
+    for (unsigned int p=pmin; p<pmax; p++) {
+      std::cout.precision(3);
+      std::cout.setf(std::ios::scientific);
+      std::cout << p << "\t" 
+		<< std::setw(10) << rel_err(mean[n], mean[np-1]) << "\t"
+		<< std::setw(10) << rel_err(mean_st[n], mean[np-1]) << "\t"
+		<< std::setw(10) << rel_err(std_dev[n], std_dev[np-1]) << "\t"
+		<< std::setw(10) << rel_err(std_dev_st[n], std_dev[np-1]) 
+		<< std::endl;
+      n++;
+    }
+      
   }
   catch (std::exception& e) {
     std::cout << e.what() << std::endl;
