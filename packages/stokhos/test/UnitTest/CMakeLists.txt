@@ -31,6 +31,20 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  AlgebraicExpansionUnitTest
+  SOURCES Stokhos_AlgebraicExpansionUnitTest.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  ConstantExpansionUnitTest
+  SOURCES Stokhos_ConstantExpansionUnitTest.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
 IF(TPL_ENABLE_ForUQTK)
  
   PACKAGE_ADD_EXECUTABLE_AND_TEST(

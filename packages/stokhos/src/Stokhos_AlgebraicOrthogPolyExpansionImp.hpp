@@ -146,6 +146,10 @@ timesEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
     pc = sz;
   else
     pc = p*xp;
+  TEST_FOR_EXCEPTION(sz < pc, std::logic_error,
+		     "Stokhos::AlgebraicOrthogPolyExpansion::timesEqual()" <<
+		     ":  Expansion size (" << sz << 
+		     ") is too small for computation.");
   if (c.size() != pc)
     c.resize(pc);
 
@@ -192,7 +196,7 @@ divideEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
     divideEqual(c, x[0]);
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,
-		       "Stokhos::ForUQTKOrthogPolyExpansion::divideEqual()" 
+		       "Stokhos::AlgebraicOrthogPolyExpansion::divideEqual()" 
 		       << ":  Method not implemented!");
 }
 
@@ -348,6 +352,10 @@ times(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
     pc = sz;
   else
     pc = pa*pb;
+  TEST_FOR_EXCEPTION(sz < pc, std::logic_error,
+		     "Stokhos::AlgebraicOrthogPolyExpansion::times()" <<
+		     ":  Expansion size (" << sz << 
+		     ") is too small for computation.");
   if (c.size() != pc)
     c.resize(pc);
 
@@ -429,7 +437,7 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
     divide(c, a, b[0]);
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,
-		       "Stokhos::ForUQTKOrthogPolyExpansion::divide()" 
+		       "Stokhos::AlgebraicOrthogPolyExpansion::divide()" 
 		       << ":  Method not implemented!");
 }
 
@@ -447,7 +455,7 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
   }
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,
-		       "Stokhos::ForUQTKOrthogPolyExpansion::divide()" 
+		       "Stokhos::AlgebraicOrthogPolyExpansion::divide()" 
 		       << ":  Method not implemented!");
 }
 
@@ -482,7 +490,7 @@ exp(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
   }
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,
-		       "Stokhos::ForUQTKOrthogPolyExpansion::exp()" 
+		       "Stokhos::AlgebraicOrthogPolyExpansion::exp()" 
 		       << ":  Method not implemented!");
 }
 
@@ -499,7 +507,7 @@ log(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
   }
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,
-		       "Stokhos::ForUQTKOrthogPolyExpansion::log()" 
+		       "Stokhos::AlgebraicOrthogPolyExpansion::log()" 
 		       << ":  Method not implemented!");
 }
 
@@ -516,7 +524,7 @@ log10(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
   }
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,
-		       "Stokhos::ForUQTKOrthogPolyExpansion::log10()" 
+		       "Stokhos::AlgebraicOrthogPolyExpansion::log10()" 
 		       << ":  Method not implemented!");
 }
 
@@ -533,7 +541,7 @@ sqrt(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
   }
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,
-		       "Stokhos::ForUQTKOrthogPolyExpansion::sqrt()" 
+		       "Stokhos::AlgebraicOrthogPolyExpansion::sqrt()" 
 		       << ":  Method not implemented!");
 }
 
@@ -551,7 +559,7 @@ pow(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
   }
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,
-		       "Stokhos::ForUQTKOrthogPolyExpansion::pow()" 
+		       "Stokhos::AlgebraicOrthogPolyExpansion::pow()" 
 		       << ":  Method not implemented!");
 }
 
@@ -569,7 +577,7 @@ pow(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
   }
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,
-		       "Stokhos::ForUQTKOrthogPolyExpansion::pow()" 
+		       "Stokhos::AlgebraicOrthogPolyExpansion::pow()" 
 		       << ":  Method not implemented!");
 }
 
@@ -587,7 +595,7 @@ pow(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
   }
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,
-		       "Stokhos::ForUQTKOrthogPolyExpansion::pow()" 
+		       "Stokhos::AlgebraicOrthogPolyExpansion::pow()" 
 		       << ":  Method not implemented!");
 }
 
@@ -604,7 +612,7 @@ sin(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& s,
   }
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,
-		       "Stokhos::ForUQTKOrthogPolyExpansion::sin()" 
+		       "Stokhos::AlgebraicOrthogPolyExpansion::sin()" 
 		       << ":  Method not implemented!");
 }
 
@@ -621,7 +629,7 @@ cos(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
   }
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,
-		       "Stokhos::ForUQTKOrthogPolyExpansion::cos()" 
+		       "Stokhos::AlgebraicOrthogPolyExpansion::cos()" 
 		       << ":  Method not implemented!");
 }
 
@@ -638,7 +646,7 @@ tan(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& t,
   }
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,
-		       "Stokhos::ForUQTKOrthogPolyExpansion::tan()" 
+		       "Stokhos::AlgebraicOrthogPolyExpansion::tan()" 
 		       << ":  Method not implemented!");
 }
 
@@ -655,7 +663,7 @@ sinh(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& s,
   }
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,
-		       "Stokhos::ForUQTKOrthogPolyExpansion::sinh()" 
+		       "Stokhos::AlgebraicOrthogPolyExpansion::sinh()" 
 		       << ":  Method not implemented!");
 }
 
@@ -672,7 +680,7 @@ cosh(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
   }
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,
-		       "Stokhos::ForUQTKOrthogPolyExpansion::cosh()" 
+		       "Stokhos::AlgebraicOrthogPolyExpansion::cosh()" 
 		       << ":  Method not implemented!");
 }
 
@@ -689,7 +697,7 @@ tanh(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& t,
   }
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,
-		       "Stokhos::ForUQTKOrthogPolyExpansion::tanh()" 
+		       "Stokhos::AlgebraicOrthogPolyExpansion::tanh()" 
 		       << ":  Method not implemented!");
 }
 
@@ -706,7 +714,7 @@ acos(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
   }
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,
-		       "Stokhos::ForUQTKOrthogPolyExpansion::acos()" 
+		       "Stokhos::AlgebraicOrthogPolyExpansion::acos()" 
 		       << ":  Method not implemented!");
 }
 
@@ -723,7 +731,7 @@ asin(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
   }
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,
-		       "Stokhos::ForUQTKOrthogPolyExpansion::asin()" 
+		       "Stokhos::AlgebraicOrthogPolyExpansion::asin()" 
 		       << ":  Method not implemented!");
 }
 
@@ -740,7 +748,7 @@ atan(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
   }
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,
-		       "Stokhos::ForUQTKOrthogPolyExpansion::atan()" 
+		       "Stokhos::AlgebraicOrthogPolyExpansion::atan()" 
 		       << ":  Method not implemented!");
 }
 
@@ -758,7 +766,7 @@ atan2(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
   }
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,
-		       "Stokhos::ForUQTKOrthogPolyExpansion::atan2()" 
+		       "Stokhos::AlgebraicOrthogPolyExpansion::atan2()" 
 		       << ":  Method not implemented!");
 }
 
@@ -776,7 +784,7 @@ atan2(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
   }
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,
-		       "Stokhos::ForUQTKOrthogPolyExpansion::atan2()" 
+		       "Stokhos::AlgebraicOrthogPolyExpansion::atan2()" 
 		       << ":  Method not implemented!");
 }
 
@@ -794,7 +802,7 @@ atan2(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
   }
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,
-		       "Stokhos::ForUQTKOrthogPolyExpansion::atan2()" 
+		       "Stokhos::AlgebraicOrthogPolyExpansion::atan2()" 
 		       << ":  Method not implemented!");
 }
 
@@ -811,7 +819,7 @@ acosh(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
   }
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,
-		       "Stokhos::ForUQTKOrthogPolyExpansion::acosh()" 
+		       "Stokhos::AlgebraicOrthogPolyExpansion::acosh()" 
 		       << ":  Method not implemented!");
 }
 
@@ -828,7 +836,7 @@ asinh(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
   }
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,
-		       "Stokhos::ForUQTKOrthogPolyExpansion::asinh()" 
+		       "Stokhos::AlgebraicOrthogPolyExpansion::asinh()" 
 		       << ":  Method not implemented!");
 }
 
@@ -845,7 +853,7 @@ atanh(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
   }
   else
     TEST_FOR_EXCEPTION(true, std::logic_error,
-		       "Stokhos::ForUQTKOrthogPolyExpansion::atanh()" 
+		       "Stokhos::AlgebraicOrthogPolyExpansion::atanh()" 
 		       << ":  Method not implemented!");
 }
 

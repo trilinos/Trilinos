@@ -45,7 +45,7 @@ struct pce_quad_func {
    const Stokhos::OrthogPolyBasis<int,double>& basis_) :
     pce(pce_), basis(basis_), vec(2) {}
   
-  double operator() (const double& a, double& b) const {
+  double operator() (const double& a, const double& b) const {
     vec[0] = a;
     vec[1] = b;
     return pce.evaluate(vec);

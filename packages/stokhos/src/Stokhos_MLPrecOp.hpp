@@ -61,7 +61,7 @@
 #ifndef STOKHOS_MLPRECOP_HPP
 #define STOKHOS_MLPRECOP_HPP
 
-#include "Stokhos.hpp"
+#include "Stokhos_ConfigDefs.h"
 
 #ifdef HAVE_STOKHOS_ML
 

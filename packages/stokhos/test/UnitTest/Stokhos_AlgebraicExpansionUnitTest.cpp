@@ -36,7 +36,7 @@
 #include "Stokhos.hpp"
 #include "Stokhos_UnitTestHelpers.hpp"
 
-namespace DerivExpansionUnitTest {
+namespace AlgebraicExpansionUnitTest {
 
   // Common setup for unit tests
   template <typename OrdinalType, typename ValueType>
@@ -45,11 +45,10 @@ namespace DerivExpansionUnitTest {
     ValueType crtol, catol;
     OrdinalType sz;
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<OrdinalType,ValueType> > basis;
-    Teuchos::RCP<Teuchos::SerialDenseMatrix<int,double> > Bij;
-    Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk;
-    Teuchos::RCP<Stokhos::Dense3Tensor<int,double> > Dijk;
     Teuchos::RCP<const Stokhos::Quadrature<OrdinalType,ValueType> > quad;
-    Teuchos::RCP< Stokhos::DerivOrthogPolyExpansion<OrdinalType,ValueType> > exp;
+    Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk;
+    Teuchos::RCP< Stokhos::AlgebraicOrthogPolyExpansion<OrdinalType,ValueType> > exp;
+    Teuchos::RCP< Stokhos::QuadOrthogPolyExpansion<OrdinalType,ValueType> > qexp;
     Stokhos::OrthogPolyApprox<OrdinalType,ValueType> x, y, u, u2, cx, cu, cu2, sx, su, su2;
     ValueType a;
     
@@ -59,7 +58,7 @@ namespace DerivExpansionUnitTest {
       crtol = 1e-12;
       catol = 1e-12;
       a = 3.1;
-      const OrdinalType d = 1;
+      const OrdinalType d = 2;
       const OrdinalType p = 7;
       
       // Create product basis
@@ -69,19 +68,21 @@ namespace DerivExpansionUnitTest {
 	  Teuchos::rcp(new Stokhos::LegendreBasis<OrdinalType,ValueType>(p));
       basis =
 	Teuchos::rcp(new Stokhos::CompletePolynomialBasis<OrdinalType,ValueType>(bases));
-      
+
       // Tensor product quadrature
       quad = 
 	Teuchos::rcp(new Stokhos::TensorProductQuadrature<OrdinalType,ValueType>(basis));
 
       // Triple product tensor
-      Bij = basis->computeDerivDoubleProductTensor();
       Cijk = basis->computeTripleProductTensor(basis->size());
-      Dijk = basis->computeDerivTripleProductTensor(Bij, Cijk);
       
-      // Quadrature expansion
+      // Algebraic expansion
       exp = 
-	Teuchos::rcp(new Stokhos::DerivOrthogPolyExpansion<OrdinalType,ValueType>(basis, Bij, Cijk, Dijk));
+	Teuchos::rcp(new Stokhos::AlgebraicOrthogPolyExpansion<OrdinalType,ValueType>(basis, Cijk));
+
+      // Quadrature expansion
+      qexp = 
+	Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<OrdinalType,ValueType>(basis, Cijk, quad));
       
       // Create approximation
       sz = basis->size();
@@ -223,45 +224,7 @@ namespace DerivExpansionUnitTest {
   struct UMinusFunc { 
     double operator() (double a) const { return -a; } 
   };
-  struct ExpFunc { 
-    double operator() (double a) const { return std::exp(a); } 
-  };
-  struct LogFunc { 
-    double operator() (double a) const { return std::log(a); } 
-  };
-  struct Log10Func { 
-    double operator() (double a) const { return std::log10(a); } 
-  };
-  struct SqrtFunc { 
-    double operator() (double a) const { return std::sqrt(a); } 
-  };
-  struct SinFunc { 
-    double operator() (double a) const { return std::sin(a); } 
-  };
-  struct CosFunc { 
-    double operator() (double a) const { return std::cos(a); } 
-  };
-  struct TanFunc { 
-    double operator() (double a) const { return std::tan(a); } 
-  };
-  struct SinhFunc { 
-    double operator() (double a) const { return std::sinh(a); } 
-  };
-  struct CoshFunc { 
-    double operator() (double a) const { return std::cosh(a); } 
-  };
-  struct TanhFunc { 
-    double operator() (double a) const { return std::tanh(a); } 
-  };
-  struct ASinFunc { 
-    double operator() (double a) const { return std::asin(a); } 
-  };
-  struct ACosFunc { 
-    double operator() (double a) const { return std::acos(a); } 
-  };
-  struct ATanFunc { 
-    double operator() (double a) const { return std::atan(a); } 
-  };
+  
   struct ASinhFunc { 
     double operator() (double a) const { 
       return std::log(a+std::sqrt(a*a+1.0)); 
@@ -290,930 +253,561 @@ namespace DerivExpansionUnitTest {
   struct DivideFunc { 
     double operator() (double a, double b) const { return a / b; } 
   };
-  struct PowFunc { 
-    double operator() (double a, double b) const { return std::pow(a,b); } 
-  };
 
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, UMinus ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, UMinus ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->unaryMinus(setup.u, v);
     setup.computePCE1<UMinusFunc>(setup.u2, v);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, Exp ) {
-    setup.exp->exp(setup.u, setup.x);
-    setup.computePCE1<ExpFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, ExpConst ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, ExpConst ) {
     setup.exp->exp(setup.cu, setup.cx);
     setup.cu2[0] = std::exp(setup.cx[0]);
     success = Stokhos::comparePCEs(setup.cu, "cu", setup.cu2, "cu2", 
 				   setup.crtol, setup.catol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, ExpResize ) {
-    Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->exp(ru, setup.x);
-    setup.computePCE1<ExpFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, Log ) {
-    setup.exp->log(setup.u, setup.x);
-    setup.computePCE1<LogFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, LogConst ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, LogConst ) {
     setup.exp->log(setup.cu, setup.cx);
     setup.cu2[0] = std::log(setup.cx[0]);
     success = Stokhos::comparePCEs(setup.cu, "cu", setup.cu2, "cu2", 
 				   setup.crtol, setup.catol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, LogResize ) {
-    Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->log(ru, setup.x);
-    setup.computePCE1<LogFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, Log10 ) {
-    setup.exp->log10(setup.u, setup.x);
-    setup.computePCE1<Log10Func>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, Log10Const ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, Log10Const ) {
     setup.exp->log10(setup.cu, setup.cx);
     setup.cu2[0] = std::log10(setup.cx[0]);
     success = Stokhos::comparePCEs(setup.cu, "cu", setup.cu2, "cu2", 
 				   setup.crtol, setup.catol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, Log10Resize ) {
-    Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->log10(ru, setup.x);
-    setup.computePCE1<Log10Func>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, Sqrt ) {
-    setup.exp->sqrt(setup.u, setup.x);
-    setup.computePCE1<SqrtFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, SqrtConst ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, SqrtConst ) {
     setup.exp->sqrt(setup.cu, setup.cx);
     setup.cu2[0] = std::sqrt(setup.cx[0]);
     success = Stokhos::comparePCEs(setup.cu, "cu", setup.cu2, "cu2", 
 				   setup.crtol, setup.catol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, SqrtResize ) {
-    Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->sqrt(ru, setup.x);
-    setup.computePCE1<SqrtFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, Sin ) {
-    setup.exp->sin(setup.u, setup.x);
-    setup.computePCE1<SinFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, SinConst ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, SinConst ) {
     setup.exp->sin(setup.cu, setup.cx);
     setup.cu2[0] = std::sin(setup.cx[0]);
     success = Stokhos::comparePCEs(setup.cu, "cu", setup.cu2, "cu2", 
 				   setup.crtol, setup.catol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, SinResize ) {
-    Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->sin(ru, setup.x);
-    setup.computePCE1<SinFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, Cos ) {
-    setup.exp->cos(setup.u, setup.x);
-    setup.computePCE1<CosFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, CosConst ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, CosConst ) {
     setup.exp->cos(setup.cu, setup.cx);
     setup.cu2[0] = std::cos(setup.cx[0]);
     success = Stokhos::comparePCEs(setup.cu, "cu", setup.cu2, "cu2", 
 				   setup.crtol, setup.catol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, CosResize ) {
-    Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->cos(ru, setup.x);
-    setup.computePCE1<CosFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, Tan ) {
-    setup.exp->tan(setup.u, setup.x);
-    setup.computePCE1<TanFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-  				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, TanConst ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, TanConst ) {
     setup.exp->tan(setup.cu, setup.cx);
     setup.cu2[0] = std::tan(setup.cx[0]);
     success = Stokhos::comparePCEs(setup.cu, "cu", setup.cu2, "cu2", 
 				   setup.crtol, setup.catol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, TanResize ) {
-    Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->tan(ru, setup.x);
-    setup.computePCE1<TanFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, Sinh ) {
-    setup.exp->sinh(setup.u, setup.x);
-    setup.computePCE1<SinhFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, SinhConst ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, SinhConst ) {
     setup.exp->sinh(setup.cu, setup.cx);
     setup.cu2[0] = std::sinh(setup.cx[0]);
     success = Stokhos::comparePCEs(setup.cu, "cu", setup.cu2, "cu2", 
 				   setup.crtol, setup.catol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, SinhResize ) {
-    Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->sinh(ru, setup.x);
-    setup.computePCE1<SinhFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, Cosh ) {
-    setup.exp->cosh(setup.u, setup.x);
-    setup.computePCE1<CoshFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, CoshConst ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, CoshConst ) {
     setup.exp->cosh(setup.cu, setup.cx);
     setup.cu2[0] = std::cosh(setup.cx[0]);
     success = Stokhos::comparePCEs(setup.cu, "cu", setup.cu2, "cu2", 
 				   setup.crtol, setup.catol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, CoshResize ) {
-    Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->cosh(ru, setup.x);
-    setup.computePCE1<CoshFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, Tanh ) {
-    setup.exp->tanh(setup.u, setup.x);
-    setup.computePCE1<TanhFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-  				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, TanhConst ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, TanhConst ) {
     setup.exp->tanh(setup.cu, setup.cx);
     setup.cu2[0] = std::tanh(setup.cx[0]);
     success = Stokhos::comparePCEs(setup.cu, "cu", setup.cu2, "cu2", 
 				   setup.crtol, setup.catol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, TanhResize ) {
-    Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->tanh(ru, setup.x);
-    setup.computePCE1<TanhFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, ASin ) {
-    setup.exp->asin(setup.u, setup.x);
-    setup.computePCE1<ASinFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, ASinConst ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, ASinConst ) {
     setup.exp->asin(setup.cu, setup.cx);
     setup.cu2[0] = std::asin(setup.cx[0]);
     success = Stokhos::comparePCEs(setup.cu, "cu", setup.cu2, "cu2", 
 				   setup.crtol, setup.catol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, ASinResize ) {
-    Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->asin(ru, setup.x);
-    setup.computePCE1<ASinFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, ACos ) {
-    setup.exp->acos(setup.u, setup.x);
-    setup.computePCE1<ACosFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, ACosConst ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, ACosConst ) {
     setup.exp->acos(setup.cu, setup.cx);
     setup.cu2[0] = std::acos(setup.cx[0]);
     success = Stokhos::comparePCEs(setup.cu, "cu", setup.cu2, "cu2", 
 				   setup.crtol, setup.catol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, ACosResize ) {
-    Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->acos(ru, setup.x);
-    setup.computePCE1<ACosFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, ATan ) {
-    setup.exp->atan(setup.u, setup.x);
-    setup.computePCE1<ATanFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-  				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, ATanConst ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, ATanConst ) {
     setup.exp->atan(setup.cu, setup.cx);
     setup.cu2[0] = std::atan(setup.cx[0]);
     success = Stokhos::comparePCEs(setup.cu, "cu", setup.cu2, "cu2", 
 				   setup.crtol, setup.catol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, ATanResize ) {
-    Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->atan(ru, setup.x);
-    setup.computePCE1<ATanFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, ASinh ) {
-    setup.exp->asinh(setup.u, setup.x);
-    setup.computePCE1<ASinhFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, ASinhConst ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, ASinhConst ) {
     ASinhFunc f;
     setup.exp->asinh(setup.cu, setup.cx);
     setup.cu2[0] = f(setup.cx[0]);
     success = Stokhos::comparePCEs(setup.cu, "cu", setup.cu2, "cu2", 
 				   setup.crtol, setup.catol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, ASinhResize ) {
-    Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->asinh(ru, setup.x);
-    setup.computePCE1<ASinhFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, ACosh ) {
-    setup.exp->acosh(setup.u, setup.x);
-    setup.computePCE1<ACoshFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, ACoshConst ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, ACoshConst ) {
     ACoshFunc f;
     setup.exp->acosh(setup.cu, setup.cx);
     setup.cu2[0] = f(setup.cx[0]);
     success = Stokhos::comparePCEs(setup.cu, "cu", setup.cu2, "cu2", 
 				   setup.crtol, setup.catol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, ACoshResize ) {
-    Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->acosh(ru, setup.x);
-    setup.computePCE1<ACoshFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, ATanh ) {
-    setup.exp->atanh(setup.u, setup.x);
-    setup.computePCE1<ATanhFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-  				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, ATanhConst ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, ATanhConst ) {
     ATanhFunc f;
     setup.exp->atanh(setup.cu, setup.cx);
     setup.cu2[0] = f(setup.cx[0]);
     success = Stokhos::comparePCEs(setup.cu, "cu", setup.cu2, "cu2", 
 				   setup.crtol, setup.catol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, ATanhResize ) {
-    Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->atanh(ru, setup.x);
-    setup.computePCE1<ATanhFunc>(setup.u2, setup.x);
-    success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
 
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, Plus ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, Plus ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis), w(setup.basis);
-    setup.exp->sin(v, setup.x);
-    setup.exp->cos(w, setup.y);
+    setup.qexp->sin(v, setup.x);
+    setup.qexp->cos(w, setup.y);
     setup.exp->plus(setup.u, v, w);
     setup.computePCE2<PlusFunc>(setup.u2, v, w);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PlusLC ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, PlusLC ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->plus(setup.u, setup.a, v);
     setup.computePCE2LC<PlusFunc>(setup.u2, setup.a, v);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PlusRC ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, PlusRC ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->plus(setup.u, v, setup.a);
     setup.computePCE2RC<PlusFunc>(setup.u2, v, setup.a);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PlusCC ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, PlusCC ) {
     setup.exp->plus(setup.cu, setup.cx, setup.cx);
     setup.computePCE2<PlusFunc>(setup.cu2, setup.cx, setup.cx);
     success = Stokhos::comparePCEs(setup.cu, "cu", setup.cu2, "cu2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PlusLC2 ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, PlusLC2 ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->plus(setup.u, setup.cx, v);
     setup.computePCE2LC<PlusFunc>(setup.u2, setup.cx[0], v);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PlusRC2 ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, PlusRC2 ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->plus(setup.u, v, setup.cx);
     setup.computePCE2RC<PlusFunc>(setup.u2, v, setup.cx[0]);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PlusResize ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, PlusResize ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis), w(setup.basis);
     Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->sin(v, setup.x);
-    setup.exp->cos(w, setup.y);
+    setup.qexp->sin(v, setup.x);
+    setup.qexp->cos(w, setup.y);
     setup.exp->plus(ru, v, w);
     setup.computePCE2<PlusFunc>(setup.u2, v, w);
     success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PlusLCResize ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, PlusLCResize ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
     Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->plus(ru, setup.a, v);
     setup.computePCE2LC<PlusFunc>(setup.u2, setup.a, v);
     success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PlusRCResize ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, PlusRCResize ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
     Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->plus(ru, v, setup.a);
     setup.computePCE2RC<PlusFunc>(setup.u2, v, setup.a);
     success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PlusLS ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, PlusLS ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->plus(setup.u, setup.sx, v);
     setup.computePCE2<PlusFunc>(setup.u2, setup.sx, v);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PlusRS ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, PlusRS ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->plus(setup.u, v, setup.sx);
     setup.computePCE2<PlusFunc>(setup.u2, v, setup.sx);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PlusLSRC ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, PlusLSRC ) {
     setup.exp->plus(setup.su, setup.sx, setup.a);
     setup.computePCE2RC<PlusFunc>(setup.su2, setup.sx, setup.a);
     success = Stokhos::comparePCEs(setup.su, "su", setup.su2, "su2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PlusRSLC ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, PlusRSLC ) {
     setup.exp->plus(setup.su, setup.a, setup.sx);
     setup.computePCE2LC<PlusFunc>(setup.su2, setup.a, setup.sx);
     success = Stokhos::comparePCEs(setup.su, "su", setup.su2, "su2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PlusLSRC2 ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, PlusLSRC2 ) {
     setup.exp->plus(setup.su, setup.sx, setup.cx);
     setup.computePCE2<PlusFunc>(setup.su2, setup.sx, setup.cx);
     success = Stokhos::comparePCEs(setup.su, "su", setup.su2, "su2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PlusRSLC2 ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, PlusRSLC2 ) {
     setup.exp->plus(setup.su, setup.cx, setup.sx);
     setup.computePCE2<PlusFunc>(setup.su2, setup.cx, setup.sx);
     success = Stokhos::comparePCEs(setup.su, "su", setup.su2, "su2", 
 				   setup.rtol, setup.atol, out);
   }
   
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, Minus ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, Minus ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis), w(setup.basis);
-    setup.exp->sin(v, setup.x);
-    setup.exp->cos(w, setup.y);
+    setup.qexp->sin(v, setup.x);
+    setup.qexp->cos(w, setup.y);
     setup.exp->minus(setup.u, v, w);
     setup.computePCE2<MinusFunc>(setup.u2, v, w);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, MinusLC ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, MinusLC ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->minus(setup.u, setup.a, v);
     setup.computePCE2LC<MinusFunc>(setup.u2, setup.a, v);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, MinusRC ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, MinusRC ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->minus(setup.u, v, setup.a);
     setup.computePCE2RC<MinusFunc>(setup.u2, v, setup.a);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, MinusCC ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, MinusCC ) {
     setup.exp->minus(setup.cu, setup.cx, setup.cx);
     setup.computePCE2<MinusFunc>(setup.cu2, setup.cx, setup.cx);
     success = Stokhos::comparePCEs(setup.cu, "cu", setup.cu2, "cu2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, MinusLC2 ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, MinusLC2 ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->minus(setup.u, setup.cx, v);
     setup.computePCE2LC<MinusFunc>(setup.u2, setup.cx[0], v);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, MinusRC2 ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, MinusRC2 ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->minus(setup.u, v, setup.cx);
     setup.computePCE2RC<MinusFunc>(setup.u2, v, setup.cx[0]);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, MinusResize ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, MinusResize ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis), w(setup.basis);
     Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->sin(v, setup.x);
-    setup.exp->cos(w, setup.y);
+    setup.qexp->sin(v, setup.x);
+    setup.qexp->cos(w, setup.y);
     setup.exp->minus(ru, v, w);
     setup.computePCE2<MinusFunc>(setup.u2, v, w);
     success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, MinusLCResize ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, MinusLCResize ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
     Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->minus(ru, setup.a, v);
     setup.computePCE2LC<MinusFunc>(setup.u2, setup.a, v);
     success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, MinusRCResize ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, MinusRCResize ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
     Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->minus(ru, v, setup.a);
     setup.computePCE2RC<MinusFunc>(setup.u2, v, setup.a);
     success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, MinusLS ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, MinusLS ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->minus(setup.u, setup.sx, v);
     setup.computePCE2<MinusFunc>(setup.u2, setup.sx, v);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, MinusRS ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, MinusRS ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->minus(setup.u, v, setup.sx);
     setup.computePCE2<MinusFunc>(setup.u2, v, setup.sx);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, MinusLSRC ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, MinusLSRC ) {
     setup.exp->minus(setup.su, setup.sx, setup.a);
     setup.computePCE2RC<MinusFunc>(setup.su2, setup.sx, setup.a);
     success = Stokhos::comparePCEs(setup.su, "su", setup.su2, "su2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, MinusRSLC ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, MinusRSLC ) {
     setup.exp->minus(setup.su, setup.a, setup.sx);
     setup.computePCE2LC<MinusFunc>(setup.su2, setup.a, setup.sx);
     success = Stokhos::comparePCEs(setup.su, "su", setup.su2, "su2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, MinusLSRC2 ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, MinusLSRC2 ) {
     setup.exp->minus(setup.su, setup.sx, setup.cx);
     setup.computePCE2<MinusFunc>(setup.su2, setup.sx, setup.cx);
     success = Stokhos::comparePCEs(setup.su, "su", setup.su2, "su2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, MinusRSLC2 ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, MinusRSLC2 ) {
     setup.exp->minus(setup.su, setup.cx, setup.sx);
     setup.computePCE2<MinusFunc>(setup.su2, setup.cx, setup.sx);
     success = Stokhos::comparePCEs(setup.su, "su", setup.su2, "su2", 
 				   setup.rtol, setup.atol, out);
   }
 
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, Times ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, Times ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis), w(setup.basis);
-    setup.exp->sin(v, setup.x);
-    setup.exp->cos(w, setup.y);
+    setup.qexp->sin(v, setup.x);
+    setup.qexp->cos(w, setup.y);
     setup.exp->times(setup.u, v, w);
     setup.computePCE2<TimesFunc>(setup.u2, v, w);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, TimesLC ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, TimesLC ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->times(setup.u, setup.a, v);
     setup.computePCE2LC<TimesFunc>(setup.u2, setup.a, v);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, TimesRC ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, TimesRC ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->times(setup.u, v, setup.a);
     setup.computePCE2RC<TimesFunc>(setup.u2, v, setup.a);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, TimesCC ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, TimesCC ) {
     setup.exp->times(setup.cu, setup.cx, setup.cx);
     setup.computePCE2<TimesFunc>(setup.cu2, setup.cx, setup.cx);
     success = Stokhos::comparePCEs(setup.cu, "cu", setup.cu2, "cu2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, TimesLC2 ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, TimesLC2 ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->times(setup.u, setup.cx, v);
     setup.computePCE2LC<TimesFunc>(setup.u2, setup.cx[0], v);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, TimesRC2 ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, TimesRC2 ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->times(setup.u, v, setup.cx);
     setup.computePCE2RC<TimesFunc>(setup.u2, v, setup.cx[0]);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, TimesResize ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, TimesResize ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis), w(setup.basis);
     Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->sin(v, setup.x);
-    setup.exp->cos(w, setup.y);
+    setup.qexp->sin(v, setup.x);
+    setup.qexp->cos(w, setup.y);
     setup.exp->times(ru, v, w);
     setup.computePCE2<TimesFunc>(setup.u2, v, w);
     success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, TimesLCResize ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, TimesLCResize ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
     Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->times(ru, setup.a, v);
     setup.computePCE2LC<TimesFunc>(setup.u2, setup.a, v);
     success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, TimesRCResize ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, TimesRCResize ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
     Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->times(ru, v, setup.a);
     setup.computePCE2RC<TimesFunc>(setup.u2, v, setup.a);
     success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, TimesLS ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, TimesLS ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->times(setup.u, setup.sx, v);
     setup.computePCE2<TimesFunc>(setup.u2, setup.sx, v);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, TimesRS ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, TimesRS ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->times(setup.u, v, setup.sx);
     setup.computePCE2<TimesFunc>(setup.u2, v, setup.sx);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, TimesLSRC ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, TimesLSRC ) {
     setup.exp->times(setup.su, setup.sx, setup.a);
     setup.computePCE2RC<TimesFunc>(setup.su2, setup.sx, setup.a);
     success = Stokhos::comparePCEs(setup.su, "su", setup.su2, "su2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, TimesRSLC ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, TimesRSLC ) {
     setup.exp->times(setup.su, setup.a, setup.sx);
     setup.computePCE2LC<TimesFunc>(setup.su2, setup.a, setup.sx);
     success = Stokhos::comparePCEs(setup.su, "su", setup.su2, "su2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, TimesLSRC2 ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, TimesLSRC2 ) {
     setup.exp->times(setup.su, setup.sx, setup.cx);
     setup.computePCE2<TimesFunc>(setup.su2, setup.sx, setup.cx);
     success = Stokhos::comparePCEs(setup.su, "su", setup.su2, "su2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, TimesRSLC2 ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, TimesRSLC2 ) {
     setup.exp->times(setup.su, setup.cx, setup.sx);
     setup.computePCE2<TimesFunc>(setup.su2, setup.cx, setup.sx);
     success = Stokhos::comparePCEs(setup.su, "su", setup.su2, "su2", 
 				   setup.rtol, setup.atol, out);
   }
 
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, Divide ) {
-    Stokhos::OrthogPolyApprox<int,double> v(setup.basis), w(setup.basis);
-    setup.exp->sin(v, setup.x);
-    setup.exp->exp(w, setup.y);
-    setup.exp->divide(setup.u, v, w);
-    setup.computePCE2<DivideFunc>(setup.u2, v, w);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, DivideLC ) {
+  
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, DivideRC ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
-    setup.exp->divide(setup.u, setup.a, v);
-    setup.computePCE2LC<DivideFunc>(setup.u2, setup.a, v);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, DivideRC ) {
-    Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->divide(setup.u, v, setup.a);
     setup.computePCE2RC<DivideFunc>(setup.u2, v, setup.a);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, DivideCC ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, DivideCC ) {
     setup.exp->divide(setup.cu, setup.cx, setup.cx);
     setup.computePCE2<DivideFunc>(setup.cu2, setup.cx, setup.cx);
     success = Stokhos::comparePCEs(setup.cu, "cu", setup.cu2, "cu2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, DivideLC2 ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, DivideRC2 ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
-    setup.exp->divide(setup.u, setup.cx, v);
-    setup.computePCE2LC<DivideFunc>(setup.u2, setup.cx[0], v);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, DivideRC2 ) {
-    Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->divide(setup.u, v, setup.cx);
     setup.computePCE2RC<DivideFunc>(setup.u2, v, setup.cx[0]);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-   TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, DivideResize ) {
-    Stokhos::OrthogPolyApprox<int,double> v(setup.basis), w(setup.basis);
-    Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->sin(v, setup.x);
-    setup.exp->exp(w, setup.y);
-    setup.exp->divide(ru, v, w);
-    setup.computePCE2<DivideFunc>(setup.u2, v, w);
-    success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, DivideLCResize ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, DivideRCResize ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
     Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->sin(v, setup.x);
-    setup.exp->divide(ru, setup.a, v);
-    setup.computePCE2LC<DivideFunc>(setup.u2, setup.a, v);
-    success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, DivideRCResize ) {
-    Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->divide(ru, v, setup.a);
     setup.computePCE2RC<DivideFunc>(setup.u2, v, setup.a);
     success = Stokhos::comparePCEs(ru, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, DivideLS ) {
-    Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
-    setup.exp->divide(setup.u, setup.sx, v);
-    setup.computePCE2<DivideFunc>(setup.u2, setup.sx, v);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, DivideRS ) {
-    Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
-    setup.exp->divide(setup.u, v, setup.sx);
-    setup.computePCE2<DivideFunc>(setup.u2, v, setup.sx);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, DivideLSRC ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, DivideLSRC ) {
     setup.exp->divide(setup.su, setup.sx, setup.a);
     setup.computePCE2RC<DivideFunc>(setup.su2, setup.sx, setup.a);
     success = Stokhos::comparePCEs(setup.su, "su", setup.su2, "su2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, DivideRSLC ) {
-    setup.exp->divide(setup.u, setup.a, setup.sx);
-    setup.computePCE2LC<DivideFunc>(setup.u2, setup.a, setup.sx);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, DivideLSRC2 ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, DivideLSRC2 ) {
     setup.exp->divide(setup.su, setup.sx, setup.cx);
     setup.computePCE2<DivideFunc>(setup.su2, setup.sx, setup.cx);
     success = Stokhos::comparePCEs(setup.su, "su", setup.su2, "su2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, DivideRSLC2 ) {
-    setup.exp->divide(setup.u, setup.cx, setup.sx);
-    setup.computePCE2<DivideFunc>(setup.u2, setup.cx, setup.sx);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
 
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, Pow ) {
-    setup.exp->pow(setup.u, setup.x, setup.y);
-    setup.computePCE2<PowFunc>(setup.u2, setup.x, setup.y);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PowLC ) {
-    setup.exp->pow(setup.u, setup.a, setup.y);
-    setup.computePCE2LC<PowFunc>(setup.u2, setup.a, setup.y);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PowRC ) {
-    setup.exp->pow(setup.u, setup.x, setup.a);
-    setup.computePCE2RC<PowFunc>(setup.u2, setup.x, setup.a);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PowCC ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, PowConst ) {
     setup.exp->pow(setup.cu, setup.cx, setup.cx);
-    setup.computePCE2<PowFunc>(setup.cu2, setup.cx, setup.cx);
+    setup.cu2[0] = std::pow(setup.cx[0], setup.cx[0]);
     success = Stokhos::comparePCEs(setup.cu, "cu", setup.cu2, "cu2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PowLC2 ) {
-    setup.exp->pow(setup.u, setup.cx, setup.y);
-    setup.computePCE2LC<PowFunc>(setup.u2, setup.cx[0], setup.y);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PowRC2 ) {
-    setup.exp->pow(setup.u, setup.x, setup.cx);
-    setup.computePCE2RC<PowFunc>(setup.u2, setup.x, setup.cx[0]);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PowResize ) {
-    Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->pow(ru, setup.x, setup.y);
-    setup.computePCE2<PowFunc>(setup.u2, setup.x, setup.y);
-    success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PowLCResize ) {
-    Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->pow(ru, setup.a, setup.y);
-    setup.computePCE2LC<PowFunc>(setup.u2, setup.a, setup.y);
-    success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PowRCResize ) {
-    Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->pow(ru, setup.x, setup.a);
-    setup.computePCE2RC<PowFunc>(setup.u2, setup.x, setup.a);
-    success = Stokhos::comparePCEs(ru, "ru", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PowLS ) {
-    setup.exp->pow(setup.u, setup.sx, setup.y);
-    setup.computePCE2<PowFunc>(setup.u2, setup.sx, setup.y);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PowRS ) {
-    setup.exp->pow(setup.u, setup.x, setup.sx);
-    setup.computePCE2<PowFunc>(setup.u2, setup.x, setup.sx);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PowLSRC ) {
-    setup.exp->pow(setup.u, setup.sx, setup.a);
-    setup.computePCE2RC<PowFunc>(setup.u2, setup.sx, setup.a);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PowRSLC ) {
-    setup.exp->pow(setup.u, setup.a, setup.sx);
-    setup.computePCE2LC<PowFunc>(setup.u2, setup.a, setup.sx);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PowLSRC2 ) {
-    setup.exp->pow(setup.u, setup.sx, setup.cx);
-    setup.computePCE2<PowFunc>(setup.u2, setup.sx, setup.cx);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PowRSLC2 ) {
-    setup.exp->pow(setup.u, setup.cx, setup.sx);
-    setup.computePCE2<PowFunc>(setup.u2, setup.cx, setup.sx);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-				   setup.rtol, setup.atol, out);
+				   setup.crtol, setup.catol, out);
   }
 
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PlusEqual ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, PlusEqual ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
-    setup.exp->cos(setup.u, setup.x);
+    setup.qexp->sin(v, setup.x);
+    setup.qexp->cos(setup.u, setup.x);
     setup.computePCE2<PlusFunc>(setup.u2, setup.u, v);
     setup.exp->plusEqual(setup.u, v);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
   				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PlusEqualC ) {
-    setup.exp->cos(setup.u, setup.x);
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, PlusEqualC ) {
+    setup.qexp->cos(setup.u, setup.x);
     setup.computePCE2RC<PlusFunc>(setup.u2, setup.u, setup.a);
     setup.exp->plusEqual(setup.u, setup.a);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
   				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PlusEqualC2 ) {
-    setup.exp->cos(setup.u, setup.x);
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, PlusEqualC2 ) {
+    setup.qexp->cos(setup.u, setup.x);
     setup.computePCE2RC<PlusFunc>(setup.u2, setup.u, setup.cx[0]);
     setup.exp->plusEqual(setup.u, setup.cx);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
   				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PlusEqualResize ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, PlusEqualResize ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
     Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->plusEqual(ru, v);
     success = Stokhos::comparePCEs(ru, "ru", v, "v", 
   				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PlusEqualS ) {
-    setup.exp->cos(setup.u, setup.x);
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, PlusEqualS ) {
+    setup.qexp->cos(setup.u, setup.x);
     setup.computePCE2<PlusFunc>(setup.u2, setup.u, setup.sx);
     setup.exp->plusEqual(setup.u, setup.sx);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
   				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PlusEqualSC ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, PlusEqualSC ) {
     setup.su = setup.sx;
     setup.computePCE2RC<PlusFunc>(setup.su2, setup.su, setup.a);
     setup.exp->plusEqual(setup.su, setup.a);
     success = Stokhos::comparePCEs(setup.su, "su", setup.su2, "su2", 
   				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, PlusEqualSC2 ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, PlusEqualSC2 ) {
     setup.su = setup.sx;
     setup.computePCE2<PlusFunc>(setup.su2, setup.su, setup.cx);
     setup.exp->plusEqual(setup.su, setup.cx);
@@ -1221,53 +815,53 @@ namespace DerivExpansionUnitTest {
   				   setup.rtol, setup.atol, out);
   }
 
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, MinusEqual ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, MinusEqual ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
-    setup.exp->cos(setup.u, setup.x);
+    setup.qexp->sin(v, setup.x);
+    setup.qexp->cos(setup.u, setup.x);
     setup.computePCE2<MinusFunc>(setup.u2, setup.u, v);
     setup.exp->minusEqual(setup.u, v);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
   				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, MinusEqualC ) {
-    setup.exp->cos(setup.u, setup.x);
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, MinusEqualC ) {
+    setup.qexp->cos(setup.u, setup.x);
     setup.computePCE2RC<MinusFunc>(setup.u2, setup.u, setup.a);
     setup.exp->minusEqual(setup.u, setup.a);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
   				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, MinusEqualC2 ) {
-    setup.exp->cos(setup.u, setup.x);
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, MinusEqualC2 ) {
+    setup.qexp->cos(setup.u, setup.x);
     setup.computePCE2RC<MinusFunc>(setup.u2, setup.u, setup.cx[0]);
     setup.exp->minusEqual(setup.u, setup.cx);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
   				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, MinusEqualResize ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, MinusEqualResize ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
     Stokhos::OrthogPolyApprox<int, double> ru(setup.basis, 0);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.exp->minusEqual(ru, v);
     setup.exp->unaryMinus(v, v);
     success = Stokhos::comparePCEs(ru, "ru", v, "v", 
   				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, MinusEqualS ) {
-    setup.exp->cos(setup.u, setup.x);
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, MinusEqualS ) {
+    setup.qexp->cos(setup.u, setup.x);
     setup.computePCE2<MinusFunc>(setup.u2, setup.u, setup.sx);
     setup.exp->minusEqual(setup.u, setup.sx);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
   				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, MinusEqualSC ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, MinusEqualSC ) {
     setup.su = setup.sx;
     setup.computePCE2RC<MinusFunc>(setup.su2, setup.su, setup.a);
     setup.exp->minusEqual(setup.su, setup.a);
     success = Stokhos::comparePCEs(setup.su, "su", setup.su2, "su2", 
   				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, MinusEqualSC2 ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, MinusEqualSC2 ) {
     setup.su = setup.sx;
     setup.computePCE2<MinusFunc>(setup.su2, setup.su, setup.cx);
     setup.exp->minusEqual(setup.su, setup.cx);
@@ -1275,53 +869,53 @@ namespace DerivExpansionUnitTest {
   				   setup.rtol, setup.atol, out);
   }
 
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, TimesEqual ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, TimesEqual ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
-    setup.exp->cos(setup.u, setup.x);
+    setup.qexp->sin(v, setup.x);
+    setup.qexp->cos(setup.u, setup.x);
     setup.computePCE2<TimesFunc>(setup.u2, setup.u, v);
     setup.exp->timesEqual(setup.u, v);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, TimesEqualC ) {
-    setup.exp->cos(setup.u, setup.x);
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, TimesEqualC ) {
+    setup.qexp->cos(setup.u, setup.x);
     setup.computePCE2RC<TimesFunc>(setup.u2, setup.u, setup.a);
     setup.exp->timesEqual(setup.u, setup.a);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
   				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, TimesEqualC2 ) {
-    setup.exp->cos(setup.u, setup.x);
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, TimesEqualC2 ) {
+    setup.qexp->cos(setup.u, setup.x);
     setup.computePCE2RC<TimesFunc>(setup.u2, setup.u, setup.cx[0]);
     setup.exp->timesEqual(setup.u, setup.cx);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
   				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, TimesEqualResize ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, TimesEqualResize ) {
     Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
+    setup.qexp->sin(v, setup.x);
     setup.su = setup.sx;
     setup.computePCE2<TimesFunc>(setup.u2, setup.su, v);
     setup.exp->timesEqual(setup.su, v);
     success = Stokhos::comparePCEs(setup.su, "su", setup.u2, "u2", 
 				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, TimesEqualS ) {
-    setup.exp->cos(setup.u, setup.x);
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, TimesEqualS ) {
+    setup.qexp->cos(setup.u, setup.x);
     setup.computePCE2<TimesFunc>(setup.u2, setup.u, setup.sx);
     setup.exp->timesEqual(setup.u, setup.sx);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
   				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, TimesEqualSC ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, TimesEqualSC ) {
     setup.su = setup.sx;
     setup.computePCE2RC<TimesFunc>(setup.su2, setup.su, setup.a);
     setup.exp->timesEqual(setup.su, setup.a);
     success = Stokhos::comparePCEs(setup.su, "su", setup.su2, "su2", 
   				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, TimesEqualSC2 ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, TimesEqualSC2 ) {
     setup.su = setup.sx;
     setup.computePCE2<TimesFunc>(setup.su2, setup.su, setup.cx);
     setup.exp->timesEqual(setup.su, setup.cx);
@@ -1329,53 +923,28 @@ namespace DerivExpansionUnitTest {
   				   setup.rtol, setup.atol, out);
   }
 
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, DivideEqual ) {
-    Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
-    setup.exp->cos(setup.u, setup.x);
-    setup.computePCE2<DivideFunc>(setup.u2, setup.u, v);
-    setup.exp->divideEqual(setup.u, v);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-  				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, DivideEqualC ) {
-    setup.exp->cos(setup.u, setup.x);
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, DivideEqualC ) {
+    setup.qexp->cos(setup.u, setup.x);
     setup.computePCE2RC<DivideFunc>(setup.u2, setup.u, setup.a);
     setup.exp->divideEqual(setup.u, setup.a);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
   				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, DivideEqualC2 ) {
-    setup.exp->cos(setup.u, setup.x);
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, DivideEqualC2 ) {
+    setup.qexp->cos(setup.u, setup.x);
     setup.computePCE2RC<DivideFunc>(setup.u2, setup.u, setup.cx[0]);
     setup.exp->divideEqual(setup.u, setup.cx);
     success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
   				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, DivideEqualResize ) {
-    Stokhos::OrthogPolyApprox<int,double> v(setup.basis);
-    setup.exp->sin(v, setup.x);
-    setup.su = setup.sx;
-    setup.computePCE2<DivideFunc>(setup.u2, setup.su, v);
-    setup.exp->divideEqual(setup.su, v);
-    success = Stokhos::comparePCEs(setup.su, "su", setup.u2, "u2", 
-  				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, DivideEqualS ) {
-    setup.exp->cos(setup.u, setup.x);
-    setup.computePCE2<DivideFunc>(setup.u2, setup.u, setup.sx);
-    setup.exp->divideEqual(setup.u, setup.sx);
-    success = Stokhos::comparePCEs(setup.u, "u", setup.u2, "u2", 
-  				   setup.rtol, setup.atol, out);
-  }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, DivideEqualSC ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, DivideEqualSC ) {
     setup.su = setup.sx;
     setup.computePCE2RC<DivideFunc>(setup.su2, setup.su, setup.a);
     setup.exp->divideEqual(setup.su, setup.a);
     success = Stokhos::comparePCEs(setup.su, "su", setup.su2, "su2", 
   				   setup.rtol, setup.atol, out);
   }
-  TEUCHOS_UNIT_TEST( Stokhos_DerivExpansion, DivideEqualSC2 ) {
+  TEUCHOS_UNIT_TEST( Stokhos_AlgebraicExpansion, DivideEqualSC2 ) {
     setup.su = setup.sx;
     setup.computePCE2<DivideFunc>(setup.su2, setup.su, setup.cx);
     setup.exp->divideEqual(setup.su, setup.cx);

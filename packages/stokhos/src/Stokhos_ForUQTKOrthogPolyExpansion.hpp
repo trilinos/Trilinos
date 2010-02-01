@@ -162,15 +162,15 @@ namespace Stokhos {
 	      const OrthogPolyApprox<ordinal_type, value_type>& a);
     void atan(OrthogPolyApprox<ordinal_type, value_type>& c, 
 	      const OrthogPolyApprox<ordinal_type, value_type>& a);
-//     void atan2(OrthogPolyApprox<ordinal_type, value_type>& c, 
-// 	       const OrthogPolyApprox<ordinal_type, value_type>& a,
-// 	       const OrthogPolyApprox<ordinal_type, value_type>& b);
-//     void atan2(OrthogPolyApprox<ordinal_type, value_type>& c, 
-// 	       const T& a, 
-// 	       const OrthogPolyApprox<ordinal_type, value_type>& b);
-//     void atan2(OrthogPolyApprox<ordinal_type, value_type>& c, 
-// 	       const OrthogPolyApprox<ordinal_type, value_type>& a, 
-// 	       const T& b);
+    void atan2(OrthogPolyApprox<ordinal_type, value_type>& c, 
+	       const OrthogPolyApprox<ordinal_type, value_type>& a,
+	       const OrthogPolyApprox<ordinal_type, value_type>& b);
+    void atan2(OrthogPolyApprox<ordinal_type, value_type>& c, 
+	       const value_type& a, 
+	       const OrthogPolyApprox<ordinal_type, value_type>& b);
+    void atan2(OrthogPolyApprox<ordinal_type, value_type>& c, 
+	       const OrthogPolyApprox<ordinal_type, value_type>& a, 
+	       const value_type& b);
     void acosh(OrthogPolyApprox<ordinal_type, value_type>& c, 
 	       const OrthogPolyApprox<ordinal_type, value_type>& a);
     void asinh(OrthogPolyApprox<ordinal_type, value_type>& c, 

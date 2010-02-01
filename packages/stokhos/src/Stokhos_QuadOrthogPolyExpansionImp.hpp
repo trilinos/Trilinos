@@ -72,9 +72,18 @@ unary_op(const FuncT& func,
          const OrthogPolyApprox<ordinal_type, value_type>& a)
 {
   ordinal_type pa = a.size();
-  ordinal_type pc = sz;
+  ordinal_type pc;
+  if (a.size() == 1)
+    pc = 1;
+  else
+    pc = sz;
   if (c.size() != pc)
     c.resize(pc);
+
+  if (pc == 1) {
+    c[0] = func(a[0]);
+    return;
+  }
 
   {
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- Unary Polynomial Evaluation");
@@ -115,9 +124,18 @@ binary_op(const FuncT& func,
 {
   ordinal_type pa = a.size();
   ordinal_type pb = b.size();
-  ordinal_type pc = sz;
+  ordinal_type pc;
+  if (pa == 1 && pb == 1)
+    pc = 1;
+  else
+    pc = sz;
   if (c.size() != pc)
     c.resize(pc);
+
+  if (pc == 1) {
+    c[0] = func(a[0], b[0]);
+    return;
+  }
 
   {
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- PP Binary Polynomial Evaluation");
@@ -159,9 +177,18 @@ binary_op(const FuncT& func,
           const OrthogPolyApprox<ordinal_type, value_type>& b)
 {
   ordinal_type pb = b.size();
-  ordinal_type pc = sz;
+  ordinal_type pc;
+  if (pb == 1)
+    pc = 1;
+  else
+    pc = sz;
   if (c.size() != pc)
     c.resize(pc);
+
+  if (pc == 1) {
+    c[0] = func(a, b[0]);
+    return;
+  }
 
   {
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- CP Binary Polynomial Evaluation");
@@ -201,9 +228,18 @@ binary_op(const FuncT& func,
           const value_type& b)
 {
   ordinal_type pa = a.size();
-  ordinal_type pc = sz;
+  ordinal_type pc;
+  if (pa == 1)
+    pc = 1;
+  else
+    pc = sz;
   if (c.size() != pc)
     c.resize(pc);
+
+  if (pc == 1) {
+    c[0] = func(a[0], b);
+    return;
+  }
 
   {
   TEUCHOS_FUNC_TIME_MONITOR("Stokhos::QuadExp -- PC Binary Polynomial Evaluation");
@@ -342,6 +378,10 @@ timesEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
     pc = sz;
   else
     pc = p*xp;
+  TEST_FOR_EXCEPTION(sz < pc, std::logic_error,
+		     "Stokhos::QuadOrthogPolyExpansion::timesEqual()" <<
+		     ":  Expansion size (" << sz << 
+		     ") is too small for computation.");
   if (c.size() != pc)
     c.resize(pc);
 
@@ -384,9 +424,15 @@ Stokhos::QuadOrthogPolyExpansion<ordinal_type, value_type>::
 divideEqual(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c, 
             const Stokhos::OrthogPolyApprox<ordinal_type, value_type >& x)
 {
-  //Stokhos::OrthogPolyApprox<ordinal_type, value_type> cc(c);
-  //divide(c,cc,x);
-  binary_op(div_quad_func(), c, c, x);
+  if (x.size() == 1) {
+    ordinal_type p = c.size();
+    value_type* cc = c.coeff();
+    const value_type* xc = x.coeff();
+    for (ordinal_type i=0; i<p; i++)
+      cc[i] /= xc[0];
+  }
+  else
+    binary_op(div_quad_func(), c, c, x);
 }
 
 template <typename ordinal_type, typename value_type>
@@ -546,6 +592,10 @@ times(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
     pc = sz;
   else
     pc = pa*pb;
+  TEST_FOR_EXCEPTION(sz < pc, std::logic_error,
+		     "Stokhos::QuadOrthogPolyExpansion::times()" <<
+		     ":  Expansion size (" << sz << 
+		     ") is too small for computation.");
   if (c.size() != pc)
     c.resize(pc);
 
@@ -623,7 +673,20 @@ divide(Stokhos::OrthogPolyApprox<ordinal_type, value_type>& c,
        const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& a, 
        const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& b)
 {
-  binary_op(div_quad_func(), c, a, b);
+  if (b.size() == 1) {
+    ordinal_type pc = a.size();
+    if (c.size() != pc)
+      c.resize(pc);
+
+    const value_type* ca = a.coeff();
+    const value_type* cb = b.coeff();
+    value_type* cc = c.coeff();
+
+    for (ordinal_type i=0; i<pc; i++)
+      cc[i] = ca[i]/cb[0];
+  }
+  else
+    binary_op(div_quad_func(), c, a, b);
 }
 
 template <typename ordinal_type, typename value_type>
