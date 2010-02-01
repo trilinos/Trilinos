@@ -27,7 +27,3 @@
       return
       end
 
-      subroutine flush(unit)
-      integer unit
-      return
-      end

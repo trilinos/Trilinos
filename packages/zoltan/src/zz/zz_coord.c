@@ -703,13 +703,14 @@ MPI_Comm local_comm;
     /* special case - eigenvectors are axis aligned */
 
     for (j=0; j<dim; j++){
-      min[j] = max[j] = coords[j];
+      min[j] = DBL_MAX;
+      max[j] = DBL_MIN;
     }
 
-    for (i=1, c = coords+dim; i<num_obj; i++, c += dim){
+    for (i=0, c = coords; i<num_obj; i++, c += dim){
       for (j=0; j<dim; j++){
         if (c[j] < min[j]) min[j] = c[j];
-        else if (c[j] > max[j]) max[j] = c[j];
+        if (c[j] > max[j]) max[j] = c[j];
       }
     }
 

@@ -60,19 +60,6 @@ integer, parameter :: stderr = 0, stdout = 6
 
 logical, parameter :: DEBUG = .false.
 
-! Not supporting SAFE_MALLOC, just use allocate where it occurs.
-
-!#define SAFE_MALLOC(v,type,size) \
-! {  v = (type) malloc(size) ; \
-!    if ( v == NULL) { \
-!       fflush(stdout); \
-!       fprintf(stderr,"in file %s, line %d, failed to allocate %ld bytes",\
-!               __FILE__,__LINE__,size); \
-!       MPI_Abort(MPI_COMM_WORLD,1); \
-!    } \
-! }
-
-
 !struct zoltanParams_list_entry {
 !  char *param;
 !  char *value;
@@ -112,13 +99,6 @@ integer :: comm
 
 contains
 
-! flush is not standard in Fortran 90, but many compilers support it.
-! Comment out the call to flush if it is not found.
-
-subroutine maybe_flush(unit)
-integer :: unit
-call flush(unit)
-end subroutine maybe_flush
 
 !static void check_level(int level) {
 !
@@ -180,12 +160,10 @@ subroutine ztnPrm_hier_set_num_levels(levels)
 
 !#ifdef DEBUG
 !  printf("(zoltanParams_hier_set_num_levels) setting to %d\n", levels);  
-!  fflush(stdout);
 !#endif
 
   if (DEBUG) then
     write(stdout,*) "(ztnPrm_hier_set_num_levels) setting to ",levels
-    call maybe_flush(stdout)
   endif
 
 !  if (zph) {
@@ -244,7 +222,7 @@ end subroutine ztnPrm_hier_set_num_levels
 !  MPI_Comm_rank(comm, &mypid);
 !
 !  printf("[%d] will compute partition %d at level %d\n", 
-!	 mypid, partition, level); fflush(stdout);
+!	 mypid, partition, level);
 !#endif
 !
 !  check_level(level);
@@ -260,7 +238,6 @@ integer :: mypid, ierr
     call MPI_Comm_rank(comm,mypid,ierr)
 
     write(stdout,*) "[",mypid,"] will compute partition ",partition," at level ",level
-    call maybe_flush(stdout)
   endif
 
   call check_level(level)
@@ -281,13 +258,12 @@ integer :: mypid, ierr, astat
 !  int mypid;
 !  MPI_Comm_rank(comm, &mypid);
 !  printf("[%d] will set param <%s> to <%s> at level %d\n", 
-!	 mypid, param, value, level); fflush(stdout);
+!	 mypid, param, value, level); 
 !#endif
 
   if (DEBUG) then
     call MPI_Comm_rank(comm,mypid,ierr)
     write(stdout,*) "[",mypid,"] will set param ",trim(param)," to ",trim(value)," at level ",level
-    call maybe_flush(stdout)
   endif
 
 !  check_level(level);
