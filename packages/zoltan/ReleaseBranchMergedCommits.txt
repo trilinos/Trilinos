@@ -1,3 +1,4 @@
+
 12/07/2009 KDD: Commits cherry-picked from the trilinos-release-10-0-branch to the master.  
 
 1384644523c7a78c241ccf06f8072f919f4004c4 - K Devine, Thu Dec 3 12:46:52 2009 -0700 : Fixed help comment for exodus/nemesis
@@ -124,4 +125,10 @@ c21b84c5bb26dd03389868727772529c2a11c7d3 - K Devine, Thu Dec 10 13:10:40 2009 -0
 h files.
 
 519a66c536d0171471536d2d2f4183eb165327d0 - K Devine, Fri Dec 11 12:53:52 2009 -0700 : My notes on using git
+
+
+2/1/2010
+
+5bbf429e3a4cf9d2b7e56fe91d5f254a7bab78fe
+fa6ad422837f77fd9c9136f2981242b0c69a2fd7
 
