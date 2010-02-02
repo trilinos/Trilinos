@@ -949,6 +949,8 @@ namespace Tpetra {
     // this is called by numerous state-changing methods, in a debug build, to ensure that the object 
     // always remains in a valid state
 
+    // if fill is complete, then sameScalarMultiplyOp_ should exist
+    TEST_FOR_EXCEPTION( fillComplete_ == true && sameScalarMultiplyOp_ == Teuchos::null,               std::logic_error, err );
     // constructedWithFilledGraph_ should only be true if matrix was constructed with a graph, in which case staticGraph_ should be true
     TEST_FOR_EXCEPTION( staticGraph_ == false && constructedWithFilledGraph_ == true,                  std::logic_error, err ); 
     // matrix values cannot be allocated without the graph indices being allocated
