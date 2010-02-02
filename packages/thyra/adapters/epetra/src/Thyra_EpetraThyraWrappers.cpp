@@ -631,30 +631,29 @@ Thyra::get_Epetra_MultiVector(
   MultiVectorBase<double> &mv
   )
 {
-  using Teuchos::rcp;
-  double *mvData = 0;
+  using Teuchos::rcpWithEmbeddedObj;
+  using Teuchos::rcpFromRef;
+  using Teuchos::outArg;
+  ArrayRCP<double> mvData;
   Index mvLeadingDim = -1;
   SpmdMultiVectorBase<double> *mvSpmdMv = 0;
   SpmdVectorBase<double> *mvSpmdV = 0;
   if ((mvSpmdMv = dynamic_cast<SpmdMultiVectorBase<double>*>(&mv))) {
-    mvSpmdMv->getLocalData(&mvData,&mvLeadingDim);
+    mvSpmdMv->getNonconstLocalData(outArg(mvData), outArg(mvLeadingDim));
   }
   else if ((mvSpmdV = dynamic_cast<SpmdVectorBase<double>*>(&mv))) {
-    Index mvStride = -1;
-    mvSpmdV->getLocalData(&mvData,&mvStride);
-#ifdef TEUCHOS_DEBUG
-    TEUCHOS_ASSERT_EQUALITY(mvStride,1);
-#endif
+    mvSpmdV->getNonconstLocalData(outArg(mvData));
     mvLeadingDim = mvSpmdV->spmdSpace()->localSubDim();
   }
-  if (mvData) {
-    rcp(
+  if (nonnull(mvData)) {
+    return rcpWithEmbeddedObj(
       new Epetra_MultiVector(
-        ::View, map, mvData, mvLeadingDim, mv.domain()->dim()
-        )
+        ::View, map, mvData.getRawPtr(), mvLeadingDim, mv.domain()->dim()
+        ),
+      mvData
       );
   }
-  return ::Thyra::get_Epetra_MultiVector(map,rcp(&mv,false));
+  return ::Thyra::get_Epetra_MultiVector(map, rcpFromRef(mv));
 }
 
 
@@ -664,28 +663,27 @@ Thyra::get_Epetra_MultiVector(
   const MultiVectorBase<double> &mv
   )
 {
-  using Teuchos::rcp;
-  const double *mvData = 0;
+  using Teuchos::rcpWithEmbeddedObj;
+  using Teuchos::rcpFromRef;
+  using Teuchos::outArg;
+  ArrayRCP<const double> mvData;
   Index mvLeadingDim = -1;
   const SpmdMultiVectorBase<double> *mvSpmdMv = 0;
   const SpmdVectorBase<double> *mvSpmdV = 0;
   if ((mvSpmdMv = dynamic_cast<const SpmdMultiVectorBase<double>*>(&mv))) {
-    mvSpmdMv->getLocalData(&mvData,&mvLeadingDim);
+    mvSpmdMv->getLocalData(outArg(mvData), outArg(mvLeadingDim));
   }
   else if ((mvSpmdV = dynamic_cast<const SpmdVectorBase<double>*>(&mv))) {
-    Index mvStride = -1;
-    mvSpmdV->getLocalData(&mvData,&mvStride);
-#ifdef TEUCHOS_DEBUG
-    TEUCHOS_ASSERT_EQUALITY(mvStride,1);
-#endif
+    mvSpmdV->getLocalData(outArg(mvData));
     mvLeadingDim = mvSpmdV->spmdSpace()->localSubDim();
   }
-  if (mvData) {
-    rcp(
+  if (nonnull(mvData)) {
+    return rcpWithEmbeddedObj(
       new Epetra_MultiVector(
-        ::View,map, const_cast<double*>(mvData), mvLeadingDim, mv.domain()->dim()
-        )
+        ::View,map, const_cast<double*>(mvData.getRawPtr()), mvLeadingDim, mv.domain()->dim()
+        ),
+      mvData
       );
   }
-  return ::Thyra::get_Epetra_MultiVector(map,rcp(&mv,false));
+  return ::Thyra::get_Epetra_MultiVector(map, rcpFromRef(mv));
 }

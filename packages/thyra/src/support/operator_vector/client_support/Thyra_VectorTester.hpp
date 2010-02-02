@@ -133,7 +133,7 @@ bool VectorTester<Scalar>::check(
   // ToDo: Test the rest of the specific VectorBase interface on v1
 
   if(out.get()) *out <<endl<< "C) Checking the MultiVectorBase interface of v ...\n";
-  result = multiVectorTester_.check(v,out.get());
+  result = multiVectorTester_.check(v, out.ptr());
   if(!result) success = false;
 
   if(out.get()) *out <<endl<< "*** Leaving Thyra::VectorTester<"<<ST::name()<<">::check(v,...) ...\n";

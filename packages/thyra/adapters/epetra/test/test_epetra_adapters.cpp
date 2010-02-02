@@ -111,6 +111,8 @@ int main( int argc, char* argv[] )
   using Teuchos::dyn_cast;
   using Teuchos::CommandLineProcessor;
   using Teuchos::RCP;
+  using Teuchos::Array;
+  using Teuchos::arcpFromArray;
   using Teuchos::rcp;
   using Teuchos::rcp_static_cast;
   using Teuchos::rcp_const_cast;
@@ -700,8 +702,9 @@ int main( int argc, char* argv[] )
       const std::string s_n = "fabs(scalar)*num_mv_cols";
       const Scalar s = fabs(scalar)*num_mv_cols;
 
-      std::vector<Scalar>  t_raw_values( num_mv_cols );
-      RTOpPack::SubVectorView<Scalar> t_raw( 0, num_mv_cols, &t_raw_values[0], 1 );
+      Array<Scalar> t_raw_values( num_mv_cols );
+      RTOpPack::SubVectorView<Scalar> t_raw( 0, num_mv_cols,
+        arcpFromArray(t_raw_values), 1 );
 
       std::fill_n( t_raw_values.begin(), t_raw_values.size(), ST::zero() );
       Thyra::assign( &*createMemberView(T->range(),t_raw), scalar );
@@ -721,8 +724,9 @@ int main( int argc, char* argv[] )
 #endif
 */
 
-      std::vector<Scalar>  T_raw_values( num_mv_cols * num_mv_cols );
-      RTOpPack::SubMultiVectorView<Scalar> T_raw( 0, num_mv_cols, 0, num_mv_cols, &T_raw_values[0], num_mv_cols );
+      Array<Scalar> T_raw_values( num_mv_cols * num_mv_cols );
+      RTOpPack::SubMultiVectorView<Scalar> T_raw( 0, num_mv_cols, 0, num_mv_cols,
+        arcpFromArray(T_raw_values), num_mv_cols );
 
       std::fill_n( T_raw_values.begin(), T_raw_values.size(), ST::zero() );
       Thyra::assign( &*createMembersView(T->range(),T_raw), scalar );

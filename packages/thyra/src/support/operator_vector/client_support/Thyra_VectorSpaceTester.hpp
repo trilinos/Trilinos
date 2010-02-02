@@ -114,7 +114,7 @@ bool VectorSpaceTester<Scalar>::check(
 
   if(out.get()) *out <<endl<< "D) Testing the MultiVectorBase interface of mv ...\n";
 
-  result = vectorTester_.multiVectorTester().check(*mv,out.get());
+  result = vectorTester_.multiVectorTester().check(*mv, out.ptr());
   if(!result) success = false;
 
   if(out.get()) {

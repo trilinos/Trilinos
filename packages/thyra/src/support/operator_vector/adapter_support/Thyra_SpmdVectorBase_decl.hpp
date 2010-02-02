@@ -205,13 +205,13 @@ public:
   //@{
 
   /** \brief Deprecated. */
-  void getLocalData( Scalar** localValues, Index* stride );
+  THYRA_DEPRECATED void getLocalData( Scalar** localValues, Index* stride );
   /** \brief Deprecated. */
-  void commitLocalData( Scalar* localValues );
+  THYRA_DEPRECATED void commitLocalData( Scalar* localValues );
   /** \brief Deprecated. */
-  void getLocalData( const Scalar** localValues, Index* stride ) const;
+  THYRA_DEPRECATED void getLocalData( const Scalar** localValues, Index* stride ) const;
   /** \brief Deprecated. */
-  void freeLocalData( const Scalar* localValues ) const;
+  THYRA_DEPRECATED void freeLocalData( const Scalar* localValues ) const;
 
   //@}
 

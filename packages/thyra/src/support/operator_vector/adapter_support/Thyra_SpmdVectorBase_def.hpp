@@ -66,16 +66,12 @@ template<class Scalar>
 RTOpPack::SubVectorView<Scalar>
 SpmdVectorBase<Scalar>::getNonconstLocalSubVector()
 {
-  Scalar *localValues = 0;
-  Index stride = 0;
-  this->getLocalData(&localValues, &stride);
-#ifdef TEUCHOS_DEBUG
-  TEUCHOS_ASSERT_EQUALITY(stride, 1);
-#endif
+  ArrayRCP<Scalar> localValues;
+  this->getNonconstLocalData(Teuchos::outArg(localValues));
   return RTOpPack::SubVectorView<Scalar>(
     localOffset_,
     localSubDim_,
-    Teuchos::arcp(localValues, 0, localSubDim_, false),
+    localValues,
     1 // stride
     );
   // ToDo: Refactor to call this function directly!
@@ -86,16 +82,12 @@ template<class Scalar>
 RTOpPack::ConstSubVectorView<Scalar>
 SpmdVectorBase<Scalar>::getLocalSubVector() const
 {
-  const Scalar *localValues = 0;
-  Index stride = 0;
-  this->getLocalData(&localValues, &stride);
-#ifdef TEUCHOS_DEBUG
-  TEUCHOS_ASSERT_EQUALITY(stride, 1);
-#endif
+  ArrayRCP<const Scalar> localValues;
+  this->getLocalData(Teuchos::outArg(localValues));
   return RTOpPack::ConstSubVectorView<Scalar>(
     localOffset_, // globalOffset?
     localSubDim_,
-    Teuchos::arcp(localValues, 0, localSubDim_, false),
+    localValues,
     1 // stride
     );
   // ToDo: Refactor to call this function directly!
@@ -349,14 +341,12 @@ void SpmdVectorBase<Scalar>::acquireDetachedVectorViewImpl(
   const Range1D& rng_in, RTOpPack::ConstSubVectorView<Scalar>* sub_vec
   ) const
 {
+#ifdef THYRA_DEBUG
+  TEUCHOS_ASSERT(sub_vec);
+#endif
   if( rng_in == Range1D::Invalid ) {
     // Just return an null view
-    sub_vec->initialize(
-      rng_in.lbound(), // globalOffset
-      0, // subDim
-      Teuchos::null, // values
-      1 // stride
-      );
+    *sub_vec = RTOpPack::ConstSubVectorView<Scalar>();
     return;
   }
   const Range1D rng = validateRange(rng_in);
@@ -371,14 +361,13 @@ void SpmdVectorBase<Scalar>::acquireDetachedVectorViewImpl(
     return;
   }
   // rng consists of all local data so get it!
-  const Scalar *localValues = NULL;
-  Index stride = 0;
-  this->getLocalData(&localValues, &stride);
+  ArrayRCP<const Scalar>localValues;
+  this->getLocalData(Teuchos::outArg(localValues));
   sub_vec->initialize(
-    rng.lbound()                               // globalOffset
-    ,rng.size()                                // subDim
-    ,localValues+(rng.lbound()-localOffset_)   // values
-    ,stride                                    // stride
+    rng.lbound(),  // globalOffset
+    rng.size(),  // subDim
+    localValues.persistingView(rng.lbound()-localOffset_, rng.size()),
+    1  // stride
     );
 }
 
@@ -414,14 +403,12 @@ void SpmdVectorBase<Scalar>::acquireNonconstDetachedVectorViewImpl(
   const Range1D& rng_in, RTOpPack::SubVectorView<Scalar>* sub_vec
   )
 {
+#ifdef THYRA_DEBUG
+  TEUCHOS_ASSERT(sub_vec);
+#endif
   if( rng_in == Range1D::Invalid ) {
     // Just return an null view
-    sub_vec->initialize(
-      rng_in.lbound()    // globalOffset
-      ,0                 // subDim
-      ,0                 // values
-      ,1                 // stride
-      );
+    *sub_vec = RTOpPack::SubVectorView<Scalar>();
     return;
   }
   const Range1D rng = validateRange(rng_in);
@@ -436,14 +423,13 @@ void SpmdVectorBase<Scalar>::acquireNonconstDetachedVectorViewImpl(
     return;
   }
   // rng consists of all local data so get it!
-  Scalar *localValues = NULL;
-  Index stride = 0;
-  this->getLocalData(&localValues,&stride);
+  ArrayRCP<Scalar> localValues;
+  this->getNonconstLocalData(Teuchos::outArg(localValues));
   sub_vec->initialize(
-    rng.lbound()                               // globalOffset
-    ,rng.size()                                // subDim
-    ,localValues+(rng.lbound()-localOffset_)   // values
-    ,stride                                    // stride
+    rng.lbound(),  // globalOffset
+    rng.size(),  // subDim
+    localValues.persistingView(rng.lbound()-localOffset_, rng.size()),
+    1  // stride
     );
 }
 
