@@ -47,8 +47,7 @@
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_Util.hpp"
 
-namespace Tpetra 
-{
+namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration

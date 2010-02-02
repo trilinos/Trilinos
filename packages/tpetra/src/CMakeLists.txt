@@ -30,6 +30,7 @@ APPEND_SET(HEADERS
   Tpetra_ConfigDefs.hpp
   Tpetra_CrsGraph.hpp
   Tpetra_CrsMatrix.hpp
+  Tpetra_CrsMatrixMultiplyOp.hpp
   Tpetra_CrsMatrixSolveOp.hpp
   Tpetra_DefaultPlatform.hpp
   Tpetra_Directory.hpp

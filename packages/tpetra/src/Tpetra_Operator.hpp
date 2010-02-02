@@ -61,11 +61,10 @@ namespace Tpetra {
     virtual const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const = 0;
 
     //! \brief Computes the operator-multivector application.
-    /*! Loosely, performs \f$Y = \alpha A^{\textrm{mode}} X + \beta Y\f$. However, the details of operation
+    /*! Loosely, performs \f$Y = \alpha \cdot A^{\textrm{mode}} \cdot X + \beta \cdot Y\f$. However, the details of operation
         vary according to the values of \c alpha and \c beta. Specifically
-        - if <tt>beta = 0</tt>, apply() is required to overwrite \c Y, so that any values in \c Y (including NaNs) are ignored.
-        - if <tt>alpha = 0</tt>, apply() may short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
-        The behavior of the call varies according to the  \f$A X\f$ into \c Y, overwriting the previous contents of \c Y.
+        - if <tt>beta == 0</tt>, apply() <b>must</b> overwrite \c Y, so that any values in \c Y (including NaNs) are ignored.
+        - if <tt>alpha == 0</tt>, apply() <b>may</b> short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
      */
     virtual void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
                MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 

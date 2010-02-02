@@ -14,6 +14,7 @@
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_CrsMatrixSolveOp.hpp"
+#include "Tpetra_CrsMatrixMultiplyOp.hpp"
 
 #include "Kokkos_SerialNode.hpp"
 #ifdef HAVE_KOKKOS_TBB
@@ -97,6 +98,7 @@ namespace {
   using Tpetra::Import;
   using Tpetra::global_size_t;
   using Tpetra::createCrsMatrixSolveOp;
+  using Tpetra::createCrsMatrixMultiplyOp;
   using Tpetra::DefaultPlatform;
   using Tpetra::ProfileType;
   using Tpetra::StaticProfile;
@@ -1296,8 +1298,93 @@ namespace {
   }
 
 
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, AlphaBetaMultiply, LO, GO, Scalar, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef  Operator<Scalar,LO,GO,Node> OP;
+    typedef ScalarTraits<Scalar> ST;
+    typedef MultiVector<Scalar,LO,GO,Node> MV;
+    typedef typename ST::magnitudeType Mag;
+    typedef ScalarTraits<Mag> MT;
+    const size_t THREE = 3;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const size_t myImageID = comm->getRank();
+    // create a Map
+    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,THREE,0,comm,node) );
+
+    /* Create the identity matrix, three rows per proc */
+    RCP<OP> AOp;
+    {
+      RCP<MAT> A = rcp(new MAT(map,1));
+      A->insertGlobalValues(3*myImageID,  tuple<GO>(3*myImageID  ), tuple<Scalar>(ST::one()) );
+      A->insertGlobalValues(3*myImageID+1,tuple<GO>(3*myImageID+1), tuple<Scalar>(ST::one()) );
+      A->insertGlobalValues(3*myImageID+2,tuple<GO>(3*myImageID+2), tuple<Scalar>(ST::one()) );
+      A->fillComplete(DoOptimizeStorage);
+      AOp = A;
+    }
+    MV X(map,1), Y(map,1), Z(map,1);
+    const Scalar alpha = ST::random(),
+                  beta = ST::random();
+    X.randomize();
+    Y.randomize();
+    // Z = alpha*X + beta*Y
+    Z.update(alpha,X,beta,Y,ST::zero());
+    // test the action: Y = alpha*I*X + beta*Y = alpha*X + beta*Y = Z
+    AOp->apply(X,Y,NO_TRANS,alpha,beta);
+    // Z -= Y  -> zero
+    Z.update(-ST::one(),Y,ST::one());
+    Array<Mag> norms(1), zeros(1,MT::zero());
+    Z.norm2(norms());
+    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+  }
 
 
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, MultiplyOp, LO, GO, Scalar, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef CrsMatrix<int,LO,GO,Node> IntMAT;
+    typedef  Operator<Scalar,LO,GO,Node> OP;
+    typedef ScalarTraits<Scalar> ST;
+    typedef MultiVector<Scalar,LO,GO,Node> MV;
+    typedef typename ST::magnitudeType Mag;
+    typedef ScalarTraits<Mag> MT;
+    const size_t THREE = 3;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const size_t myImageID = comm->getRank();
+    // create a Map
+    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,THREE,0,comm,node) );
+
+    /* Create the integer identity matrix, three rows per proc, wrapped in a Op<Scalar>  */
+    RCP<OP> AOp;
+    {
+      RCP<IntMAT> A = rcp(new IntMAT(map,1));
+      A->insertGlobalValues(3*myImageID,  tuple<GO>(3*myImageID  ), tuple<int>(1) );
+      A->insertGlobalValues(3*myImageID+1,tuple<GO>(3*myImageID+1), tuple<int>(1) );
+      A->insertGlobalValues(3*myImageID+2,tuple<GO>(3*myImageID+2), tuple<int>(1) );
+      A->fillComplete(DoOptimizeStorage);
+      AOp = createCrsMatrixMultiplyOp<Scalar>(A.getConst());
+    }
+    MV X(map,1), Y(map,1), Z(map,1);
+    X.randomize();
+    Y.randomize();
+    // Z = X + Y
+    Z.update(ST::one(),X,ST::one(),Y,ST::zero());
+    // test the action: Y = I*X + Y = X + Y == Z
+    AOp->apply(X,Y,NO_TRANS,ST::one(),ST::one());
+    // Z -= Y  -> zero
+    Z.update(-ST::one(),Y,ST::one());
+    Array<Mag> norms(1), zeros(1,MT::zero());
+    Z.norm2(norms());
+    TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,MT::zero());
+  }
 
 
   ////
@@ -1408,6 +1495,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, MultipleFillCompletes, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, CopiesAndViews, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TriSolve, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, AlphaBetaMultiply, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, MultiplyOp, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, EmptyTriSolve, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Typedefs,      LO, GO, SCALAR, NODE )
 

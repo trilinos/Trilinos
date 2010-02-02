@@ -103,12 +103,12 @@ namespace Kokkos {
 
     //! Applies the matrix to a MultiVector, overwriting Y.
     template <class DomainScalar, class RangeScalar>
-    void multiply(Teuchos::ETransp trans, const MultiVector<DomainScalar,Node> &X, MultiVector<RangeScalar,Node> &Y) const;
+    void multiply(Teuchos::ETransp trans, RangeScalar alpha, const MultiVector<DomainScalar,Node> &X, MultiVector<RangeScalar,Node> &Y) const;
 
     //! Applies the matrix to a MultiVector, accumulating into Y.
     template <class DomainScalar, class RangeScalar>
     void multiply(Teuchos::ETransp trans, 
-                  Scalar alpha, const MultiVector<DomainScalar,Node> &X, Scalar beta, MultiVector<RangeScalar,Node> &Y) const;
+                  RangeScalar alpha, const MultiVector<DomainScalar,Node> &X, RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const;
 
     //@}
 
@@ -263,12 +263,14 @@ namespace Kokkos {
   template <class DomainScalar, class RangeScalar>
   void DefaultSparseMultiply<Scalar,Ordinal,Node>::multiply(
                                 Teuchos::ETransp trans, 
+                                RangeScalar alpha,
                                 const MultiVector<DomainScalar,Node> &X, 
                                 MultiVector<RangeScalar,Node> &Y) const {
-    typedef DefaultSimpleSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1D;
-    typedef DefaultSimpleSparseMultiplyOp2<Scalar,Ordinal,DomainScalar,RangeScalar>  Op2D;
-    typedef DefaultSimpleSparseTransposeMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar> TOp1D;
-    typedef DefaultSimpleSparseTransposeMultiplyOp2<Scalar,Ordinal,DomainScalar,RangeScalar> TOp2D;
+    // the 1 parameter to the template means that beta is ignored and the output multivector enjoys overwrite semantics
+    typedef DefaultSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar, 1>  Op1D;
+    typedef DefaultSparseMultiplyOp2<Scalar,Ordinal,DomainScalar,RangeScalar, 1>  Op2D;
+    typedef DefaultSparseTransposeMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar, 1> TOp1D;
+    typedef DefaultSparseTransposeMultiplyOp2<Scalar,Ordinal,DomainScalar,RangeScalar, 1> TOp2D;
     TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::multiply(): operation not fully initialized.");
     TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
@@ -282,6 +284,8 @@ namespace Kokkos {
       if (trans == Teuchos::NO_TRANS) {
         Op1D wdp;
         rbh.begin();
+        wdp.alpha   = alpha;
+        wdp.beta    = Teuchos::ScalarTraits<RangeScalar>::zero(); // not used
         wdp.numRows = numRows_;
         wdp.offsets = rbh.template addConstBuffer<size_t>(pbuf_offsets1D_);
         wdp.inds    = rbh.template addConstBuffer<Ordinal>(pbuf_inds1D_);
@@ -297,6 +301,8 @@ namespace Kokkos {
       else {
         TOp1D wdp;
         rbh.begin();
+        wdp.alpha   = alpha;
+        wdp.beta    = Teuchos::ScalarTraits<RangeScalar>::zero(); // not used
         wdp.numRows = numRows_;
         wdp.numCols = Y.getNumRows();
         wdp.offsets = rbh.template addConstBuffer<size_t>(pbuf_offsets1D_);
@@ -315,6 +321,8 @@ namespace Kokkos {
       if (trans == Teuchos::NO_TRANS) {
         Op2D wdp;
         rbh.begin();
+        wdp.alpha   = alpha;
+        wdp.beta    = Teuchos::ScalarTraits<RangeScalar>::zero(); // not used
         wdp.numRows = numRows_;
         wdp.numEntries = rbh.template addConstBuffer<size_t>(pbuf_numEntries_);
         wdp.inds_beg   = rbh.template addConstBuffer<const Ordinal *>(pbuf_inds2D_);
@@ -330,6 +338,8 @@ namespace Kokkos {
       else {
         TOp2D wdp;
         rbh.begin();
+        wdp.alpha   = alpha;
+        wdp.beta    = Teuchos::ScalarTraits<RangeScalar>::zero(); // not used
         wdp.numRows = numRows_;
         wdp.numCols = Y.getNumRows();
         wdp.numEntries = rbh.template addConstBuffer<size_t>(pbuf_numEntries_);
@@ -352,12 +362,13 @@ namespace Kokkos {
   template <class DomainScalar, class RangeScalar>
   void DefaultSparseMultiply<Scalar,Ordinal,Node>::multiply(
                                 Teuchos::ETransp trans, 
-                                Scalar alpha, const MultiVector<DomainScalar,Node> &X, 
-                                Scalar beta, MultiVector<RangeScalar,Node> &Y) const {
-    typedef DefaultSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1D;
-    typedef DefaultSparseMultiplyOp2<Scalar,Ordinal,DomainScalar,RangeScalar>  Op2D;
-    typedef DefaultSparseTransposeMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar> TOp1D;
-    typedef DefaultSparseTransposeMultiplyOp2<Scalar,Ordinal,DomainScalar,RangeScalar> TOp2D;
+                                RangeScalar alpha, const MultiVector<DomainScalar,Node> &X, 
+                                RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const {
+    // the 0 parameter means that beta is considered, and the output multivector enjoys accumulate semantics
+    typedef DefaultSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar, 0>  Op1D;
+    typedef DefaultSparseMultiplyOp2<Scalar,Ordinal,DomainScalar,RangeScalar, 0>  Op2D;
+    typedef DefaultSparseTransposeMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar, 0> TOp1D;
+    typedef DefaultSparseTransposeMultiplyOp2<Scalar,Ordinal,DomainScalar,RangeScalar, 0> TOp2D;
     TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::multiply(): operation not fully initialized.");
     TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
