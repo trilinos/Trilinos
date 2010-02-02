@@ -1,4 +1,5 @@
 #include "Teko_EpetraBlockPreconditioner.hpp"
+#include "Teko_Preconditioner.hpp"
 
 // Thyra includes
 #include "Thyra_DefaultLinearOpSource.hpp"
@@ -229,7 +230,7 @@ void EpetraBlockPreconditioner::rebuildPreconditioner(const Epetra_Operator & A,
    TEUCHOS_ASSERT(firstBuildComplete_==true);
 }
 
-/** Try to get a <code>Teko::BlockPreconditionerState</code> object. This method
+/** Try to get a <code>Teko::PreconditionerState</code> object. This method
   * attempts to cast its internal representation of a preconditioner 
   * object to a <code>Teko::BlockPreconditioner</code> object.  If it suceeds a 
   * state object is returned.  Otherwise, <code>Teuchos::null</code> is returned.
@@ -238,9 +239,9 @@ void EpetraBlockPreconditioner::rebuildPreconditioner(const Epetra_Operator & A,
   *          If it doesn't exist for this type of preconditioner factory
   *          this method returns null.
   */
-Teuchos::RCP<BlockPreconditionerState> EpetraBlockPreconditioner::getPreconditionerState()
+Teuchos::RCP<PreconditionerState> EpetraBlockPreconditioner::getPreconditionerState()
 {
-   Teuchos::RCP<BlockPreconditioner> bp = rcp_dynamic_cast<BlockPreconditioner>(preconObj_);
+   Teuchos::RCP<Preconditioner> bp = rcp_dynamic_cast<Preconditioner>(preconObj_);
 
    if(bp!=Teuchos::null)
       return bp->getStateObject();
@@ -248,18 +249,18 @@ Teuchos::RCP<BlockPreconditionerState> EpetraBlockPreconditioner::getPreconditio
    return Teuchos::null;
 }
 
-/** Try to get a <code>Teko::BlockPreconditionerState</code> object. This method
+/** Try to get a <code>Teko::PreconditionerState</code> object. This method
   * attempts to cast its internal representation of a preconditioner 
-  * object to a <code>Teko::BlockPreconditioner</code> object.  If it suceeds a 
+  * object to a <code>Teko::Preconditioner</code> object.  If it suceeds a 
   * state object is returned.  Otherwise, <code>Teuchos::null</code> is returned.
   *
   * \returns Get the state object associated with this preconditioner.
   *          If it doesn't exist for this type of preconditioner factory
   *          this method returns null.
   */
-Teuchos::RCP<const BlockPreconditionerState> EpetraBlockPreconditioner::getPreconditionerState() const
+Teuchos::RCP<const PreconditionerState> EpetraBlockPreconditioner::getPreconditionerState() const
 {
-   Teuchos::RCP<const BlockPreconditioner> bp = rcp_dynamic_cast<const BlockPreconditioner>(preconObj_);
+   Teuchos::RCP<const Preconditioner> bp = rcp_dynamic_cast<const Preconditioner>(preconObj_);
 
    if(bp!=Teuchos::null)
       return bp->getStateObject();

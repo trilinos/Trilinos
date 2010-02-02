@@ -113,7 +113,7 @@ bool tLSCHIntegrationTest::test_hScaling(int verbosity,std::ostream & os)
    strategy->setUseFullLDU(false);
 
    RCP<Teko::BlockPreconditionerFactory> precFact = rcp(new Teko::NS::LSCPreconditionerFactory(strategy));
-   RCP<Teko::BlockPreconditionerState> bps = precFact->buildPreconditionerState();
+   RCP<Teko::BlockPreconditionerState> bps = Teuchos::rcp_dynamic_cast<Teko::BlockPreconditionerState>(precFact->buildPreconditionerState());
    Teko::LinearOp prec = precFact->buildPreconditionerOperator(A,*bps);
 
    Teko::BlockedLinearOp bA = Teko::toBlockedLinearOp(A);

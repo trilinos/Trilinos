@@ -302,7 +302,7 @@ bool tLSCIntegrationTest::test_plConstruction(int verbosity,std::ostream & os)
 
    using Teuchos::ParameterList;
 
-   RCP<Teko::BlockPreconditionerFactory> precFact;
+   RCP<Teko::PreconditionerFactory> precFact;
    RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos();
 
    /////////////////////////////////////////////////////////////////////////////
@@ -314,7 +314,7 @@ bool tLSCIntegrationTest::test_plConstruction(int verbosity,std::ostream & os)
    pl.set("Ignore Boundary Rows",true);
    pl.set("Use LDU",true);
 
-   precFact = Teko::BlockPreconditionerFactory::buildPreconditionerFactory("NS LSC", pl, invLib);
+   precFact = Teko::PreconditionerFactory::buildPreconditionerFactory("NS LSC", pl, invLib);
 
    TEST_ASSERT(precFact!=Teuchos::null,
          std::endl << "   tLSCIntegrationTest::test_plConstruction " << toString(status)
@@ -326,7 +326,7 @@ bool tLSCIntegrationTest::test_plConstruction(int verbosity,std::ostream & os)
    parPl.set("Strategy Name","Basic Inverse");
    parPl.set("Strategy Settings",pl);
 
-   precFact = Teko::BlockPreconditionerFactory::buildPreconditionerFactory("NS LSC", parPl, invLib);
+   precFact = Teko::PreconditionerFactory::buildPreconditionerFactory("NS LSC", parPl, invLib);
 
    TEST_ASSERT(precFact!=Teuchos::null,
          std::endl << "   tLSCIntegrationTest::test_plConstruction " << toString(status)
@@ -336,7 +336,7 @@ bool tLSCIntegrationTest::test_plConstruction(int verbosity,std::ostream & os)
 
    try {
       parPl.set("Strategy Name","The Cat");
-      precFact = Teko::BlockPreconditionerFactory::buildPreconditionerFactory("NS LSC", parPl, invLib);
+      precFact = Teko::PreconditionerFactory::buildPreconditionerFactory("NS LSC", parPl, invLib);
 
       TEST_ASSERT(false,
          std::endl << "   tLSCIntegrationTest::test_plConstruction " << toString(status)
@@ -348,7 +348,7 @@ bool tLSCIntegrationTest::test_plConstruction(int verbosity,std::ostream & os)
 
    try {
       pl.set("Strategy Name","The Cat");
-      precFact = Teko::BlockPreconditionerFactory::buildPreconditionerFactory("NS LSC", pl, invLib);
+      precFact = Teko::PreconditionerFactory::buildPreconditionerFactory("NS LSC", pl, invLib);
 
       TEST_ASSERT(false,
             std::endl << "   tLSCIntegrationTest::test_plConstruction " << toString(status)

@@ -100,7 +100,7 @@ public:
      */
    virtual void rebuildPreconditioner(const Epetra_Operator & A,const Epetra_MultiVector & mv);
 
-   /** Try to get a <code>Teko::BlockPreconditionerState</code> object. This method
+   /** Try to get a <code>Teko::PreconditionerState</code> object. This method
      * attempts to cast its internal representation of a preconditioner 
      * object to a <code>Teko::BlockPreconditioner</code> object.  If it suceeds a 
      * state object is returned.  Otherwise, <code>Teuchos::null</code> is returned.
@@ -109,9 +109,9 @@ public:
      *          If it doesn't exist for this type of preconditioner factory
      *          this method returns null.
      */
-   virtual Teuchos::RCP<BlockPreconditionerState> getPreconditionerState();
+   virtual Teuchos::RCP<PreconditionerState> getPreconditionerState();
 
-   /** Try to get a <code>Teko::BlockPreconditionerState</code> object. This method
+   /** Try to get a <code>Teko::PreconditionerState</code> object. This method
      * attempts to cast its internal representation of a preconditioner 
      * object to a <code>Teko::BlockPreconditioner</code> object.  If it suceeds a 
      * state object is returned.  Otherwise, <code>Teuchos::null</code> is returned.
@@ -120,7 +120,7 @@ public:
      *          If it doesn't exist for this type of preconditioner factory
      *          this method returns null.
      */
-   virtual Teuchos::RCP<const BlockPreconditionerState> getPreconditionerState() const;
+   virtual Teuchos::RCP<const PreconditionerState> getPreconditionerState() const;
 
 protected:
    Teuchos::RCP<const Thyra::LinearOpBase<double> > extractLinearOp(const Epetra_Operator & A) const;

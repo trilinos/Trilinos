@@ -14,11 +14,11 @@ AddPreconditionerFactory::AddPreconditionerFactory()
 {}
 
 //! Build the AddPrecondState object
-RCP<BlockPreconditionerState> AddPreconditionerFactory::buildPreconditionerState() const
+RCP<PreconditionerState> AddPreconditionerFactory::buildPreconditionerState() const
 { 
    AddPrecondState*   mystate = new AddPrecondState(); 
-   mystate->StateOne_ = FirstFactory_->buildPreconditionerState();
-   mystate->StateTwo_ = SecondFactory_->buildPreconditionerState();
+   mystate->StateOne_ = Teuchos::rcp_dynamic_cast<BlockPreconditionerState>(FirstFactory_->buildPreconditionerState());
+   mystate->StateTwo_ = Teuchos::rcp_dynamic_cast<BlockPreconditionerState>(SecondFactory_->buildPreconditionerState());
    return rcp(mystate);
 }
 
@@ -61,17 +61,17 @@ void AddPreconditionerFactory::initializeFromParameterList(const Teuchos::Parame
 
    // build preconditioner from the parameters
    std::string aType = aSettings->get<std::string>("Preconditioner Type");
-   RCP<Teko::BlockPreconditionerFactory> precA
-         = Teko::BlockPreconditionerFactory::buildPreconditionerFactory(aType,aSettings->sublist("Preconditioner Settings"),invLib);
+   RCP<Teko::PreconditionerFactory> precA
+         = Teko::PreconditionerFactory::buildPreconditionerFactory(aType,aSettings->sublist("Preconditioner Settings"),invLib);
 
    // build preconditioner from the parameters
    std::string bType = bSettings->get<std::string>("Preconditioner Type");
-   RCP<Teko::BlockPreconditionerFactory> precB
-         = Teko::BlockPreconditionerFactory::buildPreconditionerFactory(bType,bSettings->sublist("Preconditioner Settings"),invLib);
+   RCP<Teko::PreconditionerFactory> precB
+         = Teko::PreconditionerFactory::buildPreconditionerFactory(bType,bSettings->sublist("Preconditioner Settings"),invLib);
 
    // set precondtioners
-   FirstFactory_ = precA;
-   SecondFactory_ = precB;
+   FirstFactory_ = Teuchos::rcp_dynamic_cast<const Teko::BlockPreconditionerFactory>(precA);
+   SecondFactory_ = Teuchos::rcp_dynamic_cast<const Teko::BlockPreconditionerFactory>(precB);
 }
 
 } // end namespace Teko

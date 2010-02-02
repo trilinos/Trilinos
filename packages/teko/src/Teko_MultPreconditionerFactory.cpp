@@ -35,11 +35,11 @@ MultPreconditionerFactory::MultPreconditionerFactory()
 { }
 
 //! Build the MultPrecondState object
-RCP<Teko::BlockPreconditionerState> MultPreconditionerFactory::buildPreconditionerState() const
+RCP<Teko::PreconditionerState> MultPreconditionerFactory::buildPreconditionerState() const
 { 
    MultPrecondState*   mystate = new MultPrecondState(); 
-   mystate->StateOne_ = FirstFactory_->buildPreconditionerState();
-   mystate->StateTwo_ = SecondFactory_->buildPreconditionerState();
+   mystate->StateOne_ = Teuchos::rcp_dynamic_cast<BlockPreconditionerState>(FirstFactory_->buildPreconditionerState());
+   mystate->StateTwo_ = Teuchos::rcp_dynamic_cast<BlockPreconditionerState>(SecondFactory_->buildPreconditionerState());
    return rcp(mystate);
 }
 
@@ -96,17 +96,17 @@ void MultPreconditionerFactory::initializeFromParameterList(const Teuchos::Param
 
    // build preconditioner from the parameters
    std::string aType = aSettings->get<std::string>("Preconditioner Type");
-   RCP<Teko::BlockPreconditionerFactory> precA
+   RCP<Teko::PreconditionerFactory> precA
          = Teko::BlockPreconditionerFactory::buildPreconditionerFactory(aType,aSettings->sublist("Preconditioner Settings"),invLib);
 
    // build preconditioner from the parameters
    std::string bType = bSettings->get<std::string>("Preconditioner Type");
-   RCP<Teko::BlockPreconditionerFactory> precB
+   RCP<Teko::PreconditionerFactory> precB
          = Teko::BlockPreconditionerFactory::buildPreconditionerFactory(bType,bSettings->sublist("Preconditioner Settings"),invLib);
 
    // set precondtioners
-   FirstFactory_ = precA;
-   SecondFactory_ = precB;
+   FirstFactory_ = Teuchos::rcp_dynamic_cast<const Teko::BlockPreconditionerFactory>(precA);
+   SecondFactory_ = Teuchos::rcp_dynamic_cast<const Teko::BlockPreconditionerFactory>(precB);
 }
 
 } // end namespace Teko

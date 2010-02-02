@@ -81,7 +81,7 @@ public:
                                             Teko::BlockPreconditionerState & state) const;
     
    //! Build the MultPrecondState object
-   virtual Teuchos::RCP<Teko::BlockPreconditionerState> buildPreconditionerState() const;
+   virtual Teuchos::RCP<Teko::PreconditionerState> buildPreconditionerState() const;
 
 protected:
    // class members

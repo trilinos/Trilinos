@@ -41,16 +41,7 @@ InverseLibrary::InverseLibrary()
    stratValidPrecond_.push_back("Neumann Series"); 
 
    // set valid Teko preconditioner factory names
-/*
-   blockValidPrecond_.push_back("Block LU2x2"); 
-   blockValidPrecond_.push_back("Block Jacobi"); 
-   blockValidPrecond_.push_back("Block Gauss-Seidel"); 
-   blockValidPrecond_.push_back("Block Add"); 
-   blockValidPrecond_.push_back("Block Multiply"); 
-   blockValidPrecond_.push_back("NS LSC");
-   blockValidPrecond_.push_back("NS SIMPLE");
-*/
-   BlockPreconditionerFactory::getPreconditionerFactoryNames(blockValidPrecond_);
+   PreconditionerFactory::getPreconditionerFactoryNames(blockValidPrecond_);
 }
 
 //! add an unspecified inverse to the library
@@ -281,8 +272,8 @@ Teuchos::RCP<InverseFactory> InverseLibrary::getInverseFactory(const std::string
          const Teuchos::ParameterList & settings = pl->sublist("Preconditioner Settings");
    
          // build preconditioner factory from the string
-         RCP<BlockPreconditionerFactory> precFact 
-               = BlockPreconditionerFactory::buildPreconditionerFactory(type,settings,Teuchos::rcpFromRef(*this));
+         RCP<PreconditionerFactory> precFact 
+               = PreconditionerFactory::buildPreconditionerFactory(type,settings,Teuchos::rcpFromRef(*this));
     
          TEUCHOS_ASSERT(precFact!=Teuchos::null);
    

@@ -78,7 +78,7 @@ public:
    virtual LinearOp buildPreconditionerOperator(BlockedLinearOp & blo,BlockPreconditionerState & state) const;
 
    //! Build the LSCPrecondState object
-   virtual RCP<BlockPreconditionerState> buildPreconditionerState() const
+   virtual RCP<PreconditionerState> buildPreconditionerState() const
    { return rcp(new LSCPrecondState()); }
 
    //! For assiting in construction of the preconditioner
