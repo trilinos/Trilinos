@@ -33,6 +33,8 @@
 
 #include "Sacado_Fad_SimpleFad.hpp"
 #include "Sacado_CacheFad_DFad.hpp"
+#include "Sacado_CacheFad_SFad.hpp"
+#include "Sacado_CacheFad_SLFad.hpp"
 #include "Sacado_Tay_CacheTaylor.hpp"
 #ifdef HAVE_SACADO_STOKHOS
 #include "Sacado_PCE_OrthogPoly.hpp"
@@ -66,7 +68,20 @@ CPPUNIT_TEST_SUITE_REGISTRATION(ELRSFadTest);
 CPPUNIT_TEST_SUITE_REGISTRATION(ELRSLFadTest);
 
 typedef TraitsTests< Sacado::CacheFad::DFad<double> > CacheDFadTest;
+typedef TraitsTests< Sacado::CacheFad::SFad<double,5> > CacheSFadTest;
+typedef TraitsTests< Sacado::CacheFad::SLFad<double,10> > CacheSLFadTest;
+
 CPPUNIT_TEST_SUITE_REGISTRATION(CacheDFadTest);
+CPPUNIT_TEST_SUITE_REGISTRATION(CacheSFadTest);
+CPPUNIT_TEST_SUITE_REGISTRATION(CacheSLFadTest);
+
+typedef TraitsTests< Sacado::ELRCacheFad::DFad<double> > ELRCacheDFadTest;
+typedef TraitsTests< Sacado::ELRCacheFad::SFad<double,5> > ELRCacheSFadTest;
+typedef TraitsTests< Sacado::ELRCacheFad::SLFad<double,10> > ELRCacheSLFadTest;
+
+CPPUNIT_TEST_SUITE_REGISTRATION(ELRCacheDFadTest);
+CPPUNIT_TEST_SUITE_REGISTRATION(ELRCacheSFadTest);
+CPPUNIT_TEST_SUITE_REGISTRATION(ELRCacheSLFadTest);
 
 typedef TraitsTests< Sacado::LFad::LogicalSparse<double,bool> > LSFadTest;
 CPPUNIT_TEST_SUITE_REGISTRATION(LSFadTest);

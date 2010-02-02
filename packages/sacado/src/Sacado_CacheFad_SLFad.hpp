@@ -29,46 +29,51 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SACADO_CACHEFAD_DFAD_HPP
-#define SACADO_CACHEFAD_DFAD_HPP
+#ifndef SACADO_CACHEFAD_SLFAD_HPP
+#define SACADO_CACHEFAD_SLFAD_HPP
 
 #include "Sacado_CacheFad_GeneralFadExpr.hpp"
-#include "Sacado_Fad_DynamicStorage.hpp"
-#include "Sacado_CacheFad_DFadTraits.hpp"
+#include "Sacado_Fad_StaticStorage.hpp"
+#include "Sacado_CacheFad_SLFadTraits.hpp"
 #include "Sacado_dummy_arg.hpp"
 
 namespace Sacado {
 
   namespace CacheFad {
 
+    // Forward declaration
+    template <typename T, int Num> 
+    class StaticStorage;
+
     /*! 
-     * \brief Forward-mode AD class using dynamic memory allocation and
-     * caching expression templates.
+     * \brief Forward-mode AD class using static memory allocation
+     * with long arrays and caching expression templates.
      */
     /*!
-     * This is a user-level class for forward mode AD with dynamic
+     * This is the user-level class for forward mode AD with static
      * memory allocation, and is appropriate for whenever the number
-     * of derivative components is not known at compile time.  The user
+     * of derivative components is known at compile time.  The largest size
+     * of the derivative array is fixed by the template parameter \c Num
+     * while the actual size used is set by the \c sz argument to the 
+     * constructor or the \c n argument to diff().  The user
      * interface is provided by Sacado::CacheFad::GeneralFad.  It is similar
-     * to Sacado::Fad::DFad, except it uses the caching expression templates
+     * to Sacado::Fad::SLFad, except it uses the caching expression templates
      * that cache the results of val() calculations for later dx() 
      * calculations.
      */
-    template <typename ValueT>
-    class DFad : public Expr< GeneralFad<ValueT,
-					 Fad::DynamicStorage<ValueT> > > {
+    template <typename ValueT, int Num>
+    class SLFad : 
+      public Expr< GeneralFad<ValueT,Fad::StaticStorage<ValueT,Num> > > {
 
     public:
 
       //! Typename of scalar's (which may be different from ValueT)
       typedef typename ScalarType<ValueT>::type ScalarT;
-      typedef typename GeneralFad<ValueT,Fad::DynamicStorage<ValueT> >::value_type value_type;
-      typedef typename GeneralFad<ValueT,Fad::DynamicStorage<ValueT> >::scalar_type scalar_type;
 
-      //! Turn DFad into a meta-function class usable with mpl::apply
+      //! Turn SLFad into a meta-function class usable with mpl::apply
       template <typename T> 
       struct apply {
-	typedef DFad<T> type;
+	typedef SLFad<T,Num> type;
       };
 
       /*!
@@ -80,30 +85,30 @@ namespace Sacado {
       /*!
        * Initializes value to 0 and derivative array is empty
        */
-      DFad() : 
-	Expr< GeneralFad< ValueT,Fad::DynamicStorage<ValueT> > >() {}
+      SLFad() : 
+	Expr< GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> > >() {}
 
-      //! Constructor with supplied value \c x of type ValueT
+      //! Constructor with supplied value \c x
       /*!
        * Initializes value to \c x and derivative array is empty
        */
-      DFad(const ValueT& x) : 
-	Expr< GeneralFad< ValueT,Fad::DynamicStorage<ValueT> > >(x) {}
+      SLFad(const ValueT & x) : 
+	Expr< GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> > >(x) {}
 
       //! Constructor with supplied value \c x of type ScalarT
       /*!
        * Initializes value to \c ValueT(x) and derivative array is empty.
        * Creates a dummy overload when ValueT and ScalarT are the same type.
        */
-      DFad(const typename dummy<ValueT,ScalarT>::type& x) : 
-	Expr< GeneralFad< ValueT,Fad::DynamicStorage<ValueT> > >(ValueT(x)) {}
+      SLFad(const typename dummy<ValueT,ScalarT>::type& x) : 
+	Expr< GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> > >(ValueT(x)) {}
 
       //! Constructor with size \c sz and value \c x
       /*!
        * Initializes value to \c x and derivative array 0 of length \c sz
        */
-      DFad(const int sz, const ValueT& x) : 
-	Expr< GeneralFad< ValueT,Fad::DynamicStorage<ValueT> > >(sz,x) {}
+      SLFad(const int sz, const ValueT & x) : 
+	Expr< GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> > >(sz,x) {}
 
       //! Constructor with size \c sz, index \c i, and value \c x
       /*!
@@ -111,25 +116,25 @@ namespace Sacado {
        * as row \c i of the identity matrix, i.e., sets derivative component
        * \c i to 1 and all other's to zero.
        */
-      DFad(const int sz, const int i, const ValueT & x) : 
-	Expr< GeneralFad< ValueT,Fad::DynamicStorage<ValueT> > >(sz,i,x) {}
+      SLFad(const int sz, const int i, const ValueT & x) : 
+	Expr< GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> > >(sz,i,x) {}
 
       //! Copy constructor
-      DFad(const DFad& x) : 
-	Expr< GeneralFad< ValueT,Fad::DynamicStorage<ValueT> > >(x) {}
+      SLFad(const SLFad& x) : 
+	Expr< GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> > >(x) {}
 
       //! Copy constructor from any Expression object
-      template <typename S> DFad(const Expr<S>& x) : 
-	Expr< GeneralFad< ValueT,Fad::DynamicStorage<ValueT> > >(x) {}
+      template <typename S> SLFad(const Expr<S>& x) : 
+	Expr< GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> > >(x) {}
 
       //@}
 
       //! Destructor
-      ~DFad() {}
+      ~SLFad() {}
 
       //! Assignment operator with constant right-hand-side
-      DFad& operator=(const ValueT& v) {
-	GeneralFad< ValueT,Fad::DynamicStorage<ValueT> >::operator=(v);
+      SLFad& operator=(const ValueT& v) {
+	GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> >::operator=(v);
 	return *this;
       }
 
@@ -137,28 +142,28 @@ namespace Sacado {
       /*!
        * Creates a dummy overload when ValueT and ScalarT are the same type.
        */
-      DFad& operator=(const typename dummy<ValueT,ScalarT>::type& v) {
-	GeneralFad< ValueT,Fad::DynamicStorage<ValueT> >::operator=(ValueT(v));
+      SLFad& operator=(const typename dummy<ValueT,ScalarT>::type& v) {
+	GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> >::operator=(ValueT(v));
 	return *this;
       }
 
       //! Assignment operator with DFad right-hand-side
-      DFad& operator=(const DFad& x) {
-	GeneralFad< ValueT,Fad::DynamicStorage<ValueT> >::operator=(static_cast<const GeneralFad< ValueT,Fad::DynamicStorage<ValueT> >&>(x));
+      SLFad& operator=(const SLFad& x) {
+	GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> >::operator=(static_cast<const GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> >&>(x));
 	return *this;
       }
 
       //! Assignment operator with any expression right-hand-side
-      template <typename S> DFad& operator=(const Expr<S>& x) 
+      template <typename S> SLFad& operator=(const Expr<S>& x) 
       {
-	GeneralFad< ValueT,Fad::DynamicStorage<ValueT> >::operator=(x);
+	GeneralFad< ValueT,Fad::StaticStorage<ValueT,Num> >::operator=(x);
 	return *this;
       }
-	
-    }; // class DFad<ValueT>
+
+    }; // class SLFad<ValueT,Num>
 
   } // namespace CacheFad
 
 } // namespace Sacado
 
-#endif // SACADO_CACHEFAD_DFAD_HPP
+#endif // SACADO_CACHEFAD_SLFAD_HPP

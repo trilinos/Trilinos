@@ -46,6 +46,11 @@ SET(${PACKAGE_NAME}_TESTSUITE_SOURCES ${${PACKAGE_NAME}_TESTSUITE_SOURCES}
   RealELRFadUnitTests.cpp
   ComplexELRFadUnitTests.cpp
   CacheFadUnitTests.cpp
+  RealCacheFadUnitTests.cpp
+  ComplexCacheFadUnitTests.cpp
+  ELRCacheFadUnitTests.cpp
+  RealELRCacheFadUnitTests.cpp
+  ComplexELRCacheFadUnitTests.cpp
   LogicalSparseUnitTests.hpp
   LogicalSparseUnitTests.cpp
   TraitsTests.hpp

@@ -43,7 +43,7 @@ namespace Sacado {
 
     /*! 
      * \brief Forward-mode AD class using dynamic memory allocation and
-     * expression templates.
+     * expression-level reverse mode expression templates.
      */
     /*!
      * This is the user-level class for forward mode AD with dynamic

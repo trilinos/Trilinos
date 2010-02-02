@@ -29,16 +29,19 @@
 // ***********************************************************************
 // @HEADER
 
-#include "FadUnitTests.hpp"
+#include "FadUnitTests2.hpp"
 #include "Sacado_CacheFad_DFad.hpp"
 #include "Sacado_CacheFad_SFad.hpp"
 #include "Sacado_CacheFad_SLFad.hpp"
 
-typedef FadOpsUnitTest<Sacado::CacheFad::DFad<double>,double> DFadDoubleTest;
-typedef FadOpsUnitTest<Sacado::CacheFad::SFad<double,5>,double> SFadDoubleTest;
-typedef FadOpsUnitTest<Sacado::CacheFad::SLFad<double,10>,double> SLFadDoubleTest;
-
-CPPUNIT_TEST_SUITE_REGISTRATION(DFadDoubleTest);
-CPPUNIT_TEST_SUITE_REGISTRATION(SFadDoubleTest);
-CPPUNIT_TEST_SUITE_REGISTRATION(SLFadDoubleTest);
-
+#ifdef HAVE_SACADO_COMPLEX
+typedef FadOpsUnitTest2<Sacado::CacheFad::DFad<std::complex<double> >,
+			std::complex<double> > DFadComplexDoubleTest;
+typedef FadOpsUnitTest2<Sacado::CacheFad::SFad<std::complex<double>,5>,
+			std::complex<double> > SFadComplexDoubleTest;
+typedef FadOpsUnitTest2<Sacado::CacheFad::SLFad<std::complex<double>,10>,
+			std::complex<double> > SLFadComplexDoubleTest;
+CPPUNIT_TEST_SUITE_REGISTRATION(DFadComplexDoubleTest);
+CPPUNIT_TEST_SUITE_REGISTRATION(SFadComplexDoubleTest);
+CPPUNIT_TEST_SUITE_REGISTRATION(SLFadComplexDoubleTest);
+#endif

@@ -51,14 +51,26 @@
 //********************************************************
 // @HEADER
 
-#ifndef SACADO_CACHEFAD_EXPRESSION_HPP
-#define SACADO_CACHEFAD_EXPRESSION_HPP
+#ifndef SACADO_ELRCACHEFAD_EXPRESSION_HPP
+#define SACADO_ELRCACHEFAD_EXPRESSION_HPP
 
 #include "Sacado_Traits.hpp"
 
 namespace Sacado {
 
-  namespace CacheFad {
+  namespace ELRCacheFad {
+
+    //! Base template specification for %ExprPromote
+    /*!
+     * The %ExprPromote classes provide a mechanism for computing the 
+     * promoted expression-type of a binary operation.
+     */
+    template <typename A, typename B> struct ExprPromote {};
+
+    //! Specialization of %ExprPromote for a single type
+    template <typename A> struct ExprPromote<A,A> {
+      typedef A type;
+    };
 
     //! Wrapper for a generic expression template
     /*!
@@ -79,27 +91,39 @@ namespace Sacado {
 
       //! Typename of argument values
       typedef ConstT value_type;
-      
+
       //! Typename of scalar values
       typedef ConstT scalar_type;
+
+      //! Typename of base-expressions
+      typedef ConstT base_expr_type;
+
+      //! Number of arguments
+      static const int num_args = 0;
 
       //! Constructor
       ConstExpr(const ConstT& constant) : constant_(constant) {}
 
       //! Return size of the derivative array of the operation
       int size() const { return 0; }
-      
-      //! Return if operation has fast access
-      bool hasFastAccess() const { return 1; }
 
       //! Return value of operation
       value_type val() const { return constant_; }
 
-      //! Return derivative component \c i of operation
-      value_type dx(int i) const { return value_type(0); }
-      
-      //! Return derivative component \c i of operation
-      value_type fastAccessDx(int i) const { return value_type(0); }
+      //! Return partials w.r.t. arguments
+      void computePartials(const value_type& bar, 
+			   value_type partials[]) const {}
+
+      //! Rturn tangent component \c i of arguments
+      void getTangents(int i, value_type dots[]) const {}
+
+      //! Return tangent component \c i of argument \c Arg
+      template <int Arg>
+      value_type getTangent(int i) const { return 0.0; }
+
+      //! Return whether argument is active
+      template <int Arg>
+      bool isActive() const { return false; }
 
     protected:
       
@@ -108,8 +132,15 @@ namespace Sacado {
 
     }; // class ConstExpr
 
-  } // namespace CacheFad
+    template <typename T> struct ExprConstRef {
+      typedef const T& type;
+    };
+    template <typename T> struct ExprConstRef< ConstExpr<T> > {
+      typedef const ConstExpr<T> type;
+    };
+
+  } // namespace ELRCacheFad
 
 } // namespace Sacado
 
-#endif // SACADO_CACHEFAD_EXPRESSION_HPP
+#endif // SACADO_ELRCACHEFAD_EXPRESSION_HPP

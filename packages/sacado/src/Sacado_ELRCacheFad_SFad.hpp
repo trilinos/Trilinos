@@ -51,17 +51,17 @@
 //********************************************************
 // @HEADER
 
-#ifndef SACADO_ELRFAD_SFAD_HPP
-#define SACADO_ELRFAD_SFAD_HPP
+#ifndef SACADO_ELRCACHEFAD_SFAD_HPP
+#define SACADO_ELRCACHEFAD_SFAD_HPP
 
-#include "Sacado_ELRFad_SFadTraits.hpp"
-#include "Sacado_ELRFad_Expression.hpp"
+#include "Sacado_ELRCacheFad_SFadTraits.hpp"
+#include "Sacado_ELRCacheFad_Expression.hpp"
 #include "Sacado_StaticArrayTraits.hpp"
 #include "Sacado_dummy_arg.hpp"
 
 namespace Sacado {
 
-  namespace ELRFad {
+  namespace ELRCacheFad {
 
     //! A tag for specializing Expr for SFad expressions
     template <typename T, int Num> 
@@ -302,14 +302,17 @@ namespace Sacado {
     }; // class Expr<SFadExprTag>
 
     /*!
-     * Forward-mode AD class using static memory allocation and
-     * expression level reverse mode.
+     * \brief Forward-mode AD class using static memory allocation,
+     * caching expression templates, and expression-level reverse mode.
      */
     /*!
      * This is the user-level class for forward mode AD with static
      * memory allocation, and is appropriate for whenever the number
      * of derivative components is known at compile time.  The size
-     * of the derivative array is fixed by the template parameter \c Num.  
+     * of the derivative array is fixed by the template parameter \c Num. 
+     * It is similar to Sacado::ELRFad::SFad, except it uses the 
+     * caching expression templates that cache the results of val() 
+     * calculations for later dx() calculations.
      */
     template <typename ValueT, int Num>
     class SFad : 
@@ -437,11 +440,11 @@ namespace Sacado {
       return os;
     }
 
-  } // namespace ELRFad
+  } // namespace ELRCacheFad
 
 } // namespace Sacado
 
-#include "Sacado_ELRFad_SFadImp.hpp"
-#include "Sacado_ELRFad_Ops.hpp"
+#include "Sacado_ELRCacheFad_SFadImp.hpp"
+#include "Sacado_ELRCacheFad_Ops.hpp"
 
-#endif // SACADO_ELRFAD_SFAD_HPP
+#endif // SACADO_ELRCACHEFAD_SFAD_HPP

@@ -29,16 +29,12 @@
 // ***********************************************************************
 // @HEADER
 
-#include "FadUnitTests.hpp"
-#include "Sacado_CacheFad_DFad.hpp"
-#include "Sacado_CacheFad_SFad.hpp"
-#include "Sacado_CacheFad_SLFad.hpp"
+#include "FadUnitTests2.hpp"
 
-typedef FadOpsUnitTest<Sacado::CacheFad::DFad<double>,double> DFadDoubleTest;
-typedef FadOpsUnitTest<Sacado::CacheFad::SFad<double,5>,double> SFadDoubleTest;
-typedef FadOpsUnitTest<Sacado::CacheFad::SLFad<double,10>,double> SLFadDoubleTest;
+typedef RealFadOpsUnitTest2<Sacado::ELRCacheFad::DFad<double>,double> DFadDoubleTest2;
+typedef RealFadOpsUnitTest2<Sacado::ELRCacheFad::SFad<double,5>,double> SFadDoubleTest2;
+typedef RealFadOpsUnitTest2<Sacado::ELRCacheFad::SLFad<double,10>,double> SLFadDoubleTest2;
 
-CPPUNIT_TEST_SUITE_REGISTRATION(DFadDoubleTest);
-CPPUNIT_TEST_SUITE_REGISTRATION(SFadDoubleTest);
-CPPUNIT_TEST_SUITE_REGISTRATION(SLFadDoubleTest);
-
+CPPUNIT_TEST_SUITE_REGISTRATION(DFadDoubleTest2);
+CPPUNIT_TEST_SUITE_REGISTRATION(SFadDoubleTest2);
+CPPUNIT_TEST_SUITE_REGISTRATION(SLFadDoubleTest2);

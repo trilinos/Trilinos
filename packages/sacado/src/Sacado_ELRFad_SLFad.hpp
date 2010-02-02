@@ -43,7 +43,8 @@ namespace Sacado {
 
     /*! 
      * \brief Forward-mode AD class using static memory allocation
-     * with long arrays and expression templates.
+     * with long arrays and expression templates with expression-level
+     * reverse mode.
      */
     /*!
      * This is the user-level class for forward mode AD with static

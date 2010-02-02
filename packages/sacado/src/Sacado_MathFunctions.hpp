@@ -59,6 +59,13 @@ namespace Sacado {							\
     Expr< FADOP< Expr<T> > > OP (const Expr<T>&);			\
   }									\
 									\
+  namespace ELRCacheFad {						\
+    template <typename T> class FADOP;					\
+    template <typename T> class Expr;					\
+    template <typename T>						\
+    Expr< FADOP< Expr<T> > > OP (const Expr<T>&);			\
+  }									\
+									\
   namespace LFad {							\
     template <typename T> class FADOP;					\
     template <typename T> class Expr;					\
@@ -95,6 +102,7 @@ namespace std {                                                         \
   using Sacado::Fad::OP;						\
   using Sacado::ELRFad::OP;						\
   using Sacado::CacheFad::OP;						\
+  using Sacado::ELRCacheFad::OP;					\
   using Sacado::LFad::OP;						\
   using Sacado::Tay::OP;						\
   using Sacado::PCE::OP;						\
@@ -184,6 +192,27 @@ namespace Sacado {							\
   }									\
 									\
   namespace CacheFad {							\
+    template <typename T1, typename T2> class FADOP;			\
+    template <typename T> class Expr;					\
+    template <typename T> class ConstExpr;				\
+    template <typename T1, typename T2>					\
+    Expr< FADOP< Expr<T1>, Expr<T2> > >					\
+    OP (const Expr<T1>&, const Expr<T2>&);				\
+									\
+    template <typename T>						\
+    Expr< FADOP< Expr<T>, Expr<T> > >					\
+    OP (const Expr<T>&, const Expr<T>&);				\
+									\
+    template <typename T>						\
+    Expr< FADOP< ConstExpr<typename Expr<T>::value_type>, Expr<T> > >	\
+    OP (const typename Expr<T>::value_type&, const Expr<T>&);		\
+									\
+    template <typename T>						\
+    Expr< FADOP< Expr<T>, ConstExpr<typename Expr<T>::value_type> > >	\
+    OP (const Expr<T>&, const typename Expr<T>::value_type&);		\
+  }									\
+									\
+  namespace ELRCacheFad {						\
     template <typename T1, typename T2> class FADOP;			\
     template <typename T> class Expr;					\
     template <typename T> class ConstExpr;				\
@@ -319,6 +348,7 @@ namespace std {                                                         \
   using Sacado::Fad::OP;						\
   using Sacado::ELRFad::OP;						\
   using Sacado::CacheFad::OP;						\
+  using Sacado::ELRCacheFad::OP;					\
   using Sacado::LFad::OP;						\
   using Sacado::Tay::OP;						\
   using Sacado::PCE::OP;						\

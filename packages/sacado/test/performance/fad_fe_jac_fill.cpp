@@ -32,6 +32,8 @@
 #include "Sacado.hpp"
 #include "Sacado_Fad_SimpleFad.hpp"
 #include "Sacado_CacheFad_DFad.hpp"
+#include "Sacado_CacheFad_SFad.hpp"
+#include "Sacado_CacheFad_SLFad.hpp"
 
 #include "Fad/fad.h"
 #include "TinyFadET/tfad.h"
@@ -1045,7 +1047,7 @@ int main(int argc, char* argv[]) {
     std::cout.precision(p);
     std::cout << "num_nodes =  " << num_nodes 
 	      << ", num_eqns = " << num_eqns << ":  " << std::endl
-	      << "           " << "   Time" << "\t"<< "Time/Analytic" << "\t"
+	      << "               " << "   Time   " << "\t"<< "Time/Analytic" << "\t"
 	      << "Time/Residual" << std::endl;
 
     ta = 1.0;
@@ -1054,86 +1056,117 @@ int main(int argc, char* argv[]) {
     tr = residual_fill(num_nodes, num_eqns, mesh_spacing);
 
     ta = analytic_jac_fill(num_nodes, num_eqns, mesh_spacing);
-    std::cout << "Analytic:  " << std::setw(w) << ta << "\t" << std::setw(w) << ta/ta << "\t" << std::setw(w) << ta/tr << std::endl;
+    std::cout << "Analytic:      " << std::setw(w) << ta << "\t" << std::setw(w) << ta/ta << "\t" << std::setw(w) << ta/tr << std::endl;
 
 #ifdef HAVE_ADOLC
 #ifndef ADOLC_TAPELESS
     t = adolc_jac_fill(num_nodes, num_eqns, mesh_spacing);
-    std::cout << "ADOL-C:    " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
+    std::cout << "ADOL-C:        " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
 
     if (rt != 0) {
       t = adolc_retape_jac_fill(num_nodes, num_eqns, mesh_spacing);
-      std::cout << "ADOL-C(rt):" << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
+      std::cout << "ADOL-C(rt):  " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
     }
 
 #else
     t = adolc_tapeless_jac_fill(num_nodes, num_eqns, mesh_spacing);
-    std::cout << "ADOL-C(tl):" << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
+    std::cout << "ADOL-C(tl):    " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
 #endif
 #endif
 
 #ifdef HAVE_ADIC
     t = adic_jac_fill(num_nodes, num_eqns, mesh_spacing);
-    std::cout << "ADIC:      " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
+    std::cout << "ADIC:          " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
 #endif
 
     if (num_eqns*2 == 4) {
-      t = fad_jac_fill< FAD::TFad<4,double> >(num_nodes, num_eqns, mesh_spacing);
-      std::cout << "TFad:      " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
+      t = fad_jac_fill< FAD::TFad<16,double> >(num_nodes, num_eqns, mesh_spacing);
+      std::cout << "TFad:          " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
     }
-    else if (num_eqns*2 == 40) {
-      t = fad_jac_fill< FAD::TFad<40,double> >(num_nodes, num_eqns, mesh_spacing);
-      std::cout << "TFad:      " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
+    else if (num_eqns*2 == 16) {
+      t = fad_jac_fill< FAD::TFad<16,double> >(num_nodes, num_eqns, mesh_spacing);
+      std::cout << "TFad:          " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
     }
 
     t = fad_jac_fill< FAD::Fad<double> >(num_nodes, num_eqns, mesh_spacing);
-    std::cout << "Fad:       " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
+    std::cout << "Fad:           " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
 
     if (num_eqns*2 == 4) {
-      t = fad_jac_fill< Sacado::Fad::SFad<double,4> >(num_nodes, num_eqns, mesh_spacing);
-      std::cout << "SFad:      " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
+      t = fad_jac_fill< Sacado::Fad::SFad<double,16> >(num_nodes, num_eqns, mesh_spacing);
+      std::cout << "SFad:          " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
     }
-    else if (num_eqns*2 == 40) {
-      t = fad_jac_fill< Sacado::Fad::SFad<double,40> >(num_nodes, num_eqns, mesh_spacing);
-      std::cout << "SFad:      " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
+    else if (num_eqns*2 == 16) {
+      t = fad_jac_fill< Sacado::Fad::SFad<double,16> >(num_nodes, num_eqns, mesh_spacing);
+      std::cout << "SFad:          " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
     }
 
     if (num_eqns*2 < slfad_max) {
       t = fad_jac_fill< Sacado::Fad::SLFad<double,slfad_max> >(num_nodes, num_eqns, mesh_spacing);
-      std::cout << "SLFad:     " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
+      std::cout << "SLFad:         " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
     }
     
     t = fad_jac_fill< Sacado::Fad::DFad<double> >(num_nodes, num_eqns, mesh_spacing);
-    std::cout << "DFad:      " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
+    std::cout << "DFad:          " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
 
     t = fad_jac_fill< Sacado::Fad::SimpleFad<double> >(num_nodes, num_eqns, mesh_spacing);
-    std::cout << "SimpleFad: " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
+    std::cout << "SimpleFad:     " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
 
     t = fad_jac_fill< Sacado::Fad::DMFad<double> >(num_nodes, num_eqns, mesh_spacing);
-    std::cout << "DMFad:     " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl; 
+    std::cout << "DMFad:         " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl; 
 
     if (num_eqns*2 == 4) {
-      t = fad_jac_fill< Sacado::ELRFad::SFad<double,4> >(num_nodes, num_eqns, mesh_spacing);
-      std::cout << "ELRSFad:   " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
+      t = fad_jac_fill< Sacado::ELRFad::SFad<double,16> >(num_nodes, num_eqns, mesh_spacing);
+      std::cout << "ELRSFad:       " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
     }
-    else if (num_eqns*2 == 40) {
-      t = fad_jac_fill< Sacado::ELRFad::SFad<double,40> >(num_nodes, num_eqns, mesh_spacing);
-      std::cout << "ELRSFad:   " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
+    else if (num_eqns*2 == 16) {
+      t = fad_jac_fill< Sacado::ELRFad::SFad<double,16> >(num_nodes, num_eqns, mesh_spacing);
+      std::cout << "ELRSFad:       " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
     }
 
     if (num_eqns*2 < slfad_max) {
       t = fad_jac_fill< Sacado::ELRFad::SLFad<double,slfad_max> >(num_nodes, num_eqns, mesh_spacing);
-      std::cout << "ELRSLFad:  " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
+      std::cout << "ELRSLFad:      " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
     }
 
     t = fad_jac_fill< Sacado::ELRFad::DFad<double> >(num_nodes, num_eqns, mesh_spacing);
-    std::cout << "ELRDFad:   " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
+    std::cout << "ELRDFad:       " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
+
+    if (num_eqns*2 == 4) {
+      t = fad_jac_fill< Sacado::CacheFad::SFad<double,16> >(num_nodes, num_eqns, mesh_spacing);
+      std::cout << "CacheSFad:     " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
+    }
+    else if (num_eqns*2 == 16) {
+      t = fad_jac_fill< Sacado::CacheFad::SFad<double,16> >(num_nodes, num_eqns, mesh_spacing);
+      std::cout << "CacheSFad:     " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
+    }
+
+    if (num_eqns*2 < slfad_max) {
+      t = fad_jac_fill< Sacado::CacheFad::SLFad<double,slfad_max> >(num_nodes, num_eqns, mesh_spacing);
+      std::cout << "CacheSLFad:    " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
+    }
     
     t = fad_jac_fill< Sacado::CacheFad::DFad<double> >(num_nodes, num_eqns, mesh_spacing);
-    std::cout << "CacheFad:  " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
+    std::cout << "CacheFad:      " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
+
+    if (num_eqns*2 == 4) {
+      t = fad_jac_fill< Sacado::ELRCacheFad::SFad<double,16> >(num_nodes, num_eqns, mesh_spacing);
+      std::cout << "ELRCacheSFad:  " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
+    }
+    else if (num_eqns*2 == 16) {
+      t = fad_jac_fill< Sacado::ELRCacheFad::SFad<double,16> >(num_nodes, num_eqns, mesh_spacing);
+      std::cout << "ELRCacheSFad:  " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
+    }
+
+    if (num_eqns*2 < slfad_max) {
+      t = fad_jac_fill< Sacado::ELRCacheFad::SLFad<double,slfad_max> >(num_nodes, num_eqns, mesh_spacing);
+      std::cout << "ELRCacheSLFad: " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
+    }
+
+    t = fad_jac_fill< Sacado::ELRCacheFad::DFad<double> >(num_nodes, num_eqns, mesh_spacing);
+    std::cout << "ELRCacheFad:   " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
 
     t = fad_jac_fill< Sacado::Fad::DVFad<double> >(num_nodes, num_eqns, mesh_spacing);
-    std::cout << "DVFad:     " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
+    std::cout << "DVFad:         " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/tr << std::endl;
     
   }
   catch (std::exception& e) {

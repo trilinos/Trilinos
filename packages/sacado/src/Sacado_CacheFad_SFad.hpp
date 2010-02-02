@@ -51,17 +51,18 @@
 //********************************************************
 // @HEADER
 
-#ifndef SACADO_ELRFAD_SFAD_HPP
-#define SACADO_ELRFAD_SFAD_HPP
+#ifndef SACADO_CACHEFAD_SFAD_HPP
+#define SACADO_CACHEFAD_SFAD_HPP
 
-#include "Sacado_ELRFad_SFadTraits.hpp"
-#include "Sacado_ELRFad_Expression.hpp"
+#include "Sacado_CacheFad_SFadTraits.hpp"
+#include "Sacado_CacheFad_Expression.hpp"
 #include "Sacado_StaticArrayTraits.hpp"
 #include "Sacado_dummy_arg.hpp"
 
 namespace Sacado {
 
-  namespace ELRFad {
+  //! Namespace for forward-mode AD classes
+  namespace CacheFad {
 
     //! A tag for specializing Expr for SFad expressions
     template <typename T, int Num> 
@@ -82,11 +83,8 @@ namespace Sacado {
       //! Typename of values
       typedef T value_type;
 
-      //! Typename of base-expressions
-      typedef Expr< SFadExprTag<T,Num> > base_expr_type;
-
-      //! Number of arguments
-      static const int num_args = 1;
+      //! Typename of scalar's (which may be different from T)
+      typedef typename ScalarType<T>::type scalar_type;
 
       /*!
        * @name Initialization methods
@@ -117,11 +115,7 @@ namespace Sacado {
       Expr(const int sz, const int i, const T & x);
 
       //! Copy constructor
-      Expr(const Expr& x) : val_(x.val_) { 
-	//ss_array<T>::copy(x.dx_, dx_, Num);
-	for (int i=0; i<Num; i++)
-	  dx_[i] = x.dx_[i];
-      }
+      Expr(const Expr& x);
 
       //! Copy constructor from any Expression object
       template <typename S> Expr(const Expr<S>& x);
@@ -197,24 +191,6 @@ namespace Sacado {
 
       //! Returns derivative component \c i without bounds checking
       const T& fastAccessDx(int i) const { return dx_[i];}
-
-      //! Return partials w.r.t. arguments
-      void computePartials(const T& bar, T partials[]) const { 
-	partials[0] = bar; 
-      }
-
-      //! Return tangent component \c i of arguments
-      void getTangents(int i, T dots[]) const { 
-	dots[0] = this->dx_[i];
-      }
-
-      //! Return whether argument is active
-      template <int Arg>
-      bool isActive() const { return true; }
-
-      //! Return tangent component \c i of argument \c Arg
-      template <int Arg>
-      T getTangent(int i) const { return this->dx_[i]; }
     
       //@}
 
@@ -279,37 +255,20 @@ namespace Sacado {
       //! Derivatives
       T dx_[Num];
 
-      // Functor for mpl::for_each to compute the local accumulation
-      // of a tangent derivative
-      template <typename ExprT>
-      struct LocalAccumOp {
-	typedef typename ExprT::value_type value_type;
-	static const int N = ExprT::num_args;
-	const ExprT& x;
-	mutable value_type t;
-	value_type partials[N];
-	int i;
-	inline LocalAccumOp(const ExprT& x_) :
-	  x(x_) { x.computePartials(value_type(1.), partials); }
-	template <typename ArgT>
-	inline void operator () (ArgT arg) const {
-	  const int Arg = ArgT::value;
-	  if (x.template isActive<Arg>())
-	    t += partials[Arg] * x.template getTangent<Arg>(i);
-	}
-      };
-
     }; // class Expr<SFadExprTag>
 
     /*!
-     * Forward-mode AD class using static memory allocation and
-     * expression level reverse mode.
+     * \brief Forward-mode AD class using static memory allocation and
+     * caching expression templates.
      */
     /*!
      * This is the user-level class for forward mode AD with static
      * memory allocation, and is appropriate for whenever the number
      * of derivative components is known at compile time.  The size
      * of the derivative array is fixed by the template parameter \c Num.  
+     * It is similar to Sacado::Fad::SFad, except it uses the 
+     * caching expression templates that cache the results of val() 
+     * calculations for later dx() calculations.
      */
     template <typename ValueT, int Num>
     class SFad : 
@@ -412,36 +371,11 @@ namespace Sacado {
 
     }; // class SFad<ValueT,Num>
 
-    //! Specialization of %ExprPromote to Expr<SFadExprTag> types
-    template <typename T, int Num>
-    struct ExprPromote< Expr< SFadExprTag<T,Num> >, T > {
-      typedef Expr< SFadExprTag<T,Num> > type;
-    };
-    
-    //! Specialization of %ExprPromote to GeneralFad types
-    template <typename T, int Num>
-    struct ExprPromote< T, Expr< SFadExprTag<T,Num> > > {
-      typedef Expr< SFadExprTag<T,Num> > type;
-    };
-
-    template <typename T, int Num>
-    std::ostream& operator << (std::ostream& os, 
-                               const Expr< SFadExprTag<T,Num> >& x) {
-      os << x.val() << " [";
-      
-      for (int i=0; i< x.size(); i++) {
-        os << " " << x.dx(i);
-      }
-
-      os << " ]";
-      return os;
-    }
-
-  } // namespace ELRFad
+  } // namespace CacheFad
 
 } // namespace Sacado
 
-#include "Sacado_ELRFad_SFadImp.hpp"
-#include "Sacado_ELRFad_Ops.hpp"
+#include "Sacado_CacheFad_SFadImp.hpp"
+#include "Sacado_CacheFad_Ops.hpp"
 
-#endif // SACADO_ELRFAD_SFAD_HPP
+#endif // SACADO_CACHEFAD_SFAD_HPP

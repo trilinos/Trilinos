@@ -29,41 +29,38 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef SACADO_CACHEFAD_DFAD_HPP
-#define SACADO_CACHEFAD_DFAD_HPP
+#ifndef SACADO_ELRCACHEFAD_DFAD_HPP
+#define SACADO_ELRCACHEFAD_DFAD_HPP
 
-#include "Sacado_CacheFad_GeneralFadExpr.hpp"
+#include "Sacado_ELRCacheFad_GeneralFadExpr.hpp"
 #include "Sacado_Fad_DynamicStorage.hpp"
-#include "Sacado_CacheFad_DFadTraits.hpp"
+#include "Sacado_ELRCacheFad_DFadTraits.hpp"
 #include "Sacado_dummy_arg.hpp"
 
 namespace Sacado {
 
-  namespace CacheFad {
+  namespace ELRCacheFad {
 
     /*! 
      * \brief Forward-mode AD class using dynamic memory allocation and
-     * caching expression templates.
+     * expression-level-reverse-mode caching expression templates.
      */
     /*!
-     * This is a user-level class for forward mode AD with dynamic
+     * This is the user-level class for forward mode AD with dynamic
      * memory allocation, and is appropriate for whenever the number
      * of derivative components is not known at compile time.  The user
-     * interface is provided by Sacado::CacheFad::GeneralFad.  It is similar
-     * to Sacado::Fad::DFad, except it uses the caching expression templates
+     * interface is provided by Sacado::ELRCacheFad::GeneralFad.  It is similar
+     * to Sacado::ELRFad::DFad, except it uses the caching expression templates
      * that cache the results of val() calculations for later dx() 
      * calculations.
      */
     template <typename ValueT>
-    class DFad : public Expr< GeneralFad<ValueT,
-					 Fad::DynamicStorage<ValueT> > > {
+    class DFad : public Expr< GeneralFad<ValueT,Fad::DynamicStorage<ValueT> > > {
 
     public:
 
       //! Typename of scalar's (which may be different from ValueT)
       typedef typename ScalarType<ValueT>::type ScalarT;
-      typedef typename GeneralFad<ValueT,Fad::DynamicStorage<ValueT> >::value_type value_type;
-      typedef typename GeneralFad<ValueT,Fad::DynamicStorage<ValueT> >::scalar_type scalar_type;
 
       //! Turn DFad into a meta-function class usable with mpl::apply
       template <typename T> 
@@ -157,8 +154,8 @@ namespace Sacado {
 	
     }; // class DFad<ValueT>
 
-  } // namespace CacheFad
+  } // namespace ELRCacheFad
 
 } // namespace Sacado
 
-#endif // SACADO_CACHEFAD_DFAD_HPP
+#endif // SACADO_ELRCACHEFAD_DFAD_HPP
