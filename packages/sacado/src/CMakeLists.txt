@@ -88,10 +88,33 @@ SET(HEADERS ${HEADERS}
   Sacado_CacheFad_GeneralFad.hpp
   Sacado_CacheFad_GeneralFadImp.hpp
   Sacado_CacheFad_GeneralFadExpr.hpp
+  Sacado_CacheFad_ExpressionTraits.hpp
   Sacado_CacheFad_Expression.hpp
   Sacado_CacheFad_Ops.hpp
   Sacado_CacheFad_DFadTraits.hpp
   Sacado_CacheFad_DFad.hpp
+  Sacado_CacheFad_SFadTraits.hpp
+  Sacado_CacheFad_SFad.hpp
+  Sacado_CacheFad_SFadImp.hpp
+  Sacado_CacheFad_SLFadTraits.hpp
+  Sacado_CacheFad_SLFad.hpp
+  )
+
+# ELRCacheFAD
+SET(HEADERS ${HEADERS}
+  Sacado_ELRCacheFad_GeneralFad.hpp
+  Sacado_ELRCacheFad_GeneralFadImp.hpp
+  Sacado_ELRCacheFad_GeneralFadExpr.hpp
+  Sacado_ELRCacheFad_ExpressionTraits.hpp
+  Sacado_ELRCacheFad_Expression.hpp
+  Sacado_ELRCacheFad_Ops.hpp
+  Sacado_ELRCacheFad_DFadTraits.hpp
+  Sacado_ELRCacheFad_DFad.hpp
+  Sacado_ELRCacheFad_SLFad.hpp
+  Sacado_ELRCacheFad_SLFadTraits.hpp
+  Sacado_ELRCacheFad_SFad.hpp
+  Sacado_ELRCacheFad_SFadImp.hpp
+  Sacado_ELRCacheFad_SFadTraits.hpp
   )
 
 #TAYLOR
