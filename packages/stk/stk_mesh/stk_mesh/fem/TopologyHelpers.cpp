@@ -2,8 +2,10 @@
  * @author H. Carter Edwards
  */
 
+#include <algorithm>
 #include <stdexcept>
 #include <sstream>
+#include <cassert>
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Part.hpp>
@@ -202,6 +204,129 @@ bool element_side_polarity( const Entity & elem ,
     good = side_nodes[j].entity() == elem_nodes[ side_map[j] ].entity();
   }
   return good ;
+}
+
+void get_adjacent_entities( const Entity & entity ,
+                            unsigned subcell_rank ,
+                            unsigned subcell_identifier ,
+                            std::vector<std::pair<Entity*, unsigned> > & adjacent_entities )
+{
+  adjacent_entities.clear();
+
+  // get cell topology
+  const CellTopologyData* celltopology = get_cell_topology(entity);
+  if (celltopology == NULL) {
+    return;
+  }
+
+  // valid ranks fall within the dimension of the cell topology
+  bool bad_rank = subcell_rank >= celltopology->dimension;
+
+  // local id should be < number of entities of the desired type
+  // (if you have 4 edges, their ids should be 0-3)
+  bool bad_id = false;
+  if (!bad_rank) {
+    bad_id = subcell_identifier >= celltopology->subcell_count[subcell_rank];
+  }
+
+  if (bad_rank || bad_id) {
+    std::ostringstream msg;
+    //parallel consisent throw
+    if (bad_rank) {
+      msg << "stk::mesh::get_adjacent_entities( const Entity& entity, unsigned subcell_rank, ... ) subcell_rank is >= celltopology dimension\n";
+    }
+    else if (bad_id) {
+      msg << "stk::mesh::get_adjacent_entities( const Entity& entity, unsigned subcell_rank, unsigned subcell_identifier, ... ) subcell_identifier is >= subcell count\n";
+    }
+
+    throw std::runtime_error(msg.str());
+  }
+
+  // For the potentially common subcell, get it's nodes and num_nodes
+  const unsigned* nodes = celltopology->subcell[subcell_rank][subcell_identifier].node;
+  unsigned num_nodes = celltopology->subcell[subcell_rank][subcell_identifier].topology->node_count;
+
+  // Get all the nodal relationships for this entity. We are guaranteed
+  // that, if we make it this far, the entity is guaranteed to have
+  // some relationship to nodes (we know it is a higher-order entity
+  // than Node).
+  PairIterRelation relations = entity.relations(Node);
+
+  // Get the node entities that are related to entity
+  std::vector<Entity*> node_entities;
+  for (unsigned itr = 0; itr < num_nodes; ++itr) {
+    node_entities.push_back(relations[nodes[itr]].entity());
+  }
+
+  // Given the nodes related to the original entity, find all entities
+  // of similar rank that have some relation to one or more of these nodes
+  std::vector<Entity*> elements;
+  get_entities_through_relations(node_entities, entity.entity_type(), elements);
+
+  // Make sure to remove the original entity from the list
+  bool found = false;
+  for (std::vector<Entity*>::iterator itr = elements.begin();
+       itr != elements.end(); ++itr) {
+    if (*itr == &entity) {
+      elements.erase(itr);
+      found = true;
+      break;
+    }
+  }
+  // The original entity should be related to the nodes of its subcells
+  assert(found);
+
+  // Add the local ids, from the POV of the adj entitiy, to the return value
+  for (std::vector<Entity*>::const_iterator itr = elements.begin();
+       itr != elements.end(); ++itr) {
+    unsigned local_side_num = element_local_side_id(**itr, node_entities);
+    adjacent_entities.push_back(std::pair<Entity*, unsigned>(*itr, local_side_num));
+  }
+}
+
+int element_local_side_id( const Entity & elem ,
+                           const Entity & side )
+{
+  return -1;
+}
+
+int element_local_side_id( const Entity & elem ,
+                           const std::vector<Entity*>& entity_nodes )
+{
+  // sort the input nodes
+  std::vector<Entity*> sorted_entity_nodes(entity_nodes);
+  std::sort(sorted_entity_nodes.begin(), sorted_entity_nodes.end(), EntityLess());
+
+  // get topology of elem
+  const CellTopologyData* celltopology = get_cell_topology(elem);
+  if (celltopology == NULL) {
+    return -1;
+  }
+
+  // get nodal relations
+  PairIterRelation relations = elem.relations(Node);
+
+  const unsigned subcell_rank = celltopology->dimension - 1;
+
+  // Iterate over the subcells of elem
+  for (unsigned itr = 0; itr < celltopology->subcell_count[subcell_rank]; ++itr) {
+    // get the nodes for this subcell
+    const unsigned* nodes = celltopology->subcell[subcell_rank][itr].node;
+    unsigned num_nodes = celltopology->subcell[subcell_rank][itr].topology->node_count;
+
+    // Get the nodes in the subcell ???
+    std::vector<Entity*> node_entities;
+    for (unsigned nitr = 0; nitr < num_nodes; ++nitr) {
+      node_entities.push_back(relations[nodes[nitr]].entity());
+    }
+
+    // check to see if this subcell exactly contains the nodes that were passed in
+    std::sort(node_entities.begin(), node_entities.end(), EntityLess());
+    if (node_entities == sorted_entity_nodes) {
+      return itr;
+    }
+  }
+  return -1;
 }
 
 //----------------------------------------------------------------------

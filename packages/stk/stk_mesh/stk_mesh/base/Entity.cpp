@@ -33,13 +33,30 @@ print_entity_key( std::ostream & os , const MetaData & meta_data ,
 //----------------------------------------------------------------------
 
 Entity::Entity( const EntityKey & arg_key )
-  : m_key( arg_key ), m_relation(), m_bucket(), m_bucket_ord(0),
+  : m_key( arg_key ), m_relation(), m_bucket(), m_trans_bucket() , m_bucket_ord(0), m_trans_bucket_ord(0) ,
     m_owner_rank(0), m_sync_count(0),
     m_sharing(std::vector<EntityProc>().begin(),std::vector<EntityProc>().end())
 {}
 
 Entity::~Entity()
 {}
+
+
+PairIterRelation Entity::relations( unsigned rank ) const
+{
+  std::vector<Relation>::const_iterator i = m_relation.begin();
+  std::vector<Relation>::const_iterator e = m_relation.end();
+
+  if ( rank ) {
+    const Relation::raw_attr_type lo_attr = Relation::attribute( rank , 0 );
+    i = std::lower_bound( i , e , lo_attr , LessRelation() );
+  }
+
+  const Relation::raw_attr_type hi_attr = Relation::attribute( rank + 1 , 0 );
+  e = std::lower_bound( i , e , hi_attr , LessRelation() );
+
+  return PairIterRelation( i , e );
+}
 
 //----------------------------------------------------------------------
 

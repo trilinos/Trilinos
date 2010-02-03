@@ -2,11 +2,7 @@
 #define stk_mesh_EntityKey_hpp
 
 #include <stdint.h>
-#include <sstream>
-#include <stdexcept>
 #include <limits>
-
-#include <boost/detail/endian.hpp>
 
 namespace stk {
 namespace mesh {
@@ -15,18 +11,10 @@ namespace mesh {
  * \{
  */
 
-//----------------------------------------------------------------------
-/** \brief  Integer type for the entity identifiers */
+typedef unsigned EntityType ;
+typedef uint64_t EntityId ;
 
-// NOTE: Setting EntityId to 64-bits with a corresponding change of
-// EntityKey.x.id to 48 bits fails with the pgi builds (version 7.1
-// and 8.0).  A bug report has been submitted to PGI, but until this
-// is resolved, I am resetting EntityId back to 32 bits and
-// EntityKey.x.id to 32 bits also. GDS.
-typedef uint32_t EntityId;
-typedef unsigned EntityType;
-typedef uint64_t EntityKeyValue;
- 
+//----------------------------------------------------------------------
 /** \brief  Integer type for the entity keys, which is an encoding
  *          of the entity type and entity identifier.
  *
@@ -61,128 +49,123 @@ typedef uint64_t EntityKeyValue;
  * Thus stk::mesh can control the validity of EntityKeys associated with
  * the mesh.
  */
+union EntityKey {
+public:
+  typedef uint64_t raw_key_type ;
 
-union EntityKey
-{
-  friend EntityType entity_type(EntityKey key);
-  friend EntityId  entity_id(EntityKey key);
-  friend bool entity_key_valid(EntityKey key);
+  enum { rank_digits = 8 };
 
 private:
-  EntityKeyValue        key;
-  struct X {
-#ifdef BOOST_LITTLE_ENDIAN
-    EntityId            id    : 32;
-    EntityId            fill  : 16;
-    uint8_t             valid :  8;
-    uint8_t             type  :  8;
-#else
-    uint8_t             type  :  8;
-    uint8_t             valid :  8;
-    EntityId            fill  : 16;
-    EntityId            id    : 32;
-#endif
-  } x;
+
+  enum {
+    invalid_key = ~raw_key_type(0) ,
+    raw_digits  = std::numeric_limits<raw_key_type>::digits ,
+    id_digits   = raw_digits - rank_digits ,
+    id_mask     = ~raw_key_type(0) >> rank_digits
+  };
+
+  raw_key_type key ;
+
+  struct {
+    raw_key_type id   : id_digits ;
+    raw_key_type rank : rank_digits ;
+  } normal_view ;
+
+  struct {
+    raw_key_type rank : rank_digits ;
+    raw_key_type id   : id_digits ;
+  } reverse_view ;
 
 public:
+  /** \brief  Destructor */
+  ~EntityKey() {}
+
   /** Default constructor.
    * Note that entity_key_valid(key) == false if key is default-constructed.
    */
-  EntityKey()
-    : key(0)
-  { }
+  EntityKey() : key(invalid_key) { }
+
+  EntityKey( const EntityKey & rhs ) : key( rhs.key ) {}
+
+  EntityKey & operator = ( const EntityKey & rhs )
+    { key = rhs.key ; return *this ; }
 
   /** Constructor
    * 
-   * \param entity_type is required to lie in the range 0 to 255 (which is
+   * \param entity_rank is required to lie in the range 0 to 255 (which is
    *    the limit of what can be stored in 8 bits). This limit may be raised
    *    if we decide to use more than 8 bits for encoding an entity-type.
    *
-   * \param entity_id is required to lie in the range 1 to 2^31 (which is
-   *    the limit of what can be stored in a 32-bit int). This limit may be
-   *    raised if/when we use more than 32 bits for encoding an entity-id (and
-   *    exodus supports types other than int for ids).
+   * \param entity_id is required to lie in the range 1 to 2^id_digits.
    *
    * If entity_type or entity_id lie outside these ranges an exception will
    * be thrown.
    */
-  explicit EntityKey(EntityType entity_type, EntityId entity_id)
-    : key(0)
-  {
-    if (entity_type > 255) {
-      throw std::runtime_error("EntityKey ctor: entity_type must be <= 255 (to fit in 8-bits");
-    }
-    EntityId int_max = std::numeric_limits<int>::max();
-    if (entity_id > int_max) {
-      std::ostringstream msg;
-      msg << "EntityKey ctor: entity_id ("<<entity_id
-          <<") must be <= std::numeric_limits<int>::max() (which is "
-          << std::numeric_limits<int>::max()<<")";
-      std::string str = msg.str();
-      throw std::runtime_error(str);
-    }
+  EntityKey( unsigned entity_rank, raw_key_type entity_id );
 
-    x.id = entity_id;
-    x.valid = 1;
-    x.type = entity_type;
-  }
+  raw_key_type id() const { return key & id_mask ; }
 
-  EntityType type() const {
-    return x.type;
-  }
+  unsigned rank() const { return key >> id_digits ; }
+
+  unsigned type() const { return rank(); }
   
-  EntityId id() const {
-    return x.id;
+  bool operator==(const EntityKey &rhs) const {
+    return key == rhs.key;
   }
 
-  bool operator==(const EntityKey &entity_key) const {
-    return key == entity_key.key;
+  bool operator!=(const EntityKey &rhs) const {
+    return !(key == rhs.key);
   }
 
-  bool operator!=(const EntityKey &entity_key) const {
-    return !(key == entity_key.key);
+  bool operator<(const EntityKey &rhs) const {
+    return key < rhs.key;
   }
 
-  bool operator<(const EntityKey &entity_key) const {
-    return key < entity_key.key;
+  bool operator>(const EntityKey &rhs) const {
+    return rhs.key < key;
   }
 
-  bool operator>(const EntityKey &entity_key) const {
-    return entity_key.key < key;
+  bool operator<=(const EntityKey &rhs) const {
+    return !(key < rhs.key);
   }
 
-  bool operator<=(const EntityKey &entity_key) const {
-    return !(key < entity_key.key);
+  bool operator>=(const EntityKey &rhs) const {
+    return !(rhs.key < key);
   }
 
-  bool operator>=(const EntityKey &entity_key) const {
-    return !(entity_key.key < key);
-  }
+  //------------------------------
+  // As safe and explict a conversion
+  // as possible between the raw_key_type and value.
+
+  explicit EntityKey( const raw_key_type * const value )
+   : key( *value ) {}
+
+  raw_key_type raw_key() const { return key ; }
 };
 
 // Functions for encoding / decoding entity keys.
 
 /** \brief  Given an entity key, return an entity type (rank). */
 inline
-EntityType entity_type( EntityKey key ) {
-  return key.x.type;
+EntityType entity_type( const EntityKey & key ) {
+  return key.rank();
 }
 
 /** \brief  Given an entity key, return the identifier for the entity.  */
 inline
-EntityId  entity_id( EntityKey key ) {
-  return key.x.id;
+EntityId  entity_id( const EntityKey & key ) {
+  return key.id();
 }
 
 /** \brief  Query if an entity key is valid */
 inline
-bool entity_key_valid( EntityKey key ) {
-  return key.x.valid && key.x.id != 0 && key.x.id <= (EntityId) std::numeric_limits<int>::max();
+bool entity_key_valid( const EntityKey & key ) {
+  return key != EntityKey();
 }
 
 inline
-bool entity_id_valid( EntityId id ) {
-  return id != 0 && id <= (EntityId) std::numeric_limits<int>::max();
+bool entity_id_valid( EntityKey::raw_key_type id ) {
+  return 0 < id && id <= EntityKey().id();
 }
 
 } // namespace mesh

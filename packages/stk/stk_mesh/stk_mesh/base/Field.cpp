@@ -2,11 +2,11 @@
  * @author H. Carter Edwards
  */
 
+#include <cstring>
 #include <stdexcept>
 #include <iostream>
 #include <sstream>
 #include <algorithm>
-#include <string.h>
 
 #include <stk_util/util/SimpleArrayOps.hpp>
 #include <stk_util/util/string_case_compare.hpp>
@@ -15,6 +15,8 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/MetaData.hpp>
+
+using std::strlen;
 
 namespace stk {
 namespace mesh {
@@ -399,17 +401,18 @@ void FieldBase::verify_and_clean_restrictions(
   const char       * arg_method ,
   const PartVector & arg_all_parts )
 {
+  const EntityKey invalid_key ;
   RestrictionVector & rMap = restrictions();
   RestrictionVector::iterator i , j ;
 
   for ( i = rMap.begin() ; i != rMap.end() ; ++i ) {
-    if ( i->key != EntityKey() ) {
+    if ( i->key != invalid_key ) {
       const unsigned typeI = entity_type( i->key );
       const Part   & partI = * arg_all_parts[ entity_id( i->key ) ];
       bool  found_superset = false ;
 
       for ( j = i + 1 ; j != rMap.end() && ! found_superset ; ++j ) {
-        if ( j->key != EntityKey() ) {
+        if ( j->key != invalid_key ) {
           const unsigned typeJ = entity_type( j->key );
           const Part   & partJ = * arg_all_parts[ entity_id( j->key ) ];
 
@@ -433,10 +436,10 @@ void FieldBase::verify_and_clean_restrictions(
               }
             }
 
-            if ( found_subset ) { j->key = EntityKey(); }
+            if ( found_subset ) { j->key = invalid_key; }
           }
         }
-        if ( found_superset ) { i->key = EntityKey(); }
+        if ( found_superset ) { i->key = invalid_key; }
       }
     }
   }
@@ -444,8 +447,8 @@ void FieldBase::verify_and_clean_restrictions(
   // Clean out redundant entries:
 
   for ( j = i = rMap.begin() ; j != rMap.end() ; ++j ) {
-    if ( j->key != EntityKey() ) {
-      if ( i->key == EntityKey() ) {
+    if ( j->key != invalid_key ) {
+      if ( i->key == invalid_key ) {
         *i = *j ;
       }
       ++i ;

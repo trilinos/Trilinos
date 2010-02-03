@@ -29,6 +29,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testUnit)
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
+
+
 namespace stk {
 namespace mesh {
 
@@ -38,7 +40,7 @@ void UnitTestBulkData::modification_end(
   // Exactly match BulkData::modification_end
   // except for automatic regeneration of the ghosting aura.
 
-  STKUNIT_ASSERT_EQUAL( false , mesh.m_sync_state );
+  STKUNIT_ASSERT_EQUAL( BulkData::MODIFIABLE , mesh.m_sync_state );
 
   if ( 1 < mesh.m_parallel_size ) {
     mesh.internal_resolve_parallel_create_delete();
@@ -60,9 +62,11 @@ void UnitTestBulkData::modification_end(
 
   mesh.internal_sort_bucket_entities();
 
+  mesh.internal_flush_transaction_log_deletes ();
+
   ++ mesh.m_sync_count ;
 
-  mesh.m_sync_state = true ;
+  mesh.m_sync_state = BulkData::SYNCHRONIZED ;
 }
 
 // Unit test the Part functionality in isolation:
@@ -336,9 +340,7 @@ void test_shift_loop( BulkData & mesh ,
   const unsigned id_send = id_end - 2 ;
   const unsigned id_recv = ( id_begin + id_total - 2 ) % id_total ;
 
-  stk::mesh::PartVector part_intersection;
-  part_intersection.push_back(&( mesh.mesh_meta_data().locally_used_part() ));
-  Selector select_used( part_intersection );
+  Selector select_used( mesh.mesh_meta_data().locally_used_part() );
 
   std::vector<unsigned> local_count ;
   std::vector<EntityProc> change ;
@@ -432,15 +434,7 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
 
   Selector select_owned( meta.locally_owned_part() );
 
-  //Create a select_used selector using a required-part and a part-union
-  //just to get extra test coverage. The part-union will simply be
-  //locally-owned and locally-used. This is redundant, since locally-owned
-  //is a subset of locally-used.
-  stk::mesh::PartVector part_union;
-  part_union.push_back(&(meta.locally_owned_part()));
-  part_union.push_back(&(meta.locally_used_part()));
-
-  Selector select_used( meta.locally_used_part(), part_union );
+  Selector select_used =  meta.locally_used_part() ;
 
   Selector select_all(  meta.universal_part() );
 
@@ -455,12 +449,12 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
     generate_loop( bulk, no_parts , false /* no aura */, nPerProc, node_ids, edge_ids );
 
     count_entities( select_used , bulk , local_count );
-    STKUNIT_ASSERT( local_count[0] == nLocalNode );
-    STKUNIT_ASSERT( local_count[1] == nLocalEdge );
+    STKUNIT_ASSERT_EQUAL( local_count[0] , nLocalNode );
+    STKUNIT_ASSERT_EQUAL( local_count[1] , nLocalEdge );
 
     count_entities( select_all , bulk , local_count );
-    STKUNIT_ASSERT( local_count[0] == nLocalNode );
-    STKUNIT_ASSERT( local_count[1] == nLocalEdge );
+    STKUNIT_ASSERT_EQUAL( local_count[0] , nLocalNode );
+    STKUNIT_ASSERT_EQUAL( local_count[1] , nLocalEdge );
 
     // Shift loop by two nodes and edges.
 
@@ -678,7 +672,7 @@ void donate_one_element( BulkData & mesh , bool aura )
     if ( elem->owner_rank() != p_rank ) { elem = NULL ; }
   }
 
-  STKUNIT_ASSERT( elem );
+  STKUNIT_ASSERT( elem != NULL );
 
   unsigned donated_nodes = 0 ;
 

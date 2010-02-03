@@ -238,7 +238,7 @@
 /// To get the latest command line options for a sierra application, type
 ///
 /// \code
-///    sierra <it>application</it> -O -h
+///    sierra application -O -h
 /// \endcode
 ///
 /// The sierra applications have three command line arguments which control the log output:
@@ -255,20 +255,19 @@
 /// option directs the diagnostic writer output to a specified set of files or standard output
 /// stream.
 ///
-/// Common options are:
+/// For example:
 ///
-///   - sierra -o sierra.log<br>
-///     This creates the normal output file.  The per-processor output is not written.  The
-///     diagnostic output is written to this file.
+///   - sierra <em>application</em> -i input_deck.i -o sierra.log<br>
+///     This creates the normal output file sierra.log
 ///
-///   - sierra -o sierra.log -O "--pout=pp.log"<br>
-///     This creates the normal output file.  The per-processor output is written to
-///     pp.log.<it>n</it>.<it>r</it> for each rank, <it>r</it>, of <it>n</it> processors.
-///     The diagnostic output is written to this file.
+///   - sierra <em>application</em> -i input_deck.i -o sierra.log -O &quot;--pout=pp.log&quot;<br>
+///     The per-processor output is written to pp.log.n.r for each rank, r, of n processors.
 ///
-///   - sierra -o sierra.log -O "--dout=dd.log"<br>
-///     With the incorporation of diagnostic controlled normal output, the separation of the
-///     diagnostic output stream from the output and per-processor output stream is not useful.
+///   - sierra <em>application</em> -i input_deck.i -o sierra.log -O &quot;--fmwkout=field,parameters&quot;<br>
+///     Enable the framework field and parameter diagnostic output, see \ref stk_util_output_log_use_in_sierra_app_diag_writer
+///
+///   - sierra <em>application</em> -i input_deck.i -o sierra.log -O &quot;--timer=all&quot;<br>
+///     Enable all timers, see \ref stk_util_output_log_use_in_sierra_app_timers
 ///
 /// \subsection stk_util_output_log_use_in_sierra_app_diag_writer Diagnostic Writer Output
 ///
@@ -285,7 +284,7 @@
 ///    End
 /// \endcode
 ///
-/// Where <it>option-list</it> is a command separated list of options specific for that diagnostic
+/// where option-list is a command separated list of options specific for that diagnostic
 /// writer.
 ///
 /// It is also possible to control the output of diagnostics based on time step or simulation time.
@@ -301,9 +300,10 @@
 ///    End
 /// \endcode
 ///
-/// Where <it>n</it> and <it>m</it> are steps values, <it>s</it> and <it>t</it> are simulation
-/// times, and <it>option-list</it> is a command separated list of options specific for that
-/// diagnostic writer.  Here is an example list of options available to the adagio application:
+/// where <em>name</em> is the specific diagnostic writer, <em>n</em> and <em>m</em> are steps
+/// values, <em>s</em> and <em>t</em> are simulation times, and <em>option-list</em> is a comma
+/// separated list of options specific for that diagnostic writer.  Here is an example list of
+/// options available to the adagio application:
 ///
 /// \code
 ///    Diagnostic writers:
@@ -387,10 +387,9 @@
 ///    Print Timer Information Every interval Steps {Checkpointed|Accumulated}
 /// \endcode
 ///
-/// Where <it>timer-list</it> is a command separated list of timers.
-///
-/// Accumulated displays the values since that start of the application and Checkpointed displays
-/// the values since the last interval.
+/// where <em>timer-list</em> is a comma separated list of timers and <em>interval</em> is the
+/// number steps between timer output. <em>Accumulated</em> displays the values since that start of
+/// the application and <em>Checkpointed</em> displays the values since the last interval.
 ///
 /// Sample timers are listed below:
 ///

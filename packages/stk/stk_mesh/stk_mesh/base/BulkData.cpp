@@ -8,8 +8,10 @@
 #include <algorithm>
 #include <assert.h>
 
+#include <stk_util/util/StaticAssert.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
+#include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Comm.hpp>
@@ -18,16 +20,50 @@
 namespace stk {
 namespace mesh {
 
+namespace {
+
+std::vector< parallel::DistributedIndex::KeySpan>
+convert_entity_keys_to_spans( const MetaData & meta )
+{
+  // Make sure the distributed index can handle the EntityKey
+
+  enum { OK = StaticAssert<
+                SameType< EntityKey::raw_key_type,
+                          parallel::DistributedIndex::KeyType >::value >::OK };
+
+  // Default constructed EntityKey has all bits set.
+
+  const EntityKey invalid_key ;
+  const EntityId  min_id = 1 ;
+  const EntityId  max_id = invalid_key.id();
+
+  const size_t rank_count = meta.entity_type_count() ;
+
+  std::vector< parallel::DistributedIndex::KeySpan> spans( rank_count );
+
+  for ( size_t rank = 0 ; rank < rank_count ; ++rank ) {
+    EntityKey key_min( rank , min_id );
+    EntityKey key_max( rank , max_id );
+    spans[rank].first  = key_min.raw_key();
+    spans[rank].second = key_max.raw_key();
+  }
+
+  return spans ;
+}
+
+}
+
 //----------------------------------------------------------------------
 
 BulkData::BulkData( const MetaData & mesh_meta_data ,
             ParallelMachine parallel ,
-             unsigned bucket_max_size )
+             unsigned bucket_max_size ,
+             Transaction::TransactionType transaction_type )
   : m_buckets(),
     m_entities(),
     m_shares_all(),
     m_ghosting(),
-    m_entities_owner_index(),
+    m_entities_index( parallel, convert_entity_keys_to_spans(mesh_meta_data) ),
     m_new_entities(),
     m_del_entities(),
     m_bucket_nil( NULL ),
@@ -38,7 +74,9 @@ BulkData::BulkData( const MetaData & mesh_meta_data ,
     m_parallel_rank( parallel_machine_rank( parallel ) ),
     m_bucket_capacity( bucket_max_size ),
     m_sync_count( 0 ),
-    m_sync_state( false )
+    m_sync_state( MODIFIABLE )  ,
+    m_transaction_log( *this , transaction_type )
+
 {
   static const char method[] = "stk::mesh::BulkData::Mesh" ;
 
@@ -56,6 +94,8 @@ BulkData::BulkData( const MetaData & mesh_meta_data ,
 
 BulkData::~BulkData()
 {
+
+  m_transaction_log.reset();
   try {
     while ( ! m_ghosting.empty() ) {
       delete m_ghosting.back();
@@ -92,7 +132,7 @@ BulkData::~BulkData()
           it = m_entities.begin(); it != m_entities.end(); ++it) {
       it->second->m_bucket     = NULL ;
       it->second->m_bucket_ord = 0 ;
-      delete it->second;
+      internal_expunge_entity ( it->second );
     }
     m_entities.clear();
   } catch(...){}
@@ -100,6 +140,14 @@ BulkData::~BulkData()
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
+
+void  BulkData::reset_transaction ( Transaction::TransactionType t )
+{
+  if ( synchronized_state() == MODIFIABLE )
+    throw std::runtime_error ( "Cannot reset transaction while mesh is modifiable" );
+  m_transaction_log.reset( t );
+}
+
 
 void BulkData::update_field_data_states() const
 {
@@ -119,20 +167,26 @@ void BulkData::update_field_data_states() const
 
 void BulkData::assert_ok_to_modify( const char * method ) const
 {
-  if ( m_sync_state ) {
+  if ( m_sync_state == SYNCHRONIZED ) {
     std::string msg( method );
     msg.append( ": FAILED, NOT in the ok-to-modify state" );
     throw std::runtime_error( msg );
   }
 }
 
-void BulkData::assert_entity_owner( const char * method ,
+void BulkData::assert_entity_owner_or_not_destroyed( const char * method ,
                                     const Entity & e ,
                                     unsigned owner ) const
 {
   const bool error_not_owner = owner != e.owner_rank() ;
-  const bool error_destroyed = NULL != e.m_bucket &&
-                                  0 == e.m_bucket->m_capacity ;
+  bool error_destroyed = false;
+
+  if ( e.transaction_bucket() )
+    if ( e.transaction_bucket()->transaction_state() == Transaction::DELETED )
+      error_destroyed = true;
+
+  if ( m_transaction_log.m_to_delete.find ( const_cast<Entity *>(&e) ) != m_transaction_log.m_to_delete.end() )
+    error_destroyed = true;
 
   if ( error_not_owner || error_destroyed ) {
     std::ostringstream msg ;
@@ -140,14 +194,15 @@ void BulkData::assert_entity_owner( const char * method ,
     print_entity_key( msg , m_mesh_meta_data , e.key() );
     msg << " ) FAILED" ;
 
+    if ( error_destroyed ) {
+       msg << " : Entity has been destroyed" ;
+    }
+
     if ( error_not_owner ) {
       msg << " : Owner( " << e.owner_rank()
           << " ) != Required( " << owner << " )" ;
     }
 
-    if ( error_destroyed ) {
-       msg << " : Entity has been destroyed" ;
-    }
     throw std::runtime_error( msg.str() );
   }
 }
@@ -155,20 +210,21 @@ void BulkData::assert_entity_owner( const char * method ,
 void BulkData::assert_good_key( const char * method ,
                                 const EntityKey & key ) const
 {
-  const bool bad_key  = ! entity_key_valid( key );
-  const bool bad_type = m_buckets.size() <= entity_type( key );
+  const size_t rank_count = m_mesh_meta_data.entity_type_count();
+  const bool ok_id   = 0 < entity_id( key );
+  const bool ok_type = entity_type( key ) < rank_count ;
 
-  if ( bad_key || bad_type ) { 
+  if ( ! ok_type || ! ok_id ) {
     std::ostringstream msg ;
     msg << method ;
     msg << "( " ;
-    if ( bad_type ) {
+    if ( ! ok_type ) {
       msg << entity_type( key ) << "-"
           << entity_id( key ) << " : BAD KEY TYPE" ;
     }
     else {
       print_entity_key( msg , m_mesh_meta_data , key );
-      if ( bad_key ) { msg << " : BAD KEY" ; }
+      msg << " : BAD KEY ID" ;
     }
     msg << " ) FAILED" ;
     throw std::runtime_error( msg.str() );
@@ -181,9 +237,9 @@ bool BulkData::modification_begin()
 {
   parallel_machine_barrier( m_parallel_machine );
 
-  if ( ! m_sync_state ) return false ;
+  if ( m_sync_state == MODIFIABLE ) return false ;
 
-  m_sync_state = false ;
+  m_sync_state = MODIFIABLE ;
 
   return true ;
 }
@@ -215,23 +271,27 @@ void BulkData::verify_type_and_id(const char* calling_method,
 }
 
 Entity * BulkData::get_entity( EntityType ent_type, EntityId ent_id ,
-			       const char * required_by ) const
+			       const char * /*required_by*/ ) const
 {
   verify_type_and_id("BulkData::get_entity", ent_type, ent_id);
 
   EntityKey key(ent_type, ent_id);
 
+  return get_entity(key);
+}
+
+Entity * BulkData::get_entity( EntityKey key) const
+{
   const bool valid_key = entity_key_valid( key );
 
   const EntitySet::const_iterator i = m_entities.find( key );
 
-  if ( ! valid_key || ( required_by && i == m_entities.end() ) ) {
+  if ( ! valid_key ) {
     static const char method[] = "stk::mesh::BulkData::get_entity" ;
     std::ostringstream msg ;
     msg << method << "( " ;
     print_entity_key( msg , m_mesh_meta_data , key );
-    if ( valid_key ) { msg << " , " << required_by ; }
-    else { msg << " INVALID KEY" ; }
+    msg << " INVALID KEY" ;
     msg << " ) FAILED" ;
     throw std::runtime_error( msg.str() );
   }
@@ -242,7 +302,7 @@ Entity * BulkData::get_entity( EntityType ent_type, EntityId ent_id ,
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 // The add_parts must be full ordered and consistent,
-// i.e. no bad parts, all supersets included, and 
+// i.e. no bad parts, all supersets included, and
 // owner & used parts match the owner value.
 
 std::pair<Entity*,bool>
@@ -264,8 +324,9 @@ BulkData::internal_create_entity( const EntityKey & key ,
     result.first->m_owner_rank = owner ;
   }
   else { // An existing entity, the owner must match.
-    assert_entity_owner( method , * result.first , owner );
+    assert_entity_owner_or_not_destroyed( method , * result.first , owner );
   }
+
 
   return result ;
 }
@@ -301,6 +362,8 @@ Entity & BulkData::declare_entity( EntityType ent_type , EntityId ent_id ,
   add.push_back( owns );
 
   change_entity_parts( * result.first , add , rem );
+
+  m_transaction_log.insert_entity ( *(result.first) );
 
   return * result.first ;
 }
@@ -350,7 +413,7 @@ void verify_change_parts( const char * method ,
       else {
         msg << " , " ;
       }
-      
+
       msg << p->name() << "[" ;
       if ( part_rank < type_names.size() ) {
         msg << type_names[ part_rank ];
@@ -382,7 +445,7 @@ void BulkData::change_entity_parts(
 
   assert_ok_to_modify( method );
 
-  assert_entity_owner( method , e , m_parallel_rank );
+  assert_entity_owner_or_not_destroyed( method , e , m_parallel_rank );
 
   // Transitive addition and removal:
   // 1) Include supersets of add_parts
@@ -403,10 +466,28 @@ void BulkData::change_entity_parts(
 
   for ( PartVector::const_iterator
         ir = remove_parts.begin(); ir != remove_parts.end() ; ++ir ) {
+
+    // The following guards should be in the public interface to
+    // changing parts.  However, internal mechanisms such as changing
+    // ownership calls this function to add or remove an entity from
+    // the three special parts.  Without refactoring, these guards
+    // cannot be put in place.
+    /*
+    if ( m_mesh_meta_data.universal_part() == **ir )
+      throw std::runtime_error ( "Cannot remove entity from universal part" );
+    if ( m_mesh_meta_data.locally_owned_part() == **ir )
+      throw std::runtime_error ( "Cannot remove entity from locally owned part" );
+    if ( m_mesh_meta_data.locally_used_part() == **ir )
+      throw std::runtime_error ( "Cannot remove entity from locally used part" );
+    */
+
     if ( ! contain( a_parts , **ir ) ) {
       r_parts.push_back( *ir );
-      r_parts.insert( r_parts.end(), (*ir)->subsets().begin(),
-                                     (*ir)->subsets().end() );
+      for ( PartVector::const_iterator  cur_part = (*ir)->subsets().begin() ;
+            cur_part != (*ir)->subsets().end() ;
+            ++cur_part )
+        if ( e.bucket().member ( **cur_part ) )
+          r_parts.push_back ( *cur_part );
     }
   }
 
@@ -419,6 +500,9 @@ void BulkData::change_entity_parts(
 
   return ;
 }
+
+
+
 
 //----------------------------------------------------------------------
 
@@ -469,6 +553,11 @@ void merge_in( std::vector<unsigned> & vec , const PartVector & parts )
   }
 }
 
+struct LessEntityPointer {
+  bool operator()( const Entity * const lhs , const Entity * const rhs ) const
+    { return lhs->key() < rhs->key() ; }
+};
+
 }
 
 //  The 'add_parts' and 'remove_parts' are complete and disjoint.
@@ -483,6 +572,7 @@ void BulkData::internal_change_entity_parts(
   Bucket * const k_old = e.m_bucket ;
   const unsigned i_old = e.m_bucket_ord ;
 
+
   if ( k_old && k_old->member_all( add_parts ) &&
               ! k_old->member_any( remove_parts ) ) {
     // Is already a member of all add_parts,
@@ -491,6 +581,7 @@ void BulkData::internal_change_entity_parts(
     return ;
   }
 
+  m_transaction_log.modify_entity ( e );
   PartVector parts_removed ;
 
   std::vector<unsigned> parts_total ; // The final part list
@@ -575,10 +666,12 @@ bool BulkData::destroy_entity( Entity * & e )
         irel = entity.relations() ;
         ! irel.empty() && ! has_upward_relation ; ++irel ) {
 
-    has_upward_relation = entity.entity_type() <= irel->entity_type();
+    has_upward_relation = entity.entity_type() <= irel->entity_rank();
   }
 
   if ( has_upward_relation ) { return false ; }
+
+  // Add destroyed entity to the transaction
 
   //------------------------------
   // Immediately remove it from relations and buckets.
@@ -594,6 +687,7 @@ bool BulkData::destroy_entity( Entity * & e )
     destroy_relation( entity , * entity.m_relation.back().entity() );
   }
 
+  m_transaction_log.delete_entity ( *e );
   remove_entity( entity.m_bucket , entity.m_bucket_ord );
 
   // Set the bucket to 'bucket_nil' which:
@@ -611,6 +705,7 @@ bool BulkData::destroy_entity( Entity * & e )
   // modification_end_syncronize clean up
   m_del_entities.push_back( e );
 
+
   // Set the calling entity-pointer to NULL;
   // hopefully the user-code did not keep any outstanding
   // references to this entity.
@@ -622,8 +717,19 @@ bool BulkData::destroy_entity( Entity * & e )
 
 //----------------------------------------------------------------------
 
+void BulkData::internal_destroy_entire_bucket ( Bucket * b )
+{
+  for ( unsigned i = 0 ; i != b->m_size ; i++ )
+    internal_expunge_entity ( b->m_entities[i] );
+  Bucket::destroy_bucket ( b );
+}
+
+
+//----------------------------------------------------------------------
+
 void BulkData::internal_destroy_entity( Entity * e )
 {
+  m_transaction_log.delete_entity ( *e );
   while ( ! e->m_relation.empty() ) {
     destroy_relation( * e , * e->m_relation.back().entity() );
   }
@@ -637,7 +743,171 @@ void BulkData::internal_destroy_entity( Entity * e )
 
   m_entities.erase( e->key() );
 
-  delete e ;
+  // If the transaction is an incremental transaction, it will destroy
+  // the entity later.  Otherwise, bulk data will destroy it now
+//  if ( m_transaction_log.m_transaction_type != Transaction::INCREMENTAL )
+//    delete e ;
+}
+
+//----------------------------------------------------------------------
+
+void BulkData::remove_entity( Bucket * k , unsigned i )
+{
+  Bucket * const first = bucket_counter( k->m_key ) ? k->m_bucket : k ;
+  Bucket * const last  = first->m_bucket ;
+
+  // Only move if not the last entity being removed
+
+  if ( last != k || k->m_size != i + 1 ) {
+
+    // Not the same bucket or not the last entity
+
+    // Copy last entity in last to ik slot i
+
+    Entity * const entity = last->m_entities[ last->m_size - 1 ];
+
+    Bucket::copy_fields( *k , i , *last , last->m_size - 1 );
+
+    k->m_entities[i]     = entity ;
+    entity->m_bucket     = k ;
+    entity->m_bucket_ord = i ;
+
+    // Entity field data has relocated
+
+    internal_propagate_relocation( *entity );
+  }
+
+  --( last->m_size );
+
+  if ( last->m_size != 0 ) {
+    last->m_entities[ last->m_size ] = NULL ;
+  }
+  else {
+
+    // The current 'last' bucket is to be deleted.
+    // The previous 'last' bucket becomes the
+    // new 'last' bucket in the family:
+
+    std::vector<Bucket*> & bucket_set = m_buckets[ last->entity_type() ];
+
+    std::vector<Bucket*>::iterator ik = lower_bound(bucket_set, last->m_key);
+
+    if ( ik == bucket_set.end() || last != *ik ) {
+      if ( ik == bucket_set.end() )
+        std::cout << "Case 1 is met" << std::endl;
+      if ( *ik != last )
+        std::cout << "Case 2 is met" << std::endl;
+      throw std::runtime_error(
+        std::string("stk::mesh::BulkData::remove_entity INTERNAL FAILURE") );
+    }
+
+    ik = bucket_set.erase( ik );
+
+    if ( first != last ) { first->m_bucket = *--ik ; }
+
+    Bucket::destroy_bucket( last );
+  }
+}
+
+//----------------------------------------------------------------------
+
+void BulkData::internal_sort_bucket_entities()
+{
+  for ( unsigned entity_type = 0 ;
+                 entity_type < m_buckets.size() ; ++entity_type ) {
+
+    std::vector<Bucket*> & buckets = m_buckets[ entity_type ];
+
+    size_t bk = 0 ; // Offset to first bucket of the family
+    size_t ek = 0 ; // Offset to end   bucket of the family
+
+    for ( ; bk < buckets.size() ; bk = ek ) {
+      Bucket * ik_vacant = buckets[bk]->m_bucket ; // Last bucket, need space
+      unsigned ie_vacant = ik_vacant->size();
+
+      if ( ik_vacant->capacity() <= ie_vacant ) {
+        // Have to create a bucket just for the scratch space...
+        const unsigned * const bucket_key = buckets[bk]->m_key ;
+        const unsigned         part_count = bucket_key[0] - 1 ;
+        const unsigned * const part_ord   = bucket_key + 1 ;
+
+        ik_vacant = Bucket::declare_bucket( *this , entity_type ,
+                                            part_count , part_ord ,
+                                            m_bucket_capacity ,
+                                            m_mesh_meta_data.get_fields() ,
+                                            buckets );
+        ie_vacant = 0 ;
+      }
+
+      ik_vacant->m_entities[ ie_vacant ] = NULL ;
+
+      // Determine offset to the end bucket in this family:
+      while ( ek < buckets.size() && ik_vacant != buckets[ek] ) { ++ek ; }
+      ++ek ;
+
+      unsigned count = 0 ;
+      for ( size_t ik = bk ; ik != ek ; ++ik ) {
+        count += buckets[ik]->size();
+      }
+
+      std::vector<Entity*> entities( count );
+
+      std::vector<Entity*>::iterator j = entities.begin();
+
+      for ( size_t ik = bk ; ik != ek ; ++ik ) {
+        Bucket & b = * buckets[ik];
+        const unsigned n = b.size();
+        for ( unsigned i = 0 ; i < n ; ++i , ++j ) {
+          *j = b.m_entities[i] ;
+        }
+      }
+
+      std::sort( entities.begin() , entities.end() , LessEntityPointer() );
+
+      j = entities.begin();
+
+      bool change_this_family = false ;
+
+      for ( size_t ik = bk ; ik != ek ; ++ik ) {
+        Bucket & b = * buckets[ik];
+        const unsigned n = b.size();
+        for ( unsigned i = 0 ; i < n ; ++i , ++j ) {
+          Entity * const current = b.m_entities[i] ;
+
+          if ( current != *j ) {
+
+            if ( current ) {
+              // Move current entity to the vacant spot
+              Bucket::copy_fields( *ik_vacant , ie_vacant , b, i );
+              current->m_bucket     = ik_vacant ;
+              current->m_bucket_ord = ie_vacant ;
+              ik_vacant->m_entities[ ie_vacant ] = current ;
+            }
+
+            // Set the vacant spot to where the required entity is now.
+            ik_vacant = (*j)->m_bucket ;
+            ie_vacant = (*j)->m_bucket_ord ;
+            ik_vacant->m_entities[ ie_vacant ] = NULL ;
+
+            // Move required entity to the required spot
+            Bucket::copy_fields( b, i, *ik_vacant , ie_vacant );
+            (*j)->m_bucket     = & b ;
+            (*j)->m_bucket_ord = i ;
+            b.m_entities[i]    = *j ;
+
+            change_this_family = true ;
+          }
+
+          // Once a change has occured then need to propagate the
+          // relocation for the remainder of the family.
+          // This allows the propagation to be performed once per
+          // entity as opposed to both times the entity is moved.
+
+          if ( change_this_family ) { internal_propagate_relocation( **j ); }
+        }
+      }
+    }
+  }
 }
 
 //----------------------------------------------------------------------

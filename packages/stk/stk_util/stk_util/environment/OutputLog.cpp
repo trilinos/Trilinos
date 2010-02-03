@@ -34,7 +34,10 @@ struct LogStream
   void operator = (const LogStream &);
 };
 
-
+#ifdef __INTEL_COMPILER
+#pragma warning(push)
+#pragma warning(disable: 444)
+#endif
 struct LogStreamMap : public std::map<std::string, LogStream *>
 {
   LogStreamMap()
@@ -48,7 +51,9 @@ struct LogStreamMap : public std::map<std::string, LogStream *>
     }
   }
 };
-
+#ifdef __INTEL_COMPILER
+#pragma warning(pop)
+#endif
 
 struct OStreamTeeStreambuf
 {
@@ -71,6 +76,10 @@ struct OStreamTeeStreambuf
   void operator = (const OStreamTeeStreambuf &);
 };
 
+#ifdef __INTEL_COMPILER
+#pragma warning(push)
+#pragma warning(disable: 444)
+#endif
 struct OStreamTeeStreambufMap : public std::map<std::string, OStreamTeeStreambuf *>
 {
   OStreamTeeStreambufMap()
@@ -84,7 +93,9 @@ struct OStreamTeeStreambufMap : public std::map<std::string, OStreamTeeStreambuf
     }
   }
 };
-
+#ifdef __INTEL_COMPILER
+#pragma warning(pop)
+#endif
 
 LogStreamMap &
 get_file_stream_map()
@@ -334,6 +345,10 @@ struct Command
   virtual void execute() = 0;
 };
 
+#ifdef __INTEL_COMPILER
+#pragma warning(push)
+#pragma warning(disable: 444)
+#endif
 struct CommandList : public std::list<Command *>
 {
   CommandList()
@@ -346,7 +361,9 @@ struct CommandList : public std::list<Command *>
       delete (*it);
   }
 };
-
+#ifdef __INTEL_COMPILER
+#pragma warning(pop)
+#endif
 
 namespace {
 

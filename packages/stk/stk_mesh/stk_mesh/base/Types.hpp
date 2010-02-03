@@ -89,9 +89,9 @@ typedef PairIter< std::vector< EntityProc >::const_iterator >
  *  A relation stencil function is the inverse mapping of a contiguous
  *  span of non-negative integers to a template of entity relations.
  *  For example, a triangle-to-vertex relation stencil would map:
- *  -  0 = relation_stencil( Element , Node , 0 , 0 )
- *  -  1 = relation_stencil( Element , Node , 1 , 0 )
- *  -  2 = relation_stencil( Element , Node , 2 , 0 )
+ *  -  0 = relation_stencil( Element , Node , 0 )
+ *  -  1 = relation_stencil( Element , Node , 1 )
+ *  -  2 = relation_stencil( Element , Node , 2 )
  *  
  *  If the input entity relationship is within the stencil then
  *  a stencil function returns a non-negative integer;
@@ -99,8 +99,7 @@ typedef PairIter< std::vector< EntityProc >::const_iterator >
  */
 typedef int ( * relation_stencil_ptr )( unsigned  from_type ,
                                         unsigned  to_type ,
-                                        unsigned  identifier ,
-                                        unsigned  kind );
+                                        unsigned  identifier );
 
 //----------------------------------------------------------------------
 

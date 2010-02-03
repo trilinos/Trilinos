@@ -105,7 +105,7 @@ void testDofMapper( MPI_Comm comm )
 
   STKUNIT_ASSERT_EQUAL( ent_type, nodes[i_node]->entity_type() );
   STKUNIT_ASSERT_EQUAL( ent_id,   nodes[i_node]->identifier() );
-  STKUNIT_ASSERT_EQUAL( field->name(), temperature_field->name() );
+  STKUNIT_ASSERT_EQUAL( field->name() == temperature_field->name(), true );
   STKUNIT_ASSERT_EQUAL( offset_into_field, (int)0 );
 }
 

@@ -19,12 +19,22 @@
 #include <Teuchos_UnitTestRepository.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 
+#define STKUNIT_UNIT_TEST(testclass,testmethod) TEUCHOS_UNIT_TEST(testclass,testmethod)
+
 #define STKUNIT_ASSERT(A) \
     {bool success; TEUCHOS_TEST_ASSERT(A,std::cout,success)}
 #define STKUNIT_ASSERT_EQUAL(A,B) \
-    {bool success; TEUCHOS_TEST_EQUALITY(A,B,std::cout,success)}
+    {bool success; TEUCHOS_TEST_EQUALITY(B,A,std::cout,success)}
+#define STKUNIT_EXPECT_EQUAL(A,B) STKUNIT_ASSERT_EQUAL(A,B)
 #define STKUNIT_ASSERT_THROW(A,B) \
     {bool success; TEUCHOS_TEST_THROW(A,B,std::cout,success)}
+#define STKUNIT_EXPECT_TRUE(A) \
+    {bool success; TEUCHOS_TEST_ASSERT(A,std::cout,success) }
+#define STKUNIT_EXPECT_FALSE(A) \
+    {bool success; TEUCHOS_TEST_ASSERT(!(A),std::cout,success) }
+#define STKUNIT_ASSERT_TRUE(A) STKUNIT_EXPECT_TRUE(A)
+#define STKUNIT_ASSERT_FALSE(A) STKUNIT_EXPECT_FALSE(A)
+
 
 #define STKUNIT_MAIN(argc,argv) \
 int main(int argc,char**argv) {\
@@ -32,9 +42,9 @@ int main(int argc,char**argv) {\
   return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv); \
 }
 
-#define STKUNIT_UNIT_TEST(testclass,testmethod) TEUCHOS_UNIT_TEST(testclass,testmethod)
 
-#else
+#elif HAVE_STK_CPPUNIT
+
 //If we're not in Trilinos, we're a sierra product, so we're using cppunit:
 
 #include <cppunit/TestCase.h>
@@ -44,22 +54,23 @@ int main(int argc,char**argv) {\
 
 #define STKUNIT_ASSERT(A) CPPUNIT_ASSERT(A)
 #define STKUNIT_ASSERT_EQUAL(A,B) CPPUNIT_ASSERT_EQUAL(A,B)
+#define STKUNIT_EXPECT_EQUAL(A,B) CPPUNIT_ASSERT_EQUAL(A,B)
 #define STKUNIT_ASSERT_THROW(A,B) CPPUNIT_ASSERT_THROW(A,B)
 
 #define STKUNIT_UNIT_TEST(testclass,testmethod) \
-class testclass : public CppUnit::TestCase { \
+class testclass##_##testmethod : public CppUnit::TestCase { \
 private: \
-  CPPUNIT_TEST_SUITE( testclass ); \
+  CPPUNIT_TEST_SUITE( testclass##_##testmethod ); \
   CPPUNIT_TEST( testmethod ); \
   CPPUNIT_TEST_SUITE_END(); \
 public: \
-  testclass() : CppUnit::TestCase() {} \
+  testclass##_##testmethod() : CppUnit::TestCase() {} \
   void setUp() {} \
   void tearDown() {} \
   void testmethod(); \
 }; \
-CPPUNIT_TEST_SUITE_REGISTRATION( testclass ); \
-void testclass::testmethod() \
+CPPUNIT_TEST_SUITE_REGISTRATION( testclass##_##testmethod ); \
+void testclass##_##testmethod::testmethod() \
 
 #define STKUNIT_MAIN(argc,argv) \
 int main(int argc, char ** argv) \
@@ -93,7 +104,36 @@ int main(int argc, char ** argv) \
   return 0; \
 }
 
-#endif
+#else // HAVE_STK_GTEST
 
-#endif
+#include <gtest/gtest.h>
+
+#define STKUNIT_ASSERT(A) ASSERT_TRUE(A)
+#define STKUNIT_ASSERT_EQUAL(A,B) ASSERT_EQ(A,B)
+#define STKUNIT_EXPECT_EQUAL(A,B) EXPECT_EQ(A,B)
+#define STKUNIT_ASSERT_THROW(A,B) ASSERT_THROW(A,B)
+#define STKUNIT_EXPECT_TRUE(A) EXPECT_TRUE(A)
+#define STKUNIT_EXPECT_FALSE(A) EXPECT_FALSE(A)
+#define STKUNIT_ASSERT_TRUE(A) ASSERT_TRUE(A)
+#define STKUNIT_ASSERT_FALSE(A) ASSERT_FALSE(A)
+
+#define STKUNIT_UNIT_TEST(testclass,testmethod) TEST(testclass,testmethod)
+
+#define STKUNIT_MAIN(argc,argv) \
+int main(int argc, char **argv) { \
+  if ( MPI_SUCCESS != MPI_Init( & argc , & argv ) ) { \
+    std::cerr << "MPI_Init FAILED" << std::endl ; \
+    std::abort(); \
+  } \
+  std::cout << "Running main() from gtest_main.cc\n"; \
+  testing::InitGoogleTest(&argc, argv); \
+  bool result = RUN_ALL_TESTS(); \
+  MPI_Finalize(); \
+  return result; \
+}
+
+
+#endif // HAVE_STK_Trilinos
+
+#endif // stk_mesh_unit_tests_stk_utest_macros_hpp
 

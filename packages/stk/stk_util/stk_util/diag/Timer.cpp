@@ -135,6 +135,10 @@ private:
    * Note that the subordinate timer is an unsorted list as there are very few timers
    * created and should rarely be looked up by name.
    */
+#ifdef __INTEL_COMPILER
+#pragma warning(push)
+#pragma warning(disable: 444)
+#endif
   class finder : private std::unary_function<Timer, bool>
   {
   public:
@@ -149,6 +153,9 @@ private:
   private:
     std::string		m_name;
   };
+#ifdef __INTEL_COMPILER
+#pragma warning(pop)
+#endif
 
 public:
   /**

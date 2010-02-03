@@ -64,8 +64,8 @@ void UnitTestBulkData::generate_loop(
       Entity & e_node_0 = mesh.declare_entity( 0 , node_ids[n0] , no_parts );
       Entity & e_node_1 = mesh.declare_entity( 0 , node_ids[n1] , no_parts );
       Entity & e_edge   = mesh.declare_entity( 1 , edge_ids[i] , add_parts );
-      mesh.declare_relation( e_edge , e_node_0 , 0 , 0 );
-      mesh.declare_relation( e_edge , e_node_1 , 1 , 0 );
+      mesh.declare_relation( e_edge , e_node_0 , 0 );
+      mesh.declare_relation( e_edge , e_node_1 , 1 );
     }
   }
 
@@ -279,27 +279,20 @@ void UnitTestBulkData::generate_boxes(
     Entity & node7 = mesh.declare_entity( 0 , n7 , no_parts );
     Entity & elem  = mesh.declare_entity( 3 , elem_id , no_parts );
 
-    mesh.declare_relation( elem , node0 , 0 , 0 );
-    mesh.declare_relation( elem , node1 , 1 , 0 );
-    mesh.declare_relation( elem , node2 , 2 , 0 );
-    mesh.declare_relation( elem , node3 , 3 , 0 );
-    mesh.declare_relation( elem , node4 , 4 , 0 );
-    mesh.declare_relation( elem , node5 , 5 , 0 );
-    mesh.declare_relation( elem , node6 , 6 , 0 );
-    mesh.declare_relation( elem , node7 , 7 , 0 );
+    mesh.declare_relation( elem , node0 , 0 );
+    mesh.declare_relation( elem , node1 , 1 );
+    mesh.declare_relation( elem , node2 , 2 );
+    mesh.declare_relation( elem , node3 , 3 );
+    mesh.declare_relation( elem , node4 , 4 );
+    mesh.declare_relation( elem , node5 , 5 );
+    mesh.declare_relation( elem , node6 , 6 );
+    mesh.declare_relation( elem , node7 , 7 );
   }
   }
   }
 
   Selector select_owned( mesh.mesh_meta_data().locally_owned_part() );
-
-  stk::mesh::PartVector part_intersection;
-  part_intersection.push_back( &(mesh.mesh_meta_data().locally_used_part()) );
-  stk::mesh::PartVector part_union;
-  part_union.push_back( &(mesh.mesh_meta_data().locally_used_part()) );
-
-  Selector select_used( part_intersection, part_union );
-
+  Selector select_used( mesh.mesh_meta_data().locally_used_part() );
   Selector select_all(  mesh.mesh_meta_data().universal_part() );
 
   count_entities( select_used , mesh , local_count );

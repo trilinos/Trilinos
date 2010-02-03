@@ -72,7 +72,7 @@ public:
                    const char * required_by = NULL ) const ;
 
   /** \brief  Get an existing part by its ordinal */
-  Part & get_part( unsigned ) const ;
+  Part & get_part( unsigned ord ) const ;
 
   /** \brief  Query all parts of the mesh ordered by the parts' ordinal. */
   const PartVector & get_parts() const { return m_universal_part->subsets(); }
@@ -320,6 +320,7 @@ private:
   Part * m_universal_part ; /* Subset list contains all other parts */
   Part * m_uses_part ;
   Part * m_owns_part ;
+
 
   std::vector< FieldBase * >   m_fields ;
   std::vector< FieldRelation > m_field_relations ;

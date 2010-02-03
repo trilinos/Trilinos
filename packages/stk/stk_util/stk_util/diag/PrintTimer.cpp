@@ -262,6 +262,10 @@ ParallelTimer::dump(Writer &dout) const {
   return dout;
 }
 
+#ifdef __INTEL_COMPILER
+#pragma warning(push)
+#pragma warning(disable: 444)
+#endif
 class finder : public std::unary_function<ParallelTimer, bool>
 {
 public:
@@ -276,6 +280,9 @@ public:
 private:
   std::string           m_name;
 };
+#ifdef __INTEL_COMPILER
+#pragma warning(pop)
+#endif
 
 
 void

@@ -70,7 +70,7 @@ void testImpl( MPI_Comm comm )
   //test the linsys::impl::get_field function:
   const stk::mesh::FieldBase* field = stk::linsys::impl::get_field(field_id_map, 2);
 
-  STKUNIT_ASSERT_EQUAL( field->name(), velocity_field.name() );
+  STKUNIT_ASSERT_EQUAL( field->name() == velocity_field.name(), true );
 
   //call linsys::impl::get_field with an unknown field-id to confirm that an
   //exception is thrown.

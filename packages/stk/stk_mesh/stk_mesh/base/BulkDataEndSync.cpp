@@ -206,77 +206,6 @@ bool communicate_entity_vector( const BulkData                & mesh ,
   return true ;
 }
 
-//----------------------------------------------------------------------
-
-bool communicate_parallel_index(
-  const BulkData                & mesh ,
-  const std::vector<Entity*>    & new_entities ,
-  const std::vector<EntityProc> & owner_change ,
-        std::vector<KeyProc>    & new_entities_index ,
-        std::vector<KeyProc>    & owner_change_index )
-{
-  const unsigned p_size = mesh.parallel_size();
-  const unsigned p_rank = mesh.parallel_rank();
-  CommAll comm( mesh.parallel() );
- 
-  // Communicate created and ownership changes
-
-  for ( std::vector<Entity*>::const_iterator
-        i = new_entities.begin() ; i != new_entities.end() ; ++i ) {
-    KeyProc tmp( (*i)->key() , p_rank );
-    const unsigned p = mesh.parallel_index_rank( tmp.first );
-    comm.send_buffer( p ).pack<KeyProc>( tmp );
-  }
-
-  for ( std::vector<EntityProc>::const_iterator
-        i = owner_change.begin() ; i != owner_change.end() ; ++i ) {
-    KeyProc tmp( i->first->key() , i->second );
-    const unsigned p = mesh.parallel_index_rank( tmp.first );
-    comm.send_buffer( p ).pack<KeyProc>( tmp );
-  }
-
-  const bool local_change = ! new_entities.empty() ||
-                            ! owner_change.empty() ;
-
-  const bool global_change =
-    comm.allocate_buffers( p_size / 4 , false , local_change );
-
-  if ( ! global_change ) { return false ; }
-
-  for ( std::vector<Entity*>::const_iterator
-        i = new_entities.begin() ; i != new_entities.end() ; ++i ) {
-    KeyProc tmp( (*i)->key() , p_rank );
-    const unsigned p = mesh.parallel_index_rank( tmp.first );
-    comm.send_buffer( p ).pack<KeyProc>( tmp );
-  }
-
-  for ( std::vector<EntityProc>::const_iterator
-        i = owner_change.begin() ; i != owner_change.end() ; ++i ) {
-    KeyProc tmp( i->first->key() , i->second );
-    const unsigned p = mesh.parallel_index_rank( tmp.first );
-    comm.send_buffer( p ).pack<KeyProc>( tmp );
-  }
-  
-  comm.communicate();
-
-  for ( unsigned p = 0 ; p < p_size ; ++p ) {
-    CommBuffer & buf = comm.recv_buffer( p );
-    while ( buf.remaining() ) {
-      KeyProc tmp ; buf.unpack<KeyProc>( tmp );
-      if ( tmp.second == p ) { new_entities_index.push_back( tmp ); }
-      else                   { owner_change_index.push_back( tmp ); }
-    }
-  }
-
-  std::sort( new_entities_index.begin() ,
-             new_entities_index.end() , KeyProcLess() );
-
-  std::sort( owner_change_index.begin() ,
-             owner_change_index.end() , KeyProcLess() );
-
-  return true ;
-}
-
 }
 
 //----------------------------------------------------------------------
@@ -403,8 +332,7 @@ void BulkData::internal_resolve_destroy_ghosted(
 
 void BulkData::internal_resolve_destroy_shared(
   const std::vector<Entity*>    & del_local ,
-  const std::vector<EntityProc> & del_remote ,
-        std::vector<EntityProc> & owner_change )
+  const std::vector<EntityProc> & del_remote )
 {
   // Update all of the sharing information and set new owners as needed.
 
@@ -469,11 +397,6 @@ void BulkData::internal_resolve_destroy_shared(
     const unsigned new_owner =
       determine_new_owner( *entity , m_parallel_rank , m_parallel_size );
 
-    if ( entity->owner_rank() == m_parallel_rank ) {
-      EntityProc kp( entity , new_owner );
-      owner_change.push_back( kp );
-    }
-
     entity->m_owner_rank = new_owner ;
     entity->m_sync_count = m_sync_count ;
 
@@ -490,8 +413,11 @@ void BulkData::internal_resolve_destroy_shared(
         m_shares_all.begin() +
           std::distance( shares_all_begin , shares.begin() );
 
-      for ( ; entity == ish->first ; ++ish ) {
-        EntityProcClean::mark( *ish );
+      while ( ish != m_shares_all.end() )
+      {
+        if ( entity != ish->first ) break;
+          EntityProcClean::mark( *ish );
+        ish++; 
       }
     }
   }
@@ -522,161 +448,87 @@ void BulkData::internal_resolve_destroy_shared(
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
-namespace {
-
-void parallel_index_shared_pack( CommAll & comm ,
-                                 const std::vector< KeyProc > & send )
-{
-  std::vector< KeyProc >::const_iterator i , j , k , kk ;
-  for ( i = send.begin() ; i != send.end() ; ) {
-    for ( j = i ; j != send.end() && j->first == i->first ; ++j );
-    for ( k = i ; k != j ; ++k ) {
-      for ( kk = i ; kk != j ; ++kk ) {
-        comm.send_buffer( k->second ).pack<KeyProc>( *kk );
-      }
-    }
-    i = j ;
-  }
-}
-
-}
-
-//----------------------------------------------------------------------
-
 void BulkData::internal_update_parallel_index(
-  const std::vector<Entity*>    & new_entities ,
-  const std::vector<EntityProc> & owner_change ,
-        std::vector<EntityProc> & shared_new )
+  std::vector<EntityProc> & shared_new )
 {
   static const char method[] =
     "stk::mesh::BulkData::internal_update_parallel_index" ;
 
-  std::vector< KeyProc > new_entities_index ;
-  std::vector< KeyProc > owner_change_index ;
+  const size_t new_count = m_new_entities.size();
+  const size_t del_count = m_del_entities.size();
 
-  const bool global_change =
-    communicate_parallel_index( *this , m_new_entities, owner_change ,
-                                new_entities_index , owner_change_index );
+  std::vector< parallel::DistributedIndex::KeyType >
+    new_entities_keys(new_count),
+    del_entities_keys(del_count);
 
-  if ( ! global_change ) { return ; }
+  std::vector< parallel::DistributedIndex::KeyProc >
+    new_entities_keyprocs ;
+
+  for ( size_t i = 0 ; i < new_count ; ++i ) {
+    new_entities_keys[i] = m_new_entities[i]->key().raw_key();
+  }
+
+  for ( size_t i = 0 ; i < del_count ; ++i ) {
+    del_entities_keys[i] = m_del_entities[i]->key().raw_key();
+  }
 
   //------------------------------
   // Verify created did not already exist:
   {
-    unsigned error_count = 0 ;
-    std::ostringstream msg ;
+    m_entities_index.query( new_entities_keys , new_entities_keyprocs );
 
-    const std::vector< KeyProc >::iterator
-      iIndex_end = m_entities_owner_index.end();
-
-    std::vector< KeyProc >::iterator
-      iIndex = m_entities_owner_index.begin();
-
-    for ( std::vector<KeyProc>::iterator
-          i =  new_entities_index.begin() ;
-          i != new_entities_index.end() && iIndex != iIndex_end ; ++i ) {
-
-      for ( ; iIndex != iIndex_end && iIndex->first < i->first ; ++iIndex );
-
-      if ( iIndex != iIndex_end && iIndex->first == i->first ) {
-        ++error_count ;
-        msg << std::endl << "  ( " ;
-        print_entity_key( msg , m_mesh_meta_data , i->first );
-        msg << "  Owned by P" << iIndex->second ; 
-        msg << "  Redeclared by P" << i->second << " )" ;
-      }
-    }
+    unsigned error_count = new_entities_keyprocs.size();
 
     all_reduce( m_parallel_machine , ReduceSum<1>( & error_count ) );
 
     if ( error_count ) {
-      std::string msg_throw ;
-      msg_throw.append( method );
-      msg_throw.append( " FAILED: Existing entities redeclared" );
- 
-      if ( 0 == m_parallel_rank ) { std::cerr << msg_throw ; }
- 
-      all_write_string( m_parallel_machine , std::cerr , msg.str() );
- 
-      throw std::runtime_error( msg_throw );
-    }
-  }
+      std::ostringstream msg ;
+      msg << method ;
+      msg << " FAILED: Declare entities already existed" ;
 
-  //------------------------------
-  // Revise ownership:
-  {
-    const std::vector< KeyProc >::iterator
-      iIndex_end = m_entities_owner_index.end();
-
-    std::vector< KeyProc >::iterator
-      iIndex = m_entities_owner_index.begin();
-
-    for ( std::vector<EntityProc>::const_iterator
-          i =  owner_change.begin() ;
-          i != owner_change.end() && iIndex != iIndex_end ; ++i ) {
-      const EntityKey key = i->first->key();
-
-      for ( ; iIndex != iIndex_end && iIndex->first < key ; ++iIndex );
-
-      iIndex->second = i->second ;
-    }
-
-    EntityProcClean::clean( m_entities_owner_index );
-  }
-  //------------------------------
-  // Processing new owners:
-  {
-    const size_t n_old = m_entities_owner_index.size();
-
-    for ( std::vector<KeyProc>::iterator
-          i =  new_entities_index.begin() ;
-          i != new_entities_index.end() ; ) {
-
-      KeyProc tmp = *i ;
-
-      for ( ; i != new_entities_index.end() && tmp.first == i->first ; ++i ) {
-        tmp.second = i->second ;
+      for ( std::vector< parallel::DistributedIndex::KeyProc >::iterator
+            i =  new_entities_keyprocs.begin() ;
+            i != new_entities_keyprocs.end() ; ++i ) {
+        EntityKey key( & i->first );
+        msg << std::endl << "  ( " ;
+        print_entity_key( msg , m_mesh_meta_data , key );
+        msg << "  Already exists on P" << i->second << " )" ;
       }
-
-      m_entities_owner_index.push_back( tmp );
+ 
+      throw std::runtime_error( msg.str() );
     }
-
-    std::inplace_merge( m_entities_owner_index.begin() ,
-                        m_entities_owner_index.begin() + n_old ,
-                        m_entities_owner_index.end() ,
-                        KeyProcLess() );
   }
+
+  //------------------------------
+  // Update distributed index.
+
+  m_entities_index.update_keys( new_entities_keys , del_entities_keys );
+
   //------------------------------
   // Inform creating processes:
-  {
-    CommAll comm( m_parallel_machine );
-     
-    parallel_index_shared_pack( comm , new_entities_index );
-     
-    comm.allocate_buffers( m_parallel_size / 4 );
-     
-    parallel_index_shared_pack( comm , new_entities_index );
-     
-    comm.communicate();
-     
-    new_entities_index.clear();
-     
-    KeyProc kp ;
-    EntityProc entry( NULL , 0 );
 
-    for ( unsigned p = 0 ; p < m_parallel_size ; ++p ) {
-      CommBuffer & buf = comm.recv_buffer( p );
-      while ( buf.remaining() ) {
-        buf.unpack<KeyProc>( kp );
-        // Omits the local process: 
-        if ( m_parallel_rank != kp.second ) {
-          if ( entry.first == NULL || entry.first->key() != kp.first ) {
-            const EntitySet::iterator j = m_entities.find( kp.first );
-            entry.first = j->second ;
-          }
-          entry.second = kp.second ;
-          shared_new.push_back( entry );
+  m_entities_index.query( new_entities_keys , new_entities_keyprocs );
+
+  {
+    EntityProc entry( (Entity*) NULL , 0 );
+
+    for ( std::vector< parallel::DistributedIndex::KeyProc >::iterator
+          i =  new_entities_keyprocs.begin() ;
+          i != new_entities_keyprocs.end() ; ++i ) {
+
+      EntityKey key( & i->first );
+
+      if ( (int) m_parallel_rank != i->second ) {
+        // Another process also created this entity.
+
+        if ( entry.first == NULL || entry.first->key() != key ) {
+          // Have not looked this entity up by key 
+          const EntitySet::iterator j = m_entities.find( key );
+          entry.first = j->second ;
         }
+        entry.second = i->second ;
+        // Add the ( entity , other_process ) entry to the shared list.
+        shared_new.push_back( entry );
       }
     }
   }
@@ -753,12 +605,8 @@ void BulkData::internal_resolve_parallel_create_delete()
   send_owned_shared_ghosted( m_parallel_rank ,
                              m_ghosting , m_del_entities , send_entities );
 
-
   bool global_delete_flag =
     communicate_entity_vector( *this , send_entities , del_entities_remote );
-
-  // Force true for testing - remember to undo.
-  global_delete_flag = true ;
 
   if ( global_delete_flag ) {
     // At least one process has deleted an entity that is
@@ -775,8 +623,7 @@ void BulkData::internal_resolve_parallel_create_delete()
     // Clear the shared communication list of deleted send and receive entities.
     // Generate list for parallel ownership change.
 
-    internal_resolve_destroy_shared( m_del_entities , del_entities_remote ,
-                                     owner_change );
+    internal_resolve_destroy_shared( m_del_entities , del_entities_remote );
 
     del_entities_remote.clear();
   }
@@ -785,14 +632,9 @@ void BulkData::internal_resolve_parallel_create_delete()
 
   std::vector<EntityProc> shared_created ;
 
-  // Update the parallel index.
-  // - Check that created entities did not already exist.
-  // - Process existing ownership change.
-  // - Output sharing of created entities.
-  internal_update_parallel_index( m_new_entities , owner_change ,
-                                  shared_created );
-
-  owner_change.clear();
+  // Update the parallel index and
+  // output sharing of created entities.
+  internal_update_parallel_index( shared_created );
 
   //------------------------------
   // Update shared created entities.
@@ -803,26 +645,36 @@ void BulkData::internal_resolve_parallel_create_delete()
 
 bool BulkData::modification_end()
 {
-  if ( m_sync_state ) { return false ; }
- 
-  if ( 1 < m_parallel_size ) {
-    internal_resolve_parallel_create_delete();
-  }
+  if ( m_sync_state == SYNCHRONIZED ) { return false ; }
 
-  m_new_entities.clear();
+  int local_change_count[2] ;
+  int global_change_count[2] ;
+  local_change_count[0] = m_new_entities.size();
+  local_change_count[1] = m_del_entities.size();
 
-  while ( ! m_del_entities.empty() ) {
-    internal_destroy_entity( m_del_entities.back() );
-    m_del_entities.pop_back();
+  all_reduce_sum( m_parallel_machine ,
+                  local_change_count , global_change_count , 2 );
+
+  if ( global_change_count[0] || global_change_count[1] ) {
+
+    if ( 1 < m_parallel_size ) {
+      internal_resolve_parallel_create_delete();
+    }
+
+    m_new_entities.clear();
+
+    while ( ! m_del_entities.empty() ) {
+      internal_destroy_entity( m_del_entities.back() );
+      m_del_entities.pop_back();
+    }
   }
 
   // Parallel distribution considerations:
- 
   if ( 1 < m_parallel_size ) {
- 
+
     // Regenerate the ghosting aura around all shared mesh entities.
     internal_regenerate_shared_aura();
- 
+
     // Resolve changed part membership:
     internal_resolve_shared_membership();
   }
@@ -833,15 +685,15 @@ bool BulkData::modification_end()
   // However, it insures that the ordering of entities and buckets
   // is independent of the order in which a set of changes were
   // performed.
- 
+
   internal_sort_bucket_entities();
- 
+
   // ------------------------------
- 
+
   ++m_sync_count ;
- 
-  m_sync_state = true ;
- 
+
+  m_sync_state = SYNCHRONIZED ;
+
   return true ;
 }
 

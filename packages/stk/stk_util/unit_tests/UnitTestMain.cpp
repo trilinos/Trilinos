@@ -1,5 +1,6 @@
 #include <mpi.h>
 
+#include <cstdlib>
 #include <iostream>
 #include <string>
 #include <utility>
@@ -7,6 +8,7 @@
 #include <cppunit/extensions/TestFactoryRegistry.h>
 #include <cppunit/ui/text/TestRunner.h>
 
+using std::abort;
 
 int
 main(
@@ -15,7 +17,7 @@ main(
 {
   if ( MPI_SUCCESS != MPI_Init( & argc , & argv ) ) {
     std::cerr << "MPI_Init FAILED" << std::endl ;
-    std::abort();
+    abort();
   }
 
   {

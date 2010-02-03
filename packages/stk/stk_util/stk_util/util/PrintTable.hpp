@@ -194,6 +194,8 @@ public:
 
   PrintTable &end_row();
 
+  PrintTable &at(size_t row, size_t col);
+
   PrintTable &end_header() {
     m_header.push_back(m_table.back());
     m_table.pop_back();
@@ -276,6 +278,18 @@ struct cell_width
 };
 
 
+struct at
+{
+  at(size_t row, size_t col)
+    : m_row(row),
+      m_col(col)
+  {}
+
+  size_t                        m_row;
+  size_t                        m_col; 
+};
+
+
 struct indent
 {
   indent(PrintTable::ColumnWidth indent)
@@ -298,6 +312,11 @@ struct justify
 
 inline PrintTable &operator<<(PrintTable &tout, const cell_width &m) {
   tout.cell_width(m.m_width);
+  return tout;
+}
+
+inline PrintTable &operator<<(PrintTable &tout, const at &m) {
+  tout.at(m.m_row, m.m_col);
   return tout;
 }
 

@@ -277,7 +277,7 @@ int unpack_entities_verify( CommAll & comm_all ,
       std::vector<Relation>::iterator jr = recv_relations.begin() ;
 
       for ( ; ! bad_rel && jr != recv_relations.end() &&
-              jr->entity_type() < entity->entity_type() ; ++jr , ++ir ) {
+              jr->entity_rank() < entity->entity_type() ; ++jr , ++ir ) {
         bad_rel = ir.empty() || *jr != *ir ;
       }
     }
@@ -312,14 +312,14 @@ int unpack_entities_verify( CommAll & comm_all ,
         error_log << " Relations(" ;
         PairIterRelation ir = entity->relations();
         for ( ; ! ir.empty() &&
-                ir->entity_type() < entity->entity_type() ; ++ir ) {
-          print_relation( error_log , meta, ir->attribute() , ir->entity()->key() );
+                ir->entity_rank() < entity->entity_type() ; ++ir ) {
+          error_log << " " << *ir ;
         }
         error_log << " ) != Relations(" ;
         std::vector<Relation>::iterator jr = recv_relations.begin() ;
         for ( ; jr != recv_relations.end() &&
-                jr->entity_type() < entity->entity_type() ; ++jr ) {
-          print_relation( error_log , meta, jr->attribute() , jr->entity()->key() );
+                jr->entity_rank() < entity->entity_type() ; ++jr ) {
+          error_log << " " << *jr ;
         }
         error_log << " ) received" << std::endl ;
       }

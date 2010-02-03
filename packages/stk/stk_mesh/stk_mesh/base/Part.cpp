@@ -342,6 +342,12 @@ Part & Part::declare_part( const std::string & arg_name , EntityType arg_rank )
     p->m_supersets.push_back( this );
   }
 
+  if ( p->m_entity_rank != arg_rank ) {
+    std::stringstream err;
+    err << "Part of name '" << arg_name << "' of rank " << arg_rank << " already exists";
+    throw std::runtime_error ( err.str() );
+  }
+
   return *p ;
 }
 

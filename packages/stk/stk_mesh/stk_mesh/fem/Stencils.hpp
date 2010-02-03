@@ -18,17 +18,16 @@ enum { ElementStencils_OK =
 //----------------------------------------------------------------------
 
 template< class TopologyTraits >
-int element_node_stencil( unsigned , unsigned , unsigned , unsigned );
+int element_node_stencil( unsigned , unsigned , unsigned );
 
 template<>
 int element_node_stencil<void>( unsigned from_type ,
                                 unsigned to_type ,
-                                unsigned   identifier ,
-                                unsigned   kind )
+                                unsigned identifier )
 {
   int ordinal = -1 ;
 
-  if ( Element == from_type && Node == to_type && 0 == kind ) {
+  if ( Element == from_type && Node == to_type ) {
     ordinal = static_cast<int>(identifier);
   }
 
@@ -38,8 +37,7 @@ int element_node_stencil<void>( unsigned from_type ,
 template< class TopologyTraits >
 int element_node_stencil( unsigned from_type ,
                           unsigned to_type ,
-                          unsigned   identifier ,
-                          unsigned   kind )
+                          unsigned   identifier )
 {
   enum { number_node = TopologyTraits::node_count };
 
@@ -47,7 +45,6 @@ int element_node_stencil( unsigned from_type ,
 
   if ( Element == from_type &&
        Node    == to_type &&
-       0       == kind &&
        identifier < number_node ) {
     ordinal = static_cast<int>(identifier);
   }
@@ -56,17 +53,16 @@ int element_node_stencil( unsigned from_type ,
 }
 
 template< class TopologyTraits >
-int element_node_lock_stencil( unsigned , unsigned , unsigned , unsigned );
+int element_node_lock_stencil( unsigned , unsigned , unsigned );
 
 template<>
 int element_node_lock_stencil<void>( unsigned from_type ,
                                      unsigned to_type ,
-                                     unsigned   identifier ,
-                                     unsigned   kind )
+                                     unsigned identifier )
 {
   int ordinal = -1 ;
 
-  if ( Element == from_type && Node == to_type && 0 == kind ) {
+  if ( Element == from_type && Node == to_type ) {
     ordinal = (int) identifier ;
   }
 
@@ -76,8 +72,7 @@ int element_node_lock_stencil<void>( unsigned from_type ,
 template< class TopologyTraits >
 int element_node_lock_stencil( unsigned from_type ,
                                unsigned to_type ,
-                               unsigned   identifier ,
-                               unsigned   kind )
+                               unsigned identifier )
 {
   enum { number_node = TopologyTraits::node_count };
 
@@ -85,7 +80,6 @@ int element_node_lock_stencil( unsigned from_type ,
 
   if ( Element == from_type &&
        Node    == to_type &&
-       0       == kind &&
        identifier < number_node ) {
     ordinal = (int) identifier ;
   }

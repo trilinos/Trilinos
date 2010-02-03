@@ -24,7 +24,7 @@ void add_connectivities(stk::linsys::LinearSystem& ls,
                         const stk::mesh::BulkData& mesh_bulk)
 {
   const std::vector<mesh::Bucket*>& mesh_buckets = mesh_bulk.buckets(entity_type);
-  stk::mesh::Selector selector(part_intersection);
+  stk::mesh::Selector selector = selectIntersection(part_intersection);
   std::vector<mesh::Bucket*> part_buckets;
   stk::mesh::get_buckets(selector, mesh_buckets, part_buckets);
 
@@ -111,6 +111,7 @@ void dirichlet_bc(stk::linsys::LinearSystem& ls,
 
 int fei_solve(int & status, fei::LinearSystem &fei_ls, const Teuchos::ParameterList & params )
 {
+//Note: hard-coded to Trilinos/Aztec!!!
   Solver_AztecOO solver_az;
 
   fei::ParameterSet param_set;

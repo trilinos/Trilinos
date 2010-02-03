@@ -1,12 +1,9 @@
+
 #ifndef stk_mesh_Selector_hpp
 #define stk_mesh_Selector_hpp
 
-//----------------------------------------------------------------------
-
 #include <iosfwd>
 #include <stk_mesh/base/Types.hpp>
-
-//----------------------------------------------------------------------
 
 namespace stk {
 namespace mesh {
@@ -15,123 +12,177 @@ namespace mesh {
  *  \{
  */
 
-//----------------------------------------------------------------------
-/** \brief  Reference a bucket and parts of interest
- *          for which that bucket is a member.
- */
-struct BucketAndParts {
-  Bucket   * bucket ;
-  PartVector parts ;
+class MetaData;
 
-  ~BucketAndParts() {}
 
-  BucketAndParts() : bucket(NULL), parts() {}
-
-  explicit BucketAndParts( Bucket * b ) : bucket(b), parts() {}
-
-  BucketAndParts( const BucketAndParts & rhs )
-    : bucket( rhs.bucket ), parts( rhs.parts ) {}
-
-  BucketAndParts & operator = ( const BucketAndParts & rhs )
-    { bucket = rhs.bucket ; parts = rhs.parts ; return *this ; }
-};
-
-//----------------------------------------------------------------------
-/** \brief  Interface for selecting buckets from a mesh bulk data */
-
-class SelectorInterface {
-private:
-  SelectorInterface( const SelectorInterface & );
-  SelectorInterface & operator = ( const SelectorInterface & );
-
-protected:
-
-  SelectorInterface() {}
-
-  /** \brief  Query whether the candidate bucket should be selected */
-  virtual bool select( const Bucket & candidate ) const = 0 ;
-
-  /** \brief  Query whether the candidate bucket should be selected.
-   *          If selected then output the mesh parts which motivated
-   *          the selection of this bucket (if any).
-   */
-  virtual
-  bool select_parts( const Bucket & candidate ,
-                     PartVector & selected_parts_from_candidate ) const = 0 ;
-public:
-
-  virtual ~SelectorInterface();
-
-  /** \brief  Query whether the candidate bucket should be selected */
-  bool operator()( const Bucket & candidate ) const 
-    { return select( candidate ); }
-
-  /** \brief  Query whether the candidate bucket should be selected.
-   *          If selected then output the mesh parts which motivated
-   *          selection of the bucket (if any).
-   */
-  bool operator()( const Bucket & candidate ,
-                   PartVector & selected_parts_from_candidate ) const
-    { return select_parts( candidate , selected_parts_from_candidate ); }
-};
-
-//----------------------------------------------------------------------
-/** \brief  Commonly used selection of buckets from a mesh bulk data.
+/** \brief This is a class for selecting \ref stk::mesh::Bucket "buckets" based on a set of
+ * \ref stk::mesh::Part "meshparts" and set logic.  
  *
- *  The selection criteria is specified by which constructor is used.
- */
+ * The selector allows complements, unions and intersections.  All of
+ * this logic is converted to NAND, meaning nots and AND logic.  Each
+ * operation is placed on a stack of operands where each operand is
+ * either a left parenthesis with a number of operands included in the
+ * compound object, or an actual meshpart.  All operands have a unary
+ * bit used to complement the operand.  
+ *
+ * Please see the \ref stk_mesh_selector_unit "unit testing" for additional documentation.
+ *
+ * **/
 
-class Selector : public SelectorInterface {
+class Selector {
 public:
-  /** \brief  Buckets of a given part */
-  explicit Selector( const Part & required_part );
+  /**  \brief . */
+  ~Selector();
 
-  /** \brief  Buckets in the given intersection of parts */
-  explicit Selector( const PartVector & part_intersection );
+  /**  \brief  A default Selector selects nothing */
+  Selector();
 
-  /** \brief  Buckets of a given part and in the union of more parts.
-   *          The output 'selected_parts_from_candidate' will
-   *          be members of the 'part_union' for which the
-   *          candidate bucket is also a subset.
+  /** \brief  Copy constructor */
+  Selector( const Selector & selector);
+
+  /** \brief  Operator equality copy constructor */
+  Selector & operator = ( const Selector & B );
+
+  /** \brief  A part that is required */
+  Selector( const Part & part);
+
+  /** \brief  Intersection: this = this INTERSECT ( expression ) */
+  Selector & operator &= ( const Selector & selector);
+
+  /** \brief  Union: this = this UNION ( expression ) */
+  Selector & operator |= ( const Selector & selector);
+
+  /** \brief  Complement: this = !(this) 
+   * Postcondition:  this is a compound expression
+   * */
+  Selector & complement();
+
+  /** \brief Complement:  return !(this) */
+  Selector operator ! () const
+    { Selector S( *this ); return S.complement(); }
+
+  /** \brief  Is this bucket a subset of the
+   *          set defined by the selector expression.
    */
-  Selector( const Part       & required_part ,
-            const PartVector & part_union );
+  bool operator()( const Bucket & candidate ) const ;
 
-  /** \brief  Buckets in the intersection of some parts
-   *          and in the union of some other parts.
-   *          The output 'selected_parts_from_candidate' will
-   *          be members of the 'part_union' for which the
-   *          candidate bucket is also a subset.
-   */
-  Selector( const PartVector & part_intersection ,
-            const PartVector & part_union );
-
-protected:
-
-  virtual bool select( const Bucket & candidate ) const ;
-
-  virtual
-  bool select_parts( const Bucket & candidate ,
-                     PartVector & selected_parts_from_candidate ) const ;
+  /** \brief  Pretty print the set-expression with part names */
+  friend std::ostream & operator << ( std::ostream & out, const Selector & selector);
 
 private:
-  std::vector<unsigned>    m_intersection ;
-  std::vector<unsigned>    m_union ;
-  const PartVector * const m_all_parts ;
 
-  Selector();
-  Selector( const Selector & );
-  Selector & operator = ( const Selector & );
+  /** \brief . */
+  struct OpType {
+    unsigned       m_part_id ; ///< Id of part under consideration
+    unsigned short m_unary ;   ///< Unary NOT operator: m_unary ^ expression
+    unsigned short m_count ;   ///< Compound statement length
+
+    OpType() : m_part_id(0), m_unary(0), m_count(0) {}
+    OpType( unsigned part_id , unsigned unary , unsigned count )
+      : m_part_id( part_id ), m_unary( unary ), m_count( count ) {}
+    OpType( const OpType & opType );
+    OpType & operator = ( const OpType & opType );
+  };
+
+  /** \brief . */
+  friend class std::vector<OpType> ;
+
+  /** \brief . */
+  const MetaData * m_mesh_meta_data ;
+
+  /** \brief . */
+  std::vector< OpType > m_op ;
+
+  /** \brief . */
+  void verify_compatible( const Selector & B ) const;
+
+  /** \brief . */
+  void verify_compatible( const Bucket & B ) const;
+
+  /** \brief . */
+  bool apply( 
+      unsigned part_id , 
+      const Bucket & candidate 
+      ) const;
+
+  /** \brief . */
+  bool apply( 
+      std::vector<OpType>::const_iterator start,
+      std::vector<OpType>::const_iterator finish,
+      const Bucket & candidate
+      ) const;
+
+  /** \brief Turn the entire expression into a compound */
+  void compoundAll();
+
+  /** \brief Pretty print the expression */
+  std::string printExpression(
+      const std::vector<OpType>::const_iterator start,
+      const std::vector<OpType>::const_iterator finish
+      ) const;
+
 };
 
-//----------------------------------------------------------------------
+/** \brief . 
+ * \relates Selector
+ * */
+Selector operator & ( const Part & A , const Part & B );
+
+/** \brief . 
+ * \relates Selector
+ * */
+Selector operator & ( const Part & A , const Selector & B );
+
+/** \brief . 
+ * \relates Selector
+ * */
+Selector operator & ( const Selector & A, const Part & B );
+
+/** \brief . 
+ * \relates Selector
+ * */
+Selector operator & ( const Selector & A, const Selector & B );
+
+/** \brief . 
+ * \relates Selector
+ * */
+Selector operator | ( const Part & A , const Part & B );
+
+/** \brief . 
+ * \relates Selector
+ * */
+Selector operator | ( const Part & A , const Selector & B );
+
+/** \brief . 
+ * \relates Selector
+ * */
+Selector operator | ( const Selector & A, const Part & B  );
+
+/** \brief . 
+ * \relates Selector
+ * */
+Selector operator | ( const Selector & A , const Selector & B );
+
+/** \brief . 
+ * \relates Selector
+ * */
+Selector operator ! ( const Part & A );
+
+
+/** \brief . 
+ * \relates Selector
+ * */
+Selector selectUnion( const PartVector& union_part_vector );
+
+/** \brief . 
+ * \relates Selector 
+ * */
+Selector selectIntersection( const PartVector& intersection_part_vector );
+
 /** \} */
 
-} // namespace mesh
-} // namespace stk
+} // namespace mesh 
+} // namespace stk 
 
-//----------------------------------------------------------------------
-//----------------------------------------------------------------------
-
-#endif
+#endif // stk_mesh_Selector_hpp
 

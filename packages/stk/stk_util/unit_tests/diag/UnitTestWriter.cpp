@@ -201,7 +201,7 @@ UnitTestWriter::testUnit()
     mp[1] = new int(2);
     mp[2] = new int(3);
     mp[3] = new int(4);
-    
+
     std::multimap<int, int> mm;
     mm.insert(std::multimap<int, int>::value_type(1, 2));
     mm.insert(std::multimap<int, int>::value_type(1, 3));
@@ -211,7 +211,7 @@ UnitTestWriter::testUnit()
     mmp.insert(std::multimap<int, int *>::value_type(1, new int(2)));
     mmp.insert(std::multimap<int, int *>::value_type(1, new int(3)));
     mmp.insert(std::multimap<int, int *>::value_type(2, new int(4)));
-    
+
     std::set<int> s;
     s.insert(2);
     s.insert(3);
@@ -252,6 +252,18 @@ UnitTestWriter::testUnit()
     dw() << ms << dendl;
     dw() << msp << dendl;
     dw() << b << dendl;
+
+    for ( std::multimap<int , int *>::iterator curmmp = mmp.begin() ; curmmp != mmp.end() ; curmmp++ )
+      delete curmmp->second;
+    for ( std::map<int,int *>::iterator curmp = mp.begin() ; curmp != mp.end() ; curmp++ )
+      delete curmp->second;
+    for ( std::list<int *>::iterator curp = lp.begin() ; curp != lp.end() ; curp++ )
+      delete *curp;
+    for ( std::set<int *>::iterator cursp = sp.begin() ; cursp != sp.end() ; cursp++ )
+      delete *cursp;
+    for ( std::multiset<int *>::iterator curmsp = msp.begin() ; curmsp != msp.end() ; curmsp++ )
+      delete *curmsp;
+    
   }
 //  CPPUNIT_ASSERT_EQUAL(std::string("int\n(5:7)\nstd::vector<int, std::allocator<int> >, size 3 {\n  1 2 3 \n}\nstd::vector<int*, std::allocator<int*> >, size 3 {\n  [0] (pointer 0x53b040), 1\n  [1] (pointer 0x53b770), 2\n  [2] (pointer 0x53b750), 3\n}\nstd::list<int, std::allocator<int> >, size 3 {\n  [0] 1\n  [1] 2\n  [2] 3\n}\nstd::list<int*, std::allocator<int*> >, size 3 {\n  [0] (pointer 0x53b820), 1\n  [1] (pointer 0x53b8a0), 2\n  [2] (pointer 0x53b8e0), 3\n}\nstd::map<int, int, std::less<int>, std::allocator<std::pair<int const, int> > >, size 3 {\n  [1] 2\n  [2] 3\n  [3] 4\n}\nstd::map<int, int*, std::less<int>, std::allocator<std::pair<int const, int*> > >, size 3 {\n  [1] 0x53b9f0\n  [2] 0x53ba50\n  [3] 0x53bab0\n}\nstd::multimap<int, int, std::less<int>, std::allocator<std::pair<int const, int> > >, size 3 {\n  [1] 2\n  [1] 3\n  [2] 4\n}\nstd::multimap<int, int*, std::less<int>, std::allocator<std::pair<int const, int*> > >, size 3 {\n  [1] 0x53bb60\n  [1] 0x53bbc0\n  [2] 0x53bc20\n}\nstd::set<int, std::less<int>, std::allocator<int> >, size 3 {\n  2\n  3\n  4\n}\nstd::set<int*, std::less<int*>, std::allocator<int*> >, size 3 {\n  0x53bd10\n  0x53bd60\n  0x53bdb0\n}\nstd::multiset<int, std::less<int>, std::allocator<int> >, size 3 {\n  2\n  2\n  4\n}\nstd::multiset<int*, std::less<int*>, std::allocator<int*> >, size 3 {\n  0x53be90\n  0x53bee0\n  0x53bf30\n}\n00001010\n"), oss().str());  
 

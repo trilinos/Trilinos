@@ -29,6 +29,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
 BroadcastArg.hpp
+DistributedIndex.hpp
 ParallelComm.hpp
 Parallel.hpp
 ParallelIndex.hpp
@@ -38,6 +39,7 @@ ParallelReduce.hpp
 
 APPEND_SET(SOURCES
 BroadcastArg.cpp
+DistributedIndex.cpp
 ParallelComm.cpp
 Parallel.cpp
 ParallelIndex.cpp

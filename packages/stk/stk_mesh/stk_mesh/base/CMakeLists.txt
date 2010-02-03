@@ -20,6 +20,7 @@ SET(SOURCES "")
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../stk_util)
 INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS}/..)
 
@@ -32,6 +33,7 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_SET(HEADERS
 Bucket.hpp
 BulkData.hpp
+BulkModification.hpp
 Comm.hpp
 DataTraitsClass.hpp
 DataTraitsEnum.hpp
@@ -51,6 +53,7 @@ Property.hpp
 Relation.hpp
 Selector.hpp
 SetOwners.hpp
+Transaction.hpp
 Types.hpp
   )
 
@@ -61,11 +64,14 @@ BulkDataEndSync.cpp
 BulkDataGhosting.cpp
 BulkDataOwner.cpp
 BulkDataParallelVerify.cpp
+BulkDataRelation.cpp
 BulkDataSharing.cpp
+BulkModification.cpp
 Comm.cpp
 DataTraits.cpp
 EntityComm.cpp
 Entity.cpp
+EntityKey.cpp
 Field.cpp
 FieldData.cpp
 FieldParallel.cpp
@@ -76,6 +82,7 @@ Part.cpp
 Property.cpp
 Relation.cpp
 Selector.cpp
+Transaction.cpp
   )
 
 IF (TPL_ENABLE_MPI)

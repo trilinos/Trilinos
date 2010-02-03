@@ -2,61 +2,11 @@
 
 #include <stk_util/environment/LogControl.hpp>
 
-#include <stk_util/util/string_case_compare.hpp>
-
 namespace stk {
 
 namespace {
 
 typedef std::map<std::ostream *, LogControl *> OStreamLogControlMap;
-
-class RuleMap
-{
-public:
-  typedef std::map<std::string, LogControlRule *, LessCase> Map;
-
-  RuleMap()
-    : m_ruleMap()
-  {}
-
-  ~RuleMap() {
-    for (Map::iterator it = m_ruleMap.begin(); it != m_ruleMap.end(); ++it)
-      delete (*it).second;
-  }
-  
-  void addLogControlRule(const std::string &rule_name, const LogControlRule &rule) {
-    Map::iterator it = m_ruleMap.find(rule_name);
-    if (it != m_ruleMap.end())
-      m_ruleMap.erase(it);
-    
-    m_ruleMap[rule_name] = rule.clone();
-  }
-
-  LogControlRule *getLogControlRule(const std::string &rule_name) {
-    Map::iterator it = m_ruleMap.find(rule_name);
-
-    if (it != m_ruleMap.end())
-      return (*it).second;
-
-    else {
-      std::pair<Map::iterator, bool> result = m_ruleMap.insert(Map::value_type(rule_name, new LogControlRuleAlways));
-      return (*result.first).second;
-    }
-  }
-
-private:
-  Map           m_ruleMap;
-};
-
-
-RuleMap &
-get_rule_map() 
-{
-  static RuleMap s_ruleMap;
-
-  return s_ruleMap;
-}
-
 
 OStreamLogControlMap &
 get_ostream_log_control_map() 
@@ -95,15 +45,6 @@ LogControlRuleInterval::next()
 }
 
 
-void
-addLogControlRule(
-  const std::string &           rule_name,
-  const LogControlRule &        rule)
-{
-  get_rule_map().addLogControlRule(rule_name, rule);
-}
-
-
 LogControl::LogControl(
   std::ostream &                log_ostream,
   const LogControlRule &        rule)
@@ -126,22 +67,22 @@ LogControl::LogControl(
 }
 
 
-LogControl::LogControl(
-  std::ostream &        log_ostream,
-  const std::string &   rule_name)
-  : m_parent(0),
-    m_rule(get_rule_map().getLogControlRule(rule_name)->clone()),
-    m_state(ON),
-    m_logStream(log_ostream),
-    m_logStreambuf(log_ostream.rdbuf()),
-    m_cacheStream()
-{
-  OStreamLogControlMap &ostream_log_control_map = get_ostream_log_control_map();
+// LogControl::LogControl(
+//   std::ostream &        log_ostream,
+//   const std::string &   rule_name)
+//   : m_parent(0),
+//     m_rule(get_rule_map().getLogControlRule(rule_name)->clone()),
+//     m_state(ON),
+//     m_logStream(log_ostream),
+//     m_logStreambuf(log_ostream.rdbuf()),
+//     m_cacheStream()
+// {
+//   OStreamLogControlMap &ostream_log_control_map = get_ostream_log_control_map();
 
-  // Append this as tail of linked list of LogControl's sharing this ostream.
-  m_parent = ostream_log_control_map[&m_logStream];
-  ostream_log_control_map[&m_logStream] = this;
-}
+//   // Append this as tail of linked list of LogControl's sharing this ostream.
+//   m_parent = ostream_log_control_map[&m_logStream];
+//   ostream_log_control_map[&m_logStream] = this;
+// }
 
 
 LogControl::~LogControl()

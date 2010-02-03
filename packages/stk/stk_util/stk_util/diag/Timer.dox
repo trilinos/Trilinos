@@ -46,7 +46,7 @@
 ///     {
 ///     public:
 ///       AClass(const std::string &name, ParentClass &parent)
-///       : m_timerAClass("AClass " + name, Diag::TIMER_REGION, parent.getParentTimer()),
+///       : m_timerAClass(std::string("AClass ") + name, Diag::TIMER_REGION, parent.getParentTimer()),
 ///         m_timerInitialize("Initialize", m_timerAClass),
 ///         m_timerExecute("Execute", m_timerAClass)
 ///       {}
@@ -79,6 +79,7 @@
 ///     aFunction()
 ///     {
 ///       static Diag::Timer a_function_timer("aFunction", Diag::TIMER_PROFILE1);
+///
 ///       Diag::Timer::TimeBlock _timer(a_function_timer);
 ///    
 ///       ...

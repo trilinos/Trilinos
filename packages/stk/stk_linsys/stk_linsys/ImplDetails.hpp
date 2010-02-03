@@ -5,6 +5,7 @@
 
 #include <limits>
 #include <map>
+#include <stdexcept>
 #include <stk_mesh/base/Field.hpp>
 
 namespace stk {

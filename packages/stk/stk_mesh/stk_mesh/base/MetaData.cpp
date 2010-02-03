@@ -114,7 +114,7 @@ Part * MetaData::get_part( const std::string & p_name ,
   Part * const p = find( all_parts , p_name );
 
   if ( required_by && NULL == p ) { // ERROR
-    static const char method[] = "stk::mesh::BulkData::get_part" ;
+    static const char method[] = "stk::mesh::MetaData::get_part" ;
     std::string msg ;
     msg.append( method )
        .append( "( " )

@@ -13,8 +13,27 @@ PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 SET(SOURCES "")
 
 APPEND_SET(SOURCES
+UnitTestBucket.cpp
+UnitTestBoundaryAnalysis.cpp
+UnitTestBulkData_ChangeParts.cpp
+UnitTestBulkData.cpp
+UnitTestBulkData_Destroy.cpp
+UnitTestBulkData_Generate.cpp
+UnitTestBulkData_new.cpp
+UnitTestBulkModification.cpp
+UnitTestDataTraits.cpp
 UnitTestField.cpp
+UnitTestFixture.cpp
+UnitTestGetBuckets.cpp
+UnitTestGridMeshFixture.cpp
 UnitTestMain.cpp
+UnitTestMesh.cpp
+UnitTestMetaData.cpp
+UnitTestRelation.cpp
+UnitTestRingMeshFixture.cpp
+UnitTestSelector.cpp
+UnitTestTemplate.cpp
+UnitTestTransactionLog.cpp
 UnitTestMetaData.cpp
   )
 

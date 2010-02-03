@@ -4,6 +4,9 @@
 #include <ostream>
 #include <sstream>
 #include <string>
+#include <map>
+
+#include <stk_util/util/string_case_compare.hpp>
 
 namespace stk {
 
@@ -13,6 +16,13 @@ namespace stk {
  */
 struct LogControlRule
 {
+  /**
+   * Destroys a <code>LogControlRule</code> instance.
+   *
+   */
+  virtual ~LogControlRule()
+  {}
+  
   /**
    * @brief Member function <code>clone</code> creates a clone of the rule.
    *
@@ -38,6 +48,13 @@ struct LogControlRule
  */
 struct LogControlRuleAlways : public LogControlRule
 {
+  /**
+   * Destroys a <code>LogControlRuleAlways</code> instance.
+   *
+   */
+  virtual ~LogControlRuleAlways()
+  {}
+  
   /**
    * Creates a new <code>LogControlRuleAlways</code> instance.
    *
@@ -69,17 +86,82 @@ struct LogControlRuleAlways : public LogControlRule
 
 struct LogControlRuleInterval : public LogControlRule
 {
+  /**
+   * Creates a new <code>LogControlRuleInterval</code> instance.
+   *
+   * @param interval		an <code>int</code> interval to enable log output.
+   *
+   */
   LogControlRuleInterval(int interval);
 
+  /**
+   * Destroys a <code>LogControlRuleInterval</code> instance.
+   *
+   */
+  virtual ~LogControlRuleInterval()
+  {}
+  
+  /**
+   * @brief Member function <code>clone</code> creates a duplicate LogControlRuleAlways object.
+   *
+   * @return			a <code>LogControlRule</code> pointer to the new duplicated always object.
+   */
   virtual LogControlRule *clone() const {
     return new LogControlRuleInterval(*this);
   }
 
+  /**
+   * @brief Member function <code>next</code> returns true when the current count modulo the interval is zero.
+   * whichs indicate that the log stream should write to the log file.
+   *
+   * @return			a <code>bool</code> returns true when the current count modulo the
+   *                            interval is zero.  whichs indicate that the log stream should write
+   *                            to the log file.
+   */
   virtual bool next();
   
 private:
   int           m_interval;
   int           m_count;
+};
+
+
+class RuleMap
+{
+public:
+  typedef std::map<std::string, LogControlRule *, LessCase> Map;
+
+  RuleMap()
+    : m_ruleMap()
+  {}
+
+  ~RuleMap() {
+    for (Map::iterator it = m_ruleMap.begin(); it != m_ruleMap.end(); ++it)
+      delete (*it).second;
+  }
+  
+  void addLogControlRule(const std::string &rule_name, const LogControlRule &rule) {
+    Map::iterator it = m_ruleMap.find(rule_name);
+    if (it != m_ruleMap.end())
+      m_ruleMap.erase(it);
+    
+    m_ruleMap[rule_name] = rule.clone();
+  }
+
+  LogControlRule *getLogControlRule(const std::string &rule_name) {
+    Map::iterator it = m_ruleMap.find(rule_name);
+
+    if (it != m_ruleMap.end())
+      return (*it).second;
+
+    else {
+      std::pair<Map::iterator, bool> result = m_ruleMap.insert(Map::value_type(rule_name, new LogControlRuleAlways));
+      return (*result.first).second;
+    }
+  }
+
+private:
+  Map           m_ruleMap;
 };
 
 
@@ -163,16 +245,6 @@ private:
   std::streambuf *      m_logStreambuf;         ///< Log stream original stream buffer
   std::ostringstream    m_cacheStream;          ///< Cache stream
 };
-
-/**
- * @brief Function <code>addLogControlRule</code> add a named rule to log control's rule set.
- *
- * @param name			a <code>std::string</code> constant variable...
- *
- * @param rule			a <code>LogControlRule</code> constant variable...
- *
- */
-void addLogControlRule(const std::string &name, const LogControlRule &rule);
 
 } // namespace stk
 

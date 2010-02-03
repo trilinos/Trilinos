@@ -74,7 +74,7 @@ void testCartesian()
 
   std::string to_str = cartesian_tag.to_string(3, 1);
   std::string expected_str("y");
-  STKUNIT_ASSERT_EQUAL( to_str, expected_str );
+  STKUNIT_ASSERT_EQUAL( to_str == expected_str, true );
 
   //should throw if we supply a size < 3:
   STKUNIT_ASSERT_THROW( cartesian_tag.to_string(2, 1), std::runtime_error );

@@ -19,14 +19,19 @@ namespace mesh {
 //----------------------------------------------------------------------
 
 /* \brief  Select buckets from the input to the output. */
-void get_buckets( const SelectorInterface & selector ,
+void get_buckets( const Selector & selector ,
                   const std::vector< Bucket * > & input ,
                         std::vector< Bucket * > & output );
 
-/* \brief  Select buckets and parts from the input to the output. */
-void get_buckets( const SelectorInterface       & selector ,
-                  const std::vector< Bucket * >       & input ,
-                        std::vector< BucketAndParts > & output );
+
+/* \brief  Get the parts from the union part vector that the bucket is
+ *         contained in. 
+ */
+void get_involved_parts( 
+    const PartVector & union_parts,
+    const Bucket & candidate,
+    PartVector & involved_parts
+    );
 
 //----------------------------------------------------------------------
 /** \} */

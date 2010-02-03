@@ -1,3 +1,5 @@
+#ifndef unit_tests_UnitTestBulkData_hpp
+#define unit_tests_UnitTestBulkData_hpp
 
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/BulkData.hpp>
@@ -57,3 +59,4 @@ public:
 }
 }
 
+#endif // unit_tests_UnitTestBulkData_hpp

@@ -10,86 +10,6 @@
 namespace stk {
 namespace mesh {
 
-typedef uint8_t RelationKind;
-typedef uintptr_t relation_attr_type ;
-
-
-enum { type_digits = 4 ,
-       type_mask = (~unsigned(0)) >> ( std::numeric_limits<unsigned>::digits - type_digits ),
-       attr_kind_digits = 4 ,
-       attr_digits      = std::numeric_limits<relation_attr_type>::digits ,
-       attr_kind_shift  = attr_digits - attr_kind_digits ,
-       attr_type_shift  = attr_kind_shift - type_digits ,
-       attr_id_digits   = attr_type_shift < std::numeric_limits<int>::digits ?
-       attr_type_shift : std::numeric_limits<int>::digits ,
-       attr_kind_mask   = (~unsigned(0)) >>
-       ( std::numeric_limits<unsigned>::digits - attr_kind_digits ),
-       attr_id_mask     = (~unsigned(0)) >>
-       ( std::numeric_limits<unsigned>::digits - attr_id_digits )
-};
-
-inline
-unsigned relation_identifier( relation_attr_type attr )
-{ return attr_id_mask & attr ; }
-
-inline
-unsigned relation_kind( relation_attr_type attr )
-{ return attr >> attr_kind_shift ; }
-
-inline
-unsigned relation_entity_type( relation_attr_type attr )
-{ return type_mask & ( attr >> attr_type_shift ); }
-
-inline
-relation_attr_type
-relation_attr( unsigned entity_type ,
-               unsigned identifier ,
-               unsigned relation_kind )
-{
-  enum { kind_digits = attr_kind_digits ,
-         kind_mask   = attr_kind_mask ,
-         type_mask   = type_mask };
-
-  relation_attr_type
-    attr( ( ( relation_kind & kind_mask ) << kind_digits ) |
-            ( entity_type   & type_mask ) );
-  attr <<= attr_type_shift ;
-  attr |=  attr_id_mask & identifier ;
-  return attr ;
-}
-
-
-//----------------------------------------------------------------------
-// Not quite so trivial, perhaps should not be inlined.
-
-// inline
-// entity_key_type entity_key( unsigned type , entity_id_type id )
-// {
-//   entity_key_type key( type );
-//   key <<= EntityKey::type_shift ;
-//   key |=  EntityKey::check_bit ;
-//   key |=  EntityKey::id_mask & static_cast<entity_key_type>(id);
-//   return key ;
-// }
-
-// inline
-// relation_attr_type
-// relation_attr( unsigned entity_type ,
-//                unsigned identifier ,
-//                unsigned relation_kind )
-// {
-//   enum { kind_digits = EntityKey::attr_kind_digits ,
-//          kind_mask   = EntityKey::attr_kind_mask ,
-//          type_mask   = EntityKey::type_mask };
-
-//   relation_attr_type
-//     attr( ( ( relation_kind & kind_mask ) << kind_digits ) |
-//             ( entity_type   & type_mask ) );
-//   attr <<= EntityKey::attr_type_shift ;
-//   attr |=  EntityKey::attr_id_mask & identifier ;
-//   return attr ;
-// }
-
 /** \addtogroup stk_mesh_module
  *  \{
  */
@@ -118,6 +38,8 @@ relation_attr( unsigned entity_type ,
  */
 class Relation {
 public:
+  typedef uintptr_t raw_attr_type ;
+
   /** \brief  Destructor */
   ~Relation() {}
 
@@ -131,8 +53,8 @@ public:
   /** \brief  Assignment operator */
   Relation & operator = ( const Relation & r )
   {
-    if(this != &r) {
-      m_attr = r.m_attr ;
+    if( this != &r ) {
+      m_attr   = r.m_attr ;
       m_entity = r.m_entity ;
     }
     return *this ;
@@ -141,53 +63,106 @@ public:
   /** \brief  Construct a relation from an encoded relation attribute
    *          and a referenced entity.
    */
-  Relation( relation_attr_type attr , Entity & entity );
+  Relation( raw_attr_type attr , Entity & entity );
 
   /** \brief  Construct a relation from a referenced entity,
    *          local identifier, kind, and converse flag.
    */
-  Relation( Entity & entity ,
-            unsigned identifier ,
-            unsigned kind = 0 );
+  Relation( Entity & entity , unsigned identifier );
 
   /** \brief  The encoded relation attribute */
-  relation_attr_type attribute() const { return m_attr ; }
+  static raw_attr_type attribute( unsigned rank , unsigned id );
 
-  /** \brief  The kind of relation */
-  unsigned   kind() const { return relation_kind( m_attr ); }
+  /** \brief  The encoded relation attribute */
+  raw_attr_type attribute() const { return m_attr.value ; }
 
-  /** \brief  The type of the referenced entity */
-  unsigned entity_type() const { return relation_entity_type( m_attr ); }
+  /** \brief  The rank of the referenced entity */
+  unsigned entity_rank() const ;
 
   /** \brief  The local relation identifier */
-  unsigned   identifier() const { return relation_identifier( m_attr ); }
-
-#if 0
-  /** \brief  If the relation is from the owning to the referenced entity */
-  bool       forward() const ;
-
-  /** \brief  If the relation is from the referenced to the owning entity */
-  bool       converse() const ;
-#endif
+  unsigned identifier() const ;
 
   /** \brief  The referenced entity */
   Entity * entity() const { return m_entity ; }
 
   /** \brief  Equality operator */
   bool operator == ( const Relation & r ) const
-    { return m_attr == r.m_attr && m_entity == r.m_entity ; }
+    { return m_attr.value == r.m_attr.value && m_entity == r.m_entity ; }
 
   /** \brief  Inequality operator */
   bool operator != ( const Relation & r ) const
-    { return m_attr != r.m_attr || m_entity != r.m_entity ; }
+    { return m_attr.value != r.m_attr.value || m_entity != r.m_entity ; }
 
   /** \brief  Ordering operator */
   bool operator < ( const Relation & r ) const ;
 
 private:
-  relation_attr_type m_attr ;
-  Entity           * m_entity ;
+
+  enum {
+    attr_digits   = std::numeric_limits<raw_attr_type>::digits ,
+    uint_digits   = std::numeric_limits<unsigned>::digits ,
+    rank_digits   = EntityKey::rank_digits ,
+    id_max_digits = attr_digits - rank_digits ,
+    id_digits     = uint_digits - rank_digits ,
+    id_mask       = ~(0u) >> ( uint_digits - id_digits ),
+    rank_shift    = id_max_digits
+  };
+
+  union AttrType {
+  public:
+    raw_attr_type value ;
+
+    struct {
+      raw_attr_type identifier  : id_digits ;
+      raw_attr_type entity_rank : rank_digits ;
+    } normal_view ;
+
+    struct {
+      raw_attr_type entity_rank : rank_digits ;
+      raw_attr_type identifier  : id_digits ;
+    } reverse_view ;
+
+    AttrType( raw_attr_type v ) : value(v) {}
+    AttrType() : value(0) {}
+    AttrType( const AttrType & rhs ) : value( rhs.value ) {}
+    AttrType & operator = ( const AttrType & rhs )
+      { value = rhs.value ; return *this ; }
+  };
+
+  AttrType m_attr ;
+  Entity * m_entity ;
 };
+
+//----------------------------------------------------------------------
+
+inline
+unsigned Relation::entity_rank() const
+{ return unsigned( m_attr.value >> rank_shift ); }
+
+inline
+unsigned Relation::identifier() const
+{ return unsigned( m_attr.value & id_mask ); }
+
+struct LessRelation {
+  bool operator() ( const Relation & lhs , const Relation & rhs ) const
+    { return lhs < rhs ; }
+
+  bool operator() ( const Relation & lhs , Relation::raw_attr_type rhs ) const
+    { return lhs.attribute() < rhs ; }
+};
+
+//----------------------------------------------------------------------
+/** \brief  Query which mesh entities have a relation
+ *          to all of the input mesh entities.
+ */
+void get_entities_through_relations(
+  const std::vector<Entity*> & entities ,
+        std::vector<Entity*> & entities_related );
+
+void get_entities_through_relations(
+  const std::vector<Entity*> & entities ,
+        unsigned               entities_related_rank ,
+        std::vector<Entity*> & entities_related );
 
 //----------------------------------------------------------------------
 /** \brief  Query if a member entity of the given entity type
@@ -202,7 +177,6 @@ void induced_part_membership( Part & part ,
                               unsigned entity_type_from ,
                               unsigned entity_type_to ,
                               unsigned relation_identifier ,
-                              unsigned relation_kind ,
                               PartVector & induced_parts );
 
 /** \brief  Induce entities' part membership based upon relationships
@@ -212,7 +186,6 @@ void induced_part_membership( const Entity     & entity_from ,
                               const PartVector & omit ,
                                     unsigned     entity_type_to ,
                                     unsigned     relation_identifier ,
-                                    unsigned     relation_kind ,
                                     PartVector & entity_to_parts );
 
 /** \brief  Induce an entity's part membership based upon relationships
@@ -222,16 +195,19 @@ void induced_part_membership( const Entity     & entity ,
                               const PartVector & omit ,
                                     PartVector & induced );
 
+
 //----------------------------------------------------------------------
 
+#if 0
 /** \brief  Decode and print the relation attribute */
 std::ostream &
-print_relation( std::ostream & , relation_attr_type );
+print_relation( std::ostream & , Relation::raw__attr_type );
 
 /** \brief  Decode and print the relation attribute and referenced entity key */
 std::ostream &
 print_relation( std::ostream & , const MetaData & ,
-                relation_attr_type , EntityKey );
+                Relation::raw__attr_type , EntityKey );
+#endif
 
 /** \brief  Print the relation attributes and referenced entity's key */
 std::ostream & operator << ( std::ostream & , const Relation & );

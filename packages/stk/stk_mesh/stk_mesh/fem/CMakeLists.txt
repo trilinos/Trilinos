@@ -37,6 +37,7 @@ TopologyHelpers.hpp
   )
 
 APPEND_SET(SOURCES
+BoundaryAnalysis.cpp
 EntityTypes.cpp
 FieldTraits.cpp
 TopologyDimensions.cpp

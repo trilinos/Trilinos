@@ -29,7 +29,7 @@ void pack_entity_info( CommBuffer & buf , const Entity & entity )
  
   for ( unsigned i = 0 ; i < nrel ; ++i ) {
     buf.pack<EntityKey>( relations[i].entity()->key() );
-    buf.pack<relation_attr_type>( relations[i].attribute() );
+    buf.pack<Relation::raw_attr_type>( relations[i].attribute() );
   }
 }
  
@@ -63,10 +63,11 @@ void unpack_entity_info(
  
   for ( unsigned i = 0 ; i < nrel ; ++i ) {
     EntityKey rel_key ;
-    relation_attr_type rel_attr = 0 ;
+    Relation::raw_attr_type rel_attr = 0 ;
     buf.unpack<EntityKey>( rel_key );
-    buf.unpack<relation_attr_type>( rel_attr );
-    Entity * const entity = mesh.get_entity( entity_type(rel_key), entity_id(rel_key) );
+    buf.unpack<Relation::raw_attr_type>( rel_attr );
+    Entity * const entity =
+      mesh.get_entity( entity_type(rel_key), entity_id(rel_key) );
     if ( entity ) {
       Relation rel( rel_attr , * entity );
       relations.push_back( rel );

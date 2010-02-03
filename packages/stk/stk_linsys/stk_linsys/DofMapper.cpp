@@ -50,7 +50,7 @@ DofMapper::add_dof_mappings(const stk::mesh::BulkData& mesh_bulk,
 
   int field_id = impl::map_field_to_int(m_field_id_map, field);
 
-  stk::mesh::Selector selector(part_intersection);
+  stk::mesh::Selector selector = selectIntersection(part_intersection);
   const std::vector<stk::mesh::Bucket*>& all_buckets = mesh_bulk.buckets(ent_type);
   std::vector<stk::mesh::Bucket*> buckets;
   stk::mesh::get_buckets(selector, all_buckets, buckets);

@@ -44,7 +44,7 @@ void get_entities( const BulkData & mesh , EntityType type ,
 }
 
 unsigned count_selected_entities(
-  const SelectorInterface & selector ,
+  const Selector & selector ,
   const std::vector< Bucket * > & input_buckets )
 {
   size_t count = 0;
@@ -60,7 +60,8 @@ unsigned count_selected_entities(
   return count ;
 }
 
-void get_selected_entities( const SelectorInterface & selector ,
+
+void get_selected_entities( const Selector & selector ,
                             const std::vector< Bucket * > & input_buckets ,
                             std::vector< Entity * > & entities )
 {
@@ -84,10 +85,11 @@ void get_selected_entities( const SelectorInterface & selector ,
   std::sort(entities.begin(), entities.end(), EntityLess());
 }
 
+
 //----------------------------------------------------------------------
 
 void count_entities(
-  const SelectorInterface & selector ,
+  const Selector & selector ,
   const BulkData & mesh ,
   std::vector< EntityType > & count )
 {

@@ -1,226 +1,335 @@
-//----------------------------------------------------------------------
 
-#include <sstream>
 #include <stdexcept>
-#include <algorithm>
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/Part.hpp>
-#include <stk_mesh/base/Selector.hpp>
+#include <sstream>
+#include <iostream>
 
-//----------------------------------------------------------------------
+#include <stk_mesh/base/Selector.hpp>
+#include <stk_mesh/base/Bucket.hpp>
+#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/Types.hpp>
 
 namespace stk {
 namespace mesh {
 
-//----------------------------------------------------------------------
+Selector::Selector( )
+  : m_mesh_meta_data(0), m_op()
+{ 
+  compoundAll();
+}
 
-SelectorInterface::~SelectorInterface() {}
 
-//----------------------------------------------------------------------
+Selector::~Selector( )
+{ }
 
-namespace {
 
-/** \brief  Does [ibeg,iend) contain [jbeg,jend) */
-template< typename iType , typename jType >
-inline
-bool contains( iType i , const iType iend ,
-               jType j , const jType jend )
+// Deep copy
+Selector::Selector( const Selector & selector )
+  : m_mesh_meta_data(selector.m_mesh_meta_data), m_op(selector.m_op)
 {
-  while ( j < jend && i < iend ) {
-    if      ( *j < *i ) { break ; } // [i,iend) cannot contain *j
-    else if ( *i < *j ) { ++i ; }
-    else { ++i , ++j ; }
+}
+
+
+Selector::Selector( const Part & p )
+  : m_mesh_meta_data( & p.mesh_meta_data() ) , m_op()
+{
+  m_op.push_back( OpType( p.mesh_meta_data_ordinal() , 0 , 0 ) );
+}
+
+void Selector::compoundAll() 
+{
+  m_op.insert( m_op.begin(), OpType( 0, 0, m_op.size()+1 ) );
+}
+
+
+Selector & Selector::complement()
+{
+  bool singlePart = (m_op.size() == 1);
+  bool fullCompoundPart = (m_op[0].m_count == m_op.size());
+
+  if ( !(singlePart || fullCompoundPart) ) {
+    // Turn into a compound 
+    compoundAll();
   }
-  return j == jend ; // [i,iend) contains every [j,jend)
+  // Flip the bit
+  m_op[0].m_unary ^= 1; 
+  return *this;
 }
 
-/** \brief  Does [ibeg,iend) contain value */
-template< typename iType , typename vType >
-inline
-bool contains( iType i , const iType iend , const vType & v )
+
+Selector & Selector::operator = ( const Selector & B )
 {
-  while ( i < iend && *i < v ) { ++i ; }
-  return i < iend && *i == v ;
+  this->m_mesh_meta_data = B.m_mesh_meta_data;
+  this->m_op = B.m_op;
+  return *this;
 }
 
-}
-
-//----------------------------------------------------------------------
-
-bool Selector::select_parts(
-  const Bucket & candidate ,
-  PartVector & selected_parts_from_candidate ) const
+Selector & Selector::operator &= ( const Selector & B )
 {
-  selected_parts_from_candidate.clear();
+  if (m_mesh_meta_data == 0) {
+    m_mesh_meta_data = B.m_mesh_meta_data;
+  }
+  verify_compatible( B );
+  m_op.insert( m_op.end() , B.m_op.begin() , B.m_op.end() );
+  return *this;
+}
 
-  const std::pair<const unsigned *,const unsigned *>
-    part_ordinals = candidate.superset_part_ordinals();
 
-  bool result = contains( part_ordinals.first , part_ordinals.second ,
-                          m_intersection.begin(), m_intersection.end() );
+Selector & Selector::operator |= ( const Selector & B )
+{
+  if (m_mesh_meta_data == 0) {
+    m_mesh_meta_data = B.m_mesh_meta_data;
+  }
+  verify_compatible( B );
 
-  if ( result && m_all_parts ) { // Union check requested
-    std::vector<unsigned>::const_iterator i = m_union.begin();
-    const unsigned * j = part_ordinals.first ;
+  Selector notB = B; notB.complement();
 
-    // Determine intersection of union with the candidate
+  // this UNION B == ! ( ! this & ! B )
 
-    result = false ;
+  this->complement();                   //   ( ! (this) )
 
-    while ( i != m_union.end() && j != part_ordinals.second ) {
-      if      ( *i < *j ) { ++i ; }
-      else if ( *j < *i ) { ++j ; }
-      else {
-        result = true ;
-        // Find every match:
-        Part * const part = (*m_all_parts)[ *i ];
-        selected_parts_from_candidate.push_back( part );
-        ++i ; ++j ;
-      }
+  const unsigned finalSize = 1 + m_op.size() + notB.m_op.size();
+
+  m_op.insert( 
+      m_op.end(), 
+      notB.m_op.begin(), 
+      notB.m_op.end() );                // ! ( ! (this) & !B )
+  m_op.insert( 
+      m_op.begin(), 
+      OpType( 0 , 1 , finalSize ) );    // ! ( ! (this) & ? )
+  return *this;
+}
+
+
+void Selector::verify_compatible( const Selector & B ) const
+{
+  if (B.m_mesh_meta_data != m_mesh_meta_data) {
+    std::ostringstream msg;
+    msg << "Selector = " << *this << " has mesh meta data pointer = " << m_mesh_meta_data << std::endl;
+    msg << "Selector = " << B << " has mesh meta data pointer = " << B.m_mesh_meta_data << std::endl;
+    msg << "These selectors contain incompatible mesh meta data pointers!";
+    throw std::runtime_error( msg.str() );
+  }
+}
+
+
+void Selector::verify_compatible( const Bucket & B ) const
+{
+  const MetaData * B_mesh_meta_data = &B.mesh().mesh_meta_data();
+  if (B_mesh_meta_data != m_mesh_meta_data) {
+    std::ostringstream msg;
+    msg << "Selector = " << *this << " has mesh meta data pointer = " << m_mesh_meta_data << std::endl;
+    msg << "Bucket has mesh meta data pointer = " << B_mesh_meta_data << std::endl;
+    msg << "This selector is incompatible with this bucket!";
+    throw std::runtime_error( msg.str() );
+  }
+}
+
+
+bool Selector::apply( 
+    unsigned part_id, 
+    const Bucket & candidate 
+    ) const
+{
+  // Search for 'part_id' in the bucket's list of sorted integer part ids
+  return has_superset(candidate,part_id);
+}
+
+bool Selector::apply( 
+    std::vector<OpType>::const_iterator i,
+    std::vector<OpType>::const_iterator j,
+    const Bucket & candidate 
+    ) const
+{
+  bool result = i != j ;
+  while ( result && i != j ) {
+    if ( i->m_count ) { // Compound statement
+      result = i->m_unary ^ apply( i + 1 , i + i->m_count , candidate );
+      i += i->m_count ;
+    }
+    else { // Test for containment of bucket in this part, or not in
+      result = i->m_unary ^ apply( i->m_part_id , candidate );
+      ++i ;
     }
   }
-
   return result ;
 }
 
-bool Selector::select( const Bucket & candidate ) const
+
+bool Selector::operator()( const Bucket & candidate ) const
 {
-  const std::pair<const unsigned *,const unsigned *>
-    part_ordinals = candidate.superset_part_ordinals();
+  if (m_mesh_meta_data != NULL) {
+    verify_compatible(candidate);
+  }
+  return apply( m_op.begin() , m_op.end() , candidate );
+}
 
-  bool result = contains( part_ordinals.first , part_ordinals.second ,
-                          m_intersection.begin(), m_intersection.end() );
+Selector operator & ( const Part & A , const Part & B )
+{ 
+  Selector S( A ); 
+  S &= Selector( B ); 
+  return S; 
+}
 
-  if ( result && m_all_parts ) { // Union check requested
 
-    std::vector<unsigned>::const_iterator i = m_union.begin();
-    const unsigned * j = part_ordinals.first ;
+Selector operator & ( const Part & A , const Selector & B )
+{ 
+  Selector S( A ); 
+  S &= B; 
+  return S; 
+}
 
-    // Need at least one member of union
+Selector operator & ( const Selector & A, const Part & B )
+{ 
+  Selector S( A ); 
+  S &= Selector(B); 
+  return S; 
+}
 
-    result = false ;
+Selector operator & ( const Selector & A, const Selector & B )
+{ 
+  Selector S( A ); 
+  S &= Selector(B); 
+  return S; 
+}
 
-    while ( i != m_union.end() && j != part_ordinals.second ) {
-      if      ( *i < *j ) { ++i ; }
-      else if ( *j < *i ) { ++j ; }
-      else {
-        result = true ;
-        break ; // Only need one match
+Selector operator | ( const Part & A , const Part & B )
+{ 
+  Selector S( A ); 
+  S |= Selector( B ); 
+  return S; 
+}
+
+
+Selector operator | ( const Part & A , const Selector & B )
+{ 
+  Selector S( A ); 
+  S |= B; 
+  return S; 
+}
+
+Selector operator | ( const Selector & A, const Part & B  )
+{ 
+  Selector S( A ); 
+  S |= Selector(B); 
+  return S; 
+}
+
+Selector operator | ( const Selector & A, const Selector & B  )
+{ 
+  Selector S( A ); 
+  S |= Selector(B); 
+  return S; 
+}
+
+
+
+
+Selector operator ! ( const Part & A )
+{
+  Selector S(A);
+  return S.complement();
+}
+
+
+std::ostream & operator<<( std::ostream & out, const Selector & selector)
+{
+  out << selector.printExpression(selector.m_op.begin(),selector.m_op.end());
+  return out;
+}
+
+std::string Selector::printExpression(
+    const std::vector<OpType>::const_iterator start,
+    const std::vector<OpType>::const_iterator finish
+    ) const
+{
+  std::ostringstream outS;
+
+  std::vector<OpType>::const_iterator start_it = start;
+  std::vector<OpType>::const_iterator finish_it = finish;
+
+  const OpType & op = *start_it;
+  if (op.m_count > 0) { // Compound
+    if (op.m_unary != 0) { // Complement
+      outS << "!";
+    } 
+    outS << "(";
+    if (op.m_count == 1) {
+      outS << ")";
+    }
+    else {
+      finish_it = start_it;
+      for (int i=0 ; i < op.m_count ; ++i) {
+        ++finish_it;
       }
+      ++start_it;
+      outS << printExpression(start_it,finish_it) << ")";
+      start_it = finish_it;
+      --start_it; // back up one
     }
   }
-  return result ;
-}
-
-//----------------------------------------------------------------------
-
-namespace {
-
-void verify_meta_data( const Part & p , const PartVector & v )
-{
-  const MetaData * const md  = & p.mesh_meta_data();
-
-  PartVector::const_iterator i = v.begin() , j = v.end();
-  for ( ; i != j ; ++i ) {
-    if ( md != & (*i)->mesh_meta_data() ) {
-      std::ostringstream msg ;
-      msg << "Parts \"" << p.name() << "\" and \"" << (*i)->name()
-          << "\" are not members of the same meta-data" ;
-      throw std::runtime_error( msg.str() );
+  else { // Part
+    if (m_mesh_meta_data != NULL) {
+      Part & part = m_mesh_meta_data->get_part(op.m_part_id);
+      if (op.m_unary != 0) { // Complement
+        outS << "!";
+      }
+      outS << part.name();
     }
   }
+  ++start_it;
+  if (start_it != finish) {
+    outS << " AND " << printExpression(start_it,finish);
+  }
+  return outS.str();
 }
 
-const PartVector * all_parts( const PartVector & v )
+
+Selector::OpType::OpType( const OpType & opType ) 
+  : m_part_id(opType.m_part_id), 
+    m_unary(opType.m_unary),
+    m_count(opType.m_count)
 {
-  const PartVector * all = ! v.empty() ?
-                           & v[0]->mesh_meta_data().get_parts() : NULL ;
-  return all ;
 }
 
-void copy_ids( std::vector<unsigned> & v , const Part & p )
+
+Selector::OpType & Selector::OpType::operator=( const OpType & opType )
 {
-  v.resize( 1 );
-  v[0] = p.mesh_meta_data_ordinal();
+  this->m_part_id = opType.m_part_id;
+  this->m_unary = opType.m_unary;
+  this->m_count = opType.m_count;
+  return *this;
 }
 
-void copy_ids( std::vector<unsigned> & v , const PartVector & p )
+
+Selector selectUnion( const PartVector& union_part_vector )
 {
-  {
-    const size_t n = p.size();
-    v.resize( n );
-    for ( size_t k = 0 ; k < n ; ++k ) {
-      v[k] = p[k]->mesh_meta_data_ordinal();
+  Selector selector;
+  if (union_part_vector.size() > 0) {
+    selector = *union_part_vector[0];
+    for (unsigned i = 1 ; i < union_part_vector.size() ; ++i) {
+      selector |= *union_part_vector[i];
     }
   }
-
-  {
-    std::vector<unsigned>::iterator i = v.begin() , j = v.end();
-    std::sort( i , j );
-    i = std::unique( i , j );
-    v.erase( i , j );
-  }
+  return selector;
 }
 
-}
 
-Selector::Selector( const Part & required_part )
-  : SelectorInterface(),
-    m_intersection(),
-    m_union(),
-    m_all_parts( NULL ) // Only need if union exists
+Selector selectIntersection( const PartVector& intersection_part_vector )
 {
-  copy_ids( m_intersection , required_part );
-}
-
-Selector::Selector( const PartVector & part_intersection )
-  : SelectorInterface(),
-    m_intersection(),
-    m_union(),
-    m_all_parts( NULL ) // Only need if union exists
-{
-  if ( ! part_intersection.empty() ) {
-    verify_meta_data( * part_intersection[0] , part_intersection );
+  Selector selector;
+  if (intersection_part_vector.size() > 0) {
+    selector = *intersection_part_vector[0];
+    for (unsigned i = 1 ; i < intersection_part_vector.size() ; ++i) {
+      selector &= *intersection_part_vector[i];
+    }
   }
-  copy_ids( m_intersection , part_intersection );
+  return selector;
 }
 
-Selector::Selector( const Part & required_part ,
-                    const PartVector & part_union )
-  : SelectorInterface(),
-    m_intersection(),
-    m_union(),
-    m_all_parts( all_parts( part_union ) )
-{
-  verify_meta_data( required_part , part_union );
-  copy_ids( m_intersection , required_part );
-  copy_ids( m_union , part_union );
-}
 
-Selector::Selector( const PartVector & part_intersection ,
-                    const PartVector & part_union )
-  : SelectorInterface(),
-    m_intersection(),
-    m_union(),
-    m_all_parts( all_parts( part_union ) )
-{
-  if ( ! part_intersection.empty() ) {
-    verify_meta_data( * part_intersection[0] , part_intersection );
-    verify_meta_data( * part_intersection[0] , part_union );
-  }
-  else if ( ! part_union.empty() ) {
-    verify_meta_data( * part_union[0] , part_union );
-  }
-  copy_ids( m_intersection , part_intersection );
-  copy_ids( m_union , part_union );
-}
 
-//----------------------------------------------------------------------
-
-} // namespace mesh
-} // namespace stk
+} // namespace mesh 
+} // namespace stk 
 
 

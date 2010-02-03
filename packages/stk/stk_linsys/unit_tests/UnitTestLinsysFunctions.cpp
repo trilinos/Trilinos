@@ -90,7 +90,7 @@ void testLinsysFunctions( MPI_Comm comm )
   parts.push_back(&(meta_data.locally_used_part()));
   parts.push_back(meta_data.get_part("block_1"));
 
-  stk::mesh::Selector selector(parts);
+  stk::mesh::Selector selector = meta_data.locally_used_part() & *meta_data.get_part("block_1");
   std::vector<unsigned> count;
   stk::mesh::count_entities(selector, bulk_data, count);
 

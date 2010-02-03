@@ -93,7 +93,7 @@ void insert_closure_ghost( const MetaData & meta ,
       for ( PairIterRelation
             irel = entity->relations() ; ! irel.empty() ; ++irel ) {
 
-        if ( irel->entity_type() < etype ) {
+        if ( irel->entity_rank() < etype ) {
           insert_closure_ghost( meta , irel->entity() , remove_list );
         }
       }
@@ -114,7 +114,7 @@ void insert_transitive_ghost( const MetaData & meta ,
   const unsigned etype = entity->entity_type();
 
   for ( PairIterRelation rel = entity->relations(); ! rel.empty() ; ++rel ) {
-    if ( etype < rel->entity_type() ) {
+    if ( etype < rel->entity_rank() ) {
       insert_transitive_ghost( meta , rel->entity() , remove_list );
     }
   }
@@ -136,7 +136,7 @@ void insert_closure_send(
     PairIterRelation irel = send_entry.first->relations();
 
     for ( ; ! irel.empty() ; ++irel ) {
-      if ( irel->entity_type() < etype ) {
+      if ( irel->entity_rank() < etype ) {
         const EntityProc rel_send_entry( irel->entity(), send_entry.second );
 
         insert_closure_send( rel_send_entry , send_list );
@@ -156,14 +156,14 @@ bool member_of_owned_closure( const Entity & e , const unsigned p_rank )
   // Any higher ranking entities locally owned?
   for ( PairIterRelation
         irel = e.relations(); ! result && ! irel.empty() ; ++irel ) {
-    result = etype  <  irel->entity_type() &&
+    result = etype  <  irel->entity_rank() &&
              p_rank == irel->entity()->owner_rank();
   }
 
   // Any higher ranking entity member of an owned closure?
   for ( PairIterRelation
         irel = e.relations(); ! result && ! irel.empty() ; ++irel ) {
-    result = etype < irel->entity_type() &&
+    result = etype < irel->entity_rank() &&
              member_of_owned_closure( * irel->entity() , p_rank );
   }
 
@@ -488,7 +488,6 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
   // Consistently change the owner on all processes.
   // 1) The local_change list is giving away ownership.
   // 2) The shared_change may or may not be receiving ownership
-  // 3) The index_change updates m_entities_owner_index
 
   {
     PartVector owned( 1 );
@@ -511,25 +510,13 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
     }
   }
 
-  {
-    for ( std::vector<KeyProc>::iterator
-          i = index_change.begin() ; i != index_change.end() ; ++i ) {
-      KeyProc tmp( i->first , 0 );
-      std::vector<KeyProc>::iterator j =
-        std::lower_bound( m_entities_owner_index.begin() ,
-                          m_entities_owner_index.end() ,
-                          tmp , KeyProcLess() );
-      if ( j == m_entities_owner_index.end() || j->first != i->first ) {
-        // Theoretically cannot happen
-        throw std::logic_error( std::string( method ) );
-      }
-      j->second = i->second ;
-    }
-  }
-
   //------------------------------
   // Send entities, along with their closure, to the new owner processes
+  // Remember what is destroyed and created to update the distributed index.
   {
+    std::vector< parallel::DistributedIndex::KeyType > 
+      distributed_index_add , distributed_index_remove ;
+
     std::set< EntityProc , EntityLess > send_closure ;
     std::ostringstream error_msg ;
     int error_count = 0 ;
@@ -566,6 +553,11 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
           i = send_closure.end() ; i != send_closure.begin() ; ) {
       --i ;
       if ( ! member_of_owned_closure( * i->first , p_rank ) ) {
+        // Need to remove this entry from the distributed index
+        parallel::DistributedIndex::KeyType tmp = i->first->key().raw_key();
+        distributed_index_remove.push_back( tmp );
+
+        // Now destroy the entity.
         internal_destroy_entity( i->first );
       }
     }
@@ -602,16 +594,24 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
         if ( ! unpack_field_values( buf , * result.first , error_msg ) ) {
           ++error_count ;
         }
+
+        // Successfully added entity with 'key',
+        // need to add this to the distributed index
+        parallel::DistributedIndex::KeyType tmp = key.raw_key();
+        distributed_index_add.push_back( tmp );
       }
     }
 
     all_reduce( p_comm , ReduceSum<1>( & error_count ) );
 
     if ( error_count ) { throw std::runtime_error( error_msg.str() ); }
+
+    m_entities_index.update_keys( distributed_index_add ,
+                                  distributed_index_remove );
   }
 
   //------------------------------
-  // Regnerate sharing information for existing entities.
+  // Regenerate sharing information for existing entities.
   // Send to owner and owner sends to sharing processes
   // Sharing changes go beyond ownership change due to including
   // the closure of the changed owners.

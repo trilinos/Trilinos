@@ -303,6 +303,9 @@ public:
    *
    * @param parent		a <b>Timer</b> value of the parent timer.
    *
+   * @param timer_set		a <b>TimerSet</b> value of the timer set used to interpret the
+   *                            TimerMask's of this and children timers.
+   *
    */
   Timer(const std::string &name, const Timer parent, const TimerSet &timer_set);
 
@@ -328,6 +331,9 @@ public:
    * @param timer_mask		a <b>TimerMask</b> value which enables this timer.
    *
    * @param parent		a <b>Timer</b> value of the parent timer.
+   *
+   * @param timer_set		a <b>TimerSet</b> value of the timer set used to interpret the
+   *                            TimerMask's of this and children timers.
    *
    */
   Timer(const std::string &name, TimerMask timer_mask, const Timer parent, const TimerSet &timer_set);

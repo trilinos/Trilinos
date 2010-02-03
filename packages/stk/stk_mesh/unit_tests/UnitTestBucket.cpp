@@ -1,5 +1,6 @@
 
 #include <sstream>
+#include <stdexcept>
 
 #include <unit_tests/stk_utest_macros.hpp>
 
@@ -79,9 +80,6 @@ void UnitTestBucket::testBucket( ParallelMachine pm )
  // Need to validate print against parallel gold string
     std::stringstream  gold2;
     gold2 << gold1 << "\n";
-    std::cout << "----->\n";
-    print ( std::cout , "- " , *b1 );
-    std::cout << "<-----\n";
   }
 
  // Second, update state of bucket until circular cue is filled
@@ -100,9 +98,12 @@ void UnitTestBucket::testBucket( ParallelMachine pm )
     STKUNIT_ASSERT_THROW(field_data_valid ( *field_bases[0] , *bulk.buckets(3)[0] , 99 , "error" ) , std::runtime_error);
   }
 
- // Fourth, check has_superset (...)
+ // Fourth, check has_superset (...) and membership functions
   {
     STKUNIT_ASSERT_EQUAL ( has_superset ( *bulk.buckets(0)[0] , meta.get_parts() ) , bulk.parallel_size() == 1 );
+    STKUNIT_ASSERT ( bulk.buckets(0)[0]->member_any ( meta.get_parts() ) );
+    STKUNIT_ASSERT_EQUAL ( bulk.buckets(0)[0]->member_all ( meta.get_parts() ) , bulk.parallel_size() == 1 );
+    STKUNIT_ASSERT ( bulk.buckets(0)[0]->member ( **meta.get_parts().begin() ) );
   }
 
  // Fifth, check throw_field_data_array (...)
@@ -158,8 +159,8 @@ void UnitTestBucket::generate_loop(
       Entity & e_node_0 = mesh.declare_entity( 0 , node_ids[n0] , no_parts );
       Entity & e_node_1 = mesh.declare_entity( 0 , node_ids[n1] , no_parts );
       Entity & e_edge   = mesh.declare_entity( 1 , edge_ids[i] , add_parts );
-      mesh.declare_relation( e_edge , e_node_0 , 0 , 0 );
-      mesh.declare_relation( e_edge , e_node_1 , 1 , 0 );
+      mesh.declare_relation( e_edge , e_node_0 , 0 );
+      mesh.declare_relation( e_edge , e_node_1 , 1 );
     }
   }
 
@@ -373,27 +374,20 @@ void UnitTestBucket::generate_boxes(
     Entity & node7 = mesh.declare_entity( 0 , n7 , no_parts );
     Entity & elem  = mesh.declare_entity( 3 , elem_id , no_parts );
 
-    mesh.declare_relation( elem , node0 , 0 , 0 );
-    mesh.declare_relation( elem , node1 , 1 , 0 );
-    mesh.declare_relation( elem , node2 , 2 , 0 );
-    mesh.declare_relation( elem , node3 , 3 , 0 );
-    mesh.declare_relation( elem , node4 , 4 , 0 );
-    mesh.declare_relation( elem , node5 , 5 , 0 );
-    mesh.declare_relation( elem , node6 , 6 , 0 );
-    mesh.declare_relation( elem , node7 , 7 , 0 );
+    mesh.declare_relation( elem , node0 , 0 );
+    mesh.declare_relation( elem , node1 , 1 );
+    mesh.declare_relation( elem , node2 , 2 );
+    mesh.declare_relation( elem , node3 , 3 );
+    mesh.declare_relation( elem , node4 , 4 );
+    mesh.declare_relation( elem , node5 , 5 );
+    mesh.declare_relation( elem , node6 , 6 );
+    mesh.declare_relation( elem , node7 , 7 );
   }
   }
   }
 
   Selector select_owned( mesh.mesh_meta_data().locally_owned_part() );
-
-  stk::mesh::PartVector part_intersection;
-  part_intersection.push_back( &(mesh.mesh_meta_data().locally_used_part()) );
-  stk::mesh::PartVector part_union;
-  part_union.push_back( &(mesh.mesh_meta_data().locally_used_part()) );
-
-  Selector select_used( part_intersection, part_union );
-
+  Selector select_used( mesh.mesh_meta_data().locally_used_part() );
   Selector select_all(  mesh.mesh_meta_data().universal_part() );
 
   count_entities( select_used , mesh , local_count );

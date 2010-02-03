@@ -3,13 +3,13 @@
  * @author H. Carter Edwards
  */
 
+#include <cstring>
 #include <set>
 #include <stdexcept>
 #include <iostream>
 #include <sstream>
 #include <algorithm>
 #include <assert.h>
-#include <string.h>
 
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
@@ -20,6 +20,8 @@
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/EntityComm.hpp>
 #include <stk_mesh/base/Comm.hpp>
+
+using std::strcmp;
 
 namespace stk {
 namespace mesh {
@@ -222,7 +224,7 @@ void BulkData::internal_change_ghosting(
 
       for ( PairIterRelation
             irel = (*i)->relations(); ! irel.empty() ; ++irel ) {
-        if ( irel->entity_type() < etype &&
+        if ( irel->entity_rank() < etype &&
              is_receive_member( ghosts , irel->entity() ) ) {
           new_recv.insert( irel->entity() );
         }
@@ -402,7 +404,7 @@ void insert_transitive_closure( std::set<EntityProc,EntityLess> & new_send ,
       PairIterRelation irel  = entry.first->relations();
 
       for ( ; ! irel.empty() ; ++irel ) {
-        if ( irel->entity_type() < etype ) {
+        if ( irel->entity_rank() < etype ) {
           EntityProc tmp( irel->entity() , entry.second );
           insert_transitive_closure( new_send , tmp );
         }
@@ -593,17 +595,6 @@ void BulkData::internal_regenerate_shared_aura()
   // The change_ghosting figures out what to actually delete and add.
 
   internal_change_ghosting( aura , send , aura.receive() );
-}
-
-void BulkData::destroy_shared_aura()
-{
-  static const char method[] = "stk::mesh::BulkData::destroy_shared_aura" ;
-
-  assert_ok_to_modify( method );
-
-  Ghosting & aura = * m_ghosting[0] ;
-
-  internal_change_ghosting( aura, std::vector<EntityProc>(), aura.receive() );
 }
 
 //----------------------------------------------------------------------

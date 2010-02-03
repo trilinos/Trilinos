@@ -86,6 +86,26 @@ PrintTable::end_row()
 }
 
 
+PrintTable &
+PrintTable::at(
+  size_t        row,
+  size_t        col)
+{
+  for (Table::size_type i = m_table.size(); i <= row; ++i)
+    m_table.push_back(Row());
+  for (Row::size_type i = m_table[row].size(); i <= col; ++i) 
+    m_table[row].push_back(Cell());
+  
+  m_currentCell.m_string = std::string(m_currentCell.m_indent*2, ' ') + m_currentString.str();  
+  m_table[row][col] = m_currentCell;
+  
+  m_currentCell = Cell();
+  m_currentString.str("");
+
+  return *this;
+}
+
+
 std::ostream &
 PrintTable::print(
   std::ostream &	os) const

@@ -36,13 +36,15 @@ std::ostringstream os;
 
 void UnitTestLogControl::testUnit()
 {
-  stk::addLogControlRule("system", stk::LogControlRuleInterval(2));
-//  stk::addLogControlRule("transient", stk::LogControlRuleInterval(3));
-  stk::addLogControlRule("nonlinear", stk::LogControlRuleInterval(5));
+  stk::RuleMap rule_map;
+
+  rule_map.addLogControlRule("system", stk::LogControlRuleInterval(2));
+//  rule_map.addLogControlRule("transient", stk::LogControlRuleInterval(3));
+  rule_map.addLogControlRule("nonlinear", stk::LogControlRuleInterval(5));
 
   int work_count = 0;
 
-  stk::LogControl log_control_i(os, "system");
+  stk::LogControl log_control_i(os, *rule_map.getLogControlRule("system"));
   for (int i = 0; i < 10; ++i) {
     log_control_i.next();
 
@@ -54,7 +56,7 @@ void UnitTestLogControl::testUnit()
         
       os << "  Running transient " << j << std::endl;
 
-      stk::LogControl log_control_k(os, "nonlinear");
+      stk::LogControl log_control_k(os, *rule_map.getLogControlRule("nonlinear"));
       for (int k = 0; k < 10; ++k) {
         log_control_k.next();
         

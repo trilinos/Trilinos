@@ -1,5 +1,6 @@
 
 #include <sstream>
+#include <stdexcept>
 
 #include <unit_tests/stk_utest_macros.hpp>
 
@@ -79,11 +80,8 @@ namespace stk {
 namespace mesh {
 void UnitTestMetaData::testEntityKey()
 {
-  enum { OK = StaticAssert<sizeof(EntityKey) == sizeof(EntityKeyValue)>::OK };
-
   EntityKey
     key_bad_zero  = EntityKey(),
-    key_bad_id    = EntityKey( 0 , 0 ),
     key_good_0_1  = EntityKey( 0 , 1 ),
     key_good_1_1  = EntityKey( 1 , 1 ),
     key_good_2_10 = EntityKey( 2 , 10 );
@@ -94,7 +92,6 @@ void UnitTestMetaData::testEntityKey()
 //   entity_good_key_gone_bad.key = val ;
 
   STKUNIT_ASSERT( ! entity_key_valid( key_bad_zero ) );
-  STKUNIT_ASSERT( ! entity_key_valid( key_bad_id ) );
   STKUNIT_ASSERT(   entity_key_valid( key_good_0_1 ) );
   STKUNIT_ASSERT(   entity_key_valid( key_good_1_1 ) );
   STKUNIT_ASSERT(   entity_key_valid( key_good_2_10 ) );
@@ -118,7 +115,6 @@ void UnitTestMetaData::testEntityKey()
 //   std::cout.unsetf( std::ios::dec);
 //   std::cout.setf( std::ios::hex);
 //   std::cout << "TEST entity_key_type "
-//             << ": key_bad_id = "    << key_bad_id
 //             << ", key_good_2_10 = " << key_good_2_10.key
 //             << ", good_key_gone_bad = " << good_key_gone_bad.key
 //             << std::endl ;
@@ -872,8 +868,7 @@ void UnitTestMetaData::testProperty()
 namespace{
 int stencil_test_function( unsigned  from_type ,
                                         unsigned  to_type ,
-                                        unsigned  identifier ,
-                                        unsigned  kind )
+                                        unsigned  identifier )
 {
   return 0;
 }

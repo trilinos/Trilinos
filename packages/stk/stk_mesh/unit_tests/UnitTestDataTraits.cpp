@@ -243,9 +243,9 @@ void test_fundemental_pointer( bool testComm )
   T * b[3] ;
 
   traits.construct( b , 3 );
-  STKUNIT_ASSERT_EQUAL( reinterpret_cast<T*>(NULL) , b[0] );
-  STKUNIT_ASSERT_EQUAL( reinterpret_cast<T*>(NULL) , b[1] );
-  STKUNIT_ASSERT_EQUAL( reinterpret_cast<T*>(NULL) , b[2] );
+  STKUNIT_ASSERT_EQUAL( static_cast<T*>(NULL) , b[0] );
+  STKUNIT_ASSERT_EQUAL( static_cast<T*>(NULL) , b[1] );
+  STKUNIT_ASSERT_EQUAL( static_cast<T*>(NULL) , b[2] );
 
   traits.copy( b , a , 3 );
   STKUNIT_ASSERT_EQUAL( val + 0 , b[0] );
@@ -253,9 +253,9 @@ void test_fundemental_pointer( bool testComm )
   STKUNIT_ASSERT_EQUAL( val + 2 , b[2] );
 
   traits.destroy( b , 3 );
-  STKUNIT_ASSERT_EQUAL( reinterpret_cast<T*>(NULL) , b[0] );
-  STKUNIT_ASSERT_EQUAL( reinterpret_cast<T*>(NULL) , b[1] );
-  STKUNIT_ASSERT_EQUAL( reinterpret_cast<T*>(NULL) , b[2] );
+  STKUNIT_ASSERT_EQUAL( static_cast<T*>(NULL) , b[0] );
+  STKUNIT_ASSERT_EQUAL( static_cast<T*>(NULL) , b[1] );
+  STKUNIT_ASSERT_EQUAL( static_cast<T*>(NULL) , b[2] );
 
   STKUNIT_ASSERT_THROW( traits.sum( b , a , 3 ) , std::runtime_error );
   STKUNIT_ASSERT_THROW( traits.max( b , a , 3 ) , std::runtime_error );
@@ -320,9 +320,9 @@ void UnitTestDataTraits::testEnum( bool testComm )
   STKUNIT_ASSERT( traits.class_info.empty() );
 
   STKUNIT_ASSERT_EQUAL( traits.enum_info.size()   , size_t(3) );
-  STKUNIT_ASSERT_EQUAL( traits.enum_info[0].name  , std::string("val_a") );
-  STKUNIT_ASSERT_EQUAL( traits.enum_info[1].name  , std::string("val_b") );
-  STKUNIT_ASSERT_EQUAL( traits.enum_info[2].name  , std::string("val_c") );
+  STKUNIT_ASSERT_EQUAL( (traits.enum_info[0].name == "val_a"), true );
+  STKUNIT_ASSERT_EQUAL( (traits.enum_info[1].name  == "val_b"), true );
+  STKUNIT_ASSERT_EQUAL( (traits.enum_info[2].name  == "val_c"), true );
   STKUNIT_ASSERT_EQUAL( traits.enum_info[0].value , long(val_a) );
   STKUNIT_ASSERT_EQUAL( traits.enum_info[1].value , long(val_b) );
   STKUNIT_ASSERT_EQUAL( traits.enum_info[2].value , long(val_c) );
@@ -417,9 +417,9 @@ void UnitTestDataTraits::testClass( bool testComm )
                     reinterpret_cast<const unsigned char *>( & a );
 
   STKUNIT_ASSERT_EQUAL( traits.class_info.size() , size_t(3) );
-  STKUNIT_ASSERT_EQUAL( traits.class_info[0].name, std::string("x") );
-  STKUNIT_ASSERT_EQUAL( traits.class_info[1].name, std::string("y") );
-  STKUNIT_ASSERT_EQUAL( traits.class_info[2].name, std::string("z") );
+  STKUNIT_ASSERT_EQUAL( (traits.class_info[0].name == "x"), true );
+  STKUNIT_ASSERT_EQUAL( (traits.class_info[1].name == "y"), true );
+  STKUNIT_ASSERT_EQUAL( (traits.class_info[2].name == "z"), true );
   STKUNIT_ASSERT_EQUAL( traits.class_info[0].traits, & data_traits<double>() );
   STKUNIT_ASSERT_EQUAL( traits.class_info[1].traits, & data_traits<double>() );
   STKUNIT_ASSERT_EQUAL( traits.class_info[2].traits, & data_traits<double>() );

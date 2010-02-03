@@ -6,7 +6,16 @@
 #ifndef centroid_algorithm_hpp
 #define centroid_algorithm_hpp
 
-namespace {
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/fem/TopologyDimensions.hpp>
+
+
+namespace stk {
+namespace mesh {
+namespace use_cases {
+
+typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType ;
+typedef stk::mesh::Field<double*,stk::mesh::ElementNode> ElementNodePointerFieldType ;
 
 //----------------------------------------------------------------------
 // An example of a trivial element-block algorithm
@@ -67,10 +76,10 @@ void centroid( unsigned number_elements ,
 
 template< class ElementTraits >
 void centroid_algorithm(
-  mesh::BulkData & M ,
+  const BulkData & bulkData ,
   const VectorFieldType             & elem_centroid ,
   const ElementNodePointerFieldType & elem_node_coord ,
-  mesh::Part & elem_part )
+  Part & elem_part )
 {
   // The 'phdmesh' prototype implementation uses the
   // "homogeneous subset" concept (see the Domain Model document)
@@ -79,11 +88,11 @@ void centroid_algorithm(
 
   // Iterate the set of element buckets:
 
-  const std::vector<mesh::Bucket*> & buckets = M.buckets( mesh::Element );
+  const std::vector<Bucket*> & buckets = bulkData.buckets( Element );
 
-  for ( std::vector<mesh::Bucket*>::const_iterator
+  for ( std::vector<Bucket*>::const_iterator
         k = buckets.begin() ; k != buckets.end() ; ++k ) {
-    mesh::Bucket & bucket = **k ;
+    Bucket & bucket = **k ;
 
     // If this bucket is a subset of the given elem_part
     // then want to compute on it.
@@ -117,12 +126,13 @@ void centroid_algorithm(
 //----------------------------------------------------------------------
 
 template< class ElementTraits >
-void centroid_algorithm_unit_test_dimensions(
-  mesh::BulkData & M ,
+bool centroid_algorithm_unit_test_dimensions(
+  const BulkData & bulkData ,
   const VectorFieldType             & elem_centroid ,
   const ElementNodePointerFieldType & elem_node_coord ,
-  mesh::Part & elem_part )
+  Part & elem_part )
 {
+  bool result = true;
   // The 'phdmesh' prototype implementation uses the
   // "homogeneous subset" concept (see the Domain Model document)
   // for field data storage.  A "homogeneous subset" is called
@@ -130,11 +140,11 @@ void centroid_algorithm_unit_test_dimensions(
 
   // Iterate the set of element buckets:
 
-  const std::vector<mesh::Bucket*> & buckets = M.buckets( mesh::Element );
+  const std::vector<Bucket*> & buckets = bulkData.buckets( Element );
 
-  for ( std::vector<mesh::Bucket*>::const_iterator
+  for ( std::vector<Bucket*>::const_iterator
         k = buckets.begin() ; k != buckets.end() ; ++k ) {
-     mesh::Bucket & bucket = **k ;
+     Bucket & bucket = **k ;
 
     // If this bucket is a subset of the given elem_part
     // then want to compute on it.
@@ -147,29 +157,48 @@ void centroid_algorithm_unit_test_dimensions(
 
       // Unit testing the dimension feature
       {
-        mesh::BucketArray< ElementNodePointerFieldType >
+        BucketArray< ElementNodePointerFieldType >
           array( elem_node_coord, bucket.begin(), bucket.end() );
         const unsigned n1 = array.template dimension<0>();
         const unsigned n2 = array.template dimension<1>();
-        STKUNIT_ASSERT( n1 == ElementTraits::node_count );
-        STKUNIT_ASSERT( n2 == size );
-        STKUNIT_ASSERT( (unsigned) array.size() == n1 * n2 );
+        if ( n1 != ElementTraits::node_count ) {
+          std::cerr << "Error!  n1 == " << n1 << " != " << ElementTraits::node_count << " == ElementTraits::node_count" << std::endl;
+          result = false;
+        }
+        if ( n2 != size ) {
+          std::cerr << "Error!  n2 == " << n2 << " != " << size << " == size" << std::endl;
+          result = false;
+        }
+        if ( (unsigned) array.size() != n1 * n2 ) {
+          std::cerr << "Error!  array.size() == " << array.size() << " != " << n1*n2 << " == n1*n2" << std::endl;
+          result = false;
+        }
       }
 
       {
-        mesh::BucketArray< VectorFieldType > array( elem_centroid , bucket.begin(), bucket.end()  );
+        BucketArray< VectorFieldType > array( elem_centroid , bucket.begin(), bucket.end()  );
         const unsigned n1 = array.template dimension<0>();
         const unsigned n2 = array.template dimension<1>();
-        STKUNIT_ASSERT( n1 == (unsigned) SpatialDim );
-        STKUNIT_ASSERT( n2 == size );
-        STKUNIT_ASSERT( (unsigned) array.size() == n1 * n2 );
+        if ( n1 != (unsigned) SpatialDim ) {
+          std::cerr << "Error!  n1 == " << n1 << " != " << SpatialDim << " == SpatialDim" << std::endl;
+          result = false;
+        }
+        if ( n2 != size ) {
+          std::cerr << "Error!  n2 == " << n2 << " != " << size << " == size" << std::endl;
+          result = false;
+        }
+        if ( (unsigned) array.size() != n1 * n2 ) {
+          std::cerr << "Error!  array.size() == " << array.size() << " != " << n1*n2 << " == n1*n2" << std::endl;
+          result = false;
+        }
       }
-
     }
   }
+  return result;
 }
 
-}
+} // namespace use_cases 
+} // namespace mesh 
+} // namespace stk 
 
-#endif
-
+#endif // centroid_algorithm_hpp

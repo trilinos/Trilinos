@@ -56,6 +56,9 @@ public:
   /** \brief  The bucket which holds this mesh entity's field data */
   const Bucket & bucket() const { return *m_bucket ; }
 
+  /** \brief  The bucket which defines transaction data */
+  const Bucket * transaction_bucket() const { return m_trans_bucket; }
+
   /** \brief  The ordinal for this entity within its bucket. */
   unsigned bucket_ordinal() const { return m_bucket_ord ; }
 
@@ -75,10 +78,9 @@ public:
   PairIterRelation relations() const { return PairIterRelation( m_relation ); }
 
   /** \brief  \ref stk::mesh::Relation "Entity relations" for which this
-   *          entity is a member, the other entity is of a given type,
-   *          and the relation is of the given kind (topological = 0).
+   *          entity is a member, the other entity is of a given type.
    */
-  PairIterRelation relations( unsigned type , unsigned kind = 0 ) const ;
+  PairIterRelation relations( unsigned type ) const ;
 
   //------------------------------------
   /** \brief  Parallel processor rank of the processor which owns this entity */
@@ -92,13 +94,15 @@ public:
 
 private:
 
-  const EntityKey       m_key ;        ///< Globally unique key
-  std::vector<Relation> m_relation ;   ///< This entity's relationships
-  Bucket *              m_bucket ;     ///< Bucket for the entity's field data
-  unsigned              m_bucket_ord ; ///< Ordinal within the bucket
-  unsigned              m_owner_rank ; ///< Owner processors' rank
-  size_t                m_sync_count ; ///< Last membership change
-  PairIterEntityProc    m_sharing ;    ///< Span of entity sharing vector
+  const EntityKey       m_key ;              ///< Globally unique key
+  std::vector<Relation> m_relation ;         ///< This entity's relationships
+  Bucket *              m_bucket ;           ///< Bucket for the entity's field data
+  Bucket *              m_trans_bucket ;     ///< Bucket for the entity's transaction data
+  unsigned              m_bucket_ord ;       ///< Ordinal within the bucket
+  unsigned              m_trans_bucket_ord;
+  unsigned              m_owner_rank ;       ///< Owner processors' rank
+  size_t                m_sync_count ;       ///< Last membership change
+  PairIterEntityProc    m_sharing ;          ///< Span of entity sharing vector
 
   ~Entity();
   explicit Entity( const EntityKey & arg_key );
@@ -109,6 +113,7 @@ private:
 
 #ifndef DOXYGEN_COMPILE
   friend class BulkData ;
+  friend class Transaction ;
 #endif /* DOXYGEN_COMPILE */
 };
 
@@ -174,6 +179,24 @@ public:
   }
 
 }; //class EntityLess
+
+class EntityEqual
+{
+public:
+  bool operator()(const stk::mesh::Entity* lhs, const stk::mesh::Entity* rhs) const
+  {
+    const stk::mesh::EntityKey lhs_key = lhs ? lhs->key() : stk::mesh::EntityKey();
+    const stk::mesh::EntityKey rhs_key = rhs ? rhs->key() : stk::mesh::EntityKey();
+    return lhs_key == rhs_key;
+  }
+
+  bool operator()(const stk::mesh::Entity& lhs, const stk::mesh::Entity& rhs) const
+  {
+    const stk::mesh::EntityKey lhs_key = lhs.key();
+    const stk::mesh::EntityKey rhs_key = rhs.key();
+    return lhs_key == rhs_key;
+  }
+};
 
 //----------------------------------------------------------------------
 

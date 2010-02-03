@@ -7,6 +7,7 @@
 #include <map>
 
 #include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/parallel/DistributedIndex.hpp>
 
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Field.hpp>
@@ -19,6 +20,9 @@
 
 namespace stk {
 namespace mesh {
+
+  //Forward declare transaction
+  class Transaction;
 
 /** \addtogroup stk_mesh_module
  *  \{
@@ -36,7 +40,9 @@ namespace mesh {
 class BulkData {
 public:
 
-  ~BulkData();
+  enum BulkDataSyncState { MODIFIABLE = 1 , SYNCHRONIZED = 2 };
+
+  virtual ~BulkData();
 
   /** \brief  Construct mesh bulk data manager conformal to the given
    *          \ref stk::mesh::MetaData "meta data manager" and will
@@ -48,7 +54,8 @@ public:
    */
   BulkData( const MetaData & mesh_meta_data ,
             ParallelMachine parallel ,
-            unsigned bucket_max_size = 1000);
+            unsigned bucket_max_size = 1000 ,
+            Transaction::TransactionType transaction_type = Transaction::BULK );
 
   //------------------------------------
   /** \brief  The meta data manager for this bulk data manager. */
@@ -74,7 +81,7 @@ public:
    *          guaranteed to be parallel synchronized or
    *          modification in progress and may be parallel inconsistent.
    */
-  bool synchronized_state() const { return m_sync_state ; }
+  BulkDataSyncState synchronized_state() const { return m_sync_state ; }
 
   /** \brief  Count of the number of times that the bulk data has been
    *          parallel synchronized.  This count gets updated with
@@ -111,6 +118,13 @@ public:
    */
   bool modification_end();
 
+  /** \brief  Retrieve the bulk data for mesh modification transaction
+   */
+  const Transaction &get_transaction_log () const
+                            { return m_transaction_log; }
+
+  void  reset_transaction ( Transaction::TransactionType t = Transaction::BULK );
+
   /** \brief  Give away ownership of entities to other parallel processes.
    *
    *  A parallel-synchronous operation while the mesh is in the
@@ -129,7 +143,7 @@ public:
   void change_entity_owner( const std::vector<EntityProc> & );
 
   //------------------------------------
-  
+
   /** \brief  Rotate the field data of multistate fields.
    *
    *  <PRE>
@@ -145,13 +159,15 @@ public:
 
   //------------------------------------
   /** \brief  Query all buckets of a given entity type */
-  const std::vector<Bucket*> & buckets( unsigned type ) const ;
+  const std::vector<Bucket*> & buckets( EntityType type ) const ;
 
   /** \brief  Get entity with a given key */
   /// \todo REFACTOR remove required_by argument
   Entity * get_entity( EntityType ent_type , EntityId ent_id ,
-                       const char * required_by = NULL ) const ;
+                       const char * /* required_by */ = NULL  ) const ;
 
+  /** \brief  Get entity with a given key */
+  Entity * get_entity( const EntityKey key ) const ;
   //------------------------------------
   /** \brief  Create or retrieve a locally owned entity of a
    *          given type and id.
@@ -167,7 +183,7 @@ public:
    *  will be resolved by the call to 'modification_end'.
    */
   Entity & declare_entity( EntityType ent_type ,
-                           EntityId ent_id , const std::vector<Part*> & );
+                           EntityId ent_id , const std::vector<Part*> & parts);
 
   /** \brief  Change the parallel-locally-owned entity's
    *          part membership by adding and/or removing parts
@@ -180,7 +196,7 @@ public:
    */
   void change_entity_parts( Entity & ,
                             const std::vector<Part*> & add_parts ,
-                            const std::vector<Part*> & remove_parts = 
+                            const std::vector<Part*> & remove_parts =
                                   std::vector<Part*>() );
 
   /** \brief  Request the destruction an entity on the local process.
@@ -190,7 +206,7 @@ public:
    *  An entity cannot be the 'to' member of a relation.
    *  These relations must first be explicitly removed or the
    *  'from' entity be explicitly destroyed.
-   * 
+   *
    * \paragraph destroy_locally_owned  Destroy Locally Owned
    *
    *  Destrunction of entities in the 'locally_owned_part' schedules
@@ -225,28 +241,27 @@ public:
    *
    *  A parallel-local mesh modificaton operation.
    *
-   *  This mapping ( e_from , local_id , kind ) -> e_to  must be unique.
+   *  This mapping ( e_from , local_id ) -> e_to  must be unique.
    *
    *  Relations between entities induces part membership as follows.
    *  1) If 'e_from' is a member of 'part' and
    *     part.primary_entity_type() == e_from.entity_type()
    *     then 'e_to' has induced membership in 'part'.
    *  2) If there exists a part relation 'part_rel' such that
-   *     'e_from' is a member of part_rel.m_root and 
+   *     'e_from' is a member of part_rel.m_root and
    *     the entity relation conforms to the part relation
    *     then 'e_to' has induced membership in part_rel.m_target.
    */
   void declare_relation( Entity & e_from ,
                          Entity & e_to ,
-                         const unsigned local_id ,
-                         const unsigned kind = 0 );
+                         const unsigned local_id );
 
   /** \brief  Declare a collection of relations by simply iterating
    *          the input and calling declare_relation on each entry.
    */
   void declare_relation( Entity & , const std::vector<Relation> & );
 
-  /** \brief  Remove all relations of a given kind between two entities.
+  /** \brief  Remove all relations between two entities.
    *
    *  If the relation induced a part membership for 'e_to' and 'e_to'
    *  is not shared with another processor then that part membership
@@ -256,7 +271,7 @@ public:
    *  relatinship does not occur for that entity until the call to
    *  'modification_end'.
    */
-  void destroy_relation( Entity & e_from , Entity & e_to , unsigned kind = 0 );
+  void destroy_relation( Entity & e_from , Entity & e_to );
 
   //------------------------------------
   //------------------------------------
@@ -312,7 +327,7 @@ public:
   /** \brief  All non-const methods assert this */
   void assert_ok_to_modify( const char * ) const ;
 
-  void assert_entity_owner( const char * , const Entity & , unsigned ) const ;
+  void assert_entity_owner_or_not_destroyed( const char * , const Entity & , unsigned ) const ;
 
   void assert_good_key( const char * , const EntityKey & ) const ;
 
@@ -331,25 +346,33 @@ private:
   BulkData( const BulkData & );
   BulkData & operator = ( const BulkData & );
 
+
   // Containers:
   std::vector< std::vector<Bucket*> > m_buckets ;
   EntitySet                           m_entities ;
   std::vector<EntityProc>             m_shares_all ;
   std::vector<Ghosting*>              m_ghosting ; /**< Aura is [0] */
 
-  std::vector< std::pair< EntityKey , unsigned > > m_entities_owner_index ;
+  /** \brief  Parallel index for entity keys */
+  parallel::DistributedIndex          m_entities_index ;
   std::vector<Entity*>                m_new_entities ;
   std::vector<Entity*>                m_del_entities ;
   Bucket *                            m_bucket_nil ;
 
   // Other information:
-  const MetaData & m_mesh_meta_data ;
-  ParallelMachine  m_parallel_machine ;
-  unsigned         m_parallel_size ;
-  unsigned         m_parallel_rank ;
-  unsigned         m_bucket_capacity ;
-  size_t           m_sync_count ;
-  bool             m_sync_state ;
+  const MetaData &   m_mesh_meta_data ;
+  ParallelMachine    m_parallel_machine ;
+  unsigned           m_parallel_size ;
+  unsigned           m_parallel_rank ;
+  unsigned           m_bucket_capacity ;
+  size_t             m_sync_count ;
+  BulkDataSyncState  m_sync_state ;
+
+  // Transaction log:
+  Transaction m_transaction_log;
+  void internal_expunge_entity ( Entity *e ) { delete e; }
+  void internal_destroy_entire_bucket ( Bucket *b );
+  void internal_flush_transaction_log_deletes () { m_transaction_log.flush_deletes(); }
 
   /*  Entity modification consequences:
    *  1) Change entity relation => update via part relation => change parts
@@ -378,19 +401,16 @@ private:
   void internal_regenerate_sharing();
 
   void internal_set_shared_entities();
- 
+
   void internal_resolve_destroy_ghosted(
     const std::vector<Entity*>    & del_local ,
     const std::vector<EntityProc> & del_remote );
 
   void internal_resolve_destroy_shared(
     const std::vector<Entity*>    & del_local ,
-    const std::vector<EntityProc> & del_remote ,
-          std::vector<EntityProc> & owner_change );
+    const std::vector<EntityProc> & del_remote );
 
   void internal_update_parallel_index(
-    const std::vector<Entity*>    & new_entities ,
-    const std::vector<EntityProc> & owner_change ,
           std::vector<EntityProc> & shared_new );
 
   void internal_resolve_created_shared(
@@ -414,8 +434,7 @@ private:
    */
   void internal_regenerate_shared_aura();
 
-  void destroy_shared_aura();
-
+  friend class Transaction;
   friend class UnitTestBulkData ;
 #endif /* DOXYGEN_COMPILE */
 

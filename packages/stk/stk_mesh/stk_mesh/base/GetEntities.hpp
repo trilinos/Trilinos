@@ -27,7 +27,7 @@ namespace mesh {
  * \param count  
  */
 void count_entities(
-  const SelectorInterface & selector ,
+  const Selector & selector ,
   const BulkData & mesh ,
   std::vector<EntityType> & count );
 
@@ -39,14 +39,14 @@ void get_entities( const BulkData & , EntityType type,
  *          given selector instance), and sorted by ID.
  */
 unsigned count_selected_entities(
-    const SelectorInterface & selector ,
+    const Selector & selector ,
     const std::vector< Bucket * > & input_buckets );
 
 /** \brief  Get entities in selected parts (selected by the
  *          given selector instance), and sorted by ID.
  */
 void get_selected_entities(
-    const SelectorInterface & selector ,
+    const Selector & selector ,
     const std::vector< Bucket * > & input_buckets ,
     std::vector< Entity * > & entities );
 
