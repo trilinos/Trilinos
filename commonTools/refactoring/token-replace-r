@@ -1,2 +1,3 @@
 #!/bin/sh
-find . -type f -exec token-replace.pl $1 $2 '{}' '{}' ';'
+_SCRIPT_DIR=`echo $0 | sed "s/\(.*\)\/token-replace-r/\1/g"`
+find . -type f -exec $_SCRIPT_DIR/token-replace.pl $1 $2 '{}' '{}' ';'
