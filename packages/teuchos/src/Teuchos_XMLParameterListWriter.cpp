@@ -66,6 +66,11 @@ XMLObject XMLParameterListWriter::toXML(const ParameterEntry& entry) const
       type = "int";
       value = toString(any_cast<int>(entry.getAny(false)));
     }
+  else if (entry.isType<short>())
+    {
+      type = "short";
+      value = toString(any_cast<short>(entry.getAny(false)));
+    }
   else if (entry.isType<double>())
     {
       type = "double";
@@ -91,29 +96,42 @@ XMLObject XMLParameterListWriter::toXML(const ParameterEntry& entry) const
       type = "bool";
       value = toString(any_cast<bool>(entry.getAny(false)));
     }
-/*
+
   else if (entry.isType<Array<int> >())
     {
       const Array<int>
         &a = any_cast<Array<int> >(entry.getAny(false));
-      type = "Array<int>";
+      type = "Array int";
+      value = a.toString();
+    }
+  else if (entry.isType<Array<short> >())
+    {
+      const Array<short>
+        &a = any_cast<Array<short> >(entry.getAny(false));
+      type = "Array short";
       value = a.toString();
     }
   else if (entry.isType<Array<float> >())
     {
       const Array<float>
         &a = any_cast<Array<float> >(entry.getAny(false));
-      type = "Array<double>";
+      type = "Array float";
       value = a.toString();
     }
   else if (entry.isType<Array<double> >())
     {
       const Array<double>
         &a = any_cast<Array<double> >(entry.getAny(false));
-      type = "Array<double>";
+      type = "Array double";
       value = a.toString();
     }
-*/
+  else if (entry.isType<Array<std::string> >())
+    {
+      const Array<std::string>
+        &a = any_cast<Array<std::string> >(entry.getAny(false));
+      type = "Array string";
+      value = a.toString();
+    }
   else
     {
       type = "any";

@@ -96,6 +96,14 @@ ParameterList XMLParameterListReader::toParameterList(const XMLObject& xml) cons
                 double tmp = entry.getValue<double>(&tmp);
               }
             }
+          else if (type=="short")
+            {
+              entry.setValue<short>(child.getRequiredInt("value"), 
+                                  isDefault);
+              if (isUsed) {
+                short tmp = entry.getValue<short>(&tmp);
+              }
+            }
           else if (type=="int")
             {
               entry.setValue<int>(child.getRequiredInt("value"), 
@@ -120,6 +128,46 @@ ParameterList XMLParameterListReader::toParameterList(const XMLObject& xml) cons
                 std::string tmp = entry.getValue<std::string>(&tmp);
               }
             }
+					else if (type=="Array int")
+						{
+							entry.setValue<Array<int> >(Teuchos::fromStringToArray<int>(child.getRequired("value")),
+																			isDefault);
+							if (isUsed) {
+								Array<int> tmp = entry.getValue<Array<int> >(&tmp);
+							}
+						}
+					else if (type=="Array short")
+						{
+							entry.setValue<Array<short> >(Teuchos::fromStringToArray<short>(child.getRequired("value")),
+																			isDefault);
+							if (isUsed) {
+								Array<short> tmp = entry.getValue<Array<short> >(&tmp);
+							}
+						}
+					else if (type=="Array float")
+						{
+							entry.setValue<Array<float> >(Teuchos::fromStringToArray<float>(child.getRequired("value")),
+																			isDefault);
+							if (isUsed) {
+								Array<float> tmp = entry.getValue<Array<float> >(&tmp);
+							}
+						}
+					else if (type=="Array double")
+						{
+							entry.setValue<Array<double> >(Teuchos::fromStringToArray<double>(child.getRequired("value")),
+																			isDefault);
+							if (isUsed) {
+								Array<double> tmp = entry.getValue<Array<double> >(&tmp);
+							}
+						}
+					else if (type=="Array string")
+						{
+							entry.setValue<Array<std::string> >(Teuchos::fromStringToArray<std::string>(child.getRequired("value")),
+																			isDefault);
+							if (isUsed) {
+								Array<std::string> tmp = entry.getValue<Array<std::string> >(&tmp);
+							}
+						}
           else 
             {
               entry.setValue<std::string>(child.getRequired("value"), 
