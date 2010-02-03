@@ -7,7 +7,6 @@
 #include <vector>
 
 
-
 #include "LevelSolver.h"
 #include "TestUtils.h"
 
@@ -142,22 +141,7 @@ int main(int argc, char *argv[])
   }
   stddev = sqrt(stddev / NLRs);
 
-  //MAT Lpar(NLRs,node);
-  //MMW Lpar.initializeProfile(NLRs,NNZperRow);
   delete [] NNZperRow; NNZperRow = 0;
-
-  // put matrix data into Kokkos::CrsMatrix
-  //for (int r=0; r<NLRs; ++r) 
-  //{
-  //  double *vals;
-  //  int    *inds;
-  //  int     numentries;
-  //  L->ExtractMyRowView(r,numentries,vals,inds);
-  //  Lpar.insertEntries(r,numentries,inds,vals);
-  //}
-  //Kokkos::DefaultSparseMultiply<MAT,MV> DSMV(node);
-  //DSMV.initializeStructure(Lpar,true);
-  //DSMV.initializeValues(Lpar,true);
 
   cout << endl << "*** Matrix statistics: " << mfn << endl;
   cout << "Number of rows: " << NLRs << endl;
@@ -246,29 +230,7 @@ void verify(const Epetra_CrsMatrix *L, const Epetra_LevelSolver<nodeT> &LS)
   Epetra_SerialComm Comm;
   Epetra_Time timer(Comm);
 
-  ///////////////////////////////////////////////////////////////////
-  // Build Tpetra map from Epetra Map   ---- this needs to be stored globally in LevelSolver
-  ///////////////////////////////////////////////////////////////////
-  typedef Tpetra::Map<int, int, nodeT> tmap;
-
-  Teuchos::RCP< const Teuchos::Comm< int > > TCommRCP = Teuchos::rcp(new Teuchos::SerialComm<int>());
-
-
-  int *tmpElementList = new int[L->RowMap().NumGlobalElements()];
-
-  L->RowMap().MyGlobalElements(tmpElementList);
-
-  Teuchos::ArrayView<int> aview(tmpElementList,L->RowMap().NumGlobalElements());
-
-// MMW: map checks out for I16.mtx
-  Teuchos::RCP< const tmap > tmapRCP = Teuchos::rcp(new tmap(L->RowMap().NumGlobalElements(), aview, 0, TCommRCP,
-  							     LS.getNode())); 
-
-  delete [] tmpElementList; tmpElementList=0;  // not sure if this is good
-  ///////////////////////////////////////////////////////////////////
-
 //  tmapRCP->describe(*Teuchos::getFancyOStream(Teuchos::rcp(&std::cout,false)) , Teuchos::VERB_EXTREME  );
-
 
   ///////////////////////////////////////////////////////////////////
   // test LevelSolver
@@ -279,8 +241,7 @@ void verify(const Epetra_CrsMatrix *L, const Epetra_LevelSolver<nodeT> &LS)
 
   typedef Tpetra::Vector<double,int,int,nodeT> TV;
 
-//MMW vectors seem to be correct for I16.mtx
-  TV x_t(tmapRCP,false); 
+  TV x_t(LS.getTpetraMap(),false); 
   TV x2_t(x_t);
   TV Lx_t(x_t);
 
@@ -330,45 +291,23 @@ void verify(const Epetra_CrsMatrix *L, const Epetra_LevelSolver<nodeT> &LS)
   //////////////////////////////////////////////
   // Test 3: 
   //////////////////////////////////////////////
-
-
-//Lx_t.putScalar(1.0);
-//Lx_t.print(std::cout);
-//Lx_t.describe(*Teuchos::getFancyOStream(Teuchos::rcp(&std::cout,false)) , Teuchos::VERB_EXTREME);
-//return;
-
-
-
-
-
   cout << "Verification test 3" << std::endl;
   x_e.Random();
   Lx_e.Random();
 
-x_e.PutScalar(1.0);
-
   cout << "Applying L to x using CrsMatrix\n";
   L->Apply(x_e,Lx_e); // Lx = L * x
-
-Lx_e.Print(std::cout);
 
   copyEpetravToTpetrav(Lx_e,Lx_t);
   copyEpetravToTpetrav(x_e,x_t);
 
-
-//tpetra vectors seem to be fine
-//x_t.describe(*Teuchos::getFancyOStream(Teuchos::rcp(&std::cout,false)) , Teuchos::VERB_EXTREME);
-//Lx_t.describe(*Teuchos::getFancyOStream(Teuchos::rcp(&std::cout,false)) , Teuchos::VERB_EXTREME);
-//return;
-
-
-
   cout << "Solving L*x using LevelSolver\n"; // 
   LS.Apply(Lx_t,x2_t);   // Lx = L^-1 Lx = x
-
   x2_t.update(-1.0,x_t,1.0);
+
   errnrm = x2_t.norm2();
   xnrm = x_t.norm2();
+
   cout << "||x - inv(L)*(L*x)||/||x||: " << setprecision(2) << scientific << errnrm/xnrm << "\n\n";
   //////////////////////////////////////////////
 
