@@ -207,6 +207,7 @@ APPEND_SET(HEADERS
   Utils/ml_ValidateParameters.h
   Utils/ml_petsc.h
   RefMaxwell/ml_EdgeMatrixFreePreconditioner.h
+  RefMaxwell/ml_FaceMatrixFreePreconditioner.h
   RefMaxwell/ml_RefMaxwell_11_Operator.h
   RefMaxwell/ml_RefMaxwell.h
   MatrixFree/ml_MatrixFreePreconditioner.h
@@ -280,6 +281,7 @@ APPEND_SET(SOURCES
   Utils/ml_DD_prec.cpp
   Utils/Epetra_Multi_CrsMatrix.cpp
   Utils/ml_ValidateParameters.cpp
+  RefMaxwell/ml_FaceMatrixFreePreconditioner.cpp
   RefMaxwell/ml_EdgeMatrixFreePreconditioner.cpp
   RefMaxwell/ml_RefMaxwell_11_Operator.cpp
   RefMaxwell/ml_RefMaxwell.cpp

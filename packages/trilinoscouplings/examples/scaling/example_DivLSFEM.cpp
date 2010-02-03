@@ -94,6 +94,9 @@
 #include "Epetra_FECrsMatrix.h"
 #include "Epetra_FEVector.h"
 #include "Epetra_Vector.h"
+#include "Epetra_LinearProblem.h"
+#include "Epetra_Import.h"
+#include "Epetra_Export.h"
 
 // Teuchos includes
 #include "Teuchos_oblackholestream.hpp"
@@ -109,6 +112,7 @@
 // EpetraExt includes
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_MultiVectorOut.h"
+#include "EpetraExt_MatrixMatrix.h"
 
 // Pamgen includes
 #include "create_inline_mesh.h"
@@ -116,8 +120,16 @@
 #include "im_ne_nemesisI_l.h"
 #include "pamgen_extras.h"
 
+// AztecOO includes
+#include "AztecOO.h"
+
 // ML Includes
 #include "ml_epetra_utils.h"
+#include "ml_RefMaxwell_11_Operator.h"
+#include "ml_FaceMatrixFreePreconditioner.h"
+#include "ml_RefMaxwell.h"
+
+#define ABS(x) ((x)>0?(x):-(x))
 
 //#define DUMP_DATA
 
@@ -132,6 +144,22 @@ struct fecomp{
   }
 };
 
+
+
+
+void TestMultiLevelPreconditioner_DivLSFEM(char ProblemType[],
+                                           Teuchos::ParameterList   & MLList,
+                                           Epetra_CrsMatrix   & GradDiv,
+                                           Epetra_CrsMatrix   & D0clean,
+                                           Epetra_CrsMatrix   & D1clean,
+                                           Epetra_CrsMatrix   & FaceNode,
+                                           Epetra_CrsMatrix   & M1,
+                                           Epetra_CrsMatrix   & M1inv,
+                                           Epetra_CrsMatrix   & M2,
+                                           Epetra_MultiVector & xh,
+                                           Epetra_MultiVector & b,
+                                           double & TotalErrorResidual,
+                                           double & TotalErrorExactSol);
 
 // Functions to evaluate exact solution and its derivatives
 int evalu(double & uExact0, 
@@ -646,6 +674,18 @@ int main(int argc, char *argv[]) {
     Epetra_Map globalMapG(-1,ownedNodes,ownedGIDs,0,Comm);
     Epetra_Map globalMapC(-1,numOwnedEdges,ownedEdgeIds,0,Comm);
     Epetra_Map globalMapD(-1,numOwnedFaces,ownedFaceIds,0,Comm);
+
+
+   // Build the coordinate vectors for ML solver (including owned nodes only)
+    Epetra_Vector Nx(globalMapG), Ny(globalMapG),Nz(globalMapG);
+    for(int i=0,nlid=0;i<numNodes;i++)
+      if(nodeIsOwned[i]) {
+	Nx[nlid]=nodeCoordx[i];
+	Ny[nlid]=nodeCoordy[i];
+	Nz[nlid]=nodeCoordz[i];
+	nlid++;
+      }
+    
 
  // Print mesh size information
   if (MyPID == 0) {
@@ -1314,6 +1354,16 @@ int main(int argc, char *argv[]) {
 
       delete [] BCFaces;
 
+
+   // Build Face-Node Incidence Matrix
+   Epetra_CrsMatrix DGrad1(DGrad);
+   Epetra_CrsMatrix DCurl1(DCurl);
+   Epetra_CrsMatrix FaceNode(Copy,globalMapD,0);
+   DGrad1.PutScalar(1.0);
+   DCurl1.PutScalar(1.0);
+   EpetraExt::MatrixMatrix::Multiply(DCurl1,false,DGrad1,false,FaceNode);
+   FaceNode.PutScalar(1.0);
+
 #ifdef DUMP_DATA
   // Dump matrices to disk
    EpetraExt::RowMatrixToMatlabFile("mag_m0_matrix.dat",MassG);
@@ -1323,13 +1373,72 @@ int main(int argc, char *argv[]) {
    EpetraExt::RowMatrixToMatlabFile("mag_k2_matrix.dat",StiffD);
    EpetraExt::RowMatrixToMatlabFile("mag_t0_matrix.dat",DGrad);
    EpetraExt::RowMatrixToMatlabFile("mag_t1_matrix.dat",DCurl);
+   EpetraExt::RowMatrixToMatlabFile("mag_fn_matrix.dat",FaceNode);
    EpetraExt::MultiVectorToMatrixMarketFile("rhs2_vector.dat",rhsD,0,0,false);
 
    fSignsout.close();
 #endif
 
-  // *********** Placeholder for ML solver ***********
 
+   //   exit(1);
+
+   // *********** Placeholder for ML solver ***********
+
+   // Solve!
+   Teuchos::ParameterList MLList,dummy;
+   double TotalErrorResidual=0, TotalErrorExactSol=0;   
+   ML_Epetra::SetDefaultsRefMaxwell(MLList);
+   Teuchos::ParameterList MLList2=MLList.get("refmaxwell: 11list",MLList);
+   MLList2.set("aggregation: type","Uncoupled-MIS");
+   MLList2.set("x-coordinates",&Nx[0]);
+   MLList2.set("y-coordinates",&Ny[0]);
+   MLList2.set("z-coordinates",&Nz[0]);   
+   MLList2.set("ML output",10);
+   MLList2.set("smoother: sweeps (level 0)",3);
+   MLList2.set("smoother: sweeps",3);
+   MLList2.set("smoother: type","Chebyshev");
+   MLList2.set("eigen-analysis: type", "power-method");
+   MLList2.get("edge matrix free: coarse",dummy);
+   ML_Epetra::SetDefaults("SA",dummy,0,0,false);
+   dummy.set("PDE equations",3);
+   dummy.set("ML output",10);
+   dummy.set("smoother: sweeps",3);
+   dummy.set("smoother: type","Chebyshev");
+   dummy.set("aggregation: type","Uncoupled");
+   dummy.set("smoother: pre or post","both");
+   dummy.set("max levels",10);
+   dummy.set("coarse: type","Amesos-KLU");
+   dummy.set("repartition: enable",1);
+   dummy.set("repartition: min per proc",1000);
+   dummy.set("repartition: max min ratio",1.4);
+   dummy.set("repartition: Zoltan dimensions",3);
+   dummy.set("x-coordinates",&Nx[0]);
+   dummy.set("y-coordinates",&Ny[0]);
+   dummy.set("z-coordinates",&Nz[0]);   
+   MLList2.set("face matrix free: coarse",dummy);
+   
+  if (MyPID == 0) {
+   cout<<MLList2<<endl;
+  }
+
+
+   Epetra_FEVector xh(rhsD);  
+   MassG.SetLabel("M0");
+   MassC.SetLabel("M1");
+   MassD.SetLabel("M2");
+   StiffD.SetLabel("D2");
+   DGrad.SetLabel("D0");
+   DCurl.SetLabel("D1");
+   MassCinv.SetLabel("M1^{-1}");
+   
+   char probType[12] = "curl_lsfem";
+
+   TestMultiLevelPreconditioner_DivLSFEM(probType,MLList2,StiffD,
+					 DGrad,DCurl,
+					 FaceNode,
+					 MassC,MassCinv,MassD,
+					 xh,rhsD,
+					 TotalErrorResidual, TotalErrorExactSol);
 #ifdef CALC_ERROR
     // ********  Calculate Error in Solution ***************
 
@@ -1532,6 +1641,192 @@ int main(int argc, char *argv[]) {
 
    exit(0);
 }
+
+/*************************************************************************************/
+/*************************************************************************************/
+/*************************************************************************************/
+// Multiplies Ax = y, where all non-zero entries of A are replaced with the value 1.0
+int Multiply_Ones(const Epetra_CrsMatrix &A,const Epetra_Vector &x,Epetra_Vector &y){
+  if(!A.Filled()) 
+    EPETRA_CHK_ERR(-1); // Matrix must be filled.
+
+  double* xp = (double*) x.Values();
+  double* yp = (double*) y.Values();
+  const Epetra_Import* Importer_=A.Importer();
+  const Epetra_Export* Exporter_=A.Exporter();
+  Epetra_Vector *xcopy=0, *ImportVector_=0, *ExportVector_=0;
+
+  if (&x==&y && Importer_==0 && Exporter_==0) {
+    xcopy = new Epetra_Vector(x);
+    xp = (double *) xcopy->Values();
+  }
+  else if (Importer_)
+    ImportVector_ = new Epetra_Vector(Importer_->TargetMap());
+  else if (Exporter_)
+    ExportVector_ = new Epetra_Vector(Exporter_->SourceMap());
+  
+
+  // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
+  if(Importer_ != 0) {
+    EPETRA_CHK_ERR(ImportVector_->Import(x, *Importer_, Insert));
+    xp = (double*) ImportVector_->Values();
+    }
+  
+  // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
+  if(Exporter_ != 0)  yp = (double*) ExportVector_->Values();
+  
+  // Do actual computation
+  for(int i = 0; i < A.NumMyRows(); i++) {
+    int NumEntries,*RowIndices;
+    A.Graph().ExtractMyRowView(i,NumEntries,RowIndices);
+    double sum = 0.0;
+    for(int j = 0; j < NumEntries; j++) 
+      sum += xp[*RowIndices++];    
+    yp[i] = sum;    
+  }
+  
+  if(Exporter_ != 0) {
+    y.PutScalar(0.0); // Make sure target is zero
+    EPETRA_CHK_ERR(y.Export(*ExportVector_, *Exporter_, Add)); // Fill y with Values from export vector
+  }
+  // Handle case of rangemap being a local replicated map
+  if (!A.Graph().RangeMap().DistributedGlobal() && A.Comm().NumProc()>1) EPETRA_CHK_ERR(y.Reduce());
+
+  delete xcopy;
+  delete ImportVector_;
+  delete ExportVector_;
+
+
+  return(0);
+}
+
+
+/*************************************************************************************/
+/*************************************************************************************/
+/*************************************************************************************/
+void solution_test(string msg, const Epetra_Operator &A,const Epetra_MultiVector &lhs,const Epetra_MultiVector &rhs,const Epetra_MultiVector &xexact,Epetra_Time & Time, double & TotalErrorExactSol, double& TotalErrorResidual){
+  // ==================================================== //  
+  // compute difference between exact solution and ML one //
+  // ==================================================== //  
+  double d = 0.0, d_tot = 0.0;  
+  for( int i=0 ; i<lhs.Map().NumMyElements() ; ++i )
+    d += (lhs[0][i] - xexact[0][i]) * (lhs[0][i] - xexact[0][i]);
+  
+  A.Comm().SumAll(&d,&d_tot,1);
+  
+  // ================== //
+  // compute ||Ax - b|| //
+  // ================== //
+  double Norm;
+  Epetra_Vector Ax(rhs.Map());
+  A.Apply(lhs, Ax);
+  Ax.Update(1.0, rhs, -1.0);
+  Ax.Norm2(&Norm);
+  
+  if (A.Comm().MyPID() == 0) {
+    cout << msg << "......Using " << A.Comm().NumProc() << " processes" << endl;
+    cout << msg << "......||A x - b||_2 = " << Norm << endl;
+    cout << msg << "......||x_exact - x||_2 = " << sqrt(d_tot) << endl;
+    cout << msg << "......Total Time = " << Time.ElapsedTime() << endl;
+  }
+  
+  TotalErrorExactSol += sqrt(d_tot);
+  TotalErrorResidual += Norm;
+}
+
+
+void TestMultiLevelPreconditioner_DivLSFEM(char ProblemType[],
+                                           Teuchos::ParameterList   & MLList,
+                                           Epetra_CrsMatrix   & GradDiv,
+                                           Epetra_CrsMatrix   & D0clean,
+                                           Epetra_CrsMatrix   & D1clean,
+                                           Epetra_CrsMatrix   & FaceNode,
+                                           Epetra_CrsMatrix   & M1,
+                                           Epetra_CrsMatrix   & M1inv,
+                                           Epetra_CrsMatrix   & M2,
+                                           Epetra_MultiVector & xh,
+                                           Epetra_MultiVector & b,
+                                           double & TotalErrorResidual,
+                                           double & TotalErrorExactSol){
+  
+  /* Nuke M1 for D0, OAZ*/
+  Epetra_CrsMatrix D1(D1clean);
+  ML_Epetra::Apply_BCsToGradient(GradDiv,D1);  
+  
+  /* Get the BC faces*/
+  int numBCfaces;  
+  int* BCfaces=ML_Epetra::FindLocalDiricheltRowsFromOnesAndZeros(GradDiv,numBCfaces);  
+  ML_Epetra::Apply_OAZToMatrix(BCfaces,numBCfaces,M2);
+
+  if(!GradDiv.Comm().MyPID())
+    cout<<"Total number of rows = "<<GradDiv.NumGlobalRows()<<endl;
+
+  /* Build the (1,1) Block Operator */
+  ML_Epetra::ML_RefMaxwell_11_Operator Operator11(GradDiv,D1,M1inv,M2);
+  
+  /* Build the AztecOO stuff */
+  Epetra_MultiVector x(xh);
+  x.PutScalar(0.0);
+  
+  Epetra_LinearProblem Problem(&Operator11,&x,&b); 
+  Epetra_MultiVector* lhs = Problem.GetLHS();
+  Epetra_MultiVector* rhs = Problem.GetRHS();
+  
+  Epetra_Time Time(GradDiv.Comm());
+    
+  /* Build the aggregation guide matrix */
+  Epetra_CrsMatrix *TMT_Agg_Matrix;
+  ML_Epetra::ML_Epetra_PtAP(M1,D0clean,TMT_Agg_Matrix,false);
+  
+  /* Approximate the diagonal for EMFP: 2a^2 b guy */
+  Epetra_Vector Diagonal(GradDiv.DomainMap());
+  Epetra_Vector EdgeDiagonal(D1.DomainMap());
+  Epetra_Vector FaceDiagonal(M2.DomainMap());
+  Epetra_Vector DivDiagonal(GradDiv.DomainMap());
+
+  M1inv.ExtractDiagonalCopy(EdgeDiagonal);
+  M2.ExtractDiagonalCopy(FaceDiagonal);
+  GradDiv.ExtractDiagonalCopy(DivDiagonal);
+
+  Multiply_Ones(D1,EdgeDiagonal,Diagonal);
+
+  for(int i=0;i<GradDiv.NumMyRows();i++) {
+    Diagonal[i]=Diagonal[i]*(FaceDiagonal[i]*FaceDiagonal[i]) + DivDiagonal[i];
+    if(ABS(Diagonal[i])<1e-12) Diagonal[i]=1.0;
+  }
+
+  /* Build the EMFP Preconditioner */  
+  ML_Epetra::FaceMatrixFreePreconditioner FMFP(Operator11,Diagonal,D1,FaceNode,*TMT_Agg_Matrix,BCfaces,numBCfaces,MLList);
+
+  /* Solve! */
+  AztecOO solver(Problem);  
+  solver.SetPrecOperator(&FMFP);
+  solver.SetAztecOption(AZ_solver, AZ_cg);
+  solver.SetAztecOption(AZ_output, 32);
+  solver.Iterate(500, 1e-10);
+  //  solver.Iterate(1, 1e-10);
+
+  Epetra_MultiVector xexact(xh);
+  xexact.PutScalar(0.0);
+  
+  // accuracy check
+  string msg = ProblemType;
+  solution_test(msg,Operator11,*lhs,*rhs,xexact,Time,TotalErrorExactSol,TotalErrorResidual);
+
+  xh = *lhs;
+  
+  // Cleanup
+  delete TMT_Agg_Matrix;
+  delete [] BCfaces;
+}
+
+
+
+
+
+
+
+
 
 
 // Calculates value of exact solution u
