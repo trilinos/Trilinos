@@ -80,6 +80,11 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
     "Show warnings about deprecated code"
     )
   
+  ADVANCED_SET(${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION OFF
+    CACHE BOOL
+    "Enable explicit template instanitation in all packages that support it"
+    )
+  
   ADVANCED_OPTION(BUILD_SHARED_LIBS "Build shared libraries." OFF)
   
   ADVANCED_SET(${PROJECT_NAME}_INSTALL_INCLUDE_DIR "include"

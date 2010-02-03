@@ -70,10 +70,6 @@ MESSAGE("")
 
 PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS()
 
-ADVANCED_OPTION(Trilinos_ENABLE_EXPLICIT_INSTANTIATION
-  "Enable explicit template instantiation in all package where it is supported."
-  OFF )
-
 ADVANCED_SET(Trilinos_DATA_DIR
   "NOTFOUND"
   CACHE PATH
