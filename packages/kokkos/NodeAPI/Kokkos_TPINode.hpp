@@ -57,13 +57,13 @@ namespace Kokkos {
     tpi_work_span(work, beg, end, ibeg, iend);
   
     typedef typename WDP::ReductionType ReductionType;
-    ReductionType tmpres = WDP::identity(), tmpi;
+    ReductionType tmpi;
+    ReductionType &res = *(static_cast<ReductionType*>(work->reduce));
   
     for (int i=ibeg; i<iend; ++i) {
       tmpi = wdp.generate(i);
-      tmpres = wdp.reduce(tmpres, tmpi);
+      res = wdp.reduce(res, tmpi);
     }
-    *(static_cast<ReductionType*>(work->reduce)) = tmpres;
   }
 
   template<class WDP>
