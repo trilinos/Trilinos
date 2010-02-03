@@ -295,7 +295,8 @@ int ML_Epetra::FaceMatrixFreePreconditioner::BuildNullspace(Epetra_MultiVector *
 
   /* Cleanup */
   if(FaceNode_Matrix_->Importer()) delete n_coords;
-  delete a; delete b; delete c;
+  delete [] a; delete [] b; delete [] c;
+  delete [] d_coords;
   return 0;
 }
 
@@ -430,7 +431,7 @@ int ML_Epetra::FaceMatrixFreePreconditioner::BuildProlongator()
         //we're exploiting.
         if(idx2[j*dim+k]==-1) printf("[%d] ERROR: idx1[j]=%d / idx1[j]*dim+k=%d does not have a GID!\n",Comm_->MyPID(),idx1[j],idx1[j]*dim+k);
         if(vals1[j]==0 ) vals2[j*dim+k]=0;
-	//        else vals2[j*dim+k]= nullspace[k][i] / nonzeros;  
+	else vals2[j*dim+k]=(*nullspace)[k][i] / nonzeros;  
       }/*end for*/
     }/*end for*/
     Prolongator_->InsertGlobalValues(FaceRangeMap_->GID(i),dim*ne1,vals2,idx2);
@@ -460,6 +461,7 @@ int ML_Epetra::FaceMatrixFreePreconditioner::BuildProlongator()
   ML_Operator_Destroy(&TMT_ML);
   ML_Operator_Destroy(&P);
 
+  delete nullspace;
   delete Psparse;
   delete [] idx2;
   delete [] vals2;
