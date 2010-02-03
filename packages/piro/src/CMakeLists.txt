@@ -38,7 +38,6 @@ IF (Piro_ENABLE_NOX)
                      epetra/Piro_Epetra_MatrixFreeDecorator.hpp)
   APPEND_SET(SOURCES epetra/Piro_Epetra_NOXSolver.cpp
                      epetra/Piro_Epetra_LOCASolver.cpp
-                     epetra/Piro_Epetra_NOXObserver.cpp
                      epetra/Piro_Epetra_MatrixFreeDecorator.cpp)
 ENDIF()
 # Optional Rythmos Dependency
@@ -49,12 +48,11 @@ IF (Piro_ENABLE_Rythmos)
                      epetra/Piro_Epetra_InvertMassMatrixDecorator.cpp)
 ENDIF()
 # Optional StochasticGalerkin capability, dependion upon Stokhos and NOX
-#IF (Piro_ENABLE_Stokhos AND Piro_ENABLE_NOX) 
-#  APPEND_SET(HEADERS epetra/Piro_Epetra_StokhosNOXSolver.hpp
-#                     epetra/Piro_Epetra_StokhosNOXObserver.hpp) 
-#  APPEND_SET(SOURCES epetra/Piro_Epetra_StokhosNOXSolver.cpp
-#                     epetra/Piro_Epetra_StokhosNOXObserver.cpp)
-#ENDIF()
+# NEED TO CREATE  epetra/Piro_Epetra_StokhosNOXSolver from ENAT
+IF (Piro_ENABLE_Stokhos AND Piro_ENABLE_NOX) 
+  APPEND_SET(HEADERS epetra/Piro_Epetra_StokhosNOXObserver.hpp) 
+  APPEND_SET(SOURCES epetra/Piro_Epetra_StokhosNOXObserver.cpp)
+ENDIF()
 #
 
 #

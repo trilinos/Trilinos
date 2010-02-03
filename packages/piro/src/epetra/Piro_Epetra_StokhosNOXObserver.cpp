@@ -15,17 +15,13 @@ void Piro::Epetra::StokhosNOXObserver::observeSolution(
     const Epetra_Vector& solution)
 {
 
-cout << solution << "\nendsolution" << endl;
   // Copy into block vector, so Block access is available
   EpetraExt::BlockVector blockVec(View, map, solution);
-cout << blockVec << "\nendblockvec" << endl;
 
   Teuchos::RCP<Epetra_Vector> deterministicSizedSolnVec;
 
   for (int i=0; i< numSGBlocks; i++) {
     deterministicSizedSolnVec = blockVec.GetBlock(i);
-
-cout << *deterministicSizedSolnVec << "\nenddeterministicSizedSolnVec  " << i << endl;
 
     if (noxObserver != Teuchos::null)
       noxObserver->observeSolution(*deterministicSizedSolnVec);

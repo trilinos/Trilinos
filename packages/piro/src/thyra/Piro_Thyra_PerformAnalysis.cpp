@@ -1,4 +1,5 @@
 #include "Piro_Thyra_PerformAnalysis.hpp"
+#include "Teuchos_FancyOStream.hpp"
 #include <iostream>
 #include <string>
 
@@ -23,49 +24,63 @@ using Teuchos::null; using Teuchos::outArg;
 int
 Piro::Thyra::PerformAnalysis(
     ::Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
-    Teuchos::ParameterList& analysisParams)
+    Teuchos::ParameterList& analysisParams,
+    RCP< ::Thyra::VectorBase<double> >& p)
 {
+
+  analysisParams.validateParameters(*Piro::Thyra::getValidPiroAnalysisParameters(),0);
+
   int status;
+  RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
 
   string analysis = analysisParams.get<string>("Analysis Package");
-
-  cout << "\n\nPiro::Thyra::PerformAnalysis() requests: " << analysis << endl;
+  *out << "\n\nPiro::Thyra::PerformAnalysis() requests: " << analysis << endl;
 
 #ifdef Piro_ENABLE_TriKota
   if (analysis=="Dakota") {
-    cout << "Piro PerformAnalysis: Dakota Analysis Being Performed " << endl;
+    *out << "Piro PerformAnalysis: Dakota Analysis Being Performed " << endl;
 
     status = Piro::Thyra::PerformDakotaAnalysis(piroModel,
-                         analysisParams.sublist("Dakota"));
+                         analysisParams.sublist("Dakota"), p);
 
   } else
 #endif
 #ifdef Piro_ENABLE_MOOCHO
   if (analysis == "MOOCHO") {
-    cout << "Piro PerformAnalysis: MOOCHO Optimization Being Performed " << endl;
+    *out << "Piro PerformAnalysis: MOOCHO Optimization Being Performed " << endl;
     status = Piro::Thyra::PerformMoochoAnalysis(piroModel,
-                          analysisParams.sublist("MOOCHO"));
+                          analysisParams.sublist("MOOCHO"), p);
 
   } else
 #endif
 #ifdef Piro_ENABLE_OptiPack
   if (analysis == "OptiPack") {
-    cout << "Piro PerformAnalysis: Optipack Optimization Being Performed " << endl;
+    *out << "Piro PerformAnalysis: Optipack Optimization Being Performed " << endl;
     status = Piro::Thyra::PerformOptiPackAnalysis(piroModel,
                     analysisParams.sublist("OptiPack"),
-                    analysisParams.sublist("GlobiPack"));
+                    analysisParams.sublist("GlobiPack"), p);
 
   } else
 #endif
   {
     if (analysis == "Dakota" || analysis == "OptiPack" || analysis == "MOOCHO")
-      cout << "ERROR: Trilinos/Piro was not configured to include \n " 
+      *out << "ERROR: Trilinos/Piro was not configured to include \n " 
            << "       analysis type: " << analysis << endl;
     else
-      cout << "ERROR: Piro: Unknown analysis type: " << analysis << "\n"
+      *out << "ERROR: Piro: Unknown analysis type: " << analysis << "\n"
            << "       Valid analysis types are: Dakota, MOOCHO, OptiPack\n" << endl;
     status = 0; // Should not fail tests
   }
+
+  // Output status and paramters
+  if (status==0)  *out << "\nPiro Analysis Finished successfully." << endl;
+  else  *out << "\nPiro Analysis failed with status: " << status << endl; 
+
+  if ( analysisParams.get("Output Final Parameters", true) )
+    if (p != Teuchos::null) {
+       *out << "\tFinal parameters are: " << "\n\tp = ";
+       *out << Teuchos::describe(*p, Teuchos::VERB_EXTREME ) << endl;
+    }
 
   return status;
 }
@@ -73,7 +88,8 @@ Piro::Thyra::PerformAnalysis(
 int
 Piro::Thyra::PerformMoochoAnalysis(
     ::Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
-    Teuchos::ParameterList& moochoParams)
+    Teuchos::ParameterList& moochoParams,
+    RCP< ::Thyra::VectorBase<double> >& p)
 {
 #ifdef Piro_ENABLE_MOOCHO
   MoochoPack::MoochoThyraSolver solver;
@@ -88,11 +104,12 @@ Piro::Thyra::PerformMoochoAnalysis(
     solution_status = solver.solve();
 
   // Extract the final solution
-  RCP<const ::Thyra::VectorBase<double> > p =
-     solver.getFinalPoint().get_p(0);
+  p = ::Thyra::createMember(piroModel.get_p_space(0));
+  RCP<const ::Thyra::VectorBase<double> > p_final = solver.getFinalPoint().get_p(0);
+  ::Thyra::copy(*p_final, p.ptr());
 
-  cout << "\nAfter MOOCHO optimization, parameters are: " 
-       << "\n\tp = " << Teuchos::describe(*p, Teuchos::VERB_EXTREME ) << endl;
+//  cout << "\nAfter MOOCHO optimization, parameters are: " 
+//       << "\n\tp = " << Teuchos::describe(*p, Teuchos::VERB_EXTREME ) << endl;
 
   return (int) solution_status;
 #else
@@ -105,7 +122,8 @@ Piro::Thyra::PerformMoochoAnalysis(
 int
 Piro::Thyra::PerformDakotaAnalysis(
     ::Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
-    Teuchos::ParameterList& dakotaParams)
+    Teuchos::ParameterList& dakotaParams,
+    RCP< ::Thyra::VectorBase<double> >& p)
 {
 #ifdef Piro_ENABLE_TriKota
   string dakotaIn = dakotaParams.get("Input File","dakota.in");
@@ -122,9 +140,16 @@ Piro::Thyra::PerformDakotaAnalysis(
 
   dakota.run(trikota_interface.get());
 
-
   Dakota::RealVector finalValues =
     dakota.getFinalSolution().all_continuous_variables();
+
+  // Copy Dakota parameters into Thyra
+  p = ::Thyra::createMember(piroModel.get_p_space(0));
+  {
+      ::Thyra::DetachedVectorView<double> global_p(p);
+      for (int i = 0; i < finalValues.length(); ++i) 
+        global_p[i] = finalValues[i];
+  }
 
   cout << "\nAfter Dakota analysis, final parameters are: " 
        << "\n\tp = " << finalValues << endl;
@@ -141,7 +166,8 @@ int
 Piro::Thyra::PerformOptiPackAnalysis(
     ::Thyra::ModelEvaluatorDefaultBase<double>& piroModel,
     Teuchos::ParameterList& optipackParams,
-    Teuchos::ParameterList& globipackParams)
+    Teuchos::ParameterList& globipackParams,
+    RCP< ::Thyra::VectorBase<double> >& p)
 {
 #ifdef Piro_ENABLE_OptiPack
   // First, Linesearch stuff
@@ -156,8 +182,7 @@ Piro::Thyra::PerformOptiPackAnalysis(
 
   // Second, Optimization stuff
 
-  const RCP< ::Thyra::VectorBase<double> > p =
-    ::Thyra::createMember(piroModel.get_p_space(0));
+  p = ::Thyra::createMember(piroModel.get_p_space(0));
 
   RCP<const ::Thyra::VectorBase<double> > p_init = piroModel.getNominalValues().get_p(0);
 
@@ -183,9 +208,9 @@ Piro::Thyra::PerformOptiPackAnalysis(
     cgSolver->doSolve( p.ptr(), outArg(g_opt),
                        null, null, null, outArg(numIters) );
 
-  cout << "\nAfter OptiPack optimization of " << numIters 
-       << "  iterations \n\tg = " << g_opt << "\n\tp = " << 
-         Teuchos::describe(*p, Teuchos::VERB_EXTREME ) << endl;
+//  cout << "\nAfter OptiPack optimization of " << numIters 
+//       << "  iterations \n\tg = " << g_opt << "\n\tp = " << 
+//         Teuchos::describe(*p, Teuchos::VERB_EXTREME ) << endl;
 
   return (int) solveResult;
 #else
@@ -194,3 +219,22 @@ Piro::Thyra::PerformOptiPackAnalysis(
  return 0;  // should not fail tests
 #endif
 }
+
+
+RCP<const Teuchos::ParameterList>
+Piro::Thyra::getValidPiroAnalysisParameters()
+{
+  Teuchos::RCP<Teuchos::ParameterList> validPL =
+     rcp(new Teuchos::ParameterList("Valid Piro Analysis Params"));;
+
+  validPL->set<std::string>("Analysis Package", "","Must be: MOOCHO, Dakota, or OptiPack.");
+  validPL->set<bool>("Output Final Parameters", false, "");
+  validPL->sublist("MOOCHO",   false, "");
+  validPL->sublist("OptiPack", false, "");
+  validPL->sublist("GlobiPack", false, "");
+  validPL->sublist("Dakota",   false, "");
+
+  return validPL;
+}
+
+

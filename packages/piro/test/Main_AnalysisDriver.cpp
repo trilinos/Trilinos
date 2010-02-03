@@ -100,17 +100,17 @@ int main(int argc, char *argv[]) {
       Thyra::EpetraModelEvaluator piroThyra;
       piroThyra.initialize(piro, Teuchos::null);
 
-      // Now call the analysis routine
-      status = Piro::Thyra::PerformAnalysis(piroThyra, analysisParams);
+      RCP< ::Thyra::VectorBase<double> > p;
 
-      if (status==0) { 
-        if (Proc == 0) cout << "\nPiro Analysis Finished successfully:\n" 
-             << "\t Optimum printed above has exact soln = {1,3}" << endl;
+      // Now call the analysis routine
+      status = Piro::Thyra::PerformAnalysis(piroThyra, analysisParams, p);
+
+      if (p != Teuchos::null) {
+        // Can post-process results here
+         if (Proc==0) cout << 
+           "\nPiro_AnalysisDrvier:  Optimum printed above has exact soln = {1,3}" << endl;
       }
-      else {
-        if (Proc == 0) cout << "\nPiro Analysis failed with status: " 
-             << status << endl;
-      }
+
     }
 
     catch (std::exception& e) {

@@ -4,6 +4,7 @@
 #include "Piro_Epetra_NOXObserver.hpp"
 #include "EpetraExt_BlockVector.h"
 #include "Epetra_Map.h"
+#include "Teuchos_RCP.hpp"
 
 namespace Piro {
 namespace Epetra {
