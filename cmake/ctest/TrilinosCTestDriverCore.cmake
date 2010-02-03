@@ -772,10 +772,13 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
         ENDIF()
   
         IF (CTEST_DO_TEST)
-          # Remove the temporary test files so we can detect if there are any
+          # Remove the LastTestsFailed log so we can detect if there are any
           # failed tests.
           SET(TEST_TMP_DIR "${CTEST_BINARY_DIRECTORY}/Testing/Temporary")
-          FILE(REMOVE_RECURSE "${TEST_TMP_DIR}")
+          FILE(GLOB logfiles "${TEST_TMP_DIR}/LastTestsFailed*.log")
+          FOREACH(logfile ${logfiles})
+            FILE(REMOVE "${logfile}")
+          ENDFOREACH()
           # Run the tests that match the ${PACKAGE} name 
           MESSAGE("\nRunning test for package '${PACKAGE}' ...\n")
           CTEST_TEST(
