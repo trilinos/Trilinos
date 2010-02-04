@@ -77,7 +77,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Belos                 belos                          PS
   Tifpack               tifpack                        EX # early development stage
   Stratimikos           stratimikos                    PS
-  Meros                 meros                          PS
+  Meros                 meros                          SS
   FEI                   fei                            PS
   Anasazi               anasazi                        PS
   RBGen                 rbgen                          PS
