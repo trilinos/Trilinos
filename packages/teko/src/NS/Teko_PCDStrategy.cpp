@@ -109,8 +109,10 @@ void PCDStrategy::initializeState(const Teko::BlockedLinearOp & A,BlockPrecondit
 
       iQp = invMass;
    }
-   else
+   else {
+      Teko_DEBUG_MSG("Building inverse mass of type \"" << Teko::getDiagonalName(massInverseType_) << "\"",10);
       iQp = getInvDiagonalOp(Qp,massInverseType_);
+   }
 
    // build the inverse Laplacian complement
    /////////////////////////////////////////////
@@ -188,9 +190,6 @@ void PCDStrategy::initializeFromParameterList(const Teuchos::ParameterList & pl,
 
       // build inverse types
       massInverseType_ = getDiagonalType(massInverseStr);
-      // if(massInverseType_==NotDiag)
-      //    *getOutputStream() << "PCD Strategy requires \"Inverse Mass Type\" to be: " 
-      //                       << "Diagonal, AbsRowSum or Lumped" << std::endl;
    }
 
    // set defaults as needed
@@ -202,6 +201,7 @@ void PCDStrategy::initializeFromParameterList(const Teuchos::ParameterList & pl,
       DEBUG_STREAM << "   inv type   = \"" << invStr  << "\"" << std::endl;
       DEBUG_STREAM << "   inv F type = \"" << invFStr << "\"" << std::endl;
       DEBUG_STREAM << "   inv Laplace type = \"" << invSStr << "\"" << std::endl;
+      DEBUG_STREAM << "   inv Mass type = \"" << Teko::getDiagonalName(massInverseType_) << "\"" << std::endl;
       DEBUG_STREAM << "PCD Strategy Parameter list: " << std::endl;
       pl.print(DEBUG_STREAM);
    Teko_DEBUG_MSG_END()
