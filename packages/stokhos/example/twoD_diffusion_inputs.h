@@ -43,7 +43,7 @@ Teuchos::Array<int> xind, yind;
 
 
 //The probability distribution of the random variables.
-const double weight(const double x){
+double weight(const double& x){
   return 1;
 }
 

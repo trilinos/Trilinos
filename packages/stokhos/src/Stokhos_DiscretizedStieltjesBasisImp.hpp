@@ -29,10 +29,10 @@ template <typename ordinal_type, typename value_type>
 Stokhos::DiscretizedStieltjesBasis<ordinal_type,value_type>::
 DiscretizedStieltjesBasis(const std::string& label,
 			  const ordinal_type& p, 
-			  const value_type (*weightFn)(const value_type),
+			  value_type (*weightFn)(const value_type&),
 			  const value_type& leftEndPt,
 			  const value_type& rightEndPt, 
-			  const bool normalize) :
+			  bool normalize) :
   RecurrenceBasis<ordinal_type,value_type>(std::string("DiscretizedStieltjes -- ") + label, p, normalize),
   scaleFactor(1),
   leftEndPt_(leftEndPt),

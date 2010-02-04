@@ -71,11 +71,11 @@ enum SG_METHOD {
 int main(int argc, char *argv[]) {
   unsigned int nelem = 100;
   double h = 1.0/nelem;
-  double alpha = 2.0;
+  double alpha = 0.5;
   double leftBC = 0.0;
   double rightBC = 0.1;
-  unsigned int numalpha = 3;
-  unsigned int p = 5;
+  int num_KL = 3;
+  int p = 5;
 
   bool do_pce = true;
   bool do_dakota = false;
@@ -135,19 +135,21 @@ int main(int argc, char *argv[]) {
     // Source function
     Teuchos::ParameterList& sourceParams = 
       problemParams.sublist("Source Function");
-    sourceParams.set("Name", "Multi-Variate Exponential");
-    sourceParams.set("Nonlinear Factor Dimensions", numalpha);
-    for (unsigned int i=0; i<numalpha; i++) {
-      std::stringstream ss;
-      ss << "Nonlinear Factor " << i;
-      sourceParams.set(ss.str(), alpha/numalpha);
-    }
+    sourceParams.set("Name", "Exponential");
+    sourceParams.set("Nonlinear Factor", alpha);
 
-    // Material
+     // Material
     Teuchos::ParameterList& matParams = 
       problemParams.sublist("Material Function");
-    matParams.set("Name", "Constant");
-    matParams.set("Constant Value", 1.0);
+    matParams.set("Name", "KL Exponential Random Field");
+    matParams.set("Mean", 1.0);
+    matParams.set("Standard Deviation", 0.6);
+    matParams.set("Number of KL Terms", num_KL);
+    Teuchos::Array<double> a(1), b(1), L(1);
+    a[0] = 0.0; b[0] = 1.0; L[0] = 1.0;
+    matParams.set("Domain Lower Bounds", a);
+    matParams.set("Domain Upper Bounds", b);
+    matParams.set("Correlation Lengths", L);
 
     // Response functions
     Teuchos::ParameterList& responseParams =
@@ -165,15 +167,15 @@ int main(int argc, char *argv[]) {
       for (int i=0; i<nvar; i++) {
         input_file >> vals[i] >> name;
         std::stringstream ss;
-        ss << "Nonlinear Factor " << i;
-        sourceParams.set(ss.str(), alpha + vals[i]);
+        ss << "KL Exponential Function Random Variable " << i;
+        sourceParams.set(ss.str(), vals[i]);
       }
       input_file.close();
     }
 
     Teuchos::RefCountPtr< Teuchos::Array<std::string> > free_param_names =
 	Teuchos::rcp(new Teuchos::Array<std::string>);
-    free_param_names->push_back("Constant Function Value");
+    free_param_names->push_back("Exponential Source Function Nonlinear Factor");
 
     // Set up NOX parameters
     Teuchos::RCP<Teuchos::ParameterList> noxParams =
@@ -288,24 +290,11 @@ int main(int argc, char *argv[]) {
     if (do_pce) {
 
       TEUCHOS_FUNC_TIME_MONITOR("Total PCE Calculation Time");
-
-      unsigned int d = numalpha;
-
-      // Source function
-      Teuchos::ParameterList& sourceParams = 
-	problemParams.sublist("Source Function");
-      sourceParams.set("Name", "Multi-Variate Exponential");
-      sourceParams.set("Nonlinear Factor Dimensions", d);
-      for (unsigned int i=0; i<d; i++) {
-	std::stringstream ss;
-	ss << "Nonlinear Factor " << i;
-	sourceParams.set(ss.str(), alpha/d);
-      }
     
       // Create SG basis and expansion
       typedef Stokhos::LegendreBasis<int,double> basis_type;
-      Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
-      for (unsigned int i=0; i<d; i++)
+      Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(num_KL); 
+      for (int i=0; i<num_KL; i++)
         bases[i] = Teuchos::rcp(new basis_type(p));
       Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
         Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
@@ -342,17 +331,17 @@ int main(int argc, char *argv[]) {
 
       // Set up stochastic parameters
       Teuchos::Array< Stokhos::VectorOrthogPoly<Epetra_Vector> > sg_p(1);
-      Epetra_LocalMap p_sg_map(d, 0, *Comm);
+      Epetra_LocalMap p_sg_map(num_KL, 0, *Comm);
       sg_p[0].reset(basis, Stokhos::EpetraVectorCloner(p_sg_map));
-      for (unsigned int i=0; i<d; i++) {
-	sg_p[0].term(i,0)[i] = 2.0;
+      for (int i=0; i<num_KL; i++) {
+	sg_p[0].term(i,0)[i] = 0.0;
 	sg_p[0].term(i,1)[i] = 1.0;
       }
       Teuchos::RefCountPtr< Teuchos::Array<std::string> > sg_param_names =
 	Teuchos::rcp(new Teuchos::Array<std::string>);
-      for (unsigned int i=0; i<d; i++) {
+      for (int i=0; i<num_KL; i++) {
 	std::stringstream ss;
-	ss << "Exponential Source Function Nonlinear Factor " << i;
+	ss << "KL Exponential Function Random Variable " << i;
 	sg_param_names->push_back(ss.str());
       }
       Teuchos::Array<int> sg_p_index(1);
@@ -392,7 +381,7 @@ int main(int argc, char *argv[]) {
 	sgParams->set("Jacobian Method", "Matrix Free");
 	//sgParams->set("Jacobian Method", "KL Reduced Matrix Free");
 	//sgParams->set("Jacobian Method", "Fully Assembled");
-	sgParams->set("Number of KL Terms", 3);
+	sgParams->set("Number of KL Terms", num_KL+1);
 	Teuchos::ParameterList& precParams = 
 	  sgParams->sublist("Preconditioner Parameters");
 	// sgParams->set("Mean Preconditioner Type", "Ifpack");
@@ -464,7 +453,7 @@ int main(int argc, char *argv[]) {
 	Teuchos::rcp(new EpetraExt::BlockVector(View, finalSolution->Map(),
 						*sg_u));
       Teuchos::RCP<const EpetraExt::BlockVector> cX = X;
-      Stokhos::PCEAnasaziKL pceKL(cX, *basis, 3);
+      Stokhos::PCEAnasaziKL pceKL(cX, *basis, 20);
       Teuchos::ParameterList anasazi_params = pceKL.getDefaultParams();
       //anasazi_params.set("Num Blocks", 10);
       //anasazi_params.set("Step Size", 50);
@@ -483,8 +472,8 @@ int main(int argc, char *argv[]) {
 	utils.out() << std::sqrt(evals[i]) << std::endl;
 
       // Evaluate expansion at a point
-      Teuchos::Array<double> point(d);
-      for (unsigned int i=0; i<d; i++)
+      Teuchos::Array<double> point(num_KL);
+      for (int i=0; i<num_KL; i++)
 	point[i] = 0.5;
       Teuchos::Array<double> basis_vals(sz);
       basis->evaluateBases(point, basis_vals);

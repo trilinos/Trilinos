@@ -66,7 +66,7 @@ namespace Stokhos {
     ~RysBasis() {}
 
     //! The Rys weight function
-    static value_type rysWeight(const value_type x) { 
+    static value_type rysWeight(const value_type& x) { 
       return std::exp(-x*x/2.0); 
     }
 

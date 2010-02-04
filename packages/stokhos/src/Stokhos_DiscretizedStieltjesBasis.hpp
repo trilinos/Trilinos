@@ -60,10 +60,10 @@ namespace Stokhos {
      * \param normalize whether polynomials should be given unit norm
      */
     DiscretizedStieltjesBasis(const std::string& name, const ordinal_type& p, 
-			      const value_type (*weightFn)(const value_type),
+			      value_type (*weightFn)(const value_type&),
 			      const value_type& leftEndPt,
 			      const value_type& rightEndPt,
-			      const bool normalize);
+			      bool normalize);
     
     //! Destructor
     ~DiscretizedStieltjesBasis();
@@ -155,7 +155,7 @@ namespace Stokhos {
     const value_type rightEndPt_;
 
     //! Weight function
-    const value_type (*weightFn_)(const value_type);
+    value_type (*weightFn_)(const value_type&);
 
     //! Quadrature points for discretized stieltjes procedure
     Teuchos::Array<value_type> quad_points;
