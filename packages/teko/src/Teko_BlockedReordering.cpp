@@ -119,6 +119,12 @@ buildReorderedLinearOp(const BlockReorderManager & rowMgr,const BlockReorderMana
       // simply return entry in matrix
       Teko::LinearOp linOp = blkOp->getBlock(rowLeaf.GetIndex(),colLeaf.GetIndex());
 
+      // somehow we need to set this operator up
+      if(linOp==Teuchos::null) {
+         linOp = Thyra::zero(blkOp->productRange()->getBlock(rowLeaf.GetIndex()),
+                             blkOp->productDomain()->getBlock(colLeaf.GetIndex()));
+      }
+
       return linOp;
    }
    else if(rowSz==0) {
@@ -181,6 +187,63 @@ buildReorderedLinearOp(const BlockReorderManager & rowMgr,const BlockReorderMana
       reBlkOp->endBlockFill();   
 
       return reBlkOp;
+   }
+}
+
+/** \brief Use the BlockReorderManager to change a flat vector space
+  *        into a composite vector space.
+  * 
+  * Use the BlockReorderManager to chanage a flat vector space
+  * a more complex composite structure. The manager should not have any indicies
+  * larger then the size of the blocked operator.
+  *
+  * \param[in] mgr BlockReorderManager that specifies how the space is to
+  *                be restructured.
+  * \param[in] blkSpc  The block space to be reordered and restructured. Only the
+  *                    first level of the space will be considered. Each subspace
+  *                    (even if it is itself blocked) will be handed as an individual
+  *                    space.
+  *
+  * \returns The reordered blocked vector space.
+  *
+  * \pre The largest index in <code>bmm</code> is smaller then the dimension of the
+  *      <code>blkSpc</code>.
+  *
+  * \relates BlockReorderManager
+  */
+Teuchos::RCP<const Thyra::VectorSpaceBase<double> >
+buildReorderedVectorSpace(const BlockReorderManager & mgr,
+                          const Teuchos::RCP<const Thyra::ProductVectorSpaceBase<double> > & blkSpc)
+{
+   typedef RCP<const BlockReorderManager> BRMptr;
+
+   int sz = mgr.GetNumBlocks();
+
+   if(sz==0) {
+      // its a  leaf nodes
+      const BlockReorderLeaf & leaf = dynamic_cast<const BlockReorderLeaf &>(mgr);
+
+      // simply return entry in matrix
+      return blkSpc->getBlock(leaf.GetIndex());
+   } 
+   else {
+      Array<RCP<const Thyra::VectorSpaceBase<double> > > vecSpaces;
+
+      // loop over each row
+      for(int i=0;i<sz;i++) {
+         BRMptr blkMgr = mgr.GetBlock(i);
+
+         const RCP<const Thyra::VectorSpaceBase<double> > lvs = buildReorderedVectorSpace(*blkMgr,blkSpc);
+
+         vecSpaces.push_back(lvs);
+      }
+
+      // build a vector space
+      const RCP<const Thyra::DefaultProductVectorSpace<double> > vs 
+            = Thyra::productVectorSpace<double>(vecSpaces);
+
+      // build the vector
+      return vs;
    }
 }
 
