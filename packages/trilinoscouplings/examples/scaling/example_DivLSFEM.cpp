@@ -112,6 +112,7 @@
 // EpetraExt includes
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_MultiVectorOut.h"
+#include "EpetraExt_VectorOut.h"
 #include "EpetraExt_MatrixMatrix.h"
 
 // Pamgen includes
@@ -145,7 +146,7 @@ struct fecomp{
 };
 
 
-
+int Multiply_Abs(const Epetra_CrsMatrix &A,const Epetra_Vector &x,Epetra_Vector &y);
 
 void TestMultiLevelPreconditioner_DivLSFEM(char ProblemType[],
                                            Teuchos::ParameterList   & MLList,
@@ -1305,12 +1306,14 @@ int main(int argc, char *argv[]) {
    StiffD.GlobalAssemble(); StiffD.FillComplete();
    rhsD.GlobalAssemble();
 
- // Build the inverse diagonal for MassC
+   // Build the inverse diagonal for MassC
+   // We do this by computing the absolute rowsum and inverting that.
    Epetra_CrsMatrix MassCinv(Copy,MassC.RowMap(),MassC.RowMap(),1);
    Epetra_Vector DiagC(MassC.RowMap());
+   Epetra_Vector temp(MassC.RowMap());
+   temp.PutScalar(1.0);
+   Multiply_Abs(MassC,temp,DiagC);
 
-   DiagC.PutScalar(1.0);
-   MassC.Multiply(false,DiagC,DiagC);
    for(int i=0; i<DiagC.MyLength(); i++) {
      DiagC[i]=1.0/DiagC[i];
    }
@@ -1375,6 +1378,8 @@ int main(int argc, char *argv[]) {
    EpetraExt::RowMatrixToMatlabFile("mag_t1_matrix.dat",DCurl);
    EpetraExt::RowMatrixToMatlabFile("mag_fn_matrix.dat",FaceNode);
    EpetraExt::MultiVectorToMatrixMarketFile("rhs2_vector.dat",rhsD,0,0,false);
+   EpetraExt::VectorToMatrixMarketFile("diagc.dat",DiagC,0,0,false);
+
 
    fSignsout.close();
 #endif
@@ -1385,7 +1390,7 @@ int main(int argc, char *argv[]) {
    // *********** Placeholder for ML solver ***********
 
    // Solve!
-   Teuchos::ParameterList MLList,dummy;
+   Teuchos::ParameterList MLList,dummy,dummy2;
    double TotalErrorResidual=0, TotalErrorExactSol=0;   
    ML_Epetra::SetDefaultsRefMaxwell(MLList);
    Teuchos::ParameterList MLList2=MLList.get("refmaxwell: 11list",MLList);
@@ -1416,6 +1421,7 @@ int main(int argc, char *argv[]) {
    dummy.set("y-coordinates",&Ny[0]);
    dummy.set("z-coordinates",&Nz[0]);   
    MLList2.set("face matrix free: coarse",dummy);
+   MLList2.set("edge matrix free: coarse","disabled");
    
   if (MyPID == 0) {
    cout<<MLList2<<endl;
@@ -1700,7 +1706,66 @@ int Multiply_Ones(const Epetra_CrsMatrix &A,const Epetra_Vector &x,Epetra_Vector
   return(0);
 }
 
+/*************************************************************************************/
+/*************************************************************************************/
+/*************************************************************************************/
+// Multiplies abs(A)x = y, where all non-zero entries of A are replaced with their absolute values value 
+int Multiply_Abs(const Epetra_CrsMatrix &A,const Epetra_Vector &x,Epetra_Vector &y){
+  if(!A.Filled()) 
+    EPETRA_CHK_ERR(-1); // Matrix must be filled.
 
+  double* xp = (double*) x.Values();
+  double* yp = (double*) y.Values();
+  const Epetra_Import* Importer_=A.Importer();
+  const Epetra_Export* Exporter_=A.Exporter();
+  Epetra_Vector *xcopy=0, *ImportVector_=0, *ExportVector_=0;
+
+  if (&x==&y && Importer_==0 && Exporter_==0) {
+    xcopy = new Epetra_Vector(x);
+    xp = (double *) xcopy->Values();
+  }
+  else if (Importer_)
+    ImportVector_ = new Epetra_Vector(Importer_->TargetMap());
+  else if (Exporter_)
+    ExportVector_ = new Epetra_Vector(Exporter_->SourceMap());
+  
+
+  // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
+  if(Importer_ != 0) {
+    EPETRA_CHK_ERR(ImportVector_->Import(x, *Importer_, Insert));
+    xp = (double*) ImportVector_->Values();
+    }
+  
+  // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
+  if(Exporter_ != 0)  yp = (double*) ExportVector_->Values();
+  
+  // Do actual computation
+  for(int i = 0; i < A.NumMyRows(); i++) {
+    int NumEntries,*RowIndices;
+    double *RowValues;
+    A.ExtractMyRowView(i,NumEntries,RowValues,RowIndices);
+    double sum = 0.0;
+    for(int j = 0; j < NumEntries; j++){
+      double v=*RowValues++;
+      sum += ABS(v) * x[*RowIndices++];	
+    }
+    yp[i] = sum;    
+  }
+  
+  if(Exporter_ != 0) {
+    y.PutScalar(0.0); // Make sure target is zero
+    EPETRA_CHK_ERR(y.Export(*ExportVector_, *Exporter_, Add)); // Fill y with Values from export vector
+  }
+  // Handle case of rangemap being a local replicated map
+  if (!A.Graph().RangeMap().DistributedGlobal() && A.Comm().NumProc()>1) EPETRA_CHK_ERR(y.Reduce());
+
+  delete xcopy;
+  delete ImportVector_;
+  delete ExportVector_;
+
+
+  return(0);
+}
 /*************************************************************************************/
 /*************************************************************************************/
 /*************************************************************************************/
@@ -1794,6 +1859,15 @@ void TestMultiLevelPreconditioner_DivLSFEM(char ProblemType[],
     Diagonal[i]=Diagonal[i]*(FaceDiagonal[i]*FaceDiagonal[i]) + DivDiagonal[i];
     if(ABS(Diagonal[i])<1e-12) Diagonal[i]=1.0;
   }
+
+#ifdef DUMP_DATA
+  // Dump matrices to disk
+   EpetraExt::VectorToMatrixMarketFile("mag_est_diag.dat",Diagonal,0,0,false);
+   EpetraExt::RowMatrixToMatlabFile("mag_tmt_matrix.dat",*TMT_Agg_Matrix);
+#endif
+
+
+
 
   /* Build the EMFP Preconditioner */  
   ML_Epetra::FaceMatrixFreePreconditioner FMFP(Operator11,Diagonal,D1,FaceNode,*TMT_Agg_Matrix,BCfaces,numBCfaces,MLList);
