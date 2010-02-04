@@ -30,12 +30,14 @@
 
 #include "sparse_grid_mixed_growth.H"
 #include "sandia_rules.H"
+#include "Teuchos_TimeMonitor.hpp"
 
 template <typename ordinal_type, typename value_type>
 Stokhos::SparseGridQuadrature<ordinal_type, value_type>::
 SparseGridQuadrature(const Teuchos::RCP<const ProductBasis<ordinal_type,value_type> >& product_basis,
 		     ordinal_type sparse_grid_level) 
 {
+  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::SparseGridQuadrature -- Quad Grid Generation");
   ordinal_type d = product_basis->dimension();
   ordinal_type p = product_basis->order();
   ordinal_type sz = product_basis->size();

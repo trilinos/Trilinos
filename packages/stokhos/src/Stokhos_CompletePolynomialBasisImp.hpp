@@ -27,6 +27,7 @@
 // 
 // ***********************************************************************
 // @HEADER
+#include "Teuchos_TimeMonitor.hpp"
 
 template <typename ordinal_type, typename value_type>
 Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
@@ -134,6 +135,8 @@ Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> >
 Stokhos::CompletePolynomialBasis<ordinal_type, value_type>::
 computeTripleProductTensor(ordinal_type order) const
 {
+  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::CompletePolynomialBasis::computeTripleProductTensor");
+
   // Compute Cijk = < \Psi_i \Psi_j \Psi_k >
   Teuchos::RCP< Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk = 
     Teuchos::rcp(new Sparse3Tensor<ordinal_type, value_type>(sz));
