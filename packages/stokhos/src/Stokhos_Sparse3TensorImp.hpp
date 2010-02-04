@@ -151,6 +151,43 @@ add_term(ordinal_type i, ordinal_type j, ordinal_type k, const value_type& c)
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::Sparse3Tensor<ordinal_type, value_type>::
+sum_term(ordinal_type i, ordinal_type j, ordinal_type k, const value_type& c)
+{
+  ordinal_type ldx;
+  bool found_j = false;
+  for (ordinal_type l=0; l<j_values[k].size(); l++) {
+    if (j_values[k][l].j == j) {
+      ldx = l;
+      found_j = true;
+    }
+  }
+  if (!found_j) {
+    j_values[k].push_back(JValues());
+    ldx = j_values[k].size()-1;
+    j_values[k][ldx].j = j;
+    j_indices2[k].push_back(j);
+  }
+
+  ordinal_type idx;
+  bool found_i = false;
+  for (ordinal_type ii=0; ii<j_values[k][ldx].i_indices.size(); ii++) {
+    if (j_values[k][ldx].i_indices[ii] == i) {
+      idx = ii;
+      found_i = true;
+    }
+  }
+  if (!found_i) {
+    j_values[k][ldx].i_indices.push_back(i);
+    j_values[k][ldx].c_values.push_back(c);
+  }
+  else {
+    j_values[k][ldx].c_values[idx] += c;
+  }
+}
+
+template <typename ordinal_type, typename value_type>
+void
+Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 print(std::ostream& os) const
 {
   for (ordinal_type k=0; k<static_cast<ordinal_type>(Cijk_values.size()); k++)

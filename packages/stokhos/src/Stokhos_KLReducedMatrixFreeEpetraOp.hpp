@@ -61,7 +61,9 @@ namespace Stokhos {
      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
      const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk,
      const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops,
-     int num_KL);
+     int num_KL,
+     double drop_tolerance = 1e-6,
+     bool do_error_tests = false);
     
     //! Destructor
     virtual ~KLReducedMatrixFreeEpetraOp();
@@ -194,14 +196,26 @@ namespace Stokhos {
     //! Mean block
     Teuchos::RCP<Epetra_CrsMatrix> mean;
 
+    //! Block map for vectorized-matrices
+    Teuchos::RCP<Epetra_Map> block_vec_map;
+
+    //! Polynomial sorting vectorized matrix coefficients
+    Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Vector> > block_vec_poly;
+
     //! Dot products of KL eigenvectors and Jacobian blocks
     Teuchos::Array< Teuchos::Array<double> > dot_products;
 
-    //! KL coefficients
-    Teuchos::Array< Teuchos::Array< Teuchos::Array<double> > > kl_coeffs;
+    //! Sparse KL coefficients
+    Teuchos::RCP< Stokhos::Sparse3Tensor<int,double> > sparse_kl_coeffs;
 
     //! KL blocks
     Teuchos::Array< Teuchos::RCP<Epetra_CrsMatrix> > kl_blocks;
+
+    //! Tolerance for dropping entries in sparse 3 tensor
+    double drop_tolerance;
+
+    //! Whether to do KL error tests (can be expensive)
+    bool do_error_tests;
 
   }; // class KLReducedMatrixFreeEpetraOp
   

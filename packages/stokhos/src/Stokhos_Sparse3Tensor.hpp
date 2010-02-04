@@ -41,6 +41,11 @@ namespace Stokhos {
    * \brief Data structure storing a sparse 3-tensor C(i,j,k) in a 
    * a compressed format.
    */
+  /*!
+   * To do:  Remove old data structure and accessor methods.  Also add
+   * sorting and searching to add_term() method so adding entries is not
+   * so delicate.
+   */
   template <typename ordinal_type, typename value_type>
   class Sparse3Tensor {
   public:
@@ -62,7 +67,28 @@ namespace Stokhos {
 	       ordinal_type& i, ordinal_type& j, value_type& c) const;
 
     //! Add new term for given (i,j,k)
+    /*!
+     * IMPORTANT:  The current implementation of this method assumes entries
+     * are added in increasing order, and does not do a search if duplicate
+     * entries are added!
+     *
+     * Currently it fills both data structures for storing coefficients, so 
+     * all accessor methods should work.
+     */
     void add_term(ordinal_type i, ordinal_type j, ordinal_type k,
+		  const value_type& c);
+
+    //! Add new term for given (i,j,k) and sum in if already there
+    /*!
+     * The current implementation does search over all entries already
+     * added, so it should work as entries are added in any order.  However
+     * the search is slow and certainly could be improved upon.  (Should 
+     * investigate a sorted data structure).
+     *
+     * Currently it only fills the new data structure, so  num_values() and
+     * value() will not work.
+     */
+    void sum_term(ordinal_type i, ordinal_type j, ordinal_type k,
 		  const value_type& c);
 
     //! Print tensor
