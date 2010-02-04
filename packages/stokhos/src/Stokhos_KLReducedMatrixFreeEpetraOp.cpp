@@ -33,7 +33,7 @@
 #include "Stokhos_KLReducedMatrixFreeEpetraOp.hpp"
 #include "Stokhos_PCEAnasaziKL.hpp"
 #include "Teuchos_TestForException.hpp"
-
+#include "Teuchos_TimeMonitor.hpp"
 #include "Stokhos_OrthogPolyApprox.hpp"
 #include "Stokhos_MatrixFreeEpetraOp.hpp"
 
@@ -237,6 +237,8 @@ void
 Stokhos::KLReducedMatrixFreeEpetraOp::setup()
 {
 #ifdef HAVE_STOKHOS_ANASAZI
+  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::KLReducedMatrixFreeEpetraOp -- Calculation/setup of KL opeator");
+
   mean = Teuchos::rcp_dynamic_cast<Epetra_CrsMatrix>(
     block_ops->getCoeffPtr(0));
 
