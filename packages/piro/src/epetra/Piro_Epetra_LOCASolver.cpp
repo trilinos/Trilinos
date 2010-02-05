@@ -24,7 +24,11 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> appPar
   string jacobianSource = lsParams.get("Jacobian Operator", "Have Jacobian");
 
   if (jacobianSource == "Matrix-Free") {
-   model = Teuchos::rcp(new Piro::Epetra::MatrixFreeDecorator(model));
+    if (lsParams.isParameter("Matrix-Free Perturbation")) {
+      model = Teuchos::rcp(new Piro::Epetra::MatrixFreeDecorator(model,
+                           lsParams.get<double>("Matrix-Free Perturbation")));
+    }
+    else model = Teuchos::rcp(new Piro::Epetra::MatrixFreeDecorator(model));
   }
 
   // Grab some modelEval stuff from underlying model
