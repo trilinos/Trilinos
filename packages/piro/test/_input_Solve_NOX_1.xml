@@ -53,6 +53,7 @@
           <Parameter name="Tolerance" type="double" value="0.0001"/>
           <Parameter name="Zero Initial Guess" type="bool" value="0"/>
           <Parameter name="Jacobian Operator" type="string" value="Matrix-Free"/>
+          <Parameter name="Matrix-Free Perturbation" type="double" value="1.0e-7"/>
         </ParameterList>
         <Parameter name="Rescue Bad Newton Solve" type="bool" value="1"/>
       </ParameterList>
