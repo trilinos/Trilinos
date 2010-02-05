@@ -27,360 +27,19 @@
 //@HEADER
 */
 
-#ifndef TIFPACK_POINTRELAXATION_HPP
-#define TIFPACK_POINTRELAXATION_HPP
+#ifndef TIFPACK_RELAXATION_DEF_HPP
+#define TIFPACK_RELAXATION_DEF_HPP
 
-#include "Tifpack_ConfigDefs.hpp"
-#include "Tifpack_Preconditioner.hpp"
-#include "Tifpack_Condest.hpp"
-#include "Tifpack_Parameters.hpp"
-
-#include <Tpetra_CrsMatrix.hpp>
-#include <Tpetra_Vector.hpp>
-
-#include <Teuchos_TestForException.hpp>
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Time.hpp>
-#include <Teuchos_TypeNameTraits.hpp>
-#include <Teuchos_ScalarTraits.hpp>
-
-#include <string>
-#include <iostream>
-#include <sstream>
-
-namespace Teuchos {
-  // forward declaration
-  class ParameterList;
-}
+#include "Tifpack_Relaxation_decl.hpp"
 
 namespace Tifpack {
-enum PointRelaxationType {
-  JACOBI,
-  GS,
-  SGS
-};
-
-//! Tifpack::PointRelaxation: a class to define point relaxation preconditioners for Tpetra::RowMatrix objects.
-
-/*! 
-  The Tifpack::PointRelaxation class enables the construction of point
-  relaxation preconditioners of a Tpetra::RowMatrix. Tifpack::PointRelaxation 
-  is derived from the Tifpack::Preconditioner class, which is itself derived
-  from Tpetra::Operator.
-  Therefore this object can be used as preconditioner everywhere an
-  apply() method is required in the preconditioning step.
- 
-This class enables the construction of the following simple preconditioners:
-- Jacobi;
-- Gauss-Seidel;
-- symmetric Gauss-Seidel.
-
-<P>We now briefly describe the main features of the above preconditioners.
-Consider a linear system of type
-\f[
-A x = b,
-\f]
-where \f$A\f$ is a square, real matrix, and \f$x, b\f$ are two real
-vectors. We begin with the decomposition
-\f[
-A = D - E - F
-\f]
-where \f$D\f$ is the diagonal of A, \f$-E\f$ is the strict lower part, and
-\f$-F\f$ is the strict upper part. It is assumed that the diagonal entries
-of \f$A\f$ are different from zero.
-
-<P>Given an starting solution \f$x_0\f$, an iteration of the (damped) Jacobi
-method can be written in matrix form as follows:
-\f[
-x_{k+1} = \omega D^{-1}(E + F) x_k + D_{-1}b,
-\f]
-for \f$k < k_{max}\f$, and \f$\omega \f$ a damping parameter.
-
-Using Tifpack::Jacobi, the user can apply the specified number of sweeps
-(\f$k_{max}\f$), and the damping parameter. If only one sweep is used, then
-the class simply applies the inverse of the diagonal of A to the input
-vector.
-
-<P>Given an starting solution \f$x_0\f$, an iteration of the (damped) GaussSeidel
-method can be written in matrix form as follows:
-\f[
-(D - E) x_{k+1} = \omega F x_k + b,
-\f]
-for \f$k < k_{max}\f$, and \f$\omega \f$ a damping parameter. Equivalently,
-the Gauss-Seidel preconditioner can be defined as
-\f[
-P_{GS}^{-1} = (D - E)^{-1}.
-\f]
-Clearly, the role of E and F can be interchanged. However,
-Tifpack::GaussSeidel does not consider backward Gauss-Seidel methods.
-
-<P>For a list of supported parameters, please refer to page \ref ifp_params.
-
-<P>The complete list of supported parameters is reported in page \ref ifp_params. For a presentation of basic relaxation schemes, please refer to page
-\ref Tifpack::PointRelaxation.
-
-    \author Michael Heroux, SNL 9214.
-
-    \date Last modified on 22-Jan-05.
-*/
-template<class Scalar,class LocalOrdinal = int,class GlobalOrdinal = LocalOrdinal,class Node = Kokkos::DefaultNode::DefaultNodeType,class LocalMatVec = Kokkos::DefaultSparseMultiply<Scalar,LocalOrdinal,Node>,class LocalMatSolve = Kokkos::DefaultSparseSolve<Scalar,LocalOrdinal,Node> >
-class PointRelaxation : virtual public Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
-
-public:
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
-
-  // \name Constructors and Destructors
-  //@{
-
-  //! PointRelaxation constructor with given Tpetra::RowMatrix input.
-  explicit PointRelaxation(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Matrix);
-
-  //! PointRelaxation Destructor.
-  virtual ~PointRelaxation();
-
-  //@}
-
-  //@{ \name Preconditioner computation methods
-
-  //! Sets all the parameters for the preconditioner
-  void setParameters(Teuchos::ParameterList& params);
-
-  //! Initialize
-  void initialize();
-
-  //! Returns \c true if the preconditioner has been successfully initialized.
-  inline bool isInitialized() const {
-    return(IsInitialized_);
-  }
-
-  //! compute IC factor U using the specified graph, diagonal perturbation thresholds and relaxation parameters.
-  /*! This function computes the RILU(k) factors L and U using the current:
-    <ol>
-    <li> IlukGraph specifying the structure of L and U.
-    <li> Value for the RILU(k) relaxation parameter.
-    <li> Value for the \e a \e priori diagonal threshold values.
-    </ol>
-    InitValues() must be called before the factorization can proceed.
-   */
-  void compute();
-
-  //! If factor is completed, this query returns true, otherwise it returns false.
-  inline bool isComputed() const {
-    return(IsComputed_);
-  }
-
-  //@}
-
-  //! @name Methods implementing a Tpetra::Operator interface.
-  //@{ 
-
-  //! Applies the preconditioner to X, returns the result in Y.
-  /*! 
-    \param
-    X - (In) A Tpetra::MultiVector of dimension NumVectors to be preconditioned.
-    \param
-    Y - (InOut) A Tpetra::MultiVector of dimension NumVectors containing result.
-
-    \return Integer error code, set to 0 if successful.
-
-    \warning This routine is NOT AztecOO compliant.
-  */
-  void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-             Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-             Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
-
-  //! Returns the Tpetra::Map object associated with the domain of this operator.
-  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& getDomainMap() const;
-
-  //! Returns the Tpetra::Map object associated with the range of this operator.
-  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& getRangeMap() const;
-
-  bool hasTransposeApply() const;
-
-  //! Applies the matrix to a Tpetra::MultiVector.
-  /*! 
-    \param 
-    X - (In) A Tpetra::MultiVector of dimension NumVectors to multiply with matrix.
-    \param 
-    Y - (Out) A Tpetra::MultiVector of dimension NumVectors containing the result.
-    */
-  void applyMat(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-                Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-                Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
-
-  //@}
-
-  //@{
-  //! \name Mathematical functions.
-
-  //! Computes the estimated condition number and returns the value.
-  magnitudeType computeCondEst(CondestType CT = Cheap, 
-                               LocalOrdinal MaxIters = 1550,
-                               magnitudeType Tol = 1e-9,
-                               const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &matrix = Teuchos::null);
-
-  //@}
-
-  //@{ 
-  //! \name Attribute accessor methods
-
-  //! Returns the computed estimated condition number, or -1.0 if no computed.
-  magnitudeType getCondEst() const;
-
-  //! Returns the Tpetra::BlockMap object associated with the range of this matrix operator.
-  const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
-
-  //! Returns a reference to the matrix to be preconditioned.
-  Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getMatrix() const;
-
-  //! Returns the number of flops in the computation phase.
-  double getComputeFlops() const;
-
-  //! Returns the number of flops for the application of the preconditioner.
-  double getApplyFlops() const;
-
-  //! Returns the number of calls to initialize().
-  int getNumInitialize() const;
-
-  //! Returns the number of calls to compute().
-  int getNumCompute() const;
-
-  //! Returns the number of calls to apply().
-  int getNumApply() const;
-
-  //! Returns the time spent in initialize().
-  double getInitializeTime() const;
-
-  //! Returns the time spent in compute().
-  double getComputeTime() const;
-
-  //! Returns the time spent in apply().
-  double getApplyTime() const;
-
-  //@}
-
-  //! @name Overridden from Teuchos::Describable 
-  //@{
-
-  /** \brief Return a simple one-line description of this object. */
-  std::string description() const;
-
-  /** \brief Print the object with some verbosity level to an FancyOStream object. */
-  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
-
-  //@}
-
-private:
-
-  // @{ Internal methods
-
-  //! Copy constructor (should never be used)
-  PointRelaxation(const PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>& RHS);
-
-  //! operator= (should never be used)
-  PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>& operator=(const PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>& RHS);
-
-  //! Applies the Jacobi preconditioner to X, returns the result in Y.
-  void ApplyInverseJacobi(
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
-
-  //! Applies the Gauss-Seidel preconditioner to X, returns the result in Y.
-  void ApplyInverseGS(
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
-
-  void ApplyInverseGS_RowMatrix(
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
-
-  void ApplyInverseGS_CrsMatrix(
-        const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
-
-  //! Applies the symmetric Gauss-Seidel preconditioner to X, returns the result in Y.
-  void ApplyInverseSGS(
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
-
-  void ApplyInverseSGS_RowMatrix(
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
-
-  void ApplyInverseSGS_CrsMatrix(
-        const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
-        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
-              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
-
-  //@}
-
-  // @{ Internal data and parameters
-
-  //! reference to the matrix to be preconditioned
-  const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A_;
-  //! Reference to the communicator object
-  const Teuchos::RCP<const Teuchos::Comm<int> > Comm_;
-  //! Time object to track timing.
-  Teuchos::RCP<Teuchos::Time> Time_;
-  //! Importer for parallel GS and SGS
-  Teuchos::RCP<Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > Importer_;
-  //! Contains the diagonal elements of \c Matrix.
-  mutable Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Diagonal_;
-  //! Number of application of the preconditioner (should be greater than 0).
-  int NumSweeps_;
-  //! Which type of point relaxation approach to use
-  int PrecType_;
-  //! Minimum diagonal value
-  Scalar MinDiagonalValue_;
-  //! Damping factor.
-  double DampingFactor_;
-  //! If \c true, more than 1 processor is currently used.
-  bool IsParallel_;
-  //! If \c true, the starting solution is always the zero vector.
-  bool ZeroStartingSolution_;
-  //! Backward-Mode Gauss Seidel 
-  bool DoBackwardGS_;
-  //! Condition number estimate
-  magnitudeType Condest_;
-  //! If \c true, the preconditioner has been computed successfully.
-  bool IsInitialized_;
-  //! If \c true, the preconditioner has been computed successfully.
-  bool IsComputed_;
-  //! Contains the number of successful calls to initialize().
-  int NumInitialize_;
-  //! Contains the number of successful call to compute().
-  int NumCompute_;
-  //! Contains the number of successful call to apply().
-  mutable int NumApply_;
-  //! Contains the time for all successful calls to initialize().
-  double InitializeTime_;
-  //! Contains the time for all successful calls to compute().
-  double ComputeTime_;
-  //! Contains the time for all successful calls to apply().
-  mutable double ApplyTime_;
-  //! Contains the number of flops for compute().
-  double ComputeFlops_;
-  //! Contain sthe number of flops for apply().
-  mutable double ApplyFlops_;
-  //! Number of local rows.
-  size_t NumMyRows_;
-  //! Number of global rows.
-  global_size_t NumGlobalRows_;
-  //! Number of global nonzeros.
-  global_size_t NumGlobalNonzeros_;
-
-  //@}
-
-}; //class PointRelaxation
-
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::PointRelaxation(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A)
+template<class MatrixType>
+Relaxation<MatrixType>::Relaxation(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A)
 : A_(A),
   Comm_(A->getRowMap()->getComm()),
-  Time_( Teuchos::rcp( new Teuchos::Time("Tifpack::PointRelaxation") ) ),
+  Time_( Teuchos::rcp( new Teuchos::Time("Tifpack::Relaxation") ) ),
   NumSweeps_(1),
   PrecType_(Tifpack::JACOBI),
   MinDiagonalValue_(0.0),
@@ -404,17 +63,17 @@ PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve
   NumGlobalNonzeros_(0)
 {
   TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error, 
-      Teuchos::typeName(*this) << "::PointRelaxation(): input matrix reference was null.");
+      Teuchos::typeName(*this) << "::Relaxation(): input matrix reference was null.");
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::~PointRelaxation() {
+template<class MatrixType>
+Relaxation<MatrixType>::~Relaxation() {
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::setParameters(Teuchos::ParameterList& List)
+template<class MatrixType>
+void Relaxation<MatrixType>::setParameters(Teuchos::ParameterList& List)
 {
   Teuchos::ParameterList validparams;
   Tifpack::GetValidParameters(validparams);
@@ -438,7 +97,7 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
     PrecType_ = Tifpack::SGS;
   else {
     std::ostringstream osstr;
-    osstr << "Tifpack::PointRelaxation::setParameters: unsupported parameter-value for 'relaxation: type' (" << PT << ")";
+    osstr << "Tifpack::Relaxation::setParameters: unsupported parameter-value for 'relaxation: type' (" << PT << ")";
     std::string str = osstr.str();
     throw std::runtime_error(str);
   }
@@ -451,102 +110,114 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
+template<class MatrixType>
 const Teuchos::RCP<const Teuchos::Comm<int> > & 
-PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getComm() const{
+Relaxation<MatrixType>::getComm() const{
   return(Comm_);
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getMatrix() const {
+template<class MatrixType>
+Teuchos::RCP<const Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                     typename MatrixType::local_ordinal_type,
+                                     typename MatrixType::global_ordinal_type,
+                                     typename MatrixType::node_type> >
+Relaxation<MatrixType>::getMatrix() const {
   return(A_);
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >&
-PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getDomainMap() const {
+template<class MatrixType>
+const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
+                                     typename MatrixType::global_ordinal_type,
+                                     typename MatrixType::node_type> >&
+Relaxation<MatrixType>::getDomainMap() const {
   return A_->getDomainMap();
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >&
-PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getRangeMap() const {
+template<class MatrixType>
+const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,
+                                     typename MatrixType::global_ordinal_type,
+                                     typename MatrixType::node_type> >&
+Relaxation<MatrixType>::getRangeMap() const {
   return A_->getRangeMap();
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-bool PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::hasTransposeApply() const {
+template<class MatrixType>
+bool Relaxation<MatrixType>::hasTransposeApply() const {
   return true;
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-int PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getNumInitialize() const {
+template<class MatrixType>
+int Relaxation<MatrixType>::getNumInitialize() const {
   return(NumInitialize_);
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-int PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getNumCompute() const {
+template<class MatrixType>
+int Relaxation<MatrixType>::getNumCompute() const {
   return(NumCompute_);
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-int PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getNumApply() const {
+template<class MatrixType>
+int Relaxation<MatrixType>::getNumApply() const {
   return(NumApply_);
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-double PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getInitializeTime() const {
+template<class MatrixType>
+double Relaxation<MatrixType>::getInitializeTime() const {
   return(InitializeTime_);
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-double PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getComputeTime() const {
+template<class MatrixType>
+double Relaxation<MatrixType>::getComputeTime() const {
   return(ComputeTime_);
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-double PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getApplyTime() const {
+template<class MatrixType>
+double Relaxation<MatrixType>::getApplyTime() const {
   return(ApplyTime_);
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-double PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getComputeFlops() const {
+template<class MatrixType>
+double Relaxation<MatrixType>::getComputeFlops() const {
   return(ComputeFlops_);
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-double PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getApplyFlops() const {
+template<class MatrixType>
+double Relaxation<MatrixType>::getApplyFlops() const {
   return(ApplyFlops_);
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getCondEst() const {
+template<class MatrixType>
+typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
+Relaxation<MatrixType>::getCondEst() const
+{
   return(Condest_);
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::computeCondEst(
+template<class MatrixType>
+typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
+Relaxation<MatrixType>::computeCondEst(
                      CondestType CT,
-                     LocalOrdinal MaxIters, 
+                     typename MatrixType::local_ordinal_type MaxIters, 
                      magnitudeType Tol,
-                     const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &matrix) {
+     const Teuchos::Ptr<const Tpetra::RowMatrix<typename MatrixType::scalar_type,
+                                                typename MatrixType::local_ordinal_type,
+                                                typename MatrixType::global_ordinal_type,
+                                                typename MatrixType::node_type> > &matrix)
+{
   if (!isComputed()) // cannot compute right now
     return(-1.0);
 
@@ -558,16 +229,25 @@ PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::apply(
-          const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-                Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-                Teuchos::ETransp mode) const {
+template<class MatrixType>
+void Relaxation<MatrixType>::apply(
+          const Tpetra::MultiVector<typename MatrixType::scalar_type,
+                                    typename MatrixType::local_ordinal_type,
+                                    typename MatrixType::global_ordinal_type,
+                                    typename MatrixType::node_type>& X,
+                Tpetra::MultiVector<typename MatrixType::scalar_type,
+                                    typename MatrixType::local_ordinal_type,
+                                    typename MatrixType::global_ordinal_type,
+                                    typename MatrixType::node_type>& Y,
+                Teuchos::ETransp mode,
+                 Scalar alpha,
+                 Scalar beta) const
+{
   TEST_FOR_EXCEPTION(isComputed() == false, std::runtime_error,
-     "Tifpack::PointRelaxation::apply ERROR: isComputed() must be true prior to calling apply.");
+     "Tifpack::Relaxation::apply ERROR: isComputed() must be true prior to calling apply.");
 
   TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
-     "Tifpack::PointRelaxation::apply ERROR: X.getNumVectors() != Y.getNumVectors().");
+     "Tifpack::Relaxation::apply ERROR: X.getNumVectors() != Y.getNumVectors().");
 
   Time_->start(true);
 
@@ -594,7 +274,7 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
     ApplyInverseSGS(*Xcopy,Y);
     break;
   default:
-    throw std::runtime_error("Tifpack::PointRelaxation::apply internal logic error.");
+    throw std::runtime_error("Tifpack::Relaxation::apply internal logic error.");
   }
 
   ++NumApply_;
@@ -603,31 +283,37 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::applyMat(
-       const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-             Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+template<class MatrixType>
+void Relaxation<MatrixType>::applyMat(
+          const Tpetra::MultiVector<typename MatrixType::scalar_type,
+                                    typename MatrixType::local_ordinal_type,
+                                    typename MatrixType::global_ordinal_type,
+                                    typename MatrixType::node_type>& X,
+                Tpetra::MultiVector<typename MatrixType::scalar_type,
+                                    typename MatrixType::local_ordinal_type,
+                                    typename MatrixType::global_ordinal_type,
+                                    typename MatrixType::node_type>& Y,
              Teuchos::ETransp mode) const
 {
   TEST_FOR_EXCEPTION(isComputed() == false, std::runtime_error,
-     "Tifpack::PointRelaxation::applyMat() ERROR: isComputed() must be true prior to calling applyMat().");
+     "Tifpack::Relaxation::applyMat() ERROR: isComputed() must be true prior to calling applyMat().");
   TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
-     "Tifpack::PointRelaxation::applyMat() ERROR: X.getNumVectors() != Y.getNumVectors().");
+     "Tifpack::Relaxation::applyMat() ERROR: X.getNumVectors() != Y.getNumVectors().");
   A_->apply(X, Y, mode);
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::initialize() {
+template<class MatrixType>
+void Relaxation<MatrixType>::initialize() {
   IsInitialized_ = false;
 
   TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error,
-    "Tifpack::PointRelaxation::Initialize ERROR, Matrix is NULL");
+    "Tifpack::Relaxation::Initialize ERROR, Matrix is NULL");
 
 //  size_t globalrows = A_->getGlobalNumRows();
 //  size_t globalcols = A_->getGlobalNumCols();
 //  TEST_FOR_EXCEPTION(globalrows != globalcols, std::runtime_error,
-//   "Tifpack::PointRelaxation::Initialize ERROR, only square matrices are supported");
+//   "Tifpack::Relaxation::Initialize ERROR, only square matrices are supported");
 
   NumMyRows_ = A_->getNodeNumRows();
   NumGlobalRows_ = A_->getGlobalNumRows();
@@ -645,8 +331,8 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::compute()
+template<class MatrixType>
+void Relaxation<MatrixType>::compute()
 {
   if (!isInitialized()) {
     initialize();
@@ -659,12 +345,12 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
   Condest_ = -1.0;
 
   TEST_FOR_EXCEPTION(NumSweeps_ < 0, std::runtime_error,
-    "Tifpack::PointRelaxation::compute, NumSweeps_ must be >= 0");
+    "Tifpack::Relaxation::compute, NumSweeps_ must be >= 0");
   
   Diagonal_ = Teuchos::rcp( new Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(A_->getRowMap()) );
 
   TEST_FOR_EXCEPTION(Diagonal_ == Teuchos::null, std::runtime_error,
-    "Tifpack::PointRelaxation::compute, failed to create Diagonal_");
+    "Tifpack::Relaxation::compute, failed to create Diagonal_");
 
   A_->getLocalDiagCopy(*Diagonal_);
 
@@ -672,7 +358,7 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
   // no zeros are around. If an element is zero, then by default
   // its inverse is zero as well (that is, the row is ignored).
   Teuchos::ArrayRCP<Scalar> DiagView = Diagonal_->get1dViewNonConst();
-  for (int i = 0 ; i < NumMyRows_ ; ++i) {
+  for (size_t i = 0 ; i < NumMyRows_ ; ++i) {
     Scalar& diag = DiagView[i];
     if (Teuchos::ScalarTraits<Scalar>::magnitude(diag) < MinDiagonalValue_)
       diag = MinDiagonalValue_;
@@ -692,7 +378,7 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
     Importer_ = Teuchos::rcp( new Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>(A_->getColMap(),
                                   A_->getRowMap()) );
     TEST_FOR_EXCEPTION(Importer_ == Teuchos::null, std::runtime_error,
-      "Tifpack::PointRelaxation::compute ERROR failed to create Importer_");
+      "Tifpack::Relaxation::compute ERROR failed to create Importer_");
   }
 
   ++NumCompute_;
@@ -702,8 +388,8 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::ApplyInverseJacobi(
+template<class MatrixType>
+void Relaxation<MatrixType>::ApplyInverseJacobi(
         const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
               Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
@@ -728,12 +414,12 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::ApplyInverseGS(
+template<class MatrixType>
+void Relaxation<MatrixType>::ApplyInverseGS(
         const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
               Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
-  const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>* CrsMatrix = dynamic_cast<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>*>(&*A_);
+  const MatrixType* CrsMatrix = dynamic_cast<const MatrixType*>(&*A_);
   // try to pick the best option; performances may be improved
   // if several sweeps are used.
   if (CrsMatrix != 0)
@@ -746,8 +432,8 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::ApplyInverseGS_RowMatrix(
+template<class MatrixType>
+void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
         const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
               Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
@@ -777,7 +463,7 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
 
     if(!DoBackwardGS_){      
       /* Forward Mode */
-      for (int i = 0 ; i < NumMyRows_ ; ++i) {
+      for (size_t i = 0 ; i < NumMyRows_ ; ++i) {
         
         size_t NumEntries;
         A_->getLocalRowCopy(i, Indices(), Values(), NumEntries);
@@ -816,7 +502,7 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
     // using Export() sounded quite expensive   
     if (IsParallel_) {
       for (size_t m = 0 ; m < NumVectors ; ++m) 
-        for (int i = 0 ; i < NumMyRows_ ; ++i)
+        for (size_t i = 0 ; i < NumMyRows_ ; ++i)
           y_ptr[m][i] = y2_ptr[m][i];
     }
   }
@@ -825,9 +511,9 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::ApplyInverseGS_CrsMatrix(
-        const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+template<class MatrixType>
+void Relaxation<MatrixType>::ApplyInverseGS_CrsMatrix(
+        const MatrixType& A,
         const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
               Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
@@ -856,7 +542,7 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
 
     if(!DoBackwardGS_){  
       /* Forward Mode */
-      for (int i = 0 ; i < NumMyRows_ ; ++i) {
+      for (size_t i = 0 ; i < NumMyRows_ ; ++i) {
 
         LocalOrdinal col;
         Scalar diag = d_ptr[i];
@@ -903,7 +589,7 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
     
     if (IsParallel_) {
       for (size_t m = 0 ; m < NumVectors ; ++m) 
-        for (int i = 0 ; i < NumMyRows_ ; ++i)
+        for (size_t i = 0 ; i < NumMyRows_ ; ++i)
           y_ptr[m][i] = y2_ptr[m][i];
     }
   }
@@ -912,12 +598,12 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::ApplyInverseSGS(
+template<class MatrixType>
+void Relaxation<MatrixType>::ApplyInverseSGS(
         const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
               Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
-  const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>* CrsMatrix = dynamic_cast<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>*>(&*A_);
+  const MatrixType* CrsMatrix = dynamic_cast<const MatrixType*>(&*A_);
   // try to pick the best option; performance may be improved
   // if several sweeps are used.
   if (CrsMatrix != 0)
@@ -929,8 +615,8 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::ApplyInverseSGS_RowMatrix(
+template<class MatrixType>
+void Relaxation<MatrixType>::ApplyInverseSGS_RowMatrix(
         const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
               Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
@@ -957,7 +643,7 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
     if (IsParallel_)
       Y2->doImport(Y,*Importer_,Tpetra::INSERT);
 
-    for (int i = 0 ; i < NumMyRows_ ; ++i) {
+    for (size_t i = 0 ; i < NumMyRows_ ; ++i) {
 
       size_t NumEntries;
       Scalar diag = d_ptr[i];
@@ -998,7 +684,7 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
 
     if (IsParallel_) {
       for (size_t m = 0 ; m < NumVectors ; ++m) 
-        for (int i = 0 ; i < NumMyRows_ ; ++i)
+        for (size_t i = 0 ; i < NumMyRows_ ; ++i)
           y_ptr[m][i] = y2_ptr[m][i];
     }
   }
@@ -1007,9 +693,9 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::ApplyInverseSGS_CrsMatrix(
-        const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>& A,
+template<class MatrixType>
+void Relaxation<MatrixType>::ApplyInverseSGS_CrsMatrix(
+        const MatrixType& A,
         const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
               Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
 {
@@ -1036,7 +722,7 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
     if (IsParallel_)
       Y2->doImport(Y,*Importer_,Tpetra::INSERT);
 
-    for (int i = 0 ; i < NumMyRows_ ; ++i) {
+    for (size_t i = 0 ; i < NumMyRows_ ; ++i) {
 
       Scalar diag = d_ptr[i];
 
@@ -1080,7 +766,7 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
 
     if (IsParallel_) {
       for (size_t m = 0 ; m < NumVectors ; ++m) 
-        for (int i = 0 ; i < NumMyRows_ ; ++i)
+        for (size_t i = 0 ; i < NumMyRows_ ; ++i)
           y_ptr[m][i] = y2_ptr[m][i];
     }
   }
@@ -1089,8 +775,8 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
 }
 
 //==========================================================================
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
-std::string PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::description() const {
+template<class MatrixType>
+std::string Relaxation<MatrixType>::description() const {
   std::ostringstream oss;
   oss << Teuchos::Describable::description();
   if (isInitialized()) {
@@ -1116,8 +802,8 @@ std::string PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,L
 }
 
 //==========================================================================
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
-void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
+template<class MatrixType>
+void Relaxation<MatrixType>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
   using std::endl;
   using std::setw;
   using Teuchos::VERB_DEFAULT;
@@ -1186,5 +872,5 @@ void PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMat
 
 }//namespace Tifpack
 
-#endif // TIFPACK_POINTRELAXATION_HPP
+#endif // TIFPACK_RELAXATION_DEF_HPP
 

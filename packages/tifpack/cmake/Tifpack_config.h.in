@@ -9,3 +9,6 @@
 /* Define if we have the QD extended-precision TPL */
 #cmakedefine HAVE_TIFPACK_QD
 
+/* Define if explicit instantiation is enabled. */
+#cmakedefine HAVE_TIFPACK_EXPLICIT_INSTANTIATION
+

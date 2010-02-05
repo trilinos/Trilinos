@@ -120,7 +120,7 @@ class Preconditioner : virtual public Tpetra::Operator<Scalar,LocalOrdinal,Globa
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
 
     //! Destructor.
-    virtual ~Preconditioner();
+    virtual ~Preconditioner(){}
 
     /** \name Methods implementing Tpetra::Operator. */
     //@{
@@ -134,10 +134,9 @@ class Preconditioner : virtual public Tpetra::Operator<Scalar,LocalOrdinal,Globa
     //! Applies the effect of the preconditioner.
     virtual void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
                              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
-                       Teuchos::ETransp mode = Teuchos::NO_TRANS) const = 0;
-
-    //! Indicates whether this operator supports applying the adjoint operator.
-    virtual bool hasTransposeApply() const { return true; }
+                       Teuchos::ETransp mode = Teuchos::NO_TRANS,
+               Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+               Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const = 0;
 
     //@}
 
@@ -174,7 +173,7 @@ class Preconditioner : virtual public Tpetra::Operator<Scalar,LocalOrdinal,Globa
     //! Returns the number of calls to compute().
     virtual int getNumCompute() const = 0;
 
-    //! Returns the number of calls to ApplyInverse().
+    //! Returns the number of calls to Apply().
     virtual int getNumApply() const = 0;
 
     //! Returns the time spent in Initialize().
@@ -183,14 +182,10 @@ class Preconditioner : virtual public Tpetra::Operator<Scalar,LocalOrdinal,Globa
     //! Returns the time spent in Compute().
     virtual double getComputeTime() const = 0;
 
-    //! Returns the time spent in ApplyInverse().
+    //! Returns the time spent in Apply().
     virtual double getApplyTime() const = 0;
 
 };
-
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>::~Preconditioner()
-{ }
 
 }//namespace Tifpack
 

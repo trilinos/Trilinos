@@ -11,7 +11,7 @@
   </ParameterList>
 
 <!--
-  <Parameter name="Tifpack::Preconditioner" type="string" value="POINT_RELAXATION"/>
+  <Parameter name="Tifpack::Preconditioner" type="string" value="RELAXATION"/>
   <ParameterList name="Tifpack">
     <Parameter name="relaxation: type" type="string" value="Jacobi"/>
   </ParameterList>

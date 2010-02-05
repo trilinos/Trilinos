@@ -31,19 +31,24 @@ SET(HEADERS ${HEADERS}
   Tifpack_Chebyshev.hpp
   Tifpack_Condest.hpp
   Tifpack_CondestType.hpp
+  Tifpack_ExplicitInstantiationHelpers.hpp
   Tifpack_Heap.hpp
   Tifpack_ILUT.hpp
+  Tifpack_ILUT_decl.hpp
+  Tifpack_ILUT_def.hpp
   Tifpack_IlukGraph.hpp
   Tifpack_Parameters.hpp
-  Tifpack_PointRelaxation.hpp
   Tifpack_Preconditioner.hpp
+  Tifpack_Relaxation.hpp
   Tifpack_ScalingType.hpp
   Tifpack_Version.hpp
   )
 
 SET(SOURCES ${SOURCES}
   Tifpack_Factory.cpp
+  Tifpack_ILUT.cpp
   Tifpack_Parameters.cpp
+  Tifpack_Relaxation.cpp
   )
 
 #

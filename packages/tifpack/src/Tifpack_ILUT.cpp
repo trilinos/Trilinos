@@ -26,15 +26,17 @@
 // ***********************************************************************
 //@HEADER
 */
-#ifndef TIFPACK_CRSRILUK_HPP
 
-//declaration:
-#include "Tifpack_CrsRiluk_decl.hpp"
+#include "Tifpack_ILUT_decl.hpp"
 
-#ifndef HAVE_TIFPACK_EXPLICIT_INSTANTIATION
-//definition:
-#include "Tifpack_CrsRiluk_def.hpp"
-#endif
+#ifdef HAVE_TIFPACK_EXPLICIT_INSTANTIATION
+
+#include "Tifpack_ILUT_def.hpp"
+#include "Tifpack_ExplicitInstantiationHelpers.hpp"
+
+namespace Tifpack {
+TIFPACK_INSTANT_CRSMATRIX_FLOAT_DOUBLE_DEFAULTS(ILUT)
+}
 
 #endif
 

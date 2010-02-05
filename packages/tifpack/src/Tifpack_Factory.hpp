@@ -32,7 +32,7 @@
 
 #include "Tifpack_ConfigDefs.hpp"
 #include "Tifpack_Preconditioner.hpp"
-#include "Tifpack_PointRelaxation.hpp"
+#include "Tifpack_Relaxation.hpp"
 #include "Tifpack_Chebyshev.hpp"
 #include "Tifpack_ILUT.hpp"
 
@@ -55,7 +55,7 @@ Create requires 3 arguments:
   overlap among the processes.
 
 The first argument can assume the following values:
-- \c "POINT_RELAXATION" : returns an instance of Tifpack::PointRelaxation.
+- \c "RELAXATION" : returns an instance of Tifpack::Relaxation.
 - \c "CHEBYSHEV"        : returns an instance of Tifpack::Chebyshev (overlap is ignored).
 - \c "ILUT"             : returns an instance of Tifpack::ILUT.
 - otherwise, Create() returns Teuchos::null.
@@ -112,31 +112,40 @@ public:
    * that the client is responsible for calling <tt>delete</tt> on the
    * returned object once it is finished using it!
    */
-  template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
+  template<class MatrixType>
   static
-  Teuchos::RCP<Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  Teuchos::RCP<Tifpack::Preconditioner<typename MatrixType::scalar_type,
+                                       typename MatrixType::local_ordinal_type,
+                                       typename MatrixType::global_ordinal_type,
+                                       typename MatrixType::node_type> >
   create(const std::string& prec_type,
-         const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> >& matrix,
+         const Teuchos::RCP<const MatrixType>& matrix,
          const int overlap = 0);
 };
 
 /////////////////////////////////////////////
 /////////////////////////////////////////////
 
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-Teuchos::RCP<Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+template<class MatrixType>
+Teuchos::RCP<Tifpack::Preconditioner<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >
 Factory::create(const std::string& prec_type,
-                const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> >& matrix,
+                const Teuchos::RCP<const MatrixType>& matrix,
                 const int overlap)
 {
+  typedef typename MatrixType::scalar_type Scalar;
+  typedef typename MatrixType::local_ordinal_type LocalOrdinal;
+  typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
+  typedef typename MatrixType::node_type Node;
+  typedef typename MatrixType::mat_vec_type LocalMatVec;
+  typedef typename MatrixType::mat_solve_type LocalMatSolve;
   (void)overlap;
   Teuchos::RCP<Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec;
 
   if (prec_type == "ILUT") {
-    prec = Teuchos::rcp(new Tifpack::ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>(matrix));
+    prec = Teuchos::rcp(new Tifpack::ILUT<MatrixType>(matrix));
   }
-  else if (prec_type == "POINT_RELAXATION") {
-    prec = Teuchos::rcp(new Tifpack::PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>(matrix));
+  else if (prec_type == "RELAXATION") {
+    prec = Teuchos::rcp(new Tifpack::Relaxation<MatrixType>(matrix));
   }
   else if (prec_type == "CHEBYSHEV") {
     prec = Teuchos::rcp(new Tifpack::Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>(matrix));
@@ -144,7 +153,7 @@ Factory::create(const std::string& prec_type,
   else {
     std::ostringstream os;
     os << "Tifpack::Factory::Create ERROR, invalid preconditioner type ("
-       << prec_type;
+       << prec_type << ")";
     std::string str = os.str();
     throw std::runtime_error(str);
   }

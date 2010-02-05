@@ -25,9 +25,9 @@
 // ***********************************************************************
 
 
-/*! \file Tifpack_UnitTestPointRelaxation.cpp
+/*! \file Tifpack_UnitTestRelaxation.cpp
 
-\brief Tifpack Unit test for the PointRelaxation template.
+\brief Tifpack Unit test for the Relaxation template.
 */
 
 
@@ -42,14 +42,14 @@
 #endif
 
 #include <Tifpack_UnitTestHelpers.hpp>
-#include <Tifpack_PointRelaxation.hpp>
+#include <Tifpack_Relaxation.hpp>
 
 namespace {
 using Tpetra::global_size_t;
 typedef tif_utest::Node Node;
 
 //this macro declares the unit-test-class:
-TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackPointRelaxation, Test0, Scalar, LocalOrdinal, GlobalOrdinal)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackRelaxation, Test0, Scalar, LocalOrdinal, GlobalOrdinal)
 {
 //we are now in a class method declared by the above macro, and
 //that method has these input arguments:
@@ -64,7 +64,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackPointRelaxation, Test0, Scalar, LocalOr
 
   Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
 
-  Tifpack::PointRelaxation<Scalar,LocalOrdinal,GlobalOrdinal,Node> prec(crsmatrix);
+  Tifpack::Relaxation<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec(crsmatrix);
 
   Teuchos::ParameterList params;
   params.set("relaxation: type", "Jacobi");
@@ -109,7 +109,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackPointRelaxation, Test0, Scalar, LocalOr
 }
 
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TifpackPointRelaxation, Test0, Scalar, LocalOrdinal,GlobalOrdinal)
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TifpackRelaxation, Test0, Scalar, LocalOrdinal,GlobalOrdinal)
 
 UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
 

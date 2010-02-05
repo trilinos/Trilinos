@@ -142,7 +142,9 @@ public:
     */
   void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-             Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
+             Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                 Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+                 Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
 
   //! Returns the Tpetra::Map object associated with the domain of this operator.
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& getDomainMap() const;
@@ -472,7 +474,9 @@ template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class Lo
 void Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::apply(
           const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
                 Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-                Teuchos::ETransp mode) const {
+                Teuchos::ETransp mode,
+                 Scalar alpha,
+                 Scalar beta) const {
   TEST_FOR_EXCEPTION(!isComputed(), std::runtime_error, 
       "Tifpack::Chebyshev::apply() ERROR, not yet computed.");
 
@@ -515,10 +519,10 @@ void Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>
 
   //--- initialize coefficients
   // Note that delta stores the inverse of ML_Cheby::delta
-  Scalar alpha = LambdaMax_ / EigRatio_;
-  Scalar beta = 1.1 * LambdaMax_;
-  Scalar delta = 2.0 / (beta - alpha);
-  Scalar theta = 0.5 * (beta + alpha);
+  Scalar alpha_cheby = LambdaMax_ / EigRatio_;
+  Scalar beta_cheby = 1.1 * LambdaMax_;
+  Scalar delta = 2.0 / (beta_cheby - alpha_cheby);
+  Scalar theta = 0.5 * (beta_cheby + alpha_cheby);
   Scalar s1 = theta * delta;
 
   //--- Define vectors

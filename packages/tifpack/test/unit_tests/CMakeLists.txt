@@ -26,10 +26,10 @@ Tifpack_UnitTestCreateOverlapGraph.cpp
 Tifpack_UnitTestHeap.cpp
 Tifpack_UnitTestOverlapGraph.cpp
 Tifpack_UnitTestParameters.cpp
-#Tifpack_UnitTestIlukGraph.cpp
+Tifpack_UnitTestIlukGraph.cpp
 Tifpack_UnitTestILUT.cpp
 Tifpack_UnitTestFactory.cpp
-Tifpack_UnitTestPointRelaxation.cpp
+Tifpack_UnitTestRelaxation.cpp
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(

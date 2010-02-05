@@ -64,7 +64,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackILUT, Test0, Scalar, LocalOrdinal, Glob
 
   Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
 
-  Tifpack::ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node> prec(crsmatrix);
+  Tifpack::ILUT<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec(crsmatrix);
 
   Teuchos::ParameterList params;
   params.set("fact: ilut level-of-fill", 1.0);
@@ -115,7 +115,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackILUT, Test1, Scalar, LocalOrdinal, Glob
 
   Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = tif_utest::create_test_matrix2<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
 
-  Tifpack::ILUT<Scalar,LocalOrdinal,GlobalOrdinal,Node> prec(crsmatrix);
+  Tifpack::ILUT<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec(crsmatrix);
 
   Teuchos::ParameterList params;
   params.set("fact: ilut level-of-fill", 6.0);
