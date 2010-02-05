@@ -776,17 +776,9 @@ int main(int argc, char *argv[]) {
     delete [] sideSetIds;
 
 #ifdef DUMP_DATA
-   // Print coords
-    std::stringstream fname;
-      fname << "coords";
-      fname << MyPID << ".dat";
-    FILE *f=fopen(fname.str().c_str(),"w");
-    for (int i=0; i<numNodes; i++) {
-      if (nodeIsOwned[i]) {
-       fprintf(f,"%22.16e %22.16e %22.16e\n",nodeCoord(i,0),nodeCoord(i,1),nodeCoord(i,2));
-      }
-    }
-    fclose(f);
+    EpetraExt::VectorToMatrixMarketFile("coordx.dat",Nx);
+    EpetraExt::VectorToMatrixMarketFile("coordy.dat",Ny);
+    EpetraExt::VectorToMatrixMarketFile("coordz.dat",Nz);
 
 #endif
 
@@ -1409,7 +1401,7 @@ int main(int argc, char *argv[]) {
    dummy.set("ML output",10);
    dummy.set("smoother: sweeps",3);
    dummy.set("smoother: type","Chebyshev");
-   dummy.set("aggregation: type","Uncoupled");
+   dummy.set("aggregation: type","Uncoupled-MIS");
    dummy.set("smoother: pre or post","both");
    dummy.set("max levels",10);
    dummy.set("coarse: type","Amesos-KLU");
@@ -1437,7 +1429,7 @@ int main(int argc, char *argv[]) {
    DCurl.SetLabel("D1");
    MassCinv.SetLabel("M1^{-1}");
    
-   char probType[12] = "curl_lsfem";
+   char probType[12] = "div_lsfem";
 
    TestMultiLevelPreconditioner_DivLSFEM(probType,MLList2,StiffD,
 					 DGrad,DCurl,

@@ -19,6 +19,7 @@ extern void IVOUT(const Epetra_IntVector & A, const char * of);
 
 #include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_MultiVectorOut.h"
+#include "EpetraExt_VectorOut.h"
 
 // ================================================ ====== ==== ==== == =
 /* This function does a "view" getrow in an ML_Operator.  This is intended to be
@@ -256,7 +257,8 @@ int ML_Epetra::FaceMatrixFreePreconditioner::BuildNullspace(Epetra_MultiVector *
   // Import coordinate info
   if(FaceNode_Matrix_->Importer()){
     n_coords=new Epetra_MultiVector(FaceNode_Matrix_->ColMap(),dim);    
-    n_coords->Import(n_coords_domain,*FaceNode_Matrix_->Importer(),Zero);
+    n_coords->PutScalar(0.0);
+    n_coords->Import(n_coords_domain,*FaceNode_Matrix_->Importer(),Add);
   }
   else n_coords=&n_coords_domain;
 
@@ -288,9 +290,10 @@ int ML_Epetra::FaceMatrixFreePreconditioner::BuildNullspace(Epetra_MultiVector *
     cross_product(a,b,c);
 
     // HAQ - Hardwiring for hexes
-    (*nullspace)[0][i]=c[0]/6.0;
-    (*nullspace)[1][i]=c[1]/6.0;
-    (*nullspace)[2][i]=c[2]/6.0;
+    // HAQ - Absolute value, presuming all hexes are actually pointed the same way.  This is a HAQ!!!
+    (*nullspace)[0][i]=ABS(c[0])/6.0;
+    (*nullspace)[1][i]=ABS(c[1])/6.0;
+    (*nullspace)[2][i]=ABS(c[2])/6.0;
   }
 
   /* Cleanup */
@@ -390,12 +393,6 @@ int ML_Epetra::FaceMatrixFreePreconditioner::BuildProlongator()
   NodeAggregate(MLAggr,P,TMT_ML,NumAggregates);
   if(!P) {if(!Comm_->MyPID()) printf("ERROR: Building nodal P\n");ML_CHK_ERR(-1);}
 
-#ifndef NO_OUTPUT
-  /* DEBUG: Dump aggregates, prolongator */ 
-  Epetra_IntVector AGG(View,*NodeDomainMap_,MLAggr->aggr_info[0]);
-  IVOUT(AGG,"agg.dat");  
-#endif
-
   /* Build 1-unknown sparsity of prolongator */
   Epetra_CrsMatrix *Psparse=0;
   PBuildSparsity(P,Psparse);
@@ -405,6 +402,7 @@ int ML_Epetra::FaceMatrixFreePreconditioner::BuildProlongator()
   Epetra_MultiVector *nullspace;
   BuildNullspace(nullspace);
   if(!nullspace) {if(!Comm_->MyPID()) printf("ERROR: Building Nullspace\n");ML_CHK_ERR(-3);}
+
     
   /* Build the DomainMap of the new operator*/
   const Epetra_Map & FineColMap = Psparse->ColMap();
@@ -441,6 +439,20 @@ int ML_Epetra::FaceMatrixFreePreconditioner::BuildProlongator()
   /* FillComplete / OptimizeStorage for Prolongator*/
   Prolongator_->FillComplete(*CoarseMap_,*FaceRangeMap_);
   Prolongator_->OptimizeStorage();
+
+#ifndef NO_OUTPUT
+  /* DEBUG: Dump aggregates */ 
+  Epetra_IntVector AGG(View,*NodeDomainMap_,MLAggr->aggr_info[0]);
+  IVOUT(AGG,"agg.dat");  
+  EpetraExt::RowMatrixToMatlabFile("psparse.dat",*Psparse);
+  EpetraExt::RowMatrixToMatlabFile("prolongator.dat",*Prolongator_);
+  EpetraExt::VectorToMatrixMarketFile("null0.dat",*(*nullspace)(0));
+  EpetraExt::VectorToMatrixMarketFile("null1.dat",*(*nullspace)(1));
+  EpetraExt::VectorToMatrixMarketFile("null2.dat",*(*nullspace)(2));
+
+#endif
+
+
 
   /* EXPERIMENTAL: Normalize Prolongator Columns */
   bool normalize_prolongator=List_.get("refmaxwell: normalize prolongator",false);
