@@ -215,7 +215,8 @@ evaluate(const value_type& x, ordinal_type k) const
     return gamma[1]*(delta[0]*x-alpha[0]);
 
   value_type v0 = value_type(1.0);
-  value_type v1 = x-alpha[0]*v0;
+//  value_type v1 = x-alpha[0]*v0;
+  value_type v1 = (x*delta[0]-alpha[0])*v0;
   value_type v2;
   for (ordinal_type i=2; i<=k; i++) {
     v2 = (delta[i-1]*x-alpha[i-1])*v1 - beta[i-1]*v0;

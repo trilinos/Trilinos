@@ -147,7 +147,7 @@ TensorProductQuadrature(const Teuchos::RCP<const ProductBasis<ordinal_type,value
     ++cnt;
   }
 
-  std::cout << "Number of quadrature points = " << ntot << std::endl;
+//  std::cout << "Number of quadrature points = " << ntot << std::endl;
 
 //   std::cout << "Tensor product quadrature points, weights, values = " << std::endl;
 //   for (int i=0; i<n; i++) {
