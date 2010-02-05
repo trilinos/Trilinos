@@ -8,7 +8,7 @@
 #
 #  For the extra builds pass in (some subset of):
 #
-#    --extra-builds=SERIAL_DEBUG_BOOST_TRACE,SERIAL_DEBUG_TRACE,SERIAL_DEBUG_BOOST,MPI_DEBUG_INT
+#    --extra-builds=SERIAL_DEBUG_BOOST_TRACE,SERIAL_DEBUG_TRACE,SERIAL_DEBUG_BOOST,MPI_DEBUG_INT,MPI_OPT
 #
 # To automatically invoke a remote pull/test/push on trilinos-test2, you can
 # use the argument:
@@ -55,6 +55,15 @@ echo "
 -DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON
 -DTeuchos_ORDINAL_TYPE:STRIRNG=int
 " > MPI_DEBUG_INT.config
+
+echo "
+-DCMAKE_BUILD_TYPE:STRING=RELEASE
+-DTPL_ENABLE_MPI:BOOL=ON
+-DMPI_BASE_DIR:PATH=/Users/jmwille/install
+-DTrilinos_ENABLE_DEBUG:BOOL=OFF \
+-DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF \
+-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=OFF \
+" > MPI_OPT.config
 
 echo "
 -DCMAKE_BUILD_TYPE:STRING=RELEASE
