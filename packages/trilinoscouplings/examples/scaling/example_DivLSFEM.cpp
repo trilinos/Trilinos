@@ -1747,7 +1747,7 @@ int Multiply_Abs(const Epetra_CrsMatrix &A,const Epetra_Vector &x,Epetra_Vector 
     double sum = 0.0;
     for(int j = 0; j < NumEntries; j++){
       double v=*RowValues++;
-      sum += ABS(v) * x[*RowIndices++];	
+      sum += ABS(v) * xp[*RowIndices++];	
     }
     yp[i] = sum;    
   }
