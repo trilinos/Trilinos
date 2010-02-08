@@ -61,12 +61,23 @@ Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > PreconditionerLinearOp<Scal
    return getOperator()->domain();
 }
 
-//! @brief Apply operation
 template <typename ScalarT>
-void PreconditionerLinearOp<ScalarT>::apply(const Thyra::EConj conj, const Thyra::MultiVectorBase<ScalarT> & x, Thyra::MultiVectorBase<ScalarT> * y,
-                                            const double alpha, const double beta) const
+bool PreconditionerLinearOp<ScalarT>::opSupportedImpl(
+  const Thyra::EOpTransp M_trans) const
 {
-   getOperator()->apply(conj,x,y,alpha,beta);
+  return getOperator()->opSupported(M_trans);
+}
+
+template <typename ScalarT>
+void PreconditionerLinearOp<ScalarT>::applyImpl(
+  const Thyra::EOpTransp M_trans,
+  const Thyra::MultiVectorBase<ScalarT> & x,
+  const Teuchos::Ptr<Thyra::MultiVectorBase<ScalarT> > & y,
+  const ScalarT alpha,
+  const ScalarT beta
+  ) const
+{
+   getOperator()->apply(M_trans, x, y, alpha, beta);
 }
 
 

@@ -37,11 +37,16 @@ public:
    /** @brief Domain space of this operator */
    virtual Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > domain() const;
 
-   //! @brief Apply operation
-   virtual void apply(const Thyra::EConj conj, const Thyra::MultiVectorBase<ScalarT> & x, Thyra::MultiVectorBase<ScalarT> * y,
-                      const double alpha = Teuchos::ScalarTraits<ScalarT>::one(),
-                      const double beta = Teuchos::ScalarTraits<ScalarT>::zero()) const;
+   virtual bool opSupportedImpl(const Thyra::EOpTransp M_trans) const;
 
+   //! @brief Apply operation
+   virtual void applyImpl(
+     const Thyra::EOpTransp M_trans,
+     const Thyra::MultiVectorBase<ScalarT> & x,
+     const Teuchos::Ptr<Thyra::MultiVectorBase<ScalarT> > & y,
+     const ScalarT alpha,
+     const ScalarT beta
+     ) const;
 
    //! Get a nonconstant <code>PreconditionerBase</code> object
    virtual Teuchos::RCP<Thyra::PreconditionerBase<ScalarT> > getNonconstPreconditioner();

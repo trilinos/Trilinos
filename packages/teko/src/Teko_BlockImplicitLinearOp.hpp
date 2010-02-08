@@ -37,13 +37,21 @@ public:
    virtual void implicitApply(const BlockedMultiVector & x, BlockedMultiVector & y,
               const double alpha = 1.0, const double beta = 0.0) const = 0;
 
+protected:
+
    //! Functions required by Thyra::LinearOpBase 
    //@{ 
 
-   virtual void apply(const Thyra::EConj conj, const Thyra::MultiVectorBase<double> & x, Thyra::MultiVectorBase<double> * y,
-                      const double alpha = Teuchos::ScalarTraits<double>::one(),
-                      const double beta = Teuchos::ScalarTraits<double>::zero()) const;
- 
+  virtual bool opSupportedImpl(const Thyra::EOpTransp M_trans) const;
+
+  virtual void applyImpl(
+    const Thyra::EOpTransp M_trans,
+    const Thyra::MultiVectorBase<double> & x,
+    const Teuchos::Ptr<Thyra::MultiVectorBase<double> > & y,
+    const double alpha,
+    const double beta
+    ) const;
+  
    //@}
 };
 

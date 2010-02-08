@@ -28,6 +28,7 @@
 
 #include "Teko_EpetraOperatorWrapper.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #ifdef HAVE_MPI
 #include "Teuchos_DefaultMpiComm.hpp"
 #endif
@@ -40,10 +41,9 @@
 #endif
 #include "Thyra_EpetraThyraWrappers.hpp"
 
-#include "Thyra_LinearOperatorDecl.hpp"
+#include "Thyra_LinearOperator.hpp"
 #include "Thyra_BlockedLinearOpBase.hpp"
 #include "Thyra_ProductVectorSpaceBase.hpp"
-#include "Thyra_LinearOperatorImpl.hpp"
 
 #include "Teko_EpetraHelpers.hpp"
 #include "Teko_EpetraThyraConverter.hpp"
