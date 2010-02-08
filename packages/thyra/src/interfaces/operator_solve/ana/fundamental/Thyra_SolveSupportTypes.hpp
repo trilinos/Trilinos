@@ -168,7 +168,7 @@ struct SolveCriteria {
  * \ingroup Equation_solve_foundation_code_grp
  */
 template <class Scalar>
-THYRA_DEPRECATED struct BlockSolveCriteria {
+struct THYRA_DEPRECATED BlockSolveCriteria {
   /** \brief Solve tolerance struct */
   SolveCriteria<Scalar> solveCriteria;
   /** \brief Number of RHS that solve tolerance applies to. */
