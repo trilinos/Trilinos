@@ -74,14 +74,7 @@ protected:
     const ArrayView<Scalar> &scalarProds_out ) const;
 
   /** \brief . */
-  virtual void euclideanApplyImpl(
-    const Thyra::EuclideanLinearOpBase<Scalar> &M,
-    const Thyra::EOpTransp M_trans,
-    const Thyra::MultiVectorBase<Scalar> &X,
-    const Ptr<Thyra::MultiVectorBase<Scalar> > &Y,
-    const Scalar alpha,
-    const Scalar beta
-    ) const;
+  RCP<const Thyra::LinearOpBase<Scalar> > getLinearOpImpl() const;
 
   //@}
 

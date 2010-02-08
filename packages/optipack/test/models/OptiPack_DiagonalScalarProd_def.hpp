@@ -124,16 +124,11 @@ void DiagonalScalarProd<Scalar>::scalarProdsImpl(
 
 
 template<class Scalar>
-void DiagonalScalarProd<Scalar>::euclideanApplyImpl(
-  const Thyra::EuclideanLinearOpBase<Scalar> &M,
-  const Thyra::EOpTransp M_trans,
-  const Thyra::MultiVectorBase<Scalar> &X,
-  const Ptr<Thyra::MultiVectorBase<Scalar> > &Y,
-  const Scalar alpha,
-  const Scalar beta
-  ) const
+RCP<const Thyra::LinearOpBase<Scalar> >
+DiagonalScalarProd<Scalar>::getLinearOpImpl() const
 {
-  TEST_FOR_EXCEPT_MSG(true, "Not implemented yet!")
+  TEST_FOR_EXCEPT_MSG(true, "ToDo: Implement when needed!")
+  return Teuchos::null;
 }
 
 
