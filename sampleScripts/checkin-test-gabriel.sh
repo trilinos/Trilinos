@@ -85,8 +85,7 @@ echo "
 #
 
 ../../Trilinos/checkin-test.py \
---make-options=-j8 \
---ctest-options=-j8 \
+-j8 \
 --ctest-timeout=180 \
 --commit-msg-header-file=checkin_message \
 $EXTRA_ARGS  
