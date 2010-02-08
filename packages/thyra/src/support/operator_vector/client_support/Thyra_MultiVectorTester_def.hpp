@@ -52,13 +52,7 @@ MultiVectorTester<Scalar>::MultiVectorTester(
    num_random_vectors_(num_random_vectors),
    show_all_tests_(show_all_tests),
    dump_all_(dump_all)
-{
-  linearOpTester_.set_all_warning_tol(warning_tol);
-  linearOpTester_.set_all_error_tol(error_tol);
-  linearOpTester_.num_random_vectors(num_random_vectors);
-  linearOpTester_.show_all_tests(show_all_tests);
-  linearOpTester_.dump_all(dump_all);
-}
+{}
 
 
 template<class Scalar>

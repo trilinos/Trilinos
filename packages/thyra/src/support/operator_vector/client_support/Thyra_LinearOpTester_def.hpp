@@ -139,35 +139,23 @@ public:
 
 
 template<class Scalar>
-LinearOpTester<Scalar>::LinearOpTester(
-  const bool check_linear_properties_in,
-  const ScalarMag linear_properties_warning_tol_in,
-  const ScalarMag linear_properties_error_tol_in,
-  const bool check_adjoint_in,
-  const ScalarMag adjoint_warning_tol_in,
-  const ScalarMag adjoint_error_tol_in,
-  const bool check_for_symmetry_in,
-  const ScalarMag symmetry_warning_tol_in,
-  const ScalarMag symmetry_error_tol_in,
-  const int num_random_vectors_in,
-  const bool show_all_tests_in,
-  const bool dump_all_in,
-  const int num_rhs_in
-  )
-  :check_linear_properties_(check_linear_properties_in),
-   linear_properties_warning_tol_(linear_properties_warning_tol_in),
-   linear_properties_error_tol_(linear_properties_error_tol_in),
-   check_adjoint_(check_adjoint_in),
-   adjoint_warning_tol_(adjoint_warning_tol_in),
-   adjoint_error_tol_(adjoint_error_tol_in),
-   check_for_symmetry_(check_for_symmetry_in),
-   symmetry_warning_tol_(symmetry_warning_tol_in),
-   symmetry_error_tol_(symmetry_error_tol_in),
-   num_random_vectors_(num_random_vectors_in),
-   show_all_tests_(show_all_tests_in),
-   dump_all_(dump_all_in),
-   num_rhs_(num_rhs_in)
-{}
+LinearOpTester<Scalar>::LinearOpTester()
+  :check_linear_properties_(true),
+   linear_properties_warning_tol_(-1.0),
+   linear_properties_error_tol_(-1.0),
+   check_adjoint_(true),
+   adjoint_warning_tol_(-1.0),
+   adjoint_error_tol_(-1.0),
+   check_for_symmetry_(false),
+   symmetry_warning_tol_(-1.0),
+   symmetry_error_tol_(-1.0),
+   num_random_vectors_(1),
+   show_all_tests_(false),
+   dump_all_(false),
+   num_rhs_(1)
+{
+  setDefaultTols();
+}
 
 
 template<class Scalar>
@@ -740,6 +728,37 @@ bool LinearOpTester<Scalar>::compare(
   ) const
 {
   return compare(op1, op2, Teuchos::null, out_arg);
+}
+
+
+// private
+
+
+// Nonmember helper
+template<class ScalarMag>
+inline
+void setDefaultTol(const ScalarMag &defaultDefaultTol,
+    ScalarMag &defaultTol)
+{
+  typedef ScalarTraits<ScalarMag> SMT;
+  if (defaultTol < SMT::zero()) {
+    defaultTol = defaultDefaultTol;
+  }
+}
+
+
+template<class Scalar>
+void LinearOpTester<Scalar>::setDefaultTols()
+{
+  typedef ScalarTraits<ScalarMag> SMT;
+  const ScalarMag defaultWarningTol = 1e+2 * SMT::eps();
+  const ScalarMag defaultErrorTol = 1e+4 * SMT::eps();
+  setDefaultTol(defaultWarningTol, linear_properties_warning_tol_);
+  setDefaultTol(defaultErrorTol, linear_properties_error_tol_);
+  setDefaultTol(defaultWarningTol, adjoint_warning_tol_);
+  setDefaultTol(defaultErrorTol, adjoint_error_tol_);
+  setDefaultTol(defaultWarningTol, symmetry_warning_tol_);
+  setDefaultTol(defaultErrorTol, symmetry_error_tol_);
 }
 
 

@@ -67,26 +67,9 @@ public:
 
   /** \brief Default constructor which sets default parameter values.
    *
-   * Note: It is not recommended that the client pass in values in this
-   * constructor since the argument list may change in the near future but
-   * instead use the below set functions to change an option after
-   * construction.
+   * See the implementation of this function for the defaults that get set.
    */
-  LinearOpTester(
-    const bool check_linear_properties = true,
-    const ScalarMag linear_properties_warning_tol = 1e-13,
-    const ScalarMag linear_properties_error_tol = 1e-10,
-    const bool check_adjoint = true,
-    const ScalarMag adjoint_warning_tol = 1e-13,
-    const ScalarMag adjoint_error_tol = 1e-10,
-    const bool check_for_symmetry = false,
-    const ScalarMag symmetry_warning_tol = 1e-13,
-    const ScalarMag symmetry_error_tol = 1e-10,
-    const int num_random_vectors = 1,
-    const bool show_all_tests = false,
-    const bool dump_all = false,
-    const int num_rhs = 1
-    );
+  LinearOpTester();
   
   /** \brief Set if to check for linear properties <tt>alpha*op*(x + y) ==
    * op(alpha*x) + op(alpha*y)</tt>
@@ -364,6 +347,10 @@ public:
     }
 
   //@}
+
+private:
+
+  void setDefaultTols();
 
 }; // class LinearOpTester
 

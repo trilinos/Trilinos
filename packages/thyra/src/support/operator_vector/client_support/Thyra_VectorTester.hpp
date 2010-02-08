@@ -32,7 +32,9 @@
 #include "Thyra_VectorTesterDecl.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
+
 namespace Thyra {
+
 
 template<class Scalar>
 VectorTester<Scalar>::VectorTester(
@@ -47,13 +49,8 @@ VectorTester<Scalar>::VectorTester(
   ,num_random_vectors_(num_random_vectors)
   ,show_all_tests_(show_all_tests)
   ,dump_all_(dump_all)
-{
-  multiVectorTester_.warning_tol(warning_tol);
-  multiVectorTester_.error_tol(error_tol);
-  multiVectorTester_.num_random_vectors(num_random_vectors);
-  multiVectorTester_.show_all_tests(show_all_tests);
-  multiVectorTester_.dump_all(dump_all);
-}
+{}
+
 
 template<class Scalar>
 bool VectorTester<Scalar>::check(
@@ -143,6 +140,8 @@ bool VectorTester<Scalar>::check(
 
 }
 
+
 } // namespace Thyra
+
 
 #endif // THYRA_VECTOR_TESTER_HPP

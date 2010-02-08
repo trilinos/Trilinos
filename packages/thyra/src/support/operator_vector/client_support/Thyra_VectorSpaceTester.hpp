@@ -53,13 +53,7 @@ VectorSpaceTester<Scalar>::VectorSpaceTester(
   ,num_random_vectors_(num_random_vectors)
   ,show_all_tests_(show_all_tests)
   ,dump_all_(dump_all)
-{
-  vectorTester_.warning_tol(warning_tol);
-  vectorTester_.error_tol(error_tol);
-  vectorTester_.num_random_vectors(num_random_vectors);
-  vectorTester_.show_all_tests(show_all_tests);
-  vectorTester_.dump_all(dump_all);
-}
+{}
 
 
 template <class Scalar>
