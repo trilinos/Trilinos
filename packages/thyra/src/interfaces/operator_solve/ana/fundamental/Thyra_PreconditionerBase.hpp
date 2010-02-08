@@ -29,7 +29,7 @@
 #ifndef THYRA_PRECONDITIONER_BASE_HPP
 #define THYRA_PRECONDITIONER_BASE_HPP
 
-#include "Thyra_SolveSupportTypes.hpp"
+#include "Thyra_OperatorSolveTypes.hpp"
 #include "Teuchos_Describable.hpp"
 
 namespace Thyra {
@@ -68,7 +68,7 @@ namespace Thyra {
  *   </ul>
  * </ul>
  */
-template <class RangeScalar, class DomainScalar = RangeScalar>
+template<class Scalar>
 class PreconditionerBase : virtual public Teuchos::Describable
 {
 public:
@@ -88,12 +88,12 @@ public:
    * <li>[<tt>isLeftPrecOpConst()==true</tt>] <tt>getLeftPrecOp().get()==NULL</tt>
    * </ul>
    */
-  virtual Teuchos::RCP<LinearOpBase<DomainScalar,RangeScalar> > getNonconstLeftPrecOp() = 0;
+  virtual Teuchos::RCP<LinearOpBase<Scalar> > getNonconstLeftPrecOp() = 0;
 
   /** \brief Return a const left preconditioner linear operator if one is
    * designed or targeted to be applied on the left.
    */
-  virtual Teuchos::RCP<const LinearOpBase<DomainScalar,RangeScalar> > getLeftPrecOp()const = 0;
+  virtual Teuchos::RCP<const LinearOpBase<Scalar> > getLeftPrecOp()const = 0;
 
   /** \brief Return if the underlying right preconditioner operator is
    * const-only or allows non-const access.
@@ -107,12 +107,12 @@ public:
    * <li>[<tt>isRightPrecOpConst()==true</tt>] <tt>getRightPrecOp().get()==NULL</tt>
    * </ul>
    */
-  virtual Teuchos::RCP<LinearOpBase<DomainScalar,RangeScalar> > getNonconstRightPrecOp() = 0;
+  virtual Teuchos::RCP<LinearOpBase<Scalar> > getNonconstRightPrecOp() = 0;
 
   /** \brief Return a const right preconditioner linear operator if one is
    * designed or targeted to be applied on the right.
    */
-  virtual Teuchos::RCP<const LinearOpBase<DomainScalar,RangeScalar> > getRightPrecOp() const = 0;
+  virtual Teuchos::RCP<const LinearOpBase<Scalar> > getRightPrecOp() const = 0;
 
   /** \brief Return if the underlying unspecified preconditioner operator is
    * const-only or allows non-const access.
@@ -122,7 +122,7 @@ public:
   /** \brief Return a non-const generic preconditioner linear operator that is
    * not designed or targeted to be applied on the left or on the right.
    */
-  virtual Teuchos::RCP<LinearOpBase<DomainScalar,RangeScalar> > getNonconstUnspecifiedPrecOp() = 0;
+  virtual Teuchos::RCP<LinearOpBase<Scalar> > getNonconstUnspecifiedPrecOp() = 0;
 
   /** \brief Return a const generic preconditioner linear operator that is not
    * designed or targeted to be applied on the left or on the right.
@@ -131,7 +131,7 @@ public:
    * <li>[<tt>isUnspecifiedPrecOpConst()==true</tt>] <tt>getUnspecifiedPrecOp().get()==NULL</tt>
    * </ul>
    */
-  virtual Teuchos::RCP<const LinearOpBase<DomainScalar,RangeScalar> > getUnspecifiedPrecOp() const = 0;
+  virtual Teuchos::RCP<const LinearOpBase<Scalar> > getUnspecifiedPrecOp() const = 0;
   
   //@}
 

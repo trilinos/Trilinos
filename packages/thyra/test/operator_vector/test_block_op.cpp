@@ -34,6 +34,7 @@
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_LinearOperatorImpl.hpp"
 #include "Thyra_LinearCombinationImpl.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ScalarTraits.hpp"
@@ -122,6 +123,7 @@ bool runTest(Teuchos::RCP<Teuchos::FancyOStream>& out)
 {
   typedef typename Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
+  typedef Thyra::Ordinal Ordinal;
   *out << "==========================================================================="
        << std::endl;
   *out << "running block operator test for " << ST::name() << std::endl;
@@ -138,7 +140,7 @@ bool runTest(Teuchos::RCP<Teuchos::FancyOStream>& out)
     {
       int n = rangeSpaceSizes[br];
       rangeBlocks[br] = Thyra::defaultSpmdVectorSpace<Scalar>(
-        DefaultComm<Index>::getComm(), n, -1);
+        DefaultComm<Ordinal>::getComm(), n, -1);
       
       blocks[br].resize(domainSpaceSizes.size());
       
@@ -214,4 +216,3 @@ bool runTest(Teuchos::RCP<Teuchos::FancyOStream>& out)
 
   return err < tol;
 }
-

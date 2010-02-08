@@ -63,7 +63,7 @@ void SpmdMultiVectorSerializer<Scalar>::serialize(
   if( mpi_vec_spc.get() ) {
     // This is a mpi-based vector space so let's just write the local
     // multi-vector elements (row-by-row).
-    const Index
+    const Ordinal
       localOffset = mpi_vec_spc->localOffset(),
       localSubDim = mpi_vec_spc->localSubDim();
     const Range1D localRng( localOffset, localOffset+localSubDim-1 ); 
@@ -71,14 +71,14 @@ void SpmdMultiVectorSerializer<Scalar>::serialize(
     out << localSubDim << " " << local_mv.numSubCols() << std::endl;
     if( binaryMode() ) {
       // Write column-wise for better cache performance
-      for( Index j = 0; j < local_mv.numSubCols(); ++j )
+      for( Ordinal j = 0; j < local_mv.numSubCols(); ++j )
         out.write( reinterpret_cast<const char*>(&local_mv(0,j)), sizeof(Scalar)*localSubDim );
     }
     else {
       // Write row-wise for better readability
-      for( Index i = 0; i < localSubDim; ++i ) {
+      for( Ordinal i = 0; i < localSubDim; ++i ) {
         out << " " << i;
-        for( Index j = 0; j < local_mv.numSubCols(); ++j ) {
+        for( Ordinal j = 0; j < local_mv.numSubCols(); ++j ) {
           out << " " << local_mv(i,j);
         }
         out << std::endl;
@@ -102,7 +102,7 @@ void SpmdMultiVectorSerializer<Scalar>::deserialize(
   if( mpi_vec_spc.get() ) {
     // This is a mpi-based vector space so let's just read the local
     // multi-vector elements (row-by-row).
-    const Index
+    const Ordinal
       localOffset = mpi_vec_spc->localOffset(),
       localSubDim = mpi_vec_spc->localSubDim();
     const Range1D localRng( localOffset, localOffset+localSubDim-1 ); 
@@ -114,7 +114,7 @@ void SpmdMultiVectorSerializer<Scalar>::deserialize(
       "If this stream came from a file, then the file may not exist!"
       );
 #endif
-    Index localSubDim_in;
+    Ordinal localSubDim_in;
     in >> localSubDim_in;
 #ifdef TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION(
@@ -123,7 +123,7 @@ void SpmdMultiVectorSerializer<Scalar>::deserialize(
       "localSubDim_in = "<<localSubDim_in<<"!"
       );
 #endif
-    Index numSubCols_in;
+    Ordinal numSubCols_in;
     in >> numSubCols_in;
 #ifdef TEUCHOS_DEBUG
     TEST_FOR_EXCEPTION(
@@ -137,16 +137,16 @@ void SpmdMultiVectorSerializer<Scalar>::deserialize(
     // Get the elements
     if( binaryMode() ) {
       // Column-wise
-      for( Index j = 0; j < local_mv.numSubCols(); ++j )
+      for( Ordinal j = 0; j < local_mv.numSubCols(); ++j )
         in.read( reinterpret_cast<char*>(&local_mv(0,j)), sizeof(Scalar)*localSubDim );
     }
     else {
       // Row-wise
-      for( Index i = 0; i < localSubDim; ++i ) {
+      for( Ordinal i = 0; i < localSubDim; ++i ) {
 #ifdef TEUCHOS_DEBUG
         TEST_FOR_EXCEPTION( !in, std::logic_error, "Error, premature end of input!"	);
 #endif
-        Index i_in;
+        Ordinal i_in;
         in >> i_in;
 #ifdef TEUCHOS_DEBUG
         TEST_FOR_EXCEPTION(
@@ -155,7 +155,7 @@ void SpmdMultiVectorSerializer<Scalar>::deserialize(
           "i_in = "<<i_in<<"!"
           );
 #endif
-        for( Index j = 0; j < local_mv.numSubCols(); ++j ) {
+        for( Ordinal j = 0; j < local_mv.numSubCols(); ++j ) {
 #ifdef TEUCHOS_DEBUG
           TEST_FOR_EXCEPTION(
             !in, std::logic_error

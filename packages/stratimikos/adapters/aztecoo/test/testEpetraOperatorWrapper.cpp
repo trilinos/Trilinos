@@ -37,6 +37,8 @@
 #include "Thyra_LinearOperatorImpl.hpp"
 #include "Thyra_LinearCombinationImpl.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
+
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"

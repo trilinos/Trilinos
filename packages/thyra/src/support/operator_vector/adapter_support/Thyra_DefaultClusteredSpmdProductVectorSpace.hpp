@@ -50,9 +50,9 @@ DefaultClusteredSpmdProductVectorSpace<Scalar>::DefaultClusteredSpmdProductVecto
 
 template<class Scalar>
 DefaultClusteredSpmdProductVectorSpace<Scalar>::DefaultClusteredSpmdProductVectorSpace(
-  const Teuchos::RCP<const Teuchos::Comm<Index> >          &intraClusterComm
+  const Teuchos::RCP<const Teuchos::Comm<Ordinal> >          &intraClusterComm
   ,const int                                                       clusterRootRank
-  ,const Teuchos::RCP<const Teuchos::Comm<Index> >         &interClusterComm
+  ,const Teuchos::RCP<const Teuchos::Comm<Ordinal> >         &interClusterComm
   ,const int                                                       numBlocks
   ,const Teuchos::RCP<const VectorSpaceBase<Scalar> >      vecSpaces[]
   )
@@ -62,9 +62,9 @@ DefaultClusteredSpmdProductVectorSpace<Scalar>::DefaultClusteredSpmdProductVecto
 
 template<class Scalar>
 void DefaultClusteredSpmdProductVectorSpace<Scalar>::initialize(
-  const Teuchos::RCP<const Teuchos::Comm<Index> >          &intraClusterComm
+  const Teuchos::RCP<const Teuchos::Comm<Ordinal> >          &intraClusterComm
   ,const int                                                       clusterRootRank
-  ,const Teuchos::RCP<const Teuchos::Comm<Index> >         &interClusterComm
+  ,const Teuchos::RCP<const Teuchos::Comm<Ordinal> >         &interClusterComm
   ,const int                                                       numBlocks
   ,const Teuchos::RCP<const VectorSpaceBase<Scalar> >      vecSpaces[]
   )
@@ -75,7 +75,7 @@ void DefaultClusteredSpmdProductVectorSpace<Scalar>::initialize(
   interClusterComm_ = interClusterComm; // This can be NULL!
   vecSpaces_.resize(numBlocks);
   isEuclidean_ = true;
-  Index clusterSubDim = 0;
+  Ordinal clusterSubDim = 0;
   for( int k = 0; k < numBlocks; ++k ) {
     clusterSubDim += vecSpaces[k]->dim();
     if(!vecSpaces[k]->isEuclidean())
@@ -94,9 +94,9 @@ void DefaultClusteredSpmdProductVectorSpace<Scalar>::initialize(
   }
   // Here must then broadcast the values to all processes within each cluster.
   {
-    const Index num = 2;
-    Index buff[num] = { clusterOffset_, globalDim_ };
-    Teuchos::broadcast<Index>(*intraClusterComm_, clusterRootRank_, num, &buff[0]);
+    const Ordinal num = 2;
+    Ordinal buff[num] = { clusterOffset_, globalDim_ };
+    Teuchos::broadcast<Ordinal>(*intraClusterComm_, clusterRootRank_, num, &buff[0]);
     clusterOffset_ = buff[0];
     globalDim_     = buff[1];
   }
@@ -125,7 +125,7 @@ std::string DefaultClusteredSpmdProductVectorSpace<Scalar>::description() const
 // Public overridden from VectorSpaceBase
 
 template<class Scalar>
-Index DefaultClusteredSpmdProductVectorSpace<Scalar>::dim() const
+Ordinal DefaultClusteredSpmdProductVectorSpace<Scalar>::dim() const
 {
   return globalDim_;
 }

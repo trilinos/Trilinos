@@ -29,7 +29,7 @@
 #ifndef THYRA_SCALED_ADJOINT_LINEAR_OP_BASE_DECL_HPP
 #define THYRA_SCALED_ADJOINT_LINEAR_OP_BASE_DECL_HPP
 
-#include "Thyra_LinearOpBaseDecl.hpp"
+#include "Thyra_LinearOpBase.hpp"
 
 namespace Thyra {
 

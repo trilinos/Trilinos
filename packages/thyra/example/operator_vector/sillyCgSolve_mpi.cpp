@@ -48,7 +48,7 @@
 //
 template<class Scalar>
 bool runCgSolveExample(
-  const Teuchos::RCP<const Teuchos::Comm<Thyra::Index> > &comm,
+  const Teuchos::RCP<const Teuchos::Comm<Thyra::Ordinal> > &comm,
   const int procRank,
   const int numProc,
   const int localDim,
@@ -89,10 +89,10 @@ bool runCgSolveExample(
   // (A.1) Create the tridiagonal matrix operator
   *out << "\nConstructing tridiagonal matrix A of local dimension = " << localDim
        << " and diagonal multiplier = " << diagScale << " ...\n";
-  const Thyra::Index
+  const Thyra::Ordinal
     lowerDim = ( procRank == 0         ? localDim - 1 : localDim ),
     upperDim = ( procRank == numProc-1 ? localDim - 1 : localDim );
-  std::vector<Scalar> lower(lowerDim), diag(localDim), upper(upperDim);
+  Teuchos::Array<Scalar> lower(lowerDim), diag(localDim), upper(upperDim);
   const Scalar one = ST::one(), diagTerm = as<Scalar>(2.0)* diagScale * ST::one();
   int k = 0, kl = 0;
   // First local row
@@ -104,7 +104,7 @@ bool runCgSolveExample(
   // Last local row
   lower[kl] = -one; diag[k] = diagTerm; if(procRank < numProc-1) upper[k] = -one;
   RCP<const Thyra::LinearOpBase<Scalar> > A =
-    rcp(new ExampleTridiagSpmdLinearOp<Scalar>(comm,localDim, &lower[0], &diag[0], &upper[0]));
+    rcp(new ExampleTridiagSpmdLinearOp<Scalar>(comm, localDim, lower, diag, upper));
   *out << "\nGlobal dimension of A = " << A->domain()->dim() << std::endl;
 
   // (A.2) Testing the linear operator constructed linear operator
@@ -181,8 +181,8 @@ int main(int argc, char *argv[])
   const int procRank = Teuchos::GlobalMPISession::getRank();
   const int numProc = Teuchos::GlobalMPISession::getNProc();
 
-  const Teuchos::RCP<const Teuchos::Comm<Thyra::Index> >
-    comm = Teuchos::DefaultComm<Thyra::Index>::getComm();
+  const Teuchos::RCP<const Teuchos::Comm<Thyra::Ordinal> >
+    comm = Teuchos::DefaultComm<Thyra::Ordinal>::getComm();
 
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();

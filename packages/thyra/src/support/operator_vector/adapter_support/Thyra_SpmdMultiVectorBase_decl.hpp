@@ -29,14 +29,16 @@
 #ifndef THYRA_SPMD_MULTI_VECTOR_BASE_DECL_HPP
 #define THYRA_SPMD_MULTI_VECTOR_BASE_DECL_HPP
 
-#include "Thyra_MultiVectorDefaultBase_decl.hpp"
-#include "Thyra_SingleScalarEuclideanLinearOpBaseDecl.hpp"
+#include "Thyra_MultiVectorAdapterBase_decl.hpp"
 #include "Teuchos_BLAS.hpp"
+
 
 namespace Thyra {
 
+
 /** \brief . */
 template<class Scalar> class SpmdVectorSpaceBase;
+
 
 /** \brief Base class for SPMD multi-vectors.
  *
@@ -62,10 +64,10 @@ template<class Scalar> class SpmdVectorSpaceBase;
  * <b>Notes to subclass developers</b>
  *
  * Concrete subclasses must override only five functions:
- * <tt>spmdSpace()</tt>, <tt>getLocalData(const Scalar**,Index*)</tt>,
- * <tt>freeLocalData(const Scalar**,Index*)</tt>,
- * <tt>getLocalData(Scalar**,Index*)</tt>, and
- * <tt>commitLocalData(Scalar**,Index*)</tt>.  Note that overriding the
+ * <tt>spmdSpace()</tt>, <tt>getLocalData(const Scalar**,Ordinal*)</tt>,
+ * <tt>freeLocalData(const Scalar**,Ordinal*)</tt>,
+ * <tt>getLocalData(Scalar**,Ordinal*)</tt>, and
+ * <tt>commitLocalData(Scalar**,Ordinal*)</tt>.  Note that overriding the
  * <tt>spmdSpace()</tt> function requires implementing or using a
  * pre-implemented concrete <tt>SpmdVectorSpaceBase</tt> subclass.
  *
@@ -96,15 +98,9 @@ template<class Scalar> class SpmdVectorSpaceBase;
  */
 template<class Scalar>
 class SpmdMultiVectorBase
-  : virtual public MultiVectorDefaultBase<Scalar>,
-    virtual public SingleScalarEuclideanLinearOpBase<Scalar>
+  : virtual public MultiVectorAdapterBase<Scalar>
 {
 public:
-
-#ifdef THYRA_INJECT_USING_DECLARATIONS
-  using SingleScalarEuclideanLinearOpBase<Scalar>::euclideanApply;
-  using SingleScalarEuclideanLinearOpBase<Scalar>::apply;
-#endif
 
   /** @name  Constructors / initializers / accessors */
   //@{
@@ -146,7 +142,7 @@ public:
    * commit changes to the data.
    */
   void getNonconstLocalData(
-    const Ptr<ArrayRCP<Scalar> > &localValues, const Ptr<Index> &leadingDim
+    const Ptr<ArrayRCP<Scalar> > &localValues, const Ptr<Ordinal> &leadingDim
     )
     {
       getNonconstLocalDataImpl(localValues, leadingDim);
@@ -173,7 +169,7 @@ public:
    * </ul>
    */
   void getLocalData(
-    const Ptr<ArrayRCP<const Scalar> > &localValues, const Ptr<Index> &leadingDim
+    const Ptr<ArrayRCP<const Scalar> > &localValues, const Ptr<Ordinal> &leadingDim
     ) const
     {
       getLocalDataImpl(localValues, leadingDim);
@@ -181,71 +177,19 @@ public:
 
   //@}
 
-  /** @name Overridden from EuclideanLinearOpBase */
+  /** @name Overridden public functions from MultiVectorAdapterBase */
   //@{
 
-  /// Returns <tt>spmdSpace</tt>.
+  /** \brief Returns <tt>spmdSpace</tt>. */
   RCP< const ScalarProdVectorSpaceBase<Scalar> > rangeScalarProdVecSpc() const;
 
-  //@}
-
-  /** @name Overridden from LinearOpBase */
-  //@{
-
-  /** \brief Calls <tt>EuclideanLinearOpBase::apply()</tt> to disambiguate
-   * <tt>apply()</tt>
-   */
-  void apply(
-    const EOpTransp M_trans,
-    const MultiVectorBase<Scalar> &X,
-    MultiVectorBase<Scalar> *Y,
-    const Scalar alpha,
-    const Scalar beta
-    ) const;
-
-  //@}
-
-  /** @name Overridden from MultiVectorBase */
-  //@{
-  /** \brief . */
-  void mvMultiReductApplyOpImpl(
-    const RTOpPack::RTOpT<Scalar> &primary_op,
-    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
-    const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
-    const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
-    const Index primary_first_ele,
-    const Index primary_sub_dim,
-    const Index primary_global_offset,
-    const Index secondary_first_ele,
-    const Index secondary_sub_dim
-    ) const;
-  /** \brief . */
-  void acquireDetachedMultiVectorViewImpl(
-    const Range1D &rowRng,
-    const Range1D &colRng
-    ,RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv
-    ) const;
-  /** \brief . */
-  void releaseDetachedMultiVectorViewImpl(
-    RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv
-    ) const;
-  /** \brief . */
-  void acquireNonconstDetachedMultiVectorViewImpl(
-    const Range1D &rowRng,
-    const Range1D &colRng,
-    RTOpPack::SubMultiVectorView<Scalar> *sub_mv
-    );
-  /** \brief . */
-  void commitNonconstDetachedMultiVectorViewImpl(
-    RTOpPack::SubMultiVectorView<Scalar>* sub_mv
-    );
   //@}
 
   /** \name Deprecated. */
   //@{
 
   /** \brief Deprecated (use ArrayRCP version of getLocalData(...). */
-  THYRA_DEPRECATED void getLocalData( Scalar **localValues_out, Index *leadingDim_out )
+  THYRA_DEPRECATED void getLocalData( Scalar **localValues_out, Ordinal *leadingDim_out )
     {
       using Teuchos::outArg;
       ArrayRCP<Scalar> localValues;
@@ -261,7 +205,7 @@ public:
 
   /** \brief Deprecated. */
   THYRA_DEPRECATED void getLocalData(
-    const Scalar **localValues_out, Index *leadingDim_out
+    const Scalar **localValues_out, Ordinal *leadingDim_out
     ) const
     {
       using Teuchos::outArg;
@@ -286,24 +230,54 @@ protected:
 
   /** \brief Virtual implementation for getNonconstLocalData(). */
   virtual void getNonconstLocalDataImpl(
-    const Ptr<ArrayRCP<Scalar> > &localValues, const Ptr<Index> &leadingDim
+    const Ptr<ArrayRCP<Scalar> > &localValues, const Ptr<Ordinal> &leadingDim
     ) = 0;
 
   /** \brief Virtual implementation for getLocalData(). */
   virtual void getLocalDataImpl(
-    const Ptr<ArrayRCP<const Scalar> > &localValues, const Ptr<Index> &leadingDim
+    const Ptr<ArrayRCP<const Scalar> > &localValues, const Ptr<Ordinal> &leadingDim
     ) const = 0;
 
   //@}
 
-  /** @name Overridden from SingleScalarEuclideanLinearOpBase */
+  /** @name Protected functions overridden from MultiVectorBase */
   //@{
+  /** \brief . */
+  void mvMultiReductApplyOpImpl(
+    const RTOpPack::RTOpT<Scalar> &primary_op,
+    const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
+    const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
+    const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
+    const Ordinal primary_first_ele,
+    const Ordinal primary_sub_dim,
+    const Ordinal primary_global_offset,
+    const Ordinal secondary_first_ele,
+    const Ordinal secondary_sub_dim
+    ) const;
+  /** \brief . */
+  void acquireDetachedMultiVectorViewImpl(
+    const Range1D &rowRng,
+    const Range1D &colRng
+    ,RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv
+    ) const;
+  /** \brief . */
+  void releaseDetachedMultiVectorViewImpl(
+    RTOpPack::ConstSubMultiVectorView<Scalar>* sub_mv
+    ) const;
+  /** \brief . */
+  void acquireNonconstDetachedMultiVectorViewImpl(
+    const Range1D &rowRng,
+    const Range1D &colRng,
+    RTOpPack::SubMultiVectorView<Scalar> *sub_mv
+    );
+  /** \brief . */
+  void commitNonconstDetachedMultiVectorViewImpl(
+    RTOpPack::SubMultiVectorView<Scalar>* sub_mv
+    );
+  //@}
 
-  /** \brief For complex <tt>Scalar</tt> types returns <tt>true</tt> for
-   * <tt>NOTRANS</tt>, <tt>TRANS</tt>, and <tt>CONJTRANS</tt> and for real
-   * types returns <tt>true</tt> for all values of <tt>M_trans</tt>.
-   */
-  bool opSupported(EOpTransp M_trans) const;
+  /** @name Protected functions overridden from MultiVectorAdapterBase */
+  //@{
 
   /** \brief Uses <tt>GEMM()</tt> and <tt>Teuchos::reduceAll()</tt> to
    * implement.
@@ -311,11 +285,11 @@ protected:
    * ToDo: Finish documentation!
    */
   void euclideanApply(
-    const EOpTransp                     M_trans
-    ,const MultiVectorBase<Scalar>    &X
-    ,MultiVectorBase<Scalar>          *Y
-    ,const Scalar                     alpha
-    ,const Scalar                     beta
+    const EOpTransp M_trans,
+    const MultiVectorBase<Scalar> &X,
+    const Ptr<MultiVectorBase<Scalar> > &Y,
+    const Scalar alpha,
+    const Scalar beta
     ) const;
 
   //@}
@@ -357,10 +331,10 @@ private:
   mutable Teuchos::BLAS<int,Scalar> blas_;
 
   // cached
-  Index  globalDim_;
-  Index  localOffset_;
-  Index  localSubDim_;
-  Index  numCols_;
+  Ordinal  globalDim_;
+  Ordinal  localOffset_;
+  Ordinal  localSubDim_;
+  Ordinal  numCols_;
   
 }; // end class SpmdMultiVectorBase
 

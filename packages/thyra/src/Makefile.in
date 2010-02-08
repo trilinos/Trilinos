@@ -273,12 +273,12 @@ INTERFACES_OPERATOR_VECTOR_ANA_FUNDAMENTAL_H = \
   $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_MultiVectorBaseDecl.hpp\
   $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_OperatorVectorTypes.hpp\
   $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorBase.hpp\
-  $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorBaseDecl.hpp\
+  $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorBase.hpp\
   $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceBase.hpp\
   $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceBase_decl.hpp\
   $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceBase_def.hpp\
   $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceFactoryBase.hpp\
-  $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceFactoryBaseDecl.hpp
+  $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceFactoryBase.hpp
 
 INTERFACES_OPERATOR_VECTOR_ANA_FUNDAMENTAL = \
   $(srcdir)/interfaces/operator_vector/ana/fundamental/Thyra_VectorSpaceBase.cpp
@@ -469,7 +469,7 @@ SUPPORT_OPERATOR_VECTOR_ADAPTER_SUPPORT_SERIAL_H = \
 INTERFACES_OPERATOR_SOLVE_ANA_FUNDAMENTAL_H = \
   $(srcdir)/interfaces/operator_solve/ana/fundamental/Thyra_LinearOpSourceBase.hpp\
   $(srcdir)/interfaces/operator_solve/ana/fundamental/Thyra_LinearOpWithSolveBase.hpp\
-  $(srcdir)/interfaces/operator_solve/ana/fundamental/Thyra_LinearOpWithSolveBaseDecl.hpp\
+  $(srcdir)/interfaces/operator_solve/ana/fundamental/Thyra_LinearOpWithSolveBase.hpp\
   $(srcdir)/interfaces/operator_solve/ana/fundamental/Thyra_LinearOpWithSolveFactoryBase.hpp\
   $(srcdir)/interfaces/operator_solve/ana/fundamental/Thyra_PreconditionerBase.hpp\
   $(srcdir)/interfaces/operator_solve/ana/fundamental/Thyra_PreconditionerFactoryBase.hpp\

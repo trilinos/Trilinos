@@ -12,6 +12,8 @@
 #include "Teuchos_Time.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_as.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
+
 
 /** This is an example of how to use the implicitly composed linear operator
  *  subclasses to build a complex implicit linear operator.
@@ -262,6 +264,9 @@ int main( int argc, char *argv[] )
 
   bool success = true;
   bool result;
+
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+  // Above is needed to run in an MPI build with some MPI implementations
 
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();

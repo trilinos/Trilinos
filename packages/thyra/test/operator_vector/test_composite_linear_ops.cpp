@@ -54,7 +54,7 @@
  */
 template <class Scalar>
 bool run_composite_linear_ops_tests(
-  const Teuchos::RCP<const Teuchos::Comm<Thyra::Index> >   comm
+  const Teuchos::RCP<const Teuchos::Comm<Thyra::Ordinal> >   comm
   ,const int                                                       n
   ,const bool                                                      useSpmd
   ,const typename Teuchos::ScalarTraits<Scalar>::magnitudeType     &tol
@@ -534,8 +534,8 @@ int main( int argc, char* argv[] ) {
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
-  const Teuchos::RCP<const Teuchos::Comm<Thyra::Index> >
-    comm = Teuchos::DefaultComm<Thyra::Index>::getComm();
+  const Teuchos::RCP<const Teuchos::Comm<Thyra::Ordinal> >
+    comm = Teuchos::DefaultComm<Thyra::Ordinal>::getComm();
 
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();

@@ -64,6 +64,7 @@
 
 // External include files for Stratimikos
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
+#include "Thyra_VectorBase.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Thyra_PreconditionerFactoryBase.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
@@ -358,7 +359,8 @@ if (precFactory != Teuchos::null) {
     b = Thyra::create_Vector(inputRCP, linearOp->range() );
 
   // Solve the linear system for x
-  lows->solve(Thyra::NONCONJ_ELE, *b, &*x);
+  lows->solve(Thyra::NOTRANS, *b, x.ptr());
+  // ToDo: You need to grab the SolveStatus to see what happened!
 
 /*
   // Make sure preconditioner was constructed if requested

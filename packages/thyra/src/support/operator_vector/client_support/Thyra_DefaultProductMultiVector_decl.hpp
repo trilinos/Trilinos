@@ -31,7 +31,6 @@
 
 #include "Thyra_ProductMultiVectorBase.hpp"
 #include "Thyra_MultiVectorDefaultBase.hpp"
-#include "Thyra_SingleScalarLinearOpBase.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 
 
@@ -58,15 +57,9 @@ template <class Scalar> class DefaultProductVectorSpace;
 template<class Scalar>
 class DefaultProductMultiVector
   : virtual public ProductMultiVectorBase<Scalar>,
-    virtual protected MultiVectorDefaultBase<Scalar>,
-    virtual protected SingleScalarLinearOpBase<Scalar>
+    virtual protected MultiVectorDefaultBase<Scalar>
 {
 public:
-
-#ifdef THYRA_INJECT_USING_DECLARATIONS
-  using MultiVectorDefaultBase<Scalar>::apply;
-  using SingleScalarLinearOpBase<Scalar>::apply;
-#endif
 
   /** @name Constructors/initializers/accessors */
   //@{
@@ -156,9 +149,9 @@ protected:
   //@{
 
   /** \brief . */
-  RCP<const VectorBase<Scalar> > colImpl(Index j) const;
+  RCP<const VectorBase<Scalar> > colImpl(Ordinal j) const;
   /** \brief . */
-  RCP<VectorBase<Scalar> > nonconstColImpl(Index j);
+  RCP<VectorBase<Scalar> > nonconstColImpl(Ordinal j);
   /** \brief . */
   RCP<const MultiVectorBase<Scalar> >
   contigSubViewImpl( const Range1D& colRng ) const;
@@ -177,11 +170,11 @@ protected:
     const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
     const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
     const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
-    const Index primary_first_ele_offset,
-    const Index primary_sub_dim,
-    const Index primary_global_offset,
-    const Index secondary_first_ele_offset,
-    const Index secondary_sub_dim
+    const Ordinal primary_first_ele_offset,
+    const Ordinal primary_sub_dim,
+    const Ordinal primary_global_offset,
+    const Ordinal secondary_first_ele_offset,
+    const Ordinal secondary_sub_dim
     ) const;
   /** \brief . */
   void acquireDetachedMultiVectorViewImpl(
@@ -206,16 +199,17 @@ protected:
 
   //@}
 
-  /** \name Overridden from SingleScalarLinearOpBase */
+  /** \name Overridden from LinearOpBase */
   //@{
 
   /** \brief . */
-  bool opSupported(EOpTransp M_trans) const;
+  bool opSupportedImpl(EOpTransp M_trans) const;
+
   /** \brief . */
-  void apply(
+  void applyImpl(
     const EOpTransp M_trans,
     const MultiVectorBase<Scalar> &X,
-    MultiVectorBase<Scalar> *Y,
+    const Ptr<MultiVectorBase<Scalar> > &Y,
     const Scalar alpha,
     const Scalar beta
     ) const;

@@ -32,7 +32,7 @@ objects in %Thyra object and for getting %Tpetra views of %Thyra objects.
  * <tt>return.get()==NULL</tt>.
  */
 template<typename Ordinal, typename Packet>
-RCP<const Teuchos::Comm<Index> >
+RCP<const Teuchos::Comm<Ordinal> >
 create_Comm(
   const RCP<const Tpetra::Comm<Ordinal,Packet> > &tpetraComm
   );
@@ -260,7 +260,7 @@ public:
     {}
   ~CopyFromTpetraToThyraVector()
     {
-      for( Index i = 0; i < detachedView_->subDim(); ++i )
+      for( Ordinal i = 0; i < detachedView_->subDim(); ++i )
         (*detachedView_)[i] = tpetra_v_[i];
     }
 private:
@@ -276,7 +276,7 @@ private:
 } // namespace Thyra
 
 template<typename Ordinal, typename Packet>
-RCP<const Teuchos::Comm<Thyra::Index> >
+RCP<const Teuchos::Comm<Thyra::Ordinal> >
 Thyra::create_Comm(
   const RCP<const Tpetra::Comm<Ordinal,Packet> > &tpetraComm
   )
@@ -288,8 +288,8 @@ Thyra::create_Comm(
   RCP<const Tpetra::SerialComm<Ordinal,Packet> >
     serialTpetraComm = rcp_dynamic_cast<const Tpetra::SerialComm<Ordinal,Packet> >(tpetraComm);
   if( serialTpetraComm.get() ) {
-    RCP<const Teuchos::SerialComm<Index> >
-      serialComm = rcp(new Teuchos::SerialComm<Index>());
+    RCP<const Teuchos::SerialComm<Ordinal> >
+      serialComm = rcp(new Teuchos::SerialComm<Ordinal>());
     set_extra_data( serialTpetraComm, "serialTpetraComm", Teuchos::outArg(serialComm) );
     return serialComm;
   }
@@ -302,8 +302,8 @@ Thyra::create_Comm(
     RCP<const Teuchos::OpaqueWrapper<MPI_Comm> >
       rawMpiComm = Teuchos::opaqueWrapper(mpiTpetraComm->getMpiComm());
     set_extra_data( mpiTpetraComm, "mpiTpetraComm", Teuchos::outArg(rawMpiComm) );
-    RCP<const Teuchos::MpiComm<Index> >
-      mpiComm = rcp(new Teuchos::MpiComm<Index>(rawMpiComm));
+    RCP<const Teuchos::MpiComm<Ordinal> >
+      mpiComm = rcp(new Teuchos::MpiComm<Ordinal>(rawMpiComm));
     return mpiComm;
   }
 
@@ -323,10 +323,10 @@ Thyra::create_VectorSpace(
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION( !tpetra_vs.get(), std::invalid_argument, "create_VectorSpace::initialize(...): Error!" );
 #endif // TEUCHOS_DEBUG
-  RCP<const Teuchos::Comm<Index> >
+  RCP<const Teuchos::Comm<Ordinal> >
     comm = create_Comm(Teuchos::rcp(&tpetra_vs->comm(),false)).assert_not_null();
   Teuchos::set_extra_data( tpetra_vs, "tpetra_vs", Teuchos::outArg(comm) );
-  const Index localSubDim = tpetra_vs->getNumMyEntries();
+  const Ordinal localSubDim = tpetra_vs->getNumMyEntries();
   RCP<DefaultSpmdVectorSpace<Scalar> >
     vs = Teuchos::rcp(
       new DefaultSpmdVectorSpace<Scalar>(
@@ -445,8 +445,8 @@ Thyra::get_Tpetra_Vector(
   // 
   const VectorSpaceBase<Scalar>  &vs = *v->range();
   const SpmdVectorSpaceBase<Scalar> *mpi_vs = dynamic_cast<const SpmdVectorSpaceBase<Scalar>*>(&vs);
-  const Index localOffset = ( mpi_vs ? mpi_vs->localOffset() : 0 );
-  const Index localSubDim = ( mpi_vs ? mpi_vs->localSubDim() : vs.dim() );
+  const Ordinal localOffset = ( mpi_vs ? mpi_vs->localOffset() : 0 );
+  const Ordinal localSubDim = ( mpi_vs ? mpi_vs->localSubDim() : vs.dim() );
   //
   // Here we will extract a view of the local elements in the underlying
   // VectorBase object.  In most cases, no data will be allocated or copied
@@ -464,7 +464,7 @@ Thyra::get_Tpetra_Vector(
   // Create a temporary Tpetra::Vector object and copy the local data into it.
   RCP<Tpetra::Vector<Ordinal,Scalar> >
     tpetra_v = Teuchos::rcp(new Tpetra::Vector<Ordinal,Scalar>(tpetra_vs));
-  for( Index i = 0; i < detachedView->subDim(); ++i )
+  for( Ordinal i = 0; i < detachedView->subDim(); ++i )
     (*tpetra_v)[i] = (*detachedView)[i];
   // Create a utility object that will copy back the values in the
   // Tpetra::Vector into the Thyra vector when this temp Tpetra::Vector is
@@ -521,8 +521,8 @@ Thyra::get_Tpetra_Vector(
   // 
   const VectorSpaceBase<Scalar>  &vs = *v->range();
   const SpmdVectorSpaceBase<Scalar> *mpi_vs = dynamic_cast<const SpmdVectorSpaceBase<Scalar>*>(&vs);
-  const Index localOffset = ( mpi_vs ? mpi_vs->localOffset() : 0 );
-  const Index localSubDim = ( mpi_vs ? mpi_vs->localSubDim() : vs.dim() );
+  const Ordinal localOffset = ( mpi_vs ? mpi_vs->localOffset() : 0 );
+  const Ordinal localSubDim = ( mpi_vs ? mpi_vs->localSubDim() : vs.dim() );
   //
   // Here we will extract a view of the local elements in the underlying
   // VectorBase object.  In most cases, no data will be allocated or copied
@@ -540,7 +540,7 @@ Thyra::get_Tpetra_Vector(
   // Create a temporary Tpetra::Vector object and copy the local data into it.
   RCP<Tpetra::Vector<Ordinal,Scalar> >
     tpetra_v = Teuchos::rcp(new Tpetra::Vector<Ordinal,Scalar>(tpetra_vs));
-  for( Index i = 0; i < detachedView->subDim(); ++i )
+  for( Ordinal i = 0; i < detachedView->subDim(); ++i )
     (*tpetra_v)[i] = (*detachedView)[i];
   return tpetra_v;
   // Note that when Tpetra::Vector supports a view mode, we will initalize it

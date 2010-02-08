@@ -29,7 +29,7 @@
 #ifndef THYRA_LINEAR_OP_DEFAULT_DECL_HPP
 #define THYRA_LINEAR_OP_DEFAULT_DECL_HPP
 
-#include "Thyra_LinearOpBaseDecl.hpp"
+#include "Thyra_LinearOpBase.hpp"
 
 namespace Thyra {
 
@@ -38,13 +38,13 @@ namespace Thyra {
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
-template<class RangeScalar, class DomainScalar = RangeScalar>
-class LinearOpDefaultBase : virtual public LinearOpBase<RangeScalar,DomainScalar> {
+template<class Scalar>
+class LinearOpDefaultBase : virtual public LinearOpBase<Scalar> {
 public:
   
 #ifdef THYRA_INJECT_USING_DECLARATIONS
-  using LinearOpBase<RangeScalar,DomainScalar>::apply;
-  using LinearOpBase<RangeScalar,DomainScalar>::describe;
+  using LinearOpBase<Scalar>::apply;
+  using LinearOpBase<Scalar>::describe;
 #endif
 
   /** @name Public functions overridden from Teuchos::Describable */

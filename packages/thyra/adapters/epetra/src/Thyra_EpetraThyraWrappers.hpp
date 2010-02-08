@@ -58,7 +58,7 @@ views of %Thyra objects.
  *
  * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
  */
-RCP<const Teuchos::Comm<Index> >
+RCP<const Teuchos::Comm<Ordinal> >
 create_Comm( const RCP<const Epetra_Comm> &epetraComm );
 
 /** \brief Create an <tt>VectorSpaceBase</tt> object given an

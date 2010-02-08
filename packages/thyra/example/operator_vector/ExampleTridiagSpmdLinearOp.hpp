@@ -29,9 +29,12 @@
 #ifndef THYRA_EXAMPLE_TRIDIAG_SPMD_LINEAR_OP_HPP
 #define THYRA_EXAMPLE_TRIDIAG_SPMD_LINEAR_OP_HPP
 
-#include "Thyra_SpmdLinearOpBase.hpp"
+#include "Thyra_LinearOpDefaultBase.hpp"
+#include "Thyra_DefaultSpmdVectorSpace.hpp"
+#include "Thyra_DetachedSpmdVectorView.hpp"
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_CommHelpers.hpp"
+
 
 /** \brief Simple example subclass for Spmd tridiagonal matrices.
  *
@@ -118,55 +121,40 @@
  *
  * </ul>
  *
- * Note, this is just an example class and for the sake of simplified
- * presentation the private members are listed first and in-class
- * declarations are used which are not a good idea in production code.
- * However, in this case, they make the example code easier to read
- * and maintaining encapsulation and a well defined interface are
- * unnecessary here.
- *
  * See the source code for this simple example by clicking on the
  * link to the definition below.
  *
  * \ingroup Thyra_Op_Vec_examples_cg_Spmd_grp
  */
 template<class Scalar>
-class ExampleTridiagSpmdLinearOp : public Thyra::SpmdLinearOpBase<Scalar> {
-private:
-
-  Teuchos::RCP<const Teuchos::Comm<Thyra::Index> >  comm_;
-  int                  procRank_;
-  int                  numProcs_;
-  Thyra::Index         localDim_;
-  std::vector<Scalar>  lower_;   // size = ( procRank == 0         ? localDim - 1 : localDim )    
-  std::vector<Scalar>  diag_;    // size = localDim
-  std::vector<Scalar>  upper_;   // size = ( procRank == numProc-1 ? localDim - 1 : localDim )
-
-  void communicate( const bool first, const bool last, const Scalar x[], Scalar *x_km1, Scalar *x_kp1 ) const;
-
+class ExampleTridiagSpmdLinearOp : public Thyra::LinearOpDefaultBase<Scalar> {
 public:
 
-  /** \brief . */
-  using Thyra::SpmdLinearOpBase<Scalar>::euclideanApply;
+  /** Construct to uninitialized. */
+  ExampleTridiagSpmdLinearOp() {}
 
-  /// Construct to uninitialized
-  ExampleTridiagSpmdLinearOp() : procRank_(0), numProcs_(0) {}
-
-  /// Calls <tt>initialize()</tt>.
+  /** Calls <tt>initialize()</tt>. */
   ExampleTridiagSpmdLinearOp(
-    const Teuchos::RCP<const Teuchos::Comm<Thyra::Index> > &comm
-    ,const Thyra::Index localDim, const Scalar lower[], const Scalar diag[], const Scalar upper[] )
-    { this->initialize(comm,localDim,lower,diag,upper);	}
+    const Teuchos::RCP<const Teuchos::Comm<Thyra::Ordinal> > &comm,
+    const Thyra::Ordinal localDim,
+    const Teuchos::ArrayView<const Scalar> &lower,
+    const Teuchos::ArrayView<const Scalar> &diag,
+    const Teuchos::ArrayView<const Scalar> &upper
+    )
+    { this->initialize(comm, localDim, lower, diag, upper); }
   
   /** Initialize given lower, diagonal and upper arrays of data.
    *
-   * @param  comm      [in] Communicator (allowed to be Teuchos::null)
-   * @param  localDim  [in] Dimension of this matrix (must be >= 2).
-   * @param  lower     [in] Array (length <tt>( procRank == 0 ? localDim - 1 : localDim )</tt>)
-   *                   of the lower diagonal elements
-   * @param  diag      [in] Array (length <tt>localDim</tt>) of the central diagonal elements
-   * @param  upper     [in] Array (length <tt>( procRank == numProc-1 ? localDim - 1 : localDim )</tt>)
-   *                   of the upper diagonal elements
+   * \param comm [in] Communicator (allowed to be Teuchos::null)
+   *
+   * \param localDim [in] Dimension of this matrix (must be >= 2).
+   *
+   * \param lower [in] Array (length <tt>( procRank == 0 ? localDim - 1 :
+   * localDim )</tt>) of the lower diagonal elements \param diag [in] Array
+   * (length <tt>localDim</tt>) of the central diagonal elements
+   *
+   * \param upper [in] Array (length <tt>( procRank == numProc-1 ? localDim -
+   * 1 : localDim )</tt>) of the upper diagonal elements
    *
    * Preconditions:<ul>
    * <li><tt>localDim >= 2</tt>
@@ -174,115 +162,182 @@ public:
    *
    * Postconditions:<ul>
    * <li>Should be obvious!
-   * <li>See <tt>setLocalDimensions()</tt>
    * </ul>
    */
   void initialize(
-    const Teuchos::RCP<const Teuchos::Comm<Thyra::Index> > &comm
-    ,const Thyra::Index             localDim // >= 2
-    ,const Scalar                   lower[]  // size == ( procRank == 0         ? localDim - 1 : localDim )
-    ,const Scalar                   diag[]   // size == localDim
-    ,const Scalar                   upper[]  // size == ( procRank == numProc-1 ? localDim - 1 : localDim )
-    )
-    {
-      TEST_FOR_EXCEPT( localDim < 2 );
-      this->setLocalDimensions(comm,localDim,localDim); // Needed to set up range() and domain()
-      comm_  = Teuchos::DefaultComm<Thyra::Index>::getDefaultSerialComm(comm);
-      localDim_ = localDim;
-      numProcs_ = comm->getSize();
-      procRank_ = comm->getRank();
-      const Thyra::Index
-        lowerDim = ( procRank_ == 0           ? localDim - 1 : localDim ),
-        upperDim = ( procRank_ == numProcs_-1 ? localDim - 1 : localDim );
-      lower_.resize(lowerDim);  for( int k = 0; k < lowerDim; ++k ) lower_[k] = lower[k];
-      diag_.resize(localDim);   for( int k = 0; k < localDim; ++k ) diag_[k]  = diag[k];
-      upper_.resize(upperDim);  for( int k = 0; k < upperDim; ++k ) upper_[k] = upper[k];
-    }
-
-  // Overridden form Teuchos::Describable */
-
-  std::string description() const
-    {
-      return (std::string("ExampleTridiagSpmdLinearOp<") + Teuchos::ScalarTraits<Scalar>::name() + std::string(">"));
-    }
+    const Teuchos::RCP<const Teuchos::Comm<Thyra::Ordinal> > &comm,
+    const Thyra::Ordinal localDim,
+    const Teuchos::ArrayView<const Scalar> &lower,
+    const Teuchos::ArrayView<const Scalar> &diag,
+    const Teuchos::ArrayView<const Scalar> &upper
+    );
 
 protected:
 
+  // Overridden from LinearOpBase
 
-  // Overridden from SingleScalarEuclideanLinearOpBase
+  /** \brief . */
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > range() const
+    { return space_; }
 
-  bool opSupported( Thyra::EOpTransp M_trans ) const
+  /** \brief . */
+  Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > domain() const
+    { return space_; }
+
+  /** \brief . */
+  bool opSupportedImpl(Thyra::EOpTransp M_trans) const
     {
-      typedef Teuchos::ScalarTraits<Scalar> ST;
-      return (M_trans == Thyra::NOTRANS || (!ST::isComplex && M_trans == Thyra::CONJ) );
+      return (M_trans == Thyra::NOTRANS);
     }
 
-  // Overridden from SerialLinearOpBase
+  /** \brief . */
+  void applyImpl(
+    const Thyra::EOpTransp M_trans,
+    const Thyra::MultiVectorBase<Scalar> &X_in,
+    const Teuchos::Ptr<Thyra::MultiVectorBase<Scalar> > &Y_inout,
+    const Scalar alpha,
+    const Scalar beta
+    ) const;
 
-  void euclideanApply(
-    const Thyra::EOpTransp                         M_trans
-    ,const RTOpPack::ConstSubVectorView<Scalar>  &local_x_in
-    ,const RTOpPack::SubVectorView<Scalar>       *local_y_out
-    ,const Scalar                                alpha
-    ,const Scalar                                beta
-    ) const
-    {
-      typedef Teuchos::ScalarTraits<Scalar> ST;
-      TEST_FOR_EXCEPTION( M_trans != Thyra::NOTRANS, std::logic_error, "Error, can not handle transpose!" );
-      // Get constants
-      const Scalar zero = ST::zero();
-      // Get raw pointers to vector data to make me feel better!
-      const Scalar *x = local_x_in.values().get();
-      Scalar       *y = local_y_out->values().get();
-      // Determine what process we are
-      const bool first = ( procRank_ == 0 ), last = ( procRank_ == numProcs_-1 );
-      // Communicate ghost elements
-      Scalar x_km1, x_kp1;
-      communicate( first, last, x, &x_km1, &x_kp1 );
-      // Perform operation (if beta==0 then we must be careful since y could be uninitialized on input!)
-      Thyra::Index k = 0, lk = 0;
-      if( beta == zero ) {
-        y[k] = alpha * ( (first?zero:lower_[lk]*x_km1) + diag_[k]*x[k] + upper_[k]*x[k+1] ); if(!first) ++lk;             // First local row
-        for( k = 1; k < localDim_ - 1; ++lk, ++k )
-          y[k] = alpha * ( lower_[lk]*x[k-1] + diag_[k]*x[k] + upper_[k]*x[k+1] );                                        // Middle local rows
-        y[k] = alpha * ( lower_[lk]*x[k-1] + diag_[k]*x[k] + (last?zero:upper_[k]*x_kp1) );                               // Last local row
-      }
-      else {
-        y[k] = alpha * ( (first?zero:lower_[lk]*x_km1) + diag_[k]*x[k] + upper_[k]*x[k+1] ) + beta*y[k]; if(!first) ++lk; // First local row
-        for( k = 1; k < localDim_ - 1; ++lk, ++k )
-          y[k] = alpha * ( lower_[lk]*x[k-1] + diag_[k]*x[k] + upper_[k]*x[k+1] ) + beta*y[k];                            // Middle local rows
-        y[k] = alpha * ( lower_[lk]*x[k-1] + diag_[k]*x[k] + (last?zero:upper_[k]*x_kp1) ) + beta*y[k];                   // Last local row
-      }
-      //std::cout << "\ny = ["; for(k=0;k<localDim_;++k) { std::cout << y[k]; if(k<localDim_-1) std::cout << ","; } std::cout << "]\n";
-    }
+private:
+
+  Teuchos::RCP<const Teuchos::Comm<Thyra::Ordinal> > comm_;
+  Teuchos::RCP<const Thyra::SpmdVectorSpaceBase<Scalar> > space_;
+  Teuchos::Array<Scalar> lower_; // size = ( procRank == 0 ? localDim - 1 : localDim ) 
+  Teuchos::Array<Scalar> diag_; // size = localDim
+  Teuchos::Array<Scalar> upper_; // size = ( procRank == numProc-1 ? localDim - 1 : localDim )
+
+  void communicate( const bool first, const bool last,
+    const Teuchos::ArrayView<const Scalar> &x,
+    const Teuchos::Ptr<Scalar> &x_km1,
+    const Teuchos::Ptr<Scalar> &x_kp1 ) const;
 
 };	// end class ExampleTridiagSpmdLinearOp
 
-// private
+
+template<class Scalar>
+void ExampleTridiagSpmdLinearOp<Scalar>::initialize(
+  const Teuchos::RCP<const Teuchos::Comm<Thyra::Ordinal> > &comm,
+  const Thyra::Ordinal localDim,
+  const Teuchos::ArrayView<const Scalar> &lower,
+  const Teuchos::ArrayView<const Scalar> &diag,
+  const Teuchos::ArrayView<const Scalar> &upper
+  )
+{
+  TEST_FOR_EXCEPT( localDim < 2 );
+  comm_ = comm;
+  space_ = Thyra::defaultSpmdVectorSpace<Scalar>(comm, localDim, -1);
+  lower_ = lower;
+  diag_ = diag;
+  upper_ = upper;
+}
+
+
+template<class Scalar>
+void ExampleTridiagSpmdLinearOp<Scalar>::applyImpl(
+  const Thyra::EOpTransp M_trans,
+  const Thyra::MultiVectorBase<Scalar> &X_in,
+  const Teuchos::Ptr<Thyra::MultiVectorBase<Scalar> > &Y_inout,
+  const Scalar alpha,
+  const Scalar beta
+  ) const
+{
+
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  typedef Thyra::Ordinal Ordinal;
+  using Teuchos::outArg;
+
+  TEUCHOS_ASSERT(this->opSupported(M_trans));
+
+  // Get constants
+  const Scalar zero = ST::zero();
+  const Ordinal localDim = space_->localSubDim();
+  const Ordinal procRank = comm_->getRank();
+  const Ordinal numProcs = comm_->getSize();
+  const Ordinal m = X_in.domain()->dim();
+      
+  // Loop over the input columns
+
+  for (Ordinal col_j = 0; col_j < m; ++col_j) {
+    
+    // Get access the the elements of column j
+    Thyra::ConstDetachedSpmdVectorView<Scalar> x_vec(X_in.col(col_j));
+    Thyra::DetachedSpmdVectorView<Scalar> y_vec(Y_inout->col(col_j));
+    const Teuchos::ArrayRCP<const Scalar> x = x_vec.sv().values();
+    const Teuchos::ArrayRCP<Scalar> y = y_vec.sv().values();
+
+    // Determine what process we are
+    const bool first = (procRank == 0), last = ( procRank == numProcs-1 );
+    
+    // Communicate ghost elements
+    Scalar x_km1, x_kp1;
+    communicate( first, last, x(), outArg(x_km1), outArg(x_kp1) );
+
+    // Perform operation (if beta==0 then we must be careful since y could
+    // be uninitialized on input!)
+    Thyra::Ordinal k = 0, lk = 0;
+    if( beta == zero ) {
+      // First local row
+      y[k] = alpha * ( (first?zero:lower_[lk]*x_km1) + diag_[k]*x[k]
+        + upper_[k]*x[k+1] );
+      if(!first) ++lk;
+      // Middle local rows
+      for( k = 1; k < localDim - 1; ++lk, ++k )
+        y[k] = alpha * ( lower_[lk]*x[k-1] + diag_[k]*x[k] + upper_[k]*x[k+1] );
+      // Last local row
+      y[k] = alpha * ( lower_[lk]*x[k-1] + diag_[k]*x[k]
+        + (last?zero:upper_[k]*x_kp1) );
+    }
+    else {
+      // First local row
+      y[k] = alpha * ( (first?zero:lower_[lk]*x_km1) + diag_[k]*x[k]
+        + upper_[k]*x[k+1] ) + beta*y[k];
+      if(!first) ++lk;
+      // Middle local rows
+      for( k = 1; k < localDim - 1; ++lk, ++k )
+        y[k] = alpha * ( lower_[lk]*x[k-1] + diag_[k]*x[k] + upper_[k]*x[k+1] )
+          + beta*y[k];
+      // Last local row
+      y[k] = alpha * ( lower_[lk]*x[k-1] + diag_[k]*x[k]
+        + (last?zero:upper_[k]*x_kp1) ) + beta*y[k];
+    }
+    
+  }
+
+}
+
 
 template<class Scalar>
 void ExampleTridiagSpmdLinearOp<Scalar>::communicate(
-  const bool first, const bool last, const Scalar x[], Scalar *x_km1, Scalar *x_kp1
+  const bool first, const bool last,
+  const Teuchos::ArrayView<const Scalar> &x,
+    const Teuchos::Ptr<Scalar> &x_km1,
+    const Teuchos::Ptr<Scalar> &x_kp1
   ) const
 {
-  const bool isEven = (procRank_ % 2 == 0);
+  typedef Thyra::Ordinal Ordinal;
+  const Ordinal localDim = space_->localSubDim();
+  const Ordinal procRank = comm_->getRank();
+  const Ordinal numProcs = comm_->getSize();
+  const bool isEven = (procRank % 2 == 0);
   const bool isOdd = !isEven;
-  // 1) Send x[localDim_-1] from each even process forward to the next odd
+  // 1) Send x[localDim-1] from each even process forward to the next odd
   // process where it is received in x_km1.
-  if( isEven && procRank_+1 < numProcs_ ) send(*comm_,x[localDim_-1],procRank_+1);
-  if( isOdd && procRank_-1 >= 0 )         receive(*comm_,procRank_-1,x_km1);
+  if(isEven && procRank+1 < numProcs) send(*comm_, x[localDim-1], procRank+1);
+  if(isOdd && procRank-1 >= 0) receive(*comm_, procRank-1, &*x_km1);
   // 2) Send x[0] from each odd process backward to the previous even
   // process where it is received in x_kp1.
-  if( isOdd && procRank_-1 >= 0 )         send(*comm_,x[0],procRank_-1);
-  if( isEven && procRank_+1 < numProcs_ ) receive(*comm_,procRank_+1,x_kp1);
-  // 3) Send x[localDim_-1] from each odd process forward to the next even
+  if( isOdd && procRank-1 >= 0 )         send(*comm_, x[0], procRank-1);
+  if( isEven && procRank+1 < numProcs ) receive(*comm_, procRank+1, &*x_kp1);
+  // 3) Send x[localDim-1] from each odd process forward to the next even
   // process where it is received in x_km1.
-  if( isOdd && procRank_+1 < numProcs_ )  send(*comm_,x[localDim_-1],procRank_+1);
-  if( isEven && procRank_-1 >= 0 )        receive(*comm_,procRank_-1,x_km1);
+  if (isOdd && procRank+1 < numProcs) send(*comm_, x[localDim-1], procRank+1);
+  if (isEven && procRank-1 >= 0) receive(*comm_, procRank-1, &*x_km1);
   // 4) Send x[0] from each even process backward to the previous odd
   // process where it is received in x_kp1.
-  if(isEven && procRank_-1 >= 0 )         send(*comm_,x[0],procRank_-1);
-  if(isOdd && procRank_+1 < numProcs_ )   receive(*comm_,procRank_+1,x_kp1);
+  if (isEven && procRank-1 >= 0) send(*comm_, x[0], procRank-1);
+  if (isOdd && procRank+1 < numProcs) receive(*comm_, procRank+1, &*x_kp1);
 }
+
 
 #endif	// THYRA_EXAMPLE_TRIDIAG_SPMD_LINEAR_OP_HPP

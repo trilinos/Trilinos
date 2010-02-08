@@ -83,7 +83,7 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, blocked_op )
      out << "y = \n" << describe(*y, Teuchos::VERB_HIGH) << std::endl;
      
      // perform a matrix vector multiply
-     A->apply(Thyra::NONCONJ_ELE,*x,&*y);
+     Thyra::apply(*A, Thyra::NOTRANS, *x, y.ptr());
 
      out << "First composite operator completed" << std::endl;
   }
@@ -106,7 +106,7 @@ TEUCHOS_UNIT_TEST( EpetraLinearOp, blocked_op )
      out << "y = \n" << describe(*y, Teuchos::VERB_HIGH) << std::endl;
      
      // perform a matrix vector multiply
-     A->apply(Thyra::NONCONJ_ELE,*x,&*y);
+     Thyra::apply(*A, Thyra::NOTRANS, *x, y.ptr());
 
      out << "Second composite operator completed" << std::endl;
   }

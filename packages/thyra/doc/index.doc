@@ -252,7 +252,7 @@ A few things about the software in the %Thyra package are worth mentioning:
 
 <ul>
 
-<li><b>Scalar and Index (Ordinal) data types</b>
+<li><b>Scalar and Ordinal (Ordinal) data types</b>
 
 All of the interfaces are templated on a <b><tt>Scalar</tt></b> (i.e.
 floating-point) type and therefore almost all of %Thyra supports arbitrary
@@ -274,7 +274,7 @@ specializations of the traits class <tt>Teuchos::SerializationTraits</tt> must
 also be provided.
 
 The %Thyra interfaces and related software are not templated on an index
-(i.e. ordinal) type.  Instead, the type <tt>Thyra::Index</tt> is used which is
+(i.e. ordinal) type.  Instead, the type <tt>Thyra::Ordinal</tt> is used which is
 just a typedef that is defined at configure time to be an integer type of
 sufficient size.  This type must be able to hold the value of the largest
 dimension of a vector space that will be used by an executable.  For most

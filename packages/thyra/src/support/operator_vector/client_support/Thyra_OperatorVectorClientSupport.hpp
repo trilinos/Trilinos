@@ -55,8 +55,6 @@
 #include "Thyra_MultiVectorStdOpsTester.hpp"
 #include "Thyra_MultiVectorTester.hpp"
 #include "Thyra_ParameterDrivenMultiVectorInput.hpp"
-#include "Thyra_SingleRhsLinearOpBase.hpp"
-#include "Thyra_SingleScalarLinearOpBase.hpp"
 #include "Thyra_TesterBase.hpp"
 #include "Thyra_TestingTools.cpp"
 #include "Thyra_TestingTools.hpp"

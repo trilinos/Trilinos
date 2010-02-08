@@ -31,7 +31,6 @@
 
 #include "Thyra_DefaultMultipliedLinearOp_decl.hpp"
 #include "Thyra_AssertOp.hpp"
-#include "Teuchos_Utils.hpp"
 
 
 namespace Thyra {
@@ -165,8 +164,8 @@ std::string DefaultMultipliedLinearOp<Scalar>::description() const
 
 template<class Scalar>
 void DefaultMultipliedLinearOp<Scalar>::describe(
-  Teuchos::FancyOStream                &out_arg
-  ,const Teuchos::EVerbosityLevel      verbLevel
+  Teuchos::FancyOStream &out_arg,
+  const Teuchos::EVerbosityLevel verbLevel
   ) const
 {
   typedef Teuchos::ScalarTraits<Scalar>  ST;
@@ -208,11 +207,11 @@ void DefaultMultipliedLinearOp<Scalar>::describe(
 // protected
 
 
-// Overridden from SingleScalarLinearOpBase
+// Overridden from LinearOpBase
 
 
 template<class Scalar>
-bool DefaultMultipliedLinearOp<Scalar>::opSupported(EOpTransp M_trans) const
+bool DefaultMultipliedLinearOp<Scalar>::opSupportedImpl(EOpTransp M_trans) const
 {
   bool overallOpSupported = true;
   for( int k = 0; k < static_cast<int>(Ops_.size()); ++k )
@@ -223,22 +222,23 @@ bool DefaultMultipliedLinearOp<Scalar>::opSupported(EOpTransp M_trans) const
 
 
 template<class Scalar>
-void DefaultMultipliedLinearOp<Scalar>::apply(
-  const EOpTransp                     M_trans
-  ,const MultiVectorBase<Scalar>    &X
-  ,MultiVectorBase<Scalar>          *Y
-  ,const Scalar                     alpha
-  ,const Scalar                     beta
+void DefaultMultipliedLinearOp<Scalar>::applyImpl(
+  const EOpTransp M_trans,
+  const MultiVectorBase<Scalar> &X,
+  const Ptr<MultiVectorBase<Scalar> > &Y,
+  const Scalar alpha,
+  const Scalar beta
   ) const
 {
-  using Teuchos::rcp;
+  using Teuchos::rcpFromPtr;
+  using Teuchos::rcpFromRef;
 #ifdef TEUCHOS_DEBUG
   THYRA_ASSERT_LINEAR_OP_MULTIVEC_APPLY_SPACES(
-    "DefaultMultipliedLinearOp<Scalar>::apply(...)",*this,M_trans,X,Y
+    "DefaultMultipliedLinearOp<Scalar>::apply(...)", *this, M_trans, X, &*Y
     );
 #endif // TEUCHOS_DEBUG  
   const int nOps = Ops_.size();
-  const Index m = X.domain()->dim();
+  const Ordinal m = X.domain()->dim();
   if( real_trans(M_trans)==NOTRANS ) {
     //
     // Y = alpha * M * X + beta*Y
@@ -247,14 +247,14 @@ void DefaultMultipliedLinearOp<Scalar>::apply(
     //
     RCP<MultiVectorBase<Scalar> > T_kp1, T_k; // Temporary propagated between loops 
     for( int k = nOps-1; k >= 0; --k ) {
-      RCP<MultiVectorBase<Scalar> >         Y_k;
-      RCP<const MultiVectorBase<Scalar> >   X_k;
-      if(k==0)        Y_k = rcp(Y,false);  else Y_k = T_k = createMembers(getOp(k)->range(),m);
-      if(k==nOps-1) X_k = rcp(&X,false); else X_k = T_kp1;
+      RCP<MultiVectorBase<Scalar> > Y_k;
+      RCP<const MultiVectorBase<Scalar> > X_k;
+      if(k==0) Y_k = rcpFromPtr(Y);  else Y_k = T_k = createMembers(getOp(k)->range(), m);
+      if(k==nOps-1) X_k = rcpFromRef(X); else X_k = T_kp1;
       if( k > 0 )
-        Thyra::apply(*getOp(k),M_trans,*X_k,&*Y_k);
+        Thyra::apply(*getOp(k), M_trans, *X_k, Y_k.ptr());
       else
-        Thyra::apply(*getOp(k),M_trans,*X_k,&*Y_k,alpha,beta);
+        Thyra::apply(*getOp(k), M_trans, *X_k, Y_k.ptr(), alpha, beta);
       T_kp1 = T_k;
     }
   }
@@ -268,12 +268,12 @@ void DefaultMultipliedLinearOp<Scalar>::apply(
     for( int k = 0; k <= nOps-1; ++k ) {
       RCP<MultiVectorBase<Scalar> >         Y_k;
       RCP<const MultiVectorBase<Scalar> >   X_k;
-      if(k==nOps-1)   Y_k = rcp(Y,false);  else Y_k = T_k = createMembers(getOp(k)->domain(),m);
-      if(k==0)          X_k = rcp(&X,false); else X_k = T_km1;
+      if(k==nOps-1) Y_k = rcpFromPtr(Y);  else Y_k = T_k = createMembers(getOp(k)->domain(), m);
+      if(k==0) X_k = rcpFromRef(X); else X_k = T_km1;
       if( k < nOps-1 )
-        Thyra::apply(*getOp(k),M_trans,*X_k,&*Y_k);
+        Thyra::apply(*getOp(k), M_trans, *X_k, Y_k.ptr());
       else
-        Thyra::apply(*getOp(k),M_trans,*X_k,&*Y_k,alpha,beta);
+        Thyra::apply(*getOp(k), M_trans, *X_k, Y_k.ptr(), alpha, beta);
       T_km1 = T_k;
     }
   }
@@ -343,8 +343,8 @@ Thyra::nonconstMultiply(
   )
 {
   using Teuchos::tuple;
-  RCP<DefaultMultipliedLinearOp<Scalar> > multOp = defaultMultipliedLinearOp<Scalar>();
-  multOp->initialize(tuple(A,B)());
+  RCP<DefaultMultipliedLinearOp<Scalar> > multOp = 
+    defaultMultipliedLinearOp<Scalar>(tuple(A, B)());
   if(M_label.length())
     multOp->setObjectLabel(M_label);
   return multOp;
@@ -360,8 +360,8 @@ Thyra::multiply(
   )
 {
   using Teuchos::tuple;
-  RCP<DefaultMultipliedLinearOp<Scalar> > multOp = defaultMultipliedLinearOp<Scalar>();
-  multOp->initialize(tuple(A,B)());
+  RCP<DefaultMultipliedLinearOp<Scalar> > multOp =
+    defaultMultipliedLinearOp<Scalar>(tuple(A, B)());
   if(M_label.length())
     multOp->setObjectLabel(M_label);
   return multOp;
@@ -378,8 +378,8 @@ Thyra::multiply(
   )
 {
   using Teuchos::tuple;
-  RCP<DefaultMultipliedLinearOp<Scalar> > multOp = defaultMultipliedLinearOp<Scalar>();
-  multOp->initialize(tuple(A,B,C)());
+  RCP<DefaultMultipliedLinearOp<Scalar> > multOp =
+    defaultMultipliedLinearOp<Scalar>(tuple(A, B, C)());
   if(M_label.length())
     multOp->setObjectLabel(M_label);
   return multOp;
@@ -417,7 +417,7 @@ Thyra::multiply(
     const RCP<const LinearOpBase<SCALAR > > &B, \
     const RCP<const LinearOpBase<SCALAR > > &C, \
     const std::string &M_label \
-    );
+    ); \
 
 
 #endif	// THYRA_DEFAULT_MULTIPLIED_LINEAR_OP_DEF_HPP

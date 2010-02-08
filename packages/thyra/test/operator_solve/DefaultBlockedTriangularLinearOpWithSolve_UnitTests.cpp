@@ -1,0 +1,94 @@
+
+#include "Thyra_DefaultBlockedTriangularLinearOpWithSolve.hpp"
+#include "Thyra_DefaultSerialDenseLinearOpWithSolveFactory.hpp"
+#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
+#include "Thyra_DefaultSpmdVectorSpace.hpp"
+#include "Thyra_DefaultLinearOpSource.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_LinearOpTester.hpp"
+#include "Thyra_LinearOpWithSolveTester.hpp"
+
+#include "Teuchos_UnitTestHarness.hpp"
+#include "Thyra_UnitTestHelpers.hpp"
+
+
+namespace Thyra {
+
+
+//
+// Helper code and declarations
+//
+
+
+using Teuchos::as;
+using Teuchos::null;
+using Teuchos::RCP;
+using Teuchos::inOutArg;
+
+
+//
+// Unit Tests
+//
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultBlockedTriangularLinearOpWithSolve,
+  defaultConstruct, Scalar )
+{
+  const RCP<DefaultBlockedTriangularLinearOpWithSolve<Scalar> > dbtlows =
+    defaultBlockedTriangularLinearOpWithSolve<Scalar>();
+  TEST_ASSERT(nonnull(dbtlows));
+  TEST_EQUALITY_CONST(dbtlows->range(), null);
+  TEST_EQUALITY_CONST(dbtlows->domain(), null);
+  out << "dbtlows = " << *dbtlows;
+}
+THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultBlockedTriangularLinearOpWithSolve,
+  defaultConstruct )
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultBlockedTriangularLinearOpWithSolve,
+  basic, Scalar )
+{
+
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+
+  const Ordinal dim = 4;
+
+  const RCP<const VectorSpaceBase<Scalar> > vs =
+    defaultSpmdVectorSpace<Scalar>(dim);
+
+  const RCP<MultiVectorBase<Scalar> > M = createMembers(vs, dim);
+  randomize<Scalar>(-ST::one(), ST::one(), M.ptr());
+
+  const RCP<const LinearOpWithSolveBase<Scalar> > lows =
+    linearOpWithSolve<Scalar>(
+      *defaultSerialDenseLinearOpWithSolveFactory<Scalar>(), M );
+
+  const int numBlocks = 3;
+
+  const RCP<DefaultBlockedTriangularLinearOpWithSolve<Scalar> > dbtlows =
+    defaultBlockedTriangularLinearOpWithSolve<Scalar>();
+  dbtlows->beginBlockFill(numBlocks, numBlocks);
+
+  for (int block_i = 0; block_i < numBlocks; ++block_i) {
+    dbtlows->setLOWSBlock(block_i, block_i, lows);
+  }
+
+  dbtlows->endBlockFill();
+
+  out << "dbtlows = " << *dbtlows;
+
+  Thyra::LinearOpTester<Scalar> linearOpTester;
+  TEST_ASSERT(linearOpTester.check(*dbtlows, inOutArg(out)));
+
+  Thyra::LinearOpWithSolveTester<Scalar> linearOpWithSolveTester;
+  linearOpWithSolveTester.turn_off_all_tests();
+  linearOpWithSolveTester.check_forward_default(true);
+  linearOpWithSolveTester.check_adjoint_default(true);
+  TEST_ASSERT(linearOpWithSolveTester.check(*dbtlows, &out));
+
+}
+THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultBlockedTriangularLinearOpWithSolve,
+  basic )
+
+
+} // namespace Thyra

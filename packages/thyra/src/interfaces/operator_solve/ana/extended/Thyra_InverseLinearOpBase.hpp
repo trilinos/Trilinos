@@ -31,15 +31,17 @@
 
 #include "Thyra_LinearOpWithSolveBase.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Base interface for <ttLinearOpBase</tt> objects that are implemented
  * in terms of the solve function on a <tt>LinearOpWithSolveBase</tt> object.
  *
  * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
  */
-template<class RangeScalar, class DomainScalar=RangeScalar>
-class InverseLinearOpBase : virtual public LinearOpBase<RangeScalar,DomainScalar>
+template<class Scalar>
+class InverseLinearOpBase : virtual public LinearOpBase<Scalar>
 {
 public:
 
@@ -51,17 +53,19 @@ public:
   /** \brief Extra a non-const view of the underlying
    * <tt>LinearOpWithSolveBase</tt> object.
    */
-  virtual Teuchos::RCP<LinearOpWithSolveBase<DomainScalar,RangeScalar> >
+  virtual Teuchos::RCP<LinearOpWithSolveBase<Scalar> >
   getNonconstLows() = 0; 
 
   /** \brief Extra a const view of the underlying
    * <tt>LinearOpWithSolveBase</tt> object.
    */
-  virtual Teuchos::RCP<const LinearOpWithSolveBase<DomainScalar,RangeScalar> >
+  virtual Teuchos::RCP<const LinearOpWithSolveBase<Scalar> >
   getLows() const = 0; 
 
 };
 
+
 } // namespace Thyra
+
 
 #endif // THYRA_INVERSE_LINEAR_OP_BASE_HPP

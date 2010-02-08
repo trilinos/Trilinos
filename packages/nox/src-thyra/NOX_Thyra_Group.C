@@ -58,7 +58,7 @@ Group(const NOX::Thyra::Vector& initial_guess,
   gradient_vec_ = 
     Teuchos::rcp(new NOX::Thyra::Vector(initial_guess, ShapeCopy));
   
-  shared_jacobian_ = Teuchos::rcp(new NOX::SharedObject< ::Thyra::LinearOpWithSolveBase<double, double>, NOX::Thyra::Group >(model->create_W()));
+  shared_jacobian_ = Teuchos::rcp(new NOX::SharedObject< ::Thyra::LinearOpWithSolveBase<double>, NOX::Thyra::Group >(model->create_W()));
 
   in_args_ = model_->createInArgs();
   out_args_ = model_->createOutArgs();

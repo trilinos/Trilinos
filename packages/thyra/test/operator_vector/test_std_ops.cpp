@@ -55,7 +55,7 @@ bool run_std_ops_tests(
   using Teuchos::OSTab;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
-  typedef Thyra::Index Index;
+  typedef Thyra::Ordinal Index;
 
   RCP<Teuchos::FancyOStream>
     out = rcp(new Teuchos::FancyOStream(rcp(out_arg,false)));
@@ -73,8 +73,8 @@ bool run_std_ops_tests(
 
   if(out.get()) *out << "\nCreating a serial vector space svs with n="<<n<<" vector elements ...\n";
 
-  const RCP<const Teuchos::Comm<Index> >
-    comm = Teuchos::DefaultComm<Index>::getComm();
+  const RCP<const Teuchos::Comm<Ordinal> >
+    comm = Teuchos::DefaultComm<Ordinal>::getComm();
 
   const RCP<Thyra::VectorSpaceBase<Scalar> > svs =
     Thyra::defaultSpmdVectorSpace<Scalar>(comm,n,-1);

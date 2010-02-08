@@ -32,8 +32,8 @@
 
 #include "Thyra_MultiVectorDefaultBase_decl.hpp"
 #include "Thyra_LinearOpDefaultBase.hpp"
-#include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_VectorSpaceFactoryBase.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_AssertOp.hpp"
@@ -78,14 +78,14 @@ MultiVectorDefaultBase<Scalar>::contigSubViewImpl( const Range1D& colRng_in ) co
   Teuchos::WorkspaceStore *wss = Teuchos::get_default_workspace_store().get();
   const VectorSpaceBase<Scalar> &l_domain = *this->domain();
   const VectorSpaceBase<Scalar> &l_range = *this->range();
-  const Index dimDomain = l_domain.dim();
+  const Ordinal dimDomain = l_domain.dim();
   const Range1D colRng = Teuchos::full_range(colRng_in,0,dimDomain-1);
-  if( colRng.lbound() == 0 && as<Index>(colRng.ubound()) == dimDomain-1 )
+  if( colRng.lbound() == 0 && as<Ordinal>(colRng.ubound()) == dimDomain-1 )
     return Teuchos::rcp(this,false); // Takes all of the columns!
   if( colRng.size() ) {
     // We have to create a view of a subset of the columns
     Workspace< RCP< VectorBase<Scalar> > > col_vecs(wss,colRng.size());
-    for( Index j = colRng.lbound(); j <= colRng.ubound(); ++j )
+    for( Ordinal j = colRng.lbound(); j <= colRng.ubound(); ++j )
       col_vecs[j-colRng.lbound()] = Teuchos::rcp_const_cast<VectorBase<Scalar> >(this->col(j));
     return Teuchos::rcp(
       new DefaultColumnwiseMultiVector<Scalar>(
@@ -106,14 +106,14 @@ MultiVectorDefaultBase<Scalar>::nonconstContigSubViewImpl( const Range1D& colRng
   Teuchos::WorkspaceStore *wss = Teuchos::get_default_workspace_store().get();
   const VectorSpaceBase<Scalar> &l_domain = *this->domain();
   const VectorSpaceBase<Scalar> &l_range = *this->range();
-  const Index dimDomain = l_domain.dim();
+  const Ordinal dimDomain = l_domain.dim();
   const Range1D colRng = Teuchos::full_range(colRng_in,0,dimDomain-1);
-  if( colRng.lbound() == 0 && as<Index>(colRng.ubound()) == dimDomain-1 )
+  if( colRng.lbound() == 0 && as<Ordinal>(colRng.ubound()) == dimDomain-1 )
     return Teuchos::rcp(this,false); // Takes all of the columns!
   if( colRng.size() ) {
     // We have to create a view of a subset of the columns
     Workspace< RCP< VectorBase<Scalar> > > col_vecs(wss,colRng.size());
-    for( Index j = colRng.lbound(); j <= colRng.ubound(); ++j )
+    for( Ordinal j = colRng.lbound(); j <= colRng.ubound(); ++j )
       col_vecs[j-colRng.lbound()] = this->col(j);
     return Teuchos::rcp(
       new DefaultColumnwiseMultiVector<Scalar>(
@@ -137,7 +137,7 @@ MultiVectorDefaultBase<Scalar>::nonContigSubViewImpl(
   const int numCols = cols.size();
 #ifdef TEUCHOS_DEBUG
   const VectorSpaceBase<Scalar> &l_domain = *this->domain();
-  const Index dimDomain = l_domain.dim();
+  const Ordinal dimDomain = l_domain.dim();
   const char msg_err[] = "MultiVectorDefaultBase<Scalar>::subView(numCols,cols[]): Error!";
   TEST_FOR_EXCEPTION( numCols < 1 || dimDomain < numCols, std::invalid_argument, msg_err );
 #endif
@@ -173,7 +173,7 @@ MultiVectorDefaultBase<Scalar>::nonconstNonContigSubViewImpl(
   const int numCols = cols.size();
 #ifdef TEUCHOS_DEBUG
   const VectorSpaceBase<Scalar> &l_domain = *this->domain();
-  const Index dimDomain = l_domain.dim();
+  const Ordinal dimDomain = l_domain.dim();
   const char msg_err[] = "MultiVectorDefaultBase<Scalar>::subView(numCols,cols[]): Error!";
   TEST_FOR_EXCEPTION( numCols < 1 || dimDomain < numCols, std::invalid_argument, msg_err );
 #endif
@@ -203,11 +203,11 @@ void MultiVectorDefaultBase<Scalar>::mvMultiReductApplyOpImpl(
   const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
   const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
   const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
-  const Index prim_first_ele_offset_in,
-  const Index prim_sub_dim_in,
-  const Index prim_global_offset_in,
-  const Index sec_first_ele_offset_in,
-  const Index sec_sub_dim_in
+  const Ordinal prim_first_ele_offset_in,
+  const Ordinal prim_sub_dim_in,
+  const Ordinal prim_global_offset_in,
+  const Ordinal sec_first_ele_offset_in,
+  const Ordinal sec_sub_dim_in
   ) const
 {
 
@@ -224,12 +224,12 @@ void MultiVectorDefaultBase<Scalar>::mvMultiReductApplyOpImpl(
 
   // Get the primary and secondary dimensions.
 
-  const Index sec_dim = l_domain.dim();
-  const Index sec_sub_dim = ( sec_sub_dim_in >= 0 ? sec_sub_dim_in : sec_dim - sec_first_ele_offset_in );
+  const Ordinal sec_dim = l_domain.dim();
+  const Ordinal sec_sub_dim = ( sec_sub_dim_in >= 0 ? sec_sub_dim_in : sec_dim - sec_first_ele_offset_in );
 #ifdef TEUCHOS_DEBUG
   const VectorSpaceBase<Scalar> &l_range = *this->range();
-  const Index	prim_dim = l_range.dim();
-  const Index prim_sub_dim = ( prim_sub_dim_in >= 0 ? prim_sub_dim_in : prim_dim - prim_first_ele_offset_in );
+  const Ordinal	prim_dim = l_range.dim();
+  const Ordinal prim_sub_dim = ( prim_sub_dim_in >= 0 ? prim_sub_dim_in : prim_dim - prim_first_ele_offset_in );
   const char err_msg[] = "MultiVectorDefaultBase<Scalar>::mvMultiReductApplyOpImpl(...): Error!";
   TEST_FOR_EXCEPTION( !(0 < prim_sub_dim && prim_sub_dim <= prim_dim), std::invalid_argument, err_msg );
   TEST_FOR_EXCEPTION( !(0 < sec_sub_dim && sec_sub_dim <= sec_dim), std::invalid_argument, err_msg );
@@ -245,13 +245,13 @@ void MultiVectorDefaultBase<Scalar>::mvMultiReductApplyOpImpl(
   Workspace<RCP<VectorBase<Scalar> > > targ_vecs_s(wss, num_targ_multi_vecs);
   Workspace<Ptr<VectorBase<Scalar> > > targ_vecs(wss, num_targ_multi_vecs);
 
-  for(Index j = sec_first_ele_offset_in; j < sec_first_ele_offset_in + sec_sub_dim; ++j) {
+  for(Ordinal j = sec_first_ele_offset_in; j < sec_first_ele_offset_in + sec_sub_dim; ++j) {
     // Fill the arrays of vector arguments
-    {for(Index k = 0; k < as<Index>(num_multi_vecs); ++k) {
+    {for(Ordinal k = 0; k < as<Ordinal>(num_multi_vecs); ++k) {
         vecs_s[k] = multi_vecs[k]->col(j);
         vecs[k] = vecs_s[k].ptr();
       }}
-    {for(Index k = 0; k < as<Index>(num_targ_multi_vecs); ++k) {
+    {for(Ordinal k = 0; k < as<Ordinal>(num_targ_multi_vecs); ++k) {
         targ_vecs_s[k] = targ_multi_vecs[k]->col(j);
         targ_vecs[k] = targ_vecs_s[k].ptr();
       }}
@@ -277,11 +277,11 @@ void MultiVectorDefaultBase<Scalar>::mvSingleReductApplyOpImpl(
   const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
   const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
   const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-  const Index prim_first_ele_offset_in,
-  const Index prim_sub_dim_in,
-  const Index prim_global_offset_in,
-  const Index sec_first_ele_offset_in,
-  const Index sec_sub_dim_in
+  const Ordinal prim_first_ele_offset_in,
+  const Ordinal prim_sub_dim_in,
+  const Ordinal prim_global_offset_in,
+  const Ordinal sec_first_ele_offset_in,
+  const Ordinal sec_sub_dim_in
   ) const
 {
   using Teuchos::Workspace;
@@ -292,12 +292,12 @@ void MultiVectorDefaultBase<Scalar>::mvSingleReductApplyOpImpl(
   const VectorSpaceBase<Scalar> &l_domain = *this->domain();
 
   // Get the primary and secondary dimensions.
-  const Index sec_dim = l_domain.dim();
-  const Index sec_sub_dim = ( sec_sub_dim_in >= 0 ? sec_sub_dim_in : sec_dim - sec_first_ele_offset_in );
+  const Ordinal sec_dim = l_domain.dim();
+  const Ordinal sec_sub_dim = ( sec_sub_dim_in >= 0 ? sec_sub_dim_in : sec_dim - sec_first_ele_offset_in );
 #ifdef TEUCHOS_DEBUG
   const VectorSpaceBase<Scalar> &l_range = *this->range();
-  const Index prim_dim = l_range.dim();
-  const Index prim_sub_dim = ( prim_sub_dim_in >= 0 ? prim_sub_dim_in : prim_dim - prim_first_ele_offset_in );
+  const Ordinal prim_dim = l_range.dim();
+  const Ordinal prim_sub_dim = ( prim_sub_dim_in >= 0 ? prim_sub_dim_in : prim_dim - prim_first_ele_offset_in );
   const char err_msg[] = "MultiVectorDefaultBase<Scalar>::mvSingleReductApplyOpImpl(...): Error!";
   TEST_FOR_EXCEPTION( !(0 < prim_sub_dim && prim_sub_dim <= prim_dim), std::invalid_argument, err_msg );
   TEST_FOR_EXCEPTION( !(0 < sec_sub_dim && sec_sub_dim <= sec_dim), std::invalid_argument, err_msg );
@@ -309,7 +309,7 @@ void MultiVectorDefaultBase<Scalar>::mvSingleReductApplyOpImpl(
   Workspace<RCP<RTOpPack::ReductTarget> > rcp_reduct_objs(wss, reduct_objs_size);
   Workspace<Ptr<RTOpPack::ReductTarget> > reduct_objs(wss, reduct_objs_size);
   if (!is_null(reduct_obj)) {
-    for(Index k = 0; k < sec_sub_dim; ++k) {
+    for(Ordinal k = 0; k < sec_sub_dim; ++k) {
       rcp_reduct_objs[k] = prim_op.reduct_obj_create();
       reduct_objs[k] = rcp_reduct_objs[k].ptr();
     }
@@ -325,7 +325,7 @@ void MultiVectorDefaultBase<Scalar>::mvSingleReductApplyOpImpl(
   // Reduce all the reduction objects using the secondary reduction operator
   // into one reduction object and free the intermediate reduction objects.
   if (!is_null(reduct_obj)) {
-    for (Index k = 0; k < sec_sub_dim; ++k) {
+    for (Ordinal k = 0; k < sec_sub_dim; ++k) {
       sec_op.reduce_reduct_objs( *reduct_objs[k], reduct_obj );
     }
   }
@@ -339,7 +339,7 @@ void MultiVectorDefaultBase<Scalar>::acquireDetachedMultiVectorViewImpl(
   RTOpPack::ConstSubMultiVectorView<Scalar> *sub_mv
   ) const
 {
-  const Index
+  const Ordinal
     rangeDim = this->range()->dim(),
     domainDim = this->domain()->dim();
   const Range1D

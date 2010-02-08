@@ -122,19 +122,19 @@ public:
 
   /** \brief Returns the SPMD communicator.
    */
-  virtual Teuchos::RCP<const Teuchos::Comm<Index> > getComm() const = 0;
+  virtual Teuchos::RCP<const Teuchos::Comm<Ordinal> > getComm() const = 0;
 
   /** \brief Returns the number of local elements stored on this process.
    *
    * If <tt>this</tt> this is uninitialized then <tt>localSubDim()</tt>
    * returns <tt>0</tt>.
    */
-   virtual Index localSubDim() const = 0;
+   virtual Ordinal localSubDim() const = 0;
 
   /** \brief Returns the offset for the local sub-vector stored on this
    * process.
    */
-  virtual Index localOffset() const = 0;
+  virtual Ordinal localOffset() const = 0;
 
   /** \brief Returns the code for the mapping of elements to processes.
    *
@@ -143,7 +143,7 @@ public:
    * <li> [<tt>this->localSubDim() <= 0</tt>] <tt>this->mapCode() <= 0</tt>.
    * </ul>
    */
-  virtual Index mapCode() const = 0;
+  virtual Ordinal mapCode() const = 0;
 
   //@}
   

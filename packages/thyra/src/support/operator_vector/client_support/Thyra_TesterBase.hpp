@@ -32,6 +32,8 @@
 
 #include "Thyra_LinearOperatorImpl.hpp"
 #include "Thyra_TestSpecifier.hpp"
+#include "Thyra_VectorStdOps.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_CommHelpers.hpp"

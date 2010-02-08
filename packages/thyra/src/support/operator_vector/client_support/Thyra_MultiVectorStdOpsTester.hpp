@@ -30,6 +30,7 @@
 #define THYRA_MULTI_VECTOR_STD_OPS_TESTER_HPP
 
 #include "Thyra_MultiVectorStdOpsTesterDecl.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "Teuchos_arrayArg.hpp"
 

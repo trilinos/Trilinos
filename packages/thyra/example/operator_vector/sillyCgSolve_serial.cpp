@@ -92,7 +92,7 @@ bool runCgSolveExample(
   // (A.1) Create the tridiagonal matrix operator
   *out << "\nConstructing tridiagonal matrix A of dimension = " << dim
        << " and diagonal multiplier = " << diagScale << " ...\n";
-  std::vector<Scalar> lower(dim-1), diag(dim), upper(dim-1);
+  Teuchos::Array<Scalar> lower(dim-1), diag(dim), upper(dim-1);
   const Scalar
     up = -ST::one(),
     diagTerm = as<Scalar>(2.0) * diagScale * ST::one(),
@@ -107,7 +107,7 @@ bool runCgSolveExample(
   // Last row
   lower[k-1] = low; diag[k] = diagTerm;
   RCP<const Thyra::LinearOpBase<Scalar> > A =
-    rcp(new ExampleTridiagSerialLinearOp<Scalar>(dim, &lower[0], &diag[0], &upper[0]));
+    rcp(new ExampleTridiagSerialLinearOp<Scalar>(dim, lower, diag, upper));
 
   // (A.2) Testing the linear operator constructed linear operator
   *out << "\nTesting the constructed linear operator A ...\n";
@@ -200,9 +200,7 @@ int main(int argc, char *argv[])
   bool result;
 
   Teuchos::GlobalMPISession mpiSession(&argc,&argv);
-  // Above, I only add this to allow this test to be run with an MPI build but
-  // this test does not use MPI in any way.  This is needed with the MPICH
-  // 1.2.7 used on by SIERRA.
+  // Above is needed to run in an MPI build with some MPI implementations
 
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();

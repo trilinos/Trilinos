@@ -33,8 +33,8 @@
 namespace Thyra {
 
 
-Index SpmdVectorSpaceUtilities::computeMapCode(
-  const Teuchos::Comm<Index> &comm, const Index localSubDim
+Ordinal SpmdVectorSpaceUtilities::computeMapCode(
+  const Teuchos::Comm<Ordinal> &comm, const Ordinal localSubDim
   )
 {
   //
@@ -44,20 +44,20 @@ Index SpmdVectorSpaceUtilities::computeMapCode(
   // compatibility.
   //
   const int procRank = size(comm);
-  Index mapCode = -1;
-  Index localCode = localSubDim % (procRank+1) + localSubDim;
+  Ordinal mapCode = -1;
+  Ordinal localCode = localSubDim % (procRank+1) + localSubDim;
   reduceAll(comm, Teuchos::REDUCE_SUM, localCode,
     Teuchos::outArg(mapCode));
   return mapCode;
 }
 
 
-Index SpmdVectorSpaceUtilities::computeLocalOffset(
-  const Teuchos::Comm<Index> &comm, const Index localSubDim
+Ordinal SpmdVectorSpaceUtilities::computeLocalOffset(
+  const Teuchos::Comm<Ordinal> &comm, const Ordinal localSubDim
   )
 {
-  Index localOffset;
-  const Index _localOffset = localSubDim;
+  Ordinal localOffset;
+  const Ordinal _localOffset = localSubDim;
   scan(comm, Teuchos::REDUCE_SUM, _localOffset, 
     Teuchos::outArg(localOffset));
   localOffset -= localSubDim;
@@ -65,11 +65,11 @@ Index SpmdVectorSpaceUtilities::computeLocalOffset(
 }
 
 
-Index SpmdVectorSpaceUtilities::computeGlobalDim(
-  const Teuchos::Comm<Index> &comm, const Index localSubDim
+Ordinal SpmdVectorSpaceUtilities::computeGlobalDim(
+  const Teuchos::Comm<Ordinal> &comm, const Ordinal localSubDim
   )
 {
-  Index globalDim = -1;
+  Ordinal globalDim = -1;
   reduceAll(comm, Teuchos::REDUCE_SUM, localSubDim,
     Teuchos::outArg(globalDim));
   return globalDim;

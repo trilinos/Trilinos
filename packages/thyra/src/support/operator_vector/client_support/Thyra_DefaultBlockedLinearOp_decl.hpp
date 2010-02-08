@@ -32,12 +32,9 @@
 
 
 #include "Thyra_PhysicallyBlockedLinearOpBase.hpp"
-#include "Thyra_SingleScalarLinearOpBase.hpp"
 #include "Thyra_ProductVectorSpaceBase.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
-#include "Teuchos_Array.hpp"
-#include "Teuchos_Handleable.hpp"
-#include "Teuchos_arrayArg.hpp"
+
 
 
 namespace Thyra {
@@ -73,18 +70,10 @@ template<class Scalar> class DefaultProductVectorSpace;
  */
 template<class Scalar>
 class DefaultBlockedLinearOp
-  : virtual public PhysicallyBlockedLinearOpBase<Scalar>  // Public interface
-  , virtual protected SingleScalarLinearOpBase<Scalar>    // Implementation detail
-  , virtual public Teuchos::Handleable<LinearOpBase<Scalar, Scalar> >
+  : virtual public PhysicallyBlockedLinearOpBase<Scalar>
+
 {
 public:
-
-#ifdef THYRA_INJECT_USING_DECLARATIONS
-  using SingleScalarLinearOpBase<Scalar>::apply;
-#endif
-
-  /* \brief . */
-  TEUCHOS_GET_RCP(LinearOpBase<Scalar>);
 
   /** @name Constructors */
   //@{
@@ -187,19 +176,19 @@ public:
 
 protected:
 
-  /** @name Overridden from SingleScalarLinearOpBase */
+  /** @name Overridden from LinearOpBase */
   //@{
 
   /** \brief Returns <tt>true</tt> only if all constituent operators support
    * <tt>M_trans</tt>.
    */
-  bool opSupported(EOpTransp M_trans) const;
+  bool opSupportedImpl(EOpTransp M_trans) const;
 
   /** \brief . */
-  void apply(
+  void applyImpl(
     const EOpTransp M_trans,
     const MultiVectorBase<Scalar> &X,
-    MultiVectorBase<Scalar> *Y,
+    const Ptr<MultiVectorBase<Scalar> > &Y,
     const Scalar alpha,
     const Scalar beta
     ) const;

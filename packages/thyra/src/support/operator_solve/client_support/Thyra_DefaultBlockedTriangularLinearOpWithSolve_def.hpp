@@ -32,6 +32,7 @@
 
 #include "Thyra_DefaultBlockedTriangularLinearOpWithSolve_decl.hpp"
 #include "Thyra_ProductMultiVectorBase.hpp"
+#include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_AssertOp.hpp"
 
 
@@ -126,7 +127,7 @@ template<class Scalar>
 void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::beginBlockFill()
 {
  assertBlockFillIsActive(false);
-  TEST_FOR_EXCEPT("ToDo: Have not implemented flexible block fill yet!");
+ TEST_FOR_EXCEPT("ToDo: Have not implemented flexible block fill yet!");
 }
 
 
@@ -135,23 +136,33 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::beginBlockFill(
   const int numRowBlocks, const int numColBlocks
   )
 {
+  using Teuchos::null;
+#ifdef THYRA_DEBUG
+  TEUCHOS_ASSERT_EQUALITY(numRowBlocks, numColBlocks);
+#endif
   assertBlockFillIsActive(false);
-  TEST_FOR_EXCEPT("ToDo: Have not implemented block fill with just numBlocks yet!!");
+  numDiagBlocks_ = numRowBlocks;
+  diagonalBlocks_.resize(numDiagBlocks_);
+  productRange_ = null;
+  productDomain_ = null;
+  blockFillIsActive_ = true;
 }
 
 
 template<class Scalar>
 void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::beginBlockFill(
-  const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> >  &productRange,
+  const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &productRange,
   const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &productDomain
   )
 {
-  assertBlockFillIsActive(false);
+#ifdef THYRA_DEBUG
   TEST_FOR_EXCEPT( is_null(productRange) );
   TEST_FOR_EXCEPT( is_null(productDomain) );
   TEST_FOR_EXCEPT( productRange->numBlocks() != productDomain->numBlocks() );
-  productRange_ = productRange.assert_not_null();
-  productDomain_ = productDomain.assert_not_null();
+#endif
+  assertBlockFillIsActive(false);
+  productRange_ = productRange;
+  productDomain_ = productDomain;
   numDiagBlocks_ = productRange->numBlocks();
   diagonalBlocks_.resize(numDiagBlocks_);
   blockFillIsActive_ = true;
@@ -202,11 +213,22 @@ template<class Scalar>
 void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::endBlockFill()
 {
   assertBlockFillIsActive(true);
+  Array<RCP<const VectorSpaceBase<Scalar> > > rangeSpaces;
+  Array<RCP<const VectorSpaceBase<Scalar> > > domainSpaces;
   for ( int k = 0; k < numDiagBlocks_; ++k ) {
-    TEST_FOR_EXCEPTION(
-      is_null(diagonalBlocks_[k].getConstObj()), std::logic_error,
+    const RCP<const LinearOpWithSolveBase<Scalar> > lows_k = 
+      diagonalBlocks_[k].getConstObj();
+    TEST_FOR_EXCEPTION(is_null(lows_k), std::logic_error,
       "Error, the block diagonal k="<<k<<" can not be null when ending block fill!"
       );
+    if (is_null(productRange_)) {
+      rangeSpaces.push_back(lows_k->range());
+      domainSpaces.push_back(lows_k->domain());
+    }
+  }
+  if (is_null(productRange_)) {
+    productRange_ = productVectorSpace<Scalar>(rangeSpaces());
+    productDomain_ = productVectorSpace<Scalar>(domainSpaces());
   }
   blockFillIsActive_ = false;
 }
@@ -377,7 +399,7 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::describe(
   ) const
 {
   assertBlockFillIsActive(false);
-  Teuchos::Describable::describe(out,verbLevel);
+  Teuchos::Describable::describe(out, verbLevel);
   // ToDo: Fill in a better version of this!
 }
 
@@ -385,17 +407,86 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::describe(
 // protected
 
 
-// Overridden from SingleScalarLinearOpWithSolveBase
+// Overridden from LinearOpBase
 
 
 template<class Scalar>
-bool DefaultBlockedTriangularLinearOpWithSolve<Scalar>::solveSupportsTrans(
+bool DefaultBlockedTriangularLinearOpWithSolve<Scalar>::opSupportedImpl(
+  EOpTransp M_trans
+  ) const
+{
+  using Thyra::opSupported;
+  assertBlockFillIsActive(false);
+  for ( int k = 0; k < numDiagBlocks_; ++k ) {
+    if ( !opSupported(*diagonalBlocks_[k].getConstObj(),M_trans) )
+      return false;
+  }
+  return true;
+  // ToDo: To be safe we really should do a collective reduction of all
+  // clusters of processes.  However, for the typical use case, every block
+  // will return the same info and we should be safe!
+}
+
+
+template<class Scalar>
+void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::applyImpl(
+  const EOpTransp M_trans,
+  const MultiVectorBase<Scalar> &X_in,
+  const Ptr<MultiVectorBase<Scalar> > &Y_inout,
+  const Scalar alpha,
+  const Scalar beta
+  ) const
+{
+
+  using Teuchos::RCP;
+  using Teuchos::dyn_cast;
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  using Thyra::apply;
+
+#ifdef THYRA_DEBUG
+  THYRA_ASSERT_LINEAR_OP_MULTIVEC_APPLY_SPACES(
+    "DefaultBlockedTriangularLinearOpWithSolve<Scalar>::apply(...)",
+    *this, M_trans, X_in, &*Y_inout
+    );
+#endif // THYRA_DEBUG  
+
+  //
+  // Y = alpha * op(M) * X + beta*Y
+  //
+  // =>
+  //
+  // Y[i] = beta+Y[i] + alpha*op(Op)[i]*X[i], for i=0...numDiagBlocks-1
+  //
+  // ToDo: Update to handle off diagonal blocks when needed!
+  //
+
+  const ProductMultiVectorBase<Scalar>
+    &X = dyn_cast<const ProductMultiVectorBase<Scalar> >(X_in);
+  ProductMultiVectorBase<Scalar>
+    &Y = dyn_cast<ProductMultiVectorBase<Scalar> >(*Y_inout);
+  
+  for ( int i = 0; i < numDiagBlocks_; ++ i ) {
+    Thyra::apply( *diagonalBlocks_[i].getConstObj(), M_trans,
+      *X.getMultiVectorBlock(i), Y.getNonconstMultiVectorBlock(i).ptr(),
+      alpha, beta
+      );
+  }
+
+}
+
+
+// Overridden from LinearOpWithSolveBase
+
+
+template<class Scalar>
+bool
+DefaultBlockedTriangularLinearOpWithSolve<Scalar>::solveSupportsImpl(
   EOpTransp M_trans
   ) const
 {
   assertBlockFillIsActive(false);
   for ( int k = 0; k < numDiagBlocks_; ++k ) {
-    if ( !solveSupports( *diagonalBlocks_[k].getConstObj(), M_trans ) )
+    if ( !Thyra::solveSupports( *diagonalBlocks_[k].getConstObj(), M_trans ) )
       return false;
   }
   return true;
@@ -407,7 +498,7 @@ bool DefaultBlockedTriangularLinearOpWithSolve<Scalar>::solveSupportsTrans(
 
 template<class Scalar>
 bool
-DefaultBlockedTriangularLinearOpWithSolve<Scalar>::solveSupportsSolveMeasureType(
+DefaultBlockedTriangularLinearOpWithSolve<Scalar>::solveSupportsSolveMeasureTypeImpl(
   EOpTransp M_trans, const SolveMeasureType& solveMeasureType
   ) const
 {
@@ -425,20 +516,16 @@ DefaultBlockedTriangularLinearOpWithSolve<Scalar>::solveSupportsSolveMeasureType
     }
   }
   return true;
-  // ToDo: To be safe we really should do a collective reduction of all
-  // clusters of processes.  However, for the typical use case, every block
-  // will return the same info and we should be safe!
 }
 
 
 template<class Scalar>
-void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::solve(
+SolveStatus<Scalar>
+DefaultBlockedTriangularLinearOpWithSolve<Scalar>::solveImpl(
   const EOpTransp M_trans,
   const MultiVectorBase<Scalar> &B_in,
-  MultiVectorBase<Scalar> *X_inout,
-  const int numBlocks,
-  const BlockSolveCriteria<Scalar> blockSolveCriteria[],
-  SolveStatus<Scalar> blockSolveStatus[]
+  const Ptr<MultiVectorBase<Scalar> > &X_inout,
+  const Ptr<const SolveCriteria<Scalar> > solveCriteria
   ) const
 {
 
@@ -447,21 +534,20 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::solve(
   typedef Teuchos::ScalarTraits<Scalar> ST;
   using Thyra::solve;
 
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(0==X_inout);
+#ifdef THYRA_DEBUG
   THYRA_ASSERT_LINEAR_OP_MULTIVEC_APPLY_SPACES(
-    "DefaultBlockedTriangularLinearOpWithSolve<Scalar>::apply(...)",*this,M_trans,*X_inout,&B_in
+    "DefaultBlockedTriangularLinearOpWithSolve<Scalar>::apply(...)",
+    *this, M_trans, *X_inout, &B_in
     );
-  TEST_FOR_EXCEPT(!this->solveSupportsTrans(M_trans));
-  TEST_FOR_EXCEPT( numBlocks > 1 );
+  TEST_FOR_EXCEPT(!this->solveSupportsImpl(M_trans));
   TEST_FOR_EXCEPTION(
-    blockSolveCriteria && !blockSolveCriteria[0].solveCriteria.solveMeasureType.useDefault(),
+    nonnull(solveCriteria) && !solveCriteria->solveMeasureType.useDefault(),
     std::logic_error,
     "Error, we can't handle any non-default solve criteria yet!"
     );
   // ToDo: If solve criteria is to be handled, then we will have to be very
   // carefull how it it interpreted in terms of the individual period solves!
-#endif // TEUCHOS_DEBUG  
+#endif // THYRA_DEBUG  
 
   //
   // Y = alpha * inv(op(M)) * X + beta*Y
@@ -484,87 +570,14 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::solve(
     Op_k->setOStream(this->getOStream());
     Op_k->setVerbLevel(this->getVerbLevel());
     Thyra::solve( *Op_k, M_trans, *B.getMultiVectorBlock(i),
-      &*X.getNonconstMultiVectorBlock(i) );
+      X.getNonconstMultiVectorBlock(i).ptr() );
     // ToDo: Pass in solve criteria when needed!
   }
-  
-  // ToDo: We really need to collect the SolveStatus objects across clusters
-  // in order to really implement this interface correctly!  If a solve fails
-  // on some cluster but not another, then different solve status information
-  // will be returned.  This may result in different decisions being taken in
-  // different clusters with bad consequences.  To really handle multiple
-  // clusters correctly, we need a strategy object that knows how to do these
-  // reductions correctly.  Actually, we could use Teuchos:Comm along with a
-  // user-defined reduction object to do these reductions correctly!
+
+  return SolveStatus<Scalar>();
 
 }
 
-
-// Overridden from SingleScalarLinearOpBase
-
-
-template<class Scalar>
-bool DefaultBlockedTriangularLinearOpWithSolve<Scalar>::opSupported(
-  EOpTransp M_trans
-  ) const
-{
-  using Thyra::opSupported;
-  assertBlockFillIsActive(false);
-  for ( int k = 0; k < numDiagBlocks_; ++k ) {
-    if ( !opSupported(*diagonalBlocks_[k].getConstObj(),M_trans) )
-      return false;
-  }
-  return true;
-  // ToDo: To be safe we really should do a collective reduction of all
-  // clusters of processes.  However, for the typical use case, every block
-  // will return the same info and we should be safe!
-}
-
-
-template<class Scalar>
-void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::apply(
-  const EOpTransp M_trans,
-  const MultiVectorBase<Scalar> &X_in,
-  MultiVectorBase<Scalar> *Y_inout,
-  const Scalar alpha,
-  const Scalar beta
-  ) const
-{
-
-  using Teuchos::RCP;
-  using Teuchos::dyn_cast;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  using Thyra::apply;
-
-#ifdef TEUCHOS_DEBUG
-  THYRA_ASSERT_LINEAR_OP_MULTIVEC_APPLY_SPACES(
-    "DefaultBlockedTriangularLinearOpWithSolve<Scalar>::apply(...)",*this,M_trans,X_in,Y_inout
-    );
-#endif // TEUCHOS_DEBUG  
-
-  //
-  // Y = alpha * op(M) * X + beta*Y
-  //
-  // =>
-  //
-  // Y[i] = beta+Y[i] + alpha*op(Op)[i]*X[i], for i=0...numDiagBlocks-1
-  //
-  // ToDo: Update to handle off diagonal blocks when needed!
-  //
-
-  const ProductMultiVectorBase<Scalar>
-    &X = dyn_cast<const ProductMultiVectorBase<Scalar> >(X_in);
-  ProductMultiVectorBase<Scalar>
-    &Y = dyn_cast<ProductMultiVectorBase<Scalar> >(*Y_inout);
-  
-  for ( int i = 0; i < numDiagBlocks_; ++ i ) {
-    Thyra::apply( *diagonalBlocks_[i].getConstObj(), M_trans,
-      *X.getMultiVectorBlock(i),
-      &*Y.getNonconstMultiVectorBlock(i)
-      );
-  }
-
-}
 
 
 // private
@@ -575,7 +588,7 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::assertBlockFillIsActive(
   bool blockFillIsActive
   ) const
 {
-#ifdef TEUCHOS_DEBUG
+#ifdef THYRA_DEBUG
   TEST_FOR_EXCEPT(!(blockFillIsActive_==blockFillIsActive));
 #endif
 }
@@ -586,7 +599,7 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::assertBlockRowCol(
   const int i, const int j
   ) const
 {
-#ifdef TEUCHOS_DEBUG
+#ifdef THYRA_DEBUG
   TEST_FOR_EXCEPTION(
     !( 0 <= i && i < numDiagBlocks_ ), std::logic_error,
     "Error, i="<<i<<" does not fall in the range [0,"<<numDiagBlocks_-1<<"]!"
@@ -607,11 +620,17 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::setLOWSBlockImpl(
   )
 {
   assertBlockFillIsActive(true);
+#ifdef THYRA_DEBUG
+  TEUCHOS_ASSERT_INEQUALITY( i, >=, 0 );
+  TEUCHOS_ASSERT_INEQUALITY( j, >=, 0 );
+  TEUCHOS_ASSERT_INEQUALITY( i, <, numDiagBlocks_ );
+  TEUCHOS_ASSERT_INEQUALITY( j, <, numDiagBlocks_ );
   TEST_FOR_EXCEPTION(
     !this->acceptsLOWSBlock(i,j), std::logic_error,
     "Error, this DefaultBlockedTriangularLinearOpWithSolve does not accept\n"
     "LOWSB objects for the block i="<<i<<", j="<<j<<"!"
     );
+#endif
   diagonalBlocks_[i] = block;
 }
 
@@ -621,7 +640,7 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::assertAndSetBlockStructu
   const PhysicallyBlockedLinearOpBase<Scalar>& blocks
   )
 {
-#ifdef TEUCHOS_DEBUG
+#ifdef THYRA_DEBUG
   THYRA_ASSERT_VEC_SPACES(
     "DefaultBlockedTriangularLinearOpWithSolve<Scalar>::assertAndSetBlockStructure(blocks)",
     *blocks.range(), *this->range()

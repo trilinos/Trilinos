@@ -71,15 +71,14 @@ void EpetraLinearOp::initialize(
   EOpTransp opTrans,
   EApplyEpetraOpAs applyAs,
   EAdjointEpetraOp adjointSupport,
-  const RCP< const VectorSpaceBase<Scalar> > &range,
-  const RCP< const VectorSpaceBase<Scalar> > &domain
+  const RCP< const VectorSpaceBase<double> > &range,
+  const RCP< const VectorSpaceBase<double> > &domain
   )
 {
   
   using Teuchos::rcp_dynamic_cast;
-  typedef EpetraLinearOp::Scalar Scalar;
-  typedef SpmdVectorSpaceBase<Scalar> SPMDVSB;
-  typedef ScalarProdVectorSpaceBase<Scalar> SPVSB;
+  typedef SpmdVectorSpaceBase<double> SPMDVSB;
+  typedef ScalarProdVectorSpaceBase<double> SPVSB;
 
   // Validate input, allocate spaces, validate ...
 #ifdef TEUCHOS_DEBUG
@@ -100,11 +99,6 @@ void EpetraLinearOp::initialize(
   else
     spmdDomain = ( applyAs==EPETRA_OP_APPLY_APPLY
       ? allocateDomain(op,opTrans) : allocateRange(op,opTrans) );
-
-  const RCP<const SPVSB>
-    sp_range = rcp_dynamic_cast<const SPVSB>(spmdRange,true);
-  const RCP<const SPVSB>
-    sp_domain = rcp_dynamic_cast<const SPVSB>(spmdDomain,true);
   
   // Set data (no exceptions should be thrown now)
   isFullyInitialized_ = true;
@@ -114,15 +108,13 @@ void EpetraLinearOp::initialize(
   adjointSupport_ = adjointSupport;
   range_ = spmdRange;
   domain_ = spmdDomain;
-  sp_range_ = sp_range;
-  sp_domain_ = sp_domain;
 
 }
 
 
 void EpetraLinearOp::partiallyInitialize(
-  const RCP<const VectorSpaceBase<Scalar> > &range,
-  const RCP<const VectorSpaceBase<Scalar> > &domain,
+  const RCP<const VectorSpaceBase<double> > &range,
+  const RCP<const VectorSpaceBase<double> > &domain,
   const RCP<Epetra_Operator> &op,
   EOpTransp opTrans,
   EApplyEpetraOpAs applyAs,
@@ -131,9 +123,8 @@ void EpetraLinearOp::partiallyInitialize(
 {
   
   using Teuchos::rcp_dynamic_cast;
-  typedef EpetraLinearOp::Scalar Scalar;
-  typedef SpmdVectorSpaceBase<Scalar> SPMDVSB;
-  typedef ScalarProdVectorSpaceBase<Scalar> SPVSB;
+  typedef SpmdVectorSpaceBase<double> SPMDVSB;
+  typedef ScalarProdVectorSpaceBase<double> SPVSB;
 
   // Validate input, allocate spaces, validate ...
 #ifdef TEUCHOS_DEBUG
@@ -149,11 +140,6 @@ void EpetraLinearOp::partiallyInitialize(
     spmdRange = rcp_dynamic_cast<const SPMDVSB>(range,true);
   RCP<const SPMDVSB>
     spmdDomain = rcp_dynamic_cast<const SPMDVSB>(domain,true);
-
-  const RCP<const SPVSB>
-    sp_range = rcp_dynamic_cast<const SPVSB>(spmdRange,true);
-  const RCP<const SPVSB>
-    sp_domain = rcp_dynamic_cast<const SPVSB>(spmdDomain,true);
   
   // Set data (no exceptions should be thrown now)
   isFullyInitialized_ = false;
@@ -163,8 +149,6 @@ void EpetraLinearOp::partiallyInitialize(
   adjointSupport_ = adjointSupport;
   range_ = spmdRange;
   domain_ = spmdDomain;
-  sp_range_ = sp_range;
-  sp_domain_ = sp_domain;
   
 }
 
@@ -181,8 +165,8 @@ void EpetraLinearOp::uninitialize(
   EOpTransp *opTrans,
   EApplyEpetraOpAs *applyAs,
   EAdjointEpetraOp *adjointSupport,
-  RCP<const VectorSpaceBase<Scalar> > *range,
-  RCP<const VectorSpaceBase<Scalar> > *domain
+  RCP<const VectorSpaceBase<double> > *range,
+  RCP<const VectorSpaceBase<double> > *domain
   )
 {
 
@@ -200,20 +184,18 @@ void EpetraLinearOp::uninitialize(
   adjointSupport_ = EPETRA_OP_ADJOINT_SUPPORTED;
   range_ = Teuchos::null;
   domain_ = Teuchos::null;
-  sp_range_ = Teuchos::null;
-  sp_domain_ = Teuchos::null;
 
 }
 
 
-RCP< const SpmdVectorSpaceBase<EpetraLinearOp::Scalar> >
+RCP< const SpmdVectorSpaceBase<double> >
 EpetraLinearOp::spmdRange() const
 {
   return range_;
 }
 
 
-RCP< const SpmdVectorSpaceBase<EpetraLinearOp::Scalar> >
+RCP< const SpmdVectorSpaceBase<double> >
 EpetraLinearOp::spmdDomain() const
 {
   return domain_;
@@ -277,10 +259,102 @@ void EpetraLinearOp::getEpetraOpView(
 }
 
 
-// Overridden from SingleScalarLinearOpBase
+// Overridden from LinearOpBase
 
 
-bool EpetraLinearOp::opSupported(EOpTransp M_trans) const
+RCP<const VectorSpaceBase<double> >
+EpetraLinearOp::range() const
+{
+  return range_;
+}
+
+
+RCP<const VectorSpaceBase<double> >
+EpetraLinearOp::domain() const
+{
+  return domain_;
+}
+
+
+RCP<const LinearOpBase<double> >
+EpetraLinearOp::clone() const
+{
+  assert(0); // ToDo: Implement when needed
+  return Teuchos::null;
+}
+
+
+// Overridden from Teuchos::Describable
+
+
+std::string EpetraLinearOp::description() const
+{
+  std::ostringstream oss;
+  oss << Teuchos::Describable::description() << "{";
+  if(op_.get()) {
+    oss << "op=\'"<<typeName(*op_)<<"\'";
+    oss << ",rangeDim="<<this->range()->dim();
+    oss << ",domainDim="<<this->domain()->dim();
+  }
+  else {
+    oss << "op=NULL";
+  }
+  oss << "}";
+  return oss.str();
+}
+
+
+void EpetraLinearOp::describe(
+  FancyOStream &out,
+  const Teuchos::EVerbosityLevel verbLevel
+  ) const
+{
+  typedef Teuchos::ScalarTraits<double> ST;
+  using Teuchos::includesVerbLevel;
+  using Teuchos::as;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::OSTab;
+  using Teuchos::describe;
+  OSTab tab(out);
+  if ( as<int>(verbLevel) == as<int>(Teuchos::VERB_LOW) || is_null(op_)) {
+    out << this->description() << std::endl;
+  }
+  else if (includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM)) {
+    out
+      << Teuchos::Describable::description()
+      << "{"
+      << "rangeDim=" << this->range()->dim()
+      << ",domainDim=" << this->domain()->dim()
+      << "}\n";
+    OSTab tab(out);
+    if (op_.get()) {
+      out << "opTrans="<<toString(opTrans_)<<"\n";
+      out << "applyAs="<<toString(applyAs_)<<"\n";
+      out << "adjointSupport="<<toString(adjointSupport_)<<"\n";
+      out << "op="<<typeName(*op_)<<"\n";
+      if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_EXTREME) ) {
+        OSTab tab(out);
+        RCP<const Epetra_CrsMatrix>
+          csr_op = rcp_dynamic_cast<const Epetra_CrsMatrix>(op_);
+        if (!is_null(csr_op)) {
+          csr_op->Print(out);
+        }
+      }
+    }
+    else {
+      out << "op=NULL"<<"\n";
+    }
+  }
+}
+
+
+// protected
+
+
+// Protected member functions overridden from LinearOpBase
+
+
+bool EpetraLinearOp::opSupportedImpl(EOpTransp M_trans) const
 {
   if (!isFullyInitialized_)
     return false;
@@ -289,29 +363,12 @@ bool EpetraLinearOp::opSupported(EOpTransp M_trans) const
 }
 
 
-// Overridden from EuclideanLinearOpBase
-
-
-RCP<const ScalarProdVectorSpaceBase<EpetraLinearOp::Scalar> >
-EpetraLinearOp::rangeScalarProdVecSpc() const
-{
-  return sp_range_;
-}
-
-
-RCP<const ScalarProdVectorSpaceBase<EpetraLinearOp::Scalar> >
-EpetraLinearOp::domainScalarProdVecSpc() const
-{
-  return sp_domain_;
-}
-
-
-void EpetraLinearOp::euclideanApply(
+void EpetraLinearOp::applyImpl(
   const EOpTransp M_trans,
-  const MultiVectorBase<Scalar> &X_in,
-  MultiVectorBase<Scalar> *Y_inout,
-  const Scalar alpha,
-  const Scalar beta
+  const MultiVectorBase<double> &X_in,
+  const Ptr<MultiVectorBase<double> > &Y_inout,
+  const double alpha,
+  const double beta
   ) const
 {
 
@@ -324,7 +381,7 @@ void EpetraLinearOp::euclideanApply(
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(!isFullyInitialized_);
   THYRA_ASSERT_LINEAR_OP_MULTIVEC_APPLY_SPACES(
-    "EpetraLinearOp::euclideanApply(...)",*this,M_trans,X_in,Y_inout
+    "EpetraLinearOp::euclideanApply(...)", *this, M_trans, X_in, &*Y_inout
     );
   TEST_FOR_EXCEPTION(
     real_M_trans==TRANS && adjointSupport_==EPETRA_OP_ADJOINT_UNSUPPORTED,
@@ -334,8 +391,7 @@ void EpetraLinearOp::euclideanApply(
     );
 #endif
 
-  const RCP<const VectorSpaceBase<double> >
-    XY_domain = X_in.domain();
+  const RCP<const VectorSpaceBase<double> > XY_domain = X_in.domain();
   const int numCols = XY_domain->dim();
  
   //
@@ -489,106 +545,29 @@ void EpetraLinearOp::euclideanApply(
 }
 
 
-// Overridden from LinearOpBase
-
-
-RCP<const LinearOpBase<EpetraLinearOp::Scalar> >
-EpetraLinearOp::clone() const
-{
-  assert(0); // ToDo: Implement when needed
-  return Teuchos::null;
-}
-
-
-// Overridden from Teuchos::Describable
-
-
-std::string EpetraLinearOp::description() const
-{
-  std::ostringstream oss;
-  oss << Teuchos::Describable::description() << "{";
-  if(op_.get()) {
-    oss << "op=\'"<<typeName(*op_)<<"\'";
-    oss << ",rangeDim="<<this->range()->dim();
-    oss << ",domainDim="<<this->domain()->dim();
-  }
-  else {
-    oss << "op=NULL";
-  }
-  oss << "}";
-  return oss.str();
-}
-
-void EpetraLinearOp::describe(
-  FancyOStream &out,
-  const Teuchos::EVerbosityLevel verbLevel
-  ) const
-{
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  using Teuchos::includesVerbLevel;
-  using Teuchos::as;
-  using Teuchos::rcp_dynamic_cast;
-  using Teuchos::OSTab;
-  using Teuchos::describe;
-  OSTab tab(out);
-  if ( as<int>(verbLevel) == as<int>(Teuchos::VERB_LOW) || is_null(op_)) {
-    out << this->description() << std::endl;
-  }
-  else if (includesVerbLevel(verbLevel,Teuchos::VERB_MEDIUM)) {
-    out
-      << Teuchos::Describable::description()
-      << "{"
-      << "rangeDim=" << this->range()->dim()
-      << ",domainDim=" << this->domain()->dim()
-      << "}\n";
-    OSTab tab(out);
-    if (op_.get()) {
-      out << "opTrans="<<toString(opTrans_)<<"\n";
-      out << "applyAs="<<toString(applyAs_)<<"\n";
-      out << "adjointSupport="<<toString(adjointSupport_)<<"\n";
-      out << "op="<<typeName(*op_)<<"\n";
-      if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_EXTREME) ) {
-        OSTab tab(out);
-        RCP<const Epetra_CrsMatrix>
-          csr_op = rcp_dynamic_cast<const Epetra_CrsMatrix>(op_);
-        if (!is_null(csr_op)) {
-          csr_op->Print(out);
-        }
-      }
-    }
-    else {
-      out << "op=NULL"<<"\n";
-    }
-  }
-}
-
-
-// protected
-
-
 // Allocators for domain and range spaces
 
 
-RCP< const SpmdVectorSpaceBase<EpetraLinearOp::Scalar> > 
+RCP< const SpmdVectorSpaceBase<double> > 
 EpetraLinearOp::allocateDomain(
   const RCP<Epetra_Operator> &op,
   EOpTransp op_trans
   ) const
 {
-  return Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<Scalar> >(
+  return Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(
     create_VectorSpace(Teuchos::rcp(&op->OperatorDomainMap(),false))
     );
   // ToDo: What about the transpose argument???, test this!!!
 }
 
 
-RCP<const SpmdVectorSpaceBase<EpetraLinearOp::Scalar> > 
+RCP<const SpmdVectorSpaceBase<double> > 
 EpetraLinearOp::allocateRange(
   const RCP<Epetra_Operator> &op,
   EOpTransp op_trans
   ) const
 {
-  return Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<Scalar> >(
+  return Teuchos::rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(
     create_VectorSpace(Teuchos::rcp(&op->OperatorRangeMap(),false))
     );
   // ToDo: What about the transpose argument???, test this!!!

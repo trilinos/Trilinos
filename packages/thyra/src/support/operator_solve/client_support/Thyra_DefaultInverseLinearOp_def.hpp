@@ -223,18 +223,6 @@ void DefaultInverseLinearOp<Scalar>::describe(
       }
       else {
         out << Teuchos::describe(*lows_.getConstObj(),verbLevel);
-/*
-  // ToDo: Implement printing of solve criteria!
-        out << "fwdSolveCriteria:";
-        if(fwdSolveCriteria_.get())
-          OSTab(out).o() << "\n" << *fwdSolveCriteria_;
-        else
-          out << " NULL\n";
-        if(adjSolveCriteria_.get())
-          OSTab(out).o() << "\n" << *adjSolveCriteria_;
-        else
-          out << " NULL\n";
-*/
       }
       break;
     }
@@ -247,29 +235,30 @@ void DefaultInverseLinearOp<Scalar>::describe(
 // protected
 
 
-// Overridden from SingleScalarLinearOpBase
+// Overridden from LinearOpBase
 
 
 template<class Scalar>
-bool DefaultInverseLinearOp<Scalar>::opSupported(EOpTransp M_trans) const
+bool DefaultInverseLinearOp<Scalar>::opSupportedImpl(EOpTransp M_trans) const
 {
-  assertInitialized();
-  return solveSupports(*lows_.getConstObj(),M_trans);
+  if (nonnull(lows_)) {
+    return solveSupports(*lows_.getConstObj(),M_trans);
+  }
+  return false;
 }
 
 
 template<class Scalar>
-void DefaultInverseLinearOp<Scalar>::apply(
+void DefaultInverseLinearOp<Scalar>::applyImpl(
   const EOpTransp M_trans,
   const MultiVectorBase<Scalar> &X,
-  MultiVectorBase<Scalar> *Y,
+  const Ptr<MultiVectorBase<Scalar> > &Y,
   const Scalar alpha,
   const Scalar beta
   ) const
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
   assertInitialized();
-  TEST_FOR_EXCEPT(Y==NULL);
   // ToDo: Put in hooks for propogating verbosity level
   //
   // Y = alpha*op(M)*X + beta*Y
@@ -279,14 +268,13 @@ void DefaultInverseLinearOp<Scalar>::apply(
   // Y = beta*Y
   // Y += alpha*inv(op(lows))*X
   //
-  Teuchos::RCP<MultiVectorBase<Scalar> >
-    T;
+  Teuchos::RCP<MultiVectorBase<Scalar> > T;
   if(beta==ST::zero()) {
-    T = Teuchos::rcp(Y,false);
+    T = Teuchos::rcpFromPtr(Y);
   }
   else {
     T = createMembers(Y->range(),Y->domain()->dim());
-    scale(beta,Y);
+    scale(beta, Y);
   }
   //
   const SolveCriteria<Scalar>
@@ -316,7 +304,7 @@ void DefaultInverseLinearOp<Scalar>::apply(
     );
   //
   if(beta==ST::zero()) {
-    scale(alpha,Y);
+    scale(alpha, Y);
   }
   else {
     update( alpha, *T, Y );
@@ -395,7 +383,6 @@ Thyra::inverse(
       )
     );
 }
-
 
 
 //

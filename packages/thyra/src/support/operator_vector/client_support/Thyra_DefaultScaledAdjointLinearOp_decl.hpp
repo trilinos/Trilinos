@@ -31,9 +31,7 @@
 
 
 #include "Thyra_ScaledAdjointLinearOpBase.hpp"
-#include "Thyra_SingleScalarLinearOpBaseDecl.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
-#include "Teuchos_Handleable.hpp"
 
 
 namespace Thyra {
@@ -113,18 +111,9 @@ changes that are made.
 */
 template<class Scalar>
 class DefaultScaledAdjointLinearOp
-  : virtual public ScaledAdjointLinearOpBase<Scalar>,     // Interface
-    virtual protected SingleScalarLinearOpBase<Scalar>,   // Implementation
-    virtual public Teuchos::Handleable<LinearOpBase<Scalar> >  // ToDo: Remove!
+  : virtual public ScaledAdjointLinearOpBase<Scalar>
 {
 public:
-
-#ifdef THYRA_INJECT_USING_DECLARATIONS
-  using SingleScalarLinearOpBase<Scalar>::apply;
-#endif
-
-  /** \brief . */
-  TEUCHOS_GET_RCP(LinearOpBase<Scalar>);
 
   /** @name Constructors/initializers/accessors */
   //@{
@@ -268,7 +257,7 @@ public:
    return ( this->overallTransp()==NOTRANS ? this->getOrigOp()->range() : this->getOrigOp()->domain() );
    \endcode
    */
-  RCP< const VectorSpaceBase<Scalar> > range() const;
+  RCP<const VectorSpaceBase<Scalar> > range() const;
 
   /** \brief Return the domain space of the logical linear operator.
    *
@@ -277,7 +266,7 @@ public:
    return ( this->overallTransp()==NOTRANS ? this->getOrigOp()->domain() : this->getOrigOp()->range() );
    \endcode
    */
-  RCP< const VectorSpaceBase<Scalar> > domain() const;
+  RCP<const VectorSpaceBase<Scalar> > domain() const;
 
   /** \brief . */
   RCP<const LinearOpBase<Scalar> > clone() const;
@@ -300,7 +289,7 @@ public:
 
 protected:
   
-  /** @name Overridden from SingleScalarLinearOpBase */
+  /** @name Overridden from LinearOpBase */
   //@{
 
   /** \brief Return if the operation is supported on the logical linear
@@ -311,7 +300,7 @@ protected:
    return this->getOrigOp()->opSupported(trans_trans(this->overallTransp(),M_trans));
    \endcode
    */
-  bool opSupported(EOpTransp M_trans) const;
+  bool opSupportedImpl(EOpTransp M_trans) const;
 
   /** \brief Apply the linear operator (or its transpose) to a multi-vector :
    * <tt>Y = alpha*op(M)*X + beta*Y</tt>.
@@ -321,10 +310,10 @@ protected:
    this->getOrigOp()->apply(trans_trans(M_trans,this->overallTransp()),X,Y,(this->overallScalar()*alpha),beta)
    \endcode
    */
- void apply(
+ void applyImpl(
    const EOpTransp M_trans,
    const MultiVectorBase<Scalar> &X,
-   MultiVectorBase<Scalar> *Y,
+   const Ptr<MultiVectorBase<Scalar> > &Y,
    const Scalar alpha,
    const Scalar beta
    ) const;

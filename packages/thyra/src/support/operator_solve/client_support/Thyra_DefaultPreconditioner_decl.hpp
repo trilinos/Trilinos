@@ -79,80 +79,80 @@ public:
    * preconditioner.
    */
   DefaultPreconditioner(
-    const Teuchos::RCP<LinearOpBase<Scalar> >    &leftPrecOp
-    ,const Teuchos::RCP<LinearOpBase<Scalar> >   &rightPrecOp
+    const Teuchos::RCP<LinearOpBase<Scalar> > &leftPrecOp,
+    const Teuchos::RCP<LinearOpBase<Scalar> > &rightPrecOp
     );
 
   /** \brief Construct a const-only left-only, or right-only, or split
    * left/right preconditioner.
    */
   DefaultPreconditioner(
-    const Teuchos::RCP<const LinearOpBase<Scalar> >    &leftPrecOp
-    ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &rightPrecOp
+    const Teuchos::RCP<const LinearOpBase<Scalar> > &leftPrecOp,
+    const Teuchos::RCP<const LinearOpBase<Scalar> > &rightPrecOp
     );
 
   /** \brief Construct a single unspecified preconditioner.
    */
   DefaultPreconditioner(
-    const Teuchos::RCP<LinearOpBase<Scalar> >    &unspecifiedPrecOp
+    const Teuchos::RCP<LinearOpBase<Scalar> > &unspecifiedPrecOp
     );
 
   /** \brief Construct a const-only single unspecified preconditioner.
    */
   DefaultPreconditioner(
-    const Teuchos::RCP<const LinearOpBase<Scalar> >    &unspecifiedPrecOp
+    const Teuchos::RCP<const LinearOpBase<Scalar> > &unspecifiedPrecOp
     );
 
   /** \brief Initialize a left preconditioner.
    */
   void initializeLeft(
-    const Teuchos::RCP<LinearOpBase<Scalar> >    &leftPrecOp
+    const Teuchos::RCP<LinearOpBase<Scalar> > &leftPrecOp
     );
 
   /** \brief Initialize a const-only left preconditioner.
    */
   void initializeLeft(
-    const Teuchos::RCP<const LinearOpBase<Scalar> >    &leftPrecOp
+    const Teuchos::RCP<const LinearOpBase<Scalar> > &leftPrecOp
     );
 
   /** \brief Initialize a right preconditioner.
    */
   void initializeRight(
-    const Teuchos::RCP<LinearOpBase<Scalar> >    &rightPrecOp
+    const Teuchos::RCP<LinearOpBase<Scalar> > &rightPrecOp
     );
 
   /** \brief Initialize a const-only right preconditioner.
    */
   void initializeRight(
-    const Teuchos::RCP<const LinearOpBase<Scalar> >    &rightPrecOp
+    const Teuchos::RCP<const LinearOpBase<Scalar> > &rightPrecOp
     );
 
   /** \brief Initialize a split left/right preconditioner.
    */
   void initializeLeftRight(
-    const Teuchos::RCP<LinearOpBase<Scalar> >    &leftPrecOp
-    ,const Teuchos::RCP<LinearOpBase<Scalar> >   &rightPrecOp
+    const Teuchos::RCP<LinearOpBase<Scalar> > &leftPrecOp
+    ,const Teuchos::RCP<LinearOpBase<Scalar> > &rightPrecOp
     );
 
   /** \brief Initialize a const-only split left/right preconditioner.
    */
   void initializeLeftRight(
-    const Teuchos::RCP<const LinearOpBase<Scalar> >    &leftPrecOp
-    ,const Teuchos::RCP<const LinearOpBase<Scalar> >   &rightPrecOp
+    const Teuchos::RCP<const LinearOpBase<Scalar> > &leftPrecOp
+    ,const Teuchos::RCP<const LinearOpBase<Scalar> > &rightPrecOp
     );
 
   /** \brief Initialize a single unspecified preconditioner
    * operator.
    */
   void initializeUnspecified(
-    const Teuchos::RCP<LinearOpBase<Scalar> >    &unspecifiedPrecOp
+    const Teuchos::RCP<LinearOpBase<Scalar> > &unspecifiedPrecOp
     );
 
   /** \brief Initialize a const-only single unspecified preconditioner
    * operator.
    */
   void initializeUnspecified(
-    const Teuchos::RCP<const LinearOpBase<Scalar> >    &unspecifiedPrecOp
+    const Teuchos::RCP<const LinearOpBase<Scalar> > &unspecifiedPrecOp
     );
 
   /** \brief Uninitialize.
@@ -200,9 +200,9 @@ public:
   
 private:
   
-  Teuchos::ConstNonconstObjectContainer<LinearOpBase<Scalar> >  leftPrecOp_;
-  Teuchos::ConstNonconstObjectContainer<LinearOpBase<Scalar> >  rightPrecOp_;
-  Teuchos::ConstNonconstObjectContainer<LinearOpBase<Scalar> >  unspecifiedPrecOp_;
+  Teuchos::ConstNonconstObjectContainer<LinearOpBase<Scalar> > leftPrecOp_;
+  Teuchos::ConstNonconstObjectContainer<LinearOpBase<Scalar> > rightPrecOp_;
+  Teuchos::ConstNonconstObjectContainer<LinearOpBase<Scalar> > unspecifiedPrecOp_;
   
 };
 
@@ -217,7 +217,7 @@ private:
 template <class Scalar>
 Teuchos::RCP<const DefaultPreconditioner<Scalar> >
 unspecifiedPrec(
-  const Teuchos::RCP<const LinearOpBase<Scalar> >    &unspecifiedPrecOp
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &unspecifiedPrecOp
   )
 {
   return Teuchos::rcp(new DefaultPreconditioner<Scalar>(unspecifiedPrecOp));
@@ -231,7 +231,7 @@ unspecifiedPrec(
 template <class Scalar>
 Teuchos::RCP<const DefaultPreconditioner<Scalar> >
 leftPrec(
-  const Teuchos::RCP<const LinearOpBase<Scalar> >    &leftPrecOp
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &leftPrecOp
   )
 {
   return Teuchos::rcp(new DefaultPreconditioner<Scalar>(leftPrecOp,Teuchos::null));
@@ -245,7 +245,7 @@ leftPrec(
 template <class Scalar>
 Teuchos::RCP<const DefaultPreconditioner<Scalar> >
 rightPrec(
-  const Teuchos::RCP<const LinearOpBase<Scalar> >    &rightPrecOp
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &rightPrecOp
   )
 {
   return Teuchos::rcp(new DefaultPreconditioner<Scalar>(Teuchos::null,rightPrecOp));
@@ -259,8 +259,8 @@ rightPrec(
 template <class Scalar>
 Teuchos::RCP<const DefaultPreconditioner<Scalar> >
 splitPrec(
-  const Teuchos::RCP<const LinearOpBase<Scalar> >     &leftPrecOp
-  ,const Teuchos::RCP<const LinearOpBase<Scalar> >    &rightPrecOp
+  const Teuchos::RCP<const LinearOpBase<Scalar> > &leftPrecOp
+  ,const Teuchos::RCP<const LinearOpBase<Scalar> > &rightPrecOp
   )
 {
   return Teuchos::rcp(new DefaultPreconditioner<Scalar>(leftPrecOp,rightPrecOp));

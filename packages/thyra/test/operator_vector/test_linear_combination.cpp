@@ -51,6 +51,7 @@ bool runTests(int n, Teuchos::RCP<Teuchos::FancyOStream>& out)
 {
   typedef typename Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType Mag;
+  typedef Thyra::Ordinal Ordinal;
 
   Mag epsErr = n * 1.0e2 * ST::prec();
   Mag epsWarn = 1.0e2 * epsErr;
@@ -59,11 +60,11 @@ bool runTests(int n, Teuchos::RCP<Teuchos::FancyOStream>& out)
   
   *out << "======= Testing on a monolithic vector space ======" << std::endl;
   VectorSpace<Scalar> space(
-    Thyra::defaultSpmdVectorSpace<Scalar>(DefaultComm<Index>::getComm(),n,-1));
+    Thyra::defaultSpmdVectorSpace<Scalar>(DefaultComm<Ordinal>::getComm(),n,-1));
   
   TestSpecifier<Scalar> spec(true, epsErr, epsWarn);
   
-  LinearCombinationTester<Scalar> tester(DefaultComm<Index>::getComm(),
+  LinearCombinationTester<Scalar> tester(DefaultComm<Ordinal>::getComm(),
                                          space, out, spec); 
   
   return tester.runAllTests();

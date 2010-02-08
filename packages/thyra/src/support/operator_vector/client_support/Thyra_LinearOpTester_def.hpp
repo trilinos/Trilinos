@@ -36,6 +36,7 @@
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "Thyra_UniversalMultiVectorRandomizer.hpp"
+#include "Teuchos_TestingHelpers.hpp"
 
 
 namespace Thyra {
@@ -101,12 +102,12 @@ public:
           
           if(dump_all) oss << endl << "v3 = 0.5*op*v1 ...\n" ;
           RCP<MultiVectorBase<Scalar> > v3 = createMembers(domain,num_rhs);
-          apply( op, NONCONJ_ELE, *v1, &*v3, half );
+          apply( op, NOTRANS, *v1, v3.ptr(), half );
           if(dump_all) oss << endl << "v3 =\n" << describe(*v3,verbLevel);
           
           if(dump_all) oss << endl << "v4 = 0.5*op*v2 ...\n" ;
           RCP<MultiVectorBase<Scalar> > v4 = createMembers(domain,num_rhs);
-          apply( op, NONCONJ_ELE, *v2, &*v4, half );
+          apply( op, NOTRANS, *v2, v4.ptr(), half );
           if(dump_all) oss << endl << "v4 =\n" << describe(*v4,verbLevel);
 
           std::vector<Scalar> prod1(num_rhs), prod2(num_rhs);
@@ -298,10 +299,7 @@ bool LinearOpTester<Scalar>::check(
     ossStore.copyfmt(*out);
     bool these_results = true;
 
-    *oss << endl << "op.applySupports(NONCONJ_ELE) == true ? ";
-    result = op.applySupports(NONCONJ_ELE);
-    if(!result) these_results = false;
-    *oss << passfail(result) << endl;
+    TEUCHOS_TEST_EQUALITY_CONST( op.opSupported(NOTRANS), true, *oss, these_results );
 
     if(result) {
     
@@ -339,16 +337,16 @@ bool LinearOpTester<Scalar>::check(
         
         *oss << endl << "v4 = 0.5*op*v3 ...\n" ;
         RCP<MultiVectorBase<Scalar> > v4 = createMembers(range,loc_num_rhs);
-        apply( op, NONCONJ_ELE, *v3, &*v4, r_half );
+        apply( op, NOTRANS, *v3, v4.ptr(), r_half );
         if(dump_all()) *oss << endl << "v4 =\n" << describe(*v4,verbLevel);
         
         *oss << endl << "v5 = op*v1 ...\n" ;
         RCP<MultiVectorBase<Scalar> > v5 = createMembers(range,loc_num_rhs);
-        apply( op, NONCONJ_ELE, *v1, &*v5 );
+        apply( op, NOTRANS, *v1, v5.ptr() );
         if(dump_all()) *oss << endl << "v5 =\n" << describe(*v5,verbLevel);
         
         *oss << endl << "v5 = 0.5*op*v2 + 0.5*v5 ...\n" ;
-        apply( op, NONCONJ_ELE, *v2, &*v5, r_half, r_half );
+        apply( op, NOTRANS, *v2, v5.ptr(), r_half, r_half );
         if(dump_all()) *oss << endl << "v5 =\n" << describe(*v5,verbLevel);
 
         std::vector<Scalar> sum_v4(loc_num_rhs), sum_v5(loc_num_rhs);
@@ -388,10 +386,7 @@ bool LinearOpTester<Scalar>::check(
     ossStore.copyfmt(*out);
     bool these_results = true;
 
-    *oss << endl << "op.applyTransposeSupports(CONJ_ELE) == true ? ";
-    result = op.applyTransposeSupports(CONJ_ELE);
-    if(!result) these_results = false;
-    *oss << passfail(result) << endl;
+    TEUCHOS_TEST_EQUALITY_CONST( op.opSupported(CONJTRANS), true, *oss, these_results );
 
     if(result) {
     
@@ -429,16 +424,16 @@ bool LinearOpTester<Scalar>::check(
         
         *oss << endl << "v4 = 0.5*op'*v3 ...\n" ;
         RCP<MultiVectorBase<Scalar> > v4 = createMembers(domain,loc_num_rhs);
-        applyTranspose( op, CONJ_ELE, *v3, &*v4, d_half );
+        apply( op, CONJTRANS, *v3, v4.ptr(), d_half );
         if(dump_all()) *oss << endl << "v4 =\n" << describe(*v4,verbLevel);
         
         *oss << endl << "v5 = op'*v1 ...\n" ;
         RCP<MultiVectorBase<Scalar> > v5 = createMembers(domain,loc_num_rhs);
-        applyTranspose( op, CONJ_ELE, *v1, &*v5 );
+        apply( op, CONJTRANS, *v1, v5.ptr() );
         if(dump_all()) *oss << endl << "v5 =\n" << describe(*v5,verbLevel);
         
         *oss << endl << "v5 = 0.5*op'*v2 + 0.5*v5 ...\n" ;
-        applyTranspose( op, CONJ_ELE, *v2, &*v5, d_half, d_half );
+        apply( op, CONJTRANS, *v2, v5.ptr(), d_half, d_half );
         if(dump_all()) *oss << endl << "v5 =\n" << describe(*v5,verbLevel);
         
 
@@ -478,11 +473,8 @@ bool LinearOpTester<Scalar>::check(
     const RCP<FancyOStream> oss = Teuchos::fancyOStream(rcpFromRef(ossStore));
     ossStore.copyfmt(*out);
     bool these_results = true;
-    
-    *oss << endl << "op.applyTransposeSupports(CONJ_ELE) == true ? ";
-    result = op.applyTransposeSupports(CONJ_ELE);
-    if(!result) these_results = false;
-    *oss << passfail(result) << endl;
+
+    TEUCHOS_TEST_EQUALITY_CONST( op.opSupported(CONJTRANS), true, *oss, these_results );
 
     if(result) {
     
@@ -513,12 +505,12 @@ bool LinearOpTester<Scalar>::check(
       
         *oss << endl << "v3 = 0.5*op*v1 ...\n" ;
         RCP<MultiVectorBase<Scalar> > v3 = createMembers(range,loc_num_rhs);
-        apply( op, NONCONJ_ELE, *v1, &*v3, r_half );
+        apply( op, NOTRANS, *v1, v3.ptr(), r_half );
         if(dump_all()) *oss << endl << "v3 =\n" << describe(*v3,verbLevel);
       
         *oss << endl << "v4 = 0.5*op'*v2 ...\n" ;
         RCP<MultiVectorBase<Scalar> > v4 = createMembers(domain,loc_num_rhs);
-        applyTranspose( op, CONJ_ELE, *v2, &*v4, d_half );
+        apply( op, CONJTRANS, *v2, v4.ptr(), d_half );
         if(dump_all()) *oss << endl << "v4 =\n" << describe(*v4,verbLevel);
 
         std::vector<Scalar> prod_v4_v1(loc_num_rhs);
@@ -698,12 +690,12 @@ bool LinearOpTester<Scalar>::compare(
       
       if(dump_all()) *oss << endl << "v2 = 0.5*op1*v1 ...\n" ;
       RCP<MultiVectorBase<Scalar> > v2 = createMembers(range,loc_num_rhs);
-      apply( op1, NONCONJ_ELE, *v1, &*v2, r_half );
+      apply( op1, NOTRANS, *v1, v2.ptr(), r_half );
       if(dump_all()) *oss << endl << "v2 =\n" << *v2;
       
       if(dump_all()) *oss << endl << "v3 = 0.5*op2*v1 ...\n" ;
       RCP<MultiVectorBase<Scalar> > v3 = createMembers(range,loc_num_rhs);
-      apply( op2, NONCONJ_ELE, *v1, &*v3, r_half );
+      apply( op2, NOTRANS, *v1, v3.ptr(), r_half );
       if(dump_all()) *oss << endl << "v3 =\n" << *v3;
       
       std::vector<Scalar> sum_v2(loc_num_rhs), sum_v3(loc_num_rhs);

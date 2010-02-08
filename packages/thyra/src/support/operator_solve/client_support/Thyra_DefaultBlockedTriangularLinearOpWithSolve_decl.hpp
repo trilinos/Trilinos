@@ -32,7 +32,6 @@
 
 #include "Thyra_PhysicallyBlockedLinearOpWithSolveBase.hpp"
 #include "Thyra_PhysicallyBlockedLinearOpBase.hpp"
-#include "Thyra_SingleScalarLinearOpWithSolveBase.hpp"
 #include "Thyra_ProductVectorSpaceBase.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 #include "Teuchos_Array.hpp"
@@ -43,7 +42,7 @@ namespace Thyra {
 
 /** \brief Concrete composite <tt>LinearOpWithSolveBase</tt> subclass that
  * creates single upper or lower block triangular LOWSB object out of a set of
- * LOWSB objects along the diagonal with LOB object on the off diagonal..
+ * LOWSB objects along the diagonal with LOB objects off diagonal.
  *
  * This subclass implements a strictly block upper or lower triangular LOWSB
  * object.  With LOWSB objects on the diagonal, the block system can be solved
@@ -98,8 +97,7 @@ namespace Thyra {
  */
 template<class Scalar>
 class DefaultBlockedTriangularLinearOpWithSolve
-  : virtual public PhysicallyBlockedLinearOpWithSolveBase<Scalar>, // Public interface
-    virtual protected SingleScalarLinearOpWithSolveBase<Scalar> // Implementation detail
+  : virtual public PhysicallyBlockedLinearOpWithSolveBase<Scalar>
 {
 public:
 
@@ -152,7 +150,7 @@ public:
     );
   /** \brief . */
   void beginBlockFill(
-    const RCP<const ProductVectorSpaceBase<Scalar> >  &productRange,
+    const RCP<const ProductVectorSpaceBase<Scalar> > &productRange,
     const RCP<const ProductVectorSpaceBase<Scalar> > &productDomain
     );
   /** \brief . */
@@ -214,9 +212,9 @@ public:
   //@{
 
   /** \brief . */
-  RCP< const VectorSpaceBase<Scalar> > range() const;
+  RCP<const VectorSpaceBase<Scalar> > range() const;
   /** \brief . */
-  RCP< const VectorSpaceBase<Scalar> > domain() const;
+  RCP<const VectorSpaceBase<Scalar> > domain() const;
   /** \brief . */
   RCP<const LinearOpBase<Scalar> > clone() const;
 
@@ -225,15 +223,16 @@ public:
   /** @name Overridden from Teuchos::Describable */
   //@{
                                                 
-  /** \brief Prints just the name <tt>DefaultBlockedTriangularLinearOpWithSolve</tt> along with
-   * the overall dimensions and the number of constituent operators.
+  /** \brief Prints just the name
+   * <tt>DefaultBlockedTriangularLinearOpWithSolve</tt> along with the overall
+   * dimensions and the number of constituent operators.
    */
   std::string description() const;
 
   /** \brief Prints the details about the constituent linear operators.
    *
-   * This function outputs different levels of detail based on the value passed in
-   * for <tt>verbLevel</tt>:
+   * This function outputs different levels of detail based on the value
+   * passed in for <tt>verbLevel</tt>:
    *
    * ToDo: Finish documentation!
    */
@@ -245,44 +244,35 @@ public:
   //@}
 
 protected:
-
-  /** @name Overridden from SingleScalarLinearOpWithSolveBase */
-  //@{
-
-  /** \brief . */
-  bool solveSupportsTrans(EOpTransp M_trans) const;
-  /** \brief . */
-  bool solveSupportsSolveMeasureType(
-    EOpTransp M_trans, const SolveMeasureType& solveMeasureType ) const;
-  /** \brief . */
-  void solve(
-    const EOpTransp M_trans,
-    const MultiVectorBase<Scalar> &B,
-    MultiVectorBase<Scalar> *X,
-    const int numBlocks,
-    const BlockSolveCriteria<Scalar> blockSolveCriteria[],
-    SolveStatus<Scalar> blockSolveStatus[]
-    ) const;
   
+  /** @name Overridden from LinearOpBase */
+  //@{
+  /** \brief . */
+  bool opSupportedImpl(EOpTransp M_trans) const;
+  /** \brief . */
+ void applyImpl(
+   const EOpTransp M_trans,
+   const MultiVectorBase<Scalar> &X,
+   const Ptr<MultiVectorBase<Scalar> > &Y,
+   const Scalar alpha,
+   const Scalar beta
+   ) const;
   //@}
 
-  /** @name Overridden from SingleScalarLinearOpBase */
+  /** @name Overridden from LinearOpWithSolveBase */
   //@{
-
-  /** \brief Returns <tt>true</tt> only if all constituent operators support
-   * <tt>M_trans</tt>.
-   */
-  bool opSupported(EOpTransp M_trans) const;
-
   /** \brief . */
-  void apply(
-    const EOpTransp M_trans,
-    const MultiVectorBase<Scalar> &X,
-    MultiVectorBase<Scalar> *Y,
-    const Scalar alpha,
-    const Scalar beta
+  bool solveSupportsImpl(EOpTransp M_trans) const;
+  /** \brief . */
+  bool solveSupportsSolveMeasureTypeImpl(
+    EOpTransp M_trans, const SolveMeasureType& solveMeasureType) const;
+  /** \brief . */
+  SolveStatus<Scalar> solveImpl(
+    const EOpTransp transp,
+    const MultiVectorBase<Scalar> &B,
+    const Ptr<MultiVectorBase<Scalar> > &X,
+    const Ptr<const SolveCriteria<Scalar> > solveCriteria
     ) const;
-  
   //@}
 
 private:
@@ -324,8 +314,10 @@ private:
   void assertAndSetBlockStructure(const PhysicallyBlockedLinearOpBase<Scalar>& blocks);
   
   // Not defined and not to be called
+
   DefaultBlockedTriangularLinearOpWithSolve(
-    const DefaultBlockedTriangularLinearOpWithSolve& );
+    const DefaultBlockedTriangularLinearOpWithSolve&);
+
   DefaultBlockedTriangularLinearOpWithSolve&
   operator=(const DefaultBlockedTriangularLinearOpWithSolve&);
   

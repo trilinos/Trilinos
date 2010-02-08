@@ -85,6 +85,22 @@ createMembers(
   );
 
 
+/** \brief Create a set of vector members (a <tt>MultiVectorBase</tt>) from the vector space.
+ *
+ * Calls <tt>VectorSpaceBase::createMembers()</tt> on <tt>vs</tt> but the
+ * returned <tt>MultiVectorBase</tt> object can live past <tt>vs</tt>.
+ *
+ * \relates VectorSpaceBase
+ */
+template<class Scalar>
+RCP< MultiVectorBase<Scalar> >
+createMembers(
+  const RCP<const VectorSpaceBase<Scalar> > &vs,
+  const RCP<const VectorSpaceBase<Scalar> > &domain,
+  const std::string &label=""
+  );
+
+
 /** \brief Calls <tt>createMembers(Teuchos::rcp(&vs,false),numMembers)</tt>.
  *
  * \relates VectorSpaceBase
@@ -278,7 +294,7 @@ public:
    * If the underlying object is not initialized, then <tt>dim()==0</tt>
    * will be true and none of the other methods should be called.
    */
-  virtual Index dim() const = 0;
+  virtual Ordinal dim() const = 0;
 
   /** \brief Compare the compatibility of two vector spaces.
    *

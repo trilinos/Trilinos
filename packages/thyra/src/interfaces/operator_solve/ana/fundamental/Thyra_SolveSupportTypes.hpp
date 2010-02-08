@@ -33,12 +33,15 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_FancyOStream.hpp"
 
+
 namespace Thyra {
+
 
 /** \defgroup Equation_solve_foundation_code_grp  Equation solve foundational code
  *
  * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
  */
+
 
 /** \brief Type of solve measure norm.
  *
@@ -53,6 +56,7 @@ enum ESolveMeasureNormType {
   ,SOLVE_MEASURE_NORM_INIT_RESIDUAL   ///< Norm of the initial residual vector given a non-zero guess (i.e. <tt>||A*xo-b||</tt>)
   ,SOLVE_MEASURE_NORM_RHS             ///< Norm of the Right-hand side (i.e. <tt>||b||</tt>)
 };
+
 
 /** \brief . */
 inline
@@ -74,6 +78,7 @@ const std::string toString(const ESolveMeasureNormType solveMeasureNormType)
   }
   return NULL; // Never be called!
 }
+
 
 /** \brief Solve tolerance type.
  *
@@ -112,6 +117,7 @@ struct SolveMeasureType {
     { return ( numerator==_numerator && denominator==_denominator ); }
 };
 
+
 /** \brief . */
 inline
 std::string toString(const SolveMeasureType& solveMeasureType)
@@ -120,6 +126,7 @@ std::string toString(const SolveMeasureType& solveMeasureType)
   oss << "("<<toString(solveMeasureType.numerator)<<")/("<<solveMeasureType.denominator<<")";
   return oss.str();
 }
+
 
 /** \brief Simple struct that defines the requested solution criteria for a solve.
  *
@@ -155,12 +162,13 @@ struct SolveCriteria {
     {}
 };
 
-/** \brief Simple struct that defines the requested solution criteria for a block solve.
+
+/** \brief Deprecated..
  *
  * \ingroup Equation_solve_foundation_code_grp
  */
 template <class Scalar>
-struct BlockSolveCriteria {
+THYRA_DEPRECATED struct BlockSolveCriteria {
   /** \brief Solve tolerance struct */
   SolveCriteria<Scalar> solveCriteria;
   /** \brief Number of RHS that solve tolerance applies to. */
@@ -175,12 +183,14 @@ struct BlockSolveCriteria {
     {}
 };
 
+
 /** \brief Exception type thrown on an catastrophic solve failure.
  *
  * \ingroup Equation_solve_foundation_code_grp
  */
 class CatastrophicSolveFailure : public std::runtime_error
 {public: CatastrophicSolveFailure(const std::string& what_arg) : std::runtime_error(what_arg) {}};
+
 
 /** \brief Solution status
  *
@@ -191,6 +201,7 @@ enum ESolveStatus {
   ,SOLVE_STATUS_UNCONVERGED     ///< The requested solution criteria has likely not been achieved
   ,SOLVE_STATUS_UNKNOWN         ///< The final solution status is unknown but he solve did not totally fail
 };
+
 
 /** \brief . */
 inline
@@ -204,6 +215,7 @@ const std::string toString(const ESolveStatus solveStatus)
   }
   return ""; // Never be called!
 }
+
 
 /** \brief Simple struct for the return status from a solve.
  *
@@ -241,6 +253,7 @@ struct SolveStatus {
     }
 };
 
+
 /** \brief Print the solve status to a stream */
 template <class Scalar>
 std::ostream& operator<<( std::ostream& out_arg, const SolveStatus<Scalar> &solveStatus )
@@ -268,6 +281,7 @@ std::ostream& operator<<( std::ostream& out_arg, const SolveStatus<Scalar> &solv
   return out_arg;
 }
 
+
 /** \brief Enum that specifies how a <tt>LinearOpWithSolveBase</tt> object
  * will be used for solves after it is constructed.
  *
@@ -280,6 +294,7 @@ enum ESupportSolveUse {
   ,SUPPORT_SOLVE_FORWARD_AND_TRANSPOSE  ///< The output LOWSB object will used for forward and transpose solves
 };
 
+
 /** \brief Enum defining the status of a preconditioner object.
  *
  * \ingroup Equation_solve_foundation_code_grp
@@ -289,30 +304,41 @@ enum EPreconditionerInputType {
   ,PRECONDITIONER_INPUT_TYPE_AS_MATRIX   ///< The input preconditioner should viewed as a matrix to be factored then backsolved as a preconditioner
 };
 
+
+/** \brief Initial overallSolveStatus before calling accumulateSolveStatus().
+ */
+template <class Scalar>
+void accumulateSolveStatusInit(
+  const Ptr<SolveStatus<Scalar> > &overallSolveStatus
+  )
+{
+  overallSolveStatus->solveStatus = SOLVE_STATUS_CONVERGED;
+}
+
+
 /** \brief Accumulate solve status objects for solving a block of RHSs is
  * smaller sub-blocks.
  *
- * \param  overallSolveCriteria  [in] The overall solve criteria for the overall blocks.
- * \param  solveStatus           [in] The solve status for a sub-block (or a single RHS) 
- * \param  overallSolveStatus    [in/out] The accumulated solve status for all the
- *                               sub-blocks of RHS.
+ * \param overallSolveCriteria [in] The overall solve criteria for the overall
+ * blocks.
  *
- * On the first call, set <tt>overallSolveStatus->solveStatus =
- * SOLVE_STATUS_CONVERGED</tt> and <tt>overallSolveStatus->iterations =
- * 0</tt>!
+ * \param solveStatus [in] The solve status for a sub-block (or a single RHS)
+ *
+ * \param overallSolveStatus [in/out] The accumulated solve status for all the
+ * sub-blocks of RHS.
+ *
+ * Before the first initialize with
+ * <tt>accumulateSolveStatusInit(overallSolveStatus)</tt>.
  *
  * \ingroup Equation_solve_foundation_code_grp
  */
 template <class Scalar>
 void accumulateSolveStatus(
-  const SolveCriteria<Scalar>    &overallSolveCriteria
-  ,const SolveStatus<Scalar>     &solveStatus
-  ,SolveStatus<Scalar>           *overallSolveStatus
+  const SolveCriteria<Scalar>, // ToDo: Never used, need to take this out!
+  const SolveStatus<Scalar> &solveStatus,
+  const Ptr<SolveStatus<Scalar> > &overallSolveStatus
   )
 {
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(overallSolveStatus==NULL);
-#endif
   switch(solveStatus.solveStatus) {
     case SOLVE_STATUS_UNCONVERGED:
     {
@@ -367,6 +393,24 @@ void accumulateSolveStatus(
     overallSolveStatus->extraParameters = solveStatus.extraParameters;
 }
 
+
+/** \brief Deprecated. */
+template <class Scalar>
+THYRA_DEPRECATED
+void accumulateSolveStatus(
+  const SolveCriteria<Scalar>, // ToDo: Never used, need to take this out!
+  const SolveStatus<Scalar> &solveStatus,
+  SolveStatus<Scalar> *overallSolveStatus
+  )
+{
+  accumulateSolveStatus(
+    SolveCriteria<Scalar>(),
+    solveStatus, Teuchos::ptr(overallSolveStatus)
+    );
+}
+
+
 } // namespace Thyra
+
 
 #endif // THYRA_SOLVE_SUPPORT_TYPES_HPP

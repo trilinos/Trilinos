@@ -34,6 +34,7 @@
 
 namespace Thyra {
 
+
 /** \brief Testing class for <tt>VectorSpace</tt> and the <tt>VectorBase</tt>
  * and <tt>MultiVectorBase</tt> objects that it creates.
  *
@@ -155,39 +156,51 @@ public:
   /** \brief Check a vector space and the objects it creates through a set of
    * comprehensive tests.
    *
-   * @param  vs     [in] The vector space object to test.
-   * @param  out    [in/out] If <tt>out != NULL</tt> then output will be sent to <tt>*out</tt>.
+   * \param vs [in] The vector space object to test.
+   *
+   * \param out [in/out] If <tt>out != NULL</tt> then output will be sent to
+   * <tt>*out</tt>.
    *
    * The behavior of this function greatly depends on a number of options (see
    * <tt>VectorSpaceTester()</tt> for the default values for these options):
    *
    * <ul>
-   * <li> <b><tt>print_all_tests(bool)</tt></b>:  If <tt>print_all_tests() == true</tt>, then some output will be sent to
-   *      <tt>*out</tt> for every test performed.  This is useful to see all of tests that are performed and
-   *      in debugging.
-   * <li> <b><tt>dump_all(bool)</tt></b>:  If <tt>dump_all() == true</tt>, then all of the vectors will be printed
-   *      that are created during the tests.  This option is really only needed during initial debugging
-   *      and should only be used with small vector spaces since it will produce a lot of <tt>O(space.dim())</tt>
-   *      output.
-   * <li> <b><tt>num_random_tests(int)</tt></b>:  This is the number of random tests to perform per category of test.
-   *      A higher number will result is better validation but will consume more CPU time.
-   * <li> <b><tt>warning_tol(ScalarMag)</tt></b>:  Any test with a relative error greater than <tt>warning_tol()</tt> will
-   *      result in a warning message printed to <tt>*out</tt> but will not result in a filed test.
-   * <li> <b><tt>error_tol(Scalar)</tt></b>:  Any test with a relative error greater than <tt>error_tol()</tt> will
-   *      result in an error message printed to <tt>*out</tt> and will result in a failed test.
+   *
+   * <li> <b><tt>print_all_tests(bool)</tt></b>: If <tt>print_all_tests() ==
+   * true</tt>, then some output will be sent to <tt>*out</tt> for every test
+   * performed.  This is useful to see all of tests that are performed and in
+   * debugging.
+   *
+   * <li> <b><tt>dump_all(bool)</tt></b>: If <tt>dump_all() == true</tt>, then
+   * all of the vectors will be printed that are created during the tests.
+   * This option is really only needed during initial debugging and should
+   * only be used with small vector spaces since it will produce a lot of
+   * <tt>O(space.dim())</tt> output.
+   *
+   * <li> <b><tt>num_random_tests(int)</tt></b>: This is the number of random
+   * tests to perform per category of test.  A higher number will result is
+   * better validation but will consume more CPU time.
+   *
+   * <li> <b><tt>warning_tol(ScalarMag)</tt></b>: Any test with a relative
+   * error greater than <tt>warning_tol()</tt> will result in a warning
+   * message printed to <tt>*out</tt> but will not result in a filed test.
+   *
+   * <li> <b><tt>error_tol(Scalar)</tt></b>: Any test with a relative error
+   * greater than <tt>error_tol()</tt> will result in an error message printed
+   * to <tt>*out</tt> and will result in a failed test.
+   *
    * </ul>
    *
-   * @return The function returns <tt>true</tt> if all of the tests
-   * where within the <tt>error_tol()</tt> and returns <tt>false</tt>
-   * if not.
+   * \return The function returns <tt>true</tt> if all of the tests where
+   * within the <tt>error_tol()</tt> and returns <tt>false</tt> if not.
    *
    * The best way to see what this testing function is doing is to run the
    * test with <tt>out!=NULL</tt> and to look at the implementation by
    * clicking on the following link to the source code:
    */
   bool check(
-    const VectorSpaceBase<Scalar>  &vs
-    ,Teuchos::FancyOStream         *out
+    const VectorSpaceBase<Scalar> &vs,
+    Teuchos::FancyOStream *out
     ) const;
 
 private:
@@ -202,8 +215,10 @@ private:
 
 }; // class VectorSpaceTester
 
+
 // ///////////////////////////
 // Inline members
+
 
 template<class Scalar>
 inline
@@ -212,12 +227,14 @@ VectorTester<Scalar>& VectorSpaceTester<Scalar>::vectorTester()
   return vectorTester_;
 }
 
+
 template<class Scalar>
 inline
 const VectorTester<Scalar>& VectorSpaceTester<Scalar>::vectorTester() const
 {
   return vectorTester_;
 }
+
 
 template<class Scalar>
 inline
@@ -227,6 +244,7 @@ void VectorSpaceTester<Scalar>::warning_tol( const ScalarMag &warning_tol )
   vectorTester_.warning_tol(warning_tol);
 }
 
+
 template<class Scalar>
 inline
 typename VectorSpaceTester<Scalar>::ScalarMag
@@ -234,6 +252,7 @@ VectorSpaceTester<Scalar>::warning_tol() const
 {
   return warning_tol_;
 }
+
 
 template<class Scalar>
 inline
@@ -243,6 +262,7 @@ void VectorSpaceTester<Scalar>::error_tol( const ScalarMag &error_tol )
   vectorTester_.error_tol(error_tol);
 }
 
+
 template<class Scalar>
 inline
 typename VectorSpaceTester<Scalar>::ScalarMag
@@ -250,6 +270,7 @@ VectorSpaceTester<Scalar>::error_tol() const
 {
   return error_tol_;
 }
+
 
 template<class Scalar>
 inline
@@ -259,12 +280,14 @@ void VectorSpaceTester<Scalar>::num_random_vectors( const int num_random_vectors
   vectorTester_.num_random_vectors(num_random_vectors);
 }
 
+
 template<class Scalar>
 inline
 int VectorSpaceTester<Scalar>::num_random_vectors() const
 {
   return num_random_vectors_;
 }
+
 
 template<class Scalar>
 inline
@@ -274,12 +297,14 @@ void VectorSpaceTester<Scalar>::show_all_tests( const bool show_all_tests )
   vectorTester_.show_all_tests(show_all_tests);
 }
 
+
 template<class Scalar>
 inline
 bool VectorSpaceTester<Scalar>::show_all_tests() const
 {
   return show_all_tests_;
 }
+
 
 template<class Scalar>
 inline
@@ -289,6 +314,7 @@ void VectorSpaceTester<Scalar>::dump_all( const bool dump_all )
   vectorTester_.dump_all(dump_all);
 }
 
+
 template<class Scalar>
 inline
 bool VectorSpaceTester<Scalar>::dump_all() const
@@ -296,6 +322,8 @@ bool VectorSpaceTester<Scalar>::dump_all() const
   return dump_all_;
 }
 
+
 } // namespace Thyra
+
 
 #endif // THYRA_VECTOR_SPACE_TESTER_DECL_HPP

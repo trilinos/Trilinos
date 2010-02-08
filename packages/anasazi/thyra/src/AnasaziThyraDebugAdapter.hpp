@@ -40,7 +40,7 @@
 
 #include "AnasaziThyraAdapter.hpp"
 #include <Thyra_DetachedMultiVectorView.hpp>
-#include <Thyra_MultiVectorBaseDecl.hpp>
+#include <Thyra_MultiVectorBase.hpp>
 #include <Thyra_MultiVectorStdOps.hpp>
 
 #include "Teuchos_TestForException.hpp"

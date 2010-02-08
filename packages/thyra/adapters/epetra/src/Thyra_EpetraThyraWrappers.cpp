@@ -85,7 +85,7 @@ unwrapSingleProductVectorSpace(
 //
 
 
-Teuchos::RCP<const Teuchos::Comm<Thyra::Index> >
+Teuchos::RCP<const Teuchos::Comm<Thyra::Ordinal> >
 Thyra::create_Comm( const RCP<const Epetra_Comm> &epetraComm )
 {
   using Teuchos::rcp;
@@ -95,8 +95,8 @@ Thyra::create_Comm( const RCP<const Epetra_Comm> &epetraComm )
   RCP<const Epetra_SerialComm>
     serialEpetraComm = rcp_dynamic_cast<const Epetra_SerialComm>(epetraComm);
   if( serialEpetraComm.get() ) {
-    RCP<const Teuchos::SerialComm<Index> >
-      serialComm = rcp(new Teuchos::SerialComm<Index>());
+    RCP<const Teuchos::SerialComm<Ordinal> >
+      serialComm = rcp(new Teuchos::SerialComm<Ordinal>());
     set_extra_data( serialEpetraComm, "serialEpetraComm", Teuchos::inOutArg(serialComm) );
     return serialComm;
   }
@@ -109,8 +109,8 @@ Thyra::create_Comm( const RCP<const Epetra_Comm> &epetraComm )
     RCP<const Teuchos::OpaqueWrapper<MPI_Comm> >
       rawMpiComm = Teuchos::opaqueWrapper(mpiEpetraComm->Comm());
     set_extra_data( mpiEpetraComm, "mpiEpetraComm", Teuchos::inOutArg(rawMpiComm) );
-    RCP<const Teuchos::MpiComm<Index> >
-      mpiComm = rcp(new Teuchos::MpiComm<Index>(rawMpiComm));
+    RCP<const Teuchos::MpiComm<Ordinal> >
+      mpiComm = rcp(new Teuchos::MpiComm<Ordinal>(rawMpiComm));
     return mpiComm;
   }
 
@@ -132,10 +132,10 @@ Thyra::create_VectorSpace(
     !epetra_map.get(), std::invalid_argument,
     "create_VectorSpace::initialize(...): Error!" );
 #endif // TEUCHOS_DEBUG
-  RCP<const Teuchos::Comm<Index> >
+  RCP<const Teuchos::Comm<Ordinal> >
     comm = create_Comm(Teuchos::rcp(&epetra_map->Comm(),false)).assert_not_null();
   Teuchos::set_extra_data( epetra_map, "epetra_map", Teuchos::inOutArg(comm) );
-  const Index localSubDim = epetra_map->NumMyElements();
+  const Ordinal localSubDim = epetra_map->NumMyElements();
   RCP<DefaultSpmdVectorSpace<double> > vs =
     defaultSpmdVectorSpace<double>(
       comm, localSubDim, epetra_map->NumGlobalElements());
@@ -367,8 +367,8 @@ Thyra::get_Epetra_Vector(
   const VectorSpaceBase<double>  &vs = *v->range();
   const SpmdVectorSpaceBase<double> *mpi_vs
     = dynamic_cast<const SpmdVectorSpaceBase<double>*>(&vs);
-  const Index localOffset = ( mpi_vs ? mpi_vs->localOffset() : 0 );
-  const Index localSubDim = ( mpi_vs ? mpi_vs->localSubDim() : vs.dim() );
+  const Ordinal localOffset = ( mpi_vs ? mpi_vs->localOffset() : 0 );
+  const Ordinal localSubDim = ( mpi_vs ? mpi_vs->localSubDim() : vs.dim() );
   //
   // Here we will extract a view of the local elements in the underlying
   // VectorBase object.  In most cases, no data will be allocated or copied
@@ -445,8 +445,8 @@ Thyra::get_Epetra_Vector(
   const VectorSpaceBase<double> &vs = *v->range();
   const SpmdVectorSpaceBase<double> *mpi_vs
     = dynamic_cast<const SpmdVectorSpaceBase<double>*>(&vs);
-  const Index localOffset = ( mpi_vs ? mpi_vs->localOffset() : 0 );
-  const Index localSubDim = ( mpi_vs ? mpi_vs->localSubDim() : vs.dim() );
+  const Ordinal localOffset = ( mpi_vs ? mpi_vs->localOffset() : 0 );
+  const Ordinal localSubDim = ( mpi_vs ? mpi_vs->localSubDim() : vs.dim() );
   // Get an explicit *non-mutable* view of all of the elements in the multi
   // vector.  Note that 'v' will be remembered by this view!
   RCP<ConstDetachedVectorView<double> >
@@ -511,8 +511,8 @@ Thyra::get_Epetra_MultiVector(
   const VectorSpaceBase<double> &vs = *mv->range();
   const SpmdVectorSpaceBase<double> *mpi_vs
     = dynamic_cast<const SpmdVectorSpaceBase<double>*>(&vs);
-  const Index localOffset = ( mpi_vs ? mpi_vs->localOffset() : 0 );
-  const Index localSubDim = ( mpi_vs ? mpi_vs->localSubDim() : vs.dim() );
+  const Ordinal localOffset = ( mpi_vs ? mpi_vs->localOffset() : 0 );
+  const Ordinal localSubDim = ( mpi_vs ? mpi_vs->localSubDim() : vs.dim() );
   //
   // Here we will extract a view of the local elements in the underlying
   // MultiVectorBase object.  In most cases, no data will be allocated or
@@ -588,8 +588,8 @@ Thyra::get_Epetra_MultiVector(
   const VectorSpaceBase<double> &vs = *mv->range();
   const SpmdVectorSpaceBase<double> *mpi_vs
     = dynamic_cast<const SpmdVectorSpaceBase<double>*>(&vs);
-  const Index localOffset = ( mpi_vs ? mpi_vs->localOffset() : 0 );
-  const Index localSubDim = ( mpi_vs ? mpi_vs->localSubDim() : vs.dim() );
+  const Ordinal localOffset = ( mpi_vs ? mpi_vs->localOffset() : 0 );
+  const Ordinal localSubDim = ( mpi_vs ? mpi_vs->localSubDim() : vs.dim() );
   // Get an explicit *non-mutable* view of all of the elements in
   // the multi vector.
   RCP<ConstDetachedMultiVectorView<double> >
@@ -635,7 +635,7 @@ Thyra::get_Epetra_MultiVector(
   using Teuchos::rcpFromRef;
   using Teuchos::outArg;
   ArrayRCP<double> mvData;
-  Index mvLeadingDim = -1;
+  Ordinal mvLeadingDim = -1;
   SpmdMultiVectorBase<double> *mvSpmdMv = 0;
   SpmdVectorBase<double> *mvSpmdV = 0;
   if ((mvSpmdMv = dynamic_cast<SpmdMultiVectorBase<double>*>(&mv))) {
@@ -667,7 +667,7 @@ Thyra::get_Epetra_MultiVector(
   using Teuchos::rcpFromRef;
   using Teuchos::outArg;
   ArrayRCP<const double> mvData;
-  Index mvLeadingDim = -1;
+  Ordinal mvLeadingDim = -1;
   const SpmdMultiVectorBase<double> *mvSpmdMv = 0;
   const SpmdVectorBase<double> *mvSpmdV = 0;
   if ((mvSpmdMv = dynamic_cast<const SpmdMultiVectorBase<double>*>(&mv))) {

@@ -30,7 +30,7 @@
 #define THYRA_SCALAR_PROD_VECTOR_SPACE_BASE_DECL_HPP
 
 #include "Thyra_OperatorVectorAdapterSupportTypes.hpp"
-#include "Thyra_VectorSpaceDefaultBaseDecl.hpp"
+#include "Thyra_VectorSpaceDefaultBase.hpp"
 
 
 namespace Thyra {

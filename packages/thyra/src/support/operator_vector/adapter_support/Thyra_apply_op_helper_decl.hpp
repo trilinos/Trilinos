@@ -49,9 +49,9 @@ void apply_op_validate_input(
   const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
   const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
   const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-  const Index first_ele_offset,
-  const Index sub_dim,
-  const Index global_offset
+  const Ordinal first_ele_offset,
+  const Ordinal sub_dim,
+  const Ordinal global_offset
   );
 
 /** \brief Validate the inputs to <tt>MultiVectorBase::applyOp()</tt>.
@@ -70,11 +70,11 @@ void apply_op_validate_input(
   const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
   const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
   const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
-  const Index primary_first_ele_offset,
-  const Index primary_sub_dim,
-  const Index primary_global_offset,
-  const Index secondary_first_ele_offset,
-  const Index secondary_sub_dim
+  const Ordinal primary_first_ele_offset,
+  const Ordinal primary_sub_dim,
+  const Ordinal primary_global_offset,
+  const Ordinal secondary_first_ele_offset,
+  const Ordinal secondary_sub_dim
   );
 
 } // end namespace Thyra

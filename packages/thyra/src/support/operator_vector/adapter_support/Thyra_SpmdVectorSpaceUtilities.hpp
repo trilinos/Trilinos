@@ -37,13 +37,13 @@ namespace Thyra {
 namespace SpmdVectorSpaceUtilities {
 
 /** \brief . */
-Index computeMapCode( const Teuchos::Comm<Index> &comm, const Index localSubDim );
+Ordinal computeMapCode( const Teuchos::Comm<Ordinal> &comm, const Ordinal localSubDim );
 
 /** \brief . */
-Index computeLocalOffset( const Teuchos::Comm<Index> &comm, const Index localSubDim );
+Ordinal computeLocalOffset( const Teuchos::Comm<Ordinal> &comm, const Ordinal localSubDim );
 
 /** \brief . */
-Index computeGlobalDim( const Teuchos::Comm<Index> &comm, const Index localSubDim );
+Ordinal computeGlobalDim( const Teuchos::Comm<Ordinal> &comm, const Ordinal localSubDim );
 
 } // namespace SpmdVectorSpaceUtiltities
 

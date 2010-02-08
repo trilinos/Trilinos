@@ -67,7 +67,7 @@ public:
   DefaultSpmdVector(
     const RCP<const SpmdVectorSpaceBase<Scalar> > &spmdSpace
     ,const ArrayRCP<Scalar> &localValues
-    ,const Index stride
+    ,const Ordinal stride
     );
 
   /** \brief Initialize.
@@ -98,7 +98,7 @@ public:
   void initialize(
     const RCP<const SpmdVectorSpaceBase<Scalar> > &spmdSpace
     ,const ArrayRCP<Scalar> &localValues
-    ,const Index stride
+    ,const Ordinal stride
     );
 
   /** \brief Set to an uninitialized state.
@@ -109,7 +109,7 @@ public:
   void uninitialize(
     RCP<const SpmdVectorSpaceBase<Scalar> > *spmdSpace = NULL
     ,ArrayRCP<Scalar> *localValues = NULL
-    ,Index *stride = NULL
+    ,Ordinal *stride = NULL
     );
 
   //@}
@@ -126,7 +126,7 @@ public:
   /** \brief . */
   const Scalar* getPtr() const;
   /** \brief . */
-  Index getStride() const;
+  Ordinal getStride() const;
   
   //@}
 
@@ -149,12 +149,14 @@ private:
   
   RCP<const SpmdVectorSpaceBase<Scalar> > spmdSpace_;
   ArrayRCP<Scalar> localValues_;
-  Index stride_;
+  Ordinal stride_;
 
-}; // end class DefaultSpmdVector
+};
+
 
 // /////////////////////////////////////////////////////
 // Inline members
+
 
 template<class Scalar>
 inline
@@ -164,6 +166,7 @@ DefaultSpmdVector<Scalar>::getRCPtr()
   return localValues_;
 }
 
+
 template<class Scalar>
 inline
 ArrayRCP<const Scalar>
@@ -172,12 +175,14 @@ DefaultSpmdVector<Scalar>::getRCPtr() const
   return localValues_;
 }
 
+
 template<class Scalar>
 inline
 Scalar* DefaultSpmdVector<Scalar>::getPtr()
 {
   return localValues_.get();
 }
+
 
 template<class Scalar>
 inline
@@ -186,12 +191,14 @@ const Scalar* DefaultSpmdVector<Scalar>::getPtr() const
   return localValues_.get();
 }
 
+
 template<class Scalar>
 inline
-Index DefaultSpmdVector<Scalar>::getStride() const
+Ordinal DefaultSpmdVector<Scalar>::getStride() const
 {
   return stride_;
 }	
+
 
 } // end namespace Thyra
 

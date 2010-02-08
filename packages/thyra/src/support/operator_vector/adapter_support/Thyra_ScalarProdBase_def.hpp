@@ -30,8 +30,7 @@
 #define THYRA_SCALAR_PROD_BASE_DEF_HPP
 
 #include "Thyra_ScalarProdBase_decl.hpp"
-#include "Thyra_EuclideanLinearOpBase.hpp"
-#include "Thyra_AssertOp.hpp"
+#include "Thyra_VectorBase.hpp"
 
 
 namespace Thyra {

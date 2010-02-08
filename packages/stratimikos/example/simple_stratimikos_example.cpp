@@ -28,6 +28,8 @@
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
+#include "Thyra_LinearOpWithSolveHelpers.hpp"
+#include "Thyra_VectorBase.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "EpetraExt_readEpetraLinearSystem.h"
@@ -220,20 +222,20 @@ int main(int argc, char* argv[])
 
     // Create a linear solver factory given information read from the
     // parameter list.
-    RCP<Thyra::LinearOpWithSolveFactoryBase<double> >
-      lowsFactory = linearSolverBuilder.createLinearSolveStrategy("");
+    RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory =
+      linearSolverBuilder.createLinearSolveStrategy("");
 
     // Setup output stream and the verbosity level
     lowsFactory->setOStream(out);
     lowsFactory->setVerbLevel(Teuchos::VERB_LOW);
 
     // Create a linear solver based on the forward operator A
-    RCP<Thyra::LinearOpWithSolveBase<double> >
-      lows = Thyra::linearOpWithSolve(*lowsFactory, A);
+    RCP<Thyra::LinearOpWithSolveBase<double> > lows = 
+      Thyra::linearOpWithSolve(*lowsFactory, A);
 
     // Solve the linear system (note: the initial guess in 'x' is critical)
-    Thyra::SolveStatus<double>
-      status = Thyra::solve(*lows, Thyra::NOTRANS, *b, &*x);
+    Thyra::SolveStatus<double> status =
+      Thyra::solve<double>(*lows, Thyra::NOTRANS, *b, x.ptr());
     *out << "\nSolve status:\n" << status;
 
     // Write the linear solver parameters after they were read

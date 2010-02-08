@@ -157,7 +157,7 @@ Scalar Thyra::dot( const VectorBase<Scalar>& v_rhs1, const VectorBase<Scalar>& v
 
 
 template<class Scalar>
-Scalar Thyra::get_ele( const VectorBase<Scalar>& v, Index i )
+Scalar Thyra::get_ele( const VectorBase<Scalar>& v, Ordinal i )
 {
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::ROpSum<Scalar> sum_op;
@@ -173,7 +173,7 @@ Scalar Thyra::get_ele( const VectorBase<Scalar>& v, Index i )
 
 
 template<class Scalar>
-void Thyra::set_ele( Index i, Scalar alpha, const Ptr<VectorBase<Scalar> > &v )
+void Thyra::set_ele( Ordinal i, Scalar alpha, const Ptr<VectorBase<Scalar> > &v )
 {
   using Teuchos::tuple; using Teuchos::null;
   RTOpPack::TOpAssignScalar<Scalar> assign_scalar_op(alpha);
@@ -540,7 +540,7 @@ Scalar Thyra::min( const VectorBase<Scalar>& x ) {
 
 template<class Scalar>
 void Thyra::min( const VectorBase<Scalar>& x,
-  const Ptr<Scalar> &minEle, const Ptr<Index> &minIndex
+  const Ptr<Scalar> &minEle, const Ptr<Ordinal> &minIndex
   )
 {
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
@@ -555,7 +555,7 @@ void Thyra::min( const VectorBase<Scalar>& x,
 
 template<class Scalar>
 void Thyra::minGreaterThanBound( const VectorBase<Scalar>& x,
-  const Scalar &bound, const Ptr<Scalar> &minEle, const Ptr<Index> &minIndex
+  const Scalar &bound, const Ptr<Scalar> &minEle, const Ptr<Ordinal> &minIndex
   )
 {
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
@@ -581,7 +581,7 @@ Scalar Thyra::max( const VectorBase<Scalar>& x )
 
 template<class Scalar>
 void Thyra::max( const VectorBase<Scalar>& x,
-  const Ptr<Scalar> &maxEle, const Ptr<Index> &maxIndex
+  const Ptr<Scalar> &maxEle, const Ptr<Ordinal> &maxIndex
   )
 {
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
@@ -596,7 +596,7 @@ void Thyra::max( const VectorBase<Scalar>& x,
 
 template<class Scalar>
 void Thyra::maxLessThanBound( const VectorBase<Scalar>& x,
-  const Scalar &bound, const Ptr<Scalar> &maxEle, const Ptr<Index> &maxIndex
+  const Scalar &bound, const Ptr<Scalar> &maxEle, const Ptr<Ordinal> &maxIndex
   )
 {
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;

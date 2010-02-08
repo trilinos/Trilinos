@@ -30,9 +30,7 @@
 #define THYRA_DEFAULT_MULTIPLIED_LINEAR_OP_DECL_HPP
 
 #include "Thyra_MultipliedLinearOpBase.hpp"
-#include "Thyra_SingleScalarLinearOpBase.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
-#include "Teuchos_Handleable.hpp"
 
 
 namespace Thyra {
@@ -84,16 +82,16 @@ namespace Thyra {
 
  template<class Scalar>
  void constructD(
-    const RCP<const Thyra::LinearOpBase<Scalar> >   &A
-    ,const RCP<const Thyra::LinearOpBase<Scalar> >  &B
-    ,const RCP<const Thyra::LinearOpBase<Scalar> >  &C
-    ,RCP<const Thyra::LinearOpBase<Scalar> >        *D
+    const RCP<const Thyra::LinearOpBase<Scalar> > &A,
+    const RCP<const Thyra::LinearOpBase<Scalar> > &B,
+    const RCP<const Thyra::LinearOpBase<Scalar> > &C,
+    const Ptr<RCP<const Thyra::LinearOpBase<Scalar> > > &D
     )
  {
    typedef RCP<const Thyra::LinearOpBase<Scalar> > LOB;
    *D = Teuchos::rcp(
      new Thyra::DefaultMultipliedLinearOp<Scalar>(
-       3, Teuchos::arrayArg<LOB>(A,adjoin(B),C)()
+       Teuchos::tuple<LOB>(A, adjoin(B), C)()
        )
      );
  }
@@ -106,19 +104,9 @@ namespace Thyra {
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 template<class Scalar>
-class DefaultMultipliedLinearOp
-  : virtual public MultipliedLinearOpBase<Scalar>,        // Public interface
-    virtual protected SingleScalarLinearOpBase<Scalar>,   // Implementation detail
-    virtual public Teuchos::Handleable<LinearOpBase<Scalar> >
+class DefaultMultipliedLinearOp : virtual public MultipliedLinearOpBase<Scalar>
 {
 public:
-
-#ifdef THYRA_INJECT_USING_DECLARATIONS
-  using SingleScalarLinearOpBase<Scalar>::apply;
-#endif
-
-  /* */
-  TEUCHOS_GET_RCP(LinearOpBase<Scalar>);
 
   /** @name Constructors/initializers/accessors */
   //@{
@@ -133,11 +121,9 @@ public:
 
   /** \brief Initialize given a list of non-const linear operators.
    *
-   * @param  numOps  [in] Number of constituent operators.
-   * @param  Ops     [in] Array (length <tt>numOps</tt>) of
-   *                 constituent linear operators and their
-   *                 aggregated default definitions of the
-   *                 non-transposed operator.
+   * \param Ops [in] Array (length <tt>numOps</tt>) of constituent linear
+   * operators and their aggregated default definitions of the non-transposed
+   * operator.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>numOps > 0</tt>
@@ -150,16 +136,13 @@ public:
    * <li><tt>this->getOp(k).op().get()==Ops[k].op().get()</tt>, for <tt>k=0...numOps-1</tt>
    * </ul>
    */
-  void initialize(
-    const ArrayView<const RCP<LinearOpBase<Scalar> > > &Ops );
+  void initialize(const ArrayView<const RCP<LinearOpBase<Scalar> > > &Ops);
 
   /** \brief Initialize given a list of const linear operators.
    *
-   * @param  numOps  [in] Number of constituent operators.
-   * @param  Ops     [in] Array (length <tt>numOps</tt>) of
-   *                 constituent linear operators and their
-   *                 aggregated default definitions of the
-   *                 non-transposed operator.
+   * \param Ops [in] Array (length <tt>numOps</tt>) of constituent linear
+   * operators and their aggregated default definitions of the non-transposed
+   * operator.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>numOps > 0</tt>
@@ -172,8 +155,7 @@ public:
    * <li><tt>this->getOp(k).op().get()==Ops[k].op().get()</tt>, for <tt>k=0...numOps-1</tt>
    * </ul>
    */
-  void initialize(
-    const ArrayView<const RCP<const LinearOpBase<Scalar> > > &Ops );
+  void initialize(const ArrayView<const RCP<const LinearOpBase<Scalar> > > &Ops );
 
   /** \brief Set to uninitialized.
    *
@@ -241,19 +223,19 @@ public:
 
 protected:
 
-  /** @name Overridden from SingleScalarLinearOpBase */
+  /** @name Overridden from LinearOpBase */
   //@{
 
   /** \brief Returns <tt>true</tt> only if all constituent operators support
    * <tt>M_trans</tt>.
    */
-  bool opSupported(EOpTransp M_trans) const;
+  bool opSupportedImpl(EOpTransp M_trans) const;
 
   /** \brief . */
-  void apply(
+  void applyImpl(
     const EOpTransp M_trans,
     const MultiVectorBase<Scalar> &X,
-    MultiVectorBase<Scalar> *Y,
+    const Ptr<MultiVectorBase<Scalar> > &Y,
     const Scalar alpha,
     const Scalar beta
     ) const;
@@ -324,10 +306,39 @@ private:
  * \relates DefaultMultipliedLinearOp
  */
 template<class Scalar>
+inline
 RCP<DefaultMultipliedLinearOp<Scalar> >
 defaultMultipliedLinearOp()
 {
   return Teuchos::rcp(new DefaultMultipliedLinearOp<Scalar>);
+}
+
+
+/** \brief Nonmember constructor.
+ *
+ * \relates DefaultMultipliedLinearOp
+ */
+template<class Scalar>
+RCP<DefaultMultipliedLinearOp<Scalar> >
+defaultMultipliedLinearOp(const ArrayView<const RCP<LinearOpBase<Scalar> > > &Ops)
+{
+  RCP<DefaultMultipliedLinearOp<Scalar> > dmlo = defaultMultipliedLinearOp<Scalar>();
+  dmlo->initialize(Ops);
+  return dmlo;
+}
+
+
+/** \brief Nonmember constructor.
+ *
+ * \relates DefaultMultipliedLinearOp
+ */
+template<class Scalar>
+RCP<DefaultMultipliedLinearOp<Scalar> >
+defaultMultipliedLinearOp(const ArrayView<const RCP<const LinearOpBase<Scalar> > > &Ops)
+{
+  RCP<DefaultMultipliedLinearOp<Scalar> > dmlo = defaultMultipliedLinearOp<Scalar>();
+  dmlo->initialize(Ops);
+  return dmlo;
 }
 
 

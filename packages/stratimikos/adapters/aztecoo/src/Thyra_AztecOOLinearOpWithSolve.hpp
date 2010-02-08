@@ -30,9 +30,8 @@
 #ifndef THYRA_AZTECOO_LINEAR_OP_WITH_SOLVE_HPP
 #define THYRA_AZTECOO_LINEAR_OP_WITH_SOLVE_HPP
 
-#include "Thyra_SingleScalarLinearOpWithSolveBase.hpp"
+#include "Thyra_LinearOpWithSolveBase.hpp"
 #include "Thyra_LinearOpSourceBase.hpp"
-#include "Thyra_SingleRhsLinearOpBase.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_PreconditionerBase.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
@@ -63,10 +62,7 @@ namespace Thyra {
  *
  * \ingroup AztecOO_Thyra_adapters_grp
  */
-class AztecOOLinearOpWithSolve
-  : virtual public LinearOpWithSolveBase<double>                  // Public interface
-  , virtual protected SingleRhsLinearOpBase<double>               // Implementation detail
-  , virtual protected SingleScalarLinearOpWithSolveBase<double>   // Implementation detail
+class AztecOOLinearOpWithSolve : virtual public LinearOpWithSolveBase<double>
 {
 public:
 
@@ -100,58 +96,55 @@ public:
 
   /** \brief Sets up this object.
    *
-   * \param  fwdOp
-   *           [in] The forward operator object that defines this objects
-   *           <tt>LinearOpBase</tt> interface.  interface.
-   * \param  fwdOpSrc
-   *           [in] The source for the forward operator object <tt>fwdOp</tt>.
-   *           This also should be the exact same object that is passed in
-   *           through a <tt>LinearOpWithSolveFactoryBase</tt> interface.
-   * \param  prec
-   *           [in] The original abstract preconditioner object that was
-   *           passed through the <tt>LinearOpWithSolveFactoryBase</tt>
-   *           interface.  This object is not used for anything and can be set
-   *           as <tt>prec==Teuchos::null</tt>.
-   * \param  isExternalPrec
-   *           [in] True if the precondition was created externally from the
-   *           <tt>LinearOpWithSolveFactoryBase</tt> object, false otherwise.
-   * \param  approxFwdOpSrc
-   *           [in] The source for the original abstract approximate forward
-   *           operator object that was passed through the
-   *           <tt>LinearOpWithSolveFactoryBase</tt> interface.  This object
-   *           is not used for anything and can be set as
-   *           <tt>approxFwdOpSrc==Teuchos::null</tt>.
-   * \param  aztecFwdSolver
-   *           [in] The <tt>AztecOO</tt> object used to perform forward
-   *           solves.  This object must be be ready to call
-   *           <tt>aztecFwdSolver->SetRHS()</tt> and
-   *           <tt>aztecFwdSolver->SetLHS()</tt> and then call
-   *           <tt>aztecFwdSolver->Solve()</tt>.
-   * \param  allowInexactFwdSolve
-   *           [in] Determines if
-   *           <tt>this->solveSupportsSolveTolType(NOTRANS,SOLVE_TOL_REL_RESIDUAL_NORM)</tt>
-   *           returns true or not.  With the current design, an inexact
-   *           forward solve can not be supported if there is left scaling or
-   *           a left preconditioner aggregated with <tt>*aztecFwdOp</tt>.
-   * \param  aztecAdjSolver
-   *           [in] The <tt>AztecOO</tt> object used to perform adjoint
-   *           solves.  This object must be be ready to call
-   *           <tt>aztecAdjSolver->SetRHS()</tt> and
-   *           <tt>aztecAdjSolver->SetLHS()</tt> and then call
-   *           <tt>aztecAdjSolver->Solve()</tt>.
-   * \param  allowInexactAdjSolve
-   *           [in] Determines if
-   *           <tt>this->solveSupportsSolveTolType(TRANS,SOLVE_TOL_REL_RESIDUAL_NORM)</tt>
-   *           returns true or not.  With the current design, an inexact
-   *           forward solve can not be supported if there is left scaling or
-   *           a left preconditioner aggregated with <tt>*aztecFwdOp</tt>.
-   * \param  linearSystemTransformer
-   *           [in] This is a transformation object that is called to
-   *           pre-preprocess the linear problem before a forward and adjoint
-   *           linear solver and post-process the linear problem after forward
-   *           and adjoint linear solve.  This abstract object is used to deal
-   *           with scaling and aggregated preconditioners.  It is what makes
-   *           this implementation fairly flexible.
+   * \param fwdOp [in] The forward operator object that defines this objects
+   * <tt>LinearOpBase</tt> interface.  interface.
+   *
+   * \param fwdOpSrc [in] The source for the forward operator object
+   * <tt>fwdOp</tt>.  This also should be the exact same object that is passed
+   * in through a <tt>LinearOpWithSolveFactoryBase</tt> interface.
+   *
+   * \param prec [in] The original abstract preconditioner object that was
+   * passed through the <tt>LinearOpWithSolveFactoryBase</tt> interface.  This
+   * object is not used for anything and can be set as
+   * <tt>prec==Teuchos::null</tt>.
+   *
+   * \param isExternalPrec [in] True if the precondition was created
+   * externally from the <tt>LinearOpWithSolveFactoryBase</tt> object, false
+   * otherwise.
+   *
+   * \param approxFwdOpSrc [in] The source for the original abstract
+   * approximate forward operator object that was passed through the
+   * <tt>LinearOpWithSolveFactoryBase</tt> interface.  This object is not used
+   * for anything and can be set as <tt>approxFwdOpSrc==Teuchos::null</tt>.
+   *
+   * \param aztecFwdSolver [in] The <tt>AztecOO</tt> object used to perform
+   * forward solves.  This object must be be ready to call
+   * <tt>aztecFwdSolver->SetRHS()</tt> and <tt>aztecFwdSolver->SetLHS()</tt>
+   * and then call <tt>aztecFwdSolver->Solve()</tt>.
+   *
+   * \param allowInexactFwdSolve [in] Determines if
+   * <tt>this->solveSupportsSolveTolType(NOTRANS,SOLVE_TOL_REL_RESIDUAL_NORM)</tt>
+   * returns true or not.  With the current design, an inexact forward solve
+   * can not be supported if there is left scaling or a left preconditioner
+   * aggregated with <tt>*aztecFwdOp</tt>.
+   *
+   * \param aztecAdjSolver [in] The <tt>AztecOO</tt> object used to perform
+   * adjoint solves.  This object must be be ready to call
+   * <tt>aztecAdjSolver->SetRHS()</tt> and <tt>aztecAdjSolver->SetLHS()</tt>
+   * and then call <tt>aztecAdjSolver->Solve()</tt>.
+   *
+   * \param allowInexactAdjSolve [in] Determines if
+   * <tt>this->solveSupportsSolveTolType(TRANS,SOLVE_TOL_REL_RESIDUAL_NORM)</tt>
+   * returns true or not.  With the current design, an inexact forward solve
+   * can not be supported if there is left scaling or a left preconditioner
+   * aggregated with <tt>*aztecFwdOp</tt>.
+   *
+   * \param linearSystemTransformer [in] This is a transformation object that
+   * is called to pre-preprocess the linear problem before a forward and
+   * adjoint linear solver and post-process the linear problem after forward
+   * and adjoint linear solve.  This abstract object is used to deal with
+   * scaling and aggregated preconditioners.  It is what makes this
+   * implementation fairly flexible.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>fwdOp.get()!=NULL</tt>
@@ -175,14 +168,14 @@ public:
    * ToDo: Finish documentation!
    */
   void initialize(
-    const Teuchos::RCP<const LinearOpBase<double> > &fwdOp,
-    const Teuchos::RCP<const LinearOpSourceBase<double> > &fwdOpSrc,
-    const Teuchos::RCP<const PreconditionerBase<double> > &prec,
+    const RCP<const LinearOpBase<double> > &fwdOp,
+    const RCP<const LinearOpSourceBase<double> > &fwdOpSrc,
+    const RCP<const PreconditionerBase<double> > &prec,
     const bool isExternalPrec,
-    const Teuchos::RCP<const LinearOpSourceBase<double> > &approxFwdOpSrc,
-    const Teuchos::RCP<AztecOO> &aztecFwdSolver,
+    const RCP<const LinearOpSourceBase<double> > &approxFwdOpSrc,
+    const RCP<AztecOO> &aztecFwdSolver,
     const bool allowInexactFwdSolve = false,
-    const Teuchos::RCP<AztecOO> &aztecAdjSolver = Teuchos::null,
+    const RCP<AztecOO> &aztecAdjSolver = Teuchos::null,
     const bool allowInexactAdjSolve = false,
     const double aztecSolverScalar = 1.0
     );
@@ -190,11 +183,11 @@ public:
   /** \brief Extract the forward <tt>LinearOpBase<double></tt> object so that
    * it can be modified.
    */
-  Teuchos::RCP<const LinearOpSourceBase<double> > extract_fwdOpSrc();
+  RCP<const LinearOpSourceBase<double> > extract_fwdOpSrc();
 
   /** \brief Extract the preconditioner.
    */
-  Teuchos::RCP<const PreconditionerBase<double> > extract_prec();
+  RCP<const PreconditionerBase<double> > extract_prec();
 
   /** \brief Determine if the preconditioner was external or not.
    */
@@ -204,18 +197,18 @@ public:
   /** \brief Extract the approximate forward <tt>LinearOpBase<double></tt>
    * object used to build the preconditioner.
    */
-  Teuchos::RCP<const LinearOpSourceBase<double> > extract_approxFwdOpSrc();
+  RCP<const LinearOpSourceBase<double> > extract_approxFwdOpSrc();
   
   /** \brief Uninitialize. */
   void uninitialize(
-    Teuchos::RCP<const LinearOpBase<double> > *fwdOp = NULL,
-    Teuchos::RCP<const LinearOpSourceBase<double> > *fwdOpSrc = NULL,
-    Teuchos::RCP<const PreconditionerBase<double> > *prec = NULL,
+    RCP<const LinearOpBase<double> > *fwdOp = NULL,
+    RCP<const LinearOpSourceBase<double> > *fwdOpSrc = NULL,
+    RCP<const PreconditionerBase<double> > *prec = NULL,
     bool *isExternalPrec = NULL,
-    Teuchos::RCP<const LinearOpSourceBase<double> > *approxFwdOpSrc = NULL,
-    Teuchos::RCP<AztecOO> *aztecFwdSolver = NULL,
+    RCP<const LinearOpSourceBase<double> > *approxFwdOpSrc = NULL,
+    RCP<AztecOO> *aztecFwdSolver = NULL,
     bool *allowInexactFwdSolve = NULL,
-    Teuchos::RCP<AztecOO> *aztecAdjSolver = NULL,
+    RCP<AztecOO> *aztecAdjSolver = NULL,
     bool *allowInexactAdjSolve = NULL,
     double *aztecSolverScalar = NULL
     );
@@ -225,11 +218,11 @@ public:
   /** @name Overridden from LinearOpBase */
   //@{
   /** \brief. */
-  Teuchos::RCP< const VectorSpaceBase<double> > range() const;
+  RCP< const VectorSpaceBase<double> > range() const;
   /** \brief. */
-  Teuchos::RCP< const VectorSpaceBase<double> > domain() const;
+  RCP< const VectorSpaceBase<double> > domain() const;
   /** \brief. */
-  Teuchos::RCP<const LinearOpBase<double> > clone() const;
+  RCP<const LinearOpBase<double> > clone() const;
   //@}
 
   /** @name Overridden from Teuchos::Describable */
@@ -245,53 +238,47 @@ public:
 
 protected:
 
-  /** @name Overridden from SingleScalarLinearOpBase */
+  /** @name Overridden from LinearOpBase  */
   //@{
   /** \brief . */
-  bool opSupported(EOpTransp M_trans) const;
-  //@}
-
-  /** @name Overridden from SingleRhsLinearOpBase */
-  //@{
+  virtual bool opSupportedImpl(EOpTransp M_trans) const;
   /** \brief . */
-  void apply(
+  virtual void applyImpl(
     const EOpTransp M_trans,
-    const VectorBase<double> &x,
-    VectorBase<double> *y,
+    const MultiVectorBase<double> &X,
+    const Ptr<MultiVectorBase<double> > &Y,
     const double alpha,
     const double beta
     ) const;
   //@}
 
-  /** @name Overridden from SingleScalarLinearOpWithSolveBase */
+  /** @name Overridden from LinearOpWithSolveBase. */
   //@{
   /** \brief . */
-  bool solveSupportsTrans(EOpTransp M_trans) const;
+  virtual bool solveSupportsImpl(EOpTransp M_trans) const;
   /** \brief . */
-  bool solveSupportsSolveMeasureType(
+  virtual bool solveSupportsSolveMeasureTypeImpl(
     EOpTransp M_trans, const SolveMeasureType& solveMeasureType
     ) const;
   /** \brief . */
-  void solve(
+  SolveStatus<double> solveImpl(
     const EOpTransp M_trans,
     const MultiVectorBase<double> &B,
-    MultiVectorBase<double> *X,
-    const int numBlocks,
-    const BlockSolveCriteria<double> blockSolveCriteria[],
-    SolveStatus<double> blockSolveStatus[]
+    const Ptr<MultiVectorBase<double> > &X,
+    const Ptr<const SolveCriteria<double> > solveCriteria
     ) const;
   //@}
   
 private:
   
-  Teuchos::RCP<const LinearOpBase<double> > fwdOp_;
-  Teuchos::RCP<const LinearOpSourceBase<double> > fwdOpSrc_;
-  Teuchos::RCP<const PreconditionerBase<double> > prec_;
+  RCP<const LinearOpBase<double> > fwdOp_;
+  RCP<const LinearOpSourceBase<double> > fwdOpSrc_;
+  RCP<const PreconditionerBase<double> > prec_;
   bool isExternalPrec_;
-  Teuchos::RCP<const LinearOpSourceBase<double> > approxFwdOpSrc_;
-  Teuchos::RCP<AztecOO> aztecFwdSolver_;
+  RCP<const LinearOpSourceBase<double> > approxFwdOpSrc_;
+  RCP<AztecOO> aztecFwdSolver_;
   bool allowInexactFwdSolve_;
-  Teuchos::RCP<AztecOO> aztecAdjSolver_;
+  RCP<AztecOO> aztecAdjSolver_;
   bool allowInexactAdjSolve_;
   double aztecSolverScalar_;
   

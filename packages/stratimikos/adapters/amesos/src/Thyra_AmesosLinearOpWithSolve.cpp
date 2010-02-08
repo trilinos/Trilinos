@@ -28,8 +28,6 @@
 // @HEADER
 */
 
-#ifndef SUN_CXX
-
 #include "Thyra_AmesosLinearOpWithSolve.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
@@ -206,19 +204,19 @@ void AmesosLinearOpWithSolve::describe(
 // protected
 
 
-// Overridden from SingleScalarLinearOpBase
+// Overridden from LinearOpBase
 
 
-bool AmesosLinearOpWithSolve::opSupported(EOpTransp M_trans) const
+bool AmesosLinearOpWithSolve::opSupportedImpl(EOpTransp M_trans) const
 {
   return ::Thyra::opSupported(*fwdOp_,M_trans);
 }
 
 
-void AmesosLinearOpWithSolve::apply(
+void AmesosLinearOpWithSolve::applyImpl(
   const EOpTransp M_trans,
   const MultiVectorBase<double> &X,
-  MultiVectorBase<double> *Y,
+  const Ptr<MultiVectorBase<double> > &Y,
   const double alpha,
   const double beta
   ) const
@@ -227,10 +225,10 @@ void AmesosLinearOpWithSolve::apply(
 }
 
 
-// Overridden from SingleScalarLinearOpWithSolveBase
+// Overridden from LinearOpWithSolveBase
 
 
-bool AmesosLinearOpWithSolve::solveSupportsTrans(EOpTransp M_trans) const
+bool AmesosLinearOpWithSolve::solveSupportsImpl(EOpTransp M_trans) const
 {
   if (Thyra::real_trans(M_trans) == Thyra::NOTRANS) {
     // Assume every amesos solver supports a basic forward solve!
@@ -250,7 +248,7 @@ bool AmesosLinearOpWithSolve::solveSupportsTrans(EOpTransp M_trans) const
 }
 
 
-bool AmesosLinearOpWithSolve::solveSupportsSolveMeasureType(
+bool AmesosLinearOpWithSolve::solveSupportsSolveMeasureTypeImpl(
   EOpTransp M_trans, const SolveMeasureType& solveMeasureType
   ) const
 {
@@ -258,35 +256,30 @@ bool AmesosLinearOpWithSolve::solveSupportsSolveMeasureType(
 }
 
 
-// Overridden from SingleRhsLinearOpWithSolveBase
-
-
-void AmesosLinearOpWithSolve::solve(
+SolveStatus<double>
+AmesosLinearOpWithSolve::solveImpl(
   const EOpTransp M_trans,
   const MultiVectorBase<double> &B,
-  MultiVectorBase<double> *X,
-  const int numBlocks,
-  const BlockSolveCriteria<double> blockSolveCriteria[],
-  SolveStatus<double> blockSolveStatus[]
+  const Ptr<MultiVectorBase<double> > &X,
+  const Ptr<const SolveCriteria<double> > solveCriteria
   ) const
 {
+  using Teuchos::rcpFromPtr;
+  using Teuchos::rcpFromRef;
   using Teuchos::OSTab;
-  typedef SolveCriteria<double> SC;
-  typedef SolveStatus<double> SS;
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(X==NULL);
-  TEST_FOR_EXCEPT(blockSolveCriteria==NULL && blockSolveStatus!=NULL);
-#endif
+
   Teuchos::Time totalTimer("");
   totalTimer.start(true);
+
   TEUCHOS_FUNC_TIME_MONITOR("AmesosLOWS");
-  //
+
   Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   OSTab tab = this->getOSTab();
   if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
     *out << "\nSolving block system using Amesos solver "
          << typeName(*amesosSolver_) << " ...\n\n";
+
   //
   // Get the op(...) range and domain maps
   //
@@ -297,19 +290,22 @@ void AmesosLinearOpWithSolve::solve(
       ? amesosOp->OperatorRangeMap()  : amesosOp->OperatorDomainMap() ),
     &opDomainMap = ( amesosOpTransp == NOTRANS
       ? amesosOp->OperatorDomainMap() : amesosOp->OperatorRangeMap()  );
+
   //
   // Get Epetra_MultiVector views of B and X
   //
   Teuchos::RCP<const Epetra_MultiVector>
-    epetra_B = get_Epetra_MultiVector(opRangeMap,Teuchos::rcp(&B,false));
+    epetra_B = get_Epetra_MultiVector(opRangeMap, rcpFromRef(B));
   Teuchos::RCP<Epetra_MultiVector>
-    epetra_X = get_Epetra_MultiVector(opDomainMap,Teuchos::rcp(X,false));
+    epetra_X = get_Epetra_MultiVector(opDomainMap, rcpFromPtr(X));
+
   //
   // Set B and X in the linear problem
   //
   epetraLP_->SetLHS(&*epetra_X);
   epetraLP_->SetRHS(const_cast<Epetra_MultiVector*>(&*epetra_B));
   // Above should be okay but cross your fingers!
+
   //
   // Solve the linear system
   //
@@ -321,6 +317,7 @@ void AmesosLinearOpWithSolve::solve(
     "\'"<<typeName(*amesosSolver_)<<"\' failed with error code "<<err<<"!"
     );
   amesosSolver_->SetUseTranspose(oldUseTranspose);
+
   //
   // Unset B and X
   //
@@ -328,31 +325,32 @@ void AmesosLinearOpWithSolve::solve(
   epetraLP_->SetRHS(NULL);
   epetra_X = Teuchos::null;
   epetra_B = Teuchos::null;
+
   //
   // Scale X if needed
   //
   if(amesosSolverScalar_!=1.0)
     Thyra::scale(1.0/amesosSolverScalar_, X);
+
   //
   // Set the solve status if requested
   //
-  if(numBlocks && blockSolveStatus) {
-    for( int i = 0; i < numBlocks; ++i ) {
-      blockSolveStatus[i].solveStatus = SOLVE_STATUS_CONVERGED;
-      blockSolveStatus[i].achievedTol = SS::unknownTolerance();
-      blockSolveStatus[i].message
-        = std::string("Solver ")+typeName(*amesosSolver_)+std::string(" converged!");
-    }
-  }
+  SolveStatus<double> solveStatus;
+  solveStatus.solveStatus = SOLVE_STATUS_CONVERGED;
+  solveStatus.achievedTol = SolveStatus<double>::unknownTolerance();
+  solveStatus.message =
+    std::string("Solver ")+typeName(*amesosSolver_)+std::string(" converged!");
+  
   //
   // Report the overall time
   //
   if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
     *out
       << "\nTotal solve time = "<<totalTimer.totalElapsedTime()<<" sec\n";
+
+  return solveStatus;
+
 }
 
 
 }	// end namespace Thyra
-
-#endif // SUN_CXX

@@ -37,7 +37,6 @@
 #include "Thyra_DefaultProductMultiVector.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_AssertOp.hpp"
-#include "Teuchos_Utils.hpp"
 
 
 namespace Thyra {
@@ -394,13 +393,11 @@ void DefaultBlockedLinearOp<Scalar>::describe(
 // protected
 
 
-// Overridden from SingleScalarLinearOpBase
+// Overridden from LinearOpBase
 
 
 template<class Scalar>
-bool DefaultBlockedLinearOp<Scalar>::opSupported(
-  EOpTransp M_trans
-  ) const
+bool DefaultBlockedLinearOp<Scalar>::opSupportedImpl(EOpTransp M_trans) const
 {
   bool supported = true;
   for( int i = 0; i < numRowBlocks_; ++i ) {
@@ -416,12 +413,12 @@ bool DefaultBlockedLinearOp<Scalar>::opSupported(
 
 
 template<class Scalar>
-void DefaultBlockedLinearOp<Scalar>::apply(
-  const EOpTransp M_trans
-  ,const MultiVectorBase<Scalar> &X_in
-  ,MultiVectorBase<Scalar> *Y_inout
-  ,const Scalar alpha
-  ,const Scalar beta
+void DefaultBlockedLinearOp<Scalar>::applyImpl(
+  const EOpTransp M_trans,
+  const MultiVectorBase<Scalar> &X_in,
+  const Ptr<MultiVectorBase<Scalar> > &Y_inout,
+  const Scalar alpha,
+  const Scalar beta
   ) const
 {
 
@@ -433,7 +430,7 @@ void DefaultBlockedLinearOp<Scalar>::apply(
 
 #ifdef TEUCHOS_DEBUG
   THYRA_ASSERT_LINEAR_OP_MULTIVEC_APPLY_SPACES(
-    "DefaultBlockedLinearOp<Scalar>::apply(...)",*this,M_trans,X_in,Y_inout
+    "DefaultBlockedLinearOp<Scalar>::apply(...)", *this, M_trans, X_in, &*Y_inout
     );
 #endif // TEUCHOS_DEBUG 
   
@@ -464,7 +461,7 @@ void DefaultBlockedLinearOp<Scalar>::apply(
       defaultProductDomain_op, rcpFromRef(X_in));
   const RCP<ProductMultiVectorBase<Scalar> >
     Y = nonconstCastOrCreateSingleBlockProductMultiVector<Scalar>(
-      defaultProductRange_op, rcpFromRef(*Y_inout));
+      defaultProductRange_op, rcpFromPtr(Y_inout));
 
   for( int i = 0; i < opNumRowBlocks; ++i ) {
     MultiVectorPtr Y_i = Y->getNonconstMultiVectorBlock(i);

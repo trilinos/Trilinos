@@ -33,11 +33,10 @@
 
 namespace Thyra {
 
-template<class Scalar>                                        class ScalarProdBase;
-template<class Scalar>                                        class ScalarProdVectorSpaceBase;
-template<class RangeScalar, class DomainScalar = RangeScalar> class EuclideanLinearOpBase;
-template<class Scalar>                                        class SerialVectorSpaceBase;
-template<class Scalar>                                        class SerialVectorBase;
+template<class Scalar> class ScalarProdBase;
+template<class Scalar> class ScalarProdVectorSpaceBase;
+template<class Scalar> class SerialVectorSpaceBase;
+template<class Scalar> class SerialVectorBase;
 
 } // namespace Thyra
 

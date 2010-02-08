@@ -288,9 +288,9 @@ void DefaultProductVector<Scalar>::applyOpImpl(
   const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
   const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
   const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-  const Index first_ele_offset_in,
-  const Index sub_dim_in,
-  const Index global_offset_in
+  const Ordinal first_ele_offset_in,
+  const Ordinal sub_dim_in,
+  const Ordinal global_offset_in
   ) const
 {
 
@@ -307,7 +307,7 @@ void DefaultProductVector<Scalar>::applyOpImpl(
 
   //Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
 
-  const Index	n = productSpace_->dim();
+  const Ordinal	n = productSpace_->dim();
   const int num_vecs = vecs.size();
   const int num_targ_vecs = targ_vecs.size();
 
@@ -422,14 +422,14 @@ void DefaultProductVector<Scalar>::applyOpImpl(
   // If we get here, then we will implement the applyOpImpl(...) one vector
   // block at a time.
   //
-  const Index this_dim = n;
-  const Index sub_dim
+  const Ordinal this_dim = n;
+  const Ordinal sub_dim
     = (
       sub_dim_in < 0
       ? this_dim - first_ele_offset_in
       : sub_dim_in
       );
-  Index num_elements_remaining = sub_dim;
+  Ordinal num_elements_remaining = sub_dim;
   const int numBlocks = productSpace_->numBlocks();
   Array<RCP<const VectorBase<Scalar> > >
     sub_vecs_rcps(num_vecs);
@@ -439,14 +439,14 @@ void DefaultProductVector<Scalar>::applyOpImpl(
     sub_targ_vecs_rcps(num_targ_vecs);
   Array<Ptr<VectorBase<Scalar> > >
     sub_targ_vecs(num_targ_vecs);
-  Index g_off = -first_ele_offset_in;
+  Ordinal g_off = -first_ele_offset_in;
   for(int k = 0; k < numBlocks; ++k) {
-    const Index local_dim = productSpace_->getBlock(k)->dim();
+    const Ordinal local_dim = productSpace_->getBlock(k)->dim();
     if( g_off < 0 && -g_off+1 > local_dim ) {
       g_off += local_dim;
       continue;
     }
-    const Index
+    const Ordinal
       local_sub_dim
       = ( g_off >= 0
         ? std::min( local_dim, num_elements_remaining )
@@ -492,7 +492,7 @@ void DefaultProductVector<Scalar>::acquireDetachedVectorViewImpl(
   const Range1D
     rng = rng_in.full_range() ? Range1D(0,productSpace_->dim()-1) : rng_in;
   int    kth_vector_space  = -1;
-  Index  kth_global_offset = 0;
+  Ordinal  kth_global_offset = 0;
   productSpace_->getVecSpcPoss(rng.lbound(),&kth_vector_space,&kth_global_offset);
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !( 0 <= kth_vector_space && kth_vector_space <= numBlocks_ ) );
@@ -526,7 +526,7 @@ void DefaultProductVector<Scalar>::releaseDetachedVectorViewImpl(
 {
   if( sub_vec->values().get() == NULL ) return;
   int    kth_vector_space  = -1;
-  Index  kth_global_offset = 0;
+  Ordinal  kth_global_offset = 0;
   productSpace_->getVecSpcPoss(sub_vec->globalOffset(),&kth_vector_space,&kth_global_offset);
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !( 0 <= kth_vector_space && kth_vector_space <= numBlocks_ ) );
@@ -555,7 +555,7 @@ void DefaultProductVector<Scalar>::acquireNonconstDetachedVectorViewImpl(
   const Range1D
     rng = rng_in.full_range() ? Range1D(0,productSpace_->dim()-1) : rng_in;
   int    kth_vector_space  = -1;
-  Index  kth_global_offset = 0;
+  Ordinal  kth_global_offset = 0;
   productSpace_->getVecSpcPoss(rng.lbound(),&kth_vector_space,&kth_global_offset);
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !( 0 <= kth_vector_space && kth_vector_space <= numBlocks_ ) );
@@ -589,7 +589,7 @@ void DefaultProductVector<Scalar>::commitNonconstDetachedVectorViewImpl(
 {
   if( sub_vec->values().get() == NULL ) return;
   int    kth_vector_space  = -1;
-  Index  kth_global_offset = 0;
+  Ordinal  kth_global_offset = 0;
   productSpace_->getVecSpcPoss(sub_vec->globalOffset(),&kth_vector_space,&kth_global_offset);
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !( 0 <= kth_vector_space && kth_vector_space <= numBlocks_ ) );
@@ -616,7 +616,7 @@ void DefaultProductVector<Scalar>::setSubVectorImpl(
   )
 {
   int    kth_vector_space  = -1;
-  Index  kth_global_offset = 0;
+  Ordinal  kth_global_offset = 0;
   productSpace_->getVecSpcPoss(sub_vec.globalOffset(),&kth_vector_space,&kth_global_offset);
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !( 0 <= kth_vector_space && kth_vector_space <= numBlocks_ ) );

@@ -8,6 +8,8 @@
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_LinearOpWithSolveBase.hpp"
 #include "Thyra_LinearOpWithSolveTester.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_VectorStdOps.hpp"
 #include "EpetraExt_readEpetraLinearSystem.h"
 #include "Epetra_SerialComm.h"
 #include "Teuchos_ParameterList.hpp"

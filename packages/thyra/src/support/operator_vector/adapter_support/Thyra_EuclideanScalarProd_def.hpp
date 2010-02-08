@@ -32,7 +32,6 @@
 #include "Thyra_EuclideanScalarProd_decl.hpp"
 #include "Thyra_ScalarProdBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
-#include "Thyra_EuclideanLinearOpBase.hpp"
 
 
 namespace Thyra {
@@ -52,23 +51,6 @@ void EuclideanScalarProd<Scalar>::scalarProdsImpl(
   ) const
 {
   dots(X, Y, scalarProds_out);
-}
-
-
-template<class Scalar>
-void EuclideanScalarProd<Scalar>::euclideanApplyImpl(
-  const EuclideanLinearOpBase<Scalar> &M,
-  const EOpTransp M_trans,
-  const MultiVectorBase<Scalar> &X,
-  const Ptr<MultiVectorBase<Scalar> > &Y,
-  const Scalar alpha,
-  const Scalar beta
-  ) const
-{
-  if (real_trans(M_trans)==NOTRANS)
-    M.euclideanApply(transToConj(M_trans), X, &*Y, alpha, beta);
-  else
-    M.euclideanApplyTranspose(transToConj(M_trans), X, &*Y, alpha, beta);
 }
 
 

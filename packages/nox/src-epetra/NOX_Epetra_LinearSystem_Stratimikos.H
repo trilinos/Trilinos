@@ -366,7 +366,7 @@ protected:
   Teuchos::RCP<Thyra::LinearOpWithSolveFactoryBase<double> > lowsFactory;
   Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> > lows;
   Teuchos::RCP<const Thyra::LinearOpBase<double> > linearOp;
-  mutable Teuchos::RCP<Thyra::PreconditionerBase<double,double> > precObj;
+  mutable Teuchos::RCP<Thyra::PreconditionerBase<double> > precObj;
 
   //! Scaling object supplied by the user
   Teuchos::RCP<NOX::Epetra::Scaling> scaling;

@@ -32,7 +32,6 @@
 #include "Thyra_LinearOpScalarProd_decl.hpp"
 #include "Thyra_ScalarProdBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
-#include "Thyra_EuclideanLinearOpBase.hpp"
 
 
 namespace Thyra {
@@ -100,19 +99,10 @@ void LinearOpScalarProd<Scalar>::scalarProdsImpl(
 
 
 template<class Scalar>
-void LinearOpScalarProd<Scalar>::euclideanApplyImpl(
-  const EuclideanLinearOpBase<Scalar> &M,
-  const EOpTransp M_trans,
-  const MultiVectorBase<Scalar> &X,
-  const Ptr<MultiVectorBase<Scalar> > &Y,
-  const Scalar alpha,
-  const Scalar beta
-  ) const
+RCP<const LinearOpBase<Scalar> >
+LinearOpScalarProd<Scalar>::getLinearOpImpl() const
 {
-  Teuchos::RCP<MultiVectorBase<Scalar> >
-    T = createMembers(X.range(),X.domain()->dim());
-  Thyra::apply(*op_, NOTRANS, X, &*T);
-  Thyra::euclideanApply(M, M_trans, *T, &*Y, alpha, beta);
+  return op_;
 }
 
 

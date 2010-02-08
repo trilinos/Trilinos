@@ -112,8 +112,8 @@ public:
       set_ele(vecSpc.dim()-1,scalarLarge,&*z);
       if(out && dumpAll) *out << "\nz =\n" << *z;
 
-      Scalar minEle; Index minIndex;
-      Scalar maxEle; Index maxIndex;
+      Scalar minEle; Ordinal minIndex;
+      Scalar maxEle; Ordinal maxIndex;
 
       if(!testRelErr<Scalar>(
            "min(*z)",min(*z),"scalarSmall",scalarSmall

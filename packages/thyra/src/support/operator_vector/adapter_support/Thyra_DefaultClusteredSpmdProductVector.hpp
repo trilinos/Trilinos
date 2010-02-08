@@ -176,16 +176,16 @@ void DefaultClusteredSpmdProductVector<Scalar>::applyOpImpl(
   const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
   const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
   const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-  const Index first_ele_offset_in,
-  const Index sub_dim_in,
-  const Index global_offset_in
+  const Ordinal first_ele_offset_in,
+  const Ordinal sub_dim_in,
+  const Ordinal global_offset_in
   ) const
 {
 
   using Teuchos::null;
   using Teuchos::ptr_dynamic_cast;
 
-  const Index	n = productSpace_->dim();
+  const Ordinal	n = productSpace_->dim();
   const int num_vecs = vecs.size();
   const int num_targ_vecs = targ_vecs.size();
 
@@ -249,16 +249,16 @@ void DefaultClusteredSpmdProductVector<Scalar>::applyOpImpl(
   // Get the overlap of the element for this cluster that will participate in
   // the RTOp operation.
   //
-  const Teuchos::RCP<const Teuchos::Comm<Index> >
+  const Teuchos::RCP<const Teuchos::Comm<Ordinal> >
     intraClusterComm = productSpace_->intraClusterComm(),
     interClusterComm = productSpace_->interClusterComm();
-  const Index
+  const Ordinal
     clusterSubDim = productSpace_->clusterSubDim(),
     clusterOffset = productSpace_->clusterOffset(),
     globalDim = productSpace_->dim();
-  Index  overlap_first_cluster_ele_off  = 0;
-  Index  overlap_cluster_sub_dim        = 0;
-  Index  overlap_global_off             = 0;
+  Ordinal  overlap_first_cluster_ele_off  = 0;
+  Ordinal  overlap_cluster_sub_dim        = 0;
+  Ordinal  overlap_global_off             = 0;
   if (clusterSubDim) {
     RTOp_parallel_calc_overlap(
       globalDim,clusterSubDim,clusterOffset,first_ele_offset_in,sub_dim_in
@@ -285,7 +285,7 @@ void DefaultClusteredSpmdProductVector<Scalar>::applyOpImpl(
     //
     Array<Ptr<const VectorBase<Scalar> > >  v_vecs(num_vecs);
     Array<Ptr<VectorBase<Scalar> > > v_targ_vecs(num_targ_vecs);
-    Index overall_global_offset = overlap_global_off;
+    Ordinal overall_global_offset = overlap_global_off;
     for( int j = 0; j < numBlocks; ++j ) {
       const VectorBase<Scalar>
         &v = *vecs_[j];
@@ -300,7 +300,7 @@ void DefaultClusteredSpmdProductVector<Scalar>::applyOpImpl(
         numBlocks > 1, std::logic_error
         ,"Error, Have not implemented general support for numBlocks > 1!"
         ); // ToDo: Fix the below code for numBlocks_ > 1!
-      Index
+      Ordinal
         v_global_offset = overall_global_offset,
         v_first_ele_offset = overlap_first_cluster_ele_off,
         v_sub_dim = overlap_cluster_sub_dim;

@@ -99,7 +99,7 @@ public:
    * as: <tt>localOffset=0</tt> on process 0, <tt>localOffset=5</tt> on
    * process 1, <tt>localOffset=9</tt> on process 2 and so on.
    */
-  Index localOffset() const;
+  Ordinal localOffset() const;
   
   /** \brief .
    *
@@ -125,7 +125,7 @@ public:
    * in <tt>*this</tt> vector space can not collaborate with other
    * Spmd-based vector implementations.
    */
-  Index mapCode() const;
+  Ordinal mapCode() const;
 
   //@}
 
@@ -140,7 +140,7 @@ public:
 
   /** \brief Returns the sum of the local number of elements on every process.
    */
-  Index dim() const;
+  Ordinal dim() const;
 
   /** \brief Returns a <tt>DefaultSpmdVectorSpaceFactory</tt> object that has been given <tt>getComm()</tt>.
    */
@@ -194,17 +194,17 @@ protected:
    * *new* parallel vector space constructed and very few parallel
    * vector spaces will be created per application usually.
    */
-  virtual void updateState( const Index globalDim );
+  virtual void updateState( const Ordinal globalDim );
 
 private:
 
   // //////////////////////////////////////
   // Private data members
 
-  Index     mapCode_;    // < 0 is a flag that everything needs initialized
-  Index     defaultLocalOffset_;
-  Index     defaultGlobalDim_;
-  Index     localSubDim_;
+  Ordinal     mapCode_;    // < 0 is a flag that everything needs initialized
+  Ordinal     defaultLocalOffset_;
+  Ordinal     defaultGlobalDim_;
+  Ordinal     localSubDim_;
 
   Teuchos::RCP< const VectorSpaceFactoryBase<Scalar> >  smallVecSpcFcty_;
   

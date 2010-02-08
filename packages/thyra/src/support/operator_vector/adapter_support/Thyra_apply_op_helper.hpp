@@ -45,14 +45,14 @@ void Thyra::apply_op_validate_input(
   const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
   const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
   const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-  const Index first_ele_offset_in,
-  const Index sub_dim_in,
-  const Index global_offset_in
+  const Ordinal first_ele_offset_in,
+  const Ordinal sub_dim_in,
+  const Ordinal global_offset_in
   )
 {
   const int num_vecs = vecs.size();
   const int num_targ_vecs = targ_vecs.size();
-  const Index
+  const Ordinal
     dim = space.dim();
   TEST_FOR_EXCEPTION(
     global_offset_in < 0, std::logic_error
@@ -83,16 +83,16 @@ void Thyra::apply_op_validate_input(
   const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
   const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
   const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
-  const Index primary_first_ele_offset_in,
-  const Index primary_sub_dim_in,
-  const Index primary_global_offset_in,
-  const Index secondary_first_ele_offset_in,
-  const Index secondary_sub_dim_in
+  const Ordinal primary_first_ele_offset_in,
+  const Ordinal primary_sub_dim_in,
+  const Ordinal primary_global_offset_in,
+  const Ordinal secondary_first_ele_offset_in,
+  const Ordinal secondary_sub_dim_in
   )
 {
   using Teuchos::as;
   // Validate primary range arguments
-  const Index
+  const Ordinal
     range_dim = range.dim();
   TEST_FOR_EXCEPTION(
     primary_global_offset_in < 0, std::logic_error
@@ -109,7 +109,7 @@ void Thyra::apply_op_validate_input(
     <<primary_first_ele_offset_in<<" and primary_sub_dim_in = "<<primary_sub_dim_in
     <<" are not compatible with range.dim() = " << range_dim );
   // Validate secondary domain arguments
-  const Index
+  const Ordinal
     domain_dim = domain.dim();
   TEST_FOR_EXCEPTION(
     secondary_first_ele_offset_in < 0 || domain_dim < secondary_first_ele_offset_in+1, std::logic_error

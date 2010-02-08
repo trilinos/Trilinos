@@ -150,7 +150,7 @@ inline bool VectorOpTester<Scalar>
 
   using std::endl;
 
-  typedef Teuchos::ScalarTraits<Index> IST;
+  typedef Teuchos::ScalarTraits<Ordinal> IST;
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
   /* this test requires a comparison operator to make sense */
@@ -177,14 +177,14 @@ inline bool VectorOpTester<Scalar>
     for (int t=0; t<nTrials; t++)
     {
       zeroOut(a);
-      Index minIndex = IST::random() % N;
-      Index maxIndex = IST::random() % N;
+      Ordinal minIndex = IST::random() % N;
+      Ordinal maxIndex = IST::random() % N;
       /* skip cases where we've generated identical indices */
       if (minIndex == maxIndex) continue;
       a[minIndex] = -ST::one();
       a[maxIndex] = ST::one();
-      Index findMin = -1;
-      Index findMax = -1;
+      Ordinal findMin = -1;
+      Ordinal findMax = -1;
       Scalar minVal = Thyra::minloc(a, findMin);
       Scalar maxVal = Thyra::maxloc(a, findMax);
       err += ST::magnitude(-ST::one() - minVal);

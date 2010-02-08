@@ -30,6 +30,7 @@
 #define THYRA_VECTOR_TESTER_HPP
 
 #include "Thyra_VectorTesterDecl.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 namespace Thyra {
 

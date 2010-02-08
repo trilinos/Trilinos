@@ -126,13 +126,13 @@ Scalar dot( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y );
 /** \brief Get single element: <tt>result = v(i)</tt>.
  */
 template<class Scalar>
-Scalar get_ele( const VectorBase<Scalar>& v, Index i );
+Scalar get_ele( const VectorBase<Scalar>& v, Ordinal i );
 
 
 /** \brief Set single element: <tt>v(i) = alpha</tt>.
  */
 template<class Scalar>
-void set_ele( Index i, Scalar alpha, const Ptr<VectorBase<Scalar> > &v );
+void set_ele( Ordinal i, Scalar alpha, const Ptr<VectorBase<Scalar> > &v );
 
 
 /** \brief Assign all elements to a scalar:
@@ -441,7 +441,7 @@ Scalar min( const VectorBase<Scalar>& x );
  */
 template<class Scalar>
 void min( const VectorBase<Scalar>& x,
-  const Ptr<Scalar> &maxEle, const Ptr<Index> &maxIndex );
+  const Ptr<Scalar> &maxEle, const Ptr<Ordinal> &maxIndex );
 
 
 /** \brief Minimum element greater than some bound and its index:
@@ -473,7 +473,7 @@ void min( const VectorBase<Scalar>& x,
  */
 template<class Scalar>
 void minGreaterThanBound( const VectorBase<Scalar>& x, const Scalar &bound,
-  const Ptr<Scalar> &minEle, const Ptr<Index> &minIndex );
+  const Ptr<Scalar> &minEle, const Ptr<Ordinal> &minIndex );
 
 
 /** \brief Max element: <tt>result = max{ x(i), i = 1...n } </tt>.
@@ -501,7 +501,7 @@ Scalar max( const VectorBase<Scalar>& x );
  */
 template<class Scalar>
 void max( const VectorBase<Scalar>& x,
-  const Ptr<Scalar> &maxEle, const Ptr<Index> &maxIndex );
+  const Ptr<Scalar> &maxEle, const Ptr<Ordinal> &maxIndex );
 
 
 /** \brief Max element less than bound and its index: Returns <tt>maxEle =
@@ -532,7 +532,7 @@ void max( const VectorBase<Scalar>& x,
  */
 template<class Scalar>
 void maxLessThanBound( const VectorBase<Scalar>& x, const Scalar &bound,
-  const Ptr<Scalar> &maxEle, const Ptr<Index> &maxIndex );
+  const Ptr<Scalar> &maxEle, const Ptr<Ordinal> &maxIndex );
 
 
 //@}
@@ -547,7 +547,7 @@ void maxLessThanBound( const VectorBase<Scalar>& x, const Scalar &bound,
 
 /** \brief Deprecated. */
 template<class Scalar>
-void set_ele( Index i, Scalar alpha, VectorBase<Scalar>* v )
+void set_ele( Ordinal i, Scalar alpha, VectorBase<Scalar>* v )
 { set_ele(i, alpha, Teuchos::ptr(v)); }
 
 
@@ -744,27 +744,27 @@ void V_StVpStV( VectorBase<Scalar>* z, const Scalar &alpha,
 
 /** \brief Deprecated. */
 template<class Scalar>
-void min( const VectorBase<Scalar>& x, Scalar *maxEle, Index *maxIndex )
+void min( const VectorBase<Scalar>& x, Scalar *maxEle, Ordinal *maxIndex )
 { min(x, Teuchos::ptr(maxEle), Teuchos::ptr(maxIndex)); }
 
 
 /** \brief Deprecated. */
 template<class Scalar>
 void minGreaterThanBound( const VectorBase<Scalar>& x, const Scalar &bound,
-  Scalar *minEle, Index *minIndex )
+  Scalar *minEle, Ordinal *minIndex )
 { minGreaterThanBound(x, bound, Teuchos::ptr(minEle), Teuchos::ptr(minIndex)); }
 
 
 /** \brief Deprecated. */
 template<class Scalar>
-void max( const VectorBase<Scalar>& x, Scalar *maxEle, Index *maxIndex )
+void max( const VectorBase<Scalar>& x, Scalar *maxEle, Ordinal *maxIndex )
 { max(x, Teuchos::ptr(maxEle), Teuchos::ptr(maxIndex)); }
 
 
 /** \brief Deprecated. */
 template<class Scalar>
 void maxLessThanBound( const VectorBase<Scalar>& x, const Scalar &bound,
-  Scalar *maxEle, Index *maxIndex )
+  Scalar *maxEle, Ordinal *maxIndex )
 { maxLessThanBound(x, bound, Teuchos::ptr(maxEle), Teuchos::ptr(maxIndex)); }
 
 

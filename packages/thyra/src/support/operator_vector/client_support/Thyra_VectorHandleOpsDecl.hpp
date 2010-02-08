@@ -98,14 +98,14 @@ namespace Thyra
    * 
    */
   template <class Scalar>  
-  Scalar maxloc(const Converter<Scalar, ConstVector<Scalar> >& x, Index& index) ;
+  Scalar maxloc(const Converter<Scalar, ConstVector<Scalar> >& x, Ordinal& index) ;
 
   /** \brief Return the min of a vector and its location.
    *
    * \relates Vector
    */
   template <class Scalar>  
-  Scalar minloc(const Converter<Scalar, ConstVector<Scalar> >& x, Index& index) ;
+  Scalar minloc(const Converter<Scalar, ConstVector<Scalar> >& x, Ordinal& index) ;
 
   /** \brief Return the minimum element and its location (lowest index).
    *
@@ -113,7 +113,7 @@ namespace Thyra
    */
   template <class Scalar>   
   Scalar minloc(const Converter<Scalar, ConstVector<Scalar> >& x, 
-             const Scalar& bound, Index& index) ;
+             const Scalar& bound, Ordinal& index) ;
 
 
   /** \brief Return the maxium element and its location (lowest index).
@@ -122,7 +122,7 @@ namespace Thyra
    */
   template <class Scalar>   
   Scalar maxloc(const Converter<Scalar, ConstVector<Scalar> >& x, 
-                const Scalar& bound, Index& index);
+                const Scalar& bound, Ordinal& index);
 
   /** \brief result = alpha*x.  
    *

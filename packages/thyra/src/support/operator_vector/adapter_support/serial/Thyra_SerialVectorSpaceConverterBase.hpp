@@ -52,8 +52,8 @@ void SerialVectorSpaceConverterBase<ScalarFrom,ScalarTo>::convert(
   TEST_FOR_EXCEPT(emv_from.subDim() != emv_to.subDim());
   TEST_FOR_EXCEPT(emv_from.numSubCols() != emv_to.numSubCols());
 #endif
-  for( Index j = 0; j < emv_from.numSubCols(); ++j ) {
-    for( Index i = 0; i < emv_from.subDim(); ++i ) {
+  for( Ordinal j = 0; j < emv_from.numSubCols(); ++j ) {
+    for( Ordinal i = 0; i < emv_from.subDim(); ++i ) {
       emv_to(i,j) = emv_from(i,j); // ToDo: Make this faster using optimized copy functions?
     }
   }

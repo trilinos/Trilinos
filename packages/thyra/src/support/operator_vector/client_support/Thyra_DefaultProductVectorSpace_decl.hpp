@@ -229,7 +229,7 @@ public:
    * <li> [<tt>this->numBlocks() > 0</tt>] <tt>return != NULL</tt>
    * </ul>
    */
-  virtual const Index* vecSpacesOffsets() const;
+  virtual const Ordinal* vecSpacesOffsets() const;
 
   /** \brief Get the position of the vector space object and its offset into
    * a composite vector that owns the <tt>ith</tt> index in the
@@ -259,7 +259,7 @@ public:
    *
    * </ul>
    */
-  void getVecSpcPoss( Index i, int* kth_vector_space, Index* kth_global_offset ) const;
+  void getVecSpcPoss( Ordinal i, int* kth_vector_space, Ordinal* kth_global_offset ) const;
   
   //@}
 
@@ -277,7 +277,7 @@ public:
   //@{
 
   /** \brief Returns the summation of the constituent vector spaces. */
-  Index dim() const;
+  Ordinal dim() const;
 
   /** \brief Returns true only if also a product vector space and all
    * constituent vectors are compatible.
@@ -374,7 +374,7 @@ private:
   // Private types
 
   typedef Array<RCP<const VectorSpaceBase<Scalar> > > vecSpaces_t;
-  typedef Array<Index> vecSpacesOffsets_t;
+  typedef Array<Ordinal> vecSpacesOffsets_t;
  
   // ///////////////////////////////////
   // Private data members
@@ -383,7 +383,7 @@ private:
   RCP<vecSpaces_t> vecSpaces_;
   RCP<vecSpacesOffsets_t> vecSpacesOffsets_;
   // cached info
-  Index dim_;
+  Ordinal dim_;
   bool isInCore_;
 
   // ///////////////////////////////////
@@ -455,7 +455,7 @@ DefaultProductVectorSpace<Scalar>::vecSpaces() const
 
 
 template<class Scalar>
-inline const Index*
+inline const Ordinal*
 DefaultProductVectorSpace<Scalar>::vecSpacesOffsets() const
 {
   return ( dim_ ? &(*vecSpacesOffsets_)[0] : NULL );

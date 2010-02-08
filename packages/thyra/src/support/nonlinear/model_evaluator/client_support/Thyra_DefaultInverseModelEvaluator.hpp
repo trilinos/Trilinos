@@ -443,7 +443,7 @@ defaultInverseModelEvaluator(
 template<class Scalar>
 const std::string
 DefaultInverseModelEvaluator<Scalar>::ObservationIndex_name_
-= "Observation Index";
+= "Observation Ordinal";
 
 template<class Scalar>
 const int
@@ -454,7 +454,7 @@ DefaultInverseModelEvaluator<Scalar>::ObservationIndex_default_
 template<class Scalar>
 const std::string
 DefaultInverseModelEvaluator<Scalar>::ParameterSubvectorIndex_name_
-= "Parameter Subvector Index";
+= "Parameter Subvector Ordinal";
 
 template<class Scalar>
 const int
@@ -905,7 +905,7 @@ void DefaultInverseModelEvaluator<Scalar>::evalModelImpl(
       o_space = get_obs_space(),
       p_space = this->get_p_space(p_idx_);
 
-    const Index
+    const Ordinal
       no = o_space->dim(),
       np = p_space->dim();
     

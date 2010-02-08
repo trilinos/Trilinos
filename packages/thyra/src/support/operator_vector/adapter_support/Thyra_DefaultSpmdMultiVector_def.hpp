@@ -213,9 +213,6 @@ void DefaultSpmdMultiVector<Scalar>::uninitialize(
 }
 
 
-// Overridden public functions from EuclideanLinearOpBase
-
-
 template<class Scalar>
 RCP< const ScalarProdVectorSpaceBase<Scalar> >
 DefaultSpmdMultiVector<Scalar>::domainScalarProdVecSpc() const
@@ -333,7 +330,7 @@ DefaultSpmdMultiVector<Scalar>::nonconstNonContigSubViewImpl(
 
 template<class Scalar>
 void DefaultSpmdMultiVector<Scalar>::getNonconstLocalDataImpl(
-  const Ptr<ArrayRCP<Scalar> > &localValues, const Ptr<Index> &leadingDim
+  const Ptr<ArrayRCP<Scalar> > &localValues, const Ptr<Ordinal> &leadingDim
   )
 {
 #ifdef THYRA_DEFAULT_SPMD_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT
@@ -346,7 +343,7 @@ void DefaultSpmdMultiVector<Scalar>::getNonconstLocalDataImpl(
 
 template<class Scalar>
 void DefaultSpmdMultiVector<Scalar>::getLocalDataImpl(
-  const Ptr<ArrayRCP<const Scalar> > &localValues, const Ptr<Index> &leadingDim
+  const Ptr<ArrayRCP<const Scalar> > &localValues, const Ptr<Ordinal> &leadingDim
   ) const
 {
 #ifdef THYRA_DEFAULT_SPMD_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT

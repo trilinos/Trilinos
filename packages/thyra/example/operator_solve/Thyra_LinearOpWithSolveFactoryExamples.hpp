@@ -35,6 +35,8 @@
 #include "Thyra_PreconditionerFactoryHelpers.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_DefaultPreconditioner.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 
 namespace Thyra {

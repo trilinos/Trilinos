@@ -29,7 +29,7 @@
 #ifndef THYRA_NONLINEAR_SOLVER_BASE_HPP
 #define THYRA_NONLINEAR_SOLVER_BASE_HPP
 
-#include "Thyra_LinearOpWithSolveBaseDecl.hpp"
+#include "Thyra_LinearOpWithSolveBase.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_VerboseObject.hpp"

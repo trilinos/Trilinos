@@ -29,7 +29,7 @@
 #ifndef THYRA_MULTI_VECTOR_DEFAULT_BASE_DECL_HPP
 #define THYRA_MULTI_VECTOR_DEFAULT_BASE_DECL_HPP
 
-#include "Thyra_MultiVectorBaseDecl.hpp"
+#include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_LinearOpDefaultBaseDecl.hpp"
 
 
@@ -111,11 +111,11 @@ protected:
     const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
     const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
     const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
-    const Index primary_first_ele_offset, // ToDo: Remove!
-    const Index primary_sub_dim, // ToDo: Remove!
-    const Index primary_global_offset,
-    const Index secondary_first_ele_offset,
-    const Index secondary_sub_dim
+    const Ordinal primary_first_ele_offset, // ToDo: Remove!
+    const Ordinal primary_sub_dim, // ToDo: Remove!
+    const Ordinal primary_global_offset,
+    const Ordinal secondary_first_ele_offset,
+    const Ordinal secondary_sub_dim
     ) const;
 
   /** \brief .
@@ -129,11 +129,11 @@ protected:
     const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
     const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
     const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-    const Index primary_first_ele_offset, // ToDo: Remove!
-    const Index primary_sub_dim, // ToDo: Remove!
-    const Index primary_global_offset,
-    const Index secondary_first_ele_offset,
-    const Index secondary_sub_dim
+    const Ordinal primary_first_ele_offset, // ToDo: Remove!
+    const Ordinal primary_sub_dim, // ToDo: Remove!
+    const Ordinal primary_global_offset,
+    const Ordinal secondary_first_ele_offset,
+    const Ordinal secondary_sub_dim
     ) const;
 
   /** \brief .

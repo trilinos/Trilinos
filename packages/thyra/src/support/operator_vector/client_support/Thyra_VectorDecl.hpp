@@ -146,7 +146,7 @@ namespace Thyra
     /** Element access */
     //@{
     /** \brief Read-only access to an element. */
-    virtual Scalar operator[](Index globalIndex) const ;
+    virtual Scalar operator[](Ordinal globalIndex) const ;
     //@}
 
     /** \name Block-related functions */
@@ -168,7 +168,7 @@ namespace Thyra
    * \relates ConstVector
    */
   template <class Scalar> 
-  Index dim(const ConstVector<Scalar>& x) ;
+  Ordinal dim(const ConstVector<Scalar>& x) ;
   
   /** \brief Return the std::vector space for a std::vector.
    *
@@ -212,7 +212,7 @@ namespace Thyra
     class IndexObject
     {
     public:
-      IndexObject(const Teuchos::RCP<VectorBase<Scalar> >& v, Index i)
+      IndexObject(const Teuchos::RCP<VectorBase<Scalar> >& v, Ordinal i)
         : v_(v), count_(new int), i_(i)
       {
         *count_ = 1;
@@ -249,7 +249,7 @@ namespace Thyra
       int* count_;
       Scalar valGotten_;
       Scalar val_;
-      Index i_;
+      Ordinal i_;
       // undefined empty ctor
       IndexObject();
       // undefined assignment op
@@ -284,17 +284,17 @@ namespace Thyra
     Vector<Scalar>& acceptCopyOf(const ConstVector<Scalar>& x);
 
     /** \brief . */
-    Scalar operator[](Index globalIndex) const
+    Scalar operator[](Ordinal globalIndex) const
       {
         return ConstVector<Scalar>::operator[](globalIndex);
       }
 
-    /** \brief Index operator that allows changes to the element.
+    /** \brief Ordinal operator that allows changes to the element.
      *
      * Note: The object returned is of type <tt>IndexObject</tt> which allows
      * for the customary operations to be performed.
      */
-    IndexObject operator[](Index globalIndex)
+    IndexObject operator[](Ordinal globalIndex)
     {
       return IndexObject(this->ptr(), globalIndex);
     }

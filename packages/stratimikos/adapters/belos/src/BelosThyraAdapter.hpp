@@ -39,7 +39,7 @@
 #include "BelosConfigDefs.hpp"
 
 #include <Thyra_DetachedMultiVectorView.hpp>
-#include <Thyra_MultiVectorBaseDecl.hpp>
+#include <Thyra_MultiVectorBase.hpp>
 #include <Thyra_MultiVectorStdOps.hpp>
 
 namespace Belos {
@@ -224,7 +224,7 @@ namespace Belos {
           ,RTOpPack::ConstSubMultiVectorView<ScalarType>(0,m,0,n,&B(0,0),B.stride())
           );
       // perform the operation via A: mv <- alpha*A*B_thyra + beta*mv
-      A.apply(Thyra::NONCONJ_ELE,*B_thyra,&mv,alpha,beta);
+      Thyra::apply<ScalarType>(A, Thyra::NOTRANS, *B_thyra, Teuchos::outArg(mv), alpha, beta);
     }
 
     /*! \brief Replace \c mv with \f$\alpha A + \beta B\f$.
@@ -271,7 +271,7 @@ namespace Belos {
           A.domain()
           ,RTOpPack::SubMultiVectorView<ScalarType>(0,m,0,n,&B(0,0),B.stride())
           );
-      A.applyTranspose(Thyra::CONJ_ELE,mv,&*B_thyra,alpha,Teuchos::ScalarTraits<ScalarType>::zero());
+      Thyra::apply<ScalarType>(A, Thyra::CONJTRANS, mv, B_thyra.ptr(), alpha);
     }
 
     /*! \brief Compute a std::vector \c b where the components are the individual dot-products of the 
@@ -383,7 +383,7 @@ namespace Belos {
     */    
     static void Apply ( const TLOB& Op, const TMVB& x, TMVB& y )
     { 
-      Op.apply(Thyra::NONCONJ_ELE,x,&y);
+      Thyra::apply<ScalarType>(Op, Thyra::NOTRANS, x, Teuchos::outArg(y));
     }
     
   };

@@ -71,7 +71,7 @@ bool run_linear_op_with_solve_tests(
   using Teuchos::parameterList;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
-  typedef Index Index;
+  typedef Ordinal Index;
 
   out
     << "\n***"

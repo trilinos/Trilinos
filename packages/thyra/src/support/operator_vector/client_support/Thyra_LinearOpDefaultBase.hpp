@@ -39,20 +39,20 @@ namespace Thyra {
 // Overridden from Teuchos::Describable
 
 
-template<class RangeScalar, class DomainScalar>
-std::string LinearOpDefaultBase<RangeScalar,DomainScalar>::description() const
+template<class Scalar>
+std::string LinearOpDefaultBase<Scalar>::description() const
 {
   std::ostringstream oss;
-  const Teuchos::RCP<const VectorSpaceBase<RangeScalar> >
+  const Teuchos::RCP<const VectorSpaceBase<Scalar> >
     l_range = this->range();
-  const Teuchos::RCP<const VectorSpaceBase<DomainScalar> >
+  const Teuchos::RCP<const VectorSpaceBase<Scalar> >
     l_domain = this->domain();
   oss << Teuchos::Describable::description();
   if(!l_range.get()) {
     oss << "{range=NULL,domain=NULL}"; 
   }
   else {
-    const Index dimDomain = l_domain->dim(), dimRange = l_range->dim();
+    const Ordinal dimDomain = l_domain->dim(), dimRange = l_range->dim();
     oss
       << "{rangeDim=" << dimRange
       << ",domainDim=" << dimDomain << "}";
@@ -61,13 +61,13 @@ std::string LinearOpDefaultBase<RangeScalar,DomainScalar>::description() const
 }
 
 
-template<class RangeScalar, class DomainScalar>
-void LinearOpDefaultBase<RangeScalar,DomainScalar>::describe(
-  Teuchos::FancyOStream                &out
-  ,const Teuchos::EVerbosityLevel      verbLevel
+template<class Scalar>
+void LinearOpDefaultBase<Scalar>::describe(
+  Teuchos::FancyOStream &out,
+  const Teuchos::EVerbosityLevel verbLevel
   ) const
 {
-  describeLinearOp(*this,out,verbLevel);
+  describeLinearOp(*this, out, verbLevel);
 }
 
 

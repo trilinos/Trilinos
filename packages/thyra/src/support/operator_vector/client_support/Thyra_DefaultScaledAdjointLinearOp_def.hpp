@@ -32,6 +32,8 @@
 
 
 #include "Thyra_DefaultScaledAdjointLinearOp_decl.hpp"
+#include "Thyra_VectorSpaceBase.hpp"
+#include "Thyra_AssertOp.hpp"
 
 
 namespace Thyra {
@@ -226,31 +228,32 @@ DefaultScaledAdjointLinearOp<Scalar>::getOrigOp() const
 // protected
 
 
-// Overridden from SingleScalarLinearOpBase
+// Overridden from LinearOpBase
 
 
 template<class Scalar>
-bool DefaultScaledAdjointLinearOp<Scalar>::opSupported(EOpTransp M_trans) const
+bool DefaultScaledAdjointLinearOp<Scalar>::opSupportedImpl(EOpTransp M_trans) const
 {
   assertInitialized();
   return Thyra::opSupported(
-    *this->getOrigOp(), trans_trans(this->overallTransp(),M_trans) );
+    *this->getOrigOp(), trans_trans(this->overallTransp(), M_trans) );
 }
 
 
 template<class Scalar>
-void DefaultScaledAdjointLinearOp<Scalar>::apply(
-  const EOpTransp M_trans
-  ,const MultiVectorBase<Scalar> &X
-  ,MultiVectorBase<Scalar> *Y
-  ,const Scalar alpha
-  ,const Scalar beta
+void DefaultScaledAdjointLinearOp<Scalar>::applyImpl(
+  const EOpTransp M_trans,
+  const MultiVectorBase<Scalar> &X,
+  const Ptr<MultiVectorBase<Scalar> > &Y,
+  const Scalar alpha,
+  const Scalar beta
   ) const
 {
+  using Teuchos::as;
   assertInitialized();
   Thyra::apply(
-    *this->getOrigOp(),trans_trans(M_trans,this->overallTransp())
-    ,X,Y,Scalar(this->overallScalar()*alpha),beta
+    *this->getOrigOp(), trans_trans(M_trans, this->overallTransp()),
+    X, Y, as<Scalar>(this->overallScalar()*alpha), beta
     );
 }
 

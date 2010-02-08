@@ -96,14 +96,14 @@ SpmdVectorBase<Scalar>::getLocalSubVector() const
 
 template<class Scalar>
 void SpmdVectorBase<Scalar>::applyOpImplWithComm(
-  const Ptr<const Teuchos::Comm<Index> > &comm_in,
+  const Ptr<const Teuchos::Comm<Ordinal> > &comm_in,
   const RTOpPack::RTOpT<Scalar> &op,
   const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
   const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
   const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-  const Index first_ele_offset_in,
-  const Index sub_dim_in,
-  const Index global_offset_in
+  const Ordinal first_ele_offset_in,
+  const Ordinal sub_dim_in,
+  const Ordinal global_offset_in
   ) const
 {
 
@@ -151,7 +151,7 @@ void SpmdVectorBase<Scalar>::applyOpImplWithComm(
     );
 #endif
 
-  Teuchos::RCP<const Teuchos::Comm<Index> > comm;
+  Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm;
   if (!is_null(comm_in))
     comm = Teuchos::rcp(&*comm_in,false);
   else
@@ -166,9 +166,9 @@ void SpmdVectorBase<Scalar>::applyOpImplWithComm(
 
   // Get the overlap in the current process with the input logical sub-vector
   // from (first_ele_offset_in,sub_dim_in,global_offset_in)
-  Index  overlap_first_local_ele_off = 0;
-  Index  overlap_local_sub_dim = 0;
-  Index  overlap_global_off = 0;
+  Ordinal  overlap_first_local_ele_off = 0;
+  Ordinal  overlap_local_sub_dim = 0;
+  Ordinal  overlap_global_off = 0;
   if(localSubDim_) {
     RTOp_parallel_calc_overlap(
       globalDim_, localSubDim_, localOffset_,
@@ -273,7 +273,7 @@ SpmdVectorBase<Scalar>::space() const
 
 
 template<class Scalar>
-void SpmdVectorBase<Scalar>::getLocalData( Scalar** localValues, Index* stride )
+void SpmdVectorBase<Scalar>::getLocalData( Scalar** localValues, Ordinal* stride )
 {
 #ifdef THYRA_DEBUG
   TEUCHOS_ASSERT(localValues);
@@ -294,7 +294,7 @@ void SpmdVectorBase<Scalar>::commitLocalData( Scalar* localValues )
 
 
 template<class Scalar>
-void SpmdVectorBase<Scalar>::getLocalData( const Scalar** localValues, Index* stride ) const
+void SpmdVectorBase<Scalar>::getLocalData( const Scalar** localValues, Ordinal* stride ) const
 {
 #ifdef THYRA_DEBUG
   TEUCHOS_ASSERT(localValues);
@@ -326,9 +326,9 @@ void SpmdVectorBase<Scalar>::applyOpImpl(
   const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
   const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
   const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-  const Index first_ele_offset,
-  const Index sub_dim,
-  const Index global_offset
+  const Ordinal first_ele_offset,
+  const Ordinal sub_dim,
+  const Ordinal global_offset
   ) const
 {
   applyOpImplWithComm( Teuchos::null, op, vecs, targ_vecs, reduct_obj,

@@ -38,7 +38,7 @@ namespace Thyra {
  *
  * 
  */
-template <class RangeScalar, class DomainScalar = RangeScalar>
+template<class Scalar>
 class LinearOpSourceBase : virtual public Teuchos::Describable
 {
 public:
@@ -56,12 +56,12 @@ public:
    * <li>[<tt>isOpConst()==true</tt>] <tt>getOp().get()==NULL</tt>
    * </ul>
    */
-  virtual Teuchos::RCP<LinearOpBase<DomainScalar,RangeScalar> > getNonconstOp() = 0;
+  virtual Teuchos::RCP<LinearOpBase<Scalar> > getNonconstOp() = 0;
 
   /** \brief Return a const left preconditioner linear operator if one is
    * designed or targeted to be applied on the left.
    */
-  virtual Teuchos::RCP<const LinearOpBase<DomainScalar,RangeScalar> > getOp()const = 0;
+  virtual Teuchos::RCP<const LinearOpBase<Scalar> > getOp()const = 0;
   
   //@}
 

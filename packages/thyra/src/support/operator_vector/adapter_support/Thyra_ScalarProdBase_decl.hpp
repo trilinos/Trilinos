@@ -30,7 +30,7 @@
 #define THYRA_SCALAR_PROD_BASE_DECL_HPP
 
 #include "Thyra_OperatorVectorTypes.hpp"
-#include "Thyra_EuclideanLinearOpBaseDecl.hpp"
+#include "Teuchos_Describable.hpp"
 
 
 namespace Thyra {
@@ -74,16 +74,8 @@ namespace Thyra {
  * \ingroup Thyra_Op_Vec_basic_adapter_support_grp
  */
 template<class Scalar>
-class ScalarProdBase {
+class ScalarProdBase : virtual public Teuchos::Describable {
 public:
-  
-  /** @name Destructor */
-  //@{
-  
-  /** \brief . */
-  virtual ~ScalarProdBase() {}
-
-  //@}
   
   /** @name Non-virtual public interface */
   //@{
@@ -162,39 +154,15 @@ public:
     ) const
     { scalarProdsImpl(X, Y, scalarProds_out); }
 
-  /** \brief Modify the application of a Euclidean linear operator by
-   * inserting the vector space's scalar product.
+  /** \brief Return a linear operator representing the scalar product
+   * <tt>Q</tt>.
    *
-   * Note that one responsibility of an implementation of this function is to
-   * provide the block scalar product implementation of
-   * <tt>MultiVectorBase</tt> objects that derive from
-   * <tt>EuclideanLinearOpBase</tt>.  For example, let <tt>M</tt> be a
-   * <tt>%MultiVectorBase</tt> object and consider the operation
-   
-   <tt>Y = adjoint(M)*X</tt>
-
-   * where <tt>M_trans==CONJTRANS</tt>.  This function may, or many not, call
-   * the <tt>EuclideanLinearOpBase::euclideanApplyTranspose()</tt> function in
-   * order to implement this block Scalar product.
-   *
-   * Note that the special case of <tt>M==X</tt> should also be supported
-   * which provides the symmetric operation
-   
-   <tt>Y = adjoint(X)*X</tt>
-
-   * that can be performed in half the flops as the general case.
-   *
-   * ToDo: Finish documentation!
+   * All scalar products are not required to return this operator so a return
+   * value of <tt>null</tt> is allowed.  Note that if <tt>this->isEuclidean()
+   * == true</tt> then there is no reason to return an identity operator.
    */
-  void euclideanApply(
-    const EuclideanLinearOpBase<Scalar> &M,
-    const EOpTransp M_trans,
-    const MultiVectorBase<Scalar> &X,
-    const Ptr<MultiVectorBase<Scalar> > &Y,
-    const Scalar alpha,
-    const Scalar beta
-    ) const
-    { euclideanApplyImpl(M, M_trans, X, Y, alpha, beta); }
+  RCP<const LinearOpBase<Scalar> > getLinearOp() const
+    { return getLinearOpImpl(); }
 
   //@}
 
@@ -217,14 +185,10 @@ protected:
     ) const = 0;
 
   /** \brief . */
-  virtual void euclideanApplyImpl(
-    const EuclideanLinearOpBase<Scalar> &M,
-    const EOpTransp M_trans,
-    const MultiVectorBase<Scalar> &X,
-    const Ptr<MultiVectorBase<Scalar> > &Y,
-    const Scalar alpha,
-    const Scalar beta
-    ) const = 0;
+  virtual RCP<const LinearOpBase<Scalar> > getLinearOpImpl() const
+    {
+      return Teuchos::null;
+    }
 
   //@}
 

@@ -29,9 +29,11 @@
 #define THYRA_EPETRA_LINEAR_OP_BASE_HPP
 
 #include "Thyra_EpetraTypes.hpp"
-#include "Thyra_SingleScalarEuclideanLinearOpBase.hpp"
+#include "Thyra_LinearOpBase.hpp"
+
 
 namespace Thyra {
+
 
 /** \brief Abstract base class for all <tt>LinearOpBase</tt> objects that can
  * return an <tt>Epetra_Operator</tt> view of themselves and details about how
@@ -47,7 +49,7 @@ namespace Thyra {
  *
  * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
-class EpetraLinearOpBase : virtual public SingleScalarEuclideanLinearOpBase<double> {
+class EpetraLinearOpBase : virtual public LinearOpBase<double> {
 public:
 
   /** \name Pure virtual functions that must be overridden in subclasses. */
@@ -57,18 +59,20 @@ public:
    * <tt>Epetra_Operator</tt> view of this object and how the object is
    * applied to implement <tt>*this</tt> linear operator.
    *
-   * \param  epetraOp  [out] The non-<tt>const</tt> epetra operator view of <tt>*this</tt>.
-   * \param  epetraOpTransp
-   *                   [out] Determines if the operator is applied
-   *                   as its transpose or its non-transpose.
-   *                   The Client should use this value and ignore the value in
-   *                   <tt>(*epetraOp)->UseTranspose()</tt> since it has been shown to be
-   *                   problematic and error prone.
-   * \param  epetraOpApplyAs
-   *                  [out] Determines if the operator should be applied using
-   *                  <tt>(*epetraOp)->Apply(...)</tt> or using <tt>(*epetraOp)->ApplyInverse(...)</tt>.
-   * \param  epetraOpAdjointSupport
-   *                  [out] Determines if the operator supports transposes or not.
+   * \param epetraOp [out] The non-<tt>const</tt> epetra operator view of
+   * <tt>*this</tt>.
+   *
+   * \param epetraOpTransp [out] Determines if the operator is applied as its
+   * transpose or its non-transpose.  The Client should use this value and
+   * ignore the value in <tt>(*epetraOp)->UseTranspose()</tt> since it has
+   * been shown to be problematic and error prone.
+   *
+   * \param epetraOpApplyAs [out] Determines if the operator should be applied
+   * using <tt>(*epetraOp)->Apply(...)</tt> or using
+   * <tt>(*epetraOp)->ApplyInverse(...)</tt>.
+   *
+   * \param epetraOpAdjointSupport [out] Determines if the operator supports
+   * transposes or not.
    *
    * <b>Preconditions:</b></ul>
    * <li><tt>epetraOp!=NULL</tt>
@@ -99,29 +103,30 @@ public:
    * the case!
    */
   virtual void getEpetraOpView(
-    Teuchos::RCP<Epetra_Operator>   *epetraOp
-    ,EOpTransp                                *epetraOpTransp
-    ,EApplyEpetraOpAs                       *epetraOpApplyAs
-    ,EAdjointEpetraOp                       *epetraOpAdjointSupport
+    Teuchos::RCP<Epetra_Operator> *epetraOp,
+    EOpTransp *epetraOpTransp,
+    EApplyEpetraOpAs *epetraOpApplyAs,
+    EAdjointEpetraOp *epetraOpAdjointSupport
     ) = 0;
-    
 
   /** \brief Return a smart pointer to a <tt>const</tt>
    * <tt>Epetra_Operator</tt> view of this object and how the object is
    * applied to implement <tt>*this</tt> linear operator.
    *
-   * \param  epetraOp  [out] The <tt>const</tt> epetra operator view of <tt>*this</tt>.
-   * \param  epetraOpTransp
-   *                   [out] Determines if the operator is applied
-   *                   as its transpose or its non-transpose.
-   *                   The Client should use this value and ignore the value in
-   *                   <tt>(*epetraOp)->UseTranspose()</tt> since it has been shown to be
-   *                   problematic and error prone.
-   * \param  epetraOpApplyAs
-   *                  [out] Determines if the operator should be applied using
-   *                  <tt>(*epetraOp)->Apply(...)</tt> or using <tt>(*epetraOp)->ApplyInverse(...)</tt>.
-   * \param  epetraOpAdjointSupport
-   *                  [out] Determines if the operator supports transposes or not.
+   * \param epetraOp [out] The <tt>const</tt> epetra operator view of
+   * <tt>*this</tt>.
+   *
+   * \param epetraOpTransp [out] Determines if the operator is applied as its
+   * transpose or its non-transpose.  The Client should use this value and
+   * ignore the value in <tt>(*epetraOp)->UseTranspose()</tt> since it has
+   * been shown to be problematic and error prone.
+   *
+   * \param epetraOpApplyAs [out] Determines if the operator should be applied
+   * using <tt>(*epetraOp)->Apply(...)</tt> or using
+   * <tt>(*epetraOp)->ApplyInverse(...)</tt>.
+   *
+   * \param epetraOpAdjointSupport [out] Determines if the operator supports
+   * transposes or not.
    *
    * <b>Preconditions:</b></ul>
    * <li><tt>epetraOp!=NULL</tt>
@@ -135,11 +140,10 @@ public:
    * </ul>
    *
    * The object accessed from <tt>*return</tt> is only guaranteed to be valid
-   * while the returned <tt>Teuchos::RCP</tt> object exits.  This
-   * allows for some very specialized implementations where a
-   * <tt>Epetra_Operator</tt> view of <tt>*this</tt> can be acquired and
-   * released according to the lifetime of the returned
-   * <tt>Teuchos::RCP</tt> object.
+   * while the returned <tt>Teuchos::RCP</tt> object exits.  This allows for
+   * some very specialized implementations where a <tt>Epetra_Operator</tt>
+   * view of <tt>*this</tt> can be acquired and released according to the
+   * lifetime of the returned <tt>Teuchos::RCP</tt> object.
    *
    * Note that if the client tries to constant cast the returned object and
    * modify it that this returned view is not guaranteed to update
@@ -152,16 +156,18 @@ public:
    * the case!
    */
   virtual void getEpetraOpView(
-    Teuchos::RCP<const Epetra_Operator>   *epetraOp
-    ,EOpTransp                                      *epetraOpTransp
-    ,EApplyEpetraOpAs                             *epetraOpApplyAs
-    ,EAdjointEpetraOp                             *epetraOpAdjointSupport
+    Teuchos::RCP<const Epetra_Operator> *epetraOp,
+    EOpTransp *epetraOpTransp,
+    EApplyEpetraOpAs *epetraOpApplyAs,
+    EAdjointEpetraOp *epetraOpAdjointSupport
     ) const = 0;
 
   //@}
 
 };	// end class EpetraLinearOpBase
 
+
 }	// end namespace Thyra
+
 
 #endif	// THYRA_EPETRA_LINEAR_OP_BASE_HPP

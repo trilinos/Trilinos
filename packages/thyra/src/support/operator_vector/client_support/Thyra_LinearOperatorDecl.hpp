@@ -32,7 +32,7 @@
 #include "Teuchos_Handle.hpp"
 #include "Thyra_VectorSpaceDecl.hpp"
 #include "Thyra_ConfigDefs.hpp"
-#include "Thyra_LinearOpBaseDecl.hpp"
+#include "Thyra_LinearOpBase.hpp"
 
 namespace Thyra
 {
@@ -42,31 +42,29 @@ namespace Thyra
    *
    * \ingroup Thyra_Op_Vec_ANA_Development_grp
    */
- template <class RangeScalar, class DomainScalar=RangeScalar>
+ template<class Scalar>
   class ConstLinearOperator 
-    : public virtual Teuchos::ConstHandle<LinearOpBase<RangeScalar, DomainScalar> >
+    : public virtual Teuchos::ConstHandle<LinearOpBase<Scalar> >
   {
   public:
 
-    typedef RangeScalar Scalar;
-
     /** \brief . */
     ConstLinearOperator( const Teuchos::ENull _null = Teuchos::null )
-      : Teuchos::ConstHandle<LinearOpBase<RangeScalar, DomainScalar> >(){;}
+      : Teuchos::ConstHandle<LinearOpBase<Scalar> >(){;}
 
     /** \brief Construct from a raw pointer */
-    ConstLinearOperator(Teuchos::ConstHandleable<LinearOpBase<RangeScalar, DomainScalar> >* rawPtr) 
-      : Teuchos::ConstHandle<LinearOpBase<RangeScalar, DomainScalar> >(rawPtr){;}
+    ConstLinearOperator(Teuchos::ConstHandleable<LinearOpBase<Scalar> >* rawPtr) 
+      : Teuchos::ConstHandle<LinearOpBase<Scalar> >(rawPtr){;}
 
     /** \brief Construct from a smart pointer */
-    ConstLinearOperator(const Teuchos::RCP<const LinearOpBase<RangeScalar, DomainScalar> >& smartPtr) 
-      : Teuchos::ConstHandle<LinearOpBase<RangeScalar, DomainScalar> >(smartPtr){;}
+    ConstLinearOperator(const Teuchos::RCP<const LinearOpBase<Scalar> >& smartPtr) 
+      : Teuchos::ConstHandle<LinearOpBase<Scalar> >(smartPtr){;}
 
     /** \brief Return the domain space */
-    const VectorSpace<DomainScalar> domain() const ;
+    const VectorSpace<Scalar> domain() const ;
 
     /** \brief Return the range space */
-    const VectorSpace<RangeScalar> range() const ;
+    const VectorSpace<Scalar> range() const ;
 
     /** \brief Apply the linear operator
      *
@@ -75,10 +73,10 @@ namespace Thyra
      * out = beta*out + alpha*op*in;
      * \endcode
      **/
-    void apply(const ConstVector<DomainScalar>& in,
-               Vector<RangeScalar>& out,
-               const RangeScalar& alpha = 1.0,
-               const RangeScalar& beta = 0.0) const ;
+    void apply(const ConstVector<Scalar>& in,
+               Vector<Scalar>& out,
+               const Scalar& alpha = 1.0,
+               const Scalar& beta = 0.0) const ;
 
     /** \brief Apply the transpose of the linear operator
      *
@@ -87,10 +85,10 @@ namespace Thyra
      * out = beta*out + alpha*op^T*in;
      * \endcode
      **/
-    void applyTranspose(const ConstVector<RangeScalar>& in,
-                        Vector<DomainScalar>& out,
-                        const DomainScalar& alpha = 1.0,
-                        const DomainScalar& beta = 0.0) const ;
+    void applyTranspose(const ConstVector<Scalar>& in,
+                        Vector<Scalar>& out,
+                        const Scalar& alpha = 1.0,
+                        const Scalar& beta = 0.0) const ;
 
 
     /** \brief Return the number of block rows */
@@ -100,7 +98,7 @@ namespace Thyra
     int numBlockCols() const ;
 
     /** \brief Return the (blockRow, blockCol)-th subblock */
-    ConstLinearOperator<RangeScalar, DomainScalar> getBlock(int blockRow, int blockCol) const ;
+    ConstLinearOperator<Scalar> getBlock(int blockRow, int blockCol) const ;
 
   };
 
@@ -109,29 +107,27 @@ namespace Thyra
    *
    * \ingroup Thyra_Op_Vec_ANA_Development_grp
    */
-  template <class RangeScalar, class DomainScalar=RangeScalar>
+  template<class Scalar>
   class LinearOperator 
-    : public Teuchos::Handle<LinearOpBase<RangeScalar, DomainScalar> >,
-      public ConstLinearOperator<RangeScalar, DomainScalar>
+    : public Teuchos::Handle<LinearOpBase<Scalar> >,
+      public ConstLinearOperator<Scalar>
   {
   public:
 
-    typedef RangeScalar Scalar;
-
     /** \brief .  */
     LinearOperator( const Teuchos::ENull _null = Teuchos::null )
-      : Teuchos::Handle<LinearOpBase<RangeScalar, DomainScalar> >(){;}
+      : Teuchos::Handle<LinearOpBase<Scalar> >(){;}
 
     /** \brief Construct from a raw pointer */
-    LinearOperator(Teuchos::Handleable<LinearOpBase<RangeScalar, DomainScalar> >* rawPtr) 
-      : Teuchos::Handle<LinearOpBase<RangeScalar, DomainScalar> >(rawPtr){;}
+    LinearOperator(Teuchos::Handleable<LinearOpBase<Scalar> >* rawPtr) 
+      : Teuchos::Handle<LinearOpBase<Scalar> >(rawPtr){;}
 
     /** \brief Construct from a smart pointer */
-    LinearOperator(const Teuchos::RCP<LinearOpBase<RangeScalar, DomainScalar> >& smartPtr) 
-      : Teuchos::Handle<LinearOpBase<RangeScalar, DomainScalar> >(smartPtr){;}
+    LinearOperator(const Teuchos::RCP<LinearOpBase<Scalar> >& smartPtr) 
+      : Teuchos::Handle<LinearOpBase<Scalar> >(smartPtr){;}
 
     /** \brief Return the (blockRow, blockCol)-th subblock */
-    LinearOperator<RangeScalar, DomainScalar> getBlock(int blockRow, int blockCol) ;
+    LinearOperator<Scalar> getBlock(int blockRow, int blockCol) ;
 
   };
 

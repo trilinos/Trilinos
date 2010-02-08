@@ -436,7 +436,7 @@ defaultLumpedParameterModelEvaluator(
 template<class Scalar>
 const std::string
 DefaultLumpedParameterModelEvaluator<Scalar>::ParameterSubvectorIndex_name_
-= "Parameter Subvector Index";
+= "Parameter Subvector Ordinal";
 
 template<class Scalar>
 const int
@@ -929,7 +929,7 @@ void DefaultLumpedParameterModelEvaluator<Scalar>::generateParameterBasisMatrix(
   const RCP<const VectorSpaceBase<Scalar> >
     p_orig_space = thyraModel->get_p_space(p_idx_);
 
-  const Index p_orig_dim = p_orig_space->dim();
+  const Ordinal p_orig_dim = p_orig_space->dim();
 
   TEST_FOR_EXCEPTION(
     !( 1 <= numberOfBasisColumns_ && numberOfBasisColumns_ <= p_orig_dim ),

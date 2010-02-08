@@ -30,9 +30,8 @@
 #define THYRA_DEFAULT_INVERSE_LINEAR_OP_DECL_HPP
 
 #include "Thyra_InverseLinearOpBase.hpp"
-#include "Thyra_SingleScalarLinearOpBase.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
-#include "Teuchos_arrayArg.hpp"
+
 
 namespace Thyra {
 
@@ -68,15 +67,9 @@ enum EThrowOnSolveFailure {
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 template<class Scalar>
-class DefaultInverseLinearOp
-  : virtual public InverseLinearOpBase<Scalar>,            // Public interface
-    virtual protected SingleScalarLinearOpBase<Scalar>     // Implementation detail
+class DefaultInverseLinearOp : virtual public InverseLinearOpBase<Scalar>
 {
 public:
-
-#ifdef THYRA_INJECT_USING_DECLARATIONS
-  using SingleScalarLinearOpBase<Scalar>::apply;
-#endif
 
   /** @name Constructors/initializers/accessors */
   //@{
@@ -112,32 +105,27 @@ public:
   /** \brief Initialize given a non-const <tt>LinearOpWithSolveBase</tt>
    * object and an optional <tt>.
    *
-   * \param  lows
-   *           [in] The <tt>LinearOpWithSolveBase</tt> object that will
-   *           <tt>solve(...)</tt> and/or <tt>solveTranspose(...)</tt> will be
-   *           called on.  Note that <tt>*this</tt> may give up non-const
-   *           views of <tt>*lows</tt> so that <tt>*lows</tt> may be changed
-   *           through clients of this object.
-   * \param  fwdSolveCriteria
-   *           [in] The criteria used to call <tt>lows->solve(...)</tt>.  If
-   *           <tt>fwdSolveCriteria==NULL</tt> then the default solve criteria
-   *           built into <tt>*lows<tt> will be used.  If
-   *           <tt>fwdSolveCriteria!=NULL</tt> then <tt>*fwdSolveCriteria</tt>
-   *           will be copied internally.  <b>Warning!</b> If shallow copy is
-   *           used by any parameters in
-   *           <tt>fwdSolveCriteria->extraParameter</tt> these these
-   *           parameters will be "remembered" by <tt>*this</tt>.
-
-   * \param  adjSolveCriteria
-   *           [in] The criteria used to call
-   *           <tt>lows->solveTranspose(...)</tt>.  If
-   *           <tt>adjSolveCriteria==NULL</tt> then the default solve criteria
-   *           built into <tt>*lows<tt> will be used.  If
-   *           <tt>adjSolveCriteria!=NULL</tt> then <tt>*adjSolveCriteria</tt>
-   *           will be copied internally.  <b>Warning!</b> If shallow copy is
-   *           used by any parameters in
-   *           <tt>adjSolveCriteria->extraParameter</tt> these these
-   *           parameters will be "remembered" by <tt>*this</tt>.
+   * \param lows [in] The <tt>LinearOpWithSolveBase</tt> object that will
+   * <tt>solve(...)</tt> and/or <tt>solveTranspose(...)</tt> will be called
+   * on.  Note that <tt>*this</tt> may give up non-const views of
+   * <tt>*lows</tt> so that <tt>*lows</tt> may be changed through clients of
+   * this object.
+   *
+   * \param fwdSolveCriteria [in] The criteria used to call
+   * <tt>lows->solve(...)</tt>.  If <tt>fwdSolveCriteria==NULL</tt> then the
+   * default solve criteria built into <tt>*lows<tt> will be used.  If
+   * <tt>fwdSolveCriteria!=NULL</tt> then <tt>*fwdSolveCriteria</tt> will be
+   * copied internally.  <b>Warning!</b> If shallow copy is used by any
+   * parameters in <tt>fwdSolveCriteria->extraParameter</tt> these these
+   * parameters will be "remembered" by <tt>*this</tt>.
+   *
+   * \param adjSolveCriteria [in] The criteria used to call
+   * <tt>lows->solveTranspose(...)</tt>.  If <tt>adjSolveCriteria==NULL</tt>
+   * then the default solve criteria built into <tt>*lows<tt> will be used.
+   * If <tt>adjSolveCriteria!=NULL</tt> then <tt>*adjSolveCriteria</tt> will
+   * be copied internally.  <b>Warning!</b> If shallow copy is used by any
+   * parameters in <tt>adjSolveCriteria->extraParameter</tt> these these
+   * parameters will be "remembered" by <tt>*this</tt>.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>lows.get() != NULL</tt>
@@ -159,31 +147,27 @@ public:
   /** \brief Initialize given a non-const <tt>LinearOpWithSolveBase</tt>
    * object and an optional <tt>.
    *
-   * \param  lows
-   *           [in] The <tt>LinearOpWithSolveBase</tt> object that will
-   *           <tt>solve(...)</tt> and/or <tt>solveTranspose(...)</tt> will be
-   *           called on.  Note that <tt>*this</tt> may give up non-const
-   *           views of <tt>*lows</tt> so that <tt>*lows</tt> may be changed
-   *           through clients of this object.
-   * \param  fwdSolveCriteria
-   *           [in] The criteria used to call <tt>lows->solve(...)</tt>.  If
-   *           <tt>fwdSolveCriteria==NULL</tt> then the default solve criteria
-   *           built into <tt>*lows<tt> will be used.  If
-   *           <tt>fwdSolveCriteria!=NULL</tt> then <tt>*fwdSolveCriteria</tt>
-   *           will be copied internally.  <b>Warning!</b> If shallow copy is
-   *           used by any parameters in
-   *           <tt>fwdSolveCriteria->extraParameter</tt> these these
-   *           parameters will be "remembered" by <tt>*this</tt>.
-   * \param  adjSolveCriteria
-   *           [in] The criteria used to call
-   *           <tt>lows->solveTranspose(...)</tt>.  If
-   *           <tt>adjSolveCriteria==NULL</tt> then the default solve criteria
-   *           built into <tt>*lows<tt> will be used.  If
-   *           <tt>adjSolveCriteria!=NULL</tt> then <tt>*adjSolveCriteria</tt>
-   *           will be copied internally.  <b>Warning!</b> If shallow copy is
-   *           used by any parameters in
-   *           <tt>adjSolveCriteria->extraParameter</tt> these these
-   *           parameters will be "remembered" by <tt>*this</tt>.
+   * \param lows [in] The <tt>LinearOpWithSolveBase</tt> object that will
+   * <tt>solve(...)</tt> and/or <tt>solveTranspose(...)</tt> will be called
+   * on.  Note that <tt>*this</tt> may give up non-const views of
+   * <tt>*lows</tt> so that <tt>*lows</tt> may be changed through clients of
+   * this object.
+   *
+   * \param fwdSolveCriteria [in] The criteria used to call
+   * <tt>lows->solve(...)</tt>.  If <tt>fwdSolveCriteria==NULL</tt> then the
+   * default solve criteria built into <tt>*lows<tt> will be used.  If
+   * <tt>fwdSolveCriteria!=NULL</tt> then <tt>*fwdSolveCriteria</tt> will be
+   * copied internally.  <b>Warning!</b> If shallow copy is used by any
+   * parameters in <tt>fwdSolveCriteria->extraParameter</tt> these these
+   * parameters will be "remembered" by <tt>*this</tt>.
+   *
+   * \param adjSolveCriteria [in] The criteria used to call
+   * <tt>lows->solveTranspose(...)</tt>.  If <tt>adjSolveCriteria==NULL</tt>
+   * then the default solve criteria built into <tt>*lows<tt> will be used.
+   * If <tt>adjSolveCriteria!=NULL</tt> then <tt>*adjSolveCriteria</tt> will
+   * be copied internally.  <b>Warning!</b> If shallow copy is used by any
+   * parameters in <tt>adjSolveCriteria->extraParameter</tt> these these
+   * parameters will be "remembered" by <tt>*this</tt>.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>lows.get() != NULL</tt>
@@ -264,19 +248,19 @@ public:
 
 protected:
 
-  /** @name Overridden from SingleScalarLinearOpBase */
+  /** @name Overridden from LinearOpBase */
   //@{
 
   /** \brief Returns <tt>true</tt> only if all constituent operators support
    * <tt>M_trans</tt>.
    */
-  bool opSupported(EOpTransp M_trans) const;
+  bool opSupportedImpl(EOpTransp M_trans) const;
 
   /** \brief . */
-  void apply(
+  void applyImpl(
     const EOpTransp M_trans,
     const MultiVectorBase<Scalar> &X,
-    MultiVectorBase<Scalar> *Y,
+    const Ptr<MultiVectorBase<Scalar> > &Y,
     const Scalar alpha,
     const Scalar beta
     ) const;

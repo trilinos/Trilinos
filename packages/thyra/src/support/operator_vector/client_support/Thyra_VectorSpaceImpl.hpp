@@ -205,7 +205,7 @@ namespace Thyra
 
   //========================================================================
   template <class Scalar> inline
-  bool indexIsLocal(const VectorSpace<Scalar>& s, Index i) 
+  bool indexIsLocal(const VectorSpace<Scalar>& s, Ordinal i) 
   {
     Range1D range(i,i);
     return s.constPtr()->hasInCoreView(range, VIEW_TYPE_DIRECT, STRIDE_TYPE_UNIT);

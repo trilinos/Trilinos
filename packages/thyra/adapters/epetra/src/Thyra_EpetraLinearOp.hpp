@@ -32,7 +32,9 @@
 #include "Thyra_EpetraLinearOpBase.hpp"
 #include "Thyra_SpmdVectorSpaceBase.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Concrete <tt>LinearOpBase</tt> adapter subclass for
  * <tt>Epetra_Operator</tt> object.
@@ -55,19 +57,9 @@ namespace Thyra {
  *
  * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
-class EpetraLinearOp : virtual public EpetraLinearOpBase {
+class EpetraLinearOp : virtual public EpetraLinearOpBase
+{
 public:
-
-  /** \brief . */
-  using SingleScalarEuclideanLinearOpBase<double>::euclideanApply;
-
-  /** \name Public types */
-  //@{
-
-  /** \brief . */
-  typedef double Scalar;
-
-  //@}
 
   /** \name Constructors / initializers / accessors */
   //@{
@@ -135,8 +127,8 @@ public:
     EOpTransp opTrans = NOTRANS,
     EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
     EAdjointEpetraOp adjointSupport = EPETRA_OP_ADJOINT_SUPPORTED,
-    const RCP<const VectorSpaceBase<Scalar> > &range = Teuchos::null,
-    const RCP<const VectorSpaceBase<Scalar> > &domain = Teuchos::null
+    const RCP<const VectorSpaceBase<double> > &range = Teuchos::null,
+    const RCP<const VectorSpaceBase<double> > &domain = Teuchos::null
     );
 
   /** \brief Partially initialize.
@@ -188,8 +180,8 @@ public:
    * <tt>setFullyInitialized()</tt>.
    */
   void partiallyInitialize(
-    const RCP<const VectorSpaceBase<Scalar> > &range,
-    const RCP<const VectorSpaceBase<Scalar> > &domain,
+    const RCP<const VectorSpaceBase<double> > &range,
+    const RCP<const VectorSpaceBase<double> > &domain,
     const RCP<Epetra_Operator> &op,
     EOpTransp opTrans = NOTRANS,
     EApplyEpetraOpAs applyAs = EPETRA_OP_APPLY_APPLY,
@@ -218,8 +210,8 @@ public:
     EOpTransp *opTrans = NULL,
     EApplyEpetraOpAs *applyAs = NULL,
     EAdjointEpetraOp *adjointSupport = NULL,
-    RCP<const VectorSpaceBase<Scalar> > *range = NULL,
-    RCP<const VectorSpaceBase<Scalar> > *domain = NULL
+    RCP<const VectorSpaceBase<double> > *range = NULL,
+    RCP<const VectorSpaceBase<double> > *domain = NULL
     );
 
   /** \brief Return a smart pointer to the SpmdVectorSpaceBase object for the
@@ -230,7 +222,7 @@ public:
    * <li> [<tt>this->range().get() == NULL</tt>] <tt>return.get() == NULL</tt>
    * </ul>
    */
-  RCP< const SpmdVectorSpaceBase<Scalar> > spmdRange() const;
+  RCP<const SpmdVectorSpaceBase<double> > spmdRange() const;
 
   /** \brief Return a smart pointer to the SpmdVectorSpaceBase object for the
    * domain.
@@ -240,7 +232,7 @@ public:
    * <li> [<tt>this->domain().get() == NULL</tt>] <tt>return.get() == NULL</tt>
    * </ul>
    */
-  RCP< const SpmdVectorSpaceBase<Scalar> > spmdDomain() const;
+  RCP<const SpmdVectorSpaceBase<double> > spmdDomain() const;
 
   /** \brief . */
   RCP<Epetra_Operator> epetra_op();
@@ -270,37 +262,17 @@ public:
 
   //@}
 
-  /** \name Overridden from SingleScalarLinearOpBase */
-  //@{
-
-  /** \brief . */
-  bool opSupported(EOpTransp M_trans) const;
-  
-  //@}
-  
-  /** \name Overridden from EuclideanLinearOpBase */
-  //@{
-
-  /// Returns <tt>this->range()</tt>
-  RCP< const ScalarProdVectorSpaceBase<Scalar> > rangeScalarProdVecSpc() const;
-  /// Returns <tt>this->domain()</tt>
-  RCP< const ScalarProdVectorSpaceBase<Scalar> > domainScalarProdVecSpc() const;
-  /** \brief . */
-  void euclideanApply(
-    const EOpTransp M_trans,
-    const MultiVectorBase<Scalar> &X,
-    MultiVectorBase<Scalar> *Y,
-    const Scalar alpha,
-    const Scalar beta
-    ) const;
-
-  //@}
-  
   /** \name Overridden from LinearOpBase */
   //@{
 
   /** \brief . */
-  RCP<const LinearOpBase<Scalar> > clone() const;
+  RCP<const VectorSpaceBase<double> > range() const;
+
+  /** \brief . */
+  RCP<const VectorSpaceBase<double> > domain() const;
+
+  /** \brief . */
+  RCP<const LinearOpBase<double> > clone() const;
 
   //@}
 
@@ -319,6 +291,23 @@ public:
   
 protected:
 
+  /** \name Protected member functions overridden from LinearOpBase. */
+  //@{
+
+  /** \brief . */
+  bool opSupportedImpl(EOpTransp M_trans) const;
+
+  /** \brief . */
+  void applyImpl(
+    const EOpTransp M_trans,
+    const MultiVectorBase<double> &X,
+    const Ptr<MultiVectorBase<double> > &Y,
+    const double alpha,
+    const double beta
+    ) const;
+
+  //@}
+
   /** \name Allocators for domain and range spaces */
   //@{
 
@@ -332,7 +321,7 @@ protected:
    * vector space objects, and allocation is delegated to a virtual
    * allocator function.
    */
-  virtual RCP< const SpmdVectorSpaceBase<Scalar> > 
+  virtual RCP< const SpmdVectorSpaceBase<double> > 
   allocateDomain(
     const RCP<Epetra_Operator> &op, 
     EOpTransp op_trans 
@@ -348,7 +337,7 @@ protected:
    * vector space objects, and allocation is delegated to a virtual
    * allocator function.
    */
-  virtual RCP< const SpmdVectorSpaceBase<Scalar> >
+  virtual RCP< const SpmdVectorSpaceBase<double> >
   allocateRange( 
     const RCP<Epetra_Operator> &op, 
     EOpTransp op_trans 
@@ -366,10 +355,8 @@ private:
   EOpTransp opTrans_;
   EApplyEpetraOpAs applyAs_;
   EAdjointEpetraOp adjointSupport_;
-  RCP< const SpmdVectorSpaceBase<Scalar> > range_;
-  RCP< const SpmdVectorSpaceBase<Scalar> > domain_;
-  RCP< const ScalarProdVectorSpaceBase<Scalar> > sp_range_;
-  RCP< const ScalarProdVectorSpaceBase<Scalar> > sp_domain_;
+  RCP<const SpmdVectorSpaceBase<double> > range_;
+  RCP<const SpmdVectorSpaceBase<double> > domain_;
 
   // ////////////////////////////////////
   // Private member functions

@@ -31,7 +31,7 @@
 
 #include "Thyra_VectorSpaceBase_decl.hpp"
 #include "Thyra_ProductVectorSpaceBase.hpp"
-#include "Thyra_VectorSpaceDefaultBaseDecl.hpp"
+#include "Thyra_VectorSpaceDefaultBase.hpp"
 
 namespace Thyra {
 
@@ -80,9 +80,9 @@ public:
 
   /** \brief . */
   DefaultClusteredSpmdProductVectorSpace(
-    const Teuchos::RCP<const Teuchos::Comm<Index> >          &intraClusterComm
+    const Teuchos::RCP<const Teuchos::Comm<Ordinal> >          &intraClusterComm
     ,const int                                                       clusterRootRank
-    ,const Teuchos::RCP<const Teuchos::Comm<Index> >         &interClusterComm
+    ,const Teuchos::RCP<const Teuchos::Comm<Ordinal> >         &interClusterComm
     ,const int                                                       numBlocks
     ,const Teuchos::RCP<const VectorSpaceBase<Scalar> >      vecSpaces[]
     );
@@ -108,21 +108,21 @@ public:
    *            for this cluster of processes.
    */
   void initialize(
-    const Teuchos::RCP<const Teuchos::Comm<Index> >          &intraClusterComm
+    const Teuchos::RCP<const Teuchos::Comm<Ordinal> >          &intraClusterComm
     ,const int                                                       clusterRootRank
-    ,const Teuchos::RCP<const Teuchos::Comm<Index> >         &interClusterComm
+    ,const Teuchos::RCP<const Teuchos::Comm<Ordinal> >         &interClusterComm
     ,const int                                                       numBlocks
     ,const Teuchos::RCP<const VectorSpaceBase<Scalar> >      vecSpaces[]
     );
 
   /** \brief . */
-  Teuchos::RCP<const Teuchos::Comm<Index> > intraClusterComm() const;
+  Teuchos::RCP<const Teuchos::Comm<Ordinal> > intraClusterComm() const;
 
   /** \brief . */
   int clusterRootRank() const;
 
   /** \brief . */
-  Teuchos::RCP<const Teuchos::Comm<Index> > interClusterComm() const;
+  Teuchos::RCP<const Teuchos::Comm<Ordinal> > interClusterComm() const;
 
   /** \bief The some of the dimensions of the block vector spaces in this
    * cluster.
@@ -145,7 +145,7 @@ public:
   /** @name Public overridden from VectorSpaceBase */
   //@{
   /** \brief . */
-  Index dim() const;
+  Ordinal dim() const;
   /** \brief . */
   bool isCompatible(const VectorSpaceBase<Scalar>& vecSpc) const;
   /** \brief . */
@@ -198,16 +198,16 @@ private:
   // //////////////////////////////////////
   // Private data members
 
-  Teuchos::RCP<const Teuchos::Comm<Index> >  intraClusterComm_;
+  Teuchos::RCP<const Teuchos::Comm<Ordinal> >  intraClusterComm_;
   int                                                      clusterRootRank_;
-  Teuchos::RCP<const Teuchos::Comm<Index> >  interClusterComm_;
+  Teuchos::RCP<const Teuchos::Comm<Ordinal> >  interClusterComm_;
   vecSpaces_t vecSpaces_; // size == numBlocks
   bool isEuclidean_;
-  Index globalDim_;     // The global dimension of all of the block vectors in
+  Ordinal globalDim_;     // The global dimension of all of the block vectors in
                         // all of the clusters.
-  Index clusterSubDim_; // The some of the dimensions of the block vector
+  Ordinal clusterSubDim_; // The some of the dimensions of the block vector
                         // spaces in this cluster
-  Index clusterOffset_; // The offset of the first element in the first
+  Ordinal clusterOffset_; // The offset of the first element in the first
                         // constituent vector in this cluster in the
                         // w.r.t. the global vector.
   
@@ -217,7 +217,7 @@ private:
 // Inline defintions
 
 template<class Scalar>
-Teuchos::RCP<const Teuchos::Comm<Index> >
+Teuchos::RCP<const Teuchos::Comm<Ordinal> >
 DefaultClusteredSpmdProductVectorSpace<Scalar>::intraClusterComm() const
 {
   return intraClusterComm_;
@@ -230,7 +230,7 @@ int DefaultClusteredSpmdProductVectorSpace<Scalar>::clusterRootRank() const
 }
 
 template<class Scalar>
-Teuchos::RCP<const Teuchos::Comm<Index> >
+Teuchos::RCP<const Teuchos::Comm<Ordinal> >
 DefaultClusteredSpmdProductVectorSpace<Scalar>::interClusterComm() const
 {
   return interClusterComm_;

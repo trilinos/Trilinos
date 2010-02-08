@@ -31,13 +31,15 @@
 #ifndef THYRA_AMESOS_LINEAR_OP_WITH_SOLVE_HPP
 #define THYRA_AMESOS_LINEAR_OP_WITH_SOLVE_HPP
 
-#include "Thyra_SingleScalarLinearOpWithSolveBase.hpp"
+#include "Thyra_LinearOpWithSolveBase.hpp"
 #include "Thyra_LinearOpSourceBase.hpp"
 #include "Thyra_EpetraLinearOpBase.hpp"
 #include "Epetra_LinearProblem.h"
 #include "Amesos_BaseSolver.h"
 
+
 namespace Thyra {
+
 
 /** \brief Concrete <tt>LinearOpWithSolveBase</tt> subclass that adapts any
  * <tt>Amesos_BaseSolver</tt> object.
@@ -52,9 +54,7 @@ namespace Thyra {
  *
  * \ingroup Amesos_Thyra_adapters_grp
  */
-class AmesosLinearOpWithSolve
-  : virtual public LinearOpWithSolveBase<double>                  // Public interface
-  , virtual protected SingleScalarLinearOpWithSolveBase<double>   // Implementation detail
+class AmesosLinearOpWithSolve : virtual public LinearOpWithSolveBase<double>
 {
 public:
 
@@ -186,36 +186,34 @@ public:
 
 protected:
 
-  /** @name Overridden protected functions from SingleScalarLinearOpBase */
+  /** @name Overridden from LinearOpBase  */
   //@{
   /** \brief . */
-  bool opSupported(EOpTransp M_trans) const;
+  virtual bool opSupportedImpl(EOpTransp M_trans) const;
   /** \brief . */
-  void apply(
+  virtual void applyImpl(
     const EOpTransp M_trans,
     const MultiVectorBase<double> &X,
-    MultiVectorBase<double> *Y,
+    const Ptr<MultiVectorBase<double> > &Y,
     const double alpha,
     const double beta
     ) const;
   //@}
 
-  /** @name Overridden protected functions from SingleScalarLinearOpWithSolveBase */
+  /** @name Overridden from LinearOpWithSolveBase. */
   //@{
   /** \brief . */
-  bool solveSupportsTrans(EOpTransp M_trans) const;
+  virtual bool solveSupportsImpl(EOpTransp M_trans) const;
   /** \brief . */
-  bool solveSupportsSolveMeasureType(
+  virtual bool solveSupportsSolveMeasureTypeImpl(
     EOpTransp M_trans, const SolveMeasureType& solveMeasureType
     ) const;
   /** \brief . */
-  void solve(
+  SolveStatus<double> solveImpl(
     const EOpTransp M_trans,
     const MultiVectorBase<double> &B,
-    MultiVectorBase<double> *X,
-    const int numBlocks,
-    const BlockSolveCriteria<double> blockSolveCriteria[],
-    SolveStatus<double> blockSolveStatus[]
+    const Ptr<MultiVectorBase<double> > &X,
+    const Ptr<const SolveCriteria<double> > solveCriteria
     ) const;
   //@}
 

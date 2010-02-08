@@ -36,43 +36,48 @@
 #include "Thyra_AssertOp.hpp"
 #include "Thyra_AssertOp.hpp"
 
-template<class RangeScalar, class DomainScalar>
+
+template<class Scalar>
 void Thyra::describeLinearOp(
-  const LinearOpBase<RangeScalar,DomainScalar>   &A
-  ,Teuchos::FancyOStream                         &out_arg
-  ,const Teuchos::EVerbosityLevel                verbLevel
+  const LinearOpBase<Scalar> &A,
+  Teuchos::FancyOStream &out_arg,
+  const Teuchos::EVerbosityLevel verbLevel
   )
 {
   using Teuchos::RCP;
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
-  typedef Teuchos::ScalarTraits<DomainScalar> DST;
+  typedef Teuchos::ScalarTraits<Scalar> DST;
+
   RCP<FancyOStream> out = rcp(&out_arg,false);
   OSTab tab(out);
   *out << A.description() << "\n";
-  const Teuchos::RCP<const VectorSpaceBase<RangeScalar> >
+
+  const Teuchos::RCP<const VectorSpaceBase<Scalar> >
     range = A.range();
-  const Teuchos::RCP<const VectorSpaceBase<DomainScalar> >
+  const Teuchos::RCP<const VectorSpaceBase<Scalar> >
     domain = A.domain();
+
   if(!range.get()) {
     return;
   }
-  const Index dimDomain = domain->dim(), dimRange = range->dim();
+
+  const Ordinal dimDomain = domain->dim(), dimRange = range->dim();
   if ( dimDomain > 0 && dimRange > 0 && verbLevel >= Teuchos::VERB_EXTREME ) {
     // Copy into dense matrix by column
-    Teuchos::RCP<VectorBase<DomainScalar> > e_j = createMember(domain);
-    Teuchos::RCP<VectorBase<RangeScalar> >  t   = createMember(range); // temp column
-    RTOpPack::ConstSubVectorView<RangeScalar> sv;
-    std::vector<RangeScalar>  Md( dimRange * dimDomain ); // Column major
-    const Index
+    Teuchos::RCP<VectorBase<Scalar> > e_j = createMember(domain);
+    Teuchos::RCP<VectorBase<Scalar> > t = createMember(range); // temp column
+    RTOpPack::ConstSubVectorView<Scalar> sv;
+    Array<Scalar>  Md(dimRange*dimDomain); // Column major
+    const Ordinal
       cs = 1,         // stride for columns or rows 
       rs = dimRange;  // stride for rows or columns
-    Index i, j;
+    Ordinal i, j;
     OSTab tab2(out);
     for( j = 0; j < dimDomain; ++j ) {
       Thyra::assign( e_j.get(), DST::zero() );
       Thyra::set_ele( j, DST::one(), e_j.get() );
-      apply(A,NONCONJ_ELE,*e_j,t.get());  // extract the ith column or row
+      Thyra::apply<Scalar>(A, NOTRANS, *e_j, t.ptr());  // extract the ith column or row
       t->acquireDetachedView(Range1D(),&sv);
       for( i = 0; i < dimRange; ++i ) Md[ i*cs + j*rs ] = sv(i);
       t->releaseDetachedView(&sv);
@@ -84,6 +89,8 @@ void Thyra::describeLinearOp(
       *out << std::endl;
     }
   }
+
 }
+
 
 #endif // THYRA_DESCRIBE_LINEAR_OP_HPP

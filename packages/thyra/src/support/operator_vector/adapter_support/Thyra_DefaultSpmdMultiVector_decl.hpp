@@ -142,13 +142,10 @@ public:
     Ordinal *leadingDim = NULL
     );
 
-  //@}
-
-  /** @name Overridden public functions from EuclideanLinearOpBase */
-  //@{
   /** \brief . */
   RCP< const ScalarProdVectorSpaceBase<Scalar> >
   domainScalarProdVecSpc() const;
+
   //@}
 
   /** @name Overridden public functions from SpmdMultiVectorBase */
@@ -178,11 +175,11 @@ protected:
   //@{
   /** \brief . */
   void getNonconstLocalDataImpl(
-    const Ptr<ArrayRCP<Scalar> > &localValues, const Ptr<Index> &leadingDim
+    const Ptr<ArrayRCP<Scalar> > &localValues, const Ptr<Ordinal> &leadingDim
     );
   /** \brief . */
   void getLocalDataImpl(
-    const Ptr<ArrayRCP<const Scalar> > &localValues, const Ptr<Index> &leadingDim
+    const Ptr<ArrayRCP<const Scalar> > &localValues, const Ptr<Ordinal> &leadingDim
     ) const;
   //@}
   

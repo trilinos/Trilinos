@@ -82,16 +82,9 @@ protected:
     const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
     const ArrayView<Scalar> &scalarProds_out
     ) const;
-  
+
   /** \brief . */
-  virtual void euclideanApplyImpl(
-    const EuclideanLinearOpBase<Scalar> &M,
-    const EOpTransp M_trans,
-    const MultiVectorBase<Scalar> &X,
-    const Ptr<MultiVectorBase<Scalar> > &Y,
-    const Scalar alpha,
-    const Scalar beta
-    ) const;
+  RCP<const LinearOpBase<Scalar> > getLinearOpImpl() const;
 
   //@}
 

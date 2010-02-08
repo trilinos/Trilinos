@@ -37,7 +37,7 @@ namespace Thyra {
 
 template<class Scalar>
 DefaultSpmdVectorSpaceFactory<Scalar>::DefaultSpmdVectorSpaceFactory(
-  const Teuchos::RCP<const Teuchos::Comm<Index> > &comm
+  const Teuchos::RCP<const Teuchos::Comm<Ordinal> > &comm
   )
   :comm_(comm)
 {}

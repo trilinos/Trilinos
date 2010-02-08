@@ -29,7 +29,7 @@
 #ifndef THYRA_SPMD_VECTOR_SPACE_FACTORY_STD_DECL_HPP
 #define THYRA_SPMD_VECTOR_SPACE_FACTORY_STD_DECL_HPP
 
-#include "Thyra_VectorSpaceFactoryBaseDecl.hpp"
+#include "Thyra_VectorSpaceFactoryBase.hpp"
 
 namespace Teuchos { template<typename Ordinal> class Comm; }
 
@@ -55,7 +55,7 @@ class DefaultSpmdVectorSpaceFactory : public VectorSpaceFactoryBase<Scalar> {
 public:
 
   /** \brief Return the Spmd communicator. */
-  Teuchos::RCP<const Teuchos::Comm<Index> > getComm() const;
+  Teuchos::RCP<const Teuchos::Comm<Ordinal> > getComm() const;
 
   /** @name Overridden from VectorSpaceFactoryBase */
   //@{
@@ -82,13 +82,13 @@ public:
 
 private:
 
-  Teuchos::RCP<const Teuchos::Comm<Index> >  comm_;
+  Teuchos::RCP<const Teuchos::Comm<Ordinal> >  comm_;
 
 public:
 
   /** \brief Depreciated . */
   DefaultSpmdVectorSpaceFactory(
-    const Teuchos::RCP<const Teuchos::Comm<Index> > &comm = Teuchos::null
+    const Teuchos::RCP<const Teuchos::Comm<Ordinal> > &comm = Teuchos::null
     );
     
 }; // end class DefaultSpmdVectorSpaceFactory
@@ -109,7 +109,7 @@ public:
 template<class Scalar>
 RCP<DefaultSpmdVectorSpaceFactory<Scalar> >
 defaultSpmdVectorSpaceFactory(
-  const Teuchos::RCP<const Teuchos::Comm<Index> > &comm = Teuchos::null
+  const Teuchos::RCP<const Teuchos::Comm<Ordinal> > &comm = Teuchos::null
   )
 {
   return Teuchos::rcp(new DefaultSpmdVectorSpaceFactory<Scalar>(comm));
@@ -122,7 +122,7 @@ defaultSpmdVectorSpaceFactory(
 
 template<class Scalar>
 inline
-Teuchos::RCP<const Teuchos::Comm<Index> >
+Teuchos::RCP<const Teuchos::Comm<Ordinal> >
 DefaultSpmdVectorSpaceFactory<Scalar>::getComm() const
 {
   return comm_;

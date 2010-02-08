@@ -32,7 +32,7 @@
 
 #include "Thyra_SpmdMultiVectorBase_decl.hpp"
 #include "Thyra_MultiVectorDefaultBase.hpp"
-#include "Thyra_SingleScalarEuclideanLinearOpBase.hpp"
+#include "Thyra_MultiVectorAdapterBase.hpp"
 #include "Thyra_SpmdVectorSpaceDefaultBase.hpp"
 #include "Thyra_DetachedMultiVectorView.hpp"
 #include "Thyra_apply_op_helper.hpp"
@@ -61,7 +61,7 @@ SpmdMultiVectorBase<Scalar>::SpmdMultiVectorBase()
 {}
 
 
-// Overridden from EuclideanLinearOpBase
+// Overridden public functions from MultiVectorAdapterBase
 
 
 template<class Scalar>
@@ -69,29 +69,12 @@ RCP< const ScalarProdVectorSpaceBase<Scalar> >
 SpmdMultiVectorBase<Scalar>::rangeScalarProdVecSpc() const
 {
   return Teuchos::rcp_dynamic_cast<const ScalarProdVectorSpaceBase<Scalar> >(
-    spmdSpace(),true
+    spmdSpace(), true
     );
 }
 
 
-// Overridden from LinearOpBase
-
-
-template<class Scalar>
-void SpmdMultiVectorBase<Scalar>::apply(
-  const EOpTransp M_trans,
-  const MultiVectorBase<Scalar> &X,
-  MultiVectorBase<Scalar> *Y,
-  const Scalar alpha,
-  const Scalar beta
-  ) const
-{
-  TEST_FOR_EXCEPT_MSG(true, "This function is not even implemented anymore!");
-  //this->single_scalar_euclidean_apply_impl(M_trans, X, Y, alpha, beta);
-}
-
-
-// Overridden from MultiVectorBase
+// Protected functions overridden from MultiVectorBase
 
 
 template<class Scalar>
@@ -100,17 +83,17 @@ void SpmdMultiVectorBase<Scalar>::mvMultiReductApplyOpImpl(
   const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
   const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
   const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
-  const Index pri_first_ele_offset_in,
-  const Index pri_sub_dim_in,
-  const Index pri_global_offset_in,
-  const Index sec_first_ele_offset_in,
-  const Index sec_sub_dim_in
+  const Ordinal pri_first_ele_offset_in,
+  const Ordinal pri_sub_dim_in,
+  const Ordinal pri_global_offset_in,
+  const Ordinal sec_first_ele_offset_in,
+  const Ordinal sec_sub_dim_in
   ) const
 {
   using Teuchos::dyn_cast;
   using Teuchos::Workspace;
   Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
-  const Index numCols = this->domain()->dim();
+  const Ordinal numCols = this->domain()->dim();
   const SpmdVectorSpaceBase<Scalar> &spmdSpc = *spmdSpace();
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
@@ -303,16 +286,16 @@ void SpmdMultiVectorBase<Scalar>::commitNonconstDetachedMultiVectorViewImpl(
 }
 
 
-// protected
+// Protected functions overridden from MultiVectorAdapterBase
 
 
 template<class Scalar>
 void SpmdMultiVectorBase<Scalar>::euclideanApply(
-  const EOpTransp M_trans
-  ,const MultiVectorBase<Scalar> &X
-  ,MultiVectorBase<Scalar> *Y
-  ,const Scalar alpha
-  ,const Scalar beta
+  const EOpTransp M_trans,
+  const MultiVectorBase<Scalar> &X,
+  const Ptr<MultiVectorBase<Scalar> > &Y,
+  const Scalar alpha,
+  const Scalar beta
   ) const
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
@@ -352,7 +335,7 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
   const SpmdVectorSpaceBase<Scalar> &spmdSpc = *this->spmdSpace();
 
   // Get the Spmd communicator
-  const RCP<const Teuchos::Comm<Index> >
+  const RCP<const Teuchos::Comm<Ordinal> >
     comm = spmdSpc.getComm();
 #ifdef TEUCHOS_DEBUG
   const VectorSpaceBase<Scalar>
@@ -550,7 +533,7 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
       // Contiguous buffer for final reduction
       Workspace<Scalar> Y_local_final_buff(wss,Y_local.subDim()*Y_local.numSubCols(),false);
       // Perform the reduction
-      Teuchos::reduceAll<Index,Scalar>(
+      Teuchos::reduceAll<Ordinal,Scalar>(
         *comm,Teuchos::REDUCE_SUM,Y_local_final_buff.size(),Y_local_tmp.values().get(),
         &Y_local_final_buff[0]
         );
@@ -581,15 +564,8 @@ void SpmdMultiVectorBase<Scalar>::euclideanApply(
 }
 
 
-// Overridden from SingleScalarEuclideanLinearOpBase
+// Protected functions for subclasses to call
 
-
-template<class Scalar>
-bool SpmdMultiVectorBase<Scalar>::opSupported(EOpTransp M_trans) const
-{
-  typedef Teuchos::ScalarTraits<Scalar> ST;
-  return ( ST::isComplex ? ( M_trans!=CONJ ) : true );
-}
 
 template<class Scalar>
 void SpmdMultiVectorBase<Scalar>::updateSpmdSpace()

@@ -33,6 +33,7 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_as.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
 //
 // This example function is meant to show how easy it is to create
@@ -75,7 +76,7 @@ bool runPowerMethodExample(
   //       [             -1   2 ]
   //
   *out << "\n(1) Constructing tridiagonal matrix A of dimension = " << dim << " ...\n";
-  std::vector<Scalar> lower(dim-1), diag(dim), upper(dim-1);
+  Teuchos::Array<Scalar> lower(dim-1), diag(dim), upper(dim-1);
   const Scalar one = ST::one(), two = Scalar(2)*one;
   int k = 0;
   diag[k] = two; upper[k] = -one;                        //  First row
@@ -84,7 +85,7 @@ bool runPowerMethodExample(
   }
   lower[k-1] = -one; diag[k] = two;                      //  Last row
   Teuchos::RCP<ExampleTridiagSerialLinearOp<Scalar> >
-    A = Teuchos::rcp( new ExampleTridiagSerialLinearOp<Scalar>(dim,&lower[0],&diag[0],&upper[0]) );
+    A = Teuchos::rcp(new ExampleTridiagSerialLinearOp<Scalar>(dim, lower, diag, upper));
   if (dumpAll) *out << "\nA =\n" << *A;
 
   //
@@ -104,7 +105,7 @@ bool runPowerMethodExample(
   //
   *out << "\n(3) Increasing first diagonal entry by factor of 10 ...\n";
   diag[0] *= 10;
-  A->initialize(dim,&lower[0],&diag[0],&upper[0]);
+  A->initialize(dim, lower, diag, upper);
   if (dumpAll) *out << "A =\n" << *A;
 
   //
@@ -137,6 +138,9 @@ int main(int argc, char *argv[])
  
   bool success = true;
   bool result;
+
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+  // Above is needed to run in an MPI build with some MPI implementations
 
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();

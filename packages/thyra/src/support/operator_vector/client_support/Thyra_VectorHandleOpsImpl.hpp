@@ -68,43 +68,43 @@ namespace Thyra
   THYRA_UNARY_VECTOR_ROP_MAG(min, min, "min element")
 
   template <class Scalar> inline 
-  Scalar maxloc(const Converter<Scalar, ConstVector<Scalar> >& x, Index& index) 
+  Scalar maxloc(const Converter<Scalar, ConstVector<Scalar> >& x, Ordinal& index) 
   {
     Scalar maxEl;
     Scalar* maxElP = &maxEl;
-    Index* indexP = &index;
+    Ordinal* indexP = &index;
     Thyra::max(*(toVector(x).constPtr()), maxElP, indexP); 
     return maxEl;
   }
 
   template <class Scalar> inline 
-  Scalar minloc(const Converter<Scalar, ConstVector<Scalar> >& x, Index& index) 
+  Scalar minloc(const Converter<Scalar, ConstVector<Scalar> >& x, Ordinal& index) 
   {
     Scalar minEl;
     Scalar* minElP = &minEl;
-    Index* indexP = &index;
+    Ordinal* indexP = &index;
     Thyra::min(*(toVector(x).constPtr()), minElP, indexP); 
     return minEl;
   }
 
   template <class Scalar> inline  
   Scalar minloc(const Converter<Scalar, ConstVector<Scalar> >& x, 
-             const Scalar& bound, Index& index)
+             const Scalar& bound, Ordinal& index)
   {
     Scalar minEl;
     Scalar* minElP = &minEl;
-    Index* indexP = &index;
+    Ordinal* indexP = &index;
     Thyra::minGreaterThanBound(*(toVector(x).constPtr()), bound, minElP, indexP); 
     return minEl;
   }
 
   template <class Scalar> inline  
   Scalar maxloc(const Converter<Scalar, ConstVector<Scalar> >& x, 
-             const Scalar& bound, Index& index)
+             const Scalar& bound, Ordinal& index)
   {
     Scalar maxEl;
     Scalar* maxElP = &maxEl;
-    Index* indexP = &index;
+    Ordinal* indexP = &index;
     Thyra::maxLessThanBound(*(toVector(x).constPtr()), bound, maxElP, indexP); 
     return maxEl;
   }

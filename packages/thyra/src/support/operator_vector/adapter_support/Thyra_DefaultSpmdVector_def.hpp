@@ -51,7 +51,7 @@ template<class Scalar>
 DefaultSpmdVector<Scalar>::DefaultSpmdVector(
   const RCP<const SpmdVectorSpaceBase<Scalar> > &spmdSpace_in,
   const ArrayRCP<Scalar> &localValues,
-  const Index stride
+  const Ordinal stride
   )
 {
   initialize(spmdSpace_in, localValues, stride);
@@ -62,7 +62,7 @@ template<class Scalar>
 void DefaultSpmdVector<Scalar>::initialize(
   const RCP<const SpmdVectorSpaceBase<Scalar> > &spmdSpace_in
   ,const ArrayRCP<Scalar> &localValues
-  ,const Index stride
+  ,const Ordinal stride
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -81,7 +81,7 @@ template<class Scalar>
 void DefaultSpmdVector<Scalar>::uninitialize(
   RCP<const SpmdVectorSpaceBase<Scalar> > *spmdSpace_in
   ,ArrayRCP<Scalar> *localValues
-  ,Index *stride
+  ,Ordinal *stride
   )
 {
   if(spmdSpace_in) *spmdSpace_in = spmdSpace_;

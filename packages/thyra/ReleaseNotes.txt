@@ -18,4 +18,45 @@ time to track down the problem.
 tolerance was loosened.
 
 
+
 (*) Partial refactoring of code to use safe memory management classes
+
+
+Trilinos 10.2:
+--------------
+
+
+(*) Added deprecated warnings.  When using GCC, the g++ compiler will now emit
+warning messages when client code uses deprecated types and functions.  The
+developer of the client code should change over to use non-deprecated code
+because the deprecated code will be removed when Trilinos 11.0 is put out.
+
+
+(*) Refactored the Thyra::LinearOp[WithSolve]Base interfaces:
+
+- LinearOpBase: Removed double templating.  Now requires overridding
+opSupportedImpl(...) and applyImpl(...).  This is a break in strict bacward
+compatibility but making these functions pure virtual was needed to make sure
+the interface is implemented correctly.  Interface should be 100% backward
+compatible for external clients through depreicated functions.
+
+- LinearOpWithSolve: Removed double templating.  Now requires overridding
+solveImpl(...).  Interface should be 100% backward compatible for external
+clients through depreicated functions.  Also, the new solve[Impl](...) 
+function only takes a single SolveCriteria object and only returns a single
+SolveStatus object to simplify usage.
+
+- Removed SingleScalarXXX node classes.  There is not need for these anymore
+now that double templating is gone.
+
+- Removed SingleRhsXXX node subclasses.  These classes just make the
+intheritance hierarchy deeper without providing a lot of value.
+
+- ExampleTridiag[Serial,Spmd]LinearOp subdclasses refactored to directly
+inherit from LinearOpDefaultBase and use the Detached[Spmd]VectorView classes
+to get vector data.
+
+
+(*) Explicit template instantiation: Thyra now fully supports explicit
+template instantiation.  This results in code that builds much faster and can
+avoid internal compiler error on some platforms.

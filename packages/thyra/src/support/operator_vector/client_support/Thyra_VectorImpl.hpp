@@ -45,7 +45,7 @@ namespace Thyra
 //
 
   template <class Scalar> inline
-  Scalar ConstVector<Scalar>::operator[](Index globalIndex) const 
+  Scalar ConstVector<Scalar>::operator[](Ordinal globalIndex) const 
   {
     ConstDetachedVectorView<Scalar> view(this->constPtr(), Range1D(0, dim(*this)-1));
     return view[globalIndex];
@@ -103,7 +103,7 @@ namespace Thyra
   }
 
   template <class Scalar> inline
-  Index dim(const ConstVector<Scalar>& x) 
+  Ordinal dim(const ConstVector<Scalar>& x) 
   {
     return x.constPtr()->space()->dim();
   }

@@ -76,7 +76,7 @@ public:
    * Equivalent to calling <tt>this->initialize(Teuchos::null,dim,dim)</tt>
    */
   void initialize(
-    const Index dim
+    const Ordinal dim
     );
 
   /** \brief Initialize an SPMD space.
@@ -134,8 +134,8 @@ public:
    * </ul>
    */
   void initialize(
-    const RCP<const Teuchos::Comm<Index> > &comm,
-    const Index localSubDim, const Index globalDim
+    const RCP<const Teuchos::Comm<Ordinal> > &comm,
+    const Ordinal localSubDim, const Ordinal globalDim
     );
 
   /** \brief Set to an uninitialized state.
@@ -194,9 +194,9 @@ public:
   //@{
 
   /** \brief . */
-  RCP<const Teuchos::Comm<Index> > getComm() const;
+  RCP<const Teuchos::Comm<Ordinal> > getComm() const;
   /** \brief . */
-  Index localSubDim() const;
+  Ordinal localSubDim() const;
 
   //@}
 
@@ -205,8 +205,8 @@ private:
   // //////////////////////////////////////
   // Private data members
 
-  RCP<const Teuchos::Comm<Index> > comm_;
-  Index localSubDim_;
+  RCP<const Teuchos::Comm<Ordinal> > comm_;
+  Ordinal localSubDim_;
   int numProc_;
   int procRank_;
   RCP<DefaultSpmdVectorSpace<Scalar> > weakSelfPtr_;
@@ -223,13 +223,13 @@ public:
 
   /** \brief Deprecated. */
   DefaultSpmdVectorSpace(
-    const Index dim
+    const Ordinal dim
     );
 
   /** \brief Deprecated. */
   DefaultSpmdVectorSpace(
-    const RCP<const Teuchos::Comm<Index> > &comm,
-    const Index localSubDim, const Index globalDim
+    const RCP<const Teuchos::Comm<Ordinal> > &comm,
+    const Ordinal localSubDim, const Ordinal globalDim
     );
 
   //@}
@@ -255,7 +255,7 @@ defaultSpmdVectorSpace()
  */
 template<class Scalar>
 RCP<DefaultSpmdVectorSpace<Scalar> >
-defaultSpmdVectorSpace( const Index dim )
+defaultSpmdVectorSpace( const Ordinal dim )
 {
   RCP<DefaultSpmdVectorSpace<Scalar> > vs =
     DefaultSpmdVectorSpace<Scalar>::create();
@@ -272,8 +272,8 @@ defaultSpmdVectorSpace( const Index dim )
 template<class Scalar>
 RCP<DefaultSpmdVectorSpace<Scalar> >
 defaultSpmdVectorSpace(
-  const RCP<const Teuchos::Comm<Index> > &comm,
-  const Index localSubDim, const Index globalDim
+  const RCP<const Teuchos::Comm<Ordinal> > &comm,
+  const Ordinal localSubDim, const Ordinal globalDim
   )
 {
   RCP<DefaultSpmdVectorSpace<Scalar> > vs =

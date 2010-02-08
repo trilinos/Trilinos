@@ -34,6 +34,7 @@
 #include "Thyra_DefaultProductVector.hpp"
 #include "Thyra_DefaultProductMultiVector.hpp"
 #include "Thyra_ProductMultiVectorBase.hpp"
+#include "Teuchos_Workspace.hpp"
 #include "Teuchos_dyn_cast.hpp"
 
 
@@ -93,7 +94,7 @@ void DefaultProductVectorSpace<Scalar>::initialize(
   (*vecSpacesOffsets_)[0] = 0;
   dim_ = 0;
   for( int k = 1; k <= nBlocks; ++k ) {
-    const Index dim_km1 = vecSpaces_in[k-1]->dim();
+    const Ordinal dim_km1 = vecSpaces_in[k-1]->dim();
     (*vecSpacesOffsets_)[k] = (*vecSpacesOffsets_)[k-1] + dim_km1;
     dim_ += dim_km1;
   }
@@ -118,7 +119,7 @@ void DefaultProductVectorSpace<Scalar>::uninitialize(
 
 template<class Scalar>
 void DefaultProductVectorSpace<Scalar>::getVecSpcPoss(
-  Index i, int* kth_vector_space, Index* kth_global_offset
+  Ordinal i, int* kth_vector_space, Ordinal* kth_global_offset
   ) const
 {
   // Validate the preconditions
@@ -132,7 +133,7 @@ void DefaultProductVectorSpace<Scalar>::getVecSpcPoss(
   *kth_vector_space  = 0;
   *kth_global_offset = 0;
   while( *kth_vector_space < numBlocks_ ) {
-    const Index off_kp1 = (*vecSpacesOffsets_)[*kth_vector_space+1];
+    const Ordinal off_kp1 = (*vecSpacesOffsets_)[*kth_vector_space+1];
     if( off_kp1 > i ) {
       *kth_global_offset = (*vecSpacesOffsets_)[*kth_vector_space];
       break;
@@ -166,7 +167,7 @@ DefaultProductVectorSpace<Scalar>::getBlock(const int k) const
 
 
 template<class Scalar>
-Index DefaultProductVectorSpace<Scalar>::dim() const
+Ordinal DefaultProductVectorSpace<Scalar>::dim() const
 {
   return dim_;
 }
@@ -262,7 +263,7 @@ void DefaultProductVectorSpace<Scalar>::scalarProdsImpl(
   using Teuchos::as;
   using Teuchos::Workspace;
   const VectorSpaceBase<Scalar> &domain = *X_in.domain();
-  const Index m = domain.dim();
+  const Ordinal m = domain.dim();
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(is_null(scalarProds_out));
   TEST_FOR_EXCEPT( !domain.isCompatible(*Y_in.domain()) );
@@ -300,7 +301,7 @@ bool DefaultProductVectorSpace<Scalar>::hasInCoreView(const Range1D& rng_in, con
   const Range1D rng = full_range(rng_in,0,dim_-1);
   // First see if rng fits in a single constituent vector
   int    kth_vector_space  = -1;
-  Index  kth_global_offset = 0;
+  Ordinal  kth_global_offset = 0;
   this->getVecSpcPoss(rng.lbound(),&kth_vector_space,&kth_global_offset);
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT( !( 0 <= kth_vector_space && kth_vector_space <= numBlocks_ ) );

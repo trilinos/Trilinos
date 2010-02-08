@@ -307,7 +307,7 @@ void copy(
   TEST_FOR_EXCEPT(vec==0);
   DetachedVectorView<Scalar> dVec(*vec);
   TEST_FOR_EXCEPT(implicit_cast<int>(dVec.subDim())!=implicit_cast<int>(array.size())); // ToDo: Give a very good error message!
-  for( Index i = 0; i < dVec.subDim(); ++i ) {
+  for( Ordinal i = 0; i < dVec.subDim(); ++i ) {
     dVec[i] = array[i];
   }
 }
@@ -462,7 +462,7 @@ bool ParameterDrivenMultiVectorInput<Scalar>::readMultiVector(
     vectorWasRead = true;
   }
   if(explicitArray_.size()) {
-    if( implicit_cast<Index>(explicitArray_.size()) != vecSpc().dim() ) {
+    if( implicit_cast<Ordinal>(explicitArray_.size()) != vecSpc().dim() ) {
       // Call back to throw an exception with a better erro message!
       Teuchos::getArrayFromStringParameter<Scalar>(
         *paramList_,ExplicitArray_name_,vecSpc().dim(),false);
@@ -472,7 +472,7 @@ bool ParameterDrivenMultiVectorInput<Scalar>::readMultiVector(
       *out << "\nSetting \"" << mvName << "\" directly from the parameter array "
            << explicitArray_ << " ...\n";
     TEST_FOR_EXCEPTION(
-      mv->domain()->dim()!=implicit_cast<Index>(1), std::logic_error
+      mv->domain()->dim()!=implicit_cast<Ordinal>(1), std::logic_error
       ,"Error! We can not handle reading in multi-vectors directly from"
       " the parameter list yet!"
       );

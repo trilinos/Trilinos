@@ -59,18 +59,6 @@ protected:
     const MultiVectorBase<Scalar>& X, const MultiVectorBase<Scalar>& Y,
     const ArrayView<Scalar> &scalarProds
     ) const;
-  
-  /** \brief Simply calls
-   * <tt>M.euclideanApply(M_trans,X,Y,alpha,beta)</tt>.
-   */
-  virtual void euclideanApplyImpl(
-    const EuclideanLinearOpBase<Scalar> &M,
-    const EOpTransp M_trans,
-    const MultiVectorBase<Scalar> &X,
-    const Ptr<MultiVectorBase<Scalar> > &Y,
-    const Scalar alpha,
-    const Scalar beta
-    ) const;
 
   //@}
 

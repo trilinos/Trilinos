@@ -43,22 +43,22 @@
 namespace Thyra
 {
 
-  template <class RangeScalar, class DomainScalar> inline 
-  const VectorSpace<DomainScalar> ConstLinearOperator<RangeScalar, DomainScalar>
+  template<class Scalar> inline 
+  const VectorSpace<Scalar> ConstLinearOperator<Scalar>
   ::domain() const 
   {return this->constPtr()->domain();}
     
-  template <class RangeScalar, class DomainScalar> inline 
-  const VectorSpace<RangeScalar> ConstLinearOperator<RangeScalar, DomainScalar>
+  template<class Scalar> inline 
+  const VectorSpace<Scalar> ConstLinearOperator<Scalar>
   ::range() const 
   {return this->constPtr()->range();}
 
-  template <class RangeScalar, class DomainScalar> inline 
-  void ConstLinearOperator<RangeScalar, DomainScalar>
-  ::apply(const ConstVector<DomainScalar>& in,
-          Vector<RangeScalar>& out,
-          const RangeScalar& alpha,
-          const RangeScalar& beta) const
+  template<class Scalar> inline 
+  void ConstLinearOperator<Scalar>
+  ::apply(const ConstVector<Scalar>& in,
+          Vector<Scalar>& out,
+          const Scalar& alpha,
+          const Scalar& beta) const
   {
     /* the result std::vector might not be initialized. If it's null,
      * create a new std::vector in the range space */
@@ -66,16 +66,16 @@ namespace Thyra
       {
         out = this->range().createMember();
       }
-    this->constPtr()->apply(NONCONJ_ELE, *(in.constPtr().get()),
-                       out.ptr().get(), alpha, beta);
+    this->constPtr()->apply(NOTRANS, *(in.constPtr().get()),
+                       out.ptr().ptr(), alpha, beta);
   }
 
-  template <class RangeScalar, class DomainScalar> inline 
-  void ConstLinearOperator<RangeScalar, DomainScalar>
-  ::applyTranspose(const ConstVector<RangeScalar>& in,
-                   Vector<DomainScalar>& out,
-                   const DomainScalar& alpha,
-                   const DomainScalar& beta) const
+  template<class Scalar> inline 
+  void ConstLinearOperator<Scalar>
+  ::applyTranspose(const ConstVector<Scalar>& in,
+                   Vector<Scalar>& out,
+                   const Scalar& alpha,
+                   const Scalar& beta) const
   {
     /* the result std::vector might not be initialized. If it's null,
      * create a new std::vector in the domain space (i.e., the range space
@@ -89,21 +89,21 @@ namespace Thyra
                                 alpha, beta);
   }
   
-  template <class RangeScalar, class DomainScalar> inline 
-  int ConstLinearOperator<RangeScalar, DomainScalar>::numBlockRows() const
+  template<class Scalar> inline 
+  int ConstLinearOperator<Scalar>::numBlockRows() const
   {
     return range().numBlocks();
   }
   
-  template <class RangeScalar, class DomainScalar> inline 
-  int ConstLinearOperator<RangeScalar, DomainScalar>::numBlockCols() const
+  template<class Scalar> inline 
+  int ConstLinearOperator<Scalar>::numBlockCols() const
   {
     return domain().numBlocks();
   }
 
-  template <class RangeScalar, class DomainScalar> inline 
-  ConstLinearOperator<RangeScalar, DomainScalar> 
-  ConstLinearOperator<RangeScalar, DomainScalar>::getBlock(int blockRow, 
+  template<class Scalar> inline 
+  ConstLinearOperator<Scalar> 
+  ConstLinearOperator<Scalar>::getBlock(int blockRow, 
                                                            int blockCol) const
   {
     const Thyra::BlockedLinearOpBase<Scalar>* p = 
@@ -121,9 +121,9 @@ namespace Thyra
     return *this;
   }
 
-  template <class RangeScalar, class DomainScalar> inline 
-  LinearOperator<RangeScalar, DomainScalar> 
-  LinearOperator<RangeScalar, DomainScalar>::getBlock(int blockRow, 
+  template<class Scalar> inline 
+  LinearOperator<Scalar> 
+  LinearOperator<Scalar>::getBlock(int blockRow, 
                                                       int blockCol) 
   {
     Thyra::BlockedLinearOpBase<Scalar>* p = 

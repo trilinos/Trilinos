@@ -236,7 +236,7 @@ DefaultProductMultiVector<Scalar>::domain() const
 
 template<class Scalar>
 RCP<const VectorBase<Scalar> >
-DefaultProductMultiVector<Scalar>::colImpl(Index j) const
+DefaultProductMultiVector<Scalar>::colImpl(Ordinal j) const
 {
   validateColIndex(j);
   Array<RCP<const VectorBase<Scalar> > > cols_;
@@ -248,7 +248,7 @@ DefaultProductMultiVector<Scalar>::colImpl(Index j) const
 
 template<class Scalar>
 RCP<VectorBase<Scalar> >
-DefaultProductMultiVector<Scalar>::nonconstColImpl(Index j)
+DefaultProductMultiVector<Scalar>::nonconstColImpl(Ordinal j)
 {
   validateColIndex(j);
   Array<RCP<VectorBase<Scalar> > > cols_;
@@ -316,11 +316,11 @@ void DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(
   const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs_in,
   const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs_inout,
   const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
-  const Index primary_first_ele_offset_in,
-  const Index primary_sub_dim_in,
-  const Index primary_global_offset_in,
-  const Index secondary_first_ele_offset_in,
-  const Index secondary_sub_dim_in
+  const Ordinal primary_first_ele_offset_in,
+  const Ordinal primary_sub_dim_in,
+  const Ordinal primary_global_offset_in,
+  const Ordinal secondary_first_ele_offset_in,
+  const Ordinal secondary_sub_dim_in
   ) const
 {
   
@@ -329,8 +329,8 @@ void DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(
 
   assertInitialized();
 
-  const Index domainDim = this->domain()->dim();
-  const Index rangeDim = this->range()->dim();
+  const Ordinal domainDim = this->domain()->dim();
+  const Ordinal rangeDim = this->range()->dim();
 
 #ifdef TEUCHOS_DEBUG
   for ( int j = 0; j < multi_vecs_in.size(); ++j ) {
@@ -379,13 +379,13 @@ void DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(
     );
 #endif //  TEUCHOS_DEBUG
 
-  const Index primary_sub_dim
+  const Ordinal primary_sub_dim
     = (
       primary_sub_dim_in < 0
       ? rangeDim - primary_first_ele_offset_in
       : primary_sub_dim_in
       );
-  const Index secondary_sub_dim
+  const Ordinal secondary_sub_dim
     = (
       secondary_sub_dim_in < 0
       ? domainDim - secondary_first_ele_offset_in
@@ -456,19 +456,19 @@ void DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(
     Array<Ptr<MultiVectorBase<Scalar> > >
       targ_multi_vecs_block_k(targ_multi_vecs_inout.size());
 
-    Index num_rows_remaining = primary_sub_dim;
-    Index g_off = -primary_first_ele_offset_in;
+    Ordinal num_rows_remaining = primary_sub_dim;
+    Ordinal g_off = -primary_first_ele_offset_in;
 
     for ( int k = 0; k < numBlocks_; ++k ) {
 
       // See if this block involves any of the requested rows and if so get
       // the local context.
-      const Index local_dim = productSpace_->getBlock(k)->dim();
+      const Ordinal local_dim = productSpace_->getBlock(k)->dim();
       if( g_off < 0 && -g_off+1 > local_dim ) {
         g_off += local_dim;
         continue;
       }
-      const Index local_sub_dim
+      const Ordinal local_sub_dim
         = (
           g_off >= 0
           ? std::min( local_dim, num_rows_remaining )
@@ -572,21 +572,21 @@ void DefaultProductMultiVector<Scalar>::commitNonconstDetachedMultiVectorViewImp
 }
 
 
-// Overridden protected functions from SingleScalarLinearOpBase
+// Overridden protected functions from LinearOpBase
 
 
 template<class Scalar>
-bool DefaultProductMultiVector<Scalar>::opSupported(EOpTransp M_trans) const
+bool DefaultProductMultiVector<Scalar>::opSupportedImpl(EOpTransp M_trans) const
 {
   return true; // We can do it all!
 }
 
 
 template<class Scalar>
-void DefaultProductMultiVector<Scalar>::apply(
+void DefaultProductMultiVector<Scalar>::applyImpl(
   const EOpTransp M_trans,
   const MultiVectorBase<Scalar> &X_in,
-  MultiVectorBase<Scalar> *Y_inout,
+  const Ptr<MultiVectorBase<Scalar> > &Y_inout,
   const Scalar alpha,
   const Scalar beta
   ) const
@@ -599,7 +599,7 @@ void DefaultProductMultiVector<Scalar>::apply(
 #ifdef TEUCHOS_DEBUG
   THYRA_ASSERT_LINEAR_OP_MULTIVEC_APPLY_SPACES(
     "DefaultProductMultiVector<Scalar>::apply(...)",
-    *this, M_trans, X_in, Y_inout );
+    *this, M_trans, X_in, &*Y_inout );
 #endif
 
   if ( real_trans(M_trans) == NOTRANS ) {
@@ -635,10 +635,10 @@ void DefaultProductMultiVector<Scalar>::apply(
         M_k = multiVecs_[k].getConstObj(),
         X_k = X.getMultiVectorBlock(k);
       if ( 0 == k ) {
-        Thyra::apply( *M_k, M_trans, *X_k, &*Y_inout, alpha, beta ); 
+        Thyra::apply( *M_k, M_trans, *X_k, Y_inout.ptr(), alpha, beta ); 
       }
       else {
-        Thyra::apply( *M_k, M_trans, *X_k, &*Y_inout, alpha, ST::one() ); 
+        Thyra::apply( *M_k, M_trans, *X_k, Y_inout.ptr(), alpha, ST::one() ); 
       }
     }
   }

@@ -32,7 +32,7 @@
 #include "Teuchos_Handle.hpp"
 #include "Thyra_ConfigDefs.hpp"
 #include "Thyra_VectorSpaceBase_decl.hpp"
-#include "Thyra_VectorBaseDecl.hpp"
+#include "Thyra_VectorBase.hpp"
 #include "Thyra_VectorDecl.hpp"
 
 namespace Thyra
@@ -176,7 +176,7 @@ namespace Thyra
    * \relates VectorSpace 
    */
   template <class Scalar>
-  bool indexIsLocal(const VectorSpace<Scalar>& s, Index i);
+  bool indexIsLocal(const VectorSpace<Scalar>& s, Ordinal i);
 
   /** \brief Test whether a std::vector space is an atomic SPMD object.
    *

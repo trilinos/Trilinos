@@ -74,8 +74,8 @@ bool run_product_space_tests(
 
   Teuchos::Array<RCP<const Thyra::VectorSpaceBase<Scalar> > >
     vecSpaces(numBlocks);
-  const RCP<const Teuchos::Comm<Thyra::Index> >
-    comm = Teuchos::DefaultComm<Thyra::Index>::getComm();
+  const RCP<const Teuchos::Comm<Thyra::Ordinal> >
+    comm = Teuchos::DefaultComm<Thyra::Ordinal>::getComm();
   const int numProcs = size(*comm);
   RCP<const Thyra::VectorSpaceBase<Scalar> >
     spaceBlock = Thyra::defaultSpmdVectorSpace<Scalar>(comm,n,-1);

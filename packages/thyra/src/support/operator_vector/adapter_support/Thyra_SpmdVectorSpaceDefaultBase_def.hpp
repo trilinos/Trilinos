@@ -47,14 +47,14 @@ SpmdVectorSpaceDefaultBase<Scalar>::SpmdVectorSpaceDefaultBase()
 
 
 template<class Scalar>
-Index SpmdVectorSpaceDefaultBase<Scalar>::localOffset() const
+Ordinal SpmdVectorSpaceDefaultBase<Scalar>::localOffset() const
 {
   return defaultLocalOffset_;
 }
 
 
 template<class Scalar>
-Index SpmdVectorSpaceDefaultBase<Scalar>::mapCode() const
+Ordinal SpmdVectorSpaceDefaultBase<Scalar>::mapCode() const
 {
   return mapCode_;
 }
@@ -70,7 +70,7 @@ std::string SpmdVectorSpaceDefaultBase<Scalar>::description() const
   ostr << ",localSubDim="<<this->localSubDim();
   ostr << ",localOffset="<<this->localOffset();
   ostr << ",comm=";
-  RCP<const Comm<Index> > comm;
+  RCP<const Comm<Ordinal> > comm;
   if ( (comm=this->getComm())!=null ) {
     ostr << comm->description();
   }
@@ -86,7 +86,7 @@ std::string SpmdVectorSpaceDefaultBase<Scalar>::description() const
 
 
 template<class Scalar>
-Index SpmdVectorSpaceDefaultBase<Scalar>::dim() const
+Ordinal SpmdVectorSpaceDefaultBase<Scalar>::dim() const
 {
   return defaultGlobalDim_;
 }
@@ -144,10 +144,10 @@ bool SpmdVectorSpaceDefaultBase<Scalar>::isCompatible(
 
 
 template<class Scalar>
-void SpmdVectorSpaceDefaultBase<Scalar>::updateState( const Index globalDim )
+void SpmdVectorSpaceDefaultBase<Scalar>::updateState( const Ordinal globalDim )
 {
   localSubDim_ = this->localSubDim(); 
-  const Teuchos::RCP<const Teuchos::Comm<Index> >
+  const Teuchos::RCP<const Teuchos::Comm<Ordinal> >
     comm = this->getComm();
   if( localSubDim_ >= 0 ) {
     int numProc = 1;

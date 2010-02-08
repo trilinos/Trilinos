@@ -82,15 +82,13 @@ using Teuchos::TypeNameTraits;
 
 
 /// Type for the dimension of a vector space
-typedef Teuchos::Range1D::Index  Ordinal;
-
+typedef Teuchos::Ordinal Ordinal;
 
 /// Deprecated: Use Ordinal instead!
-typedef Ordinal Index;
-
+THYRA_DEPRECATED typedef Ordinal Index;
 
 /// Type for a range of indices
-typedef Teuchos::Range1D   Range1D;
+typedef Teuchos::Range1D Range1D;
 
 
 /** \brief Enumeration for determining how a linear operator is applied.
@@ -134,7 +132,7 @@ enum EOpTransp {
 
 
 /** \brief Deprecated. */
-typedef EOpTransp ETransp;
+THYRA_DEPRECATED typedef EOpTransp ETransp;
 
 
 /** \brief Return a string name for a <tt>EOpTransp</tt> value.
@@ -227,7 +225,8 @@ EConj transToConj( EOpTransp trans )
 /** \brief Convert from <tt>EConj</tt> to <tt>EOpTransp</tt> for forward apply.
  */
 inline
-EOpTransp applyConjToTrans( EConj conj ) {
+EOpTransp applyConjToTrans( EConj conj )
+{
   switch(conj) {
     case NONCONJ_ELE: return NOTRANS;
     case CONJ_ELE:    return CONJ;
@@ -240,7 +239,8 @@ EOpTransp applyConjToTrans( EConj conj ) {
 /** \brief Convert from <tt>EConj</tt> to <tt>EOpTransp</tt> for forward apply.
  */
 inline
-EOpTransp applyTransposeConjToTrans( EConj conj ) {
+EOpTransp applyTransposeConjToTrans( EConj conj )
+{
   switch(conj) {
     case NONCONJ_ELE: return TRANS;
     case CONJ_ELE:    return CONJTRANS;
@@ -306,7 +306,7 @@ class OpNotSupported : public std::logic_error
 
 template<class Scalar> class VectorSpaceFactoryBase;
 template<class Scalar> class VectorSpaceBase;
-template<class RangeScalar, class DomainScalar = RangeScalar> class LinearOpBase;
+template<class Scalar> class LinearOpBase;
 template<class Scalar> class MultiVectorBase;
 template<class Scalar> class VectorBase;
 

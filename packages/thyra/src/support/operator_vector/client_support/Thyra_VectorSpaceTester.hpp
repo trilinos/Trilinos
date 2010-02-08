@@ -31,6 +31,8 @@
 
 #include "Thyra_VectorSpaceTesterDecl.hpp"
 #include "Thyra_TestingTools.hpp"
+#include "Thyra_VectorStdOps.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 
 
 namespace Thyra {

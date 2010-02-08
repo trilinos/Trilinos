@@ -30,7 +30,7 @@
 #define THYRA_SPMD_VECTOR_BASE_DECL_HPP
 
 
-#include "Thyra_VectorDefaultBaseDecl.hpp"
+#include "Thyra_VectorDefaultBase.hpp"
 #include "Thyra_SpmdVectorSpaceDefaultBase_decl.hpp"
 
 
@@ -65,8 +65,8 @@ namespace Thyra {
  * <b>Notes to subclass developers</b>
  *
  * Concrete subclasses must override only two functions: <tt>spmdSpace()</tt>
- * and <tt>getLocalData(Scalar**,Index*)</tt>.  The default implementation of
- * <tt>getLocalData(cons Scalar**,Index*)</tt> should rarely need to be
+ * and <tt>getLocalData(Scalar**,Ordinal*)</tt>.  The default implementation of
+ * <tt>getLocalData(cons Scalar**,Ordinal*)</tt> should rarely need to be
  * overridden as it just calls the pure-virtual non-<tt>const</tt> version.
  * Note that providing an implementation for <tt>spmdSpace()</tt> of course
  * means having to implement or use a pre-implemented
@@ -175,14 +175,14 @@ public:
    * If <tt>comm==NULL</tt>, then the local communicator will be used instead.
    */
   virtual void applyOpImplWithComm(
-    const Ptr<const Teuchos::Comm<Index> > &comm,
+    const Ptr<const Teuchos::Comm<Ordinal> > &comm,
     const RTOpPack::RTOpT<Scalar> &op,
     const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
     const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
     const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-    const Index first_ele_offset,
-    const Index sub_dim,
-    const Index global_offset
+    const Ordinal first_ele_offset,
+    const Ordinal sub_dim,
+    const Ordinal global_offset
     ) const;
 
   //@}
@@ -205,11 +205,11 @@ public:
   //@{
 
   /** \brief Deprecated. */
-  THYRA_DEPRECATED void getLocalData( Scalar** localValues, Index* stride );
+  THYRA_DEPRECATED void getLocalData( Scalar** localValues, Ordinal* stride );
   /** \brief Deprecated. */
   THYRA_DEPRECATED void commitLocalData( Scalar* localValues );
   /** \brief Deprecated. */
-  THYRA_DEPRECATED void getLocalData( const Scalar** localValues, Index* stride ) const;
+  THYRA_DEPRECATED void getLocalData( const Scalar** localValues, Ordinal* stride ) const;
   /** \brief Deprecated. */
   THYRA_DEPRECATED void freeLocalData( const Scalar* localValues ) const;
 
@@ -239,9 +239,9 @@ protected:
     const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
     const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
     const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-    const Index first_ele_offset,
-    const Index sub_dim,
-    const Index global_offset
+    const Ordinal first_ele_offset,
+    const Ordinal sub_dim,
+    const Ordinal global_offset
     ) const;
   /** \brief Implemented through <tt>this->getLocalData()</tt> */
   void acquireDetachedVectorViewImpl(
@@ -280,9 +280,9 @@ private:
   mutable bool in_applyOpImpl_;
 
   // Cached (only on vector space!)
-  mutable Index  globalDim_;
-  mutable Index  localOffset_;
-  mutable Index  localSubDim_;
+  mutable Ordinal  globalDim_;
+  mutable Ordinal  localOffset_;
+  mutable Ordinal  localSubDim_;
 
   // /////////////////////////////////////
   // Private member functions

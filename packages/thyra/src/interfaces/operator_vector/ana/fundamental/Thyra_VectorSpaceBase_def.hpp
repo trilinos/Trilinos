@@ -182,6 +182,18 @@ Thyra::createMembers(
 template<class Scalar>
 Teuchos::RCP< Thyra::MultiVectorBase<Scalar> >
 Thyra::createMembers(
+  const RCP<const VectorSpaceBase<Scalar> > &vs,
+  const RCP<const VectorSpaceBase<Scalar> > &domain,
+  const std::string &label
+  )
+{
+  return createMembers(vs, domain->dim(), label);
+}
+
+
+template<class Scalar>
+Teuchos::RCP< Thyra::MultiVectorBase<Scalar> >
+Thyra::createMembers(
   const VectorSpaceBase<Scalar> &vs, int numMembers,
   const std::string &label
   )
@@ -336,6 +348,13 @@ Thyra::createMembersView( const VectorSpaceBase<Scalar> &vs,
     int numMembers,  const std::string &label \
     ); \
    \
+  template RCP< Thyra::MultiVectorBase<SCALAR > > \
+  createMembers( \
+    const RCP<const VectorSpaceBase<SCALAR > > &vs, \
+    const RCP<const VectorSpaceBase<SCALAR > > &domain, \
+    const std::string &label \
+    ); \
+  \
   template RCP< MultiVectorBase<SCALAR > > \
   createMembers( \
     const VectorSpaceBase<SCALAR > &vs, int numMembers, \

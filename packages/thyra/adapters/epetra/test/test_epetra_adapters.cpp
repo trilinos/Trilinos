@@ -34,6 +34,7 @@
 #include "Thyra_DiagonalEpetraLinearOpWithSolveFactory.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Epetra_SerialComm.h"
 #include "Epetra_LocalMap.h"
 #include "Epetra_CrsMatrix.h"

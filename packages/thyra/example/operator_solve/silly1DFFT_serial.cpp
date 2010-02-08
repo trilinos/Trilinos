@@ -67,9 +67,9 @@ public:
       TEST_FOR_EXCEPT( mv->range()->dim() % 2 != 0 );
 #     endif
       Thyra::DetachedMultiVectorView<Scalar> ev_mv(*mv);
-      const Thyra::Index n = ev_mv.subDim();
-      for( Thyra::Index j = 1; j <= ev_mv.numSubCols(); ++j ) {
-        for( Thyra::Index i = 1; i <= n/2; ++i ) {
+      const Thyra::Ordinal n = ev_mv.subDim();
+      for( Thyra::Ordinal j = 1; j <= ev_mv.numSubCols(); ++j ) {
+        for( Thyra::Ordinal i = 1; i <= n/2; ++i ) {
           const Scalar val = ST::random();
           ev_mv(i,j)     = val;
           ev_mv(n-i+1,j) = ST::conjugate(val);

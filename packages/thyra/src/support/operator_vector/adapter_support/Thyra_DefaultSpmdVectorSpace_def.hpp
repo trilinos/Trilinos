@@ -52,7 +52,7 @@ DefaultSpmdVectorSpace<Scalar>::create()
 
 template<class Scalar>
 void DefaultSpmdVectorSpace<Scalar>::initialize(
-  const Index dim_in
+  const Ordinal dim_in
   )
 {
   this->initialize(Teuchos::null, dim_in, dim_in);
@@ -61,8 +61,8 @@ void DefaultSpmdVectorSpace<Scalar>::initialize(
 
 template<class Scalar>
 void DefaultSpmdVectorSpace<Scalar>::initialize(
-  const RCP<const Teuchos::Comm<Index> > &comm
-  ,const Index localSubDim_in, const Index globalDim
+  const RCP<const Teuchos::Comm<Ordinal> > &comm
+  ,const Ordinal localSubDim_in, const Ordinal globalDim
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -213,7 +213,7 @@ bool DefaultSpmdVectorSpace<Scalar>::hasInCoreView(
   ) const
 {
   const Range1D rng = full_range(rng_in,0,this->dim()-1);
-  const Index l_localOffset = this->localOffset();
+  const Ordinal l_localOffset = this->localOffset();
   return ( l_localOffset<=rng.lbound() && rng.ubound()<l_localOffset+localSubDim_ );
 }
 
@@ -230,7 +230,7 @@ DefaultSpmdVectorSpace<Scalar>::clone() const
 
 
 template<class Scalar>
-RCP<const Teuchos::Comm<Index> >
+RCP<const Teuchos::Comm<Ordinal> >
 DefaultSpmdVectorSpace<Scalar>::getComm() const
 {
   return comm_;
@@ -238,7 +238,7 @@ DefaultSpmdVectorSpace<Scalar>::getComm() const
 
 
 template<class Scalar>
-Index DefaultSpmdVectorSpace<Scalar>::localSubDim() const
+Ordinal DefaultSpmdVectorSpace<Scalar>::localSubDim() const
 {
   return localSubDim_;
 }
@@ -260,7 +260,7 @@ DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace()
 
 template<class Scalar>
 DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace(
-  const Index dim_in
+  const Ordinal dim_in
   )
   :localSubDim_(-1), numProc_(-1), procRank_(-1)
 {
@@ -270,8 +270,8 @@ DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace(
 
 template<class Scalar>
 DefaultSpmdVectorSpace<Scalar>::DefaultSpmdVectorSpace(
-  const RCP<const Teuchos::Comm<Index> > &comm,
-  const Index my_localSubDim, const Index globalDim
+  const RCP<const Teuchos::Comm<Ordinal> > &comm,
+  const Ordinal my_localSubDim, const Ordinal globalDim
   )
   :localSubDim_(-1), numProc_(-1), procRank_(-1)
 {

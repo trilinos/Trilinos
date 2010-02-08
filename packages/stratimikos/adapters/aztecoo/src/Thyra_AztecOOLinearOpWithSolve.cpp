@@ -27,8 +27,6 @@
 //@HEADER
 */
 
-#ifndef SUN_CXX
-
 #include "Thyra_AztecOOLinearOpWithSolve.hpp"
 #include "Thyra_LinearOpWithSolveHelpers.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
@@ -45,7 +43,7 @@ namespace {
 inline
 Teuchos::ETransp convert( Thyra::EOpTransp trans_in )
 {
-  Teuchos::ETransp  trans_out;
+  Teuchos::ETransp trans_out;
   switch(trans_in) {
     case Thyra::NOTRANS:
       trans_out = Teuchos::NO_TRANS;
@@ -75,7 +73,7 @@ public:
   ~SetAztecSolveState();
 private:
   Teuchos::RCP<AztecOO> aztecSolver_;
-  Teuchos::RCP<Teuchos::FancyOStream>  fancyOStream_;
+  Teuchos::RCP<Teuchos::FancyOStream> fancyOStream_;
   Teuchos::EVerbosityLevel verbLevel_;
   int outputFrequency_;
   int convergenceTest_;
@@ -94,8 +92,8 @@ SetAztecSolveState::SetAztecSolveState(
   
   // Output state
   verbLevel_ = verbLevel;
-  if( Teuchos::VERB_NONE != verbLevel_ ) {
-    if(!is_null(fancyOStream)) {
+  if ( Teuchos::VERB_NONE != verbLevel_ ) {
+    if (!is_null(fancyOStream)) {
       // AztecOO puts in two tabs before it prints anything.  Therefore,
       // there is not much that we can do to improve the layout of the
       // indentation so just leave it!
@@ -154,8 +152,8 @@ SetAztecSolveState::~SetAztecSolveState()
 {
       
   // Output state
-  if( Teuchos::VERB_NONE != verbLevel_ ) {
-    if(!is_null(fancyOStream_)) {
+  if ( Teuchos::VERB_NONE != verbLevel_ ) {
+    if (!is_null(fancyOStream_)) {
       aztecSolver_->SetOutputStream(std::cout);
       aztecSolver_->SetErrorStream(std::cerr);
       *fancyOStream_ << "\n";
@@ -181,11 +179,11 @@ namespace Thyra {
 
 
 AztecOOLinearOpWithSolve::AztecOOLinearOpWithSolve(
-  const int       fwdDefaultMaxIterations
-  ,const double   fwdDefaultTol
-  ,const int      adjDefaultMaxIterations
-  ,const double   adjDefaultTol
-  ,const bool     outputEveryRhs
+  const int fwdDefaultMaxIterations
+  ,const double fwdDefaultTol
+  ,const int adjDefaultMaxIterations
+  ,const double adjDefaultTol
+  ,const bool outputEveryRhs
   )
   :fwdDefaultMaxIterations_(fwdDefaultMaxIterations)
   ,fwdDefaultTol_(fwdDefaultTol)
@@ -200,16 +198,16 @@ AztecOOLinearOpWithSolve::AztecOOLinearOpWithSolve(
 
 
 void AztecOOLinearOpWithSolve::initialize(
-  const RCP<const LinearOpBase<double> >                 &fwdOp
-  ,const RCP<const LinearOpSourceBase<double> >          &fwdOpSrc
-  ,const RCP<const PreconditionerBase<double> >          &prec
-  ,const bool                                                             isExternalPrec
-  ,const RCP<const LinearOpSourceBase<double> >          &approxFwdOpSrc
-  ,const RCP<AztecOO>                                    &aztecFwdSolver
-  ,const bool                                                             allowInexactFwdSolve
-  ,const RCP<AztecOO>                                    &aztecAdjSolver
-  ,const bool                                                             allowInexactAdjSolve
-  ,const double                                                           aztecSolverScalar
+  const RCP<const LinearOpBase<double> > &fwdOp
+  ,const RCP<const LinearOpSourceBase<double> > &fwdOpSrc
+  ,const RCP<const PreconditionerBase<double> > &prec
+  ,const bool isExternalPrec
+  ,const RCP<const LinearOpSourceBase<double> > &approxFwdOpSrc
+  ,const RCP<AztecOO> &aztecFwdSolver
+  ,const bool allowInexactFwdSolve
+  ,const RCP<AztecOO> &aztecAdjSolver
+  ,const bool allowInexactAdjSolve
+  ,const double aztecSolverScalar
   )
 {
 #ifdef TEUCHOS_DEBUG
@@ -228,7 +226,7 @@ void AztecOOLinearOpWithSolve::initialize(
   allowInexactAdjSolve_ = allowInexactAdjSolve;
   aztecSolverScalar_ = aztecSolverScalar;
   const std::string fwdOpLabel = fwdOp_->getObjectLabel();
-  if(fwdOpLabel.length())
+  if (fwdOpLabel.length())
     this->setObjectLabel( "lows("+fwdOpLabel+")" );
 }
 
@@ -282,16 +280,16 @@ void AztecOOLinearOpWithSolve::uninitialize(
   double *aztecSolverScalar
   )
 {
-  if(fwdOp) *fwdOp = fwdOp_;
-  if(fwdOpSrc) *fwdOpSrc = fwdOpSrc_;
-  if(prec) *prec = prec_;
-  if(isExternalPrec) *isExternalPrec = isExternalPrec_;
-  if(approxFwdOpSrc) *approxFwdOpSrc = approxFwdOpSrc_;
-  if(aztecFwdSolver) *aztecFwdSolver = aztecFwdSolver_;
-  if(allowInexactFwdSolve) *allowInexactFwdSolve = allowInexactFwdSolve_;
-  if(aztecAdjSolver) *aztecAdjSolver = aztecAdjSolver_;
-  if(allowInexactAdjSolve) *allowInexactAdjSolve = allowInexactAdjSolve_;
-  if(aztecSolverScalar) *aztecSolverScalar = aztecSolverScalar_;
+  if (fwdOp) *fwdOp = fwdOp_;
+  if (fwdOpSrc) *fwdOpSrc = fwdOpSrc_;
+  if (prec) *prec = prec_;
+  if (isExternalPrec) *isExternalPrec = isExternalPrec_;
+  if (approxFwdOpSrc) *approxFwdOpSrc = approxFwdOpSrc_;
+  if (aztecFwdSolver) *aztecFwdSolver = aztecFwdSolver_;
+  if (allowInexactFwdSolve) *allowInexactFwdSolve = allowInexactFwdSolve_;
+  if (aztecAdjSolver) *aztecAdjSolver = aztecAdjSolver_;
+  if (allowInexactAdjSolve) *allowInexactAdjSolve = allowInexactAdjSolve_;
+  if (aztecSolverScalar) *aztecSolverScalar = aztecSolverScalar_;
 
   fwdOp_ = Teuchos::null;
   fwdOpSrc_ = Teuchos::null;
@@ -319,7 +317,7 @@ AztecOOLinearOpWithSolve::range() const
 RCP< const VectorSpaceBase<double> >
 AztecOOLinearOpWithSolve::domain() const
 {
-  return  ( fwdOp_.get() ? fwdOp_->domain() : Teuchos::null );
+  return ( fwdOp_.get() ? fwdOp_->domain() : Teuchos::null );
 }
 
 
@@ -337,7 +335,7 @@ std::string AztecOOLinearOpWithSolve::description() const
 {
   std::ostringstream oss;
   oss << Teuchos::Describable::description();
-  if(fwdOp_.get()) {
+  if (fwdOp_.get()) {
     oss << "{";
     oss << "fwdOp="<<fwdOp_->description()<<"";
     oss << "}";
@@ -368,44 +366,44 @@ void AztecOOLinearOpWithSolve::describe(
         << "rangeDim=" << this->range()->dim()
         << ",domainDim="<< this->domain()->dim() << "}\n";
       OSTab tab(out);
-      if(!is_null(fwdOp_)) {
+      if (!is_null(fwdOp_)) {
         out << "fwdOp = " << describe(*fwdOp_,verbLevel);
       }
-      if(!is_null(prec_)) {
+      if (!is_null(prec_)) {
         out << "prec = " << describe(*prec_,verbLevel);
       }
-      if(!is_null(aztecFwdSolver_)) {
-        if(aztecFwdSolver_->GetUserOperator())
+      if (!is_null(aztecFwdSolver_)) {
+        if (aztecFwdSolver_->GetUserOperator())
           out
             << "Aztec Fwd Op = "
             << typeName(*aztecFwdSolver_->GetUserOperator()) << "\n";
-        if(aztecFwdSolver_->GetUserMatrix())
+        if (aztecFwdSolver_->GetUserMatrix())
           out
             << "Aztec Fwd Mat = "
             << typeName(*aztecFwdSolver_->GetUserMatrix()) << "\n";
-        if(aztecFwdSolver_->GetPrecOperator())
+        if (aztecFwdSolver_->GetPrecOperator())
           out
             << "Aztec Fwd Prec Op = "
             << typeName(*aztecFwdSolver_->GetPrecOperator()) << "\n";
-        if(aztecFwdSolver_->GetPrecMatrix())
+        if (aztecFwdSolver_->GetPrecMatrix())
           out
             << "Aztec Fwd Prec Mat = "
             << typeName(*aztecFwdSolver_->GetPrecMatrix()) << "\n";
       }
-      if(!is_null(aztecAdjSolver_)) {
-        if(aztecAdjSolver_->GetUserOperator())
+      if (!is_null(aztecAdjSolver_)) {
+        if (aztecAdjSolver_->GetUserOperator())
           out
             << "Aztec Adj Op = "
             << typeName(*aztecAdjSolver_->GetUserOperator()) << "\n";
-        if(aztecAdjSolver_->GetUserMatrix())
+        if (aztecAdjSolver_->GetUserMatrix())
           out
             << "Aztec Adj Mat = "
             << typeName(*aztecAdjSolver_->GetUserMatrix()) << "\n";
-        if(aztecAdjSolver_->GetPrecOperator())
+        if (aztecAdjSolver_->GetPrecOperator())
           out
             << "Aztec Adj Prec Op = "
             << typeName(*aztecAdjSolver_->GetPrecOperator()) << "\n";
-        if(aztecAdjSolver_->GetPrecMatrix())
+        if (aztecAdjSolver_->GetPrecMatrix())
           out
             << "Aztec Adj Prec Mat = "
             << typeName(*aztecAdjSolver_->GetPrecMatrix()) << "\n";
@@ -418,51 +416,47 @@ void AztecOOLinearOpWithSolve::describe(
 }
 
 
-// ToDo: Add more detailed describe() function override to show all of the good stuff!
-
-
 // protected
 
 
-// Overridden from SingleScalarLinearOpBase
+// Overridden from LinearOpBase
 
 
-bool AztecOOLinearOpWithSolve::opSupported(EOpTransp M_trans) const
+bool AztecOOLinearOpWithSolve::opSupportedImpl(EOpTransp M_trans) const
 {
   return ::Thyra::opSupported(*fwdOp_,M_trans);
 }
 
 
-// Overridden from SingleRhsLinearOpBase
-
-
-void AztecOOLinearOpWithSolve::apply(
-  const EOpTransp                M_trans
-  ,const VectorBase<double>    &x
-  ,VectorBase<double>          *y
-  ,const double                alpha
-  ,const double                beta
+void AztecOOLinearOpWithSolve::applyImpl(
+  const EOpTransp M_trans,
+  const MultiVectorBase<double> &X,
+  const Ptr<MultiVectorBase<double> > &Y,
+  const double alpha,
+  const double beta
   ) const
 {
-  Thyra::apply( *fwdOp_, M_trans, x, y, alpha, beta );
+  Thyra::apply( *fwdOp_, M_trans, X, Y, alpha, beta );
 }
 
 
-// Overridden from SingleScalarLinearOpWithSolveBase
+// Overridden from LinearOpWithSolveBase
 
 
-bool AztecOOLinearOpWithSolve::solveSupportsTrans(EOpTransp M_trans) const
+bool
+AztecOOLinearOpWithSolve::solveSupportsImpl(EOpTransp M_trans) const
 {
-  if(real_trans(M_trans)==NOTRANS) return true;
-  return (aztecAdjSolver_.get()!=NULL);
+  if (real_trans(M_trans)==NOTRANS) return true;
+  return (nonnull(aztecAdjSolver_));
 }
 
 
-bool AztecOOLinearOpWithSolve::solveSupportsSolveMeasureType(
+bool
+AztecOOLinearOpWithSolve::solveSupportsSolveMeasureTypeImpl(
   EOpTransp M_trans, const SolveMeasureType& solveMeasureType
   ) const
 {
-  if(real_trans(M_trans)==NOTRANS) {
+  if (real_trans(M_trans)==NOTRANS) {
     if (solveMeasureType.useDefault())
     {
       return true;
@@ -528,47 +522,48 @@ bool AztecOOLinearOpWithSolve::solveSupportsSolveMeasureType(
 }
 
 
-// Overridden from SingleRhsLinearOpWithSolveBase
+// Overridden from LinearOpWithSolveBase
 
 
-void AztecOOLinearOpWithSolve::solve(
+SolveStatus<double>
+AztecOOLinearOpWithSolve::solveImpl(
   const EOpTransp M_trans,
   const MultiVectorBase<double> &B,
-  MultiVectorBase<double> *X,
-  const int numBlocks,
-  const BlockSolveCriteria<double> blockSolveCriteria[],
-  SolveStatus<double> blockSolveStatus[]
+  const Ptr<MultiVectorBase<double> > &X,
+  const Ptr<const SolveCriteria<double> > solveCriteria
   ) const
 {
+  using Teuchos::rcpFromRef;
+  using Teuchos::rcpFromPtr;
   using Teuchos::OSTab;
-  typedef SolveCriteria<double>  SC;
-  typedef SolveStatus<double>    SS;
+  typedef SolveCriteria<double> SC;
+  typedef SolveStatus<double> SS;
 
   TEUCHOS_FUNC_TIME_MONITOR("AztecOOLOWS");
   Teuchos::Time totalTimer(""), timer("");
   totalTimer.start(true);
 
-  RCP<Teuchos::FancyOStream>  out = this->getOStream();
+  RCP<Teuchos::FancyOStream> out = this->getOStream();
   Teuchos::EVerbosityLevel verbLevel = this->getVerbLevel();
   OSTab tab = this->getOSTab();
-  if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
+  if (out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
     *out << "\nSolving block system using AztecOO ...\n\n";
 
   //
   // Validate input
   //
-  TEST_FOR_EXCEPT(numBlocks > 1); // ToDo: Deal with multiple solve criteria later if needed
-  TEST_FOR_EXCEPT(!this->solveSupportsTrans(M_trans));
+  TEUCHOS_ASSERT(this->solveSupportsImpl(M_trans));
   SolveMeasureType solveMeasureType;
-  if (numBlocks && blockSolveCriteria) {
-    solveMeasureType = blockSolveCriteria[0].solveCriteria.solveMeasureType;
-    assertSupportsSolveMeasureType(*this,M_trans,solveMeasureType);
+  if (nonnull(solveCriteria)) {
+    solveMeasureType = solveCriteria->solveMeasureType;
+    assertSupportsSolveMeasureType(*this, M_trans, solveMeasureType);
   }
-  TEST_FOR_EXCEPT(X==NULL);
+
   //
   // Get the transpose argument
   //
   const EOpTransp aztecOpTransp = real_trans(M_trans);
+
   //
   // Get the solver, operator, and preconditioner that we will use
   //
@@ -576,43 +571,47 @@ void AztecOOLinearOpWithSolve::solve(
     aztecSolver = ( aztecOpTransp == NOTRANS ? aztecFwdSolver_  : aztecAdjSolver_ );
   const Epetra_Operator
     *aztecOp = aztecSolver->GetUserOperator();
+
   //
   // Get the op(...) range and domain maps
   //
   const Epetra_Map
-    &opRangeMap  = aztecOp->OperatorRangeMap(),
+    &opRangeMap = aztecOp->OperatorRangeMap(),
     &opDomainMap = aztecOp->OperatorDomainMap();
+
   //
   // Get the convergence criteria
   //
-  double tol            = ( aztecOpTransp==NOTRANS ? fwdDefaultTol()           : adjDefaultTol()           );
-  int    maxIterations  = ( aztecOpTransp==NOTRANS ? fwdDefaultMaxIterations() : adjDefaultMaxIterations() );
-  bool   isDefaultSolveCriteria = true;
-  if( numBlocks && blockSolveCriteria ) {
-    if( blockSolveCriteria[0].solveCriteria.requestedTol != SC::unspecifiedTolerance() ) {
-      tol = blockSolveCriteria[0].solveCriteria.requestedTol;
+  double tol = ( aztecOpTransp==NOTRANS ? fwdDefaultTol() : adjDefaultTol() );
+  int maxIterations = ( aztecOpTransp==NOTRANS
+    ? fwdDefaultMaxIterations() : adjDefaultMaxIterations() );
+  bool isDefaultSolveCriteria = true;
+  if (nonnull(solveCriteria)) {
+    if ( solveCriteria->requestedTol != SC::unspecifiedTolerance() ) {
+      tol = solveCriteria->requestedTol;
       isDefaultSolveCriteria = false;
     }
   }
+
   //
   // Get Epetra_MultiVector views of B and X
   //
+
   RCP<const Epetra_MultiVector> epetra_B;
   RCP<Epetra_MultiVector> epetra_X;
 
-  const EpetraOperatorWrapper* opWrapper 
-    = dynamic_cast<const EpetraOperatorWrapper*>(aztecOp);
+  const EpetraOperatorWrapper* opWrapper =
+    dynamic_cast<const EpetraOperatorWrapper*>(aztecOp);
 
-  if (opWrapper == 0)
-    {
-      epetra_B = get_Epetra_MultiVector(opRangeMap,Teuchos::rcp(&B,false));
-      epetra_X = get_Epetra_MultiVector(opDomainMap,Teuchos::rcp(X,false));
-    }
-
+  if (opWrapper == 0) {
+    epetra_B = get_Epetra_MultiVector(opRangeMap, rcpFromRef(B));
+    epetra_X = get_Epetra_MultiVector(opDomainMap, rcpFromPtr(X));
+  }
 
   //
   // Use AztecOO to solve each RHS one at a time (which is all that I can do anyway)
   //
+
   int totalIterations = 0;
   SolveStatus<double> solveStatus;
   solveStatus.solveStatus = SOLVE_STATUS_CONVERGED;
@@ -636,8 +635,8 @@ void AztecOOLinearOpWithSolve::solve(
 
     // We need to declare epetra_x_j as non-const because when we have a phony
     // Epetra operator we'll have to copy a thyra vector into it.
-    Epetra_Vector   *epetra_b_j;
-    Epetra_Vector   *epetra_x_j;
+    Epetra_Vector *epetra_b_j;
+    Epetra_Vector *epetra_x_j;
 
     if (opWrapper == 0)
       {
@@ -670,7 +669,8 @@ void AztecOOLinearOpWithSolve::solve(
     {
       SetAztecSolveState
         setAztecSolveState(aztecSolver,out,verbLevel,solveMeasureType);
-      aztecSolver->Iterate( maxIterations, tol ); // We ignore the returned status but get it below
+      aztecSolver->Iterate( maxIterations, tol );
+      // NOTE: We ignore the returned status but get it below
     }
     timer.stop();
     //
@@ -679,45 +679,44 @@ void AztecOOLinearOpWithSolve::solve(
     // processed. It's moved here because we need to do it before copying the
     // solution back into a Thyra vector. - KL
     //
-    if(aztecSolverScalar_ != 1.0)
+    if (aztecSolverScalar_ != 1.0)
       epetra_x_j->Scale(1.0/aztecSolverScalar_);
 
     /* If necessary, convert the solution back to a non-epetra vector */
-    if (opWrapper != 0)
-      {
-        Vector<double> colX = X->col(j);
-        opWrapper->copyEpetraIntoThyra(*epetra_x_j, colX);
-        // clean up the temporary vectors we created.
-        delete epetra_b_j;
-        delete epetra_x_j;
-      }
+    if (opWrapper != 0) {
+      Vector<double> colX = X->col(j);
+      opWrapper->copyEpetraIntoThyra(*epetra_x_j, colX);
+      // clean up the temporary vectors we created.
+      delete epetra_b_j;
+      delete epetra_x_j;
+    }
 
     //
     // Set the return solve status
     //
-    const int     iterations  = aztecSolver->NumIters();
-    const double  achievedTol = aztecSolver->ScaledResidual();
-    const double  *AZ_status  = aztecSolver->GetAztecStatus();
+    const int iterations = aztecSolver->NumIters();
+    const double achievedTol = aztecSolver->ScaledResidual();
+    const double *AZ_status = aztecSolver->GetAztecStatus();
     std::ostringstream oss;
     bool converged = false;
-    if(AZ_status[AZ_why]==AZ_normal)           { oss << "Aztec returned AZ_normal."; converged = true; }
-    else if(AZ_status[AZ_why]==AZ_param)       oss << "Aztec returned AZ_param.";
-    else if(AZ_status[AZ_why]==AZ_breakdown)   oss << "Aztec returned AZ_breakdown.";
-    else if(AZ_status[AZ_why]==AZ_loss)        oss << "Aztec returned AZ_loss.";
-    else if(AZ_status[AZ_why]==AZ_ill_cond)    oss << "Aztec returned AZ_ill_cond.";
-    else if(AZ_status[AZ_why]==AZ_maxits)      oss << "Aztec returned AZ_maxits.";
-    else                                       oss << "Aztec returned an unknown status?";
+    if (AZ_status[AZ_why]==AZ_normal) { oss << "Aztec returned AZ_normal."; converged = true; }
+    else if (AZ_status[AZ_why]==AZ_param) oss << "Aztec returned AZ_param.";
+    else if (AZ_status[AZ_why]==AZ_breakdown) oss << "Aztec returned AZ_breakdown.";
+    else if (AZ_status[AZ_why]==AZ_loss) oss << "Aztec returned AZ_loss.";
+    else if (AZ_status[AZ_why]==AZ_ill_cond) oss << "Aztec returned AZ_ill_cond.";
+    else if (AZ_status[AZ_why]==AZ_maxits) oss << "Aztec returned AZ_maxits.";
+    else oss << "Aztec returned an unknown status?";
     oss << "  Iterations = " << iterations << ".";
     oss << "  Achieved Tolerance = " << achievedTol << ".";
     oss << "  Total time = " << timer.totalElapsedTime() << " sec.";
-    if(out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE) && outputEveryRhs())
+    if (out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE) && outputEveryRhs())
       Teuchos::OSTab(out).o() << "j="<<j<<": " << oss.str() << "\n";
     //
     totalIterations += iterations;
-    solveStatus.achievedTol = TEUCHOS_MAX(solveStatus.achievedTol,achievedTol);
+    solveStatus.achievedTol = TEUCHOS_MAX(solveStatus.achievedTol, achievedTol);
     // Note, achieveTol may actually be greater than tol due to ill conditioning and roundoff!
     solveStatus.message = oss.str();
-    if( isDefaultSolveCriteria ) {
+    if ( isDefaultSolveCriteria ) {
       switch(solveStatus.solveStatus) {
         case SOLVE_STATUS_UNKNOWN:
           // Leave overall unknown!
@@ -739,42 +738,39 @@ void AztecOOLinearOpWithSolve::solve(
   //
   epetra_X = Teuchos::null;
   epetra_B = Teuchos::null;
+
   //
   // Update the overall solve criteria
   //
   totalTimer.stop();
-  if( numBlocks && blockSolveStatus ) {
-    std::ostringstream oss;
-    oss
-      << "AztecOO solver "
-      << ( solveStatus.solveStatus==SOLVE_STATUS_CONVERGED ? "converged" : "unconverged" )
-      << " on m = "<<m<<" RHSs using " << totalIterations << " cumulative iterations"
-      << " for an average of " << (totalIterations/m) << " iterations/RHS and"
-      << " total CPU time of "<<totalTimer.totalElapsedTime()<<" sec.";
-    blockSolveStatus[0].message     = oss.str();
-    if(isDefaultSolveCriteria) {
-      blockSolveStatus[0].solveStatus = SOLVE_STATUS_UNKNOWN;
-      blockSolveStatus[0].achievedTol = SS::unknownTolerance();
-    }
-    else {
-      blockSolveStatus[0].solveStatus = solveStatus.solveStatus;
-      blockSolveStatus[0].achievedTol = solveStatus.achievedTol;
-    }
+  SolveStatus<double> overallSolveStatus;
+  std::ostringstream oss;
+  oss
+    << "AztecOO solver "
+    << ( overallSolveStatus.solveStatus==SOLVE_STATUS_CONVERGED ? "converged" : "unconverged" )
+    << " on m = "<<m<<" RHSs using " << totalIterations << " cumulative iterations"
+    << " for an average of " << (totalIterations/m) << " iterations/RHS and"
+    << " total CPU time of "<<totalTimer.totalElapsedTime()<<" sec.";
+  overallSolveStatus.message = oss.str();
+  if (isDefaultSolveCriteria) {
+    overallSolveStatus.solveStatus = SOLVE_STATUS_UNKNOWN;
+    overallSolveStatus.achievedTol = SS::unknownTolerance();
   }
+  else {
+    overallSolveStatus.solveStatus = solveStatus.solveStatus;
+    overallSolveStatus.achievedTol = solveStatus.achievedTol;
+  }
+
   //
   // Report the overall time
   //
-  if(out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
+  if (out.get() && static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW))
     *out
       << "\nTotal solve time = "<<totalTimer.totalElapsedTime()<<" sec\n";
+
+  return overallSolveStatus;
+
 }
 
 
 }	// end namespace Thyra
-
-#endif // SUN_CXX
-
-
-
-
-

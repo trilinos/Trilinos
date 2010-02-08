@@ -59,7 +59,7 @@ namespace NOX {
 namespace Thyra {
   template <class T> class ModelEvaluator;
   template <class T> class MultiVectorBase;
-  template <class RangeScalar, class DomainScalar> class LinearOpWithSolveBase;
+  template <class Scalar> class LinearOpWithSolveBase;
 }
 
 namespace NOX {

@@ -277,22 +277,22 @@ void RealComplexFFTLinearOp<RealScalar>::updateReal(
   TEST_FOR_EXCEPT( ev_V_complex.subDim() != ev_V.subDim() || ev_V_complex.numSubCols() != ev_V.numSubCols() );
 #endif  
   if( beta == ST::zero() ) {
-    for( Thyra::Index j = 0; j < ev_V.numSubCols(); ++j ) {
-      for( Thyra::Index i = 0; i < ev_V.subDim(); ++i ) {
+    for( Thyra::Ordinal j = 0; j < ev_V.numSubCols(); ++j ) {
+      for( Thyra::Ordinal i = 0; i < ev_V.subDim(); ++i ) {
         ev_V(i,j) = ev_V_complex(i,j).real();
       }
     }
   }
   else if( beta == ST::one() ) {
-    for( Thyra::Index j = 0; j < ev_V.numSubCols(); ++j ) {
-      for( Thyra::Index i = 0; i < ev_V.subDim(); ++i ) {
+    for( Thyra::Ordinal j = 0; j < ev_V.numSubCols(); ++j ) {
+      for( Thyra::Ordinal i = 0; i < ev_V.subDim(); ++i ) {
         ev_V(i,j) += ev_V_complex(i,j).real();
       }
     }
   }
   else {
-    for( Thyra::Index j = 0; j < ev_V.numSubCols(); ++j ) {
-      for( Thyra::Index i = 0; i < ev_V.subDim(); ++i ) {
+    for( Thyra::Ordinal j = 0; j < ev_V.numSubCols(); ++j ) {
+      for( Thyra::Ordinal i = 0; i < ev_V.subDim(); ++i ) {
         ev_V(i,j) = beta*ev_V(i,j) + ev_V_complex(i,j).real();
       }
     }
