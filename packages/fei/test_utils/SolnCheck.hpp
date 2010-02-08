@@ -15,7 +15,7 @@ namespace SolnCheck {
   int readSoln(const char* baseName, int np, fei::FillableMat& solution);
 
   int compareSoln(fei::FillableMat& solution1, fei::FillableMat& solution2,
-			 double tol=1.e-5);
+			 double tol=1.e-3);
 
   int readMatrix(const char* baseName, int np, fei::FillableMat& matrix);
 
