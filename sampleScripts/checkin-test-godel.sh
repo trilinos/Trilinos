@@ -27,8 +27,7 @@ echo "
 #
 
 ../../Trilinos/checkin-test.py \
---make-options="-j6" \
---ctest-options="-j6" \
+-j6 \
 --ctest-timeout=180 \
 --commit-msg-header-file=checkin_message \
 $EXTRA_ARGS  
