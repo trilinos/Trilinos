@@ -21,7 +21,7 @@
 #include "Epetra_CrsMatrix.h"
 
 // Teko includes
-#include "Epetra/Teko_EpetraOperatorWrapper.hpp"
+#include "Teko_EpetraOperatorWrapper.hpp"
 
 namespace Teko {
 namespace Epetra {

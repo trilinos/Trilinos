@@ -2,7 +2,7 @@
 #define __Teko_EpetraBlockPreconditioner_hpp__
 
 #include "Teko_BlockPreconditionerFactory.hpp"
-#include "Epetra/Teko_EpetraInverseOpWrapper.hpp"
+#include "Teko_EpetraInverseOpWrapper.hpp"
 
 namespace Teko {
 namespace Epetra {

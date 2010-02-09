@@ -11,8 +11,8 @@
 
 // Teko includes
 #include "Teko_BlockedReordering.hpp"
-#include "Epetra/Teko_EpetraOperatorWrapper.hpp"
-#include "Epetra/Teko_StridedMappingStrategy.hpp"
+#include "Teko_EpetraOperatorWrapper.hpp"
+#include "Teko_StridedMappingStrategy.hpp"
 
 namespace Teko {
 namespace Epetra {
