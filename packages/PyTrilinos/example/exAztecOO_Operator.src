@@ -145,14 +145,16 @@ class Laplace1D_Operator(Epetra.Operator):
         operator.
         """
         try:
+            # Under GNU C++ 4.1.2, x and y are provided to this method as "raw"
+            # Epetra.Epetra_MultiVectors rather than hybrid Epetra.MultiVectors
+            # -- so we fix them.
+            if not isinstance(x, Epetra.MultiVector):
+                x = Epetra.MultiVector(Epetra.View, x)
+            if not isinstance(y, Epetra.MultiVector):
+                y = Epetra.MultiVector(Epetra.View, y)
             # Import the off-processor values
             xImp = Epetra.MultiVector(self.__importMap, x.NumVectors())
             xImp.Import(x, self.__importer, Epetra.Insert)
-            # Under GNU C++ 4.1.2, y is provided to this method as a "raw"
-            # Epetra.Epetra_MultiVector rather than a hybrid
-            # Epetra.MultiVector -- so we fix it.
-            if not isinstance(y, Epetra.MultiVector):
-                y = Epetra.MultiVector(Epetra.View, y)
             # Apply operator to interior points
             y[:,self.__y0:self.__y1] = 2.0 * xImp[:,1:-1] - xImp[:,:-2] - \
                                        xImp[:,2:]

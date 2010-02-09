@@ -39,7 +39,6 @@ PACKAGE_ADD_TEST(
     --n=4 --eps-scale=${EPS_SCALE}
   NUM_MPI_PROCS 1
   COMM serial mpi
-  XHOSTTYPE Darwin 
   )
 
 
@@ -50,7 +49,6 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
-  XHOSTTYPE Darwin 
   )
 
 
@@ -61,7 +59,6 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
-  XHOSTTYPE Darwin 
   )
 
 
@@ -72,10 +69,4 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
-  XHOSTTYPE Darwin 
   )
-
-
-# Bug: 4699: ToDo: Fix the randomize(...) function to create random columns.
-# Or, you can just generate a matrix with 1, 2, 3, 4 ... which should be a
-# nicely conditioned matrix for small matrices.

@@ -443,7 +443,7 @@ defaultInverseModelEvaluator(
 template<class Scalar>
 const std::string
 DefaultInverseModelEvaluator<Scalar>::ObservationIndex_name_
-= "Observation Ordinal";
+= "Observation Index";
 
 template<class Scalar>
 const int

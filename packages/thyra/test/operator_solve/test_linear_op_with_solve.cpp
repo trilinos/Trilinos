@@ -45,6 +45,8 @@
 #include "Teuchos_StandardCatchMacros.hpp"
 #include "Teuchos_LocalTestingHelpers.hpp"
 
+#include "OperatorSolveHelpers.hpp"
+
 
 namespace Thyra {
 
@@ -84,10 +86,9 @@ bool run_linear_op_with_solve_tests(
   const RCP<const Thyra::VectorSpaceBase<Scalar> >
     vs = Thyra::defaultSpmdVectorSpace<Scalar>(n);
 
-  out << "\nB) Create a random MV object ...\n";
-  const RCP<MultiVectorBase<Scalar> >
-    M = createMembers(vs, n);
-  randomize<Scalar>(-ST::one(), ST::one(), M.ptr());
+  out << "\nB) Create a nonsingular MV object ...\n";
+  const RCP<const MultiVectorBase<Scalar> > M =
+    createNonsingularMultiVector(vs);
 
   out << "\nC) Create DefaultSerialDenseLinearOpWithSolve object M_lows from M ...\n";
 

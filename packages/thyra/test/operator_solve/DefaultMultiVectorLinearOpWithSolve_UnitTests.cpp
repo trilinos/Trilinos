@@ -9,6 +9,8 @@
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_LinearOpWithSolveTester.hpp"
 
+#include "OperatorSolveHelpers.hpp"
+
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Thyra_UnitTestHelpers.hpp"
 
@@ -57,8 +59,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultMultiVectorLinearOpWithSolve, basic,
   const RCP<const VectorSpaceBase<Scalar> > vs =
     defaultSpmdVectorSpace<Scalar>(dim);
 
-  const RCP<MultiVectorBase<Scalar> > M = createMembers(vs, dim);
-  randomize<Scalar>(-ST::one(), ST::one(), M.ptr());
+  const RCP<const MultiVectorBase<Scalar> > M =
+    createNonsingularMultiVector(vs);
 
   const RCP<const LinearOpWithSolveFactoryBase<Scalar> > lowsf = 
     defaultSerialDenseLinearOpWithSolveFactory<Scalar>();
