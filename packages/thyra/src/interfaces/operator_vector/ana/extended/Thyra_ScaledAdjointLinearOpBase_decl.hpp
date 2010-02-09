@@ -31,7 +31,9 @@
 
 #include "Thyra_LinearOpBase.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Base class for <tt>LinearOpBase</tt> decorator subclasses that wrap
 a <tt>LinearOpBase</tt> object and adds on an extra scaling factor and/or a
@@ -78,26 +80,30 @@ public:
    * Note that <tt>*this</tt> is only guaranteed to be fully modified once the
    * returned RCP goes away.
    */
-  virtual Teuchos::RCP<LinearOpBase<Scalar> > getNonconstOrigOp() = 0;
+  virtual RCP<LinearOpBase<Scalar> > getNonconstOrigOp() = 0;
 
   /** \brief Return the const original linear operator <tt>origOp</tt>.
    */
-  virtual Teuchos::RCP<const LinearOpBase<Scalar> > getOrigOp() const = 0;
+  virtual RCP<const LinearOpBase<Scalar> > getOrigOp() const = 0;
 
   //@}
 
 };
 
+
 /** \brief Extract the <tt>overallScalar</tt>, <tt>overallTransp</tt> and
  * <tt>const</tt> <tt>origOp</tt> from a <tt>const</tt>
  * <tt>LinearOpBase</tt> object.
  *
- * \param  Op      [in] The input, possibly scaled and/or adjoined, linear operator
- * \param  scalar  [out] The overall scaling factor.
- * \param  transp  [out] The overall adjoint (transposition) enum.
- * \param  origOp  [out] The underlying, non-scaled and non-adjoined linear operator.
- *                 This pointer returns a non-persisting relationship that is to be
- *                 used and then immediately forgotten.
+ * \param Op [in] The input, possibly scaled and/or adjoined, linear operator
+ *
+ * \param scalar [out] The overall scaling factor.
+ *
+ * \param transp [out] The overall adjoint (transposition) enum.
+ *
+ * \param origOp [out] The underlying, non-scaled and non-adjoined linear
+ * operator.  This pointer returns a non-persisting relationship that is to be
+ * used and then immediately forgotten.
  *
  * Preconditions:<ul>
  * <li><tt>scalar!==NULL</tt>
@@ -121,23 +127,27 @@ public:
  */
 template<class Scalar>
 void unwrap(
-  const LinearOpBase<Scalar>      &Op
-  ,Scalar                         *scalar
-  ,EOpTransp                        *transp
-  ,const LinearOpBase<Scalar>*    *origOp
+  const LinearOpBase<Scalar> &Op,
+  Scalar *scalar,
+  EOpTransp *transp,
+  const LinearOpBase<Scalar>* *origOp
   );
 
+
 /** \brief Extract the <tt>overallScalar</tt>, <tt>overallTransp</tt> and
- * <tt>Teuchos::RCP</tt> wrapped <tt>const</tt> <tt>origOp</tt> from a
- * <tt>Teuchos::RCP</tt> wrapped <tt>const</tt> <tt>LinearOpBase</tt>
+ * <tt>RCP</tt> wrapped <tt>const</tt> <tt>origOp</tt> from a
+ * <tt>RCP</tt> wrapped <tt>const</tt> <tt>LinearOpBase</tt>
  * object.
  *
- * \param  Op      [in] The input, possibly scaled and/or adjoined, linear operator
- * \param  scalar  [out] The overall scaling factor.
- * \param  transp  [out] The overall adjoint (transposition) enum.
- * \param  origOp  [out] The underlying, non-scaled and non-adjoined linear operator.
- *                 This pointer returns a non-persisting relationship that is to be
- *                 used and then immediately forgotten.
+ * \param Op [in] The input, possibly scaled and/or adjoined, linear operator
+ *
+ * \param scalar [out] The overall scaling factor.
+ *
+ * \param transp [out] The overall adjoint (transposition) enum.
+ *
+ * \param origOp [out] The underlying, non-scaled and non-adjoined linear
+ * operator.  This pointer returns a non-persisting relationship that is to be
+ * used and then immediately forgotten.
  *
  * Preconditions:<ul>
  * <li><tt>scalar!==NULL</tt>
@@ -161,12 +171,14 @@ void unwrap(
  */
 template<class Scalar>
 void unwrap(
-  const Teuchos::RCP<const LinearOpBase<Scalar> >     &Op
-  ,Scalar                                                     *scalar
-  ,EOpTransp                                                    *transp
-  ,Teuchos::RCP<const LinearOpBase<Scalar> >          *origOp
+  const RCP<const LinearOpBase<Scalar> > &Op,
+  Scalar *scalar,
+  EOpTransp *transp,
+  RCP<const LinearOpBase<Scalar> > *origOp
   );
 
+
 } // namespace Thyra
+
 
 #endif	// THYRA_SCALED_ADJOINT_LINEAR_OP_BASE_DECL_HPP

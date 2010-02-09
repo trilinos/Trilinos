@@ -29,7 +29,7 @@
 #ifndef THYRA_SPMD_VECTOR_SPACE_BASE_BASE_HPP
 #define THYRA_SPMD_VECTOR_SPACE_BASE_BASE_HPP
 
-#include "Thyra_SpmdVectorSpaceBaseDecl.hpp"
+#include "Thyra_SpmdVectorSpaceBase_decl.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
 
 #endif // THYRA_SPMD_VECTOR_SPACE_BASE_BASE_HPP
