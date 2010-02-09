@@ -8,6 +8,7 @@ EG_EXE=/Users/jmwille/bin/eg
 BASEDIR=/Users/jmwille/TrilinosTestHarness
 DRIVER_SCRIPT_DIR=$BASEDIR/Trilinos/cmake/ctest/drivers/s903186
 TRILINOS_REPOSITORY_LOCATION="software.sandia.gov:/space/git/Trilinos"
+export PYTHONPATH=/Users/jmwille/install/lib/python2.5/site-packages
 
 echo
 echo "Starting nightly Trilinos development testing on s903186: `date`"
