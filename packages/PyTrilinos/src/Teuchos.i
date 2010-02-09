@@ -89,6 +89,7 @@ ParameterList will accept a python dictionary.
 #undef HAVE_STDINT_H
 #endif
 #include "Teuchos_ConfigDefs.hpp"
+#include "Teuchos_DLLExportMacro.h"
 
 // Teuchos includes
 #include "Teuchos_FILEstream.hpp"
@@ -109,6 +110,7 @@ using Teuchos::RCP;
 
 // Configuration macros for SWIG
 %include "Teuchos_config.h"
+%include "Teuchos_DLLExportMacro.h"
 
 // Namespace flattening
 using std::string;

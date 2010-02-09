@@ -88,6 +88,10 @@ package:
 
 // Configuration includes
 #include "PyTrilinos_config.h"
+#include "Anasazi_config.h"
+#ifdef HAVE_EPETRA
+#include "Anasaziepetra_DLLExportMacro.h"
+#endif
 #define NO_IMPORT_ARRAY
 #include "numpy_include.h"
 
@@ -174,8 +178,12 @@ package:
 
 %}
 
-// Include PyTrilinos configuration
+// Include configuration
 %include "PyTrilinos_config.h"
+%include "Anasazi_config.h"
+#ifdef HAVE_EPETRA
+%include "Anasaziepetra_DLLExportMacro.h"
+#endif
 
 // Standard exception handling
 %include "exception.i"

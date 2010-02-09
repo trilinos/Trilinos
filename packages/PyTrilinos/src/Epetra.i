@@ -97,6 +97,7 @@ SerialDenseMatrix, IntSerialDenseVector and IntSerialDenseMatrix.
 #undef HAVE_STDINT_H
 #endif
 #include "Epetra_ConfigDefs.h"
+#include "Epetra_DLLExportMacro.h"
 
 // Import the numpy interface
 #define NO_IMPORT_ARRAY
@@ -230,6 +231,7 @@ char* strtok;
 
 %rename(FormatStdout) Epetra_FormatStdout;
 %include "Epetra_ConfigDefs.h"
+%include "Epetra_DLLExportMacro.h"
 
 // Include Epetra documentation
 %include "Epetra_dox.i"

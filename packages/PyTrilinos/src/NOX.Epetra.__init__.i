@@ -89,6 +89,7 @@ NOX.Epetra provides the following user-level classes:
 #include "Epetra_JadMatrix.h"
 #include "Epetra_SerialDenseSVD.h"
 #include "Epetra_SerialDistributor.h"
+#include "Epetra_DLLExportMacro.h"
 
 // EpetraExt includes
 #include "EpetraExt_MapColoring.h"
@@ -130,6 +131,9 @@ using namespace NOX;
 using namespace NOX::Abstract;
 using namespace NOX::Epetra;
 %}
+
+// Configuration
+%include "Epetra_DLLExportMacro.h"
 
 // General exception handling
 %include "exception.i"
