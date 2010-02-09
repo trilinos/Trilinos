@@ -225,6 +225,11 @@ class Laplace1D_Matrix(Epetra.RowMatrix):
                 return -1
             xImp = Epetra.MultiVector(self.__orderedColMap, x.NumVectors())
             xImp.Import(x, self.__orderedImporter, Epetra.Insert)
+            # Under GNU C++ 4.1.2, y is provided to this method as a "raw"
+            # Epetra.Epetra_MultiVector rather than a hybrid
+            # Epetra.MultiVector -- so we fix it.
+            if not isinstance(y, Epetra.MultiVector):
+                y = Epetra.MultiVector(Epetra.View, y)
             # Apply operator to interior points
             y[:,self.__y0:self.__y1] = 2.0 * xImp[:,1:-1] - xImp[:,:-2] - \
                                        xImp[:,2:]
