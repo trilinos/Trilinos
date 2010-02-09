@@ -350,7 +350,11 @@ double *Zoltan_Malloc(size_t n, char *filename, int lineno)
 
 /* Safe version of realloc. Does not initialize memory. */
 
+#ifdef REALLOC_BUG
+double *Zoltan_Realloc(void *ptr, size_t n, size_t n_old, char *filename, int lineno)
+#else
 double *Zoltan_Realloc(void *ptr, size_t n, char *filename, int lineno)
+#endif
 {
   char *yo = "Zoltan_Realloc";
   struct malloc_debug_data *dbptr;   /* loops through debug list */
@@ -371,7 +375,20 @@ double *Zoltan_Realloc(void *ptr, size_t n, char *filename, int lineno)
       p = NULL;
     }
     else {
+#ifdef REALLOC_BUG
+      p = (double *) malloc(n);
+      if (p){
+        if ((n > n_old) && (n_old > 0)){
+          memcpy(p, ptr, n_old);
+        }
+        else if (n <= n_old){
+          memcpy(p, ptr, n);
+        }
+        free(ptr);
+      }
+#else
       p = (double *) realloc((char *) ptr, n);
+#endif
 
       if (DEBUG_MEMORY > 1) {
         /* Need to replace item in allocation list */

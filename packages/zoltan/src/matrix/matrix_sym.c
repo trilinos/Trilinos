@@ -76,6 +76,8 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
 
   matrix->ystart = (int*) ZOLTAN_MALLOC((matrix->nY+1)*sizeof(int));
   if (matrix->ystart == NULL) MEMORY_ERROR;
+  matrix->ystart_size = matrix->nY+1;
+
   matrix->yGNO = (int*) ZOLTAN_MALLOC( matrix->nY*sizeof(int));
   if (matrix->nY && matrix->yGNO == NULL) MEMORY_ERROR;
   matrix->pinGNO = (int*) ZOLTAN_MALLOC(matrix->nPins*sizeof(int));
@@ -83,6 +85,8 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
   matrix->pinwgt = (float*) ZOLTAN_MALLOC(matrix->pinwgtdim*matrix->nPins*sizeof(float));
   if (matrix->nPins && matrix->pinwgtdim && matrix->pinwgt == NULL)
     MEMORY_ERROR;
+
+  matrix->pin_info_size = matrix->nPins;
 
   Zoltan_Matrix_Remove_DupArcs(zz, cnt, tr_tab, pinwgt, matrix);
   ZOLTAN_FREE(&tr_tab);

@@ -695,7 +695,7 @@ MPI_Status stat;
         if (numIds > 0){
 
           if (numIds > idbufSize){
-            idbuf = ZOLTAN_REALLOC_GID_ARRAY(zz, idbuf, numIds);
+            idbuf = ZOLTAN_REALLOC_GID_ARRAY(zz, idbuf, numIds, idbufSize);
             idbufSize = numIds;
           }
           MPI_Recv(idbuf, numIds * lenGID, MPI_INT, 
@@ -791,7 +791,7 @@ ZOLTAN_ID_PTR newIds, mergedPtr, inPtr;
 
   ht = (struct _gidht **)htptr;
 
-  newIds = ZOLTAN_REALLOC_GID_ARRAY(zz, *merged_egids, size_merged + numIds);
+  newIds = ZOLTAN_REALLOC_GID_ARRAY(zz, *merged_egids, size_merged + numIds, size_merged);
 
   mergedPtr = newIds + size_merged;
   numMerged = size_merged;

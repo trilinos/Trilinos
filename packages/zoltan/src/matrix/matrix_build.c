@@ -146,6 +146,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
 
   matrix->pinGNO = (int*)ZOLTAN_MALLOC(matrix->nPins* sizeof(int));
   if ((matrix->nPins > 0) && (matrix->pinGNO == NULL)) MEMORY_ERROR;
+  matrix->pin_info_size = matrix->nPins;
 
   if (matrix->opts.local) { /* keep only local edges */
     proclist = (int*) ZOLTAN_MALLOC(matrix->nPins*sizeof(int));
@@ -361,6 +362,8 @@ matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_P
     matrix->ystart = (int*) ZOLTAN_MALLOC((matrix->nY+1)*sizeof(int));
     if (matrix->ystart == NULL)
       MEMORY_ERROR;
+
+    matrix->ystart_size = matrix->nY + 1;
 
     matrix->ystart[0] = 0;
     matrix->yend = matrix->ystart + 1;

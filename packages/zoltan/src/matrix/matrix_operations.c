@@ -183,9 +183,14 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   if (outmat->yend != outmat->ystart + 1)
     ZOLTAN_FREE(&outmat->yend);
 
-  outmat->pinGNO = (int *) ZOLTAN_REALLOC(outmat->pinGNO, outmat->nPins * sizeof(int));
+  outmat->pinGNO = (int *) ZOLTAN_REALLOC(outmat->pinGNO, 
+                               outmat->nPins * sizeof(int), 
+                               outmat->pin_info_size * sizeof(int));
   outmat->pinwgt = (float *) ZOLTAN_REALLOC(outmat->pinwgt,
-			       outmat->nPins*outmat->pinwgtdim*sizeof(float));
+			       outmat->nPins*outmat->pinwgtdim*sizeof(float),
+			       outmat->pin_info_size*outmat->pinwgtdim*sizeof(float));
+
+  outmat->pin_info_size = outmat->nPins;
   outmat->yend = outmat->ystart + 1;
 
 #ifdef CC_TIMERS
@@ -235,6 +240,7 @@ Zoltan_Matrix_Remove_Duplicates(ZZ *zz, Zoltan_matrix inmat, Zoltan_matrix *outm
     freeflag = 1;
     outmat->pinwgt = (float*) ZOLTAN_MALLOC(inmat.pinwgtdim*inmat.nPins*sizeof(float));
     if (inmat.pinwgtdim && inmat.nPins && outmat->pinwgt == NULL) MEMORY_ERROR;
+    outmat->pin_info_size = inmat.nPins;
   }
 
   ierr = Zoltan_Matrix_Remove_DupArcs(zz, size, arcs, pinwgt,outmat);
@@ -306,9 +312,15 @@ Zoltan_Matrix_Construct_CSR(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   }
 
 
-  outmat->pinGNO = (int *) ZOLTAN_REALLOC(outmat->pinGNO, outmat->nPins * sizeof(int));
+  outmat->pinGNO = (int *) ZOLTAN_REALLOC(outmat->pinGNO, 
+                              outmat->nPins * sizeof(int), 
+                              outmat->pin_info_size * sizeof(int));
+
   outmat->pinwgt = (float *) ZOLTAN_REALLOC(outmat->pinwgt,
-			       outmat->nPins*outmat->pinwgtdim*sizeof(float));
+			       outmat->nPins*outmat->pinwgtdim*sizeof(float),
+			       outmat->pin_info_size*outmat->pinwgtdim*sizeof(float));
+
+  outmat->pin_info_size = outmat->nPins;
 
 
   ZOLTAN_FREE(&tmparray);

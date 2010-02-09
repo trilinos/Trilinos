@@ -589,9 +589,9 @@ static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size,
 /* convenience macro to encapsulate resizing a buffer when necessary. Note: */
 /* currently ZOLTAN_REALLOC aborts on any error and doesn't return - But... */
 #define MACRO_REALLOC(new_size, old_size, buffer)  {\
-  old_size = (new_size);\
-  if (!(buffer = (int*) ZOLTAN_REALLOC (buffer, old_size * sizeof(int)))) \
+  if (!(buffer = (int*) ZOLTAN_REALLOC (buffer, (new_size) * sizeof(int), (old_size) * sizeof(int)))) \
     MEMORY_ERROR; \
+  old_size = (new_size); \
   } 
 
 /* instead of realloc; just free and alloc new one to avoid memcpy in realloc */
@@ -1259,11 +1259,11 @@ static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size,
    
    /* realloc rec buffer if necessary */  
    if (*recsize > *nRec)  {   
-     *nRec = *recsize;
-     if (!(*rec = (int*) ZOLTAN_REALLOC (*rec, *nRec * sizeof(int))))  {
+     if (!(*rec = (int*) ZOLTAN_REALLOC (*rec, *recsize * sizeof(int), *nRec * sizeof(int))))  {
        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Memory error");
        return ZOLTAN_MEMERR;
      }
+     *nRec = *recsize;
    }
    
    /* send messages from send buffer to destinations */      

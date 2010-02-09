@@ -1562,7 +1562,7 @@ static int sendNextStepsForbiddenColors(ZZ *zz, G2LHash *hash, int nlvtx, int p,
 				 int *nColor, int *color, int *mark, int *confChk, int sncnt, int *wset, int *wsize, MPI_Request *sreqsFx, MPI_Request *sreqsF)
 {
     int u, m1 = 0, m2 = 0, m3, m4;
-    int cnt;
+    int cnt, old_size;
 
     /*** calculate forbidden colors for each vertex u
 	 that proc p will color in its current superstep ***/
@@ -1590,8 +1590,9 @@ static int sendNextStepsForbiddenColors(ZZ *zz, G2LHash *hash, int nlvtx, int p,
 	    }
 	}
 	if (forbsizeS[p] < m2 + cnt) { /*if send buffer is not large enough, increase buffer by 20% */
+            old_size = forbsizeS[p];
 	    forbsizeS[p] = (int)((double)(m2+cnt) * 1.2);
-	    forbiddenS[p] = (int *) ZOLTAN_REALLOC(forbiddenS[p], sizeof(int) * forbsizeS[p]);
+	    forbiddenS[p] = (int *) ZOLTAN_REALLOC(forbiddenS[p], sizeof(int) * forbsizeS[p], sizeof(int) * old_size);
 	}
 	for (m3 = 1; m3 <= *nColor; m3++) {
 	    if (mark[m3] == u) {
@@ -1622,7 +1623,7 @@ static int waitPtrAndForbiddenColors(ZZ *zz, int rreqcntFx, MPI_Request *rreqsFx
     for (l=rreqcntFx-1; l>=0; --l) { /* process the received messages */
 	p = rreqfromFx[l];
 	if (forbsize[p] < xforbidden[p][0]) { /*xforbidden[p][0] is the buffersize for msg from p*/
-	    forbidden[p] = (int *) ZOLTAN_REALLOC(forbidden[p], sizeof(int) * xforbidden[p][0]);
+	    forbidden[p] = (int *) ZOLTAN_REALLOC(forbidden[p], sizeof(int) * xforbidden[p][0], sizeof(int) * forbsize[p]);
 	    forbsize[p] = xforbidden[p][0];
 	}
 	/*** Issue async recvs for corresponding forbidden colors ***/
