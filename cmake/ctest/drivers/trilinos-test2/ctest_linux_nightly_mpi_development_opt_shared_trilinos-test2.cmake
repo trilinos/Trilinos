@@ -13,6 +13,8 @@ SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 
 #disabling Mesquite because of a build error when shared libs is turned on.
 SET(EXTRA_EXCLUDE_PACKAGES Mesquite)
+#can't use default Trilinos_EXCLUDE_PACKAGES because it includes PyTrilinos
+SET( Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} TriKota)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DDART_TESTING_TIMEOUT:STRING=120"
@@ -23,6 +25,8 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_Pthread:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
   "-DBoost_INCLUDE_DIRS:FILEPATH=/home/trilinos/include"
+  "Trilinos_ENABLE_PyTrilinos:BOOL=ON"
+  "-DSWIG_EXECUTABLE:FILEPATH=/home/trilinos/tpl/gcc4.1.2/swig-1.3.40/bin/swig"
   )
 
 #

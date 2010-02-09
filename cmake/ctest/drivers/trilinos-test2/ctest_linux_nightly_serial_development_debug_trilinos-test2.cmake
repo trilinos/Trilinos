@@ -18,8 +18,8 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_Pthread:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
   "-DBoost_INCLUDE_DIRS:FILEPATH=/home/trilinos/include"
-  "-DTPL_ENABLE_ExodusII:BOOL=OFF"
-  "-DTPL_ENABLE_Nemesis:BOOL=OFF"
+  "-DTPL_ENABLE_ExodusII:BOOL=ON"
+  "-DTPL_ENABLE_Nemesis:BOOL=ON"
   "-DNemesis_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/nemesis_3.09/include"
   "-DNemesis_LIBRARY_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/nemesis_3.09/lib"
   )
