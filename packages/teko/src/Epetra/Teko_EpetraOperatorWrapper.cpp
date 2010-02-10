@@ -45,7 +45,6 @@
 #include "Thyra_BlockedLinearOpBase.hpp"
 #include "Thyra_ProductVectorSpaceBase.hpp"
 
-#include "Teko_EpetraHelpers.hpp"
 #include "Teko_EpetraThyraConverter.hpp"
 #include "Teuchos_Ptr.hpp"
 
