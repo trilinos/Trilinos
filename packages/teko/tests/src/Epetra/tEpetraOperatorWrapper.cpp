@@ -4,11 +4,12 @@
 
 // Thyra includes
 #include "Thyra_VectorStdOps.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
-#include "Thyra_EpetraOperatorWrapper.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
 #include "Thyra_ProductVectorBase.hpp"
+#include "Thyra_ProductMultiVectorBase.hpp"
 #include "Thyra_SpmdVectorSpaceBase.hpp"
 #include "Thyra_DetachedSpmdVectorView.hpp"
 
@@ -30,6 +31,8 @@
 // TriUtils includes
 #include "Trilinos_Util_CrsMatrixGallery.h"
 
+#include "Teko_EpetraOperatorWrapper.hpp"
+
 #include "tEpetraOperatorWrapper.hpp"
 
 
@@ -41,6 +44,7 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
 using Thyra::VectorBase;
+using Thyra::MultiVectorBase;
 using Thyra::LinearOpBase;
 using Thyra::createMember;
 using Thyra::LinearOpTester;
@@ -118,7 +122,8 @@ bool tEpetraOperatorWrapper::test_functionality(int verbosity,std::ostream & os)
                                                                       Thyra::epetraLinearOp(B),
                                                                       Thyra::epetraLinearOp(C),"A");
 
-   const RCP<Thyra::EpetraOperatorWrapper> epetra_A = rcp(new Thyra::EpetraOperatorWrapper(A));
+   // const RCP<Thyra::EpetraOperatorWrapper> epetra_A = rcp(new Thyra::EpetraOperatorWrapper(A));
+   const RCP<Teko::Epetra::EpetraOperatorWrapper> epetra_A = rcp(new Teko::Epetra::EpetraOperatorWrapper(A));
 
    // begin the tests!
    const Epetra_Map & rangeMap  = epetra_A->OperatorRangeMap();
@@ -150,29 +155,33 @@ bool tEpetraOperatorWrapper::test_functionality(int verbosity,std::ostream & os)
          << "( largest = " << domainMap.MaxAllGID() 
          << ", true = " <<  domainMap.NumGlobalElements()-1 << " )" );
 
+   RCP<const Teko::Epetra::MappingStrategy> ms = epetra_A->getMapStrategy();
+
    // create a vector to test: copyThyraIntoEpetra
    //////////////////////////////////////////////////////////////
    {
-      const RCP<VectorBase<double> > tv = Thyra::createMember(A->domain());
-      Thyra::randomize(-100.0,100.0,&*tv);
-      const Thyra::ConstVector<double> handle_tv(tv);
-      const RCP<const VectorBase<double> > tv_0 = Thyra::productVectorBase<double>(tv)->getVectorBlock(0);
-      const RCP<const VectorBase<double> > tv_1 = Thyra::productVectorBase<double>(tv)->getVectorBlock(1);
-      const Thyra::ConstDetachedSpmdVectorView<double> vv_0(tv_0);
-      const Thyra::ConstDetachedSpmdVectorView<double> vv_1(tv_1);
+      const RCP<MultiVectorBase<double> > tv = Thyra::createMembers(A->domain(),1);
+      Thyra::randomize(-100.0,100.0,tv.ptr());
+      // const Thyra::ConstVector<double> handle_tv(tv);
+      const RCP<const MultiVectorBase<double> > tv_0 
+            = Teuchos::rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<double> >(tv)->getMultiVectorBlock(0);
+      const RCP<const MultiVectorBase<double> > tv_1 
+            = Teuchos::rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<double> >(tv)->getMultiVectorBlock(1);
+      const Thyra::ConstDetachedSpmdVectorView<double> vv_0(tv_0->col(0));
+      const Thyra::ConstDetachedSpmdVectorView<double> vv_1(tv_1->col(0));
 
       int off_0 = vv_0.globalOffset();
       int off_1 = vv_1.globalOffset();
       
       // create its Epetra counter part
       const RCP<Epetra_Vector> ev = rcp(new Epetra_Vector(epetra_A->OperatorDomainMap()));
-      epetra_A->copyThyraIntoEpetra(handle_tv,*ev);
+      ms->copyThyraIntoEpetra(tv,*ev,*epetra_A);
 
-      // compare handle_tv to ev!
-      TEST_EQUALITY(Thyra::dim(handle_tv),ev->GlobalLength(),
+      // compare tv to ev!
+      TEST_EQUALITY(tv->range()->dim(),ev->GlobalLength(),
             "   tEpetraOperatorWrapper::test_functionality: " << toString(status) << ": "
          << " checking ThyraIntoEpetra copy "
-         << "( thyra dim = " << Thyra::dim(handle_tv)
+         << "( thyra dim = " << tv->range()->dim()
          << ", global length = " <<  ev->GlobalLength() << " )" );
       int numMyElements = domainMap.NumMyElements();
       bool compareThyraToEpetraValue = true;
@@ -198,23 +207,24 @@ bool tEpetraOperatorWrapper::test_functionality(int verbosity,std::ostream & os)
       ev->Random();
 
       // create its thyra counterpart
-      const RCP<VectorBase<double> > tv = Thyra::createMember(A->domain());
-      const Thyra::Vector<double> handle_tv(tv);
-      const RCP<const VectorBase<double> > tv_0 = Thyra::productVectorBase<double>(tv)->getVectorBlock(0);
-      const RCP<const VectorBase<double> > tv_1 = Thyra::productVectorBase<double>(tv)->getVectorBlock(1);
-      const Thyra::ConstDetachedSpmdVectorView<double> vv_0(tv_0);
-      const Thyra::ConstDetachedSpmdVectorView<double> vv_1(tv_1);
+      const RCP<MultiVectorBase<double> > tv = Thyra::createMembers(A->domain(),1);
+      const RCP<const MultiVectorBase<double> > tv_0 
+            = Teuchos::rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<double> >(tv)->getMultiVectorBlock(0);
+      const RCP<const MultiVectorBase<double> > tv_1 
+            = Teuchos::rcp_dynamic_cast<const Thyra::ProductMultiVectorBase<double> >(tv)->getMultiVectorBlock(1);
+      const Thyra::ConstDetachedSpmdVectorView<double> vv_0(tv_0->col(0));
+      const Thyra::ConstDetachedSpmdVectorView<double> vv_1(tv_1->col(0));
 
-      int off_0 = rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<double> >(tv_0->space())->localOffset();
-      int off_1 = rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<double> >(tv_1->space())->localOffset();
+      int off_0 = rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<double> >(tv_0->range())->localOffset();
+      int off_1 = rcp_dynamic_cast<const Thyra::SpmdVectorSpaceBase<double> >(tv_1->range())->localOffset();
 
-      epetra_A->copyEpetraIntoThyra(*ev,handle_tv);
+      ms->copyEpetraIntoThyra(*ev,tv.ptr(),*epetra_A);
    
       // compare handle_tv to ev!
-      TEST_EQUALITY(Thyra::dim(handle_tv),ev->GlobalLength(),
+      TEST_EQUALITY(tv->range()->dim(),ev->GlobalLength(),
             "   tEpetraOperatorWrapper::test_functionality: " << toString(status) << ": "
          << " checking EpetraIntoThyra copy "
-         << "( thyra dim = " << Thyra::dim(handle_tv)
+         << "( thyra dim = " << tv->range()->dim()
          << ", global length = " <<  ev->GlobalLength() << " )" );
       int numMyElements = domainMap.NumMyElements();
       bool compareEpetraToThyraValue = true;
