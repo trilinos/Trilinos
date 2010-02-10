@@ -828,6 +828,7 @@
     <Dependency name="ML" type="LR"/>
     <Dependency name="Belos" type="ILO"/>
     <Dependency name="Stratimikos" type="LR"/>
+    <Dependency name="Meros" type="LR"/>
     <Dependency name="Anasazi" type="LR"/>
     <EmailAddresses>
       <Email address="teko-regression@software.sandia.gov"/>

@@ -5,8 +5,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   sillyCgSolve_serial
   SOURCES sillyCgSolve_serial.cpp
   ARGS
-    "--use-silly-cg"
-    "--use-sillier-cg"
+    "--sym-op" # Default case
     "--unsym-op --diag-scale=1.05"
   NUM_MPI_PROCS 1
   )

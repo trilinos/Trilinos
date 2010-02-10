@@ -28,7 +28,6 @@
 
 #include "ExampleTridiagSerialLinearOp.hpp"
 #include "sillyCgSolve.hpp"
-#include "sillierCgSolve.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_VectorStdOps.hpp"
@@ -56,8 +55,7 @@ bool runCgSolveExample(
   const bool symOp,
   const bool showAllTests,
   const typename Teuchos::ScalarTraits<Scalar>::magnitudeType tolerance,
-  const int maxNumIters,
-  const bool useSillierCg
+  const int maxNumIters
   )
 {
 
@@ -151,12 +149,8 @@ bool runCgSolveExample(
   // (B) Solve the linear system with the silly CG solver
   //
   *out << "\nSolving the linear system with sillyCgSolve(...) ...\n";
-  if(useSillierCg) {
-    OSTab tab(out);
-    result = sillierCgSolve(*A, *b, maxNumIters, tolerance, x.ptr(), *out);
-  }
-  else {
-    OSTab tab(out);
+  {
+    OSTab tab2(out);
     result = sillyCgSolve(*A, *b, maxNumIters, tolerance, x.ptr(), *out);
   }
   if(!result) success = false;
@@ -240,11 +234,6 @@ int main(int argc, char *argv[])
     clp.setOption( "max-num-iters", &maxNumIters,
       "Maximum of CG iterations." );
 
-    bool useSillierCg = false;
-    clp.setOption( "use-sillier-cg", "use-silly-cg", &useSillierCg,
-      "Use the handle-based sillerCgSolve() function or the nonhandle-based"
-      " sillyCgSolve() function");
-
     CommandLineProcessor::EParseCommandLineReturn parse_return = clp.parse(argc,argv);
     if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL ) return parse_return;
 
@@ -252,24 +241,24 @@ int main(int argc, char *argv[])
 
 #if defined(HAVE_THYRA_FLOAT)
     result = runCgSolveExample<float>(dim, diagScale, symOp, showAllTests,
-      tolerance, maxNumIters, useSillierCg);
+      tolerance, maxNumIters);
     if(!result) success = false;
 #endif
 
     result = runCgSolveExample<double>(dim, diagScale, symOp, showAllTests,
-      tolerance, maxNumIters, useSillierCg);
+      tolerance, maxNumIters);
     if(!result) success = false;
 
 #ifdef HAVE_THYRA_COMPLEX
 
 #if defined(HAVE_THYRA_FLOAT)
     result = runCgSolveExample<std::complex<float> >(dim, diagScale, symOp, showAllTests,
-      tolerance, maxNumIters, useSillierCg);
+      tolerance, maxNumIters);
     if(!result) success = false;
 #endif
 
     result = runCgSolveExample<std::complex<double> >(dim, diagScale, symOp, showAllTests,
-      tolerance, maxNumIters, useSillierCg);
+      tolerance, maxNumIters);
     if(!result) success = false;
 
 #endif // HAVE_THYRA_COMPLEX
@@ -277,7 +266,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_TEUCHOS_GNU_MP
 
     result = runCgSolveExample<mpf_class>(dim, diagScale, symOp, showAllTests, 
-      tolerance, maxNumIters, useSillierCg);
+      tolerance, maxNumIters);
     if(!result) success = false;
 
 #ifdef HAVE_THYRA_COMPLEX

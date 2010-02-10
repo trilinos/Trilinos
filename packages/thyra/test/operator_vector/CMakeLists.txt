@@ -41,29 +41,6 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  test_handles
-  SOURCES test_handles.cpp
-  ARGS --verbose
-  NUM_MPI_PROCS 1
-  )
-
-
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  test_block_op
-  SOURCES test_block_op.cpp
-  ARGS --verbose
-  )
-
-
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  test_linear_combination
-  SOURCES test_linear_combination
-  ARGS --verbose
-  NUM_MPI_PROCS 1
-  )
-
-
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
   DetachedSpmdVectorViewUnitTests
   SOURCES
     DetachedSpmdVectorView_UnitTests.cpp

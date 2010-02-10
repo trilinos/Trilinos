@@ -31,23 +31,6 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-ASSERT_DEFINED(CMAKE_HOST_SYSTEM_NAME)
-IF (CMAKE_HOST_SYSTEM_NAME STREQUAL "Linux")
-  SET(testEpetraOperatorWrapper_tol 1e-4)
-ELSE()
-  SET(testEpetraOperatorWrapper_tol 1e-3)
-ENDIF()
-
-PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  testEpetraOperatorWrapper
-  SOURCES
-    testEpetraOperatorWrapper.cpp
-    ${COMMON_SOURCES}
-  ARGS --tol=${testEpetraOperatorWrapper_tol}
-  COMM serial mpi
-  NUM_MPI_PROCS 1
-  )
-
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyAztecOOTestFiles
   DEST_FILES
@@ -69,5 +52,4 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyAztecOOTestFiles
   EXEDEPS
     test_single_aztecoo_thyra_solver_driver
     test_aztecoo_thyra_driver
-    testEpetraOperatorWrapper
   )
