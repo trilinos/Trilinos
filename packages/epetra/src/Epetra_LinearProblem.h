@@ -47,7 +47,7 @@ enum ProblemDifficultyLevel {easy, moderate, hard, unsure};
 */
 
 
-class Epetra_LinearProblem {
+class EPETRA_LIB_DLL_EXPORT Epetra_LinearProblem {
     
   public:
     //! @name Constructors/Destructor
