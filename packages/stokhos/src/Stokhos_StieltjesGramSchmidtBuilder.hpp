@@ -63,11 +63,11 @@ namespace Stokhos {
 
     //! Get reduced basis
     Teuchos::RCP<const OrthogPolyBasis<ordinal_type, value_type> >
-    getReducedBasis() const { return gs_basis; }
+    getReducedBasis() const;
 
     //! Get reduced quadrature
     Teuchos::RCP<Quadrature<ordinal_type, value_type> >
-    getReducedQuadrature() const { return gs_quad; }
+    getReducedQuadrature() const;
 
     //! Get reduced PCEs
     void 

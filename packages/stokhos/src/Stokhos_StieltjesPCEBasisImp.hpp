@@ -186,11 +186,13 @@ stieltjes(ordinal_type nstart,
   }
   for (ordinal_type i=start; i<nfinish; i++) {
     integrateBasisSquared(i, a, b, weights, points, phi_vals, val1, val2);
-    //std::cout << "i = " << i << " val1 = " << val1 << " val2 = " << val2
-    //	      << std::endl;
+    // std::cout << "i = " << i << " val1 = " << val1 << " val2 = " << val2
+    // 	      << std::endl;
     TEST_FOR_EXCEPTION(val1 < 1.0e-14, std::logic_error,
 		     "Stokhos::StieltjesPCEBasis::stieltjes():  "
-		     << " Polynomial is zero!  Try increasing number of quadrature points");
+		       << " Polynomial " << i << " out of " << nfinish 
+		       << " has norm " << val1 
+		       << "!  Try increasing number of quadrature points");
     nrm[i] = val1;
     a[i] = val2/val1;
     b[i] = nrm[i]/nrm[i-1];

@@ -96,8 +96,23 @@ StieltjesGramSchmidtBuilder(
 						       new_points, 
 						       new_weights)
     );
-  
-  
+
+}
+
+template <typename ordinal_type, typename value_type>
+Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >
+Stokhos::StieltjesGramSchmidtBuilder<ordinal_type,value_type>::
+getReducedBasis() const
+{
+  return gs_basis;
+}
+
+template <typename ordinal_type, typename value_type>
+Teuchos::RCP<Stokhos::Quadrature<ordinal_type, value_type> >
+Stokhos::StieltjesGramSchmidtBuilder<ordinal_type,value_type>::
+getReducedQuadrature() const
+{
+  return gs_quad;
 }
 
 template <typename ordinal_type, typename value_type>
