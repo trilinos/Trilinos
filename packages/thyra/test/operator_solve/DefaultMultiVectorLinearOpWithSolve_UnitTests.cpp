@@ -80,10 +80,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultMultiVectorLinearOpWithSolve, basic,
   out << "dmvlows = " << *dmvlows;
 
   Thyra::LinearOpTester<Scalar> linearOpTester;
-  TEST_ASSERT(linearOpTester.check(*dmvlows, inOutArg(out)));
+  const bool checkOpResult = linearOpTester.check(*dmvlows, inOutArg(out));
+  TEST_ASSERT(checkOpResult);
 
   Thyra::LinearOpWithSolveTester<Scalar> linearOpWithSolveTester;
-  TEST_ASSERT(linearOpWithSolveTester.check(*dmvlows, &out));
+  const bool checkSolveResult = linearOpWithSolveTester.check(*dmvlows, &out);
+  TEST_ASSERT(checkSolveResult);
 
 }
 THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultMultiVectorLinearOpWithSolve,

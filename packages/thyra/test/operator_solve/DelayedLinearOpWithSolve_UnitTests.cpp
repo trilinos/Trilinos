@@ -72,10 +72,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DelayedLinearOpWithSolve, basic,
   out << "dlows = " << *dlows;
 
   Thyra::LinearOpTester<Scalar> linearOpTester;
-  TEST_ASSERT(linearOpTester.check(*dlows, inOutArg(out)));
+  const bool checkOpResult = linearOpTester.check(*dlows, inOutArg(out));
+  TEST_ASSERT(checkOpResult);
 
   Thyra::LinearOpWithSolveTester<Scalar> linearOpWithSolveTester;
-  TEST_ASSERT(linearOpWithSolveTester.check(*dlows, &out));
+  const bool checkSolveResult = linearOpWithSolveTester.check(*dlows, &out);
+  TEST_ASSERT(checkSolveResult);
 
 }
 THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DelayedLinearOpWithSolve,

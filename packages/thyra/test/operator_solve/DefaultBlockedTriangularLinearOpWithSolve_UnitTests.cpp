@@ -80,13 +80,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultBlockedTriangularLinearOpWithSolve,
   out << "dbtlows = " << *dbtlows;
 
   Thyra::LinearOpTester<Scalar> linearOpTester;
-  TEST_ASSERT(linearOpTester.check(*dbtlows, inOutArg(out)));
+  const bool checkOpResult = linearOpTester.check(*dbtlows, inOutArg(out));
+  TEST_ASSERT(checkOpResult);
 
   Thyra::LinearOpWithSolveTester<Scalar> linearOpWithSolveTester;
   linearOpWithSolveTester.turn_off_all_tests();
   linearOpWithSolveTester.check_forward_default(true);
   linearOpWithSolveTester.check_adjoint_default(true);
-  TEST_ASSERT(linearOpWithSolveTester.check(*dbtlows, &out));
+  const bool checkSolveResult = linearOpWithSolveTester.check(*dbtlows, &out);
+  TEST_ASSERT(checkSolveResult);
 
 }
 THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultBlockedTriangularLinearOpWithSolve,
