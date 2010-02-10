@@ -91,17 +91,16 @@ void MultiVectorAdapterBase<Scalar>::applyImpl(
       ? domainScalarProdVecSpc()
       : rangeScalarProdVecSpc() );
   RCP<const ScalarProdBase<Scalar> > scalarProd = scalarProdVecSpc->getScalarProd();
-  RCP<MultiVectorBase<Scalar> > T;
-  if (!scalarProd->isEuclidean()) {
+  if (scalarProd->isEuclidean()) {
+    // Y = beta*Y + alpha * op(M) * X
+    this->euclideanApply(M_trans, X, Y, alpha, beta);
+  }
+  else {
     // T = Q * X
-    T = createMembers(X.range(), X.domain());
+    RCP<MultiVectorBase<Scalar> > T = createMembers(X.range(), X.domain());
     ::Thyra::apply(*scalarProd->getLinearOp(), NOTRANS, X, T.ptr());
     // Y = beta*Y + alpha * op(M) * T
     this->euclideanApply(M_trans, *T, Y, alpha, beta);
-  }
-  else {
-    // Y = beta*Y + alpha * op(M) * X
-    this->euclideanApply(M_trans, X, Y, alpha, beta);
   }
 }
 
