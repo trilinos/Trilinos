@@ -61,11 +61,12 @@ views of %Thyra objects.
 RCP<const Teuchos::Comm<Ordinal> >
 create_Comm( const RCP<const Epetra_Comm> &epetraComm );
 
+
 /** \brief Create an <tt>VectorSpaceBase</tt> object given an
  * <tt>Epetra_Map</tt> object.
  *
- * \param  epetra_map  [in] The Epetra map defining the partitioning of elements
- *                     to processors.
+ * \param epetra_map [in] The Epetra map defining the partitioning of elements
+ * to processors.
  *
  * <b>Preconditions:</b><ul>
  * <li><tt>epetra_map.get() != NULL</tt>
@@ -103,11 +104,10 @@ create_VectorSpace(
 /** \brief Create a <tt>VectorSpaceBase</tt> object that creates locally
  * replicated vector objects.
  *
- * \param  parentSpace
- *           [in] The vector space that will be used to create the smaller
- *           locally-replicated vector space.
- * \param  dim
- *           [in] The dimension of the locally replicated vector space.
+ * \param parentSpace [in] The vector space that will be used to create the
+ * smaller locally-replicated vector space.
+ *
+ * \param dim [in] The dimension of the locally replicated vector space.
  *
  * Note: This vector space will be compatible with the domain space of a
  * multivector. which has the range space <tt>parentSpace</tt>.
@@ -124,8 +124,8 @@ create_LocallyReplicatedVectorSpace(
 /** \brief Create a non-<tt>const</tt> <tt>VectorBase</tt> object from a
  * non-<tt>const</tt> <tt>Epetra_Vector</tt> object.
  *
- * @param  epetra_v  [in] Smart pointer to the <tt>Epetra_Vector</tt> object to wrap.
- * @param  space     [in] The vector space that is compatible with <tt>epetra_v->Map()</tt>.
+ * \param  epetra_v  [in] Smart pointer to the <tt>Epetra_Vector</tt> object to wrap.
+ * \param  space     [in] The vector space that is compatible with <tt>epetra_v->Map()</tt>.
  *
  * <b>Precondiitions:</b><ul>
  * <li>[<tt>epetra_v.get()!=NULL</tt>] <tt>space.get()!=NULL</tt>
@@ -155,8 +155,8 @@ create_Vector(
 /** \brief Create an <tt>const</tt> <tt>VectorBase</tt> wrapper object for
  * a <tt>const</tt> <tt>Epetra_Vector</tt> object.
  *
- * @param  epetra_v  [in] Smart pointer to the <tt>Epetra_Vector</tt> object to wrap.
- * @param  space     [in] The vector space that is compatible with <tt>epetra_v->Map()</tt>.
+ * \param  epetra_v  [in] Smart pointer to the <tt>Epetra_Vector</tt> object to wrap.
+ * \param  space     [in] The vector space that is compatible with <tt>epetra_v->Map()</tt>.
  *
  * <b>Precondiitions:</b><ul>
  * <li>[<tt>epetra_v.get()!=NULL</tt>] <tt>space.get()!=NULL</tt>
@@ -184,9 +184,9 @@ create_Vector(
 /** \brief Create a non-<tt>const</tt> <tt>MultiVectorBase</tt> object from a
  * non-<tt>const</tt> <tt>Epetra_MultiVector</tt> object.
  *
- * @param  epetra_mv  [in] Smart pointer to the <tt>Epetra_MultiVector</tt> object to wrap.
- * @param  range      [in] The vector space that is compatible with <tt>epetra_mv->Map()</tt>.
- * @param  domain     [in] The vector space that is compatible with <tt>epetra_mv.NumVectors</tt>.
+ * \param  epetra_mv  [in] Smart pointer to the <tt>Epetra_MultiVector</tt> object to wrap.
+ * \param  range      [in] The vector space that is compatible with <tt>epetra_mv->Map()</tt>.
+ * \param  domain     [in] The vector space that is compatible with <tt>epetra_mv.NumVectors</tt>.
  *                    If <tt>domain.get()==NULL</tt>, then a space will be created internally.
  *
  * <b>Precondiitions:</b><ul>
@@ -215,10 +215,15 @@ create_MultiVector(
 /** \brief Create an <tt>const</tt> <tt>MultiVectorBase</tt> wrapper object
  * for a <tt>const</tt> <tt>Epetra_MultiVector</tt> object.
  *
- * @param  epetra_mv  [in] Smart pointer to the <tt>Epetra_MultiVector</tt> object to wrap.
- * @param  range      [in] The vector space that is compatible with <tt>epetra_mv->Map()</tt>.
- * @param  domain     [in] The vector space that is compatible with <tt>epetra_mv.NumVectors</tt>.
- *                    If <tt>domain.get()==NULL</tt>, then a space will be created internally.
+ * \param epetra_mv [in] Smart pointer to the <tt>Epetra_MultiVector</tt>
+ * object to wrap.
+ *
+ * \param range [in] The vector space that is compatible with
+ * <tt>epetra_mv->Map()</tt>.
+ *
+ * \param domain [in] The vector space that is compatible with
+ * <tt>epetra_mv.NumVectors</tt>.  If <tt>domain.get()==NULL</tt>, then a
+ * space will be created internally.
  *
  * <b>Preconditions:</b><ul>
  * <li><tt>epetra_mv.get()!=NULL</tt>
@@ -238,6 +243,25 @@ create_MultiVector(
   const RCP<const VectorSpaceBase<double> > &range,
   const RCP<const VectorSpaceBase<double> > &domain = Teuchos::null
   );
+
+
+/** \brief Get (or create) and <tt>Epetra_Comm</tt> given a
+ * <tt>Teuchos::Comm</tt> object.
+ *
+ * ToDo: Finish documentation!
+ */
+RCP<const Epetra_Comm>
+get_Epetra_Comm(const Teuchos::Comm<Ordinal>& comm);
+
+
+/** \brief Get (or create) an <tt>Epetra_Map</tt> object given an
+ * <tt>VectorSpaceBase</tt> object an optionally an extra <tt>Epetra_Comm</tt>
+ * object.
+ *
+ * ToDo: Finish documentation!
+ */
+RCP<const Epetra_Map>
+get_Epetra_Map(const VectorSpaceBase<double>& vs, const RCP<const Epetra_Comm>& comm);
 
 
 /** \brief Get a non-<tt>const</tt> <tt>Epetra_Vector</tt> view from a

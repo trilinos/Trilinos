@@ -441,6 +441,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   using Teuchos::rcp_const_cast;
   using Teuchos::set_extra_data;
   using Teuchos::get_optional_extra_data;
+  using Teuchos::get_optional_nonconst_extra_data;
   typedef EpetraExt::ProductOperator PO;
 
   const Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -475,14 +476,14 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   }
   else
   {
-    fwdOp = makeEpetraWrapper(ConstLinearOperator<double>(tmpFwdOp));
+    fwdOp = makeEpetraWrapper(tmpFwdOp);
     if (
       tmpApproxFwdOp.get()
       &&
       dynamic_cast<const EpetraLinearOpBase*>(&*tmpApproxFwdOp.get())
       )
     {
-      approxFwdOp = makeEpetraWrapper(ConstLinearOperator<double>(tmpApproxFwdOp));
+      approxFwdOp = makeEpetraWrapper(tmpApproxFwdOp);
     }
   }
   
@@ -583,8 +584,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
       wrappedPrecOp = tmpWrappedPrecOp;
     }
     else {
-      wrappedPrecOp = makeEpetraWrapper(
-        ConstLinearOperator<double>(tmpWrappedPrecOp));
+      wrappedPrecOp = makeEpetraWrapper(tmpWrappedPrecOp);
     }
     epetraPrecOp = rcp_dynamic_cast<const EpetraLinearOpBase>(
       wrappedPrecOp,true);
@@ -729,9 +729,11 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
       Ptr<bool> constructedAztecPreconditioner;
       if(
         !reusePrec
-        && !is_null( constructedAztecPreconditioner = get_optional_nonconst_extra_data<bool>(
-               aztecFwdSolver,"AOOLOWSF::constructedAztecPreconditoner") )
-        && *constructedAztecPreconditioner
+        &&
+        !is_null(constructedAztecPreconditioner = get_optional_nonconst_extra_data<bool>(
+                   aztecFwdSolver, "AOOLOWSF::constructedAztecPreconditoner") )
+        &&
+        *constructedAztecPreconditioner
         )
       {
         aztecFwdSolver->DestroyPreconditioner();

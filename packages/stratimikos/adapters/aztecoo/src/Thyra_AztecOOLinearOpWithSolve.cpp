@@ -533,6 +533,8 @@ AztecOOLinearOpWithSolve::solveImpl(
   const Ptr<const SolveCriteria<double> > solveCriteria
   ) const
 {
+
+  using Teuchos::rcp;
   using Teuchos::rcpFromRef;
   using Teuchos::rcpFromPtr;
   using Teuchos::OSTab;
@@ -635,33 +637,29 @@ AztecOOLinearOpWithSolve::solveImpl(
 
     // We need to declare epetra_x_j as non-const because when we have a phony
     // Epetra operator we'll have to copy a thyra vector into it.
-    Epetra_Vector *epetra_b_j;
-    Epetra_Vector *epetra_x_j;
+    RCP<Epetra_Vector> epetra_b_j;
+    RCP<Epetra_Vector> epetra_x_j;
 
-    if (opWrapper == 0)
-      {
-        epetra_b_j = const_cast<Epetra_Vector*>((*epetra_B)(j));
-        epetra_x_j = (*epetra_X)(j);
+    if (opWrapper == 0) {
+      epetra_b_j = rcpFromRef(*const_cast<Epetra_Vector*>((*epetra_B)(j)));
+      epetra_x_j = rcpFromRef(*(*epetra_X)(j));
+    }
+    else {
+      if (is_null(epetra_b_j)) {
+        epetra_b_j = rcp(new Epetra_Vector(opRangeMap));
+        epetra_x_j = rcp(new Epetra_Vector(opDomainMap));
       }
-    else
-      {
-        RCP<VectorBase<double> > colX = X->col(j);
-        RCP<const VectorBase<double> > colB = B.col(j);
-        ConstVector<double> vB = colB;
-        Vector<double> vX = colX;
-        epetra_b_j = new Epetra_Vector(opRangeMap);
-        epetra_x_j = new Epetra_Vector(opDomainMap);
-        opWrapper->copyThyraIntoEpetra(vB, *epetra_b_j);
-        opWrapper->copyThyraIntoEpetra(vX, *epetra_x_j);
-      }
+      opWrapper->copyThyraIntoEpetra(*B.col(j), *epetra_b_j);
+      opWrapper->copyThyraIntoEpetra(*X->col(j), *epetra_x_j);
+    }
 
-    TEST_FOR_EXCEPT(!epetra_b_j);
-    TEST_FOR_EXCEPT(!epetra_x_j);
     //
     // Set the RHS and LHS
     //
-    aztecSolver->SetRHS( epetra_b_j ); // Should be okay?
-    aztecSolver->SetLHS( epetra_x_j );
+
+    aztecSolver->SetRHS(&*epetra_b_j);
+    aztecSolver->SetLHS(&*epetra_x_j);
+
     //
     // Solve the linear system
     //
@@ -673,6 +671,7 @@ AztecOOLinearOpWithSolve::solveImpl(
       // NOTE: We ignore the returned status but get it below
     }
     timer.stop();
+
     //
     // Scale the solution 
     // (Originally, this was at the end of the loop after all columns had been
@@ -682,18 +681,17 @@ AztecOOLinearOpWithSolve::solveImpl(
     if (aztecSolverScalar_ != 1.0)
       epetra_x_j->Scale(1.0/aztecSolverScalar_);
 
-    /* If necessary, convert the solution back to a non-epetra vector */
+    //
+    // If necessary, convert the solution back to a non-epetra vector
+    //
     if (opWrapper != 0) {
-      Vector<double> colX = X->col(j);
-      opWrapper->copyEpetraIntoThyra(*epetra_x_j, colX);
-      // clean up the temporary vectors we created.
-      delete epetra_b_j;
-      delete epetra_x_j;
+      opWrapper->copyEpetraIntoThyra(*epetra_x_j, X->col(j).ptr());
     }
 
     //
     // Set the return solve status
     //
+
     const int iterations = aztecSolver->NumIters();
     const double achievedTol = aztecSolver->ScaledResidual();
     const double *AZ_status = aztecSolver->GetAztecStatus();
@@ -711,10 +709,10 @@ AztecOOLinearOpWithSolve::solveImpl(
     oss << "  Total time = " << timer.totalElapsedTime() << " sec.";
     if (out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE) && outputEveryRhs())
       Teuchos::OSTab(out).o() << "j="<<j<<": " << oss.str() << "\n";
-    //
-    totalIterations += iterations;
+    
     solveStatus.achievedTol = TEUCHOS_MAX(solveStatus.achievedTol, achievedTol);
     // Note, achieveTol may actually be greater than tol due to ill conditioning and roundoff!
+
     solveStatus.message = oss.str();
     if ( isDefaultSolveCriteria ) {
       switch(solveStatus.solveStatus) {
@@ -732,6 +730,9 @@ AztecOOLinearOpWithSolve::solveImpl(
       }
     }
   }
+
+  aztecSolver->SetRHS(0);
+  aztecSolver->SetLHS(0);
   
   //
   // Release the Epetra_MultiVector views of X and B

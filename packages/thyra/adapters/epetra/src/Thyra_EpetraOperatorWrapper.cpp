@@ -27,310 +27,188 @@
 // @HEADER
 
 #include "Thyra_EpetraOperatorWrapper.hpp"
+#include "Thyra_EpetraThyraWrappers.hpp"
+#include "Thyra_DetachedSpmdVectorView.hpp"
+#include "Thyra_DefaultProductVector.hpp"
+#include "Thyra_ProductVectorSpaceBase.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
-#ifdef HAVE_MPI
-#include "Teuchos_DefaultMpiComm.hpp"
-#endif
-#include "Teuchos_DefaultSerialComm.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
+
+#ifdef HAVE_MPI
+#  include "Epetra_MpiComm.h"
+#endif
 #include "Epetra_SerialComm.h"
 #include "Epetra_Vector.h"
+
 #ifdef HAVE_MPI
-#include "Epetra_MpiComm.h"
+#  include "Teuchos_DefaultMpiComm.hpp"
 #endif
-#include "Thyra_EpetraThyraWrappers.hpp"
+#include "Teuchos_DefaultSerialComm.hpp"
 
 
 namespace Thyra { 
 
 
-using namespace Teuchos;
+// Constructor, utilties
 
 
-EpetraOperatorWrapper::EpetraOperatorWrapper(const ConstLinearOperator<double>& thyraOp)
+EpetraOperatorWrapper::EpetraOperatorWrapper(
+  const RCP<const LinearOpBase<double> > &thyraOp
+  )
   : useTranspose_(false),
     thyraOp_(thyraOp),
-    domain_(thyraOp_.domain()),
-    range_(thyraOp_.range()),
-    comm_(getEpetraComm(thyraOp)),
-    domainMap_(thyraVSToEpetraMap(thyraOp_.domain(), comm_)),
-    rangeMap_(thyraVSToEpetraMap(thyraOp_.range(), comm_)),
-    label_(thyraOp_.description())
+    range_(thyraOp->range()),
+    domain_(thyraOp->domain()),
+    comm_(getEpetraComm(*thyraOp)),
+    rangeMap_(get_Epetra_Map(*range_, comm_)),
+    domainMap_(get_Epetra_Map(*domain_, comm_)),
+    label_(thyraOp->description())
 {;}
+
+
+void EpetraOperatorWrapper::copyEpetraIntoThyra(const Epetra_MultiVector& x,
+  const Ptr<VectorBase<double> > &thyraVec) const
+{
+
+  using Teuchos::rcpFromPtr;
+  using Teuchos::rcp_dynamic_cast;
+
+  const int numVecs = x.NumVectors();
+
+  TEST_FOR_EXCEPTION(numVecs != 1, std::runtime_error,
+    "epetraToThyra does not work with MV dimension != 1");
+
+  const RCP<ProductVectorBase<double> > prodThyraVec =
+    castOrCreateNonconstProductVectorBase(rcpFromPtr(thyraVec));
+
+  const ArrayView<const double> epetraData(x[0], x.Map().NumMyElements());
+  // NOTE: I tried using Epetra_MultiVector::operator()(int) to return an
+  // Epetra_Vector object but it has a defect when Reset(...) is called which
+  // results in a memory access error (see bug 4700).
+
+  int offset = 0;
+  const int numBlocks = prodThyraVec->productSpace()->numBlocks();
+  for (int b = 0; b < numBlocks; ++b) {
+    const RCP<VectorBase<double> > vec_b = prodThyraVec->getNonconstVectorBlock(b);
+    const RCP<const SpmdVectorSpaceBase<double> > spmd_vs_b =
+      rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(vec_b->space(), true);
+    DetachedSpmdVectorView<double> view(vec_b);
+    const ArrayRCP<double> thyraData = view.sv().values();
+    const int localNumElems = spmd_vs_b->localSubDim();
+    for (int i=0; i < localNumElems; ++i) {
+      thyraData[i] = epetraData[i+offset];
+    }
+    offset += localNumElems;
+  }
+
+}
+
+
+void EpetraOperatorWrapper::copyThyraIntoEpetra(
+  const VectorBase<double>& thyraVec, Epetra_MultiVector& x) const 
+{
+
+  using Teuchos::rcpFromRef;
+  using Teuchos::rcp_dynamic_cast;
+
+  const int numVecs = x.NumVectors();
+
+  TEST_FOR_EXCEPTION(numVecs != 1, std::runtime_error,
+    "epetraToThyra does not work with MV dimension != 1");
+
+  const RCP<const ProductVectorBase<double> > prodThyraVec =
+    castOrCreateProductVectorBase(rcpFromRef(thyraVec));
+
+  const ArrayView<double> epetraData(x[0], x.Map().NumMyElements());
+  // NOTE: See above!
+
+  int offset = 0;
+  const int numBlocks = prodThyraVec->productSpace()->numBlocks();
+  for (int b = 0; b < numBlocks; ++b) {
+    const RCP<const VectorBase<double> > vec_b = prodThyraVec->getVectorBlock(b);
+    const RCP<const SpmdVectorSpaceBase<double> > spmd_vs_b =
+      rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(vec_b->space(), true);
+    ConstDetachedSpmdVectorView<double> view(vec_b);
+    const ArrayRCP<const double> thyraData = view.sv().values();
+    const int localNumElems = spmd_vs_b->localSubDim();
+    for (int i=0; i < localNumElems; ++i) {
+      epetraData[i+offset] = thyraData[i];
+    }
+    offset += localNumElems;
+  }
+
+}
+
+
+// Overridden from Epetra_Operator
+
+
+int EpetraOperatorWrapper::Apply(const Epetra_MultiVector& X,
+  Epetra_MultiVector& Y) const
+{
+
+  const RCP<const VectorSpaceBase<double> >
+    opRange = ( !useTranspose_ ? range_ : domain_ ),
+    opDomain = ( !useTranspose_ ? domain_ : range_ );
+
+  const RCP<VectorBase<double> > tx = createMember(opDomain);
+  copyEpetraIntoThyra(X, tx.ptr());
+
+  const RCP<VectorBase<double> > ty = createMember(opRange);
+
+  Thyra::apply<double>( *thyraOp_, !useTranspose_ ? NOTRANS : CONJTRANS, *tx, ty.ptr());
+
+  copyThyraIntoEpetra(*ty, Y);
+
+  return 0;
+
+}
+
+
+int EpetraOperatorWrapper::ApplyInverse(const Epetra_MultiVector& X, 
+  Epetra_MultiVector& Y) const
+{
+  TEST_FOR_EXCEPTION(true, std::runtime_error,
+    "EpetraOperatorWrapper::ApplyInverse not implemented");
+  return 1;
+}
 
 
 double EpetraOperatorWrapper::NormInf() const 
 {
   TEST_FOR_EXCEPTION(true, std::runtime_error,
-                     "EpetraOperatorWrapper::NormInf not implemated");
+    "EpetraOperatorWrapper::NormInf not implemated");
   return 1.0;
 }
 
 
-RCP<Epetra_Map> 
-EpetraOperatorWrapper
-::thyraVSToEpetraMap(const VectorSpace<double>& vs,
-                     const RCP<Epetra_Comm>& comm) const 
+// private
+
+
+RCP<const Epetra_Comm> 
+EpetraOperatorWrapper::getEpetraComm(const LinearOpBase<double>& thyraOp)
 {
-  int globalDim = vs.dim();
-  int myLocalElements = 0;
-  
-  /* find the number of local elements, summed over all blocks */
-  if (isSPMD(vs))
-    {
-      myLocalElements = numLocalElements(vs);
-    }
-  else
-    {
-      for (int b=0; b<vs.numBlocks(); b++)
-        {
-          TEST_FOR_EXCEPTION(!isSPMD(vs.getBlock(b)), std::runtime_error, 
-                             "EpetraOperatorWrapper requires std::vector space "
-                             "blocks to be SPMD vectors");
-          myLocalElements += numLocalElements(vs.getBlock(b));
-        }
-    }
 
-  
-  /* find the GIDs owned by this processor, taken from all blocks */
-  Array<int> myGIDs(myLocalElements);
-  
-  int count=0;
-  int blockOffset = 0;
-  for (int b=0; b<vs.numBlocks(); b++)
-    {
-      int lowGIDInBlock = lowestLocallyOwnedIndex(vs.getBlock(b));
-      int numLocalElementsInBlock = numLocalElements(vs.getBlock(b));
-      for (int i=0; i<numLocalElementsInBlock; i++, count++)
-        {
-          myGIDs[count] = blockOffset+lowGIDInBlock+i;
-        }
-
-      blockOffset += vs.getBlock(b).dim();
-    }
-
-  /* create the std::map */
-  RCP<Epetra_Map> rtn 
-    = rcp(new Epetra_Map(globalDim, myLocalElements, &(myGIDs[0]), 0, *comm));
-
-  return rtn;
-}
-
-
-void EpetraOperatorWrapper::copyEpetraIntoThyra(const Epetra_MultiVector& x,
-                                                Vector<double> thyraVec) const
-{
-  int numVecs = x.NumVectors();
-  TEST_FOR_EXCEPTION(numVecs != 1, std::runtime_error,
-                     "epetraToThyra does not work with MV dimension != 1");
-
-  double* const epetraData = x[0];
-
-  Teuchos::RCP<Teuchos::FancyOStream>
-    out = Teuchos::VerboseObjectBase::getDefaultOStream();
-  bool verbose = false;
-  if (verbose)
-    {
-      *out << "in ETO::copyEpetraIntoThyra()" << std::endl;
-      double normIn=0;
-      x.Norm2(&normIn);
-      *out << "before: norm(Epetra vec) = " << normIn << std::endl;
-    }
-
-  int offset = 0;
-  for (int b=0; b<thyraVec.numBlocks(); b++)
-    {
-      Vector<double> block = thyraVec.getBlock(b);
-      TEST_FOR_EXCEPTION(!isSPMD(Thyra::space(block)), std::runtime_error, "block is not SPMD");
-      int localOffset = lowestLocallyOwnedIndex(Thyra::space(block));
-      int localNumElems = numLocalElements(Thyra::space(block));
-
-      RCP<SpmdVectorBase<double> > spmd 
-        = rcp_dynamic_cast<SpmdVectorBase<double> >(block.ptr());
-
-      /** get a non-const pointer to the data in the thyra std::vector */ 
-      {
-        /* limit the scope so that it gets destroyed, and thus committed,
-         * before using the std::vector */
-        Teuchos::RCP<DetachedVectorView<double> > view 
-          = rcp(new DetachedVectorView<double>(block.ptr(), 
-                                               Thyra::Range1D(localOffset,
-                                                       localOffset+localNumElems-1), 
-                                               true));
-        double* thyraData = view->values();
-        for (int i=0; i<localNumElems; i++)
-          {
-            thyraData[i] = epetraData[i+offset];
-          }
-      }
-      offset += localNumElems;
-    }
-  if (verbose)
-    {
-      *out << "after: norm(Thyra vec) = " << norm2(thyraVec) << std::endl;
-    }
-}
-
-
-void EpetraOperatorWrapper::
-copyThyraIntoEpetra(const ConstVector<double>& thyraVec,
-                    Epetra_MultiVector& v) const 
-{
-  int numVecs = v.NumVectors();
-  TEST_FOR_EXCEPTION(numVecs != 1, std::runtime_error,
-                     "copyThyraIntoEpetra does not work with MV dimension != 1");
-
-  /* get a writable pointer to the contents of the Epetra std::vector */
-  double* epetraData = v[0];
-
-  Teuchos::RCP<Teuchos::FancyOStream>
-    out = Teuchos::VerboseObjectBase::getDefaultOStream();
-  bool verbose = false;
-  if (verbose)
-    {
-      *out << "in ETO::copyThyraIntoEpetra()" << std::endl;
-      *out << "before: norm(Thyra vec) = " << norm2(thyraVec) << std::endl;
-    }
-
-  int offset = 0;
-  for (int b=0; b<thyraVec.numBlocks(); b++)
-    {
-      ConstVector<double> block = thyraVec.getBlock(b);
-      TEST_FOR_EXCEPTION(!isSPMD(Thyra::space(block)), std::runtime_error, 
-                         "block is not SPMD");
-      int localOffset = lowestLocallyOwnedIndex(Thyra::space(block));
-      int localNumElems = numLocalElements(Thyra::space(block));
-      RCP<const SpmdVectorBase<double> > spmd 
-        = rcp_dynamic_cast<const SpmdVectorBase<double> >(block.constPtr());
-
-      /** get a const pointer to the data in the thyra std::vector */ 
-      {
-        /* limit the scope so that it gets destroyed, and thus committed,
-         * before using the std::vector */
-        Teuchos::RCP<const ConstDetachedVectorView<double> > view 
-          = rcp(new ConstDetachedVectorView<double>(block.constPtr(), 
-                                               Thyra::Range1D(localOffset,
-                                                              localOffset+localNumElems-1), 
-                                               true));
-        const double* thyraData = view->values();
-        for (int i=0; i<localNumElems; i++)
-          {
-            epetraData[i+offset] = thyraData[i];
-          }
-      }
-      offset += localNumElems;
-    }
-  
-  if (verbose)
-    {
-      double normOut=0;
-      v.Norm2(&normOut);
-      *out << "after: norm(Epetra vec) = " << normOut << std::endl;
-    }
-}
-
-
-int EpetraOperatorWrapper::Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
-{
-  Teuchos::RCP<Teuchos::FancyOStream>
-    out = Teuchos::VerboseObjectBase::getDefaultOStream();
-  bool verbose = false;
-  if (verbose)
-    {
-      *out << "in ETO::Apply()" << std::endl;
-      double normX=0;
-      double normY=0;
-      X.Norm2(&normX);
-      Y.Norm2(&normY);
-      *out << "before: norm(in) = " << normX << std::endl;
-      *out << "before: norm(out) = " << normY << std::endl;
-    }
-
-  if (!useTranspose_)
-    {
-      Vector<double> tX = domain_.createMember();
-      copyEpetraIntoThyra(X, tX);
-      Vector<double> tY = range_.createMember();
-      zeroOut(tY);
-      thyraOp_.apply(tX, tY);
-      copyThyraIntoEpetra(tY, Y);
-    }
-  else
-    {
-      Vector<double> tX = range_.createMember();
-      copyEpetraIntoThyra(X, tX);
-      Vector<double> tY = domain_.createMember();
-      zeroOut(tY);
-      thyraOp_.applyTranspose(tX, tY);
-      copyThyraIntoEpetra(tY, Y);
-    }
-
-  if (verbose)
-    {
-      double normX=0;
-      double normY=0;
-      X.Norm2(&normX);
-      Y.Norm2(&normY);
-      *out << "after: norm(in) = " << normX << std::endl;
-      *out << "after: norm(out) = " << normY << std::endl;
-      *out << "leaving ETO::Apply()" << std::endl;
-    }
-  return 0;
-}
-
-
-int EpetraOperatorWrapper::ApplyInverse(const Epetra_MultiVector& X, 
-                                      Epetra_MultiVector& Y) const
-{
-  TEST_FOR_EXCEPTION(true, std::runtime_error,
-                     "EpetraOperatorWrapper::ApplyInverse not implemented");
-  return 1;
-}
-
-
-RCP<Epetra_Comm> 
-EpetraOperatorWrapper::getEpetraComm(const ConstLinearOperator<double>& thyraOp) const
-{
-  RCP<Epetra_Comm> rtn;
-  VectorSpace<double> vs = thyraOp.domain().getBlock(0);
-
-  RCP<const SpmdVectorSpaceBase<double> > spmd 
-    = rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(vs.constPtr());
-
-  TEST_FOR_EXCEPTION(!isSPMD(vs), std::runtime_error, 
-                     "EpetraOperatorWrapper requires std::vector space "
-                     "blocks to be SPMD std::vector spaces");
-
-
-  const SerialComm<Ordinal>* serialComm 
-    = dynamic_cast<const SerialComm<Ordinal>*>(spmd->getComm().get());
-
+  using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::SerialComm;
 #ifdef HAVE_MPI
-  const MpiComm<Ordinal>* mpiComm 
-    = dynamic_cast<const MpiComm<Ordinal>*>(spmd->getComm().get());
-
-  TEST_FOR_EXCEPTION(mpiComm==0 && serialComm==0, std::runtime_error, 
-                     "SPMD std::vector space has a communicator that is "
-                     "neither a serial comm nor an MPI comm");
-
-  if (mpiComm != 0)
-    {
-      rtn = rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
-    }
-  else
-    {
-      rtn = rcp(new Epetra_SerialComm());
-    }
-#else
-  TEST_FOR_EXCEPTION(serialComm==0, std::runtime_error, 
-                     "SPMD std::vector space has a communicator that is "
-                     "neither a serial comm nor an MPI comm");
-  rtn = rcp(new Epetra_SerialComm());
-  
+  using Teuchos::MpiComm;
 #endif
 
-  TEST_FOR_EXCEPTION(rtn.get()==0, std::runtime_error, "null communicator created");
-  return rtn;
+  RCP<const VectorSpaceBase<double> > vs = thyraOp.range();
+  
+  const RCP<const ProductVectorSpaceBase<double> > prod_vs =
+    rcp_dynamic_cast<const ProductVectorSpaceBase<double> >(vs);
+
+  if (nonnull(prod_vs))
+    vs = prod_vs->getBlock(0);
+
+  const RCP<const SpmdVectorSpaceBase<double> > spmd_vs =
+    rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(vs, true);
+
+  return get_Epetra_Comm(*spmd_vs->getComm());
+
 }
 
 
@@ -338,11 +216,9 @@ EpetraOperatorWrapper::getEpetraComm(const ConstLinearOperator<double>& thyraOp)
 
 
 Teuchos::RCP<const Thyra::LinearOpBase<double> > 
-Thyra::makeEpetraWrapper(const ConstLinearOperator<double>& thyraOp)
+Thyra::makeEpetraWrapper(const RCP<const LinearOpBase<double> > &thyraOp)
 {
-  RCP<const LinearOpBase<double> > rtn =
-    epetraLinearOp(
-      Teuchos::rcp(new EpetraOperatorWrapper(thyraOp))
-      );
-  return rtn;
+  return epetraLinearOp(
+    Teuchos::rcp(new EpetraOperatorWrapper(thyraOp))
+    );
 }

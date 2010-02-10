@@ -335,6 +335,131 @@ Thyra::create_MultiVector(
 }
 
 
+Teuchos::RCP<const Epetra_Comm>
+Thyra::get_Epetra_Comm(const Teuchos::Comm<Ordinal>& comm_in)
+{
+
+  using Teuchos::rcp;
+  using Teuchos::ptrFromRef;
+  using Teuchos::ptr_dynamic_cast;
+  using Teuchos::SerialComm;
+#ifdef HAVE_MPI
+  using Teuchos::MpiComm;
+#endif
+
+  const Ptr<const Teuchos::Comm<Ordinal> > comm = Teuchos::ptrFromRef(comm_in);
+
+  const Ptr<const SerialComm<Ordinal> > serialComm =
+    ptr_dynamic_cast<const SerialComm<Ordinal> >(comm);
+
+  RCP<const Epetra_Comm> epetraComm;
+
+#ifdef HAVE_MPI
+
+  const Ptr<const MpiComm<Ordinal> > mpiComm =
+    ptr_dynamic_cast<const MpiComm<Ordinal> >(comm);
+
+  TEST_FOR_EXCEPTION(is_null(mpiComm) && is_null(serialComm),
+    std::runtime_error, 
+    "SPMD std::vector space has a communicator that is "
+    "neither a serial comm nor an MPI comm");
+
+  if (nonnull(mpiComm)) {
+    epetraComm = rcp(new Epetra_MpiComm(*mpiComm->getRawMpiComm()()));
+  }
+  else {
+    epetraComm = rcp(new Epetra_SerialComm());
+  }
+
+#else
+
+  TEST_FOR_EXCEPTION(is_null(serialComm), std::runtime_error, 
+    "SPMD std::vector space has a communicator that is "
+    "neither a serial comm nor an MPI comm");
+
+  epetraComm = rcp(new Epetra_SerialComm());
+  
+#endif
+  
+  TEST_FOR_EXCEPTION(is_null(epetraComm), std::runtime_error,
+    "null communicator created");
+  
+  return epetraComm;
+
+}
+
+
+Teuchos::RCP<const Epetra_Map>
+Thyra::get_Epetra_Map(const VectorSpaceBase<double>& vs_in,
+  const RCP<const Epetra_Comm>& comm)
+{
+
+  using Teuchos::rcpFromRef;
+  using Teuchos::rcpFromPtr;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::ptrFromRef;
+  using Teuchos::ptr_dynamic_cast;
+
+  const Ptr<const VectorSpaceBase<double> > vs_ptr = ptrFromRef(vs_in);
+  
+  const Ptr<const SpmdVectorSpaceBase<double> > spmd_vs =
+    ptr_dynamic_cast<const SpmdVectorSpaceBase<double> >(vs_ptr);
+
+  const Ptr<const ProductVectorSpaceBase<double> > &prod_vs = 
+    ptr_dynamic_cast<const ProductVectorSpaceBase<double> >(vs_ptr);
+
+  TEST_FOR_EXCEPTION( is_null(spmd_vs) && is_null(prod_vs), std::logic_error,
+    "Error, the concrete VectorSpaceBase object of type "
+    +Teuchos::demangleName(typeid(vs_in).name())+" does not support the"
+    " SpmdVectorSpaceBase or the ProductVectorSpaceBase interfaces!" );
+
+  const int numBlocks = (nonnull(prod_vs) ? prod_vs->numBlocks() : 1);
+
+  // Get an array of SpmdVectorBase objects for the blocks
+  
+  Array<RCP<const SpmdVectorSpaceBase<double> > > spmd_vs_blocks;
+  if (nonnull(prod_vs)) {
+    for (int block_i = 0; block_i < numBlocks; ++block_i) {
+      const RCP<const SpmdVectorSpaceBase<double> > spmd_vs_i =
+        rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(
+          prod_vs->getBlock(block_i), true);
+      spmd_vs_blocks.push_back(spmd_vs_i);
+    }
+  }
+  else {
+    spmd_vs_blocks.push_back(rcpFromPtr(spmd_vs));
+  }
+  
+  // Find the number of local elements, summed over all blocks
+
+  int myLocalElements = 0;
+  for (int block_i = 0; block_i < numBlocks; ++block_i) {
+    myLocalElements += spmd_vs_blocks[block_i]->localSubDim();
+  }
+  
+  // Find the GIDs owned by this processor, taken from all blocks
+  
+  int count=0;
+  int blockOffset = 0;
+  Array<int> myGIDs(myLocalElements);
+  for (int block_i = 0; block_i < numBlocks; ++block_i) {
+    const RCP<const SpmdVectorSpaceBase<double> > spmd_vs_i = spmd_vs_blocks[block_i];
+    const int lowGIDInBlock = spmd_vs_i->localOffset();
+    const int numLocalElementsInBlock = spmd_vs_i->localSubDim();
+    for (int i=0; i < numLocalElementsInBlock; ++i, ++count) {
+      myGIDs[count] = blockOffset + lowGIDInBlock + i;
+    }
+    blockOffset += spmd_vs_i->dim();
+  }
+  
+  const int globalDim = vs_in.dim();
+
+  return Teuchos::rcp(
+    new Epetra_Map(globalDim, myLocalElements, &(myGIDs[0]), 0, *comm));
+
+}
+
+
 Teuchos::RCP<Epetra_Vector>
 Thyra::get_Epetra_Vector(
   const Epetra_Map &map,

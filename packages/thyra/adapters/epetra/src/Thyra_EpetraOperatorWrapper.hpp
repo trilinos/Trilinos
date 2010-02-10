@@ -26,105 +26,114 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_EPETRA_OPERATOR_H
-#define THYRA_EPETRA_OPERATOR_H
+#ifndef THYRA_EPETRA_OPERATOR_WRAPPER_HPP
+#define THYRA_EPETRA_OPERATOR_WRAPPER_HPP
 
 #include "Thyra_LinearOpBase.hpp"
-#include "Thyra_VectorImpl.hpp" // need for LinOpDecl
-#include "Thyra_VectorSpaceImpl.hpp" // need for LinOpDecl
-#include "Thyra_LinearOperatorImpl.hpp"
 #include "Epetra_Map.h"
 #include "Epetra_Comm.h"
 #include "Epetra_MultiVector.h"
 #include "Epetra_Operator.h"
 
 
-namespace Thyra
+namespace Thyra {
+
+
+/** \brief Implements the Epetra_Operator interface with a Thyra LinearOperator.
+ *
+ * This enables the use of absrtact Thyra operators in AztecOO as
+ * preconditioners and operators, without being rendered into concrete Epetra
+ * matrices.
+ */
+class EpetraOperatorWrapper : public Epetra_Operator
 {
-  using namespace Teuchos;
-  using namespace Thyra;
+public:
 
-  /** 
-   * Wrap a Thyra operator in the Epetra_Operator interface, and then wrap
-   * it again in a Thyra operator interface. This lets an arbitrary Thyra
-   * operator be given to the Thyra AztecOO adapters.
-   */
-  RCP<const LinearOpBase<double> > 
-  makeEpetraWrapper(const ConstLinearOperator<double>& thyraOp);
+  /** \name Constructor, utilties. */
+  //@{
 
+  /** \brief . */
+  EpetraOperatorWrapper(const RCP<const LinearOpBase<double> > &thyraOp);
 
-  /** \brief 
-   * Implements the Epetra_Operator interface with a Thyra LinearOperator. This
-   * enables the use of absrtact Thyra operators in AztecOO as preconditioners and 
-   * operators, without being rendered into concrete Epetra matrices.
-   */
-  class EpetraOperatorWrapper : public Epetra_Operator
-  {
-  public:
-    /** */
-    EpetraOperatorWrapper(const ConstLinearOperator<double>& thyraOp);
+  /** \brief . */
+  void copyEpetraIntoThyra(const Epetra_MultiVector &x,
+    const Ptr<VectorBase<double> > &thyraVec) const;
+
+  /** \brief . */
+  void copyThyraIntoEpetra(const VectorBase<double> &thyraVec,
+    Epetra_MultiVector &x) const;
+
+  //@}
+
+  /** \name Overridden from Epetra_Operator */
+  //@{
+
+  /** \brief . */
+  int SetUseTranspose(bool UseTranspose)
+    {
+      useTranspose_ = UseTranspose;
+      return 0;
+    }
+
+  /** \brief . */
+  int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const ;
+
+  /** \brief . */
+  int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const ;
+
+  /** \brief . */
+  double NormInf() const ;
+
+  /** \brief . */
+  const char* Label() const {return label_.c_str();}
+
+  /** \brief . */
+  bool UseTranspose() const {return useTranspose_;}
+
+  /** \brief . */
+  bool HasNormInf() const {return false;}
     
-    /** */
-    virtual ~EpetraOperatorWrapper() {;}
+  /** \brief . */
+  const Epetra_Comm& Comm() const {return *comm_;}
 
-    /** */
-    int SetUseTranspose(bool UseTranspose) {useTranspose_ = UseTranspose; return 0;}
+  /** \brief . */
+  const Epetra_Map& OperatorDomainMap() const {return *domainMap_;}
 
-    /** */
-    int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const ;
+  /** \brief . */
+  const Epetra_Map& OperatorRangeMap() const {return *rangeMap_;}
 
-    /** */
-    int ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const ;
+  //@}
 
-    /** */
-    double NormInf() const ;
+private:
 
-    /** */
-    const char* Label() const {return label_.c_str();}
+  bool useTranspose_;
+  RCP<const LinearOpBase<double> > thyraOp_;
+  RCP<const VectorSpaceBase<double> > range_;
+  RCP<const VectorSpaceBase<double> > domain_;
+  RCP<const Epetra_Comm> comm_;
+  RCP<const Epetra_Map> rangeMap_;
+  RCP<const Epetra_Map> domainMap_;
 
-    /** */
-    bool UseTranspose() const {return useTranspose_;}
+  std::string label_;
 
-    /** */
-    bool HasNormInf() const {return false;}
-    
-    /** */
-    const Epetra_Comm& Comm() const {return *comm_;}
+  static RCP<const Epetra_Comm> getEpetraComm(const LinearOpBase<double>& thyraOp);
 
-    /** */
-    const Epetra_Map& OperatorDomainMap() const {return *domainMap_;}
-
-    /** */
-    const Epetra_Map& OperatorRangeMap() const {return *rangeMap_;}
+};
 
 
-    /** */
-    void copyEpetraIntoThyra(const Epetra_MultiVector& x,
-                             Vector<double> thyraVec) const ;
-
-    /** */
-    void copyThyraIntoEpetra(const ConstVector<double>& thyraVec,
-                             Epetra_MultiVector& v) const ;
-
-  private:
-    /** */
-    RCP<Epetra_Map> thyraVSToEpetraMap(const VectorSpace<double>& vs,
-                                               const RCP<Epetra_Comm>& comm) const ;
-
-    /** */
-    RCP<Epetra_Comm> getEpetraComm(const ConstLinearOperator<double>& thyraOp) const ;
+/** \brief Wrap a Thyra operator in the Epetra_Operator interface, and then
+ * wrap it again in a Thyra operator interface.
+ *
+ * This lets an arbitrary Thyra operator be given to the Thyra AztecOO
+ * adapters.
+ *
+ * \relates EpetraOperatorWrapper
+ */
+RCP<const LinearOpBase<double> > 
+makeEpetraWrapper(const RCP<const LinearOpBase<double> > &thyraOp);
 
 
-    bool useTranspose_;
-    ConstLinearOperator<double> thyraOp_;
-    VectorSpace<double> domain_;
-    VectorSpace<double> range_;
-    RCP<Epetra_Comm> comm_;
-    RCP<Epetra_Map> domainMap_;
-    RCP<Epetra_Map> rangeMap_;
+}  // namespace Thyra
 
-    std::string label_;
-  };
-} 
 
-#endif 
+#endif // THYRA_EPETRA_OPERATOR_WRAPPER_HPP
