@@ -411,11 +411,13 @@ INSTALL(
   RENAME TrilinosConfig.cmake
 )
 
-INSTALL(
-  EXPORT ${PROJECT_NAME}
-  DESTINATION "."
-  FILE ${PROJECT_NAME}-targets.cmake
-  )
+IF(${PROJECT_NAME}_HAS_INSTALL_TARGETS)
+  INSTALL(
+    EXPORT ${PROJECT_NAME}
+    DESTINATION "."
+    FILE ${PROJECT_NAME}-targets.cmake
+    )
+ENDIF()
 
 #
 # M) Export the library dependencies. This will let client projects
