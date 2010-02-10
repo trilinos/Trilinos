@@ -92,8 +92,12 @@ void EpetraExtDiagScaledMatProdTransformer::transform(
  
    // get diagonal scaling
    RCP<const VectorBase<double> > d;
+   double D_scalar = 1.0;
    if(haveDiagScaling) {
-      const RCP<const LinearOpBase<double> > D = multi_op.getOp(1);
+      const RCP<const LinearOpBase<double> > op_D = multi_op.getOp(1);
+      EOpTransp D_transp = NOTRANS;
+      RCP<const LinearOpBase<double> > D;
+      unwrap( op_D, &D_scalar, &D_transp, &D );
       d = rcp_dynamic_cast<const DiagonalLinearOpBase<double> >(D, true)->getDiag();
    }
  
@@ -170,8 +174,8 @@ void EpetraExtDiagScaledMatProdTransformer::transform(
                                *epetra_G,   G_transp==CONJTRANS, *epetra_op)==0);
 
    // scale the whole thing if neccessary
-   if(B_scalar*G_scalar!=1.0)
-      epetra_op->Scale(B_scalar*G_scalar);
+   if(B_scalar*G_scalar*D_scalar!=1.0)
+      epetra_op->Scale(B_scalar*G_scalar*D_scalar);
  
    // set output operator to use newly create epetra_op
    thyra_epetra_op_inout.initialize(epetra_op);
