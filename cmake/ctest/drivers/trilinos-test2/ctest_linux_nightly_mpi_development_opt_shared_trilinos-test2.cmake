@@ -25,7 +25,6 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_Pthread:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
   "-DBoost_INCLUDE_DIRS:FILEPATH=/home/trilinos/include"
-  "Trilinos_ENABLE_PyTrilinos:BOOL=ON"
   "-DSWIG_EXECUTABLE:FILEPATH=/home/trilinos/tpl/gcc4.1.2/swig-1.3.40/bin/swig"
   )
 
