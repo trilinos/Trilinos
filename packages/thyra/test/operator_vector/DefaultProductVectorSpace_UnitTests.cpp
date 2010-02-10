@@ -1,6 +1,7 @@
 
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
+#include "Thyra_DefaultProductVector.hpp"
 #include "Thyra_DetachedSpmdVectorView.hpp"
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_VectorStdOps.hpp"
@@ -12,7 +13,7 @@
 #include "Thyra_UnitTestHelpers.hpp"
 
 
-namespace {
+namespace Thyra {
 
 
 //
@@ -22,26 +23,6 @@ namespace {
 
 using Teuchos::as;
 using Teuchos::null;
-using Teuchos::RCP;
-using Thyra::VectorSpaceBase;
-using Thyra::VectorBase;
-using Thyra::MultiVectorBase;
-using Thyra::createMember;
-using Thyra::createMembers;
-using Thyra::DefaultSpmdVectorSpace;
-using Thyra::defaultSpmdVectorSpace;
-using Thyra::ProductVectorSpaceBase;
-using Thyra::DefaultProductVectorSpace;
-using Thyra::productVectorSpace;
-using Thyra::ConstDetachedVectorView;
-using Thyra::DetachedVectorView;
-using Thyra::ConstDetachedSpmdVectorView;
-using Thyra::DetachedSpmdVectorView;
-using Thyra::V_S;
-using Thyra::V_V;
-using Thyra::assign;
-using Thyra::sum;
-typedef Thyra::Ordinal Ordinal;
 
 
 const int g_localDim = 4; // ToDo: Make variable!
@@ -49,11 +30,21 @@ const int g_localDim = 4; // ToDo: Make variable!
 
 template<class Scalar>
 RCP<VectorSpaceBase<Scalar> > 
-createSpmdVectorSpace(const Teuchos_Ordinal localDim)
+createSpmdVectorSpace(const Ordinal localDim)
 {
   return defaultSpmdVectorSpace<Scalar>(
-    Teuchos::DefaultComm<Teuchos_Ordinal>::getComm(),
+    Teuchos::DefaultComm<Ordinal>::getComm(),
     localDim, -1 );
+}
+
+
+template<class Scalar>
+RCP<VectorSpaceBase<Scalar> > 
+createProductVectorSpace(const Ordinal localDim, const int numBlocks)
+{
+  return productVectorSpace<Scalar>(
+    createSpmdVectorSpace<Scalar>(localDim),
+    numBlocks);
 }
 
 
@@ -271,4 +262,109 @@ THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultProductVectorSpace,
   singleBlockCompatibility )
 
 
-} // namespace
+//
+// DefaultProductVector
+//
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultProductVector,
+  castOrCreateNonconstProductVectorBase_cast, Scalar )
+{
+
+  const int numBlocks = 3;
+
+  const RCP<const VectorSpaceBase<Scalar> > vs =
+    createProductVectorSpace<Scalar>(g_localDim, numBlocks);
+
+  const RCP<VectorBase<Scalar> > v = createMember(vs);
+
+  const RCP<ProductVectorBase<Scalar> > prod_v =
+    castOrCreateNonconstProductVectorBase(v);
+
+  out << "prod_v = " << *prod_v;
+
+  TEST_EQUALITY_CONST(prod_v->productSpace()->numBlocks(), numBlocks);
+
+  TEST_EQUALITY(
+    dynamic_cast<void*>(v.getRawPtr()),
+    dynamic_cast<void*>(prod_v.getRawPtr()));
+
+}
+THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultProductVector,
+  castOrCreateNonconstProductVectorBase_cast )
+
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultProductVector,
+  castOrCreateNonconstProductVectorBase_create, Scalar )
+{
+
+  const RCP<const VectorSpaceBase<Scalar> > vs =
+    createSpmdVectorSpace<Scalar>(g_localDim);
+
+  const RCP<VectorBase<Scalar> > v = createMember(vs);
+
+  const RCP<ProductVectorBase<Scalar> > prod_v =
+    castOrCreateNonconstProductVectorBase(v);
+
+  out << "prod_v = " << *prod_v;
+
+  TEST_EQUALITY_CONST(prod_v->productSpace()->numBlocks(), 1);
+
+}
+THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultProductVector,
+  castOrCreateNonconstProductVectorBase_create )
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultProductVector,
+  castOrCreateProductVectorBase_cast, Scalar )
+{
+
+  const int numBlocks = 3;
+
+  const RCP<const VectorSpaceBase<Scalar> > vs =
+    createProductVectorSpace<Scalar>(g_localDim, numBlocks);
+
+  const RCP<const VectorBase<Scalar> > v = createMember(vs);
+
+  const RCP<const ProductVectorBase<Scalar> > prod_v =
+    castOrCreateProductVectorBase(v);
+
+  out << "prod_v = " << *prod_v;
+
+  TEST_EQUALITY_CONST(prod_v->productSpace()->numBlocks(), numBlocks);
+
+  TEST_EQUALITY(
+    dynamic_cast<const void*>(v.getRawPtr()),
+    dynamic_cast<const void*>(prod_v.getRawPtr()));
+
+}
+THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultProductVector,
+  castOrCreateProductVectorBase_cast )
+
+
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultProductVector,
+  castOrCreateProductVectorBase_create, Scalar )
+{
+
+  const RCP<const VectorSpaceBase<Scalar> > vs =
+    createSpmdVectorSpace<Scalar>(g_localDim);
+
+  const RCP<const VectorBase<Scalar> > v = createMember(vs);
+
+  const RCP<const ProductVectorBase<Scalar> > prod_v =
+    castOrCreateProductVectorBase(v);
+
+  out << "prod_v = " << *prod_v;
+
+  TEST_EQUALITY_CONST(prod_v->productSpace()->numBlocks(), 1);
+
+}
+THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultProductVector,
+  castOrCreateProductVectorBase_create )
+
+
+
+
+} // namespace Thyra

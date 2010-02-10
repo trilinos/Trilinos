@@ -643,4 +643,56 @@ void DefaultProductVector<Scalar>::setSubVectorImpl(
 } // namespace Thyra
 
 
+template<class Scalar>
+Teuchos::RCP<Thyra::ProductVectorBase<Scalar> >
+Thyra::castOrCreateNonconstProductVectorBase(const RCP<VectorBase<Scalar> > v)
+{
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::tuple;
+  const RCP<ProductVectorBase<Scalar> > prod_v =
+    rcp_dynamic_cast<ProductVectorBase<Scalar> >(v);
+  if (nonnull(prod_v)) {
+    return prod_v;
+  }
+  return defaultProductVector<Scalar>(
+    productVectorSpace<Scalar>(tuple(v->space())()),
+    tuple(v)()
+    );
+}
+
+
+template<class Scalar>
+Teuchos::RCP<const Thyra::ProductVectorBase<Scalar> >
+Thyra::castOrCreateProductVectorBase(const RCP<const VectorBase<Scalar> > v)
+{
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::tuple;
+  const RCP<const ProductVectorBase<Scalar> > prod_v =
+    rcp_dynamic_cast<const ProductVectorBase<Scalar> >(v);
+  if (nonnull(prod_v)) {
+    return prod_v;
+  }
+  return defaultProductVector<Scalar>(
+    productVectorSpace<Scalar>(tuple(v->space())()),
+    tuple(v)()
+    );
+}
+
+
+//
+// Explicit instant macro
+//
+
+#define THYRA_DEFAULT_PRODUCT_VECTOR_INSTANT(SCALAR) \
+  \
+  template class DefaultProductVector<SCALAR >; \
+  \
+  template RCP<ProductVectorBase<SCALAR > >  \
+  castOrCreateNonconstProductVectorBase(const RCP<VectorBase<SCALAR > > v);  \
+  \
+  template RCP<const ProductVectorBase<SCALAR > >  \
+  castOrCreateProductVectorBase(const RCP<const VectorBase<SCALAR > > v);  \
+
+
+
 #endif // THYRA_DEFAULT_PRODUCT_VECTOR_DEF_HPP

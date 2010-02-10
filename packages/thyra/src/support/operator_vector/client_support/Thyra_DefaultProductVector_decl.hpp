@@ -313,6 +313,26 @@ defaultProductVector(
 }
 
 
+/** \brief Return a casted non-const ProductVectorBase object or create a new
+ * DefaultProductVector object with one component.
+ *
+ * \relates DefaultProductVector
+ */
+template<class Scalar>
+RCP<ProductVectorBase<Scalar> >
+castOrCreateNonconstProductVectorBase(const RCP<VectorBase<Scalar> > v);
+
+
+/** \brief Return a casted const ProductVectorBase object or create a new
+ * DefaultProductVector object with one component.
+ *
+ * \relates DefaultProductVector
+ */
+template<class Scalar>
+RCP<const ProductVectorBase<Scalar> >
+castOrCreateProductVectorBase(const RCP<const VectorBase<Scalar> > v);
+
+
 /** \brief Deprecated. */
 template<class Scalar>
 RCP<DefaultProductVector<Scalar> >
