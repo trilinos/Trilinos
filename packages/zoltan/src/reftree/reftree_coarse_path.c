@@ -216,14 +216,12 @@ char *yo = "push";
 /* make sure there's enough memory */
 
    if (to_add_ptr[list] >= to_add_dim[list]-1) {
-      to_add[list] = (int *) ZOLTAN_REALLOC(to_add[list],
-                                            sizeof(int *)*2*to_add_dim[list],
-                                            sizeof(int *)*to_add_dim[list]);
+      to_add_dim[list] *= 2;
+      to_add[list] = (int *) ZOLTAN_REALLOC(to_add[list], sizeof(int *)*to_add_dim[list]);
       if (to_add[list] == NULL) {
          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
          return(ZOLTAN_MEMERR);
       }
-      to_add_dim[list] = 2*to_add_dim[list];
    }
 
 /* push */
@@ -269,7 +267,7 @@ static int set_neigh(ZOLTAN_ID_PTR vertices, int *num_vert,
 char *yo = "set_neigh";
 struct Zoltan_Reftree_inthash_node **hashtable;
 int **temp_element_list;
-int i, j, k, l, len, nvert, vert, index, element, vert_count, ierr;
+int i, j, k, l, nvert, vert, index, element, vert_count, ierr;
 
 /* 
  * first create a list of elements for each vertex
@@ -350,21 +348,16 @@ int i, j, k, l, len, nvert, vert, index, element, vert_count, ierr;
 /* see if we need more memory for the element_list's */
 
          if (nvert >= element_list_dim) {
-            len = element_list_dim * 2;
-            temp_element_list = (int **) ZOLTAN_REALLOC(element_list,
-                                   sizeof(int *)*len, sizeof(int *)*element_list_dim);
+            element_list_dim *= 2;
+            temp_element_list = (int **) ZOLTAN_REALLOC(element_list, sizeof(int *)*element_list_dim);
 
             if (temp_element_list != NULL) element_list = temp_element_list;
 
-            num_elem = (int *) ZOLTAN_REALLOC(num_elem,
-                                 sizeof(int)*len, sizeof(int)*element_list_dim);
+            num_elem = (int *) ZOLTAN_REALLOC(num_elem, sizeof(int)*element_list_dim);
 
-            elem_dim = (int *) ZOLTAN_REALLOC(elem_dim,
-                                 sizeof(int)*len, sizeof(int)*element_list_dim);
+            elem_dim = (int *) ZOLTAN_REALLOC(elem_dim, sizeof(int)*element_list_dim);
 
-            vertex_gid = ZOLTAN_REALLOC_GID_ARRAY(zz,vertex_gid,len,element_list_dim);
-
-            element_list_dim = len;
+            vertex_gid = ZOLTAN_REALLOC_GID_ARRAY(zz,vertex_gid,element_list_dim);
 
             if (temp_element_list == NULL || num_elem == NULL ||
                 elem_dim == NULL || vertex_gid == NULL) {
@@ -391,9 +384,8 @@ int i, j, k, l, len, nvert, vert, index, element, vert_count, ierr;
             }
          }
          if (num_elem[vert] > elem_dim[vert]-1) {
-
-            element_list[vert] = (int *) ZOLTAN_REALLOC(element_list[vert],
-                              sizeof(int)*elem_dim[vert]*2, sizeof(int)*elem_dim[vert]);
+            elem_dim[vert] *= 2;
+            element_list[vert] = (int *) ZOLTAN_REALLOC(element_list[vert], sizeof(int)*elem_dim[vert]);
 
             if (element_list[vert] == NULL) {
                ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
@@ -404,7 +396,6 @@ int i, j, k, l, len, nvert, vert, index, element, vert_count, ierr;
                return(ZOLTAN_MEMERR);
             }
 
-            elem_dim[vert] *= 2;
          }
 
 /* add the element to the list of this vertex */
@@ -545,7 +536,7 @@ static int add_neigh_pair(int v,int e1,int e2, ZZ *zz)
  */
 
 char *yo = "add_neigh_pair";
-int nshare, index = 0, i, j, k, len;
+int nshare, index = 0, i, j, k;
 
 /* 
  * see if they are already listed as neighbors
@@ -568,16 +559,16 @@ int nshare, index = 0, i, j, k, len;
 /* see if we need more memory */
 
    if (neigh_dim[e1][nshare+1] <= num_neigh[e1][nshare+1]) {
-      len = neigh_dim[e1][nshare+1] * 2;
-      neigh[e1][nshare+1] = (int *) ZOLTAN_REALLOC(neigh[e1][nshare+1],
-                                           sizeof(int)*len, sizeof(int)*neigh_dim[e1][nshare+1]);
-      shared_vert[e1][nshare+1] = (int **) ZOLTAN_REALLOC(shared_vert[e1][nshare+1],
-                                       sizeof(int *)*len, sizeof(int *)*neigh_dim[e1][nshare+1]);
+      neigh_dim[e1][nshare+1] *= 2;
+      neigh[e1][nshare+1] = 
+        (int *) ZOLTAN_REALLOC(neigh[e1][nshare+1], sizeof(int)*neigh_dim[e1][nshare+1]);
+      shared_vert[e1][nshare+1] = 
+        (int **) ZOLTAN_REALLOC(shared_vert[e1][nshare+1], sizeof(int *)*neigh_dim[e1][nshare+1]);
+
       if (neigh[e1][nshare+1] == NULL || shared_vert[e1][nshare+1] == NULL) {
          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
          return(ZOLTAN_MEMERR);
       }
-      neigh_dim[e1][nshare+1] = len;
 
       for (k=neigh_dim[e1][nshare+1]/2; k<neigh_dim[e1][nshare+1]; k++) {
          shared_vert[e1][nshare+1][k] = (int *) ZOLTAN_MALLOC(sizeof(int)*(nshare+1));
@@ -626,16 +617,15 @@ int nshare, index = 0, i, j, k, len;
 /* see if we need more memory */
 
    if (neigh_dim[e2][nshare+1] <= num_neigh[e2][nshare+1]) {
-      len = neigh_dim[e2][nshare+1] * 2;
+      neigh_dim[e2][nshare+1] *= 2;
       neigh[e2][nshare+1] = (int *) ZOLTAN_REALLOC(neigh[e2][nshare+1], 
-                                       sizeof(int)*len, sizeof(int)*neigh_dim[e2][nshare+1]);
+                                       sizeof(int)*neigh_dim[e2][nshare+1]);
       shared_vert[e2][nshare+1] = (int **) ZOLTAN_REALLOC(shared_vert[e2][nshare+1], 
-                                       sizeof(int *)*len, sizeof(int *)*neigh_dim[e2][nshare+1]);
+                                       sizeof(int *)*neigh_dim[e2][nshare+1]);
       if (neigh[e2][nshare+1] == NULL || shared_vert[e2][nshare+1] == NULL) {
          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
          return(ZOLTAN_MEMERR);
       }
-      neigh_dim[e2][nshare+1] = len;
 
       for (k=neigh_dim[e2][nshare+1]/2; k<neigh_dim[e2][nshare+1]; k++) {
          shared_vert[e2][nshare+1][k] = (int *) ZOLTAN_MALLOC(sizeof(int)*(nshare+1));

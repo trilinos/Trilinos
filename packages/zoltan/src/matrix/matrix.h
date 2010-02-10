@@ -75,8 +75,6 @@ typedef struct Zoltan_matrix_ {
 			         (and is ystart+1 after matrix complete) */
   int          *pinGNO;        /* array of gno of other extremtiy */
   float        *pinwgt;        /* Wgt for pins */
-  int          ystart_size;    /* length of ystart buffer */
-  int          pin_info_size;  /* length of pinGNO and pinwgt buffer */
 
   /* These fields are used only before matrix_complete */
   /* Allow us to move only pins and CSR structure without having to worry

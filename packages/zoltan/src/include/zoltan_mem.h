@@ -41,17 +41,7 @@ extern "C" {
 #define ZOLTAN_CALLOC(a, b)  Zoltan_Calloc((a), (b), __FILE__, __LINE__)
 #define ZOLTAN_FREE(a)       Zoltan_Free((void**)(void*) (a), __FILE__, __LINE__)
 
-/* Several platforms have been found to have a realloc bug, possibly related to
- * versions of MPI.  Either realloc() returns NULL when there is plenty of
- * memory, or it crashes.  On these platforms, define REALLOC_BUG to use malloc
- * instead.  Feb 9, 2010.
- */
-
-#ifdef REALLOC_BUG
-#define ZOLTAN_REALLOC(a, b, c) Zoltan_Realloc((a), (b), (c), __FILE__, __LINE__)
-#else
-#define ZOLTAN_REALLOC(a, b, c) Zoltan_Realloc((a), (b),  __FILE__, __LINE__)
-#endif
+#define ZOLTAN_REALLOC(a, b) Zoltan_Realloc((a), (b),  __FILE__, __LINE__)
 
 #define ZOLTAN_MEM_STAT_TOTAL   0
 #define ZOLTAN_MEM_STAT_MAXIMUM 1
@@ -68,11 +58,7 @@ extern void    Zoltan_Memory_Debug(int);
 extern void    Zoltan_Free(void **, char *, int);
 extern double *Zoltan_Calloc(size_t, size_t, char *, int);
 extern double *Zoltan_Malloc(size_t, char *, int);
-#ifdef REALLOC_BUG
-extern double *Zoltan_Realloc(void *, size_t, size_t, char *, int);
-#else
 extern double *Zoltan_Realloc(void *, size_t, char *, int);
-#endif
 extern void    Zoltan_Memory_Stats(void);
 extern size_t  Zoltan_Memory_Usage(int);
 extern void    Zoltan_Memory_Reset(int);

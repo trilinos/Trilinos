@@ -107,7 +107,7 @@ char msg[128];
 
   ierr = Zoltan_PHG_Fill_Hypergraph(zz, zhg, hgp, input_parts);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
-    sprintf(msg,"Error building hypergraph from data supplied by your %d queries",input_object);
+    sprintf(msg,"Error building hypergraph from data supplied by your %s queries",input_object);
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, msg);
     goto End;
   }

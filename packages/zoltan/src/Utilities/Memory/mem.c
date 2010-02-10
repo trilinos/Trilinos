@@ -34,6 +34,10 @@ static int DEBUG_MEMORY = 0;	/* Flag for detecting memory leaks */
 static size_t bytes_used = 0;	/* Sum of active allocations */
 static size_t bytes_max = 0;	/* Largest total of active allocations */
 
+#ifdef REALLOC_BUG
+static size_t max_alloc = 0;	/* Largest single allocation */
+#endif
+
 static int nmalloc = 0;         /* number of calls to malloc */
 static int nfree = 0;           /* number of calls to free */
 
@@ -285,6 +289,14 @@ double *Zoltan_Malloc(size_t n, char *filename, int lineno)
   char *basefile;
 
   if (n > 0) {
+
+#ifdef REALLOC_BUG
+    if (n > max_alloc){
+      max_alloc = n;
+    }
+    n += sizeof(double);
+#endif
+
     pntr = (double *) malloc(n);
     if (pntr == NULL) {
       GET_RANK(&proc);
@@ -294,6 +306,11 @@ double *Zoltan_Malloc(size_t n, char *filename, int lineno)
       return ((double *) NULL);
     }
     nmalloc++;
+
+#ifdef REALLOC_BUG
+    pntr[0] = (double)(n - sizeof(double));
+    ++pntr;
+#endif
   }
   else if (n == 0)
     pntr = NULL;
@@ -344,22 +361,22 @@ double *Zoltan_Malloc(size_t n, char *filename, int lineno)
       proc, nmalloc, (unsigned long) n, (long) pntr, filename, lineno);
   }
 
+
   return pntr;
 
 } /* Zoltan_Malloc */
 
 /* Safe version of realloc. Does not initialize memory. */
 
-#ifdef REALLOC_BUG
-double *Zoltan_Realloc(void *ptr, size_t n, size_t n_old, char *filename, int lineno)
-#else
 double *Zoltan_Realloc(void *ptr, size_t n, char *filename, int lineno)
-#endif
 {
   char *yo = "Zoltan_Realloc";
   struct malloc_debug_data *dbptr;   /* loops through debug list */
   int       proc;             /* processor ID */
   double   *p;                /* returned pointer */
+#ifdef REALLOC_BUG
+  int n_old;
+#endif
 
   if (ptr == NULL) {	/* Previous allocation not important */
     if (n == 0) {
@@ -376,15 +393,33 @@ double *Zoltan_Realloc(void *ptr, size_t n, char *filename, int lineno)
     }
     else {
 #ifdef REALLOC_BUG
-      p = (double *) malloc(n);
+      /* Feb 10, 2010: Several platforms show a realloc bug where realloc
+       * either fails to allocate memory when there is sufficient memory
+       * or it crashes.  If realloc shows this failure, then build Zoltan
+       * with REALLOC_BUG, and we will call malloc/memcpy/free instead.
+       */
+      p = (double *)ptr;
+      p--;
+      n_old = p[0];
+
+      if ((n_old < 1) || (n_old > max_alloc)){  /* sanity check */
+        GET_RANK(&proc);
+        fprintf(stderr, "%s (from %s,%d) Zoltan_Realloc called on a pointer "
+                        "that was not returned by Zoltan_Malloc (proc %d)\n",
+    		        yo, filename, lineno, proc);
+        return NULL;
+      }
+
+      p = (double *) Zoltan_Malloc(n, filename, lineno);
+
       if (p){
-        if ((n > n_old) && (n_old > 0)){
+        if (n > n_old){
           memcpy(p, ptr, n_old);
         }
         else if (n <= n_old){
           memcpy(p, ptr, n);
         }
-        free(ptr);
+        Zoltan_Free((void **) &ptr, filename, lineno);
       }
 #else
       p = (double *) realloc((char *) ptr, n);
@@ -433,6 +468,10 @@ void Zoltan_Free (void **ptr, char *filename, int lineno)
   struct malloc_debug_data **prev;   /* holds previous pointer */
   int       proc;             /* processor ID */
 
+#ifdef REALLOC_BUG
+  double *p=NULL;
+#endif
+
 /*
  *  This version of free calls the system's free function.  It doesn't call
  *  free if ptr is the NULL pointer.
@@ -468,8 +507,13 @@ void Zoltan_Free (void **ptr, char *filename, int lineno)
        }
      }
    }
- 
+
+#ifdef REALLOC_BUG
+  p = (double *)*ptr;
+  free(p-1);
+#else
   free(*ptr);
+#endif
  
   /* Set value of ptr to NULL, to flag further references to it. */
   *ptr = NULL;

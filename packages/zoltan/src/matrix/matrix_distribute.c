@@ -285,25 +285,17 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
 
   /* Unpack the non-zeros received. */
 
-  outmat->mtx.ystart = (int *) ZOLTAN_REALLOC(outmat->mtx.ystart, 
-                     (nEdge + 1)*sizeof(int), outmat->mtx.ystart_size * sizeof(int));
+  outmat->mtx.ystart = (int *) ZOLTAN_REALLOC(outmat->mtx.ystart, (nEdge + 1)*sizeof(int));
   if (outmat->mtx.ystart == NULL) MEMORY_ERROR;
-  outmat->mtx.ystart_size = nEdge + 1;
-
   outmat->mtx.yend = outmat->mtx.ystart + 1;
 
-  outmat->mtx.pinGNO = (int *) ZOLTAN_REALLOC(outmat->mtx.pinGNO, 
-                (outmat->mtx.nPins) * sizeof(int), outmat->mtx.pin_info_size * sizeof(int));
+  outmat->mtx.pinGNO = (int *) ZOLTAN_REALLOC(outmat->mtx.pinGNO, (outmat->mtx.nPins) * sizeof(int));
   if (outmat->mtx.nPins && (outmat->mtx.pinGNO == NULL)) MEMORY_ERROR;
 
   outmat->mtx.pinwgt = (float *) ZOLTAN_REALLOC(outmat->mtx.pinwgt,
-	     (outmat->mtx.nPins * outmat->mtx.pinwgtdim) * sizeof(float),
-	     (outmat->mtx.pin_info_size*outmat->mtx.pinwgtdim) * sizeof(float));
-
+	     (outmat->mtx.nPins * outmat->mtx.pinwgtdim) * sizeof(float));
   if (outmat->mtx.nPins && outmat->mtx.pinwgtdim && outmat->mtx.pinwgt == NULL)
     MEMORY_ERROR;
-
-  outmat->mtx.pin_info_size = outmat->mtx.nPins;
 
   if (inmat.opts.keep_distribution == 0 || inmat.opts.speed != MATRIX_NO_REDIST ||
       inmat.opts.symmetrize != 0) { /* Check for duplicates */

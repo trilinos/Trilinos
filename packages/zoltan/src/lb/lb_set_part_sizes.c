@@ -84,8 +84,7 @@ int Zoltan_LB_Set_Part_Sizes(ZZ *zz, int global_num,
   if (zz->LB.Part_Info_Len + len > zz->LB.Part_Info_Max_Len){
     maxlen = 2*(zz->LB.Part_Info_Len + len);  /* Double the length */
     zz->LB.Part_Info = (struct Zoltan_part_info *) ZOLTAN_REALLOC( zz->LB.Part_Info, 
-                         maxlen * sizeof(struct Zoltan_part_info),
-                         zz->LB.Part_Info_Max_Len * sizeof(struct Zoltan_part_info));
+                         maxlen * sizeof(struct Zoltan_part_info));
   }
 
   if (zz->LB.Part_Info == NULL){

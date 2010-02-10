@@ -89,8 +89,8 @@ int i;
 
   /* Allow extra space for objects that are imported to the processor. */
   *max_obj = (int)(overalloc * *num_obj) + 1;
-  *global_ids = ZOLTAN_REALLOC_GID_ARRAY(zz, *global_ids, (*max_obj), (*num_obj));
-  *local_ids  = ZOLTAN_REALLOC_LID_ARRAY(zz, *local_ids, (*max_obj), (*num_obj));
+  *global_ids = ZOLTAN_REALLOC_GID_ARRAY(zz, *global_ids, (*max_obj));
+  *local_ids  = ZOLTAN_REALLOC_LID_ARRAY(zz, *local_ids, (*max_obj));
   *dots = (struct Dot_Struct *)ZOLTAN_MALLOC((*max_obj)*sizeof(struct Dot_Struct));
 
   if (!(*global_ids) || (zz->Num_LID && !(*local_ids)) || !(*dots)) {
@@ -452,7 +452,7 @@ int Zoltan_RB_Send_Dots(
   int message_tag = 32760;          /* message tag */
   int num_gid_entries = zz->Num_GID;
   int num_lid_entries = zz->Num_LID;
-  int i, len, ierr = ZOLTAN_OK;
+  int i, ierr = ZOLTAN_OK;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
   incoming = 0;
@@ -470,12 +470,12 @@ int Zoltan_RB_Send_Dots(
   if (dotnew > *dotmax) {
     *allocflag = 1;
 
-    len = (int) (overalloc * dotnew);
-    if (len < dotnew) len = dotnew;
+    *dotmax = (int) (overalloc * dotnew);
+    if (*dotmax < dotnew) *dotmax = dotnew;
 
     if (use_ids) {
-      *gidpt = ZOLTAN_REALLOC_GID_ARRAY(zz, *gidpt, len, *dotmax);
-      *lidpt = ZOLTAN_REALLOC_LID_ARRAY(zz, *lidpt, len, *dotmax);
+      *gidpt = ZOLTAN_REALLOC_GID_ARRAY(zz, *gidpt, *dotmax);
+      *lidpt = ZOLTAN_REALLOC_LID_ARRAY(zz, *lidpt, *dotmax);
       if (!*gidpt || (num_lid_entries && !*lidpt)) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
         ierr = ZOLTAN_MEMERR;
@@ -483,16 +483,13 @@ int Zoltan_RB_Send_Dots(
       }
     }
 
-    *dotpt = (struct Dot_Struct *) 
-         ZOLTAN_REALLOC(*dotpt, len * sizeof(struct Dot_Struct), *dotmax * sizeof(struct Dot_Struct));
-    *dotmark = (int *) ZOLTAN_REALLOC(*dotmark, len * sizeof(int), *dotmax * sizeof(int));
+    *dotpt = (struct Dot_Struct *) ZOLTAN_REALLOC(*dotpt, *dotmax * sizeof(struct Dot_Struct));
+    *dotmark = (int *) ZOLTAN_REALLOC(*dotmark, *dotmax * sizeof(int));
     if (!*dotpt || !*dotmark) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
       ierr = ZOLTAN_MEMERR;
       goto End;
     }
-
-    *dotmax = len;
 
     if (stats) counters[6]++;
   }

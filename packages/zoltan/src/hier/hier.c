@@ -1049,19 +1049,17 @@ static int is_gid_local(HierPartParams *hpp, ZOLTAN_ID_TYPE gid) {
    then remove duplicates and sort */
 static void insert_unique_gids_of_interest(HierPartParams *hpp,
 					   ZOLTAN_ID_TYPE gid) {
-  int low, mid, high, index, old_size;
+  int low, mid, high, index;
 
   HIER_CHECK_GID_RANGE(gid);
 
   /* we will not always insert, but we realloc first just in case */
   if (hpp->allocsize_gids_of_interest == hpp->num_gids_of_interest) {
-    old_size = hpp->allocsize_gids_of_interest;
     /* reasonable increment? */
     hpp->allocsize_gids_of_interest += hpp->hier_num_obj + 1;
     hpp->gids_of_interest = 
       (ZOLTAN_ID_PTR)ZOLTAN_REALLOC(hpp->gids_of_interest, 
-				    sizeof(ZOLTAN_ID_TYPE)* hpp->allocsize_gids_of_interest,
-				    sizeof(ZOLTAN_ID_TYPE)* old_size); 
+				    sizeof(ZOLTAN_ID_TYPE)* hpp->allocsize_gids_of_interest);
   }
 
   /* find it (or not) */
@@ -2157,7 +2155,7 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
 				       ZOLTAN_ID_PTR export_lids,
 				       int *export_procs, int *export_parts,
 				       int *ierr) {
-  int i, local_index, old_size;
+  int i, local_index;
   HierPartParams *hpp = (HierPartParams *)data;
   char *yo = "Zoltan_Hier_Mid_Migrate_Fn";
   int removed_from_migrated_in;
@@ -2270,19 +2268,16 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
        migrated out and other allocated space? */
     if (hpp->num_migrated_in_gids - removed_from_migrated_in + 
 	add_to_migrated_in > hpp->alloc_migrated_in_gids) {
-      old_size = hpp->alloc_migrated_in_gids;
       /* reallocate arrays */
       hpp->alloc_migrated_in_gids = hpp->num_migrated_in_gids - 
 	removed_from_migrated_in + add_to_migrated_in;
       if (hpp->migrated_in_gids) {
 	hpp->migrated_in_gids = 
 	  (ZOLTAN_ID_PTR)ZOLTAN_REALLOC(hpp->migrated_in_gids,
-					sizeof(ZOLTAN_ID_TYPE)* hpp->alloc_migrated_in_gids,
-					sizeof(ZOLTAN_ID_TYPE)* old_size);
+					sizeof(ZOLTAN_ID_TYPE)* hpp->alloc_migrated_in_gids);
 	hpp->migrated_in_data = 
 	  (void **)ZOLTAN_REALLOC(hpp->migrated_in_data,
-				  sizeof(void *)*hpp->alloc_migrated_in_gids,
-				  sizeof(void *)*old_size);
+				  sizeof(void *)*hpp->alloc_migrated_in_gids);
       }
       else {
 	hpp->migrated_in_gids =

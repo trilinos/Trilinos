@@ -1703,7 +1703,7 @@ static int get_int_array(ZZ *zz, int len, int **buf, int *oldlen)
   char msg[256];
 
   if (len > *oldlen){
-    *buf = (int *)ZOLTAN_REALLOC(*buf, len * sizeof(int), *oldlen * sizeof(int));
+    *buf = (int *)ZOLTAN_REALLOC(*buf, len * sizeof(int));
     if (*buf) *oldlen = len;
     else{
       sprintf(msg,"can not allocate buffer size %d ints (%ld)\n", len,len*sizeof(int));
@@ -1721,7 +1721,7 @@ static int get_char_array(ZZ *zz, int len, char **buf, int *oldlen)
   char msg[256];
 
   if (len > *oldlen){
-    *buf = (char *)ZOLTAN_REALLOC(*buf, len * sizeof(char), *oldlen * sizeof(char));
+    *buf = (char *)ZOLTAN_REALLOC(*buf, len * sizeof(char));
     if (*buf) *oldlen = len;
     else{
       sprintf(msg,"can not allocate buffer size %d\n",len);

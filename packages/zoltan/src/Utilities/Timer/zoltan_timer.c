@@ -189,9 +189,8 @@ static char *yo = "Zoltan_Timer_Init";
 
   if (ret >= zt->Length) {
     /* Realloc -- need more individual timers */
-    zt->Times = (ZTIMER_TS *) ZOLTAN_REALLOC(zt->Times, 
-        (zt->Length + INITLENGTH) * sizeof(ZTIMER_TS), zt->Length * sizeof(ZTIMER_TS));
     zt->Length += INITLENGTH;
+    zt->Times = (ZTIMER_TS *) ZOLTAN_REALLOC(zt->Times, zt->Length * sizeof(ZTIMER_TS));
   }
 
   Zoltan_Timer_Reset(zt, ret, use_barrier, name);

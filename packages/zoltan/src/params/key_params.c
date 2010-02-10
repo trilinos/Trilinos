@@ -128,9 +128,8 @@ int  idx 			/* index of vector param, -1 if scalar */
 	zz->Obj_Weight_Dim = result.ival;
         if (zz->Obj_Weight_Dim > zz->LB.Imb_Tol_Len){
           /* Resize and reallocate Imb_Tol. */
-          zz->LB.Imbalance_Tol = (float *) ZOLTAN_REALLOC(zz->LB.Imbalance_Tol,
-            (zz->LB.Imb_Tol_Len+10) * sizeof(float), zz->LB.Imb_Tol_Len * sizeof(float));
           zz->LB.Imb_Tol_Len += 10;
+          zz->LB.Imbalance_Tol = (float *) ZOLTAN_REALLOC(zz->LB.Imbalance_Tol, zz->LB.Imb_Tol_Len * sizeof(float));
         }
 	status = 3;		/* Don't add to Params field of ZZ */
         break;
