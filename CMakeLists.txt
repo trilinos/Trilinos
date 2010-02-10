@@ -387,9 +387,35 @@ PACKAGE_ARCH_CONFIGURE_ENABLED_PACKAGES()
 # L) Install-related commands
 #
 
+#Config file for setting variables and finding include/library paths from the build directory
+SET(${PROJECT_NAME}_CONFIG_INCLUDE_DIRS ${${PROJECT_NAME}_INCLUDE_DIRS})
+SET(${PROJECT_NAME}_CONFIG_LIBRARY_DIRS ${${PROJECT_NAME}_LIBRARY_DIRS})
+SET(${PROJECT_NAME}_TARGETS_INCLUDE "")
+
 CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/cmake/TrilinosConfig.cmake.in
   ${CMAKE_CURRENT_BINARY_DIR}/TrilinosConfig.cmake )
 
+#Config file for setting variables and finding include/library paths from the Install directory
+SET(${PROJECT_NAME}_CONFIG_INCLUDE_DIRS ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR})
+SET(${PROJECT_NAME}_CONFIG_LIBRARY_DIRS ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_LIB_DIR})
+SET(${PROJECT_NAME}_TARGETS_INCLUDE "include(${CMAKE_INSTALL_PREFIX}/${PROJECT_NAME}-targets.cmake)")
+
+PRINT_VAR(${PROJECT_NAME}_TARGETS_INCLUDE)
+
+CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/cmake/TrilinosConfig.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/TrilinosConfig_install.cmake )
+
+INSTALL(
+  FILES ${CMAKE_CURRENT_BINARY_DIR}/TrilinosConfig_install.cmake
+  DESTINATION "."
+  RENAME TrilinosConfig.cmake
+)
+
+INSTALL(
+  EXPORT ${PROJECT_NAME}
+  DESTINATION "."
+  FILE ${PROJECT_NAME}-targets.cmake
+  )
 
 #
 # M) Export the library dependencies. This will let client projects

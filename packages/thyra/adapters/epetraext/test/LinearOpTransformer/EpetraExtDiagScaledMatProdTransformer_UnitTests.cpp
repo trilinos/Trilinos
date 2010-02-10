@@ -63,6 +63,7 @@ buildBDGOperator(int scenario,const Teuchos::RCP<const Thyra::LinearOpBase<doubl
    // Create the implicit operator
    double scalea=10.0;
    double scaleb=-7.0;
+   double scaled=52.0;
 
    RCP<const LinearOpBase<double> > M;
    RCP<VectorBase<double> > d;
@@ -90,6 +91,10 @@ buildBDGOperator(int scenario,const Teuchos::RCP<const Thyra::LinearOpBase<doubl
    case 4: 
       M = multiply( adjoint(B), diagonal(d), adjoint(G), "M" );
       out << " Testing adj(B)*D*adj(G)" << std::endl;
+      break;
+   case 5: 
+      M = multiply( B, scale(scaled,diagonal(d)), G, "M" );
+      out << " Testing B*(52.0*D)*G" << std::endl;
       break;
    default:
       TEUCHOS_ASSERT(false);
@@ -182,7 +187,7 @@ TEUCHOS_UNIT_TEST( EpetraExtDiagScaledMatProdTransformer, basic_BDB )
   // build scenario=1 -> B*D*B, scenario=2 -> B*D*B',
   //       scenario=3 -> B'*D*B, scenario=4 -> B'*D*B'
   //int scenario = 3;
-  for(int scenario=1;scenario<=4;scenario++) {
+  for(int scenario=1;scenario<=5;scenario++) {
      const RCP<const Thyra::LinearOpBase<double> > M = buildBDBOperator(scenario,B,4.5,out);
 
      //

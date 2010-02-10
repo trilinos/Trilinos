@@ -31,7 +31,7 @@
 #include <Kokkos_TPINode.hpp>
 #endif
 
-//#define USE_ISORROPIA
+#define USE_ISORROPIA
 
 #ifdef USE_ISORROPIA
   #define FNARGS "[matrix filename]"
@@ -179,6 +179,7 @@ int main(int argc, char *argv[])
        return -1;
    }
    LS.SetLevelInfo(NumLevels,&lsizes[0],&pvec[0]); 
+
 #else
    {
       double time;
@@ -196,6 +197,7 @@ int main(int argc, char *argv[])
    {
       double time;
       timer.ResetStartTime();
+
       LS.Setup(*L);
       time = timer.ElapsedTime();
       cout << "LevelSolver::Setup() time: " << time << endl;
@@ -208,10 +210,11 @@ int main(int argc, char *argv[])
    }
 
    // Verify that the level solver correctly solves the system
+   for(int i=0;i<numTrials;i++)
    verify(L,LS);
 
    // Time the level solver 
-//   timeLevelSolver(L,LS,numTrials);
+   //timeLevelSolver(L,LS,numTrials);
 
 //   timeOrigSolver(L,numTrials);
 
@@ -251,22 +254,22 @@ void verify(const Epetra_CrsMatrix *L, const Epetra_LevelSolver<nodeT> &LS)
   //////////////////////////////////////////////
   // Test 1: Sanity Check
   //////////////////////////////////////////////
-  cout << "Verification test 1" << std::endl;
-  x_e.SetSeed(static_cast<unsigned int>(100000*timer.WallTime()));
-  x_e.Random();
-  Lx_e.SetSeed(static_cast<unsigned int>(100000*timer.WallTime()));
-  Lx_e.Random();
+//   cout << "Verification test 1" << std::endl;
+//   x_e.SetSeed(static_cast<unsigned int>(100000*timer.WallTime()));
+//   x_e.Random();
+//   Lx_e.SetSeed(static_cast<unsigned int>(100000*timer.WallTime()));
+//   Lx_e.Random();
 
-  cout << "Applying L to x using CrsMatrix\n";
-  L->Apply(x_e,Lx_e); // Lx = L * x
+//   cout << "Applying L to x using CrsMatrix\n";
+//   L->Apply(x_e,Lx_e); // Lx = L * x
 
-  cout << "Solving L*x using CrsMatrix\n";
-  L->Solve(false,false,false,Lx_e,x2_e);      // Lx = L^-1 Lx = x
+//   cout << "Solving L*x using CrsMatrix\n";
+//   L->Solve(false,false,false,Lx_e,x2_e);      // Lx = L^-1 Lx = x
           
-  x2_e.Update(-1.0,x_e,1.0);
-  x2_e.Norm2(&errnrm);
-  x_e.Norm2(&xnrm);
-  cout << "||x - inv(L)*(L*x)||/||x||: " << setprecision(2) << scientific << errnrm/xnrm << "\n\n";
+//   x2_e.Update(-1.0,x_e,1.0);
+//   x2_e.Norm2(&errnrm);
+//   x_e.Norm2(&xnrm);
+//   cout << "||x - inv(L)*(L*x)||/||x||: " << setprecision(2) << scientific << errnrm/xnrm << "\n\n";
   //////////////////////////////////////////////
 
   //////////////////////////////////////////////
@@ -371,13 +374,18 @@ void timeLevelSolver(const Epetra_CrsMatrix *L, Epetra_LevelSolver<nodeT> &LS, i
   Epetra_SerialComm Comm;
   Epetra_Time timer(Comm);
 
-  Epetra_Vector x(L->RowMap(),false);
-  Epetra_Vector Lx(x);
+  typedef Tpetra::Vector<double,int,int,nodeT> TV;
+
+  TV x_t(LS.getTpetraMap(),false);
+  TV b_t(x_t);
+
+  x_t.randomize();
+  b_t.randomize();
 
   // for timings, neglect diagonal of LS because the scaling routines are not parallelized
   // LS.setUnitDiag(true);
   // MMW: Need to parallelize scaling routines
-  LS.setIgnorePerm(true);
+  //LS.setIgnorePerm(true);
 
   cout << "*** Timings over " << numTrials << " trials" << endl;
 
@@ -390,7 +398,7 @@ void timeLevelSolver(const Epetra_CrsMatrix *L, Epetra_LevelSolver<nodeT> &LS, i
   timer.ResetStartTime();
   for (int t=0; t<numTrials; ++t) 
   {
-      LS.Apply(Lx,Lx);
+      LS.Apply(b_t,x_t);
   }
   time = timer.ElapsedTime();
   cout << setw(20) << "LevelSolver  solve, " << setw(2) << 0 << " threads, "

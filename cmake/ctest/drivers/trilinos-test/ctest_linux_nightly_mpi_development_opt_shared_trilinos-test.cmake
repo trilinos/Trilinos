@@ -13,6 +13,7 @@ SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 
 #disabling Mesquite because of a build error when shared libs is turned on.
 SET(EXTRA_EXCLUDE_PACKAGES Mesquite)
+SET( Trilinos_EXCLUDE_PACKAGES ${EXTRA_EXCLUDE_PACKAGES} TriKota)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DDART_TESTING_TIMEOUT:STRING=120"
@@ -23,6 +24,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DTPL_ENABLE_Pthread:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
   "-DBoost_INCLUDE_DIRS:FILEPATH=/home/trilinos/tpl/gcc4.1.2/boost_1_38_0"
+  "-DSWIG_EXECUTABLE:FILEPATH=/home/trilinos/tpl/gcc4.1.2/swig-1.3.40/bin/swig"
   )
 
 #
