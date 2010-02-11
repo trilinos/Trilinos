@@ -2,6 +2,7 @@
 #include "Teuchos_FancyOStream.hpp"
 #include <iostream>
 #include <string>
+#include "Thyra_DetachedVectorView.hpp"
 
 #ifdef Piro_ENABLE_TriKota
 #include "TriKota_Driver.hpp"
