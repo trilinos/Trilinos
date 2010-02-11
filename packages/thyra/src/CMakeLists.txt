@@ -21,11 +21,11 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/interfaces/operator_vector/ana/fundamental)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/interfaces/operator_vector/fundamental)
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(HEADERS ${DIR}/*.cpp)
 
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/interfaces/operator_vector/ana/extended)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/interfaces/operator_vector/extended)
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
@@ -40,11 +40,11 @@ APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/support/operator_vector/adapter_support/serial)
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/interfaces/operator_solve/ana/fundamental)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/interfaces/operator_solve/fundamental)
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/interfaces/operator_solve/ana/extended)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/interfaces/operator_solve/extended)
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
@@ -52,7 +52,7 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/support/operator_solve/client_s
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/interfaces/nonlinear/model_evaluator/ana/fundamental)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/interfaces/nonlinear/model_evaluator/fundamental)
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
@@ -60,7 +60,7 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/support/nonlinear/model_evaluat
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/interfaces/nonlinear/solvers/ana/fundamental)
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/interfaces/nonlinear/solvers/fundamental)
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
