@@ -2,17 +2,17 @@
 # Note: all relative paths are relative to package/doc!
 #
 @INCLUDE = Doxyfile.options
-@INCLUDE = thyra/src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/TagFiles # Requires @INCLUDE_PATH=$(TRILINOS_HOME)/packages
+@INCLUDE = thyra/src/interfaces/nonlinear/model_evaluator/fundamental/doc/TagFiles # Requires @INCLUDE_PATH=$(TRILINOS_HOME)/packages
 #
 # Package options
 #
 PROJECT_NAME           = "Thyra ANA Nonlinear Solver Interfaces"
-OUTPUT_DIRECTORY       = ../src/interfaces/nonlinear/solvers/ana/fundamental/doc
+OUTPUT_DIRECTORY       = ../src/interfaces/nonlinear/solvers/fundamental/doc
 #
 # What and how documentation is extracted
 #
-INPUT                  = ../src/interfaces/nonlinear/solvers/ana/fundamental/doc/index.doc \
-                         ../src/interfaces/nonlinear/solvers/ana/fundamental \
+INPUT                  = ../src/interfaces/nonlinear/solvers/fundamental/doc/index.doc \
+                         ../src/interfaces/nonlinear/solvers/fundamental \
                          ./dirs.doc
 FILE_PATTERNS          = *.h *c *.hpp *.cpp
 RECURSIVE              = YES

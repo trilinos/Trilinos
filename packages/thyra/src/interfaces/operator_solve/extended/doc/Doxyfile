@@ -2,18 +2,18 @@
 # Note: all relative paths are relative to package/doc!
 #
 @INCLUDE = Doxyfile.options
-@INCLUDE = thyra/src/interfaces/operator_solve/ana/fundamental/doc/TagFiles # Requires @INCLUDE_PATH=$(TRILINOS_HOME)/packages
-@INCLUDE = thyra/src/interfaces/operator_vector/ana/extended/doc/TagFiles # Requires @INCLUDE_PATH=$(TRILINOS_HOME)/packages
+@INCLUDE = thyra/src/interfaces/operator_solve/fundamental/doc/TagFiles # Requires @INCLUDE_PATH=$(TRILINOS_HOME)/packages
+@INCLUDE = thyra/src/interfaces/operator_vector/extended/doc/TagFiles # Requires @INCLUDE_PATH=$(TRILINOS_HOME)/packages
 #
 # Package options
 #
 PROJECT_NAME           = "Extended Thyra ANA Operator/Solve Interfaces"
-OUTPUT_DIRECTORY       = ../src/interfaces/operator_solve/ana/extended/doc
+OUTPUT_DIRECTORY       = ../src/interfaces/operator_solve/extended/doc
 #
 # What and how documentation is extracted
 #
-INPUT                  = ../src/interfaces/operator_solve/ana/extended/doc/index.doc \
-                         ../src/interfaces/operator_solve/ana/extended \
+INPUT                  = ../src/interfaces/operator_solve/extended/doc/index.doc \
+                         ../src/interfaces/operator_solve/extended \
                          ./dirs.doc
 FILE_PATTERNS          = *.h *c *.hpp *.cpp
 RECURSIVE              = YES

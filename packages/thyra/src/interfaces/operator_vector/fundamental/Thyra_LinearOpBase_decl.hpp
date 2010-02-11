@@ -55,25 +55,20 @@ namespace Thyra {
  *
  * \section Thyra_LO_intro_sec Introduction
  *
- * A linear operator can optionally perform the forward operations
+ * A linear operator can optionally perform following operations
  *
  * <ul>
  * <li><b>Forward non-conjugate apply</b> \verbatim Y = alpha*M*X + beta*Y \endverbatim
  * <li><b>Forward conjugate apply</b> \verbatim Y = alpha*conjugate(M)*X + beta*Y \endverbatim
- * </ul>
- *
- * through the <tt>apply()</tt> function and the operations
- *
- * <ul>
  * <li><b>Transpose non-conjugate apply</b> \verbatim Y = alpha*transpose(M)*X + beta*Y \endverbatim
  * <li><b>Transpose conjugate (i.e. adjoint) apply</b> \verbatim Y = alpha*adjoint(M)*X + beta*Y \endverbatim
  * </ul>
  *
- * through the <tt>applyTranspose()</tt> function where <tt>Y</tt> and
- * <tt>X</tt> are <tt>MultiVectorBase</tt> objects.  The reason for the exact
- * form of the above operations is that there are direct BLAS and equivalent
- * versions of these operations and performing a sum-into multiplication is
- * more efficient in general.
+ * through the <tt>apply()</tt> function where <tt>Y</tt> and <tt>X</tt> are
+ * <tt>MultiVectorBase</tt> objects.  The reason for the exact form of the
+ * above operations is that there are direct BLAS and equivalent versions of
+ * these operations and performing a sum-into multiplication is more efficient
+ * in general.
  *
  * \section Thyra_LO_spaces_sec Range and domain spaces
  *
@@ -81,21 +76,6 @@ namespace Thyra {
  * <tt>x</tt> and <tt>y</tt> that lie in the domain and the range spaces of
  * the non-transposed linear operator <tt>y = M*x</tt>.  These spaces are
  * returned by <tt>domain()</tt> and <tt>range()</tt>.
- *
- * First, note that there is a forward declaration for this class of the form
- 
- \code
-  template<class Scalar> class LinearOpBase;
- \endcode
-
- * that allows the class to be refereed to using just one Scalar type as
- * <tt>LinearOpBase<Scalar></tt>.  This is useful for both clients and
- * subclass implementations.
- *
- * When a client ANA can only support a single-scalar type of linear operator,
- * it may be more convenient to use some of the wrapper functions such as
- * <tt>Thyra::apply()</tt> and <tt>Thyra::opSupported()</tt> that are
- * described \ref Thyra_Op_Vec_LinearOpBase_support_grp "here".
  *
  * \section Thyra_LO_adjoint_relation_sec Scalar products and the adjoint relation
  *
@@ -120,18 +100,16 @@ namespace Thyra {
  * \section Thyra_LO_aliasing_sec Aliasing policy
  *
  * It is strictly forbidden to alias the input/output object <tt>Y</tt> with
- * the input object <tt>X</tt> in <tt>apply()</tt> or
- * <tt>applyTranspose()</tt>.  Allowing aliasing would greatly complicate the
- * development of concrete subclasses.
+ * the input object <tt>X</tt> in <tt>apply()</tt>.  Allowing aliasing would
+ * greatly complicate the development of concrete subclasses.
  *
  * \section Thyra_LO_optional_adjoints_sec Optional support for specific types of operator applications
  *
  * This interface does not require that a linear operator implementation
  * support all of the different types of operator applications defined in the
- * \ref Thyra_LO_intro_sec "introduction" above.  If a
- * <tt>%LinearOpBase</tt> object can not support a particular type of operator
- * application, then this is determined by the functions
- * <tt>applySupports()</tt> and <tt>applyTransposeSupports()</tt>.
+ * \ref Thyra_LO_intro_sec "introduction" above.  If a <tt>%LinearOpBase</tt>
+ * object can not support a particular type of operator application, then this
+ * is determined by the functions <tt>opSupported()</tt>.
  *
  * \section Thyra_LO_testing_sec Testing LinearOpBase objects
  *
@@ -158,14 +136,14 @@ namespace Thyra {
  *
  * <li><b>Partially Initialized</b>:
  *     State: <tt>(!is_null(this->range()) && !is_null(this->domain()))
- *            && (!this->applySupports(conj) && !this->applyTransposeSupports(conj))</tt>
- *            for all values of <tt>conj</tt>,
+ *            && (!this->opSupported(M_trans))</tt>
+ *            for all values of <tt>M_trans</tt>,
  *     Nonmember function: <tt>isPartiallyInitialized()</tt>
  *
  * <li><b>Fully Initialized</b>:
  *     State: <tt>(!is_null(this->range()) && !is_null(this->domain()))
- *            && (this->applySupports(conj) || this->applyTransposeSupports(conj))</tt>
- *            for at least one valid value for <tt>conj</tt>,
+ *            && (this->opSupported(M_trans)</tt>
+ *            for at least one valid value for <tt>M_trans</tt>,
  *     Nonmember function: <tt>isFullyInitialized()</tt>
  *
  * </ul>
@@ -175,23 +153,18 @@ namespace Thyra {
  *
  * \section Thyra_LO_dev_notes_sec Notes for subclass developers
  *
- * There are only three functions that a concrete subclass is required to
- * override: <tt>domain()</tt>, <tt>range()</tt> and <tt>apply()</tt>.  Note
- * that the functions <tt>domain()</tt> and <tt>range()</tt> should simply
- * return <tt>VectorSpaceBase</tt> objects for subclasses that are already
- * defined for the vectors that the linear operator interacts with through the
- * function <tt>apply()</tt>.  Therefore, given that appropriate
- * <tt>VectorSpaceBase</tt> and <tt>MultiVectorBase</tt> (and/or
+ * There are only foure functions that a concrete subclass is required to
+ * override: <tt>domain()</tt>, <tt>range()</tt> <tt>opSupportedImpl()</tt>,
+ * and <tt>applyImpl()</tt>.  Note that the functions <tt>domain()</tt> and
+ * <tt>range()</tt> should simply return <tt>VectorSpaceBase</tt> objects for
+ * subclasses that are already defined for the vectors that the linear
+ * operator interacts with through the function <tt>apply()</tt>.  The
+ * function <tt>opSupportedImpl()</tt> just returns what operations are
+ * supported and is therefore trivial to implement.  Therefore, given that
+ * appropriate <tt>VectorSpaceBase</tt> and <tt>MultiVectorBase</tt> (and/or
  * <tt>VectorBase</tt>) subclasses exist, the only real work involved in
  * implementing a <tt>LinearOpBase</tt> subclass is in defining a single
- * function <tt>apply()</tt>.
- *
- * This interface provides default implementations for the functions
- * <tt>applyTranspose()</tt> and <tt>applyTransposeSupports()</tt> where it is
- * assumed that the operator does not support transpose (or adjoint) operator
- * applications.  If transpose (and/or adjoint) operator applications can be
- * supported, then the functions <tt>applyTranspose()</tt> and
- * <tt>applyTransposeSupports()</tt> should be overridden as well.
+ * function <tt>applyImpl()</tt>.
  *
  * If possible, the subclass should also override the <tt>clone()</tt>
  * function which allows clients to create copies of a <tt>LinearOpBase</tt>
@@ -210,15 +183,14 @@ public:
 
   /** \brief Return a smart pointer for the range space for <tt>this</tt> operator.
    *
-   * Note that a return value of <tt>return.get()==NULL</tt> is a flag
-   * that <tt>*this</tt> is not fully initialized.
+   * Note that a return value of <tt>is_null(returnVal)</tt> is a flag that
+   * <tt>*this</tt> is not fully initialized.
    *
-   * If <tt>return.get()!=NULL</tt>, it is required that the object
-   * referenced by <tt>*return.get()</tt> must have lifetime that
-   * extends past the lifetime of the returned smart pointer object.
-   * However, the object referenced by <tt>*return.get()</tt> may
-   * change if <tt>*this</tt> modified so this reference should not
-   * be maintained for too long.
+   * If <tt>nonnull(returnVal)</tt>, it is required that the object referenced
+   * by <tt>*returnVal</tt> must have lifetime that extends past the
+   * lifetime of the returned smart pointer object.  However, the object
+   * referenced by <tt>*returnVal</tt> may change if <tt>*this</tt>
+   * modified so this reference should not be maintained for too long.
    *
    * <b>New Behavior!</b> It is required that the <tt>%VectorSpaceBase</tt>
    * object embedded in <tt>return</tt> must be valid past the lifetime of
@@ -228,15 +200,14 @@ public:
 
   /** \brief Return a smart pointer for the domain space for <tt>this</tt> operator.
    *
-   * Note that a return value of <tt>return.get()==NULL</tt> is a flag
+   * Note that a return value of <tt>is_null(returnVal)</tt> is a flag
    * that <tt>*this</tt> is not fully initialized.
    *
-   * If <tt>return.get()!=NULL</tt>, it is required that the object
-   * referenced by <tt>*return.get()</tt> must have lifetime that
-   * extends past the lifetime of the returned smart pointer object.
-   * However, the object referenced by <tt>*return.get()</tt> may
-   * change if <tt>*this</tt> modified so this reference should not
-   * be maintained for too long.
+   * If <tt>nonnull(returnVal)</tt>, it is required that the object referenced
+   * by <tt>*returnVal</tt> must have lifetime that extends past the lifetime
+   * of the returned smart pointer object.  However, the object referenced by
+   * <tt>*returnVal</tt> may change if <tt>*this</tt> modified so this
+   * reference should not be maintained for too long.
    *
    * <b>New Behavior!</b> It is required that the <tt>%VectorSpaceBase</tt>
    * object embedded in <tt>return</tt> must be valid past the lifetime of
@@ -324,7 +295,7 @@ public:
    * use reference counting and lazy evaluation internally and will not
    * actually copy any large amount of data unless it has to.
    *
-   * The default implementation returns <tt>return.get()==NULL</tt> which is
+   * The default implementation returns <tt>is_null(returnVal)</tt> which is
    * allowable.  A linear operator object is not required to return a non-NULL
    * value but many good matrix-based linear operator implementations will.
    */

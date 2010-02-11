@@ -3,7 +3,7 @@
 #
 @INCLUDE = Doxyfile.options
 @INCLUDE = thyra/src/support/operator_vector/doc/TagFiles
-@INCLUDE = thyra/src/interfaces/nonlinear/solvers/ana/fundamental/doc/TagFiles
+@INCLUDE = thyra/src/interfaces/nonlinear/solvers/fundamental/doc/TagFiles
 #
 # Package options
 #

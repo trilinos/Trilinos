@@ -85,7 +85,7 @@ structure of thyra</a>.
   <ul>
 
   <li> <b>Fundamental ANA Operator/Vector Interfaces 
-    [<a href="../../src/interfaces/operator_vector/ana/fundamental/doc/html/index.html">
+    [<a href="../../src/interfaces/operator_vector/fundamental/doc/html/index.html">
     doxygen collection</a>]</b> <a name="interfaces_operator_vector_ana_fundamental"></a>
 
     \image html ThyraOperatorVectorSimple.gif
@@ -97,7 +97,7 @@ structure of thyra</a>.
     and <tt>Thyra::LinearOpBase</tt>.
 
   <li> <b>Extended ANA Operator/Vector Interfaces
-    [<a href="../../src/interfaces/operator_vector/ana/extended/doc/html/index.html">
+    [<a href="../../src/interfaces/operator_vector/extended/doc/html/index.html">
     doxygen collection</a>]</b><a name="interfaces_operator_vector_ana_extended"></a>
 
     These are some interfaces based on the
@@ -116,7 +116,7 @@ structure of thyra</a>.
   <ul>
 
   <li> <b>Fundamental ANA Operator Solve Interfaces
-    [<a href="../../src/interfaces/operator_solve/ana/fundamental/doc/html/index.html">
+    [<a href="../../src/interfaces/operator_solve/fundamental/doc/html/index.html">
     doxygen collection</a>]</b><a name="interfaces_operator_solve_ana_fundamental"></a>
 
     \image html PreconditionerFactory75.jpg
@@ -129,7 +129,7 @@ structure of thyra</a>.
     <tt>Thyra::LinearOpWithSolveFactoryBase</tt> and <tt>Thyra::PreconditionerFactoryBase</tt>).
 
   <li> <b>Extended ANA Operator Solve Interfaces
-    [<a href="../../src/interfaces/operator_solve/ana/extended/doc/html/index.html">
+    [<a href="../../src/interfaces/operator_solve/extended/doc/html/index.html">
     doxygen collection</a>]</b><a name="interfaces_operator_solve_ana_extended"></a>
 
     Included here is a variety of extended interfaces that build on the fundamental operator/solve
@@ -143,7 +143,7 @@ structure of thyra</a>.
   <ul>
 
   <li> <b>Fundamental ANA Model Evaluator Interfaces
-    [<a href="../../src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/html/index.html">
+    [<a href="../../src/interfaces/nonlinear/model_evaluator/fundamental/doc/html/index.html">
     doxygen collection</a>]</b><a name="interfaces_nonlinear_model_evaluator_ana_fundamental"></a>
 
     \image html ModelEvaluator75.gif
@@ -151,7 +151,7 @@ structure of thyra</a>.
     Contained here are interfaces for nonlinear models such as <tt>Thyra::ModelEvaluator</tt>.
 
   <li> <b>Fundamental ANA Nonlinear Solver Interfaces
-    [<a href="../../src/interfaces/nonlinear/solvers/ana/fundamental/doc/html/index.html">
+    [<a href="../../src/interfaces/nonlinear/solvers/fundamental/doc/html/index.html">
     doxygen collection</a>]</b><a name="interfaces_nonlinear_solvers_ana_fundamental"></a>
 
     Contained here are interfaces for nonlinear equation solvers.

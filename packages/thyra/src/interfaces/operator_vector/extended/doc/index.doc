@@ -55,7 +55,7 @@ define interoperability between objects in many contexts.
      collection of code.
 
     <ul>
-    <li><tt>Thyra::MPIVectorSpaceBase</tt> defines an interface for getting information about the partitioning
+    <li><tt>Thyra::MpiVectorSpaceBase</tt> defines an interface for getting information about the partitioning
        of elements to processors in an SPMD program.
     </ul>
 

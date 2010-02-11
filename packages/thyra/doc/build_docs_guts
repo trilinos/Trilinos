@@ -36,40 +36,40 @@ pushd ../../../doc/RefCountPtr/beginners; make pdf ; popd
 cp ../../../doc/RefCountPtrBeginnersGuide/.pdf ../src/support/operator_vector/doc/html/.
 
 echo
-echo "Generating doxygen documentation for thyra/src/interfaces/operator_vector/ana/fundamental ..."
+echo "Generating doxygen documentation for thyra/src/interfaces/operator_vector/fundamental ..."
 echo
 
-doxygen ../src/interfaces/operator_vector/ana/fundamental/doc/Doxyfile
+doxygen ../src/interfaces/operator_vector/fundamental/doc/Doxyfile
 
 echo
-echo "Generating doxygen documentation for thyra/src/interfaces/operator_vector/ana/extended ..."
+echo "Generating doxygen documentation for thyra/src/interfaces/operator_vector/extended ..."
 echo
 
-doxygen ../src/interfaces/operator_vector/ana/extended/doc/Doxyfile
+doxygen ../src/interfaces/operator_vector/extended/doc/Doxyfile
 
 echo
-echo "Generating doxygen documentation for thyra/src/interfaces/operator_solve/ana/fundamental ..."
+echo "Generating doxygen documentation for thyra/src/interfaces/operator_solve/fundamental ..."
 echo
 
-doxygen ../src/interfaces/operator_solve/ana/fundamental/doc/Doxyfile
+doxygen ../src/interfaces/operator_solve/fundamental/doc/Doxyfile
 
 echo
-echo "Generating doxygen documentation for thyra/src/interfaces/operator_solve/ana/extended ..."
+echo "Generating doxygen documentation for thyra/src/interfaces/operator_solve/extended ..."
 echo
 
-doxygen ../src/interfaces/operator_solve/ana/extended/doc/Doxyfile
+doxygen ../src/interfaces/operator_solve/extended/doc/Doxyfile
 
 echo
-echo "Generating doxygen documentation for thyra/src/interfaces/nonlinear/model_evaluator/ana/fundamental ..."
+echo "Generating doxygen documentation for thyra/src/interfaces/nonlinear/model_evaluator/fundamental ..."
 echo
 
-doxygen ../src/interfaces/nonlinear/model_evaluator/ana/fundamental/doc/Doxyfile
+doxygen ../src/interfaces/nonlinear/model_evaluator/fundamental/doc/Doxyfile
 
 echo
-echo "Generating doxygen documentation for thyra/src/interfaces/nonlinear/solvers/ana/fundamental ..."
+echo "Generating doxygen documentation for thyra/src/interfaces/nonlinear/solvers/fundamental ..."
 echo
 
-doxygen ../src/interfaces/nonlinear/solvers/ana/fundamental/doc/Doxyfile
+doxygen ../src/interfaces/nonlinear/solvers/fundamental/doc/Doxyfile
 
 echo
 echo "Generating doxygen documentation for thyra/src/support/operator_vector ..."

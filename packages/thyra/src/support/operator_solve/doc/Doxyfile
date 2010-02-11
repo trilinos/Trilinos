@@ -2,7 +2,7 @@
 # Note: all relative paths are relative to package/doc!
 #
 @INCLUDE = Doxyfile.options
-@INCLUDE = thyra/src/interfaces/operator_solve/ana/fundamental/doc/TagFiles
+@INCLUDE = thyra/src/interfaces/operator_solve/fundamental/doc/TagFiles
 #
 # Package options
 #
