@@ -108,12 +108,8 @@ public:
   */
   void setParameters(Teuchos::ParameterList& params);
 
-  //! Initialize L and U with values from user matrix A.
-  /*! Copies values from the user's matrix into the nonzero pattern of L and U.
-    \param In 
-           A - User matrix to be factored.
-    \warning The graph of A must be identical to the graph passed in to IlukGraph constructor.
-             
+  //! Initialize ILUT preconditioner object.
+  /*! Clear away any previously-allocated L and U objects.
    */
   void initialize();
 
@@ -122,18 +118,17 @@ public:
     return(IsInitialized_);
   }
 
-  //! Compute IC factor U using the specified graph, diagonal perturbation thresholds and relaxation parameters.
-  /*! This function computes the RILU(k) factors L and U using the current:
+  //! Compute factors L and U using the specified diagonal perturbation thresholds and relaxation parameters.
+  /*! This function computes the ILUT factors L and U using the current:
     <ol>
-    <li> IlukGraph specifying the structure of L and U.
-    <li> Value for the RILU(k) relaxation parameter.
+    <li> Value for the drop tolerance
+    <li> Value for the level of fill
     <li> Value for the \e a \e priori diagonal threshold values.
     </ol>
-    InitValues() must be called before the factorization can proceed.
    */
   void compute();
 
-  //! If factor is completed, this query returns true, otherwise it returns false.
+  //! If compute() is completed, this query returns true, otherwise it returns false.
   inline bool isComputed() const {
     return(IsComputed_);
   }
