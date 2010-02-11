@@ -5,7 +5,7 @@ ASSERT_DEFINED(Phalanx_ENABLE_Belos)
 ASSERT_DEFINED(Phalanx_ENABLE_Epetra)
 ASSERT_DEFINED(Phalanx_ENABLE_Ifpack)
 
-IF (Phalanx_ENABLE_Epetra AND Phalanx_ENABLE_Belos AND Phalanx_ENABLE_Ifpack)
+IF (Phalanx_ENABLE_Epetra AND Phalanx_ENABLE_Belos AND Phalanx_ENABLE_Ifpack AND Phalanx_ENABLE_ML)
 
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
   
@@ -90,4 +90,4 @@ IF (Phalanx_ENABLE_Epetra AND Phalanx_ENABLE_Belos AND Phalanx_ENABLE_Ifpack)
     PASS_REGULAR_EXPRESSION "Run has completed successfully!"
     )
   
-ENDIF(Phalanx_ENABLE_Epetra AND Phalanx_ENABLE_Belos AND Phalanx_ENABLE_Ifpack)
+ENDIF(Phalanx_ENABLE_Epetra AND Phalanx_ENABLE_Belos AND Phalanx_ENABLE_Ifpack AND Phalanx_ENABLE_ML)

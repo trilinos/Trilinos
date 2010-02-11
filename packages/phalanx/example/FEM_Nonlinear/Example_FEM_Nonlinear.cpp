@@ -68,6 +68,7 @@
 #include <mpi.h>
 #endif
 #include "Ifpack.h"
+#include "ml_epetra_preconditioner.h"
 
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 // ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -168,6 +169,17 @@ int main(int argc, char *argv[])
     
     RCP<Time> total_time = TimeMonitor::getNewTimer("Total Run Time");
     TimeMonitor tm(*total_time);
+
+    RCP<Time> residual_eval_time = 
+      TimeMonitor::getNewTimer("Residual Evaluation Time");
+    RCP<Time> jacobian_eval_time = 
+      TimeMonitor::getNewTimer("Jacobian Evaluation Time");
+    RCP<Time> linear_solve_time = 
+      TimeMonitor::getNewTimer("Linear Solve Time");
+    RCP<Time> nonlinear_solve_time = 
+      TimeMonitor::getNewTimer("Nonlinear Solve Time");
+    RCP<Time> preconditioner_solve_time = 
+      TimeMonitor::getNewTimer("Preconditioner Time");
 
     bool print_debug_info = false;
 
@@ -433,22 +445,79 @@ int main(int argc, char *argv[])
       cout << fm << endl;
 
     // *********************************************************
-    // * Build Preconditioner (Ifpack)
+    // * Evaluate Jacobian and Residual (required for ML to 
+    // * to be constructed properly
+    // *********************************************************    
+    {
+      TimeMonitor t(*jacobian_eval_time);
+
+      overlapped_x->Import(*owned_x, *importer, Insert);
+      
+      owned_f->PutScalar(0.0);
+      overlapped_f->PutScalar(0.0);
+      owned_jac->PutScalar(0.0);
+      overlapped_jac->PutScalar(0.0);
+      
+      for (std::size_t i = 0; i < worksets.size(); ++i)
+	fm.evaluateFields<MyTraits::Jacobian>(worksets[i]);
+      
+      owned_f->Export(*overlapped_f, *exporter, Add);
+      owned_jac->Export(*overlapped_jac, *exporter, Add);
+      
+      applyBoundaryConditions(1.0, *owned_x, *owned_jac, *owned_f, mb);
+    }
+
     // *********************************************************
-    
-    Ifpack Factory;
-    std::string PrecType = "ILU";
-    int OverlapLevel = 0;
-    RCP<Ifpack_Preconditioner> Prec = 
-      Teuchos::rcp( Factory.Create(PrecType, owned_jac.get(), OverlapLevel) );
-    ParameterList ifpackList;
-    ifpackList.set("fact: drop tolerance", 1e-9);
-    ifpackList.set("fact: level-of-fill", 1);
-    ifpackList.set("schwarz: combine mode", "Add");
-    IFPACK_CHK_ERR(Prec->SetParameters(ifpackList));
-    IFPACK_CHK_ERR(Prec->Initialize());
-    RCP<Belos::EpetraPrecOp> belosPrec = 
-      rcp( new Belos::EpetraPrecOp( Prec ) );
+    // * Build Preconditioner (Ifpack or ML)
+    // *********************************************************    
+    bool use_ml = true;
+
+    RCP<Belos::EpetraPrecOp> belosPrec;
+    RCP<Ifpack_Preconditioner> ifpack_prec;
+    RCP<ML_Epetra::MultiLevelPreconditioner> ml_prec;
+
+    if (!use_ml) {
+      Ifpack Factory;
+      std::string PrecType = "ILU";
+      int OverlapLevel = 0;
+      ifpack_prec = 
+	Teuchos::rcp( Factory.Create(PrecType,owned_jac.get(),OverlapLevel) );
+      ParameterList ifpackList;
+      ifpackList.set("fact: drop tolerance", 1e-9);
+      ifpackList.set("fact: level-of-fill", 1);
+      ifpackList.set("schwarz: combine mode", "Add");
+      IFPACK_CHK_ERR(ifpack_prec->SetParameters(ifpackList));
+      IFPACK_CHK_ERR(ifpack_prec->Initialize());
+      belosPrec = rcp( new Belos::EpetraPrecOp( ifpack_prec ) );
+    }
+    else {
+      ParameterList ml_params;
+      ML_Epetra::SetDefaults("SA",ml_params);
+      //ml_params.set("Base Method Defaults", "SA");
+      ml_params.set("ML label", "Phalanx_Test");
+      ml_params.set("ML output", 10);
+      ml_params.set("print unused", 1);
+      ml_params.set("max levels", 4);
+      ml_params.set("PDE equations",2);
+      ml_params.set("prec type","MGV");
+      ml_params.set("increasing or decreasing","increasing");
+      // ml_params.set("aggregation: nodes per aggregate",50);
+      ml_params.set("aggregation: type","Uncoupled");
+      ml_params.set("aggregation: damping factor", 0.0);
+      ml_params.set("coarse: type","Amesos-KLU");
+      //ml_params.set("coarse: type","IFPACK");
+      ml_params.set("coarse: max size", 1000);
+      //ml_params.set("smoother: type","IFPACK");
+      ml_params.set("smoother: type","block Gauss-Seidel");
+      ml_params.set("smoother: ifpack type","ILU");
+      ml_params.set("smoother: ifpack overlap",1);
+      ml_params.sublist("smoother: ifpack list").set("fact: level-of-fill",1);
+      ml_params.sublist("smoother: ifpack list").set("schwarz: reordering type","rcm");
+      ml_prec = rcp( new ML_Epetra::MultiLevelPreconditioner(*owned_jac, 
+							     ml_params, 
+							     true) );
+      belosPrec = rcp( new Belos::EpetraPrecOp( ml_prec ) );
+    }
 
     // *********************************************************
     // * Build linear solver (Belos)
@@ -488,7 +557,7 @@ int main(int argc, char *argv[])
     
     RCP<Belos::LinearProblem<double,MV,OP> > problem =
       rcp(new Belos::LinearProblem<double,MV,OP>(owned_jac, DX, F) );
-    
+
     problem->setRightPrec( belosPrec );
 
     RCP< Belos::SolverManager<double,MV,OP> > gmres_solver = 
@@ -498,44 +567,8 @@ int main(int argc, char *argv[])
     // * Solve the system
     // *********************************************************
 
-    RCP<Time> residual_eval_time = 
-      TimeMonitor::getNewTimer("Residual Evaluation Time");
-    RCP<Time> jacobian_eval_time = 
-      TimeMonitor::getNewTimer("Jacobian Evaluation Time");
-    RCP<Time> linear_solve_time = 
-      TimeMonitor::getNewTimer("Linear Solve Time");
-    RCP<Time> nonlinear_solve_time = 
-      TimeMonitor::getNewTimer("Nonlinear Solve Time");
-
     // Set initial guess
     owned_x->PutScalar(1.0);
-
-
-
-
-    
-//     for (std::vector<Element_Linear2D>::iterator cell = cells.begin(); 
-// 	 cell != cells.end(); ++cell) {
-
-//       const PHX::Array<double,Node,Dim>& coords = 
-// 	cell->nodeCoordinates();
-      
-//       for (std::size_t node = 0; node < cell->numNodes(); ++node) {
-// 	if (cell->ownsNode(node)) {
-// 	  double x = coords(node,0);
-// 	  //double y = coords(node,1);
-// 	  double value = 3.33 * x;
-// 	  int lid = owned_x->Map().LID(cell->globalNodeId(node) * num_eq);
-// 	  (*owned_x)[lid] = value;
-// 	  (*owned_x)[lid + 1] = value;
-// 	}
-//       }
-//     }
-
-
-
-
-
 
     // Evaluate Residual
     {
@@ -605,7 +638,14 @@ int main(int argc, char *argv[])
 	
 	owned_delta_x->PutScalar(0.0);
 
-	IFPACK_CHK_ERR(Prec->Compute());
+	{
+	  TimeMonitor tp(*preconditioner_solve_time);
+	  
+	  if (use_ml)
+	    ml_prec->ReComputePreconditioner();
+	  else
+	    IFPACK_CHK_ERR(ifpack_prec->Compute());
+	}
 
 	problem->setProblem();
 
