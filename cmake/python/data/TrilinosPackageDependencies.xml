@@ -783,4 +783,18 @@
       <Regression address="teko-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
+  <Package name="Lyno" dir="lyno">
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,EpetraExt,Anasazi,Amesos,Belos"/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="AztecOO,ML,Ifpack,Optika"/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Checkin address="lyno-checkins@software.sandia.gov"/>
+      <Regression address="lyno-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </Package>
 </PackageDependencies>

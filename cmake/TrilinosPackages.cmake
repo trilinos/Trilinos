@@ -106,6 +106,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Mesquite              mesquite                       PS
   Stalix                stalix                         EX
   Teko                  teko                           EX
+  Lyno                  lyno                           EX
   )
 
 
