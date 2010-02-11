@@ -2,8 +2,8 @@
 
 CTEST_EXE=/home/trilinos/cmake/bin/ctest
 EG_EXE=/home/trilinos/git/bin/eg
-BASEDIR=/home/bmpersc/nightly/Trilinos.base/development
-BASEDATADIR=/home/bmpersc/nightly
+BASEDIR=/home/jmwille/TrilinosTestHarness/TrilinosDevelopment
+BASEDATADIR=/home/jmwille/TrilinosTestHarness
 DRIVER_SCRIPT_DIR=$BASEDIR/Trilinos/cmake/ctest/drivers/trilinos-test
 TRILINOS_REPOSITORY_LOCATION="software.sandia.gov:/space/git/Trilinos"
 
@@ -11,7 +11,7 @@ export CMAKE_LIBRARY_PATH="/home/trilinos/tpl/gcc4.1.2/exodusII_4.84/lib:/home/t
 export CMAKE_INCLUDE_PATH="/home/trilinos/tpl/gcc4.1.2/exodusII_4.84/include:/home/trilinos/tpl/gcc4.1.2/netcdf_4.0/include"
 export TRILINOSDATADIRECTORY=$BASEDATADIR/TrilinosData
 export PYTHONPATH=/home/trilinos/tpl/gcc4.1.2/numpy1.4.0/lib64/python2.4/site-packages
-export LD_LIBRARY_PATH=$BASEDATADIR/MPI_OPT_DEV_SHARED/BUILD/packages/PyTrilinos/src
+export LD_LIBRARY_PATH=$BASEDIR/MPI_OPT_DEV_SHARED/BUILD/packages/PyTrilinos/src
 
 #get the date for use in log files
 DATE=`date "+%m-%d-%Y"`
