@@ -358,13 +358,13 @@
   <SubProject name="STK">
     <Dependency name="Teuchos" type="LR"/>
     <Dependency name="ThreadPool" type="LR"/>
-    <Dependency name="Epetra" type="ILO"/>
+    <Dependency name="Epetra" type="ILR"/>
     <Dependency name="Zoltan" type="ILO"/>
     <Dependency name="Shards" type="LR"/>
-    <Dependency name="Triutils" type="ILO"/>
+    <Dependency name="Triutils" type="ILR"/>
     <Dependency name="EpetraExt" type="ILO"/>
     <Dependency name="Isorropia" type="ILO"/>
-    <Dependency name="AztecOO" type="ILO"/>
+    <Dependency name="AztecOO" type="LR"/>
     <Dependency name="Galeri" type="ILO"/>
     <Dependency name="Amesos" type="ILO"/>
     <Dependency name="Ifpack" type="ILO"/>

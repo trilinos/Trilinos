@@ -27,6 +27,8 @@ namespace mesh {
 
 void BulkData::internal_set_shared_entities()
 {
+  if (parallel_size() == 1) return;
+
   // Clear the entities' sharing in preparation for setting it.
  
   {

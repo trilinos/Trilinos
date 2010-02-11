@@ -99,12 +99,14 @@ DofMapper::add_dof_mappings(const stk::mesh::BulkData& mesh_bulk,
     sharing_procs.push_back(shared_entities[i].second);
   }
 
-  std::vector<int> num_sharing_procs_per_id(shared_ids.size(), 1);
+  if (shared_ids.size() > 0) {
+    std::vector<int> num_sharing_procs_per_id(shared_ids.size(), 1);
 
-  int err = m_fei_vecspace->initSharedIDs(shared_ids.size(), idType,
-                                         &shared_ids[0], &num_sharing_procs_per_id[0],
-                                         &sharing_procs[0]);
-  if (err != 0) throw_fei_err("stk::linsys::DofMapper::add_dof_mappings ERROR: fei::VectorSpace::initSharedIDs returned error-code=",err);
+    int err = m_fei_vecspace->initSharedIDs(shared_ids.size(), idType,
+                                           &shared_ids[0], &num_sharing_procs_per_id[0],
+                                           &sharing_procs[0]);
+    if (err != 0) throw_fei_err("stk::linsys::DofMapper::add_dof_mappings ERROR: fei::VectorSpace::initSharedIDs returned error-code=",err);
+  }
 }
 
 void
