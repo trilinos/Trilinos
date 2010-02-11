@@ -63,7 +63,7 @@ namespace Thyra {
  * can set some options on how the reading and writing gets done (e.g. use
  * binary or ASCII formating).
  *
- * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
+ * \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
  */
 template<class Scalar>
 class MultiVectorFileIOBase

@@ -110,6 +110,8 @@ namespace Thyra {
  \endverbatim
  
  * This class could be made much more general but for now ???
+ *
+ * \ingroup Thyra_Nonlin_ME_support_grp
  */
 template<class Scalar>
 class DefaultMultiPeriodModelEvaluator

@@ -156,6 +156,8 @@ namespace Thyra {
  * where <tt>u_f = S_f * u</tt>.
  *
  * ToDo: Finish documentation!
+ *
+ * \ingroup EpetraExt_Thyra_Op_Vec_adapters_grp
  */
 class EpetraModelEvaluator
   : public ModelEvaluatorDefaultBase<double>,

@@ -39,7 +39,9 @@
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 #include "Teuchos_as.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Simple dampended Newton solver using a Armijo line search :-)
  * 
@@ -58,6 +60,8 @@ namespace Thyra {
  * </ul>
  *
  * ToDo: Finish documentation.
+ *
+ * \ingroup Thyra_Nonlin_ME_solvers_grp
  */
 template <class Scalar>
 class DampenedNewtonNonlinearSolver : public NonlinearSolverBase<Scalar> {
@@ -504,6 +508,8 @@ void DampenedNewtonNonlinearSolver<Scalar>::set_W_is_current(bool W_is_current)
   J_is_current_ = W_is_current;
 }
 
+
 } // namespace Thyra
+
 
 #endif // THYRA_DAMPENED_NEWTON_NONLINEAR_SOLVER_HPP

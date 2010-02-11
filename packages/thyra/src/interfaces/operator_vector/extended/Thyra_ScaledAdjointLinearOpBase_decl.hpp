@@ -53,7 +53,7 @@ a <tt>Scalar</tt>, and the operation <tt>op(Op)</tt> is specified by a
 <tt>op(Op) = Op^T</tt> (<tt>TRANS</tt>), or <tt>op(Op) = Op^H</tt>
 (<tt>CONJTRANS</tt>).
 
-\ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
+\ingroup Thyra_Op_Vec_extended_interfaces_code_grp
 
 */
 template<class Scalar>
@@ -123,7 +123,7 @@ public:
  * The implementation of this function is not too complicated and is
  * appropriate for study.
  *
- * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
+ * \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
  */
 template<class Scalar>
 void unwrap(

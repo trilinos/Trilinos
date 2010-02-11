@@ -39,9 +39,9 @@ namespace Thyra {
 /** \brief Base interface for linear operators with a solve that are composed
  * out of individual LOB and LOWSB objects.
  *
- * ToDo: Finish Documentation.
+ * \ingroup Thyra_Op_Solve_extended_interfaces_code_grp
  *
- * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
+ * ToDo: Finish Documentation.
  */
 template<class Scalar>
 class PhysicallyBlockedLinearOpWithSolveBase

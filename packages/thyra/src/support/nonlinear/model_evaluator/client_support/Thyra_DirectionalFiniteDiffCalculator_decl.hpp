@@ -110,6 +110,8 @@ public:
  * two different ways is undefined and is likely to change.
  *
  * ToDo: Finish documentaton!
+ *
+ * \ingroup Thyra_Nonlin_ME_support_grp
  */
 template<class Scalar>
 class DirectionalFiniteDiffCalculator

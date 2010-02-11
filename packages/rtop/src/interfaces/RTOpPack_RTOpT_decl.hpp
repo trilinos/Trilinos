@@ -307,23 +307,17 @@ public:
   /** \brief Apply the reduction/transformation operator to a set of
    * sub-vectors.
    *
-   * <tt>op(sub_vecs[],targ_sub_vecs[]),reduct_obj) -> targ_sub_vecs[],reduct_obj</tt>.
+   * <tt>op(sub_vecs[], targ_sub_vecs[], reduct_obj) -> targ_sub_vecs[], reduct_obj</tt>.
    *
-   * This is the bread and butter of the whole design. Through this
-   * method, a vector implementation applies a
-   * reduction/transformation operator to a set of sub-vectors.
-   *
-   * \param num_vecs [in] Number of non-mutable sub-vectors in
-   * <tt>sub_vec[]</tt>.
+   * This is the bread and butter of the whole design. Through this method, a
+   * vector implementation applies a reduction/transformation operator to a
+   * set of sub-vectors.
    *
    * \param sub_vecs [in] Array (length <tt>num_vecs</tt>) of non-mutable
    * vectors to apply the operator over. The ordering of these sub-vectors
    * <tt>sub_vecs[k], for k = 0...num_vecs-1</tt>, is significant to the this
    * operator object. If <tt>num_vecs==0</tt> then <tt>sub_vecs</tt> can be
    * <tt>NULL</tt>.
-   *
-   * \param num_targ_vecs [in] Number of mutable sub-vectors in
-   * <tt>targ_sub_vec[]</tt>.
    *
    * \param targ_sub_vecs [in/out] Array (length <tt>num_targ_vecs</tt>) of
    * mutable vectors to apply the operator over and be mutated. The ordering
@@ -342,24 +336,26 @@ public:
    * <tt>NULL</tt> as no reduction will be performed.
    *
    * Preconditions:<ul>
-   * <li> <tt>num_vecs > 0 || num_targ_vecs > 0</tt>
-   * <li> <tt>[num_vecs > 0] sub_vecs != NULL</tt>
-   * <li> <tt>[num_targ_vecs > 0] targ_sub_vecs != NULL</tt>
-   * <li> <tt>[num_vecs > 0] globalOffset==sub_vecs[k].globalOffset</tt>
-   * , for <tt>k = 0,...,num_vecs-1</tt>
-   * <li> <tt>[num_targ_vecs > 0] globalOffset==targ_sub_vecs[k].globalOffset</tt>
-   * , for <tt>k = 0,...,num_targ_vecs-1</tt>
-   * <li> <tt>[num_vecs > 0] subDim==sub_vecs[k].subDim()</tt>
-   * , for <tt>k = 0,...,num_vecs-1</tt>
-   * <li> <tt>[num_targ_vecs > 0] subDim==targ_sub_vecs[k].subDim()</tt>
-   * , for <tt>k = 0,...,num_targ_vecs-1</tt>
+   *
+   * <li> <tt>globalOffset==sub_vecs[k].globalOffset</tt> , for <tt>k =
+   * 0,...,sub_vecs.subDim()-1</tt>
+   *
+   * <li> <tt>globalOffset==targ_sub_vecs[k].globalOffset</tt> , for <tt>k =
+   * 0,...,targ_vecs.subDim()-1</tt>
+   *
+   * <li> <tt>subDim==sub_vecs[k].subDim()</tt> , for <tt>k =
+   * 0,...,sub_vecs.subDim()-1</tt>
+   *
+   * <li> <tt>subDim==targ_sub_vecs[k].subDim()</tt> , for <tt>k =
+   * 0,...,targ_vecs.subDim()-1</tt>
+   *
    * </ul>
    *
-   * If <tt>reduct_obj != NULL</tt> then the reduction operation will
+   * If <tt>nonnull(reduct_obj)==true</tt> then the reduction operation will
    * be accumulated as:
    *
    \verbatim
-   op(op(sub_vecs[],targ_sub_vecs[]),reduct_obj) -> reduct_obj
+   op(op(sub_vecs[], targ_sub_vecs[], reduct_obj) -> reduct_obj
    \endverbatim
    *
    * By allowing an in/out <tt>reduct_obj</tt> and an accumulation of
@@ -370,10 +366,11 @@ public:
    * then on return, <tt>reduct_obj</tt> will contain only the
    * reduction from this function call.
    *
-   * If <tt>num_vecs</tt> is incompatible with the underlying operator object then
+   * If the sizes of <tt>sub_vecs</tt> and <tt>targ_sub_vecs</tt> is
+   * incompatible with the underlying operator object then
    * <tt>InvalidNumVecs</tt> is thrown. If the sub-vectors are not compatible
    * (i.e. <tt>globalOffset</tt> and/or <tt>subDim</tt> not the same) then
-   * IncompatibleVecs is thrown.
+   * <tt>IncompatibleVecs</tt> is thrown.
    */
   void apply_op(
     const ArrayView<const ConstSubVectorView<Scalar> > &sub_vecs,
@@ -385,6 +382,74 @@ public:
     }
 
   //@}
+
+protected:
+
+  /** \name Protected virtual functions to be overridden by subclasses. */
+  //@{
+
+  /** \brief . */
+  virtual void get_reduct_type_num_entries_impl(
+    const Ptr<int> &num_values,
+    const Ptr<int> &num_indexes,
+    const Ptr<int> &num_chars
+    ) const;
+
+  /** \brief . */
+  virtual Teuchos::RCP<ReductTarget> reduct_obj_create_impl() const;
+
+  /** \brief . */
+  virtual void reduce_reduct_objs_impl(
+    const ReductTarget& in_reduct_obj, const Ptr<ReductTarget>& inout_reduct_obj
+    ) const;
+
+  /** \brief . */
+  virtual void reduct_obj_reinit_impl( const Ptr<ReductTarget> &reduct_obj ) const;
+
+  /** \brief . */
+  virtual void extract_reduct_obj_state_impl(
+    const ReductTarget &reduct_obj,
+    const ArrayView<primitive_value_type> &value_data,
+    const ArrayView<index_type> &index_data,
+    const ArrayView<char_type> &char_data
+    ) const;
+
+  /** \brief . */
+  virtual void load_reduct_obj_state_impl(
+    const ArrayView<const primitive_value_type> &value_data,
+    const ArrayView<const index_type> &index_data,
+    const ArrayView<const char_type> &char_data,
+    const Ptr<ReductTarget> &reduct_obj
+    ) const;
+
+  /** \brief . */
+  virtual const std::string op_name_impl() const;
+
+  /** \brief . */
+  virtual bool coord_invariant_impl() const;
+
+  /** \brief . */
+  virtual void apply_op_impl(
+    const ArrayView<const ConstSubVectorView<Scalar> > &sub_vecs,
+    const ArrayView<const SubVectorView<Scalar> > &targ_sub_vecs,
+    const Ptr<ReductTarget> &reduct_obj
+    ) const = 0;
+
+  //@}
+
+  /** \name Nonvirtual protected functions. */
+  //@{
+
+  /** \brief Constructor that creates an operator name appended with the
+   * type. */
+  RTOpT( const std::string &op_name_base = "" );
+
+  /** \brief Just set the opeator name. */
+  void setOpNameBase( const std::string &op_name_base );
+
+  //@}
+
+public:
 
   /** \name Deprecated (NVI) */
   //@{
@@ -457,72 +522,6 @@ public:
 
   //@}
 
-protected:
-
-  /** \brief Protected virtual functions to be overridden by subclasses. */
-  //@{
-
-  /** \brief . */
-  virtual void get_reduct_type_num_entries_impl(
-    const Ptr<int> &num_values,
-    const Ptr<int> &num_indexes,
-    const Ptr<int> &num_chars
-    ) const;
-
-  /** \brief . */
-  virtual Teuchos::RCP<ReductTarget> reduct_obj_create_impl() const;
-
-  /** \brief . */
-  virtual void reduce_reduct_objs_impl(
-    const ReductTarget& in_reduct_obj, const Ptr<ReductTarget>& inout_reduct_obj
-    ) const;
-
-  /** \brief . */
-  virtual void reduct_obj_reinit_impl( const Ptr<ReductTarget> &reduct_obj ) const;
-
-  /** \brief . */
-  virtual void extract_reduct_obj_state_impl(
-    const ReductTarget &reduct_obj,
-    const ArrayView<primitive_value_type> &value_data,
-    const ArrayView<index_type> &index_data,
-    const ArrayView<char_type> &char_data
-    ) const;
-
-  /** \brief . */
-  virtual void load_reduct_obj_state_impl(
-    const ArrayView<const primitive_value_type> &value_data,
-    const ArrayView<const index_type> &index_data,
-    const ArrayView<const char_type> &char_data,
-    const Ptr<ReductTarget> &reduct_obj
-    ) const;
-
-  /** \brief . */
-  virtual const std::string op_name_impl() const;
-
-  /** \brief . */
-  virtual bool coord_invariant_impl() const;
-
-  /** \brief . */
-  virtual void apply_op_impl(
-    const ArrayView<const ConstSubVectorView<Scalar> > &sub_vecs,
-    const ArrayView<const SubVectorView<Scalar> > &targ_sub_vecs,
-    const Ptr<ReductTarget> &reduct_obj
-    ) const = 0;
-
-  //@}
-
-  /** \brief Nonvirtual protected functions. */
-  //@{
-
-  /** \brief Constructor that creates an operator name appended with the
-   * type. */
-  RTOpT( const std::string &op_name_base = "" );
-
-  /** \brief Just set the opeator name. */
-  void setOpNameBase( const std::string &op_name_base );
-
-  //@}
-
 private:
 
   std::string op_name_;
@@ -534,10 +533,6 @@ private:
 
 // 2007/11/14: rabartl: ToDo: Break off an RTOpDefaultBase interface and put
 // all default implementation functions in there.
-
-
-// 2007/11/14: rabartl: ToDo: Change functions to accept ArrayView objects and
-// depricate raw pointer functions.
 
 
 } // end namespace RTOpPack

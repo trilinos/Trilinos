@@ -1,4 +1,3 @@
-/** \dir src Base directory for all library code that lives in the Thyra package */
 
 /** \dir src/interfaces Base directory for critical interoperability interfaces
 
@@ -11,37 +10,25 @@ we are going to get anywhere.
 
 /** \dir src/interfaces/operator_vector Base directory for interoperability interfaces for operators (i.e. matrices) and vectors */
 
-/** \dir src/interfaces/operator_vector/ana Base directory for interoperability interfaces for operators (i.e. matrices) and vectors and abstract numerical algorithms */
+/** \dir src/interfaces/operator_vector/fundamental Fundamental interoperability interfaces for operators, vectors, and vector spaces for abstract numerical algorithms */
 
-/** \dir src/interfaces/operator_vector/ana/fundamental Fundamental interoperability interfaces for operators, vectors, and vector spaces for abstract numerical algorithms */
-
-/** \dir src/interfaces/operator_vector/ana/extended Extended interoperability interfaces for operators, vectors, and vector spaces for abstract numerical algorithms
+/** \dir src/interfaces/operator_vector/extended Extended interoperability interfaces for operators, vectors, and vector spaces for abstract numerical algorithms
 These interfaces are based on the Fundamental Thyra ANA Operator/Vector Interfaces.
-*/
-
-/** \dir src/interfaces/operator_vector/app Base directory for interoperability interfaces for operators (i.e. matrices) and vectors and applications and linear algebra libraries
-The interfaces in this directory are completely independent from the ANA interoperability interfaces.
 */
 
 /** \dir src/interfaces/operator_solve Base directory for interoperability interfaces for linear (operator) solvers */
 
-/** \dir src/interfaces/operator_solve/ana Base directory for interoperability interfaces for linear (operator) solvers and abstract numerical algorithms */
-
-/** \dir src/interfaces/operator_solve/ana/fundamental Fundamental interoperability interfaces for linear (operator) solvers for abstract numerical algorithms */
+/** \dir src/interfaces/operator_solve/fundamental Fundamental interoperability interfaces for linear (operator) solvers for abstract numerical algorithms */
 
 /** \dir src/interfaces/nonlinear Base directory for interoperability interfaces related to nonlinear problems */
 
 /** \dir src/interfaces/nonlinear/model_evaluator Base directory for interoperability interfaces related to nonlinear models */
 
-/** \dir src/interfaces/nonlinear/model_evaluator/ana Base directory for interoperability interfaces related to nonlinear models and abstract numerical algorithms */
-
-/** \dir src/interfaces/nonlinear/model_evaluator/ana/fundamental Fundamental interoperability interfaces for nonlinear models for abstract numerical algorithms */
+/** \dir src/interfaces/nonlinear/model_evaluator/fundamental Fundamental interoperability interfaces for nonlinear models for abstract numerical algorithms */
 
 /** \dir src/interfaces/nonlinear/solvers Base directory for interoperability interfaces related to nonlinear solvers */
 
-/** \dir src/interfaces/nonlinear/solvers/ana Base directory for interoperability interfaces related to nonlinear solvers and abstract numerical algorithms */
-
-/** \dir src/interfaces/nonlinear/solvers/ana/fundamental Fundamental interoperability interfaces for nonlinear solves for abstract numerical algorithms */
+/** \dir src/interfaces/nonlinear/solvers/fundamental Fundamental interoperability interfaces for nonlinear solves for abstract numerical algorithms */
 
 /** \dir src/support Base directory for default implemenations and support software related to the basic interoperability interfaces
 
@@ -76,8 +63,6 @@ vector spaces.  High-quality default implementations for common use cases is
 also provided.
 
 */
-
-/** \dir src/support/operator_vector/adapter_support/serial Support code for creating concrete serial implementations of operators (i.e. matrices) and vectors */
 
 /** \dir src/support/nonlinear Base directory for support code related to nonlinear problems */
 

@@ -31,7 +31,9 @@
 
 #include "Thyra_SerialVectorSpaceConverterBaseDecl.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Concrete subclass for a converter subclass for converting serial
  * multi-vectors and vectors.
@@ -41,7 +43,7 @@ namespace Thyra {
  * space type and therefore this subclass is more general then it may appear
  * at first.
  *
- * \ingroup Thyra_Op_Vec_serial_adapters_grp
+ * \ingroup Thyra_Op_Vec_adapters_Spmd_concrete_std_grp
  */
 template<class ScalarFrom, class ScalarTo>
 class DefaultSerialVectorSpaceConverter : virtual public SerialVectorSpaceConverterBase<ScalarFrom,ScalarTo> {
@@ -66,6 +68,8 @@ public:
   
 };
 
+
 } // namespace Thyra
+
 
 #endif // THYRA_SERIAL_VECTOR_SPACE_CONVERTED_STD_DECL_HPP

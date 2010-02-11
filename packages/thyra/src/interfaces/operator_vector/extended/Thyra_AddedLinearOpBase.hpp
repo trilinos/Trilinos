@@ -54,7 +54,7 @@ namespace Thyra {
    = alpha * ( Op[0] * x + Op[1] * x + ...  + Op[numOps-1] * x ) + beta * y
  \endverbatim
  *
- * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
+ * \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
  */
 template<class Scalar>
 class AddedLinearOpBase : virtual public LinearOpBase<Scalar> {

@@ -32,11 +32,13 @@
 #include "Thyra_SolveSupportTypes.hpp"
 #include "Teuchos_Describable.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Base interface for objects that can return a linear operator.
  *
- * 
+ * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
  */
 template<class Scalar>
 class LinearOpSourceBase : virtual public Teuchos::Describable

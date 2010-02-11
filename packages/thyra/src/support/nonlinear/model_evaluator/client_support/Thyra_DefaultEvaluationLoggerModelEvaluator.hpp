@@ -35,11 +35,13 @@
 
 namespace Thyra {
 
+
 /** \brief This class wraps any ModelEvaluator object and logs the evaluation
  * of various functions.
  *
  * ToDo: Finish documentation!
  *
+ * \ingroup Thyra_Nonlin_ME_support_grp
  */
 template<class Scalar>
 class DefaultEvaluationLoggerModelEvaluator

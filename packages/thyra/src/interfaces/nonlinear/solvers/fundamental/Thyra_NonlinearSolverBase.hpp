@@ -35,7 +35,9 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_ParameterListAcceptor.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Base class for all nonlinear equation solvers.
  *
@@ -53,7 +55,8 @@ namespace Thyra {
  *      like the maximum number of iterations etc. in the extraParameters
  *      parameter list field.
  * </ul>
- * 
+ *
+ * \ingroup Thyra_Nonlinear_solver_interfaces_code_grp
  */
 template <class Scalar>
 class NonlinearSolverBase
@@ -264,6 +267,8 @@ void NonlinearSolverBase<Scalar>::set_W_is_current(bool W_is_current)
     );
 }
 
+
 } // namespace Thyra
+
 
 #endif // THYRA_NONLINEAR_SOLVER_BASE_HPP

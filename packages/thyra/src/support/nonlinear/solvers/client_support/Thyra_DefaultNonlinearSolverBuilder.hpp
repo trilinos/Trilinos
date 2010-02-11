@@ -42,7 +42,8 @@ namespace Thyra {
  * factory objects.
  *
  * ToDo: Finish Documentation!
- * 
+ *
+ * \ingroup Thyra_Nonlin_ME_solvers_grp
  */
 class DefaultNonlinearSolverBuilder
   : public Thyra::NonlinearSolverBuilderBase<double>
@@ -136,17 +137,6 @@ void setNonlinearSolverFactory(
 {
   TEST_FOR_EXCEPT(true);
 }
-
-
-// ///////////////////////////////////////////////////////
-// Implementation
-
-
-  
-
-
-
-
 
 
 #endif // THYRA_DEFAULT_NONLINEAR_SOLVER_BUILDER_HPP

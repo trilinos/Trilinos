@@ -35,7 +35,11 @@
 namespace Thyra {
 
 
-/** \brief Base interface for transforming a LinearOpBase object. */
+/** \brief Transformer subclass for adding Epetra/Thyra operators using
+ * EpetraExt::MatrixMatrix.
+ *
+ * \ingroup EpetraExt_Thyra_Op_Vec_adapters_grp
+ */
 class EpetraExtAddTransformer : public LinearOpTransformerBase<double>
 {
 public:

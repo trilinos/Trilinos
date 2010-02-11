@@ -49,7 +49,7 @@ namespace Thyra {
    = alpha * x + beta * y
  \endverbatim
  *
- * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
+ * \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
  */
 template<class Scalar>
 class IdentityLinearOpBase : virtual public LinearOpBase<Scalar>

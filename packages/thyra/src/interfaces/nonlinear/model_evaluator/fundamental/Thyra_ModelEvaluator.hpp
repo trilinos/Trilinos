@@ -613,6 +613,8 @@ namespace Thyra {
  * subclass.
  *
  * ToDo: Finish Documentation!
+ *
+ * \ingroup Thyra_Nonlinear_model_evaluator_interfaces_code_grp
  */
 template<class Scalar>
 class ModelEvaluator : public ModelEvaluatorBase {

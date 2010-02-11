@@ -56,6 +56,8 @@ namespace Thyra {
  * and <tt>OutArgsSetup</tt>0 that only subclasses should be able to access.
  * This makes the design very secure to help avoid bad usage of the nested
  * classes.
+ *
+ * \ingroup Thyra_Nonlinear_model_evaluator_interfaces_code_grp
  */
 class ModelEvaluatorBase
   : virtual public Teuchos::Describable,
@@ -731,12 +733,6 @@ protected:
 };
 
 
-/** \defgroup Thyra_MEB_helper_functions_grp Helper functions for Thyra::ModelEvaluatorBase.
- *
- */
-//@{
-
-
 /** \relates ModelEvaluatorBase */
 std::string toString(ModelEvaluatorBase::EInArgsMembers);
 
@@ -756,9 +752,6 @@ ModelEvaluatorBase::EDerivativeMultiVectorOrientation
 getOtherDerivativeMultiVectorOrientation(
   ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation
   );
-
-
-//@}
 
 
 } // namespace Thyra

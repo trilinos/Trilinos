@@ -220,6 +220,8 @@ namespace Thyra {
  * with finite bounds on the parameters.  However, a parameter-list option can
  * be set that will cause the bounds to be ignored and it would be the
  * client's responsibility to deal with the implications of this choice.
+ *
+ * \ingroup Thyra_Nonlin_ME_support_grp
  */
 template<class Scalar>
 class DefaultLumpedParameterModelEvaluator

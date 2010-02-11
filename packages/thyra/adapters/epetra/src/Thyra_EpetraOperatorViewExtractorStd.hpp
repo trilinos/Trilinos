@@ -30,13 +30,17 @@
 
 #include "Thyra_EpetraOperatorViewExtractorBase.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Standard strategy subclass for extracting an
  * <tt>Epetra_Operator</tt> view out of a <tt>Thyra::LinearOpBase<double></tt>
  * object by dynamic casting to the <tt>EpetraLinearOpBase</tt> interface.
  *
  * ToDo: Finish documentation!
+ *
+ * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
 class EpetraOperatorViewExtractorStd : virtual public EpetraOperatorViewExtractorBase
 {
@@ -70,6 +74,8 @@ public:
 
 };
 
+
 } // namespace Thyra
+
 
 #endif // THYRA_EPETRA_OPERATOR_VIEW_EXTRACTOR_STD_HPP

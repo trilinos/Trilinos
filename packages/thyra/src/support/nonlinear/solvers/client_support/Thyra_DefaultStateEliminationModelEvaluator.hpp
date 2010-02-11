@@ -34,13 +34,16 @@
 #include "Thyra_NonlinearSolverBase.hpp"
 #include "Teuchos_Time.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief This class wraps any ModelEvaluator object along with a NonlinearSolverBase object
  * and eliminates the steady-state equations f(x,...)=0
  *
  * ToDo: Finish documentation!
  *
+ * \ingroup Thyra_Nonlin_ME_solvers_grp
  */
 template<class Scalar>
 class DefaultStateEliminationModelEvaluator

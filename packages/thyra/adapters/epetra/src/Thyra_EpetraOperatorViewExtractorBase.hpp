@@ -31,12 +31,16 @@
 #include "Thyra_LinearOpBase.hpp"
 #include "Thyra_EpetraTypes.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Strategy interface for extracting an <tt>Epetra_Operator</tt> view
  * out of a <tt>Thyra::LinearOpBase<double></tt> object.
  *
  * ToDo: Finish documentation!
+ *
+ * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
 class EpetraOperatorViewExtractorBase : virtual public Teuchos::Describable
 {
@@ -164,6 +168,8 @@ public:
 
 };
 
+
 } // namespace Thyra
+
 
 #endif // THYRA_EPETRA_OPERATOR_VIEW_EXTRACTOR_BASE_HPP

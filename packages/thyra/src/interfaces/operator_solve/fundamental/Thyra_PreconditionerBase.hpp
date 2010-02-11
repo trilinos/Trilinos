@@ -38,6 +38,8 @@ namespace Thyra {
  * or more linear operators objects and information on how they are ment to be
  * applied.
  *
+ * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
+ *
  * This class supports four different kinds of preconditioners:
  * <ul>
  * <li>Single preconditioner linear operator designed or targeted to be applied on the left:

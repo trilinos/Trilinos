@@ -38,7 +38,7 @@ namespace Thyra {
 /** \brief Base interface for <ttLinearOpBase</tt> objects that are implemented
  * in terms of the solve function on a <tt>LinearOpWithSolveBase</tt> object.
  *
- * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
+ * \ingroup Thyra_Op_Solve_extended_interfaces_code_grp
  */
 template<class Scalar>
 class InverseLinearOpBase : virtual public LinearOpBase<Scalar>

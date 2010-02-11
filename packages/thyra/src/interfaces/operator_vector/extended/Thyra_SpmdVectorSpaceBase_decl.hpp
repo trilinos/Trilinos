@@ -111,7 +111,7 @@ namespace Thyra {
  * If optimized implementations of multi-vectors can be supported,
  * then the <tt>createMembers()</tt> method should also be overridden.
  *
- * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
+ * \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
  */
 template<class Scalar>
 class SpmdVectorSpaceBase : virtual public VectorSpaceBase<Scalar> {

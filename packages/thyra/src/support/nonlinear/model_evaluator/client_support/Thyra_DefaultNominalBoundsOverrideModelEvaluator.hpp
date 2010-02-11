@@ -82,6 +82,7 @@ namespace Thyra {
  *
  * ToDo: Finish documentation!
  *
+ * \ingroup Thyra_Nonlin_ME_support_grp
  */
 template<class Scalar>
 class DefaultNominalBoundsOverrideModelEvaluator

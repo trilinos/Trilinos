@@ -29,13 +29,18 @@
 #ifndef THYRA_DIAGONAL_EPETRA_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
 #define THYRA_DIAGONAL_EPETRA_LINEAR_OP_WITH_SOLVE_FACTORY_HPP
 
-#ifndef SUN_CXX
 
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 
+
 namespace Thyra {
 
-/** \brief. */
+
+/** \brief Create a DefaultDiagonalLinearOpWithSolve out of a diagonal
+ * Epetra_RowMatrix object.
+ *
+ * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
+ */
 class DiagonalEpetraLinearOpWithSolveFactory : public LinearOpWithSolveFactoryBase<double> {
 public:
 
@@ -50,17 +55,17 @@ public:
 
   /** \brief . */
   void initializeOp(
-    const Teuchos::RCP<const LinearOpSourceBase<double> >    &fwdOpSrc
-    ,LinearOpWithSolveBase<double>                                   *Op
-    ,const ESupportSolveUse                                          supportSolveUse
+    const Teuchos::RCP<const LinearOpSourceBase<double> > &fwdOpSrc,
+    LinearOpWithSolveBase<double> *Op,
+    const ESupportSolveUse supportSolveUse
     ) const;
 
   void uninitializeOp(
-    LinearOpWithSolveBase<double>                               *Op
-    ,Teuchos::RCP<const LinearOpSourceBase<double> >    *fwdOpSrc
-    ,Teuchos::RCP<const PreconditionerBase<double> >    *prec
-    ,Teuchos::RCP<const LinearOpSourceBase<double> >    *approxFwdOpSrc
-    ,ESupportSolveUse                                           *supportSolveUse
+    LinearOpWithSolveBase<double> *Op,
+    Teuchos::RCP<const LinearOpSourceBase<double> > *fwdOpSrc,
+    Teuchos::RCP<const PreconditionerBase<double> > *prec,
+    Teuchos::RCP<const LinearOpSourceBase<double> > *approxFwdOpSrc,
+    ESupportSolveUse *supportSolveUse
     ) const;
 
   //@}
@@ -83,10 +88,8 @@ public:
 
 };
 
-//@}
 
 } // namespace Thyra
 
-#endif // SUN_CXX
 
 #endif // THYRA_DIAGONAL_EPETRA_LINEAR_OP_WITH_SOLVE_FACTORY_HPP

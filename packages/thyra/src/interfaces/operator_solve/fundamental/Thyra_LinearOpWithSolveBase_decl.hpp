@@ -42,8 +42,8 @@ namespace Thyra {
 
 /** \brief Base class for all linear operators that can support a high-level
  * solve operation.
- * 
- * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
+ *
+ * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
  *
  * \section LOWSB_outline_sec Outline
  *

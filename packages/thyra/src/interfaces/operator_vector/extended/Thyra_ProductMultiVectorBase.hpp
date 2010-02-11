@@ -47,7 +47,7 @@ template<class Scalar> class ProductVectorSpaceBase;
  *
  * ToDo: Finish documentation!
  *
- * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
+ * \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
  */
 template<class Scalar>
 class ProductMultiVectorBase : virtual public MultiVectorBase<Scalar> {

@@ -43,7 +43,7 @@ namespace Thyra {
  * compatible with only a specific instantiation of a concrete vector space
  * subclass.
  *
- * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
+ * \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
  */
 template<class Scalar>
 class MultiVectorRandomizerBase {

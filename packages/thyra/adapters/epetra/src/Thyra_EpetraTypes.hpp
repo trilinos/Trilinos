@@ -44,18 +44,9 @@ class Epetra_Operator;
 namespace Thyra {
 
 
-/** \defgroup Epetra_Thyra_Op_Vec_support_code_grp Epetra to Thyra Operator/Vector Adapter Support Code
-
-\ingroup Epetra_Thyra_Op_Vec_adapters_grp
-
-This is some basic support code that the Epetra to %Thyra operator/vector adapter Code is built on.
-
-*/
-
-
 /** \brief Determine if adjoints are supported on Epetra_Opeator or not.
  *
- * \ingroup Epetra_Thyra_Op_Vec_support_code_grp
+ * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
 enum EAdjointEpetraOp {
   EPETRA_OP_ADJOINT_SUPPORTED      ///< Adjoint supported
@@ -65,7 +56,7 @@ enum EAdjointEpetraOp {
 
 /** \brief . 
  *
- * \ingroup Epetra_Thyra_Op_Vec_support_code_grp
+ * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
 inline
 const std::string toString(const EAdjointEpetraOp adjointEpetraOp)
@@ -84,7 +75,7 @@ const std::string toString(const EAdjointEpetraOp adjointEpetraOp)
 
 /** \brief Determine how the apply an Epetra_Operator as a linear operator
  *
- * \ingroup Epetra_Thyra_Op_Vec_support_code_grp
+ * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
 enum EApplyEpetraOpAs {
   EPETRA_OP_APPLY_APPLY            ///< Apply using Epetra_Operator::Apply(...)
@@ -94,7 +85,7 @@ enum EApplyEpetraOpAs {
 
 /** \brief .
  *
- * \ingroup Epetra_Thyra_Op_Vec_support_code_grp
+ * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
 inline
 const std::string toString(const EApplyEpetraOpAs applyEpetraOpAs)

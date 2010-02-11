@@ -42,6 +42,8 @@ namespace Thyra {
 /** \brief Factory interface for creating precondtioner objects from
  * <tt>LinearOpBase</tt> objects.
  *
+ * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
+ *
  * ToDo: Finish documentation!
  */
 template<class Scalar>

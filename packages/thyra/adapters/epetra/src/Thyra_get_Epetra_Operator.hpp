@@ -35,21 +35,13 @@
 namespace Thyra {
 
 
-/** \defgroup Epetra_Thyra_Op_Vec_get_Epetra_Operator_grp Epetra_Operator extraction utility functions
-
-\ingroup Epetra_Thyra_Op_Vec_adapters_grp
-
-These function allow the extraction of an <tt>Epetra_Operator</tt> from a <tt>Thyra::LinearOpBase</tt> object.
-
-*/
-
-
 /** \brief Get smart pointer to non-<tt>const</tt>
  * <tt>Epetra_Operator</tt> object from reference to a
  * non-<tt>const</tt> <tt>EpetraLinearOp</tt> accessed through its
  * <tt>LinearOpBase</tt> interface.
  *
- * @param op [in] Reference to operator to extract <tt>Epetra_Operator</tt> out of.
+ * \param op [in] Reference to operator to extract <tt>Epetra_Operator</tt>
+ * out of.
  *
  * Preconditions:<ul>
  * <li><tt>dynamic_cast<EpetraLinearOp*>(&op) != NULL</tt>
@@ -67,7 +59,7 @@ These function allow the extraction of an <tt>Epetra_Operator</tt> from a <tt>Th
  * be done to accomplish this type of access by looking at the source
  * code by clicking on:
  *
- * \ingroup Epetra_Thyra_Op_Vec_get_Epetra_Operator_grp
+ * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
 Teuchos::RCP<Epetra_Operator>
 get_Epetra_Operator( LinearOpBase<double> &op );
@@ -78,7 +70,8 @@ get_Epetra_Operator( LinearOpBase<double> &op );
  * <tt>EpetraLinearOp</tt> accessed through its <tt>LinearOpBase</tt>
  * interface.
  *
- * @param op [in] Reference to operator to extract <tt>Epetra_Operator</tt> out of.
+ * \param op [in] Reference to operator to extract <tt>Epetra_Operator</tt>
+ * out of.
  *
  * Preconditions:<ul>
  * <li><tt>dynamic_cast<const EpetraLinearOp*>(&op) != NULL</tt>
@@ -96,7 +89,7 @@ get_Epetra_Operator( LinearOpBase<double> &op );
  * be done to accomplish this type of access by looking at the source
  * code by clicking on:
  *
- * \ingroup Epetra_Thyra_Op_Vec_get_Epetra_Operator_grp
+ * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
 Teuchos::RCP<const Epetra_Operator>
 get_Epetra_Operator( const LinearOpBase<double> &op );

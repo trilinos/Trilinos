@@ -39,24 +39,13 @@ namespace Teuchos { template<class Ordinal> class Comm; }
 namespace Thyra {
 
 
-/** \defgroup Thyra_Epetra_Thyra_Wrappers_grp  Collection of functions for wrapping and unwrapping Epetra objects
-
-\ingroup Epetra_Thyra_Op_Vec_adapters_grp
-
-This set of functions provides some general utility code for wrapping Epetra
-objects in standard %Thyra subclass implementations and for getting Epetra
-views of %Thyra objects.
-
-*/
-
-
 /** \brief Given an <tt>Epetra_Comm</tt> object, return an equivalent
  * <tt>Teuchos::Comm</tt> object.
  *
  * If a successful conversion could not be performed then
  * <tt>return.get()==NULL</tt>.
  *
- * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
+ * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
 RCP<const Teuchos::Comm<Ordinal> >
 create_Comm( const RCP<const Epetra_Comm> &epetraComm );
@@ -93,7 +82,7 @@ create_Comm( const RCP<const Epetra_Comm> &epetraComm );
  * linking).  If SPMD support is not compiled into Epetra, then a serial
  * implementation of the communication is used instead.
  *
- * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
+ * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
 RCP<const VectorSpaceBase<double> >
 create_VectorSpace(
@@ -112,7 +101,7 @@ create_VectorSpace(
  * Note: This vector space will be compatible with the domain space of a
  * multivector. which has the range space <tt>parentSpace</tt>.
  *
- * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
+ * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
 RCP<const VectorSpaceBase<double> >
 create_LocallyReplicatedVectorSpace(
@@ -143,7 +132,7 @@ create_LocallyReplicatedVectorSpace(
  * <tt>VectorBase</tt> is destroyed.  In addition, <tt>*return</tt> is only
  * valid as long as one <tt>RefCoutPtr</tt> wrapper object still exits.
  *
- * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
+ * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
 RCP<VectorBase<double> >
 create_Vector(
@@ -172,7 +161,7 @@ create_Vector(
  * <tt>Epetra_Vector</tt> object.  In addition, <tt>*return</tt> is only
  * valid as long as one <tt>RefCoutPtr</tt> wrapper object still exits.
  *
- * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
+ * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
 RCP<const VectorBase<double> >
 create_Vector(
@@ -202,7 +191,7 @@ create_Vector(
  * In addition, <tt>*return</tt> is only valid as long as one
  * <tt>RefCoutPtr</tt> wrapper object still exits.
  *
- * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
+ * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
 RCP<MultiVectorBase<double> >
 create_MultiVector(
@@ -235,7 +224,7 @@ create_MultiVector(
  * <tt>Epetra_MultiVector</tt> object.  In addition, <tt>*return</tt> is only
  * valid as long as one <tt>RefCoutPtr</tt> wrapper object still exits.
  *
- * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
+ * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
 RCP<const MultiVectorBase<double> >
 create_MultiVector(
@@ -284,7 +273,7 @@ get_Epetra_Map(const VectorSpaceBase<double>& vs, const RCP<const Epetra_Comm>& 
  * Note: the <tt>v</tt> object is not guaranteed to be modified until the last
  * smart pointer to the returned <tt>Epetra_Vector</tt> object is destroyed.
  *
- * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
+ * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
 RCP<Epetra_Vector>
 get_Epetra_Vector(
@@ -310,7 +299,7 @@ get_Epetra_Vector(
  * the view in <tt>return</tt> will persist until all of the RCP objects to
  * the returned <tt>Epetra_Vector</tt> object go away.
  *
- * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
+ * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
 RCP<const Epetra_Vector>
 get_Epetra_Vector(
@@ -340,7 +329,7 @@ get_Epetra_Vector(
  * the last smart pointer to the returned <tt>Epetra_MultiVector</tt>
  * object is destroyed.
  *
- * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
+ * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
 RCP<Epetra_MultiVector>
 get_Epetra_MultiVector(
@@ -366,7 +355,7 @@ get_Epetra_MultiVector(
  * and the view in <tt>return</tt> will persist until all of the RCP objects
  * to the returned <tt>Epetra_MultiVector</tt> object go away.
  *
- * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
+ * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
 RCP<const Epetra_MultiVector>
 get_Epetra_MultiVector(
@@ -396,7 +385,7 @@ get_Epetra_MultiVector(
  * the last smart pointer to the returned <tt>Epetra_MultiVector</tt>
  * object is destroyed.
  *
- * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
+ * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
 Teuchos::RCP<Epetra_MultiVector>
 get_Epetra_MultiVector(
@@ -422,7 +411,7 @@ get_Epetra_MultiVector(
  * it punts and calls the more general (but more expensive)
  * <tt>get_Epetra_MultiVector()</tt> function.
  *
- * \ingroup Thyra_Epetra_Thyra_Wrappers_grp
+ * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
 Teuchos::RCP<const Epetra_MultiVector>
 get_Epetra_MultiVector(

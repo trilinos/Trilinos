@@ -37,9 +37,9 @@
 namespace Thyra {
 
 
-/** \defgroup Equation_solve_foundation_code_grp  Equation solve foundational code
+/** \defgroup Equation_solve_foundation_code_grp  Operator solve foundational code
  *
- * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
+ * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
  */
 
 

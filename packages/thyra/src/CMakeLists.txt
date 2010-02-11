@@ -37,9 +37,6 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/support/operator_vector/adapter
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/support/operator_vector/adapter_support/serial)
-APPEND_GLOB(HEADERS ${DIR}/*.hpp)
-
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/interfaces/operator_solve/fundamental)
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)

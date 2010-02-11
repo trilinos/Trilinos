@@ -44,6 +44,8 @@ namespace Thyra {
  * The minimum that a subclass must to is to define implementations for
  * <tt>get_p_space()</tt>, <tt>get_g_space()</tt>, <tt>createInArgs()</tt>,
  * <tt>createOutArgsImpl</tt>, and <tt>evalModelImpl()</tt>.
+ *
+ * \ingroup Thyra_Nonlin_ME_support_grp
  */
 template<class Scalar>
 class ResponseOnlyModelEvaluatorBase : virtual public ModelEvaluatorDefaultBase<Scalar> {

@@ -168,7 +168,7 @@ public:
 
 protected:
 
-  /** \brief Protected virtual functions. */
+  /** \name Protected virtual functions. */
   //@{
 
   /** \brief . */

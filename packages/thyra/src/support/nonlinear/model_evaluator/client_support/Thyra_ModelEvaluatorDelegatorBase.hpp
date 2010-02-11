@@ -62,6 +62,8 @@ namespace Thyra {
  * access the wrapped model evaluator object.  A subclass can choose to ignore
  * this and override the functions <tt>isUnderlyingModelConst()<tt>,
  * <tt>getConstUnderlyingModel()</tt>, and <tt>getUnderlyingModel()</tt>.
+ *
+ * \ingroup Thyra_Nonlin_ME_support_grp
  */
 template<class Scalar>
 class ModelEvaluatorDelegatorBase

@@ -42,6 +42,8 @@ namespace Thyra {
  * derivatives using finite differences.
  *
  * ToDo: Finish documentation!
+ *
+ * \ingroup Thyra_Nonlin_ME_support_grp
  */
 template<class Scalar>
 class DefaultFiniteDifferenceModelEvaluator

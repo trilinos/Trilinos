@@ -242,6 +242,8 @@ namespace Thyra {
  * 
  * <b>Note:</b> In this case, of course, the observation response function
  * must have dimension 1.
+ *
+ * \ingroup Thyra_Nonlin_ME_support_grp
  */
 template<class Scalar>
 class DefaultInverseModelEvaluator

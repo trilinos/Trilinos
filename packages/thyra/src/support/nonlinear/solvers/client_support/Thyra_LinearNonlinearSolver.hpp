@@ -45,6 +45,8 @@ namespace Thyra {
  * This class basically implements a Newton method with one iteration and
  * never checks the final tolerence.  Otherwise, it is identical to a Newton
  * method with one iteration.
+ *
+ * \ingroup Thyra_Nonlin_ME_solvers_grp
  */
 template <class Scalar>
 class LinearNonlinearSolver : public NonlinearSolverBase<Scalar> {
@@ -99,7 +101,7 @@ private:
 
 /** \biref Nonmember constructor.
  *
- * \relates ???
+ * \relates LinearNonlinearSolver
  */
 template <class Scalar>
 RCP<LinearNonlinearSolver<Scalar> > linearNonlinearSolver()

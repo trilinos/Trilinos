@@ -36,7 +36,11 @@
 namespace Thyra {
 
 
-/** \brief Base interface for transforming a LinearOpBase object. */
+/** \brief Transformer subclass for diagonally scaling and multiplying
+ * Epetra/Thyra operators.
+ *
+ * \ingroup EpetraExt_Thyra_Op_Vec_adapters_grp
+ */
 class EpetraExtDiagScaledMatProdTransformer : public LinearOpTransformerBase<double>
 {
 public:

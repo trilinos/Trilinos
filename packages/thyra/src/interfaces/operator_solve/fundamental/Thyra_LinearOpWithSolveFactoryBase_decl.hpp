@@ -41,7 +41,7 @@ namespace Thyra {
 /** \brief Factory interface for creating <tt>LinearOpWithSolveBase</tt>
  * objects from compatible <tt>LinearOpBase</tt> objects.
  *
- * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
+ * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
  *
  * \section LOWSFB_outline_sec Outline
  *

@@ -37,9 +37,9 @@ namespace Thyra {
 /** \brief Abstract interface for an object that can create
  * <tt>LinearOpWithSolveFactoryBase</tt> objects on demand.
  *
- * ToDo: Finish documentation!
+ * \ingroup Thyra_Op_Solve_extended_interfaces_code_grp
  *
- * \ingroup Thyra_Op_Solve_Interoperability_Extended_Interfaces_grp
+ * ToDo: Finish documentation!
  */
 template<class Scalar>
 class LinearSolverBuilderBase : virtual public Teuchos::ParameterListAcceptor

@@ -31,7 +31,9 @@
 
 #include "Thyra_OperatorVectorTypes.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Base interface for a factory that converts vector space types and
  * vectors and multi-vectors from one scalar type to another.
@@ -50,7 +52,7 @@ namespace Thyra {
  *
  * ToDo: Finish documentation!
  *
- * \ingroup Thyra_Op_Vec_Interoperability_Extended_Interfaces_grp
+ * \ingroup Thyra_Op_Vec_extended_interfaces_code_grp
  */
 template<class ScalarFrom, class ScalarTo>
 class VectorSpaceConverterBase {
@@ -85,6 +87,8 @@ public:
   
 };
 
+
 } // namespace Thyra
+
 
 #endif // THYRA_VECTOR_SPACE_CONVERTED_BASE_HPP

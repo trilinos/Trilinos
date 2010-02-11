@@ -44,6 +44,8 @@ namespace Thyra {
  * This enables the use of absrtact Thyra operators in AztecOO as
  * preconditioners and operators, without being rendered into concrete Epetra
  * matrices.
+ *
+ * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
 class EpetraOperatorWrapper : public Epetra_Operator
 {
