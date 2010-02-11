@@ -103,7 +103,7 @@ namespace Epetra {
   class DefaultMappingStrategy : public MappingStrategy {
   public:
      /** */
-     DefaultMappingStrategy(const RCP<const Thyra::LinearOpBase<double> > & thyraOp, Epetra_Comm & comm);
+     DefaultMappingStrategy(const RCP<const Thyra::LinearOpBase<double> > & thyraOp,const Epetra_Comm & comm);
 
      virtual ~DefaultMappingStrategy() {}
 
@@ -218,7 +218,7 @@ namespace Epetra {
     EpetraOperatorWrapper();
 
     /** */
-    RCP<Epetra_Comm> getEpetraComm(const Thyra::LinearOpBase<double> & inOp) const;
+    RCP<const Epetra_Comm> getEpetraComm(const Thyra::LinearOpBase<double> & inOp) const;
 
     /** */
     void SetOperator(const RCP<const Thyra::LinearOpBase<double> > & thyraOp,bool buildMap=true);
@@ -237,7 +237,7 @@ namespace Epetra {
     bool useTranspose_;
 
     /** */
-    RCP<Epetra_Comm> comm_;
+    RCP<const Epetra_Comm> comm_;
 
     /** */
     std::string label_;

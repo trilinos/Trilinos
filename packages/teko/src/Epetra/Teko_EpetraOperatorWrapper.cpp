@@ -41,7 +41,7 @@
 #endif
 #include "Thyra_EpetraThyraWrappers.hpp"
 
-#include "Thyra_LinearOperator.hpp"
+// #include "Thyra_LinearOperator.hpp"
 #include "Thyra_BlockedLinearOpBase.hpp"
 #include "Thyra_ProductVectorSpaceBase.hpp"
 
@@ -56,14 +56,18 @@ namespace Epetra {
 using namespace Teuchos;
 using namespace Thyra;
 
-DefaultMappingStrategy::DefaultMappingStrategy(const RCP<const Thyra::LinearOpBase<double> > & thyraOp, Epetra_Comm & comm)
+DefaultMappingStrategy::DefaultMappingStrategy(const RCP<const Thyra::LinearOpBase<double> > & thyraOp,const Epetra_Comm & comm)
 {
+   RCP<Epetra_Comm> newComm = rcp(comm.Clone());
+
    // extract vector spaces from linear operator
    domainSpace_ = thyraOp->domain();
    rangeSpace_ = thyraOp->range();
 
-   domainMap_ = Teko::Epetra::thyraVSToEpetraMap(*domainSpace_,Teuchos::rcpFromRef(comm));
-   rangeMap_ = Teko::Epetra::thyraVSToEpetraMap(*rangeSpace_,Teuchos::rcpFromRef(comm));
+   // domainMap_ = Teko::Epetra::thyraVSToEpetraMap(*domainSpace_,Teuchos::rcpFromRef(comm));
+   // rangeMap_ = Teko::Epetra::thyraVSToEpetraMap(*rangeSpace_,Teuchos::rcpFromRef(comm));
+   domainMap_ = Teko::Epetra::thyraVSToEpetraMap(*domainSpace_,newComm);
+   rangeMap_ = Teko::Epetra::thyraVSToEpetraMap(*rangeSpace_,newComm);
 }
 
 void DefaultMappingStrategy::copyEpetraIntoThyra(const Epetra_MultiVector& x, const Ptr<Thyra::MultiVectorBase<double> > & thyraVec,
@@ -167,9 +171,35 @@ int EpetraOperatorWrapper::ApplyInverse(const Epetra_MultiVector& X,
 }
 
 
-RCP<Epetra_Comm> 
+RCP<const Epetra_Comm> 
 EpetraOperatorWrapper::getEpetraComm(const Thyra::LinearOpBase<double>& inOp) const
 {
+  RCP<const VectorSpaceBase<double> > vs = inOp.domain();
+
+  RCP<const SpmdVectorSpaceBase<double> > spmd;
+  RCP<const VectorSpaceBase<double> > current = vs;
+  while(current!=Teuchos::null) {
+     // try to cast to a product vector space first
+     RCP<const ProductVectorSpaceBase<double> > prod
+           = rcp_dynamic_cast<const ProductVectorSpaceBase<double> >(current);
+
+     // figure out what type it is
+     if(prod==Teuchos::null) {
+        // hopfully this is a SPMD vector space
+        spmd = rcp_dynamic_cast<const SpmdVectorSpaceBase<double> >(current);
+
+        break;
+     }
+     else // get first convenient vector space
+        current = prod->getBlock(0);
+  }
+
+  TEST_FOR_EXCEPTION(spmd==Teuchos::null, std::runtime_error, 
+                     "EpetraOperatorWrapper requires std::vector space "
+                     "blocks to be SPMD std::vector spaces");
+
+  return Thyra::get_Epetra_Comm(*spmd->getComm());
+/*
   const Thyra::ConstLinearOperator<double> thyraOp = rcpFromRef(inOp); 
 
   RCP<Epetra_Comm> rtn;
@@ -230,6 +260,7 @@ EpetraOperatorWrapper::getEpetraComm(const Thyra::LinearOpBase<double>& inOp) co
 
   TEST_FOR_EXCEPTION(rtn.get()==0, std::runtime_error, "null communicator created");
   return rtn;
+*/
 }
 
 int EpetraOperatorWrapper::GetBlockRowCount()
