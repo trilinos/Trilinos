@@ -185,6 +185,10 @@ int main(int argc, char *argv[])
       TimeMonitor::getNewTimer("Nonlinear Solve Time");
     RCP<Time> preconditioner_solve_time = 
       TimeMonitor::getNewTimer("Preconditioner Time");
+    RCP<Time> setup_time = 
+      TimeMonitor::getNewTimer("Setup Time (not scalable)");
+
+    setup_time->start();
 
     bool print_debug_info = false;
 
@@ -616,6 +620,8 @@ int main(int argc, char *argv[])
     RCP< Belos::SolverManager<double,MV,OP> > gmres_solver = 
       rcp( new Belos::BlockGmresSolMgr<double,MV,OP>(problem, belosList) );
     
+    setup_time->stop();
+
     // *********************************************************
     // * Solve the system
     // *********************************************************
