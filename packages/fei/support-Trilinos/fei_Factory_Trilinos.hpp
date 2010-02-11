@@ -11,6 +11,8 @@
 
 #include "fei_trilinos_macros.hpp"
 
+#include <fei_mpi.h>
+
 #include <fei_Include_Trilinos.hpp>
 
 #ifdef HAVE_FEI_EPETRA
