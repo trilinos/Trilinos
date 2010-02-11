@@ -436,7 +436,7 @@ defaultLumpedParameterModelEvaluator(
 template<class Scalar>
 const std::string
 DefaultLumpedParameterModelEvaluator<Scalar>::ParameterSubvectorIndex_name_
-= "Parameter Subvector Ordinal";
+= "Parameter Subvector Index";
 
 template<class Scalar>
 const int
