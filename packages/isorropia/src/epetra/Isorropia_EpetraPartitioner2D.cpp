@@ -261,12 +261,18 @@ partition(bool force_repartitioning)
   std::string zoltan("ZOLTAN");
   Teuchos::ParameterList &sublist = paramlist_.sublist(zoltan);
 
+  if (paramlist_.isParameter("NUM PARTS")) 
+  {
+    sublist.set("NUM_GLOBAL_PARTS", paramlist_.get<std::string>("NUM PARTS"));
+  }
+  if (paramlist_.isParameter("IMBALANCE TOL")) 
+  {
+    sublist.set("IMBALANCE_TOL", paramlist_.get<std::string>("IMBALANCE TOL"));
+  }
+
   lib_->repartition(sublist, properties_, exportsSize_, imports_);
-
   computeNumberOfProperties();
-
   operation_already_computed_ = true;
-
 }
 ////////////////////////////////////////////////////////////////////////////////
 

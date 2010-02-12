@@ -639,9 +639,7 @@ repartition(Teuchos::ParameterList& zoltanParamList,
     }
   }
 
-
   //zz_->Set_Param("FINAL_OUTPUT","1"); //MMW
-
 
   //Generate Load Balance
   int changes=0, num_gid_entries=0, num_lid_entries=0, num_import=0, num_export=0;
@@ -663,13 +661,11 @@ repartition(Teuchos::ParameterList& zoltanParamList,
   imports.clear();
   imports.assign(import_global_ids, import_global_ids + num_import);
 
-  //MMW: NEED to fix
+  //MMW: NEED to fix: Bug 4701
   properties.assign(num_obj_, queryObject_->RowMap().Comm().MyPID());
 
   for( int i = 0; i < num_export; ++i ) 
   {
-
-
     properties[export_local_ids[i]] = export_to_part[i];
   }
 
