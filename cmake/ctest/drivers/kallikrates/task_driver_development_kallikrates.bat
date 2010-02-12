@@ -48,7 +48,7 @@ rem Now run ctest on each of the ctest build scripts for this machine
 call "%CTEST_EXE%" -S "%BASEDIR%\Trilinos\cmake\ctest\drivers\kallikrates\ctest_windows_nightly_serial_development.cmake" -VV >"%BASEDIR%\ctest_msvc_nightly_serial_development_kallikrates.out" 2>&1
 
 rem Have to set the path so that the tests can find the dlls during runtime. We need a better solution than this long term. Something like -rpath for gnu.
-set PATH=%PATH%;%BASEDIR%\SERIAL_OPT_DEV_SHARED\BUILD\packages\src\epetra;%BASEDIR%\SERIAL_OPT_DEV_SHARED\BUILD\packages\src\teuchos;%BASEDIR%\SERIAL_OPT_DEV_SHARED\BUILD\packages\src\anasazi
+set PATH=%PATH%;%BASEDIR%\SERIAL_OPT_DEV_SHARED\BUILD\packages\epetra\src;%BASEDIR%\SERIAL_OPT_DEV_SHARED\BUILD\packages\teuchos\src;%BASEDIR%\SERIAL_OPT_DEV_SHARED\BUILD\packages\anasazi\src
 
 call "%CTEST_EXE%" -S "%BASEDIR%\Trilinos\cmake\ctest\drivers\kallikrates\ctest_windows_nightly_serial_development_shared.cmake" -VV >"%BASEDIR%\ctest_msvc_nightly_serial_development_shared_kallikrates.out" 2>&1
 
