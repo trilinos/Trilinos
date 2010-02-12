@@ -4,4 +4,4 @@ This is an example of using phalanx with a finite element discretization.  Some 
 
 2. We use explicit template instantiation for the evaluators, so that compilation times are fast when recompiling evaluators.  You can enable explicit template instantiation by defining PHX_ETI in your configure script.
 
-3. This is a serial example.
+3. This is a fully parallel example.  For scalability you will need the ml precoditioners.
