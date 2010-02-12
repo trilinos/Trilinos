@@ -106,11 +106,11 @@ public:
 
 
 
-  /** Return the new partition ID for a given element that
-     resided locally in the old partitioning.
-  */
+//   /** Return the new partition ID for a given element that
+//      resided locally in the old partitioning.
+//   */
 
-  virtual int newPartitionNumber(int myElem) const = 0;
+//   virtual int newPartitionNumber(int myElem) const = 0;
 
 
 

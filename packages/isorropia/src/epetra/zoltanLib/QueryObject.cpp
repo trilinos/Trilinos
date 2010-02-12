@@ -139,7 +139,7 @@ QueryObject::QueryObject( Teuchos::RCP<const Epetra_RowMatrix> matrix,
       }
     }
   }
-  else  // otherwise must be hypergraph
+  else if(input_type_ != hgraph2d_finegrain_input_) // otherwise must be hypergraph
   {
     input_type_ = hgraph_input_;
   }
@@ -331,11 +331,13 @@ void QueryObject::Object_List  ( void * data,
 {
   QueryObject *zq = (QueryObject *)data;
 
-  if (zq){
+  if (zq)
+  {
     zq->My_Object_List(num_gid_entries, num_lid_entries,
 		    global_ids, local_ids, weight_dim, object_weights, ierr);
   }
-  else{
+  else
+  {
     *ierr = ZOLTAN_FATAL;
   }
 
@@ -384,12 +386,15 @@ void QueryObject::HG_Size_CS ( void * data,
 {
   QueryObject *zq = (QueryObject *)data;
 
-  if (zq){
+  if (zq)
+  {
     zq->My_HG_Size_CS(num_lists, num_pins, format, ierr );
   }
-  else{
+  else
+  {
     *ierr = ZOLTAN_FATAL;
   }
+
 }
 void QueryObject::HG_CS ( void * data,
 	    int num_gid_entries, int num_row_or_col, int num_pins, int format,
@@ -468,10 +473,12 @@ int QueryObject::My_Number_Objects(int * ierr )
 {
   *ierr = ZOLTAN_OK;
 
-  if (input_type_ == geometric_input_){
+  if (input_type_ == geometric_input_)
+  {
     return coords_->MyLength();
   }
-  else if (input_type_ == hgraph2d_finegrain_input_){
+  else if (input_type_ == hgraph2d_finegrain_input_)
+  {
     if (!haveGraph_)
     {
       return matrix_->NumMyNonzeros();
@@ -481,7 +488,8 @@ int QueryObject::My_Number_Objects(int * ierr )
       return graph_->NumMyNonzeros();
     }
   }
-  else{
+  else
+  {
     return rowMap_->NumMyElements();  // graph or hypergraph
   }
 }
@@ -514,7 +522,7 @@ void QueryObject::My_Object_List(int num_gid_entries, int num_lid_entries,
 
     if (!haveGraph_) //matrix
     {
-      int ngids = 0;
+      ngids = 0;
       for (int rowNum=0; rowNum<numRows; rowNum++)
       {
         int rowSize;
@@ -541,7 +549,7 @@ void QueryObject::My_Object_List(int num_gid_entries, int num_lid_entries,
     }
     else // graph    
     {
-      int ngids = 0;
+      ngids = 0;
       for (int rowNum=0; rowNum<numRows; rowNum++)
       {
         int rowSize;
@@ -563,11 +571,18 @@ void QueryObject::My_Object_List(int num_gid_entries, int num_lid_entries,
         delete [] tmprowCols;
       }
     }
+
+    for (int indx=0; indx<ngids/2; indx++)
+    {
+      local_ids[indx] = indx;
+    }
+
     return;
   } // fine-grain hypergraph case
 
 
-  if (ngids < 1){
+  if (ngids < 1)
+  {
     return;
   }
 
@@ -575,7 +590,8 @@ void QueryObject::My_Object_List(int num_gid_entries, int num_lid_entries,
     local_ids[i] = i;
   }
 
-  if (weight_dim >= 1){          // Note we only supply 1-D weights
+  if (weight_dim >= 1) // Note we only supply 1-D weights
+  {          
     float *to_wgts = object_weights;
     if (input_type_ == geometric_input_){
       double *wgts=NULL;
@@ -594,13 +610,15 @@ void QueryObject::My_Object_List(int num_gid_entries, int num_lid_entries,
         }
       }
     }
-    else if (costs_->haveVertexWeights()){
+    else if (costs_->haveVertexWeights())
+    {
       std::map<int, float> weightMap;
       std::map<int, float>::iterator curr;
       std::map<int, float>::iterator end = weightMap.end();
   
       int mapSize = costs_->getVertexWeights(weightMap);
-      if (mapSize != ngids){
+      if (mapSize != ngids)
+      {
         *ierr = ZOLTAN_FATAL;
         std::cout << "Proc:" << myProc_ << " Error: ";
         std::cout << "QueryObject::My_Object_List, number of vertex weights" << std::endl;
@@ -619,6 +637,7 @@ void QueryObject::My_Object_List(int num_gid_entries, int num_lid_entries,
       }
     }
   }
+
   return;
 }
 
@@ -794,14 +813,34 @@ void QueryObject::My_HG_Size_CS(int* num_lists, int* num_pins, int* format, int 
 
   *format = ZOLTAN_COMPRESSED_VERTEX;   // We will return row (vertex) lists
 
-  if (haveGraph_){
-    *num_lists = graph_->NumMyRows();       // Number of rows
-    *num_pins = graph_->NumMyNonzeros();    // Total nonzeros in these rows
+
+  if(input_type_ == hgraph2d_finegrain_input_) // 2D fine-grain hypergraph
+  {
+    if (haveGraph_) // graph
+    {
+       *num_lists = graph_->NumMyNonzeros(); 
+    }
+    else // matrix
+    {
+      *num_lists = matrix_->NumMyNonzeros(); 
+    }
+    *num_pins = 2 * (*num_lists);
   }
-  else{
-    *num_lists = matrix_->NumMyRows();       // Number of rows
-    *num_pins = matrix_->NumMyNonzeros();    // Total nonzeros in these rows
+  else // 1D hypergraph
+  {
+    if (haveGraph_)
+    {
+      *num_lists = graph_->NumMyRows();       // Number of rows
+      *num_pins = graph_->NumMyNonzeros();    // Total nonzeros in these rows
+    }
+    else
+    {
+      *num_lists = matrix_->NumMyRows();       // Number of rows
+      *num_pins = matrix_->NumMyNonzeros();    // Total nonzeros in these rows
+    }
   }
+
+
 
   return;
 }
@@ -816,10 +855,23 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
 
   *ierr = ZOLTAN_OK;
 
-  if (haveGraph_){
+  /////////////////////////////////////////////////////
+  // if fine-grain hypergraph, call this other function
+  /////////////////////////////////////////////////////
+  if(input_type_ == hgraph2d_finegrain_input_)
+  {
+    My_FGHG_CS(num_gid_entries, num_row_or_col, num_pins, format, 
+               vtxedge_GID, vtxedge_ptr, pin_GID, ierr);
+    return;
+  }
+  /////////////////////////////////////////////////////
+
+  if (haveGraph_)
+  {
     npins = graph_->NumMyNonzeros();
   }
-  else{
+  else
+  {
     npins = matrix_->NumMyNonzeros();
     int maxrow = matrix_->MaxNumEntries();
     if (maxrow > 0){
@@ -876,10 +928,147 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
     npins -= num_indices;
   }
 
-  if (tmp){
+  if (tmp)
+  {
     delete [] tmp;
   }
 }
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+void QueryObject::My_FGHG_CS (int num_gid_entries, int num_nonzeros, int num_pins, int format,
+	    ZOLTAN_ID_PTR vtx_GID, int* vtx_ptr, ZOLTAN_ID_PTR pin_GID,
+				     int * ierr )
+{
+  int nverts, npins;
+
+   *ierr = ZOLTAN_OK;
+
+   //////////////////////////////////////////
+   // Sanity checks of function input
+   //////////////////////////////////////////
+   if (haveGraph_)  // graph
+   {
+      nverts = graph_->NumMyNonzeros();
+   }
+   else   //matrix
+   {
+      nverts = matrix_->NumMyNonzeros();
+   }
+   npins = 2*nverts;
+
+   if ((format != ZOLTAN_COMPRESSED_VERTEX) ||
+       (num_nonzeros != nverts) || (num_pins != npins))
+   {
+      *ierr = ZOLTAN_FATAL;
+      std::cout << "Proc:" << myProc_ << " Error: ";
+      std::cout << "QueryObject::My_HG_CS, bad arguments" << std::endl;
+      return;
+   }
+   //////////////////////////////////////////
+
+   //////////////////////////////////////////
+   // Allocate temporary memory needed for row extraction
+   //////////////////////////////////////////
+   int *tmprowCols=0;
+   double *tmprowVals=0;
+
+   int maxrow=0;
+
+   if (haveGraph_)  // graph
+   {
+      maxrow = graph_->MaxNumIndices();
+
+      if (maxrow > 0)
+      {
+         tmprowCols = new int [maxrow];
+         if (!tmprowCols)
+         {
+ 	   *ierr = ZOLTAN_MEMERR;
+ 	   return;
+         }
+      }
+   }
+   else   //matrix
+   {
+      maxrow = matrix_->MaxNumEntries();
+      if (maxrow > 0)
+      {
+         tmprowCols = new int [maxrow];
+         if (!tmprowCols)
+         {
+ 	   *ierr = ZOLTAN_MEMERR;
+ 	   return;
+         }
+         tmprowVals = new double [maxrow];
+         if (!tmprowVals)
+         {
+ 	   *ierr = ZOLTAN_MEMERR;
+ 	   return;
+         }
+      }
+   }
+   //////////////////////////////////////////
+
+   //////////////////////////////////////////
+   int numRows = rowMap_->NumMyElements();
+   int num_indices = 0;
+
+   vtx_ptr[0] = 0;
+   int nzindx=0;
+   int rc=0;
+   for (int rowi=0; rowi<numRows; rowi++)
+   {
+
+      if (haveGraph_)
+      {
+         rc = graph_->ExtractMyRowCopy(rowi, maxrow, num_indices, tmprowCols);
+      }
+      else
+      {
+         rc = matrix_->ExtractMyRowCopy(rowi, maxrow, num_indices, tmprowVals, tmprowCols);
+      }
+
+      if (rc != 0)
+      {
+         *ierr = ZOLTAN_FATAL;
+         std::cout << "Proc:" << myProc_ << " Error: ";
+         std::cout << "QueryObject::My_FGHG_CS, extracting row" << std::endl;
+         return;
+      }
+
+      for(int indx=0; indx<num_indices; indx++)
+      {
+        vtx_GID[2*nzindx] = rowMap_->GID(rowi);
+        vtx_GID[2*nzindx+1] = colMap_->GID(tmprowCols[indx]);
+
+        // First pin for vertex (row pin)
+        pin_GID[4*nzindx] = 0;
+        pin_GID[4*nzindx+1] = rowMap_->GID(rowi);
+
+        // Second pin for vertex (column pin)
+        pin_GID[4*nzindx+2] = 1;
+        pin_GID[4*nzindx+3] = colMap_->GID(tmprowCols[indx]);
+
+        nzindx++;
+        vtx_ptr[nzindx]= 2*nzindx;
+      }
+
+   }
+   //////////////////////////////////////////
+
+
+    if (tmprowCols) 
+    {
+      delete [] tmprowCols;
+    }
+    if (tmprowVals) 
+    {
+      delete [] tmprowVals;
+    }
+}
+////////////////////////////////////////////////////////////////////////////////
+
 
 void QueryObject::My_HG_Size_Edge_Weights( int* num_edges, int* ierr)
 {

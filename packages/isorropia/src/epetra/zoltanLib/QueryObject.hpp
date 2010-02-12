@@ -158,10 +158,19 @@ class QueryObject
    */
   void My_HG_Size_CS (int* num_lists, int* num_pins, int* format,
 			  int * ierr );
+
   /** My_HG_CS() is a query function used for hypergraph partitioning
       only. Zoltan calls this query to get the non-zeros lists from the QueryObject. 
    */
   void My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pins,
+	   int format, ZOLTAN_ID_PTR vtxedge_GID, int* vtxedge_ptr, ZOLTAN_ID_PTR pin_GID,
+				       int * ierr );
+
+
+  /** My_FGHG_CS() is a query function used for fine-grain hypergraph partitioning
+      only. Zoltan calls this query to get the non-zeros lists from the QueryObject. 
+   */
+  void My_FGHG_CS (int num_gid_entries, int num_row_or_col, int num_pins,
 	   int format, ZOLTAN_ID_PTR vtxedge_GID, int* vtxedge_ptr, ZOLTAN_ID_PTR pin_GID,
 				       int * ierr );
 

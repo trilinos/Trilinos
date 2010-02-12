@@ -233,20 +233,16 @@ Partitioner2D::~Partitioner2D(){}
 void Partitioner2D::
 partition(bool force_repartitioning)
 {
-
-  std::cout << "MMW::NEED to reimplement" << std::endl; //MMW
-
-
-  std::string partitioning_method_str("PARTITIONING_METHOD");
+  std::string partitioning_method_str("PARTITIONING METHOD");
   std::string partitioning_method =
     paramlist_.get(partitioning_method_str, "UNSPECIFIED");
 
-  if(partitioning_method_str == "UNSPECIFIED")
+  if(partitioning_method == "UNSPECIFIED")
   {
     throw Isorropia::Exception("PARTITIONING_METHOD parameter must be specified.");
   }
 
-  if(partitioning_method_str != "HGRAPH2D_FINEGRAIN" && partitioning_method_str != "HGRAPH2D_placeholder")
+  if(partitioning_method != "HGRAPH2D_FINEGRAIN")
   {
     throw Isorropia::Exception("PARTITIONING_METHOD parameter must be HGRAPH2D_FINEGRAIN.");
   }
@@ -261,7 +257,6 @@ partition(bool force_repartitioning)
   else
     lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix_, costs_, 
              Library::hgraph2d_finegrain_input_));
-
 
   std::string zoltan("ZOLTAN");
   Teuchos::ParameterList &sublist = paramlist_.sublist(zoltan);
