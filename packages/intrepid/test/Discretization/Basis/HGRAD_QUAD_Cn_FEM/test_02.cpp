@@ -34,12 +34,13 @@
 */
 
 #include "Intrepid_FieldContainer.hpp"
-#include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
+#include "Intrepid_HGRAD_QUAD_Cn_FEM.hpp"
 #include "Intrepid_DefaultCubatureFactory.hpp"
 #include "Intrepid_RealSpaceTools.hpp"
 #include "Intrepid_ArrayTools.hpp"
 #include "Intrepid_FunctionSpaceTools.hpp"
 #include "Intrepid_CellTools.hpp"
+#include "Intrepid_PointTools.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
@@ -172,7 +173,7 @@ int main(int argc, char *argv[]) {
   *outStream \
     << "===============================================================================\n" \
     << "|                                                                             |\n" \
-    << "|                    Unit Test (Basis_HGRAD_QUAD_C2_FEM)                      |\n" \
+    << "|                    Unit Test (Basis_HGRAD_QUAD_Cn_FEM)                      |\n" \
     << "|                                                                             |\n" \
     << "|     1) Patch test involving mass and stiffness matrices,                    |\n" \
     << "|        for the Neumann problem on a physical parallelogram                  |\n" \
@@ -275,8 +276,10 @@ int main(int argc, char *argv[]) {
           double zero = basis_order*basis_order*100*INTREPID_TOL;
 
           //create basis
+	  FieldContainer<double> pts(PointTools::getLatticeSize(side,2),1);
+	  PointTools::getLattice<double,FieldContainer<double> >(pts,side,2);
           Teuchos::RCP<Basis<double,FieldContainer<double> > > basis =
-            Teuchos::rcp(new Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer<double> >() );
+            Teuchos::rcp(new Basis_HGRAD_QUAD_Cn_FEM<double,FieldContainer<double> >(2,2,pts,pts) );
           int numFields = basis->getCardinality();
 
           // create cubatures

@@ -35,7 +35,7 @@
 */
 
 #ifndef INTREPID_PRODUCTTOPOLOGY_HPP
-#define INTREPID_PRODUCTOPOLOGY_HPP
+#define INTREPID_PRODUCTTOPOLOGY_HPP
 
 #include "Shards_CellTopology.hpp"
 #include "Teuchos_TestForException.hpp"
@@ -63,6 +63,24 @@ namespace Intrepid {
 			       const int entity0 ,
 			       const int dim1 ,
 			       const int entity1 ,
+			       int &resultdim ,
+			       int &resultentity );
+    /** \brief 
+	\param dim0         [in]  - dimension of first term in cartesian product
+	\param entity0      [in]  - entity id of first term in cartesian product
+	\param dim1         [in]  - dimension of second term in cartesian product
+	\param entity1      [in]  - entity id of second term in cartesian product
+	\param dim2         [in]  - dimension of third term in cartesian product
+	\param entity2      [in]  - entity id of third term in cartesian product
+	\param resultdim    [out] - dimension of resulting entity
+	\param resultentity [out] - id of resulting entity
+    */    
+    static void lineProduct3d( const int dim0 ,
+			       const int entity0 ,
+			       const int dim1 ,
+			       const int entity1 ,
+			       const int dim2 ,
+			       const int entity2 ,
 			       int &resultdim ,
 			       int &resultentity );
 

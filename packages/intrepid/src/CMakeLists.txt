@@ -94,6 +94,8 @@ APPEND_SET(HEADERS
   Discretization/Basis/Intrepid_HGRAD_HEX_C1_FEMDef.hpp
   Discretization/Basis/Intrepid_HGRAD_HEX_C2_FEM.hpp
   Discretization/Basis/Intrepid_HGRAD_HEX_C2_FEMDef.hpp
+  Discretization/Basis/Intrepid_HGRAD_HEX_Cn_FEM.hpp
+  Discretization/Basis/Intrepid_HGRAD_HEX_Cn_FEMDef.hpp
   Discretization/Basis/Intrepid_HGRAD_LINE_C1_FEM.hpp
   Discretization/Basis/Intrepid_HGRAD_LINE_C1_FEMDef.hpp
   Discretization/Basis/Intrepid_HGRAD_LINE_Cn_FEM_JACOBI.hpp
@@ -156,6 +158,8 @@ APPEND_SET(HEADERS
   Discretization/Basis/Intrepid_HCURL_TET_In_FEMDef.hpp
   Discretization/Basis/Intrepid_OrthogonalBases.hpp
   Discretization/Basis/Intrepid_OrthogonalBasesDef.hpp
+  Discretization/Basis/Intrepid_ProductTopology.hpp
+  Discretization/Basis/Intrepid_ProductTopologyDef.hpp
   )
 
 #
