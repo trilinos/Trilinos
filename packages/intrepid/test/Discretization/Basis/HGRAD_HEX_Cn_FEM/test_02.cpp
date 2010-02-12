@@ -34,7 +34,8 @@
 */
 
 #include "Intrepid_FieldContainer.hpp"
-#include "Intrepid_HGRAD_HEX_C2_FEM.hpp"
+#include "Intrepid_HGRAD_HEX_Cn_FEM.hpp"
+#include "Intrepid_PointTools.hpp"
 #include "Intrepid_DefaultCubatureFactory.hpp"
 #include "Intrepid_RealSpaceTools.hpp"
 #include "Intrepid_ArrayTools.hpp"
@@ -197,7 +198,7 @@ int main(int argc, char *argv[]) {
   *outStream \
     << "===============================================================================\n" \
     << "|                                                                             |\n" \
-    << "|                    Unit Test (Basis_HGRAD_HEX_C2_FEM)                       |\n" \
+    << "|                    Unit Test (Basis_HGRAD_HEX_Cn_FEM)                       |\n" \
     << "|                                                                             |\n" \
     << "|     1) Patch test involving mass and stiffness matrices,                    |\n" \
     << "|        for the Neumann problem on a physical parallelepiped                 |\n" \
@@ -229,10 +230,11 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    int max_order = 2;                                                                    // max total order of polynomial solution
+    int max_order = 3;                                                                    // max total order of polynomial solution
     DefaultCubatureFactory<double>  cubFactory;                                           // create factory
     shards::CellTopology cell(shards::getCellTopologyData< shards::Hexahedron<> >());     // create parent cell topology
     shards::CellTopology side(shards::getCellTopologyData< shards::Quadrilateral<> >());  // create relevant subcell (side) topology
+    shards::CellTopology line(shards::getCellTopologyData< shards::Line<> >());  // create relevant subcell (side) topology
     int cellDim = cell.getDimension();
     int sideDim = side.getDimension();
     unsigned numSides = 6;
@@ -337,14 +339,17 @@ int main(int argc, char *argv[]) {
             FieldContainer<double> exact_solution(1, numInterpPoints);
             u_exact(exact_solution, interp_points, x_order, y_order, z_order);
 
-            int basis_order = 2;
+            int basis_order = 3;
 
             // set test tolerance;
             double zero = basis_order*basis_order*basis_order*100*INTREPID_TOL;
 
-            //create basis
+	    //create basis
+	    FieldContainer<double> pts(PointTools::getLatticeSize(line,basis_order),1);
+	    PointTools::getLattice<double,FieldContainer<double> >(pts,line,basis_order);
+	    
             Teuchos::RCP<Basis<double,FieldContainer<double> > > basis =
-              Teuchos::rcp(new Basis_HGRAD_HEX_C2_FEM<double,FieldContainer<double> >() );
+              Teuchos::rcp(new Basis_HGRAD_HEX_Cn_FEM<double,FieldContainer<double> >( basis_order,basis_order,basis_order,pts,pts,pts) );
             int numFields = basis->getCardinality();
 
             // create cubatures
