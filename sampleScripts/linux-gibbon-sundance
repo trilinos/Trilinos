@@ -50,6 +50,13 @@ PYTHON_INC_PATH=${INC_PATH}/python2.5
 #
 FORTRAN_LIBS="-lgfortran"
 
+# ----------------------------------------------------------------------------
+# Find out whether the Chaco mesh partitioner has been installed
+if [ -x `tcsh -c "which chaco"` ] ; then
+HAVE_CHACO=ON
+else
+HAVE_CHACO=OFF
+fi
 
 # ----------------------------------------------------------------------------
 # Set variables that control the type of build
@@ -81,6 +88,7 @@ VERBOSE_CONFIGURE=OFF
 
 EXTRA_C_FLAGS=
 EXTRA_CXX_FLAGS=
+
 
 
 # ----------------------------------------------------------------------------
@@ -215,6 +223,7 @@ ${ECHO} cmake \
 -D Trilinos_ENABLE_Meros:BOOL=${ENABLE_MEROS} \
 -D Sundance_ENABLE_BROKEN_CODE:BOOL=OFF \
 -D Sundance_ENABLE_Python:BOOL=${PY_SUNDANCE} \
+-D Sundance_ENABLE_EXTERNAL_CHACO:BOOL=${HAVE_CHACO} \
 -D Trilinos_DATA_DIR:FILEPATH="${TRILINOS_DATA_DIR}" \
 -D NOX_ENABLE_LOCA:BOOL=OFF \
 -D CMAKE_INSTALL_PREFIX:PATH=${INSTALL_PREFIX} \
