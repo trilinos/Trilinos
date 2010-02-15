@@ -779,7 +779,7 @@ int main(int argc, char *argv[])
 
     // Only check num gmres steps in serial
 #ifndef HAVE_MPI
-    TEST_FOR_EXCEPTION(num_gmres_iterations != 20, std::runtime_error,
+    TEST_FOR_EXCEPTION(num_gmres_iterations != 10, std::runtime_error,
 		       "Incorrect number of GMRES iterations!");
 #endif
 

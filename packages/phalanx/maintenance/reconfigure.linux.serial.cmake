@@ -5,6 +5,8 @@ cmake -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
       -D Trilinos_ENABLE_Sacado:BOOL=ON \
       -D Trilinos_ENABLE_Epetra:BOOL=ON \
       -D Trilinos_ENABLE_Ifpack:BOOL=ON \
+      -D Trilinos_ENABLE_ML:BOOL=ON \
+      -D Trilinos_ENABLE_Amesos:BOOL=ON \
       -D Trilinos_ENABLE_AztecOO:BOOL=OFF \
       -D Trilinos_ENABLE_Belos:BOOL=ON \
       -D Trilinos_ENABLE_Phalanx:BOOL=ON \
@@ -31,4 +33,4 @@ cmake -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
       -D CMAKE_VERBOSE_MAKEFILE:BOOL=ON \
       -D Trilinos_VERBOSE_CONFIGURE:BOOL=OFF \
       -D CMAKE_SKIP_RULE_DEPENDENCY=ON \
-       ../
+       ../Trilinos

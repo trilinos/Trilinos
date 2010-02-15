@@ -507,7 +507,7 @@
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Shards,Sacado"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES value="Belos,Epetra,Ifpack,Intrepid,ML"/>
+    <TEST_OPTIONAL_DEP_PACKAGES value="Belos,Epetra,Ifpack,Intrepid,ML,Amesos"/>
     <LIB_REQUIRED_DEP_TPLS value="Boost"/>
     <LIB_OPTIONAL_DEP_TPLS/>
     <TEST_REQUIRED_DEP_TPLS/>

@@ -7,6 +7,8 @@ cmake \
       -D Trilinos_ENABLE_Sacado:BOOL=ON \
       -D Trilinos_ENABLE_Epetra:BOOL=ON \
       -D Trilinos_ENABLE_Ifpack:BOOL=ON \
+      -D Trilinos_ENABLE_ML:BOOL=ON \
+      -D Trilinos_ENABLE_Amesos:BOOL=ON \
       -D Trilinos_ENABLE_AztecOO:BOOL=OFF \
       -D Trilinos_ENABLE_Belos:BOOL=ON \
       -D Trilinos_ENABLE_Intrepid:BOOL=ON \
@@ -40,6 +42,6 @@ cmake \
       -D Trilinos_ENABLE_STRONG_CXX_COMPILE_WARNINGS=OFF \
       -D Trilinos_ENABLE_STRONG_C_COMPILE_WARNINGS=OFF \
       -D Trilinos_ENABLE_SHADOW_WARNINGS=OFF \
-       ../
+       ../Trilinos
 
 ##      -D CMAKE_EXE_LINKER_FLAGS:STRING="-L/usr/lib -lgfortran" \
