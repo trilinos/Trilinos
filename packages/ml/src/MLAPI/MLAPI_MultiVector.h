@@ -120,13 +120,13 @@ public:
     NumVectors_  = NumVectors;
     VectorSpace_ = VectorSpace;
     SetRCPLength(NumVectors);
-    if (GetMyLength()) {
+    //if (GetMyLength()) {
       for (int v = 0 ; v < NumVectors ; ++v)
         SetRCPValues(Teuchos::rcp(new DoubleVector(GetMyLength())), v);
 
       if (SetToZero)
         *this = 0.0;
-    }
+    //}
 
     StackPop();
   }
@@ -218,10 +218,10 @@ public:
     VectorSpace_ = S;
     SetRCPLength(GetNumVectors());
     for (int v = 0 ; v < GetNumVectors() ; ++v) {
-      if (GetMyLength())
+      //if (GetMyLength())
         SetRCPValues(Teuchos::rcp(new DoubleVector(GetMyLength())), v);
-      else
-        SetRCPValues(Teuchos::null, v);
+      //else
+      //  SetRCPValues(Teuchos::null, v);
     }
 
     if (SetToZero) *this = 0.0;
@@ -235,11 +235,10 @@ public:
     int n = GetMyLength();
 
     for (int v = 0 ; v < NumVectors ; ++v) {
-      if (GetMyLength()) {
+      //if (GetMyLength())
         RCPValues_.push_back(Teuchos::rcp(new DoubleVector(n)));
-      }
-      else
-        RCPValues_.push_back(Teuchos::null);
+      //else
+      //  RCPValues_.push_back(Teuchos::null);
 
       ++NumVectors_;
 

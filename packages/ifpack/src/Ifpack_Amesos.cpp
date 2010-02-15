@@ -133,8 +133,8 @@ int Ifpack_Amesos::Initialize()
     IFPACK_CHK_ERR(-1);
 
   // at least one nonzero
-  if (Matrix_->NumMyNonzeros() == 0) 
-    IFPACK_CHK_ERR(-1);
+  //if (Matrix_->NumMyNonzeros() == 0) 
+  //  IFPACK_CHK_ERR(-1);
 
   Problem_->SetOperator(const_cast<Epetra_RowMatrix*>(Matrix_.get()));
 
