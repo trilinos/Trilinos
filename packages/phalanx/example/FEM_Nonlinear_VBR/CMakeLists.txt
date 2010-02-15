@@ -5,7 +5,7 @@ ASSERT_DEFINED(Phalanx_ENABLE_Belos)
 ASSERT_DEFINED(Phalanx_ENABLE_Epetra)
 ASSERT_DEFINED(Phalanx_ENABLE_Ifpack)
 
-IF (Phalanx_ENABLE_Epetra AND Phalanx_ENABLE_Belos AND Phalanx_ENABLE_Ifpack AND Phalanx_ENABLE_ML)
+IF (Phalanx_ENABLE_Epetra AND Phalanx_ENABLE_Belos AND Phalanx_ENABLE_Ifpack AND Phalanx_ENABLE_ML AND Phalanx_ENABLE_Amesos)
 
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
   
