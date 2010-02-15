@@ -2690,7 +2690,7 @@ void Trilinos_Util::CrsMatrixGallery::CreateMatrixPei(void)
     for( int j=0 ; j<NumGlobalElements_ ; ++j ) {
       Indices[j] = j;
       Values[j] = 1.0;
-      if( j == MyGlobalElements_[i] ) Values[j] += a_;
+      if( MyGlobalElements_[i] == j ) Values[j] += a_;
     }
 
     matrix_->InsertGlobalValues(MyGlobalElements_[i], NumEntries, Values, Indices);
