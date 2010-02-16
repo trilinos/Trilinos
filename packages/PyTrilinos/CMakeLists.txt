@@ -43,7 +43,7 @@ SET(${PACKAGE_NAME}_VERSION 4.2)
 # the top-level names only, such as Epetra, AztecOO and NOX.  The list
 # of modules is similar to the packages, except it contains the names
 # of python modules that correspond to nested namespaces, such as
-# NOX.__init__ or NOX.Epetra.
+# NOX.__init__ or NOX.Epetra.Interface.
 SET(${PACKAGE_NAME}_PACKAGES "")
 SET(${PACKAGE_NAME}_MODULES  "")
 

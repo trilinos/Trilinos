@@ -19,7 +19,7 @@
 #
 # The user then calls
 #
-#     SWIG_ADD_MODULE(NAME LANGUAGE OUTDIR MODULE [SOURCE1 ...])
+#     SWIG_ADD_MODULE(NAME LANGUAGE SOURCE OUTDIR MODULE [OTHER_SOURCE1...])
 #
 # where NAME is a unique target name.  If possible, this should match
 # the MODULE name.  However, in cases where the MODULE name is not
@@ -27,8 +27,8 @@
 # have the same module name __init__), then NAME and MODULE should be
 # different.  LANGUAGE should be a supported SWIG target language,
 # OUTDIR and MODULE are typically obtained from
-# SWIG_MODULE_GET_OUTDIR_AND_MODULE(...), and SOURCE1, etc., are the
-# SWIG interface file and any additional required source files.
+# SWIG_MODULE_GET_OUTDIR_AND_MODULE(...), SOURCE is the SWIG interface
+# file, and OTHER_SOURCES1... are any additional source files.
 #
 # This also defines the following macro:
 #
@@ -38,7 +38,7 @@
 # LIBRARY1, etc., are the libraries the module is required to link to.
 
 # Re-worked by Bill Spotz, Sandia National Laboratories, March and
-# April, 2009.
+# April, 2009; February, 2010.
 
 SET(SWIG_CXX_EXTENSION "cpp")
 SET(SWIG_EXTRA_LIBRARIES "")
@@ -48,7 +48,7 @@ SET(SWIG_PYTHON_EXTRA_FILE_EXTENSION "py")
 #
 # For given swig module initialize variables associated with it
 #
-MACRO(SWIG_MODULE_INITIALIZE name language)
+MACRO(SWIG_MODULE_INITIALIZE name module language)
   STRING(TOUPPER "${language}" swig_uppercase_language)
   STRING(TOLOWER "${language}" swig_lowercase_language)
   SET(SWIG_MODULE_${name}_LANGUAGE "${swig_uppercase_language}")
@@ -61,7 +61,7 @@ MACRO(SWIG_MODULE_INITIALIZE name language)
   IF(SWIG_MODULE_${name}_MODULE)
     SET(SWIG_MODULE_${name}_REAL_NAME "${SWIG_MODULE_${name}_MODULE}")
   ELSE(SWIG_MODULE_${name}_MODULE)
-    SET(SWIG_MODULE_${name}_REAL_NAME "${name}")
+    SET(SWIG_MODULE_${name}_REAL_NAME "${module}")
   ENDIF(SWIG_MODULE_${name}_MODULE)
   IF("x${SWIG_MODULE_${name}_LANGUAGE}x" MATCHES "^xPYTHONx$")
     SET(SWIG_MODULE_${name}_REAL_NAME "_${SWIG_MODULE_${name}_REAL_NAME}")
@@ -100,25 +100,20 @@ ENDMACRO(SWIG_MODULE_GET_OUTDIR_AND_MODULE)
 # For a given language, input file, and output file, determine extra files that
 # will be generated. This is internal swig macro.
 #
-MACRO(SWIG_GET_EXTRA_OUTPUT_FILES language outfiles generatedpath infile)
-  GET_SOURCE_FILE_PROPERTY(SWIG_GET_EXTRA_OUTPUT_FILES_module_basename
-    ${infile} SWIG_MODULE_NAME)
-  IF(SWIG_GET_EXTRA_OUTPUT_FILES_module_basename STREQUAL "NOTFOUND")
-    GET_FILENAME_COMPONENT(SWIG_GET_EXTRA_OUTPUT_FILES_module_basename "${infile}" NAME_WE)
-  ENDIF(SWIG_GET_EXTRA_OUTPUT_FILES_module_basename STREQUAL "NOTFOUND")
+MACRO(SWIG_GET_EXTRA_OUTPUT_FILES language outfiles infile outdir module)
+  SET(${outfiles})
   FOREACH(it ${SWIG_${language}_EXTRA_FILE_EXTENSION})
-    SET(${outfiles} ${${outfiles}}
-      "${generatedpath}/${SWIG_GET_EXTRA_OUTPUT_FILES_module_basename}.${it}")
+    set(${outfiles} ${${outfiles}}
+      ${outdir}/${module}.${it})
   ENDFOREACH(it)
 ENDMACRO(SWIG_GET_EXTRA_OUTPUT_FILES)
 
 #
 # Take swig (*.i) file and add proper custom commands for it
 #
-MACRO(SWIG_ADD_SOURCE_TO_MODULE name outfiles infile)
+MACRO(SWIG_ADD_SOURCE_TO_MODULE name outfiles infile outdir module)
   SET(swig_full_infile ${infile})
   GET_FILENAME_COMPONENT(swig_source_file_path "${infile}" PATH)
-  #GET_FILENAME_COMPONENT(swig_source_file_name_we "${infile}" NAME_WE)
   STRING(REGEX REPLACE "(.*)\\.i$" "\\1" swig_source_file_name_we ${infile})
   GET_SOURCE_FILE_PROPERTY(swig_source_file_generated ${infile} GENERATED)
   GET_SOURCE_FILE_PROPERTY(swig_source_file_cplusplus ${infile} CPLUSPLUS)
@@ -155,25 +150,15 @@ MACRO(SWIG_ADD_SOURCE_TO_MODULE name outfiles infile)
     SET(swig_generated_file_fullname
       "${swig_generated_file_fullname}/${swig_source_file_relative_path}")
   ENDIF(swig_source_file_relative_path)
-  # If SWIG_MODULE_${name}_OUTDIR or CMAKE_SWIG_OUTDIR was specified
-  # then pass it to -outdir
-  IF(SWIG_MODULE_${name}_OUTDIR)
-    SET(swig_outdir ${SWIG_MODULE_${name}_OUTDIR})
-  ELSE(SWIG_MODULE_${name}_OUTDIR)
-    IF(CMAKE_SWIG_OUTDIR)
-      SET(swig_outdir ${CMAKE_SWIG_OUTDIR})
-    ELSE(CMAKE_SWIG_OUTDIR)
-      SET(swig_outdir ${CMAKE_CURRENT_BINARY_DIR})
-    ENDIF(CMAKE_SWIG_OUTDIR)
-  ENDIF(SWIG_MODULE_${name}_OUTDIR)
   SWIG_GET_EXTRA_OUTPUT_FILES(${SWIG_MODULE_${name}_LANGUAGE}
     swig_extra_generated_files
-    "${swig_outdir}"
-    "${infile}")
+    "${infile}"
+    "${outdir}"
+    "${module}")
   SET(swig_generated_file_fullname
     "${swig_generated_file_fullname}/${swig_source_file_name_we}")
-  # add the language into the name of the file (i.e. TCL_wrap)
-  # this allows for the same .i file to be wrapped into different languages
+  # Add the language into the name of the file (i.e. TCL_wrap).  This
+  # allows for the same .i file to be wrapped into different languages
   SET(swig_generated_file_fullname
     "${swig_generated_file_fullname}${SWIG_MODULE_${name}_LANGUAGE}_wrap")
 
@@ -192,7 +177,7 @@ MACRO(SWIG_ADD_SOURCE_TO_MODULE name outfiles infile)
   ENDFOREACH(it)
 
   SET(swig_special_flags)
-  # default is c, so add c++ flag if it is c++
+  # Default is c, so add c++ flag if it is c++
   IF(swig_source_file_cplusplus)
     SET(swig_special_flags ${swig_special_flags} "-c++")
   ENDIF(swig_source_file_cplusplus)
@@ -206,7 +191,7 @@ MACRO(SWIG_ADD_SOURCE_TO_MODULE name outfiles infile)
     ARGS "-${SWIG_MODULE_${name}_SWIG_LANGUAGE_FLAG}"
     ${swig_source_file_flags}
     ${CMAKE_SWIG_FLAGS}
-    -outdir ${swig_outdir}
+    -outdir ${outdir}
     ${swig_special_flags}
     ${swig_extra_flags}
     ${swig_include_dirs}
@@ -223,9 +208,9 @@ ENDMACRO(SWIG_ADD_SOURCE_TO_MODULE)
 #
 # Create Swig module
 #
-MACRO(SWIG_ADD_MODULE name language outdir module)
+MACRO(SWIG_ADD_MODULE name language source outdir module)
   # Obtain the *.i and other sources
-  SET(swig_dot_i_sources)
+  SET(swig_dot_i_sources ${source})
   SET(swig_other_sources)
   FOREACH(it ${ARGN})
     IF(${it} MATCHES ".*\\.i$")
@@ -235,12 +220,12 @@ MACRO(SWIG_ADD_MODULE name language outdir module)
     ENDIF(${it} MATCHES ".*\\.i$")
   ENDFOREACH(it)
 
-  SWIG_MODULE_INITIALIZE(${name} ${language})
+  SWIG_MODULE_INITIALIZE(${name} ${module} ${language})
 
   SET(swig_generated_sources)
   SET(CMAKE_SWIG_OUTDIR "${outdir}")
   FOREACH(it ${swig_dot_i_sources})
-    SWIG_ADD_SOURCE_TO_MODULE(${name} swig_generated_source ${it})
+    SWIG_ADD_SOURCE_TO_MODULE(${name} swig_generated_source ${it} ${outdir} ${module})
     SET(swig_generated_sources ${swig_generated_sources} "${swig_generated_source}")
   ENDFOREACH(it)
   SET(CMAKE_SWIG_OUTDIR "")

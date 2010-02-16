@@ -88,6 +88,7 @@ SET(HEADERS ${HEADERS}
 APPEND_SET(HEADERS
   NumPyImporter.h
   PythonException.h
+  PyTrilinos_Util.h
   FILEstream.h
   numpy_include.h
   )
@@ -95,6 +96,7 @@ APPEND_SET(HEADERS
 APPEND_SET(SOURCES
   NumPyImporter.cpp
   PythonException.cpp
+  PyTrilinos_Util.cpp
   FILEstream.cpp
   )
 
@@ -125,6 +127,7 @@ IF(PyTrilinos_ENABLE_Epetra)
     Epetra_NumPySerialDenseMatrix.h
     Epetra_NumPySerialDenseVector.h
     Epetra_NumPyVector.h
+    Epetra_PyUtil.h
     )
 
   APPEND_SET(SOURCES
@@ -136,6 +139,7 @@ IF(PyTrilinos_ENABLE_Epetra)
     Epetra_NumPySerialDenseMatrix.cpp
     Epetra_NumPySerialDenseVector.cpp
     Epetra_NumPyVector.cpp
+    Epetra_PyUtil.cpp
     )
 
 ENDIF(PyTrilinos_ENABLE_Epetra)
@@ -171,12 +175,12 @@ ADD_CUSTOM_COMMAND(
   OUTPUT ${SWIG_RUNTIME}
   COMMAND ${SWIG_EXECUTABLE} -python -external-runtime
   )
+APPEND_SET(HEADERS ${CMAKE_CURRENT_BINARY_DIR}/${SWIG_RUNTIME})
 
 #
 # Define the targets for the PyTrilinos library
-PACKAGE_ADD_LIBRARY(
-  pytrilinos
-  HEADERS ${HEADERS} ${CMAKE_CURRENT_BINARY_DIR}/${SWIG_RUNTIME}
+PACKAGE_ADD_LIBRARY(pytrilinos
+  HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
 
@@ -205,9 +209,9 @@ SET(PyTrilinos_INSTALL_DIR
 MESSAGE(STATUS "PyTrilinos installation path: ${PyTrilinos_INSTALL_DIR}")
 
 #
-# Add the PyTrilinos subdirectory, which is top-level package
+# Add the PyTrilinos subdirectory, which is the top-level package
 # directory.  This needs to be done before the following loop over the
-# PyTrilinos modules, because to the call to GET_DIRECTORY_PROPERTY().
+# PyTrilinos modules, because of the call to GET_DIRECTORY_PROPERTY().
 ADD_SUBDIRECTORY(PyTrilinos)
 
 #
@@ -226,14 +230,12 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
     )
   # Determine the swig module output directory, name and unique target name
   SWIG_MODULE_GET_OUTDIR_AND_MODULE(${MODULE}.i MODULE_OUTDIR MODULE_NAME)
-  IF(TARGET ${MODULE_NAME})
-    SET(PyTrilinos_TARGET_NAME ${MODULE_NODOT})
-  ELSE(TARGET ${MODULE_NAME})
-    SET(PyTrilinos_TARGET_NAME ${MODULE_NAME})
-  ENDIF(TARGET ${MODULE_NAME})
-  # Add the SWIG module
-  SWIG_ADD_MODULE(${PyTrilinos_TARGET_NAME} python "${MODULE_OUTDIR}"
-    "${MODULE_NAME}" ${MODULE}.i)
+  SET(PyTrilinos_TARGET_NAME ${MODULE_NODOT})
+  SWIG_ADD_MODULE(${PyTrilinos_TARGET_NAME}
+    python
+    "${MODULE}.i"
+    "${MODULE_OUTDIR}"
+    "${MODULE_NAME}")
   SWIG_LINK_LIBRARIES(${PyTrilinos_TARGET_NAME} pytrilinos)
   # Add the header file to the list of additional "make clean" files
   LIST(APPEND ADDITIONAL_CLEAN_FILES "${MODULE}PYTHON_wrap.h")
@@ -255,8 +257,7 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
       DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX/Epetra)
     INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
       DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX/Epetra)
-    LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/NOX/Epetra/${MODULE_NAME}.py"
-      "PyTrilinos/NOX/Epetra/${MODULE_NAME}.pyc")
+    LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/NOX/Epetra/${MODULE_NAME}.pyc")
   #
   # PyTrilinos.NOX
   ELSEIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/NOX")
@@ -271,8 +272,7 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
       DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX)
     INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
       DESTINATION ${PyTrilinos_INSTALL_DIR}/NOX)
-    LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/NOX/${MODULE_NAME}.py"
-      "PyTrilinos/NOX/${MODULE_NAME}.pyc")
+    LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/NOX/${MODULE_NAME}.pyc")
   #
   # PyTrilinos.LOCA
   ELSEIF("${MODULE_OUTDIR}" MATCHES "PyTrilinos/LOCA")
@@ -287,8 +287,7 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
       DESTINATION ${PyTrilinos_INSTALL_DIR}/LOCA)
     INSTALL(TARGETS ${PyTrilinos_TARGET_NAME}
       DESTINATION ${PyTrilinos_INSTALL_DIR}/LOCA)
-    LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/LOCA/${MODULE_NAME}.py"
-      "PyTrilinos/LOCA/${MODULE_NAME}.pyc")
+    LIST(APPEND ADDITIONAL_CLEAN_FILES "PyTrilinos/LOCA/${MODULE_NAME}.pyc")
   #
   # PyTrilinos
   ELSE("${MODULE_OUTDIR}")
