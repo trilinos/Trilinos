@@ -41,6 +41,8 @@
 #include "Epetra_JadMatrix.h"
 #include "Epetra_LinearProblem.h"
 
+#include "Epetra_PyUtil.h"
+
 %}
 
 //////////////
@@ -1307,3 +1309,23 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(const Epetra_VbrMatrix&);
 //////////////////////////////////
 %rename(LinearProblem) Epetra_LinearProblem;
 %include "Epetra_LinearProblem.h"
+
+//////////////////////////////////
+// Typemaps for Epetra_Operator //
+//////////////////////////////////
+#ifdef HAVE_TEUCHOS
+%typemap(out) Teuchos::RCP<Epetra_Operator>
+{
+  if ($1 == Teuchos::null)
+    $result = Py_BuildValue("");
+  else
+  {
+    $result = convertEpetraOperatorToPython($1.get());
+  }
+}
+#endif
+
+%typemap(directorin) Epetra_Operator &
+{
+  $input = convertEpetraOperatorToPython(&$1_name);
+}
