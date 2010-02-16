@@ -39,11 +39,6 @@
 namespace RTOpPack {
 
 
-/** \defgroup RTOpCpp_grp Templated interfaces for generalized vector reduction/transformation operators in C++.
- */
-//@{
-
-
 /** \brief Abstract base class for all reduction objects.
  */
 class ReductTarget : public Teuchos::Describable
@@ -131,8 +126,8 @@ class ReductTarget : public Teuchos::Describable
  *
  \verbatim
 
-   op(v[0](i)...v[*](i),z[0](i)...z[*](i)) -> z[0](i)...z[*](i),reduct_obj
-      , for i = 0...n-1
+   op(v[0](i)...v[*](i),z[0](i)...z[*](i)) -> z[0](i)...z[*](i),reduct_obj,
+      for i = 0...n-1
  \endverbatim
  *
  * This design is based on a few assumptions about the reduction and
@@ -355,7 +350,7 @@ public:
    * be accumulated as:
    *
    \verbatim
-   op(op(sub_vecs[], targ_sub_vecs[], reduct_obj) -> reduct_obj
+   op(sub_vecs[], targ_sub_vecs[], reduct_obj) -> reduct_obj
    \endverbatim
    *
    * By allowing an in/out <tt>reduct_obj</tt> and an accumulation of
@@ -444,7 +439,7 @@ protected:
    * type. */
   RTOpT( const std::string &op_name_base = "" );
 
-  /** \brief Just set the opeator name. */
+  /** \brief Just set the operator name. */
   void setOpNameBase( const std::string &op_name_base );
 
   //@}
