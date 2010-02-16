@@ -195,11 +195,7 @@ public:
   /** \brief Creates a new reduction target object initialized and ready to be used in
    * a reduction.
    *
-   * To delete this object simply let the returned
-   * <tt>RCP<></tt> object go out of scope.
-   *
-   *
-   * The default implementation returns <tt>return.get()==NULL</tt>
+   * The default implementation returns <tt>returnVal.get()==NULL</tt>
    * (i.e. by default there is no reduction operation performed).
    */
   Teuchos::RCP<ReductTarget> reduct_obj_create() const
@@ -280,7 +276,7 @@ public:
    * The default implementation uses the value created in the
    * constructor <tt>RTOpT()</tt>.
    */
-  const std::string op_name() const
+  std::string op_name() const
     {
       return op_name_impl();
     }
@@ -418,7 +414,7 @@ protected:
     ) const;
 
   /** \brief . */
-  virtual const std::string op_name_impl() const;
+  virtual std::string op_name_impl() const;
 
   /** \brief . */
   virtual bool coord_invariant_impl() const;

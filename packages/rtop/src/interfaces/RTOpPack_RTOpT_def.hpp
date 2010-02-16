@@ -105,7 +105,7 @@ void RTOpT<Scalar>::load_reduct_obj_state_impl(
 
 
 template<class Scalar>
-const std::string RTOpT<Scalar>::op_name_impl() const
+std::string RTOpT<Scalar>::op_name_impl() const
 {
   return op_name_;
 }
