@@ -146,12 +146,12 @@ def main():
     # class, based on the EpetraExt.ModelEvaluator created above
     interface = NOX.Epetra.ModelEvaluatorInterface(model)
 
-    # Use the NOX.defaultSolver() function to build a complete NOX solver based
-    # on the ModelEvaluatorInterface created above
+    # Use the NOX.Epetra.defaultSolver() function to build a complete NOX solver
+    # based on the ModelEvaluatorInterface created above
     initGuess = model.get_x_init()
     jacobian  = model.create_W()
     interface.computeJacobian(initGuess, jacobian)
-    solver    = NOX.defaultSolver(initGuess, interface, interface, jacobian)
+    solver    = NOX.Epetra.defaultSolver(initGuess, interface, interface, jacobian)
 
     # Solve the problem
     #status = solver.solve()
