@@ -28,52 +28,6 @@ using Teuchos::rcp_const_cast;
 namespace Teko {
 namespace NS {
 
-// helper function for a lid driven cavity-like problem
-// This function _WILL_ change the operator
-Teko::ModifiableLinearOp reduceCrsOperator(Teko::ModifiableLinearOp & op,const std::vector<int> & zeroIndicies)
-{
-   // Extract a non-const version of the operator
-   RCP<Epetra_Operator> eOp = get_Epetra_Operator(*rcp_const_cast<Thyra::LinearOpBase<double> >(op));
-   RCP<Epetra_CrsMatrix> eCrsOp = rcp_dynamic_cast<Epetra_CrsMatrix>(eOp);
-
-   // build vector for scaling
-   Epetra_Vector scaling(eCrsOp->OperatorRangeMap());
-   scaling.PutScalar(1.0);
-
-   // figure out which zero index (if any) this processor owns
-   std::vector<std::pair<int,int> > localIndicies; // local, global indicies
-   for(unsigned int i=0;i<zeroIndicies.size();i++) {
-      // check if this zero index is owned by this processor
-      int local = eCrsOp->LRID(zeroIndicies[i]);
-      if(local>=0) 
-         localIndicies.push_back(std::make_pair(local,zeroIndicies[i]));
-   }
-
-   // set a number of rows to zero
-   for(unsigned int i=0;i<localIndicies.size();i++) 
-      TEST_FOR_EXCEPT(scaling.ReplaceGlobalValue(localIndicies[i].second,0,0.0));
-
-   // wipe out all but the desired rows and columns
-   eCrsOp->RightScale(scaling);
-   eCrsOp->LeftScale(scaling);
-
-   #if 1
-   // so the matrix is still invertable...set the digaonals of the
-   // wiped rows to 1
-   for(unsigned int i=0;i<localIndicies.size();i++) {
-      double value = 1.0;
-      int index = localIndicies[i].second;
-
-      // set diagonal to one
-      TEST_FOR_EXCEPT(eCrsOp->ReplaceGlobalValues(index,1,&value,&index));
-   } 
-   #endif
-
-   // now wrap the crs matrix in a ZeroedEpetraOperator
-   // return Thyra::epetraLinearOp(rcp(new Teko::Epetra::ZeroedOperator(zeroIndicies,eCrsOp)));
-   return Thyra::nonconstEpetraLinearOp(eCrsOp);
-}
-
 /////////////////////////////////////////////////////////////////////////////
 // InvLSCStrategy Implementation
 /////////////////////////////////////////////////////////////////////////////
@@ -453,7 +407,6 @@ void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & 
       DEBUG_STREAM << "   bndry rows = " << rowZeroing << std::endl;
       DEBUG_STREAM << "   use ldu    = " << useLDU << std::endl;
       DEBUG_STREAM << "   use mass    = " << useMass_ << std::endl;
-      // DEBUG_STREAM << "   use lumping    = " << useLumping_ << std::endl;
       DEBUG_STREAM << "   use w-scaling    = " << useWScaling_ << std::endl;
       DEBUG_STREAM << "   scale type    = " << getDiagonalName(scaleType_) << std::endl;
       DEBUG_STREAM << "LSC  Inverse Strategy Parameter list: " << std::endl;
