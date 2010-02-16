@@ -36,6 +36,8 @@
 #include "Thyra_ModelEvaluatorDelegatorBase.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_DefaultAdjointLinearOpWithSolve.hpp"
+#include "Thyra_VectorStdOps.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Teuchos_implicit_cast.hpp"
 #include "Teuchos_Assert.hpp"
 

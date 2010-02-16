@@ -31,10 +31,14 @@
 
 #include "Rythmos_ForwardEulerStepper_decl.hpp"
 #include "Rythmos_StepperHelpers.hpp"
-#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 #include "Thyra_ModelEvaluatorHelpers.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_VectorStdOps.hpp"
+#include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+
 
 namespace Rythmos {
+
 
 // --------------------------------------------------------------------
 // ForwardEulerStepperMomento definitions:

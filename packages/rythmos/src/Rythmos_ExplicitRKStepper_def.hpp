@@ -41,6 +41,9 @@
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 #include "Thyra_ModelEvaluatorHelpers.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_VectorStdOps.hpp"
+
 
 namespace Rythmos {
 

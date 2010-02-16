@@ -31,6 +31,10 @@
 
 
 #include "Thyra_ModelEvaluatorBase_decl.hpp"
+#include "Thyra_MultiVectorBase.hpp"
+#include "Thyra_VectorBase.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 
 namespace Thyra {

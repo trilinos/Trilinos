@@ -35,6 +35,7 @@
 #include "OptiPack_Types.hpp"
 #include "OptiPack_LineSearchPointEvaluatorBase.hpp"
 #include "Thyra_ModelEvaluatorHelpers.hpp"
+#include "Thyra_VectorStdOps.hpp"
 #include "GlobiPack_MeritFunc1DBase.hpp"
 #include "Teuchos_Assert.hpp"
 

@@ -42,6 +42,8 @@
 #include "Teuchos_TestForException.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_SolveSupportTypes.hpp"
+#include "Thyra_VectorStdOps.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "NOX_Common.H"
 #include "NOX_Thyra_Group.H"	// class definition
 #include "NOX_Abstract_MultiVector.H"

@@ -37,6 +37,7 @@
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_ModelEvaluatorHelpers.hpp"
+#include "Thyra_PolynomialVectorTraits.hpp"
 #include "RTOpPack_RTOpTHelpers.hpp"
 
 namespace Rythmos {

@@ -35,6 +35,7 @@
 #include "Rythmos_AdjointModelEvaluator.hpp"
 #include "Rythmos_DefaultIntegrator.hpp" // ToDo: Remove when we can!
 #include "Thyra_LinearNonlinearSolver.hpp"
+#include "Thyra_VectorBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_TestingTools.hpp"
 

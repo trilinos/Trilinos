@@ -33,6 +33,7 @@
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_DetachedMultiVectorView.hpp"
 #include "Thyra_DefaultSerialDenseLinearOpWithSolveFactory.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 namespace Rythmos {
 

@@ -34,6 +34,7 @@
 #include "Rythmos_InterpolatorBaseHelpers.hpp"
 #include "Teuchos_Assert.hpp"
 #include "Thyra_AssertOp.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 
 namespace Rythmos {

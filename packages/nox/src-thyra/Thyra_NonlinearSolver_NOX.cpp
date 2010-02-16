@@ -2,6 +2,7 @@
 // @HEADER
 
 #include "Thyra_NonlinearSolver_NOX.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 #include "NOX.H"
 #include "NOX_Thyra.H"

@@ -37,6 +37,7 @@
 #include "Thyra_DefaultSerialDenseLinearOpWithSolveFactory.hpp"
 #include "Thyra_DefaultMultiVectorLinearOpWithSolve.hpp"
 #include "Thyra_DefaultLinearOpSource.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 #ifdef SINCOSMODEL_DEBUG
 #include <iostream>

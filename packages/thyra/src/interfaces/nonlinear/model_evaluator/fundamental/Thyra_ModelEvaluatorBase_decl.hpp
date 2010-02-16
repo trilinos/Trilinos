@@ -31,7 +31,6 @@
 
 
 #include "Thyra_LinearOpWithSolveBase.hpp"
-#include "Thyra_PolynomialVectorTraits.hpp"
 #include "Teuchos_Describable.hpp"
 #include "Teuchos_Polynomial.hpp"
 #include "Teuchos_Assert.hpp"

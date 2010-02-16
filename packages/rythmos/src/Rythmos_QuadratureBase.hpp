@@ -30,17 +30,13 @@
 #define Rythmos_QUADRATURE_BASE_H
 
 #include "Rythmos_TimeRange.hpp"
+#include "Rythmos_Types.hpp"
 
-#include "Teuchos_Describable.hpp"
-#include "Teuchos_RCP.hpp"
-#include "Teuchos_Array.hpp"
 #include "Thyra_ModelEvaluator.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 
 namespace Rythmos {
-
-using Teuchos::RCP;
-using Teuchos::Array;
 
 /** \brief Specific implementation of 1D Gaussian based quadrature formulas
  */
