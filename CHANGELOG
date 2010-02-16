@@ -4,6 +4,16 @@
 #                                                                             #
 ###############################################################################
 
+Release update 10.0.5 February 16, 2010
+
+1. Zoltan - Bug 4695. Fix issue with segfaulting when running RCB with
+            reduce_dimensions=1
+
+2. Triutils - Bug 4690. Applied a work around for an internal compiler error
+              when using intel compilers
+
+-------------------------------------------------------------------------------
+
 Release update 10.0.4 December 18, 2009
 
 0. Stokhos - This was left off the 10.0.3 release notes by mistake. Stokhos is

@@ -37,7 +37,7 @@
 #define TRILINOS_MAJOR_VERSION 10
 
 /* The major and minor version numbers (i.e. xx.yy.zz) */
-#define TRILINOS_MAJOR_MINOR_VERSION 100004
+#define TRILINOS_MAJOR_MINOR_VERSION 100005
 
 /* NOTE: These macros are given long int values to allow comparisons in
  * preprocessor #if statements.  For example, you can do comparisons
@@ -62,6 +62,6 @@
  *
  * NOTE: This string is to be used for outputting, not for comparison logic.
  */
-#define TRILINOS_VERSION_STRING "10.0.4"
+#define TRILINOS_VERSION_STRING "10.0.5"
 
 #endif /* TRILINOS_VERSION_H */
