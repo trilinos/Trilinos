@@ -32,11 +32,13 @@
 #include "Thyra_OperatorSolveTypes.hpp"
 #include "Teuchos_Describable.hpp"
 
+
 namespace Thyra {
 
+
 /** \brief Simple interface class to access a precreated preconditioner as one
- * or more linear operators objects and information on how they are ment to be
- * applied.
+ * or more linear operators objects and information on how they are meant to
+ * be applied.
  *
  * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
  *
@@ -137,8 +139,16 @@ public:
   
   //@}
 
+private:
+  
+  // Not defined and not to be called
+  PreconditionerBase<Scalar>&
+  operator=(const PreconditionerBase<Scalar>&);
+
 };
 
+
 } // namespace Thyra
+
 
 #endif // THYRA_PRECONDITIONER_BASE_HPP

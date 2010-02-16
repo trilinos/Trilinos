@@ -858,6 +858,12 @@ public:
   
   //@}
 
+private:
+  
+  // Not defined and not to be called
+  LinearOpWithSolveFactoryBase<Scalar>&
+  operator=(const LinearOpWithSolveFactoryBase<Scalar>&);
+
 };
 
 

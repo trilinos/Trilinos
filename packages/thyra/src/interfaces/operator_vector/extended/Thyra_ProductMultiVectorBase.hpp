@@ -109,6 +109,12 @@ public:
    */
   virtual Teuchos::RCP<const MultiVectorBase<Scalar> >
   getMultiVectorBlock(const int k) const = 0;
+
+private:
+  
+  // Not defined and not to be called
+  ProductMultiVectorBase<Scalar>&
+  operator=(const ProductMultiVectorBase<Scalar>&);
   
 };
 

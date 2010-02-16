@@ -1143,6 +1143,12 @@ public:
 
   //@}
 
+private:
+  
+  // Not defined and not to be called
+  MultiVectorBase<Scalar>&
+  operator=(const MultiVectorBase<Scalar>&);
+
 };
 
 

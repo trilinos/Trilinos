@@ -225,6 +225,12 @@ public:
 
   //@}
 
+private:
+  
+  // Not defined and not to be called
+  PreconditionerFactoryBase<Scalar>&
+  operator=(const PreconditionerFactoryBase<Scalar>&);
+
 };
 
 

@@ -103,6 +103,12 @@ private:
   const VectorSpaceBase<Scalar> *spaces;
 #endif
 
+private:
+  
+  // Not defined and not to be called
+  ProductVectorSpaceBase<Scalar>&
+  operator=(const ProductVectorSpaceBase<Scalar>&);
+
 };
 
 

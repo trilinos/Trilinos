@@ -79,6 +79,12 @@ public:
     const Teuchos::RCP<const LinearOpWithSolveBase<Scalar> > &block
     ) = 0;
 
+private:
+  
+  // Not defined and not to be called
+  PhysicallyBlockedLinearOpWithSolveBase<Scalar>&
+  operator=(const PhysicallyBlockedLinearOpWithSolveBase<Scalar>&);
+
 };
 
 

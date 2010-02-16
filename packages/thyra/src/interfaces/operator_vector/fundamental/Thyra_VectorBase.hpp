@@ -495,6 +495,12 @@ public:
     }
 */
 
+private:
+  
+  // Not defined and not to be called
+  VectorBase<Scalar>&
+  operator=(const VectorBase<Scalar>&);
+
 };
 
 

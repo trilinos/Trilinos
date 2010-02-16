@@ -115,6 +115,12 @@ public:
   virtual RCP<const VectorBase<Scalar> >
   getVectorBlock(const int k) const = 0; 
 
+private:
+  
+  // Not defined and not to be called
+  ProductVectorBase<Scalar>&
+  operator=(const ProductVectorBase<Scalar>&);
+
 };
 
 

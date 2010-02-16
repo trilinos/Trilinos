@@ -32,7 +32,9 @@
 #include "Thyra_VectorSpaceBase_decl.hpp"
 #include "Teuchos_Comm.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Base abstract <tt>%VectorSpaceBase</tt> class for all SPMD-based
  * vector spaces.
@@ -146,9 +148,17 @@ public:
   virtual Ordinal mapCode() const = 0;
 
   //@}
+
+private:
+  
+  // Not defined and not to be called
+  SpmdVectorSpaceBase<Scalar>&
+  operator=(const SpmdVectorSpaceBase<Scalar>&);
   
 };
 
+
 } // end namespace Thyra
+
 
 #endif // THYRA_SPMD_VECTOR_SPACE_BASE_BASE_DECL_HPP

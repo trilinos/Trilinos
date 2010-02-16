@@ -76,8 +76,16 @@ public:
 
   //@}
 
-}; // end class VectorSpaceFactoryBase
+private:
+  
+  // Not defined and not to be called
+  VectorSpaceFactoryBase<Scalar>&
+  operator=(const VectorSpaceFactoryBase<Scalar>&);
+
+};
+
 
 } // end namespace Thyra
+
 
 #endif  // THYRA_VECTOR_SPACE_FACTORY_DECL_HPP

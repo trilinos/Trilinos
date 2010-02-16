@@ -351,6 +351,12 @@ protected:
 
   //@}
 
+private:
+  
+  // Not defined and not to be called
+  LinearOpBase<Scalar>&
+  operator=(const LinearOpBase<Scalar>&);
+
 };
 
 

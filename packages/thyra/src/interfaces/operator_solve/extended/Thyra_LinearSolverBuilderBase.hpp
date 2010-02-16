@@ -32,7 +32,9 @@
 #include "Teuchos_ParameterListAcceptor.hpp"
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Abstract interface for an object that can create
  * <tt>LinearOpWithSolveFactoryBase</tt> objects on demand.
@@ -117,6 +119,12 @@ public:
     ,double                                                       *solveTime
     ) const = 0;
   */
+
+private:
+  
+  // Not defined and not to be called
+  LinearSolverBuilderBase<Scalar>&
+  operator=(const LinearSolverBuilderBase<Scalar>&);
 
 };
 

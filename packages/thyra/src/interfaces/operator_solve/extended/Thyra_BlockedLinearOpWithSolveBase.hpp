@@ -59,6 +59,12 @@ public:
   virtual Teuchos::RCP<const LinearOpWithSolveBase<Scalar> >
   getLOWSBlock(const int i, const int j) const = 0; 
 
+private:
+  
+  // Not defined and not to be called
+  BlockedLinearOpWithSolveBase<Scalar>&
+  operator=(const BlockedLinearOpWithSolveBase<Scalar>&);
+
 };
 
 

@@ -60,6 +60,12 @@ public:
   virtual Teuchos::RCP<NonlinearSolverBase<Scalar> >
   createNonlinearSolver(const std::string &nonlinearSolverTypeName) const = 0;
 
+private:
+  
+  // Not defined and not to be called
+  NonlinearSolverBuilderBase<Scalar>&
+  operator=(const NonlinearSolverBuilderBase<Scalar>&);
+
 };
 
 

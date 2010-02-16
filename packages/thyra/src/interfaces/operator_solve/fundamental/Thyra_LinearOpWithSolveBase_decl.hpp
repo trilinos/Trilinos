@@ -453,6 +453,12 @@ private:
     const BlockSolveCriteria<Scalar> blockSolveCriteria[]
     );
 
+private:
+  
+  // Not defined and not to be called
+  LinearOpWithSolveBase<Scalar>&
+  operator=(const LinearOpWithSolveBase<Scalar>&);
+
 };
 
 

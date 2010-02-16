@@ -986,6 +986,12 @@ public:
 
   //@}
 
+private:
+  
+  // Not defined and not to be called
+  ModelEvaluator<Scalar>&
+  operator=(const ModelEvaluator<Scalar>&);
+
 };
 
 } // namespace Thyra

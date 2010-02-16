@@ -721,6 +721,12 @@ public:
 
   //@}
 
+private:
+  
+  // Not defined and not to be called
+  VectorSpaceBase<Scalar>&
+  operator=(const VectorSpaceBase<Scalar>&);
+
 };
 
 

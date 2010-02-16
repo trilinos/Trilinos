@@ -31,7 +31,9 @@
 
 #include "Thyra_BlockedLinearOpBase.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Base interface for physically blocked linear operators.
  *
@@ -179,8 +181,16 @@ public:
    */
   virtual void uninitialize() = 0;
 
+private:
+  
+  // Not defined and not to be called
+  PhysicallyBlockedLinearOpBase<Scalar>&
+  operator=(const PhysicallyBlockedLinearOpBase<Scalar>&);
+
 };
 
+
 } // namespace Thyra
+
 
 #endif // THYRA_PHYSICALLY_BLOCKED_LINEAR_OP_BASE_HPP

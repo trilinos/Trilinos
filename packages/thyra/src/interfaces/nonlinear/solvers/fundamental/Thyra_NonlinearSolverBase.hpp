@@ -195,6 +195,12 @@ public:
 
   //@}
 
+private:
+  
+  // Not defined and not to be called
+  NonlinearSolverBase<Scalar>&
+  operator=(const NonlinearSolverBase<Scalar>&);
+
 };
 
 
