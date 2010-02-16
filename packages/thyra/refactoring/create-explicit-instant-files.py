@@ -40,7 +40,7 @@ clp.add_option(
   help="Namespace." )
 
 clp.add_option(
-  "--explicit-instant-Define", dest="explicitInstantDefine", type="string",
+  "--explicit-instant-define", dest="explicitInstantDefine", type="string",
   default="HAVE_THYRA_EXPLICIT_INSTANTIATION",
   help="Name of the explicit instantiation macro." )
 
