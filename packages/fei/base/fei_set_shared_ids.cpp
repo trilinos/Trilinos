@@ -76,10 +76,10 @@ void set_shared_ids(MPI_Comm comm,
   if (global_rmap_size == 0) return;
 
   map_type::const_iterator highest = rmap.end();
-  --highest;
+  if (local_rmap_size > 0) --highest;
 
-  int lowest_local_id = rmap.begin()->first;
-  int highest_local_id = highest->first;
+  int lowest_local_id = local_rmap_size>0 ? rmap.begin()->first : 0;
+  int highest_local_id = local_rmap_size>0 ? highest->first : 0;
 
   int lowest_global_id = 0;
   int highest_global_id = 0;
