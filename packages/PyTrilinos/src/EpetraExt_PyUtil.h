@@ -40,15 +40,11 @@
 #define CONST
 #endif
 
-// Teuchos includes
-#include "Teuchos_RCPDecl.hpp"
+// PyTrilinos include
+#include "PyTrilinos_config.h"
 
 // Epetra includes
-#include "Epetra_BlockMap.h"
-#include "Epetra_Map.h"
-#include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
-#include "Epetra_Operator.h"
 
 // EpetraExt includes
 #include "EpetraExt_ConfigDefs.h"
@@ -68,103 +64,6 @@
 // passed to the PyImport_ImportModuleEx(...) function, which expects
 // a non-const string (not that I know why...).
 char PyTrilinosEpetraExt[21] = "PyTrilinos.EpetraExt";
-
-// Given the name of a python object, extract it from the named python
-// module.  If it does not exist in the given module, return NULL.
-PyObject * getObjectFromModule(char * modName, CONST char * objName);
-
-// Given the name of a python class, extract it from the named python
-// module.  If it does not exist in the given module, return NULL.
-PyObject * getClassFromModule(char * modName, CONST char * clsName);
-
-// Given a python object and an attribute name, return 'true' if the
-// attribute exists and is python 'None'.  If the attribute does not
-// exist, throw a PythonException.
-bool objectAttrIsNone(PyObject * object, CONST char * name);
-
-// Given a python object and an attribute name, return 'true' if the
-// attribute exists and is python 'True'.  If the attribute does not
-// exist, throw a PythonException.
-bool objectAttrIsTrue(PyObject * object, CONST char * name);
-
-// Given a python object and an attribute name, return the boolean
-// value of the attribute.  If the attribute does not exist or the
-// attribute is not a boolean, throw a PythonException.
-bool getBoolObjectAttr(PyObject * object, CONST char * name);
-
-// Given a python object and an attribute name, return the integer
-// value of the attribute.  If the attribute does not exist or the
-// attribute is not an integer, throw a PythonException.
-int getIntObjectAttr(PyObject * object, CONST char * name);
-
-// Given a python object and an attribute name, return the floating
-// point (double) value of the attribute.  If the attribute does not
-// exist or the attribute is not a float, throw a PythonException.
-double getFloatObjectAttr(PyObject * object, CONST char * name);
-
-// Given a python object and an attribute name, return the tuple value
-// of the attribute.  If the attribute does not exist or the attribute
-// is not a tuple, throw a PythonException.
-PyObject * getTupleObjectAttr(PyObject * object, CONST char * name);
-
-// Given a python object and an attribute name, return the string
-// value of the attribute.  If the attribute does not exist or the
-// attribute is not a string, throw a PythonException.
-CONST char * getStringObjectAttr(PyObject * object, CONST char * name);
-
-// Given a python object and an attribute name, return the string
-// value of the i-th item of the attribute.  If the attribute does not
-// exist or the attribute is not a sequence of strings, throw a
-// PythonException.
-CONST char * getStringItemObjectAttr(PyObject * object, CONST char * name, int i);
-
-// Given a const Epetra_BlockMap, return a reference counted pointer
-// to a const Epetra_Map.  If the upcast cannot be performed, throw a
-// PythonException.
-Teuchos::RCP<const Epetra_Map>
-getEpetraMapPtrFromEpetraBlockMap(const Epetra_BlockMap & ebm);
-
-// Given a python object and an attribute name, return a reference
-// counted pointer to the Epetra_Vector value of the attribute.  If
-// the attribute does not exist or the attribute is not an
-// Epetra_Vector, throw a PythonException.
-Teuchos::RCP<Epetra_Vector>
-getEpetraVectorObjectAttr(PyObject * object, CONST char * name);
-
-// Given a python object and an attribute name, return a reference
-// counted pointer to the const Epetra_Vector value of the attribute.
-// If the attribute does not exist or the attribute is not an
-// Epetra_Vector, throw a PythonException.
-Teuchos::RCP<const Epetra_Vector>
-getConstEpetraVectorObjectAttr(PyObject * object, CONST char * name);
-
-// Given a python object and an attribute name, return a reference
-// counted pointer to the const Epetra_Vector value of the i-th item
-// of the attribute.  If the attribute does not exist or the attribute
-// is not a sequence of Epetra_Vectors, throw a PythonException.
-Teuchos::RCP<const Epetra_Vector>
-getConstEpetraVectorItemObjectAttr(PyObject * object, CONST char * name, int i);
-
-// Given a python object and an attribute name, return a reference
-// counted pointer to the Epetra_MultiVector value of the attribute.
-// If the attribute does not exist or the attribute is not an
-// Epetra_MultiVector, throw a PythonException.
-Teuchos::RCP<Epetra_MultiVector>
-getEpetraMultiVectorObjectAttr(PyObject * object, CONST char * name);
-
-// Given a python object and an attribute name, return a reference
-// counted pointer to the const Epetra_MultiVector value of the
-// attribute.  If the attribute does not exist or the attribute is not
-// an Epetra_MultiVector, throw a PythonException.
-Teuchos::RCP<const Epetra_MultiVector>
-getConstEpetraMultiVectorObjectAttr(PyObject * object, CONST char * name);
-
-// Given a python object and an attribute name, return a reference
-// counted pointer to the Epetra_Operator value of the attribute.  If
-// the attribute does not exist or the attribute is not an
-// Epetra_Operator, throw a PythonException.
-Teuchos::RCP<Epetra_Operator>
-getEpetraOperatorObjectAttr(PyObject * object, CONST char * name);
 
 // Given a python object and an attribute name, return the
 // EpetraExt::ModelEvaluator::Evaluation<Epetra_Vector> value of the
@@ -231,28 +130,6 @@ getDerivativeObjectAttr(PyObject * object, CONST char * name);
 EpetraExt::ModelEvaluator::Derivative
 getDerivativeItemObjectAttr(PyObject * object, CONST char * name, int i);
 
-// Given a pointer to an Epetra_MultiVector, convert to a python
-// object and return the pointer.  Attempt to downcast to an
-// Epetra_NumPyMultiVector.
-PyObject *
-convertEpetraMultiVectorToPython(const Epetra_MultiVector * emv);
-
-// Given a pointer to an Epetra_Vector, convert to a python object and
-// return the pointer.  Attempt to downcast to an Epetra_NumPyVector.
-PyObject * 
-convertEpetraVectorToPython(const Epetra_Vector * ev);
-
-// Given a pointer to an Epetra_Operator, convert to a python
-// object and return the pointer.  Attempt to downcast to any one of
-// the many Epetra classes that derive from Epetra_Operator.
-PyObject *
-convertEpetraOperatorToPython(Epetra_Operator * eo);
-
-// Given a Teuchos Array of ints, return a tuple_of_int.  Return NULL
-// upon failure.
-PyObject *
-convertArrayOfIntToPython(const Teuchos::Array<int> & tai);
-
 // Given an EpetraExt::ModelEvaluator::InArgs object, convert to a
 // python object and return the pointer.
 PyObject *
@@ -302,5 +179,14 @@ ModelEvaluator::InArgs  convertInArgsFromPython( PyObject*);
 // PythonException.
 ModelEvaluator::OutArgs convertOutArgsFromPython(PyObject*);
 }
+
+#ifdef HAVE_TEUCHOS
+
+// Given a Teuchos Array of ints, return a tuple_of_int.  Return NULL
+// upon failure.
+PyObject *
+convertArrayOfIntToPython(const Teuchos::Array<int> & tai);
+
+#endif  // HAVE_TEUCHOS
 
 #endif // EPETRAEXT_PYUTIL_H
