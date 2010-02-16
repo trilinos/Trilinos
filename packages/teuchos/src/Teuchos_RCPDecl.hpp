@@ -799,6 +799,24 @@ public:
    */
   inline const RCP<T>& assert_valid_ptr() const;
 
+  /** \brief Calls <tt>assert_not_null()</tt> in a debug build. */
+  inline const RCP<T>& debug_assert_not_null() const
+    {
+#ifdef TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL
+      assert_not_null();
+#endif
+      return *this;
+    }
+
+  /** \brief Calls <tt>assert_valid_ptr()</tt> in a debug build. */
+  inline const RCP<T>& debug_assert_valid_ptr() const
+    {
+#ifdef TEUCHOS_DEBUG
+      assert_valid_ptr();
+#endif
+      return *this;
+    }
+
   //@}
 
   /** \name boost::shared_ptr compatiblity funtions. */
@@ -832,22 +850,6 @@ private:
 
   T *ptr_; // NULL if this pointer is null
   RCPNodeHandle node_; // NULL if this pointer is null
-
-  inline const RCP<T>& debug_assert_not_null() const
-    {
-#ifdef TEUCHOS_REFCOUNTPTR_ASSERT_NONNULL
-      assert_not_null();
-#endif
-      return *this;
-    }
-
-  inline const RCP<T>& debug_assert_valid_ptr() const
-    {
-#ifdef TEUCHOS_DEBUG
-      assert_valid_ptr();
-#endif
-      return *this;
-    }
 
 public: // Bad bad bad
 
