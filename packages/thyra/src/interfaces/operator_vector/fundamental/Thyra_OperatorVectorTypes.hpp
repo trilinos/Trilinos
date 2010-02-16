@@ -45,53 +45,84 @@
 
 namespace Thyra {
 
-
 // Using declarations from Teuchos
 
-/** \brief . */
-using Teuchos::Ptr;
-/** \brief . */
-using Teuchos::RCP;
-/** \brief . */
-using Teuchos::Array;
-/** \brief . */
-using Teuchos::ArrayView;
-/** \brief . */
-using Teuchos::ArrayRCP;
-/** \brief . */
-using Teuchos::Tuple;
-/** \brief . */
-using Teuchos::FancyOStream;
-/** \brief . */
-using Teuchos::ParameterList;
-/** \brief . */
-using Teuchos::ScalarTraits;
-/** \brief . */
-using Teuchos::typeName;
-/** \brief . */
-using Teuchos::TypeNameTraits;
-
-/** \defgroup Thyra_Op_Vec_BasicTypes_grp Basic Thyra types.
+/** \brief .
+ *
  * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
-//@{
-
-//
-// Basic types
-//
-
-
-/// Type for the dimension of a vector space
+using Teuchos::Ptr;
+/** \brief .
+ *
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
+ */
+using Teuchos::RCP;
+/** \brief .
+ *
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
+ */
+using Teuchos::Array;
+/** \brief .
+ *
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
+ */
+using Teuchos::ArrayView;
+/** \brief .
+ *
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
+ */
+using Teuchos::ArrayRCP;
+/** \brief .
+ *
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
+ */
+using Teuchos::Tuple;
+/** \brief .
+ *
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
+ */
+typedef Teuchos::Range1D Range1D;
+/** \brief .
+ *
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
+ */
+using Teuchos::FancyOStream;
+/** \brief .
+ *
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
+ */
+using Teuchos::ParameterList;
+/** \brief .
+ *
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
+ */
+using Teuchos::ScalarTraits;
+/** \brief .
+ *
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
+ */
+using Teuchos::typeName;
+/** \brief .
+ *
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
+ */
+using Teuchos::TypeNameTraits;
+/** \brief Type for the dimension of a vector space.
+`*
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
+ */
 typedef Teuchos::Ordinal Ordinal;
 
-/// Deprecated: Use Ordinal instead!
+/** \brief Deprecated: Use Ordinal instead!
+`*
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
+ */
 THYRA_DEPRECATED typedef Ordinal Index;
-
-/// Type for a range of indices
-typedef Teuchos::Range1D Range1D;
 
 
 /** \brief Enumeration for determining how a linear operator is applied.
+`*
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
 enum EConj {
   NONCONJ_ELE     ///< Use the linear operator with non-conjugate elements.
@@ -100,6 +131,8 @@ enum EConj {
 
 
 /** \brief Return a string name for a <tt>EOpTransp</tt> value.
+`*
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
 inline
 const char* toString(EConj conj)
@@ -114,6 +147,8 @@ const char* toString(EConj conj)
 
 
 /** \brief Enumeration for determining how a linear operator is applied.
+`*
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
 enum EOpTransp {
   /** \brief Use the non-transposed operator. */
@@ -131,11 +166,16 @@ enum EOpTransp {
 };
 
 
-/** \brief Deprecated. */
+/** \brief Deprecated (use EOpTransp instead).
+ *
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
+ */
 THYRA_DEPRECATED typedef EOpTransp ETransp;
 
 
 /** \brief Return a string name for a <tt>EOpTransp</tt> value.
+ *
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
 inline
 const char* toString(EOpTransp transp)
@@ -153,6 +193,8 @@ const char* toString(EOpTransp transp)
 
 /** \brief Return <tt>NOTRANS</tt> or <tt>TRANS</tt> for real scalar valued
  * operators and this also is used for determining structural transpose.
+ *
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
 inline
 EOpTransp real_trans(EOpTransp transp)
@@ -169,6 +211,8 @@ EOpTransp real_trans(EOpTransp transp)
 
 
 /** \brief Perform a not operation on an EOpTransp value
+ *
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
 inline 
 EOpTransp not_trans( EOpTransp transp )
@@ -185,6 +229,8 @@ EOpTransp not_trans( EOpTransp transp )
 
 
 /** \brief Combine two transpose arguments
+ *
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
 inline
 EOpTransp trans_trans( EOpTransp trans1, EOpTransp trans2 )
@@ -208,6 +254,8 @@ EOpTransp trans_trans( EOpTransp trans1, EOpTransp trans2 )
 
 
 /** \brief Convert from <tt>EOpTransp</tt> to <tt>EConj</tt>.
+ *
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
 inline
 EConj transToConj( EOpTransp trans )
@@ -223,6 +271,8 @@ EConj transToConj( EOpTransp trans )
 }
 
 /** \brief Convert from <tt>EConj</tt> to <tt>EOpTransp</tt> for forward apply.
+ *
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
 inline
 EOpTransp applyConjToTrans( EConj conj )
@@ -237,6 +287,8 @@ EOpTransp applyConjToTrans( EConj conj )
 
 
 /** \brief Convert from <tt>EConj</tt> to <tt>EOpTransp</tt> for forward apply.
+ *
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
 inline
 EOpTransp applyTransposeConjToTrans( EConj conj )
@@ -251,6 +303,8 @@ EOpTransp applyTransposeConjToTrans( EConj conj )
 
 /** \brief Determines if a view is a direct view of data or a detached copy of
  * data.
+ *
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
 enum EViewType {
   VIEW_TYPE_DIRECT   ///< The view is a direct view of data and no copies are made.
@@ -258,44 +312,49 @@ enum EViewType {
 };
 
 
-/** \brief Determine if data is unit stride or non-unit stride. */
+/** \brief Determine if data is unit stride or non-unit stride.
+ *
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
+ */
 enum EStrideType {
-  STRIDE_TYPE_UNIT      ///< The stride between elements in an array is one.
-  ,STRIDE_TYPE_NONUNIT   ///< The stride between elements in an array is greater than or equal to one.
+  /// The stride between elements in an array is one.
+  STRIDE_TYPE_UNIT,
+  /// The stride between elements in an array is greater than or equal to one.
+  STRIDE_TYPE_NONUNIT
 };
-
-
-//@}
 
 
 namespace Exceptions {
 
 
-/** \defgroup Thyra_Op_Vec_Exceptions_grp Basic Thyra exception types.
+/** \brief Thrown if any member functions are called before initialize() has
+ * been called.
+ *
  * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
  */
-//@{
-
-
-/// Thrown if any member functions are called before initialize() has been called.
 class UnInitialized : public std::logic_error
-{public: UnInitialized(const std::string& what_arg) : std::logic_error(what_arg) {}};
+{public: UnInitialized(const std::string& what_arg)
+   : std::logic_error(what_arg) {}};
 
 
-/// Thrown if vector spaces are incompatible
+/** \brief Thrown if vector spaces are incompatible.
+ *
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
+ */
 class IncompatibleVectorSpaces : public std::logic_error
 {public:
-  IncompatibleVectorSpaces(const std::string& what_arg) : std::logic_error(what_arg) {}
-//	IncompatibleVectorSpaces(const IncompatibleVectorSpaces& ivs) : std::logic_error(ivs.what()) {}
+  IncompatibleVectorSpaces(const std::string& what_arg)
+    : std::logic_error(what_arg) {}
 };
 
 
-/// Thrown if the argument <tt>M_trans</tt> is not supported,
+/** \biref Thrown if the argument <tt>M_trans</tt> is not supported.
+ *
+ * \ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
+ */
 class OpNotSupported : public std::logic_error
-{public: OpNotSupported(const std::string& what_arg) : std::logic_error(what_arg) {}};
-
-
-//@}
+{public: OpNotSupported(const std::string& what_arg)
+   : std::logic_error(what_arg) {}};
 
 
 } // namespace Exceptions

@@ -35,19 +35,10 @@
 
 namespace Thyra {
 
-/** \defgroup Thyra_Op_Vec_test_tools_code_grp Miscellaneous C++ utility code for testing and debugging.
-
-\ingroup Thyra_Op_Vec_ANA_Development_grp
-
-Here is some assorted C++ code to aid in testing and debugging
-%Thyra code.
-
-*/
-
 
 /** \brief .
  *
- * \ingroup Thyra_Op_Vec_test_tools_code_grp
+ * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 inline const std::string passfail(const bool result)
 {
@@ -57,7 +48,7 @@ inline const std::string passfail(const bool result)
 
 /** \brief .
  *
- * \ingroup Thyra_Op_Vec_test_tools_code_grp
+ * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 template <class Scalar>
 inline
@@ -71,7 +62,7 @@ relErr( const Scalar &s1, const Scalar &s2 )
  *
  * ToDo: Finish documentation!
  *
- * \ingroup Thyra_Op_Vec_test_tools_code_grp
+ * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 template <class Scalar>
 typename Teuchos::ScalarTraits<Scalar>::magnitudeType
@@ -81,7 +72,7 @@ relVectorErr( const VectorBase<Scalar> &v1, const VectorBase<Scalar> &v2 );
  *
  * ToDo: Finish documentation!
  *
- * \ingroup Thyra_Op_Vec_test_tools_code_grp
+ * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 template<class Scalar>
 inline
@@ -113,7 +104,7 @@ bool testRelErr(
  *
  * ToDo: Finish documentation!
  *
- * \ingroup Thyra_Op_Vec_test_tools_code_grp
+ * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 template<class Scalar1, class Scalar2, class ScalarMag>
 bool testRelErrors(
@@ -138,7 +129,7 @@ bool testRelErrors(
  *
  * ToDo: Finish documentation!
  *
- * \ingroup Thyra_Op_Vec_test_tools_code_grp
+ * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 template<class Scalar>
 bool testRelNormDiffErr(
@@ -159,7 +150,7 @@ bool testRelNormDiffErr(
  *
  * ToDo: Finish documentation!
  *
- * \ingroup Thyra_Op_Vec_test_tools_code_grp
+ * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 template<class Scalar>
 bool testMaxErr(
@@ -179,7 +170,7 @@ bool testMaxErr(
  *
  * ToDo: Finish documentation!
  *
- * \ingroup Thyra_Op_Vec_test_tools_code_grp
+ * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 template<class Scalar>
 bool testMaxErrors(
@@ -198,7 +189,7 @@ bool testMaxErrors(
  *
  * ToDo: Finish documentation!
  *
- * \ingroup Thyra_Op_Vec_test_tools_code_grp
+ * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 bool testBoolExpr(
   const std::string    &boolExprName
@@ -240,7 +231,7 @@ void printTestResults(
  *
  * ToDo: Finish documentation!
  *
- * \ingroup Thyra_Op_Vec_test_tools_code_grp
+ * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 template<class Scalar>
 std::ostream& operator<<( std::ostream& o, const VectorBase<Scalar>& v );
@@ -249,7 +240,7 @@ std::ostream& operator<<( std::ostream& o, const VectorBase<Scalar>& v );
  *
  * Calls <tt>M.describe(o,Teuchos::VERB_EXTREME);</tt>
  *
- * \ingroup Thyra_Op_Vec_test_tools_code_grp
+ * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 template<class Scalar>
 std::ostream& operator<<( std::ostream& o, const LinearOpBase<Scalar>& M );

@@ -37,17 +37,11 @@
 namespace Thyra {
 
 
-/** \defgroup Equation_solve_foundation_code_grp  Operator solve foundational code
- *
- * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
- */
-
-
 /** \brief Type of solve measure norm.
  *
  * For reference we refer to solving a single linear system <tt>A*x=b</tt>.
  *
- * \ingroup Equation_solve_foundation_code_grp
+ * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
  */
 enum ESolveMeasureNormType {
   SOLVE_MEASURE_ONE                   ///< No solve measure (i.e. same as 1.0)
@@ -58,7 +52,10 @@ enum ESolveMeasureNormType {
 };
 
 
-/** \brief . */
+/** \brief .
+ *
+ * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
+ */
 inline
 const std::string toString(const ESolveMeasureNormType solveMeasureNormType)
 {
@@ -91,7 +88,7 @@ const std::string toString(const ESolveMeasureNormType solveMeasureNormType)
  * <tt>numerator==SOLVE_MEASURE_ONE&&denominator==SOLVE_MEASURE_ONE</tt>
  * (i.e. 1/1) means that there is no solve measure type specified.
  *
- * \ingroup Equation_solve_foundation_code_grp
+ * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
  */
 struct SolveMeasureType {
   /** \brief . */
@@ -118,7 +115,10 @@ struct SolveMeasureType {
 };
 
 
-/** \brief . */
+/** \brief .
+ *
+ * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
+ */
 inline
 std::string toString(const SolveMeasureType& solveMeasureType)
 {
@@ -130,7 +130,7 @@ std::string toString(const SolveMeasureType& solveMeasureType)
 
 /** \brief Simple struct that defines the requested solution criteria for a solve.
  *
- * \ingroup Equation_solve_foundation_code_grp
+ * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
  */
 template <class Scalar>
 struct SolveCriteria {
@@ -163,9 +163,9 @@ struct SolveCriteria {
 };
 
 
-/** \brief Deprecated..
+/** \brief Deprecated.
  *
- * \ingroup Equation_solve_foundation_code_grp
+ * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
  */
 template <class Scalar>
 struct THYRA_DEPRECATED BlockSolveCriteria {
@@ -186,7 +186,7 @@ struct THYRA_DEPRECATED BlockSolveCriteria {
 
 /** \brief Exception type thrown on an catastrophic solve failure.
  *
- * \ingroup Equation_solve_foundation_code_grp
+ * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
  */
 class CatastrophicSolveFailure : public std::runtime_error
 {public: CatastrophicSolveFailure(const std::string& what_arg) : std::runtime_error(what_arg) {}};
@@ -194,7 +194,7 @@ class CatastrophicSolveFailure : public std::runtime_error
 
 /** \brief Solution status
  *
- * \ingroup Equation_solve_foundation_code_grp
+ * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
  */
 enum ESolveStatus {
   SOLVE_STATUS_CONVERGED        ///< The requested solution criteria has likely been achieved
@@ -203,7 +203,10 @@ enum ESolveStatus {
 };
 
 
-/** \brief . */
+/** \brief .
+ *
+ * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
+ */
 inline
 const std::string toString(const ESolveStatus solveStatus)
 {
@@ -221,7 +224,7 @@ const std::string toString(const ESolveStatus solveStatus)
  *
  * In the future, more fields may be added to aid in user diagnostics.
  *
- * \ingroup Equation_solve_foundation_code_grp
+ * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
  */
 template <class Scalar>
 struct SolveStatus {
@@ -254,7 +257,10 @@ struct SolveStatus {
 };
 
 
-/** \brief Print the solve status to a stream */
+/** \brief Print the solve status to a stream.
+ *
+ * \relates SolveStatus
+ */
 template <class Scalar>
 std::ostream& operator<<( std::ostream& out_arg, const SolveStatus<Scalar> &solveStatus )
 {
@@ -285,7 +291,7 @@ std::ostream& operator<<( std::ostream& out_arg, const SolveStatus<Scalar> &solv
 /** \brief Enum that specifies how a <tt>LinearOpWithSolveBase</tt> object
  * will be used for solves after it is constructed.
  *
- * \ingroup Equation_solve_foundation_code_grp
+ * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
  */
 enum ESupportSolveUse {
   SUPPORT_SOLVE_UNSPECIFIED  ///< How the output LOWSB object will be useded for solves in unspecified
@@ -297,7 +303,7 @@ enum ESupportSolveUse {
 
 /** \brief Enum defining the status of a preconditioner object.
  *
- * \ingroup Equation_solve_foundation_code_grp
+ * \ingroup Thyra_Op_Solve_fundamental_interfaces_code_grp
  */
 enum EPreconditionerInputType {
   PRECONDITIONER_INPUT_TYPE_AS_OPERATOR  ///< The input preconditioner should just be applied as an operator
@@ -306,6 +312,8 @@ enum EPreconditionerInputType {
 
 
 /** \brief Initial overallSolveStatus before calling accumulateSolveStatus().
+ *
+ * \relates SolveStatus
  */
 template <class Scalar>
 void accumulateSolveStatusInit(
@@ -330,7 +338,7 @@ void accumulateSolveStatusInit(
  * Before the first initialize with
  * <tt>accumulateSolveStatusInit(overallSolveStatus)</tt>.
  *
- * \ingroup Equation_solve_foundation_code_grp
+ * \relates SolveStatus
  */
 template <class Scalar>
 void accumulateSolveStatus(
@@ -394,7 +402,10 @@ void accumulateSolveStatus(
 }
 
 
-/** \brief Deprecated. */
+/** \brief Deprecated.
+ *
+ * \relates SolveStatus
+ */
 template <class Scalar>
 THYRA_DEPRECATED
 void accumulateSolveStatus(

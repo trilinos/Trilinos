@@ -27,9 +27,19 @@ that provide the foundation for all ANAs.
 */
 
 
+/** \defgroup Thyra_Op_Vec_extended_interfaces_code_grp Thyra operator/vector extended interfaces
+
+\ingroup Thyra_Op_Vec_interfaces_code_grp
+
+\brief These are the extended \ref thyra_interfaces_operator_vector_sec that
+provide the foundation for all ANAs.
+
+*/
+
+
 /** \defgroup Thyra_Op_Vec_Behavior_Of_Views_grp State behavior of Thyra views
 
-\ingroup Thyra_Op_Vec_fundamental_interfaces_code_grp
+\ingroup Thyra_Op_Vec_interfaces_code_grp
 
 All views in Thyra have the behavior as outlined in the below diagram:
 
@@ -42,16 +52,6 @@ okay to allow multiple changeable views to be active if these views do not
 overlap but it depends on the implementation of underlying parent object and
 of the views.  Multiple non-changeable views should always be allowed, even if
 they overlap.
-
-*/
-
-
-/** \defgroup Thyra_Op_Vec_extended_interfaces_code_grp Thyra operator/vector extended interfaces
-
-\ingroup Thyra_Op_Vec_interfaces_code_grp
-
-\brief These are the extended \ref thyra_interfaces_operator_vector_sec that
-provide the foundation for all ANAs.
 
 */
 
@@ -138,11 +138,11 @@ the foundation for all ANAs.
 */
 
 
-/** \defgroup Thyra_Op_Vec_ANA_Development_grp Development of linear Abstract Numerical Algorithms (ANAs)
+/** \defgroup Thyra_Op_Vec_ANA_Development_grp Development of linear Abstract Numerical Algorithms (ANAs) (Client Support)
 
 \ingroup Thyra_Op_Vec_support_grp
 
-\brief While the \ref Thyra_Op_Vec_fundamental_interfaces_sec were not
+\brief While the \ref Thyra_Op_Vec_fundamental_interfaces_code_grp were not
 principally designed to provide a direct API for the development of
 ANA software, with some minimal helper functions and classes, directly
 writing even sophisticated ANA implementations directly in terms of
@@ -150,7 +150,7 @@ writing even sophisticated ANA implementations directly in terms of
 
 It turns out that using %Thyra for the development of simple ANAs,
 as described below, really does not require any deep understanding of
-the \ref Thyra_Op_Vec_fundamental_interfaces_sec "foundational Thyra operator/vector interfaces.
+the \ref Thyra_Op_Vec_fundamental_interfaces_code_grp "foundational Thyra operator/vector interfaces.
 
 \section Thyra_Op_Vec_ANA_Development_overview_sec Overview of Using Thyra Software for Development of ANA Software
 
@@ -345,7 +345,7 @@ thrown.  The use of these view classes is quite straightforward.
 <li><b>Basic default implementation node subclasses</b>
 
 The following subclasses directly derive from
-\ref Thyra_Op_Vec_fundamental_interfaces_sec and provide general default
+\ref Thyra_Op_Vec_fundamental_interfaces_code_grp and provide general default
 implementations for as many virtual functions as reasonable:
 
 <ul>
@@ -471,7 +471,7 @@ linear operators.
 
 <ul>
 
-<li> \ref Thyra_Op_Vec_ANA_Interoperability_grp
+<li> \ref Thyra_Op_Vec_fundamental_interfaces_code_grp
 
 <li> \ref Thyra_Op_Vec_Adapters_grp
 
@@ -480,35 +480,23 @@ linear operators.
 */
 
 
-/** \defgroup Thyra_Op_Vec_ANA_Development_support_code_grp General ANA support code
- *
- * \ingroup Thyra_Op_Vec_ANA_Development_grp
- */
-
-
-/** \defgroup Thyra_Op_Vec_ANA_Development_support_code_utils_grp General ANA support code utilities
- *
- * \ingroup Thyra_Op_Vec_ANA_Development_support_code_grp
- */
-
-
-/** \defgroup Thyra_Op_Vec_Adapters_grp Development of Concrete Thyra Operator/Vector Subclass Implementations
+/** \defgroup Thyra_Op_Vec_Adapters_grp Development of Concrete Thyra Operator/Vector Subclass Implementations (Adapter Support)
 
 \ingroup Thyra_Op_Vec_support_grp
 
 \brief In order for abstract numerical algorithms (ANAs)
 \ref Thyra_Op_Vec_ANA_Development_grp "developed with Thyra" or
-\ref Thyra_Op_Vec_ANA_Interoperability_grp "accessed using Thyra" to be useful,
+\ref Thyra_Op_Vec_fundamental_interfaces_code_grp "accessed using Thyra" to be useful,
 concrete implementations of the
-\ref Thyra_Op_Vec_fundamental_interfaces_sec must be provided.
+\ref Thyra_Op_Vec_fundamental_interfaces_code_grp must be provided.
 However, because of a number of convenient C++ subclasses described
 here, a developer of such implementation subclasses does not really need to understand much at all
 about the philosophy or details behind the fundamental %Thyra
 interfaces in order to provide implementations for the most common use
 cases.
 
-One of the main motivations behind the design of the \ref
-Thyra_Op_Vec_fundamental_interfaces_sec is the uniform support for many
+One of the main motivations behind the design of the 
+\ref Thyra_Op_Vec_fundamental_interfaces_code_grp is the uniform support for many
 different computing environments such as serial shared-memory (i.e. SMP) and a
 variety of distributed-memory models (e.g. SPMD (single program, multiple
 data), client-server, master-slave and client-server/master-slave).  While
@@ -517,7 +505,7 @@ these types will be in more typical SMP serial shared-memory or SPMD
 distributed-memory environments.  Because of this, the Trilinos package %Thyra
 contains a set of base subclasses that makes the development of concrete
 vector space, vector, multi-vector and linear operator subclasses as easy as
-possible.  However, the \ref Thyra_Op_Vec_fundamental_interfaces_sec allow
+possible.  However, the \ref Thyra_Op_Vec_fundamental_interfaces_code_grp allow
 for almost limitless possibilities with respect to the types of
 implementations so it is not reasonable to provide pre-packaged support for
 all of the possibilities.
@@ -565,7 +553,7 @@ Below we outline support code contained in the %Thyra package for
 different categories of computing platforms.
 
 <b>Note!</b> Before attempting to create your own concrete subclasses
-of the \ref Thyra_Op_Vec_fundamental_interfaces_sec please browse the 
+of the \ref Thyra_Op_Vec_fundamental_interfaces_code_grp please browse the 
 links below so that you know what support is already available.  In many
 cases, most of the concrete implementation software that you need for
 %Thyra is already provided.
@@ -592,7 +580,7 @@ of MPI or any other concrete interprocess communication protocol.
 
 <ul>
 
-<li> \ref Thyra_Op_Vec_ANA_Interoperability_grp
+<li> \ref Thyra_Op_Vec_fundamental_interfaces_code_grp
 
 <li> \ref Thyra_Op_Vec_ANA_Development_grp
 
@@ -600,20 +588,12 @@ of MPI or any other concrete interprocess communication protocol.
 
 */
 
+
 /** \defgroup Thyra_Op_Vec_general_adapter_support_code_grp Miscellaneous Support Code for Developing Thyra Operator/Vector Subclass Implementations
 
 \ingroup Thyra_Op_Vec_Adapters_grp
 
 \brief This is some basic C++ code to support the development of Thyra subclass implementations.
-
-*/
-
-
-/** \defgroup Thyra_Op_Vec_general_adapter_support_code_utils_grp Internal Helper Code not meant for General Use
-
-\brief Some support code that is not meant for general programmers to access.
-
-\ingroup Thyra_Op_Vec_general_adapter_support_code_grp
 
 */
 
@@ -698,37 +678,32 @@ category of Serial and SPMD vectors, multi-vectors and vector spaces.
 
 <ul>
 
-<li><tt>Thyra::SpmdVectorSpaceDefaultBase</tt> abstracts the the types of
-SPMD distributed-memory data distributions supported by these base
-subclasses.  This vector space base class assumes a unique
-partitioning of vector and multi-vector elements to a set of
-processors where there exists no ghost elements.
+<li><tt>Thyra::SpmdVectorSpaceDefaultBase</tt> abstracts the the types of SPMD
+distributed-memory data distributions supported by these base subclasses.
+This vector space base class assumes a unique partitioning of vector and
+multi-vector elements to a set of processors where there exists no ghost
+elements.
 
-<li><tt>Thyra::SpmdVectorBase</tt> is a base subclass for
-SPMD <tt>%Thyra::%VectorBase</tt> objects.  This class defines concrete
+<li><tt>Thyra::SpmdVectorBase</tt> is a base subclass for SPMD
+<tt>%Thyra::%VectorBase</tt> objects.  This class defines concrete
 implementations for the <tt>%Thyra::%VectorBase</tt> virtual functions
-<tt>%applyOp()</tt>, <tt>%acquireDetachedView() const</tt>, <tt>%releaseDetachedView()
-const</tt>, <tt>%acquireDetachedView()</tt> and <tt>%commitDetachedView()</tt>.
-These functions are implemented given explicit access to local processor
-elements as returned by the <tt>getLocalData()</tt> functions overridden
-in a subclass object.
+<tt>%applyOp()</tt>, <tt>%acquireDetachedView() const</tt>,
+<tt>%releaseDetachedView() const</tt>, <tt>%acquireDetachedView()</tt> and
+<tt>%commitDetachedView()</tt>.  These functions are implemented given
+explicit access to local processor elements as returned by the
+<tt>getLocalData()</tt> functions overridden in a subclass object.
 
-<li><tt>Thyra::SpmdMultiVectorBase</tt> is a base subclass for
-SPMD <tt>%Thyra::%MultiVectorBase</tt> objects.  This class
-defines concrete implementations for the
-<tt>%Thyra::%MultiVectorBase</tt> virtual functions <tt>%applyOp()</tt>,
-<tt>%acquireDetachedView() const</tt>, <tt>%releaseDetachedView()
-const</tt>, <tt>%acquireDetachedView()</tt> and
-<tt>%commitDetachedView()</tt>.  These functions are implemented
-given explicit access to local processor elements as returned by the
-<tt>getLocalData()</tt> functions overridden in a subclass object.  In
-addition, this subclass derives from
-<tt>Thyra::EuclideanLinearOpBase</tt> so that any
-application-specific scalar product is automatically supported.  The
-multi-vector version of
-<tt>Thyra::SpmdMultiVectorBase::euclideanApply()</tt> is implemented
-by calling <tt>Teuchos::BLAS::GEMM()</tt> on each local processor to
-access level-3 BLAS.  Therefore, if %Teuchos is configured to link to
+<li><tt>Thyra::SpmdMultiVectorBase</tt> is a base subclass for SPMD
+<tt>%Thyra::%MultiVectorBase</tt> objects.  This class defines concrete
+implementations for the <tt>%Thyra::%MultiVectorBase</tt> virtual functions
+<tt>%applyOp()</tt>, <tt>%acquireDetachedView() const</tt>,
+<tt>%releaseDetachedView() const</tt>, <tt>%acquireDetachedView()</tt> and
+<tt>%commitDetachedView()</tt>.  These functions are implemented given
+explicit access to local processor elements as returned by the
+<tt>getLocalData()</tt> functions overridden in a subclass object.  The
+multi-vector version of <tt>Thyra::SpmdMultiVectorBase::apply()</tt> is
+implemented by calling <tt>Teuchos::BLAS::GEMM()</tt> on each local processor
+to access level-3 BLAS.  Therefore, if %Teuchos is configured to link to
 optimized BLAS then this base subclass will provided a near optimal
 implementation of a SPMD multi-vector.
 
@@ -738,16 +713,6 @@ One of the big advantages of deriving concrete SPMD
 implementations from these base subclasses is that they provide automatic
 interoperability between different concrete subclasses.  This type of
 automatic interoperability is demonstrated in ???this testing program???.
-
-\section Thyra_Op_Vec_spmd_adapters_linear_op_sec Base Subclasses for SPMD Thyra::LinearOpBase Implementations
-
-To facilitate the creation of concrete SPMD linear operators the
-following simple but very general base class is supplied:
-
-<ul> <li><tt>Thyra::SpmdLinearOpBase</tt> is a general base subclass for
-Serial and SPMD platforms that only requires concrete subclass implementations
-to override one function that accepts explicit local vector or multi-vector
-data. </ul>
 
 */
 
@@ -760,21 +725,12 @@ data. </ul>
 implementations of SPMD vector space, vector and multi-vector
 subclasses.
 
-\image html DefaultSpmdVectorSpace.gif "Concrete subclasses for SPMD distributed-memory Thyra implementations (Note: above graphic is not hyperlinked!)"
-
 \section Thyra_Op_Vec_adapters_Spmd_concrete_std_classes_grp Concrete SPMD Subclasses
 
 The concrete subclasses described here, for the most part, derive directly
 from the \ref \ref Thyra_Op_Vec_adapters_Spmd_support_grp.
 
 <ul>
-
-<li><tt>Thyra::DefaultSpmdVectorSpaceFactory</tt> is a concrete
-<tt>%Thyra::%VectorSpaceFactoryBase</tt> subclass implementation that
-creates locally replicated <tt>%Thyra::%DefaultSpmdVectorSpace</tt> objects
-given their dimension.  This class is meant to create domain spaces for
-any SPMD multi-vector object it is is used as such (for
-example, see <tt>Thyra::SpmdVectorSpaceDefaultBase::smallVecSpcFcty()</tt>).
 
 <li><tt>Thyra::DefaultSpmdVectorSpace</tt> is a general
 <tt>%Thyra::%VectorSpaceBase</tt> subclass implementation for 
@@ -792,6 +748,13 @@ efficient <tt>%Thyra::%MultiVectorBase</tt> subclass implementation for
 SPMD multi-vectors.  Objects of this type can be constructed
 from a variety of data sources due to the magic of
 <tt>%Teuchos::%RCP</tt>.
+
+<li><tt>Thyra::DefaultSpmdVectorSpaceFactory</tt> is a concrete
+<tt>%Thyra::%VectorSpaceFactoryBase</tt> subclass implementation that
+creates locally replicated <tt>%Thyra::%DefaultSpmdVectorSpace</tt> objects
+given their dimension.  This class is meant to create domain spaces for
+any SPMD multi-vector object it is is used as such (for
+example, see <tt>Thyra::SpmdVectorSpaceDefaultBase::smallVecSpcFcty()</tt>).
 
 <li><tt>Thyra::DefaultSpmdMultiVectorFileIO</tt> in a concrete implementation
 of <tt>Thyra::MultiVectorFileIO</tt> that reads and writes (multi)vector to

@@ -107,7 +107,7 @@ enum EM_VS { VS_RANGE, VS_DOMAIN };
 
 /** \brief Utility function for selecting domain or range spaces
  *
- * \ingroup Thyra_Op_Vec_ANA_Development_support_code_utils_grp
+ * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 template<class Scalar>
 const Thyra::VectorSpaceBase<Scalar>& linear_op_op(
@@ -132,7 +132,7 @@ const Thyra::VectorSpaceBase<Scalar>& linear_op_op(
 
 /** \brief This macro just asserts that a LHS argument is set
  *
- * \ingroup Thyra_Op_Vec_ANA_Development_support_code_grp
+ * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 #define THYRA_ASSERT_LHS_ARG(FUNC_NAME,LHS_ARG) \
   TEST_FOR_EXCEPTION( \
@@ -148,7 +148,7 @@ const Thyra::VectorSpaceBase<Scalar>& linear_op_op(
 
 /** \brief Helper assertion macro
  *
- * \ingroup Thyra_Op_Vec_ANA_Development_support_code_utils_grp
+ * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 #define THYRA_ASSERT_VEC_SPACES_NAMES(FUNC_NAME,VS1,VS1_NAME,VS2,VS2_NAME) \
 { \
@@ -170,7 +170,7 @@ const Thyra::VectorSpaceBase<Scalar>& linear_op_op(
  * message string embedded in the thrown exception gives the concrete
  * types of the two vector spaces involved as well as their dimensions.
  *
- * \ingroup Thyra_Op_Vec_ANA_Development_support_code_grp
+ * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 #define THYRA_ASSERT_VEC_SPACES(FUNC_NAME,VS1,VS2)\
 THYRA_ASSERT_VEC_SPACES_NAMES(FUNC_NAME,VS1,#VS1,VS2,#VS2)
@@ -181,7 +181,7 @@ THYRA_ASSERT_VEC_SPACES_NAMES(FUNC_NAME,VS1,#VS1,VS2,#VS2)
  *
  * This macro is not recommended for casual users.
  *
- * \ingroup Thyra_Op_Vec_ANA_Development_support_code_utils_grp
+ * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 #define THYRA_ASSERT_MAT_VEC_SPACES(FUNC_NAME,M,M_T,M_VS,VS) \
 { \
@@ -206,7 +206,7 @@ THYRA_ASSERT_VEC_SPACES_NAMES(FUNC_NAME,VS1,#VS1,VS2,#VS2)
  * message string embedded in the thrown exception gives the concrete
  * types of the vector spaces involved as well as their dimensions.
  *
- * \ingroup Thyra_Op_Vec_ANA_Development_support_code_grp
+ * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 #define THYRA_ASSERT_LINEAR_OP_VEC_APPLY_SPACES(FUNC_NAME,M,M_T,X,Y) \
   { \
@@ -233,7 +233,7 @@ THYRA_ASSERT_VEC_SPACES_NAMES(FUNC_NAME,VS1,#VS1,VS2,#VS2)
  * message string embedded in the thrown exception gives the concrete
  * types of the vector spaces involved as well as their dimensions.
  *
- * \ingroup Thyra_Op_Vec_ANA_Development_support_code_grp
+ * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 #define THYRA_ASSERT_LINEAR_OP_MULTIVEC_APPLY_SPACES(FUNC_NAME,M,M_T,X,Y) \
   { \
@@ -345,7 +345,7 @@ void assertLinearOpTimesLinearOpNames(
 
 /** \brief Assert that a linear operator addition matches up.
  *
- * \ingroup Thyra_Op_Vec_ANA_Development_support_code_utils_grp
+ * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 #define THYRA_ASSERT_LINEAR_OP_PLUS_LINEAR_OP_SPACES_NAMES(FUNC_NAME,M1,M1_T,M1_N,M2,M2_T,M2_N) \
   ::Thyra::assertLinearOpPlusLinearOpNames(FUNC_NAME,M1,M1_T,M1_N,M2,M2_T,M2_N)
@@ -353,7 +353,7 @@ void assertLinearOpTimesLinearOpNames(
 
 /** \brief Assert that a linear operator multiplication matches up.
  *
- * \ingroup Thyra_Op_Vec_ANA_Development_support_code_utils_grp
+ * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 #define THYRA_ASSERT_LINEAR_OP_TIMES_LINEAR_OP_SPACES_NAMES(FUNC_NAME,M1,M1_T,M1_N,M2,M2_T,M2_N) \
   ::Thyra::assertLinearOpTimesLinearOpNames(FUNC_NAME,M1,M1_T,M1_N,M2,M2_T,M2_N)
@@ -363,7 +363,7 @@ void assertLinearOpTimesLinearOpNames(
  *
  * This macro is not recommended for casual users.
  *
- * \ingroup Thyra_Op_Vec_ANA_Development_support_code_utils_grp
+ * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 #define THYRA_ASSERT_MAT_MAT_SPACES(FUNC_NAME,M1,M1_T,M1_VS,M2,M2_T,M2_VS) \
   { \

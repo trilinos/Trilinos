@@ -35,7 +35,7 @@
   <li>\ref thyra_adapters_sec
     <ul>
     <li>\ref thyra_adapters_epetra_sec
-    <li><a href="index.html#epetraext_thyra_adpaters">EpetraExt/Thyra adpaters</a>
+    <li>\ref thyra_adapters_epetraext_sec
     </ul>
   <li>\ref thyra_browse_sec
   </ul>
