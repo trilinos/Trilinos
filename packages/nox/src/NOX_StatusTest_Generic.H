@@ -112,10 +112,10 @@ public:
 
 };
 
+ostream& operator<<(ostream& os, NOX::StatusTest::StatusType type);
+
 } // namespace StatusTest
 } // namespace NOX
-
-ostream& operator<<(ostream& os, NOX::StatusTest::StatusType type);
 
 
 #endif

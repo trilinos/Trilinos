@@ -121,9 +121,10 @@ private:
   Teuchos::RCP<Epetra_Vector> tmpVectorPtr;
 
 };
-}  // namespace Epetra
-}  // namespace NOX
 
 ostream& operator<<(ostream& os, NOX::Epetra::Scaling& scalingObject);
+
+}  // namespace Epetra
+}  // namespace NOX
 
 #endif /* NOX_EPETRA_SCALING_H */

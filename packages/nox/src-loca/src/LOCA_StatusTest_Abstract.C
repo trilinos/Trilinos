@@ -41,7 +41,8 @@
 
 #include "LOCA_StatusTest_Abstract.H"
 
-ostream& operator<<(ostream& os, LOCA::StatusTest::StatusType status)
+ostream& 
+LOCA::StatusTest::operator<<(ostream& os, LOCA::StatusTest::StatusType status)
 {
   os << setiosflags(ios::left) << setw(13) << setfill('.');
   switch (status) {

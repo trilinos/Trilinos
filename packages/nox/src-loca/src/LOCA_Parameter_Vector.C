@@ -255,7 +255,7 @@ LOCA::ParameterVector::print(ostream& stream) const
 }
 
 ostream& 
-operator<<(ostream& stream, const LOCA::ParameterVector& p)
+LOCA::operator<<(ostream& stream, const LOCA::ParameterVector& p)
 {
   p.print(stream);
   return stream;

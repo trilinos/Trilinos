@@ -193,7 +193,7 @@ NOX::Utils::Fill NOX::Utils::fill(int filln, char fillc)
   return NOX::Utils::Fill(filln, fillc);
 }
 
-ostream& operator<<(ostream& os, const NOX::Utils::Fill& f)
+ostream& NOX::operator<<(ostream& os, const NOX::Utils::Fill& f)
 {
   for (int i = 0; i < f.n; i ++)
     os << f.c;
@@ -210,7 +210,7 @@ NOX::Utils::Sci NOX::Utils::sciformat(double dval, int p)
   return NOX::Utils::Sci(dval, p);
 }
 
-ostream& operator<<(ostream& os, const NOX::Utils::Sci& s)
+ostream& NOX::operator<<(ostream& os, const NOX::Utils::Sci& s)
 {
   os.setf(ios::scientific);
   os.precision(s.p);
@@ -270,7 +270,7 @@ void NOX::Utils::print(ostream& os) const
   os << "Precision = " << precision << endl;
 }
 
-ostream& operator<<(ostream& os, const NOX::Utils& utils)
+ostream& NOX::operator<<(ostream& os, const NOX::Utils& utils)
 {
   utils.print(os);
   return os;

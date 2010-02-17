@@ -242,7 +242,8 @@ void NOX::Epetra::Scaling::print(ostream& os)
   return;
 }
 
-ostream& operator<<(ostream& os, NOX::Epetra::Scaling& scalingObject)
+ostream& 
+NOX::Epetra::operator<<(ostream& os, NOX::Epetra::Scaling& scalingObject)
 {
   scalingObject.print(os);
   return os;

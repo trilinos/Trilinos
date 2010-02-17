@@ -109,11 +109,11 @@ public:
 
 };
 
-} // namespace StatusTest
-} // namespace LOCA
-
 ostream&
 operator<<(ostream& os, LOCA::StatusTest::StatusType status);
+
+} // namespace StatusTest
+} // namespace LOCA
 
 
 #endif

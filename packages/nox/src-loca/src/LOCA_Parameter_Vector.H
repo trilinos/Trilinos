@@ -143,9 +143,10 @@ protected:
   vector<string> l;
 
 };
-} //namespace LOCA
 
 //! Overload the operator<< to print ParameterVector objects.
 ostream& operator<<(ostream& stream, const LOCA::ParameterVector& p);
+
+} //namespace LOCA
 
 #endif

@@ -197,7 +197,7 @@ namespace NOX {
 } // namespace NOX
 
 //! Function for printing
-ostream& operator<<(ostream& stream, const NOX::LAPACK::Vector& v);
+ostream& NOX::LAPACK::operator<<(ostream& stream, const NOX::LAPACK::Vector& v);
 
 
 

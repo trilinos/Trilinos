@@ -42,7 +42,8 @@
 #include "NOX_StatusTest_Generic.H"
 #include "NOX_Common.H"
 
-ostream& operator<<(ostream& os, NOX::StatusTest::StatusType type)
+ostream& 
+NOX::StatusTest::operator<<(ostream& os, NOX::StatusTest::StatusType type)
 {
   os << setiosflags(ios::left) << setw(13) << setfill('.');
   switch (type) {

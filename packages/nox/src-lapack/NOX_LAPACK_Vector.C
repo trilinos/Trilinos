@@ -308,7 +308,7 @@ ostream& NOX::LAPACK::Vector::leftshift(ostream& stream) const
   return stream;
 }
 
-ostream& operator<<(ostream& stream, const NOX::LAPACK::Vector& v)
+ostream& NOX::LAPACK::operator<<(ostream& stream, const NOX::LAPACK::Vector& v)
 {
   return v.leftshift(stream);
 }

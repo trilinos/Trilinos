@@ -281,11 +281,11 @@ private:
 
 }; // class Utils
 
-} // namespace NOX
-
 ostream& operator<<(ostream&, const NOX::Utils::Fill&);
 ostream& operator<<(ostream&, const NOX::Utils::Sci&);
 ostream& operator<<(ostream&, const NOX::Utils& utils);
+
+} // namespace NOX
 
 
 #endif
