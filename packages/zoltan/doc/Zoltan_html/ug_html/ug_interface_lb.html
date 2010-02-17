@@ -233,7 +233,7 @@ is "EXPORT" or "EXPORT AND IMPORT".
 <LI>It is the count of all objects on this processor,
 if 
 <a href="ug_alg.html#RETURN_LISTS">RETURN_LISTS</a> 
-is "PARTITION ASSIGNMENTS".
+is "PARTS" (or "PART ASSIGNMENTS").
 <LI>It is -1 if the value of 
 <a href="ug_alg.html#RETURN_LISTS">RETURN_LISTS</a> 
 indicates that either no lists are to be returned, or only import lists
@@ -255,7 +255,7 @@ is equal to "EXPORT" or "EXPORT AND IMPORT"),
 or an array of <i>num_export</i> global IDs
 for every object on this processor
 (if <a href="ug_alg.html#RETURN_LISTS">RETURN_LISTS</a> 
-is equal to "PARTITION ASSIGNMENTS"), 
+is equal to "PARTS" or "PART ASSIGNMENTS"), 
 .&nbsp;
 <br>(size = <i>num_export</i> * <i>num_gid_entries</i>)</td>
 </tr>
@@ -276,7 +276,7 @@ with the global IDs returned in <i>export_global_ids</i>
 ID of the processor to which each object is now assigned
 (i.e., the destination processor).
 If <a href="ug_alg.html#RETURN_LISTS">RETURN_LISTS</a> 
-is equal to "PARTITION ASSIGNMENTS", this list includes all objects, otherwise
+is equal to "PARTS" or "PART ASSIGNMENTS", this list includes all objects, otherwise
 it only includes the objects which are moving to a new part and/or process.
 
 </td>
