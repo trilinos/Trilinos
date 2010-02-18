@@ -78,6 +78,21 @@ APPEND_SET(SOURCES
   )
 
 #
+# src/ccolamd
+#
+
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/ccolamd)
+
+APPEND_SET(NOINSTALLHEADERS
+  ccolamd/ccolamd.h
+  )
+
+APPEND_SET(SOURCES
+  ccolamd/ccolamd.c
+  ccolamd/ccolamd_global.c
+  )
+
+#
 # src/coloring
 #
 

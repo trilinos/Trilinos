@@ -1,0 +1,31 @@
+##############################################################################
+# This is a modified version of the CCOLAMD (Constrained Column Approximate
+# Minimum Degree ordering) code written by Timothy A. Davis, Sivasankaran
+# Rajamanickam and Stefan Larimore. CCOLAMD version 2.7.1 is used as the base.
+# CCOLAMD website : http://www.cise.ufl.edu/research/sparse/ccolamd/
+#
+# The changes to CCOLAMD are: 
+#
+#   1. UFconfig.h used by CCOLAMD is not used by Zoltan. Instead the definition
+#   of UF_long is now part of ccolamd.h.
+#
+#   2. Any user callable function <func> of CCOLAMD will be called
+#   Zoltan_<func>.
+#
+#   3. The one global varibale ccolamd_printf will be Zoltan_ccolamd_printf.
+#
+##############################################################################
+
+
+CCOLAMD Directory - Constrained Column ordering methods.
+------------------------------------------------------------------------
+
+ccolamd.c     	 -- Routines for computing constrained column ordering for 
+		    sparse LU and Cholesky factorizations.
+
+ccolamd.h 	 -- External interface oc CCOLAMD. The methods are visible to 
+		    Zoltan only.
+
+ccolamd_global.c -- Defines the printf used by CCOLAMD for debug information.
+
+
