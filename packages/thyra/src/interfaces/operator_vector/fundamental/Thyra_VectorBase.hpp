@@ -283,22 +283,6 @@ protected:
     const Ordinal sub_dim,
     const Ordinal global_offset
     ) const = 0;
-/*
-    {
-      // 2008/02/19: rabartl: ToDo: Remove this default implemenation once the
-      // refactoring is done.
-      using Teuchos::as;
-      Array<const VectorBase<Scalar>*> raw_vecs(vecs.size());
-      for ( int k = 0; k < as<int>(vecs.size()); ++k )
-        raw_vecs[k] = &*vecs[k];
-      Array<VectorBase<Scalar>*> raw_targ_vecs(targ_vecs.size());
-      for ( int k = 0; k < as<int>(targ_vecs.size()); ++k )
-        raw_targ_vecs[k] = &*targ_vecs[k];
-      this->applyOp(op, raw_vecs.size(), raw_vecs.getRawPtr(),
-        raw_targ_vecs.size(), raw_targ_vecs.getRawPtr(),
-        reduct_obj.get(), first_ele_offset, sub_dim, global_offset );
-    }
-*/
   
   /** \brief Get a non-mutable explicit view of a sub-vector.
    *
@@ -475,26 +459,6 @@ protected:
 
   //@}
 
-public:
-
-/*
-  virtual void applyOp(
-    const RTOpPack::RTOpT<Scalar> &op,
-    const int num_vecs,
-    const VectorBase<Scalar>*const vecs[],
-    const int num_targ_vecs,
-    VectorBase<Scalar>*const targ_vecs[],
-    RTOpPack::ReductTarget *reduct_obj,
-    const Ordinal first_ele_offset,
-    const Ordinal sub_dim,
-    const Ordinal global_offset
-    ) const
-    {
-      TEST_FOR_EXCEPT(true);
-      // ToDo: remove this function once the refactoring is finished!
-    }
-*/
-
 private:
   
   // Not defined and not to be called
@@ -541,50 +505,79 @@ private:
  *
  * \param sub_dim [in] (default = -1) The number of elements in these vectors
  * to include in the reduction/transformation operation.  The value of
- * <tt>sub_dim < 0</tt> means to include all available elements.  The value of
- * <tt>sub_dim == 0</tt> means to include none of the elements of the vector.
- * This last value is somewhat undefined but has meaning in some specialized
- * contexts (such as for SPMD vectors).
+ * <tt>sub_dim < 0</tt> means to include all available elements after
+ * <tt>first_ele_offset</tt>.  The value of <tt>sub_dim == 0</tt> means to
+ * include none of the elements of the vector.  This last value is somewhat
+ * undefined but has meaning in some specialized contexts (such as for SPMD
+ * vectors).
  *
  * \param global_offset [in] (default = 0) The offset applied to the included
  * vector elements.
  *
  * <b>Preconditions:</b><ul>
- * <li> [<tt>vecs.size() > 0</tt>] <tt>vecs[k]->space()->isCompatible(*this->space()) == true</tt>,
- *      for <tt>k = 0...vecs.size()-1</tt> (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
- * <li> [<tt>targ_vecs.size() > 0</tt>] <tt>targ_vecs[k]->space()->isCompatible(*this->space()) == true</tt>,
- *      for <tt>k = 0...targ_vecs.size()-1</tt> (throw <tt>Exceptions::IncompatibleVectorSpaces</tt>)
- * <li> [<tt>targ_vecs.size() > 0</tt>] The vectors pointed to by <tt>targ_vecs[k]</tt>, for
- *      <tt>k = 0...targ_vecs.size()-1</tt> must not alias each other or any of the vectors
- *      <tt>vecs[k]</tt>, for <tt>k = 0...vecs.size()-1</tt>.  <b>You have be warned!!!!</b>
- * <li> <tt>0 <= first_ele_offset < this->space()->dim()</tt> (throw <tt>std::out_of_range</tt>)
+ *
+ * <li> [<tt>vecs.size() > 0</tt>]
+ * <tt>vecs[k]->space()->isCompatible(*this->space()) == true</tt>, for <tt>k
+ * = 0...vecs.size()-1</tt> (throw
+ * <tt>Exceptions::IncompatibleVectorSpaces</tt>)
+ *
+ * <li> [<tt>targ_vecs.size() > 0</tt>]
+ * <tt>targ_vecs[k]->space()->isCompatible(*this->space()) == true</tt>, for
+ * <tt>k = 0...targ_vecs.size()-1</tt> (throw
+ * <tt>Exceptions::IncompatibleVectorSpaces</tt>)
+ *
+ * <li> [<tt>targ_vecs.size() > 0</tt>] The vectors pointed to by
+ * <tt>targ_vecs[k]</tt>, for <tt>k = 0...targ_vecs.size()-1</tt> must not
+ * alias each other or any of the vectors <tt>vecs[k]</tt>, for <tt>k =
+ * 0...vecs.size()-1</tt>.  <b>You have be warned!!!!</b>
+ *
+ * <li> <tt>0 <= first_ele_offset < this->space()->dim()</tt> (throw
+ * <tt>std::out_of_range</tt>)
+ *
  * <li> <tt>global_offset >= 0</tt> (throw <tt>std::invalid_argument</tt>)
- * <li> <tt>sub_dim - first_ele_offset <= this->space()->dim()</tt> (throw <tt>std::length_error</tt>).
+ *
+ * <li> <tt>sub_dim - first_ele_offset <= this->space()->dim()</tt> (throw
+ * <tt>std::length_error</tt>).
+ *
  * </ul>
  *
  * <b>Postconditions:</b><ul>
- * <li> The vectors in <tt>targ_vecs[]</tt> may be modified as determined by the definition of <tt>op</tt>.
- * <li> [<tt>reduct_obj!=null</tt>] The reduction object <tt>reduct_obj</tt> contains
- *      the combined reduction from the input state of <tt>reduct_obj</tt> and the reductions that
- *      where accumulated during this this function invocation.
+ *
+ * <li> The vectors in <tt>targ_vecs[]</tt> may be modified as determined by
+ * the definition of <tt>op</tt>.
+ *
+ * <li> [<tt>reduct_obj!=null</tt>] The reduction object <tt>reduct_obj</tt>
+ * contains the combined reduction from the input state of <tt>reduct_obj</tt>
+ * and the reductions that where accumulated during this this function
+ * invocation.
+ *
  * </ul>
  *
- * The logical vector passed to the <tt>op\ref RTOpPack::RTOpT::apply_op ".apply_op(...)"</tt>
- * function is:
+ * The logical vector <tt>v</tt> passed in subvector chunks to
+ * <tt>op\ref RTOpPack::RTOpT::apply_op ".apply_op(...)"</tt>
+ * is:
 
  \verbatim
 
- v(k + global_offset) = this->get_ele(first_ele_offset + k)
- , for k = 0 ... sub_dim-1
+ v(k + global_offset) = this->get_ele(first_ele_offset + k),
+    for k = 0 ... sub_dim-1
  \endverbatim
  
  * where <tt>v</tt> represents any one of the input or input/output vectors.
- * The situation where <tt>first_ele_offset == 0</tt> and <tt>global_offset > 1</tt>
- * corresponds to the case where the vectors represent constituent vectors in
- * a larger aggregate vector.  The situation where <tt>first_ele_offset > 0</tt> and
- * <tt>global_offset == 0</tt> is for when a sub-view of the vectors are being
- * treated as full vectors.  Other combinations of these arguments are also
- * possible.
+ * The situation where <tt>first_ele_offset == 0</tt> and <tt>global_offset >
+ * 1</tt> corresponds to the case where the vectors represent constituent
+ * vectors in a larger aggregate vector.  The situation where
+ * <tt>first_ele_offset > 0</tt> and <tt>global_offset == 0</tt> is for when a
+ * sub-view of the vectors are being treated as full vectors.  Other
+ * combinations of these arguments are also possible.  Note that
+ * <tt>global_offset</tt> is only meaningful for non-coordinate invariant
+ * RTOpT objects.
+ *
+ * So in summary, <tt>first_ele_offset</tt> and <tt>sub_dim</tt> determine
+ * what elements from <tt>*this</tt> contribute to the logical <tt>v</tt> but
+ * it is <tt>global_offset</tt> that determines what elements these are in the
+ * logical vector <tt>v</tt> with respect to non-coordinate invariant
+ * <tt>RTOpT</tt> objects.
  *
  * \relates VectorBase
  */
