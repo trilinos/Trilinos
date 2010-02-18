@@ -464,9 +464,9 @@ the desired relative size of the <i>vwgt_idx[i]</i>'th weight of part
 <hr WIDTH="100%"><b>Zoltan_LB_Eval </b>evaluates the quality of a decomposition.
 The quality metrics of interest differ depending on how you are using Zoltan.
 If you are partitioning points in space using one of Zoltan's geometric methods,
-you will want to know the weighted balance of objects across partitions.  However
+you will want to know the weighted balance of objects across parts.  However
 if you are partitioning a graph, you will want to know about edges that have
-vertices in more than one partition.  <b>Zoltan_LB_Eval </b> can write three
+vertices in more than one part.  <b>Zoltan_LB_Eval </b> can write three
 different structures with these differing metrics.
 <p>
 <table WIDTH="100%" NOSAVE >
@@ -521,10 +521,10 @@ Several of the fields in the EVAL structures are arrays of values.
 The arrays contain values for
 <ol>
 <li>the total for the local process
-<li>the total across all partitions
-<li>the minimum across all partitions
-<li>the maximum across all partitions
-<li>the average across all partitions
+<li>the total across all parts
+<li>the minimum across all parts
+<li>the maximum across all parts
+<li>the average across all parts
 </ol>
 <p>
 in that order.  The corresponding macros that refer to these fields are:
