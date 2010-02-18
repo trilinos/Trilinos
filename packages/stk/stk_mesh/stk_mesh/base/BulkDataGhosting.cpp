@@ -191,10 +191,12 @@ void BulkData::internal_change_ghosting(
   const std::vector<Entity*> & remove_receive )
 {
   const MetaData & meta = m_mesh_meta_data ;
+  const unsigned rank_count = meta.entity_type_count();
   const unsigned p_size = m_parallel_size ;
 
   //------------------------------------
   // Copy ghosting lists into more efficiently editted container.
+  // The send and receive lists must be in entity rank-order.
 
   std::set< EntityProc , EntityLess > new_send ;
   std::set< Entity * ,   EntityLess > new_recv ;
@@ -237,15 +239,20 @@ void BulkData::internal_change_ghosting(
 
   //------------------------------------
   // Add the specified entities and their closure to the send ghosting
-  //
+
   for ( std::vector< EntityProc >::const_iterator
         i = add_send.begin() ; i != add_send.end() ; ++i ) {
     insert_transitive_closure( new_send , *i );
   }
 
+  // Synchronize the send and receive list.
+  // If the send list contains a not-owned entity
+  // inform the owner and receiver to ad that entity
+  // to their ghost send and receive lists.
+
   comm_sync_send_recv( *this , new_send , new_recv );
 
-  // The new_send list is now complete and accurate
+  // The new_send list is now parallel complete and parallel accurate
   // The new_recv has those ghost entities that are to be kept.
   //------------------------------------
   // Remove the ghost entities defined by: ghosts.m_recv - new_recv
@@ -269,6 +276,11 @@ void BulkData::internal_change_ghosting(
 
   //------------------------------------
   // Push newly ghosted entities to the receivers and update the new_recv list
+  // Unpacking must proceed in entity-rank order so that higher ranking
+  // entities that have relations to lower ranking entities will have
+  // the lower ranking entities unpacked first.  The higher and lower
+  // ranking entities may be owned by different processes,
+  // as such unpacking must be performed in rank order.
 
   {
     const EntityLess less ;
@@ -292,42 +304,75 @@ void BulkData::internal_change_ghosting(
 
     for ( std::vector< EntityProc >::iterator
           k = send.begin() ; k != send.end() ; ++k ) {
-      pack_entity_info( comm.send_buffer( k->second ) , * k->first );
+      CommBuffer & buf = comm.send_buffer( k->second );
+      const unsigned rank = k->first->entity_type();
+      buf.pack<unsigned>( rank );
+      pack_entity_info(  buf , * k->first );
+      pack_field_values( buf , * k->first );
     }
 
     comm.allocate_buffers( p_size / 4 );
 
     for ( std::vector< EntityProc >::iterator
           k = send.begin() ; k != send.end() ; ++k ) {
-      pack_entity_info( comm.send_buffer( k->second ) , * k->first );
+      CommBuffer & buf = comm.send_buffer( k->second );
+      const unsigned rank = k->first->entity_type();
+      buf.pack<unsigned>( rank );
+      pack_entity_info(  buf , * k->first );
+      pack_field_values( buf , * k->first );
     }
 
     comm.communicate();
 
-    for ( unsigned p = 0 ; p < p_size ; ++p ) {
-      CommBuffer & buf = comm.recv_buffer(p);
-      while ( buf.remaining() ) {
-        PartVector parts ;
-        std::vector<Relation> relations ;
-        EntityKey key ;
-        unsigned  owner = ~0u ;
- 
-        unpack_entity_info( buf, *this, key, owner, parts, relations );
- 
-        // Must not have the locally_owned_part or locally_used_part
+    std::ostringstream error_msg ;
+    int error_count = 0 ;
 
-        remove( parts , meta.locally_owned_part() );
-        remove( parts , meta.locally_used_part() );
- 
-        std::pair<Entity*,bool> result = internal_create_entity( key , owner );
+    for ( unsigned rank = 0 ; rank < rank_count ; ++rank ) {
+      for ( unsigned p = 0 ; p < p_size ; ++p ) {
+        CommBuffer & buf = comm.recv_buffer(p);
+        while ( buf.remaining() ) {
+          // Only unpack if of the current entity rank.
+          // If not the current entity rank, break the iteration
+          // until a subsequent entity rank iteration.
+          {
+            unsigned this_rank = ~0u ;
+            buf.peek<unsigned>( this_rank );
 
-        internal_change_entity_parts( * result.first , parts , PartVector() );
- 
-        declare_relation( * result.first , relations );
+            if ( this_rank != rank ) break ;
 
-        new_recv.insert( result.first );
+            buf.unpack<unsigned>( this_rank );
+          }
+ 
+          PartVector parts ;
+          std::vector<Relation> relations ;
+          EntityKey key ;
+          unsigned  owner = ~0u ;
+
+          unpack_entity_info( buf, *this, key, owner, parts, relations );
+ 
+          // Must not have the locally_owned_part or locally_used_part
+
+          remove( parts , meta.locally_owned_part() );
+          remove( parts , meta.locally_used_part() );
+ 
+          std::pair<Entity*,bool> result = internal_create_entity( key , owner );
+
+          internal_change_entity_parts( * result.first , parts , PartVector() );
+ 
+          declare_relation( * result.first , relations );
+
+          if ( ! unpack_field_values( buf , * result.first , error_msg ) ) {
+            ++error_count ;
+          }
+
+          new_recv.insert( result.first );
+        }
       }
     }
+
+    all_reduce( m_parallel_machine , ReduceSum<1>( & error_count ) );
+
+    if ( error_count ) { throw std::runtime_error( error_msg.str() ); }
   }
 
   ghosts.m_send.assign( new_send.begin() , new_send.end() );

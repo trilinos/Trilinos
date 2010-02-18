@@ -47,8 +47,8 @@ struct FactoryOrder {
 template <class RangeBoundingVolume,class DomainBoundingVolume>
 bool parallel_bihtree_search(
     std::vector<std::pair<typename DomainBoundingVolume::Key,typename RangeBoundingVolume::Key> > & domain_to_range_keys,
-    std::vector<RangeBoundingVolume> &range,
-    std::vector<DomainBoundingVolume> &domain,
+    const std::vector<RangeBoundingVolume> &range,
+    const std::vector<DomainBoundingVolume> &domain,
     const FactoryOrder & order)
 {
 
@@ -79,8 +79,8 @@ bool parallel_bihtree_search(
 template <class RangeBoundingVolume,class DomainBoundingVolume>
 bool coarse_search_bihtree(
     std::vector<std::pair<typename DomainBoundingVolume::Key,typename RangeBoundingVolume::Key> > & domain_to_range_keys,
-    std::vector<RangeBoundingVolume> &range,
-    std::vector<DomainBoundingVolume> &domain,
+    const std::vector<RangeBoundingVolume> &range,
+    const std::vector<DomainBoundingVolume> &domain,
     const FactoryOrder & order)
 {
   const unsigned p_size = parallel_machine_size( order.m_communicator );
@@ -102,8 +102,8 @@ bool coarse_search_bihtree(
 template <class RangeBoundingVolume,class DomainBoundingVolume>
 bool coarse_search_octree(
     std::vector<std::pair<typename DomainBoundingVolume::Key,typename RangeBoundingVolume::Key> > & domain_to_range_keys,
-    std::vector<RangeBoundingVolume> &range,
-    std::vector<DomainBoundingVolume> &domain,
+    const std::vector<RangeBoundingVolume> &range,
+    const std::vector<DomainBoundingVolume> &domain,
     const FactoryOrder & order)
 {
 
@@ -130,8 +130,8 @@ bool coarse_search_octree(
 template <class RangeBoundingVolume,class DomainBoundingVolume>
 bool coarse_search(
     std::vector<std::pair<typename DomainBoundingVolume::Key,typename RangeBoundingVolume::Key> > & domain_to_range_keys,
-    std::vector<RangeBoundingVolume> &range,
-    std::vector<DomainBoundingVolume> &domain,
+    const  std::vector<RangeBoundingVolume> &range,
+    const std::vector<DomainBoundingVolume> &domain,
     const FactoryOrder & order)
 {
   switch (order.m_algorithm) {

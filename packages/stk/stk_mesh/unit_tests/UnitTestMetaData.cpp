@@ -123,6 +123,9 @@ void UnitTestMetaData::testEntityKey()
 
   EntityKey key01(0,1), key_default;
   key01 = key_default;
+
+  STKUNIT_ASSERT_THROW( EntityKey( ~0u , 1 ) , std::runtime_error );
+  STKUNIT_ASSERT_THROW( EntityKey( 0 , ~stk::mesh::EntityKey::raw_key_type(0) ) , std::runtime_error );
 }
 
 //----------------------------------------------------------------------

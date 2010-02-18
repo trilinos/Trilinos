@@ -3,6 +3,8 @@
 
 #include <mpi.h>
 
+#include <sstream>
+
 #include <stk_search/BoundingBoxCompare.hpp>
 #include <stk_search/BoundingBox.hpp>
 
@@ -109,19 +111,22 @@ void tests() {
   compare::Partition<PointBoundingBox<uint64_t,float,3>,compare::KEY> partition_key(2);
   STKUNIT_ASSERT_EQUAL(partition_key(a),true);
 
-  use_case::dw() << "Test diag writer for BoundingBox" << std::endl;
-  use_case::dw() << pa << std::endl;
-  use_case::dw() << sa << std::endl;
-  use_case::dw() << aa << std::endl;
+ // use_case::dw() << "Test diag writer for BoundingBox" << std::endl;
+ // use_case::dw() << pa << std::endl;
+ // use_case::dw() << sa << std::endl;
+ // use_case::dw() << aa << std::endl;
 
-  use_case::out() << "Test writer for BoundingBox" << std::endl;
-  use_case::out() << pa << std::endl;
-  use_case::out() << sa << std::endl;
-  use_case::out() << aa << std::endl;
 
-  use_case::out() << paa << std::endl;
-  use_case::out() << saa << std::endl;
-  use_case::out() << aaa << std::endl;
+  std::stringstream output;
+
+  output << "Test writer for BoundingBox" << std::endl;
+  output  << pa << std::endl;
+  output << sa << std::endl;
+  output << aa << std::endl;
+
+  output << paa << std::endl;
+  output << saa << std::endl;
+  output << aaa << std::endl;
 
 }
 

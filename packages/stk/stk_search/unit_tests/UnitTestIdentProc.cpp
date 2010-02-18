@@ -34,9 +34,7 @@ void tests() {
   STKUNIT_ASSERT_EQUAL(a >= d,false);
   STKUNIT_ASSERT_EQUAL(a >= e,true);
 
-  std::cout << "Test Insertion operator: " << a << std::endl;
-
-  use_case::dw() << "Test diag writer for IdentProc: " << a << std::endl;
+  //use_case::dw() << "Test diag writer for IdentProc: " << a << std::endl;
 
 }
 

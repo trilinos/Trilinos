@@ -136,7 +136,6 @@ void UnitTestBihTree::testTree( )
     }
   }
 
-  std::ostringstream out;
   for (int i = 1<<6; i >= 1; i >>= 1) {
     test_tree(range,domain,64,i);
   }

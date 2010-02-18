@@ -672,7 +672,7 @@ void donate_one_element( BulkData & mesh , bool aura )
     if ( elem->owner_rank() != p_rank ) { elem = NULL ; }
   }
 
-  STKUNIT_ASSERT( elem != NULL );
+  STKUNIT_ASSERT( elem );
 
   unsigned donated_nodes = 0 ;
 
