@@ -41,15 +41,47 @@ int Zoltan_AllReduceInPlace(void *, int , MPI_Datatype , MPI_Op , MPI_Comm );
 /* A Zoltan_Map is like a C++ STL map.  It uses Zoltan_Hash.
  */
 
-#define ZOLTAN_MAX_MAP 10 /* The max number of simultaneous sets created */
 
-int Zoltan_Map_Create(ZZ *zz, int hash_range, int num_id_entries, int store_keys, int num_entries);
-int Zoltan_Map_Destroy(ZZ *zz, int set_num);
-int Zoltan_Map_Add(ZZ *zz, int set_num, int *key, int *data);
-int Zoltan_Map_Find(ZZ *zz, int set_num, int *key, int **data);
-int Zoltan_Map_Size(ZZ *zz, int set_num);
-int Zoltan_Map_First(ZZ *zz, int set_num, int **key, int **data);
-int Zoltan_Map_Next(ZZ *zz, int set_num, int **key, int **data);
+struct Zoltan_Map_Entry{
+  int *key;          /* a copy of or a pointer to callers key */
+  void *data;        /* a pointer provided by caller */
+  struct Zoltan_Map_Entry *next;
+};
+
+typedef struct Zoltan_Map_Entry ZOLTAN_ENTRY;
+
+struct Zoltan_Map_List{
+  ZOLTAN_ENTRY **entries; /* hash array, length max_index + 1 */
+
+  ZOLTAN_ENTRY *top;      /* if dynamicEntries==0, entries are here */
+
+  int id_size;          /* size of integer tuple */
+  int max_index;        /* hash number range */
+  int max_entries;      /* size of top array, or 0 if dynamicEntries == 1 */
+
+  int prev_index;       /* index of top element returned in iterator */
+  int prev_hash_index;  /* hash index of previous returned element */
+  ZOLTAN_ENTRY *prev;   /* pointer to previous returned element */
+
+  int dynamicEntries;   /* 1 - entries allocated as they are added */
+			/* 0 - entries allocated at the start in top array */
+
+  int copyKeys;         /* 1 - We create a copy of the added keys */
+			/* 0 - We keep a pointer to the caller's copy of the key */
+
+  int used;             /* 1 - this map is being used, 0 - it's free */
+  int entry_count;      /* how many entries have been added to the map */
+};
+
+typedef struct Zoltan_Map_List ZOLTAN_MAP;
+
+ZOLTAN_MAP* Zoltan_Map_Create(ZZ *zz, int hash_range, int num_id_entries, int store_keys, int num_entries);
+int Zoltan_Map_Destroy(ZZ *zz, ZOLTAN_MAP *map);
+int Zoltan_Map_Add(ZZ *zz, ZOLTAN_MAP *map, int *key, void *data);
+int Zoltan_Map_Find(ZZ *zz, ZOLTAN_MAP *map, int *key, void **data);
+int Zoltan_Map_Size(ZZ *zz, ZOLTAN_MAP *map);
+int Zoltan_Map_First(ZZ *zz, ZOLTAN_MAP *map, int **key, void **data);
+int Zoltan_Map_Next(ZZ *zz, ZOLTAN_MAP *map, int **key, void **data);
 
 /*****************************************************************************/
 /*****************************************************************************/

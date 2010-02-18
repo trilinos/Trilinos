@@ -51,7 +51,7 @@ int hypergraph_callbacks = 0;
 int graph_callbacks = 0;
 int use_all_neighbors = -1;
 int need_pin_weights = 0;
-int map1=-1, map2=-1;
+ZOLTAN_MAP *map1=NULL, *map2=NULL;
 int msg_tag = 30000;
 int ierr = ZOLTAN_OK;
 
@@ -552,7 +552,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       /* Send to vertex owner the number of edges containing that vertex */
 
       map1 = Zoltan_Map_Create(zz, 0, 1, 0, zhg->nObj);
-      if (map1 < 0) goto End;
+      if (map1 == NULL) goto End;
 
       for (i=0; i < zhg->nObj; i++){
         indexptr = (int *)(i+1);
@@ -585,7 +585,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       if (zhg->nObj && !zhg->numHEdges) MEMORY_ERROR;
 
       for (i=0; i < nRequests; i++){
-        ierr = Zoltan_Map_Find(zz, map1, recvIntBuf + i, &indexptr);
+        ierr = Zoltan_Map_Find(zz, map1, recvIntBuf + i, (void*)&indexptr);
         if (ierr != ZOLTAN_OK) goto End;
         if (!indexptr) FATAL_ERROR("Unexpected vertex global number received");
 
@@ -814,7 +814,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     /* Create a lookup object for all vertex pairs in graph */
 
     map2 = Zoltan_Map_Create(zz, 0, 2, 1, zhg->nPins);
-    if (map2 < 0) goto End;
+    if (map2 == NULL) goto End;
 
     for (i=0, k=0; i < zhg->nObj; i++){
       for (j=0; j < zhg->Esize[i]; j++, k++){
@@ -855,7 +855,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
            cnt++;
          }
          else{
-           ierr = Zoltan_Map_Find(zz, map2, gnos, &indexptr);
+           ierr = Zoltan_Map_Find(zz, map2, gnos, (void*)&indexptr);
            if (ierr != ZOLTAN_OK) goto End;
 
            if (indexptr != NULL){
@@ -927,7 +927,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       gnos[0] = recvIntBuf[i*2];
       gnos[1] = recvIntBuf[i*2 + 1];
 
-      ierr = Zoltan_Map_Find(zz, map2, gnos, &indexptr);
+      ierr = Zoltan_Map_Find(zz, map2, gnos, (void*)&indexptr);
       if (ierr != ZOLTAN_OK) goto End;
 
       index = (long int)indexptr - 1;
