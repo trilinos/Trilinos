@@ -48,6 +48,9 @@ namespace Kokkos {
 
   // default implementation
   template <class Scalar, class Ordinal, class Node = DefaultNode::DefaultNodeType>
+  /*! \class DefaultSparseMultiply
+      \brief DefaultSparseMultiply
+  */
   class DefaultSparseMultiply {
   public:
     typedef Scalar  ScalarType;

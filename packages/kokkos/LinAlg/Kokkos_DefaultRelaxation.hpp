@@ -138,8 +138,8 @@ namespace Kokkos {
     void ExtractDiagonal();    
 
     // Update the temp vector size
-    bool UpdateJacobiTemp(size_t num_vectors) const;
-    bool UpdateChebyTemp(size_t num_vectors) const;
+    bool UpdateJacobiTemp(size_t num_vectors, size_t vec_leng) const;
+    bool UpdateChebyTemp(size_t num_vectors, size_t vec_leng) const;
 
     // My node
     Teuchos::RCP<Node> node_;
@@ -375,12 +375,12 @@ namespace Kokkos {
   }
   /**********************************************************************/
   template <class Scalar, class Ordinal, class Node>
-  bool DefaultRelaxation<Scalar,Ordinal,Node>::UpdateJacobiTemp(size_t num_vectors) const{
+  bool DefaultRelaxation<Scalar,Ordinal,Node>::UpdateJacobiTemp(size_t num_vectors, size_t vec_leng) const{
     // Re-allocate memory if needed
     if(num_vectors > lastNumJacobiVectors_){
       tempJacobiVector_=Teuchos::null;
       lastNumJacobiVectors_=num_vectors;
-      tempJacobiVector_ = node_->template allocBuffer<Scalar>(numRows_*lastNumJacobiVectors_); 
+      tempJacobiVector_ = node_->template allocBuffer<Scalar>(vec_leng*lastNumJacobiVectors_); 
       return true;
     }
     return false;
@@ -388,14 +388,14 @@ namespace Kokkos {
 
   /**********************************************************************/
   template <class Scalar, class Ordinal, class Node>
-  bool DefaultRelaxation<Scalar,Ordinal,Node>::UpdateChebyTemp(size_t num_vectors) const{
+  bool DefaultRelaxation<Scalar,Ordinal,Node>::UpdateChebyTemp(size_t num_vectors, size_t vec_leng) const{
     // Re-allocate memory if needed
     if(num_vectors > lastNumChebyVectors_){
       tempChebyVectorW_=Teuchos::null;
       tempChebyVectorX_=Teuchos::null;
       lastNumChebyVectors_=num_vectors;
-      tempChebyVectorW_ = node_->template allocBuffer<Scalar>(numRows_*lastNumChebyVectors_); 
-      tempChebyVectorX_ = node_->template allocBuffer<Scalar>(numRows_*lastNumChebyVectors_); 
+      tempChebyVectorW_ = node_->template allocBuffer<Scalar>(numRows_*lastNumChebyVectors_);
+      tempChebyVectorX_ = node_->template allocBuffer<Scalar>(vec_leng*lastNumChebyVectors_); 
       return true;
     }
     return false;
@@ -464,7 +464,7 @@ namespace Kokkos {
 
 
     TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
-        Teuchos::typeName(*this) << "::sweep_fine_hybrid(): operation not fully initialized.");
+        Teuchos::typeName(*this) << "::sweep_coarse_hybrid(): operation not fully initialized.");
     TEST_FOR_EXCEPT(X.getNumCols() != B.getNumCols());
     ReadyBufferHelper<Node> rbh(node_);   
 
@@ -528,8 +528,8 @@ namespace Kokkos {
     // Copy x over to the temp vector
     // NTS: The MultiVector copy constructor is a View. We need to do this the hard way.
     MultiVector<Scalar,Node> X0(X.getNode());
-    UpdateJacobiTemp(X.getNumCols());
-    X0.initializeValues(numRows_,B.getNumCols(),tempJacobiVector_,B.getStride());
+    UpdateJacobiTemp(X.getNumCols(),X.getNumRows());
+    X0.initializeValues(X.getNumRows(),B.getNumCols(),tempJacobiVector_,B.getStride());
     DefaultArithmetic<MultiVector<Scalar,Node> >::Assign(X0,X);
 
     if (isEmpty_ == true) {
@@ -589,6 +589,7 @@ namespace Kokkos {
     oneOverTheta_=1.0 / theta_;
     rho_=1.0/s1_;
 
+
     first_cheby_iteration_=true;
     cheby_setup_done_=true;
   }
@@ -603,17 +604,19 @@ namespace Kokkos {
     TEST_FOR_EXCEPTION(indsInit_ == false || valsInit_ == false, std::runtime_error,
 		       Teuchos::typeName(*this) << "::sweep_jacobi(): operation not fully initialized.");
     TEST_FOR_EXCEPT(X.getNumCols() != B.getNumCols());
-    TEST_FOR_EXCEPT(X.getStride() != B.getStride());
+    //size_t xstride = X.getStride();
+    //size_t bstride = B.getStride();
+    //TEST_FOR_EXCEPT(xstride != bstride); //TODO JJH don't think we want this b/c X is imported, B is local
     TEST_FOR_EXCEPT(cheby_setup_done_ == false);
     
     ReadyBufferHelper<Node> rbh(node_);
     
     // If the number of multivectors has changed, we need to run Cheby from scratch
-    first_cheby_iteration_= UpdateChebyTemp(X.getNumCols()) || first_cheby_iteration_;
+    first_cheby_iteration_= UpdateChebyTemp(X.getNumCols(),X.getNumRows()) || first_cheby_iteration_;
     
     // Copy X to X0 so we get the matvec correct
     MultiVector<Scalar,Node> X0(X.getNode());
-    X0.initializeValues(numRows_,X.getNumCols(),tempChebyVectorX_,X.getStride());
+    X0.initializeValues(X.getNumRows(),X.getNumCols(),tempChebyVectorX_,X.getStride());
     DefaultArithmetic<MultiVector<Scalar,Node> >::Assign(X0,X);
 
     // Update Scalars 
