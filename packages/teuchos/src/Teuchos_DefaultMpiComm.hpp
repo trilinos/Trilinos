@@ -216,10 +216,13 @@ public:
 
   //@}
 
-private:
+  // These should be private but the PGI compiler requires them be public
 
   static int const minTag_ = 26000; // These came from Teuchos::MpiComm???
   static int const maxTag_ = 26099; // ""
+
+private:
+
   static int tagCounter_;
 
   RCP<const OpaqueWrapper<MPI_Comm> > rawMpiComm_;
