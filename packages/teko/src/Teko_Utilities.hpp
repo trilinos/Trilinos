@@ -654,7 +654,8 @@ double computeSmallestMagEig(const Teuchos::RCP<const Thyra::LinearOpBase<double
 typedef enum {  Diagonal     //! Specifies that just the diagonal is used
               , Lumped       //! Specifies that row sum is used to form a diagonal
               , AbsRowSum    //! Specifies that the \f$i^{th}\f$ diagonal entry is \f$\sum_j |A_{ij}|\f$
-              , NotDiag      //! For user convenience, if Teko recieves this value, exceptions will be thrown
+	      , BlkDiag      //! Specifies that a block diagonal approximation is to be used
+              , NotDiag      //! For user convenience, if Teko recieves this value, exceptions will be thrown	      
               } DiagonalType;
 
 /** Get a diagonal operator from a matrix. The mechanism for computing
@@ -694,6 +695,8 @@ std::string getDiagonalName(const DiagonalType & dt);
   *          a <code>NotDiag</code>
   */
 DiagonalType getDiagonalType(std::string name);
+
+LinearOp probe(Teuchos::RCP<const Epetra_CrsGraph> &G, LinearOp & Op);
 
 } // end namespace Teko
 

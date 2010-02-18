@@ -42,7 +42,10 @@ protected:
 
    Teuchos::RCP<InverseFactory> invF_; 
    Teuchos::RCP<InverseFactory> invS_; 
-   Teuchos::RCP<Epetra_SerialComm> comm;
+   Teuchos::RCP<const Epetra_Comm> comm;
+
+   // For block diagonal version
+   Teuchos::ArrayRCP<int> block_starts_, block_gids_;
 
    double tolerance_;
 };

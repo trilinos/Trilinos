@@ -4,9 +4,16 @@
 #include "Teko_InverseFactory.hpp"
 #include "Teko_BlockLowerTriInverseOp.hpp"
 #include "Teko_BlockUpperTriInverseOp.hpp"
+#include "Teko_DiagonalPreconditionerFactory.hpp"
 
 #include "Teuchos_Time.hpp"
+#include "Epetra_FECrsGraph.h"
+#include "EpetraExt_PointToBlockDiagPermute.h"
+#include "Isorropia_EpetraProber.hpp"
+#include "Thyra_EpetraOperatorWrapper.hpp"
+#include "Thyra_EpetraLinearOp.hpp"
 
+using Isorropia::Epetra::Prober;
 using Teuchos::RCP;
 
 namespace Teko {
@@ -67,6 +74,50 @@ LinearOp SIMPLEPreconditionerFactory
 
       // since H is now implicit, we must build an implicit Schur complement
       buildExplicitSchurComplement = false;
+   }
+   else if(fInverseType_==BlkDiag) {
+     // Block diagonal approximation for H
+     DiagonalPreconditionerFactory Hfact;
+     DiagonalPrecondState Hstate;
+     Hfact.initializeFromParameterList(BlkDiagList_);           
+     LinearOp Hop=Hfact.buildPreconditionerOperator(matF,Hstate); 
+
+
+
+
+
+     // HAX for explicit construction 
+
+     // Build CrsGraph
+     int Nlb=BlkDiagList_.get("number of local blocks",0);
+     int *block_starts=BlkDiagList_.get("block start index",(int*)0);
+     int *block_gids=BlkDiagList_.get("block entry gids",(int*)0);
+     // NTS: Does not support PurelyLocalMode
+     TEUCHOS_ASSERT(block_gids);
+
+     Epetra_FECrsGraph *G=new Epetra_FECrsGraph(Copy,Hstate.BDP_->OperatorRangeMap(),0);
+     for(int i=0;i<Nlb;i++){
+       int blksize=block_starts[i+1]-block_starts[i];
+       G->InsertGlobalIndices(blksize,&block_gids[block_starts[i]],blksize,&block_gids[block_starts[i]]);
+     }
+     G->GlobalAssemble();
+     G->FillComplete();
+     RCP<const Epetra_CrsGraph> Gg=rcp(G);
+
+
+     // Probe H
+     /*     Teuchos::ParameterList probeList;
+
+     Prober prober(Gg,probeList,true);
+     Teuchos::RCP<Epetra_CrsMatrix> Hmat=rcp(new Epetra_CrsMatrix(Copy,*G));
+     prober.probe(*Hstate.BDP_,*Hmat);
+
+     // Wrap Hmat into H
+     H = Thyra::epetraLinearOp(Hmat);*/
+     H=probe(Gg,Hop);
+
+
+     buildExplicitSchurComplement = true;//NTS: Do I need this?
    }
    else {
       // get generic diagonal
@@ -182,6 +233,10 @@ void SIMPLEPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
       fInverseType_ = getDiagonalType(fInverseStr);
       if(fInverseType_==NotDiag)
          customHFactory_ = invLib->getInverseFactory(fInverseStr);
+
+      // Grab the sublist if we're using the block diagonal
+      if(fInverseType_==BlkDiag)
+	BlkDiagList_=pl.sublist("H options");      
    }
    if(pl.isParameter("Use Mass Scaling"))
       useMass_ = pl.get<bool>("Use Mass Scaling");

@@ -17,11 +17,15 @@
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_get_Epetra_Operator.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
+#include "Thyra_EpetraOperatorWrapper.hpp"
+#include "Thyra_EpetraLinearOp.hpp"
 
 // Teuchos includes
 #include "Teuchos_Array.hpp"
 
 // Epetra includes
+#include "Epetra_Operator.h"
+#include "Epetra_CrsGraph.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Map.h"
 
@@ -32,8 +36,12 @@
 #include "AnasaziBlockKrylovSchur.hpp"
 #include "AnasaziStatusTestMaxIters.hpp"
 
+// Isorropia includes
+#include "Isorropia_EpetraProber.hpp"
+
 // Teko includes
 #include "Epetra/Teko_EpetraHelpers.hpp"
+#include "Epetra/Teko_EpetraOperatorWrapper.hpp"
 
 #include <cmath>
 
@@ -42,6 +50,7 @@ namespace Teko {
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
 using Teuchos::RCP;
+using Isorropia::Epetra::Prober;
 
 const Teuchos::RCP<Teuchos::FancyOStream> getOutputStream()
 { 
@@ -1173,6 +1182,8 @@ std::string getDiagonalName(const DiagonalType & dt)
       return "AbsRowSum";
    case NotDiag:
       return "NotDiag";
+   case BlkDiag:
+      return "BlkDiag";
    };
 
    return "<error>";
@@ -1191,11 +1202,29 @@ DiagonalType getDiagonalType(std::string name)
    if(name=="Diagonal")
       return Diagonal;
    if(name=="Lumped")
-      return Lumped;
+     return Lumped;
    if(name=="AbsRowSum")
       return AbsRowSum;
+   if(name=="BlkDiag")
+      return BlkDiag;
  
    return NotDiag;
+}
+
+
+
+LinearOp probe(Teuchos::RCP<const Epetra_CrsGraph> &G, LinearOp & Op){
+  Teuchos::ParameterList probeList;
+  Prober prober(G,probeList,true);
+  Teuchos::RCP<Epetra_CrsMatrix> Mat=rcp(new Epetra_CrsMatrix(Copy,*G));
+
+  std::cout<<Teuchos::describe(*Op->range())<<endl;
+  std::cout<<Teuchos::describe(*Op->domain())<<endl;
+
+
+  Teko::Epetra::EpetraOperatorWrapper Mwrap(Op);
+  prober.probe(Mwrap,*Mat);
+  return Thyra::epetraLinearOp(Mat);    
 }
 
 }

@@ -35,6 +35,9 @@ public:
 
    //! For assisting in construction of the preconditioner
    virtual bool updateRequestedParameters(const Teuchos::ParameterList & pl);
+
+   //! Initialize from a parameter list
+   virtual void initializeFromParameterList(const Teuchos::ParameterList & pl);
     
 protected:
    // class members
@@ -48,8 +51,8 @@ protected:
    bool useMass_;
    Teko::LinearOp massMatrix_;
    
-   //! Initialize from a parameter list
-   virtual void initializeFromParameterList(const Teuchos::ParameterList & pl);
+   // Info for the block-diagonal approximation to H if used.
+   mutable Teuchos::ParameterList BlkDiagList_;
 };
  
 } // end namespace NS

@@ -5,10 +5,12 @@
 
 // Teuchos includes
 #include "Teuchos_RCP.hpp"
+#include "Teuchos_ArrayRCP.hpp"
 
 // Epetra includes
 #include "Epetra_Map.h"
 #include "Epetra_CrsMatrix.h"
+#include "Epetra_MpiComm.h"
 #include "Epetra_Vector.h"
 
 // Thyra includes
@@ -29,6 +31,8 @@
 #include "Thyra_MultiVectorStdOps.hpp"
 
 #include <vector>
+
+#include "mpi.h"
 
 // This whole test rig is based on inverting the matrix
 // 
@@ -53,7 +57,10 @@ void tSIMPLEPreconditionerFactory::initializeTest()
 
    tolerance_ = 1.0e-13;
 
-   comm = rcp(new Epetra_SerialComm());
+   comm=GetComm();
+   TEUCHOS_ASSERT(dynamic_cast<const Epetra_MpiComm*>(&*comm));//haq
+
+
    const RCP<Epetra_Map> map = rcp(new Epetra_Map(2,0,*comm));
 
    const RCP<Epetra_CrsMatrix> ptrF  = rcp(new Epetra_CrsMatrix(Copy,*map,2));
@@ -75,6 +82,15 @@ void tSIMPLEPreconditionerFactory::initializeTest()
    ptrF->InsertGlobalValues(1,2,&row1[0],&indicies[0]);
    ptrF->FillComplete();
    F_ = Thyra::epetraLinearOp(ptrF,"ptrF");
+
+   // build block info for block diagonal (one block)
+   block_starts_=arcp(new int[2],0,2);
+   block_gids_=arcp(new int[2],0,2);
+   int *block_starts=block_starts_.getRawPtr();
+   int *block_gids=block_gids_.getRawPtr();
+   block_starts[0]=0;block_starts[1]=2;
+   block_gids[0]=ptrF->LRID(0);
+   block_gids[1]=ptrF->LRID(1);
    
    // build B matrix
    row0[0] =  1.0; row0[1] = -3.0; 
@@ -92,7 +108,7 @@ void tSIMPLEPreconditionerFactory::initializeTest()
    ptrBt->FillComplete();
    Bt_ = Thyra::epetraLinearOp(ptrBt,"ptrBt");
 
-   // build F matrix
+   // build C matrix
    row0[0] = 1.0; row0[1] = 2.0; 
    row1[0] = 2.0; row1[1] = 1.0; 
    ptrC->InsertGlobalValues(0,2,&row0[0],&indicies[0]);
@@ -199,9 +215,19 @@ bool tSIMPLEPreconditionerFactory::test_initializePrec(int verbosity,std::ostrea
    bool allPassed = true;
 
    // Build block2x2 preconditioner
-   const RCP<const Thyra::PreconditionerFactoryBase<double> > precFactory 
-         = rcp(new SIMPLEPreconditionerFactory(invF_,0.9));
+   RCP<SIMPLEPreconditionerFactory> sFactory = rcp(new SIMPLEPreconditionerFactory(invF_,0.9));
+   const RCP<const Thyra::PreconditionerFactoryBase<double> > precFactory =sFactory;
    RCP<Thyra::PreconditionerBase<double> > prec = precFactory->createPrec();
+   
+   // parameter list for (1,1) block
+   Teuchos::ParameterList List,BlkList;
+   BlkList.set("number of local blocks",1);
+   BlkList.set("block start index",&*block_starts_);
+   BlkList.set("block entry gids",&*block_gids_);
+   List.set("H options",BlkList);
+   List.set("Explicit Velocity Inverse Type","BlkDiag");
+   List.set("Inverse Pressure Type","Amesos");
+   sFactory->initializeFromParameterList(List);
 
    // initialize the preconditioner
    precFactory->initializePrec(Thyra::defaultLinearOpSource(A_), &*prec);
