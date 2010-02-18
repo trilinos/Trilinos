@@ -371,7 +371,7 @@ operator<<(std::basic_ostream<Ch, Tr> &os, IndentFlags indent_flags) {
     osb->set_flags(indent_flags.m_flags);
       
   return os;
-};
+}
 
 typedef stk::basic_indent_streambuf<char> indent_streambuf;
 

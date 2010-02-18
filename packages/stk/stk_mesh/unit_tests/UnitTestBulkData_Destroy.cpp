@@ -139,7 +139,8 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
     bulk.modification_begin();
 
     // Destroy the element:
-    STKUNIT_ASSERT( bulk.destroy_entity( edge ) );
+    std::cout << "UnitTestBulkData::testDestroy_loop ... " << std::endl;
+    STKUNIT_ASSERT( true == bulk.destroy_entity( edge ) );
     STKUNIT_ASSERT( NULL == edge );
 
     // Destroy orphanned node:
@@ -172,7 +173,7 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
     // The not-owned shared entity:
     Entity * node = bulk.get_entity( 0 , node_ids[ nNotOwned ] );
 
-    STKUNIT_ASSERT( node );
+    STKUNIT_ASSERT( node != NULL );
     STKUNIT_ASSERT( p_rank != node->owner_rank() );
     STKUNIT_ASSERT_EQUAL( size_t(1) , node->sharing().size() );
     STKUNIT_ASSERT_EQUAL( size_t(2) , node->relations().size() );
@@ -213,8 +214,8 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
     Entity * node_owned = bulk.get_entity( 0 , node_ids[ nOwned ] );
     Entity * node_not_owned = bulk.get_entity( 0 , node_ids[ nNotOwned ] );
 
-    STKUNIT_ASSERT( node_owned );
-    STKUNIT_ASSERT( node_not_owned );
+    STKUNIT_ASSERT( node_owned != NULL );
+    STKUNIT_ASSERT( node_not_owned != NULL );
     STKUNIT_ASSERT( p_rank != node_not_owned->owner_rank() );
     STKUNIT_ASSERT_EQUAL( p_rank , node_owned->owner_rank() );
     STKUNIT_ASSERT_EQUAL( size_t(1) , node_owned->sharing().size() );

@@ -41,7 +41,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyAssertOwnerDeletedEntity )
     cur_bucket++;
   }
 
-  STKUNIT_ASSERT ( cell_to_delete );
+  STKUNIT_ASSERT ( cell_to_delete != NULL );
   cell_to_delete_copy = cell_to_delete;
   bulk.modification_begin();
   bulk.destroy_entity ( cell_to_delete );

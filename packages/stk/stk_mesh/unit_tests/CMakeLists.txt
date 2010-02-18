@@ -15,6 +15,7 @@ SET(SOURCES "")
 APPEND_SET(SOURCES
 UnitTestBucket.cpp
 UnitTestBoundaryAnalysis.cpp
+UnitTestBoxMeshFixture.cpp
 UnitTestBulkData_ChangeParts.cpp
 UnitTestBulkData.cpp
 UnitTestBulkData_Destroy.cpp

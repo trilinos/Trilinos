@@ -152,7 +152,7 @@ template <class K, class P>
 std::ostream& operator<<(std::ostream &dout, const IdentProc<K, P> &ident_proc){
   dout << "id " << ident_proc.ident << ", proc " << ident_proc.proc;
   return dout;
-};
+}
 
 
 } // namespace ident
