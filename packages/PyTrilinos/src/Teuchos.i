@@ -150,11 +150,6 @@ using Teuchos::RCP;
     PyErr_SetString(PyExc_KeyError, e.what());
     SWIG_fail;
   }
-//   catch(Swig::DirectorMethodException & e)
-//   {
-//     PyErr_SetString(PyExc_RuntimeError, e.what());
-//     SWIG_fail;
-//   }
   SWIG_CATCH_STDEXCEPT
   catch(...)
   {
@@ -239,7 +234,7 @@ __version__ = Teuchos_Version().split()[2]
 
 %typemap(out) SWIGTYPE SMARTPOINTER
 {
-  $result = SWIG_NewPointerObj((void*)$1.get(), $descriptor(Type*), 1);
+  $result = SWIG_NewPointerObj((void*)$1.get(), $descriptor(Type*), %convertptr_flags);
 }
 
 %extend_smart_pointer(RCP< Type >)

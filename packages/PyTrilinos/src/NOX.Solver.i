@@ -88,6 +88,14 @@ in addition to the following factory function:
 using Teuchos::RCP;
 %}
 
+// Configuration and optional includes
+%include "PyTrilinos_config.h"
+#ifdef HAVE_NOX_EPETRA
+%{
+#include "NOX_Epetra_Group.H"
+%}
+#endif
+
 // Standard exception handling
 %include "exception.i"
 
@@ -240,29 +248,5 @@ using Teuchos::RCP;
   }
 }
 
-
-// NOX default solver.  Provide a function that returns a solver with
-// default settings.
-// %pythoncode
-// {
-// def defaultSolver(group, myPID=0, maxIt=100, tol=1.0e-4, precMaxAge=5):
-
-//     # Convergence status test
-//     nlParams = {"Nonlinear Solver" : "Line Search Based",
-//                 "Printing"         : {"MyPID"            : myPID,
-//                                       "Output Precision" : 3,
-//                                       "Output Processor" : 0    },
-//                 "Line Search"      : {"Method" : "Full Step"},
-//                 "Direction"        : {"Method" : "Newton"},
-//                 "Newton"           : {"Forcing Term Method" : "Constant"},
-//                 "Linear Solver"    : {"Aztec Solver"    : "GMRES",
-//                                       "Max Iterations"  : maxIt,
-//                                       "Tolerance"       : tol,
-//                                       "Preconditioner"  : "Ifpack",
-//                                       "Max Age Of Prec" : precMaxAge    },
-//                 "Solver Options"   : {"Status Test Check Type" : "Complete"}
-//                 }
-// }
-    
 // Turn off the exception handling
 %exception;

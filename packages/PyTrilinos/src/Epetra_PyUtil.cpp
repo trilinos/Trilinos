@@ -79,7 +79,7 @@ PyObject * convertEpetraVectorToPython(const Epetra_Vector * ev)
 
 ////////////////////////////////////////////////////////////////////////
 
-PyObject * convertEpetraOperatorToPython(Epetra_Operator * eo)
+PyObject * convertEpetraOperatorToPython(const Epetra_Operator * eo, int cnvt_flags)
 {
   // SWIG initialization
   static swig_type_info * swig_EO_ptr   = SWIG_TypeQuery("Epetra_Operator        *");
@@ -95,40 +95,40 @@ PyObject * convertEpetraOperatorToPython(Epetra_Operator * eo)
   static swig_type_info * swig_EFCM_ptr = SWIG_TypeQuery("Epetra_FECrsMatrix     *");
   static swig_type_info * swig_EJM_ptr  = SWIG_TypeQuery("Epetra_JadMatrix       *");
 
-  Epetra_VbrRowMatrix * evrm = dynamic_cast<Epetra_VbrRowMatrix*>(eo);
-  if (evrm) return SWIG_NewPointerObj((void*) evrm, swig_EVRM_ptr, 1);
+  const Epetra_VbrRowMatrix * evrm = dynamic_cast<const Epetra_VbrRowMatrix*>(eo);
+  if (evrm) return SWIG_NewPointerObj((void*) evrm, swig_EVRM_ptr, cnvt_flags);
 
-  Epetra_FEVbrMatrix * efvm = dynamic_cast<Epetra_FEVbrMatrix*>(eo);
-  if (efvm) return SWIG_NewPointerObj((void*) efvm, swig_EFVM_ptr, 1);
+  const Epetra_FEVbrMatrix * efvm = dynamic_cast<const Epetra_FEVbrMatrix*>(eo);
+  if (efvm) return SWIG_NewPointerObj((void*) efvm, swig_EFVM_ptr, cnvt_flags);
 
-  Epetra_FECrsMatrix * efcm = dynamic_cast<Epetra_FECrsMatrix*>(eo);
-  if (efcm) return SWIG_NewPointerObj((void*) efcm, swig_EFCM_ptr, 1);
+  const Epetra_FECrsMatrix * efcm = dynamic_cast<const Epetra_FECrsMatrix*>(eo);
+  if (efcm) return SWIG_NewPointerObj((void*) efcm, swig_EFCM_ptr, cnvt_flags);
 
-  Epetra_JadMatrix * ejm = dynamic_cast<Epetra_JadMatrix*>(eo);
-  if (ejm) return SWIG_NewPointerObj((void*) ejm, swig_EJM_ptr, 1);
+  const Epetra_JadMatrix * ejm = dynamic_cast<const Epetra_JadMatrix*>(eo);
+  if (ejm) return SWIG_NewPointerObj((void*) ejm, swig_EJM_ptr, cnvt_flags);
 
-  Epetra_BasicRowMatrix * ebrm = dynamic_cast<Epetra_BasicRowMatrix*>(eo);
-  if (ebrm) return SWIG_NewPointerObj((void*) ebrm, swig_EBRM_ptr, 1);
+  const Epetra_BasicRowMatrix * ebrm = dynamic_cast<const Epetra_BasicRowMatrix*>(eo);
+  if (ebrm) return SWIG_NewPointerObj((void*) ebrm, swig_EBRM_ptr, cnvt_flags);
 
-  Epetra_CrsMatrix * ecm = dynamic_cast<Epetra_CrsMatrix*>(eo);
-  if (ecm) return SWIG_NewPointerObj((void*) ecm, swig_ECM_ptr, 1);
+  const Epetra_CrsMatrix * ecm = dynamic_cast<const Epetra_CrsMatrix*>(eo);
+  if (ecm) return SWIG_NewPointerObj((void*) ecm, swig_ECM_ptr, cnvt_flags);
 
-  //Epetra_MsrMatrix * emm = dynamic_cast<Epetra_MsrMatrix*>(eo);
-  //if (emm) return SWIG_NewPointerObj((void*) emm, swig_EMM_ptr, 1);
+  //const Epetra_MsrMatrix * emm = dynamic_cast<const Epetra_MsrMatrix*>(eo);
+  //if (emm) return SWIG_NewPointerObj((void*) emm, swig_EMM_ptr, cnvt_flags);
 
-  Epetra_VbrMatrix * evm = dynamic_cast<Epetra_VbrMatrix*>(eo);
-  if (evm) return SWIG_NewPointerObj((void*) evm, swig_EVM_ptr, 1);
+  const Epetra_VbrMatrix * evm = dynamic_cast<const Epetra_VbrMatrix*>(eo);
+  if (evm) return SWIG_NewPointerObj((void*) evm, swig_EVM_ptr, cnvt_flags);
 
-  Epetra_RowMatrix * erm = dynamic_cast<Epetra_RowMatrix*>(eo);
-  if (erm) return SWIG_NewPointerObj((void*) erm, swig_ERM_ptr, 1);
+  const Epetra_RowMatrix * erm = dynamic_cast<const Epetra_RowMatrix*>(eo);
+  if (erm) return SWIG_NewPointerObj((void*) erm, swig_ERM_ptr, cnvt_flags);
 
-  Epetra_InvOperator * eio = dynamic_cast<Epetra_InvOperator*>(eo);
-  if (eio) return SWIG_NewPointerObj((void*) eio, swig_EIO_ptr, 1);
+  const Epetra_InvOperator * eio = dynamic_cast<const Epetra_InvOperator*>(eo);
+  if (eio) return SWIG_NewPointerObj((void*) eio, swig_EIO_ptr, cnvt_flags);
 
-  //Epetra_FastCrsOperator * efco = dynamic_cast<Epetra_FastCrsOperator*>(eo);
-  //if (efco) return SWIG_NewPointerObj((void*) efco, swig_EFCO_ptr, 1);
+  //const Epetra_FastCrsOperator * efco = dynamic_cast<const Epetra_FastCrsOperator*>(eo);
+  //if (efco) return SWIG_NewPointerObj((void*) efco, swig_EFCO_ptr, cnvt_flags);
 
-  return SWIG_NewPointerObj((void*) eo, swig_EO_ptr, 1);
+  return SWIG_NewPointerObj((void*) eo, swig_EO_ptr, cnvt_flags);
 }
 
 ////////////////////////////////////////////////////////////////////////

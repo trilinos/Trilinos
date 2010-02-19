@@ -132,6 +132,7 @@ package:
 #include "Epetra_JadMatrix.h"
 
 // Epetra NumPy includes
+#include "Epetra_PyUtil.h"
 #include "Epetra_NumPyIntSerialDenseMatrix.h"
 #include "Epetra_NumPyIntSerialDenseVector.h"
 #include "Epetra_NumPySerialDenseMatrix.h"

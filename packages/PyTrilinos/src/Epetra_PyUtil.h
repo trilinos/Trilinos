@@ -72,7 +72,9 @@ convertEpetraVectorToPython(const Epetra_Vector * ev);
 // object and return the pointer.  Attempt to downcast to any one of
 // the many Epetra classes that derive from Epetra_Operator.
 PyObject *
-convertEpetraOperatorToPython(Epetra_Operator * eo);
+convertEpetraOperatorToPython(const Epetra_Operator * eo, int cnvt_flags=0);
+
+////////////////////////////////////////////////////////////
 
 #ifdef HAVE_TEUCHOS
 

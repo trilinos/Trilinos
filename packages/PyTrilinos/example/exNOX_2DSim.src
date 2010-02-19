@@ -39,9 +39,7 @@
 #############################################################################
 
 # System imports
-import numpy
-from   optparse import *
-import sys
+from optparse import *
 
 #
 # Parse the command-line arguments
@@ -58,11 +56,14 @@ options,args = parser.parse_args()
 # we want to be able to control whether we import from the build directory or
 # from a system-installed version of PyTrilinos.
 from testutil import fromPyTrilinosImport
-#Teuchos   = fromPyTrilinosImport('Teuchos'  , options.testharness)
-Epetra    = fromPyTrilinosImport('Epetra'   , options.testharness)
-#EpetraExt = fromPyTrilinosImport('EpetraExt', options.testharness)
-NOX       = fromPyTrilinosImport('NOX'      , options.testharness)
+Epetra = fromPyTrilinosImport('Epetra', options.testharness)
+NOX    = fromPyTrilinosImport('NOX'   , options.testharness)
 
+#
+# Define a class that is the interface to the nonlinear problem.  It derives
+# from NOX.Epetra.Interface.Required in order to support the computeF() method.
+# It derives from NOX.Epetra.Interface.Jacobian in order to support the
+# computeJacobian() method.
 class MyProblem(NOX.Epetra.Interface.Required,
                 NOX.Epetra.Interface.Jacobian):
 
@@ -88,34 +89,39 @@ class MyProblem(NOX.Epetra.Interface.Required,
 
     def computeJacobian(self, x, Jac):
         try:
-            print "jacobian =", type(Jac)
-            print "calling InsertGlobalValues..."
             Jac.InsertGlobalValues(0, [ 2*x[0], 2*x[1]], [0,1])
-            print "calling InsertGlobalValues..."
             Jac.InsertGlobalValues(1, [-2*x[0], 1     ], [0,1])
-            print "calling FillComplete..."
             Jac.FillComplete()
-            print "done"
         except Exception, e:
             print "Exception in MyProblem.computeJacobian method"
             print e
             return False
         return True
 
+#
+# Main function.  Create a solver based on the MyProblem class and solve it.
 def main():
-    soln      = Epetra.Vector([.5,.5])
+
+    # Initialize
     initGuess = Epetra.Vector([.5,.5])
     problem   = MyProblem()
     jacobian  = problem.getJacobian()
-    print "jacobian =", jacobian.Label()
-    print "Constructing solver"
-    solver    = NOX.Epetra.defaultSolver(initGuess,problem,problem,jacobian)
+    solver    = NOX.Epetra.defaultSolver(initGuess, problem, problem, jacobian,
+                                         maxIters=40)
+    print solver.statusTest
 
-    print "Calling solve() method"
+    # Solve
     solveStatus = solver.solve()
-    print "Solve complete"
+    print
+    if solveStatus != NOX.StatusTest.Converged:
+        print "Nonlinear solver failed to converge"
+        print "End Result: TEST FAILED"
+    else:
+        group = solver.getSolutionGroup()
+        soln  = group.getX()
+        print "Solution =", soln
+        print "End Result: TEST PASSED"
 
-    finalGroup = solver.getSolutionGroup()
-    finalSoln  = finalGroup.getX()
-
+#
+# Main script: call the main() function.
 main()

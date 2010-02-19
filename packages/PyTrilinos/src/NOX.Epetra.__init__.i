@@ -242,7 +242,7 @@ using namespace NOX::Epetra;
   nevResult = dynamic_cast<NOX::Epetra::Vector*>($1);
   if (nevResult == NULL)
   {
-    // If we cannot upcast, then return the NOX::Abstract::Vector
+    // If we cannot downcast, then return the NOX::Abstract::Vector
     $result = SWIG_NewPointerObj((void*)&$1, $descriptor, 1);
   }
   else
@@ -257,6 +257,46 @@ using namespace NOX::Epetra;
 {
   enpvResult = new Epetra_NumPyVector(View, *$1, 0);
   $result = SWIG_NewPointerObj((void*)enpvResult, $descriptor(Epetra_NumPyVector*), 1);
+}
+
+// Convert NOX::Epetra::LinearSystem objects to
+// NOX::Epetra::LinearSystemAztecOO
+%typemap(out) Teuchos::RCP< NOX::Epetra::LinearSystem >
+(NOX::Epetra::LinearSystem*        nelsPtr     = NULL,
+ NOX::Epetra::LinearSystemAztecOO* nelsaResult = NULL)
+{
+  nelsPtr = $1.get();
+  nelsaResult = dynamic_cast< NOX::Epetra::LinearSystemAztecOO*>(nelsPtr);
+  if (nelsaResult == NULL)
+  {
+    //If we cannot downcast then return the NOX::Epetra::LinearSystem
+    $result = SWIG_NewPointerObj((void*)nelsPtr, $descriptor(NOX::Epetra::LinearSystem*),
+				 %convertptr_flags);
+  }
+  else
+  {
+    $result = SWIG_NewPointerObj((void*)nelsaResult, $descriptor(NOX::Epetra::LinearSystemAztecOO*),
+				 %convertptr_flags);
+  }
+}
+
+%typemap(out) Teuchos::RCP< const NOX::Epetra::LinearSystem >
+(const NOX::Epetra::LinearSystem*        nelsPtr     = NULL,
+ const NOX::Epetra::LinearSystemAztecOO* nelsaResult = NULL)
+{
+  nelsPtr = $1.get();
+  nelsaResult = dynamic_cast< const NOX::Epetra::LinearSystemAztecOO*>(nelsPtr);
+  if (nelsaResult == NULL)
+  {
+    //If we cannot downcast then return the NOX::Epetra::LinearSystem
+    $result = SWIG_NewPointerObj((void*)nelsPtr, $descriptor(NOX::Epetra::LinearSystem*),
+				 %convertptr_flags);
+  }
+  else
+  {
+    $result = SWIG_NewPointerObj((void*)nelsaResult, $descriptor(NOX::Epetra::LinearSystemAztecOO*),
+				 %convertptr_flags);
+  }
 }
 
 // Epetra includes.  This is a potential source of problems.  The
@@ -608,7 +648,9 @@ def defaultStatusTest(absTol=None, relTol=None, relGroup=None, updateTol=None,
     return combo
 
 def defaultSolver(initGuess, reqInterface, jacInterface=None, jacobian=None,
-                  precInterface=None, preconditioner=None, nlParams=None):
+                  precInterface=None, preconditioner=None, nlParams=None,
+                  absTol=1.0e-8, relTol=1.0e-2, relGroup=None, updateTol=1.0e-5,
+                  wAbsTol=1.0e-8, wRelTol=1.0e-2, maxIters=20, finiteValue=True):
     """
     defaultSolver(initGuess, reqInterface, jacInterface=None, jacobian=None,
                   precInterface=None, preconditioner=None, nlParams=None) -> Solver
@@ -622,15 +664,36 @@ def defaultSolver(initGuess, reqInterface, jacInterface=None, jacobian=None,
                      provided.
     jacInterface   - a NOX.Epetra.Interface.Jacobian object that defines the
                      Jacobian of the nonlinear problem.  Default None.
-    jacobian       - if jacInterface is provided, this is the Epetra.Operator
-                     that defines the Jacobian matrix.  Default None.
+    jacobian       - if jacInterface is provided, this should also be provided
+                     and is the Epetra.Operator that defines the Jacobian
+                     matrix.  Default None. 
     precInterface  - a NOX.Epetra.Interface.Preconditioner object that defines
                      the preconditioner to the nonlinear problem.  Default None.
-    preconditioner - if precInterface is provided, this is the
-                     Epetra.Operator that defines the preconditioner.
+    preconditioner - if precInterface is provided, this should also be provided
+                     and is the Epetra.Operator that defines the preconditioner.
                      Default None.
     nlParams       - dict that contains a list of nonlinear parameters.  Default
                      None, in which case defaultNonlinearParameters() is used.
+    absTol         - if not None, include an absolute residual status test,
+                     using this value as the tolerance.  Default 1.0e-8.
+    relTol         - if not None, include a relative residual status test, using
+                     this value as the tolerance.  Default 1.0e-2.
+    relGroup       - if relTol is specified, use this Group to determine the
+                     scaling.  If relGroup is None, use the result of
+                     defaultGroup().  Default None.
+    updateTol      - if not None, include an update status test, using this
+                     value as the tolerance.  Default 1.0e-5.
+    wAbsTol        - if not None, along with wRelTol, include a weighted RMS
+                     status test, using this value as the absolute tolerance.
+                     Default 1.0e-8.
+    wRelTol        - if not None, along with wAbsTol, include a weighted RMS
+                     status test, using this value as the relative tolerance.
+                     Default 1.0e-2.
+    maxIters       - if not None, include a maximum nonlinear iterations status
+                     test, using this value as the maximum allowable iterations.
+                     Default 20. 
+    finiteValue    - if True, include a finite value status test.  Default
+                     True. 
     """
 
     # Sanity checks to prevent more cryptic problems down the road...
@@ -638,7 +701,6 @@ def defaultSolver(initGuess, reqInterface, jacInterface=None, jacobian=None,
         assert isinstance(reqInterface, Interface.Required)
     if jacInterface is not None:
         assert isinstance(jacInterface, Interface.Jacobian        )
-        print type(jacobian)
         assert isinstance(jacobian    , (PyTrilinos.Epetra.Operator, Operator))
     if precInterface is not None:
         assert isinstance(precInterface , Interface.Preconditioner  )
@@ -656,14 +718,15 @@ def defaultSolver(initGuess, reqInterface, jacInterface=None, jacobian=None,
                          jacobian, precInterface, preconditioner)
 
     # Get the default StatusTest
-    statusTest = defaultStatusTest(absTol      = 1.0e-8,
-                                   relTol      = 1.0e-2,
-                                   relGroup    = group,
-                                   updateTol   = 1.0e-5,
-                                   wAbsTol     = 1.0e-8,
-                                   wRelTol     = 1.0e-2,
-                                   maxIters    = 20,
-                                   finiteValue = True)
+    if relTol and (relGroup is None): relGroup = group
+    statusTest = defaultStatusTest(absTol      = absTol,
+                                   relTol      = relTol,
+                                   relGroup    = relGroup,
+                                   updateTol   = updateTol,
+                                   wAbsTol     = wAbsTol,
+                                   wRelTol     = wRelTol,
+                                   maxIters    = maxIters,
+                                   finiteValue = finiteValue)
 
     # Return the default Solver
     solver = PyTrilinos.NOX.Solver.buildSolver(group, statusTest, nlParams)

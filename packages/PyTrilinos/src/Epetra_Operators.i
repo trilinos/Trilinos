@@ -45,6 +45,9 @@
 
 %}
 
+// Configuration
+%include "PyTrilinos_config.h"
+
 //////////////
 // Typemaps //
 //////////////
@@ -1317,15 +1320,29 @@ Epetra_VbrMatrix::Epetra_VbrMatrix(const Epetra_VbrMatrix&);
 %typemap(out) Teuchos::RCP<Epetra_Operator>
 {
   if ($1 == Teuchos::null)
+  {
     $result = Py_BuildValue("");
+  }
   else
   {
-    $result = convertEpetraOperatorToPython($1.get());
+    $result = convertEpetraOperatorToPython($1.get(), %convertptr_flags);
+  }
+}
+
+%typemap(out) Teuchos::RCP<const Epetra_Operator>
+{
+  if ($1 == Teuchos::null)
+  {
+    $result = Py_BuildValue("");
+  }
+  else
+  {
+    $result = convertEpetraOperatorToPython($1.get(), %convertptr_flags);
   }
 }
 #endif
 
 %typemap(directorin) Epetra_Operator &
 {
-  $input = convertEpetraOperatorToPython(&$1_name);
+  $input = convertEpetraOperatorToPython(&$1_name, %convertptr_flags);
 }
