@@ -39,7 +39,9 @@
 #define STKUNIT_MAIN(argc,argv) \
 int main(int argc,char**argv) {\
   Teuchos::GlobalMPISession mpiSession(&argc, &argv); \
-  return Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv); \
+  bool result = Teuchos::UnitTestRepository::runUnitTestsFromMain(argc, argv); \
+  std::cout << std::endl ; \
+  return result; \
 }
 
 

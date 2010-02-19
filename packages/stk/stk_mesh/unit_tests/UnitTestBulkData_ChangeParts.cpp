@@ -233,10 +233,12 @@ void UnitTestBulkData::testChangeParts( ParallelMachine pm )
     STKUNIT_ASSERT( tmp[3] == & part_B_2 );
   }
 
-  STKUNIT_ASSERT_EQUAL( size_t(p_size - 1) , entity_0_1.sharing().size() );
-  STKUNIT_ASSERT_EQUAL( size_t(p_size - 1) , entity_1_1.sharing().size() );
-  STKUNIT_ASSERT_EQUAL( size_t(p_size - 1) , entity_2_1.sharing().size() );
-  STKUNIT_ASSERT_EQUAL( size_t(p_size - 1) , entity_3_1.sharing().size() );
+  if (bulk.parallel_size() > 1) {
+    STKUNIT_ASSERT_EQUAL( size_t(p_size - 1) , entity_0_1.sharing().size() );
+    STKUNIT_ASSERT_EQUAL( size_t(p_size - 1) , entity_1_1.sharing().size() );
+    STKUNIT_ASSERT_EQUAL( size_t(p_size - 1) , entity_2_1.sharing().size() );
+    STKUNIT_ASSERT_EQUAL( size_t(p_size - 1) , entity_3_1.sharing().size() );
+  }
 
   bulk.modification_begin();
 

@@ -140,7 +140,8 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
 
     // Destroy the element:
     std::cout << "UnitTestBulkData::testDestroy_loop ... " << std::endl;
-    STKUNIT_ASSERT( true == bulk.destroy_entity( edge ) );
+    bool result = bulk.destroy_entity( edge );
+    STKUNIT_ASSERT( true == result );
     STKUNIT_ASSERT( NULL == edge );
 
     // Destroy orphanned node:

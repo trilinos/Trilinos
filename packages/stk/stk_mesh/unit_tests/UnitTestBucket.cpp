@@ -422,7 +422,9 @@ void UnitTestBucket::generate_boxes(
       ( j == local_box[1][1] && j != root_box[1][1] ) ||
       ( i == local_box[0][0] && i != root_box[0][0] ) ||
       ( i == local_box[0][1] && i != root_box[0][1] );
-    STKUNIT_ASSERT_EQUAL( shared , ! node->sharing().empty() );
+    if (mesh.parallel_size() > 1) {
+      STKUNIT_ASSERT_EQUAL( shared , ! node->sharing().empty() );
+    }
   }
   }
   }

@@ -51,6 +51,7 @@ void find_local_closure ( EntitySet & closure, const EntityVector & entities)
 
 void construct_communication_set( const BulkData & bulk, const EntitySet & closure, EntityProcSet & communication_set)
 {
+  if (bulk.parallel_size() < 2) return;
 
   for ( EntitySet::const_iterator i = closure.begin();
       i != closure.end(); ++i)

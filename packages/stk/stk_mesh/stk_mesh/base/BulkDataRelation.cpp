@@ -315,7 +315,7 @@ void BulkData::destroy_relation( Entity & e_from , Entity & e_to )
   // If the entity is shared then wait until modificaton_end_synchronize.
   //------------------------------
 
-  if ( ! del.empty() && e_to.sharing().empty() ) {
+  if ( ! del.empty() && (parallel_size() < 2 || e_to.sharing().empty()) ) {
     PartVector add ;
     internal_change_entity_parts( e_to , add , del );
   }
@@ -382,7 +382,7 @@ void BulkData::internal_propagate_part_changes(
         }
       }
 
-      if ( e_to.sharing().empty() ) {
+      if ( parallel_size() < 2 || e_to.sharing().empty() ) {
         // Entirely local, ok to remove memberships now
         internal_change_entity_parts( e_to , to_add , to_del );
       }
