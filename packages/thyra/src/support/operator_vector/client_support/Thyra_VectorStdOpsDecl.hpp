@@ -812,7 +812,7 @@ template<class Scalar>
 inline
 Scalar Thyra::scalarProd( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y )
 {
-  return x.space()->scalarProd(x,y);
+  return x.space()->scalarProd(x, y);
 }
 
 
@@ -820,7 +820,7 @@ template<class Scalar>
 inline
 Scalar Thyra::inner( const VectorBase<Scalar>& x, const VectorBase<Scalar>& y )
 {
-  return x.space()->scalarProd(x,y);
+  return x.space()->scalarProd(x, y);
 }
 
 
@@ -830,7 +830,7 @@ typename Teuchos::ScalarTraits<Scalar>::magnitudeType
 Thyra::norm( const VectorBase<Scalar>& v )
 {
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  return ST::magnitude(ST::squareroot(v.space()->scalarProd(v,v)));
+  return ST::magnitude(ST::squareroot(v.space()->scalarProd(v, v)));
 }
 
 
