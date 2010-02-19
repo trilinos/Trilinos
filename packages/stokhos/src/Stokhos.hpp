@@ -40,6 +40,7 @@
 #include "Stokhos_HermiteBasis.hpp"
 #include "Stokhos_RysBasis.hpp"
 #include "Stokhos_DiscretizedStieltjesBasis.hpp"
+#include "Stokhos_PecosOneDOrthogPolyBasis.hpp"
 #include "Stokhos_CompletePolynomialBasis.hpp"
 
 // Expansion methods
@@ -59,6 +60,7 @@
 // Tensors
 #include "Stokhos_Sparse3Tensor.hpp"
 #include "Stokhos_Dense3Tensor.hpp"
+#include "Stokhos_Sparse3TensorUtilities.hpp"
 
 // Operators
 #include "Stokhos_MLPrecOp.hpp"

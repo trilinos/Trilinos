@@ -43,6 +43,14 @@ PACKAGE_ADD_EXECUTABLE(
 
 IF(Stokhos_ENABLE_TriKota)
 
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    pecos_hermite_example
+    SOURCES pecos_hermite_example.cpp
+    COMM serial mpi
+    PASS_REGULAR_EXPRESSION "Example Passed"
+    NUM_MPI_PROCS 1
+  )
+
   IF(Stokhos_ENABLE_ML)
 
      PACKAGE_ADD_EXECUTABLE(
@@ -58,5 +66,10 @@ IF(Stokhos_ENABLE_TriKota)
      )
 
   ENDIF()
+
+PACKAGE_ADD_EXECUTABLE(
+  sparsity_example
+  SOURCES sparsity_example.cpp
+  )
 
 ENDIF()

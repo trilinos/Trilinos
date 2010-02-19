@@ -52,6 +52,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_ClenshawCurtisLegendreBasisImp.hpp
   Stokhos_StieltjesPCEBasis.hpp
   Stokhos_StieltjesPCEBasisImp.hpp
+  Stokhos_PecosOneDOrthogPolyBasis.hpp
+  Stokhos_PecosOneDOrthogPolyBasisImp.hpp
   Stokhos_OrthogPolyBasis.hpp
   Stokhos_ProductBasis.hpp
   Stokhos_DerivBasis.hpp
@@ -63,6 +65,7 @@ SET(HEADERS ${HEADERS}
   Stokhos_Sparse3TensorImp.hpp
   Stokhos_Dense3Tensor.hpp
   Stokhos_Dense3TensorImp.hpp
+  Stokhos_Sparse3TensorUtilities.hpp
   Stokhos_Quadrature.hpp
   Stokhos_TensorProductQuadrature.hpp
   Stokhos_TensorProductQuadratureImp.hpp
