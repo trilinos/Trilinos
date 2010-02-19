@@ -133,20 +133,6 @@ bool ILUT<MatrixType>::hasTransposeApply() const {
 
 //==========================================================================
 template <class MatrixType>
-const Teuchos::RCP<const MatrixType>&
-ILUT<MatrixType>::getL() const {
-  return(L_);
-}
-
-//==========================================================================
-template <class MatrixType>
-const Teuchos::RCP<const MatrixType>&
-ILUT<MatrixType>::getU() const {
-  return(U_);
-}
-
-//==========================================================================
-template <class MatrixType>
 int ILUT<MatrixType>::getNumInitialize() const {
   return(NumInitialize_);
 }
@@ -191,13 +177,6 @@ global_size_t ILUT<MatrixType>::getGlobalNumEntries() const {
 template<class MatrixType>
 size_t ILUT<MatrixType>::getNodeNumEntries() const {
   return(L_->getNodeNumEntries() + U_->getNodeNumEntries());
-}
-
-//==========================================================================
-template<class MatrixType>
-typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
-ILUT<MatrixType>::getCondEst() const {
-  return(Condest_);
 }
 
 //=============================================================================

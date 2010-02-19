@@ -206,9 +206,11 @@ class CrsRiluk: public virtual Tifpack::Preconditioner<typename MatrixType::scal
   */
   CrsRiluk(const Teuchos::RCP<const MatrixType>& A_in);
   
+ private:
   //! Copy constructor.
   CrsRiluk(const CrsRiluk<MatrixType> & src);
 
+ public:
   //! Tifpack_CrsRiluk Destructor
   virtual ~CrsRiluk();
 
@@ -373,7 +375,7 @@ class CrsRiluk: public virtual Tifpack::Preconditioner<typename MatrixType::scal
   
   
   void AllocateCrs();
-  int InitAllValues(const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & overlapA, int MaxNumEntries);
+  void InitAllValues(const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & overlapA, int MaxNumEntries);
   void generateXY(Teuchos::ETransp mode, 
 		 const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xin,
      const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Yin,

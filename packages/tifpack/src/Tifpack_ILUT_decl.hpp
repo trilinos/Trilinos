@@ -174,7 +174,7 @@ public:
                                const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &Matrix_in = Teuchos::null);
 
   //! Returns the computed estimated condition number, or -1.0 if no computed.
-  magnitudeType getCondEst() const;
+  magnitudeType getCondEst() const { return Condest_; }
 
   //! Returns the Tpetra::BlockMap object associated with the range of this matrix operator.
   const Teuchos::RCP<const Teuchos::Comm<int> > & getComm() const;
@@ -183,10 +183,10 @@ public:
   Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getMatrix() const;
 
   //! Returns a reference to the L factor.
-  const Teuchos::RCP<const MatrixType>& getL() const;
+  const Teuchos::RCP<const MatrixType> getL() const { return L_; }
   
   //! Returns a reference to the U factor.
-  const Teuchos::RCP<const MatrixType>& getU() const;
+  const Teuchos::RCP<const MatrixType> getU() const { return U_; }
     
   //! Returns the number of calls to Initialize().
   int getNumInitialize() const;
