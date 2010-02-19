@@ -184,10 +184,12 @@ int Zoltan_Order (
     strcpy(zz->Order.order_type, "GLOBAL");
   }
 #endif /* ZOLTAN_SCOTCH */
+#ifdef ZOLTAN_HUND
   else if (!strcasecmp(opt.method, "HUND")) {
     ierr = Zoltan_HUND(zz, num_gid_entries, num_obj, gids, permuted_global_ids, NULL);
     goto End;
   }
+#endif /* ZOLTAN_HUND */
   else {
     fprintf(stderr, "%s\n", opt.method);
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Unknown ordering method");
