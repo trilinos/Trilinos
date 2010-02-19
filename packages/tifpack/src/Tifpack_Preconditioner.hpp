@@ -141,7 +141,7 @@ class Preconditioner : virtual public Tpetra::Operator<Scalar,LocalOrdinal,Globa
     //@}
 
     //! Sets all parameters for the preconditioner.
-    virtual void setParameters(Teuchos::ParameterList& List) = 0;
+    virtual void setParameters(const Teuchos::ParameterList& List) = 0;
 
     //! Computes all (graph-related) data necessary to initialize the preconditioner.
     virtual void initialize() = 0;

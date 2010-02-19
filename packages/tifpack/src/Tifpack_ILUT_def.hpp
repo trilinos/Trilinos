@@ -76,7 +76,7 @@ ILUT<MatrixType>::~ILUT() {
 
 //==========================================================================
 template <class MatrixType>
-void ILUT<MatrixType>::setParameters(Teuchos::ParameterList& params) {
+void ILUT<MatrixType>::setParameters(const Teuchos::ParameterList& params) {
   Tifpack::GetParameter(params, "fact: ilut level-of-fill", LevelOfFill_);
   TEST_FOR_EXCEPTION(LevelOfFill_ <= 0.0, std::runtime_error,
     "Tifpack::ILUT::SetParameters ERROR, level-of-fill must be >= 0.");

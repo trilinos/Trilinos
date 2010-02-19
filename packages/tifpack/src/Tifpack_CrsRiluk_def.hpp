@@ -29,124 +29,126 @@
 #ifndef TIFPACK_CRSRILUK_DEF_HPP
 #define TIFPACK_CRSRILUK_DEF_HPP
 
+namespace Tifpack {
+
 //==============================================================================
 template<class MatrixType>
-CrsRiluk<MatrixType>::Ifpack_CrsRiluk(const Ifpack_IlukGraph & Graph_in) 
+CrsRiluk<MatrixType>::CrsRiluk(const Teuchos::RCP<const MatrixType>& Matrix_in) 
   : UserMatrixIsCrs_(false),
-    Graph_(Graph_in),
-    Comm_(Graph_in.Comm()),
+    Graph_(),
+    A_(Matrix_in),
     UseTranspose_(false),
+    LevelOfFill_(0),
+    LevelOfOverlap_(0),
     NumMyDiagonals_(0),
     Allocated_(false),
-    ValuesInitialized_(false),
+    isInitialized_(false),
     Factored_(false),
     RelaxValue_(0.0),
     Athresh_(0.0),
     Rthresh_(1.0),
     Condest_(-1.0),
-    OverlapMode_(Zero)
+    OverlapMode_(Tpetra::REPLACE)
 {
-  // Test for non-trivial overlap here so we can use it later.
-  IsOverlapped_ = (Graph_in.LevelOverlap()>0 && Graph_in.DomainMap().DistributedGlobal());
 }
 
 //==============================================================================
 template<class MatrixType>
-CrsRiluk<MatrixType>::Ifpack_CrsRiluk(const Ifpack_CrsRiluk & FactoredMatrix) 
-  : UserMatrixIsCrs_(FactoredMatrix.UserMatrixIsCrs_),
-    IsOverlapped_(FactoredMatrix.IsOverlapped_),
-    Graph_(FactoredMatrix.Graph_),
-    IlukRowMap_(FactoredMatrix.IlukRowMap_),
-    IlukDomainMap_(FactoredMatrix.IlukDomainMap_),
-    IlukRangeMap_(FactoredMatrix.IlukRangeMap_),
-    Comm_(FactoredMatrix.Comm_),
-    UseTranspose_(FactoredMatrix.UseTranspose_),
-    NumMyDiagonals_(FactoredMatrix.NumMyDiagonals_),
-    Allocated_(FactoredMatrix.Allocated_),
-    ValuesInitialized_(FactoredMatrix.ValuesInitialized_),
-    Factored_(FactoredMatrix.Factored_),
-    RelaxValue_(FactoredMatrix.RelaxValue_),
-    Athresh_(FactoredMatrix.Athresh_),
-    Rthresh_(FactoredMatrix.Rthresh_),
-    Condest_(FactoredMatrix.Condest_),
-    OverlapMode_(FactoredMatrix.OverlapMode_)
+CrsRiluk<MatrixType>::CrsRiluk(const CrsRiluk<MatrixType>& src) 
+  : UserMatrixIsCrs_(src.UserMatrixIsCrs_),
+    IsOverlapped_(src.IsOverlapped_),
+    Graph_(src.Graph_),
+    UseTranspose_(src.UseTranspose_),
+    LevelOfFill_(src.LevelOfFill_),
+    LevelOfOverlap_(src.LevelOfOverlap_),
+    NumMyDiagonals_(src.NumMyDiagonals_),
+    Allocated_(src.Allocated_),
+    isInitialized_(src.isInitialized_),
+    Factored_(src.Factored_),
+    RelaxValue_(src.RelaxValue_),
+    Athresh_(src.Athresh_),
+    Rthresh_(src.Rthresh_),
+    Condest_(src.Condest_),
+    OverlapMode_(src.OverlapMode_)
 {
-  L_ = Teuchos::rcp( new Epetra_CrsMatrix(FactoredMatrix.L()) );
-  U_ = Teuchos::rcp( new Epetra_CrsMatrix(FactoredMatrix.U()) );
-  D_ = Teuchos::rcp( new Epetra_Vector(FactoredMatrix.D()) );
-  if (IlukRowMap_!=Teuchos::null) IlukRowMap_ = Teuchos::rcp( new Epetra_Map(*IlukRowMap_) );
-  if (IlukDomainMap_!=Teuchos::null) IlukDomainMap_ = Teuchos::rcp( new Epetra_Map(*IlukDomainMap_) );
-  if (IlukRangeMap_!=Teuchos::null) IlukRangeMap_ = Teuchos::rcp( new Epetra_Map(*IlukRangeMap_) );
-  
+  L_ = Teuchos::rcp( new MatrixType(src.L()) );
+  U_ = Teuchos::rcp( new MatrixType(src.U()) );
+  D_ = Teuchos::rcp( new Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(src.getD()) );
 }
+
 //==============================================================================
 template<class MatrixType>
-CrsRiluk<MatrixType>::~Ifpack_CrsRiluk(){
-
-  ValuesInitialized_ = false;
-  Factored_ = false;
-  Allocated_ = false;
+CrsRiluk<MatrixType>::~CrsRiluk() {
 }
+
 //==============================================================================
 template<class MatrixType>
-int CrsRiluk<MatrixType>::AllocateCrs() {
+void CrsRiluk<MatrixType>::AllocateCrs() {
 
-  // Allocate Epetra_CrsMatrix using ILUK graphs
-  L_ = Teuchos::rcp( new MatrixType(Graph_.L_Graph()) );
-  U_ = Teuchos::rcp( new MatrixType(Graph_.U_Graph()) );
-  D_ = Teuchos::rcp( new Tpetra::Vector(Graph_.L_Graph().getRowMap()) );
+  // Allocate Matrix using ILUK graphs
+  L_ = Teuchos::rcp( new MatrixType(Graph_->getL_Graph()) );
+  U_ = Teuchos::rcp( new MatrixType(Graph_->getU_Graph()) );
+  D_ = Teuchos::rcp( new Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Graph_->getL_Graph()->getRowMap()) );
   SetAllocated(true);
-  return(0);
 }
 
 //==========================================================================
 template<class MatrixType>
 void CrsRiluk<MatrixType>::setParameters(const Teuchos::ParameterList& parameterlist) {
+  Tifpack::GetParameter(parameterlist, "fact: iluk level-of-fill", LevelOfFill_);
+  Tifpack::GetParameter(parameterlist, "fact: iluk level-of-overlap", LevelOfOverlap_);
   double tmp = -1;
-  Tifpack::GetParameter(params, "fact: absolute threshold", tmp);
+  Tifpack::GetParameter(parameterlist, "fact: absolute threshold", tmp);
   if (tmp != -1) Athresh_ = tmp;
   tmp = -1;
-  Tifpack::GetParameter(params, "fact: relative threshold", tmp);
+  Tifpack::GetParameter(parameterlist, "fact: relative threshold", tmp);
   if (tmp != -1) Rthresh_ = tmp;
   tmp = -1;
-  Tifpack::GetParameter(params, "fact: relax value", tmp);
+  Tifpack::GetParameter(parameterlist, "fact: relax value", tmp);
   if (tmp != -1) RelaxValue_ = tmp;
-
-  params.double_params[Ifpack::relax_value] = RelaxValue_;
-  params.double_params[Ifpack::absolute_threshold] = Athresh_;
-  params.double_params[Ifpack::relative_threshold] = Rthresh_;
 }
 
 //==========================================================================
 template<class MatrixType>
-int CrsRiluk<MatrixType>::InitValues(const Epetra_CrsMatrix & A) {
+void CrsRiluk<MatrixType>::initialize() {
 
-  UserMatrixIsCrs_ = true;
+  if (Graph_ != Teuchos::null) return;
+
+  Graph_ = Teuchos::rcp(new Tifpack::IlukGraph<LocalOrdinal,GlobalOrdinal,Node>(A_->getCrsGraph(), LevelOfFill_, LevelOfOverlap_));
+
+  Graph_->constructFilledGraph();
+
+  setInitialized(true);
 
   if (!Allocated()) AllocateCrs();
 
-  Teuchos::RefCountPtr<Epetra_CrsMatrix> OverlapA = Teuchos::rcp( (Epetra_CrsMatrix *) &A, false );
+//  Teuchos::RCP<MatrixType> OverlapA = Teuchos::rcp( (Epetra_CrsMatrix *) &A, false );
 
   if (IsOverlapped_) {
   
-    OverlapA = Teuchos::rcp( new Epetra_CrsMatrix(Copy, *Graph_.OverlapGraph()) );
-    EPETRA_CHK_ERR(OverlapA->Import(A, *Graph_.OverlapImporter(), Insert));
-    EPETRA_CHK_ERR(OverlapA->FillComplete());
+//    OverlapA = Teuchos::rcp( new MatrixType(Graph_->OverlapGraph()) );
+//    EPETRA_CHK_ERR(OverlapA->Import(A, *Graph_->OverlapImporter(), Insert));
+//    EPETRA_CHK_ERR(OverlapA->FillComplete());
   }
   
-  // Get Maximun Row length
-  int MaxNumEntries = OverlapA->MaxNumEntries();
+  // Get Maximum Row length
+  //int MaxNumEntries = OverlapA->MaxNumEntries();
 
   // Do the rest using generic Epetra_RowMatrix interface
 
-  EPETRA_CHK_ERR(InitAllValues(*OverlapA, MaxNumEntries));
+//  EPETRA_CHK_ERR(InitAllValues(*OverlapA, MaxNumEntries));
 
-  return(0);
 }
 
 //==========================================================================
 template<class MatrixType>
-int CrsRiluk<MatrixType>::InitAllValues(const Epetra_RowMatrix & OverlapA, int MaxNumEntries) {
+bool CrsRiluk<MatrixType>::isInitialized() const {
+  return isInitialized_;
+}
+
+//==========================================================================
+template<class MatrixType>
+int CrsRiluk<MatrixType>::InitAllValues(const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & OverlapA, int MaxNumEntries) {
 
   int ierr = 0;
   int i, j;
@@ -155,30 +157,32 @@ int CrsRiluk<MatrixType>::InitAllValues(const Epetra_RowMatrix & OverlapA, int M
   int NumNonzeroDiags = 0;
 
 
-  vector<int> InI(MaxNumEntries); // Allocate temp space
-  vector<int> LI(MaxNumEntries);
-  vector<int> UI(MaxNumEntries);
-  vector<double> InV(MaxNumEntries);
-  vector<double> LV(MaxNumEntries);
-  vector<double> UV(MaxNumEntries);
+  Teuchos::Array<LocalOrdinal> InI(MaxNumEntries); // Allocate temp space
+  Teuchos::Array<LocalOrdinal> LI(MaxNumEntries);
+  Teuchos::Array<LocalOrdinal> UI(MaxNumEntries);
+  Teuchos::Array<Scalar> InV(MaxNumEntries);
+  Teuchos::Array<Scalar> LV(MaxNumEntries);
+  Teuchos::Array<Scalar> UV(MaxNumEntries);
 
-  bool ReplaceValues = (L_->StaticGraph() || L_->IndicesAreLocal()); // Check if values should be inserted or replaced
+  bool ReplaceValues = (L_->isStaticGraph() || L_->isLocallyIndexed()); // Check if values should be inserted or replaced
 
   if (ReplaceValues) {
-    L_->PutScalar(0.0); // Zero out L and U matrices
-    U_->PutScalar(0.0);
+    L_->putScalar(0.0); // Zero out L and U matrices
+    U_->putScalar(0.0);
   }
 
-  D_->PutScalar(0.0); // Set diagonal values to zero
-  double *DV;
-  EPETRA_CHK_ERR(D_->ExtractView(&DV)); // Get view of diagonal
+  D_->putScalar(0.0); // Set diagonal values to zero
+  Teuchos::ArrayRCP<const Scalar> DV = D_->get1dView(); // Get view of diagonal
     
+
+  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap =
+    L_->getRowMap();
 
   // First we copy the user's matrix into L and U, regardless of fill level
 
-  for (i=0; i< NumMyRows(); i++) {
+  for (i=0; i< L_->getNodeNumRows(); i++) {
 
-    EPETRA_CHK_ERR(OverlapA.ExtractMyRowCopy(i, MaxNumEntries, NumIn, &InV[0], &InI[0])); // Get Values and Indices
+    OverlapA.getLocalRowCopy(i, InV(), InI(), NumIn); // Get Values and Indices
     
     // Split into L and U (we don't assume that indices are ordered).
     
@@ -190,21 +194,23 @@ int CrsRiluk<MatrixType>::InitAllValues(const Epetra_RowMatrix & OverlapA, int M
       int k = InI[j];
 
       if (k==i) {
-	DiagFound = true;
-	DV[i] += Rthresh_ * InV[j] + EPETRA_SGN(InV[j]) * Athresh_; // Store perturbed diagonal in Epetra_Vector D_
+        DiagFound = true;
+        DV[i] += Rthresh_ * InV[j] + TIFPACK_SGN(InV[j]) * Athresh_; // Store perturbed diagonal in Tpetra::Vector D_
       }
 
-      else if (k < 0) {EPETRA_CHK_ERR(-1);} // Out of range
+      else if (k < 0) { // Out of range
+        throw std::runtime_error("out of range in Tifpack::CrsRiluk::InitAllValues");
+      }
 
       else if (k < i) {
-	LI[NumL] = k;
-	LV[NumL] = InV[j];
-	NumL++;
+        LI[NumL] = k;
+        LV[NumL] = InV[j];
+        NumL++;
       }
-      else if (k<NumMyRows()) {
-	UI[NumU] = k;
-	UV[NumU] = InV[j];
-	NumU++;
+      else if (k<L_->getNodeNumRows()) {
+        UI[NumU] = k;
+        UV[NumU] = InV[j];
+        NumU++;
       }
     }
     
@@ -215,22 +221,26 @@ int CrsRiluk<MatrixType>::InitAllValues(const Epetra_RowMatrix & OverlapA, int M
 
     if (NumL) {
       if (ReplaceValues) {
-	EPETRA_CHK_ERR(L_->ReplaceMyValues(i, NumL, &LV[0], &LI[0]));
+        //replaceGlobalValues works with Global row and Local column-indices:
+        GlobalOrdinal global_row = rowMap->getGlobalElement(i);
+        L_->replaceGlobalValues(global_row, LV(0, NumL), LI(0,NumL));
       }
       else {
-	EPETRA_CHK_ERR(L_->InsertMyValues(i, NumL, &LV[0], &LI[0]));
+        L_->insertLocalValues(i, LV(0,NumL), LI(0,NumL));
       }
     }
 
     if (NumU) {
       if (ReplaceValues) {
-	EPETRA_CHK_ERR(U_->ReplaceMyValues(i, NumU, &UV[0], &UI[0]));
+        //replaceGlobalValues works with Global row and Local column-indices:
+        GlobalOrdinal global_row = rowMap->getGlobalElement(i);
+        U_->replaceGlobalValues(global_row, UV(0,NumU), UI(0,NumU));
       }
       else {
-	EPETRA_CHK_ERR(U_->InsertMyValues(i, NumU, &UV[0], &UI[0]));
+        U_->insertLocalValues(i, UV(0,NumU), UI(0,NumU));
       }
     }
-    
+
   }
 
   if (!ReplaceValues) {
@@ -238,96 +248,95 @@ int CrsRiluk<MatrixType>::InitAllValues(const Epetra_RowMatrix & OverlapA, int M
     // The domain of U and the range of L must be the same as those of the original matrix,
     // However if the original matrix is a VbrMatrix, these two latter maps are translation from
     // a block map to a point map.
-    EPETRA_CHK_ERR(L_->FillComplete(L_->RowMatrixColMap(), *L_RangeMap_));
-    EPETRA_CHK_ERR(U_->FillComplete(*U_DomainMap_, U_->RowMatrixRowMap()));
+    L_->fillComplete(L_->getColMap(), A_->getRangeMap());
+    U_->fillComplete(A_->getDomainMap(), U_->getRowMap());
   }
 
   // At this point L and U have the values of A in the structure of L and U, and diagonal vector D
 
-  SetValuesInitialized(true);
+  setInitialized(true);
   SetFactored(false);
 
   int TotalNonzeroDiags = 0;
-  EPETRA_CHK_ERR(Graph_.L_Graph().RowMap().Comm().SumAll(&NumNonzeroDiags, &TotalNonzeroDiags, 1));
+  Teuchos::reduceAll(*L_->getRowMap()->getComm(),Teuchos::REDUCE_SUM,
+                     1,&NumNonzeroDiags,&TotalNonzeroDiags);
   NumMyDiagonals_ = NumNonzeroDiags;
-  if (NumNonzeroDiags != NumMyRows()) ierr = 1; // Diagonals are not right, warn user
-
-  return(ierr);
+  if (NumNonzeroDiags != U_->getNodeNumRows()) {
+    throw std::runtime_error("Error in Tifpack::CrsRiluk::InitAllValues, wrong number of diagonals.");
+  }
 }
 
 //==========================================================================
 template<class MatrixType>
-int CrsRiluk<MatrixType>::compute() {
+void CrsRiluk<MatrixType>::compute() {
 
-  if (!ValuesInitialized()) return(-2); // Must have values initialized.
-  if (isComputed()) return(-3); // Can't have already computed factors.
+  TEST_FOR_EXCEPTION(!isInitialized(), std::runtime_error,
+      "Tifpack::CrsRiluk::compute() ERROR: isInitialized() must be true.");
+  TEST_FOR_EXCEPTION(isComputed() == true, std::runtime_error,
+      "Tifpack::CrsRiluk::compute() ERROR: Can't have already computed factors.");
 
-  SetValuesInitialized(false);
+  setInitialized(false);
 
   // MinMachNum should be officially defined, for now pick something a little 
   // bigger than IEEE underflow value
 
-  double MinDiagonalValue = Epetra_MinDouble;
-  double MaxDiagonalValue = 1.0/MinDiagonalValue;
+  Scalar MinDiagonalValue = Teuchos::ScalarTraits<Scalar>::rmin();
+  Scalar MaxDiagonalValue = Teuchos::ScalarTraits<Scalar>::one()/MinDiagonalValue;
 
-  int ierr = 0;
-  int i, j, k;
-  int * LI=0, * UI = 0;
-  double * LV=0, * UV = 0;
-  int NumIn, NumL, NumU;
+  size_t NumIn, NumL, NumU;
 
   // Get Maximun Row length
-  int MaxNumEntries = L_->MaxNumEntries() + U_->MaxNumEntries() + 1;
+  size_t MaxNumEntries = L_->getNodeMaxNumRowEntries() + U_->getNodeMaxNumRowEntries() + 1;
 
-  vector<int> InI(MaxNumEntries); // Allocate temp space
-  vector<double> InV(MaxNumEntries);
-  vector<int> colflag(NumMyCols());
+  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap =
+    L_->getRowMap();
 
-  double *DV;
-  ierr = D_->ExtractView(&DV); // Get view of diagonal
+  Teuchos::Array<GlobalOrdinal> InI(MaxNumEntries); // Allocate temp space
+  Teuchos::Array<Scalar> InV(MaxNumEntries);
+  Teuchos::Array<int> colflag(MaxNumEntries);
+
+  Teuchos::ArrayRCP<Scalar> DV = D_->get1dViewNonConst(); // Get view of diagonal
 
   int current_madds = 0; // We will count multiply-add as they happen
 
   // Now start the factorization.
 
   // Need some integer workspace and pointers
-  int NumUU; 
-  int * UUI;
-  double * UUV;
-  for (j=0; j<NumMyCols(); j++) colflag[j] = - 1;
+  size_t NumUU; 
+  Teuchos::ArrayRCP<const LocalOrdinal> UUI;
+  Teuchos::ArrayRCP<const Scalar> UUV;
+  for (size_t j=0; j<MaxNumEntries; j++) colflag[j] = - 1;
 
-  for(i=0; i<NumMyRows(); i++) {
+  for(size_t i=0; i<L_->getNodeNumRows(); i++) {
+    LocalOrdinal local_row = i;
 
  // Fill InV, InI with current row of L, D and U combined
 
     NumIn = MaxNumEntries;
-    EPETRA_CHK_ERR(L_->ExtractMyRowCopy(i, NumIn, NumL, &InV[0], &InI[0]));
-    LV = &InV[0];
-    LI = &InI[0];
+    L_->getGlobalRowCopy(local_row, InI(), InV(), NumL);
 
     InV[NumL] = DV[i]; // Put in diagonal
-    InI[NumL] = i;
+    InI[NumL] = local_row;
     
-    EPETRA_CHK_ERR(U_->ExtractMyRowCopy(i, NumIn-NumL-1, NumU, &InV[NumL+1], &InI[NumL+1]));
+    U_->getGlobalRowCopy(local_row, InI(NumL+1,MaxNumEntries-NumL-1), InV(NumL+1,MaxNumEntries-NumL-1), NumU);
     NumIn = NumL+NumU+1;
-    UV = &InV[NumL+1];
-    UI = &InI[NumL+1];
 
     // Set column flags
-    for (j=0; j<NumIn; j++) colflag[InI[j]] = j;
+    for (size_t j=0; j<NumIn; j++) colflag[InI[j]] = j;
 
-    double diagmod = 0.0; // Off-diagonal accumulator
+    Scalar diagmod = 0.0; // Off-diagonal accumulator
 
-    for (int jj=0; jj<NumL; jj++) {
-      j = InI[jj];
-      double multiplier = InV[jj]; // current_mults++;
+    for (size_t jj=0; jj<NumL; jj++) {
+      LocalOrdinal j = InI[jj];
+      Scalar multiplier = InV[jj]; // current_mults++;
 
       InV[jj] *= DV[j];
-      
-      EPETRA_CHK_ERR(U_->ExtractMyRowView(j, NumUU, UUV, UUI)); // View of row above
+ 
+      U_->getLocalRowView(j, UUI, UUV); // View of row above
+      NumUU = UUI.size();
 
       if (RelaxValue_==0.0) {
-        for (k=0; k<NumUU; k++) {
+        for (size_t k=0; k<NumUU; k++) {
           int kk = colflag[UUI[k]];
           if (kk>-1) {
             InV[kk] -= multiplier*UUV[k];
@@ -336,7 +345,7 @@ int CrsRiluk<MatrixType>::compute() {
         }
       }
       else {
-        for (k=0; k<NumUU; k++) {
+        for (size_t k=0; k<NumUU; k++) {
           int kk = colflag[UUI[k]];
           if (kk>-1) InV[kk] -= multiplier*UUV[k];
           else diagmod -= multiplier*UUV[k];
@@ -345,7 +354,8 @@ int CrsRiluk<MatrixType>::compute() {
       }
     }
     if (NumL) {
-      EPETRA_CHK_ERR(L_->ReplaceMyValues(i, NumL, LV, LI));  // Replace current row of L
+      GlobalOrdinal global_row = rowMap->getGlobalElement(i);
+      L_->replaceGlobalValues(global_row, InI(0,NumL), InV(0,NumL));  // Replace current row of L
     }
 
     DV[i] = InV[NumL]; // Extract Diagonal value
@@ -355,305 +365,196 @@ int CrsRiluk<MatrixType>::compute() {
       // current_madds++;
     }
 
-    if (fabs(DV[i]) > MaxDiagonalValue) {
+    if (Teuchos::ScalarTraits<Scalar>::magnitude(DV[i]) > MaxDiagonalValue) {
       if (DV[i] < 0) DV[i] = - MinDiagonalValue;
       else DV[i] = MinDiagonalValue;
     }
     else
       DV[i] = 1.0/DV[i]; // Invert diagonal value
 
-    for (j=0; j<NumU; j++) UV[j] *= DV[i]; // Scale U by inverse of diagonal
+    for (size_t j=0; j<NumU; j++) InV[NumL+1+j] *= DV[i]; // Scale U by inverse of diagonal
 
     if (NumU) {
-      EPETRA_CHK_ERR(U_->ReplaceMyValues(i, NumU, UV, UI));  // Replace current row of L and U
+      GlobalOrdinal global_row = rowMap->getGlobalElement(i);
+      U_->replaceGlobalValues(global_row, InI(NumL+1,NumU), InV(NumL+1,NumU));  // Replace current row of L and U
     }
 
     // Reset column flags
-    for (j=0; j<NumIn; j++) colflag[InI[j]] = -1;
+    for (size_t j=0; j<NumIn; j++) colflag[InI[j]] = -1;
   }
 
   // Validate that the L and U factors are actually lower and upper triangular
 
-  if( !L_->LowerTriangular() ) 
-    EPETRA_CHK_ERR(-2);
-  if( !U_->UpperTriangular() ) 
-    EPETRA_CHK_ERR(-3);
+  if( !L_->isLowerTriangular() ) 
+    throw std::runtime_error("Tifpack::CrsRiluk::compute() ERROR, L isn't lower triangular.");
+  if( !U_->isUpperTriangular() ) 
+    throw std::runtime_error("Tifpack::CrsRiluk::compute() ERROR, U isn't lower triangular.");
   
   // Add up flops
  
   double current_flops = 2 * current_madds;
   double total_flops = 0;
     
-  EPETRA_CHK_ERR(Graph_.L_Graph().RowMap().Comm().SumAll(&current_flops, &total_flops, 1)); // Get total madds across all PEs
+  // Get total madds across all PEs
+  Teuchos::reduceAll(*L_->getRowMap()->getComm(),Teuchos::REDUCE_SUM,
+                     1,&current_flops,&total_flops);
 
   // Now count the rest
-  total_flops += (double) L_->NumGlobalNonzeros(); // Accounts for multiplier above
-  total_flops += (double) D_->GlobalLength(); // Accounts for reciprocal of diagonal
-  if (RelaxValue_!=0.0) total_flops += 2 * (double)D_->GlobalLength(); // Accounts for relax update of diag
+  total_flops += (double) L_->getGlobalNumEntries(); // Accounts for multiplier above
+  total_flops += (double) D_->getGlobalLength(); // Accounts for reciprocal of diagonal
+  if (RelaxValue_!=0.0) total_flops += 2 * (double)D_->getGlobalLength(); // Accounts for relax update of diag
 
-  UpdateFlops(total_flops); // Update flop count
+  //UpdateFlops(total_flops); // Update flop count
 
   SetFactored(true);
-
-  return(ierr);
-
 }
 
 //=============================================================================
 template<class MatrixType>
-int CrsRiluk<MatrixType>::Solve(bool Trans, const Epetra_MultiVector& X, 
-				Epetra_MultiVector& Y) const {
+void CrsRiluk<MatrixType>::apply(
+       const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+             Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+             Teuchos::ETransp mode, Scalar alpha, Scalar beta) const {
 //
-// This function finds Y such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
+// This function finds Y such that
+// LDU Y = X, or
+// U(trans) D L(trans) Y = X
+// for multiple RHS
 //
 
   // First generate X and Y as needed for this function
-  Teuchos::RefCountPtr<Epetra_MultiVector> X1;
-  Teuchos::RefCountPtr<Epetra_MultiVector> Y1;
-  EPETRA_CHK_ERR(GenerateXY(Trans, X, Y, &X1, &Y1));
+  Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > X1;
+  Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Y1;
+  generateXY(mode, X, Y, X1, Y1);
 
-  bool Upper = true;
-  bool Lower = false;
-  bool UnitDiagonal = true;
+//  Epetra_Flops * counter = this->GetFlopCounter();
+//  if (counter!=0) {
+//    L_->SetFlopCounter(*counter);
+//    Y1->SetFlopCounter(*counter);
+//    U_->SetFlopCounter(*counter);
+//  }
 
-  Epetra_Flops * counter = this->GetFlopCounter();
-  if (counter!=0) {
-    L_->SetFlopCounter(*counter);
-    Y1->SetFlopCounter(*counter);
-    U_->SetFlopCounter(*counter);
-  }
+  Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+  Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
 
-  if (!Trans) {
+  if (!mode == Teuchos::NO_TRANS) {
 
-    EPETRA_CHK_ERR(L_->Solve(Lower, Trans, UnitDiagonal, *X1, *Y1));
-    EPETRA_CHK_ERR(Y1->Multiply(1.0, *D_, *Y1, 0.0)); // y = D*y (D_ has inverse of diagonal)
-    EPETRA_CHK_ERR(U_->Solve(Upper, Trans, UnitDiagonal, *Y1, *Y1)); // Solve Uy = y
-    if (IsOverlapped_) {EPETRA_CHK_ERR(Y.Export(*Y1,*L_->Exporter(), OverlapMode_));} // Export computed Y values if needed
+    L_->solve(*X1, *Y1,mode);
+    Y1->elementWiseMultiply(one, *D_, *Y1, zero); // y = D*y (D_ has inverse of diagonal)
+    U_->solve(*Y1, *Y1,mode); // Solve Uy = y
+    if (IsOverlapped_) {Y.doExport(*Y1,*L_->getGraph()->getExporter(), OverlapMode_);} // Export computed Y values if needed
   }
   else {
-    EPETRA_CHK_ERR(U_->Solve(Upper, Trans, UnitDiagonal, *X1, *Y1)); // Solve Uy = y
-    EPETRA_CHK_ERR(Y1->Multiply(1.0, *D_, *Y1, 0.0)); // y = D*y (D_ has inverse of diagonal)
-    EPETRA_CHK_ERR(L_->Solve(Lower, Trans, UnitDiagonal, *Y1, *Y1));
-    if (IsOverlapped_) {EPETRA_CHK_ERR(Y.Export(*Y1,*U_->Importer(), OverlapMode_));} // Export computed Y values if needed
+    U_->solve(*X1, *Y1,mode); // Solve Uy = y
+    Y1->elementWiseMultiply(one, *D_, *Y1, zero); // y = D*y (D_ has inverse of diagonal)
+    L_->solve(*Y1, *Y1,mode);
+    if (IsOverlapped_) {Y.doExport(*Y1,*U_->getGraph()->getImporter(), OverlapMode_);} // Export computed Y values if needed
   } 
-
-  return(0);
 }
 
 //=============================================================================
 template<class MatrixType>
-int CrsRiluk<MatrixType>::Multiply(bool Trans, const Epetra_MultiVector& X, 
-			      Epetra_MultiVector& Y) const {
+int CrsRiluk<MatrixType>::Multiply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
+			      Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+            Teuchos::ETransp mode) const {
 //
 // This function finds X such that LDU Y = X or U(trans) D L(trans) Y = X for multiple RHS
 //
     
   // First generate X and Y as needed for this function
-  Teuchos::RefCountPtr<Epetra_MultiVector> X1;
-  Teuchos::RefCountPtr<Epetra_MultiVector> Y1;
-  EPETRA_CHK_ERR(GenerateXY(Trans, X, Y, &X1, &Y1));
+  Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > X1;
+  Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Y1;
+  generateXY(mode, X, Y, X1, Y1);
 
-  Epetra_Flops * counter = this->GetFlopCounter();
-  if (counter!=0) {
-    L_->SetFlopCounter(*counter);
-    Y1->SetFlopCounter(*counter);
-    U_->SetFlopCounter(*counter);
-  }
+//  Epetra_Flops * counter = this->GetFlopCounter();
+//  if (counter!=0) {
+//    L_->SetFlopCounter(*counter);
+//    Y1->SetFlopCounter(*counter);
+//    U_->SetFlopCounter(*counter);
+//  }
 
-  if (!Trans) {
-    EPETRA_CHK_ERR(U_->Multiply(Trans, *X1, *Y1)); // 
-    EPETRA_CHK_ERR(Y1->Update(1.0, *X1, 1.0)); // Y1 = Y1 + X1 (account for implicit unit diagonal)
-    EPETRA_CHK_ERR(Y1->ReciprocalMultiply(1.0, *D_, *Y1, 0.0)); // y = D*y (D_ has inverse of diagonal)
-    Epetra_MultiVector Y1temp(*Y1); // Need a temp copy of Y1
-    EPETRA_CHK_ERR(L_->Multiply(Trans, Y1temp, *Y1));
-    EPETRA_CHK_ERR(Y1->Update(1.0, Y1temp, 1.0)); // (account for implicit unit diagonal)
-    if (IsOverlapped_) {EPETRA_CHK_ERR(Y.Export(*Y1,*L_->Exporter(), OverlapMode_));} // Export computed Y values if needed
+  if (!mode == Teuchos::NO_TRANS) {
+    U_->apply(*X1, *Y1,mode); // 
+    Y1->update(1.0, *X1, 1.0); // Y1 = Y1 + X1 (account for implicit unit diagonal)
+    Y1->reciprocalMultiply(1.0, *D_, *Y1, 0.0); // y = D*y (D_ has inverse of diagonal)
+    Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Y1temp(*Y1); // Need a temp copy of Y1
+    L_->multiply(Y1temp, *Y1,mode);
+    Y1->update(1.0, Y1temp, 1.0); // (account for implicit unit diagonal)
+    if (IsOverlapped_) {Y.doExport(*Y1,*L_->getGraph()->getExporter(), OverlapMode_);} // Export computed Y values if needed
   }
   else {
 
-    EPETRA_CHK_ERR(L_->Multiply(Trans, *X1, *Y1));
-    EPETRA_CHK_ERR(Y1->Update(1.0, *X1, 1.0)); // Y1 = Y1 + X1 (account for implicit unit diagonal)
-    EPETRA_CHK_ERR(Y1->ReciprocalMultiply(1.0, *D_, *Y1, 0.0)); // y = D*y (D_ has inverse of diagonal)
-    Epetra_MultiVector Y1temp(*Y1); // Need a temp copy of Y1
-    EPETRA_CHK_ERR(U_->Multiply(Trans, Y1temp, *Y1));
-    EPETRA_CHK_ERR(Y1->Update(1.0, Y1temp, 1.0)); // (account for implicit unit diagonal)
-    if (IsOverlapped_) {EPETRA_CHK_ERR(Y.Export(*Y1,*L_->Exporter(), OverlapMode_));}
+    L_->multiply(*X1, *Y1,mode);
+    Y1->update(1.0, *X1, 1.0); // Y1 = Y1 + X1 (account for implicit unit diagonal)
+    Y1->reciprocalMultiply(1.0, *D_, *Y1, 0.0); // y = D*y (D_ has inverse of diagonal)
+    Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Y1temp(*Y1); // Need a temp copy of Y1
+    U_->multiply(Y1temp, *Y1,mode);
+    Y1->update(1.0, Y1temp, 1.0); // (account for implicit unit diagonal)
+    if (IsOverlapped_) {Y.doExport(*Y1,*L_->getGraph()->getExporter(), OverlapMode_);}
   } 
   return(0);
 }
 
 //=============================================================================
 template<class MatrixType>
-int CrsRiluk<MatrixType>::Condest(bool Trans, double & ConditionNumberEstimate) const {
+typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
+CrsRiluk<MatrixType>::computeCondEst(Teuchos::ETransp mode) const {
 
   if (Condest_>=0.0) {
-    ConditionNumberEstimate = Condest_;
-    return(0);
+    return Condest_;
   }
   // Create a vector with all values equal to one
-  Epetra_Vector Ones(U_->DomainMap());
-  Epetra_Vector OnesResult(L_->RangeMap());
-  Ones.PutScalar(1.0);
+  Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Ones(U_->getDomainMap());
+  Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> OnesResult(L_->getRangeMap());
+  Ones.putScalar(1.0);
 
-  EPETRA_CHK_ERR(Solve(Trans, Ones, OnesResult)); // Compute the effect of the solve on the vector of ones
-  EPETRA_CHK_ERR(OnesResult.Abs(OnesResult)); // Make all values non-negative
-  EPETRA_CHK_ERR(OnesResult.MaxValue(&ConditionNumberEstimate)); // Get the maximum value across all processors
-  Condest_ = ConditionNumberEstimate; // Save value for possible later calls
-  return(0);
+  apply(Ones, OnesResult,mode); // Compute the effect of the solve on the vector of ones
+  OnesResult.Abs(OnesResult); // Make all values non-negative
+  Condest_ = OnesResult.getMaxValue(); // Get the maximum value across all processors
+  return Condest_;
 }
 
-//==============================================================================
-template<class MatrixType>
-int CrsRiluk<MatrixType>::BlockGraph2PointGraph(const Epetra_CrsGraph & BG, Epetra_CrsGraph & PG, bool Upper) {
 
-  if (!BG.IndicesAreLocal()) {EPETRA_CHK_ERR(-1);} // Must have done FillComplete on BG
-
-  int * ColFirstPointInElementList = BG.RowMap().FirstPointInElementList();
-  int * ColElementSizeList = BG.RowMap().ElementSizeList();
-  if (BG.Importer()!=0) {
-    ColFirstPointInElementList = BG.ImportMap().FirstPointInElementList();
-    ColElementSizeList = BG.ImportMap().ElementSizeList();
-  }
-
-  int Length = (BG.MaxNumIndices()+1) * BG.ImportMap().MaxMyElementSize();
-  vector<int> tmpIndices(Length);
-
-  int BlockRow, BlockOffset, NumEntries;
-  int NumBlockEntries;
-  int * BlockIndices;
-
-  int NumMyRows_tmp = PG.NumMyRows();
-
-  for (int i=0; i<NumMyRows_tmp; i++) {
-    EPETRA_CHK_ERR(BG.RowMap().FindLocalElementID(i, BlockRow, BlockOffset));
-    EPETRA_CHK_ERR(BG.ExtractMyRowView(BlockRow, NumBlockEntries, BlockIndices));
-
-    int * ptr = &tmpIndices[0]; // Set pointer to beginning of buffer
-
-    int RowDim = BG.RowMap().ElementSize(BlockRow);
-    NumEntries = 0;
-
-    // This next line make sure that the off-diagonal entries in the block diagonal of the 
-    // original block entry matrix are included in the nonzero pattern of the point graph
-    if (Upper) {
-      int jstart = i+1;
-      int jstop = EPETRA_MIN(NumMyRows_tmp,i+RowDim-BlockOffset);
-      for (int j= jstart; j< jstop; j++) {*ptr++ = j; NumEntries++;}
-    }
-
-    for (int j=0; j<NumBlockEntries; j++) {
-      int ColDim = ColElementSizeList[BlockIndices[j]];
-      NumEntries += ColDim;
-      assert(NumEntries<=Length); // Sanity test
-      int Index = ColFirstPointInElementList[BlockIndices[j]];
-      for (int k=0; k < ColDim; k++) *ptr++ = Index++;
-    }
-
-    // This next line make sure that the off-diagonal entries in the block diagonal of the 
-    // original block entry matrix are included in the nonzero pattern of the point graph
-    if (!Upper) {
-      int jstart = EPETRA_MAX(0,i-RowDim+1);
-      int jstop = i;
-      for (int j = jstart; j < jstop; j++) {*ptr++ = j; NumEntries++;}
-    }
-
-    EPETRA_CHK_ERR(PG.InsertMyIndices(i, NumEntries, &tmpIndices[0]));
-  }
-
-  SetAllocated(true);
-
-  return(0);
-}
- 
 //=========================================================================
 template<class MatrixType>
-int CrsRiluk<MatrixType>::GenerateXY(bool Trans, 
-				const Epetra_MultiVector& Xin, const Epetra_MultiVector& Yin,
-				Teuchos::RefCountPtr<Epetra_MultiVector>* Xout, 
-				Teuchos::RefCountPtr<Epetra_MultiVector>* Yout) const {
+void CrsRiluk<MatrixType>::generateXY(Teuchos::ETransp mode, 
+    const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xin,
+    const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Yin,
+    Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Xout, 
+    Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Yout) const {
 
   // Generate an X and Y suitable for performing Solve() and Multiply() methods
 
-  if (Xin.NumVectors()!=Yin.NumVectors()) EPETRA_CHK_ERR(-1); // Return error: X and Y not the same size
+  TEST_FOR_EXCEPTION(Xin.getNumVectors()!=Yin.getNumVectors(), std::runtime_error,
+       "Tifpack::CrsRiluk::GenerateXY ERROR: X and Y not the same size");
 
   //cout << "Xin = " << Xin << endl;
-  (*Xout) = Teuchos::rcp( (Epetra_MultiVector *) &Xin, false );
-  (*Yout) = Teuchos::rcp( (Epetra_MultiVector *) &Yin, false );
-  if (!IsOverlapped_ && UserMatrixIsCrs_) return(0); // Nothing more to do
+  Xout = Teuchos::rcp( (Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> *) &Xin, false );
+  Yout = Teuchos::rcp( (Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> *) &Yin, false );
+  if (!IsOverlapped_ && UserMatrixIsCrs_) return; // Nothing more to do
 
   if (IsOverlapped_) {
     // Make sure the number of vectors in the multivector is the same as before.
     if (OverlapX_!=Teuchos::null) {
-      if (OverlapX_->NumVectors()!=Xin.NumVectors()) {
-	OverlapX_ = Teuchos::null;
-	OverlapY_ = Teuchos::null;
+      if (OverlapX_->getNumVectors()!=Xin.getNumVectors()) {
+        OverlapX_ = Teuchos::null;
+        OverlapY_ = Teuchos::null;
       }
     }
     if (OverlapX_==Teuchos::null) { // Need to allocate space for overlap X and Y
-      OverlapX_ = Teuchos::rcp( new Epetra_MultiVector(U_->RowMatrixColMap(), (*Xout)->NumVectors()) );
-      OverlapY_ = Teuchos::rcp( new Epetra_MultiVector(L_->RowMatrixRowMap(), (*Yout)->NumVectors()) );
+      OverlapX_ = Teuchos::rcp( new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(U_->getColMap(), Xout->getNumVectors()) );
+      OverlapY_ = Teuchos::rcp( new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(L_->getRowMap(), Yout->getNumVectors()) );
     }
-    if (!Trans) {
-      EPETRA_CHK_ERR(OverlapX_->Import(*(*Xout),*U_->Importer(), Insert)); // Import X values for solve
+    if (mode == Teuchos::NO_TRANS) {
+      OverlapX_->doImport(*Xout,*U_->getGraph()->getImporter(), Tpetra::INSERT); // Import X values for solve
     }
     else {
-      EPETRA_CHK_ERR(OverlapX_->Import(*(*Xout),*L_->Exporter(), Insert)); // Import X values for solve
+      OverlapX_->doImport(*Xout,*L_->getGraph()->getExporter(), Tpetra::INSERT); // Import X values for solve
     }
-    (*Xout) = OverlapX_;
-    (*Yout) = OverlapY_; // Set pointers for Xout and Yout to point to overlap space
+    Xout = OverlapX_;
+    Yout = OverlapY_; // Set pointers for Xout and Yout to point to overlap space
     //cout << "OverlapX_ = " << *OverlapX_ << endl;
   }
-  
-  return(0);
-}
-
-//=============================================================================
-// Non-member functions
-
-ostream& operator << (ostream& os, const Ifpack_CrsRiluk& A)
-{
-/*  Epetra_fmtflags olda = os.setf(ios::right,ios::adjustfield);
-  Epetra_fmtflags oldf = os.setf(ios::scientific,ios::floatfield);
-  int oldp = os.precision(12); */
-  int LevelFill = A.Graph().LevelFill();
-  int LevelOverlap = A.Graph().LevelOverlap();
-  Epetra_CrsMatrix & L = (Epetra_CrsMatrix &) A.L();
-  Epetra_CrsMatrix & U = (Epetra_CrsMatrix &) A.U();
-  Epetra_Vector & D = (Epetra_Vector &) A.D();
-
-  os.width(14);
-  os << endl;
-  os <<  "     Level of Fill = "; os << LevelFill;
-  os << endl;
-  os.width(14);
-  os <<  "     Level of Overlap = "; os << LevelOverlap;
-  os << endl;
-
-  os.width(14);
-  os <<  "     Lower Triangle = ";
-  os << endl;
-  os << L; // Let Epetra_CrsMatrix handle the rest.
-  os << endl;
-
-  os.width(14);
-  os <<  "     Inverse of Diagonal = ";
-  os << endl;
-  os << D; // Let Epetra_Vector handle the rest.
-  os << endl;
-
-  os.width(14);
-  os <<  "     Upper Triangle = ";
-  os << endl;
-  os << U; // Let Epetra_CrsMatrix handle the rest.
-  os << endl;
- 
-  // Reset os flags
-
-/*  os.setf(olda,ios::adjustfield);
-  os.setf(oldf,ios::floatfield);
-  os.precision(oldp); */
-
-  return os;
 }
 
 }//namespace Tifpack

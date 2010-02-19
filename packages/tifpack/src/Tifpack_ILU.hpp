@@ -120,7 +120,7 @@ public:
 	 must have type double. For overlap_mode, the ParameterEntry must have
 	 type Tpetra::CombineMode.
 	 */
-	int setParameters(Teuchos::ParameterList& parameterlist);
+	int setParameters(const Teuchos::ParameterList& parameterlist);
 	
 	//! If set true, transpose of this operator will be applied.
 	/*! This flag allows the transpose of the given operator to be used implicitly.  Setting this flag
@@ -454,7 +454,7 @@ void ILU::destroy()
 }
 
 //==========================================================================
-int ILU::setParameters(Teuchos::ParameterList& list)
+int ILU::setParameters(const Teuchos::ParameterList& list)
 {
 	relaxValue_ = list.get("fact: relax value", RelaxValue_);
 	athresh_ = list.get("fact: absolute threshold", Athresh_);

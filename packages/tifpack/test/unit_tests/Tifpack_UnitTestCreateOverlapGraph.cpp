@@ -25,11 +25,11 @@
 // ***********************************************************************
 
 
-/*! \file Tifpack_UnitTestTemplate.cpp
+/*! \file Tifpack_UnitTestCreateOverlapGraph.cpp
 
-\brief Tifpack Unit testing template.
+\brief Tifpack Unit test.
 
-This file demonstrates how you create a unit test for template code.
+This file unit-tests the CreateOverlapGraph function.
 
 */
 

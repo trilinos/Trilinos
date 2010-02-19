@@ -73,7 +73,7 @@ Relaxation<MatrixType>::~Relaxation() {
 
 //==========================================================================
 template<class MatrixType>
-void Relaxation<MatrixType>::setParameters(Teuchos::ParameterList& List)
+void Relaxation<MatrixType>::setParameters(const Teuchos::ParameterList& List)
 {
   Teuchos::ParameterList validparams;
   Tifpack::GetValidParameters(validparams);

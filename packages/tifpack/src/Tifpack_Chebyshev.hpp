@@ -110,7 +110,7 @@ public:
   //@{ \name Preconditioner computation methods
 
   //! Sets all the parameters for the preconditioner
-  void setParameters(Teuchos::ParameterList& params);
+  void setParameters(const Teuchos::ParameterList& params);
 
   //! Initialize
   void initialize();
@@ -345,7 +345,7 @@ Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::~Ch
 
 //==========================================================================
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-void Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::setParameters(Teuchos::ParameterList& List) {
+void Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::setParameters(const Teuchos::ParameterList& List) {
 
   Tifpack::GetParameter(List, "chebyshev: ratio eigenvalue", EigRatio_);
   Tifpack::GetParameter(List, "chebyshev: min eigenvalue", LambdaMin_);

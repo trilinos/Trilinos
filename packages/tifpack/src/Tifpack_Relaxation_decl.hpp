@@ -146,7 +146,7 @@ public:
   //@{ \name Preconditioner computation methods
 
   //! Sets all the parameters for the preconditioner
-  void setParameters(Teuchos::ParameterList& params);
+  void setParameters(const Teuchos::ParameterList& params);
 
   //! Initialize
   void initialize();

@@ -50,7 +50,7 @@ namespace Tifpack {
 
 /*! The IlukGraph class enables the construction of matrix graphs using level-fill algorithms.
   The only function required for construction is a getGlobalRowView capability, i.e., the graph that is passed in
- to the constructor must implement the RowGraph interface defined in Tpetra::RowGraph.hpp 
+ to the constructor must implement the RowGraph interface defined in Tpetra_RowGraph.hpp 
  
  
  <b>Constructing IlukGraph objects</b>
@@ -83,8 +83,7 @@ public:
    \param In
    LevelOverlap_in - The level of overlap between subdomains.
    
-   \warning Actual construction occurs in ConstructFilledGraph.  This allows error codes to 
-   be passed back to the user.
+   \warning Actual construction occurs in constructFilledGraph.
    */
   IlukGraph(const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > &Graph_in, int LevelFill_in, int LevelOverlap_in);
   
@@ -95,25 +94,22 @@ public:
   virtual ~IlukGraph();
   
   //!Set parameters using Teuchos::ParameterList object.
-  /* This method is only available if the Teuchos package is enabled.
+  /**
    This method recogizes two parameter names: Level_fill and Level_overlap.
    Both are case insensitive, and in both cases the ParameterEntry must
    have type int.
    */
-  void SetParameters(const Teuchos::ParameterList& parameterlist,
-                     bool cerr_warning_if_unused=false);
+  void setParameters(const Teuchos::ParameterList& parameterlist);
   
   //! This method performs the actual construction of the graph.
   /** 
    */
-  void ConstructFilledGraph();
+  void constructFilledGraph();
   
   //! Does the actual construction of the overlap matrix graph.
-  /* 
-   \return Integer error code, set to 0 if successful.
-   
+  /**
    */
-  void ConstructOverlapGraph();
+  void constructOverlapGraph();
   
   //! Returns the level of fill used to construct this graph.
   int getLevelFill() const {return(LevelFill_);}
@@ -122,19 +118,13 @@ public:
   int getLevelOverlap() const {return(LevelOverlap_);}
   
   //! Returns the graph of lower triangle of the ILU(k) graph as a Tpetra::CrsGraph.
-  Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> & getL_Graph() {return(*L_Graph_);}
+  const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& getL_Graph() const {return(L_Graph_);}
   
   //! Returns the graph of upper triangle of the ILU(k) graph as a Tpetra::CrsGraph.
-  Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> & getU_Graph() {return(*U_Graph_);}
-  
-  //! Returns the graph of lower triangle of the ILU(k) graph as a Tpetra::CrsGraph.
-  const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> & getL_Graph() const {return(*L_Graph_);}
-  
-  //! Returns the graph of upper triangle of the ILU(k) graph as a Tpetra::CrsGraph.
-  const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> & getU_Graph() const {return(*U_Graph_);}
+  const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& getU_Graph() const {return(U_Graph_);}
   
   //! Returns the the overlapped graph.
-  Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> * getOverlapGraph() const  {return(&*OverlapGraph_);}
+  const Teuchos::RCP<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& getOverlapGraph() const  {return(OverlapGraph_);}
 
   //! Returns the global number of diagonals in the ILU(k) graph.
   size_t getNumGlobalDiagonals() const { return NumGlobalDiagonals_; }
@@ -191,16 +181,15 @@ IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::~IlukGraph()
 
 //==============================================================================
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-void IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::SetParameters(const Teuchos::ParameterList& parameterlist,
-                                                               bool cerr_warning_if_unused)
+void IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::setParameters(const Teuchos::ParameterList& parameterlist)
 {
-  GetParameter(parameterlist, "LEVEL_FILL", LevelFill_);
-  GetParameter(parameterlist, "LEVEL_OVERLAP", LevelOverlap_);
+  GetParameter(parameterlist, "iluk level-of-fill", LevelFill_);
+  GetParameter(parameterlist, "iluk level-of-overlap", LevelOverlap_);
 }
 
 //==============================================================================
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-void IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::ConstructOverlapGraph() {
+void IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::constructOverlapGraph() {
   
   if (OverlapGraph_ == Teuchos::null) {
     OverlapGraph_ = CreateOverlapGraph(Graph_, LevelOverlap_);
@@ -209,11 +198,11 @@ void IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::ConstructOverlapGraph() {
 
 //==============================================================================
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
-void IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::ConstructFilledGraph() {
+void IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::constructFilledGraph() {
   size_t NumIn, NumL, NumU;
   bool DiagFound;
  
-  ConstructOverlapGraph();
+  constructOverlapGraph();
  
   L_Graph_ = Teuchos::rcp( new TpetraCrsGraphType(OverlapGraph_->getRowMap(), OverlapGraph_->getRowMap(),  0));
   U_Graph_ = Teuchos::rcp( new TpetraCrsGraphType(OverlapGraph_->getRowMap(), OverlapGraph_->getRowMap(),  0));
@@ -222,8 +211,8 @@ void IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::ConstructFilledGraph() {
   // Get Maximum Row length
   int MaxNumIndices = OverlapGraph_->getNodeMaxNumRowEntries();
  
-  Teuchos::Array<int> L(MaxNumIndices);
-  Teuchos::Array<int> U(MaxNumIndices);
+  Teuchos::Array<LocalOrdinal> L(MaxNumIndices);
+  Teuchos::Array<LocalOrdinal> U(MaxNumIndices);
  
   // First we copy the user's graph into L and U, regardless of fill level
  
@@ -290,7 +279,7 @@ void IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::ConstructFilledGraph() {
     std::vector<std::vector<int> > Levels(MaxRC);
     std::vector<int> LinkList(MaxRC);
     std::vector<int> CurrentLevel(MaxRC);
-    Teuchos::Array<int> CurrentRow(MaxRC+1);
+    Teuchos::Array<LocalOrdinal> CurrentRow(MaxRC+1);
     std::vector<int> LevelsRowU(MaxRC);
  
     for (int i=0; i<NumMyRows; i++)
@@ -394,7 +383,7 @@ void IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::ConstructFilledGraph() {
       // Diagonal
       
       TEST_FOR_EXCEPTION(Next != i, std::runtime_error,
-                         "Tifpack::IlukGraph::ConstructFilledGraph: FATAL: U has zero diagonal")
+                         "Tifpack::IlukGraph::constructFilledGraph: FATAL: U has zero diagonal")
 
       LevelsRowU[0] = CurrentLevel[Next];
       Next = LinkList[Next];

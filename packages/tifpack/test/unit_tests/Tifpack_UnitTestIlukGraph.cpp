@@ -69,20 +69,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(TifpackIlukGraph, IlukGraphTest0, LocalOrdinal
 
   Tifpack::IlukGraph<LocalOrdinal,GlobalOrdinal> iluk0_graph(crsgraph, fill_levels, overlap_levels);
 
-  iluk0_graph.ConstructFilledGraph();
+  iluk0_graph.constructFilledGraph();
 
   int num_procs = crsgraph->getMap()->getComm()->getSize();
   size_t num_global_elements = num_rows_per_proc * num_procs;
 
-  size_t num_global_rows = iluk0_graph.getL_Graph().getGlobalNumRows();
+  size_t num_global_rows = iluk0_graph.getL_Graph()->getGlobalNumRows();
 
   TEUCHOS_TEST_EQUALITY( num_global_rows, num_global_elements, out, success)
 
   //The number of nonzeros in an ILU(0) graph should be the same as the
   //number of nonzeros in the input graph:
 
-  size_t nnz0 = iluk0_graph.getL_Graph().getGlobalNumEntries() +
-                iluk0_graph.getU_Graph().getGlobalNumEntries() +
+  size_t nnz0 = iluk0_graph.getL_Graph()->getGlobalNumEntries() +
+                iluk0_graph.getU_Graph()->getGlobalNumEntries() +
                 iluk0_graph.getNumGlobalDiagonals();
 
   size_t nnz_input = crsgraph->getGlobalNumEntries();
@@ -93,15 +93,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(TifpackIlukGraph, IlukGraphTest0, LocalOrdinal
 
   Tifpack::IlukGraph<int,int> iluk2_graph(crsgraph, fill_levels, overlap_levels);
 
-  iluk2_graph.ConstructFilledGraph();
+  iluk2_graph.constructFilledGraph();
 
   TEUCHOS_TEST_EQUALITY( num_global_rows, num_global_elements, out, success)
 
   //The number of nonzeros in an ILU(2) graph should be greater than the
   //number of nonzeros in the ILU(0) graph:
 
-  size_t nnz2 = iluk2_graph.getL_Graph().getGlobalNumEntries() +
-                iluk2_graph.getU_Graph().getGlobalNumEntries() +
+  size_t nnz2 = iluk2_graph.getL_Graph()->getGlobalNumEntries() +
+                iluk2_graph.getU_Graph()->getGlobalNumEntries() +
                 iluk2_graph.getNumGlobalDiagonals();
 
   bool nnz2_greater_than_nnz0 = nnz2 > nnz0;

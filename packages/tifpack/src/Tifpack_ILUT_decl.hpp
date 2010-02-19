@@ -106,7 +106,7 @@ public:
      threshold entries must have type double and overlap_mode must have type
      Tpetra::CombineMode.
   */
-  void setParameters(Teuchos::ParameterList& params);
+  void setParameters(const Teuchos::ParameterList& params);
 
   //! Initialize ILUT preconditioner object.
   /*! Clear away any previously-allocated L and U objects.
