@@ -50,16 +50,20 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
   tr_tab = (Zoltan_Arc*) ZOLTAN_MALLOC(sizeof(Zoltan_Arc)*matrix->nPins*2);
   if (matrix->nPins && tr_tab == NULL) MEMORY_ERROR;
 
+  pinwgt = (float*)ZOLTAN_MALLOC(matrix->nPins*2*matrix->pinwgtdim*sizeof(float));
+  for (i = 0 ; i < 2 ; ++i) /* Copy pin weights */
+    memcpy(pinwgt + i*matrix->nPins*matrix->pinwgtdim*sizeof(float),
+	   matrix->pinwgt, matrix->nPins*matrix->pinwgtdim*sizeof(float));
+  ZOLTAN_FREE(&matrix->pinwgt);
+
   for (i=0, cnt = 0 ; i < matrix->nY ; ++i) {
     for (j = matrix->ystart[i] ; j < matrix->yend[i] ; ++j) {
-      tr_tab[cnt].yGNO = matrix->yGNO[i] + bipartite*matrix->globalX;   /* Normal arc */
-      tr_tab[cnt].pinGNO = matrix->pinGNO[j];
-      tr_tab[cnt].offset = j;
+      tr_tab[cnt].GNO[0] = matrix->yGNO[i] + bipartite*matrix->globalX;   /* Normal arc */
+      tr_tab[cnt].GNO[1] = matrix->pinGNO[j];
       cnt ++;
 
-      tr_tab[cnt].yGNO = matrix->pinGNO[j];                        /* Symmetric arc */
-      tr_tab[cnt].pinGNO = matrix->yGNO[i] + bipartite*matrix->globalX; /* new ordering */
-      tr_tab[cnt].offset = j;
+      tr_tab[cnt].GNO[0] = matrix->pinGNO[j];                        /* Symmetric arc */
+      tr_tab[cnt].GNO[1] = matrix->yGNO[i] + bipartite*matrix->globalX; /* new ordering */
       cnt ++;
     }
   }
@@ -72,7 +76,6 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
   ZOLTAN_FREE(&matrix->ystart);
   ZOLTAN_FREE(&matrix->yGNO);
   ZOLTAN_FREE(&matrix->pinGNO);
-  pinwgt = matrix->pinwgt;
 
   matrix->ystart = (int*) ZOLTAN_MALLOC((matrix->nY+1)*sizeof(int));
   if (matrix->ystart == NULL) MEMORY_ERROR;

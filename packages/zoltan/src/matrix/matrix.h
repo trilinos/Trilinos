@@ -97,9 +97,8 @@ typedef struct Zoltan_matrix_2d_ {
 
 /* Auxiliary struct used internaly */
 typedef struct Zoltan_Arc_ {
-    int yGNO;
-    int pinGNO;
-    int offset;
+    int GNO[2];
+    int part_y;
 } Zoltan_Arc;
 
 /*--------------

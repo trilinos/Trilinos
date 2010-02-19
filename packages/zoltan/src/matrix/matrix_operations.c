@@ -29,14 +29,6 @@ void intSort2asc3(int *, int);
 /* Auxiliary functions declarations */
 /************************************/
 
-/* static int */
-/* compar_arcs (const Zoltan_Arc* e1, const Zoltan_Arc* e2); */
-
-/* static int */
-/* compar_int (const int *e1, const int *e2) { */
-/*   return (e1-e2); */
-/* } */
-
 /* Functions used when we merge duplicate arcs */
 
 /* Definition of the merge wgt operator : arguments are accumulation wgt, partial wgt, wgt dim */
@@ -58,16 +50,6 @@ wgtFctMax(float* current, float* new, int dim);
 /****************************************/
 /* Function definitions are here        */
 /****************************************/
-
-/*
-static  int
-compar_arcs (const Zoltan_Arc* e1, const Zoltan_Arc* e2)
-{
-  if (e1->yGNO == e2->yGNO)
-    return (e1->pinGNO - e2->pinGNO);
-  return (e1->yGNO - e2->yGNO);
-}
-*/
 
 /* This function compare if the wgt are the same for both arcs*/
 static int
@@ -113,9 +95,12 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   static char *yo = "Zoltan_Matrix_Remove_DupArcs";
   int ierr = ZOLTAN_OK;
   WgtFctPtr wgtfct;
-  int nY, nPin;
   int i;
-  int prev_pinGNO;
+  ZOLTAN_MAP *nnz_map=NULL, *y_map = NULL;
+  int *ysize = NULL;
+  int *ptrGNO;
+  int *tabGNO;
+  int *perm;
 #ifdef CC_TIMERS
   double time;
 #endif
@@ -137,62 +122,76 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
     wgtfct = &wgtFctAdd;
   }
 
-  intSort2asc3((int*)arcs, size);
-/*   qsort ((void*)arcs, size, sizeof(Zoltan_Arc), */
-/* 	 (int (*)(const void*,const void*))compar_arcs); */
+  ZOLTAN_FREE(&outmat->yGNO);
 
-#ifdef CC_TIMERS
-  fprintf(stderr, "(%d) remove arcs (qsort): %g\n", zz->Proc, MPI_Wtime()-time);
-#endif
+  nnz_map = Zoltan_Map_Create(zz, 0, 2, 0, size);
+  if (nnz_map == NULL) MEMORY_ERROR;
+  y_map = Zoltan_Map_Create(zz, 0, 1, 0, size);
+  if (y_map == NULL) MEMORY_ERROR;
+  ysize = (int*) ZOLTAN_CALLOC(size, sizeof(int));
+  if (size > 0 && ysize == NULL) MEMORY_ERROR;
 
-  prev_pinGNO = -2;
-  for (i = 0, nY=-1, nPin=-1; i < size ; ++i) {
-    int new = 0;
-    int yGNO = arcs[i].yGNO;
-    int pinGNO = arcs[i].pinGNO;
-
-    new = ((nY < 0) || (outmat->yGNO[nY] != yGNO));
-    if (new) {
-      nY++;
-      outmat->ystart[nY] = nPin + 1;
-      outmat->yGNO[nY] = yGNO;
-      prev_pinGNO = -1;
-      if (pinGNO < 0)
-	continue;
-    }
-    new = new ||(pinGNO != prev_pinGNO);
-    if (new) { /* New edge */
-      nPin ++;
-      outmat->pinGNO[nPin] = pinGNO;
-      memcpy(outmat->pinwgt + nPin*outmat->pinwgtdim, pinwgt + arcs[i].offset*outmat->pinwgtdim,
-	     outmat->pinwgtdim*sizeof(float));
-    }
-    else { /* Duplicate */
-      wgtfct(outmat->pinwgt + nPin* outmat->pinwgtdim,
-	     pinwgt + arcs[i].offset*outmat->pinwgtdim, outmat->pinwgtdim);
-    }
-    prev_pinGNO = outmat->pinGNO[nPin];
+  /* First remove duplicated nnz and extract local yGNO*/
+  for(i = 0; i < size ; ++i) {
+    int position;
+    /* TODO: Upgrade map to do find and add */
+    Zoltan_Map_Add(zz, nnz_map, arcs[i].GNO, (void*)i);
+    position = Zoltan_Map_Size(zz, y_map);
+    Zoltan_Map_Add(zz, y_map, &arcs[i].GNO[0], (void*)position);
+    ysize[position] += 1; /* One arc for yGNO */
   }
-  nY ++;
-  outmat->ystart[nY] = nPin+1; /* compact mode */
-  outmat->nPins = nPin+1;
-  outmat->nY = nY;
 
-  /* Try to minimize memory */
-  /* We reduce memory, thus I don't think these realloc can fail */
-  if (outmat->yend != outmat->ystart + 1)
-    ZOLTAN_FREE(&outmat->yend);
+  /* Now order yGNO */
+  outmat->nY = Zoltan_Map_Size(zz, y_map);
+  outmat->yGNO = (int*) ZOLTAN_MALLOC(outmat->nY*sizeof(int));
+  if (outmat->nY > 0 && outmat->yGNO == NULL) MEMORY_ERROR;
+  perm = (int*) ZOLTAN_MALLOC(outmat->nY*sizeof(int));
+  if (outmat->nY > 0 && perm == NULL) MEMORY_ERROR;
+  for (i = 0 ; i < outmat->nY ; ++i)
+    perm[i] = i;
 
-  outmat->pinGNO = (int *) ZOLTAN_REALLOC(outmat->pinGNO, outmat->nPins * sizeof(int)) ;
-  outmat->pinwgt = (float *) ZOLTAN_REALLOC(outmat->pinwgt,
-			       outmat->nPins*outmat->pinwgtdim*sizeof(float));
+  Zoltan_Comm_Sort_Ints(outmat->yGNO, perm, outmat->nY);
 
-  outmat->yend = outmat->ystart + 1;
+  /* Build indirection table */
+  outmat->ystart = (int*) ZOLTAN_MALLOC((outmat->nY+1)*sizeof(int));
+  if (outmat->ystart == NULL) MEMORY_ERROR;
+
+  Zoltan_Map_First(zz, y_map, &ptrGNO, (void**)&i);
+  while (ptrGNO != NULL) {
+    outmat->ystart[perm[i]+1] = ysize[i]; /* Trick +1 to allow easy build of indirection */
+    Zoltan_Map_Next(zz, y_map, &ptrGNO, (void**)&i);
+  }
+  outmat->ystart[0] = 0;
+  for (i = 1 ; i < outmat->nY + 1 ; ++i)
+    outmat->ystart[i] += outmat->ystart[i-1];
+
+  /* Now put the nnz at the correct place */
+  memset(ysize, 0, outmat->nY*sizeof(int));
+  Zoltan_Map_First(zz, nnz_map, &tabGNO, (void**)&i);
+  while (tabGNO != NULL) {
+    int nnz_index;
+    int y_index;
+
+    Zoltan_Map_Find(zz, y_map, &tabGNO[0], (void**)&y_index);
+    y_index = perm[y_index];
+
+    nnz_index = outmat->ystart[y_index] + ysize[y_index];
+    ysize[y_index] ++;
+    outmat->pinGNO[nnz_index] = tabGNO[1];
+    memcpy(outmat->pinwgt+nnz_index*sizeof(float)*outmat->pinwgtdim,
+	   pinwgt+i*sizeof(float)*outmat->pinwgtdim,
+	   outmat->pinwgtdim*sizeof(float));
+    Zoltan_Map_Next(zz, nnz_map, &tabGNO, (void**)&i);
+  }
+
+  Zoltan_Map_Destroy(zz, nnz_map);
+  Zoltan_Map_Destroy(zz, y_map);
 
 #ifdef CC_TIMERS
   fprintf(stderr, "(%d) remove arcs: %g\n", zz->Proc, MPI_Wtime()-time);
 #endif
 
+ End:
   ZOLTAN_TRACE_EXIT(zz, yo);
   return (ierr);
 }
@@ -219,14 +218,12 @@ Zoltan_Matrix_Remove_Duplicates(ZZ *zz, Zoltan_matrix inmat, Zoltan_matrix *outm
 
   for (i = 0, cnt=0 ; i < inmat.nY; i++) {
     /* Fake arc in order to be sure to keep this vertex */
-    arcs[cnt].yGNO = inmat.yGNO[i];
-    arcs[cnt].pinGNO = -1;
-    arcs[cnt].offset = -1;
+    arcs[cnt].GNO[0] = inmat.yGNO[i];
+    arcs[cnt].GNO[1] = -1;
     cnt++;
     for (j = inmat.ystart[i]; j < inmat.yend[i]; j++) {
-      arcs[cnt].yGNO = inmat.yGNO[i];
-      arcs[cnt].pinGNO = inmat.pinGNO[j];
-      arcs[cnt].offset = j;
+      arcs[cnt].GNO[0] = inmat.yGNO[i];
+      arcs[cnt].GNO[1] = inmat.pinGNO[j];
       cnt ++;
     }
   }
@@ -280,8 +277,8 @@ Zoltan_Matrix_Construct_CSR(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
 
   /* Count degree for each vertex */
   for (i = 0 ; i < size ; i++) {
-    int lno = arcs[i].yGNO - offset;
-    if (arcs[i].pinGNO != -1)
+    int lno = arcs[i].GNO[0] - offset;
+    if (arcs[i].GNO[1] != -1)
       tmparray[lno] ++;
   }
 
@@ -294,13 +291,13 @@ Zoltan_Matrix_Construct_CSR(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   memset(tmparray, 0, sizeof(int)*outmat->nY);
   outmat->nPins = 0;
   for(i = 0 ; i <size; i++) {
-    int lno = arcs[i].yGNO - offset;
+    int lno = arcs[i].GNO[0] - offset;
     int index;
-    if (arcs[i].pinGNO == -1)
+    if (arcs[i].GNO[1] == -1)
       continue;
     index = outmat->ystart[lno] + tmparray[lno];
-    outmat->pinGNO[index] = arcs[i].pinGNO;
-    memcpy(outmat->pinwgt + index*outmat->pinwgtdim, pinwgt + arcs[i].offset*outmat->pinwgtdim,
+    outmat->pinGNO[index] = arcs[i].GNO[1];
+    memcpy(outmat->pinwgt + index*outmat->pinwgtdim, pinwgt + i*outmat->pinwgtdim,
 	   outmat->pinwgtdim*sizeof(float));
     tmparray[lno]++;
     outmat->nPins ++;

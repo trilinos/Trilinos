@@ -241,9 +241,8 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
       vtx_Proc_x = VTX_TO_PROC_X(outmat, vtx_gno);
 
       proclist[cnt] = procptr[edge_Proc_y * nProc_x + vtx_Proc_x];
-      sendbuf[cnt].yGNO = edge_gno;
-      sendbuf[cnt].pinGNO = vtx_gno;
-      sendbuf[cnt].offset = j;
+      sendbuf[cnt].GNO[0] = edge_gno;
+      sendbuf[cnt].GNO[1] = vtx_gno;
       cnt++;
     }
   }
@@ -274,9 +273,6 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
     msg_tag--;
     Zoltan_Comm_Do_Post(plan, msg_tag, (char *) outmat->mtx.pinwgt, outmat->mtx.pinwgtdim*sizeof(float),
 		   (char *) tmpwgtarray);
-    for (i = 0 ; i < outmat->mtx.nPins ; ++i) { /* Fill indirection structure */
-      nonzeros[i].offset = i;
-    }
     Zoltan_Comm_Do_Wait(plan, msg_tag, (char *) outmat->mtx.pinwgt, outmat->mtx.pinwgtdim*sizeof(float),
 		   (char *) tmpwgtarray);
     ZOLTAN_FREE(&outmat->mtx.pinwgt);
@@ -303,9 +299,8 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
     for (i = 0 ; i < nEdge ; ++i) {
       int offset = dist_y[myProc_y];
       j=outmat->mtx.nPins + i;
-      nonzeros[j].yGNO = offset + i;
-      nonzeros[j].pinGNO = -1;
-      nonzeros[j].offset = 0;
+      nonzeros[j].GNO[0] = offset + i;
+      nonzeros[j].GNO[1] = -1;
     }
 
     Zoltan_Matrix_Remove_DupArcs(zz, outmat->mtx.nPins + nEdge, (Zoltan_Arc*)nonzeros, tmpwgtarray,
