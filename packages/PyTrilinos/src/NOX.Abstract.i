@@ -126,7 +126,7 @@ NOX.Abstract provides the following user-level classes:
 // if possible
 %typemap(out) NOX::Abstract::Vector & (NOX::Epetra::Vector* nevResult  = NULL,
 				       Epetra_NumPyVector*  enpvResult = NULL)
-%{
+{
   nevResult = dynamic_cast<NOX::Epetra::Vector*>($1);
   if (nevResult == NULL)
   {
@@ -139,12 +139,12 @@ NOX.Abstract provides the following user-level classes:
     $result = SWIG_NewPointerObj((void*)enpvResult, $descriptor(Epetra_NumPyVector*),
 				 %convertptr_flags);
   }
-%}
+}
 
 // Downcast NOX::Abstract::Group return arguments to NOX::Epetra::Group,
 // if possible
 %typemap(out) NOX::Abstract::Group & (NOX::Epetra::Group* negResult = NULL)
-%{
+{
   negResult = dynamic_cast<NOX::Epetra::Group*>($1);
   if (negResult == NULL)
   {
@@ -156,7 +156,7 @@ NOX.Abstract provides the following user-level classes:
     $result = SWIG_NewPointerObj((void*)negResult, $descriptor(NOX::Epetra::Group*),
 				 %convertptr_flags);
   }
-%}
+}
 #endif
 
 ////////////////////////////////
