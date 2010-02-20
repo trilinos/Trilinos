@@ -21,20 +21,21 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     ROpNormInf_UnitTests.cpp
     ROpSum_UnitTests.cpp
     ROpWeightedNorm2_UnitTests.cpp
-    TOpSetSubVector_UnitTests.cpp
+    TOpAXPY_UnitTests.cpp
     TOpAbs_UnitTests.cpp
     TOpAddScalar_UnitTests.cpp
     TOpAssignScalar_UnitTests.cpp
     TOpAssignVectors_UnitTests.cpp
-    TOpAXPY_UnitTests.cpp
     TOpEleWiseConjProd_UnitTests.cpp
     TOpEleWiseDivide_UnitTests.cpp
-    TOpEleWiseProd_UnitTests.cpp
     TOpEleWiseProdUpdate_UnitTests.cpp
+    TOpEleWiseProd_UnitTests.cpp
     TOpLinearCombination_UnitTests.cpp
     TOpRandomize_UnitTests.cpp
     TOpReciprocal_UnitTests.cpp
     TOpScaleVector_UnitTests.cpp
+    TOpSetAssendingValues_UnitTests.cpp
+    TOpSetSubVector_UnitTests.cpp
     ../support/supportUnitTestsHelpers.cpp
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   ARGS "--error-tol-slack=1e+2"

@@ -761,7 +761,7 @@ private:
 //
 
 
-/** \brief Base class for transformations for 1 input and 1 output vector. */
+/** \brief Base class for transformations for 0 input and 1 output vector. */
 template<class Scalar, class EleWiseTransformation>
 class TOp_0_1_Base : public RTOpT<Scalar>
 {
@@ -804,6 +804,68 @@ public:
       else {
         for( Teuchos_Index i = 0; i < subDim; ++i, z0_val += z0_s )
           eleWiseTransformation_( *z0_val);
+      }
+      
+    }
+  
+  //@}
+  
+private:
+
+  EleWiseTransformation eleWiseTransformation_;
+
+};
+
+
+/** \brief Base class for coordinate variant transformations for 0 input and 1
+ * output vector. */
+template<class Scalar, class EleWiseTransformation>
+class TOp_0_1_CoordVariantBase : public RTOpT<Scalar>
+{
+public:
+
+  /** \brief . */
+  TOp_0_1_CoordVariantBase(
+    EleWiseTransformation eleWiseTransformation = EleWiseTransformation()
+    )
+    : eleWiseTransformation_(eleWiseTransformation)
+    {}
+
+  /** @name Overridden from RTOpT */
+  //@{
+
+  /** \brief This RTOp is NOT coordinate invariant! . */
+  bool coord_invariant_impl() const { return false; }
+
+  /** \brief . */
+  void apply_op_impl(
+    const ArrayView<const ConstSubVectorView<Scalar> > &sub_vecs,
+    const ArrayView<const SubVectorView<Scalar> > &targ_sub_vecs,
+    const Ptr<ReductTarget> &reduct_obj_inout
+    ) const
+    {
+      typedef typename Teuchos::ArrayRCP<const Scalar>::iterator const_iter_t;
+      typedef typename Teuchos::ArrayRCP<Scalar>::iterator iter_t;
+
+#ifdef TEUCHOS_DEBUG
+      validate_apply_op<Scalar>(*this, 0, 1, false,
+        sub_vecs, targ_sub_vecs, reduct_obj_inout.getConst());
+#endif
+      
+      const RTOpPack::index_type subDim = targ_sub_vecs[0].subDim();
+
+      iter_t z0_val = targ_sub_vecs[0].values().begin();
+      const ptrdiff_t z0_s = targ_sub_vecs[0].stride();
+
+      RTOpPack::index_type global_i = targ_sub_vecs[0].globalOffset();
+
+      if ( z0_s == 1 ) {
+        for( Teuchos_Index i = 0; i < subDim; ++i, ++global_i )
+          eleWiseTransformation_(global_i, *z0_val++);
+      }
+      else {
+        for( Teuchos_Index i = 0; i < subDim; ++i, z0_val += z0_s, ++global_i )
+          eleWiseTransformation_(global_i, *z0_val);
       }
       
     }
