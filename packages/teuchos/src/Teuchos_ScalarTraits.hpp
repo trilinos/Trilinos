@@ -62,32 +62,12 @@
 #include <gmpxx.h>
 #endif
 
-/*! \struct Teuchos::ScalarTraits
-    \brief This structure defines some basic traits for a scalar field type.
-
-    Scalar traits are an essential part of templated codes.  This structure offers
-    the basic traits of the templated scalar type, like defining zero and one,
-    and basic functions on the templated scalar type, like performing a square root.
-
-    The functions in the templated base unspecialized struct are designed not to
-    compile (giving a nice compile-time error message) and therefore specializations
-    must be written for Scalar types actually used.
-
-    \note 
-     <ol>
-       <li> The default defined specializations are provided for \c int, \c float, and \c double.
-     	 <li> ScalarTraits can be used with the Arbitrary Precision Library ( \c http://crd.lbl.gov/~dhbailey/mpdist/ )
-            by configuring Teuchos with \c --enable-teuchos-arprec and giving the appropriate paths to ARPREC.
-            Then ScalarTraits has the specialization: \c mp_real.
-     	 <li> If Teuchos is configured with \c --enable-teuchos-std::complex then ScalarTraits also has
-            a parital specialization for all std::complex numbers of the form <tt>std::complex<T></tt>.
-     </ol>
-*/
-
 
 #include "Teuchos_ScalarTraitsDecl.hpp"
 
+
 namespace Teuchos {
+
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
 
@@ -136,6 +116,7 @@ struct ScalarTraits<char>
   static inline char pow(char x, char y) { return (char) std::pow((double)x,(double)y); }
 };
 
+
 template<>
 struct ScalarTraits<short int>
 {
@@ -167,6 +148,7 @@ struct ScalarTraits<short int>
   static inline short int squareroot(short int x) { return (short int) std::sqrt((double) x); }
   static inline short int pow(short int x, short int y) { return (short int) std::pow((double)x,(double)y); }
 };
+
 
 template<>
 struct ScalarTraits<int>
@@ -201,6 +183,7 @@ struct ScalarTraits<int>
   static inline int pow(int x, int y) { return (int) std::pow((double)x,(double)y); }
 };
 
+
 template<>
 struct ScalarTraits<unsigned int>
 {
@@ -232,6 +215,7 @@ struct ScalarTraits<unsigned int>
   static inline unsigned int squareroot(unsigned int x) { return (unsigned int) std::sqrt((double) x); }
   static inline unsigned int pow(unsigned int x, unsigned int y) { return (unsigned int) std::pow((double)x,(double)y); }
 };
+
 
 template<>
 struct ScalarTraits<long int>
@@ -265,6 +249,7 @@ struct ScalarTraits<long int>
   static inline long int pow(long int x, long int y) { return (long int) std::pow((double)x,(double)y); }
 };
 
+
 template<>
 struct ScalarTraits<long unsigned int>
 {
@@ -296,6 +281,7 @@ struct ScalarTraits<long unsigned int>
   static inline long unsigned int squareroot(long unsigned int x) { return (long unsigned int) std::sqrt((double) x); }
   static inline long unsigned int pow(long unsigned int x, long unsigned int y) { return (long unsigned int) std::pow((double)x,(double)y); }
 };
+
 
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
 template<>
@@ -331,9 +317,11 @@ struct ScalarTraits<long long int>
 };
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
 
+
 #ifndef __sun
 extern TEUCHOS_LIB_DLL_EXPORT const float flt_nan;
 #endif
+
  
 template<>
 struct ScalarTraits<float>
@@ -426,9 +414,11 @@ struct ScalarTraits<float>
   static inline float pow(float x, float y) { return std::pow(x,y); }
 };
 
+
 #ifndef __sun
 extern TEUCHOS_LIB_DLL_EXPORT const double dbl_nan;
 #endif
+
  
 template<>
 struct ScalarTraits<double>
@@ -536,9 +526,13 @@ struct ScalarTraits<double>
   static inline double pow(double x, double y) { return std::pow(x,y); }
 };
 
+
 #ifdef HAVE_TEUCHOS_QD
+
+
 bool operator&&(const dd_real &a, const dd_real &b);
 bool operator&&(const qd_real &a, const qd_real &b);
+
 
 template<>
 struct ScalarTraits<dd_real>
@@ -597,6 +591,7 @@ struct ScalarTraits<dd_real>
   static inline dd_real pow(dd_real x, dd_real y) { return pow(x,y); }
 };
 
+
 template<>
 struct ScalarTraits<qd_real>
 {
@@ -654,9 +649,12 @@ struct ScalarTraits<qd_real>
   static inline qd_real pow(qd_real x, qd_real y) { return pow(x,y); }
 };
 
+
 #endif  // HAVE_TEUCHOS_QD
 
+
 #ifdef HAVE_TEUCHOS_GNU_MP
+
 
 extern gmp_randclass gmp_rng; 
 
@@ -740,10 +738,13 @@ struct ScalarTraits<mp_real>
   static inline mp_real pow(mp_real x, mp_real y) { return pow(x,y); }
   // Todo: RAB: 2004/05/28: Add nan() and isnaninf() functions when needed!
 };
+
   
 #endif // HAVE_TEUCHOS_ARPREC
+
  
 #ifdef HAVE_TEUCHOS_COMPLEX
+
 
 // Partial specialization for std::complex numbers templated on real type T
 template<class T> 
@@ -809,10 +810,14 @@ struct ScalarTraits<
   static inline ComplexT pow(ComplexT x, ComplexT y) { return pow(x,y); }
 };
 
+
 #endif //  HAVE_TEUCHOS_COMPLEX
+
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
+
 } // Teuchos namespace
+
 
 #endif // _TEUCHOS_SCALARTRAITS_HPP_

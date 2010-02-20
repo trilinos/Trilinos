@@ -35,7 +35,9 @@
  
 #include "Teuchos_ConfigDefs.hpp"
 
+
 namespace Teuchos {
+
 
 template <typename T>
 struct UndefinedScalarTraits
@@ -44,30 +46,31 @@ struct UndefinedScalarTraits
   static inline T notDefined() { return T::this_type_is_missing_a_specialization(); }
 };
 
+
 /* This is the default structure used by ScalarTraits<T> to produce a compile time
 	error when the specialization does not exist for type <tt>T</tt>.
 */
 
-/*! \struct Teuchos::ScalarTraits
-    \brief This structure defines some basic traits for a scalar field type.
 
-    Scalar traits are an essential part of templated codes.  This structure offers
-    the basic traits of the templated scalar type, like defining zero and one,
-    and basic functions on the templated scalar type, like performing a square root.
-
-    The functions in the templated base unspecialized struct are designed not to
-    compile (giving a nice compile-time error message) and therefore specializations
-    must be written for Scalar types actually used.
-
-    \note 
-     <ol>
-       <li> The default defined specializations are provided for \c int, \c float, and \c double.
-     	 <li> ScalarTraits can be used with the Arbitrary Precision Library ( \c http://crd.lbl.gov/~dhbailey/mpdist/ )
-            by configuring Teuchos with \c --enable-teuchos-arprec and giving the appropriate paths to ARPREC.
-            Then ScalarTraits has the specialization: \c mp_real.
-     	 <li> If Teuchos is configured with \c --enable-teuchos-std::complex then ScalarTraits also has
-            a parital specialization for all std::complex numbers of the form <tt>std::complex<T></tt>.
-     </ol>
+/*! \brief This structure defines some basic traits for a scalar field type.
+ *
+ * Scalar traits are an essential part of templated codes.  This structure offers
+ * the basic traits of the templated scalar type, like defining zero and one,
+ * and basic functions on the templated scalar type, like performing a square root.
+ * 
+ * The functions in the templated base unspecialized struct are designed not to
+ * compile (giving a nice compile-time error message) and therefore specializations
+ * must be written for Scalar types actually used.
+ * 
+ * \note <ol>
+ * 
+ * <li> The default defined specializations are provided for \c int, \c float, and \c double.
+ * 
+ * <li> If Teuchos is configured with </tt>Teuchos_ENABLE_COMPLEX=ON</tt> then
+ * ScalarTraits also has a parital specialization for all
+ * <tt>std::complex</tt> numbers of the form <tt>std::complex<T></tt>.
+ * 
+ * </ol>
 */
 template <typename T>
 struct ScalarTraits
@@ -84,7 +87,10 @@ struct ScalarTraits
   static const bool isOrdinal = false;
   //! Determines if scalar type supports relational operators such as <, >, <=, >=.
   static const bool isComparable = false;
-  //! Determines if scalar type have machine-specific parameters (i.e. eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(), rmax() are supported)
+  /** \brief Determines if scalar type have machine-specific parameters
+   * (i.e. eps(), sfmin(), base(), prec(), t(), rnd(), emin(), rmin(), emax(),
+   * rmax() are supported).
+   */
   static const bool hasMachineParameters = false;
   //! Returns relative machine precision.
   static inline magnitudeType eps()   { return UndefinedScalarTraits<T>::notDefined(); }
@@ -133,7 +139,9 @@ struct ScalarTraits
   //! Returns the result of raising one scalar \c x to the power \c y.
   static inline T pow(T x, T y) { return UndefinedScalarTraits<T>::notDefined(); }
 };
+
   
 } // Teuchos namespace
+
 
 #endif // _TEUCHOS_SCALARTRAITS_DECL_HPP_
