@@ -62,6 +62,7 @@ NOX.Epetra.Interface provides the following user-level classes:
 #include "Teuchos_PythonParameter.h"
 
 // Epetra includes
+#include "Epetra_LocalMap.h"
 #include "Epetra_SrcDistObject.h"
 #include "Epetra_Operator.h"
 #include "Epetra_RowMatrix.h"
