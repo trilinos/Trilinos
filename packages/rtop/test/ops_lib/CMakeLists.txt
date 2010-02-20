@@ -9,6 +9,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SOURCES
     ROpCountNanInf_UnitTests.cpp
     ROpDotProd_UnitTests.cpp
+    ROpGetElement_UnitTests.cpp
     ROpGetSubVector_UnitTests.cpp
     ROpMaxIndexLessThanBound_UnitTests.cpp
     ROpMaxIndex_UnitTests.cpp
