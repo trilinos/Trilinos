@@ -249,8 +249,12 @@ bool compareFloatingArrays(
  * \ingroup teuchos_testing_grp
  */
 #define TEUCHOS_TEST_ASSERT( v1, out, success ) \
-  TEUCHOS_TEST_EQUALITY_CONST( v1, true, out, success )
-
+  { \
+    const bool l_result = v1; \
+    (out) << #v1" = "<<l_result<<" == true : "; \
+    (out) << TEUCHOS_PASS_FAIL(l_result) << "\n"; \
+    if (!l_result) (success) = false; \
+  }
 
 /** \brief Test that two values are equal.
  *

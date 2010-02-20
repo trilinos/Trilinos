@@ -580,48 +580,56 @@ void maxLessThanBound( const VectorBase<Scalar>& x, const Scalar &bound,
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void set_ele( Ordinal i, Scalar alpha, VectorBase<Scalar>* v )
 { set_ele(i, alpha, Teuchos::ptr(v)); }
 
 
 /** \brief Deprecated. */
 template<class Scalar> inline
+THYRA_DEPRECATED
 void put_scalar( const Scalar& alpha, VectorBase<Scalar>* y )
 { put_scalar<Scalar>(alpha,Teuchos::ptr(y)); }
 
 
 /** \brief Deprecated. */
 template<class Scalar> inline
+THYRA_DEPRECATED
 void copy( const VectorBase<Scalar>& x, VectorBase<Scalar>* y )
 { copy(x,Teuchos::ptr(y)); }
 
 
 /** \brief Deprecated. */
 template<class Scalar> inline
+THYRA_DEPRECATED
 void add_scalar( const Scalar& alpha, VectorBase<Scalar>* y )
 { add_scalar(alpha,Teuchos::ptr(y)); }
 
 
 /** \brief Deprecated. */
 template<class Scalar> inline
+THYRA_DEPRECATED
 void scale( const Scalar& alpha, VectorBase<Scalar>* y )
 { scale(alpha,Teuchos::ptr(y)); }
 
 
 /** \brief Deprecated. */
 template<class Scalar> inline
+THYRA_DEPRECATED
 void abs( VectorBase<Scalar>* y, const VectorBase<Scalar>& x )
 { abs(Teuchos::ptr(y),x); }
 
 
 /** \brief Deprecated. */
 template<class Scalar> inline
+THYRA_DEPRECATED
 void reciprocal( VectorBase<Scalar>* y, const VectorBase<Scalar>& x )
 { reciprocal(Teuchos::ptr(y),x); }
 
 
 /** \brief Deprecated. */
 template<class Scalar> inline
+THYRA_DEPRECATED
 void ele_wise_prod( const Scalar& alpha, const VectorBase<Scalar>& x,
   const VectorBase<Scalar>& v, VectorBase<Scalar>* y )
 { ele_wise_prod(alpha, x, v, Teuchos::ptr(y)); }
@@ -629,6 +637,7 @@ void ele_wise_prod( const Scalar& alpha, const VectorBase<Scalar>& x,
 
 /** \brief Deprecated. */
 template<class Scalar> inline
+THYRA_DEPRECATED
 void ele_wise_conj_prod( const Scalar& alpha, const VectorBase<Scalar>& x,
   const VectorBase<Scalar>& v, VectorBase<Scalar>* y )
 { ele_wise_conj_prod(alpha,x,v,Teuchos::ptr(y)); }
@@ -636,6 +645,7 @@ void ele_wise_conj_prod( const Scalar& alpha, const VectorBase<Scalar>& x,
 
 /** \brief Deprecated. */
 template<class Scalar> inline
+THYRA_DEPRECATED
 void Vp_StVtV( VectorBase<Scalar>* y, const Scalar& alpha,
   const VectorBase<Scalar>& x, const VectorBase<Scalar>& v)
 { Vp_StVtV(Teuchos::ptr(y),alpha,x,v); }
@@ -643,6 +653,7 @@ void Vp_StVtV( VectorBase<Scalar>* y, const Scalar& alpha,
 
 /** \brief Deprecated. */
 template<class Scalar> inline
+THYRA_DEPRECATED
 void ele_wise_prod_update( const Scalar& alpha, const VectorBase<Scalar>& x,
   VectorBase<Scalar>* y )
 { ele_wise_prod_update(alpha,x,Teuchos::ptr(y)); }
@@ -650,6 +661,7 @@ void ele_wise_prod_update( const Scalar& alpha, const VectorBase<Scalar>& x,
 
 /** \brief Deprecated. */
 template<class Scalar> inline
+THYRA_DEPRECATED
 void Vt_StV( VectorBase<Scalar>* y, const Scalar& alpha,
   const VectorBase<Scalar> &x )
 { Vt_StV(Teuchos::ptr(y),alpha,x); }
@@ -657,6 +669,7 @@ void Vt_StV( VectorBase<Scalar>* y, const Scalar& alpha,
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void ele_wise_divide( const Scalar& alpha, const VectorBase<Scalar>& x,
   const VectorBase<Scalar>& v, VectorBase<Scalar>* y )
 { ele_wise_divide(alpha,x,v,Teuchos::ptr(y)); }
@@ -664,6 +677,7 @@ void ele_wise_divide( const Scalar& alpha, const VectorBase<Scalar>& x,
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void linear_combination(
   const int m
   ,const Scalar alpha_in[]
@@ -684,36 +698,42 @@ void linear_combination(
 
 /** \brief Deprecated. */
 template<class Scalar> inline
+THYRA_DEPRECATED
 void randomize( Scalar l, Scalar u, VectorBase<Scalar>* v )
 { randomize(l,u,Teuchos::ptr(v)); }
 
 
 /** \brief Deprecated. */
 template<class Scalar> inline
+THYRA_DEPRECATED
 void assign( VectorBase<Scalar>* y, const Scalar& alpha )
 { assign(Teuchos::ptr(y),alpha); }
 
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void assign( VectorBase<Scalar>* y, const VectorBase<Scalar>& x )
 { assign(Teuchos::ptr(y), x); }
 
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void Vp_S( VectorBase<Scalar>* y, const Scalar& alpha )
 { Vp_S(Teuchos::ptr(y), alpha); }
 
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void Vt_S( VectorBase<Scalar>* y, const Scalar& alpha )
 { Vt_S(Teuchos::ptr(y), alpha); }
 
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void V_StV( VectorBase<Scalar>* y, const Scalar& alpha,
   const VectorBase<Scalar> &x )
 { V_StV(Teuchos::ptr(y), alpha, x); }
@@ -721,6 +741,7 @@ void V_StV( VectorBase<Scalar>* y, const Scalar& alpha,
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void Vp_StV( VectorBase<Scalar>* y, const Scalar& alpha,
   const VectorBase<Scalar>& x )
 { Vp_StV(Teuchos::ptr(y), alpha, x); }
@@ -728,6 +749,7 @@ void Vp_StV( VectorBase<Scalar>* y, const Scalar& alpha,
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void Vp_V(
   VectorBase<Scalar>* y, const VectorBase<Scalar>& x,
   const Scalar& beta = Teuchos::ScalarTraits<Scalar>::one()
@@ -737,18 +759,21 @@ void Vp_V(
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void V_V( VectorBase<Scalar>* y, const VectorBase<Scalar>& x )
 { V_V(Teuchos::ptr(y), x); }
 
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void V_S( VectorBase<Scalar>* y, const Scalar& alpha )
 { V_S(Teuchos::ptr(y), alpha); }
 
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void V_VpV( VectorBase<Scalar>* z, const VectorBase<Scalar>& x,
   const VectorBase<Scalar>& y )
 { V_VpV(Teuchos::ptr(z), x, y); }
@@ -756,6 +781,7 @@ void V_VpV( VectorBase<Scalar>* z, const VectorBase<Scalar>& x,
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void V_VmV( VectorBase<Scalar>* z, const VectorBase<Scalar>& x,
   const VectorBase<Scalar>& y )
 { V_VmV(Teuchos::ptr(z), x, y); }
@@ -763,6 +789,7 @@ void V_VmV( VectorBase<Scalar>* z, const VectorBase<Scalar>& x,
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void V_StVpV( VectorBase<Scalar>* z, const Scalar &alpha,
   const VectorBase<Scalar>& x, const VectorBase<Scalar>& y )
 { V_StVpV(Teuchos::ptr(z), alpha, x, y); }
@@ -770,6 +797,7 @@ void V_StVpV( VectorBase<Scalar>* z, const Scalar &alpha,
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void V_StVpStV( VectorBase<Scalar>* z, const Scalar &alpha,
   const VectorBase<Scalar>& x, const Scalar &beta, const VectorBase<Scalar>& y )
 { V_StVpStV(Teuchos::ptr(z), alpha, x, beta, y); }
@@ -777,12 +805,14 @@ void V_StVpStV( VectorBase<Scalar>* z, const Scalar &alpha,
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void min( const VectorBase<Scalar>& x, Scalar *maxEle, Ordinal *maxIndex )
 { min(x, Teuchos::ptr(maxEle), Teuchos::ptr(maxIndex)); }
 
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void minGreaterThanBound( const VectorBase<Scalar>& x, const Scalar &bound,
   Scalar *minEle, Ordinal *minIndex )
 { minGreaterThanBound(x, bound, Teuchos::ptr(minEle), Teuchos::ptr(minIndex)); }
@@ -790,12 +820,14 @@ void minGreaterThanBound( const VectorBase<Scalar>& x, const Scalar &bound,
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void max( const VectorBase<Scalar>& x, Scalar *maxEle, Ordinal *maxIndex )
 { max(x, Teuchos::ptr(maxEle), Teuchos::ptr(maxIndex)); }
 
 
 /** \brief Deprecated. */
 template<class Scalar>
+THYRA_DEPRECATED
 void maxLessThanBound( const VectorBase<Scalar>& x, const Scalar &bound,
   Scalar *maxEle, Ordinal *maxIndex )
 { maxLessThanBound(x, bound, Teuchos::ptr(maxEle), Teuchos::ptr(maxIndex)); }
