@@ -65,6 +65,12 @@ NOX.Epetra.Interface provides the following user-level classes:
 #include "Epetra_SrcDistObject.h"
 #include "Epetra_Operator.h"
 #include "Epetra_RowMatrix.h"
+#include "Epetra_BasicRowMatrix.h"
+#include "Epetra_JadMatrix.h"
+#include "Epetra_InvOperator.h"
+#include "Epetra_FEVbrMatrix.h"
+#include "Epetra_FECrsMatrix.h"
+#include "Epetra_PyUtil.h"
 
 // Local Epetra includes
 #include "Epetra_NumPyVector.h"
@@ -89,6 +95,9 @@ NOX.Epetra.Interface provides the following user-level classes:
 
 // Trilinos module imports
 %import "Teuchos.i"
+
+// Epetra module imports
+%import "Epetra.i"
 
 // Teuchos::RCPs typemaps
 %teuchos_rcp_typemaps(NOX::Epetra::Interface::Required)

@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 # -*- python -*-
 
-# @header
+# @HEADER
 # ************************************************************************
 #
 #                PyTrilinos: Python interface to Trilinos
@@ -27,7 +27,7 @@
 # Questions? contact Bill Spotz (wfspotz@sandia.gov)
 #
 # ************************************************************************
-# @header
+# @HEADER
 
 # This example script builds Teuchos.ParameterList objects and functionally
 # equivalent python dictionaries, demonstrating various capabilities of the

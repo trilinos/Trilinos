@@ -184,16 +184,6 @@ example subdirectory of the PyTrilinos package:
   }
 }
 
-%typemap(out) Teuchos::RCP<Epetra_Operator>
-{
-  if ($1 == Teuchos::null)
-    $result = Py_BuildValue("");
-  else
-  {
-    $result = convertEpetraOperatorToPython($1.get());
-  }
-}
-
 // General exception handling
 %feature("director:except")
 {

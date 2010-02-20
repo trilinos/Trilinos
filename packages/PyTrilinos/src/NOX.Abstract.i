@@ -73,6 +73,7 @@ NOX.Abstract provides the following user-level classes:
 %include "PyTrilinos_config.h"
 #ifdef HAVE_NOX_EPETRA
 %{
+#include "NOX_Epetra_Group.H"
 #include "NOX_Epetra_Vector.H"
 #include "Epetra_NumPyVector.h"
 %}
@@ -120,24 +121,42 @@ NOX.Abstract provides the following user-level classes:
 // Support for Teuchos::RCPs
 %teuchos_rcp_typemaps(NOX::Abstract::Group)
 
+#ifdef HAVE_NOX_EPETRA
 // Downcast NOX::Abstract::Vector return arguments to Epetra.Vectors,
 // if possible
-#ifdef HAVE_NOX_EPETRA
-%typemap(out) NOX::Abstract::Vector & (NOX::Epetra::Vector* nevResult=NULL,
-				       Epetra_NumPyVector* enpvResult=NULL)
-%{
+%typemap(out) NOX::Abstract::Vector & (NOX::Epetra::Vector* nevResult  = NULL,
+				       Epetra_NumPyVector*  enpvResult = NULL)
+{
   nevResult = dynamic_cast<NOX::Epetra::Vector*>($1);
   if (nevResult == NULL)
   {
     // If we cannot downcast, then return the NOX::Abstract::Vector
-    $result = SWIG_NewPointerObj((void*)&$1, $descriptor, 1);
+    $result = SWIG_NewPointerObj((void*)&$1, $descriptor, %convertptr_flags);
   }
   else
   {
     enpvResult = new Epetra_NumPyVector(View, nevResult->getEpetraVector(), 0);
-    $result = SWIG_NewPointerObj((void*)enpvResult, $descriptor(Epetra_NumPyVector*), 1);
+    $result = SWIG_NewPointerObj((void*)enpvResult, $descriptor(Epetra_NumPyVector*),
+				 %convertptr_flags);
   }
-%}
+}
+
+// Downcast NOX::Abstract::Group return arguments to NOX::Epetra::Group,
+// if possible
+%typemap(out) NOX::Abstract::Group & (NOX::Epetra::Group* negResult = NULL)
+{
+  negResult = dynamic_cast<NOX::Epetra::Group*>($1);
+  if (negResult == NULL)
+  {
+    // If we cannot downcast, then return the NOX::Abstract::Group
+    $result = SWIG_NewPointerObj((void*)&$1, $descriptor, %convertptr_flags);
+  }
+  else
+  {
+    $result = SWIG_NewPointerObj((void*)negResult, $descriptor(NOX::Epetra::Group*),
+				 %convertptr_flags);
+  }
+}
 #endif
 
 ////////////////////////////////

@@ -1,3 +1,22 @@
+Release Notes for PyTrilinos 4.3 (Trilinos 10.1)
+================================================
+
+PyTrilinos.NOX notes:
+
+  Updated the wrappers so that the Jacobian can be specified using the
+  NOX.Epetra.Interface.Jacobian base class.  To get this to work
+  required that the directorin %typemaps for Epetra_Operator used by
+  NOX.Epetra.Interface.Jacobian be updated to downcast the
+  Epetra_Operator argument to our best guess at the derived class.
+  Such a downcast had already been written for the EpetraExt
+  ModelEvaluator, so code was moved around to make it more generally
+  accessible.  This uncovered a memory management bug that took some
+  time to track down, but the result now is much more stable memory
+  management all-around.
+
+  The new capability is demonstrated in serial in example script
+  exNOX_2DSim.
+
 Release Notes for PyTrilinos 4.2 (Trilinos 10.0)
 ================================================
 

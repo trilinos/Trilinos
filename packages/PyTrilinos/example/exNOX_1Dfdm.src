@@ -259,7 +259,7 @@ def main():
     noxInitGuess = NOX.Epetra.Vector(initGuess,NOX.Epetra.Vector.CreateView)
 
     # Define the ParameterLists
-    nlParams    = NOX.defaultNonlinearParameters(comm,2)
+    nlParams    = NOX.Epetra.defaultNonlinearParameters(comm,2)
     printParams = nlParams["Printing"]
     lsParams    = nlParams["Linear Solver"]
 
@@ -271,7 +271,7 @@ def main():
                                               True)
 
     # Create and execute the solver
-    solver = NOX.defaultSolver(initGuess, interface, mf, mf, fdc, fdc, nlParams)
+    solver = NOX.Epetra.defaultSolver(initGuess, interface, mf, mf, fdc, fdc, nlParams)
 
     ### Begin Nonlinear Solve ###
 
