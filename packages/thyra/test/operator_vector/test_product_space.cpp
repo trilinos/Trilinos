@@ -29,6 +29,7 @@
 #include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_VectorSpaceTester.hpp"
+#include "Thyra_VectorStdOpsTester.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_DefaultComm.hpp"
@@ -72,6 +73,10 @@ bool run_product_space_tests(
   vectorSpaceTester.show_all_tests(showAllTests);
   vectorSpaceTester.dump_all(dumpAll);
 
+  Thyra::VectorStdOpsTester<Scalar> vectorStdOpsTester;
+  vectorStdOpsTester.warning_tol(ScalarMag(0.1)*tol);
+  vectorStdOpsTester.error_tol(tol);
+
   Teuchos::Array<RCP<const Thyra::VectorSpaceBase<Scalar> > >
     vecSpaces(numBlocks);
   const RCP<const Teuchos::Comm<Thyra::Ordinal> >
@@ -106,8 +111,10 @@ bool run_product_space_tests(
     << " : " << ( result ? "passed" : "failed" ) << std::endl;
   
   if(out.get()) *out << "\nTesting the VectorSpaceBase interface of ps ...\n";
-  result = vectorSpaceTester.check(*ps, out.get());
-  if(!result) success = false;
+  TEUCHOS_TEST_ASSERT(vectorSpaceTester.check(*ps, out.get()), *out, success);
+  
+  if(out.get()) *out << "\nTesting standard vector ops for ps ...\n";
+  TEUCHOS_TEST_ASSERT(vectorStdOpsTester.checkStdOps(*ps, out.get()), *out, success);
   
   if(out.get()) *out << "\nB) Testing a nested product space of product vector spaces called pps ...\n";
 
@@ -120,8 +127,10 @@ bool run_product_space_tests(
     rcp(new Thyra::DefaultProductVectorSpace<Scalar> (numBlocks,&blockVecSpaces[0]));
   
   if(out.get()) *out << "\nTesting the VectorSpaceBase interface of pps ...\n";
-  result = vectorSpaceTester.check(*pps, out.get());
-  if(!result) success = false;
+  TEUCHOS_TEST_ASSERT(vectorSpaceTester.check(*pps, out.get()), *out, success);
+  
+  if(out.get()) *out << "\nTesting standard vector ops for pps ...\n";
+  TEUCHOS_TEST_ASSERT(vectorStdOpsTester.checkStdOps(*pps, out.get()), *out, success);
 
   if(numProcs==1) {
 
@@ -140,8 +149,10 @@ bool run_product_space_tests(
       = Thyra::defaultSpmdVectorSpace<Scalar>(numBlocks*n);
     
     if(out.get()) *out << "\nTesting the serial space ss ...\n";
-    result = vectorSpaceTester.check(*ss, out.get());
-    if(!result) success = false;
+    TEUCHOS_TEST_ASSERT(vectorSpaceTester.check(*ss, out.get()), *out, success);
+  
+    if(out.get()) *out << "\nTesting standard vector ops for ss ...\n";
+    TEUCHOS_TEST_ASSERT(vectorStdOpsTester.checkStdOps(*ss, out.get()), *out, success);
     
     if(out.get()) *out << "\nCreating product vectors; pv1, pv2 ...\n";
     RCP<Thyra::VectorBase<Scalar> >
@@ -149,10 +160,10 @@ bool run_product_space_tests(
       pv2 = createMember(*ps);
     
     if(out.get()) *out << "\nassign(&pv1,2.0) ...\n";
-    Thyra::assign( &*pv1, two );
+    Thyra::assign( pv1.ptr(), two );
     
     if(out.get()) *out << "\nassign(&pv1,3.0) ...\n";
-    Thyra::assign( &*pv2, three );
+    Thyra::assign( pv2.ptr(), three );
     
     if(out.get()) *out << "\nCreating serial vectors; sv1, sv2 ...\n";
     RCP<Thyra::VectorBase<Scalar> >
@@ -160,7 +171,7 @@ bool run_product_space_tests(
       sv2 = createMember(ss);
     
     if(out.get()) *out << "\nassign(&sv1,*pv1) ...\n";
-    Thyra::assign( &*sv1, *pv1 );
+    Thyra::assign( sv1.ptr(), *pv1 );
     
     if(out.get()) *out << "\nsum(sv1)=";
     sresult1 = Thyra::sum(*sv1);
@@ -176,7 +187,7 @@ bool run_product_space_tests(
       << "\nsv1 =\n" << *sv1;
     
     if(out.get()) *out << "\nassign(&pv2,*sv1) ...\n";
-    Thyra::assign( &*pv2, *sv1 );
+    Thyra::assign( pv2.ptr(), *sv1 );
     
     if(out.get()) *out << "\nsum(pv2)=";
     sresult1 = Thyra::sum(*pv2);
@@ -249,7 +260,7 @@ int main( int argc, char* argv[] ) {
 #ifdef THYRA_TEUCHOS_BLASFLOAT
     if( !run_product_space_tests<std::complex<float> >(n,numBlocks,float(1e-5),showAllTests,dumpAll,verbose?&*out:NULL) ) success = false;
 #endif // HAVE_THYRA_TEUCHOS_BLASFLOAT
-    if( !run_product_space_tests<std::complex<double> >(n,numBlocks,double(1e-13),showAllTests,dumpAll,verbose?&*out:NULL) ) success = false;
+    if( !run_product_space_tests<std::complex<double> >(n,numBlocks,double(1e-12),showAllTests,dumpAll,verbose?&*out:NULL) ) success = false;
 #endif // defined(HAVE_THYRA_COMPLEX)
 #ifdef HAVE_TEUCHOS_GNU_MP
     //if( !run_product_space_tests<mpf_class>(n,numBlocks,mpf_class(1e-13),showAllTests,dumpAll,verbose?&*out:NULL) ) success = false;
