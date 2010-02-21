@@ -32,11 +32,13 @@
 
 #include "Thyra_LinearOpWithSolveFactoryBase.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
+#include "Thyra_LinearOpWithSolveBase.hpp"
 #include "Thyra_PreconditionerFactoryHelpers.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_DefaultPreconditioner.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_VectorStdOps.hpp"
+#include "Thyra_VectorBase.hpp"
 
 
 namespace Thyra {
@@ -97,6 +99,7 @@ void singleLinearSolve(
   Teuchos::FancyOStream &out
   )
 {
+  using Teuchos::ptr;
   Teuchos::OSTab tab(out);
   out << "\nPerforming a single linear solve ...\n";
   // Create the LOWSB object that will be used to solve the linear system
@@ -104,8 +107,8 @@ void singleLinearSolve(
     invertibleA = Thyra::linearOpWithSolve(lowsFactory,Teuchos::rcp(&A,false));
   // Solve the system using a default solve criteria using a non-member helper function 
   assign(&*x,Teuchos::ScalarTraits<Scalar>::zero()); // Must initialize to a guess before solve!
-  Thyra::SolveStatus<Scalar>
-    status = Thyra::solve(*invertibleA,Thyra::NOTRANS,b,x);
+  Thyra::SolveStatus<Scalar> 
+    status = Thyra::solve<Scalar>(*invertibleA, Thyra::NOTRANS, b, ptr(x));
   out << "\nSolve status:\n" << status;
 } // end singleLinearSolve
 
