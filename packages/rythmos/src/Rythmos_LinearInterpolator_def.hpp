@@ -32,6 +32,7 @@
 #include "Rythmos_LinearInterpolator_decl.hpp"
 #include "Rythmos_InterpolatorBaseHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
+#include "Thyra_VectorSpaceBase.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
 

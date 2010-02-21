@@ -32,26 +32,27 @@
 #include "Rythmos_CubicSplineInterpolator_decl.hpp"
 #include "Rythmos_InterpolatorBaseHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
+#include "Thyra_VectorSpaceBase.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
-namespace Rythmos {
 
-// non-member constructor
 template<class Scalar>
-RCP<CubicSplineInterpolator<Scalar> > cubicSplineInterpolator()
+Teuchos::RCP<Rythmos::CubicSplineInterpolator<Scalar> >
+Rythmos::cubicSplineInterpolator()
 {
   RCP<CubicSplineInterpolator<Scalar> > csi = Teuchos::rcp(new CubicSplineInterpolator<Scalar>() );
   return csi;
 }
 
 template<class Scalar>
-void computeCubicSplineCoeff(
+void Rythmos::computeCubicSplineCoeff(
     const typename DataStore<Scalar>::DataStoreVector_t & data,
     const Ptr<CubicSplineCoeff<Scalar> > & coeffPtr
     )
 {
   using Teuchos::outArg;
   typedef Teuchos::ScalarTraits<Scalar> ST;
+  using Thyra::createMember;
   TEST_FOR_EXCEPTION( 
       (data.size() < 2), std::logic_error,
       "Error!  A minimum of two data points is required for this cubic spline."
@@ -76,9 +77,9 @@ void computeCubicSplineCoeff(
     coeff.t.push_back(t[0]);
     coeff.t.push_back(t[1]);
     coeff.a.push_back(x_vec[0]->clone_v());
-    coeff.b.push_back(Thyra::createMember(x_vec[0]->space()));
-    coeff.c.push_back(Thyra::createMember(x_vec[0]->space()));
-    coeff.d.push_back(Thyra::createMember(x_vec[0]->space()));
+    coeff.b.push_back(createMember(x_vec[0]->space()));
+    coeff.c.push_back(createMember(x_vec[0]->space()));
+    coeff.d.push_back(createMember(x_vec[0]->space()));
     Scalar h = coeff.t[1] - coeff.t[0];
     V_StVpStV(outArg(*coeff.b[0]),ST::one()/h,*x_vec[1],-ST::one()/h,*x_vec[0]);
     V_S(outArg(*coeff.c[0]),ST::zero());
@@ -146,8 +147,9 @@ void computeCubicSplineCoeff(
   coeff.c.erase(coeff.c.end()-1);
 }
 
+
 template<class Scalar>
-void validateCubicSplineCoeff(const CubicSplineCoeff<Scalar>& coeff) 
+void Rythmos::validateCubicSplineCoeff(const CubicSplineCoeff<Scalar>& coeff) 
 {
   int t_n = coeff.t.size();
   int a_n = coeff.a.size();
@@ -161,10 +163,9 @@ void validateCubicSplineCoeff(const CubicSplineCoeff<Scalar>& coeff)
       );
 }
 
-// Non-member helper function
-// Evaluate cubic spline 
+
 template<class Scalar>
-void evaluateCubicSpline(
+void Rythmos::evaluateCubicSpline(
     const CubicSplineCoeff<Scalar>& coeff,
     unsigned int j, 
     const Scalar& t,
@@ -206,6 +207,10 @@ void evaluateCubicSpline(
     V_StVpStV(outArg(*Spp),Scalar(6*ST::one())*dt,d,Scalar(2*ST::one()),c);
   }
 }
+
+
+namespace Rythmos {
+
 
 template<class Scalar>
 CubicSplineInterpolator<Scalar>::CubicSplineInterpolator()
@@ -415,7 +420,8 @@ CubicSplineInterpolator<Scalar>::unsetParameterList()
 }
 
 template<class Scalar>
-RCP<const Teuchos::ParameterList> CubicSplineInterpolator<Scalar>::getValidParameters() const
+RCP<const Teuchos::ParameterList>
+CubicSplineInterpolator<Scalar>::getValidParameters() const
 {
   static RCP<Teuchos::ParameterList> validPL;
   if (is_null(validPL)) {
@@ -426,11 +432,13 @@ RCP<const Teuchos::ParameterList> CubicSplineInterpolator<Scalar>::getValidParam
   return (validPL);
 }
 
+
 // 
 // Explicit Instantiation macro
 //
 // Must be expanded from within the Rythmos namespace!
 //
+
 
 #define RYTHMOS_CUBIC_SPLINE_INTERPOLATOR_INSTANT(SCALAR) \
   \

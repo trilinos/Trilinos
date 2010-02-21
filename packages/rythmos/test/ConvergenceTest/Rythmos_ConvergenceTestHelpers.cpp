@@ -27,6 +27,7 @@
 //@HEADER
 
 #include "Rythmos_ConvergenceTestHelpers.hpp"
+#include "Thyra_VectorStdOps.hpp"
 #ifdef _MSC_VER
 #include "winmath.h"
 #endif
@@ -98,7 +99,7 @@ double computeOrderByLocalErrorConvergenceStudy(
     RCP<const VectorBase<double> > x_exact = stepperFactoryAndExactSolution.getExactSolution(h);
     RCP<VectorBase<double> > tmp_vec = createMember(stepper->getModel()->get_x_space());
     // take norm of difference
-    Thyra::V_StVpStV(&*tmp_vec,1.0,*x_exact,-1.0,*x);
+    Thyra::V_StVpStV(tmp_vec.ptr(), 1.0, *x_exact ,-1.0, *x);
 //    stepSize.push_back(h);
     logStepSize.push_back(log(h));
     double nrm = Thyra::norm_inf(*tmp_vec);
@@ -152,7 +153,7 @@ double computeOrderByGlobalErrorConvergenceStudy(
     // get exact solution 
     RCP<const VectorBase<double> > x_exact = stepperFactoryAndExactSolution.getExactSolution(t_final);
     // take norm of difference
-    Thyra::V_StVpStV(&*tmp_vec,1.0,*x_exact,-1.0,*x);
+    Thyra::V_StVpStV(tmp_vec.ptr(), 1.0, *x_exact, -1.0, *x);
 //    stepSize.push_back(h);
     logStepSize.push_back(log(h));
     double nrm = Thyra::norm_inf(*tmp_vec);
