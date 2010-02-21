@@ -183,7 +183,7 @@ private:
  * \ingroup Teuchos_Array_Arguments
  */
 template<class T>
-inline ArrayArg<1,T> arrayArg( T t1 )
+inline TEUCHOS_DEPRECATED ArrayArg<1,T> arrayArg( T t1 )
 {
   T array[] = { t1 };
   return ArrayArg<1,T>(array);
@@ -194,7 +194,7 @@ inline ArrayArg<1,T> arrayArg( T t1 )
  * \ingroup Teuchos_Array_Arguments
  */
 template<class T>
-inline ArrayArg<2,T> arrayArg( T t1, T t2 )
+inline TEUCHOS_DEPRECATED ArrayArg<2,T> arrayArg( T t1, T t2 )
 {
   T array[] = { t1, t2 };
   return ArrayArg<2,T>(array);
@@ -205,7 +205,7 @@ inline ArrayArg<2,T> arrayArg( T t1, T t2 )
  * \ingroup Teuchos_Array_Arguments
  */
 template<class T>
-inline ArrayArg<3,T> arrayArg( T t1, T t2, T t3 )
+inline TEUCHOS_DEPRECATED ArrayArg<3,T> arrayArg( T t1, T t2, T t3 )
 {
   T array[] = { t1, t2, t3 };
   return ArrayArg<3,T>(array);
@@ -216,7 +216,7 @@ inline ArrayArg<3,T> arrayArg( T t1, T t2, T t3 )
  * \ingroup Teuchos_Array_Arguments
  */
 template<class T>
-inline ArrayArg<4,T> arrayArg( T t1, T t2, T t3, T t4 )
+inline TEUCHOS_DEPRECATED ArrayArg<4,T> arrayArg( T t1, T t2, T t3, T t4 )
 {
   T array[] = { t1, t2, t3, t4 };
   return ArrayArg<4,T>(array);
@@ -227,7 +227,7 @@ inline ArrayArg<4,T> arrayArg( T t1, T t2, T t3, T t4 )
  * \ingroup Teuchos_Array_Arguments
  */
 template<class T>
-inline ArrayArg<5,T> arrayArg( T t1, T t2, T t3, T t4, T t5 )
+inline TEUCHOS_DEPRECATED ArrayArg<5,T> arrayArg( T t1, T t2, T t3, T t4, T t5 )
 {
   T array[] = { t1, t2, t3, t4, t5 };
   return ArrayArg<5,T>(array);
@@ -238,7 +238,7 @@ inline ArrayArg<5,T> arrayArg( T t1, T t2, T t3, T t4, T t5 )
  * \ingroup Teuchos_Array_Arguments
  */
 template<class T>
-inline ArrayArg<6,T> arrayArg( T t1, T t2, T t3, T t4, T t5, T t6 )
+inline TEUCHOS_DEPRECATED ArrayArg<6,T> arrayArg( T t1, T t2, T t3, T t4, T t5, T t6 )
 {
   T array[] = { t1, t2, t3, t4, t5, t6 };
   return ArrayArg<6,T>(array);

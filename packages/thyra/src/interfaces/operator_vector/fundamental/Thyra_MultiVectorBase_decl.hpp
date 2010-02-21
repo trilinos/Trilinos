@@ -162,8 +162,8 @@ namespace Thyra {
    ,Thyra::MultiVectorBase<Scalar>      *Y
    )
  {
-   using Teuchos::arrayArg;
-   assign( &*Y->subView(3,arrayArg<int>(2,4,6)()), ,*X.subView(3,arrayArg<int>(1,3,5)()) );
+   using Teuchos::tuple;
+   assign( Y->subView(tuple<int>(2,4,6)()).ptr(), *X.subView(tuple<int>(1,3,5)()) );
  }
 
  \endcode
@@ -173,7 +173,7 @@ namespace Thyra {
  *
  * <b>Note:</b> In the above example <tt>*Y</tt> is not guaranteed to be
  * updated until the view returned from
- * <tt>Y->subView(3,arrayArg<int>(2,4,6)())</tt> is destroyed (which occurs at
+ * <tt>Y->subView(tuple<int>(2,4,6)())</tt> is destroyed (which occurs at
  * the end of the statement in which it occurs in this case).
  * 
  * In general, the first contiguous form of views will be more efficient that

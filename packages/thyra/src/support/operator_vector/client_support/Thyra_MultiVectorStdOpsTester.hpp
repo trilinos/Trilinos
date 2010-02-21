@@ -32,7 +32,6 @@
 #include "Thyra_MultiVectorStdOpsTesterDecl.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_TestingTools.hpp"
-#include "Teuchos_arrayArg.hpp"
 
 namespace Thyra {
 
@@ -56,7 +55,6 @@ bool MultiVectorStdOpsTester<Scalar>::checkStdOps(
   ,const bool                      &dumpAll
   )
 {
-  using Teuchos::arrayArg;
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
   if(out)

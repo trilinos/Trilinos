@@ -31,7 +31,6 @@
 
 #include "Thyra_ZeroLinearOpBase.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
-#include "Teuchos_arrayArg.hpp"
 
 
 namespace Thyra {

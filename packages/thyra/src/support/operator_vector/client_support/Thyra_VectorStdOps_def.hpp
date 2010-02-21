@@ -59,7 +59,6 @@
 #include "RTOpPack_TOpReciprocal.hpp"
 #include "RTOpPack_TOpRandomize.hpp"
 #include "Teuchos_TestForException.hpp"
-#include "Teuchos_arrayArg.hpp"
 
 
 //
