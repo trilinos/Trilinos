@@ -33,6 +33,7 @@
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "RTOpPack_ROpDotProd.hpp"
+#include "RTOpPack_ROpGetElement.hpp"
 #include "RTOpPack_ROpMin.hpp"
 #include "RTOpPack_ROpMinIndex.hpp"
 #include "RTOpPack_ROpMinIndexGreaterThanBound.hpp"
@@ -160,12 +161,12 @@ template<class Scalar>
 Scalar Thyra::get_ele( const VectorBase<Scalar>& v, Ordinal i )
 {
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
-  RTOpPack::ROpSum<Scalar> sum_op;
-  Teuchos::RCP<RTOpPack::ReductTarget> sum_targ = sum_op.reduct_obj_create();
-  applyOp<Scalar>(sum_op, tuple(ptrInArg(v)),
+  RTOpPack::ROpGetElement<Scalar> get_ele_op(i);
+  Teuchos::RCP<RTOpPack::ReductTarget> get_ele_targ = get_ele_op.reduct_obj_create();
+  applyOp<Scalar>(get_ele_op, tuple(ptrInArg(v)),
     ArrayView<Ptr<VectorBase<Scalar> > >(null),
-    sum_targ.ptr(), i, 1, 0 );
-  return sum_op(*sum_targ);
+    get_ele_targ.ptr() );
+  return get_ele_op(*get_ele_targ);
 }
 
 
