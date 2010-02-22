@@ -1,8 +1,7 @@
 
 #include <unit_tests/stk_utest_macros.hpp>
 
-#include <mpi.h>
-
+#include <stk_util/parallel/Parallel.hpp>
 #include <Shards_BasicTopologies.hpp>
 #include <stk_mesh/fem/EntityTypes.hpp>
 #include <stk_mesh/fem/FieldDeclarations.hpp>
@@ -95,7 +94,7 @@ void testDofMapper( MPI_Comm comm )
   std::cout << "...Completed testing error condition." << std::endl;
 
   int numProcs = 1;
-  MPI_Comm_size(comm, &numProcs);
+  numProcs = stk::parallel_machine_size( MPI_COMM_WORLD );
 
   fei::SharedPtr<fei::VectorSpace> fei_vspace = dof_mapper.get_fei_VectorSpace();
   int numIndices = fei_vspace->getGlobalNumIndices();

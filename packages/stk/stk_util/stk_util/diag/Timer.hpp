@@ -6,9 +6,8 @@
 #include <list>
 #include <string>
 
-#include <mpi.h>
-
 #include <stk_util/diag/TimerMetricTraits.hpp>
+#include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/util/FormatTime.hpp>
 #include <stk_util/diag/Writer_fwd.hpp>
 
@@ -577,7 +576,7 @@ public:
    * @param start_timer	a <b>bool</b> value to start the timer on construction.
    *
    */
-  TimeBlockSynchronized(Timer &timer, MPI_Comm mpi_comm, bool start_timer = true);
+  TimeBlockSynchronized(Timer &timer, ParallelMachine mpi_comm, bool start_timer = true);
 
   /**
    * Destroys a <b>TimeBlockSynchronized</b> instance.  Stops the timer if it has
@@ -601,7 +600,7 @@ public:
 
 private:
   Timer &			m_timer;	////< Timer to accumulate block run times.
-  MPI_Comm			m_mpiComm;	////< MPI comm to synchronize across
+  ParallelMachine		m_mpiComm;	////< MPI comm to synchronize across
   bool			m_started;	////< Timer has been started
 };
 

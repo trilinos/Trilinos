@@ -819,8 +819,10 @@ TimeBlockSynchronized::TimeBlockSynchronized(
     m_started(start_timer)
 {
   if (m_timer.m_timerImpl->shouldRecord()) {
+#ifdef STK_HAS_MPI
     if (mpi_comm != MPI_COMM_NULL)
       MPI_Barrier(mpi_comm);
+#endif
 
     if (start_timer)
       m_timer.start();

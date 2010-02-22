@@ -1,7 +1,7 @@
 
 #include <stddef.h>
-#include <mpi.h>
 #include <stdexcept>
+#include <stk_util/parallel/Parallel.hpp>
 #include <stk_mesh/base/DataTraits.hpp>
 #include <stk_mesh/base/DataTraitsEnum.hpp>
 #include <stk_mesh/base/DataTraitsClass.hpp>
@@ -31,8 +31,10 @@ STKUNIT_UNIT_TEST(TestDataTraits, testUnit)
   int mpi_rank = 0;
   int mpi_size = 0;
   
+#ifdef STK_HAS_MPI
   STKUNIT_ASSERT_EQUAL(MPI_SUCCESS, MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank) );
   STKUNIT_ASSERT_EQUAL(MPI_SUCCESS, MPI_Comm_size(MPI_COMM_WORLD, &mpi_size) );
+#endif
   STKUNIT_ASSERT(mpi_rank < mpi_size);
 
   bool testComm = mpi_size <= 1 ;

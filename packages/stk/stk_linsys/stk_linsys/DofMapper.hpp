@@ -3,8 +3,7 @@
 
 #include <map>
 
-#include <mpi.h>
-
+#include <stk_util/parallel/Parallel.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 

@@ -86,8 +86,8 @@ void fill_utest_mesh_bulk_data(stk::mesh::BulkData& bulk_data)
   const unsigned num_elems = 4;
 
   int numProcs = 1, myProc = 0;
-  MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
-  MPI_Comm_rank(MPI_COMM_WORLD, &myProc);
+  numProcs = stk::parallel_machine_size( MPI_COMM_WORLD );
+  myProc = stk::parallel_machine_rank( MPI_COMM_WORLD );
 
   stk::mesh::EntityId elem_id = 1 + myProc*num_elems;
   stk::mesh::EntityId node_ids[ shards::Hexahedron<8>::node_count ];

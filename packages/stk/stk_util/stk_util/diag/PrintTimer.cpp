@@ -327,6 +327,7 @@ collect_timers(
   Marshal mout;
   mout << root_timer;
 
+#ifdef STK_HAS_MPI
   // Gather the send counts on root processor
   std::string send_string(mout.str());
   int send_count = send_string.size();
@@ -381,6 +382,7 @@ collect_timers(
         merge_parallel_timer(parallel_timer, parallel_timer_vector[j], checkpoint);
     }
   }
+#endif
 }
 
 // PrintTable &printTable(PrintTable &table, MPI_Comm mpi_comm, MetricsMask metrics_mask) const;

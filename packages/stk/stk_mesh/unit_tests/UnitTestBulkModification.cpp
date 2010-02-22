@@ -21,10 +21,10 @@
 
 class UnitTestStkMeshBulkModification {
  public:
-  UnitTestStkMeshBulkModification() : m_num_procs(0), m_rank(0)
+  UnitTestStkMeshBulkModification(stk::ParallelMachine pm) : m_comm(pm), m_num_procs(0), m_rank(0)
   {
-    MPI_Comm_size(MPI_COMM_WORLD, &m_num_procs);
-    MPI_Comm_rank(MPI_COMM_WORLD, &m_rank);
+    m_num_procs = stk::parallel_machine_size( m_comm );
+    m_rank = stk::parallel_machine_rank( m_comm );
   }
 
   void test_bulkdata_not_syncronized();
@@ -33,6 +33,7 @@ class UnitTestStkMeshBulkModification {
   void test_all_local_edges();
   void test_parallel_consistency();
 
+  stk::ParallelMachine m_comm;
   int m_num_procs;
   int m_rank;
 };
@@ -41,31 +42,31 @@ namespace {
 
 STKUNIT_UNIT_TEST( UnitTestBulkDataNotSyrncronized , testUnit )
 {
-  UnitTestStkMeshBulkModification unit;
+  UnitTestStkMeshBulkModification unit(MPI_COMM_WORLD);
   unit.test_bulkdata_not_syncronized(); 
 }
 
 STKUNIT_UNIT_TEST( UnitTestClosureOfNonLocallyUsedEntities , testUnit )
 {
-  UnitTestStkMeshBulkModification unit;
+  UnitTestStkMeshBulkModification unit(MPI_COMM_WORLD);
   unit.test_closure_of_non_locally_used_entities();
 }
 
 STKUNIT_UNIT_TEST( UnitTestAllLocalNodes , testUnit )
 {
-  UnitTestStkMeshBulkModification unit;
+  UnitTestStkMeshBulkModification unit(MPI_COMM_WORLD);
   unit.test_all_local_nodes();
 }
 
 STKUNIT_UNIT_TEST( UnitTestAllLocalEdges , testUnit )
 {
-  UnitTestStkMeshBulkModification unit;
+  UnitTestStkMeshBulkModification unit(MPI_COMM_WORLD);
   unit.test_all_local_edges();
 }
 
 STKUNIT_UNIT_TEST( UnitTestParallelConsistency , testUnit )
 {
-  UnitTestStkMeshBulkModification unit;
+  UnitTestStkMeshBulkModification unit(MPI_COMM_WORLD);
   unit.test_parallel_consistency();
 }
 

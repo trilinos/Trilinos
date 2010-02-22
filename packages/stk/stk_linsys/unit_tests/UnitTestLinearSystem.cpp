@@ -1,8 +1,7 @@
 
 #include <unit_tests/stk_utest_macros.hpp>
 
-#include <mpi.h>
-
+#include <stk_util/parallel/Parallel.hpp>
 #include <Shards_BasicTopologies.hpp>
 #include <stk_mesh/fem/EntityTypes.hpp>
 #include <stk_mesh/fem/FieldDeclarations.hpp>
@@ -113,8 +112,8 @@ void testLinearSystem( MPI_Comm comm )
   STKUNIT_ASSERT_EQUAL( (fei::LinearSystem*)const_linsys_ptr, linsys_ptr);
 
   int numProcs = 1, myProc = 0;
-  MPI_Comm_rank(comm, &myProc);
-  MPI_Comm_size(comm, &numProcs);
+  myProc = stk::parallel_machine_rank( MPI_COMM_WORLD );
+  numProcs = stk::parallel_machine_size( MPI_COMM_WORLD );
 
   fei::SharedPtr<fei::Matrix> matrix = ls.get_fei_LinearSystem()->getMatrix();
   int num_local_rows = matrix->getLocalNumRows();

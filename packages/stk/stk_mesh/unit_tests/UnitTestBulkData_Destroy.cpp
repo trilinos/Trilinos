@@ -3,8 +3,7 @@
 
 #include <unit_tests/stk_utest_macros.hpp>
 
-#include <mpi.h>
-
+#include <stk_util/parallel/Parallel.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Comm.hpp>
@@ -139,7 +138,6 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
     bulk.modification_begin();
 
     // Destroy the element:
-    std::cout << "UnitTestBulkData::testDestroy_loop ... " << std::endl;
     bool result = bulk.destroy_entity( edge );
     STKUNIT_ASSERT( true == result );
     STKUNIT_ASSERT( NULL == edge );

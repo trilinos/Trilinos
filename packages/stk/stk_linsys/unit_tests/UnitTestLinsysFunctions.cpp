@@ -2,8 +2,7 @@
 
 #include <cmath>
 
-#include <mpi.h>
-
+#include <stk_util/parallel/Parallel.hpp>
 #include <Shards_BasicTopologies.hpp>
 #include <stk_mesh/fem/EntityTypes.hpp>
 #include <stk_mesh/fem/FieldDeclarations.hpp>

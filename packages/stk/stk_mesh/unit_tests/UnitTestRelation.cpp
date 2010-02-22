@@ -9,8 +9,7 @@
 */
 #include <unit_tests/stk_utest_macros.hpp>
 
-#include <mpi.h>
-
+#include <stk_util/parallel/Parallel.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Field.hpp>

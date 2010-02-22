@@ -65,8 +65,8 @@ UnitTestMesh::UnitTestMesh ( stk::ParallelMachine comm , unsigned block_size )
   , m_bulk_data ( m_meta_data , comm , block_size )
   , m_previous_state ( stk::mesh::BulkData::MODIFIABLE )
 {
-  MPI_Comm_rank ( comm , (int *)&m_comm_rank );
-  MPI_Comm_size ( comm , (int *)&m_comm_size );
+  m_comm_rank = stk::parallel_machine_rank( comm );
+  m_comm_size = stk::parallel_machine_size( comm );
 }
 
 

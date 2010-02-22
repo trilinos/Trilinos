@@ -21,14 +21,15 @@
 
 class UnitTestStkMeshBoundaryAnalysis {
 public:
-  UnitTestStkMeshBoundaryAnalysis() : m_num_procs(0), m_rank(0)
+  UnitTestStkMeshBoundaryAnalysis(stk::ParallelMachine pm) : m_comm(pm),  m_num_procs(0), m_rank(0)
   {
-    MPI_Comm_size(MPI_COMM_WORLD, &m_num_procs);
-    MPI_Comm_rank(MPI_COMM_WORLD, &m_rank);
+    m_num_procs = stk::parallel_machine_size( m_comm );
+    m_rank = stk::parallel_machine_rank( m_comm );
   }
 
   void test_boundary_analysis();
 
+  stk::ParallelMachine m_comm;
   int m_num_procs;
   int m_rank;
 };
@@ -37,7 +38,7 @@ namespace {
 
 STKUNIT_UNIT_TEST( UnitTestStkMeshBoundaryAnalysis , testUnit )
 {
-  UnitTestStkMeshBoundaryAnalysis unit;
+  UnitTestStkMeshBoundaryAnalysis unit(MPI_COMM_WORLD);
   unit.test_boundary_analysis();
 }
 

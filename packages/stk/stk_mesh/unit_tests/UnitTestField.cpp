@@ -21,8 +21,8 @@ STKUNIT_UNIT_TEST(UnitTestField, testUnit)
   stk::ParallelMachine pworld = MPI_COMM_WORLD ;
   stk::ParallelMachine pself  = MPI_COMM_SELF ;
 #else
-  stk::ParallelMachine pworld = parallel_machine_null();
-  stk::ParallelMachine pself  = parallel_machine_null();
+  stk::ParallelMachine pworld = stk::parallel_machine_null();
+  stk::ParallelMachine pself  = stk::parallel_machine_null();
 #endif
   if ( 0 == stk::parallel_machine_rank( pworld ) ) {
     // Nothing parallel being tested, only run on one process

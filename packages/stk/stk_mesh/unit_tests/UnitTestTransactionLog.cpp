@@ -5,8 +5,7 @@
 
 #include <unit_tests/stk_utest_macros.hpp>
 
-#include <mpi.h>
-
+#include <stk_util/parallel/Parallel.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Field.hpp>
@@ -28,13 +27,14 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkOnCreate)
   stk::mesh::Part  &new_part = meta.declare_part ( "another part" );
   meta.commit ();
 
-  stk::mesh::BulkData bulk ( meta , MPI_COMM_WORLD , 100 );
+  stk::ParallelMachine comm(MPI_COMM_WORLD);
+  stk::mesh::BulkData bulk ( meta , comm , 100 );
   std::vector<stk::mesh::Part *>  add_part;
   add_part.push_back ( &new_part );
 
   int  size , rank;
-  MPI_Comm_rank ( MPI_COMM_WORLD , &rank );
-  MPI_Comm_size ( MPI_COMM_WORLD , &size );
+  rank = stk::parallel_machine_rank( comm );
+  size = stk::parallel_machine_size( comm );
 
   for ( int i = 0 ; i != 100 ; i++ )
   {
@@ -602,14 +602,16 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyParallelResolutionModify)
 
   // Once found, tell all processes which one.  If not found, tell
   // them that as well
-  stk::mesh::EntityId node_id = node_to_modify ? node_to_modify->identifier() : 0;
-  int found_a_node = node_to_modify ? 1 : 0;
-
   int       *found_node_list     = new int [ bulk.parallel_size() ];
   stk::mesh::EntityId  *found_node_id_list  = new stk::mesh::EntityId [ bulk.parallel_size() ];
 
+#ifdef STK_HAS_MPI
+  stk::mesh::EntityId node_id = node_to_modify ? node_to_modify->identifier() : 0;
+  int found_a_node = node_to_modify ? 1 : 0;
+
   MPI_Allgather ( &found_a_node , 1 , MPI_INT , found_node_list , 1 , MPI_INT , bulk.parallel() );
   MPI_Allgather ( &node_id , 1 , MPI_INT , found_node_id_list , 1 , MPI_INT , bulk.parallel() );
+#endif
 
   // Modify the node
   bulk.reset_transaction ( stk::mesh::Transaction::INCREMENTAL );

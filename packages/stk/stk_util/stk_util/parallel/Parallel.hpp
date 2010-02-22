@@ -71,6 +71,15 @@ inline void parallel_machine_finalize()
 
 #else
 
+// Some needed stubs
+#define MPI_Comm int
+//#define MPI_Request int
+#define MPI_COMM_WORLD 0
+//#define MPI_Abort(a, b) abort()
+//#define MPI_Wtime() 0.0
+#define MPI_Barrier( a ) (void)a
+//#define MPI_SUCCESS 0
+
 namespace stk {
 
 typedef int ParallelMachine ;
