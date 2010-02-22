@@ -118,6 +118,13 @@ bool RTOpT<Scalar>::coord_invariant_impl() const
 }
 
 
+template<class Scalar>
+Range1D RTOpT<Scalar>::range_impl() const
+{
+  return Range1D();
+}
+
+
 // Nonvirtual protected functions
 
 

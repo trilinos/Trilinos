@@ -295,6 +295,21 @@ public:
       return coord_invariant_impl();
     }
 
+  /** \brief Returns the continuous range of elements that this operator is
+   * defined over.
+   *
+   * Vector client implementations are free to ignore this but they can use
+   * this information to optimize rare operators that only interact with a
+   * subset of elements.
+   *
+   * The default implementation return <tt>Range1D()</tt> which means all of
+   * the elements.
+   */
+  Range1D range() const
+    {
+      return range_impl();
+    }
+
   /** \brief Apply the reduction/transformation operator to a set of
    * sub-vectors.
    *
@@ -418,6 +433,9 @@ protected:
 
   /** \brief . */
   virtual bool coord_invariant_impl() const;
+
+  /** \brief . */
+  virtual Range1D range_impl() const;
 
   /** \brief . */
   virtual void apply_op_impl(

@@ -36,6 +36,7 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ArrayRCP.hpp"
+#include "Teuchos_Range1D.hpp"
 #include "Teuchos_ScalarTraits.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
 #include "Teuchos_TestForException.hpp"
@@ -63,6 +64,8 @@ using Teuchos::ArrayRCP;
 using Teuchos::ArrayView;
 /** \brief . */
 using Teuchos::Array;
+/** \brief . */
+using Teuchos::Range1D;
 /** \brief . */
 using Teuchos::ScalarTraits;
 /** \brief . */
