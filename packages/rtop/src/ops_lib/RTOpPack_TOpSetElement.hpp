@@ -27,22 +27,25 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef RTOPPACK_ROP_GET_ELEMENT_HPP
-#define RTOPPACK_ROP_GET_ELEMENT_HPP
+#ifndef RTOPPACK_TOP_SET_ELEMENT_HPP
+#define RTOPPACK_TOP_SET_ELEMENT_HPP
 
 #include "RTOpPack_RTOpTHelpers.hpp"
+#include "Teuchos_as.hpp"
 
 
 namespace RTOpPack {
 
 
-/** \brief . */
+/** \brief Element-wise transformation for TOpSetElement. */
 template<class Scalar>
-class ROpGetElementEleWiseReductionOp {
+class TOpSetElementEleWiseTransformation
+{
 public:
   /** \brief . */
-  ROpGetElementEleWiseReductionOp(const Ordinal &global_i_in = -1)
-    :global_i_(global_i_in)
+  TOpSetElementEleWiseTransformation( const Ordinal &global_i_in = -1,
+    const Scalar &val_i_in = static_cast<Scalar>(0.0) )
+    :global_i_(global_i_in), val_i_(val_i_in)
     {}
   /** \brief . */
   Ordinal global_i() const
@@ -50,59 +53,50 @@ public:
       return global_i_;
     }
   /** \brief . */
-  void operator()(const index_type i, const Scalar &v0, Scalar &reduct) const
+  void operator()( const Ordinal global_i_in, Scalar &z0 ) const
     {
-      if (i == global_i_) {
-        reduct = v0;
+      if (global_i_in == global_i_) {
+        z0 = val_i_;
       }
     }
 private:
   Ordinal global_i_;
+  Scalar val_i_;
 };
 
 
-/** \brief Returns the value of the element at index <tt>global_i</tt>.
- *
- * Warning! If the element is not found, then 0 is returned!
+/** \brief Set the elements of a vector to: <tt>z0[i] = i+global_i+1, i=0...n-1</tt>.
  */
 template<class Scalar>
-class ROpGetElement
-  : public ROp_1_CoordVariantScalarReduction<
-        Scalar,
-        Scalar,
-        ROpGetElementEleWiseReductionOp<Scalar>
-      >
+class TOpSetElement
+  : public TOp_0_1_CoordVariantBase<Scalar, TOpSetElementEleWiseTransformation<Scalar> >
 {
 public:
   /** \brief . */
-  ROpGetElement(const Ordinal &global_i)
+  TOpSetElement(const Ordinal &global_i_in = -1,
+    const Scalar &val_i_in = static_cast<Scalar>(0.0))
     {
-      this->setOpNameBase("ROpGetElement");
-      this->initialize(global_i);
-      this->initReductObjValue(ScalarTraits<Scalar>::zero());
+      this->setOpNameBase("TOpSetElement");
+      this->setEleWiseTransformation(
+        TOpSetElementEleWiseTransformation<Scalar>(global_i_in, val_i_in));
     }
   /** \brief . */
-  void initialize(const Ordinal &global_i)
+  void initialize(const Ordinal &global_i_in, const Scalar &val_i_in)
     { 
-      this->setEleWiseReduction(ROpGetElementEleWiseReductionOp<Scalar>(global_i));
-    }
-  /** \brief . */
-  Scalar operator()(const ReductTarget& reduct_obj ) const
-    {
-      return this->getRawVal(reduct_obj);
+      this->setEleWiseTransformation(
+        TOpSetElementEleWiseTransformation<Scalar>(global_i_in, val_i_in));
     }
 protected:
   /** \brief . */
   virtual Range1D range_impl() const
     {
-      const Ordinal i = this->getEleWiseReduction().global_i();
+      const Ordinal i = this->getEleWiseTransformation().global_i();
       return Range1D(i, i);
     }
-
 };
 
 
 } // namespace RTOpPack
 
 
-#endif // RTOPPACK_ROP_GET_ELEMENT_HPP
+#endif // RTOPPACK_TOP_SET_ELEMENT_HPP

@@ -562,6 +562,9 @@ class ROp_1_CoordVariantScalarReduction
 {
 public:
 
+  /** \name Public members */
+  //@{
+
   /** \brief . */
   typedef ROpScalarReductionWithOpBase<Scalar, ReductScalar, ReductObjReduction> base_t;
 
@@ -578,6 +581,12 @@ public:
   /** \brief . */
   void setEleWiseReduction(EleWiseReduction eleWiseReduction_in)
     { eleWiseReduction_ = eleWiseReduction_in; }
+
+  /** \brief . */
+  const EleWiseReduction& getEleWiseReduction() const
+    { return eleWiseReduction_; }
+  
+  //@}
 
   /** @name Overridden from RTOpT */
   //@{
@@ -831,6 +840,18 @@ public:
     : eleWiseTransformation_(eleWiseTransformation)
     {}
 
+  /** \brief . */
+  void setEleWiseTransformation(EleWiseTransformation eleWiseTransformation)
+    {
+      eleWiseTransformation_ = eleWiseTransformation;
+    }
+
+  /** \brief . */
+  const EleWiseTransformation& getEleWiseTransformation() const
+    {
+      return eleWiseTransformation_;
+    }
+  
   /** @name Overridden from RTOpT */
   //@{
 

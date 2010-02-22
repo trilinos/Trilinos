@@ -4,7 +4,7 @@
 
 int TestingSupportHelpers::n = 4;
 
-double TestingSupportHelpers::errorTolSlack = 1e+1;
+double TestingSupportHelpers::errorTolSlack = 1e+2;
 
 bool TestingSupportHelpers::verbose = false;
 

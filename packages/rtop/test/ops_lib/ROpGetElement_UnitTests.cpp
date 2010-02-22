@@ -15,7 +15,25 @@ const double g_tol = 100.0 * ScalarTraits<double>::eps();
 
 
 template<class Scalar>
-void basicTest(const int size, const int stride, FancyOStream &out, bool &success)
+void getElementTestCase( ROpGetElement<Scalar> &getEleOp, 
+  const ConstSubVectorView<Scalar> sv, const Ordinal i,
+  FancyOStream &out, bool &success)
+{
+  using Teuchos::as;
+  using Teuchos::null;
+  using Teuchos::tuple;
+  out << "\nTest i="<<i<<":\n";
+  getEleOp.initialize(i);
+  TEST_EQUALITY_CONST(getEleOp.range().lbound(), i);
+  TEST_EQUALITY_CONST(getEleOp.range().ubound(), i);
+  const RCP<ReductTarget> reduct_obj = getEleOp.reduct_obj_create();
+  getEleOp.apply_op(tuple<ConstSubVectorView<Scalar> >(sv)(), null, reduct_obj.ptr());
+  TEST_EQUALITY_CONST(getEleOp(*reduct_obj), as<Scalar>(i+1));
+}
+
+
+template<class Scalar>
+void basicTestROpGetElement(const int size, const int stride, FancyOStream &out, bool &success)
 {
   using Teuchos::as;
   using Teuchos::null;
@@ -28,55 +46,42 @@ void basicTest(const int size, const int stride, FancyOStream &out, bool &succes
   setAssendingOp.apply_op(null, tuple<SubVectorView<Scalar> >(sv)(), null);
 
   ROpGetElement<Scalar> getEleOp(0);
-  const RCP<ReductTarget> reduct_obj = getEleOp.reduct_obj_create();
 
-  getEleOp.globalIndex(0);
-  getEleOp.reduct_obj_reinit(reduct_obj.ptr());
-  getEleOp.apply_op(tuple<ConstSubVectorView<Scalar> >(sv)(), null, reduct_obj.ptr());
-  TEST_EQUALITY_CONST(getEleOp(*reduct_obj), as<Scalar>(1));
+  getElementTestCase<Scalar>(getEleOp, sv, 0, out, success);
 
-  getEleOp.globalIndex(1);
-  getEleOp.reduct_obj_reinit(reduct_obj.ptr());
-  getEleOp.apply_op(tuple<ConstSubVectorView<Scalar> >(sv)(), null, reduct_obj.ptr());
-  TEST_EQUALITY_CONST(getEleOp(*reduct_obj), as<Scalar>(2));
+  getElementTestCase<Scalar>(getEleOp, sv, 1, out, success);
 
-  getEleOp.globalIndex(size-2);
-  getEleOp.reduct_obj_reinit(reduct_obj.ptr());
-  getEleOp.apply_op(tuple<ConstSubVectorView<Scalar> >(sv)(), null, reduct_obj.ptr());
-  TEST_EQUALITY_CONST(getEleOp(*reduct_obj), as<Scalar>(size-1));
+  getElementTestCase<Scalar>(getEleOp, sv, size-2, out, success);
 
-  getEleOp.globalIndex(size-1);
-  getEleOp.reduct_obj_reinit(reduct_obj.ptr());
-  getEleOp.apply_op(tuple<ConstSubVectorView<Scalar> >(sv)(), null, reduct_obj.ptr());
-  TEST_EQUALITY_CONST(getEleOp(*reduct_obj), as<Scalar>(size));
+  getElementTestCase<Scalar>(getEleOp, sv, size-1, out, success);
 
 }
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpGetElement, basicTest_4_1, Scalar )
 {
-  basicTest<Scalar>(4, 1, out, success);
+  basicTestROpGetElement<Scalar>(4, 1, out, success);
 }
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( ROpGetElement, basicTest_4_1)
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpGetElement, basicTest_4_3, Scalar )
 {
-  basicTest<Scalar>(4, 3, out, success);
+  basicTestROpGetElement<Scalar>(4, 3, out, success);
 }
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( ROpGetElement, basicTest_4_3)
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpGetElement, basicTest_6_1, Scalar )
 {
-  basicTest<Scalar>(6, 1, out, success);
+  basicTestROpGetElement<Scalar>(6, 1, out, success);
 }
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( ROpGetElement, basicTest_6_1)
 
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ROpGetElement, basicTest_6_3, Scalar )
 {
-  basicTest<Scalar>(6, 3, out, success);
+  basicTestROpGetElement<Scalar>(6, 3, out, success);
 }
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( ROpGetElement, basicTest_6_3)
 

@@ -36,6 +36,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     TOpReciprocal_UnitTests.cpp
     TOpScaleVector_UnitTests.cpp
     TOpSetAssendingValues_UnitTests.cpp
+    TOpSetElement_UnitTests.cpp
     TOpSetSubVector_UnitTests.cpp
     ../support/supportUnitTestsHelpers.cpp
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
