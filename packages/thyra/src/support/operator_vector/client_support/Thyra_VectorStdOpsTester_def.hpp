@@ -359,6 +359,22 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
     const Scalar val = get_ele<Scalar>(*y, n-1);
     TEUCHOS_TEST_EQUALITY_CONST( val, as<Scalar>(n), out, success );
   }
+
+#ifdef THYRA_DEBUG
+
+  out << "\n"<<tc<<") get_ele<Scalar>(*y, -1);\n";
+  ++tc;
+  {
+    TEUCHOS_TEST_THROW(get_ele<Scalar>(*y, -1), std::out_of_range, out, success );
+  }
+
+  out << "\n"<<tc<<") get_ele<Scalar>(*y, n);\n";
+  ++tc;
+  {
+    TEUCHOS_TEST_THROW(get_ele<Scalar>(*y, n), std::out_of_range, out, success );
+  }
+
+#endif // THYRA_DEBUG
     
   // reciprocal
   out << "\n"<<tc<<") reciprocal(z.ptr(),*v1);\n";

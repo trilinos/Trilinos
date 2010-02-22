@@ -59,6 +59,7 @@
 #include "RTOpPack_TOpReciprocal.hpp"
 #include "RTOpPack_TOpRandomize.hpp"
 #include "Teuchos_TestForException.hpp"
+#include "Teuchos_Assert.hpp"
 
 
 //
@@ -160,6 +161,9 @@ template<class Scalar>
 Scalar Thyra::get_ele( const VectorBase<Scalar>& v, Ordinal i )
 {
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
+#ifdef THYRA_DEBUG
+  TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE(i, 0, v.space()->dim());
+#endif
   RTOpPack::ROpGetElement<Scalar> get_ele_op(i);
   Teuchos::RCP<RTOpPack::ReductTarget> get_ele_targ = get_ele_op.reduct_obj_create();
   applyOp<Scalar>(get_ele_op, tuple(ptrInArg(v)),
