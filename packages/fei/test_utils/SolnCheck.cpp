@@ -94,7 +94,10 @@ int SolnCheck::checkSolution(int localProc, int numProcs,
     FEI_COUT << "FEI_tester:checkSolution: checking '"<<extension<<"' solution...";
     int solnCheckCode = SolnCheck::compareSoln(soln, correctSoln);
 
-    if (solnCheckCode != 0) return(-1);
+    if (solnCheckCode != 0) {
+      FEI_COUT << "soln-check failed, checkFileName="<<checkFileName<<FEI_ENDL;
+      return(-1);
+    }
     FEI_COUT << " ok"<<FEI_ENDL;
   }
   return(0);

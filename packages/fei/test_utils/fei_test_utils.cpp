@@ -396,6 +396,7 @@ void print_args(int argc, char** argv){
 int compareMatrices(fei::FillableMat& mat1, fei::FillableMat& mat2, double tol)
 {
   if (mat1 == mat2) return 0;
+  FEI_COUT << "compareMatrices returned not-equal, tol=="<<tol << FEI_ENDL;
   return 1;
 }
 
