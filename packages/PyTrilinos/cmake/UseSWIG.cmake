@@ -109,6 +109,31 @@ MACRO(SWIG_GET_EXTRA_OUTPUT_FILES language outfiles infile outdir module)
 ENDMACRO(SWIG_GET_EXTRA_OUTPUT_FILES)
 
 #
+# Use "swig -MM" to obtain a list of dependencies for the swig module
+# and use it to set SWIG_MODULE_${name}_EXTRA_DEPS.
+#
+MACRO(SWIG_GET_DEPENDENCIES name)
+  # This execute_process has three phases: (1) run swig -MM to obtain
+  # the dependencies, (2) pipe the results to sed to delete the first
+  # line (which is the wrapper file name), and (3) pipe those results
+  # to sed again to convert the contination character to a semicolon.
+  EXECUTE_PROCESS(COMMAND ${SWIG_EXECUTABLE} -MM ${swig_special_flags}
+    -${SWIG_MODULE_${name}_SWIG_LANGUAGE_FLAG} ${swig_source_file_flags} ${CMAKE_SWIG_FLAGS}
+    ${swig_extra_flags} ${swig_include_dirs} ${swig_source_file_fullname}
+    COMMAND sed "1 d"
+    COMMAND sed "s/ \\\\/;/"
+    OUTPUT_VARIABLE swig_dependencies
+    )
+  # Loop over ${swig_dependencies} to generate a whitespace-stripped
+  # SWIG_MODULE_${name}_EXTRA_DEPS
+  SET(SWIG_MODULE_${name}_EXTRA_DEPS "")
+  FOREACH(it ${swig_dependencies})
+    STRING(STRIP ${it} dependency)
+    SET(SWIG_MODULE_${name}_EXTRA_DEPS ${SWIG_MODULE_${name}_EXTRA_DEPS} ${dependency})
+  ENDFOREACH(it)
+ENDMACRO(SWIG_GET_DEPENDENCIES)
+
+#
 # Take swig (*.i) file and add proper custom commands for it
 #
 MACRO(SWIG_ADD_SOURCE_TO_MODULE name outfiles infile outdir module)
@@ -185,6 +210,9 @@ MACRO(SWIG_ADD_SOURCE_TO_MODULE name outfiles infile outdir module)
   IF(SWIG_MODULE_${name}_EXTRA_FLAGS)
     SET(swig_extra_flags ${swig_extra_flags} ${SWIG_MODULE_${name}_EXTRA_FLAGS})
   ENDIF(SWIG_MODULE_${name}_EXTRA_FLAGS)
+
+  SWIG_GET_DEPENDENCIES(${name})
+
   ADD_CUSTOM_COMMAND(
     OUTPUT "${swig_generated_file_fullname}" ${swig_extra_generated_files}
     COMMAND "${SWIG_EXECUTABLE}"
