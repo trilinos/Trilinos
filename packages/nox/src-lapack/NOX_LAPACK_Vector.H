@@ -193,11 +193,12 @@ namespace NOX {
       vector<double> x;
     };
 
+    //! Function for printing
+    ostream& operator<<(ostream& stream, const NOX::LAPACK::Vector& v);
+
   } // namespace LAPACK
 } // namespace NOX
 
-//! Function for printing
-ostream& NOX::LAPACK::operator<<(ostream& stream, const NOX::LAPACK::Vector& v);
 
 
 
