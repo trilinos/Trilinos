@@ -45,6 +45,7 @@
 #
 
 SET(Trilinos_TPLS_AND_CLASSIFICATIONS
+  Peano          EX
   CUDA           EX
   Thrust         EX
   TBB            EX
