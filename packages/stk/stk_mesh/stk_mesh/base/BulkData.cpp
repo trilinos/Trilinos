@@ -717,6 +717,27 @@ bool BulkData::destroy_entity( Entity * & e )
 
 //----------------------------------------------------------------------
 
+void BulkData::generate_new_keys(const std::vector<size_t>& requests,
+                                 std::vector<EntityKey>& requested_keys)
+{
+  typedef stk::parallel::DistributedIndex::KeyType KeyType;
+  std::vector< std::vector<KeyType> > 
+    requested_key_types;
+  m_entities_index.generate_new_keys(requests, requested_key_types);
+
+  requested_keys.clear();
+  for (std::vector< std::vector<KeyType> >::const_iterator itr = requested_key_types.begin(); itr != requested_key_types.end(); ++itr) {
+    const std::vector<KeyType>& key_types = *itr;
+    for (std::vector<KeyType>::const_iterator 
+           kitr = key_types.begin(); kitr != key_types.end(); ++kitr) {
+      EntityKey key(&(*kitr));
+      requested_keys.push_back(key);
+    }
+  }
+}
+
+//----------------------------------------------------------------------
+
 void BulkData::internal_destroy_entire_bucket ( Bucket * b )
 {
   for ( unsigned i = 0 ; i != b->m_size ; i++ )

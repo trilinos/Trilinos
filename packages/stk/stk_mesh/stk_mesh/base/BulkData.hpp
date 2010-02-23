@@ -236,6 +236,11 @@ public:
   bool destroy_entity( Entity * & );
 
   //------------------------------------
+
+  void generate_new_keys(const std::vector<size_t>& requests,
+                         std::vector<EntityKey>& requested_keys);
+
+  //------------------------------------
   /** \brief  Declare a relation and its converse between
    *          entities in the same mesh.
    *
