@@ -37,6 +37,7 @@ static int key_match(int key_size, int *key1, int *key2);
  *  Zoltan_Map_Create       Initialize the map
  *  Zoltan_Map_Add          Add an element to the map
  *  Zoltan_Map_Find         Find an element in the map, return the associated pointer
+ *  Zoltan_Map_Find_Add     Try to find an element in the map, if not present, add it.
  *  Zoltan_Map_First        Return the first element in the map (like an iterator)
  *  Zoltan_Map_Next         Return the next element in the map
  *  Zoltan_Map_Size         Return the number of elements in the map
@@ -190,7 +191,11 @@ int Zoltan_Map_Destroy(ZZ *zz, ZOLTAN_MAP* map)
  * (Return ZOLTAN_OK, etc.)
  */
 
-int Zoltan_Map_Add(ZZ *zz, ZOLTAN_MAP* map, int *key, void *data)
+int Zoltan_Map_Add(ZZ *zz, ZOLTAN_MAP* map, int *key, void *data) {
+  return (Zoltan_Map_Find_Add(zz, map, key, data, NULL));
+}
+
+int Zoltan_Map_Find_Add(ZZ *zz, ZOLTAN_MAP* map, int *key, void *datain, void **dataout)
 {
   char *yo = "Zoltan_Map_Add";
   int index, match, i;
@@ -247,12 +252,15 @@ int Zoltan_Map_Add(ZZ *zz, ZOLTAN_MAP* map, int *key, void *data)
       element->key = key;
     }
 
-    element->data = data;
+    element->data = datain;
     element->next = map->entries[index];
 
     map->entries[index] = element;
 
     map->entry_count++;
+  }
+  else if (dataout != NULL) {
+    *dataout = element->data;
   }
 
   return ZOLTAN_OK;

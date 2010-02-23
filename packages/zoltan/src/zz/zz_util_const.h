@@ -79,6 +79,7 @@ ZOLTAN_MAP* Zoltan_Map_Create(ZZ *zz, int hash_range, int num_id_entries, int st
 int Zoltan_Map_Destroy(ZZ *zz, ZOLTAN_MAP *map);
 int Zoltan_Map_Add(ZZ *zz, ZOLTAN_MAP *map, int *key, void *data);
 int Zoltan_Map_Find(ZZ *zz, ZOLTAN_MAP *map, int *key, void **data);
+int Zoltan_Map_Find_Add(ZZ *zz, ZOLTAN_MAP* map, int *key, void *datain, void **dataout);
 int Zoltan_Map_Size(ZZ *zz, ZOLTAN_MAP *map);
 int Zoltan_Map_First(ZZ *zz, ZOLTAN_MAP *map, int **key, void **data);
 int Zoltan_Map_Next(ZZ *zz, ZOLTAN_MAP *map, int **key, void **data);
