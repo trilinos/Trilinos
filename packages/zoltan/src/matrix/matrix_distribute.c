@@ -211,7 +211,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
 
   offset = dist_y[myProc_y];
 
-/*   ierr = Zoltan_Matrix_Remove_Duplicates(zz, outmat->mtx, &outmat->mtx); */
+  ierr = Zoltan_Matrix_Remove_Duplicates(zz, outmat->mtx, &outmat->mtx);
   nPins = outmat->mtx.nPins;
 
 
@@ -271,9 +271,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
     if (outmat->mtx.nPins && tmpwgtarray == NULL) MEMORY_ERROR;
 
     msg_tag--;
-    Zoltan_Comm_Do_Post(plan, msg_tag, (char *) outmat->mtx.pinwgt, outmat->mtx.pinwgtdim*sizeof(float),
-		   (char *) tmpwgtarray);
-    Zoltan_Comm_Do_Wait(plan, msg_tag, (char *) outmat->mtx.pinwgt, outmat->mtx.pinwgtdim*sizeof(float),
+    Zoltan_Comm_Do(plan, msg_tag, (char *) outmat->mtx.pinwgt, outmat->mtx.pinwgtdim*sizeof(float),
 		   (char *) tmpwgtarray);
     ZOLTAN_FREE(&outmat->mtx.pinwgt);
   }

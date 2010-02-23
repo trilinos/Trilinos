@@ -123,10 +123,15 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   }
 
   ZOLTAN_FREE(&outmat->yGNO);
+  ZOLTAN_FREE(&outmat->pinwgt);
+  ZOLTAN_FREE(&outmat->pinGNO);
+  if (outmat->yend != outmat->ystart +1)
+    ZOLTAN_FREE(&outmat->yend);
+  ZOLTAN_FREE(&outmat->ystart);
 
-  nnz_map = Zoltan_Map_Create(zz, 0, 2, 0, size);
+  nnz_map = Zoltan_Map_Create(zz, 0, 2, 1, size);
   if (nnz_map == NULL) MEMORY_ERROR;
-  y_map = Zoltan_Map_Create(zz, 0, 1, 0, size);
+  y_map = Zoltan_Map_Create(zz, 0, 1, 1, size);
   if (y_map == NULL) MEMORY_ERROR;
   ysize = (int*) ZOLTAN_CALLOC(size, sizeof(int));
   if (size > 0 && ysize == NULL) MEMORY_ERROR;
@@ -134,11 +139,17 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   /* First remove duplicated nnz and extract local yGNO*/
   for(i = 0; i < size ; ++i) {
     int position;
-    /* TODO: Upgrade map to do find and add */
-    Zoltan_Map_Add(zz, nnz_map, arcs[i].GNO, (void*)i);
+    if (arcs[i].GNO[1] >= 0) {/* real arc */
+      int prev;
+      Zoltan_Map_Find_Add(zz, nnz_map, arcs[i].GNO, (void*)i, (void**)&prev);
+      if (prev != i) /* Duplicate arcs */
+	wgtfct(pinwgt+i*outmat->pinwgtdim, pinwgt+prev*outmat->pinwgtdim,
+	       outmat->pinwgtdim);
+    }
     position = Zoltan_Map_Size(zz, y_map);
-    Zoltan_Map_Add(zz, y_map, &arcs[i].GNO[0], (void*)position);
-    ysize[position] += 1; /* One arc for yGNO */
+    Zoltan_Map_Find_Add(zz, y_map, &arcs[i].GNO[0], (void*)position, (void**)&position);
+    if (arcs[i].GNO[1] >= 0)
+      ysize[position] += 1; /* One arc for yGNO */
   }
 
   /* Now order yGNO */
@@ -150,11 +161,17 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   for (i = 0 ; i < outmat->nY ; ++i)
     perm[i] = i;
 
+  Zoltan_Map_First(zz, y_map, &ptrGNO, (void**)&i);
+  while (ptrGNO != NULL) {
+    outmat->yGNO[i] = ptrGNO[0];
+    Zoltan_Map_Next(zz, y_map, &ptrGNO, (void**)&i);
+  }
   Zoltan_Comm_Sort_Ints(outmat->yGNO, perm, outmat->nY);
 
   /* Build indirection table */
   outmat->ystart = (int*) ZOLTAN_MALLOC((outmat->nY+1)*sizeof(int));
   if (outmat->ystart == NULL) MEMORY_ERROR;
+  outmat->yend = outmat->ystart+1;
 
   Zoltan_Map_First(zz, y_map, &ptrGNO, (void**)&i);
   while (ptrGNO != NULL) {
@@ -164,6 +181,13 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   outmat->ystart[0] = 0;
   for (i = 1 ; i < outmat->nY + 1 ; ++i)
     outmat->ystart[i] += outmat->ystart[i-1];
+
+
+  outmat->nPins = Zoltan_Map_Size (zz, nnz_map);
+  outmat->pinGNO = (int*) ZOLTAN_MALLOC(outmat->nPins*sizeof(int));
+  if (outmat->nPins > 0 && outmat->pinGNO == NULL) MEMORY_ERROR;
+  outmat->pinwgt = (float*) ZOLTAN_MALLOC(outmat->nPins*outmat->pinwgtdim*sizeof(float));
+  if (outmat->nPins > 0 && outmat->pinwgtdim >0 && outmat->pinwgt == NULL) MEMORY_ERROR;
 
   /* Now put the nnz at the correct place */
   memset(ysize, 0, outmat->nY*sizeof(int));
@@ -178,20 +202,25 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
     nnz_index = outmat->ystart[y_index] + ysize[y_index];
     ysize[y_index] ++;
     outmat->pinGNO[nnz_index] = tabGNO[1];
-    memcpy(outmat->pinwgt+nnz_index*sizeof(float)*outmat->pinwgtdim,
-	   pinwgt+i*sizeof(float)*outmat->pinwgtdim,
-	   outmat->pinwgtdim*sizeof(float));
+    if (outmat->pinwgtdim > 0 )
+      memcpy(outmat->pinwgt+nnz_index*outmat->pinwgtdim,
+	     pinwgt+i*outmat->pinwgtdim, /* No *sizeof(float) as it is float* pointer */
+	     outmat->pinwgtdim*sizeof(float));
     Zoltan_Map_Next(zz, nnz_map, &tabGNO, (void**)&i);
   }
 
-  Zoltan_Map_Destroy(zz, nnz_map);
-  Zoltan_Map_Destroy(zz, y_map);
 
 #ifdef CC_TIMERS
   fprintf(stderr, "(%d) remove arcs: %g\n", zz->Proc, MPI_Wtime()-time);
 #endif
 
  End:
+  Zoltan_Map_Destroy(zz, nnz_map);
+  Zoltan_Map_Destroy(zz, y_map);
+
+  ZOLTAN_FREE(&ysize);
+  ZOLTAN_FREE(&perm);
+
   ZOLTAN_TRACE_EXIT(zz, yo);
   return (ierr);
 }
