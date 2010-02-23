@@ -635,9 +635,9 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="ExodusII,MPI"/>
+    <LIB_OPTIONAL_DEP_TPLS value="Peano,ExodusII,MPI"/>
     <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS value="ExodusII,MPI"/>
+    <TEST_OPTIONAL_DEP_TPLS value="Peano,ExodusII,MPI"/>
     <EmailAddresses>
       <Checkin address="sundance-checkins@software.sandia.gov"/>
       <Regression address="sundance-regression@software.sandia.gov"/>
