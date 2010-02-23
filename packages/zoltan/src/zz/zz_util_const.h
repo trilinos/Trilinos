@@ -76,7 +76,7 @@ struct Zoltan_Map_List{
 typedef struct Zoltan_Map_List ZOLTAN_MAP;
 
 ZOLTAN_MAP* Zoltan_Map_Create(ZZ *zz, int hash_range, int num_id_entries, int store_keys, int num_entries);
-int Zoltan_Map_Destroy(ZZ *zz, ZOLTAN_MAP *map);
+int Zoltan_Map_Destroy(ZZ *zz, ZOLTAN_MAP **map);
 int Zoltan_Map_Add(ZZ *zz, ZOLTAN_MAP *map, int *key, void *data);
 int Zoltan_Map_Find(ZZ *zz, ZOLTAN_MAP *map, int *key, void **data);
 int Zoltan_Map_Find_Add(ZZ *zz, ZOLTAN_MAP* map, int *key, void *datain, void **dataout);

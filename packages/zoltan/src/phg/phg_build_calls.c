@@ -595,7 +595,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
 
       ZOLTAN_FREE(&recvIntBuf);
 
-      Zoltan_Map_Destroy(zz, map1);
+      Zoltan_Map_Destroy(zz, &map1);
     }
 
     zhg->edgeWeightDim = ew_dim;
@@ -950,7 +950,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       }
     }
 
-    Zoltan_Map_Destroy(zz, map2);
+    Zoltan_Map_Destroy(zz, &map2);
     ZOLTAN_FREE(&recvIntBuf);
 
     if (ew_dim){

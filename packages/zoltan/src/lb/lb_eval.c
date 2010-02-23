@@ -572,7 +572,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
       }
     }
 
-    Zoltan_Map_Destroy(zz, map);
+    Zoltan_Map_Destroy(zz, &map);
 
     if (num_pairs > 0){
       qsort(partNbors, num_pairs, sizeof(int) * 2,
@@ -808,7 +808,7 @@ End:
 
   /* Free data */
 
-  Zoltan_Map_Destroy(zz, map);
+  Zoltan_Map_Destroy(zz, &map);
 
   ZOLTAN_FREE(&localCount);
   ZOLTAN_FREE(&globalVals);

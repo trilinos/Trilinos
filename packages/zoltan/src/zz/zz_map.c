@@ -133,27 +133,27 @@ ZOLTAN_MAP* Zoltan_Map_Create(ZZ *zz,     /* just need this for error messages *
  * a map that has already been destroyed, or for a map that was never created.
  * (Return ZOLTAN_OK, etc.)
  */
-int Zoltan_Map_Destroy(ZZ *zz, ZOLTAN_MAP* map)
+int Zoltan_Map_Destroy(ZZ *zz, ZOLTAN_MAP** map)
 {
   int i;
   ZOLTAN_ENTRY *nextEntry, *tmpEntry;
 
-  if (!map){
+  if (!map || !*map){
     return ZOLTAN_OK;  /* OK to call Destroy more than once */
   }
 
-  if (map->copyKeys){
+  if ((*map)->copyKeys){
 
     /* free our copies of the keys */
 
-    if (!map->dynamicEntries){
-      for (i=0; i < map->entry_count; i++){
-	ZOLTAN_FREE(&(map->top[i].key));
+    if (!(*map)->dynamicEntries){
+      for (i=0; i < (*map)->entry_count; i++){
+	ZOLTAN_FREE(&((*map)->top[i].key));
       }
     }
     else{
-      for (i=0; i <= map->max_index; i++){
-	nextEntry = map->entries[i];
+      for (i=0; i <= (*map)->max_index; i++){
+	nextEntry = (*map)->entries[i];
 	while (nextEntry){
 	  tmpEntry = nextEntry->next;
 	  ZOLTAN_FREE(&(nextEntry->key));
@@ -165,24 +165,23 @@ int Zoltan_Map_Destroy(ZZ *zz, ZOLTAN_MAP* map)
 
   /* free the map entries */
 
-  if (!map->dynamicEntries){
-    ZOLTAN_FREE(&map->entries);
-    ZOLTAN_FREE(&map->top);
+  if (!(*map)->dynamicEntries){
+    ZOLTAN_FREE(&(*map)->entries);
+    ZOLTAN_FREE(&(*map)->top);
   }
   else{
-    for (i=0; i <= map->max_index; i++){
-      nextEntry = map->entries[i];
+    for (i=0; i <= (*map)->max_index; i++){
+      nextEntry = (*map)->entries[i];
       while (nextEntry){
 	tmpEntry = nextEntry->next;
 	ZOLTAN_FREE(&nextEntry);
 	nextEntry = tmpEntry;
       }
     }
-    ZOLTAN_FREE(&map->entries);
+    ZOLTAN_FREE(&(*map)->entries);
   }
 
-  memset(map, 0, sizeof(ZOLTAN_MAP));
-
+  ZOLTAN_FREE(map);
   return ZOLTAN_OK;
 }
 
@@ -259,7 +258,7 @@ int Zoltan_Map_Find_Add(ZZ *zz, ZOLTAN_MAP* map, int *key, void *datain, void **
 
     map->entry_count++;
   }
-  else if (dataout != NULL) {
+  if (dataout != NULL) {
     *dataout = element->data;
   }
 

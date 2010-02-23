@@ -215,8 +215,8 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
 #endif
 
  End:
-  Zoltan_Map_Destroy(zz, nnz_map);
-  Zoltan_Map_Destroy(zz, y_map);
+  Zoltan_Map_Destroy(zz, &nnz_map);
+  Zoltan_Map_Destroy(zz, &y_map);
 
   ZOLTAN_FREE(&ysize);
   ZOLTAN_FREE(&perm);

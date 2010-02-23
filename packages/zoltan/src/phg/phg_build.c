@@ -868,7 +868,7 @@ long int index;
       index = (long int)indexptr - 1;
       outparts[i] = zhg->Output_Parts[index];
     }
-    Zoltan_Map_Destroy(zz, map);
+    Zoltan_Map_Destroy(zz, &map);
   }
 
   ZOLTAN_FREE(&recvpins);
