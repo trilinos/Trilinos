@@ -2,3 +2,4 @@
 /* Define to indicate that STK is in Trilinos (rather than in Sierra) */
 #cmakedefine HAVE_STK_Trilinos
 
+#cmakedefine HAVE_MPI
