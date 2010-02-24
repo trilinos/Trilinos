@@ -414,6 +414,10 @@ namespace Epetra
 ////////////////////////////////////////////
 // NOX.Epetra.LinearSystemAztecOO support //
 ////////////////////////////////////////////
+// There are two LinearSystemAztecOO constructors that are similar,
+// but different.  SWIG gets confused and thinks one overshadows the
+// other.  This suppresses the warning.
+%warnfilter(509) NOX::Epetra::LinearSystemAztecOO::LinearSystemAztecOO;
 %include "NOX_Epetra_LinearSystem_AztecOO.H"
 
 ////////////////////////////////////////////////
