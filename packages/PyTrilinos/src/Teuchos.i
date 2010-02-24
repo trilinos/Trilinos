@@ -243,7 +243,9 @@ __version__ = Teuchos_Version().split()[2]
 }
 
 %extend_smart_pointer(RCP< Type >)
-%template()           RCP< Type >;
+%ignore     RCP< Type >::swap;
+%ignore     RCP< Type >::operator();
+%template() RCP< Type >;
 
 %enddef
 
