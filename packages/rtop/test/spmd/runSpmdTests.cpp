@@ -38,7 +38,7 @@
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ScalarTraits.hpp"
-#include "Teuchos_arrayArg.hpp"
+#include "Teuchos_Tuple.hpp"
 
 
 template<class Scalar>
@@ -50,11 +50,12 @@ bool testRTOp(
 
   using Teuchos::as;
   using Teuchos::RCP;
+  using Teuchos::Ptr;
   using Teuchos::rcp;
   using Teuchos::FancyOStream;
   using Teuchos::VerboseObjectBase;
   using Teuchos::OSTab;
-  using Teuchos::arrayArg;
+  using Teuchos::tuple;
   using Teuchos::broadcast;
 
   typedef Teuchos_Ordinal Ordinal;
@@ -113,9 +114,9 @@ bool testRTOp(
   RTOpPack::ReductTargetSerializer<Scalar>
     sumTargetSerializer(Teuchos::rcp(&sumOp,false));
 
-  broadcast<Ordinal>(
-    comm, sumTargetSerializer, 0, 1,
-    arrayArg<RTOpPack::ReductTarget*>(&*sumTarget2)()
+  broadcast<Ordinal, RTOpPack::ReductTarget>(
+    comm, sumTargetSerializer, 0,
+    tuple<Ptr<RTOpPack::ReductTarget> >(sumTarget2.ptr())()
     );
 
   *out << "\nbroadcast value = " << sumOp(*sumTarget2) << "\n";

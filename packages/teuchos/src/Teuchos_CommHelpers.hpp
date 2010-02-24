@@ -151,6 +151,16 @@ void broadcast(
   const int rootRank, const Ordinal count, Packet*const buffer[]
   );
 
+/** \brief Broadcast array of objects that use reference semantics.
+ *
+ * \relates Comm
+ */
+template<typename Ordinal, typename Packet>
+void broadcast(
+  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer,
+  const int rootRank, const ArrayView<const Ptr<Packet> > &buffer
+  );
+
 /** \brief Gather array of objects that use value semantics from every process
  * to every process.
  *
@@ -895,10 +905,25 @@ void Teuchos::broadcast(
     <<">( reference type )"
     );
   ReferenceTypeSerializationBuffer<Ordinal,Packet>
-    charBuffer(serializer,count,buffer);
+    charBuffer(serializer, count, buffer);
   comm.broadcast(
     rootRank,charBuffer.getBytes(),charBuffer.getCharBuffer()
     );
+}
+
+
+template<typename Ordinal, typename Packet>
+void Teuchos::broadcast(
+  const Comm<Ordinal>& comm, const Serializer<Ordinal,Packet> &serializer,
+  const int rootRank, const ArrayView<const Ptr<Packet> > &buffer
+  )
+{
+  Array<Packet*> bufferPtrArray;
+  for (int i = 0; i < buffer.size(); ++i) {
+    bufferPtrArray.push_back(buffer[i].getRawPtr());
+  }
+  broadcast<Ordinal,Packet>(comm, serializer, rootRank,
+    buffer.size(), bufferPtrArray.getRawPtr());
 }
 
 
