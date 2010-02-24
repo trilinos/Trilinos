@@ -5,7 +5,6 @@ PyTrilinos To Do List
 * General
   - Any package with Directors should get %feature("director:except") ...
     and catch(Swig::DirectorException &e) ...
-  - Automatic -fPIC for shared library builds (3311)
   - Developers Manual
   - Can I get PyTrilinos to configure and build if Teuchos is
     disabled?
@@ -39,7 +38,6 @@ PyTrilinos To Do List
   - Refactor
 
 * NOX
-  - exNOX_1Dfem.py in parallel (3614)
   - Pure numpy interface
   - Unit tests
   - Examples
