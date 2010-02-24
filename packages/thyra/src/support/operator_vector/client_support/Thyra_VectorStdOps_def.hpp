@@ -34,6 +34,7 @@
 #include "Thyra_VectorBase.hpp"
 #include "RTOpPack_ROpDotProd.hpp"
 #include "RTOpPack_ROpGetElement.hpp"
+#include "RTOpPack_TOpSetElement.hpp"
 #include "RTOpPack_ROpMin.hpp"
 #include "RTOpPack_ROpMinIndex.hpp"
 #include "RTOpPack_ROpMinIndexGreaterThanBound.hpp"
@@ -180,11 +181,14 @@ template<class Scalar>
 void Thyra::set_ele( Ordinal i, Scalar alpha, const Ptr<VectorBase<Scalar> > &v )
 {
   using Teuchos::tuple; using Teuchos::null;
-  RTOpPack::TOpAssignScalar<Scalar> assign_scalar_op(alpha);
-  applyOp<Scalar>(assign_scalar_op,
+#ifdef THYRA_DEBUG
+  TEUCHOS_ASSERT_IN_RANGE_UPPER_EXCLUSIVE(i, 0, v->space()->dim());
+#endif
+  RTOpPack::TOpSetElement<Scalar> set_ele_op(i, alpha);
+  applyOp<Scalar>(set_ele_op,
     ArrayView<Ptr<const VectorBase<Scalar> > >(null),
     tuple(v),
-    null, i, 1, 0 );
+    null);
 }
 
 

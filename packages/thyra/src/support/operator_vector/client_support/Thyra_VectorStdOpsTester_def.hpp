@@ -199,6 +199,27 @@ public:
 };
 
 
+// Other helpers
+
+
+template<class Scalar>
+void setEleTestCase( const Ptr<VectorBase<Scalar> > &z, const Ordinal i, int &tc,
+  std::ostream &out, bool &success)
+{
+  using Teuchos::as;
+  out << "\n"<<tc<<") set_ele(z, "<<i<<");\n";
+  ++tc;
+  {
+    typedef ScalarTraits<Scalar> ST;
+    const Scalar val_i = as<Scalar>(i+1);
+    assign<Scalar>(z, ST::zero());
+    set_ele(i, val_i, z);
+    TEUCHOS_TEST_EQUALITY_CONST(get_ele(*z, i), val_i, out, success);
+    TEUCHOS_TEST_EQUALITY_CONST(sum(*z), val_i, out, success);
+  }
+}
+
+
 // VectorStdOpsTester
 
 
@@ -240,8 +261,6 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
     " run Thyra::VectorStdOpsTester::checkStdOps(...)!" );
 
   const Scalar
-    //zero = as<Scalar>(0.0),
-    //one = as<Scalar>(1.0),
     two = as<Scalar>(2.0),
     three = as<Scalar>(3.0),
     four = as<Scalar>(4.0);
@@ -375,12 +394,32 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   }
 
 #endif // THYRA_DEBUG
+
+  // set_ele
+
+  setEleTestCase<Scalar>(z.ptr(), 0, tc, out, success);
+
+  setEleTestCase<Scalar>(z.ptr(), 1, tc, out, success);
+
+  setEleTestCase<Scalar>(z.ptr(), n-2, tc, out, success);
+
+  setEleTestCase<Scalar>(z.ptr(), n-1, tc, out, success);
+
+#ifdef THYRA_DEBUG
+
+  TEUCHOS_TEST_THROW(set_ele(-1, two, z.ptr()),
+    std::out_of_range, out, success);
+
+  TEUCHOS_TEST_THROW(set_ele(n, two, z.ptr()),
+    std::out_of_range, out, success);
+
+#endif // THYRA_DEBUG
     
   // reciprocal
   out << "\n"<<tc<<") reciprocal(z.ptr(),*v1);\n";
   ++tc;
   {
-    reciprocal(z.ptr(),*v1);
+    reciprocal(z.ptr(), *v1);
     if(!testRelErr<Scalar>(
          "sum(*z)",sum(*z),"-0.5*vecSpc.dim()",as<Scalar>(-0.5)*as<Scalar>(vecSpc.dim())
          ,"error_tol",error_tol(),"warning_tol",warning_tol(),&out)
