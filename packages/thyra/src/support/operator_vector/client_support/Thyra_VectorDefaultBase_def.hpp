@@ -361,10 +361,7 @@ void VectorDefaultBase<Scalar>::acquireDetachedVectorViewImpl(
     reduct_obj = get_sub_vector_op.reduct_obj_create(); // This is really of type RTOpPack::ConstSubVectorView<Scalar>!
   // Perform the reduction (get the sub-vector requested)
   const VectorBase<Scalar>* sub_vecs[] = { this };
-  ::Thyra::applyOp<Scalar>(
-    get_sub_vector_op, 1, sub_vecs, 0, NULL, &*reduct_obj,
-    rng.lbound(),rng.size(),rng.lbound() // first_ele_offset,sub_dim,global_offset
-    );
+  ::Thyra::applyOp<Scalar>(get_sub_vector_op, 1, sub_vecs, 0, NULL, &*reduct_obj);
   // Get the sub-vector.
   *sub_vec_inout = get_sub_vector_op(*reduct_obj);
 }
@@ -423,10 +420,7 @@ void VectorDefaultBase<Scalar>::setSubVectorImpl( const RTOpPack::SparseSubVecto
 {
   RTOpPack::TOpSetSubVector<Scalar> set_sub_vector_op(sub_vec);
   VectorBase<Scalar>* targ_vecs[1] = { this };
-  ::Thyra::applyOp<Scalar>(
-    set_sub_vector_op,0,NULL,1,targ_vecs,NULL
-    ,sub_vec.globalOffset(),sub_vec.subDim(),sub_vec.globalOffset() // first_ele_offset,sub_dim,global_offset
-    );
+  ::Thyra::applyOp<Scalar>(set_sub_vector_op, 0, NULL, 1, targ_vecs, NULL);
 }
 
 
