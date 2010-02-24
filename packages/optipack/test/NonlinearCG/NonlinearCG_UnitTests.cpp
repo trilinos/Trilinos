@@ -177,7 +177,9 @@ createNonlinearCGSolver(
 template<class Scalar>
 class TOpAssignValToGlobalIndex : public RTOpPack::RTOpT<Scalar> {
 public:
-  TOpAssignValToGlobalIndex() {}
+  TOpAssignValToGlobalIndex(const Teuchos::Range1D &range = Teuchos::Range1D())
+    :range_(range)
+    {}
 protected:
   bool coord_invariant_impl() const
     {
@@ -198,9 +200,14 @@ protected:
       const ptrdiff_t z_val_s = z.stride();
 
       for ( int i = 0; i < z_sub_dim; ++i, z_val += z_val_s ) {
-        *z_val = as<Scalar>(z_global_offset + i + 1);
+        const Ordinal global_i = z_global_offset + i;
+        if (range_.in_range(global_i)) {
+          *z_val = as<Scalar>(global_i + 1);
+        }
       }
     }
+private:
+  Teuchos::Range1D range_;
 };
 
 
@@ -383,6 +390,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG, oneEigenVal
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, partialEigenVal, Scalar )
 {
 
+  using Teuchos::Range1D;
   using Teuchos::optInArg;
   typedef ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
@@ -399,8 +407,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, partialEigenVal, Scalar )
   {
     const RCP<VectorBase<Scalar> > diag = createMember(p_space);
     V_S(diag.ptr(), ST::one());
-    applyOp<Scalar>( TOpAssignValToGlobalIndex<Scalar>(),
-      null, tuple(diag.ptr())(), null, 0, numUniqueEigenVals, 0 );
+    applyOp<Scalar>( TOpAssignValToGlobalIndex<Scalar>(Range1D(0,numUniqueEigenVals-1)),
+      null, tuple(diag.ptr())(), null );
     out << "diag =\n" << *diag;
     model->setDiagonalVector(diag);
   }
@@ -521,6 +529,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG, fullEigenVa
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, fullEigenValScalarProd, Scalar )
 {
 
+  using Teuchos::Range1D;
   using Teuchos::optInArg;
   typedef ScalarTraits<Scalar> ST;
   typedef typename ST::magnitudeType ScalarMag;
@@ -545,8 +554,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, fullEigenValScalarProd, Scalar )
   {
     const RCP<VectorBase<Scalar> > diag_bar = createMember(p_space);
     V_S(diag_bar.ptr(), ST::one());
-    applyOp<Scalar>( TOpAssignValToGlobalIndex<Scalar>(),
-      null, tuple(diag_bar.ptr())(), null, 0, numUniqueEigenVals, 0 );
+    applyOp<Scalar>( TOpAssignValToGlobalIndex<Scalar>(Range1D(0, numUniqueEigenVals-1)),
+      null, tuple(diag_bar.ptr())(), null );
     //applyOp<Scalar>( TOpAssignValToGlobalIndex<Scalar>(),
     //  null, tuple(diag_bar.ptr())(), null );
     out << "diag_bar =\n" << *diag_bar;
