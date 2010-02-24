@@ -34,15 +34,20 @@
 #include "Teuchos_Serializer.hpp"
 #include "Teuchos_ReductionOp.hpp"
 
+
 namespace Teuchos { template<typename Ordinal> class Comm; }
+
 
 //#define RTOPPACK_SPMD_APPLY_OP_DUMP
 
+
 namespace RTOpPack {
+
 
 #ifdef RTOPPACK_DEBUG
 extern bool show_spmd_apply_op_dump;
 #endif // RTOPPACK_DEBUG
+
 
 /** \brief Return the size in bytes of an external representation of a
  * <tt>ReductTarget</tt> object.
@@ -55,6 +60,7 @@ int serializedSize(
   ,int  num_indexes
   ,int  num_chars
   );
+
 
 /** \brief Serialize a <tt>ReductTarget</tt> object.
  *
@@ -70,6 +76,7 @@ void serialize(
   char reduct_obj_ext[]
   );
 
+
 /** \brief Deserialize a <tt>ReductTarget</tt> object.
  *
  * \ingroup RTOpPack_parallel_helpers_grp
@@ -83,6 +90,7 @@ void deserialize(
   const char reduct_obj_ext[],
   ReductTarget *reduct_obj
   );
+
 
 /** \brief Serializer subclass for <tt>ReductTarget</tt> objects.
  *
@@ -127,6 +135,7 @@ private:
   ReductTargetSerializer& operator=(const ReductTargetSerializer&);
 };
 
+
 /** \brief ReductionOp subclass for <tt>ReductTarget</tt> objects.
  *
  * The copy constructor is allowed and has shallow copy semantics.
@@ -159,6 +168,7 @@ private:
   ReductTargetReductionOp<Scalar>& operator=(const ReductTargetReductionOp<Scalar>&);
 };
 
+
 /** \brief Reduce a set of reduction objects.
  *
  * ToDo: Finish documentation!
@@ -173,6 +183,7 @@ void SPMD_all_reduce(
   ,const ReductTarget*const           i_reduct_objs[]
   ,ReductTarget*const                 reduct_objs[]
   );
+
 
 /** \brief Apply an RTOp in SMPD mode to a set of vectors with contiguous
  * storage per process.
@@ -191,6 +202,7 @@ void SPMD_apply_op(
   ,const SubVectorView<Scalar>        targ_sub_vecs[]
   ,ReductTarget                       *reduct_obj
   );
+
 
 /** \brief Apply an RTOp in SMPD mode to a set of columns to a set of
  * multi-vectors with contiguous storage per process.
@@ -211,6 +223,7 @@ void SPMD_apply_op(
   ,ReductTarget*const                      reduct_objs[]
   );
 
+
 /** \brief Apply an RTOp in SMPD mode to a set of columns to a set of
  * multi-vectors with contiguous storage per process.
  *
@@ -230,6 +243,8 @@ void  SPMD_apply_op(
   ,ReductTarget*const                       reduct_objs[]
   );
 
+
 } // end namespace RTOpPack
+
 
 #endif // RTOPPACK_SPMD_APPLY_OP_DECL_HPP
