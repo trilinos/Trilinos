@@ -226,44 +226,31 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   if (outmat->mtx.nPins && outmat->mtx.pinwgtdim && outmat->mtx.pinwgt == NULL)
     MEMORY_ERROR;
 
-/*   if (inmat.opts.keep_distribution == 0 || inmat.opts.speed != MATRIX_NO_REDIST || */
-/*       inmat.opts.symmetrize != 0) { /\* Check for duplicates *\/ */
-    /* First, add fake edges for empty vertices */
-    /* TODO: do this feature */
-/*     for (i = 0 ; i < nEdge ; ++i) { */
-/*       j=outmat->mtx.nPins + i; */
-/*       nonzeros[j].GNO[0] = offset + i; */
-/*       nonzeros[j].GNO[1] = -1; */
-/*     } */
+  /* TODO: do take care about singletons */
 
-    Zoltan_Matrix_Remove_DupArcs(zz, outmat->mtx.nPins, (Zoltan_Arc*)nonzeros, tmpwgtarray,
-				 &outmat->mtx);
-
-/*   } */
-/*   else { */
-/*     Zoltan_Matrix_Construct_CSR (zz, outmat->mtx.nPins, (Zoltan_Arc*)nonzeros, tmpwgtarray, &outmat->mtx, offset); */
-/*   } */
+  Zoltan_Matrix_Remove_DupArcs(zz, outmat->mtx.nPins, (Zoltan_Arc*)nonzeros, tmpwgtarray,
+			       &outmat->mtx);
 
   /* Now we just have to change numbering */
-    outmat->dist_y = (int *) ZOLTAN_CALLOC((nProc_y+1), sizeof(int));
-    outmat->dist_x = (int *) ZOLTAN_CALLOC((nProc_x+1), sizeof(int));
-    if (outmat->dist_y == NULL || outmat->dist_x == NULL) MEMORY_ERROR;
+  outmat->dist_y = (int *) ZOLTAN_CALLOC((nProc_y+1), sizeof(int));
+  outmat->dist_x = (int *) ZOLTAN_CALLOC((nProc_x+1), sizeof(int));
+  if (outmat->dist_y == NULL || outmat->dist_x == NULL) MEMORY_ERROR;
 
-    /* FIXME: Work only in 1D */
-    MPI_Allgather(&outmat->mtx.nY, 1, MPI_INT,
-		  outmat->dist_y+1, 1, MPI_INT,
-		  communicator);
-    for (i = 1 ; i <= nProc_y ; i ++) {
-      outmat->dist_y[i] += outmat->dist_y[i-1];
-    }
-    outmat->dist_x[1] = outmat->mtx.globalX;
+  /* FIXME: Work only in 1D */
+  MPI_Allgather(&outmat->mtx.nY, 1, MPI_INT,
+		outmat->dist_y+1, 1, MPI_INT,
+		communicator);
+  for (i = 1 ; i <= nProc_y ; i ++) {
+    outmat->dist_y[i] += outmat->dist_y[i-1];
+  }
+  outmat->dist_x[1] = outmat->mtx.globalX;
 
-    perm_y = (int *) ZOLTAN_MALLOC(outmat->mtx.nY * sizeof(int));
-    if (outmat->mtx.nY > 0 && perm_y == NULL) MEMORY_ERROR;
-    for (i = 0 ; i < outmat->mtx.nY ; ++i)
-      perm_y[i] = i + outmat->dist_y[myProc_y];
+  perm_y = (int *) ZOLTAN_MALLOC(outmat->mtx.nY * sizeof(int));
+  if (outmat->mtx.nY > 0 && perm_y == NULL) MEMORY_ERROR;
+  for (i = 0 ; i < outmat->mtx.nY ; ++i)
+    perm_y[i] = i + outmat->dist_y[myProc_y];
 
-    Zoltan_Matrix_Permute(zz, &outmat->mtx, perm_y);
+  Zoltan_Matrix_Permute(zz, &outmat->mtx, perm_y);
 
  End:
   ZOLTAN_FREE(&perm_y);
