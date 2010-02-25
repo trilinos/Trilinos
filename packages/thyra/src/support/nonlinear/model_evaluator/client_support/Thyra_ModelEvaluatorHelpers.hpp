@@ -673,6 +673,10 @@ void Thyra::assertOutArgsEvalObjects(
   const int Ng = outArgs.Ng();
   const int Np = outArgs.Np();
 
+  if (inArgs) {
+    TEUCHOS_ASSERT_EQUALITY(outArgs.Np(), inArgs->Np());
+  }
+
   model.createOutArgs().assertSameSupport(outArgs);
 
   // f
