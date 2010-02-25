@@ -34,15 +34,15 @@
 #include "Teuchos_Workspace.hpp"
 #include "Teuchos_CommHelpers.hpp"
 
-#ifdef RTOPPACK_DEBUG
+#ifdef RTOP_DEBUG
 #  include "Teuchos_VerboseObject.hpp"
-#endif // RTOPPACK_DEBUG
+#endif // RTOP_DEBUG
 
 
 namespace RTOpPack {
 
 
-#ifdef RTOPPACK_DEBUG
+#ifdef RTOP_DEBUG
 
 
 template<class Scalar>
@@ -62,7 +62,7 @@ void print( const ConstSubVectorView<Scalar> &v, Teuchos::FancyOStream &out_arg 
 # include "Teuchos_VerboseObject.hpp"
 
 
-#endif // RTOPPACK_DEBUG
+#endif // RTOP_DEBUG
 
 
 } // namespace RTOpPack
@@ -156,7 +156,7 @@ void RTOpPack::deserialize(
     values_off = num_chars_off + index_type_size,
     indexes_off = values_off + num_values_in * prim_value_type_size,
     chars_off = indexes_off + num_indexes_in * index_type_size;
-#ifdef RTOPPACK_DEBUG
+#ifdef RTOP_DEBUG
   Ordinal num_values = -1, num_indexes = -1, num_chars = -1;
   ITST::deserialize(index_type_size, &reduct_obj_ext[num_values_off], 1, &num_values);
   ITST::deserialize(index_type_size, &reduct_obj_ext[num_indexes_off], 1, &num_indexes);
@@ -216,7 +216,7 @@ void ReductTargetSerializer<Scalar>::serialize(
   ,char charBuffer[]
   ) const
 {
-#ifdef RTOPPACK_DEBUG
+#ifdef RTOP_DEBUG
   TEST_FOR_EXCEPT( !(count > 0) );
   TEST_FOR_EXCEPT( !reduct_objs );
   TEST_FOR_EXCEPT( !(bytes==this->getBufferSize(count)) );
@@ -247,7 +247,7 @@ void ReductTargetSerializer<Scalar>::deserialize(
   ,ReductTarget * const reduct_objs[]
   ) const
 {
-#ifdef RTOPPACK_DEBUG
+#ifdef RTOP_DEBUG
   TEST_FOR_EXCEPT( !(bytes > 0) );
   TEST_FOR_EXCEPT( !charBuffer );
   TEST_FOR_EXCEPT( !(bytes==getBufferSize(count)) );
@@ -402,7 +402,7 @@ void RTOpPack::SPMD_apply_op(
   )
 {
   using Teuchos::arrayView;
-#ifdef RTOPPACK_DEBUG
+#ifdef RTOP_DEBUG
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
   Teuchos::OSTab tab(out);
@@ -445,7 +445,7 @@ void RTOpPack::SPMD_apply_op(
       }
     }
   }
-#endif // RTOPPACK_DEBUG
+#endif // RTOP_DEBUG
   using Teuchos::Workspace;
   Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
   if( reduct_objs == NULL && sub_vecs == NULL && sub_targ_vecs == NULL ) {
@@ -498,7 +498,7 @@ void RTOpPack::SPMD_apply_op(
             );
         }
       }
-#ifdef RTOPPACK_DEBUG
+#ifdef RTOP_DEBUG
       if(show_spmd_apply_op_dump) {
         if(reduct_objs) {
           *out << "\nIntermediate reduction objects in this process before global reduction:\n";
@@ -510,7 +510,7 @@ void RTOpPack::SPMD_apply_op(
           }
         }
       }
-#endif // RTOPPACK_DEBUG
+#endif // RTOP_DEBUG
       //
       // Reduce the local intermediate reduction objects into the global reduction objects
       //
@@ -519,17 +519,17 @@ void RTOpPack::SPMD_apply_op(
       for( int kc = 0; kc < num_cols; ++kc ) {
         _i_reduct_objs[kc] = &*i_reduct_objs[kc];
       }
-#ifdef RTOPPACK_DEBUG
+#ifdef RTOP_DEBUG
       if(show_spmd_apply_op_dump) {
         if(reduct_objs) {
           *out << "\nPerforming global reduction ...\n";
         }
       }
-#endif // RTOPPACK_DEBUG
+#endif // RTOP_DEBUG
       SPMD_all_reduce(comm,op,num_cols,&_i_reduct_objs[0],reduct_objs);
     }
   }
-#ifdef RTOPPACK_DEBUG
+#ifdef RTOP_DEBUG
   if(show_spmd_apply_op_dump) {
     if( num_targ_vecs && sub_targ_vecs ) {
       *out << "\nInput/output vectors *after* transforamtion:\n";
@@ -552,7 +552,7 @@ void RTOpPack::SPMD_apply_op(
     }
     *out << "\nLeaving RTOpPack::SPMD_apply_op(...) ...\n";
   }
-#endif // RTOPPACK_DEBUG
+#endif // RTOP_DEBUG
 }
 
 

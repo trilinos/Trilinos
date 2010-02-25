@@ -37,4 +37,8 @@
 
 #include <RTOp_Config.h>
 
+#ifdef HAVE_RTOP_DEBUG
+#  define RTOP_DEBUG
+#endif
+
 #endif /*_RTOP_CONFIGDEFS_H_*/

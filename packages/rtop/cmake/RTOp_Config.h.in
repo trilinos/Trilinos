@@ -1,6 +1,6 @@
 #cmakedefine HAVE_MPI
 
-#cmakedefine RTOPPACK_DEBUG
+#cmakedefine HAVE_RTOP_DEBUG
 
 #cmakedefine HAVE_RTOP_EXPLICIT_INSTANTIATION
 

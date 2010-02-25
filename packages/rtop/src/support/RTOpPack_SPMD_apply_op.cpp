@@ -30,9 +30,9 @@
 #include "RTOpPack_SPMD_apply_op_decl.hpp"
 
 
-#ifdef RTOPPACK_DEBUG
+#ifdef RTOP_DEBUG
 bool RTOpPack::show_spmd_apply_op_dump = false;
-#endif // RTOPPACK_DEBUG
+#endif // RTOP_DEBUG
 
 
 #ifdef HAVE_RTOP_EXPLICIT_INSTANTIATION
