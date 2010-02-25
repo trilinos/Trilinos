@@ -42,6 +42,15 @@ extern "C" {
 typedef enum {ADD_WEIGHT=0, MAX_WEIGHT, CMP_WEIGHT} WgtOp;
 typedef enum {MATRIX_FULL_DD=0, MATRIX_FAST, MATRIX_NO_REDIST} SpeedOpt;
 
+
+/* Hash function used to describe how to distribute data */
+/* (Y, X, data, &part_y) */
+typedef int distFnct(int, int, void *, int*);
+int Zoltan_Distribute_Origin(int edge_gno, int vtx_gno, void* data, int *part_y);
+int Zoltan_Distribute_Linear(int edge_gno, int vtx_gno, void* data, int *part_y);
+int Zoltan_Distribute_Cyclic(int edge_gno, int vtx_gno, void* data, int *part_y);
+int Zoltan_Distribute_Partition(int edge_gno, int vtx_gno, void* data, int *part_y);
+
 /* This structure defines how the matrix will be constructed */
 typedef struct Zoltan_matrix_options_ {
   int enforceSquare;           /* Want to build a graph */
@@ -93,6 +102,9 @@ typedef struct Zoltan_matrix_2d_ {
   PHGComm         *comm;        /* How data are distributed */
   int             *dist_x;      /* Distribution on x axis */
   int             *dist_y;      /* Distribution on y axis */
+  distFnct        *hashDistFct; /* How to distribute nnz */
+  void            *hashDistData;/* Used by hashDist */
+
 } Zoltan_matrix_2d;
 
 /* Auxiliary struct used internaly */
@@ -119,6 +131,9 @@ Zoltan_Matrix_Free(Zoltan_matrix *m);
 /* Free a matrix2d object */
 void
 Zoltan_Matrix2d_Free(Zoltan_matrix_2d *m);
+
+void
+Zoltan_Matrix2d_Init(Zoltan_matrix_2d *m);
 
 /* This function compute the indices of the diagonal terms.
    This function needs that diagonal terms are declared at most
@@ -163,6 +178,9 @@ Zoltan_Distribute_layout (ZZ *zz, const PHGComm * const inlayout,
 int Zoltan_Distribute_Square (ZZ * zz, PHGComm *layout) ;
 /* Distribute in a linear 1D way, typically for a graph */
 int Zoltan_Distribute_LinearY (ZZ * zz, PHGComm *layout) ;
+
+int Zoltan_Distribute_Set(Zoltan_matrix_2d* mat,
+			  distFnct *hashDistFct, void * hashDistData);
 
 /* Compute a symmertrization of the matrix.
  * if bipartite == 0, A+At transformation is done (matrix has to be square).

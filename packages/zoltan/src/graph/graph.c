@@ -79,6 +79,8 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local)
   Zoltan_Assign_Param_Vals(zz->Params, ZG_params, zz->Debug_Level, zz->Proc,
 			   zz->Debug_Proc);
 
+  Zoltan_Matrix2d_Init(&graph->mtx);
+
   graph->mtx.comm = (PHGComm*)ZOLTAN_MALLOC (sizeof(PHGComm));
   if (graph->mtx.comm == NULL) MEMORY_ERROR;
   Zoltan_PHGComm_Init (graph->mtx.comm);

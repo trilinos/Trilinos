@@ -66,6 +66,25 @@ Zoltan_Matrix_Reset(Zoltan_matrix* m)
   m->yGID = NULL;
 }
 
+
+void
+Zoltan_Matrix2d_Init(Zoltan_matrix_2d *m)
+{
+  memset(m, 0, sizeof(Zoltan_matrix_2d));
+
+  Zoltan_Distribute_Set(m, &Zoltan_Distribute_Linear, (void*)m);
+}
+
+int
+Zoltan_Distribute_Set(Zoltan_matrix_2d* mat,
+		      distFnct *hashDistFct, void * hashDistData)
+{
+  mat->hashDistData = hashDistData;
+  mat->hashDistFct = hashDistFct;
+  return (ZOLTAN_OK);
+}
+
+
 int
 Zoltan_Matrix_Complete(ZZ* zz,Zoltan_matrix* m)
 {

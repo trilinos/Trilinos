@@ -75,7 +75,7 @@ Zoltan_Distribute_layout (ZZ *zz, const PHGComm * const inlayout,
 }
 
 
-static int hash_edges(int edge_gno, int vtx_gno, void* data, int *part_y)
+int Zoltan_Distribute_Origin(int edge_gno, int vtx_gno, void* data, int *part_y)
 {
   Zoltan_matrix_2d *mat;
 
@@ -85,7 +85,35 @@ static int hash_edges(int edge_gno, int vtx_gno, void* data, int *part_y)
   return (*part_y);
 }
 
+int Zoltan_Distribute_Linear(int edge_gno, int vtx_gno, void* data, int *part_y)
+{
+  Zoltan_matrix_2d *mat;
 
+  mat = (Zoltan_matrix_2d*) data;
+  *part_y = (int)floor((double)edge_gno/((double)mat->mtx.globalY/(double)mat->comm->nProc));
+
+  return (*part_y);
+}
+
+int Zoltan_Distribute_Cyclic(int edge_gno, int vtx_gno, void* data, int *part_y)
+{
+  Zoltan_matrix_2d *mat;
+
+  mat = (Zoltan_matrix_2d*) data;
+  *part_y = (int)floor((double)edge_gno/((double)mat->mtx.globalY/(double)mat->comm->nProc));
+
+  return (*part_y);
+}
+
+int Zoltan_Distribute_Partition(int edge_gno, int vtx_gno, void* data, int *part_y)
+{
+  Zoltan_matrix_2d *mat;
+
+  mat = (Zoltan_matrix_2d*) data;
+  *part_y = (int)floor((double)edge_gno/((double)mat->mtx.globalY/(double)mat->comm->nProc));
+
+  return (*part_y);
+}
 
 
 /* if !copy, inmat is not usable after this call */
@@ -99,7 +127,6 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   int ierr = ZOLTAN_OK;
   int nProc_x, nProc_y;
   int myProc_x, myProc_y;
-  int *dist_x=NULL, *dist_y=NULL;
   int i, j, cnt;
   int *proclist = NULL;
   Zoltan_Arc *nonzeros= NULL, *sendbuf= NULL;
@@ -107,7 +134,6 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   float *wgtarray = NULL;
   float *tmpwgtarray = NULL;
   int msg_tag = 1021982;
-  int offset;
   ZOLTAN_COMM_OBJ *plan;
   MPI_Comm communicator = MPI_COMM_NULL;
   int nProc;
@@ -139,7 +165,6 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
 
   ierr = Zoltan_Matrix_Remove_Duplicates(zz, outmat->mtx, &outmat->mtx);
 
-
   /*
    * Build comm plan for sending non-zeros to their target processors in
    * 2D data distribution.
@@ -165,8 +190,8 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
       /* processor column for the vertex */
       vtx_gno = pinGNO[j];
 
-      proclist[cnt] = hash_edges(edge_gno, vtx_gno, (void*)outmat,
-				 &sendbuf[cnt].part_y);
+      proclist[cnt] = (outmat->hashDistFct)(edge_gno, vtx_gno, outmat->hashDistData,
+					  &sendbuf[cnt].part_y);
       if (proclist[cnt] < 0) /* Discard this nnz */
         continue;
       sendbuf[cnt].GNO[0] = edge_gno;
