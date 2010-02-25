@@ -125,7 +125,7 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   ZOLTAN_FREE(&outmat->yGNO);
   ZOLTAN_FREE(&outmat->pinwgt);
   ZOLTAN_FREE(&outmat->pinGNO);
-  if (outmat->yend != outmat->ystart +1)
+  if (outmat->yend != NULL && (outmat->yend != outmat->ystart +1))
     ZOLTAN_FREE(&outmat->yend);
   ZOLTAN_FREE(&outmat->ystart);
 
@@ -491,7 +491,7 @@ Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, int* perm_y)
   ZOLTAN_FREE (&ywgt);
 
   /* We have to define dd : old_yGNO, new_yGNO */
-  ierr = Zoltan_DD_Create (&dd, zz->Communicator, 1, 1, 0, m->globalY/zz->Num_Proc, 0);
+  ierr = Zoltan_DD_Create (&dd, zz->Communicator, 1, 1, 0, m->globalY/* /zz->Num_Proc */, 0);
   /* Hope a linear assignment will help a little */
   Zoltan_DD_Set_Neighbor_Hash_Fn1(dd, m->globalY/zz->Num_Proc);
 
