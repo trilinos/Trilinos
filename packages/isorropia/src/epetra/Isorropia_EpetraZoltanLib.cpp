@@ -180,6 +180,8 @@ int ZoltanLibClass::precompute()
     itype = ZoltanLib::QueryObject::hgraph2d_finegrain_input_;
   else if (input_type_ == geometric_input_)
     itype = ZoltanLib::QueryObject::geometric_input_;
+  else if (input_type_ == simple_input_)
+    itype = ZoltanLib::QueryObject::simple_input_;
   else if (input_type_ == hgraph_graph_input_)                 // hierarchical partitioning
     itype = ZoltanLib::QueryObject::hgraph_graph_input_;
   else if (input_type_ == hgraph_geometric_input_)             // hierarchical partitioning
@@ -276,6 +278,10 @@ int ZoltanLibClass::precompute()
       if (!zoltanParamList_.isParameter(lb_method_str))  //MMW: Don't think this if is needed 
 	zoltanParamList_.set(lb_method_str, "RCB");
     }
+    else if (input_type_ == simple_input_)
+    {
+      zoltanParamList_.set(lb_method_str, "BLOCK");      
+    }
     else if (input_type_ == hgraph_graph_input_    || input_type_ == hgraph_geometric_input_ ||
              input_type_ == graph_geometric_input_ || input_type_ == hgraph_graph_geometric_input_ )
     {
@@ -315,7 +321,7 @@ int ZoltanLibClass::precompute()
       }
     //}
   }
-  else  //graph or hypergraph 
+  else if(input_type_ != simple_input_) //graph or hypergraph 
   {
     if (queryObject_->haveVertexWeights()) 
     {

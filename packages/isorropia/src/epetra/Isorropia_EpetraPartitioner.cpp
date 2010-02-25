@@ -353,26 +353,40 @@ partition(bool force_repartitioning)
       input_type = Library::geometric_input_;
     }
   }
-  else
+  else  //not geometry
   {
     if (partitioning_method == "GRAPH")
     {
       input_type = Library::graph_input_;
       sublist.set("LB_METHOD", "GRAPH");
     }
-    else if (partitioning_method == "HIER_HGRAPH_GRAPH") // Can perhaps simply this partitioning method name by using another parameter
+    else if (partitioning_method == "BLOCK")
+    {
+      input_type = Library::simple_input_;
+      sublist.set("LB_METHOD", "BLOCK");
+    }
+    else if (partitioning_method == "CYCLIC")
+    {
+      input_type = Library::simple_input_;
+      sublist.set("LB_METHOD", "CYCLIC");
+    }
+    else if (partitioning_method == "RANDOM")
+    {
+      input_type = Library::simple_input_;
+      sublist.set("LB_METHOD", "RANDOM");
+    }
+    else if (partitioning_method == "HIER_HGRAPH_GRAPH") // Can perhaps simplify this partitioning method name by using another parameter
     {
       sublist.set("LB_METHOD", "HIER");
       input_type = Library::hgraph_graph_input_;
     }
+    
     else //Hypergraph by default
     {
       input_type = Library::hgraph_input_;
       sublist.set("LB_METHOD", "HYPERGRAPH");
     }
   }
-
-
 
 
   if (paramlist_.isParameter("NUM PARTS")) {

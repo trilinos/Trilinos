@@ -206,14 +206,16 @@ load_balance(MPI_Comm &comm,
   zz->Set_Num_Obj_Fn(QueryObject::Number_Objects, (void *)&queryObject);
   zz->Set_Obj_List_Fn(QueryObject::Object_List, (void *)&queryObject);
 
-  if (lb_meth == "HYPERGRAPH"){
+  if (lb_meth == "HYPERGRAPH")
+  {
     zz->Set_HG_Size_CS_Fn(QueryObject::HG_Size_CS, (void *)&queryObject);
     zz->Set_HG_CS_Fn(QueryObject::HG_CS, (void *)&queryObject);
     zz->Set_HG_Size_Edge_Wts_Fn(QueryObject::HG_Size_Edge_Weights , 
                                 (void *)&queryObject);
     zz->Set_HG_Edge_Wts_Fn(QueryObject::HG_Edge_Weights, (void *)&queryObject);
   }
-  else{
+  else
+  {
     zz->Set_Num_Edges_Multi_Fn(QueryObject::Number_Edges_Multi, (void *)&queryObject);
     zz->Set_Edge_List_Multi_Fn(QueryObject::Edge_List_Multi, (void *)&queryObject);
   }

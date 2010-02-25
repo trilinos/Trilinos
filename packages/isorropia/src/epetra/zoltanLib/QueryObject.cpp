@@ -507,7 +507,7 @@ void QueryObject::My_Object_List(int num_gid_entries, int num_lid_entries,
     ngids = rowMap_->NumMyElements();
     rowMap_->MyGlobalElements( ((int *) global_ids) );
   }
-  else if ((input_type_ == hgraph_input_) || (input_type_ == graph_input_)) // not sure why this can't be merged into above if?
+  else if ((input_type_ == hgraph_input_) || (input_type_ == graph_input_) || (input_type_==simple_input_)) // not sure why this can't be merged into above if?
   {
     ngids = rowMap_->NumMyElements();
     rowMap_->MyGlobalElements( ((int *) global_ids) );

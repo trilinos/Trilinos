@@ -300,10 +300,16 @@ class QueryObject
   */
   static const int hgraph_graph_geometric_input_ = 8;
 
+  /** input_type_ == simple_input_
+      This indicates that a simple method (block, cyclic, or random) will be used.
+  */
+  static const int simple_input_ = 9;
+
+
   /** input_type_ == unspecified_input_.
       This value is the "unset" state for the input_type_ instance variable.
     */
-  static const int unspecified_input_ = 9;
+  static const int unspecified_input_ = 10;
 
 
 
