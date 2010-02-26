@@ -49,6 +49,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   ARGS --verbose
   )
 PACKAGE_ADD_TEST(
+  test_std_ops
   NAME test_std_ops_serial
   ARGS --verbose
   NUM_MPI_PROCS 1
