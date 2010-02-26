@@ -87,11 +87,6 @@ void SpmdMultiVectorBase<Scalar>::mvMultiReductApplyOpImpl(
   ) const
 {
 
-  const Ordinal pri_first_ele_offset_in = 0;
-  const Ordinal pri_sub_dim_in = -1;
-  const Ordinal sec_first_ele_offset_in = 0;
-  const Ordinal sec_sub_dim_in = -1;
-
   using Teuchos::dyn_cast;
   using Teuchos::Workspace;
 
@@ -102,80 +97,71 @@ void SpmdMultiVectorBase<Scalar>::mvMultiReductApplyOpImpl(
 
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
-    in_applyOp_, std::invalid_argument
-    ,"SpmdMultiVectorBase<>::mvMultiReductApplyOpImpl(...): Error, this method is being entered recursively which is a "
-    "clear sign that one of the methods acquireDetachedView(...), releaseDetachedView(...) or commitDetachedView(...) "
-    "was not implemented properly!"
+    in_applyOp_, std::invalid_argument,
+    "SpmdMultiVectorBase<>::mvMultiReductApplyOpImpl(...): Error, this method is"
+    " being entered recursively which is a clear sign that one of the methods"
+    " acquireDetachedView(...), releaseDetachedView(...) or commitDetachedView(...)"
+    " was not implemented properly!"
     );
   apply_op_validate_input(
-    "SpmdMultiVectorBase<>::mvMultiReductApplyOpImpl(...)", *this->domain(), *this->range(),
-    pri_op, multi_vecs, targ_multi_vecs, reduct_objs, pri_global_offset_in);
+    "SpmdMultiVectorBase<>::mvMultiReductApplyOpImpl(...)", *this->domain(),
+    *this->range(), pri_op, multi_vecs, targ_multi_vecs, reduct_objs,
+    pri_global_offset_in);
 #endif
+
   // Flag that we are in applyOp()
   in_applyOp_ = true;
+
   // First see if this is a locally replicated vector in which case
   // we treat this as a local operation only.
   const bool locallyReplicated = (localSubDim_ == globalDim_);
-  // Get the overlap in the current process with the input logical sub-vector
-  // from (first_ele_offset_in,sub_dim_in,global_offset_in)
-  Teuchos_Index overlap_first_local_ele_off = 0;
-  Teuchos_Index overlap_local_sub_dim = 0;
-  Teuchos_Index overlap_global_offset = 0;
-  RTOp_parallel_calc_overlap(
-    globalDim_, localSubDim_, localOffset_, pri_first_ele_offset_in, pri_sub_dim_in, pri_global_offset_in
-    ,&overlap_first_local_ele_off, &overlap_local_sub_dim, &overlap_global_offset
-    );
-  const Range1D
-    local_rng = (
-      overlap_first_local_ele_off>=0
-      ? Range1D( localOffset_+overlap_first_local_ele_off, localOffset_+overlap_first_local_ele_off+overlap_local_sub_dim-1 )
-      : Range1D::Invalid
-      ),
-    col_rng(
-      sec_first_ele_offset_in
-      ,sec_sub_dim_in >= 0 ? sec_first_ele_offset_in+sec_sub_dim_in-1 : numCols-1
-      );
+
+  const Range1D local_rng(localOffset_, localOffset_+localSubDim_-1);
+  const Range1D col_rng(0, numCols-1);
+
   // Create sub-vector views of all of the *participating* local data
-  Workspace<RTOpPack::ConstSubMultiVectorView<Scalar> > sub_multi_vecs(wss,multi_vecs.size());
-  Workspace<RTOpPack::SubMultiVectorView<Scalar> > targ_sub_multi_vecs(wss,targ_multi_vecs.size());
-  if( overlap_first_local_ele_off >= 0 ) {
-    for(int k = 0; k < multi_vecs.size(); ++k ) {
-      multi_vecs[k]->acquireDetachedView( local_rng, col_rng, &sub_multi_vecs[k] );
-      sub_multi_vecs[k].setGlobalOffset( overlap_global_offset );
-    }
-    for(int k = 0; k < targ_multi_vecs.size(); ++k ) {
-      targ_multi_vecs[k]->acquireDetachedView( local_rng, col_rng, &targ_sub_multi_vecs[k] );
-      targ_sub_multi_vecs[k].setGlobalOffset( overlap_global_offset );
-    }
+  Workspace<RTOpPack::ConstSubMultiVectorView<Scalar> >
+    sub_multi_vecs(wss,multi_vecs.size());
+  Workspace<RTOpPack::SubMultiVectorView<Scalar> >
+    targ_sub_multi_vecs(wss,targ_multi_vecs.size());
+  for(int k = 0; k < multi_vecs.size(); ++k ) {
+    multi_vecs[k]->acquireDetachedView(local_rng, col_rng, &sub_multi_vecs[k]);
+    sub_multi_vecs[k].setGlobalOffset(localOffset_+pri_global_offset_in);
   }
-  Workspace<RTOpPack::ReductTarget*> reduct_objs_ptr(wss,reduct_objs.size());
+  for(int k = 0; k < targ_multi_vecs.size(); ++k ) {
+    targ_multi_vecs[k]->acquireDetachedView(local_rng, col_rng, &targ_sub_multi_vecs[k]);
+    targ_sub_multi_vecs[k].setGlobalOffset(localOffset_+pri_global_offset_in);
+  }
+  Workspace<RTOpPack::ReductTarget*> reduct_objs_ptr(wss, reduct_objs.size());
   for (int k = 0; k < reduct_objs.size(); ++k) {
     reduct_objs_ptr[k] = &*reduct_objs[k];
   }
+
   // Apply the RTOp operator object (all processors must participate)
   RTOpPack::SPMD_apply_op(
-    locallyReplicated ? NULL : spmdSpc.getComm().get() // comm
-    ,pri_op // op
-    ,col_rng.size() // num_cols
-    ,multi_vecs.size() // multi_vecs.size()
-    ,multi_vecs.size() && overlap_first_local_ele_off>=0 ? &sub_multi_vecs[0] : NULL // sub_multi_vecs
-    ,targ_multi_vecs.size() // targ_multi_vecs.size()
-    ,targ_multi_vecs.size() && overlap_first_local_ele_off>=0 ? &targ_sub_multi_vecs[0] : NULL// targ_sub_multi_vecs
-    ,reduct_objs.size() ? &reduct_objs_ptr[0] : 0 // reduct_objs
+    locallyReplicated ? NULL : spmdSpc.getComm().get(), // comm
+    pri_op, // op
+    col_rng.size(), // num_cols
+    multi_vecs.size(), // multi_vecs.size()
+    multi_vecs.size() ? &sub_multi_vecs[0] : NULL, // sub_multi_vecs
+    targ_multi_vecs.size(), // targ_multi_vecs.size()
+    targ_multi_vecs.size() ? &targ_sub_multi_vecs[0] : NULL, // targ_sub_multi_vecs
+    reduct_objs.size() ? &reduct_objs_ptr[0] : 0 // reduct_objs
     );
+
   // Free and commit the local data
-  if( overlap_first_local_ele_off >= 0 ) {
-    for(int k = 0; k < multi_vecs.size(); ++k ) {
-      sub_multi_vecs[k].setGlobalOffset(local_rng.lbound());
-      multi_vecs[k]->releaseDetachedView( &sub_multi_vecs[k] );
-    }
-    for(int k = 0; k < targ_multi_vecs.size(); ++k ) {
-      targ_sub_multi_vecs[k].setGlobalOffset(local_rng.lbound());
-      targ_multi_vecs[k]->commitDetachedView( &targ_sub_multi_vecs[k] );
-    }
+  for(int k = 0; k < multi_vecs.size(); ++k ) {
+    sub_multi_vecs[k].setGlobalOffset(local_rng.lbound());
+    multi_vecs[k]->releaseDetachedView( &sub_multi_vecs[k] );
   }
+  for(int k = 0; k < targ_multi_vecs.size(); ++k ) {
+    targ_sub_multi_vecs[k].setGlobalOffset(local_rng.lbound());
+    targ_multi_vecs[k]->commitDetachedView( &targ_sub_multi_vecs[k] );
+  }
+
   // Flag that we are leaving applyOp()
   in_applyOp_ = false;
+
 }
 
 

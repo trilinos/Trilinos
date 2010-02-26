@@ -193,25 +193,15 @@ void DefaultClusteredSpmdProductVector<Scalar>::applyOpImpl(
   // Validate input
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
-    !(0 <= first_ele_offset_in && first_ele_offset_in < n), std::out_of_range
-    ,"DefaultClusteredSpmdProductVector::applyOp(...): Error, "
-    "first_ele_offset_in = " << first_ele_offset_in << " is not in range [0,"<<(n-1)<<"]" );
-  TEST_FOR_EXCEPTION(
-    global_offset_in < 0, std::invalid_argument
-    ,"DefaultClusteredSpmdProductVector::applyOp(...): Error, "
+    global_offset_in < 0, std::invalid_argument,
+    "DefaultClusteredSpmdProductVector::applyOp(...): Error, "
     "global_offset_in = " << global_offset_in << " is not acceptable" );
-  TEST_FOR_EXCEPTION(
-    sub_dim_in > 0 && sub_dim_in - first_ele_offset_in > n, std::length_error
-    ,"DefaultClusteredSpmdProductVector::applyOp(...): Error, "
-    "global_offset_in = " << global_offset_in << ", sub_dim_in = " << sub_dim_in
-    << "first_ele_offset_in = " << first_ele_offset_in << " and n = " << n
-    << " are not compatible" );
   bool test_failed;
   for (int k = 0; k < num_vecs; ++k) {
     test_failed = !this->space()->isCompatible(*vecs[k]->space());
     TEST_FOR_EXCEPTION(
-      test_failed, Exceptions::IncompatibleVectorSpaces
-      ,"DefaultClusteredSpmdProductVector::applyOp(...): Error vecs["<<k<<"]->space() "
+      test_failed, Exceptions::IncompatibleVectorSpaces,
+      "DefaultClusteredSpmdProductVector::applyOp(...): Error vecs["<<k<<"]->space() "
       <<"of type \'"<<typeName(*vecs[k]->space())<<"\' is not compatible with this "
       <<"\'VectorSpaceBlocked\' vector space!"
       );

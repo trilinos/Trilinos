@@ -207,11 +207,6 @@ void MultiVectorDefaultBase<Scalar>::mvMultiReductApplyOpImpl(
   ) const
 {
 
-  const Ordinal prim_first_ele_offset_in = 0;
-  const Ordinal prim_sub_dim_in = -1;
-  const Ordinal sec_first_ele_offset_in = 0;
-  const Ordinal sec_sub_dim_in = -1;
-
   using Teuchos::Workspace;
   using Teuchos::as;
   Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
@@ -226,15 +221,6 @@ void MultiVectorDefaultBase<Scalar>::mvMultiReductApplyOpImpl(
   // Get the primary and secondary dimensions.
 
   const Ordinal sec_dim = l_domain.dim();
-  const Ordinal sec_sub_dim = ( sec_sub_dim_in >= 0 ? sec_sub_dim_in : sec_dim - sec_first_ele_offset_in );
-#ifdef TEUCHOS_DEBUG
-  const VectorSpaceBase<Scalar> &l_range = *this->range();
-  const Ordinal	prim_dim = l_range.dim();
-  const Ordinal prim_sub_dim = ( prim_sub_dim_in >= 0 ? prim_sub_dim_in : prim_dim - prim_first_ele_offset_in );
-  const char err_msg[] = "MultiVectorDefaultBase<Scalar>::mvMultiReductApplyOpImpl(...): Error!";
-  TEST_FOR_EXCEPTION( !(0 < prim_sub_dim && prim_sub_dim <= prim_dim), std::invalid_argument, err_msg );
-  TEST_FOR_EXCEPTION( !(0 < sec_sub_dim && sec_sub_dim <= sec_dim), std::invalid_argument, err_msg );
-#endif
 
   //
   // Apply the reduction/transformation operator and transform the
@@ -246,7 +232,7 @@ void MultiVectorDefaultBase<Scalar>::mvMultiReductApplyOpImpl(
   Workspace<RCP<VectorBase<Scalar> > > targ_vecs_s(wss, num_targ_multi_vecs);
   Workspace<Ptr<VectorBase<Scalar> > > targ_vecs(wss, num_targ_multi_vecs);
 
-  for(Ordinal j = sec_first_ele_offset_in; j < sec_first_ele_offset_in + sec_sub_dim; ++j) {
+  for(Ordinal j = 0; j < sec_dim; ++j) {
     // Fill the arrays of vector arguments
     {for(Ordinal k = 0; k < as<Ordinal>(num_multi_vecs); ++k) {
         vecs_s[k] = multi_vecs[k]->col(j);
@@ -281,11 +267,6 @@ void MultiVectorDefaultBase<Scalar>::mvSingleReductApplyOpImpl(
   ) const
 {
 
-  const Ordinal prim_first_ele_offset_in = 0;
-  const Ordinal prim_sub_dim_in = -1;
-  const Ordinal sec_first_ele_offset_in = 0;
-  const Ordinal sec_sub_dim_in = -1;
-
   using Teuchos::Workspace;
   Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
 
@@ -295,23 +276,14 @@ void MultiVectorDefaultBase<Scalar>::mvSingleReductApplyOpImpl(
 
   // Get the primary and secondary dimensions.
   const Ordinal sec_dim = l_domain.dim();
-  const Ordinal sec_sub_dim = ( sec_sub_dim_in >= 0 ? sec_sub_dim_in : sec_dim - sec_first_ele_offset_in );
-#ifdef TEUCHOS_DEBUG
-  const VectorSpaceBase<Scalar> &l_range = *this->range();
-  const Ordinal prim_dim = l_range.dim();
-  const Ordinal prim_sub_dim = ( prim_sub_dim_in >= 0 ? prim_sub_dim_in : prim_dim - prim_first_ele_offset_in );
-  const char err_msg[] = "MultiVectorDefaultBase<Scalar>::mvSingleReductApplyOpImpl(...): Error!";
-  TEST_FOR_EXCEPTION( !(0 < prim_sub_dim && prim_sub_dim <= prim_dim), std::invalid_argument, err_msg );
-  TEST_FOR_EXCEPTION( !(0 < sec_sub_dim && sec_sub_dim <= sec_dim), std::invalid_argument, err_msg );
-#endif
 
   // Create a temporary buffer for the reduction objects of the primary reduction
   // so that we can call the companion version of this method.
-  const int reduct_objs_size = (!is_null(reduct_obj) ? sec_sub_dim : 0);
+  const int reduct_objs_size = (!is_null(reduct_obj) ? sec_dim : 0);
   Workspace<RCP<RTOpPack::ReductTarget> > rcp_reduct_objs(wss, reduct_objs_size);
   Workspace<Ptr<RTOpPack::ReductTarget> > reduct_objs(wss, reduct_objs_size);
   if (!is_null(reduct_obj)) {
-    for(Ordinal k = 0; k < sec_sub_dim; ++k) {
+    for(Ordinal k = 0; k < sec_dim; ++k) {
       rcp_reduct_objs[k] = prim_op.reduct_obj_create();
       reduct_objs[k] = rcp_reduct_objs[k].ptr();
     }
@@ -325,7 +297,7 @@ void MultiVectorDefaultBase<Scalar>::mvSingleReductApplyOpImpl(
   // Reduce all the reduction objects using the secondary reduction operator
   // into one reduction object and free the intermediate reduction objects.
   if (!is_null(reduct_obj)) {
-    for (Ordinal k = 0; k < sec_sub_dim; ++k) {
+    for (Ordinal k = 0; k < sec_dim; ++k) {
       sec_op.reduce_reduct_objs( *reduct_objs[k], reduct_obj );
     }
   }

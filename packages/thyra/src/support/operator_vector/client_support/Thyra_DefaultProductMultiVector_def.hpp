@@ -319,11 +319,6 @@ void DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(
   const Ordinal primary_global_offset_in
   ) const
 {
-  
-  const Ordinal primary_first_ele_offset_in = 0;
-  const Ordinal primary_sub_dim_in = -1;
-  const Ordinal secondary_first_ele_offset_in = 0;
-  const Ordinal secondary_sub_dim_in = -1;
 
   using Teuchos::ptr_dynamic_cast;
   using Thyra::applyOp;
@@ -354,44 +349,10 @@ void DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(
       *this->domain(), *targ_multi_vecs_inout[j]->domain()
       );
   }
-  TEST_FOR_EXCEPT(
-    !(
-      0 <= primary_first_ele_offset_in
-      &&
-      primary_first_ele_offset_in < rangeDim
-      )
-    );
-  TEST_FOR_EXCEPT(
-    primary_sub_dim_in > 0
-    &&
-    primary_first_ele_offset_in + primary_sub_dim_in > rangeDim
-    );
-  TEST_FOR_EXCEPT(
-    !(
-      0 <= secondary_first_ele_offset_in
-      &&
-      secondary_first_ele_offset_in < domainDim
-      )
-    );
-  TEST_FOR_EXCEPT(
-    secondary_sub_dim_in > 0
-    &&
-    secondary_first_ele_offset_in + secondary_sub_dim_in > domainDim
-    );
 #endif //  TEUCHOS_DEBUG
 
-  const Ordinal primary_sub_dim
-    = (
-      primary_sub_dim_in < 0
-      ? rangeDim - primary_first_ele_offset_in
-      : primary_sub_dim_in
-      );
-  const Ordinal secondary_sub_dim
-    = (
-      secondary_sub_dim_in < 0
-      ? domainDim - secondary_first_ele_offset_in
-      : secondary_sub_dim_in
-      );
+  const Ordinal primary_sub_dim = rangeDim;
+  const Ordinal secondary_sub_dim = domainDim;
 
   //
   // Try to dynamic cast all of the multi-vector objects to the
@@ -458,25 +419,11 @@ void DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(
       targ_multi_vecs_block_k(targ_multi_vecs_inout.size());
 
     Ordinal num_rows_remaining = primary_sub_dim;
-    Ordinal g_off = -primary_first_ele_offset_in;
+    Ordinal g_off = primary_global_offset_in;
 
     for ( int k = 0; k < numBlocks_; ++k ) {
 
-      // See if this block involves any of the requested rows and if so get
-      // the local context.
-      const Ordinal local_dim = productSpace_->getBlock(k)->dim();
-      if( g_off < 0 && -g_off+1 > local_dim ) {
-        g_off += local_dim;
-        continue;
-      }
-      const Ordinal local_sub_dim
-        = (
-          g_off >= 0
-          ? std::min( local_dim, num_rows_remaining )
-          : std::min( local_dim + g_off, num_rows_remaining )
-          );
-      if( local_sub_dim <= 0 )
-        break;
+      const Ordinal dim_k = productSpace_->getBlock(k)->dim();
 
       // Fill the MultiVector array objects for this block
 
@@ -499,8 +446,10 @@ void DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(
       Thyra::applyOp<Scalar>(
         primary_op, multi_vecs_block_k(), targ_multi_vecs_block_k(),
         reduct_objs,
-        g_off < 0 ? primary_global_offset_in : primary_global_offset_in + g_off // primary_global_offset,
+        g_off
         );
+
+      g_off += dim_k;
     }
 
   }

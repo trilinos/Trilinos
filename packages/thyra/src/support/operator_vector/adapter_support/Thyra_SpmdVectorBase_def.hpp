@@ -34,17 +34,11 @@
 #include "Thyra_VectorDefaultBase.hpp"
 #include "Thyra_SpmdVectorSpaceDefaultBase.hpp"
 #include "Thyra_apply_op_helper.hpp"
-#include "RTOp_parallel_helpers.h"
 #include "RTOpPack_SPMD_apply_op.hpp"
 #include "Teuchos_Workspace.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_dyn_cast.hpp"
 #include "Teuchos_Assert.hpp"
-
-
-#ifdef THYRA_SPMD_VECTOR_BASE_DUMP
-#  include "Teuchos_VerboseObject.hpp"
-#endif // THYRA_SPMD_VECTOR_BASE_DUMP
 
 
 namespace Thyra {
@@ -105,9 +99,6 @@ void SpmdVectorBase<Scalar>::applyOpImplWithComm(
   ) const
 {
 
-  const Ordinal first_ele_offset_in = 0;
-  const Ordinal sub_dim_in = -1;
-
   using Teuchos::null;
   using Teuchos::dyn_cast;
   using Teuchos::Workspace;
@@ -115,33 +106,15 @@ void SpmdVectorBase<Scalar>::applyOpImplWithComm(
   const int num_vecs = vecs.size();
   const int num_targ_vecs = targ_vecs.size();
 
-#ifdef THYRA_SPMD_VECTOR_BASE_DUMP
-  Teuchos::RCP<Teuchos::FancyOStream>
-    out = Teuchos::VerboseObjectBase::getDefaultOStream();
-  Teuchos::OSTab tab(out);
-  if(show_dump) {
-    *out << "\nEntering SpmdVectorBase<Scalar>::applyOp(...) ...\n";
-    *out
-      << "\nop = " << typeName(op)
-      << "\nnum_vecs = " << num_vecs
-      << "\nnum_targ_vecs = " << num_targ_vecs
-      << "\nreduct_obj = " << reduct_obj
-      << "\nglobal_offset_in = " << global_offset_in
-      << "\n"
-      ;
-  }
-#endif // THYRA_SPMD_VECTOR_BASE_DUMP
-
   Ptr<Teuchos::WorkspaceStore> wss = Teuchos::get_default_workspace_store().ptr();
   const SpmdVectorSpaceBase<Scalar> &spmdSpc = *spmdSpace();
 
 #ifdef TEUCHOS_DEBUG
-  // ToDo: Validate input!
   TEST_FOR_EXCEPTION(
-    in_applyOpImpl_, std::invalid_argument
-    ,"SpmdVectorBase<>::applyOp(...): Error, this method is being entered recursively which is a "
-    "clear sign that one of the methods acquireDetachedView(...), releaseDetachedView(...) or commitDetachedView(...) "
-    "was not implemented properly!"
+    in_applyOpImpl_, std::invalid_argument,
+    "SpmdVectorBase<>::applyOp(...): Error, this method is being entered recursively"
+    " which is a clear sign that one of the methods acquireDetachedView(...),"
+    " releaseDetachedView(...) or commitDetachedView(...) was not implemented properly!"
     );
   Thyra::apply_op_validate_input(
     "SpmdVectorBase<>::applyOp(...)",*space(),
@@ -149,8 +122,8 @@ void SpmdVectorBase<Scalar>::applyOpImplWithComm(
 #endif
 
   Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm;
-  if (!is_null(comm_in))
-    comm = Teuchos::rcp(&*comm_in,false);
+  if (nonnull(comm_in))
+    comm = Teuchos::rcpFromPtr(comm_in);
   else
     comm = spmdSpc.getComm();
 
@@ -161,49 +134,18 @@ void SpmdVectorBase<Scalar>::applyOpImplWithComm(
   // we treat this as a local operation only.
   const bool locallyReplicated = ( comm_in == null && localSubDim_ == globalDim_ );
 
-  // Get the overlap in the current process with the input logical sub-vector
-  // from (first_ele_offset_in,sub_dim_in,global_offset_in)
-  Ordinal  overlap_first_local_ele_off = 0;
-  Ordinal  overlap_local_sub_dim = 0;
-  Ordinal  overlap_global_off = 0;
-  if(localSubDim_) {
-    RTOp_parallel_calc_overlap(
-      globalDim_, localSubDim_, localOffset_,
-      first_ele_offset_in, sub_dim_in, global_offset_in,
-      &overlap_first_local_ele_off, &overlap_local_sub_dim, &overlap_global_off
-      );
-  }
-  const Range1D local_rng = (
-    overlap_first_local_ele_off>=0
-    ? Range1D( localOffset_ + overlap_first_local_ele_off, localOffset_
-      + overlap_first_local_ele_off + overlap_local_sub_dim - 1 )
-    : Range1D::Invalid
-    );
-
-#ifdef THYRA_SPMD_VECTOR_BASE_DUMP
-  if(show_dump) {
-    *out
-      << "\noverlap_first_local_ele_off = " << overlap_first_local_ele_off
-      << "\noverlap_local_sub_dim = " << overlap_local_sub_dim
-      << "\noverlap_global_off = " << overlap_global_off
-      << "\nlocal_rng = ["<<local_rng.lbound()<<","<<local_rng.ubound()<<"]"
-      << "\n"
-      ;
-  }
-#endif // THYRA_SPMD_VECTOR_BASE_DUMP
+  const Range1D local_rng(localOffset_, localOffset_+localSubDim_-1);
 
   // Create sub-vector views of all of the *participating* local data
-  Workspace<RTOpPack::ConstSubVectorView<Scalar> > sub_vecs(wss.get(),num_vecs);
-  Workspace<RTOpPack::SubVectorView<Scalar> > sub_targ_vecs(wss.get(),num_targ_vecs);
-  if( overlap_first_local_ele_off >= 0 ) {
-    {for(int k = 0; k < num_vecs; ++k ) {
-      vecs[k]->acquireDetachedView( local_rng, &sub_vecs[k] );
-      sub_vecs[k].setGlobalOffset( overlap_global_off );
-    }}
-    {for(int k = 0; k < num_targ_vecs; ++k ) {
-      targ_vecs[k]->acquireDetachedView( local_rng, &sub_targ_vecs[k] );
-      sub_targ_vecs[k].setGlobalOffset( overlap_global_off );
-    }}
+  Workspace<RTOpPack::ConstSubVectorView<Scalar> > sub_vecs(wss.get(), num_vecs);
+  Workspace<RTOpPack::SubVectorView<Scalar> > sub_targ_vecs(wss.get(), num_targ_vecs);
+  for(int k = 0; k < num_vecs; ++k ) {
+    vecs[k]->acquireDetachedView( local_rng, &sub_vecs[k] );
+    sub_vecs[k].setGlobalOffset(localOffset_+global_offset_in);
+  }
+  for(int k = 0; k < num_targ_vecs; ++k ) {
+    targ_vecs[k]->acquireDetachedView( local_rng, &sub_targ_vecs[k] );
+    sub_targ_vecs[k].setGlobalOffset(localOffset_+global_offset_in);
   }
 
   // Apply the RTOp operator object (all processors must participate)
@@ -218,25 +160,17 @@ void SpmdVectorBase<Scalar>::applyOpImplWithComm(
     );
 
   // Free and commit the local data
-  if (overlap_first_local_ele_off >= 0) {
-    for (int k = 0; k < num_vecs; ++k ) {
-      sub_vecs[k].setGlobalOffset(local_rng.lbound());
-      vecs[k]->releaseDetachedView( &sub_vecs[k] );
-    }
-    for (int k = 0; k < num_targ_vecs; ++k ) {
-      sub_targ_vecs[k].setGlobalOffset(local_rng.lbound());
-      targ_vecs[k]->commitDetachedView( &sub_targ_vecs[k] );
-    }
+  for (int k = 0; k < num_vecs; ++k ) {
+    sub_vecs[k].setGlobalOffset(local_rng.lbound());
+    vecs[k]->releaseDetachedView(&sub_vecs[k]);
+  }
+  for (int k = 0; k < num_targ_vecs; ++k ) {
+    sub_targ_vecs[k].setGlobalOffset(local_rng.lbound());
+    targ_vecs[k]->commitDetachedView(&sub_targ_vecs[k]);
   }
 
   // Flag that we are leaving applyOp()
   in_applyOpImpl_ = false;
-
-#ifdef THYRA_SPMD_VECTOR_BASE_DUMP
-  if(show_dump) {
-    *out << "\nLeaving SpmdVectorBase<Scalar>::applyOp(...) ...\n";
-  }
-#endif // THYRA_SPMD_VECTOR_BASE_DUMP
 
 }
 
