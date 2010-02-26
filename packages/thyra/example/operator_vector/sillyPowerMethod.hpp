@@ -56,6 +56,7 @@ bool sillyPowerMethod(
 
   // Create some typedefs and some other stuff to make the code cleaner
   typedef Teuchos::ScalarTraits<Scalar> ST; typedef typename ST::magnitudeType ScalarMag;
+  using Thyra::apply;
   const Scalar one = ST::one(); using Thyra::NOTRANS;
   typedef Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > VectorSpacePtr;
   typedef Teuchos::RCP<Thyra::VectorBase<Scalar> > VectorPtr;
@@ -70,7 +71,7 @@ bool sillyPowerMethod(
   for( int iter = 0; iter < maxNumIters; ++iter ) {
     const ScalarMag z_nrm = norm(*z);           // Compute natural norm of z
     V_StV( q.ptr(), Scalar(one/z_nrm), *z );    // q = (1/||z}*z 
-    apply( A, NOTRANS , *q, z.ptr() );          // z = A*q
+    apply<Scalar>( A, NOTRANS , *q, z.ptr() );  // z = A*q
     *lambda = scalarProd(*q,*z);                // lambda = <q,z>
     if( iter%(maxNumIters/10) == 0 || iter+1 == maxNumIters ) {
       V_StVpV(r.ptr(),Scalar(-*lambda),*q,*z);  // r = -lambda*q + z
