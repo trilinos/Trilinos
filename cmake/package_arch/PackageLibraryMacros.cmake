@@ -1,3 +1,4 @@
+INCLUDE(PackageCreateClientTemplateHeaders)
 INCLUDE(ParseVariableArguments)
 INCLUDE(GlobalSet)
 INCLUDE(AppendSet)

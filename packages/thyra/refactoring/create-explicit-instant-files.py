@@ -45,6 +45,11 @@ clp.add_option(
   help="Name of the explicit instantiation macro." )
 
 clp.add_option(
+  "--create-user-header", dest="createUserHeader", action="store_true",
+  help="Create the user header file XX.hpp.",
+  default=False )
+
+clp.add_option(
   "--move-current-files", dest="moveCurrentFiles", action="store_true",
   help="Move the current existing files.",
   default=False )
@@ -78,15 +83,17 @@ if options.moveCurrentFiles:
 
 # B) Create the XXX.hpp file
 
-Namespace_FileBase_hpp = \
-  "#include \""+declFile+"\"\n"+ \
-  "#ifndef "+options.explicitInstantDefine+"\n"+ \
-  "#  include \""+defFile+"\"\n"+ \
-  "#endif\n"
-
-writeStrToFile(baseFileName+".hpp", Namespace_FileBase_hpp)
-
-echoRunSysCmnd("eg add "+baseFileName+".hpp")
+if options.createUserHeader:
+  
+  Namespace_FileBase_hpp = \
+    "#include \""+declFile+"\"\n"+ \
+    "#ifndef "+options.explicitInstantDefine+"\n"+ \
+    "#  include \""+defFile+"\"\n"+ \
+    "#endif\n"
+  
+  writeStrToFile(baseFileName+".hpp", Namespace_FileBase_hpp)
+  
+  echoRunSysCmnd("eg add "+baseFileName+".hpp")
 
 # C) Create the XXX.cpp file
 
