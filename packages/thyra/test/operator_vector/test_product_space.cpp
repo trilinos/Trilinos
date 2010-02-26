@@ -131,80 +131,6 @@ bool run_product_space_tests(
   
   if(out.get()) *out << "\nTesting standard vector ops for pps ...\n";
   TEUCHOS_TEST_ASSERT(vectorStdOpsTester.checkStdOps(*pps, out.get()), *out, success);
-
-  if(numProcs==1) {
-
-    if(out.get()) *out
-      << "\nC) Test the compatibility of serial vectors and product vectors with serial blocks."
-      << "\n   These tests demonstrate the principle of how all in-core vectors are compatible ...\n";
-    
-    const Scalar
-      one   = ST::one(),
-      two   = Scalar(2)*one,
-      three = Scalar(3)*one;
-    
-    if(out.get()) *out << "\nCreating a serial vector space ss with numBlocks*n=" << numBlocks*n << " vector elements ...\n";
-    
-    const RCP<const Thyra::VectorSpaceBase<Scalar> > ss
-      = Thyra::defaultSpmdVectorSpace<Scalar>(numBlocks*n);
-    
-    if(out.get()) *out << "\nTesting the serial space ss ...\n";
-    TEUCHOS_TEST_ASSERT(vectorSpaceTester.check(*ss, out.get()), *out, success);
-  
-    if(out.get()) *out << "\nTesting standard vector ops for ss ...\n";
-    TEUCHOS_TEST_ASSERT(vectorStdOpsTester.checkStdOps(*ss, out.get()), *out, success);
-    
-    if(out.get()) *out << "\nCreating product vectors; pv1, pv2 ...\n";
-    RCP<Thyra::VectorBase<Scalar> >
-      pv1 = createMember(*ps),
-      pv2 = createMember(*ps);
-    
-    if(out.get()) *out << "\nassign(&pv1,2.0) ...\n";
-    Thyra::assign( pv1.ptr(), two );
-    
-    if(out.get()) *out << "\nassign(&pv1,3.0) ...\n";
-    Thyra::assign( pv2.ptr(), three );
-    
-    if(out.get()) *out << "\nCreating serial vectors; sv1, sv2 ...\n";
-    RCP<Thyra::VectorBase<Scalar> >
-      sv1 = createMember(ss),
-      sv2 = createMember(ss);
-    
-    if(out.get()) *out << "\nassign(&sv1,*pv1) ...\n";
-    Thyra::assign( sv1.ptr(), *pv1 );
-    
-    if(out.get()) *out << "\nsum(sv1)=";
-    sresult1 = Thyra::sum(*sv1);
-    sresult2 = two*Scalar(ps->dim());
-    result = ( ST::magnitude( Thyra::relErr( sresult1, sresult2 ) )
-               < ST::magnitude( tol ) );
-    if(!result) success = false;
-    if(out.get()) *out
-      << sresult1 << " == 2*ps->dim()=" << sresult2
-      << " : " << ( result ? "passed" : "failed" ) << std::endl;
-    
-    if(out.get() && dumpAll) *out
-      << "\nsv1 =\n" << *sv1;
-    
-    if(out.get()) *out << "\nassign(&pv2,*sv1) ...\n";
-    Thyra::assign( pv2.ptr(), *sv1 );
-    
-    if(out.get()) *out << "\nsum(pv2)=";
-    sresult1 = Thyra::sum(*pv2);
-    sresult2 = two*Scalar(ps->dim());
-    result = ( ST::magnitude( Thyra::relErr( sresult1, sresult2 ) )
-               < ST::magnitude( tol ) );
-    if(!result) success = false;
-    if(out.get()) *out
-      << sresult1 << " == 2*ps->dim()=" << sresult2
-      << " : " << ( result ? "passed" : "failed" ) << std::endl;
-    
-    if(out.get() && dumpAll) *out
-      << "\npv2 =\n" << *pv2;
-    
-    // ToDo: Finish tests!
-
-  }
     
   if(out.get()) *out
     << "\n*** Leaving run_product_space_tests<"<<ST::name()<<">(...) ...\n";
@@ -212,6 +138,7 @@ bool run_product_space_tests(
   return success;
 
 } // end run_product_space_tests() [Doxygen looks for this!]
+
 
 int main( int argc, char* argv[] ) {
 
