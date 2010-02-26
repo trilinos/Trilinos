@@ -95,8 +95,8 @@ bool VectorTester<Scalar>::check(
     std::ostringstream oss;
     bool these_results = true;
     
-    oss <<endl<< "assign(&*t1,2.0) ...\n";
-    Thyra::assign( &*t1, two );
+    oss <<endl<< "assign(t1.ptr(),2.0) ...\n";
+    Thyra::assign( t1.ptr(), two );
     if(dump_all()) oss <<endl<< "\nt1 =\n" << describe(*t1,verbLevel);
     
     result = testRelErr(
@@ -106,8 +106,8 @@ bool VectorTester<Scalar>::check(
       );
     if(!result) these_results = false;
     
-    oss <<endl<< "assign(&*t2,3.0) ...\n";
-    Thyra::assign( &*t2, three );
+    oss <<endl<< "assign(t2.ptr(),3.0) ...\n";
+    Thyra::assign( t2.ptr(), three );
     if(dump_all()) oss <<endl<< "t2 =\n" << *t1;
     
     result = testRelErr(

@@ -65,7 +65,6 @@ bool run_product_space_tests(
   if(out.get()) *out << "\n*** Entering run_product_space_tests<"<<ST::name()<<">(...) ...\n";
 
   bool success = true, result;
-  Scalar sresult1, sresult2;
 
   Thyra::VectorSpaceTester<Scalar> vectorSpaceTester;
   vectorSpaceTester.warning_tol(ScalarMag(0.1)*tol);

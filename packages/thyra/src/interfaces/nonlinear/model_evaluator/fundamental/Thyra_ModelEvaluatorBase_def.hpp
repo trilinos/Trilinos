@@ -928,11 +928,11 @@ void ModelEvaluatorBase::OutArgs<Scalar>::setFailed() const
   typedef Teuchos::ScalarTraits<Scalar> ST;
   isFailed_ = true;
   if( this->supports(OUT_ARG_f) && this->get_f().get() ) {
-    assign(&*this->get_f(),ST::nan());
+    assign(this->get_f().ptr(),ST::nan());
   }
   for( int j = 0; j < this->Ng(); ++j ) {
     if(this->get_g(j).get())
-      assign(&*this->get_g(j),ST::nan());
+      assign(this->get_g(j).ptr(),ST::nan());
   }
   // ToDo: Set other objects to NaN as well!
 }

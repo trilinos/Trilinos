@@ -169,7 +169,7 @@ void DefaultMultiVectorLinearOpWithSolve<Scalar>::applyImpl(
     RCP<MultiVectorBase<Scalar> >
       Y = dyn_cast<MVPV>(*y).getNonconstMultiVector().assert_not_null();
     
-    Thyra::apply( *lows_.getConstObj(), M_trans, *X, &*Y, alpha, beta );
+    Thyra::apply( *lows_.getConstObj(), M_trans, *X, Y.ptr(), alpha, beta );
 
   }
 

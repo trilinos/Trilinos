@@ -68,7 +68,7 @@ void LinearOpBase<Scalar>::apply(
   const Scalar beta
   ) const
 {
-  Thyra::apply(*this, applyConjToTrans(conj), X, Y, alpha, beta);
+  Thyra::apply(*this, applyConjToTrans(conj), X, Teuchos::ptr(Y), alpha, beta);
 }
 
 
@@ -90,7 +90,7 @@ void LinearOpBase<Scalar>::applyTranspose(
   const Scalar beta
   ) const
 {
-  Thyra::apply(*this, applyTransposeConjToTrans(conj), X, Y, alpha, beta);
+  Thyra::apply(*this, applyTransposeConjToTrans(conj), X, Teuchos::ptr(Y), alpha, beta);
 }
 
 
@@ -98,7 +98,7 @@ void LinearOpBase<Scalar>::applyTranspose(
 
 
 // ToDo: You can move this back to the decl file after you have refactored
-// apply(...) to not use raw pointers.  Otherwise the &*Y call needs to have
+// apply(...) to not use raw pointers.  Otherwise the Y.ptr() call needs to have
 // the definition of MultiVectorBase.
 
 

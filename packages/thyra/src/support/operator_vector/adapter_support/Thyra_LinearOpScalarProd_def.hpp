@@ -93,7 +93,7 @@ void LinearOpScalarProd<Scalar>::scalarProdsImpl(
 {
   Teuchos::RCP<MultiVectorBase<Scalar> >
     T = createMembers(Y.range() ,Y.domain()->dim());
-  Thyra::apply(*op_, NOTRANS,Y, &*T);
+  Thyra::apply(*op_, NOTRANS,Y, T.ptr());
   dots(X, *T, scalarProds_out);
 }
 

@@ -75,8 +75,8 @@ void Thyra::describeLinearOp(
     Ordinal i, j;
     OSTab tab2(out);
     for( j = 0; j < dimDomain; ++j ) {
-      Thyra::assign( e_j.get(), DST::zero() );
-      Thyra::set_ele( j, DST::one(), e_j.get() );
+      Thyra::assign( e_j.ptr(), DST::zero() );
+      Thyra::set_ele( j, DST::one(), e_j.ptr() );
       Thyra::apply<Scalar>(A, NOTRANS, *e_j, t.ptr());  // extract the ith column or row
       t->acquireDetachedView(Range1D(),&sv);
       for( i = 0; i < dimRange; ++i ) Md[ i*cs + j*rs ] = sv(i);

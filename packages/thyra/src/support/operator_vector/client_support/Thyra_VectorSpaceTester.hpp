@@ -96,7 +96,7 @@ bool VectorSpaceTester<Scalar>::check(
   if(out.get()) *out <<endl<< "C) Creating a randomized vector member v ...\n";
   Teuchos::RCP<Thyra::VectorBase<Scalar> >
     v = createMember(vs);
-  randomize(Scalar(-ST::one()),Scalar(+ST::one()),&*v);
+  randomize(Scalar(-ST::one()),Scalar(+ST::one()),v.ptr());
 
   if(out.get()) *out <<endl<< "D) Testing the VectorBase interface of v ...\n";
 
@@ -106,7 +106,7 @@ bool VectorSpaceTester<Scalar>::check(
   if(out.get()) *out <<endl<< "C) Creating a randomized MultiVector member mv ...\n";
   Teuchos::RCP<Thyra::MultiVectorBase<Scalar> >
     mv = createMembers(vs,num_mv_cols());
-  randomize(Scalar(-ST::one()),Scalar(+ST::one()),&*mv);
+  randomize(Scalar(-ST::one()),Scalar(+ST::one()),mv.ptr());
 
   if(out.get()) *out <<endl<< "D) Testing the MultiVectorBase interface of mv ...\n";
 

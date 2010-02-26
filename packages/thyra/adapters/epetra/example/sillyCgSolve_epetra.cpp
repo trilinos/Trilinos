@@ -120,10 +120,10 @@ int main(int argc, char *argv[])
     // (D.4) Create the RHS vector b and initialize it to a random vector
     RCP<Thyra::VectorBase<double> > b = createMember(b_space);
     Thyra::seed_randomize<double>(0);
-    Thyra::randomize( -1.0, +1.0, &*b );
+    Thyra::randomize( -1.0, +1.0, b.ptr() );
     // (D.5) Create LHS vector x and set to zero
     RCP<Thyra::VectorBase<double> > x = createMember(A->domain());
-    Thyra::assign( &*x, 0.0 );
+    Thyra::assign( x.ptr(), 0.0 );
     //
     // (E) Solve the linear system with the silly CG solver
     //
@@ -133,8 +133,8 @@ int main(int argc, char *argv[])
     // (F) Check that the linear system was solved to the specified tolerance
     //
     RCP<Thyra::VectorBase<double> > r = createMember(A->range());                     
-    Thyra::assign(&*r,*b);                                        // r = b
-    Thyra::apply(*A,Thyra::NOTRANS,*x,&*r,-1.0,+1.0);             // r = -A*x + r
+    Thyra::assign(r.ptr(),*b);                                        // r = b
+    Thyra::apply(*A,Thyra::NOTRANS,*x,r.ptr(),-1.0,+1.0);             // r = -A*x + r
     const double r_nrm = Thyra::norm(*r), b_nrm =Thyra:: norm(*b);
     const double rel_err = r_nrm/b_nrm, relaxTol = 2.0*tolerance;
     result = rel_err <= relaxTol;

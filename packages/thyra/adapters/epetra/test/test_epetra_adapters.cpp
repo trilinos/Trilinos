@@ -111,6 +111,7 @@ int main( int argc, char* argv[] )
 
   using Teuchos::dyn_cast;
   using Teuchos::CommandLineProcessor;
+  using Teuchos::Ptr;
   using Teuchos::RCP;
   using Teuchos::Array;
   using Teuchos::arcpFromArray;
@@ -294,14 +295,14 @@ int main( int argc, char* argv[] )
 
     if(verbose) *out << "\n*** (B.1) Testing individual vector/multi-vector RTOps\n";
 
-    Thyra::assign( &*ev1, 0.0 );
-    Thyra::assign( &*ev2, scalar );
-    Thyra::assign( &*nev1, 0.0 );
-    Thyra::assign( &*nev2, scalar );
-    Thyra::assign( &*eV1, 0.0 );
-    Thyra::assign( &*eV2, scalar );
-    Thyra::assign( &*neV1, 0.0 );
-    Thyra::assign( &*neV2, scalar );
+    Thyra::assign( ev1.ptr(), 0.0 );
+    Thyra::assign( ev2.ptr(), scalar );
+    Thyra::assign( nev1.ptr(), 0.0 );
+    Thyra::assign( nev2.ptr(), scalar );
+    Thyra::assign( eV1.ptr(), 0.0 );
+    Thyra::assign( eV2.ptr(), scalar );
+    Thyra::assign( neV1.ptr(), 0.0 );
+    Thyra::assign( neV2.ptr(), scalar );
 
     Scalar
       ev1_nrm = Thyra::norm_1(*ev1),
@@ -337,7 +338,7 @@ int main( int argc, char* argv[] )
 
     if(verbose) *out << "\nPerforming ev1 = ev2 ...\n";
     timer.start(true);
-     Thyra::assign( &*ev1, *ev2 );
+     Thyra::assign( ev1.ptr(), *ev2 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(!testRelErr("Thyra::norm_1(ev1)",Thyra::norm_1(*ev1),"Thyra::norm_1(ev2)",ev2_nrm,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
@@ -345,7 +346,7 @@ int main( int argc, char* argv[] )
 
     if(verbose) *out << "\nPerforming eV1 = eV2 ...\n";
     timer.start(true);
-     Thyra::assign( &*eV1, *eV2 );
+     Thyra::assign( eV1.ptr(), *eV2 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(!testRelErr("Thyra::norm_1(eV1)",Thyra::norm_1(*eV1),"Thyra::norm_1(eV2)",eV2_nrm,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
@@ -353,7 +354,7 @@ int main( int argc, char* argv[] )
 
     if(verbose) *out << "\nPerforming ev1 = nev2 ...\n";
     timer.start(true);
-     Thyra::assign( &*ev1, *nev2 );
+     Thyra::assign( ev1.ptr(), *nev2 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(!testRelErr("Thyra::norm_1(ev1)",Thyra::norm_1(*ev1),"Thyra::norm_1(nev2)",nev2_nrm,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
@@ -361,7 +362,7 @@ int main( int argc, char* argv[] )
 
     if(verbose) *out << "\nPerforming nev1 = ev2 ...\n";
     timer.start(true);
-     Thyra::assign( &*nev1, *ev2 );
+     Thyra::assign( nev1.ptr(), *ev2 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(!testRelErr("Thyra::norm_1(nev1)",Thyra::norm_1(*nev1),"Thyra::norm_1(ev2)",ev2_nrm,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
@@ -369,7 +370,7 @@ int main( int argc, char* argv[] )
 
     if(verbose) *out << "\nPerforming nev1 = nev2 ...\n";
     timer.start(true);
-     Thyra::assign( &*nev1, *nev2 );
+     Thyra::assign( nev1.ptr(), *nev2 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(!testRelErr("Thyra::norm_1(nev1)",Thyra::norm_1(*nev1),"Thyra::norm_1(nev2)",nev2_nrm,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
@@ -377,7 +378,7 @@ int main( int argc, char* argv[] )
 
     if(verbose) *out << "\nPerforming eV1 = neV2 ...\n";
     timer.start(true);
-     Thyra::assign( &*eV1, *neV2 );
+     Thyra::assign( eV1.ptr(), *neV2 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(!testRelErr("Thyra::norm_1(eV1)",Thyra::norm_1(*eV1),"Thyra::norm_1(neV2)",neV2_nrm,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
@@ -385,7 +386,7 @@ int main( int argc, char* argv[] )
 
     if(verbose) *out << "\nPerforming neV1 = eV2 ...\n";
     timer.start(true);
-     Thyra::assign( &*neV1, *eV2 );
+     Thyra::assign( neV1.ptr(), *eV2 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(!testRelErr("Thyra::norm_1(neV1)",Thyra::norm_1(*neV1),"Thyra::norm_1(eV2)",eV2_nrm,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
@@ -393,7 +394,7 @@ int main( int argc, char* argv[] )
 
     if(verbose) *out << "\nPerforming neV1 = neV2 ...\n";
     timer.start(true);
-     Thyra::assign( &*neV1, *neV2 );
+     Thyra::assign( neV1.ptr(), *neV2 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(!testRelErr("Thyra::norm_1(neV1)",Thyra::norm_1(*neV1),"Thyra::norm_1(neV2)",neV2_nrm,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
@@ -443,7 +444,7 @@ int main( int argc, char* argv[] )
 
     if(verbose) *out << "\nPerforming eV1'*eV2 ...\n";
     timer.start(true);
-    apply( *eV1, TRANS, *eV2, &*T );
+    apply( *eV1, TRANS, *eV2, T.ptr() );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(!testRelErr("Thyra::norm_1(eV1'*eV2)",Thyra::norm_1(*T),s2_n,s2,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
@@ -451,7 +452,7 @@ int main( int argc, char* argv[] )
 
     if(verbose) *out << "\nPerforming neV1'*eV2 ...\n";
     timer.start(true);
-    apply( *neV1, TRANS, *eV2, &*T );
+    apply( *neV1, TRANS, *eV2, T.ptr() );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(!testRelErr("Thyra::norm_1(neV1'*eV2)",Thyra::norm_1(*T),s2_n,s2,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
@@ -459,7 +460,7 @@ int main( int argc, char* argv[] )
 
     if(verbose) *out << "\nPerforming eV1'*neV2 ...\n";
     timer.start(true);
-    apply( *eV1, TRANS, *neV2, &*T );
+    apply( *eV1, TRANS, *neV2, T.ptr() );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(!testRelErr("Thyra::norm_1(eV1'*neV2)",Thyra::norm_1(*T),s2_n,s2,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
@@ -467,7 +468,7 @@ int main( int argc, char* argv[] )
 
     if(verbose) *out << "\nPerforming neV1'*neV2 ...\n";
     timer.start(true);
-    apply( *neV1, TRANS, *neV2, &*T );
+    apply( *neV1, TRANS, *neV2, T.ptr() );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(!testRelErr("Thyra::norm_1(neV1'*neV2)",Thyra::norm_1(*T),s2_n,s2,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
@@ -567,63 +568,63 @@ int main( int argc, char* argv[] )
     
     if(verbose) *out << "\nPerforming ey = 2*Op*ev1 ...\n";
     timer.start(true);
-    apply( *Op, NOTRANS, *ev1, &*ey, 2.0 );
+    apply( *Op, NOTRANS, *ev1, ey.ptr(), 2.0 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(!testRelErr("Thyra::norm_1(ey)",Thyra::norm_1(*ey),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
 
     if(verbose) *out << "\nPerforming eY = 2*Op*eV1 ...\n";
     timer.start(true);
-    apply( *Op, NOTRANS, *eV1, &*eY, 2.0 );
+    apply( *Op, NOTRANS, *eV1, eY.ptr(), 2.0 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(!testRelErr("Thyra::norm_1(eY)",Thyra::norm_1(*eY),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
 
     if(verbose) *out << "\nPerforming ney = 2*Op*ev1 ...\n";
     timer.start(true);
-    apply( *Op, NOTRANS, *ev1, &*ney, 2.0 );
+    apply( *Op, NOTRANS, *ev1, ney.ptr(), 2.0 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(!testRelErr("Thyra::norm_1(ney)",Thyra::norm_1(*ney),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
 
     if(verbose) *out << "\nPerforming neY = 2*Op*eV1 ...\n";
     timer.start(true);
-    apply( *Op, NOTRANS, *eV1, &*neY, 2.0 );
+    apply( *Op, NOTRANS, *eV1, neY.ptr(), 2.0 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(!testRelErr("Thyra::norm_1(neY)",Thyra::norm_1(*neY),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
 
     if(verbose) *out << "\nPerforming ey = 2*Op*nev1 ...\n";
     timer.start(true);
-    apply( *Op, NOTRANS, *nev1, &*ey, 2.0 );
+    apply( *Op, NOTRANS, *nev1, ey.ptr(), 2.0 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(!testRelErr("Thyra::norm_1(ey)",Thyra::norm_1(*ey),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
 
     if(verbose) *out << "\nPerforming eY = 2*Op*neV1 ...\n";
     timer.start(true);
-    apply( *Op, NOTRANS, *neV1, &*eY, 2.0 );
+    apply( *Op, NOTRANS, *neV1, eY.ptr(), 2.0 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(!testRelErr("Thyra::norm_1(eY)",Thyra::norm_1(*eY),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
 
     if(verbose) *out << "\nPerforming ney = 2*Op*nev1 ...\n";
     timer.start(true);
-    apply( *Op, NOTRANS, *nev1, &*ney, 2.0 );
+    apply( *Op, NOTRANS, *nev1, ney.ptr(), 2.0 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(!testRelErr("Thyra::norm_1(ney)",Thyra::norm_1(*ney),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
 
     if(verbose) *out << "\nPerforming ney = 2*Op*nev1 through MultiVector interface ...\n";
     timer.start(true);
-    apply( *Op, NOTRANS, static_cast<const Thyra::MultiVectorBase<Scalar>&>(*nev1), static_cast<Thyra::MultiVectorBase<Scalar>*>(&*ney), 2.0 );
+    apply( *Op, NOTRANS, static_cast<const Thyra::MultiVectorBase<Scalar>&>(*nev1), Ptr<Thyra::MultiVectorBase<Scalar> >(ney.ptr()), 2.0 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(!testRelErr("Thyra::norm_1(ney)",Thyra::norm_1(*ney),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
 
     if(verbose) *out << "\nPerforming neY = 2*Op*neV1 ...\n";
     timer.start(true);
-    apply( *Op, NOTRANS, *neV1, &*neY, 2.0 );
+    apply( *Op, NOTRANS, *neV1, neY.ptr(), 2.0 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(!testRelErr("Thyra::norm_1(neY)",Thyra::norm_1(*neY),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
@@ -650,7 +651,7 @@ int main( int argc, char* argv[] )
 
     if(verbose) *out << "\nPerforming eY_v1 = 2*Op*eV1_v1 ...\n";
     timer.start(true);
-    apply( *Op, NOTRANS, *eV1_v1, &*eY->subView(col_rng), 2.0 );
+    apply( *Op, NOTRANS, *eV1_v1, eY->subView(col_rng).ptr(), 2.0 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(verbose && dumpAll) *out << "\neV_v1=\n" << *eY->subView(col_rng);
@@ -658,7 +659,7 @@ int main( int argc, char* argv[] )
 
     if(verbose) *out << "\nPerforming eY_v2 = 2*Op*eV1_v2 ...\n";
     timer.start(true);
-    apply( *Op, NOTRANS, *eV1_v2, &*eY->subView(numCols,cols), 2.0 );
+    apply( *Op, NOTRANS, *eV1_v2, eY->subView(numCols,cols).ptr(), 2.0 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(verbose && dumpAll) *out << "\neV_v2=\n" << *eY->subView(numCols,cols);
@@ -666,7 +667,7 @@ int main( int argc, char* argv[] )
 
     if(verbose) *out << "\nPerforming neY_v1 = 2*Op*eV1_v1 ...\n";
     timer.start(true);
-    apply( *Op, NOTRANS, *eV1_v1, &*neY->subView(col_rng), 2.0 );
+    apply( *Op, NOTRANS, *eV1_v1, neY->subView(col_rng).ptr(), 2.0 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(verbose && dumpAll) *out << "\neV_v1=\n" << *eY->subView(col_rng);
@@ -674,14 +675,14 @@ int main( int argc, char* argv[] )
 
     if(verbose) *out << "\nPerforming eY_v1 = 2*Op*neV1_v1 ...\n";
     timer.start(true);
-    apply( *Op, NOTRANS, *neV1_v1, &*eY->subView(col_rng), 2.0 );
+    apply( *Op, NOTRANS, *neV1_v1, eY->subView(col_rng).ptr(), 2.0 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(!testRelErr("Thyra::norm_1(eY_v1)",Thyra::norm_1(*eY->subView(col_rng)),s3_n,s3,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
 
     if(verbose) *out << "\nPerforming neY_v2 = 2*Op*eV1_v2 ...\n";
     timer.start(true);
-    apply( *Op, NOTRANS, *eV1_v2, &*neY->subView(numCols,cols), 2.0 );
+    apply( *Op, NOTRANS, *eV1_v2, neY->subView(numCols,cols).ptr(), 2.0 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(verbose && dumpAll) *out << "\neV_v2=\n" << *eY->subView(numCols,cols);
@@ -689,7 +690,7 @@ int main( int argc, char* argv[] )
 
     if(verbose) *out << "\nPerforming eY_v2 = 2*Op*neV1_v2 ...\n";
     timer.start(true);
-    apply( *Op, NOTRANS, *neV1_v2, &*eY->subView(numCols,cols), 2.0 );
+    apply( *Op, NOTRANS, *neV1_v2, eY->subView(numCols,cols).ptr(), 2.0 );
     timer.stop();
     if(verbose) *out << "  time = " << timer.totalElapsedTime() << " sec\n";
     if(verbose && dumpAll) *out << "\neV_v2=\n" << *eY->subView(numCols,cols);
@@ -708,7 +709,7 @@ int main( int argc, char* argv[] )
         arcpFromArray(t_raw_values), 1 );
 
       std::fill_n( t_raw_values.begin(), t_raw_values.size(), ST::zero() );
-      Thyra::assign( &*createMemberView(T->range(),t_raw), scalar );
+      Thyra::assign( createMemberView(T->range(),t_raw).ptr(), scalar );
       Teuchos::RCP<const Thyra::VectorBase<Scalar> > t_view = createMemberView(T->range(),static_cast<RTOpPack::ConstSubVectorView<Scalar>&>(t_raw));
       Scalar t_nrm = Thyra::norm_1(*t_view);
       if(!testRelErr("Thyra::norm_1(t_view)",t_nrm,s_n,s,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
@@ -717,7 +718,7 @@ int main( int argc, char* argv[] )
 /*
 #ifndef SUN_CXX // The sun compiler Forte Developer 5.4 does not destory temporaries properly and this does not work
       std::fill_n( t_raw_values.begin(), t_raw_values.size(), ST::zero() );
-      Thyra::assign( &*T->range()->Thyra::VectorSpaceBase<Scalar>::createMemberView(t_raw), scalar );
+      Thyra::assign( T->range().ptr()->Thyra::VectorSpaceBase<Scalar>::createMemberView(t_raw), scalar );
       t_view = T->range()->Thyra::VectorSpaceBase<Scalar>::createMemberView(static_cast<RTOpPack::ConstSubVectorView<Scalar>&>(t_raw));
       t_nrm = Thyra::norm_1(*t_view);
       if(!testRelErr("Thyra::norm_1(t_view)",t_nrm,s_n,s,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
@@ -730,7 +731,7 @@ int main( int argc, char* argv[] )
         arcpFromArray(T_raw_values), num_mv_cols );
 
       std::fill_n( T_raw_values.begin(), T_raw_values.size(), ST::zero() );
-      Thyra::assign( &*createMembersView(T->range(),T_raw), scalar );
+      Thyra::assign( createMembersView(T->range(),T_raw).ptr(), scalar );
       Teuchos::RCP<const Thyra::MultiVectorBase<Scalar> >
         T_view = createMembersView(T->range(),static_cast<RTOpPack::ConstSubMultiVectorView<Scalar>&>(T_raw));
       Scalar T_nrm = Thyra::norm_1(*T_view);
@@ -740,7 +741,7 @@ int main( int argc, char* argv[] )
 /*
 #ifndef SUN_CXX // The sun compiler Forte Developer 5.4 does not destory temporaries properly and this does not work
       std::fill_n( T_raw_values.begin(), T_raw_values.size(), ST::zero() );
-      Thyra::assign( &*T->range()->Thyra::VectorSpaceBase<Scalar>::createMembersView(T_raw), scalar );
+      Thyra::assign( T->range().ptr()->Thyra::VectorSpaceBase<Scalar>::createMembersView(T_raw), scalar );
       T_view = T->range()->Thyra::VectorSpaceBase<Scalar>::createMembersView(static_cast<RTOpPack::ConstSubMultiVectorView<Scalar>&>(T_raw));
       T_nrm = Thyra::norm_1(*T_view);
       if(!testRelErr("Thyra::norm_1(T_view)",T_nrm,s_n,s,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)) success=false;
@@ -771,14 +772,14 @@ int main( int argc, char* argv[] )
         T1 = create_MultiVector(eT1,mpi_vs);
 
       if(verbose) *out << "\nPerforming t1 = ev1 ...\n";
-      assign( &*t1, *ev1 );
+      assign( t1.ptr(), *ev1 );
       if(!testRelErr(
            "sum(t1)",Thyra::sum(*t1),"sum(ev1)",sum(*ev1)
            ,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)
         ) success=false;
 
       if(verbose) *out << "\nPerforming T1 = eV1 ...\n";
-      assign( &*T1, *eV1 );
+      assign( T1.ptr(), *eV1 );
       if(!testRelErr(
            "norm_1(T1)",Thyra::norm_1(*T1),"norm_1(eV1)",norm_1(*eV1)
            ,"max_rel_err",max_rel_err,"max_rel_warn",max_rel_warn,verbose?&*out:NULL)
@@ -949,7 +950,7 @@ int main( int argc, char* argv[] )
       *out << "\nPerforming eV1 = eV2 (using Thyra::SpmdMultiVectorBase::applyOp(...)) " << num_time_loops_1 << " times ...\n";
     timer.start(true);
     for(int k = 0; k < num_time_loops_1; ++k ) {
-      Thyra::assign( &*eV1, *eV2 );
+      Thyra::assign( eV1.ptr(), *eV2 );
     }
     timer.stop();
     thyra_wrapped_time = timer.totalElapsedTime();
@@ -1003,7 +1004,7 @@ int main( int argc, char* argv[] )
       *out << "\nPerforming eV1'*eV2 (using Thyra::SpmdMultiVectorBase::apply(...)) "	<< num_time_loops_2 << " times ...\n";
     timer.start(true);
     for(int k = 0; k < num_time_loops_2; ++k ) {
-      apply( *eV1, TRANS, *eV2, &*T );
+      apply( *eV1, TRANS, *eV2, T.ptr() );
     }
     timer.stop();
     thyra_wrapped_time = timer.totalElapsedTime();
@@ -1061,7 +1062,7 @@ int main( int argc, char* argv[] )
 
     timer.start(true);
     for(int k = 0; k < num_time_loops_3; ++k ) {
-      apply( *Op, NOTRANS, *eV1, &*eY );
+      apply( *Op, NOTRANS, *eV1, eY.ptr() );
     }
     timer.stop();
 

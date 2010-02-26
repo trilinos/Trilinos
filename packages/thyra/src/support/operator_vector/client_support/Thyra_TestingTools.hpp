@@ -48,7 +48,7 @@ Thyra::relVectorErr( const VectorBase<Scalar> &v1, const VectorBase<Scalar> &v2 
 #endif
   RCP<VectorBase<Scalar> >
     diff = createMember(v1.space());
-  V_VmV( &*diff, v1, v2 );
+  V_VmV( diff.ptr(), v1, v2 );
   const ScalarMag
     nrm_v1 = norm(v1),
     nrm_v2 = norm(v2),
@@ -159,7 +159,7 @@ bool Thyra::testRelNormDiffErr(
         << li << v1_name << " = " << describe(v1,verbLevel)
         << li << v2_name << " = " << describe(v2,verbLevel);
       RCP<VectorBase<Scalar> > diff = createMember(v1.space());
-      V_VmV( &*diff, v1, v2 );
+      V_VmV( diff.ptr(), v1, v2 );
       *out
         << li << v1_name << " - " << v2_name << " = " << describe(*diff,verbLevel);
     }

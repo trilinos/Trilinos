@@ -64,18 +64,19 @@ bool sillyPowerMethod(
   out << "\nStarting power method (target tolerrance = "<<tolerance<<") ...\n\n";
   VectorPtr q = createMember(A.domain()), z = createMember(A.range()), r = createMember(A.range());
   Thyra::seed_randomize<Scalar>(0);
-  Thyra::randomize( Scalar(-one), Scalar(+one), &*z );
+  Thyra::randomize( Scalar(-one), Scalar(+one), z.ptr() );
 
   // Perform iterations
   for( int iter = 0; iter < maxNumIters; ++iter ) {
-    const ScalarMag z_nrm = norm(*z);       // Compute natural norm of z
-    V_StV( &*q, Scalar(one/z_nrm), *z );    // q = (1/||z}*z 
-    apply( A, NOTRANS , *q, &*z );          // z = A*q
-    *lambda = scalarProd(*q,*z);            // lambda = <q,z>    : Approximate maximum absolute eigenvalue
+    const ScalarMag z_nrm = norm(*z);           // Compute natural norm of z
+    V_StV( q.ptr(), Scalar(one/z_nrm), *z );    // q = (1/||z}*z 
+    apply( A, NOTRANS , *q, z.ptr() );          // z = A*q
+    *lambda = scalarProd(*q,*z);                // lambda = <q,z>
     if( iter%(maxNumIters/10) == 0 || iter+1 == maxNumIters ) {
-      V_StVpV(&*r,Scalar(-*lambda),*q,*z);  // r = -lambda*q + z : Compute residual of eigenvalue equation
-      const ScalarMag r_nrm = norm(*r);     // Compute natural norm of r
-      out << "Iter = " << iter << ", lambda = " << (*lambda) << ", ||A*q-lambda*q|| = " << r_nrm << std::endl;
+      V_StVpV(r.ptr(),Scalar(-*lambda),*q,*z);  // r = -lambda*q + z
+      const ScalarMag r_nrm = norm(*r);         // Compute natural norm of r
+      out << "Iter = " << iter << ", lambda = " << (*lambda)
+          << ", ||A*q-lambda*q|| = " << r_nrm << std::endl;
       if( r_nrm < tolerance )
         return true;  // Success!
     }

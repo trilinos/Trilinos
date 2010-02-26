@@ -103,7 +103,7 @@ TEUCHOS_UNIT_TEST( EpetraOperatorWrapper, basic )
    // create a vector to test: copyThyraIntoEpetra
    {
       const RCP<VectorBase<double> > tv = Thyra::createMember(A->domain());
-      Thyra::randomize(-100.0,100.0,&*tv);
+      Thyra::randomize(-100.0, 100.0, tv.ptr());
       const RCP<const VectorBase<double> > tv_0 =
         Thyra::productVectorBase<double>(tv)->getVectorBlock(0);
       const RCP<const VectorBase<double> > tv_1 =

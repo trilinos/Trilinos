@@ -61,8 +61,10 @@ bool run_scalar_product_tests(
   typedef Teuchos::ScalarTraits<Scalar>    ST;
   typedef typename ST::magnitudeType       ScalarMag;
   typedef Teuchos::ScalarTraits<ScalarMag> SMT;
+  using Teuchos::Ptr;
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::as;
   using Teuchos::rcp_implicit_cast;
   using Teuchos::OSTab;
 
@@ -94,7 +96,8 @@ bool run_scalar_product_tests(
       );
 
   Thyra::seed_randomize<Scalar>(0);
-  Thyra::randomize( Scalar(Scalar(-1)*ST::one()), Scalar(Scalar(+1)*ST::one()), &*op_coeff );
+  Thyra::randomize<Scalar>( as<Scalar>(-ST::one()), ST::one(),
+    Ptr<Thyra::MultiVectorBase<Scalar> >(op_coeff.ptr()) );
   if(out.get() && dumpAll) *out << "\nop_coeff =\n" << *op_coeff;
   RCP<const Thyra::VectorSpaceConverterBase<ScalarMag,Scalar> >
     vecSpcConverterFromMag = rcp(new Thyra::DefaultSerialVectorSpaceConverter<ScalarMag,Scalar>());
@@ -104,8 +107,8 @@ bool run_scalar_product_tests(
   RCP<Thyra::VectorBase<ScalarMag> >
     _domainScalarProdDiag = createMember(magDomain),
     _rangeScalarProdDiag  = createMember(*magRange);
-  Thyra::randomize( ScalarMag(ScalarMag(+1)*SMT::one()), ScalarMag(ScalarMag(+2)*SMT::one()), &*_domainScalarProdDiag );
-  Thyra::randomize( ScalarMag(ScalarMag(+1)*SMT::one()), ScalarMag(ScalarMag(+2)*SMT::one()), &*_rangeScalarProdDiag );
+  Thyra::randomize( ScalarMag(ScalarMag(+1)*SMT::one()), ScalarMag(ScalarMag(+2)*SMT::one()), _domainScalarProdDiag.ptr() );
+  Thyra::randomize( ScalarMag(ScalarMag(+1)*SMT::one()), ScalarMag(ScalarMag(+2)*SMT::one()), _rangeScalarProdDiag.ptr() );
   vecSpcConverterFromMag->convert( *_domainScalarProdDiag, &*domainScalarProdOp->getNonconstDiag() );
   vecSpcConverterFromMag->convert( *_rangeScalarProdDiag, &*rangeScalarProdOp->getNonconstDiag() );
 

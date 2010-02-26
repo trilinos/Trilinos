@@ -325,9 +325,6 @@ void DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(
 
   assertInitialized();
 
-  const Ordinal domainDim = this->domain()->dim();
-  const Ordinal rangeDim = this->range()->dim();
-
 #ifdef TEUCHOS_DEBUG
   for ( int j = 0; j < multi_vecs_in.size(); ++j ) {
     THYRA_ASSERT_VEC_SPACES(
@@ -350,9 +347,6 @@ void DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(
       );
   }
 #endif //  TEUCHOS_DEBUG
-
-  const Ordinal primary_sub_dim = rangeDim;
-  const Ordinal secondary_sub_dim = domainDim;
 
   //
   // Try to dynamic cast all of the multi-vector objects to the
@@ -418,7 +412,6 @@ void DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(
     Array<Ptr<MultiVectorBase<Scalar> > >
       targ_multi_vecs_block_k(targ_multi_vecs_inout.size());
 
-    Ordinal num_rows_remaining = primary_sub_dim;
     Ordinal g_off = primary_global_offset_in;
 
     for ( int k = 0; k < numBlocks_; ++k ) {
@@ -559,9 +552,8 @@ void DefaultProductMultiVector<Scalar>::applyImpl(
     for ( int k = 0; k < numBlocks_; ++k ) {
       Thyra::apply(
         *multiVecs_[k].getConstObj(), M_trans,
-        X_in, &*Y.getNonconstMultiVectorBlock(k),
-        alpha, beta
-        ); 
+        X_in, Y.getNonconstMultiVectorBlock(k).ptr(),
+        alpha, beta ); 
     }
   }
   else {

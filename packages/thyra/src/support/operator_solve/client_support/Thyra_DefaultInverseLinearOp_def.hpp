@@ -277,23 +277,18 @@ void DefaultInverseLinearOp<Scalar>::applyImpl(
     scale(beta, Y);
   }
   //
-  const SolveCriteria<Scalar>
-    *solveCriteria
-    = (
+  const Ptr<const SolveCriteria<Scalar> > solveCriteria = 
+    (
       real_trans(M_trans)==NOTRANS
-      ? fwdSolveCriteria_.get()
-      : adjSolveCriteria_.get()
+      ? fwdSolveCriteria_.ptr()
+      : adjSolveCriteria_.ptr()
       );
   assign(T.get(), ST::zero()); // Have to initialize before solve!
-  SolveStatus<Scalar>
-    solveStatus = Thyra::solve<Scalar>(
-      *lows_.getConstObj(), M_trans
-      ,X,&*T
-      ,solveCriteria
-      );
+  SolveStatus<Scalar> solveStatus =
+    Thyra::solve<Scalar>(*lows_.getConstObj(), M_trans, X, T.ptr(), solveCriteria);
 
   TEST_FOR_EXCEPTION(
-    solveCriteria && solveStatus.solveStatus!=SOLVE_STATUS_CONVERGED
+    nonnull(solveCriteria) && solveStatus.solveStatus!=SOLVE_STATUS_CONVERGED
     && ( real_trans(M_trans)==NOTRANS
          ? throwOnFwdSolveFailure_==THROW_ON_SOLVE_FAILURE
          : throwOnAdjSolveFailure_==THROW_ON_SOLVE_FAILURE )

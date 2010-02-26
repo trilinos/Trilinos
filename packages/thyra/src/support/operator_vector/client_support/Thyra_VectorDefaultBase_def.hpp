@@ -165,7 +165,7 @@ VectorDefaultBase<Scalar>::clone_v() const
           <<">::clone_v() called!\n";
 #endif
   RCP<VectorBase<Scalar> > copy = createMember(this->space());
-  assign( &*copy, *this );
+  assign(copy.ptr(), *this);
   return copy;
 }
 

@@ -134,18 +134,18 @@ int exampleImplicitlyComposedLinearOperators(
     eta = 4.0;
 
   // Randomize the values in the Multi-Vector
-  randomize( -one, +one, &*mvA );
-  randomize( -one, +one, &*mvB );
-  randomize( -one, +one, &*mvC );
-  randomize( -one, +one, &*d );
-  randomize( -one, +one, &*mvE );
-  randomize( -one, +one, &*mvF );
-  randomize( -one, +one, &*mvJ );
-  randomize( -one, +one, &*mvK );
-  randomize( -one, +one, &*mvL );
-  randomize( -one, +one, &*mvN );
-  randomize( -one, +one, &*mvP );
-  randomize( -one, +one, &*mvQ );
+  randomize( -one, +one, mvA.ptr() );
+  randomize( -one, +one, mvB.ptr() );
+  randomize( -one, +one, mvC.ptr() );
+  randomize( -one, +one, d.ptr() );
+  randomize( -one, +one, mvE.ptr() );
+  randomize( -one, +one, mvF.ptr() );
+  randomize( -one, +one, mvJ.ptr() );
+  randomize( -one, +one, mvK.ptr() );
+  randomize( -one, +one, mvL.ptr() );
+  randomize( -one, +one, mvN.ptr() );
+  randomize( -one, +one, mvP.ptr() );
+  randomize( -one, +one, mvQ.ptr() );
 
   // Get the linear operator forms of the basic component linear operators
   const RCP<const LinearOpBase<Scalar> >

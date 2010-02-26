@@ -363,6 +363,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
   using std::setw;
   using std::endl;
   using std::right;
+  using Teuchos::as;
   typedef ModelEvaluatorBase MEB;
   namespace DFDCT = DirectionalFiniteDiffCalculatorTypes;
   typedef VectorBase<Scalar> V;
@@ -567,14 +568,14 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
     VectorPtr f;
     if( var.supports(MEB::OUT_ARG_f) && (f=var.get_f()).get() ) {
       pfunc.set_f(createMember(model.get_f_space()));
-      assign(&*f,ST::zero());
+      assign(f.ptr(),ST::zero());
       if(!bfunc.get_f().get()) all_funcs_at_base_computed = false;
     }
     for( int j = 0; j < Ng; ++j ) {
       VectorPtr g_j;
       if( (g_j=var.get_g(j)).get() ) {
         pfunc.set_g(j,createMember(model.get_g_space(j)));
-        assign(&*g_j,ST::zero());
+        assign(g_j.ptr(),ST::zero());
         if(!bfunc.get_g(j).get()) all_funcs_at_base_computed = false;
       }
     }
@@ -763,13 +764,13 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
         *out << "\nSetting perturbedPoint = basePoint + uh_i*uh*direction ...\n";
       // z = zo + uh_i*uh*v
       {
-        if( dir.supports(MEB::IN_ARG_x) && dir.get_x().get() )
-          V_StVpV(&*per_x,Scalar(uh_i*uh),*dir.get_x(),*bp.get_x());
-        if( dir.supports(MEB::IN_ARG_x_dot) && dir.get_x_dot().get() )
-          V_StVpV(&*per_x_dot,Scalar(uh_i*uh),*dir.get_x_dot(),*bp.get_x_dot());
-        for( int l = 0; l < Np; ++l ) {
+        if ( dir.supports(MEB::IN_ARG_x) && dir.get_x().get() )
+          V_StVpV(per_x.ptr(),as<Scalar>(uh_i*uh),*dir.get_x(),*bp.get_x());
+        if ( dir.supports(MEB::IN_ARG_x_dot) && dir.get_x_dot().get() )
+          V_StVpV(per_x_dot.ptr(), as<Scalar>(uh_i*uh), *dir.get_x_dot(), *bp.get_x_dot());
+        for ( int l = 0; l < Np; ++l ) {
           if( dir.get_p(l).get() )
-            V_StVpV(&*per_p[l],Scalar(uh_i*uh),*dir.get_p(l),*bp.get_p(l));
+            V_StVpV(per_p[l].ptr(), as<Scalar>(uh_i*uh), *dir.get_p(l), *bp.get_p(l));
         }
       }
       if(out.get() && trace)
@@ -812,11 +813,11 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
         << " where (1.0)/(dwgt*uh) = (1.0)/("<<dwgt<<"*"<<uh<<") = "<<alpha<<" ...\n";
     VectorPtr f;
     if( var.supports(MEB::OUT_ARG_f) && (f=var.get_f()).get() )
-      Vt_S(&*f,alpha);
+      Vt_S(f.ptr(),alpha);
     for( int j = 0; j < Ng; ++j ) {
       VectorPtr g_j;
       if( (g_j=var.get_g(j)).get() )
-        Vt_S(&*g_j,alpha);
+        Vt_S(g_j.ptr(),alpha);
     }
     if(out.get() && trace)
       *out << "\nFinal variations=\n" << describe(var,verbLevel);
@@ -923,7 +924,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcDerivatives(
     if (hasDerivObject) {
       VectorPtr e_i = createMember(model.get_p_space(l));
       dir.set_p(l,e_i);
-      assign(&*e_i,ST::zero());
+      assign(e_i.ptr(),ST::zero());
       const int np_l = e_i->space()->dim();
       for( int i = 0 ; i < np_l; ++ i ) {
         if(out.get() && trace)
@@ -936,16 +937,16 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcDerivatives(
             var.set_g(j,var_g[j]); // Computes d(g(j))/d(p(l)(i))
           }
         }
-        set_ele(i,ST::one(),&*e_i);
+        set_ele(i,ST::one(),e_i.ptr());
         this->calcVariations(
           model,bp,dir,bfunc,var
           );
-        set_ele(i,ST::zero(),&*e_i);
+        set_ele(i,ST::zero(),e_i.ptr());
         if (DfDp_l.get()) var.set_f(Teuchos::null);
         for (int j = 0; j < Ng; ++j) {
           MultiVectorPtr DgDp_j_l;
           if ( !is_null(DgDp_j_l=DgDp_l[j].getMultiVector()) ) {
-            assign( &*DgDp_j_l->col(i), *var_g[j] );
+            assign( DgDp_j_l->col(i).ptr(), *var_g[j] );
           }
         }
       }
