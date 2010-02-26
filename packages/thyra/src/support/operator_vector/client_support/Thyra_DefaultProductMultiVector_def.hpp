@@ -316,14 +316,15 @@ void DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(
   const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs_in,
   const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs_inout,
   const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
-  const Ordinal primary_first_ele_offset_in,
-  const Ordinal primary_sub_dim_in,
-  const Ordinal primary_global_offset_in,
-  const Ordinal secondary_first_ele_offset_in,
-  const Ordinal secondary_sub_dim_in
+  const Ordinal primary_global_offset_in
   ) const
 {
   
+  const Ordinal primary_first_ele_offset_in = 0;
+  const Ordinal primary_sub_dim_in = -1;
+  const Ordinal secondary_first_ele_offset_in = 0;
+  const Ordinal secondary_sub_dim_in = -1;
+
   using Teuchos::ptr_dynamic_cast;
   using Thyra::applyOp;
 
@@ -498,10 +499,7 @@ void DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(
       Thyra::applyOp<Scalar>(
         primary_op, multi_vecs_block_k(), targ_multi_vecs_block_k(),
         reduct_objs,
-        g_off < 0 ? -g_off : 0, // primary_first_ele_offset
-        local_sub_dim,  // primary_sub_dim
-        g_off < 0 ? primary_global_offset_in : primary_global_offset_in + g_off, // primary_global_offset,
-        secondary_first_ele_offset_in, secondary_sub_dim
+        g_off < 0 ? primary_global_offset_in : primary_global_offset_in + g_off // primary_global_offset,
         );
     }
 
@@ -515,10 +513,7 @@ void DefaultProductMultiVector<Scalar>::mvMultiReductApplyOpImpl(
 
     MultiVectorDefaultBase<Scalar>::mvMultiReductApplyOpImpl(
       primary_op, multi_vecs_in(), targ_multi_vecs_inout(),
-      reduct_objs,
-      primary_first_ele_offset_in, primary_sub_dim_in, primary_global_offset_in,
-      secondary_first_ele_offset_in, secondary_sub_dim_in
-      );
+      reduct_objs, primary_global_offset_in);
 
   }
 

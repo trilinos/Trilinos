@@ -173,12 +173,11 @@ public:
     const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
     const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
     const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-    const Ordinal first_ele_offset,
-    const Ordinal sub_dim,
     const Ordinal global_offset
     ) const
-    { applyOpImpl(op,vecs,targ_vecs,reduct_obj,
-        first_ele_offset,sub_dim,global_offset); }
+    {
+      applyOpImpl(op, vecs, targ_vecs, reduct_obj, global_offset);
+    }
 
   //@}
 
@@ -279,8 +278,6 @@ protected:
     const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
     const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
     const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-    const Ordinal first_ele_offset,
-    const Ordinal sub_dim,
     const Ordinal global_offset
     ) const = 0;
   
@@ -500,17 +497,6 @@ private:
  * <tt>reduct_obj</tt> must be set to <tt>null</tt> and no reduction will be
  * performed.
  *
- * \param first_ele_offset [in] (default = 0) The index of the first element
- * in <tt>this</tt> to be included.
- *
- * \param sub_dim [in] (default = -1) The number of elements in these vectors
- * to include in the reduction/transformation operation.  The value of
- * <tt>sub_dim < 0</tt> means to include all available elements after
- * <tt>first_ele_offset</tt>.  The value of <tt>sub_dim == 0</tt> means to
- * include none of the elements of the vector.  This last value is somewhat
- * undefined but has meaning in some specialized contexts (such as for SPMD
- * vectors).
- *
  * \param global_offset [in] (default = 0) The offset applied to the included
  * vector elements.
  *
@@ -531,13 +517,7 @@ private:
  * alias each other or any of the vectors <tt>vecs[k]</tt>, for <tt>k =
  * 0...vecs.size()-1</tt>.  <b>You have be warned!!!!</b>
  *
- * <li> <tt>0 <= first_ele_offset < this->space()->dim()</tt> (throw
- * <tt>std::out_of_range</tt>)
- *
  * <li> <tt>global_offset >= 0</tt> (throw <tt>std::invalid_argument</tt>)
- *
- * <li> <tt>sub_dim - first_ele_offset <= this->space()->dim()</tt> (throw
- * <tt>std::length_error</tt>).
  *
  * </ul>
  *
@@ -553,32 +533,6 @@ private:
  *
  * </ul>
  *
- * The logical vector <tt>v</tt> passed in subvector chunks to
- * <tt>op\ref RTOpPack::RTOpT::apply_op ".apply_op(...)"</tt>
- * is:
-
- \verbatim
-
- v(k + global_offset) = this->get_ele(first_ele_offset + k),
-    for k = 0 ... sub_dim-1
- \endverbatim
- 
- * where <tt>v</tt> represents any one of the input or input/output vectors.
- * The situation where <tt>first_ele_offset == 0</tt> and <tt>global_offset >
- * 1</tt> corresponds to the case where the vectors represent constituent
- * vectors in a larger aggregate vector.  The situation where
- * <tt>first_ele_offset > 0</tt> and <tt>global_offset == 0</tt> is for when a
- * sub-view of the vectors are being treated as full vectors.  Other
- * combinations of these arguments are also possible.  Note that
- * <tt>global_offset</tt> is only meaningful for non-coordinate invariant
- * RTOpT objects.
- *
- * So in summary, <tt>first_ele_offset</tt> and <tt>sub_dim</tt> determine
- * what elements from <tt>*this</tt> contribute to the logical <tt>v</tt> but
- * it is <tt>global_offset</tt> that determines what elements these are in the
- * logical vector <tt>v</tt> with respect to non-coordinate invariant
- * <tt>RTOpT</tt> objects.
- *
  * \relates VectorBase
  */
 template<class Scalar>
@@ -588,17 +542,13 @@ void applyOp(
   const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
   const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
   const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-  const Ordinal first_ele_offset = 0,
-  const Ordinal sub_dim = -1,
   const Ordinal global_offset = 0
   )
 {
   if (vecs.size())
-    vecs[0]->applyOp(
-      op, vecs, targ_vecs, reduct_obj, first_ele_offset, sub_dim, global_offset);
+    vecs[0]->applyOp(op, vecs, targ_vecs, reduct_obj, global_offset);
   else if (targ_vecs.size())
-    targ_vecs[0]->applyOp(
-      op, vecs, targ_vecs, reduct_obj, first_ele_offset, sub_dim, global_offset);
+    targ_vecs[0]->applyOp(op, vecs, targ_vecs, reduct_obj, global_offset);
 }
 
 
@@ -615,8 +565,6 @@ void applyOp(
   const int num_targ_vecs,
   VectorBase<Scalar>*const targ_vecs_inout[],
   RTOpPack::ReductTarget *reduct_obj,
-  const Ordinal first_ele_offset = 0,
-  const Ordinal sub_dim = -1,
   const Ordinal global_offset = 0
   )
 {
@@ -627,8 +575,7 @@ void applyOp(
   Array<Ptr<VectorBase<Scalar> > > targ_vecs(num_targ_vecs);
   for ( int k = 0; k < num_targ_vecs; ++k )
     targ_vecs[k] = ptr(targ_vecs_inout[k]);
-  applyOp<Scalar>(op, vecs(), targ_vecs(), ptr(reduct_obj),
-    first_ele_offset, sub_dim, global_offset );
+  applyOp<Scalar>(op, vecs(), targ_vecs(), ptr(reduct_obj), global_offset);
 }
 
 

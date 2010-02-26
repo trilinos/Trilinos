@@ -180,8 +180,6 @@ public:
     const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
     const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
     const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-    const Ordinal first_ele_offset,
-    const Ordinal sub_dim,
     const Ordinal global_offset
     ) const;
 
@@ -239,8 +237,6 @@ protected:
     const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
     const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
     const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-    const Ordinal first_ele_offset,
-    const Ordinal sub_dim,
     const Ordinal global_offset
     ) const;
   /** \brief Implemented through <tt>this->getLocalData()</tt> */

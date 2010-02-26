@@ -101,11 +101,12 @@ void SpmdVectorBase<Scalar>::applyOpImplWithComm(
   const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
   const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
   const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-  const Ordinal first_ele_offset_in,
-  const Ordinal sub_dim_in,
   const Ordinal global_offset_in
   ) const
 {
+
+  const Ordinal first_ele_offset_in = 0;
+  const Ordinal sub_dim_in = -1;
 
   using Teuchos::null;
   using Teuchos::dyn_cast;
@@ -125,8 +126,6 @@ void SpmdVectorBase<Scalar>::applyOpImplWithComm(
       << "\nnum_vecs = " << num_vecs
       << "\nnum_targ_vecs = " << num_targ_vecs
       << "\nreduct_obj = " << reduct_obj
-      << "\nfirst_ele_offset_in = " << first_ele_offset_in
-      << "\nsub_dim_in = " << sub_dim_in
       << "\nglobal_offset_in = " << global_offset_in
       << "\n"
       ;
@@ -146,9 +145,7 @@ void SpmdVectorBase<Scalar>::applyOpImplWithComm(
     );
   Thyra::apply_op_validate_input(
     "SpmdVectorBase<>::applyOp(...)",*space(),
-    op, vecs, targ_vecs, reduct_obj,
-    first_ele_offset_in, sub_dim_in, global_offset_in
-    );
+    op, vecs, targ_vecs, reduct_obj, global_offset_in);
 #endif
 
   Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm;
@@ -326,13 +323,11 @@ void SpmdVectorBase<Scalar>::applyOpImpl(
   const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
   const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
   const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-  const Ordinal first_ele_offset,
-  const Ordinal sub_dim,
   const Ordinal global_offset
   ) const
 {
   applyOpImplWithComm( Teuchos::null, op, vecs, targ_vecs, reduct_obj,
-    first_ele_offset, sub_dim, global_offset );
+    global_offset);
 }
 
 

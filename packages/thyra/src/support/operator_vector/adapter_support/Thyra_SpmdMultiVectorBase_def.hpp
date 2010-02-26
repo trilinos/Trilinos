@@ -83,18 +83,23 @@ void SpmdMultiVectorBase<Scalar>::mvMultiReductApplyOpImpl(
   const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
   const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
   const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
-  const Ordinal pri_first_ele_offset_in,
-  const Ordinal pri_sub_dim_in,
-  const Ordinal pri_global_offset_in,
-  const Ordinal sec_first_ele_offset_in,
-  const Ordinal sec_sub_dim_in
+  const Ordinal pri_global_offset_in
   ) const
 {
+
+  const Ordinal pri_first_ele_offset_in = 0;
+  const Ordinal pri_sub_dim_in = -1;
+  const Ordinal sec_first_ele_offset_in = 0;
+  const Ordinal sec_sub_dim_in = -1;
+
   using Teuchos::dyn_cast;
   using Teuchos::Workspace;
+
   Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
+
   const Ordinal numCols = this->domain()->dim();
   const SpmdVectorSpaceBase<Scalar> &spmdSpc = *spmdSpace();
+
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPTION(
     in_applyOp_, std::invalid_argument
@@ -104,10 +109,7 @@ void SpmdMultiVectorBase<Scalar>::mvMultiReductApplyOpImpl(
     );
   apply_op_validate_input(
     "SpmdMultiVectorBase<>::mvMultiReductApplyOpImpl(...)", *this->domain(), *this->range(),
-    pri_op, multi_vecs, targ_multi_vecs, reduct_objs,
-    pri_first_ele_offset_in, pri_sub_dim_in, pri_global_offset_in,
-    sec_first_ele_offset_in, sec_sub_dim_in
-    );
+    pri_op, multi_vecs, targ_multi_vecs, reduct_objs, pri_global_offset_in);
 #endif
   // Flag that we are in applyOp()
   in_applyOp_ = true;

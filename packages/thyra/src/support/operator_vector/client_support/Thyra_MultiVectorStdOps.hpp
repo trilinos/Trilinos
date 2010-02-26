@@ -136,7 +136,8 @@ Thyra::norm_1( const MultiVectorBase<Scalar>& V )
   RCP<RTOpPack::ReductTarget>
     max_targ = max_op.reduct_obj_create();
   // Perform the reductions
-  applyOp<Scalar>(sum_abs_op, max_op, tuple(ptrInArg(V)), null, max_targ.ptr() );
+  Thyra::applyOp<Scalar>(sum_abs_op, max_op, tuple(ptrInArg(V))(), null,
+    max_targ.ptr());
   // Return the final value
   return max_op(*max_targ);
 }

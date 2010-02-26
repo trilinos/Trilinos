@@ -203,13 +203,14 @@ void MultiVectorDefaultBase<Scalar>::mvMultiReductApplyOpImpl(
   const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
   const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
   const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
-  const Ordinal prim_first_ele_offset_in,
-  const Ordinal prim_sub_dim_in,
-  const Ordinal prim_global_offset_in,
-  const Ordinal sec_first_ele_offset_in,
-  const Ordinal sec_sub_dim_in
+  const Ordinal prim_global_offset_in
   ) const
 {
+
+  const Ordinal prim_first_ele_offset_in = 0;
+  const Ordinal prim_sub_dim_in = -1;
+  const Ordinal sec_first_ele_offset_in = 0;
+  const Ordinal sec_sub_dim_in = -1;
 
   using Teuchos::Workspace;
   using Teuchos::as;
@@ -261,8 +262,7 @@ void MultiVectorDefaultBase<Scalar>::mvMultiReductApplyOpImpl(
       vecs().getConst(),
       targ_vecs().getConst(),
       reduct_objs.size() ? reduct_objs[j] : Ptr<RTOpPack::ReductTarget>(),
-      prim_first_ele_offset_in, prim_sub_dim_in, prim_global_offset_in
-      );
+      prim_global_offset_in);
   }
   // At this point all of the designated targ vectors in the target multi-vectors have
   // been transformed and all the reduction objects in reduct_obj[] have accumulated
@@ -277,13 +277,15 @@ void MultiVectorDefaultBase<Scalar>::mvSingleReductApplyOpImpl(
   const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
   const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
   const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-  const Ordinal prim_first_ele_offset_in,
-  const Ordinal prim_sub_dim_in,
-  const Ordinal prim_global_offset_in,
-  const Ordinal sec_first_ele_offset_in,
-  const Ordinal sec_sub_dim_in
+  const Ordinal prim_global_offset_in
   ) const
 {
+
+  const Ordinal prim_first_ele_offset_in = 0;
+  const Ordinal prim_sub_dim_in = -1;
+  const Ordinal sec_first_ele_offset_in = 0;
+  const Ordinal sec_sub_dim_in = -1;
+
   using Teuchos::Workspace;
   Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
 
@@ -318,9 +320,7 @@ void MultiVectorDefaultBase<Scalar>::mvSingleReductApplyOpImpl(
   // Call the companion version that accepts an array of reduction objects
   this->applyOp(
     prim_op, multi_vecs, targ_multi_vecs, reduct_objs,
-    prim_first_ele_offset_in, prim_sub_dim_in, prim_global_offset_in,
-    sec_first_ele_offset_in, sec_sub_dim_in
-    );
+    prim_global_offset_in);
 
   // Reduce all the reduction objects using the secondary reduction operator
   // into one reduction object and free the intermediate reduction objects.

@@ -248,11 +248,7 @@ protected:
     const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
     const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
     const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
-    const Ordinal primary_first_ele,
-    const Ordinal primary_sub_dim,
-    const Ordinal primary_global_offset,
-    const Ordinal secondary_first_ele,
-    const Ordinal secondary_sub_dim
+    const Ordinal primary_global_offset
     ) const;
   /** \brief . */
   void acquireDetachedMultiVectorViewImpl(

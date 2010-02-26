@@ -203,17 +203,7 @@ bool DefaultProductVectorSpace<Scalar>::isCompatible(
     return this->getBlock(0)->isCompatible(vecSpc);
   }
 
-  // Check for in-core views
-  if (this->hasInCoreView(Range1D(), VIEW_TYPE_DETACHED, STRIDE_TYPE_NONUNIT)
-    && vecSpc.hasInCoreView() && ( this->dim() == vecSpc.dim() ) )
-  {
-    return true;
-  }
-  // 2009/05/11: rabartl: ToDo: Remove this!
-
-
-
-  // If we get here, the RHS is not a product vector spacde and/or this is not
+  // If we get here, the RHS is not a product vector space and/or this is not
   // a single block VS so we can assume the spaces are *not* compatible!
   return false;
 

@@ -259,14 +259,11 @@ void DefaultMultiVectorProductVector<Scalar>::applyOpImpl(
   const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
   const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
   const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-  const Ordinal first_ele_offset,
-  const Ordinal sub_dim,
   const Ordinal global_offset
   ) const
 {
   this->getDefaultProductVector()->applyOp(
-    op, vecs, targ_vecs, reduct_obj,
-    first_ele_offset, sub_dim, global_offset );
+    op, vecs, targ_vecs, reduct_obj, global_offset );
 }
 
 

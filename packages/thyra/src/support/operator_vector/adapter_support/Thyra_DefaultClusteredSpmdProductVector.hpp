@@ -176,11 +176,12 @@ void DefaultClusteredSpmdProductVector<Scalar>::applyOpImpl(
   const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
   const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
   const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-  const Ordinal first_ele_offset_in,
-  const Ordinal sub_dim_in,
   const Ordinal global_offset_in
   ) const
 {
+
+  const Ordinal first_ele_offset_in = 0;
+  const Ordinal sub_dim_in =  -1;
 
   using Teuchos::null;
   using Teuchos::ptr_dynamic_cast;
@@ -307,8 +308,7 @@ void DefaultClusteredSpmdProductVector<Scalar>::applyOpImpl(
       // Apply RTOp on just this cluster
       Thyra::applyOp<Scalar>(
         op, v_vecs, v_targ_vecs, i_reduct_obj.ptr(),
-        v_first_ele_offset, v_sub_dim, v_global_offset
-        );
+        v_global_offset);
       //
       overall_global_offset += v_space.dim();
     }

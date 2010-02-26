@@ -553,18 +553,11 @@ public:
     const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
     const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
     const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
-    const Ordinal primary_first_ele_offset, // ToDo: Remove!
-    const Ordinal primary_sub_dim, // ToDo: Remove!
-    const Ordinal primary_global_offset,
-    const Ordinal secondary_first_ele_offset,
-    const Ordinal secondary_sub_dim
+    const Ordinal primary_global_offset
     ) const
     {
-      mvMultiReductApplyOpImpl(
-        primary_op, multi_vecs, targ_multi_vecs, reduct_objs,
-        primary_first_ele_offset, primary_sub_dim,
-        primary_global_offset, secondary_first_ele_offset, secondary_sub_dim
-        );
+      mvMultiReductApplyOpImpl(primary_op, multi_vecs, targ_multi_vecs,
+        reduct_objs, primary_global_offset);
     }
 
   /** \brief mvSingleReductApplyOpImpl().
@@ -577,19 +570,11 @@ public:
     const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
     const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
     const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-    const Ordinal primary_first_ele_offset, // ToDo: Remove!
-    const Ordinal primary_sub_dim, // ToDo: Remove!
-    const Ordinal primary_global_offset,
-    const Ordinal secondary_first_ele_offset,
-    const Ordinal secondary_sub_dim
+    const Ordinal primary_global_offset
     ) const
     {
-      mvSingleReductApplyOpImpl(
-        primary_op, secondary_op, multi_vecs, targ_multi_vecs, reduct_obj,
-        primary_first_ele_offset, primary_sub_dim,
-        primary_global_offset, secondary_first_ele_offset,
-        secondary_sub_dim
-        );
+      mvSingleReductApplyOpImpl(primary_op, secondary_op, multi_vecs, targ_multi_vecs,
+        reduct_obj, primary_global_offset);
     }
   
   //@}
@@ -846,11 +831,7 @@ protected:
     const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
     const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
     const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
-    const Ordinal primary_first_ele_offset, // ToDo: Remove!
-    const Ordinal primary_sub_dim, // ToDo: Remove!
-    const Ordinal primary_global_offset,
-    const Ordinal secondary_first_ele_offset,
-    const Ordinal secondary_sub_dim
+    const Ordinal primary_global_offset
     ) const = 0;
 
   /** \brief Apply a reduction/transformation operator column by column and
@@ -879,11 +860,7 @@ protected:
     const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
     const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
     const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-    const Ordinal primary_first_ele_offset, // ToDo: Remove!
-    const Ordinal primary_sub_dim, // ToDo: Remove!
-    const Ordinal primary_global_offset,
-    const Ordinal secondary_first_ele_offset,
-    const Ordinal secondary_sub_dim
+    const Ordinal primary_global_offset
     ) const = 0;
 
   /** \brief Get a non-changeable explicit view of a sub-multi-vector.
@@ -1118,11 +1095,7 @@ public:
     const int num_targ_multi_vecs,
     MultiVectorBase<Scalar>*const targ_multi_vecs_inout[],
     RTOpPack::ReductTarget*const reduct_objs_inout[],
-    const Ordinal primary_first_ele_offset,
-    const Ordinal primary_sub_dim,
-    const Ordinal primary_global_offset,
-    const Ordinal secondary_first_ele_offset,
-    const Ordinal secondary_sub_dim_in
+    const Ordinal primary_global_offset
     ) const;
 
   /** \brief Deprecated. */
@@ -1134,11 +1107,7 @@ public:
     const int num_targ_multi_vecs,
     MultiVectorBase<Scalar>*const targ_multi_vecs_inout[],
     RTOpPack::ReductTarget* reduct_obj,
-    const Ordinal primary_first_ele_offset,
-    const Ordinal primary_sub_dim,
-    const Ordinal primary_global_offset,
-    const Ordinal secondary_first_ele_offset,
-    const Ordinal secondary_sub_dim
+    const Ordinal primary_global_offset
     ) const;
 
   //@}
@@ -1166,27 +1135,15 @@ void applyOp(
   const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
   const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
   const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
-  const Ordinal primary_first_ele_offset = 0,
-  const Ordinal primary_sub_dim = -1,
-  const Ordinal primary_global_offset = 0,
-  const Ordinal secondary_first_ele_offset = 0,
-  const Ordinal secondary_sub_dim = -1
+  const Ordinal primary_global_offset = 0
   )
 {
   if(multi_vecs.size())
-    multi_vecs[0]->applyOp(
-      primary_op
-      ,multi_vecs,targ_multi_vecs
-      ,reduct_objs,primary_first_ele_offset,primary_sub_dim,primary_global_offset
-      ,secondary_first_ele_offset,secondary_sub_dim
-      );
+    multi_vecs[0]->applyOp(primary_op, multi_vecs, targ_multi_vecs,
+      reduct_objs, primary_global_offset);
   else if(targ_multi_vecs.size())
-    targ_multi_vecs[0]->applyOp(
-      primary_op
-      ,multi_vecs,targ_multi_vecs
-      ,reduct_objs,primary_first_ele_offset,primary_sub_dim,primary_global_offset
-      ,secondary_first_ele_offset,secondary_sub_dim
-      );
+    targ_multi_vecs[0]->applyOp(primary_op, multi_vecs, targ_multi_vecs,
+      reduct_objs, primary_global_offset);
 }
 
 
@@ -1205,27 +1162,15 @@ void applyOp(
   const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
   const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
   const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-  const Ordinal primary_first_ele_offset = 0,
-  const Ordinal primary_sub_dim = -1,
-  const Ordinal primary_global_offset = 0,
-  const Ordinal secondary_first_ele_offset = 0,
-  const Ordinal secondary_sub_dim = -1
+  const Ordinal primary_global_offset = 0
   )
 {
   if(multi_vecs.size())
-    multi_vecs[0]->applyOp(
-      primary_op,secondary_op
-      ,multi_vecs,targ_multi_vecs
-      ,reduct_obj,primary_first_ele_offset,primary_sub_dim,primary_global_offset
-      ,secondary_first_ele_offset,secondary_sub_dim
-      );
+    multi_vecs[0]->applyOp(primary_op, secondary_op, multi_vecs, targ_multi_vecs,
+      reduct_obj, primary_global_offset);
   else if(targ_multi_vecs.size())
-    targ_multi_vecs[0]->applyOp(
-      primary_op,secondary_op
-      ,multi_vecs,targ_multi_vecs
-      ,reduct_obj,primary_first_ele_offset,primary_sub_dim,primary_global_offset
-      ,secondary_first_ele_offset,secondary_sub_dim
-      );
+    targ_multi_vecs[0]->applyOp(primary_op, secondary_op, multi_vecs, targ_multi_vecs,
+      reduct_obj, primary_global_offset);
 }
 
 
@@ -1247,27 +1192,19 @@ void applyOp(
   const int num_targ_multi_vecs,
   MultiVectorBase<Scalar>*const targ_multi_vecs[],
   RTOpPack::ReductTarget*const reduct_objs[],
-  const Ordinal primary_first_ele_offset = 0,
-  const Ordinal primary_sub_dim = -1,
-  const Ordinal primary_global_offset = 0,
-  const Ordinal secondary_first_ele_offset = 0,
-  const Ordinal secondary_sub_dim = -1
+  const Ordinal primary_global_offset = 0
   )
 {
   if(num_multi_vecs)
     multi_vecs[0]->applyOp(
-      primary_op
-      ,num_multi_vecs,multi_vecs,num_targ_multi_vecs,targ_multi_vecs
-      ,reduct_objs,primary_first_ele_offset,primary_sub_dim,primary_global_offset
-      ,secondary_first_ele_offset,secondary_sub_dim
-      );
+      primary_op,
+      num_multi_vecs, multi_vecs, num_targ_multi_vecs, targ_multi_vecs,
+      reduct_objs, primary_global_offset);
   else if(num_targ_multi_vecs)
     targ_multi_vecs[0]->applyOp(
-      primary_op
-      ,num_multi_vecs,multi_vecs,num_targ_multi_vecs,targ_multi_vecs
-      ,reduct_objs,primary_first_ele_offset,primary_sub_dim,primary_global_offset
-      ,secondary_first_ele_offset,secondary_sub_dim
-      );
+      primary_op,
+      num_multi_vecs, multi_vecs, num_targ_multi_vecs, targ_multi_vecs,
+      reduct_objs, primary_global_offset);
 }
 
 
@@ -1287,27 +1224,19 @@ void applyOp(
   const int num_targ_multi_vecs,
   MultiVectorBase<Scalar>*const targ_multi_vecs[],
   RTOpPack::ReductTarget *reduct_obj,
-  const Ordinal primary_first_ele_offset = 0,
-  const Ordinal primary_sub_dim = -1,
-  const Ordinal primary_global_offset = 0,
-  const Ordinal secondary_first_ele_offset = 0,
-  const Ordinal secondary_sub_dim = -1
+  const Ordinal primary_global_offset = 0
   )
 {
   if(num_multi_vecs)
     multi_vecs[0]->applyOp(
-      primary_op,secondary_op
-      ,num_multi_vecs,multi_vecs,num_targ_multi_vecs,targ_multi_vecs
-      ,reduct_obj,primary_first_ele_offset,primary_sub_dim,primary_global_offset
-      ,secondary_first_ele_offset,secondary_sub_dim
-      );
+      primary_op, secondary_op,
+      num_multi_vecs, multi_vecs, num_targ_multi_vecs, targ_multi_vecs,
+      reduct_obj, primary_global_offset);
   else if(num_targ_multi_vecs)
     targ_multi_vecs[0]->applyOp(
-      primary_op,secondary_op
-      ,num_multi_vecs,multi_vecs,num_targ_multi_vecs,targ_multi_vecs
-      ,reduct_obj,primary_first_ele_offset,primary_sub_dim,primary_global_offset
-      ,secondary_first_ele_offset,secondary_sub_dim
-      );
+      primary_op, secondary_op,
+      num_multi_vecs, multi_vecs, num_targ_multi_vecs, targ_multi_vecs,
+      reduct_obj, primary_global_offset);
 }
 
 

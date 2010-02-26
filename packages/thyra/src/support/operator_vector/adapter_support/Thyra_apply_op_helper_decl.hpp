@@ -32,7 +32,9 @@
 #include "Thyra_OperatorVectorTypes.hpp"
 #include "RTOpPack_RTOpT.hpp"
 
+
 namespace Thyra {
+
 
 /** \brief Validate the inputs to <tt>VectorBase::applyOp()</tt>.
  *
@@ -49,10 +51,9 @@ void apply_op_validate_input(
   const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
   const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
   const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-  const Ordinal first_ele_offset,
-  const Ordinal sub_dim,
   const Ordinal global_offset
   );
+
 
 /** \brief Validate the inputs to <tt>MultiVectorBase::applyOp()</tt>.
  *
@@ -70,13 +71,11 @@ void apply_op_validate_input(
   const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
   const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
   const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
-  const Ordinal primary_first_ele_offset,
-  const Ordinal primary_sub_dim,
-  const Ordinal primary_global_offset,
-  const Ordinal secondary_first_ele_offset,
-  const Ordinal secondary_sub_dim
+  const Ordinal primary_global_offset
   );
 
+
 } // end namespace Thyra
+
 
 #endif // THYRA_APPLY_OP_HELPER_DECL_HPP

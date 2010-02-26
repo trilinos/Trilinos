@@ -45,8 +45,6 @@ void Thyra::apply_op_validate_input(
   const ArrayView<const Ptr<const VectorBase<Scalar> > > &vecs,
   const ArrayView<const Ptr<VectorBase<Scalar> > > &targ_vecs,
   const Ptr<RTOpPack::ReductTarget> &reduct_obj,
-  const Ordinal first_ele_offset_in,
-  const Ordinal sub_dim_in,
   const Ordinal global_offset_in
   )
 {
@@ -58,15 +56,6 @@ void Thyra::apply_op_validate_input(
     global_offset_in < 0, std::logic_error
     ,func_name << " : Error! global_offset_in = "
     <<global_offset_in<<" is not valid" );
-  TEST_FOR_EXCEPTION(
-    first_ele_offset_in+1 > dim, std::logic_error
-    ,func_name << " : Error! first_ele_offset_in = "
-    <<first_ele_offset_in<<" is not compatible with space.dim() = " << dim );
-  TEST_FOR_EXCEPTION(
-    (sub_dim_in > 0 && sub_dim_in > dim-first_ele_offset_in), std::logic_error
-    ,func_name << " : Error! first_ele_offset_in = "
-    <<first_ele_offset_in<<" and sub_dim_in = "<<sub_dim_in
-    <<" is not compatible with space.dim() = " << dim );
   for (int k = 0; k < num_vecs; ++k)
     THYRA_ASSERT_VEC_SPACES(func_name,space,*vecs[k]->space());
   for (int k = 0; k < num_targ_vecs; ++k)
@@ -83,11 +72,7 @@ void Thyra::apply_op_validate_input(
   const ArrayView<const Ptr<const MultiVectorBase<Scalar> > > &multi_vecs,
   const ArrayView<const Ptr<MultiVectorBase<Scalar> > > &targ_multi_vecs,
   const ArrayView<const Ptr<RTOpPack::ReductTarget> > &reduct_objs,
-  const Ordinal primary_first_ele_offset_in,
-  const Ordinal primary_sub_dim_in,
-  const Ordinal primary_global_offset_in,
-  const Ordinal secondary_first_ele_offset_in,
-  const Ordinal secondary_sub_dim_in
+  const Ordinal primary_global_offset_in
   )
 {
   using Teuchos::as;
@@ -98,29 +83,9 @@ void Thyra::apply_op_validate_input(
     primary_global_offset_in < 0, std::logic_error
     ,func_name << " : Error! primary_global_offset_in = "
     <<primary_global_offset_in<<" is not valid" );
-  TEST_FOR_EXCEPTION(
-    primary_first_ele_offset_in < 0 || range_dim < primary_first_ele_offset_in+1, std::logic_error
-    ,func_name << " : Error! primary_first_ele_offset_in = "
-    <<primary_first_ele_offset_in<<" is not compatible with range.dim() = " << range_dim );
-  TEST_FOR_EXCEPTION(
-    (primary_sub_dim_in > 0 && primary_sub_dim_in > range_dim-primary_first_ele_offset_in)
-    , std::logic_error
-    ,func_name << " : Error! primary_first_ele_offset_in = "
-    <<primary_first_ele_offset_in<<" and primary_sub_dim_in = "<<primary_sub_dim_in
-    <<" are not compatible with range.dim() = " << range_dim );
   // Validate secondary domain arguments
   const Ordinal
     domain_dim = domain.dim();
-  TEST_FOR_EXCEPTION(
-    secondary_first_ele_offset_in < 0 || domain_dim < secondary_first_ele_offset_in+1, std::logic_error
-    ,func_name << " : Error! secondary_first_ele_offset_in = "
-    <<secondary_first_ele_offset_in<<" is not compatible with domain.dim() = " << domain_dim );
-  TEST_FOR_EXCEPTION(
-    (secondary_sub_dim_in > 0 && secondary_sub_dim_in > domain_dim-secondary_first_ele_offset_in)
-    , std::logic_error
-    ,func_name << " : Error! secondary_first_ele_offset_in = "
-    <<secondary_first_ele_offset_in<<" and secondary_sub_dim_in = "<<secondary_sub_dim_in
-    <<" are not compatible with domain.dim() = " << domain_dim );
   // Validate spaces
   for (int k = 0; k < multi_vecs.size(); ++k) {
     THYRA_ASSERT_VEC_SPACES(func_name,domain,*multi_vecs[k]->domain());
