@@ -6,6 +6,13 @@
 #include "Teuchos_UnitTestHarness.hpp"
 #include "Teuchos_DefaultComm.hpp"
 
+//#define THYRA_DEFAULT_SPMD_VECTOR_SPACE_UNIT_TESTS_DUMP
+
+#ifdef THYRA_DEFAULT_SPMD_VECTOR_SPACE_UNIT_TESTS_DUMP
+#  include "RTOpPack_SPMD_apply_op_decl.hpp"
+#  include "Thyra_SpmdVectorBase.hpp"
+#endif // THYRA_DEFAULT_SPMD_VECTOR_SPACE_UNIT_TESTS_DUMP
+
 
 namespace {
 
@@ -246,6 +253,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, parallelFullExtract,
     createSpmdVectorSpace<Scalar>(g_localDim);
 
   const RCP<VectorBase<Scalar> > v = createMember(vs);
+#ifdef THYRA_DEFAULT_SPMD_VECTOR_SPACE_UNIT_TESTS_DUMP
+    RTOpPack::show_spmd_apply_op_dump = true;
+#endif
   {
     out << "\nSetting up v[i] = i, i=0...n-1 ...\n";
     const DetachedSpmdVectorView<Scalar> dv(v);
@@ -273,6 +283,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdVectorSpace, parallelFullExtract,
     else success = false;
 
   }
+
+#ifdef THYRA_DEFAULT_SPMD_VECTOR_SPACE_UNIT_TESTS_DUMP
+    RTOpPack::show_spmd_apply_op_dump = false;
+#endif
   
 }
 
