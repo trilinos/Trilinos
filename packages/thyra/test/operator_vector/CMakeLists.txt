@@ -5,13 +5,23 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   test_product_space
   SOURCES test_product_space.cpp
   )
+PACKAGE_ADD_TEST(
+  test_product_space
+  NAME test_product_space_serial
+  NUM_MPI_PROCS 1
+  )
 
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   test_scalar_product
   SOURCES test_scalar_product.cpp
-  COMM serial
   ARGS --verbose
+  )
+PACKAGE_ADD_TEST(
+  test_scalar_product
+  NAME test_scalar_product_serial
+  ARGS --verbose
+  NUM_MPI_PROCS 1
   )
 
 
@@ -38,6 +48,11 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SOURCES test_std_ops.cpp
   ARGS --verbose
   )
+PACKAGE_ADD_TEST(
+  NAME test_std_ops_serial
+  ARGS --verbose
+  NUM_MPI_PROCS 1
+  )
 
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
@@ -46,6 +61,12 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     DetachedSpmdVectorView_UnitTests.cpp
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   STANDARD_PASS_OUTPUT
+  )
+PACKAGE_ADD_TEST(
+  DetachedSpmdVectorViewUnitTests
+  NAME DetachedSpmdVectorViewUnitTests_serial
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
   )
 
 
@@ -66,6 +87,12 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   STANDARD_PASS_OUTPUT
   )
+PACKAGE_ADD_TEST(
+  DefaultProductVectorSpaceUnitTests
+  NAME DefaultProductVectorSpaceUnitTests_serial
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
 
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
@@ -75,6 +102,11 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   STANDARD_PASS_OUTPUT
   )
+PACKAGE_ADD_TEST(
+  DefaultMultiVectorProductVectorSpaceUnitTests
+  NAME DefaultMultiVectorProductVectorSpaceUnitTests_serial
+  STANDARD_PASS_OUTPUT
+  )
 
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
@@ -82,6 +114,5 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SOURCES
     DefaultBlockedLinearOp_UnitTests.cpp
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
-  NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
