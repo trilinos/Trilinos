@@ -38,34 +38,42 @@
 extern "C" {
 #endif
 
-/** \brief This function helps to implement vector method <tt>apply_op(...)</tt> for any type of parallel vector.
+/** \brief This function helps to implement vector method
+ * <tt>apply_op(...)</tt> for any type of parallel vector.
  *
- * @param  global_dim    [in] Dimension of the original parallel vector 'v' (see above). 
- * @param  local_sub_dim [in] Dimension of the local subvector 'u' (see above).
- * @param  local_off     [in] Gives the offset of the first element in the local sub-vector 'u'
- *                       into the global vector 'v' (see above).
- * @param  first_ele_off [in] Determines the first element in 'v' which is used to define
- *                       the logical sub-vector 'g' (see above).
- * @param  sub_dim       [in] Determines the length of the logical sub-vector 'g' (see above).
- *                       If <tt>sub_dim < 0</tt> then <tt>sub_dim = global_dim - first_ele_off</tt>
- *                       is used in its place.
- * @param  global_off [in] Determines the offset of the logical subvector 'g' into the logical
- *                       global vector 'p' (see above).
- * @param  overlap_first_local_ele_off
- *                       [out] If <tt>*overlap_first_local_ele < 0</tt> on output, then this means
- *                       that there is no overlap of 'u' with 'g' (see above).  Otherwise, there
- *                       is overlap and <tt>*overlap_first_local_ele_off</tt> gives the first element
- *                       in 'u' that overlaps with 'g' which defines 'w' (see above).
- * @param  overlap_local_sub_dim
- *                       [out]  If <tt>*overlap_first_local_ele_off < 0</tt> on output then this
- *                       argument is not set and should be ignored.  Otherwise, 
- *                       <tt>*overlap_local_sub_dim</tt> gives number of elements in 'u' that
- *                       overlaps with 'g' that defines 'w' (see above).
- * @param  overlap_global_off
- *                       [out]  If <tt>*overlap_first_local_ele_off < 0</tt> on output then this
- *                       argument is not set and should be ignored.  Otherwise, 
- *                       <tt>*overlap_global_off</tt> gives the placement of 'w' into 'p'
- *                       (see above).
+ * \param global_dim [in] Dimension of the original parallel vector 'v' (see
+ * above).
+ *
+ * \param local_sub_dim [in] Dimension of the local subvector 'u' (see above).
+ *
+ * \param local_off [in] Gives the offset of the first element in the local
+ * sub-vector 'u' into the global vector 'v' (see above).
+ *
+ * \param first_ele_off [in] Determines the first element in 'v' which is used
+ * to define the logical sub-vector 'g' (see above).
+ *
+ * \param sub_dim [in] Determines the length of the logical sub-vector 'g'
+ * (see above).  If <tt>sub_dim < 0</tt> then <tt>sub_dim = global_dim -
+ * first_ele_off</tt> is used in its place.
+ *
+ * \param global_off [in] Determines the offset of the logical subvector 'g'
+ * into the logical global vector 'p' (see above).
+ *
+ * \param overlap_first_local_ele_off [out] If <tt>*overlap_first_local_ele <
+ * 0</tt> on output, then this means that there is no overlap of 'u' with 'g'
+ * (see above).  Otherwise, there is overlap and
+ * <tt>*overlap_first_local_ele_off</tt> gives the first element in 'u' that
+ * overlaps with 'g' which defines 'w' (see above).
+ *
+ * \param overlap_local_sub_dim [out] If <tt>*overlap_first_local_ele_off <
+ * 0</tt> on output then this argument is not set and should be ignored.
+ * Otherwise, <tt>*overlap_local_sub_dim</tt> gives number of elements in 'u'
+ * that overlaps with 'g' that defines 'w' (see above).
+ *
+ * \param overlap_global_off [out] If <tt>*overlap_first_local_ele_off <
+ * 0</tt> on output then this argument is not set and should be ignored.
+ * Otherwise, <tt>*overlap_global_off</tt> gives the placement of 'w' into 'p'
+ * (see above).
  *
  * Preconditions:<ul>
  * <li><tt>global_dim > 0</tt>
@@ -79,7 +87,8 @@ extern "C" {
  * Postconditions:<ul>
  * <li><tt>0 <= overlap_first_local_ele_off <= local_sub_dim</tt>
  * <li>[<tt>overlap_first_local_ele_off == 0</tt>] There is no overlap of 'g' with 'u'
- * <li>[<tt>overlap_first_local_ele_off != 0</tt>] <tt>0 <= overlap_local_sub_dim <= local_sub_dim - overlap_first_local_ele_off</tt>
+ * <li>[<tt>overlap_first_local_ele_off != 0</tt>] <tt>0 <= overlap_local_sub_dim
+ *   <= local_sub_dim - overlap_first_local_ele_off</tt>
  * </ul>
  *
  * To understand what this function computes first consider the what
