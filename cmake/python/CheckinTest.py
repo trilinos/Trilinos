@@ -223,6 +223,28 @@ def executePull(inOptions, baseTestDir, outFile, pullFromRepo=None):
     )
 
 
+class Timings:
+  def __init__(self):
+    self.update = -1.0
+    self.configure = -1.0
+    self.build = -1.0
+    self.test = -1.0
+  def deepCopy(self):
+    copyTimings = Timings()
+    copyTimings.update = self.update
+    copyTimings.configure = self.configure
+    copyTimings.build = self.build
+    copyTimings.test = self.test
+    return copyTimings
+  def totalTime(self):
+    tt = 0.0
+    if self.update > 0: tt += self.update
+    if self.configure > 0: tt += self.configure
+    if self.build > 0: tt += self.build
+    if self.test > 0: tt += self.test
+    return tt
+
+
 class BuildTestCase:
   def __init__(self, name, runBuildTestCase, isDefaultBuild, extraCMakeOptions, buildIdx):
     self.name = name
@@ -230,6 +252,7 @@ class BuildTestCase:
     self.isDefaultBuild = isDefaultBuild
     self.extraCMakeOptions = extraCMakeOptions
     self.buildIdx = buildIdx
+    self.timings = Timings()
 
 
 def setBuildTestCaseInList(buildTestCaseList_inout,
@@ -408,22 +431,7 @@ def createConfigureFile(cmakeOptions, baseCmnd, trilinosSrcDir, configFileName):
   
     writeStrToFile(configFileName, doConfigStr)
     echoRunSysCmnd('chmod a+x '+configFileName)
-
-
-class Timings:
-  def __init__(self):
-    self.update = -1.0
-    self.configure = -1.0
-    self.build = -1.0
-    self.test = -1.0
-  def deepCopy(self):
-    copyTimings = Timings()
-    copyTimings.update = self.update
-    copyTimings.configure = self.configure
-    copyTimings.build = self.build
-    copyTimings.test = self.test
-    return copyTimings
-
+  
 
 def getStageStatus(stageName, stageDoBool, stagePassed, stageTiming):
   stageStatusStr = stageName + ": "
@@ -1071,7 +1079,7 @@ def runBuildTestCaseDriver(inOptions, baseTestDir, buildTestCase, timings):
     try:
       echoChDir(baseTestDir)
       writeDefaultBuildSpecificConfigFile(buildTestCaseName)
-      result = runBuildTestCase(inOptions, buildTestCase, timings.deepCopy())
+      result = runBuildTestCase(inOptions, buildTestCase, timings)
       if not result: success = False
     except Exception, e:
       success = False
@@ -1590,11 +1598,12 @@ def checkinTest(inOptions):
           print "Will *not* attempt to run on request!"
 
       for buildTestCase in buildTestCaseList:
+        buildTestCase.timings = timings.deepCopy()
         result = runBuildTestCaseDriver(
           inOptions,
           baseTestDir,
           buildTestCase,
-          timings
+          buildTestCase.timings
           )
         if not result:
           buildTestCasesPassed = False
@@ -1634,7 +1643,7 @@ def checkinTest(inOptions):
         commitEmailBodyExtra += str(i)+") "+buildTestName+" => "+statusMsg
         if not buildTestCaseOkayToCommit:
           commitEmailBodyExtra += " => Not ready for final commit/push!"
-        commitEmailBodyExtra += "\n"
+        commitEmailBodyExtra += " ("+str(buildTestCase.timings.totalTime())+" min)\n"
         #print "buildTestCaseActionsPass =", buildTestCaseActionsPass
         if not buildTestCaseActionsPass:
           success = False
