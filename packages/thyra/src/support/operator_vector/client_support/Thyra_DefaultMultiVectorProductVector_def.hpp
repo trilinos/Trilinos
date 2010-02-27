@@ -51,23 +51,23 @@ DefaultMultiVectorProductVector<Scalar>::DefaultMultiVectorProductVector()
 
 template <class Scalar>
 void DefaultMultiVectorProductVector<Scalar>::initialize(
-  const RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &productSpace,
+  const RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &productSpace_in,
   const RCP<MultiVectorBase<Scalar> > &multiVec
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(is_null(productSpace));
+  TEST_FOR_EXCEPT(is_null(productSpace_in));
   TEST_FOR_EXCEPT(is_null(multiVec));
   THYRA_ASSERT_VEC_SPACES(
     "DefaultMultiVectorProductVector<Scalar>::initialize(productSpace,multiVec)",
-    *multiVec->range(), *productSpace->getBlock(0)
+    *multiVec->range(), *productSpace_in->getBlock(0)
     );
-  TEUCHOS_ASSERT_EQUALITY( multiVec->domain()->dim(), productSpace->numBlocks());
+  TEUCHOS_ASSERT_EQUALITY( multiVec->domain()->dim(), productSpace_in->numBlocks());
 #endif
 
-  numBlocks_ = productSpace->numBlocks();
+  numBlocks_ = productSpace_in->numBlocks();
 
-  productSpace_ = productSpace;
+  productSpace_ = productSpace_in;
 
   multiVec_ = multiVec;
 
@@ -76,23 +76,23 @@ void DefaultMultiVectorProductVector<Scalar>::initialize(
 
 template <class Scalar>
 void DefaultMultiVectorProductVector<Scalar>::initialize(
-  const RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &productSpace,
+  const RCP<const DefaultMultiVectorProductVectorSpace<Scalar> > &productSpace_in,
   const RCP<const MultiVectorBase<Scalar> > &multiVec
   )
 {
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(is_null(productSpace));
+  TEST_FOR_EXCEPT(is_null(productSpace_in));
   TEST_FOR_EXCEPT(is_null(multiVec));
   THYRA_ASSERT_VEC_SPACES(
-    "DefaultMultiVectorProductVector<Scalar>::initialize(productSpace,multiVec)",
-    *multiVec->range(), *productSpace->getBlock(0)
+    "DefaultMultiVectorProductVector<Scalar>::initialize(productSpace_in,multiVec)",
+    *multiVec->range(), *productSpace_in->getBlock(0)
     );
-  TEUCHOS_ASSERT_EQUALITY( multiVec->domain()->dim(), productSpace->numBlocks() );
+  TEUCHOS_ASSERT_EQUALITY( multiVec->domain()->dim(), productSpace_in->numBlocks() );
 #endif
 
-  numBlocks_ = productSpace->numBlocks();
+  numBlocks_ = productSpace_in->numBlocks();
 
-  productSpace_ = productSpace;
+  productSpace_ = productSpace_in;
 
   multiVec_ = multiVec;
 
@@ -164,7 +164,7 @@ void DefaultMultiVectorProductVector<Scalar>::describe(
         << Teuchos::Describable::description() << "{"
         << "dim=" << this->space()->dim()
         << "}\n";
-      OSTab tab(out);
+      OSTab tab2(out);
       *out <<  "multiVec = " << Teuchos::describe(*multiVec_.getConstObj(),verbLevel);
       break;
     }

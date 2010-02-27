@@ -32,6 +32,7 @@
 
 #include "Thyra_DefaultDiagonalLinearOp_decl.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_VectorStdOps.hpp"
 #include "Thyra_VectorBase.hpp"
 #include "Thyra_AssertOp.hpp"
 

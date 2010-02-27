@@ -146,25 +146,25 @@ bool run_linear_op_with_solve_tests(
       M_lows_adj = adjointLows(M_lows);
 
     {
-      OSTab tab(out);
+      OSTab tab2(out);
       
       out << "\nG.1.a) Test that we can extract the underlying const M_lows ...\n";
       {
-        OSTab tab(out);
+        OSTab tab3(out);
         TEST_EQUALITY( M_lows,
           rcp_dynamic_cast<const Thyra::DefaultAdjointLinearOpWithSolve<Scalar> >(M_lows_adj,true)->getOp() );
       }
       
       out << "\nG.1.b) Testing LOB interface of DefaultAdjointLinearOpWithSolve object M_lows_adj ...\n";
       {
-        OSTab tab(out);
+        OSTab tab3(out);
         const bool result = linearOpTester.check(*M_lows_adj, &out);
         if(!result) success = false;
       }
       
       out << "\nG.1.c) Testing LOWSB interface of DefaultAdjointLinearOpWithSolve object M_lows_adj ...\n";
       {
-        OSTab tab(out);
+        OSTab tab3(out);
         const bool result = linearOpWithSolveTester.check(*M_lows_adj, &out);
         if(!result) success = false;
       }
@@ -172,7 +172,7 @@ bool run_linear_op_with_solve_tests(
       out << "\nG.1.d) Testing that M_lows_adj is the adjoint of M (M_adj) ...\n";
       const RCP<const LinearOpBase<Scalar> > M_adj = Thyra::adjoint<Scalar>(M);
       {
-        OSTab tab(out);
+        OSTab tab3(out);
         const bool result = linearOpTester.compare(*M_lows_adj, *M_adj, &out);
         if(!result) success = false;
       }
@@ -184,11 +184,11 @@ bool run_linear_op_with_solve_tests(
       M_lows_adj_nonconst = nonconstAdjointLows<Scalar>(M_lows_nonconst);
 
     {
-      OSTab tab(out);
+      OSTab tab3(out);
       
       out << "\nG.2.a) Test that we can extract the underlying non-const and const M_lows ...\n";
       {
-        OSTab tab(out);
+        OSTab tab4(out);
         TEST_EQUALITY( M_lows,
           rcp_dynamic_cast<Thyra::DefaultAdjointLinearOpWithSolve<Scalar> >(M_lows_adj_nonconst,true)->getOp() );
         TEST_EQUALITY( M_lows_nonconst,
@@ -197,7 +197,7 @@ bool run_linear_op_with_solve_tests(
       
       out << "\nG.2.b) Only testing LOB interface of DefaultAdjointLinearOpWithSolve object M_lows_adj_nonconst ...\n";
       {
-        OSTab tab(out);
+        OSTab tab4(out);
         const bool result = linearOpTester.check(*M_lows_adj_nonconst, &out);
         if(!result) success = false;
       }

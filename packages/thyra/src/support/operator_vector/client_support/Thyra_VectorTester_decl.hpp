@@ -26,50 +26,48 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_MULTI_VECTOR_TESTER_DECL_HPP
-#define THYRA_MULTI_VECTOR_TESTER_DECL_HPP
+#ifndef THYRA_VECTOR_TESTER_DECL_HPP
+#define THYRA_VECTOR_TESTER_DECL_HPP
 
 #include "Thyra_OperatorVectorTypes.hpp"
-#include "Thyra_LinearOpTester.hpp"
-
+#include "Thyra_MultiVectorTester.hpp"
 
 namespace Thyra {
 
-
-/** \brief Unit testing class for a <tt>MultiVectorBase</tt> object.
+/** \brief Unit testing class for a <tt>VectorBase</tt> object.
  *
  * ToDo: Finish documentation!
  *
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 template<class Scalar>
-class MultiVectorTester {
+class VectorTester {
 public:
 
   /** \brief Local typedef for scalar magnitude */
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType ScalarMag;
 
-  /** \brief Expose a non-<tt>const</tt> reference to the <tt>LinearOpTester</tt>
-   * object used to test the <tt>LinearOpBase</tt> interface supported by
-   * <tt>MultiVectorBase</tt>.
+  /** \brief Expose a non-<tt>const</tt> reference to the <tt>MultiVectorTester</tt>
+   * object used to test the <tt>MultiVectorBase</tt> interface supported by
+   * <tt>VectorBase</tt>.
    *
    * Clients can use this interface to override options directly set on
    * <tt>*this</tt>.
    */
-  LinearOpTester<Scalar>& linearOpTester();
+  MultiVectorTester<Scalar>& multiVectorTester();
 
-  /** \brief Expose a <tt>const</tt> reference to the <tt>LinearOpTester</tt>
-   * object used to test the <tt>LinearOpBase</tt> interface supported by
-   * <tt>MultiVectorBase</tt>.
+  /** \brief Expose a <tt>const</tt> reference to the <tt>MultiVectorTester</tt>
+   * object used to test the <tt>MultiVectorBase</tt> interface supported by
+   * <tt>VectorBase</tt>.
    *
    * Clients can use this interface to query (but not change) options.
    */
-  const LinearOpTester<Scalar>& linearOpTester() const;
+  const MultiVectorTester<Scalar>& multiVectorTester() const;
 
   /** \brief Set the tolerance above which a relative error will generate a
    * warning message.
    *
-   * Also calls <tt>this->linearOpTester().set_all_warning_tol(warning_tol).
+   * Also calls <tt>this->multiVectorTester().set_all_warning_tol(warning_tol).
    */
   void warning_tol( const ScalarMag &warning_tol );
 
@@ -79,7 +77,7 @@ public:
   /** \brief Set the error above which a relative error will generate a
    * an message and cause the test to fail.
    *
-   * Also calls <tt>this->linearOpTester().set_all_error_tol(error_tol).
+   * Also calls <tt>this->multiVectorTester().set_all_error_tol(error_tol).
    */
   void error_tol( const ScalarMag &error_tol );
 
@@ -88,7 +86,7 @@ public:
 
   /** \brief Set the number random vectors that is generated during each test.
    *
-   * Also calls <tt>this->linearOpTester().num_random_vectors(num_random_vectors).
+   * Also calls <tt>this->multiVectorTester().num_random_vectors(num_random_vectors).
    */
   void num_random_vectors( const int num_random_vectors );
 
@@ -100,7 +98,7 @@ public:
   /** \brief Set whether all of the tests will be printed independent if they
    * pass or fail.
    *
-   * Also calls <tt>this->linearOpTester().show_all_tests(show_all_tests).
+   * Also calls <tt>this->multiVectorTester().show_all_tests(show_all_tests).
    */
   void show_all_tests( const bool show_all_tests );
 
@@ -112,7 +110,7 @@ public:
   /** \brief Set whether all of the vectors and multi-vectors will be dumped
    * or not.
    *
-   * Also calls <tt>this->linearOpTester().dump_all(dump_all).
+   * Also calls <tt>this->multiVectorTester().dump_all(dump_all).
    */
   void dump_all( const bool dump_all );
 
@@ -134,14 +132,14 @@ public:
    * <li><tt>this->num_random_vectors() == num_random_vectors</tt>
    * <li><tt>this->show_all_tests() == show_all_tests</tt>
    * <li><tt>this->dump_all() == dump_all</tt>
-   * <li>Calls <tt>this->linearOpTester().set_all_warning_tol(warning_tol)</tt>
-   * <li>Calls <tt>this->linearOpTester().set_all_error_tol(error_tol)</tt>
-   * <li>Calls <tt>this->linearOpTester().num_random_vectors(num_random_vectors)</tt>
-   * <li>Calls <tt>this->linearOpTester().show_all_tests(show_all_tests)</tt>
-   * <li>Calls <tt>this->linearOpTester().dump_all(dump_all)</tt>
+   * <li>Calls <tt>this->multiVectorTester().set_all_warning_tol(warning_tol)</tt>
+   * <li>Calls <tt>this->multiVectorTester().set_all_error_tol(error_tol)</tt>
+   * <li>Calls <tt>this->multiVectorTester().num_random_vectors(num_random_vectors)</tt>
+   * <li>Calls <tt>this->multiVectorTester().show_all_tests(show_all_tests)</tt>
+   * <li>Calls <tt>this->multiVectorTester().dump_all(dump_all)</tt>
    * </ul>
    */
-  MultiVectorTester(
+  VectorTester(
     const ScalarMag     warning_tol            = 1e-13
     ,const ScalarMag    error_tol              = 1e-10
     ,const int          num_random_vectors     = 1
@@ -149,13 +147,13 @@ public:
     ,const bool         dump_all               = false
     );
 
-  /** \brief Check a multi-vector object in a set of comprehensive teats.
+  /** \brief Check a vector object in a set of comprehensive tests.
    *
-   * @param  mv     [in] The multi-vector object to test.
+   * @param  v      [in] The vector object to test.
    * @param  out    [in/out] If <tt>out != NULL</tt> then output will be sent to <tt>*out</tt>.
    *
    * The behavior of this function greatly depends on a number of options (see
-   * <tt>MultiVectorTester()</tt> for the default values for these options):
+   * <tt>VectorTester()</tt> for the default values for these options):
    *
    * <ul>
    * <li> <b><tt>print_all_tests(bool)</tt></b>:  If <tt>print_all_tests() == true</tt>, then some output will be sent to
@@ -181,13 +179,13 @@ public:
    * clicking on the following link to the source code:
    */
   bool check(
-    const MultiVectorBase<Scalar>  &mv
+    const VectorBase<Scalar>       &v
     ,Teuchos::FancyOStream         *out
     ) const;
 
 private:
 
-  LinearOpTester<Scalar> linearOpTester_;
+  MultiVectorTester<Scalar> multiVectorTester_;
 
   ScalarMag    warning_tol_;
   ScalarMag    error_tol_;
@@ -195,117 +193,102 @@ private:
   bool         show_all_tests_;
   bool         dump_all_;
 
-}; // class MultiVectorTester
-
+}; // class VectorTester
 
 // //////////////////////////////////
 // Inline members
 
-
 template<class Scalar>
 inline
-LinearOpTester<Scalar>& MultiVectorTester<Scalar>::linearOpTester()
+MultiVectorTester<Scalar>& VectorTester<Scalar>::multiVectorTester()
 {
-  return linearOpTester_;
+  return multiVectorTester_;
 }
 
-
 template<class Scalar>
 inline
-const LinearOpTester<Scalar>& MultiVectorTester<Scalar>::linearOpTester() const
+const MultiVectorTester<Scalar>& VectorTester<Scalar>::multiVectorTester() const
 {
-  return linearOpTester_;
+  return multiVectorTester_;
 }
 
-
 template<class Scalar>
 inline
-void MultiVectorTester<Scalar>::warning_tol( const ScalarMag &warning_tol )
+void VectorTester<Scalar>::warning_tol( const ScalarMag &warning_tol_in )
 {
-  warning_tol_ = warning_tol;
-  linearOpTester_.set_all_warning_tol(warning_tol);
+  warning_tol_ = warning_tol_in;
+  multiVectorTester_.warning_tol(warning_tol_in);
 }
 
-
 template<class Scalar>
 inline
-typename MultiVectorTester<Scalar>::ScalarMag
-MultiVectorTester<Scalar>::warning_tol() const
+typename VectorTester<Scalar>::ScalarMag
+VectorTester<Scalar>::warning_tol() const
 {
   return warning_tol_;
 }
 
-
 template<class Scalar>
 inline
-void MultiVectorTester<Scalar>::error_tol( const ScalarMag &error_tol )
+void VectorTester<Scalar>::error_tol( const ScalarMag &error_tol_in )
 {
-  error_tol_ = error_tol;
-  linearOpTester_.set_all_error_tol(error_tol);
+  error_tol_ = error_tol_in;
+  multiVectorTester_.error_tol(error_tol_in);
 }
 
-
 template<class Scalar>
 inline
-typename MultiVectorTester<Scalar>::ScalarMag
-MultiVectorTester<Scalar>::error_tol() const
+typename VectorTester<Scalar>::ScalarMag
+VectorTester<Scalar>::error_tol() const
 {
   return error_tol_;
 }
 
-
 template<class Scalar>
 inline
-void MultiVectorTester<Scalar>::num_random_vectors( const int num_random_vectors )
+void VectorTester<Scalar>::num_random_vectors( const int num_random_vectors_in )
 {
-  num_random_vectors_ = num_random_vectors;
-  linearOpTester_.num_random_vectors(num_random_vectors);
+  num_random_vectors_ = num_random_vectors_in;
+  multiVectorTester_.num_random_vectors(num_random_vectors_in);
 }
 
-
 template<class Scalar>
 inline
-int MultiVectorTester<Scalar>::num_random_vectors() const
+int VectorTester<Scalar>::num_random_vectors() const
 {
   return num_random_vectors_;
 }
 
-
 template<class Scalar>
 inline
-void MultiVectorTester<Scalar>::show_all_tests( const bool show_all_tests )
+void VectorTester<Scalar>::show_all_tests( const bool show_all_tests_in )
 {
-  show_all_tests_ = show_all_tests;
-  linearOpTester_.show_all_tests(show_all_tests);
+  show_all_tests_ = show_all_tests_in;
+  multiVectorTester_.show_all_tests(show_all_tests_in);
 }
 
-
 template<class Scalar>
 inline
-bool MultiVectorTester<Scalar>::show_all_tests() const
+bool VectorTester<Scalar>::show_all_tests() const
 {
   return show_all_tests_;
 }
 
-
 template<class Scalar>
 inline
-void MultiVectorTester<Scalar>::dump_all( const bool dump_all )
+void VectorTester<Scalar>::dump_all( const bool dump_all_in )
 {
-  dump_all_ = dump_all;
-  linearOpTester_.dump_all(dump_all);
+  dump_all_ = dump_all_in;
+  multiVectorTester_.dump_all(dump_all_in);
 }
 
-
 template<class Scalar>
 inline
-bool MultiVectorTester<Scalar>::dump_all() const
+bool VectorTester<Scalar>::dump_all() const
 {
   return dump_all_;
 }
 
-
 } // namespace Thyra
 
-
-#endif // THYRA_MULTI_VECTOR_TESTER_DECL_HPP
+#endif // THYRA_VECTOR_TESTER_DECL_HPP

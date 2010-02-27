@@ -32,6 +32,7 @@
 #include "Thyra_MultiVectorTester_decl.hpp"
 #include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Teuchos_TestingHelpers.hpp"
 
@@ -41,17 +42,17 @@ namespace Thyra {
 
 template<class Scalar>
 MultiVectorTester<Scalar>::MultiVectorTester(
-  const ScalarMag warning_tol,
-  const ScalarMag error_tol,
-  const int num_random_vectors,
-  const bool show_all_tests,
-  const bool dump_all
+  const ScalarMag warning_tol_in,
+  const ScalarMag error_tol_in,
+  const int num_random_vectors_in,
+  const bool show_all_tests_in,
+  const bool dump_all_in
   )
-  :warning_tol_(warning_tol),
-   error_tol_(error_tol),
-   num_random_vectors_(num_random_vectors),
-   show_all_tests_(show_all_tests),
-   dump_all_(dump_all)
+  :warning_tol_(warning_tol_in),
+   error_tol_(error_tol_in),
+   num_random_vectors_(num_random_vectors_in),
+   show_all_tests_(show_all_tests_in),
+   dump_all_(dump_all_in)
 {}
 
 
@@ -69,7 +70,7 @@ bool MultiVectorTester<Scalar>::checkMultiVector(
   using Teuchos::tuple;
   using Teuchos::null;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef typename ST::magnitudeType ScalarMag;
+  //typedef typename ST::magnitudeType ScalarMag;
 
   RCP<FancyOStream> out;
   if (!is_null(out_inout))
@@ -96,7 +97,7 @@ bool MultiVectorTester<Scalar>::checkMultiVector(
   *out << "\n"<<tc<<") Checking non-contiguous non-const multi-vector views ...\n";
   ++tc;
   {
-    OSTab tab(out);
+    OSTab tab2(out);
     const int numCols = 6;
     const RCP<MultiVectorBase<Scalar> > mv = createMembers(vs, numCols);
     assign<Scalar>(mv.ptr(), ST::zero());
@@ -127,7 +128,7 @@ bool MultiVectorTester<Scalar>::checkMultiVector(
   *out << "\n"<<tc<<") Checking non-contiguous const multi-vector views ...\n";
   ++tc;
   {
-    OSTab tab(out);
+    OSTab tab2(out);
     const int numCols = 6;
     const RCP<MultiVectorBase<Scalar> > mv = createMembers(vs, numCols);
     const Scalar
@@ -176,7 +177,7 @@ bool MultiVectorTester<Scalar>::check(
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef typename ST::magnitudeType ScalarMag;
+  //typedef typename ST::magnitudeType ScalarMag;
 
   RCP<FancyOStream> out;
   if (!is_null(out_inout))

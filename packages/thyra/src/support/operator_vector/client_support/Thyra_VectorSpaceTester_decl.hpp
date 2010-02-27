@@ -238,10 +238,10 @@ const VectorTester<Scalar>& VectorSpaceTester<Scalar>::vectorTester() const
 
 template<class Scalar>
 inline
-void VectorSpaceTester<Scalar>::warning_tol( const ScalarMag &warning_tol )
+void VectorSpaceTester<Scalar>::warning_tol( const ScalarMag &warning_tol_in )
 {
-  warning_tol_ = warning_tol;
-  vectorTester_.warning_tol(warning_tol);
+  warning_tol_ = warning_tol_in;
+  vectorTester_.warning_tol(warning_tol_in);
 }
 
 
@@ -256,10 +256,10 @@ VectorSpaceTester<Scalar>::warning_tol() const
 
 template<class Scalar>
 inline
-void VectorSpaceTester<Scalar>::error_tol( const ScalarMag &error_tol )
+void VectorSpaceTester<Scalar>::error_tol( const ScalarMag &error_tol_in )
 {
-  error_tol_ = error_tol;
-  vectorTester_.error_tol(error_tol);
+  error_tol_ = error_tol_in;
+  vectorTester_.error_tol(error_tol_in);
 }
 
 
@@ -274,10 +274,10 @@ VectorSpaceTester<Scalar>::error_tol() const
 
 template<class Scalar>
 inline
-void VectorSpaceTester<Scalar>::num_random_vectors( const int num_random_vectors )
+void VectorSpaceTester<Scalar>::num_random_vectors( const int num_random_vectors_in )
 {
-  num_random_vectors_ = num_random_vectors;
-  vectorTester_.num_random_vectors(num_random_vectors);
+  num_random_vectors_ = num_random_vectors_in;
+  vectorTester_.num_random_vectors(num_random_vectors_in);
 }
 
 
@@ -291,10 +291,10 @@ int VectorSpaceTester<Scalar>::num_random_vectors() const
 
 template<class Scalar>
 inline
-void VectorSpaceTester<Scalar>::show_all_tests( const bool show_all_tests )
+void VectorSpaceTester<Scalar>::show_all_tests( const bool show_all_tests_in )
 {
-  show_all_tests_ = show_all_tests;
-  vectorTester_.show_all_tests(show_all_tests);
+  show_all_tests_ = show_all_tests_in;
+  vectorTester_.show_all_tests(show_all_tests_in);
 }
 
 
@@ -308,10 +308,10 @@ bool VectorSpaceTester<Scalar>::show_all_tests() const
 
 template<class Scalar>
 inline
-void VectorSpaceTester<Scalar>::dump_all( const bool dump_all )
+void VectorSpaceTester<Scalar>::dump_all( const bool dump_all_in )
 {
-  dump_all_ = dump_all;
-  vectorTester_.dump_all(dump_all);
+  dump_all_ = dump_all_in;
+  vectorTester_.dump_all(dump_all_in);
 }
 
 

@@ -29,14 +29,13 @@
 #ifndef THYRA_DEFAULT_CLUSTERED_SPMD_PRODUCT_VECTOR_HPP
 #define THYRA_DEFAULT_CLUSTERED_SPMD_PRODUCT_VECTOR_HPP
 
-#include "Thyra_DefaultClusteredSpmdProductVectorDecl.hpp"
+#include "Thyra_DefaultClusteredSpmdProductVector_decl.hpp"
 #include "Thyra_DefaultClusteredSpmdProductVectorSpace.hpp"
 #include "Thyra_SpmdVectorBase.hpp"
 #include "RTOp_parallel_helpers.h"
 #include "RTOpPack_SPMD_apply_op.hpp"
 #include "Teuchos_Workspace.hpp"
 #include "Teuchos_dyn_cast.hpp"
-#include "Teuchos_arrayArg.hpp"
 #include "Teuchos_implicit_cast.hpp"
 
 
@@ -55,22 +54,22 @@ DefaultClusteredSpmdProductVector<Scalar>::DefaultClusteredSpmdProductVector()
 
 template <class Scalar>
 DefaultClusteredSpmdProductVector<Scalar>::DefaultClusteredSpmdProductVector(
-  const Teuchos::RCP<const DefaultClusteredSpmdProductVectorSpace<Scalar> >  &productSpace
+  const Teuchos::RCP<const DefaultClusteredSpmdProductVectorSpace<Scalar> >  &productSpace_in
   ,const Teuchos::RCP<VectorBase<Scalar> >                                   vecs[]
   )
 {
-  initialize(productSpace,vecs);
+  initialize(productSpace_in,vecs);
 }
 
 
 template <class Scalar>
 void DefaultClusteredSpmdProductVector<Scalar>::initialize(
-  const Teuchos::RCP<const DefaultClusteredSpmdProductVectorSpace<Scalar> >  &productSpace
+  const Teuchos::RCP<const DefaultClusteredSpmdProductVectorSpace<Scalar> >  &productSpace_in
   ,const Teuchos::RCP<VectorBase<Scalar> >                                   vecs[]
   )
 {
   // ToDo: Validate input!
-  productSpace_ = productSpace;
+  productSpace_ = productSpace_in;
   const int numBlocks = productSpace_->numBlocks();
   vecs_.resize(numBlocks);
   if(vecs) {
@@ -78,19 +77,19 @@ void DefaultClusteredSpmdProductVector<Scalar>::initialize(
   }
   else {
     for( int k = 0; k < numBlocks; ++k )
-      vecs_[k] = createMember(productSpace->getBlock(k));
+      vecs_[k] = createMember(productSpace_->getBlock(k));
   }
 }
 
 
 template <class Scalar>
 void DefaultClusteredSpmdProductVector<Scalar>::uninitialize(
-  Teuchos::RCP<const DefaultClusteredSpmdProductVectorSpace<Scalar> >  *productSpace
+  Teuchos::RCP<const DefaultClusteredSpmdProductVectorSpace<Scalar> >  *productSpace_in
   ,Teuchos::RCP<VectorBase<Scalar> >                                   vecs[]
   )
 {
   const int numBlocks = vecs_.size();
-  if(productSpace) *productSpace = productSpace_;
+  if(productSpace_in) *productSpace_in = productSpace_;
   if(vecs) std::copy( &vecs_[0], &vecs_[0]+numBlocks, vecs );
   productSpace_ = Teuchos::null;
   vecs_.resize(0);
@@ -185,8 +184,8 @@ void DefaultClusteredSpmdProductVector<Scalar>::applyOpImpl(
 
   using Teuchos::null;
   using Teuchos::ptr_dynamic_cast;
+  using Teuchos::tuple;
 
-  const Ordinal	n = productSpace_->dim();
   const int num_vecs = vecs.size();
   const int num_targ_vecs = targ_vecs.size();
 
@@ -291,10 +290,7 @@ void DefaultClusteredSpmdProductVector<Scalar>::applyOpImpl(
         numBlocks > 1, std::logic_error
         ,"Error, Have not implemented general support for numBlocks > 1!"
         ); // ToDo: Fix the below code for numBlocks_ > 1!
-      Ordinal
-        v_global_offset = overall_global_offset,
-        v_first_ele_offset = overlap_first_cluster_ele_off,
-        v_sub_dim = overlap_cluster_sub_dim;
+      Ordinal v_global_offset = overall_global_offset;
       // Apply RTOp on just this cluster
       Thyra::applyOp<Scalar>(
         op, v_vecs, v_targ_vecs, i_reduct_obj.ptr(),
@@ -321,8 +317,8 @@ void DefaultClusteredSpmdProductVector<Scalar>::applyOpImpl(
         &*interClusterComm,
         op,
         1,
-        Teuchos::arrayArg<const RTOpPack::ReductTarget*>(&*i_reduct_obj)(),
-        Teuchos::arrayArg<RTOpPack::ReductTarget*>(&*icl_reduct_obj)()
+        tuple<const RTOpPack::ReductTarget*>(&*i_reduct_obj).getRawPtr(),
+        tuple<RTOpPack::ReductTarget*>(&*icl_reduct_obj).getRawPtr()
         );
     }
     // Now the root processes in each cluster have the full global reduction
@@ -334,8 +330,8 @@ void DefaultClusteredSpmdProductVector<Scalar>::applyOpImpl(
       &*intraClusterComm,
       op,
       1,
-      Teuchos::arrayArg<const RTOpPack::ReductTarget*>(&*icl_reduct_obj)(),
-      Teuchos::arrayArg<RTOpPack::ReductTarget*>(&*reduct_obj)()
+      tuple<const RTOpPack::ReductTarget*>(&*icl_reduct_obj).getRawPtr(),
+      tuple<RTOpPack::ReductTarget*>(&*reduct_obj).getRawPtr()
       );
     // ToDo: Replace the above operation with a reduction across clustere into
     // reduct_obj in the root processes and then broadcast the result to all

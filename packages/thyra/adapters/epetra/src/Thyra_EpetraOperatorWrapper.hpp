@@ -71,9 +71,9 @@ public:
   //@{
 
   /** \brief . */
-  int SetUseTranspose(bool UseTranspose)
+  int SetUseTranspose(bool UseTranspose_in)
     {
-      useTranspose_ = UseTranspose;
+      useTranspose_ = UseTranspose_in;
       return 0;
     }
 

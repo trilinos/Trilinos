@@ -219,20 +219,20 @@ public:
 
   /** \brief Deprecated. */
   THYRA_DEPRECATED void initialize(
-    const int numOps,
+    const int numOps_in,
     const RCP<LinearOpBase<Scalar> > Ops[]
     )
     {
-      initialize(Teuchos::arrayView(Ops, numOps));
+      initialize(Teuchos::arrayView(Ops, numOps_in));
     }
 
   /** \brief Deprecated. */
   THYRA_DEPRECATED void initialize(
-    const int numOps,
+    const int numOps_in,
     const RCP<const LinearOpBase<Scalar> > Ops[]
     )
     {
-      initialize(Teuchos::arrayView(Ops, numOps));
+      initialize(Teuchos::arrayView(Ops, numOps_in));
     }
 
   //@}

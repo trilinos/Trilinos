@@ -225,11 +225,11 @@ void setEleTestCase( const Ptr<VectorBase<Scalar> > &z, const Ordinal i, int &tc
 
 template <class Scalar>
 VectorStdOpsTester<Scalar>::VectorStdOpsTester(
-  const ScalarMag &warning_tol,
-  const ScalarMag &error_tol
+  const ScalarMag &warning_tol_in,
+  const ScalarMag &error_tol_in
   )
-  :warning_tol_(warning_tol),
-   error_tol_(error_tol)
+  :warning_tol_(warning_tol_in),
+   error_tol_(error_tol_in)
 {}
 
 

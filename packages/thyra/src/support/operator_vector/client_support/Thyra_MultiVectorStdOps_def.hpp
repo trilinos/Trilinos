@@ -29,11 +29,12 @@
 #ifndef THYRA_MULTI_VECTOR_STD_OPS_HPP
 #define THYRA_MULTI_VECTOR_STD_OPS_HPP
 
-#include "Thyra_MultiVectorStdOpsDecl.hpp"
+#include "Thyra_MultiVectorStdOps_decl.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorBase.hpp"
+#include "Thyra_VectorBase.hpp"
 #include "RTOpPack_ROpSum.hpp"
 #include "RTOpPack_ROpDotProd.hpp"
 #include "RTOpPack_ROpNorm1.hpp"
@@ -370,6 +371,74 @@ void Thyra::V_StVpV(
     ST::zero(), Z
     );
 }
+
+
+//
+// Explicit instant macro
+//
+
+#define THYRA_MULTI_VECTOR_STD_OPS_INSTANT(SCALAR) \
+   \
+  template void norms( const MultiVectorBase<SCALAR >& V, \
+    const ArrayView<ScalarTraits<SCALAR >::magnitudeType> &norms ); \
+   \
+  template void dots( const MultiVectorBase<SCALAR >& V1, const MultiVectorBase<SCALAR >& V2, \
+    const ArrayView<SCALAR > &dots ); \
+   \
+  template void sums( const MultiVectorBase<SCALAR >& V, const ArrayView<SCALAR > &sums ); \
+   \
+  template Teuchos::ScalarTraits<SCALAR >::magnitudeType \
+  norm_1( const MultiVectorBase<SCALAR >& V ); \
+   \
+  template void scale( SCALAR  alpha, const Ptr<MultiVectorBase<SCALAR > > &V ); \
+   \
+  template void scaleUpdate( const VectorBase<SCALAR >& a, \
+    const MultiVectorBase<SCALAR >& U, const Ptr<MultiVectorBase<SCALAR > > &V ); \
+   \
+  template void assign( const Ptr<MultiVectorBase<SCALAR > > &V, SCALAR  alpha ); \
+   \
+  template void assign( const Ptr<MultiVectorBase<SCALAR > > &V, \
+    const MultiVectorBase<SCALAR >& U ); \
+   \
+  template void update( SCALAR  alpha, const MultiVectorBase<SCALAR >& U, \
+    const Ptr<MultiVectorBase<SCALAR > > &V ); \
+   \
+  template void update( const ArrayView<const SCALAR > &alpha, SCALAR  beta, \
+    const MultiVectorBase<SCALAR >& U, const Ptr<MultiVectorBase<SCALAR > > &V ); \
+   \
+  template void update( const MultiVectorBase<SCALAR >& U, \
+    const ArrayView<const SCALAR > &alpha, SCALAR  beta, \
+    const Ptr<MultiVectorBase<SCALAR > > &V ); \
+   \
+  template void linear_combination( \
+    const ArrayView<const SCALAR > &alpha, \
+    const ArrayView<const Ptr<const MultiVectorBase<SCALAR > > > &X, \
+    const SCALAR  &beta, \
+    const Ptr<MultiVectorBase<SCALAR > > &Y \
+    ); \
+   \
+  template void randomize( SCALAR  l, SCALAR  u, \
+    const Ptr<MultiVectorBase<SCALAR > > &V ); \
+   \
+  template void Vt_S( const Ptr<MultiVectorBase<SCALAR > > &Z, \
+    const SCALAR & alpha ); \
+   \
+  template void Vp_S( const Ptr<MultiVectorBase<SCALAR > > &Z, \
+    const SCALAR & alpha ); \
+   \
+  template void Vp_V( const Ptr<MultiVectorBase<SCALAR > > &Z, \
+    const MultiVectorBase<SCALAR >& X ); \
+   \
+  template void V_VpV( const Ptr<MultiVectorBase<SCALAR > > &Z, \
+    const MultiVectorBase<SCALAR >& X, const MultiVectorBase<SCALAR >& Y ); \
+   \
+  template void V_VmV( const Ptr<MultiVectorBase<SCALAR > > &Z, \
+    const MultiVectorBase<SCALAR >& X, const MultiVectorBase<SCALAR >& Y ); \
+   \
+  template void V_StVpV( \
+    const Ptr<MultiVectorBase<SCALAR > > &Z, const SCALAR  &alpha, \
+    const MultiVectorBase<SCALAR >& X, const MultiVectorBase<SCALAR >& Y  \
+    ); \
 
 
 #endif // THYRA_MULTI_VECTOR_STD_OPS_HPP

@@ -33,6 +33,8 @@
 #include "Thyra_ScalarProdVectorSpaceBase.hpp"
 #include "Thyra_DefaultSpmdVectorSpaceFactory.hpp"
 #include "Thyra_SpmdVectorSpaceUtilities.hpp"
+#include "Thyra_ProductVectorSpaceBase.hpp"
+
 
 namespace Thyra {
 

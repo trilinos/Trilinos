@@ -32,8 +32,11 @@
 #include "Thyra_VectorSpaceBase_decl.hpp"
 #include "Thyra_ProductVectorSpaceBase.hpp"
 #include "Thyra_VectorSpaceDefaultBase.hpp"
+#include "Teuchos_Comm.hpp"
+
 
 namespace Thyra {
+
 
 /** \brief Concrete subclass of <tt>VectorSpaceBase</tt> that takes a
  * collection of individual <tt>VectorSpaceBase</tt> objects distributed over
@@ -213,8 +216,10 @@ private:
   
 };
 
+
 // ///////////////////////////
 // Inline defintions
+
 
 template<class Scalar>
 Teuchos::RCP<const Teuchos::Comm<Ordinal> >
@@ -223,11 +228,13 @@ DefaultClusteredSpmdProductVectorSpace<Scalar>::intraClusterComm() const
   return intraClusterComm_;
 }
 
+
 template<class Scalar>
 int DefaultClusteredSpmdProductVectorSpace<Scalar>::clusterRootRank() const
 {
   return clusterRootRank_;
 }
+
 
 template<class Scalar>
 Teuchos::RCP<const Teuchos::Comm<Ordinal> >
@@ -236,11 +243,13 @@ DefaultClusteredSpmdProductVectorSpace<Scalar>::interClusterComm() const
   return interClusterComm_;
 }
 
+
 template<class Scalar>
 int DefaultClusteredSpmdProductVectorSpace<Scalar>::clusterSubDim() const
 {
   return clusterSubDim_;
 }
+
 
 template<class Scalar>
 int DefaultClusteredSpmdProductVectorSpace<Scalar>::clusterOffset() const
@@ -248,6 +257,8 @@ int DefaultClusteredSpmdProductVectorSpace<Scalar>::clusterOffset() const
   return clusterOffset_;
 }
 
+
 } // end namespace Thyra
+
 
 #endif // THYRA_DEFAULT_CLUSTERED_SPMD_PRODUCT_VECTOR_SPACE_DECL_HPP

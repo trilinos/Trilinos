@@ -188,7 +188,7 @@ bool LinearOpWithSolveTester<Scalar>::check(
   typedef Teuchos::VerboseObjectTempState<LinearOpWithSolveBase<Scalar> > VOTS;
   typedef Teuchos::ScalarTraits<Scalar> ST;
   bool success = true, result;
-  const int num_rhs = this->num_rhs();
+  const int l_num_rhs = this->num_rhs();
   Teuchos::RCP<FancyOStream> out = Teuchos::rcp(out_arg,false);
   const Teuchos::EVerbosityLevel verbLevel = (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);
   Teuchos::Time timer("");
@@ -247,19 +247,19 @@ bool LinearOpWithSolveTester<Scalar>::check(
 
       for( int rand_vec_i = 1; rand_vec_i <= num_random_vectors(); ++rand_vec_i ) {
 
-        OSTab tab(oss);
+        OSTab tab2(oss);
 
         *oss <<endl<< "Random vector tests = " << rand_vec_i << endl;
 
         tab.incrTab();
       
         *oss <<endl<< "v1 = randomize(-1,+1); ...\n" ;
-        Teuchos::RCP<MultiVectorBase<Scalar> > v1 = createMembers(domain,num_rhs);
+        Teuchos::RCP<MultiVectorBase<Scalar> > v1 = createMembers(domain,l_num_rhs);
         Thyra::randomize( Scalar(-1.0), Scalar(+1.0), &*v1 );
         if(dump_all()) *oss <<endl<< "v1 =\n" << describe(*v1,verbLevel);
       
         *oss <<endl<< "v2 = Op*v1 ...\n" ;
-        Teuchos::RCP<MultiVectorBase<Scalar> > v2 = createMembers(range,num_rhs);
+        Teuchos::RCP<MultiVectorBase<Scalar> > v2 = createMembers(range,l_num_rhs);
         timer.start(true);
         Thyra::apply(op, NOTRANS, *v1, v2.ptr());
         timer.stop();
@@ -267,7 +267,7 @@ bool LinearOpWithSolveTester<Scalar>::check(
         if(dump_all()) *oss <<endl<< "v2 =\n" << describe(*v2,verbLevel);
 
         *oss <<endl<< "v3 = inv(Op)*v2 ...\n" ;
-        Teuchos::RCP<MultiVectorBase<Scalar> > v3 = createMembers(domain,num_rhs);
+        Teuchos::RCP<MultiVectorBase<Scalar> > v3 = createMembers(domain,l_num_rhs);
         assign(&*v3, ST::zero());
         SolveStatus<Scalar> solveStatus;
         {
@@ -283,12 +283,12 @@ bool LinearOpWithSolveTester<Scalar>::check(
         OSTab(oss).o() << solveStatus;
 
         *oss <<endl<< "v4 = v3 - v1 ...\n" ;
-        Teuchos::RCP<MultiVectorBase<Scalar> > v4 = createMembers(domain,num_rhs);
+        Teuchos::RCP<MultiVectorBase<Scalar> > v4 = createMembers(domain,l_num_rhs);
         V_VmV( &*v4, *v3, *v1 );
         if(dump_all()) *oss <<endl<< "v4 =\n" << describe(*v4,verbLevel);
       
         *oss <<endl<< "v5 = Op*v3 - v2 ...\n" ;
-        Teuchos::RCP<MultiVectorBase<Scalar> > v5 = createMembers(range,num_rhs);
+        Teuchos::RCP<MultiVectorBase<Scalar> > v5 = createMembers(range,l_num_rhs);
         assign( &*v5, *v2 );
         timer.start(true);
         Thyra::apply(op, NOTRANS, *v3, v5.ptr(), Scalar(1.0) ,Scalar(-1.0));
@@ -296,7 +296,7 @@ bool LinearOpWithSolveTester<Scalar>::check(
         OSTab(oss).o() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
         if(dump_all()) *oss <<endl<< "v5 =\n" << describe(*v5,verbLevel);
 
-        std::vector<ScalarMag> norms_v1(num_rhs), norms_v4(num_rhs), norms_v4_norms_v1(num_rhs);
+        std::vector<ScalarMag> norms_v1(l_num_rhs), norms_v4(l_num_rhs), norms_v4_norms_v1(l_num_rhs);
         norms(*v1,&norms_v1[0]);
         norms(*v4,&norms_v4[0]);
         std::transform(
@@ -305,14 +305,14 @@ bool LinearOpWithSolveTester<Scalar>::check(
           );
 
         result = testMaxErrors(
-          num_rhs, "norm(v4)/norm(v1)", &norms_v4_norms_v1[0]
+          l_num_rhs, "norm(v4)/norm(v1)", &norms_v4_norms_v1[0]
           ,"forward_default_solution_error_error_tol()", forward_default_solution_error_error_tol()
           ,"forward_default_solution_error_warning_tol()", forward_default_solution_error_warning_tol()
           ,&*oss
           );
         if(!result) these_results = false;
 
-        std::vector<ScalarMag> norms_v2(num_rhs), norms_v5(num_rhs), norms_v5_norms_v2(num_rhs);
+        std::vector<ScalarMag> norms_v2(l_num_rhs), norms_v5(l_num_rhs), norms_v5_norms_v2(l_num_rhs);
         norms(*v2,&norms_v2[0]);
         norms(*v5,&norms_v5[0]);
         std::transform(
@@ -321,7 +321,7 @@ bool LinearOpWithSolveTester<Scalar>::check(
           );
 
         result = testMaxErrors(
-          num_rhs, "norm(v5)/norm(v2)", &norms_v5_norms_v2[0]
+          l_num_rhs, "norm(v5)/norm(v2)", &norms_v5_norms_v2[0]
           ,"forward_default_residual_error_tol()", forward_default_residual_error_tol()
           ,"forward_default_residual_warning_tol()", forward_default_residual_warning_tol()
           ,&*oss
@@ -369,19 +369,19 @@ bool LinearOpWithSolveTester<Scalar>::check(
 
       for( int rand_vec_i = 1; rand_vec_i <= num_random_vectors(); ++rand_vec_i ) {
 
-        OSTab tab(oss);
+        OSTab tab2(oss);
 
         *oss <<endl<< "Random vector tests = " << rand_vec_i << endl;
 
         tab.incrTab();
       
         *oss <<endl<< "v1 = randomize(-1,+1); ...\n" ;
-        Teuchos::RCP<MultiVectorBase<Scalar> > v1 = createMembers(domain,num_rhs);
+        Teuchos::RCP<MultiVectorBase<Scalar> > v1 = createMembers(domain,l_num_rhs);
         Thyra::randomize( Scalar(-1.0), Scalar(+1.0), &*v1 );
         if(dump_all()) *oss <<endl<< "v1 =\n" << describe(*v1,verbLevel);
       
         *oss <<endl<< "v2 = Op*v1 ...\n" ;
-        Teuchos::RCP<MultiVectorBase<Scalar> > v2 = createMembers(range,num_rhs);
+        Teuchos::RCP<MultiVectorBase<Scalar> > v2 = createMembers(range,l_num_rhs);
         timer.start(true);
         Thyra::apply(op, NOTRANS, *v1, v2.ptr());
         timer.stop();
@@ -389,7 +389,7 @@ bool LinearOpWithSolveTester<Scalar>::check(
         if(dump_all()) *oss <<endl<< "v2 =\n" << describe(*v2,verbLevel);
 
         *oss <<endl<< "v3 = inv(Op)*v2 ...\n" ;
-        Teuchos::RCP<MultiVectorBase<Scalar> > v3 = createMembers(domain,num_rhs);
+        Teuchos::RCP<MultiVectorBase<Scalar> > v3 = createMembers(domain,l_num_rhs);
         SolveCriteria<Scalar> solveCriteria(
           SolveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS)
           ,forward_residual_solve_tol()
@@ -415,7 +415,7 @@ bool LinearOpWithSolveTester<Scalar>::check(
           << passfail(result)<<endl;
       
         *oss <<endl<< "v4 = Op*v3 - v2 ...\n" ;
-        Teuchos::RCP<MultiVectorBase<Scalar> > v4 = createMembers(range,num_rhs);
+        Teuchos::RCP<MultiVectorBase<Scalar> > v4 = createMembers(range,l_num_rhs);
         assign( &*v4, *v2 );
         timer.start(true);
         Thyra::apply(op, NOTRANS, *v3, v4.ptr(), Scalar(1.0), Scalar(-1.0));
@@ -423,7 +423,7 @@ bool LinearOpWithSolveTester<Scalar>::check(
         OSTab(oss).o() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
         if(dump_all()) *oss <<endl<< "v4 =\n" << describe(*v4,verbLevel);
 
-        std::vector<ScalarMag> norms_v2(num_rhs), norms_v4(num_rhs), norms_v4_norms_v2(num_rhs);
+        std::vector<ScalarMag> norms_v2(l_num_rhs), norms_v4(l_num_rhs), norms_v4_norms_v2(l_num_rhs);
         norms(*v2,&norms_v2[0]);
         norms(*v4,&norms_v4[0]);
         std::transform(
@@ -432,7 +432,7 @@ bool LinearOpWithSolveTester<Scalar>::check(
           );
 
         result = testMaxErrors(
-          num_rhs, "norm(v4)/norm(v2)", &norms_v4_norms_v2[0]
+          l_num_rhs, "norm(v4)/norm(v2)", &norms_v4_norms_v2[0]
           ,"forward_residual_solve_tol()+forward_residual_slack_error_tol()", ScalarMag(forward_residual_solve_tol()+forward_residual_slack_error_tol())
           ,"forward_residual_solve_tol()_slack_warning_tol()", ScalarMag(forward_residual_solve_tol()+forward_residual_slack_warning_tol())
           ,&*oss
@@ -484,19 +484,19 @@ bool LinearOpWithSolveTester<Scalar>::check(
 
       for( int rand_vec_i = 1; rand_vec_i <= num_random_vectors(); ++rand_vec_i ) {
 
-        OSTab tab(oss);
+        OSTab tab2(oss);
 
         *oss <<endl<< "Random vector tests = " << rand_vec_i << endl;
         
         tab.incrTab();
       
         *oss <<endl<< "v1 = randomize(-1,+1); ...\n" ;
-        Teuchos::RCP<MultiVectorBase<Scalar> > v1 = createMembers(range,num_rhs);
+        Teuchos::RCP<MultiVectorBase<Scalar> > v1 = createMembers(range,l_num_rhs);
         Thyra::randomize( Scalar(-1.0), Scalar(+1.0), &*v1 );
         if(dump_all()) *oss <<endl<< "v1 =\n" << describe(*v1,verbLevel);
       
         *oss <<endl<< "v2 = Op'*v1 ...\n" ;
-        Teuchos::RCP<MultiVectorBase<Scalar> > v2 = createMembers(domain,num_rhs);
+        Teuchos::RCP<MultiVectorBase<Scalar> > v2 = createMembers(domain,l_num_rhs);
         timer.start(true);
         Thyra::apply(op, CONJTRANS, *v1, v2.ptr());
         timer.stop();
@@ -504,7 +504,7 @@ bool LinearOpWithSolveTester<Scalar>::check(
         if(dump_all()) *oss <<endl<< "v2 =\n" << describe(*v2,verbLevel);
 
         *oss <<endl<< "v3 = inv(Op')*v2 ...\n" ;
-        Teuchos::RCP<MultiVectorBase<Scalar> > v3 = createMembers(range,num_rhs);
+        Teuchos::RCP<MultiVectorBase<Scalar> > v3 = createMembers(range,l_num_rhs);
         assign(&*v3, ST::zero());
         SolveStatus<Scalar> solveStatus;
         {
@@ -520,12 +520,12 @@ bool LinearOpWithSolveTester<Scalar>::check(
         OSTab(oss).o() << solveStatus;
 
         *oss <<endl<< "v4 = v3 - v1 ...\n" ;
-        Teuchos::RCP<MultiVectorBase<Scalar> > v4 = createMembers(range,num_rhs);
+        Teuchos::RCP<MultiVectorBase<Scalar> > v4 = createMembers(range,l_num_rhs);
         V_VmV( &*v4, *v3, *v1 );
         if(dump_all()) *oss <<endl<< "v4 =\n" << describe(*v4,verbLevel);
       
         *oss <<endl<< "v5 = Op'*v3 - v2 ...\n" ;
-        Teuchos::RCP<MultiVectorBase<Scalar> > v5 = createMembers(domain,num_rhs);
+        Teuchos::RCP<MultiVectorBase<Scalar> > v5 = createMembers(domain,l_num_rhs);
         assign( &*v5, *v2 );
         timer.start(true);
         Thyra::apply(op, CONJTRANS, *v3, v5.ptr(), Scalar(1.0), Scalar(-1.0));
@@ -533,7 +533,7 @@ bool LinearOpWithSolveTester<Scalar>::check(
         OSTab(oss).o() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
         if(dump_all()) *oss <<endl<< "v5 =\n" << describe(*v5,verbLevel);
 
-        std::vector<ScalarMag> norms_v1(num_rhs), norms_v4(num_rhs), norms_v4_norms_v1(num_rhs);
+        std::vector<ScalarMag> norms_v1(l_num_rhs), norms_v4(l_num_rhs), norms_v4_norms_v1(l_num_rhs);
         norms(*v1,&norms_v1[0]);
         norms(*v4,&norms_v4[0]);
         std::transform(
@@ -542,14 +542,14 @@ bool LinearOpWithSolveTester<Scalar>::check(
           );
 
         result = testMaxErrors(
-          num_rhs, "norm(v4)/norm(v1)", &norms_v4_norms_v1[0]
+          l_num_rhs, "norm(v4)/norm(v1)", &norms_v4_norms_v1[0]
           ,"adjoint_default_solution_error_error_tol()", adjoint_default_solution_error_error_tol()
           ,"adjoint_default_solution_error_warning_tol()", adjoint_default_solution_error_warning_tol()
           ,&*oss
           );
         if(!result) these_results = false;
 
-        std::vector<ScalarMag> norms_v2(num_rhs), norms_v5(num_rhs), norms_v5_norms_v2(num_rhs);
+        std::vector<ScalarMag> norms_v2(l_num_rhs), norms_v5(l_num_rhs), norms_v5_norms_v2(l_num_rhs);
         norms(*v2,&norms_v2[0]);
         norms(*v5,&norms_v5[0]);
         std::transform(
@@ -558,7 +558,7 @@ bool LinearOpWithSolveTester<Scalar>::check(
           );
 
         result = testMaxErrors(
-          num_rhs, "norm(v5)/norm(v2)", &norms_v5_norms_v2[0]
+          l_num_rhs, "norm(v5)/norm(v2)", &norms_v5_norms_v2[0]
           ,"adjoint_default_residual_error_tol()", adjoint_default_residual_error_tol()
           ,"adjoint_default_residual_warning_tol()", adjoint_default_residual_warning_tol()
           ,&*oss
@@ -606,19 +606,19 @@ bool LinearOpWithSolveTester<Scalar>::check(
 
       for( int rand_vec_i = 1; rand_vec_i <= num_random_vectors(); ++rand_vec_i ) {
 
-        OSTab tab(oss);
+        OSTab tab2(oss);
 
         *oss <<endl<< "Random vector tests = " << rand_vec_i << endl;
 
         tab.incrTab();
       
         *oss <<endl<< "v1 = randomize(-1,+1); ...\n" ;
-        Teuchos::RCP<MultiVectorBase<Scalar> > v1 = createMembers(range,num_rhs);
+        Teuchos::RCP<MultiVectorBase<Scalar> > v1 = createMembers(range,l_num_rhs);
         Thyra::randomize( Scalar(-1.0), Scalar(+1.0), &*v1 );
         if(dump_all()) *oss <<endl<< "v1 =\n" << describe(*v1,verbLevel);
       
         *oss <<endl<< "v2 = Op'*v1 ...\n" ;
-        Teuchos::RCP<MultiVectorBase<Scalar> > v2 = createMembers(domain,num_rhs);
+        Teuchos::RCP<MultiVectorBase<Scalar> > v2 = createMembers(domain,l_num_rhs);
         timer.start(true);
         Thyra::apply(op, CONJTRANS, *v1, v2.ptr());
         timer.stop();
@@ -626,7 +626,7 @@ bool LinearOpWithSolveTester<Scalar>::check(
         if(dump_all()) *oss <<endl<< "v2 =\n" << describe(*v2,verbLevel);
 
         *oss <<endl<< "v3 = inv(Op')*v2 ...\n" ;
-        Teuchos::RCP<MultiVectorBase<Scalar> > v3 = createMembers(range,num_rhs);
+        Teuchos::RCP<MultiVectorBase<Scalar> > v3 = createMembers(range,l_num_rhs);
         SolveCriteria<Scalar> solveCriteria(
           SolveMeasureType(SOLVE_MEASURE_NORM_RESIDUAL,SOLVE_MEASURE_NORM_RHS)
           ,adjoint_residual_solve_tol()
@@ -653,7 +653,7 @@ bool LinearOpWithSolveTester<Scalar>::check(
           *oss <<endl<<"achievedTol==unknownTolerance(): Setting achievedTol = adjoint_residual_solve_tol() = "<<adjoint_residual_solve_tol()<<endl;
       
         *oss <<endl<< "v4 = Op'*v3 - v2 ...\n" ;
-        Teuchos::RCP<MultiVectorBase<Scalar> > v4 = createMembers(domain,num_rhs);
+        Teuchos::RCP<MultiVectorBase<Scalar> > v4 = createMembers(domain,l_num_rhs);
         assign( &*v4, *v2 );
         timer.start(true);
         Thyra::apply(op, CONJTRANS, *v3, v4.ptr(), Scalar(1.0), Scalar(-1.0));
@@ -661,7 +661,7 @@ bool LinearOpWithSolveTester<Scalar>::check(
         OSTab(oss).o() <<"\n=> Apply time = "<<timer.totalElapsedTime()<<" sec\n";
         if(dump_all()) *oss <<endl<< "v4 =\n" << describe(*v4,verbLevel);
 
-        std::vector<ScalarMag> norms_v2(num_rhs), norms_v4(num_rhs), norms_v4_norms_v2(num_rhs);
+        std::vector<ScalarMag> norms_v2(l_num_rhs), norms_v4(l_num_rhs), norms_v4_norms_v2(l_num_rhs);
         norms(*v2,&norms_v2[0]);
         norms(*v4,&norms_v4[0]);
         std::transform(
@@ -670,7 +670,7 @@ bool LinearOpWithSolveTester<Scalar>::check(
           );
 
         result = testMaxErrors(
-          num_rhs, "norm(v4)/norm(v2)", &norms_v4_norms_v2[0],
+          l_num_rhs, "norm(v4)/norm(v2)", &norms_v4_norms_v2[0],
           "adjoint_residual_solve_tol()+adjoint_residual_slack_error_tol()",
           ScalarMag(adjoint_residual_solve_tol()+adjoint_residual_slack_error_tol()),
           "adjoint_residual_solve_tol()_slack_warning_tol()",

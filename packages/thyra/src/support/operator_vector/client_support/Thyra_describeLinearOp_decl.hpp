@@ -26,51 +26,30 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_LINEAR_OP_DEFAULT_BASE_HPP
-#define THYRA_LINEAR_OP_DEFAULT_BASE_HPP
+#ifndef THYRA_DESCRIBE_LINEAR_OP_DECL_HPP
+#define THYRA_DESCRIBE_LINEAR_OP_DECL_HPP
 
-#include "Thyra_LinearOpDefaultBaseDecl.hpp"
-#include "Thyra_LinearOpBase.hpp"
-#include "Thyra_describeLinearOp.hpp"
+#include "Thyra_OperatorVectorTypes.hpp"
+#include "Teuchos_FancyOStream.hpp"
+#include "Teuchos_VerbosityLevel.hpp"
+
 
 namespace Thyra {
 
 
-// Overridden from Teuchos::Describable
-
-
+/** \brief Basic implementation of a describe function for a linear operator.
+ *
+ * \ingroup Thyra_Op_Vec_ANA_Developmnet_support_code_grp
+ */
 template<class Scalar>
-std::string LinearOpDefaultBase<Scalar>::description() const
-{
-  std::ostringstream oss;
-  const Teuchos::RCP<const VectorSpaceBase<Scalar> >
-    l_range = this->range();
-  const Teuchos::RCP<const VectorSpaceBase<Scalar> >
-    l_domain = this->domain();
-  oss << Teuchos::Describable::description();
-  if(!l_range.get()) {
-    oss << "{range=NULL,domain=NULL}"; 
-  }
-  else {
-    const Ordinal dimDomain = l_domain->dim(), dimRange = l_range->dim();
-    oss
-      << "{rangeDim=" << dimRange
-      << ",domainDim=" << dimDomain << "}";
-  }
-  return oss.str();
-}
-
-
-template<class Scalar>
-void LinearOpDefaultBase<Scalar>::describe(
-  Teuchos::FancyOStream &out,
+void describeLinearOp(
+  const LinearOpBase<Scalar> &A,
+  Teuchos::FancyOStream &out_arg,
   const Teuchos::EVerbosityLevel verbLevel
-  ) const
-{
-  describeLinearOp(*this, out, verbLevel);
-}
+  );
 
 
 }	// end namespace Thyra
 
-#endif // THYRA_LINEAR_OP_DEFAULT_BASE_HPP
+
+#endif // THYRA_DESCRIBE_LINEAR_OP_DECL_HPP

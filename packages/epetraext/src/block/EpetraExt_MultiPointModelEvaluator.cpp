@@ -11,12 +11,12 @@ EpetraExt::MultiPointModelEvaluator::MultiPointModelEvaluator(
     ) : 
     underlyingME(underlyingME_),
     globalComm(globalComm_),
+    underlyingNg(0),
     timeStepsOnTimeDomain(globalComm_->NumTimeStepsOnDomain()),
     numTimeDomains(globalComm_->NumSubDomains()),
     timeDomain(globalComm_->SubDomainRank()),
     rowStencil(0),
     rowIndex(0),
-    underlyingNg(0),
     q_vec(q_vec_),
     matching_vec(matching_vec_)
 {

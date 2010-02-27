@@ -795,8 +795,8 @@ void EpetraModelEvaluator::convertInArgsFromEpetraToThyra(
     inArgs->set_x_dot( create_Vector( epetraInArgs.get_x_dot(), x_space_ ) );
   }
 
-  const int Np = inArgs->Np();
-  for( int l = 0; l < Np; ++l ) {
+  const int l_Np = inArgs->Np();
+  for( int l = 0; l < l_Np; ++l ) {
     inArgs->set_p( l, create_Vector( epetraInArgs.get_p(l), p_space_[l] ) );
   }
   
@@ -1291,8 +1291,8 @@ void EpetraModelEvaluator::updateInArgsOutArgs() const
   const EpetraExt::ModelEvaluator &epetraModel = *epetraModel_;
   EME::InArgs  epetraInArgs  = epetraModel.createInArgs();
   EME::OutArgs epetraOutArgs = epetraModel.createOutArgs();
-  const int Np = epetraOutArgs.Np();
-  const int Ng = epetraOutArgs.Ng();
+  const int l_Np = epetraOutArgs.Np();
+  const int l_Ng = epetraOutArgs.Ng();
 
   //
   // InArgs
@@ -1317,7 +1317,7 @@ void EpetraModelEvaluator::updateInArgsOutArgs() const
 
   OutArgsSetup<double> outArgs;
   outArgs.setModelEvalDescription(this->description());
-  outArgs.set_Np_Ng(Np, Ng);
+  outArgs.set_Np_Ng(l_Np, l_Ng);
   // f
   outArgs.setSupports(OUT_ARG_f, epetraOutArgs.supports(EME::OUT_ARG_f));
   if (outArgs.supports(OUT_ARG_f)) {
@@ -1327,7 +1327,7 @@ void EpetraModelEvaluator::updateInArgsOutArgs() const
     outArgs.setSupports(OUT_ARG_W_op,  epetraOutArgs.supports(EME::OUT_ARG_W));
     outArgs.set_W_properties(convert(epetraOutArgs.get_W_properties()));
     // DfDp
-    for(int l=0; l<Np; ++l) {
+    for(int l=0; l<l_Np; ++l) {
       outArgs.setSupports(OUT_ARG_DfDp, l,
         convert(epetraOutArgs.supports(EME::OUT_ARG_DfDp, l)));
       if(!outArgs.supports(OUT_ARG_DfDp, l).none())
@@ -1336,7 +1336,7 @@ void EpetraModelEvaluator::updateInArgsOutArgs() const
     }
   }
   // DgDx_dot and DgDx
-  for(int j=0; j<Ng; ++j) {
+  for(int j=0; j<l_Ng; ++j) {
     if (inArgs.supports(IN_ARG_x_dot))
       outArgs.setSupports(OUT_ARG_DgDx_dot, j,
         convert(epetraOutArgs.supports(EME::OUT_ARG_DgDx_dot, j)));
@@ -1351,7 +1351,7 @@ void EpetraModelEvaluator::updateInArgsOutArgs() const
         convert(epetraOutArgs.get_DgDx_properties(j)));
   }
   // DgDp
-  for(int j=0; j<Ng; ++j) for(int l=0; l<Np; ++l) {
+  for(int j=0; j < l_Ng; ++j) for(int l=0; l < l_Np; ++l) {
     const EME::DerivativeSupport epetra_DgDp_j_l_support =
       epetraOutArgs.supports(EME::OUT_ARG_DgDp, j, l);
     outArgs.setSupports(OUT_ARG_DgDp, j, l,

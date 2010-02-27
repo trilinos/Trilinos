@@ -29,7 +29,7 @@
 #ifndef THYRA_SPMD_VECTOR_SPACE_FACTORY_STD_HPP
 #define THYRA_SPMD_VECTOR_SPACE_FACTORY_STD_HPP
 
-#include "Thyra_DefaultSpmdVectorSpaceFactoryDecl.hpp"
+#include "Thyra_DefaultSpmdVectorSpaceFactory_decl.hpp"
 #include "Thyra_VectorSpaceFactoryBase.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 

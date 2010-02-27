@@ -29,7 +29,7 @@
 #ifndef THYRA_DESCRIBE_LINEAR_OP_HPP
 #define THYRA_DESCRIBE_LINEAR_OP_HPP
 
-#include "Thyra_describeLinearOpDecl.hpp"
+#include "Thyra_describeLinearOp_def.hpp"
 #include "Thyra_LinearOpBase.hpp"
 #include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_VectorStdOps.hpp"
@@ -91,6 +91,20 @@ void Thyra::describeLinearOp(
   }
 
 }
+
+
+//
+// Explicit instant macro
+//
+
+#define THYRA_DESCRIBE_LINEAR_INSTANT(SCALAR) \
+    \
+  template void describeLinearOp(  \
+    const LinearOpBase<SCALAR > &A,  \
+    Teuchos::FancyOStream &out_arg,  \
+    const Teuchos::EVerbosityLevel verbLevel  \
+    );  \
+
 
 
 #endif // THYRA_DESCRIBE_LINEAR_OP_HPP

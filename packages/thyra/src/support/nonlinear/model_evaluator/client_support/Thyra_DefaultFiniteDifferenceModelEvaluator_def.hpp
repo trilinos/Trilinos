@@ -117,7 +117,7 @@ void DefaultFiniteDifferenceModelEvaluator<Scalar>::evalModelImpl(
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::OSTab;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef typename ST::magnitudeType ScalarMag;
+  //typedef typename ST::magnitudeType ScalarMag;
   typedef ModelEvaluatorBase MEB;
   namespace DFDCT = DirectionalFiniteDiffCalculatorTypes;
 

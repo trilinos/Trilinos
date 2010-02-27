@@ -66,9 +66,9 @@ template<class Scalar>
 void DefaultAddedLinearOp<Scalar>::initialize(
   const ArrayView<const RCP<LinearOpBase<Scalar> > > &Ops )
 {
-  const int numOps = Ops.size();
-  Ops_.resize(numOps);
-  for( int k = 0; k < numOps; ++k )
+  const int l_numOps = Ops.size();
+  Ops_.resize(l_numOps);
+  for( int k = 0; k < l_numOps; ++k )
     Ops_[k].initialize(Ops[k]);
   validateOps();
   setupDefaultObjectLabel();
@@ -79,9 +79,9 @@ template<class Scalar>
 void DefaultAddedLinearOp<Scalar>::initialize(
   const ArrayView<const RCP<const LinearOpBase<Scalar> > > &Ops )
 {
-  const int numOps = Ops.size();
-  Ops_.resize(numOps);
-  for( int k = 0; k < numOps; ++k )
+  const int l_numOps = Ops.size();
+  Ops_.resize(l_numOps);
+  for( int k = 0; k < l_numOps; ++k )
     Ops_[k].initialize(Ops[k]);
   validateOps();
   setupDefaultObjectLabel();
@@ -193,7 +193,7 @@ void DefaultAddedLinearOp<Scalar>::describe(
   assertInitialized();
   RCP<FancyOStream> out = rcp(&out_arg,false);
   OSTab tab(out);
-  const int numOps = Ops_.size();
+  const int l_numOps = Ops_.size();
   switch(verbLevel) {
     case Teuchos::VERB_DEFAULT:
     case Teuchos::VERB_LOW:
@@ -207,12 +207,12 @@ void DefaultAddedLinearOp<Scalar>::describe(
         << Teuchos::Describable::description() << "{"
         << "rangeDim=" << this->range()->dim()
         << ",domainDim="<< this->domain()->dim() << "}\n";
-      OSTab tab(out);
+      OSTab tab2(out);
       *out
-        <<  "numOps="<< numOps << std::endl
+        <<  "numOps="<< l_numOps << std::endl
         <<  "Constituent LinearOpBase objects for M = Op[0]*...*Op[numOps-1]:\n";
       tab.incrTab();
-      for( int k = 0; k < numOps; ++k ) {
+      for( int k = 0; k < l_numOps; ++k ) {
         *out << "Op["<<k<<"] = " << Teuchos::describe(*getOp(k),verbLevel);
       }
       break;
@@ -228,21 +228,21 @@ void DefaultAddedLinearOp<Scalar>::describe(
 
 template<class Scalar>
 DefaultAddedLinearOp<Scalar>::DefaultAddedLinearOp(
-  const int numOps,
+  const int numOps_in,
   const RCP<LinearOpBase<Scalar> > Ops[]
   )
 {
-  initialize(Teuchos::arrayView(Ops, numOps));
+  initialize(Teuchos::arrayView(Ops, numOps_in));
 }
 
 
 template<class Scalar>
 DefaultAddedLinearOp<Scalar>::DefaultAddedLinearOp(
-  const int numOps,
+  const int numOps_in,
   const RCP<const LinearOpBase<Scalar> > Ops[]
   )
 {
-  initialize(Teuchos::arrayView(Ops, numOps));
+  initialize(Teuchos::arrayView(Ops, numOps_in));
 }
 
 
@@ -255,10 +255,10 @@ DefaultAddedLinearOp<Scalar>::DefaultAddedLinearOp(
 template<class Scalar>
 bool DefaultAddedLinearOp<Scalar>::opSupportedImpl(EOpTransp M_trans) const
 {
-  bool opSupported = true;
+  bool isOpSupported = true;
   for( int k = 0; k < static_cast<int>(Ops_.size()); ++k )
-    if(!Thyra::opSupported(*getOp(k),M_trans)) opSupported = false;
-  return opSupported;
+    if(!Thyra::opSupported(*getOp(k),M_trans)) isOpSupported = false;
+  return isOpSupported;
   // ToDo: Cache these?
 }
 
@@ -285,8 +285,8 @@ void DefaultAddedLinearOp<Scalar>::applyImpl(
   //
   // Y = beta*Y + sum(alpha*op(Op[j])*X),j=0...numOps-1)
   //
-  const int numOps = Ops_.size();
-  for( int j = 0; j < numOps; ++j )
+  const int l_numOps = Ops_.size();
+  for( int j = 0; j < l_numOps; ++j )
     Thyra::apply(*getOp(j), M_trans, X, Y, alpha, j==0 ? beta : ST::one());
 }
 
@@ -301,8 +301,8 @@ void DefaultAddedLinearOp<Scalar>::validateOps()
   using Teuchos::toString;
 #ifdef TEUCHOS_DEBUG
   try {
-    const int numOps = Ops_.size();
-    for( int k = 0; k < numOps; ++k ) {
+    const int l_numOps = Ops_.size();
+    for( int k = 0; k < l_numOps; ++k ) {
       TEST_FOR_EXCEPT( Ops_[k]().get() == NULL );
       if( k > 0 ) {
         THYRA_ASSERT_LINEAR_OP_PLUS_LINEAR_OP_SPACES_NAMES(
@@ -325,8 +325,8 @@ template<class Scalar>
 void DefaultAddedLinearOp<Scalar>::setupDefaultObjectLabel()
 {
   std::ostringstream label;
-  const int numOps = Ops_.size();
-  for( int k = 0; k < numOps; ++k ) {
+  const int l_numOps = Ops_.size();
+  for( int k = 0; k < l_numOps; ++k ) {
     std::string Op_k_label = Ops_[k]->getObjectLabel();
     if (Op_k_label.length() == 0)
       Op_k_label = "ANYM";

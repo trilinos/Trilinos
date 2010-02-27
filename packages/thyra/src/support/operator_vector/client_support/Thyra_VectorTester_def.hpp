@@ -29,8 +29,12 @@
 #ifndef THYRA_VECTOR_TESTER_HPP
 #define THYRA_VECTOR_TESTER_HPP
 
-#include "Thyra_VectorTesterDecl.hpp"
+#include "Thyra_VectorTester_decl.hpp"
 #include "Thyra_VectorStdOps.hpp"
+#include "Thyra_VectorBase.hpp"
+#include "Thyra_VectorSpaceBase.hpp"
+#include "Thyra_TestingTools.hpp"
+#include "Teuchos_VerbosityLevel.hpp"
 
 
 namespace Thyra {
@@ -38,17 +42,17 @@ namespace Thyra {
 
 template<class Scalar>
 VectorTester<Scalar>::VectorTester(
-  const ScalarMag     warning_tol
-  ,const ScalarMag    error_tol
-  ,const int          num_random_vectors
-  ,const bool         show_all_tests
-  ,const bool         dump_all
+  const ScalarMag     warning_tol_in
+  ,const ScalarMag    error_tol_in
+  ,const int          num_random_vectors_in
+  ,const bool         show_all_tests_in
+  ,const bool         dump_all_in
   )
-  :warning_tol_(warning_tol)
-  ,error_tol_(error_tol)
-  ,num_random_vectors_(num_random_vectors)
-  ,show_all_tests_(show_all_tests)
-  ,dump_all_(dump_all)
+  :warning_tol_(warning_tol_in)
+  ,error_tol_(error_tol_in)
+  ,num_random_vectors_(num_random_vectors_in)
+  ,show_all_tests_(show_all_tests_in)
+  ,dump_all_(dump_all_in)
 {}
 
 
@@ -64,7 +68,7 @@ bool VectorTester<Scalar>::check(
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef typename ST::magnitudeType    ScalarMag;
+  //typedef typename ST::magnitudeType    ScalarMag;
 
   Teuchos::RCP<FancyOStream> out = Teuchos::rcp(out_arg,false);
   const Teuchos::EVerbosityLevel verbLevel = (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);

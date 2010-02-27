@@ -240,10 +240,10 @@ const LinearOpTester<Scalar>& MultiVectorTester<Scalar>::linearOpTester() const
 
 template<class Scalar>
 inline
-void MultiVectorTester<Scalar>::warning_tol( const ScalarMag &warning_tol )
+void MultiVectorTester<Scalar>::warning_tol( const ScalarMag &warning_tol_in )
 {
-  warning_tol_ = warning_tol;
-  linearOpTester_.set_all_warning_tol(warning_tol);
+  warning_tol_ = warning_tol_in;
+  linearOpTester_.set_all_warning_tol(warning_tol_in);
 }
 
 
@@ -258,10 +258,10 @@ MultiVectorTester<Scalar>::warning_tol() const
 
 template<class Scalar>
 inline
-void MultiVectorTester<Scalar>::error_tol( const ScalarMag &error_tol )
+void MultiVectorTester<Scalar>::error_tol( const ScalarMag &error_tol_in )
 {
-  error_tol_ = error_tol;
-  linearOpTester_.set_all_error_tol(error_tol);
+  error_tol_ = error_tol_in;
+  linearOpTester_.set_all_error_tol(error_tol_in);
 }
 
 
@@ -276,10 +276,10 @@ MultiVectorTester<Scalar>::error_tol() const
 
 template<class Scalar>
 inline
-void MultiVectorTester<Scalar>::num_random_vectors( const int num_random_vectors )
+void MultiVectorTester<Scalar>::num_random_vectors( const int num_random_vectors_in )
 {
-  num_random_vectors_ = num_random_vectors;
-  linearOpTester_.num_random_vectors(num_random_vectors);
+  num_random_vectors_ = num_random_vectors_in;
+  linearOpTester_.num_random_vectors(num_random_vectors_in);
 }
 
 
@@ -293,10 +293,10 @@ int MultiVectorTester<Scalar>::num_random_vectors() const
 
 template<class Scalar>
 inline
-void MultiVectorTester<Scalar>::show_all_tests( const bool show_all_tests )
+void MultiVectorTester<Scalar>::show_all_tests( const bool show_all_tests_in )
 {
-  show_all_tests_ = show_all_tests;
-  linearOpTester_.show_all_tests(show_all_tests);
+  show_all_tests_ = show_all_tests_in;
+  linearOpTester_.show_all_tests(show_all_tests_in);
 }
 
 
@@ -310,10 +310,10 @@ bool MultiVectorTester<Scalar>::show_all_tests() const
 
 template<class Scalar>
 inline
-void MultiVectorTester<Scalar>::dump_all( const bool dump_all )
+void MultiVectorTester<Scalar>::dump_all( const bool dump_all_in )
 {
-  dump_all_ = dump_all;
-  linearOpTester_.dump_all(dump_all);
+  dump_all_ = dump_all_in;
+  linearOpTester_.dump_all(dump_all_in);
 }
 
 

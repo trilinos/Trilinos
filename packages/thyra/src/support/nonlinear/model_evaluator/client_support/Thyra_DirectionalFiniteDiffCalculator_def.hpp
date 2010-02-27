@@ -243,15 +243,15 @@ const std::string DirectionalFiniteDiffCalculator<Scalar>::FDStepSelectType_defa
 
 template<class Scalar>
 DirectionalFiniteDiffCalculator<Scalar>::DirectionalFiniteDiffCalculator(
-  EFDMethodType               fd_method_type
-  ,EFDStepSelectType          fd_step_select_type
-  ,ScalarMag                  fd_step_size
-  ,ScalarMag                  fd_step_size_min
+  EFDMethodType               fd_method_type_in
+  ,EFDStepSelectType          fd_step_select_type_in
+  ,ScalarMag                  fd_step_size_in
+  ,ScalarMag                  fd_step_size_min_in
   )
-  :fd_method_type_(fd_method_type)
-  ,fd_step_select_type_(fd_step_select_type)
-  ,fd_step_size_(fd_step_size)
-  ,fd_step_size_min_(fd_step_size_min)
+  :fd_method_type_(fd_method_type_in)
+  ,fd_step_select_type_(fd_step_select_type_in)
+  ,fd_step_size_(fd_step_size_in)
+  ,fd_step_size_min_(fd_step_size_min_in)
 {}
 
 
@@ -510,13 +510,13 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
   // ToDo: Consider cramped bounds and method order.
   //
   
-  DFDCT::EFDMethodType fd_method_type = this->fd_method_type();
-  switch(fd_method_type) {
+  DFDCT::EFDMethodType l_fd_method_type = this->fd_method_type();
+  switch(l_fd_method_type) {
     case DFDCT::FD_ORDER_TWO_AUTO:
-      fd_method_type = DFDCT::FD_ORDER_TWO_CENTRAL;
+      l_fd_method_type = DFDCT::FD_ORDER_TWO_CENTRAL;
       break;
     case DFDCT::FD_ORDER_FOUR_AUTO:
-      fd_method_type = DFDCT::FD_ORDER_FOUR_CENTRAL;
+      l_fd_method_type = DFDCT::FD_ORDER_FOUR_CENTRAL;
       break;
     default:
       break; // Okay
@@ -595,7 +595,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
     
   int num_evals = 0;
   ScalarMag dwgt = SMT::zero();
-  switch(fd_method_type) {
+  switch(l_fd_method_type) {
     case DFDCT::FD_ORDER_ONE: // may only need one eval if f(xo) etc is passed in
       num_evals = 2;
       dwgt      = ScalarMag(1.0);
@@ -624,7 +624,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
     ScalarMag
       uh_i   = 0.0,
       wgt_i  = 0.0;
-    switch(fd_method_type) {
+    switch(l_fd_method_type) {
       case DFDCT::FD_ORDER_ONE: {
         switch(eval_i) {
           case 1:
@@ -723,7 +723,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcVariations(
 
     if(out.get() && trace)
       *out << "\neval_i="<<eval_i<<", uh_i="<<uh_i<<", wgt_i="<<wgt_i<<"\n";
-    Teuchos::OSTab tab(out);
+    Teuchos::OSTab tab2(out);
     
     // Compute the weighted term and add it to the sum
     if(uh_i == ST::zero()) {
@@ -842,7 +842,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcDerivatives(
 {
 
   using std::string;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
+  //typedef Teuchos::ScalarTraits<Scalar> ST;
 
   TEUCHOS_FUNC_TIME_MONITOR(
     string("Thyra::DirectionalFiniteDiffCalculator<")+ST::name()+">::calcDerivatives(...)"
@@ -878,7 +878,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcDerivatives(
   for( int l = 0; l < Np; ++l ) {
     if(out.get() && trace)
       *out << "\nComputing derivatives for parameter subvector p("<<l<<") ...\n";
-    Teuchos::OSTab tab(out);
+    Teuchos::OSTab tab2(out);
     //
     // Load up OutArgs var object of derivative variations to compute
     //
@@ -929,7 +929,7 @@ void DirectionalFiniteDiffCalculator<Scalar>::calcDerivatives(
       for( int i = 0 ; i < np_l; ++ i ) {
         if(out.get() && trace)
           *out << "\nComputing derivatives for single variable p("<<l<<")("<<i<<") ...\n";
-        Teuchos::OSTab tab(out);
+        Teuchos::OSTab tab3(out);
         if(DfDp_l.get()) var.set_f(DfDp_l->col(i)); // Compute DfDp(l)(i) in place!
         for(int j = 0; j < Ng; ++j) {
           MultiVectorPtr DgDp_j_l;

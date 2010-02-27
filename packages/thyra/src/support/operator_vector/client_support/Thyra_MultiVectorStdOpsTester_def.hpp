@@ -29,7 +29,7 @@
 #ifndef THYRA_MULTI_VECTOR_STD_OPS_TESTER_HPP
 #define THYRA_MULTI_VECTOR_STD_OPS_TESTER_HPP
 
-#include "Thyra_MultiVectorStdOpsTesterDecl.hpp"
+#include "Thyra_MultiVectorStdOpsTester_decl.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_TestingTools.hpp"
 
@@ -39,13 +39,13 @@ namespace Thyra {
 
 template <class Scalar>
 MultiVectorStdOpsTester<Scalar>::MultiVectorStdOpsTester(
-  const ScalarMag    &warning_tol
-  ,const ScalarMag   &error_tol
-  ,const int         num_mv_cols
+  const ScalarMag    &warning_tol_in
+  ,const ScalarMag   &error_tol_in
+  ,const int         num_mv_cols_in
   )
-  :warning_tol_(warning_tol)
-  ,error_tol_(error_tol)
-  ,num_mv_cols_(num_mv_cols)
+  :warning_tol_(warning_tol_in)
+  ,error_tol_(error_tol_in)
+  ,num_mv_cols_(num_mv_cols_in)
 {}
 
 template <class Scalar>

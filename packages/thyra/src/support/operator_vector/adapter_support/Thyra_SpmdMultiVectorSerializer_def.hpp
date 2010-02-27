@@ -29,7 +29,7 @@
 #ifndef THYRA_SPMD_MULTI_VECTOR_SERIALIZER_HPP
 #define THYRA_SPMD_MULTI_VECTOR_SERIALIZER_HPP
 
-#include "Thyra_SpmdMultiVectorSerializerDecl.hpp"
+#include "Thyra_SpmdMultiVectorSerializer_decl.hpp"
 #include "Thyra_SpmdVectorSpaceDefaultBase.hpp"
 #include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_DetachedMultiVectorView.hpp"

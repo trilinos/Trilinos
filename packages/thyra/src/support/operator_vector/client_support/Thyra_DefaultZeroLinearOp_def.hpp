@@ -47,22 +47,22 @@ DefaultZeroLinearOp<Scalar>::DefaultZeroLinearOp()
 
 template<class Scalar>
 DefaultZeroLinearOp<Scalar>::DefaultZeroLinearOp(
-  const RCP<const VectorSpaceBase<Scalar> > &range,
-  const RCP<const VectorSpaceBase<Scalar> > &domain
+  const RCP<const VectorSpaceBase<Scalar> > &range_in,
+  const RCP<const VectorSpaceBase<Scalar> > &domain_in
   )
 {
-  initialize(range,domain);
+  initialize(range_in,domain_in);
 }
 
 
 template<class Scalar>
 void DefaultZeroLinearOp<Scalar>::initialize(
-  const RCP<const VectorSpaceBase<Scalar> > &range,
-  const RCP<const VectorSpaceBase<Scalar> > &domain
+  const RCP<const VectorSpaceBase<Scalar> > &range_in,
+  const RCP<const VectorSpaceBase<Scalar> > &domain_in
   )
 {
-  range_ = range.assert_not_null();
-  domain_ = domain.assert_not_null();
+  range_ = range_in.assert_not_null();
+  domain_ = domain_in.assert_not_null();
 }
 
 
@@ -158,11 +158,11 @@ void DefaultZeroLinearOp<Scalar>::applyImpl(
 template<class Scalar>
 Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
 Thyra::zero(
-  const RCP<const VectorSpaceBase<Scalar> > &range,
-  const RCP<const VectorSpaceBase<Scalar> > &domain
+  const RCP<const VectorSpaceBase<Scalar> > &range_in,
+  const RCP<const VectorSpaceBase<Scalar> > &domain_in
   )
 {
-  return Teuchos::rcp(new DefaultZeroLinearOp<Scalar>(range, domain));
+  return Teuchos::rcp(new DefaultZeroLinearOp<Scalar>(range_in, domain_in));
 }
 
 

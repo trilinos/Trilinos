@@ -31,7 +31,10 @@
 
 #include "Thyra_LinearOpScalarProd_decl.hpp"
 #include "Thyra_ScalarProdBase.hpp"
+#include "Thyra_LinearOpBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_MultiVectorBase.hpp"
+#include "Thyra_VectorSpaceBase.hpp"
 
 
 namespace Thyra {

@@ -151,19 +151,19 @@ void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::beginBlockFill(
 
 template<class Scalar>
 void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::beginBlockFill(
-  const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &productRange,
-  const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &productDomain
+  const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &productRange_in,
+  const Teuchos::RCP<const ProductVectorSpaceBase<Scalar> > &productDomain_in
   )
 {
 #ifdef THYRA_DEBUG
-  TEST_FOR_EXCEPT( is_null(productRange) );
-  TEST_FOR_EXCEPT( is_null(productDomain) );
-  TEST_FOR_EXCEPT( productRange->numBlocks() != productDomain->numBlocks() );
+  TEST_FOR_EXCEPT( is_null(productRange_in) );
+  TEST_FOR_EXCEPT( is_null(productDomain_in) );
+  TEST_FOR_EXCEPT( productRange_in->numBlocks() != productDomain_in->numBlocks() );
 #endif
   assertBlockFillIsActive(false);
-  productRange_ = productRange;
-  productDomain_ = productDomain;
-  numDiagBlocks_ = productRange->numBlocks();
+  productRange_ = productRange_in;
+  productDomain_ = productDomain_in;
+  numDiagBlocks_ = productRange_in->numBlocks();
   diagonalBlocks_.resize(numDiagBlocks_);
   blockFillIsActive_ = true;
 }
@@ -585,11 +585,11 @@ DefaultBlockedTriangularLinearOpWithSolve<Scalar>::solveImpl(
 
 template<class Scalar>
 void DefaultBlockedTriangularLinearOpWithSolve<Scalar>::assertBlockFillIsActive(
-  bool blockFillIsActive
+  bool blockFillIsActive_in
   ) const
 {
 #ifdef THYRA_DEBUG
-  TEST_FOR_EXCEPT(!(blockFillIsActive_==blockFillIsActive));
+  TEST_FOR_EXCEPT(!(blockFillIsActive_==blockFillIsActive_in));
 #endif
 }
 

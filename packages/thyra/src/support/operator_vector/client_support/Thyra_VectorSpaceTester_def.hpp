@@ -29,7 +29,7 @@
 #ifndef THYRA_VECTOR_SPACE_TESTER_HPP
 #define THYRA_VECTOR_SPACE_TESTER_HPP
 
-#include "Thyra_VectorSpaceTesterDecl.hpp"
+#include "Thyra_VectorSpaceTester_decl.hpp"
 #include "Thyra_TestingTools.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
@@ -40,19 +40,19 @@ namespace Thyra {
 
 template <class Scalar>
 VectorSpaceTester<Scalar>::VectorSpaceTester(
-  const ScalarMag     warning_tol
-  ,const ScalarMag    error_tol
-  ,const int          num_random_vectors
-  ,const int          num_mv_cols
-  ,const bool         show_all_tests
-  ,const bool         dump_all
+  const ScalarMag     warning_tol_in
+  ,const ScalarMag    error_tol_in
+  ,const int          num_random_vectors_in
+  ,const int          num_mv_cols_in
+  ,const bool         show_all_tests_in
+  ,const bool         dump_all_in
   )
-  :num_mv_cols_(num_mv_cols) // declared first!
-  ,warning_tol_(warning_tol)
-  ,error_tol_(error_tol)
-  ,num_random_vectors_(num_random_vectors)
-  ,show_all_tests_(show_all_tests)
-  ,dump_all_(dump_all)
+  :num_mv_cols_(num_mv_cols_in) // declared first!
+  ,warning_tol_(warning_tol_in)
+  ,error_tol_(error_tol_in)
+  ,num_random_vectors_(num_random_vectors_in)
+  ,show_all_tests_(show_all_tests_in)
+  ,dump_all_(dump_all_in)
 {}
 
 
@@ -67,7 +67,7 @@ bool VectorSpaceTester<Scalar>::check(
   using Teuchos::FancyOStream;
   using Teuchos::OSTab;
   typedef Teuchos::ScalarTraits<Scalar> ST;
-  typedef typename ST::magnitudeType    ScalarMag;
+  //typedef typename ST::magnitudeType    ScalarMag;
 
   Teuchos::RCP<FancyOStream> out = Teuchos::rcp(out_arg,false);
   const Teuchos::EVerbosityLevel verbLevel = (dump_all()?Teuchos::VERB_EXTREME:Teuchos::VERB_MEDIUM);

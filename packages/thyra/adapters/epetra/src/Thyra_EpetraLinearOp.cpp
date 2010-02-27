@@ -71,8 +71,8 @@ void EpetraLinearOp::initialize(
   EOpTransp opTrans,
   EApplyEpetraOpAs applyAs,
   EAdjointEpetraOp adjointSupport,
-  const RCP< const VectorSpaceBase<double> > &range,
-  const RCP< const VectorSpaceBase<double> > &domain
+  const RCP< const VectorSpaceBase<double> > &range_in,
+  const RCP< const VectorSpaceBase<double> > &domain_in
   )
 {
   
@@ -87,17 +87,18 @@ void EpetraLinearOp::initialize(
   // ToDo: Validate spmdRange, spmdDomain against op maps!
 #endif
 
-  RCP<const SPMDVSB> spmdRange;
-  if(!is_null(range))
-    spmdRange = rcp_dynamic_cast<const SPMDVSB>(range,true);
+  RCP<const SPMDVSB> l_spmdRange;
+  if(!is_null(range_in))
+    l_spmdRange = rcp_dynamic_cast<const SPMDVSB>(range_in,true);
   else
-    spmdRange = ( applyAs==EPETRA_OP_APPLY_APPLY
+    l_spmdRange = ( applyAs==EPETRA_OP_APPLY_APPLY
       ? allocateRange(op,opTrans) : allocateDomain(op,opTrans) );
-  RCP<const SPMDVSB> spmdDomain;
-  if(!is_null(domain))
-    spmdDomain = rcp_dynamic_cast<const SPMDVSB>(domain,true);
+
+  RCP<const SPMDVSB> l_spmdDomain;
+  if(!is_null(domain_in))
+    l_spmdDomain = rcp_dynamic_cast<const SPMDVSB>(domain_in,true);
   else
-    spmdDomain = ( applyAs==EPETRA_OP_APPLY_APPLY
+    l_spmdDomain = ( applyAs==EPETRA_OP_APPLY_APPLY
       ? allocateDomain(op,opTrans) : allocateRange(op,opTrans) );
   
   // Set data (no exceptions should be thrown now)
@@ -106,15 +107,15 @@ void EpetraLinearOp::initialize(
   opTrans_ = opTrans;
   applyAs_ = applyAs;
   adjointSupport_ = adjointSupport;
-  range_ = spmdRange;
-  domain_ = spmdDomain;
+  range_ = l_spmdRange;
+  domain_ = l_spmdDomain;
 
 }
 
 
 void EpetraLinearOp::partiallyInitialize(
-  const RCP<const VectorSpaceBase<double> > &range,
-  const RCP<const VectorSpaceBase<double> > &domain,
+  const RCP<const VectorSpaceBase<double> > &range_in,
+  const RCP<const VectorSpaceBase<double> > &domain_in,
   const RCP<Epetra_Operator> &op,
   EOpTransp opTrans,
   EApplyEpetraOpAs applyAs,
@@ -128,18 +129,18 @@ void EpetraLinearOp::partiallyInitialize(
 
   // Validate input, allocate spaces, validate ...
 #ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPTION( is_null(range), std::invalid_argument,
+  TEST_FOR_EXCEPTION( is_null(range_in), std::invalid_argument,
     "Thyra::EpetraLinearOp::partiallyInitialize(...): Error!" );
-  TEST_FOR_EXCEPTION( is_null(domain), std::invalid_argument,
+  TEST_FOR_EXCEPTION( is_null(domain_in), std::invalid_argument,
     "Thyra::EpetraLinearOp::partiallyInitialize(...): Error!" );
   TEST_FOR_EXCEPTION( is_null(op), std::invalid_argument,
     "Thyra::EpetraLinearOp::partiallyInitialize(...): Error!" );
 #endif
 
   RCP<const SPMDVSB>
-    spmdRange = rcp_dynamic_cast<const SPMDVSB>(range,true);
+    l_spmdRange = rcp_dynamic_cast<const SPMDVSB>(range_in,true);
   RCP<const SPMDVSB>
-    spmdDomain = rcp_dynamic_cast<const SPMDVSB>(domain,true);
+    l_spmdDomain = rcp_dynamic_cast<const SPMDVSB>(domain_in,true);
   
   // Set data (no exceptions should be thrown now)
   isFullyInitialized_ = false;
@@ -147,8 +148,8 @@ void EpetraLinearOp::partiallyInitialize(
   opTrans_ = opTrans;
   applyAs_ = applyAs;
   adjointSupport_ = adjointSupport;
-  range_ = spmdRange;
-  domain_ = spmdDomain;
+  range_ = l_spmdRange;
+  domain_ = l_spmdDomain;
   
 }
 
@@ -165,8 +166,8 @@ void EpetraLinearOp::uninitialize(
   EOpTransp *opTrans,
   EApplyEpetraOpAs *applyAs,
   EAdjointEpetraOp *adjointSupport,
-  RCP<const VectorSpaceBase<double> > *range,
-  RCP<const VectorSpaceBase<double> > *domain
+  RCP<const VectorSpaceBase<double> > *range_out,
+  RCP<const VectorSpaceBase<double> > *domain_out
   )
 {
 
@@ -174,8 +175,8 @@ void EpetraLinearOp::uninitialize(
   if(opTrans) *opTrans = opTrans_;
   if(applyAs) *applyAs = applyAs_;
   if(adjointSupport) *adjointSupport = adjointSupport_;
-  if(range) *range = range_;
-  if(domain) *domain = domain_;
+  if(range_out) *range_out = range_;
+  if(domain_out) *domain_out = domain_;
 
   isFullyInitialized_ = false;
   op_ = Teuchos::null;
@@ -326,14 +327,14 @@ void EpetraLinearOp::describe(
       << "rangeDim=" << this->range()->dim()
       << ",domainDim=" << this->domain()->dim()
       << "}\n";
-    OSTab tab(out);
+    OSTab tab2(out);
     if (op_.get()) {
       out << "opTrans="<<toString(opTrans_)<<"\n";
       out << "applyAs="<<toString(applyAs_)<<"\n";
       out << "adjointSupport="<<toString(adjointSupport_)<<"\n";
       out << "op="<<typeName(*op_)<<"\n";
       if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_EXTREME) ) {
-        OSTab tab(out);
+        OSTab tab3(out);
         RCP<const Epetra_CrsMatrix>
           csr_op = rcp_dynamic_cast<const Epetra_CrsMatrix>(op_);
         if (!is_null(csr_op)) {
@@ -486,7 +487,7 @@ void EpetraLinearOp::applyImpl(
 #ifdef EPETRA_THYRA_TEUCHOS_TIMERS
         TEUCHOS_FUNC_TIME_MONITOR_DIFF(
           "Thyra::EpetraLinearOp::euclideanApply: Apply(beta!=0): Y=0",
-          Apply);
+          Apply2);
 #endif
         assign( Y_inout, 0.0 );
       }
@@ -499,7 +500,7 @@ void EpetraLinearOp::applyImpl(
 #ifdef EPETRA_THYRA_TEUCHOS_TIMERS
         TEUCHOS_FUNC_TIME_MONITOR_DIFF(
           "Thyra::EpetraLinearOp::euclideanApply: Apply(beta!=0): Apply",
-          Apply);
+          Apply2);
 #endif
         op_->Apply( *X, T );
       }

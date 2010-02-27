@@ -29,7 +29,7 @@
 #ifndef THYRA_DEFAULT_CLUSTERED_SPMD_PRODUCT_VECTOR_SPACE_HPP
 #define THYRA_DEFAULT_CLUSTERED_SPMD_PRODUCT_VECTOR_SPACE_HPP
 
-#include "Thyra_DefaultClusteredSpmdProductVectorSpaceDecl.hpp"
+#include "Thyra_DefaultClusteredSpmdProductVectorSpace_decl.hpp"
 #include "Thyra_SpmdVectorSpaceBase.hpp"
 #include "Thyra_DefaultClusteredSpmdProductVector.hpp"
 #include "Thyra_VectorSpaceDefaultBase.hpp"
@@ -50,34 +50,34 @@ DefaultClusteredSpmdProductVectorSpace<Scalar>::DefaultClusteredSpmdProductVecto
 
 template<class Scalar>
 DefaultClusteredSpmdProductVectorSpace<Scalar>::DefaultClusteredSpmdProductVectorSpace(
-  const Teuchos::RCP<const Teuchos::Comm<Ordinal> >          &intraClusterComm
-  ,const int                                                       clusterRootRank
-  ,const Teuchos::RCP<const Teuchos::Comm<Ordinal> >         &interClusterComm
-  ,const int                                                       numBlocks
+  const Teuchos::RCP<const Teuchos::Comm<Ordinal> >          &intraClusterComm_in
+  ,const int                                                       clusterRootRank_in
+  ,const Teuchos::RCP<const Teuchos::Comm<Ordinal> >         &interClusterComm_in
+  ,const int                                                       numBlocks_in
   ,const Teuchos::RCP<const VectorSpaceBase<Scalar> >      vecSpaces[]
   )
 {
-  initialize(intraClusterComm,clusterRootRank,interClusterComm,numBlocks,vecSpaces);
+  initialize(intraClusterComm_in,clusterRootRank_in,interClusterComm_in,numBlocks_in,vecSpaces);
 }
 
 template<class Scalar>
 void DefaultClusteredSpmdProductVectorSpace<Scalar>::initialize(
-  const Teuchos::RCP<const Teuchos::Comm<Ordinal> >          &intraClusterComm
-  ,const int                                                       clusterRootRank
-  ,const Teuchos::RCP<const Teuchos::Comm<Ordinal> >         &interClusterComm
-  ,const int                                                       numBlocks
+  const Teuchos::RCP<const Teuchos::Comm<Ordinal> >          &intraClusterComm_in
+  ,const int                                                       clusterRootRank_in
+  ,const Teuchos::RCP<const Teuchos::Comm<Ordinal> >         &interClusterComm_in
+  ,const int                                                       numBlocks_in
   ,const Teuchos::RCP<const VectorSpaceBase<Scalar> >      vecSpaces[]
   )
 {
   // Set state
-  intraClusterComm_ = intraClusterComm.assert_not_null();
-  clusterRootRank_ = clusterRootRank;
-  interClusterComm_ = interClusterComm; // This can be NULL!
-  vecSpaces_.resize(numBlocks);
+  intraClusterComm_ = intraClusterComm_in.assert_not_null();
+  clusterRootRank_ = clusterRootRank_in;
+  interClusterComm_ = interClusterComm_in; // This can be NULL!
+  vecSpaces_.resize(numBlocks_in);
   isEuclidean_ = true;
-  Ordinal clusterSubDim = 0;
-  for( int k = 0; k < numBlocks; ++k ) {
-    clusterSubDim += vecSpaces[k]->dim();
+  Ordinal l_clusterSubDim = 0;
+  for( int k = 0; k < numBlocks_in; ++k ) {
+    l_clusterSubDim += vecSpaces[k]->dim();
     if(!vecSpaces[k]->isEuclidean())
       isEuclidean_ = false;
     vecSpaces_[k] = vecSpaces[k];
@@ -86,10 +86,10 @@ void DefaultClusteredSpmdProductVectorSpace<Scalar>::initialize(
   // only involving the root process in each cluster.
   if(interClusterComm_.get()) {
     clusterOffset_ = SpmdVectorSpaceUtilities::computeLocalOffset(
-      *interClusterComm_,clusterSubDim
+      *interClusterComm_,l_clusterSubDim
       );
     globalDim_ = SpmdVectorSpaceUtilities::computeGlobalDim(
-      *interClusterComm_,clusterSubDim
+      *interClusterComm_,l_clusterSubDim
     );
   }
   // Here must then broadcast the values to all processes within each cluster.
@@ -99,9 +99,10 @@ void DefaultClusteredSpmdProductVectorSpace<Scalar>::initialize(
     Teuchos::broadcast<Ordinal>(*intraClusterComm_, clusterRootRank_, num, &buff[0]);
     clusterOffset_ = buff[0];
     globalDim_     = buff[1];
+
   }
   //
-  clusterSubDim_ = clusterSubDim;
+  clusterSubDim_ = l_clusterSubDim;
   // ToDo: Do a global communication across all clusters to see if all vector
   // spaces are all Euclidean.  It is unlikely to be the case where all of the
   // clusters do not have the same vector spaces so I do not think this will
@@ -157,9 +158,9 @@ Scalar DefaultClusteredSpmdProductVectorSpace<Scalar>::scalarProd(
   const VectorBase<Scalar>& x, const VectorBase<Scalar>& y
   ) const
 {
-  Scalar scalarProds[1];
-  this->scalarProds(x,y,&scalarProds[0]);
-  return scalarProds[0];
+  Scalar scalarProds_out[1];
+  this->scalarProds(x, y, &scalarProds_out[0]);
+  return scalarProds_out[0];
 }
 
 template<class Scalar>
