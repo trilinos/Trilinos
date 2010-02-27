@@ -19,10 +19,6 @@ SET(SOURCES "")
 #
 
 
-SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
-APPEND_SET(HEADERS ${DIR}/${PACKAGE_NAME}_Config.h )
-
-
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
@@ -66,6 +62,16 @@ SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/lapack)
 APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 PACKAGE_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
+
+#
+# Binary src
+#
+
+# Must global the binary src dir last to get all of the generated headers
+
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+APPEND_SET(HEADERS ${DIR}/${PACKAGE_NAME}_Config.h )
 
 #
 # C) Define the targets for package's library(s)
