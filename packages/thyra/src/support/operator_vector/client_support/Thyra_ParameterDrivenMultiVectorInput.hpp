@@ -31,6 +31,7 @@
 
 #include "Thyra_MultiVectorFileIOBase.hpp"
 #include "Thyra_DetachedVectorView.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Teuchos_ParameterListAcceptor.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_StandardCompositionMacros.hpp"

@@ -35,6 +35,7 @@
 #include "Thyra_DefaultBlockedTriangularLinearOpWithSolveFactory.hpp" // Default implementation
 #include "Thyra_DefaultBlockedLinearOp.hpp"
 #include "Thyra_ModelEvaluatorDelegatorBase.hpp"
+#include "Thyra_ProductVectorBase.hpp"
 #include "Teuchos_implicit_cast.hpp"
 #include "Teuchos_AbstractFactory.hpp" // Interface
 #include "Teuchos_AbstractFactoryStd.hpp" // Implementation

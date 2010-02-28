@@ -29,7 +29,7 @@
 #ifndef THYRA_MULTI_VECTOR_STD_OPS_DECL_HPP
 #define THYRA_MULTI_VECTOR_STD_OPS_DECL_HPP
 
-#include "Thyra_OperatorVectorTypes.hpp"
+#include "Thyra_MultiVectorBase.hpp"
 #include "RTOpPack_ROpNorm1.hpp"
 #include "RTOpPack_ROpNorm2.hpp"
 #include "RTOpPack_ROpNormInf.hpp"
@@ -551,6 +551,31 @@ Thyra::norms_inf( const MultiVectorBase<Scalar>& V )
   Array<ScalarMag> norms(V.domain()->dim());
   Thyra::norms_inf<Scalar>(V, norms());
   return norms;
+}
+
+
+// /////////////////////////////////////////////
+// Other implementations
+
+
+template<class Scalar, class NormOp>
+void Thyra::reductions( const MultiVectorBase<Scalar>& V, const NormOp &op,
+  const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms )
+{
+  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
+  const int m = V.domain()->dim();
+  Array<RCP<RTOpPack::ReductTarget> > rcp_op_targs(m);
+  Array<Ptr<RTOpPack::ReductTarget> > op_targs(m);
+  for( int kc = 0; kc < m; ++kc ) {
+    rcp_op_targs[kc] = op.reduct_obj_create();
+    op_targs[kc] = rcp_op_targs[kc].ptr();
+  }
+  applyOp<Scalar>(op, tuple(ptrInArg(V)),
+    ArrayView<Ptr<MultiVectorBase<Scalar> > >(null),
+    op_targs );
+  for( int kc = 0; kc < m; ++kc ) {
+    norms[kc] = op(*op_targs[kc]);
+  }
 }
 
 

@@ -43,6 +43,7 @@
 #include "NOX_Thyra_Vector.H"
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_VectorStdOps.hpp"
 #include "Thyra_DetachedMultiVectorView.hpp"
 
 NOX::Thyra::MultiVector::

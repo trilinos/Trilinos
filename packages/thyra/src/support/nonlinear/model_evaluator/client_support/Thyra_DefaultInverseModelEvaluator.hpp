@@ -35,6 +35,7 @@
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_ParameterDrivenMultiVectorInput.hpp"
 #include "Thyra_VectorSpaceFactoryBase.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_AssertOp.hpp"
 #include "Teuchos_StandardMemberCompositionMacros.hpp"
 #include "Teuchos_StandardCompositionMacros.hpp"

@@ -62,27 +62,6 @@ void Thyra::norms( const MultiVectorBase<Scalar>& V,
 }
 
 
-template<class Scalar, class NormOp>
-void Thyra::reductions( const MultiVectorBase<Scalar>& V, const NormOp &op,
-  const ArrayView<typename ScalarTraits<Scalar>::magnitudeType> &norms )
-{
-  using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
-  const int m = V.domain()->dim();
-  Array<RCP<RTOpPack::ReductTarget> > rcp_op_targs(m);
-  Array<Ptr<RTOpPack::ReductTarget> > op_targs(m);
-  for( int kc = 0; kc < m; ++kc ) {
-    rcp_op_targs[kc] = op.reduct_obj_create();
-    op_targs[kc] = rcp_op_targs[kc].ptr();
-  }
-  applyOp<Scalar>(op, tuple(ptrInArg(V)),
-    ArrayView<Ptr<MultiVectorBase<Scalar> > >(null),
-    op_targs );
-  for( int kc = 0; kc < m; ++kc ) {
-    norms[kc] = op(*op_targs[kc]);
-  }
-}
-
-
 template<class Scalar>
 void Thyra::dots( const MultiVectorBase<Scalar>& V1, const MultiVectorBase<Scalar>& V2,
   const ArrayView<Scalar> &dots )
