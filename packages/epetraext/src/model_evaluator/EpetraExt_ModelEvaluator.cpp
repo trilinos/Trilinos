@@ -94,8 +94,7 @@ void ModelEvaluator::InArgs::assert_l(int l) const
 
 
 ModelEvaluator::OutArgs::OutArgs()
-  :modelEvalDescription_("WARNING!  THIS OUTARGS OBJECT IS UNINITALIZED!"),
-   Np_sg_(0)
+  :modelEvalDescription_("WARNING!  THIS OUTARGS OBJECT IS UNINITALIZED!")
 {
   std::fill_n(&supports_[0],NUM_E_OUT_ARGS_MEMBERS,false);
 }
@@ -141,6 +140,29 @@ ModelEvaluator::OutArgs::supports(EOutArgsDgDp arg, int j, int l) const
   assert_j(j);
   assert_l(l);
   return supports_DgDp_[ j*Np() + l ];
+}
+
+const ModelEvaluator::DerivativeSupport&
+ModelEvaluator::OutArgs::supports(EOutArgsDfDp_sg arg, int l) const
+{
+  assert_l_sg(l);
+  return supports_DfDp_sg_[l];
+}
+
+
+const ModelEvaluator::DerivativeSupport&
+ModelEvaluator::OutArgs::supports(EOutArgsDgDx_dot_sg arg, int j) const
+{
+  assert_j_sg(j);
+  return supports_DgDx_dot_sg_[j];
+}
+
+
+const ModelEvaluator::DerivativeSupport&
+ModelEvaluator::OutArgs::supports(EOutArgsDgDx_sg arg, int j) const
+{
+  assert_j_sg(j);
+  return supports_DgDx_sg_[j];
 }
 
 const ModelEvaluator::DerivativeSupport&
@@ -213,15 +235,31 @@ void ModelEvaluator::OutArgs::_set_Np_Ng(int Np, int Ng)
 
 void ModelEvaluator::OutArgs::_set_Np_Ng_sg(int Np_sg, int Ng_sg)
 {
+  if(Np_sg) {
+    supports_DfDp_sg_.resize(Np_sg);
+    DfDp_sg_.resize(Np_sg);
+    std::fill_n(DfDp_sg_.begin(),Np_sg,SGDerivative());
+    DfDp_sg_properties_.resize(Np_sg);
+    std::fill_n(DfDp_sg_properties_.begin(),Np_sg,DerivativeProperties());
+  }
   if(Ng_sg) {
     g_sg_.resize(Ng_sg);
+    supports_DgDx_dot_sg_.resize(Ng_sg);
+    DgDx_dot_sg_.resize(Ng_sg);
+    std::fill_n(DgDx_dot_sg_.begin(),Ng_sg,SGDerivative());
+    DgDx_dot_sg_properties_.resize(Ng_sg);
+    std::fill_n(DgDx_dot_sg_properties_.begin(),Ng_sg,DerivativeProperties());
+    supports_DgDx_sg_.resize(Ng_sg);
+    DgDx_sg_.resize(Ng_sg);
+    std::fill_n(DgDx_sg_.begin(),Ng_sg,SGDerivative());
+    DgDx_sg_properties_.resize(Ng_sg);
+    std::fill_n(DgDx_sg_properties_.begin(),Ng_sg,DerivativeProperties());
   }
   if(Np_sg && Ng_sg) {
-    Np_sg_ = Np_sg;
     const int NpNg_sg = Np_sg*Ng_sg;
     supports_DgDp_sg_.resize(NpNg_sg);
     DgDp_sg_.resize(NpNg_sg);
-    std::fill_n(DgDp_sg_.begin(),NpNg_sg,sg_deriv_t());
+    std::fill_n(DgDp_sg_.begin(),NpNg_sg,SGDerivative());
     DgDp_sg_properties_.resize(NpNg_sg);
     std::fill_n(DgDp_sg_properties_.begin(),NpNg_sg,DerivativeProperties());
   }
@@ -264,6 +302,26 @@ void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDp arg, int j, int l, cons
   assert_j(j);
   assert_l(l);
   supports_DgDp_[ j*Np() + l ] = supports;
+}
+
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDfDp_sg arg, int l, const DerivativeSupport& supports )
+{
+  assert_l_sg(l);
+  supports_DfDp_sg_[l] = supports;
+}
+
+
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_dot_sg arg, int j, const DerivativeSupport& supports )
+{
+  assert_j_sg(j);
+  supports_DgDx_dot_sg_[j] = supports;
+}
+
+
+void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDx_sg arg, int j, const DerivativeSupport& supports )
+{
+  assert_j_sg(j);
+  supports_DgDx_sg_[j] = supports;
 }
 
 void ModelEvaluator::OutArgs::_setSupports( EOutArgsDgDp_sg arg, int j, int l, const DerivativeSupport& supports )
@@ -309,6 +367,26 @@ void ModelEvaluator::OutArgs::_set_DgDp_properties( int j, int l, const Derivati
 {
   assert_supports(OUT_ARG_DgDp,j,l);
   DgDp_properties_[ j*Np() + l ] = properties;
+}
+
+void ModelEvaluator::OutArgs::_set_DfDp_sg_properties( int l, const DerivativeProperties &properties )
+{
+  assert_supports(OUT_ARG_DfDp_sg,l);
+  DfDp_sg_properties_[l] = properties;
+}
+
+
+void ModelEvaluator::OutArgs::_set_DgDx_dot_sg_properties( int j, const DerivativeProperties &properties )
+{
+  assert_supports(OUT_ARG_DgDx_dot_sg,j);
+  DgDx_dot_sg_properties_[j] = properties;
+}
+
+
+void ModelEvaluator::OutArgs::_set_DgDx_sg_properties( int j, const DerivativeProperties &properties )
+{
+  assert_supports(OUT_ARG_DgDx_sg,j);
+  DgDx_sg_properties_[j] = properties;
 }
 
 void ModelEvaluator::OutArgs::_set_DgDp_sg_properties( int j, int l, const DerivativeProperties &properties )
@@ -373,6 +451,41 @@ void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDp arg, int j, int l) co
     ,"Thyra::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDp,j,l): "
     "model = \'"<<modelEvalDescription_<<"\': Error,"
     "The argument DgDp(j,l) with indexes j = " << j << " and l = " << l << " is not supported!"
+    );
+}
+
+void ModelEvaluator::OutArgs::assert_supports(EOutArgsDfDp_sg arg, int l) const
+{
+  assert_l_sg(l);
+  TEST_FOR_EXCEPTION(
+    supports_DfDp_sg_[l].none(), std::logic_error
+    ,"Thyra::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DfDp_sg,l): "
+    "model = \'"<<modelEvalDescription_<<"\': Error,"
+    "The argument DfDp_sg(l) with index l = " << l << " is not supported!"
+    );
+}
+
+
+void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_dot_sg arg, int j) const
+{
+  assert_j_sg(j);
+  TEST_FOR_EXCEPTION(
+    supports_DgDx_dot_sg_[j].none(), std::logic_error
+    ,"Thyra::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDx_dot_sg,j): "
+    "model = \'"<<modelEvalDescription_<<"\': Error,"
+    "The argument DgDx_dot_sg(j) with index j = " << j << " is not supported!"
+    );
+}
+
+
+void ModelEvaluator::OutArgs::assert_supports(EOutArgsDgDx_sg arg, int j) const
+{
+  assert_j_sg(j);
+  TEST_FOR_EXCEPTION(
+    supports_DgDx_sg_[j].none(), std::logic_error
+    ,"Thyra::ModelEvaluator::OutArgs::assert_supports(OUT_ARG_DgDx_sg,j): "
+    "model = \'"<<modelEvalDescription_<<"\': Error,"
+    "The argument DgDx_sg(j) with index j = " << j << " is not supported!"
     );
 }
 

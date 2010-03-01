@@ -395,11 +395,11 @@ int main(int argc, char *argv[]) {
     // Get Jacobian blocks
     Teuchos::RCP<Stokhos::MatrixFreeEpetraOp> sg_J_op = 
       Teuchos::rcp_dynamic_cast<Stokhos::MatrixFreeEpetraOp>(sg_J);
-    const Stokhos::VectorOrthogPoly<Epetra_Operator>& sg_J_poly =
+    Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Operator> > sg_J_poly =
       sg_J_op->getOperatorBlocks();
     Teuchos::RCP<const Epetra_CrsMatrix> J_mean = 
       Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>(
-	sg_J_poly.getCoeffPtr(0));
+	sg_J_poly->getCoeffPtr(0));
 
     // Build a vector polynomial out of matrix nonzeros
     Epetra_Map J_vec_map(-1, J_mean->NumMyNonzeros(), 0, *Comm);
@@ -408,7 +408,7 @@ int main(int argc, char *argv[]) {
     for (unsigned int coeff=0; coeff<sz; coeff++) {
       Teuchos::RCP<const Epetra_CrsMatrix> J_coeff = 
 	Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>
-	(sg_J_poly.getCoeffPtr(coeff));
+	(sg_J_poly->getCoeffPtr(coeff));
       int row = 0;
       for (int i=0; i<J_mean->NumMyRows(); i++) {
 	int num_col;
@@ -613,8 +613,8 @@ int main(int argc, char *argv[]) {
     EpetraExt::ModelEvaluator::OutArgs sg_outArgs2 = 
 	sg_model->createOutArgs();
     Teuchos::RCP<Epetra_Vector> sg_g = 
-      Teuchos::rcp(new Epetra_Vector(*(sg_model->get_g_map(0))));
-    sg_outArgs2.set_g(0, sg_g);
+      Teuchos::rcp(new Epetra_Vector(*(sg_model->get_g_map(1))));
+    sg_outArgs2.set_g(1, sg_g);
     sg_model->evalModel(sg_inArgs, sg_outArgs2);
 
     // Print mean and standard deviation

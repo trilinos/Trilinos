@@ -165,7 +165,7 @@ Stokhos::KLReducedMatrixFreeEpetraOp::Apply(const Epetra_MultiVector& Input,
       for (unsigned int l=0; l<nj; l++) {
 	const Teuchos::Array<int>& i_indices = sparse_kl_coeffs->Iindices(k,l);
 	const Teuchos::Array<double>& c_values = sparse_kl_coeffs->values(k,l);
-	for (unsigned int i=0; i<i_indices.size(); i++) {
+	for (int i=0; i<i_indices.size(); i++) {
 	  int ii = i_indices[i];
 	  result_block[ii]->Update(c_values[i], *result_tmp2(l), 1.0);
 	}
@@ -289,7 +289,7 @@ Stokhos::KLReducedMatrixFreeEpetraOp::setup()
       int j = j_indices[p];
       const Teuchos::Array<int>& i_indices = Cijk->Iindices(l,p);
       const Teuchos::Array<double>& c_values = Cijk->values(l,p);
-      for (unsigned int ii=0; ii<i_indices.size(); ii++) {
+      for (int ii=0; ii<i_indices.size(); ii++) {
 	int i = i_indices[ii];
 	double nrm = norms[i];
 	double c  = c_values[ii];
@@ -321,7 +321,7 @@ Stokhos::KLReducedMatrixFreeEpetraOp::setup()
   // Check accuracy of KL expansion
   if (do_error_tests) {
     Teuchos::Array<double> point(sg_basis->dimension());
-    for (unsigned int i=0; i<sg_basis->dimension(); i++)
+    for (int i=0; i<sg_basis->dimension(); i++)
       point[i] = 0.5;
     Teuchos::Array<double> basis_vals(num_blocks);
     sg_basis->evaluateBases(point, basis_vals);
@@ -348,7 +348,8 @@ Stokhos::KLReducedMatrixFreeEpetraOp::setup()
     // Check accuracy of operator
     Epetra_Vector op_input(*sg_map), op_result(*sg_map), op_kl_result(*sg_map);
     op_input.PutScalar(1.0);
-    Stokhos::MatrixFreeEpetraOp op(base_map, sg_map, sg_basis, Cijk, block_ops);
+    Stokhos::MatrixFreeEpetraOp op(base_map, base_map, sg_map, sg_map, 
+				   sg_basis, Cijk, block_ops);
     op.Apply(op_input, op_result);
     this->Apply(op_input, op_kl_result);
     op_result.Update(-1.0, op_kl_result, 1.0);

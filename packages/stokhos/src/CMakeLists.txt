@@ -109,6 +109,7 @@ SET(HEADERS ${HEADERS}
   Stokhos_KL_ExponentialRandomField.hpp
   Stokhos_KL_ExponentialRandomFieldImp.hpp
   Stokhos_KLReducedMatrixFreeEpetraOp.hpp
+  Stokhos_EpetraMultiVectorOperator.hpp
   )
 
 SET(SOURCES ${SOURCES}
@@ -125,6 +126,7 @@ SET(SOURCES ${SOURCES}
   Stokhos_PCECovarianceOp.cpp
   Stokhos_PCEAnasaziKL.cpp
   Stokhos_KLReducedMatrixFreeEpetraOp.cpp
+  Stokhos_EpetraMultiVectorOperator.cpp
   )
 
 #

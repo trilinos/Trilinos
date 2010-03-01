@@ -236,7 +236,7 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
   OutArgs::sg_vector_t f_sg;
   OutArgs::sg_operator_t W_sg;
   Teuchos::Array<OutArgs::sg_vector_t> g_sg(outArgs.Ng_sg());
-  Teuchos::Array< Teuchos::Array<OutArgs::sg_deriv_t> > dgdp_sg(outArgs.Ng_sg());
+  Teuchos::Array< Teuchos::Array<SGDerivative> > dgdp_sg(outArgs.Ng_sg());
   Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis;
   if (inArgs.supports(IN_ARG_x_sg)) {
     x_sg = inArgs.get_x_sg();
@@ -283,8 +283,8 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
     for (int j=0; j<outArgs.Np_sg(); j++) {
       if (!outArgs.supports(OUT_ARG_DgDp_sg, i, j).none()) {
 	dgdp_sg[i][j] = outArgs.get_DgDp_sg(i,j);
-	if (dgdp_sg[i][j] != Teuchos::null)
-	  dgdp_sg[i][j]->init(0.0);
+	if (dgdp_sg[i][j].getMultiVector() != Teuchos::null)
+	  dgdp_sg[i][j].getMultiVector()->init(0.0);
       }
     }
   }
@@ -300,7 +300,7 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
     const Teuchos::Array<double>& basis_norms = basis->norm_squared();
 
     // Perform integrations
-    for (unsigned int qp=0; qp<quad_points.size(); qp++) {
+    for (int qp=0; qp<quad_points.size(); qp++) {
 
       {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("SGQuadModelEvaluator -- Polynomial Evaluation",
@@ -367,11 +367,12 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
               basis_norms, *g_qp[i]);
           }
           for (int j=0; j<outArgs.Np_sg(); j++) {
-            if (dgdp_sg[i][j] != Teuchos::null) {
-              TEUCHOS_FUNC_TIME_MONITOR("SGQuadModelEvaluator -- dg/dp Integration");
-              dgdp_sg[i][j]->sumIntoAllTerms(quad_weights[qp], quad_values[qp], 
-                basis_norms, dgdp_qp[i][j]);
-            }
+	    TEUCHOS_FUNC_TIME_MONITOR("SGQuadModelEvaluator -- dg/dp Integration");
+	    if (dgdp_sg[i][j].getMultiVector() != Teuchos::null) {
+	      dgdp_sg[i][j].getMultiVector()->sumIntoAllTerms(
+		quad_weights[qp], quad_values[qp], basis_norms, 
+		*(dgdp_qp[i][j].getMultiVector()));
+	    }
           }
         }
 

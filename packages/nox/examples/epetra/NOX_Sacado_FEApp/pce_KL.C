@@ -417,23 +417,34 @@ int main(int argc, char *argv[]) {
       else 
 	sg_solver = sg_model;
       
-      // Evaluate SG responses at SG parameters
+     // Evaluate SG responses at SG parameters
       EpetraExt::ModelEvaluator::InArgs sg_inArgs = sg_solver->createInArgs();
       EpetraExt::ModelEvaluator::OutArgs sg_outArgs = 
 	sg_solver->createOutArgs();
-      Teuchos::RCP<const Epetra_Vector> sg_p_init = sg_solver->get_p_init(0);
-      Teuchos::RCP<Epetra_Vector> sg_g = 
-	Teuchos::rcp(new Epetra_Vector(*(sg_solver->get_g_map(0))));
-      Teuchos::RCP<Epetra_Vector> sg_u = 
-	Teuchos::rcp(new Epetra_Vector(*(sg_solver->get_g_map(1))));
-      Teuchos::RCP<Epetra_MultiVector> sg_dgdp = 
-	Teuchos::rcp(new Epetra_MultiVector(*(sg_solver->get_g_map(0)),
-					    p_init->MyLength()));
-      sg_inArgs.set_p(0, sg_p_init);
-      sg_outArgs.set_g(0, sg_g);
-      sg_outArgs.set_g(1, sg_u);
-      if (SG_Method == SG_NI)
-	sg_outArgs.set_DgDp(0, 0, sg_dgdp);
+      Teuchos::RCP<const Epetra_Vector> sg_p_init = sg_solver->get_p_init(2);
+      sg_inArgs.set_p(2, sg_p_init);
+      Teuchos::RCP<Epetra_Vector> sg_g;
+      Teuchos::RCP<Epetra_Vector> sg_u;
+      Teuchos::RCP<Epetra_MultiVector> sg_dgdp;
+      if (SG_Method == SG_NI) {
+	sg_g = Teuchos::rcp(new Epetra_Vector(*(sg_solver->get_g_map(2))));
+	sg_u = Teuchos::rcp(new Epetra_Vector(*(sg_solver->get_g_map(3))));
+	sg_dgdp = 
+	  Teuchos::rcp(new Epetra_MultiVector(*(sg_solver->get_g_map(2)),
+					      p_init->MyLength()));
+	sg_outArgs.set_g(2, sg_g);
+	sg_outArgs.set_DgDp(2, 0, sg_dgdp);
+      }
+      else {
+	sg_g = Teuchos::rcp(new Epetra_Vector(*(sg_solver->get_g_map(1))));
+	sg_u = Teuchos::rcp(new Epetra_Vector(*(sg_solver->get_g_map(2))));
+	sg_dgdp = 
+	  Teuchos::rcp(new Epetra_MultiVector(*(sg_solver->get_g_map(1)),
+					      p_init->MyLength()));
+	sg_outArgs.set_g(1, sg_g);
+	sg_outArgs.set_g(2, sg_u);
+	sg_outArgs.set_DgDp(1, 0, sg_dgdp);
+      }
       sg_solver->evalModel(sg_inArgs, sg_outArgs);
 
       // Print mean and standard deviation
@@ -449,8 +460,7 @@ int main(int argc, char *argv[]) {
       utils.out() << "Mean =      " << mean << std::endl;
       utils.out() << "Std. Dev. = " << std_dev << std::endl;
 
-      if (SG_Method == SG_NI)
-	sg_dgdp->Print(std::cout);
+      sg_dgdp->Print(std::cout);
 
 #ifdef HAVE_STOKHOS_ANASAZI
       // Compute KL expansion of solution sg_u

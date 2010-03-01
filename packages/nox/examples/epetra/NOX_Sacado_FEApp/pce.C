@@ -302,7 +302,7 @@ int main(int argc, char *argv[]) {
         Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
        // Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
        // 	 Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(basis, p));
-      unsigned int sz = basis->size();
+      int sz = basis->size();
       Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk =
 	basis->computeTripleProductTensor(sz);
       Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
@@ -345,14 +345,13 @@ int main(int argc, char *argv[]) {
 	sg_param_names->push_back(ss.str());
       }
       Teuchos::Array<int> sg_p_index(1);
-      
+      sg_p_index[0] = 1;
+
       if (SG_Method == SG_AD || SG_Method == SG_ELEMENT) {
-	sg_p_index[0] = 1;
 	model = Teuchos::rcp(new FEApp::ModelEvaluator(app, free_param_names,
 						       sg_param_names));
       }
       else {
-	sg_p_index[0] = 1;
 	Teuchos::Array<int> sg_p_index_quad(1);
 	sg_p_index_quad[0] = 1;
 	Teuchos::Array<int> sg_g_index_quad(1);
@@ -393,6 +392,10 @@ int main(int argc, char *argv[]) {
       }
       Teuchos::Array<int> sg_g_index(1);
       sg_g_index[0] = 0;
+      if (SG_Method == SG_NI) {
+	sg_g_index.resize(2);
+	sg_g_index[1] = 1;
+      }
       Teuchos::RCP<Stokhos::SGModelEvaluator> sg_model =
 	Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, Cijk, 
 						   sg_p_index, sg_g_index, 
@@ -416,19 +419,30 @@ int main(int argc, char *argv[]) {
       EpetraExt::ModelEvaluator::InArgs sg_inArgs = sg_solver->createInArgs();
       EpetraExt::ModelEvaluator::OutArgs sg_outArgs = 
 	sg_solver->createOutArgs();
-      Teuchos::RCP<const Epetra_Vector> sg_p_init = sg_solver->get_p_init(0);
-      Teuchos::RCP<Epetra_Vector> sg_g = 
-	Teuchos::rcp(new Epetra_Vector(*(sg_solver->get_g_map(0))));
-      Teuchos::RCP<Epetra_Vector> sg_u = 
-	Teuchos::rcp(new Epetra_Vector(*(sg_solver->get_g_map(1))));
-      Teuchos::RCP<Epetra_MultiVector> sg_dgdp = 
-	Teuchos::rcp(new Epetra_MultiVector(*(sg_solver->get_g_map(0)),
-					    p_init->MyLength()));
-      sg_inArgs.set_p(0, sg_p_init);
-      sg_outArgs.set_g(0, sg_g);
-      sg_outArgs.set_g(1, sg_u);
-      if (SG_Method == SG_NI)
-	sg_outArgs.set_DgDp(0, 0, sg_dgdp);
+      Teuchos::RCP<const Epetra_Vector> sg_p_init = sg_solver->get_p_init(2);
+      sg_inArgs.set_p(2, sg_p_init);
+      Teuchos::RCP<Epetra_Vector> sg_g;
+      Teuchos::RCP<Epetra_Vector> sg_u;
+      Teuchos::RCP<Epetra_MultiVector> sg_dgdp;
+      if (SG_Method == SG_NI) {
+	sg_g = Teuchos::rcp(new Epetra_Vector(*(sg_solver->get_g_map(2))));
+	sg_u = Teuchos::rcp(new Epetra_Vector(*(sg_solver->get_g_map(3))));
+	sg_dgdp = 
+	  Teuchos::rcp(new Epetra_MultiVector(*(sg_solver->get_g_map(2)),
+					      p_init->MyLength()));
+	sg_outArgs.set_g(2, sg_g);
+	sg_outArgs.set_DgDp(2, 0, sg_dgdp);
+      }
+      else {
+	sg_g = Teuchos::rcp(new Epetra_Vector(*(sg_solver->get_g_map(1))));
+	sg_u = Teuchos::rcp(new Epetra_Vector(*(sg_solver->get_g_map(2))));
+	sg_dgdp = 
+	  Teuchos::rcp(new Epetra_MultiVector(*(sg_solver->get_g_map(1)),
+					      p_init->MyLength()));
+	sg_outArgs.set_g(1, sg_g);
+	sg_outArgs.set_g(2, sg_u);
+	sg_outArgs.set_DgDp(1, 0, sg_dgdp);
+      }
       sg_solver->evalModel(sg_inArgs, sg_outArgs);
 
       // Print mean and standard deviation
@@ -444,9 +458,8 @@ int main(int argc, char *argv[]) {
       utils.out() << "Mean =      " << mean << std::endl;
       utils.out() << "Std. Dev. = " << std_dev << std::endl;
 
-      if (SG_Method == SG_NI)
-	sg_dgdp->Print(std::cout);
-
+      sg_dgdp->Print(std::cout);
+      
 #ifdef HAVE_STOKHOS_ANASAZI
       // Compute KL expansion of solution sg_u
       Teuchos::RCP<EpetraExt::BlockVector> X = 
@@ -468,7 +481,7 @@ int main(int argc, char *argv[]) {
 	utils.out() << "KL Eigensolver did not converge!" << std::endl;
       Teuchos::Array<double> evals = pceKL.getEigenvalues();
       utils.out() << "KL eigenvalues = " << std::endl;
-      for (unsigned int i=0; i<evals.size(); i++)
+      for (int i=0; i<evals.size(); i++)
 	utils.out() << std::sqrt(evals[i]) << std::endl;
 
       // Evaluate expansion at a point
@@ -481,7 +494,7 @@ int main(int argc, char *argv[]) {
       Teuchos::RCP<Epetra_MultiVector> evecs = pceKL.getEigenvectors();
       Teuchos::Array< Stokhos::OrthogPolyApprox<int,double> > rvs(evals.size());
       Teuchos::Array<double> val_rvs(evals.size());
-      for (unsigned int i=0; i<evals.size(); i++) {
+      for (int i=0; i<evals.size(); i++) {
       	rvs[i].reset(basis);
 	rvs[i][0] = 0.0;
       	for (int j=1; j<sz; j++)
@@ -491,11 +504,11 @@ int main(int argc, char *argv[]) {
       
       Epetra_Vector val_kl(finalSolution->Map());
       val_kl.Update(1.0, *(X->GetBlock(0)), 0.0);
-      for (unsigned int i=0; i<evals.size(); i++)
+      for (int i=0; i<evals.size(); i++)
 	val_kl.Update(val_rvs[i], *((*evecs)(i)), 1.0);
 
       Stokhos::VectorOrthogPoly<Epetra_Vector> sg_u_poly(basis);
-      for (unsigned int i=0; i<sz; i++)
+      for (int i=0; i<sz; i++)
 	sg_u_poly.setCoeffPtr(i, X->GetBlock(i));
       Epetra_Vector val(finalSolution->Map());
       sg_u_poly.evaluate(basis_vals, val);

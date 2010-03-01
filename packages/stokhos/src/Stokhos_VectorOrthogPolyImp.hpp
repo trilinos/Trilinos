@@ -294,3 +294,36 @@ sumIntoAllTerms(const value_type& weight,
     traits_type::update(*(coeff_[i]), weight*basis_values[i]/basis_norms[i], 
 			vec);
 }
+
+template <typename coeff_type>
+std::ostream&
+Stokhos::VectorOrthogPoly<coeff_type>::
+print(std::ostream& os) const
+{
+  Teuchos::Array<ordinal_type> trm;
+  ordinal_type sz = coeff_.size();
+  os << "Stokhos::VectorOrthogPoly of size " << sz << " in basis "
+     << "\n" << basis_->getName() << ":" << std::endl;
+
+  Teuchos::RCP< const Stokhos::ProductBasis<ordinal_type, value_type> > 
+    product_basis = Teuchos::rcp_dynamic_cast< const Stokhos::ProductBasis<ordinal_type, value_type> >(basis_);
+
+  if (product_basis != Teuchos::null) {
+    for (ordinal_type i=0; i<sz; i++) {
+      trm = product_basis->getTerm(i);
+      os << "Term " << i << " (";
+      for (ordinal_type j=0; j<static_cast<ordinal_type>(trm.size())-1; j++)
+	os << trm[j] << ", ";
+      os << trm[trm.size()-1] << "):" << std::endl;
+      traits_type::print(os, *(coeff_[i]));
+    }
+  }
+  else {
+    for (ordinal_type i=0; i<sz; i++) {
+      os << "Term " << i << ":" << std::endl;
+      traits_type::print(os, *(coeff_[i]));
+    }
+  }
+
+  return os;
+}

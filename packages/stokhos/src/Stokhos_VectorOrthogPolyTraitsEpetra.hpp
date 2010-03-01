@@ -31,6 +31,7 @@
 #ifndef STOKHOS_VECTORORTHOGPOLYTRAITSEPETRA_HPP
 #define STOKHOS_VECTORORTHOGPOLYTRAITSEPETRA_HPP
 
+#include <iostream>
 #include "Stokhos_VectorOrthogPoly.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Epetra_Vector.h"
@@ -137,6 +138,12 @@ namespace Stokhos {
       vec.Update(a,x,1.0); 
     }
 
+    //! Print vector
+    static std::ostream& print(std::ostream& os, const Epetra_Vector& vec) {
+      vec.Print(os);
+      return os;
+    }
+
   };
 
   //! Specialization of VectorOrthogPolyTraits to Epetra_MultiVector coefficients
@@ -161,6 +168,13 @@ namespace Stokhos {
     static void update(Epetra_MultiVector& vec, double a, 
 		       const Epetra_MultiVector& x) {
       vec.Update(a,x,1.0); 
+    }
+
+    //! Print vector
+    static std::ostream& print(std::ostream& os, 
+			       const Epetra_MultiVector& vec) {
+      vec.Print(os);
+      return os;
     }
 
   };
@@ -193,6 +207,12 @@ namespace Stokhos {
       }
     }
 
+    //! Print matrix
+    static std::ostream& print(std::ostream& os, const Epetra_CrsMatrix& mat) {
+      mat.Print(os);
+      return os;
+    }
+
   };
 
   //! Specialization of VectorOrthogPolyTraits to Epetra_Operator coefficients
@@ -223,6 +243,12 @@ namespace Stokhos {
       VectorOrthogPolyTraits<Epetra_CrsMatrix>::update(mat, a, x);
     }
 
+    //! Print operator
+    static std::ostream& print(std::ostream& os, const Epetra_Operator& op) {
+      os << "Epetra_Operator" << std::endl;
+      return os;
+    }
+
   };
 
   /*! 
@@ -251,6 +277,14 @@ namespace Stokhos {
 		       const EpetraExt::ModelEvaluator::Derivative& x) {
       vec.getMultiVector()->Update(a,*(x.getMultiVector()),1.0); 
     }
+
+    //! Print vector
+    static std::ostream& print(std::ostream& os, 
+			       const EpetraExt::ModelEvaluator::Derivative& vec)
+      {
+	vec.getMultiVector()->Print(os);
+	return os;
+      }
 
   };
 }

@@ -112,6 +112,7 @@ Teuchos::RCP<const Epetra_Map> ENAT::NOXSolver::get_g_map(int j) const
 
   if      (j < num_g) return model->get_g_map(j);
   else if (j == num_g) return model->get_x_map();
+  return Teuchos::null;
 }
 
 Teuchos::RCP<const Epetra_Vector> ENAT::NOXSolver::get_x_init() const
@@ -150,7 +151,7 @@ EpetraExt::ModelEvaluator::OutArgs ENAT::NOXSolver::createOutArgs() const
     for (int j=0; j<num_p; j++)
       if (!model_outargs.supports(OUT_ARG_DgDp, i, j).none())
 	outArgs.setSupports(OUT_ARG_DgDp, i, j, 
-			    DerivativeSupport(DERIV_MV_BY_COL));
+			    DerivativeSupport(DERIV_TRANS_MV_BY_ROW));
 
   return outArgs;
 }
@@ -238,11 +239,11 @@ void ENAT::NOXSolver::evalModel(const InArgs& inArgs,
     // df/dp
     bool do_sens = false;
     for (int j=0; j<num_g; j++) {
-      if (!outArgs.supports(OUT_ARG_DgDp, i, j).none() && 
-	  outArgs.get_DgDp(i,j).getMultiVector() != Teuchos::null) {
+      if (!outArgs.supports(OUT_ARG_DgDp, j, i).none() && 
+	  outArgs.get_DgDp(j,i).getMultiVector() != Teuchos::null) {
 	do_sens = true;
 	Teuchos::Array<int> p_indexes = 
-	  outArgs.get_DgDp(i,j).getDerivativeMultiVector().getParamIndexes();
+	  outArgs.get_DgDp(j,i).getDerivativeMultiVector().getParamIndexes();
 	TEST_FOR_EXCEPTION(p_indexes.size() > 0, 
 			   Teuchos::Exceptions::InvalidParameter,
 			   std::endl <<
@@ -267,7 +268,7 @@ void ENAT::NOXSolver::evalModel(const InArgs& inArgs,
       // EpetraExt::ModelEvaluator::DerivativeMultiVector 
       // 	dmv_dfdp(dfdp, DERIV_MV_BY_COL, p_indexes);
       EpetraExt::ModelEvaluator::DerivativeMultiVector 
-	dmv_dfdp(dfdp, DERIV_MV_BY_COL);
+	dmv_dfdp(dfdp, DERIV_TRANS_MV_BY_ROW);
       model_outargs.set_DfDp(i,dmv_dfdp);
     }
   }
@@ -284,31 +285,37 @@ void ENAT::NOXSolver::evalModel(const InArgs& inArgs,
     bool do_sens = false;
     for (int i=0; i<num_p; i++) {
       Teuchos::RCP<Epetra_MultiVector> dgdp_out;
-      if (!outArgs.supports(OUT_ARG_DgDp, i, j).none()) {
-	dgdp_out = outArgs.get_DgDp(i,j).getMultiVector();
+      if (!outArgs.supports(OUT_ARG_DgDp, j, i).none()) {
+	dgdp_out = outArgs.get_DgDp(j,i).getMultiVector();
 	if (dgdp_out != Teuchos::null)
 	  do_sens = true;
       }
     }
     if (do_sens) {
-      Teuchos::RCP<const Epetra_Map> g_map = model->get_g_map(j);
-      Teuchos::RCP<Epetra_MultiVector> dgdx = 
-	Teuchos::rcp(new Epetra_MultiVector(finalSolution->Map(),
-					    g_map->NumGlobalElements()));
-      model_outargs.set_DgDx(j,dgdx);
+      if (model_outargs.supports(OUT_ARG_DgDx,j).supports(DERIV_LINEAR_OP)) {
+	Teuchos::RCP<Epetra_Operator> dgdx_op = model->create_DgDx_op(j);
+	model_outargs.set_DgDx(j,dgdx_op);
+      }
+      else { 
+	Teuchos::RCP<const Epetra_Map> g_map = model->get_g_map(j);
+	Teuchos::RCP<Epetra_MultiVector> dgdx = 
+	  Teuchos::rcp(new Epetra_MultiVector(finalSolution->Map(),
+					      g_map->NumGlobalElements()));
+	model_outargs.set_DgDx(j,dgdx);
+      }
 
       for (int i=0; i<num_p; i++) {
 	// dg/dp
-	if (!outArgs.supports(OUT_ARG_DgDp, i, j).none()) {
+	if (!outArgs.supports(OUT_ARG_DgDp, j, i).none()) {
 	  Teuchos::RCP<Epetra_MultiVector> dgdp_out = 
-	    outArgs.get_DgDp(i,j).getMultiVector();
+	    outArgs.get_DgDp(j,i).getMultiVector();
 	  if (dgdp_out != Teuchos::null) {
 	    dgdp_out->PutScalar(0.0);
 	    Teuchos::Array<int> p_indexes = 
-	      outArgs.get_DgDp(i,j).getDerivativeMultiVector().getParamIndexes();
+	      outArgs.get_DgDp(j,i).getDerivativeMultiVector().getParamIndexes();
 	    EpetraExt::ModelEvaluator::DerivativeMultiVector 
-	      dmv_dgdp(dgdp_out, DERIV_MV_BY_COL,p_indexes);
-	    model_outargs.set_DgDp(i,j,dmv_dgdp);
+	      dmv_dgdp(dgdp_out, DERIV_TRANS_MV_BY_ROW, p_indexes);
+	    model_outargs.set_DgDp(j,i,dmv_dgdp);
 	  }
 	}
       }
@@ -344,13 +351,22 @@ void ENAT::NOXSolver::evalModel(const InArgs& inArgs,
 	// In this case just interchange the order of dgdx and dxdp
 	// We should really probably check what the underlying ME does
 	for (int j=0; j<num_g; j++) {
-	  if (!outArgs.supports(OUT_ARG_DgDp, i, j).none()) {
+	  if (!outArgs.supports(OUT_ARG_DgDp, j, i).none()) {
 	    Teuchos::RCP<Epetra_MultiVector> dgdp_out = 
-	      outArgs.get_DgDp(i,j).getMultiVector();
+	      outArgs.get_DgDp(j,i).getMultiVector();
 	    if (dgdp_out != Teuchos::null) {
-	      Teuchos::RCP<Epetra_MultiVector> dgdx = 
-		model_outargs.get_DgDx(j).getMultiVector();
-	      dgdp_out->Multiply('T', 'N', 1.0, *dgdx, *dxdp, 1.0);
+	      if (model_outargs.supports(OUT_ARG_DgDx,j).supports(DERIV_LINEAR_OP)) {
+		Teuchos::RCP<Epetra_Operator> dgdx = 
+		  model_outargs.get_DgDx(j).getLinearOp();
+		Epetra_MultiVector tmp(*dgdp_out);
+		dgdx->Apply(*dxdp, tmp);
+		dgdp_out->Update(1.0, tmp, 1.0);
+	      }
+	      else {
+		Teuchos::RCP<Epetra_MultiVector> dgdx = 
+		  model_outargs.get_DgDx(j).getMultiVector();
+		dgdp_out->Multiply('T', 'N', 1.0, *dgdx, *dxdp, 1.0);
+	      }
 	    }
 	  }
 	}

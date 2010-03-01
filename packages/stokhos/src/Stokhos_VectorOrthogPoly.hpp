@@ -31,6 +31,7 @@
 #ifndef STOKHOS_VECTORORTHOGPOLY_HPP
 #define STOKHOS_VECTORORTHOGPOLY_HPP
 
+#include <iostream>
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
 #include "Stokhos_OrthogPolyBasis.hpp"
@@ -195,6 +196,9 @@ namespace Stokhos {
 			 const Teuchos::Array<value_type>& basis_norms,
 			 const coeff_type& vec);
 
+    //! Print polynomial
+    std::ostream& print(std::ostream& os) const;
+
   protected:
 
     //! Basis
@@ -207,6 +211,12 @@ namespace Stokhos {
     Teuchos::Array< Teuchos::RCP<coeff_type> > coeff_;
 
   }; // class VectorOrthogPoly
+
+  template <typename coeff_type>
+  std::ostream& operator << (std::ostream& os, 
+			     const VectorOrthogPoly<coeff_type>& vec) {
+    return vec.print(os);
+  }
 
 } // end namespace Stokhos
 

@@ -379,6 +379,75 @@ public:
     DerivativeMultiVector dmv_;
   };
 
+  /** \brief Simple aggregate class for a derivative object represented as a
+   * column-wise multi-vector or its transpose as a row-wise multi-vector.
+   */
+  class SGDerivativeMultiVector {
+  public:
+    /** \brief . */
+    SGDerivativeMultiVector() {}
+    /** \brief . */
+    SGDerivativeMultiVector(
+      const Teuchos::RefCountPtr< Stokhos::VectorOrthogPoly<Epetra_MultiVector> > &mv
+      ,const EDerivativeMultiVectorOrientation orientation = DERIV_MV_BY_COL
+      ,const Teuchos::Array<int> &paramIndexes = Teuchos::Array<int>()
+      ) : mv_(mv), orientation_(orientation), paramIndexes_(paramIndexes) {}
+    /** \brief . */
+    void changeOrientation( const EDerivativeMultiVectorOrientation orientation )
+      { orientation_ = orientation; };
+    /** \brief . */
+    Teuchos::RefCountPtr< Stokhos::VectorOrthogPoly<Epetra_MultiVector> > getMultiVector() const
+      { return mv_; }
+    /** \brief . */
+    EDerivativeMultiVectorOrientation getOrientation() const
+      { return orientation_; }
+    /** \brief . */
+    const Teuchos::Array<int>& getParamIndexes() const
+      { return paramIndexes_; }
+  private:
+    Teuchos::RefCountPtr< Stokhos::VectorOrthogPoly<Epetra_MultiVector> > mv_;
+    EDerivativeMultiVectorOrientation orientation_;
+    Teuchos::Array<int> paramIndexes_;
+  };
+
+  /** \brief Simple aggregate class that stores a derivative object
+   * as a general linear operator or as a multi-vector.
+   */
+  class SGDerivative {
+  public:
+    /** \brief . */
+    SGDerivative() {}
+    /** \brief . */
+    SGDerivative( const Teuchos::RefCountPtr< Stokhos::VectorOrthogPoly<Epetra_Operator> > &lo )
+      : lo_(lo) {}
+     /** \brief . */
+    SGDerivative(
+      const Teuchos::RefCountPtr< Stokhos::VectorOrthogPoly<Epetra_MultiVector> > &mv
+      ,const EDerivativeMultiVectorOrientation orientation = DERIV_MV_BY_COL
+      ) : dmv_(mv,orientation) {}
+   /** \brief . */
+    SGDerivative( const SGDerivativeMultiVector &dmv )
+      : dmv_(dmv) {}
+    /** \brief . */
+    Teuchos::RefCountPtr< Stokhos::VectorOrthogPoly<Epetra_Operator> > getLinearOp() const
+      { return lo_; }
+    /** \brief . */
+    Teuchos::RefCountPtr< Stokhos::VectorOrthogPoly<Epetra_MultiVector> > getMultiVector() const
+      { return dmv_.getMultiVector(); }
+    /** \brief . */
+    EDerivativeMultiVectorOrientation getMultiVectorOrientation() const
+      { return dmv_.getOrientation(); }
+    /** \brief . */
+    SGDerivativeMultiVector getDerivativeMultiVector() const
+      { return dmv_; }
+    /** \brief . */
+    bool isEmpty() const
+        { return !lo_.get() && !dmv_.getMultiVector().get(); }
+  private:
+    Teuchos::RefCountPtr< Stokhos::VectorOrthogPoly<Epetra_Operator> > lo_;
+    SGDerivativeMultiVector dmv_;
+  };
+
   /** \brief.  */
   enum EOutArgsMembers {
     OUT_ARG_f
@@ -411,6 +480,21 @@ public:
   };
 
   /** \brief . */
+  enum EOutArgsDfDp_sg {
+    OUT_ARG_DfDp_sg   ///< .
+  };
+
+  /** \brief . */
+  enum EOutArgsDgDx_dot_sg {
+    OUT_ARG_DgDx_dot_sg   ///< .
+  };
+
+  /** \brief . */
+  enum EOutArgsDgDx_sg {
+    OUT_ARG_DgDx_sg   ///< .
+  };
+
+  /** \brief . */
   enum EOutArgsDgDp_sg {
     OUT_ARG_DgDp_sg   ///< .
   };
@@ -424,9 +508,6 @@ public:
 
     //! Short-hand for stochastic Galerkin operator type
     typedef Teuchos::RefCountPtr<Stokhos::VectorOrthogPoly<Epetra_Operator> > sg_operator_t;
-
-    //! Short-hand for stochastic Galerkin derivative type
-    typedef Teuchos::RefCountPtr<Stokhos::VectorOrthogPoly<Derivative> > sg_deriv_t;
 
     /** \brief. */
     OutArgs();
@@ -450,6 +531,12 @@ public:
     const DerivativeSupport& supports(EOutArgsDgDx arg, int j) const;
     /** \brief <tt>0 <= j && j < Ng()</tt> and <tt>0 <= l && l < Np()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDgDp arg, int j, int l) const;
+    /** \brief <tt>0 <= l && l < Np_sg()</tt>.  */
+    const DerivativeSupport& supports(EOutArgsDfDp_sg arg, int l) const;
+    /** \brief <tt>0 <= j && j < Ng_sg()</tt>.  */
+    const DerivativeSupport& supports(EOutArgsDgDx_dot_sg arg, int j) const;
+    /** \brief <tt>0 <= j && j < Ng_sg()</tt>.  */
+    const DerivativeSupport& supports(EOutArgsDgDx_sg arg, int j) const;
     /** \brief <tt>0 <= j && j < Ng_sg()</tt> and <tt>0 <= l && l < Np_sg()</tt>.  */
     const DerivativeSupport& supports(EOutArgsDgDp_sg arg, int j, int l) const;
     /** \brief. */
@@ -490,11 +577,23 @@ public:
     /** \brief . */
     DerivativeProperties get_DfDp_properties(int l) const;
     /** \brief .  */
+    void set_DfDp_sg(int l,  const SGDerivative &DfDp_sg_l);
+    /** \brief .  */
+    SGDerivative get_DfDp_sg(int l) const;
+    /** \brief . */
+    DerivativeProperties get_DfDp_sg_properties(int l) const;
+    /** \brief .  */
     void set_DgDx_dot(int j, const Derivative &DgDx_dot_j);
     /** \brief .  */
     Derivative get_DgDx_dot(int j) const;
     /** \brief . */
     DerivativeProperties get_DgDx_dot_properties(int j) const;
+    /** \brief .  */
+    void set_DgDx_dot_sg(int j, const SGDerivative &DgDx_dot_j);
+    /** \brief .  */
+    SGDerivative get_DgDx_dot_sg(int j) const;
+    /** \brief . */
+    DerivativeProperties get_DgDx_dot_sg_properties(int j) const;
     /** \brief .  */
     void set_DgDx(int j, const Derivative &DgDx_j);
     /** \brief .  */
@@ -502,15 +601,21 @@ public:
     /** \brief . */
     DerivativeProperties get_DgDx_properties(int j) const;
     /** \brief .  */
+    void set_DgDx_sg(int j, const SGDerivative &DgDx_j);
+    /** \brief .  */
+    SGDerivative get_DgDx_sg(int j) const;
+    /** \brief . */
+    DerivativeProperties get_DgDx_sg_properties(int j) const;
+    /** \brief .  */
     void set_DgDp( int j, int l, const Derivative &DgDp_j_l );
     /** \brief .  */
     Derivative get_DgDp(int j, int l) const;
     /** \brief . */
     DerivativeProperties get_DgDp_properties(int j, int l) const;
     /** \brief .  */
-    void set_DgDp_sg( int j, int l, const sg_deriv_t &DgDp_sg_j_l );
+    void set_DgDp_sg( int j, int l, const SGDerivative &DgDp_sg_j_l );
     /** \brief .  */
-    sg_deriv_t get_DgDp_sg(int j, int l) const;
+    SGDerivative get_DgDp_sg(int j, int l) const;
     /** \brief . */
     DerivativeProperties get_DgDp_sg_properties(int j, int l) const;
 
@@ -540,6 +645,12 @@ public:
     /** \brief . */
     void _setSupports( EOutArgsDgDp arg, int j, int l, const DerivativeSupport& );
     /** \brief . */
+    void _setSupports( EOutArgsDfDp_sg arg, int l, const DerivativeSupport& );
+    /** \brief . */
+    void _setSupports( EOutArgsDgDx_dot_sg arg, int j, const DerivativeSupport& );
+    /** \brief . */
+    void _setSupports( EOutArgsDgDx_sg arg, int j, const DerivativeSupport& );
+    /** \brief . */
     void _setSupports( EOutArgsDgDp_sg arg, int j, int l, const DerivativeSupport& );
     /** \brief . */
     void _set_W_properties( const DerivativeProperties &W_properties );
@@ -553,12 +664,19 @@ public:
     /** \brief . */
     void _set_DgDp_properties( int j, int l, const DerivativeProperties &properties );
     /** \brief . */
+    void _set_DfDp_sg_properties( int l, const DerivativeProperties &properties );
+    /** \brief . */
+    void _set_DgDx_dot_sg_properties( int j, const DerivativeProperties &properties );
+    /** \brief . */
+    void _set_DgDx_sg_properties( int j, const DerivativeProperties &properties );
+    /** \brief . */
     void _set_DgDp_sg_properties( int j, int l, const DerivativeProperties &properties );
   private:
     // types
     typedef Teuchos::Array<Evaluation<Epetra_Vector> > g_t;
     typedef Teuchos::Array<sg_vector_t > g_sg_t;
     typedef Teuchos::Array<Derivative> deriv_t;
+    typedef Teuchos::Array<SGDerivative> sg_deriv_t;
     typedef Teuchos::Array<DerivativeProperties> deriv_properties_t;
     typedef Teuchos::Array<DerivativeSupport> supports_t;
     // data
@@ -568,7 +686,10 @@ public:
     supports_t supports_DgDx_dot_; // Ng
     supports_t supports_DgDx_; // Ng
     supports_t supports_DgDp_; // Ng x Np
-    supports_t supports_DgDp_sg_; // Ng_sg x Np
+    supports_t supports_DfDp_sg_; // Np_sg
+    supports_t supports_DgDx_dot_sg_; // Ng_sg
+    supports_t supports_DgDx_sg_; // Ng_sg
+    supports_t supports_DgDp_sg_; // Ng_sg x Np_sg
     Evaluation<Epetra_Vector> f_;
     g_t g_;
     g_sg_t g_sg_;
@@ -587,15 +708,23 @@ public:
     Teuchos::RefCountPtr<Teuchos::Polynomial<Epetra_Vector> > f_poly_;
     sg_vector_t f_sg_;
     sg_operator_t W_sg_;
-    Teuchos::Array<sg_deriv_t> DgDp_sg_; // Ng_sg x Np_sg
+    sg_deriv_t DfDp_sg_; // Np_sg
+    deriv_properties_t DfDp_sg_properties_; // Np_sg
+    sg_deriv_t DgDx_dot_sg_; // Ng_sg
+    sg_deriv_t DgDx_sg_; // Ng_sg
+    deriv_properties_t DgDx_dot_sg_properties_; // Ng_sg
+    deriv_properties_t DgDx_sg_properties_; // Ng_sg
+    sg_deriv_t DgDp_sg_; // Ng_sg x Np_sg
     deriv_properties_t DgDp_sg_properties_; // Ng_sg x Np_sg
-    int Np_sg_;
     // functions
     void assert_supports(EOutArgsMembers arg) const;
     void assert_supports(EOutArgsDfDp arg, int l) const;
     void assert_supports(EOutArgsDgDx_dot arg, int j) const;
     void assert_supports(EOutArgsDgDx arg, int j) const;
     void assert_supports(EOutArgsDgDp arg, int j, int l) const;
+    void assert_supports(EOutArgsDfDp_sg arg, int l) const;
+    void assert_supports(EOutArgsDgDx_dot_sg arg, int j) const;
+    void assert_supports(EOutArgsDgDx_sg arg, int j) const;
     void assert_supports(EOutArgsDgDp_sg arg, int j, int l) const;
     void assert_l(int l) const;
     void assert_j(int j) const;
@@ -777,6 +906,12 @@ protected:
     /** \brief . */
     void setSupports(EOutArgsDgDp arg, int j, int l, const DerivativeSupport& );
     /** \brief . */
+    void setSupports(EOutArgsDfDp_sg arg, int l, const DerivativeSupport& );
+    /** \brief . */
+    void setSupports(EOutArgsDgDx_dot_sg arg, int j, const DerivativeSupport& );
+    /** \brief . */
+    void setSupports(EOutArgsDgDx_sg arg, int j, const DerivativeSupport& );
+    /** \brief . */
     void setSupports(EOutArgsDgDp_sg arg, int j, int l, const DerivativeSupport& );
     /** \brief . */
     void set_W_properties( const DerivativeProperties &properties );
@@ -789,6 +924,12 @@ protected:
     void set_DgDx_properties( int j, const DerivativeProperties &properties );
     /** \brief . */
     void set_DgDp_properties( int j, int l, const DerivativeProperties &properties );
+    /** \brief . */
+    void set_DfDp_sg_properties( int l, const DerivativeProperties &properties );
+    /** \brief . */
+    void set_DgDx_dot_sg_properties( int j, const DerivativeProperties &properties );
+    /** \brief . */
+    void set_DgDx_sg_properties( int j, const DerivativeProperties &properties );
     /** \brief . */
     void set_DgDp_sg_properties( int j, int l, const DerivativeProperties &properties );
   };
@@ -1019,7 +1160,7 @@ int ModelEvaluator::OutArgs::Ng() const
 inline
 int ModelEvaluator::OutArgs::Np_sg() const
 {
-  return Np_sg_;
+  return DfDp_sg_.size();
 }
 
 inline
@@ -1106,6 +1247,29 @@ ModelEvaluator::OutArgs::get_DfDp_properties(int l) const
 }
 
 inline
+void ModelEvaluator::OutArgs::set_DfDp_sg( int l, const SGDerivative &DfDp_sg_l )
+{
+  assert_supports(OUT_ARG_DfDp_sg,l);
+  DfDp_sg_[l] = DfDp_sg_l;
+}
+
+inline
+ModelEvaluator::SGDerivative
+ModelEvaluator::OutArgs::get_DfDp_sg(int l) const
+{
+  assert_supports(OUT_ARG_DfDp_sg,l);
+  return DfDp_sg_[l];
+}
+
+inline
+ModelEvaluator::DerivativeProperties
+ModelEvaluator::OutArgs::get_DfDp_sg_properties(int l) const
+{
+  assert_supports(OUT_ARG_DfDp_sg,l);
+  return DfDp_sg_properties_[l];
+}
+
+inline
 void ModelEvaluator::OutArgs::set_DgDx_dot( int j, const Derivative &DgDx_dot_j )
 {
   assert_supports(OUT_ARG_DgDx_dot,j);
@@ -1126,6 +1290,29 @@ ModelEvaluator::OutArgs::get_DgDx_dot_properties(int j) const
 {
   assert_supports(OUT_ARG_DgDx_dot,j);
   return DgDx_dot_properties_[j];
+}
+
+inline
+void ModelEvaluator::OutArgs::set_DgDx_dot_sg( int j, const SGDerivative &DgDx_dot_sg_j )
+{
+  assert_supports(OUT_ARG_DgDx_dot_sg,j);
+  DgDx_dot_sg_[j] = DgDx_dot_sg_j;
+}
+
+inline
+ModelEvaluator::SGDerivative
+ModelEvaluator::OutArgs::get_DgDx_dot_sg(int j) const
+{
+  assert_supports(OUT_ARG_DgDx_dot_sg,j);
+  return DgDx_dot_sg_[j];
+}
+
+inline
+ModelEvaluator::DerivativeProperties
+ModelEvaluator::OutArgs::get_DgDx_dot_sg_properties(int j) const
+{
+  assert_supports(OUT_ARG_DgDx_dot_sg,j);
+  return DgDx_dot_sg_properties_[j];
 }
 
 inline
@@ -1152,6 +1339,29 @@ ModelEvaluator::OutArgs::get_DgDx_properties(int j) const
 }
 
 inline
+void ModelEvaluator::OutArgs::set_DgDx_sg( int j, const SGDerivative &DgDx_sg_j )
+{
+  assert_supports(OUT_ARG_DgDx_sg,j);
+  DgDx_sg_[j] = DgDx_sg_j;
+}
+
+inline
+ModelEvaluator::SGDerivative
+ModelEvaluator::OutArgs::get_DgDx_sg(int j) const
+{
+  assert_supports(OUT_ARG_DgDx_sg,j);
+  return DgDx_sg_[j];
+}
+
+inline
+ModelEvaluator::DerivativeProperties
+ModelEvaluator::OutArgs::get_DgDx_sg_properties(int j) const
+{
+  assert_supports(OUT_ARG_DgDx_sg,j);
+  return DgDx_sg_properties_[j];
+}
+
+inline
 void ModelEvaluator::OutArgs::set_DgDp( int j, int l, const Derivative &DgDp_j_l )
 {
   assert_supports(OUT_ARG_DgDp,j,l);
@@ -1175,14 +1385,14 @@ ModelEvaluator::OutArgs::get_DgDp_properties(int j, int l) const
 }
 
 inline
-void ModelEvaluator::OutArgs::set_DgDp_sg( int j, int l, const ModelEvaluator::OutArgs::sg_deriv_t &DgDp_sg_j_l )
+void ModelEvaluator::OutArgs::set_DgDp_sg( int j, int l, const SGDerivative &DgDp_sg_j_l )
 {
   assert_supports(OUT_ARG_DgDp_sg,j,l);
   DgDp_sg_[ j*Np_sg() + l ] = DgDp_sg_j_l;
 }
 
 inline
-ModelEvaluator::OutArgs::sg_deriv_t
+ModelEvaluator::SGDerivative
 ModelEvaluator::OutArgs::get_DgDp_sg(int j, int l) const
 {
   assert_supports(OUT_ARG_DgDp_sg,j,l);
@@ -1282,6 +1492,18 @@ void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsDgDp arg, int j, int l, 
 { this->_setSupports(arg,j,l,new_supports); }
 
 inline
+void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsDfDp_sg arg, int l, const DerivativeSupport& new_supports )
+{ this->_setSupports(arg,l,new_supports); }
+
+inline
+void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsDgDx_dot_sg arg, int j, const DerivativeSupport& new_supports )
+{ this->_setSupports(arg,j,new_supports); }
+
+inline
+void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsDgDx_sg arg, int j, const DerivativeSupport& new_supports )
+{ this->_setSupports(arg,j,new_supports); }
+
+inline
 void ModelEvaluator::OutArgsSetup::setSupports( EOutArgsDgDp_sg arg, int j, int l, const DerivativeSupport& new_supports )
 { this->_setSupports(arg,j,l,new_supports); }
 
@@ -1314,6 +1536,24 @@ inline
 void ModelEvaluator::OutArgsSetup::set_DgDp_properties( int j, int l, const DerivativeProperties &properties )
 {
   this->_set_DgDp_properties(j,l,properties);
+}
+
+inline
+void ModelEvaluator::OutArgsSetup::set_DfDp_sg_properties( int l, const DerivativeProperties &properties )
+{
+  this->_set_DfDp_sg_properties(l,properties);
+}
+
+inline
+void ModelEvaluator::OutArgsSetup::set_DgDx_dot_sg_properties( int j, const DerivativeProperties &properties )
+{
+  this->_set_DgDx_dot_sg_properties(j,properties);
+}
+
+inline
+void ModelEvaluator::OutArgsSetup::set_DgDx_sg_properties( int j, const DerivativeProperties &properties )
+{
+  this->_set_DgDx_sg_properties(j,properties);
 }
 
 inline

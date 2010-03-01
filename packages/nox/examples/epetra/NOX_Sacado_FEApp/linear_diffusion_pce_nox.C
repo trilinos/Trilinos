@@ -323,10 +323,10 @@ int main(int argc, char *argv[]) {
       sg_model->createOutArgs();
     Teuchos::RCP<const Epetra_Vector> sg_p = sg_model->get_p_init(0);
     Teuchos::RCP<Epetra_Vector> sg_g = 
-      Teuchos::rcp(new Epetra_Vector(*(sg_model->get_g_map(0))));
+      Teuchos::rcp(new Epetra_Vector(*(sg_model->get_g_map(1))));
     sg_inArgs.set_p(0, sg_p);
     sg_inArgs.set_x(Teuchos::rcp(&finalSolution,false));
-    sg_outArgs.set_g(0, sg_g);
+    sg_outArgs.set_g(1, sg_g);
     sg_model->evalModel(sg_inArgs, sg_outArgs);
 
     // Print mean and standard deviation

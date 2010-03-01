@@ -33,14 +33,18 @@
 #include "Stokhos_MatrixFreeEpetraOp.hpp"
 
 Stokhos::MatrixFreeEpetraOp::MatrixFreeEpetraOp(
- const Teuchos::RCP<const Epetra_Map>& base_map_,
- const Teuchos::RCP<const Epetra_Map>& sg_map_,
+ const Teuchos::RCP<const Epetra_Map>& domain_base_map_,
+ const Teuchos::RCP<const Epetra_Map>& range_base_map_,
+ const Teuchos::RCP<const Epetra_Map>& domain_sg_map_,
+ const Teuchos::RCP<const Epetra_Map>& range_sg_map_,
  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis_,
  const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk_,
  const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops_) 
   : label("Stokhos Matrix Free Operator"),
-    base_map(base_map_),
-    sg_map(sg_map_),
+    domain_base_map(domain_base_map_),
+    range_base_map(range_base_map_),
+    domain_sg_map(domain_sg_map_),
+    range_sg_map(range_sg_map_),
     sg_basis(sg_basis_),
     Cijk(Cijk_),
     block_ops(ops_),
@@ -50,9 +54,8 @@ Stokhos::MatrixFreeEpetraOp::MatrixFreeEpetraOp(
     input_block(expansion_size),
     result_block(expansion_size),
     tmp(),
-    tmp2()
+    tmp_trans()
 {
-  tmp2 = Teuchos::rcp(new Epetra_MultiVector(*base_map, expansion_size));
 }
 
 Stokhos::MatrixFreeEpetraOp::~MatrixFreeEpetraOp()
@@ -66,17 +69,23 @@ Stokhos::MatrixFreeEpetraOp::reset(
   block_ops = ops;
 }
 
-const Stokhos::VectorOrthogPoly<Epetra_Operator>&
+Teuchos::RCP<const Stokhos::VectorOrthogPoly<Epetra_Operator> >
+Stokhos::MatrixFreeEpetraOp::getOperatorBlocks() const
+{
+  return block_ops;
+}
+
+Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >
 Stokhos::MatrixFreeEpetraOp::getOperatorBlocks()
 {
-  return *block_ops;
+  return block_ops;
 }
 
 int 
 Stokhos::MatrixFreeEpetraOp::SetUseTranspose(bool UseTranspose) 
 {
   useTranspose = UseTranspose;
-  for (unsigned int i=0; i<num_blocks; i++)
+  for (int i=0; i<num_blocks; i++)
     (*block_ops)[i].SetUseTranspose(useTranspose);
 
   return 0;
@@ -98,18 +107,38 @@ Stokhos::MatrixFreeEpetraOp::Apply(const Epetra_MultiVector& Input,
   // Initialize
   Result.PutScalar(0.0);
 
+  const Epetra_Map* input_base_map = domain_base_map.get();
+  const Epetra_Map* result_base_map = range_base_map.get();
+  if (useTranspose == true) {
+    input_base_map = range_base_map.get();
+    result_base_map = domain_base_map.get();
+  }
+
   // Allocate temporary storage
   int m = Input.NumVectors();
-  if (tmp == Teuchos::null || tmp->NumVectors() != m)
-    tmp = Teuchos::rcp(new Epetra_MultiVector(*base_map, m));
+  if (useTranspose == false && 
+      (tmp == Teuchos::null || tmp->NumVectors() != m*expansion_size))
+    tmp = Teuchos::rcp(new Epetra_MultiVector(*result_base_map, 
+					      m*expansion_size));
+  else if (useTranspose == true && 
+	   (tmp_trans == Teuchos::null || 
+	    tmp_trans->NumVectors() != m*expansion_size))
+    tmp_trans = Teuchos::rcp(new Epetra_MultiVector(*result_base_map, 
+						    m*expansion_size));
+  Epetra_MultiVector *tmp_result;
+  if (useTranspose == false)
+    tmp_result = tmp.get();
+  else
+    tmp_result = tmp_trans.get();
 
   // Extract blocks
-  EpetraExt::BlockMultiVector sg_input(View, *base_map, *input);
-  EpetraExt::BlockMultiVector sg_result(View, *base_map, Result);
-  for (unsigned int i=0; i<expansion_size; i++) {
+  EpetraExt::BlockMultiVector sg_input(View, *input_base_map, *input);
+  EpetraExt::BlockMultiVector sg_result(View, *result_base_map, Result);
+  for (int i=0; i<expansion_size; i++) {
     input_block[i] = sg_input.GetBlock(i);
     result_block[i] = sg_result.GetBlock(i);
   }
+  int N = input_block[0]->MyLength();
 
   // Apply block SG operator via
   // w_i = 
@@ -117,27 +146,34 @@ Stokhos::MatrixFreeEpetraOp::Apply(const Epetra_MultiVector& Input,
   // for i=0,...,P where P = expansion_size, L = num_blocks, w_j is the jth 
   // input block, w_i is the ith result block, and J_k is the kth block operator
   const Teuchos::Array<double>& norms = sg_basis->norm_squared();
-  for (unsigned int k=0; k<num_blocks; k++) {
-    unsigned int nj = Cijk->num_j(k);
+  for (int k=0; k<num_blocks; k++) {
+    int nj = Cijk->num_j(k);
     const Teuchos::Array<int>& j_indices = Cijk->Jindices(k);
-    Teuchos::Array<double*> j_ptr(nj);
-    for (unsigned int l=0; l<nj; l++)
-      j_ptr[l] = input_block[j_indices[l]]->Values();
-    Epetra_MultiVector input_tmp(View, *base_map, &j_ptr[0], nj);
-    Epetra_MultiVector result_tmp(View, *tmp2, const_cast<int*>(&j_indices[0]), nj);
+    Teuchos::Array<double*> j_ptr(nj*m);
+    Teuchos::Array<int> mj_indices(nj*m);
+    for (int l=0; l<nj; l++) {
+      for (int mm=0; mm<m; mm++) {
+	j_ptr[l*m+mm] = input_block[j_indices[l]]->Values()+mm*N;
+	mj_indices[l*m+mm] = j_indices[l]*m+mm;
+      }
+    }
+    Epetra_MultiVector input_tmp(View, *input_base_map, &j_ptr[0], nj*m);
+    Epetra_MultiVector result_tmp(View, *tmp_result, &mj_indices[0], nj*m);
     (*block_ops)[k].Apply(input_tmp, result_tmp);
-    for (unsigned int l=0; l<nj; l++) {
+    for (int l=0; l<nj; l++) {
       const Teuchos::Array<int>& i_indices = Cijk->Iindices(k,l);
       const Teuchos::Array<double>& c_values = Cijk->values(k,l);
-      for (unsigned int i=0; i<i_indices.size(); i++) {
+      for (int i=0; i<i_indices.size(); i++) {
   	int ii = i_indices[i];
-  	result_block[ii]->Update(c_values[i]/norms[ii], *result_tmp(l), 1.0);
+	for (int mm=0; mm<m; mm++)
+	  (*result_block[ii])(mm)->Update(c_values[i]/norms[ii], 
+					  *result_tmp(l*m+mm), 1.0);
       }
     }
   }
 
   // Destroy blocks
-  for (unsigned int i=0; i<expansion_size; i++) {
+  for (int i=0; i<expansion_size; i++) {
     input_block[i] = Teuchos::null;
     result_block[i] = Teuchos::null;
   }
@@ -184,16 +220,16 @@ Stokhos::MatrixFreeEpetraOp::HasNormInf() const
 const Epetra_Comm & 
 Stokhos::MatrixFreeEpetraOp::Comm() const
 {
-  return base_map->Comm();
+  return domain_base_map->Comm();
 }
 const Epetra_Map& 
 Stokhos::MatrixFreeEpetraOp::OperatorDomainMap() const
 {
-  return *sg_map;
+  return *domain_sg_map;
 }
 
 const Epetra_Map& 
 Stokhos::MatrixFreeEpetraOp::OperatorRangeMap() const
 {
-  return *sg_map;
+  return *range_sg_map;
 }

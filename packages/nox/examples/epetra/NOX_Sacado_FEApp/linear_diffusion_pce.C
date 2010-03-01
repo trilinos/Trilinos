@@ -252,10 +252,10 @@ int main(int argc, char *argv[]) {
 
     // Compute new residual & response function
     Teuchos::RCP<Epetra_Vector> sg_g = 
-      Teuchos::rcp(new Epetra_Vector(*(sg_model->get_g_map(0))));
+      Teuchos::rcp(new Epetra_Vector(*(sg_model->get_g_map(1))));
     EpetraExt::ModelEvaluator::OutArgs sg_outArgs2 = sg_model->createOutArgs();
     sg_outArgs2.set_f(sg_f);
-    sg_outArgs2.set_g(0, sg_g);
+    sg_outArgs2.set_g(1, sg_g);
     sg_model->evalModel(sg_inArgs, sg_outArgs2);
 
     // Print initial residual norm

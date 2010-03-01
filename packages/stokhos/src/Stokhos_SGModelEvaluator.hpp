@@ -38,7 +38,6 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "EpetraExt_BlockVector.h"
 #include "Stokhos_OrthogPolyBasis.hpp"
 #include "Stokhos_VectorOrthogPoly.hpp"
 #include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
@@ -115,6 +114,12 @@ namespace Stokhos {
     //! Create preconditioner operator
     Teuchos::RCP<Epetra_Operator> create_M() const;
 
+    //! Create SG operator representing dg/dxdot
+    Teuchos::RefCountPtr<Epetra_Operator> create_DgDx_dot_op(int j) const;
+
+    //! Create SG operator representing dg/dx
+    Teuchos::RefCountPtr<Epetra_Operator> create_DgDx_op(int j) const;
+
     //! Create InArgs
     InArgs createInArgs() const;
 
@@ -177,8 +182,11 @@ namespace Stokhos {
     //! Block SG residual map
     Teuchos::RCP<const Epetra_Map> sg_f_map;
 
-    //! Number of stochastic parameter vectors
+    //! Number of parameter vectors of underlying model evaluator
     int num_p;
+
+    //! Number of stochastic parameter vectors
+    int num_p_sg;
 
     //! Block SG parameter map
     Teuchos::Array< Teuchos::RCP<const Epetra_Map> > sg_p_map;
@@ -186,8 +194,11 @@ namespace Stokhos {
     //! SG coefficient parameter names
     Teuchos::Array< Teuchos::RCP< Teuchos::Array<std::string> > > sg_p_names;
 
-    //! Number of stochastic response vectors
+    //! Number of response vectors of underlying model evaluator
     int num_g;
+
+    //! Number of stochastic response vectors
+    int num_g_sg;
 
     //! Block SG response map
     Teuchos::Array< Teuchos::RCP<const Epetra_Map> > sg_g_map;
@@ -213,8 +224,17 @@ namespace Stokhos {
     //! g stochastic Galerkin components
     mutable Teuchos::Array< Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Vector> > > g_sg_blocks;
 
+    //! df/dp stochastic Galerkin components
+    mutable Teuchos::Array< Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_MultiVector> > > dfdp_sg_blocks;
+
+    //! dg/dxdot stochastic Galerkin components
+    mutable Teuchos::Array< Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_MultiVector> > > dgdx_dot_sg_blocks;
+
+    //! dg/dx stochastic Galerkin components
+    mutable Teuchos::Array< Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_MultiVector> > > dgdx_sg_blocks;
+
     //! dg/dp stochastic Galerkin components
-    mutable Teuchos::Array< Teuchos::Array< Teuchos::RCP< Stokhos::VectorOrthogPoly<Derivative> > > > dgdp_sg_blocks;
+    mutable Teuchos::Array< Teuchos::Array< Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_MultiVector> > > > dgdp_sg_blocks;
 
     //! Method for creating block Jacobian
     enum EJacobianMethod {
