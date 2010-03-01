@@ -42,9 +42,17 @@ Isorropia contains separate classes to solve each of these problems, all of whic
 <a name="parameters"> </a>
 \section parameters  Isorropia parameters
 
-Isorropia has a fairly small number of parameters, listed below. Note that Isorropia parameters are case insensitive. For more specific control of low-level features, you may set a Zoltan parameter. Isorropia will pass any parameter in the Zoltan sublist to Zoltan.
+Isorropia has a fairly small number of parameters, listed below. (Default values in all caps.) Note that Isorropia parameters are case insensitive. For more specific control of low-level features, you may set a Zoltan parameter. Isorropia will pass any parameter in the Zoltan sublist to Zoltan.
 
-TODO: List all Isorropia parameters.
+<ul>
+<li>STRUCTURALLY SYMMETRIC [NO/yes] (is symmetrization required?) </li>
+<li>PARTITIONING METHOD [block/cyclic/random/rcb/hsfc/graph/HYPERGRAPH] </li>
+<li>NUM PARTS [int n] (global number of parts) </li>
+<li>IMBALANCE TOL [float tol] (1.0 is perfect balance)</li>
+<li>BALANCE OBJECTIVE [ROWS/nonzeros] </li>
+<li>DISTANCE [1/2] (for coloring only; two is default) </li>
+</ul>
+
 
 <a name="partitioning"> </a>
 \section partitioning  Partitioning and Load Balancing
