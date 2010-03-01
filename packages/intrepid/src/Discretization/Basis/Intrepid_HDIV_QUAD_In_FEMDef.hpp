@@ -1,4 +1,4 @@
-i// @HEADER
+// @HEADER
 // ************************************************************************
 //
 //                           Intrepid Package
@@ -63,7 +63,6 @@ namespace Intrepid {
     
     std::vector<int> tags( tagSize * this->getCardinality() );
     
-
     const std::vector<std::vector<int> >& closedDofTags = closedBasis_.getAllDofTags();
     const std::vector<std::vector<int> >& openDofTags = openBasis_.getAllDofTags();
 
@@ -86,7 +85,7 @@ namespace Intrepid {
       total_dof_per_entity[1][i] = openBasis_.getCardinality();
     }
 
-    total_dof_per_entity[2][0] = getCardinality() - 4 * openBasis_.getCardinality();
+    total_dof_per_entity[2][0] = this->getCardinality() - 4 * openBasis_.getCardinality();
 
     int tagcur = 0;
     // loop over the x-component basis functions, which are (psi(x)phi(y),0)
@@ -105,6 +104,7 @@ namespace Intrepid {
 	tags[4*tagcur+2] = current_dof_per_entity[dofdim][dofent];
 	current_dof_per_entity[dofdim][dofent]++;
 	tags[4*tagcur+3] = total_dof_per_entity[dofdim][dofent];
+	tagcur++;
       }
     }
     // now we have to do it for the y-component basis functions, which are
@@ -117,19 +117,27 @@ namespace Intrepid {
 	const int oent = openDofTags[i][1];
 	int dofdim;
 	int dofent;
-	ProductTopology::lineProduct2D(odim,oent,cdim,cent,dofdim,dofent);
+	ProductTopology::lineProduct2d(odim,oent,cdim,cent,dofdim,dofent);
 	tags[4*tagcur] = dofdim;
 	tags[4*tagcur+1] = dofent;
 	tags[4*tagcur+2] = current_dof_per_entity[dofdim][dofent];
 	current_dof_per_entity[dofdim][dofent]++;
 	tags[4*tagcur+3] = total_dof_per_entity[dofdim][dofent];
+	tagcur++;
       }
     }
+
+//     for (int i=0;i<this->getCardinality();i++) {
+//       for (int j=0;j<4;j++) {
+// 	std::cout << tags[4*i+j] << " ";
+//       }
+//       std::cout << std::endl;
+//     }
   
     // Basis-independent function sets tag and enum data in tagToOrdinal_ and ordinalToTag_ arrays:
     Intrepid::setOrdinalTagData(this -> tagToOrdinal_,
 				this -> ordinalToTag_,
-				tags,
+				&(tags[0]),
 				this -> basisCardinality_,
 				tagSize,
 				posScDim,
@@ -161,7 +169,7 @@ namespace Intrepid {
     
     for (int i=0;i<dim0;i++) {
       xPoints(i,0) = inputPoints(i,0);
-      yPoints(i,1) = inputPoints(i,1);
+      yPoints(i,0) = inputPoints(i,1);
     }
     
     switch (operatorType) {
@@ -177,12 +185,12 @@ namespace Intrepid {
 	openBasis_.getValues( openBasisValsXPts , xPoints , OPERATOR_VALUE );
 	openBasis_.getValues( openBasisValsYPts , yPoints , OPERATOR_VALUE );
 	
-	int bfcur = 0.0;
+	int bfcur = 0;
 	// x component bfs are (closed(x) open(y),0)
 	for (int j=0;j<openBasis_.getCardinality();j++) {
 	  for (int i=0;i<closedBasis_.getCardinality();i++) {
 	    for (int l=0;l<dim0;l++) {
-	      outputValues(bfcur,l,0) = closedBasisValsXpts(i,l) * openBasisValsYPts(j,l);
+	      outputValues(bfcur,l,0) = closedBasisValsXPts(i,l) * openBasisValsYPts(j,l);
 	      outputValues(bfcur,l,1) = 0.0;
 	    }
 	    bfcur++;
@@ -194,7 +202,7 @@ namespace Intrepid {
 	  for (int i=0;i<openBasis_.getCardinality();i++) {
 	    for (int l=0;l<dim0;l++) {
 	      outputValues(bfcur,l,0) = 0.0;
-	      outputValues(bfcur,l,1) = openBasisValsXpts(i,l) * closedBasisValsYPts(j,l);
+	      outputValues(bfcur,l,1) = openBasisValsXPts(i,l) * closedBasisValsYPts(j,l);
 	    }
 	    bfcur++;
 	  }
@@ -203,15 +211,15 @@ namespace Intrepid {
       break;
     case OPERATOR_DIV:
       {
-	FieldContainer<Scalar> closedBasisDerivsXPts( closedBasis_.getCardinality() , dim0 );
-	FieldContainer<Scalar> closedBasisDerivsYPts( closedBasis_.getCardinality() , dim0 );
+	FieldContainer<Scalar> closedBasisDerivsXPts( closedBasis_.getCardinality() , dim0 , 1 );
+	FieldContainer<Scalar> closedBasisDerivsYPts( closedBasis_.getCardinality() , dim0 , 1 );
 	FieldContainer<Scalar> openBasisValsXPts( openBasis_.getCardinality() , dim0 );
 	FieldContainer<Scalar> openBasisValsYPts( openBasis_.getCardinality() , dim0 );
 	
 	closedBasis_.getValues( closedBasisDerivsXPts , xPoints , OPERATOR_D1 );
 	closedBasis_.getValues( closedBasisDerivsYPts , yPoints , OPERATOR_D1 );
-	openBasis_.getValues( openBasisValuesXPts , xPoints , OPERATOR_VALUE );
-	openBasis_.getValues( openBasisValuesYPts , yPoints , OPERATOR_VALUE );
+	openBasis_.getValues( openBasisValsXPts , xPoints , OPERATOR_VALUE );
+	openBasis_.getValues( openBasisValsYPts , yPoints , OPERATOR_VALUE );
 	
 	int bfcur = 0;
 	
@@ -219,7 +227,7 @@ namespace Intrepid {
 	for (int j=0;j<openBasis_.getCardinality();j++) {
 	  for (int i=0;i<closedBasis_.getCardinality();i++) {
 	    for (int l=0;l<dim0;l++) {
-	      outputValues(bfcur,l) = closedBasisDerivsXpts(i,l) * openBasisValsYPts(j,l);
+	      outputValues(bfcur,l) = closedBasisDerivsXPts(i,l,0) * openBasisValsYPts(j,l);
 	    }
 	    bfcur++;
 	  }
@@ -229,7 +237,7 @@ namespace Intrepid {
 	for (int j=0;j<closedBasis_.getCardinality();j++) {
 	  for (int i=0;i<openBasis_.getCardinality();i++) {
 	    for (int l=0;l<dim0;l++) {
-	      outputValues(bfcur,l) = openBasisValsXpts(i,l) * closedBasisDerivsYPts(j,l);
+	      outputValues(bfcur,l) = openBasisValsXPts(i,l) * closedBasisDerivsYPts(j,l,0);
 	    }
 	    bfcur++;
 	  }

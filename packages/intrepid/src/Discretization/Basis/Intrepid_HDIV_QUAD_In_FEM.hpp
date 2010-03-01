@@ -36,6 +36,8 @@
 #ifndef INTREPID_HDIV_QUAD_In_FEM_HPP
 #define INTREPID_HDIV_QUAD_In_FEM_HPP
 #include "Intrepid_Basis.hpp"
+#include "Intrepid_ProductTopology.hpp"
+#include "Intrepid_HGRAD_LINE_Cn_FEM.hpp"
 
 namespace Intrepid {
   
@@ -56,8 +58,8 @@ private:
    */
   void initializeTags();
   
-  Basis_HGRAD_LINE_Cn_FEM closedBasis_;
-  Basis_HGRAD_LINE_Cn_FEM openBasis_;
+  Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> closedBasis_;
+  Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar> openBasis_;
 
 public:
 

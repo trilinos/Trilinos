@@ -138,6 +138,8 @@ APPEND_SET(HEADERS
   Discretization/Basis/Intrepid_HDIV_TRI_I1_FEMDef.hpp
   Discretization/Basis/Intrepid_HDIV_QUAD_I1_FEM.hpp
   Discretization/Basis/Intrepid_HDIV_QUAD_I1_FEMDef.hpp
+  Discretization/Basis/Intrepid_HDIV_QUAD_In_FEM.hpp
+  Discretization/Basis/Intrepid_HDIV_QUAD_In_FEMDef.hpp
   Discretization/Basis/Intrepid_HDIV_WEDGE_I1_FEM.hpp
   Discretization/Basis/Intrepid_HDIV_WEDGE_I1_FEMDef.hpp 
   Discretization/Basis/Intrepid_HGRAD_TRI_Cn_FEM_ORTH.hpp
