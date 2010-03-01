@@ -60,9 +60,13 @@ MaxIters(int maxIterations,
   if ( globalDataPtr.is_valid_ptr() && !globalDataPtr.is_null() )
     globalDataPtr_ = globalDataPtr;
 
-  if (maxiters < 1) 
+  if (maxiters < 0)
   {
-    globalDataPtr_->locaUtils->err() << "LOCA::StatusTest::MaxIters - must choose a number greater than zero" << endl;
+    if ( globalDataPtr_.is_valid_ptr() && !globalDataPtr_.is_null() )
+        globalDataPtr_->locaUtils->err() << "LOCA::StatusTest::MaxIters - must choose a number greater than or equal to zero" << endl;
+    else
+        // This will spit out the error message NUMPROC times. -- Without locaUtils, there's nothing we can do..
+        std::cerr << "LOCA::StatusTest::MaxIters - must choose a number greater than or equal to zero" << endl;
     throw "LOCA Error";
   }
 }
