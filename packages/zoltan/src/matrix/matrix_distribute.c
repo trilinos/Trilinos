@@ -23,6 +23,12 @@ extern "C" {
 #include "phg.h"
 #include "matrix.h"
 
+
+typedef struct ZOLTAN_DIST_PART_ {
+  ZZ* zz;
+  ZOLTAN_MAP* map;
+} ZOLTAN_DIST_PART;
+
 /* Layout related functions */
 
 int Zoltan_Distribute_Square (ZZ * zz, PHGComm *layout)
@@ -107,14 +113,47 @@ int Zoltan_Distribute_Cyclic(int edge_gno, int vtx_gno, void* data, int *part_y)
 
 int Zoltan_Distribute_Partition(int edge_gno, int vtx_gno, void* data, int *part_y)
 {
-  Zoltan_matrix_2d *mat;
+  ZOLTAN_DIST_PART* part;
 
-  mat = (Zoltan_matrix_2d*) data;
-  *part_y = (int)floor((double)edge_gno/((double)mat->mtx.globalY/(double)mat->comm->nProc));
+  part = (ZOLTAN_DIST_PART*) data;
+  Zoltan_Map_Find(part->zz, part->map, &edge_gno, (void**)part_y);
 
   return (*part_y);
 }
 
+ZOLTAN_DIST_PART* Zoltan_Distribute_Partition_Register(ZZ* zz, int size, int* yGNO, int *part)
+{
+  ZOLTAN_DIST_PART* dist;
+  int i;
+
+  dist = (ZOLTAN_DIST_PART*) ZOLTAN_MALLOC(sizeof(ZOLTAN_DIST_PART));
+  if (dist == NULL)
+    return (NULL);
+
+  dist->zz = zz;
+
+  dist->map = Zoltan_Map_Create(zz, 0, 1, 1, size);
+  if (dist->map == NULL) {
+    ZOLTAN_FREE(&dist);
+    return (NULL);
+  }
+
+  for (i = 0 ; i < size ; ++i ) {
+    Zoltan_Map_Add(dist->zz, dist->map, &yGNO[i], (void*)part[i]);
+  }
+
+  return (dist);
+}
+
+void
+Zoltan_Distribute_Partition_Free(ZOLTAN_DIST_PART** part)
+{
+  if (part == NULL || *part == NULL)
+    return;
+
+  Zoltan_Map_Destroy((*part)->zz, &(*part)->map);
+  ZOLTAN_FREE(part);
+}
 
 /* if !copy, inmat is not usable after this call */
 /* for pin wgt, we may do a "savage cast" to avoid padding problem */
