@@ -129,9 +129,9 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
     ZOLTAN_FREE(&outmat->yend);
   ZOLTAN_FREE(&outmat->ystart);
 
-  nnz_map = Zoltan_Map_Create(zz, 0, 2, 1, size);
+  nnz_map = Zoltan_Map_Create(zz, 0, 2, 0, size);
   if (nnz_map == NULL) MEMORY_ERROR;
-  y_map = Zoltan_Map_Create(zz, 0, 1, 1, size);
+  y_map = Zoltan_Map_Create(zz, 0, 1, 0, size);
   if (y_map == NULL) MEMORY_ERROR;
   ysize = (int*) ZOLTAN_CALLOC(size, sizeof(int));
   if (size > 0 && ysize == NULL) MEMORY_ERROR;

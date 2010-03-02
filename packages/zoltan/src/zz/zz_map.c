@@ -89,10 +89,12 @@ ZOLTAN_MAP* Zoltan_Map_Create(ZZ *zz,     /* just need this for error messages *
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Out of memory\n");
       return NULL;
     }
-    keys = (int*)ZOLTAN_CALLOC(num_entries, sizeof(int)*num_id_entries);
-    if (!keys) {
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Out of memory\n");
-      return NULL;
+    if (store_keys) {
+      keys = (int*)ZOLTAN_CALLOC(num_entries, sizeof(int)*num_id_entries);
+      if (!keys) {
+	ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Out of memory\n");
+	return NULL;
+      }
     }
   }
 
