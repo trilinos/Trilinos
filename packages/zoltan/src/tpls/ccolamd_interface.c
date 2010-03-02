@@ -67,13 +67,14 @@ int Zoltan_CColAMD_Order(
 int Zoltan_CColAMD(
   ZZ *zz,               /* Zoltan structure */
   struct Zoltan_DD_Struct *dd_constraint,
+  int nPart,
   int *num_obj,
   ZOLTAN_ID_PTR *gids,
   int **rank
 )
 {
   static char *yo = "Zoltan_CColAMD";
-  int n, ierr = ZOLTAN_OK;
+  int ierr = ZOLTAN_OK;
   Zoltan_matrix_options opt;
   double knobs [CCOLAMD_KNOBS];
   int stats [CCOLAMD_STATS];
@@ -83,6 +84,7 @@ int Zoltan_CColAMD(
   void *partdata = NULL;
   int *ystart = NULL;
   int n_col, n_row, n_nnz;
+  ZOLTAN_ID_PTR localgids;
   Zoltan_matrix_2d mtx;
   int i;
   int offset = 0;
@@ -102,36 +104,32 @@ int Zoltan_CColAMD(
   ierr = Zoltan_Matrix_Build(zz, &opt, &mtx.mtx);
   CHECK_IERR;
 
-  /* Set up the correct distribution function */
-  /* TODO: do here to avoid a first distribution */
+ /* Set up the correct distribution function */
+  n_col = mtx.mtx.nY;
+  localgids = Zoltan_Matrix_Get_GID(zz, &mtx.mtx);
+  if (n_col > 0 && localgids == NULL) MEMORY_ERROR;
+
+  cmember = (int*) ZOLTAN_MALLOC(n_col * sizeof(int));
+  if (n_col > 0 && cmember == NULL) MEMORY_ERROR;
+  ierr = Zoltan_DD_Find (dd_constraint, localgids, (ZOLTAN_ID_PTR)cmember, NULL, NULL,
+			 n_col, NULL);
+  CHECK_IERR;
+  ZOLTAN_FREE(&localgids);
+  partdata = Zoltan_Distribute_Partition_Register(zz, n_col, mtx.mtx.yGNO, cmember, zz->Num_Proc, nPart);
+  ZOLTAN_FREE(&cmember);
+  Zoltan_Distribute_Set(&mtx, &Zoltan_Distribute_Partition, partdata);
 
   ierr = Zoltan_Distribute_LinearY(zz, mtx.comm);
   CHECK_IERR;
 
   ierr = Zoltan_Matrix2d_Distribute (zz, mtx.mtx, &mtx, 0);
   CHECK_IERR;
+  Zoltan_Distribute_Partition_Free(&partdata);
   ierr = Zoltan_Matrix_Complete(zz, &mtx.mtx);
   CHECK_IERR;
 
   /* XXX */
   /* Cannot work as we cannot use matrix_complete more than once ... */
-
-  n_col = mtx.mtx.nY;
-  cmember = (int*) ZOLTAN_MALLOC(n_col * sizeof(int));
-  if (n_col > 0 && cmember == NULL) MEMORY_ERROR;
-
-  ierr = Zoltan_DD_Find (dd_constraint, mtx.mtx.yGID, (ZOLTAN_ID_PTR)cmember, NULL, NULL,
-			 mtx.mtx.nY, NULL);
-  CHECK_IERR;
-  partdata = Zoltan_Distribute_Partition_Register(zz, n_col, mtx.mtx.yGNO, cmember);
-  ZOLTAN_FREE(&cmember);
-  Zoltan_Distribute_Set(&mtx, &Zoltan_Distribute_Partition, partdata);
-  ierr = Zoltan_Matrix2d_Distribute (zz, mtx.mtx, &mtx, 0);
-  CHECK_IERR;
-  ierr = Zoltan_Matrix_Complete(zz, &mtx.mtx);
-  CHECK_IERR;
-  Zoltan_Distribute_Partition_Free(&partdata);
-
 
   (*num_obj) = n_col = mtx.mtx.nY;
   n_row = mtx.mtx.globalX;
@@ -143,6 +141,10 @@ int Zoltan_CColAMD(
 
   cmember = (int*) ZOLTAN_MALLOC(n_col * sizeof(int));
   if (n_col > 0 && cmember == NULL) MEMORY_ERROR;
+  ierr = Zoltan_DD_Find (dd_constraint, mtx.mtx.yGID, (ZOLTAN_ID_PTR)cmember, NULL, NULL,
+			 n_col, NULL);
+  CHECK_IERR;
+
 
   (*gids) = ZOLTAN_MALLOC_GID_ARRAY(zz , n_col);
   if (n_col > 0 && (*gids) == NULL) MEMORY_ERROR;
@@ -163,7 +165,7 @@ int Zoltan_CColAMD(
   /* Compute ordering */
   /* Upon return, ystart is the invert permutation ... */
   ierr = ccolamd (n_row, n_col, Alen, pins, ystart,
-	   knobs, stats, cmember);
+		  knobs, stats, cmember);
 
   ZOLTAN_FREE(&pins);
   ZOLTAN_FREE(&cmember);
@@ -176,6 +178,7 @@ int Zoltan_CColAMD(
   MPI_Scan(&n_col, &offset, 1, MPI_INT, MPI_SUM, zz->Communicator);
   offset -= n_col;
   /* Compute direct permutation */
+
   for (i = 0 ; i < n_col ; ++i) {
     (*rank)[ystart[i]] = i + offset;
   }
@@ -183,6 +186,7 @@ int Zoltan_CColAMD(
 /*   memcpy ((*rank), ystart, n_col * sizeof(int)); */
 
  End:
+  ZOLTAN_FREE(&localgids);
   ZOLTAN_FREE(&pins);
   ZOLTAN_FREE(&ystart);
   ZOLTAN_FREE(&cmember);

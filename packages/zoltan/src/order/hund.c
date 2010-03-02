@@ -33,6 +33,7 @@ extern "C" {
 int Zoltan_CColAMD(
   ZZ *zz,               /* Zoltan structure */
   struct Zoltan_DD_Struct *dd_constraint,
+  int nPart,
   int *num_obj,
   ZOLTAN_ID_PTR *gid,
   int **rank
@@ -144,7 +145,7 @@ int Zoltan_HUND(
   ierr = HUND_Order_simple(zz,  num_local_gid, part, data->numParts, data->sizeParts, dperm);
   CHECK_IERR;
 #else /* SIMPLE_HUND */
-  ierr = Zoltan_CColAMD(zz, data->ddHedge, &num_local_gid, &local_gid, &dperm);
+  ierr = Zoltan_CColAMD(zz, data->ddHedge, data->numParts, &num_local_gid, &local_gid, &dperm);
   CHECK_IERR;
 #endif /* SIMPLE_HUND */
 

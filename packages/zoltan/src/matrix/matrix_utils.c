@@ -138,6 +138,21 @@ Zoltan_Matrix_Complete(ZZ* zz,Zoltan_matrix* m)
   return (ierr);
 }
 
+/* Return an array of locally owned GID */
+ZOLTAN_ID_PTR Zoltan_Matrix_Get_GID(ZZ* zz, Zoltan_matrix* m)
+{
+  ZOLTAN_ID_PTR yGID;
+
+  yGID = ZOLTAN_MALLOC_GID_ARRAY(zz, m->nY);
+  if (m->nY && yGID == NULL)
+    return (NULL);
+
+  /* Get Informations about Y */
+  Zoltan_DD_Find (m->ddY, (ZOLTAN_ID_PTR)m->yGNO, yGID, NULL, NULL,
+		  m->nY, NULL);
+
+  return (yGID);
+}
 
 int
 Zoltan_Matrix2d_adjproc (ZZ* zz, const Zoltan_matrix_2d * const mat, int **adjproc)

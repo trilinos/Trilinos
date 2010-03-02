@@ -27,6 +27,8 @@ extern "C" {
 typedef struct ZOLTAN_DIST_PART_ {
   ZZ* zz;
   ZOLTAN_MAP* map;
+  int nProc;
+  int nPart;
 } ZOLTAN_DIST_PART;
 
 /* Layout related functions */
@@ -120,10 +122,10 @@ int Zoltan_Distribute_Partition(int edge_gno, int vtx_gno, void* data, int *part
   Zoltan_Map_Find(part->zz, part->map, &edge_gno, (void**)&answer);
   *part_y = (int)answer;
 
-  return (*part_y);
+  return ((int)floor((double)*part_y/((double)part->nPart/(double)part->nProc)));
 }
 
-void* Zoltan_Distribute_Partition_Register(ZZ* zz, int size, int* yGNO, int *part)
+void* Zoltan_Distribute_Partition_Register(ZZ* zz, int size, int* yGNO, int *part, int nProc, int nPart)
 {
   ZOLTAN_DIST_PART* dist;
   int i;
@@ -143,6 +145,9 @@ void* Zoltan_Distribute_Partition_Register(ZZ* zz, int size, int* yGNO, int *par
   for (i = 0 ; i < size ; ++i ) {
     Zoltan_Map_Add(dist->zz, dist->map, &yGNO[i], (void*)part[i]);
   }
+
+  dist->nProc = nProc;
+  dist->nPart = nPart;
 
   return ((void*)dist);
 }

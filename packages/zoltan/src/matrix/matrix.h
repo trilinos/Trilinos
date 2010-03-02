@@ -182,7 +182,7 @@ int Zoltan_Distribute_LinearY (ZZ * zz, PHGComm *layout) ;
 int Zoltan_Distribute_Set(Zoltan_matrix_2d* mat,
 			  distFnct *hashDistFct, void * hashDistData);
 
-void* Zoltan_Distribute_Partition_Register(ZZ* zz, int size, int* yGNO, int *part);
+void* Zoltan_Distribute_Partition_Register(ZZ* zz, int size, int* yGNO, int *part, int nProc, int nPart);
 void Zoltan_Distribute_Partition_Free(void** dist);
 
 
@@ -209,9 +209,14 @@ Zoltan_Matrix_Construct_CSR(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
 
 /* This code has to be called just before specializing the matrix into
  * a graph or an hypergraph.
+ * Warning: Matrix cannot be modified afterwards.
  */
 int
 Zoltan_Matrix_Complete(ZZ* zz, Zoltan_matrix* m);
+
+/* Return an array of locally owned GID */
+ZOLTAN_ID_PTR Zoltan_Matrix_Get_GID(ZZ* zz, Zoltan_matrix* m);
+
 
 /* This code is used to fill the adjproc array which is used in some
  * place in Zoltan.
