@@ -37,26 +37,26 @@ LinearOp RepeatPreconditionerFactory::buildPreconditionerOperator(LinearOp & lo,
                    << "preconditioner factory has been set. Currently it is null!");
 
    // build user specified preconditioner
-   InverseLinearOp & invP = state.getModifiableOp("prec");
+   ModifiableLinearOp & invP = state.getModifiableOp("prec");
    if(invP==Teuchos::null)
-      invP = Teko::buildInverse(precFactory_,lo);
+      invP = Teko::buildInverse(*precFactory_,lo);
    else
-      Teko::rebuildInverse(precFactory_,lo,invP);
+      Teko::rebuildInverse(*precFactory_,lo,invP);
 
    // no repititions are required
    if(correctionNum_==0) return invP;
 
    // now build correction operator
    LinearOp I = Thyra::identity(lo->range());
-   LinearOp AiP = multiply(lo,invP);
+   LinearOp AiP = multiply(lo,invP.getConst());
    LinearOp correction = add(I,scale(-1.0,AiP)); // I - A * iPA
 
    LinearOp resMap = I; // will map r_n to r_{n+1}
-   for(int i=0;i<correctionNum_;i++) 
+   for(unsigned int i=0;i<correctionNum_;i++) 
       resMap = multiply(correction,resMap); // resMap = (I-A*iP)*resMap
    
    // iP = (I-A*iP)^{correctionNum}
-   return multiply(invP,resMap);
+   return multiply(invP.getConst(),resMap);
 }
 
 /** \brief This function builds the internals of the preconditioner factory
@@ -64,13 +64,16 @@ LinearOp RepeatPreconditionerFactory::buildPreconditionerOperator(LinearOp & lo,
   */
 void RepeatPreconditionerFactory::initializeFromParameterList(const Teuchos::ParameterList & settings)
 {
-   correctionNum_ = settings.get<int>("Iteration Count",1);
+
+   correctionNum_ = 1;
+   if(settings.isParameter("Iteration Count"))
+      correctionNum_ = settings.get<int>("Iteration Count");
  
    TEST_FOR_EXCEPTION(not settings.isParameter("Preconditioner Type"),std::runtime_error,
                       "Parameter \"Preconditioner Type\" is required by a Teko::RepeatPreconditionerFactory");
       
    // grab library and preconditioner name
-   RCP<const InverseLibrary> il = getInverseLibrary();
+   Teuchos::RCP<const InverseLibrary> il = getInverseLibrary();
    std::string precName = settings.get<std::string>("Preconditioner Type");
 
    // build preconditioner factory
@@ -97,7 +100,7 @@ bool RepeatPreconditionerFactory::updateRequestedParameters(const Teuchos::Param
                       "ERROR: Teko::RepeatPreconditionerFactory::updateRequestedParameters requires that a "
                    << "preconditioner factory has been set. Currently it is null!");
 
-   return precFactory_->updatedRequestedParameters(pl);
+   return precFactory_->updateRequestedParameters(pl);
 }
 
 } // end namespace Teko

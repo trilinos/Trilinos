@@ -17,7 +17,6 @@ APPEND_GLOB( SOURCES
   ./src/*.cpp
 )
 
-
 PACKAGE_ADD_EXECUTABLE(
   testdriver
   SOURCES
@@ -55,4 +54,13 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(testdriver_copyfiles
   SOURCE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/data"
   DEST_DIR "${CMAKE_CURRENT_BINARY_DIR}/data"
   EXEDEPS testdriver
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  RepeatPreconditionerFactory_test
+  SOURCES
+    unit_tests/tRepeatPreconditionerFactory.cpp
+    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+  COMM serial mpi
+  NUM_MPI_PROCS 1
   )
