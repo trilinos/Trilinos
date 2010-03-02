@@ -91,6 +91,8 @@ int Zoltan_CColAMD(
   memset (&opt, 0, sizeof(Zoltan_matrix_options));
   opt.speed = MATRIX_NO_REDIST;
 
+
+  Zoltan_Matrix2d_Init(&mtx);
   mtx.comm = (PHGComm*)ZOLTAN_MALLOC (sizeof(PHGComm));
   if (mtx.comm == NULL) MEMORY_ERROR;
   Zoltan_PHGComm_Init (mtx.comm);
@@ -105,19 +107,25 @@ int Zoltan_CColAMD(
 
   ierr = Zoltan_Distribute_LinearY(zz, mtx.comm);
   CHECK_IERR;
+
   ierr = Zoltan_Matrix2d_Distribute (zz, mtx.mtx, &mtx, 0);
   CHECK_IERR;
   ierr = Zoltan_Matrix_Complete(zz, &mtx.mtx);
   CHECK_IERR;
 
+  /* XXX */
+  /* Cannot work as we cannot use matrix_complete more than once ... */
+
   n_col = mtx.mtx.nY;
+  cmember = (int*) ZOLTAN_MALLOC(n_col * sizeof(int));
+  if (n_col > 0 && cmember == NULL) MEMORY_ERROR;
 
   ierr = Zoltan_DD_Find (dd_constraint, mtx.mtx.yGID, (ZOLTAN_ID_PTR)cmember, NULL, NULL,
 			 mtx.mtx.nY, NULL);
   CHECK_IERR;
   partdata = Zoltan_Distribute_Partition_Register(zz, n_col, mtx.mtx.yGNO, cmember);
   ZOLTAN_FREE(&cmember);
-  Zoltan_Distribute_Set(&mtx, Zoltan_Distribute_Partition, partdata);
+  Zoltan_Distribute_Set(&mtx, &Zoltan_Distribute_Partition, partdata);
   ierr = Zoltan_Matrix2d_Distribute (zz, mtx.mtx, &mtx, 0);
   CHECK_IERR;
   ierr = Zoltan_Matrix_Complete(zz, &mtx.mtx);

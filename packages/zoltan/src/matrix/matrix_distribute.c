@@ -114,9 +114,11 @@ int Zoltan_Distribute_Cyclic(int edge_gno, int vtx_gno, void* data, int *part_y)
 int Zoltan_Distribute_Partition(int edge_gno, int vtx_gno, void* data, int *part_y)
 {
   ZOLTAN_DIST_PART* part;
+  void *answer;
 
   part = (ZOLTAN_DIST_PART*) data;
-  Zoltan_Map_Find(part->zz, part->map, &edge_gno, (void**)part_y);
+  Zoltan_Map_Find(part->zz, part->map, &edge_gno, (void**)&answer);
+  *part_y = (int)answer;
 
   return (*part_y);
 }
@@ -232,7 +234,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
       /* processor column for the vertex */
       vtx_gno = pinGNO[j];
 
-      proclist[cnt] = (outmat->hashDistFct)(edge_gno, vtx_gno, outmat->hashDistData,
+      proclist[cnt] = (*outmat->hashDistFct)(edge_gno, vtx_gno, outmat->hashDistData,
 					  &sendbuf[cnt].part_y);
       if (proclist[cnt] < 0) /* Discard this nnz */
         continue;
