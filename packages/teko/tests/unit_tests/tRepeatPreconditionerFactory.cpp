@@ -53,18 +53,85 @@ const RCP<const Thyra::LinearOpBase<double> > build2x2(const Epetra_Comm & comm,
    return Thyra::epetraLinearOp(blk);
 }
 
-RCP<Teuchos::ParameterList> buildLibPL(int numTerms,std::string scalingType)
+RCP<Teuchos::ParameterList> buildLibPL(int count,std::string scalingType)
 {
    RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList());
-   RCP<Teuchos::ParameterList> nList = rcp(new Teuchos::ParameterList());
 
-   nList->set("Type","Neumann Series");
-   nList->set("Number of Terms",numTerms);
-   nList->set("Scaling Type",scalingType);
-
-   pl->set("Neumann",*nList);
+   pl->set("Iterations Count",count);
+   pl->set("Preconditioner Type",scalingType);
 
    return pl;
+}
+
+TEUCHOS_UNIT_TEST(tRepeatPreconditionerFactory, parameter_list_init)
+{
+   // build global (or serial communicator)
+   #ifdef HAVE_MPI
+      Epetra_MpiComm Comm(MPI_COMM_WORLD);
+   #else
+      Epetra_SerialComm Comm;
+   #endif
+
+   Teko::LinearOp  A = build2x2(Comm,1,2,3,4);
+
+   Thyra::LinearOpTester<double> tester;
+   tester.show_all_tests(true);
+
+   {
+      RCP<Teuchos::ParameterList> pl = buildLibPL(4,"Amesos");
+      RCP<Teko::RepeatPreconditionerFactory> precFact = rcp(new Teko::RepeatPreconditionerFactory());
+      RCP<Teko::InverseFactory> invFact = rcp(new Teko::PreconditionerInverseFactory(precFact));
+
+      try {
+         precFact->initializeFromParameterList(*pl);
+         out << "Passed correct parameter list" << std::endl;
+
+         Teko::LinearOp prec = Teko::buildInverse(*invFact,A);
+      }
+      catch(...) {
+         success = false; 
+         out << "Failed correct parameter list" << std::endl;
+      }
+   }
+
+   {
+      Teuchos::ParameterList pl;
+      pl.set("Preconditioner Type","Amesos");
+
+      RCP<Teko::RepeatPreconditionerFactory> precFact = rcp(new Teko::RepeatPreconditionerFactory());
+      RCP<Teko::InverseFactory> invFact = rcp(new Teko::PreconditionerInverseFactory(precFact));
+
+      try {
+         precFact->initializeFromParameterList(pl);
+         out << "Passed iteration count" << std::endl;
+
+         Teko::LinearOp prec = Teko::buildInverse(*invFact,A);
+      }
+      catch(...) {
+         out << "Failed iteration count" << std::endl;
+      }
+   }
+
+   {
+      Teuchos::ParameterList pl;
+      pl.set("Iteration Count",4);
+      pl.set("Precondiioner Type","Amesos");
+
+      RCP<Teko::RepeatPreconditionerFactory> precFact = rcp(new Teko::RepeatPreconditionerFactory());
+
+      try {
+         precFact->initializeFromParameterList(pl);
+         success = false;
+         out << "Failed preconditioner type" << std::endl;
+
+         // these should not be executed
+         RCP<Teko::InverseFactory> invFact = rcp(new Teko::PreconditionerInverseFactory(precFact));
+         Teko::LinearOp prec = Teko::buildInverse(*invFact,A);
+      }
+      catch(const std::exception & exp) {
+         out << "Passed preconditioner type" << std::endl;
+      }
+   }
 }
 
 TEUCHOS_UNIT_TEST(tRepeatPreconditionerFactory, constructor_test)
@@ -103,18 +170,18 @@ TEUCHOS_UNIT_TEST(tRepeatPreconditionerFactory, constructor_test)
       using Teko::multiply;
 
       RCP<Teko::InverseFactory> precOpFact = rcp(new Teko::StaticOpInverseFactory(iP));
-      RCP<Teko::RepeatPreconditionerFactory> precFact = rcp(new Teko::RepeatPreconditionerFactory(3,precOpFact));
+      RCP<Teko::RepeatPreconditionerFactory> precFact = rcp(new Teko::RepeatPreconditionerFactory(4,precOpFact));
       RCP<Teko::InverseFactory> invFact = rcp(new Teko::PreconditionerInverseFactory(precFact));
 
       Teko::LinearOp prec = Teko::buildInverse(*invFact,A);
-      Teko::LinearOp exact = multiply(multiply(iP,ImAiP,ImAiP),ImAiP);
+      Teko::LinearOp exact = multiply(multiply(iP,ImAiP,ImAiP),ImAiP,ImAiP);
 
-      const bool result = tester.compare( *prec, *iP, &out);
+      const bool result = tester.compare( *prec, *exact, &out);
       if (!result) {
-         out << "Apply 3: FAILURE" << std::endl;
+         out << "Apply 4: FAILURE" << std::endl;
          success = false;
       }
       else
-         out << "Apply 3: SUCCESS" << std::endl;
+         out << "Apply 4: SUCCESS" << std::endl;
    }
 }

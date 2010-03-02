@@ -9,6 +9,7 @@
 #include "Teko_AddPreconditionerFactory.hpp"
 #include "Teko_MultPreconditionerFactory.hpp"
 #include "Teko_LU2x2PreconditionerFactory.hpp"
+#include "Teko_RepeatPreconditionerFactory.hpp"
 #include "NS/Teko_LSCPreconditionerFactory.hpp"
 #include "NS/Teko_SIMPLEPreconditionerFactory.hpp"
 
@@ -225,6 +226,9 @@ void PreconditionerFactory::initializePrecFactoryBuilder()
 
    clone = rcp(new AutoClone<NS::SIMPLEPreconditionerFactory>());
    precFactoryBuilder_.addClone("NS SIMPLE",clone);
+
+   clone = rcp(new AutoClone<RepeatPreconditionerFactory>());
+   precFactoryBuilder_.addClone("Repeat Preconditioner",clone);
 }
 
 void PreconditionerFactory::getPreconditionerFactoryNames(std::vector<std::string> & names)

@@ -78,6 +78,9 @@ void RepeatPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
 
    // build preconditioner factory
    precFactory_ = il->getInverseFactory(precName);
+   TEST_FOR_EXCEPTION(precFactory_==Teuchos::null,std::runtime_error,
+                      "ERROR: \"Preconditioner Type\" = " << precName 
+                   << " could not be found");
 }
 
 /** \brief Request the additional parameters this preconditioner factory
