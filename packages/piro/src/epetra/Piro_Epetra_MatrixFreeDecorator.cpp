@@ -6,6 +6,7 @@
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_implicit_cast.hpp"
+#include "EpetraExt_ModelEvaluator.h"
 
 
 Piro::Epetra::MatrixFreeDecorator::MatrixFreeDecorator(
@@ -176,10 +177,16 @@ void Piro::Epetra::MatrixFreeDecorator::evalModel( const InArgs& inArgs,
         clonedInArgs.set_p(l, Teuchos::rcp(new Epetra_Vector(*p_l)));
     }
     clonedInArgs.set_x(Teuchos::rcp(new Epetra_Vector(*inArgs.get_x())));
-    RCP<const Epetra_Vector> xdot = inArgs.get_x_dot();
-    if (nonnull(xdot))
-      clonedInArgs.set_x_dot(Teuchos::rcp(new Epetra_Vector(*inArgs.get_x_dot())));
-    W_mfo->setBase(clonedInArgs, fBase);
+
+    bool haveXdot = false;
+    if (inArgs.supports(IN_ARG_x_dot)) {
+      RCP<const Epetra_Vector> xdot = inArgs.get_x_dot();
+      if (nonnull(xdot)) {
+        clonedInArgs.set_x_dot(Teuchos::rcp(new Epetra_Vector(*inArgs.get_x_dot())));
+        haveXdot = true;
+      }
+    }
+    W_mfo->setBase(clonedInArgs, fBase, haveXdot);
   }
 }
 
@@ -205,14 +212,18 @@ Piro::Epetra::MatrixFreeOperator::MatrixFreeOperator(
 
 void Piro::Epetra::MatrixFreeOperator::setBase(
              const EpetraExt::ModelEvaluator::InArgs modelInArgs_,
-             Teuchos::RCP<Epetra_Vector> fBase_)
+             Teuchos::RCP<Epetra_Vector> fBase_,
+             const bool haveXdot_)
 {
   // Deep copy base solution, shallow copy residual base
   modelInArgs = modelInArgs_;
-  haveXdot = nonnull(modelInArgs.get_x_dot());
+  haveXdot = haveXdot_;
+
   fBase = fBase_;
   modelInArgs.get_x()->Norm2(&solutionNorm);
   baseIsSet = true;
+
+  cout << "XXX Base X reset with norm = " << solutionNorm << endl;
 }
 
 int  Piro::Epetra::MatrixFreeOperator::Apply
@@ -263,6 +274,14 @@ int  Piro::Epetra::MatrixFreeOperator::Apply
   *Y0 = *y; // copy in
 
   return 0;
+}
+
+Piro::Epetra::MatrixFreeOperator::~MatrixFreeOperator() { 
+   // relinquish pointers
+   modelInArgs.set_x(Teuchos::null); 
+   if (haveXdot) modelInArgs.set_x_dot(Teuchos::null); 
+   for (int l = 0; l < modelInArgs.Np(); ++l) 
+     modelInArgs.set_p(l,Teuchos::null);
 }
 
 // The following are trivial implementations
