@@ -144,9 +144,6 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
     }
   }
 
-  matrix->pinGNO = (int*)ZOLTAN_MALLOC(matrix->nPins* sizeof(int));
-  if ((matrix->nPins > 0) && (matrix->pinGNO == NULL)) MEMORY_ERROR;
-
   if (matrix->opts.local) { /* keep only local edges */
     proclist = (int*) ZOLTAN_MALLOC(matrix->nPins*sizeof(int));
     if (matrix->nPins && proclist == NULL) MEMORY_ERROR;
@@ -156,6 +153,9 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
 
   /* Convert pinID to pinGNO using the same translation as x */
   if (matrix->opts.speed == MATRIX_FULL_DD) {
+    matrix->pinGNO = (int*)ZOLTAN_MALLOC(matrix->nPins* sizeof(int));
+    if ((matrix->nPins > 0) && (matrix->pinGNO == NULL)) MEMORY_ERROR;
+
     ierr = Zoltan_DD_Find (dd, pinID, (ZOLTAN_ID_PTR)(matrix->pinGNO), NULL, NULL,
 			   matrix->nPins, proclist);
     if (ierr != ZOLTAN_OK) {

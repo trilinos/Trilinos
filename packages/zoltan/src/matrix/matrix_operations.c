@@ -505,6 +505,8 @@ Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, int* perm_y)
   Zoltan_DD_Find (dd, (ZOLTAN_ID_PTR)m->pinGNO, (ZOLTAN_ID_PTR)pinGNO, NULL, NULL,
 		  m->nPins, NULL);
 
+  Zoltan_DD_Destroy(&dd);
+
   ZOLTAN_FREE(&m->pinGNO);
   m->pinGNO = pinGNO;
   pinGNO = NULL;

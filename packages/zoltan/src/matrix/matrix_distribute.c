@@ -292,16 +292,8 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
 
   /* Unpack the non-zeros received. */
 
-  outmat->mtx.pinGNO = (int *) ZOLTAN_MALLOC(outmat->mtx.nPins * sizeof(int));
-  if (outmat->mtx.nPins && (outmat->mtx.pinGNO == NULL)) MEMORY_ERROR;
-
-  outmat->mtx.pinwgt = (float *) ZOLTAN_MALLOC(outmat->mtx.nPins * outmat->mtx.pinwgtdim
-					       * sizeof(float));
-  if (outmat->mtx.nPins && outmat->mtx.pinwgtdim && outmat->mtx.pinwgt == NULL)
-    MEMORY_ERROR;
 
   /* TODO: do take care about singletons */
-
   Zoltan_Matrix_Remove_DupArcs(zz, outmat->mtx.nPins, (Zoltan_Arc*)nonzeros, tmpwgtarray,
 			       &outmat->mtx);
 

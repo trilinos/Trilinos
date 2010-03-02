@@ -124,6 +124,7 @@ int Zoltan_CColAMD(
 
   ierr = Zoltan_Matrix2d_Distribute (zz, mtx.mtx, &mtx, 0);
   CHECK_IERR;
+
   Zoltan_Distribute_Partition_Free(&partdata);
   ierr = Zoltan_Matrix_Complete(zz, &mtx.mtx);
   CHECK_IERR;
