@@ -1,3 +1,11 @@
+/*------------------------------------------------------------------------*/
+/*                 Copyright 2010 Sandia Corporation.                     */
+/*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
+/*  license for use of this work by or on behalf of the U.S. Government.  */
+/*  Export of this program may require a license from the                 */
+/*  United States Government.                                             */
+/*------------------------------------------------------------------------*/
+
 #include <use_cases/GridFixture.hpp>
 #include <stk_mesh/base/BulkModification.hpp>
 
@@ -14,6 +22,10 @@
 
 bool element_death_use_case(stk::ParallelMachine pm)
 {
+  if (stk::parallel_machine_size(pm) > 1) {
+    return true;
+  }
+
   GridFixture fixture(pm);
   stk::mesh::BulkData& bulk_data = fixture.bulk_data();
   stk::mesh::MetaData& meta_data = fixture.meta_data();
@@ -24,10 +36,12 @@ bool element_death_use_case(stk::ParallelMachine pm)
   entity_ids_to_kill.push_back(10);
 
   std::vector<stk::mesh::Entity*> entities_to_kill;
-  for (std::vector<unsigned>::const_iterator itr = entity_ids_to_kill.begin();
-       itr != entity_ids_to_kill.end(); ++itr) {
-    entities_to_kill.push_back(bulk_data.get_entity(stk::mesh::Face,
-                                                              *itr));
+  if (stk::parallel_machine_rank(pm) == 0) {
+    for (std::vector<unsigned>::const_iterator itr = entity_ids_to_kill.begin();
+         itr != entity_ids_to_kill.end(); ++itr) {
+      entities_to_kill.push_back(bulk_data.get_entity(stk::mesh::Face,
+                                                      *itr));
+    }
   }
 
   // find the parallel-consistent closure of the elements to be killed
