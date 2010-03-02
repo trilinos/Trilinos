@@ -56,7 +56,7 @@ int _MPI_Op_insert (MPI_User_function* function, int commute, MPI_Op* id) {
     if (_MPI_OP_LIST[i].valid != _MPI_VALID) break;
   }
 
-  if (i>=_MPI_COMM_ARRAY_SIZE) {
+  if (i>=_MPI_OP_ARRAY_SIZE) {
     _MPI_COVERAGE();
     /* ----------------------------------------------- */
     /* This realloc doesn't orphan ops because MPI_Op  */
