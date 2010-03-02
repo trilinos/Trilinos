@@ -23,6 +23,10 @@
 #include "Thyra_DefaultMultipliedLinearOp.hpp"
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_PreconditionerFactoryHelpers.hpp"
+#include "Thyra_VectorBase.hpp"
+#include "Thyra_MultiVectorBase.hpp"
+#include "Thyra_VectorStdOps.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 
 #include <vector>
 
@@ -294,9 +298,9 @@ bool tSIMPLEPreconditionerFactory::test_diagonal(int verbosity,std::ostream & os
    // construct a couple of vectors
    Epetra_Vector ea(*map),eb(*map);
    Epetra_Vector ef(*map),eg(*map);
-   const RCP<const Thyra::VectorBase<double> > x = BlockVector(ea,eb,A->domain());
-   const RCP<const Thyra::VectorBase<double> > z = BlockVector(ef,eg,A->domain());
-   const RCP<Thyra::VectorBase<double> > y = Thyra::createMember(A->range()); 
+   const RCP<const Thyra::MultiVectorBase<double> > x = BlockVector(ea,eb,A->domain());
+   const RCP<const Thyra::MultiVectorBase<double> > z = BlockVector(ef,eg,A->domain());
+   const RCP<Thyra::MultiVectorBase<double> > y = Thyra::createMembers(A->range(),1); 
 
    // now checks of the preconditioner (should be exact!)
    /////////////////////////////////////////////////////////////////////////
@@ -305,8 +309,8 @@ bool tSIMPLEPreconditionerFactory::test_diagonal(int verbosity,std::ostream & os
    ea[0] = 0.0; ea[1] = 1.0; eb[0] = 1.0; eb[1] = 3.0;
    ef[0] =  0.21875; ef[1]  =  0.5;  
    eg[0] = -0.028125; eg[1] =  0.0;
-   Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
-   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
+   Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
+   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_);
    if(not status || verbosity>=10 ) { 
       os << std::endl << "   tSIMPLEPreconditionerFactory::test_diagonal " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
                       << diff << ")" << std::endl;
@@ -320,8 +324,8 @@ bool tSIMPLEPreconditionerFactory::test_diagonal(int verbosity,std::ostream & os
    ea[0] =-2.0; ea[1] = 4.0; eb[0] = 7.0; eb[1] = 9.0;
    ef[0] = 1.71875; ef[1] =  1.4;
    eg[0] = -0.478125; eg[1] = 0.135;
-   Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
-   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
+   Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
+   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_);
    if(not status || verbosity>=10 ) { 
       os << std::endl << "   tSIMPLEPreconditionerFactory::test_diagonal " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
                       << diff << ")" << std::endl;
@@ -335,8 +339,8 @@ bool tSIMPLEPreconditionerFactory::test_diagonal(int verbosity,std::ostream & os
    ea[0] = 1.0; ea[1] = 0.0; eb[0] = 0.0; eb[1] =-5.0;
    ef[0] = -0.09375; ef[1] = -1.0;
    eg[0] =  0.140625; eg[1] =  0.225;
-   Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
-   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
+   Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
+   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_);
    if(not status || verbosity>=10 ) { 
       os << std::endl << "   tSIMPLEPreconditionerFactory::test_diagonal " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
                       << diff << ")" << std::endl;
@@ -350,8 +354,8 @@ bool tSIMPLEPreconditionerFactory::test_diagonal(int verbosity,std::ostream & os
    ea[0] = 4.0; ea[1] =-4.0; eb[0] = 6.0; eb[1] =12.0;
    ef[0] = 0.9375; ef[1] =  2.800000000000001;
    eg[0] = 0.39375; eg[1] = -1.08;
-   Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
-   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
+   Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
+   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_);
    if(not status || verbosity>=10 ) { 
       os << std::endl << "   tSIMPLEPreconditionerFactory::test_diagonal " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
                       << diff << ")" << std::endl;
@@ -386,11 +390,11 @@ bool tSIMPLEPreconditionerFactory::test_result(int verbosity,std::ostream & os)
    Epetra_Vector ea(*map),eb(*map);
    Epetra_Vector ef(*map),eg(*map);
    
-   const RCP<const Thyra::VectorBase<double> > x = BlockVector(ea,eb,A_->domain());
-   const RCP<const Thyra::VectorBase<double> > z = BlockVector(ef,eg,A_->domain());
-   const RCP<Thyra::VectorBase<double> > y = Thyra::createMember(A_->range()); 
+   const RCP<const Thyra::MultiVectorBase<double> > x = BlockVector(ea,eb,A_->domain());
+   const RCP<const Thyra::MultiVectorBase<double> > z = BlockVector(ef,eg,A_->domain());
+   const RCP<Thyra::MultiVectorBase<double> > y = Thyra::createMembers(A_->range(),1); 
 
-   Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
+   Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
 
    // now checks of the preconditioner (should be exact!)
    /////////////////////////////////////////////////////////////////////////
@@ -399,8 +403,8 @@ bool tSIMPLEPreconditionerFactory::test_result(int verbosity,std::ostream & os)
    ea[0] = 0.0; ea[1] = 1.0; eb[0] = 1.0; eb[1] = 3.0;
    ef[0] = 0.987654320987654; ef[1] = 1.074074074074074;
    eg[0] = 0.777777777777778; eg[1] = 1.066666666666667;
-   Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
-   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
+   Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
+   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_);
    if(not status || verbosity>=10 ) { 
       os << std::endl << "   tSIMPLEPreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
                       << diff << ")" << std::endl;
@@ -414,8 +418,8 @@ bool tSIMPLEPreconditionerFactory::test_result(int verbosity,std::ostream & os)
    ea[0] =-2.0; ea[1] = 4.0; eb[0] = 7.0; eb[1] = 9.0;
    ef[0] = 4.197530864197531; ef[1] = 2.814814814814815;
    eg[0] = 2.855555555555555; eg[1] = 3.633333333333334;
-   Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
-   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
+   Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
+   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_);
    if(not status || verbosity>=10 ) { 
       os << std::endl << "   tSIMPLEPreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
                       << diff << ")" << std::endl;
@@ -429,8 +433,8 @@ bool tSIMPLEPreconditionerFactory::test_result(int verbosity,std::ostream & os)
    ea[0] = 1.0; ea[1] = 0.0; eb[0] = 0.0; eb[1] =-5.0;
    ef[0] = -0.567901234567901; ef[1] = -1.592592592592592;
    eg[0] = -1.122222222222222; eg[1] = -1.333333333333333;
-   Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
-   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
+   Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
+   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_);
    if(not status || verbosity>=10 ) { 
       os << std::endl << "   tSIMPLEPreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
                       << diff << ")" << std::endl;
@@ -444,8 +448,8 @@ bool tSIMPLEPreconditionerFactory::test_result(int verbosity,std::ostream & os)
    ea[0] = 4.0; ea[1] =-4.0; eb[0] = 6.0; eb[1] =12.0;
    ef[0] = 0.518518518518519; ef[1] = 2.888888888888889;
    eg[0] = 1.533333333333334; eg[1] = 5.600000000000001;
-   Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
-   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_);
+   Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
+   status = ((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_);
    if(not status || verbosity>=10 ) { 
       os << std::endl << "   tSIMPLEPreconditionerFactory::test_result " << toString(status) << ":  (y=inv(A)*x) != z (|y-z|_2/|z|_2 = " 
                       << diff << ")" << std::endl;

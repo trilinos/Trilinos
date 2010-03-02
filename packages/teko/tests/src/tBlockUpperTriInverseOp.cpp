@@ -5,6 +5,8 @@
 
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
+#include "Thyra_VectorBase.hpp"
+#include "Thyra_MultiVectorBase.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_VectorStdOps.hpp"
 
@@ -165,7 +167,7 @@ bool tBlockUpperTriInverseOp::test_alphabeta(int verbosity,std::ostream & os)
    Thyra::randomize<double>(-10,10,src.ptr());
    Thyra::randomize<double>(-10,10,dste.ptr());
 
-   RCP<Thyra::VectorBase<double> > dstn = dste->clone_v();
+   RCP<Thyra::MultiVectorBase<double> > dstn = dste->clone_v();
 
    diff = Teko::Test::Difference(dste,dstn);
    TEST_ASSERT(diff<=0.0,

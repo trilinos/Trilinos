@@ -10,6 +10,7 @@
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Thyra_ProductVectorSpaceBase.hpp"
 #include "Thyra_DefaultProductVector.hpp"
+#include "Thyra_DefaultProductMultiVector.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Thyra_DefaultLinearOpSource.hpp"
 #include "Thyra_PreconditionerFactoryHelpers.hpp"
@@ -18,6 +19,8 @@
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
+
+#include "Teko_Utilities.hpp"
 
 // Epetra includes
 #include "Epetra_SerialComm.h"
@@ -53,32 +56,38 @@ const RCP<const Thyra::LinearOpBase<double> > build2x2(const Epetra_Comm & comm,
    return Thyra::epetraLinearOp(blk);
 }
 
-const RCP<const Thyra::VectorBase<double> > BlockVector(const Epetra_Vector & eu, const Epetra_Vector & ev,
+const RCP<const Thyra::MultiVectorBase<double> > BlockVector(const Epetra_Vector & eu, const Epetra_Vector & ev,
         const RCP<const Thyra::VectorSpaceBase<double> > & vs)
 {
-   typedef RCP<const Thyra::VectorBase<double> > Vector;
+   typedef RCP<const Thyra::MultiVectorBase<double> > Vector;
 
    const RCP<const Thyra::ProductVectorSpaceBase<double> > pvs 
          = rcp_dynamic_cast<const Thyra::ProductVectorSpaceBase<double> >(vs);
-   const Vector u = Thyra::create_Vector(rcpFromRef(eu),pvs->getBlock(0)); 
-   const Vector v = Thyra::create_Vector(rcpFromRef(ev),pvs->getBlock(1)); 
+
+   RCP<const Epetra_MultiVector> meu = rcpFromRef(eu);
+   RCP<const Epetra_MultiVector> mev = rcpFromRef(ev);
+   const Vector u = Thyra::create_MultiVector(meu,pvs->getBlock(0)); 
+   const Vector v = Thyra::create_MultiVector(mev,pvs->getBlock(1)); 
 
    // build rhs: this is ugly...in 2 steps
    // (i). allocate space for rhs "Product" vector, this is the range of A
    // (j). Need to do a dynamic cast to set the blocks (VectorBase doesn't know about setBlock)
-   const RCP<Thyra::VectorBase<double> > rhs = Thyra::createMember(vs);
-   rcp_dynamic_cast<Thyra::DefaultProductVector<double> >(rhs)->setBlock(0,u);
-   rcp_dynamic_cast<Thyra::DefaultProductVector<double> >(rhs)->setBlock(1,v);
+   // const RCP<Thyra::MultiVectorBase<double> > rhs = Thyra::createMembers(vs,1);
+   // rcp_dynamic_cast<Thyra::DefaultProductMultiVector<double> >(rhs)->setBlock(0,u);
+   // rcp_dynamic_cast<Thyra::DefaultProductMultiVector<double> >(rhs)->setBlock(1,v);
+   std::vector<RCP<Thyra::MultiVectorBase<double> > > blocks;
+   blocks.push_back(rcp_const_cast<Thyra::MultiVectorBase<double> >(u));
+   blocks.push_back(rcp_const_cast<Thyra::MultiVectorBase<double> >(v));
 
-   return rhs;
+   return buildBlockedMultiVector(blocks);
 }
 
-void Print(std::ostream & os,const std::string & s,const RCP<const Thyra::VectorBase<double> > & v)
+void Print(std::ostream & os,const std::string & s,const RCP<const Thyra::MultiVectorBase<double> > & v)
 {
-   Thyra::ConstDetachedVectorView<double> view(v);
+   Thyra::ConstDetachedVectorView<double> view(v->col(0));
 
    os << s << " = "; 
-   for(int i=0;i<v->space()->dim();i++) os << view[i] << " ";
+   for(int i=0;i<v->range()->dim();i++) os << view[i] << " ";
    os << std::endl;
 }
 
@@ -119,16 +128,16 @@ void HardExtract(std::ostream & os,const RCP<const Thyra::LinearOpBase<double> >
 }
 
 // add two Thyra vectors
-const Teuchos::RCP<Thyra::VectorBase<double> > Add(const Teuchos::RCP<const Thyra::VectorBase<double> > & x,
-                                                   const Teuchos::RCP<const Thyra::VectorBase<double> > & y)
+const Teuchos::RCP<Thyra::MultiVectorBase<double> > Add(const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & x,
+                                                   const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & y)
 {
    return Add(1.0,x,1.0,y);
 }
 
-const Teuchos::RCP<Thyra::VectorBase<double> > Add(double ax,const Teuchos::RCP<const Thyra::VectorBase<double> > & x,
-                                                   double ay,const Teuchos::RCP<const Thyra::VectorBase<double> > & y)
+const Teuchos::RCP<Thyra::MultiVectorBase<double> > Add(double ax,const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & x,
+                                                   double ay,const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & y)
 {
-   const Teuchos::RCP<Thyra::VectorBase<double> > z = Thyra::createMember(x->space());
+   const Teuchos::RCP<Thyra::MultiVectorBase<double> > z = Thyra::createMembers(x->range(),1);
 
    Thyra::linear_combination<double>(Teuchos::tuple<double>(ax,ay),
          Teuchos::tuple(Teuchos::ptrInArg(*x),Teuchos::ptrInArg(*y)),0.0,z.ptr());
@@ -137,12 +146,12 @@ const Teuchos::RCP<Thyra::VectorBase<double> > Add(double ax,const Teuchos::RCP<
 }
 
 // compute ||x-y||_2
-double Difference(const Teuchos::RCP<const Thyra::VectorBase<double> > & x,
-                  const Teuchos::RCP<const Thyra::VectorBase<double> > & y)
+double Difference(const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & x,
+                  const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & y)
 {
-   Teuchos::RCP<const Thyra::VectorBase<double> > z = Add(1.0,x,-1.0,y);
+   Teuchos::RCP<const Thyra::MultiVectorBase<double> > z = Add(1.0,x,-1.0,y);
 
-   return Thyra::norm_2(*z);
+   return Thyra::norm_2(*z->col(0));
 }
 
 // construct a diagonal matrix

@@ -13,7 +13,7 @@ OBJS = Teko_Utilities.o Teko_BlockPreconditionerFactory.o \
        Teko_BlockLowerTriInverseOp.o Teko_BlockedReordering.o \
        Teko_InverseFactory.o Teko_AddPreconditionerFactory.o Teko_MultPreconditionerFactory.o \
        Teko_InverseLibrary.o Teko_LU2x2DiagonalStrategy.o Teko_ImplicitLinearOp.o \
-       Teko_PreconditionerFactory.o Teko_PreconditionerState.o
+       Teko_PreconditionerFactory.o Teko_PreconditionerState.o Teko_RepeatPreconditionerFactory.o
 
 all: $(OBJS)
 	make -C ./NS

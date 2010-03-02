@@ -5,6 +5,10 @@
 
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
+#include "Thyra_VectorBase.hpp"
+#include "Thyra_MultiVectorBase.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 #include "Teko_Utilities.hpp"
 #include "Teko_BlockLowerTriInverseOp.hpp"

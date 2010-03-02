@@ -25,6 +25,7 @@
 #include "Thyra_DefaultScaledAdjointLinearOp.hpp"
 #include "Thyra_PreconditionerFactoryHelpers.hpp"
 #include "Thyra_LinearOpTester.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 #include <vector>
 
@@ -138,9 +139,9 @@ bool tLSCStabilized::test_diagonal(int verbosity,std::ostream & os)
    // construct a couple of vectors
    Epetra_Vector ea(*map),eb(*map);
    Epetra_Vector ef(*map),eg(*map);
-   const RCP<const Thyra::VectorBase<double> > x = BlockVector(ea,eb,A->domain());
-   const RCP<const Thyra::VectorBase<double> > z = BlockVector(ef,eg,A->domain());
-   const RCP<Thyra::VectorBase<double> > y = Thyra::createMember(A->range()); 
+   const RCP<const Thyra::MultiVectorBase<double> > x = BlockVector(ea,eb,A->domain());
+   const RCP<const Thyra::MultiVectorBase<double> > z = BlockVector(ef,eg,A->domain());
+   const RCP<Thyra::MultiVectorBase<double> > y = Thyra::createMembers(A->range(),1); 
 
    // now checks of the preconditioner (should be exact!)
    /////////////////////////////////////////////////////////////////////////
@@ -149,8 +150,8 @@ bool tLSCStabilized::test_diagonal(int verbosity,std::ostream & os)
    ea[0] = 0.0; ea[1] = 1.0; eb[0] = 1.0; eb[1] = 3.0;
    ef[0] =  0.407268709825528; ef[1] =  1.560553633217993;
    eg[0] = -0.058181244260790; eg[1] = -0.265138408304498;
-   Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
-   TEST_ASSERT((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_,
+   Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
+   TEST_ASSERT((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_,
                "   tLSCStabilized::test_diagonal " << toString(status) << ":(y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
             << diff << " <= " << tolerance_ << ")\n"
             << "      " << Print("x",x) 
@@ -161,8 +162,8 @@ bool tLSCStabilized::test_diagonal(int verbosity,std::ostream & os)
    ea[0] =-2.0; ea[1] = 4.0; eb[0] = 7.0; eb[1] = 9.0;
    ef[0] =  0.850880968778696; ef[1] =  5.181660899653979;
    eg[0] = -0.407268709825528; eg[1] = -0.795415224913495;
-   Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
-   TEST_ASSERT((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_,
+   Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
+   TEST_ASSERT((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_,
                "   tLSCStabilized::test_diagonal " << toString(status) << ":(y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
             << diff << " <= " << tolerance_ << ")\n"
             << "      " << Print("x",x) 
@@ -173,8 +174,8 @@ bool tLSCStabilized::test_diagonal(int verbosity,std::ostream & os)
    ea[0] = 1.0; ea[1] = 0.0; eb[0] = 0.0; eb[1] =-5.0;
    ef[0] =  1.000000000000000; ef[1] = -1.767589388696655;
    eg[0] =  0.000000000000000; eg[1] =  0.441897347174164;
-   Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
-   TEST_ASSERT((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_,
+   Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
+   TEST_ASSERT((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_,
                "   tLSCStabilized::test_diagonal " << toString(status) << ":(y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
             << diff << " <= " << tolerance_ << ")\n"
             << "      " << Print("x",x) 
@@ -185,8 +186,8 @@ bool tLSCStabilized::test_diagonal(int verbosity,std::ostream & os)
    ea[0] = 4.0; ea[1] =-4.0; eb[0] = 6.0; eb[1] =12.0;
    ef[0] =  6.443612258953168; ef[1] =  2.242214532871971;
    eg[0] = -0.349087465564738; eg[1] = -1.060553633217993;
-   Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
-   TEST_ASSERT((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_,
+   Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
+   TEST_ASSERT((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_,
                "   tLSCStabilized::test_diagonal " << toString(status) << ":(y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
             << diff << " <= " << tolerance_ << ")\n"
             << "      " << Print("x",x) 
@@ -255,9 +256,9 @@ bool tLSCStabilized::test_diagonalNotSym(int verbosity,std::ostream & os)
    // construct a couple of vectors
    Epetra_Vector ea(*map),eb(*map);
    Epetra_Vector ef(*map),eg(*map);
-   const RCP<const Thyra::VectorBase<double> > x = BlockVector(ea,eb,A->domain());
-   const RCP<const Thyra::VectorBase<double> > z = BlockVector(ef,eg,A->domain());
-   const RCP<Thyra::VectorBase<double> > y = Thyra::createMember(A->range()); 
+   const RCP<const Thyra::MultiVectorBase<double> > x = BlockVector(ea,eb,A->domain());
+   const RCP<const Thyra::MultiVectorBase<double> > z = BlockVector(ef,eg,A->domain());
+   const RCP<Thyra::MultiVectorBase<double> > y = Thyra::createMembers(A->range(),1); 
 
    // now checks of the preconditioner (should be exact!)
    /////////////////////////////////////////////////////////////////////////
@@ -266,8 +267,8 @@ bool tLSCStabilized::test_diagonalNotSym(int verbosity,std::ostream & os)
    ea[0] = 0.0; ea[1] = 1.0; eb[0] = 1.0; eb[1] = 3.0;
    ef[0] =  0.407268709825528; ef[1] =  1.560553633217993;
    eg[0] = -0.058181244260790; eg[1] = -0.265138408304498;
-   Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
-   TEST_ASSERT((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_,
+   Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
+   TEST_ASSERT((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_,
                "   tLSCStabilized::test_diagonal " << toString(status) << ":(y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
             << diff << " <= " << tolerance_ << ")\n"
             << "      " << Print("x",x) 
@@ -278,8 +279,8 @@ bool tLSCStabilized::test_diagonalNotSym(int verbosity,std::ostream & os)
    ea[0] =-2.0; ea[1] = 4.0; eb[0] = 7.0; eb[1] = 9.0;
    ef[0] =  0.850880968778696; ef[1] =  5.181660899653979;
    eg[0] = -0.407268709825528; eg[1] = -0.795415224913495;
-   Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
-   TEST_ASSERT((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_,
+   Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
+   TEST_ASSERT((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_,
                "   tLSCStabilized::test_diagonal " << toString(status) << ":(y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
             << diff << " <= " << tolerance_ << ")\n"
             << "      " << Print("x",x) 
@@ -290,8 +291,8 @@ bool tLSCStabilized::test_diagonalNotSym(int verbosity,std::ostream & os)
    ea[0] = 1.0; ea[1] = 0.0; eb[0] = 0.0; eb[1] =-5.0;
    ef[0] =  1.000000000000000; ef[1] = -1.767589388696655;
    eg[0] =  0.000000000000000; eg[1] =  0.441897347174164;
-   Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
-   TEST_ASSERT((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_,
+   Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
+   TEST_ASSERT((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_,
                "   tLSCStabilized::test_diagonal " << toString(status) << ":(y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
             << diff << " <= " << tolerance_ << ")\n"
             << "      " << Print("x",x) 
@@ -302,8 +303,8 @@ bool tLSCStabilized::test_diagonalNotSym(int verbosity,std::ostream & os)
    ea[0] = 4.0; ea[1] =-4.0; eb[0] = 6.0; eb[1] =12.0;
    ef[0] =  6.443612258953168; ef[1] =  2.242214532871971;
    eg[0] = -0.349087465564738; eg[1] = -1.060553633217993;
-   Thyra::apply(*precOp,NONCONJ_ELE,*x,&*y);
-   TEST_ASSERT((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z))<tolerance_,
+   Thyra::apply(*precOp,Thyra::NOTRANS,*x,y.ptr());
+   TEST_ASSERT((diff = Teko::Test::Difference(y,z)/Thyra::norm_2(*z->col(0)))<tolerance_,
                "   tLSCStabilized::test_diagonal " << toString(status) << ":(y=inv(A)*x) != z (|y-z|_2/|z|_2 = "
             << diff << " <= " << tolerance_ << ")\n"
             << "      " << Print("x",x) 
@@ -358,8 +359,8 @@ bool tLSCStabilized::test_strategy(int verbosity,std::ostream & os)
    const RCP<Epetra_Map> map = rcp(new Epetra_Map(sz,0,*comm));
 
    Epetra_Vector ea(*map),eb(*map);
-   const RCP<const Thyra::VectorBase<double> > x = BlockVector(ea,eb,A->domain());
-   const RCP<Thyra::VectorBase<double> > y = Thyra::createMember(A->range()); 
+   const RCP<const Thyra::MultiVectorBase<double> > x = BlockVector(ea,eb,A->domain());
+   const RCP<Thyra::MultiVectorBase<double> > y = Thyra::createMembers(A->range(),1); 
 
    Teuchos::ParameterList paramList;
    paramList.set("Linear Solver Type","Amesos");

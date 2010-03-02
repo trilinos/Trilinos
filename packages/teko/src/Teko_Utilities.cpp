@@ -14,6 +14,7 @@
 #include "Thyra_DefaultProductMultiVector.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_VectorStdOps.hpp"
 #include "Thyra_get_Epetra_Operator.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 

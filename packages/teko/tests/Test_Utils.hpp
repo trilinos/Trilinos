@@ -22,10 +22,10 @@ namespace Test {
 const Teuchos::RCP<const Thyra::LinearOpBase<double> > build2x2(const Epetra_Comm & comm,double a,double b,double c,double d);
 
 // prints a vector, with string "s" as the name
-void Print(std::ostream & os,const std::string & s,const Teuchos::RCP<const Thyra::VectorBase<double> > & v);
+void Print(std::ostream & os,const std::string & s,const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & v);
 
 // prints a vector, with string "s" as the name
-inline std::string Print(const std::string & s,const Teuchos::RCP<const Thyra::VectorBase<double> > & v)
+inline std::string Print(const std::string & s,const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & v)
 { std::stringstream ss; Print(ss,s,v); return ss.str(); }
 
 // builds a single vector of the identity matrix
@@ -36,20 +36,20 @@ Teuchos::RCP<Thyra::VectorBase<double> > BuildIVector(int j,const Teuchos::RCP<c
 void HardExtract(std::ostream & os,const Teuchos::RCP<const Thyra::LinearOpBase<double> > & A);
 
 // add two Thyra vectors
-const Teuchos::RCP<Thyra::VectorBase<double> > Add(const Teuchos::RCP<const Thyra::VectorBase<double> > & x,
-                                                   const Teuchos::RCP<const Thyra::VectorBase<double> > & y);
-const Teuchos::RCP<Thyra::VectorBase<double> > Add(double ax,const Teuchos::RCP<const Thyra::VectorBase<double> > & x,
-                                                   double ay,const Teuchos::RCP<const Thyra::VectorBase<double> > & y);
+const Teuchos::RCP<Thyra::MultiVectorBase<double> > Add(const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & x,
+                                                   const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & y);
+const Teuchos::RCP<Thyra::MultiVectorBase<double> > Add(double ax,const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & x,
+                                                   double ay,const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & y);
 
 // compute ||x-y||_2
-double Difference(const Teuchos::RCP<const Thyra::VectorBase<double> > & x,
-                  const Teuchos::RCP<const Thyra::VectorBase<double> > & y);
+double Difference(const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & x,
+                  const Teuchos::RCP<const Thyra::MultiVectorBase<double> > & y);
 
 // construct a diagonal matrix
 const Teuchos::RCP<const Thyra::LinearOpBase<double> > DiagMatrix(int cnt,double * vec,std::string label="");
 
 // 2-Vector
-const Teuchos::RCP<const Thyra::VectorBase<double> > BlockVector(const Epetra_Vector & u, const Epetra_Vector & v,
+const Teuchos::RCP<const Thyra::MultiVectorBase<double> > BlockVector(const Epetra_Vector & u, const Epetra_Vector & v,
         const Teuchos::RCP<const Thyra::VectorSpaceBase<double> > & vs);
 
 class UnitTest {

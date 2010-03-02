@@ -192,24 +192,23 @@ protected:
    Teuchos::RCP<InverseFactory> invFactoryF_;
    Teuchos::RCP<InverseFactory> invFactoryS_;
 
-   // operators requested, to be filled by user
-   LinearOp userPresStabMat_;
-   mutable LinearOp hScaling_;
-   MultiVector wScaling_;
-
    // number of power iterations when computing spectral radius
    int eigSolveParam_;
 
    // flags for handling various options
    bool rowZeroingNeeded_;
    bool useFullLDU_;
+   bool useMass_;
    bool useLumping_;
    bool useWScaling_;
+   DiagonalType scaleType_; 
    bool isSymmetric_;
 
-   // scaling operator parameters
-   bool useMass_;
-   DiagonalType scaleType_; 
+   // operators requested, to be filled by user
+   LinearOp userPresStabMat_;
+   mutable LinearOp hScaling_;
+   MultiVector wScaling_;
+
 private:
    InvLSCStrategy(const InvLSCStrategy &);
 };

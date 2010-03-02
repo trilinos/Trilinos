@@ -24,6 +24,9 @@
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Thyra_DefaultBlockedLinearOp.hpp"
 #include "Thyra_LinearOpTester.hpp"
+#include "Thyra_MultiVectorBase.hpp"
+#include "Thyra_VectorBase.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 // Aztec includes
 #include "AztecOO.h"
@@ -128,19 +131,19 @@ bool tLSCHIntegrationTest::test_hScaling(int verbosity,std::ostream & os)
    // construct a couple of vectors
    const RCP<Epetra_Map> map = rcp(new Epetra_Map(2,0,*GetComm()));
    Epetra_Vector ea(*map),eb(*map);
-   const RCP<const Thyra::VectorBase<double> > x = BlockVector(ea,eb,prec->domain());
-   const RCP<Thyra::VectorBase<double> > y = Thyra::createMember(prec->range()); 
+   const RCP<const Thyra::MultiVectorBase<double> > x = BlockVector(ea,eb,prec->domain());
+   const RCP<Thyra::MultiVectorBase<double> > y = Thyra::createMembers(prec->range(),1); 
    ea[0] = 1.0; ea[1] = 0.0; eb[0] = 0.0; eb[1] = 0.0;
-   Thyra::apply(*prec,Thyra::NONCONJ_ELE,*x,&*y);
+   Thyra::apply(*prec,Thyra::NOTRANS,*x,y.ptr());
    ss << "prec = " << Teuchos::describe(*y,Teuchos::VERB_EXTREME) << std::endl;
    ea[0] = 0.0; ea[1] = 1.0; eb[0] = 0.0; eb[1] = 0.0;
-   Thyra::apply(*prec,Thyra::NONCONJ_ELE,*x,&*y);
+   Thyra::apply(*prec,Thyra::NOTRANS,*x,y.ptr());
    ss << "prec = " << Teuchos::describe(*y,Teuchos::VERB_EXTREME) << std::endl;
    ea[0] = 0.0; ea[1] = 0.0; eb[0] = 1.0; eb[1] = 0.0;
-   Thyra::apply(*prec,Thyra::NONCONJ_ELE,*x,&*y);
+   Thyra::apply(*prec,Thyra::NOTRANS,*x,y.ptr());
    ss << "prec = " << Teuchos::describe(*y,Teuchos::VERB_EXTREME) << std::endl;
    ea[0] = 0.0; ea[1] = 0.0; eb[0] = 0.0; eb[1] = 1.0;
-   Thyra::apply(*prec,Thyra::NONCONJ_ELE,*x,&*y);
+   Thyra::apply(*prec,Thyra::NOTRANS,*x,y.ptr());
    ss << "prec = " << Teuchos::describe(*y,Teuchos::VERB_EXTREME) << std::endl;
   
    Thyra::LinearOpTester<double> tester;
