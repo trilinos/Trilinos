@@ -515,8 +515,34 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
       RETURN_VALUE  UPDATE_RETURN_VAL)
     MESSAGE("CTEST_UPDATE(...) returned '${UPDATE_RETURN_VAL}'")
 
-    # ToDo: Add git command to update preCopyrightTrilinos
-    
+    SET(PRECOPYRIGHT_TRILINOS_SRC_DIR "${CTEST_SOURCE_DIRECTORY}/preCopyrightTrilinos")
+    IF (NOT EXISTS "${PRECOPYRIGHT_TRILINOS_SRC_DIR}")
+      SET(PRECOPYRIGHT_TRILINOS_REPO "software.sandia.gov:/space/git/preCopyrightTrilinos")
+      MESSAGE("Doing initial GIT pull from '${PRECOPYRIGHT_TRILINOS_REPO}' ...")
+      EXECUTE_PROCESS(
+        COMMAND "${GIT_EXE}" clone "${PRECOPYRIGHT_TRILINOS_REPO}"
+        WORKING_DIRECTORY "${CTEST_SOURCE_DIRECTORY}"
+        OUTPUT_FILE "${CTEST_BINARY_DIRECTORY}/preCopyrightTrilinos.update.out"
+        )
+    ELSE()
+      MESSAGE("Doing GIT update of '${PRECOPYRIGHT_TRILINOS_SRC_DIR}' ...")
+      EXECUTE_PROCESS(
+        COMMAND "${GIT_EXE}" pull
+        WORKING_DIRECTORY "${PRECOPYRIGHT_TRILINOS_SRC_DIR}"
+        OUTPUT_FILE "${CTEST_BINARY_DIRECTORY}/preCopyrightTrilinos.update.out"
+        )
+    ENDIF()
+
+    # ToDo: Above, find a way to get the update info into the CDash submit to
+    # be displayed on the cdash server.  If this is too hard to do then who
+    # cares.  Eventually precopyright code will make it into the main
+    # repository.
+
+    # ToDo: Above, we need to only clone from
+    # software:/space/git/nighly/preCopyrightTrilinos.  Someone needs to add
+    # the cron job to update software:/space/git/nighly/preCopyrightTrilinos
+    # before we can do this.
+
     IF(CTEST_TEST_TYPE STREQUAL Continuous)
       IF(UPDATE_RETURN_VAL EQUAL 0)
         IF(NOT CTEST_START_WITH_EMPTY_BINARY_DIRECTORY) # indicator of '1st time'...
