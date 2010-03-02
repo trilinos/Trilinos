@@ -96,6 +96,9 @@ int Zoltan_HUND(
   Zoltan_Set_Param(zz, "NUM_GLOBAL_PARTS", partArg);
   Zoltan_Set_Param(zz, "IMBALANCE_TOL", "1.2");
   Zoltan_Set_Param(zz, "RETURN_LISTS", "PARTITION_ASSIGNMENTS");
+  /* We want to minimize the number of columns in the separator,
+     not the number of nnz */
+  Zoltan_Set_Param(zz, "PHG_CUT_OBJECTIVE", "HYPEREDGES");
 
   ierr = Zoltan_LB_Partition(zz, /* input (all remaining fields are output) */
 			     &changes,        /* 1 if partitioning was changed, 0 otherwise */
