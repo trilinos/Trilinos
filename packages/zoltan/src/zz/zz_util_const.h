@@ -54,6 +54,7 @@ struct Zoltan_Map_List{
   ZOLTAN_ENTRY **entries; /* hash array, length max_index + 1 */
 
   ZOLTAN_ENTRY *top;      /* if dynamicEntries==0, entries are here */
+  int *keys;              /* If copyKeys and !dynamicEntries, keys are here */
 
   int id_size;          /* size of integer tuple */
   int max_index;        /* hash number range */

@@ -71,6 +71,7 @@ ZOLTAN_MAP* Zoltan_Map_Create(ZZ *zz,     /* just need this for error messages *
   ZOLTAN_ENTRY *top = NULL;
   ZOLTAN_ENTRY **entries = NULL;
   ZOLTAN_MAP* map = NULL;
+  int *keys = NULL;
 
   if ((num_id_entries < 1) || (num_entries < 0) || (hash_range_max < 0)){
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Bad parameters\n");
@@ -85,6 +86,11 @@ ZOLTAN_MAP* Zoltan_Map_Create(ZZ *zz,     /* just need this for error messages *
 
     top = (ZOLTAN_ENTRY *)ZOLTAN_CALLOC(num_entries, sizeof(ZOLTAN_ENTRY));
     if (!top){
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Out of memory\n");
+      return NULL;
+    }
+    keys = (int*)ZOLTAN_CALLOC(num_entries, sizeof(int)*num_id_entries);
+    if (!keys) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Out of memory\n");
       return NULL;
     }
@@ -124,6 +130,7 @@ ZOLTAN_MAP* Zoltan_Map_Create(ZZ *zz,     /* just need this for error messages *
   map->dynamicEntries  = (num_entries == 0);
   map->copyKeys        = store_keys;
   map->entry_count     = 0;
+  map->keys            = keys;
 
   return map;
 }
@@ -147,9 +154,7 @@ int Zoltan_Map_Destroy(ZZ *zz, ZOLTAN_MAP** map)
     /* free our copies of the keys */
 
     if (!(*map)->dynamicEntries){
-      for (i=0; i < (*map)->entry_count; i++){
-	ZOLTAN_FREE(&((*map)->top[i].key));
-      }
+      ZOLTAN_FREE(&((*map)->keys));
     }
     else{
       for (i=0; i <= (*map)->max_index; i++){
@@ -239,13 +244,14 @@ int Zoltan_Map_Find_Add(ZZ *zz, ZOLTAN_MAP* map, int *key, void *datain, void **
     }
 
     if (map->copyKeys){
-      element->key = (int *)ZOLTAN_MALLOC(sizeof(int) * map->id_size);
-      if (!element->key)
-	return ZOLTAN_MEMERR;
-
-      for (i=0; i < map->id_size; i++){
-	element->key[i] = key[i];
+      if(map->dynamicEntries) {
+	element->key = (int *)ZOLTAN_MALLOC(sizeof(int) * map->id_size);
+	if (!element->key)
+	  return ZOLTAN_MEMERR;
       }
+      else
+	element->key = map->keys + map->entry_count;
+      memcpy(element->key, key, sizeof(int)*map->id_size);
     }
     else{
       element->key = key;
