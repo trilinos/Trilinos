@@ -29,8 +29,8 @@
 #ifndef THYRA_POLYNOMIAL_VECTOR_TRAITS_HPP
 #define THYRA_POLYNOMIAL_VECTOR_TRAITS_HPP
 
-#include "Teuchos_PolynomialTraits.hpp"
 #include "Thyra_VectorBase.hpp"
+#include "Teuchos_PolynomialTraits.hpp"
 #include "Thyra_VectorStdOps.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 
