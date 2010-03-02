@@ -69,7 +69,7 @@
 
   \section announcements Announcements
 
-  NOX/LOCA version 8.0 will be release as part of Trilinos 8.0 in September 2007.  Please read the \ref nox_release_information page for more details on these changes.
+  NOX/LOCA version 10.2 will be released as part of Trilinos 10.2 in March 2010.  Please read the \ref nox_release_information page for more details on these changes.
 
   \section technical_information Technical Information
 
@@ -186,53 +186,10 @@ The documentation is generated in the source directory tree.  The main page is \
 
 %NOX is a package in the <a href="http://trilinos.sandia.gov">Trilinos Solver Framework</a>.  You will have to <a href="http://trilinos.sandia.gov/download">download</a> the Trilinos software, configure for your machine, build the libraries, and install them into your working directories.
 
-The <a href="http://trilinos.sandia.gov/getting_started.html">Getting Started With Trilinos</a> page is an excellent resource for configuring and building Trilinos. Imporatant links include:
+The <a href="http://trilinos.sandia.gov/getting_started.html">Getting Started With Trilinos</a> page is an excellent resource for configuring and building Trilinos. Important links include:
 <ul>
-<li> <a href="http://trilinos.sandia.gov/TrilinosUserGuide.pdf">Trilinos User Guide</a>
+<li> <a href="http://trilinos.sandia.gov/Trilinos10CMakeQuickstart.txt">CMake Quickstart Guide</a>
 </ul>
-
-The configure command creates machine specific Makefiles for each Trilinos package including %NOX and %LOCA.  The configure script also enables specific options in each code.  %NOX and %LOCA specific configuration flags are given on the \ref nox_configuration_options page.
-
-A typical configure script file for building nox and loca with epetra support enabled (for debian linux) is:
-<pre>
-../configure \
---prefix=/home/rppawlo/trilinos_local \
---disable-tests \
---disable-examples \
---enable-nox --enable-nox-tests --enable-nox-examples --enable-prerelease \
---enable-nox-lapack --enable-nox-epetra \
---with-nox-epetraext \
---enable-loca \
---enable-epetra \
---enable-epetraext \
---enable-ifpack \
---enable-aztecoo \
---enable-triutils \
---enable-anasazi \
---enable-teuchos --enable-teuchos-complex \
---disable-default-packages \
---disable-python \
---with-lapack=/usr/lib/liblapack.a \
---with-blas=/usr/lib/libblas.a \
-CXXFLAGS="-DMPICH_SKIP_MPICXX -g -ansi -Wall" \
-CFLAGS="-g -ansi -Wall" FFLAGS="-g -ansi -Wall" \
---with-gnumake \
---enable-mpi \
---with-mpi-compilers \
---cache-file=config.cache
-</pre>
-
-After Trilinos is configured and built, the headers and libraries must be installed into a working directory.  This is done by typing in the top level build directory:
-\verbatim
-make install
-\endverbatim
-
-By default, %Trilinos will be installed in /usr/local. Headers are put
-into /usr/local/include and libraries are put into /usr/local/lib.  If
-you prefer that it be installed in a different directory (which we
-strongly recommend), the directory can be specified using the
---prefix=PREFIX configuration option, where PREFIX is the preferred
-directory.
 
 \section step1_problems If you have problems...
 
@@ -297,25 +254,24 @@ Go on to \ref step2.
   The NOX::LAPACK instantiation is an interface to the BLAS/LAPACK
   library.  It is not intended for large-scale computations, but to
   serve as an easy-to-understand example of how one might interface to
-  %NOX.  To compile the NOX::LAPACK library, use the
-  --enable-nox-lapack option to configure; see \ref
-  nox_configuration_options.  \note The NOX::LAPACK instatiation is
-  serial only.
+  %NOX.  To compile the NOX::LAPACK library, use the CMake flag
+  "NOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK=ON" option to enable.
+  The NOX::LAPACK instatiation is serial only.
   <li>
   The NOX::Epetra instantiation is an interface to the Trilinos/Epetra
   linear algebra library.  It is Sandia's workhorse code for parallel
   applications.  For more information see the <a
   href="http://trilinos.sandia.gov/packages/epetra">Epetra Home
-  Page</a>. When you download %NOX as part of Trilinos (see \ref
-  downloads), Epetra is included in the distribution.  To compile the
-  NOX::Epetra library, use the --enable-nox-epetra option to
-  configure; see \ref nox_configuration_options.  For instructions on
-  interfacing your code to the epetra implementation see \ref
-  epetra_interface.  \note The epetra support interface actually
-  requires 3 Trilinos libraries: %Epetra, %AztecOO, and %Ifpack.  All
-  three of these libraries must be enabled during configure.
-  Optionally, it can also use two other libraries, the %EpetraExt and
-  %ML libraries.
+  Page</a>. The epetra support interface actually requires four
+  Trilinos libraries: %Epetra, %EpetraExt, %AztecOO, and %Ifpack.  The
+  NOX::Epetra library is automatically enabled if you configure
+  Trilinos with the four required packages enabled.  Alternatively,
+  you can force epetra support to be enabled with the CMake flag
+  "NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA=ON".  The configure will
+  fail if you do not have the required packages (%Epetra, %EpetraExt,
+  %AztecOO, and %Ifpack) enabled.  For instructions on interfacing
+  your code to the epetra implementation see \ref epetra_interface.
+  Optionally, the epetra support can also use the %ML library.
   <li>
   The NOX::Thyra instantiation is an interface to the Trilinos/Thyra
   package.  The Thyra package contains a set of interfaces and
@@ -329,21 +285,21 @@ Go on to \ref step2.
   functionality is moved into the Trilinos/Stratimikos layer.  For
   more information see the <a
   href="http://trilinos.sandia.gov/packages/thyra">Thyra Home
-  Page</a>. When you download %NOX as part of Trilinos (see \ref
-  downloads), Thyra is included in the distribution.  To compile the
-  NOX::Thyra library, use the --enable-nox-thyra option during
-  configure; see \ref nox_configuration_options.  For instructions on
-  interfacing your code to the thyra implementation see \ref
-  thyra_interface.
+  Page</a>. Thyra will automatically be enabled if the Trilinos
+  package Thyra is enabled. To explicitly force the NOX::Thyra library
+  to be enabled, use the CMake option
+  "NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA=ON" during configure.  For
+  instructions on interfacing your code to the thyra implementation
+  see \ref thyra_interface.
   <li>
   The NOX::PETSc instantiation is an interface with the PETSc
-  library. PETSc was developed at <a href="http://www.anl.gov">Argonne
+  library. PETSc is developed at <a href="http://www.anl.gov">Argonne
   National Labs</a>; for more information see the <a
   href="http://www-fp.mcs.anl.gov/petsc">PETSc Home Page</a> To
-  compile the NOX::Petsc library and examples, use the
-  --enable-nox-petsc option to configure; see \ref
-  nox_configuration_options.  For instructions on interfacing your
-  code to the petsc implementation see \ref petsc_interface.  
+  compile the NOX::Petsc library and examples, use the CMake flag
+  "NOX_ENABLE_ABSTRACT_IMPLEMENTATION_PETSC=ON".  For instructions on
+  interfacing your code to the petsc implementation see \ref
+  petsc_interface.
   </ul>
 
 \section step2_problems If you have problems...
@@ -490,61 +446,7 @@ Go on to \ref step4.
 
 \section step4_export_makefiles Using the Export Makefile System
 
-%NOX and %LOCA support the export makefile system to streamline issues dealing with linking against user applications.  When %NOX and %LOCA are installed using the "make install" command, it will install two Makefiles that contain all flags needed to link an application against the solvers.  The first Makefile is Makefile.export.nox.  The important flags are NOX_INCLUDES, NOX_LIBS, LOCA_INCLUDES, and LOCA_LIBS.  These make variables contain all paths and libraries needed to link against %NOX and %LOCA.
-
-The second makefile is Makefile.export.nox.macros.  This file contains all the flags and compiler options that the Trilinos libraries were built with.  One challenge in linking applications against Trilinos is using a consistent set of compiler flags.  This file take all the guesswork out of the process.  Just include this file in your own makefile and use the associated flags.
-
-Below is an example of a Makefile a user can write to link against %NOX.  This example can be found in the directory  Trilinos/packages/nox/examples/lapack/NOX_ExportMakefile.  In this example the user has written an interface to the nox lapack support for soving the Rosenbrock exmaple.  The code is found in the file Rosenbrock.C.  The file Makefile includes the %NOX export makefiles:
-
-\code
-#####################################################################
-## Example Makefile for a user application that does not use autoconf
-## - Uses lapack concrete instations for group and vector 
-## - Must use gnu-make (gmake) if the "shell" command is invoked
-#####################################################################
-
-##
-## Set the Trilinos install directory 
-##
-TRILINOS_INSTALL_DIR = /home/rppawlo/trilinos_local
-
-##
-## Include any direct Trilinos library dependencies - in this case only nox
-##
-include $(TRILINOS_INSTALL_DIR)/include/Makefile.export.nox.macros
-include $(TRILINOS_INSTALL_DIR)/include/Makefile.export.nox
-
-##
-## Use one of the following lines (2nd line is for non-gnumake platforms)
-##
-COMPILE_FLAGS = $(shell perl $(TRILINOS_INSTALL_DIR)/include/strip_dup_incl_paths.pl $(NOX_CXXFLAGS) $(NOX_DEFS) $(NOX_CPPFLAGS) $(NOX_INCLUDES))
-
-#COMPILE_FLAGS = $(NOX_CXXFLAGS) $(NOX_DEFS) $(NOX_CPPFLAGS) $(NOX_INCLUDES)
-
-##
-## Use one of the following lines (2nd line is for non-gnumake platforms)
-##
-LINK_FLAGS = $(shell perl $(TRILINOS_INSTALL_DIR)/include/strip_dup_libs.pl $(NOX_LIBS))
-
-#LINK_FLAGS = $(NOX_LIBS)
-
-##
-## Build your application code
-##
-
-Rosenbrock.exe: Rosenbrock.o
-	$(NOX_CXXLD) $(NOX_CXXFLAGS) -o Rosenbrock.exe Rosenbrock.o $(LINK_FLAGS)
-
-Rosenbrock.o:
-	$(NOX_CXX) $(COMPILE_FLAGS) -c Rosenbrock.C
-
-clean:
-	rm -f *.o Rosenbrock.exe *~
-\endcode
-
-In this example, we assume the user has installed %Trilinos into the directory /home/rppawlo/trilinos_local.  This directory is specified when configuring Trilinos with the --prefix=/home/rppawlo/trilinos_local.
-
-The first thing a user does is include the two export makefiles generated by nox. Next, the compile and link flags are defined.  Note that there exist 2 ways of defining the COMPILE_FLAGS and LINK_FLAGS.  One is for users that use gnu's version of make and the second (commented out) is for non-gnumake users.  The shell command is only supported in gnumake and is used to strip out duplicate headers.  The export makefile system has the unfortuante side effect of generating duplicate include paths when being installed. Finally, the user's application uses the compile and link flags to build their own executable.
+%NOX and %LOCA support the export makefile system to streamline issues dealing with linking against user applications.  When %NOX and %LOCA are installed using the "make install" command, it will install two Makefiles that contain all flags needed to link an application against the solvers.  The first Makefile is Makefile.export.NOX.  This contains the flags needed to build and link your code against nox.  The second file is Makefile.client.NOX.  This file can be used to link directly against your code.  See the files for more details.
 
 \section step4_basics Compiling Without using Export Makefiles
 
@@ -568,16 +470,16 @@ CXXFLAGS = -I$(NOX_PREFIX)/include/
 
 Compiling with Epetra support:
 
-We assume that Epetra, Aztec, and Ifpack are installed in the same place as %NOX.
+We assume that Epetra, EpetraExt, Aztec, and Ifpack are installed in the same directory as %NOX.
 
 \verbatim
 NOX_PREFIX = /usr/local
 LDFLAGS = -L$(NOX_PREFIX)/lib 
-LIBS = -lnox -lnoxepetra -laztecoo -lifpack -lepetra  -llapack -lblas 
+LIBS = -lnox -lnoxepetra -laztecoo -lifpack -lepetraext -lepetra  -llapack -lblas 
 CXXFLAGS = -I$(NOX_PREFIX)/include/
 \endverbatim
 
-\note If compiling without using the export makefile system, you have to be very careful about which libraries are needed to link against.  Enabling configure options typically brings in new library requirements.  The export makefile system catches this automatically.  Not using expor tmakefiles means YOU will have to catch the additional dependencies.
+\note If compiling without using the export makefile system, you have to be very careful about which libraries are needed to link against.  Enabling configure options typically brings in new library requirements.  The export makefile system catches this automatically.  Not using export makefiles means YOU will have to catch the additional dependencies.
 
 \section step4_problems If you have problems...
 
@@ -612,7 +514,19 @@ The following pages are relevant to developers.
 /* ************************************************************************ */
 /* ************************************************************************ */
 
-/*! \page nox_release_information NOX and LOCA Release Information (Last updated August 28th 2007)
+/*! \page nox_release_information NOX and LOCA Release Information (Last updated March 1st 2010)
+
+
+ %NOX/%LOCA version 10.2 will be release as part of Trilinos 10.2 in March 2010. 
+ <ul>
+ <li> We have fixed a long standing issue with nox regarding overloading of the ostream operator.  If you are compiling nox and get a compile/link error that fails to find the "operator<<" method on one of your classes, then you need to move your overloaded ostream function for that object into the correct namespace (the same namespace as the object it is operating on).  
+
+The following artice by Herb Sutter explains this issue:
+
+<a href="http://www.gotw.ca/publications/mill08.htm">Herb Sutter Article</a>
+ 
+ </ul>
+
 
  %NOX/%LOCA version 10.0 will be release as part of Trilinos 10.0 in September 2009.  
  <ul>
@@ -735,37 +649,39 @@ NOX release 4.0 notes:
 
 Here is a list and explanation of %NOX specific configuration options.  See the <a href="http://trilinos.sandia.gov/TrilinosUserGuide.pdf">Trilinos User Guide</a> for general options supported by all packages in %Trilinos.
 
-To get a complete list of all configure options supported by %NOX and %LOCA, go to the top-level %NOX source directory:
+To get a complete list of all configure options supported by %NOX and %LOCA do the following:
 \code
-> cd Trilinos/packages/nox
-\endcode
-
-Then run configure's help mode:
-\code
-> ./configure --help
+    $ cd $BUILD_DIR
+    $ rm CMakeCache.txt
+    $ cmake -LAH -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
+      $TRILINOS_HOME
+  
+    NOTE: You can also just look at the text file CMakeCache.txt after
+    configure which gets created in the build directory and has all of the
+    cache variables and documentation.
 \endcode
 
 \section basic_config Basic Options
 
 <ul>
-  <li> \c --enable-nox-debug          
+  <li> \c NOX_ENABLE_DEBUG=ON          
     <ul>
       <li> This turns on special debugging checks and output in %NOX.
     </ul>
-  <li> \c --enable-nox-examples          
+  <li> \c NOX_ENABLE_EXAMPLES=ON          
     <ul>
-      <li> Builds the example code in %NOX and %LOCA. Overrides the --enable-examples configure flag for the nox package only.
+      <li> Builds the example code in %NOX and %LOCA. Overrides the Trilinos_ENABLE_EXAMPLES configure flag for the nox package only.
     </ul>
-  <li> \c --enable-nox-tests          
+  <li> \c NOX_ENABLE_TESTS=ON         
     <ul>
-      <li> Builds the tests in %NOX and %LOCA. Overrides the --enable-tests configure flag for the nox package only.
+      <li> Builds the tests in %NOX and %LOCA. Overrides the Trilinos_ENABLE_TESTS configure flag for the nox package only.
     </ul>
 </ul>
 
 \section lapack_options LAPACK-Related Options
 
 <ul>
-  <li> \c --enable-nox-lapack         
+  <li> \c  NOX_ENABLE_ABSTRACT_IMPLEMENTATION_LAPACK=ON       
     <ul>
       <li> Compile noxlapack library (libnoxlapack.a). Default is not to compile the library.
     </ul>
@@ -774,25 +690,25 @@ Then run configure's help mode:
 \section epetra_options Epetra-Related Options
 
 <ul>
-  <li> \c --enable-nox-epetra         
+  <li> \c NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA=ON         
     <ul>
-      <li> Compile noxepetra library (libnoxepetra.a). Default is not to compile the library.
+      <li> Compile noxepetra library (libnoxepetra.a). Default is not to compile the library unless Epetra, EpetraExt, Ifpack, and AztecOO are enabled.
     </ul>
 </ul>
 
 \section thyra_options Thyra-Related Options
 
 <ul>
-  <li> \c --enable-nox-thyra         
+  <li> \c NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA=ON         
     <ul>
-      <li> Compile noxthyra library (libnoxthyra.a). Default is not to compile the library.
+      <li> Compile noxthyra library (libnoxthyra.a). Default is not to compile the library unless the Thyra package is enabled.
     </ul>
 </ul>
 
 \section petsc_options PETSc-Related Options
 
 <ul>
-  <li> \c --enable-nox-petsc      
+  <li> \c NOX_ENABLE_ABSTRACT_IMPLEMENTATION_PETSC=ON      
     <ul>
       <li> Compile noxpetsc library (libnoxpetsc.a). Default is not to compile the library.
       <li> Requires existing PETSc source specified by environment variables, 
@@ -806,59 +722,32 @@ Then run configure's help mode:
 \section loca_config LOCA-Related Options
 
 <ul>
-  <li> \c --enable-loca
+  <li> \c NOX_ENABLE_LOCA=ON
     <ul>
-      <li> Compile the loca library (libloca.a). Default is not to compile the library.
-           Also compiles appropriate interfaces if they have been enabled (e.g., lapack and epetra).  
-      <li> %LOCA requires the Trilinos package <a href="http://trilinos.sandia.gov/packages/teuchos/index.html"> Teuchos</a>, and Trilinos must be configured with \c --enable-teuchos to use %LOCA.  
-      <li> If %LAPACK support is enabled, Trilinos must be configured with \c --enable-teuchos-complex.
+      <li> Compile the loca library (libloca.a). Default is to always compile the library.
+      <li> If %LAPACK support is enabled, Trilinos must be configured with Teuchos_ENABLE_COMPLEX for required complex support.
     </ul>
-  <li> \c --with-loca-anasazi
+  <li> \c NOX_ENABLE_Anasazi=ON
     <ul>
       <li> Enable <a href="http://trilinos.sandia.gov/packages/anasazi/index.html"> Anasazi </a> eigensolver support in %LOCA.
       <li> %LOCA has a generic interface to Anasazi allowing it to compute eigenvalues/eigenvectors for any group/vector implementation.
-      <li> Trilinos must be configured with \c --enable-anasazi to use this option.
+      <li> Automatically enabled if the Anasazi library is enabled.
     </ul>
-  <li> \c --with-loca-mf[=PATH]
+  <li> \c NOX_ENABLE_MF=ON
     <ul>
       <li> Enable Multifario support in %LOCA.
-      <li> <a href="http://www.coin-or.org/multifario/"> Multifario </a> (MF) is a multi-parameter continuation library written by Mike Henderson at IBM.  Including this option allows %LOCA to use MF for multi-parameter continuation.  Optinally, the path to the top-level Multifario directory can be specified as an argument to this option.  The path to the Multifario include directory will then by PATH/include and the path to the Multifario library directory will be PATH/lib.
-      <li> The flags \c --with-mf-incdir and \c --with-mf-libdir are also available to point to the MF include and lib directories.  A version of MF that is known to work with %LOCA is available in the Trilinos3PL.
-      <li> The multifario libraries can be specified with --with-mf-libs.  The default is "-lMF -lExpCmp".
+      <li> <a href="http://www.coin-or.org/multifario/"> Multifario </a> (MF) is a multi-parameter continuation library written by Mike Henderson at IBM.  Including this option allows %LOCA to use MF for multi-parameter continuation.  
+      <li> The version of MF that is known to work with %LOCA is available in the Trilinos3PL.
+      <li> The multifario libraries can be specified using the TPL support.  See the Trilinos CMake quickstart guide for more details on enabling third party libraries.
     </ul>
 </ul>
-
-\section python_config Python-Related Options
-
-<ul>
-<li> \c --enable-python
-  <ul>
-    <li> Enable python interface wrappers in %NOX.  Default is to not build the python support.
-    <li> If %LOCA is enabled, \c --enable-python also enables the %LOCA-python wrappers, and if %LAPACK or %Epetra support is enabled, those python interface wrappers are enabled as well.
-    <li> The python interface wrappers are generated by <a href="http://www.swig.org/"> SWIG </a>.
-    <li> The wrappers are known to work with python 2.3 and 2.4.  For the python-Epetra support, the Numeric module is required, and version 23.3 is known to work.
-  </ul>
-<li> \c --with-swig
-  <ul>
-    <li> Enable creation of SWIG wrapper files using SWIG.  
-    <li> SWIG is now required to build the python interface files.
-    <li> The path to the SWIG binary can be passed as an optional argument to this flag.
-    <li> Currently SWIG version >= 1.3.23 is required.
-  </ul>
-</ul>
-    
 
 \section developer_config Developer-Related Options
 
 <ul>
-<li>  \c --enable-maintainer-mode 
+<li>  \c NOX_BUILD_PRERELEASE=ON
   <ul>
-    <li> Enable make rules and dependencies not useful
-         (and sometimes confusing) to the casual installer
-  </ul>
-<li>  \c --enable-prerelease
-  <ul>
-    <li> Cannot be used with the distribution version of the code - only works withe CVS version.
+    <li> Cannot be used with the distribution version of the code - only works with the development version.
          Compiles code that is not included in the releases but is part of the CVS repository. 
          See \ref prerelease.
   </ul>
@@ -878,7 +767,7 @@ distributed, documented, or tested as part of the automatic nightly
 scripts. 
 
 Prerelease code will only be used if configure is executed with the \c
---enable-prerelease option. In that case, 
+NOX_BUILD_PRERELEASE=ON option. In that case, 
 <ul>
 <li>all prerelease code will be compiled (\c -DWITH_PRERELEASE is added to \c CPPFLAGS), 
 <li>doxygen will document prerelease code (\c WITH_PRERELEASE is added to the \c PREDEFINED variable in Doxyfile),
@@ -900,27 +789,36 @@ ifdef as follows.
 #endif
 \endverbatim
 
-<li> Modify Makefile.am.
+<li> Modify the CMakelists.txt file.
 
 For example, the following modifications were made to \c
 nox/src/Makefile.am to add NOX_Direction_QuasiNewton as prerelease code
 in the libnox.a library.
 
 \verbatim
-if BUILD_PRERELEASE
+# Prerelease Code
+IF (${PACKAGE_NAME}_BUILD_PRERELEASE)
+  
+  APPEND_SET(HEADERS
+    NOX_Solver_TensorBasedTest.H
+    NOX_LineSearch_Tensor.H
+    NOX_Direction_Tensor.H
+    NOX_Direction_QuasiNewton.H
+    NOX_Direction_ModifiedNewton.H
+    )
 
-nodist_pkginclude_HEADERS = \
-	$(srcdir)/NOX_Direction_QuasiNewton.H 
+  APPEND_SET(SOURCES
+    NOX_Solver_TensorBasedTest.C
+    NOX_LineSearch_Tensor.C
+    NOX_Direction_Tensor.C
+    NOX_Direction_QuasiNewton.C
+    NOX_Direction_ModifiedNewton.C
+    )
 
-nodist_libnox_a_SOURCES = \
-	$(srcdir)/NOX_Direction_QuasiNewton.C
-
-endif
+ENDIF()
 \endverbatim
 
 </ol>
-
-Remember to run configure with the \c --enable-prerelease option!!
 
 \note Prerelease code must still be able to compile.
 
@@ -930,40 +828,12 @@ Remember to run configure with the \c --enable-prerelease option!!
 /* ************************************************************************ */
 /* ************************************************************************ */
 
-/*! \page cvsrepos NOX Developer's Guide to the CVS Repository for NOX
+/*! \page cvsrepos NOX Developer's Guide to the Git Repository for NOX
 
-The CVS repository is located on 
-<a href="http://software.sandia.gov/>software.sandia.gov"</a>. See Bill Goldman (bgoldma@sandia.gov) for an account.
+The git repository is located on software.sandia.gov. See Bill Goldman (bgoldma@sandia.gov) for an account.
 
 You should not do any development on software.sandia.gov. Instead,
-check out a copy to your local machine.  Be sure to correctly set your
-\c CVS_RSH environment variable to \c ssh.
-
-<ul>
-<li>
-To check out nox:
-\verbatim
-cvs -d :ext:username@software.sandia.gov:/space/CVS checkout -P nox
-\endverbatim
-
-<li>
-To update your copy of nox to the latest version:
-\verbatim
-cvs update -d -P
-\endverbatim
-</ul>
-
-We have installed a <a
-href="http://software.sandia.gov/bonsai/cvsqueryform.cgi?cvsroot=/space/CVS&module=nox">web
-front end for browsing and querying the CVS repository</a>. 
-
-<ul>
-<li> \b Browsing: From the
-"CVS Query Form" select the "Trilinos Tree" under "Browse" in the
-yellow box on the right hand side. Next, choose "Trilinos", then
-"packages", and finally "nox".
-<li> \b Querying: Select "nox" as the "Module"
-</ul>
+check out a copy to your local machine.  
 
 */
 
