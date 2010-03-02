@@ -14,6 +14,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SOURCES
     CrsMatrix_UnitTests
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ../UnitTestMissingExplicitInstantiations.cpp
   ARGS ${ARGS}
   COMM serial mpi
   STANDARD_PASS_OUTPUT

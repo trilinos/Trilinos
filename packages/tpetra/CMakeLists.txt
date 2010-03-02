@@ -17,15 +17,40 @@ ELSE()
   PACKAGE( Tpetra CLEANED )
 ENDIF()
 
+PACKAGE_ADD_EXPLICIT_INSTANTIATION_OPTION()
+
+PACKAGE_ADD_DEBUG_OPTION()
+
 #
 # B) Set up package-specific options
 #
 
 ADD_OPTION_AND_DEFINE(
-  Tpetra_ENABLE_DEBUG
-  HAVE_TPETRA_DEBUG
-  "Enable a host of runtime debug checking."
-  ${Trilinos_ENABLE_DEBUG}
+  ${PACKAGE_NAME}_INST_FLOAT
+  HAVE_TPETRA_INST_FLOAT
+  "If explicit instantiation is enabled, instantiate over scalar field float."
+  OFF
+  )
+
+ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_INST_DOUBLE
+  HAVE_TPETRA_INST_DOUBLE
+  "If explicit instantiation is enabled, instantiate over scalar field double."
+  ON
+  )
+
+ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_INST_COMPLEX_FLOAT
+  HAVE_TPETRA_INST_COMPLEX_FLOAT
+  "If explicit instantiation is enabled, instantiate over scalar field complex<float>."
+  OFF
+  )
+
+ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_INST_COMPLEX_DOUBLE
+  HAVE_TPETRA_INST_COMPLEX_DOUBLE
+  "If explicit instantiation is enabled, instantiate over scalar field complex<double>."
+  OFF
   )
 
 ADD_OPTION_AND_DEFINE(

@@ -67,6 +67,7 @@
 
 #include <Tpetra_config.h>
 #include <Teuchos_ConfigDefs.hpp>
+#include <Kokkos_ConfigDefs.hpp>
 
 // Used in all Tpetra code that explicitly must a type (like a loop index)
 // that is used with the Teuchos::Array[View,RCP] classes.
@@ -124,7 +125,17 @@ namespace Tpetra {
     DoNotOptimizeStorage /*!< Indicates that storage should not be optimized */
   };
 
-  /*! Combine mode */
+  /*!  \brief Tpetra::Combine Mode enumerable type */
+  /*! 
+    If set to Add, existing values will be summed with new values.
+		If set to Insert, new values will be inserted that don't currently exist.
+		If set to Replace, existing values will be replaced with new values.
+
+		NOTE: Add and Replace are intended for modifying values that already exist,
+		but it will function correctly if those values don't already exist. (i.e.
+		zero will be inserted, and then summed with or replaced by the new value.)
+		However, performance may suffer. (The same goes for Insert.)
+  */
 	enum CombineMode {
 		ADD,    /*!< Existing values will be summed with new values. */
 		INSERT, /*!< Insert new values that don't currently exist. */

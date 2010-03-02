@@ -111,7 +111,7 @@ namespace Tpetra {
     inline bool isDistributed() const;
 
     //! Access function for the Tpetra::Map this DistObject was constructed with.
-    inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getMap() const;
+    inline const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getMap() const { return map_; }
 
     //@}
 
@@ -311,12 +311,6 @@ namespace Tpetra {
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
   bool DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::isDistributed() const {
     return map_->isDistributed();
-  }
-
-  template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
-  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & 
-  DistObject<Packet,LocalOrdinal,GlobalOrdinal,Node>::getMap() const {
-    return map_;
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>
