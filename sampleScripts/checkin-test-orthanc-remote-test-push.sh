@@ -45,7 +45,7 @@ echo "
 
 ../../Trilinos/checkin-test.py \
 --send-email-to=bakercg@ornl.gov \
---make-options=\"-j12\" \
+--make-options=\"-j2\" \
 --ctest-options=\"-j2\" \
 --ctest-timeout=180 \
 --commit-msg-header-file=checkin_message \
