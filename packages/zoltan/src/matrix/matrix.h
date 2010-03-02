@@ -182,6 +182,10 @@ int Zoltan_Distribute_LinearY (ZZ * zz, PHGComm *layout) ;
 int Zoltan_Distribute_Set(Zoltan_matrix_2d* mat,
 			  distFnct *hashDistFct, void * hashDistData);
 
+void* Zoltan_Distribute_Partition_Register(ZZ* zz, int size, int* yGNO, int *part);
+void Zoltan_Distribute_Partition_Free(void** dist);
+
+
 /* Compute a symmertrization of the matrix.
  * if bipartite == 0, A+At transformation is done (matrix has to be square).
  * else, a bipartite graph of the matrix is built (matrix can have any shape).

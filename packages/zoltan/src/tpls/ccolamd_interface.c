@@ -60,6 +60,8 @@ int Zoltan_CColAMD_Order(
 /***************************************************************************
  * External function to compute CCOLAMD ordering,
  * used by Zoltan_order.
+ * Compute by /slices/ of the matrix, according to the partition given
+ * in parameter.
  **************************************************************************/
 
 int Zoltan_CColAMD(
@@ -78,10 +80,12 @@ int Zoltan_CColAMD(
   size_t Alen;
   int *pins = NULL;         /* Ccolamd needs a copy of the non-zeros */
   int *cmember = NULL;      /* constraints */
+  void *partdata = NULL;
   int *ystart = NULL;
   int n_col, n_row, n_nnz;
   Zoltan_matrix_2d mtx;
   int i;
+  int offset = 0;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
   memset (&opt, 0, sizeof(Zoltan_matrix_options));
@@ -95,6 +99,10 @@ int Zoltan_CColAMD(
   /* TODO: take this in parameter instead */
   ierr = Zoltan_Matrix_Build(zz, &opt, &mtx.mtx);
   CHECK_IERR;
+
+  /* Set up the correct distribution function */
+  /* TODO: do here to avoid a first distribution */
+
   ierr = Zoltan_Distribute_LinearY(zz, mtx.comm);
   CHECK_IERR;
   ierr = Zoltan_Matrix2d_Distribute (zz, mtx.mtx, &mtx, 0);
@@ -102,20 +110,34 @@ int Zoltan_CColAMD(
   ierr = Zoltan_Matrix_Complete(zz, &mtx.mtx);
   CHECK_IERR;
 
+  n_col = mtx.mtx.nY;
+
+  ierr = Zoltan_DD_Find (dd_constraint, mtx.mtx.yGID, (ZOLTAN_ID_PTR)cmember, NULL, NULL,
+			 mtx.mtx.nY, NULL);
+  CHECK_IERR;
+  partdata = Zoltan_Distribute_Partition_Register(zz, n_col, mtx.mtx.yGNO, cmember);
+  ZOLTAN_FREE(&cmember);
+  Zoltan_Distribute_Set(&mtx, Zoltan_Distribute_Partition, partdata);
+  ierr = Zoltan_Matrix2d_Distribute (zz, mtx.mtx, &mtx, 0);
+  CHECK_IERR;
+  ierr = Zoltan_Matrix_Complete(zz, &mtx.mtx);
+  CHECK_IERR;
+  Zoltan_Distribute_Partition_Free(&partdata);
+
+
   (*num_obj) = n_col = mtx.mtx.nY;
   n_row = mtx.mtx.globalX;
   n_nnz = mtx.mtx.nPins;
+
 
   /* Prepare call to CCOLAMD */
   ccolamd_set_defaults (knobs);
 
   cmember = (int*) ZOLTAN_MALLOC(n_col * sizeof(int));
   if (n_col > 0 && cmember == NULL) MEMORY_ERROR;
+
   (*gids) = ZOLTAN_MALLOC_GID_ARRAY(zz , n_col);
   if (n_col > 0 && (*gids) == NULL) MEMORY_ERROR;
-  ierr = Zoltan_DD_Find (dd_constraint, mtx.mtx.yGID, (ZOLTAN_ID_PTR)cmember, NULL, NULL,
-			 mtx.mtx.nY, NULL);
-  CHECK_IERR;
   memcpy ((*gids), mtx.mtx.yGID, n_col*sizeof(int)*zz->Num_GID);
 
   Alen = ccolamd_recommended (n_nnz, n_row, n_col);
@@ -141,8 +163,13 @@ int Zoltan_CColAMD(
   (*rank) = (int*) ZOLTAN_MALLOC(n_col * sizeof(int));
   if (n_col > 0 && (*rank) == NULL) MEMORY_ERROR;
 
+
+  /* Compute offset in the global graph */
+  MPI_Scan(&n_col, &offset, 1, MPI_INT, MPI_SUM, zz->Communicator);
+  offset -= n_col;
+  /* Compute direct permutation */
   for (i = 0 ; i < n_col ; ++i) {
-    (*rank)[ystart[i]] = i;
+    (*rank)[ystart[i]] = i + offset;
   }
 
 /*   memcpy ((*rank), ystart, n_col * sizeof(int)); */

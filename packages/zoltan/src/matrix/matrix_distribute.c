@@ -121,7 +121,7 @@ int Zoltan_Distribute_Partition(int edge_gno, int vtx_gno, void* data, int *part
   return (*part_y);
 }
 
-ZOLTAN_DIST_PART* Zoltan_Distribute_Partition_Register(ZZ* zz, int size, int* yGNO, int *part)
+void* Zoltan_Distribute_Partition_Register(ZZ* zz, int size, int* yGNO, int *part)
 {
   ZOLTAN_DIST_PART* dist;
   int i;
@@ -142,17 +142,20 @@ ZOLTAN_DIST_PART* Zoltan_Distribute_Partition_Register(ZZ* zz, int size, int* yG
     Zoltan_Map_Add(dist->zz, dist->map, &yGNO[i], (void*)part[i]);
   }
 
-  return (dist);
+  return ((void*)dist);
 }
 
 void
-Zoltan_Distribute_Partition_Free(ZOLTAN_DIST_PART** part)
+Zoltan_Distribute_Partition_Free(void** dist)
 {
-  if (part == NULL || *part == NULL)
+  ZOLTAN_DIST_PART* part;
+
+  if (dist == NULL || *dist == NULL)
     return;
 
-  Zoltan_Map_Destroy((*part)->zz, &(*part)->map);
-  ZOLTAN_FREE(part);
+  part = (ZOLTAN_DIST_PART*) (*dist);
+  Zoltan_Map_Destroy(part->zz, &part->map);
+  ZOLTAN_FREE(dist);
 }
 
 /* if !copy, inmat is not usable after this call */
