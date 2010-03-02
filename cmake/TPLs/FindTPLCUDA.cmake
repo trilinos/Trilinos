@@ -250,6 +250,9 @@
 ###############################################################################
 
 # FindCUDA.cmake
+INCLUDE(PrependGlobalSet)
+INCLUDE(RemoveGlobalDuplicates)
+INCLUDE(AppendSet)
 
 # We need to have at least this version to support the VERSION_LESS argument to 'if' (2.6.2) and unset (2.6.3)
 cmake_policy(PUSH)
@@ -664,6 +667,7 @@ find_package_handle_standard_args(CUDA DEFAULT_MSG
 # Set Trilinos TPL variables
 set(TPL_CUDA_INCLUDE_DIRS ${CUDA_INCLUDE_DIRS})
 set(TPL_CUDA_LIBRARIES    ${CUDA_LIBRARIES})
+append_set(TPL_CUDA_LIBRARIES    ${CUDA_CUBLAS_LIBRARIES})
 set(TPL_CUDA_LIBRARY_DIRS "")
 
 
@@ -1106,6 +1110,10 @@ endmacro(CUDA_WRAP_SRCS)
 macro(CUDA_ADD_LIBRARY cuda_target)
 
   CUDA_ADD_CUDA_INCLUDE_ONCE()
+  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    MESSAGE("\nCUDA_ADD_LIBRARY: ${cuda_target}")
+  ENDIF()
+
 
   # Separate the sources from the options
   CUDA_GET_SOURCES_AND_OPTIONS(_sources _cmake_options _options ${ARGN})
@@ -1124,6 +1132,25 @@ macro(CUDA_ADD_LIBRARY cuda_target)
   target_link_libraries(${cuda_target}
     ${CUDA_LIBRARIES}
     )
+
+  # add the install targets
+  INSTALL(
+    TARGETS ${cuda_target}
+    EXPORT ${PROJECT_NAME}
+      RUNTIME DESTINATION "${${PROJECT_NAME}_INSTALL_RUNTIME_DIR}"
+      LIBRARY DESTINATION "${${PROJECT_NAME}_INSTALL_LIB_DIR}"
+      ARCHIVE DESTINATION "${${PROJECT_NAME}_INSTALL_LIB_DIR}"
+    COMPONENT ${PACKAGE_NAME}
+    )
+
+  # Add to the list of libraries for the current package
+  PREPEND_GLOBAL_SET(${PACKAGE_NAME}_LIBRARIES ${cuda_target})
+  REMOVE_GLOBAL_DUPLICATES(${PACKAGE_NAME}_LIBRARIES)
+  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    PRINT_VAR(${PACKAGE_NAME}_INCLUDE_DIRS)
+    PRINT_VAR(${PACKAGE_NAME}_LIBRARY_DIRS)
+    PRINT_VAR(${PACKAGE_NAME}_LIBRARIES)
+  ENDIF()
 
   # We need to set the linker language based on what the expected generated file
   # would be. CUDA_C_OR_CXX is computed based on CUDA_HOST_COMPILATION_CPP.
