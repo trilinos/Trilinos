@@ -2,7 +2,9 @@ INCLUDE(PackageGeneralMacros)
 
 FUNCTION(PACKAGE_WRITE_PACKAGE_CONFIG_FILE PACKAGE_NAME)
 
-  MESSAGE("For package ${PACKAGE_NAME} creating ${PACKAGE_NAME}Config.cmake")
+  IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    MESSAGE("For package ${PACKAGE_NAME} creating ${PACKAGE_NAME}Config.cmake")
+  ENDIF()
 
   # Remove from the package list all packages after ${PACKAGE} in the dependency
   # chain. This way each package can create its own minimalist export makefile
@@ -56,11 +58,6 @@ FUNCTION(PACKAGE_WRITE_PACKAGE_CONFIG_FILE PACKAGE_NAME)
 
     SET(OPTIONAL_TPLS ${${PACKAGE}_LIB_OPTIONAL_DEP_TPLS})
 
-    #apparently reversing an empty list in cmake is an error...
-    IF(OPTIONAL_TPLS)
-      LIST(REVERSE OPTIONAL_TPLS)
-    ENDIF()
-
     FOREACH(TPL ${OPTIONAL_TPLS})
       IF(${PACKAGE}_ENABLE_${TPL})
         LIST(APPEND FULL_TPL_SET ${TPL})
@@ -68,18 +65,32 @@ FUNCTION(PACKAGE_WRITE_PACKAGE_CONFIG_FILE PACKAGE_NAME)
     ENDFOREACH()
   ENDFOREACH()
 
-  # We have to reverse the list before removing the duplicates to make sure
-  # that the proper ordering is maintained between dependent tpls. 
+  #We will use the complete list of supported tpls for the project
+  #to help us create a properly ordered list of tpls.
   IF(FULL_TPL_SET)
-    LIST(REVERSE FULL_TPL_SET)
-    LIST(REMOVE_DUPLICATES FULL_TPL_SET)
-    LIST(REVERSE FULL_TPL_SET)
+    # Reversing the tpl list so that the list of tpls will be produced in
+    # order of most dependent to least dependent.
+    SET(TPL_LIST ${${PROJECT_NAME}_TPLS})
+    LIST(REVERSE TPL_LIST)
+    
+    SET(ORDERED_FULL_TPL_SET "")
+    FOREACH(TPL ${TPL_LIST})
+      LIST(FIND FULL_TPL_SET ${TPL} FOUND)
+      
+      IF(FOUND GREATER -1)
+        LIST(APPEND ORDERED_FULL_TPL_SET ${TPL})
+      ENDIF()
+    ENDFOREACH()
+  ENDIF()
+  
+  IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    MESSAGE("ORDERED_FULL_TPL_SET after all tpls = ${ORDERED_FULL_TPL_SET}")
   ENDIF()
   
   SET(${PACKAGE_NAME}_TPL_LIBRARIES "")
   SET(${PACKAGE_NAME}_TPL_INCLUDE_DIRS "")
   SET(${PACKAGE_NAME}_TPL_LIBRARY_DIRS "")
-  FOREACH(TPL ${FULL_TPL_SET})
+  FOREACH(TPL ${ORDERED_FULL_TPL_SET})
     LIST(APPEND ${PACKAGE_NAME}_TPL_LIBRARIES ${TPL_${TPL}_LIBRARIES})
     LIST(APPEND ${PACKAGE_NAME}_TPL_INCLUDE_DIRS ${TPL_${TPL}_INCLUDE_DIRS})
     LIST(APPEND ${PACKAGE_NAME}_TPL_LIBRARY_DIRS ${TPL_${TPL}_LIBRARY_DIRS})
@@ -175,6 +186,7 @@ FUNCTION(PACKAGE_WRITE_TRILINOS_CONFIG_FILE)
   
   SET(${PROJECT_NAME}_CONFIG_TPL_INCLUDE_DIRS ${FULL_TPL_INCLUDE_DIRS_SET})
   SET(${PROJECT_NAME}_CONFIG_TPL_LIBRARY_DIRS ${FULL_TPL_LIBRARY_DIRS_SET})
+  SET(${PROJECT_NAME}_CONFIG_TPL_LIBRARIES ${FULL_TPL_LIBRARY_SET})
   
   #
   # Configure two files for finding Trilinos. One for the build tree and one for installing

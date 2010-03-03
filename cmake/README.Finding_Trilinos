@@ -110,15 +110,15 @@ Trilinos. For individual packages this will only hold the packages which the
 given package has a dependency on and that dependency was enabled. This list is
 very useful in determining the actual dependencies of a package for the
 individual package case. If you know which package you would like to check
-dependency on you can use list(find <package name> Trilinos_PACKAGE_LIST). If
-you do not know which other packages that your package of interest depends on
-but want to include their options as well you could loop over this list and then
-use each individual package name as the argument to a find_package call. You
-generally won't need to do this if you just want to link your package of
-interest as everything required to properly link that package will have already
-been set in the above variables. However, there are cases where this information
-is useful, such as if you can optionally use features from the dependencies of
-your package of interest.
+dependency on you can use list(find ${Trilinos_PACKAGE_LIST} <package name>
+package_found). If you do not know which other packages that your package of
+interest depends on but want to include their options as well you could loop
+over this list and then use each individual package name as the argument to a
+find_package call. You generally won't need to do this if you just want to link
+your package of interest as everything required to properly link that package
+will have already been set in the above variables. However, there are cases
+where this information is useful, such as if you can optionally use features
+from the dependencies of your package of interest.
 
 
 Trilinos_TPL_LIST holds the complete list of TPLs that were enabled for
@@ -153,6 +153,7 @@ Example CMakeLists.txt file:
 MAKE_MINIMUM_REQUIRED(VERSION 2.8)
 
 #FIND_PACKAGE takes a search path as an optional second argument
+#for example FIND_PACKAGE(Trilinos PATHS <path to trilinos>)
 FIND_PACKAGE(Trilinos)
 
 IF(NOT Trilinos_FOUND)
@@ -162,6 +163,6 @@ ENDIF()
 SET(MY_SOURCES ...)
 
 INCLUDE_DIRECTORIES(${Trilinos_INCLUDE_DIRS})
-LINK_DIRECTORIES(${Trilinos_LIBRARY_DIRS})
-ADD_EXECUTABLE(my_exe ${MY_SOURCES}
-TARGET_LINK_LIBRARIES(my_exe ${Trilinos_LIBRARIES})
+LINK_DIRECTORIES(${Trilinos_LIBRARY_DIRS} ${Trilinos_TPL_LIBRARY_DIRS})
+ADD_EXECUTABLE(my_exe ${MY_SOURCES})
+TARGET_LINK_LIBRARIES(my_exe ${Trilinos_LIBRARIES} ${Trilinos_TPL_LIBRARIES})
