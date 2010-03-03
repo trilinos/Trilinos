@@ -28,15 +28,12 @@ SET(HEADERS ${HEADERS}
 # Core Files
 #
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-
 # general headers, sources
-APPEND_SET(HEADERS
-    Tpetra_MatrixIO.hpp
-  )
-APPEND_SET(SOURCES
-    Tpetra_MatrixIOInst.cpp
-  )
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+APPEND_GLOB(HEADERS ${DIR}/*.cpp)
+PACKAGE_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
+
 
 #
 # C) Define the targets for package's library(s)

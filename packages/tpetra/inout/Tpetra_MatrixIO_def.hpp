@@ -1,35 +1,8 @@
-#ifndef TPETRA_MATRIX_IO
-#define TPETRA_MATRIX_IO
+#ifndef TPETRA_MATRIX_IO_DEF
+#define TPETRA_MATRIX_IO_DEF
 
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_ArrayRCP.hpp>
-#include <Teuchos_CommHelpers.hpp>
-#include <Tpetra_CrsMatrix.hpp>
-
-namespace Tpetra {
-  namespace Utils {
-
-    bool parseIfmt(Teuchos::ArrayRCP<char> fmt, int &perline, int &width);
-    bool parseRfmt(Teuchos::ArrayRCP<char> fmt, int &perline, int &width, int &prec, char &flag);
-    void readHBInfo(const std::string &filename, int &M, int &N, int &nz, Teuchos::ArrayRCP<char> &Type, int &Nrhs);
-
-    void readHBHeader(std::ifstream &in_file, Teuchos::ArrayRCP<char> &Title, Teuchos::ArrayRCP<char> &Key, Teuchos::ArrayRCP<char> &Type, 
-        int &Nrow, int &Ncol, int &Nnzero, int &Nrhs,
-        Teuchos::ArrayRCP<char> &Ptrfmt, Teuchos::ArrayRCP<char> &Indfmt, Teuchos::ArrayRCP<char> &Valfmt, Teuchos::ArrayRCP<char> &Rhsfmt, 
-        int &Ptrcrd, int &Indcrd, int &Valcrd, int &Rhscrd, Teuchos::ArrayRCP<char> &Rhstype);
-
-    void readHBMatDouble(const std::string &filename, int &M, int &N, int &nonzeros, std::string &Type, Teuchos::ArrayRCP<int> &colptr, Teuchos::ArrayRCP<int> &rowind, Teuchos::ArrayRCP<double> &val);
-
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
-    void
-    readHBMatrix(const std::string &filename, 
-                         const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
-                         const Teuchos::RCP<Node> &node,
-                         Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> > &A);
-  } // end of Tpetra::Utils namespace
-} // end of Tpetra namespace
-
-#ifndef HIDE_TPETRA_INOUT_IMPLEMENTATIONS
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_MatrixIO.hpp"
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
 void
@@ -190,6 +163,19 @@ Tpetra::Utils::readHBMatrix(const std::string &filename,
   A->fillComplete(domMap,rowMap,Tpetra::DoOptimizeStorage);
 }
 
-#endif
+//
+// Explicit instantiation macro
+//
+// Must be expanded from within the Tpetra::Utils namespace!
+//
+
+
+#define TPETRA_READHBMATRIX_INSTANT(SCALAR,LO,GO,NODE) \
+  template                                               \
+  void \
+  readHBMatrix<SCALAR,LO,GO,NODE,Kokkos::DefaultSparseMultiply<SCALAR,LO,NODE >,Kokkos::DefaultSparseSolve<SCALAR,LO,NODE > >(             \
+      const std::string &, const Teuchos::RCP<const Teuchos::Comm<int> > &, const Teuchos::RCP<NODE > &,                                                                      \
+      Teuchos::RCP< CrsMatrix<SCALAR,LO,GO,NODE,Kokkos::DefaultSparseMultiply<SCALAR,LO,NODE >,Kokkos::DefaultSparseSolve<SCALAR,LO,NODE > > > &);
+
 
 #endif

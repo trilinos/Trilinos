@@ -20,6 +20,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   # ARGS 
   COMM mpi # serial
   STANDARD_PASS_OUTPUT
+  DEPLIBS kokkos kokkoslinalg kokkosnodeapi tpetrainout tpetratestlib
 )
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(Tpetra_HybridPlatformTest_Files1

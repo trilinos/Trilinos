@@ -344,8 +344,8 @@ Tpetra::createCrsMatrixMultiplyOp(const Teuchos::RCP<const Tpetra::CrsMatrix<Mat
   \
   template class CrsMatrixMultiplyOp< OPSCALAR , MATSCALAR , LO , GO , NODE >; \
   \
-  template Teuchos::RCP< Tpetra::CrsMatrixMultiplyOp<OPSCALAR,MATSCALAR,LO,GO,NODE> > \
-  createCrsMatrixMultiplyOp(const Teuchos::RCP<const Tpetra::CrsMatrix<MATSCALAR,LO,GO,NODE> > &A); \
+  template Teuchos::RCP< CrsMatrixMultiplyOp<OPSCALAR,MATSCALAR,LO,GO,NODE> > \
+  createCrsMatrixMultiplyOp(const Teuchos::RCP<const CrsMatrix<MATSCALAR,LO,GO,NODE> > &A); \
   \
   template void CrsMatrix<MATSCALAR,LO,GO,NODE>::multiply<OPSCALAR,OPSCALAR>( \
         const MultiVector<OPSCALAR,LO,GO,NODE> &X, \
