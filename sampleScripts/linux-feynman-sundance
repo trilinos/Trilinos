@@ -33,7 +33,7 @@ TRILINOS_SRC_DIR=${HOME}/Code/Trilinos
 # cannot be found, these tests will be disabled.
 TRILINOS_DATA_DIR=${HOME}/Code/TrilinosData
 
-source ${HOME}/Code/Trilinos/krlong-linux-common
+source ${HOME}/Code/Trilinos/sampleScripts/krlong-linux-common
 
 exit 0
 

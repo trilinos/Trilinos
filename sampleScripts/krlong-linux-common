@@ -59,6 +59,8 @@ CHECK_STL=OFF
 PARANOID_COMPILER=ON
 # Whether to do explicit template instantiation
 EXPLICIT_TEMPLATES=ON
+# Ordinal type (should normally be int)
+ORDINAL_TYPE=int
 # ----------------------------------------------------------------------------
 # Verbosity of configuration
 VERBOSE_CONFIGURE=OFF
@@ -88,7 +90,7 @@ INSTALL_PREFIX=$PWD
 #
 # ---------------------------------------------------------------------------
 # Argument parsing logic.
-TEMP=`getopt -o x --long python,help,mpi,serial,shared,static,dryrun,verbose,check-stl,debug,opt,exodus,no-exodus,g77,lib64,meros,explicit,no-explicit,lax,src:,data:,prefix:,extra-cflags:,extra-cxxflags: -- "$@"`
+TEMP=`getopt -o x --long python,help,mpi,serial,shared,static,dryrun,verbose,check-stl,debug,opt,exodus,no-exodus,g77,lib64,meros,explicit,no-explicit,lax,ordinal:,src:,data:,prefix:,extra-cflags:,extra-cxxflags: -- "$@"`
 
 eval set -- "$TEMP"
 
@@ -126,6 +128,8 @@ while true ; do
             EXTRA_F_FLAGS="$2"; shift 2;;
       --data)
             TRILINOS_DATA_DIR="$2"; shift 2;;
+      --ordinal)
+            ORDINAL="$2"; shift 2;;
       --prefix)
             INSTALL_PREFIX="$2"; shift 2;;
       --help)
@@ -152,6 +156,7 @@ while true ; do
             echo "--extra-cxxflags <f>   extra C++ flags (default: none)" 
             echo "--extra-cflags <f>     extra C flags (default: none)"
             echo "--extra-fflags <f>     extra Fortran flags (default: none)"
+            echo "--ordinal <str>  ordinal type (default: int)"
             echo "--data <dir>     set location of Trilinos data (default: \${HOME}/Code/TrilinosData)"
             echo "--prefix <dir>   set installation directory (default: \${PWD})"
             echo " ";
@@ -193,7 +198,7 @@ ${ECHO} cmake \
 -D Trilinos_ENABLE_Stokhos:BOOL=${ENABLE_STOKHOS} \
 -D Sundance_ENABLE_BROKEN_CODE:BOOL=OFF \
 -D Sundance_ENABLE_Python:BOOL=${PY_SUNDANCE} \
--D Teuchos_ORDINAL_TYPE:STRING=int \
+-D Teuchos_ORDINAL_TYPE:STRING=${ORDINAL} \
 -D Trilinos_DATA_DIR:FILEPATH="${TRILINOS_DATA_DIR}" \
 -D NOX_ENABLE_LOCA:BOOL=OFF \
 -D CMAKE_INSTALL_PREFIX:PATH=${INSTALL_PREFIX} \
