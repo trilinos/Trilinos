@@ -213,7 +213,7 @@ namespace Kokkos {
     inline static Scalar reduce(Scalar x, Scalar y) {return x+y;}
     Scalar generate(int i) {
       Scalar xi = x[i]; Scalar yi = y[i];
-      return SCT::real( SCT::conjugate(xi)*yi );
+      return SCT::conjugate(xi)*yi;
     }
   };
 
