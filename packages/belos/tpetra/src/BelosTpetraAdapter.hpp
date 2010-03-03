@@ -80,7 +80,7 @@ namespace Belos {
 #ifdef HAVE_TPETRA_DEBUG
       TEST_FOR_EXCEPTION( *std::min_element(index.begin(),index.end()) < 0, std::runtime_error,
           "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneCopy(mv,index): indices must be >= zero.");
-      TEST_FOR_EXCEPTION( *std::max_element(index.begin(),index.end()) >= mv.getNumVectors(), std::runtime_error,
+      TEST_FOR_EXCEPTION( (size_t)*std::max_element(index.begin(),index.end()) >= mv.getNumVectors(), std::runtime_error,
           "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneCopy(mv,index): indices must be < mv.getNumVectors().");
 #endif
       for (typename std::vector<int>::size_type j=1; j<index.size(); ++j) {
@@ -101,7 +101,7 @@ namespace Belos {
 #ifdef HAVE_TPETRA_DEBUG
       TEST_FOR_EXCEPTION( *std::min_element(index.begin(),index.end()) < 0, std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneView(mv,index): indices must be >= zero.");
-      TEST_FOR_EXCEPTION( *std::max_element(index.begin(),index.end()) >= mv.getNumVectors(), std::invalid_argument,
+      TEST_FOR_EXCEPTION( (size_t)*std::max_element(index.begin(),index.end()) >= mv.getNumVectors(), std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneView(mv,index): indices must be < mv.getNumVectors().");
 #endif
       for (typename std::vector<int>::size_type j=1; j<index.size(); ++j) {
@@ -122,7 +122,7 @@ namespace Belos {
 #ifdef HAVE_TPETRA_DEBUG
       TEST_FOR_EXCEPTION( *std::min_element(index.begin(),index.end()) < 0, std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneView(mv,index): indices must be >= zero.");
-      TEST_FOR_EXCEPTION( *std::max_element(index.begin(),index.end()) >= mv.getNumVectors(), std::invalid_argument,
+      TEST_FOR_EXCEPTION( (size_t)*std::max_element(index.begin(),index.end()) >= mv.getNumVectors(), std::invalid_argument,
           "Belos::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneView(mv,index): indices must be < mv.getNumVectors().");
 #endif
       for (typename std::vector<int>::size_type j=1; j<index.size(); ++j) {

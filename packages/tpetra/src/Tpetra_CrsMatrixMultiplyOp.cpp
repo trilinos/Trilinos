@@ -49,6 +49,20 @@ namespace Tpetra {
 #endif
 #endif
 
+#if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
+  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<double>,std::complex<double>,int,int,Kokkos::SerialNode)
+#if defined(HAVE_KOKKOS_TBB)
+  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<double>,std::complex<double>,int,int,Kokkos::TBBNode)
+#endif
+#if defined(HAVE_KOKKOS_THREADPOOL)
+    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<double>,std::complex<double>,int,int,Kokkos::TPINode)
+#endif
+// not yet supported
+// #if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_COMPLEX_DOUBLE)
+//     TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<double>,std::complex<double>,int,int,Kokkos::ThrustGPUNode)
+// #endif
+#endif
+
   // get all cross scalar applications
 
   // double x float

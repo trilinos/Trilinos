@@ -1478,7 +1478,7 @@ namespace {
 
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
-  #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TheEyeOfTruth, LO, GO, SCALAR, NODE )  \
@@ -1540,16 +1540,18 @@ namespace {
      typedef std::complex<double> ComplexDouble; \
      UNIT_TEST_ALLCPUNODES(LO, GO, ComplexDouble)
 
-#ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
-#   define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
-           UNIT_TEST_ALLNODES(LO, GO, float)
-    UNIT_TEST_GROUP_ORDINAL(int, int)
-#else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
-#   define UNIT_TEST_GROUP_ORDINAL( LO, GO ) \
-           UNIT_TEST_ALLNODES(LO, GO, float) \
-           UNIT_TEST_ALLCPUNODES_COMPLEX_DOUBLE(LO, GO)
-    typedef short int ShortInt; UNIT_TEST_GROUP_ORDINAL(ShortInt, int)
-    UNIT_TEST_GROUP_ORDINAL(int, int)
+#define UNIT_TEST_ALLCPUNODES_COMPLEX_FLOAT(LO, GO) \
+     typedef std::complex<float> ComplexFloat; \
+     UNIT_TEST_ALLCPUNODES(LO, GO, ComplexFloat)
+
+#if defined(HAVE_TPETRA_INST_DOUBLE)
+  UNIT_TEST_ALLNODES(int, int, double)
+#endif
+
+#if !defined(FAST_DEVELOPMENT_BUILD)
+# if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
+    UNIT_TEST_ALLCPUNODES_COMPLEX_FLOAT(int, int)
+# endif 
 #endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 }

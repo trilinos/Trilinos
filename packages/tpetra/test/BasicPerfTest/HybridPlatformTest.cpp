@@ -64,7 +64,13 @@ class runTest {
     //
     // Get the data from the HB file and build the Map,Matrix
     //
-    Teuchos::RCP< Tpetra::CrsMatrix<float,int,int,Node> > A;
+    // we prefer float for this test, as it is more likely to exercise the GPU
+#if   defined(HAVE_TPETRA_INST_FLOAT)
+    typedef float  TestScalar;
+#elif defined(HAVE_TPETRA_INST_DOUBLE)
+    typedef double TestScalar;
+#endif
+    Teuchos::RCP< Tpetra::CrsMatrix<TestScalar,int,int,Node> > A;
     try {
       Tpetra::Utils::readHBMatrix(fnMatrix,comm,node,A);
     }
@@ -75,7 +81,7 @@ class runTest {
       testPassed = false;      
       return;
     }
-    (void)power_method<Node,float,int>(A,10000,1e-4f,comm->getRank() == 0);
+    (void)power_method<Node,TestScalar,int>(A,10000,1e-4f,comm->getRank() == 0);
     testPassed = true;
   }
 };

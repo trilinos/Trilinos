@@ -172,17 +172,36 @@ namespace {
   // INSTANTIATIONS
   //
 
-#ifdef HAVE_TEUCHOS_COMPLEX
+#ifdef HAVE_TPETRA_INST_FLOAT
+#  define UNIT_TEST_GROUP_ORDINAL_FLOAT(O1, O2)\
+     UNIT_TEST_GROUP_ORDINAL_SCALAR(O1, O2, float)
+#else
+#  define UNIT_TEST_GROUP_ORDINAL_FLOAT(O1, O2)
+#endif
+
+#ifdef HAVE_TPETRA_INST_DOUBLE
+#  define UNIT_TEST_GROUP_ORDINAL_DOUBLE(O1, O2)\
+     UNIT_TEST_GROUP_ORDINAL_SCALAR(O1, O2, double)
+#else
+#  define UNIT_TEST_GROUP_ORDINAL_DOUBLE(O1, O2)
+#endif
+
+#ifdef HAVE_TPETRA_INST_COMPLEX_FLOAT
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(O1, O2)\
      typedef std::complex<float> ComplexFloat; \
      UNIT_TEST_GROUP_ORDINAL_SCALAR(O1, O2, ComplexFloat)
+#else
+#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(O1, O2)
+#endif
+
+#ifdef HAVE_TPETRA_INST_COMPLEX_DOUBLE
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(O1, O2)\
      typedef std::complex<double> ComplexDouble; \
      UNIT_TEST_GROUP_ORDINAL_SCALAR(O1, O2, ComplexDouble)
 #else
-#  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(O1, O2)
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(O1, O2)
 #endif
+
 
   // Uncomment this for really fast development cycles but make sure to comment
   // it back again before checking in so that we can test all the types.
@@ -194,35 +213,15 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, OPTestDist, O1, O2, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, OPTestLocal, O1, O2, SCALAR )
 
+#define UNIT_TEST_GROUP_ORDINAL_ORDINAL( O1, O2 ) \
+        UNIT_TEST_GROUP_ORDINAL_FLOAT(O1, O2)         \
+        UNIT_TEST_GROUP_ORDINAL_DOUBLE(O1, O2)        \
+        UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(O1, O2) \
+        UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(O1, O2)
+
 #define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
     UNIT_TEST_GROUP_ORDINAL_ORDINAL( ORDINAL, ORDINAL )
 
-# ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
-#    define UNIT_TEST_GROUP_ORDINAL_ORDINAL( O1, O2 ) \
-         UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(O1, O2) \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(O1, O2, double)
-
-     UNIT_TEST_GROUP_ORDINAL(int)
-# else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
-#    define UNIT_TEST_GROUP_ORDINAL_ORDINAL( O1, O2 ) \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(O1, O2, float) \
-         UNIT_TEST_GROUP_ORDINAL_SCALAR(O1, O2, double) \
-         UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(O1, O2) \
-         UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(O1, O2)
-
-     typedef short int ShortInt;
-     UNIT_TEST_GROUP_ORDINAL(ShortInt)
-
-     UNIT_TEST_GROUP_ORDINAL(int)
-
-     typedef long int LongInt;
-     UNIT_TEST_GROUP_ORDINAL_ORDINAL( int, LongInt )
-#    ifdef HAVE_TEUCHOS_LONG_LONG_INT
-        typedef long long int LongLongInt;
-        UNIT_TEST_GROUP_ORDINAL_ORDINAL( int,LongLongInt)
-#    endif
-
-# endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
+  UNIT_TEST_GROUP_ORDINAL(int)
 
 }
