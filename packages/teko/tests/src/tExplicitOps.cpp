@@ -118,6 +118,7 @@ bool tExplicitOps::test_mult_diagScaleMatProd(int verbosity,std::ostream & os)
    bool allPassed = true;
 
    Thyra::LinearOpTester<double> tester;
+   tester.set_all_error_tol(1e-10);
    tester.show_all_tests(true);
 
    RCP<const Thyra::LinearOpBase<double> > thyOp;
@@ -160,6 +161,7 @@ bool tExplicitOps::test_mult_diagScaling(int verbosity,std::ostream & os)
    bool allPassed = true;
 
    Thyra::LinearOpTester<double> tester;
+   tester.set_all_error_tol(1e-10);
    tester.show_all_tests(true);
 
    RCP<const Thyra::LinearOpBase<double> > thyOp;
@@ -202,6 +204,7 @@ bool tExplicitOps::test_mult_modScaleMatProd(int verbosity,std::ostream & os)
    bool allPassed = true;
 
    Thyra::LinearOpTester<double> tester;
+   tester.set_all_error_tol(1e-10);
    tester.show_all_tests(true);
 
    Teko::LinearOp thyOp;
@@ -264,6 +267,7 @@ bool tExplicitOps::test_add(int verbosity,std::ostream & os)
    bool allPassed = true;
 
    Thyra::LinearOpTester<double> tester;
+   tester.set_all_error_tol(1e-10);
    tester.show_all_tests(true);
 
    RCP<const Thyra::LinearOpBase<double> > thyOp;
@@ -292,6 +296,7 @@ bool tExplicitOps::test_add_mod(int verbosity,std::ostream & os)
    bool allPassed = true;
 
    Thyra::LinearOpTester<double> tester;
+   tester.set_all_error_tol(1e-10);
    tester.show_all_tests(true);
 
    RCP<const Thyra::LinearOpBase<double> > thyOp;
