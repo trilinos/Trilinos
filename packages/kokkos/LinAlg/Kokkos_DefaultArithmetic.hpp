@@ -211,7 +211,7 @@ namespace Kokkos {
     Scalar reduce(Scalar x, Scalar y) {return x+y;}
     Scalar generate(size_t i) {
       Scalar xi = x[i]; Scalar yi = y[i];
-      return SCT::real( SCT::conjugate(xi)*yi );
+      return SCT::conjugate(xi)*yi;
     }
   };
 
