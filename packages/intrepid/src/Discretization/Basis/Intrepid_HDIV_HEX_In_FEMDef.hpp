@@ -89,10 +89,10 @@ namespace Intrepid {
 
     // tally dof on each facet.  none on vertex or edge
     for (int i=0;i<6;i++) {
-      total_dof_per_entity[2][i] = pow( openBasis_.getCardinality(), 2);
+      total_dof_per_entity[2][i] = openBasis_.getCardinality() * openBasis_.getCardinality();
     }
 
-    total_dof_per_entity[2][0] = this->getCardinality() - 6 * pow(openBasis_.getCardinality(),2);
+    total_dof_per_entity[2][0] = this->getCardinality() - 6 * openBasis_.getCardinality()* openBasis_.getCardinality();
 
     int tagcur = 0;
     // loop over the x-component basis functions, which are (psi(x)phi(y)phi(z),0,0)
