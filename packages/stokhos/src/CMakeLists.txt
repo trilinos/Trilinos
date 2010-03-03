@@ -18,10 +18,10 @@ SET(SOURCES "")
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
-# Add path to Dakota headers: TODO: make conditional on TriKota?
+# Add path to Dakota headers in installed directory
 IF (${PACKAGE_NAME}_ENABLE_TriKota)
 INCLUDE_DIRECTORIES(
-    ${CMAKE_CURRENT_SOURCE_DIR}/../../TriKota/Dakota/packages/Pecos/packages/VPISparseGrid/src/
+    ${CMAKE_CURRENT_BINARY_DIR}/../../TriKota/Dakota/install/include
   )
 ENDIF()
 
