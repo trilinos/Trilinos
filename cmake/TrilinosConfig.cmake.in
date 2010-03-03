@@ -1,40 +1,76 @@
-# $Header$
-
-#-----------------------------------------------------------------------------
+##############################################################################
 #
-# <PACKAGE>Config.cmake - CMake configuration file for external projects.
+# CMake variable for use by ${PROJECT_NAME} clients. 
 #
+# ${DISCOURAGE_EDITING}
+#
+##############################################################################
 
-# The package include file directories.
-SET(${PROJECT_NAME}_INCLUDE_DIRS "${${PROJECT_NAME}_CONFIG_INCLUDE_DIRS}")
 
-# The package library directories.
-SET(${PROJECT_NAME}_LIBRARY_DIRS "${${PROJECT_NAME}_CONFIG_LIBRARY_DIRS}")
+## ---------------------------------------------------------------------------
+## Compilers used by ${PROJECT_NAME} build
+## ---------------------------------------------------------------------------
 
-# The package libraries.
-SET(${PROJECT_NAME}_LIBRARIES "${${PROJECT_NAME}_LIBRARIES}")
+SET(${PROJECT_NAME}_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
 
-# The package version number
-SET(${PROJECT_NAME}_VERSION "${${PROJECT_NAME}_VERSION}")
+SET(${PROJECT_NAME}_C_COMPILER "${CMAKE_C_COMPILER}")
 
-# Was Trilinos built with shared libs?
+SET(${PROJECT_NAME}_Fortran_COMPILER "${CMAKE_Fortran_COMPILER}")
+
+## ---------------------------------------------------------------------------
+## Compiler flags used by ${PROJECT_NAME} build
+## ---------------------------------------------------------------------------
+
+SET(${PROJECT_NAME}_CXX_COMPILER_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}}")
+
+SET(${PROJECT_NAME}_C_COMPILER_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}}")
+
+SET(${PROJECT_NAME}_Fortran_COMPILER_FLAGS "${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE}}")
+
+## This is the command-line entry used for setting rpaths. In a build
+## with static libraries it will be empty. 
+SET(${PROJECT_NAME}_SHARED_LIB_RPATH_COMMAND "${SHARED_LIB_RPATH_COMMAND}")
 SET(${PROJECT_NAME}_BUILD_SHARED_LIBS "${BUILD_SHARED_LIBS}")
 
+SET(${PROJECT_NAME}_LINKER ${CMAKE_LINKER})
+SET(${PROJECT_NAME}_AR ${CMAKE_AR})
 
-# Export the specification of the compilers used to build Trilinos.
-# (KRL 26 Nov 2009)
 
-SET(Trilinos_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
+## ---------------------------------------------------------------------------
+## Set library specifications and paths 
+## ---------------------------------------------------------------------------
 
-SET(Trilinos_C_COMPILER "${CMAKE_C_COMPILER}")
+## Extra link flags (e.g., specification of fortran libraries)
+SET(${PROJECT_NAME}_EXTRA_LD_FLAGS "${${PROJECT_NAME}_EXTRA_LINK_FLAGS}")
 
-SET(Trilinos_Fortran_COMPILER "${CMAKE_Fortran_COMPILER}")
+## The project version number
+SET(${PROJECT_NAME}_VERSION "${${PROJECT_NAME}_VERSION}")
 
-SET(Trilinos_CXX_COMPILER_FLAGS "${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}}")
+## The project include file directories.
+SET(${PROJECT_NAME}_INCLUDE_DIRS "${${PROJECT_NAME}_CONFIG_INCLUDE_DIRS}")
 
-SET(Trilinos_C_COMPILER_FLAGS "${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}}")
+## The project library directories.
+SET(${PROJECT_NAME}_LIBRARY_DIRS "${${PROJECT_NAME}_CONFIG_LIBRARY_DIRS}")
 
-SET(Trilinos_Fortran_COMPILER_FLAGS "${CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE}}")
+## The project libraries.
+SET(${PROJECT_NAME}_LIBRARIES "${${PROJECT_NAME}_CONFIG_LIBRARIES}")
 
-#only include the targets file if this is an install
-${Trilinos_TARGETS_INCLUDE}
+## The project tpl include paths
+SET(${PROJECT_NAME}_TPL_INCLUDE_DIRS "${${PROJECT_NAME}_CONFIG_TPL_INCLUDE_DIRS}")
+
+## The project tpl library paths
+SET(${PROJECT_NAME}_TPL_LIBRARY_DIRS "${${PROJECT_NAME}_CONFIG_TPL_LIBRARY_DIRS}")
+
+## The project tpl libraries
+SET(${PROJECT_NAME}_TPL_LIBRARIES "${${PROJECT_NAME}_CONFIG_TPL_LIBRARIES}")
+
+## ---------------------------------------------------------------------------
+## Set useful general variables 
+## ---------------------------------------------------------------------------
+
+## The packages enabled for this project
+SET(${PROJECT_NAME}_PACKAGE_LIST "${FULL_PACKAGE_SET}")
+
+## The TPLs enabled for this project
+SET(${PROJECT_NAME}_TPL_LIST "${FULL_TPL_SET}")
+

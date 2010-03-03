@@ -1,0 +1,167 @@
+Trilinos has the capability to allow other CMake-aware projects to use the
+find_package(...) call to discover the path to Trilinos and its packages and set
+some important variables. Using find_package(Trilinos) to discover Trilinos will
+provide you with a lot of useful information about how Trilinos was built,
+including compilers, compiler options, which packages were enabled etc. In
+addition to finding just Trilinos you can also use find_package to find
+individual packages. 
+
+There are two versions of this system, one for an installation of Trilinos, and
+another for a build tree of Trilinos. The only difference between the versions
+is the  information that is stored in the variables being relative to an install
+tree versus relative to a build tree. The variables still have the same meaning
+and names regardless of which type you are using.
+
+The easiest way to use this is to add find_package(Trilinos <any search paths>)
+to your project's CMakeLists.txt file. Aside from the normal variables that
+CMake sets when it finds a package you will be able to make the build of your
+project consistent with how Trilinos was built. If you are only interested in a
+set of specific packages you can also use find_package(<package name) for each
+package. All of the same information will be available, however the variables
+will reflect the name of the package and not Trilinos. Throughout the rest of
+this readme you can replace "Trilinos_" with "<package>_" for the cases where
+you are looking for a specific package
+
+The variables most projects will be interested in are those that store which
+Trilinos packages were enabled, their libraries, and the tpls that Trilinos was
+configured with. The following variables contain that information. There is a
+minor difference between these variables for Trilinos as a whole and for an
+individual package. For projects that use find_package(Trilinos) these variables
+will hold the complete set of packages or tpls that were enabled for Trilinos.
+This is guaranteed to be the full set of what Trilinos was configured with. When
+you use find_package to find individual Trilinos packages, only those packages
+and tpls which were both enabled for the Trilinos build and enabled for the
+specific package will be contained in these variables. In this way, the
+<package>Config.cmake file is more accurate than the TrilinosConfig.cmake when
+you are interested in specific dependencies for a package. However, the
+TrilinosConfig.cmake file does include the <package>Config.cmake files for every
+package that was enabled. So if you want to use find_package(Trilinos) you still
+have access to all of the package variables so that you can inspect them for
+any dependencies that they have which you might need to know about.
+
+Compiler variables:
+
+The C++ compiler is in Trilinos_CXX_COMPILER and the options for the C++
+compilier are in Trilinos_CXX_COMPILER_FLAGS.
+
+The C compiler is in Trilinos_C_COMPILER and the options for the C compiler are
+in Trilinos_C_COMPILER_FLAGS
+
+The Fortran compiler is in Trilinos_Fortran_COMPILER and the options for the
+Fortran compiler are in Trilinos_Fortran_COMPILER_FLAGS
+
+If Trilinos was built as shared libraries, Trilinos_BUILD_SHARED_LIBS will be
+set to ON, and any additional rpaths needed will be in
+Trilinos_SHARED_LIB_RPATH_COMMAND.
+
+Any additional options that were passed to the linker for Trilinos or a package
+can be found in the variable Trilinos_EXTRA_LD_FLAGS.
+
+Packages, TPLs and other library variables.
+
+Trilinos_INCLUDE_DIRS holds the paths to all the header files for all packages
+that Trilinos was configured with. 
+
+Trilinos_LIBRARY_DIRS holds the paths to all the library files for all packages
+that Trilinos was configured with.
+
+Trilinos_LIBRARIES is the complete list of all the libraries for the packages
+that Trilinos was configured with. This list is in the proper order for linking
+so it is safe to just add this to a "target_link_libraries" command. If you want
+to loop over this variable and use each library individually you will most
+likely want to take care not to rearrange the relative ordering of the Trilinos
+libraries. If you depend on several Trilinos packages and have used find_package
+to find the individual packages you will need to concatenate the
+<package>_LIBRARIES variables from the packages you depend on. It is common for
+Trilinos packages to have dependencies on other Trilinos packages. simply
+concatenating these lists together will often result in some libraries being on
+the link line multiple times. While this isn't typically harmful it isn't ideal.
+You can avoid this by using the CMake call list(remove_duplicates ...), however,
+you need to do a bit of prep work to make this work right. Since
+remove_duplicates keeps the first instance and removes the later instances to
+maintain proper order for linking you will have to reverse the list then remove
+the duplicates and then reverse the list again. This isn't very intuitive, but
+thankfully CMake has built in commands to handle this easily. Something like the
+following should be all you need.
+
+list(reverse <full_library_list>)
+list(remove_duplicates <full_library_list>)
+list(reverse <full_library_list>)
+
+Trilinos_TPL_INCLUDE_DIRS holds the paths to all the header files needed by all
+TPLs that were enabled.
+
+Trilinos_TPL_LIBRARY_DIRS holds the paths to all the library files for all the
+TPLs that were enabled. Note that some TPLs return their absolute path to their
+libraries when they are found. In those instances the TPLs typically do not set
+this variable as well. This won't affect linking, but it does make it harder to
+rely on only this variable to look for the paths to all enabled TPLs.
+
+Trilinos_TPL_LIBRARIES holds the full list of libraries for the enabled TPLs.
+For Trilinos this is guaranteed to be in the correct order for linking if there
+are dependencies between TPLs. This should generally be true for individual
+packages as well. However, there isn't currently a mechanic in place that
+guarantees this. There has been some care taken to ensure that these libraries
+come out in the right order, however, if you run into a case where this is not
+true please let us know so that we can fix it.
+
+Trilinos_PACKAGE_LIST holds the complete list of all enabled packages for
+Trilinos. For individual packages this will only hold the packages which the
+given package has a dependency on and that dependency was enabled. This list is
+very useful in determining the actual dependencies of a package for the
+individual package case. If you know which package you would like to check
+dependency on you can use list(find <package name> Trilinos_PACKAGE_LIST). If
+you do not know which other packages that your package of interest depends on
+but want to include their options as well you could loop over this list and then
+use each individual package name as the argument to a find_package call. You
+generally won't need to do this if you just want to link your package of
+interest as everything required to properly link that package will have already
+been set in the above variables. However, there are cases where this information
+is useful, such as if you can optionally use features from the dependencies of
+your package of interest.
+
+
+Trilinos_TPL_LIST holds the complete list of TPLs that were enabled for
+Trilinos. It is possible for Trilinos to be configured with TPLs that are not
+used by any of the enabled packages. This won't cause any errors in such a case,
+but if you are interested in getting the minimum set of TPLs then it would be
+best to check this variable for the packages you are interested in. For
+individual packages this will hold only those TPLs that the package was
+configured to use.
+
+
+Trilinos_VERSION holds the version number for Trilinos. This variable does not
+exist for individual packages as there is no common versioning system for the
+packages and many do not state this version in their CMakeLists.txt files.
+
+Other general variables:
+
+Trilinos_LINKER holds the linker that Trilinos was configured for. Typically
+it is safe to use any linker that supports the library type that Trilinos was
+compiled for, but if you want to use the exact same linker executable that
+Trilinos used, you can get it from this variable.
+
+Trilinos_AR holds the archiving utility that was used to make the Trilinos
+libraries if they were compiled as static libraries. Again using a different but
+compatible archiver is generally fine, but if you want to use the same one as
+Trilinos you can use this variable.
+
+
+--------------------------------------------------------------------------------
+Example CMakeLists.txt file:
+
+MAKE_MINIMUM_REQUIRED(VERSION 2.8)
+
+#FIND_PACKAGE takes a search path as an optional second argument
+FIND_PACKAGE(Trilinos)
+
+IF(NOT Trilinos_FOUND)
+  MESSAGE(FATAL_ERROR "Could not Find Trilinos")
+ENDIF()
+
+SET(MY_SOURCES ...)
+
+INCLUDE_DIRECTORIES(${Trilinos_INCLUDE_DIRS})
+LINK_DIRECTORIES(${Trilinos_LIBRARY_DIRS})
+ADD_EXECUTABLE(my_exe ${MY_SOURCES}
+TARGET_LINK_LIBRARIES(my_exe ${Trilinos_LIBRARIES})

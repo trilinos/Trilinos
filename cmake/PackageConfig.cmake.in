@@ -1,0 +1,77 @@
+##############################################################################
+#
+# CMake variable for use by ${PROJECT_NAME}/${PACKAGE_NAME} clients. 
+#
+# ${DISCOURAGE_EDITING}
+#
+##############################################################################
+
+
+## ---------------------------------------------------------------------------
+## Compilers used by ${PROJECT_NAME}/${PACKAGE_NAME} build
+## ---------------------------------------------------------------------------
+
+SET(${PACKAGE_NAME}_CXX_COMPILER "${CMAKE_CXX_COMPILER}")
+
+SET(${PACKAGE_NAME}_C_COMPILER "${CMAKE_C_COMPILER}")
+
+SET(${PACKAGE_NAME}_FORTRAN_COMPILER "${CMAKE_Fortran_COMPILER}")
+
+
+## ---------------------------------------------------------------------------
+## Compiler flags used by ${PROJECT_NAME}/${PACKAGE_NAME} build
+## ---------------------------------------------------------------------------
+
+## Set compiler flags, including those determined by build type
+SET(${PACKAGE_NAME}_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}}")
+
+SET(${PACKAGE_NAME}_C_FLAGS "${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}}")
+
+SET(${PACKAGE_NAME}_FORTRAN_FLAGS "${CMAKE_FORTRAN_FLAGS} ${CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE}}")
+
+## Extra link flags (e.g., specification of fortran libraries)
+SET(${PACKAGE_NAME}_EXTRA_LD_FLAGS "${Trilinos_EXTRA_LINK_FLAGS}")
+
+## This is the command-line entry used for setting rpaths. In a build
+## with static libraries it will be empty. 
+SET(${PACKAGE_NAME}_SHARED_LIB_RPATH_COMMAND "${SHARED_LIB_RPATH_COMMAND}")
+SET(${PACKAGE_NAME}_BUILD_SHARED_LIBS "${BUILD_SHARED_LIBS}")
+
+SET(${PACKAGE_NAME}_LINKER ${CMAKE_LINKER})
+SET(${PACKAGE_NAME}_AR ${CMAKE_AR})
+
+## ---------------------------------------------------------------------------
+## Set library specifications and paths 
+## ---------------------------------------------------------------------------
+
+## Extra link flags (e.g., specification of fortran libraries)
+SET(${PACKAGE_NAME}_EXTRA_LD_FLAGS "${${PROJECT_NAME}_EXTRA_LINK_FLAGS}")
+
+## List of package include dirs
+SET(${PACKAGE_NAME}_INCLUDE_DIRS "${INCLUDE_DIRS}")
+
+## List of package library paths
+SET(${PACKAGE_NAME}_LIBRARY_DIRS "${LIBRARY_DIRS}")
+
+## List of package libraries
+SET(${PACKAGE_NAME}_LIBRARIES "${FULL_LIBRARY_SET}")
+
+## Specification of directories for TPL headers
+SET(${PACKAGE_NAME}_TPL_INCLUDE_DIRS "${${PACKAGE_NAME}_TPL_INCLUDE_DIRS}")
+
+## Specification of directories for TPL libraries
+SET(${PACKAGE_NAME}_TPL_LIBRARY_DIRS "${${PACKAGE_NAME}_TPL_LIBRARY_DIRS}")
+
+## List of required TPLs
+SET(${PACKAGE_NAME}_TPL_LIBRARIES "${${PACKAGE_NAME}_TPL_LIBRARIES}")
+
+## ---------------------------------------------------------------------------
+## Set useful general variables 
+## ---------------------------------------------------------------------------
+
+## The packages enabled for this project
+SET(${PACKAGE_NAME}_PACKAGE_LIST "${FULL_PACKAGE_SET}")
+
+## The TPLs enabled for this project
+SET(${PACKAGE_NAME}_TPL_LIST "${FULL_TPL_SET}")
+

@@ -264,6 +264,8 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
 
       ENDFOREACH()
     
+      LIST(REMOVE_DUPLICATES INCLUDES_FOUND)
+
       MULTILINE_SET(DOCSTR
         "List of semi-colon separated paths to append to the compile invocations"
         " to find the headers for the TPL ${TPL_NAME}.  This is the final variable"
@@ -274,7 +276,7 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
       
       ADVANCED_SET(TPL_${TPL_NAME}_INCLUDE_DIRS ${INCLUDES_FOUND}
         CACHE PATH ${DOCSTR})
-  
+        
       IF (NOT TPL_${TPL_NAME}_INCLUDE_DIRS)
         MULTILINE_SET(ERRMSG
           "Error, could not find the ${TPL_NAME} headers include directory!"

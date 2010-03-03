@@ -1,5 +1,6 @@
 INCLUDE(PackageArchSetupStrongCompileWarnings)
 INCLUDE(PackageWriteExportMakefile)
+INCLUDE(PackageWritePackageConfig)
 
 INCLUDE(ParseVariableArguments)
 INCLUDE(GlobalNullSet)
@@ -282,6 +283,10 @@ MACRO(PACKAGE_POSTPROCESS)
     PACKAGE_WRITE_EXPORT_MAKEFILE(${PROJECT_NAME} ${PACKAGE_NAME}
       "Makefile.export" "Makefile.client")
   ENDIF()
+  
+  #create the configure file so external projects can find packages with a
+  #call to find_package(<package_name>)
+  PACKAGE_WRITE_PACKAGE_CONFIG_FILE(${PACKAGE_NAME})
 
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
     MESSAGE("\nPACKAGE_POSTPROCESS: ${PACKAGE_NAME}")
