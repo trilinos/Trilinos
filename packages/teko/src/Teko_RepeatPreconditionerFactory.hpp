@@ -31,7 +31,7 @@ namespace Teko {
   * $i^{th}$ correction
   *
     \f$
-    e_i = P^{-1} r_i.
+    e_i = P^{-1} \sum_{j=0}^i r_j.
     \f$
   *
   * This factory takes a preconditioner (or inverse) factory and

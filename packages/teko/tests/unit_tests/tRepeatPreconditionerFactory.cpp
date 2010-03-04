@@ -146,6 +146,7 @@ TEUCHOS_UNIT_TEST(tRepeatPreconditionerFactory, constructor_test)
    Teko::LinearOp  A = build2x2(Comm,1,2,3,4);
    Teko::LinearOp iP = build2x2(Comm,1.0,0.0,0.0,1.0/4.0);
    Teko::LinearOp ImAiP = build2x2(Comm,0.0,-0.5,-3.0,0.0);
+   Teko::LinearOp I = Thyra::identity(ImAiP->range());
 
    Thyra::LinearOpTester<double> tester;
    tester.show_all_tests(true);
@@ -170,18 +171,18 @@ TEUCHOS_UNIT_TEST(tRepeatPreconditionerFactory, constructor_test)
       using Teko::multiply;
 
       RCP<Teko::InverseFactory> precOpFact = rcp(new Teko::StaticOpInverseFactory(iP));
-      RCP<Teko::RepeatPreconditionerFactory> precFact = rcp(new Teko::RepeatPreconditionerFactory(4,precOpFact));
+      RCP<Teko::RepeatPreconditionerFactory> precFact = rcp(new Teko::RepeatPreconditionerFactory(2,precOpFact));
       RCP<Teko::InverseFactory> invFact = rcp(new Teko::PreconditionerInverseFactory(precFact));
 
       Teko::LinearOp prec = Teko::buildInverse(*invFact,A);
-      Teko::LinearOp exact = multiply(multiply(iP,ImAiP,ImAiP),ImAiP,ImAiP);
+      Teko::LinearOp exact = Teko::multiply(iP,Teko::add(I,Teko::multiply(Teko::add(I,ImAiP),ImAiP))); // iP*(I+(I+X)*X)
 
       const bool result = tester.compare( *prec, *exact, &out);
       if (!result) {
-         out << "Apply 4: FAILURE" << std::endl;
+         out << "Apply 2: FAILURE" << std::endl;
          success = false;
       }
       else
-         out << "Apply 4: SUCCESS" << std::endl;
+         out << "Apply 2: SUCCESS" << std::endl;
    }
 }

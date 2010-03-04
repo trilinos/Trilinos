@@ -43,17 +43,17 @@ LinearOp RepeatPreconditionerFactory::buildPreconditionerOperator(LinearOp & lo,
    else
       Teko::rebuildInverse(*precFactory_,lo,invP);
 
-   // no repititions are required
-   if(correctionNum_==0) return invP;
+   // // no repititions are required
+   // if(correctionNum_==0) return invP;
 
    // now build correction operator
-   LinearOp I = Thyra::identity(lo->range());
-   LinearOp AiP = multiply(lo,invP.getConst());
+   LinearOp I = Thyra::identity(lo->range(),"I");
+   LinearOp AiP = multiply(lo,invP.getConst(),"AiP");
    LinearOp correction = add(I,scale(-1.0,AiP)); // I - A * iPA
 
    LinearOp resMap = I; // will map r_n to r_{n+1}
    for(unsigned int i=0;i<correctionNum_;i++) 
-      resMap = multiply(correction,resMap); // resMap = (I-A*iP)*resMap
+      resMap = add(I,multiply(resMap,correction)); // resMap = I + resMap*(I-A*iP)
    
    // iP = (I-A*iP)^{correctionNum}
    return multiply(invP.getConst(),resMap);
