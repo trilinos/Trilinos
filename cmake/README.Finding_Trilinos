@@ -110,8 +110,10 @@ Trilinos. For individual packages this will only hold the packages which the
 given package has a dependency on and that dependency was enabled. This list is
 very useful in determining the actual dependencies of a package for the
 individual package case. If you know which package you would like to check
-dependency on you can use LIST(find ${Trilinos_PACKAGE_LIST} <package name>
-package_found). If you do not know which other packages that your package of
+dependency on you can use: 
+  LIST(FIND Trilinos_PACKAGE_LIST <package name> package_index)
+Variable package_index will return -1 if it is not in the list.
+If you do not know which other packages that your package of
 interest depends on but want to include their options as well you could loop
 over this list and then use each individual package name as the argument to a
 FIND_PACKAGE call. You generally won't need to do this if you just want to link
