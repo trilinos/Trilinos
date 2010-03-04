@@ -79,50 +79,50 @@ namespace Kokkos {
       // 
       if (upper && unitDiag) {
         // upper + unit
-        xj[numRows-1] = yj[numRows-1];
+        xj[numRows-1] = (DomainScalar)yj[numRows-1];
         for (size_t r=2; r < numRows+1; ++r) {
           const size_t row = numRows - r; // for row=numRows-2 to 0 step -1
           const size_t begin = offsets[row], end = offsets[row+1];
-          xj[row] = yj[row];
+          xj[row] = (DomainScalar)yj[row];
           for (size_t c=begin; c != end; ++c) {
-            xj[row] -= vals[c] * xj[inds[c]];
+            xj[row] -= (DomainScalar)vals[c] * xj[inds[c]];
           }
         }
       }
       else if (upper && !unitDiag) {
         // upper + non-unit
-        xj[numRows-1] = yj[numRows-1] / vals[offsets[numRows-1]];
+        xj[numRows-1] = (DomainScalar)( yj[numRows-1] / (RangeScalar)vals[offsets[numRows-1]] );
         for (size_t r=2; r < numRows+1; ++r) {
           const size_t row = numRows - r; // for row=numRows-2 to 0 step -1
           const size_t diag = offsets[row], end = offsets[row+1];
-          const Scalar dval = vals[diag];
-          xj[row] = yj[row];
+          const DomainScalar dval = (DomainScalar)vals[diag];
+          xj[row] = (DomainScalar)yj[row];
           for (size_t c=diag+1; c != end; ++c) {
-            xj[row] -= vals[c] * xj[inds[c]];
+            xj[row] -= (DomainScalar)vals[c] * xj[inds[c]];
           }
           xj[row] /= dval;
         }
       }
       else if (!upper && unitDiag) {
         // lower + unit
-        xj[0] = yj[0];
+        xj[0] = (DomainScalar)yj[0];
         for (size_t row=1; row < numRows; ++row) {
           const size_t begin = offsets[row], end = offsets[row+1];
-          xj[row] = yj[row];
+          xj[row] = (DomainScalar)yj[row];
           for (size_t c=begin; c != end; ++c) {
-            xj[row] -= vals[c] * xj[inds[c]];
+            xj[row] -= (DomainScalar)vals[c] * xj[inds[c]];
           }
         }
       }
       else if (!upper && !unitDiag) {
         // lower + non-unit
-        xj[0] = yj[0] / vals[0];
+        xj[0] = (DomainScalar)( yj[0] / (RangeScalar)vals[0] );
         for (size_t row=1; row < numRows; ++row) {
           const size_t begin = offsets[row], diag = offsets[row+1]-1;
-          const Scalar dval = vals[diag];
-          xj[row] = yj[row];
+          const DomainScalar dval = vals[diag];
+          xj[row] = (DomainScalar)yj[row];
           for (size_t c=begin; c != diag; ++c) {
-            xj[row] -= vals[c] * xj[inds[c]];
+            xj[row] -= (DomainScalar)vals[c] * xj[inds[c]];
           }
           xj[row] /= dval;
         }
@@ -152,7 +152,7 @@ namespace Kokkos {
       const RangeScalar *yj = y + rhs * ystride;
       const Scalar  *rowvals;
       const Ordinal *rowinds;
-      Scalar dval;
+      DomainScalar dval;
       size_t nE;
       // 
       // upper triangular requires backwards substition, solving in reverse order
@@ -160,59 +160,59 @@ namespace Kokkos {
       // 
       if (upper && unitDiag) {
         // upper + unit
-        xj[numRows-1] = yj[numRows-1];
+        xj[numRows-1] = (DomainScalar)yj[numRows-1];
         for (size_t row=numRows-2; row != 0; --row) {
           nE = numEntries[row];
           rowvals = vals_beg[row];
           rowinds = inds_beg[row];
           xj[row] = yj[row];
           for (size_t j=0; j != nE; ++j) {
-            xj[row] -= rowvals[j] * xj[rowinds[j]];
+            xj[row] -= (DomainScalar)rowvals[j] * xj[rowinds[j]];
           }
         }
         nE = numEntries[0];
         rowvals = vals_beg[0];
         rowinds = inds_beg[0];
-        xj[0] = yj[0];
+        xj[0] = (DomainScalar)yj[0];
         for (size_t j=0; j != nE; ++j) {
-          xj[0] -= rowvals[j] * xj[rowinds[j]];
+          xj[0] -= (DomainScalar)rowvals[j] * xj[rowinds[j]];
         }
       }
       else if (upper && !unitDiag) {
         // upper + non-unit: diagonal is first entry
-        dval = vals_beg[numRows-1][0];
-        xj[numRows-1] = yj[numRows-1] / dval;
+        dval = (DomainScalar)vals_beg[numRows-1][0];
+        xj[numRows-1] = (DomainScalar)yj[numRows-1] / dval;
         for (size_t row=numRows-2; row != 0; --row) {
           nE = numEntries[row];
           rowvals = vals_beg[row];
           rowinds = inds_beg[row];
-          xj[row] = yj[row];
+          xj[row] = (DomainScalar)yj[row];
           Scalar dval_inner = rowvals[0];
           for (size_t j=1; j < nE; ++j) {
-            xj[row] -= rowvals[j] * xj[rowinds[j]];
+            xj[row] -= (DomainScalar)rowvals[j] * xj[rowinds[j]];
           }
           xj[row] /= dval_inner;
         }
         nE = numEntries[0];
         rowvals = vals_beg[0];
         rowinds = inds_beg[0];
-        xj[0] = yj[0];
-        Scalar dval_inner = rowvals[0];
+        xj[0] = (DomainScalar)yj[0];
+        DomainScalar dval_inner = (DomainScalar)rowvals[0];
         for (size_t j=1; j < nE; ++j) {
-          xj[0] -= rowvals[j] * xj[rowinds[j]];
+          xj[0] -= (DomainScalar)rowvals[j] * xj[rowinds[j]];
         }
         xj[0] /= dval_inner;
       }
       else if (!upper && unitDiag) {
         // lower + unit
-        xj[0] = yj[0];
+        xj[0] = (DomainScalar)yj[0];
         for (size_t row=1; row < numRows; ++row) {
           nE = numEntries[row];
           rowvals = vals_beg[row];
           rowinds = inds_beg[row];
-          xj[row] = yj[row];
+          xj[row] = (DomainScalar)yj[row];
           for (size_t j=0; j < nE; ++j) {
-            xj[row] -= rowvals[j] * xj[rowinds[j]];
+            xj[row] -= (DomainScalar)rowvals[j] * xj[rowinds[j]];
           }
         }
       }
@@ -220,17 +220,17 @@ namespace Kokkos {
         // lower + non-unit; diagonal is last entry
         nE = numEntries[0];
         rowvals = vals_beg[0];
-        dval = rowvals[0];
+        dval = (DomainScalar)rowvals[0];
         xj[0] = yj[0];
         for (size_t row=1; row < numRows; ++row) {
           nE = numEntries[row];
           rowvals = vals_beg[row];
           rowinds = inds_beg[row];
-          dval = rowvals[nE-1];
-          xj[row] = yj[row];
+          dval = (DomainScalar)rowvals[nE-1];
+          xj[row] = (DomainScalar)yj[row];
           if (nE > 1) {
             for (size_t j=0; j < nE-1; ++j) {
-              xj[row] -= rowvals[j] * xj[rowinds[j]];
+              xj[row] -= (DomainScalar)rowvals[j] * xj[rowinds[j]];
             }
           }
           xj[row] /= dval;
@@ -274,25 +274,25 @@ namespace Kokkos {
           beg = offsets[row]; 
           endplusone = offsets[row+1];
           for (size_t j=beg; j < endplusone; ++j) {
-            xj[inds[j]] -= (vals[j] * xj[row]);
+            xj[inds[j]] -= (DomainScalar)vals[j] * xj[row];
           }
         }
       }
       else if (upper && !unitDiag) {
         // upper + non-unit; diag is first element in row
         size_t diag, endplusone;
-        Scalar dval;
+        DomainScalar dval;
         for (size_t row=0; row < numRows-1; ++row) {
           diag = offsets[row]; 
           endplusone = offsets[row+1];
-          dval = vals[diag];
+          dval = (DomainScalar)vals[diag];
           xj[row] /= dval;
           for (size_t j=diag+1; j < endplusone; ++j) {
-            xj[inds[j]] -= (vals[j] * xj[row]);
+            xj[inds[j]] -= (DomainScalar)vals[j] * xj[row];
           }
         }
         diag = offsets[numRows-1];
-        dval = vals[diag];
+        dval = (DomainScalar)vals[diag];
         xj[numRows-1] /= dval;
       }
       else if (!upper && unitDiag) {
@@ -300,23 +300,23 @@ namespace Kokkos {
         for (size_t row=numRows-1; row > 0; --row) {
           size_t beg = offsets[row], endplusone = offsets[row+1];
           for (size_t j=beg; j < endplusone; ++j) {
-            xj[inds[j]] -= (vals[j] * xj[row]);
+            xj[inds[j]] -= (DomainScalar)vals[j] * xj[row];
           }
         }
       }
       else if (!upper && !unitDiag) {
         // lower + non-unit; diag is last element in row
-        Scalar dval;
+        DomainScalar dval;
         for (size_t row=numRows-1; row > 0; --row) {
           size_t beg = offsets[row], diag = offsets[row+1]-1;
-          dval = vals[diag];
+          dval = (DomainScalar)vals[diag];
           xj[row] /= dval;
           for (size_t j=beg; j < diag; ++j) {
-            xj[inds[j]] -= (vals[j] * xj[row]);
+            xj[inds[j]] -= (DomainScalar)vals[j] * xj[row];
           }
         }
         // last row
-        dval = vals[0];
+        dval = (DomainScalar)vals[0];
         xj[0] /= dval;
       }
     }
@@ -344,14 +344,14 @@ namespace Kokkos {
       const RangeScalar *yj = y + rhs * ystride;
       const Scalar  *rowvals;
       const Ordinal *rowinds;
-      Scalar dval;
+      DomainScalar dval;
       size_t nE;
       // 
       // put y into x and solve system in-situ
       // this is copy-safe, in the scenario that x and y point to the same location.
       //
       for (size_t row=0; row < numRows; ++row) {
-        xj[row] = yj[row];
+        xj[row] = (DomainScalar)yj[row];
       }
       // 
       if (upper && unitDiag) {
@@ -361,7 +361,7 @@ namespace Kokkos {
           rowvals = vals_beg[row];
           rowinds = inds_beg[row];
           for (size_t j=0; j < nE; ++j) {
-            xj[rowinds[j]] -= (rowvals[j] * xj[row]);
+            xj[rowinds[j]] -= (DomainScalar)rowvals[j] * xj[row];
           }
         }
       }
@@ -371,14 +371,14 @@ namespace Kokkos {
           nE = numEntries[row];
           rowvals = vals_beg[row];
           rowinds = inds_beg[row];
-          dval = rowvals[0];
+          dval = (DomainScalar)rowvals[0];
           xj[row] /= dval;
           for (size_t j=1; j < nE; ++j) {
-            xj[rowinds[j]] -= (rowvals[j] * xj[row]);
+            xj[rowinds[j]] -= (DomainScalar)rowvals[j] * xj[row];
           }
         }
         rowvals = vals_beg[numRows-1];
-        dval = rowvals[0];
+        dval = (DomainScalar)rowvals[0];
         xj[numRows-1] /= dval;
       }
       else if (!upper && unitDiag) {
@@ -388,7 +388,7 @@ namespace Kokkos {
           rowvals = vals_beg[row];
           rowinds = inds_beg[row];
           for (size_t j=0; j < nE; ++j) {
-            xj[rowinds[j]] -= (rowvals[j] * xj[row]);
+            xj[rowinds[j]] -= (DomainScalar)rowvals[j] * xj[row];
           }
         }
       }
@@ -398,14 +398,14 @@ namespace Kokkos {
           nE = numEntries[row];
           rowvals = vals_beg[row];
           rowinds = inds_beg[row];
-          dval = rowvals[nE-1];
+          dval = (DomainScalar)rowvals[nE-1];
           xj[row] /= dval;
           for (size_t j=0; j < nE-1; ++j) {
-            xj[rowinds[j]] -= (rowvals[j] * xj[row]);
+            xj[rowinds[j]] -= (DomainScalar)rowvals[j] * xj[row];
           }
         }
         rowvals = vals_beg[0];
-        dval = rowvals[0];
+        dval = (DomainScalar)rowvals[0];
         xj[0] /= dval;
       }
     }
