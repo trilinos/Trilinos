@@ -2662,7 +2662,7 @@ namespace Tpetra {
         view_lclInds2D_ = Teuchos::null;
         // allocate single memory block
         pbuf_rowOffsets_ = node->template allocBuffer<size_t>(nlrs+1);
-        view_rowOffsets_ = node->template viewBufferNonConst(Kokkos::WriteOnly,nlrs+1,pbuf_rowOffsets_);
+        view_rowOffsets_ = node->template viewBufferNonConst<size_t>(Kokkos::WriteOnly,nlrs+1,pbuf_rowOffsets_);
         if (nodeNumEntries_ > 0) {
           pbuf_lclInds1D_ = node->template allocBuffer<LocalOrdinal>(nodeNumEntries_);
           ArrayRCP<LocalOrdinal> curptr = pbuf_lclInds1D_;
@@ -2694,7 +2694,7 @@ namespace Tpetra {
         // storage is already allocated; just need to pack
         if (nodeNumEntries_ > 0) {
           if (view_rowOffsets_ == Teuchos::null) {
-            view_rowOffsets_ = node->template viewBufferNonConst(Kokkos::ReadWrite,nlrs+1,pbuf_rowOffsets_);
+            view_rowOffsets_ = node->template viewBufferNonConst<size_t>(Kokkos::ReadWrite,nlrs+1,pbuf_rowOffsets_);
           }
           ArrayRCP<LocalOrdinal> curptr = pbuf_lclInds1D_,
                                  oldptr = pbuf_lclInds1D_;
