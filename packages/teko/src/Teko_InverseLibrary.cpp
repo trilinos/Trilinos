@@ -27,6 +27,8 @@ void addToStratimikosBuilder(Stratimikos::DefaultLinearSolverBuilder & builder)
 
 InverseLibrary::InverseLibrary()
 {
+   Teko_DEBUG_SCOPE("InverseLibrary::InverseLibrary", 10);
+
    // setup some valid Stratimikos parameters
    /////////////////////////////////////////////
 
@@ -42,6 +44,13 @@ InverseLibrary::InverseLibrary()
 
    // set valid Teko preconditioner factory names
    PreconditionerFactory::getPreconditionerFactoryNames(blockValidPrecond_);
+
+   Teko_DEBUG_MSG_BEGIN(10)
+      DEBUG_STREAM << "Loaded \"block\" preconditioners = ";
+      for(std::size_t i=0;i<blockValidPrecond_.size();i++)
+         DEBUG_STREAM << blockValidPrecond_[i] << ", ";
+      DEBUG_STREAM << std::endl;
+   Teko_DEBUG_MSG_END()
 }
 
 //! add an unspecified inverse to the library
@@ -346,7 +355,7 @@ RCP<InverseLibrary> InverseLibrary::buildFromParameterList(const Teuchos::Parame
       invLib = rcp(new InverseLibrary());
 
    // to convert the void* like entry
-   Teuchos::ParameterList * temp;
+   Teuchos::ParameterList * temp = 0;
 
    // loop over all entries in parameter list
    Teuchos::ParameterList::ConstIterator itr;
@@ -381,7 +390,7 @@ Teuchos::RCP<InverseLibrary> InverseLibrary::buildFromStratimikos(const Stratimi
    Teuchos::ParameterList pft(pl->sublist("Preconditioner Types"));
 
    Teuchos::ParameterList::ConstIterator itr;
-   Teuchos::ParameterList * temp;
+   Teuchos::ParameterList * temp = 0;
 
    // loop over all entries in solver list
    for(itr=lst.begin();itr!=lst.end();++itr) {
