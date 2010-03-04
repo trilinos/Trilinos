@@ -253,7 +253,7 @@ namespace Intrepid {
 	    for (int i=0;i<openBasis_.getCardinality();i++) {
 	      for (int l=0;l<dim0;l++) {
 		outputValues(bfcur,l,0) = 0.0;
-		outputValues(bfcur,l,1) = openBasisValsXPts(i,l) * closedBasisValsYPts(j,l);
+		outputValues(bfcur,l,1) = openBasisValsXPts(i,l) * closedBasisValsYPts(j,l) * openBasisValsZPts(k,l);
 		outputValues(bfcur,l,2) = 0.0;
 	      }
 	      bfcur++;
