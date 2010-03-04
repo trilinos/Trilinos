@@ -935,7 +935,6 @@ namespace Tpetra {
     }
   }
 
-
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
@@ -1400,8 +1399,8 @@ namespace Tpetra {
     using std::make_pair;
     using Teuchos::tuple;
     typedef typename std::map<GlobalOrdinal,std::list<pair<GlobalOrdinal,Scalar> > >::const_iterator NLITER;
-    int numImages = getComm()->getSize();
-    int myImageID = getComm()->getRank();
+    const int numImages = getComm()->getSize();
+    const int myImageID = getComm()->getRank();
     // Determine if any nodes have global entries to share
     size_t MyNonlocals = nonlocals_.size(), 
            MaxGlobalNonlocals;
@@ -2007,28 +2006,53 @@ namespace Tpetra {
       if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME) {
         if (myImageID == 0) out << "\nRow map: " << std::endl;
         getRowMap()->describe(out,vl);
+        //
         if (getColMap() != Teuchos::null) {
           if (myImageID == 0) out << "\nColumn map: " << std::endl;
           getColMap()->describe(out,vl);
         }
         if (getDomainMap() != Teuchos::null) {
-          if (myImageID == 0) out << "\nDomain map: " << std::endl;
-          getDomainMap()->describe(out,vl);
+          if (getDomainMap() == getRowMap()) {
+            if (myImageID == 0) out << "\nDomain map is row map.";
+          }
+          else if (getDomainMap() == getColMap()) {
+            if (myImageID == 0) out << "\nDomain map is row map.";
+          }
+          else {
+            if (myImageID == 0) out << "\nDomain map: " << std::endl;
+            getDomainMap()->describe(out,vl);
+          }
         }
         if (getRangeMap() != Teuchos::null) {
-          if (myImageID == 0) out << "\nRange map: " << std::endl;
-          getRangeMap()->describe(out,vl);
+          if (getRangeMap() == getDomainMap()) {
+            if (myImageID == 0) out << "\nRange map is domain map." << std::endl;
+          }
+          else if (getRangeMap() == getRowMap()) {
+            if (myImageID == 0) out << "\nRange map is row map." << std::endl;
+          }
+          else {
+            if (myImageID == 0) out << "\nRange map: " << std::endl;
+            getRangeMap()->describe(out,vl);
+          }
         }
+        if (myImageID == 0) out << std::endl;
       }
       // O(P) data
       if (vl == VERB_MEDIUM || vl == VERB_HIGH || vl == VERB_EXTREME) {
         for (int imageCtr = 0; imageCtr < numImages; ++imageCtr) {
           if (myImageID == imageCtr) {
-            out << "Node ID = " << imageCtr << std::endl
-                << "Node number of entries = " << getNodeNumEntries() << std::endl
-                << "Node number of diagonals = " << getNodeNumDiags() << std::endl
-                << "Node max number of entries = " << getNodeMaxNumRowEntries() << std::endl
-                << "Node number of allocated entries = " << graph_->getNodeAllocationSize() << std::endl;
+            out << "Node ID = " << imageCtr << std::endl;
+            if (graph_->getNodeAllocationSize() == Teuchos::OrdinalTraits<size_t>::invalid()) {
+              out << "Node not allocated" << std::endl;
+            }
+            else {
+              out << "Node number of allocated entries = " << graph_->getNodeAllocationSize() << std::endl;
+            }
+            out << "Node number of entries = " << getNodeNumEntries() << std::endl;
+            if (isFillComplete()) {
+              out << "Node number of diagonals = " << getNodeNumDiags() << std::endl;
+            }
+            out << "Node max number of entries = " << getNodeMaxNumRowEntries() << std::endl;
           }
           comm->barrier();
           comm->barrier();

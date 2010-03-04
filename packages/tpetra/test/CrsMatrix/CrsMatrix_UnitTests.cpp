@@ -58,6 +58,7 @@ namespace {
   using std::string;
 
   using Teuchos::TypeTraits::is_same;
+  using Teuchos::FancyOStream;
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
   using Teuchos::rcp;
@@ -1221,7 +1222,7 @@ namespace {
   {
     RCP<Node> node = getNode<Node>();
     // do a FEM-type communication, then apply to a MultiVector containing the identity
-    // this will check more difficult communication and test multivector apply
+    // this will check non-trivial communication and test multivector apply
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
     typedef ScalarTraits<Scalar> ST;
     typedef MultiVector<Scalar,LO,GO,Node> MV;
@@ -1237,7 +1238,7 @@ namespace {
     // create a Map
     RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,ONE,0,comm,node) );
 
-    // for debugging: Teuchos::VerboseObjectBase::setDefaultOStream(Teuchos::rcp(&out,false));
+    // RCP<FancyOStream> fos = Teuchos::fancyOStream(rcp(&std::cout,false));
     
     /* Create the following matrix:
     0  [2 1       ]   [2 1]
@@ -1249,15 +1250,20 @@ namespace {
     */
     size_t myNNZ;
     MAT A(map,4);
-    MV mveye(map,numImages), mvans(map,numImages), mvres(map,numImages,false);
+    A.setObjectLabel("The Matrix");
+    MV mveye(map,numImages), mvans(map,numImages), mvres(map,numImages,true);
+    mveye.setObjectLabel("mveye");
+    mvans.setObjectLabel("mvans");
+    mvres.setObjectLabel("mvres");
     if (myImageID != numImages-1) { // last image assigns none
       Array<Scalar> vals(tuple<Scalar>(static_cast<Scalar>(2)*ST::one(),ST::one(),static_cast<Scalar>(2)*ST::one()));
       Array<GO> cols(tuple<GO>(myImageID,myImageID + 1));
-      A.insertGlobalValues(myImageID  ,cols(),vals(0,2));
-      A.insertGlobalValues(myImageID+1,cols(),vals(1,2));
+      A.insertGlobalValues(myImageID  ,cols(),vals(0,2)); // insert [2 1]
+      A.insertGlobalValues(myImageID+1,cols(),vals(1,2)); // insert [1 2]
     }
-    // divine myNNZ and build multivector with matrix
+    // put one on the diagonal, setting mveye to the identity
     mveye.replaceLocalValue(0,myImageID,ST::one());
+    // divine myNNZ and build multivector with matrix
     if (myImageID == 0) {
       myNNZ = 2;
       mvans.replaceLocalValue(0,0,static_cast<Scalar>(2));
@@ -1275,6 +1281,7 @@ namespace {
       mvans.replaceLocalValue(0,myImageID+1,static_cast<Scalar>(1));
     }
     A.fillComplete();
+
     // test the properties
     TEST_EQUALITY(A.getGlobalNumEntries()     , static_cast<size_t>(3*numImages-2));
     TEST_EQUALITY(A.getNodeNumEntries()       , myNNZ);
@@ -1549,8 +1556,14 @@ namespace {
 #endif
 
 #if !defined(FAST_DEVELOPMENT_BUILD)
+# if defined(HAVE_TPETRA_INST_FLOAT)
+    UNIT_TEST_ALLNODES(int, int, float)
+# endif 
 # if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
     UNIT_TEST_ALLCPUNODES_COMPLEX_FLOAT(int, int)
+# endif 
+# if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
+    UNIT_TEST_ALLCPUNODES_COMPLEX_DOUBLE(int, int)
 # endif 
 #endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
 

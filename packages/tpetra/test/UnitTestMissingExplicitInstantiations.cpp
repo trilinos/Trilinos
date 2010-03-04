@@ -61,6 +61,24 @@ namespace Tpetra {
 # endif
 #endif
 
+  // mixed: float wrapper for int matrix for CrsMatrix unit test
+#if defined(HAVE_TPETRA_INST_FLOAT) 
+  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(float,int,int,int,Kokkos::SerialNode)
+  TPETRA_CRSMATRIX_SOLVEOP_INSTANT(float,int,int,int,Kokkos::SerialNode)
+# if defined(HAVE_KOKKOS_TBB)
+    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(float,int,int,int,Kokkos::TBBNode)
+    TPETRA_CRSMATRIX_SOLVEOP_INSTANT(float,int,int,int,Kokkos::TBBNode)
+# endif
+# if defined(HAVE_KOKKOS_THREADPOOL)
+    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(float,int,int,int,Kokkos::TPINode)
+    TPETRA_CRSMATRIX_SOLVEOP_INSTANT(float,int,int,int,Kokkos::TPINode)
+# endif
+# if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_FLOAT)
+    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(float,int,int,int,Kokkos::ThrustGPUNode)
+    TPETRA_CRSMATRIX_SOLVEOP_INSTANT(float,int,int,int,Kokkos::ThrustGPUNode)
+# endif
+#endif
+
   // mixed: complex<float> wrapper for int matrix for CrsMatrix unit test
 #if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
   TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<float>,int,int,int,Kokkos::SerialNode)
@@ -76,6 +94,24 @@ namespace Tpetra {
 # if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_COMPLEX_FLOAT)
     TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<float>,int,int,int,Kokkos::ThrustGPUNode)
     TPETRA_CRSMATRIX_SOLVEOP_INSTANT(std::complex<float>,int,int,int,Kokkos::ThrustGPUNode)
+# endif
+#endif
+
+  // mixed: complex<double> wrapper for int matrix for CrsMatrix unit test
+#if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
+  TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<double>,int,int,int,Kokkos::SerialNode)
+  TPETRA_CRSMATRIX_SOLVEOP_INSTANT(std::complex<double>,int,int,int,Kokkos::SerialNode)
+# if defined(HAVE_KOKKOS_TBB)
+    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<double>,int,int,int,Kokkos::TBBNode)
+    TPETRA_CRSMATRIX_SOLVEOP_INSTANT(std::complex<double>,int,int,int,Kokkos::TBBNode)
+# endif
+# if defined(HAVE_KOKKOS_THREADPOOL)
+    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<double>,int,int,int,Kokkos::TPINode)
+    TPETRA_CRSMATRIX_SOLVEOP_INSTANT(std::complex<double>,int,int,int,Kokkos::TPINode)
+# endif
+# if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_COMPLEX_DOUBLE)
+    TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(std::complex<double>,int,int,int,Kokkos::ThrustGPUNode)
+    TPETRA_CRSMATRIX_SOLVEOP_INSTANT(std::complex<double>,int,int,int,Kokkos::ThrustGPUNode)
 # endif
 #endif
 
