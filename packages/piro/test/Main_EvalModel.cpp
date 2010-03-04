@@ -13,8 +13,10 @@ int main(int argc, char *argv[]) {
   MPI_Init(&argc,&argv);
   double total_time = -MPI_Wtime();
   (void) MPI_Comm_rank(MPI_COMM_WORLD, &Proc);
-#endif
   MPI_Comm appComm = MPI_COMM_WORLD;
+#else
+  int appComm=0;
+#endif
 
   using Teuchos::RCP;
   using Teuchos::rcp;

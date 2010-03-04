@@ -1,11 +1,5 @@
 #include "MockModelEval_A.hpp"
 
-#ifdef HAVE_MPI
-#  include "Epetra_MpiComm.h"
-#else
-#  include "Epetra_SerialComm.h"
-#endif // HAVE_MPI
-
 using Teuchos::RCP;
 using Teuchos::rcp;
 

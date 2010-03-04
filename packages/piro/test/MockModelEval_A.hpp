@@ -4,10 +4,16 @@
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_RCP.hpp"
 
+#ifdef HAVE_MPI
+#include "Epetra_MpiComm.h"
+#else
+typedef int MPI_Comm;
+#include "Epetra_SerialComm.h"
+#endif 
+
 #include "Epetra_LocalMap.h"
 #include "Epetra_Vector.h"
 #include "Epetra_CrsMatrix.h"
-#include "Epetra_Comm.h"
 
 #include "EpetraExt_ModelEvaluator.h"
 
