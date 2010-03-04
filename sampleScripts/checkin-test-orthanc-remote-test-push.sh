@@ -22,6 +22,7 @@ source ~/.bashrc
 
 echo "
 -DBUILD_SHARED_LIBS:BOOL=ON
+-DTrilinos_ENABLE_Fortran:BOOL=OFF
 " > COMMON.config
 
 echo "
