@@ -1,7 +1,8 @@
 #ifndef __Teko_EpetraBlockPreconditioner_hpp__
 #define __Teko_EpetraBlockPreconditioner_hpp__
 
-#include "Teko_BlockPreconditionerFactory.hpp"
+// #include "Teko_BlockPreconditionerFactory.hpp"
+#include "Teko_PreconditionerFactory.hpp"
 #include "Teko_EpetraInverseOpWrapper.hpp"
 
 namespace Teko {
@@ -24,7 +25,7 @@ public:
      * Constructor that takes the BlockPreconditionerFactory that will
      * build the preconditioner.
      */
-   EpetraBlockPreconditioner(const Teuchos::RCP<const BlockPreconditionerFactory> & bfp); 
+   EpetraBlockPreconditioner(const Teuchos::RCP<const PreconditionerFactory> & bfp); 
 
    /** \brief Build the underlying data structure for the preconditioner.
      *        
@@ -129,7 +130,8 @@ protected:
    EpetraBlockPreconditioner(); 
    EpetraBlockPreconditioner(const EpetraBlockPreconditioner &); 
 
-   Teuchos::RCP<const BlockPreconditionerFactory> preconFactory_;
+   // Teuchos::RCP<const BlockPreconditionerFactory> preconFactory_;
+   Teuchos::RCP<const PreconditionerFactory> preconFactory_;
    Teuchos::RCP<Thyra::PreconditionerBase<double> > preconObj_;
    bool firstBuildComplete_;
 };

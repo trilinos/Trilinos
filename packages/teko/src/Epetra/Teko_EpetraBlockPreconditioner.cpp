@@ -25,7 +25,7 @@ using Teuchos::rcp_dynamic_cast;
   * Constructor that takes the BlockPreconditionerFactory that will
   * build the preconditioner.
   */
-EpetraBlockPreconditioner::EpetraBlockPreconditioner(const Teuchos::RCP<const BlockPreconditionerFactory> & bfp)
+EpetraBlockPreconditioner::EpetraBlockPreconditioner(const Teuchos::RCP<const PreconditionerFactory> & bfp)
    : preconFactory_(bfp), firstBuildComplete_(false)
 { 
 }
