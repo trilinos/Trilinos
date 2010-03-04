@@ -22,20 +22,13 @@ source ~/.bashrc
 
 echo "
 -DBUILD_SHARED_LIBS:BOOL=ON
--DTrilinos_ENABLE_Fortran:BOOL=OFF
--DTrilinos_EXTRA_LINK_FLAGS:STRING=\"-Wl,-rpath,/opt/gcc/gcc-4.3.2/lib64\"
 " > COMMON.config
 
-
 echo "
--DMPI_BASE_DIR:PATH=/usr/local/openmpi/gcc-4.3.2/openmpi-1.3.2
--DTrilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=\"\"
 " > MPI_DEBUG.config
 
 
 echo "
--DCMAKE_CXX_COMPILER=/opt/gcc/gcc-4.3.2/bin/g++
--DCMAKE_C_COMPILER=/opt/gcc/gcc-4.3.2/bin/gcc
 " > SERIAL_RELEASE.config
 
 
@@ -45,8 +38,8 @@ echo "
 
 ../../Trilinos/checkin-test.py \
 --send-email-to=bakercg@ornl.gov \
---make-options=\"-j2\" \
---ctest-options=\"-j2\" \
+--make-options=\"-j4\" \
+--ctest-options=\"-j1\" \
 --ctest-timeout=180 \
 --commit-msg-header-file=checkin_message \
 --extra-pull-from=zan:master \
