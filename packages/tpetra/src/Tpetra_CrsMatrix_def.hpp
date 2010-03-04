@@ -1874,7 +1874,7 @@ namespace Tpetra {
                                         const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, 
                                               MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 
                                               Teuchos::ETransp mode, RangeScalar alpha, RangeScalar beta) const {
-    typedef Teuchos::ScalarTraits<Scalar> ST;
+    typedef Teuchos::ScalarTraits<RangeScalar> ST;
     const Kokkos::MultiVector<DomainScalar,Node> *lclX = &X.getLocalMV();
     Kokkos::MultiVector<RangeScalar,Node>        *lclY = &Y.getLocalMVNonConst();
 #ifdef HAVE_TPETRA_DEBUG
@@ -1908,7 +1908,6 @@ namespace Tpetra {
                                     const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>  &Y, 
                                           MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X,
                                           Teuchos::ETransp mode) const {
-    typedef Teuchos::ScalarTraits<Scalar> ST;
     const Kokkos::MultiVector<RangeScalar,Node> *lclY = &Y.getLocalMV();
     Kokkos::MultiVector<DomainScalar,Node>      *lclX = &X.getLocalMVNonConst();
 #ifdef HAVE_TPETRA_DEBUG
