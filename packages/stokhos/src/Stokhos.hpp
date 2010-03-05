@@ -71,5 +71,6 @@
 // Model Evaluators
 #include "Stokhos_SGModelEvaluator.hpp"
 #include "Stokhos_SGQuadModelEvaluator.hpp"
+#include "Stokhos_SGInverseModelEvaluator.hpp"
 
 #endif // STOKHOS_HPP 

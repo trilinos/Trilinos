@@ -72,6 +72,12 @@ namespace Stokhos {
     /** \name Overridden from EpetraExt::ModelEvaluator . */
     //@{
 
+    //! Return solution vector map
+    Teuchos::RCP<const Epetra_Map> get_x_map() const;
+
+    //! Return residual vector map
+    Teuchos::RCP<const Epetra_Map> get_f_map() const;
+
     //! Return parameter vector map
     Teuchos::RCP<const Epetra_Map> get_p_map(int l) const;
 

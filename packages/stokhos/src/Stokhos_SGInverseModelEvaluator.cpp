@@ -78,6 +78,20 @@ Stokhos::SGInverseModelEvaluator::SGInverseModelEvaluator(
 
 Teuchos::RCP<const Epetra_Map>
 Stokhos::SGInverseModelEvaluator::
+get_x_map() const
+{
+  return Teuchos::null;
+}
+
+Teuchos::RCP<const Epetra_Map>
+Stokhos::SGInverseModelEvaluator::
+get_f_map() const
+{
+  return Teuchos::null;
+}
+
+Teuchos::RCP<const Epetra_Map>
+Stokhos::SGInverseModelEvaluator::
 get_p_map(int l) const
 {
   return me->get_p_map(l);
@@ -131,12 +145,11 @@ Stokhos::SGInverseModelEvaluator::createOutArgs() const
       outArgs.setSupports(OUT_ARG_DgDp, i, j, 
 			  me_outargs.supports(OUT_ARG_DgDp, i, j));
 
-  outArgs.set_Np_Ng_sg(num_p_sg, num_g_sg);
+  outArgs.set_Np_Ng_sg(me_outargs.Np(), num_g_sg);
   for (int i=0; i<num_g_sg; i++)
-    for (int j=0; j<num_p_sg; j++)
+    for (int j=0; j<me_outargs.Np(); j++)
       outArgs.setSupports(OUT_ARG_DgDp_sg, i, j, 
-			  me_outargs.supports(OUT_ARG_DgDp, sg_g_index[i], 
-					      sg_p_index[j]));
+			  me_outargs.supports(OUT_ARG_DgDp, sg_g_index[i], j));
   
   return outArgs;
 }

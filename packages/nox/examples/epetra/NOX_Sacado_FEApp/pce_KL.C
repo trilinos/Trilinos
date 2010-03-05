@@ -464,7 +464,7 @@ int main(int argc, char *argv[]) {
 	Teuchos::rcp(new EpetraExt::BlockVector(View, finalSolution->Map(),
 						*sg_u));
       Teuchos::RCP<const EpetraExt::BlockVector> cX = X;
-      Stokhos::PCEAnasaziKL pceKL(cX, *basis, 5);
+      Stokhos::PCEAnasaziKL pceKL(cX, *basis, 20);
       Teuchos::ParameterList anasazi_params = pceKL.getDefaultParams();
       //anasazi_params.set("Num Blocks", 10);
       anasazi_params.set("Verbosity",  
