@@ -545,9 +545,9 @@ would be of interest if you are doing geometric partitioning:
 
 <UL>
 <li><strong>obj_imbalance</strong>: imbalance in count of objects across parts, scaled by
-requested part sizes if <a href="ug_query_lb.html#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a> is defined.
+requested part sizes.
 <li><strong>imbalance</strong>: imbalance in weight of objects across parts, scaled by
-requested part sizes if <a href="ug_query_lb.html#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a> is defined.
+requested part sizes.
 <li><strong>nobj</strong>: an array containing the number of objects on the local <em>process</em>, the total number of objects, the minimum number of objects in a <em>part</em>, the maximum number in a partitition, and the average number of objects across the parts.
 <li><strong>obj_wgt</strong>: an array containing the sum of the weight of objects on the local <em>process</em>, the total weight across all processes, the minimum weight in a <em>part</em>, the maximum weight in a partitition, and the average weight of objects across the parts.
 <li><strong>xtra_imbalance</strong>: if the <a href="ug_param.html#OBJ_WEIGHT_DIM">OBJ_WEIGHT_DIM</a> exceeds one, the <strong>obj_imbalance</strong> value for the extra weights is in this array.
@@ -566,9 +566,9 @@ would be of interest if you are doing graph partitioning:
 <li><strong>cut_weight</strong>: an array summing the weight of cut edges (the first element again is not set) across all parts, the minimum across parts, the maximum, and then the average
 <li><strong>nnborparts</strong>: an array which counts the number of neighboring parts that each part has,  the first element again is not set, the next is the sum across all parts, the minimum across parts, the maximum, and then the average
 <li><strong>obj_imbalance</strong>: imbalance in count of objects across parts, scaled by
-requested part sizes if <a href="ug_query_lb.html#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a> is defined.
+requested part sizes.
 <li><strong>imbalance</strong>: imbalance in weight of objects across parts, scaled by
-requested part sizes if <a href="ug_query_lb.html#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a> is defined.
+requested part sizes.
 <li><strong>nobj</strong>: an array containing the number of objects on the local <em>process</em>, the total number of objects, the minimum number of objects in a <em>part</em>, the maximum number in a partitition, and the average number of objects across the parts.
 <li><strong>obj_wgt</strong>: an array containing the sum of the weight of objects on the local <em>process</em>, the total weight across all processes, the minimum weight in a <em>part</em>, the maximum weight in a partitition, and the average weight of objects across the parts.
 <li><strong>num_boundary</strong>: an array which counts the number of objects in a part that have at least one remote neighbor, the first element is not set, the next is the sum across parts, the next is the minimum count in any part, the next is the maximum, and then the average for all parts
@@ -588,9 +588,9 @@ would be of interest if you are doing hypergraph partitioning:
 <p>
 <UL>
 <li><strong>obj_imbalance</strong>: imbalance in count of objects across parts, scaled by
-requested part sizes if <a href="ug_query_lb.html#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a> is defined.
+requested part sizes.
 <li><strong>imbalance</strong>: imbalance in weight of objects across parts, scaled by
-requested part sizes if <a href="ug_query_lb.html#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a> is defined.
+requested part sizes.
 <li><strong>cutl</strong>: an array containing what is known at the CUTL or the ConCut measure of the hypergraph, the first element is not set (this is the local process total, which has no meaning), the next is the sum of the CUTL across parts, then the minimum CUTL across parts, then the maximum CUTL across parts, finally the average CUTL across parts.
 <li><strong>cutn</strong>: an array containing what is known at the CUTN or the NetCut measure of the hypergraph, the first element is not set, the next is the sum of the CUTL across parts, then the minimum CUTL across parts, then the maximum CUTL across parts, finally the average CUTL across parts.
 <li><strong>nobj</strong>: an array containing the number of objects on the local <em>process</em>, t
@@ -634,7 +634,8 @@ for writing the <a href="#ZOLTAN_HG_EVAL">ZOLTAN_HG_EVAL</a> if they are availab
 otherwise Zoltan will create a hypergraph from the
 <a href="ug_query_lb.html#Graph-based Functions">graph-Based</a> functions.
 <br>
-If defined, the values set by the  <a href="ug_query_lb.html#ZOLTAN_PART_FN">ZOLTAN_PART_FN</a> 
+If <a href="ug_interface_lb.html#Zoltan_LB_Set_Part_Sizes">Zoltan_LB_Set_Part_Sizes</a> has been
+called, the part sizes set by the <a href="ug_interface_lb.html#Zoltan_LB_Set_Part_Sizes">Zoltan_LB_Set_Part_Sizes</a>
 will be used in calculating imbalances.
 </td>
 
