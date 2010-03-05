@@ -157,7 +157,17 @@ public:
 
     \return Integer error code, set to 0 if successful.
     */
-  virtual inline int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const;
+  virtual inline int Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
+  {
+    if (IsComputed() == false)
+      IFPACK_CHK_ERR(-3);
+
+    if (X.NumVectors() != Y.NumVectors())
+      IFPACK_CHK_ERR(-2);
+
+    IFPACK_CHK_ERR(Matrix_->Multiply(UseTranspose(),X,Y));
+    return(0);
+  }
 
   //! Applies the preconditioner to X, returns the result in Y.
   /*! 

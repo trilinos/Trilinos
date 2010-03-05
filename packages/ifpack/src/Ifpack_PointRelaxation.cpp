@@ -132,21 +132,6 @@ const Epetra_Map& Ifpack_PointRelaxation::OperatorRangeMap() const
 }
 
 //==============================================================================
-int Ifpack_PointRelaxation::
-Apply(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
-{
-
-  if (IsComputed() == false)
-    IFPACK_CHK_ERR(-3);
-
-  if (X.NumVectors() != Y.NumVectors())
-    IFPACK_CHK_ERR(-2);
-
-  IFPACK_CHK_ERR(Matrix_->Multiply(UseTranspose(),X,Y));
-  return(0);
-}
-
-//==============================================================================
 int Ifpack_PointRelaxation::Initialize()
 {
   IsInitialized_ = false;
