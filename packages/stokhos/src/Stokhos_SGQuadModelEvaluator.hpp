@@ -35,7 +35,6 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
-#include "Stokhos_Quadrature.hpp"
 
 namespace Stokhos {
 
@@ -54,11 +53,9 @@ namespace Stokhos {
   public:
 
     // Constructor
-    SGQuadModelEvaluator(
-	      const Teuchos::RCP<EpetraExt::ModelEvaluator>& me,
-	      const Teuchos::RCP< const Stokhos::Quadrature<int,double> >& quad,
-	      const Teuchos::Array<int>& sg_p_index,
-	      const Teuchos::Array<int>& sg_g_index);
+    SGQuadModelEvaluator(const Teuchos::RCP<EpetraExt::ModelEvaluator>& me,
+			 const Teuchos::Array<int>& sg_p_index,
+			 const Teuchos::Array<int>& sg_g_index);
     
     /** \name Overridden from EpetraExt::ModelEvaluator . */
     //@{
@@ -104,9 +101,6 @@ namespace Stokhos {
     //! Underlying model evaluator
     Teuchos::RCP<EpetraExt::ModelEvaluator> me;
 
-    //! Quadrature class
-    mutable Teuchos::RCP< const Stokhos::Quadrature<int,double> > quad;
-
     //! Index of stochastic parameters
     Teuchos::Array<int> sg_p_index;
 
@@ -131,11 +125,20 @@ namespace Stokhos {
     //! Residual vector
     Teuchos::RCP<Epetra_Vector> f_qp;
 
-    //! W operaator
+    //! W operator
     Teuchos::RCP<Epetra_Operator> W_qp;
+
+    //! Residual derivatives
+    Teuchos::Array<EpetraExt::ModelEvaluator::Derivative> dfdp_qp;
 
     //! Response vectors
     Teuchos::Array< Teuchos::RCP<Epetra_Vector> > g_qp;
+
+    //! Response derivative
+    Teuchos::Array<EpetraExt::ModelEvaluator::Derivative> dgdx_qp;
+
+    //! Response derivative
+    Teuchos::Array<EpetraExt::ModelEvaluator::Derivative> dgdx_dot_qp;
 
     //! Response sensitivities
     Teuchos::Array< Teuchos::Array<EpetraExt::ModelEvaluator::Derivative> > dgdp_qp;

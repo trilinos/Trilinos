@@ -50,6 +50,11 @@ class Epetra_Operator;
 // Forward declaration of Stochastic Galerkin (SG) argument types
 namespace Stokhos {
   template <typename coeff_type> class VectorOrthogPoly;
+  class EpetraVectorOrthogPoly;
+  class EpetraMultiVectorOrthogPoly;
+  template <typename ordinal_type, typename scalar_type> class OrthogPolyBasis;
+  template <typename ordinal_type, typename scalar_type> class Quadrature;
+  template <typename ordinal_type, typename scalar_type> class OrthogPolyExpansion;
 }
 
 namespace EpetraExt {
@@ -75,15 +80,18 @@ public:
     ,IN_ARG_t
     ,IN_ARG_alpha
     ,IN_ARG_beta
+    ,IN_ARG_sg_basis ///< Stochastic Galerkin basis
+    ,IN_ARG_sg_quadrature ///< Stochastic Galerkin quadrature
+    ,IN_ARG_sg_expansion ///< Stochastic Galerkin expansion
   };
-  static const int NUM_E_IN_ARGS_MEMBERS=9;
+  static const int NUM_E_IN_ARGS_MEMBERS=12;
 
   /** \brief . */
   class InArgs {
   public:
 
     //! Short-hand for stochastic Galerkin vector type
-    typedef Teuchos::RefCountPtr<const Stokhos::VectorOrthogPoly<Epetra_Vector> > sg_const_vector_t;
+    typedef Teuchos::RefCountPtr<const Stokhos::EpetraVectorOrthogPoly> sg_const_vector_t;
     
     /** \brief. */
     InArgs();
@@ -141,6 +149,18 @@ public:
     /** \brief. */
     double get_t() const;
     /** \brief. */
+    Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > get_sg_basis() const;
+    /** \brief. */
+    void set_sg_basis( const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& basis );
+    /** \brief. */
+    Teuchos::RCP<const Stokhos::Quadrature<int,double> > get_sg_quadrature() const;
+    /** \brief. */
+    void set_sg_quadrature( const Teuchos::RCP<const Stokhos::Quadrature<int,double> >& quad );
+    /** \brief. */
+    Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > get_sg_expansion() const;
+    /** \brief. */
+    void set_sg_expansion( const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> >& exp );
+    /** \brief. */
     bool supports(EInArgsMembers arg) const;
   protected:
     /** \brief . */
@@ -168,6 +188,9 @@ public:
     double                                     t_;
     double                                     alpha_;
     double                                     beta_;
+    Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > sg_basis_;
+    Teuchos::RCP<const Stokhos::Quadrature<int,double> > sg_quad_;
+    Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > sg_exp_;
     bool supports_[NUM_E_IN_ARGS_MEMBERS];
     // functions
     void assert_supports(EInArgsMembers arg) const;
@@ -388,7 +411,7 @@ public:
     SGDerivativeMultiVector() {}
     /** \brief . */
     SGDerivativeMultiVector(
-      const Teuchos::RefCountPtr< Stokhos::VectorOrthogPoly<Epetra_MultiVector> > &mv
+      const Teuchos::RefCountPtr< Stokhos::EpetraMultiVectorOrthogPoly > &mv
       ,const EDerivativeMultiVectorOrientation orientation = DERIV_MV_BY_COL
       ,const Teuchos::Array<int> &paramIndexes = Teuchos::Array<int>()
       ) : mv_(mv), orientation_(orientation), paramIndexes_(paramIndexes) {}
@@ -396,7 +419,7 @@ public:
     void changeOrientation( const EDerivativeMultiVectorOrientation orientation )
       { orientation_ = orientation; };
     /** \brief . */
-    Teuchos::RefCountPtr< Stokhos::VectorOrthogPoly<Epetra_MultiVector> > getMultiVector() const
+    Teuchos::RefCountPtr< Stokhos::EpetraMultiVectorOrthogPoly > getMultiVector() const
       { return mv_; }
     /** \brief . */
     EDerivativeMultiVectorOrientation getOrientation() const
@@ -405,7 +428,7 @@ public:
     const Teuchos::Array<int>& getParamIndexes() const
       { return paramIndexes_; }
   private:
-    Teuchos::RefCountPtr< Stokhos::VectorOrthogPoly<Epetra_MultiVector> > mv_;
+    Teuchos::RefCountPtr< Stokhos::EpetraMultiVectorOrthogPoly > mv_;
     EDerivativeMultiVectorOrientation orientation_;
     Teuchos::Array<int> paramIndexes_;
   };
@@ -422,7 +445,7 @@ public:
       : lo_(lo) {}
      /** \brief . */
     SGDerivative(
-      const Teuchos::RefCountPtr< Stokhos::VectorOrthogPoly<Epetra_MultiVector> > &mv
+      const Teuchos::RefCountPtr< Stokhos::EpetraMultiVectorOrthogPoly > &mv
       ,const EDerivativeMultiVectorOrientation orientation = DERIV_MV_BY_COL
       ) : dmv_(mv,orientation) {}
    /** \brief . */
@@ -432,7 +455,7 @@ public:
     Teuchos::RefCountPtr< Stokhos::VectorOrthogPoly<Epetra_Operator> > getLinearOp() const
       { return lo_; }
     /** \brief . */
-    Teuchos::RefCountPtr< Stokhos::VectorOrthogPoly<Epetra_MultiVector> > getMultiVector() const
+    Teuchos::RefCountPtr< Stokhos::EpetraMultiVectorOrthogPoly > getMultiVector() const
       { return dmv_.getMultiVector(); }
     /** \brief . */
     EDerivativeMultiVectorOrientation getMultiVectorOrientation() const
@@ -504,7 +527,7 @@ public:
   public:
 
     //! Short-hand for stochastic Galerkin vector type
-    typedef Teuchos::RefCountPtr<Stokhos::VectorOrthogPoly<Epetra_Vector> > sg_vector_t;
+    typedef Teuchos::RefCountPtr<Stokhos::EpetraVectorOrthogPoly> sg_vector_t;
 
     //! Short-hand for stochastic Galerkin operator type
     typedef Teuchos::RefCountPtr<Stokhos::VectorOrthogPoly<Epetra_Operator> > sg_operator_t;
@@ -1118,6 +1141,33 @@ void ModelEvaluator::InArgs::set_beta( double beta )
 inline
 double ModelEvaluator::InArgs::get_beta() const
 { assert_supports(IN_ARG_beta); return beta_; }
+
+inline
+void ModelEvaluator::InArgs::set_sg_basis( const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& basis )
+{ assert_supports(IN_ARG_sg_basis); sg_basis_ = basis; }
+
+inline
+Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >
+ModelEvaluator::InArgs::get_sg_basis() const
+{ assert_supports(IN_ARG_sg_basis); return sg_basis_; }
+
+inline
+void ModelEvaluator::InArgs::set_sg_quadrature( const Teuchos::RCP<const Stokhos::Quadrature<int,double> >& quad )
+{ assert_supports(IN_ARG_sg_quadrature); sg_quad_ = quad; }
+
+inline
+Teuchos::RCP<const Stokhos::Quadrature<int,double> >
+ModelEvaluator::InArgs::get_sg_quadrature() const
+{ assert_supports(IN_ARG_sg_quadrature); return sg_quad_; }
+
+inline
+void ModelEvaluator::InArgs::set_sg_expansion( const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> >& exp )
+{ assert_supports(IN_ARG_sg_expansion); sg_exp_ = exp; }
+
+inline
+Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> >
+ModelEvaluator::InArgs::get_sg_expansion() const
+{ assert_supports(IN_ARG_sg_expansion); return sg_exp_; }
 
 inline
 void ModelEvaluator::InArgs::_setModelEvalDescription( const std::string &new_modelEvalDescription )

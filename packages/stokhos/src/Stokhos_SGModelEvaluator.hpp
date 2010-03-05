@@ -41,6 +41,8 @@
 #include "Stokhos_OrthogPolyBasis.hpp"
 #include "Stokhos_VectorOrthogPoly.hpp"
 #include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
+#include "Stokhos_EpetraVectorOrthogPoly.hpp"
+#include "Stokhos_EpetraMultiVectorOrthogPoly.hpp"
 #include "Stokhos_PreconditionerFactory.hpp"
 
 namespace Stokhos {
@@ -75,13 +77,15 @@ namespace Stokhos {
     SGModelEvaluator(
       const Teuchos::RCP<EpetraExt::ModelEvaluator>& me,
       const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
+      const Teuchos::RCP<const Stokhos::Quadrature<int,double> >& sg_quad,
+      const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> >& sg_exp,
       const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk,
       const Teuchos::Array<int>& sg_p_index,
       const Teuchos::Array<int>& sg_g_index,
       const Teuchos::RCP<Teuchos::ParameterList>& params,
       const Teuchos::RCP<const Epetra_Comm>& comm,
-      const Teuchos::Array< Stokhos::VectorOrthogPoly<Epetra_Vector> >& initial_p_sg,
-      const Stokhos::VectorOrthogPoly<Epetra_Vector>* initial_x_sg = NULL);
+      const Teuchos::Array< Stokhos::EpetraVectorOrthogPoly >& initial_p_sg,
+      const Stokhos::EpetraVectorOrthogPoly* initial_x_sg = NULL);
 
     /** \name Overridden from EpetraExt::ModelEvaluator . */
     //@{
@@ -143,8 +147,14 @@ namespace Stokhos {
     //! Underlying model evaluator
     Teuchos::RCP<EpetraExt::ModelEvaluator> me;
 
-    //! Stochastic Galerking basis
+    //! Stochastic Galerkin basis
     Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> > sg_basis;
+
+    //! Stochastic Galerkin quadrature
+    Teuchos::RCP<const Stokhos::Quadrature<int,double> > sg_quad;
+
+    //! Stochastic Galerkin expansion
+    Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > sg_exp;
 
     //! Index of stochastic parameters
     Teuchos::Array<int> sg_p_index;
@@ -207,34 +217,34 @@ namespace Stokhos {
     Teuchos::RCP< const Stokhos::Sparse3Tensor<int, double> > Cijk;
 
     //! x_dot stochastic Galerkin components
-    Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Vector> > x_dot_sg_blocks;
+    Teuchos::RCP< Stokhos::EpetraVectorOrthogPoly > x_dot_sg_blocks;
 
     //! x stochastic Galerkin components
-    Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Vector> > x_sg_blocks;
+    Teuchos::RCP< Stokhos::EpetraVectorOrthogPoly > x_sg_blocks;
 
     //! p stochastic Galerkin components
-    Teuchos::Array< Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Vector> > > p_sg_blocks;
+    Teuchos::Array< Teuchos::RCP< Stokhos::EpetraVectorOrthogPoly > > p_sg_blocks;
 
     //! f stochastic Galerkin components
-    mutable Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Vector> > f_sg_blocks;
+    mutable Teuchos::RCP< Stokhos::EpetraVectorOrthogPoly > f_sg_blocks;
 
     //! W stochastic Galerkin components
     mutable Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Operator> > W_sg_blocks;
 
     //! g stochastic Galerkin components
-    mutable Teuchos::Array< Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Vector> > > g_sg_blocks;
+    mutable Teuchos::Array< Teuchos::RCP< Stokhos::EpetraVectorOrthogPoly > > g_sg_blocks;
 
     //! df/dp stochastic Galerkin components
-    mutable Teuchos::Array< Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_MultiVector> > > dfdp_sg_blocks;
+    mutable Teuchos::Array< Teuchos::RCP< Stokhos::EpetraMultiVectorOrthogPoly > > dfdp_sg_blocks;
 
     //! dg/dxdot stochastic Galerkin components
-    mutable Teuchos::Array< Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_MultiVector> > > dgdx_dot_sg_blocks;
+    mutable Teuchos::Array< Teuchos::RCP< Stokhos::EpetraMultiVectorOrthogPoly > > dgdx_dot_sg_blocks;
 
     //! dg/dx stochastic Galerkin components
-    mutable Teuchos::Array< Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_MultiVector> > > dgdx_sg_blocks;
+    mutable Teuchos::Array< Teuchos::RCP< Stokhos::EpetraMultiVectorOrthogPoly > > dgdx_sg_blocks;
 
     //! dg/dp stochastic Galerkin components
-    mutable Teuchos::Array< Teuchos::Array< Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_MultiVector> > > > dgdp_sg_blocks;
+    mutable Teuchos::Array< Teuchos::Array< Teuchos::RCP< Stokhos::EpetraMultiVectorOrthogPoly > > > dgdp_sg_blocks;
 
     //! Method for creating block Jacobian
     enum EJacobianMethod {

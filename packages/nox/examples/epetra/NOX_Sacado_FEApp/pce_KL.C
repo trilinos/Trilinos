@@ -320,24 +320,19 @@ int main(int argc, char *argv[]) {
 
       std::cout << "sz = " << sz << std::endl;
 
-      if (SG_Method == SG_AD || SG_Method == SG_ELEMENT) {
-	appParams->set("Enable Stochastic Galerkin", true);
-	appParams->set("Stochastic Galerkin expansion", expansion);
-	appParams->set("Stochastic Galerkin quadrature", quad);
-	if (SG_Method == SG_AD)
-	  appParams->set("SG Method", "AD");
-	else
-	  appParams->set("SG Method", "Gauss Quadrature");
-      }
+      if (SG_Method == SG_AD)
+	appParams->set("SG Method", "AD");
+      else if (SG_Method == SG_ELEMENT)
+	appParams->set("SG Method", "Gauss Quadrature");
 
       // Create new app for Stochastic Galerkin solve
       app = Teuchos::rcp(new FEApp::Application(x, Comm, appParams, false,
 						finalSolution.get()));
 
       // Set up stochastic parameters
-      Teuchos::Array< Stokhos::VectorOrthogPoly<Epetra_Vector> > sg_p(1);
+      Teuchos::Array< Stokhos::EpetraVectorOrthogPoly > sg_p(1);
       Epetra_LocalMap p_sg_map(d, 0, *Comm);
-      sg_p[0].reset(basis, Stokhos::EpetraVectorCloner(p_sg_map));
+      sg_p[0].reset(basis, p_sg_map);
       for (unsigned int i=0; i<d; i++) {
 	sg_p[0].term(i,0)[i] = 0.0;
 	sg_p[0].term(i,1)[i] = 1.0;
@@ -376,7 +371,7 @@ int main(int argc, char *argv[]) {
 	}
 	model =
 	  Teuchos::rcp(new Stokhos::SGQuadModelEvaluator(underlying_model, 
-							 quad, sg_p_index_quad,
+							 sg_p_index_quad,
 							 sg_g_index_quad));
       }
 
@@ -399,7 +394,8 @@ int main(int argc, char *argv[]) {
       Teuchos::Array<int> sg_g_index(1);
       sg_g_index[0] = 0;
       Teuchos::RCP<Stokhos::SGModelEvaluator> sg_model =
-	Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, Cijk,
+	Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, quad,
+						   expansion, Cijk,
 						   sg_p_index, sg_g_index, 
 						   sgParams, Comm, sg_p));
 

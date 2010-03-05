@@ -97,9 +97,12 @@ SET(HEADERS ${HEADERS}
   Stokhos_MLPrecOp.hpp
   Stokhos_SGModelEvaluator.hpp
   Stokhos_SGQuadModelEvaluator.hpp
+  Stokhos_SGInverseModelEvaluator.hpp
   Stokhos_VectorOrthogPoly.hpp
   Stokhos_VectorOrthogPolyImp.hpp
   Stokhos_VectorOrthogPolyTraitsEpetra.hpp
+  Stokhos_EpetraVectorOrthogPoly.hpp
+  Stokhos_EpetraMultiVectorOrthogPoly.hpp
   Stokhos_PCECovarianceOp.hpp
   Stokhos_PCEAnasaziKL.hpp
   Stokhos_KL_OneDEigenPair.hpp
@@ -121,8 +124,11 @@ SET(SOURCES ${SOURCES}
   Stokhos_IfpackPreconditionerFactory.cpp
   Stokhos_MLPreconditionerFactory.cpp
   Stokhos_MLPrecOp.cpp
+  Stokhos_EpetraVectorOrthogPoly.cpp
+  Stokhos_EpetraMultiVectorOrthogPoly.cpp
   Stokhos_SGModelEvaluator.cpp
   Stokhos_SGQuadModelEvaluator.cpp
+  Stokhos_SGInverseModelEvaluator.cpp
   Stokhos_PCECovarianceOp.cpp
   Stokhos_PCEAnasaziKL.cpp
   Stokhos_KLReducedMatrixFreeEpetraOp.cpp

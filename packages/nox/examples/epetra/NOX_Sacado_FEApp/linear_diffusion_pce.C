@@ -153,16 +153,14 @@ int main(int argc, char *argv[]) {
     std::cout << "Stochastic Galerkin expansion size = " << sz << std::endl;
 
     // Create application
-    appParams->set("Enable Stochastic Galerkin", true);
-    appParams->set("Stochastic Galerkin expansion", expansion);
     appParams->set("SG Method", "AD");
     Teuchos::RCP<FEApp::Application> app = 
       Teuchos::rcp(new FEApp::Application(x, Comm, appParams, false));
     
     // Set up stochastic parameters
-    Teuchos::Array< Stokhos::VectorOrthogPoly<Epetra_Vector> > sg_params(1);
+    Teuchos::Array< Stokhos::EpetraVectorOrthogPoly > sg_params(1);
     Epetra_LocalMap p_sg_map(num_KL, 0, *Comm);
-    sg_params[0].reset(basis, Stokhos::EpetraVectorCloner(p_sg_map));
+    sg_params[0].reset(basis, p_sg_map);
     for (int i=0; i<num_KL; i++) {
       sg_params[0].term(i,0)[i] = 0.0;
       sg_params[0].term(i,1)[i] = 1.0;
@@ -199,7 +197,8 @@ int main(int argc, char *argv[]) {
     sg_p_index[0] = 1;
     sg_g_index[0] = 0;
     Teuchos::RCP<Stokhos::SGModelEvaluator> sg_model =
-      Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, Cijk, sg_p_index,
+      Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, Teuchos::null,
+						 expansion, Cijk, sg_p_index,
 						 sg_g_index, sgParams,
 						 Comm, sg_params));
 
