@@ -32,7 +32,8 @@
 The following graph (sparse matrix) ordering algorithms are currently included in the Zoltan toolkit:
 <blockquote>
 <a href="ug_order_parmetis.html">Nested dissection by METIS/ParMETIS </a><br>
-<a href="ug_order_ptscotch.html">Nested dissection by Scotch/PT-Scotch</a>
+<a href="ug_order_ptscotch.html">Nested dissection by Scotch/PT-Scotch</a><br>
+<a href="ug_order_local_hsfc.html">Local ordering with Hilbert space filling curves</a>
 </blockquote>
 These methods produce orderings for various applications (e.g., reducing fill in sparse matrix factorizations).
 Ordering is accessed through calls to 
@@ -42,7 +43,9 @@ Ordering is accessed through calls to
 <h3>
 <b>Third-party libraries</b>
 </h3>
-Currently, all ordering in Zoltan is provided through the third-party libraries METIS/ParMETIS and PT-Scotch. At least one of these must be present to use Zoltan ordering.
+Currently, most ordering in Zoltan is provided through the third-party libraries METIS/ParMETIS and PT-Scotch. 
+The one exception is the local Hilbert space filling curve ordering.
+To use the other methods, a third-party library must be present.
 
 <h3>
 <a NAME="Order Parameters"></a>
@@ -71,7 +74,8 @@ Valid values are&nbsp;
 "METIS" (sequential <a href="ug_order_parmetis.html">nodal nested dissection by METIS</a>),
 <br>"PARMETIS" (parallel <a href="ug_order_parmetis.html">nodal nested dissection by ParMETIS </a>), 
 <br>"SCOTCH" (sequential ordering using <a href="ug_order_ptscotch.html">Scotch</a>),
-<br>"PTSCOTCH" (parallel ordering using <a href="ug_order_ptscotch.html">PT-Scotch</a>), and
+<br>"PTSCOTCH" (parallel ordering using <a href="ug_order_ptscotch.html">PT-Scotch</a>), 
+<br>"LOCAL_HSFC" (for local Hilbert space filling curve ordering), and
 <br>"NONE" (for no ordering).
 </blockquote>
 </td>

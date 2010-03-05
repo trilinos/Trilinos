@@ -1,0 +1,102 @@
+<!doctype html public "-//w3c//dtd html 4.0 transitional//en">
+<html>
+<head>
+   <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+   <meta name="GENERATOR" content="Mozilla/4.76 [en] (X11; U; Linux 2.4.2-2smp i686) [Netscape]">
+  <meta name="sandia.approval_type" content="formal">
+  <meta name="sandia.approved" content="SAND2007-4748W">
+  <meta name="author" content="Zoltan PI">
+
+   <title>Zoltan User's Guide:  Local Ordering with HSFC</title>
+<!-----------------------------------------------------------------------------
+ ! Zoltan Library for Parallel Applications            !
+ ! Copyright (c) 2000,2001,2002, Sandia National Laboratories.                !
+ ! This document is released under the GNU Lesser General Public License.     !
+ ! For more info, see the README file in the top-level Zoltan directory.      !
+ !----------------------------------------------------------------------------!
+-->
+<!-- CVS File Information
+     $RCSfile$
+     $Author$
+     $Date$
+     $Revision$
+-->
+</head>
+<body bgcolor="#FFFFFF">
+
+<div align=right><b><i><a href="ug.html">Zoltan User's Guide</a>&nbsp;
+|&nbsp; <a href="ug_color.html">Next</a>&nbsp; |&nbsp; <a href="ug_order_ptscotch.html">Previous</a></i></b></div>
+
+<h2>
+<a NAME="LOCAL_HSFC"></a>Local Ordering with Hilbert Space Filling Curves (HSFC)</h2>
+This is a local geometric ordering method that uses Hilbert space filling curves
+to order the vertices located at specified coordinates.  This method assumes the
+data to be ordered is local to the process and the query functions should
+reflect this.
+
+<p>
+For more information on the HSFC algorithm, see the 
+<a href="ug_alg_hsfc.html">HSFC algorithm documentation</a>.
+
+
+
+
+<br>&nbsp;
+<br>&nbsp;
+<table WIDTH="100%" NOSAVE >
+<tr>
+<td VALIGN=TOP><b>Order_Method String:</b></td>
+
+<td><b>LOCAL_HSFC</b></td>
+</tr>
+
+<tr>
+<td><b>Parameters:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td VALIGN=TOP></td>
+
+<td>Currently none defined.</td>
+</tr>
+
+<tr>
+<td VALIGN=TOP><b>Required Query Functions:</b></td>
+
+<td></td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><b><a href="ug_query_lb.html#ZOLTAN_NUM_OBJ_FN">ZOLTAN_NUM_OBJ_FN</a></b></td>
+</tr>
+
+<tr>
+<td></td>
+
+<td><b><a href="ug_query_lb.html#ZOLTAN_OBJ_LIST_FN">ZOLTAN_OBJ_LIST_FN</a></b>
+</td>
+</tr>
+
+<tr VALIGN=TOP>
+
+<td></td>
+<td NOSAVE>
+<b><a href="ug_query_lb.html#ZOLTAN_NUM_GEOM_FN">ZOLTAN_NUM_GEOM_FN</a></b> 
+<br>
+<b><a href="ug_query_lb.html#ZOLTAN_GEOM_MULTI_FN">ZOLTAN_GEOM_MULTI_FN</a></b> or
+<b><a href="ug_query_lb.html#ZOLTAN_GEOM_FN">ZOLTAN_GEOM_FN</a></b>
+</td>
+
+</tr>
+
+</table>
+
+<p>
+<hr WIDTH="100%">[<a href="ug.html">Table of Contents</a>&nbsp; | <a href="ug_color.html">Next:&nbsp;
+Coloring Algorithms</a> |&nbsp; <a href="ug_order_ptscotch.html">Previous:&nbsp; Ordering by PT-Scotch</a>&nbsp; |&nbsp; <a href="http://www.sandia.gov/general/privacy-security/index.html">Privacy and Security</a>]
+</body>
+</html>
