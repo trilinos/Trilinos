@@ -75,22 +75,12 @@ Valid values are&nbsp;
 <br>"PARMETIS" (parallel <a href="ug_order_parmetis.html">nodal nested dissection by ParMETIS </a>), 
 <br>"SCOTCH" (sequential ordering using <a href="ug_order_ptscotch.html">Scotch</a>),
 <br>"PTSCOTCH" (parallel ordering using <a href="ug_order_ptscotch.html">PT-Scotch</a>), 
-<br>"LOCAL_HSFC" (for local Hilbert space filling curve ordering), and
+<br>"LOCAL_HSFC" (local ordering using <a href="ug_order_local_hsfc.html">Hilbert space filling curves</a>), and
 <br>"NONE" (for no ordering).
 </blockquote>
 </td>
 </tr>
 
-<tr VALIGN=TOP NOSAVE>
-<td NOSAVE><a
-NAME="ORDER_START_INDEX"></a><i>ORDER_START_INDEX</i></td>
-
-<td>The start index for the permutation vectors <i>rank</i> and <i>iperm</i>.
-Valid values are 0 and 1.</td>
-</tr><br><br>
-
-<tr></tr>
-<tr></tr>
 
 
 <tr VALIGN=TOP>
@@ -102,20 +92,10 @@ Valid values are 0 and 1.</td>
 <tr VALIGN=TOP>
 <td></td>
 
-<td><i>ORDER_METHOD</i> = NODEND</td>
+<td><i>ORDER_METHOD</i> = PARMETIS (with MPI), METIS (when no MPI)</td>
 </tr>
 
-<tr VALIGN=TOP>
-<td></td>
 
-<td><i>ORDER_TYPE </i>= DIST</td>
-</tr>
-
-<tr VALIGN=TOP>
-<td></td>
-
-<td><i>ORDER_START_INDEX </i>= 0</td>
-</tr>
 
 
 
