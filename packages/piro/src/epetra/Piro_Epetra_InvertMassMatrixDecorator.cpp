@@ -3,9 +3,9 @@
 
 #include "Piro_Epetra_InvertMassMatrixDecorator.hpp"
 
+#include "Thyra_VectorBase.hpp"
 
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
-#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Teuchos_VerboseObject.hpp"
@@ -147,6 +147,6 @@ void Piro::Epetra::InvertMassMatrixDecorator::evalModel( const InArgs& inArgs,
     RCP<const Thyra::VectorBase<double> >
       b = Thyra::create_Vector( modelOutArgs.get_f(), A->range() );
 
-    lows->solve(Thyra::NONCONJ_ELE, *b, &*x);
+    lows->solve(Thyra::NONCONJ_ELE, *b, x.get());
   }
 }

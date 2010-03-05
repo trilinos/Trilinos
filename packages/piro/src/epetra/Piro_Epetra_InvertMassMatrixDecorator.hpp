@@ -9,6 +9,7 @@
 
 #include "EpetraExt_ModelEvaluator.h"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
+#include "Thyra_LinearOpWithSolveHelpers.hpp"
 
 /** \brief Epetra-based Model Evaluator subclass for Charon!
  *

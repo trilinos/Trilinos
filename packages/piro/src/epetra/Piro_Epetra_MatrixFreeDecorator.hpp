@@ -8,7 +8,6 @@
 #include "Epetra_LocalMap.h"
 
 #include "EpetraExt_ModelEvaluator.h"
-#include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 
 /** \brief  Decorator class that creates a W (Jacobian) operator
  *          using Matrix-Free directional derivatives. 

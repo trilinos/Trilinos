@@ -5,6 +5,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Thyra_ModelEvaluatorDefaultBase.hpp"
+#include "Thyra_VectorStdOps.hpp"
 
 namespace Piro {
   namespace Thyra {
