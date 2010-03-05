@@ -29,17 +29,36 @@
 # ************************************************************************
 # @HEADER
 
+#############################################################################
+#
+# This script solves the 2x2 problem
+#
+#     F[0] =      x[0]^2 + x[1]^2 - p[0]  = 0
+#     F[1] = d * [x[1]   - x[0]^2 - p[1]] = 0
+#
+# using the EpetraExt.ModelEvaluator class and the
+# NOX.Epetra.ModelEvaluatorInterface interface.  If d=1, p[0]=1 and p[1]=0, then
+# this is the same problem as in exNOX_2DSim.
+#
+#############################################################################
+
 #
 # System imports
 from   optparse import *
-import sys
 
 #
 # Parse the command-line arguments
 parser = OptionParser()
-parser.add_option("-b", "--use-boost", action="store_true", dest="boost",
-                  default=False,
-                  help="test the experimental boost-generated PyTrilinos package")
+parser.add_option("-d", "--d", type="float", dest="d", default=10.0,
+                  help="scaling factor for equation 1 [default 10.0]")
+parser.add_option("--p0", type="float", dest="p0", default=2.0,
+                  help="adjustment parameter for equation 0 [default 2.0]")
+parser.add_option("--p1", type="float", dest="p1", default=0.0,
+                  help="adjustment parameter for equation 1 [default 0.0]")
+parser.add_option("--x00", type="float", dest="x00", default=0.9,
+                  help="initial guess for x[0] [default 0.9]")
+parser.add_option("--x01", type="float", dest="x01", default=1.1,
+                  help="initial guess for x[1] [default 1.1]")
 parser.add_option("-t", "--testharness", action="store_true",
                   dest="testharness", default=False,
                   help="test local build modules; prevent loading system-installed modules")
@@ -59,9 +78,9 @@ NOX       = fromPyTrilinosImport('NOX',       options.testharness)
 #
 # Derive a class from the ModelEvaluator base class
 class EpetraModelEval2DSim(EpetraExt.ModelEvaluator):
-    def __init__(self, d=10.0, p0=2.0, p1=0.0, x00=1.0, x01=1.0):
+    def __init__(self, d=10.0, p0=2.0, p1=0.0, x00=0.9, x01=1.1):
         EpetraExt.ModelEvaluator.__init__(self)
-        self.setObjectLabel('2D Simulation')
+        self.setObjectLabel('2x2 Simulation')
         # Simple data
         self.__d    = d
         self.__p0   = p0
@@ -125,12 +144,12 @@ class EpetraModelEval2DSim(EpetraExt.ModelEvaluator):
             W = outArgs.W
 
             if f:
-                f[0] =  x[0]      + x[1]*x[1] - p[0]
-                f[1] = (x[0]*x[0] - x[1]      - p[1]) * d
+                f[0] =  x[0]*x[0] + x[1]*x[1] - p[0]
+                f[1] = (x[1]      - x[0]*x[0] - p[1]) * d
 
             if W:
-                W.SumIntoGlobalValues(0, [       1, 2*x[1]], [0, 1])
-                W.SumIntoGlobalValues(1, [2*d*x[0],     -d], [0, 1])
+                W.ReplaceGlobalValues(0, [ 2*x[0]  , 2*x[1]], [0, 1])
+                W.ReplaceGlobalValues(1, [-2*x[0]*d, d     ], [0, 1])
         except Exception, e:
             print '\n\nException raised in EpetraModelEval2DSim.evalModel():'
             print type(e)
@@ -140,7 +159,12 @@ def main():
 
     # 'model' is an instance of the EpetraModelEval2DSim class defined in this
     # example script, that derives from EpetraExt.ModelEvaluator
-    model = EpetraModelEval2DSim()  # Use default initialization
+    model = EpetraModelEval2DSim(options.d,
+                                 options.p0,
+                                 options.p1,
+                                 options.x00,
+                                 options.x01
+                                 )
 
     # 'interface' is an instance of the NOX.Epetra.ModelEvaluatorInterface
     # class, based on the EpetraExt.ModelEvaluator created above
@@ -154,12 +178,22 @@ def main():
     solver    = NOX.Epetra.defaultSolver(initGuess, interface, interface, jacobian)
 
     # Solve the problem
-    #status = solver.solve()
-    status = NOX.StatusTest.Converged
-    if status == NOX.StatusTest.Converged:
-        print "End Result: TEST PASSED"
-    else:
+    solveStatus = solver.solve()
+
+    #
+    # Output the results
+    print
+    print "d  =", options.d
+    print "p0 =", options.p0
+    print "p1 =", options.p1
+    if solveStatus != NOX.StatusTest.Converged:
+        print "Nonlinear solver failed to converge"
         print "End Result: TEST FAILED"
+    else:
+        group = solver.getSolutionGroup()
+        soln  = group.getX()
+        print "Solution =", soln
+        print "End Result: TEST PASSED"
 
 if __name__ == "__main__":
     main()
