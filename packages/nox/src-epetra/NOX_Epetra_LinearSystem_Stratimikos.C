@@ -70,6 +70,7 @@
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Teuchos_VerboseObject.hpp"
+#include "Thyra_SolveSupportTypes.hpp"
 
 // EpetraExt includes for dumping a matrix
 #ifdef HAVE_NOX_DEBUG
@@ -108,7 +109,8 @@ LinearSystemStratimikos(
   maxAgeOfPrec(1),
   timer(cloneVector.getEpetraVector().Comm()),
   timeCreatePreconditioner(0.0),
-  timeApplyJacbianInverse(0.0)
+  timeApplyJacbianInverse(0.0),
+  getLinearSolveToleranceFromNox(false)
 {
   // Allocate solver
   initializeStratimikos(stratSolverParams.sublist("Stratimikos"));
@@ -145,7 +147,8 @@ LinearSystemStratimikos(
   maxAgeOfPrec(1),
   timer(cloneVector.getEpetraVector().Comm()),
   timeCreatePreconditioner(0.0),
-  timeApplyJacbianInverse(0.0)
+  timeApplyJacbianInverse(0.0),
+  getLinearSolveToleranceFromNox(false)
 {
   // Interface for user-defined preconditioning -- 
   // requires flipping of the apply and applyInverse methods
@@ -196,6 +199,14 @@ initializeStratimikos(Teuchos::ParameterList& stratParams)
   // Initialize the LinearOpWithSolve
   lows = lowsFactory->createOp();
 
+/*
+  // Store sublist and string name where the Tolerance is set
+  // so that inexact Newton can modify it in resetTolerance()
+  if ("Belos" == stratParams.get("Linear Solver Type","Belos")) {
+  }
+*/
+  
+
 }
 //***********************************************************************
 void NOX::Epetra::LinearSystemStratimikos::
@@ -235,6 +246,10 @@ reset(Teuchos::ParameterList& noxStratParams)
   maxAgeOfPrec = noxStratParams.get("Max Age Of Prec", 1);
   precQueryCounter = 0;
 
+  // This needs to be in sync with Inexact Newton option from
+  // a different sublist
+  getLinearSolveToleranceFromNox = 
+    noxStratParams.get("Use Linear Solve Tolerance From NOX", false);
 #ifdef HAVE_NOX_DEBUG
 #ifdef HAVE_NOX_EPETRAEXT
   linearSolveCount = 0;
@@ -285,8 +300,7 @@ applyJacobianInverse(Teuchos::ParameterList &p,
   NOX::Epetra::Vector& nonConstInput = const_cast<NOX::Epetra::Vector&>(input);
   
   // Zero out the delta X of the linear problem if requested by user.
-  if (zeroInitialGuess)
-    result.init(0.0);
+  if (zeroInitialGuess) result.init(0.0);
 
   // Wrap Thyra objects around Epetra and NOX objects
   Teuchos::RCP<const Thyra::LinearOpBase<double> > linearOp =
@@ -296,57 +310,6 @@ applyJacobianInverse(Teuchos::ParameterList &p,
   // Set the linear Op and  precomputed prec on this lows
     Thyra::initializePreconditionedOp<double>(
       *lowsFactory, linearOp, precObj ,&*lows);
-
-#ifdef XXXXX
-  // Construct preconditioner if given AND if factory supports it
-  // Construct prec from matrix that approximates the linear op
-  if (precMatrixSource == SeparateMatrix &&
-      lowsFactory->supportsPreconditionerInputType(
-          Thyra::PRECONDITIONER_INPUT_TYPE_AS_MATRIX)) {
-
-    Teuchos::RCP<const Thyra::LinearOpBase<double> > precOp =
-       Thyra::epetraLinearOp(precPtr);
-
-    Thyra::initializeApproxPreconditionedOp<double>
-       (*lowsFactory,linearOp,precOp,&*lows);
-   
-  }
-  // Use prec operator that approximates inverse of linear op
-  else if (precMatrixSource == UserDefined_ &&
-      lowsFactory->supportsPreconditionerInputType(
-          Thyra::PRECONDITIONER_INPUT_TYPE_AS_OPERATOR)) {
-    
-    Teuchos::RCP<const Thyra::LinearOpBase<double> > precOp =
-       Thyra::epetraLinearOp(precPtr);
-
-    Thyra::initializePreconditionedOp<double>(
-      *lowsFactory,linearOp,Thyra::rightPrec<double>(precOp) ,&*lows);
-  }
-  else {
-    // Default case of using only the Jacobian and no 
-    // separate preconditioner object
-
-//    Thyra::initializeOp(*lowsFactory, linearOp, &*lows);
-
-    RCP<Thyra::PreconditionerFactoryBase<double> > precFactory =
-      lowsFactory->getPreconditionerFactory();
-
-if (precFactory == Teuchos::null) cout << "AGS precFactory Null" << endl;
-
-if (precFactory != Teuchos::null) {
-    precObj = precFactory->createPrec();
-
-    RCP<const Thyra::LinearOpSourceBase<double> > losb =
-         rcp(new Thyra::DefaultLinearOpSource<double>(linearOp));
-
-    precFactory->initializePrec(losb, precObj.get());
-}
-
-    Thyra::initializePreconditionedOp<double>(
-      *lowsFactory, linearOp, precObj ,&*lows);
-
-  }
-#endif
 
   Teuchos::RCP<Epetra_Vector> resultRCP =
     Teuchos::rcp(&result.getEpetraVector(), false);
@@ -358,17 +321,19 @@ if (precFactory != Teuchos::null) {
   Teuchos::RCP<const Thyra::VectorBase<double> >
     b = Thyra::create_Vector(inputRCP, linearOp->range() );
 
-  // Solve the linear system for x
-  lows->solve(Thyra::NOTRANS, *b, x.ptr());
-  // ToDo: You need to grab the SolveStatus to see what happened!
-
-/*
-  // Make sure preconditioner was constructed if requested
-  if (!isPrecConstructed && (precAlgorithm != None_)) {
-    throwError("applyJacobianInverse", 
-       "Preconditioner is not constructed!  Call createPreconditioner() first.");
+  // Alter the convergence tolerance, if Inexact Newton
+  Teuchos::RCP<Thyra::SolveCriteria<double> > solveCriteria;
+  if (getLinearSolveToleranceFromNox) {
+    Thyra::SolveMeasureType solveMeasure(
+        Thyra::SOLVE_MEASURE_NORM_RESIDUAL,
+        Thyra::SOLVE_MEASURE_NORM_INIT_RESIDUAL );
+    solveCriteria = Teuchos::rcp(new Thyra::SolveCriteria<double>(
+        solveMeasure, p.get<double>("Tolerance") ) );
   }
-*/
+
+  // Solve the linear system for x
+  lows->solve(Thyra::NOTRANS, *b, x.ptr(), solveCriteria.ptr());
+  // ToDo: You need to grab the SolveStatus to see what happened!
 
   // Set the output parameters in the "Output" sublist
 /***

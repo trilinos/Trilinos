@@ -412,6 +412,9 @@ protected:
   //! If true, any preconditioner error will cause a throw instead of a warning.
   bool throwErrorOnPrecFailure;
 
+  //! If true, the linear solve tolerance comes from NOX (i.e. Inexact Newton)
+  bool getLinearSolveToleranceFromNox;
+
 #ifdef HAVE_NOX_DEBUG
 #ifdef HAVE_NOX_EPETRAEXT
   mutable int linearSolveCount;

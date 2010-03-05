@@ -176,7 +176,7 @@ int main(int argc, char *argv[])
   Teuchos::ParameterList& dirParams = nlParams.sublist("Direction");
   dirParams.set("Method", "Newton");
   Teuchos::ParameterList& newtonParams = dirParams.sublist("Newton");
-    newtonParams.set("Forcing Term Method", "Constant");
+    newtonParams.set("Forcing Term Method", "Type 1");
 
   // Alternative linear solver list for Stratimikos
   Teuchos::ParameterList& stratLinSolParams = newtonParams.sublist("Stratimikos Linear Solver");
@@ -318,7 +318,7 @@ int main(int argc, char *argv[])
   }
 
   // 3. Nonlinear solve iterations (10)
-  if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Output").get("Nonlinear Iterations", 0) != 10)
+  if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Output").get("Nonlinear Iterations", 0) != 11)
     status = 3;
 
   // Summarize test results 
