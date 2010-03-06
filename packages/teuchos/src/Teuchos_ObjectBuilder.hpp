@@ -34,25 +34,44 @@
 #include "Teuchos_AbstractFactoryStd.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
-// 03/03/09 Todd Coffey <tscoffe@sandia.gov>:
-// This is a generic builder class that provides a validated parameter list and
-// can build anything that can be constructed with a default constructor and
-// accepts a parameter list through setParameterList (e.g. it derives from
-// ParameterListAcceptor).
-// Note the following:
-// * The default object name is "Object" (this can be changed through setObjectName)
-// * The default object type name is "Object Type" (this can be changed through setObjectTypeName)
-// * The valid parameter list has a parameter named "Object Type" with a default value of "None"
-// * The builder will create a null RCP if no factories have been set on it with setObjectFactory
-// * A parameter list need not be set on the builder to call create, it will
-// simply create the default factory which is either "None" if no factories
-// have been set or it will be the last factory that was set.  
-// * Setting a parameter list on the builder allows you to specify which object
-// will be created by default.
-
 
 namespace Teuchos {
 
+
+/** \brief Generic parameterlist driven bulider class.
+ *
+ * This is a generic builder class that provides a validated parameter list
+ * and can build anything that can be constructed with a default constructor
+ * and accepts a parameter list through setParameterList (e.g. it derives from
+ * ParameterListAcceptor).
+ *
+ * Note the following:<ul>
+ *
+ * <li> The default object name is "Object" (this can be changed through
+ * setObjectName)
+ *
+ * <li> The default object type name is "Object Type" (this can be changed
+ * through setObjectTypeName)
+ *
+ * <li> The valid parameter list has a parameter named "Object Type" with a
+ * default value of "None"
+ *
+ * <li> The builder will create a null RCP if no factories have been set on
+ * it with setObjectFactory
+ *
+ * <li> A parameter list need not be set on the builder to call create, it
+ * will simply create the default factory which is either "None" if no
+ * factories have been set or it will be the last factory that was set
+ *
+ * <li> Setting a parameter list on the builder allows you to specify which
+ * object will be created by default and allows you to control what options
+ * will be used in each object.
+ *
+ * </ul>
+ *
+ *
+ * \author Todd Coffey <tscoffe@sandia.gov>
+ */
 template<class ObjectType>
 class ObjectBuilder : virtual public ParameterListAcceptor
 {
@@ -165,6 +184,11 @@ objectBuilder(const std::string& objectName, const std::string& objectTypeName)
   ob->setObjectTypeName(objectTypeName);
   return ob;
 }
+
+
+//
+// Implementation
+//
 
 
 template<class ObjectType>
