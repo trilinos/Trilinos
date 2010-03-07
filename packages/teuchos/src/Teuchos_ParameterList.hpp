@@ -254,7 +254,7 @@ public:
   /*! \brief Retrieves parameter \c name of type \c T from a list, an
     <tt>Exceptions::InvalidParameter</tt> std::exception is thrown if this
     parameter doesn't exist (<tt>Exceptions::InvalidParameterName</tt>) or is
-    the wrong type (<tt>Exceptions::InvalidParameterName</tt>).  \note The
+    the wrong type (<tt>Exceptions::InvalidParameterType</tt>).  \note The
     syntax for calling this method is: <tt> list.template get<int>( "Iters" )
     </tt>
   */
@@ -264,7 +264,7 @@ public:
   /*! \brief Retrieves parameter \c name of type \c T from a constant list, an
     <tt>Exceptions::InvalidParameter</tt> std::exception is thrown if this
     parameter doesn't exist (<tt>Exceptions::InvalidParameterName</tt>) or is
-    the wrong type (<tt>Exceptions::InvalidParameterName</tt>).  \note The
+    the wrong type (<tt>Exceptions::InvalidParameterType</tt>).  \note The
     syntax for calling this method is: <tt> list.template get<int>( "Iters" )
     </tt>
   */
