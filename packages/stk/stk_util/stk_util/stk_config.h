@@ -13,6 +13,9 @@
 // This file gets created by cmake during a Trilinos build
 // and will not be present in a sierra build using bjam or associated wrappers
 #include <STK_config.h>
+#ifdef HAVE_MPI
+#define STK_HAS_MPI
+#endif
 #else
 #define STK_HAS_MPI
 #endif
@@ -21,8 +24,5 @@
 #define STK_VERSION 0.1a
 #define STK_HAS_SNL_EXODUSII
 
-#ifdef HAVE_MPI
-#define STK_HAS_MPI
-#endif
 
 #endif /* stk_util_config_h */

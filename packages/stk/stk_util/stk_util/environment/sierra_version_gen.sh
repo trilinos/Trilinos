@@ -1,5 +1,4 @@
 #!/bin/bash
-
 DIR=$(dirname $0)
 
 # The current working directory might not be the source tree, so go there
@@ -9,10 +8,8 @@ DIR=$(dirname $0)
 cd ${DIR}
 
 # Don't prepend DIR here, since we are now in that directory.
-SVF=sierra_version.hpp
+SIERRA_HEADER_FILE=sierra_version.hpp
 OVERRIDE_FILE="version"
-
-DEF_VER=vERROR
 
 RECORD=
 while test "$#" -ne 0
@@ -33,38 +30,54 @@ LF='
 # see if there is a version file (included in release tarballs).
 # Finally, default.
 if test $(git rev-parse --git-dir 2>/dev/null) &&
-    VN=$(git describe --abbrev=8 HEAD 2>/dev/null) &&
-    case "$VN" in
+    NEW_VERSION=$(git describe --abbrev=8 HEAD 2>/dev/null) &&
+    case "$NEW_VERSION" in
         *$LF*) (exit 1) ;;
         v[0-9]*)
             git update-index -q --refresh > /dev/null
             test -z "$(git diff-index --name-only HEAD --)" ||
-            VN="$VN-modified" ;;
+            NEW_VERSION="${NEW_VERSION}-modified" ;;
         esac
 then
     # PKN: leaving this here in case we want to muck
     # with the formatting later.
-    #VN=$(echo "$VN" | sed -e 's/-/./g');
-    VN=$VN
+    #NEW_VERSION=$(echo "$NEW_VERSION" | sed -e 's/-/./g');
+    NEW_VERSION=$NEW_VERSION
+
+# If there's no git version, try the override file.
 elif test -f "$OVERRIDE_FILE"
 then
-    VN=$(cat ${OVERRIDE_FILE}) || VN="$DEF_VER"
+    NEW_VERSION=$(cat ${OVERRIDE_FILE}) ||
+        { 
+        echo >&2 "sierra_version_gen.sh: Unable to read file $(pwd)/${OVERRIDE_FILE}" 
+        exit 1
+        }
+    test "$NEW_VERSION" != 'ERROR' ||
+        { 
+        echo >&2 "sierra_version_gen.sh: Invalid version 'ERROR' in $(pwd)/${OVERRIDE_FILE}. Deleting that file." 
+        rm -f $(pwd)/${OVERRIDE_FILE}
+        exit 2
+        }
 else
-    VN="$DEF_VER"
+    # Give up.
+    echo >&2 "sierra_version_gen.sh: No .git repository to determine git version and $(pwd)/${OVERRIDE_FILE} file not found."
+    exit 3
 fi
 
-VN=$(expr "$VN" : v*'\(.*\)')
+# Trim the 'v' from the beginning of the version (why is it there in the first place?)
+NEW_VERSION=$(expr "$NEW_VERSION" : v*'\(.*\)')
 
-if test -r $SVF
+if test -r $SIERRA_HEADER_FILE
 then
-    VC=$(cat $SVF)
+    CURRENT_VERSION=$(cat $SIERRA_HEADER_FILE)
 else
-    VC=unset
+    CURRENT_VERSION=unset
 fi
-test "// $VN" = "$VC" ||
-    echo "// $VN" > $SVF
+# Don't touch the header if it already contains this version (to prevent unwanted recompilation.)
+test "// $NEW_VERSION" = "$CURRENT_VERSION" ||
+    echo "// $NEW_VERSION" > $SIERRA_HEADER_FILE
 
-# echo out so build system can use as macro definition
+# Echo out so build system can use as macro definition, but only if --record was not passed.
 test -z "$RECORD" &&
-    echo -n "$VN" ||
-    echo -n "$VN" > $OVERRIDE_FILE
+    echo -n "$NEW_VERSION" ||
+    echo -n "$NEW_VERSION" > $OVERRIDE_FILE
