@@ -34,6 +34,22 @@
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
 
 
+// Define the polynomial traits class specializtaion
+// Teuchos::PolynomialTraits<VectorBase > before there is any chance of an
+// instantiation requiring the definition of this class.  The Intel C++ 9.1
+// compiler is having trouble compiling Thyra_EpetraModelEvaluator.cpp because
+// Thyra_ModelEvaluatorBase_decl.hpp is only including
+// "Teuchos_Polynomial.hpp" which does not contain the needed specialization.
+// By including it here, all client code is likely to compile just fine.  I am
+// going through all of the in order to avoid having to put
+// Thyra_PolynomialVectorTraits.hpp in the interfaces directory.  The problem
+// with putting Thyra_PolynomialVectorTraits.hpp the interfaces directory is
+// that it contains calls to code in the support directory and creates an
+// unacceptable circular dependency that will cause problems once we move to
+// subpackages in the CMake build system.
+#include "Thyra_PolynomialVectorTraits.hpp"
+
+
 namespace Thyra {
 
 
