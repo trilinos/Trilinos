@@ -11,7 +11,7 @@
 #ifdef STK_BUILT_IN_SIERRA
 #include <stk_util/environment/sierra_version.hpp>
 #else
-#define SIERRA_VERSION XXXXXXX
+#define SIERRA_VERSION "XXXXXXX"
 #endif
 
 namespace stk {
