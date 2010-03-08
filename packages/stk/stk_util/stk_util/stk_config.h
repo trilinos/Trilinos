@@ -9,7 +9,13 @@
 #ifndef stk_util_config_h
 #define stk_util_config_h
 
+#ifndef STK_BUILT_IN_SIERRA
+// This file gets created by cmake during a Trilinos build
+// and will not be present in a sierra build using bjam or associated wrappers
 #include <STK_config.h>
+#else
+#define STK_HAS_MPI
+#endif
 
 #define STK_PACKAGE stk
 #define STK_VERSION 0.1a
