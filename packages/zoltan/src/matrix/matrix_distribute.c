@@ -108,7 +108,7 @@ int Zoltan_Distribute_Cyclic(int edge_gno, int vtx_gno, void* data, int *part_y)
   Zoltan_matrix_2d *mat;
 
   mat = (Zoltan_matrix_2d*) data;
-  *part_y = (int)floor((double)edge_gno/((double)mat->mtx.globalY/(double)mat->comm->nProc));
+  *part_y = edge_gno%mat->comm->nProc;
 
   return (*part_y);
 }
@@ -124,6 +124,7 @@ int Zoltan_Distribute_Partition(int edge_gno, int vtx_gno, void* data, int *part
 
   return ((int)floor((double)*part_y/((double)part->nPart/(double)part->nProc)));
 }
+
 
 void* Zoltan_Distribute_Partition_Register(ZZ* zz, int size, int* yGNO, int *part, int nProc, int nPart)
 {
@@ -166,8 +167,7 @@ Zoltan_Distribute_Partition_Free(void** dist)
 }
 
 /* if !copy, inmat is not usable after this call */
-/* for pin wgt, we may do a "savage cast" to avoid padding problem */
-
+ 
 int
 Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as we can share it inside outmat */
 			    Zoltan_matrix_2d *outmat, int copy)
