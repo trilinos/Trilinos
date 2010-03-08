@@ -4,17 +4,14 @@ INCLUDE(PackageLibraryMacros)
 SET(HEADERS "")
 SET(SOURCES "")
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+APPEND_GLOB(SOURCES ${DIR}/*.cpp)
+PACKAGE_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
 
-SET(HEADERS ${HEADERS}
-  GlobiPack_TestLagrPolyMeritFunc1D.hpp
-  GlobiPack_TestLagrPolyMeritFunc1D_decl.hpp
-  GlobiPack_TestLagrPolyMeritFunc1D_def.hpp
-  )
-
-SET(SOURCES ${SOURCES}
-  GlobiPack_TestLagrPolyMeritFunc1D.cpp
-  )
+# Must glob the binary src dir last to get all of the generated headers
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_BINARY_DIR})
+APPEND_GLOB(HEADERS ${DIR}/*.hpp)
 
 PACKAGE_ADD_LIBRARY(
   globipack_test_meritfuncs
