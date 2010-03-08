@@ -32,6 +32,10 @@
 // TODO: add test where non-"zero" graph is used to build matrix; if no values are added to matrix, the operator effect should be zero. This tests that matrix values are initialized properly.
 // TODO: add test where dynamic profile initially has no allocation, then entries are added. this will test new view functionality.
 
+// FINISH: add pre-consructed graph tests discussed in recent series of emails
+// FINISH: add test where pre-constructed but un-fill-completed graph is fill-completed by user before matrix fill-complete; this should throw an exception on matrix fillcomplete, but probably doesn't at the moment due to bugs. an exception is only thrown if we have abuse warnings on; but regardless, the matrix should return non-fill-completed.
+    
+
 namespace Teuchos {
   template <>
     ScalarTraits<int>::magnitudeType
@@ -307,37 +311,47 @@ namespace {
       }
     }
     graph.fillComplete(DoOptimizeStorage);
-    // create a matrix using the graph
-    MAT matrix(rcpFromRef(graph));
-    TEST_EQUALITY_CONST( matrix.getProfileType() == StaticProfile, true );
-    // insert throws exception: not allowed with static graph
-    TEST_THROW( matrix.insertGlobalValues(map->getMinGlobalIndex(),tuple<GO>(map->getMinGlobalIndex()),tuple(ST::one())), std::runtime_error );
-    // suminto and replace are allowed
-    for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
-      if (r == map->getMinAllGlobalIndex()) {
-        matrix.replaceGlobalValues(r, tuple(r,r+1), tuple(ST::one(),ST::one()) );
+    {
+      // create a matrix using the graph and test allowed functionality
+      MAT matrix(rcpFromRef(graph));
+      TEST_EQUALITY_CONST( matrix.getProfileType() == StaticProfile, true );
+      // insert throws exception: not allowed with static graph
+      TEST_THROW( matrix.insertGlobalValues(map->getMinGlobalIndex(),tuple<GO>(map->getMinGlobalIndex()),tuple(ST::one())), std::runtime_error );
+      // suminto and replace are allowed
+      for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
+        if (r == map->getMinAllGlobalIndex()) {
+          matrix.replaceGlobalValues(r, tuple(r,r+1), tuple(ST::one(),ST::one()) );
+        }
+        else if (r == map->getMaxAllGlobalIndex()) {
+          matrix.replaceGlobalValues(r, tuple(r-1,r), tuple(ST::one(),ST::one()) );
+        }
+        else {
+          matrix.replaceGlobalValues(r, tuple(r-1,r,r+1), tuple(ST::one(),ST::one(),ST::one()) );
+        }
       }
-      else if (r == map->getMaxAllGlobalIndex()) {
-        matrix.replaceGlobalValues(r, tuple(r-1,r), tuple(ST::one(),ST::one()) );
+      for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
+        // increment the diagonals
+        matrix.sumIntoGlobalValues(r, tuple(r), tuple(ST::one()) );
       }
-      else {
-        matrix.replaceGlobalValues(r, tuple(r-1,r,r+1), tuple(ST::one(),ST::one(),ST::one()) );
-      }
+      matrix.fillComplete();
+      TEST_EQUALITY( matrix.getNodeNumDiags(), numLocal );
+      TEST_EQUALITY( matrix.getGlobalNumDiags(), numImages*numLocal );
+      TEST_EQUALITY( matrix.getGlobalNumEntries(), 3*numImages*numLocal - 2 );
+      V dvec(map,false);
+      dvec.randomize();
+      matrix.getLocalDiagCopy(dvec);
+      Array<Scalar> expectedDiags(numLocal, static_cast<Scalar>(2));
+      ArrayRCP<const Scalar> dvec_view = dvec.get1dView();
+      TEST_COMPARE_FLOATING_ARRAYS( expectedDiags(), dvec_view, MT::zero() );
     }
-    for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
-      // increment the diagonals
-      matrix.sumIntoGlobalValues(r, tuple(r), tuple(ST::one()) );
+    {
+      // Bug verification:
+      //  Tpetra::CrsMatrix constructed with a graph will experience a seg-fault if setAllToScalar is called before 
+      //  some other call allocates memory. this is because setAllToScalar has an incorrect if-statement that is 
+      //  not allocating memory.
+      MAT matrix(rcpFromRef(graph));
+      TEST_NOTHROW( matrix.setAllToScalar( ST::one() ) );
     }
-    matrix.fillComplete();
-    TEST_EQUALITY( matrix.getNodeNumDiags(), numLocal );
-    TEST_EQUALITY( matrix.getGlobalNumDiags(), numImages*numLocal );
-    TEST_EQUALITY( matrix.getGlobalNumEntries(), 3*numImages*numLocal - 2 );
-    V dvec(map,false);
-    dvec.randomize();
-    matrix.getLocalDiagCopy(dvec);
-    Array<Scalar> expectedDiags(numLocal, static_cast<Scalar>(2));
-    ArrayRCP<const Scalar> dvec_view = dvec.get1dView();
-    TEST_COMPARE_FLOATING_ARRAYS( expectedDiags(), dvec_view, MT::zero() );
   }
 
 
@@ -1487,6 +1501,9 @@ namespace {
   // it back again before checking in so that we can test all the types.
   // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
+typedef std::complex<float>  ComplexFloat;
+typedef std::complex<double> ComplexDouble;
+
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, TheEyeOfTruth, LO, GO, SCALAR, NODE )  \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ZeroMatrix   , LO, GO, SCALAR, NODE )  \
@@ -1525,45 +1542,78 @@ namespace {
 #define UNIT_TEST_TPINODE(LO, GO, SCALAR)
 #endif
 
+// don't test Kokkos node for MPI builds, because we probably don't have multiple GPUs per node
 #if defined(HAVE_KOKKOS_THRUST) && !defined(HAVE_TPETRA_MPI)
-#define UNIT_TEST_THRUSTGPUNODE(LO, GO, SCALAR) \
-      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, ThrustGPUNode )
+// float
+#if defined(HAVE_KOKKOS_CUDA_FLOAT)
+#  define UNIT_TEST_THRUSTGPUNODE_FLOAT(LO, GO) \
+          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, float, ThrustGPUNode )
 #else
-#define UNIT_TEST_THRUSTGPUNODE(LO, GO, SCALAR)
+#  define UNIT_TEST_THRUSTGPUNODE_FLOAT(LO, GO)
 #endif
-
-#define UNIT_TEST_ALLNODES(LO, GO, SCALAR) \
-    UNIT_TEST_SERIALNODE(LO, GO, SCALAR) \
-    UNIT_TEST_TBBNODE(LO, GO, SCALAR) \
-    UNIT_TEST_TPINODE(LO, GO, SCALAR) \
-    UNIT_TEST_THRUSTGPUNODE(LO, GO, SCALAR)
+// double
+#if defined(HAVE_KOKKOS_CUDA_DOUBLE)
+#  define UNIT_TEST_THRUSTGPUNODE_DOUBLE(LO, GO) \
+          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, double, ThrustGPUNode )
+#else
+#  define UNIT_TEST_THRUSTGPUNODE_DOUBLE(LO, GO)
+#endif
+// complex<float>
+#if defined(HAVE_KOKKOS_CUDA_COMPLEX_FLOAT)
+#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(LO, GO) \
+          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, ComplexFloat, ThrustGPUNode )
+#else
+#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(LO, GO)
+#endif
+// complex<double>
+#if defined(HAVE_KOKKOS_CUDA_COMPLEX_DOUBLE)
+#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(LO, GO) \
+          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, ComplexDouble, ThrustGPUNode )
+#else
+#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(LO, GO)
+#endif
+#else
+// none
+# define UNIT_TEST_THRUSTGPUNODE_FLOAT(LO, GO)
+# define UNIT_TEST_THRUSTGPUNODE_DOUBLE(LO, GO)
+# define UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(LO, GO)
+# define UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(LO, GO)
+#endif
 
 #define UNIT_TEST_ALLCPUNODES(LO, GO, SCALAR) \
     UNIT_TEST_SERIALNODE(LO, GO, SCALAR) \
     UNIT_TEST_TBBNODE(LO, GO, SCALAR) \
     UNIT_TEST_TPINODE(LO, GO, SCALAR)
 
-#define UNIT_TEST_ALLCPUNODES_COMPLEX_DOUBLE(LO, GO) \
-     typedef std::complex<double> ComplexDouble; \
-     UNIT_TEST_ALLCPUNODES(LO, GO, ComplexDouble)
+#define UNIT_TEST_FLOAT(LO, GO) \
+    UNIT_TEST_ALLCPUNODES(LO, GO, float) \
+    UNIT_TEST_THRUSTGPUNODE_FLOAT(LO, GO)
 
-#define UNIT_TEST_ALLCPUNODES_COMPLEX_FLOAT(LO, GO) \
-     typedef std::complex<float> ComplexFloat; \
-     UNIT_TEST_ALLCPUNODES(LO, GO, ComplexFloat)
+#define UNIT_TEST_DOUBLE(LO, GO) \
+    UNIT_TEST_ALLCPUNODES(LO, GO, double) \
+    UNIT_TEST_THRUSTGPUNODE_DOUBLE(LO, GO)
+
+#define UNIT_TEST_COMPLEX_FLOAT(LO, GO) \
+    UNIT_TEST_ALLCPUNODES(LO, GO, ComplexFloat) \
+    UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(LO, GO)
+
+#define UNIT_TEST_COMPLEX_DOUBLE(LO, GO) \
+    UNIT_TEST_ALLCPUNODES(LO, GO, ComplexDouble) \
+    UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(LO, GO)
 
 #if defined(HAVE_TPETRA_INST_DOUBLE)
-  UNIT_TEST_ALLNODES(int, int, double)
+  UNIT_TEST_DOUBLE(int, int)
 #endif
 
 #if !defined(FAST_DEVELOPMENT_BUILD)
 # if defined(HAVE_TPETRA_INST_FLOAT)
-    UNIT_TEST_ALLNODES(int, int, float)
+    UNIT_TEST_FLOAT(int, int)
 # endif 
 # if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
-    UNIT_TEST_ALLCPUNODES_COMPLEX_FLOAT(int, int)
+    UNIT_TEST_COMPLEX_FLOAT(int, int)
 # endif 
 # if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
-    UNIT_TEST_ALLCPUNODES_COMPLEX_DOUBLE(int, int)
+    UNIT_TEST_COMPLEX_DOUBLE(int, int)
 # endif 
 #endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
 

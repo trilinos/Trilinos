@@ -1305,7 +1305,7 @@ namespace Tpetra {
     if (numEntries == 0) {
       // do nothing
     }
-    else if (valuesAreAllocated_) {
+    else if (valuesAreAllocated_ == false) {
       // numEntries > 0, so graph must already be allocated; allocatedValues() will verify this
       allocateValues(alpha);
     }

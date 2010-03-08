@@ -15,6 +15,12 @@
 /* Enable double type for CUDA nodes. */
 #cmakedefine HAVE_KOKKOS_CUDA_DOUBLE
 
+/* Enable complex<float> type for CUDA nodes. */
+#cmakedefine HAVE_KOKKOS_CUDA_COMPLEX_FLOAT
+
+/* Enable complex<double> type for CUDA nodes. */
+#cmakedefine HAVE_KOKKOS_CUDA_COMPLEX_DOUBLE
+
 /* Define if want to build kokkos-tests */
 #cmakedefine HAVE_KOKKOS_TESTS
 

@@ -41,6 +41,20 @@ ADD_OPTION_AND_DEFINE(
   OFF
 )
 
+ADD_OPTION_AND_DEFINE(
+  Kokkos_ENABLE_CUDA_COMPLEX_FLOAT
+  HAVE_KOKKOS_CUDA_COMPLEX_FLOAT
+  "Enable complex<float> type for CUDA nodes."
+  OFF
+)
+
+ADD_OPTION_AND_DEFINE(
+  Kokkos_ENABLE_CUDA_COMPLEX_DOUBLE
+  HAVE_KOKKOS_CUDA_COMPLEX_DOUBLE
+  "Enable complex<double> type for CUDA nodes."
+  OFF
+)
+
 #
 # C) Add the libraries, tests, and examples
 #
