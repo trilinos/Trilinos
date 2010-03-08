@@ -1,0 +1,4 @@
+#include "OptiPack_DiagonalQuadraticResponseOnlyModelEvaluator_decl.hpp"
+#ifndef HAVE_OPTIPACK_EXPLICIT_INSTANTIATION
+#  include "OptiPack_DiagonalQuadraticResponseOnlyModelEvaluator_def.hpp"
+#endif
