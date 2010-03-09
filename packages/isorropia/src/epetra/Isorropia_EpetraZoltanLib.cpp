@@ -267,7 +267,7 @@ int ZoltanLibClass::precompute()
     zoltanParamList_.set(dbg_level_str, "0");
   }
 
-  if (!zoltanParamList_.isParameter(lb_method_str)) 
+  if (!zoltanParamList_.isParameter(lb_method_str)) //set default parameters
   {
     if (input_type_ == graph_input_)
     {
@@ -278,7 +278,7 @@ int ZoltanLibClass::precompute()
       if (!zoltanParamList_.isParameter(lb_method_str))  //MMW: Don't think this if is needed 
 	zoltanParamList_.set(lb_method_str, "RCB");
     }
-    else if (input_type_ == simple_input_)
+    else if (input_type_ == simple_input_) //not sure this is needed
     {
       zoltanParamList_.set(lb_method_str, "BLOCK");      
     }
@@ -428,7 +428,7 @@ void ZoltanLibClass::computeCost()
   int myRows = input_map_->NumMyElements();
   int globalNumRows = input_map_->NumGlobalElements();
 
-  if (input_graph_.get() == 0) 
+  if (input_graph_.get() == 0) //matrix
   {
     myNZ = input_matrix_->NumMyNonzeros();
     mySelfEdges = input_matrix_->NumMyDiagonals();
@@ -436,7 +436,7 @@ void ZoltanLibClass::computeCost()
     globalSelfEdges = input_matrix_->NumGlobalDiagonals();
     globalNumCols = input_matrix_->NumGlobalCols();
   }
-  else
+  else //graph
   {
     myNZ = input_graph_->NumMyNonzeros();
     mySelfEdges = input_graph_->NumMyDiagonals();

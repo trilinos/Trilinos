@@ -332,6 +332,21 @@ partition(bool force_repartitioning)
       sublist.set("LB_METHOD", "RCB");
       input_type = Library::geometric_input_;
     }
+    else if (partitioning_method == "BLOCK")
+    {
+      input_type = Library::simple_input_;
+      sublist.set("LB_METHOD", "BLOCK");
+    }
+    else if (partitioning_method == "CYCLIC")
+    {
+      input_type = Library::simple_input_;
+      sublist.set("LB_METHOD", "CYCLIC");
+    }
+    else if (partitioning_method == "RANDOM")
+    {
+      input_type = Library::simple_input_;
+      sublist.set("LB_METHOD", "RANDOM");
+    }
     else if (partitioning_method == "HIER_GRAPH_GEOM") // Can perhaps simply this partitioning method name by using another parameter
     {
       sublist.set("LB_METHOD", "HIER");

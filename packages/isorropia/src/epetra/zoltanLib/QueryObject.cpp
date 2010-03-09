@@ -473,9 +473,9 @@ int QueryObject::My_Number_Objects(int * ierr )
 {
   *ierr = ZOLTAN_OK;
 
-  if (input_type_ == geometric_input_)
+  if (input_type_ == geometric_input_) 
   {
-    return coords_->MyLength();
+    return coords_->MyLength(); // probably can use rowMap_ instead
   }
   else if (input_type_ == hgraph2d_finegrain_input_)
   {
@@ -501,13 +501,9 @@ void QueryObject::My_Object_List(int num_gid_entries, int num_lid_entries,
   *ierr = ZOLTAN_OK;
   int ngids = 0;
 
-  //M.M.W. hierarchical
-  if (input_type_ == geometric_input_)
-  {
-    ngids = rowMap_->NumMyElements();
-    rowMap_->MyGlobalElements( ((int *) global_ids) );
-  }
-  else if ((input_type_ == hgraph_input_) || (input_type_ == graph_input_) || (input_type_==simple_input_)) // not sure why this can't be merged into above if?
+  //M.M.W. need to add hierarchical support
+
+  if ((input_type_ == geometric_input_) || (input_type_ == hgraph_input_) || (input_type_ == graph_input_) || (input_type_==simple_input_)) 
   {
     ngids = rowMap_->NumMyElements();
     rowMap_->MyGlobalElements( ((int *) global_ids) );
