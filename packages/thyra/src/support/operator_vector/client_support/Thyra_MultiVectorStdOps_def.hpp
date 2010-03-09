@@ -96,7 +96,8 @@ void Thyra::sums( const MultiVectorBase<Scalar>& V, const ArrayView<Scalar> &sum
     rcp_op_targs[kc] = sum_op.reduct_obj_create();
     op_targs[kc] = rcp_op_targs[kc].ptr();
   }
-  applyOp<Scalar>(sum_op, tuple(ptrInArg(V)), null, op_targs);
+  applyOp<Scalar>(sum_op, tuple(ptrInArg(V)),
+    ArrayView<const Ptr<MultiVectorBase<Scalar> > >(null), op_targs);
   for( int kc = 0; kc < m; ++kc ) {
     sums[kc] = sum_op(*op_targs[kc]);
   }
@@ -116,7 +117,8 @@ Thyra::norm_1( const MultiVectorBase<Scalar>& V )
   RCP<RTOpPack::ReductTarget>
     max_targ = max_op.reduct_obj_create();
   // Perform the reductions
-  Thyra::applyOp<Scalar>(sum_abs_op, max_op, tuple(ptrInArg(V))(), null,
+  Thyra::applyOp<Scalar>(sum_abs_op, max_op, tuple(ptrInArg(V))(), 
+    ArrayView<const Ptr<MultiVectorBase<Scalar> > >(null),
     max_targ.ptr());
   // Return the final value
   return max_op(*max_targ);

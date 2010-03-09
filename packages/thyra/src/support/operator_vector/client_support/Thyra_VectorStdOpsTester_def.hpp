@@ -243,6 +243,7 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   using Teuchos::as;
   using Teuchos::tuple;
   using Teuchos::null;
+  using Teuchos::outArg;
   typedef Teuchos::ScalarTraits<Scalar> ST;
 
   TEUCHOS_ASSERT(out_out);
@@ -286,7 +287,9 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   out << "\ny[i] = i+1\n";
   {
     RTOpPack::TOpSetAssendingValues<Scalar> setAssendOp(ST::zero());
-    applyOp<Scalar>( setAssendOp, null, tuple<Ptr<VectorBase<Scalar> > >(y.ptr())(),
+    applyOp<Scalar>( setAssendOp,
+      ArrayView<const Ptr<const VectorBase<Scalar> > >(null),
+      tuple<Ptr<VectorBase<Scalar> > >(y.ptr())(),
       null );
   }
 
@@ -636,8 +639,10 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
     z  = createMember(vecSpc);
     const Scalar alpha = as<Scalar>(1.2345);
     seed_randomize<Scalar>(12345);
-    randomize(as<Scalar>(as<Scalar>(-10)*ST::one()),as<Scalar>(as<Scalar>(10)*ST::one()),v1.ptr());
-    randomize(as<Scalar>(as<Scalar>(-10)*ST::one()),as<Scalar>(as<Scalar>(10)*ST::one()),v2.ptr());
+    randomize<Scalar>(as<Scalar>(as<Scalar>(-10)*ST::one()),
+      as<Scalar>(as<Scalar>(10)*ST::one()), v1.ptr());
+    randomize<Scalar>(as<Scalar>(as<Scalar>(-10)*ST::one()),
+      as<Scalar>(as<Scalar>(10)*ST::one()), v2.ptr());
     V_VpStV(outArg(*v3), *v1, alpha, *v2);
     V_V(z.ptr(), *v1);
     Vp_StV(z.ptr(), alpha, *v2);

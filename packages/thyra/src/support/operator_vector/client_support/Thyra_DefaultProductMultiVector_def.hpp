@@ -737,7 +737,7 @@ Thyra::nonconstCastOrCreateSingleBlockProductMultiVector(
   template class DefaultProductMultiVector<SCALAR >; \
   \
   template RCP<DefaultProductMultiVector<SCALAR > >  \
-  defaultProductMultiVector();  \
+  defaultProductMultiVector<SCALAR >();  \
     \
     \
   template RCP<DefaultProductMultiVector<SCALAR > >  \

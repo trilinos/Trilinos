@@ -887,7 +887,7 @@ Thyra::nonconstBlock2x2(
   template class DefaultBlockedLinearOp<SCALAR >; \
    \
   template RCP<DefaultBlockedLinearOp<SCALAR > > \
-  defaultBlockedLinearOp(); \
+  defaultBlockedLinearOp<SCALAR >(); \
    \
   template RCP<const LinearOpBase<SCALAR > > \
   block1x1( \

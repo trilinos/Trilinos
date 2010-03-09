@@ -293,7 +293,7 @@ void DefaultClusteredSpmdProductVector<Scalar>::applyOpImpl(
       Ordinal v_global_offset = overall_global_offset;
       // Apply RTOp on just this cluster
       Thyra::applyOp<Scalar>(
-        op, v_vecs, v_targ_vecs, i_reduct_obj.ptr(),
+        op, v_vecs(), v_targ_vecs(), i_reduct_obj.ptr(),
         v_global_offset);
       //
       overall_global_offset += v_space.dim();

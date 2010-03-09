@@ -123,7 +123,9 @@ Thyra::norm_2( const VectorBase<Scalar>& w, const VectorBase<Scalar>& v )
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::ROpWeightedNorm2<Scalar> wght_norm_2_op;
   Teuchos::RCP<RTOpPack::ReductTarget> wght_norm_2_targ = wght_norm_2_op.reduct_obj_create();
-  applyOp<Scalar>(wght_norm_2_op,tuple(ptrInArg(w),ptrInArg(v)),null,wght_norm_2_targ.ptr());
+  applyOp<Scalar>(wght_norm_2_op, tuple(ptrInArg(w), ptrInArg(v)),
+    ArrayView<const Ptr<VectorBase<Scalar> > >(null),
+    wght_norm_2_targ.ptr());
   return wght_norm_2_op(*wght_norm_2_targ);
 }
 
@@ -541,7 +543,9 @@ Scalar Thyra::min( const VectorBase<Scalar>& x ) {
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::ROpMin<Scalar> min_op;
   Teuchos::RCP<RTOpPack::ReductTarget> min_targ = min_op.reduct_obj_create();
-  applyOp<Scalar>( min_op, tuple(ptrInArg(x)), null, min_targ.ptr() );
+  applyOp<Scalar>( min_op, tuple(ptrInArg(x)),
+    ArrayView<const Ptr<VectorBase<Scalar> > >(null),
+    min_targ.ptr() );
   return min_op(*min_targ);
 }
 
@@ -554,7 +558,9 @@ void Thyra::min( const VectorBase<Scalar>& x,
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::ROpMinIndex<Scalar> min_op;
   Teuchos::RCP<RTOpPack::ReductTarget> min_targ = min_op.reduct_obj_create();
-  applyOp<Scalar>( min_op, tuple(ptrInArg(x)), null, min_targ.ptr() );
+  applyOp<Scalar>( min_op, tuple(ptrInArg(x)),
+    ArrayView<const Ptr<VectorBase<Scalar> > >(null),
+    min_targ.ptr() );
   RTOpPack::ScalarIndex<Scalar> scalarIndex = min_op(*min_targ);
   *minEle = scalarIndex.scalar;
   *minIndex = scalarIndex.index;
@@ -569,7 +575,9 @@ void Thyra::minGreaterThanBound( const VectorBase<Scalar>& x,
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::ROpMinIndexGreaterThanBound<Scalar> min_op(bound);
   Teuchos::RCP<RTOpPack::ReductTarget> min_targ = min_op.reduct_obj_create();
-  applyOp<Scalar>( min_op, tuple(ptrInArg(x)), null, min_targ.ptr() );
+  applyOp<Scalar>( min_op, tuple(ptrInArg(x)),
+    ArrayView<const Ptr<VectorBase<Scalar> > >(null),
+    min_targ.ptr() );
   RTOpPack::ScalarIndex<Scalar> scalarIndex = min_op(*min_targ);
   *minEle = scalarIndex.scalar;
   *minIndex = scalarIndex.index;
@@ -582,7 +590,9 @@ Scalar Thyra::max( const VectorBase<Scalar>& x )
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::ROpMax<Scalar> max_op;
   Teuchos::RCP<RTOpPack::ReductTarget> max_targ = max_op.reduct_obj_create();
-  applyOp<Scalar>( max_op, tuple(ptrInArg(x)), null, max_targ.ptr() );
+  applyOp<Scalar>( max_op, tuple(ptrInArg(x)),
+    ArrayView<const Ptr<VectorBase<Scalar> > >(null),
+    max_targ.ptr() );
   return max_op(*max_targ);
 }
 
@@ -595,7 +605,9 @@ void Thyra::max( const VectorBase<Scalar>& x,
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::ROpMaxIndex<Scalar> max_op;
   Teuchos::RCP<RTOpPack::ReductTarget> max_targ = max_op.reduct_obj_create();
-  applyOp<Scalar>( max_op, tuple(ptrInArg(x)), null, max_targ.ptr() );
+  applyOp<Scalar>( max_op, tuple(ptrInArg(x)),
+    ArrayView<const Ptr<VectorBase<Scalar> > >(null),
+    max_targ.ptr() );
   RTOpPack::ScalarIndex<Scalar> scalarIndex = max_op(*max_targ);
   *maxEle = scalarIndex.scalar;
   *maxIndex = scalarIndex.index;
@@ -610,7 +622,9 @@ void Thyra::maxLessThanBound( const VectorBase<Scalar>& x,
   using Teuchos::tuple; using Teuchos::ptrInArg; using Teuchos::null;
   RTOpPack::ROpMaxIndexLessThanBound<Scalar> max_op(bound);
   Teuchos::RCP<RTOpPack::ReductTarget> max_targ = max_op.reduct_obj_create();
-  applyOp<Scalar>( max_op, tuple(ptrInArg(x)), null, max_targ.ptr() );
+  applyOp<Scalar>( max_op, tuple(ptrInArg(x)),
+    ArrayView<const Ptr<VectorBase<Scalar> > >(null),
+    max_targ.ptr() );
   RTOpPack::ScalarIndex<Scalar> scalarIndex = max_op(*max_targ);
   *maxEle = scalarIndex.scalar;
   *maxIndex = scalarIndex.index;
@@ -689,7 +703,7 @@ void Thyra::maxLessThanBound( const VectorBase<Scalar>& x,
     );  \
    \
   template void linear_combination(  \
-    const ArrayView<const SCALAR> &alpha,  \
+    const ArrayView<const SCALAR > &alpha,  \
     const ArrayView<const Ptr<const VectorBase<SCALAR > > > &x,  \
     const SCALAR &beta,  \
     const Ptr<VectorBase<SCALAR > > &y  \
