@@ -380,33 +380,36 @@ namespace {
       TEST_NOTHROW( matrix.setAllToScalar( ST::one() ) );
     }
     {
-      // create a simple upper-triangular bidiagonal graph
-      CrsGraph<LO,GO,Node> bigraph(map,2,StaticProfile);
+      // create a simple diagonal graph
+      CrsGraph<LO,GO,Node> diaggraph(map,1,StaticProfile);
       for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
-        if (r == map->getMaxAllGlobalIndex()) {
-          bigraph.insertGlobalIndices(r,tuple(r));
-        }
-        else {
-          bigraph.insertGlobalIndices(r,tuple(r,r+1));
-        }
+        diaggraph.insertGlobalIndices(r,tuple(r));
       }
-      bigraph.fillComplete(DoOptimizeStorage);
+      diaggraph.fillComplete(DoOptimizeStorage);
+      TEST_EQUALITY_CONST( diaggraph.isFillComplete(), true );
+      TEST_EQUALITY_CONST( diaggraph.isStorageOptimized(), true );
+      TEST_EQUALITY_CONST( diaggraph.isUpperTriangular(), true );
+      TEST_EQUALITY_CONST( diaggraph.isLowerTriangular(), true );
       // Bug verification:
       // Tpetra::CrsMatrix constructed with a Optimized, Fill-Complete graph will not call fillLocalMatrix() 
       // in optimizeStorage(), because it returns early due to picking up the storage optimized bool from the graph.
       // As a result, the local mat-vec and mat-solve operations are never initialized, and multiply() and solve() 
       // fail with a complaint regarding the initialization of these objects.
-      MAT matrix(rcpFromRef(bigraph));
+      MAT matrix(rcpFromRef(diaggraph));
       TEST_NOTHROW( matrix.setAllToScalar( ST::one() ) );
-      V x(map,false), y(map,false);
-      // init x to ones(); multiply into y, solve back into x, check for ones()
-      x.putScalar(SONE);
       matrix.fillComplete(DoOptimizeStorage);
+      TEST_EQUALITY_CONST( matrix.isFillComplete(), true );
+      TEST_EQUALITY_CONST( matrix.isStorageOptimized(), true );
+      TEST_EQUALITY_CONST( matrix.isUpperTriangular(), true );
+      TEST_EQUALITY_CONST( matrix.isLowerTriangular(), true );
+      // init x to ones(); multiply into y, solve in-situ in y, check result
+      V x(map,false), y(map,false);
+      x.putScalar(SONE);
       TEST_NOTHROW( matrix.multiply(x,y,NO_TRANS,SONE,SZERO) );
-      TEST_NOTHROW( matrix.solve(y,x,NO_TRANS) );
-      Array<Scalar> exp(numLocal, SONE);
+      TEST_NOTHROW( matrix.solve(y,y,NO_TRANS) );
       ArrayRCP<const Scalar> x_view = x.get1dView();
-      TEST_COMPARE_FLOATING_ARRAYS( exp(), x_view, MT::zero() );
+      ArrayRCP<const Scalar> y_view = y.get1dView();
+      TEST_COMPARE_FLOATING_ARRAYS( y_view, x_view, MT::zero() );
     }
     {
       // create a simple diagonal graph
