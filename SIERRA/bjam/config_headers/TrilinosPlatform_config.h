@@ -134,7 +134,7 @@ specific items to form TrilinosPlatform_config.h
 #  define THYRA_DEFAULT_PRODUCT_MULTI_VECTOR_EXPLICIT_INSTANTIATION
 #endif
 
-#if defined(__sun) 
+#if defined(__GNUC__)
 #  define THYRA_INJECT_USING_DECLARATIONS
 #  define HAVE_RTOP_EXPLICIT_INSTANTIATION
 #  define HAVE_THYRA_EXPLICIT_INSTANTIATION
