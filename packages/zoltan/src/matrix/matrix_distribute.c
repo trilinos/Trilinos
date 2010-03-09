@@ -120,7 +120,7 @@ int Zoltan_Distribute_Partition(int edge_gno, int vtx_gno, void* data, int *part
 
   part = (ZOLTAN_DIST_PART*) data;
   Zoltan_Map_Find(part->zz, part->map, &edge_gno, (void**)&answer);
-  *part_y = (int)answer;
+  *part_y = (int)(long)answer;
 
   return ((int)floor((double)*part_y/((double)part->nPart/(double)part->nProc)));
 }
@@ -167,7 +167,6 @@ Zoltan_Distribute_Partition_Free(void** dist)
 }
 
 /* if !copy, inmat is not usable after this call */
- 
 int
 Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as we can share it inside outmat */
 			    Zoltan_matrix_2d *outmat, int copy)
@@ -188,6 +187,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   int nProc;
   int *yGNO = NULL;
   int *pinGNO = NULL;
+  struct Zoltan_DD_Struct *dd = NULL;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -196,11 +196,11 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
     /* TODO: We need to copy the arrays also */
     Zoltan_Matrix_Reset (&outmat->mtx);
     /* Copy also directories */
-    outmat->mtx.ddX = Zoltan_DD_Copy (inmat.ddX);
-    if (inmat.ddY == inmat.ddX)
-      outmat->mtx.ddY = outmat->mtx.ddX;
-    else
-      outmat->mtx.ddY = Zoltan_DD_Copy (inmat.ddY);
+/*     outmat->mtx.ddX = Zoltan_DD_Copy (inmat.ddX); */
+/*     if (inmat.ddY == inmat.ddX) */
+/*       outmat->mtx.ddY = outmat->mtx.ddX; */
+/*     else */
+/*       outmat->mtx.ddY = Zoltan_DD_Copy (inmat.ddY); */
   }
 
   communicator = outmat->comm->Communicator;
@@ -211,8 +211,44 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   myProc_x = outmat->comm->myProc_x;
   myProc_y = outmat->comm->myProc_y;
 
+  /* TODO: do the same for x* */
+  /* Register (ygno, ypid, yoffset) in a dd */
+  if (inmat.redist) {
+    int *ypid;
+    int *yoffset;
+    int cnt = 0;
+
+    /* Cannot use direct arrays as some informations might be missing */
+    yGNO = (int*) ZOLTAN_MALLOC(inmat.nY*sizeof(int));
+    ypid = (int*) ZOLTAN_MALLOC(inmat.nY*sizeof(int));
+    yoffset = (int*) ZOLTAN_MALLOC(inmat.nY*sizeof(int));
+    if (inmat.nY > 0 && (yGNO == NULL || ypid == NULL || yoffset == NULL))
+      MEMORY_ERROR;
+    ierr = Zoltan_DD_Create (&dd, zz->Communicator, 1, 1,
+                             1, inmat.nY, 0);
+    CHECK_IERR;
+    /* Hope a linear assignment will help a little */
+    Zoltan_DD_Set_Neighbor_Hash_Fn1(dd, outmat->mtx.globalY/outmat->comm->nProc);
+
+
+    for (i = 0, cnt=0 ; i < inmat.nY ; ++i) {
+      if (inmat.ypid[i] < 0) /* Don't have informations */
+	continue;
+      yGNO[cnt] = inmat.yGNO[i];
+      ypid[cnt] = inmat.ypid[i];
+      yoffset[cnt] = inmat.yoffset[i];
+      cnt++;
+    }
+
+    Zoltan_DD_Update (dd, (ZOLTAN_ID_PTR)yGNO, (ZOLTAN_ID_PTR)ypid, (ZOLTAN_ID_PTR)yoffset, NULL, cnt);
+    ZOLTAN_FREE(&yGNO);
+    ZOLTAN_FREE(&ypid);
+    ZOLTAN_FREE(&yoffset);
+  }
 
   ierr = Zoltan_Matrix_Remove_Duplicates(zz, outmat->mtx, &outmat->mtx);
+  CHECK_IERR;
+  ZOLTAN_FREE(&outmat->mtx.yGID);
 
   /*
    * Build comm plan for sending non-zeros to their target processors in
@@ -254,14 +290,10 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   if (outmat->mtx.yend != outmat->mtx.ystart + 1)
     ZOLTAN_FREE(&outmat->mtx.yend);
   outmat->mtx.yend = NULL;
-  ZOLTAN_FREE(&outmat->mtx.ystart);
   ZOLTAN_FREE(&outmat->mtx.yGNO);
+  ZOLTAN_FREE(&outmat->mtx.ystart);
   ZOLTAN_FREE(&outmat->mtx.pinGNO);
   ZOLTAN_FREE(&outmat->mtx.pinwgt);
-  ZOLTAN_FREE(&outmat->mtx.yGID);
-  ZOLTAN_FREE(&outmat->mtx.ywgt);
-
-
   /*
    * Send pins to their target processors.
    * They become non-zeros in the 2D data distribution.
@@ -274,6 +306,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   nonzeros = (Zoltan_Arc *) ZOLTAN_MALLOC((outmat->mtx.nPins) * sizeof(Zoltan_Arc));
   if (outmat->mtx.nPins && nonzeros == NULL) MEMORY_ERROR;
 
+  /* TODO: We can do non-blocking here */
   msg_tag--;
   Zoltan_Comm_Do(plan, msg_tag, (char *) sendbuf, sizeof(Zoltan_Arc),
 		 (char *) nonzeros);
@@ -291,8 +324,6 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   Zoltan_Comm_Destroy(&plan);
 
   /* Unpack the non-zeros received. */
-
-
   /* TODO: do take care about singletons */
   Zoltan_Matrix_Remove_DupArcs(zz, outmat->mtx.nPins, (Zoltan_Arc*)nonzeros, tmpwgtarray,
 			       &outmat->mtx);
@@ -318,7 +349,27 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
 
   Zoltan_Matrix_Permute(zz, &outmat->mtx, perm_y);
 
+  /* Update GNO -> (pid,offset) infos */
+  /* TODO : same thing for X */
+  if (outmat->mtx.redist) {
+    ZOLTAN_FREE(&outmat->mtx.ypid);
+    ZOLTAN_FREE(&outmat->mtx.yoffset);
+
+    outmat->mtx.ypid = (int*) ZOLTAN_MALLOC(outmat->mtx.nY*sizeof(int));
+    outmat->mtx.yoffset = (int*) ZOLTAN_MALLOC(outmat->mtx.nY*sizeof(int));
+    if (outmat->mtx.nY > 0 && (outmat->mtx.ypid == NULL
+			       || outmat->mtx.yoffset == NULL))
+      MEMORY_ERROR;
+
+    Zoltan_DD_Find (dd, (ZOLTAN_ID_PTR)outmat->mtx.yGNO, (ZOLTAN_ID_PTR)outmat->mtx.ypid,
+		    (ZOLTAN_ID_PTR)outmat->mtx.yoffset, NULL, outmat->mtx.nY, NULL);
+    Zoltan_DD_Destroy(&dd);
+  }
+
  End:
+  if (dd != NULL)
+    Zoltan_DD_Destroy(&dd);
+
   ZOLTAN_FREE(&perm_y);
   ZOLTAN_FREE(&proclist);
   ZOLTAN_FREE(&sendbuf);

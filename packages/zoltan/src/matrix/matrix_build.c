@@ -52,6 +52,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
   int * Input_Parts=NULL;
   struct Zoltan_DD_Struct *dd = NULL;
   int *proclist = NULL;
+  int i;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -65,6 +66,8 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
   ierr = Zoltan_Get_Obj_List(zz, &nX, &xGID, &xLID,
 			     zz->Obj_Weight_Dim, &xwgt,
 			     &Input_Parts);
+  ZOLTAN_FREE(&Input_Parts);
+  ZOLTAN_FREE(&xwgt);
 
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error getting object data");
@@ -101,16 +104,15 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
     MPI_Allreduce(&nX, &matrix->globalX, 1, MPI_INT, MPI_SUM, zz->Communicator);
   }
 
-  /* I store : xGNO, xGID, xwgt, Input_Part */
-  ierr = Zoltan_DD_Create (&matrix->ddX, zz->Communicator, 1, zz->Num_GID,
-			   zz->Obj_Weight_Dim*sizeof(float)/sizeof(int), matrix->globalX/zz->Num_Proc, 0);
-  CHECK_IERR;
-
-  /* Hope a linear assignment will help a little */
-  Zoltan_DD_Set_Neighbor_Hash_Fn1(matrix->ddX, matrix->globalX/zz->Num_Proc);
-  /* Associate all the data with our xGNO */
-  Zoltan_DD_Update (matrix->ddX, (ZOLTAN_ID_PTR)xGNO, xGID, (ZOLTAN_ID_PTR) xwgt, Input_Parts, nX);
-  ZOLTAN_FREE(&Input_Parts);
+  /* Store informations to recover objects informations */
+  matrix->xpid = (int*) ZOLTAN_MALLOC(nX*sizeof(int));
+  if (nX > 0 && matrix->xpid == NULL) MEMORY_ERROR;
+  matrix->xoffset = (int*) ZOLTAN_CALLOC(nX, sizeof(int));
+  if (nX > 0 && matrix->xoffset == NULL) MEMORY_ERROR;
+  for (i = 0 ; i < nX ; ++i) {
+    matrix->xpid[i] = zz->Proc;
+    matrix->xoffset[i] = i;
+  }
 
   if (matrix->opts.pinwgt)
     matrix->pinwgtdim = zz->Edge_Weight_Dim;
@@ -144,20 +146,13 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
     }
   }
 
-  if (matrix->opts.local) { /* keep only local edges */
-    proclist = (int*) ZOLTAN_MALLOC(matrix->nPins*sizeof(int));
-    if (matrix->nPins && proclist == NULL) MEMORY_ERROR;
-  }
-  else
-    proclist = NULL;
-
   /* Convert pinID to pinGNO using the same translation as x */
   if (matrix->opts.speed == MATRIX_FULL_DD) {
     matrix->pinGNO = (int*)ZOLTAN_MALLOC(matrix->nPins* sizeof(int));
     if ((matrix->nPins > 0) && (matrix->pinGNO == NULL)) MEMORY_ERROR;
 
     ierr = Zoltan_DD_Find (dd, pinID, (ZOLTAN_ID_PTR)(matrix->pinGNO), NULL, NULL,
-			   matrix->nPins, proclist);
+			   matrix->nPins, NULL);
     if (ierr != ZOLTAN_OK) {
       ZOLTAN_PRINT_ERROR(zz->Proc,yo,"Undefined GID found.\n");
       ierr = ZOLTAN_FATAL;
@@ -186,6 +181,10 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
 /*     ZOLTAN_FREE(&proclist); */
 /*     Zoltan_Matrix_Delete_nnz(zz, matrix, nnz, nnz_list); */
 /*   } */
+
+
+  matrix->ypid = matrix->xpid;
+  matrix->yoffset = matrix->xoffset;
 
   if (!matrix->opts.enforceSquare) {
     /* Hyperedges name translation is different from the one of vertices */
@@ -218,14 +217,15 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
 /*       } */
 /*     } */
 
-      /* We have to define ddY : yGNO, yGID, ywgt */
-      ierr = Zoltan_DD_Create (&matrix->ddY, zz->Communicator, 1, zz->Num_GID,
-			       matrix->ywgtdim*sizeof(float)/sizeof(int), matrix->globalY/zz->Num_Proc, 0);
-      /* Hope a linear assignment will help a little */
-      Zoltan_DD_Set_Neighbor_Hash_Fn1(matrix->ddY, matrix->globalY/zz->Num_Proc);
-      /* Associate all the data with our yGNO */
-      Zoltan_DD_Update (matrix->ddY, (ZOLTAN_ID_PTR)matrix->yGNO,
-			yGID, (ZOLTAN_ID_PTR) matrix->ywgt, NULL, matrix->nY);
+    /* Store informations to recover objects informations */
+    matrix->ypid = (int*) ZOLTAN_MALLOC(matrix->nY*sizeof(int));
+    if (matrix->nY > 0 && matrix->ypid == NULL) MEMORY_ERROR;
+    matrix->xoffset = (int*) ZOLTAN_CALLOC(matrix->nY, sizeof(int));
+    if (matrix->nY > 0 && matrix->yoffset == NULL) MEMORY_ERROR;
+    for (i = 0 ; i < matrix->nY ; ++i) {
+      matrix->ypid[i] = zz->Proc;
+      matrix->yoffset[i] = i;
+    }
   }
 
  End:
@@ -373,7 +373,7 @@ matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_P
 
   if (matrix->opts.enforceSquare) {
     matrix->globalY = matrix->globalX;
-    matrix->ddY = matrix->ddX;
+/*     matrix->ddY = matrix->ddX; */
     matrix->ywgtdim = zz->Obj_Weight_Dim;
   }
 

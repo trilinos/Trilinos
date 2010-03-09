@@ -226,6 +226,7 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
 }
 
 /* Function that removes locale duplicated nnz */
+/* This function must be called with a valid matrix */
 int
 Zoltan_Matrix_Remove_Duplicates(ZZ *zz, Zoltan_matrix inmat, Zoltan_matrix *outmat)
 {
@@ -454,41 +455,9 @@ Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, int* perm_y)
   static char *yo = "Zoltan_Matrix_Permute";
   int ierr = ZOLTAN_OK;
   int *pinGNO = NULL;
-  ZOLTAN_ID_PTR yGID=NULL;
-  float *ywgt=NULL;
   struct Zoltan_DD_Struct *dd;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
-
-  /* First apply y permutation */
-  if (m->completed) { /* We directly know the good arrays */
-    yGID = m->yGID;
-    ywgt = m->ywgt;
-
-    if (m->ddY == NULL || m->ddY != m->ddX) { /* We have to create again the DD */
-      /* We have to define ddY : yGNO, yGID, ywgt */
-      ierr = Zoltan_DD_Create (&m->ddY, zz->Communicator, 1, zz->Num_GID,
-			       m->ywgtdim*sizeof(float)/sizeof(int), m->globalY/zz->Num_Proc, 0);
-      /* Hope a linear assignment will help a little */
-      Zoltan_DD_Set_Neighbor_Hash_Fn1(m->ddY, m->globalY/zz->Num_Proc);
-    }
-  }
-  else { /* We have to get these fields */
-    /* Update data directories */
-    yGID = ZOLTAN_MALLOC_GID_ARRAY(zz, m->nY);
-    ywgt = (float*) ZOLTAN_MALLOC(m->nY * sizeof(float) * m->ywgtdim);
-    if (m->nY && (yGID == NULL || (m->ywgtdim && ywgt == NULL)))
-      MEMORY_ERROR;
-    /* Get Informations about Y */
-    Zoltan_DD_Find (m->ddY, (ZOLTAN_ID_PTR)m->yGNO, yGID, (ZOLTAN_ID_PTR)ywgt, NULL,
-		    m->nY, NULL);
-  }
-
-  /* Get Informations about Y */
-  Zoltan_DD_Update (m->ddY, (ZOLTAN_ID_PTR)perm_y, yGID, (ZOLTAN_ID_PTR)ywgt, NULL,
-		    m->nY);
-  ZOLTAN_FREE (&yGID);
-  ZOLTAN_FREE (&ywgt);
 
   /* We have to define dd : old_yGNO, new_yGNO */
   ierr = Zoltan_DD_Create (&dd, zz->Communicator, 1, 1, 0, m->globalY/zz->Num_Proc, 0);
@@ -513,8 +482,6 @@ Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, int* perm_y)
 
  End:
   ZOLTAN_FREE (&pinGNO);
-  ZOLTAN_FREE (&yGID);
-  ZOLTAN_FREE (&ywgt);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
   return (ierr);

@@ -34,11 +34,13 @@ Zoltan_Matrix_Free(Zoltan_matrix *m)
   ZOLTAN_FREE(&m->pinwgt);
   ZOLTAN_FREE(&m->yGID);
   ZOLTAN_FREE(&m->ywgt);
-
-  if (m->ddY != m->ddX && m->ddY != NULL)
-    Zoltan_DD_Destroy(&m->ddY);
-  if (m->ddX != NULL)
-    Zoltan_DD_Destroy(&m->ddX);
+  if (m->ypid != m->xpid)
+    ZOLTAN_FREE(&m->ypid);
+  ZOLTAN_FREE(&m->xpid);
+  if (m->yoffset != m->xoffset)
+    ZOLTAN_FREE(&m->yoffset);
+  ZOLTAN_FREE(&m->xoffset);
+  ZOLTAN_FREE(&m->ybipart);
 
   memset (m, 0, sizeof(Zoltan_matrix));
 }
@@ -123,13 +125,13 @@ Zoltan_Matrix_Complete(ZZ* zz,Zoltan_matrix* m)
     MEMORY_ERROR;
 
   /* Get Informations about Y */
-  Zoltan_DD_Find (m->ddY, (ZOLTAN_ID_PTR)m->yGNO, m->yGID, (ZOLTAN_ID_PTR)m->ywgt, NULL,
-		  m->nY, NULL);
+/*   Zoltan_DD_Find (m->ddY, (ZOLTAN_ID_PTR)m->yGNO, m->yGID, (ZOLTAN_ID_PTR)m->ywgt, NULL, */
+/* 		  m->nY, NULL); */
 
-  if (m->ddY != m->ddX) {
-    Zoltan_DD_Destroy(&m->ddY);
-    m->ddY = NULL;
-  }
+/*   if (m->ddY != m->ddX) { */
+/*     Zoltan_DD_Destroy(&m->ddY); */
+/*     m->ddY = NULL; */
+/*   } */
 
   m->completed = 1;
  End:
@@ -148,8 +150,8 @@ ZOLTAN_ID_PTR Zoltan_Matrix_Get_GID(ZZ* zz, Zoltan_matrix* m)
     return (NULL);
 
   /* Get Informations about Y */
-  Zoltan_DD_Find (m->ddY, (ZOLTAN_ID_PTR)m->yGNO, yGID, NULL, NULL,
-		  m->nY, NULL);
+/*   Zoltan_DD_Find (m->ddY, (ZOLTAN_ID_PTR)m->yGNO, yGID, NULL, NULL, */
+/* 		  m->nY, NULL); */
 
   return (yGID);
 }
