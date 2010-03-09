@@ -186,9 +186,8 @@ c.....initialize soln
 c
 c.....do a series of SPAXPYs (sparse saxpys)
       if (nrhs.eq.1) then
-         jend = pntr(0)
          do 120 j = 0, m-1
-            jbgn = jend
+            jbgn = pntr(j)
             jend = pntr(j+1)
             xj1 = x(j)
             do 130 i = jbgn, jend-1
@@ -198,9 +197,8 @@ c.....do a series of SPAXPYs (sparse saxpys)
          
       else if (nrhs.eq.2) then
          
-      jend = pntr(0)
       do 220 j = 0, m-1
-         jbgn = jend
+         jbgn = pntr(j)
          jend = pntr(j+1)
          incx = j
          xj1 = x(incx)
@@ -217,9 +215,8 @@ c.....do a series of SPAXPYs (sparse saxpys)
          
       else if (nrhs.eq.3) then
          
-      jend = pntr(0)
       do 320 j = 0, m-1
-         jbgn = jend
+         jbgn = pntr(j)
          jend = pntr(j+1)
          incx = j
          xj1 = x(incx)
@@ -240,9 +237,8 @@ c.....do a series of SPAXPYs (sparse saxpys)
       
       else if (nrhs.eq.4) then
          
-      jend = pntr(0)
       do 420 j = 0, m-1
-         jbgn = jend
+         jbgn = pntr(j)
          jend = pntr(j+1)
          incx = j
          xj1 = x(incx)
@@ -267,9 +263,8 @@ c.....do a series of SPAXPYs (sparse saxpys)
       
       else if (nrhs.eq.5) then
          
-      jend = pntr(0)
       do 520 j = 0, m-1
-         jbgn = jend
+         jbgn = pntr(j)
          jend = pntr(j+1)
          incx = j
          xj1 = x(incx)
@@ -324,9 +319,9 @@ c.....do a series of SPAXPYs (sparse saxpys)
 *     --------------------------
 *
       if (nrhs.eq.1) then
-         jend = pntr(0)
+!$omp do
          do 110 j = 0, m-1
-            jbgn = jend
+            jbgn = pntr(j)
             jend = pntr(j+1)
             yj1 = 0.0
             do 120 i = jbgn, jend-1
@@ -337,10 +332,9 @@ c.....do a series of SPAXPYs (sparse saxpys)
          
 
       else if (nrhs.eq.2) then
-
-         jend = pntr(0)
+!$omp do
          do 210 j = 0, m-1
-            jbgn = jend
+            jbgn = pntr(j)
             jend = pntr(j+1)
             yj1 = 0.0
             yj2 = 0.0
@@ -358,10 +352,9 @@ c.....do a series of SPAXPYs (sparse saxpys)
  210     continue
          
       else if (nrhs.eq.3) then
-
-         jend = pntr(0)
+!$omp do
          do 310 j = 0, m-1
-            jbgn = jend
+            jbgn = pntr(j)
             jend = pntr(j+1)
             incx = 0
             yj1 = 0.0
@@ -385,10 +378,9 @@ c.....do a series of SPAXPYs (sparse saxpys)
  310     continue
 
       else if (nrhs.eq.4) then
-
-         jend = pntr(0)
+!$omp do
          do 410 j = 0, m-1
-            jbgn = jend
+            jbgn = pntr(j)
             jend = pntr(j+1)
             yj1 = 0.0
             yj2 = 0.0
@@ -416,10 +408,9 @@ c.....do a series of SPAXPYs (sparse saxpys)
  410     continue
 
       else if (nrhs.eq.5) then
-
-         jend = pntr(0)
+!$omp do
          do 510 j = 0, m-1
-            jbgn = jend
+            jbgn = pntr(j)
             jend = pntr(j+1)
             yj1 = 0.0
             yj2 = 0.0

@@ -355,7 +355,7 @@ int main(int argc, char *argv[])
       int nrhs=k;
       if (verbose) cout << "\n*************** Results for " << nrhs << " RHS with ";
 
-      bool StaticProfile = (j==0);
+      bool StaticProfile = (j!=0);
       if (verbose) 
 	if (StaticProfile) cout << " static profile\n";
 	else cout << " dynamic profile\n";

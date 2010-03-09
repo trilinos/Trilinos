@@ -36,6 +36,9 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #include "Epetra_Object.h"
 #include "Epetra_Comm.h"
 #include "Epetra_SerialCommData.h"
+#ifdef Epetra_HAVE_OMP
+#include <omp.h>
+#endif
 class Epetra_Distributor;
 
 //! Epetra_SerialComm:  The Epetra Serial Communication Class.
@@ -360,7 +363,18 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialComm: public Epetra_Object, public virt
   //@{ 
   //! Print method that implements Epetra_Object virtual Print method
   inline void Print(ostream & os) const {
+#ifdef Epetra_HAVE_OMP
+#pragma omp parallel 
+{
+  int numThreads = omp_get_num_threads();
+  int threadNum = omp_get_thread_num();
+		os << "::Processor "<< MyPID()<<" of " << NumProc() << " total processors."
+                   << "\n   Thread " << threadNum << " of " << numThreads << " total threads."; 
+}
+#else
 		os << "::Processor "<< MyPID()<<" of " << NumProc() << " total processors."; 
+#endif
+
 		return; 
 	}
   //! Print method that implements Epetra_Comm virtual PrintInfo method

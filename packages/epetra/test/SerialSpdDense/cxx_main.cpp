@@ -443,7 +443,8 @@ int check(Epetra_SerialSpdDenseSolver &solver, double * A1, int LDA1,
   assert(ierr>-1);
   if (ierr!=0) return(ierr); // Factorization failed due to poor conditioning.
   double rcond;
-  assert(solver.ReciprocalConditionEstimate(rcond)==0);
+  ierr = solver.ReciprocalConditionEstimate(rcond);
+  assert(ierr==0);
   if (verbose) {
     
     double rcond1 = 1.0/std::exp(3.5*((double)N));

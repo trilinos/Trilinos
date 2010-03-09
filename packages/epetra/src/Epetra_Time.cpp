@@ -32,6 +32,9 @@
 #ifdef EPETRA_MPI
 #include <time.h>
 #endif
+#ifdef Epetra_HAVE_OMP
+#include <omp.h>
+#endif
 
 //=============================================================================
 Epetra_Time::Epetra_Time(const Epetra_Comm& Comm) 
@@ -74,6 +77,9 @@ double Epetra_Time::WallTime(void) const
 
 #else
 
+#ifdef Epetra_HAVE_OMP
+       return(omp_get_wtime());
+#else
 #if ICL || defined(_WIN32)
 
    clock_t start;
@@ -98,10 +104,12 @@ double Epetra_Time::WallTime(void) const
    return( ((double) (tp.tv_sec - start)) + (tp.tv_usec-startu)/1000000.0 );
 #else
    return( (double) clock() / CLOCKS_PER_SEC );
-#endif
+#endif // MINGW
 
-#endif
-#endif
+#endif // ICL || WIN32
+
+#endif // Epetra_HAVE_OMP
+#endif // EPETRA_MPI
 
 }
 //=============================================================================

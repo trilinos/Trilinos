@@ -1216,7 +1216,7 @@ int Epetra_CrsGraph::OptimizeStorage() {
     // Pack indices into All_Indices_
     
     int* tmp = CrsGraphData_->All_Indices_.Values();
-    int * IndexOffset = CrsGraphData_->IndexOffset_ .Values();
+    int * IndexOffset = CrsGraphData_->IndexOffset_.Values();
     for(i = 0; i < numMyBlockRows; i++) {
       NumIndices = IndexOffset[i+1] - IndexOffset[i];
       int*& ColIndices = CrsGraphData_->Indices_[i];
