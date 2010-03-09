@@ -2019,9 +2019,9 @@ class SDIRK3Stage4thOrder_RKBT :
       Teuchos::SerialDenseVector<int,Scalar> c(numStages);
       Scalar zero = ST::zero();
       Scalar one = ST::one();
-      Scalar pi = as<Scalar>(4*one)*atan(one);
-      Scalar gamma = as<Scalar>( one/ST::squareroot(3*one)*cos(pi/(18*one))+one/(2*one) );
-      Scalar delta = as<Scalar>( one/(6*one*pow(2*gamma-one,2*one)) );
+      Scalar pi = as<Scalar>(4*one)*std::atan(one);
+      Scalar gamma = as<Scalar>( one/ST::squareroot(3*one)*std::cos(pi/(18*one))+one/(2*one) );
+      Scalar delta = as<Scalar>( one/(6*one*std::pow(2*gamma-one,2*one)) );
       A(0,0) = gamma;
       A(0,1) = zero;
       A(0,2) = zero;
