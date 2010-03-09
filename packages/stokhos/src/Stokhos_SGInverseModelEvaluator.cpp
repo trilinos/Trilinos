@@ -37,17 +37,34 @@
 
 Stokhos::SGInverseModelEvaluator::SGInverseModelEvaluator(
   const Teuchos::RCP<EpetraExt::ModelEvaluator>& me_,
+  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis_,
   const Teuchos::Array<int>& sg_p_index_,
-  const Teuchos::Array<int>& sg_g_index_) 
+  const Teuchos::Array<int>& sg_g_index_,
+  const Teuchos::Array< Teuchos::RCP<const Epetra_Map> >& base_p_maps_,
+  const Teuchos::Array< Teuchos::RCP<const Epetra_Map> >& base_g_maps_) 
   : me(me_),
+    sg_basis(sg_basis_),
     sg_p_index(sg_p_index_),
     sg_g_index(sg_g_index_),
+    base_p_maps(base_p_maps_),
+    base_g_maps(base_g_maps_),
     num_p_sg(sg_p_index.size()),
     num_g_sg(sg_g_index.size()),
     block_p(num_p_sg),
     block_g(num_g_sg),
     block_dgdp(num_g_sg)
 {
+  TEST_FOR_EXCEPTION(
+    base_p_maps.size() != num_p_sg, std::logic_error,
+    std::endl 
+    << "Error!  Stokhos::SGInverseModelEvaluator::SGInverseModelEvaluator():"
+    << "  Base parameter map array size does not match size of index array!");
+  TEST_FOR_EXCEPTION(
+    base_g_maps.size() != num_g_sg, std::logic_error,
+    std::endl 
+    << "Error!  Stokhos::SGInverseModelEvaluator::SGInverseModelEvaluator():"
+    << "  Base response map array size does not match size of index array!");
+
   InArgs me_inargs = me->createInArgs();
   OutArgs me_outargs = me->createOutArgs();
   
@@ -99,9 +116,31 @@ get_p_map(int l) const
 
 Teuchos::RCP<const Epetra_Map>
 Stokhos::SGInverseModelEvaluator::
+get_p_sg_map(int l) const
+{
+  TEST_FOR_EXCEPTION(
+    l >= num_p_sg || l < 0, std::logic_error,
+    std::endl << "Error!  Stokhos::SGInverseModelEvaluator::get_p_sg_map():"
+    << "  Invalid parameter index l = " << l << std::endl);
+  return base_p_maps[l];
+}
+
+Teuchos::RCP<const Epetra_Map>
+Stokhos::SGInverseModelEvaluator::
 get_g_map(int l) const
 {
   return me->get_g_map(l);
+}
+
+Teuchos::RCP<const Epetra_Map>
+Stokhos::SGInverseModelEvaluator::
+get_g_sg_map(int l) const
+{
+  TEST_FOR_EXCEPTION(
+    l >= num_g_sg || l < 0, std::logic_error,
+    std::endl << "Error!  Stokhos::SGInverseModelEvaluator::get_g_sg_map():"
+    << "  Invalid parameter index l = " << l << std::endl);
+  return base_g_maps[l];
 }
 
 Teuchos::RCP<const Teuchos::Array<std::string> >
@@ -111,11 +150,38 @@ get_p_names(int l) const
   return me->get_p_names(l);
 }
 
+Teuchos::RCP<const Teuchos::Array<std::string> >
+Stokhos::SGInverseModelEvaluator::
+get_p_sg_names(int l) const
+{
+  TEST_FOR_EXCEPTION(
+    l >= num_p_sg || l < 0, std::logic_error,
+    std::endl << "Error!  Stokhos::SGInverseModelEvaluator::get_p_sg_names():"
+    << "  Invalid parameter index l = " << l << std::endl);
+  return me->get_p_names(sg_p_index[l]);
+}
+
 Teuchos::RCP<const Epetra_Vector> 
 Stokhos::SGInverseModelEvaluator::
 get_p_init(int l) const
 {
   return me->get_p_init(l);
+}
+
+Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly>
+Stokhos::SGInverseModelEvaluator::
+get_p_sg_init(int l) const
+{
+  TEST_FOR_EXCEPTION(
+    l >= num_p_sg || l < 0, std::logic_error,
+    std::endl << "Error!  Stokhos::SGInverseModelEvaluator::get_p_sg_init():"
+    << "  Invalid parameter index l = " << l << std::endl);
+  Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> init_p_sg =
+    Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(sg_basis, 
+						     View,
+						     *(base_p_maps[l]),
+						     *(me->get_p_init(l))));
+  return init_p_sg;
 }
 
 EpetraExt::ModelEvaluator::InArgs

@@ -777,6 +777,9 @@ public:
   /** \breif . */
   virtual Teuchos::RefCountPtr<const Epetra_Map> get_p_map(int l) const;
 
+  /** \brief . */
+  virtual Teuchos::RefCountPtr<const Epetra_Map> get_p_sg_map(int l) const;
+
   /** \brief Get the names of the parameters associated with parameter
    * subvector l if available.
    *
@@ -793,8 +796,14 @@ public:
    */
   virtual Teuchos::RefCountPtr<const Teuchos::Array<std::string> > get_p_names(int l) const;
 
+  /** \brief . */
+  virtual Teuchos::RefCountPtr<const Teuchos::Array<std::string> > get_p_sg_names(int l) const;
+
   /** \breif . */
   virtual Teuchos::RefCountPtr<const Epetra_Map> get_g_map(int j) const;
+
+  /** \brief . */
+  virtual Teuchos::RefCountPtr<const Epetra_Map> get_g_sg_map(int j) const;
 
   //@}
 
@@ -805,10 +814,19 @@ public:
   virtual Teuchos::RefCountPtr<const Epetra_Vector> get_x_init() const;
 
   /** \brief . */
+  virtual Teuchos::RefCountPtr<const Stokhos::EpetraVectorOrthogPoly> get_x_sg_init() const;
+
+  /** \brief . */
   virtual Teuchos::RefCountPtr<const Epetra_Vector> get_x_dot_init() const;
 
   /** \brief . */
+  virtual Teuchos::RefCountPtr<const Stokhos::EpetraVectorOrthogPoly> get_x_dot_sg_init() const;
+
+  /** \brief . */
   virtual Teuchos::RefCountPtr<const Epetra_Vector> get_p_init(int l) const;
+
+  /** \brief . */
+  virtual Teuchos::RefCountPtr<const Stokhos::EpetraVectorOrthogPoly> get_p_sg_init(int l) const;
 
   /** \brief . */
   virtual double get_t_init() const;
@@ -860,13 +878,25 @@ public:
   virtual Teuchos::RefCountPtr<Epetra_Operator> create_DfDp_op(int l) const;
 
   /** \brief . */
+  virtual Teuchos::RefCountPtr<Epetra_Operator> create_DfDp_sg_op(int l) const;
+
+  /** \brief . */
   virtual Teuchos::RefCountPtr<Epetra_Operator> create_DgDx_dot_op(int j) const;
+
+  /** \brief . */
+  virtual Teuchos::RefCountPtr<Epetra_Operator> create_DgDx_dot_sg_op(int j) const;
 
   /** \brief . */
   virtual Teuchos::RefCountPtr<Epetra_Operator> create_DgDx_op(int j) const;
 
   /** \brief . */
+  virtual Teuchos::RefCountPtr<Epetra_Operator> create_DgDx_sg_op(int j) const;
+
+  /** \brief . */
   virtual Teuchos::RefCountPtr<Epetra_Operator> create_DgDp_op( int j, int l ) const;
+
+  /** \brief . */
+  virtual Teuchos::RefCountPtr<Epetra_Operator> create_DgDp_sg_op( int j, int l ) const;
 
   //@}
 

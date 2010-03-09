@@ -74,7 +74,6 @@ EpetraVectorOrthogPoly(
 Stokhos::EpetraVectorOrthogPoly::
 EpetraVectorOrthogPoly(
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis,
-  Epetra_DataAccess CV,
   const Epetra_BlockMap& coeff_map,
   const Epetra_BlockMap& block_map) :
   VectorOrthogPoly<Epetra_Vector>(basis),
@@ -206,3 +205,21 @@ setBlockVector(const Teuchos::RCP<EpetraExt::BlockVector>& block_vec)
     this->setCoeffPtr(i, bv->GetBlock(i));
 }
 
+void
+Stokhos::EpetraVectorOrthogPoly::
+computeMean(Epetra_Vector& v) const
+{
+  v.Scale(1.0, *(coeff_[0]));
+}
+
+void
+Stokhos::EpetraVectorOrthogPoly::
+computeStandardDeviation(Epetra_Vector& v) const
+{
+  const Teuchos::Array<double>& nrm2 = this->basis_->norm_squared();
+  v.PutScalar(0.0);
+  for (int i=1; i<this->size(); i++)
+    v.Multiply(nrm2[i], *coeff_[i], *coeff_[i], 1.0);
+  for (int i=0; i<v.MyLength(); i++)
+    v[i] = std::sqrt(v[i]);
+}

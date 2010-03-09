@@ -53,9 +53,11 @@ namespace Stokhos {
   public:
 
     // Constructor
-    SGQuadModelEvaluator(const Teuchos::RCP<EpetraExt::ModelEvaluator>& me,
-			 const Teuchos::Array<int>& sg_p_index,
-			 const Teuchos::Array<int>& sg_g_index);
+    SGQuadModelEvaluator(
+      const Teuchos::RCP<EpetraExt::ModelEvaluator>& me,
+      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
+      const Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly>& initial_x_sg,
+      const Teuchos::Array< Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> >& initial_p_sg);
     
     /** \name Overridden from EpetraExt::ModelEvaluator . */
     //@{
@@ -69,18 +71,34 @@ namespace Stokhos {
     //! Return parameter vector map
     Teuchos::RCP<const Epetra_Map> get_p_map(int l) const;
 
+    //! Return parameter vector map
+    Teuchos::RCP<const Epetra_Map> get_p_sg_map(int l) const;
+
     //! Return observation vector map
     Teuchos::RCP<const Epetra_Map> get_g_map(int l) const;
+
+    //! Return observation vector map
+    Teuchos::RCP<const Epetra_Map> get_g_sg_map(int l) const;
 
     //! Return array of parameter names
     Teuchos::RCP<const Teuchos::Array<std::string> > 
     get_p_names(int l) const;
 
+    //! Return array of parameter names
+    Teuchos::RCP<const Teuchos::Array<std::string> > 
+    get_p_sg_names(int l) const;
+
     //! Return initial solution
     Teuchos::RCP<const Epetra_Vector> get_x_init() const;
 
+    //! Return initial solution
+    Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly> get_x_sg_init() const;
+
     //! Return initial parameters
     Teuchos::RCP<const Epetra_Vector> get_p_init(int l) const;
+
+    //! Return initial parameters
+    Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly> get_p_sg_init(int l) const;
 
     //! Create W = alpha*M + beta*J matrix
     Teuchos::RCP<Epetra_Operator> create_W() const;
@@ -101,11 +119,14 @@ namespace Stokhos {
     //! Underlying model evaluator
     Teuchos::RCP<EpetraExt::ModelEvaluator> me;
 
-    //! Index of stochastic parameters
-    Teuchos::Array<int> sg_p_index;
+    //! SG basis
+    Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > sg_basis;
 
-    //! Index of stochastic responses
-    Teuchos::Array<int> sg_g_index;
+    //! SG initial guess
+    Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly> initial_x_sg;
+
+    //! SG initial parameters
+    Teuchos::Array< Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> > initial_p_sg;
 
     //! Number of parameter vectors
     int num_p;

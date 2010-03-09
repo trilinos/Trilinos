@@ -579,15 +579,25 @@ ModelEvaluator::~ModelEvaluator()
 Teuchos::RefCountPtr<const Epetra_Map>
 ModelEvaluator::get_p_map(int l) const
 { return Teuchos::null; }
- 
+
+Teuchos::RefCountPtr<const Epetra_Map>
+ModelEvaluator::get_p_sg_map(int l) const
+{ return Teuchos::null; }
 
 Teuchos::RefCountPtr<const Teuchos::Array<std::string> >
 ModelEvaluator::get_p_names(int l) const
 { return Teuchos::null; }
 
+Teuchos::RefCountPtr<const Teuchos::Array<std::string> >
+ModelEvaluator::get_p_sg_names(int l) const
+{ return Teuchos::null; }
 
 Teuchos::RefCountPtr<const Epetra_Map>
 ModelEvaluator::get_g_map(int j) const
+{ return Teuchos::null; }
+
+Teuchos::RefCountPtr<const Epetra_Map>
+ModelEvaluator::get_g_sg_map(int j) const
 { return Teuchos::null; }
 
 
@@ -598,14 +608,26 @@ Teuchos::RefCountPtr<const Epetra_Vector>
 ModelEvaluator::get_x_init() const
 { return Teuchos::null; }
 
+Teuchos::RefCountPtr<const Stokhos::EpetraVectorOrthogPoly>
+ModelEvaluator::get_x_sg_init() const
+{ return Teuchos::null; }
+
 
 Teuchos::RefCountPtr<const Epetra_Vector>
 ModelEvaluator::get_x_dot_init() const
 { return Teuchos::null; }
 
+Teuchos::RefCountPtr<const Stokhos::EpetraVectorOrthogPoly>
+ModelEvaluator::get_x_dot_sg_init() const
+{ return Teuchos::null; }
+
 
 Teuchos::RefCountPtr<const Epetra_Vector>
 ModelEvaluator::get_p_init(int l) const
+{ return Teuchos::null; }
+
+Teuchos::RefCountPtr<const Stokhos::EpetraVectorOrthogPoly>
+ModelEvaluator::get_p_sg_init(int l) const
 { return Teuchos::null; }
 
 
@@ -665,9 +687,17 @@ Teuchos::RefCountPtr<Epetra_Operator>
 ModelEvaluator::create_DfDp_op(int l) const
 { return Teuchos::null; }
 
+Teuchos::RefCountPtr<Epetra_Operator>
+ModelEvaluator::create_DfDp_sg_op(int l) const
+{ return Teuchos::null; }
+
 
 Teuchos::RefCountPtr<Epetra_Operator>
 ModelEvaluator::create_DgDx_dot_op(int j) const
+{ return Teuchos::null; }
+
+Teuchos::RefCountPtr<Epetra_Operator>
+ModelEvaluator::create_DgDx_dot_sg_op(int j) const
 { return Teuchos::null; }
 
 
@@ -675,9 +705,17 @@ Teuchos::RefCountPtr<Epetra_Operator>
 ModelEvaluator::create_DgDx_op(int j) const
 { return Teuchos::null; }
 
+Teuchos::RefCountPtr<Epetra_Operator>
+ModelEvaluator::create_DgDx_sg_op(int j) const
+{ return Teuchos::null; }
+
 
 Teuchos::RefCountPtr<Epetra_Operator>
 ModelEvaluator::create_DgDp_op( int j, int l ) const
+{ return Teuchos::null; }
+
+Teuchos::RefCountPtr<Epetra_Operator>
+ModelEvaluator::create_DgDp_sg_op( int j, int l ) const
 { return Teuchos::null; }
 
 

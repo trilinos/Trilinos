@@ -217,3 +217,22 @@ setBlockMultiVector(const Teuchos::RCP<EpetraExt::BlockMultiVector>& block_vec)
     this->setCoeffPtr(i, bv->GetBlock(i));
 }
 
+void
+Stokhos::EpetraMultiVectorOrthogPoly::
+computeMean(Epetra_MultiVector& v) const
+{
+  v.Scale(1.0, *(coeff_[0]));
+}
+
+void
+Stokhos::EpetraMultiVectorOrthogPoly::
+computeStandardDeviation(Epetra_MultiVector& v) const
+{
+  const Teuchos::Array<double>& nrm2 = this->basis_->norm_squared();
+  v.PutScalar(0.0);
+  for (int i=1; i<this->size(); i++)
+    v.Multiply(nrm2[i], *coeff_[i], *coeff_[i], 1.0);
+  for (int j=0; j<v.NumVectors(); j++)
+    for (int i=0; i<v.MyLength(); i++)
+      v[j][i] = std::sqrt(v[j][i]);
+}

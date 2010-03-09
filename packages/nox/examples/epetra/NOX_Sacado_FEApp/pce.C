@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
 
   bool do_pce = true;
   bool do_dakota = false;
-  SG_METHOD SG_Method = SG_NI;
+  SG_METHOD SG_Method = SG_AD;
 
   int MyPID;
 
@@ -325,12 +325,13 @@ int main(int argc, char *argv[]) {
 						finalSolution.get()));
 
       // Set up stochastic parameters
-      Teuchos::Array< Stokhos::EpetraVectorOrthogPoly > sg_p(1);
       Epetra_LocalMap p_sg_map(num_KL, 0, *Comm);
-      sg_p[0].reset(basis, p_sg_map);
+      Teuchos::Array< Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> > sg_p(2);
+      sg_p[1] = 
+	Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(basis, p_sg_map));
       for (int i=0; i<num_KL; i++) {
-	sg_p[0].term(i,0)[i] = 0.0;
-	sg_p[0].term(i,1)[i] = 1.0;
+	sg_p[1]->term(i,0)[i] = 0.0;
+	sg_p[1]->term(i,1)[i] = 1.0;
       }
       Teuchos::RefCountPtr< Teuchos::Array<std::string> > sg_param_names =
 	Teuchos::rcp(new Teuchos::Array<std::string>);
@@ -339,22 +340,19 @@ int main(int argc, char *argv[]) {
 	ss << "KL Exponential Function Random Variable " << i;
 	sg_param_names->push_back(ss.str());
       }
-      Teuchos::Array<int> sg_p_index(1);
-      sg_p_index[0] = 1;
+
+      // Setup stochastic initial guess
+      Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_x = 
+	Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(basis, 
+							 finalSolution->Map()));
+      (*sg_x)[0] = *finalSolution;
 
       if (SG_Method == SG_AD || SG_Method == SG_ELEMENT) {
 	model = Teuchos::rcp(new FEApp::ModelEvaluator(app, free_param_names,
-						       sg_param_names));
+						       sg_param_names,
+						       sg_x, sg_p[1]));
       }
       else {
-	Teuchos::Array<int> sg_p_index_quad(1);
-	sg_p_index_quad[0] = 1;
-	Teuchos::Array<int> sg_g_index_quad(1);
-	sg_g_index_quad[0] = 0;
-	if (SG_Method == SG_NI) {
-	  sg_g_index_quad.resize(2);
-	  sg_g_index_quad[1] = 1;
-	}
 	Teuchos::RCP<EpetraExt::ModelEvaluator> underlying_model;
 	if (SG_Method == SG_GLOBAL)
 	  underlying_model = 
@@ -368,9 +366,8 @@ int main(int argc, char *argv[]) {
 	    Teuchos::rcp(new ENAT::NOXSolver(appParams, base_model));
 	}
 	model =
-	  Teuchos::rcp(new Stokhos::SGQuadModelEvaluator(underlying_model, 
-							 sg_p_index_quad,
-							 sg_g_index_quad));
+	  Teuchos::rcp(new Stokhos::SGQuadModelEvaluator(underlying_model,
+							 basis, sg_x, sg_p));
       }
 
       Teuchos::RCP<Teuchos::ParameterList> sgParams = 
@@ -389,17 +386,10 @@ int main(int argc, char *argv[]) {
 	ML_Epetra::SetDefaults("DD", precParams);
 	sgParams->set("Evaluate W with F", false);
       }
-      Teuchos::Array<int> sg_g_index(1);
-      sg_g_index[0] = 0;
-      if (SG_Method == SG_NI) {
-	sg_g_index.resize(2);
-	sg_g_index[1] = 1;
-      }
       Teuchos::RCP<Stokhos::SGModelEvaluator> sg_model =
 	Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, quad, 
 						   expansion, Cijk, 
-						   sg_p_index, sg_g_index, 
-						   sgParams, Comm, sg_p));
+						   sgParams, Comm));
 
       // Create SG NOX solver
       Teuchos::RCP<EpetraExt::ModelEvaluator> sg_solver;
@@ -409,48 +399,54 @@ int main(int argc, char *argv[]) {
 	if (jac_method == "Matrix Free" || 
 	    jac_method == "KL Reduced Matrix Free")
 	  M = sg_model->create_M();
-	
 	sg_solver = Teuchos::rcp(new ENAT::NOXSolver(appParams, sg_model, M));
-	Teuchos::Array<int> sg_inverse_p_index(1);
-	sg_inverse_p_index[0] = 1;
-	Teuchos::Array<int> sg_inverse_g_index(2);
+      }
+      else
+	sg_solver = sg_model;
+
+      // Create SG Inverse model evaluator
+      Teuchos::Array<int> sg_inverse_p_index(1);
+      Teuchos::Array<int> sg_inverse_g_index(2);
+      Teuchos::Array< Teuchos::RCP<const Epetra_Map> > base_p_maps(1);
+      Teuchos::Array< Teuchos::RCP<const Epetra_Map> > base_g_maps(2);
+      sg_inverse_p_index[0] = 1;
+      base_p_maps[0] = model->get_p_sg_map(0);
+      base_g_maps[0] = model->get_g_sg_map(0);
+      base_g_maps[1] = model->get_x_map();
+      if (SG_Method != SG_NI) {
+	// Responses are:  g, block g, block u
 	sg_inverse_g_index[0] = 1;
 	sg_inverse_g_index[1] = 2;
-	sg_solver = Teuchos::rcp(new Stokhos::SGInverseModelEvaluator(
-				   sg_solver, sg_inverse_p_index, 
-				   sg_inverse_g_index));
       }
       else {
-	sg_solver = sg_model;
-	Teuchos::Array<int> sg_inverse_p_index(1);
-	sg_inverse_p_index[0] = 1;
-	Teuchos::Array<int> sg_inverse_g_index(2);
+	// Responses are:  g, u, block g, block u
 	sg_inverse_g_index[0] = 2;
 	sg_inverse_g_index[1] = 3;
-	sg_solver = Teuchos::rcp(new Stokhos::SGInverseModelEvaluator(
-				   sg_solver, sg_inverse_p_index, 
-				   sg_inverse_g_index));
       }
+      sg_solver = Teuchos::rcp(new Stokhos::SGInverseModelEvaluator(
+				   sg_solver, 
+				   basis,
+				   sg_inverse_p_index, 
+				   sg_inverse_g_index, 
+				   base_p_maps, 
+				   base_g_maps));
       
       // Evaluate SG responses at SG parameters
       EpetraExt::ModelEvaluator::InArgs sg_inArgs = sg_solver->createInArgs();
       EpetraExt::ModelEvaluator::OutArgs sg_outArgs = 
 	sg_solver->createOutArgs();
       Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly> sg_p_init =
-	Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(
-		       basis, View, *(sg_model->get_p_map(1)), 
-		       *(sg_solver->get_p_init(2))));
+	sg_solver->get_p_sg_init(0);
       sg_inArgs.set_p_sg(0, sg_p_init);
       Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_g = 
 	Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(
-		       basis, *(sg_solver->get_g_map(0))));
+		       basis, *(sg_solver->get_g_sg_map(0))));
       Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_u = 
 	Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(
-		       basis, finalSolution->Map()));
-	
+		       basis, *(sg_solver->get_g_sg_map(1))));
       Teuchos::RCP<Stokhos::EpetraMultiVectorOrthogPoly> sg_dgdp = 
 	Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(
-		       basis, *(sg_solver->get_g_map(0)),
+		       basis, *(sg_solver->get_g_sg_map(0)),
 		       p_init->MyLength()));
       sg_outArgs.set_g_sg(0, sg_g);
       sg_outArgs.set_g_sg(1, sg_u);
@@ -460,29 +456,20 @@ int main(int argc, char *argv[]) {
 
       // Print mean and standard deviation
       utils.out().precision(12);
-      sg_g->print(std::cout);
-      double mean = (*sg_g)[0][0];
-      double std_dev = 0.0;
-      const Teuchos::Array<double>& nrm2 = basis->norm_squared();
-      for (int i=1; i<basis->size(); i++)
-        std_dev += (*sg_g)[i][0]*(*sg_g)[i][0]*nrm2[i];
-      std_dev = std::sqrt(std_dev);
-
-      utils.out() << "Mean =      " << mean << std::endl;
-      utils.out() << "Std. Dev. = " << std_dev << std::endl;
-
-      sg_dgdp->print(std::cout);
-      
+      std::cout << "SG expansion of response:" << std::endl << *sg_g;
+      Epetra_Vector mean(*(sg_solver->get_g_sg_map(0)));
+      Epetra_Vector std_dev(*(sg_solver->get_g_sg_map(0)));
+      sg_g->computeMean(mean);
+      sg_g->computeStandardDeviation(std_dev);
+      utils.out() << "Mean =      " << mean[0] << std::endl;
+      utils.out() << "Std. Dev. = " << std_dev[0] << std::endl;
+      std::cout << "SG expansion of sensitivity:" << std::endl << *sg_dgdp;
 
 #ifdef HAVE_STOKHOS_ANASAZI
       // Compute KL expansion of solution sg_u
       Teuchos::RCP<EpetraExt::BlockVector> X;
-      if (SG_Method == SG_NI)
-      	X = Teuchos::rcp(new EpetraExt::BlockVector(finalSolution->Map(),
-						    *(sg_solver->get_g_map(3))));
-      else
-	X = Teuchos::rcp(new EpetraExt::BlockVector(finalSolution->Map(),
-						    *(sg_solver->get_g_map(2))));
+      X = Teuchos::rcp(new EpetraExt::BlockVector(finalSolution->Map(),
+						  *(sg_model->get_x_map())));
       sg_u->assignToBlockVector(*X);
       Teuchos::RCP<const EpetraExt::BlockVector> cX = X;
       Stokhos::PCEAnasaziKL pceKL(cX, *basis, 20);

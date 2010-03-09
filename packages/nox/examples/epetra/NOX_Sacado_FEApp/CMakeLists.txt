@@ -27,7 +27,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_Sacado AND
 
     PACKAGE_ADD_EXECUTABLE_AND_TEST(
       Sacado_FEApp_Linear_Diffusion_PCE_Example
-      SOURCES linear_diffusion_pce.C ENAT_NOXSolver.hpp ENAT_NOXSolver.cpp
+      SOURCES linear_diffusion_pce.C
       COMM serial mpi
       NUM_MPI_PROCS 2
       ARGS
@@ -36,7 +36,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_Sacado AND
 
     PACKAGE_ADD_EXECUTABLE_AND_TEST(
       Sacado_FEApp_Linear_Diffusion_PCE_NOX_Example
-      SOURCES linear_diffusion_pce_nox.C ENAT_NOXSolver.hpp ENAT_NOXSolver.cpp
+      SOURCES linear_diffusion_pce_nox.C
       COMM serial mpi
       NUM_MPI_PROCS 2
       ARGS
@@ -45,12 +45,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_Sacado AND
 
     IF(Stokhos_ENABLE_Anasazi)	
       PACKAGE_ADD_EXECUTABLE(
-        Sacado_FEApp_PCE_KL_Example
-        SOURCES pce_KL.C ENAT_NOXSolver.hpp ENAT_NOXSolver.cpp
-        COMM serial mpi
-        )
-      PACKAGE_ADD_EXECUTABLE(
-        Jacobian_KL_Example
+        Sacado_FEApp_Jacobian_KL_Example
         SOURCES jacobian_KL.cpp ENAT_NOXSolver.hpp ENAT_NOXSolver.cpp
         COMM serial mpi
         )

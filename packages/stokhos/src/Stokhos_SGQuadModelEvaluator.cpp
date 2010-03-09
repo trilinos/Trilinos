@@ -41,14 +41,16 @@
 
 Stokhos::SGQuadModelEvaluator::
 SGQuadModelEvaluator(
-	    const Teuchos::RCP<EpetraExt::ModelEvaluator>& me_,
-	    const Teuchos::Array<int>& sg_p_index_,
-	    const Teuchos::Array<int>& sg_g_index_) : 
+  const Teuchos::RCP<EpetraExt::ModelEvaluator>& me_,
+  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis_,
+  const Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly>& initial_x_sg_,
+  const Teuchos::Array< Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> >& initial_p_sg_) : 
   me(me_),
-  sg_p_index(sg_p_index_),
-  sg_g_index(sg_g_index_),
-  num_p(sg_p_index.size()),
-  num_g(sg_g_index.size()),
+  sg_basis(sg_basis_),
+  initial_x_sg(initial_x_sg_),
+  initial_p_sg(initial_p_sg_),
+  num_p(0),
+  num_g(0),
   x_dot_qp(),
   x_qp(),
   p_qp(),
@@ -62,6 +64,7 @@ SGQuadModelEvaluator(
 {
   // Create storage for x_dot, x, and p at a quad point
   InArgs me_inargs = me->createInArgs();
+  num_p = me_inargs.Np();
   if (me_inargs.supports(IN_ARG_x_dot))
     x_dot_qp = Teuchos::rcp(new Epetra_Vector(*(me->get_x_map())));
   if (me_inargs.supports(IN_ARG_x))
@@ -72,6 +75,7 @@ SGQuadModelEvaluator(
 
   // Create storage for f and W at a quad point
   OutArgs me_outargs = me->createOutArgs();
+  num_g = me_outargs.Ng();
 
   // f
   if (me_outargs.supports(OUT_ARG_f))
@@ -82,8 +86,8 @@ SGQuadModelEvaluator(
     W_qp = me->create_W();
 
   // df/dp
-  dfdp_qp.resize(me_inargs.Np());
-  for (int i=0; i<me_inargs.Np(); i++)
+  dfdp_qp.resize(num_p);
+  for (int i=0; i<num_p; i++)
     if (me_outargs.supports(OUT_ARG_DfDp,i).supports(DERIV_TRANS_MV_BY_ROW))
       dfdp_qp[i] = EpetraExt::ModelEvaluator::Derivative(
 	Teuchos::rcp(new Epetra_MultiVector(
@@ -106,54 +110,54 @@ SGQuadModelEvaluator(
 
     // g
     g_qp[i] = 
-      Teuchos::rcp(new Epetra_Vector(*(me->get_g_map(sg_g_index[i]))));
+      Teuchos::rcp(new Epetra_Vector(*(me->get_g_map(i))));
 
     // dg/dx
-    if (me_outargs.supports(OUT_ARG_DgDx, sg_g_index[i]).supports(DERIV_TRANS_MV_BY_ROW))
+    if (me_outargs.supports(OUT_ARG_DgDx, i).supports(DERIV_TRANS_MV_BY_ROW))
       dgdx_qp[i] = EpetraExt::ModelEvaluator::Derivative(
 	Teuchos::rcp(new Epetra_MultiVector(
 		       *(me->get_x_map()),
 		       me->get_g_map(i)->NumGlobalElements())));
-    else if (me_outargs.supports(OUT_ARG_DgDx, sg_g_index[i]).supports(DERIV_MV_BY_COL))
+    else if (me_outargs.supports(OUT_ARG_DgDx, i).supports(DERIV_MV_BY_COL))
       dgdx_qp[i] = EpetraExt::ModelEvaluator::Derivative(
 	Teuchos::rcp(new Epetra_MultiVector(
 		       *(me->get_g_map(i)),
 		       me->get_x_map()->NumGlobalElements())));
-    else if (me_outargs.supports(OUT_ARG_DgDx, sg_g_index[i]).supports(DERIV_LINEAR_OP))
+    else if (me_outargs.supports(OUT_ARG_DgDx, i).supports(DERIV_LINEAR_OP))
       dgdx_qp[i] = EpetraExt::ModelEvaluator::Derivative(
 	me->create_DgDx_op(i));
     
     // dg/dx_dot
-    if (me_outargs.supports(OUT_ARG_DgDx_dot, sg_g_index[i]).supports(DERIV_TRANS_MV_BY_ROW))
+    if (me_outargs.supports(OUT_ARG_DgDx_dot, i).supports(DERIV_TRANS_MV_BY_ROW))
       dgdx_dot_qp[i] = EpetraExt::ModelEvaluator::Derivative(
 	Teuchos::rcp(new Epetra_MultiVector(
 		       *(me->get_x_map()),
 		       me->get_g_map(i)->NumGlobalElements())));
-    else if (me_outargs.supports(OUT_ARG_DgDx_dot, sg_g_index[i]).supports(DERIV_MV_BY_COL))
+    else if (me_outargs.supports(OUT_ARG_DgDx_dot, i).supports(DERIV_MV_BY_COL))
       dgdx_dot_qp[i] = EpetraExt::ModelEvaluator::Derivative(
 	Teuchos::rcp(new Epetra_MultiVector(
 		       *(me->get_g_map(i)),
 		       me->get_x_map()->NumGlobalElements())));
-    else if (me_outargs.supports(OUT_ARG_DgDx_dot, sg_g_index[i]).supports(DERIV_LINEAR_OP))
+    else if (me_outargs.supports(OUT_ARG_DgDx_dot, i).supports(DERIV_LINEAR_OP))
       dgdx_dot_qp[i] = EpetraExt::ModelEvaluator::Derivative(
 	me->create_DgDx_dot_op(i));
 
     // dg/dp
-    dgdp_qp[i].resize(me_outargs.Np());
-    for (int j=0; j<me_outargs.Np(); j++)
-      if (me_outargs.supports(OUT_ARG_DgDp, sg_g_index[i], j).supports(DERIV_TRANS_MV_BY_ROW))
+    dgdp_qp[i].resize(num_p);
+    for (int j=0; j<num_p; j++)
+      if (me_outargs.supports(OUT_ARG_DgDp, i, j).supports(DERIV_TRANS_MV_BY_ROW))
 	dgdp_qp[i][j] = EpetraExt::ModelEvaluator::Derivative(
 	  Teuchos::rcp(new Epetra_MultiVector(
 			 *(me->get_p_map(j)),
-			 me->get_g_map(sg_g_index[i])->NumGlobalElements())));
-      else if (me_outargs.supports(OUT_ARG_DgDp, sg_g_index[i], j).supports(DERIV_MV_BY_COL))
+			 me->get_g_map(i)->NumGlobalElements())));
+      else if (me_outargs.supports(OUT_ARG_DgDp, i, j).supports(DERIV_MV_BY_COL))
 	dgdp_qp[i][j] = EpetraExt::ModelEvaluator::Derivative(
 	  Teuchos::rcp(new Epetra_MultiVector(
-			 *(me->get_g_map(sg_g_index[i])),
+			 *(me->get_g_map(i)),
 			 me->get_p_map(j)->NumGlobalElements())));
-      else if (me_outargs.supports(OUT_ARG_DgDp, sg_g_index[i], j).supports(DERIV_LINEAR_OP))
+      else if (me_outargs.supports(OUT_ARG_DgDp, i, j).supports(DERIV_LINEAR_OP))
 	dgdp_qp[i][j] = EpetraExt::ModelEvaluator::Derivative(
-	  me->create_DgDp_op(sg_g_index[i],j));
+	  me->create_DgDp_op(i,j));
   }
 }
 
@@ -182,7 +186,21 @@ get_p_map(int l) const
 
 Teuchos::RCP<const Epetra_Map>
 Stokhos::SGQuadModelEvaluator::
+get_p_sg_map(int l) const
+{
+  return me->get_p_map(l);
+}
+
+Teuchos::RCP<const Epetra_Map>
+Stokhos::SGQuadModelEvaluator::
 get_g_map(int l) const
+{
+  return me->get_g_map(l);
+}
+
+Teuchos::RCP<const Epetra_Map>
+Stokhos::SGQuadModelEvaluator::
+get_g_sg_map(int l) const
 {
   return me->get_g_map(l);
 }
@@ -194,6 +212,13 @@ get_p_names(int l) const
   return me->get_p_names(l);
 }
 
+Teuchos::RCP<const Teuchos::Array<std::string> >
+Stokhos::SGQuadModelEvaluator::
+get_p_sg_names(int l) const
+{
+  return me->get_p_names(l);
+}
+
 Teuchos::RCP<const Epetra_Vector>
 Stokhos::SGQuadModelEvaluator::
 get_x_init() const
@@ -201,11 +226,42 @@ get_x_init() const
   return me->get_x_init();
 }
 
+Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly>
+Stokhos::SGQuadModelEvaluator::
+get_x_sg_init() const
+{
+  if (initial_x_sg != Teuchos::null)
+    return initial_x_sg;
+  Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> init_x_sg =
+    Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(sg_basis, 
+						     *(me->get_x_map())));
+  (*init_x_sg)[0] = *(me->get_x_init());
+  return init_x_sg;
+}
+
 Teuchos::RCP<const Epetra_Vector>
 Stokhos::SGQuadModelEvaluator::
 get_p_init(int l) const
 {
   return me->get_p_init(l);
+}
+
+Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly>
+Stokhos::SGQuadModelEvaluator::
+get_p_sg_init(int l) const
+{
+  TEST_FOR_EXCEPTION(l >= num_p || l < 0, 
+		     std::logic_error,
+                     std::endl << 
+                     "Error!  Stokhos::SGQuadModelEvaluator::get_p_sg_init():  "
+		     << "Invalid parameter index l = " << l << std::endl);
+  if (initial_p_sg[l] != Teuchos::null)
+    return initial_p_sg[l];
+  Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> init_p_sg =
+    Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(sg_basis, 
+						     *(me->get_p_map(l))));
+  (*init_p_sg)[0] = *(me->get_p_init(l));
+  return init_p_sg;
 }
 
 Teuchos::RCP<Epetra_Operator>
@@ -274,12 +330,12 @@ createOutArgs() const
 			me_outargs.supports(OUT_ARG_DfDp, j));
   for (int i=0; i<num_g; i++) {
     outArgs.setSupports(OUT_ARG_DgDx_sg, i, 
-			me_outargs.supports(OUT_ARG_DgDx, sg_g_index[i]));
+			me_outargs.supports(OUT_ARG_DgDx, i));
     outArgs.setSupports(OUT_ARG_DgDx_dot_sg, i, 
-			me_outargs.supports(OUT_ARG_DgDx_dot, sg_g_index[i]));
+			me_outargs.supports(OUT_ARG_DgDx_dot, i));
     for (int j=0; j<me_outargs.Np(); j++)
       outArgs.setSupports(OUT_ARG_DgDp_sg, i, j, 
-			  me_outargs.supports(OUT_ARG_DgDp, sg_g_index[i], j));
+			  me_outargs.supports(OUT_ARG_DgDp, i, j));
   }
   
   return outArgs;
@@ -449,8 +505,8 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
         for (int i=0; i<inArgs.Np_sg(); i++) {
           if (p_sg[i] != Teuchos::null) {
             TEUCHOS_FUNC_TIME_MONITOR("SGQuadModelEvaluator -- P Evaluation");
-            p_sg[i]->evaluate(quad_values[qp], *(p_qp[sg_p_index[i]]));
-            me_inargs.set_p(sg_p_index[i], p_qp[sg_p_index[i]]);
+            p_sg[i]->evaluate(quad_values[qp], *(p_qp[i]));
+            me_inargs.set_p(i, p_qp[i]);
           }
         }
         if (f_sg != Teuchos::null)
@@ -463,14 +519,14 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
 	}
         for (int i=0; i<outArgs.Ng_sg(); i++) {
 	  if (g_sg[i] != Teuchos::null)
-	    me_outargs.set_g(sg_g_index[i], g_qp[i]);
+	    me_outargs.set_g(i, g_qp[i]);
 	  if (!dgdx_dot_sg[i].isEmpty())
-	    me_outargs.set_DgDx_dot(sg_g_index[i], dgdx_dot_qp[i]);
+	    me_outargs.set_DgDx_dot(i, dgdx_dot_qp[i]);
 	  if (!dgdx_sg[i].isEmpty())
-	    me_outargs.set_DgDx(sg_g_index[i], dgdx_qp[i]);
+	    me_outargs.set_DgDx(i, dgdx_qp[i]);
           for (int j=0; j<outArgs.Np_sg(); j++)
             if (!dgdp_sg[i][j].isEmpty())
-              me_outargs.set_DgDp(sg_g_index[i], j, dgdp_qp[i][j]);
+              me_outargs.set_DgDp(i, j, dgdp_qp[i][j]);
         }
 
       }

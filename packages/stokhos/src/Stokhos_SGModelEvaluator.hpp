@@ -80,12 +80,8 @@ namespace Stokhos {
       const Teuchos::RCP<const Stokhos::Quadrature<int,double> >& sg_quad,
       const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> >& sg_exp,
       const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk,
-      const Teuchos::Array<int>& sg_p_index,
-      const Teuchos::Array<int>& sg_g_index,
       const Teuchos::RCP<Teuchos::ParameterList>& params,
-      const Teuchos::RCP<const Epetra_Comm>& comm,
-      const Teuchos::Array< Stokhos::EpetraVectorOrthogPoly >& initial_p_sg,
-      const Stokhos::EpetraVectorOrthogPoly* initial_x_sg = NULL);
+      const Teuchos::RCP<const Epetra_Comm>& comm);
 
     /** \name Overridden from EpetraExt::ModelEvaluator . */
     //@{
@@ -155,12 +151,6 @@ namespace Stokhos {
 
     //! Stochastic Galerkin expansion
     Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > sg_exp;
-
-    //! Index of stochastic parameters
-    Teuchos::Array<int> sg_p_index;
-
-    //! Index of stochastic responses
-    Teuchos::Array<int> sg_g_index;
 
     //! Algorithmic parameters
     Teuchos::RCP<Teuchos::ParameterList> params;

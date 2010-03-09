@@ -301,12 +301,12 @@ int main(int argc, char *argv[]) {
 					      finalSolution.get()));
 
     // Set up stochastic parameters
-    Teuchos::Array< Stokhos::EpetraVectorOrthogPoly > sg_p(1);
     Epetra_LocalMap p_sg_map(d, 0, *Comm);
-    sg_p[0].reset(basis, p_sg_map);
+    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_p = 
+      Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(basis, p_sg_map));
     for (unsigned int i=0; i<d; i++) {
-      sg_p[0].term(i,0)[i] = 2.0;
-      sg_p[0].term(i,1)[i] = 1.0;
+      sg_p->term(i,0)[i] = 2.0;
+      sg_p->term(i,1)[i] = 1.0;
     }
     Teuchos::RefCountPtr< Teuchos::Array<std::string> > sg_param_names =
       Teuchos::rcp(new Teuchos::Array<std::string>);
@@ -315,10 +315,16 @@ int main(int argc, char *argv[]) {
       ss << "Exponential Source Function Nonlinear Factor " << i;
       sg_param_names->push_back(ss.str());
     }
-    Teuchos::Array<int> sg_p_index(1);
-    sg_p_index[0] = 1;
+
+    // Setup stochastic initial guess
+    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_x_init = 
+      Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(basis, 
+						       finalSolution->Map()));
+    (*sg_x_init)[0] = *finalSolution;
+
     model = Teuchos::rcp(new FEApp::ModelEvaluator(app, free_param_names,
-						   sg_param_names));
+						   sg_param_names,
+						   sg_x_init, sg_p));
 
     Teuchos::RCP<Teuchos::ParameterList> sgParams = 
       Teuchos::rcp(&(appParams->sublist("SG Parameters")),false);
@@ -331,13 +337,10 @@ int main(int argc, char *argv[]) {
       Teuchos::rcp(new IfpackPreconditionerFactory(precParams));
     sgParams->set("Preconditioner Factory", sg_prec);
     sgParams->set("Evaluate W with F", false);
-    Teuchos::Array<int> sg_g_index(1);
-    sg_g_index[0] = 0;
     Teuchos::RCP<Stokhos::SGModelEvaluator> sg_model =
       Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, quad,
-						 expansion, Cijk, sg_p_index,
-						 sg_g_index, sgParams,
-						 Comm, sg_p));
+						 expansion, Cijk, sgParams,
+						 Comm));
   
     // Evaluate SG responses at SG parameters
     EpetraExt::ModelEvaluator::InArgs sg_inArgs = sg_model->createInArgs();

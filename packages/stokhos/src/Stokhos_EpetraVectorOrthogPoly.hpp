@@ -96,7 +96,6 @@ namespace Stokhos {
      */
     EpetraVectorOrthogPoly(
       const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int, double> >& basis,
-      Epetra_DataAccess CV,
       const Epetra_BlockMap& coeff_map,
       const Epetra_BlockMap& block_map);
 
@@ -156,6 +155,12 @@ namespace Stokhos {
 
     //! Set block vector
     void setBlockVector(const Teuchos::RCP<EpetraExt::BlockVector>& block_vec);
+
+    //! Compute mean
+    void computeMean(Epetra_Vector& v) const;
+
+    //! Compute standard deviation
+    void computeStandardDeviation(Epetra_Vector& v) const;
 
   protected:
 

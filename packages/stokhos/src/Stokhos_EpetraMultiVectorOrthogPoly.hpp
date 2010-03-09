@@ -163,6 +163,12 @@ namespace Stokhos {
     void setBlockMultiVector(
       const Teuchos::RCP<EpetraExt::BlockMultiVector>& block_vec);
 
+    //! Compute mean
+    void computeMean(Epetra_MultiVector& v) const;
+
+    //! Compute standard deviation
+    void computeStandardDeviation(Epetra_MultiVector& v) const;
+
   protected:
 
     //! Block vector storing coefficients

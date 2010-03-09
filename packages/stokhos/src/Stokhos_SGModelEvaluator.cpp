@@ -54,18 +54,12 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
   const Teuchos::RCP<const Stokhos::Quadrature<int,double> >& sg_quad_,
   const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> >& sg_exp_,
   const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk_,
-  const Teuchos::Array<int>& sg_p_index_,
-  const Teuchos::Array<int>& sg_g_index_,
   const Teuchos::RCP<Teuchos::ParameterList>& params_,
-  const Teuchos::RCP<const Epetra_Comm>& comm,
-  const Teuchos::Array< Stokhos::EpetraVectorOrthogPoly >& initial_p_sg,
-  const Stokhos::EpetraVectorOrthogPoly* initial_x_sg) 
+  const Teuchos::RCP<const Epetra_Comm>& comm) 
   : me(me_),
     sg_basis(sg_basis_),
     sg_quad(sg_quad_),
     sg_exp(sg_exp_),
-    sg_p_index(sg_p_index_),
-    sg_g_index(sg_g_index_),
     params(params_),
     num_sg_blocks(sg_basis->size()),
     num_W_blocks(sg_basis->size()),
@@ -77,25 +71,25 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
     sg_x_map(),
     sg_f_map(),
     num_p(0),
-    num_p_sg(sg_p_index.size()),
-    sg_p_map(num_p_sg),
-    sg_p_names(num_p_sg),
+    num_p_sg(0),
+    sg_p_map(),
+    sg_p_names(),
     num_g(0),
-    num_g_sg(sg_g_index.size()),
-    sg_g_map(num_g_sg),
+    num_g_sg(0),
+    sg_g_map(),
     Cijk(Cijk_),
     x_dot_sg_blocks(),
     x_sg_blocks(),
-    p_sg_blocks(num_p_sg),
+    p_sg_blocks(),
     f_sg_blocks(),
     W_sg_blocks(),
-    g_sg_blocks(num_g_sg),
+    g_sg_blocks(),
     dfdp_sg_blocks(),
-    dgdx_dot_sg_blocks(num_g_sg),
-    dgdx_sg_blocks(num_g_sg),
-    dgdp_sg_blocks(num_g_sg),
+    dgdx_dot_sg_blocks(),
+    dgdx_sg_blocks(),
+    dgdp_sg_blocks(),
     jacobianMethod(MATRIX_FREE),
-    sg_p_init(num_p_sg),
+    sg_p_init(),
     eval_W_with_f(false)
 {
   if (x_map != Teuchos::null)
@@ -186,10 +180,14 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
     
   // Parameters -- The idea here is to add new parameter vectors
   // for the stochastic Galerkin components of the parameters
-  // specified through sg_p_index.
 
   InArgs me_inargs = me->createInArgs();
   num_p = me_inargs.Np();
+  num_p_sg = me_inargs.Np_sg();
+  sg_p_map.resize(num_p_sg);
+  sg_p_names.resize(num_p_sg);
+  sg_p_init.resize(num_p_sg);
+  p_sg_blocks.resize(num_p_sg);
 
   // Determine parameter expansion type
   std::string p_expansion_type = 
@@ -201,14 +199,14 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
   
   // Create parameter maps, names, and initial values
   for (int i=0; i<num_p_sg; i++) {
-    Teuchos::RCP<const Epetra_Map> p_map = me->get_p_map(sg_p_index[i]);
+    Teuchos::RCP<const Epetra_Map> p_map = me->get_p_sg_map(i);
     sg_p_map[i] = 
       Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(*p_map,
 							     rowIndex,
 							     *sg_comm));
     
     Teuchos::RCP<const Teuchos::Array<std::string> > p_names = 
-      me->get_p_names(sg_p_index[i]);
+      me->get_p_sg_names(i);
     if (p_names != Teuchos::null) {
       sg_p_names[i] = 
 	Teuchos::rcp(new Teuchos::Array<std::string>(num_sg_blocks*(p_names->size())));
@@ -222,28 +220,33 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
     // Create initial p
     sg_p_init[i] = 
       Teuchos::rcp(new EpetraExt::BlockVector(*p_map, *sg_p_map[i]));
-    for (unsigned int j=0; j<num_sg_blocks; j++)
-      sg_p_init[i]->LoadBlockValues(initial_p_sg[i][j], j);
+    Teuchos::RCP<const EpetraVectorOrthogPoly> initial_p_sg =
+      me->get_p_sg_init(i);
+    initial_p_sg->assignToBlockVector(*sg_p_init[i]);
     
     // Create p SG blocks
     p_sg_blocks[i] = 
       Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(sg_basis,
-								num_p_blocks));
+						       num_p_blocks));
     
   }
 
   // Responses -- The idea here is to add new parameter vectors
-  // for the stochastic Galerkin components of the parameters
-  // specified through sg_p_index.
+  // for the stochastic Galerkin components of the respones
 
   // Get number of SG parameters model supports derivatives w.r.t.
   OutArgs me_outargs = me->createOutArgs();
   num_g = me_outargs.Ng();
-  int np_sg = me_outargs.Np_sg();
+  num_g_sg = me_outargs.Ng_sg();
+  sg_g_map.resize(num_g_sg);
+  g_sg_blocks.resize(num_g_sg);
+  dgdx_dot_sg_blocks.resize(num_g_sg);
+  dgdx_sg_blocks.resize(num_g_sg);
+  dgdp_sg_blocks.resize(num_g_sg);
 
   // Create response maps
   for (int i=0; i<num_g_sg; i++) {
-    Teuchos::RCP<const Epetra_Map> g_map = me->get_g_map(sg_g_index[i]);
+    Teuchos::RCP<const Epetra_Map> g_map = me->get_g_sg_map(i);
     sg_g_map[i] = 
       Teuchos::rcp(EpetraExt::BlockUtility::GenerateBlockMap(*g_map,
 							     rowIndex,
@@ -260,33 +263,26 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
       Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(sg_basis));
     
     // Create dg/dp SG blocks
-    dgdp_sg_blocks[i].resize(np_sg);
-    for (int j=0; j<np_sg; j++)
+    dgdp_sg_blocks[i].resize(num_p_sg);
+    for (int j=0; j<num_p_sg; j++)
       dgdp_sg_blocks[i][j] = 
 	Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(sg_basis));
   }
 
-  // Create df/dp SG blocks
+  
   if (supports_x) {
-    dfdp_sg_blocks.resize(np_sg);
-    for (int i=0; i<np_sg; i++)
+
+    // Create df/dp SG blocks
+    dfdp_sg_blocks.resize(num_p_sg);
+    for (int i=0; i<num_p_sg; i++)
       dfdp_sg_blocks[i] = 
 	Teuchos::rcp(new Stokhos::EpetraMultiVectorOrthogPoly(sg_basis));
-  }
-  
-  
-  
-  if (supports_x) {
+
     // Create initial x
     sg_x_init = Teuchos::rcp(new EpetraExt::BlockVector(*x_map, *sg_x_map));
-    if (initial_x_sg == NULL) {
-      Teuchos::RCP<const Epetra_Vector> xinit = me->get_x_init();
-      sg_x_init->LoadBlockValues(*xinit, 0);
-    }
-    else {
-      for (unsigned int i=0; i<num_sg_blocks; i++)
-	sg_x_init->LoadBlockValues((*initial_x_sg)[i], i);
-    }
+    Teuchos::RCP<const EpetraVectorOrthogPoly> initial_x_sg =
+      me->get_x_sg_init();
+    initial_x_sg->assignToBlockVector(*sg_x_init);
     
     // Get preconditioner factory for matrix-free
     if (jacobianMethod == MATRIX_FREE || 
@@ -447,39 +443,39 @@ Stokhos::SGModelEvaluator::create_DgDx_op(int j) const
   if (j < num_g)
     return me->create_DgDx_op(j);
   else if (j < num_g + num_g_sg && supports_x) {
-    int jj = sg_g_index[j-num_g];
+    int jj = j-num_g;
     Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Operator> > sg_blocks =
       Teuchos::rcp(new Stokhos::VectorOrthogPoly<Epetra_Operator>(sg_basis));
     OutArgs me_outargs = me->createOutArgs();
-    if (me_outargs.supports(OUT_ARG_DgDx, jj).supports(DERIV_LINEAR_OP))
+    if (me_outargs.supports(OUT_ARG_DgDx_sg, jj).supports(DERIV_LINEAR_OP))
       for (unsigned int i=0; i<num_sg_blocks; i++)
-	sg_blocks->setCoeffPtr(i, me->create_DgDx_op(jj));
-    else if (me_outargs.supports(OUT_ARG_DgDx, jj).supports(DERIV_MV_BY_COL))
+	sg_blocks->setCoeffPtr(i, me->create_DgDx_sg_op(jj));
+    else if (me_outargs.supports(OUT_ARG_DgDx_sg, jj).supports(DERIV_MV_BY_COL))
       for (unsigned int i=0; i<num_sg_blocks; i++) {
 	Teuchos::RCP<Epetra_MultiVector> mv = 
-	  Teuchos::rcp(new Epetra_MultiVector(*(me->get_g_map(jj)), 
+	  Teuchos::rcp(new Epetra_MultiVector(*(me->get_g_sg_map(jj)), 
 					      me->get_x_map()->NumMyElements()));
 	Teuchos::RCP<Epetra_Operator> block = 
 	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv));
 	sg_blocks->setCoeffPtr(i, block);
       }
-    else if (me_outargs.supports(OUT_ARG_DgDx, jj).supports(DERIV_TRANS_MV_BY_ROW))
+    else if (me_outargs.supports(OUT_ARG_DgDx_sg, jj).supports(DERIV_TRANS_MV_BY_ROW))
       for (unsigned int i=0; i<num_sg_blocks; i++) {
 	Teuchos::RCP<Epetra_MultiVector> mv = 
 	  Teuchos::rcp(new Epetra_MultiVector(*(me->get_x_map()), 
-					      me->get_g_map(jj)->NumMyElements()));
+					      me->get_g_sg_map(jj)->NumMyElements()));
 	Teuchos::RCP<Epetra_Operator> block = 
 	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv));
 	sg_blocks->setCoeffPtr(i, block);
       }
     else
       TEST_FOR_EXCEPTION(true, std::logic_error,
-			 "Error!  me_outargs.supports(OUT_ARG_DgDx, " << j
+			 "Error!  me_outargs.supports(OUT_ARG_DgDx_sg, " << j
 			 << ").none() is true!");
 
     return Teuchos::rcp(new Stokhos::MatrixFreeEpetraOp(
-			  x_map, me->get_g_map(jj), sg_x_map, 
-			  sg_g_map[j-num_g], sg_basis, Cijk, sg_blocks));
+			  x_map, me->get_g_sg_map(jj), sg_x_map, 
+			  sg_g_map[jj], sg_basis, Cijk, sg_blocks));
   }
   else 
     TEST_FOR_EXCEPTION(true, std::logic_error,
@@ -495,27 +491,27 @@ Stokhos::SGModelEvaluator::create_DgDx_dot_op(int j) const
   if (j < num_g)
     return me->create_DgDx_dot_op(j);
   else if (j < num_g + num_g_sg && supports_x) {
-    int jj = sg_g_index[j-num_g];
+    int jj = j-num_g;
     Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Operator> > sg_blocks =
       Teuchos::rcp(new Stokhos::VectorOrthogPoly<Epetra_Operator>(sg_basis));
     OutArgs me_outargs = me->createOutArgs();
-    if (me_outargs.supports(OUT_ARG_DgDx_dot, jj).supports(DERIV_LINEAR_OP))
+    if (me_outargs.supports(OUT_ARG_DgDx_dot_sg, jj).supports(DERIV_LINEAR_OP))
       for (unsigned int i=0; i<num_sg_blocks; i++)
-	sg_blocks->setCoeffPtr(i, me->create_DgDx_dot_op(jj));
-    else if (me_outargs.supports(OUT_ARG_DgDx_dot, jj).supports(DERIV_MV_BY_COL))
+	sg_blocks->setCoeffPtr(i, me->create_DgDx_dot_sg_op(jj));
+    else if (me_outargs.supports(OUT_ARG_DgDx_dot_sg, jj).supports(DERIV_MV_BY_COL))
       for (unsigned int i=0; i<num_sg_blocks; i++) {
 	Teuchos::RCP<Epetra_MultiVector> mv = 
-	  Teuchos::rcp(new Epetra_MultiVector(*(me->get_g_map(jj)), 
+	  Teuchos::rcp(new Epetra_MultiVector(*(me->get_g_sg_map(jj)), 
 					      me->get_x_map()->NumMyElements()));
 	Teuchos::RCP<Epetra_Operator> block = 
 	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv));
 	sg_blocks->setCoeffPtr(i, block);
       }
-    else if (me_outargs.supports(OUT_ARG_DgDx_dot, jj).supports(DERIV_TRANS_MV_BY_ROW))
+    else if (me_outargs.supports(OUT_ARG_DgDx_dot_sg, jj).supports(DERIV_TRANS_MV_BY_ROW))
       for (unsigned int i=0; i<num_sg_blocks; i++) {
 	Teuchos::RCP<Epetra_MultiVector> mv = 
 	  Teuchos::rcp(new Epetra_MultiVector(*(me->get_x_map()), 
-					      me->get_g_map(jj)->NumMyElements()));
+					      me->get_g_sg_map(jj)->NumMyElements()));
 	
 	Teuchos::RCP<Epetra_Operator> block = 
 	  Teuchos::rcp(new Stokhos::EpetraMultiVectorOperator(mv));
@@ -523,12 +519,12 @@ Stokhos::SGModelEvaluator::create_DgDx_dot_op(int j) const
       }
     else
       TEST_FOR_EXCEPTION(true, std::logic_error,
-			 "Error!  me_outargs.supports(OUT_ARG_DgDx_dot, " << j
-			 << ").none() is true!");
+			 "Error!  me_outargs.supports(OUT_ARG_DgDx_dot_sg, " 
+			 << j << ").none() is true!");
 
     return Teuchos::rcp(new Stokhos::MatrixFreeEpetraOp(
-			  x_map, me->get_g_map(jj), sg_x_map, 
-			  sg_g_map[j-num_g], sg_basis, Cijk, sg_blocks));
+			  x_map, me->get_g_sg_map(jj), sg_x_map, 
+			  sg_g_map[jj], sg_basis, Cijk, sg_blocks));
   }
   else 
     TEST_FOR_EXCEPTION(true, std::logic_error,
@@ -584,13 +580,13 @@ Stokhos::SGModelEvaluator::createOutArgs() const
 			  me_outargs.supports(OUT_ARG_DgDp, i, j));
   }
   for (int i=0; i<num_g_sg; i++) {
-    if (!me_outargs.supports(OUT_ARG_DgDx_dot, sg_g_index[i]).none())
+    if (!me_outargs.supports(OUT_ARG_DgDx_dot_sg, i).none())
       outArgs.setSupports(OUT_ARG_DgDx_dot, i+num_g,  DERIV_LINEAR_OP);
-    if (!me_outargs.supports(OUT_ARG_DgDx, sg_g_index[i]).none())
+    if (!me_outargs.supports(OUT_ARG_DgDx_sg, i).none())
       outArgs.setSupports(OUT_ARG_DgDx, i+num_g,  DERIV_LINEAR_OP);
     for (int j=0; j<me_outargs.Np(); j++)
       outArgs.setSupports(OUT_ARG_DgDp, i+num_g, j, 
-			  me_outargs.supports(OUT_ARG_DgDp, sg_g_index[i], j));
+			  me_outargs.supports(OUT_ARG_DgDp_sg, i, j));
   }
 
   // We do not support derivatives w.r.t. the new SG parameters, so their
@@ -741,8 +737,7 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
     // g
     Teuchos::RCP<Epetra_Vector> g = outArgs.get_g(i+num_g);
     if (g != Teuchos::null) {
-      g_sg_blocks[i]->resetCoefficients(View, *(me->get_g_map(sg_g_index[i])), 
-					*g);
+      g_sg_blocks[i]->resetCoefficients(View, *(me->get_g_sg_map(i)), *g);
       me_outargs.set_g_sg(i, g_sg_blocks[i]);
     }
 
@@ -764,7 +759,7 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
 		sg_blocks->getCoeffPtr(k), true)->getMultiVector();
 	    dgdx_dot_sg_blocks[i]->setCoeffPtr(k, mv);
 	  }
-	  if (me_outargs.supports(OUT_ARG_DgDx_dot, sg_g_index[i]).supports(DERIV_MV_BY_COL))
+	  if (me_outargs.supports(OUT_ARG_DgDx_dot_sg, i).supports(DERIV_MV_BY_COL))
 	    me_outargs.set_DgDx_dot_sg(i, SGDerivative(dgdx_dot_sg_blocks[i],
 						       DERIV_MV_BY_COL));
 	  else
@@ -797,7 +792,7 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
 		sg_blocks->getCoeffPtr(k), true)->getMultiVector();
 	    dgdx_sg_blocks[i]->setCoeffPtr(k, mv);
 	  }
-	  if (me_outargs.supports(OUT_ARG_DgDx, sg_g_index[i]).supports(DERIV_MV_BY_COL))
+	  if (me_outargs.supports(OUT_ARG_DgDx_sg, i).supports(DERIV_MV_BY_COL))
 	    me_outargs.set_DgDx_sg(i, SGDerivative(dgdx_sg_blocks[i],
 						   DERIV_MV_BY_COL));
 	  else
@@ -819,7 +814,7 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
 	Derivative dgdp = outArgs.get_DgDp(i+num_g,j);
 	if (dgdp.getMultiVector() != Teuchos::null) {
 	  dgdp_sg_blocks[i][j]->resetCoefficients(
-	    View, *(me->get_g_map(sg_g_index[i])), *(dgdp.getMultiVector()));
+	    View, *(me->get_g_sg_map(i)), *(dgdp.getMultiVector()));
 	  me_outargs.set_DgDp_sg(i, j, 
 				 SGDerivative(dgdp_sg_blocks[i][j],
 					      dgdp.getMultiVectorOrientation()));

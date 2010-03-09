@@ -158,12 +158,12 @@ int main(int argc, char *argv[]) {
       Teuchos::rcp(new FEApp::Application(x, Comm, appParams, false));
     
     // Set up stochastic parameters
-    Teuchos::Array< Stokhos::EpetraVectorOrthogPoly > sg_params(1);
     Epetra_LocalMap p_sg_map(num_KL, 0, *Comm);
-    sg_params[0].reset(basis, p_sg_map);
+    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_p_init = 
+      Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(basis, p_sg_map));
     for (int i=0; i<num_KL; i++) {
-      sg_params[0].term(i,0)[i] = 0.0;
-      sg_params[0].term(i,1)[i] = 1.0;
+      sg_p_init->term(i,0)[i] = 0.0;
+      sg_p_init->term(i,1)[i] = 1.0;
     }
     Teuchos::RefCountPtr< Teuchos::Array<std::string> > sg_param_names =
       Teuchos::rcp(new Teuchos::Array<std::string>);
@@ -172,11 +172,18 @@ int main(int argc, char *argv[]) {
       ss << "KL Exponential Function Random Variable " << i;
       sg_param_names->push_back(ss.str());
     }
+
+    // Setup stochastic initial guess
+    Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_x_init = 
+      Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(basis, 
+						       *(app->getMap())));
+    sg_x_init->init(0.0);
     
     // Create application model evaluator
     Teuchos::RCP<EpetraExt::ModelEvaluator> model = 
       Teuchos::rcp(new FEApp::ModelEvaluator(app, free_param_names,
-					     sg_param_names));
+					     sg_param_names, sg_x_init, 
+					     sg_p_init));
     
     // Setup stochastic Galerkin algorithmic parameters
     Teuchos::RCP<Teuchos::ParameterList> sgParams = 
@@ -192,15 +199,10 @@ int main(int argc, char *argv[]) {
     precParams.set("default values", "DD");
 
     // Create stochastic Galerkin model evaluator
-    Teuchos::Array<int> sg_p_index(1);
-    Teuchos::Array<int> sg_g_index(1);
-    sg_p_index[0] = 1;
-    sg_g_index[0] = 0;
     Teuchos::RCP<Stokhos::SGModelEvaluator> sg_model =
       Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, Teuchos::null,
-						 expansion, Cijk, sg_p_index,
-						 sg_g_index, sgParams,
-						 Comm, sg_params));
+						 expansion, Cijk, sgParams,
+						 Comm));
 
     // Create vectors and operators
     Teuchos::RCP<const Epetra_Vector> sg_p = sg_model->get_p_init(0);
@@ -262,18 +264,17 @@ int main(int argc, char *argv[]) {
     std::cout << "\nFinal residual norm = " << norm_f << std::endl;
 
     // Print mean and standard deviation
-    EpetraExt::BlockVector sg_g_block(View, *(model->get_g_map(0)), *sg_g);
-    Stokhos::VectorOrthogPoly<Epetra_Vector> sg_g_vec_poly(
-      basis, Stokhos::EpetraVectorCloner(sg_g_block));
-    Stokhos::OrthogPolyApprox<int,double> sg_g_poly(basis);
-    for (int i=0; i<sz; i++)
-      sg_g_poly[i] = sg_g_vec_poly[i][0];
+    Stokhos::EpetraVectorOrthogPoly sg_g_poly(basis, View, 
+					      *(model->get_g_map(0)), *sg_g);
+    Epetra_Vector mean(*(model->get_g_map(0)));
+    Epetra_Vector std_dev(*(model->get_g_map(0)));
+    sg_g_poly.computeMean(mean);
+    sg_g_poly.computeStandardDeviation(std_dev);
     std::cout << "\nResponse Expansion = " << std::endl;
     std::cout.precision(12);
     sg_g_poly.print(std::cout);
-    std::cout << "\nResponse Mean =      " << sg_g_poly.mean() << std::endl;
-    std::cout << "Response Std. Dev. = " << sg_g_poly.standard_deviation() 
-		<< std::endl;
+    std::cout << "\nResponse Mean =      " << std::endl << mean << std::endl;
+    std::cout << "Response Std. Dev. = " << std::endl << std_dev << std::endl;
 
     if (norm_f < 1.0e-10)
       std::cout << "Test Passed!" << std::endl;
