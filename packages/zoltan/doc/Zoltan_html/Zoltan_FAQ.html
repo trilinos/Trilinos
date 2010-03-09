@@ -285,6 +285,7 @@ invocations?</a>
 <li>  <a href="#MPIRECVLIMIT">During runs (particularly on RedStorm), MPI 
 reports that it is out of resources or too many messages have been posted.
 What does this mean and what can I do?</a>
+<li> <a href="#REALLOCBUG">Realloc fails when there is plenty of memory.  Is this a Zoltan bug?</a>
 </ol>
 <p>
 <hr WIDTH="100%">
@@ -367,6 +368,16 @@ DEFS line of zoltan/src/Utilities/Config/Config.&lt;platform>
 In the <a href="ug_html/ug_usage.html#TrilinosAutotools">Autotool build
 environment</a>, option <i>--enable-mpi-recv-limit=#</i> sets the 
 maximum number of simultaneous receives allowed.  The default value is 2000.
+
+<hr WIDTH="100%">
+<li> <a name="REALLOCBUG"></a>Realloc fails when there is plenty of memory.  Is this a Zoltan bug?
+<p>
+This problem has been noted on different Linux clusters running parallel
+applications using different MPI libraries and C++ libraries.  Realloc fails where
+a malloc call will succeed.  The source of the error has
+not been identified, but it is not a Zoltan bug.  The
+solution is to compile Zoltan with the flag <b>-DREALLOC_BUG</b>.  Zoltan will replace
+every realloc call with malloc followed by a memcpy and a free.
 </ol>
 
 <p>
