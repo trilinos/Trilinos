@@ -1,17 +1,17 @@
 // Teko includes
-#include "Teko_RepeatPreconditionerFactory.hpp"
+#include "Teko_IterativePreconditionerFactory.hpp"
 
 namespace Teko {
 
 //! Default constructor, for use with the AutoClone class.
-RepeatPreconditionerFactory::RepeatPreconditionerFactory()
+IterativePreconditionerFactory::IterativePreconditionerFactory()
    : correctionNum_(0), precFactory_(Teuchos::null)
 { }
 
 /** Construct a preconditioner factory that applies a specified
   * preconditioner, a fixed number of times.
   */
-RepeatPreconditionerFactory::RepeatPreconditionerFactory(unsigned int correctionNum,
+IterativePreconditionerFactory::IterativePreconditionerFactory(unsigned int correctionNum,
                             const Teuchos::RCP<Teko::InverseFactory> & precFactory)
    : correctionNum_(correctionNum), precFactory_(precFactory)
 { }
@@ -19,7 +19,7 @@ RepeatPreconditionerFactory::RepeatPreconditionerFactory(unsigned int correction
 /** Construct a preconditioner factory that applies a specified
   * preconditioner, a fixed number of times.
   */
-RepeatPreconditionerFactory::RepeatPreconditionerFactory(unsigned int correctionNum,
+IterativePreconditionerFactory::IterativePreconditionerFactory(unsigned int correctionNum,
                             const Teuchos::RCP<Teko::PreconditionerFactory> & precFactory)
    : correctionNum_(correctionNum)
 {
@@ -30,10 +30,10 @@ RepeatPreconditionerFactory::RepeatPreconditionerFactory(unsigned int correction
 /** \brief Function that is called to build the preconditioner
   *        for the linear operator that is passed in.
   */
-LinearOp RepeatPreconditionerFactory::buildPreconditionerOperator(LinearOp & lo,PreconditionerState & state) const
+LinearOp IterativePreconditionerFactory::buildPreconditionerOperator(LinearOp & lo,PreconditionerState & state) const
 {
    TEST_FOR_EXCEPTION(precFactory_==Teuchos::null,std::runtime_error,
-                      "ERROR: Teko::RepeatPreconditionerFactory::buildPreconditionerOperator requires that a "
+                      "ERROR: Teko::IterativePreconditionerFactory::buildPreconditionerOperator requires that a "
                    << "preconditioner factory has been set. Currently it is null!");
 
    // build user specified preconditioner
@@ -62,7 +62,7 @@ LinearOp RepeatPreconditionerFactory::buildPreconditionerOperator(LinearOp & lo,
 /** \brief This function builds the internals of the preconditioner factory
   *        from a parameter list.
   */
-void RepeatPreconditionerFactory::initializeFromParameterList(const Teuchos::ParameterList & settings)
+void IterativePreconditionerFactory::initializeFromParameterList(const Teuchos::ParameterList & settings)
 {
 
    correctionNum_ = 1;
@@ -70,7 +70,7 @@ void RepeatPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
       correctionNum_ = settings.get<int>("Iteration Count");
  
    TEST_FOR_EXCEPTION(not settings.isParameter("Preconditioner Type"),std::runtime_error,
-                      "Parameter \"Preconditioner Type\" is required by a Teko::RepeatPreconditionerFactory");
+                      "Parameter \"Preconditioner Type\" is required by a Teko::IterativePreconditionerFactory");
       
    // grab library and preconditioner name
    Teuchos::RCP<const InverseLibrary> il = getInverseLibrary();
@@ -86,10 +86,10 @@ void RepeatPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
 /** \brief Request the additional parameters this preconditioner factory
   *        needs. 
   */
-Teuchos::RCP<Teuchos::ParameterList> RepeatPreconditionerFactory::getRequestedParameters() const
+Teuchos::RCP<Teuchos::ParameterList> IterativePreconditionerFactory::getRequestedParameters() const
 {
    TEST_FOR_EXCEPTION(precFactory_==Teuchos::null,std::runtime_error,
-                      "ERROR: Teko::RepeatPreconditionerFactory::getRequestedParameters requires that a "
+                      "ERROR: Teko::IterativePreconditionerFactory::getRequestedParameters requires that a "
                    << "preconditioner factory has been set. Currently it is null!");
 
    return precFactory_->getRequestedParameters();
@@ -97,10 +97,10 @@ Teuchos::RCP<Teuchos::ParameterList> RepeatPreconditionerFactory::getRequestedPa
 
 /** \brief Update this object with the fields from a parameter list.
   */
-bool RepeatPreconditionerFactory::updateRequestedParameters(const Teuchos::ParameterList & pl)
+bool IterativePreconditionerFactory::updateRequestedParameters(const Teuchos::ParameterList & pl)
 {
    TEST_FOR_EXCEPTION(precFactory_==Teuchos::null,std::runtime_error,
-                      "ERROR: Teko::RepeatPreconditionerFactory::updateRequestedParameters requires that a "
+                      "ERROR: Teko::IterativePreconditionerFactory::updateRequestedParameters requires that a "
                    << "preconditioner factory has been set. Currently it is null!");
 
    return precFactory_->updateRequestedParameters(pl);

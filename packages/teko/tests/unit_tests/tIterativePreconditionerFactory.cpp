@@ -18,7 +18,7 @@
 #include "Teko_Utilities.hpp"
 #include "Teko_InverseLibrary.hpp"
 #include "Teko_InverseFactory.hpp"
-#include "Teko_RepeatPreconditionerFactory.hpp"
+#include "Teko_IterativePreconditionerFactory.hpp"
 
 // Thyra includes
 #include "Thyra_EpetraLinearOp.hpp"
@@ -63,7 +63,7 @@ RCP<Teuchos::ParameterList> buildLibPL(int count,std::string scalingType)
    return pl;
 }
 
-TEUCHOS_UNIT_TEST(tRepeatPreconditionerFactory, parameter_list_init)
+TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, parameter_list_init)
 {
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -79,7 +79,7 @@ TEUCHOS_UNIT_TEST(tRepeatPreconditionerFactory, parameter_list_init)
 
    {
       RCP<Teuchos::ParameterList> pl = buildLibPL(4,"Amesos");
-      RCP<Teko::RepeatPreconditionerFactory> precFact = rcp(new Teko::RepeatPreconditionerFactory());
+      RCP<Teko::IterativePreconditionerFactory> precFact = rcp(new Teko::IterativePreconditionerFactory());
       RCP<Teko::InverseFactory> invFact = rcp(new Teko::PreconditionerInverseFactory(precFact));
 
       try {
@@ -98,7 +98,7 @@ TEUCHOS_UNIT_TEST(tRepeatPreconditionerFactory, parameter_list_init)
       Teuchos::ParameterList pl;
       pl.set("Preconditioner Type","Amesos");
 
-      RCP<Teko::RepeatPreconditionerFactory> precFact = rcp(new Teko::RepeatPreconditionerFactory());
+      RCP<Teko::IterativePreconditionerFactory> precFact = rcp(new Teko::IterativePreconditionerFactory());
       RCP<Teko::InverseFactory> invFact = rcp(new Teko::PreconditionerInverseFactory(precFact));
 
       try {
@@ -117,7 +117,7 @@ TEUCHOS_UNIT_TEST(tRepeatPreconditionerFactory, parameter_list_init)
       pl.set("Iteration Count",4);
       pl.set("Precondiioner Type","Amesos");
 
-      RCP<Teko::RepeatPreconditionerFactory> precFact = rcp(new Teko::RepeatPreconditionerFactory());
+      RCP<Teko::IterativePreconditionerFactory> precFact = rcp(new Teko::IterativePreconditionerFactory());
 
       try {
          precFact->initializeFromParameterList(pl);
@@ -134,7 +134,41 @@ TEUCHOS_UNIT_TEST(tRepeatPreconditionerFactory, parameter_list_init)
    }
 }
 
-TEUCHOS_UNIT_TEST(tRepeatPreconditionerFactory, constructor_test)
+TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, inverse_test)
+{
+   // build global (or serial communicator)
+   #ifdef HAVE_MPI
+      Epetra_MpiComm Comm(MPI_COMM_WORLD);
+   #else
+      Epetra_SerialComm Comm;
+   #endif
+
+   Teko::LinearOp  A = build2x2(Comm,1,2,3,4);
+   RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos();
+   RCP<Teko::InverseFactory> invFact = invLib->getInverseFactory("Amesos");
+   Teko::LinearOp iP = Teko::buildInverse(*invFact,A);
+
+   Thyra::LinearOpTester<double> tester;
+   tester.show_all_tests(true);
+
+   {
+      RCP<Teko::InverseFactory> precOpFact = rcp(new Teko::StaticOpInverseFactory(iP));
+      RCP<Teko::IterativePreconditionerFactory> precFact = rcp(new Teko::IterativePreconditionerFactory(9,precOpFact));
+      RCP<Teko::InverseFactory> invFact = rcp(new Teko::PreconditionerInverseFactory(precFact));
+
+      Teko::LinearOp prec = Teko::buildInverse(*invFact,A);
+
+      const bool result = tester.compare( *prec, *iP, &out);
+      if (!result) {
+         out << "Apply 0: FAILURE" << std::endl;
+         success = false;
+      }
+      else
+         out << "Apply 0: SUCCESS" << std::endl;
+   }
+}
+
+TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, constructor_test)
 {
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -153,7 +187,7 @@ TEUCHOS_UNIT_TEST(tRepeatPreconditionerFactory, constructor_test)
 
    {
       RCP<Teko::InverseFactory> precOpFact = rcp(new Teko::StaticOpInverseFactory(iP));
-      RCP<Teko::RepeatPreconditionerFactory> precFact = rcp(new Teko::RepeatPreconditionerFactory(0,precOpFact));
+      RCP<Teko::IterativePreconditionerFactory> precFact = rcp(new Teko::IterativePreconditionerFactory(0,precOpFact));
       RCP<Teko::InverseFactory> invFact = rcp(new Teko::PreconditionerInverseFactory(precFact));
 
       Teko::LinearOp prec = Teko::buildInverse(*invFact,A);
@@ -171,7 +205,7 @@ TEUCHOS_UNIT_TEST(tRepeatPreconditionerFactory, constructor_test)
       using Teko::multiply;
 
       RCP<Teko::InverseFactory> precOpFact = rcp(new Teko::StaticOpInverseFactory(iP));
-      RCP<Teko::RepeatPreconditionerFactory> precFact = rcp(new Teko::RepeatPreconditionerFactory(2,precOpFact));
+      RCP<Teko::IterativePreconditionerFactory> precFact = rcp(new Teko::IterativePreconditionerFactory(2,precOpFact));
       RCP<Teko::InverseFactory> invFact = rcp(new Teko::PreconditionerInverseFactory(precFact));
 
       Teko::LinearOp prec = Teko::buildInverse(*invFact,A);

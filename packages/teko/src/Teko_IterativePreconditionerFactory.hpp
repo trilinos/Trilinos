@@ -1,5 +1,5 @@
-#ifndef __Teko_RepeatPreconditionerFactory_hpp__
-#define __Teko_RepeatPreconditionerFactory_hpp__
+#ifndef __Teko_IterativePreconditionerFactory_hpp__
+#define __Teko_IterativePreconditionerFactory_hpp__
 
 // Teko includes
 #include "Teko_PreconditionerFactory.hpp"
@@ -38,11 +38,11 @@ namespace Teko {
   * constructs \f$P^{-1}\f$, and then applies it, as outlined above,
   * a user specified number of times.
   */
-class RepeatPreconditionerFactory 
+class IterativePreconditionerFactory 
    : public virtual Teko::PreconditionerFactory {
 public:
    //! Default constructor, for use with the AutoClone class.
-   RepeatPreconditionerFactory();
+   IterativePreconditionerFactory();
 
    /** Construct a preconditioner factory that applies a specified
      * preconditioner, a fixed number of times.
@@ -54,7 +54,7 @@ public:
      *                          is returned.
      * \param[in] precFactory Factory used to construct the preconditioner
      */
-   RepeatPreconditionerFactory(unsigned int correctionNum,
+   IterativePreconditionerFactory(unsigned int correctionNum,
                                const Teuchos::RCP<Teko::InverseFactory> & precFactory);
 
    /** Construct a preconditioner factory that applies a specified
@@ -67,7 +67,7 @@ public:
      *                          is returned.
      * \param[in] precFactory Factory used to construct the preconditioner
      */
-   RepeatPreconditionerFactory(unsigned int correctionNum,
+   IterativePreconditionerFactory(unsigned int correctionNum,
                                const Teuchos::RCP<Teko::PreconditionerFactory> & precFactory);
 
 

@@ -57,9 +57,9 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(testdriver_copyfiles
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  RepeatPreconditionerFactory_test
+  IterativePreconditionerFactory_test
   SOURCES
-    unit_tests/tRepeatPreconditionerFactory.cpp
+    unit_tests/tIterativePreconditionerFactory.cpp
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
