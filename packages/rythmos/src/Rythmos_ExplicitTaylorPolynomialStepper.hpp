@@ -716,17 +716,17 @@ void ExplicitTaylorPolynomialStepper<Scalar>::describe(
   if (verbLevel == Teuchos::VERB_EXTREME) {
     out << description() << "::describe" << std::endl;
     out << "model_ = " << std::endl;
-    out << model_->describe(out,verbLevel) << std::endl;
+    out << Teuchos::describe(*model_, verbLevel) << std::endl;
     out << "x_vector_ = " << std::endl;
-    out << x_vector_->describe(out,verbLevel) << std::endl;
+    out << Teuchos::describe(*x_vector_, verbLevel) << std::endl;
     out << "x_dot_vector_ = " << std::endl;
-    out << x_dot_vector_->describe(out,verbLevel) << std::endl;
+    out << Teuchos::describe(*x_dot_vector_, verbLevel) << std::endl;
     out << "f_vector_ = " << std::endl;
-    out << f_vector_->describe(out,verbLevel) << std::endl;
+    out << Teuchos::describe(*f_vector_, verbLevel) << std::endl;
     out << "x_poly_ = " << std::endl;
-    out << x_poly_->describe(out,verbLevel) << std::endl;
+    out << Teuchos::describe(*x_poly_, verbLevel) << std::endl;
     out << "f_poly_ = " << std::endl;
-    out << f_poly_->describe(out,verbLevel) << std::endl;
+    out << Teuchos::describe(*f_poly_, verbLevel) << std::endl;
     out << "t_ = " << t_ << std::endl;
     out << "t_initial_ = " << t_initial_ << std::endl;
     out << "t_final_ = " << t_final_ << std::endl;
@@ -736,7 +736,6 @@ void ExplicitTaylorPolynomialStepper<Scalar>::describe(
     out << "degree_ = " << degree_ << std::endl;
     out << "linc_ = " << linc_ << std::endl;
   }
-  return(out);
 }
 
 
