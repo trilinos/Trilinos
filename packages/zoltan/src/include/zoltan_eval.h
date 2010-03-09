@@ -47,8 +47,6 @@ struct _eval_hg_struct{
 typedef struct _eval_hg_struct ZOLTAN_HG_EVAL;
 
 struct _eval_graph_struct{
-  float cutl[EVAL_SIZE];        /* HG ConCut measure */
-  float cutn[EVAL_SIZE];        /* HG NetCut measure */
   float cuts[EVAL_SIZE];        /* The number of cut edges */
   float cut_wgt[EVAL_SIZE]  ;   /* The sum of the weights of the cut edges */
   float nnborparts[EVAL_SIZE];  /* The number of neighboring partitions */

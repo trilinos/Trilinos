@@ -250,7 +250,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
 
   float *vwgts=NULL, *ewgts=NULL, *wgt=NULL;
   float *globalVals = NULL;
-  float *cutn=NULL, *cutl=NULL, *cut_wgt=NULL;
+  float *cut_wgt=NULL;
   float *part_sizes = NULL;
 
   int partPair[2], dummyValue[2];
@@ -438,11 +438,9 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
 
   cuts = (int *)ZOLTAN_CALLOC(nparts, sizeof(int));
   num_boundary = (int *)ZOLTAN_CALLOC(nparts, sizeof(int));
-  cutn = (float *)ZOLTAN_CALLOC(nparts, sizeof(float));
-  cutl = (float *)ZOLTAN_CALLOC(nparts, sizeof(float));
   part_check = (int *) ZOLTAN_CALLOC(nparts, sizeof(int));
 
-  if (nparts && (!cuts || !cutn || !cutl || !num_boundary || !part_check)){
+  if (nparts && (!cuts || !num_boundary || !part_check)){
     ierr = ZOLTAN_MEMERR;
     goto End;
   }
@@ -508,16 +506,6 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
     } /* next neighbor */
 
     if (nother_parts){
-      /*
-       * hypergraph ConCut measure - hyperedge is vertex and all it's neighbors
-       */
-      cutl[obj_part] += (obj_edge_weights * nother_parts);
-
-      /*
-       * hypergraph NetCut measure
-       */
-      cutn[obj_part] += obj_edge_weights;
-
       /*
        * for each part, the number of objects with a neighbor outside
        * the part
@@ -652,37 +640,6 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
                graph->nnborparts + EVAL_GLOBAL_SUM);
 
   graph->nnborparts[EVAL_GLOBAL_AVG] = graph->nnborparts[EVAL_GLOBAL_SUM] / nparts;
-
-  /*
-   * CUTN - NetCut
-   */
-
-
-  MPI_Allreduce(cutn, globalVals, nparts, MPI_FLOAT, MPI_SUM, comm);
-
-  ZOLTAN_FREE(&cutn);
-
-  fget_strided_stats(globalVals, 1, 0, nparts,
-               graph->cutn + EVAL_GLOBAL_MIN,
-               graph->cutn + EVAL_GLOBAL_MAX,
-               graph->cutn + EVAL_GLOBAL_SUM);
-
-  graph->cutn[EVAL_GLOBAL_AVG] = graph->cutn[EVAL_GLOBAL_SUM] / nparts;
-
-  /*
-   * CUTL - Connectivity Cut
-   */
-
-  MPI_Allreduce(cutl, globalVals, nparts, MPI_FLOAT, MPI_SUM, comm);
-
-  ZOLTAN_FREE(&cutl);
-
-  fget_strided_stats(globalVals, 1, 0, nparts,
-               graph->cutl + EVAL_GLOBAL_MIN,
-               graph->cutl + EVAL_GLOBAL_MAX,
-               graph->cutl + EVAL_GLOBAL_SUM);
-
-  graph->cutl[EVAL_GLOBAL_AVG] = graph->cutl[EVAL_GLOBAL_SUM] / nparts;
 
   /*
    * CUTS - Number of cut edges in each part
@@ -844,13 +801,6 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
       graph->nnborparts[EVAL_GLOBAL_MIN], graph->nnborparts[EVAL_GLOBAL_MAX], 
       graph->nnborparts[EVAL_GLOBAL_AVG], graph->nnborparts[EVAL_GLOBAL_SUM]);
 
-    printf("\n");
-
-    printf("%s  CUTN (Sum_over_edges( (nparts>1)*ewgt )): %8.3f\n", yo, 
-           graph->cutn[EVAL_GLOBAL_SUM]);
-    printf("%s  CUTL (Sum_over_edges( (nparts-1)*ewgt )): %8.3f\n", yo, 
-           graph->cutl[EVAL_GLOBAL_SUM]);
-    
     printf("\n\n");
   }
 
@@ -874,8 +824,6 @@ End:
   ZOLTAN_FREE(&nbors_part);
   ZOLTAN_FREE(&num_boundary);
   ZOLTAN_FREE(&cut_wgt);
-  ZOLTAN_FREE(&cutn);
-  ZOLTAN_FREE(&cutl);
   ZOLTAN_FREE(&cuts);
   ZOLTAN_FREE(&partCount);
   ZOLTAN_FREE(&part_check);
@@ -1803,14 +1751,6 @@ void Zoltan_LB_Eval_Print_Graph(ZOLTAN_GRAPH_EVAL *graph)
   printf("# bdry vtxs %11.4f %11.4f %11.4f %11.4f %11.4f\n",
     graph->num_boundary[EVAL_GLOBAL_MIN], graph->num_boundary[EVAL_GLOBAL_MAX], graph->num_boundary[EVAL_GLOBAL_AVG],
     graph->num_boundary[EVAL_GLOBAL_SUM], graph->num_boundary[EVAL_LOCAL_SUM]);
-
-  printf(" cutn       %11.4f %11.4f %11.4f %11.4f\n",
-    graph->cutn[EVAL_GLOBAL_MIN], graph->cutn[EVAL_GLOBAL_MAX], graph->cutn[EVAL_GLOBAL_AVG],
-    graph->cutn[EVAL_GLOBAL_SUM]);
-
-  printf(" cutl       %11.4f %11.4f %11.4f %11.4f\n",
-    graph->cutl[EVAL_GLOBAL_MIN], graph->cutl[EVAL_GLOBAL_MAX], graph->cutl[EVAL_GLOBAL_AVG],
-    graph->cutl[EVAL_GLOBAL_SUM]);
 
   printf(" cuts       %11.4f %11.4f %11.4f %11.4f\n",
     graph->cuts[EVAL_GLOBAL_MIN], graph->cuts[EVAL_GLOBAL_MAX], graph->cuts[EVAL_GLOBAL_AVG],
