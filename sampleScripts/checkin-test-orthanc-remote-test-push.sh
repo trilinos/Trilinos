@@ -43,7 +43,6 @@ echo "
 --ctest-options=\"-j1\" \
 --ctest-timeout=180 \
 --commit-msg-header-file=checkin_message \
---extra-pull-from=zan:master \
 --do-all \
 $EXTRA_ARGS
 
