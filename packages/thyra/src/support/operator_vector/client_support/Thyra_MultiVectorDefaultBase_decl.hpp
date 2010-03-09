@@ -60,11 +60,6 @@ class MultiVectorDefaultBase
 {
 public:
 
-#ifdef THYRA_INJECT_USING_DECLARATIONS
-  using MultiVectorBase<Scalar>::apply;
-  using LinearOpDefaultBase<Scalar>::apply;
-#endif
-
   /** \name Overridden public member functions from MultiVectorBase */
   //@{
 
