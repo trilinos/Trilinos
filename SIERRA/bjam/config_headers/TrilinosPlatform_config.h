@@ -136,4 +136,7 @@ specific items to form TrilinosPlatform_config.h
 
 #if defined(__sun) 
 #  define THYRA_INJECT_USING_DECLARATIONS
+#  define HAVE_RTOP_EXPLICIT_INSTANTIATION
+#  define HAVE_THYRA_EXPLICIT_INSTANTIATION
+/* #  define HAVE_RYTHMOS_EXPLICIT_INSTANTIATION */
 #endif
