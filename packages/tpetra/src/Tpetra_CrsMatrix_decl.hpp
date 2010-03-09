@@ -451,6 +451,7 @@ namespace Tpetra {
       bool valuesAreAllocated_,
            staticGraph_,
            constructedWithFilledGraph_,
+           constructedWithOptimizedGraph_,
            fillComplete_,
            storageOptimized_;
 

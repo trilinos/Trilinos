@@ -79,8 +79,8 @@ namespace Tpetra {
   , valuesAreAllocated_(false)
   , staticGraph_(false)
   , constructedWithFilledGraph_(false)
+  , constructedWithOptimizedGraph_(false)
   , fillComplete_(false)
-  , storageOptimized_(false) 
   {
     try {
       graph_ = Teuchos::rcp( new CrsGraph<LocalOrdinal,GlobalOrdinal,Node>(rowMap,maxNumEntriesPerRow,pftype) );
@@ -109,8 +109,8 @@ namespace Tpetra {
   , valuesAreAllocated_(false)
   , staticGraph_(false)
   , constructedWithFilledGraph_(false)
-  , fillComplete_(false)
-  , storageOptimized_(false) {
+  , constructedWithOptimizedGraph_(false)
+  , fillComplete_(false) {
     try {
       graph_ = Teuchos::rcp( new CrsGraph<LocalOrdinal,GlobalOrdinal,Node>(rowMap,NumEntriesPerRowToAlloc,pftype) );
     }
@@ -139,8 +139,8 @@ namespace Tpetra {
   , valuesAreAllocated_(false)
   , staticGraph_(false)
   , constructedWithFilledGraph_(false)
-  , fillComplete_(false)
-  , storageOptimized_(false) {
+  , constructedWithOptimizedGraph_(false)
+  , fillComplete_(false) {
     try {
       graph_ = Teuchos::rcp( new CrsGraph<LocalOrdinal,GlobalOrdinal,Node>(rowMap,colMap,maxNumEntriesPerRow,pftype) );
     }
@@ -169,8 +169,8 @@ namespace Tpetra {
   , valuesAreAllocated_(false)
   , staticGraph_(false)
   , constructedWithFilledGraph_(false)
-  , fillComplete_(false)
-  , storageOptimized_(false) {
+  , constructedWithOptimizedGraph_(false)
+  , fillComplete_(false) {
     try {
       graph_ = Teuchos::rcp( new CrsGraph<LocalOrdinal,GlobalOrdinal,Node>(rowMap,NumEntriesPerRowToAlloc,pftype) );
     }
@@ -195,19 +195,23 @@ namespace Tpetra {
   , lclMatSolve_(graph->getNode())
   , valuesAreAllocated_(false)
   , staticGraph_(true)
-  , fillComplete_(graph->isFillComplete())
-  , storageOptimized_(graph->isStorageOptimized()) {
+  , fillComplete_(false) {
     TEST_FOR_EXCEPTION(graph_ == Teuchos::null, std::runtime_error,
         Teuchos::typeName(*this) << "::CrsMatrix(graph): specified pointer is null.");
     // we won't prohibit the case where the graph is not yet filled, but we will check below to ensure that the
     // graph isn't filled between now and when fillComplete() is called on this matrix.
     // the user is not allowed to modify the graph. this check is about the most that we can do to check whether they have.
+    // similarly for optimized storage
     constructedWithFilledGraph_ = graph_->isFillComplete();
+    constructedWithOptimizedGraph_ = graph_->isStorageOptimized();
 
     // it is okay to create this now; this will prevent us from having to check for it on every call to apply()
     // we will use a non-owning rcp to wrap *this; this is safe as long as we do not shared sameScalarMultiplyOp_ with anyone, 
     // which would allow it to persist past the destruction of *this
     sameScalarMultiplyOp_ = createCrsMatrixMultiplyOp<Scalar>( rcp(this,false).getConst() );
+
+    // the graph has entries, and the matrix should have entries as well, set to zero. no need or point in lazy allocating in this case.
+    allocateValues( Teuchos::ScalarTraits<Scalar>::zero() );
 
     checkInternalState();
   }
@@ -246,7 +250,7 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
   bool CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::isStorageOptimized() const {
-    return storageOptimized_; 
+    return graph_->isStorageOptimized();
   }
 
 
@@ -517,17 +521,15 @@ namespace Tpetra {
     // always remains in a valid state
 
     // constructedWithFilledGraph_ should only be true if matrix was constructed with a graph, in which case staticGraph_ should be true
+    // similarly for optimized storage
     TEST_FOR_EXCEPTION( staticGraph_ == false && constructedWithFilledGraph_ == true,                  std::logic_error, err ); 
+    TEST_FOR_EXCEPTION( staticGraph_ == false && constructedWithOptimizedGraph_ == true,               std::logic_error, err ); 
     // matrix values cannot be allocated without the graph indices being allocated
     TEST_FOR_EXCEPTION( valuesAreAllocated_ == true && graph_->indicesAreAllocated() == false,         std::logic_error, err );
     // if matrix is fill complete, then graph must be fill complete
     TEST_FOR_EXCEPTION( fillComplete_ == true && graph_->isFillComplete() == false,                    std::logic_error, err );
-    // if matrix is storage optimized, then graph must be storage optimizied
-    TEST_FOR_EXCEPTION( storageOptimized_   != graph_->isStorageOptimized(),                           std::logic_error, err );
-    // if matrix is storage optimized, it must have been fill completed
-    TEST_FOR_EXCEPTION( storageOptimized_ == true && fillComplete_ == false,                           std::logic_error, err );
     // if matrix is storage optimized, it should have a 1D allocation 
-    TEST_FOR_EXCEPTION( storageOptimized_ == true && pbuf_values2D_ != Teuchos::null,                  std::logic_error, err );
+    TEST_FOR_EXCEPTION( isStorageOptimized() == true && pbuf_values2D_ != Teuchos::null,               std::logic_error, err );
     // if values are not allocated, then views should be null
     TEST_FOR_EXCEPTION( valuesAreAllocated_ == false && (view_values1D_ != null || view_values2D_ != null), std::logic_error, err );
     // no view should be present in the absence of a buffer
@@ -708,7 +710,7 @@ namespace Tpetra {
         Teuchos::typeName(*this) << "::fillLocalMatrix(): Internal logic error. Please contact Tpetra team.");
 #endif
     lclMatrix_.clear();
-    if (storageOptimized_) {
+    if (isStorageOptimized()) {
       // fill packed matrix; it is okay for pbuf_values1D_ to be null; the matrix will flag itself as empty
       lclMatrix_.setPackedValues(pbuf_values1D_);
     }
@@ -1642,37 +1644,47 @@ namespace Tpetra {
           Teuchos::typeName(*this) << "::fillComplete(): cannot have non-local entries on a serial run. Invalid entry was submitted to the CrsMatrix.");
     }
 
-    if (graph_->isFillComplete()) {
-      // if the graph is filled, it should be because 
-      // - it was given at construction, already filled
-      // - it was filled on a previous call to fillComplete()
-      // if neither, it means that the graph has been filled by the user.
-      // this means that a graph passed at construction has been filled in the interim.
-      // in this case, indices have been sorted and merged, so that we are no longer able
-      // to sort or merge the associated values. nothing we can do here.
-      if ((constructedWithFilledGraph_ || isFillComplete()) == false) {
+    // if the matrix was constructed with an unfilled graph, it must not have been filled in the interim. 
+    // similarly for optimized storage. this has likely wrecked the fragile dance between graph and matrix.
+    if (isStaticGraph()) {
+      if (constructedWithFilledGraph_ == false && graph_->isFillComplete() == true) {
         TPETRA_ABUSE_WARNING(true,std::runtime_error,
             "::fillComplete(): fillComplete() has been called on graph since matrix was constructed.");
         return;
       }
+      if (constructedWithOptimizedGraph_ == false && graph_->isStorageOptimized() == true) {
+        TPETRA_ABUSE_WARNING(true,std::runtime_error,
+            "::fillComplete(): optimizeStorage() has been called on graph since matrix was constructed.");
+        return;
+      }
+    }
+
+    // if we're not allowed to change a static graph, then we can't call optimizeStorage() on it.
+    // then we can't call fillComplete() on the matrix with DoOptimizeStorage
+    // throw a warning. this is an unfortunate late evaluation; however, we couldn't know when we received the graph that the user would try to 
+    // optimize the storage later on.
+    if (os == DoOptimizeStorage && isStaticGraph() && graph_->isStorageOptimized() == false) {
+      TPETRA_ABUSE_WARNING(true,std::runtime_error,
+          "::fillComplete(): requested optimized storage, but static graph does not have optimized storage. Ignoring request to optimize storage.");
+      os = DoNotOptimizeStorage;
     }
 
     if (isStaticGraph() == false) {
       graph_->makeIndicesLocal(domainMap,rangeMap);
-    }
-    sortEntries();
-    mergeRedundantEntries();
-    if (isStaticGraph() == false) {
-      // can't optimize graph storage before optimizing our storage
+      sortEntries();
+      mergeRedundantEntries();
+      // can't optimize graph storage before optimizing our storage; therefore, do not optimize storage yet.
       graph_->fillComplete(domainMap,rangeMap,DoNotOptimizeStorage);
     }
 
     fillComplete_ = true;
 
-    if (os == DoOptimizeStorage) {
+    if (os == DoOptimizeStorage && isStorageOptimized() == false) {
       // this will also:
       // * call optimizeStorage() on the graph as well, if isStaticGraph() == false
-      // * fill the local graph and local matrix
+      //   this will call fillLocalGraph() on the graph
+      // * call fillLocalMatrix()
+      //   this will initialize the local mat-vec and (if appropriate) the local solve
       optimizeStorage();
     }
     else { 
@@ -1765,10 +1777,11 @@ namespace Tpetra {
     std::string err = Teuchos::typeName(*this) + "::optimizeStorage(): Internal logic error. Please contact Tpetra team.";
 #endif
     if (isStorageOptimized() == true) return;
+    // if storage is not optimized and we have a static graph, we will not be able to optimize the storage. throw an exception.
+    TEST_FOR_EXCEPTION( isStaticGraph(), std::logic_error, 
+        Teuchos::typeName(*this) << "::optimizeStorage(): Cannot optimize storage with a static graph. Possible internal logic error. Please contact Tpetra team.");
     TEST_FOR_EXCEPTION(isFillComplete() == false || graph_->isSorted() == false || graph_->notRedundant() == false, std::runtime_error,
         Teuchos::typeName(*this) << "::optimizeStorage(): fillComplete() must be called before optimizeStorage().");
-    TEST_FOR_EXCEPTION(graph_->isStorageOptimized(), std::logic_error,
-        Teuchos::typeName(*this) << "::optimizeStorage(): optimizeStorage() already called on graph, but not on matrix.");
     // 
     Teuchos::RCP<Node> node = lclMatrix_.getNode();
     const size_t       nlrs = getNodeNumRows(),
@@ -1841,11 +1854,9 @@ namespace Tpetra {
         }
       }
     }
-    storageOptimized_ = true;
 
-    if (isStaticGraph() == false) {
-      graph_->optimizeStorage();
-    }
+    // now we can optimize the graph storage; this process is symmetric w.r.t. the process undertaken in the matrix
+    graph_->optimizeStorage();
 
     // local graph was filled during graph_->optimizeStorage()
     fillLocalMatrix(); 
