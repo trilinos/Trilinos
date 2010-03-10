@@ -5528,6 +5528,7 @@ echo "${ECHO_T}no" >&6; }
 fi
 
 
+CXXFLAGS="-DMPICH_IGNORE_CXX_SEEK  ${CXXFLAGS}"
 #fi
 
 { echo "$as_me:$LINENO: checking whether additional CFLAGS flags should be added" >&5
@@ -6266,32 +6267,6 @@ else
 fi
 
 
-
-# Check whether --with-parmetis was given.
-if test "${with_parmetis+set}" = set; then
-  withval=$with_parmetis; ac_cv_use_parmetis=$withval
-else
-  ac_cv_use_parmetis=no
-fi
-
-
-{ echo "$as_me:$LINENO: checking whether to use parmetis" >&5
-echo $ECHO_N "checking whether to use parmetis... $ECHO_C" >&6; }
-
-if test "X$ac_cv_use_parmetis" != "Xno"; then
-  { echo "$as_me:$LINENO: result: yes" >&5
-echo "${ECHO_T}yes" >&6; }
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_PARMETIS
-_ACEOF
-
-else
-  { echo "$as_me:$LINENO: result: no" >&5
-echo "${ECHO_T}no" >&6; }
-fi
-
-     SUMMARY:  adding a new m4 file in config to find the mpi compilers,
  if test "X$ac_cv_use_parmetis" != "Xno"; then
   BUILD_PARMETIS_TRUE=
   BUILD_PARMETIS_FALSE='#'

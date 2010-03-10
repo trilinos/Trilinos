@@ -155,6 +155,7 @@ AC_PROG_RANLIB
 TAC_ARG_WITH_FLAGS(ccflags, CCFLAGS)
 #if test "X$ac_cv_use_zoltan_cppdriver" = "Xyes"; then
 TAC_ARG_WITH_FLAGS(cxxflags, CXXFLAGS)
+CXXFLAGS="-DMPICH_IGNORE_CXX_SEEK  ${CXXFLAGS}"
 #fi
 TAC_ARG_WITH_FLAGS(cflags, CFLAGS)
 TAC_ARG_WITH_FLAGS(fcflags, FCFLAGS)
