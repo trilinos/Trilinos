@@ -399,6 +399,10 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   # Do the tests or not (Note: must be true for coverage testing)
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_TEST TRUE )
 
+  # Maximum number of procs an mpi test can request (if more are requested,
+  # the test will be skipped) 
+  SET_DEFAULT_AND_FROM_ENV( CTEST_MPI_EXEC_MAX_NUMPROCS 4 )
+
   # How many tests ctest will spawn simultaneously
   SET_DEFAULT_AND_FROM_ENV( CTEST_PARALLEL_LEVEL 1 )
 
@@ -692,6 +696,10 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
     IF (Trilinos_ENABLE_SECONDARY_STABLE_CODE)
       LIST(APPEND CONFIGURE_OPTIONS
         "-DTrilinos_ENABLE_SECONDARY_STABLE_CODE:BOOL=ON")
+    ENDIF()
+    IF (CTEST_MPI_EXEC_MAX_NUMPROCS)
+      LIST(APPEND CONFIGURE_OPTIONS
+        "-DMPI_EXEC_MAX_NUMPROCS:STRING=${CTEST_MPI_EXEC_MAX_NUMPROCS}")
     ENDIF()
     IF (CTEST_DO_COVERAGE_TESTING)
       LIST(APPEND CONFIGURE_OPTIONS
