@@ -90,7 +90,7 @@ public:
       In that case, the range map is set to equal the row map. 
       The domain map will equal the range map, unless the
       input_graph has different domain and range maps, in which case
-      the range map is preserved.  By default callFillComplete is @c true.
+      the original domain map is preserved.  By default callFillComplete is @c true.
 
       \return a reference counted pointer to the new redistributed graph 
   */
@@ -108,7 +108,7 @@ public:
       In that case, the range map is set to equal the row map. 
       The domain map will equal the range map, unless the
       input_matrix has different domain and range maps, in which case
-      the range map is preserved.  By default callFillComplete is @c true.
+      the original domain map is preserved.  By default callFillComplete is @c true.
 
       \return a reference counted pointer to the new redistributed matrix
   */
@@ -126,7 +126,7 @@ public:
       In that case, the range map is set to equal the row map. 
       The domain map will equal the range map, unless the
       input_matrix has different domain and range maps, in which case
-      the range map is preserved.  By default callFillComplete is @c true.
+      the original domain map is preserved.  By default callFillComplete is @c true.
 
       \return a reference counted pointer to the new redistributed matrix
   */
