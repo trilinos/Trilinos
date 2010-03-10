@@ -255,14 +255,16 @@ Library::~Library()
 
 int Library::precompute()
 {
-  std::string str1("Isorropia::Epetra::Operator::precompute ");
+  std::string str1("Isorropia::Epetra::Library::precompute ");
   std::string str2;
 
   int inputCount = ((input_graph_.get() == 0) ? 0 : 1);
   inputCount += ((input_matrix_.get() == 0) ? 0 : 1);
   inputCount += ((input_coords_.get() == 0) ? 0 : 1);
+  inputCount += ((input_map_.get() == 0) ? 0 : 1);
 
-  if (inputCount != 1){
+  if (inputCount < 1)
+  {
     str2 = "ERROR: not holding valid input.";
     throw Isorropia::Exception(str1+str2);
   }
