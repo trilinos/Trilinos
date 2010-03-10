@@ -71,7 +71,6 @@ typedef struct Zoltan_matrix_ {
   int           redist;        /* HG queries have been used or matrix distribution has changed*/
   int           completed;     /* Matrix is ready to be specialized in HG or G */
   int           globalX;       /* Overall number on X dimension */
-  int           nX;
   int           globalY;       /* Overall number on Y dimension */
   int           offsetY;       /* Used for bipartite graph: GNO >= offsetY are edges */
   int           nY;            /* Local number in Y dimension */
@@ -95,14 +94,6 @@ typedef struct Zoltan_matrix_ {
 
   int          *xpid;
   int          *xoffset;
-
-  ZOLTAN_COMM_OBJ *planX;
-  int          xNSend;
-  int          *xsend;
-  ZOLTAN_COMM_OBJ *planY;
-  int          yNSend;
-  int          *ysend;
-
 /*   struct Zoltan_DD_Struct *ddX; /\* Map xGNO -> xGID, xwgt, Input_Parts *\/ */
 /*   struct Zoltan_DD_Struct *ddY; /\* Map yGNO -> yGID, ywgt *\/ */
 
@@ -229,15 +220,8 @@ Zoltan_Matrix_Construct_CSR(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
 int
 Zoltan_Matrix_Complete(ZZ* zz, Zoltan_matrix* m);
 
-/* Project obj informations from the original (queries) distribution to the actual matrix */
-int
-Zoltan_Matrix_Project_Forward(ZZ *zz, Zoltan_matrix_2d *m, char* inputX, char* inputY, int elemsize,
-			      char *outputX, char *outputY);
-
-int
-Zoltan_Matrix_Project_Backward(ZZ *zz, Zoltan_matrix_2d *m, char* infoX, char* infoY, int elemsize,
-			       char *outputX, char *outputY);
-
+/* Return an array of locally owned GID */
+ZOLTAN_ID_PTR Zoltan_Matrix_Get_GID(ZZ* zz, Zoltan_matrix* m);
 
 
 /* This code is used to fill the adjproc array which is used in some
