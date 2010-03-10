@@ -291,7 +291,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
 #endif
   M1_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*M1_Matrix_,M1_Matrix_Trans_,"M1",(verbose_&&!Comm_->MyPID())));
   M0inv_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*M0inv_Matrix_,M0inv_Matrix_Trans_,"M0inv",(verbose_&&!Comm_->MyPID())));
-  TMT_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*TMT_Matrix_,TMT_Matrix_Trans_,"TMT",(verbose_&&!Comm_->MyPID())));
+  if(TMT_Matrix_) TMT_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*TMT_Matrix_,TMT_Matrix_Trans_,"TMT",(verbose_&&!Comm_->MyPID()))); 
   TMT_Agg_Matrix_ = dynamic_cast<Epetra_CrsMatrix*>(ModifyEpetraMatrixColMap(*TMT_Agg_Matrix_,TMT_Agg_Matrix_Trans_,"TMTA",(verbose_&&!Comm_->MyPID())));
 #endif
 
