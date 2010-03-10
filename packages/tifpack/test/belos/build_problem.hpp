@@ -44,7 +44,7 @@ Teuchos::RCP<Belos::LinearProblem<Scalar,Tpetra::MultiVector<Scalar,LocalOrdinal
   Teuchos::RCP<BLinProb> problem = Teuchos::rcp(new BLinProb(A,x,b));
 
   std::string tifpack_precond("not specified");
-  Tifpack::GetParameter(test_params, "Tifpack::Preconditioner", tifpack_precond);
+  Tifpack::getParameter(test_params, "Tifpack::Preconditioner", tifpack_precond);
   if (tifpack_precond != "not specified") {
     Teuchos::RCP<TOP> precond = build_precond<Scalar,LocalOrdinal,GlobalOrdinal,Node>(test_params, A);
     problem->setLeftPrec(precond);
@@ -74,10 +74,10 @@ Teuchos::RCP<
 
   std::string mm_file("not specified");
   std::string rhs_mm_file("not specified");
-  Tifpack::GetParameter(test_params, "mm_file", mm_file);
-  Tifpack::GetParameter(test_params, "rhs_mm_file", rhs_mm_file);
+  Tifpack::getParameter(test_params, "mm_file", mm_file);
+  Tifpack::getParameter(test_params, "rhs_mm_file", rhs_mm_file);
   std::string hb_file("not specified");
-  Tifpack::GetParameter(test_params, "hb_file", hb_file);
+  Tifpack::getParameter(test_params, "hb_file", hb_file);
 
   if (mm_file != "not specified") {
     if (comm->getRank() == 0) {

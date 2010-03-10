@@ -17,7 +17,7 @@ build_precond(Teuchos::ParameterList& test_params,
   Tifpack::Factory factory;
 
   std::string prec_name("not specified");
-  Tifpack::GetParameter(test_params, "Tifpack::Preconditioner", prec_name);
+  Tifpack::getParameter(test_params, "Tifpack::Preconditioner", prec_name);
   prec = factory.create(prec_name, A);
 
   Teuchos::ParameterList tif_params;

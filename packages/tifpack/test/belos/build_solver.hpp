@@ -23,7 +23,7 @@ build_solver(Teuchos::ParameterList& test_params,
   Teuchos::RCP<Teuchos::ParameterList> rcpparams = Teuchos::rcp(&bparams,false);
 
   std::string solver_type("not specified");
-  Tifpack::GetParameter(test_params, "solver_type", solver_type);
+  Tifpack::getParameter(test_params, "solver_type", solver_type);
   if (solver_type == "PseudoBlockCG") {
     solver = Teuchos::rcp(new Belos::PseudoBlockCGSolMgr<Scalar,MV,OP>(problem,rcpparams));
   }

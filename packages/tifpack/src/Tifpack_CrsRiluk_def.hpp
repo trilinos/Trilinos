@@ -454,7 +454,7 @@ int CrsRiluk<MatrixType>::Multiply(const Tpetra::MultiVector<Scalar,LocalOrdinal
 //
     
   // First generate X and Y as needed for this function
-  Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > X1;
+  Teuchos::RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > X1;
   Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Y1;
   generateXY(mode, X, Y, X1, Y1);
 
