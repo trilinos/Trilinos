@@ -156,6 +156,10 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local)
 #endif
   ierr = Zoltan_Matrix_Complete(zz, &graph->mtx.mtx);
 
+  /* Get informations relative to vertices */
+
+
+
 #ifdef CC_TIMERS
   times[7] = Zoltan_Time(zz->Timer);
 #endif

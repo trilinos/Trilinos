@@ -23,6 +23,9 @@ extern "C" {
 #include "phg.h"
 #include "matrix.h"
 
+
+static int zoltan_matrix_msg_tag = 19570222;
+
 void
 Zoltan_Matrix_Free(Zoltan_matrix *m)
 {
@@ -66,6 +69,11 @@ Zoltan_Matrix_Reset(Zoltan_matrix* m)
   m->pinwgt = NULL;
   m->ywgt = NULL;
   m->yGID = NULL;
+  m->ypid = NULL;
+  m->yoffset = NULL;
+  m->ybipart = NULL;
+  m->xpid = NULL;
+  m->xoffset = NULL;
 }
 
 
@@ -118,21 +126,6 @@ Zoltan_Matrix_Complete(ZZ* zz,Zoltan_matrix* m)
     m->yend = m->ystart + 1;
   }
 
-  /* Update data directories */
-  m->yGID = ZOLTAN_MALLOC_GID_ARRAY(zz, m->nY);
-  m->ywgt = (float*) ZOLTAN_MALLOC(m->nY * sizeof(float) * m->ywgtdim);
-  if (m->nY && (m->yGID == NULL || (m->ywgtdim && m->ywgt == NULL)))
-    MEMORY_ERROR;
-
-  /* Get Informations about Y */
-/*   Zoltan_DD_Find (m->ddY, (ZOLTAN_ID_PTR)m->yGNO, m->yGID, (ZOLTAN_ID_PTR)m->ywgt, NULL, */
-/* 		  m->nY, NULL); */
-
-/*   if (m->ddY != m->ddX) { */
-/*     Zoltan_DD_Destroy(&m->ddY); */
-/*     m->ddY = NULL; */
-/*   } */
-
   m->completed = 1;
  End:
   ZOLTAN_TRACE_EXIT(zz, yo);
@@ -140,21 +133,150 @@ Zoltan_Matrix_Complete(ZZ* zz,Zoltan_matrix* m)
   return (ierr);
 }
 
-/* Return an array of locally owned GID */
-ZOLTAN_ID_PTR Zoltan_Matrix_Get_GID(ZZ* zz, Zoltan_matrix* m)
+
+/* Create necessary data to do projection from user distributed data to zoltan ones
+ */
+static int
+Zoltan_Matrix_Project_Create_Kernel(ZOLTAN_COMM_OBJ **plan, MPI_Comm communicator,
+				    int n, int* inpid, int *inoffset,
+				    int *outsize, int **output)
 {
-  ZOLTAN_ID_PTR yGID;
+  int ierr = ZOLTAN_OK;
 
-  yGID = ZOLTAN_MALLOC_GID_ARRAY(zz, m->nY);
-  if (m->nY && yGID == NULL)
-    return (NULL);
+  zoltan_matrix_msg_tag --;
 
-  /* Get Informations about Y */
-/*   Zoltan_DD_Find (m->ddY, (ZOLTAN_ID_PTR)m->yGNO, yGID, NULL, NULL, */
-/* 		  m->nY, NULL); */
+  ierr = Zoltan_Comm_Create(plan, n, inpid, communicator, zoltan_matrix_msg_tag, outsize);
+  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
+    return ierr;
 
-  return (yGID);
+  *output = (int*)ZOLTAN_MALLOC((*outsize)*sizeof(int));
+  if ((*outsize) > 0 && (*output) == NULL) return ZOLTAN_MEMERR;
+
+  ierr = Zoltan_Comm_Do(*plan, zoltan_matrix_msg_tag, (char *) inoffset, sizeof(int),
+		 (char *) (*output));
+  return (ierr);
 }
+
+
+int
+Zoltan_Matrix_Project_Create(ZZ* zz, Zoltan_matrix* m)
+{
+  int ierr = ZOLTAN_OK;
+/* Build comm_plan to be able to import/export objs informations */
+  ierr = Zoltan_Matrix_Project_Create_Kernel(&m->planX, zz->Communicator,
+				      m->nX, m->xpid, m->xoffset,
+				      &m->xNSend, &m->xsend);
+  if (m->ypid != m->xpid) {
+    /* Do specific plan */
+    ierr = Zoltan_Matrix_Project_Create_Kernel(&m->planY, zz->Communicator,
+					m->nY, m->ypid, m->yoffset,
+					&m->yNSend, &m->ysend);
+  }
+  else {
+    m->yNSend = m->xNSend;
+    m->planY = m->planX;
+    m->ysend = m->xsend;
+  }
+
+  return (ierr);
+}
+
+/* Project obj informations from the original (queries) distribution to the actual matrix */
+int
+Zoltan_Matrix_Project_Forward(ZZ *zz, Zoltan_matrix_2d *m, char* inputX, char* inputY, int elemsize,
+			      char *outputX, char *outputY)
+{
+  int i,j;
+  char *tmp;
+  int ierr = ZOLTAN_OK;
+
+  if (m->mtx.planX == NULL)
+    Zoltan_Matrix_Project_Create(zz, &m->mtx);
+
+  for (j = 0 ; j < 2 ; ++j) {
+    char *in, *out;
+    ZOLTAN_COMM_OBJ *plan;
+    int nSend;
+    int *send_ptr;
+    if (j == 0){
+      in = inputX;
+      out = outputX;
+      plan = m->mtx.planX;
+      nSend = m->mtx.xNSend;
+      send_ptr = m->mtx.xsend;
+    }
+    else {
+      if (m->mtx.planY == m->mtx.planX) /* same thing than X ! */
+	break;
+      in = inputY;
+      out = outputY;
+      plan = m->mtx.planY;
+      nSend = m->mtx.yNSend;
+      send_ptr = m->mtx.ysend;
+    }
+    if (in == NULL || out == NULL || plan == NULL)
+      continue;
+
+    tmp = (char*) ZOLTAN_MALLOC(nSend*elemsize);
+    if (nSend >0 && tmp == NULL) return (ZOLTAN_MEMERR);
+    for (i = 0 ; i < nSend ; ++i) {
+      memcpy(tmp+i*elemsize, in+send_ptr[i]*elemsize, elemsize);
+    }
+    zoltan_matrix_msg_tag --;
+    ierr = Zoltan_Comm_Do_Reverse(plan, zoltan_matrix_msg_tag, (char *) tmp, sizeof(int), NULL,
+				  (char *) out);
+    ZOLTAN_FREE(&tmp);
+  }
+  return (ierr);
+}
+
+int
+Zoltan_Matrix_Project_Backward(ZZ *zz, Zoltan_matrix_2d *m, char* infoX, char* infoY, int elemsize,
+			       char *outputX, char *outputY)
+{
+  int i,j;
+  char *tmp;
+  int ierr = ZOLTAN_OK;
+
+  if (m->mtx.planX == NULL)
+    Zoltan_Matrix_Project_Create(zz, &m->mtx);
+
+  for (j = 0 ; j < 2 ; ++j) {
+    char *in, *out;
+    ZOLTAN_COMM_OBJ *plan;
+    int nSend;
+    int *send_ptr;
+    if (j == 0){
+      in = infoX;
+      out = outputX;
+      plan = m->mtx.planX;
+      nSend = m->mtx.xNSend;
+      send_ptr = m->mtx.xsend;
+    }
+    else {
+      in = infoY;
+      out = outputY;
+      plan = m->mtx.planY;
+      nSend = m->mtx.yNSend;
+      send_ptr = m->mtx.ysend;
+    }
+    if (in == NULL || out == NULL || plan == NULL)
+      continue;
+
+    tmp = (char*) ZOLTAN_MALLOC(nSend*elemsize);
+    if (nSend >0 && tmp == NULL) return (ZOLTAN_MEMERR);
+    zoltan_matrix_msg_tag --;
+    ierr = Zoltan_Comm_Do(plan, zoltan_matrix_msg_tag, (char *) in, sizeof(int),
+			  (char *) tmp);
+    for (i = 0 ; i < nSend ; ++i) {
+      memcpy(out+send_ptr[i]*elemsize, tmp+i*elemsize, elemsize);
+    }
+
+    ZOLTAN_FREE(&tmp);
+  }
+  return (ierr);
+}
+
 
 int
 Zoltan_Matrix2d_adjproc (ZZ* zz, const Zoltan_matrix_2d * const mat, int **adjproc)
