@@ -138,6 +138,13 @@ namespace Tpetra {
                          const Teuchos::ArrayView<const GlobalOrdinal> &cols,
                          const Teuchos::ArrayView<const Scalar>        &vals);
 
+      //! Replace matrix entries, using local IDs.
+      /*! All index values must be in the local space. 
+       */
+      void replaceLocalValues(LocalOrdinal localRow, 
+                         const Teuchos::ArrayView<const LocalOrdinal> &cols,
+                         const Teuchos::ArrayView<const Scalar>       &vals);
+
       //! Sum into multiple entries, using global IDs.
       /*! All index values must be in the global space. */
       void sumIntoGlobalValues(GlobalOrdinal globalRow, 

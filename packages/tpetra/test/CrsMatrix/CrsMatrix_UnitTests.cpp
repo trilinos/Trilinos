@@ -473,6 +473,69 @@ namespace {
     }
   }
 
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, WithGraph_replaceLocal, LO, GO, Scalar, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+    // generate a tridiagonal matrix
+    typedef ScalarTraits<Scalar> ST;
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef Vector<Scalar,LO,GO,Node> V;
+    typedef typename ST::magnitudeType Mag;
+    typedef ScalarTraits<Mag> MT;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const size_t numImages = size(*comm);
+    // create a Map
+    const size_t numLocal = 10;
+    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm,node) );
+    CrsGraph<LO,GO,Node> graph(map,3,StaticProfile);
+    for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
+      if (r == map->getMinAllGlobalIndex()) {
+        graph.insertGlobalIndices(r,tuple(r,r+1));
+      }
+      else if (r == map->getMaxAllGlobalIndex()) {
+        graph.insertGlobalIndices(r,tuple(r-1,r));
+      }
+      else {
+        graph.insertGlobalIndices(r,tuple(r-1,r,r+1));
+      }
+    }
+    graph.fillComplete(DoOptimizeStorage);
+    // create a matrix using the graph
+    MAT matrix(rcpFromRef(graph));
+    TEST_EQUALITY_CONST( matrix.getProfileType() == StaticProfile, true );
+    // insert throws exception: not allowed with static graph
+    TEST_THROW( matrix.insertGlobalValues(map->getMinGlobalIndex(),tuple<GO>(map->getMinGlobalIndex()),tuple(ST::one())), std::runtime_error );
+    // suminto and replace are allowed
+    for (LO r=map->getMinLocalIndex(); r <= map->getMaxLocalIndex(); ++r) {
+      if (r == map->getMinLocalIndex()) {
+        matrix.replaceLocalValues(r, tuple(r,r+1), tuple(ST::one(),ST::one()) );
+      }
+      else if (r == map->getMaxLocalIndex()) {
+        matrix.replaceLocalValues(r, tuple(r-1,r), tuple(ST::one(),ST::one()) );
+      }
+      else {
+        matrix.replaceLocalValues(r, tuple(r-1,r,r+1), tuple(ST::one(),ST::one(),ST::one()) );
+      }
+    }
+    for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
+      // increment the diagonals
+      matrix.sumIntoGlobalValues(r, tuple(r), tuple(ST::one()) );
+    }
+    matrix.fillComplete();
+    TEST_EQUALITY( matrix.getNodeNumDiags(), numLocal );
+    TEST_EQUALITY( matrix.getGlobalNumDiags(), numImages*numLocal );
+    TEST_EQUALITY( matrix.getGlobalNumEntries(), 3*numImages*numLocal - 2 );
+    V dvec(map,false);
+    dvec.randomize();
+    matrix.getLocalDiagCopy(dvec);
+    Array<Scalar> expectedDiags(numLocal, static_cast<Scalar>(2));
+    ArrayRCP<const Scalar> dvec_view = dvec.get1dView();
+    TEST_COMPARE_FLOATING_ARRAYS( expectedDiags(), dvec_view, MT::zero() );
+  }
+
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, ExceedStaticAlloc, LO, GO, Scalar, Node )
@@ -1634,6 +1697,7 @@ typedef std::complex<double> ComplexDouble;
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, NonSquare, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Transpose, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, WithGraph, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, WithGraph_replaceLocal, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ExceedStaticAlloc, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, MultipleFillCompletes, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, CopiesAndViews, LO, GO, SCALAR, NODE ) \

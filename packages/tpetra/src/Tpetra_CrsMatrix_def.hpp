@@ -1007,6 +1007,78 @@ namespace Tpetra {
     //}
   }
 
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::replaceLocalValues(      
+                                        LocalOrdinal localRow,
+                                        const Teuchos::ArrayView<const LocalOrdinal> &indices,
+                                        const Teuchos::ArrayView<const Scalar>        &values) {
+    using Teuchos::ArrayRCP;
+    // find the values for the specified indices
+    // if the row is not ours, throw an exception
+    // ignore values not in the matrix (indices not found)
+    // operate whether indices are local or global
+    const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid();
+    TEST_FOR_EXCEPTION(values.size() != indices.size(), std::runtime_error,
+        Teuchos::typeName(*this) << "::replaceLocalValues(): values.size() must equal indices.size().");
+    typename Teuchos::ArrayView<const LocalOrdinal>::iterator ind = indices.begin();
+    typename Teuchos::ArrayView<const       Scalar>::iterator val = values.begin();
+    bool isLocalRow = getRowMap()->isNodeLocalElement(localRow);
+    TEST_FOR_EXCEPTION(isLocalRow == false, std::runtime_error,
+        Teuchos::typeName(*this) << "::replaceLocalValues(): specified local row does not belong to this processor.");
+    //
+    if (valuesAreAllocated_ == false) {
+      // allocate graph, so we can access views below
+      if (graph_->indicesAreAllocated() == false) {
+        graph_->allocateIndices( CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::AllocateGlobal );
+      }
+      // graph must be allocated before matrix, because matrix needs to know the total allocation of the graph
+      allocateValues();
+#ifdef HAVE_TPETRA_DEBUG
+      TEST_FOR_EXCEPTION(valuesAreAllocated_ == false || graph_->indicesAreAllocated() == false, std::logic_error, 
+          Teuchos::typeName(*this) << "::insertLocalValues(): Internal logic error. Please contact Tpetra team.");
+#endif
+    }
+    // 
+    if (isLocallyIndexed() == true) {
+      ArrayRCP<const LocalOrdinal> lindrowview;
+      RowInfo sizeInfo = graph_->getFullLocalView(localRow, lindrowview);
+      ArrayRCP<Scalar> valrowview = getFullViewNonConst(localRow, sizeInfo);
+      while (ind != indices.end()) {
+        LocalOrdinal lind = *ind;
+        size_t loc = graph_->findLocalIndex(localRow,lind,lindrowview);
+        if (loc != STINV) {
+          valrowview[loc] = (*val);
+        }
+        ++ind;
+        ++val;
+      }
+      valrowview = Teuchos::null;
+      lindrowview = Teuchos::null;
+    }
+    else if (isGloballyIndexed() == true) {
+      ArrayRCP<const GlobalOrdinal> gindrowview;
+      GlobalOrdinal g_row = graph_->getRowMap()->getGlobalElement(localRow);
+      RowInfo sizeInfo = graph_->getFullGlobalView(g_row, gindrowview);
+      ArrayRCP<Scalar> valrowview = getFullViewNonConst(localRow, sizeInfo);
+      while (ind != indices.end()) {
+        GlobalOrdinal gind = graph_->getColMap()->getGlobalElement(*ind);
+        size_t loc = graph_->findGlobalIndex(g_row,gind,gindrowview);
+        if (loc != STINV) {
+          valrowview[loc] = (*val);
+        }
+        ++ind;
+        ++val;
+      }
+      valrowview = Teuchos::null;
+      gindrowview = Teuchos::null;
+    }
+    //else {
+    // graph indices are not allocated, i.e., are non-existant; nothing to do
+    //}
+  }
+
 
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
