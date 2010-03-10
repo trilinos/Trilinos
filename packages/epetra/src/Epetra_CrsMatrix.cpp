@@ -2796,7 +2796,7 @@ void Epetra_CrsMatrix::GeneralMM(double ** X, int LDX, double ** Y, int LDY, int
 #endif
     for (int i=0; i < NumMyRows_; i++) {
       int prevOffset = IndexOffset[i];
-      int NumEntries = *IndexOffset - prevOffset;
+      int NumEntries = IndexOffset[i+1] - prevOffset;
       int *    RowIndices = Indices+prevOffset;
       double * RowValues  = Values+prevOffset;
       for (int k=0; k<NumVectors; k++) {
