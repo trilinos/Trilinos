@@ -68,6 +68,8 @@ public:
 
   Operator(Teuchos::RCP<const Epetra_MultiVector> input_coords, int base);
 
+  Operator(Teuchos::RCP<const Epetra_BlockMap> input_map, int base);
+
   Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph, 
 	   Teuchos::RCP<const Epetra_MultiVector> input_coords, int base);
 
@@ -90,6 +92,24 @@ public:
 
   Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
               const Teuchos::ParameterList& paramlist, int base);
+
+
+  /** Constructor that accepts an Epetra_BlockMap object
+
+     \param input_map  BlockMap object for which a new operation
+        is to be computed. 
+
+     \param paramlist Teuchos::ParameterList which will be copied to an
+        internal ParameterList attribute. 
+
+  If the ParameterList object contains a sublist named "Zoltan", then
+  the Zoltan library is used to perform the operation. Also, any
+  parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
+  */
+
+  Operator(Teuchos::RCP<const Epetra_BlockMap> input_map,
+              const Teuchos::ParameterList& paramlist, int base);
+
 
 
   /** Constructor that accepts an Epetra_CrsGraph object

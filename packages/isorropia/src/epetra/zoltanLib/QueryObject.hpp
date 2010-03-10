@@ -239,6 +239,14 @@ class QueryObject
               int inputType);
 
 
+  /** Constructor
+   */
+  QueryObject( Teuchos::RCP<const Epetra_BlockMap> inputMap,
+	       int inputType);
+
+
+
+
   /** Destructor
    */
   virtual ~QueryObject();

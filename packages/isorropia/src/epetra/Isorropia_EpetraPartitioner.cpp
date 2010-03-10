@@ -89,6 +89,15 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
     partition(true);
 }
 
+Partitioner::Partitioner(Teuchos::RCP<const Epetra_BlockMap> input_map,
+			 bool compute_partitioning_now):
+  Operator (input_map, 0),
+  partGIDs(NULL), partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+
 Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 			 Teuchos::RCP<const Epetra_MultiVector> coords,
 			 bool compute_partitioning_now):
@@ -138,6 +147,17 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
   if (compute_partitioning_now)
     partition(true);
 }
+
+Partitioner::Partitioner(Teuchos::RCP<const Epetra_BlockMap> input_map,
+			 const Teuchos::ParameterList& paramlist,
+			 bool compute_partitioning_now):
+  Operator (input_map, paramlist, 0),
+  partGIDs(NULL), partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+
 
 Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
                          Teuchos::RCP<const Epetra_MultiVector> coords,
@@ -298,15 +318,23 @@ partition(bool force_repartitioning)
     lib_ = Teuchos::rcp(new ZoltanLibClass(input_graph_, costs_));
   else if (input_matrix_.get() != 0)
     lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix_, costs_));
-  else if (input_coords_.get() != 0){
-    if (weights_.get()){
+  else if (input_coords_.get() != 0)
+  {
+    if (weights_.get())
+    {
       lib_ = Teuchos::rcp(new ZoltanLibClass(input_coords_, weights_));
     }
-    else{
+    else
+    {
       lib_ = Teuchos::rcp(new ZoltanLibClass(input_coords_));
     }
   }
-  else{
+  else if (input_map_.get() != 0)
+  {
+    lib_ = Teuchos::rcp(new ZoltanLibClass(input_map_));
+  }
+  else
+  {
     throw Isorropia::Exception("Partitioner::partition - no input object.");
   }
 
@@ -368,7 +396,7 @@ partition(bool force_repartitioning)
       input_type = Library::geometric_input_;
     }
   }
-  else  //not geometry
+  else if (input_graph_.get() != 0 || input_matrix_.get() != 0) // graph or matrix input
   {
     if (partitioning_method == "GRAPH")
     {
@@ -402,7 +430,24 @@ partition(bool force_repartitioning)
       sublist.set("LB_METHOD", "HYPERGRAPH");
     }
   }
-
+  else  // BlockMap input
+  {
+    if (partitioning_method == "CYCLIC")
+    {
+      input_type = Library::simple_input_;
+      sublist.set("LB_METHOD", "CYCLIC");
+    }
+    else if (partitioning_method == "RANDOM")
+    {
+      input_type = Library::simple_input_;
+      sublist.set("LB_METHOD", "RANDOM");
+    }
+    else // BLOCK by default
+    {
+      input_type = Library::simple_input_;
+      sublist.set("LB_METHOD", "BLOCK");
+    }
+  }
 
   if (paramlist_.isParameter("NUM PARTS")) {
     sublist.set("NUM_GLOBAL_PARTS", paramlist_.get<std::string>("NUM PARTS"));

@@ -79,6 +79,7 @@ public:
   ZoltanLibClass(Teuchos::RCP<const Epetra_MultiVector> input_coords, int inputType=unspecified_input_);
   ZoltanLibClass(Teuchos::RCP<const Epetra_MultiVector> input_coords,
             Teuchos::RCP<const Epetra_MultiVector> weights, int inputType=unspecified_input_);
+  ZoltanLibClass(Teuchos::RCP<const Epetra_BlockMap> input_map, int inputType=unspecified_input_);
 
 
 

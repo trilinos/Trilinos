@@ -79,6 +79,7 @@ public:
   Library(Teuchos::RCP<const Epetra_MultiVector> input_coords, int itype = unspecified_input_);
   Library(Teuchos::RCP<const Epetra_MultiVector> input_coords,
           Teuchos::RCP<const Epetra_MultiVector> weights, int itype = unspecified_input_);
+  Library(Teuchos::RCP<const Epetra_BlockMap> input_map, int itype = unspecified_input_);
 
   virtual ~Library();
 

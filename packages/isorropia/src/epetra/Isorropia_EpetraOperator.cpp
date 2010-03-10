@@ -83,6 +83,21 @@ Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph, int base)
 }
 
 Operator::
+Operator(Teuchos::RCP<const Epetra_BlockMap> input_map, int base)
+  : input_map_(input_map),
+    input_graph_(0),
+    input_matrix_(0),
+    input_coords_(0),
+    costs_(0),
+    weights_(0),
+    operation_already_computed_(false),
+    lib_(0),
+    base_(base)
+{
+
+}
+
+Operator::
 Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph, 
 	 Teuchos::RCP<const Epetra_MultiVector> input_coords,int base)
   : input_graph_(input_graph),
@@ -108,6 +123,18 @@ Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
     lib_(0), base_(base)
 {
   input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
+  setParameters(paramlist);
+}
+
+Operator::
+Operator(Teuchos::RCP<const Epetra_BlockMap> input_map,
+	 const Teuchos::ParameterList& paramlist, int base)
+  : input_map_(input_map),input_graph_(0), input_matrix_(0),
+    input_coords_(0),
+    costs_(0), weights_(0),
+    operation_already_computed_(false),
+    lib_(0), base_(base)
+{
   setParameters(paramlist);
 }
 

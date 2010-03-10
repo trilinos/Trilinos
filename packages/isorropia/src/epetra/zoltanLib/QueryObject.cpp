@@ -161,6 +161,25 @@ QueryObject::QueryObject( Teuchos::RCP<const Epetra_MultiVector> coords,
   input_type_ = geometric_input_;
 }
 
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+QueryObject::QueryObject( Teuchos::RCP<const Epetra_BlockMap> input_map,
+                                     int inputType) 
+  : haveGraph_(false) ,
+    graph_(0),
+    matrix_(0),
+    coords_(0),
+    rowMap_(input_map.getRawPtr()), // MMW: this is dangerous but so are all of the above rowMap_ assignments
+    costs_(0),
+    weights_(0),
+    input_type_(inputType) 
+{
+  myProc_ = rowMap_->Comm().MyPID();
+  base_ = rowMap_->IndexBase();
+}
+////////////////////////////////////////////////////////////////////////////////
+
 ////////////////////////////////////////////////////////////////////////////////
 // For hierarchical with graph or hgraph and geometric
 ////////////////////////////////////////////////////////////////////////////////
@@ -490,7 +509,7 @@ int QueryObject::My_Number_Objects(int * ierr )
   }
   else
   {
-    return rowMap_->NumMyElements();  // graph or hypergraph
+    return rowMap_->NumMyElements();  // graph or hypergraph or simple partitioning methods
   }
 }
 

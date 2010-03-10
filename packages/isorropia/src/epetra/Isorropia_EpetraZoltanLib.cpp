@@ -157,6 +157,14 @@ ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_MultiVector> input_coor
   }
 }
 
+ZoltanLibClass::ZoltanLibClass(Teuchos::RCP<const Epetra_BlockMap> input_map,
+                               int inputType):
+  Library(input_map, inputType)
+{
+}
+
+
+
 int ZoltanLibClass::precompute()
 {
   std::string str1("Isorropia::ZoltanLibClass::precompute ");
@@ -212,7 +220,7 @@ int ZoltanLibClass::precompute()
     mpicomm = empicomm.Comm();
 #endif
   }
-  else if (input_graph_.get() != 0) 
+  else if (input_graph_.get() != 0) //graph inputs
   {
     queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_graph_, costs_, itype));
 #ifdef HAVE_MPI
@@ -221,7 +229,7 @@ int ZoltanLibClass::precompute()
     mpicomm = empicomm.Comm();
 #endif
   }
-  else if (input_matrix_.get() != 0)
+  else if (input_matrix_.get() != 0) //matrix inputs
   {
     queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_matrix_, costs_, itype));
 #ifdef HAVE_MPI
@@ -230,7 +238,7 @@ int ZoltanLibClass::precompute()
     mpicomm = empicomm.Comm();
 #endif
   }
-  else
+  else if (input_coords_.get() != 0) // coord inputs 
   {
     queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_coords_, weights_));
 #ifdef HAVE_MPI
@@ -239,6 +247,17 @@ int ZoltanLibClass::precompute()
     mpicomm = empicomm.Comm();
 #endif
   }
+  else // BlockMap inputs
+  {
+    queryObject_ =  Teuchos::rcp(new ZoltanLib::QueryObject(input_map_, itype));
+#ifdef HAVE_MPI
+    const  Epetra_Comm &ecomm = input_map_->Comm();
+    const Epetra_MpiComm &empicomm = dynamic_cast<const Epetra_MpiComm &>(ecomm);
+    mpicomm = empicomm.Comm();
+#endif
+  }
+
+
 
   float version;
   int argcTmp=0;
@@ -354,7 +373,8 @@ int ZoltanLibClass::precompute()
     iter = zoltanParamList_.begin(),
     iter_end = zoltanParamList_.end();
 
-  for(; iter != iter_end; ++iter) {
+  for(; iter != iter_end; ++iter) 
+  {
     const std::string& name = iter->first;
     const std::string& value = Teuchos::getValue<std::string>(iter->second);
     zz_->Set_Param(name, value);
@@ -645,8 +665,6 @@ repartition(Teuchos::ParameterList& zoltanParamList,
     }
   }
 
-  //zz_->Set_Param("FINAL_OUTPUT","1"); //MMW
-
   //Generate Load Balance
   int changes=0, num_gid_entries=0, num_lid_entries=0, num_import=0, num_export=0;
   ZOLTAN_ID_PTR import_global_ids=NULL, import_local_ids=NULL;
@@ -667,7 +685,6 @@ repartition(Teuchos::ParameterList& zoltanParamList,
   imports.clear();
   imports.assign(import_global_ids, import_global_ids + num_import);
 
-  //MMW: NEED to fix: Bug 4701
   properties.assign(num_obj_, queryObject_->RowMap().Comm().MyPID());
 
   for( int i = 0; i < num_export; ++i ) 
