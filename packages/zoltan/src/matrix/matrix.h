@@ -79,7 +79,6 @@ typedef struct Zoltan_matrix_ {
   int           nPins;         /* Local number of Pins */
   int           pinwgtdim;     /* Wgt dimensions for pins */
   int          *yGNO;          /* Local edges gnos */
-  int          *ybipart;       /* Flag to know the type of Y: ori(0) or created(1) */
   int          *ystart;        /* Indirection array to describe a column */
   int          *yend;          /* end of local pins, usually ystart+1
 			         (and is ystart+1 after matrix complete) */
@@ -89,13 +88,8 @@ typedef struct Zoltan_matrix_ {
   /* These fields are used only before matrix_complete */
   /* Allow us to move only pins and CSR structure without having to worry
    * about vertex and edge data. */
-  int          *ypid;
-  int          *yoffset;        /* Where are the data associated to vertices*/
-
-  int          *xpid;
-  int          *xoffset;
-/*   struct Zoltan_DD_Struct *ddX; /\* Map xGNO -> xGID, xwgt, Input_Parts *\/ */
-/*   struct Zoltan_DD_Struct *ddY; /\* Map yGNO -> yGID, ywgt *\/ */
+  struct Zoltan_DD_Struct *ddX; /* Map xGNO -> xGID, xwgt, Input_Parts */
+  struct Zoltan_DD_Struct *ddY; /* Map yGNO -> yGID, ywgt */
 
   /* These fields are used after matrix_complete */
   float        *ywgt;           /* Wgt for local Y */

@@ -253,8 +253,8 @@ Zoltan_ZG_Vertex_Info(ZZ* zz, const ZG *const graph,
     input_part = NULL;
   }
 
-/*   ierr = Zoltan_DD_Find(graph->mtx.mtx.ddX, (ZOLTAN_ID_PTR)graph->mtx.mtx.yGNO, */
-/* 			gid, NULL, input_part, nX, NULL); */
+  ierr = Zoltan_DD_Find(graph->mtx.mtx.ddX, (ZOLTAN_ID_PTR)graph->mtx.mtx.yGNO,
+			gid, NULL, input_part, nX, NULL);
  End:
   ZOLTAN_TRACE_EXIT(zz, yo);
   return (ierr);
@@ -273,43 +273,43 @@ Zoltan_ZG_Register(ZZ* zz, ZG* graph, int* properties)
   ZOLTAN_ID_PTR GID;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
-/*   size = graph->mtx.mtx.nY; */
-/*   dd = graph->mtx.mtx.ddY; */
+  size = graph->mtx.mtx.nY;
+  dd = graph->mtx.mtx.ddY;
 
-/*   if (graph->bipartite) { /\* Need to construct another properties array with only the fixed elements ! *\/ */
-/*     int vertlno; */
+  if (graph->bipartite) { /* Need to construct another properties array with only the fixed elements ! */
+    int vertlno;
 
-/*     if (graph->fixObj) { */
-/*       dd = graph->mtx.mtx.ddX; */
-/*     } */
-/*     props = (int*)ZOLTAN_MALLOC(sizeof(int)*size); */
-/*     if (graph->mtx.mtx.nY  && props == NULL) MEMORY_ERROR; */
-/*     GID = ZOLTAN_MALLOC_GID_ARRAY(zz, size); */
-/*     if (size && GID == NULL) MEMORY_ERROR; */
-/*     for (size = 0, vertlno = 0 ; vertlno < graph->mtx.mtx.nY ; ++vertlno) { */
-/*       if (graph->fixed_vertices[vertlno]) { */
-/* 	props[size] = properties[vertlno]; */
-/* 	ZOLTAN_SET_GID(zz, GID+ size*zz->Num_GID, */
-/* 		       graph->mtx.mtx.yGID+vertlno*zz->Num_GID); */
-/* 	size ++; */
-/*       } */
-/*     } */
-/*   } */
-/*   else { */
-/*     props = properties; */
-/*     GID = graph->mtx.mtx.yGID; */
-/*     if (graph->mtx.mtx.ddY == NULL) { */
-/*       ierr = Zoltan_DD_Create (&graph->mtx.mtx.ddY, zz->Communicator, 1, zz->Num_GID, */
-/* 			       1, graph->mtx.mtx.globalY/zz->Num_Proc, 0); */
-/*       CHECK_IERR; */
-/*       /\* Hope a linear assignment will help a little *\/ */
-/*       Zoltan_DD_Set_Neighbor_Hash_Fn1(graph->mtx.mtx.ddY, graph->mtx.mtx.globalX/zz->Num_Proc); */
-/*     } */
-/*     dd = graph->mtx.mtx.ddY; */
-/*   } */
-/*   /\* Make our new numbering public *\/ */
-/*   ierr = Zoltan_DD_Update (dd, GID, NULL, NULL, props, size); */
-/*   CHECK_IERR; */
+    if (graph->fixObj) {
+      dd = graph->mtx.mtx.ddX;
+    }
+    props = (int*)ZOLTAN_MALLOC(sizeof(int)*size);
+    if (graph->mtx.mtx.nY  && props == NULL) MEMORY_ERROR;
+    GID = ZOLTAN_MALLOC_GID_ARRAY(zz, size);
+    if (size && GID == NULL) MEMORY_ERROR;
+    for (size = 0, vertlno = 0 ; vertlno < graph->mtx.mtx.nY ; ++vertlno) {
+      if (graph->fixed_vertices[vertlno]) {
+	props[size] = properties[vertlno];
+	ZOLTAN_SET_GID(zz, GID+ size*zz->Num_GID,
+		       graph->mtx.mtx.yGID+vertlno*zz->Num_GID);
+	size ++;
+      }
+    }
+  }
+  else {
+    props = properties;
+    GID = graph->mtx.mtx.yGID;
+    if (graph->mtx.mtx.ddY == NULL) {
+      ierr = Zoltan_DD_Create (&graph->mtx.mtx.ddY, zz->Communicator, 1, zz->Num_GID,
+			       1, graph->mtx.mtx.globalY/zz->Num_Proc, 0);
+      CHECK_IERR;
+      /* Hope a linear assignment will help a little */
+      Zoltan_DD_Set_Neighbor_Hash_Fn1(graph->mtx.mtx.ddY, graph->mtx.mtx.globalX/zz->Num_Proc);
+    }
+    dd = graph->mtx.mtx.ddY;
+  }
+  /* Make our new numbering public */
+  ierr = Zoltan_DD_Update (dd, GID, NULL, NULL, props, size);
+  CHECK_IERR;
 
   End:
   if (graph->bipartite) {
@@ -329,11 +329,11 @@ Zoltan_ZG_Query (ZZ* zz, const ZG* const graph,
 {
   struct Zoltan_DD_Struct *dd;
 
-/*   dd = graph->mtx.mtx.ddY; */
-/*   if (graph->bipartite && graph->fixObj) */
-/*     dd = graph->mtx.mtx.ddX; */
+  dd = graph->mtx.mtx.ddY;
+  if (graph->bipartite && graph->fixObj)
+    dd = graph->mtx.mtx.ddX;
 
-/*   return Zoltan_DD_Find(dd, GID, NULL, NULL, properties, GID_length, NULL); */
+  return Zoltan_DD_Find(dd, GID, NULL, NULL, properties, GID_length, NULL);
 }
 
 void
