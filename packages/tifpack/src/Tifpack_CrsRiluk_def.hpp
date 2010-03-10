@@ -34,15 +34,16 @@ namespace Tifpack {
 //==============================================================================
 template<class MatrixType>
 CrsRiluk<MatrixType>::CrsRiluk(const Teuchos::RCP<const MatrixType>& Matrix_in) 
-  : UserMatrixIsCrs_(false),
+  : isOverlapped_(false),
     Graph_(),
     A_(Matrix_in),
     UseTranspose_(false),
     LevelOfFill_(0),
     LevelOfOverlap_(0),
     NumMyDiagonals_(0),
-    Allocated_(false),
+    isAllocated_(false),
     isInitialized_(false),
+    numInitialized_(0),
     Factored_(false),
     RelaxValue_(0.0),
     Athresh_(0.0),
@@ -55,14 +56,13 @@ CrsRiluk<MatrixType>::CrsRiluk(const Teuchos::RCP<const MatrixType>& Matrix_in)
 //==============================================================================
 //template<class MatrixType>
 //CrsRiluk<MatrixType>::CrsRiluk(const CrsRiluk<MatrixType>& src) 
-//  : UserMatrixIsCrs_(src.UserMatrixIsCrs_),
-//    IsOverlapped_(src.IsOverlapped_),
+//  : isOverlapped_(src.isOverlapped_),
 //    Graph_(src.Graph_),
 //    UseTranspose_(src.UseTranspose_),
 //    LevelOfFill_(src.LevelOfFill_),
 //    LevelOfOverlap_(src.LevelOfOverlap_),
 //    NumMyDiagonals_(src.NumMyDiagonals_),
-//    Allocated_(src.Allocated_),
+//    isAllocated_(src.isAllocated_),
 //    isInitialized_(src.isInitialized_),
 //    Factored_(src.Factored_),
 //    RelaxValue_(src.RelaxValue_),
@@ -83,28 +83,38 @@ CrsRiluk<MatrixType>::~CrsRiluk() {
 
 //==============================================================================
 template<class MatrixType>
-void CrsRiluk<MatrixType>::AllocateCrs() {
+void CrsRiluk<MatrixType>::allocate_L_and_U() {
 
   // Allocate Matrix using ILUK graphs
   L_ = Teuchos::rcp( new MatrixType(Graph_->getL_Graph()) );
   U_ = Teuchos::rcp( new MatrixType(Graph_->getU_Graph()) );
+  L_->setAllToScalar(0.0); // Zero out L and U matrices
+  U_->setAllToScalar(0.0);
+  L_->fillComplete();
+  U_->fillComplete();
+  bool isLower = L_->isLowerTriangular();
+  bool isUpper = U_->isUpperTriangular();
+  if (!isLower || !isUpper) {
+    std::cout << "error in triangular detection" << std::endl;
+  }
+
   D_ = Teuchos::rcp( new Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(Graph_->getL_Graph()->getRowMap()) );
-  SetAllocated(true);
+  setAllocated(true);
 }
 
 //==========================================================================
 template<class MatrixType>
 void CrsRiluk<MatrixType>::setParameters(const Teuchos::ParameterList& parameterlist) {
-  Tifpack::GetParameter(parameterlist, "fact: iluk level-of-fill", LevelOfFill_);
-  Tifpack::GetParameter(parameterlist, "fact: iluk level-of-overlap", LevelOfOverlap_);
+  Tifpack::getParameter(parameterlist, "fact: iluk level-of-fill", LevelOfFill_);
+  Tifpack::getParameter(parameterlist, "fact: iluk level-of-overlap", LevelOfOverlap_);
   double tmp = -1;
-  Tifpack::GetParameter(parameterlist, "fact: absolute threshold", tmp);
+  Tifpack::getParameter(parameterlist, "fact: absolute threshold", tmp);
   if (tmp != -1) Athresh_ = tmp;
   tmp = -1;
-  Tifpack::GetParameter(parameterlist, "fact: relative threshold", tmp);
+  Tifpack::getParameter(parameterlist, "fact: relative threshold", tmp);
   if (tmp != -1) Rthresh_ = tmp;
   tmp = -1;
-  Tifpack::GetParameter(parameterlist, "fact: relax value", tmp);
+  Tifpack::getParameter(parameterlist, "fact: relax value", tmp);
   if (tmp != -1) RelaxValue_ = tmp;
 }
 
@@ -120,49 +130,37 @@ void CrsRiluk<MatrixType>::initialize() {
 
   setInitialized(true);
 
-  if (!Allocated()) AllocateCrs();
+  if (!isAllocated()) allocate_L_and_U();
 
-//  Teuchos::RCP<MatrixType> OverlapA = Teuchos::rcp( (Epetra_CrsMatrix *) &A, false );
-
-  if (IsOverlapped_) {
-  
+  if (isOverlapped_) {
+    throw std::runtime_error("Error, Tifpack::CrsRiluk::initialize: overlapping not yet supported.");
 //    OverlapA = Teuchos::rcp( new MatrixType(Graph_->OverlapGraph()) );
 //    EPETRA_CHK_ERR(OverlapA->Import(A, *Graph_->OverlapImporter(), Insert));
 //    EPETRA_CHK_ERR(OverlapA->FillComplete());
   }
-  
-  // Get Maximum Row length
-  //int MaxNumEntries = OverlapA->MaxNumEntries();
-
-  // Do the rest using generic Epetra_RowMatrix interface
-
-//  EPETRA_CHK_ERR(InitAllValues(*OverlapA, MaxNumEntries));
-
+  else {
+    initAllValues(*A_);
+  }
 }
 
 //==========================================================================
 template<class MatrixType>
-bool CrsRiluk<MatrixType>::isInitialized() const {
-  return isInitialized_;
-}
+void CrsRiluk<MatrixType>::initAllValues(const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & OverlapA) {
 
-//==========================================================================
-template<class MatrixType>
-void CrsRiluk<MatrixType>::InitAllValues(const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & OverlapA, int MaxNumEntries) {
-
-  size_t NumIn, NumL, NumU;
-  bool DiagFound;
+  size_t NumIn = 0, NumL = 0, NumU = 0;
+  bool DiagFound = false;
   size_t NumNonzeroDiags = 0;
+  size_t MaxNumEntries = OverlapA.getGlobalMaxNumRowEntries();
 
 
-  Teuchos::Array<LocalOrdinal> InI(MaxNumEntries); // Allocate temp space
-  Teuchos::Array<LocalOrdinal> LI(MaxNumEntries);
-  Teuchos::Array<LocalOrdinal> UI(MaxNumEntries);
+  Teuchos::Array<GlobalOrdinal> InI(MaxNumEntries); // Allocate temp space
+  Teuchos::Array<GlobalOrdinal> LI(MaxNumEntries);
+  Teuchos::Array<GlobalOrdinal> UI(MaxNumEntries);
   Teuchos::Array<Scalar> InV(MaxNumEntries);
   Teuchos::Array<Scalar> LV(MaxNumEntries);
   Teuchos::Array<Scalar> UV(MaxNumEntries);
 
-  bool ReplaceValues = false ; //(L_->isStaticGraph() || L_->isLocallyIndexed()); // Check if values should be inserted or replaced
+  bool ReplaceValues = (L_->isStaticGraph() || L_->isLocallyIndexed()); // Check if values should be inserted or replaced
 
   if (ReplaceValues) {
     L_->setAllToScalar(0.0); // Zero out L and U matrices
@@ -178,10 +176,10 @@ void CrsRiluk<MatrixType>::InitAllValues(const Tpetra::RowMatrix<Scalar,LocalOrd
 
   // First we copy the user's matrix into L and U, regardless of fill level
 
-  for (LocalOrdinal i=rowMap->getMinLocalIndex(); i<=rowMap->getMaxLocalIndex(); ++i) {
-    LocalOrdinal local_row = i;
+  for (GlobalOrdinal i=rowMap->getMinGlobalIndex(); i<=rowMap->getMaxGlobalIndex(); ++i) {
+    GlobalOrdinal global_row = i;
 
-    OverlapA.getLocalRowCopy(local_row, InI(), InV(), NumIn); // Get Values and Indices
+    OverlapA.getGlobalRowCopy(global_row, InI(), InV(), NumIn); // Get Values and Indices
     
     // Split into L and U (we don't assume that indices are ordered).
     
@@ -190,7 +188,7 @@ void CrsRiluk<MatrixType>::InitAllValues(const Tpetra::RowMatrix<Scalar,LocalOrd
     DiagFound = false;
     
     for (size_t j=0; j< NumIn; j++) {
-      LocalOrdinal k = InI[j];
+      GlobalOrdinal k = InI[j];
 
       if (k==i) {
         DiagFound = true;
@@ -198,7 +196,7 @@ void CrsRiluk<MatrixType>::InitAllValues(const Tpetra::RowMatrix<Scalar,LocalOrd
       }
 
       else if (k < 0) { // Out of range
-        throw std::runtime_error("out of range in Tifpack::CrsRiluk::InitAllValues");
+        throw std::runtime_error("out of range (k<0) in Tifpack::CrsRiluk::initAllValues");
       }
 
       else if (k < i) {
@@ -206,38 +204,37 @@ void CrsRiluk<MatrixType>::InitAllValues(const Tpetra::RowMatrix<Scalar,LocalOrd
         LV[NumL] = InV[j];
         NumL++;
       }
-      else if (k<rowMap->getMaxLocalIndex()) {
+      else if (k <= rowMap->getMaxGlobalIndex()) {
         UI[NumU] = k;
         UV[NumU] = InV[j];
         NumU++;
+      }
+      else {
+        throw std::runtime_error("out of range in Tifpack::CrsRiluk::initAllValues");
       }
     }
     
     // Check in things for this row of L and U
 
-    if (DiagFound) NumNonzeroDiags++;
+    if (DiagFound) ++NumNonzeroDiags;
     else DV[i] = Athresh_;
 
     if (NumL) {
-//      if (ReplaceValues) {
-//        //replaceGlobalValues works with Global row and Local column-indices:
-//        GlobalOrdinal global_row = rowMap->getGlobalElement(local_row);
-//        L_->replaceGlobalValues(global_row, LI(0, NumL), LV(0,NumL));
-//      }
-//      else {
-        L_->insertLocalValues(local_row, LI(0,NumL), LV(0,NumL));
-//      }
+      if (ReplaceValues) {
+        L_->replaceGlobalValues(global_row, LI(0, NumL), LV(0,NumL));
+      }
+      else {
+        L_->insertGlobalValues(global_row, LI(0,NumL), LV(0,NumL));
+      }
     }
 
     if (NumU) {
-//      if (ReplaceValues) {
-//        //replaceGlobalValues works with Global row and Local column-indices:
-//        GlobalOrdinal global_row = rowMap->getGlobalElement(local_row);
-//        U_->replaceGlobalValues(global_row, UI(0,NumU), UV(0,NumU));
-//      }
-//      else {
-        U_->insertLocalValues(local_row, UI(0,NumU), UV(0,NumU));
-//      }
+      if (ReplaceValues) {
+        U_->replaceGlobalValues(global_row, UI(0,NumU), UV(0,NumU));
+      }
+      else {
+        U_->insertGlobalValues(global_row, UI(0,NumU), UV(0,NumU));
+      }
     }
 
   }
@@ -254,7 +251,7 @@ void CrsRiluk<MatrixType>::InitAllValues(const Tpetra::RowMatrix<Scalar,LocalOrd
   // At this point L and U have the values of A in the structure of L and U, and diagonal vector D
 
   setInitialized(true);
-  SetFactored(false);
+  setFactored(false);
 
   size_t TotalNonzeroDiags = 0;
   Teuchos::reduceAll(*L_->getRowMap()->getComm(),Teuchos::REDUCE_SUM,
@@ -287,16 +284,14 @@ void CrsRiluk<MatrixType>::compute() {
   // Get Maximun Row length
   size_t MaxNumEntries = L_->getNodeMaxNumRowEntries() + U_->getNodeMaxNumRowEntries() + 1;
 
-  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& rowMap =
-    L_->getRowMap();
-
-  Teuchos::Array<GlobalOrdinal> InI(MaxNumEntries); // Allocate temp space
+  Teuchos::Array<LocalOrdinal> InI(MaxNumEntries); // Allocate temp space
   Teuchos::Array<Scalar> InV(MaxNumEntries);
-  Teuchos::Array<int> colflag(MaxNumEntries);
+  size_t num_cols = U_->getColMap()->getNodeNumElements();
+  Teuchos::Array<int> colflag(num_cols);
 
   Teuchos::ArrayRCP<Scalar> DV = D_->get1dViewNonConst(); // Get view of diagonal
 
-  int current_madds = 0; // We will count multiply-add as they happen
+  size_t current_madds = 0; // We will count multiply-add as they happen
 
   // Now start the factorization.
 
@@ -304,7 +299,7 @@ void CrsRiluk<MatrixType>::compute() {
   size_t NumUU; 
   Teuchos::ArrayRCP<const LocalOrdinal> UUI;
   Teuchos::ArrayRCP<const Scalar> UUV;
-  for (size_t j=0; j<MaxNumEntries; j++) colflag[j] = - 1;
+  for (size_t j=0; j<num_cols; j++) colflag[j] = - 1;
 
   for(size_t i=0; i<L_->getNodeNumRows(); i++) {
     LocalOrdinal local_row = i;
@@ -312,12 +307,12 @@ void CrsRiluk<MatrixType>::compute() {
  // Fill InV, InI with current row of L, D and U combined
 
     NumIn = MaxNumEntries;
-    L_->getGlobalRowCopy(local_row, InI(), InV(), NumL);
+    L_->getLocalRowCopy(local_row, InI(), InV(), NumL);
 
     InV[NumL] = DV[i]; // Put in diagonal
     InI[NumL] = local_row;
     
-    U_->getGlobalRowCopy(local_row, InI(NumL+1,MaxNumEntries-NumL-1), InV(NumL+1,MaxNumEntries-NumL-1), NumU);
+    U_->getLocalRowCopy(local_row, InI(NumL+1,MaxNumEntries-NumL-1), InV(NumL+1,MaxNumEntries-NumL-1), NumU);
     NumIn = NumL+NumU+1;
 
     // Set column flags
@@ -353,8 +348,7 @@ void CrsRiluk<MatrixType>::compute() {
       }
     }
     if (NumL) {
-      GlobalOrdinal global_row = rowMap->getGlobalElement(i);
-      L_->replaceGlobalValues(global_row, InI(0,NumL), InV(0,NumL));  // Replace current row of L
+      L_->replaceLocalValues(local_row, InI(0,NumL), InV(0,NumL));  // Replace current row of L
     }
 
     DV[i] = InV[NumL]; // Extract Diagonal value
@@ -374,8 +368,7 @@ void CrsRiluk<MatrixType>::compute() {
     for (size_t j=0; j<NumU; j++) InV[NumL+1+j] *= DV[i]; // Scale U by inverse of diagonal
 
     if (NumU) {
-      GlobalOrdinal global_row = rowMap->getGlobalElement(i);
-      U_->replaceGlobalValues(global_row, InI(NumL+1,NumU), InV(NumL+1,NumU));  // Replace current row of L and U
+      U_->replaceLocalValues(local_row, InI(NumL+1,NumU), InV(NumL+1,NumU));  // Replace current row of L and U
     }
 
     // Reset column flags
@@ -405,7 +398,7 @@ void CrsRiluk<MatrixType>::compute() {
 
   //UpdateFlops(total_flops); // Update flop count
 
-  SetFactored(true);
+  setFactored(true);
 }
 
 //=============================================================================
@@ -422,7 +415,7 @@ void CrsRiluk<MatrixType>::apply(
 //
 
   // First generate X and Y as needed for this function
-  Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > X1;
+  Teuchos::RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > X1;
   Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Y1;
   generateXY(mode, X, Y, X1, Y1);
 
@@ -441,13 +434,13 @@ void CrsRiluk<MatrixType>::apply(
     L_->solve(*X1, *Y1,mode);
     Y1->elementWiseMultiply(one, *D_, *Y1, zero); // y = D*y (D_ has inverse of diagonal)
     U_->solve(*Y1, *Y1,mode); // Solve Uy = y
-    if (IsOverlapped_) {Y.doExport(*Y1,*L_->getGraph()->getExporter(), OverlapMode_);} // Export computed Y values if needed
+    if (isOverlapped_) {Y.doExport(*Y1,*L_->getGraph()->getExporter(), OverlapMode_);} // Export computed Y values if needed
   }
   else {
     U_->solve(*X1, *Y1,mode); // Solve Uy = y
     Y1->elementWiseMultiply(one, *D_, *Y1, zero); // y = D*y (D_ has inverse of diagonal)
     L_->solve(*Y1, *Y1,mode);
-    if (IsOverlapped_) {Y.doExport(*Y1,*U_->getGraph()->getImporter(), OverlapMode_);} // Export computed Y values if needed
+    if (isOverlapped_) {Y.doExport(*Y1,*U_->getGraph()->getImporter(), OverlapMode_);} // Export computed Y values if needed
   } 
 }
 
@@ -479,7 +472,7 @@ int CrsRiluk<MatrixType>::Multiply(const Tpetra::MultiVector<Scalar,LocalOrdinal
     Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Y1temp(*Y1); // Need a temp copy of Y1
     L_->apply(Y1temp, *Y1,mode);
     Y1->update(1.0, Y1temp, 1.0); // (account for implicit unit diagonal)
-    if (IsOverlapped_) {Y.doExport(*Y1,*L_->getGraph()->getExporter(), OverlapMode_);} // Export computed Y values if needed
+    if (isOverlapped_) {Y.doExport(*Y1,*L_->getGraph()->getExporter(), OverlapMode_);} // Export computed Y values if needed
   }
   else {
 
@@ -489,7 +482,7 @@ int CrsRiluk<MatrixType>::Multiply(const Tpetra::MultiVector<Scalar,LocalOrdinal
     Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Y1temp(*Y1); // Need a temp copy of Y1
     U_->apply(Y1temp, *Y1,mode);
     Y1->update(1.0, Y1temp, 1.0); // (account for implicit unit diagonal)
-    if (IsOverlapped_) {Y.doExport(*Y1,*L_->getGraph()->getExporter(), OverlapMode_);}
+    if (isOverlapped_) {Y.doExport(*Y1,*L_->getGraph()->getExporter(), OverlapMode_);}
   } 
   return(0);
 }
@@ -519,8 +512,8 @@ template<class MatrixType>
 void CrsRiluk<MatrixType>::generateXY(Teuchos::ETransp mode, 
     const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xin,
     const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Yin,
-    Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Xout, 
-    Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Yout) const {
+    Teuchos::RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Xout, 
+    Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Yout) const {
 
   // Generate an X and Y suitable for performing Solve() and Multiply() methods
 
@@ -528,11 +521,11 @@ void CrsRiluk<MatrixType>::generateXY(Teuchos::ETransp mode,
        "Tifpack::CrsRiluk::GenerateXY ERROR: X and Y not the same size");
 
   //cout << "Xin = " << Xin << endl;
-  Xout = Teuchos::rcp( (Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> *) &Xin, false );
+  Xout = Teuchos::rcp( (const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> *) &Xin, false );
   Yout = Teuchos::rcp( (Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> *) &Yin, false );
-  if (!IsOverlapped_ && UserMatrixIsCrs_) return; // Nothing more to do
+  if (!isOverlapped_) return; // Nothing more to do
 
-  if (IsOverlapped_) {
+  if (isOverlapped_) {
     // Make sure the number of vectors in the multivector is the same as before.
     if (OverlapX_!=Teuchos::null) {
       if (OverlapX_->getNumVectors()!=Xin.getNumVectors()) {

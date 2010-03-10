@@ -31,7 +31,7 @@
 
 namespace Tifpack {
 
-void GetValidParameters(Teuchos::ParameterList& params)
+void getValidParameters(Teuchos::ParameterList& params)
 {
   //params.clear();
   Teuchos::ParameterList empty;
@@ -81,7 +81,7 @@ void GetValidParameters(Teuchos::ParameterList& params)
   params.set("partitioner: overlap", (int)0);
   params.set("partitioner: print level", (int)0);
 
-  // Tifpack_PointRelaxation.cpp
+  // Tifpack_Relaxation.cpp
   params.set("relaxation: type", "Jacobi");
   params.set("relaxation: sweeps", (int)1);
   params.set("relaxation: damping factor", (double)1.0);

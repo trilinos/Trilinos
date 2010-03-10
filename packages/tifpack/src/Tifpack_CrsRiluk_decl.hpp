@@ -236,8 +236,8 @@ class CrsRiluk: public virtual Tifpack::Preconditioner<typename MatrixType::scal
   void setParameters(const Teuchos::ParameterList& parameterlist);
 
   void initialize();
-  bool isInitialized() const;
-  int getNumInitialize() const {return -1;}
+  bool isInitialized() const {return isInitialized_;}
+  int getNumInitialize() const {return numInitialized_;}
 
   //! Compute ILU factors L and U using the specified diagonal perturbation thresholds and relaxation parameters.
   /*! This function computes the RILU(k) factors L and U using the current:
@@ -326,17 +326,18 @@ class CrsRiluk: public virtual Tifpack::Preconditioner<typename MatrixType::scal
   // Atribute access functions
   
   //! Get RILU(k) relaxation parameter
-  double GetRelaxValue() {return RelaxValue_;}
+  double GetRelaxValue() const {return RelaxValue_;}
 
   //! Get absolute threshold value
-  double getAbsoluteThreshold() {return Athresh_;}
+  double getAbsoluteThreshold() const {return Athresh_;}
 
   //! Get relative threshold value
-  double getRelativeThreshold() {return Rthresh_;}
+  double getRelativeThreshold() const {return Rthresh_;}
+
+  int getLevelOfFill() const { return LevelOfFill_; }
 
   //! Get overlap mode type
   Tpetra::CombineMode getOverlapMode() {return OverlapMode_;}
-
  
   //! Returns the number of nonzero entries in the global graph.
   int getGlobalNumEntries() const {return(getL().getGlobalNumEntries()+getU().getGlobalNumEntries());}
@@ -357,32 +358,31 @@ class CrsRiluk: public virtual Tifpack::Preconditioner<typename MatrixType::scal
 
   //! Returns the Tpetra::Map object associated with the domain of this operator.
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& getDomainMap() const
-  { return L_->getColMap();/*re-visit this, I don't think it is correct...*/ }
+  { return Graph_->getL_Graph()->getDomainMap(); }
 
   //! Returns the Tpetra::Map object associated with the range of this operator.
   const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& getRangeMap() const
-  { return U_->getRowMap();/*re-visit this, I don't think it is correct...*/ }
+  { return Graph_->getU_Graph()->getRangeMap(); }
 
   //@}
 
  protected:
-  void SetFactored(bool Flag) {Factored_ = Flag;}
+  void setFactored(bool Flag) {Factored_ = Flag;}
   void setInitialized(bool Flag) {isInitialized_ = Flag;}
-  bool Allocated() const {return(Allocated_);}
-  int SetAllocated(bool Flag) {Allocated_ = Flag; return(0);}
+  bool isAllocated() const {return(isAllocated_);}
+  void setAllocated(bool Flag) {isAllocated_ = Flag;}
   
  private:
   
   
-  void AllocateCrs();
-  void InitAllValues(const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & overlapA, int MaxNumEntries);
+  void allocate_L_and_U();
+  void initAllValues(const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> & overlapA);
   void generateXY(Teuchos::ETransp mode, 
 		 const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xin,
      const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Yin,
-     Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Xout, 
-     Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Yout) const;
-  bool UserMatrixIsCrs_;
-  bool IsOverlapped_;
+     Teuchos::RCP<const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Xout, 
+     Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& Yout) const;
+  bool isOverlapped_;
   Teuchos::RCP<Tifpack::IlukGraph<LocalOrdinal,GlobalOrdinal,Node> > Graph_;
   const Teuchos::RCP<const MatrixType> A_;
   Teuchos::RCP<MatrixType> L_;
@@ -394,8 +394,9 @@ class CrsRiluk: public virtual Tifpack::Preconditioner<typename MatrixType::scal
   int LevelOfOverlap_;
 
   int NumMyDiagonals_;
-  bool Allocated_;
+  bool isAllocated_;
   bool isInitialized_;
+  int numInitialized_;
   bool Factored_;
   double RelaxValue_;
   double Athresh_;

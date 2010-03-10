@@ -77,21 +77,21 @@ ILUT<MatrixType>::~ILUT() {
 //==========================================================================
 template <class MatrixType>
 void ILUT<MatrixType>::setParameters(const Teuchos::ParameterList& params) {
-  Tifpack::GetParameter(params, "fact: ilut level-of-fill", LevelOfFill_);
+  Tifpack::getParameter(params, "fact: ilut level-of-fill", LevelOfFill_);
   TEST_FOR_EXCEPTION(LevelOfFill_ <= 0.0, std::runtime_error,
     "Tifpack::ILUT::SetParameters ERROR, level-of-fill must be >= 0.");
 
   double tmp = -1;
-  Tifpack::GetParameter(params, "fact: absolute threshold", tmp);
+  Tifpack::getParameter(params, "fact: absolute threshold", tmp);
   if (tmp != -1) Athresh_ = tmp;
   tmp = -1;
-  Tifpack::GetParameter(params, "fact: relative threshold", tmp);
+  Tifpack::getParameter(params, "fact: relative threshold", tmp);
   if (tmp != -1) Rthresh_ = tmp;
   tmp = -1;
-  Tifpack::GetParameter(params, "fact: relax value", tmp);
+  Tifpack::getParameter(params, "fact: relax value", tmp);
   if (tmp != -1) RelaxValue_ = tmp;
   tmp = -1;
-  Tifpack::GetParameter(params, "fact: drop tolerance", tmp);
+  Tifpack::getParameter(params, "fact: drop tolerance", tmp);
   if (tmp != -1) DropTolerance_ = tmp;
 }
 

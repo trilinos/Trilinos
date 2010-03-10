@@ -31,8 +31,6 @@
 
 #include "Tifpack_ConfigDefs.hpp"
 #include "Tifpack_Preconditioner.hpp"
-#include "Tifpack_ConfigDefs.hpp"
-#include "Tifpack_Preconditioner.hpp"
 #include "Tifpack_Reordering.hpp"
 #include "Tifpack_RCMReordering.hpp"
 #include "Tifpack_METISReordering.hpp"

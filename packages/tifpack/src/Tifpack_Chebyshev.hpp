@@ -347,15 +347,15 @@ Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::~Ch
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
 void Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::setParameters(const Teuchos::ParameterList& List) {
 
-  Tifpack::GetParameter(List, "chebyshev: ratio eigenvalue", EigRatio_);
-  Tifpack::GetParameter(List, "chebyshev: min eigenvalue", LambdaMin_);
-  Tifpack::GetParameter(List, "chebyshev: max eigenvalue", LambdaMax_);
-  Tifpack::GetParameter(List, "chebyshev: degree",PolyDegree_);
-  Tifpack::GetParameter(List, "chebyshev: min diagonal value", MinDiagonalValue_);
-  Tifpack::GetParameter(List, "chebyshev: zero starting solution", ZeroStartingSolution_);
+  Tifpack::getParameter(List, "chebyshev: ratio eigenvalue", EigRatio_);
+  Tifpack::getParameter(List, "chebyshev: min eigenvalue", LambdaMin_);
+  Tifpack::getParameter(List, "chebyshev: max eigenvalue", LambdaMax_);
+  Tifpack::getParameter(List, "chebyshev: degree",PolyDegree_);
+  Tifpack::getParameter(List, "chebyshev: min diagonal value", MinDiagonalValue_);
+  Tifpack::getParameter(List, "chebyshev: zero starting solution", ZeroStartingSolution_);
 
   Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>* ID = 0;
-  Tifpack::GetParameter(List, "chebyshev: operator inv diagonal", ID);
+  Tifpack::getParameter(List, "chebyshev: operator inv diagonal", ID);
 
   if (ID != 0) {
     InvDiagonal_ = Teuchos::rcp( new Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(*ID) );

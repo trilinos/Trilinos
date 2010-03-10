@@ -67,37 +67,40 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackCrsRiluk, Test0, Scalar, LocalOrdinal, 
   Tifpack::CrsRiluk<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec(crsmatrix);
 
   Teuchos::ParameterList params;
-  params.set("fact: iluk level-of-fill", 1.0);
-  params.set("fact: drop tolerance", 0.0);
+  int fill_level = 1;
+  params.set("fact: iluk level-of-fill", fill_level);
+  params.set("fact: iluk level-of-overlap", 0);
 
   TEUCHOS_TEST_NOTHROW(prec.setParameters(params), out, success);
 
+  TEUCHOS_TEST_EQUALITY( prec.getLevelOfFill(), fill_level, out, success);
+
   prec.initialize();
   //trivial tests to insist that the preconditioner's domain/range maps are
-  //identically those of the matrix:
-//  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>* mtx_dom_map_ptr = &*crsmatrix->getDomainMap();
-//  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>* mtx_rng_map_ptr = &*crsmatrix->getRangeMap();
-//
-//  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>* prec_dom_map_ptr = &*prec.getDomainMap();
-//  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>* prec_rng_map_ptr = &*prec.getRangeMap();
-//
-//  TEUCHOS_TEST_EQUALITY( prec_dom_map_ptr, mtx_dom_map_ptr, out, success );
-//  TEUCHOS_TEST_EQUALITY( prec_rng_map_ptr, mtx_rng_map_ptr, out, success );
-//
-//  prec.compute();
-//
-//  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,2), y(rowmap,2);
-//  x.putScalar(1);
-//
-//  prec.apply(x, y);
-//
-//  Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
-//
-//  //y should be full of 0.5's now.
-//
-//  Teuchos::ArrayRCP<Scalar> halfs(num_rows_per_proc*2, 0.5);
-//
-//  TEST_COMPARE_FLOATING_ARRAYS(yview, halfs(), Teuchos::ScalarTraits<Scalar>::eps());
+  //the same as those of the matrix:
+  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& mtx_dom_map = *crsmatrix->getDomainMap();
+  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& mtx_rng_map = *crsmatrix->getRangeMap();
+
+  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& prec_dom_map = *prec.getDomainMap();
+  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>& prec_rng_map = *prec.getRangeMap();
+
+  TEUCHOS_TEST_EQUALITY( prec_dom_map.isSameAs(mtx_dom_map), true, out, success );
+  TEUCHOS_TEST_EQUALITY( prec_rng_map.isSameAs(mtx_rng_map), true, out, success );
+
+  prec.compute();
+
+  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,2), y(rowmap,2);
+  x.putScalar(1);
+
+  prec.apply(x, y);
+
+  Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
+
+  //y should be full of 0.5's now.
+
+  Teuchos::ArrayRCP<Scalar> halfs(num_rows_per_proc*2, 0.5);
+
+  TEST_COMPARE_FLOATING_ARRAYS(yview, halfs(), Teuchos::ScalarTraits<Scalar>::eps());
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackCrsRiluk, Test1, Scalar, LocalOrdinal, GlobalOrdinal)

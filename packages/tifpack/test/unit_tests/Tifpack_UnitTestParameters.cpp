@@ -49,18 +49,18 @@ TEUCHOS_UNIT_TEST(TifpackParameters, Test0)
 
   Teuchos::ParameterList validparams;
 
-  TEUCHOS_TEST_NOTHROW(Tifpack::GetValidParameters(validparams), out, success);
+  TEUCHOS_TEST_NOTHROW(Tifpack::getValidParameters(validparams), out, success);
 
   params.validateParameters(validparams);
 
   int level_of_fill = 0;
 
-  //call GetParameter with a wrong name:
-  Tifpack::GetParameter(params, "level-of-fill", level_of_fill);
+  //call getParameter with a wrong name:
+  Tifpack::getParameter(params, "level-of-fill", level_of_fill);
   TEUCHOS_TEST_EQUALITY(level_of_fill, 0, out, success)
 
-  //call GetParameter with a valid name:
-  Tifpack::GetParameter(params, "fact: iluk level-of-fill", level_of_fill);
+  //call getParameter with a valid name:
+  Tifpack::getParameter(params, "fact: iluk level-of-fill", level_of_fill);
   TEUCHOS_TEST_EQUALITY(level_of_fill, 2, out, success)
 }
 
