@@ -134,8 +134,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackChebyshev, Test0, Scalar, LocalOrdinal,
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TifpackChebyshev, Test0, Scalar, LocalOrdinal,GlobalOrdinal)
 
 UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
+#ifndef HAVE_TIFPACK_EXPLICIT_INSTANTIATION
 typedef long int LongInt;
 UNIT_TEST_GROUP_SCALAR_ORDINAL(float, int, LongInt)
+#endif
 
 #ifdef HAVE_TIFPACK_QD
 UNIT_TEST_GROUP_SCALAR_ORDINAL(dd_real, int, int)
