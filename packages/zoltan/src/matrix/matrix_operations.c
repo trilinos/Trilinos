@@ -140,14 +140,16 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   for(i = 0; i < size ; ++i) {
     int position;
     if (arcs[i].GNO[1] >= 0) {/* real arc */
-      int prev;
-      Zoltan_Map_Find_Add(zz, nnz_map, arcs[i].GNO, (void*)i, (void**)&prev);
-      if (prev != i) /* Duplicate arcs */
+      int prev = -1;
+      Zoltan_Map_Find_Add(zz, nnz_map, arcs[i].GNO, (void*)(long)i, (void**)&prev);
+      if (prev != i) {/* Duplicate arcs */
 	wgtfct(pinwgt+i*outmat->pinwgtdim, pinwgt+prev*outmat->pinwgtdim,
 	       outmat->pinwgtdim);
+	continue;
+      }
     }
     position = Zoltan_Map_Size(zz, y_map);
-    Zoltan_Map_Find_Add(zz, y_map, &arcs[i].GNO[0], (void*)position, (void**)&position);
+    Zoltan_Map_Find_Add(zz, y_map, &arcs[i].GNO[0], (void*)(long)position, (void**)&position);
     if (arcs[i].GNO[1] >= 0)
       ysize[position] += 1; /* One arc for yGNO */
   }
@@ -487,12 +489,12 @@ Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, int* perm_y)
     else
       ybipart = NULL;
     /* Get Informations about Y */
-    Zoltan_DD_Find (m->ddY, (ZOLTAN_ID_PTR)m->yGNO, yGID, (ZOLTAN_ID_PTR)ypid, (ZOLTAN_ID_PTR)ybipart,
+    Zoltan_DD_Find (m->ddY, (ZOLTAN_ID_PTR)m->yGNO, yGID, (ZOLTAN_ID_PTR)ypid, ybipart,
 		    m->nY, NULL);
   }
 
   /* Get Informations about Y */
-  Zoltan_DD_Update (m->ddY, (ZOLTAN_ID_PTR)perm_y, yGID, (ZOLTAN_ID_PTR)ybipart, (ZOLTAN_ID_PTR)ybipart,
+  Zoltan_DD_Update (m->ddY, (ZOLTAN_ID_PTR)perm_y, yGID, (ZOLTAN_ID_PTR)ybipart, ybipart,
 		    m->nY);
   ZOLTAN_FREE (&yGID);
   ZOLTAN_FREE (&ypid);
