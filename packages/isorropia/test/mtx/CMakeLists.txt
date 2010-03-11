@@ -29,6 +29,13 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  test_simple_methods
+  SOURCES test_simple_methods.cpp
+  DEPLIBS isorropia_test_utils
+  COMM serial mpi
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   test_colorer
   SOURCES test_colorer.cpp
   DEPLIBS isorropia_test_utils
@@ -42,6 +49,6 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(TestCreateBalancedCopyCopyFiles
-  SOURCE_FILES simple.mtx simple_25X50.mtx simple_50X25.mtx small.mtx felix.mtx
+  SOURCE_FILES simple.mtx simple_25X50.mtx simple_50X25.mtx small.mtx felix.mtx arrow100.mtx
   EXEDEPS test_balanced_copy
   )
