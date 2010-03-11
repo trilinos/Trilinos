@@ -176,8 +176,6 @@ int Zoltan_Preprocess_Graph(
     ZOLTAN_PARMETIS_ERROR(ierr, "Get_Obj_List returned error.");
   }
 
-    
-
   /* Build Graph for third party library data structures, or just get vtxdist. */
 
   if (gr->get_data) {
@@ -190,10 +188,10 @@ int Zoltan_Preprocess_Graph(
 			     &gr->vtxdist, &gr->xadj, &gr->adjncy, &gr->adjproc,
 			     &float_ewgts, NULL);
     /* TODO: support graph redistribution */
-/*   if (prt) */
-/*     ierr = Zoltan_ZG_Vertex_Info(zz, &graph, global_ids, &prt->input_part); */
-/*   else */
-/*     ierr = Zoltan_ZG_Vertex_Info(zz, &graph, global_ids, NULL); */
+  if (prt)
+    ierr = Zoltan_ZG_Vertex_Info(zz, &graph, global_ids, &float_vwgt, &prt->input_part);
+  else
+    ierr = Zoltan_ZG_Vertex_Info(zz, &graph, global_ids, &float_vwgt, NULL);
 
 /*     /\* Just to try *\/ */
 /*     if (prt) { */

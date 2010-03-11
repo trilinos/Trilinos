@@ -235,15 +235,21 @@ Zoltan_ZG_Vertex_Info(ZZ* zz, const ZG *const graph,
 		      ZOLTAN_ID_PTR *pgid, float **pwwgt, int **pinput_part) {
   static char *yo = "Zoltan_ZG_Vertex_Info";
   int ierr = ZOLTAN_OK;
+  float *wgt = NULL;
+  int *input_part = NULL;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-  *pwwgt = (float*) ZOLTAN_MALLOC(graph->mtx.mtx.nY*zz->Obj_Weight_Dim*sizeof(float));
-  if (graph->mtx.mtx.nY >0 && zz->Obj_Weight_Dim > 0 && *pwwgt == NULL) MEMORY_ERROR;
-  *pinput_part = (int*) ZOLTAN_MALLOC(graph->mtx.mtx.nY*sizeof(int));
-  if (graph->mtx.mtx.nY > 0 && *pinput_part == NULL) MEMORY_ERROR;
+  if (pwwgt != NULL) {
+    wgt = *pwwgt = (float*) ZOLTAN_MALLOC(graph->mtx.mtx.nY*zz->Obj_Weight_Dim*sizeof(float));
+    if (graph->mtx.mtx.nY >0 && zz->Obj_Weight_Dim > 0 && *pwwgt == NULL) MEMORY_ERROR;
+  }
+  if (pinput_part != NULL) {
+    input_part = *pinput_part = (int*) ZOLTAN_MALLOC(graph->mtx.mtx.nY*sizeof(int));
+    if (graph->mtx.mtx.nY > 0 && *pinput_part == NULL) MEMORY_ERROR;
+  }
   ierr = Zoltan_Matrix_Vertex_Info(zz, &graph->mtx.mtx,
-				   *pwwgt, *pinput_part);
+				   *wgt, *input_part);
 
  End:
   ZOLTAN_TRACE_EXIT(zz, yo);
