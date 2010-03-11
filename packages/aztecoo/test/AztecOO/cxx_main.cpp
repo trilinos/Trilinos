@@ -1484,6 +1484,7 @@ int test_bug2554(Epetra_Comm& Comm, bool verbose)
   solver->Iterate(50,1e-12);
 
   // Clean up some memory
+  solver->UnsetLHSRHS(); // Make sure this function works
   delete problem;
   delete solver;
   delete [] dummy;

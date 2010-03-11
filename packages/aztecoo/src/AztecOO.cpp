@@ -619,6 +619,16 @@ int AztecOO::SetRHS(Epetra_MultiVector * B) {
   return(0);
 }
 //=============================================================================
+int AztecOO::UnsetLHSRHS() {
+  X_ = 0;
+  x_ = 0;
+  x_LDA_ = -1;
+  B_ = 0;
+  b_ = 0;
+  b_LDA_ = -1;
+  return(0);
+}
+//=============================================================================
 int AztecOO::SetProcConfig(const Epetra_Comm & Comm) {
 
   if (!procConfigSet_) {
