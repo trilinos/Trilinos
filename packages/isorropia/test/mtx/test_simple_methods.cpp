@@ -196,7 +196,7 @@ bool testPartitioningMVInput(Teuchos::RCP<const Epetra_MultiVector> mv, const ch
     if(myrank==0)
     {
       std::cout << "WARNING for testPartitionMVInput() with number of processors = " << worldsize << std::endl
-                << "        Number of processes not supported .... returning success" << std::endl;
+                << "        Number of processes not supported .... (by default) returning success" << std::endl;
     }
   }
 
@@ -273,7 +273,7 @@ bool testPartitioningMatrixInput(Teuchos::RCP<const Epetra_RowMatrix> mat, const
     if(myrank==0)
     {
       std::cout << "WARNING for testPartitionMatrixInput() with number of processors = " << worldsize << std::endl
-                << "        Number of processes not supported .... returning success" << std::endl;
+                << "        Number of processes not supported .... (by default) returning success" << std::endl;
     }
   }
 
@@ -350,7 +350,7 @@ bool testPartitioningMapInput(Teuchos::RCP<const Epetra_BlockMap> map, const cha
     if(myrank==0)
     {
       std::cout << "WARNING for testPartitionMapInput() with number of processors = " << worldsize << std::endl
-                << "        Number of processes not supported .... returning success" << std::endl;
+                << "        Number of processes not supported .... (by default) returning success" << std::endl;
     }
   }
 
