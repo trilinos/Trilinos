@@ -18,7 +18,7 @@ class DiagonalPreconditionerOp :public ImplicitLinearOp  {
 public:
 
   /** @brief Constuctor */
-  DiagonalPreconditionerOp(Teuchos::RCP<EpetraExt_PointToBlockDiagPermute> BDP, const VectorSpace & range, const VectorSpace & domain);
+  DiagonalPreconditionerOp(Teuchos::RCP<EpetraExt_PointToBlockDiagPermute> BDP, const VectorSpace range, const VectorSpace domain);
 
   /** @brief Range space of this operator */
   virtual VectorSpace range() const {return range_;}
@@ -63,7 +63,7 @@ private:
   
 
   Teuchos::RCP<EpetraExt_PointToBlockDiagPermute> BDP_;
-  const VectorSpace & range_, & domain_;
+  const VectorSpace range_, domain_;
 };
 
 } // end namespace Teko

@@ -12,7 +12,7 @@ using Thyra::MultiVectorBase;
 
 namespace Teko {
 
-DiagonalPreconditionerOp::DiagonalPreconditionerOp(Teuchos::RCP<EpetraExt_PointToBlockDiagPermute> BDP, const VectorSpace & range, const VectorSpace & domain):
+DiagonalPreconditionerOp::DiagonalPreconditionerOp(Teuchos::RCP<EpetraExt_PointToBlockDiagPermute> BDP, const VectorSpace range, const VectorSpace domain):
   BDP_(BDP),
   range_(range),
   domain_(domain){}
