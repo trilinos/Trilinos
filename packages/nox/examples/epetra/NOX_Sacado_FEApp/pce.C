@@ -326,12 +326,22 @@ int main(int argc, char *argv[]) {
 
       // Set up stochastic parameters
       Epetra_LocalMap p_sg_map(num_KL, 0, *Comm);
-      Teuchos::Array< Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> > sg_p(2);
-      sg_p[1] = 
+      Teuchos::Array< Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> > sg_p;
+      int sg_p_index;
+      if (SG_Method == SG_AD || SG_Method == SG_ELEMENT) {
+	sg_p.resize(1);
+	sg_p_index = 0;
+      }
+      else {
+	// When SGQuadModelEvaluator is used, there are 2 SG parameter vectors
+	sg_p.resize(2);
+	sg_p_index = 1;
+      }
+      sg_p[sg_p_index] = 
 	Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(basis, p_sg_map));
       for (int i=0; i<num_KL; i++) {
-	sg_p[1]->term(i,0)[i] = 0.0;
-	sg_p[1]->term(i,1)[i] = 1.0;
+	sg_p[sg_p_index]->term(i,0)[i] = 0.0;
+	sg_p[sg_p_index]->term(i,1)[i] = 1.0;
       }
       Teuchos::RefCountPtr< Teuchos::Array<std::string> > sg_param_names =
 	Teuchos::rcp(new Teuchos::Array<std::string>);
@@ -349,8 +359,7 @@ int main(int argc, char *argv[]) {
 
       if (SG_Method == SG_AD || SG_Method == SG_ELEMENT) {
 	model = Teuchos::rcp(new FEApp::ModelEvaluator(app, free_param_names,
-						       sg_param_names,
-						       sg_x, sg_p[1]));
+						       sg_param_names));
       }
       else {
 	Teuchos::RCP<EpetraExt::ModelEvaluator> underlying_model;
@@ -367,7 +376,7 @@ int main(int argc, char *argv[]) {
 	}
 	model =
 	  Teuchos::rcp(new Stokhos::SGQuadModelEvaluator(underlying_model,
-							 basis, sg_x, sg_p));
+							 basis));
       }
 
       Teuchos::RCP<Teuchos::ParameterList> sgParams = 
@@ -389,7 +398,7 @@ int main(int argc, char *argv[]) {
       Teuchos::RCP<Stokhos::SGModelEvaluator> sg_model =
 	Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, quad, 
 						   expansion, Cijk, 
-						   sgParams, Comm));
+						   sgParams, Comm, sg_x, sg_p));
 
       // Create SG NOX solver
       Teuchos::RCP<EpetraExt::ModelEvaluator> sg_block_solver;
@@ -413,7 +422,7 @@ int main(int argc, char *argv[]) {
       sg_inverse_p_index[0] = 1;
       base_p_maps[0] = model->get_p_sg_map(0);
       base_g_maps[0] = model->get_g_sg_map(0);
-      base_g_maps[1] = model->get_x_map();
+      base_g_maps[1] = app->getMap();
       if (SG_Method != SG_NI) {
 	// Responses are:  g, block g, block u
 	sg_inverse_g_index[0] = 1;
@@ -467,68 +476,70 @@ int main(int argc, char *argv[]) {
       std::cout << "SG expansion of sensitivity:" << std::endl << *sg_dgdp;
 
 #ifdef HAVE_STOKHOS_ANASAZI
-      // Compute KL expansion of solution sg_u
-      Teuchos::RCP<EpetraExt::BlockVector> X;
-      X = Teuchos::rcp(new EpetraExt::BlockVector(finalSolution->Map(),
-						  *(sg_model->get_x_map())));
-      sg_u->assignToBlockVector(*X);
-      Teuchos::RCP<const EpetraExt::BlockVector> cX = X;
-      Stokhos::PCEAnasaziKL pceKL(cX, *basis, 20);
-      Teuchos::ParameterList anasazi_params = pceKL.getDefaultParams();
-      //anasazi_params.set("Num Blocks", 10);
-      //anasazi_params.set("Step Size", 50);
-      anasazi_params.set("Verbosity",  
-      			 Anasazi::FinalSummary + 
-      			 //Anasazi::StatusTestDetails + 
-      			 //Anasazi::IterationDetails + 
-      			 Anasazi::Errors + 
-      			 Anasazi::Warnings);
-      bool result = pceKL.computeKL(anasazi_params);
-      if (!result)
-	utils.out() << "KL Eigensolver did not converge!" << std::endl;
-      Teuchos::Array<double> evals = pceKL.getEigenvalues();
-      utils.out() << "KL eigenvalues = " << std::endl;
-      for (int i=0; i<evals.size(); i++)
-	utils.out() << std::sqrt(evals[i]) << std::endl;
+      if (SG_Method != SG_NI) {
+	// Compute KL expansion of solution sg_u
+	Teuchos::RCP<EpetraExt::BlockVector> X;
+	X = Teuchos::rcp(new EpetraExt::BlockVector(finalSolution->Map(),
+						    *(sg_model->get_x_map())));
+	sg_u->assignToBlockVector(*X);
+	Teuchos::RCP<const EpetraExt::BlockVector> cX = X;
+	Stokhos::PCEAnasaziKL pceKL(cX, *basis, 20);
+	Teuchos::ParameterList anasazi_params = pceKL.getDefaultParams();
+	//anasazi_params.set("Num Blocks", 10);
+	//anasazi_params.set("Step Size", 50);
+	anasazi_params.set("Verbosity",  
+			   Anasazi::FinalSummary + 
+			   //Anasazi::StatusTestDetails + 
+			   //Anasazi::IterationDetails + 
+			   Anasazi::Errors + 
+			   Anasazi::Warnings);
+	bool result = pceKL.computeKL(anasazi_params);
+	if (!result)
+	  utils.out() << "KL Eigensolver did not converge!" << std::endl;
+	Teuchos::Array<double> evals = pceKL.getEigenvalues();
+	utils.out() << "KL eigenvalues = " << std::endl;
+	for (int i=0; i<evals.size(); i++)
+	  utils.out() << std::sqrt(evals[i]) << std::endl;
 
-      // Evaluate expansion at a point
-      Teuchos::Array<double> point(num_KL);
-      for (int i=0; i<num_KL; i++)
-	point[i] = 0.5;
-      Teuchos::Array<double> basis_vals(sz);
-      basis->evaluateBases(point, basis_vals);
-
-      Teuchos::RCP<Epetra_MultiVector> evecs = pceKL.getEigenvectors();
-      Teuchos::Array< Stokhos::OrthogPolyApprox<int,double> > rvs(evals.size());
-      Teuchos::Array<double> val_rvs(evals.size());
-      for (int i=0; i<evals.size(); i++) {
-      	rvs[i].reset(basis);
-	rvs[i][0] = 0.0;
-      	for (int j=1; j<sz; j++)
-      	  X->GetBlock(j)->Dot(*((*evecs)(i)), &(rvs[i][j]));
-	val_rvs[i] = rvs[i].evaluate(point, basis_vals);
+	// Evaluate expansion at a point
+	Teuchos::Array<double> point(num_KL);
+	for (int i=0; i<num_KL; i++)
+	  point[i] = 0.5;
+	Teuchos::Array<double> basis_vals(sz);
+	basis->evaluateBases(point, basis_vals);
+	
+	Teuchos::RCP<Epetra_MultiVector> evecs = pceKL.getEigenvectors();
+	Teuchos::Array< Stokhos::OrthogPolyApprox<int,double> > rvs(evals.size());
+	Teuchos::Array<double> val_rvs(evals.size());
+	for (int i=0; i<evals.size(); i++) {
+	  rvs[i].reset(basis);
+	  rvs[i][0] = 0.0;
+	  for (int j=1; j<sz; j++)
+	    X->GetBlock(j)->Dot(*((*evecs)(i)), &(rvs[i][j]));
+	  val_rvs[i] = rvs[i].evaluate(point, basis_vals);
+	}
+	
+	Epetra_Vector val_kl(finalSolution->Map());
+	val_kl.Update(1.0, *(X->GetBlock(0)), 0.0);
+	for (int i=0; i<evals.size(); i++)
+	  val_kl.Update(val_rvs[i], *((*evecs)(i)), 1.0);
+	
+	Stokhos::VectorOrthogPoly<Epetra_Vector> sg_u_poly(basis);
+	for (int i=0; i<sz; i++)
+	  sg_u_poly.setCoeffPtr(i, X->GetBlock(i));
+	Epetra_Vector val(finalSolution->Map());
+	sg_u_poly.evaluate(basis_vals, val);
+	
+	// val.Print(std::cout);
+	// val_kl.Print(std::cout);
+	
+	val.Update(-1.0, val_kl, 1.0);
+	// val.Print(std::cout);
+	
+	double diff;
+	val.NormInf(&diff);
+	std::cout << "Infinity norm of difference = " << diff << std::endl;
       }
-      
-      Epetra_Vector val_kl(finalSolution->Map());
-      val_kl.Update(1.0, *(X->GetBlock(0)), 0.0);
-      for (int i=0; i<evals.size(); i++)
-	val_kl.Update(val_rvs[i], *((*evecs)(i)), 1.0);
-
-      Stokhos::VectorOrthogPoly<Epetra_Vector> sg_u_poly(basis);
-      for (int i=0; i<sz; i++)
-	sg_u_poly.setCoeffPtr(i, X->GetBlock(i));
-      Epetra_Vector val(finalSolution->Map());
-      sg_u_poly.evaluate(basis_vals, val);
-
-      // val.Print(std::cout);
-      // val_kl.Print(std::cout);
-
-      val.Update(-1.0, val_kl, 1.0);
-      // val.Print(std::cout);
-
-      double diff;
-      val.NormInf(&diff);
-      std::cout << "Infinity norm of difference = " << diff << std::endl;
 #endif
       
       NOX::StatusTest::StatusType status = NOX::StatusTest::Converged;

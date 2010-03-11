@@ -56,8 +56,8 @@ namespace Stokhos {
     SGQuadModelEvaluator(
       const Teuchos::RCP<EpetraExt::ModelEvaluator>& me,
       const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
-      const Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly>& initial_x_sg,
-      const Teuchos::Array< Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> >& initial_p_sg);
+      const Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly>& initial_x_sg = Teuchos::null,
+      const Teuchos::Array< Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> >& initial_p_sg = Teuchos::Array< Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> >());
     
     /** \name Overridden from EpetraExt::ModelEvaluator . */
     //@{
