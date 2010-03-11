@@ -37,7 +37,9 @@
 #include "AnasaziStatusTestMaxIters.hpp"
 
 // Isorropia includes
+#ifdef HAVE_TEKO_ISORROPIA
 #include "Isorropia_EpetraProber.hpp"
+#endif
 
 // Teko includes
 #include "Epetra/Teko_EpetraHelpers.hpp"
@@ -1214,17 +1216,20 @@ DiagonalType getDiagonalType(std::string name)
 
 
 LinearOp probe(Teuchos::RCP<const Epetra_CrsGraph> &G, LinearOp & Op){
+#ifdef HAVE_TEKO_ISORROPIA
   Teuchos::ParameterList probeList;
   Prober prober(G,probeList,true);
   Teuchos::RCP<Epetra_CrsMatrix> Mat=rcp(new Epetra_CrsMatrix(Copy,*G));
 
-  std::cout<<Teuchos::describe(*Op->range())<<endl;
-  std::cout<<Teuchos::describe(*Op->domain())<<endl;
-
-
   Teko::Epetra::EpetraOperatorWrapper Mwrap(Op);
   prober.probe(Mwrap,*Mat);
+
+  cout<<*Op<<endl;
+  cout<<*Mat<<endl;
   return Thyra::epetraLinearOp(Mat);    
+#else
+  TEUCHOS_ASSERT(false);
+#endif
 }
 
 }
