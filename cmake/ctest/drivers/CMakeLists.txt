@@ -28,25 +28,28 @@ set(DOWNLOADED_DIR "${TrilinosDriver_SOURCE_DIR}/cmake-prebuilt/bin")
 set(DOWNLOADED_CMAKE "${DOWNLOADED_DIR}/cmake")
 set(DOWNLOADED_CTEST "${DOWNLOADED_DIR}/ctest")
 
+set(SITES
+corrin
+dash2win64
+exetazo
+gabriel
+godel
+kallikrates
+s903186
+s909348
+thumper
+trilinos-test
+trilinos-test2
+)
+
 # Figure out which machine we're on
 site_name(site)
-message("site=${site}")
 set(subdir "${site}")
-if("${site}" MATCHES "corrin")
-  set(subdir "corrin")
-endif()
+
+foreach(sitename ${SITES})
+  if("${site}" MATCHES "${sitename}")
+    set(subdir "${sitename}")
+  endif()
+endforeach()
   
 add_subdirectory("${subdir}")
-
-
-#add_subdirectory(corrin)
-#add_subdirectory(dash2win64)
-#add_subdirectory(exetazo)
-#add_subdirectory(gabriel)
-#add_subdirectory(godel)
-#add_subdirectory(kallikrates)
-#add_subdirectory(s903186)
-#add_subdirectory(s909348)
-#add_subdirectory(thumper)
-#add_subdirectory(trilinos-test)
-#add_subdirectory(trilinos-test2)
