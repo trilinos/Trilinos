@@ -335,7 +335,7 @@ int Zoltan_Color(
 /*     ZOLTAN_FREE(&vtxwgt); */
 /*     ZOLTAN_FREE(&input_part); */
 /*   } */
-  Zoltan_ZG_Query(zz, &graph, global_ids, nvtx, color_exp);
+  Zoltan_ZG_Query(zz, &graph, global_ids, num_obj, color_exp);
 
 #if 0
   /* Check if there is an error in coloring */

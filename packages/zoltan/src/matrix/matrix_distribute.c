@@ -85,7 +85,14 @@ Zoltan_Distribute_layout (ZZ *zz, const PHGComm * const inlayout,
 
 int Zoltan_Distribute_Origin(int edge_gno, int vtx_gno, void* data, int *part_y)
 {
-  return (Zoltan_Distribute_Partition(edge_gno, vtx_gno, data, part_y));
+  ZOLTAN_DIST_PART* part;
+  void *answer = NULL;
+
+  part = (ZOLTAN_DIST_PART*) data;
+  Zoltan_Map_Find(part->zz, part->map, &edge_gno, (void**)&answer);
+  *part_y = (int)(long)answer;
+
+  return (*part_y);
 }
 
 int Zoltan_Distribute_Linear(int edge_gno, int vtx_gno, void* data, int *part_y)
@@ -115,7 +122,7 @@ int Zoltan_Distribute_Partition(int edge_gno, int vtx_gno, void* data, int *part
 
   part = (ZOLTAN_DIST_PART*) data;
   Zoltan_Map_Find(part->zz, part->map, &edge_gno, (void**)&answer);
-  *part_y = (int)answer;
+  *part_y = (int)(long)answer;
 
   return ((int)floor((double)*part_y/((double)part->nPart/(double)part->nProc)));
 }
@@ -139,7 +146,7 @@ void* Zoltan_Distribute_Partition_Register(ZZ* zz, int size, int* yGNO, int *par
   }
 
   for (i = 0 ; i < size ; ++i ) {
-    Zoltan_Map_Add(dist->zz, dist->map, &yGNO[i], (void*)part[i]);
+    Zoltan_Map_Add(dist->zz, dist->map, &yGNO[i], (void*)(long)part[i]);
   }
 
   dist->nProc = nProc;
@@ -220,10 +227,12 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
 
       cmember = (int*)ZOLTAN_MALLOC(outmat->mtx.nY*sizeof(int));
       if (outmat->mtx.nY > 0 && cmember == NULL) MEMORY_ERROR;
+      Zoltan_DD_Find (outmat->mtx.ddY, (ZOLTAN_ID_PTR)outmat->mtx.yGNO, NULL, (ZOLTAN_ID_PTR)cmember, NULL,
+		      outmat->mtx.nY, NULL);
       partdata = Zoltan_Distribute_Partition_Register(zz, outmat->mtx.nY, outmat->mtx.yGNO,
 						      cmember, zz->Num_Proc, zz->Num_Proc);
       ZOLTAN_FREE(&cmember);
-      Zoltan_Distribute_Set(&outmat->mtx, &Zoltan_Distribute_Origin, partdata);
+      Zoltan_Distribute_Set(outmat, &Zoltan_Distribute_Origin, partdata);
     }
   }
 
@@ -263,6 +272,9 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
       cnt++;
     }
   }
+
+  if (outmat->hashDistFct == &Zoltan_Distribute_Origin)
+    Zoltan_Distribute_Partition_Free(&outmat->hashDistData);
 
   if (outmat->mtx.yend != outmat->mtx.ystart + 1)
     ZOLTAN_FREE(&outmat->mtx.yend);

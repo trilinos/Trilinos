@@ -118,7 +118,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
     xpid[i] = zz->Proc;
 
   Zoltan_DD_Update (matrix->ddX, (ZOLTAN_ID_PTR)xGNO, xGID, (ZOLTAN_ID_PTR) xpid, NULL, nX);
-
+  ZOLTAN_FREE(&xpid);
 
   if (matrix->opts.pinwgt)
     matrix->pinwgtdim = zz->Edge_Weight_Dim;
@@ -234,7 +234,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
   }
 
  End:
-
+  ZOLTAN_FREE(&xpid);
   ZOLTAN_FREE(&xLID);
   ZOLTAN_FREE(&xGNO);
   ZOLTAN_FREE(&xGID);
@@ -254,13 +254,14 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
 
 int
 Zoltan_Matrix_Vertex_Info(ZZ* zz, const Zoltan_matrix * const m,
+			  ZOLTAN_ID_PTR lid,
 			  float *wwgt, int *input_part)
 {
   static char *yo = "Zoltan_Matrix_Vertex_Info";
   int ierr = ZOLTAN_OK;
   int nX;
-  ZOLTAN_ID_PTR gid = NULL;
-  ZOLTAN_ID_PTR lid = NULL;
+  ZOLTAN_ID_PTR l_gid = NULL;
+  ZOLTAN_ID_PTR l_lid = NULL;
   float * l_xwgt = NULL;
   int *l_input_part = NULL;
   struct Zoltan_DD_Struct *dd = NULL;
@@ -272,27 +273,32 @@ Zoltan_Matrix_Vertex_Info(ZZ* zz, const Zoltan_matrix * const m,
     goto End;
   }
 
-  ierr = Zoltan_Get_Obj_List(zz, &nX, &gid, &lid,
+  ierr = Zoltan_Get_Obj_List(zz, &nX, &l_gid, &l_lid,
 			     zz->Obj_Weight_Dim, &l_xwgt,
 			     &l_input_part);
-  ZOLTAN_FREE(&lid);
 
-  ierr = Zoltan_DD_Create (&dd, zz->Communicator,
-			   zz->Obj_Weight_Dim*sizeof(float)/sizeof(int), 1,
-			   0, nX, 0);
+  ierr = Zoltan_DD_Create (&dd, zz->Communicator, zz->Num_GID, zz->Num_LID,
+			   zz->Obj_Weight_Dim*sizeof(float)/sizeof(int),
+			   nX, 0);
   CHECK_IERR;
 
     /* Make our new numbering public */
-  Zoltan_DD_Update (dd, gid, (ZOLTAN_ID_PTR) l_xwgt, (ZOLTAN_ID_PTR)l_input_part,  NULL, nX);
+  Zoltan_DD_Update (dd, l_gid, l_lid, (ZOLTAN_ID_PTR) l_xwgt,l_input_part, nX);
+  ZOLTAN_FREE(&l_gid);
+  ZOLTAN_FREE(&l_lid);
   ZOLTAN_FREE(&l_xwgt);
   ZOLTAN_FREE(&l_input_part);
 
-  ierr = Zoltan_DD_Find (dd, m->yGID, (ZOLTAN_ID_PTR)wwgt, input_part, NULL,
+  ierr = Zoltan_DD_Find (dd, m->yGID, lid, (ZOLTAN_ID_PTR)wwgt, input_part,
 		    m->nY, NULL);
 
  End:
   if (dd != NULL)
     Zoltan_DD_Destroy(&dd);
+  ZOLTAN_FREE(&l_gid);
+  ZOLTAN_FREE(&l_lid);
+  ZOLTAN_FREE(&l_xwgt);
+  ZOLTAN_FREE(&l_input_part);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
   return (ierr);

@@ -38,7 +38,7 @@ Zoltan_ZG_Export (ZZ* zz, const ZG* const graph, int *gvtx, int *nvtx, int *obj_
 
 int
 Zoltan_ZG_Vertex_Info(ZZ* zz, const ZG *const graph,
-		      ZOLTAN_ID_PTR *pgid, float **pwwgt, int **pinput_part);
+		      ZOLTAN_ID_PTR *pgid, ZOLTAN_ID_PTR *plid, float **pwwgt, int **pinput_part);
 
 int
 Zoltan_ZG_Register(ZZ* zz, ZG* graph, int* properties);

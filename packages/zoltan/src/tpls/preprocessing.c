@@ -162,36 +162,26 @@ int Zoltan_Preprocess_Graph(
 			   zz->Debug_Proc);
 
   input_part = NULL;
-  ierr = Zoltan_Get_Obj_List(zz, &gr->num_obj, global_ids, local_ids,
-			       gr->obj_wgt_dim, &float_vwgt, &input_part);
-  CHECK_IERR;
-  if (prt) {
-    prt->input_part = input_part;
-  }
-  else if (input_part) { /* Ordering, dont need part */
-    ZOLTAN_FREE(&input_part);
-  }
-  if (ierr){
-    /* Return error */
-    ZOLTAN_PARMETIS_ERROR(ierr, "Get_Obj_List returned error.");
-  }
 
   /* Build Graph for third party library data structures, or just get vtxdist. */
 
   if (gr->get_data) {
-    local = IS_LOCAL_GRAPH(gr->graph_type);
     ZOLTAN_FREE(&float_vwgt);
+    ZOLTAN_FREE(&input_part);
+    ZOLTAN_FREE(global_ids);
+    local = IS_LOCAL_GRAPH(gr->graph_type);
+
     ierr = Zoltan_ZG_Build (zz, graph, local); /* Normal graph */
     CHECK_IERR;
     ierr = Zoltan_ZG_Export (zz, graph,
 			     &gr->num_obj, &gr->num_obj, &gr->obj_wgt_dim, &gr->edge_wgt_dim,
 			     &gr->vtxdist, &gr->xadj, &gr->adjncy, &gr->adjproc,
 			     &float_ewgts, NULL);
-    /* TODO: support graph redistribution */
-  if (prt)
-    ierr = Zoltan_ZG_Vertex_Info(zz, &graph, global_ids, &float_vwgt, &prt->input_part);
-  else
-    ierr = Zoltan_ZG_Vertex_Info(zz, &graph, global_ids, &float_vwgt, NULL);
+    /* Find info about the graph according to the distribution */
+    if (prt)
+      ierr = Zoltan_ZG_Vertex_Info(zz, graph, global_ids, local_ids, &float_vwgt, &prt->input_part);
+    else
+      ierr = Zoltan_ZG_Vertex_Info(zz, graph, global_ids, local_ids, &float_vwgt, NULL);
 
 /*     /\* Just to try *\/ */
 /*     if (prt) { */
@@ -204,6 +194,20 @@ int Zoltan_Preprocess_Graph(
   }
   else{ /* Only geometry */
     int i;
+    ierr = Zoltan_Get_Obj_List(zz, &gr->num_obj, global_ids, local_ids,
+			       gr->obj_wgt_dim, &float_vwgt, &input_part);
+    CHECK_IERR;
+    if (prt) {
+      prt->input_part = input_part;
+    }
+    else if (input_part) { /* Ordering, dont need part */
+      ZOLTAN_FREE(&input_part);
+    }
+    if (ierr){
+      /* Return error */
+      ZOLTAN_PARMETIS_ERROR(ierr, "Get_Obj_List returned error.");
+    }
+
     /* No graph but still needs vtxdist*/
     gr->vtxdist = (int*) ZOLTAN_MALLOC ((zz->Num_Proc+1)*sizeof(int));
     if (gr->vtxdist == NULL)

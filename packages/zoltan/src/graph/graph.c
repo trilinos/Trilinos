@@ -232,14 +232,16 @@ Zoltan_ZG_Export (ZZ* zz, const ZG* const graph, int *gvtx, int *nvtx,
 
 int
 Zoltan_ZG_Vertex_Info(ZZ* zz, const ZG *const graph,
-		      ZOLTAN_ID_PTR *pgid, float **pwwgt, int **pinput_part) {
+		      ZOLTAN_ID_PTR *pgid, ZOLTAN_ID_PTR *plid, float **pwwgt, int **pinput_part) {
   static char *yo = "Zoltan_ZG_Vertex_Info";
   int ierr = ZOLTAN_OK;
   float *wgt = NULL;
   int *input_part = NULL;
+  ZOLTAN_ID_PTR lid = NULL;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
+  AFFECT_NOT_NULL(pgid, graph->mtx.mtx.yGID);
   if (pwwgt != NULL) {
     wgt = *pwwgt = (float*) ZOLTAN_MALLOC(graph->mtx.mtx.nY*zz->Obj_Weight_Dim*sizeof(float));
     if (graph->mtx.mtx.nY >0 && zz->Obj_Weight_Dim > 0 && *pwwgt == NULL) MEMORY_ERROR;
@@ -248,8 +250,13 @@ Zoltan_ZG_Vertex_Info(ZZ* zz, const ZG *const graph,
     input_part = *pinput_part = (int*) ZOLTAN_MALLOC(graph->mtx.mtx.nY*sizeof(int));
     if (graph->mtx.mtx.nY > 0 && *pinput_part == NULL) MEMORY_ERROR;
   }
-  ierr = Zoltan_Matrix_Vertex_Info(zz, &graph->mtx.mtx,
-				   *wgt, *input_part);
+  if (plid != NULL) {
+    lid = *plid = ZOLTAN_MALLOC_LID_ARRAY(zz, graph->mtx.mtx.nY);
+    if (graph->mtx.mtx.nY >0 && zz->Num_LID >0 && *plid == NULL)
+      MEMORY_ERROR;
+  }
+  ierr = Zoltan_Matrix_Vertex_Info(zz, &graph->mtx.mtx, lid,
+				   wgt, input_part);
 
  End:
   ZOLTAN_TRACE_EXIT(zz, yo);
@@ -326,8 +333,8 @@ Zoltan_ZG_Query (ZZ* zz, const ZG* const graph,
   struct Zoltan_DD_Struct *dd;
 
   dd = graph->mtx.mtx.ddY;
-  if (graph->bipartite && graph->fixObj)
-    dd = graph->mtx.mtx.ddX;
+/*   if (graph->bipartite && graph->fixObj) */
+/*     dd = graph->mtx.mtx.ddX; */
 
   return Zoltan_DD_Find(dd, GID, NULL, NULL, properties, GID_length, NULL);
 }

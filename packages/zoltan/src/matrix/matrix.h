@@ -220,6 +220,7 @@ ZOLTAN_ID_PTR Zoltan_Matrix_Get_GID(ZZ* zz, Zoltan_matrix* m);
 
 int
 Zoltan_Matrix_Vertex_Info(ZZ* zz, const Zoltan_matrix * const m,
+			  ZOLTAN_ID_PTR lid,
 			  float *wwgt, int *input_part);
 
 /* This code is used to fill the adjproc array which is used in some
