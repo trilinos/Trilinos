@@ -169,6 +169,7 @@ APPEND_SET(HEADERS
   Teuchos_implicit_cast.hpp
   Teuchos_map.hpp
   Teuchos_oblackholestream.hpp
+  Teuchos_Version.hpp
   )
 
 # Set sources
