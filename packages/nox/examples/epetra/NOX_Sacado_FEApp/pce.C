@@ -415,23 +415,16 @@ int main(int argc, char *argv[]) {
 	sg_block_solver = sg_model;
 
       // Create SG Inverse model evaluator
-      Teuchos::Array<int> sg_inverse_p_index(1);
-      Teuchos::Array<int> sg_inverse_g_index(2);
-      Teuchos::Array< Teuchos::RCP<const Epetra_Map> > base_p_maps(1);
-      Teuchos::Array< Teuchos::RCP<const Epetra_Map> > base_g_maps(2);
-      sg_inverse_p_index[0] = 1;
-      base_p_maps[0] = model->get_p_sg_map(0);
-      base_g_maps[0] = model->get_g_sg_map(0);
-      base_g_maps[1] = app->getMap();
+      Teuchos::Array<int> sg_inverse_p_index = sg_model->get_p_sg_indices();
+      Teuchos::Array<int> sg_inverse_g_index = sg_model->get_g_sg_indices();
+      Teuchos::Array< Teuchos::RCP<const Epetra_Map> > base_p_maps = 
+	sg_model->get_p_sg_base_maps();
+      Teuchos::Array< Teuchos::RCP<const Epetra_Map> > base_g_maps = 
+	sg_model->get_g_sg_base_maps();
+      // Add sg_u response function supplied by ENAT::NOXSolver
       if (SG_Method != SG_NI) {
-	// Responses are:  g, block g, block u
-	sg_inverse_g_index[0] = 1;
-	sg_inverse_g_index[1] = 2;
-      }
-      else {
-	// Responses are:  g, u, block g, block u
-	sg_inverse_g_index[0] = 2;
-	sg_inverse_g_index[1] = 3;
+	sg_inverse_g_index.push_back(sg_inverse_g_index[sg_inverse_g_index.size()-1]+1);
+	base_g_maps.push_back(app->getMap());
       }
       Teuchos::RCP<EpetraExt::ModelEvaluator> sg_solver = 
 	Teuchos::rcp(new Stokhos::SGInverseModelEvaluator(sg_block_solver, 
@@ -446,8 +439,8 @@ int main(int argc, char *argv[]) {
       EpetraExt::ModelEvaluator::OutArgs sg_outArgs = 
 	sg_solver->createOutArgs();
       Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly> sg_p_init =
-	sg_solver->get_p_sg_init(0);
-      sg_inArgs.set_p_sg(0, sg_p_init);
+	sg_solver->get_p_sg_init(sg_p_index);
+      sg_inArgs.set_p_sg(sg_p_index, sg_p_init);
       Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> sg_g = 
 	Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(
 		       basis, *(sg_solver->get_g_sg_map(0))));

@@ -923,3 +923,39 @@ Stokhos::SGModelEvaluator::set_x_init(const Epetra_Vector& x_in)
 {
   sg_x_init->Scale(1.0, x_in);
 }
+
+Teuchos::Array<int> 
+Stokhos::SGModelEvaluator::get_p_sg_indices() const
+{
+  Teuchos::Array<int> sg_p_index(num_p_sg);
+  for (int i=0; i<num_p_sg; i++)
+    sg_p_index[i] = num_p + i;
+  return sg_p_index;
+}
+
+Teuchos::Array<int> 
+Stokhos::SGModelEvaluator::get_g_sg_indices() const
+{
+  Teuchos::Array<int> sg_g_index(num_g_sg);
+  for (int i=0; i<num_g_sg; i++)
+    sg_g_index[i] = num_g + i;
+  return sg_g_index;
+}
+
+Teuchos::Array< Teuchos::RCP<const Epetra_Map> > 
+Stokhos::SGModelEvaluator::get_p_sg_base_maps() const
+{
+  Teuchos::Array< Teuchos::RCP<const Epetra_Map> > base_maps(num_p_sg);
+  for (int i=0; i<num_p_sg; i++)
+    base_maps[i] = me->get_p_sg_map(i);
+  return base_maps;
+}
+
+Teuchos::Array< Teuchos::RCP<const Epetra_Map> > 
+Stokhos::SGModelEvaluator::get_g_sg_base_maps() const
+{
+  Teuchos::Array< Teuchos::RCP<const Epetra_Map> > base_maps(num_g_sg);
+  for (int i=0; i<num_g_sg; i++)
+    base_maps[i] = me->get_g_sg_map(i);
+  return base_maps;
+}

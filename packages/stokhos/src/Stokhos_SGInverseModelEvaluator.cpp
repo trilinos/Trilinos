@@ -180,7 +180,7 @@ get_p_sg_init(int l) const
     Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(sg_basis, 
 						     View,
 						     *(base_p_maps[l]),
-						     *(me->get_p_init(l))));
+						     *(me->get_p_init(sg_p_index[l]))));
   return init_p_sg;
 }
 
