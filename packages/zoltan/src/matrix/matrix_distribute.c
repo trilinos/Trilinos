@@ -85,12 +85,7 @@ Zoltan_Distribute_layout (ZZ *zz, const PHGComm * const inlayout,
 
 int Zoltan_Distribute_Origin(int edge_gno, int vtx_gno, void* data, int *part_y)
 {
-  Zoltan_matrix_2d *mat;
-
-  mat = (Zoltan_matrix_2d*) data;
-  *part_y = (int)floor((double)edge_gno/((double)mat->mtx.globalY/(double)mat->comm->nProc));
-
-  return (*part_y);
+  return (Zoltan_Distribute_Partition(edge_gno, vtx_gno, data, part_y));
 }
 
 int Zoltan_Distribute_Linear(int edge_gno, int vtx_gno, void* data, int *part_y)
