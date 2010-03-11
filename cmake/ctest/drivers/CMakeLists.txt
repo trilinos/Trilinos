@@ -22,11 +22,11 @@ macro(download_prebuilt_cmake _type)
   else()
     message(FATAL_ERROR "Error occurred while downloading prebuilt CMake: ${err}")
   endif()
+  
+  set(DOWNLOADED_DIR "${TrilinosDriver_SOURCE_DIR}/cmake-prebuilt/bin")
+  set(DOWNLOADED_CMAKE "${DOWNLOADED_DIR}/cmake")
+  set(DOWNLOADED_CTEST "${DOWNLOADED_DIR}/ctest")
 endmacro()
-
-set(DOWNLOADED_DIR "${TrilinosDriver_SOURCE_DIR}/cmake-prebuilt/bin")
-set(DOWNLOADED_CMAKE "${DOWNLOADED_DIR}/cmake")
-set(DOWNLOADED_CTEST "${DOWNLOADED_DIR}/ctest")
 
 set(SITES
 corrin
