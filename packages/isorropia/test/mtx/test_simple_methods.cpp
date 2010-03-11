@@ -93,9 +93,6 @@ int main(int argc, char** argv)
   int myrank = Comm.MyPID();
   bool success = true;
 
-  MPI_Comm_size(MPI_COMM_WORLD,&worldsize);
-  MPI_Comm_rank(MPI_COMM_WORLD,&myrank);
-
   /////////////////////////////////////////////////////////////
   /// Read and distribute matrices
   /////////////////////////////////////////////////////////////
@@ -412,6 +409,7 @@ bool checkPartition2(const Isorropia::Epetra::Partitioner &partitioner,
     }
   }
 
+#ifdef EPETRA_MPI
   int returnFlag;
   MPI_Allreduce(&success,&returnFlag,1,MPI_INT,MPI_LAND,MPI_COMM_WORLD);
 
@@ -419,6 +417,7 @@ bool checkPartition2(const Isorropia::Epetra::Partitioner &partitioner,
   {
     return false;
   }
+#endif
 
   return true;
 }
@@ -446,6 +445,7 @@ bool checkPartition4(const Isorropia::Epetra::Partitioner &partitioner,
     }
   }
 
+#ifdef EPETRA_MPI
   int returnFlag;
   MPI_Allreduce(&success,&returnFlag,1,MPI_INT,MPI_LAND,MPI_COMM_WORLD);
 
@@ -453,6 +453,7 @@ bool checkPartition4(const Isorropia::Epetra::Partitioner &partitioner,
   {
     return false;
   }
+#endif
 
   return true;
 }
