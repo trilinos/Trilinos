@@ -55,7 +55,9 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
   const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> >& sg_exp_,
   const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk_,
   const Teuchos::RCP<Teuchos::ParameterList>& params_,
-  const Teuchos::RCP<const Epetra_Comm>& comm) 
+  const Teuchos::RCP<const Epetra_Comm>& comm,
+  const Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly>& initial_x_sg,
+  const Teuchos::Array< Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> >& initial_p_sg) 
   : me(me_),
     sg_basis(sg_basis_),
     sg_quad(sg_quad_),
@@ -220,9 +222,24 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
     // Create initial p
     sg_p_init[i] = 
       Teuchos::rcp(new EpetraExt::BlockVector(*p_map, *sg_p_map[i]));
-    Teuchos::RCP<const EpetraVectorOrthogPoly> initial_p_sg =
-      me->get_p_sg_init(i);
-    initial_p_sg->assignToBlockVector(*sg_p_init[i]);
+    if (initial_p_sg.size() == num_p_sg && initial_p_sg[i] != Teuchos::null) {
+      // Use provided initial parameters
+      initial_p_sg[i]->assignToBlockVector(*sg_p_init[i]);
+    }
+    else {
+      Teuchos::RCP<const EpetraVectorOrthogPoly> init_p_sg = 
+	me->get_p_sg_init(i);
+      if (init_p_sg != Teuchos::null) {
+	// Use initial parameters provided by underlying model evaluator
+	init_p_sg->assignToBlockVector(*sg_p_init[i]);
+      }
+      else {
+	TEST_FOR_EXCEPTION(true, std::logic_error,
+			   "Error!  Must provide initial parameters through " <<
+			   "constructor or undelying model evaluator's " <<
+			   "get_p_sg_init() method.");
+      }
+    }
     
     // Create p SG blocks
     p_sg_blocks[i] = 
@@ -280,9 +297,22 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
 
     // Create initial x
     sg_x_init = Teuchos::rcp(new EpetraExt::BlockVector(*x_map, *sg_x_map));
-    Teuchos::RCP<const EpetraVectorOrthogPoly> initial_x_sg =
-      me->get_x_sg_init();
-    initial_x_sg->assignToBlockVector(*sg_x_init);
+    if (initial_x_sg != Teuchos::null) {
+      // Use supplied initial guess
+      initial_x_sg->assignToBlockVector(*sg_x_init);
+    }
+    else {
+      Teuchos::RCP<const EpetraVectorOrthogPoly> init_x_sg = 
+	me->get_x_sg_init();
+      if (init_x_sg != Teuchos::null) {
+	// Use initial guess provided by underlying model evaluator
+	init_x_sg->assignToBlockVector(*sg_x_init);
+      }
+      else {
+	// Use default choice of deterministic initial guess for mean
+	sg_x_init->LoadBlockValues(*(me->get_x_init()), 0);
+      }
+    }
     
     // Get preconditioner factory for matrix-free
     if (jacobianMethod == MATRIX_FREE || 

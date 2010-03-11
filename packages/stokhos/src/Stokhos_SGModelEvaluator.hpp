@@ -81,7 +81,9 @@ namespace Stokhos {
       const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> >& sg_exp,
       const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk,
       const Teuchos::RCP<Teuchos::ParameterList>& params,
-      const Teuchos::RCP<const Epetra_Comm>& comm);
+      const Teuchos::RCP<const Epetra_Comm>& comm,
+      const Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly>& initial_x_sg = Teuchos::null,
+      const Teuchos::Array< Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> >& initial_p_sg = Teuchos::Array< Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> >());
 
     /** \name Overridden from EpetraExt::ModelEvaluator . */
     //@{
