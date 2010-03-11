@@ -282,7 +282,7 @@ void update(double alpha,const MultiVector & x,double beta,MultiVector & y)
 }
 
 //! Get the strictly upper triangular portion of the matrix
-BlockedLinearOp getUpperTriBlocks(const BlockedLinearOp & blo)
+BlockedLinearOp getUpperTriBlocks(const BlockedLinearOp & blo,bool callEndBlockFill)
 {
    int rows = blockRowCount(blo);
 
@@ -314,13 +314,14 @@ BlockedLinearOp getUpperTriBlocks(const BlockedLinearOp & blo)
             upper->setBlock(i,j,uij);
       }
    }
-   upper->endBlockFill();
+   if(callEndBlockFill)
+      upper->endBlockFill();
 
    return upper;
 }
 
 //! Get the strictly lower triangular portion of the matrix
-BlockedLinearOp getLowerTriBlocks(const BlockedLinearOp & blo)
+BlockedLinearOp getLowerTriBlocks(const BlockedLinearOp & blo,bool callEndBlockFill)
 {
    int rows = blockRowCount(blo);
 
@@ -352,7 +353,8 @@ BlockedLinearOp getLowerTriBlocks(const BlockedLinearOp & blo)
             lower->setBlock(i,j,uij);
       }
    }
-   lower->endBlockFill();
+   if(callEndBlockFill)
+      lower->endBlockFill();
 
    return lower;
 }

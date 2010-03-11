@@ -316,10 +316,10 @@ inline void endBlockFill(BlockedLinearOp & blo)
 { blo->endBlockFill(); }
 
 //! Get the strictly upper triangular portion of the matrix
-BlockedLinearOp getUpperTriBlocks(const BlockedLinearOp & blo);
+BlockedLinearOp getUpperTriBlocks(const BlockedLinearOp & blo,bool callEndBlockFill=true);
 
 //! Get the strictly lower triangular portion of the matrix
-BlockedLinearOp getLowerTriBlocks(const BlockedLinearOp & blo);
+BlockedLinearOp getLowerTriBlocks(const BlockedLinearOp & blo,bool callEndBlockFill=true);
 
 /** \brief Build a zero operator mimicing the block structure
   *        of the passed in matrix.
