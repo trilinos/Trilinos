@@ -149,6 +149,7 @@ TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, inverse_test)
    Teko::LinearOp iP = Teko::buildInverse(*invFact,A);
 
    Thyra::LinearOpTester<double> tester;
+   tester.dump_all(true);
    tester.show_all_tests(true);
 
    {
