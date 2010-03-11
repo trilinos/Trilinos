@@ -88,7 +88,6 @@ SET(Trilinos_TPLS_AND_CLASSIFICATIONS
   HDF5           EX
   MATLAB         EX
   CASK           EX
-  CCOLAMD        SS
   )
 
 # NOTES:

@@ -138,7 +138,7 @@ int Zoltan_CColAMD(
 
 
   /* Prepare call to CCOLAMD */
-  ccolamd_set_defaults (knobs);
+  Zoltan_ccolamd_set_defaults (knobs);
 
   cmember = (int*) ZOLTAN_MALLOC(n_col * sizeof(int));
   if (n_col > 0 && cmember == NULL) MEMORY_ERROR;
@@ -151,7 +151,7 @@ int Zoltan_CColAMD(
   if (n_col > 0 && (*gids) == NULL) MEMORY_ERROR;
   memcpy ((*gids), mtx.mtx.yGID, n_col*sizeof(int)*zz->Num_GID);
 
-  Alen = ccolamd_recommended (n_nnz, n_row, n_col);
+  Alen = Zoltan_ccolamd_recommended (n_nnz, n_row, n_col);
   pins = (int*) ZOLTAN_MALLOC(Alen * sizeof(int));
   if (Alen >0 && pins == NULL) MEMORY_ERROR;
   memcpy (pins, mtx.mtx.pinGNO, mtx.mtx.nPins*sizeof(int));
@@ -165,7 +165,7 @@ int Zoltan_CColAMD(
 
   /* Compute ordering */
   /* Upon return, ystart is the invert permutation ... */
-  ierr = ccolamd (n_row, n_col, Alen, pins, ystart,
+  ierr = Zoltan_ccolamd (n_row, n_col, Alen, pins, ystart,
 		  knobs, stats, cmember);
 
   ZOLTAN_FREE(&pins);

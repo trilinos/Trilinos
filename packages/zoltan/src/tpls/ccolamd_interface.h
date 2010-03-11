@@ -24,11 +24,7 @@
 extern "C" {
 #endif
 
-
-#ifdef ZOLTAN_CCOLAMD
-#include <ccolamd.h>
-#endif /* ZOLTAN_CCOLAMD */
-
+#include "zoltan_ccolamd.h"
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

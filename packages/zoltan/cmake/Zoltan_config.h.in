@@ -38,9 +38,6 @@
 /* Define if want to build with scotch enabled */
 #cmakedefine HAVE_SCOTCH
 
-/* Define if want to build with CCOLAMD enabled */
-#cmakedefine HAVE_CCOLAMD
-
 /* Define if DON'T want support for MPI TPL */
 #ifndef HAVE_MPI
 #define NO_MPI_TPL

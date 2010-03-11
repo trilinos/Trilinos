@@ -17,9 +17,6 @@ SET(HAVE_PATOH ${${PACKAGE_NAME}_ENABLE_PaToH})
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Scotch)
 SET(HAVE_SCOTCH ${${PACKAGE_NAME}_ENABLE_Scotch})
 
-ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_CCOLAMD)
-SET(HAVE_CCOLAMD ${${PACKAGE_NAME}_ENABLE_CCOLAMD})
-
 ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Zlib)
 SET(HAVE_GZIP ${${PACKAGE_NAME}_ENABLE_Zlib})
 
@@ -87,7 +84,7 @@ APPEND_SET(SOURCES
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/ccolamd)
 
 APPEND_SET(NOINSTALLHEADERS
-  ccolamd/ccolamd.h
+  ccolamd/zoltan_ccolamd.h
   )
 
 APPEND_SET(SOURCES
@@ -355,6 +352,7 @@ APPEND_SET(NOINSTALLHEADERS
   tpls/third_library.h
   tpls/third_library_tools.h
   tpls/graph_util.h
+  tpls/ccolamd_interface.h
   )
 
 APPEND_SET(SOURCES
@@ -364,6 +362,7 @@ APPEND_SET(SOURCES
   tpls/scatter_graph.c
   tpls/third_library.c
   tpls/verify_graph.c
+  tpls/ccolamd_interface.c
   )
 
 IF (${PACKAGE_NAME}_ENABLE_ParMETIS OR ${PACKAGE_NAME}_ENABLE_METIS)
@@ -386,18 +385,6 @@ IF (${PACKAGE_NAME}_ENABLE_Scotch)
 
   APPEND_SET(SOURCES
   tpls/scotch_interface.c
-    )
-
-ENDIF()
-
-IF (${PACKAGE_NAME}_ENABLE_CCOLAMD)
-
-  APPEND_SET(NOINSTALLHEADERS
-  tpls/ccolamd_interface.h
-    )
-
-  APPEND_SET(SOURCES
-  tpls/ccolamd_interface.c
     )
 
 ENDIF()
