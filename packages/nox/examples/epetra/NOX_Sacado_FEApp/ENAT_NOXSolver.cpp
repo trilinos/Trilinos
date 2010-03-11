@@ -168,7 +168,7 @@ void ENAT::NOXSolver::evalModel(const InArgs& inArgs,
 
   // Solve
   solver->reset(*currentSolution);
-  NOX::StatusTest::StatusType status = solver->solve();
+  status = solver->solve();
 
   // Print status
   NOX::Utils utils(appParams->sublist("NOX").sublist("Printing"));

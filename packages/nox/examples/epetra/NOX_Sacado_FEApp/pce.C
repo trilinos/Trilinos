@@ -241,7 +241,7 @@ int main(int argc, char *argv[]) {
     normWRMS.set("Absolute Tolerance", 1e-8);
     Teuchos::ParameterList& maxIters = statusParams.sublist("Test 1");
     maxIters.set("Test Type", "MaxIters");
-    maxIters.set("Maximum Iterations", 15);
+    maxIters.set("Maximum Iterations", 5);
 
     // Create application
     Teuchos::RCP<FEApp::Application> app = 
@@ -392,17 +392,18 @@ int main(int argc, char *argv[]) {
 						   sgParams, Comm));
 
       // Create SG NOX solver
-      Teuchos::RCP<EpetraExt::ModelEvaluator> sg_solver;
+      Teuchos::RCP<EpetraExt::ModelEvaluator> sg_block_solver;
       if (SG_Method != SG_NI) {
 	Teuchos::RCP<Epetra_Operator> M;
 	std::string jac_method = sgParams->get<std::string>("Jacobian Method");
 	if (jac_method == "Matrix Free" || 
 	    jac_method == "KL Reduced Matrix Free")
 	  M = sg_model->create_M();
-	sg_solver = Teuchos::rcp(new ENAT::NOXSolver(appParams, sg_model, M));
+	sg_block_solver = 
+	  Teuchos::rcp(new ENAT::NOXSolver(appParams, sg_model, M));
       }
       else
-	sg_solver = sg_model;
+	sg_block_solver = sg_model;
 
       // Create SG Inverse model evaluator
       Teuchos::Array<int> sg_inverse_p_index(1);
@@ -423,13 +424,13 @@ int main(int argc, char *argv[]) {
 	sg_inverse_g_index[0] = 2;
 	sg_inverse_g_index[1] = 3;
       }
-      sg_solver = Teuchos::rcp(new Stokhos::SGInverseModelEvaluator(
-				   sg_solver, 
-				   basis,
-				   sg_inverse_p_index, 
-				   sg_inverse_g_index, 
-				   base_p_maps, 
-				   base_g_maps));
+      Teuchos::RCP<EpetraExt::ModelEvaluator> sg_solver = 
+	Teuchos::rcp(new Stokhos::SGInverseModelEvaluator(sg_block_solver, 
+							  basis,
+							  sg_inverse_p_index, 
+							  sg_inverse_g_index, 
+							  base_p_maps, 
+							  base_g_maps));
       
       // Evaluate SG responses at SG parameters
       EpetraExt::ModelEvaluator::InArgs sg_inArgs = sg_solver->createInArgs();
@@ -531,8 +532,8 @@ int main(int argc, char *argv[]) {
 #endif
       
       NOX::StatusTest::StatusType status = NOX::StatusTest::Converged;
-      // if (SG_Method != SG_NI)
-      // 	status = Teuchos::rcp_dynamic_cast<ENAT::NOXSolver>(sg_solver)->getSolverStatus();
+      if (SG_Method != SG_NI)
+      	status = Teuchos::rcp_dynamic_cast<ENAT::NOXSolver>(sg_block_solver)->getSolverStatus();
       if (status == NOX::StatusTest::Converged) 
 	utils.out() << "Test Passed!" << endl;
 

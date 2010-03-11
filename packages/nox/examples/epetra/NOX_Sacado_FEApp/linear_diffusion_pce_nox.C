@@ -269,7 +269,7 @@ int main(int argc, char *argv[]) {
     normF.set("Scale Type", "Scaled");
     Teuchos::ParameterList& maxIters = statusParams.sublist("Test 1");
     maxIters.set("Test Type", "MaxIters");
-    maxIters.set("Maximum Iterations", 15);
+    maxIters.set("Maximum Iterations", 1);
 
     // Create NOX interface
     Teuchos::RCP<NOX::Epetra::ModelEvaluatorInterface> nox_interface = 
