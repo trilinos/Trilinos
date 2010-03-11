@@ -46,6 +46,7 @@ static int get_line_ints(char *buf, int bufsize, int *vals);
 static void input_file_error(int numProcs, int tag, int startProc);
 static void showGraphPartitions(int myProc, int numIDs, int *GIDs, int *parts, int nparts);
 static void read_input_file(int myRank, int numProcs, char *fname, GRAPH_DATA *myData);
+static unsigned int simple_hash(unsigned int *key, unsigned int n);
 
 int main(int argc, char *argv[])
 {
@@ -552,7 +553,7 @@ GRAPH_DATA *send_graph;
 
     for (i=0; i <numGlobalNeighbors; i++){
       id = (unsigned int)graph->nborGID[i];
-      graph->nborProc[i] = Zoltan_Hash(&id, 1, numProcs);
+      graph->nborProc[i] = simple_hash(&id, numProcs);
     } 
 
     /* Create a sub graph for each process */
@@ -561,7 +562,7 @@ GRAPH_DATA *send_graph;
 
     for (i=0; i < numGlobalVertices; i++){
       id = (unsigned int)graph->vertexGID[i];
-      procID = Zoltan_Hash(&id, 1, numProcs);
+      procID = simple_hash(&id, numProcs);
       send_graph[procID].numMyVertices++;
     }
 
@@ -577,7 +578,7 @@ GRAPH_DATA *send_graph;
 
       id = (unsigned int)graph->vertexGID[i];
       nnbors = graph->nborIndex[i+1] - graph->nborIndex[i];
-      procID = Zoltan_Hash(&id, 1, numProcs);
+      procID = simple_hash(&id, numProcs);
 
       j = idx[procID];
       send_graph[procID].vertexGID[j] = id;
@@ -602,7 +603,7 @@ GRAPH_DATA *send_graph;
 
       id = (unsigned int)graph->vertexGID[i];
       nnbors = graph->nborIndex[i+1] - graph->nborIndex[i];
-      procID = Zoltan_Hash(&id, 1, numProcs);
+      procID = simple_hash(&id, numProcs);
       j = idx[procID];
 
       if (nnbors > 0){
@@ -708,3 +709,34 @@ GRAPH_DATA *send_graph;
     }
   }
 }
+
+unsigned int simple_hash(unsigned int *key, unsigned int n)
+{
+  unsigned int h, rest, *p, bytes, num_bytes;
+  char *byteptr;
+
+  num_bytes = (unsigned int) sizeof(int);
+
+  /* First hash the int-sized portions of the key */
+  h = 0;
+  for (p = (unsigned int *)key, bytes=num_bytes;
+       bytes >= (unsigned int) sizeof(int);
+       bytes-=sizeof(int), p++){
+    h = (h*2654435761U) ^ (*p);
+  }
+
+  /* Then take care of the remaining bytes, if any */
+  rest = 0;
+  for (byteptr = (char *)p; bytes > 0; bytes--, byteptr++){
+    rest = (rest<<8) | (*byteptr);
+  }
+
+  /* Merge the two parts */
+  if (rest)
+    h = (h*2654435761U) ^ rest;
+
+  /* Return h mod n */
+  return (h%n);
+}
+
+

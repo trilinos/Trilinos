@@ -550,7 +550,7 @@ char buf[512];
 int bufsize;
 int numGlobalVertices, numGlobalEdges, numGlobalNZ;
 int num, count, nnbors, ack=0;
-int to, from, remaining;
+int to=-1, from, remaining;
 int vGID;
 int i, j;
 int vals[128], send_count[3];
