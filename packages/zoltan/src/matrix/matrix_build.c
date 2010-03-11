@@ -52,6 +52,8 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
   int * Input_Parts=NULL;
   struct Zoltan_DD_Struct *dd = NULL;
   int *proclist = NULL;
+  int *xpid = NULL;
+  int i;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -70,7 +72,8 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error getting object data");
     goto End;
   }
-
+  ZOLTAN_FREE(&Input_Parts);
+  ZOLTAN_FREE(&xwgt);
 
   /*******************************************************************/
   /* Assign vertex consecutive numbers (gnos)                        */
@@ -101,16 +104,21 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
     MPI_Allreduce(&nX, &matrix->globalX, 1, MPI_INT, MPI_SUM, zz->Communicator);
   }
 
-  /* I store : xGNO, xGID, xwgt, Input_Part */
+  /* I store : xGNO, xGID, xpid,  */
   ierr = Zoltan_DD_Create (&matrix->ddX, zz->Communicator, 1, zz->Num_GID,
-			   zz->Obj_Weight_Dim*sizeof(float)/sizeof(int), matrix->globalX/zz->Num_Proc, 0);
+			   1, matrix->globalX/zz->Num_Proc, 0);
   CHECK_IERR;
 
   /* Hope a linear assignment will help a little */
   Zoltan_DD_Set_Neighbor_Hash_Fn1(matrix->ddX, matrix->globalX/zz->Num_Proc);
   /* Associate all the data with our xGNO */
-  Zoltan_DD_Update (matrix->ddX, (ZOLTAN_ID_PTR)xGNO, xGID, (ZOLTAN_ID_PTR) xwgt, Input_Parts, nX);
-  ZOLTAN_FREE(&Input_Parts);
+  xpid = (int*)ZOLTAN_MALLOC(nX*sizeof(int));
+  if (nX >0 && xpid == NULL) MEMORY_ERROR;
+  for (i = 0 ; i < nX ; ++i)
+    xpid[i] = zz->Proc;
+
+  Zoltan_DD_Update (matrix->ddX, (ZOLTAN_ID_PTR)xGNO, xGID, (ZOLTAN_ID_PTR) xpid, NULL, nX);
+
 
   if (matrix->opts.pinwgt)
     matrix->pinwgtdim = zz->Edge_Weight_Dim;
@@ -132,10 +140,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
     matrix->yGNO = (int*)ZOLTAN_MALLOC(matrix->nY * sizeof(int));
     if (matrix->nY && matrix->yGNO == NULL)
       MEMORY_ERROR;
-    matrix->ywgt = (float*)ZOLTAN_MALLOC(matrix->ywgtdim * matrix->nY * sizeof(float));
-    if (matrix->ywgtdim && matrix->nY && matrix->ywgt == NULL)
-      MEMORY_ERROR;
-    ierr = Zoltan_DD_Find (dd, yGID, (ZOLTAN_ID_PTR)(matrix->yGNO), (ZOLTAN_ID_PTR)matrix->ywgt, NULL,
+    ierr = Zoltan_DD_Find (dd, yGID, (ZOLTAN_ID_PTR)(matrix->yGNO), NULL, NULL,
 		    matrix->nY, NULL);
     if (ierr != ZOLTAN_OK) {
       ZOLTAN_PRINT_ERROR(zz->Proc,yo,"Hyperedge GIDs don't match.\n");
@@ -220,12 +225,12 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
 
       /* We have to define ddY : yGNO, yGID, ywgt */
       ierr = Zoltan_DD_Create (&matrix->ddY, zz->Communicator, 1, zz->Num_GID,
-			       matrix->ywgtdim*sizeof(float)/sizeof(int), matrix->globalY/zz->Num_Proc, 0);
+			       0, matrix->globalY/zz->Num_Proc, 0);
       /* Hope a linear assignment will help a little */
       Zoltan_DD_Set_Neighbor_Hash_Fn1(matrix->ddY, matrix->globalY/zz->Num_Proc);
       /* Associate all the data with our yGNO */
       Zoltan_DD_Update (matrix->ddY, (ZOLTAN_ID_PTR)matrix->yGNO,
-			yGID, (ZOLTAN_ID_PTR) matrix->ywgt, NULL, matrix->nY);
+			yGID, NULL, NULL, matrix->nY);
   }
 
  End:
@@ -240,12 +245,59 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
     Zoltan_DD_Destroy(&dd);
   /* Already stored in the DD */
   ZOLTAN_FREE(&yGID);
-  ZOLTAN_FREE(&matrix->ywgt);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
 
   return (ierr);
 }
+
+
+int
+Zoltan_Matrix_Vertex_Info(ZZ* zz, const Zoltan_matrix * const m,
+			  float *wwgt, int *input_part)
+{
+  static char *yo = "Zoltan_Matrix_Vertex_Info";
+  int ierr = ZOLTAN_OK;
+  int nX;
+  ZOLTAN_ID_PTR gid = NULL;
+  ZOLTAN_ID_PTR lid = NULL;
+  float * l_xwgt = NULL;
+  int *l_input_part = NULL;
+  struct Zoltan_DD_Struct *dd = NULL;
+
+  ZOLTAN_TRACE_ENTER(zz, yo);
+
+  if (m->completed == 0) {
+    ierr = ZOLTAN_FATAL;
+    goto End;
+  }
+
+  ierr = Zoltan_Get_Obj_List(zz, &nX, &gid, &lid,
+			     zz->Obj_Weight_Dim, &l_xwgt,
+			     &l_input_part);
+  ZOLTAN_FREE(&lid);
+
+  ierr = Zoltan_DD_Create (&dd, zz->Communicator,
+			   zz->Obj_Weight_Dim*sizeof(float)/sizeof(int), 1,
+			   0, nX, 0);
+  CHECK_IERR;
+
+    /* Make our new numbering public */
+  Zoltan_DD_Update (dd, gid, (ZOLTAN_ID_PTR) l_xwgt, (ZOLTAN_ID_PTR)l_input_part,  NULL, nX);
+  ZOLTAN_FREE(&l_xwgt);
+  ZOLTAN_FREE(&l_input_part);
+
+  ierr = Zoltan_DD_Find (dd, m->yGID, (ZOLTAN_ID_PTR)wwgt, input_part, NULL,
+		    m->nY, NULL);
+
+ End:
+  if (dd != NULL)
+    Zoltan_DD_Destroy(&dd);
+
+  ZOLTAN_TRACE_EXIT(zz, yo);
+  return (ierr);
+}
+
 
   /*
    * Each processor:
@@ -307,7 +359,6 @@ matrix_get_edges(ZZ *zz, Zoltan_matrix *matrix, ZOLTAN_ID_PTR *yGID, ZOLTAN_ID_P
     *xGNO = NULL;
     *yGID = NULL;
     matrix->ywgtdim = zz->Obj_Weight_Dim;
-    matrix->ywgt = *xwgt;
     *xwgt = NULL;
 
     numGID = zz->Num_GID;

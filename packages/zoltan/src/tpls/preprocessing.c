@@ -188,7 +188,7 @@ int Zoltan_Preprocess_Graph(
     ierr = Zoltan_ZG_Export (zz, graph,
 			     &gr->num_obj, &gr->num_obj, &gr->obj_wgt_dim, &gr->edge_wgt_dim,
 			     &gr->vtxdist, &gr->xadj, &gr->adjncy, &gr->adjproc,
-			     &float_vwgt, &float_ewgts, NULL);
+			     &float_ewgts, NULL);
     /* TODO: support graph redistribution */
 /*   if (prt) */
 /*     ierr = Zoltan_ZG_Vertex_Info(zz, &graph, global_ids, &prt->input_part); */

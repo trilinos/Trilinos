@@ -31,13 +31,15 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
   Zoltan_Arc *tr_tab = NULL;
   int i, j, cnt;
   ZOLTAN_ID_PTR yGID = NULL;
-  float *ywgt = NULL;
-  int *Input_Parts = NULL;
+  int *ypid=NULL;
+  int *ygid=NULL;
   float *pinwgt=NULL;
+  int nY_ori;
+  int * ybipart = NULL;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
   if (bipartite || !matrix->opts.enforceSquare) {
-    bipartite = 1;
+    matrix->bipartite = 1;
     matrix->redist = 1;
   }
 
@@ -68,78 +70,64 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
     }
   }
 
-  matrix->nY += MIN(matrix->globalX, matrix->nPins);
-  matrix->nPins*=2;
-  if (matrix->yend != matrix->ystart + 1)
-    ZOLTAN_FREE(&matrix->yend);
-  matrix->yend=NULL;
-  ZOLTAN_FREE(&matrix->ystart);
-  ZOLTAN_FREE(&matrix->yGNO);
-  ZOLTAN_FREE(&matrix->pinGNO);
-
-  matrix->ystart = (int*) ZOLTAN_MALLOC((matrix->nY+1)*sizeof(int));
-  if (matrix->ystart == NULL) MEMORY_ERROR;
-
-  matrix->yGNO = (int*) ZOLTAN_MALLOC( matrix->nY*sizeof(int));
-  if (matrix->nY && matrix->yGNO == NULL) MEMORY_ERROR;
-  matrix->pinGNO = (int*) ZOLTAN_MALLOC(matrix->nPins*sizeof(int));
-  if (matrix->nPins && matrix->pinGNO == NULL) MEMORY_ERROR;
-  matrix->pinwgt = (float*) ZOLTAN_MALLOC(matrix->pinwgtdim*matrix->nPins*sizeof(float));
-  if (matrix->nPins && matrix->pinwgtdim && matrix->pinwgt == NULL)
-    MEMORY_ERROR;
-
   Zoltan_Matrix_Remove_DupArcs(zz, cnt, tr_tab, pinwgt, matrix);
   ZOLTAN_FREE(&tr_tab);
   ZOLTAN_FREE(&pinwgt);
 
   if (bipartite) {
-    /* Update data directories */
-    Input_Parts = (int*) ZOLTAN_MALLOC(matrix->nY * sizeof(int));
-    yGID = ZOLTAN_MALLOC_GID_ARRAY(zz, matrix->nY);
-    ywgt = (float*) ZOLTAN_MALLOC(matrix->nY * sizeof(float) * matrix->ywgtdim);
-    if (matrix->nY && (Input_Parts == NULL || yGID == NULL
-		       || (matrix->ywgtdim && ywgt == NULL)))
-      MEMORY_ERROR;
+    int endX;
+    int * yGNO = NULL;
 
-    /* Get Informations about Y */
-    Zoltan_DD_Find (matrix->ddY, (ZOLTAN_ID_PTR)matrix->yGNO, yGID, (ZOLTAN_ID_PTR)ywgt, NULL,
-		    matrix->nY, NULL);
+    /* Update data directories */
+    yGID = ZOLTAN_MALLOC_GID_ARRAY(zz, matrix->nY);
+    ypid = (int*) ZOLTAN_MALLOC(matrix->nY*sizeof(int));
+
+    ybipart = (int*) ZOLTAN_MALLOC(matrix->nY*sizeof(int));
+
+    for (endX = 0 ; endX < matrix->nY ; ++endX) {
+      if (matrix->yGNO[endX] >= matrix->globalX)
+	break;
+      ybipart[endX] = 0;
+    }
     /* Get Informations about X */
-    Zoltan_DD_Find (matrix->ddX, (ZOLTAN_ID_PTR)matrix->yGNO + matrix->nY, yGID + matrix->nY*zz->Num_GID,
-		    (ZOLTAN_ID_PTR)ywgt + matrix->nY*sizeof(float)*matrix->ywgtdim/sizeof(int),
-		    Input_Parts + matrix->nY,
-		    matrix->nY - matrix->nY, NULL);
+    Zoltan_DD_Find (matrix->ddX, (ZOLTAN_ID_PTR)matrix->yGNO, yGID, (ZOLTAN_ID_PTR)ypid, NULL,
+		    endX, NULL);
+
+    yGNO = ZOLTAN_MALLOC(endX*sizeof(int));
+    for (i = endX ; i < matrix->nY ; ++i) {
+      yGNO[i-endX] = matrix->yGNO[i] - matrix->globalX;
+      /* TODO: add a something to have the correct ypid */
+      ybipart[endX] = 1;
+    }
+    /* Get Informations about Y */
+    Zoltan_DD_Find (matrix->ddY, (ZOLTAN_ID_PTR)yGNO,
+		    yGID + endX*zz->Num_GID,
+		    NULL, NULL,
+		    matrix->nY-endX, NULL);
 
     if (matrix->ddY != matrix->ddX)
       Zoltan_DD_Destroy (&matrix->ddY);
     Zoltan_DD_Destroy (&matrix->ddX);
 
-  /* Update yGNO: new yGNO = prev yGNO + matrix->globalX */
-    /* for (i=0 ; i < matrix->nY ; ++i) { */
-    /*   matrix->yGNO[i] += matrix->globalX; */
-    /*   Input_Parts[i] = -1; */
-    /* } */
-
-    matrix->offsetY = matrix->globalX;
     matrix->globalX += matrix->globalY;
-    matrix->globalY += matrix->offsetY;
+    matrix->globalY = matrix->globalX;
 
-    /* I store : xGNO, xGID, xwgt, Input_Part */
+    /* I store : xGNO, xGID, xpid, bipart */
     ierr = Zoltan_DD_Create (&matrix->ddX, zz->Communicator, 1, zz->Num_GID,
-			     matrix->ywgtdim*sizeof(float)/sizeof(int), matrix->globalX/zz->Num_Proc, 0);
+			     1, matrix->globalX/zz->Num_Proc, 0);
     matrix->ddY = matrix->ddX;
     /* Hope a linear assignment will help a little */
     Zoltan_DD_Set_Neighbor_Hash_Fn1(matrix->ddX, matrix->globalX/zz->Num_Proc);
     /* Associate all the data with our xyGNO */
-    Zoltan_DD_Update (matrix->ddX, (ZOLTAN_ID_PTR)matrix->yGNO, yGID, (ZOLTAN_ID_PTR) ywgt,
-		      Input_Parts, matrix->nY);
+    Zoltan_DD_Update (matrix->ddX, (ZOLTAN_ID_PTR)matrix->yGNO, yGID, ypid, ybipart,
+		      matrix->nY);
   }
 
  End:
+  ZOLTAN_FREE(&ybipart);
+  ZOLTAN_FREE(&ypid);
   ZOLTAN_FREE(&pinwgt);
-  ZOLTAN_FREE(&ywgt);
   ZOLTAN_FREE(&yGID);
-  ZOLTAN_FREE(&Input_Parts);
   ZOLTAN_FREE(&tr_tab);
 
   ZOLTAN_TRACE_EXIT(zz, yo);

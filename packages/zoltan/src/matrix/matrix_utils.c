@@ -33,7 +33,6 @@ Zoltan_Matrix_Free(Zoltan_matrix *m)
   ZOLTAN_FREE(&m->pinGNO);
   ZOLTAN_FREE(&m->pinwgt);
   ZOLTAN_FREE(&m->yGID);
-  ZOLTAN_FREE(&m->ywgt);
 
   if (m->ddY != m->ddX && m->ddY != NULL)
     Zoltan_DD_Destroy(&m->ddY);
@@ -62,7 +61,6 @@ Zoltan_Matrix_Reset(Zoltan_matrix* m)
   m->yend = NULL;
   m->pinGNO = NULL;
   m->pinwgt = NULL;
-  m->ywgt = NULL;
   m->yGID = NULL;
 }
 
@@ -118,12 +116,14 @@ Zoltan_Matrix_Complete(ZZ* zz,Zoltan_matrix* m)
 
   /* Update data directories */
   m->yGID = ZOLTAN_MALLOC_GID_ARRAY(zz, m->nY);
-  m->ywgt = (float*) ZOLTAN_MALLOC(m->nY * sizeof(float) * m->ywgtdim);
-  if (m->nY && (m->yGID == NULL || (m->ywgtdim && m->ywgt == NULL)))
+  m->ybipart = (int*) ZOLTAN_MALLOC(m->nY * sizeof(int));
+  if (m->bipartite)
+    m->ybipart = (int*) ZOLTAN_MALLOC(m->nY * sizeof(int));
+  if (m->nY && (m->yGID == NULL || (m->ypid == NULL) || (m->bipartite && m->ybipart == NULL)))
     MEMORY_ERROR;
 
   /* Get Informations about Y */
-  Zoltan_DD_Find (m->ddY, (ZOLTAN_ID_PTR)m->yGNO, m->yGID, (ZOLTAN_ID_PTR)m->ywgt, NULL,
+  Zoltan_DD_Find (m->ddY, (ZOLTAN_ID_PTR)m->yGNO, m->yGID, (ZOLTAN_ID_PTR)m->ypid, (ZOLTAN_ID_PTR)m->ybipart,
 		  m->nY, NULL);
 
   if (m->ddY != m->ddX) {

@@ -167,7 +167,6 @@ Zoltan_Distribute_Partition_Free(void** dist)
 }
 
 /* if !copy, inmat is not usable after this call */
- 
 int
 Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as we can share it inside outmat */
 			    Zoltan_matrix_2d *outmat, int copy)
@@ -188,6 +187,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   int nProc;
   int *yGNO = NULL;
   int *pinGNO = NULL;
+  void *partdata = NULL;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -213,6 +213,24 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
 
 
   ierr = Zoltan_Matrix_Remove_Duplicates(zz, outmat->mtx, &outmat->mtx);
+
+
+  if (outmat->hashDistFct == &Zoltan_Distribute_Origin) {
+    /* I need to know the original distribution */
+    if (outmat->mtx.ddX != outmat->mtx.ddY) { /* No initial distribution */
+      outmat->hashDistFct = &Zoltan_Distribute_Linear;
+    }
+    else {
+      int *cmember = NULL;
+
+      cmember = (int*)ZOLTAN_MALLOC(outmat->mtx.nY*sizeof(int));
+      if (outmat->mtx.nY > 0 && cmember == NULL) MEMORY_ERROR;
+      partdata = Zoltan_Distribute_Partition_Register(zz, outmat->mtx.nY, outmat->mtx.yGNO,
+						      cmember, zz->Num_Proc, zz->Num_Proc);
+      ZOLTAN_FREE(&cmember);
+      Zoltan_Distribute_Set(&outmat->mtx, &Zoltan_Distribute_Origin, partdata);
+    }
+  }
 
   /*
    * Build comm plan for sending non-zeros to their target processors in
@@ -259,7 +277,6 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   ZOLTAN_FREE(&outmat->mtx.pinGNO);
   ZOLTAN_FREE(&outmat->mtx.pinwgt);
   ZOLTAN_FREE(&outmat->mtx.yGID);
-  ZOLTAN_FREE(&outmat->mtx.ywgt);
 
 
   /*

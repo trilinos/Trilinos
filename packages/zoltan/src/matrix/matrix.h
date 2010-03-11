@@ -70,9 +70,9 @@ typedef struct Zoltan_matrix_ {
   Zoltan_matrix_options opts;  /* How to build the matrix */
   int           redist;        /* HG queries have been used or matrix distribution has changed*/
   int           completed;     /* Matrix is ready to be specialized in HG or G */
+  int           bipartite;
   int           globalX;       /* Overall number on X dimension */
   int           globalY;       /* Overall number on Y dimension */
-  int           offsetY;       /* Used for bipartite graph: GNO >= offsetY are edges */
   int           nY;            /* Local number in Y dimension */
   int           nY_ori;        /* nY in the initial (user ?) distribution */
   int           ywgtdim;       /* Wgt dimensions for Y */
@@ -88,12 +88,13 @@ typedef struct Zoltan_matrix_ {
   /* These fields are used only before matrix_complete */
   /* Allow us to move only pins and CSR structure without having to worry
    * about vertex and edge data. */
-  struct Zoltan_DD_Struct *ddX; /* Map xGNO -> xGID, xwgt, Input_Parts */
-  struct Zoltan_DD_Struct *ddY; /* Map yGNO -> yGID, ywgt */
+  struct Zoltan_DD_Struct *ddX; /* Map xGNO -> xGID, xpid */
+  struct Zoltan_DD_Struct *ddY; /* Map yGNO -> yGID, ypid */
 
   /* These fields are used after matrix_complete */
-  float        *ywgt;           /* Wgt for local Y */
   ZOLTAN_ID_PTR yGID;           /* Local Y GID */
+  int          *ypid;           /* Initial processor */
+  int          *ybipart;
 } Zoltan_matrix;
 
   /* Overstructure to handle distribution */
@@ -217,6 +218,9 @@ Zoltan_Matrix_Complete(ZZ* zz, Zoltan_matrix* m);
 /* Return an array of locally owned GID */
 ZOLTAN_ID_PTR Zoltan_Matrix_Get_GID(ZZ* zz, Zoltan_matrix* m);
 
+int
+Zoltan_Matrix_Vertex_Info(ZZ* zz, const Zoltan_matrix * const m,
+			  float *wwgt, int *input_part);
 
 /* This code is used to fill the adjproc array which is used in some
  * place in Zoltan.
