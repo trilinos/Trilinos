@@ -33,6 +33,15 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1-4
   )
 
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  migrateGRAPH
+  SOURCES migrateGRAPH.c
+  ARGS 
+  COMM serial mpi
+  NUM_MPI_PROCS 1-4
+  )
+
+
 PACKAGE_COPY_FILES_TO_BINARY_DIR(CExamplesCopyFiles
   SOURCE_FILES hypergraph.txt mesh.txt objects.txt graph.txt
  )

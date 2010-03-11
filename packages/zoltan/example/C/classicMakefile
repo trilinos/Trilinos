@@ -55,9 +55,7 @@ MPI_LIBS=
 CFLAGS=-g -Wall
 CXXFLAGS=-g -Wall
 
-C_EXAMPLES = simpleBLOCK  simpleRCB simpleGRAPH simplePHG 
-
-CPP_EXAMPLES = cpp_simpleBLOCK  cpp_simpleRCB cpp_simpleGRAPH cpp_simplePHG 
+C_EXAMPLES = simpleBLOCK  simpleRCB simpleGRAPH simplePHG migrateGRAPH
 
 all:   $(C_EXAMPLES) $(CPP_EXAMPLES)
 
