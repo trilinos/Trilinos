@@ -12,8 +12,6 @@ PACKAGE(Teko)
 # B) Set up package-specific options
 #
 
-# Nothing to do here
-
 #
 # C) Add the libraries, tests, and examples
 #

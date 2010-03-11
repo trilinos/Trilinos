@@ -219,6 +219,7 @@ bool tSIMPLEPreconditionerFactory::test_initializePrec(int verbosity,std::ostrea
    const RCP<const Thyra::PreconditionerFactoryBase<double> > precFactory =sFactory;
    RCP<Thyra::PreconditionerBase<double> > prec = precFactory->createPrec();
    
+/*
    // parameter list for (1,1) block
    Teuchos::ParameterList List,BlkList;
    BlkList.set("number of local blocks",1);
@@ -228,6 +229,7 @@ bool tSIMPLEPreconditionerFactory::test_initializePrec(int verbosity,std::ostrea
    List.set("Explicit Velocity Inverse Type","BlkDiag");
    List.set("Inverse Pressure Type","Amesos");
    sFactory->initializeFromParameterList(List);
+*/
 
    // initialize the preconditioner
    precFactory->initializePrec(Thyra::defaultLinearOpSource(A_), &*prec);

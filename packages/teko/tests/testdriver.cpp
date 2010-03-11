@@ -18,10 +18,10 @@
 
 #include "Test_Utils.hpp"
 #include "src/tDiagonalPreconditionerFactory.hpp"
-/*#include "src/tLU2x2PreconditionerFactory.hpp"
-  #include "src/tLSCStablePreconditionerFactory.hpp"*/
+#include "src/tLU2x2PreconditionerFactory.hpp"
+#include "src/tLSCStablePreconditionerFactory.hpp"
 #include "src/tSIMPLEPreconditionerFactory.hpp"
-/*#include "src/tLSCStabilized.hpp"
+#include "src/tLSCStabilized.hpp"
 #include "src/tJacobi2x2PreconditionerFactory.hpp"
 #include "src/tBlockJacobiPreconditionerFactory.hpp"
 #include "src/tBlockUpperTriInverseOp.hpp"
@@ -41,7 +41,6 @@
 #include "src/Epetra/tBlockingEpetra.hpp"
 #include "src/Epetra/tBlockedEpetraOperator.hpp"
 #include "src/Epetra/tEpetraThyraConverter.hpp"
-*/
 
 void gdbIn()
 {
@@ -96,10 +95,9 @@ int main(int argc,char * argv[])
 
    // gdbIn();
 
-   // Teko_ADD_UNIT_TEST(Teko::Test::tLSCStabilized,LSCStabilized);
-
+   Teko_ADD_UNIT_TEST(Teko::Test::tSIMPLEPreconditionerFactory,SIMPLEPreconditionerFactory);
    Teko_ADD_UNIT_TEST(Teko::Test::tDiagonalPreconditionerFactory,DiagonalPreconditionerFactory);
-   /*Teko_ADD_UNIT_TEST(Teko::Test::tLU2x2PreconditionerFactory,LU2x2PreconditionerFactory);
+   Teko_ADD_UNIT_TEST(Teko::Test::tLU2x2PreconditionerFactory,LU2x2PreconditionerFactory);
    Teko_ADD_UNIT_TEST(Teko::Test::tLSCStablePreconditionerFactory,LSCStablePreconditionerFactory);
    Teko_ADD_UNIT_TEST(Teko::Test::tLSCStabilized,LSCStabilized);
    Teko_ADD_UNIT_TEST(Teko::Test::tJacobi2x2PreconditionerFactory,Jacobi2x2PreconditionerFactory);
@@ -112,9 +110,8 @@ int main(int argc,char * argv[])
    Teko_ADD_UNIT_TEST(Teko::Test::tEpetraThyraConverter,EpetraThyraConverter);
    Teko_ADD_UNIT_TEST(Teko::Test::tGraphLaplacian,tGraphLaplacian);
    Teko_ADD_UNIT_TEST(Teko::Test::tParallelInverse,tParallelInverse);
-   Teko_ADD_UNIT_TEST(Teko::Test::tExplicitOps,tExplicitOps);*/
-   Teko_ADD_UNIT_TEST(Teko::Test::tSIMPLEPreconditionerFactory,SIMPLEPreconditionerFactory);
-   /*   Teko_ADD_UNIT_TEST(Teko::Test::tLSCHIntegrationTest,LSCHIntegrationTest);
+   Teko_ADD_UNIT_TEST(Teko::Test::tExplicitOps,tExplicitOps);
+   Teko_ADD_UNIT_TEST(Teko::Test::tLSCHIntegrationTest,LSCHIntegrationTest);
    Teko_ADD_UNIT_TEST(Teko::Test::tLumping,Lumping);
    Teko_ADD_UNIT_TEST(Teko::Test::tAbsRowSum,AbsRowSum);
    Teko_ADD_UNIT_TEST(Teko::Test::tNeumannSeries,NeumannSeries);
@@ -123,7 +120,7 @@ int main(int argc,char * argv[])
       Teko_ADD_UNIT_TEST(Teko::Test::tLSCIntegrationTest,LSCIntegrationTest);
       Teko_ADD_UNIT_TEST(Teko::Test::tStridedEpetraOperator,tStridedEpetraOperator);
       Teko_ADD_UNIT_TEST(Teko::Test::tBlockedEpetraOperator,tBlockedEpetraOperator);
-      }*/
+   }
 
    bool status = Teko::Test::UnitTest::RunTests(verbosity,*termout,*failout);
 

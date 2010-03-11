@@ -1,3 +1,4 @@
+#include "Teko_Config.h"
 #include "Teko_Utilities.hpp"
 
 // Thyra includes
@@ -37,7 +38,7 @@
 #include "AnasaziStatusTestMaxIters.hpp"
 
 // Isorropia includes
-#ifdef HAVE_TEKO_ISORROPIA
+#ifdef Teko_ENABLE_Isorropia
 #include "Isorropia_EpetraProber.hpp"
 #endif
 
@@ -52,7 +53,9 @@ namespace Teko {
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
 using Teuchos::RCP;
+#ifdef Teko_ENABLE_Isorropia
 using Isorropia::Epetra::Prober;
+#endif
 
 const Teuchos::RCP<Teuchos::FancyOStream> getOutputStream()
 { 
@@ -1216,7 +1219,7 @@ DiagonalType getDiagonalType(std::string name)
 
 
 LinearOp probe(Teuchos::RCP<const Epetra_CrsGraph> &G, LinearOp & Op){
-#ifdef HAVE_TEKO_ISORROPIA
+#ifdef Teko_ENABLE_Isorropia
   Teuchos::ParameterList probeList;
   Prober prober(G,probeList,true);
   Teuchos::RCP<Epetra_CrsMatrix> Mat=rcp(new Epetra_CrsMatrix(Copy,*G));
@@ -1228,7 +1231,7 @@ LinearOp probe(Teuchos::RCP<const Epetra_CrsGraph> &G, LinearOp & Op){
   cout<<*Mat<<endl;
   return Thyra::epetraLinearOp(Mat);    
 #else
-  TEUCHOS_ASSERT(false);
+  TEST_FOR_EXCEPTION(true,std::runtime,"Probe requires Isorropia");
 #endif
 }
 
