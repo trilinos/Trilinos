@@ -96,9 +96,6 @@ int main(int argc, char** argv)
   MPI_Comm_size(MPI_COMM_WORLD,&worldsize);
   MPI_Comm_rank(MPI_COMM_WORLD,&myrank);
 
-
-  std::cout << "VERBOSE: " << ispatest::set_verbose(0, argc, argv) << std::endl;
-
   /////////////////////////////////////////////////////////////
   /// Read and distribute matrices
   /////////////////////////////////////////////////////////////
