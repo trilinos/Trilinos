@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include "zoltan.h"
-#include "zz_util_const.h"
 
 /* Name of file containing graph to be partitioned */
 

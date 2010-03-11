@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include "zoltan.h"
-#include "zz_util_const.h"
 
 /* Name of file containing graph to be partitioned */
 
@@ -391,7 +390,7 @@ int i, val[2];
 static void showGraphPartitions(int myProc, int numIDs, int *GIDs, int *parts, int nparts)
 {
 int partAssign[25], allPartAssign[25];
-int i, j, part, cuts, prevPart;
+int i, j, part, cuts, prevPart=-1;
 float imbal, localImbal, sum;
 int *partCount;
 
