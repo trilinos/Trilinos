@@ -1,8 +1,5 @@
 # corrin driver
 
-# download cmake into binary directory
-download_prebuilt_cmake("release")
-
 # cygwin CVS needs to know to use ssh
 set(CVS_RSH "C:/cygwin/bin/ssh.exe")
 # Driver script for dashboards on Corrin

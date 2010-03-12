@@ -1,8 +1,5 @@
 # dash2win64 driver
 
-# download cmake into binary directory
-download_prebuilt_cmake("release")
-
 # CVS needs to know how to use ssh
 set(CVS_RSH "C:/Dashboards/Support/Trilinos-ssh/ssh.cmd")
 # Set location of CVS_EXE

@@ -1,8 +1,5 @@
 # kallikrates driver
 
-# download cmake into binary directory
-download_prebuilt_cmake("release")
-
 # GIT needs to know how to use ssh
 set(GIT_SSH "C:\Users\bmpersc\Documents\plink_wrap.bat")
 
