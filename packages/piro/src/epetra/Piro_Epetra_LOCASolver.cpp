@@ -1,32 +1,72 @@
+// @HEADER
+// ************************************************************************
+// 
+//        Piro: Strategy package for embedded analysis capabilitites
+//                  Copyright (2010) Sandia Corporation
+// 
+// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+// the U.S. Government retains certain rights in this software.
+// 
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//  
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+// 
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// 
+// Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
+// National Laboratories.
+// 
+// ************************************************************************
+// @HEADER
+
 #include "Piro_Epetra_LOCASolver.hpp"
 #include "Piro_Epetra_MatrixFreeDecorator.hpp"
 #include "Piro_ValidPiroParameters.hpp"
+#include "NOX_Epetra_LinearSystem_Stratimikos.H"
 
 
-Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> appParams_,
+Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> piroParams_,
                           Teuchos::RCP<EpetraExt::ModelEvaluator> model_,
                           Teuchos::RCP<Piro::Epetra::NOXObserver> observer_,
                           Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> saveEigData_
 ) :
-  appParams(appParams_),
+  piroParams(piroParams_),
   model(model_),
   observer(observer_),
   saveEigData(saveEigData_),
-  utils(appParams->sublist("NOX").sublist("Printing"))
+  utils(piroParams->sublist("NOX").sublist("Printing"))
 {
-  //appParams->validateParameters(*Piro::getValidPiroParameters(),0);
+  //piroParams->validateParameters(*Piro::getValidPiroParameters(),0);
 
   Teuchos::RCP<Teuchos::ParameterList> noxParams =
-	Teuchos::rcp(&(appParams->sublist("NOX")),false);
+	Teuchos::rcp(&(piroParams->sublist("NOX")),false);
   Teuchos::ParameterList& printParams = noxParams->sublist("Printing");
-  Teuchos::ParameterList& lsParams = noxParams->
-	sublist("Direction").sublist("Newton").sublist("Linear Solver");
-  string jacobianSource = lsParams.get("Jacobian Operator", "Have Jacobian");
+
+  string jacobianSource = piroParams->get("Jacobian Operator", "Have Jacobian");
+
+  Teuchos::ParameterList& noxstratlsParams = noxParams->
+        sublist("Direction").sublist("Newton").sublist("Stratimikos Linear Solver");
+
+  // Inexact Newton must be set in a second sublist when using 
+  // Stratimikos: This code snippet sets it automatically
+  bool inexact = (noxParams->sublist("Direction").sublist("Newton").
+                  get("Forcing Term Method", "Constant") != "Constant");
+  noxstratlsParams.sublist("NOX Stratimikos Options").
+                   set("Use Linear Solve Tolerance From NOX", inexact);
 
   if (jacobianSource == "Matrix-Free") {
-    if (lsParams.isParameter("Matrix-Free Perturbation")) {
+    if (piroParams->isParameter("Matrix-Free Perturbation")) {
       model = Teuchos::rcp(new Piro::Epetra::MatrixFreeDecorator(model,
-                           lsParams.get<double>("Matrix-Free Perturbation")));
+                           piroParams->get<double>("Matrix-Free Perturbation")));
     }
     else model = Teuchos::rcp(new Piro::Epetra::MatrixFreeDecorator(model));
   }
@@ -47,7 +87,7 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> appPar
 
   // Create global data object
   Teuchos::RefCountPtr<LOCA::GlobalData> globalData =
-	LOCA::createGlobalData(appParams, epetraFactory);
+	LOCA::createGlobalData(piroParams, epetraFactory);
 
   // Create LOCA interface
   interface = Teuchos::rcp(
@@ -67,13 +107,6 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> appPar
     A = model->create_W();
     iJac = interface;
   }
-/*
-  else if (jacobianSource == "Matrix-Free") {
-    A = Teuchos::rcp(new NOX::Epetra::MatrixFree(printParams,
-                                     iReq, *currentSolution));
-    iJac = Teuchos::rcp_dynamic_cast<NOX::Epetra::Interface::Jacobian>(A);
-  }
-*/
   else if (jacobianSource == "Finite Difference") {
     A = Teuchos::rcp(new NOX::Epetra::FiniteDifference(printParams,
                                             iReq, *currentSolution));
@@ -97,25 +130,26 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> appPar
 
   // Create the linear system
   // also Build shifted linear system for eigensolver
-  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linsys;
-  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> shiftedLinSys;
+  Teuchos::RCP<NOX::Epetra::LinearSystemStratimikos> linsys;
+  Teuchos::RCP<NOX::Epetra::LinearSystemStratimikos> shiftedLinSys;
   if (M != Teuchos::null) {
     Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = interface;
-    lsParams.set("Preconditioner", "User Defined");
+
+cout << "PELS SETTING PrecAlreadyInvertd to true -- often needs to be false \n" << endl;
     linsys =
-      Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams,
-                  lsParams, iJac, A, iPrec, M, *currentSolution));
+      Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(printParams,
+                  noxstratlsParams, iJac, A, iPrec, M, *currentSolution, true));
     shiftedLinSys =
-      Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams,
-							lsParams, iJac, A, iPrec, M,*currentSolution));
+      Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(printParams,
+  		  noxstratlsParams, iJac, A, iPrec, M,*currentSolution, true));
   }
   else {
      linsys =
-        Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams,
-                          lsParams, iReq, iJac, A, *currentSolution));
+        Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(printParams,
+                          noxstratlsParams, iJac, A, *currentSolution));
      shiftedLinSys =
-        Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams,
-                          lsParams, iReq, iJac, A, *currentSolution));
+        Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(printParams,
+                          noxstratlsParams, iJac, A, *currentSolution));
   }
 
   Teuchos::RefCountPtr<LOCA::Epetra::Interface::TimeDependent> iTime =
@@ -137,7 +171,7 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> appPar
 
   if (saveEigData != Teuchos::null) {
     Teuchos::ParameterList& eigParams =
-      appParams->sublist("LOCA").sublist("Stepper").sublist("Eigensolver");
+      piroParams->sublist("LOCA").sublist("Stepper").sublist("Eigensolver");
     eigParams.set("Save Eigen Data Method", "User-Defined");
     eigParams.set("User-Defined Save Eigen Data Name", "Piro Strategy");
     eigParams.set( eigParams.get
@@ -145,11 +179,16 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> appPar
   }
    
   // Create the solver
-  stepper = Teuchos::rcp(new LOCA::Stepper(globalData, grp, statusTests, appParams));
+  stepper = Teuchos::rcp(new LOCA::Stepper(globalData, grp, statusTests, piroParams));
 }
 
 Piro::Epetra::LOCASolver::~LOCASolver()
 {
+  // Release saveEigenData RCP
+  Teuchos::ParameterList& eigParams =
+      piroParams->sublist("LOCA").sublist("Stepper").sublist("Eigensolver");
+  eigParams.set( eigParams.get
+      ("User-Defined Save Eigen Data Name", "Piro Strategy"), Teuchos::null);
 }
 
 Teuchos::RCP<const Epetra_Map> Piro::Epetra::LOCASolver::get_x_map() const
@@ -270,7 +309,7 @@ void Piro::Epetra::LOCASolver::evalModel( const InArgs& inArgs,
   if (utils.isPrintType(NOX::Utils::Parameters)) {
     utils.out() << endl << "Final Parameters" << endl
 		<< "****************" << endl;
-    appParams->print(utils.out());
+    piroParams->print(utils.out());
     utils.out() << endl;
   }
 
@@ -282,9 +321,9 @@ void Piro::Epetra::LOCASolver::evalModel( const InArgs& inArgs,
     static int totalNewtonIters=0;
     static int totalKrylovIters=0;
     static int stepNum=0;
-    int NewtonIters = appParams->sublist("NOX").
+    int NewtonIters = piroParams->sublist("NOX").
       sublist("Output").get("Nonlinear Iterations", -1000);
-    int KrylovIters = appParams->sublist("NOX").sublist("Direction").sublist("Newton").
+    int KrylovIters = piroParams->sublist("NOX").sublist("Direction").sublist("Newton").
       sublist("Linear Solver").sublist("Output").
       get("Total Number of Linear Iterations", -1000);
     totalNewtonIters += NewtonIters;
@@ -415,11 +454,11 @@ void Piro::Epetra::LOCASolver::evalModel( const InArgs& inArgs,
 					  NOX::Epetra::MultiVector::CreateView);
 	
 	grp->computeJacobian();
-	grp->applyJacobianInverseMultiVector(*appParams, dfdp_nox, dxdp_nox);
+	grp->applyJacobianInverseMultiVector(*piroParams, dfdp_nox, dxdp_nox);
 	dxdp_nox.scale(-1.0);
 	
 	if (observer != Teuchos::null &&
-	    appParams->sublist("VTK").get("Visualize Sensitivities", false) ==
+	    piroParams->sublist("VTK").get("Visualize Sensitivities", false) ==
 	    true) {
 	  for (int k=0; k<numParameters; k++) {
 	    Epetra_Vector* sv = dxdp_nox.getEpetraMultiVector()(k);
