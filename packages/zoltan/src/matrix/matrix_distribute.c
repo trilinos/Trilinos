@@ -279,6 +279,9 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
         continue;
       sendbuf[cnt].GNO[0] = edge_gno;
       sendbuf[cnt].GNO[1] = -1;
+#ifdef HAVE_PURIFY
+      memset(wgtarray+cnt*outmat->mtx.pinwgtdim, 0,outmat->mtx.pinwgtdim*sizeof(float));
+#endif
       cnt++;
     }
   }

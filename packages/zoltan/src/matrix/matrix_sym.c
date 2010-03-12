@@ -50,20 +50,23 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
   tr_tab = (Zoltan_Arc*) ZOLTAN_MALLOC(sizeof(Zoltan_Arc)*(matrix->nPins*2+matrix->nY));
   if (matrix->nPins && tr_tab == NULL) MEMORY_ERROR;
 
-  pinwgt = (float*)ZOLTAN_MALLOC(matrix->nPins*2*matrix->pinwgtdim*sizeof(float));
+  pinwgt = (float*)ZOLTAN_MALLOC((matrix->nPins*2+matrix->nY)*matrix->pinwgtdim*sizeof(float));
   for (i = 0 ; i < 2 ; ++i) /* Copy pin weights */
     memcpy(pinwgt + i*matrix->nPins*matrix->pinwgtdim*sizeof(float),
 	   matrix->pinwgt, matrix->nPins*matrix->pinwgtdim*sizeof(float));
-  ZOLTAN_FREE(&matrix->pinwgt);
 
   for (i=0, cnt = 0 ; i < matrix->nY ; ++i) {
     for (j = matrix->ystart[i] ; j < matrix->yend[i] ; ++j) {
       tr_tab[cnt].GNO[0] = matrix->yGNO[i] + bipartite*matrix->globalX;   /* Normal arc */
       tr_tab[cnt].GNO[1] = matrix->pinGNO[j];
+      memcpy(pinwgt + cnt*matrix->pinwgtdim, matrix->pinwgt+j*matrix->pinwgtdim,
+	     matrix->pinwgtdim*sizeof(float));
       cnt ++;
 
       tr_tab[cnt].GNO[0] = matrix->pinGNO[j];                        /* Symmetric arc */
       tr_tab[cnt].GNO[1] = matrix->yGNO[i] + bipartite*matrix->globalX; /* new ordering */
+      memcpy(pinwgt + cnt*matrix->pinwgtdim, matrix->pinwgt+j*matrix->pinwgtdim,
+	     matrix->pinwgtdim*sizeof(float));
       cnt ++;
     }
     if (matrix->ystart[i] == matrix->yend[i]) { /* Singleton */
@@ -72,6 +75,7 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
       cnt ++;
     }
   }
+  ZOLTAN_FREE(&matrix->pinwgt);
 
   Zoltan_Matrix_Remove_DupArcs(zz, cnt, tr_tab, pinwgt, matrix);
   ZOLTAN_FREE(&tr_tab);
