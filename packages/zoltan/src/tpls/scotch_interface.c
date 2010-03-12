@@ -75,7 +75,17 @@ Zoltan_Scotch_Build_Graph(ZOLTAN_Third_Graph * gr,
  * TODO: at this time, only distributed computations are allowed.
  */
 
-int Zoltan_Scotch_Order(ZZ *zz, int *num_obj, ZOLTAN_ID_PTR *gids, ZOLTAN_ID_PTR* rankgids, ZOOS *order_opt)
+int Zoltan_Scotch_Order(
+  ZZ *zz,               /* Zoltan structure */
+  int num_obj,		/* Number of (local) objects to order. */
+  ZOLTAN_ID_PTR gids,   /* List of global ids (local to this proc) */
+  /* The application must allocate enough space */
+  ZOLTAN_ID_PTR lids,   /* List of local ids (local to this proc) */
+/* The application must allocate enough space */
+  int *rank,		/* rank[i] is the rank of gids[i] */
+  int *iperm,
+  ZOOS *order_opt 	/* Ordering options, parsed by Zoltan_Order */
+)
 {
   static char *yo = "Zoltan_Scotch_Order";
   int n, ierr;
@@ -83,7 +93,6 @@ int Zoltan_Scotch_Order(ZZ *zz, int *num_obj, ZOLTAN_ID_PTR *gids, ZOLTAN_ID_PTR
   ZOLTAN_Third_Graph gr;
   SCOTCH_Strat        stradat;
   SCOTCH_Graph        cgrafdat;
-  ZOLTAN_ID_PTR       lid = NULL;
 #ifdef ZOLTAN_PTSCOTCH
   SCOTCH_Dgraph       grafdat;
   SCOTCH_Dordering    ordedat;
@@ -142,16 +151,16 @@ int Zoltan_Scotch_Order(ZZ *zz, int *num_obj, ZOLTAN_ID_PTR *gids, ZOLTAN_ID_PTR
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Get_Num_Obj returned error.");
     return(ZOLTAN_FATAL);
   }
-  /* if (n != num_obj){ */
-  /*   /\* Currently this is a fatal error. *\/ */
-  /*   ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Input num_obj does not equal the number of objects."); */
-  /*   return(ZOLTAN_FATAL); */
-  /* } */
+  if (n != num_obj){
+    /* Currently this is a fatal error. */
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Input num_obj does not equal the number of objects.");
+    return(ZOLTAN_FATAL);
+  }
 
   /* Do not use weights for ordering */
 /*   gr.obj_wgt_dim = -1; */
 /*   gr.edge_wgt_dim = -1; */
-  gr.num_obj = n;
+  gr.num_obj = num_obj;
 
   /* Check what ordering type is requested */
 #ifdef ZOLTAN_PTSCOTCH
@@ -167,6 +176,7 @@ int Zoltan_Scotch_Order(ZZ *zz, int *num_obj, ZOLTAN_ID_PTR *gids, ZOLTAN_ID_PTR
   }
   gr.get_data = 1;
 
+
   timer_p = Zoltan_Preprocess_Timer(zz, &use_timers);
 
     /* Start timer */
@@ -176,7 +186,8 @@ int Zoltan_Scotch_Order(ZZ *zz, int *num_obj, ZOLTAN_ID_PTR *gids, ZOLTAN_ID_PTR
     times[0] = Zoltan_Time(zz->Timer);
   }
 
-  ierr = Zoltan_Preprocess_Graph(zz, gids, &lid,  &gr, NULL, NULL, NULL);
+  ierr = Zoltan_Preprocess_Graph(zz, &gids, &lids,  &gr, NULL, NULL, NULL);
+
 
   if (Zoltan_Scotch_Build_Graph(&gr, comm,
 #ifdef ZOLTAN_PTSCOTCH
@@ -377,8 +388,7 @@ int Zoltan_Scotch_Order(ZZ *zz, int *num_obj, ZOLTAN_ID_PTR *gids, ZOLTAN_ID_PTR
   }
 #endif /* ZOLTAN_PTSCOTCH */
 
-  ierr = Zoltan_Postprocess_Graph (zz, *gids, lid, &gr, NULL, NULL, NULL, &ord, NULL);
-  ZOLTAN_FREE(&lid);
+  ierr = Zoltan_Postprocess_Graph (zz, gids, lids, &gr, NULL, NULL, NULL, &ord, NULL);
 
   /* Get a time here */
   if (get_times) times[3] = Zoltan_Time(zz->Timer);
@@ -401,29 +411,11 @@ int Zoltan_Scotch_Order(ZZ *zz, int *num_obj, ZOLTAN_ID_PTR *gids, ZOLTAN_ID_PTR
   if (use_timers)
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_p, zz->Communicator);
 
-  /* Convert ord.rank to rankGID */
-  {
-      struct Zoltan_DD_Struct *dd = NULL;
-      int offset;
-      int *GNO = NULL;
-
-      GNO = (int*) ZOLTAN_MALLOC (n*sizeof(int));
-      MPI_Scan(&n, &offset, 1, MPI_INT, MPI_SUM, zz->Communicator);
-      offset -= n;
-      for (i = 0 ; i < n ; ++i) GNO[i] = offset + i;
-      Zoltan_DD_Create (&dd, zz->Communicator, 1, zz->Num_GID,
-			0, gr.num_obj, 0);
-      Zoltan_DD_Update (dd, (ZOLTAN_ID_PTR)GNO, *gids,NULL, NULL, nX);
-      ZOLTAN_FREE(&GNO);
-
-      *rankGID = ZOLTAN_MALLOC_GID_ARRAY(zz, n);
-      ierr = Zoltan_DD_Find (dd, *rankGID, (ZOLTAN_ID_PTR)ord.rank, NULL, NULL,
-			     n, NULL);
-      Zoltan_DD_Destroy(&dd);
-      dd = NULL;
-  }
-
-
+  if ((ord.iperm != NULL) && (iperm != NULL))
+    memcpy(iperm, ord.iperm, gr.num_obj*sizeof(indextype));
+  if (ord.iperm != NULL)  ZOLTAN_FREE(&ord.iperm);
+  if (order_opt->return_args&RETURN_RANK)
+    memcpy(rank, ord.rank, gr.num_obj*sizeof(indextype));
   ZOLTAN_FREE(&ord.rank);
   ZOLTAN_FREE(&strat);
 

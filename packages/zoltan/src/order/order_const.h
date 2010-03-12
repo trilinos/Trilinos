@@ -80,8 +80,9 @@ typedef struct Zoltan_Order_Options ZOOS;
  * ordering method or uses the ordering struct.
  */
 
-typedef int ZOLTAN_ORDER_FN(  struct Zoltan_Struct *zz, int *,
-			      ZOLTAN_ID_PTR*, ZOLTAN_ID_PTR*);
+typedef int ZOLTAN_ORDER_FN(  struct Zoltan_Struct *zz, int,
+			      ZOLTAN_ID_PTR, ZOLTAN_ID_PTR,
+			      int *, int *, ZOOS *);
 
 /*****************************************************************************/
 /* PROTOTYPES */
@@ -94,7 +95,15 @@ extern ZOLTAN_ORDER_FN Zoltan_Scotch_Order;
 #endif /* ZOLTAN_SCOTCH */
 
 #ifdef CEDRIC_2D_PARTITIONS
-extern ZOLTAN_ORDER_FN Zoltan_HUND;
+int Zoltan_HUND(
+  struct Zoltan_Struct *zz,               /* Zoltan structure */
+  int num_gid_entries, /* # of entries for a global id */
+  int num_obj,		/* Number of objects to order */
+  ZOLTAN_ID_PTR gids,   /* List of global ids (local to this proc) */
+                        /* The application must allocate enough space */
+  int *rank,            /* rank[i] is the rank of gids[i] */
+  int *iperm            /* iperm[rank[i]]=i, only for sequential ordering */
+  );
 #endif /* CEDRIC_2D_PARTITIONS */
 
 /* Parameter routine */
