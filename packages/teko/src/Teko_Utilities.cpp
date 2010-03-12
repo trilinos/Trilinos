@@ -1233,7 +1233,7 @@ LinearOp probe(Teuchos::RCP<const Epetra_CrsGraph> &G, LinearOp & Op){
   cout<<*Mat<<endl;
   return Thyra::epetraLinearOp(Mat);    
 #else
-  TEST_FOR_EXCEPTION(true,std::runtime,"Probe requires Isorropia");
+  TEST_FOR_EXCEPTION(true,std::runtime_error,"Probe requires Isorropia");
 #endif
 }
 
