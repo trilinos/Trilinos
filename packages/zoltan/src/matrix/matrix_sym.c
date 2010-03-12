@@ -32,9 +32,7 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
   int i, j, cnt;
   ZOLTAN_ID_PTR yGID = NULL;
   int *ypid=NULL;
-  int *ygid=NULL;
   float *pinwgt=NULL;
-  int nY_ori;
   int * ybipart = NULL;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -49,7 +47,7 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
   matrix->opts.symmetrize = 1;
 
   /* Update the data directories */
-  tr_tab = (Zoltan_Arc*) ZOLTAN_MALLOC(sizeof(Zoltan_Arc)*matrix->nPins*2);
+  tr_tab = (Zoltan_Arc*) ZOLTAN_MALLOC(sizeof(Zoltan_Arc)*(matrix->nPins*2+matrix->nY));
   if (matrix->nPins && tr_tab == NULL) MEMORY_ERROR;
 
   pinwgt = (float*)ZOLTAN_MALLOC(matrix->nPins*2*matrix->pinwgtdim*sizeof(float));
@@ -66,6 +64,11 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
 
       tr_tab[cnt].GNO[0] = matrix->pinGNO[j];                        /* Symmetric arc */
       tr_tab[cnt].GNO[1] = matrix->yGNO[i] + bipartite*matrix->globalX; /* new ordering */
+      cnt ++;
+    }
+    if (matrix->ystart[i] == matrix->yend[i]) { /* Singleton */
+      tr_tab[cnt].GNO[0] = matrix->yGNO[i] + bipartite*matrix->globalX;   /* Normal arc */
+      tr_tab[cnt].GNO[1] = -1;
       cnt ++;
     }
   }
@@ -93,7 +96,7 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
     Zoltan_DD_Find (matrix->ddX, (ZOLTAN_ID_PTR)matrix->yGNO, yGID, (ZOLTAN_ID_PTR)ypid, NULL,
 		    endX, NULL);
 
-    yGNO = ZOLTAN_MALLOC(endX*sizeof(int));
+    yGNO = (int*)ZOLTAN_MALLOC(endX*sizeof(int));
     for (i = endX ; i < matrix->nY ; ++i) {
       yGNO[i-endX] = matrix->yGNO[i] - matrix->globalX;
       /* TODO: add a something to have the correct ypid */
@@ -119,7 +122,7 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
     /* Hope a linear assignment will help a little */
     Zoltan_DD_Set_Neighbor_Hash_Fn1(matrix->ddX, matrix->globalX/zz->Num_Proc);
     /* Associate all the data with our xyGNO */
-    Zoltan_DD_Update (matrix->ddX, (ZOLTAN_ID_PTR)matrix->yGNO, yGID, ypid, ybipart,
+    Zoltan_DD_Update (matrix->ddX, (ZOLTAN_ID_PTR)matrix->yGNO, yGID, (ZOLTAN_ID_PTR)ypid, ybipart,
 		      matrix->nY);
   }
 

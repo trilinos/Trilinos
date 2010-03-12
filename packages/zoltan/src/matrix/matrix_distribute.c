@@ -240,10 +240,11 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
    * Build comm plan for sending non-zeros to their target processors in
    * 2D data distribution.
    */
-  proclist = (int *)ZOLTAN_MALLOC(outmat->mtx.nPins *sizeof(int));
-  sendbuf = (Zoltan_Arc*) ZOLTAN_MALLOC(outmat->mtx.nPins * sizeof(Zoltan_Arc));
+  /* TRICK: create fake arc (edgeno, -1) for empty Y. Upper bound for size might be nPins + nY */
+  proclist = (int *)ZOLTAN_MALLOC((outmat->mtx.nPins+outmat->mtx.nY) *sizeof(int));
+  sendbuf = (Zoltan_Arc*) ZOLTAN_MALLOC((outmat->mtx.nPins +outmat->mtx.nY)* sizeof(Zoltan_Arc));
 
-  if ((outmat->mtx.nPins >0) && (proclist == NULL || sendbuf == NULL)) MEMORY_ERROR;
+  if ((outmat->mtx.nPins + outmat->mtx.nY >0) && (proclist == NULL || sendbuf == NULL)) MEMORY_ERROR;
 
   wgtarray = (float*) ZOLTAN_MALLOC(outmat->mtx.nPins*outmat->mtx.pinwgtdim*sizeof(float));
 
@@ -269,6 +270,15 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
       sendbuf[cnt].GNO[1] = vtx_gno;
       memcpy(wgtarray+cnt*outmat->mtx.pinwgtdim, outmat->mtx.pinwgt+j*outmat->mtx.pinwgtdim,
                outmat->mtx.pinwgtdim*sizeof(float));
+      cnt++;
+    }
+    if(outmat->mtx.ystart[i] == outmat->mtx.yend[i]) {
+      proclist[cnt] = (*outmat->hashDistFct)(edge_gno, -1, outmat->hashDistData,
+					  &sendbuf[cnt].part_y);
+      if (proclist[cnt] < 0) /* Discard this nnz */
+        continue;
+      sendbuf[cnt].GNO[0] = edge_gno;
+      sendbuf[cnt].GNO[1] = -1;
       cnt++;
     }
   }
