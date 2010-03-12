@@ -396,7 +396,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     }
 
 #ifdef CEDRIC_2D_PARTITIONS
-    {
+    if (hgp->keep_tree) {
       int offset;
       int *egno = NULL;
       MPI_Scan(&zhg->nHedges, &offset, 1, MPI_INT, MPI_SUM, zz->Communicator);
@@ -406,6 +406,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
 	fprintf (stderr, "EDGEGID %d\t%d\n", global_ids[j], offset + j);
       }
 #endif /* CEDRIC_PRINT */
+
       egno = (int*)ZOLTAN_MALLOC(zhg->nHedges*sizeof(int));
       for (j=0; j < zhg->nHedges; j++){
 	egno[j] = j + offset;
@@ -413,7 +414,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       Zoltan_DD_Create (&zhg->ddHedge, zz->Communicator, 1, zz->Num_GID,
 			0, zhg->nHedges, 0);
       Zoltan_DD_Update (zhg->ddHedge, (ZOLTAN_ID_PTR) egno, global_ids, NULL,
-			NULL, zhg->nHedges);
+			  NULL, zhg->nHedges);
       ZOLTAN_FREE(&egno);
     }
 #endif /* CEDRIC_2D_PARTITIONS */

@@ -95,6 +95,7 @@ int Zoltan_HUND(
   sprintf (partArg, "%d", numPart);
   Zoltan_Set_Param(zz, "NUM_GLOBAL_PARTS", partArg);
   Zoltan_Set_Param(zz, "IMBALANCE_TOL", "1.2");
+  Zoltan_Set_Param(zz, "PHG_KEEP_TREE", "1"); /* We need the separator tree */
   Zoltan_Set_Param(zz, "RETURN_LISTS", "PARTITION_ASSIGNMENTS");
   /* We want to minimize the number of columns in the separator,
      not the number of nnz */

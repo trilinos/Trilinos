@@ -110,7 +110,11 @@ static PARAM_VARS PHG_params[] = {
   {"PATOH_ALLOC_POOL0",               NULL,  "INT",    0},
     /* Memory allocation parameter for Patoh. */
   {"PATOH_ALLOC_POOL1",               NULL,  "INT",    0},   
-    /* Memory allocation parameter for Patoh. */
+  /* Memory allocation parameter for Patoh. */
+#ifdef CEDRIC_2D_PARTITIONS
+  {"PHG_KEEP_TREE",                   NULL,  "INT",    0},
+  /* Keep dissection tree */
+#endif /* CEDRIC_2D_PARTITIONS */
   {NULL,                              NULL,  NULL,     0}     
 };
 
@@ -473,28 +477,31 @@ int **exp_to_part )         /* list of partitions to which exported objs
 
       }
 
-#ifdef CHECK_LEFTALONE_VERTICES          
+#ifdef CHECK_LEFTALONE_VERTICES
       findAndSaveLeftAloneVertices(zz, hg, p, parts, &hgp);
-#endif      
+#endif
     }
 
 #ifdef CEDRIC_2D_PARTITIONS
-    /* Build a centralized tree */
-    Zoltan_PHG_Tree_centralize(zz);
-    if (zoltan_hg->ddHedge != NULL) {
-      Zoltan_PHG_2ways_hyperedge_partition (zz, hg, parts, get_tree(zz), zoltan_hg->ddHedge,
-					    &ddPartEdge, &numParts, &sizeParts);
-      Zoltan_DD_Destroy(&zoltan_hg->ddHedge);
-      data = (Zoltan_PHG_LB_Data*)zz->LB.Data_Structure;
-      data->ddHedge = ddPartEdge;
-      data->numParts = numParts;
-      data->sizeParts = sizeParts;
+    if (hgp.keep_tree) {
+      /* Build a centralized tree */
+      Zoltan_PHG_Tree_centralize(zz);
+      if (zoltan_hg->ddHedge != NULL) {
+	Zoltan_PHG_2ways_hyperedge_partition (zz, hg, parts, get_tree(zz), zoltan_hg->ddHedge,
+					      &ddPartEdge, &numParts, &sizeParts);
+	Zoltan_DD_Destroy(&zoltan_hg->ddHedge);
+	data = (Zoltan_PHG_LB_Data*)zz->LB.Data_Structure;
+	data->ddHedge = ddPartEdge;
+	data->numParts = numParts;
+	data->sizeParts = sizeParts;
+      }
+      else
+	data = NULL;
     }
     else
-      data = NULL;
-#else /* CEDRIC_2D_PARTITIONS */
-      Zoltan_PHG_LB_Data_free_tree(zz);
 #endif /* CEDRIC_2D_PARTITIONS */
+      Zoltan_PHG_LB_Data_free_tree(zz);
+
   }
 
   if (!strcasecmp(hgp.hgraph_method, "REPARTITION")) {
@@ -722,6 +729,9 @@ int Zoltan_PHG_Initialize_Params(
   Zoltan_Bind_Param(PHG_params, "PHG_VERTEX_SCALING", &hgp->vtx_scaling);
   Zoltan_Bind_Param(PHG_params, "PHG_REFINEMENT_METHOD", hgp->refinement_str);
   Zoltan_Bind_Param(PHG_params, "PHG_DIRECT_KWAY", &hgp->kway);
+#ifdef CEDRIC_2D_PARTITIONS
+  Zoltan_Bind_Param(PHG_params, "PHG_KEEP_TREE", &hgp->keep_tree);
+#endif /* CEDRIC_2D_PARTITIONS */
   Zoltan_Bind_Param(PHG_params, "PHG_REFINEMENT_LOOP_LIMIT", 
                                 &hgp->fm_loop_limit);
   Zoltan_Bind_Param(PHG_params, "PHG_REFINEMENT_MAX_NEG_MOVE", 
