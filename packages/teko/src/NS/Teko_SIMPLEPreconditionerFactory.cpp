@@ -9,11 +9,9 @@
 #include "Teuchos_Time.hpp"
 #include "Epetra_FECrsGraph.h"
 #include "EpetraExt_PointToBlockDiagPermute.h"
-#include "Isorropia_EpetraProber.hpp"
 #include "Thyra_EpetraOperatorWrapper.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 
-using Isorropia::Epetra::Prober;
 using Teuchos::RCP;
 
 namespace Teko {
