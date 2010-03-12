@@ -101,6 +101,7 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   int *ptrGNO;
   int *tabGNO;
   int *perm;
+  int *iperm;
 #ifdef CC_TIMERS
   double time;
 #endif
@@ -158,17 +159,23 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   outmat->nY = Zoltan_Map_Size(zz, y_map);
   outmat->yGNO = (int*) ZOLTAN_MALLOC(outmat->nY*sizeof(int));
   if (outmat->nY > 0 && outmat->yGNO == NULL) MEMORY_ERROR;
-  perm = (int*) ZOLTAN_MALLOC(outmat->nY*sizeof(int));
-  if (outmat->nY > 0 && perm == NULL) MEMORY_ERROR;
+  iperm = (int*) ZOLTAN_MALLOC(outmat->nY*sizeof(int));
+  if (outmat->nY > 0 && iperm == NULL) MEMORY_ERROR;
   for (i = 0 ; i < outmat->nY ; ++i)
-    perm[i] = i;
+    iperm[i] = i;
 
   Zoltan_Map_First(zz, y_map, &ptrGNO, (void**)&i);
   while (ptrGNO != NULL) {
     outmat->yGNO[i] = ptrGNO[0];
     Zoltan_Map_Next(zz, y_map, &ptrGNO, (void**)&i);
   }
-  Zoltan_Comm_Sort_Ints(outmat->yGNO, perm, outmat->nY);
+  Zoltan_Comm_Sort_Ints(outmat->yGNO, iperm, outmat->nY);
+
+  perm = (int*) ZOLTAN_MALLOC(outmat->nY*sizeof(int));
+  if (outmat->nY > 0 && perm == NULL) MEMORY_ERROR;
+  for (i = 0 ; i < outmat->nY ; ++i)
+    perm[iperm[i]]= i;
+  ZOLTAN_FREE(&iperm);
 
   /* Build indirection table */
   outmat->ystart = (int*) ZOLTAN_MALLOC((outmat->nY+1)*sizeof(int));

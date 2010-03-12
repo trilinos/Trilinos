@@ -208,6 +208,7 @@ Zoltan_ZG_Export (ZZ* zz, const ZG* const graph, int *gvtx, int *nvtx,
 		  int **vtxdist, int **xadj, int **adjncy, int **adjproc,
 		  /* float **xwgt, */ float **ewgt, int **partialD2)
 {
+  int ierr = ZOLTAN_OK;
 
   AFFECT_NOT_NULL(gvtx, graph->mtx.mtx.globalY);
   AFFECT_NOT_NULL(nvtx, graph->mtx.mtx.nY);
