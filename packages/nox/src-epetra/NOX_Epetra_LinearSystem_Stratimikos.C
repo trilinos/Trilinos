@@ -71,6 +71,7 @@
 #include "Thyra_EpetraLinearOp.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Thyra_SolveSupportTypes.hpp"
+#include "Thyra_OperatorVectorTypes.hpp"
 
 // EpetraExt includes for dumping a matrix
 #ifdef HAVE_NOX_DEBUG
@@ -306,8 +307,10 @@ applyJacobianInverse(Teuchos::ParameterList &p,
   Teuchos::RCP<const Thyra::LinearOpBase<double> > linearOp =
     Thyra::epetraLinearOp(jacPtr);
 
-//Teuchos::RCP<Thyra::PreconditionerBase<double> > precObj;
   // Set the linear Op and  precomputed prec on this lows
+  if (precObj == Teuchos::null) 
+    Thyra::initializeOp(*lowsFactory, linearOp, &*lows);
+  else 
     Thyra::initializePreconditionedOp<double>(
       *lowsFactory, linearOp, precObj ,&*lows);
 
@@ -333,6 +336,11 @@ applyJacobianInverse(Teuchos::ParameterList &p,
 
   // Solve the linear system for x
   lows->solve(Thyra::NOTRANS, *b, x.ptr(), solveCriteria.ptr());
+
+  //Release RCPs
+  x = Teuchos::null; b = Teuchos::null; 
+  resultRCP = Teuchos::null; inputRCP = Teuchos::null; 
+
   // ToDo: You need to grab the SolveStatus to see what happened!
 
   // Set the output parameters in the "Output" sublist
@@ -478,9 +486,15 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
   double endTime = timer.WallTime();
   timeCreatePreconditioner += (endTime - startTime);
 
-  if (utils.isPrintType(Utils::LinearSolverDetails))
-    utils.out() << "\n       Time required to create precondtioner : " 
-         << (endTime - startTime) << " (sec.)" << endl;;
+  if (precObj != Teuchos::null)  {
+    if (utils.isPrintType(Utils::LinearSolverDetails))
+      utils.out() << "\n       Time required to create precondtioner : " 
+           << (endTime - startTime) << " (sec.)" << endl;
+  }
+  else {
+    if (utils.isPrintType(Utils::LinearSolverDetails))
+      utils.out() << "\n       No precondtioner requested. " << endl;
+  }
 
   return true;
 }
