@@ -1,5 +1,7 @@
 # dash2win64 driver
 
+set(CTEST_EXE "${CMAKE_CTEST_COMMAND}")
+
 # CVS needs to know how to use ssh
 set(CVS_RSH "C:/Dashboards/Support/Trilinos-ssh/ssh.cmd")
 # Set location of CVS_EXE
@@ -20,10 +22,10 @@ add_custom_target(cvs_checkout ALL
 # Now add test for each of the ctest build scripts for this machine
 
 add_test(serial_release
-  "${DOWNLOADED_CTEST}"
+  "${CTEST_EXE}"
   -S
-  "${TrilinosDriver_SOURCE_DIR}/dash2win64/ctest_windows_nightly_serial_release.cmake"
+  "${workingdir}/Trilinosdash2win64/ctest_windows_nightly_serial_release.cmake"
   -VV
   --output-log
-  "${TrilinosDriver_BINARY_DIR}/ctest_msvc_nightly_serial_optimized_dash2win64.out"
+  "${workingdir}/ctest_msvc_nightly_serial_optimized_dash2win64.out"
 )

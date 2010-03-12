@@ -1,5 +1,7 @@
 # corrin driver
 
+set(CTEST_EXE "${CMAKE_CTEST_COMMAND}")
+
 # cygwin CVS needs to know to use ssh
 set(CVS_RSH "C:/cygwin/bin/ssh.exe")
 # Driver script for dashboards on Corrin
@@ -19,7 +21,7 @@ add_custom_target(cvs_checkout ALL
   WORKING_DIRECTORY "${workingdir})
 
 add_test(serial_release
-  "${DOWNLOADED_CTEST}"
+  "${CTEST_EXE}"
   -S
   "${TrilinosDriver_SOURCE_DIR}/corrin/ctest_windows_nightly_serial_release.cmake"
   -VV

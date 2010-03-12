@@ -1,5 +1,7 @@
 # kallikrates driver
 
+set(CTEST_EXE "${CMAKE_CTEST_COMMAND}")
+
 # GIT needs to know how to use ssh
 set(GIT_SSH "C:\Users\bmpersc\Documents\plink_wrap.bat")
 
@@ -26,11 +28,11 @@ endif()
 
 # Add targets to update the local repository
 add_custom_target(gitcheckout ALL
-  COMMAND "%GIT_EXE%" checkout ${BRANCH}
+  COMMAND "${GIT_EXE}" checkout ${BRANCH}
   WORKING_DIRECTORY "${workingdir}/Trilinos"
   COMMENT "Doing update of an existing directory")
 add_custom_target(gitpull ALL
-  COMMAND "%GIT_EXE%" pull
+  COMMAND "${GIT_EXE}" pull
   WORKING_DIRECTORY "${workingdir}/Trilinos"
   DEPENDS gitcheckout)
 
