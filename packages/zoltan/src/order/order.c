@@ -225,6 +225,7 @@ int Zoltan_Order (
   }
 
 
+  /* TODO allocate all this stuff with the graph */
   local_gids = ZOLTAN_MALLOC_GID_ARRAY(zz, local_num_obj);
   local_rank = (int*) ZOLTAN_MALLOC(local_num_obj*sizeof(int));
 
