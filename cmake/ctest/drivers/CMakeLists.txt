@@ -1,6 +1,9 @@
 project(TrilinosDriver NONE)
 cmake_minimum_required(VERSION 2.7.20090924)
 
+include(CTest)
+enable_testing()
+
 macro(download_prebuilt_cmake _type)
   if(NOT _type)
     set(_type "release")
@@ -23,7 +26,7 @@ macro(download_prebuilt_cmake _type)
     message(FATAL_ERROR "Error occurred while downloading prebuilt CMake: ${err}")
   endif()
   
-  set(DOWNLOADED_DIR "${TrilinosDriver_SOURCE_DIR}/cmake-prebuilt/bin")
+  set(DOWNLOADED_DIR "${TrilinosDriver_BINARY_DIR}/cmake-prebuilt/bin")
   set(DOWNLOADED_CMAKE "${DOWNLOADED_DIR}/cmake")
   set(DOWNLOADED_CTEST "${DOWNLOADED_DIR}/ctest")
 endmacro()
