@@ -218,10 +218,37 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
     Zoltan_Map_Next(zz, nnz_map, &tabGNO, (void**)&i);
   }
 
-
 #ifdef CC_TIMERS
   fprintf(stderr, "(%d) remove arcs: %g\n", zz->Proc, MPI_Wtime()-time);
 #endif
+
+#define MATRIX_DEBUG
+
+#ifdef MATRIX_DEBUG
+ {
+  /* Sort edges for each vertex to have the same answers than previously */
+   float *tmpwgt = NULL;
+   ZOLTAN_FREE(&perm);
+   perm = (int*)ZOLTAN_MALLOC(outmat->nPins*sizeof(int));
+   tmpwgt = (float*) ZOLTAN_MALLOC(outmat->nPins*outmat->pinwgtdim*sizeof(float));
+
+  for (i = 0 ; i < outmat->nY ; ++i) {
+    int j;
+    int degree = outmat->yend[i]-outmat->ystart[i];
+    for (j=0;j < degree; ++j) perm[j] = j;
+    Zoltan_Comm_Sort_Ints(outmat->pinGNO + outmat->ystart[i],
+			  perm, degree);
+    memcpy(tmpwgt, outmat->pinwgt+outmat->ystart[i], degree*sizeof(float)*outmat->pinwgtdim);
+    for (j = 0 ; j < degree ; ++j) {
+      memcpy(outmat->pinwgt+(j+outmat->ystart[i])*outmat->pinwgtdim,
+	     tmpwgt+perm[j]*outmat->pinwgtdim,
+	     outmat->pinwgtdim*sizeof(float));
+    }
+  }
+  ZOLTAN_FREE(&tmpwgt);
+  ZOLTAN_FREE(&perm);
+ }
+#endif /* MATRIX_DEBUG */
 
  End:
   Zoltan_Map_Destroy(zz, &nnz_map);
@@ -229,6 +256,7 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
 
   ZOLTAN_FREE(&ysize);
   ZOLTAN_FREE(&perm);
+  ZOLTAN_FREE(&iperm);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
   return (ierr);
