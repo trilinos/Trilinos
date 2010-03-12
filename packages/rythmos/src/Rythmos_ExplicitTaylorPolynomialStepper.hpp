@@ -764,7 +764,7 @@ void ExplicitTaylorPolynomialStepper<Scalar>::getPoints(
     t_-dt_,constOptInArg(*x_vector_old_),constOptInArg(*x_dot_vector_old_),
     t_,constOptInArg(*x_vector_),constOptInArg(*x_dot_vector_),
     time_vec,ptr(x_vec),ptr(xdot_vec),ptr(accuracy_vec),
-    null
+    Ptr<InterpolatorBase<Scalar> >(null)
     );
 }
 

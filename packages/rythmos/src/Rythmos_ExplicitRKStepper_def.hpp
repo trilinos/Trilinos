@@ -314,10 +314,12 @@ void ExplicitRKStepper<Scalar>::getPoints(
   using Teuchos::constOptInArg;
   using Teuchos::null;
   defaultGetPoints<Scalar>(
-      t_old_,constOptInArg(*solution_vector_old_),null,
-      t_,constOptInArg(*solution_vector_),null,
-      time_vec,ptr(x_vec),ptr(xdot_vec),ptr(accuracy_vec),
-      null
+      t_old_, constOptInArg(*solution_vector_old_),
+      Ptr<const VectorBase<Scalar> >(null),
+      t_, constOptInArg(*solution_vector_),
+      Ptr<const VectorBase<Scalar> >(null),
+      time_vec,ptr(x_vec), ptr(xdot_vec), ptr(accuracy_vec),
+      Ptr<InterpolatorBase<Scalar> >(null)
       );
 }
 

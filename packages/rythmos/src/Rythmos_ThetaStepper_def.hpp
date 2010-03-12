@@ -321,6 +321,7 @@ RCP<Thyra::ModelEvaluator<Scalar> >
 ThetaStepper<Scalar>::getNonconstModel() 
 {
   TEST_FOR_EXCEPT(true);
+  return Teuchos::null;
 }
 
 
