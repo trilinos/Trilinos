@@ -45,9 +45,8 @@ int Zoltan_Build_Graph(ZZ *zz, int *graph_type, int check_graph,
   ierr = Zoltan_ZG_Export (zz, &graph,
 			   &glb_obj, &my_num_obj, &my_obj_wgt_dim, edge_wgt_dim,
 			   vtxdist, xadj, adjncy, adjproc,
-			   NULL, ewgts, NULL);
+			   ewgts, NULL);
 
-  graph.mtx.mtx.ywgt = NULL;
   graph.mtx.mtx.pinwgt = NULL;
   graph.mtx.mtx.ystart = NULL;
   graph.mtx.mtx.yend = NULL;

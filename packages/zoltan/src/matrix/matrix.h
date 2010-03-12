@@ -42,6 +42,15 @@ extern "C" {
 typedef enum {ADD_WEIGHT=0, MAX_WEIGHT, CMP_WEIGHT} WgtOp;
 typedef enum {MATRIX_FULL_DD=0, MATRIX_FAST, MATRIX_NO_REDIST} SpeedOpt;
 
+
+/* Hash function used to describe how to distribute data */
+/* (Y, X, data, &part_y) */
+typedef int distFnct(int, int, void *, int*);
+int Zoltan_Distribute_Origin(int edge_gno, int vtx_gno, void* data, int *part_y);
+int Zoltan_Distribute_Linear(int edge_gno, int vtx_gno, void* data, int *part_y);
+int Zoltan_Distribute_Cyclic(int edge_gno, int vtx_gno, void* data, int *part_y);
+int Zoltan_Distribute_Partition(int edge_gno, int vtx_gno, void* data, int *part_y);
+
 /* This structure defines how the matrix will be constructed */
 typedef struct Zoltan_matrix_options_ {
   int enforceSquare;           /* Want to build a graph */
@@ -61,9 +70,9 @@ typedef struct Zoltan_matrix_ {
   Zoltan_matrix_options opts;  /* How to build the matrix */
   int           redist;        /* HG queries have been used or matrix distribution has changed*/
   int           completed;     /* Matrix is ready to be specialized in HG or G */
+  int           bipartite;
   int           globalX;       /* Overall number on X dimension */
   int           globalY;       /* Overall number on Y dimension */
-  int           offsetY;       /* Used for bipartite graph: GNO >= offsetY are edges */
   int           nY;            /* Local number in Y dimension */
   int           nY_ori;        /* nY in the initial (user ?) distribution */
   int           ywgtdim;       /* Wgt dimensions for Y */
@@ -79,12 +88,13 @@ typedef struct Zoltan_matrix_ {
   /* These fields are used only before matrix_complete */
   /* Allow us to move only pins and CSR structure without having to worry
    * about vertex and edge data. */
-  struct Zoltan_DD_Struct *ddX; /* Map xGNO -> xGID, xwgt, Input_Parts */
-  struct Zoltan_DD_Struct *ddY; /* Map yGNO -> yGID, ywgt */
+  struct Zoltan_DD_Struct *ddX; /* Map xGNO -> xGID, xpid */
+  struct Zoltan_DD_Struct *ddY; /* Map yGNO -> yGID, ypid */
 
   /* These fields are used after matrix_complete */
-  float        *ywgt;           /* Wgt for local Y */
   ZOLTAN_ID_PTR yGID;           /* Local Y GID */
+  int          *ypid;           /* Initial processor */
+  int          *ybipart;
 } Zoltan_matrix;
 
   /* Overstructure to handle distribution */
@@ -93,13 +103,15 @@ typedef struct Zoltan_matrix_2d_ {
   PHGComm         *comm;        /* How data are distributed */
   int             *dist_x;      /* Distribution on x axis */
   int             *dist_y;      /* Distribution on y axis */
+  distFnct        *hashDistFct; /* How to distribute nnz */
+  void            *hashDistData;/* Used by hashDist */
+
 } Zoltan_matrix_2d;
 
 /* Auxiliary struct used internaly */
 typedef struct Zoltan_Arc_ {
-    int yGNO;
-    int pinGNO;
-    int offset;
+    int GNO[2];
+    int part_y;
 } Zoltan_Arc;
 
 /*--------------
@@ -120,6 +132,9 @@ Zoltan_Matrix_Free(Zoltan_matrix *m);
 /* Free a matrix2d object */
 void
 Zoltan_Matrix2d_Free(Zoltan_matrix_2d *m);
+
+void
+Zoltan_Matrix2d_Init(Zoltan_matrix_2d *m);
 
 /* This function compute the indices of the diagonal terms.
    This function needs that diagonal terms are declared at most
@@ -165,6 +180,13 @@ int Zoltan_Distribute_Square (ZZ * zz, PHGComm *layout) ;
 /* Distribute in a linear 1D way, typically for a graph */
 int Zoltan_Distribute_LinearY (ZZ * zz, PHGComm *layout) ;
 
+int Zoltan_Distribute_Set(Zoltan_matrix_2d* mat,
+			  distFnct *hashDistFct, void * hashDistData);
+
+void* Zoltan_Distribute_Partition_Register(ZZ* zz, int size, int* yGNO, int *part, int nProc, int nPart);
+void Zoltan_Distribute_Partition_Free(void** dist);
+
+
 /* Compute a symmertrization of the matrix.
  * if bipartite == 0, A+At transformation is done (matrix has to be square).
  * else, a bipartite graph of the matrix is built (matrix can have any shape).
@@ -188,9 +210,18 @@ Zoltan_Matrix_Construct_CSR(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
 
 /* This code has to be called just before specializing the matrix into
  * a graph or an hypergraph.
+ * Warning: Matrix cannot be modified afterwards.
  */
 int
 Zoltan_Matrix_Complete(ZZ* zz, Zoltan_matrix* m);
+
+/* Return an array of locally owned GID */
+ZOLTAN_ID_PTR Zoltan_Matrix_Get_GID(ZZ* zz, Zoltan_matrix* m);
+
+int
+Zoltan_Matrix_Vertex_Info(ZZ* zz, const Zoltan_matrix * const m,
+			  ZOLTAN_ID_PTR lid,
+			  float *wwgt, int *input_part);
 
 /* This code is used to fill the adjproc array which is used in some
  * place in Zoltan.

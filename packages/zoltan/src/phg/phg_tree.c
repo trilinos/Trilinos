@@ -23,16 +23,6 @@ extern "C" {
 #include "phg.h"
 #include <limits.h>
 
-typedef struct Zoltan_PHG_LB_Data_ {
-  struct phg_timer_indices * timers;
-  Zoltan_PHG_Tree * tree;
-#ifdef CEDRIC_2D_PARTITIONS
-  struct Zoltan_DD_Struct *ddHedge;
-  int * partTree; /* Not used yet */
-  int numParts;
-  int sizeParts;
-#endif /* CEDRIC_2D_PARTITIONS */
-} Zoltan_PHG_LB_Data;
 
 #define SET_MIN_NODE(ptr, offset, val) (ptr)[2*(offset)]=-(val)
 #define SET_MAX_NODE(ptr, offset, val) (ptr)[2*(offset)+1]=(val)
