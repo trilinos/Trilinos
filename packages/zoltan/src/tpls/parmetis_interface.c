@@ -780,6 +780,9 @@ int Zoltan_ParMetis_Order(
 
   ierr = Zoltan_Postprocess_Graph (zz, l_gids, l_lids, &gr, NULL, NULL, NULL, &ord, NULL);
 
+  ZOLTAN_FREE(&l_gids);
+  ZOLTAN_FREE(&l_lids);
+
 
   /* Get a time here */
   if (get_times) times[3] = Zoltan_Time(zz->Timer);
