@@ -238,6 +238,8 @@ create_MultiVector(
  * <tt>Teuchos::Comm</tt> object.
  *
  * ToDo: Finish documentation!
+ *
+ * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
 RCP<const Epetra_Comm>
 get_Epetra_Comm(const Teuchos::Comm<Ordinal>& comm);
@@ -248,6 +250,8 @@ get_Epetra_Comm(const Teuchos::Comm<Ordinal>& comm);
  * object.
  *
  * ToDo: Finish documentation!
+ *
+ * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
 RCP<const Epetra_Map>
 get_Epetra_Map(const VectorSpaceBase<double>& vs, const RCP<const Epetra_Comm>& comm);
