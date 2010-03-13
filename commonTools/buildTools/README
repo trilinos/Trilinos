@@ -1,0 +1,6 @@
+The scripts in this directory are for the old autotools build system for
+Trilinos that are only used by a few Trilinos packages used in contexts
+outside of Trilinos.
+
+The build tools for the new Trilinos CMake system are in the base-level
+directory cmake/.
