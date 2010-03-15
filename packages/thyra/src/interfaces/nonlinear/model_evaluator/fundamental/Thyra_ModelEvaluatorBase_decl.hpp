@@ -32,8 +32,11 @@
 
 #include "Thyra_LinearOpWithSolveBase.hpp"
 #include "Teuchos_Describable.hpp"
-#include "Teuchos_Polynomial.hpp"
 #include "Teuchos_Assert.hpp"
+
+#ifdef HAVE_THYRA_ME_POLYNOMIAL
+#  include "Teuchos_Polynomial.hpp"
+#endif
 
 
 namespace Thyra {
@@ -110,6 +113,7 @@ public:
     void set_x( const RCP<const VectorBase<Scalar> > &x );
     /** \brief Precondition: <tt>supports(IN_ARG_x)==true</tt>.  */
     RCP<const VectorBase<Scalar> > get_x() const;
+#ifdef HAVE_THYRA_ME_POLYNOMIAL
     /** \brief Precondition: <tt>supports(IN_ARG_x_poly)==true</tt>.  */
     void set_x_poly( 
       const RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_poly );
@@ -120,6 +124,7 @@ public:
       const RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_dot_poly );
     /** \brief Precondition: <tt>supports(IN_ARG_x_dot_poly)==true</tt>.  */
     RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > get_x_dot_poly() const;
+#endif // HAVE_THYRA_ME_POLYNOMIAL
     /** \brief Set <tt>p(l)</tt> where <tt>0 <= l && l < this->Np()</tt>.  */
     void set_p( int l, const RCP<const VectorBase<Scalar> > &p_l );
     /** \brief Get <tt>p(l)</tt> where <tt>0 <= l && l < this->Np()</tt>.  */
@@ -171,8 +176,10 @@ public:
     std::string modelEvalDescription_;
     RCP<const VectorBase<Scalar> > x_dot_;
     RCP<const VectorBase<Scalar> > x_;
+#ifdef HAVE_THYRA_ME_POLYNOMIAL
     RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > x_dot_poly_;
     RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > x_poly_;
+#endif // HAVE_THYRA_ME_POLYNOMIAL
     p_t p_;
     ScalarMag t_;
     Scalar alpha_;
@@ -523,10 +530,12 @@ public:
     /** \brief Return the know properties of <tt>DgDp(j,l)</tt> (precondition:
      * <tt>supports(OUT_ARG_DgDp,j,l)==true</tt>). */
     DerivativeProperties get_DgDp_properties(int j, int l) const;
+#ifdef HAVE_THYRA_ME_POLYNOMIAL
     /** \brief Precondition: <tt>supports(OUT_ARG_f_poly)==true</tt>.  */
     void set_f_poly( const RCP<Teuchos::Polynomial< VectorBase<Scalar> > > &f_poly );
     /** \brief Precondition: <tt>supports(OUT_ARG_f_poly)==true</tt>.  */
     RCP<Teuchos::Polynomial< VectorBase<Scalar> > > get_f_poly() const;
+#endif // HAVE_THYRA_ME_POLYNOMIAL
     /** \brief Set all arguments fron <tt>outArgs</tt> into <tt>*this</tt>.
      *
      * If <tt>ignoreUnsupported==true</tt>, then arguments in <tt>outArgs</tt>
@@ -621,7 +630,9 @@ public:
     deriv_properties_t DgDx_properties_; // Ng
     deriv_t DgDp_; // Ng x Np
     deriv_properties_t DgDp_properties_; // Ng x Np
-    RCP<Teuchos::Polynomial< VectorBase<Scalar> > > f_poly_;
+#ifdef HAVE_THYRA_ME_POLYNOMIAL
+   RCP<Teuchos::Polynomial< VectorBase<Scalar> > > f_poly_;
+#endif // HAVE_THYRA_ME_POLYNOMIAL
     mutable bool isFailed_;
     // functions
     void assert_supports(EOutArgsMembers arg) const;

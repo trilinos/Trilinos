@@ -29,9 +29,13 @@
 #ifndef THYRA_MODEL_EVALUATOR_DEFAULT_BASE_HPP
 #define THYRA_MODEL_EVALUATOR_DEFAULT_BASE_HPP
 
+#include "Thyra_VectorBase.hpp"
 
 #include "Thyra_ModelEvaluator.hpp"
 #include "Thyra_LinearOpWithSolveFactoryHelpers.hpp"
+
+
+#ifdef HAVE_THYRA_ME_POLYNOMIAL
 
 
 // Define the polynomial traits class specializtaion
@@ -48,6 +52,9 @@
 // unacceptable circular dependency that will cause problems once we move to
 // subpackages in the CMake build system.
 #include "Thyra_PolynomialVectorTraits.hpp"
+
+
+#endif // HAVE_THYRA_ME_POLYNOMIAL
 
 
 namespace Thyra {

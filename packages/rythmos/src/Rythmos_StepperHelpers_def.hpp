@@ -168,6 +168,10 @@ void eval_model_explicit(
   model.evalModel(inArgs,outArgs);
 }
 
+
+#ifdef HAVE_THYRA_ME_POLYNOMIAL
+
+
 template<class Scalar>
 void eval_model_explicit_poly(
     const Thyra::ModelEvaluator<Scalar> &model,
@@ -189,6 +193,9 @@ void eval_model_explicit_poly(
 
   model.evalModel(inArgs,outArgs);
 }
+
+
+#endif // HAVE_THYRA_ME_POLYNOMIAL
 
 
 template<class Scalar>
@@ -334,6 +341,25 @@ template<class Scalar>
 // Must be expanded from within the Rythmos namespace!
 //
 
+
+#ifdef HAVE_THYRA_ME_POLYNOMIAL
+
+#define RYTHMOS_STEPPER_HELPERS_POLY_INSTANT(SCALAR) \
+  template void eval_model_explicit_poly( \
+      const Thyra::ModelEvaluator< SCALAR > &model, \
+      Thyra::ModelEvaluatorBase::InArgs< SCALAR > &basePoint, \
+      const Teuchos::Polynomial< VectorBase< SCALAR > > &x_poly, \
+      const Thyra::ModelEvaluatorBase::InArgs< SCALAR >::ScalarMag &t, \
+      const Ptr<Teuchos::Polynomial<VectorBase< SCALAR > > >& f_poly \
+      );
+
+#else // HAVE_THYRA_ME_POLYNOMIAL
+
+#define RYTHMOS_STEPPER_HELPERS_POLY_INSTANT(SCALAR)
+
+#endif // HAVE_THYRA_ME_POLYNOMIAL
+
+
 #define RYTHMOS_STEPPER_HELPERS_INSTANT(SCALAR) \
   \
   template void assertValidModel( \
@@ -354,13 +380,7 @@ template<class Scalar>
       const Ptr<VectorBase< SCALAR > >& f_out \
       ); \
   \
-  template void eval_model_explicit_poly( \
-      const Thyra::ModelEvaluator< SCALAR > &model, \
-      Thyra::ModelEvaluatorBase::InArgs< SCALAR > &basePoint, \
-      const Teuchos::Polynomial< VectorBase< SCALAR > > &x_poly, \
-      const Thyra::ModelEvaluatorBase::InArgs< SCALAR >::ScalarMag &t, \
-      const Ptr<Teuchos::Polynomial<VectorBase< SCALAR > > >& f_poly \
-      ); \
+  RYTHMOS_STEPPER_HELPERS_POLY_INSTANT(SCALAR) \
   \
   template void defaultGetPoints( \
       const  SCALAR & t_old, \

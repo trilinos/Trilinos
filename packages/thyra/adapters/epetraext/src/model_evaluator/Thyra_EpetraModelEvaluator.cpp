@@ -815,7 +815,10 @@ void EpetraModelEvaluator::convertInArgsFromThyraToEpetra(
 
   using Teuchos::rcp;
   using Teuchos::rcp_const_cast;
+#ifdef HAVE_THYRA_ME_POLYNOMIAL
   using Teuchos::Polynomial;
+#endif // HAVE_THYRA_ME_POLYNOMIAL
+
 
   TEST_FOR_EXCEPT(0==epetraInArgs);
 
@@ -836,6 +839,8 @@ void EpetraModelEvaluator::convertInArgsFromThyraToEpetra(
     p_l = inArgs.get_p(l);
     if(p_l.get()) epetraInArgs->set_p(l,get_Epetra_Vector(*p_map_[l],p_l));
   }
+
+#ifdef HAVE_THYRA_ME_POLYNOMIAL
 
   RCP<const Polynomial< VectorBase<double> > > x_dot_poly;
   RCP<Epetra_Vector> epetra_ptr;
@@ -869,6 +874,8 @@ void EpetraModelEvaluator::convertInArgsFromThyraToEpetra(
     }
     epetraInArgs->set_x_poly(epetra_x_poly);
   }
+
+#endif // HAVE_THYRA_ME_POLYNOMIAL
 
   if( inArgs.supports(IN_ARG_t) )
     epetraInArgs->set_t(inArgs.get_t());
@@ -1030,6 +1037,8 @@ void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
     }
   }
 
+#ifdef HAVE_THYRA_ME_POLYNOMIAL
+
   // f_poly
   RCP<const Teuchos::Polynomial< VectorBase<double> > > f_poly;
   if( outArgs.supports(OUT_ARG_f_poly) && (f_poly = outArgs.get_f_poly()).get() )
@@ -1044,6 +1053,8 @@ void EpetraModelEvaluator::convertOutArgsFromThyraToEpetra(
     }
     epetraUnscaledOutArgs.set_f_poly(epetra_f_poly);
   }
+
+#endif // HAVE_THYRA_ME_POLYNOMIAL
 
 }
 
@@ -1303,9 +1314,11 @@ void EpetraModelEvaluator::updateInArgsOutArgs() const
   inArgs.set_Np(epetraInArgs.Np());
   inArgs.setSupports(IN_ARG_x_dot, epetraInArgs.supports(EME::IN_ARG_x_dot));
   inArgs.setSupports(IN_ARG_x, epetraInArgs.supports(EME::IN_ARG_x));
+#ifdef HAVE_THYRA_ME_POLYNOMIAL
   inArgs.setSupports(IN_ARG_x_dot_poly,
     epetraInArgs.supports(EME::IN_ARG_x_dot_poly));
   inArgs.setSupports(IN_ARG_x_poly, epetraInArgs.supports(EME::IN_ARG_x_poly));
+#endif // HAVE_THYRA_ME_POLYNOMIAL
   inArgs.setSupports(IN_ARG_t, epetraInArgs.supports(EME::IN_ARG_t));
   inArgs.setSupports(IN_ARG_alpha, epetraInArgs.supports(EME::IN_ARG_alpha));
   inArgs.setSupports(IN_ARG_beta, epetraInArgs.supports(EME::IN_ARG_beta));
@@ -1360,8 +1373,10 @@ void EpetraModelEvaluator::updateInArgsOutArgs() const
       outArgs.set_DgDp_properties(j, l,
         convert(epetraOutArgs.get_DgDp_properties(j, l)));
   }
+#ifdef HAVE_THYRA_ME_POLYNOMIAL
   outArgs.setSupports(OUT_ARG_f_poly,
     epetraOutArgs.supports(EME::OUT_ARG_f_poly));
+#endif // HAVE_THYRA_ME_POLYNOMIAL
   prototypeOutArgs_ = outArgs;
 
   // We are current!

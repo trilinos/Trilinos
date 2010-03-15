@@ -40,7 +40,9 @@
 #include "Rythmos_ForwardEulerStepper.hpp"
 #include "Rythmos_ExplicitRKStepper.hpp"
 #include "Rythmos_ImplicitRKStepper.hpp"
-#include "Rythmos_ExplicitTaylorPolynomialStepper.hpp"
+#ifdef HAVE_THYRA_ME_POLYNOMIAL
+#  include "Rythmos_ExplicitTaylorPolynomialStepper.hpp"
+#endif // HAVE_THYRA_ME_POLYNOMIAL
 #ifdef HAVE_RYTHMOS_EXPERIMENTAL
 #include "Rythmos_ThetaStepper.hpp"
 #endif // HAVE_RYTHMOS_EXPERIMENTAL
@@ -246,10 +248,12 @@ void StepperBuilder<Scalar>::initializeDefaults_()
       "Implicit RK"
       );
 
+#ifdef HAVE_THYRA_ME_POLYNOMIAL
   builder_.setObjectFactory(
       abstractFactoryStd< StepperBase<Scalar>, ExplicitTaylorPolynomialStepper<Scalar> >(),
       "Explicit Taylor Polynomial"
       );
+#endif // HAVE_THYRA_ME_POLYNOMIAL
 
 #ifdef HAVE_RYTHMOS_EXPERIMENTAL
   builder_.setObjectFactory(

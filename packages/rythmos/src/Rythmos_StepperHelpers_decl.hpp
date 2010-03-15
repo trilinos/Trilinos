@@ -80,6 +80,10 @@ void eval_model_explicit(
     const Ptr<VectorBase<Scalar> >& f_out
     );
 
+
+#ifdef HAVE_THYRA_ME_POLYNOMIAL
+
+
 template<class Scalar>
 void eval_model_explicit_poly(
     const Thyra::ModelEvaluator<Scalar> &model,
@@ -88,6 +92,9 @@ void eval_model_explicit_poly(
     const typename Thyra::ModelEvaluatorBase::InArgs<Scalar>::ScalarMag &t,
     const Ptr<Teuchos::Polynomial<VectorBase<Scalar> > >& f_poly
     );
+
+
+#endif // HAVE_THYRA_ME_POLYNOMIAL
 
 
 // This function simply returns the boundary points if they're asked for.  Otherwise it throws.

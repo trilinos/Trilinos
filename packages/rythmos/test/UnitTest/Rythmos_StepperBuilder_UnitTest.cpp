@@ -201,6 +201,10 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, createIRKStepper ) {
   TEST_EQUALITY( verbLevel, Teuchos::VERB_NONE );
 }
 
+
+#ifdef HAVE_THYRA_ME_POLYNOMIAL
+
+
 TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, createETPStepper ) {
   // Verify the builder operates correctly for ETP Stepper
   RCP<StepperBuilder<double> > builder = stepperBuilder<double>();
@@ -224,6 +228,10 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperBuilder, createETPStepper ) {
   Teuchos::EVerbosityLevel verbLevel = etpStepper->getVerbLevel();
   TEST_EQUALITY( verbLevel, Teuchos::VERB_NONE );
 }
+
+
+#endif // HAVE_THYRA_ME_POLYNOMIAL
+
 
 } // namespace Rythmos 
 

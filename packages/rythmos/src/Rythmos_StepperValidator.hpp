@@ -317,8 +317,10 @@ void StepperValidatorMockModel<Scalar>::initialize_()
     inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_t );
     inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_x );
     inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_beta );
+#ifdef HAVE_THYRA_ME_POLYNOMIAL
     // For ExplicitTaylorPolynomialStepper
     inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_x_poly );
+#endif // HAVE_THYRA_ME_POLYNOMIAL
     inArgs.set_Np(1); 
     if (isImplicit_) {
       inArgs.setSupports( Thyra::ModelEvaluatorBase::IN_ARG_x_dot );
@@ -330,8 +332,10 @@ void StepperValidatorMockModel<Scalar>::initialize_()
     outArgs.setModelEvalDescription(this->description());
     outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_f );
     outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_W_op );
+#ifdef HAVE_THYRA_ME_POLYNOMIAL
     // For ExplicitTaylorPolynomialStepper
     outArgs.setSupports( Thyra::ModelEvaluatorBase::OUT_ARG_f_poly );
+#endif // HAVE_THYRA_ME_POLYNOMIAL
     outArgs.set_Np_Ng(Np_,Ng_);
     outArgs_ = outArgs;
     // Set up nominal values
@@ -505,12 +509,14 @@ void StepperValidatorMockModel<Scalar>::evalModelImpl(
   if (!is_null(f_out)) {
     Thyra::V_S(Teuchos::outArg(*f_out),ST::zero());
   }
+#ifdef HAVE_THYRA_ME_POLYNOMIAL
   if (outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_f_poly)) {
     RCP<Teuchos::Polynomial<VectorBase<Scalar> > > f_poly_out = outArgs.get_f_poly();
     if (!is_null(f_poly_out)) {
       //Thyra::V_S(Teuchos::outArg(*f_poly_out),ST::zero());
     }
   }
+#endif // HAVE_THYRA_ME_POLYNOMIAL
 
 }
 
