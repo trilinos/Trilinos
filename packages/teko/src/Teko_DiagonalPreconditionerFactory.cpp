@@ -34,7 +34,6 @@ LinearOp DiagonalPreconditionerFactory::buildPreconditionerOperator(LinearOp & l
   // Get the underlying Epetra_CrsMatrix, if we have one
   RCP<const Epetra_Operator> eo=Thyra::get_Epetra_Operator(*lo);
   TEUCHOS_ASSERT(eo!=Teuchos::null);
-  TEUCHOS_ASSERT(dynamic_cast<const Epetra_MpiComm*>(&eo->Comm()));
   const Epetra_CrsMatrix *MAT=dynamic_cast<const Epetra_CrsMatrix*>(&*eo);
   TEUCHOS_ASSERT(MAT);
 
