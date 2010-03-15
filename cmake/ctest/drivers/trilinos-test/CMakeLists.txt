@@ -1,6 +1,6 @@
 # trilinos-test driver
 
-set(CTEST_EXE /home/trilinos/cmake/bin/ctest)
+set(CTEST_EXE "${CMAKE_CTEST_COMMAND}")
 set(EG_EXE /home/trilinos/git/bin/eg)
 set(BASEDIR /home/bmpersc/nightly/Trilinos.base/release_10)
 set(BASEDATADIR /home/bmpersc/nightly)
