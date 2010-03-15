@@ -419,22 +419,18 @@ void CrsRiluk<MatrixType>::apply(
   Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Y1;
   generateXY(mode, X, Y, X1, Y1);
 
-//  Epetra_Flops * counter = this->GetFlopCounter();
-//  if (counter!=0) {
-//    L_->SetFlopCounter(*counter);
-//    Y1->SetFlopCounter(*counter);
-//    U_->SetFlopCounter(*counter);
-//  }
-
   Scalar one = Teuchos::ScalarTraits<Scalar>::one();
   Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
 
-  if (!mode == Teuchos::NO_TRANS) {
+  if (mode == Teuchos::NO_TRANS) {
 
     L_->solve(*X1, *Y1,mode);
     Y1->elementWiseMultiply(one, *D_, *Y1, zero); // y = D*y (D_ has inverse of diagonal)
     U_->solve(*Y1, *Y1,mode); // Solve Uy = y
-    if (isOverlapped_) {Y.doExport(*Y1,*L_->getGraph()->getExporter(), OverlapMode_);} // Export computed Y values if needed
+    if (isOverlapped_) {
+      // Export computed Y values if needed
+      Y.doExport(*Y1,*L_->getGraph()->getExporter(), OverlapMode_);
+    }
   }
   else {
     U_->solve(*X1, *Y1,mode); // Solve Uy = y

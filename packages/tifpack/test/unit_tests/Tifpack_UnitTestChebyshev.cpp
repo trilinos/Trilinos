@@ -64,7 +64,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackChebyshev, Test0, Scalar, LocalOrdinal,
 
   Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
 
-  Tifpack::Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node> prec(crsmatrix);
+  Tifpack::Chebyshev<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec(crsmatrix);
 
   Scalar one = Teuchos::ScalarTraits<Scalar>::one();
   Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();

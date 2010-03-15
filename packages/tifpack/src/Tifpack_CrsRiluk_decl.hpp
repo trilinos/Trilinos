@@ -312,8 +312,8 @@ class CrsRiluk: public virtual Tifpack::Preconditioner<typename MatrixType::scal
                                magnitudeType Tol = 1e-9,
                                const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &Matrix = Teuchos::null)
   {
-    throw std::runtime_error("CrsRiluk::computeCondEst ERROR, this overload of computeCondEst not implemented yet.");
-    return 0;
+    std::cerr << "Warning, Tifpack::CrsRiluk::computeCondEst currently does not use MaxIters/Tol/etc arguments..." << std::endl;
+    return computeCondEst(Teuchos::NO_TRANS);
   }
 
   magnitudeType getCondEst() const {return Condest_;}

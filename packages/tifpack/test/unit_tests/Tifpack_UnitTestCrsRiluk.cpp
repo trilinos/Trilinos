@@ -121,27 +121,30 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackCrsRiluk, Test1, Scalar, LocalOrdinal, 
   Tifpack::CrsRiluk<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec(crsmatrix);
 
   Teuchos::ParameterList params;
-  params.set("fact: iluk level-of-fill", 6.0);
-  params.set("fact: drop tolerance", 0.0);
+  params.set("fact: iluk level-of-fill", 1);
+  params.set("fact: iluk level-of-overlap", 0);
 
   TEUCHOS_TEST_NOTHROW(prec.setParameters(params), out, success);
 
   prec.initialize();
-//  prec.compute();
-//
-//  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,2), y(rowmap,2);
-//  x.putScalar(1);
-//
-//  crsmatrix->apply(x,y);
-//  prec.apply(y, x);
-//
-//  Teuchos::ArrayRCP<const Scalar> xview = x.get1dView();
-//
-//  //x should be full of 1's now.
-//
-//  Teuchos::ArrayRCP<Scalar> ones(num_rows_per_proc*2, 1);
-//
-//  TEST_COMPARE_FLOATING_ARRAYS(xview, ones(), 2*Teuchos::ScalarTraits<Scalar>::eps());
+  prec.compute();
+
+  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,2), y(rowmap,2);
+  x.putScalar(1);
+
+  //apply the matrix to x, putting A*x in y:
+  crsmatrix->apply(x,y);
+  //apply the precontioner to y, putting ~A^-1*y in x:
+  //(this should set x back to 1's)
+  prec.apply(y, x);
+
+  Teuchos::ArrayRCP<const Scalar> xview = x.get1dView();
+
+  //x should be full of 1's now.
+
+  Teuchos::ArrayRCP<Scalar> ones(num_rows_per_proc*2, 1);
+
+  TEST_COMPARE_FLOATING_ARRAYS(xview, ones(), 2*Teuchos::ScalarTraits<Scalar>::eps());
 }
 
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \

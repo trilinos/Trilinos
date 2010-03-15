@@ -90,17 +90,21 @@ this flag allows to set a non-zero initial guess.
 
 \date Last modified on 04-Apr-06.
 */
-template<class Scalar,class LocalOrdinal = int,class GlobalOrdinal = LocalOrdinal,class Node = Kokkos::DefaultNode::DefaultNodeType,class LocalMatVec = Kokkos::DefaultSparseMultiply<Scalar,LocalOrdinal,Node>,class LocalMatSolve = Kokkos::DefaultSparseSolve<Scalar,LocalOrdinal,Node> >
-class Chebyshev : virtual public Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+template<class MatrixType>
+class Chebyshev : virtual public Tifpack::Preconditioner<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> {
 
 public:
+  typedef typename MatrixType::scalar_type Scalar;
+  typedef typename MatrixType::local_ordinal_type LocalOrdinal;
+  typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
+  typedef typename MatrixType::node_type Node;
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
 
   // \name Constructors and Destructors
   //@{
 
   //! Chebyshev constructor with given Tpetra::RowMatrix input.
-  explicit Chebyshev(const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> >& Matrix);
+  explicit Chebyshev(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A);
 
   //! Chebyshev destructor.
   virtual ~Chebyshev();
@@ -141,8 +145,8 @@ public:
     Y - (InOut) A Tpetra::_MultiVector of dimension NumVectors containing result.
     */
   void apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-             Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-             Teuchos::ETransp mode = Teuchos::NO_TRANS,
+                   Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+                   Teuchos::ETransp mode = Teuchos::NO_TRANS,
                  Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
                  Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
 
@@ -162,8 +166,8 @@ public:
     Y - (Out) A Tpetra::MultiVector of dimension NumVectors containing the result.
     */
   void applyMat(const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-                Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-                Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
+                      Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+                      Teuchos::ETransp mode = Teuchos::NO_TRANS) const;
 
   //@}
 
@@ -246,10 +250,10 @@ public:
 private:
   
   //! Copy constructor (should never be used)
-  Chebyshev(const Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>& rhs);
+  Chebyshev(const Chebyshev<MatrixType>& src);
 
   //! operator= (should never be used)
-  Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>& operator=(const Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>& rhs);
+  Chebyshev<MatrixType>& operator=(const Chebyshev<MatrixType>& src);
 
   // @{ Internal data and parameters
 

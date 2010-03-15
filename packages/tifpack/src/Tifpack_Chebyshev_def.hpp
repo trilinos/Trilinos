@@ -36,8 +36,8 @@ namespace Tifpack {
 //Definitions for the Chebyshev methods:
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::Chebyshev(const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> >& A)
+template<class MatrixType>
+Chebyshev<MatrixType>::Chebyshev(const Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& A)
 : A_(A),
   Comm_(A->getRowMap()->getComm()),
   Time_( Teuchos::rcp( new Teuchos::Time("Tifpack::Chebyshev") ) ),
@@ -67,13 +67,13 @@ Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::Che
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::~Chebyshev() {
+template<class MatrixType>
+Chebyshev<MatrixType>::~Chebyshev() {
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-void Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::setParameters(const Teuchos::ParameterList& List) {
+template<class MatrixType>
+void Chebyshev<MatrixType>::setParameters(const Teuchos::ParameterList& List) {
 
   Tifpack::getParameter(List, "chebyshev: ratio eigenvalue", EigRatio_);
   Tifpack::getParameter(List, "chebyshev: min eigenvalue", LambdaMin_);
@@ -91,98 +91,98 @@ void Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
+template<class MatrixType>
 const Teuchos::RCP<const Teuchos::Comm<int> > & 
-Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getComm() const{
+Chebyshev<MatrixType>::getComm() const{
   return(Comm_);
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-Teuchos::RCP<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getMatrix() const {
+template<class MatrixType>
+Teuchos::RCP<const Tpetra::RowMatrix<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >
+Chebyshev<MatrixType>::getMatrix() const {
   return(A_);
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >&
-Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getDomainMap() const {
+template<class MatrixType>
+const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >&
+Chebyshev<MatrixType>::getDomainMap() const {
   return A_->getDomainMap();
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >&
-Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getRangeMap() const {
+template<class MatrixType>
+const Teuchos::RCP<const Tpetra::Map<typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> >&
+Chebyshev<MatrixType>::getRangeMap() const {
   return A_->getRangeMap();
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-bool Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::hasTransposeApply() const {
+template<class MatrixType>
+bool Chebyshev<MatrixType>::hasTransposeApply() const {
   return true;
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-int Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getNumInitialize() const {
+template<class MatrixType>
+int Chebyshev<MatrixType>::getNumInitialize() const {
   return(NumInitialize_);
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-int Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getNumCompute() const {
+template<class MatrixType>
+int Chebyshev<MatrixType>::getNumCompute() const {
   return(NumCompute_);
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-int Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getNumApply() const {
+template<class MatrixType>
+int Chebyshev<MatrixType>::getNumApply() const {
   return(NumApply_);
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-double Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getInitializeTime() const {
+template<class MatrixType>
+double Chebyshev<MatrixType>::getInitializeTime() const {
   return(InitializeTime_);
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-double Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getComputeTime() const {
+template<class MatrixType>
+double Chebyshev<MatrixType>::getComputeTime() const {
   return(ComputeTime_);
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-double Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getApplyTime() const {
+template<class MatrixType>
+double Chebyshev<MatrixType>::getApplyTime() const {
   return(ApplyTime_);
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-double Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getComputeFlops() const {
+template<class MatrixType>
+double Chebyshev<MatrixType>::getComputeFlops() const {
   return(ComputeFlops_);
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-double Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getApplyFlops() const {
+template<class MatrixType>
+double Chebyshev<MatrixType>::getApplyFlops() const {
   return(ApplyFlops_);
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getCondEst() const {
+template<class MatrixType>
+typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
+Chebyshev<MatrixType>::getCondEst() const {
   return(Condest_);
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-typename Teuchos::ScalarTraits<Scalar>::magnitudeType
-Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::computeCondEst(
+template<class MatrixType>
+typename Teuchos::ScalarTraits<typename MatrixType::scalar_type>::magnitudeType
+Chebyshev<MatrixType>::computeCondEst(
                      CondestType CT,
                      LocalOrdinal MaxIters, 
                      magnitudeType Tol,
@@ -198,10 +198,10 @@ Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::com
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-void Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::apply(
-          const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-                Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+template<class MatrixType>
+void Chebyshev<MatrixType>::apply(
+           const Tpetra::MultiVector<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& X,
+                 Tpetra::MultiVector<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& Y,
                 Teuchos::ETransp mode,
                  Scalar alpha,
                  Scalar beta) const {
@@ -343,10 +343,10 @@ void Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-void Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::applyMat(
-       const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X,
-             Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
+template<class MatrixType>
+void Chebyshev<MatrixType>::applyMat(
+           const Tpetra::MultiVector<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& X,
+                 Tpetra::MultiVector<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& Y,
              Teuchos::ETransp mode) const
 {
   TEST_FOR_EXCEPTION(isComputed() == false, std::runtime_error,
@@ -357,8 +357,8 @@ void Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-void Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::initialize() {
+template<class MatrixType>
+void Chebyshev<MatrixType>::initialize() {
   IsInitialized_ = false;
 
   TEST_FOR_EXCEPTION(A_ == Teuchos::null, std::runtime_error, 
@@ -378,8 +378,8 @@ void Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-void Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::compute()
+template<class MatrixType>
+void Chebyshev<MatrixType>::compute()
 {
   if (!isInitialized()) {
     initialize();
@@ -422,19 +422,19 @@ void Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-void Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::
-PowerMethod(const Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Operator, 
-            const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& InvPointDiagonal, 
+template<class MatrixType>
+void Chebyshev<MatrixType>::
+PowerMethod(const Tpetra::Operator<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& Operator, 
+            const Tpetra::Vector<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type>& InvPointDiagonal, 
             const int MaximumIterations, 
-            Scalar& lambda_max)
+            typename MatrixType::scalar_type& lambda_max)
 {
   // this is a simple power method
   lambda_max = 0.0;
   Teuchos::Array<Scalar> RQ_top(1), RQ_bottom(1);
   Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(Operator.getDomainMap());
   Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> y(Operator.getRangeMap());
-  x.Random();
+  x.randomize();
   Teuchos::Array<Scalar> norms(x.getNumVectors());
   x.norm2(norms());
 
@@ -457,8 +457,8 @@ PowerMethod(const Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Oper
 }
 
 //==========================================================================
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
-void Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::
+template<class MatrixType>
+void Chebyshev<MatrixType>::
 CG(const Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Operator, 
             const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& InvPointDiagonal, 
    const int MaximumIterations, 
@@ -493,8 +493,8 @@ CG(const Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Operator,
 }
 
 //==========================================================================
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
-std::string Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::description() const {
+template <class MatrixType>
+std::string Chebyshev<MatrixType>::description() const {
   std::ostringstream oss;
   oss << Teuchos::Describable::description();
   if (isInitialized()) {
@@ -516,8 +516,8 @@ std::string Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMa
 }
 
 //==========================================================================
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
-void Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
+template <class MatrixType>
+void Chebyshev<MatrixType>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
   using std::endl;
   using std::setw;
   using Teuchos::VERB_DEFAULT;

@@ -34,7 +34,7 @@ Tifpack_UnitTestRelaxation.cpp
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    Tifpack_unit_tests
+    unit_tests
     SOURCES ${SOURCES}
     ARGS ""
     COMM serial mpi
