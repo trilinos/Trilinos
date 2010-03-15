@@ -3,7 +3,7 @@
 set(CTEST_EXE "${CMAKE_CTEST_COMMAND}")
 set(EG_EXE /home/trilinos/install/bin/eg)
 set(workingdir "${TrilinosDriver_BINARY_DIR}")
-set(DRIVER_SCRIPT_DIR "${TrilinosDriver_SOURCE_DIR}")
+set(DRIVER_SCRIPT_DIR "${TrilinosDriver_SOURCE_DIR}/godel")
 set(TRILINOS_REPOSITORY_LOCATION "software.sandia.gov:/space/git/Trilinos")
 
 # Get the day of the week

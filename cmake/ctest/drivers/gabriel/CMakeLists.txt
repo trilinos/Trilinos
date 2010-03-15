@@ -3,7 +3,7 @@
 set(CTEST_EXE "${CMAKE_CTEST_COMMAND}")
 
 set(workingdir "${TrilinosDriver_BINARY_DIR}")
-set(DRIVER_SCRIPT_DIR="${TrilinosDriver_SOURCE_DIR}")
+set(DRIVER_SCRIPT_DIR="${TrilinosDriver_SOURCE_DIR}/gabriel")
 set(BRANCH trilinos-release-10-0-branch)
 set(TRILINOS_REPOSITORY_LOCATION software.sandia.gov:/space/git/nightly/Trilinos)
 
