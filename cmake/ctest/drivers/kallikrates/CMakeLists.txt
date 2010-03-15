@@ -12,10 +12,6 @@ set(TRILINOS_REPOSITORY_LOCATION software.sandia.gov:/space/git/nightly/Trilinos
 
 set(workingdir "${TrilinosDriver_BINARY_DIR}")
 
-# setup the environment for command line cl to run
-add_custom_target(vsvars ALL
-  COMMAND "C:\Program Files\Microsoft Visual Studio 9.0\Common7\Tools\vsvars32.bat")
-
 # checkout the basics from Trilinos needed to run the dashboard including
 # this script.
 if(NOT EXISTS "${workingdir}/Trilinos")
@@ -41,7 +37,7 @@ add_custom_target(gitpull ALL
 add_test(serial_release
   "${CTEST_EXE}"
   -S
-  "${workingdir}/Trilinos/cmake/ctest/drivers/kallikrates/ctest_windows_nightly_serial_release.cmake"
+  "${TrilinosDriver_SOURCE_DIR}/kallikrates/ctest_windows_nightly_serial_release.cmake"
   -VV
   --output-log
   "${workingdir}/ctest_msvc_nightly_serial_release_kallikrates.out"
@@ -51,7 +47,7 @@ add_test(serial_release
 #add_test(mpi_release
 #  "${CTEST_EXE}"
 #  -S
-#  "${workingdir}/Trilinos/cmake/ctest/drivers/kallikrates/ctest_windows_nightly_mpi_release.cmake"
+#  "${TrilinosDriver_SOURCE_DIR}/kallikrates/ctest_windows_nightly_mpi_release.cmake"
 #  -VV
 #  --output-log
 #  "${workingdir}/ctest_msvc_nightly_mpi_release_kallikrates.out"

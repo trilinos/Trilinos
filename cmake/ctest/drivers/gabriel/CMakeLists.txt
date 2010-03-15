@@ -3,7 +3,7 @@
 set(CTEST_EXE "${CMAKE_CTEST_COMMAND}")
 
 set(workingdir "${TrilinosDriver_BINARY_DIR}")
-set(DRIVER_SCRIPT_DIR="${workingdir}/Trilinos/cmake/ctest/drivers/gabriel")
+set(DRIVER_SCRIPT_DIR="${TrilinosDriver_SOURCE_DIR}")
 set(BRANCH trilinos-release-10-0-branch)
 set(TRILINOS_REPOSITORY_LOCATION software.sandia.gov:/space/git/nightly/Trilinos)
 
@@ -34,7 +34,7 @@ add_test(mpi_debug
 )
 
 add_test(kill_orted killall -s 9 orted)
-set_tests_properties(kill_orted PROPERTIES DEPENDS mpi_debug)
+set_property(TEST kill_orted PROPERTY DEPENDS mpi_debug)
 
 add_test(serial_release
   "${CTEST_EXE}
@@ -55,4 +55,4 @@ add_test(serial_debug_boost_tracing
 )
 
 add_test(notify_finish /home/rabartl/mailmsg.py "Finished nightly Trilinos CMake tests gabriel: http://trilinos-dev.sandia.gov/cdash/index.php?project=Trilinos")
-set_tests_properties(notify_finish DEPENDS mpi_debug serial_release serial_debug_boost_tracing)
+set_property(TEST notify_finish PROPERTY DEPENDS mpi_debug serial_release serial_debug_boost_tracing)
