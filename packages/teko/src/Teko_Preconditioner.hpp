@@ -68,6 +68,14 @@ public:
    virtual const RCP<const PreconditionerState> getStateObject() const
    { return state_; }
 
+   /** Merge a state object into the one used by this Preconditioner
+     * (Merge in this case is the same as that used by PreconditionerState::merge).
+     *
+     * \param[in] state A state object to merge into the internal state object.
+     */
+   virtual void mergeStateObject(const PreconditionerState & state)
+   { state_->merge(state); }
+
 protected:
    //! User defined state for this preconditioner
    RCP<PreconditionerState> state_;

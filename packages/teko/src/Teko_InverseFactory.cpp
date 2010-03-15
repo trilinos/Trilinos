@@ -10,6 +10,7 @@
 // Teko includes
 #include "Teko_Utilities.hpp"
 #include "Teko_BlockPreconditionerFactory.hpp"
+#include "Teko_Preconditioner.hpp"
 #include "Teko_PreconditionerLinearOp.hpp"
 
 using Teuchos::rcp;
@@ -144,8 +145,40 @@ InverseLinearOp PreconditionerInverseFactory::buildInverse(const LinearOp & line
    RCP<Thyra::PreconditionerBase<double> > prec = precFactory_->createPrec();
    precFactory_->initializePrec(Thyra::defaultLinearOpSource(linearOp),&*prec);
 
-//   RCP<Thyra::LinearOpBase<double> > precOp = prec->getNonconstUnspecifiedPrecOp();
-//   Teuchos::set_extra_data(prec,"prec",Teuchos::inOutArg(precOp));
+   RCP<Teko::PreconditionerLinearOp<double> > precOp 
+         = rcp(new Teko::PreconditionerLinearOp<double>(prec));
+
+   return precOp;
+}
+
+/** \brief Build an inverse operator and make sure it aware of some parents state
+  *        This functionality is only useful for Teko::PreconditionerFactory inverses.
+  *
+  * Build an inverse operator and make sure it aware of some parents state
+  * This functionality is only useful for Teko::PreconditionerFactory inverses.
+  *
+  * \param[in] linearOp Linear operator needing to be inverted.
+  * \param[in] parentState Current state object to be used. Only useful for preconditioners.
+  *
+  * \returns New linear operator that functions as the inverse
+  *          of <code>linearOp</code>.
+  */
+InverseLinearOp PreconditionerInverseFactory::buildInverse(const LinearOp & linearOp, const PreconditionerState & parentState) const
+{ 
+   Teko_DEBUG_SCOPE("PreconditionerInverseFactory::buildInverse(A,parentState)",0);
+   RCP<Thyra::PreconditionerBase<double> > prec = precFactory_->createPrec();
+
+   {
+      Teko_DEBUG_SCOPE("Casting to Teko::Preconditioner",0);
+      // pass state downward if a Teko::Preconditioner object is begin used
+      RCP<Teko::Preconditioner> tekoPrec = Teuchos::rcp_dynamic_cast<Teko::Preconditioner>(prec);
+      if(tekoPrec!=Teuchos::null) {
+         Teko_DEBUG_SCOPE("Merging states",0);
+         tekoPrec->mergeStateObject(parentState);
+      }
+   }
+
+   precFactory_->initializePrec(Thyra::defaultLinearOpSource(linearOp),&*prec);
 
    RCP<Teko::PreconditionerLinearOp<double> > precOp 
          = rcp(new Teko::PreconditionerLinearOp<double>(prec));
@@ -168,8 +201,6 @@ void PreconditionerInverseFactory::rebuildInverse(const LinearOp & source,Invers
 {
    Teko_DEBUG_MSG("BEGIN PreconditionerInverseFactory::rebuildInverse",10);
 
-   // RCP<Thyra::PreconditionerBase<double> > prec 
-   //       = Teuchos::get_extra_data<RCP<Thyra::PreconditionerBase<double> > >(dest,"prec");
    RCP<Thyra::PreconditionerBase<double> > prec 
          = Teuchos::rcp_dynamic_cast<Teko::PreconditionerLinearOp<double> >(dest)->getNonconstPreconditioner();
 
@@ -280,6 +311,33 @@ InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & A)
    InverseLinearOp inv;
    try {
       inv = factory.buildInverse(A);
+   }
+   catch(std::exception & e) {
+      RCP<Teuchos::FancyOStream> out = Teko::getOutputStream();
+
+      *out << "Teko: \"buildInverse\" could not construct the inverse operator using ";
+      *out << "\"" << factory.toString() << "\"" << std::endl;
+      *out << std::endl;
+      *out << "*** THROWN EXCEPTION ***\n";
+      *out << e.what() << std::endl;
+      *out << "************************\n";
+      
+      throw e;
+   }
+
+   return inv;
+}
+
+/** Build an inverse operator using a factory and a linear operator
+  * This functionality is only useful for Teko::PreconditionerFactory inverses.
+  */
+InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & A,
+                             const PreconditionerState & parentState)
+{
+   Teko_DEBUG_SCOPE("buildInverse(factory,A,parentState)",0);
+   InverseLinearOp inv;
+   try {
+      inv = factory.buildInverse(A,parentState);
    }
    catch(std::exception & e) {
       RCP<Teuchos::FancyOStream> out = Teko::getOutputStream();

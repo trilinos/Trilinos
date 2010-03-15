@@ -30,6 +30,21 @@ RCP<Teuchos::ParameterList> PreconditionerState::unsetParameterList()
    return paramList;
 }
 
+//! Merge internal storage of another PreconditionerState object into this one
+void PreconditionerState::merge(const PreconditionerState & ps,int position)
+{
+   // merge the two linearOps lists
+   linearOps_.insert(ps.linearOps_.begin(),ps.linearOps_.end());
+ 
+   // merge two parameter lists
+   Teuchos::ParameterList::ConstIterator itr;
+   if(ps.paramList_!=Teuchos::null) {
+      Teuchos::RCP<Teuchos::ParameterList> paramList = getNonconstParameterList();
+      for(itr=ps.paramList_->begin();itr!=ps.paramList_->end();++itr)
+         paramList->setEntry(itr->first,itr->second);
+   }
+}
+
 /////////////////////////////////////////////////////
 
 } // end namespace Teko

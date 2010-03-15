@@ -103,6 +103,9 @@ public:
         return modifiableOp_[name];
      return itr->second; }
 
+   //! Merge internal storage of another PreconditionerState object into this one
+   virtual void merge(const PreconditionerState & ps,int position=-1);
+
 protected:
    //! for ParameterListAcceptor
    Teuchos::RCP<Teuchos::ParameterList>          paramList_;
