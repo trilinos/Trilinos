@@ -153,13 +153,12 @@ LinearSystemStratimikos(
 {
   // Interface for user-defined preconditioning -- 
   // requires flipping of the apply and applyInverse methods
+  precPtr = preconditioner;
   if (precIsAlreadyInverted) {
     precMatrixSource = UserDefined_;
-    precPtr = Teuchos::rcp(new Epetra_InvOperator(preconditioner.get()));
   }
   else { // User supplies approximate matrix 
     precMatrixSource = SeparateMatrix;
-    precPtr = preconditioner;
   }
 
   initializeStratimikos(stratSolverParams.sublist("Stratimikos"));
@@ -467,10 +466,11 @@ createPreconditioner(const NOX::Epetra::Vector& x, Teuchos::ParameterList& p,
     precInterfacePtr->computePreconditioner(x.getEpetraVector(),
 					    *precPtr, &p);
 
+    Teuchos::RCP<Epetra_Operator> invPrecPtr =
+      Teuchos::rcp(new Epetra_InvOperator(precPtr.get()));
     RCP<const Thyra::LinearOpBase<double> > precOp =
-      Thyra::epetraLinearOp(precPtr);
+      Thyra::epetraLinearOp(invPrecPtr);
 
-    //precObj = Thyra::rightPrec<double>(precOp);
     RCP<Thyra::DefaultPreconditioner<double> > precObjDef =
        rcp(new Thyra::DefaultPreconditioner<double>);
     precObjDef->initializeRight(precOp);

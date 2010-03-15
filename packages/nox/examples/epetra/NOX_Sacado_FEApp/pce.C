@@ -407,7 +407,7 @@ int main(int argc, char *argv[]) {
 	std::string jac_method = sgParams->get<std::string>("Jacobian Method");
 	if (jac_method == "Matrix Free" || 
 	    jac_method == "KL Reduced Matrix Free")
-	  M = sg_model->create_M();
+	  M = sg_model->create_WPrec()->PrecOp;
 	sg_block_solver = 
 	  Teuchos::rcp(new ENAT::NOXSolver(appParams, sg_model, M));
       }

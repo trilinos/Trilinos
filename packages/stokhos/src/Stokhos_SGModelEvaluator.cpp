@@ -444,23 +444,26 @@ Stokhos::SGModelEvaluator::create_W() const
   return Teuchos::null;
 }
 
-Teuchos::RCP<Epetra_Operator>
-Stokhos::SGModelEvaluator::create_M() const
+Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
+Stokhos::SGModelEvaluator::create_WPrec() const
 {
+  Teuchos::RCP<Epetra_Operator> precOp;
   if (supports_x) {
     if (jacobianMethod == MATRIX_FREE || 
 	jacobianMethod == KL_MATRIX_FREE || 
-	jacobianMethod == KL_REDUCED_MATRIX_FREE)
-      return Teuchos::rcp(new Stokhos::MeanEpetraOp(x_map, sg_x_map, 
-						    num_sg_blocks, 
-						    Teuchos::null));
+	jacobianMethod == KL_REDUCED_MATRIX_FREE) {
+        precOp = Teuchos::rcp(new Stokhos::MeanEpetraOp(x_map, sg_x_map, 
+							num_sg_blocks, 
+							Teuchos::null));
+        return Teuchos::rcp(new EpetraExt::ModelEvaluator::Preconditioner(precOp,true));
+    }
     else if (jacobianMethod == FULLY_ASSEMBLED) {
       Teuchos::RCP<Epetra_Operator> W = me->create_W();
       Teuchos::RCP<Epetra_RowMatrix> W_row = 
 	Teuchos::rcp_dynamic_cast<Epetra_RowMatrix>(W, true);
-      return
-	Teuchos::rcp(new EpetraExt::BlockCrsMatrix(*W_row, rowStencil, 
-						   rowIndex, *sg_comm));
+        precOp = Teuchos::rcp(new EpetraExt::BlockCrsMatrix(*W_row, rowStencil, 
+		  					    rowIndex, *sg_comm));
+        return Teuchos::rcp(new EpetraExt::ModelEvaluator::Preconditioner(precOp,false));
     }
   }
   
@@ -596,7 +599,7 @@ Stokhos::SGModelEvaluator::createOutArgs() const
   if (jacobianMethod == MATRIX_FREE ||
       jacobianMethod == KL_MATRIX_FREE || 
       jacobianMethod == KL_REDUCED_MATRIX_FREE)
-    outArgs.setSupports(OUT_ARG_M, me_outargs.supports(OUT_ARG_W));
+    outArgs.setSupports(OUT_ARG_WPrec, me_outargs.supports(OUT_ARG_W));
   for (int j=0; j<me_outargs.Np(); j++)
     outArgs.setSupports(OUT_ARG_DfDp, j, 
 			me_outargs.supports(OUT_ARG_DfDp, j));
@@ -636,20 +639,20 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
   Teuchos::RCP<Epetra_Operator> W_out;
   if (outArgs.supports(OUT_ARG_W))
     W_out = outArgs.get_W();
-  Teuchos::RCP<Epetra_Operator> M_out;
-  if (outArgs.supports(OUT_ARG_M))
-    M_out = outArgs.get_M();
+  Teuchos::RCP<Epetra_Operator> WPrec_out;
+  if (outArgs.supports(OUT_ARG_WPrec))
+    WPrec_out = outArgs.get_WPrec();
 
   // Check if we are using the "matrix-free" method for W and we are 
   // computing a preconditioner.  
-  bool eval_mean = (W_out == Teuchos::null && M_out != Teuchos::null);
+  bool eval_mean = (W_out == Teuchos::null && WPrec_out != Teuchos::null);
 
   // Here we are assuming a full W fill occurred previously which we can use
   // for the preconditioner.  Given the expense of computing the SG W blocks
   // this saves significant computational cost
   if (eval_mean) {
     Teuchos::RCP<Stokhos::MeanEpetraOp> W_mean = 
-      Teuchos::rcp_dynamic_cast<Stokhos::MeanEpetraOp>(M_out, true);
+      Teuchos::rcp_dynamic_cast<Stokhos::MeanEpetraOp>(WPrec_out, true);
     Teuchos::RCP<Epetra_Operator> prec = 
       precFactory->compute(W_sg_blocks->getCoeffPtr(0));    
     W_mean->setMeanOperator(prec);
@@ -889,9 +892,9 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
 	W_mf->reset(W_sg_blocks);
       }
 
-      if (M_out != Teuchos::null) {
+      if (WPrec_out != Teuchos::null) {
 	Teuchos::RCP<Stokhos::MeanEpetraOp> W_mean = 
-	  Teuchos::rcp_dynamic_cast<Stokhos::MeanEpetraOp>(M_out, true);
+	  Teuchos::rcp_dynamic_cast<Stokhos::MeanEpetraOp>(WPrec_out, true);
 	Teuchos::RCP<Epetra_Operator> prec = 
 	  precFactory->compute(W_sg_blocks->getCoeffPtr(0));    
 	W_mean->setMeanOperator(prec);

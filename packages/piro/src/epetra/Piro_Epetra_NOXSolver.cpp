@@ -109,17 +109,17 @@ Piro::Epetra::NOXSolver::NOXSolver(Teuchos::RCP<Teuchos::ParameterList> piroPara
    * it, then we use it, or (2) if a parameter list says
    * User_Defined ?  [Below, logic is ooption (1).]
    */
-  Teuchos::RCP<Epetra_Operator> M;
-  if (outargs.supports(EpetraExt::ModelEvaluator::OUT_ARG_M))
-    M = model->create_M(); 
+  Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner> WPrec;
+  if (outargs.supports(EpetraExt::ModelEvaluator::OUT_ARG_WPrec))
+    WPrec = model->create_WPrec(); 
 
   // Create the linear system
   Teuchos::RCP<NOX::Epetra::LinearSystemStratimikos> linsys;
-  if (M != Teuchos::null) {
+  if (WPrec != Teuchos::null) {
     Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = interface;
     linsys = Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(printParams,
-                      noxstratlsParams, iJac, A, iPrec, M, *currentSolution));
-
+                      noxstratlsParams, iJac, A, iPrec, WPrec->PrecOp,
+                      *currentSolution, WPrec->isAlreadyInverted));
   }
   else {
     linsys = Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(printParams,

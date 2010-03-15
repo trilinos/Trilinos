@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Epetra_Vector> sg_dx = 
       Teuchos::rcp(new Epetra_Vector(*(sg_model->get_x_map())));
     Teuchos::RCP<Epetra_Operator> sg_J = sg_model->create_W();
-    Teuchos::RCP<Epetra_Operator> sg_M = sg_model->create_M();
+    Teuchos::RCP<Epetra_Operator> sg_M = sg_model->create_WPrec()->PrecOp;
 
     // Setup InArgs and OutArgs
     EpetraExt::ModelEvaluator::InArgs sg_inArgs = sg_model->createInArgs();
@@ -223,7 +223,7 @@ int main(int argc, char *argv[]) {
     sg_inArgs.set_x(sg_x);
     sg_outArgs.set_f(sg_f);
     sg_outArgs.set_W(sg_J);
-    sg_outArgs.set_M(sg_M);
+    sg_outArgs.set_WPrec(sg_M);
 
     // Evaluate model
     sg_model->evalModel(sg_inArgs, sg_outArgs);

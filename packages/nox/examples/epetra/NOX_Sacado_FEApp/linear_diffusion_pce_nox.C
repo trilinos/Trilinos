@@ -282,7 +282,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = nox_interface;
     Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linsys;
     if (matrix_free) {
-      Teuchos::RCP<Epetra_Operator> M = sg_model->create_M();
+      Teuchos::RCP<Epetra_Operator> M = sg_model->create_WPrec()->PrecOp;
       Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = nox_interface;
       lsParams.set("Preconditioner", "User Defined");
       linsys = 

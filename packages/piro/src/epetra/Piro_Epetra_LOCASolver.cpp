@@ -124,24 +124,26 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> piroPa
    * it, then we use it, or (2) if a parameter list says
    * User_Defined ?  [Below, logic is ooption (1).]
    */
-  Teuchos::RCP<Epetra_Operator> M;
-  if (outargs.supports(EpetraExt::ModelEvaluator::OUT_ARG_M))
-    M = model->create_M();
+
+  Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner> WPrec;
+  if (outargs.supports(EpetraExt::ModelEvaluator::OUT_ARG_WPrec))
+    WPrec = model->create_WPrec();
 
   // Create the linear system
   // also Build shifted linear system for eigensolver
   Teuchos::RCP<NOX::Epetra::LinearSystemStratimikos> linsys;
   Teuchos::RCP<NOX::Epetra::LinearSystemStratimikos> shiftedLinSys;
-  if (M != Teuchos::null) {
+  if (WPrec != Teuchos::null) {
     Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = interface;
 
-cout << "PELS SETTING PrecAlreadyInvertd to true -- often needs to be false \n" << endl;
     linsys =
       Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(printParams,
-                  noxstratlsParams, iJac, A, iPrec, M, *currentSolution, true));
+                  noxstratlsParams, iJac, A, iPrec, WPrec->PrecOp,
+                  *currentSolution, WPrec->isAlreadyInverted));
     shiftedLinSys =
       Teuchos::rcp(new NOX::Epetra::LinearSystemStratimikos(printParams,
-  		  noxstratlsParams, iJac, A, iPrec, M,*currentSolution, true));
+  		  noxstratlsParams, iJac, A, iPrec, WPrec->PrecOp,
+                  *currentSolution, WPrec->isAlreadyInverted));
   }
   else {
      linsys =

@@ -114,7 +114,7 @@ namespace Stokhos {
     Teuchos::RCP<Epetra_Operator> create_W() const;
 
     //! Create preconditioner operator
-    Teuchos::RCP<Epetra_Operator> create_M() const;
+    Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner> create_WPrec() const;
 
     //! Create SG operator representing dg/dxdot
     Teuchos::RefCountPtr<Epetra_Operator> create_DgDx_dot_op(int j) const;

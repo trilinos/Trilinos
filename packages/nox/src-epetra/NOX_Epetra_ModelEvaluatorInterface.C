@@ -117,7 +117,7 @@ computePreconditioner(const Epetra_Vector& x,
   EpetraExt::ModelEvaluator::OutArgs outargs = model_->createOutArgs();
 
   inargs_.set_x( Teuchos::rcp(&x, false) );
-  outargs.set_M( Teuchos::rcp(&M, false) );
+  outargs.set_WPrec( Teuchos::rcp(&M, false) );
 
   model_->evalModel(inargs_, outargs);
 

@@ -88,9 +88,10 @@ Teuchos::RCP<Epetra_Operator> Piro::Epetra::MatrixFreeDecorator::create_W() cons
   return Teuchos::rcp(new Piro::Epetra::MatrixFreeOperator(model, lambda));
 }
 
-Teuchos::RCP<Epetra_Operator> Piro::Epetra::MatrixFreeDecorator::create_M() const
+Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner>
+Piro::Epetra::MatrixFreeDecorator::create_WPrec() const
 {
-  return model->create_M();
+  return model->create_WPrec();
 }
 
 EpetraExt::ModelEvaluator::InArgs Piro::Epetra::MatrixFreeDecorator::createInArgs() const

@@ -84,7 +84,7 @@ class MatrixFreeDecorator
   /** \brief . */
   Teuchos::RCP<Epetra_Operator> create_W() const;
  /** \brief . */
-  Teuchos::RCP<Epetra_Operator> create_M() const;
+  Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner> create_WPrec() const;
   /** \brief . */
   EpetraExt::ModelEvaluator::InArgs createInArgs() const;
   /** \brief . */
