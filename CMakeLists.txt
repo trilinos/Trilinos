@@ -351,7 +351,11 @@ MESSAGE("")
 
 PACKAGE_ARCH_PROCESS_ENABLED_TPLS()
 
+# OpenMP is similar to a TPL in some respects, but requires only compiler
+# flags to enable
 
+OPTION(Trilinos_ENABLE_OpenMP
+      "Build with OpenMP support." OFF)
 #
 # I) Set up for testing with CTest and Trilinos test harness
 #
