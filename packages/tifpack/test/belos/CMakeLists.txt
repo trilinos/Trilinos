@@ -39,6 +39,7 @@ ENDIF()
 PACKAGE_COPY_FILES_TO_BINARY_DIR(TifpackBelosCopyFiles
   DEST_FILES
   test_ILUT_calore1_mm.xml test_PtJacobi_calore1_mm.xml test_GS_calore1_mm.xml
+  test_CrsRiluk_calore1_mm.xml test_Cheby_calore1_mm.xml
   test_SGS_calore1_mm.xml calore1.mtx test_pseudoblockcg_small_sym_mm.xml
   test_PtJacobi_small_sym_mm.xml small_sym.mtx test_gmres_small_sym_mm.xml
   test_GS_tfqmr_small_sym_mm.xml test_ILUT_tfqmr_small_sym_mm.xml
@@ -171,6 +172,15 @@ PACKAGE_ADD_TEST(
 
 PACKAGE_ADD_TEST(
   tif_belos TifpackBelosCopyFiles
+  NAME Cheby_belos
+  ARGS "--xml_file=test_Cheby_calore1_mm.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+PACKAGE_ADD_TEST(
+  tif_belos TifpackBelosCopyFiles
   NAME GS_belos
   ARGS "--xml_file=test_GS_calore1_mm.xml"
   COMM serial mpi
@@ -191,6 +201,15 @@ PACKAGE_ADD_TEST(
   tif_belos TifpackBelosCopyFiles
   NAME ILUT_belos
   ARGS "--xml_file=test_ILUT_calore1_mm.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+PACKAGE_ADD_TEST(
+  tif_belos TifpackBelosCopyFiles
+  NAME CrsRiluk_belos
+  ARGS "--xml_file=test_CrsRiluk_calore1_mm.xml"
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
