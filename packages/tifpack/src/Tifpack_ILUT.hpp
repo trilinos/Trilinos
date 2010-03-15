@@ -31,7 +31,7 @@
 // Tifpack::ILUT is a translation of the Aztec ILUT
 // implementation. The Aztec ILUT implementation was
 // written by Ray Tuminaro.
-// See notes below, in the Tifpack::ILUT::Compute method.
+// See notes in the Tifpack::ILUT::Compute method.
 // ABW.
 //------------------------------------------------------
 

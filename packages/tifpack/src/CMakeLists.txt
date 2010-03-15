@@ -29,6 +29,8 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 SET(HEADERS ${HEADERS}
   Tifpack_ConfigDefs.hpp
   Tifpack_Chebyshev.hpp
+  Tifpack_Chebyshev_decl.hpp
+  Tifpack_Chebyshev_def.hpp
   Tifpack_Condest.hpp
   Tifpack_CondestType.hpp
   Tifpack_CrsRiluk.hpp
@@ -48,6 +50,7 @@ SET(HEADERS ${HEADERS}
   )
 
 SET(SOURCES ${SOURCES}
+  Tifpack_Chebyshev.cpp
   Tifpack_CrsRiluk.cpp
   Tifpack_Factory.cpp
   Tifpack_ILUT.cpp

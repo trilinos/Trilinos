@@ -1,8 +1,8 @@
 /*@HEADER
 // ***********************************************************************
 // 
-//       Tifpack: Tempated Object-Oriented Algebraic Preconditioner Package
-//                 Copyright (2009) Sandia Corporation
+//       Tifpack: Object-Oriented Algebraic Preconditioner Package
+//                 Copyright (2002) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -27,15 +27,16 @@
 //@HEADER
 */
 
-#ifndef TIFPACK_CHEBYSHEV_HPP
-#define TIFPACK_CHEBYSHEV_HPP
-
-//declaration:
 #include "Tifpack_Chebyshev_decl.hpp"
 
-#ifndef HAVE_TIFPACK_EXPLICIT_INSTANTIATION
-//definition:
+#ifdef HAVE_TIFPACK_EXPLICIT_INSTANTIATION
+
 #include "Tifpack_Chebyshev_def.hpp"
+#include "Tifpack_ExplicitInstantiationHelpers.hpp"
+
+namespace Tifpack {
+TIFPACK_INSTANT_CRSMATRIX_FLOAT_DOUBLE_DEFAULTS(Chebyshev)
+}
+
 #endif
 
-#endif /* TIFPACK_CHEBYSHEV_HPP */
