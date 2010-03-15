@@ -2,7 +2,6 @@ project(TrilinosDriver NONE)
 cmake_minimum_required(VERSION 2.7.20090924)
 
 include(CTest)
-enable_testing()
 
 macro(download_prebuilt_cmake _type)
   if(NOT _type)
@@ -38,6 +37,7 @@ exetazo
 gabriel
 godel
 kallikrates
+qwghlm
 s903186
 s909348
 thumper
