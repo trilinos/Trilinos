@@ -38,6 +38,7 @@ extern "C" {
 #ifdef ZOLTAN_METIS
 #undef ZOLTAN_METIS
 #endif
+
 #endif /* ZOLTAN_PARMETIS */
 
 #ifdef ZOLTAN_METIS
@@ -72,6 +73,9 @@ extern "C" {
 
 #ifndef indextype
 #define indextype int
+#endif /* indextype */
+
+#ifndef weighttype
 #define weighttype int
 #endif /* indextype */
 
