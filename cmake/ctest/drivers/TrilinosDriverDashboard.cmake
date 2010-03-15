@@ -2,6 +2,16 @@ set(CTEST_SITE "$ENV{CTEST_SITE}")
 if("${CTEST_SITE}" STREQUAL "")
   site_name(CTEST_SITE)
 endif()
+if("${CTEST_SITE}" STREQUAL "")
+  if(WIN32)
+    set(CTEST_SITE $ENV{COMPUTERNAME})
+  else()
+    execute_process(COMMAND uname -n
+      OUTPUT_VARIABLE CTEST_SITE
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+      )
+  endif()
+endif()
 
 set(CTEST_BUILD_NAME "$ENV{CTEST_BUILD_NAME}")
 if("${CTEST_BUILD_NAME}" STREQUAL "")
@@ -18,7 +28,11 @@ endif()
 
 set(CTEST_CMAKE_GENERATOR "$ENV{CTEST_CMAKE_GENERATOR}")
 if("${CTEST_CMAKE_GENERATOR}" STREQUAL "")
-  set(CTEST_CMAKE_GENERATOR "Unix Makefiles")
+  if(WIN32)
+    set(CTEST_CMAKE_GENERATOR "NMake Makefiles")
+  else()
+    set(CTEST_CMAKE_GENERATOR "Unix Makefiles")
+  endif()
 endif()
 
 set(CTEST_TEST_TIMEOUT "$ENV{CTEST_TEST_TIMEOUT}")
