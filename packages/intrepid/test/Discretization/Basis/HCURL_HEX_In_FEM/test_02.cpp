@@ -36,6 +36,7 @@
 #include "Intrepid_FieldContainer.hpp"
 #include "Intrepid_HCURL_HEX_In_FEM.hpp"
 #include "Intrepid_CubatureTensor.hpp"
+#include "Intrepid_DefaultCubatureFactory.hpp"
 #include "Intrepid_CubaturePolylib.hpp"
 #include "Intrepid_RealSpaceTools.hpp"
 #include "Intrepid_ArrayTools.hpp"
@@ -162,8 +163,6 @@ int main(int argc, char *argv[]) {
 
       CubatureTensor<double,FieldContainer<double>,FieldContainer<double> > cellCub( vecCub );
 
-
-      
       int numCubPointsCell = cellCub.getNumPoints();
       
       // hold cubature information
