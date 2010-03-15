@@ -96,6 +96,10 @@ clp.add_option(
   help="Download and/or extract tarballs for all platforms (default = just this platform)" )
 
 clp.add_option(
+  "--http-proxy", dest="httpProxy", type="string", default="",
+  help="Proxy in the form 'http://server:port/' - use if you are behind a firewall with respect to downloading from http://www.cmake.org (default = \"\")." )
+
+clp.add_option(
   "--install-dir", dest="installDir", type="string", default="/usr/local",
   help="The install directory for CMake (default = /usr/local)." )
 
@@ -133,7 +137,15 @@ def DetectLatestCMakeBuilds(basedir, baseurl, vdir):
   createDir(basedir)
 
   print "Querying " + url + "..."
-  urllib.urlretrieve(url, filename)
+
+  proxies = None # if None, use proxy from env var http_proxy
+  if not options.httpProxy == "":
+    proxies = {'http': options.httpProxy}
+
+  opener = urllib.FancyURLopener(proxies=proxies)
+  opener.retrieve(url, filename)
+
+  print "Detecting ..."
 
   lines = []
   regex = re.compile(
@@ -212,7 +224,14 @@ def Download(basedir, url):
 
   print 'Downloading ' + href + '...'
 
-  urllib.urlretrieve(url, filename)
+  createDir(basedir)
+
+  proxies = None # if None, use proxy from env var http_proxy
+  if not options.httpProxy == "":
+    proxies = {'http': options.httpProxy}
+
+  opener = urllib.FancyURLopener(proxies=proxies)
+  opener.retrieve(url, filename)
 
 
 def Extract(basedir, url):
@@ -275,7 +294,7 @@ def Install(basedir, url):
     # avoid the "copytree doesn't work if dir already exists" problem by using
     # the sys command "cp"
     createDir(options.installDir)
-    echoRunSysCmnd("cp -r " + dirname + "/ " + options.installDir)
+    echoRunSysCmnd("cp -r \"" + dirname + "/\" \"" + options.installDir + "\"")
 
 
 def DownloadForPlatform(p):
