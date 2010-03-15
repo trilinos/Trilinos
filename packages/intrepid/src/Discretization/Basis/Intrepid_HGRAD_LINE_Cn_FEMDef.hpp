@@ -101,6 +101,63 @@ namespace Intrepid {
     }
 
   }  
+
+  template<class Scalar, class ArrayScalar>
+  Basis_HGRAD_LINE_Cn_FEM<Scalar,ArrayScalar>::Basis_HGRAD_LINE_Cn_FEM( const int n ,
+									const EPointType &pointType ):
+    latticePts_( n+1 , 1 ),
+    Phis_( n ),
+    V_(n+1,n+1),
+    Vinv_(n+1,n+1)
+  {
+    const int N = n+1;
+    this -> basisCardinality_  = N;
+    this -> basisDegree_       = n;
+    this -> basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Line<2> >() );
+    this -> basisType_         = BASIS_FEM_FIAT;
+    this -> basisCoordinates_  = COORDINATES_CARTESIAN;
+    this -> basisTagsAreSet_   = false;
+
+    switch(pointType) {
+    case POINTTYPE_EQUISPACED:
+      PointTools::getLattice<Scalar,FieldContainer<Scalar> >( latticePts_ ,  this->basisCellTopology_ , n , 0 , POINTTYPE_EQUISPACED );
+      break;
+    case POINTTYPE_SPECTRAL: 
+      PointTools::getLattice<Scalar,FieldContainer<Scalar> >( latticePts_ ,  this->basisCellTopology_ , n , 0 , POINTTYPE_WARPBLEND );
+      break;
+    case POINTTYPE_SPECTRAL_OPEN: 
+      PointTools::getGaussPoints<Scalar,FieldContainer<Scalar> >( latticePts_ , n );
+      break;
+    default:
+      TEST_FOR_EXCEPTION( true , std::invalid_argument , "Basis_HGRAD_LINE_Cn_FEM:: invalid point type" );
+      break;
+    }
+
+    // form Vandermonde matrix.  Actually, this is the transpose of the VDM,
+    // so we transpose on copy below.
+  
+    Phis_.getValues( V_ , latticePts_ , OPERATOR_VALUE );
+
+    // now I need to copy V into a Teuchos array to do the inversion
+    Teuchos::SerialDenseMatrix<int,Scalar> Vsdm(N,N);
+    for (int i=0;i<N;i++) {
+      for (int j=0;j<N;j++) {
+        Vsdm(i,j) = V_(i,j);
+      }
+    }
+
+    // invert the matrix
+    Teuchos::SerialDenseSolver<int,Scalar> solver;
+    solver.setMatrix( rcp( &Vsdm , false ) );
+    solver.invert( );
+
+    // now I need to copy the inverse into Vinv
+    for (int i=0;i<N;i++) {
+      for (int j=0;j<N;j++) {
+        Vinv_(i,j) = Vsdm(j,i);
+      }
+    }
+  }  
   
   
   template<class Scalar, class ArrayScalar>

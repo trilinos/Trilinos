@@ -51,6 +51,19 @@ namespace Intrepid {
     this -> basisCoordinates_  = COORDINATES_CARTESIAN;
     this -> basisTagsAreSet_   = false;
   }
+
+  template<class Scalar, class ArrayScalar>
+  Basis_HCURL_QUAD_In_FEM<Scalar,ArrayScalar>::Basis_HCURL_QUAD_In_FEM( int order , const EPointType &pointType ):
+    closedBasis_( order , pointType==POINTTYPE_SPECTRAL?POINTTYPE_SPECTRAL:POINTTYPE_EQUISPACED ),
+    openBasis_( order-1 , pointType==POINTTYPE_SPECTRAL?POINTTYPE_SPECTRAL_OPEN:POINTTYPE_EQUISPACED )
+  {
+    this -> basisDegree_       = order;
+    this -> basisCardinality_  = 2 * closedBasis_.getCardinality() * openBasis_.getCardinality(); 
+    this -> basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Quadrilateral<4> >() );
+    this -> basisType_         = BASIS_FEM_FIAT;
+    this -> basisCoordinates_  = COORDINATES_CARTESIAN;
+    this -> basisTagsAreSet_   = false;
+  }
   
   template<class Scalar, class ArrayScalar>
   void Basis_HCURL_QUAD_In_FEM<Scalar, ArrayScalar>::initializeTags() {

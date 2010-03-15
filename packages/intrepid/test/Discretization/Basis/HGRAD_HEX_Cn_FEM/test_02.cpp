@@ -339,7 +339,7 @@ int main(int argc, char *argv[]) {
             FieldContainer<double> exact_solution(1, numInterpPoints);
             u_exact(exact_solution, interp_points, x_order, y_order, z_order);
 
-            int basis_order = 3;
+            int basis_order = max_order;
 
             // set test tolerance;
             double zero = basis_order*basis_order*basis_order*100*INTREPID_TOL;
@@ -349,7 +349,7 @@ int main(int argc, char *argv[]) {
 	    PointTools::getLattice<double,FieldContainer<double> >(pts,line,basis_order);
 	    
             Teuchos::RCP<Basis<double,FieldContainer<double> > > basis =
-              Teuchos::rcp(new Basis_HGRAD_HEX_Cn_FEM<double,FieldContainer<double> >( basis_order,basis_order,basis_order,pts,pts,pts) );
+              Teuchos::rcp(new Basis_HGRAD_HEX_Cn_FEM<double,FieldContainer<double> >( basis_order, POINTTYPE_SPECTRAL ) );
             int numFields = basis->getCardinality();
 
             // create cubatures

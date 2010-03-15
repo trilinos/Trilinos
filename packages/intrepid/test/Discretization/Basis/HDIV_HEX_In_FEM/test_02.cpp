@@ -171,22 +171,11 @@ int main(int argc, char *argv[]) {
     for (int basis_order=min_order;basis_order<=max_order;basis_order++) {
       // create bases
       // get the points for the vector basis
-      FieldContainer<double> closedPts(PointTools::getLatticeSize(line,basis_order+1),1);
-      FieldContainer<double> openPts(PointTools::getLatticeSize(line,basis_order+2,1),1);
-      PointTools::getLattice<double,FieldContainer<double> >(closedPts,line,basis_order+1);
-      PointTools::getLattice<double,FieldContainer<double> >(openPts,line,basis_order+2,1);
-
       Teuchos::RCP<Basis<double,FieldContainer<double> > > vectorBasis =
-        Teuchos::rcp(new Basis_HDIV_HEX_In_FEM<double,FieldContainer<double> >(basis_order+1,
-									       closedPts,
-									       openPts) );
+        Teuchos::rcp(new Basis_HDIV_HEX_In_FEM<double,FieldContainer<double> >(basis_order+1,POINTTYPE_SPECTRAL) );
+
       Teuchos::RCP<Basis<double,FieldContainer<double> > > scalarBasis =
-        Teuchos::rcp(new Basis_HGRAD_HEX_Cn_FEM<double,FieldContainer<double> >(basis_order,
-										basis_order,
-										basis_order,
-										openPts,
-										openPts,
-										openPts) );
+	Teuchos::rcp(new Basis_HGRAD_HEX_Cn_FEM<double,FieldContainer<double> >(basis_order,POINTTYPE_SPECTRAL) );
       
       int numVectorFields = vectorBasis->getCardinality();
       int numScalarFields = scalarBasis->getCardinality();

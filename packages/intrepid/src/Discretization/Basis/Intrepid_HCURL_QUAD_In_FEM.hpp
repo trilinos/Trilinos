@@ -71,6 +71,10 @@ public:
   Basis_HCURL_QUAD_In_FEM( int order , 
 			  const ArrayScalar &ptsClosed ,
 			  const ArrayScalar &ptsOpen );
+
+  /** \brief Constructor allowing users to select the order and either eqispaced of spectral points */
+  Basis_HCURL_QUAD_In_FEM( int order , const EPointType &pointType );
+
   
     
   /** \brief  Evaluation of a FEM basis on a <strong>reference Quadrilateral</strong> cell. 

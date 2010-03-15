@@ -71,7 +71,11 @@ public:
   Basis_HDIV_HEX_In_FEM( int order , 
 			  const ArrayScalar &ptsClosed ,
 			  const ArrayScalar &ptsOpen );
-  
+
+  /** \brief  Streamlined constructor that allows user to request equispaced points or
+      Gauss-Lobatto cross with Gauss-Legendre points in each vector component
+  */
+  Basis_HDIV_HEX_In_FEM( int order , const EPointType &pointType );  
     
   /** \brief  Evaluation of a FEM basis on a <strong>reference Hexahedral</strong> cell. 
     

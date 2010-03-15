@@ -276,10 +276,8 @@ int main(int argc, char *argv[]) {
           double zero = basis_order*basis_order*100*INTREPID_TOL;
 
           //create basis
-	  FieldContainer<double> pts(PointTools::getLatticeSize(side,2),1);
-	  PointTools::getLattice<double,FieldContainer<double> >(pts,side,2);
           Teuchos::RCP<Basis<double,FieldContainer<double> > > basis =
-            Teuchos::rcp(new Basis_HGRAD_QUAD_Cn_FEM<double,FieldContainer<double> >(2,2,pts,pts) );
+            Teuchos::rcp(new Basis_HGRAD_QUAD_Cn_FEM<double,FieldContainer<double> >(2,POINTTYPE_SPECTRAL) );
           int numFields = basis->getCardinality();
 
           // create cubatures

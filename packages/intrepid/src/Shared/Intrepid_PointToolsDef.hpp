@@ -90,6 +90,10 @@ namespace Intrepid {
     case POINTTYPE_WARPBLEND:
       getWarpBlendLattice<Scalar,ArrayType>( cellType , pts , order , offset );
       break;
+    default:
+      TEST_FOR_EXCEPTION( true ,
+			  std::invalid_argument ,
+			  "PointTools::getLattice: invalid EPointType" );
     }
     return;
   }
@@ -104,7 +108,7 @@ namespace Intrepid {
 
     IntrepidPolylib::zwgj( z , w , order + 1 , 0.0 , 0.0 );
     for (int i=0;i<order+1;i++) {
-      pts(i) = z[i];
+      pts(i,0) = z[i];
     }
 
     delete []z;
@@ -199,13 +203,18 @@ namespace Intrepid {
                                              const int order ,
                                              const int offset )
   {
-    TEST_FOR_EXCEPTION( order <= 0 ,
+    TEST_FOR_EXCEPTION( order < 0 ,
                         std::invalid_argument ,
                         ">>> ERROR (Intrepid::PointTools::getEquispacedLatticeLine): order must be positive" );
-    const Scalar h = 2.0 / order;
-
-    for (int i=offset;i<=order-offset;i++) {
-      points(i-offset,0) = -1.0 + h * (Scalar) i;
+    if (order == 0) {
+      points(0,0) = 0.0;
+    }
+    else {
+      const Scalar h = 2.0 / order;
+      
+      for (int i=offset;i<=order-offset;i++) {
+	points(i-offset,0) = -1.0 + h * (Scalar) i;
+      }
     }
 
     return;
@@ -268,10 +277,12 @@ namespace Intrepid {
     Scalar *z = new Scalar[order+1];
     Scalar *w = new Scalar[order+1];
     
-    IntrepidPolylib::zwglj( z , w , order + 1 , 0.0 , 0.0 );
+    // order is order of polynomial degree.  The Gauss-Lobatto points are accurate
+    // up to degree 2*i-1
+    IntrepidPolylib::zwglj( z , w , order+1 , 0.0 , 0.0 );
 
     for (int i=offset;i<=order-offset;i++) {
-      points(i-offset) = z[i];
+      points(i-offset,0) = z[i];
     }
 
     delete []z;
@@ -346,10 +357,12 @@ namespace Intrepid {
                                                 const int offset  )
   {
     /* get Gauss-Lobatto points */
-    Intrepid::FieldContainer<Scalar> gaussX( order + 1 );
+    Intrepid::FieldContainer<Scalar> gaussX( order + 1 , 1 );
     
     PointTools::getWarpBlendLatticeLine<Scalar,FieldContainer<Scalar> >( gaussX , order , 0 );
     
+    gaussX.resize(gaussX.dimension(0));
+
     Scalar alpopt[] = {0.0000,0.0000,1.4152,0.1001,0.2751,0.9800,1.0999,
                         1.2832,1.3648, 1.4773, 1.4959, 1.5743, 1.5770, 1.6223, 1.6258};
 
@@ -501,9 +514,9 @@ namespace Intrepid {
                               ArrayType &dxy )
   {
     // get Gauss-Lobatto-nodes
-    FieldContainer<Scalar> gaussX(order+1);
+    FieldContainer<Scalar> gaussX(order+1,1);
     PointTools::getWarpBlendLatticeLine<Scalar,FieldContainer<Scalar> >( gaussX , order , 0 );
-
+    gaussX.resize(order+1);
     const int N = L1.dimension(0);
     
     // Warburton code reverses them

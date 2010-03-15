@@ -28,4 +28,13 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt)
 #    PASS_REGULAR_EXPRESSION "TEST PASSED"
     ADD_DIR_TO_NAME
     )
+#  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+#    Example_05
+#   SOURCES example_05.cpp
+#    DEPLIBS epetra epetraext 
+#    ARGS "1 1"
+#    NUM_MPI_PROCS 1
+#    PASS_REGULAR_EXPRESSION "TEST PASSED"
+#    ADD_DIR_TO_NAME
+#    )
 ENDIF()
