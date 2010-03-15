@@ -318,42 +318,15 @@ namespace {
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(ORDINAL)
 #endif
 
-  // Uncomment this for really fast development cycles but make sure to comment
-  // it back again before checking in so that we can test all the types.
-  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ImportExport, GetNeighborsForward,  ORDINAL, SCALAR ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( ImportExport, GetNeighborsBackward, ORDINAL, SCALAR )
 
-# ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
-#   define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
+#define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ImportExport, basic, ORDINAL ) \
-      UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, double) \
-      UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL) 
+      UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, double)
 
-    UNIT_TEST_GROUP_ORDINAL(int)
-
-# else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
-#   define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( ImportExport, basic, ORDINAL ) \
-      UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, float) \
-      UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, double) \
-      UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(ORDINAL) \
-      UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(ORDINAL)
-
-    typedef short int ShortInt;
-    UNIT_TEST_GROUP_ORDINAL(ShortInt)
-    typedef long int LongInt;
-    UNIT_TEST_GROUP_ORDINAL(LongInt)
-#   ifdef HAVE_TEUCHOS_LONG_LONG_INT
-      typedef long long int LongLongInt;
-      UNIT_TEST_GROUP_ORDINAL(LongLongInt)
-#   endif
-
-# endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
+UNIT_TEST_GROUP_ORDINAL(int)
 
 }
 

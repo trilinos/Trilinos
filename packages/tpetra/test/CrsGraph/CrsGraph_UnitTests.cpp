@@ -714,14 +714,14 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, Typedefs      , LO, GO )
 
      UNIT_TEST_GROUP_LO_GO(int,int)
-#ifndef FAST_DEVELOPMENT_UNIT_TEST_BUILD
-#ifdef HAVE_TEUCHOS_LONG_LONG_INT
-        typedef long long int LongLongInt;
-        UNIT_TEST_GROUP_LO_GO(short,LongLongInt)
-#else
-        typedef long int LongInt;
-        UNIT_TEST_GROUP_LO_GO(short,LongInt)
-#endif
-# endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
+// #ifndef FAST_DEVELOPMENT_UNIT_TEST_BUILD
+// #ifdef HAVE_TEUCHOS_LONG_LONG_INT
+//         typedef long long int LongLongInt;
+//         UNIT_TEST_GROUP_LO_GO(short,LongLongInt)
+// #else
+//         typedef long int LongInt;
+//         UNIT_TEST_GROUP_LO_GO(short,LongInt)
+// #endif
+// # endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 }

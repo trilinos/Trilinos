@@ -34,6 +34,7 @@
 #include <Teuchos_Array.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_Object.hpp>
+#include "Tpetra_Distributor.hpp"
 
 namespace Tpetra {
 

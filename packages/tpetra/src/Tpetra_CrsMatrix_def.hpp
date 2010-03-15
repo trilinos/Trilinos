@@ -31,17 +31,12 @@
 
 // TODO: row-wise insertion of entries in globalAssemble() may be more efficient
 
-#include <Kokkos_DefaultNode.hpp>
-#include <Kokkos_CrsMatrix.hpp>
-#include <Kokkos_DefaultSparseMultiply.hpp>
-#include <Kokkos_DefaultSparseSolve.hpp>
 #include <Kokkos_NodeHelpers.hpp>
 
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
-#include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 
 #include "Tpetra_CrsMatrixMultiplyOp.hpp" // must include for implicit instantiation to work

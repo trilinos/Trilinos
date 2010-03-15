@@ -28,15 +28,16 @@
 
 // TODO: make sure that Ordinal values in constructors aren't invalid()
 
-#ifndef TPETRA_MAP_HPP
-#define TPETRA_MAP_HPP
+#ifndef TPETRA_MAP_DEF_HPP
+#define TPETRA_MAP_DEF_HPP
 
 #include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_as.hpp>
-#include "Tpetra_MapDecl.hpp"
 #include "Tpetra_Directory.hpp"
+#include "Tpetra_Util.hpp"
+#include <stdexcept>
 
 //
 // compute isDistributed. it will be global.
@@ -458,50 +459,59 @@ namespace Tpetra {
   Map<LocalOrdinal,GlobalOrdinal,Node>::~Map () 
   {}
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  global_size_t Map<LocalOrdinal,GlobalOrdinal,Node>::getGlobalNumElements() const {
-    return numGlobalElements_;
-  }
+  // inlined
+  // template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  // global_size_t Map<LocalOrdinal,GlobalOrdinal,Node>::getGlobalNumElements() const {
+  //   return numGlobalElements_;
+  // }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  size_t Map<LocalOrdinal,GlobalOrdinal,Node>::getNodeNumElements() const {
-    return numLocalElements_;
-  }
+  // inlined
+  // template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  // size_t Map<LocalOrdinal,GlobalOrdinal,Node>::getNodeNumElements() const {
+  //   return numLocalElements_;
+  // }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  GlobalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getIndexBase() const {
-    return indexBase_;
-  }
+  // inlined
+  // template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  // GlobalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getIndexBase() const {
+  //   return indexBase_;
+  // }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  LocalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getMinLocalIndex() const {
-    return Teuchos::OrdinalTraits<LocalOrdinal>::zero();
-  }
+  // inlined
+  // template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  // LocalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getMinLocalIndex() const {
+  //   return Teuchos::OrdinalTraits<LocalOrdinal>::zero();
+  // }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  LocalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getMaxLocalIndex() const {
-    return Teuchos::as<LocalOrdinal>(numLocalElements_-1);
-  }
+  // inlined
+  // template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  // LocalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getMaxLocalIndex() const {
+  //   return Teuchos::as<LocalOrdinal>(numLocalElements_-1);
+  // }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  GlobalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getMinGlobalIndex() const {
-    return minMyGID_;
-  }
+  // inlined
+  // template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  // GlobalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getMinGlobalIndex() const {
+  //   return minMyGID_;
+  // }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  GlobalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getMaxGlobalIndex() const {
-    return maxMyGID_;
-  }
+  // inlined
+  // template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  // GlobalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getMaxGlobalIndex() const {
+  //   return maxMyGID_;
+  // }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  GlobalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getMinAllGlobalIndex() const {
-    return minAllGID_;
-  }
+  // inlined
+  // template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  // GlobalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getMinAllGlobalIndex() const {
+  //   return minAllGID_;
+  // }
 
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  GlobalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getMaxAllGlobalIndex() const {
-    return maxAllGID_;
-  }
+  // inlined
+  // template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  // GlobalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getMaxAllGlobalIndex() const {
+  //   return maxAllGID_;
+  // }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   LocalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getLocalElement(GlobalOrdinal globalIndex) const {
@@ -826,5 +836,16 @@ namespace Tpetra {
 
 } // Tpetra namespace
 
-#endif // TPETRA_MAP_HPP
 
+//
+// Explicit instantiation macro
+//
+// Must be expanded from within the Tpetra namespace!
+//
+
+#define TPETRA_MAP_INSTANT(LO,GO,NODE) \
+  \
+  template class Map< LO , GO , NODE >; \
+
+
+#endif // TPETRA_MAP_DEF_HPP

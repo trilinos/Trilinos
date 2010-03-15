@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TPETRA_VECTOR_HPP
-#define TPETRA_VECTOR_HPP
+#ifndef TPETRA_VECTOR_DEF_HPP
+#define TPETRA_VECTOR_DEF_HPP
 
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
@@ -35,7 +35,6 @@
 #include <Teuchos_Tuple.hpp>
 
 #include "Tpetra_MultiVector.hpp"
-#include "Tpetra_VectorDecl.hpp"
 
 namespace Tpetra {
 
@@ -125,7 +124,7 @@ namespace Tpetra {
   typename Teuchos::ScalarTraits<Scalar>::magnitudeType Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm1() const {
     using Teuchos::outArg;
     typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType Mag;
-    Mag norm = MVT::Norm1(*this->lclMV_);
+    Mag norm = MVT::Norm1(this->lclMV_);
     if (this->isDistributed()) {
       Mag lnorm = norm;
       Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lnorm,outArg(norm));
@@ -244,4 +243,15 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
-#endif // TPETRA_VECTOR_HPP
+//
+// Explicit instantiation macro
+//
+// Must be expanded from within the Tpetra namespace!
+//
+
+#define TPETRA_VECTOR_INSTANT(SCALAR,LO,GO,NODE) \
+  \
+  template class Vector< SCALAR , LO , GO , NODE >;
+
+
+#endif // TPETRA_VECTOR_DEF_HPP

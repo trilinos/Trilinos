@@ -36,7 +36,6 @@
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_as.hpp>
 #include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_DirectoryDecl.hpp"
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Map.hpp"
 
@@ -328,5 +327,15 @@ namespace Tpetra {
   } // end generateDirectory()
     
 } // namespace Tpetra
+
+//
+// Explicit instantiation macro
+//
+// Must be expanded from within the Tpetra namespace!
+//
+
+#define TPETRA_DIRECTORY_INSTANT(LO,GO,NODE) \
+  \
+  template class Directory< LO , GO , NODE >; \
 
 #endif // TPETRA_DIRECTORY_HPP

@@ -34,14 +34,9 @@
 #include <Kokkos_DefaultSparseMultiply.hpp>
 #include <Kokkos_DefaultSparseSolve.hpp>
 #include "Tpetra_Operator.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 
 namespace Tpetra {
-
-#ifndef DOXYGEN_SHOULD_SKIP_THIS  
-  // forward declaration
-  template <class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
-  class CrsMatrix;
-#endif
 
   //! \brief A class for wrapping a Tpetra::CrsMatrix solve in a Tpetra::Operator.
   template <class OpScalar, class MatScalar = OpScalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatVec = Kokkos::DefaultSparseMultiply<MatScalar,LocalOrdinal,Node>, class LocalMatSolve = Kokkos::DefaultSparseSolve<MatScalar,LocalOrdinal,Node> >

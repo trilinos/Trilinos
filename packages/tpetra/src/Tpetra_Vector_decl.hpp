@@ -29,7 +29,7 @@
 #ifndef TPETRA_VECTOR_DECL_HPP
 #define TPETRA_VECTOR_DECL_HPP
 
-#include "Tpetra_MultiVectorDecl.hpp"
+#include "Tpetra_MultiVector_decl.hpp"
 
 namespace Tpetra {
 

@@ -33,6 +33,7 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Describable.hpp>
 #include <Teuchos_Comm.hpp>
+#include <Teuchos_OrdinalTraits.hpp>
 
 // enums and defines
 #include "Tpetra_ConfigDefs.hpp"
@@ -98,31 +99,31 @@ namespace Tpetra {
     //@{ 
 
     //! Returns the number of elements in this Map.
-    inline global_size_t getGlobalNumElements() const;
+    inline global_size_t getGlobalNumElements() const { return numGlobalElements_; }
 
     //! Returns the number of elements belonging to the calling node.
-    inline size_t getNodeNumElements() const;
+    inline size_t getNodeNumElements() const { return numLocalElements_; }
 
     //! Returns the index base for this Map.
-    inline GlobalOrdinal getIndexBase() const;
+    inline GlobalOrdinal getIndexBase() const { return indexBase_; }
 
     //! Returns minimum local index
-    inline LocalOrdinal getMinLocalIndex() const;
+    inline LocalOrdinal getMinLocalIndex() const { return Teuchos::OrdinalTraits<LocalOrdinal>::zero(); }
 
     //! Returns maximum local index
-    inline LocalOrdinal getMaxLocalIndex() const;
+    inline LocalOrdinal getMaxLocalIndex() const { return Teuchos::as<LocalOrdinal>(numLocalElements_-1); }
 
     //! Returns minimum global index owned by this node
-    inline GlobalOrdinal getMinGlobalIndex() const;
+    inline GlobalOrdinal getMinGlobalIndex() const { return minMyGID_; }
 
     //! Returns maximum global index owned by this node
-    inline GlobalOrdinal getMaxGlobalIndex() const;
+    inline GlobalOrdinal getMaxGlobalIndex() const { return maxMyGID_; }
 
     //! Return the minimum global index over all nodes
-    inline GlobalOrdinal getMinAllGlobalIndex() const;
+    inline GlobalOrdinal getMinAllGlobalIndex() const { return minAllGID_; }
 
     //! Return the maximum global index over all nodes
-    inline GlobalOrdinal getMaxAllGlobalIndex() const;
+    inline GlobalOrdinal getMaxAllGlobalIndex() const { return maxAllGID_; }
 
     //! \brief Return the local index for a given global index
     /*! If the global index is not owned by this node, returns Teuchos::OrdinalTraits<LocalOrdinal>::invalid(). */
@@ -251,7 +252,6 @@ namespace Tpetra {
   //! Returns true if \c map is not identical to this Map. Implemented in isSameAs().
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   bool operator!= (const Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Map<LocalOrdinal,GlobalOrdinal,Node> &map2);
-
 
 } // Tpetra namespace
 

@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TPETRA_MULTIVECTOR_HPP
-#define TPETRA_MULTIVECTOR_HPP
+#ifndef TPETRA_MULTIVECTOR_DEF_HPP
+#define TPETRA_MULTIVECTOR_DEF_HPP
 
 #include <Teuchos_TestForException.hpp>
 #include <Teuchos_as.hpp>
@@ -37,7 +37,6 @@
 #include <Teuchos_Ptr.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
 
-#include "Tpetra_MultiVectorDecl.hpp"
 #include "Tpetra_Vector.hpp"
 
 namespace Tpetra {
@@ -1714,4 +1713,14 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
-#endif // TPETRA_MULTIVECTOR_HPP
+//
+// Explicit instantiation macro
+//
+// Must be expanded from within the Tpetra namespace!
+//
+
+#define TPETRA_MULTIVECTOR_INSTANT(SCALAR,LO,GO,NODE) \
+  \
+  template class MultiVector< SCALAR , LO , GO , NODE >;
+
+#endif // TPETRA_MULTIVECTOR_DEF_HPP
