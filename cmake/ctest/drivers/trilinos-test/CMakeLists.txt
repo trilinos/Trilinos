@@ -23,7 +23,7 @@ execute_process(COMMAND date "+%m-%d-%Y" OUTPUT_VARIABLE DATE)
 add_test(mpi_release
   ${CTEST_EXE}
   -S
-  "${DRIVER_SCRIPT_DIR}/ctest_linux_nightly_mpi_release_trilinos-test.cmake"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ctest_linux_nightly_mpi_release_trilinos-test.cmake"
   -VV
   --output-log
   "${workingdir}/MPI_RELEASE_10.0_${DATE}.log"
@@ -32,7 +32,7 @@ add_test(mpi_release
 add_test(mpi_release_shared
   ${CTEST_EXE}
   -S
-  "${DRIVER_SCRIPT_DIR}/ctest_linux_nightly_mpi_release_shared_trilinos-test.cmake"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ctest_linux_nightly_mpi_release_shared_trilinos-test.cmake"
   -VV
   --output-log
   "${workingdir}/MPI_RELEASE_10.0_SHARED_${DATE}.log"
@@ -41,7 +41,7 @@ add_test(mpi_release_shared
 add_test(serial_release
   ${CTEST_EXE}
   -S
-  "${DRIVER_SCRIPT_DIR}/ctest_linux_nightly_serial_release_trilinos-test.cmake"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ctest_linux_nightly_serial_release_trilinos-test.cmake"
   -VV
   --output-log
   "${workingdir}/SERIAL_RELEASE_10.0_${DATE}.log"

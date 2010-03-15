@@ -12,32 +12,11 @@ set(TRILINOS_REPOSITORY_LOCATION software.sandia.gov:/space/git/nightly/Trilinos
 
 set(workingdir "${TrilinosDriver_BINARY_DIR}")
 
-# checkout the basics from Trilinos needed to run the dashboard including
-# this script.
-if(NOT EXISTS "${workingdir}/Trilinos")
-  message("Cloning the repository because none exists yet.")
-  execute_process(COMMAND "${GIT_EXE}" clone ${TRILINOS_REPOSITORY_LOCATION}
-    WORKING_DIRECTORY "${workingdir}")
-  execute_process(COMMAND "${GIT_EXE}" checkout --track origin/${BRANCH}
-    WORKING_DIRECTORY "${workingdir}/Trilinos")
-endif()
-
-# Add targets to update the local repository
-add_custom_target(gitcheckout ALL
-  COMMAND "${GIT_EXE}" checkout ${BRANCH}
-  WORKING_DIRECTORY "${workingdir}/Trilinos"
-  COMMENT "Doing update of an existing directory")
-add_custom_target(gitpull ALL
-  COMMAND "${GIT_EXE}" pull
-  WORKING_DIRECTORY "${workingdir}/Trilinos"
-  DEPENDS gitcheckout)
-
 # Now run ctest on each of the ctest build scripts for this machine
-
 add_test(serial_release
   "${CTEST_EXE}"
   -S
-  "${TrilinosDriver_SOURCE_DIR}/kallikrates/ctest_windows_nightly_serial_release.cmake"
+  "${CMAKE_CURRENT_SOURCE_DIR}/ctest_windows_nightly_serial_release.cmake"
   -VV
   --output-log
   "${workingdir}/ctest_msvc_nightly_serial_release_kallikrates.out"
@@ -47,7 +26,7 @@ add_test(serial_release
 #add_test(mpi_release
 #  "${CTEST_EXE}"
 #  -S
-#  "${TrilinosDriver_SOURCE_DIR}/kallikrates/ctest_windows_nightly_mpi_release.cmake"
+#  "${CMAKE_CURRENT_SOURCE_DIR}/ctest_windows_nightly_mpi_release.cmake"
 #  -VV
 #  --output-log
 #  "${workingdir}/ctest_msvc_nightly_mpi_release_kallikrates.out"

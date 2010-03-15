@@ -1,10 +1,7 @@
 # godel driver
 
 set(CTEST_EXE "${CMAKE_CTEST_COMMAND}")
-set(EG_EXE /home/trilinos/install/bin/eg)
 set(workingdir "${TrilinosDriver_BINARY_DIR}")
-set(DRIVER_SCRIPT_DIR "${TrilinosDriver_SOURCE_DIR}/godel")
-set(TRILINOS_REPOSITORY_LOCATION "software.sandia.gov:/space/git/Trilinos")
 
 # Get the day of the week
 execute_process(COMMAND date +%A OUTPUT_VARIABLE DAYOFWEEK)
@@ -23,23 +20,13 @@ else()
   set(RUN_MEMCHECK_TESTS OFF)
 endif()
 
-#if(NOT EXISTS "${workingdir}/Trilinos")
-#  message("Cloning the repository because none exists yet")
-#  execute_process(COMMAND ${EG_EXE} clone ${TRILINOS_REPOSITORY_LOCATION}
-#    WORKING_DIRECTORY "${workingdir}")
-#else()
-#  add_custom_target(gitpull ALL
-#    COMMAND ${EG_EXE} pull
-#    WORKING_DIRECTORY "${workingdir}/Trilinos")
-#endif()
-
 #add_test(email_results /home/rabartl/mailmsg.py "Finished nightly Trilinos tests godel: http://trilinos-dev.sandia.gov/cdash/index.php?project=Trilinos")
 
 if(RUN_REGULAR_TESTS)
   add_test(serial_performance
     ${CTEST_EXE}
     -S
-    "${DRIVER_SCRIPT_DIR}/ctest_linux_nightly_serial_performance_godel.cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ctest_linux_nightly_serial_performance_godel.cmake"
     -VV
     --output-log
     "${workingdir}/ctest_linux_nightly_serial_performance_godel.out"
@@ -83,7 +70,7 @@ if(RUN_REGULAR_TESTS)
   add_test(mpi_opt_zoltan_c
     ${CTEST_EXE}
     -S
-    "${DRIVER_SCRIPT_DIR}/ctest_linux_nightly_mpi_opt_zoltan_c_godel.cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ctest_linux_nightly_mpi_opt_zoltan_c_godel.cmake"
     -VV
     --output-log
     "${workingdir}/ctest_linux_nightly_mpi_opt_zoltan_c_godel.out
@@ -92,7 +79,7 @@ if(RUN_REGULAR_TESTS)
   add_test(serial_debug_icpc
     ${CTEST_EXE}
     -S
-    "${DRIVER_SCRIPT_DIR}/ctest_linux_nightly_serial_debug_icpc_godel.cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ctest_linux_nightly_serial_debug_icpc_godel.cmake"
     -VV
     --output-log
     "${workingdir}/ctest_linux_nightly_serial_debug_icpc_godel.out"
@@ -101,7 +88,7 @@ if(RUN_REGULAR_TESTS)
   add_test(serial_release
     ${CTEST_EXE}
     -S
-    "${DRIVER_SCRIPT_DIR}/ctest_linux_nightly_serial_release_icpc_godel.cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ctest_linux_nightly_serial_release_icpc_godel.cmake"
     -VV
     --output-log
     "${workingdir}/ctest_linux_nightly_serial_release_icpc_godel.out
@@ -115,7 +102,7 @@ if(RUN_COVERAGE_TESTS)
   add_test(serial_debug_coverage
     ${CTEST_EXE}
     -S
-    "${DRIVER_SCRIPT_DIR}/ctest_linux_nightly_serial_debug_coverage_godel.cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ctest_linux_nightly_serial_debug_coverage_godel.cmake"
     -VV
     --output-log
     "${workingdir}/ctest_linux_nightly_serial_debug_coverage_godel.out"
@@ -124,7 +111,7 @@ if(RUN_COVERAGE_TESTS)
   add_test(mpi_debug_coverage
     ${CTEST_EXE}
     -S
-    "${DRIVER_SCRIPT_DIR}/ctest_linux_nightly_mpi_debug_coverage_godel.cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ctest_linux_nightly_mpi_debug_coverage_godel.cmake"
     -VV
     --output-log
     "${workingdir}/ctest_linux_nightly_mpi_debug_coverage_godel.out"
@@ -138,7 +125,7 @@ if(RUN_MEMCHECK_TESTS)
   add_test(serial_debug_memcheck
     ${CTEST_EXE}
     -S
-    "${DRIVER_SCRIPT_DIR}/ctest_linux_nightly_serial_debug_memcheck_godel.cmake
+    "${CMAKE_CURRENT_SOURCE_DIR}/ctest_linux_nightly_serial_debug_memcheck_godel.cmake
     -VV
     --output-log
     "${workingdir}/ctest_linux_nightly_serial_debug_memcheck_godel.out"
@@ -147,7 +134,7 @@ if(RUN_MEMCHECK_TESTS)
   add_test(mpi_debug_memcheck
     ${CTEST_EXE}
     -S
-    "${DRIVER_SCRIPT_DIR}/ctest_linux_nightly_mpi_debug_memcheck_godel.cmake"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ctest_linux_nightly_mpi_debug_memcheck_godel.cmake"
     -VV
     --output-log
     "${workingdir}/ctest_linux_nightly_mpi_debug_memcheck_godel.out"
