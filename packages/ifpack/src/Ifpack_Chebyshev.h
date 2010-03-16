@@ -408,6 +408,10 @@ private:
   Teuchos::RefCountPtr<EpetraExt_PointToBlockDiagPermute> InvBlockDiagonal_;
 #endif
 
+
+  //! Run on the normal equations
+  bool SolveNormalEquations_;
+
   //! If \c true, the Operator_ is an Epetra_RowMatrix.
   bool IsRowMatrix_;
   //! Time object to track timing.

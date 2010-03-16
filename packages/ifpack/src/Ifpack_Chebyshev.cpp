@@ -52,6 +52,17 @@
 
 #define ABS(x) ((x)>0?(x):-(x))
 
+// Helper function for normal equations
+inline void Apply_Transpose(Teuchos::RCP<const Epetra_Operator> Operator_,const Epetra_MultiVector &X,Epetra_MultiVector &Y){
+  Epetra_Operator * Operator=const_cast<Epetra_Operator*>(&*Operator_);
+  Operator->SetUseTranspose(true);
+  Operator->Apply(X,Y);
+  Operator->SetUseTranspose(false);
+}
+
+
+
+
 //==============================================================================
 // NOTE: any change to the default values should be committed to the other
 //       constructor as well.
@@ -82,6 +93,7 @@ Ifpack_Chebyshev(const Epetra_Operator* Operator) :
   NumGlobalNonzeros_(0),
   Operator_(Teuchos::rcp(Operator,false)),
   UseBlockMode_(false),  
+  SolveNormalEquations_(false),
   IsRowMatrix_(false), 
   ZeroStartingSolution_(true)
 {
@@ -125,6 +137,7 @@ Ifpack_Chebyshev(const Epetra_RowMatrix* Operator) :
   Operator_(Teuchos::rcp(Operator,false)),
   Matrix_(Teuchos::rcp(Operator,false)),
   UseBlockMode_(false),
+  SolveNormalEquations_(false),
   IsRowMatrix_(true), 
   ZeroStartingSolution_(true)
 {
@@ -166,7 +179,9 @@ int Ifpack_Chebyshev::SetParameters(Teuchos::ParameterList& List)
     }    
   }  
 #endif
-  
+
+  SolveNormalEquations_ = List.get("chebyshev: solve normal equations",SolveNormalEquations_);
+
   if (ID != 0) 
   {
     InvDiagonal_ = Teuchos::rcp( new Epetra_Vector(*ID) );
@@ -434,8 +449,7 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   Y.ExtractView(&yPtr);
 
 #ifdef HAVE_IFPACK_EPETRAEXT
-  //const EpetraExt_PointToBlockDiagPermute& IBD=*(&*InvBlockDiagonal_);
-  EpetraExt_PointToBlockDiagPermute* IBD;
+  EpetraExt_PointToBlockDiagPermute* IBD=0;
   if (UseBlockMode_) IBD=&*InvBlockDiagonal_;
 #endif
   
@@ -485,6 +499,13 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
   double oneOverTheta = 1.0/theta;
   int i, j, k;
 
+
+  //--- If solving normal equations, multiply RHS by A^T
+  if(SolveNormalEquations_){
+    Apply_Transpose(Operator_,Y,V);
+    Y=V;
+  }
+
   // Do the smoothing when block scaling is turned OFF
   // --- Treat the initial guess
   if (ZeroStartingSolution_ == false) {
@@ -494,6 +515,13 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     if(UseBlockMode_) {
       Temp.Update(oneOverTheta,X,-oneOverTheta,V,0.0);
       IBD->ApplyInverse(Temp,W);
+
+      // Perform additional matvecs for normal equations
+      // CMS: Testing this only in block mode FOR NOW
+      if(SolveNormalEquations_){
+	IBD->ApplyInverse(W,Temp);
+	Apply_Transpose(Operator_,Temp,W);
+      }
     }
     else
 #endif
@@ -520,6 +548,14 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 #ifdef HAVE_IFPACK_EPETRAEXT    
     if(UseBlockMode_) {
       IBD->ApplyInverse(X,W);
+
+      // Perform additional matvecs for normal equations
+      // CMS: Testing this only in block mode FOR NOW
+      if(SolveNormalEquations_){
+	IBD->ApplyInverse(W,Temp);
+	Apply_Transpose(Operator_,Temp,W);
+      }
+
       W.Scale(oneOverTheta);
       Y.Update(1.0, W, 0.0);      
     }
@@ -566,6 +602,14 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
       //NTS: We can clobber V since it will be reset in the Apply
       V.Update(dtemp2,X,-dtemp2);
       IBD->ApplyInverse(V,Temp);
+
+      // Perform additional matvecs for normal equations
+      // CMS: Testing this only in block mode FOR NOW
+      if(SolveNormalEquations_){
+	IBD->ApplyInverse(V,Temp);
+	Apply_Transpose(Operator_,Temp,V);
+      }
+
       W.Update(1.0,Temp,1.0);
     }
     else{
@@ -595,6 +639,15 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
       //We can clobber V since it will be reset in the Apply
       V.Update(dtemp2,X,-dtemp2);
       IBD->ApplyInverse(V,Temp);
+
+      // Perform additional matvecs for normal equations
+      // CMS: Testing this only in block mode FOR NOW
+      if(SolveNormalEquations_){
+	IBD->ApplyInverse(V,Temp);
+	Apply_Transpose(Operator_,Temp,V);
+      }
+
+
       W.Update(1.0,Temp,1.0);
     }
     else{
@@ -716,6 +769,11 @@ PowerMethod(const int MaximumIterations,  double& lambda_max)
   {
     Operator_->Apply(x, z);
     InvBlockDiagonal_->ApplyInverse(z,y);
+    if(SolveNormalEquations_){
+      InvBlockDiagonal_->ApplyInverse(y,z);
+      Apply_Transpose(Operator_,z, y);
+    }
+
     IFPACK_CHK_ERR(y.Dot(x, &RQ_top));
     IFPACK_CHK_ERR(x.Dot(x, &RQ_bottom));
     lambda_max = RQ_top / RQ_bottom;
@@ -744,9 +802,7 @@ CG(const int MaximumIterations,
   Epetra_Vector y(Operator_->OperatorRangeMap());
   x.Random();
   y.PutScalar(0.0);
-  const Epetra_CrsMatrix *tmp=dynamic_cast<const Epetra_CrsMatrix*>(&*Matrix_);
   Epetra_LinearProblem LP(const_cast<Epetra_RowMatrix*>(&*Matrix_), &x, &y);
-
   
   AztecOO solver(LP);
   solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
