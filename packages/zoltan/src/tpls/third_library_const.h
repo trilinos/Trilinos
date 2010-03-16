@@ -68,12 +68,8 @@ extern "C" {
 
 #include "zoltan_ccolamd.h"
 #ifndef indextype
-#define indextype UF_long
+#define indextype UF_long /* UF_long is int by default */
 #endif
-
-#ifndef indextype
-#define indextype int
-#endif /* indextype */
 
 #ifndef weighttype
 #define weighttype int
