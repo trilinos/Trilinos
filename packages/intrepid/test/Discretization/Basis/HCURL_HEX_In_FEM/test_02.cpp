@@ -124,12 +124,12 @@ int main(int argc, char *argv[]) {
   outStream -> precision(16);
   
   try {
-    shards::CellTopology cell(shards::getCellTopologyData< shards::Tetrahedron<> >());  // create parent cell topology
+    shards::CellTopology cell(shards::getCellTopologyData< shards::Hexahedron<8> >());  // create parent cell topology
     
     int cellDim = cell.getDimension();
     
-    int min_order = 2;
-    int max_order = 4;
+    int min_order = 1;
+    int max_order = 3;
     
     int numIntervals = max_order;
     int numInterpPoints = (numIntervals + 1)*(numIntervals +1)*(numIntervals+1);
@@ -150,20 +150,14 @@ int main(int argc, char *argv[]) {
       // create basis
       Teuchos::RCP<Basis<double,FieldContainer<double> > > basis =
         Teuchos::rcp(new Basis_HCURL_HEX_In_FEM<double,FieldContainer<double> >(basis_order,POINTTYPE_SPECTRAL) );
-      
       int numFields = basis->getCardinality();
       
       // create cubatures
-      Teuchos::RCP<Cubature<double> > polylibcub = 
-	Teuchos::rcp(new CubaturePolylib<double,FieldContainer<double>,FieldContainer<double> >( 2*(basis_order),PL_GAUSS ) );
-      std::vector<Teuchos::RCP<Cubature<double> > > vecCub(3);
-      vecCub[0] = polylibcub;
-      vecCub[1] = polylibcub;
-      vecCub[2] = polylibcub;
+      DefaultCubatureFactory<double> cubFactory;
+      Teuchos::RCP<Cubature<double> > cellCub = cubFactory.create( cell , 2* basis_order );
 
-      CubatureTensor<double,FieldContainer<double>,FieldContainer<double> > cellCub( vecCub );
 
-      int numCubPointsCell = cellCub.getNumPoints();
+      int numCubPointsCell = cellCub->getNumPoints();
       
       // hold cubature information
       FieldContainer<double> cub_points_cell(numCubPointsCell, cellDim);
@@ -194,7 +188,7 @@ int main(int argc, char *argv[]) {
       
       // build matrices outside the loop, and then just do the rhs
       // for each iteration
-      cellCub.getCubature(cub_points_cell, cub_weights_cell);
+      cellCub->getCubature(cub_points_cell, cub_weights_cell);
       
       // need the vector basis
       basis->getValues(value_of_basis_at_cub_points_cell,
