@@ -1962,6 +1962,9 @@ namespace {
   // it back again before checking in so that we can test all the types.
   // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
+typedef std::complex<float>  ComplexFloat;
+typedef std::complex<double> ComplexDouble;
+
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, basic             , ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, BadConstNumVecs   , ORDINAL, SCALAR, NODE ) \
