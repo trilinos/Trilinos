@@ -17,7 +17,7 @@ add_test(kill_orted killall -s 9 orted)
 set_property(TEST kill_orted PROPERTY DEPENDS mpi_debug)
 
 add_test(serial_release
-  "${CTEST_EXE}
+  "${CTEST_EXE}"
   -S
   "${CMAKE_CURRENT_SOURCE_DIR}/ctest_linux_nightly_serial_release_gabriel.cmake"
   -VV

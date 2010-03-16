@@ -4,7 +4,7 @@ if("${CTEST_SITE}" STREQUAL "")
 endif()
 if("${CTEST_SITE}" STREQUAL "")
   if(WIN32)
-    set(CTEST_SITE $ENV{COMPUTERNAME})
+    string(TOLOWER "$ENV{COMPUTERNAME}" CTEST_SITE)
   else()
     execute_process(COMMAND uname -n
       OUTPUT_VARIABLE CTEST_SITE

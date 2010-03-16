@@ -73,7 +73,7 @@ if(RUN_REGULAR_TESTS)
     "${CMAKE_CURRENT_SOURCE_DIR}/ctest_linux_nightly_mpi_opt_zoltan_c_godel.cmake"
     -VV
     --output-log
-    "${workingdir}/ctest_linux_nightly_mpi_opt_zoltan_c_godel.out
+    "${workingdir}/ctest_linux_nightly_mpi_opt_zoltan_c_godel.out"
   )
 
   add_test(serial_debug_icpc
@@ -91,7 +91,7 @@ if(RUN_REGULAR_TESTS)
     "${CMAKE_CURRENT_SOURCE_DIR}/ctest_linux_nightly_serial_release_icpc_godel.cmake"
     -VV
     --output-log
-    "${workingdir}/ctest_linux_nightly_serial_release_icpc_godel.out
+    "${workingdir}/ctest_linux_nightly_serial_release_icpc_godel.out"
   )
   
   #set_property(TEST email_results APPEND PROPERTY DEPENDS
@@ -125,7 +125,7 @@ if(RUN_MEMCHECK_TESTS)
   add_test(serial_debug_memcheck
     ${CTEST_EXE}
     -S
-    "${CMAKE_CURRENT_SOURCE_DIR}/ctest_linux_nightly_serial_debug_memcheck_godel.cmake
+    "${CMAKE_CURRENT_SOURCE_DIR}/ctest_linux_nightly_serial_debug_memcheck_godel.cmake"
     -VV
     --output-log
     "${workingdir}/ctest_linux_nightly_serial_debug_memcheck_godel.out"

@@ -36,7 +36,7 @@ dash2win64
 exetazo
 gabriel
 godel
-HUT11
+hut11
 kallikrates
 qwghlm
 s903186
