@@ -79,8 +79,9 @@ namespace {
   using Tpetra::MultiVector;
   using Tpetra::global_size_t;
   using Tpetra::DefaultPlatform;
-  using Tpetra::LocallyReplicated;
   using Tpetra::GloballyDistributed;
+
+  using Tpetra::createLocalMapWithNode;
 
   using Kokkos::SerialNode;
   RCP<SerialNode> snode;
@@ -528,8 +529,8 @@ namespace {
     // case 1: C(local) = A^X(local) * B^X(local)  : four of these
     {
       // create local Maps
-      RCP<Map<Ordinal,Ordinal,Node> > map3l = rcp( new Map<Ordinal,Ordinal,Node>(as<global_size_t>(3),as<Ordinal>(0),comm,LocallyReplicated,node) ),
-                                      map2l = rcp( new Map<Ordinal,Ordinal,Node>(as<global_size_t>(2),as<Ordinal>(0),comm,LocallyReplicated,node) );
+      RCP<const Map<Ordinal,Ordinal,Node> > map3l = createLocalMapWithNode<Ordinal,Ordinal,Node>(3,comm,node),
+                                            map2l = createLocalMapWithNode<Ordinal,Ordinal,Node>(2,comm,node);
       MV mvecA(map3l,2),
          mvecB(map2l,3),
          mvecD(map2l,2);
@@ -548,9 +549,9 @@ namespace {
     // case 2: C(local) = A^T(distr) * B  (distr)  : one of these
     {
       RCP<Map<Ordinal,Ordinal,Node> > map3n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(3),0,comm,node) ),
-                                      map2n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(2),0,comm,node) ),
-                                      map2l = rcp( new Map<Ordinal,Ordinal,Node>(as<global_size_t>(2),as<Ordinal>(0),comm,LocallyReplicated,node) ),
-                                      map3l = rcp( new Map<Ordinal,Ordinal,Node>(as<global_size_t>(3),as<Ordinal>(0),comm,LocallyReplicated,node) );
+                                      map2n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(2),0,comm,node) );
+      RCP<const Map<Ordinal,Ordinal,Node> > map2l = createLocalMapWithNode<Ordinal,Ordinal,Node>(2,comm,node),
+                                            map3l = createLocalMapWithNode<Ordinal,Ordinal,Node>(3,comm,node);
       MV mv3nx2(map3n,2),
          mv2nx2(map2n,2),
          mv2lx2(map2l,2),
@@ -568,9 +569,9 @@ namespace {
     // case 3: C(distr) = A  (distr) * B^X(local)  : two of these
     {
       RCP<Map<Ordinal,Ordinal,Node> > map3n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(3),0,comm,node) ),
-                                      map2n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(2),0,comm,node) ),
-                                      map2l = rcp( new Map<Ordinal,Ordinal,Node>(as<global_size_t>(2),as<Ordinal>(0),comm,LocallyReplicated,node) ),
-                                      map3l = rcp( new Map<Ordinal,Ordinal,Node>(as<global_size_t>(3),as<Ordinal>(0),comm,LocallyReplicated,node) );
+                                      map2n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(2),0,comm,node) );
+      RCP<const Map<Ordinal,Ordinal,Node> > map2l = createLocalMapWithNode<Ordinal,Ordinal,Node>(2,comm,node),
+                                            map3l = createLocalMapWithNode<Ordinal,Ordinal,Node>(3,comm,node);
       MV mv3nx2(map3n,2),
          mv2nx2(map2n,2),
          mv2x3(map2l,3),
@@ -599,9 +600,9 @@ namespace {
     const Ordinal indexBase = 0;
     // create a Map
     RCP<Map<Ordinal,Ordinal,Node> > map3n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(3),indexBase,comm,node) ),
-                                    map2n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(2),indexBase,comm,node) ),
-                                    lmap3 = rcp( new Map<Ordinal,Ordinal,Node>(as<global_size_t>(3),indexBase,comm,LocallyReplicated,node) ),
-                                    lmap2 = rcp( new Map<Ordinal,Ordinal,Node>(as<global_size_t>(2),indexBase,comm,LocallyReplicated,node) );
+                                    map2n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(2),indexBase,comm,node) );
+    RCP<const Map<Ordinal,Ordinal,Node> > lmap3 = createLocalMapWithNode<Ordinal,Ordinal,Node>(3,comm,node),
+                                          lmap2 = createLocalMapWithNode<Ordinal,Ordinal,Node>(2,comm,node);
     const Scalar S1 = ScalarTraits<Scalar>::one(),
                  S0 = ScalarTraits<Scalar>::zero();
     const Mag    M0 = ScalarTraits<Mag>::zero();

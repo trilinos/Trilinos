@@ -19,6 +19,10 @@
 
 namespace Tpetra {
 
+  // for default node
+  template Teuchos::RCP< const Map<int,int,Kokkos::DefaultNode::DefaultNodeType> >
+  createLocalMap<int,int>(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
+
   TPETRA_MAP_INSTANT(int,int,Kokkos::SerialNode)
 #if defined(HAVE_KOKKOS_TBB)
   TPETRA_MAP_INSTANT(int,int,Kokkos::TBBNode)

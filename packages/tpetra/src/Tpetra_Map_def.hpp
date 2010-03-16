@@ -836,6 +836,21 @@ namespace Tpetra {
 
 } // Tpetra namespace
 
+template <class LocalOrdinal, class GlobalOrdinal>
+Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
+Tpetra::createLocalMap(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
+  return createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType>(numElements, comm, Kokkos::DefaultNode::getDefaultNode());
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
+Tpetra::createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) {
+  Teuchos::RCP< Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map;
+  map = rcp( new Map<LocalOrdinal,GlobalOrdinal,Node>((global_size_t)numElements,                     // num elements, global and local
+                                                      Teuchos::OrdinalTraits<GlobalOrdinal>::zero(),  // index base is zero
+                                                      comm, LocallyReplicated, node) );
+  return map.getConst();
+}
 
 //
 // Explicit instantiation macro
@@ -846,6 +861,9 @@ namespace Tpetra {
 #define TPETRA_MAP_INSTANT(LO,GO,NODE) \
   \
   template class Map< LO , GO , NODE >; \
+  \
+  template Teuchos::RCP< const Map<LO,GO,NODE> > \
+  createLocalMapWithNode<LO,GO,NODE>(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< NODE > &node); \
 
 
 #endif // TPETRA_MAP_DEF_HPP

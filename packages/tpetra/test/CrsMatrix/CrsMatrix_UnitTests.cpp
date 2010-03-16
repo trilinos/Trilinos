@@ -98,6 +98,7 @@ namespace {
   using Tpetra::RowMatrix;
   using Tpetra::Import;
   using Tpetra::global_size_t;
+  using Tpetra::createLocalMapWithNode;
   using Tpetra::createCrsMatrixSolveOp;
   using Tpetra::createCrsMatrixMultiplyOp;
   using Tpetra::DefaultPlatform;
@@ -107,7 +108,6 @@ namespace {
   using Tpetra::OptimizeOption;
   using Tpetra::DoOptimizeStorage;
   using Tpetra::DoNotOptimizeStorage;
-  using Tpetra::LocallyReplicated;
   using Tpetra::GloballyDistributed;
   using Tpetra::INSERT;
 
@@ -845,8 +845,8 @@ namespace {
     const size_t numVecs  = 3;
     RCP<Map<LO,GO,Node> > rowmap = rcp( new Map<LO,GO,Node>(INVALID,M,static_cast<GO>(0),comm,node) );
     rowmap->setObjectLabel("Row Map");
-    RCP<Map<LO,GO,Node> > lclmap = rcp( new Map<LO,GO,Node>(static_cast<global_size_t>(P),static_cast<GO>(0),comm,LocallyReplicated,node) );
-    lclmap->setObjectLabel("Local Map");
+    RCP<const Map<LO,GO,Node> > lclmap = createLocalMapWithNode<LO,GO,Node>(P,comm,node);
+
     // create the matrix
     MAT A(rowmap,P,DynamicProfile);
     for (GO i=0; i<static_cast<GO>(M); ++i) {
@@ -940,7 +940,7 @@ namespace {
     // 
     const size_t numVecs  = 3;
     RCP<Map<LO,GO,Node> > rowmap = rcp( new Map<LO,GO,Node>(INVALID,M,0,comm,node) );
-    RCP<Map<LO,GO,Node> > lclmap = rcp( new Map<LO,GO,Node>(P,static_cast<GO>(0),comm,LocallyReplicated,node) );
+    RCP<const Map<LO,GO,Node> > lclmap = createLocalMapWithNode<LO,GO,Node>(P,comm,node);
     // create the matrix
     MAT A(rowmap,P);
     for (size_t i=0; i<M; ++i) {

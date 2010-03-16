@@ -253,6 +253,22 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   bool operator!= (const Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Map<LocalOrdinal,GlobalOrdinal,Node> &map2);
 
+  //! \brief Non-member function to create a locally replicated Tpetra::Map with the default node.
+  /*! This method returns a Map instantiated on the Kokkos default node type, Kokkos::DefaultNode::DefaultNodeType.
+
+      The Map is configured to use zero-based indexing.
+   */
+  template <class LocalOrdinal, class GlobalOrdinal>
+  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
+  createLocalMap(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
+
+  //! Non-member function to create a locally replicated Tpetra::Map with a specified node.
+  /*! The Map is configured to use zero-based indexing.
+   */
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
+  createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node);
+
 } // Tpetra namespace
 
 #endif // TPETRA_MAP_DECL_HPP
