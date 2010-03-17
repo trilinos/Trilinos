@@ -98,11 +98,11 @@ cd "$BASE_DIR"
 if [ -d Trilinos ]; then
   echo Doing an update of existing directory >>"$LOGFILE"
   cd Trilinos
-#  "$EG_EXE" pull >>"$LOGFILE"
+  "$EG_EXE" pull >>"$LOGFILE"
   cd ..
 else
   echo Cloning the repository because none exists yet >>"$LOGFILE"
-#  "$EG_EXE" clone $TRILINOS_REPOSITORY >>"$LOGFILE"
+  "$EG_EXE" clone $TRILINOS_REPOSITORY >>"$LOGFILE"
 fi
 
 # Download and install CMake/CTest 'release' build
