@@ -13,10 +13,38 @@ from CMakeBinaries import *
 import re
 import shutil
 import string
+import subprocess
 import sys
 import tarfile
 import urllib
 import zipfile
+
+
+#
+# Discover domain (detect if in .sandia.gov) if possible.
+# Use it to set default_http_proxy value appropriately.
+#
+
+default_http_proxy = ""
+hostname = ""
+
+if sys.platform == 'darwin':
+  hostname = subprocess.Popen(["hostname"], stdout=subprocess.PIPE).communicate()[0]
+  # `hostname` works on s903186...
+
+if sys.platform == 'linux2':
+  hostname = subprocess.Popen(["hostname", "--fqdn"], stdout=subprocess.PIPE).communicate()[0]
+  # `hostname --fqdn` works on trilinos-test...
+
+if sys.platform == 'win32':
+  hostname = "" # best way to get fully qualified hostname from win32 system call?
+
+if hostname != '':
+  hostname = hostname.strip()
+  hostname = hostname.lower()
+
+  if hostname[-11:] == ".sandia.gov":
+    default_http_proxy = "http://wwwproxy.sandia.gov:80/"
 
 
 #
@@ -38,6 +66,14 @@ Valid values for --installer-type are:
   'release' - default / recommended version, may be same as min
   'rc' - latest release candidate, may be same as release
   'dev' - latest development build
+
+If your computer is in the sandia.gov domain, this script should automatically
+detect that and use the correct value for --http-proxy to enable downloading
+files from the web with http. If you need to pass a proxy in manually, pass
+the fully qualified form, as in: --http-proxy="http://wwwproxy.sandia.gov:80/"
+If you do not specify an --http-proxy and one is not automatically set due to
+sandia.gov domain detection, then the http_proxy environment variable is
+honored.
 
 By default, if you just type:
 
@@ -96,8 +132,8 @@ clp.add_option(
   help="Download and/or extract tarballs for all platforms (default = just this platform)" )
 
 clp.add_option(
-  "--http-proxy", dest="httpProxy", type="string", default="",
-  help="Proxy in the form 'http://server:port/' - use if you are behind a firewall with respect to downloading from http://www.cmake.org (default = \"\")." )
+  "--http-proxy", dest="httpProxy", type="string", default=default_http_proxy,
+  help="Proxy in the form 'http://server:port/' - use if you are behind a firewall with respect to downloading from http://www.cmake.org (default = \""+default_http_proxy+"\")." )
 
 clp.add_option(
   "--install-dir", dest="installDir", type="string", default="/usr/local",
