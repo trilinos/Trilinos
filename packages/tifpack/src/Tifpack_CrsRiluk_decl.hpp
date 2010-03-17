@@ -401,7 +401,7 @@ class CrsRiluk: public virtual Tifpack::Preconditioner<typename MatrixType::scal
   double RelaxValue_;
   double Athresh_;
   double Rthresh_;
-  mutable double Condest_;
+  mutable magnitudeType Condest_;
 
   mutable Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > OverlapX_;
   mutable Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > OverlapY_;

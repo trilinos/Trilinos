@@ -498,7 +498,9 @@ CrsRiluk<MatrixType>::computeCondEst(Teuchos::ETransp mode) const {
 
   apply(Ones, OnesResult,mode); // Compute the effect of the solve on the vector of ones
   OnesResult.abs(OnesResult); // Make all values non-negative
-  Condest_ = OnesResult.normInf(); // Get the maximum value across all processors
+  Teuchos::Array<magnitudeType> norms(1);
+  OnesResult.normInf(norms());
+  Condest_ = norms[0];
   return Condest_;
 }
 
