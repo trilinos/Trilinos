@@ -41,6 +41,7 @@ IF (Piro_ENABLE_NOX)
     Main_AnalysisDriver.cpp
     MockModelEval_A.cpp
     MockModelEval_A.hpp
+    ObserveSolution_Epetra.hpp
     COMM serial mpi
     NUM_MPI_PROCS 1-4
     ARGS -v

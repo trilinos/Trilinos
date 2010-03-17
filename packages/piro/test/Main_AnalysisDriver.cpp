@@ -32,6 +32,7 @@
 #include <string>
 
 #include "MockModelEval_A.hpp"
+#include "ObserveSolution_Epetra.hpp"
 
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_TestForException.hpp"
@@ -113,11 +114,14 @@ int main(int argc, char *argv[]) {
 
       std::string& solver = piroParams.get("Piro Solver","NOX");
       const RCP<Teuchos::ParameterList> piroParamsRCP = rcp(&piroParams, false);
+
 #ifdef Piro_ENABLE_NOX
+      RCP<Piro::Epetra::NOXObserver> observer = rcp(new ObserveSolution_Epetra());
+
       if (solver=="NOX")
-        piro = rcp(new Piro::Epetra::NOXSolver(piroParamsRCP, Model));
+        piro = rcp(new Piro::Epetra::NOXSolver(piroParamsRCP, Model, observer));
       else if (solver=="LOCA")
-        piro = rcp(new Piro::Epetra::LOCASolver(piroParamsRCP, Model));
+        piro = rcp(new Piro::Epetra::LOCASolver(piroParamsRCP, Model, observer));
       else
 #endif
 #ifdef Piro_ENABLE_Rythmos
