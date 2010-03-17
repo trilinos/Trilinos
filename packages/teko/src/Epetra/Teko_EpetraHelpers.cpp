@@ -115,7 +115,7 @@ void fillDefaultSpmdMultiVector(Teuchos::RCP<Thyra::DefaultSpmdMultiVector<doubl
   *
   * \param[in]     rowMap   Map specifying which global indices this process examines 
   * \param[in]     mat      Matrix to be examined
-  * \param[in,out] indices Output list of indices corresponding to dirchlet rows.
+  * \param[in,out] indices Output list of indices corresponding to dirchlet rows (GIDs).
   */
 void identityRowIndices(const Epetra_Map & rowMap, const Epetra_CrsMatrix & mat,std::vector<int> & outIndices)
 {
