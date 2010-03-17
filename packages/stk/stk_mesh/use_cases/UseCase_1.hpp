@@ -30,7 +30,7 @@
  *   1       5      9       13      17          
  * </PRE>
  * 
- *  Local node numbering
+ *  Element-Local node numbering
  * <PRE>
  *      8       7
  *      +-------+
@@ -53,9 +53,9 @@ namespace use_cases {
 
 
 
-// Two part MetaData with four entity types:  
+// MetaData with four entity types:  
 // Node, Edge, Face, Element 
-// and two parts (partLeft and partRight)
+// and two mesh-parts (partLeft and partRight)
 class UseCase_1_MetaData
 {
   protected:

@@ -465,15 +465,17 @@ void UnitTestRelation::generate_boxes(
     EntityId node_id = 1 + i + j * (ngx+1) + k * (ngx+1) * (ngy+1);
     Entity * const node = mesh.get_entity( node_type , node_id );
     STKUNIT_ASSERT( node != NULL );
-    // Shared if on a processor boundary.
-    const bool shared =
-      ( k == local_box[2][0] && k != root_box[2][0] ) ||
-      ( k == local_box[2][1] && k != root_box[2][1] ) ||
-      ( j == local_box[1][0] && j != root_box[1][0] ) ||
-      ( j == local_box[1][1] && j != root_box[1][1] ) ||
-      ( i == local_box[0][0] && i != root_box[0][0] ) ||
-      ( i == local_box[0][1] && i != root_box[0][1] );
-    STKUNIT_ASSERT_EQUAL( shared , ! node->sharing().empty() );
+    if (mesh.parallel_size() > 1) {
+      // Shared if on a processor boundary.
+      const bool shared =
+        ( k == local_box[2][0] && k != root_box[2][0] ) ||
+        ( k == local_box[2][1] && k != root_box[2][1] ) ||
+        ( j == local_box[1][0] && j != root_box[1][0] ) ||
+        ( j == local_box[1][1] && j != root_box[1][1] ) ||
+        ( i == local_box[0][0] && i != root_box[0][0] ) ||
+        ( i == local_box[0][1] && i != root_box[0][1] );
+      STKUNIT_ASSERT_EQUAL( shared , ! node->sharing().empty() );
+    }
   }
   }
   }
