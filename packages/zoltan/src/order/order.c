@@ -303,8 +303,9 @@ int Zoltan_Order (
                    "ZOLTAN     Balance:     ");
   }
 
-
+#ifdef ZOLTAN_HUND
  End:
+#endif /*ZOLTAN_HUND*/
   ZOLTAN_TRACE_EXIT(zz, yo);
   return (ierr);
 }
