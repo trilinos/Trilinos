@@ -88,12 +88,12 @@ SGQuadModelEvaluator(
   // df/dp
   dfdp_qp.resize(num_p);
   for (int i=0; i<num_p; i++)
-    if (me_outargs.supports(OUT_ARG_DfDp,i).supports(DERIV_TRANS_MV_BY_ROW))
+    if (me_outargs.supports(OUT_ARG_DfDp,i).supports(DERIV_MV_BY_COL))
       dfdp_qp[i] = EpetraExt::ModelEvaluator::Derivative(
 	Teuchos::rcp(new Epetra_MultiVector(
 		       *(me->get_f_map()),
 		       me->get_p_map(i)->NumGlobalElements())));
-    else if (me_outargs.supports(OUT_ARG_DfDp,i).supports(DERIV_MV_BY_COL))
+    else if (me_outargs.supports(OUT_ARG_DfDp,i).supports(DERIV_TRANS_MV_BY_ROW))
       dfdp_qp[i] = EpetraExt::ModelEvaluator::Derivative(
 	Teuchos::rcp(new Epetra_MultiVector(
 		       *(me->get_p_map(i)),

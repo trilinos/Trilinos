@@ -151,7 +151,7 @@ EpetraExt::ModelEvaluator::OutArgs ENAT::NOXSolver::createOutArgs() const
     for (int j=0; j<num_p; j++)
       if (!model_outargs.supports(OUT_ARG_DgDp, i, j).none())
 	outArgs.setSupports(OUT_ARG_DgDp, i, j, 
-			    DerivativeSupport(DERIV_TRANS_MV_BY_ROW));
+			    DerivativeSupport(DERIV_MV_BY_COL));
 
   return outArgs;
 }
@@ -268,7 +268,7 @@ void ENAT::NOXSolver::evalModel(const InArgs& inArgs,
       // EpetraExt::ModelEvaluator::DerivativeMultiVector 
       // 	dmv_dfdp(dfdp, DERIV_MV_BY_COL, p_indexes);
       EpetraExt::ModelEvaluator::DerivativeMultiVector 
-	dmv_dfdp(dfdp, DERIV_TRANS_MV_BY_ROW);
+	dmv_dfdp(dfdp, DERIV_MV_BY_COL);
       model_outargs.set_DfDp(i,dmv_dfdp);
     }
   }
@@ -314,7 +314,7 @@ void ENAT::NOXSolver::evalModel(const InArgs& inArgs,
 	    Teuchos::Array<int> p_indexes = 
 	      outArgs.get_DgDp(j,i).getDerivativeMultiVector().getParamIndexes();
 	    EpetraExt::ModelEvaluator::DerivativeMultiVector 
-	      dmv_dgdp(dgdp_out, DERIV_TRANS_MV_BY_ROW, p_indexes);
+	      dmv_dgdp(dgdp_out, DERIV_MV_BY_COL, p_indexes);
 	    model_outargs.set_DgDp(j,i,dmv_dgdp);
 	  }
 	}

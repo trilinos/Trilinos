@@ -581,6 +581,11 @@ Stokhos::SGModelEvaluator::createInArgs() const
   inArgs.setSupports(IN_ARG_t, me_inargs.supports(IN_ARG_t));
   inArgs.setSupports(IN_ARG_alpha, me_inargs.supports(IN_ARG_alpha));
   inArgs.setSupports(IN_ARG_beta, me_inargs.supports(IN_ARG_beta));
+  inArgs.setSupports(IN_ARG_sg_basis, me_inargs.supports(IN_ARG_sg_basis));
+  inArgs.setSupports(IN_ARG_sg_quadrature, 
+		     me_inargs.supports(IN_ARG_sg_quadrature));
+  inArgs.setSupports(IN_ARG_sg_expansion, 
+		     me_inargs.supports(IN_ARG_sg_expansion));
   
   return inArgs;
 }
@@ -693,12 +698,24 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
     me_inargs.set_beta(inArgs.get_beta());
   if (me_inargs.supports(IN_ARG_t))
     me_inargs.set_t(inArgs.get_t());
-  if (me_inargs.supports(IN_ARG_sg_basis))
-    me_inargs.set_sg_basis(sg_basis);
-  if (me_inargs.supports(IN_ARG_sg_quadrature))
-    me_inargs.set_sg_quadrature(sg_quad);
-  if (me_inargs.supports(IN_ARG_sg_expansion))
-    me_inargs.set_sg_expansion(sg_exp);
+  if (me_inargs.supports(IN_ARG_sg_basis)) {
+    if (inArgs.get_sg_basis() != Teuchos::null)
+      me_inargs.set_sg_basis(inArgs.get_sg_basis());
+    else
+      me_inargs.set_sg_basis(sg_basis);
+  }
+  if (me_inargs.supports(IN_ARG_sg_quadrature)) {
+    if (inArgs.get_sg_quadrature() != Teuchos::null)
+      me_inargs.set_sg_quadrature(inArgs.get_sg_quadrature());
+    else
+      me_inargs.set_sg_quadrature(sg_quad);
+  }
+  if (me_inargs.supports(IN_ARG_sg_expansion)) {
+    if (inArgs.get_sg_expansion() != Teuchos::null)
+      me_inargs.set_sg_expansion(inArgs.get_sg_expansion());
+    else
+      me_inargs.set_sg_expansion(sg_exp);
+  }
 
   // Pass parameters
   for (int i=0; i<num_p; i++)
