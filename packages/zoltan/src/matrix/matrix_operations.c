@@ -204,11 +204,8 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   while (tabGNO != NULL) {
     int nnz_index;
     int y_index;
-    int *oldtabGNO; /* TODO: Find better bug fix! */
 
-    oldtabGNO = tabGNO ; /* save good pointer for tabGNO */
     Zoltan_Map_Find(zz, y_map, &tabGNO[0], (void**)&y_index);
-    tabGNO = oldtabGNO; /* somehow tabGNO is set to NULL */
     y_index = perm[y_index];
 
     nnz_index = outmat->ystart[y_index] + ysize[y_index];
@@ -259,6 +256,7 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
 
   ZOLTAN_FREE(&ysize);
   ZOLTAN_FREE(&perm);
+  ZOLTAN_FREE(&iperm);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
   return (ierr);
