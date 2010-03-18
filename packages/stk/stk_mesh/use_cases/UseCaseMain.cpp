@@ -6,6 +6,7 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <iostream>
 
 #include <use_cases/UseCase_1.hpp>
 #include <use_cases/UseCase_2.hpp>

@@ -26,6 +26,8 @@ class Entity;
 }
 
 namespace search_util {
+
+
 /**
  * Used to output the results of a coarse or direct search to
  * verify which entity contains another entity.
@@ -68,6 +70,9 @@ void print_entity_proc_map(stk::diag::Writer &writer,
                            const std::vector<stk::mesh::Entity*>& entity_proc,
                            const std::string &action,
                            const std::string &to_from);
+
+void print_entity_proc_map( stk::diag::Writer & writer ,
+                            const stk::mesh::BulkData & mesh );
 
 /**
  * Used to output the results of a relation vector in human
