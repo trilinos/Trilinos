@@ -125,7 +125,7 @@ namespace Tpetra {
       numMax = std::max<size_t>( numMax, NumEntriesPerRowToAlloc[r] );
     }
     TEST_FOR_EXCEPTION((numMin < Teuchos::OrdinalTraits<size_t>::one() && numMin != Teuchos::OrdinalTraits<size_t>::zero()) || numMax > Teuchos::OrdinalTraits<size_t>::max(),
-        std::runtime_error, Teuchos::typeName(*this) << "::allocateIndices(): Invalid user-specified number of non-zeros per row.");
+        std::runtime_error, Teuchos::typeName(*this) << "::CrsGraph(): Invalid user-specified number of non-zeros per row.");
     clearGlobalConstants();
     checkInternalState();
   }
@@ -1766,6 +1766,11 @@ namespace Tpetra {
     domainMap_ = domainMap;
     rangeMap_  = rangeMap;
 
+    if (indicesAreAllocated() == false) {
+      // must allocate global, because we have no column map
+      allocateIndices( AllocateGlobal );
+    }
+
     if (Teuchos::size(*getComm()) > 1) {
       globalAssemble();
     }
@@ -2275,6 +2280,7 @@ namespace Tpetra {
     // delete it before clearing the view below, to short-circuit the copy-back
     if (nodeNumAllocated_ == 0) {
       pbuf_rowOffsets_ = Teuchos::null;
+      pbuf_lclInds1D_  = Teuchos::null;
     }
     // this must be cleared before the call to fillLocalGraph()
     view_rowOffsets_ = Teuchos::null;

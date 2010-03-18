@@ -81,7 +81,7 @@ class runTest {
       testPassed = false;      
       return;
     }
-    (void)power_method<Node,TestScalar,int>(A,10000,1e-4f,comm->getRank() == 0);
+    (void)power_method<Node,TestScalar,int>(A,100,1e-4f,comm->getRank() == 0);
     testPassed = true;
   }
 };

@@ -227,6 +227,29 @@ namespace {
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, EmptyFillComplete, LO, GO )
+  {
+    typedef CrsGraph<LO,GO,Node> GRAPH;
+    // what happens when we call CrsGraph::submitEntry() for a row that isn't on the Map?
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    // create a Map with numLocal entries per node
+    const size_t numLocal = 10;
+    RCP<Map<LO,GO> > map = rcp( new Map<LO,GO>(INVALID,numLocal,0,comm) );
+    {
+      // create static-profile matrix, fill-complete without inserting (and therefore, without allocating)
+      GRAPH graph(map,1,StaticProfile);
+      graph.fillComplete(DoOptimizeStorage);
+    }
+    {
+      // create dynamic-profile matrix, fill-complete without inserting (and therefore, without allocating)
+      GRAPH graph(map,1,DynamicProfile);
+      graph.fillComplete(DoOptimizeStorage);
+    }
+  }
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, insert_remove_LIDs, LO, GO )
   {
@@ -711,6 +734,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, WithStaticProfile , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, CopiesAndViews, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, Describable   , LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, EmptyFillComplete, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, Typedefs      , LO, GO )
 
      UNIT_TEST_GROUP_LO_GO(int,int)

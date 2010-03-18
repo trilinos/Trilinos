@@ -80,17 +80,17 @@ namespace Kokkos {
 
     //! Initialize structure of matrix
     template <class GRAPH>
-    Teuchos::DataAccess initializeStructure(GRAPH &graph, Teuchos::DataAccess cv);
+    Teuchos::DataAccess initializeStructure(const GRAPH &graph, Teuchos::DataAccess cv);
 
     //! Initialize values of matrix
     template <class MATRIX>
-    Teuchos::DataAccess initializeValues(MATRIX &matrix, Teuchos::DataAccess cv);
+    Teuchos::DataAccess initializeValues(const MATRIX &matrix, Teuchos::DataAccess cv);
 
     //! Initialize structure of matrix, using Kokkos::CrsGraph
-    Teuchos::DataAccess initializeStructure(CrsGraph<Ordinal,Node> &graph, Teuchos::DataAccess cv);
+    Teuchos::DataAccess initializeStructure(const CrsGraph<Ordinal,Node> &graph, Teuchos::DataAccess cv);
 
     //! Initialize values of matrix, using Kokkos::CrsMatrix
-    Teuchos::DataAccess initializeValues(CrsMatrix<Scalar,Node> &matrix, Teuchos::DataAccess cv);
+    Teuchos::DataAccess initializeValues(const CrsMatrix<Scalar,Node> &matrix, Teuchos::DataAccess cv);
 
     //! Clear all matrix structure and values.
     void clear();
@@ -143,7 +143,7 @@ namespace Kokkos {
 
   template<class Scalar, class Ordinal, class Node>
   template <class GRAPH>
-  Teuchos::DataAccess DefaultSparseSolve<Scalar,Ordinal,Node>::initializeStructure(GRAPH &graph, Teuchos::DataAccess cv) {
+  Teuchos::DataAccess DefaultSparseSolve<Scalar,Ordinal,Node>::initializeStructure(const GRAPH &graph, Teuchos::DataAccess cv) {
     // not implemented for general sparse graphs
     TEST_FOR_EXCEPTION(true, std::exception, 
         Teuchos::typeName(*this) << "::initializeStructure(): method is not implemented for graph of type " << Teuchos::typeName(graph));
@@ -151,7 +151,7 @@ namespace Kokkos {
 
   template<class Scalar, class Ordinal, class Node>
   template <class MATRIX>
-  Teuchos::DataAccess DefaultSparseSolve<Scalar,Ordinal,Node>::initializeValues(MATRIX &matrix, Teuchos::DataAccess cv) {
+  Teuchos::DataAccess DefaultSparseSolve<Scalar,Ordinal,Node>::initializeValues(const MATRIX &matrix, Teuchos::DataAccess cv) {
     // not implemented for general sparse matrices
     TEST_FOR_EXCEPTION(true, std::exception, 
         Teuchos::typeName(*this) << "::initializeValues(): method is not implemented for matrix of type " << Teuchos::typeName(matrix));
@@ -159,7 +159,7 @@ namespace Kokkos {
 
 
   template <class Scalar, class Ordinal, class Node>
-  Teuchos::DataAccess DefaultSparseSolve<Scalar,Ordinal,Node>::initializeStructure(CrsGraph<Ordinal,Node> &graph, Teuchos::DataAccess cv) {
+  Teuchos::DataAccess DefaultSparseSolve<Scalar,Ordinal,Node>::initializeStructure(const CrsGraph<Ordinal,Node> &graph, Teuchos::DataAccess cv) {
     using Teuchos::ArrayRCP;
     TEST_FOR_EXCEPTION(cv != Teuchos::View, std::runtime_error,
         Teuchos::typeName(*this) << "::initializeStructure(): requires View access.");
@@ -200,7 +200,7 @@ namespace Kokkos {
 
 
   template <class Scalar, class Ordinal, class Node>
-  Teuchos::DataAccess DefaultSparseSolve<Scalar,Ordinal,Node>::initializeValues(CrsMatrix<Scalar,Node> &matrix, Teuchos::DataAccess cv) {
+  Teuchos::DataAccess DefaultSparseSolve<Scalar,Ordinal,Node>::initializeValues(const CrsMatrix<Scalar,Node> &matrix, Teuchos::DataAccess cv) {
     using Teuchos::ArrayRCP;
     TEST_FOR_EXCEPTION(cv != Teuchos::View, std::runtime_error,
         Teuchos::typeName(*this) << "::initializeValues(): requires View access.");
