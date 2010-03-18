@@ -810,8 +810,7 @@ int Zoltan_PHG_Cuts(
 
 static char *yo = "Zoltan_PHG_Cuts";
 int ierr = ZOLTAN_OK;
-int i;
-ZOLTAN_MAP *map;
+int i, map_num;
 int npins = 0;                   /* # of pins in hyperedges */
 int *pins = NULL;                   /* pins for edges */
 int *pin_procs = NULL;           /* procs owning pins for edges */
@@ -848,17 +847,17 @@ long int index;
 
   if (nrecv) {
 
-    map = Zoltan_Map_Create(zz, 0, 1, 0, zhg->nObj);
-    if (map == NULL) goto End;
+    map_num = Zoltan_Map_Create(zz, 0, 1, 0, zhg->nObj);
+    if (map_num < 0) goto End;
 
     for (i=0; i < zhg->nObj; i++){
       indexptr = (int *)(i+1);
-      ierr = Zoltan_Map_Add(zz, map, myObjGNO + i, indexptr);
+      ierr = Zoltan_Map_Add(zz, map_num, myObjGNO + i, indexptr);
       if (ierr != ZOLTAN_OK) goto End;
     }
     
     for (i = 0; i < nrecv; i++) {
-      ierr = Zoltan_Map_Find(zz, map, recvpins + i, (void*)&indexptr);
+      ierr = Zoltan_Map_Find(zz, map_num, recvpins + i, &indexptr);
       if (ierr != ZOLTAN_OK) goto End;
       if (indexptr == NULL){
          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in pin map.");
@@ -868,7 +867,7 @@ long int index;
       index = (long int)indexptr - 1;
       outparts[i] = zhg->Output_Parts[index];
     }
-    Zoltan_Map_Destroy(zz, &map);
+    Zoltan_Map_Destroy(zz, map_num);
   }
 
   ZOLTAN_FREE(&recvpins);

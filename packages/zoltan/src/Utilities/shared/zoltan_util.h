@@ -75,14 +75,6 @@ extern "C" {
 #define ZOLTAN_PATOH
 #endif
 
-#ifdef HAVE_CCOLAMD
-#define ZOLTAN_CCOLAMD
-#endif
-
-#ifdef HAVE_ZOLTAN_HUND
-#define ZOLTAN_HUND
-#endif
-
 #ifdef HAVE_DRUM
 #define ZOLTAN_DRUM
 #endif

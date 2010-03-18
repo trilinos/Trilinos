@@ -571,14 +571,8 @@ int Zoltan_ParMetis_Order(
   int use_timers = 0;
   double times[5];
 
-  ZOLTAN_ID_PTR       l_gids = NULL;
-  ZOLTAN_ID_PTR       l_lids = NULL;
-
   int  options[MAX_OPTIONS];
   char alg[MAX_PARAM_STRING_LEN+1];
-
-
-
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -643,7 +637,7 @@ int Zoltan_ParMetis_Order(
     times[0] = Zoltan_Time(zz->Timer);
   }
 
-  ierr = Zoltan_Preprocess_Graph(zz, &l_gids, &l_lids,  &gr, NULL, NULL, NULL);
+  ierr = Zoltan_Preprocess_Graph(zz, &gids, &lids,  &gr, NULL, NULL, NULL);
   if ((ierr != ZOLTAN_OK) && (ierr != ZOLTAN_WARN)) {
     Zoltan_Third_Exit(&gr, NULL, NULL, NULL, NULL, NULL);
     return (ierr);
@@ -774,14 +768,7 @@ int Zoltan_ParMetis_Order(
     zz->Order.leaves = NULL;
   }
 
-  /* Correct because no redistribution */
-  memcpy(gids, l_gids, n*zz->Num_GID*sizeof(int));
-  memcpy(lids, l_lids, n*zz->Num_GID*sizeof(int));
-
-  ierr = Zoltan_Postprocess_Graph (zz, l_gids, l_lids, &gr, NULL, NULL, NULL, &ord, NULL);
-
-  ZOLTAN_FREE(&l_gids);
-  ZOLTAN_FREE(&l_lids);
+  ierr = Zoltan_Postprocess_Graph (zz, gids, lids, &gr, NULL, NULL, NULL, &ord, NULL);
 
 
   /* Get a time here */

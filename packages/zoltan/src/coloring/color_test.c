@@ -154,7 +154,7 @@ int Zoltan_Color_Test(
   Zoltan_ZG_Build (zz, &graph, 0);
   Zoltan_ZG_Export (zz, &graph,
 		    &gvtx, &nvtx, NULL, NULL, &vtxdist, &xadj, &adjncy, &adjproc,
-		    NULL, NULL);
+		    NULL, NULL, NULL);
 
 
   /* Exchange global color information */

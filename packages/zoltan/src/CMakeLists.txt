@@ -84,7 +84,7 @@ APPEND_SET(SOURCES
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/ccolamd)
 
 APPEND_SET(NOINSTALLHEADERS
-  ccolamd/zoltan_ccolamd.h
+  ccolamd/ccolamd.h
   )
 
 APPEND_SET(SOURCES
@@ -289,11 +289,6 @@ APPEND_SET(SOURCES
   order/perm.c
   )
 
-IF (${PACKAGE_NAME}_ENABLE_HUND)
-  APPEND_SET(SOURCES
-    order/hund.c
-    )
-ENDIF()
 #
 # src/par
 #
@@ -342,37 +337,35 @@ APPEND_SET(SOURCES
 
 
 #
-# src/tpls
+# src/parmetis
 #
 
-INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/tpls)
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/parmetis)
 
 APPEND_SET(NOINSTALLHEADERS
-  tpls/third_library_const.h
-  tpls/third_library.h
-  tpls/third_library_tools.h
-  tpls/graph_util.h
-  tpls/ccolamd_interface.h
+  parmetis/third_library_const.h
+  parmetis/third_library.h
+  parmetis/third_library_tools.h
+  parmetis/graph_util.h
   )
 
 APPEND_SET(SOURCES
-  tpls/build_graph.c
-  tpls/postprocessing.c
-  tpls/preprocessing.c
-  tpls/scatter_graph.c
-  tpls/third_library.c
-  tpls/verify_graph.c
-  tpls/ccolamd_interface.c
+  parmetis/build_graph.c
+  parmetis/postprocessing.c
+  parmetis/preprocessing.c
+  parmetis/scatter_graph.c
+  parmetis/third_library.c
+  parmetis/verify_graph.c
   )
 
 IF (${PACKAGE_NAME}_ENABLE_ParMETIS OR ${PACKAGE_NAME}_ENABLE_METIS)
 
   APPEND_SET(NOINSTALLHEADERS
-    tpls/parmetis_interface.h
+    parmetis/parmetis_interface.h
     )
 
   APPEND_SET(SOURCES
-    tpls/parmetis_interface.c
+    parmetis/parmetis_interface.c
     )
 
 ENDIF()
@@ -380,15 +373,14 @@ ENDIF()
 IF (${PACKAGE_NAME}_ENABLE_Scotch)
 
   APPEND_SET(NOINSTALLHEADERS
-  tpls/scotch_interface.h
+  parmetis/scotch_interface.h
     )
 
   APPEND_SET(SOURCES
-  tpls/scotch_interface.c
+  parmetis/scotch_interface.c
     )
 
 ENDIF()
-
 
 #
 # src/phg

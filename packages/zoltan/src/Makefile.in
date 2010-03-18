@@ -129,31 +129,35 @@ am__libzoltan_a_SOURCES_DIST = $(srcdir)/all/all_allo.c \
 	$(srcdir)/params/bind_param.c $(srcdir)/params/check_param.c \
 	$(srcdir)/params/free_params.c $(srcdir)/params/key_params.c \
 	$(srcdir)/params/print_params.c $(srcdir)/params/set_param.c \
-	$(srcdir)/tpls/build_graph.c $(srcdir)/tpls/postprocessing.c \
-	$(srcdir)/tpls/preprocessing.c $(srcdir)/tpls/scatter_graph.c \
-	$(srcdir)/tpls/third_library.c $(srcdir)/tpls/verify_graph.c \
-	$(srcdir)/tpls/parmetis_interface.c $(srcdir)/phg/phg_build.c \
-	$(srcdir)/phg/phg_build_calls.c $(srcdir)/phg/phg.c \
-	$(srcdir)/phg/phg_lookup.c $(srcdir)/phg/phg_verbose.c \
-	$(srcdir)/phg/phg_coarse.c $(srcdir)/phg/phg_comm.c \
-	$(srcdir)/phg/phg_distrib.c $(srcdir)/phg/phg_gather.c \
-	$(srcdir)/phg/phg_hypergraph.c $(srcdir)/phg/phg_match.c \
-	$(srcdir)/phg/phg_order.c $(srcdir)/phg/phg_parkway.c \
-	$(srcdir)/phg/phg_patoh.c $(srcdir)/phg/phg_plot.c \
-	$(srcdir)/phg/phg_rdivide.c $(srcdir)/phg/phg_refinement.c \
-	$(srcdir)/phg/phg_scale.c $(srcdir)/phg/phg_serialpartition.c \
-	$(srcdir)/phg/phg_util.c $(srcdir)/phg/phg_tree.c \
-	$(srcdir)/phg/phg_Vcycle.c $(srcdir)/rcb/box_assign.c \
-	$(srcdir)/rcb/create_proc_list.c $(srcdir)/rcb/inertial1d.c \
-	$(srcdir)/rcb/inertial2d.c $(srcdir)/rcb/inertial3d.c \
-	$(srcdir)/rcb/point_assign.c $(srcdir)/rcb/rcb_box.c \
-	$(srcdir)/rcb/rcb.c $(srcdir)/rcb/rcb_util.c \
-	$(srcdir)/rcb/rib.c $(srcdir)/rcb/rib_util.c \
-	$(srcdir)/rcb/shared.c $(srcdir)/reftree/reftree_build.c \
+	$(srcdir)/parmetis/build_graph.c \
+	$(srcdir)/parmetis/postprocessing.c \
+	$(srcdir)/parmetis/preprocessing.c \
+	$(srcdir)/parmetis/scatter_graph.c \
+	$(srcdir)/parmetis/third_library.c \
+	$(srcdir)/parmetis/verify_graph.c \
+	$(srcdir)/parmetis/parmetis_interface.c \
+	$(srcdir)/phg/phg_build.c $(srcdir)/phg/phg_build_calls.c \
+	$(srcdir)/phg/phg.c $(srcdir)/phg/phg_lookup.c \
+	$(srcdir)/phg/phg_verbose.c $(srcdir)/phg/phg_coarse.c \
+	$(srcdir)/phg/phg_comm.c $(srcdir)/phg/phg_distrib.c \
+	$(srcdir)/phg/phg_gather.c $(srcdir)/phg/phg_hypergraph.c \
+	$(srcdir)/phg/phg_match.c $(srcdir)/phg/phg_order.c \
+	$(srcdir)/phg/phg_parkway.c $(srcdir)/phg/phg_patoh.c \
+	$(srcdir)/phg/phg_plot.c $(srcdir)/phg/phg_rdivide.c \
+	$(srcdir)/phg/phg_refinement.c $(srcdir)/phg/phg_scale.c \
+	$(srcdir)/phg/phg_serialpartition.c $(srcdir)/phg/phg_util.c \
+	$(srcdir)/phg/phg_tree.c $(srcdir)/phg/phg_Vcycle.c \
+	$(srcdir)/rcb/box_assign.c $(srcdir)/rcb/create_proc_list.c \
+	$(srcdir)/rcb/inertial1d.c $(srcdir)/rcb/inertial2d.c \
+	$(srcdir)/rcb/inertial3d.c $(srcdir)/rcb/point_assign.c \
+	$(srcdir)/rcb/rcb_box.c $(srcdir)/rcb/rcb.c \
+	$(srcdir)/rcb/rcb_util.c $(srcdir)/rcb/rib.c \
+	$(srcdir)/rcb/rib_util.c $(srcdir)/rcb/shared.c \
+	$(srcdir)/reftree/reftree_build.c \
 	$(srcdir)/reftree/reftree_coarse_path.c \
 	$(srcdir)/reftree/reftree_hash.c \
 	$(srcdir)/reftree/reftree_part.c \
-	$(srcdir)/tpls/scotch_interface.c $(srcdir)/simple/block.c \
+	$(srcdir)/parmetis/scotch_interface.c $(srcdir)/simple/block.c \
 	$(srcdir)/simple/cyclic.c $(srcdir)/simple/random.c \
 	$(srcdir)/timer/timer_params.c \
 	$(srcdir)/Utilities/Communication/comm_exchange_sizes.c \
@@ -620,35 +624,35 @@ PARAMS = \
 	$(srcdir)/params/print_params.c \
 	$(srcdir)/params/set_param.c
 
-TPLS_H = \
-	$(srcdir)/tpls/third_library_const.h \
-	$(srcdir)/tpls/third_library.h \
-	$(srcdir)/tpls/third_library_tools.h \
-	$(srcdir)/tpls/graph_util.h 
+PARMETIS_H = \
+	$(srcdir)/parmetis/third_library_const.h \
+	$(srcdir)/parmetis/third_library.h \
+	$(srcdir)/parmetis/third_library_tools.h \
+	$(srcdir)/parmetis/graph_util.h 
 
-TPLS = \
-	$(srcdir)/tpls/build_graph.c \
-	$(srcdir)/tpls/postprocessing.c \
-	$(srcdir)/tpls/preprocessing.c \
-	$(srcdir)/tpls/scatter_graph.c \
-	$(srcdir)/tpls/third_library.c \
-	$(srcdir)/tpls/verify_graph.c
+PARMETIS = \
+	$(srcdir)/parmetis/build_graph.c \
+	$(srcdir)/parmetis/postprocessing.c \
+	$(srcdir)/parmetis/preprocessing.c \
+	$(srcdir)/parmetis/scatter_graph.c \
+	$(srcdir)/parmetis/third_library.c \
+	$(srcdir)/parmetis/verify_graph.c
 
-EXTRA_TPLS_INTERFACE_H = \
-	$(srcdir)/tpls/parmetis_interface.h
+EXTRA_PARMETIS_INTERFACE_H = \
+	$(srcdir)/parmetis/parmetis_interface.h
 
 EXTRA_PARMETIS_INTERFACE = \
-	$(srcdir)/tpls/parmetis_interface.c
+	$(srcdir)/parmetis/parmetis_interface.c
 
 @BUILD_PARMETIS_FALSE@PARMETIS_INTERFACE_H = 
 @BUILD_PARMETIS_TRUE@PARMETIS_INTERFACE_H = $(EXTRA_PARMETIS_INTERFACE_H)
 @BUILD_PARMETIS_FALSE@PARMETIS_INTERFACE = 
 @BUILD_PARMETIS_TRUE@PARMETIS_INTERFACE = $(EXTRA_PARMETIS_INTERFACE)
 EXTRA_SCOTCH_INTERFACE_H = \
-	$(srcdir)/tpls/scotch_interface.h
+	$(srcdir)/parmetis/scotch_interface.h
 
 EXTRA_SCOTCH_INTERFACE = \
-	$(srcdir)/tpls/scotch_interface.c
+	$(srcdir)/parmetis/scotch_interface.c
 
 @BUILD_SCOTCH_FALSE@SCOTCH_INTERFACE_H = 
 @BUILD_SCOTCH_TRUE@SCOTCH_INTERFACE_H = $(EXTRA_SCOTCH_INTERFACE_H)
@@ -970,7 +974,7 @@ ZOLTAN_H = \
 	$(ORDER_H) \
 	$(PAR_H) \
 	$(PARAMS_H) \
-	$(TPLS_H) \
+	$(PARMETIS_H) \
 	$(PARMETIS_INTERFACE_H) \
 	$(PHG_H) \
 	$(RCB_H) \
@@ -994,7 +998,7 @@ libzoltan_a_SOURCES = \
 	$(ORDER) \
 	$(PAR) \
 	$(PARAMS) \
-	$(TPLS) \
+	$(PARMETIS) \
 	$(PARMETIS_INTERFACE) \
 	$(PHG) \
 	$(RCB) \
@@ -2370,103 +2374,103 @@ set_param.obj: $(srcdir)/params/set_param.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o set_param.obj `if test -f '$(srcdir)/params/set_param.c'; then $(CYGPATH_W) '$(srcdir)/params/set_param.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/params/set_param.c'; fi`
 
-build_graph.o: $(srcdir)/tpls/build_graph.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT build_graph.o -MD -MP -MF $(DEPDIR)/build_graph.Tpo -c -o build_graph.o `test -f '$(srcdir)/tpls/build_graph.c' || echo '$(srcdir)/'`$(srcdir)/tpls/build_graph.c
+build_graph.o: $(srcdir)/parmetis/build_graph.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT build_graph.o -MD -MP -MF $(DEPDIR)/build_graph.Tpo -c -o build_graph.o `test -f '$(srcdir)/parmetis/build_graph.c' || echo '$(srcdir)/'`$(srcdir)/parmetis/build_graph.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/build_graph.Tpo $(DEPDIR)/build_graph.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/tpls/build_graph.c' object='build_graph.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/parmetis/build_graph.c' object='build_graph.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o build_graph.o `test -f '$(srcdir)/tpls/build_graph.c' || echo '$(srcdir)/'`$(srcdir)/tpls/build_graph.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o build_graph.o `test -f '$(srcdir)/parmetis/build_graph.c' || echo '$(srcdir)/'`$(srcdir)/parmetis/build_graph.c
 
-build_graph.obj: $(srcdir)/tpls/build_graph.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT build_graph.obj -MD -MP -MF $(DEPDIR)/build_graph.Tpo -c -o build_graph.obj `if test -f '$(srcdir)/tpls/build_graph.c'; then $(CYGPATH_W) '$(srcdir)/tpls/build_graph.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/tpls/build_graph.c'; fi`
+build_graph.obj: $(srcdir)/parmetis/build_graph.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT build_graph.obj -MD -MP -MF $(DEPDIR)/build_graph.Tpo -c -o build_graph.obj `if test -f '$(srcdir)/parmetis/build_graph.c'; then $(CYGPATH_W) '$(srcdir)/parmetis/build_graph.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parmetis/build_graph.c'; fi`
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/build_graph.Tpo $(DEPDIR)/build_graph.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/tpls/build_graph.c' object='build_graph.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/parmetis/build_graph.c' object='build_graph.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o build_graph.obj `if test -f '$(srcdir)/tpls/build_graph.c'; then $(CYGPATH_W) '$(srcdir)/tpls/build_graph.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/tpls/build_graph.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o build_graph.obj `if test -f '$(srcdir)/parmetis/build_graph.c'; then $(CYGPATH_W) '$(srcdir)/parmetis/build_graph.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parmetis/build_graph.c'; fi`
 
-postprocessing.o: $(srcdir)/tpls/postprocessing.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT postprocessing.o -MD -MP -MF $(DEPDIR)/postprocessing.Tpo -c -o postprocessing.o `test -f '$(srcdir)/tpls/postprocessing.c' || echo '$(srcdir)/'`$(srcdir)/tpls/postprocessing.c
+postprocessing.o: $(srcdir)/parmetis/postprocessing.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT postprocessing.o -MD -MP -MF $(DEPDIR)/postprocessing.Tpo -c -o postprocessing.o `test -f '$(srcdir)/parmetis/postprocessing.c' || echo '$(srcdir)/'`$(srcdir)/parmetis/postprocessing.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/postprocessing.Tpo $(DEPDIR)/postprocessing.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/tpls/postprocessing.c' object='postprocessing.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/parmetis/postprocessing.c' object='postprocessing.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o postprocessing.o `test -f '$(srcdir)/tpls/postprocessing.c' || echo '$(srcdir)/'`$(srcdir)/tpls/postprocessing.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o postprocessing.o `test -f '$(srcdir)/parmetis/postprocessing.c' || echo '$(srcdir)/'`$(srcdir)/parmetis/postprocessing.c
 
-postprocessing.obj: $(srcdir)/tpls/postprocessing.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT postprocessing.obj -MD -MP -MF $(DEPDIR)/postprocessing.Tpo -c -o postprocessing.obj `if test -f '$(srcdir)/tpls/postprocessing.c'; then $(CYGPATH_W) '$(srcdir)/tpls/postprocessing.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/tpls/postprocessing.c'; fi`
+postprocessing.obj: $(srcdir)/parmetis/postprocessing.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT postprocessing.obj -MD -MP -MF $(DEPDIR)/postprocessing.Tpo -c -o postprocessing.obj `if test -f '$(srcdir)/parmetis/postprocessing.c'; then $(CYGPATH_W) '$(srcdir)/parmetis/postprocessing.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parmetis/postprocessing.c'; fi`
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/postprocessing.Tpo $(DEPDIR)/postprocessing.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/tpls/postprocessing.c' object='postprocessing.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/parmetis/postprocessing.c' object='postprocessing.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o postprocessing.obj `if test -f '$(srcdir)/tpls/postprocessing.c'; then $(CYGPATH_W) '$(srcdir)/tpls/postprocessing.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/tpls/postprocessing.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o postprocessing.obj `if test -f '$(srcdir)/parmetis/postprocessing.c'; then $(CYGPATH_W) '$(srcdir)/parmetis/postprocessing.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parmetis/postprocessing.c'; fi`
 
-preprocessing.o: $(srcdir)/tpls/preprocessing.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT preprocessing.o -MD -MP -MF $(DEPDIR)/preprocessing.Tpo -c -o preprocessing.o `test -f '$(srcdir)/tpls/preprocessing.c' || echo '$(srcdir)/'`$(srcdir)/tpls/preprocessing.c
+preprocessing.o: $(srcdir)/parmetis/preprocessing.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT preprocessing.o -MD -MP -MF $(DEPDIR)/preprocessing.Tpo -c -o preprocessing.o `test -f '$(srcdir)/parmetis/preprocessing.c' || echo '$(srcdir)/'`$(srcdir)/parmetis/preprocessing.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/preprocessing.Tpo $(DEPDIR)/preprocessing.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/tpls/preprocessing.c' object='preprocessing.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/parmetis/preprocessing.c' object='preprocessing.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o preprocessing.o `test -f '$(srcdir)/tpls/preprocessing.c' || echo '$(srcdir)/'`$(srcdir)/tpls/preprocessing.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o preprocessing.o `test -f '$(srcdir)/parmetis/preprocessing.c' || echo '$(srcdir)/'`$(srcdir)/parmetis/preprocessing.c
 
-preprocessing.obj: $(srcdir)/tpls/preprocessing.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT preprocessing.obj -MD -MP -MF $(DEPDIR)/preprocessing.Tpo -c -o preprocessing.obj `if test -f '$(srcdir)/tpls/preprocessing.c'; then $(CYGPATH_W) '$(srcdir)/tpls/preprocessing.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/tpls/preprocessing.c'; fi`
+preprocessing.obj: $(srcdir)/parmetis/preprocessing.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT preprocessing.obj -MD -MP -MF $(DEPDIR)/preprocessing.Tpo -c -o preprocessing.obj `if test -f '$(srcdir)/parmetis/preprocessing.c'; then $(CYGPATH_W) '$(srcdir)/parmetis/preprocessing.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parmetis/preprocessing.c'; fi`
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/preprocessing.Tpo $(DEPDIR)/preprocessing.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/tpls/preprocessing.c' object='preprocessing.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/parmetis/preprocessing.c' object='preprocessing.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o preprocessing.obj `if test -f '$(srcdir)/tpls/preprocessing.c'; then $(CYGPATH_W) '$(srcdir)/tpls/preprocessing.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/tpls/preprocessing.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o preprocessing.obj `if test -f '$(srcdir)/parmetis/preprocessing.c'; then $(CYGPATH_W) '$(srcdir)/parmetis/preprocessing.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parmetis/preprocessing.c'; fi`
 
-scatter_graph.o: $(srcdir)/tpls/scatter_graph.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT scatter_graph.o -MD -MP -MF $(DEPDIR)/scatter_graph.Tpo -c -o scatter_graph.o `test -f '$(srcdir)/tpls/scatter_graph.c' || echo '$(srcdir)/'`$(srcdir)/tpls/scatter_graph.c
+scatter_graph.o: $(srcdir)/parmetis/scatter_graph.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT scatter_graph.o -MD -MP -MF $(DEPDIR)/scatter_graph.Tpo -c -o scatter_graph.o `test -f '$(srcdir)/parmetis/scatter_graph.c' || echo '$(srcdir)/'`$(srcdir)/parmetis/scatter_graph.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/scatter_graph.Tpo $(DEPDIR)/scatter_graph.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/tpls/scatter_graph.c' object='scatter_graph.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/parmetis/scatter_graph.c' object='scatter_graph.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o scatter_graph.o `test -f '$(srcdir)/tpls/scatter_graph.c' || echo '$(srcdir)/'`$(srcdir)/tpls/scatter_graph.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o scatter_graph.o `test -f '$(srcdir)/parmetis/scatter_graph.c' || echo '$(srcdir)/'`$(srcdir)/parmetis/scatter_graph.c
 
-scatter_graph.obj: $(srcdir)/tpls/scatter_graph.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT scatter_graph.obj -MD -MP -MF $(DEPDIR)/scatter_graph.Tpo -c -o scatter_graph.obj `if test -f '$(srcdir)/tpls/scatter_graph.c'; then $(CYGPATH_W) '$(srcdir)/tpls/scatter_graph.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/tpls/scatter_graph.c'; fi`
+scatter_graph.obj: $(srcdir)/parmetis/scatter_graph.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT scatter_graph.obj -MD -MP -MF $(DEPDIR)/scatter_graph.Tpo -c -o scatter_graph.obj `if test -f '$(srcdir)/parmetis/scatter_graph.c'; then $(CYGPATH_W) '$(srcdir)/parmetis/scatter_graph.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parmetis/scatter_graph.c'; fi`
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/scatter_graph.Tpo $(DEPDIR)/scatter_graph.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/tpls/scatter_graph.c' object='scatter_graph.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/parmetis/scatter_graph.c' object='scatter_graph.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o scatter_graph.obj `if test -f '$(srcdir)/tpls/scatter_graph.c'; then $(CYGPATH_W) '$(srcdir)/tpls/scatter_graph.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/tpls/scatter_graph.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o scatter_graph.obj `if test -f '$(srcdir)/parmetis/scatter_graph.c'; then $(CYGPATH_W) '$(srcdir)/parmetis/scatter_graph.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parmetis/scatter_graph.c'; fi`
 
-third_library.o: $(srcdir)/tpls/third_library.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT third_library.o -MD -MP -MF $(DEPDIR)/third_library.Tpo -c -o third_library.o `test -f '$(srcdir)/tpls/third_library.c' || echo '$(srcdir)/'`$(srcdir)/tpls/third_library.c
+third_library.o: $(srcdir)/parmetis/third_library.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT third_library.o -MD -MP -MF $(DEPDIR)/third_library.Tpo -c -o third_library.o `test -f '$(srcdir)/parmetis/third_library.c' || echo '$(srcdir)/'`$(srcdir)/parmetis/third_library.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/third_library.Tpo $(DEPDIR)/third_library.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/tpls/third_library.c' object='third_library.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/parmetis/third_library.c' object='third_library.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o third_library.o `test -f '$(srcdir)/tpls/third_library.c' || echo '$(srcdir)/'`$(srcdir)/tpls/third_library.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o third_library.o `test -f '$(srcdir)/parmetis/third_library.c' || echo '$(srcdir)/'`$(srcdir)/parmetis/third_library.c
 
-third_library.obj: $(srcdir)/tpls/third_library.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT third_library.obj -MD -MP -MF $(DEPDIR)/third_library.Tpo -c -o third_library.obj `if test -f '$(srcdir)/tpls/third_library.c'; then $(CYGPATH_W) '$(srcdir)/tpls/third_library.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/tpls/third_library.c'; fi`
+third_library.obj: $(srcdir)/parmetis/third_library.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT third_library.obj -MD -MP -MF $(DEPDIR)/third_library.Tpo -c -o third_library.obj `if test -f '$(srcdir)/parmetis/third_library.c'; then $(CYGPATH_W) '$(srcdir)/parmetis/third_library.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parmetis/third_library.c'; fi`
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/third_library.Tpo $(DEPDIR)/third_library.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/tpls/third_library.c' object='third_library.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/parmetis/third_library.c' object='third_library.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o third_library.obj `if test -f '$(srcdir)/tpls/third_library.c'; then $(CYGPATH_W) '$(srcdir)/tpls/third_library.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/tpls/third_library.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o third_library.obj `if test -f '$(srcdir)/parmetis/third_library.c'; then $(CYGPATH_W) '$(srcdir)/parmetis/third_library.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parmetis/third_library.c'; fi`
 
-verify_graph.o: $(srcdir)/tpls/verify_graph.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT verify_graph.o -MD -MP -MF $(DEPDIR)/verify_graph.Tpo -c -o verify_graph.o `test -f '$(srcdir)/tpls/verify_graph.c' || echo '$(srcdir)/'`$(srcdir)/tpls/verify_graph.c
+verify_graph.o: $(srcdir)/parmetis/verify_graph.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT verify_graph.o -MD -MP -MF $(DEPDIR)/verify_graph.Tpo -c -o verify_graph.o `test -f '$(srcdir)/parmetis/verify_graph.c' || echo '$(srcdir)/'`$(srcdir)/parmetis/verify_graph.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/verify_graph.Tpo $(DEPDIR)/verify_graph.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/tpls/verify_graph.c' object='verify_graph.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/parmetis/verify_graph.c' object='verify_graph.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o verify_graph.o `test -f '$(srcdir)/tpls/verify_graph.c' || echo '$(srcdir)/'`$(srcdir)/tpls/verify_graph.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o verify_graph.o `test -f '$(srcdir)/parmetis/verify_graph.c' || echo '$(srcdir)/'`$(srcdir)/parmetis/verify_graph.c
 
-verify_graph.obj: $(srcdir)/tpls/verify_graph.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT verify_graph.obj -MD -MP -MF $(DEPDIR)/verify_graph.Tpo -c -o verify_graph.obj `if test -f '$(srcdir)/tpls/verify_graph.c'; then $(CYGPATH_W) '$(srcdir)/tpls/verify_graph.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/tpls/verify_graph.c'; fi`
+verify_graph.obj: $(srcdir)/parmetis/verify_graph.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT verify_graph.obj -MD -MP -MF $(DEPDIR)/verify_graph.Tpo -c -o verify_graph.obj `if test -f '$(srcdir)/parmetis/verify_graph.c'; then $(CYGPATH_W) '$(srcdir)/parmetis/verify_graph.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parmetis/verify_graph.c'; fi`
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/verify_graph.Tpo $(DEPDIR)/verify_graph.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/tpls/verify_graph.c' object='verify_graph.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/parmetis/verify_graph.c' object='verify_graph.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o verify_graph.obj `if test -f '$(srcdir)/tpls/verify_graph.c'; then $(CYGPATH_W) '$(srcdir)/tpls/verify_graph.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/tpls/verify_graph.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o verify_graph.obj `if test -f '$(srcdir)/parmetis/verify_graph.c'; then $(CYGPATH_W) '$(srcdir)/parmetis/verify_graph.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parmetis/verify_graph.c'; fi`
 
-parmetis_interface.o: $(srcdir)/tpls/parmetis_interface.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT parmetis_interface.o -MD -MP -MF $(DEPDIR)/parmetis_interface.Tpo -c -o parmetis_interface.o `test -f '$(srcdir)/tpls/parmetis_interface.c' || echo '$(srcdir)/'`$(srcdir)/tpls/parmetis_interface.c
+parmetis_interface.o: $(srcdir)/parmetis/parmetis_interface.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT parmetis_interface.o -MD -MP -MF $(DEPDIR)/parmetis_interface.Tpo -c -o parmetis_interface.o `test -f '$(srcdir)/parmetis/parmetis_interface.c' || echo '$(srcdir)/'`$(srcdir)/parmetis/parmetis_interface.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/parmetis_interface.Tpo $(DEPDIR)/parmetis_interface.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/tpls/parmetis_interface.c' object='parmetis_interface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/parmetis/parmetis_interface.c' object='parmetis_interface.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o parmetis_interface.o `test -f '$(srcdir)/tpls/parmetis_interface.c' || echo '$(srcdir)/'`$(srcdir)/tpls/parmetis_interface.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o parmetis_interface.o `test -f '$(srcdir)/parmetis/parmetis_interface.c' || echo '$(srcdir)/'`$(srcdir)/parmetis/parmetis_interface.c
 
-parmetis_interface.obj: $(srcdir)/tpls/parmetis_interface.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT parmetis_interface.obj -MD -MP -MF $(DEPDIR)/parmetis_interface.Tpo -c -o parmetis_interface.obj `if test -f '$(srcdir)/tpls/parmetis_interface.c'; then $(CYGPATH_W) '$(srcdir)/tpls/parmetis_interface.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/tpls/parmetis_interface.c'; fi`
+parmetis_interface.obj: $(srcdir)/parmetis/parmetis_interface.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT parmetis_interface.obj -MD -MP -MF $(DEPDIR)/parmetis_interface.Tpo -c -o parmetis_interface.obj `if test -f '$(srcdir)/parmetis/parmetis_interface.c'; then $(CYGPATH_W) '$(srcdir)/parmetis/parmetis_interface.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parmetis/parmetis_interface.c'; fi`
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/parmetis_interface.Tpo $(DEPDIR)/parmetis_interface.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/tpls/parmetis_interface.c' object='parmetis_interface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/parmetis/parmetis_interface.c' object='parmetis_interface.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o parmetis_interface.obj `if test -f '$(srcdir)/tpls/parmetis_interface.c'; then $(CYGPATH_W) '$(srcdir)/tpls/parmetis_interface.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/tpls/parmetis_interface.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o parmetis_interface.obj `if test -f '$(srcdir)/parmetis/parmetis_interface.c'; then $(CYGPATH_W) '$(srcdir)/parmetis/parmetis_interface.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parmetis/parmetis_interface.c'; fi`
 
 phg_build.o: $(srcdir)/phg/phg_build.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT phg_build.o -MD -MP -MF $(DEPDIR)/phg_build.Tpo -c -o phg_build.o `test -f '$(srcdir)/phg/phg_build.c' || echo '$(srcdir)/'`$(srcdir)/phg/phg_build.c
@@ -3000,19 +3004,19 @@ reftree_part.obj: $(srcdir)/reftree/reftree_part.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o reftree_part.obj `if test -f '$(srcdir)/reftree/reftree_part.c'; then $(CYGPATH_W) '$(srcdir)/reftree/reftree_part.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/reftree/reftree_part.c'; fi`
 
-scotch_interface.o: $(srcdir)/tpls/scotch_interface.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT scotch_interface.o -MD -MP -MF $(DEPDIR)/scotch_interface.Tpo -c -o scotch_interface.o `test -f '$(srcdir)/tpls/scotch_interface.c' || echo '$(srcdir)/'`$(srcdir)/tpls/scotch_interface.c
+scotch_interface.o: $(srcdir)/parmetis/scotch_interface.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT scotch_interface.o -MD -MP -MF $(DEPDIR)/scotch_interface.Tpo -c -o scotch_interface.o `test -f '$(srcdir)/parmetis/scotch_interface.c' || echo '$(srcdir)/'`$(srcdir)/parmetis/scotch_interface.c
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/scotch_interface.Tpo $(DEPDIR)/scotch_interface.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/tpls/scotch_interface.c' object='scotch_interface.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/parmetis/scotch_interface.c' object='scotch_interface.o' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o scotch_interface.o `test -f '$(srcdir)/tpls/scotch_interface.c' || echo '$(srcdir)/'`$(srcdir)/tpls/scotch_interface.c
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o scotch_interface.o `test -f '$(srcdir)/parmetis/scotch_interface.c' || echo '$(srcdir)/'`$(srcdir)/parmetis/scotch_interface.c
 
-scotch_interface.obj: $(srcdir)/tpls/scotch_interface.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT scotch_interface.obj -MD -MP -MF $(DEPDIR)/scotch_interface.Tpo -c -o scotch_interface.obj `if test -f '$(srcdir)/tpls/scotch_interface.c'; then $(CYGPATH_W) '$(srcdir)/tpls/scotch_interface.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/tpls/scotch_interface.c'; fi`
+scotch_interface.obj: $(srcdir)/parmetis/scotch_interface.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT scotch_interface.obj -MD -MP -MF $(DEPDIR)/scotch_interface.Tpo -c -o scotch_interface.obj `if test -f '$(srcdir)/parmetis/scotch_interface.c'; then $(CYGPATH_W) '$(srcdir)/parmetis/scotch_interface.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parmetis/scotch_interface.c'; fi`
 @am__fastdepCC_TRUE@	mv -f $(DEPDIR)/scotch_interface.Tpo $(DEPDIR)/scotch_interface.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/tpls/scotch_interface.c' object='scotch_interface.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/parmetis/scotch_interface.c' object='scotch_interface.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o scotch_interface.obj `if test -f '$(srcdir)/tpls/scotch_interface.c'; then $(CYGPATH_W) '$(srcdir)/tpls/scotch_interface.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/tpls/scotch_interface.c'; fi`
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o scotch_interface.obj `if test -f '$(srcdir)/parmetis/scotch_interface.c'; then $(CYGPATH_W) '$(srcdir)/parmetis/scotch_interface.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/parmetis/scotch_interface.c'; fi`
 
 block.o: $(srcdir)/simple/block.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT block.o -MD -MP -MF $(DEPDIR)/block.Tpo -c -o block.o `test -f '$(srcdir)/simple/block.c' || echo '$(srcdir)/'`$(srcdir)/simple/block.c

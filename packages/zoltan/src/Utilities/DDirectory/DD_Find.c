@@ -25,34 +25,6 @@ extern "C" {
 #endif
 
 
-int Zoltan_DD_GetLocalKeys(Zoltan_DD_Directory *dd,
-			   ZOLTAN_ID_PTR *gid,
-			   int *size)
-{
-  int ierr = ZOLTAN_OK;
-  int i, k;
-  DD_Node *ptr;
-  int gid_alloc_size;
-
-  gid_alloc_size = dd->table_length;
-  (*gid) = (ZOLTAN_ID_PTR) ZOLTAN_MALLOC(gid_alloc_size*dd->gid_length*sizeof(int));
-
-  k= 0;
-   for (i = 0; i < dd->table_length; i++)
-     for (ptr = dd->table[i]; ptr != NULL; ptr = ptr->next) {
-       if (k >= gid_alloc_size) {
-	 gid_alloc_size *= 2;
-	 (*gid) = (ZOLTAN_ID_PTR) ZOLTAN_REALLOC((*gid), gid_alloc_size*dd->gid_length*sizeof(int));
-       }
-       ZOLTAN_SET_ID (dd->gid_length, (*gid)+k*dd->gid_length, ptr->gid);
-       k++;
-     }
-
-   (*size) = k;
-
-  return (ierr);
-}
-
 /*  NOTE: See file, README, for associated documentation. (RTH) */
 
 

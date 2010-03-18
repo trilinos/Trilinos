@@ -175,7 +175,7 @@ ALL_OBJ_DIRS := $(wildcard Obj_*)
 SUB_VPATH	= ../include ../Utilities/shared \
 		  ../zz ../all ../lb ../par ../rcb ../coloring ../oct ../hsfc \
 		  ../phg  ../simple ../util ../graph ../matrix \
-		  ../params ../driver$(ZOLTAN_OLD) ../ch ../tpls ../timer \
+		  ../params ../driver$(ZOLTAN_OLD) ../ch ../parmetis ../timer \
                   ../order ../ha ../reftree ../hier  \
 		  ../Utilities/Communication ../Utilities/Memory \
                   ../Utilities/DDirectory ../Utilities/Timer \
@@ -185,13 +185,13 @@ SUBINCPATH	= -I../include -I../Utilities/shared \
 		  -I../coloring -I../graph -I../matrix -I../simple -I../oct  \
 		  -I../order -I../hsfc -I../phg  -I../util \
 		  -I../params -I../driver$(ZOLTAN_OLD) -I../ch \
-		  -I../tpls -I../timer  \
+		  -I../parmetis -I../timer  \
                   -I../ha -I../hier -I../reftree \
 		  -I../Utilities/Communication -I../Utilities/Memory \
                   -I../Utilities/DDirectory -I../Utilities/Timer
 SUBDIRS		= driver$(ZOLTAN_OLD) ch zz all lb order par rcb \
 		  coloring oct phg simple util \
-                  hsfc tpls params hier  \
+                  hsfc parmetis params hier  \
 		  timer ha  reftree include postprocessing/ordering
 UTIL_SUBDIRS	= Utilities/shared Utilities/Communication \
 		  Utilities/Memory Utilities/DDirectory Utilities/Timer
@@ -269,13 +269,13 @@ PAR_INC		= par_const.h par_average_const.h par_median_const.h \
 		  par_bisect_const.h \
                   par_tflops_special_const.c
 
-TPLS_CSRC	= third_library.c preprocessing.c postprocessing.c
-TPLS_INC	= third_library_const.h
+PARMETIS_CSRC	= third_library.c preprocessing.c postprocessing.c
+PARMETIS_INC	= third_library_const.h
 ifdef PARMETIS_LIBPATH
-TPLS_CSRC  += parmetis_interface.c
+PARMETIS_CSRC  += parmetis_interface.c
 endif
 ifdef SCOTCH_LIBPATH
-TPLS_CSRC  += scotch_interface.c
+PARMETIS_CSRC  += scotch_interface.c
 endif
 
 
@@ -354,7 +354,7 @@ ZOLTAN_INC_PATH	= $(SUBINCPATH) $(INCLUDE_PATH) $(MPI_INCPATH) \
 ZOLTAN_CSRC    += $(ZZ_CSRC) $(LB_CSRC) $(ALL_CSRC) $(RCB_CSRC) $(PAR_CSRC) \
 		  $(COLOR_CSRC) $(GRAPH_CSRC) $(MATRIX_CSRC) $(SIMPLE_CSRC) \
 		  $(ORDER_CSRC) $(OCT_CSRC) $(HSFC_CSRC) \
-		  $(PARAMS_CSRC) $(TPLS_CSRC) $(PHG_CSRC) $(HG_CSRC) \
+		  $(PARAMS_CSRC) $(PARMETIS_CSRC) $(PHG_CSRC) $(HG_CSRC) \
 		  $(TIMER_CSRC) $(HA_CSRC) $(REFTREE_CSRC) \
 		  $(HIER_CSRC) $(THIRD_PARTY_CSRC) $(SIMPLE_CSRC) 
 ZOLTAN_VPATH	= $(SUB_VPATH) $(THIRD_PARTY_VPATH)
@@ -632,6 +632,8 @@ zscript:
 	@echo INCLUDE_PATH='"$$5"' >> zoltan_script
 	@echo PARMETIS_FLAG='"$${6:+-DZOLTAN_PARMETIS}"' >> zoltan_script
 	@echo PARMETIS_INCPATH='"$$7"' >> zoltan_script
+	@echo JOSTLE_FLAG='"$${8:+-DZOLTAN_JOSTLE}"' >> zoltan_script
+	@echo JOSTLE_INCPATH='"$$9"' >> zoltan_script
 	@echo shift 9 >> zoltan_script
 	@echo AR='"$$1"' >> zoltan_script
 	@echo RANLIB='"$$2"' >> zoltan_script
@@ -639,7 +641,7 @@ zscript:
 	@echo ZOLTAN_LIB_DIR='"$$4"' >> zoltan_script
 	@echo MPI_INCPATH='"$$5"' >> zoltan_script
 	@echo CCOMP='"$$CC $$CFLAGS $$F90CFLAGS $$INCLUDE_PATH $$MPI_INCPATH $$PARMETIS_INCPATH $$JOSTLE_INCPATH"' >> zoltan_script
-	@echo GDEFINES='"$$PARMETIS_FLAG"' >> zoltan_script
+	@echo GDEFINES='"$$PARMETIS_FLAG $$JOSTLE_FLAG"' >> zoltan_script
 	@echo ZOLTAN_OBJ_DIR='"Obj_$$ZOLTAN_ARCH"' >> zoltan_script
 	@echo 'if [ ! -d $$ZOLTAN_OBJ_DIR ]; ' >> zoltan_script
 	@echo 'then mkdir $$ZOLTAN_OBJ_DIR ;' >> zoltan_script
@@ -691,9 +693,9 @@ zscript:
 	@for iii in $(PAR_CSRC) ; do \
 	 echo '$$CCOMP' $(SUBINCPATH) -c '$$GDEFINES $$DEFS' ../par/$$iii >> zoltan_script; \
 	 done;
-	@echo "echo 'Zoltan:  Compiling Zoltan/tpls'" >> zoltan_script
-	@for iii in $(TPLS_CSRC) ; do \
-	 echo '$$CCOMP' $(SUBINCPATH) '$$PARMETIS_INCPATH' -c '$$GDEFINES $$DEFS' ../tpls/$$iii >> zoltan_script; \
+	@echo "echo 'Zoltan:  Compiling Zoltan/parmetis'" >> zoltan_script
+	@for iii in $(PARMETIS_CSRC) ; do \
+	 echo '$$CCOMP' $(SUBINCPATH) '$$PARMETIS_INCPATH' -c '$$GDEFINES $$DEFS' ../parmetis/$$iii >> zoltan_script; \
 	 done;
 	@echo "echo 'Zoltan:  Compiling Zoltan/timer'" >> zoltan_script
 	@for iii in $(TIMER_CSRC) ; do \

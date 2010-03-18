@@ -234,7 +234,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
   int nparts, nonempty_nparts, req_nparts;
   int num_weights=0, obj_part, nbor_part, nother_parts;
   int num_pairs, num_parts;
-  ZOLTAN_MAP *map = NULL;
+  int map_num = -1;
   int num_obj = 0;
   int num_edges = 0;
   int hashTableSize = 0;
@@ -420,13 +420,13 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
      * Alternative is a nparts*nparts array, which uses too much memory.
      */
 
-    map = Zoltan_Map_Create(zz,
+    map_num = Zoltan_Map_Create(zz,
                    hashTableSize, /* size of hash table            */
                    2,             /* number of integers in key */
                    1,             /* yes, store a copy of the key */
                    0);            /* dynamically allocate hash table entries */
 
-    if (map == NULL){
+    if (map_num < 0){
       ierr = ZOLTAN_FATAL;
       goto End;
     }
@@ -497,7 +497,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
           partPair[0] = obj_part;
           partPair[1] = nbor_part;
 
-          ierr = Zoltan_Map_Add(zz, map, partPair, dummyValue);
+          ierr = Zoltan_Map_Add(zz, map_num, partPair, dummyValue);
           if (ierr != ZOLTAN_OK){
             goto End;
           }
@@ -532,7 +532,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
 
   if (num_edges){
 
-    num_pairs = Zoltan_Map_Size(zz, map);
+    num_pairs = Zoltan_Map_Size(zz, map_num);
     num_parts = 0;
 
     if (num_pairs > 0){
@@ -545,7 +545,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
 
       /* Zoltan_Map "iterator */
 
-      ierr = Zoltan_Map_First(zz, map, &key, (void*)&keyValue);
+      ierr = Zoltan_Map_First(zz, map_num, &key, &keyValue);
 
       if ( ((ierr == ZOLTAN_OK) && !key) ||  /* must be at least one pair */
            (ierr != ZOLTAN_OK)){
@@ -557,7 +557,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
         partNbors[num_parts++] = key[0];
         partNbors[num_parts++] = key[1];
 
-        ierr = Zoltan_Map_Next(zz, map, &key, (void*)&keyValue);
+        ierr = Zoltan_Map_Next(zz, map_num, &key, &keyValue);
   
         if (ierr != ZOLTAN_OK){
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in Zoltan_Map_Next\n");
@@ -572,9 +572,9 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
       }
     }
 
-    Zoltan_Map_Destroy(zz, &map);
+    Zoltan_Map_Destroy(zz, map_num);
 
-    if (num_pairs > 0){
+    if (num_pairs > 0){     
       qsort(partNbors, num_pairs, sizeof(int) * 2,
             zoltan_lb_eval_sort_increasing);
 
@@ -808,7 +808,7 @@ End:
 
   /* Free data */
 
-  Zoltan_Map_Destroy(zz, &map);
+  Zoltan_Map_Destroy(zz, map_num);
 
   ZOLTAN_FREE(&localCount);
   ZOLTAN_FREE(&globalVals);

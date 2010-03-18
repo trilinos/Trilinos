@@ -169,6 +169,7 @@ void Zoltan_Third_Exit(ZOLTAN_Third_Graph *gr, ZOLTAN_Third_Geom *geo,
     MEMFREE(gr->ewgts);
     MEMFREE(gr->float_ewgts);
     MEMFREE(gr->adjproc);
+    gr->graph.mtx.mtx.ywgt = NULL;
     gr->graph.mtx.mtx.pinwgt = NULL;
     gr->graph.mtx.mtx.ystart = NULL;
     gr->graph.mtx.mtx.yend = NULL;

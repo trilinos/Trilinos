@@ -1,7 +1,7 @@
 /*****************************************************************************
  * Zoltan Library for Parallel Applications                                  *
  * Copyright (c) 2000,2001,2002, Sandia National Laboratories.               *
- * For more info, see the README file in the top-level Zoltan directory.     *
+ * For more info, see the README file in the top-level Zoltan directory.     *  
  *****************************************************************************/
 /*****************************************************************************
  * CVS File Information :
@@ -21,14 +21,50 @@ extern "C" {
 #include <zz_util_const.h>
 #include <zoltan_mem.h>
 
+struct Zoltan_Map_Entry{
+  int *key;          /* a copy of or a pointer to callers key */
+  int *data;        /* a pointer provided by caller */
+  struct Zoltan_Map_Entry *next;
+};
+
+typedef struct Zoltan_Map_Entry ZOLTAN_ENTRY;
+
+struct Zoltan_Map_List{
+  ZOLTAN_ENTRY **entries; /* hash array, length max_index + 1 */
+
+  ZOLTAN_ENTRY *top;      /* if dynamicEntries==0, entries are here */
+
+  int id_size;          /* size of integer tuple */
+  int max_index;        /* hash number range */
+  int max_entries;      /* size of top array, or 0 if dynamicEntries == 1 */
+
+  int prev_index;       /* index of top element returned in iterator */
+  int prev_hash_index;  /* hash index of previous returned element */
+  ZOLTAN_ENTRY *prev;   /* pointer to previous returned element */
+
+  int dynamicEntries;   /* 1 - entries allocated as they are added */
+                        /* 0 - entries allocated at the start in top array */
+
+  int copyKeys;         /* 1 - We create a copy of the added keys */
+                        /* 0 - We keep a pointer to the caller's copy of the key */
+
+  int used;             /* 1 - this map is being used, 0 - it's free */
+  int entry_count;      /* how many entries have been added to the map */
+};
+
+typedef struct Zoltan_Map_List ZOLTAN_MAP;
+
+static ZOLTAN_MAP map_array[ZOLTAN_MAX_MAP];
 
 static int key_match(int key_size, int *key1, int *key2);
 
+static ZOLTAN_MAP *get_used_map(int map_num);
+
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
 
-/*
+/* 
  * A Zoltan_Map is like a C++ STL map.  It uses Zoltan_Hash to maintain a
  * a table mapping integer tuples (keys) to pointers (values).  Keys are unique.
  *
@@ -37,7 +73,6 @@ static int key_match(int key_size, int *key1, int *key2);
  *  Zoltan_Map_Create       Initialize the map
  *  Zoltan_Map_Add          Add an element to the map
  *  Zoltan_Map_Find         Find an element in the map, return the associated pointer
- *  Zoltan_Map_Find_Add     Try to find an element in the map, if not present, add it.
  *  Zoltan_Map_First        Return the first element in the map (like an iterator)
  *  Zoltan_Map_Next         Return the next element in the map
  *  Zoltan_Map_Size         Return the number of elements in the map
@@ -54,31 +89,35 @@ static int key_match(int key_size, int *key1, int *key2);
  */
 
 /*****************************************************************
- * Create a new map.
+ * Create a new map.  
  * Return the map number to be used in subsequent calls.
- * (Return NULL on error)
+ * (Return -1 on error)
  */
-ZOLTAN_MAP* Zoltan_Map_Create(ZZ *zz,     /* just need this for error messages */
-		      int hash_range_max, /* > 0: maximum hash value */
-					  /*   0: Zoltan_Map_Create will choose value */
-		      int num_id_entries, /* length of a key */
-		      int store_keys,     /* 1 - keep a copy of each key */
-					  /* 0 - keep a pointer to caller's key */
-		      int num_entries)    /* > 0: number of keys that will be added */
-					  /*   0: dynamically allocate entries */
+int Zoltan_Map_Create(ZZ *zz,     /* just need this for error messages */
+                      int hash_range_max, /* > 0: maximum hash value */
+                                          /*   0: Zoltan_Map_Create will choose value */
+                      int num_id_entries, /* length of a key */
+                      int store_keys,     /* 1 - keep a copy of each key */
+                                          /* 0 - keep a pointer to caller's key */
+                      int num_entries)    /* > 0: number of keys that will be added */
+                                          /*   0: dynamically allocate entries */
 {
   char *yo = "Zoltan_Map_Create";
   ZOLTAN_ENTRY *top = NULL;
   ZOLTAN_ENTRY **entries = NULL;
-  ZOLTAN_MAP* map = NULL;
-  int *keys = NULL;
+  int map_num = 0;
 
   if ((num_id_entries < 1) || (num_entries < 0) || (hash_range_max < 0)){
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Bad parameters\n");
-    return NULL;
+    return -1;
   }
 
-  map = (ZOLTAN_MAP*) ZOLTAN_MALLOC(sizeof(ZOLTAN_MAP));
+  while ((map_num < ZOLTAN_MAX_MAP) && (map_array[map_num].used != 0)) map_num++;
+
+  if (map_num == ZOLTAN_MAX_MAP){
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Maximum number of maps already allocated\n");
+    return -1;
+  }
 
   if (num_entries > 0){
 
@@ -87,14 +126,7 @@ ZOLTAN_MAP* Zoltan_Map_Create(ZZ *zz,     /* just need this for error messages *
     top = (ZOLTAN_ENTRY *)ZOLTAN_CALLOC(num_entries, sizeof(ZOLTAN_ENTRY));
     if (!top){
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Out of memory\n");
-      return NULL;
-    }
-    if (store_keys) {
-      keys = (int*)ZOLTAN_CALLOC(num_entries, sizeof(int)*num_id_entries);
-      if (!keys) {
-	ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Out of memory\n");
-	return NULL;
-      }
+      return -1;
     }
   }
 
@@ -103,9 +135,9 @@ ZOLTAN_MAP* Zoltan_Map_Create(ZZ *zz,     /* just need this for error messages *
   if (hash_range_max == 0){  /* we should give this more thought */
     if (num_entries > 0){
       if (num_entries > 10000)
-	hash_range_max = 10000;
+        hash_range_max = 10000;
       else
-	hash_range_max = num_entries;
+        hash_range_max = num_entries;
     }
     else{
       hash_range_max = 1000;
@@ -116,25 +148,23 @@ ZOLTAN_MAP* Zoltan_Map_Create(ZZ *zz,     /* just need this for error messages *
 
   if (!entries){
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Out of memory\n");
-    return NULL;
+    return -1;
   }
 
+  map_array[map_num].entries     = entries;
+  map_array[map_num].top         = top;
+  map_array[map_num].id_size     = num_id_entries;
+  map_array[map_num].max_index   = hash_range_max;
+  map_array[map_num].max_entries = num_entries;
+  map_array[map_num].prev_index      = -1;
+  map_array[map_num].prev_hash_index = -1;
+  map_array[map_num].prev            = NULL;
+  map_array[map_num].used            = 1;
+  map_array[map_num].dynamicEntries  = (num_entries == 0); 
+  map_array[map_num].copyKeys        = store_keys;
+  map_array[map_num].entry_count     = 0;
 
-  map->entries     = entries;
-  map->top         = top;
-  map->id_size     = num_id_entries;
-  map->max_index   = hash_range_max;
-  map->max_entries = num_entries;
-  map->prev_index      = -1;
-  map->prev_hash_index = -1;
-  map->prev            = NULL;
-  map->used            = 1;
-  map->dynamicEntries  = (num_entries == 0);
-  map->copyKeys        = store_keys;
-  map->entry_count     = 0;
-  map->keys            = keys;
-
-  return map;
+  return map_num;
 }
 
 /*****************************************************************
@@ -142,53 +172,57 @@ ZOLTAN_MAP* Zoltan_Map_Create(ZZ *zz,     /* just need this for error messages *
  * a map that has already been destroyed, or for a map that was never created.
  * (Return ZOLTAN_OK, etc.)
  */
-int Zoltan_Map_Destroy(ZZ *zz, ZOLTAN_MAP** map)
+int Zoltan_Map_Destroy(ZZ *zz, int map_num)
 {
   int i;
   ZOLTAN_ENTRY *nextEntry, *tmpEntry;
+  ZOLTAN_MAP *map = get_used_map(map_num);
 
-  if (!map || !*map){
+  if (!map){
     return ZOLTAN_OK;  /* OK to call Destroy more than once */
   }
 
-  if ((*map)->copyKeys){
+  if (map->copyKeys){
 
     /* free our copies of the keys */
 
-    if (!(*map)->dynamicEntries){
-      ZOLTAN_FREE(&((*map)->keys));
+    if (!map->dynamicEntries){
+      for (i=0; i < map->entry_count; i++){
+        ZOLTAN_FREE(&(map->top[i].key));
+      }
     }
     else{
-      for (i=0; i <= (*map)->max_index; i++){
-	nextEntry = (*map)->entries[i];
-	while (nextEntry){
-	  tmpEntry = nextEntry->next;
-	  ZOLTAN_FREE(&(nextEntry->key));
-	  nextEntry = tmpEntry;
-	}
+      for (i=0; i <= map->max_index; i++){
+        nextEntry = map->entries[i];
+        while (nextEntry){
+          tmpEntry = nextEntry->next;
+          ZOLTAN_FREE(&(nextEntry->key));
+          nextEntry = tmpEntry;
+        }
       }
     }
   }
 
   /* free the map entries */
 
-  if (!(*map)->dynamicEntries){
-    ZOLTAN_FREE(&(*map)->entries);
-    ZOLTAN_FREE(&(*map)->top);
+  if (!map->dynamicEntries){
+    ZOLTAN_FREE(&map->entries);
+    ZOLTAN_FREE(&map->top);
   }
   else{
-    for (i=0; i <= (*map)->max_index; i++){
-      nextEntry = (*map)->entries[i];
+    for (i=0; i <= map->max_index; i++){
+      nextEntry = map->entries[i];
       while (nextEntry){
-	tmpEntry = nextEntry->next;
-	ZOLTAN_FREE(&nextEntry);
-	nextEntry = tmpEntry;
+        tmpEntry = nextEntry->next;
+        ZOLTAN_FREE(&nextEntry);
+        nextEntry = tmpEntry;
       }
     }
-    ZOLTAN_FREE(&(*map)->entries);
+    ZOLTAN_FREE(&map->entries);
   }
 
-  ZOLTAN_FREE(map);
+  memset(map, 0, sizeof(ZOLTAN_MAP));
+
   return ZOLTAN_OK;
 }
 
@@ -197,16 +231,14 @@ int Zoltan_Map_Destroy(ZZ *zz, ZOLTAN_MAP** map)
  * (Return ZOLTAN_OK, etc.)
  */
 
-int Zoltan_Map_Add(ZZ *zz, ZOLTAN_MAP* map, int *key, void *data) {
-  return (Zoltan_Map_Find_Add(zz, map, key, data, NULL));
-}
-
-int Zoltan_Map_Find_Add(ZZ *zz, ZOLTAN_MAP* map, int *key, void *datain, void **dataout)
+int Zoltan_Map_Add(ZZ *zz, int map_num, int *key, int *data)
 {
   char *yo = "Zoltan_Map_Add";
   int index, match, i;
   ZOLTAN_ENTRY *element;
   ZOLTAN_ID_PTR zkey = (ZOLTAN_ID_PTR)key;
+
+  ZOLTAN_MAP *map = get_used_map(map_num);
 
   if (!map){
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Map specified does not exist\n");
@@ -231,43 +263,39 @@ int Zoltan_Map_Find_Add(ZZ *zz, ZOLTAN_MAP* map, int *key, void *datain, void **
   if (!match){
     i = map->entry_count;
 
-    if (!map->dynamicEntries && (i == map->max_entries)){
+    if (!map->dynamicEntries && (i == map->max_entries)){   
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Fixed size map overflow\n");
       return ZOLTAN_FATAL;
     }
 
     if (map->dynamicEntries){
       element = (ZOLTAN_ENTRY *)ZOLTAN_MALLOC(sizeof(ZOLTAN_ENTRY));
-      if (!element)
-	return ZOLTAN_MEMERR;
+      if (!element) 
+        return ZOLTAN_MEMERR;
     }
     else{
       element = map->top + i;
     }
 
     if (map->copyKeys){
-      if(map->dynamicEntries) {
-	element->key = (int *)ZOLTAN_MALLOC(sizeof(int) * map->id_size);
-	if (!element->key)
-	  return ZOLTAN_MEMERR;
+      element->key = (int *)ZOLTAN_MALLOC(sizeof(int) * map->id_size);
+      if (!element->key) 
+        return ZOLTAN_MEMERR;
+
+      for (i=0; i < map->id_size; i++){
+        element->key[i] = key[i];
       }
-      else
-	element->key = map->keys + map->entry_count;
-      memcpy(element->key, key, sizeof(int)*map->id_size);
     }
     else{
       element->key = key;
     }
 
-    element->data = datain;
+    element->data = data;
     element->next = map->entries[index];
 
     map->entries[index] = element;
 
     map->entry_count++;
-  }
-  if (dataout != NULL) {
-    *dataout = element->data;
   }
 
   return ZOLTAN_OK;
@@ -279,12 +307,14 @@ int Zoltan_Map_Find_Add(ZZ *zz, ZOLTAN_MAP* map, int *key, void *datain, void **
  * (Return ZOLTAN_OK, etc.)
  */
 
-int Zoltan_Map_Find(ZZ *zz, ZOLTAN_MAP* map, int *key, void **data)
+int Zoltan_Map_Find(ZZ *zz, int map_num, int *key, int **data)
 {
   char *yo = "Zoltan_Map_Find";
   int index, match;
   ZOLTAN_ENTRY *element;
   ZOLTAN_ID_PTR zkey = (ZOLTAN_ID_PTR)key;
+
+  ZOLTAN_MAP *map = get_used_map(map_num);
 
   *data = NULL;
 
@@ -313,8 +343,10 @@ int Zoltan_Map_Find(ZZ *zz, ZOLTAN_MAP* map, int *key, void **data)
  * Return the number of keys in the map.
  */
 
-int Zoltan_Map_Size(ZZ *zz, ZOLTAN_MAP* map)
+int Zoltan_Map_Size(ZZ *zz, int map_num)
 {
+  ZOLTAN_MAP *map = get_used_map(map_num);
+
   if (!map){
     return 0;
   }
@@ -330,14 +362,17 @@ int Zoltan_Map_Size(ZZ *zz, ZOLTAN_MAP* map)
  * (Return ZOLTAN_OK, etc)
  */
 
-int Zoltan_Map_First(ZZ *zz, ZOLTAN_MAP* map, int **key, void **data)
+int Zoltan_Map_First(ZZ *zz, int map_num, int **key, int **data)
 {
   char *yo = "Zoltan_Map_First";
+  ZOLTAN_MAP *map = NULL;
   ZOLTAN_ENTRY *entry = NULL;
   int i;
 
   *key = NULL;
   *data = NULL;
+
+  map = get_used_map(map_num);
 
   if (map){
 
@@ -348,25 +383,25 @@ int Zoltan_Map_First(ZZ *zz, ZOLTAN_MAP* map, int **key, void **data)
     }
     else{
       if (!map->dynamicEntries){
-	map->prev_index = 0;
-	entry = map->top;
+        map->prev_index = 0;
+        entry = map->top;
       }
       else{
 
-	/* find the first entry in the map */
+        /* find the first entry in the map */
 
-	for (i=0; i <= map->max_index; i++){
-	  if (map->entries[i]){
+        for (i=0; i <= map->max_index; i++){
+          if (map->entries[i]){
 
-	    map->prev_hash_index = i;
-	    entry = map->prev = map->entries[i];
-	    break;
-	  }
-	}
-	if (!entry){
-	  ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Entry not found\n");
-	  return ZOLTAN_FATAL;
-	}
+            map->prev_hash_index = i;
+            entry = map->prev = map->entries[i];
+            break;
+          }
+        }
+        if (!entry){
+          ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Entry not found\n");
+          return ZOLTAN_FATAL;
+        }
       }
 
       *key = entry->key;
@@ -388,13 +423,16 @@ int Zoltan_Map_First(ZZ *zz, ZOLTAN_MAP* map, int **key, void **data)
  * (Return ZOLTAN_OK, etc)
  */
 
-int Zoltan_Map_Next(ZZ *zz, ZOLTAN_MAP* map, int **key, void **data)
+int Zoltan_Map_Next(ZZ *zz, int map_num, int **key, int **data)
 {
-  ZOLTAN_ENTRY *next = NULL;
+  ZOLTAN_MAP *map = NULL;
+  ZOLTAN_ENTRY *next = NULL; 
   int i;
 
   *key = NULL;
   *data = NULL;
+
+  map = get_used_map(map_num);
 
   if (!map){
     return ZOLTAN_OK;
@@ -411,7 +449,7 @@ int Zoltan_Map_Next(ZZ *zz, ZOLTAN_MAP* map, int **key, void **data)
   }
   else{
     if (map->prev == NULL){
-      return Zoltan_Map_First(zz, map, key, data);
+      return Zoltan_Map_First(zz, map_num, key, data);
     }
     if (map->prev->next != NULL){
       next = map->prev->next;
@@ -419,14 +457,14 @@ int Zoltan_Map_Next(ZZ *zz, ZOLTAN_MAP* map, int **key, void **data)
     }
     else{
       for (i=map->prev_hash_index+1; i <= map->max_index; i++){
-	if (map->entries[i]){
-	  map->prev_hash_index = i;
-	  next = map->prev = map->entries[i];
-	  break;
-	}
+        if (map->entries[i]){
+          map->prev_hash_index = i;
+          next = map->prev = map->entries[i];
+          break;
+        }
       }
       if (!next){
-	return ZOLTAN_OK;   /* at the end of the entries */
+        return ZOLTAN_OK;   /* at the end of the entries */
       }
     }
   }
@@ -440,6 +478,19 @@ int Zoltan_Map_Next(ZZ *zz, ZOLTAN_MAP* map, int **key, void **data)
 /***********************************************************************
  * static helper functions
  */
+
+static ZOLTAN_MAP *get_used_map(int map_num)
+{
+  ZOLTAN_MAP *map = NULL;
+
+  if ((map_num >= 0) &&
+      (map_num < ZOLTAN_MAX_MAP) &&
+      (map_array[map_num].used != 0)){
+  
+    map = map_array + map_num;
+  }
+  return map;
+}
 
 static int key_match(int key_size, int *key1, int *key2)
 {
@@ -455,3 +506,4 @@ static int key_match(int key_size, int *key1, int *key2)
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif
+

@@ -73,17 +73,6 @@ struct phg_timer_indices {
   int cprefine;   /* Part of Coarse Partitioning */
 };
 
-typedef struct Zoltan_PHG_LB_Data_ {
-  struct phg_timer_indices * timers;
-  Zoltan_PHG_Tree * tree;
-#ifdef CEDRIC_2D_PARTITIONS
-  struct Zoltan_DD_Struct *ddHedge;
-  int * partTree; /* Not used yet */
-  int numParts;
-  int *sizeParts;
-#endif /* CEDRIC_2D_PARTITIONS */
-} Zoltan_PHG_LB_Data;
-
 struct phg_timer_indices *
 Zoltan_PHG_LB_Data_timers(ZZ const * zz);
 

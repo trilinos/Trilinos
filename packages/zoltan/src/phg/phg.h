@@ -108,9 +108,6 @@ struct PHGPartParamsStruct {
                          * See levels PHG_DEBUG_* below.  */
   int final_output;     /* Prints final timing and quality info at end of PHG
                            (regardless of value of output_level) */
-#ifdef CEDRIC_2D_PARTITIONS
-  int keep_tree;
-#endif /* CEDRIC_2D_PARTITIONS */
 
     /* NOTE THAT this comm refers to "GLOBAL" comm structure
        (hence the name change: just to make sure it has not been used

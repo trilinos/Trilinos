@@ -269,10 +269,10 @@ int Zoltan_Color(
     ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Cannot construct graph.");
   ierr = Zoltan_ZG_Export (zz, &graph,
 		    &gvtx, &nvtx, NULL, NULL, &vtxdist, &xadj, &adjncy, &adjproc,
-		     NULL, &partialD2);
+		    NULL, NULL, &partialD2);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Cannot construct graph (2).");
-#ifdef _DEBUG_TIMES
+#ifdef _DEBUG_TIMES    
   times[2] = Zoltan_Time(zz->Timer);
 #endif
 
@@ -290,7 +290,7 @@ int Zoltan_Color(
 #endif
 
   /* Add ids of the d1 neighbors into the hash table*/
-  for (i=0; i<xadj[nvtx]; ++i)
+  for (i=0; i<xadj[nvtx]; ++i) 
       adjncy[i] = Zoltan_G2LHash_Insert(&hash, adjncy[i]);
   /* lastlno is the total number of local and d1 neighbors */
   lastlno = nvtx+hash.size;
@@ -311,7 +311,7 @@ int Zoltan_Color(
 			     1: indicates vertex needs to be colored, 0 means don't color  */
   }
 
-#ifdef _DEBUG_TIMES
+#ifdef _DEBUG_TIMES  
   times[3] = Zoltan_Time(zz->Timer);
 #endif
   /* Select Coloring algorithm and perform the coloring */
@@ -335,7 +335,7 @@ int Zoltan_Color(
 /*     ZOLTAN_FREE(&vtxwgt); */
 /*     ZOLTAN_FREE(&input_part); */
 /*   } */
-  Zoltan_ZG_Query(zz, &graph, global_ids, num_obj, color_exp);
+  Zoltan_ZG_Query(zz, &graph, global_ids, nvtx, color_exp);
 
 #if 0
   /* Check if there is an error in coloring */

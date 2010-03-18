@@ -93,8 +93,6 @@ int Zoltan_Scotch_Order(
   ZOLTAN_Third_Graph gr;
   SCOTCH_Strat        stradat;
   SCOTCH_Graph        cgrafdat;
-  ZOLTAN_ID_PTR       l_gids = NULL;
-  ZOLTAN_ID_PTR       l_lids = NULL;
 #ifdef ZOLTAN_PTSCOTCH
   SCOTCH_Dgraph       grafdat;
   SCOTCH_Dordering    ordedat;
@@ -188,7 +186,7 @@ int Zoltan_Scotch_Order(
     times[0] = Zoltan_Time(zz->Timer);
   }
 
-  ierr = Zoltan_Preprocess_Graph(zz, &l_gids, &l_lids,  &gr, NULL, NULL, NULL);
+  ierr = Zoltan_Preprocess_Graph(zz, &gids, &lids,  &gr, NULL, NULL, NULL);
 
 
   if (Zoltan_Scotch_Build_Graph(&gr, comm,
@@ -390,14 +388,7 @@ int Zoltan_Scotch_Order(
   }
 #endif /* ZOLTAN_PTSCOTCH */
 
-  /* Correct because no redistribution */
-  memcpy(gids, l_gids, n*zz->Num_GID*sizeof(int));
-  memcpy(lids, l_lids, n*zz->Num_GID*sizeof(int));
-
-  ierr = Zoltan_Postprocess_Graph (zz, l_gids, l_lids, &gr, NULL, NULL, NULL, &ord, NULL);
-
-  ZOLTAN_FREE(&l_gids);
-  ZOLTAN_FREE(&l_gids);
+  ierr = Zoltan_Postprocess_Graph (zz, gids, lids, &gr, NULL, NULL, NULL, &ord, NULL);
 
   /* Get a time here */
   if (get_times) times[3] = Zoltan_Time(zz->Timer);

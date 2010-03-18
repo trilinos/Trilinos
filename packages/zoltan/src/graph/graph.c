@@ -79,8 +79,6 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local)
   Zoltan_Assign_Param_Vals(zz->Params, ZG_params, zz->Debug_Level, zz->Proc,
 			   zz->Debug_Proc);
 
-  Zoltan_Matrix2d_Init(&graph->mtx);
-
   graph->mtx.comm = (PHGComm*)ZOLTAN_MALLOC (sizeof(PHGComm));
   if (graph->mtx.comm == NULL) MEMORY_ERROR;
   Zoltan_PHGComm_Init (graph->mtx.comm);
@@ -166,20 +164,19 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local)
     int offset;
 
     graph->bipartite = 1;
-    graph->fixed_vertices = graph->mtx.mtx.ybipart;
-/*     graph->fixed_vertices = (int*) ZOLTAN_MALLOC(graph->mtx.mtx.nY*sizeof(int)); */
-/*     if (graph->mtx.mtx.nY && graph->fixed_vertices == NULL) MEMORY_ERROR; */
-/*     limit = graph->mtx.mtx.offsetY; */
-/*     /\* What kind of vertices do we want to keep ? *\/ */
-/*     graph->fixObj = !strcasecmp(bipartite_type, "OBJ"); /\* Non-zero value means "objects" *\/ */
+    graph->fixed_vertices = (int*) ZOLTAN_MALLOC(graph->mtx.mtx.nY*sizeof(int));
+    if (graph->mtx.mtx.nY && graph->fixed_vertices == NULL) MEMORY_ERROR;
+    limit = graph->mtx.mtx.offsetY;
+    /* What kind of vertices do we want to keep ? */
+    graph->fixObj = !strcasecmp(bipartite_type, "OBJ"); /* Non-zero value means "objects" */
 
-/*     offset = graph->mtx.mtx.offsetY - graph->mtx.dist_y[graph->mtx.comm->myProc_y]; */
-/*     if (graph->fixObj) /\* What kind of vertices do we want to keep ? *\/ */
-/*       for (vertlno = 0 ; vertlno < graph->mtx.mtx.nY ; ++ vertlno) */
-/* 	graph->fixed_vertices[vertlno] = (vertlno < offset); */
-/*     else */
-/*       for (vertlno = 0 ; vertlno < graph->mtx.mtx.nY ; ++ vertlno) */
-/* 	graph->fixed_vertices[vertlno] = (vertlno >= offset); */
+    offset = graph->mtx.mtx.offsetY - graph->mtx.dist_y[graph->mtx.comm->myProc_y];
+    if (graph->fixObj) /* What kind of vertices do we want to keep ? */
+      for (vertlno = 0 ; vertlno < graph->mtx.mtx.nY ; ++ vertlno)
+	graph->fixed_vertices[vertlno] = (vertlno < offset);
+    else
+      for (vertlno = 0 ; vertlno < graph->mtx.mtx.nY ; ++ vertlno)
+	graph->fixed_vertices[vertlno] = (vertlno >= offset);
   }
 
 #ifdef CC_TIMERS
@@ -206,9 +203,8 @@ int
 Zoltan_ZG_Export (ZZ* zz, const ZG* const graph, int *gvtx, int *nvtx,
 		  int *obj_wgt_dim, int *edge_wgt_dim,
 		  int **vtxdist, int **xadj, int **adjncy, int **adjproc,
-		  /* float **xwgt, */ float **ewgt, int **partialD2)
+		  float **xwgt, float **ewgt, int **partialD2)
 {
-  int ierr = ZOLTAN_OK;
 
   AFFECT_NOT_NULL(gvtx, graph->mtx.mtx.globalY);
   AFFECT_NOT_NULL(nvtx, graph->mtx.mtx.nY);
@@ -219,7 +215,7 @@ Zoltan_ZG_Export (ZZ* zz, const ZG* const graph, int *gvtx, int *nvtx,
   /* I have to convert from float to int */
   AFFECT_NOT_NULL(obj_wgt_dim, graph->mtx.mtx.ywgtdim);
   AFFECT_NOT_NULL(edge_wgt_dim, graph->mtx.mtx.pinwgtdim);
-/*   AFFECT_NOT_NULL(xwgt, graph->mtx.mtx.ywgt); */
+  AFFECT_NOT_NULL(xwgt, graph->mtx.mtx.ywgt);
   AFFECT_NOT_NULL(ewgt, graph->mtx.mtx.pinwgt);
 
 /*   /\* TODO: convert wgt to int to be able to call Zoltan_Verify_Graph *\/ */
@@ -233,32 +229,30 @@ Zoltan_ZG_Export (ZZ* zz, const ZG* const graph, int *gvtx, int *nvtx,
 
 int
 Zoltan_ZG_Vertex_Info(ZZ* zz, const ZG *const graph,
-		      ZOLTAN_ID_PTR *pgid, ZOLTAN_ID_PTR *plid, float **pwwgt, int **pinput_part) {
+		      ZOLTAN_ID_PTR *pgid, int **pinput_part) {
   static char *yo = "Zoltan_ZG_Vertex_Info";
   int ierr = ZOLTAN_OK;
-  float *wgt = NULL;
+  int nX;
+  ZOLTAN_ID_PTR gid = NULL;
   int *input_part = NULL;
-  ZOLTAN_ID_PTR lid = NULL;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
-  AFFECT_NOT_NULL(pgid, graph->mtx.mtx.yGID);
-  if (pwwgt != NULL) {
-    wgt = *pwwgt = (float*) ZOLTAN_MALLOC(graph->mtx.mtx.nY*zz->Obj_Weight_Dim*sizeof(float));
-    if (graph->mtx.mtx.nY >0 && zz->Obj_Weight_Dim > 0 && *pwwgt == NULL) MEMORY_ERROR;
-  }
+  nX = graph->mtx.mtx.nY;
+  gid = ZOLTAN_MALLOC_GID_ARRAY(zz, nX);
+  if (nX && gid == NULL) MEMORY_ERROR;
+  (*pgid) = gid;
   if (pinput_part != NULL) {
-    input_part = *pinput_part = (int*) ZOLTAN_MALLOC(graph->mtx.mtx.nY*sizeof(int));
-    if (graph->mtx.mtx.nY > 0 && *pinput_part == NULL) MEMORY_ERROR;
+    input_part = (int*) ZOLTAN_MALLOC(nX * sizeof(int));
+    if (nX && input_part == NULL) MEMORY_ERROR;
+    (*pinput_part) = input_part;
   }
-  if (plid != NULL) {
-    lid = *plid = ZOLTAN_MALLOC_LID_ARRAY(zz, graph->mtx.mtx.nY);
-    if (graph->mtx.mtx.nY >0 && zz->Num_LID >0 && *plid == NULL)
-      MEMORY_ERROR;
+  else {
+    input_part = NULL;
   }
-  ierr = Zoltan_Matrix_Vertex_Info(zz, &graph->mtx.mtx, lid,
-				   wgt, input_part);
 
+  ierr = Zoltan_DD_Find(graph->mtx.mtx.ddX, (ZOLTAN_ID_PTR)graph->mtx.mtx.yGNO,
+			gid, NULL, input_part, nX, NULL);
  End:
   ZOLTAN_TRACE_EXIT(zz, yo);
   return (ierr);
@@ -334,8 +328,8 @@ Zoltan_ZG_Query (ZZ* zz, const ZG* const graph,
   struct Zoltan_DD_Struct *dd;
 
   dd = graph->mtx.mtx.ddY;
-/*   if (graph->bipartite && graph->fixObj) */
-/*     dd = graph->mtx.mtx.ddX; */
+  if (graph->bipartite && graph->fixObj)
+    dd = graph->mtx.mtx.ddX;
 
   return Zoltan_DD_Find(dd, GID, NULL, NULL, properties, GID_length, NULL);
 }
