@@ -71,6 +71,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_TensorProductQuadratureImp.hpp
   Stokhos_SparseGridQuadrature.hpp
   Stokhos_SparseGridQuadratureImp.hpp
+  Stokhos_AnisoSparseGridQuadrature.hpp
+  Stokhos_AnisoSparseGridQuadratureImp.hpp
   Stokhos_UserDefinedQuadrature.hpp
   Stokhos_UserDefinedQuadratureImp.hpp
   Stokhos_OrthogPolyApprox.hpp

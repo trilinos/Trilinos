@@ -56,6 +56,7 @@
 // Quadrature methods
 #include "Stokhos_TensorProductQuadrature.hpp"
 #include "Stokhos_SparseGridQuadrature.hpp"
+#include "Stokhos_AnisoSparseGridQuadrature.hpp"
 
 // Tensors
 #include "Stokhos_Sparse3Tensor.hpp"
