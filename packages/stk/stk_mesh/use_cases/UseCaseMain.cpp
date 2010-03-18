@@ -16,8 +16,6 @@
 #include <stk_mesh/base/Types.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
-#include <stk_util/environment/ProgramOptions.hpp>
-#include <stk_util/use_cases/UseCaseEnvironment.hpp>
 
 void printStatus(bool status)
 {
@@ -31,8 +29,7 @@ void printStatus(bool status)
 
 int main ( int argc, char * argv[] )
 {
-  use_case::UseCaseEnvironment use_case_environment(&argc, &argv);
-  stk::ParallelMachine parallel_machine = use_case_environment.m_comm;
+  stk::ParallelMachine parallel_machine = stk::parallel_machine_init(&argc, &argv);
 
   bool status = true;
   {
@@ -79,9 +76,11 @@ int main ( int argc, char * argv[] )
   if (status) {
     result = 0;
   }
-  std::cout << "Overall Use Case testing results: ";
+  std::cout << "End Result: TEST PASSED" << std::endl;
   printStatus(status);
   std::cout << std::endl;
+
+  stk::parallel_machine_finalize();
 
   return result;
 }
