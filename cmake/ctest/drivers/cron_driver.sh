@@ -111,7 +111,17 @@ echo Downloading/installing CMake >>"$LOGFILE"
 
 rm -rf "$BASE_DIR/tools/cmake-release"
 
-"$PYTHON_EXE" "$BASE_DIR/Trilinos/cmake/python/download-cmake.py" --skip-detect "--install-dir=$BASE_DIR/tools/cmake-release" --installer-type=release >>"$LOGFILE"
+"$PYTHON_EXE" "$BASE_DIR/Trilinos/cmake/python/download-cmake.py" \
+  --skip-detect "--install-dir=$BASE_DIR/tools/cmake-release" \
+  --installer-type=release >>"$LOGFILE"
+# Ross Bartlett: ToDo: We need to allow --installer-type to be variable so
+# that we can test development versions of CMake/CTest?
+
+# Roscoe Bartlett: NOTE: If the upgrade of CMake/CTest above failes for any
+# reason, this failure will be silent and you will never know it.  The upgrade
+# of CTest/CMake used to drive the individual builds should be run as a CTest
+# test so that it gets sent to the CDash dashbaord and we get error emails.
+
 
 CTEST_EXE=`find "$BASE_DIR/tools/cmake-release" | grep "bin/ctest"`
 
