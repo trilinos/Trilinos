@@ -86,7 +86,7 @@ CREATE_DEPENCENCY_HANDLING_TEST_CASE(
 
 CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   EnableEpetraExt
-  ARGS -DTrilinos_ENABLE_EpetraExt:BOOL=ON
+  ARGS -DTrilinos_ENABLE_EpetraExt:BOOL=ON -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF
   PASS_REGULAR_EXPRESSION_ALL
     "Final set of enabled packages:  Teuchos Epetra EpetraExt 3"
   )
@@ -94,7 +94,7 @@ CREATE_DEPENCENCY_HANDLING_TEST_CASE(
 
 CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   EnableEpetraExt_EnableAllOptionalPackages
-  ARGS -DTrilinos_ENABLE_EpetraExt:BOOL=ON -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON
+  ARGS -DTrilinos_ENABLE_EpetraExt:BOOL=ON
   PASS_REGULAR_EXPRESSION_ALL
     "Final set of enabled packages:  Teuchos Epetra Zoltan Triutils EpetraExt 5"
   )
@@ -170,7 +170,7 @@ CREATE_DEPENCENCY_HANDLING_TEST_CASE(
 
 CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   EnableThyra_ThyraEnableEpetraExt
-  ARGS  -DTrilinos_ENABLE_Thyra=ON -DThyra_ENABLE_EpetraExt=ON
+  ARGS  -DTrilinos_ENABLE_Thyra=ON -DThyra_ENABLE_EpetraExt=ON  -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF
   PASS_REGULAR_EXPRESSION_ALL
     "Final set of enabled packages:  Teuchos RTOp Epetra EpetraExt Thyra 5"
   )
@@ -179,7 +179,6 @@ CREATE_DEPENCENCY_HANDLING_TEST_CASE(
 CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   EnableAllPackages_EnableSecondaryStableCode_EnableAllOptionalPackges
   ARGS  -DTrilinos_ENABLE_ALL_PACKAGES=ON -DTrilinos_ENABLE_SECONDARY_STABLE_CODE=ON
-    -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=ON
   PASS_REGULAR_EXPRESSION_ALL
     "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx 21"
     "Final set of enabled TPLs:  BLAS LAPACK Boost 3"
@@ -188,7 +187,7 @@ CREATE_DEPENCENCY_HANDLING_TEST_CASE(
 
 CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   EnableStratimikos_EnableAllOptionalPackages_BadSystem1
-  ARGS  -DTrilinos_ENABLE_Stratimikos=ON -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON
+  ARGS  -DTrilinos_ENABLE_Stratimikos=ON
     -DTrilinos_HOSTTYPE:STRING=BadSystem1
   PASS_REGULAR_EXPRESSION_ALL
     "Explicitly disabled packages on input .+:  Stokhos Ifpack ML 3"
@@ -201,7 +200,7 @@ CREATE_DEPENCENCY_HANDLING_TEST_CASE(
 
 CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   EnableStratimikos_EnableAllOptionalPackages_BadSystem2
-  ARGS  -DTrilinos_ENABLE_Stratimikos=ON -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON
+  ARGS  -DTrilinos_ENABLE_Stratimikos=ON
     -DTrilinos_HOSTTYPE:STRING=BadSystem2
   PASS_REGULAR_EXPRESSION_ALL
     "Explicitly disabled packages on input .+:  Stokhos Ifpack 2"
@@ -213,7 +212,7 @@ CREATE_DEPENCENCY_HANDLING_TEST_CASE(
 
 CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   EnableStratimikos_EnableIfpack_EnableAllOptionalPackages_BadSystem2
-  ARGS  -DTrilinos_ENABLE_Stratimikos=ON -DTrilinos_ENABLE_Ifpack=ON -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON
+  ARGS  -DTrilinos_ENABLE_Stratimikos=ON -DTrilinos_ENABLE_Ifpack=ON
     -DTrilinos_HOSTTYPE:STRING=BadSystem2
   PASS_REGULAR_EXPRESSION_ALL
     "WARNING: User has set Trilinos_ENABLE_Ifpack=ON but the" 

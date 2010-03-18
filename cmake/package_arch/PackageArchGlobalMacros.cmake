@@ -24,7 +24,7 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
   SET( ${PROJECT_NAME}_ENABLE_ALL_PACKAGES OFF CACHE BOOL
     "Enable all packages (Primary Stable and perhaps Secondary Stable packages)." )
   
-  SET(${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES OFF CACHE BOOL
+  SET(${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES ON CACHE BOOL
     "Recursively enable all optional packages for set of enabled packages." )
   
   SET(${PROJECT_NAME}_ENABLE_ALL_FORWARD_DEP_PACKAGES OFF CACHE BOOL
