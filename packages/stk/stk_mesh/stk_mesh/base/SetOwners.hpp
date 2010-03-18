@@ -27,31 +27,30 @@ typedef std::greater<unsigned> HighestRankSharingProcOwns;
 template<class OwnershipRule>
 void set_owners(BulkData& mesh_bulk_data)
 {
-  const std::vector<EntityProc>& shared_entities = mesh_bulk_data.shared_entities();
+  typedef std::set<unsigned,OwnershipRule> ProcSet ;
 
-  typedef std::map<Entity*,std::set<unsigned,OwnershipRule> > entity_set_map;
-
-  entity_set_map entities;
-
-  unsigned local_proc = mesh_bulk_data.parallel_rank();
-
-  for(size_t i=0; i<shared_entities.size(); ++i) {
-    Entity* entity = shared_entities[i].first;
-    const unsigned& proc = shared_entities[i].second;
-
-    entities[entity].insert(proc);
-  }
+  const unsigned local_proc = mesh_bulk_data.parallel_rank();
 
   std::vector<EntityProc> entity_new_owners;
 
-  typename entity_set_map::iterator
-    iter = entities.begin(), iend = entities.end();
+  const std::vector<Entity*>& entity_comm = mesh_bulk_data.entity_comm();
 
-  for(; iter!=iend; ++iter) {
-    Entity* const entity = iter->first;
-    const unsigned& new_owner_proc = *(iter->second.begin());
+  for ( size_t i=0; i<entity_comm.size(); ++i) {
+    Entity * const entity = entity_comm[i] ;
 
-    if (entity->owner_rank() == local_proc) {
+    const PairIterEntityComm sharing = entity->sharing();
+
+    if ( ! sharing.empty() && entity->owner_rank() == local_proc ) {
+      ProcSet proc_set ;
+
+      proc_set.insert( local_proc );
+
+      for ( size_t j = 0 ; j < sharing.size() ; ++j ) {
+        proc_set.insert( sharing[j].proc );
+      }
+
+      const unsigned new_owner_proc = *proc_set.begin();
+
       entity_new_owners.push_back(std::make_pair( entity, new_owner_proc ) );
     }
   }

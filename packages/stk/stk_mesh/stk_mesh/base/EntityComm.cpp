@@ -18,6 +18,96 @@
 namespace stk {
 namespace mesh {
 
+//----------------------------------------------------------------------------
+
+bool in_shared( const Entity & entity )
+{
+  PairIterEntityComm ec = entity.comm();
+  return ! ec.empty() && ec.front().ghost_id == 0 ;
+}
+
+bool in_shared( const Entity & entity , unsigned proc )
+{
+  for ( PairIterEntityComm ec = entity.comm();
+        ! ec.empty() && ec->ghost_id == 0 ; ++ec ) {
+    if ( proc == ec->proc ) {
+      return true ;
+    }
+  }
+  return false ;
+}
+
+bool in_receive_ghost( const Entity & entity )
+{
+  // Ghost communication with owner.
+  PairIterEntityComm ec = entity.comm();
+  return ! ec.empty() && ec.front().ghost_id != 0 &&
+                         ec.front().proc == entity.owner_rank();
+}
+
+bool in_receive_ghost( const Ghosting & ghost , const Entity & entity )
+{
+  return in_ghost( ghost , entity , entity.owner_rank() );
+}
+
+bool in_send_ghost( const Entity & entity )
+{
+  // Ghost communication with non-owner.
+  PairIterEntityComm ec = entity.comm();
+  return ! ec.empty() && ec.back().ghost_id != 0 &&
+                         ec.back().proc != entity.owner_rank();
+}
+
+bool in_send_ghost( const Entity & entity , unsigned proc )
+{
+  for ( PairIterEntityComm ec = entity.comm(); ! ec.empty() ; ++ec ) {
+    if ( ec->ghost_id != 0 &&
+         ec->proc   != entity.owner_rank() &&
+         ec->proc   == proc ) {
+      return true ;
+    }
+  }
+  return false ;
+}
+
+bool in_ghost( const Ghosting & ghost , const Entity & entity , unsigned p )
+{
+  // Ghost communication from owner.
+  EntityCommInfo tmp( ghost.ordinal() , p );
+
+  std::vector<EntityCommInfo>::const_iterator i =
+    std::lower_bound( entity.comm().begin() , entity.comm().end() , tmp );
+
+  return i != entity.comm().end() && tmp == *i ;
+}
+
+
+void comm_procs( const Entity & entity , std::vector<unsigned> & procs )
+{
+  procs.clear();
+  for ( PairIterEntityComm ec = entity.comm(); ! ec.empty() ; ++ec ) {
+    procs.push_back( ec->proc );
+  }
+  std::sort( procs.begin() , procs.end() );
+  std::vector<unsigned>::iterator
+    i = std::unique( procs.begin() , procs.end() );
+  procs.erase( i , procs.end() );
+}
+
+void comm_procs( const Ghosting & ghost ,
+                 const Entity & entity , std::vector<unsigned> & procs )
+{
+  procs.clear();
+  for ( PairIterEntityComm ec = entity.comm(); ! ec.empty() ; ++ec ) {
+    if ( ec->ghost_id == ghost.ordinal() ) {
+      procs.push_back( ec->proc );
+    }
+  }
+}
+
+
+//----------------------------------------------------------------------------
+
 void pack_entity_info( CommBuffer & buf , const Entity & entity )
 {
   const EntityKey & key   = entity.key();
@@ -76,7 +166,7 @@ void unpack_entity_info(
     buf.unpack<Relation::raw_attr_type>( rel_attr );
     Entity * const entity =
       mesh.get_entity( entity_type(rel_key), entity_id(rel_key) );
-    if ( entity ) {
+    if ( entity && entity->bucket().capacity() ) {
       Relation rel( rel_attr , * entity );
       relations.push_back( rel );
     }

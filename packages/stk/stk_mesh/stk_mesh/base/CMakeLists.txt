@@ -65,7 +65,6 @@ BulkDataGhosting.cpp
 BulkDataOwner.cpp
 BulkDataParallelVerify.cpp
 BulkDataRelation.cpp
-BulkDataSharing.cpp
 BulkModification.cpp
 Comm.cpp
 DataTraits.cpp
@@ -77,6 +76,7 @@ FieldData.cpp
 FieldParallel.cpp
 GetBuckets.cpp
 GetEntities.cpp
+Ghosting.cpp
 MetaData.cpp
 Part.cpp
 Property.cpp

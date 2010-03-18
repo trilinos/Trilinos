@@ -22,7 +22,7 @@
 #include <stk_mesh/fem/TopologyHelpers.hpp>
     
 #include <Shards_BasicTopologies.hpp>
-
+#include <stk_mesh/base/DataTraits.hpp>
 
 class BoxMeshFixture
 {
@@ -30,6 +30,8 @@ public:
   typedef int Scalar ;
   typedef stk::mesh::Field<Scalar, stk::mesh::Cartesian>   CoordFieldType;
   typedef stk::mesh::Field<Scalar*,stk::mesh::ElementNode> CoordGatherFieldType;
+  typedef stk::mesh::Field<Scalar*,stk::mesh::QuadratureTag> QuadTagType;
+  typedef stk::mesh::Field<Scalar*,stk::mesh::BasisTag> BasisTagType;
 
   BoxMeshFixture(stk::ParallelMachine pm);
 
@@ -37,6 +39,8 @@ public:
 
   CoordFieldType       * m_coord_field ;
   CoordGatherFieldType * m_coord_gather_field ;
+  QuadTagType          * m_quad_tag ;
+  BasisTagType         * m_basis_tag ;
 
   //  Box of 8 elements:
   //  Up to 8 processes, so each process owns at least one element.

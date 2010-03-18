@@ -65,15 +65,13 @@ convert_entity_keys_to_spans( const MetaData & meta )
 
 BulkData::BulkData( const MetaData & mesh_meta_data ,
             ParallelMachine parallel ,
-             unsigned bucket_max_size ,
-             Transaction::TransactionType transaction_type )
+             unsigned bucket_max_size )
   : m_buckets(),
     m_entities(),
-    m_shares_all(),
+    m_entity_comm(),
     m_ghosting(),
     m_entities_index( parallel, convert_entity_keys_to_spans(mesh_meta_data) ),
     m_new_entities(),
-    m_del_entities(),
     m_bucket_nil( NULL ),
 
     m_mesh_meta_data( mesh_meta_data ),
@@ -82,9 +80,7 @@ BulkData::BulkData( const MetaData & mesh_meta_data ,
     m_parallel_rank( parallel_machine_rank( parallel ) ),
     m_bucket_capacity( bucket_max_size ),
     m_sync_count( 0 ),
-    m_sync_state( MODIFIABLE )  ,
-    m_transaction_log( *this , transaction_type )
-
+    m_sync_state( MODIFIABLE )
 {
   static const char method[] = "stk::mesh::BulkData::Mesh" ;
 
@@ -97,13 +93,12 @@ BulkData::BulkData( const MetaData & mesh_meta_data ,
   m_bucket_nil =
     Bucket::declare_nil_bucket( *this , mesh_meta_data.get_fields().size() );
 
+  create_ghosting( std::string("shared") );
   create_ghosting( std::string("shared_aura") );
 }
 
 BulkData::~BulkData()
 {
-
-  m_transaction_log.reset();
   try {
     while ( ! m_ghosting.empty() ) {
       delete m_ghosting.back();
@@ -111,7 +106,7 @@ BulkData::~BulkData()
     }
   } catch(...){}
 
-  try { m_shares_all.clear(); } catch(...){}
+  try { m_entity_comm.clear(); } catch(...){}
 
   // Remove entities from the buckets.
   // Destroy entities, which were allocated by the set itself.
@@ -136,26 +131,14 @@ BulkData::~BulkData()
   try { Bucket::destroy_bucket( m_bucket_nil ); } catch(...) {}
 
   try {
-    for ( EntitySet::iterator
-          it = m_entities.begin(); it != m_entities.end(); ++it) {
-      it->second->m_bucket     = NULL ;
-      it->second->m_bucket_ord = 0 ;
-      internal_expunge_entity ( it->second );
+    while ( ! m_entities.empty() ) {
+      internal_expunge_entity( m_entities.begin() );
     }
-    m_entities.clear();
   } catch(...){}
 }
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
-
-void  BulkData::reset_transaction ( Transaction::TransactionType t )
-{
-  if ( synchronized_state() == MODIFIABLE )
-    throw std::runtime_error ( "Cannot reset transaction while mesh is modifiable" );
-  m_transaction_log.reset( t );
-}
-
 
 void BulkData::update_field_data_states() const
 {
@@ -182,34 +165,20 @@ void BulkData::assert_ok_to_modify( const char * method ) const
   }
 }
 
-void BulkData::assert_entity_owner_or_not_destroyed( const char * method ,
+void BulkData::assert_entity_owner( const char * method ,
                                     const Entity & e ,
                                     unsigned owner ) const
 {
   const bool error_not_owner = owner != e.owner_rank() ;
-  bool error_destroyed = false;
 
-  if ( e.transaction_bucket() )
-    if ( e.transaction_bucket()->transaction_state() == Transaction::DELETED )
-      error_destroyed = true;
-
-  if ( m_transaction_log.m_to_delete.find ( const_cast<Entity *>(&e) ) != m_transaction_log.m_to_delete.end() )
-    error_destroyed = true;
-
-  if ( error_not_owner || error_destroyed ) {
+  if ( error_not_owner ) {
     std::ostringstream msg ;
     msg << method << "( " ;
     print_entity_key( msg , m_mesh_meta_data , e.key() );
     msg << " ) FAILED" ;
 
-    if ( error_destroyed ) {
-       msg << " : Entity has been destroyed" ;
-    }
-
-    if ( error_not_owner ) {
-      msg << " : Owner( " << e.owner_rank()
-          << " ) != Required( " << owner << " )" ;
-    }
+    msg << " : Owner( " << e.owner_rank()
+        << " ) != Required( " << owner << " )" ;
 
     throw std::runtime_error( msg.str() );
   }
@@ -248,6 +217,19 @@ bool BulkData::modification_begin()
   if ( m_sync_state == MODIFIABLE ) return false ;
 
   m_sync_state = MODIFIABLE ;
+
+  // Clear out the previous transaction information
+  // m_transaction_log.flush();
+
+  // Clear out the entities destroyed in the previous modification.
+  // They were retained for change-logging purposes.
+
+  for ( EntitySet::iterator i = m_entities.begin() ; i != m_entities.end() ; ) {
+    const EntitySet::iterator j = i ; ++i ;
+    if ( j->second->m_bucket == m_bucket_nil ) {
+      internal_expunge_entity( j );
+    }
+  }
 
   return true ;
 }
@@ -314,11 +296,8 @@ Entity * BulkData::get_entity( EntityKey key) const
 // owner & used parts match the owner value.
 
 std::pair<Entity*,bool>
-BulkData::internal_create_entity( const EntityKey & key ,
-                                  const unsigned    owner )
+BulkData::internal_create_entity( const EntityKey & key )
 {
-  const char method[] = "stk::mesh::BulkData::internal_create_entity" ;
-
   EntitySet::value_type tmp(key,NULL);
 
   const std::pair< EntitySet::iterator , bool >
@@ -329,14 +308,37 @@ BulkData::internal_create_entity( const EntityKey & key ,
 
   if ( insert_result.second )  { // A new entity
     insert_result.first->second = result.first = new Entity( key );
-    result.first->m_owner_rank = owner ;
+    result.first->m_owner_rank   = ~0u ;
+    result.first->m_sync_count   = m_sync_count ;
   }
-  else { // An existing entity, the owner must match.
-    assert_entity_owner_or_not_destroyed( method , * result.first , owner );
-  }
-
 
   return result ;
+}
+
+
+void BulkData::internal_expunge_entity( BulkData::EntitySet::iterator i )
+{
+  const bool ok_ptr = i->second != NULL ;
+  const bool ok_key = ok_ptr ? i->first == i->second->key() : true ;
+
+  if ( ! ok_ptr || ! ok_key ) {
+    std::ostringstream msg ;
+    msg << "stk::mesh::BulkData::internal_expunge_entity( " ;
+    print_entity_key( msg , m_mesh_meta_data , i->first );
+    if ( ! ok_ptr ) {
+      msg << "NULL" ;
+    }
+    else {
+      msg << " != " ;
+      print_entity_key( msg , m_mesh_meta_data , i->second->key() );
+    }
+    msg << ") FAILED" ;
+    throw std::runtime_error( msg.str() );
+  }
+
+  delete i->second ;
+  i->second = NULL ;
+  m_entities.erase( i );
 }
 
 //----------------------------------------------------------------------
@@ -354,11 +356,16 @@ Entity & BulkData::declare_entity( EntityType ent_type , EntityId ent_id ,
 
   assert_good_key( method , key );
 
-  std::pair< Entity * , bool > result =
-    internal_create_entity( key , m_parallel_rank );
+  std::pair< Entity * , bool > result = internal_create_entity( key );
+
+  if ( ! result.second ) {
+    // An existing entity, the owner must match.
+    assert_entity_owner( method , * result.first , m_parallel_rank );
+  }
 
   if ( result.second ) { // A new entity
     m_new_entities.push_back( result.first );
+    result.first->m_owner_rank = m_parallel_rank ;
   }
 
   //------------------------------
@@ -371,7 +378,7 @@ Entity & BulkData::declare_entity( EntityType ent_type , EntityId ent_id ,
 
   change_entity_parts( * result.first , add , rem );
 
-  m_transaction_log.insert_entity ( *(result.first) );
+  // m_transaction_log.insert_entity ( *(result.first) );
 
   return * result.first ;
 }
@@ -453,7 +460,7 @@ void BulkData::change_entity_parts(
 
   assert_ok_to_modify( method );
 
-  assert_entity_owner_or_not_destroyed( method , e , m_parallel_rank );
+  assert_entity_owner( method , e , m_parallel_rank );
 
   // Transitive addition and removal:
   // 1) Include supersets of add_parts
@@ -509,9 +516,6 @@ void BulkData::change_entity_parts(
   return ;
 }
 
-
-
-
 //----------------------------------------------------------------------
 
 namespace {
@@ -561,11 +565,6 @@ void merge_in( std::vector<unsigned> & vec , const PartVector & parts )
   }
 }
 
-struct LessEntityPointer {
-  bool operator()( const Entity * const lhs , const Entity * const rhs ) const
-    { return lhs->key() < rhs->key() ; }
-};
-
 }
 
 //  The 'add_parts' and 'remove_parts' are complete and disjoint.
@@ -577,7 +576,8 @@ void BulkData::internal_change_entity_parts(
   const PartVector & add_parts ,
   const PartVector & remove_parts )
 {
-  Bucket * const k_old = e.m_bucket ;
+  Bucket * const k_old = e.m_bucket != m_bucket_nil
+                       ? e.m_bucket : (Bucket *) NULL ;
   const unsigned i_old = e.m_bucket_ord ;
 
 
@@ -589,7 +589,7 @@ void BulkData::internal_change_entity_parts(
     return ;
   }
 
-  m_transaction_log.modify_entity ( e );
+  // m_transaction_log.modify_entity ( e );
   PartVector parts_removed ;
 
   std::vector<unsigned> parts_total ; // The final part list
@@ -679,6 +679,10 @@ bool BulkData::destroy_entity( Entity * & e )
 
   if ( has_upward_relation ) { return false ; }
 
+  if ( 0 == entity.m_bucket->capacity() ) {
+    // Cannot already be destroyed.
+    return false ;
+  }
   // Add destroyed entity to the transaction
 
   //------------------------------
@@ -695,7 +699,8 @@ bool BulkData::destroy_entity( Entity * & e )
     destroy_relation( entity , * entity.m_relation.back().entity() );
   }
 
-  m_transaction_log.delete_entity ( *e );
+  // m_transaction_log.delete_entity ( *e );
+
   remove_entity( entity.m_bucket , entity.m_bucket_ord );
 
   // Set the bucket to 'bucket_nil' which:
@@ -709,13 +714,8 @@ bool BulkData::destroy_entity( Entity * & e )
   entity.m_bucket     = m_bucket_nil ;
   entity.m_bucket_ord = 0 ;
 
-  // Remember what entities have been destroyed for
-  // modification_end_syncronize clean up
-  m_del_entities.push_back( e );
-
-
   // Set the calling entity-pointer to NULL;
-  // hopefully the user-code did not keep any outstanding
+  // hopefully the user-code will clean up any outstanding
   // references to this entity.
 
   e = NULL ;
@@ -742,40 +742,6 @@ void BulkData::generate_new_keys(const std::vector<size_t>& requests,
       requested_keys.push_back(key);
     }
   }
-}
-
-//----------------------------------------------------------------------
-
-void BulkData::internal_destroy_entire_bucket ( Bucket * b )
-{
-  for ( unsigned i = 0 ; i != b->m_size ; i++ )
-    internal_expunge_entity ( b->m_entities[i] );
-  Bucket::destroy_bucket ( b );
-}
-
-
-//----------------------------------------------------------------------
-
-void BulkData::internal_destroy_entity( Entity * e )
-{
-  m_transaction_log.delete_entity ( *e );
-  while ( ! e->m_relation.empty() ) {
-    destroy_relation( * e , * e->m_relation.back().entity() );
-  }
-
-  if ( e->m_bucket->capacity() ) { // Not the 'nil' bucket.
-    remove_entity( e->m_bucket , e->m_bucket_ord );
-  }
-
-  e->m_bucket     = NULL ;
-  e->m_bucket_ord = 0 ;
-
-  m_entities.erase( e->key() );
-
-  // If the transaction is an incremental transaction, it will destroy
-  // the entity later.  Otherwise, bulk data will destroy it now
-//  if ( m_transaction_log.m_transaction_type != Transaction::INCREMENTAL )
-//    delete e ;
 }
 
 //----------------------------------------------------------------------
@@ -891,7 +857,7 @@ void BulkData::internal_sort_bucket_entities()
         }
       }
 
-      std::sort( entities.begin() , entities.end() , LessEntityPointer() );
+      std::sort( entities.begin() , entities.end() , EntityLess() );
 
       j = entities.begin();
 

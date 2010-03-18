@@ -31,6 +31,9 @@ public:
   /** \brief  Text name for printing purposes only */
   const std::string & name() const { return m_name ; }
 
+  /** \brief  Ordinal to identify the ghosting subset */
+  unsigned ordinal() const { return m_ordinal ; }
+
   /** \brief  Bulk data synchronization count when this
    *          ghosting object was last modified.
    */
@@ -38,21 +41,17 @@ public:
 
   /** \brief  Locally owned entities ghosted on other processors.
    *
-   *          This communication list for sending updates
+   *          This generated communication list for sending updates
    *          is sorted by entity key and processor rank.
-   *
-   * \todo REFACTOR rename to 'send_list'
    */
-  const std::vector< EntityProc > & send() const { return m_send ; }
+  void send_list( std::vector< EntityProc > & ) const ;
 
   /** \brief  Entities ghosted on this processor from the owner.
    *
-   *          This communication list for receiving updates
+   *          This generated communication list for receiving updates
    *          is sorted by entity key.
-   *
-   * \todo REFACTOR rename to 'receive_list'
    */
-  const std::vector< Entity * > & receive() const { return m_recv ; }
+  void receive_list( std::vector< Entity * > & ) const ;
 
 private:
   /** \brief  A Ghosting object is owned by a BulkData object,
@@ -62,12 +61,11 @@ private:
 
   BulkData                & m_mesh ; ///< Owner
   const std::string         m_name ; ///< Name for printing purposes
-  std::vector< EntityProc > m_send ; ///< Locally owned entities to send
-  std::vector< Entity * >   m_recv ; ///< Ghosted entities
   size_t                    m_sync_count ; ///< Bulk data sync count
+  unsigned                  m_ordinal ;
 
-  Ghosting( BulkData & M , const std::string & n , size_t count )
-    : m_mesh( M ) , m_name( n ), m_send(), m_recv(), m_sync_count( count ) {}
+  Ghosting( BulkData & M , const std::string & n , unsigned ord , size_t count )
+    : m_mesh( M ) , m_name( n ), m_sync_count( count ), m_ordinal( ord ) {}
 
   ~Ghosting() {}
 

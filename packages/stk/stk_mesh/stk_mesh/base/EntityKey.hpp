@@ -155,6 +155,11 @@ public:
 
 /** \brief  Given an entity key, return an entity type (rank). */
 inline
+EntityType entity_rank( const EntityKey & key ) {
+  return key.rank();
+}
+
+inline
 EntityType entity_type( const EntityKey & key ) {
   return key.rank();
 }

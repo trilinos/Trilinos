@@ -53,7 +53,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyAssertOwnerDeletedEntity )
   cell_to_delete_copy = cell_to_delete;
   bulk.modification_begin();
   bulk.destroy_entity ( cell_to_delete );
-  STKUNIT_ASSERT_THROW ( bulk.assert_entity_owner_or_not_destroyed ( "method" , *cell_to_delete_copy , fixture.comm_rank()) , std::runtime_error );
+  // Destroying an already destroyed entity returns false
+  STKUNIT_ASSERT( false == bulk.destroy_entity( cell_to_delete_copy ) );
   bulk.modification_end();
 }
 
@@ -197,22 +198,27 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyParallelAddParts )
   fixture.generate_boxes ();
 
   bulk.modification_begin();
-  std::vector<stk::mesh::EntityProc>::const_iterator  cur_entity = bulk.shared_entities().begin();
-  while ( cur_entity != bulk.shared_entities().end() )
-  {
-    if ( cur_entity->first->entity_type() == 0 )
-      if ( cur_entity->first->owner_rank() == fixture.comm_rank() )
-        bulk.change_entity_parts ( *cur_entity->first , add_part , stk::mesh::PartVector() );
-    cur_entity++;
+
+  for ( std::vector<stk::mesh::Entity*>::const_iterator
+        cur_entity =  bulk.entity_comm().begin();
+        cur_entity != bulk.entity_comm().end() ; ++cur_entity ) {
+    stk::mesh::Entity & entity = **cur_entity ;
+    if ( entity.entity_rank() == 0 ) {
+      if ( entity.owner_rank() == fixture.comm_rank() ) {
+        bulk.change_entity_parts ( entity, add_part, stk::mesh::PartVector() );
+      }
+    }
   }
+
   bulk.modification_end();
 
-  cur_entity = bulk.shared_entities().begin();
-  while ( cur_entity != bulk.shared_entities().end() )
-  {
-    if ( cur_entity->first->entity_type() == 0 )
-      STKUNIT_ASSERT ( cur_entity->first->bucket().member ( fixture.get_part_a_0 () ) );
-    cur_entity++;
+  for ( std::vector<stk::mesh::Entity*>::const_iterator
+        cur_entity =  bulk.entity_comm().begin();
+        cur_entity != bulk.entity_comm().end() ; ++cur_entity ) {
+    stk::mesh::Entity & entity = **cur_entity ;
+    if ( entity.entity_rank() == 0 ) {
+      STKUNIT_ASSERT ( entity.bucket().member ( fixture.get_part_a_0 () ) );
+    }
   }
 }
 
@@ -324,15 +330,29 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyTrivialDestroyAllGhostings )
   bulk.change_ghosting ( ghosting , to_send , empty_vector );
   bulk.modification_end();
 
-  STKUNIT_ASSERT ( ghosting.send().size() > 0u );
-  STKUNIT_ASSERT ( ghosting.receive().size() > 0u );
+  {
+    std::vector<stk::mesh::EntityProc> send_list ;
+    std::vector<stk::mesh::Entity*>    recv_list ;
+    ghosting.send_list( send_list );
+    ghosting.receive_list( recv_list );
+
+    STKUNIT_ASSERT ( send_list.size() > 0u );
+    STKUNIT_ASSERT ( recv_list.size() > 0u );
+  }
 
   bulk.modification_begin();
   bulk.destroy_all_ghosting ();
   bulk.modification_end();
 
-  STKUNIT_ASSERT_EQUAL ( ghosting.send().size() , 0u );
-  STKUNIT_ASSERT_EQUAL ( ghosting.receive().size() , 0u );
+  {
+    std::vector<stk::mesh::EntityProc> send_list ;
+    std::vector<stk::mesh::Entity*>    recv_list ;
+    ghosting.send_list( send_list );
+    ghosting.receive_list( recv_list );
+
+    STKUNIT_ASSERT_EQUAL ( send_list.size() , 0u );
+    STKUNIT_ASSERT_EQUAL ( recv_list.size() , 0u );
+  }
 }
 
 

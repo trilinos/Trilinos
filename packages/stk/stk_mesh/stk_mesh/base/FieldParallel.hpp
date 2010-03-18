@@ -39,13 +39,14 @@ void communicate_field_data(
   const Ghosting                        & ghosts ,
   const std::vector< const FieldBase *> & fields );
 
-/** Communicate field data given symmetric communication plan.  */
+/** Communicate field data among shared entities */
 void communicate_field_data(
-  ParallelMachine ,
-  const std::vector<EntityProc> & ,
+  const BulkData & mesh ,
   const unsigned field_count ,
   const FieldBase * fields[] ,
   CommAll & sparse );
+
+void communicate_field_data_verify_read( CommAll & );
 
 //----------------------------------------------------------------------
 
@@ -66,13 +67,14 @@ void parallel_reduce( const BulkData & mesh ,
 {
   const FieldBase * fields[1] = { & op.field };
 
-  const std::vector<EntityProc> & shared = mesh.shared_entities();
-
   CommAll sparse ;
 
-  communicate_field_data( mesh.parallel(), shared, 1, fields, sparse );
+  communicate_field_data( mesh, 1, fields, sparse );
 
-  op( shared , sparse );
+  op( mesh.entity_comm() , sparse );
+
+  // For debugging:
+  // communicate_field_data_verify_read( sparse );
 }
 
 /** Parallel reduction of shared entities' field data.
@@ -88,14 +90,15 @@ void parallel_reduce( const BulkData & mesh ,
 {
   const FieldBase * fields[2] = { & op1.field , & op2.field };
 
-  const std::vector<EntityProc> & shared = mesh.shared_entities();
-
   CommAll sparse ;
 
-  communicate_field_data( mesh.parallel(), shared, 2, fields, sparse );
+  communicate_field_data( mesh, 2, fields, sparse );
 
-  op1( shared , sparse );
-  op2( shared , sparse );
+  op1( mesh.entity_comm() , sparse );
+  op2( mesh.entity_comm() , sparse );
+
+  // For debugging:
+  // communicate_field_data_verify_read( sparse );
 }
 
 //----------------------------------------------------------------------
@@ -111,7 +114,7 @@ struct ParallelReduceField {
   ParallelReduceField( const field_type & f ) : field(f) {}
   ParallelReduceField( const ParallelReduceField & p ) : field(p.field) {}
 
-  void operator()( const std::vector<EntityProc> & shared ,
+  void operator()( const std::vector<Entity*> & entity_comm ,
                    CommAll & sparse ) const ;
 
 private:
@@ -123,23 +126,28 @@ template< class ReduceOp ,
           class Tag4 , class Tag5, class Tag6, class Tag7 >
 void ParallelReduceField< ReduceOp , Type ,  Tag1,  Tag2,  Tag3 ,
                                      Tag4 ,  Tag5,  Tag6,  Tag7 >::
-  operator()( const std::vector<EntityProc> & shared , CommAll & sparse ) const
+  operator()( const std::vector<Entity*> & entity_comm ,
+              CommAll & sparse ) const
 {
   typedef EntityArray< field_type > array_type ;
 
-  for ( std::vector<EntityProc>::const_iterator
-        i = shared.begin(); i != shared.end() ; ++i ) {
+  for ( std::vector<Entity*>::const_iterator
+        i = entity_comm.begin(); i != entity_comm.end() ; ++i ) {
+    Entity & entity = **i ;
+    array_type array( field , entity );
+    Type * const ptr_beg = array.contiguous_data();
+    Type * const ptr_end = ptr_beg + array.size();
 
-    array_type array( field , * i->first );
-    Type * ptr           = array.contiguous_data();
-    Type * const ptr_end = ptr + array.size();
+    for ( PairIterEntityComm
+          ec = entity.comm() ; ! ec.empty() && ec->ghost_id == 0 ; ++ec ) {
 
-    CommBuffer & b = sparse.recv_buffer( i->second );
+      CommBuffer & b = sparse.recv_buffer( ec->proc );
 
-    for ( ; ptr < ptr_end ; ++ptr ) {
-      Type tmp ;
-      b.template unpack<unsigned char>( (unsigned char *)(&tmp), sizeof(Type) );
-      ReduceOp( ptr , & tmp );
+      for ( Type * ptr = ptr_beg ; ptr < ptr_end ; ++ptr ) {
+        Type tmp ;
+        b.template unpack<unsigned char>( (unsigned char *)(&tmp), sizeof(Type) );
+        ReduceOp( ptr , & tmp );
+      }
     }
   }
 }

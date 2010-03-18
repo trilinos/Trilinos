@@ -14,6 +14,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
+#include <stk_mesh/base/EntityComm.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/fem/EntityTypes.hpp>
 
@@ -41,40 +42,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testUnit)
 namespace stk {
 namespace mesh {
 
-void UnitTestBulkData::modification_end(
-  BulkData & mesh , bool aura )
-{
-  // Exactly match BulkData::modification_end
-  // except for automatic regeneration of the ghosting aura.
-
-  STKUNIT_ASSERT_EQUAL( BulkData::MODIFIABLE , mesh.m_sync_state );
-
-  if ( 1 < mesh.m_parallel_size ) {
-    mesh.internal_resolve_parallel_create_delete();
-  }
-
-  // Done with created and deleted entity lists.
-
-  mesh.m_new_entities.clear();
-   
-  while ( ! mesh.m_del_entities.empty() ) {
-    mesh.internal_destroy_entity( mesh.m_del_entities.back() );
-    mesh.m_del_entities.pop_back();
-  }  
-
-  if ( 1 < mesh.m_parallel_size ) {
-    if ( aura ) { mesh.internal_regenerate_shared_aura(); }
-    mesh.internal_resolve_shared_membership();
-  }
-
-  mesh.internal_sort_bucket_entities();
-
-  mesh.internal_flush_transaction_log_deletes ();
-
-  ++ mesh.m_sync_count ;
-
-  mesh.m_sync_state = BulkData::SYNCHRONIZED ;
-}
+bool UnitTestBulkData::modification_end( BulkData & mesh , bool aura )
+{ return mesh.internal_modification_end( aura ); }
 
 // Unit test the Part functionality in isolation:
 
@@ -230,10 +199,22 @@ void UnitTestBulkData::testChangeOwner_nodes( ParallelMachine pm )
     bulk.change_entity_owner( change );
     STKUNIT_ASSERT( bulk.modification_end() );
 
-    STKUNIT_ASSERT( NULL == bulk.get_entity( 0 , ids[id_give] ) );
-    STKUNIT_ASSERT( NULL == bulk.get_entity( 0 , ids[id_give+1] ) );
     STKUNIT_ASSERT( NULL != bulk.get_entity( 0 , ids[id_get] ) );
     STKUNIT_ASSERT( NULL != bulk.get_entity( 0 , ids[id_get+1] ) );
+
+    // Entities given away are destroyed until the next modification cycle
+    {
+      Entity * const e0 = bulk.get_entity( 0 , ids[id_give] );
+      Entity * const e1 = bulk.get_entity( 0 , ids[id_give+1] );
+      STKUNIT_ASSERT( NULL != e0 && e0->bucket().capacity() == 0 );
+      STKUNIT_ASSERT( NULL != e1 && e1->bucket().capacity() == 0 );
+    }
+
+    STKUNIT_ASSERT( bulk.modification_begin() );
+    STKUNIT_ASSERT( bulk.modification_end() );
+
+    STKUNIT_ASSERT( NULL == bulk.get_entity( 0 , ids[id_give] ) );
+    STKUNIT_ASSERT( NULL == bulk.get_entity( 0 , ids[id_give+1] ) );
   }
 
   std::cout << std::endl
@@ -390,7 +371,7 @@ void test_shift_loop( BulkData & mesh ,
 
   STKUNIT_ASSERT( mesh.modification_begin() );
   mesh.change_entity_owner( change );
-  UnitTestBulkData::modification_end( mesh , generate_aura );
+  STKUNIT_ASSERT( UnitTestBulkData::modification_end( mesh , generate_aura ) );
 
   send_edge_1 = mesh.get_entity( 1 , edge_ids[ id_send ] );
   send_edge_2 = mesh.get_entity( 1 , edge_ids[ id_send + 1 ] );
@@ -406,20 +387,20 @@ void test_shift_loop( BulkData & mesh ,
   STKUNIT_ASSERT( local_count[0] == nLocalNode );
   STKUNIT_ASSERT( local_count[1] == nLocalEdge );
 
-  const std::vector<EntityProc> & shared = mesh.shared_entities();
-
-  STKUNIT_ASSERT( shared.size() == 2u );
-
-  const unsigned n0 = id_recv ;
-  const unsigned n1 = id_send ;
-
-  if ( n0 < n1 ) {
-    STKUNIT_ASSERT( shared[0].first->identifier() == node_ids[n0] );
-    STKUNIT_ASSERT( shared[1].first->identifier() == node_ids[n1] );
+  unsigned count_shared = 0 ;
+  for ( std::vector<Entity*>::const_iterator
+        i = mesh.entity_comm().begin() ;
+        i != mesh.entity_comm().end() ; ++i ) {
+    if ( in_shared( **i ) ) { ++count_shared ; }
   }
-  else {
-    STKUNIT_ASSERT( shared[1].first->identifier() == node_ids[n0] );
-    STKUNIT_ASSERT( shared[0].first->identifier() == node_ids[n1] );
+  STKUNIT_ASSERT( count_shared == 2u );
+
+  {
+    Entity * const node_recv = mesh.get_entity( Node , node_ids[id_recv] );
+    Entity * const node_send = mesh.get_entity( Node , node_ids[id_send] );
+
+    STKUNIT_ASSERT( node_recv->sharing().size() == 1 );
+    STKUNIT_ASSERT( node_send->sharing().size() == 1 );
   }
 }
 
@@ -568,7 +549,14 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
       change[0].first = bulk.get_entity( 0 , node_ids[1] );
       change[0].second = p_size ;
       // Error to change a ghost:
-      change[1].first = bulk.shared_aura().receive()[0] ;
+      for ( std::vector<Entity*>::const_iterator
+            ec =  bulk.entity_comm().begin() ;
+            ec != bulk.entity_comm().end() ; ++ec ) {
+        if ( in_receive_ghost( **ec ) ) {
+          change[1].first = *ec ;
+          break ;
+        }
+      }
       change[1].second = p_rank ;
       // Error to change to multiple owners:
       change[2].first = bulk.get_entity( 0 , node_ids[1] );
@@ -615,7 +603,7 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
 
     STKUNIT_ASSERT( bulk.modification_begin() );
     bulk.change_entity_owner( change );
-    UnitTestBulkData::modification_end( bulk , false );
+    STKUNIT_ASSERT( bulk.internal_modification_end( false ) );
 
     count_entities( select_owned , bulk , local_count );
     const unsigned n_node = p_rank == 0          ? nPerProc + 1 : (
@@ -666,12 +654,20 @@ void donate_one_element( BulkData & mesh , bool aura )
 
   std::vector<EntityProc> change ;
 
-  const std::vector<EntityProc> & shared = mesh.shared_entities(); 
-  STKUNIT_ASSERT( ! shared.empty() );
-
   // A shared node:
-  Entity * const node = shared[0].first ;
+  Entity * node = NULL ;
   Entity * elem = NULL ;
+
+  for ( std::vector<Entity*>::const_iterator
+        i =  mesh.entity_comm().begin() ;
+        i != mesh.entity_comm().end() ; ++i ) {
+    if ( in_shared( **i ) && (**i).entity_rank() == Node ) {
+      node = *i ;
+      break ;
+    }
+  }
+
+  STKUNIT_ASSERT( node != NULL );
 
   for ( PairIterRelation rel = node->relations( 3 );
         ! rel.empty() && elem == NULL ; ++rel ) {
@@ -687,7 +683,7 @@ void donate_one_element( BulkData & mesh , bool aura )
   if ( 0 == p_rank ) {
     EntityProc entry ;
     entry.first = elem ;
-    entry.second = shared[0].second ;
+    entry.second = node->sharing()[0].proc ;
     change.push_back( entry );
     for ( PairIterRelation
           rel = elem->relations(0) ; ! rel.empty() ; ++rel ) {
@@ -701,7 +697,7 @@ void donate_one_element( BulkData & mesh , bool aura )
 
   STKUNIT_ASSERT( mesh.modification_begin() );
   mesh.change_entity_owner( change );
-  UnitTestBulkData::modification_end( mesh , aura );
+  STKUNIT_ASSERT( UnitTestBulkData::modification_end( mesh , aura ) );
 
   count_entities( select_owned , mesh , after_count );
 
@@ -724,27 +720,27 @@ void donate_all_shared_nodes( BulkData & mesh , bool aura )
 
   // Donate owned shared nodes to first sharing process.
 
-  const std::vector<EntityProc> & shared = mesh.shared_entities(); 
+  const std::vector<Entity*> & entity_comm = mesh.entity_comm(); 
 
-  STKUNIT_ASSERT( ! shared.empty() );
+  STKUNIT_ASSERT( ! entity_comm.empty() );
 
   std::vector<EntityProc> change ;
 
-  {
-    Entity * node = NULL ;
-    for ( std::vector<EntityProc>::const_iterator
-          i =  shared.begin() ;
-          i != shared.end() && i->first->entity_type() == 0 ; ++i ) {
-      if ( i->first->owner_rank() == p_rank && node != i->first ) {
-        change.push_back( *i );
-        node = i->first ;
-      }
+  for ( std::vector<Entity*>::const_iterator
+        i =  entity_comm.begin() ;
+        i != entity_comm.end() &&
+        (**i).entity_rank() == Node ; ++i ) {
+    Entity * const node = *i ;
+    const PairIterEntityComm ec = node->sharing();
+
+    if ( node->owner_rank() == p_rank && ! ec.empty() ) {
+      change.push_back( EntityProc( node , ec->proc ) );
     }
   }
 
   STKUNIT_ASSERT( mesh.modification_begin() );
   mesh.change_entity_owner( change );
-  UnitTestBulkData::modification_end( mesh , aura );
+  STKUNIT_ASSERT( UnitTestBulkData::modification_end( mesh , aura ) );
 
   count_entities( select_used , mesh , after_count );
 

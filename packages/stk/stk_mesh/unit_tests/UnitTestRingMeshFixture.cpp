@@ -122,17 +122,17 @@ void RingMeshFixture::generate_loop(
   STKUNIT_ASSERT( local_count[1] == nLocalEdge );
 
   if ( 1 < p_size ) {
-    const std::vector<EntityProc> & shared = m_bulk_data->shared_entities();
-
-    STKUNIT_ASSERT_EQUAL( shared.size() , size_t(2) );
-
     const unsigned n0 = id_end < id_total ? id_begin : 0 ;
     const unsigned n1 = id_end < id_total ? id_end : id_begin ;
 
-    STKUNIT_ASSERT( shared[0].first->identifier() == node_ids[n0] );
-    STKUNIT_ASSERT( shared[1].first->identifier() == node_ids[n1] );
-    STKUNIT_ASSERT_EQUAL( shared[0].first->sharing().size() , size_t(1) );
-    STKUNIT_ASSERT_EQUAL( shared[1].first->sharing().size() , size_t(1) );
+    Entity * const node0 = m_bulk_data->get_entity( Node , node_ids[n0] );
+    Entity * const node1 = m_bulk_data->get_entity( Node , node_ids[n1] );
+
+    STKUNIT_ASSERT( node0 != NULL );
+    STKUNIT_ASSERT( node1 != NULL );
+
+    STKUNIT_ASSERT_EQUAL( node0->sharing().size() , size_t(1) );
+    STKUNIT_ASSERT_EQUAL( node1->sharing().size() , size_t(1) );
   }
 
   // Test no-op first:

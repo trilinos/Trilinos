@@ -7,6 +7,11 @@
 /*------------------------------------------------------------------------*/
 
 
+/**  Disabled to resolve inconsistently destroyed mesh entities.
+ *   Revisit when development is driven by a use case.
+ */
+#if 0
+
 #include <unistd.h> // For sleep
 #include <stdexcept>
 
@@ -242,6 +247,7 @@ void Transaction::purge_map ( BucketListByType &buckets )
 // This method uses the internal_destroy_entire_bucket method in
 // BulkData which does not, in turn, call the delete_entity
 // transaction function.
+/*
 void Transaction::purge_and_erase_map ( BucketListByType &buckets )
 {
   BucketListByType::iterator cur_type = buckets.begin();
@@ -256,27 +262,33 @@ void Transaction::purge_and_erase_map ( BucketListByType &buckets )
     cur_type->clear();
     cur_type++;
   }
-
 }
+
 void Transaction::flush_deletes ()
 {
   for ( std::set<Entity *>::iterator  cur_del_entity = m_to_delete.begin() ; cur_del_entity != m_to_delete.end() ; cur_del_entity++ )
     m_bulk_data.internal_expunge_entity ( *cur_del_entity );
   m_to_delete.clear ();
 }
+*/
 
+
+void Transaction::flush()
+{
+  purge_map ( m_modified );
+  purge_map ( m_inserted );
+  purge_map ( m_deleted );
+
+  m_modified_parts.clear();
+  m_deleted_parts.clear();
+  m_inserted_parts.clear();
+}
 
 // Explicity purge and erase memory as needed.
 void Transaction::reset ( TransactionType type )
 {
   m_transaction_type = type;
-  purge_map ( m_modified );
-  purge_map ( m_inserted );
-  purge_and_erase_map ( m_deleted );
-
-  m_modified_parts.clear();
-  m_deleted_parts.clear();
-  m_inserted_parts.clear();
+  flush();
 }
 
 void Transaction::add_parts_to_partset ( Entity &e , PartSet &pl )
@@ -398,3 +410,6 @@ void Transaction::remove_entity_from_bucket ( Entity &e , BucketList &buckets )
 
 }
 }
+
+#endif
+

@@ -95,16 +95,20 @@ DofMapper::add_dof_mappings(const stk::mesh::BulkData& mesh_bulk,
   std::vector<int> shared_ids;
   std::vector<int> sharing_procs;
 
-  const std::vector<stk::mesh::EntityProc>& shared_entities = mesh_bulk.shared_entities();
-  for(size_t i=0; i<shared_entities.size(); ++i) {
-    stk::mesh::Entity* ent = shared_entities[i].first;
+  const std::vector<stk::mesh::Entity*>& entity_comm = mesh_bulk.entity_comm();
+  for(size_t i=0; i<entity_comm.size(); ++i) {
+    stk::mesh::Entity* ent = entity_comm[i] ;
 
     //we only care about entities of the right type, and which have data for 'field'.
-    if (ent->entity_type() != ent_type) continue;
+    if (ent->entity_rank() != ent_type) continue;
     if (!stk::mesh::field_data_valid(field, *ent)) continue;
 
-    shared_ids.push_back(impl::entityid_to_int(ent->identifier()));
-    sharing_procs.push_back(shared_entities[i].second);
+    const stk::mesh::PairIterEntityComm ec = ent->sharing();
+
+    for ( size_t j = 0 ; j < ec.size() ; ++j ) {
+      shared_ids.push_back(impl::entityid_to_int(ent->identifier()));
+      sharing_procs.push_back(ec[j].proc);
+    }
   }
 
   if (shared_ids.size() > 0) {

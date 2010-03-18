@@ -21,6 +21,9 @@
 
 namespace {
 void testCartesian();
+void testCylindrical();
+void testFullTensor();
+void testSymmetricTensor();
 void testFieldDataArray( stk::ParallelMachine pm );
 
 STKUNIT_UNIT_TEST(UnitTestField, testUnit)
@@ -35,6 +38,9 @@ STKUNIT_UNIT_TEST(UnitTestField, testUnit)
   if ( 0 == stk::parallel_machine_rank( pworld ) ) {
     // Nothing parallel being tested, only run on one process
     testCartesian();
+    testCylindrical();
+    testFullTensor();
+    testSymmetricTensor();
     testFieldDataArray( pself );
   }
 }
@@ -94,6 +100,67 @@ void testCartesian()
 
   //should throw if we supply a "z" along with size==2:
   STKUNIT_ASSERT_THROW( cartesian_tag.to_index(2, "z"), std::runtime_error );
+}
+
+void testCylindrical()
+{
+  const stk::mesh::Cylindrical&  cylindrical_tag = stk::mesh::Cylindrical::tag();
+
+  std::string to_str = cylindrical_tag.to_string(3, 1);
+  std::string expected_str("a");
+  STKUNIT_ASSERT_EQUAL( to_str == expected_str, true );
+
+  //should throw if we supply a size < 3:
+  STKUNIT_ASSERT_THROW( cylindrical_tag.to_string(2, 1), std::runtime_error );
+
+  shards::ArrayDimTag::size_type expected_idx = 1;
+  shards::ArrayDimTag::size_type idx = cylindrical_tag.to_index(3, "a");
+
+  STKUNIT_ASSERT_EQUAL( idx, expected_idx );
+
+  //should throw if we supply a "z" along with size==2:
+  STKUNIT_ASSERT_THROW( cylindrical_tag.to_index(2, "z"), std::runtime_error );
+}
+
+void testFullTensor()
+{
+  const stk::mesh::FullTensor&  fulltensor_tag = stk::mesh::FullTensor::tag();
+
+  std::string to_str = fulltensor_tag.to_string(9, 1);
+  std::string expected_str("yx");
+  STKUNIT_ASSERT_EQUAL( to_str == expected_str, true );
+
+  //should throw if we supply a size < 9:
+  STKUNIT_ASSERT_THROW( fulltensor_tag.to_string(2, 1), std::runtime_error );
+
+  shards::ArrayDimTag::size_type expected_idx = 1;
+  shards::ArrayDimTag::size_type idx = fulltensor_tag.to_index(9, "yx");
+
+  STKUNIT_ASSERT_EQUAL( idx, expected_idx );
+
+  //should throw if we supply a "zz" along with size==2:
+  STKUNIT_ASSERT_THROW( fulltensor_tag.to_index(2, "zz"), std::runtime_error );
+}
+
+void testSymmetricTensor()
+{
+  const stk::mesh::SymmetricTensor&  symmetrictensor_tag = stk::mesh::SymmetricTensor::tag();
+
+  std::string to_str = symmetrictensor_tag.to_string(9, 1);
+  std::string expected_str("yx");
+  STKUNIT_ASSERT_EQUAL( to_str == expected_str, true );
+
+  //should throw if we supply a size < 9:
+  STKUNIT_ASSERT_THROW( symmetrictensor_tag.to_string(2, 1), std::runtime_error );
+
+
+  shards::ArrayDimTag::size_type expected_idx = 1;
+  shards::ArrayDimTag::size_type idx = symmetrictensor_tag.to_index(6, "yy");
+
+  STKUNIT_ASSERT_EQUAL( idx, expected_idx );
+
+  //should throw if we supply a "xz" along with size==5:
+  STKUNIT_ASSERT_THROW( symmetrictensor_tag.to_index(5, "xz"), std::runtime_error );
 }
 
 void testFieldDataArray( stk::ParallelMachine pm )

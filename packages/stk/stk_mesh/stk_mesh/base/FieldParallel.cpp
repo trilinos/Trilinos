@@ -30,6 +30,7 @@ void communicate_field_data(
 
   const BulkData & mesh = ghosts.mesh();
   const unsigned parallel_size = mesh.parallel_size();
+  const unsigned parallel_rank = mesh.parallel_rank();
 
   const std::vector<const FieldBase *>::const_iterator fe = fields.end();
   const std::vector<const FieldBase *>::const_iterator fb = fields.begin();
@@ -41,30 +42,28 @@ void communicate_field_data(
   std::vector<unsigned> send_size( parallel_size , zero );
   std::vector<unsigned> recv_size( parallel_size , zero );
 
-  for ( std::vector<EntityProc>::const_iterator
-        i = ghosts.send().begin() ; i != ghosts.send().end() ; ++i ) {
-    Entity       & e = * i->first ;
-    const unsigned p = i->second ;
-
-    unsigned e_size = 0 ;
-    for ( fi = fb ; fi != fe ; ++fi ) {
-      const FieldBase & f = **fi ;
-      e_size += field_data_size( f , e );
-    } 
-    send_size[ p ] += e_size ;
-  }
-
   for ( std::vector<Entity*>::const_iterator
-        i = ghosts.receive().begin() ; i != ghosts.receive().end() ; ++i ) {
-    Entity       & e = **i ;
-    const unsigned p = e.owner_rank();
+        i =  mesh.entity_comm().begin() ;
+        i != mesh.entity_comm().end() ; ++i ) {
+    Entity & e = **i ;
+    const bool owned = e.owner_rank() == parallel_rank ;
 
     unsigned e_size = 0 ;
     for ( fi = fb ; fi != fe ; ++fi ) {
       const FieldBase & f = **fi ;
       e_size += field_data_size( f , e );
-    } 
-    recv_size[ p ] += e_size ;
+    }
+
+    for ( PairIterEntityComm ec = e.comm() ; ! ec.empty() ; ++ec ) {
+      if ( ghosts.ordinal() == ec->ghost_id ) {
+        if ( owned ) {
+          send_size[ ec->proc ] += e_size ;
+        }
+        else {
+          recv_size[ ec->proc ] += e_size ;
+        }
+      }
+    }
   }
 
   // Allocate send and receive buffers:
@@ -77,20 +76,30 @@ void communicate_field_data(
     sparse.allocate_buffers( mesh.parallel(), parallel_size / 4 , s_size, r_size);
   }
 
-  // Pack for send:
+  // Send packing:
 
-  for ( std::vector<EntityProc>::const_iterator
-        i = ghosts.send().begin() ; i != ghosts.send().end() ; ++i ) {
-    Entity       & e = * i->first ;
-    const unsigned p = i->second ;
+  for ( std::vector<Entity*>::const_iterator
+        i =  mesh.entity_comm().begin() ;
+        i != mesh.entity_comm().end() ; ++i ) {
+    Entity & e = **i ;
+    if ( e.owner_rank() == parallel_rank ) {
 
-    CommBuffer & b = sparse.send_buffer( p );
-    for ( fi = fb ; fi != fe ; ++fi ) {
-      const FieldBase & f = **fi ;
-      const unsigned size = field_data_size( f , e );
-      if ( size ) {
-        unsigned char * ptr = reinterpret_cast<unsigned char *>(field_data( f , e ));
-        b.pack<unsigned char>( ptr , size );
+      for ( fi = fb ; fi != fe ; ++fi ) {
+        const FieldBase & f = **fi ;
+        const unsigned size = field_data_size( f , e );
+
+        if ( size ) {
+          unsigned char * ptr =
+            reinterpret_cast<unsigned char *>(field_data( f , e ));
+        
+          for ( PairIterEntityComm ec = e.comm() ; ! ec.empty() ; ++ec ) {
+
+            if ( ghosts.ordinal() == ec->ghost_id ) {
+              CommBuffer & b = sparse.send_buffer( ec->proc );
+              b.pack<unsigned char>( ptr , size );
+            }
+          }
+        }
       }
     }
   }
@@ -102,17 +111,27 @@ void communicate_field_data(
   // Unpack for recv:
 
   for ( std::vector<Entity*>::const_iterator
-        i = ghosts.receive().begin() ; i != ghosts.receive().end() ; ++i ) {
-    Entity       & e = **i ;
-    const unsigned p = e.owner_rank();
+        i =  mesh.entity_comm().begin() ;
+        i != mesh.entity_comm().end() ; ++i ) {
+    Entity & e = **i ;
+    if ( e.owner_rank() != parallel_rank ) {
 
-    CommBuffer & b = sparse.recv_buffer( p );
-    for ( fi = fb ; fi != fe ; ++fi ) {
-      const FieldBase & f = **fi ;
-      const unsigned size = field_data_size( f , e );
-      if ( size ) {
-        unsigned char * ptr = reinterpret_cast<unsigned char *>(field_data( f , e ));
-        b.unpack<unsigned char>( ptr , size );
+      for ( fi = fb ; fi != fe ; ++fi ) {
+        const FieldBase & f = **fi ;
+        const unsigned size = field_data_size( f , e );
+
+        if ( size ) {
+          unsigned char * ptr =
+            reinterpret_cast<unsigned char *>(field_data( f , e ));
+        
+          for ( PairIterEntityComm ec = e.comm() ; ! ec.empty() ; ++ec ) {
+
+            if ( ghosts.ordinal() == ec->ghost_id ) {
+              CommBuffer & b = sparse.recv_buffer( ec->proc );
+              b.unpack<unsigned char>( ptr , size );
+            }
+          }
+        }
       }
     }
   }
@@ -228,13 +247,14 @@ void communicate_field_data(
 //----------------------------------------------------------------------
 
 void communicate_field_data(
-  ParallelMachine machine ,
-  const std::vector<EntityProc> & shared ,
+  const BulkData & mesh ,
   const unsigned field_count ,
   const FieldBase * fields[] ,
   CommAll & sparse )
 {
-  const unsigned parallel_size = parallel_machine_size( machine );
+  const std::vector<Entity*> & entity_comm = mesh.entity_comm();
+
+  const unsigned parallel_size = mesh.parallel_size();
 
   // Sizing for send and receive
 
@@ -242,14 +262,19 @@ void communicate_field_data(
   std::vector<unsigned> msg_size( parallel_size , zero );
 
   size_t j = 0;
-  std::vector<EntityProc>::const_iterator i ;
 
   for ( j = 0 ; j < field_count ; ++j ) {
     const FieldBase & f = * fields[j] ;
-    for ( i = shared.begin() ; i != shared.end() ; ++i ) {
-      Entity       & e = * i->first ;
-      const unsigned p = i->second ;
-      msg_size[ p ] += field_data_size( f , e );
+    for ( std::vector<Entity*>::const_iterator
+          i = entity_comm.begin() ; i != entity_comm.end() ; ++i ) {
+      Entity & e = **i ;
+      const unsigned size = field_data_size( f , e );
+      if ( size ) {
+        for ( PairIterEntityComm
+              ec = e.comm() ; ! ec.empty() && ec->ghost_id == 0 ; ++ec ) {
+          msg_size[ ec->proc ] += size ;
+        }
+      }
     }
   }
 
@@ -257,24 +282,25 @@ void communicate_field_data(
 
   {
     const unsigned * const s_size = & msg_size[0] ;
-    sparse.allocate_buffers( machine, parallel_size / 4 , s_size, s_size);
+    sparse.allocate_buffers( mesh.parallel(), parallel_size / 4 , s_size, s_size);
   }
 
   // Pack for send:
  
   for ( j = 0 ; j < field_count ; ++j ) {
     const FieldBase & f = * fields[j] ;
-    for ( i = shared.begin() ; i != shared.end() ; ++i ) {
-      Entity       & e = * i->first ;
-      const unsigned p = i->second ;
-
-      CommBuffer & b = sparse.send_buffer( p );
-
+    for ( std::vector<Entity*>::const_iterator
+          i = entity_comm.begin() ; i != entity_comm.end() ; ++i ) {
+      Entity & e = **i ;
       const unsigned size = field_data_size( f , e );
-
       if ( size ) {
-        unsigned char * ptr = reinterpret_cast<unsigned char *>(field_data( f , e ));
-        b.pack<unsigned char>( ptr , size );
+        unsigned char * ptr =
+          reinterpret_cast<unsigned char *>(field_data( f , e ));
+        for ( PairIterEntityComm
+              ec = e.comm() ; ! ec.empty() && ec->ghost_id == 0 ; ++ec ) {
+          CommBuffer & b = sparse.send_buffer( ec->proc );
+          b.pack<unsigned char>( ptr , size );
+        }
       }
     }
   }
@@ -282,6 +308,23 @@ void communicate_field_data(
   // Communicate:
 
   sparse.communicate();
+}
+
+void communicate_field_data_verify_read( CommAll & sparse )
+{
+  std::ostringstream msg ;
+  int flag = 0 ;
+  for ( unsigned p = 0 ; p < sparse.parallel_size() ; ++p ) {
+    if ( sparse.recv_buffer( p ).remaining() ) {
+      msg << "P" << sparse.parallel_rank()
+          << " Unread data from P" << p << std::endl ;
+      flag = 1 ;
+    }
+  }
+  all_reduce( sparse.parallel() , ReduceSum<1>( & flag ) );
+  if ( flag ) {
+    throw std::runtime_error( msg.str() );
+  }
 }
 
 //----------------------------------------------------------------------

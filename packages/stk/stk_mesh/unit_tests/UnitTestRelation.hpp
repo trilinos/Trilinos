@@ -47,11 +47,6 @@ public:
                               const bool  generate_aura ,
                               const int   root_box[][2] ,
                                     int   local_box[][2] );
-
-
-
-  /** Allow unit testing with and without ghosting aura */
-  static void modification_end( BulkData & mesh ,bool aura );
 };
 
 }

@@ -61,37 +61,21 @@ void construct_communication_set( const BulkData & bulk, const EntitySet & closu
 {
   if (bulk.parallel_size() < 2) return;
 
-  for ( EntitySet::const_iterator i = closure.begin();
-      i != closure.end(); ++i)
-  {
+  for ( EntitySet::const_iterator
+        i = closure.begin(); i != closure.end(); ++i) {
+
     Entity & entity = **i;
 
-    //add sharing processes to communication_set
-    PairIterEntityProc sharing = entity.sharing();
-    communication_set.insert(sharing.first, sharing.second);
+    const bool owned = bulk.parallel_rank() == entity.owner_rank();
 
-    const std::vector<Ghosting *> & all_ghosting = bulk.ghostings();
+    // Add sharing processes and ghost-send processes to communication_set
 
-    //add Ghosting to the communication_set
-    for( std::vector<Ghosting *>::const_iterator g = all_ghosting.begin();
-        g != all_ghosting.end(); ++g)
-    {
-      const Ghosting & ghost = **g;
-      const std::vector< EntityProc > & ghost_send = ghost.send();
-
-      //ghost_send is sorted and unique
-      //find where this entity is in the Ghosting list
-      std::vector< EntityProc >::const_iterator j_begin =
-        std::lower_bound(ghost_send.begin(),ghost_send.end(), entity, EntityLess());
-
-      //find the end of this entity in the Ghosting list
-      std::vector< EntityProc >::const_iterator j_end = j_begin;
-      for(; j_end != ghost_send.end() && j_end->first == &entity; ++j_end);
-
-      //insert this entity Ghosting into the communication_set
-      communication_set.insert(j_begin,j_end);
+    for ( PairIterEntityComm ec = entity.comm(); ! ec.empty() ; ++ec ) {
+      if ( owned || ec->ghost_id == 0 ) {
+        EntityProc tmp( & entity , ec->proc );
+        communication_set.insert( tmp );
+      }
     }
-
   }
 }
 

@@ -163,6 +163,7 @@ class Transaction
      * delete the entities in m_deleted.
      */
     void   reset ( TransactionType type = BULK );
+    void   flush ();
 
 
     /** \brief Let the transaction log know this entity has been

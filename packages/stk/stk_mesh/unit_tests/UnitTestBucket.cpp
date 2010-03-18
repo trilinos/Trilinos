@@ -19,6 +19,7 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/Comm.hpp>
+#include <stk_mesh/base/EntityComm.hpp>
 #include <stk_mesh/fem/EntityTypes.hpp>
 
 #include <unit_tests/UnitTestBucket.hpp>
@@ -200,17 +201,17 @@ void UnitTestBucket::generate_loop(
   STKUNIT_ASSERT( local_count[1] == nLocalEdge );
 
   if ( 1 < p_size ) {
-    const std::vector<EntityProc> & shared = mesh.shared_entities();
-
-    STKUNIT_ASSERT_EQUAL( shared.size() , size_t(2) );
-
     const unsigned n0 = id_end < id_total ? id_begin : 0 ;
     const unsigned n1 = id_end < id_total ? id_end : id_begin ;
 
-    STKUNIT_ASSERT( shared[0].first->identifier() == node_ids[n0] );
-    STKUNIT_ASSERT( shared[1].first->identifier() == node_ids[n1] );
-    STKUNIT_ASSERT_EQUAL( shared[0].first->sharing().size() , size_t(1) );
-    STKUNIT_ASSERT_EQUAL( shared[1].first->sharing().size() , size_t(1) );
+    Entity * const node0 = mesh.get_entity( Node , node_ids[n0] );
+    Entity * const node1 = mesh.get_entity( Node , node_ids[n1] );
+
+    STKUNIT_ASSERT( node0 != NULL );
+    STKUNIT_ASSERT( node1 != NULL );
+
+    STKUNIT_ASSERT_EQUAL( node0->sharing().size() , size_t(1) );
+    STKUNIT_ASSERT_EQUAL( node1->sharing().size() , size_t(1) );
   }
 
   // Test no-op first:
@@ -453,8 +454,8 @@ void UnitTestBucket::generate_boxes(
           Entity * const node = mesh.get_entity( node_type , node_id );
           STKUNIT_ASSERT( node != NULL );
           // Must be shared with 'p'
-          PairIterEntityProc iter = node->sharing();
-          for ( ; ! iter.empty() && iter->second != p ; ++iter );
+          PairIterEntityComm iter = node->sharing();
+          for ( ; ! iter.empty() && iter->proc != p ; ++iter );
           STKUNIT_ASSERT( ! iter.empty() );
 
           ++count_shared_node_pairs ;
@@ -462,7 +463,14 @@ void UnitTestBucket::generate_boxes(
       }
     }
   }
-  STKUNIT_ASSERT_EQUAL( mesh.shared_entities().size() , count_shared_node_pairs );
+
+  size_t count_shared_entities = 0 ;
+  for ( std::vector<Entity*>::const_iterator
+        i = mesh.entity_comm().begin() ; i != mesh.entity_comm().end() ; ++i ) {
+    const PairIterEntityComm ec = (**i).sharing();
+    count_shared_entities += ec.size();
+  }
+  STKUNIT_ASSERT_EQUAL( count_shared_entities , count_shared_node_pairs );
 
   delete[] p_box ;
 }

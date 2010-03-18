@@ -69,6 +69,7 @@ class BulkData ; // Bulk-data of a mesh
 class Bucket ;   // Homogeneous collection of mesh entitities their field data
 class Entity ;   // Individual entity within the mesh
 class Relation ; // Relation pair of local mesh entities
+class Ghosting ;
 
 template< class FieldType > struct EntityArray ;
 template< class FieldType > struct BucketArray ;

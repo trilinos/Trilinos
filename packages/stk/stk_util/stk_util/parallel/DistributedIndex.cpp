@@ -485,7 +485,7 @@ void DistributedIndex::generate_new_keys_global_counts(
       size_t count = 0 ;
       while ( j != m_key_usage.end() && j->first <= key_span_last ) {
         const KeyType key = j->first ;
-        while ( key == j->first ) { ++j ; }
+        while ( j != m_key_usage.end() && key == j->first ) { ++j ; }
         ++count ;
       }
       local_counts[i] = count ;

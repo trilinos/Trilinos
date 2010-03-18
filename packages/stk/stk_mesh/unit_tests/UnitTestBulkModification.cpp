@@ -99,20 +99,19 @@ void UnitTestStkMeshBulkModification::test_closure_of_non_locally_used_entities(
 
   stk::mesh::BulkData& bulk_data = ring_mesh.bulk_data();
 
-  const std::vector<stk::mesh::Ghosting *> & ghostings = bulk_data.ghostings();
+  const stk::mesh::Ghosting & ghost = bulk_data.shared_aura();
 
-  if (!ghostings.empty()) {
-    const stk::mesh::Ghosting& ghost = *ghostings.front();
-    const std::vector< stk::mesh::Entity* > & ghost_receive = ghost.receive();
+  std::vector< stk::mesh::Entity* > ghost_receive ;
 
-    if (!ghost_receive.empty()) {
-      std::vector< stk::mesh::Entity *> entities;
-      std::vector< stk::mesh::Entity *> entities_closure;
+  ghost.receive_list( ghost_receive );
 
-      entities.push_back(ghost_receive.front());
+  if (!ghost_receive.empty()) {
+    std::vector< stk::mesh::Entity *> entities;
+    std::vector< stk::mesh::Entity *> entities_closure;
 
-      STKUNIT_ASSERT_THROW(stk::mesh::find_closure(bulk_data, entities, entities_closure), std::runtime_error);
-    }
+    entities.push_back(ghost_receive.front());
+
+    STKUNIT_ASSERT_THROW(stk::mesh::find_closure(bulk_data, entities, entities_closure), std::runtime_error);
   }
 }
 

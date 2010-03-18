@@ -45,27 +45,17 @@ void print_entry( std::ostream & msg , const EntityProc & e )
 //----------------------------------------------------------------------
 
 struct LessEntityProc {
+  EntityLess compare ;
   LessEntityProc() {}
 
   bool operator()( const EntityProc & lhs , const EntityProc & rhs ) const
-  {
-    const EntityKey lhs_key = lhs.first->key();
-    const EntityKey rhs_key = rhs.first->key();
-    return lhs_key != rhs_key ? lhs_key < rhs_key : lhs.second < rhs.second ;
-  }
+  { return compare( lhs , rhs ); }
 
   bool operator()( const EntityProc & lhs , const Entity & rhs ) const
-  {
-    const EntityKey lhs_key = lhs.first->key();
-    const EntityKey rhs_key = rhs.key();
-    return lhs_key < rhs_key ;
-  }
+  { return compare( lhs , rhs ); }
 
   bool operator()( const EntityProc & lhs , const unsigned rhs ) const
-  {
-    const unsigned lhs_type = lhs.first->entity_type();
-    return lhs_type < rhs ;
-  }
+  { return lhs.first->entity_rank() < rhs ; }
 };
 
 struct EqualEntityProc {
@@ -475,18 +465,28 @@ bool comm_mesh_counts( BulkData & M ,
 
 namespace {
 
-std::pair< std::vector<EntityProc>::const_iterator ,
-           std::vector<EntityProc>::const_iterator >
-span( const std::vector<EntityProc> & v , unsigned entity_type )
+struct EntityRankLess {
+  bool operator()( const Entity * const lhs , const unsigned rhs ) const
+    { return lhs->entity_rank() < rhs ; }
+};
+
+std::pair< std::vector<Entity*>::const_iterator ,
+           std::vector<Entity*>::const_iterator >
+span( const std::vector<Entity*> & v , const unsigned entity_rank )
 {
-  const unsigned t1 = entity_type ;
-  const unsigned t2 = t1 + 1 ;
+  const unsigned entity_rank_end = entity_rank + 1 ;
 
-  std::pair< std::vector<EntityProc>::const_iterator ,
-             std::vector<EntityProc>::const_iterator > result ;
+  std::pair< std::vector<Entity*>::const_iterator ,
+             std::vector<Entity*>::const_iterator > result ;
 
-  result.first  = lower_bound(v,t1);
-  result.second = lower_bound(v,t2);
+  result.first  = v.begin();
+  result.second = v.end();
+
+  result.first  = std::lower_bound( result.first, result.second,
+                                    entity_rank , EntityRankLess() );
+
+  result.second = std::lower_bound( result.first, result.second,
+                                    entity_rank_end , EntityRankLess() );
 
   return result ;
 }
@@ -500,65 +500,83 @@ bool comm_verify_shared_entity_values(
   const BulkData & M , unsigned t , const FieldBase & f )
 {
   const unsigned parallel_size = M.parallel_size();
+  const unsigned parallel_rank = M.parallel_rank();
 
-  const unsigned max_size = f.max_size(t) * f.data_traits().size_of ;
+  const std::pair< std::vector<Entity*>::const_iterator ,
+                   std::vector<Entity*>::const_iterator >
+    entity_comm = span( M.entity_comm() , t );
 
-  const std::pair< std::vector<EntityProc>::const_iterator ,
-                   std::vector<EntityProc>::const_iterator >
-    shares = span( M.shared_entities() , t );
-
-  std::vector<EntityProc>::const_iterator ic ;
+  std::vector<Entity*>::const_iterator ic ;
 
   ParallelMachine comm = M.parallel();
 
-  CommAll sparse ;
+  CommAll sparse( M.parallel() );
 
-  {
-    const unsigned zero = 0 ;
-    std::vector<unsigned> comm_size( parallel_size , zero );
+  for ( ic = entity_comm.first ; ic != entity_comm.second ; ++ic ) {
+    Entity & entity = **ic ;
+    if ( entity.owner_rank() == parallel_rank ) {
 
-    for ( ic = shares.first ; ic != shares.second ; ++ic ) {
-      comm_size[ ic->second ] += max_size ;
+      const unsigned size = field_data_size( f , entity );
+
+      for ( PairIterEntityComm ec = entity.comm();
+            ! ec.empty() && ec->ghost_id == 0 ; ++ec ) {
+        sparse.send_buffer( ec->proc )
+              .skip<unsigned>(1)
+              .skip<unsigned char>( size );
+      }
     }
-
-    const unsigned * const p_size = & comm_size[0] ;
-
-    sparse.allocate_buffers( comm, parallel_size / 4 , p_size, p_size );
   }
 
-  std::vector<unsigned char> scratch( max_size );
+  sparse.allocate_buffers( parallel_size / 4 );
 
-  for ( ic = shares.first ; ic != shares.second ; ++ic ) {
-    Entity & e = * ic->first ;
-    const Bucket & k = e.bucket();
-    const unsigned this_size = field_data_size( f , k );
-    CommBuffer & b = sparse.send_buffer( ic->second );
+  for ( ic = entity_comm.first ; ic != entity_comm.second ; ++ic ) {
+    Entity & entity = **ic ;
+    if ( entity.owner_rank() == parallel_rank ) {
 
-    unsigned char * ptr = reinterpret_cast<unsigned char *>( field_data( f , e ) );
+      const unsigned size = field_data_size( f , entity );
+      unsigned char * ptr =
+        reinterpret_cast<unsigned char *>( field_data( f , entity ) );
 
-    b.pack<unsigned char>( ptr , this_size );
-    b.skip<unsigned char>( max_size - this_size );
+      for ( PairIterEntityComm ec = entity.comm();
+            ! ec.empty() && ec->ghost_id == 0 ; ++ec ) {
+        sparse.send_buffer( ec->proc )
+              .pack<unsigned>( size )
+              .pack<unsigned char>( ptr , size );
+      }
+    }
   }
 
   sparse.communicate();
 
+  const unsigned max_size = f.max_size(t) * f.data_traits().size_of ;
+
+  std::vector<unsigned char> scratch( max_size );
+
+  unsigned char * const scr = & scratch[0] ;
+
   unsigned ok = 1 ;
 
-  for ( ic = shares.first ; ic != shares.second ; ++ic ) {
-    Entity & e = * ic->first ;
-    const Bucket & k = e.bucket();
-    const unsigned this_size = field_data_size( f , k );
-    CommBuffer & b = sparse.recv_buffer( ic->second );
+  for ( ic = entity_comm.first ; ok && ic != entity_comm.second ; ++ic ) {
 
-    unsigned char * ptr = reinterpret_cast<unsigned char *>( field_data( f , e ) );
-    unsigned char * scr = & scratch[0] ;
+    Entity & entity = **ic ;
 
-    b.unpack<unsigned char>( scr , this_size );
-    b.skip<unsigned char>( max_size - this_size );
+    if ( in_shared( entity , entity.owner_rank() ) ) {
 
-    // Compare data and scratch
-    for ( unsigned j = 0 ; ok && j < this_size ; ++j ) {
-      ok = ptr[j] == scr[j] ;
+      const unsigned size = field_data_size( f , entity );
+      unsigned char * ptr =
+        reinterpret_cast<unsigned char *>( field_data( f , entity ) );
+
+      unsigned recv_size = 0 ;
+      sparse.recv_buffer( entity.owner_rank() )
+            .unpack<unsigned>( recv_size )
+            .unpack<unsigned char>( scr , recv_size );
+
+      ok = recv_size == size ;
+
+      // Compare data and scratch
+      for ( unsigned j = 0 ; ok && j < size ; ++j ) {
+        ok = ptr[j] == scr[j] ;
+      }
     }
   }
 
