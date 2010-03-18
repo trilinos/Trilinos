@@ -141,7 +141,7 @@ export TDD_CRON_DRIVER_SCRIPT=$SCRIPT_DIR/cron_driver.sh
 
 echo Running ctest -S TrilinosDriverDashboard.cmake >>"$LOGFILE"
 
-"$CTEST_EXE" -S "$SCRIPT_DIR/TrilinosDriverDashboard.cmake" -VV >>"$LOGFILE" 2>&1
+"$CTEST_EXE" -S "$SCRIPT_DIR/TrilinosDriverDashboard.cmake" >>"$LOGFILE" 2>&1
 
 CTEST_RESULT=`echo $?`
 echo CTEST_RESULT=+$CTEST_RESULT+ >>"$LOGFILE"

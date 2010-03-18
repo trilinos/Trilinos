@@ -135,7 +135,7 @@ set TDD_CRON_DRIVER_SCRIPT=%~f0
 
 echo Running ctest -S TrilinosDriverDashboard.cmake >>"%LOGFILE%"
 
-call "%CTEST_EXE%" -S "%SCRIPT_DIR%TrilinosDriverDashboard.cmake" -VV >>"%LOGFILE%" 2>&1
+call "%CTEST_EXE%" -S "%SCRIPT_DIR%TrilinosDriverDashboard.cmake" >>"%LOGFILE%" 2>&1
 set CTEST_RESULT=%ERRORLEVEL%
 
 echo CTEST_RESULT=+%CTEST_RESULT%+ >>"%LOGFILE%"
