@@ -192,7 +192,7 @@ g_cmndinterceptsDiffOnlyPasses = \
 
 g_cmndinterceptsPullOnlyPasses = \
   "IT: eg status; 1; 'eg status shows no uncommitted files'\n" \
-  "IT: eg pull --rebase; 0; 'initial eg pull passed'\n"
+  "IT: eg pull; 0; 'initial eg pull passed'\n"
 
 g_cmndinterceptsPullPasses = \
   g_cmndinterceptsPullOnlyPasses \
@@ -210,14 +210,14 @@ g_cmndinterceptsConfigBuildTestPasses = \
   "IT: ctest -j5; 0; '100% tests passed, 0 tests failed out of 100'\n"
 
 g_cmndinterceptsFinalPushPasses = \
-  "IT: eg pull --rebase; 0; 'final eg pull --rebase passed'\n" \
+  "IT: eg pull && eg rebase --against origin; 0; 'final eg pull and rebase passed'\n" \
   "IT: eg log --oneline origin..; 0; 'Only one commit'\n" \
   "IT: eg cat-file -p HEAD; 0; 'This is the last commit message'\n" \
   "IT: eg commit --amend -F .*; 0; 'Amending the last commit passed'\n" \
   "IT: eg push; 0; 'push passes'\n"
 
 g_cmndinterceptsFinalPushNoAppendTestResultsPasses = \
-  "IT: eg pull --rebase; 0; 'final eg pull --rebase passed'\n" \
+  "IT: eg pull && eg rebase --against origin; 0; 'final eg pull and rebase passed'\n" \
   "IT: eg log --oneline origin..; 0; 'Only one commit'\n" \
   "IT: eg push; 0; 'push passes'\n"
 
@@ -586,7 +586,7 @@ class test_checkin_test(unittest.TestCase):
       (getInitialCommitOutputFileName(), "initial eg commit passed\n"),
       (getInitialPullOutputFileName(), "initial eg pull passed\n"),
       (getModifiedFilesOutputFileName(), "M\tpackages/teuchos/CMakeLists.txt\n"),
-      (getFinalPullOutputFileName(), "final eg pull --rebase passed\n"),
+      (getFinalPullOutputFileName(), "final eg pull and rebase passed\n"),
       (getFinalCommitEmailBodyFileName(),
          getAutomatedStatusSummaryHeaderKeyStr()+"\n"
          +"Enabled Packages: Teuchos\n" \
@@ -994,7 +994,7 @@ class test_checkin_test(unittest.TestCase):
       "--pull --extra-pull-from=machine:/repo/dir/repo:master",
       \
       g_cmndinterceptsPullOnlyPasses \
-      +"IT: eg pull --rebase machine:/repo/dir/repo master; 0; 'eg extra pull passed'\n"
+      +"IT: eg pull machine:/repo/dir/repo master; 0; 'eg extra pull passed'\n"
       +g_cmndinterceptsDiffOnlyPasses \
       +g_cmndinterceptsSendFinalEmail \
       ,
@@ -1003,7 +1003,7 @@ class test_checkin_test(unittest.TestCase):
       \
       g_expectedRegexUpdatePasses \
       +"Pulling in updates from .machine:\/repo\/dir\/repo master.\n" \
-      +"eg pull --rebase machine:\/repo\/dir\/repo master\n" \
+      +"eg pull machine:\/repo\/dir\/repo master\n" \
       +"Not performing any build cases because no --configure, --build or --test was specified!\n" \
       +"A COMMIT IS \*NOT\* OKAY TO BE PERFORMED!\n" \
       +"A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
@@ -1217,7 +1217,7 @@ class test_checkin_test(unittest.TestCase):
       +"^DID PUSH: Trilinos:\n" \
       ,
       failRegexStrList = \
-      "eg pull --rebase dummy master\n" \
+      "eg pull dummy master\n" \
       )
 
 
@@ -1456,7 +1456,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "--do-all",
       "IT: eg status; 1; 'eg status shows no uncommitted files'\n" \
-      "IT: eg pull --rebase; 1; 'eg pull failed'\n" \
+      "IT: eg pull; 1; 'eg pull failed'\n" \
       ,
       \
       False,
@@ -1630,7 +1630,7 @@ class test_checkin_test(unittest.TestCase):
       g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
-      +"IT: eg pull --rebase; 1; 'final eg pull --rebase FAILED'\n" \
+      +"IT: eg pull && eg rebase --against origin; 1; 'final eg pull FAILED'\n" \
       +"IT: eg log --oneline origin..; 0; 'Only one commit'\n" \
       +g_cmndinterceptsSendFinalEmail \
       ,      \
@@ -1663,7 +1663,7 @@ class test_checkin_test(unittest.TestCase):
       g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
-      +"IT: eg pull --rebase; 0; 'final eg pull --rebase passed'\n" \
+      +"IT: eg pull && eg rebase --against origin; 0; 'final eg pull and rebase passed'\n" \
       +"IT: eg log --oneline origin..; 0; 'Only one commit'\n" \
       +"IT: eg cat-file -p HEAD; 0; 'This is the last commit message'\n" \
       +"IT: eg commit --amend -F .*; 1; 'Amending the last commit FAILED'\n" \
@@ -1700,7 +1700,7 @@ class test_checkin_test(unittest.TestCase):
       g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
-      +"IT: eg pull --rebase; 0; 'final eg pull --rebase passed'\n" \
+      +"IT: eg pull && eg rebase --against origin; 0; 'final eg pull and rebase passed'\n" \
       +"IT: eg log --oneline origin..; 0; 'Only one commit'\n" \
       +"IT: eg cat-file -p HEAD; 0; 'This is the last commit message'\n" \
       +"IT: eg commit --amend -F .*; 0; 'Amending the last commit passed'\n" \
@@ -1737,7 +1737,7 @@ class test_checkin_test(unittest.TestCase):
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
-      +"IT: eg pull --rebase; 0; 'final eg pull --rebase passed'\n" \
+      +"IT: eg pull && eg rebase --against origin; 0; 'final eg pull and rebase passed'\n" \
       +"IT: eg log --oneline origin..; 0; ''\n" \
       +"IT: eg cat-file -p HEAD; 0; 'Some commit not the local commit'\n" \
       +"IT: eg push; 1; 'push FAILED due to no local commits'\n"
