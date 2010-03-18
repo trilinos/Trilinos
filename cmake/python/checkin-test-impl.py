@@ -96,10 +96,11 @@ commit/push:
   script will fail if there are no uncommitted changes.
 
   NOTE: If you do not specify the --commit argument, you must not have any
-  uncommitted changes or the 'eg pull --rebase' command will fail and
-  therefore the whole script will fail.  To still run the script, you will
-  need to use 'eg stash' to stash away your unstaged/uncommitted changes
-  *before* running this script.
+  uncommitted changes or the 'eg pull && eg rebase --against origin' command
+  will fail on the final pull/rebase befor ethe push and therefore the whole
+  script will fail.  To still run the script, you will need to use 'eg stash'
+  to stash away your unstaged/uncommitted changes *before* running this
+  script.
 
   NOTE: You need to have SSH public/private keys set up to software.sandia.gov
   for the git commands invoked in the script to work without you having to
@@ -141,10 +142,10 @@ The following approximate steps are performed by this script:
 
 1) [Optional] Do the local commit (done if --commit is set)
 
-2) Do a 'eg pull --rebase' to update the code (done if --pull or --do-all is
-set.).
+  NOTE: You can do all of your commits yourself and skip the --commit
+  argument.
 
-  NOTE: You can not have any uncommitted changes!
+2) Do a 'eg pull' to update the code (done if --pull or --do-all is set).
 
   NOTE: If not doing a pull, use --allow-no-pull or --local-do-all.
 
@@ -178,7 +179,11 @@ extra builds specified with --extra-builds):
 5) Do final pull, append test results to last commit message, and push (done
 if --push is set)
 
-  5.a) Do a final pull (done if --pull or --do-all is set.)
+  5.a) Do a final 'eg pull && eg rebase --against origin' (done if --pull or
+  --do-all is set)
+
+    NOTE: The final 'eg rebase --against origin' is required to avoid trival
+    merge commits that the Trilinos global get repo will reject on the push.
   
   5.b) Amend commit message of the most recent commit with the summary of the
   testing performed.  (done if --append-test-results (default) is set.)
