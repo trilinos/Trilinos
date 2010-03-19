@@ -75,6 +75,23 @@ namespace Teuchos {
 void throwScalarTraitsNanInfError( const std::string &errMsg );
 
 
+template<class Scalar>
+bool generic_real_isnaninf(const Scalar &x)
+{
+  typedef std::numeric_limits<Scalar> NL;
+  // IEEE says this should fail for NaN (not all compilers do not obey IEEE)
+  const Scalar tol = 1.0; // Any (bounded) number should do!
+  if (!(x <= tol) && !(x > tol)) return true;
+  // Use fact that Inf*0 = NaN (again, all compilers do not obey IEEE)
+  Scalar z = static_cast<Scalar>(0.0) * x;
+  if (!(z <= tol) && !(z > tol)) return true;
+  // As a last result use comparisons
+  if (x == NL::infinity() || x == -NL::infinity()) return true;
+  // We give up and assume the number is finite
+  return false;
+}
+
+
 #define TEUCHOS_SCALAR_TRAITS_NAN_INF_ERR( VALUE, MSG ) \
   if (isnaninf(VALUE)) { \
     std::ostringstream omsg; \
@@ -383,11 +400,8 @@ struct ScalarTraits<float>
     return flt_nan;
 #endif
   }
-  static inline bool isnaninf(float x) { // RAB: 2004/05/28: Taken from NOX_StatusTest_FiniteValue.C
-    const float tol = 1e-6f; // Any (bounded) number should do!
-    if( !(x <= tol) && !(x > tol) ) return true;                 // IEEE says this should fail for NaN
-    float z=0.0f*x; if( !(z <= tol) && !(z > tol) ) return true;  // Use fact that Inf*0 = NaN
-    return false;
+  static inline bool isnaninf(float x) {
+    return generic_real_isnaninf<float>(x);
   }
   static inline void seedrandom(unsigned int s) { 
     std::srand(s); 
@@ -495,11 +509,8 @@ struct ScalarTraits<double>
     return dbl_nan;
 #endif
   }
-  static inline bool isnaninf(double x) { // RAB: 2004/05/28: Taken from NOX_StatusTest_FiniteValue.C
-    const double tol = 1e-6; // Any (bounded) number should do!
-    if( !(x <= tol) && !(x > tol) ) return true;                  // IEEE says this should fail for NaN
-    double z=0.0*x; if( !(z <= tol) && !(z > tol) ) return true;  // Use fact that Inf*0 = NaN
-    return false;
+  static inline bool isnaninf(double x) {
+    return generic_real_isnaninf<double>(x);
   }
   static inline void seedrandom(unsigned int s) { 
     std::srand(s); 

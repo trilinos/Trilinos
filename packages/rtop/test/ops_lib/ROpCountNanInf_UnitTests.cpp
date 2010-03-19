@@ -6,6 +6,9 @@
 namespace {
 
 
+using TestingSupportHelpers::print;
+
+
 template<class Scalar>
 void basicTest(const int stride, FancyOStream &out, bool &success)
 {
@@ -18,6 +21,13 @@ void basicTest(const int stride, FancyOStream &out, bool &success)
   sv(1) = ST::random();
   sv(2) = ST::one()/ST::zero();
   sv(3) = ST::zero();
+
+  TEST_ASSERT(ST::isnaninf(sv(0)));
+  TEST_ASSERT(!ST::isnaninf(sv(1)));
+  TEST_ASSERT(ST::isnaninf(sv(2)));
+  TEST_ASSERT(!ST::isnaninf(sv(3)));
+
+  print(sv, "sv", out);
 
   RTOpPack::ROpCountNanInf<Scalar> countNanInfOp;
   RCP<RTOpPack::ReductTarget> countNanInf = countNanInfOp.reduct_obj_create();

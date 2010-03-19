@@ -28,6 +28,17 @@ typedef RTOpPack::index_type index_type;
 
 
 template<class Scalar>
+void print(const ConstSubVectorView<Scalar> &sv, const std::string &sv_name,
+  std::ostream &out)
+{
+  out << sv_name << " = " << sv << "\n";
+  for (int i = 0; i < sv.subDim(); ++i) {
+    out << sv[i] << ":" << i << "\n";
+  }
+}
+
+
+template<class Scalar>
 SubVectorView<Scalar>
 newStridedSubVectorView(const int m, const int stride, const Scalar &val)
 {
