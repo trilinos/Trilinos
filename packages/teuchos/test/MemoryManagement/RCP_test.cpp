@@ -482,7 +482,8 @@ int main( int argc, char* argv[] ) {
     TEST_FOR_EXCEPT( a_rsptr1.getRawPtr() != a_sptr1.get() );
     TEST_FOR_EXCEPT( a_rsptr1.get() != a_rsptr1.getRawPtr() );
     boost::shared_ptr<A> a_sptr2 = shared_pointer(a_rsptr1);
-    TEST_FOR_EXCEPT( a_sptr2._internal_equiv(a_sptr1) != true );
+    // There seems no standard way to test that a shared_ptr shares the same node
+    //TEST_FOR_EXCEPT( a_sptr2._internal_equiv(a_sptr1) != true );
     RCP<A> a_rsptr2 = rcp(a_sptr2);
     TEST_FOR_EXCEPT( a_rsptr2.ptr() != a_rsptr1.ptr() );
     //TEST_FOR_EXCEPT( a_rsptr2 != a_rsptr1 ); // This should work if boost::get_deleter() works correctly!
