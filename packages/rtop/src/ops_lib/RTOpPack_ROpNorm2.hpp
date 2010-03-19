@@ -65,7 +65,10 @@ public:
     }
   /** \brief . */
   typename ST::magnitudeType operator()(const ReductTarget& reduct_obj) const
-    { return ST::magnitude(ST::squareroot(this->getRawVal(reduct_obj))); }
+    {
+      const Scalar sqrt_reduct = ST::squareroot(this->getRawVal(reduct_obj));
+      return ST::magnitude(sqrt_reduct);
+    }
 };
 
 

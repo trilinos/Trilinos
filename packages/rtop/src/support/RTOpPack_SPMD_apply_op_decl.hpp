@@ -38,15 +38,21 @@
 namespace Teuchos { template<typename Ordinal> class Comm; }
 
 
-//#define RTOPPACK_SPMD_APPLY_OP_DUMP
+// Enable this by hand to enable showing the dump of the RTOp
+#define RTOPPACK_ENABLE_SHOW_DUMP
+
+
+#ifdef RTOP_DEBUG
+#  define RTOPPACK_ENABLE_SHOW_DUMP
+#endif
 
 
 namespace RTOpPack {
 
 
-#ifdef RTOP_DEBUG
+#ifdef RTOPPACK_ENABLE_SHOW_DUMP
 extern bool show_spmd_apply_op_dump;
-#endif // RTOP_DEBUG
+#endif // RTOPPACK_ENABLE_SHOW_DUMP
 
 
 /** \brief Return the size in bytes of an external representation of a

@@ -812,12 +812,24 @@ struct ScalarTraits<
         x, "Error, the input value to squareroot(...) x = " << x << " can not be NaN!" );
 #endif
       typedef ScalarTraits<magnitudeType>  STMT;
-      const T r  = x.real(), i = x.imag();
+      const T r  = x.real(), i = x.imag(), zero = STMT::zero(), two = 2.0;
       const T a  = STMT::squareroot((r*r)+(i*i));
-      const T nr = STMT::squareroot((a+r)/2);
-      const T ni = STMT::squareroot((a-r)/2);
+      const T nr = STMT::squareroot((a+r)/two);
+      const T ni = ( i == zero ? zero : STMT::squareroot((a-r)/two) );
       return ComplexT(nr,ni);
     }
+    // 2010/03/19: rabartl: Above, I had to add the check for i == zero
+    // to avoid a returned NaN on the Intel 10.1 compiler.  For some
+    // reason, having these two squareroot calls in a row produce a NaN
+    // in an optimized build with this compiler.  Amazingly, when I put
+    // in print statements (i.e. std::cout << ...) the NaN went away and
+    // the second squareroot((a-r)/two) returned zero correctly.  I
+    // guess that calling the output routine flushed the registers or
+    // something and restarted the squareroot rountine for this compiler
+    // or something similar.  Actually, due to roundoff, it is possible that a-r
+    // might be slightly less than zero (i.e. -1e-16) and that would cause
+    // a possbile NaN return.  THe above if test is the right thing to do
+    // I think and is very cheap.
   static inline ComplexT pow(ComplexT x, ComplexT y) { return pow(x,y); }
 };
 

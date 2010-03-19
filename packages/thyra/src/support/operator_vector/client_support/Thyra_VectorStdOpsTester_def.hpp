@@ -38,8 +38,7 @@
 //#define THYRA_VECTOR_STD_OPS_TESTER_DUMP
 
 #ifdef THYRA_VECTOR_STD_OPS_TESTER_DUMP
-#  include "RTOpPack_SPMD_apply_op_decl.hpp"
-#  include "Thyra_SpmdVectorBase.hpp"
+#  include "RTOpPack_SPMD_apply_op.hpp"
 #endif // THYRA_VECTOR_STD_OPS_TESTER_DUMP
 
 
@@ -338,18 +337,10 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   ++tc;
   {
     abs(z.ptr(), *v1);
-#ifdef THYRA_VECTOR_STD_OPS_TESTER_DUMP
-    SpmdVectorBase<Scalar>::show_dump = true;
-    RTOpPack::show_spmd_apply_op_dump = true;
-#endif // THYRA_VECTOR_STD_OPS_TESTER_DUMP
     if(!testRelErr<Scalar>(
          "sum(*z)",sum(*z),"2.0*vecSpc.dim()",as<Scalar>(2.0)*as<Scalar>(vecSpc.dim())
          ,"error_tol",error_tol(),"warning_tol",warning_tol(),&out)
       ) success=false;
-#ifdef THYRA_VECTOR_STD_OPS_TESTER_DUMP
-    SpmdVectorBase<Scalar>::show_dump = false;
-    RTOpPack::show_spmd_apply_op_dump = false;
-#endif // THYRA_VECTOR_STD_OPS_TESTER_DUMP
   }
 
   // get_ele
@@ -489,6 +480,9 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
   out << "\n"<<tc<<") Testing Vt_S(z.ptr(),alpha) ...\n";
   ++tc;
   {
+#ifdef THYRA_VECTOR_STD_OPS_TESTER_DUMP
+    RTOpPack::show_spmd_apply_op_dump = true;
+#endif // THYRA_VECTOR_STD_OPS_TESTER_DUMP
     v1  = createMember(vecSpc);
     v2  = createMember(vecSpc);
     const Scalar alpha = as<Scalar>(1.2345);
@@ -497,12 +491,21 @@ bool VectorStdOpsTester<Scalar>::checkStdOps(
     V_V(v2.ptr(),*v1);
     Vt_S(v1.ptr(), alpha);
     const Scalar norm_alpha_v1 = norm_2(*v1);
-    const Scalar alpha_norm_v1 = ST::magnitude(alpha)*norm_2(*v2);
+    //out << "norm_alpha_v1 = " << norm_alpha_v1 << "\n";
+    const Scalar mag_alpha = ST::magnitude(alpha);
+    //out << "mag_alpha = " << mag_alpha << "\n";
+    const Scalar norm_2_v2 = norm_2(*v2);
+    //out << "norm_2_v2 = " << norm_2_v2 << "\n";
+    const Scalar alpha_norm_v1 = mag_alpha * norm_2_v2;
+    //out << "alpha_norm_v1 = " << alpha_norm_v1 << "\n";
     if(!testMaxErr<Scalar>(
          "norm_alpha_v1 - alpha_norm_v1",ST::magnitude(norm_alpha_v1-alpha_norm_v1)
          ,"error_tol",error_tol(),"warning_tol",warning_tol(),&out
         )
       ) success=false;
+#ifdef THYRA_VECTOR_STD_OPS_TESTER_DUMP
+    RTOpPack::show_spmd_apply_op_dump = false;
+#endif // THYRA_VECTOR_STD_OPS_TESTER_DUMP
   }
   
   // Test V_StV
