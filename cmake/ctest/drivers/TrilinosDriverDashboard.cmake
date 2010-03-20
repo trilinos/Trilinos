@@ -55,6 +55,11 @@ if(NOT "$ENV{TDD_CRON_DRIVER_SCRIPT}" STREQUAL "")
   set(CTEST_NOTES_FILES ${CTEST_NOTES_FILES} "$ENV{TDD_CRON_DRIVER_SCRIPT}")
 endif()
 
+# Ross Bartlett: The update of Trilinos and the update of the inner
+# cmake/ctest needs to be driven inside of the underlying CMakeLists.txt file.
+# Any major error that occurs needs to be recorded as a CTest test and
+# reported to the TrilinosDriver dashboard.
+
 ctest_empty_binary_directory("${CTEST_BINARY_DIRECTORY}")
 ctest_start("Experimental")
 ctest_configure(BUILD "${CTEST_BINARY_DIRECTORY}")

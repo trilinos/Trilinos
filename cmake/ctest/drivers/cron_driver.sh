@@ -5,6 +5,17 @@
 # - this machine is set up to pull/clone Trilinos using eg or git
 # - python is in the PATH and is version 2.4 or later
 
+# Ross Bartlett: This entire script needs to be rewritten as a python script
+# so the Unix and Linux testing can be driven from the same script.  We can't
+# have this duplication.  Other thihng things that need to be done:
+#
+#  1) The update of the master Trilinos git repo needs to be driven as a CTest test
+#     along with the other SERIAL_DEBUG, MPI_DEBUG tests.  If it fails, we need
+#     to know it.
+#
+#  2) The update of the inner CMake/CTest needs to be driven as a test along
+#     with the other CTest tests.  If it fails, we need to know it.
+
 MACHINE=`uname -n`
 
 # SCRIPT_DIR is the directory where *this* script is:
@@ -100,9 +111,17 @@ if [ -d Trilinos ]; then
   cd Trilinos
   "$EG_EXE" pull >>"$LOGFILE"
   cd ..
+  # Ross Bartlett:  If this pull fails for any reason, we will *never* know it.
+  # This pull must be driven as a ctest test so that it will show up on the
+  # Trilinos driver dashbaord pass or fail.
 else
   echo Cloning the repository because none exists yet >>"$LOGFILE"
   "$EG_EXE" clone $TRILINOS_REPOSITORY >>"$LOGFILE"
+  # Ross Barlett: We never need this script to clone from scratch.  It is
+  # critical that the developer does this manually in order to bootstrap the
+  # process.  Also, when testing on a branch of Trilinos, this must be first
+  # cloned and switched to the branch manually.  We don't need this else
+  # statement.
 fi
 
 # Download and install CMake/CTest 'release' build
@@ -121,7 +140,6 @@ rm -rf "$BASE_DIR/tools/cmake-release"
 # reason, this failure will be silent and you will never know it.  The upgrade
 # of CTest/CMake used to drive the individual builds should be run as a CTest
 # test so that it gets sent to the CDash dashbaord and we get error emails.
-
 
 CTEST_EXE=`find "$BASE_DIR/tools/cmake-release" | grep "bin/ctest"`
 
