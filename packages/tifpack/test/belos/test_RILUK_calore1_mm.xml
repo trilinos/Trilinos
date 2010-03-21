@@ -16,5 +16,5 @@
     <Parameter name="fact: iluk level-of-overlap" type="int" value="0"/>
   </ParameterList>
 
-  <Parameter name="expectNumIters" type="int" value="7"/>
+  <Parameter name="expectNumIters" type="int" value="8"/>
 </ParameterList>

@@ -8,9 +8,30 @@
 #include "Teuchos_CommHelpers.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector.hpp"
+#include "Tpetra_MatrixIO.hpp"
 
-//I/O for Harwell-Boeing files
-#include <iohb.h>
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
+Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+read_matrix_hb(const std::string& hb_file,
+               const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+               Teuchos::RCP<Node> node)
+{
+  Teuchos::Time timer("read_matrix");
+  timer.start();
+
+  Teuchos::RCP<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A;
+  Tpetra::Utils::readHBMatrix(hb_file,comm,node,A);
+
+  timer.stop();
+
+  int my_proc = comm->getRank();
+
+  if (my_proc==0) {
+    std::cout << "proc 0 time to read and fill matrix: " << timer.totalElapsedTime() << std::endl;
+  }
+
+  return A;
+}
 
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
 Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >

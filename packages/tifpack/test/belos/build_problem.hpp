@@ -34,7 +34,7 @@ Teuchos::RCP<Belos::LinearProblem<Scalar,Tpetra::MultiVector<Scalar,LocalOrdinal
 
   if (b == Teuchos::null) {
     b = Teuchos::rcp(new TMV(rowmap, 1));
-    x->putScalar(1);
+    x->randomize();
 
     BOPT::Apply(*A, *x, *b);
     BMVT::MvInit(*x, 0);
@@ -62,7 +62,8 @@ Teuchos::RCP<
         Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
         Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
    > build_problem(Teuchos::ParameterList& test_params,
-                   const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
+                   const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                   Teuchos::RCP<Node> node)
 {
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
   typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>    TOP;
@@ -96,8 +97,7 @@ Teuchos::RCP<
     if (comm->getRank() == 0) {
       std::cout << "Harwell-Boeing file: " << hb_file << std::endl;
     }
-//    problem = build_problem_hb(hb_file);
-    throw std::runtime_error("Harwell-Boeing not yet supported by test driver.");
+    A = read_matrix_hb<Scalar,LocalOrdinal,GlobalOrdinal,Node>(hb_file, comm, node);
   }
   else {
     throw std::runtime_error("No matrix file specified.");

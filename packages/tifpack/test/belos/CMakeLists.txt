@@ -40,6 +40,7 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(TifpackBelosCopyFiles
   DEST_FILES
   test_ILUT_calore1_mm.xml test_Jacobi_calore1_mm.xml test_GS_calore1_mm.xml
   test_RILUK_calore1_mm.xml test_Cheby_calore1_mm.xml
+  test_Jacobi_nos1_hb.xml test_2_Jacobi_nos1_hb.xml nos1.rsa
   test_SGS_calore1_mm.xml calore1.mtx test_pseudoblockcg_small_sym_mm.xml
   test_Jacobi_small_sym_mm.xml small_sym.mtx test_gmres_small_sym_mm.xml
   test_GS_tfqmr_small_sym_mm.xml test_ILUT_tfqmr_small_sym_mm.xml
@@ -76,6 +77,24 @@ PACKAGE_ADD_TEST(
   ARGS "--xml_file=test_Jacobi_calore1_mm.xml"
   COMM serial mpi
   NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+PACKAGE_ADD_TEST(
+  tif_belos TifpackBelosCopyFiles
+  NAME Jacobi_hb_belos
+  ARGS "--xml_file=test_Jacobi_nos1_hb.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+PACKAGE_ADD_TEST(
+  tif_belos TifpackBelosCopyFiles
+  NAME Jacobi_hb_belos
+  ARGS "--xml_file=test_2_Jacobi_nos1_hb.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 2
   STANDARD_PASS_OUTPUT
 )
 

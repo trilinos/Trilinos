@@ -11,5 +11,5 @@
     <Parameter name="chebyshev: degree" type="int" value="3"/>
   </ParameterList>
 
-  <Parameter name="expectNumIters" type="int" value="29"/>
+  <Parameter name="expectNumIters" type="int" value="32"/>
 </ParameterList>

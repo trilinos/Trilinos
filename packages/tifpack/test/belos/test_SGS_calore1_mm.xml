@@ -11,5 +11,5 @@
     <Parameter name="relaxation: type" type="string" value="symmetric Gauss-Seidel"/>
   </ParameterList>
 
-  <Parameter name="expectNumIters" type="int" value="17"/>
+  <Parameter name="expectNumIters" type="int" value="19"/>
 </ParameterList>

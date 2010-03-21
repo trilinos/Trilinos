@@ -15,5 +15,5 @@
     <Parameter name="relaxation: type" type="string" value="Jacobi"/>
   </ParameterList>
 
-  <Parameter name="expectNumIters" type="int" value="29"/>
+  <Parameter name="expectNumIters" type="int" value="32"/>
 </ParameterList>
