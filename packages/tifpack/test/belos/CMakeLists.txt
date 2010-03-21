@@ -38,10 +38,10 @@ ENDIF()
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(TifpackBelosCopyFiles
   DEST_FILES
-  test_ILUT_calore1_mm.xml test_PtJacobi_calore1_mm.xml test_GS_calore1_mm.xml
+  test_ILUT_calore1_mm.xml test_Jacobi_calore1_mm.xml test_GS_calore1_mm.xml
   test_RILUK_calore1_mm.xml test_Cheby_calore1_mm.xml
   test_SGS_calore1_mm.xml calore1.mtx test_pseudoblockcg_small_sym_mm.xml
-  test_PtJacobi_small_sym_mm.xml small_sym.mtx test_gmres_small_sym_mm.xml
+  test_Jacobi_small_sym_mm.xml small_sym.mtx test_gmres_small_sym_mm.xml
   test_GS_tfqmr_small_sym_mm.xml test_ILUT_tfqmr_small_sym_mm.xml
   test_tfqmr_small_sym_mm.xml test_ILUT_tfqmr_calore1_mm.xml
   5w.mtx 5w.vec 5w_bel_tif_ILUT.xml
@@ -72,8 +72,8 @@ PACKAGE_ADD_TEST(
 
 PACKAGE_ADD_TEST(
   tif_belos TifpackBelosCopyFiles
-  NAME PtJacobi_belos
-  ARGS "--xml_file=test_PtJacobi_calore1_mm.xml"
+  NAME Jacobi_belos
+  ARGS "--xml_file=test_Jacobi_calore1_mm.xml"
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
