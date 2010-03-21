@@ -34,7 +34,7 @@
 #include "Tifpack_Preconditioner.hpp"
 #include "Tifpack_Relaxation.hpp"
 #include "Tifpack_Chebyshev.hpp"
-#include "Tifpack_CrsRiluk.hpp"
+#include "Tifpack_RILUK.hpp"
 #include "Tifpack_ILUT.hpp"
 
 namespace Tifpack {
@@ -59,7 +59,7 @@ The first argument can assume the following values:
 - \c "RELAXATION"  : returns an instance of Tifpack::Relaxation.
 - \c "CHEBYSHEV"   : returns an instance of Tifpack::Chebyshev (overlap is ignored).
 - \c "ILUT"        : returns an instance of Tifpack::ILUT.
-- \c "CRSRILUK"    : returns an instance of Tifpack::CrsRiluk.
+- \c "CRSRILUK"    : returns an instance of Tifpack::RILUK.
 - otherwise, create() returns Teuchos::null.
 
 
@@ -144,8 +144,8 @@ Factory::create(const std::string& prec_type,
   if (prec_type == "ILUT") {
     prec = Teuchos::rcp(new Tifpack::ILUT<MatrixType>(matrix));
   }
-  else if (prec_type == "CRSRILUK") {
-    prec = Teuchos::rcp(new Tifpack::CrsRiluk<MatrixType>(matrix));
+  else if (prec_type == "RILUK") {
+    prec = Teuchos::rcp(new Tifpack::RILUK<MatrixType>(matrix));
   }
   else if (prec_type == "RELAXATION") {
     prec = Teuchos::rcp(new Tifpack::Relaxation<MatrixType>(matrix));

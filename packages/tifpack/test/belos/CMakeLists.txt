@@ -39,14 +39,14 @@ ENDIF()
 PACKAGE_COPY_FILES_TO_BINARY_DIR(TifpackBelosCopyFiles
   DEST_FILES
   test_ILUT_calore1_mm.xml test_PtJacobi_calore1_mm.xml test_GS_calore1_mm.xml
-  test_CrsRiluk_calore1_mm.xml test_Cheby_calore1_mm.xml
+  test_RILUK_calore1_mm.xml test_Cheby_calore1_mm.xml
   test_SGS_calore1_mm.xml calore1.mtx test_pseudoblockcg_small_sym_mm.xml
   test_PtJacobi_small_sym_mm.xml small_sym.mtx test_gmres_small_sym_mm.xml
   test_GS_tfqmr_small_sym_mm.xml test_ILUT_tfqmr_small_sym_mm.xml
   test_tfqmr_small_sym_mm.xml test_ILUT_tfqmr_calore1_mm.xml
   5w.mtx 5w.vec 5w_bel_tif_ILUT.xml
-  5w_bel_tif_CrsRiluk_0.xml 5w_bel_tif_CrsRiluk_1.xml
-  test_CrsRiluk_tfqmr_small_sym_mm.xml
+  5w_bel_tif_RILUK_0.xml 5w_bel_tif_RILUK_1.xml
+  test_RILUK_tfqmr_small_sym_mm.xml
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
   EXEDEPS tif_belos
@@ -145,8 +145,8 @@ PACKAGE_ADD_TEST(
 
 PACKAGE_ADD_TEST(
   tif_belos TifpackBelosCopyFiles
-  NAME CrsRiluk_5w_0
-  ARGS "--xml_file=5w_bel_tif_CrsRiluk_0.xml"
+  NAME RILUK_5w_0
+  ARGS "--xml_file=5w_bel_tif_RILUK_0.xml"
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
@@ -154,8 +154,8 @@ PACKAGE_ADD_TEST(
 
 PACKAGE_ADD_TEST(
   tif_belos TifpackBelosCopyFiles
-  NAME CrsRiluk_5w_1
-  ARGS "--xml_file=5w_bel_tif_CrsRiluk_1.xml"
+  NAME RILUK_5w_1
+  ARGS "--xml_file=5w_bel_tif_RILUK_1.xml"
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
@@ -163,8 +163,8 @@ PACKAGE_ADD_TEST(
 
 PACKAGE_ADD_TEST(
   tif_belos TifpackBelosCopyFiles
-  NAME CrsRiluk_small_belos
-  ARGS "--xml_file=test_CrsRiluk_tfqmr_small_sym_mm.xml"
+  NAME RILUK_small_belos
+  ARGS "--xml_file=test_RILUK_tfqmr_small_sym_mm.xml"
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
@@ -208,8 +208,8 @@ PACKAGE_ADD_TEST(
 
 PACKAGE_ADD_TEST(
   tif_belos TifpackBelosCopyFiles
-  NAME CrsRiluk_belos
-  ARGS "--xml_file=test_CrsRiluk_calore1_mm.xml"
+  NAME RILUK_belos
+  ARGS "--xml_file=test_RILUK_calore1_mm.xml"
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT

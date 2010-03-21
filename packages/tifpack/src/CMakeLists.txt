@@ -33,9 +33,9 @@ SET(HEADERS ${HEADERS}
   Tifpack_Chebyshev_def.hpp
   Tifpack_Condest.hpp
   Tifpack_CondestType.hpp
-  Tifpack_CrsRiluk.hpp
-  Tifpack_CrsRiluk_decl.hpp
-  Tifpack_CrsRiluk_def.hpp
+  Tifpack_RILUK.hpp
+  Tifpack_RILUK_decl.hpp
+  Tifpack_RILUK_def.hpp
   Tifpack_ExplicitInstantiationHelpers.hpp
   Tifpack_Heap.hpp
   Tifpack_ILUT.hpp
@@ -51,7 +51,7 @@ SET(HEADERS ${HEADERS}
 
 SET(SOURCES ${SOURCES}
   Tifpack_Chebyshev.cpp
-  Tifpack_CrsRiluk.cpp
+  Tifpack_RILUK.cpp
   Tifpack_Factory.cpp
   Tifpack_ILUT.cpp
   Tifpack_Parameters.cpp
