@@ -106,8 +106,6 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   double time;
 #endif
   ZOLTAN_TRACE_ENTER(zz, yo);
-  /* TODO: Temporary work-around: return without doing anything! */
-  return ierr;
 
 #ifdef CC_TIMERS
   time = MPI_Wtime();
