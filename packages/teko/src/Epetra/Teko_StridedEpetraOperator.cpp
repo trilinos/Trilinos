@@ -130,7 +130,7 @@ void StridedEpetraOperator::WriteBlocks(const std::string & prefix) const
          std::stringstream ss;
          ss << prefix << "_" << i << j << ".mm";
 
-         // get the row matrix object
+         // get the row matrix object (Note: can't use "GetBlock" method b/c matrix might be reordered)
          RCP<const Epetra_RowMatrix> mat
                = Teuchos::rcp_dynamic_cast<const Epetra_RowMatrix>(Thyra::get_Epetra_Operator(*blockOp->getBlock(i,j)));
 
@@ -150,8 +150,6 @@ void StridedEpetraOperator::WriteBlocks(const std::string & prefix) const
 std::string StridedEpetraOperator::PrintNorm(const eNormType & nrmType,const char newline)
 {
    BlockedLinearOp blockOp = toBlockedLinearOp(stridedOperator_);
-   // RCP<Thyra::PhysicallyBlockedLinearOpBase<double> > blockOp
-   //       = rcp_dynamic_cast<Thyra::PhysicallyBlockedLinearOpBase<double> >(stridedOperator_);
 
    // get size of strided block operator
    int rowCount = Teko::blockRowCount(blockOp);
@@ -162,9 +160,9 @@ std::string StridedEpetraOperator::PrintNorm(const eNormType & nrmType,const cha
    ss << std::scientific;
    for(int row=0;row<rowCount;row++) {
       for(int col=0;col<colCount;col++) {
-         // get the row matrix object
-         RCP<const Epetra_CrsMatrix> mat
-               = Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>(GetBlock(row,col));
+         // get the row matrix object (Note: can't use "GetBlock" method b/c matrix might be reordered)
+         RCP<const Epetra_CrsMatrix> mat = Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>(
+               Thyra::get_Epetra_Operator(*blockOp->getBlock(row,col)));
 
          // compute the norm
          double norm = 0.0;
