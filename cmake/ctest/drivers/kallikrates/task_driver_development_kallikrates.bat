@@ -12,7 +12,7 @@ set GIT_SSH=C:\Users\bmpersc\Documents\plink_wrap.bat
 
 rem Set location of CTEST_EXE, and GIT_EXE
 set GIT_EXE=C:\Program Files (x86)\Git\cmd\git
-set CTEST_EXE=C:\Program Files (x86)\CMake 2.8.0 rc5\bin\ctest.exe
+set CTEST_EXE=C:\Program Files (x86)\CMake 2.8\bin\ctest.exe
 set TRILINOS_REPOSITORY_LOCATION=software.sandia.gov:/space/git/nightly/Trilinos
 
 rem Set the base directory which is one above where Trilinos will be 
