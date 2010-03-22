@@ -178,6 +178,7 @@ void RILUK<MatrixType>::initAllValues(const Tpetra::RowMatrix<Scalar,LocalOrdina
 
   for (GlobalOrdinal i=rowMap->getMinGlobalIndex(); i<=rowMap->getMaxGlobalIndex(); ++i) {
     GlobalOrdinal global_row = i;
+    LocalOrdinal local_row = rowMap->getLocalElement(global_row);
 
     OverlapA.getGlobalRowCopy(global_row, InI(), InV(), NumIn); // Get Values and Indices
     
@@ -192,7 +193,7 @@ void RILUK<MatrixType>::initAllValues(const Tpetra::RowMatrix<Scalar,LocalOrdina
 
       if (k==i) {
         DiagFound = true;
-        DV[i] += Rthresh_ * InV[j] + TIFPACK_SGN(InV[j]) * Athresh_; // Store perturbed diagonal in Tpetra::Vector D_
+        DV[local_row] += Rthresh_ * InV[j] + TIFPACK_SGN(InV[j]) * Athresh_; // Store perturbed diagonal in Tpetra::Vector D_
       }
 
       else if (k < 0) { // Out of range
@@ -209,15 +210,15 @@ void RILUK<MatrixType>::initAllValues(const Tpetra::RowMatrix<Scalar,LocalOrdina
         UV[NumU] = InV[j];
         NumU++;
       }
-      else {
-        throw std::runtime_error("out of range in Tifpack::RILUK::initAllValues");
-      }
+//      else {
+//        throw std::runtime_error("out of range in Tifpack::RILUK::initAllValues");
+//      }
     }
     
     // Check in things for this row of L and U
 
     if (DiagFound) ++NumNonzeroDiags;
-    else DV[i] = Athresh_;
+    else DV[local_row] = Athresh_;
 
     if (NumL) {
       if (ReplaceValues) {
@@ -258,7 +259,7 @@ void RILUK<MatrixType>::initAllValues(const Tpetra::RowMatrix<Scalar,LocalOrdina
                      1,&NumNonzeroDiags,&TotalNonzeroDiags);
   NumMyDiagonals_ = NumNonzeroDiags;
   if (NumNonzeroDiags != U_->getNodeNumRows()) {
-    throw std::runtime_error("Error in Tifpack::RILUK::InitAllValues, wrong number of diagonals.");
+    throw std::runtime_error("Error in Tifpack::RILUK::initAllValues, wrong number of diagonals.");
   }
 }
 
