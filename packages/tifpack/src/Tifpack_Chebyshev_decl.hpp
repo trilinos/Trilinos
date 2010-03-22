@@ -60,7 +60,7 @@ namespace Tifpack {
 
 /*!
   The Tifpack::Chebyshev class enables the construction of preconditioners
-  based on Chebyshev polynomials for a Tpetra::CrsMatrix.
+  based on Chebyshev polynomials for a Tpetra::RowMatrix.
   Tifpack::Chebyshev is derived from the Tifpack::Preconditioner class, 
   which is itself derived from Tpetra::Operator.
   Therefore this object can be used as preconditioner everywhere an
@@ -71,19 +71,19 @@ namespace Tifpack {
 <P> (04/04/06) Flops are not counted in the routine apply()
 
 The list of parameters is
-- EigRatio_             = List.get("chebyshev: ratio eigenvalue", EigRatio_);
-this is the ratio to define the lower bound on the spectrum; lambda^* = LambdaMax_ / EigRatio_;
+- EigRatio: "chebyshev: ratio eigenvalue"
+this is the ratio to define the lower bound on the spectrum; lambda^* = LambdaMax / EigRatio;
 a typical value used in ML is 30.0 (30.0 is the default value).
-- LambdaMin_            = List.get("chebyshev: min eigenvalue", LambdaMin_);
+- LambdaMin: "chebyshev: min eigenvalue"
 this is the smallest eigenvalue; this parameter is optional and is only
 accessed to check whether the input matrix is equal to identity.
-- LambdaMax_            = List.get("chebyshev: max eigenvalue", LambdaMax_);
+- LambdaMax: "chebyshev: max eigenvalue"
 this is the largest eigenvalue of the matrix.
-- PolyDegree_           = List.get("chebyshev: degree",PolyDegree_);
+- PolyDegree:  "chebyshev: degree"
 this is the polynomial degree.
-- MinDiagonalValue_     = List.get("chebyshev: min diagonal value", MinDiagonalValue_);
+- MinDiagonalValue:  "chebyshev: min diagonal value"
 this defines the threshold for diagonal values under which they are not inverted
-- ZeroStartingSolution_ = List.get("chebyshev: zero starting solution", ZeroStartingSolution_);
+- ZeroStartingSolution:  "chebyshev: zero starting solution"
 this flag allows to set a non-zero initial guess.
 
 \author Ulrich Hetmaniuk. SNL 1416.
@@ -239,7 +239,7 @@ public:
                          const int MaximumIterations, 
                          Scalar& LambdaMax);
 
-  //! Uses AztecOO's CG to estimate lambda_min and lambda_max.
+  //! Not currently implemented: Use CG to estimate lambda_min and lambda_max.
   static void CG(const Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Operator, 
                 const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& InvPointDiagonal, 
                 const int MaximumIterations, 

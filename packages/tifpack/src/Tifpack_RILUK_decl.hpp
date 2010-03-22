@@ -60,9 +60,9 @@ namespace Tifpack {
        entries that were from previous level only (not the current level).  This rule limits fill to entries that
        are direct decendents from the previous level graph.  Fill for level k is determined by applying this rule
        recursively.  For sufficiently large values of k, the fill would eventually be complete and an exact LU
-       factorization would be computed.  Level of fill is defined during the construction of the Tifpack_IlukGraph object.
+       factorization would be computed.
 
-  <li> Level of overlap - All Ifpack preconditioners work on parallel distributed memory computers by using
+  <li> Level of overlap - All Tifpack preconditioners work on parallel distributed memory computers by using
        the row partitioning the user input matrix to determine the partitioning for local ILU factors.  If the level of
        overlap is set to zero,
        the rows of the user matrix that are stored on a given processor are treated as a self-contained local matrix
@@ -82,7 +82,7 @@ namespace Tifpack {
   <li> Fraction of relaxation - Tifpack_RILUK computes the ILU factorization row-by-row.  As entries at a given
        row are computed, some number of them will be dropped because they do match the prescribed sparsity pattern.
        The relaxation factor determines how these dropped values will be handled.  If the RelaxValue (changed by calling
-       SetRelaxValue()) is zero, then these extra entries will by dropped.  This is a classical ILU approach.
+       setRelaxValue()) is zero, then these extra entries will by dropped.  This is a classical ILU approach.
        If the RelaxValue is 1, then the sum
        of the extra entries will be added to the diagonal.  This is a classical Modified ILU (MILU) approach.  If
        RelaxValue is between 0 and 1, then RelaxValue times the sum of extra entries will be added to the diagonal.
@@ -163,27 +163,13 @@ forcing the diagonal values to have minimal magnitude of \f$\alpha\f$ and
 to increase each by an amount proportional to \f$\rho\f$, and still keep
 the sign of the original diagonal entry.
 
-<b>Constructing Tifpack::RILUK objects</b>
-
-Constructing Tifpack::RILUK objects is a multi-step process.  The basic steps are as follows:
-<ol>
-  <li> Create Tifpack::RILUK instance, including storage,  via constructor.
-  <li> Enter values via one or more Put or SumInto functions.
-  <li> Complete construction via FillComplete call.
-</ol>
-
-Note that, even after a matrix is constructed, it is possible to update existing matrix entries.  It is \e not possible to
-create new entries.
-
 <b> Counting Floating Point Operations </b>
 
-Each Tifpack::RILUK object keep track of the number
+Each Tifpack::RILUK object keeps track of the number
 of \e serial floating point operations performed using the specified object as the \e this argument
 to the function.  The Flops() function returns this number as a double precision number.  Using this 
 information, in conjunction with the Teuchos::Time class, one can get accurate parallel performance
 numbers.  The ResetFlops() function resets the floating point counter.
-
-\warning A Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> is required for the Tifpack_RILUK constructor.
 
 */    
 

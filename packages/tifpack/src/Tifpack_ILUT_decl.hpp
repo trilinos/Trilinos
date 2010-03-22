@@ -31,7 +31,7 @@
 // Tifpack::ILUT is a translation of the Aztec ILUT
 // implementation. The Aztec ILUT implementation was
 // written by Ray Tuminaro.
-// See notes below, in the Tifpack::ILUT::Compute method.
+// See notes in the Tifpack::ILUT::Compute method.
 // ABW.
 //------------------------------------------------------
 
@@ -42,7 +42,6 @@
 #include "Tifpack_Preconditioner.hpp"
 #include "Tifpack_Condest.hpp"
 #include "Tifpack_Heap.hpp"
-#include "Tifpack_ScalingType.hpp"
 #include "Tifpack_Parameters.hpp"
 
 #include <Teuchos_TestForException.hpp>
@@ -66,16 +65,9 @@ namespace Tifpack {
 //! Tifpack::ILUT: A class for constructing and using an ILUT factorization
 // of a given Tpetra::RowMatrix.
 
-/*! The Tifpack::ILUT class computes a "Relaxed" ILUT factorization with level k fill 
-    of a given Tpetra::RowMatrix. 
+/*! The Tifpack::ILUT class computes an ILUT factorization with specified fill 
+    and drop-tolerance, of a given Tpetra::RowMatrix. 
 
-    <P> Please refer to \ref ifp_ilu for a general description of the ILU algorithm.
-
-    <P>The complete list of supported parameters is reported in page \ref ifp_params. 
-
-    \author Michael Heroux, SNL 9214.
-
-    \date Last modified on 22-Jan-05.
 */
 template<class MatrixType>
 class ILUT: virtual public Tifpack::Preconditioner<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> {
