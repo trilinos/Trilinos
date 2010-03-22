@@ -199,10 +199,78 @@
 	if (BadResidual(verbose,residual, NumVectors)) return(-1);
       }
 
+    
+  }
+    // ====================================
+    // LocalMap Tests
+    // ====================================
+
+    // Construct MultiVectors
+  {
+    
+        int localLength = 10;
+        double *localMinValue = new double[localLength];
+        double *localMaxValue = new double[localLength];
+        double *localNorm1 = new double[localLength];
+        double *localDot = new double[localLength];
+        double *localNorm2 = new double[localLength];
+        double *localMeanValue = new double[localLength];
+        Epetra_LocalMap MapSmall(localLength, IndexBase, Comm);
+        Epetra_MultiVector A(MapSmall, NumVectors);
+
+        double doubleLocalLength = (double) localLength;
+        for (int j=0; j< NumVectors; j++) {
+          for (i=0; i< localLength-1; i++) A[j][i] = (double) (i+1);
+          A[j][localLength-1] = (double) (localLength+j); // Only the last value differs across multivectors
+          localMinValue[j] = A[j][0]; // Increasing values
+          localMaxValue[j] = A[j][localLength-1];
+          localNorm1[j] = (doubleLocalLength-1.0)*(doubleLocalLength)/2.0+A[j][localLength-1];
+          localDot[j] = (doubleLocalLength-1.0)*(doubleLocalLength)*(2.0*(doubleLocalLength-1.0)+1.0)/6.0+A[j][localLength-1]*A[j][localLength-1];
+          localNorm2[j] = std::sqrt(localDot[j]);
+          localMeanValue[j] = localNorm1[j]/doubleLocalLength;
+        }
+	ierr += A.MinValue(residual);
+        for (int j=0; j<NumVectors; j++) residual[j] = std::abs(residual[j] - localMinValue[j]);
+	if (verbose) cout << "XXXXX MinValue" << endl;
+	if (BadResidual(verbose,residual, NumVectors)) return(-1);
+
+	ierr += A.MaxValue(residual);
+        for (int j=0; j<NumVectors; j++) residual[j] = std::abs(residual[j] - localMaxValue[j]);
+	if (verbose) cout << "XXXXX MaxValue" << endl;
+	if (BadResidual(verbose,residual, NumVectors)) return(-1);
+
+	ierr += A.Norm1(residual);
+        for (int j=0; j<NumVectors; j++) residual[j] = std::abs(residual[j] - localNorm1[j]);
+	if (verbose) cout << "XXXXX Norm1" << endl;
+	if (BadResidual(verbose,residual, NumVectors)) return(-1);
+
+	ierr += A.Dot(A,residual);
+        for (int j=0; j<NumVectors; j++) residual[j] = std::abs(residual[j] - localDot[j]);
+	if (verbose) cout << "XXXXX Dot" << endl;
+	if (BadResidual(verbose,residual, NumVectors)) return(-1);
+
+	ierr += A.Norm2(residual);
+        for (int j=0; j<NumVectors; j++) residual[j] = std::abs(residual[j] - localNorm2[j]);
+	if (verbose) cout << "XXXXX Norm2" << endl;
+	if (BadResidual(verbose,residual, NumVectors)) return(-1);
+
+	ierr += A.MeanValue(residual);
+        for (int j=0; j<NumVectors; j++) residual[j] = std::abs(residual[j] - localMeanValue[j]);
+	if (verbose) cout << "XXXXX MeanValue" << endl;
+	if (BadResidual(verbose,residual, NumVectors)) return(-1);
+
+        delete [] localMinValue;
+        delete [] localMaxValue;
+        delete [] localNorm1;
+        delete [] localDot;
+        delete [] localNorm2;
+        delete [] localMeanValue;
+
+  }
+
     delete [] residual;
     
     return(ierr);
-  }
   }
 
 int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)

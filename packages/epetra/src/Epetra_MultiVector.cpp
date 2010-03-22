@@ -989,7 +989,7 @@ int Epetra_MultiVector::Dot(const Epetra_MultiVector& A, double *Result) const {
 
   // Dot product of two MultiVectors 
 
-  int i, j;
+  int i;
   if (NumVectors_ != A.NumVectors()) EPETRA_CHK_ERR(-1);
   if (MyLength_ != A.MyLength()) EPETRA_CHK_ERR(-2);
   UpdateDoubleTemp();
@@ -1003,13 +1003,17 @@ int Epetra_MultiVector::Dot(const Epetra_MultiVector& A, double *Result) const {
       const double * const fromA = A_Pointers[i];
       double sum = 0.0;
 #pragma omp parallel for reduction (+:sum)
-      for (j=0; j < MyLength_; j++) sum += from[j] * fromA[j];
+      for (int j=0; j < MyLength_; j++) sum += from[j] * fromA[j];
       DoubleTemp_[i] = sum;
     }
 #else
   for (i=0; i < NumVectors_; i++) DoubleTemp_[i] = DOT(MyLength_, Pointers_[i], A_Pointers[i]);
 #endif
-  Comm_->SumAll(DoubleTemp_, Result, NumVectors_);
+
+  if (DistributedGlobal())
+    Comm_->SumAll(DoubleTemp_, Result, NumVectors_);
+  else
+    for (i=0; i< NumVectors_; ++i) Result[i] = DoubleTemp_[i];
   
   UpdateFlops(2*GlobalLength_*NumVectors_);
 
@@ -1375,7 +1379,10 @@ int  Epetra_MultiVector::Norm1 (double* Result) const {
   for (i=0; i < NumVectors_; i++) DoubleTemp_[i] = ASUM(MyLength_, Pointers_[i]);
 #endif
   
-  Comm_->SumAll(DoubleTemp_, Result, NumVectors_);
+  if (DistributedGlobal())
+    Comm_->SumAll(DoubleTemp_, Result, NumVectors_);
+  else
+    for (i=0; i< NumVectors_; ++i) Result[i] = DoubleTemp_[i];
   
   UpdateFlops(2*GlobalLength_*NumVectors_);
 
@@ -1401,7 +1408,11 @@ int  Epetra_MultiVector::Norm2 (double* Result) const {
       for (j=0; j < MyLength_; j++) sum += from[j] * from[j];
       DoubleTemp_[i] = sum;
     }
-  Comm_->SumAll(DoubleTemp_, Result, NumVectors_);
+  if (DistributedGlobal())
+    Comm_->SumAll(DoubleTemp_, Result, NumVectors_);
+  else
+    for (i=0; i< NumVectors_; ++i) Result[i] = DoubleTemp_[i];
+
   for (i=0; i < NumVectors_; i++) Result[i] = std::sqrt(Result[i]);
   
   UpdateFlops(2*GlobalLength_*NumVectors_);
@@ -1443,7 +1454,10 @@ int  Epetra_MultiVector::NormInf (double* Result) const {
       if (j>-1) DoubleTemp_[i] = std::abs(Pointers_[i][j]);
 #endif
     }
-  Comm_->MaxAll(DoubleTemp_, Result, NumVectors_);
+  if (DistributedGlobal())
+    Comm_->MaxAll(DoubleTemp_, Result, NumVectors_);
+  else
+    for (i=0; i< NumVectors_; ++i) Result[i] = DoubleTemp_[i];
   
   // UpdateFlops(0);  Strictly speaking there are not FLOPS in this routine  
   return(0);
@@ -1483,8 +1497,15 @@ int  Epetra_MultiVector::NormWeighted (const Epetra_MultiVector& Weights, double
       }
       DoubleTemp_[i] = sum;
     }
-  Comm_->SumAll(DoubleTemp_, Result, NumVectors_);
-  double OneOverN = 1.0 / (double) GlobalLength_;
+  double OneOverN;
+  if (DistributedGlobal()) {
+    Comm_->SumAll(DoubleTemp_, Result, NumVectors_);
+    OneOverN = 1.0 / (double) GlobalLength_;
+  }
+  else {
+    for (i=0; i< NumVectors_; ++i) Result[i] = DoubleTemp_[i];
+    OneOverN = 1.0 / (double) MyLength_;
+  }
   for (i=0; i < NumVectors_; i++) Result[i] = std::sqrt(Result[i]*OneOverN);
   
   UpdateFlops(3*GlobalLength_*NumVectors_);
@@ -1532,7 +1553,7 @@ int  Epetra_MultiVector::MinValue (double* Result) const {
   //not been referenced. Also, if vector contents are uninitialized
   //then Result contents are not well defined...
 
-  if (Comm_->NumProc() == 1) return(ierr);
+  if (Comm_->NumProc() == 1 || !DistributedGlobal()) return(ierr);
 
   //We're going to use MPI_Allgather to gather every proc's local-
   //min values onto every other proc. We'll use the last position
@@ -1642,7 +1663,7 @@ int  Epetra_MultiVector::MaxValue (double* Result) const {
   //not been referenced. Also, if vector contents are uninitialized
   //then Result contents are not well defined...
 
-  if (Comm_->NumProc() == 1) return(ierr);
+  if (Comm_->NumProc() == 1  || !DistributedGlobal()) return(ierr);
 
   //We're going to use MPI_Allgather to gather every proc's local-
   //max values onto every other proc. We'll use the last position
@@ -1733,7 +1754,11 @@ int  Epetra_MultiVector::MeanValue (double* Result) const {
       for (j=0; j < MyLength_; j++) sum += from[j];
       DoubleTemp_[i] = sum;
     }
-  Comm_->SumAll(DoubleTemp_, Result, NumVectors_);
+  if (DistributedGlobal())
+    Comm_->SumAll(DoubleTemp_, Result, NumVectors_);
+  else
+    for (i=0; i< NumVectors_; ++i) Result[i] = DoubleTemp_[i];
+
   for (i=0; i < NumVectors_; i++) Result[i] = Result[i]*fGlobalLength;
   
   UpdateFlops(GlobalLength_*NumVectors_);
