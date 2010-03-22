@@ -1,5 +1,6 @@
 
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.exetazo.gcc.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../../TrilinosVersion.cmake")
 
 #
 # Set the options specific to this build case
@@ -7,12 +8,12 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.exetazo.gcc.cmake")
 
 SET(COMM_TYPE SERIAL)
 SET(BUILD_TYPE DEBUG)
-SET(BUILD_DIR_NAME SERIAL_DEBUG_RELEASE_10.0)
+SET(BUILD_DIR_NAME "SERIAL_DEBUG_RELEASE_${Trilinos_VERSION}")
 #SET(CTEST_TEST_TYPE EXPERIMENTAL)
-SET(Trilinos_TRACK "Nightly Release 10.0")
+SET(Trilinos_TRACK ${Trilinos_TESTING_TRACK})
 set(CTEST_TEST_TIMEOUT "720")
 
-SET(Trilinos_BRANCH "-r trilinos-release-10-0-branch")
+SET(Trilinos_BRANCH ${Trilinos_REPOSITORY_BRANCH})
 
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 

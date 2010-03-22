@@ -1,5 +1,6 @@
 
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.s909348.gcc.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../../TrilinosVersion.cmake")
 
 #
 # Set the options specific to this build case
@@ -7,10 +8,10 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.s909348.gcc.cmake")
 
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME MPI_RELEASE_10.0)
-SET(Trilinos_TRACK "Nightly Release 10.0")
+SET(BUILD_DIR_NAME "MPI_RELEASE_${Trilinos_VERSION}")
+SET(Trilinos_TRACK ${Trilinos_TESTING_TRACK})
 
-SET(Trilinos_BRANCH "trilinos-release-10-0-branch")
+SET(Trilinos_BRANCH ${Trilinos_REPOSITORY_BRANCH})
 
 SET(EXTRA_EXCLUDE_PACKAGES Zoltan)
 

@@ -1,4 +1,5 @@
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.kallikrates.msvc.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../../TrilinosVersion.cmake")
 
 #
 # Set the options specific to this build case
@@ -6,10 +7,10 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.kallikrates.msvc.cmak
 #SET(CTEST_DO_UPDATES FALSE)
 SET(COMM_TYPE SERIAL)
 SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME SERIAL_RELEASE_10.0)
-SET(Trilinos_TRACK "Nightly Release 10.0")
+SET(BUILD_DIR_NAME "SERIAL_RELEASE_${Trilinos_VERSION}")
+SET(Trilinos_TRACK ${Trilinos_TESTING_TRACK})
 
-SET(Trilinos_BRANCH "trilinos-release-10-0-branch")
+SET(Trilinos_BRANCH ${Trilinos_REPOSITORY_BRANCH})
 
 #
 # Set the rest of the system-specific options and run the dashboard build/test

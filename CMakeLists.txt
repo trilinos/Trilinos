@@ -19,7 +19,6 @@ ENDIF()
 
 PROJECT(Trilinos NONE)
 
-SET(Trilinos_VERSION "11.0d")
 SET(TRILINOS_HOME_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL "")
 SET(TRILINOS_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE INTERNAL "")
 # Above, we put these in the cache so we can grep them out
@@ -31,6 +30,15 @@ SET( CMAKE_MODULE_PATH
    ${TRILINOS_HOME_DIR}/cmake/package_arch
    ${TRILINOS_HOME_DIR}/cmake/config_tests
    )
+
+#Pull in Trilinos version information and create the version header file.
+INCLUDE(TrilinosVersion)
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/Trilinos_version.h.in
+  Trilinos_version.h)
+
+#Since the version header file is now configured the root build
+#dir needs to be on the include path
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 
 INCLUDE(PackageArchGlobalMacros)
 INCLUDE(TrilinosGlobalMacros)
