@@ -95,7 +95,7 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   static char *yo = "Zoltan_Matrix_Remove_DupArcs";
   int ierr = ZOLTAN_OK;
   WgtFctPtr wgtfct;
-  int i;
+  long i;
   ZOLTAN_MAP *nnz_map=NULL, *y_map = NULL;
   int *ysize = NULL;
   int *ptrGNO;
@@ -139,9 +139,9 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
 
   /* First remove duplicated nnz and extract local yGNO*/
   for(i = 0; i < size ; ++i) {
-    int position;
+    long position;
     if (arcs[i].GNO[1] >= 0) {/* real arc */
-      int prev = -1;
+      long prev = -1;
       Zoltan_Map_Find_Add(zz, nnz_map, arcs[i].GNO, (void*)(long)i, (void**)&prev);
       if (prev != i) {/* Duplicate arcs */
 	wgtfct(pinwgt+i*outmat->pinwgtdim, pinwgt+prev*outmat->pinwgtdim,
@@ -203,7 +203,7 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   Zoltan_Map_First(zz, nnz_map, &tabGNO, (void**)&i);
   while (tabGNO != NULL) {
     int nnz_index;
-    int y_index;
+    long y_index;
 
     Zoltan_Map_Find(zz, y_map, &tabGNO[0], (void**)&y_index);
     y_index = perm[y_index];
