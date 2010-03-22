@@ -256,7 +256,6 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
 
   ZOLTAN_FREE(&ysize);
   ZOLTAN_FREE(&perm);
-  ZOLTAN_FREE(&iperm);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
   return (ierr);
