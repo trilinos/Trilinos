@@ -101,7 +101,13 @@ GUI, moving most options to the advanced area.  There are a lot of Trilinos
 options, and users could easily have trouble finding what they are looking
 for.  Really, CMake should support a grouping capability to group options
 hierarchically with the GUI allowing expansion and contraction of the
-categories of options shown.
+categories of options shown.  One thing that would help a lot is if the CMake
+GUI would allow you to select "Grouped" view but turn "Advanced" options on
+and off.  Currently, the "Grouped" view shows all options including advanced
+options.  Then, in the Trilinos CMake system, we could avoid setting package
+specific options like PACKAGE_ENABLE_TESTS unless those packages were actually
+explicitly enabled.  Again though, to really organize all of these options we
+need the ability to hierarchically group options any way that we would like.
 
 
 (*) [CDash] [P4] Implement a tool that will go back in time and delete
