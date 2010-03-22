@@ -50,6 +50,8 @@ int Zoltan_DD_Find (Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR gid,
  ZOLTAN_ID_PTR lid, ZOLTAN_ID_PTR data, int *partition, int count,
  int *owner) ;
 
+int Zoltan_DD_GetLocalKeys(Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR* gid, int* size);
+
 int Zoltan_DD_Remove (Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR gid,
  int count) ;
 

@@ -32,8 +32,9 @@ Zoltan_Matrix_Free(Zoltan_matrix *m)
   ZOLTAN_FREE(&m->yGNO);
   ZOLTAN_FREE(&m->pinGNO);
   ZOLTAN_FREE(&m->pinwgt);
-  ZOLTAN_FREE(&m->yGID);
-  ZOLTAN_FREE(&m->ywgt);
+/*   ZOLTAN_FREE(&m->yGID); */
+  ZOLTAN_FREE(&m->ybipart);
+  ZOLTAN_FREE(&m->ypid);
 
   if (m->ddY != m->ddX && m->ddY != NULL)
     Zoltan_DD_Destroy(&m->ddY);
@@ -62,9 +63,27 @@ Zoltan_Matrix_Reset(Zoltan_matrix* m)
   m->yend = NULL;
   m->pinGNO = NULL;
   m->pinwgt = NULL;
-  m->ywgt = NULL;
   m->yGID = NULL;
 }
+
+
+void
+Zoltan_Matrix2d_Init(Zoltan_matrix_2d *m)
+{
+  memset(m, 0, sizeof(Zoltan_matrix_2d));
+
+  Zoltan_Distribute_Set(m, &Zoltan_Distribute_Origin, (void*)m);
+}
+
+int
+Zoltan_Distribute_Set(Zoltan_matrix_2d* mat,
+		      distFnct *hashDistFct, void * hashDistData)
+{
+  mat->hashDistData = hashDistData;
+  mat->hashDistFct = hashDistFct;
+  return (ZOLTAN_OK);
+}
+
 
 int
 Zoltan_Matrix_Complete(ZZ* zz,Zoltan_matrix* m)
@@ -99,12 +118,14 @@ Zoltan_Matrix_Complete(ZZ* zz,Zoltan_matrix* m)
 
   /* Update data directories */
   m->yGID = ZOLTAN_MALLOC_GID_ARRAY(zz, m->nY);
-  m->ywgt = (float*) ZOLTAN_MALLOC(m->nY * sizeof(float) * m->ywgtdim);
-  if (m->nY && (m->yGID == NULL || (m->ywgtdim && m->ywgt == NULL)))
+  m->ypid = (int*) ZOLTAN_MALLOC(m->nY * sizeof(int));
+  if (m->bipartite)
+    m->ybipart = (int*) ZOLTAN_MALLOC(m->nY * sizeof(int));
+  if (m->nY && ((m->yGID == NULL) || (m->ypid == NULL) || (m->bipartite && m->ybipart == NULL)))
     MEMORY_ERROR;
 
   /* Get Informations about Y */
-  Zoltan_DD_Find (m->ddY, (ZOLTAN_ID_PTR)m->yGNO, m->yGID, (ZOLTAN_ID_PTR)m->ywgt, NULL,
+  Zoltan_DD_Find (m->ddY, (ZOLTAN_ID_PTR)m->yGNO, m->yGID, (ZOLTAN_ID_PTR)m->ypid, m->ybipart,
 		  m->nY, NULL);
 
   if (m->ddY != m->ddX) {
@@ -119,6 +140,21 @@ Zoltan_Matrix_Complete(ZZ* zz,Zoltan_matrix* m)
   return (ierr);
 }
 
+/* Return an array of locally owned GID */
+ZOLTAN_ID_PTR Zoltan_Matrix_Get_GID(ZZ* zz, Zoltan_matrix* m)
+{
+  ZOLTAN_ID_PTR yGID;
+
+  yGID = ZOLTAN_MALLOC_GID_ARRAY(zz, m->nY);
+  if (m->nY && yGID == NULL)
+    return (NULL);
+
+  /* Get Informations about Y */
+  Zoltan_DD_Find (m->ddY, (ZOLTAN_ID_PTR)m->yGNO, yGID, NULL, NULL,
+		  m->nY, NULL);
+
+  return (yGID);
+}
 
 int
 Zoltan_Matrix2d_adjproc (ZZ* zz, const Zoltan_matrix_2d * const mat, int **adjproc)
