@@ -19,6 +19,8 @@ namespace Epetra {
 
 class StridedEpetraOperator : public EpetraOperatorWrapper {
 public:
+   enum eNormType { Inf, One, Frobenius};
+
    StridedEpetraOperator(int numVars,const Teuchos::RCP<Epetra_Operator> & content,
                          const std::string & label="<ANYM>");
    StridedEpetraOperator(const std::vector<int> & vars,const Teuchos::RCP<Epetra_Operator> & content,
@@ -48,6 +50,15 @@ public:
    /** Write out this operator to matrix market files
      */
    virtual void WriteBlocks(const std::string & prefix) const;
+
+   /** Print the Norm of the sub matrces. The type of norm
+     * is specified by the argument.
+     *
+     * \param[in] nrmType Type of norm to use
+     * \param[in] newline Character to use when a new line
+     *                    is needed. 
+     */
+   virtual std::string PrintNorm(const eNormType & nrmType=Frobenius,const char newline='\n');
 
    // functions overloading Epetra_Operator
    ////////////////////////////////////////////////

@@ -140,6 +140,57 @@ void StridedEpetraOperator::WriteBlocks(const std::string & prefix) const
    }
 }
 
+/** Print the Norm of the sub matrces. The type of norm
+  * is specified by the argument.
+  *
+  * \param[in] nrmType Type of norm to use
+  * \param[in] newline Character to use when a new line
+  *                    is needed. 
+  */
+std::string StridedEpetraOperator::PrintNorm(const eNormType & nrmType,const char newline)
+{
+   BlockedLinearOp blockOp = toBlockedLinearOp(stridedOperator_);
+   // RCP<Thyra::PhysicallyBlockedLinearOpBase<double> > blockOp
+   //       = rcp_dynamic_cast<Thyra::PhysicallyBlockedLinearOpBase<double> >(stridedOperator_);
+
+   // get size of strided block operator
+   int rowCount = Teko::blockRowCount(blockOp);
+   int colCount = Teko::blockRowCount(blockOp);
+
+   std::stringstream ss;
+   ss.precision(4);
+   ss << std::scientific;
+   for(int row=0;row<rowCount;row++) {
+      for(int col=0;col<colCount;col++) {
+         // get the row matrix object
+         RCP<const Epetra_CrsMatrix> mat
+               = Teuchos::rcp_dynamic_cast<const Epetra_CrsMatrix>(GetBlock(row,col));
+
+         // compute the norm
+         double norm = 0.0;
+         switch(nrmType) {
+         case Inf: 
+            norm = mat->NormInf();
+            break;
+         case One: 
+            norm = mat->NormOne();
+            break;
+         case Frobenius: 
+            norm = mat->NormFrobenius();
+            break;
+         default:
+            TEST_FOR_EXCEPTION(true,std::runtime_error,
+                               "StridedEpetraOperator::eNormType incorrectly specified");
+         }
+
+         ss << norm << " "; 
+      }
+      ss << newline;
+   }
+
+   return ss.str();
+}
+
 #ifndef Teko_DEBUG_OFF
 bool StridedEpetraOperator::testAgainstFullOperator(int count,double tol) const
 {
