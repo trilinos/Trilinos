@@ -35,6 +35,7 @@ SET(HEADERS ${HEADERS}
   Tifpack_ConfigDefs.hpp
   Tifpack_CreateOverlapGraph.hpp
   Tifpack_ExplicitInstantiationHelpers.hpp
+  Tifpack_Factory.hpp
   Tifpack_Heap.hpp
   Tifpack_ILUT.hpp
   Tifpack_ILUT_decl.hpp
