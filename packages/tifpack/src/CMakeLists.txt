@@ -33,12 +33,14 @@ SET(HEADERS ${HEADERS}
   Tifpack_Condest.hpp
   Tifpack_CondestType.hpp
   Tifpack_ConfigDefs.hpp
+  Tifpack_CreateOverlapGraph.hpp
   Tifpack_ExplicitInstantiationHelpers.hpp
   Tifpack_Heap.hpp
   Tifpack_ILUT.hpp
   Tifpack_ILUT_decl.hpp
   Tifpack_ILUT_def.hpp
   Tifpack_IlukGraph.hpp
+  Tifpack_OverlapGraph.hpp
   Tifpack_Parameters.hpp
   Tifpack_Preconditioner.hpp
   Tifpack_Relaxation.hpp
