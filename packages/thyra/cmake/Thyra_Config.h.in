@@ -3,6 +3,8 @@
 
 #cmakedefine HAVE_THYRA_EPETRAEXT
 
+#cmakedefine HAVE_THYRA_TPETRA
+
 #cmakedefine HAVE_THYRA_TEUCHOS_BLASFLOAT
 
 #cmakedefine HAVE_THYRA_FLOAT

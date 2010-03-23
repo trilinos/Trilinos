@@ -246,10 +246,12 @@ namespace Tpetra {
   }; // Map class
 
   //! Returns true if \c map is identical to this Map. Implemented in isSameAs().
+  /*! \relates Map */
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   bool operator== (const Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Map<LocalOrdinal,GlobalOrdinal,Node> &map2);
 
   //! Returns true if \c map is not identical to this Map. Implemented in isSameAs().
+  /*! \relates Map */
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   bool operator!= (const Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Map<LocalOrdinal,GlobalOrdinal,Node> &map2);
 
@@ -257,6 +259,8 @@ namespace Tpetra {
   /*! This method returns a Map instantiated on the Kokkos default node type, Kokkos::DefaultNode::DefaultNodeType.
 
       The Map is configured to use zero-based indexing.
+
+      \relates Map
    */
   template <class LocalOrdinal, class GlobalOrdinal>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
@@ -264,6 +268,8 @@ namespace Tpetra {
 
   //! Non-member function to create a locally replicated Tpetra::Map with a specified node.
   /*! The Map is configured to use zero-based indexing.
+
+      \relates Map
    */
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
