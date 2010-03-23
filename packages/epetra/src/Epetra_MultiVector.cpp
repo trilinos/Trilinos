@@ -1358,6 +1358,9 @@ int  Epetra_MultiVector::Norm1 (double* Result) const {
     
   int i;
 
+
+  if (!Map().UniqueGIDs()) {EPETRA_CHK_ERR(-1);}
+
   UpdateDoubleTemp();
 #ifdef Epetra_HAVE_OMP
   for (i=0; i < NumVectors_; i++) 
@@ -1395,6 +1398,8 @@ int  Epetra_MultiVector::Norm2 (double* Result) const {
   // 2-norm of each vector in MultiVector 
   
   int i, j;
+
+  if (!Map().UniqueGIDs()) {EPETRA_CHK_ERR(-1);}
 
   UpdateDoubleTemp();
 
@@ -1739,6 +1744,9 @@ int  Epetra_MultiVector::MeanValue (double* Result) const {
   // Mean value of each vector in MultiVector 
   
   int i, j;
+
+  if (!Map().UniqueGIDs()) {EPETRA_CHK_ERR(-1);}
+
   double fGlobalLength = 1.0/EPETRA_MAX((double) GlobalLength_, 1.0);
   
 
@@ -1823,6 +1831,9 @@ int  Epetra_MultiVector::MeanValue (double* Result) const {
     bool Case1 = ( A_is_local &&  B_is_local &&  C_is_local);  // Case 1 above
     bool Case2 = (!A_is_local && !B_is_local &&  C_is_local && TransA=='T' );// Case 2
     bool Case3 = (!A_is_local &&  B_is_local && !C_is_local && TransA=='N');// Case 3
+
+    if (Case2 && (!A.Map().UniqueGIDs() || !B.Map().UniqueGIDs())) {EPETRA_CHK_ERR(-4);}
+    if (Case3 && (!A.Map().UniqueGIDs() || !Map().UniqueGIDs())) {EPETRA_CHK_ERR(-5);}
   
     // Test for meaningful cases
 
