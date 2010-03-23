@@ -1449,9 +1449,9 @@ int  Epetra_MultiVector::NormInf (double* Result) const {
          localnormval = EPETRA_MAX(localnormval,std::abs(from[j])); 
       }
 #pragma omp critical
-{
+      {
       normval = EPETRA_MAX(normval,localnormval);
-}
+      }
 }
       DoubleTemp_[i] = normval;
 #else
@@ -1537,9 +1537,11 @@ int  Epetra_MultiVector::MinValue (double* Result) const {
 {
       double localMinVal = MinVal;
 #pragma omp for
-      for (j=0; j< MyLength_; j++) MinVal = EPETRA_MIN(localMinVal,from[j]); 
-#pragma omp critical
+      for (j=0; j< MyLength_; j++) localMinVal = EPETRA_MIN(localMinVal,from[j]); 
+#pragma omp critical 
+      {
       MinVal = EPETRA_MIN(MinVal,localMinVal);
+      }
 }
       DoubleTemp_[i] = MinVal;
 #else
@@ -1647,9 +1649,11 @@ int  Epetra_MultiVector::MaxValue (double* Result) const {
 {
       double localMaxVal = MaxVal;
 #pragma omp for
-      for (j=0; j< MyLength_; j++) MaxVal = EPETRA_MAX(localMaxVal,from[j]); 
-#pragma omp critical
+      for (j=0; j< MyLength_; j++) localMaxVal = EPETRA_MAX(localMaxVal,from[j]); 
+#pragma omp critical 
+      {
       MaxVal = EPETRA_MAX(MaxVal,localMaxVal);
+      }
 }
       DoubleTemp_[i] = MaxVal;
 #else
