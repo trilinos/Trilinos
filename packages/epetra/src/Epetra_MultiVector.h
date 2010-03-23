@@ -664,6 +664,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
   /*!
     \param Out
     Result - Result[i] contains 1-norm of ith vector.
+    \warning Map of the \e this multivector must have unique GIDs (UniqueGIDs() must return true).
 
     \return Integer error code, set to 0 if successful.
   */
@@ -673,6 +674,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
   /*!
     \param Out
     Result - Result[i] contains 2-norm of ith vector.
+    \warning Map of the \e this multivector must have unique GIDs (UniqueGIDs() must return true).
 
     \return Integer error code, set to 0 if successful.
   */
@@ -733,6 +735,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
   /*!
     \param Out
     Result - Result[i] contains mean value of ith vector.
+    \warning Map of the \e this multivector must have unique GIDs (UniqueGIDs() must return true).
 
     \return Integer error code, set to 0 if successful.
   */
@@ -781,6 +784,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_MultiVector: public Epetra_DistObject, public
     B - Multi-vector.
     \param In
     ScalarThis - Scalar to multiply with \e this.
+    \warning Map of the distributed multivectors must have unique GIDs (UniqueGIDs() must return true).
 
     \return Integer error code, set to 0 if successful.
 
