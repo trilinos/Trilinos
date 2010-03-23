@@ -87,6 +87,7 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, evaluateCubicSpline ) {
 
 TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, bad_evaluateCubicSpline ) {
   {
+    ECHO("TEST 1")
     CubicSplineCoeff<double> coeff;
     coeff.t.push_back(0.0);
     coeff.a.push_back(createDefaultVector(1,1.0));
@@ -99,25 +100,12 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, bad_evaluateCubicSpline ) {
     TEST_THROW(evaluateCubicSpline<double>(coeff, index, t, outArg(*S)), std::logic_error);
   }
   {
-    CubicSplineCoeff<double> coeff;
-    coeff.t.push_back(0.0);
-    coeff.t.push_back(1.0);
-    coeff.a.push_back(createDefaultVector(1,1.0));
-    coeff.a.push_back(createDefaultVector(1,1.0));
-    coeff.b.push_back(createDefaultVector(1,2.0));
-    coeff.c.push_back(createDefaultVector(1,3.0));
-    coeff.d.push_back(createDefaultVector(1,4.0));
-    int index = 0;
-    double t = 1.5;
-    RCP<Thyra::VectorBase<double> > S   = createDefaultVector(1,0.0);
-    TEST_THROW(evaluateCubicSpline<double>(coeff, index, t, outArg(*S)), std::logic_error);
-  }
-  {
+    ECHO("TEST 2")
     CubicSplineCoeff<double> coeff;
     coeff.t.push_back(0.0);
     coeff.t.push_back(1.0);
     coeff.a.push_back(createDefaultVector(1,1.0));
-    coeff.b.push_back(createDefaultVector(1,2.0));
+    coeff.a.push_back(createDefaultVector(1,1.0));
     coeff.b.push_back(createDefaultVector(1,2.0));
     coeff.c.push_back(createDefaultVector(1,3.0));
     coeff.d.push_back(createDefaultVector(1,4.0));
@@ -127,12 +115,13 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, bad_evaluateCubicSpline ) {
     TEST_THROW(evaluateCubicSpline<double>(coeff, index, t, outArg(*S)), std::logic_error);
   }
   {
+    ECHO("TEST 3")
     CubicSplineCoeff<double> coeff;
     coeff.t.push_back(0.0);
     coeff.t.push_back(1.0);
     coeff.a.push_back(createDefaultVector(1,1.0));
     coeff.b.push_back(createDefaultVector(1,2.0));
-    coeff.c.push_back(createDefaultVector(1,3.0));
+    coeff.b.push_back(createDefaultVector(1,2.0));
     coeff.c.push_back(createDefaultVector(1,3.0));
     coeff.d.push_back(createDefaultVector(1,4.0));
     int index = 0;
@@ -141,12 +130,28 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, bad_evaluateCubicSpline ) {
     TEST_THROW(evaluateCubicSpline<double>(coeff, index, t, outArg(*S)), std::logic_error);
   }
   {
+    ECHO("TEST 4")
     CubicSplineCoeff<double> coeff;
     coeff.t.push_back(0.0);
     coeff.t.push_back(1.0);
     coeff.a.push_back(createDefaultVector(1,1.0));
     coeff.b.push_back(createDefaultVector(1,2.0));
     coeff.c.push_back(createDefaultVector(1,3.0));
+    coeff.c.push_back(createDefaultVector(1,3.0));
+    coeff.d.push_back(createDefaultVector(1,4.0));
+    int index = 0;
+    double t = 1.5;
+    RCP<Thyra::VectorBase<double> > S   = createDefaultVector(1,0.0);
+    TEST_THROW(evaluateCubicSpline<double>(coeff, index, t, outArg(*S)), std::logic_error);
+  }
+  {
+    ECHO("TEST 5")
+    CubicSplineCoeff<double> coeff;
+    coeff.t.push_back(0.0);
+    coeff.t.push_back(1.0);
+    coeff.a.push_back(createDefaultVector(1,1.0));
+    coeff.b.push_back(createDefaultVector(1,2.0));
+    coeff.c.push_back(createDefaultVector(1,3.0));
     coeff.d.push_back(createDefaultVector(1,4.0));
     coeff.d.push_back(createDefaultVector(1,4.0));
     int index = 0;
@@ -155,6 +160,7 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, bad_evaluateCubicSpline ) {
     TEST_THROW(evaluateCubicSpline<double>(coeff, index, t, outArg(*S)), std::logic_error);
   }
   {
+    ECHO("TEST 6")
     CubicSplineCoeff<double> coeff;
     coeff.t.push_back(0.0);
     coeff.t.push_back(1.0);
@@ -168,6 +174,7 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, bad_evaluateCubicSpline ) {
     TEST_THROW(evaluateCubicSpline<double>(coeff, index, t, outArg(*S)), std::out_of_range);
   }
   {
+    ECHO("TEST 7")
     CubicSplineCoeff<double> coeff;
     coeff.t.push_back(0.0);
     coeff.t.push_back(1.0);
@@ -178,7 +185,7 @@ TEUCHOS_UNIT_TEST( Rythmos_CubicSplineInterpolator, bad_evaluateCubicSpline ) {
     int index = -1;
     double t = 1.5;
     RCP<Thyra::VectorBase<double> > S   = createDefaultVector(1,0.0);
-    TEST_THROW(evaluateCubicSpline<double>(coeff, index, t, outArg(*S)), std::out_of_range);
+    TEST_THROW(evaluateCubicSpline<double>(coeff, index, t, outArg(*S)), Teuchos::RangeError);
   }
 }
 

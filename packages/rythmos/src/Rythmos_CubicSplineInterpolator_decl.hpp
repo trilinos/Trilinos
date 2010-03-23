@@ -143,7 +143,7 @@ void validateCubicSplineCoeff(const CubicSplineCoeff<Scalar>& coeff);
 template<class Scalar>
 void evaluateCubicSpline(
     const CubicSplineCoeff<Scalar>& coeff,
-    unsigned int j, 
+    Teuchos::Ordinal j, 
     const Scalar& t,
     const Ptr<Thyra::VectorBase<Scalar> >& S,
     const Ptr<Thyra::VectorBase<Scalar> >& Sp = Teuchos::null, 
