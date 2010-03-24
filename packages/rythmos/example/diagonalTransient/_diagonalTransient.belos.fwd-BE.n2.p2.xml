@@ -13,7 +13,7 @@
    </ParameterList>
  </ParameterList>
   <ParameterList name="DiagonalTransientModel">
-    <Parameter name="NumElements" type="int" value="2"/>
+    <Parameter name="NumElements" type="int" value="4"/>
     <Parameter name="Coeff_s" type="string" value="{0.0, 0.0}"/>
   </ParameterList>
   <ParameterList name="Rythmos Stepper">
