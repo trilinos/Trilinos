@@ -80,7 +80,6 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Meros                 meros                          SS
   FEI                   fei                            PS
   Anasazi               anasazi                        PS
-  Teko                  teko                           SS
   RBGen                 rbgen                          PS
   TriKota               TriKota                        SS
   Stokhos               stokhos                        SS
@@ -105,8 +104,6 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   NewPackage            new_package                    EX # Should be SS
   Optika		optika			       SS
   Mesquite              mesquite                       PS
-  Stalix                stalix                         EX
-  Lyno                  lyno                           EX
   )
 
 
