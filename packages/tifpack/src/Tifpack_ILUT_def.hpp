@@ -429,7 +429,7 @@ void ILUT<MatrixType>::compute() {
     // Put indices and values for L into arrays and then into the L_ matrix.
 
     //   first, the original entries from the L section of A:
-    for(size_t i=0; i<RowNnz; ++i) {
+    for(Tsize_t i=0; i<ColIndicesA.size(); ++i) {
       if (ColIndicesA[i] < row_i) {
         tmp_idx.push_back(ColIndicesA[i]);
         tmpv.push_back(cur_row[ColIndicesA[i]]);
@@ -461,7 +461,7 @@ void ILUT<MatrixType>::compute() {
 
     // Pick out the diagonal element, store its reciprocal.
     if (cur_row[row_i] == zero) {
-      std::cerr << "Tifpack::ILUT::Compute: zero pivot encountered! Replacing with rownorm and continuing..." << std::endl;
+      std::cerr << "Tifpack::ILUT::Compute: zero pivot encountered! Replacing with rownorm and continuing...(You may need to set the parameter 'fact: absolute threshold'.)" << std::endl;
       cur_row[row_i] = rownorm;
     }
     InvDiagU[row_i] = one / cur_row[row_i];

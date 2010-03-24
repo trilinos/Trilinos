@@ -48,6 +48,7 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(TifpackBelosCopyFiles
   test_GS_tfqmr_small_sym_mm.xml test_ILUT_tfqmr_small_sym_mm.xml
   test_tfqmr_small_sym_mm.xml test_ILUT_tfqmr_calore1_mm.xml
   5w.mtx 5w.vec 5w_bel_tif_ILUT.xml
+  5w_missing_diag.mtx 5w_missing_diag_ILUT.xml
   5w_bel_tif_RILUK_0.xml 5w_bel_tif_RILUK_1.xml
   test_RILUK_tfqmr_small_sym_mm.xml
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
@@ -195,6 +196,15 @@ PACKAGE_ADD_TEST(
   tif_belos TifpackBelosCopyFiles
   NAME ILUT_5w_2
   ARGS "--xml_file=5w_bel_tif_ILUT.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+PACKAGE_ADD_TEST(
+  tif_belos TifpackBelosCopyFiles
+  NAME ILUT_5w_no_diag
+  ARGS "--xml_file=5w_missing_diag_ILUT.xml"
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
