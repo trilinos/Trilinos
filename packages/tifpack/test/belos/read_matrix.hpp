@@ -103,18 +103,20 @@ read_matrix_mm(const std::string& mm_file,
       getline(in, line);
       std::istringstream isstr(line);
       isstr >> irow >> icol >> val;
-    
-      g_row = irow-1;
-      if (g_row != last_row) {
-        if (col.size() > 0) {
-          A->insertGlobalValues(last_row, col(), coef() );
-          col.clear();
-          coef.clear();
+ 
+      if (!isstr.fail()) {
+        g_row = irow-1;
+        if (g_row != last_row) {
+          if (col.size() > 0) {
+            A->insertGlobalValues(last_row, col(), coef() );
+            col.clear();
+            coef.clear();
+          }
+          last_row = g_row;
         }
-        last_row = g_row;
+        col.push_back(icol-1);
+        coef.push_back(val);
       }
-      col.push_back(icol-1);
-      coef.push_back(val);
     }
 
     if (col.size() > 0) {
