@@ -10,5 +10,5 @@
     <Parameter name="Output Frequency" type="int" value="1"/>
   </ParameterList>
 
-  <Parameter name="expectNumIters" type="int" value="24"/>
+  <Parameter name="expectNumIters" type="int" value="26"/>
 </ParameterList>
