@@ -1,7 +1,11 @@
+Release notes for Isorropia 3.3 (Trilinos 10.2), Mar. 2009:
+------------------------------------------------------------
+ - Isorropia::Epetra::Partitioner now supports partitioning of maps, 
+   using Zoltan's simple methods (block, cyclic, random).
+
+
 Release notes for Isorropia 3.2 (Trilinos 10.0), Sept. 2009:
 ------------------------------------------------------------
-
-The most important changes and new features are listed below.
 
 General:
  - New configuration and build system based on CMake. 
