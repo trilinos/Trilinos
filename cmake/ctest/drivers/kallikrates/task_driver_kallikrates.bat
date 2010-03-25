@@ -13,7 +13,7 @@ set GIT_SSH=C:\Users\bmpersc\Documents\plink_wrap.bat
 rem Set location of CTEST_EXE, and GIT_EXE
 set GIT_EXE=C:\Program Files (x86)\Git\cmd\git
 set CTEST_EXE=C:\Program Files (x86)\CMake 2.8\bin\ctest.exe
-set BRANCH=trilinos-release-10-0-branch
+set BRANCH=trilinos-release-10-2-branch
 set TRILINOS_REPOSITORY_LOCATION=software.sandia.gov:/space/git/nightly/Trilinos
 
 rem Set the base directory which is one above where Trilinos will be 
@@ -50,6 +50,12 @@ if exist Trilinos goto update else goto checkout
 rem Now run ctest on each of the ctest build scripts for this machine
 
 call "%CTEST_EXE%" -S "%BASEDIR%\Trilinos\cmake\ctest\drivers\kallikrates\ctest_windows_nightly_serial_release.cmake" -VV >"%BASEDIR%\ctest_msvc_nightly_serial_release_kallikrates.out" 2>&1
+
+rem Have to set the path so that the tests can find the dlls during runtime. We need a better solution than this long term. Something like -rpath for gnu.
+set PATH=%PATH%;%BASEDIR%\SERIAL_OPT_DEV_SHARED\BUILD\packages\epetra\src;%BASEDIR%\SERIAL_OPT_DEV_SHARED\BUILD\packages\teuchos\src;%BASEDIR%\SERIAL_OPT_DEV_SHARED\BUILD\packages\anasazi\src
+
+call "%CTEST_EXE%" -S "%BASEDIR%\Trilinos\cmake\ctest\drivers\kallikrates\ctest_windows_nightly_serial_release_shared.cmake" -VV >"%BASEDIR%\ctest_msvc_nightly_serial_release_shared_kallikrates.out" 2>&1
+
 
 rem disabling temporarily since the mpi build is unstable on windows right now.
 rem call "%CTEST_EXE%" -S "%BASEDIR%\Trilinos\cmake\ctest\drivers\kallikrates\ctest_windows_nightly_mpi_release.cmake" -VV >"%BASEDIR%\ctest_msvc_nightly_mpi_release_kallikrates.out" 2>&1
