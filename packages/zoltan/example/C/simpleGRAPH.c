@@ -107,7 +107,6 @@ int main(int argc, char *argv[])
   Zoltan_Set_Param(zz, "LB_METHOD", "GRAPH");
   Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); 
   Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1");
-  Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "1");
   Zoltan_Set_Param(zz, "RETURN_LISTS", "ALL");
 
   /* Graph parameters */
