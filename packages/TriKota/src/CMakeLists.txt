@@ -50,6 +50,28 @@ ELSE()
 
 SET(TriKota_Rebuild_Dakota ON)
 
+SET(DAKOTA_CONFIGURE_COMMAND ${PACKAGE_SOURCE_DIR}/Dakota/configure
+    CC=${CMAKE_C_COMPILER} 
+    CXX=${CMAKE_CXX_COMPILER} 
+    FC=${CMAKE_Fortran_COMPILER} 
+    F77=${CMAKE_Fortran_COMPILER}
+    --prefix=${PACKAGE_BINARY_DIR}/Dakota/install
+    --with-teuchos-include=${PACKAGE_SOURCE_DIR}/../teuchos/src
+    --with-teuchos-lib=${PACKAGE_BINARY_DIR}/../teuchos/src
+    --with-boost=${Boost_INCLUDE_DIRS}
+    --with-plugin 
+    --without-graphics
+    --without-dot 
+    --without-nlpql 
+    --without-npsol)
+IF(TPL_ENABLE_MPI)
+  SET(DAKOTA_CONFIGURE_COMMAND ${DAKOTA_CONFIGURE_COMMAND}
+    MPICXX=${CMAKE_CXX_COMPILER})
+ELSE()
+  SET(DAKOTA_CONFIGURE_COMMAND ${DAKOTA_CONFIGURE_COMMAND}
+    --disable-mpi)
+ENDIF()
+
 EXECUTE_PROCESS(
   COMMAND echo "-->TriKota: Launching Dakota configure script -- takes several minutes."
   WORKING_DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota
@@ -57,15 +79,8 @@ EXECUTE_PROCESS(
 
 EXECUTE_PROCESS(
   WORKING_DIRECTORY ${PACKAGE_BINARY_DIR}/Dakota
-  COMMAND ${PACKAGE_SOURCE_DIR}/Dakota/configure --without-graphics
-    CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} MPICXX=${CMAKE_CXX_COMPILER}
-    FC=${CMAKE_Fortran_COMPILER} F77=${CMAKE_Fortran_COMPILER}
-    --prefix=${PACKAGE_BINARY_DIR}/Dakota/install
-    --with-teuchos-include=${PACKAGE_SOURCE_DIR}/../teuchos/src
-    --with-teuchos-lib=${PACKAGE_BINARY_DIR}/../teuchos/src
-    --with-boost=${Boost_INCLUDE_DIRS}
-    --with-plugin --without-dot
-    OUTPUT_FILE ${PACKAGE_BINARY_DIR}/Dakota/configure.out
+  COMMAND ${DAKOTA_CONFIGURE_COMMAND}
+  OUTPUT_FILE ${PACKAGE_BINARY_DIR}/Dakota/configure.out
   )
 
 EXECUTE_PROCESS(
@@ -136,7 +151,7 @@ APPEND_SET(SOURCES
 
 SET(DAKOTA_LIBS
     dakota pecos lhs surfpack conmin
-    ddace fsudace jega nlpql npsol opt
+    ddace fsudace jega opt
     psuade newmat ncsuopt sparsegrid coliny colin
     pebbl utilib 3po nappspack appspack conveyor
     shared cdd cport amplsolver lhs

@@ -901,7 +901,7 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const Epetra_MultiVect
   // need a linear distribution to use hyperslabs
   Teuchos::RefCountPtr<Epetra_MultiVector> LinearX;
 
-  if (Comm().NumProc() == 1 || X.Map().LinearMap())
+  if (X.Map().LinearMap())
     LinearX = Teuchos::rcp(const_cast<Epetra_MultiVector*>(&X), false);
   else
     {
@@ -981,14 +981,14 @@ void EpetraExt::HDF5::Write(const std::string& GroupName, const Epetra_MultiVect
 
 // ==========================================================================
 void EpetraExt::HDF5::Read(const std::string& GroupName, const Epetra_Map& Map,
-                        Epetra_MultiVector*& X)
+                        Epetra_MultiVector*& X, bool writeTranspose)
 {
   // first read it with linear distribution
   Epetra_MultiVector* LinearX;
-  Read(GroupName, LinearX);
+  Read(GroupName, LinearX, writeTranspose, Map.IndexBase());
   
   // now build the importer to the actual one
-  Epetra_Import Importer(Map, X->Map());
+  Epetra_Import Importer(Map, LinearX->Map());
   X = new Epetra_MultiVector(Map, LinearX->NumVectors());
   X->Import(*LinearX, Importer, Insert);
 
@@ -997,16 +997,25 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, const Epetra_Map& Map,
 }
 
 // ==========================================================================
-void EpetraExt::HDF5::Read(const std::string& GroupName, Epetra_MultiVector*& LinearX)
+void EpetraExt::HDF5::Read(const std::string& GroupName, Epetra_MultiVector*& LinearX,
+                           bool readTranspose, const int& indexBase)
 {
   int GlobalLength, NumVectors;
 
   ReadMultiVectorProperties(GroupName, GlobalLength, NumVectors);
 
   hid_t group_id;
+  hid_t memspace_id;
 
-  // Create the dataspace for the dataset.
-  hsize_t q_dimsf[] = {NumVectors, GlobalLength};
+  // Whether or not we do readTranspose or not is
+  // handled by one of the components of q_dimsf, offset and count.
+  // They are determined by indexT
+  int indexT(0);
+  if (readTranspose) indexT = 1;
+
+  hsize_t q_dimsf[] = {GlobalLength, GlobalLength};
+  q_dimsf[indexT] = NumVectors;
+
   hid_t filespace_id = H5Screate_simple(2, q_dimsf, NULL);
 
   if (!IsContained(GroupName))
@@ -1025,14 +1034,24 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, Epetra_MultiVector*& Li
 #endif
   H5Pclose(plist_id_);
 
-  Epetra_Map LinearMap(GlobalLength, 0, Comm());
+  Epetra_Map LinearMap(GlobalLength, indexBase, Comm());
   LinearX = new Epetra_MultiVector(LinearMap, NumVectors);
 
   // Select hyperslab in the file.
-  hsize_t offset[] = {0, LinearMap.GID(0)};
+  hsize_t offset[] = {LinearMap.GID(0) - indexBase, LinearMap.GID(0) - indexBase};
   hsize_t stride[] = {1, 1};
-  hsize_t count[] = {NumVectors, 1};
-  hsize_t block[] = {1, LinearX->MyLength()};
+
+  // If readTranspose is false, we can read the data in one shot.
+  // It would actually be possible to skip this first part and
+  if (!readTranspose)
+  {
+  // Select hyperslab in the file.
+  hsize_t count[] = {1, 1};
+  hsize_t block[] = {LinearX->MyLength(), LinearX->MyLength()};
+
+  offset[indexT]  = 0;
+  count [indexT]  = NumVectors;
+  block [indexT]  = 1;
 
   filespace_id = H5Dget_space(dset_id);
   H5Sselect_hyperslab(filespace_id, H5S_SELECT_SET, offset, stride, 
@@ -1040,11 +1059,41 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, Epetra_MultiVector*& Li
 
   // Each process defines dataset in memory and writes it to the hyperslab in the file.
   hsize_t dimsm[] = {NumVectors * LinearX->MyLength()};
-  hid_t memspace_id = H5Screate_simple(1, dimsm, NULL);
+  memspace_id = H5Screate_simple(1, dimsm, NULL);
 
   // Write hyperslab
   CHECK_STATUS(H5Dread(dset_id, H5T_NATIVE_DOUBLE, memspace_id, filespace_id, 
                        H5P_DEFAULT, LinearX->Values()));
+
+  } else {
+    // doing exactly the same as in write
+
+    // Select hyperslab in the file.
+    hsize_t count[] = {LinearX->MyLength(),
+		       LinearX->MyLength()};
+    hsize_t block[] = {1, 1};
+
+    // write vectors one by one
+    for (int n(0); n < NumVectors; ++n)
+    {
+      // Select hyperslab in the file.
+      offset[indexT] = n;
+      count [indexT] = 1;
+
+      filespace_id = H5Dget_space(dset_id);
+      H5Sselect_hyperslab(filespace_id, H5S_SELECT_SET, offset, stride,
+			  count, block);
+
+      // Each process defines dataset in memory and writes it to the hyperslab in the file.
+      hsize_t dimsm[] = {LinearX->MyLength()};
+      memspace_id = H5Screate_simple(1, dimsm, NULL);
+
+      // Read hyperslab
+      CHECK_STATUS(H5Dread(dset_id, H5T_NATIVE_DOUBLE, memspace_id, filespace_id,
+			   H5P_DEFAULT, LinearX->operator[](n)));
+
+    }
+  }
 
   CHECK_STATUS(H5Gclose(group_id));
   CHECK_STATUS(H5Sclose(memspace_id));
@@ -1579,5 +1628,5 @@ void EpetraExt::HDF5::Read(const std::string& GroupName, const std::string& Data
 }
 
 
-#endif  // HAVE_EPETRAEXT_HDF5
+#endif
 

@@ -76,6 +76,10 @@ public:
 			  const ArrayScalar &pts_x ,
 			  const ArrayScalar &pts_y ,
 			  const ArrayScalar &pts_z );
+
+  /** \brief streamlined constructor giving two choices: equispaced
+      lattice points or spectral (i.e. Lobatto) */
+  Basis_HGRAD_HEX_Cn_FEM( const int order , const EPointType & pointType );
   
     
   /** \brief  Evaluation of a FEM basis on a <strong>reference Hexahedron</strong> cell. 

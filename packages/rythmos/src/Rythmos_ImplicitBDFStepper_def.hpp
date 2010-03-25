@@ -550,7 +550,7 @@ void ImplicitBDFStepper<Scalar>::getPoints(
         time_, constOptInArg(*xn0_), constOptInArg(*xpn0_),
         time_, constOptInArg(*xn0_), constOptInArg(*xpn0_),
         time_vec, ptr(x_vec), ptr(xdot_vec), ptr(accuracy_vec),
-        null
+        Ptr<InterpolatorBase<Scalar> >(null)
         );
     return;
   }

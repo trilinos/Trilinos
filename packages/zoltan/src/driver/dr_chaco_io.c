@@ -441,8 +441,16 @@ int chaco_fill_elements(
         mesh->elements[i].edge_wgt = NULL;
 
       for (j = 0; j < mesh->elements[i].nadj; j++) {
+#if 0
         elem_id = adj[start[i] + j] - (1-base);  /* Chaco is 1-based;
                                                     HG may be 0 or 1 based. */
+#else
+        /* when called from hypergraph build, the line above gives the wrong
+         * value for the adjacency.  (it is one too low). I'm guessing that
+         * this is the fix.  Works for hypergraph & chaco files in testing.
+         */
+        elem_id = adj[start[i] + j];
+#endif
 
         /* determine which processor the adjacent vertex is on */
         k = ch_dist_proc(elem_id, assignments, base);

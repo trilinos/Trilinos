@@ -113,7 +113,7 @@ namespace Tpetra {
       CrsMatrix(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, const Teuchos::ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, ProfileType pftype = DynamicProfile);
 
       //! Constructor specifying a pre-constructed graph.
-      explicit CrsMatrix(const Teuchos::RCP<CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > &graph);
+      explicit CrsMatrix(const Teuchos::RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > &graph);
 
       // !Destructor.
       virtual ~CrsMatrix();
@@ -137,6 +137,13 @@ namespace Tpetra {
       void replaceGlobalValues(GlobalOrdinal globalRow, 
                          const Teuchos::ArrayView<const GlobalOrdinal> &cols,
                          const Teuchos::ArrayView<const Scalar>        &vals);
+
+      //! Replace matrix entries, using local IDs.
+      /*! All index values must be in the local space. 
+       */
+      void replaceLocalValues(LocalOrdinal localRow, 
+                         const Teuchos::ArrayView<const LocalOrdinal> &cols,
+                         const Teuchos::ArrayView<const Scalar>       &vals);
 
       //! Sum into multiple entries, using global IDs.
       /*! All index values must be in the global space. */
@@ -413,7 +420,11 @@ namespace Tpetra {
       typedef Teuchos::OrdinalTraits<GlobalOrdinal>   GOT;
       typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
 
-      void allocateValues(Scalar alpha = Teuchos::ScalarTraits<Scalar>::zero());
+      enum GraphAllocationStatus {
+        GraphAlreadyAllocated,
+        GraphNotYetAllocated
+      };
+      void allocateValues( typename CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::AllocateLocalGlobal lg, Scalar alpha, GraphAllocationStatus gas);
       void sortEntries();
       void mergeRedundantEntries();
       void checkInternalState() const;
@@ -442,14 +453,14 @@ namespace Tpetra {
        */
       Teuchos::ArrayRCP<Scalar> getFullViewNonConst(size_t myRow, RowInfo sizeInfo);
 
-      Teuchos::RCP<CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > graph_;
+      Teuchos::RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > staticGraph_;
+      Teuchos::RCP<      CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >     myGraph_;
 
       Kokkos::CrsMatrix<Scalar,Node> lclMatrix_;
       LocalMatVec lclMatVec_;
       LocalMatSolve lclMatSolve_;
 
       bool valuesAreAllocated_,
-           staticGraph_,
            constructedWithFilledGraph_,
            constructedWithOptimizedGraph_,
            fillComplete_,

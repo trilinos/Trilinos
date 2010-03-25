@@ -73,6 +73,9 @@
 /* define if we want to use MPI */
 #cmakedefine HAVE_MPI
 
+/* define if we want to use OpenMP */
+#cmakedefine Epetra_HAVE_OMP
+
 /* Define if want to build with oski enabled */
 #cmakedefine HAVE_OSKI
 

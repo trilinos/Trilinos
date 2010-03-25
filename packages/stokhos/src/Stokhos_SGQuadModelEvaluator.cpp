@@ -88,12 +88,12 @@ SGQuadModelEvaluator(
   // df/dp
   dfdp_qp.resize(num_p);
   for (int i=0; i<num_p; i++)
-    if (me_outargs.supports(OUT_ARG_DfDp,i).supports(DERIV_TRANS_MV_BY_ROW))
+    if (me_outargs.supports(OUT_ARG_DfDp,i).supports(DERIV_MV_BY_COL))
       dfdp_qp[i] = EpetraExt::ModelEvaluator::Derivative(
 	Teuchos::rcp(new Epetra_MultiVector(
 		       *(me->get_f_map()),
 		       me->get_p_map(i)->NumGlobalElements())));
-    else if (me_outargs.supports(OUT_ARG_DfDp,i).supports(DERIV_MV_BY_COL))
+    else if (me_outargs.supports(OUT_ARG_DfDp,i).supports(DERIV_TRANS_MV_BY_ROW))
       dfdp_qp[i] = EpetraExt::ModelEvaluator::Derivative(
 	Teuchos::rcp(new Epetra_MultiVector(
 		       *(me->get_p_map(i)),
@@ -255,7 +255,7 @@ get_p_sg_init(int l) const
                      std::endl << 
                      "Error!  Stokhos::SGQuadModelEvaluator::get_p_sg_init():  "
 		     << "Invalid parameter index l = " << l << std::endl);
-  if (initial_p_sg[l] != Teuchos::null)
+  if (initial_p_sg.size() == num_p && initial_p_sg[l] != Teuchos::null)
     return initial_p_sg[l];
   Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> init_p_sg =
     Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(sg_basis, 

@@ -181,32 +181,10 @@ namespace {
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(ORDINAL)
 #endif
 
-  // Uncomment this for really fast development cycles but make sure to comment
-  // it back again before checking in so that we can test all the types.
-  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
-# ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
 #   define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsGraphImportExport, doImport, ORDINAL )
 
     UNIT_TEST_GROUP_ORDINAL(int)
-
-# else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
-
-#   define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( CrsGraphImportExport, doImport, ORDINAL )
-
-    typedef short int ShortInt;
-    UNIT_TEST_GROUP_ORDINAL(ShortInt)
-    typedef long int LongInt;
-    UNIT_TEST_GROUP_ORDINAL(LongInt)
-#   ifdef HAVE_TEUCHOS_LONG_LONG_INT
-      typedef long long int LongLongInt;
-      UNIT_TEST_GROUP_ORDINAL(LongLongInt)
-#   endif
-
-# endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 }
 

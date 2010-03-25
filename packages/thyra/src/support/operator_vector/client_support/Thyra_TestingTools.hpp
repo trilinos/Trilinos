@@ -149,7 +149,8 @@ bool Thyra::testRelNormDiffErr(
   if (nonnull(out)) {
     *out
       << endl
-      << li << "Testing relative error between vectors " << v1_name << " and " << v2_name << ":\n";
+      << li << "Testing relative error between vectors "
+      << v1_name << " and " << v2_name << ":\n";
     OSTab tab(out);
     *out
       << li << "||"<<v1_name<<"|| = " << nrm_v1 << endl
@@ -165,7 +166,8 @@ bool Thyra::testRelNormDiffErr(
     }
     *out
       << li << "Check: rel_err(" << v1_name << "," << v2_name << ") = "
-      << rel_err << " <= " << maxRelErr_error_name << " = " << maxRelErr_error << " : " << passfail(success) << endl;
+      << rel_err << " <= " << maxRelErr_error_name << " = "
+      << maxRelErr_error << " : " << passfail(success) << endl;
     if( success && rel_err >= maxRelErr_warning ) {
       *out
         << li << "Warning! rel_err(" << v1_name << "," << v2_name << " >= "
@@ -192,12 +194,16 @@ bool Thyra::testMaxErr(
   typedef typename ST::magnitudeType ScalarMag;
   typedef Teuchos::ScalarTraits<ScalarMag> SMT;
   const ScalarMag error_mag = ST::magnitude(error);
-  const bool success = ( !SMT::isnaninf(error_mag) && !SMT::isnaninf(max_error) && error_mag <= max_error );
+  const bool success = (
+    !SMT::isnaninf(error_mag)
+    && !SMT::isnaninf(max_error)
+    && error_mag <= max_error );
   if(out) {
     *out
       << std::endl
       << li << "Check: |" << error_name << "| = " << error_mag
-      << " <= " << max_error_name << " = " << max_error << " : " << passfail(success) << std::endl;
+      << " <= " << max_error_name << " = " << max_error << " : "
+      << passfail(success) << std::endl;
     if( success && error_mag >= max_warning ) {
       *out
         << li << "Warning! " << error_name << " = " << error_mag
@@ -206,6 +212,7 @@ bool Thyra::testMaxErr(
   }
   return success;
 }
+
 
 template<class Scalar>
 bool Thyra::testMaxErrors(
@@ -238,11 +245,15 @@ bool Thyra::testMaxErrors(
     << li << "Check: |"<<error_name<<"| <= "<<max_error_name<<" ?\n";
   for( int i = 0; i < num_scalars; ++i ) {
     const ScalarMag error_mag = ST::magnitude(error[i]);
-    const bool result = ( !SMT::isnaninf(error_mag) && !SMT::isnaninf(max_error) && error_mag <= max_error );
+    const bool result = (
+      !SMT::isnaninf(error_mag)
+      && !SMT::isnaninf(max_error)
+      && error_mag <= max_error );
     if(!result) success = false;
     if(out) {
       *out
-        << li << "  "<<setw(2)<<i<<": |"<<error[i]<<"| = "<<error_mag<<" <= "<<max_error<<" : "<<passfail(success)<<"\n";
+        << li << "  "<<setw(2)<<i<<": |"<<error[i]<<"| = "<<error_mag<<" <= "
+        <<max_error<<" : "<<passfail(success)<<"\n";
       if( result && error_mag >= max_warning ) {
         *out
           << li << "      Warning! |...| >= "<<max_warning_name<<" = "<<max_warning<<"!\n";
@@ -252,16 +263,19 @@ bool Thyra::testMaxErrors(
   return success;
 }
 
+
 template<class Scalar>
 std::ostream& Thyra::operator<<( std::ostream& o, const VectorBase<Scalar>& v )
 {
   return o << Teuchos::describe(v, Teuchos::VERB_EXTREME);
 }
 
+
 template<class Scalar>
 std::ostream& Thyra::operator<<( std::ostream& o, const LinearOpBase<Scalar>& M )
 {
   return o << Teuchos::describe(M, Teuchos::VERB_EXTREME);
 }
+
 
 #endif // THYRA_TESTING_TOOLS_HPP

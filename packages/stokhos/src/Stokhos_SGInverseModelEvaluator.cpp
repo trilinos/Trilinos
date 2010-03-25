@@ -180,7 +180,7 @@ get_p_sg_init(int l) const
     Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(sg_basis, 
 						     View,
 						     *(base_p_maps[l]),
-						     *(me->get_p_init(l))));
+						     *(me->get_p_init(sg_p_index[l]))));
   return init_p_sg;
 }
 
@@ -192,7 +192,12 @@ Stokhos::SGInverseModelEvaluator::createInArgs() const
 
   inArgs.setModelEvalDescription(this->description());
   inArgs.set_Np(me_inargs.Np());
-  inArgs.set_Np_sg(num_p_sg);  
+  inArgs.set_Np_sg(num_p_sg); 
+  inArgs.setSupports(IN_ARG_sg_basis, me_inargs.supports(IN_ARG_sg_basis));
+  inArgs.setSupports(IN_ARG_sg_quadrature, 
+		     me_inargs.supports(IN_ARG_sg_quadrature));
+  inArgs.setSupports(IN_ARG_sg_expansion, 
+		     me_inargs.supports(IN_ARG_sg_expansion));
 
   return inArgs;
 }
@@ -239,6 +244,14 @@ Stokhos::SGInverseModelEvaluator::evalModel(const InArgs& inArgs,
       me_inargs.set_p(sg_p_index[i], block_p[i]);
     }
   }
+
+  // Pass SG data
+  if (me_inargs.supports(IN_ARG_sg_basis))
+    me_inargs.set_sg_basis(inArgs.get_sg_basis());
+  if (me_inargs.supports(IN_ARG_sg_quadrature))
+    me_inargs.set_sg_quadrature(inArgs.get_sg_quadrature());
+  if (me_inargs.supports(IN_ARG_sg_expansion))
+    me_inargs.set_sg_expansion(inArgs.get_sg_expansion());
 
   // Create underlying outargs
   OutArgs me_outargs = me->createOutArgs();

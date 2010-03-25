@@ -314,6 +314,12 @@ class HDF5
       H5Fclose(file_id_);
       IsOpen_ = false;
     }
+    
+    //! Flush the content to the file
+    void Flush()
+    {
+      H5Fflush(file_id_, H5F_SCOPE_GLOBAL);
+    }
 
     //! Returns \c true is a file has already been open using Open()/Create()
     bool IsOpen() const
@@ -456,11 +462,13 @@ class HDF5
     //! Writes a distributed vector to group \c GroupName, write transpose if writeTranspose set to true.
     void Write(const string& GroupName, const Epetra_MultiVector& x, bool writeTranspose = false);
 
-    //! Reads a vector from group \c GroupName, assumes linear distribution.
-    void Read(const string& GroupName, Epetra_MultiVector*& X);
+    //! Reads a vector from group \c GroupName, assumes linear distribution. Read transpose if writeTranspose set to true.
+    void Read(const string& GroupName, Epetra_MultiVector*& X,
+              bool writeTranspose = false, const int& indexBase = 0);
 
-    //! Reads a vector from group \c GroupName using given map.
-    void Read(const string& GroupName, const Epetra_Map& Map, Epetra_MultiVector*& X);
+    //! Reads a vector from group \c GroupName using given map. Read transpose if writeTranspose set to true.
+    void Read(const string& GroupName, const Epetra_Map& Map, Epetra_MultiVector*& X,
+              bool writeTranspose = false);
 
     //! Reads basic properties of specified Epetra_MultiVector.
     void ReadMultiVectorProperties(const string& GroupName, 

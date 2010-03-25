@@ -77,21 +77,21 @@ ILUT<MatrixType>::~ILUT() {
 //==========================================================================
 template <class MatrixType>
 void ILUT<MatrixType>::setParameters(const Teuchos::ParameterList& params) {
-  Tifpack::GetParameter(params, "fact: ilut level-of-fill", LevelOfFill_);
+  Tifpack::getParameter(params, "fact: ilut level-of-fill", LevelOfFill_);
   TEST_FOR_EXCEPTION(LevelOfFill_ <= 0.0, std::runtime_error,
     "Tifpack::ILUT::SetParameters ERROR, level-of-fill must be >= 0.");
 
   double tmp = -1;
-  Tifpack::GetParameter(params, "fact: absolute threshold", tmp);
+  Tifpack::getParameter(params, "fact: absolute threshold", tmp);
   if (tmp != -1) Athresh_ = tmp;
   tmp = -1;
-  Tifpack::GetParameter(params, "fact: relative threshold", tmp);
+  Tifpack::getParameter(params, "fact: relative threshold", tmp);
   if (tmp != -1) Rthresh_ = tmp;
   tmp = -1;
-  Tifpack::GetParameter(params, "fact: relax value", tmp);
+  Tifpack::getParameter(params, "fact: relax value", tmp);
   if (tmp != -1) RelaxValue_ = tmp;
   tmp = -1;
-  Tifpack::GetParameter(params, "fact: drop tolerance", tmp);
+  Tifpack::getParameter(params, "fact: drop tolerance", tmp);
   if (tmp != -1) DropTolerance_ = tmp;
 }
 
@@ -429,7 +429,7 @@ void ILUT<MatrixType>::compute() {
     // Put indices and values for L into arrays and then into the L_ matrix.
 
     //   first, the original entries from the L section of A:
-    for(size_t i=0; i<RowNnz; ++i) {
+    for(Tsize_t i=0; i<ColIndicesA.size(); ++i) {
       if (ColIndicesA[i] < row_i) {
         tmp_idx.push_back(ColIndicesA[i]);
         tmpv.push_back(cur_row[ColIndicesA[i]]);
@@ -461,7 +461,7 @@ void ILUT<MatrixType>::compute() {
 
     // Pick out the diagonal element, store its reciprocal.
     if (cur_row[row_i] == zero) {
-      std::cerr << "Tifpack::ILUT::Compute: zero pivot encountered! Replacing with rownorm and continuing..." << std::endl;
+      std::cerr << "Tifpack::ILUT::Compute: zero pivot encountered! Replacing with rownorm and continuing...(You may need to set the parameter 'fact: absolute threshold'.)" << std::endl;
       cur_row[row_i] = rownorm;
     }
     InvDiagU[row_i] = one / cur_row[row_i];

@@ -13,6 +13,7 @@
 
 //#include <Tpetra_MapDecl.hpp>
 //#include <Tpetra_ConfigDefs.hpp>
+#include <Tpetra_Vector.hpp>
 
 #include <Teuchos_DefaultSerialComm.hpp>
 
@@ -210,7 +211,6 @@ int main(int argc, char *argv[])
    }
 
    // Verify that the level solver correctly solves the system
-   for(int i=0;i<numTrials;i++)
    verify(L,LS);
 
    // Time the level solver 

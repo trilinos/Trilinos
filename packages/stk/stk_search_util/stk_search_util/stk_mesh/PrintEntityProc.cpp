@@ -10,6 +10,7 @@
 #include <stk_util/diag/Writer.hpp>
 #include <stk_util/diag/WriterExt.hpp>
 #include <stk_mesh/base/Entity.hpp>
+#include <stk_mesh/base/EntityComm.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/fem/EntityTypes.hpp>
@@ -95,6 +96,50 @@ void print_entity_proc_map(stk::diag::Writer &writer,
     }
   }
 }
+
+
+void print_entity_proc_map( stk::diag::Writer & writer ,
+                            const stk::mesh::BulkData & mesh )
+{
+  const stk::mesh::MetaData & meta = mesh.mesh_meta_data();
+  const std::vector<stk::mesh::Entity*> & comm = mesh.entity_comm();
+  const std::vector<stk::mesh::Ghosting*> & ghost = mesh.ghostings();
+
+  size_t counter = 0 ;
+
+  for ( size_t ig = 0 ; ig < ghost.size() ; ++ig ) {
+
+    const stk::mesh::Ghosting & g = * ghost[ig] ;
+
+    writer << "P" << mesh.parallel_rank()
+           << " " << g.name() << " Communication:" << std::endl ;
+
+    for ( std::vector<stk::mesh::Entity*>::const_iterator
+          i = comm.begin() ; i != comm.end() ; ++i ) {
+
+      const stk::mesh::Entity & entity = **i ;
+
+      std::vector<unsigned> procs ;
+
+      stk::mesh::comm_procs( g , entity , procs );
+
+      if ( ! procs.empty() ) {
+        writer << "[" << counter << "] "
+               << meta.entity_type_name( entity.entity_rank() )
+               << "[" << entity.identifier() << " " ;
+        if ( entity.owner_rank() != mesh.parallel_rank() ) {
+          writer << "not_" ;
+        }
+        writer << "owned ] {" ;
+        for ( size_t j = 0 ; j < procs.size() ; ++j ) {
+          writer << " " << procs[j] ; 
+        }
+        writer << " }" << std::endl ;
+      }
+    }
+  }
+}
+
 
 /**
  * Used to output the results of a relation vector in human

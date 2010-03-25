@@ -65,6 +65,10 @@ public:
   Basis_HGRAD_QUAD_Cn_FEM( const int orderx , const int ordery,
 			   const ArrayScalar &pts_x ,
 			   const ArrayScalar &pts_y );
+
+  /** \brief Constructor giving a PointType switch for equispaced or spectral (i.e. Gauss-Lobatto) points */
+  Basis_HGRAD_QUAD_Cn_FEM( const int order ,
+			   const EPointType &pointType );
   
     
   /** \brief  FEM basis evaluation on a <strong>reference Quadrilateral</strong> cell. 

@@ -363,6 +363,8 @@ namespace Intrepid {
   enum EPointType
     {
       POINTTYPE_EQUISPACED = 0,             // value = 0
+      POINTTYPE_SPECTRAL,
+      POINTTYPE_SPECTRAL_OPEN,
       POINTTYPE_WARPBLEND 
     };
   
@@ -374,6 +376,12 @@ namespace Intrepid {
       break;
     case POINTTYPE_WARPBLEND:
       retString = "WarpBlend Points";
+      break;
+    case POINTTYPE_SPECTRAL:
+      retString = "Spectral Points";
+      break;
+    case POINTTYPE_SPECTRAL_OPEN:
+      retString = "Open Spectral Points";
       break;
     }
     return retString;

@@ -62,6 +62,21 @@ namespace Intrepid {
   }
 
   template<class Scalar, class ArrayScalar>
+  Basis_HGRAD_HEX_Cn_FEM<Scalar,ArrayScalar>::Basis_HGRAD_HEX_Cn_FEM( const int order , 
+								      const EPointType & pointType ):
+    xBasis_( order , pointType ), 
+    yBasis_( order , pointType ),
+    zBasis_( order , pointType )
+  {
+    this->basisCardinality_ = (order+1)*(order+1)*(order+1);
+    this->basisDegree_ = order;
+    this -> basisCellTopology_ = shards::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8> >() );
+    this -> basisType_         = BASIS_FEM_FIAT;
+    this -> basisCoordinates_  = COORDINATES_CARTESIAN;
+    this -> basisTagsAreSet_   = false;
+  }
+
+  template<class Scalar, class ArrayScalar>
   void Basis_HGRAD_HEX_Cn_FEM<Scalar,ArrayScalar>::initializeTags()
   {
     // Basis-dependent initializations

@@ -183,8 +183,8 @@ IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::~IlukGraph()
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
 void IlukGraph<LocalOrdinal,GlobalOrdinal,Node>::setParameters(const Teuchos::ParameterList& parameterlist)
 {
-  GetParameter(parameterlist, "iluk level-of-fill", LevelFill_);
-  GetParameter(parameterlist, "iluk level-of-overlap", LevelOverlap_);
+  getParameter(parameterlist, "iluk level-of-fill", LevelFill_);
+  getParameter(parameterlist, "iluk level-of-overlap", LevelOverlap_);
 }
 
 //==============================================================================

@@ -37,18 +37,27 @@ void assert_valid_relation( const char method[] ,
   const bool error_mesh_from = & mesh != & e_from.bucket().mesh();
   const bool error_mesh_to   = & mesh != & e_to.bucket().mesh();
   const bool error_type      = e_from.entity_type() <= e_to.entity_type();
+  const bool error_nil_from  = 0 == e_from.bucket().capacity();
+  const bool error_nil_to    = 0 == e_to.bucket().capacity();
 
-  if ( error_mesh_from || error_mesh_to || error_type ) {
+  if ( error_mesh_from || error_mesh_to || error_type ||
+       error_nil_from || error_nil_to ) {
     std::ostringstream msg ;
     msg << method << "( from " ;
     print_entity_key( msg , mesh.mesh_meta_data(), e_from.key() );
     if ( error_mesh_from ) {
       msg << " NOT MEMBER OF THIS MESH" ;
     }
+    if ( error_nil_from ) {
+      msg << " WAS DESTROYED" ;
+    }
     msg << " , to " ;
     print_entity_key( msg , mesh.mesh_meta_data(), e_to.key() );
     if ( error_mesh_to ) {
       msg << " NOT MEMBER OF THIS MESH" ;
+    }
+    if ( error_nil_to ) {
+      msg << " WAS DESTROYED" ;
     }
     msg << " ) FAILED" ;
     if ( error_type ) {
@@ -240,8 +249,8 @@ void BulkData::declare_relation( Entity & e_from ,
     }
   }
 
-  m_transaction_log.modify_entity ( e_from );
-  m_transaction_log.modify_sole_entity ( e_to );
+  // m_transaction_log.modify_entity ( e_from );
+  // m_transaction_log.modify_sole_entity ( e_to );
 }
 
 //----------------------------------------------------------------------
@@ -329,8 +338,8 @@ void BulkData::destroy_relation( Entity & e_from , Entity & e_to )
   }
 
   // Mark e_from and e_to as modified
-  m_transaction_log.modify_entity ( e_from );
-  m_transaction_log.modify_sole_entity ( e_to );
+  // m_transaction_log.modify_entity ( e_from );
+  // m_transaction_log.modify_sole_entity ( e_to );
 
 }
 

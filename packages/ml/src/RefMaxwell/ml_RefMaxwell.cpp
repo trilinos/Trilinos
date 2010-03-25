@@ -524,7 +524,7 @@ int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList 
     }/*end if*/
   }/*end if*/
   else{
-    /* Setup Teuchos Lists - Chebyshev / SGS */
+    /* Setup Teuchos Lists - Chebyshev / SGS / Ifpack */
     Teuchos::ParameterList PreList;
     PreList.setName("refmaxwell: edge presmoother");
     PreList.set("coarse: type",List.get("smoother: type","symmetric Gauss-Seidel"));
@@ -537,7 +537,11 @@ int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList 
     PreList.set("smoother: Block Chebyshev number of blocks",List.get("smoother: Block Chebyshev number of blocks",-1));
     PreList.set("smoother: Block Chebyshev block list",List.get("smoother: Block Chebyshev block list",(int*)0));
     PreList.set("smoother: Block Chebyshev block starts",List.get("smoother: Block Chebyshev block starts",(int*)0));
+    PreList.set("smoother: ifpack list",List.sublist("smoother: ifpack list"));
     
+    // EXPERIMENTAL: Normal Equations
+    PreList.set("smoother: chebyshev solve normal equations",List.get("smoother: chebyshev solve normal equations",false));
+
     Teuchos::ParameterList PostList(PreList);
     PostList.setName("refmaxwell: edge postsmoother");
     PreList.set("coarse: pre or post","pre");

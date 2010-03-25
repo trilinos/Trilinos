@@ -34,7 +34,7 @@ Teuchos::RCP<Belos::LinearProblem<Scalar,Tpetra::MultiVector<Scalar,LocalOrdinal
 
   if (b == Teuchos::null) {
     b = Teuchos::rcp(new TMV(rowmap, 1));
-    x->putScalar(1);
+    x->randomize();
 
     BOPT::Apply(*A, *x, *b);
     BMVT::MvInit(*x, 0);
@@ -44,7 +44,7 @@ Teuchos::RCP<Belos::LinearProblem<Scalar,Tpetra::MultiVector<Scalar,LocalOrdinal
   Teuchos::RCP<BLinProb> problem = Teuchos::rcp(new BLinProb(A,x,b));
 
   std::string tifpack_precond("not specified");
-  Tifpack::GetParameter(test_params, "Tifpack::Preconditioner", tifpack_precond);
+  Tifpack::getParameter(test_params, "Tifpack::Preconditioner", tifpack_precond);
   if (tifpack_precond != "not specified") {
     Teuchos::RCP<TOP> precond = build_precond<Scalar,LocalOrdinal,GlobalOrdinal,Node>(test_params, A);
     problem->setLeftPrec(precond);
@@ -62,7 +62,8 @@ Teuchos::RCP<
         Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
         Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
    > build_problem(Teuchos::ParameterList& test_params,
-                   const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
+                   const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                   Teuchos::RCP<Node> node)
 {
   typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TMV;
   typedef Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node>    TOP;
@@ -74,10 +75,10 @@ Teuchos::RCP<
 
   std::string mm_file("not specified");
   std::string rhs_mm_file("not specified");
-  Tifpack::GetParameter(test_params, "mm_file", mm_file);
-  Tifpack::GetParameter(test_params, "rhs_mm_file", rhs_mm_file);
+  Tifpack::getParameter(test_params, "mm_file", mm_file);
+  Tifpack::getParameter(test_params, "rhs_mm_file", rhs_mm_file);
   std::string hb_file("not specified");
-  Tifpack::GetParameter(test_params, "hb_file", hb_file);
+  Tifpack::getParameter(test_params, "hb_file", hb_file);
 
   if (mm_file != "not specified") {
     if (comm->getRank() == 0) {
@@ -96,8 +97,7 @@ Teuchos::RCP<
     if (comm->getRank() == 0) {
       std::cout << "Harwell-Boeing file: " << hb_file << std::endl;
     }
-//    problem = build_problem_hb(hb_file);
-    throw std::runtime_error("Harwell-Boeing not yet supported by test driver.");
+    A = read_matrix_hb<Scalar,LocalOrdinal,GlobalOrdinal,Node>(hb_file, comm, node);
   }
   else {
     throw std::runtime_error("No matrix file specified.");

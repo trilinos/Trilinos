@@ -499,10 +499,10 @@ static int run_test(Teuchos::RCP<Epetra_CrsMatrix> matrix,
 
   // Reference counted pointer to balanced object
 
-  Epetra_CrsMatrix *matrixPtr;
-  Epetra_CrsGraph *graphPtr;
-  Epetra_RowMatrix *rowMatrixPtr;
-  Epetra_LinearProblem *problemPtr;
+  Epetra_CrsMatrix *matrixPtr=NULL;
+  Epetra_CrsGraph *graphPtr=NULL;
+  Epetra_RowMatrix *rowMatrixPtr=NULL;
+  Epetra_LinearProblem *problemPtr=NULL;
 
   // Row map for balanced object
   const Epetra_BlockMap *targetBlockRowMap=NULL;  // for input CrsGraph

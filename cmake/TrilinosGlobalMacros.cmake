@@ -97,8 +97,8 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
  
     
   SET(CPACK_SOURCE_IGNORE_FILES
-    /CVS/
-    ".cvsignore"
+    /.git/
+    ".gitignore"
     classicMakefile
     /cmake/CMakeKitwareBacklog.txt
     /cmake/TODO
@@ -106,10 +106,7 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
     /packages/ForTrilinos
     /packages/ITAPS
     /packages/globipack
-    /packages/mesquite
-    /packages/optika
     /packages/optipack
-    /packages/tifpack
     /packages/TriKota
     /packages/aristos
     /packages/claps
@@ -119,6 +116,9 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
     /packages/rbgen
     /packages/WebTrilinos
     /packages/cmmlib
+    /packages/lyno
+    /packages/stalix
+    /packages/teko
     ${CONFIGURE_AC_LIST}
     ${CONFIGURE_LIST}
     ${MAKEFILE_AM_LIST}
@@ -138,86 +138,8 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
     /Trilinos/config
     /Trilinos/doc/[^b]
     /Trilinos/README_old
-    /sampleScripts/aix-fortrilinos-serial
-    /sampleScripts/aix_mpi_sais028
-    /sampleScripts/aix_mpi_sais028_rabartl_2007709
-    /sampleScripts/aix_mpi_sierra
-    /sampleScripts/altix_mpi_boeing
-    /sampleScripts/altix_mpi_boeing_makefile
-    /sampleScripts/barcelona_mpi_oski_ikarlin
-    /sampleScripts/beowulf_mpi_marzio
-    /sampleScripts/checkin-test-gabriel.sh
-    /sampleScripts/checkin-test-godel.sh
-    /sampleScripts/checkin-test-scicolan-rabartl.sh
-    /sampleScripts/clovertown_mpi_oski_ikarlin
-    /sampleScripts/cplant_mpi_ross_alegra
-    /sampleScripts/cplant_serial_alaska
-    /sampleScripts/crosscompile/redstorm
-    /sampleScripts/cygwin_thyra_rab
-    /sampleScripts/cygwin_tramonto_debug
-    /sampleScripts/gonzales_portland_compilers
-    /sampleScripts/irix_serial_paul
-    /sampleScripts/itanium2_serial_icc
-    /sampleScripts/janus_mpi_alegra
-    /sampleScripts/janus_mpi_roguewave
-    /sampleScripts/janus_mpi_sierra
-    /sampleScripts/janus_sasn100_amesos
-    /sampleScripts/liberty_mpi_debug_rabartl
-    /sampleScripts/linux-gabriel-gcc-3.3.4-mpi-opt
-    /sampleScripts/linux-gabriel-gcc-3.3.4-serial-debug
-    /sampleScripts/linux-gabriel-gcc-3.3.4-serial-debug-checkedstl
-    /sampleScripts/linux-gabriel-gcc-4.2.0-serial-debug
-    /sampleScripts/linux-gibbon-sundance
-    /sampleScripts/linux-meros-mpi-debug-woolf
-    /sampleScripts/linux-mumps-ifort
-    /sampleScripts/linuxCluster_mpi_rogue
-    /sampleScripts/linux_mpi_instCluster_thyra
-    /sampleScripts/linux_mpi_purify_engsci_rabartl
-    /sampleScripts/linux_mpi_sierra
-    /sampleScripts/linux_mpi_tbird
-    /sampleScripts/linux_serial_debug_gcc-3.3.4_thumper_rabartl
-    /sampleScripts/linux_serial_debug_gcc-3.4.3_thumper_rabartl
-    /sampleScripts/linux_serial_debug_gcc-3.4.3_thumper_rabartl_bootstrap
-    /sampleScripts/linux_serial_gcov
-    /sampleScripts/linux_serial_gcov_all
-    /sampleScripts/macos-voltaire-sundance
-    /sampleScripts/niagara_mpi_oski_ikarlin
-    /sampleScripts/nwcc_mpi_spirit
-    /sampleScripts/odin_mpi
-    /sampleScripts/opteron_pgi_mpi_maherou
-    /sampleScripts/opteron_pgi_serial_maherou
-    /sampleScripts/osf_mpi_sierra
-    /sampleScripts/paunchy_mpi_dsc_purify
-    /sampleScripts/paunchy_serial_thyra_rabartl
-    /sampleScripts/rab_cygwin_intel
-    /sampleScripts/rab_cygwin_intel/README
-    /sampleScripts/rab_cygwin_intel/_set_env_icl.bat
-    /sampleScripts/rab_cygwin_intel/set_env_icl
-    /sampleScripts/redStorm_mpi_gcc
-    /sampleScripts/redStorm_mpi_reddish1
-    /sampleScripts/redStorm_serial_reddish1
-    /sampleScripts/redStorm_serial_reddish1_thyra_rabartl
-    /sampleScripts/scico_linux_64bit_sahp6556_with_purify
-    /sampleScripts/sgi64_mpi_amesos_atlantis
-    /sampleScripts/sgi64_mpi_amesos_mumps_atlantis
-    /sampleScripts/sgi64_mpi_marzio
-    /sampleScripts/sgi64_mpi_thyra_atlantis_rabartl
-    /sampleScripts/solaris_mpi_jeter
-    /sampleScripts/solaris_mpi_paunchy
-    /sampleScripts/solaris_mpi_paunchy_purify
-    /sampleScripts/solaris_mpi_sierra
-    /sampleScripts/solaris_serial_paunchy
-    /sampleScripts/solaris_serial_paunchy_thyra_rabartl
-    /sampleScripts/stratus_serial_debug_rabartl
-    /sampleScripts/sun7_mpi_sierra
-    /sampleScripts/sun_niagrat2_mpi
-    /sampleScripts/sun_serial_marzio
-    /sampleScripts/thyra-linux-gcc
-    /sampleScripts/thyra-linux-intel
-    /sampleScripts/tlcc_pgi_mpi
-    /sampleScripts/vplant_mpi_pan
-    /sampleScripts/west_mpi
-    /sampleScripts/xeon_mpi_oski_ikarlin
+    /sampleScripts/old_autotools
+    /sampleScripts/git-profiles
     ".*.pyc"
     /SIERRA/
     /commonTools/test/coverage
@@ -227,6 +149,7 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
     /commonTools/test/utilities/packages
     /commonTools/test/utilities/r.*
     /commonTools/scripts
+    /commonTools/git
     /packages/PyTrilinos/Notes.txt
     /packages/PyTrilinos/aclocal.m4
     /packages/PyTrilinos/bootstrap
@@ -578,6 +501,82 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
     /packages/ml/test/scripts
     /packages/ml/test/scripts/run-tests.sh
     /packages/sacado/example/FEApp/experimental
+    /packages/tifpack/src/Tifpack_AMDReordering.cpp
+    /packages/tifpack/src/Tifpack_AMDReordering.hpp
+    /packages/tifpack/src/Tifpack_AdditiveSchwarz.hpp
+    /packages/tifpack/src/Tifpack_Amesos.cpp
+    /packages/tifpack/src/Tifpack_Amesos.hpp
+    /packages/tifpack/src/Tifpack_BlockRelaxation.hpp
+    /packages/tifpack/src/Tifpack_ConstructLevelFillGraph.hpp
+    /packages/tifpack/src/Tifpack_Container.hpp
+    /packages/tifpack/src/Tifpack_CrsGraph.hpp
+    /packages/tifpack/src/Tifpack_DenseContainer.cpp
+    /packages/tifpack/src/Tifpack_DenseContainer.hpp
+    /packages/tifpack/src/Tifpack_DiagPreconditioner.cpp
+    /packages/tifpack/src/Tifpack_DiagPreconditioner.hpp
+    /packages/tifpack/src/Tifpack_DiagonalFilter.cpp
+    /packages/tifpack/src/Tifpack_DiagonalFilter.hpp
+    /packages/tifpack/src/Tifpack_DropFilter.cpp
+    /packages/tifpack/src/Tifpack_DropFilter.hpp
+    /packages/tifpack/src/Tifpack_EquationPartitioner.cpp
+    /packages/tifpack/src/Tifpack_EquationPartitioner.hpp
+    /packages/tifpack/src/Tifpack_Graph.hpp
+    /packages/tifpack/src/Tifpack_Graph_Tpetra_CrsGraph.cpp
+    /packages/tifpack/src/Tifpack_Graph_Tpetra_CrsGraph.hpp
+    /packages/tifpack/src/Tifpack_Graph_Tpetra_RowMatrix.cpp
+    /packages/tifpack/src/Tifpack_Graph_Tpetra_RowMatrix.hpp
+    /packages/tifpack/src/Tifpack_GreedyPartitioner.cpp
+    /packages/tifpack/src/Tifpack_GreedyPartitioner.hpp
+    /packages/tifpack/src/Tifpack_HashTable.cpp
+    /packages/tifpack/src/Tifpack_HashTable.hpp
+    /packages/tifpack/src/Tifpack_IC.cpp
+    /packages/tifpack/src/Tifpack_IC.hpp
+    /packages/tifpack/src/Tifpack_ICT.cpp
+    /packages/tifpack/src/Tifpack_ICT.hpp
+    /packages/tifpack/src/Tifpack_IC_Utils.cpp
+    /packages/tifpack/src/Tifpack_IC_Utils.hpp
+    /packages/tifpack/src/Tifpack_IKLU.cpp
+    /packages/tifpack/src/Tifpack_IKLU.hpp
+    /packages/tifpack/src/Tifpack_IKLU_Utils.cpp
+    /packages/tifpack/src/Tifpack_IKLU_Utils.hpp
+    /packages/tifpack/src/Tifpack_ILU.cpp
+    /packages/tifpack/src/Tifpack_ILU.hpp
+    /packages/tifpack/src/Tifpack_LinearPartitioner.cpp
+    /packages/tifpack/src/Tifpack_LinearPartitioner.hpp
+    /packages/tifpack/src/Tifpack_LocalFilter.cpp
+    /packages/tifpack/src/Tifpack_LocalFilter.hpp
+    /packages/tifpack/src/Tifpack_METISPartitioner.cpp
+    /packages/tifpack/src/Tifpack_METISPartitioner.hpp
+    /packages/tifpack/src/Tifpack_METISReordering.cpp
+    /packages/tifpack/src/Tifpack_METISReordering.hpp
+    /packages/tifpack/src/Tifpack_NodeFilter.cpp
+    /packages/tifpack/src/Tifpack_NodeFilter.hpp
+    /packages/tifpack/src/Tifpack_OverlapFactor.cpp
+    /packages/tifpack/src/Tifpack_OverlapFactorObject.hpp
+    /packages/tifpack/src/Tifpack_OverlapSolveObject.cpp
+    /packages/tifpack/src/Tifpack_OverlapSolveObject.hpp
+    /packages/tifpack/src/Tifpack_OverlappingPartitioner.cpp
+    /packages/tifpack/src/Tifpack_OverlappingPartitioner.hpp
+    /packages/tifpack/src/Tifpack_OverlappingRowMatrix.cpp
+    /packages/tifpack/src/Tifpack_OverlappingRowMatrix.hpp
+    /packages/tifpack/src/Tifpack_Partitioner.hpp
+    /packages/tifpack/src/Tifpack_PerturbedMatrix.hpp
+    /packages/tifpack/src/Tifpack_RCMReordering.cpp
+    /packages/tifpack/src/Tifpack_RCMReordering.hpp
+    /packages/tifpack/src/Tifpack_ReorderFilter.cpp
+    /packages/tifpack/src/Tifpack_ReorderFilter.hpp
+    /packages/tifpack/src/Tifpack_Reordering.hpp
+    /packages/tifpack/src/Tifpack_SPARSKIT.cpp
+    /packages/tifpack/src/Tifpack_SPARSKIT.hpp
+    /packages/tifpack/src/Tifpack_SingletonFilter.cpp
+    /packages/tifpack/src/Tifpack_SingletonFilter.hpp
+    /packages/tifpack/src/Tifpack_SparseContainer.hpp
+    /packages/tifpack/src/Tifpack_SparsityFilter.cpp
+    /packages/tifpack/src/Tifpack_SparsityFilter.hpp
+    /packages/tifpack/src/Tifpack_UserPartitioner.cpp
+    /packages/tifpack/src/Tifpack_UserPartitioner.hpp
+    /packages/tifpack/src/Tifpack_Utils.cpp
+    /packages/tifpack/src/Tifpack_Utils.hpp
   )
   
   IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)

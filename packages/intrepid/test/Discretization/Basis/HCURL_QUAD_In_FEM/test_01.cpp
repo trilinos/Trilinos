@@ -96,12 +96,8 @@ int main(int argc, char *argv[]) {
   // Define basis and error flag
   const int deg = 1;
   shards::CellTopology line(shards::getCellTopologyData< shards::Line<> >()); 
-  FieldContainer<double> closedPts(PointTools::getLatticeSize(line,deg),1);
-  FieldContainer<double> openPts(PointTools::getLatticeSize(line,deg+1,1),1);
-  PointTools::getLattice<double,FieldContainer<double> >(closedPts,line,deg);
-  PointTools::getLattice<double,FieldContainer<double> >(openPts,line,deg+1,1);
-  
-  Basis_HCURL_QUAD_In_FEM<double, FieldContainer<double> > quadBasis(deg,closedPts,openPts);
+
+  Basis_HCURL_QUAD_In_FEM<double, FieldContainer<double> > quadBasis(deg,POINTTYPE_EQUISPACED);
   int errorFlag = 0;
 
   // Initialize throw counter for exception testing

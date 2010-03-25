@@ -6,6 +6,17 @@
 
 #include "Tpetra_CrsMatrix_def.hpp"
 
+#include <Kokkos_SerialNode.hpp>
+#if defined(HAVE_KOKKOS_TBB)
+#  include <Kokkos_TBBNode.hpp>
+#endif
+#if defined(HAVE_KOKKOS_THREADPOOL)
+#  include <Kokkos_TPINode.hpp>
+#endif
+#if defined(HAVE_KOKKOS_THRUST)
+#  include <Kokkos_ThrustGPUNode.hpp>
+#endif
+
 namespace Tpetra {
 
 #if defined(HAVE_TPETRA_INST_FLOAT)

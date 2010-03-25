@@ -731,8 +731,7 @@ AztecOOLinearOpWithSolve::solveImpl(
     }
   }
 
-  aztecSolver->SetRHS(0);
-  aztecSolver->SetLHS(0);
+  aztecSolver->UnsetLHSRHS();
   
   //
   // Release the Epetra_MultiVector views of X and B

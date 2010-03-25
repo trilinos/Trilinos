@@ -9,7 +9,7 @@
 
 #include <stk_mesh/base/FieldData.hpp>
 #include <unit_tests/UnitTestBoxMeshFixture.hpp>
-
+#include <unit_tests/stk_utest_macros.hpp>
 
 BoxMeshFixture::~BoxMeshFixture()
 {
@@ -28,6 +28,8 @@ BoxMeshFixture::BoxMeshFixture( stk::ParallelMachine pm )
 
   m_coord_field = &m_meta_data->declare_field<CoordFieldType>("Coordinates");
   m_coord_gather_field = &m_meta_data->declare_field<CoordGatherFieldType>("GatherCoordinates");
+  m_quad_tag = &m_meta_data->declare_field<QuadTagType>("Quad");
+  m_basis_tag = &m_meta_data->declare_field<BasisTagType>("Basis");
 
   //put coord-field on all nodes:
   stk::mesh::put_field(*m_coord_field, stk::mesh::Node, m_meta_data->universal_part(), SpatialDim );
@@ -126,5 +128,28 @@ BoxMeshFixture::BoxMeshFixture( stk::ParallelMachine pm )
   }
   }
   }
+
+   const char * strNameElement = stk::mesh::ElementNode::tag().name();
+   strNameElement = "!()";
+   const char * strNameQuadrature = stk::mesh::QuadratureTag::tag().name();
+   strNameQuadrature = "!()";
+   const char * strNameBasis  = stk::mesh::BasisTag::tag().name();
+   strNameBasis = "!()";
+
+   //first test
+   std::ostringstream description1;
+   description1 << strNameElement;
+   STKUNIT_EXPECT_EQUAL( "!()", description1.str() );
+
+   //second test
+   std::ostringstream description2;
+   description2 << strNameQuadrature;
+   STKUNIT_EXPECT_EQUAL( "!()", description2.str() );
+
+   //third test
+   std::ostringstream description3;
+   description3 << strNameBasis;
+   STKUNIT_EXPECT_EQUAL( "!()", description3.str() );
+
 }
 

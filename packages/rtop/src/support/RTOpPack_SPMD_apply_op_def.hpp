@@ -34,15 +34,15 @@
 #include "Teuchos_Workspace.hpp"
 #include "Teuchos_CommHelpers.hpp"
 
-#ifdef RTOP_DEBUG
+#ifdef RTOPPACK_ENABLE_SHOW_DUMP
 #  include "Teuchos_VerboseObject.hpp"
-#endif // RTOP_DEBUG
+#endif // RTOPPACK_ENABLE_SHOW_DUMP
 
 
 namespace RTOpPack {
 
 
-#ifdef RTOP_DEBUG
+#ifdef RTOPPACK_ENABLE_SHOW_DUMP
 
 
 template<class Scalar>
@@ -62,7 +62,7 @@ void print( const ConstSubVectorView<Scalar> &v, Teuchos::FancyOStream &out_arg 
 # include "Teuchos_VerboseObject.hpp"
 
 
-#endif // RTOP_DEBUG
+#endif // RTOPPACK_ENABLE_SHOW_DUMP
 
 
 } // namespace RTOpPack
@@ -402,7 +402,7 @@ void RTOpPack::SPMD_apply_op(
   )
 {
   using Teuchos::arrayView;
-#ifdef RTOP_DEBUG
+#ifdef RTOPPACK_ENABLE_SHOW_DUMP
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
   Teuchos::OSTab tab(out);
@@ -445,7 +445,7 @@ void RTOpPack::SPMD_apply_op(
       }
     }
   }
-#endif // RTOP_DEBUG
+#endif // RTOPPACK_ENABLE_SHOW_DUMP
   using Teuchos::Workspace;
   Teuchos::WorkspaceStore* wss = Teuchos::get_default_workspace_store().get();
   if( reduct_objs == NULL && sub_vecs == NULL && sub_targ_vecs == NULL ) {
@@ -498,7 +498,7 @@ void RTOpPack::SPMD_apply_op(
             );
         }
       }
-#ifdef RTOP_DEBUG
+#ifdef RTOPPACK_ENABLE_SHOW_DUMP
       if(show_spmd_apply_op_dump) {
         if(reduct_objs) {
           *out << "\nIntermediate reduction objects in this process before global reduction:\n";
@@ -510,7 +510,7 @@ void RTOpPack::SPMD_apply_op(
           }
         }
       }
-#endif // RTOP_DEBUG
+#endif // RTOPPACK_ENABLE_SHOW_DUMP
       //
       // Reduce the local intermediate reduction objects into the global reduction objects
       //
@@ -519,17 +519,17 @@ void RTOpPack::SPMD_apply_op(
       for( int kc = 0; kc < num_cols; ++kc ) {
         _i_reduct_objs[kc] = &*i_reduct_objs[kc];
       }
-#ifdef RTOP_DEBUG
+#ifdef RTOPPACK_ENABLE_SHOW_DUMP
       if(show_spmd_apply_op_dump) {
         if(reduct_objs) {
           *out << "\nPerforming global reduction ...\n";
         }
       }
-#endif // RTOP_DEBUG
+#endif // RTOPPACK_ENABLE_SHOW_DUMP
       SPMD_all_reduce(comm,op,num_cols,&_i_reduct_objs[0],reduct_objs);
     }
   }
-#ifdef RTOP_DEBUG
+#ifdef RTOPPACK_ENABLE_SHOW_DUMP
   if(show_spmd_apply_op_dump) {
     if( num_targ_vecs && sub_targ_vecs ) {
       *out << "\nInput/output vectors *after* transforamtion:\n";
@@ -552,7 +552,7 @@ void RTOpPack::SPMD_apply_op(
     }
     *out << "\nLeaving RTOpPack::SPMD_apply_op(...) ...\n";
   }
-#endif // RTOP_DEBUG
+#endif // RTOPPACK_ENABLE_SHOW_DUMP
 }
 
 

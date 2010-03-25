@@ -29,7 +29,6 @@
 #ifndef TPETRA_CRSMATRIXMULTIPLYOP_DEF_HPP
 #define TPETRA_CRSMATRIXMULTIPLYOP_DEF_HPP
 
-#include <Teuchos_RCP.hpp>
 #include "Tpetra_CrsMatrix.hpp"
 
 namespace Tpetra {

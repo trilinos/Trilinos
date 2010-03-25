@@ -44,6 +44,7 @@
 #include "Thyra_DefaultMultiVectorProductVectorSpace.hpp"
 #include "Thyra_DefaultMultiVectorProductVector.hpp"
 #include "Thyra_DefaultMultiVectorLinearOpWithSolve.hpp"
+#include "Thyra_MultiVectorStdOps.hpp"
 #include "Teuchos_implicit_cast.hpp"
 #include "Teuchos_Assert.hpp"
 

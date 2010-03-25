@@ -421,7 +421,7 @@
   </Package>
   <Package name="Teko" dir="teko">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,Thyra,EpetraExt,Stratimikos,AztecOO,Anasazi,ML,Ifpack,Amesos"/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES value="Isorropia"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
@@ -770,7 +770,7 @@
     </EmailAddresses>
   </Package>
   <Package name="Stalix" dir="stalix">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Sacado,Tpetra"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Sacado,Tpetra,Thyra"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>

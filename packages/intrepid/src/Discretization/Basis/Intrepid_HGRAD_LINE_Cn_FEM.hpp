@@ -36,6 +36,7 @@
 #define INTREPID_HGRAD_LINE_Cn_FEM_HPP
 
 #include "Intrepid_Basis.hpp"
+#include "Intrepid_PointTools.hpp"
 #include "Intrepid_Polylib.hpp"
 #include "Intrepid_HGRAD_LINE_Cn_FEM_JACOBI.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
@@ -84,6 +85,11 @@ public:
   /** \brief  Constructor.
   */
   Basis_HGRAD_LINE_Cn_FEM(int order , const ArrayScalar &pts );  
+
+  /** \brief Constructor.
+      \param  int order:        [in] polynomial degree of the basis
+      \param  int pointType:    [in] type of points, either POINTTYPE_EQUISPACED or POINTTYPE_SPECTRAL */
+  Basis_HGRAD_LINE_Cn_FEM(int order , const EPointType &pointType );  
   
   
   /** \brief  Evaluation of a FEM basis on a <strong>reference Line</strong> cell. 

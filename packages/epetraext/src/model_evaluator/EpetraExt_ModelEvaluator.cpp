@@ -337,9 +337,9 @@ void ModelEvaluator::OutArgs::_set_W_properties( const DerivativeProperties &W_p
   W_properties_ = W_properties;
 }
 
-void ModelEvaluator::OutArgs::_set_M_properties( const DerivativeProperties &M_properties )
+void ModelEvaluator::OutArgs::_set_WPrec_properties( const DerivativeProperties &WPrec_properties )
 {
-  M_properties_ = M_properties;
+  WPrec_properties_ = WPrec_properties;
 }
 
 void ModelEvaluator::OutArgs::_set_DfDp_properties( int l, const DerivativeProperties &properties )
@@ -679,8 +679,8 @@ Teuchos::RefCountPtr<Epetra_Operator>
 ModelEvaluator::create_W() const
 { return Teuchos::null; }
 
-Teuchos::RefCountPtr<Epetra_Operator>
-ModelEvaluator::create_M() const
+Teuchos::RefCountPtr<EpetraExt::ModelEvaluator::Preconditioner>
+ModelEvaluator::create_WPrec() const
 { return Teuchos::null; }
 
 Teuchos::RefCountPtr<Epetra_Operator>
@@ -774,8 +774,8 @@ std::string EpetraExt::toString( ModelEvaluator::EOutArgsMembers outArg )
       return "OUT_ARG_f";
     case ModelEvaluator::OUT_ARG_W:
       return "OUT_ARG_W";
-    case ModelEvaluator::OUT_ARG_M:
-      return "OUT_ARG_M";
+    case ModelEvaluator::OUT_ARG_WPrec:
+      return "OUT_ARG_WPrec";
     case ModelEvaluator::OUT_ARG_f_poly:
       return "OUT_ARG_f_poly";
     case ModelEvaluator::OUT_ARG_f_sg:

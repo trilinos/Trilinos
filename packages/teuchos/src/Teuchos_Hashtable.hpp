@@ -114,7 +114,7 @@ namespace Teuchos
       mutable Value mostRecentValue_;
       mutable Key mostRecentKey_;
 
-      mutable int nHits_;
+      mutable size_t nHits_;
       mutable double avgDegeneracy_;
       double rehashDensity_;
     };

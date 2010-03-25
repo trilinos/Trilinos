@@ -269,7 +269,7 @@ int main(int argc, char *argv[]) {
     normF.set("Scale Type", "Scaled");
     Teuchos::ParameterList& maxIters = statusParams.sublist("Test 1");
     maxIters.set("Test Type", "MaxIters");
-    maxIters.set("Maximum Iterations", 15);
+    maxIters.set("Maximum Iterations", 1);
 
     // Create NOX interface
     Teuchos::RCP<NOX::Epetra::ModelEvaluatorInterface> nox_interface = 
@@ -282,7 +282,7 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = nox_interface;
     Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linsys;
     if (matrix_free) {
-      Teuchos::RCP<Epetra_Operator> M = sg_model->create_M();
+      Teuchos::RCP<Epetra_Operator> M = sg_model->create_WPrec()->PrecOp;
       Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = nox_interface;
       lsParams.set("Preconditioner", "User Defined");
       linsys = 
@@ -322,10 +322,10 @@ int main(int argc, char *argv[]) {
     EpetraExt::ModelEvaluator::InArgs sg_inArgs = sg_model->createInArgs();
     EpetraExt::ModelEvaluator::OutArgs sg_outArgs = 
       sg_model->createOutArgs();
-    Teuchos::RCP<const Epetra_Vector> sg_p = sg_model->get_p_init(0);
+    Teuchos::RCP<const Epetra_Vector> sg_p = sg_model->get_p_init(2);
     Teuchos::RCP<Epetra_Vector> sg_g = 
       Teuchos::rcp(new Epetra_Vector(*(sg_model->get_g_map(1))));
-    sg_inArgs.set_p(0, sg_p);
+    sg_inArgs.set_p(2, sg_p);
     sg_inArgs.set_x(Teuchos::rcp(&finalSolution,false));
     sg_outArgs.set_g(1, sg_g);
     sg_model->evalModel(sg_inArgs, sg_outArgs);

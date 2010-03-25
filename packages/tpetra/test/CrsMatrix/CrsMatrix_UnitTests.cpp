@@ -98,6 +98,7 @@ namespace {
   using Tpetra::RowMatrix;
   using Tpetra::Import;
   using Tpetra::global_size_t;
+  using Tpetra::createLocalMapWithNode;
   using Tpetra::createCrsMatrixSolveOp;
   using Tpetra::createCrsMatrixMultiplyOp;
   using Tpetra::DefaultPlatform;
@@ -107,7 +108,6 @@ namespace {
   using Tpetra::OptimizeOption;
   using Tpetra::DoOptimizeStorage;
   using Tpetra::DoNotOptimizeStorage;
-  using Tpetra::LocallyReplicated;
   using Tpetra::GloballyDistributed;
   using Tpetra::INSERT;
 
@@ -278,12 +278,112 @@ namespace {
 
 
   ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, EmptyFillComplete, LO, GO, Scalar, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+    // generate a tridiagonal matrix
+    typedef ScalarTraits<Scalar> ST;
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef Vector<Scalar,LO,GO,Node> V;
+    typedef typename ST::magnitudeType Mag;
+    typedef ScalarTraits<Mag> MT;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    // create a Map with numLocal entries per node
+    const size_t numLocal = 10;
+    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm,node) );
+    {
+      // create static-profile matrix, fill-complete without inserting (and therefore, without allocating)
+      MAT matrix(map,1,StaticProfile);
+      matrix.fillComplete(DoOptimizeStorage);
+    }
+    {
+      // create dynamic-profile matrix, fill-complete without inserting (and therefore, without allocating)
+      MAT matrix(map,1,DynamicProfile);
+      matrix.fillComplete(DoOptimizeStorage);
+    }
+  }
+
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, AdvancedGraphUsage, LO, GO, Scalar, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+    // generate a tridiagonal matrix
+    typedef ScalarTraits<Scalar> ST;
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef Vector<Scalar,LO,GO,Node> V;
+    typedef typename ST::magnitudeType Mag;
+    typedef ScalarTraits<Mag> MT;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    // create a Map with numLocal entries per node
+    const size_t numLocal = 10;
+    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm,node) );
+    {
+      CrsGraph<LO,GO,Node> diaggraph(map,1,StaticProfile);
+      // A pre-constructed graph must be fill complete before being used to construct a CrsMatrix
+      TEST_THROW( MAT matrix(rcpFromRef(diaggraph)), std::runtime_error );
+    }
+    {
+      // create a simple diagonal graph
+      CrsGraph<LO,GO,Node> diaggraph(map,1,StaticProfile);
+      for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
+        diaggraph.insertGlobalIndices(r,tuple(r));
+      }
+      diaggraph.fillComplete(DoNotOptimizeStorage);
+      TEST_EQUALITY_CONST( diaggraph.isFillComplete(), true );
+      TEST_EQUALITY_CONST( diaggraph.isStorageOptimized(), false );
+      // fillComplete(), but do not optimizeStorage()
+      // matrix constructed with non-optimized-storage graph
+      MAT mat1(rcpFromRef(diaggraph));
+      // optimizeStorage() the graph, and test that the matrix notices this change and throws a warning/fails to fillComplete()
+      diaggraph.optimizeStorage();
+      TEST_EQUALITY_CONST( diaggraph.isStorageOptimized(), true );
+#ifdef HAVE_TPETRA_THROW_ABUSE_WARNINGS
+        TEST_THROW( mat1.fillComplete(DoNotOptimizeStorage), std::runtime_error )
+#else
+        mat1.fillComplete(DoNotOptimizeStorage);
+#endif
+      TEST_EQUALITY_CONST( mat1.isFillComplete(), false );
+    }
+    {
+      // create a simple diagonal graph
+      CrsGraph<LO,GO,Node> diaggraph(map,1,StaticProfile);
+      for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
+        diaggraph.insertGlobalIndices(r,tuple(r));
+      }
+      // fill-complete the graph, but do not optimize the storage
+      diaggraph.fillComplete(DoNotOptimizeStorage);
+      TEST_EQUALITY_CONST( diaggraph.isFillComplete(), true );
+      TEST_EQUALITY_CONST( diaggraph.isStorageOptimized(), false );
+      // matrix constructed with non-storage-optimized graph
+      MAT mat1(rcpFromRef(diaggraph));
+      // fill complete the matrix and ask it to optimize storage.
+      // this is not allowed on a static graph, and will either throw an exception or ignore the request to optimize storage.
+#ifdef HAVE_TPETRA_THROW_ABUSE_WARNINGS
+      TEST_THROW( mat1.fillComplete(DoOptimizeStorage), std::runtime_error );
+      TEST_EQUALITY_CONST( mat1.isFillComplete(), false );
+      TEST_EQUALITY_CONST( mat1.isStorageOptimized(), false );
+#else
+      mat1.fillComplete(DoOptimizeStorage);
+      TEST_EQUALITY_CONST( mat1.isFillComplete(), true );
+      TEST_EQUALITY_CONST( mat1.isStorageOptimized(), false );
+#endif
+    }
+  }
+
+
+  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, WithGraph, LO, GO, Scalar, Node )
   {
     RCP<Node> node = getNode<Node>();
     // generate a tridiagonal matrix
     typedef ScalarTraits<Scalar> ST;
     typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef CrsGraph<LO,GO,Node>        GRPH;
     typedef Vector<Scalar,LO,GO,Node> V;
     typedef typename ST::magnitudeType Mag;
     typedef ScalarTraits<Mag> MT;
@@ -297,28 +397,9 @@ namespace {
     const size_t numLocal = 10;
     RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm,node) );
     {
-      // create a simple diagonal graph
-      CrsGraph<LO,GO,Node> diaggraph(map,1,StaticProfile);
-      for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
-        diaggraph.insertGlobalIndices(r,tuple(r));
-      }
-      // A user-specified graph may not be fill-completed in the interval between moment that it is passed to the matrix and
-      // the moment the matrix is fill-completed. The CrsMatrix class should throw an exception in this case.
-      MAT matrix(rcpFromRef(diaggraph));
-      // this sets up for the exception
-      diaggraph.fillComplete(DoOptimizeStorage);
-      // this should trigger the exception if we are throwing abuse warnings; otherwise, it will return without completing the fill
-#ifdef HAVE_TPETRA_THROW_ABUSE_WARNINGS
-      TEST_THROW( matrix.fillComplete(DoOptimizeStorage), std::runtime_error );
-#else
-      matrix.fillComplete(DoOptimizeStorage);
-#endif
-      TEST_EQUALITY_CONST( matrix.isFillComplete(), false );
-    }
-    {
       //////////////////////////////////
       // create a simple tridiagonal graph
-      CrsGraph<LO,GO,Node> trigraph(map,3,StaticProfile);
+      GRPH trigraph(map,3,StaticProfile);
       for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
         if (r == map->getMinAllGlobalIndex()) {
           trigraph.insertGlobalIndices(r,tuple(r,r+1));
@@ -365,7 +446,7 @@ namespace {
     }
     {
       // create a simple diagonal graph
-      CrsGraph<LO,GO,Node> diaggraph(map,1,StaticProfile);
+      GRPH diaggraph(map,1,StaticProfile);
       for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
         diaggraph.insertGlobalIndices(r,tuple(r));
       }
@@ -381,7 +462,7 @@ namespace {
     }
     {
       // create a simple diagonal graph
-      CrsGraph<LO,GO,Node> diaggraph(map,1,StaticProfile);
+      GRPH diaggraph(map,1,StaticProfile);
       for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
         diaggraph.insertGlobalIndices(r,tuple(r));
       }
@@ -413,64 +494,84 @@ namespace {
     }
     {
       // create a simple diagonal graph
-      CrsGraph<LO,GO,Node> diaggraph(map,1,StaticProfile);
+      RCP<GRPH> diaggraph = rcp( new GRPH(map,1,StaticProfile) );
       for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
-        diaggraph.insertGlobalIndices(r,tuple(r));
+        diaggraph->insertGlobalIndices(r,tuple(r));
       }
-      // don't fillComplete() or optimizeStorage()
-      {
-        // matrix constructed with fill-incomplete graph
-        MAT mat1(rcpFromRef(diaggraph));
-        // fillComplete() the graph, and test that the matrix notices this change and throws a warning/fails to fillComplete()
-        diaggraph.fillComplete(DoNotOptimizeStorage);
-        TEST_EQUALITY_CONST( diaggraph.isFillComplete(), true );
-        TEST_EQUALITY_CONST( diaggraph.isStorageOptimized(), false );
-#ifdef HAVE_TPETRA_THROW_ABUSE_WARNINGS
-        TEST_THROW( mat1.fillComplete(DoNotOptimizeStorage), std::runtime_error )
-#else
-        mat1.fillComplete(DoNotOptimizeStorage);
-#endif
-        TEST_EQUALITY_CONST( mat1.isFillComplete(), false );
+      diaggraph->fillComplete(DoOptimizeStorage);
+      TEST_EQUALITY_CONST( diaggraph->isFillComplete(), true );
+      TEST_EQUALITY_CONST( diaggraph->isStorageOptimized(), true );
+      TEST_EQUALITY_CONST( diaggraph->isUpperTriangular(), true );
+      TEST_EQUALITY_CONST( diaggraph->isLowerTriangular(), true );
+      // construct a matrix with the graph from another matrix
+      MAT matrix1(diaggraph);
+      TEST_EQUALITY( matrix1.getCrsGraph(), diaggraph );
+      MAT matrix2( matrix1.getCrsGraph() );
+      TEST_EQUALITY( matrix2.getCrsGraph(), matrix1.getCrsGraph() );
+    }
+  }
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, WithGraph_replaceLocal, LO, GO, Scalar, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+    // generate a tridiagonal matrix
+    typedef ScalarTraits<Scalar> ST;
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    typedef Vector<Scalar,LO,GO,Node> V;
+    typedef typename ST::magnitudeType Mag;
+    typedef ScalarTraits<Mag> MT;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const size_t numImages = size(*comm);
+    // create a Map
+    const size_t numLocal = 10;
+    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm,node) );
+    CrsGraph<LO,GO,Node> graph(map,3,StaticProfile);
+    for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
+      if (r == map->getMinAllGlobalIndex()) {
+        graph.insertGlobalIndices(r,tuple(r,r+1));
       }
-      {
-        // matrix constructed with non-optimized-storage graph
-        MAT mat1(rcpFromRef(diaggraph));
-        // optimizeStorage() the graph, and test that the matrix notices this change and throws a warning/fails to fillComplete()
-        TEST_EQUALITY_CONST( diaggraph.isFillComplete(), true );
-        diaggraph.optimizeStorage();
-        TEST_EQUALITY_CONST( diaggraph.isStorageOptimized(), true );
-#ifdef HAVE_TPETRA_THROW_ABUSE_WARNINGS
-        TEST_THROW( mat1.fillComplete(DoNotOptimizeStorage), std::runtime_error )
-#else
-        mat1.fillComplete(DoNotOptimizeStorage);
-#endif
-        TEST_EQUALITY_CONST( mat1.isFillComplete(), false );
+      else if (r == map->getMaxAllGlobalIndex()) {
+        graph.insertGlobalIndices(r,tuple(r-1,r));
+      }
+      else {
+        graph.insertGlobalIndices(r,tuple(r-1,r,r+1));
       }
     }
-    {
-      // create a simple diagonal graph
-      CrsGraph<LO,GO,Node> diaggraph(map,1,StaticProfile);
-      for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
-        diaggraph.insertGlobalIndices(r,tuple(r));
+    graph.fillComplete(DoOptimizeStorage);
+    // create a matrix using the graph
+    MAT matrix(rcpFromRef(graph));
+    TEST_EQUALITY_CONST( matrix.getProfileType() == StaticProfile, true );
+    // insert throws exception: not allowed with static graph
+    TEST_THROW( matrix.insertGlobalValues(map->getMinGlobalIndex(),tuple<GO>(map->getMinGlobalIndex()),tuple(ST::one())), std::runtime_error );
+    // suminto and replace are allowed
+    for (LO r=map->getMinLocalIndex(); r <= map->getMaxLocalIndex(); ++r) {
+      if (r == map->getMinLocalIndex()) {
+        matrix.replaceLocalValues(r, tuple(r,r+1), tuple(ST::one(),ST::one()) );
       }
-      // fill-complete the graph, but do not optimize the storage
-      diaggraph.fillComplete(DoNotOptimizeStorage);
-      TEST_EQUALITY_CONST( diaggraph.isFillComplete(), true );
-      TEST_EQUALITY_CONST( diaggraph.isStorageOptimized(), false );
-      // matrix constructed with non-storage-optimized graph
-      MAT mat1(rcpFromRef(diaggraph));
-      // fill complete the matrix and ask it to optimize storage.
-      // this is not allowed on a static graph, and will either throw an exception or ignore the request to optimize storage.
-#ifdef HAVE_TPETRA_THROW_ABUSE_WARNINGS
-      TEST_THROW( mat1.fillComplete(DoOptimizeStorage), std::runtime_error );
-      TEST_EQUALITY_CONST( mat1.isFillComplete(), false );
-      TEST_EQUALITY_CONST( mat1.isStorageOptimized(), false );
-#else
-      mat1.fillComplete(DoOptimizeStorage);
-      TEST_EQUALITY_CONST( mat1.isFillComplete(), true );
-      TEST_EQUALITY_CONST( mat1.isStorageOptimized(), false );
-#endif
+      else if (r == map->getMaxLocalIndex()) {
+        matrix.replaceLocalValues(r, tuple(r-1,r), tuple(ST::one(),ST::one()) );
+      }
+      else {
+        matrix.replaceLocalValues(r, tuple(r-1,r,r+1), tuple(ST::one(),ST::one(),ST::one()) );
+      }
     }
+    for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
+      // increment the diagonals
+      matrix.sumIntoGlobalValues(r, tuple(r), tuple(ST::one()) );
+    }
+    matrix.fillComplete();
+    TEST_EQUALITY( matrix.getNodeNumDiags(), numLocal );
+    TEST_EQUALITY( matrix.getGlobalNumDiags(), numImages*numLocal );
+    TEST_EQUALITY( matrix.getGlobalNumEntries(), 3*numImages*numLocal - 2 );
+    V dvec(map,false);
+    dvec.randomize();
+    matrix.getLocalDiagCopy(dvec);
+    Array<Scalar> expectedDiags(numLocal, static_cast<Scalar>(2));
+    ArrayRCP<const Scalar> dvec_view = dvec.get1dView();
+    TEST_COMPARE_FLOATING_ARRAYS( expectedDiags(), dvec_view, MT::zero() );
   }
 
 
@@ -782,8 +883,8 @@ namespace {
     const size_t numVecs  = 3;
     RCP<Map<LO,GO,Node> > rowmap = rcp( new Map<LO,GO,Node>(INVALID,M,static_cast<GO>(0),comm,node) );
     rowmap->setObjectLabel("Row Map");
-    RCP<Map<LO,GO,Node> > lclmap = rcp( new Map<LO,GO,Node>(static_cast<global_size_t>(P),static_cast<GO>(0),comm,LocallyReplicated,node) );
-    lclmap->setObjectLabel("Local Map");
+    RCP<const Map<LO,GO,Node> > lclmap = createLocalMapWithNode<LO,GO,Node>(P,comm,node);
+
     // create the matrix
     MAT A(rowmap,P,DynamicProfile);
     for (GO i=0; i<static_cast<GO>(M); ++i) {
@@ -877,7 +978,7 @@ namespace {
     // 
     const size_t numVecs  = 3;
     RCP<Map<LO,GO,Node> > rowmap = rcp( new Map<LO,GO,Node>(INVALID,M,0,comm,node) );
-    RCP<Map<LO,GO,Node> > lclmap = rcp( new Map<LO,GO,Node>(P,static_cast<GO>(0),comm,LocallyReplicated,node) );
+    RCP<const Map<LO,GO,Node> > lclmap = createLocalMapWithNode<LO,GO,Node>(P,comm,node);
     // create the matrix
     MAT A(rowmap,P);
     for (size_t i=0; i<M; ++i) {
@@ -1634,6 +1735,9 @@ typedef std::complex<double> ComplexDouble;
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, NonSquare, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Transpose, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, WithGraph, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, EmptyFillComplete, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, AdvancedGraphUsage, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, WithGraph_replaceLocal, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, ExceedStaticAlloc, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, MultipleFillCompletes, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, CopiesAndViews, LO, GO, SCALAR, NODE ) \

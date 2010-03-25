@@ -56,8 +56,8 @@ namespace StatusTest {
 /*!
   \brief Arbitrary combination of status tests.
 
-  In the \c AND (see NOX::StatusTest::Combo::ComboType) combination, the
-  result is \c Unconverged (see NOX::StatusTest::StatusType) if \e any of
+  In the \c AND (see LOCA::StatusTest::Combo::ComboType) combination, the
+  result is \c Unconverged (see LOCA::StatusTest::StatusType) if \e any of
   the tests is \c Unconverged. Otherwise, the result is equal to the
   result of the \e first test in the list that is either \c Converged
   or \c Failed. It is not recommended to mix \c Converged and \c
@@ -70,9 +70,7 @@ namespace StatusTest {
   -type tests at the end of the \c OR list.
 
   \note We call checkStatus on \e every convergence test, though some
-  may be called with the NOX::StatusTest::None option.
-
-  \author Tammy Kolda (SNL 8950) and Roger Pawlowski (SNL 1416)
+  may be called with the LOCA::StatusTest::None option.
 */
 class Combo : public Abstract {
 
@@ -90,16 +88,19 @@ public:
   };
 
   //! Constructor.  Optional argument is the error stream for output.
-  Combo(ComboType t, const Teuchos::RCP<const LOCA::GlobalData> globalDataPtr = Teuchos::null);
+  Combo( ComboType t,
+         const Teuchos::RCP<const LOCA::GlobalData> globalDataPtr = Teuchos::null );
 
   //! Constructor with a single test.
-  Combo(ComboType t, const Teuchos::RCP<Abstract>& a,
-      const Teuchos::RCP<const LOCA::GlobalData> globalDataPtr = Teuchos::null);
+  Combo(ComboType t,
+        const Teuchos::RCP<Abstract>& a,
+        const Teuchos::RCP<const LOCA::GlobalData> globalDataPtr = Teuchos::null );
 
   //! Constructor with two tests.
-  Combo(ComboType t, const Teuchos::RCP<Abstract>& a,
-	const Teuchos::RCP<Abstract>& b,
-	const Teuchos::RCP<const LOCA::GlobalData> globalDataPtr = Teuchos::null);
+  Combo( ComboType t,
+         const Teuchos::RCP<Abstract>& a,
+         const Teuchos::RCP<Abstract>& b,
+         const Teuchos::RCP<const LOCA::GlobalData> globalDataPtr = Teuchos::null );
 
   //! Add another test to this combination. 
   /*!
@@ -116,39 +117,42 @@ public:
     See addOp() and orOp() for details.
   */
   virtual LOCA::StatusTest::StatusType
-  checkStatus(const LOCA::Stepper& stepper,
-              LOCA::StatusTest::CheckType checkType);
+  checkStatus( const LOCA::Stepper         & stepper,
+               LOCA::StatusTest::CheckType   checkType
+             );
 
   virtual LOCA::StatusTest::StatusType getStatus() const;
 
-  virtual ostream& print(ostream& stream, int indent = 0) const;
+  virtual ostream& print( ostream& stream,
+                          int indent = 0
+                        ) const;
   
 protected:
 
-  //! Use this for checkStatus when this is an OR type combo. Updates NOX::StatusTest::Combo::status.
+  //! Use this for checkStatus when this is an OR type combo. Updates LOCA::StatusTest::Combo::status.
   /*!  
-    If there is a combination of NOX::StatusTest::Failed and
-    NOX::StatusTest::Converged in the tests that are OR'd together,
+    If there is a combination of LOCA::StatusTest::Failed and
+    LOCA::StatusTest::Converged in the tests that are OR'd together,
     the value of status for this test is set to the status of the
-    first test it encounters which is not NOX::Status::Unconvered. The
+    first test it encounters which is not LOCA::Status::Unconverged. The
     tests are evaluated in the order that they were added to the
     combination.
 
     \note We compute the status of all tests in the combination for
     the sake of completeness, even if we could determine the status of
     this combination test without that check.
-
   */
-  virtual void orOp(const LOCA::Stepper& stepper,
-                    LOCA::StatusTest::CheckType checkType);
+  virtual void
+  orOp( const LOCA::Stepper               & stepper,
+              LOCA::StatusTest::CheckType   checkType);
 
-  //! Use this for checkStatus when this is an AND type combo. Updates NOX::StatusTest::Combo::status.
+  //! Use this for checkStatus when this is an AND type combo. Updates LOCA::StatusTest::Combo::status.
   /*!  
 
-    If any tests are NOX::StatusTest::Unconverged, then the status of
-    this test is NOX::StatusTest::Unconverged.  If there is a
-    combination of NOX::StatusTest::Failed and
-    NOX::StatusTest::Converged in the tests that are AND'd together,
+    If any tests are LOCA::StatusTest::Unconverged, then the status of
+    this test is LOCA::StatusTest::Unconverged.  If there is a
+    combination of LOCA::StatusTest::Failed and
+    LOCA::StatusTest::Converged in the tests that are AND'd together,
     the value of status for this test is set to the status of the
     first test it encounters.  The tests are evaluated in the
     order that they were added to the combination.
@@ -157,8 +161,9 @@ protected:
     the sake of completeness, even if we could determine the status of
     this combination test without that check.
   */
-  virtual void andOp(const LOCA::Stepper& stepper,
-		     LOCA::StatusTest::CheckType checkType);
+  virtual void
+  andOp( const LOCA::Stepper               & stepper,
+               LOCA::StatusTest::CheckType   checkType );
 
   /*! \brief Check whether or not it is safe to add \c a to this list
    of tests.
@@ -176,11 +181,10 @@ private:
   //! Vector of generic status tests
   vector<Teuchos::RCP<Abstract> > tests;
 
-  //! %Status
+  //! Status
   LOCA::StatusTest::StatusType status;
 
   //! Ostream used to print errors
-//  NOX::Utils utils;
   Teuchos::RCP<const LOCA::GlobalData> globalDataPtr_;
 
 }; // class Combo

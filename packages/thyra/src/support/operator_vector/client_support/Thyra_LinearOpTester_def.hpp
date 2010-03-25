@@ -662,7 +662,8 @@ bool LinearOpTester<Scalar>::compare(
       << endl << "  \\________/    \\________/"
       << endl << "      v2            v3"
       << endl << ""
-      << endl << "   |sum(v2)| == |sum(v3)|"
+      << endl << "   norm(v2-v3) ~= 0"
+      // << endl << "   |sum(v2)| == |sum(v3)|"
       << endl;
 
     for( int rand_vec_i = 1; rand_vec_i <= num_random_vectors(); ++rand_vec_i ) {
@@ -686,6 +687,20 @@ bool LinearOpTester<Scalar>::compare(
       apply( op2, NOTRANS, *v1, v3.ptr(), r_half );
       if(dump_all()) *oss << endl << "v3 =\n" << *v3;
       
+      // check error in each column
+      for(int col_id=0;col_id < v1->domain()->dim();col_id++) {
+         std::stringstream ss;
+         ss << ".col[" << col_id << "]";
+
+         result = Thyra::testRelNormDiffErr(
+            "v2"+ss.str(),*v2->col(col_id)
+           ,"v3"+ss.str(),*v3->col(col_id)
+           ,"linear_properties_error_tol()", linear_properties_error_tol()
+           ,"linear_properties_warning_tol()", linear_properties_warning_tol()
+           ,&*oss);
+         if(!result) these_results = false;
+      }
+      /*
       std::vector<Scalar> sum_v2(loc_num_rhs), sum_v3(loc_num_rhs);
       sums(*v2,&sum_v2[0]);
       sums(*v3,&sum_v3[0]);
@@ -698,6 +713,7 @@ bool LinearOpTester<Scalar>::compare(
         ,"linear_properties_warning_tol()", linear_properties_warning_tol()
         ,&*oss
         );
+      */
       if(!result) these_results = false;
       
     }

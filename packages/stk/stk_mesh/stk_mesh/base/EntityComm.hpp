@@ -22,6 +22,36 @@
 namespace stk {
 namespace mesh {
 
+/** \brief  Is shared with any other process */
+bool in_shared( const Entity & entity );
+
+/** \brief  Is shared with a given process */
+bool in_shared( const Entity & entity , unsigned proc );
+
+/** \brief  Is a receive ghost copy of an entity */
+bool in_receive_ghost( const Entity & entity );
+
+/** \brief  Is a receive ghost copy of an entity */
+bool in_receive_ghost( const Ghosting & ghost , const Entity & entity );
+
+/** \brief  Is sent to a ghost copy of an entity on any process */
+bool in_send_ghost( const Entity & entity );
+
+/** \brief  Is sent to a ghost copy of an entity on a given process */
+bool in_send_ghost( const Entity & entity , unsigned proc );
+
+/** \brief  Is in ghosting either send to 'p' or receive from 'p' */
+bool in_ghost( const Ghosting & ghost , const Entity & entity , unsigned p );
+
+/** \brief  List of all entity communication processes, sorted */
+void comm_procs( const Entity & entity , std::vector<unsigned> & procs );
+
+/** \brief  List of entity communication processes for a given ghost, sorted */
+void comm_procs( const Ghosting & ghost ,
+                 const Entity & entity , std::vector<unsigned> & procs );
+
+
+
 void pack_entity_info( CommBuffer & buf , const Entity & entity );
  
 void unpack_entity_info(

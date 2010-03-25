@@ -46,10 +46,10 @@ void process_command_line(int argc, char*argv[], std::string& xml_file);
 
 int main(int argc, char*argv[])
 {
+  Teuchos::GlobalMPISession mpisess(&argc,&argv,&std::cout);
+
   Teuchos::Time timer("total");
   timer.start();
-
-  Teuchos::GlobalMPISession mpisess(&argc,&argv,&std::cout);
 
   Tpetra::DefaultPlatform::DefaultPlatformType& platform = Tpetra::DefaultPlatform::getDefaultPlatform();
   Teuchos::RCP<const Teuchos::Comm<int> > comm = platform.getComm();
@@ -84,7 +84,8 @@ int main(int argc, char*argv[])
   //Note that build_problem calls build_precond and sets a preconditioner on the
   //linear-problem, if a preconditioner is specified.
 
-  Teuchos::RCP<BLinProb> problem = build_problem<Scalar,LO,GO,Node>(test_params, comm);
+  Teuchos::RCP<BLinProb> problem =
+    build_problem<Scalar,LO,GO,Node>(test_params, comm, platform.getNode());
 
   //The build_solver function is located in build_solver.hpp:
 
@@ -114,9 +115,9 @@ int main(int argc, char*argv[])
 
   if (test_params.isParameter("expectNumIters")) {
     int expected_iters = 0;
-    Tifpack::GetParameter(test_params, "expectNumIters", expected_iters);
+    Tifpack::getParameter(test_params, "expectNumIters", expected_iters);
     int actual_iters = solver->getNumIters();
-    if (ret == Belos::Converged && actual_iters == expected_iters && norms[0] < 1.e-7) {
+    if (ret == Belos::Converged && actual_iters <= expected_iters && norms[0] < 1.e-7) {
       if (comm->getRank() == 0) {
         std::cout << "End Result: TEST PASSED" << std::endl;
       }
@@ -124,7 +125,7 @@ int main(int argc, char*argv[])
     else {
       if (comm->getRank() == 0) {
         std::cout << "Actual iters("<<actual_iters
-           <<") != expected number of iterations ("
+           <<") > expected number of iterations ("
               <<expected_iters<<"), or resid-norm(" << norms[0] << ") >= 1.e-7"<<std::endl;
       }
     }

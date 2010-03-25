@@ -246,6 +246,8 @@ namespace Stokhos {
     //! Print operator
     static std::ostream& print(std::ostream& os, const Epetra_Operator& op) {
       os << "Epetra_Operator" << std::endl;
+      const Epetra_CrsMatrix& mat = dynamic_cast<const Epetra_CrsMatrix&>(op);
+      VectorOrthogPolyTraits<Epetra_CrsMatrix>::print(os, mat);
       return os;
     }
 

@@ -27,32 +27,40 @@ SET(HEADERS ${HEADERS}
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 SET(HEADERS ${HEADERS}
-  Tifpack_ConfigDefs.hpp
   Tifpack_Chebyshev.hpp
+  Tifpack_Chebyshev_decl.hpp
+  Tifpack_Chebyshev_def.hpp
   Tifpack_Condest.hpp
   Tifpack_CondestType.hpp
-  Tifpack_CrsRiluk.hpp
-  Tifpack_CrsRiluk_decl.hpp
-  Tifpack_CrsRiluk_def.hpp
+  Tifpack_ConfigDefs.hpp
+  Tifpack_CreateOverlapGraph.hpp
   Tifpack_ExplicitInstantiationHelpers.hpp
+  Tifpack_Factory.hpp
   Tifpack_Heap.hpp
   Tifpack_ILUT.hpp
   Tifpack_ILUT_decl.hpp
   Tifpack_ILUT_def.hpp
   Tifpack_IlukGraph.hpp
+  Tifpack_OverlapGraph.hpp
   Tifpack_Parameters.hpp
   Tifpack_Preconditioner.hpp
   Tifpack_Relaxation.hpp
+  Tifpack_Relaxation_decl.hpp
+  Tifpack_Relaxation_def.hpp
+  Tifpack_RILUK.hpp
+  Tifpack_RILUK_decl.hpp
+  Tifpack_RILUK_def.hpp
   Tifpack_ScalingType.hpp
   Tifpack_Version.hpp
   )
 
 SET(SOURCES ${SOURCES}
-  Tifpack_CrsRiluk.cpp
+  Tifpack_Chebyshev.cpp
   Tifpack_Factory.cpp
   Tifpack_ILUT.cpp
   Tifpack_Parameters.cpp
   Tifpack_Relaxation.cpp
+  Tifpack_RILUK.cpp
   )
 
 #

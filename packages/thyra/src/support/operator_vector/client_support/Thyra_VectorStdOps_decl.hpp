@@ -381,7 +381,7 @@ void Vp_StV( const Ptr<VectorBase<Scalar> > &y, const Scalar& alpha,
 template<class Scalar>
 void Vp_V(
   const Ptr<VectorBase<Scalar> > &y, const VectorBase<Scalar>& x,
-  const Scalar& beta = Teuchos::ScalarTraits<Scalar>::one()
+  const Scalar& beta = static_cast<Scalar>(1.0)
   );
 
 
@@ -752,7 +752,7 @@ template<class Scalar>
 THYRA_DEPRECATED
 void Vp_V(
   VectorBase<Scalar>* y, const VectorBase<Scalar>& x,
-  const Scalar& beta = Teuchos::ScalarTraits<Scalar>::one()
+  const Scalar& beta = static_cast<Scalar>(1.0)
   )
 { Vp_V(Teuchos::ptr(y), x, beta); }
 

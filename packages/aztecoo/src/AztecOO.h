@@ -206,6 +206,12 @@ class AztecOO {
   */
   int SetRHS(Epetra_MultiVector * B);
 
+
+  //! AztecOO unset LHS and RHS
+  /*! Sets to null the previously objects..
+  */
+  int UnsetLHSRHS();
+
   //! AztecOO Preconditioner Matrix Set
   /*! Associates an already defined Epetra_Matrix as the matrix that will be used by
     AztecOO when constructing native AztecOO preconditioners.  By default,

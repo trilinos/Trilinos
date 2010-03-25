@@ -402,6 +402,25 @@ public:
     DerivativeMultiVector dmv_;
   };
 
+  /** \brief Simple aggregate struct that stores a preconditioner
+   * as an Epetra_Operator and a bool, about whether it is inverted or not.
+   */
+  struct Preconditioner {
+    /** \brief Default constructor of null Operatir */
+    Preconditioner() : PrecOp(Teuchos::null), isAlreadyInverted(false) {}
+    /** \brief Usable constructor to set the (Epetra_Operator,bool) pair */
+    Preconditioner(const Teuchos::RCP<Epetra_Operator>& PrecOp_,
+                     bool isAlreadyInverted_ )
+      : PrecOp(PrecOp_), isAlreadyInverted(isAlreadyInverted_) {}
+    /** \brief Accessor for the Epetra_Operator */
+    Teuchos::RCP<Epetra_Operator> PrecOp;
+    /** \brief Bool flag. When isAlreadyInverted==true, then the PrecOp
+        is an approximation to the inverse of the Matrix. If false, then
+        this Operator is an approximation to the matrix, and still must
+        be sent to a preconditioning algorithm like ILU. */
+    bool isAlreadyInverted;
+  };
+
   /** \brief Simple aggregate class for a derivative object represented as a
    * column-wise multi-vector or its transpose as a row-wise multi-vector.
    */
@@ -478,7 +497,7 @@ public:
     ,OUT_ARG_f_poly   ///< Residual vector Taylor polynomial
     ,OUT_ARG_f_sg     ///< Stochastic Galerkin residual vector polynomial
     ,OUT_ARG_W_sg     ///< Stochastic Galerkin "W" operator polyomial
-    ,OUT_ARG_M        ///< Preconditioner operator (approx Jacobian)
+    ,OUT_ARG_WPrec   ///< Preconditioner operator (approx Jacobian)
   };
   static const int NUM_E_OUT_ARGS_MEMBERS=7;
 
@@ -582,13 +601,13 @@ public:
     sg_vector_t get_g_sg(int j) const;
     /** \brief. */
     void set_W( const Teuchos::RefCountPtr<Epetra_Operator> &W );
-    void set_M( const Teuchos::RefCountPtr<Epetra_Operator> &M );
+    void set_WPrec( const Teuchos::RefCountPtr<Epetra_Operator> &WPrec );
     /** \brief. */
     Teuchos::RefCountPtr<Epetra_Operator> get_W() const;
-    Teuchos::RefCountPtr<Epetra_Operator> get_M() const;
+    Teuchos::RefCountPtr<Epetra_Operator> get_WPrec() const;
     /** \brief . */
     DerivativeProperties get_W_properties() const;
-    DerivativeProperties get_M_properties() const;
+    DerivativeProperties get_WPrec_properties() const;
     /** \brief Set stochastic Galerkin W operator polynomial. */
     void set_W_sg( const sg_operator_t& W_sg );
     /** \brief Get stochastic Galerkin W operator polynomial. */
@@ -677,7 +696,7 @@ public:
     void _setSupports( EOutArgsDgDp_sg arg, int j, int l, const DerivativeSupport& );
     /** \brief . */
     void _set_W_properties( const DerivativeProperties &W_properties );
-    void _set_M_properties( const DerivativeProperties &M_properties );
+    void _set_WPrec_properties( const DerivativeProperties &WPrec_properties );
     /** \brief . */
     void _set_DfDp_properties( int l, const DerivativeProperties &properties );
     /** \brief . */
@@ -717,9 +736,9 @@ public:
     g_t g_;
     g_sg_t g_sg_;
     Teuchos::RefCountPtr<Epetra_Operator> W_;
-    Teuchos::RefCountPtr<Epetra_Operator> M_;
+    Teuchos::RefCountPtr<Epetra_Operator> WPrec_;
     DerivativeProperties W_properties_;
-    DerivativeProperties M_properties_;
+    DerivativeProperties WPrec_properties_;
     deriv_t DfDp_; // Np
     deriv_properties_t DfDp_properties_; // Np
     deriv_t DgDx_dot_; // Ng
@@ -872,7 +891,7 @@ public:
    * (i.e. implicit solvers are not supported by default).
    */
   virtual Teuchos::RefCountPtr<Epetra_Operator> create_W() const;
-  virtual Teuchos::RefCountPtr<Epetra_Operator> create_M() const;
+  virtual Teuchos::RefCountPtr<EpetraExt::ModelEvaluator::Preconditioner> create_WPrec() const;
 
   /** \brief . */
   virtual Teuchos::RefCountPtr<Epetra_Operator> create_DfDp_op(int l) const;
@@ -968,7 +987,7 @@ protected:
     void setSupports(EOutArgsDgDp_sg arg, int j, int l, const DerivativeSupport& );
     /** \brief . */
     void set_W_properties( const DerivativeProperties &properties );
-    void set_M_properties( const DerivativeProperties &properties );
+    void set_WPrec_properties( const DerivativeProperties &properties );
     /** \brief . */
     void set_DfDp_properties( int l, const DerivativeProperties &properties );
     /** \brief . */
@@ -1289,19 +1308,19 @@ ModelEvaluator::OutArgs::get_g_sg(int j) const
 inline
 void ModelEvaluator::OutArgs::set_W( const Teuchos::RefCountPtr<Epetra_Operator> &W ) { W_ = W; }
 inline
-void ModelEvaluator::OutArgs::set_M( const Teuchos::RefCountPtr<Epetra_Operator> &M ) { M_ = M; }
+void ModelEvaluator::OutArgs::set_WPrec( const Teuchos::RefCountPtr<Epetra_Operator> &WPrec ) { WPrec_ = WPrec; }
 
 inline
 Teuchos::RefCountPtr<Epetra_Operator> ModelEvaluator::OutArgs::get_W() const { return W_; }
 inline
-Teuchos::RefCountPtr<Epetra_Operator> ModelEvaluator::OutArgs::get_M() const { return M_; }
+Teuchos::RefCountPtr<Epetra_Operator> ModelEvaluator::OutArgs::get_WPrec() const { return WPrec_; }
 
 inline
 ModelEvaluator::DerivativeProperties ModelEvaluator::OutArgs::get_W_properties() const
 { return W_properties_; }
 inline
-ModelEvaluator::DerivativeProperties ModelEvaluator::OutArgs::get_M_properties() const
-{ return M_properties_; }
+ModelEvaluator::DerivativeProperties ModelEvaluator::OutArgs::get_WPrec_properties() const
+{ return WPrec_properties_; }
 
 inline
 void ModelEvaluator::OutArgs::set_DfDp( int l, const Derivative &DfDp_l )
@@ -1591,8 +1610,8 @@ inline
 void ModelEvaluator::OutArgsSetup::set_W_properties( const DerivativeProperties &properties )
 { this->_set_W_properties(properties); }
 inline
-void ModelEvaluator::OutArgsSetup::set_M_properties( const DerivativeProperties &properties )
-{ this->_set_M_properties(properties); }
+void ModelEvaluator::OutArgsSetup::set_WPrec_properties( const DerivativeProperties &properties )
+{ this->_set_WPrec_properties(properties); }
 
 inline
 void ModelEvaluator::OutArgsSetup::set_DfDp_properties( int l, const DerivativeProperties &properties )

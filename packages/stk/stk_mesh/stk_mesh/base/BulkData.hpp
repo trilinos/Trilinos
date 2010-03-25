@@ -29,9 +29,6 @@
 namespace stk {
 namespace mesh {
 
-  //Forward declare transaction
-  class Transaction;
-
 /** \addtogroup stk_mesh_module
  *  \{
  */
@@ -62,8 +59,7 @@ public:
    */
   BulkData( const MetaData & mesh_meta_data ,
             ParallelMachine parallel ,
-            unsigned bucket_max_size = 1000 ,
-            Transaction::TransactionType transaction_type = Transaction::BULK );
+            unsigned bucket_max_size = 1000 );
 
   //------------------------------------
   /** \brief  The meta data manager for this bulk data manager. */
@@ -125,13 +121,6 @@ public:
    *              a parallel-consistent exception will be thrown.
    */
   bool modification_end();
-
-  /** \brief  Retrieve the bulk data for mesh modification transaction
-   */
-  const Transaction &get_transaction_log () const
-                            { return m_transaction_log; }
-
-  void  reset_transaction ( Transaction::TransactionType t = Transaction::BULK );
 
   /** \brief  Give away ownership of entities to other parallel processes.
    *
@@ -288,16 +277,16 @@ public:
 
   //------------------------------------
   //------------------------------------
-  /** \brief Symmetric parallel relations for shared mesh entities.  */
-  const std::vector<EntityProc> & shared_entities() const
-    { return m_shares_all ; }
+  /** \brief  All entities with communication information. */
+  const std::vector<Entity*> & entity_comm() const
+    { return m_entity_comm ; }
 
   //------------------------------------
   /** \brief  Query the shared-entity aura.
    *          Is likely to be stale if ownership or sharing has changed
    *          and the 'modification_end' has not been called.
    */
-  Ghosting & shared_aura() const { return * m_ghosting[0] ; }
+  Ghosting & shared_aura() const { return * m_ghosting[1] ; }
 
   /** \brief Asymmetric parallel relations for owner-to-ghosted mesh entities.
    *
@@ -340,11 +329,9 @@ public:
   /** \brief  All non-const methods assert this */
   void assert_ok_to_modify( const char * ) const ;
 
-  void assert_entity_owner_or_not_destroyed( const char * , const Entity & , unsigned ) const ;
+  void assert_entity_owner( const char * , const Entity & , unsigned ) const ;
 
   void assert_good_key( const char * , const EntityKey & ) const ;
-
-  unsigned parallel_index_rank( const EntityKey & ) const ;
 
   //------------------------------------
 private:
@@ -363,13 +350,12 @@ private:
   // Containers:
   std::vector< std::vector<Bucket*> > m_buckets ;
   EntitySet                           m_entities ;
-  std::vector<EntityProc>             m_shares_all ;
-  std::vector<Ghosting*>              m_ghosting ; /**< Aura is [0] */
+  std::vector<Entity*>                m_entity_comm ;
+  std::vector<Ghosting*>              m_ghosting ; /**< Aura is [1] */
 
   /** \brief  Parallel index for entity keys */
   parallel::DistributedIndex          m_entities_index ;
   std::vector<Entity*>                m_new_entities ;
-  std::vector<Entity*>                m_del_entities ;
   Bucket *                            m_bucket_nil ;
 
   // Other information:
@@ -381,11 +367,7 @@ private:
   size_t             m_sync_count ;
   BulkDataSyncState  m_sync_state ;
 
-  // Transaction log:
-  Transaction m_transaction_log;
-  void internal_expunge_entity ( Entity *e ) { delete e; }
-  void internal_destroy_entire_bucket ( Bucket *b );
-  void internal_flush_transaction_log_deletes () { m_transaction_log.flush_deletes(); }
+  unsigned determine_new_owner( Entity & ) const ;
 
   /*  Entity modification consequences:
    *  1) Change entity relation => update via part relation => change parts
@@ -394,10 +376,9 @@ private:
    */
   void remove_entity( Bucket * , unsigned );
 
-  std::pair<Entity*,bool>
-   internal_create_entity( const EntityKey & key , const unsigned owner );
+  void internal_expunge_entity( EntitySet::iterator );
 
-  void internal_destroy_entity( Entity * );
+  std::pair<Entity*,bool> internal_create_entity( const EntityKey & key );
 
   void internal_change_entity_parts( Entity & ,
                                      const PartVector & add_parts ,
@@ -411,27 +392,16 @@ private:
                                  const std::vector<EntityProc> & add_send ,
                                  const std::vector<Entity*> & remove_receive );
 
-  void internal_regenerate_sharing();
-
-  void internal_set_shared_entities();
-
-  void internal_resolve_destroy_ghosted(
-    const std::vector<Entity*>    & del_local ,
-    const std::vector<EntityProc> & del_remote );
-
-  void internal_resolve_destroy_shared(
-    const std::vector<Entity*>    & del_local ,
-    const std::vector<EntityProc> & del_remote );
-
   void internal_update_parallel_index(
-          std::vector<EntityProc> & shared_new );
+    const std::vector<Entity*> & del_entities ,
+          std::vector<Entity*> & shared_new );
 
-  void internal_resolve_created_shared(
-    const std::vector<EntityProc> & new_shared );
-
-  void internal_resolve_parallel_create_delete();
+  void internal_resolve_parallel_create_delete(
+    const std::vector<Entity*> & del_entities );
 
   void internal_resolve_shared_membership();
+
+  bool internal_modification_end( bool regenerate_aura );
 
   void internal_sort_bucket_entities();
 
@@ -447,10 +417,8 @@ private:
    */
   void internal_regenerate_shared_aura();
 
-  friend class Transaction;
   friend class UnitTestBulkData ;
 #endif /* DOXYGEN_COMPILE */
-
 };
 
 /** \} */

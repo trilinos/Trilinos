@@ -15,6 +15,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Comm.hpp>
+#include <stk_mesh/base/EntityComm.hpp>
 #include <stk_mesh/fem/EntityTypes.hpp>
 
 #include <unit_tests/UnitTestBulkData.hpp>
@@ -95,7 +96,7 @@ void UnitTestBulkData::generate_loop(
   get_selected_entities( select_all, mesh.buckets(stk::mesh::Node), universal_nodes );
   STKUNIT_ASSERT( universal_nodes.size() == all_nodes.size() );
 
-  UnitTestBulkData::modification_end( mesh , generate_aura );
+  STKUNIT_ASSERT( mesh.internal_modification_end( generate_aura ) );
 
   // Verify declarations and sharing two end nodes:
 
@@ -104,17 +105,25 @@ void UnitTestBulkData::generate_loop(
   STKUNIT_ASSERT( local_count[1] == nLocalEdge );
 
   if ( 1 < p_size ) {
-    const std::vector<EntityProc> & shared = mesh.shared_entities();
+    const std::vector<Entity*> & entity_comm = mesh.entity_comm();
+    size_t shared_count = 0 ;
+    for ( std::vector<Entity*>::const_iterator
+          ec = entity_comm.begin() ; ec != entity_comm.end() ; ++ec ) {
+      if ( in_shared( **ec ) ) { ++shared_count ; }
+    }
 
-    STKUNIT_ASSERT_EQUAL( shared.size() , size_t(2) );
+    STKUNIT_ASSERT_EQUAL( shared_count , size_t(2) );
 
     const unsigned n0 = id_end < id_total ? id_begin : 0 ;
     const unsigned n1 = id_end < id_total ? id_end : id_begin ;
 
-    STKUNIT_ASSERT( shared[0].first->identifier() == node_ids[n0] );
-    STKUNIT_ASSERT( shared[1].first->identifier() == node_ids[n1] );
-    STKUNIT_ASSERT_EQUAL( shared[0].first->sharing().size() , size_t(1) );
-    STKUNIT_ASSERT_EQUAL( shared[1].first->sharing().size() , size_t(1) );
+    Entity * const node0 = mesh.get_entity( Node , node_ids[n0] );
+    Entity * const node1 = mesh.get_entity( Node , node_ids[n1] );
+
+    STKUNIT_ASSERT( node0 != NULL );
+    STKUNIT_ASSERT( node1 != NULL );
+    STKUNIT_ASSERT_EQUAL( node0->sharing().size() , size_t(1) );
+    STKUNIT_ASSERT_EQUAL( node1->sharing().size() , size_t(1) );
   }
 
   // Test no-op first:
@@ -123,7 +132,7 @@ void UnitTestBulkData::generate_loop(
 
   STKUNIT_ASSERT( mesh.modification_begin() );
   mesh.change_entity_owner( change );
-  UnitTestBulkData::modification_end( mesh , generate_aura );
+  STKUNIT_ASSERT( mesh.internal_modification_end( generate_aura ) );
 
   count_entities( select_used , mesh , local_count );
   STKUNIT_ASSERT( local_count[0] == nLocalNode );
@@ -144,7 +153,7 @@ void UnitTestBulkData::generate_loop(
     }
     STKUNIT_ASSERT( mesh.modification_begin() );
     mesh.change_entity_owner( change );
-    UnitTestBulkData::modification_end( mesh , generate_aura );
+    STKUNIT_ASSERT( mesh.internal_modification_end( generate_aura ) );
 
     count_entities( select_all , mesh , local_count );
     STKUNIT_ASSERT( local_count[0] == nLocalNode + n_extra );
@@ -309,7 +318,7 @@ void UnitTestBulkData::generate_boxes(
   STKUNIT_ASSERT_EQUAL( n_local , local_count[0] );
 
   // Set up sharing:
-  UnitTestBulkData::modification_end( mesh , generate_aura );
+  STKUNIT_ASSERT( mesh.internal_modification_end( generate_aura ) );
 
   // Verify declarations and sharing
 
@@ -357,8 +366,8 @@ void UnitTestBulkData::generate_boxes(
           Entity * const node = mesh.get_entity( node_type , node_id );
           STKUNIT_ASSERT( node != NULL );
           // Must be shared with 'p'
-          PairIterEntityProc iter = node->sharing();
-          for ( ; ! iter.empty() && iter->second != p ; ++iter );
+          PairIterEntityComm iter = node->sharing();
+          for ( ; ! iter.empty() && iter->proc != p ; ++iter );
           STKUNIT_ASSERT( ! iter.empty() );
 
           ++count_shared_node_pairs ;
@@ -366,7 +375,14 @@ void UnitTestBulkData::generate_boxes(
       }
     }
   }
-  STKUNIT_ASSERT_EQUAL( mesh.shared_entities().size() , count_shared_node_pairs );
+
+  size_t count_shared_entities = 0 ;
+  for ( std::vector<Entity*>::const_iterator
+        i = mesh.entity_comm().begin() ; i != mesh.entity_comm().end() ; ++i ) {
+    const PairIterEntityComm ec = (**i).sharing();
+    count_shared_entities += ec.size();
+  }
+  STKUNIT_ASSERT_EQUAL( count_shared_entities , count_shared_node_pairs );
 
   delete[] p_box ;
 }

@@ -272,6 +272,9 @@ void eval_f_W(
   );
 
 
+#ifdef HAVE_THYRA_ME_POLYNOMIAL
+
+
 /** \brief . */
 template<class Scalar>
 void eval_f_poly(
@@ -291,6 +294,9 @@ void eval_f_poly(
   ,const typename ModelEvaluatorBase::InArgs<Scalar>::ScalarMag &t
   ,Teuchos::Polynomial< VectorBase<Scalar> > *f_poly
   );
+
+
+#endif // HAVE_THYRA_ME_POLYNOMIAL
 
 
 } // namespace Thyra
@@ -975,6 +981,9 @@ void Thyra::eval_f_W(
 }
 
 
+#ifdef HAVE_THYRA_ME_POLYNOMIAL
+
+
 template<class Scalar>
 void Thyra::eval_f_poly(
   const ModelEvaluator<Scalar> &model
@@ -1025,6 +1034,9 @@ void Thyra::eval_f_poly(
   model.evalModel(inArgs,outArgs);
 
 }
+
+
+#endif // HAVE_THYRA_ME_POLYNOMIAL
 
 
 #endif // THYRA_MODEL_EVALUATOR_HELPERS_HPP

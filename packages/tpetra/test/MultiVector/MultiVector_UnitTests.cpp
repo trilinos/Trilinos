@@ -79,8 +79,9 @@ namespace {
   using Tpetra::MultiVector;
   using Tpetra::global_size_t;
   using Tpetra::DefaultPlatform;
-  using Tpetra::LocallyReplicated;
   using Tpetra::GloballyDistributed;
+
+  using Tpetra::createLocalMapWithNode;
 
   using Kokkos::SerialNode;
   RCP<SerialNode> snode;
@@ -528,8 +529,8 @@ namespace {
     // case 1: C(local) = A^X(local) * B^X(local)  : four of these
     {
       // create local Maps
-      RCP<Map<Ordinal,Ordinal,Node> > map3l = rcp( new Map<Ordinal,Ordinal,Node>(as<global_size_t>(3),as<Ordinal>(0),comm,LocallyReplicated,node) ),
-                                      map2l = rcp( new Map<Ordinal,Ordinal,Node>(as<global_size_t>(2),as<Ordinal>(0),comm,LocallyReplicated,node) );
+      RCP<const Map<Ordinal,Ordinal,Node> > map3l = createLocalMapWithNode<Ordinal,Ordinal,Node>(3,comm,node),
+                                            map2l = createLocalMapWithNode<Ordinal,Ordinal,Node>(2,comm,node);
       MV mvecA(map3l,2),
          mvecB(map2l,3),
          mvecD(map2l,2);
@@ -548,9 +549,9 @@ namespace {
     // case 2: C(local) = A^T(distr) * B  (distr)  : one of these
     {
       RCP<Map<Ordinal,Ordinal,Node> > map3n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(3),0,comm,node) ),
-                                      map2n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(2),0,comm,node) ),
-                                      map2l = rcp( new Map<Ordinal,Ordinal,Node>(as<global_size_t>(2),as<Ordinal>(0),comm,LocallyReplicated,node) ),
-                                      map3l = rcp( new Map<Ordinal,Ordinal,Node>(as<global_size_t>(3),as<Ordinal>(0),comm,LocallyReplicated,node) );
+                                      map2n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(2),0,comm,node) );
+      RCP<const Map<Ordinal,Ordinal,Node> > map2l = createLocalMapWithNode<Ordinal,Ordinal,Node>(2,comm,node),
+                                            map3l = createLocalMapWithNode<Ordinal,Ordinal,Node>(3,comm,node);
       MV mv3nx2(map3n,2),
          mv2nx2(map2n,2),
          mv2lx2(map2l,2),
@@ -568,9 +569,9 @@ namespace {
     // case 3: C(distr) = A  (distr) * B^X(local)  : two of these
     {
       RCP<Map<Ordinal,Ordinal,Node> > map3n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(3),0,comm,node) ),
-                                      map2n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(2),0,comm,node) ),
-                                      map2l = rcp( new Map<Ordinal,Ordinal,Node>(as<global_size_t>(2),as<Ordinal>(0),comm,LocallyReplicated,node) ),
-                                      map3l = rcp( new Map<Ordinal,Ordinal,Node>(as<global_size_t>(3),as<Ordinal>(0),comm,LocallyReplicated,node) );
+                                      map2n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(2),0,comm,node) );
+      RCP<const Map<Ordinal,Ordinal,Node> > map2l = createLocalMapWithNode<Ordinal,Ordinal,Node>(2,comm,node),
+                                            map3l = createLocalMapWithNode<Ordinal,Ordinal,Node>(3,comm,node);
       MV mv3nx2(map3n,2),
          mv2nx2(map2n,2),
          mv2x3(map2l,3),
@@ -599,9 +600,9 @@ namespace {
     const Ordinal indexBase = 0;
     // create a Map
     RCP<Map<Ordinal,Ordinal,Node> > map3n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(3),indexBase,comm,node) ),
-                                    map2n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(2),indexBase,comm,node) ),
-                                    lmap3 = rcp( new Map<Ordinal,Ordinal,Node>(as<global_size_t>(3),indexBase,comm,LocallyReplicated,node) ),
-                                    lmap2 = rcp( new Map<Ordinal,Ordinal,Node>(as<global_size_t>(2),indexBase,comm,LocallyReplicated,node) );
+                                    map2n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(2),indexBase,comm,node) );
+    RCP<const Map<Ordinal,Ordinal,Node> > lmap3 = createLocalMapWithNode<Ordinal,Ordinal,Node>(3,comm,node),
+                                          lmap2 = createLocalMapWithNode<Ordinal,Ordinal,Node>(2,comm,node);
     const Scalar S1 = ScalarTraits<Scalar>::one(),
                  S0 = ScalarTraits<Scalar>::zero();
     const Mag    M0 = ScalarTraits<Mag>::zero();
@@ -1962,6 +1963,9 @@ namespace {
   // it back again before checking in so that we can test all the types.
   // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
+typedef std::complex<float>  ComplexFloat;
+typedef std::complex<double> ComplexDouble;
+
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, basic             , ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, BadConstNumVecs   , ORDINAL, SCALAR, NODE ) \
@@ -2008,43 +2012,79 @@ namespace {
 #define UNIT_TEST_TPINODE(ORDINAL, SCALAR)
 #endif
 
+// don't test Kokkos node for MPI builds, because we probably don't have multiple GPUs per node
 #if defined(HAVE_KOKKOS_THRUST) && !defined(HAVE_TPETRA_MPI)
-#define UNIT_TEST_THRUSTGPUNODE(ORDINAL, SCALAR) \
-      UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, ThrustGPUNode )
+// float
+#if defined(HAVE_KOKKOS_CUDA_FLOAT)
+#  define UNIT_TEST_THRUSTGPUNODE_FLOAT(ORDINAL) \
+          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( ORDINAL, float, ThrustGPUNode )
 #else
-#define UNIT_TEST_THRUSTGPUNODE(ORDINAL, SCALAR)
+#  define UNIT_TEST_THRUSTGPUNODE_FLOAT(ORDINAL)
+#endif
+// double
+#if defined(HAVE_KOKKOS_CUDA_DOUBLE)
+#  define UNIT_TEST_THRUSTGPUNODE_DOUBLE(ORDINAL) \
+          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( ORDINAL, double, ThrustGPUNode )
+#else
+#  define UNIT_TEST_THRUSTGPUNODE_DOUBLE(ORDINAL)
+#endif
+// complex<float>
+#if defined(HAVE_KOKKOS_CUDA_COMPLEX_FLOAT)
+#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(ORDINAL) \
+          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( ORDINAL, ComplexFloat, ThrustGPUNode )
+#else
+#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(ORDINAL)
+#endif
+// complex<double>
+#if defined(HAVE_KOKKOS_CUDA_COMPLEX_DOUBLE)
+#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(ORDINAL) \
+          UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( ORDINAL, ComplexDouble, ThrustGPUNode )
+#else
+#  define UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(ORDINAL)
+#endif
+#else
+// none
+# define UNIT_TEST_THRUSTGPUNODE_FLOAT(ORDINAL)
+# define UNIT_TEST_THRUSTGPUNODE_DOUBLE(ORDINAL)
+# define UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(ORDINAL)
+# define UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(ORDINAL)
 #endif
 
-#define UNIT_TEST_ALLNODES(ORDINAL, SCALAR) \
-    UNIT_TEST_SERIALNODE(ORDINAL, SCALAR) \
-    UNIT_TEST_TBBNODE(ORDINAL, SCALAR) \
-    UNIT_TEST_TPINODE(ORDINAL, SCALAR) \
-    UNIT_TEST_THRUSTGPUNODE(ORDINAL, SCALAR)
-
 #define UNIT_TEST_ALLCPUNODES(ORDINAL, SCALAR) \
     UNIT_TEST_SERIALNODE(ORDINAL, SCALAR) \
     UNIT_TEST_TBBNODE(ORDINAL, SCALAR) \
     UNIT_TEST_TPINODE(ORDINAL, SCALAR)
 
-#define UNIT_TEST_ALLCPUNODES(ORDINAL, SCALAR) \
-    UNIT_TEST_SERIALNODE(ORDINAL, SCALAR) \
-    UNIT_TEST_TBBNODE(ORDINAL, SCALAR) \
-    UNIT_TEST_TPINODE(ORDINAL, SCALAR)
+#define UNIT_TEST_FLOAT(ORDINAL) \
+    UNIT_TEST_ALLCPUNODES(ORDINAL, float) \
+    UNIT_TEST_THRUSTGPUNODE_FLOAT(ORDINAL)
 
-#define UNIT_TEST_ALLCPUNODES_COMPLEX_DOUBLE(ORDINAL) \
-     typedef std::complex<double> ComplexDouble; \
-     UNIT_TEST_ALLCPUNODES(ORDINAL, ComplexDouble)
+#define UNIT_TEST_DOUBLE(ORDINAL) \
+    UNIT_TEST_ALLCPUNODES(ORDINAL, double) \
+    UNIT_TEST_THRUSTGPUNODE_DOUBLE(ORDINAL)
 
-#ifdef FAST_DEVELOPMENT_UNIT_TEST_BUILD
-#   define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-           UNIT_TEST_ALLNODES(ORDINAL, float)
-    UNIT_TEST_GROUP_ORDINAL(int)
-#else // not FAST_DEVELOPMENT_UNIT_TEST_BUILD
-#   define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-           UNIT_TEST_ALLNODES(ORDINAL, float) \
-           UNIT_TEST_ALLCPUNODES_COMPLEX_DOUBLE(ORDINAL)
-    typedef short int ShortInt; UNIT_TEST_GROUP_ORDINAL(ShortInt)
-    UNIT_TEST_GROUP_ORDINAL(int)
+#define UNIT_TEST_COMPLEX_FLOAT(ORDINAL) \
+    UNIT_TEST_ALLCPUNODES(ORDINAL, ComplexFloat) \
+    UNIT_TEST_THRUSTGPUNODE_COMPLEX_FLOAT(ORDINAL)
+
+#define UNIT_TEST_COMPLEX_DOUBLE(ORDINAL) \
+    UNIT_TEST_ALLCPUNODES(ORDINAL, ComplexDouble) \
+    UNIT_TEST_THRUSTGPUNODE_COMPLEX_DOUBLE(ORDINAL)
+
+#if defined(HAVE_TPETRA_INST_DOUBLE)
+  UNIT_TEST_DOUBLE(int)
+#endif
+
+#if !defined(FAST_DEVELOPMENT_BUILD)
+# if defined(HAVE_TPETRA_INST_FLOAT)
+    UNIT_TEST_FLOAT(int)
+# endif 
+# if defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
+    UNIT_TEST_COMPLEX_FLOAT(int)
+# endif 
+# if defined(HAVE_TPETRA_INST_COMPLEX_DOUBLE)
+    UNIT_TEST_COMPLEX_DOUBLE(int)
+# endif 
 #endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 }

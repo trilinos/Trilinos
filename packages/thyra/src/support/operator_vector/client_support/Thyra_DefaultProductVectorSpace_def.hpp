@@ -381,36 +381,20 @@ void DefaultProductVectorSpace<Scalar>::describe(
   ) const
 {
   typedef Teuchos::ScalarTraits<Scalar>  ST;
-  using Teuchos::RCP;
-  using Teuchos::FancyOStream;
+  using Teuchos::includesVerbLevel;
   using Teuchos::OSTab;
   RCP<FancyOStream> out = rcpFromRef(out_arg);
   OSTab tab(out);
-  switch(verbLevel) {
-    case Teuchos::VERB_NONE:
-      break;
-    case Teuchos::VERB_DEFAULT:
-    case Teuchos::VERB_LOW:
-      *out << this->description() << std::endl;
-      break;
-    case Teuchos::VERB_MEDIUM:
-    case Teuchos::VERB_HIGH:
-    case Teuchos::VERB_EXTREME:
-    {
-      *out << this->description() << std::endl;
-      if (numBlocks_ <= 0)
-        break;
-      OSTab tab2(out);
-      *out
-        <<  "Constituent vector spaces V[0], V[1], ... V[numBlocks-1]:\n";
-      OSTab tab3(out);
-      for( int k = 0; k < numBlocks_; ++k ) {
-        *out << "V["<<k<<"] = " << Teuchos::describe(*(*vecSpaces_)[k],verbLevel);
-      }
-      break;
+  if (includesVerbLevel(verbLevel, Teuchos::VERB_LOW, true)) {
+    *out << this->description() << std::endl;
+  }
+  if (includesVerbLevel(verbLevel, Teuchos::VERB_MEDIUM) && numBlocks_ > 0) {
+    OSTab tab2(out);
+    *out <<  "Constituent vector spaces V[0], V[1], ... V[numBlocks-1]:\n";
+    OSTab tab3(out);
+    for( int k = 0; k < numBlocks_; ++k ) {
+      *out << "V["<<k<<"] = " << Teuchos::describe(*(*vecSpaces_)[k],verbLevel);
     }
-    default:
-      TEST_FOR_EXCEPT(true); // Should never get here!
   }
 }
 

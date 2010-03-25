@@ -120,6 +120,8 @@ ModelEvaluatorBase::InArgs<Scalar>::get_x() const
 { assert_supports(IN_ARG_x); return x_; }
 
 
+#ifdef HAVE_THYRA_ME_POLYNOMIAL
+
 template<class Scalar>
 void ModelEvaluatorBase::InArgs<Scalar>::set_x_dot_poly(
   const RCP<const Teuchos::Polynomial< VectorBase<Scalar> > > &x_dot_poly
@@ -145,6 +147,8 @@ RCP<const Teuchos::Polynomial< VectorBase<Scalar> > >
 ModelEvaluatorBase::InArgs<Scalar>::get_x_poly() const
 { assert_supports(IN_ARG_x_poly); return x_poly_; }
 
+
+#endif // HAVE_THYRA_ME_POLYNOMIAL
 
 template<class Scalar>
 void ModelEvaluatorBase::InArgs<Scalar>::set_p(
@@ -204,6 +208,7 @@ void ModelEvaluatorBase::InArgs<Scalar>::setArgs(
     if(supports(IN_ARG_x) || !ignoreUnsupported)
       set_x(condCloneVec(inArgs.get_x(),cloneObjects));
   }
+#ifdef HAVE_THYRA_ME_POLYNOMIAL
   if( inArgs.supports(IN_ARG_x_dot_poly) && inArgs.get_x_dot_poly().get() ) {
     if(supports(IN_ARG_x_dot_poly) || !ignoreUnsupported) {
       TEST_FOR_EXCEPT(
@@ -218,6 +223,7 @@ void ModelEvaluatorBase::InArgs<Scalar>::setArgs(
       set_x_poly(inArgs.get_x_poly());
     }
   }
+#endif // HAVE_THYRA_ME_POLYNOMIAL
   const int min_Np = TEUCHOS_MIN(this->Np(),inArgs.Np());
   for( int l = 0; l < min_Np; ++l ) {
     if(inArgs.get_p(l).get())
@@ -828,6 +834,9 @@ ModelEvaluatorBase::OutArgs<Scalar>::get_DgDp_properties(int j, int l) const
 }
 
 
+#ifdef HAVE_THYRA_ME_POLYNOMIAL
+
+
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::set_f_poly(
   const RCP<Teuchos::Polynomial< VectorBase<Scalar> > > &f_poly
@@ -845,6 +854,9 @@ ModelEvaluatorBase::OutArgs<Scalar>::get_f_poly() const
 }
 
 
+#endif // HAVE_THYRA_ME_POLYNOMIAL
+
+
 template<class Scalar>
 void ModelEvaluatorBase::OutArgs<Scalar>::setArgs(
   const OutArgs<Scalar>& inputOutArgs, bool ignoreUnsupported
@@ -858,11 +870,13 @@ void ModelEvaluatorBase::OutArgs<Scalar>::setArgs(
     if ( supports(OUT_ARG_f) || !ignoreUnsupported )
       set_f(inputOutArgs.get_f());
   }
+#ifdef HAVE_THYRA_ME_POLYNOMIAL
   // f_poly
   if ( inputOutArgs.supports(OUT_ARG_f_poly) && inputOutArgs.get_f_poly().get() ) {
     if ( supports(OUT_ARG_f_poly) || !ignoreUnsupported )
       set_f_poly(inputOutArgs.get_f_poly());
   }
+#endif // HAVE_THYRA_ME_POLYNOMIAL
   // g(j)
   for ( int j = 0; j < min_Ng; ++j ) {
     if ( inputOutArgs.get_g(j).get() )
@@ -958,8 +972,10 @@ bool ModelEvaluatorBase::OutArgs<Scalar>::isEmpty() const
     if (!DfDp_[l].isEmpty())
       return false;
   }
+#ifdef HAVE_THYRA_ME_POLYNOMIAL
   if (!is_null(f_poly_))
     return false;
+#endif // HAVE_THYRA_ME_POLYNOMIAL
   for ( int j = 0; j < Ng(); ++j ) {
     if (!is_null(g_[j]))
       return false;

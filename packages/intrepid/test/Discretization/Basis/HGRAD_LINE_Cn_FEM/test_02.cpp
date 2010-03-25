@@ -176,20 +176,17 @@ int main(int argc, char *argv[]) {
     DefaultCubatureFactory<double>  cubFactory;                                   // create factory
     shards::CellTopology line(shards::getCellTopologyData< shards::Line<> >());   // create cell topology
 
-    for (int soln_order=1; soln_order <= max_order; soln_order++) {
 
-      // evaluate exact solution
-      FieldContainer<double> exact_solution(1, numInterpPoints);
-      u_exact(exact_solution, interp_points, soln_order);
+    for (int basis_order=1; basis_order <= max_order; basis_order++) {
+      //create basis
+      Teuchos::RCP<Basis<double,FieldContainer<double> > > lineBasis =
+	Teuchos::rcp(new Basis_HGRAD_LINE_Cn_FEM<double,FieldContainer<double> >(basis_order,POINTTYPE_SPECTRAL) );
 
-      for (int basis_order=soln_order; basis_order <= max_order; basis_order++) {
-	// create points for basis
-	FieldContainer<double> pts(basis_order+1,1);
-	PointTools::getLattice<double,FieldContainer<double> >(pts,line,basis_order);
-
-        //create basis
-        Teuchos::RCP<Basis<double,FieldContainer<double> > > lineBasis =
-          Teuchos::rcp(new Basis_HGRAD_LINE_Cn_FEM<double,FieldContainer<double> >(basis_order,pts) );
+      for (int soln_order=1; soln_order <= basis_order; soln_order++) {
+	// evaluate exact solution
+	FieldContainer<double> exact_solution(1, numInterpPoints);
+	u_exact(exact_solution, interp_points, soln_order);
+	
         int numFields = lineBasis->getCardinality();
 
         // create cubature

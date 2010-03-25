@@ -19,8 +19,6 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Part.hpp>
 
-#include <stk_mesh/base/Transaction.hpp>
-
 //----------------------------------------------------------------------
 
 namespace stk {
@@ -255,8 +253,6 @@ private:
   DataMap        * const m_field_map ;   // Field value data map, shared
   Entity        ** const m_entities ;    // Array of entity pointers,
                                          // begining of field value memory.
-
-  Transaction::State       m_transaction_state;
 public:
 
   //--------------------------------
@@ -300,9 +296,6 @@ public:
 
   /** \brief  Bucket is a subset of any of the given parts */
   bool member_any( const std::vector<Part*> & ) const ;
-
-  Transaction::State  transaction_state() const 
-              { return m_transaction_state; }
 
   //--------------------------------
   /** Query bucket's supersets' ordinals. */
@@ -371,8 +364,6 @@ private:
 
   template< class field_type > friend struct EntityArray ;
   template< class field_type > friend struct BucketArray ;
-
-  friend class Transaction;
 };
 
 

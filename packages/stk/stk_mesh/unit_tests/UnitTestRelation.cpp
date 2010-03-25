@@ -23,6 +23,7 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/Comm.hpp>
+#include <stk_mesh/base/EntityComm.hpp>
 #include <stk_mesh/fem/EntityTypes.hpp>
 
 #include <unit_tests/UnitTestRelation.hpp>
@@ -221,20 +222,6 @@ void UnitTestRelation::generate_loop(
   count_entities( select_used , mesh , local_count );
   STKUNIT_ASSERT( local_count[0] == nLocalNode );
   STKUNIT_ASSERT( local_count[1] == nLocalEdge );
-
-  if ( 1 < p_size ) {
-    const std::vector<EntityProc> & shared = mesh.shared_entities();
-
-    STKUNIT_ASSERT_EQUAL( shared.size() , size_t(2) );
-
-    const unsigned n0 = id_end < id_total ? id_begin : 0 ;
-    const unsigned n1 = id_end < id_total ? id_end : id_begin ;
-
-    STKUNIT_ASSERT( shared[0].first->identifier() == node_ids[n0] );
-    STKUNIT_ASSERT( shared[1].first->identifier() == node_ids[n1] );
-    STKUNIT_ASSERT_EQUAL( shared[0].first->sharing().size() , size_t(1) );
-    STKUNIT_ASSERT_EQUAL( shared[1].first->sharing().size() , size_t(1) );
-  }
 
   // Test no-op first:
 
@@ -478,7 +465,6 @@ void UnitTestRelation::generate_boxes(
   }
   }
 
-  size_t count_shared_node_pairs = 0 ;
   for ( unsigned p = 0 ; p < p_size ; ++p ) if ( p != p_rank ) {
     for ( int k = p_box[p][2][0] ; k <= p_box[p][2][1] ; ++k )
     if ( local_box[2][0] <= k && k <= local_box[2][1] ) {
@@ -494,16 +480,11 @@ void UnitTestRelation::generate_boxes(
           Entity * const node = mesh.get_entity( node_type , node_id );
           STKUNIT_ASSERT( node != NULL );
           // Must be shared with 'p'
-          PairIterEntityProc iter = node->sharing();
-          for ( ; ! iter.empty() && iter->second != p ; ++iter );
-          STKUNIT_ASSERT( ! iter.empty() );
-
-          ++count_shared_node_pairs ;
+          STKUNIT_ASSERT( in_shared( *node , p ) );
         }
       }
     }
   }
-  STKUNIT_ASSERT_EQUAL( mesh.shared_entities().size() , count_shared_node_pairs );
 
   delete[] p_box ;
 }

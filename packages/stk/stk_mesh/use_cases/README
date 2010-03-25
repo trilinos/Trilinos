@@ -1,0 +1,19 @@
+
+The use_cases serve as examples of creating and filling simple meshes.
+The file UseCaseMain.cpp acts as a driver, running each of the separate use-cases
+in succession.
+Each use-case mesh is embodied in a struct or class called UseCase_<n>_Mesh.
+The files for those classes contain the code that populates the MetaData and
+BulkData mesh objects with mesh-entities, fields, etc.
+UseCaseMain.cpp creates the UseCase_<n>_Mesh object, then calls functions
+'populate' and 'verifyMesh'.
+
+
+For a completely different example of using stk::mesh, see the
+Mantevo 'miniFE' application, which is a miniature finite-element application.
+miniFE can be downloaded from http://software.sandia.gov/mantevo.
+After unpacking the miniFE source code, see the file stk_mesh_description.hpp.
+miniFE builds a mesh representing a brick-shaped domain of hexahedral elements,
+defines a coordinate field on the nodes, and assembles a finite-element
+problem, solving the steady-state conduction equation.
+

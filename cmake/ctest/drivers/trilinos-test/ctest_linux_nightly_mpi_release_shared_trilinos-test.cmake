@@ -1,5 +1,6 @@
 
 INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.trilinos-test.gcc.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/../../../TrilinosVersion.cmake")
 
 #
 # Set the options specific to this build case
@@ -7,10 +8,10 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.trilinos-test.gcc.cma
 
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME MPI_RELEASE_10.0_SHARED)
-SET(Trilinos_TRACK "Nightly Release 10.0")
+SET(BUILD_DIR_NAME "MPI_RELEASE_${Trilinos_VERSION}_SHARED")
+SET(Trilinos_TRACK ${Trilinos_TESTING_TRACK})
 
-SET(Trilinos_BRANCH "trilinos-release-10-0-branch")
+SET(Trilinos_BRANCH ${Trilinos_REPOSITORY_BRANCH})
 
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 

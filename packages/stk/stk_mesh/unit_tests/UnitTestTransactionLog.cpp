@@ -6,7 +6,14 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-
+/** \TODO The design of the transaction logging functionality must 
+ *        be revisited / revised to clean up entity creation / deletion
+ *        where two or more entities could exist with the same key.
+ *        Such a condition is severely erroneous.  Until the design
+ *        revisit / revision is carried out the transaction capability
+ *        is disabled.
+ */
+#if 0
 
 #include <sstream>
 #include <stdexcept>
@@ -293,6 +300,18 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkDelete)
 
 STKUNIT_UNIT_TEST(UnitTestTransaction, verifyTransactionSpanningModifications)
 {
+  //  HCE 3/4/10:
+  //  For transactions to span multiple modifications destroyed
+  //  mesh entities would have to be retained across multiple
+  //  transactions.  This creates a problem where the transaction
+  //  has to take ownership of the mesh entities away from the
+  //  creating bulk data.
+  //  This capability needs to be re-thought.
+
+  return ;
+
+
+
   stk::unit_test::UnitTestMesh           fixture;
   fixture.generate_boxes();
   stk::mesh::BulkData                   &bulk = fixture.nonconst_bulk_data();
@@ -652,4 +671,6 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyParallelResolutionModify)
   delete [] found_node_list;
   delete [] found_node_id_list;
 }
+
+#endif
 

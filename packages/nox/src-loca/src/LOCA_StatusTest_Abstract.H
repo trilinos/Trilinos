@@ -92,8 +92,8 @@ public:
   //! %Test the stopping criterion
   /*!  
     The test can (and should, if possible) be skipped if 
-    checkType is NOX::StatusType::None.  If the test is skipped, then
-    the status should be set to NOX::StatusTest::Unevaluated.
+    checkType is LOCA::StatusType::None.  If the test is skipped, then
+    the status should be set to LOCA::StatusTest::Unevaluated.
   */
   virtual LOCA::StatusTest::StatusType
   checkStatus(const LOCA::Stepper& stepper,
@@ -117,4 +117,3 @@ operator<<(ostream& os, LOCA::StatusTest::StatusType status);
 
 
 #endif
-

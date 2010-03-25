@@ -76,7 +76,7 @@ template<class MatrixType>
 void Relaxation<MatrixType>::setParameters(const Teuchos::ParameterList& List)
 {
   Teuchos::ParameterList validparams;
-  Tifpack::GetValidParameters(validparams);
+  Tifpack::getValidParameters(validparams);
   List.validateParameters(validparams);
 
   std::string PT;
@@ -87,7 +87,7 @@ void Relaxation<MatrixType>::setParameters(const Teuchos::ParameterList& List)
   else if (PrecType_ == Tifpack::SGS)
     PT = "symmetric Gauss-Seidel";
 
-  Tifpack::GetParameter(List, "relaxation: type", PT);
+  Tifpack::getParameter(List, "relaxation: type", PT);
 
   if (PT == "Jacobi")
     PrecType_ = Tifpack::JACOBI;
@@ -102,11 +102,11 @@ void Relaxation<MatrixType>::setParameters(const Teuchos::ParameterList& List)
     throw std::runtime_error(str);
   }
 
-  Tifpack::GetParameter(List, "relaxation: sweeps",NumSweeps_);
-  Tifpack::GetParameter(List, "relaxation: damping factor", DampingFactor_);
-  Tifpack::GetParameter(List, "relaxation: min diagonal value", MinDiagonalValue_);
-  Tifpack::GetParameter(List, "relaxation: zero starting solution", ZeroStartingSolution_);
-  Tifpack::GetParameter(List, "relaxation: backward mode",DoBackwardGS_);
+  Tifpack::getParameter(List, "relaxation: sweeps",NumSweeps_);
+  Tifpack::getParameter(List, "relaxation: damping factor", DampingFactor_);
+  Tifpack::getParameter(List, "relaxation: min diagonal value", MinDiagonalValue_);
+  Tifpack::getParameter(List, "relaxation: zero starting solution", ZeroStartingSolution_);
+  Tifpack::getParameter(List, "relaxation: backward mode",DoBackwardGS_);
 }
 
 //==========================================================================

@@ -1,7 +1,7 @@
 
 The STK package in Trilinos is a work in progress.
 
-As of Oct. 19 2009, stk_mesh is building, a portion of stk_util is building
+stk_mesh and stk_linsys are building, a portion of stk_util is building
 (only the portion needed to build stk_mesh), and stk_mesh/unit_tests tests
 are building and running.
 

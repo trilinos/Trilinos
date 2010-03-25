@@ -35,17 +35,18 @@
 #include "Thyra_VectorSpaceBase.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
 
+namespace Rythmos {
 
 template<class Scalar>
 Teuchos::RCP<Rythmos::CubicSplineInterpolator<Scalar> >
-Rythmos::cubicSplineInterpolator()
+cubicSplineInterpolator()
 {
   RCP<CubicSplineInterpolator<Scalar> > csi = Teuchos::rcp(new CubicSplineInterpolator<Scalar>() );
   return csi;
 }
 
 template<class Scalar>
-void Rythmos::computeCubicSplineCoeff(
+void computeCubicSplineCoeff(
     const typename DataStore<Scalar>::DataStoreVector_t & data,
     const Ptr<CubicSplineCoeff<Scalar> > & coeffPtr
     )
@@ -149,7 +150,7 @@ void Rythmos::computeCubicSplineCoeff(
 
 
 template<class Scalar>
-void Rythmos::validateCubicSplineCoeff(const CubicSplineCoeff<Scalar>& coeff) 
+void validateCubicSplineCoeff(const CubicSplineCoeff<Scalar>& coeff) 
 {
   int t_n = coeff.t.size();
   int a_n = coeff.a.size();
@@ -165,9 +166,9 @@ void Rythmos::validateCubicSplineCoeff(const CubicSplineCoeff<Scalar>& coeff)
 
 
 template<class Scalar>
-void Rythmos::evaluateCubicSpline(
+void evaluateCubicSpline(
     const CubicSplineCoeff<Scalar>& coeff,
-    unsigned int j, 
+    Teuchos::Ordinal j, 
     const Scalar& t,
     const Ptr<Thyra::VectorBase<Scalar> >& S,
     const Ptr<Thyra::VectorBase<Scalar> >& Sp, 
@@ -179,7 +180,7 @@ void Rythmos::evaluateCubicSpline(
   typedef Teuchos::ScalarTraits<Scalar> ST;
   // Assert preconditions:
   validateCubicSplineCoeff<Scalar>(coeff);
-  TEST_FOR_EXCEPTION( ((j < 0) || (as<Teuchos::Ordinal>(j) >= coeff.a.size())),
+  TEST_FOR_EXCEPTION( as<Teuchos::Ordinal>(j) >= coeff.a.size(),
      std::out_of_range, "Error!, j is out of range" );
 
   Scalar dt = t-coeff.t[j];
@@ -209,7 +210,6 @@ void Rythmos::evaluateCubicSpline(
 }
 
 
-namespace Rythmos {
 
 
 template<class Scalar>
@@ -312,7 +312,7 @@ void CubicSplineInterpolator<Scalar>::interpolate(
     // satisfiy all of the requested time points that you find.  NOTE: The
     // loop will be existed once all of the time points are satisified (see
     // return below).
-    for (int i=0 ; i < as<int>((*nodes_).size())-1; ++i) {
+    for (Teuchos::Ordinal i=0 ; i < (*nodes_).size()-1; ++i) {
       const Scalar& ti = (*nodes_)[i].time;
       const Scalar& tip1 = (*nodes_)[i+1].time;
       const TimeRange<Scalar> range_i(ti,tip1);
@@ -453,7 +453,7 @@ CubicSplineInterpolator<Scalar>::getValidParameters() const
   template void validateCubicSplineCoeff(const CubicSplineCoeff< SCALAR >& coeff); \
   template void evaluateCubicSpline( \
       const CubicSplineCoeff< SCALAR >& coeff, \
-      unsigned int j,  \
+      Teuchos::Ordinal j,  \
       const  SCALAR & t, \
       const Ptr<Thyra::VectorBase< SCALAR > >& S, \
       const Ptr<Thyra::VectorBase< SCALAR > >& Sp,  \

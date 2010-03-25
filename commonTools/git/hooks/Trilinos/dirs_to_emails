@@ -30,6 +30,7 @@ packages/claps claps-checkins@software.sandia.gov
 packages/CTrilinos Ctrilinos-checkins@software.sandia.gov
 packages/didasko didasko-checkins@software.sandia.gov
 packages/pamgen pamgen-checkins@software.sandia.gov
+packages/piro piro-checkins@software.sandia.gov
 packages/PyTrilinos pytrilinos-checkins@software.sandia.gov
 packages/stratimikos stratimikos-checkins@software.sandia.gov
 packages/thyra thyra-checkins@software.sandia.gov

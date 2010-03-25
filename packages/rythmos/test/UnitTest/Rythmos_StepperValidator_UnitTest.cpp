@@ -122,6 +122,10 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperValidator, ForwardSensitivityStepper ) {
 }
 */
 
+
+#ifdef HAVE_THYRA_ME_POLYNOMIAL
+
+
 TEUCHOS_UNIT_TEST( Rythmos_StepperValidator, ExplicitTaylorPolynomial ) {
   RCP<StepperValidator<double> > sv = stepperValidator<double>();
   RCP<IntegratorBuilder<double> > ib = integratorBuilder<double>();
@@ -133,6 +137,10 @@ TEUCHOS_UNIT_TEST( Rythmos_StepperValidator, ExplicitTaylorPolynomial ) {
   sv->validateStepper();
   TEST_ASSERT( true );
 }
+
+
+#endif // HAVE_THYRA_ME_POLYNOMIAL
+
 
 TEUCHOS_UNIT_TEST( Rythmos_StepperValidator, ForwardEuler ) {
   RCP<StepperValidator<double> > sv = stepperValidator<double>();

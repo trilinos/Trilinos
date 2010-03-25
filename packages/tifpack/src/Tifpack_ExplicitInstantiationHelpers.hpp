@@ -23,9 +23,10 @@
                   Kokkos::DefaultSparseSolve<double,int,Kokkos::DefaultNode::DefaultNodeType> > >;
 
 #define TIFPACK_INSTANT_CRSMATRIX_FLOAT_DOUBLE_DEFAULTS(CLASSNAME) \
-  TIFPACK_CLASS_CrsMatrix_float_short_int_defaultNode_defaultSM_defaultSS(CLASSNAME) \
-  TIFPACK_CLASS_CrsMatrix_float_int_int_defaultNode_defaultSM_defaultSS(CLASSNAME) \
   TIFPACK_CLASS_CrsMatrix_double_int_int_defaultNode_defaultSM_defaultSS(CLASSNAME)
+
+//  TIFPACK_CLASS_CrsMatrix_float_int_int_defaultNode_defaultSM_defaultSS(CLASSNAME)
+//  TIFPACK_CLASS_CrsMatrix_float_short_int_defaultNode_defaultSM_defaultSS(CLASSNAME)
 
 #endif
 

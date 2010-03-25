@@ -81,7 +81,9 @@ namespace Stokhos {
       const Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> >& sg_exp,
       const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk,
       const Teuchos::RCP<Teuchos::ParameterList>& params,
-      const Teuchos::RCP<const Epetra_Comm>& comm);
+      const Teuchos::RCP<const Epetra_Comm>& comm,
+      const Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly>& initial_x_sg = Teuchos::null,
+      const Teuchos::Array< Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> >& initial_p_sg = Teuchos::Array< Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> >());
 
     /** \name Overridden from EpetraExt::ModelEvaluator . */
     //@{
@@ -112,7 +114,7 @@ namespace Stokhos {
     Teuchos::RCP<Epetra_Operator> create_W() const;
 
     //! Create preconditioner operator
-    Teuchos::RCP<Epetra_Operator> create_M() const;
+    Teuchos::RCP<EpetraExt::ModelEvaluator::Preconditioner> create_WPrec() const;
 
     //! Create SG operator representing dg/dxdot
     Teuchos::RefCountPtr<Epetra_Operator> create_DgDx_dot_op(int j) const;
@@ -137,6 +139,26 @@ namespace Stokhos {
      * for users of this class.
      */
     void set_x_init(const Epetra_Vector& x_in);
+
+    //! Get indices of SG parameters
+    /*!
+     * These indices determine which parameter vectors that will be passed
+     * through InArgs correspond to the SG parameters.
+     */
+    Teuchos::Array<int> get_p_sg_indices() const;
+
+    //! Get indices of SG responses
+    /*!
+     * These indices determine which response vectors that will be passed
+     * through OutArgs correspond to the SG responses.
+     */
+    Teuchos::Array<int> get_g_sg_indices() const;
+
+    //! Get base maps of SG parameters
+    Teuchos::Array< Teuchos::RCP<const Epetra_Map> > get_p_sg_base_maps() const;
+
+    //! Get base maps of SG responses
+    Teuchos::Array< Teuchos::RCP<const Epetra_Map> > get_g_sg_base_maps() const;
 
   protected:
 

@@ -106,6 +106,12 @@ IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/hg_vwgt)
   ADD_SUBDIRECTORY(hg_vwgt)
 ENDIF()
 
+IF (Trilinos_ENABLE_CXX)
+  IF(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/loc_hsfc_order)
+    ADD_SUBDIRECTORY(loc_hsfc_order)
+  ENDIF()
+ENDIF()
+
 # Copy executables to test directory.
 PACKAGE_COPY_FILES_TO_BINARY_DIR(zoltan_zdrive_copy
   SOURCE_FILES zdrive.exe

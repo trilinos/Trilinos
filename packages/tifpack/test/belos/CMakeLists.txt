@@ -38,12 +38,19 @@ ENDIF()
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(TifpackBelosCopyFiles
   DEST_FILES
-  test_ILUT_calore1_mm.xml test_PtJacobi_calore1_mm.xml test_GS_calore1_mm.xml
+  test_ILUT_calore1_mm.xml test_Jacobi_calore1_mm.xml test_GS_calore1_mm.xml
+  test_RILUK_calore1_mm.xml test_Cheby_calore1_mm.xml
+  test_Jacobi_nos1_hb.xml test_2_Jacobi_nos1_hb.xml nos1.rsa
+  test_2_ILUT_nos1_hb.xml test_2_RILUK_nos1_hb.xml
+  test_4_ILUT_nos1_hb.xml test_4_RILUK_nos1_hb.xml
   test_SGS_calore1_mm.xml calore1.mtx test_pseudoblockcg_small_sym_mm.xml
-  test_PtJacobi_small_sym_mm.xml small_sym.mtx test_gmres_small_sym_mm.xml
+  test_Jacobi_small_sym_mm.xml small_sym.mtx test_gmres_small_sym_mm.xml
   test_GS_tfqmr_small_sym_mm.xml test_ILUT_tfqmr_small_sym_mm.xml
   test_tfqmr_small_sym_mm.xml test_ILUT_tfqmr_calore1_mm.xml
   5w.mtx 5w.vec 5w_bel_tif_ILUT.xml
+  5w_missing_diag.mtx 5w_missing_diag_ILUT.xml
+  5w_bel_tif_RILUK_0.xml 5w_bel_tif_RILUK_1.xml
+  test_RILUK_tfqmr_small_sym_mm.xml
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
   EXEDEPS tif_belos
@@ -69,10 +76,64 @@ PACKAGE_ADD_TEST(
 
 PACKAGE_ADD_TEST(
   tif_belos TifpackBelosCopyFiles
-  NAME PtJacobi_belos
-  ARGS "--xml_file=test_PtJacobi_calore1_mm.xml"
+  NAME Jacobi_belos
+  ARGS "--xml_file=test_Jacobi_calore1_mm.xml"
   COMM serial mpi
   NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+PACKAGE_ADD_TEST(
+  tif_belos TifpackBelosCopyFiles
+  NAME Jacobi_hb_belos
+  ARGS "--xml_file=test_Jacobi_nos1_hb.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+PACKAGE_ADD_TEST(
+  tif_belos TifpackBelosCopyFiles
+  NAME Jacobi_hb_belos
+  ARGS "--xml_file=test_2_Jacobi_nos1_hb.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+)
+
+PACKAGE_ADD_TEST(
+  tif_belos TifpackBelosCopyFiles
+  NAME ILUT_hb_belos
+  ARGS "--xml_file=test_2_ILUT_nos1_hb.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+)
+
+PACKAGE_ADD_TEST(
+  tif_belos TifpackBelosCopyFiles
+  NAME ILUT_hb_belos
+  ARGS "--xml_file=test_4_ILUT_nos1_hb.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 4
+  STANDARD_PASS_OUTPUT
+)
+
+PACKAGE_ADD_TEST(
+  tif_belos TifpackBelosCopyFiles
+  NAME RILUK_hb_belos
+  ARGS "--xml_file=test_2_RILUK_nos1_hb.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 2
+  STANDARD_PASS_OUTPUT
+)
+
+PACKAGE_ADD_TEST(
+  tif_belos TifpackBelosCopyFiles
+  NAME RILUK_hb_belos
+  ARGS "--xml_file=test_4_RILUK_nos1_hb.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 4
   STANDARD_PASS_OUTPUT
 )
 
@@ -131,14 +192,59 @@ IF(Tifpack_ENABLE_QD)
   )
 ENDIF()
 
-# PACKAGE_ADD_TEST(
-#   tif_belos TifpackBelosCopyFiles
-#   NAME PtJacobi_belos
-#   ARGS "--xml_file=test_PtJacobi_calore1_mm.xml"
-#   COMM serial mpi
-#   NUM_MPI_PROCS 2
-#   STANDARD_PASS_OUTPUT
-# )
+PACKAGE_ADD_TEST(
+  tif_belos TifpackBelosCopyFiles
+  NAME ILUT_5w_2
+  ARGS "--xml_file=5w_bel_tif_ILUT.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+PACKAGE_ADD_TEST(
+  tif_belos TifpackBelosCopyFiles
+  NAME ILUT_5w_no_diag
+  ARGS "--xml_file=5w_missing_diag_ILUT.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+PACKAGE_ADD_TEST(
+  tif_belos TifpackBelosCopyFiles
+  NAME RILUK_5w_0
+  ARGS "--xml_file=5w_bel_tif_RILUK_0.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+PACKAGE_ADD_TEST(
+  tif_belos TifpackBelosCopyFiles
+  NAME RILUK_5w_1
+  ARGS "--xml_file=5w_bel_tif_RILUK_1.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+PACKAGE_ADD_TEST(
+  tif_belos TifpackBelosCopyFiles
+  NAME RILUK_small_belos
+  ARGS "--xml_file=test_RILUK_tfqmr_small_sym_mm.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+PACKAGE_ADD_TEST(
+  tif_belos TifpackBelosCopyFiles
+  NAME Cheby_belos
+  ARGS "--xml_file=test_Cheby_calore1_mm.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
 
 PACKAGE_ADD_TEST(
   tif_belos TifpackBelosCopyFiles
@@ -162,6 +268,15 @@ PACKAGE_ADD_TEST(
   tif_belos TifpackBelosCopyFiles
   NAME ILUT_belos
   ARGS "--xml_file=test_ILUT_calore1_mm.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+PACKAGE_ADD_TEST(
+  tif_belos TifpackBelosCopyFiles
+  NAME RILUK_belos
+  ARGS "--xml_file=test_RILUK_calore1_mm.xml"
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT

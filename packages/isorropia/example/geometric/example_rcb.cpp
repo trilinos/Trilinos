@@ -191,8 +191,7 @@ int main(int argc, char** argv) {
     // with Zoltan parameters in it.  See the Zoltan Users' Guide for
     // Zoltan parameters.  http://www.cs.sandia.gov/Zoltan
 
-    Teuchos::ParameterList &sublist = params.sublist("ZOLTAN");
-  
+    //Teuchos::ParameterList &sublist = params.sublist("ZOLTAN");
     //sublist.set("DEBUG_LEVEL", "1"); // Zoltan will print out parameters
     //sublist.set("DEBUG_LEVEL", "5");   // proc 0 will trace Zoltan calls
     //sublist.set("DEBUG_MEMORY", "2");  // Zoltan will trace alloc & free

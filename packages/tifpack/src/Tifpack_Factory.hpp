@@ -34,6 +34,7 @@
 #include "Tifpack_Preconditioner.hpp"
 #include "Tifpack_Relaxation.hpp"
 #include "Tifpack_Chebyshev.hpp"
+#include "Tifpack_RILUK.hpp"
 #include "Tifpack_ILUT.hpp"
 
 namespace Tifpack {
@@ -44,10 +45,10 @@ bool supportsUnsymmetric(const std::string& prec_type);
 
 //! Tifpack::Factory a factory class to create Tifpack preconditioners.
 /*!
-Class Tifpack::Factory contains just one method: Create().
-Using Create(), users can easily create a variety of Tifpack preconditioners. 
+Class Tifpack::Factory contains just one method: create().
+Using create(), users can easily create a variety of Tifpack preconditioners. 
 
-Create requires 3 arguments:
+create requires 3 arguments:
 - a string, indicating the preconditioner to be built;
 - a pointer to a Tpetra::RowMatrix, representing the matrix
   to be used to define the preconditioner;
@@ -55,10 +56,11 @@ Create requires 3 arguments:
   overlap among the processes.
 
 The first argument can assume the following values:
-- \c "RELAXATION" : returns an instance of Tifpack::Relaxation.
-- \c "CHEBYSHEV"        : returns an instance of Tifpack::Chebyshev (overlap is ignored).
-- \c "ILUT"             : returns an instance of Tifpack::ILUT.
-- otherwise, Create() returns Teuchos::null.
+- \c "RELAXATION"  : returns an instance of Tifpack::Relaxation.
+- \c "CHEBYSHEV"   : returns an instance of Tifpack::Chebyshev (overlap is ignored).
+- \c "ILUT"        : returns an instance of Tifpack::ILUT.
+- \c "CRSRILUK"    : returns an instance of Tifpack::RILUK.
+- otherwise, create() returns Teuchos::null.
 
 
 <P> The following fragment of code shows the
@@ -78,19 +80,17 @@ Tifpack::Factory<Scalar,LocalOrdinal,GlobalOrdinal,Node> Factory;
 
 Teuchos::RCP<TCrsMatrix> A; // A is fillComplete()'d.
 std::string PrecType = "ILUT"; // use incomplete LU on each process
-Teuchos::RCP<TPrecond> Prec = Factory.Create(PrecType, A);
+Teuchos::RCP<TPrecond> Prec = Factory.create(PrecType, A);
 assert (Prec != Teuchos::null);
 
 Teuchos::ParameterList List;
-List.set("fact: level-of-fill", 5.0); // use ILUT(fill=5, drop=0)
+List.set("fact: ilut level-of-fill", 5.0); // use ILUT(fill=5, drop=0)
 
 Prec->SetParameters(List);
 Prec->Initialize();
 Prec->Compute();
 
 // now Prec can be used as a preconditioner
-// (Note that if you wish to use it with Belos, you must wrap it in
-//  a Tpetra::FlipOp adaptor.)
 
 \endcode
 
@@ -144,11 +144,14 @@ Factory::create(const std::string& prec_type,
   if (prec_type == "ILUT") {
     prec = Teuchos::rcp(new Tifpack::ILUT<MatrixType>(matrix));
   }
+  else if (prec_type == "RILUK") {
+    prec = Teuchos::rcp(new Tifpack::RILUK<MatrixType>(matrix));
+  }
   else if (prec_type == "RELAXATION") {
     prec = Teuchos::rcp(new Tifpack::Relaxation<MatrixType>(matrix));
   }
   else if (prec_type == "CHEBYSHEV") {
-    prec = Teuchos::rcp(new Tifpack::Chebyshev<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>(matrix));
+    prec = Teuchos::rcp(new Tifpack::Chebyshev<MatrixType>(matrix));
   }
   else {
     std::ostringstream os;

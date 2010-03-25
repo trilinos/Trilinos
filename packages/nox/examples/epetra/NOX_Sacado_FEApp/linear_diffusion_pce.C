@@ -205,7 +205,7 @@ int main(int argc, char *argv[]) {
 						 Comm));
 
     // Create vectors and operators
-    Teuchos::RCP<const Epetra_Vector> sg_p = sg_model->get_p_init(0);
+    Teuchos::RCP<const Epetra_Vector> sg_p = sg_model->get_p_init(2);
     Teuchos::RCP<Epetra_Vector> sg_x = 
       Teuchos::rcp(new Epetra_Vector(*(sg_model->get_x_map())));
     *sg_x = *(sg_model->get_x_init());
@@ -214,16 +214,16 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Epetra_Vector> sg_dx = 
       Teuchos::rcp(new Epetra_Vector(*(sg_model->get_x_map())));
     Teuchos::RCP<Epetra_Operator> sg_J = sg_model->create_W();
-    Teuchos::RCP<Epetra_Operator> sg_M = sg_model->create_M();
+    Teuchos::RCP<Epetra_Operator> sg_M = sg_model->create_WPrec()->PrecOp;
 
     // Setup InArgs and OutArgs
     EpetraExt::ModelEvaluator::InArgs sg_inArgs = sg_model->createInArgs();
     EpetraExt::ModelEvaluator::OutArgs sg_outArgs = sg_model->createOutArgs();
-    sg_inArgs.set_p(0, sg_p);
+    sg_inArgs.set_p(2, sg_p);
     sg_inArgs.set_x(sg_x);
     sg_outArgs.set_f(sg_f);
     sg_outArgs.set_W(sg_J);
-    sg_outArgs.set_M(sg_M);
+    sg_outArgs.set_WPrec(sg_M);
 
     // Evaluate model
     sg_model->evalModel(sg_inArgs, sg_outArgs);

@@ -169,10 +169,10 @@ int main(int argc, char** argv) {
 #ifdef HAVE_ISORROPIA_ZOLTAN
   //This time, we'll try graph partitioning..
   //Create a parameter sublist for Zoltan parameters.
-  Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
   paramlist.set("PARTITIONING METHOD", "GRAPH");
 
   //We could also call ParMetis, if Zoltan was built with ParMetis.
+  //Teuchos::ParameterList& sublist = paramlist.sublist("Zoltan");
   //sublist.set("GRAPH_PACKAGE", "PARMETIS");
   //sublist.set("PARMETIS_METHOD", "PARTKWAY");
 

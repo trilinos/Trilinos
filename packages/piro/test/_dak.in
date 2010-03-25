@@ -1,0 +1,19 @@
+#  DAKOTA INPUT FILE
+
+method,
+   conmin_frcg
+   max_iterations = 50
+   convergence_tolerance = 1.0e-6
+
+variables,
+	continuous_design = 2
+
+interface,
+	direct
+	  analysis_driver = 'Piro'
+          evaluation_servers = 1
+
+responses,
+	num_objective_functions = 1
+        analytic_gradients
+	no_hessians

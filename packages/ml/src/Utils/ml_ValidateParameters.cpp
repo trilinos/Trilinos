@@ -155,7 +155,10 @@ void ML_Epetra::SetValidSmooParams(ParameterList *PL, Array<string> &smoothers)
   setIntParameter("smoother: Block Chebyshev number of blocks",-1,"Number of blocks to use with Block Chebyshev",PL,intParam);    
   PL->set("smoother: Block Chebyshev block starts",(int*)0);
   PL->set("smoother: Block Chebyshev block list",(int*)0);
-  
+
+  // EXPERIMENTAL
+  PL->set("smoother: chebyshev solve normal equations",false);
+
   /* Coarse IFPACK Solvers - experimental */
   //PL->set("smoother: ifpack list",dummy);
   //PL->set("smoother: ifpack type",std::string(""));

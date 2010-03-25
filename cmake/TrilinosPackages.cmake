@@ -75,7 +75,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Komplex               komplex                        PS
   ML                    ml                             PS
   Belos                 belos                          PS
-  Tifpack               tifpack                        EX # early development stage
+  Tifpack               tifpack                        SS
   Stratimikos           stratimikos                    PS
   Meros                 meros                          SS
   FEI                   fei                            PS
@@ -84,7 +84,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   RBGen                 rbgen                          PS
   TriKota               TriKota                        SS
   Stokhos               stokhos                        SS
-  STK                   stk                            EX # Depends on boost
+  STK                   stk                            SS # Depends on boost
   Sacado                sacado                         PS
   Intrepid              intrepid                       PS
   Phalanx               phalanx                        SS

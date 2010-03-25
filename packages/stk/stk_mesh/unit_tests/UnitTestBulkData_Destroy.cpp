@@ -79,13 +79,23 @@ void UnitTestBulkData::testDestroy_nodes( ParallelMachine pm )
   for ( unsigned i = id_begin ; i < id_end ; ++i ) {
     Entity * e = bulk.get_entity( 0 , ids[ i ] );
 
-    STKUNIT_ASSERT( NULL != bulk.get_entity( 0 , ids[ i ] ) );
+    STKUNIT_ASSERT( NULL != e );
 
     bulk.modification_begin();
-    bulk.destroy_entity( e );
+    STKUNIT_ASSERT( bulk.destroy_entity( e ) );
     bulk.modification_end();
 
-    STKUNIT_ASSERT( NULL == bulk.get_entity( 0 , ids[ i ] ) );
+    // Due to change logging the previously deleted entity
+    // should be gone, but the currently deleted entity
+    // should exist in the 'nil' set.
+
+    if ( id_begin < i ) {
+      STKUNIT_ASSERT( NULL == bulk.get_entity( 0 , ids[ i - 1 ] ) );
+    }
+
+    e = bulk.get_entity( 0 , ids[ i ] );
+    STKUNIT_ASSERT( NULL != e );
+    STKUNIT_ASSERT( 0 == e->bucket().capacity() );
   }
 
   std::cout << std::endl
@@ -95,6 +105,11 @@ void UnitTestBulkData::testDestroy_nodes( ParallelMachine pm )
 }
 
 //----------------------------------------------------------------------
+
+void assert_is_destroyed( const Entity * const entity )
+{
+  STKUNIT_ASSERT( entity == NULL || entity->bucket().capacity() == 0 );
+}
 
 void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
 {
@@ -159,7 +174,7 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
       STKUNIT_ASSERT( bulk.destroy_entity( node1 ) );
       STKUNIT_ASSERT( NULL == node1 );
     }
-    UnitTestBulkData::modification_end( bulk , aura_flag );
+    STKUNIT_ASSERT( bulk.internal_modification_end( aura_flag ) );
 
     if ( NULL != node0 ) {
       STKUNIT_ASSERT_EQUAL( node0_edges - 1 , node0->relations().size() );
@@ -201,11 +216,11 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
     }
     STKUNIT_ASSERT( bulk.destroy_entity( node ) );
 
-    UnitTestBulkData::modification_end( bulk , aura_flag );
+    STKUNIT_ASSERT( bulk.internal_modification_end( aura_flag ) );
 
-    STKUNIT_ASSERT( NULL == bulk.get_entity(0, node_ids[nNotOwned] ) );
-    STKUNIT_ASSERT( NULL == bulk.get_entity(1, node_edge_ids[0] ) );
-    STKUNIT_ASSERT( NULL == bulk.get_entity(1, node_edge_ids[1] ) );
+    assert_is_destroyed( bulk.get_entity(0, node_ids[nNotOwned] ) );
+    assert_is_destroyed( bulk.get_entity(1, node_edge_ids[0] ) );
+    assert_is_destroyed( bulk.get_entity(1, node_edge_ids[1] ) );
   }
   //------------------------------
   if ( 1 < p_size ) { // With ghosting
@@ -245,15 +260,15 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
     }
     STKUNIT_ASSERT( bulk.destroy_entity( node_owned ) );
 
-    UnitTestBulkData::modification_end( bulk , aura_flag );
+    STKUNIT_ASSERT( bulk.internal_modification_end( aura_flag ) );
 
     // Ownership of the other process' owned, shared, and destroyed node
     // has been transferred to this process.
 
     STKUNIT_ASSERT_EQUAL( p_rank , node_not_owned->owner_rank() );
-    STKUNIT_ASSERT( NULL == bulk.get_entity(0, node_ids[ nOwned ] ) );
-    STKUNIT_ASSERT( NULL == bulk.get_entity(1, node_edge_ids[0] ) );
-    STKUNIT_ASSERT( NULL == bulk.get_entity(1, node_edge_ids[1] ) );
+    assert_is_destroyed( bulk.get_entity(0, node_ids[ nOwned ] ) );
+    assert_is_destroyed( bulk.get_entity(1, node_edge_ids[0] ) );
+    assert_is_destroyed( bulk.get_entity(1, node_edge_ids[1] ) );
   }
 }
 

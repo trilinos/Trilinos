@@ -50,6 +50,9 @@ class NOXSolver
   /** \brief . */
   void evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const;
 
+  //! Return status of nonlinear solve
+  NOX::StatusTest::StatusType getSolverStatus() const { return status; }
+
   private:
   /** \brief . */
   Teuchos::RCP<const Epetra_Map> get_x_map() const;
@@ -79,6 +82,7 @@ class NOXSolver
    int num_g;
 
    Teuchos::RCP<NOX::Epetra::Group> grp;
+   mutable NOX::StatusTest::StatusType status;
 };
 
 }

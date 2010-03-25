@@ -36,14 +36,14 @@
 namespace Tifpack {
 
 //! Fills a list which contains all the parameters possibly used by Tifpack.
-void GetValidParameters(Teuchos::ParameterList& params);
+void getValidParameters(Teuchos::ParameterList& params);
 
 //! Set a value from a ParameterList if a parameter with the specified name exists.
 /** If the specified name does not name a parameter in the list, then 'value' is
   not referenced.
 */
 template<typename T>
-void GetParameter(const Teuchos::ParameterList& params, const std::string& name, T& value)
+void getParameter(const Teuchos::ParameterList& params, const std::string& name, T& value)
 {
   if (params.isParameter(name)) {
     if (params.isType<T>(name)) {

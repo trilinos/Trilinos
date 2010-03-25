@@ -8,6 +8,12 @@ Set up email notification hooks
   $ ln -s THIS_DIR/post-receive .
   $ ln -s THIS_DIR/post-receive-email .
   $ ln -s THIS_DIR/get_recipients.py .
+  $ ln -s THIS_DIR/update_push_log.py .
+
+  Or, if you just want to copy the scripts do:
+
+  $ cd GIT_REPO_BASE_DIR/hooks
+  $ THIS_DIR/copy_hooks_scripts.sh
 
 2) Copy configure file and customize:
 

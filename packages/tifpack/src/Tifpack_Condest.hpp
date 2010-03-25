@@ -38,13 +38,15 @@
 namespace Tifpack {
 
 template<class Scalar,class LocalOrdinal,class GlobalOrdinal, class Node>
-Scalar Condest(const Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>& TIFP,
+typename Teuchos::ScalarTraits<Scalar>::magnitudeType
+Condest(const Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>& TIFP,
 		           const Tifpack::CondestType CT,
                const int MaxIters = 1550,
                const typename Teuchos::ScalarTraits<Scalar>::magnitudeType& Tol = 1e-9,
                const Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &matrix_in = Teuchos::null)
 {
-  Scalar ConditionNumberEstimate = -1.0;
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+  magnitudeType ConditionNumberEstimate = -1.0;
   Teuchos::Ptr<const Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > matrix = matrix_in;
   if (matrix_in == Teuchos::null) {
     matrix = TIFP.getMatrix().ptr();
@@ -64,7 +66,7 @@ Scalar Condest(const Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,N
     // Get the maximum value across all processors
     Teuchos::Array<Scalar> cne(1,0);
     OnesResult.normInf(cne());
-    ConditionNumberEstimate = cne[0];
+    ConditionNumberEstimate = Teuchos::ScalarTraits<Scalar>::magnitude(cne[0]);
   }
   else if (CT == Tifpack::CG) {
 

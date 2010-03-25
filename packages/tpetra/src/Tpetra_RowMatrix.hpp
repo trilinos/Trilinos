@@ -33,7 +33,7 @@
 #include <Kokkos_DefaultNode.hpp>
 
 #include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_MapDecl.hpp"
+#include "Tpetra_Map.hpp"
 #include "Tpetra_Operator.hpp"
 #include "Tpetra_RowGraph.hpp"
 #include "Tpetra_Vector.hpp"

@@ -208,8 +208,10 @@ def getRepoSpaceBranchFromOptionStr(extraPullFrom):
 
 
 
-def executePull(inOptions, baseTestDir, outFile, pullFromRepo=None):
-  cmnd = "eg pull --rebase"
+def executePull(inOptions, baseTestDir, outFile, pullFromRepo=None, doRebase=False):
+  cmnd = "eg pull"
+  if doRebase:
+    cmnd += " && eg rebase --against origin"
   if pullFromRepo:
     repoSpaceBranch = getRepoSpaceBranchFromOptionStr(pullFromRepo)
     print "\nPulling in updates from '"+repoSpaceBranch+"' ...\n"
@@ -1757,12 +1759,13 @@ def checkinTest(inOptions):
       else:
 
         print "\nExplanation: In order to push, the local repo needs to be up-to-date\n" \
-          " with the global repo or the push will not be allowed.  Therefore, a pull\n" \
-          " before the push must be performed if there are updates in the global reop\n" \
-          " regardless if --pull was specified or not.\n"
+          "with the global repo or the push will not be allowed.  Therefore, a pull\n" \
+          "before the push must be performed if there are updates in the global reop\n" \
+          "regardless if --pull was specified or not.  Also, a rebase must be done in\n" \
+          "order to get a linear history required by the hooks in the main repository.\n"
 
         (update2Rtn, update2Time) = \
-          executePull(inOptions, baseTestDir, getFinalPullOutputFileName())
+          executePull(inOptions, baseTestDir, getFinalPullOutputFileName(), None, True)
 
         if update2Rtn == 0:
           print "\nFinal update passed!\n"

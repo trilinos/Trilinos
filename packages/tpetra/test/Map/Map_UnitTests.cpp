@@ -1,6 +1,7 @@
 #include <Teuchos_UnitTestHarness.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_Tuple.hpp>
+#include <Teuchos_CommHelpers.hpp>
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
@@ -328,16 +329,20 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, sameasTests, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( Map, ContigUniformMap, LO, GO )
 
-    UNIT_TEST_GROUP_ORDINAL(char , int)
+    // UNIT_TEST_GROUP_ORDINAL(char , int)
+
     UNIT_TEST_GROUP_ORDINAL(int , int)
-    typedef short int ShortInt;
-    UNIT_TEST_GROUP_ORDINAL(ShortInt, int)
-    typedef long int LongInt;
-    UNIT_TEST_GROUP_ORDINAL(int , LongInt)
+
+    // typedef short int ShortInt;
+    // UNIT_TEST_GROUP_ORDINAL(ShortInt, int)
+
+    // typedef long int LongInt;
+    // UNIT_TEST_GROUP_ORDINAL(int , LongInt)
+
 #   ifdef HAVE_TEUCHOS_LONG_LONG_INT
-      typedef long long int LongLongInt;
-      UNIT_TEST_GROUP_ORDINAL(char , LongLongInt)
-      UNIT_TEST_GROUP_ORDINAL(int , LongLongInt)
+      // typedef long long int LongLongInt;
+      // UNIT_TEST_GROUP_ORDINAL(char , LongLongInt)
+      // UNIT_TEST_GROUP_ORDINAL(int , LongLongInt)
 #   endif
 
 # endif // FAST_DEVELOPMENT_UNIT_TEST_BUILD

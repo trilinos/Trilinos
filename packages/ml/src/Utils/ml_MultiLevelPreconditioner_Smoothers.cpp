@@ -73,7 +73,6 @@ using namespace Teuchos;
  */
 int ML_Epetra::MultiLevelPreconditioner::SetSmoothers() 
 {
-
   Epetra_Time Time(Comm());
 
   double smooTime=0, coarseTime=0, perLevelTime=0, totalTime=0;
@@ -146,6 +145,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   int *cheby_blockIndices=List_.get("smoother: Block Chebyshev block list",(int*)0);
   int *cheby_blockStarts=List_.get("smoother: Block Chebyshev block starts",(int*)0);
   
+  // Chebyshev-NE parameters
+  bool cheby_NE=List_.get("smoother: chebyshev solve normal equations",false);
+
   // Hiptmair-specific declarations
   string SubSmType,NodeSubSmType,EdgeSubSmType;
   int NodeSubSmIts = 1, EdgeSubSmIts = 1;
@@ -683,8 +685,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       int MyCheby_nBlocks=smList.get("smoother: Block Chebyshev number of blocks",cheby_nBlocks);
       int* MyCheby_blockIndices=smList.get("smoother: Block Chebyshev block list",cheby_blockIndices);
       int* MyCheby_blockStarts=smList.get("smoother: Block Chebyshev block starts",cheby_blockStarts);
+      bool MyCheby_NE=smList.get("smoother: chebyshev solve normal equations",cheby_NE);
 
-      
       if( verbose_ ) {
         if (MySmoother == "IFPACK-Block Chebyshev" && MyCheby_blockIndices && MyCheby_blockStarts)
           cout << msg << "IFPACK Block Chebyshev, order = " << MyChebyshevPolyOrder
@@ -712,6 +714,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
         IFPACKList.set("chebyshev: use block mode",true);
         IFPACKList.set("chebyshev: block list",PermuteList);
         IFPACKList.set("chebyshev: eigenvalue max iterations",this_A->spectral_radius_max_iters);
+	
+	// EXPERIMENTAL: Cheby-NE
+	IFPACKList.set("chebyshev: solve normal equations",MyCheby_NE);
       }
       else {
         // Regular Chebyshev needs an eigenvalue estimate
@@ -723,7 +728,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       IFPACKList.set("chebyshev: min eigenvalue", this_A->lambda_min);
       IFPACKList.set("chebyshev: max eigenvalue", this_A->lambda_max);
       IFPACKList.set("chebyshev: degree", MyChebyshevPolyOrder);
-            
+           
       ML_Gen_Smoother_Ifpack(ml_, "Chebyshev", 0, currentLevel, 
                              pre_or_post, (void*)&IFPACKList, (void*)Comm_);
       

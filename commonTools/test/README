@@ -1,0 +1,8 @@
+This directory contains the old home-grown perl-based test harness for
+Trilinos prior to moving to CMake/CTest/CDash.  This directory should really
+be removed.  The only file still being used is:
+
+    commonTools/test/utilities/compareTestOutput
+
+That file should be moved else where and this whole 'test' directory should be
+deleted.

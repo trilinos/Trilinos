@@ -59,12 +59,12 @@ enum RelaxationType {
   SGS
 };
 
-//! Tifpack::Relaxation: a class to define point relaxation preconditioners for Tpetra::RowMatrix objects.
+//! Tifpack::Relaxation: defines relaxation preconditioners for Tpetra::RowMatrix objects.
 
 /*! 
-  The Tifpack::Relaxation class enables the construction of point
-  relaxation preconditioners of a Tpetra::RowMatrix. Tifpack::Relaxation 
-  is derived from the Tifpack::Preconditioner class, which is itself derived
+  The Tifpack::Relaxation class enables the construction of relaxation
+  preconditioners for Tpetra::RowMatrix. Tifpack::Relaxation 
+  is derived from Tifpack::Preconditioner, which is itself derived
   from Tpetra::Operator.
   Therefore this object can be used as preconditioner everywhere an
   apply() method is required in the preconditioning step.
@@ -72,7 +72,7 @@ enum RelaxationType {
 This class enables the construction of the following simple preconditioners:
 - Jacobi;
 - Gauss-Seidel;
-- symmetric Gauss-Seidel.
+- Symmetric Gauss-Seidel.
 
 <P>We now briefly describe the main features of the above preconditioners.
 Consider a linear system of type
@@ -100,7 +100,7 @@ Using Tifpack::Jacobi, the user can apply the specified number of sweeps
 the class simply applies the inverse of the diagonal of A to the input
 vector.
 
-<P>Given an starting solution \f$x_0\f$, an iteration of the (damped) GaussSeidel
+<P>Given a starting solution \f$x_0\f$, an iteration of the (damped) GaussSeidel
 method can be written in matrix form as follows:
 \f[
 (D - E) x_{k+1} = \omega F x_k + b,
@@ -156,18 +156,10 @@ public:
     return(IsInitialized_);
   }
 
-  //! compute IC factor U using the specified graph, diagonal perturbation thresholds and relaxation parameters.
-  /*! This function computes the RILU(k) factors L and U using the current:
-    <ol>
-    <li> IlukGraph specifying the structure of L and U.
-    <li> Value for the RILU(k) relaxation parameter.
-    <li> Value for the \e a \e priori diagonal threshold values.
-    </ol>
-    InitValues() must be called before the factorization can proceed.
-   */
+  //! compute the preconditioner for the specified matrix, diagonal perturbation thresholds and relaxation parameters.
   void compute();
 
-  //! If factor is completed, this query returns true, otherwise it returns false.
+  //! Return true if compute() has been called.
   inline bool isComputed() const {
     return(IsComputed_);
   }
