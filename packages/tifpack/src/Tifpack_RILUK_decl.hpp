@@ -48,7 +48,11 @@ namespace Tifpack {
 //! Tifpack_RILUK: A class for constructing and using an incomplete lower/upper (ILU) factorization of a given Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>.
 
 /*! The Tifpack_RILUK class computes a "Relaxed" ILU factorization with level k fill 
-    of a given Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>.  The factorization 
+    of a given Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>.
+
+For a complete list of valid parameters, see RILUK::setParameters.
+
+  The factorization 
     that is produced is a function of several parameters:
 <ol>
   <li> The pattern of the matrix - All fill is derived from the original matrix nonzero structure.  Level zero fill
@@ -213,11 +217,15 @@ class RILUK: public virtual Tifpack::Preconditioner<typename MatrixType::scalar_
   void SetOverlapMode( Tpetra::CombineMode OverlapMode) {OverlapMode_ = OverlapMode;}
 
   //! Set parameters using a Teuchos::ParameterList object.
-  /* This method recognizes four parameter names: relax_value,
-     absolute_threshold, relative_threshold and overlap_mode. These names are
-     case insensitive, and in each case except overlap_mode, the ParameterEntry
-     must have type double. For overlap_mode, the ParameterEntry must have
-     type Tpetra::CombineMode.
+  /**
+   <ul>
+   <li> "fact: iluk level-of-fill" (int)<br>
+   <li> "fact: iluk level-of-overlap" (int)<br>
+Not currently supported.
+   <li> "fact: absolute threshold" (magnitude-type)<br>
+   <li> "fact: relative threshold" (magnitude-type)<br>
+   <li> "fact: relax value" (magnitude-type)<br>
+   </ul>
   */
   void setParameters(const Teuchos::ParameterList& parameterlist);
 
