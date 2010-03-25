@@ -214,6 +214,13 @@ TPLS = \
 	$(srcdir)/tpls/third_library.c \
 	$(srcdir)/tpls/verify_graph.c
 
+CCOLAMD_H = \
+	$(srcdir)/ccolamd/zoltan_ccolamd.h 
+
+CCOLAMD = \
+	$(srcdir)/ccolamd/ccolamd.c \
+	$(srcdir)/ccolamd/ccolamd_global.c 
+
 EXTRA_TPLS_INTERFACE_H = \
 	$(srcdir)/tpls/parmetis_interface.h
 
@@ -575,6 +582,7 @@ ZOLTAN_H = \
 	$(PAR_H) \
 	$(PARAMS_H) \
 	$(TPLS_H) \
+	$(CCOLAMD_H) \
 	$(PARMETIS_INTERFACE_H) \
 	$(PHG_H) \
 	$(RCB_H) \
@@ -599,6 +607,7 @@ libzoltan_a_SOURCES = \
 	$(PAR) \
 	$(PARAMS) \
 	$(TPLS) \
+	$(CCOLAMD) \
 	$(PARMETIS_INTERFACE) \
 	$(PHG) \
 	$(RCB) \
