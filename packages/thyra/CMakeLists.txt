@@ -41,6 +41,12 @@ ADD_OPTION_AND_DEFINE(
 
 ADD_SUBDIRECTORY(src)
 
+# Add the targets for building the test library so that other packages can use
+# the same test library without requiring Thyra tests be enabled.
+
+ADD_SUBDIRECTORY(test/nonlinear/models)
+
+# This does not enable anything in the models directory
 PACKAGE_ADD_TEST_DIRECTORIES(test)
 
 PACKAGE_ADD_EXAMPLE_DIRECTORIES(example)

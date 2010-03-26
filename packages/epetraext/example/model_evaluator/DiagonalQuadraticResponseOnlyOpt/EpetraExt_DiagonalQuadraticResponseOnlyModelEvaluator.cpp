@@ -128,20 +128,20 @@ void DiagonalQuadraticResponseOnlyModelEvaluator::evalModel(
   // Compute the functions
   //
 
-  if (!is_null(g_out) || !is_null(DgDp_trans_out)) {
+  if (nonnull(g_out) || nonnull(DgDp_trans_out)) {
 
     Epetra_Vector p_minus_pt(*map_p_);
 
     p_minus_pt = p;
     p_minus_pt.Update(-1.0, *pt_, 1.0);
 
-    if (!is_null(g_out)) {
+    if (nonnull(g_out)) {
       double dot[1];
       p_minus_pt.Dot(p_minus_pt, dot);
       (*g_out)[0] = scale_ * 0.5 * dot[0];
     }
     
-    if (!is_null(DgDp_trans_out)) {
+    if (nonnull(DgDp_trans_out)) {
       (*DgDp_trans_out) = p_minus_pt;
       DgDp_trans_out->Scale(scale_);
     }

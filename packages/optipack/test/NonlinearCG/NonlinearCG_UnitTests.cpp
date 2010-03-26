@@ -34,9 +34,9 @@
 #include "Thyra_TestingTools.hpp"
 
 #include "OptiPack_NonlinearCG.hpp"
-#include "OptiPack_DiagonalQuadraticResponseOnlyModelEvaluator.hpp"
 #include "GlobiPack_ArmijoPolyInterpLineSearch.hpp"
 #include "GlobiPack_BrentsLineSearch.hpp"
+#include "Thyra_DiagonalQuadraticResponseOnlyModelEvaluator.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_ModelEvaluatorHelpers.hpp"
 #include "Thyra_VectorStdOps.hpp"
@@ -73,14 +73,14 @@ typedef Thyra::Ordinal Ordinal;
 using Thyra::VectorSpaceBase;
 using Thyra::VectorBase;
 using Thyra::applyOp;
+using Thyra::DiagonalQuadraticResponseOnlyModelEvaluator;
+using Thyra::diagonalQuadraticResponseOnlyModelEvaluator;
 using GlobiPack::ArmijoPolyInterpLineSearch;
 using GlobiPack::armijoQuadraticLineSearch;
 using GlobiPack::BrentsLineSearch;
 using GlobiPack::brentsLineSearch;
 using OptiPack::NonlinearCG;
 using OptiPack::nonlinearCG;
-using OptiPack::DiagonalQuadraticResponseOnlyModelEvaluator;
-using OptiPack::diagonalQuadraticResponseOnlyModelEvaluator;
 namespace NCGU = OptiPack::NonlinearCGUtils;
 
 

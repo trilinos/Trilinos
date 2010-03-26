@@ -6,6 +6,9 @@
 #include "Thyra_StateFuncModelEvaluatorBase.hpp"
 
 
+namespace Thyra {
+
+
 template<class Scalar> class Simple2DModelEvaluator;
 
 
@@ -120,6 +123,9 @@ private: // member functions
   Simple2DModelEvaluator();
 
 };
+
+
+} // namespace Thyra
 
 
 #endif // THYRA_SIMPLE_2D_MODEL_EVALUATOR_DECL_HPP

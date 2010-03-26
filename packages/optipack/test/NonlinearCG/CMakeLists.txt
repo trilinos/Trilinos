@@ -6,7 +6,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   SOURCES
     NonlinearCG_UnitTests.cpp
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
-  DEPLIBS optipack_test_models
+  DEPLIBS thyra_nonlinear_test_models
   COMM serial mpi
   ARGS
     " "   # Make sure default works

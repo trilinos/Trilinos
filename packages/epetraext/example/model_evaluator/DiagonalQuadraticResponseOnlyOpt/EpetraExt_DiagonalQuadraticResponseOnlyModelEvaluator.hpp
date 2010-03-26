@@ -74,7 +74,10 @@ private:
 };
 
 
-/** \brief Nonmember constructor. */
+/** \brief Nonmember constructor.
+ *
+ * \relates DiagonalQuadraticResponseOnlyModelEvaluator
+ */
 inline
 Teuchos::RCP<DiagonalQuadraticResponseOnlyModelEvaluator>
 diagonalQuadraticResponseOnlyModelEvaluator(
