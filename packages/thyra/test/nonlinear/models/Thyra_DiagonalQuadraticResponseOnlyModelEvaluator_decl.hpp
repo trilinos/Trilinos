@@ -181,10 +181,13 @@ private:
 /** \brief Non-member constructor. */
 template<class Scalar>
 RCP<DiagonalQuadraticResponseOnlyModelEvaluator<Scalar> >
-diagonalQuadraticResponseOnlyModelEvaluator(const int localDim)
+diagonalQuadraticResponseOnlyModelEvaluator(
+  const int localDim,
+  const RCP<const Teuchos::Comm<Ordinal> > &comm = Teuchos::null
+  )
 {
   using Teuchos::rcp;
-  return rcp(new DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>(localDim));
+  return rcp(new DiagonalQuadraticResponseOnlyModelEvaluator<Scalar>(localDim, comm));
 }
 
 
