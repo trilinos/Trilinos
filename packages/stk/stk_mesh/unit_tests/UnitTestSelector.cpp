@@ -24,8 +24,8 @@
 
 namespace {
 
-  using sunit::Stk_Mesh_Fixture;
-  using sunit::ExampleFixture ;;
+  using sunit::Stk_Mesh_Fixture ;
+  using sunit::ExampleFixture ;
   using sunit::getExamplePart;
   using sunit::getPartVector;
   using sunit::getExampleBucket;
