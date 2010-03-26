@@ -29,33 +29,36 @@
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/EntityTypes.hpp>
 
+//----------------------------------------------------------------------
+
 enum { SpatialDim   = 3 };
 
 #include <use_cases/centroid_algorithm.hpp>
 
 #include <use_cases/UseCase_4.hpp>
 
-//----------------------------------------------------------------------
-
 namespace stk{
 namespace mesh {
 namespace use_cases {
 
-UseCase_4_MetaData::UseCase_4_MetaData(const std::vector<std::string> & entity_type_names)
-  : m_metaData(entity_type_names),
-    m_block_hex20(m_metaData.declare_part(       "block_1", Element )),
-    m_block_wedge15(m_metaData.declare_part(     "block_2", Element )),
-    m_part_vertex_nodes(m_metaData.declare_part(       "vertex_nodes", Node )),
-    m_side_part(m_metaData.declare_part(   "sideset_1", Face )),
-    m_coordinates_field(m_metaData.declare_field< VectorFieldType >( "coordinates" )),
-    m_velocity_field(m_metaData.declare_field< VectorFieldType >( "velocity" )),
-    m_centroid_field(m_metaData.declare_field< VectorFieldType >( "centroid" )),
-    m_temperature_field(m_metaData.declare_field< ScalarFieldType >( "temperature" )),
-    m_pressure_field(m_metaData.declare_field< ScalarFieldType >( "pressure" )),
-    m_boundary_field(m_metaData.declare_field< VectorFieldType >( "boundary" )),
-    m_element_node_coordinates_field(m_metaData.declare_field< ElementNodePointerFieldType >( "elem_node_coord" ))
+UseCase_4_Mesh::UseCase_4_Mesh( stk::ParallelMachine comm )
+  : m_metaData( fem_entity_type_names() )
+  , m_bulkData( m_metaData , comm )
+
+  , m_block_hex20(       m_metaData.declare_part( "block_1", Element ))
+  , m_block_wedge15(     m_metaData.declare_part( "block_2", Element ))
+  , m_part_vertex_nodes( m_metaData.declare_part( "vertex_nodes", Node ))
+  , m_side_part(         m_metaData.declare_part( "sideset_1", Face ))
+
+  , m_coordinates_field(m_metaData.declare_field< VectorFieldType >( "coordinates" ))
+  , m_velocity_field(m_metaData.declare_field< VectorFieldType >( "velocity" ))
+  , m_centroid_field(m_metaData.declare_field< VectorFieldType >( "centroid" ))
+  , m_temperature_field(m_metaData.declare_field< ScalarFieldType >( "temperature" ))
+  , m_pressure_field(m_metaData.declare_field< ScalarFieldType >( "pressure" ))
+  , m_boundary_field(m_metaData.declare_field< VectorFieldType >( "boundary" ))
+  , m_element_node_coordinates_field(m_metaData.declare_field< ElementNodePointerFieldType >( "elem_node_coord" ) )
 {
-  // Attache a cell topology to these parts:
+  // Attach appropriate element topology to element block parts:
   set_cell_topology< shards::Hexahedron<20> >( m_block_hex20 );
   set_cell_topology< shards::Wedge<15>      >( m_block_wedge15 );
 
@@ -81,7 +84,7 @@ UseCase_4_MetaData::UseCase_4_MetaData(const std::vector<std::string> & entity_t
     & element_node_stencil< shards::Wedge<6>  > ,
     m_part_vertex_nodes );
 
-  // Field restrictions:
+  // Where fields exist on the mesh:
   Part & universal = m_metaData.universal_part();
 
   put_field( m_coordinates_field , Node , universal );
@@ -105,19 +108,13 @@ UseCase_4_MetaData::UseCase_4_MetaData(const std::vector<std::string> & entity_t
   put_field( m_element_node_coordinates_field, Element, m_block_wedge15, shards::Wedge<15> ::node_count );
   
   m_metaData.commit();
-
 }
 
 UseCase_4_Mesh::~UseCase_4_Mesh() 
-{
-}
+{ }
 
-UseCase_4_Mesh::UseCase_4_Mesh( stk::ParallelMachine comm )
-  : UseCase_4_MetaData(fem_entity_type_names()),
-    m_bulkData(m_metaData,comm,field_data_chunk_size)
-{
-}
-
+//------------------------------------------------------------------------------
+// Use-case specific mesh data:
 
 enum { node_count   = 66 };
 enum { number_hex   = 2 };
@@ -177,44 +174,46 @@ static const EntityId hex_node_ids[2][ shards::Hexahedron<27>::node_count ] = {
 
 }
 
+//------------------------------------------------------------------------------
 
-void populate( UseCase_4_Mesh & mesh )
+void UseCase_4_Mesh::populate()
 {
-  BulkData & bulkData = mesh.modifiableBulkData();
-  const VectorFieldType & node_coord = mesh.const_coordinates_field();
-  Part & block_hex20 = mesh.block_hex20();
-  Part & block_wedge15 = mesh.block_wedge15();
-  Part & side_part = mesh.side_part();
+  m_bulkData.modification_begin();
 
   EntityId elem_id = 1;
   EntityId face_id = 1;
 
   PartVector side_add; 
-  insert( side_add , side_part );
+  insert( side_add , m_side_part );
+
+  // Declare element with its nodes.
+  // Declare a side on an element.  This utility function creates the
+  // side, element-side relations, and side-node relations.
+  // It will NOT check if the side sandwiched between two elements.
 
   for ( unsigned i = 0 ; i < number_hex ; ++i , ++elem_id , ++face_id ) {
     Entity & elem =
-      declare_element( bulkData, block_hex20, elem_id, hex_node_ids[i] );
+      declare_element( m_bulkData, m_block_hex20, elem_id, hex_node_ids[i] );
 
-    Entity & face = declare_element_side( bulkData, face_id, elem, 0 );
+    Entity & face = declare_element_side( m_bulkData, face_id, elem, 0 );
 
-    bulkData.change_entity_parts( face , side_add );
+    m_bulkData.change_entity_parts( face , side_add );
   }
 
   for ( unsigned i = 0 ; i < number_wedge ; ++i , ++elem_id , ++face_id ) {
     Entity & elem =
-      declare_element( bulkData, block_wedge15, elem_id, wedge_node_ids[i] );
+      declare_element( m_bulkData, m_block_wedge15, elem_id, wedge_node_ids[i] );
 
-    Entity & face = declare_element_side( bulkData, face_id , elem , 4 );
+    Entity & face = declare_element_side( m_bulkData, face_id , elem , 4 );
 
-    bulkData.change_entity_parts( face , side_add );
+    m_bulkData.change_entity_parts( face , side_add );
   }
 
   for ( unsigned i = 0 ; i < node_count ; ++i ) {
-    Entity * const node = bulkData.get_entity( Node, i + 1 );
+    Entity * const node = m_bulkData.get_entity( Node, i + 1 );
 
     if ( node != NULL ) {
-      double * const coord = field_data( node_coord , *node );
+      double * const coord = field_data( m_coordinates_field , *node );
 
       coord[0] = node_coord_data[i][0] ;
       coord[1] = node_coord_data[i][1] ;
@@ -222,28 +221,36 @@ void populate( UseCase_4_Mesh & mesh )
     }
   }
   
-  // No parallel stuff for now
+  m_bulkData.modification_end();
 }
 
-void runAlgorithms( UseCase_4_Mesh & mesh ) {
-  BulkData & bulkData = mesh.modifiableBulkData();
-  VectorFieldType & centroid_field = mesh.centroid_field();
-  ElementNodePointerFieldType & elem_node_coord = mesh.element_node_coordinates_field();
-  Part & block_hex20 = mesh.block_hex20();
-  Part & block_wedge15 = mesh.block_wedge15();
+//------------------------------------------------------------------------------
 
-  // Run the centroid algorithms 
+void runAlgorithms( const UseCase_4_Mesh & mesh )
+{
+  const BulkData & bulkData = mesh.m_bulkData ;
+  VectorFieldType & centroid_field = mesh.m_centroid_field ;
+  ElementNodePointerFieldType & elem_node_coord = mesh.m_element_node_coordinates_field ;
+  Part & block_hex20 = mesh.m_block_hex20 ;
+  Part & block_wedge15 = mesh.m_block_wedge15 ;
+
+  // Run the centroid algorithm on the hexes:
   centroid_algorithm< shards::Hexahedron<20> >( bulkData ,
                                         centroid_field ,
                                         elem_node_coord ,
                                         block_hex20 );
 
+  // Run the centroid algorithm on the wedges:
   centroid_algorithm< shards::Wedge<15> >( bulkData ,
                                    centroid_field ,
                                    elem_node_coord ,
                                    block_wedge15 );
 
 }
+
+//------------------------------------------------------------------------------
+
+namespace {
 
 // Note:  this is a duplicate of verify_elem_node_coord_3
 bool verify_elem_node_coord_4( 
@@ -491,18 +498,22 @@ bool verify_pressure_velocity_stencil(
   return result;
 }
 
+}
+
+//------------------------------------------------------------------------------
+
 bool verifyMesh( const UseCase_4_Mesh & mesh )
 {
   bool result = true;
-  const BulkData& bulk_data = mesh.bulkData();
+  const BulkData& bulk_data = mesh.m_bulkData ;
 
   std::vector<Bucket *> element_buckets = bulk_data.buckets( Element );
 
   // Verify the element node coordinates and side nodes:
   // block_hex20:
-  Part & block_hex20 = mesh.block_hex20();
-  const ElementNodePointerFieldType & elem_node_coord = mesh.const_element_node_coordinates_field();
-  const VectorFieldType & node_coord = mesh.const_coordinates_field();
+  Part & block_hex20 = mesh.m_block_hex20 ;
+  const ElementNodePointerFieldType & elem_node_coord = mesh.m_element_node_coordinates_field ;
+  const VectorFieldType & node_coord = mesh.m_coordinates_field ;
   result = result && 
     verify_elem_node_coord_by_part_4(
         block_hex20,
@@ -513,7 +524,7 @@ bool verifyMesh( const UseCase_4_Mesh & mesh )
         );
   // Verify element side node: 
   const std::vector<Bucket *> face_buckets = bulk_data.buckets( Face );
-  Part & side_part = mesh.side_part();
+  Part & side_part = mesh.m_side_part ;
   {
     Selector selector = block_hex20 & side_part;
     std::vector<Entity *> entities;
@@ -527,7 +538,7 @@ bool verifyMesh( const UseCase_4_Mesh & mesh )
   }
 
   // block_wedge15:
-  Part & block_wedge15 = mesh.block_wedge15();
+  Part & block_wedge15 = mesh.m_block_wedge15 ;
   result = result && 
     verify_elem_node_coord_by_part_4(
         block_wedge15,
@@ -550,7 +561,7 @@ bool verifyMesh( const UseCase_4_Mesh & mesh )
   }
 
   // Verify centroid dimensions
-  const VectorFieldType & centroid_field = mesh.const_centroid_field();
+  const VectorFieldType & centroid_field = mesh.m_centroid_field ;
   result = result && 
     centroid_algorithm_unit_test_dimensions< shards::Hexahedron<20> >(
         bulk_data , centroid_field , elem_node_coord , block_hex20 );
@@ -560,16 +571,16 @@ bool verifyMesh( const UseCase_4_Mesh & mesh )
         bulk_data , centroid_field , elem_node_coord , block_wedge15 );
 
   // Verify boundary field data
-  const VectorFieldType & boundary_field = mesh.const_boundary_field();
+  const VectorFieldType & boundary_field = mesh.m_boundary_field ;
   result = result && 
     verify_boundary_field_data( bulk_data ,
                               side_part ,
                               boundary_field );
 
   // Verify pressure velocity stencil for block_hex20
-  Part & part_vertex_nodes = mesh.part_vertex_nodes();
-  const ScalarFieldType & pressure_field = mesh.const_pressure_field();
-  const VectorFieldType & velocity_field = mesh.const_velocity_field();
+  Part & part_vertex_nodes = mesh.m_part_vertex_nodes ;
+  const ScalarFieldType & pressure_field = mesh.m_pressure_field ;
+  const VectorFieldType & velocity_field = mesh.m_velocity_field ;
   result = result && 
     verify_pressure_velocity_stencil
     < shards::Hexahedron<20> , shards::Hexahedron<8>  >

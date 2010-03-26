@@ -19,6 +19,7 @@
 #include <stk_mesh/fem/EntityTypes.hpp>
 
 #include <unit_tests/UnitTestBulkData.hpp>
+#include <unit_tests/UnitTestRingMeshFixture.hpp>
 
 STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testUnit)
 {
@@ -67,26 +68,27 @@ void UnitTestBulkData::testBulkData( ParallelMachine pm )
   BulkData bulk( meta , pm , 100 );
 
   for ( size_t i = 0 ; i < 4 ; ++i ) {
-    STKUNIT_ASSERT( i == bulk.synchronized_count() );
-    STKUNIT_ASSERT( bulk.modification_end() );
     STKUNIT_ASSERT( bulk.modification_begin() );
+    STKUNIT_ASSERT_EQUAL( i , bulk.synchronized_count() );
+    STKUNIT_ASSERT( bulk.modification_end() );
   }
 
   std::vector<Part*> no_parts ;
 
   Entity * e[10] ;
+
+  STKUNIT_ASSERT( bulk.modification_begin() );
   for ( size_t i = 0 ; i < 10 ; ++i ) {
     e[i] = & bulk.declare_entity(  i , 1 , no_parts );
   }
-
   STKUNIT_ASSERT( bulk.modification_end() );
-  STKUNIT_ASSERT( bulk.modification_begin() );
 
   for ( size_t i = 0 ; i < 10 ; ++i ) {
     STKUNIT_ASSERT( e[i] == bulk.get_entity( i , 1 ) );
   }
 
   bool ok = false ;
+  STKUNIT_ASSERT( bulk.modification_begin() );
   try {
     bulk.declare_entity( 11 , 1 , no_parts );
   }
@@ -97,6 +99,7 @@ void UnitTestBulkData::testBulkData( ParallelMachine pm )
   STKUNIT_ASSERT( ok );
   STKUNIT_ASSERT( bulk.modification_end() );
 
+  // Catch not-ok-to-modify
   ok = false ;
   try {
     bulk.declare_entity( 0 , 2 , no_parts );
@@ -121,12 +124,12 @@ void UnitTestBulkData::testChangeOwner_nodes( ParallelMachine pm )
   const unsigned id_end   = nPerProc * ( p_rank + 1 );
 
   MetaData meta( fem_entity_type_names() );
+  BulkData bulk( meta , pm , 100 );
 
   const PartVector no_parts ;
 
   meta.commit();
-
-  BulkData bulk( meta , pm , 100 );
+  bulk.modification_begin();
 
   // Ids for all entities (all entities have type 0):
 
@@ -254,6 +257,8 @@ void UnitTestBulkData::testCreateMore_error( ParallelMachine pm )
 
     BulkData bulk( meta , pm , 100 );
 
+    bulk.modification_begin();
+
     // Ids for all entities (all entities have type 0):
 
     std::vector<EntityId> ids( id_total );
@@ -308,104 +313,6 @@ void UnitTestBulkData::testCreateMore_error( ParallelMachine pm )
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
-namespace {
-
-void test_shift_loop( BulkData & mesh ,
-                      const bool                     generate_aura ,
-                      const unsigned                 nPerProc ,
-                      const std::vector<EntityId> & node_ids ,
-                      const std::vector<EntityId> & edge_ids )
-{
-  const unsigned p_rank = mesh.parallel_rank();
-  const unsigned p_size = mesh.parallel_size();
-  const unsigned id_total = nPerProc * p_size ;
-  const unsigned id_begin = nPerProc * p_rank ;
-  const unsigned id_end   = nPerProc * ( p_rank + 1 );
-  const unsigned nLocalNode = nPerProc + ( 1 < p_size ? 1 : 0 );
-  const unsigned nLocalEdge = nPerProc ;
-
-  const unsigned p_send  = ( p_rank + 1 ) % p_size ;
-  const unsigned id_send = id_end - 2 ;
-  const unsigned id_recv = ( id_begin + id_total - 2 ) % id_total ;
-
-  Selector select_used( mesh.mesh_meta_data().locally_used_part() );
-
-  std::vector<unsigned> local_count ;
-  std::vector<EntityProc> change ;
-
-  Entity * send_edge_1 = mesh.get_entity( 1 , edge_ids[ id_send ] );
-  Entity * send_edge_2 = mesh.get_entity( 1 , edge_ids[ id_send + 1 ] );
-  Entity * send_node_1 = send_edge_1->relations()[1].entity();
-  Entity * send_node_2 = send_edge_2->relations()[1].entity();
-  Entity * recv_edge_1 = mesh.get_entity( 1 , edge_ids[ id_recv ] );
-  Entity * recv_edge_2 = mesh.get_entity( 1 , edge_ids[ id_recv + 1 ] );
-
-  STKUNIT_ASSERT( NULL != send_edge_1 && p_rank == send_edge_1->owner_rank() );
-  STKUNIT_ASSERT( NULL != send_edge_2 && p_rank == send_edge_2->owner_rank() );
-  STKUNIT_ASSERT( NULL == recv_edge_1 || p_rank != recv_edge_1->owner_rank() );
-  STKUNIT_ASSERT( NULL == recv_edge_2 || p_rank != recv_edge_2->owner_rank() );
-
-  if ( p_rank == send_node_1->owner_rank() ) {
-    EntityProc entry( send_node_1 , p_send );
-    change.push_back( entry );
-  }
-  if ( p_rank == send_node_2->owner_rank() ) {
-    EntityProc entry( send_node_2 , p_send );
-    change.push_back( entry );
-  }
-  {
-    EntityProc entry( send_edge_1 , p_send );
-    change.push_back( entry );
-  }
-  {
-    EntityProc entry( send_edge_2 , p_send );
-    change.push_back( entry );
-  }
-
-  send_edge_1 = NULL ;
-  send_edge_2 = NULL ;
-  send_node_1 = NULL ;
-  send_node_2 = NULL ;
-  recv_edge_1 = NULL ;
-  recv_edge_2 = NULL ;
-
-  STKUNIT_ASSERT( mesh.modification_begin() );
-  mesh.change_entity_owner( change );
-  STKUNIT_ASSERT( UnitTestBulkData::modification_end( mesh , generate_aura ) );
-
-  send_edge_1 = mesh.get_entity( 1 , edge_ids[ id_send ] );
-  send_edge_2 = mesh.get_entity( 1 , edge_ids[ id_send + 1 ] );
-  recv_edge_1 = mesh.get_entity( 1 , edge_ids[ id_recv ] );
-  recv_edge_2 = mesh.get_entity( 1 , edge_ids[ id_recv + 1 ] );
-
-  STKUNIT_ASSERT( NULL == send_edge_1 || p_rank != send_edge_1->owner_rank() );
-  STKUNIT_ASSERT( NULL == send_edge_2 || p_rank != send_edge_2->owner_rank() );
-  STKUNIT_ASSERT( NULL != recv_edge_1 && p_rank == recv_edge_1->owner_rank() );
-  STKUNIT_ASSERT( NULL != recv_edge_2 && p_rank == recv_edge_2->owner_rank() );
-
-  count_entities( select_used , mesh , local_count );
-  STKUNIT_ASSERT( local_count[0] == nLocalNode );
-  STKUNIT_ASSERT( local_count[1] == nLocalEdge );
-
-  unsigned count_shared = 0 ;
-  for ( std::vector<Entity*>::const_iterator
-        i = mesh.entity_comm().begin() ;
-        i != mesh.entity_comm().end() ; ++i ) {
-    if ( in_shared( **i ) ) { ++count_shared ; }
-  }
-  STKUNIT_ASSERT( count_shared == 2u );
-
-  {
-    Entity * const node_recv = mesh.get_entity( Node , node_ids[id_recv] );
-    Entity * const node_send = mesh.get_entity( Node , node_ids[id_send] );
-
-    STKUNIT_ASSERT( node_recv->sharing().size() == 1 );
-    STKUNIT_ASSERT( node_send->sharing().size() == 1 );
-  }
-}
-
-}
-
 void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
 {
   enum { nPerProc = 10 };
@@ -414,46 +321,35 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
   const unsigned nLocalNode = nPerProc + ( 1 < p_size ? 1 : 0 );
   const unsigned nLocalEdge = nPerProc ;
 
-  std::vector<EntityId> node_ids , edge_ids ;
-
-  MetaData meta( fem_entity_type_names() );
-
-  meta.commit();
-
-  Selector select_owned( meta.locally_owned_part() );
-
-  Selector select_used =  meta.locally_used_part() ;
-
-  Selector select_all(  meta.universal_part() );
-
-  PartVector no_parts ;
-
   std::vector<unsigned> local_count ;
 
   //------------------------------
   {
-    BulkData bulk( meta , pm , 100 );
+    RingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
 
-    generate_loop( bulk, no_parts , false /* no aura */, nPerProc, node_ids, edge_ids );
+    ring_mesh.generate_loop( false /* no aura */ );
 
-    count_entities( select_used , bulk , local_count );
+    const Selector select_used(  ring_mesh.m_meta_data.locally_used_part() );
+    const Selector select_all(   ring_mesh.m_meta_data.universal_part() );
+
+    count_entities( select_used , ring_mesh.m_bulk_data , local_count );
     STKUNIT_ASSERT_EQUAL( local_count[0] , nLocalNode );
     STKUNIT_ASSERT_EQUAL( local_count[1] , nLocalEdge );
 
-    count_entities( select_all , bulk , local_count );
+    count_entities( select_all , ring_mesh.m_bulk_data , local_count );
     STKUNIT_ASSERT_EQUAL( local_count[0] , nLocalNode );
     STKUNIT_ASSERT_EQUAL( local_count[1] , nLocalEdge );
 
     // Shift loop by two nodes and edges.
 
     if ( 1 < p_size ) {
-      test_shift_loop(bulk,false/* no aura */,nPerProc,node_ids,edge_ids);
+      ring_mesh.test_shift_loop( false /* no aura */ );
 
-      count_entities( select_used , bulk , local_count );
+      count_entities( select_used , ring_mesh.m_bulk_data , local_count );
       STKUNIT_ASSERT( local_count[0] == nLocalNode );
       STKUNIT_ASSERT( local_count[1] == nLocalEdge );
 
-      count_entities( select_all , bulk , local_count );
+      count_entities( select_all , ring_mesh.m_bulk_data , local_count );
       STKUNIT_ASSERT( local_count[0] == nLocalNode );
       STKUNIT_ASSERT( local_count[1] == nLocalEdge );
     }
@@ -462,32 +358,36 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
   //------------------------------
   // Test shift starting with ghosting but not regenerated ghosting.
   {
-    BulkData bulk( meta , pm , 100 );
+    RingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
 
-    generate_loop( bulk, no_parts , true /* aura */, nPerProc, node_ids, edge_ids );
+    ring_mesh.generate_loop( true /* with aura */ );
 
-    count_entities( select_used , bulk , local_count );
-    STKUNIT_ASSERT( local_count[0] == nLocalNode );
-    STKUNIT_ASSERT( local_count[1] == nLocalEdge );
+    const Selector select_owned( ring_mesh.m_meta_data.locally_owned_part() );
+    const Selector select_used(  ring_mesh.m_meta_data.locally_used_part() );
+    const Selector select_all(   ring_mesh.m_meta_data.universal_part() );
 
-    count_entities( select_all , bulk , local_count );
+    count_entities( select_used , ring_mesh.m_bulk_data , local_count );
+    STKUNIT_ASSERT_EQUAL( local_count[0] , nLocalNode );
+    STKUNIT_ASSERT_EQUAL( local_count[1] , nLocalEdge );
+
+    count_entities( select_all , ring_mesh.m_bulk_data , local_count );
     const unsigned n_extra = 1 < p_size ? 2 : 0 ;
     STKUNIT_ASSERT( local_count[0] == nLocalNode + n_extra );
     STKUNIT_ASSERT( local_count[1] == nLocalEdge + n_extra );
 
     if ( 1 < p_size ) {
-      test_shift_loop(bulk,false/* aura */,nPerProc,node_ids,edge_ids);
+      ring_mesh.test_shift_loop( false /* no aura */ );
 
-      count_entities( select_owned , bulk , local_count );
+      count_entities( select_owned , ring_mesh.m_bulk_data , local_count );
       STKUNIT_ASSERT( local_count[0] == nPerProc );
       STKUNIT_ASSERT( local_count[1] == nPerProc );
 
-      count_entities( select_used , bulk , local_count );
+      count_entities( select_used , ring_mesh.m_bulk_data , local_count );
       STKUNIT_ASSERT( local_count[0] == nLocalNode );
       STKUNIT_ASSERT( local_count[1] == nLocalEdge );
 
       // All of my ghosts were disrupted and therefore deleted:
-      count_entities( select_all , bulk , local_count );
+      count_entities( select_all , ring_mesh.m_bulk_data , local_count );
       STKUNIT_ASSERT_EQUAL( nLocalEdge , local_count[1] );
       STKUNIT_ASSERT_EQUAL( nLocalNode , local_count[0] );
     }
@@ -495,32 +395,36 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
   //------------------------------
   // Test shift starting with ghosting and regenerating ghosting.
   {
-    BulkData bulk( meta , pm , 100 );
+    RingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
 
-    generate_loop( bulk, no_parts , true /* aura */, nPerProc, node_ids, edge_ids );
+    ring_mesh.generate_loop( true /* with aura */ );
 
-    count_entities( select_used , bulk , local_count );
+    const Selector select_owned( ring_mesh.m_meta_data.locally_owned_part() );
+    const Selector select_used(  ring_mesh.m_meta_data.locally_used_part() );
+    const Selector select_all(   ring_mesh.m_meta_data.universal_part() );
+
+    count_entities( select_used , ring_mesh.m_bulk_data , local_count );
     STKUNIT_ASSERT( local_count[0] == nLocalNode );
     STKUNIT_ASSERT( local_count[1] == nLocalEdge );
 
-    count_entities( select_all , bulk , local_count );
+    count_entities( select_all , ring_mesh.m_bulk_data , local_count );
     const unsigned n_extra = 1 < p_size ? 2 : 0 ;
     STKUNIT_ASSERT( local_count[0] == nLocalNode + n_extra );
     STKUNIT_ASSERT( local_count[1] == nLocalEdge + n_extra );
 
     if ( 1 < p_size ) {
-      test_shift_loop(bulk,true/* aura */,nPerProc,node_ids,edge_ids);
+      ring_mesh.test_shift_loop( true /* with aura */ );
 
-      count_entities( select_owned , bulk , local_count );
+      count_entities( select_owned , ring_mesh.m_bulk_data , local_count );
       STKUNIT_ASSERT( local_count[0] == nPerProc );
       STKUNIT_ASSERT( local_count[1] == nPerProc );
 
-      count_entities( select_used , bulk , local_count );
+      count_entities( select_used , ring_mesh.m_bulk_data , local_count );
       STKUNIT_ASSERT( local_count[0] == nLocalNode );
       STKUNIT_ASSERT( local_count[1] == nLocalEdge );
 
       // All of my ghosts were regenerated:
-      count_entities( select_all , bulk , local_count );
+      count_entities( select_all , ring_mesh.m_bulk_data , local_count );
       STKUNIT_ASSERT( local_count[0] == nLocalNode + n_extra );
       STKUNIT_ASSERT( local_count[1] == nLocalEdge + n_extra );
     }
@@ -528,30 +432,21 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
   //------------------------------
   // Test bad owner change catching:
   if ( 1 < p_size ) {
-    BulkData bulk( meta , pm , 100 );
+    RingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
 
-    generate_loop( bulk, no_parts , true /* aura */, nPerProc, node_ids, edge_ids );
-
-    count_entities( select_used , bulk , local_count );
-    STKUNIT_ASSERT( local_count[0] == nLocalNode );
-    STKUNIT_ASSERT( local_count[1] == nLocalEdge );
-
-    count_entities( select_all , bulk , local_count );
-    const unsigned n_extra = 1 < p_size ? 2 : 0 ;
-    STKUNIT_ASSERT( local_count[0] == nLocalNode + n_extra );
-    STKUNIT_ASSERT( local_count[1] == nLocalEdge + n_extra );
+    ring_mesh.generate_loop( true /* with aura */ );
 
     std::vector<EntityProc> change ;
 
     if ( 0 == p_rank ) {
       change.resize(4);
       // Error to change to bad owner:
-      change[0].first = bulk.get_entity( 0 , node_ids[1] );
+      change[0].first = ring_mesh.m_bulk_data.get_entity( 0 , ring_mesh.m_node_ids[1] );
       change[0].second = p_size ;
       // Error to change a ghost:
       for ( std::vector<Entity*>::const_iterator
-            ec =  bulk.entity_comm().begin() ;
-            ec != bulk.entity_comm().end() ; ++ec ) {
+            ec =  ring_mesh.m_bulk_data.entity_comm().begin() ;
+            ec != ring_mesh.m_bulk_data.entity_comm().end() ; ++ec ) {
         if ( in_receive_ghost( **ec ) ) {
           change[1].first = *ec ;
           break ;
@@ -559,18 +454,18 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
       }
       change[1].second = p_rank ;
       // Error to change to multiple owners:
-      change[2].first = bulk.get_entity( 0 , node_ids[1] );
+      change[2].first = ring_mesh.m_bulk_data.get_entity( 0 , ring_mesh.m_node_ids[1] );
       change[2].second = ( p_rank + 1 ) % p_size ;
       change[3].first = change[2].first ;
       change[3].second = ( p_rank + 2 ) % p_size ;
     }
 
-    STKUNIT_ASSERT( bulk.modification_begin() );
+    STKUNIT_ASSERT( ring_mesh.m_bulk_data.modification_begin() );
 
     std::string error_msg ;
     bool exception_thrown = false ;
     try {
-      bulk.change_entity_owner( change );
+      ring_mesh.m_bulk_data.change_entity_owner( change );
     }
     catch( const std::exception & x ) {
       exception_thrown = true ;
@@ -587,25 +482,29 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
   // Test move one element with initial ghosting but not regenerated ghosting:
   // last processor give its shared node to P0
   if ( 1 < p_size ) {
-    BulkData bulk( meta , pm , 100 );
+    RingMeshFixture ring_mesh( pm , nPerProc , false /* no edge parts */ );
 
-    generate_loop( bulk , no_parts , true , nPerProc , node_ids , edge_ids );
+    ring_mesh.generate_loop( true /* with aura */ );
+
+    const Selector select_owned( ring_mesh.m_meta_data.locally_owned_part() );
+    const Selector select_used(  ring_mesh.m_meta_data.locally_used_part() );
+    const Selector select_all(   ring_mesh.m_meta_data.universal_part() );
 
     std::vector<EntityProc> change ;
 
     if ( p_rank + 1 == p_size ) {
       EntityProc entry ;
-      entry.first = bulk.get_entity( 0 , node_ids[0] );
+      entry.first = ring_mesh.m_bulk_data.get_entity( 0 , ring_mesh.m_node_ids[0] );
       entry.second = 0 ;
       STKUNIT_ASSERT_EQUAL( p_rank , entry.first->owner_rank() );
       change.push_back( entry );
     }
 
-    STKUNIT_ASSERT( bulk.modification_begin() );
-    bulk.change_entity_owner( change );
-    STKUNIT_ASSERT( bulk.internal_modification_end( false ) );
+    STKUNIT_ASSERT( ring_mesh.m_bulk_data.modification_begin() );
+    ring_mesh.m_bulk_data.change_entity_owner( change );
+    STKUNIT_ASSERT( UnitTestBulkData::modification_end( ring_mesh.m_bulk_data , false ) );
 
-    count_entities( select_owned , bulk , local_count );
+    count_entities( select_owned , ring_mesh.m_bulk_data , local_count );
     const unsigned n_node = p_rank == 0          ? nPerProc + 1 : (
                             p_rank + 1 == p_size ? nPerProc - 1 :
                                                    nPerProc );
@@ -613,17 +512,17 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
     STKUNIT_ASSERT_EQUAL( n_node , local_count[0] );
     STKUNIT_ASSERT_EQUAL( (unsigned) nPerProc , local_count[1] );
 
-    count_entities( select_used , bulk , local_count );
+    count_entities( select_used , ring_mesh.m_bulk_data , local_count );
     STKUNIT_ASSERT_EQUAL( nLocalNode , local_count[0] );
     STKUNIT_ASSERT_EQUAL( nLocalEdge , local_count[1] );
 
     // Moving the node disrupted ghosting on first and last process
-    count_entities( select_all , bulk , local_count );
+    count_entities( select_all , ring_mesh.m_bulk_data , local_count );
     const unsigned n_extra = p_rank + 1 == p_size || p_rank == 0 ? 1 : 2 ;
-
     STKUNIT_ASSERT_EQUAL( nLocalNode + n_extra , local_count[0] );
     STKUNIT_ASSERT_EQUAL( nLocalEdge + n_extra , local_count[1] );
   }
+
   //------------------------------
 
   std::cout << std::endl
@@ -772,7 +671,7 @@ void UnitTestBulkData::testChangeOwner_box( ParallelMachine pm )
   //------------------------------
   {
     BulkData bulk( meta , pm , 100 );
-
+    bulk.modification_begin();
     generate_boxes( bulk , false /* no aura */ , root_box , local_box );
 
     if ( 1 < p_size ) {
@@ -782,6 +681,7 @@ void UnitTestBulkData::testChangeOwner_box( ParallelMachine pm )
 
   if ( 1 < p_size ) {
     BulkData bulk( meta , pm , 100 );
+    bulk.modification_begin();
 
     generate_boxes( bulk , false /* no aura */ , root_box , local_box );
 
@@ -790,6 +690,7 @@ void UnitTestBulkData::testChangeOwner_box( ParallelMachine pm )
   //------------------------------
   if ( 1 < p_size ) {
     BulkData bulk( meta , pm , 100 );
+    bulk.modification_begin();
 
     generate_boxes( bulk , false /* no aura */ , root_box , local_box );
 
@@ -799,6 +700,7 @@ void UnitTestBulkData::testChangeOwner_box( ParallelMachine pm )
   // Introduce ghosts:
   if ( 1 < p_size ) {
     BulkData bulk( meta , pm , 100 );
+    bulk.modification_begin();
 
     generate_boxes( bulk , true /* aura */ , root_box , local_box );
 

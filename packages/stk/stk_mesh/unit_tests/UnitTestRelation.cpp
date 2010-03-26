@@ -68,6 +68,7 @@ namespace mesh {
 
 void UnitTestRelation::testRelation( ParallelMachine pm )
 {
+  typedef Field<double>  ScalarFieldType;
  // static const char method[] = "stk::mesh::UnitTestRelation" ;
 
  // Create a mesh for testing buckets
@@ -82,7 +83,9 @@ void UnitTestRelation::testRelation( ParallelMachine pm )
 
   MetaData meta( entity_names );
   MetaData meta2 ( entity_names );
-  typedef Field<double>  ScalarFieldType;
+
+  BulkData bulk( meta , pm , 4 );
+  BulkData bulk2( meta2 , pm , 4 );
 
   ScalarFieldType & temperature =
        meta.declare_field < ScalarFieldType > ( "temperature" , 4 );
@@ -104,8 +107,9 @@ void UnitTestRelation::testRelation( ParallelMachine pm )
   put_field ( volume2 , Element , universal2 );
   meta2.commit();
 
-  BulkData bulk( meta , pm , 4 );
-  BulkData bulk2( meta2 , pm , 4 );
+
+  bulk.modification_begin();
+  bulk2.modification_begin();
 
   const int root_box[3][2] = { { 0,4 } , { 0,5 } , { 0,6 } };
   int local_box[3][2] = { { 0,0 } , { 0,0 } , { 0,0 } };

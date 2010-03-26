@@ -19,6 +19,7 @@
 #include <stk_mesh/fem/EntityTypes.hpp>
 
 #include <unit_tests/UnitTestBulkData.hpp>
+#include <unit_tests/UnitTestRingMeshFixture.hpp>
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
@@ -47,6 +48,7 @@ void UnitTestBulkData::testChangeParts( ParallelMachine pm )
   }
 
   MetaData meta( entity_names );
+  BulkData bulk( meta , pm , 100 );
 
   Part & part_univ = meta.universal_part();
   Part & part_uses = meta.locally_used_part();
@@ -63,8 +65,7 @@ void UnitTestBulkData::testChangeParts( ParallelMachine pm )
   // Part & part_B_3 = meta.declare_part( std::string("B_3") , 3 );
 
   meta.commit();
-
-  BulkData bulk( meta , pm , 100 );
+  bulk.modification_begin();
 
   PartVector tmp(1);
 
@@ -310,137 +311,118 @@ void UnitTestBulkData::testChangeParts_loop( ParallelMachine pm )
   const unsigned nLocalNode = nPerProc + ( 1 < p_size ? 1 : 0 );
   const unsigned nLocalEdge = nPerProc ;
 
-  std::vector<EntityId> node_ids , edge_ids ;
+  RingMeshFixture ring_mesh( pm , nPerProc , true /* generate parts */ );
 
-  MetaData meta( fem_entity_type_names() );
+  ring_mesh.generate_loop( false /* no aura */ );
 
-  Part & part_univ = meta.universal_part();
-  Part & part_uses = meta.locally_used_part();
-  Part & part_owns = meta.locally_owned_part();
+  Part & part_owns = ring_mesh.m_meta_data.locally_owned_part();
+  Part & part_uses = ring_mesh.m_meta_data.locally_used_part();
+  Part & part_univ = ring_mesh.m_meta_data.universal_part();
 
-  PartVector edge_parts( nLocalEdge );
-  for ( unsigned i = 0 ; i < nLocalEdge ; ++i ) {
-    std::ostringstream name ;
-    name << "EdgePart_" << i ;
-    edge_parts[i] = & meta.declare_part( name.str() , Edge );
-  }
-
-  Part & edge_part_extra = meta.declare_part( "EdgePart_Extra" , Edge );
-
-  meta.commit();
-
-  Selector select_owned( meta.locally_owned_part() );
-  Selector select_used( meta.locally_used_part() );
-  Selector select_all(  meta.universal_part() );
+  Selector select_owned( ring_mesh.m_meta_data.locally_owned_part() );
+  Selector select_used(  ring_mesh.m_meta_data.locally_used_part() );
+  Selector select_all(   ring_mesh.m_meta_data.universal_part() );
 
   std::vector<unsigned> local_count ;
 
-  //------------------------------
-  {
-    BulkData bulk( meta , pm , 100 );
+  PartVector tmp ;
+  for ( unsigned i = 0 ; i < nLocalEdge ; ++i ) {
+    const unsigned n = i + nPerProc * p_rank ;
+    Entity * const edge = ring_mesh.m_bulk_data.get_entity( 1 , ring_mesh.m_edge_ids[n] );
+    STKUNIT_ASSERT( edge != NULL );
+    edge->bucket().supersets( tmp );
+    STKUNIT_ASSERT( size_t(4) == tmp.size() );
+    STKUNIT_ASSERT( tmp[0] == & part_univ );
+    STKUNIT_ASSERT( tmp[1] == & part_uses );
+    STKUNIT_ASSERT( tmp[2] == & part_owns );
+    STKUNIT_ASSERT( tmp[3] == ring_mesh.m_edge_parts[ n % ring_mesh.m_edge_parts.size() ] );
+  }
 
-    generate_loop( bulk, edge_parts , false /* no aura */, nPerProc,
-                   node_ids, edge_ids );
+  for ( unsigned i = 0 ; i < nLocalNode ; ++i ) {
+    const unsigned n = ( i + nPerProc * p_rank ) % ring_mesh.m_node_ids.size();
+    const unsigned e0 = n ;
+    const unsigned e1 = ( n + ring_mesh.m_edge_ids.size() - 1 ) % ring_mesh.m_edge_ids.size();
+    const unsigned ns = ring_mesh.m_edge_parts.size();
+    const unsigned n0 = e0 % ns ;
+    const unsigned n1 = e1 % ns ;
+    Part * const epart_0 = ring_mesh.m_edge_parts[ n0 < n1 ? n0 : n1 ];
+    Part * const epart_1 = ring_mesh.m_edge_parts[ n0 < n1 ? n1 : n0 ];
 
-    PartVector tmp ;
-    for ( unsigned i = 0 ; i < nLocalEdge ; ++i ) {
-      const unsigned n = i + nPerProc * p_rank ;
-      Entity * const edge = bulk.get_entity( 1 , edge_ids[n] );
-      STKUNIT_ASSERT( edge != NULL );
-      edge->bucket().supersets( tmp );
-      STKUNIT_ASSERT( size_t(4) == tmp.size() );
+    Entity * const node = ring_mesh.m_bulk_data.get_entity( 0 , ring_mesh.m_node_ids[n] );
+    STKUNIT_ASSERT( node != NULL );
+    node->bucket().supersets( tmp );
+    if ( node->owner_rank() == p_rank ) {
+      STKUNIT_ASSERT( size_t(5) == tmp.size() );
       STKUNIT_ASSERT( tmp[0] == & part_univ );
       STKUNIT_ASSERT( tmp[1] == & part_uses );
       STKUNIT_ASSERT( tmp[2] == & part_owns );
-      STKUNIT_ASSERT( tmp[3] == edge_parts[ n % edge_parts.size() ] );
+      STKUNIT_ASSERT( tmp[3] == epart_0 );
+      STKUNIT_ASSERT( tmp[4] == epart_1 );
     }
-
-    for ( unsigned i = 0 ; i < nLocalNode ; ++i ) {
-      const unsigned n = ( i + nPerProc * p_rank ) % node_ids.size();
-      const unsigned e0 = n ;
-      const unsigned e1 = ( n + edge_ids.size() - 1 ) % edge_ids.size();
-      const unsigned ns = edge_parts.size();
-      const unsigned n0 = e0 % ns ;
-      const unsigned n1 = e1 % ns ;
-      Part * const epart_0 = edge_parts[ n0 < n1 ? n0 : n1 ];
-      Part * const epart_1 = edge_parts[ n0 < n1 ? n1 : n0 ];
-
-      Entity * const node = bulk.get_entity( 0 , node_ids[n] );
-      STKUNIT_ASSERT( node != NULL );
-      node->bucket().supersets( tmp );
-      if ( node->owner_rank() == p_rank ) {
-        STKUNIT_ASSERT( size_t(5) == tmp.size() );
-        STKUNIT_ASSERT( tmp[0] == & part_univ );
-        STKUNIT_ASSERT( tmp[1] == & part_uses );
-        STKUNIT_ASSERT( tmp[2] == & part_owns );
-        STKUNIT_ASSERT( tmp[3] == epart_0 );
-        STKUNIT_ASSERT( tmp[4] == epart_1 );
-      }
-      else {
-        STKUNIT_ASSERT( size_t(4) == tmp.size() );
-        STKUNIT_ASSERT( tmp[0] == & part_univ );
-        STKUNIT_ASSERT( tmp[1] == & part_uses );
-        STKUNIT_ASSERT( tmp[2] == epart_0 );
-        STKUNIT_ASSERT( tmp[3] == epart_1 );
-      }
+    else {
+      STKUNIT_ASSERT( size_t(4) == tmp.size() );
+      STKUNIT_ASSERT( tmp[0] == & part_univ );
+      STKUNIT_ASSERT( tmp[1] == & part_uses );
+      STKUNIT_ASSERT( tmp[2] == epart_0 );
+      STKUNIT_ASSERT( tmp[3] == epart_1 );
     }
+  }
 
-    bulk.modification_begin();
+  ring_mesh.m_bulk_data.modification_begin();
 
-    if ( 0 == p_rank ) {
+  if ( 0 == p_rank ) {
 
-      for ( unsigned i = 0 ; i < nLocalEdge ; ++i ) {
-        const unsigned n = i + nPerProc * p_rank ;
+    for ( unsigned i = 0 ; i < nLocalEdge ; ++i ) {
+      const unsigned n = i + nPerProc * p_rank ;
 
-        PartVector add(1); add[0] = & edge_part_extra ;
-        PartVector rem(1); rem[0] = edge_parts[ n % edge_parts.size() ];
+      PartVector add(1); add[0] = & ring_mesh.m_edge_part_extra ;
+      PartVector rem(1); rem[0] = ring_mesh.m_edge_parts[ n % ring_mesh.m_edge_parts.size() ];
 
-        Entity * const edge = bulk.get_entity( 1 , edge_ids[n] );
-        bulk.change_entity_parts( *edge , add , rem );
-        edge->bucket().supersets( tmp );
-        STKUNIT_ASSERT_EQUAL( size_t(4) , tmp.size() );
-        STKUNIT_ASSERT( tmp[0] == & part_univ );
-        STKUNIT_ASSERT( tmp[1] == & part_uses );
-        STKUNIT_ASSERT( tmp[2] == & part_owns );
-        STKUNIT_ASSERT( tmp[3] == & edge_part_extra );
-      }
+      Entity * const edge = ring_mesh.m_bulk_data.get_entity( 1 , ring_mesh.m_edge_ids[n] );
+      ring_mesh.m_bulk_data.change_entity_parts( *edge , add , rem );
+      edge->bucket().supersets( tmp );
+      STKUNIT_ASSERT_EQUAL( size_t(4) , tmp.size() );
+      STKUNIT_ASSERT( tmp[0] == & part_univ );
+      STKUNIT_ASSERT( tmp[1] == & part_uses );
+      STKUNIT_ASSERT( tmp[2] == & part_owns );
+      STKUNIT_ASSERT( tmp[3] == & ring_mesh.m_edge_part_extra );
     }
+  }
 
-    bulk.modification_end();
+  ring_mesh.m_bulk_data.modification_end();
 
-    for ( unsigned i = 0 ; i < nLocalNode ; ++i ) {
-      const unsigned n = ( i + nPerProc * p_rank ) % node_ids.size();
-      const unsigned e0 = n ;
-      const unsigned e1 = ( n + edge_ids.size() - 1 ) % edge_ids.size();
-      const unsigned ns = edge_parts.size();
-      const unsigned n0 = e0 % ns ;
-      const unsigned n1 = e1 % ns ;
-      Part * ep_0 = e0 < nLocalEdge ? & edge_part_extra : edge_parts[n0] ;
-      Part * ep_1 = e1 < nLocalEdge ? & edge_part_extra : edge_parts[n1] ;
+  for ( unsigned i = 0 ; i < nLocalNode ; ++i ) {
+    const unsigned n = ( i + nPerProc * p_rank ) % ring_mesh.m_node_ids.size();
+    const unsigned e0 = n ;
+    const unsigned e1 = ( n + ring_mesh.m_edge_ids.size() - 1 ) % ring_mesh.m_edge_ids.size();
+    const unsigned ns = ring_mesh.m_edge_parts.size();
+    const unsigned n0 = e0 % ns ;
+    const unsigned n1 = e1 % ns ;
+    Part * ep_0 = e0 < nLocalEdge ? & ring_mesh.m_edge_part_extra : ring_mesh.m_edge_parts[n0] ;
+    Part * ep_1 = e1 < nLocalEdge ? & ring_mesh.m_edge_part_extra : ring_mesh.m_edge_parts[n1] ;
 
-      Part * epart_0 = ep_0->mesh_meta_data_ordinal() < ep_1->mesh_meta_data_ordinal() ? ep_0 : ep_1 ;
-      Part * epart_1 = ep_0->mesh_meta_data_ordinal() < ep_1->mesh_meta_data_ordinal() ? ep_1 : ep_0 ;
+    Part * epart_0 = ep_0->mesh_meta_data_ordinal() < ep_1->mesh_meta_data_ordinal() ? ep_0 : ep_1 ;
+    Part * epart_1 = ep_0->mesh_meta_data_ordinal() < ep_1->mesh_meta_data_ordinal() ? ep_1 : ep_0 ;
 
-      const size_t n_edge_part_count = epart_0 == epart_1 ? 1 : 2 ;
+    const size_t n_edge_part_count = epart_0 == epart_1 ? 1 : 2 ;
 
-      Entity * const node = bulk.get_entity( 0 , node_ids[n] );
-      STKUNIT_ASSERT( node != NULL );
-      node->bucket().supersets( tmp );
-      if ( node->owner_rank() == p_rank ) {
-        STKUNIT_ASSERT_EQUAL( n_edge_part_count + 3 , tmp.size() );
-        STKUNIT_ASSERT( tmp[0] == & part_univ );
-        STKUNIT_ASSERT( tmp[1] == & part_uses );
-        STKUNIT_ASSERT( tmp[2] == & part_owns );
-        STKUNIT_ASSERT( tmp[3] == epart_0 );
-        if ( 1 < n_edge_part_count ) STKUNIT_ASSERT( tmp[4] == epart_1 );
-      }
-      else {
-        STKUNIT_ASSERT_EQUAL( n_edge_part_count + 2 , tmp.size() );
-        STKUNIT_ASSERT( tmp[0] == & part_univ );
-        STKUNIT_ASSERT( tmp[1] == & part_uses );
-        STKUNIT_ASSERT( tmp[2] == epart_0 );
-        if ( 1 < n_edge_part_count ) STKUNIT_ASSERT( tmp[3] == epart_1 );
-      }
+    Entity * const node = ring_mesh.m_bulk_data.get_entity( 0 , ring_mesh.m_node_ids[n] );
+    STKUNIT_ASSERT( node != NULL );
+    node->bucket().supersets( tmp );
+    if ( node->owner_rank() == p_rank ) {
+      STKUNIT_ASSERT_EQUAL( n_edge_part_count + 3 , tmp.size() );
+      STKUNIT_ASSERT( tmp[0] == & part_univ );
+      STKUNIT_ASSERT( tmp[1] == & part_uses );
+      STKUNIT_ASSERT( tmp[2] == & part_owns );
+      STKUNIT_ASSERT( tmp[3] == epart_0 );
+      if ( 1 < n_edge_part_count ) STKUNIT_ASSERT( tmp[4] == epart_1 );
+    }
+    else {
+      STKUNIT_ASSERT_EQUAL( n_edge_part_count + 2 , tmp.size() );
+      STKUNIT_ASSERT( tmp[0] == & part_univ );
+      STKUNIT_ASSERT( tmp[1] == & part_uses );
+      STKUNIT_ASSERT( tmp[2] == epart_0 );
+      if ( 1 < n_edge_part_count ) STKUNIT_ASSERT( tmp[3] == epart_1 );
     }
   }
 }

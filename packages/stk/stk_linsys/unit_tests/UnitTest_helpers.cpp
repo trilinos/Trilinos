@@ -37,6 +37,8 @@ void fill_utest_mesh_meta_data(stk::mesh::MetaData& meta_data, bool use_temperat
 
   stk::mesh::put_field( pressure_field,    stk::mesh::Element, elem_block );
   stk::mesh::put_field( velocity_field,    stk::mesh::Node,    elem_block );
+
+  meta_data.commit();
 }
 
 // Assume the following mesh of 4 hex8 elements on the first processor (proc 0).
@@ -91,6 +93,8 @@ void elem_node_ids( stk::mesh::EntityId elem_id , stk::mesh::EntityId node_ids[]
 
 void fill_utest_mesh_bulk_data(stk::mesh::BulkData& bulk_data)
 {
+  bulk_data.modification_begin();
+
   const unsigned num_elems = 4;
 
   int numProcs = 1, myProc = 0;
@@ -106,5 +110,7 @@ void fill_utest_mesh_bulk_data(stk::mesh::BulkData& bulk_data)
     elem_node_ids( elem_id+i, node_ids );
     stk::mesh::declare_element( bulk_data, elem_block, elem_id+i, node_ids );
   }
+
+  bulk_data.modification_end();
 }
 

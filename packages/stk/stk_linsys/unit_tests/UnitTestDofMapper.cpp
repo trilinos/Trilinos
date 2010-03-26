@@ -35,17 +35,13 @@ void testDofMapper( MPI_Comm comm )
 {
   //First create and fill MetaData and BulkData objects:
 
-  stk::mesh::MetaData meta_data( stk::mesh::fem_entity_type_names() );
-
-  fill_utest_mesh_meta_data( meta_data );
-  meta_data.commit();
-
   const unsigned bucket_size = 100; //for a real application mesh, bucket_size would be much bigger...
 
+  stk::mesh::MetaData meta_data( stk::mesh::fem_entity_type_names() );
   stk::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
-  fill_utest_mesh_bulk_data( bulk_data );
 
-  bulk_data.modification_end();
+  fill_utest_mesh_meta_data( meta_data );
+  fill_utest_mesh_bulk_data( bulk_data );
 
   stk::mesh::Selector selector(meta_data.locally_used_part());
   std::vector<unsigned> count;

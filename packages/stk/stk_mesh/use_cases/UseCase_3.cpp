@@ -36,21 +36,22 @@ namespace stk{
 namespace mesh {
 namespace use_cases {
 
-UseCase_3_MetaData::UseCase_3_MetaData(const std::vector<std::string> & entity_type_names)
-  : m_metaData(entity_type_names),
-    m_block_hex(m_metaData.declare_part(       "block_1", Element )),
-    m_block_wedge(m_metaData.declare_part(     "block_2", Element )),
-    m_block_tet(m_metaData.declare_part(       "block_3", Element )),
-    m_block_pyramid(m_metaData.declare_part(   "block_4", Element )),
-    m_block_quad_shell(m_metaData.declare_part("block_5", Element )),
-    m_block_tri_shell(m_metaData.declare_part( "block_6", Element )),
-    m_coordinates_field(m_metaData.declare_field< VectorFieldType >( "coordinates" )),
-    m_centroid_field(m_metaData.declare_field< VectorFieldType >( "centroid" )),
-    m_temperature_field(m_metaData.declare_field< ScalarFieldType >( "temperature" )),
-    m_volume_field(m_metaData.declare_field< ScalarFieldType >( "volume" )),
-    m_element_node_coordinates_field(m_metaData.declare_field< ElementNodePointerFieldType >( "elem_node_coord" ))
+UseCase_3_Mesh::UseCase_3_Mesh( stk::ParallelMachine comm )
+  : m_metaData( fem_entity_type_names() )
+  , m_bulkData( m_metaData , comm )
+  , m_block_hex(        m_metaData.declare_part( "block_1", Element ))
+  , m_block_wedge(      m_metaData.declare_part( "block_2", Element ))
+  , m_block_tet(        m_metaData.declare_part( "block_3", Element ))
+  , m_block_pyramid(    m_metaData.declare_part( "block_4", Element ))
+  , m_block_quad_shell( m_metaData.declare_part( "block_5", Element ))
+  , m_block_tri_shell(  m_metaData.declare_part( "block_6", Element ))
+  , m_coordinates_field( m_metaData.declare_field< VectorFieldType >( "coordinates" ))
+  , m_centroid_field(    m_metaData.declare_field< VectorFieldType >( "centroid" ))
+  , m_temperature_field( m_metaData.declare_field< ScalarFieldType >( "temperature" ))
+  , m_volume_field( m_metaData.declare_field< ScalarFieldType >( "volume" ))
+  , m_element_node_coordinates_field( m_metaData.declare_field< ElementNodePointerFieldType >( "elem_node_coord" ))
 {
-  // Attache a cell topology to these parts:
+  // Attache a element topology to the designated element block parts:
   set_cell_topology< shards::Hexahedron<8>          >( m_block_hex );
   set_cell_topology< shards::Wedge<6>               >( m_block_wedge );
   set_cell_topology< shards::Tetrahedron<4>         >( m_block_tet );
@@ -58,7 +59,7 @@ UseCase_3_MetaData::UseCase_3_MetaData(const std::vector<std::string> & entity_t
   set_cell_topology< shards::ShellQuadrilateral<4>  >( m_block_quad_shell );
   set_cell_topology< shards::ShellTriangle<3>       >( m_block_tri_shell );
 
-  // Field restrictions:
+  // Define where fields exist on the mesh:
   Part & universal = m_metaData.universal_part();
 
   put_field( m_coordinates_field , Node , universal );
@@ -69,6 +70,16 @@ UseCase_3_MetaData::UseCase_3_MetaData(const std::vector<std::string> & entity_t
   put_field( m_volume_field, Element, m_block_tet );
   put_field( m_volume_field, Element, m_block_pyramid );
   
+  // Define the field-relation such that the values of the
+  // 'element_node_coordinates_field' are pointers to the
+  // element's nodal 'coordinates_field'.
+  // I.e., let:
+  //   double *const* elem_node_coord =
+  //     field_data( m_element_node_coordinates_field , element );
+  // then
+  //     elem_node_coord[n][0..2] is the coordinates of element node 'n'
+  //     that are attached to that node.
+
   m_metaData.declare_field_relation(
     m_element_node_coordinates_field ,
     & element_node_stencil<void> ,
@@ -83,21 +94,15 @@ UseCase_3_MetaData::UseCase_3_MetaData(const std::vector<std::string> & entity_t
   put_field( m_element_node_coordinates_field, Element, m_block_tri_shell, shards::ShellTriangle<> ::node_count );
   
   m_metaData.commit();
-
 }
 
 UseCase_3_Mesh::~UseCase_3_Mesh() 
-{
-}
+{ }
 
-UseCase_3_Mesh::UseCase_3_Mesh( stk::ParallelMachine comm )
-  : UseCase_3_MetaData(fem_entity_type_names()),
-    m_bulkData(m_metaData,comm,field_data_chunk_size)
-{
-}
+//------------------------------------------------------------------------------
+// Use case specific mesh generation data:
 
 enum { SpatialDim = 3 };
-
 enum { node_count = 21 };
 enum { number_hex = 3 };
 enum { number_wedge = 3 };
@@ -148,55 +153,51 @@ static const EntityId shell_tri_node_ids[3][ shards::ShellTriangle<> ::node_coun
 
 }
 
+//------------------------------------------------------------------------------
 
-
-void populate( UseCase_3_Mesh & mesh )
+void UseCase_3_Mesh::populate()
 {
-  BulkData & bulkData = mesh.modifiableBulkData();
-  const VectorFieldType & node_coord = mesh.const_coordinates_field();
-  Part & hex_block = mesh.block_hex();
-  Part & wedge_block = mesh.block_wedge();
-  Part & tetra_block = mesh.block_tet();
-  Part & pyramid_block = mesh.block_pyramid();
-  Part & quad_shell_block = mesh.block_quad_shell();
-  Part & tri_shell_block = mesh.block_tri_shell();
+  m_bulkData.modification_begin();
 
   EntityId elem_id = 1; 
 
   for ( unsigned i = 0 ; i < number_hex ; ++i , ++elem_id ) {
-    declare_element( bulkData, hex_block, elem_id, hex_node_ids[i] );
+    declare_element( m_bulkData, m_block_hex, elem_id, hex_node_ids[i] );
   }
 
   for ( unsigned i = 0 ; i < number_wedge ; ++i , ++elem_id ) {
-    declare_element( bulkData, wedge_block, elem_id, wedge_node_ids[i] );
+    declare_element( m_bulkData, m_block_wedge, elem_id, wedge_node_ids[i] );
   }
 
   for ( unsigned i = 0 ; i < number_tetra ; ++i , ++elem_id ) {
-    declare_element( bulkData, tetra_block, elem_id, tetra_node_ids[i] );
+    declare_element( m_bulkData, m_block_tet, elem_id, tetra_node_ids[i] );
   }
 
   for ( unsigned i = 0 ; i < number_pyramid ; ++i , ++elem_id ) {
-    declare_element( bulkData, pyramid_block, elem_id, pyramid_node_ids[i] );
+    declare_element( m_bulkData, m_block_pyramid, elem_id, pyramid_node_ids[i] );
   }
 
   for ( unsigned i = 0 ; i < number_shell_quad ; ++i , ++elem_id ) {
-    declare_element( bulkData, quad_shell_block, elem_id, shell_quad_node_ids[i]);
+    declare_element( m_bulkData, m_block_quad_shell, elem_id, shell_quad_node_ids[i]);
   }
 
   for ( unsigned i = 0 ; i < number_shell_tri ; ++i , ++elem_id ) {
-    declare_element( bulkData, tri_shell_block, elem_id, shell_tri_node_ids[i] );
+    declare_element( m_bulkData, m_block_tri_shell, elem_id, shell_tri_node_ids[i] );
   }
 
   for ( unsigned i = 0 ; i < node_count ; ++i ) {
-    Entity * const node = bulkData.get_entity( Node , i + 1 );
-    double * const coord = field_data( node_coord , *node );
+    Entity * const node = m_bulkData.get_entity( Node , i + 1 );
+    double * const coord = field_data( m_coordinates_field , *node );
     coord[0] = node_coord_data[i][0] ;
     coord[1] = node_coord_data[i][1] ;
     coord[2] = node_coord_data[i][2] ;
   }
 
+  m_bulkData.modification_end();
   // No parallel stuff for now
 }
+
+//------------------------------------------------------------------------------
 
 bool verify_elem_node_coord_3(
   mesh::Entity & elem ,
@@ -290,17 +291,17 @@ bool verifyMesh( const UseCase_3_Mesh & mesh )
 {
   bool result = true;
 
-  const BulkData & bulkData = mesh.bulkData();
-  const VectorFieldType & node_coord = mesh.const_coordinates_field();
+  const BulkData & bulkData = mesh.m_bulkData ;
+  const VectorFieldType & node_coord = mesh.m_coordinates_field ;
   const ElementNodePointerFieldType & elem_node_coord  = 
-    mesh.const_element_node_coordinates_field();
+    mesh.m_element_node_coordinates_field ;
   
   std::vector<Bucket *> element_buckets = bulkData.buckets( Element );
   
   // Verify entities in each part are set up correcty:
 
   // hex_block:
-  Part & hex_block = mesh.block_hex();
+  Part & hex_block = mesh.m_block_hex ;
   result = result && 
     verify_elem_node_coord_by_part_3(
       hex_block,
@@ -311,7 +312,7 @@ bool verifyMesh( const UseCase_3_Mesh & mesh )
       );
 
   // wedge_block:
-  Part & wedge_block = mesh.block_wedge();
+  Part & wedge_block = mesh.m_block_wedge ;
   result = result && 
     verify_elem_node_coord_by_part_3(
       wedge_block,
@@ -322,7 +323,7 @@ bool verifyMesh( const UseCase_3_Mesh & mesh )
       );
 
   // tetra_block
-  Part & tetra_block = mesh.block_tet();
+  Part & tetra_block = mesh.m_block_tet ;
   result = result && 
     verify_elem_node_coord_by_part_3(
       tetra_block,
@@ -333,7 +334,7 @@ bool verifyMesh( const UseCase_3_Mesh & mesh )
       );
 
   // pyramid_block
-  Part & pyramid_block = mesh.block_pyramid();
+  Part & pyramid_block = mesh.m_block_pyramid ;
   result = result && 
     verify_elem_node_coord_by_part_3(
       pyramid_block,
@@ -344,7 +345,7 @@ bool verifyMesh( const UseCase_3_Mesh & mesh )
       );
 
   // quad_shell_block
-  Part & quad_shell_block = mesh.block_quad_shell();
+  Part & quad_shell_block = mesh.m_block_quad_shell ;
   result = result && 
     verify_elem_node_coord_by_part_3(
       quad_shell_block,
@@ -355,7 +356,7 @@ bool verifyMesh( const UseCase_3_Mesh & mesh )
       );
 
   // tri_shell_block
-  Part & tri_shell_block = mesh.block_tri_shell();
+  Part & tri_shell_block = mesh.m_block_tri_shell ;
   result = result && 
     verify_elem_node_coord_by_part_3(
       tri_shell_block,

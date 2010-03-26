@@ -42,29 +42,24 @@ void testLinsysFunctions( MPI_Comm comm )
 {
   //First create and fill MetaData and BulkData objects:
 
+  const unsigned bucket_size = 100; //for a real application mesh, bucket_size would be much bigger...
+
   stk::mesh::MetaData meta_data( stk::mesh::fem_entity_type_names() );
   stk::mesh::MetaData meta_data2( stk::mesh::fem_entity_type_names() );
+
+  stk::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
+  stk::mesh::BulkData bulk_data2( meta_data2, comm, bucket_size );
+
+  //create a boundary-condition part for testing later:
+  stk::mesh::Part& bcpart = meta_data.declare_part("bcpart");
 
   fill_utest_mesh_meta_data( meta_data );
 
   bool use_temperature=false;
   fill_utest_mesh_meta_data( meta_data2, use_temperature );
 
-  //create a boundary-condition part for testing later:
-  stk::mesh::Part& bcpart = meta_data.declare_part("bcpart");
-
-  meta_data.commit();
-  meta_data2.commit();
-
-  const unsigned bucket_size = 100; //for a real application mesh, bucket_size would be much bigger...
-
-  stk::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
-  stk::mesh::BulkData bulk_data2( meta_data2, comm, bucket_size );
   fill_utest_mesh_bulk_data( bulk_data );
   fill_utest_mesh_bulk_data( bulk_data2 );
-
-  bulk_data.modification_end();
-  bulk_data2.modification_end();
 
   //set owner-processors to lowest-sharing (stk::mesh defaults to
   //highest-sharing) If highest-sharing owns, then it isn't correct for the

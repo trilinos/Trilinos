@@ -38,8 +38,9 @@ std::vector<std::string>  get_entity_type_names ( int rank )
 }
 
 
-UnitTestMetaData::UnitTestMetaData ()
+UnitTestMesh::UnitTestMesh ( stk::ParallelMachine comm , unsigned block_size )
   : m_meta_data ( get_entity_type_names ( MAX_RANK ) ) 
+  , m_bulk_data ( m_meta_data , comm , block_size )
   , m_test_part ( m_meta_data.declare_part ( "Test Part" ) )
   , m_cell_part ( m_meta_data.declare_part ( "Cell list" , MAX_RANK ) )
   , m_part_A_0 ( m_meta_data.declare_part ( "Part A 0", 0 ) )
@@ -52,6 +53,9 @@ UnitTestMetaData::UnitTestMetaData ()
   , m_part_B_2 ( m_meta_data.declare_part ( "Part B 2", 2 ) )
   , m_part_B_3 ( m_meta_data.declare_part ( "Part B 3", 3 ) )
   , m_part_B_superset ( m_meta_data.declare_part ( "Part B superset" ) )
+  , m_comm_rank( stk::parallel_machine_rank( comm ) )
+  , m_comm_size( stk::parallel_machine_size( comm ) )
+  , m_previous_state ( stk::mesh::BulkData::MODIFIABLE )
 {
   m_meta_data.declare_part_subset ( m_part_A_superset , m_part_A_0 );
   m_meta_data.declare_part_subset ( m_part_A_superset , m_part_A_1 );
@@ -64,17 +68,6 @@ UnitTestMetaData::UnitTestMetaData ()
   m_meta_data.declare_part_subset ( m_part_B_superset , m_part_B_3 );
 
   m_meta_data.commit ();
-}
-
-
-
-UnitTestMesh::UnitTestMesh ( stk::ParallelMachine comm , unsigned block_size )
-  : UnitTestMetaData ()
-  , m_bulk_data ( m_meta_data , comm , block_size )
-  , m_previous_state ( stk::mesh::BulkData::MODIFIABLE )
-{
-  m_comm_rank = stk::parallel_machine_rank( comm );
-  m_comm_size = stk::parallel_machine_size( comm );
 }
 
 
