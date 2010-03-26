@@ -190,6 +190,8 @@ extern int read_mm_file(
   MESH_INFO_PTR mesh
 );
 
+extern void mm_cleanup(MESH_INFO_PTR);
+
 extern int read_mtxplus_file(
   int Proc,
   int Num_Proc,

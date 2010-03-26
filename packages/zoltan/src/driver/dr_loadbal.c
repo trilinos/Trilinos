@@ -968,7 +968,7 @@ MESH_INFO_PTR mesh;
   if ((mesh->data_type == HYPERGRAPH) && mesh->visible_nvtx) {
     int i, cnt = 0;
     for (i = 0; i < mesh->num_elems; i++)
-      if (mesh->elements[i].globalID < mesh->visible_nvtx) cnt++;
+      if (mesh->elements[i].globalID <= mesh->visible_nvtx) cnt++;
     return(cnt);
   }
   else
@@ -1007,7 +1007,7 @@ void get_elements(void *data, int num_gid_entries, int num_lid_entries,
 
     current_elem = &elem[i];
     if ((mesh->data_type == HYPERGRAPH) && mesh->visible_nvtx &&
-	(current_elem->globalID >= mesh->visible_nvtx)) continue;
+	(current_elem->globalID > mesh->visible_nvtx)) continue;
 
     for (j = 0; j < gid; j++) global_id[idx*num_gid_entries+j]=0;
     global_id[idx*num_gid_entries+gid] = (ZOLTAN_ID_TYPE) current_elem->globalID;
@@ -1384,11 +1384,11 @@ void get_num_edges_multi(
       ncount = 0;
       for (j = 0; j < nedges; j++)  {
 	if (current_elem->adj_proc[j] == mesh->proc) {
-	  if (mesh->elements[current_elem->adj[j]].globalID<mesh->visible_nvtx)
+	  if (mesh->elements[current_elem->adj[j]].globalID<=mesh->visible_nvtx)
 	    ncount++;
 	}
 	else {
-	  if (current_elem->adj[j] < mesh->visible_nvtx)
+	  if (current_elem->adj[j] <= mesh->visible_nvtx)
 	    ncount++;
 	}
       }
@@ -1454,12 +1454,12 @@ void get_edge_list_multi (void *data, int num_gid_entries, int num_lid_entries,
 	/* Did I blank this vertex of mine */
 	if (mesh->blank && mesh->blank[local_elem]) continue;
 	if (mesh->visible_nvtx &&
-	    mesh->elements[local_elem].globalID >= mesh->visible_nvtx) continue;
+	    mesh->elements[local_elem].globalID > mesh->visible_nvtx) continue;
       }
       else {
 	if (current_elem->adj_blank && current_elem->adj_blank[i]) continue;
 	if (mesh->visible_nvtx &&
-	    current_elem->adj[i] >= mesh->visible_nvtx) continue;
+	    current_elem->adj[i] > mesh->visible_nvtx) continue;
       }
 
       for (k = 0; k < gid; k++) nbor_global_id[k+j*num_gid_entries] = 0;
@@ -1925,7 +1925,7 @@ void get_hg_size_compressed_pin_storage(
     /* Count #pins in "visible" part */
     *num_pins = 0;
     for (i=0; i<mesh->hindex[mesh->nhedges]; i++){
-      if (mesh->hvertex[i] < mesh->visible_nvtx){
+      if (mesh->hvertex[i] <= mesh->visible_nvtx){
 	  ++(*num_pins);
       }
     }
@@ -2011,7 +2011,7 @@ void get_hg_compressed_pin_storage(
   for (i=0; i<mesh->nhedges; i++){
     pins = 0;
     for (j=mesh->hindex[i]; j<mesh->hindex[i+1]; j++){
-      if (mesh->visible_nvtx && (mesh->hvertex[j] >= mesh->visible_nvtx))
+      if (mesh->visible_nvtx && (mesh->hvertex[j] > mesh->visible_nvtx))
 	; /* skip pin */
       else{
 	for (k=0; k<gid; k++){

@@ -512,12 +512,18 @@ static int read_mesh(
         Gen_Error(0, "fatal: Error returned from read_mm_file\n");
         return 0;
     }
+    mm_cleanup(mesh);
   }
   else if (pio_info->file_type == MATRIXMARKET_PLUS_FILE) {
     if (!read_mtxplus_file(Proc, Num_Proc, prob, pio_info, mesh)) {
         Gen_Error(0, "fatal: Error returned from read_mtxplus_file\n");
         return 0;
     }
+    /* KDDKDD 3/26/10:  
+     * Eventually, we should do cleanup here to address bug 3346.
+     * but doing so will change the answer files.
+     * mm_cleanup(mesh);
+     */
   }
   else if (pio_info->file_type == NO_FILE_POINTS) {
     if (!create_random_input(Proc, Num_Proc, prob, pio_info, mesh)) {
