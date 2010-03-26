@@ -36,39 +36,30 @@ The following fixture creates the mesh below on proc 0
 37---38---39---40---41
 */
 
-GridFixture::GridFixture(stk::ParallelMachine pm) : m_meta_data(NULL),
-                                                    m_bulk_data(NULL),
-                                                    m_quad_part(NULL),
-                                                    m_boundary_part(NULL),
-                                                    m_dead_part(NULL)
+GridFixture::GridFixture(stk::ParallelMachine pm)
+  : m_meta_data( stk::mesh::fem_entity_type_names() )
+  , m_bulk_data( m_meta_data , pm )
+  , m_quad_part( m_meta_data.declare_part("quad_part", stk::mesh::Face) )
+  , m_boundary_part( m_meta_data.declare_part("boundary_part", stk::mesh::Edge))
+  , m_dead_part( m_meta_data.declare_part("dead_part", stk::mesh::Face))
 {
-  m_meta_data = new stk::mesh::MetaData( stk::mesh::fem_entity_type_names() );
-  m_quad_part = &(m_meta_data->declare_part("quad_part", stk::mesh::Face));
-  m_boundary_part = &(m_meta_data->declare_part("boundary_part", stk::mesh::Edge));
-  m_dead_part = &(m_meta_data->declare_part("dead_part", stk::mesh::Face));
-  
-  stk::mesh::set_cell_topology<shards::Quadrilateral<4> >(*m_quad_part);
+  stk::mesh::set_cell_topology<shards::Quadrilateral<4> >(m_quad_part);
 
-  m_meta_data->commit();
+  m_meta_data.commit();
 
-  m_bulk_data = new stk::mesh::BulkData( *m_meta_data, pm);
-
+  m_bulk_data.modification_begin();
   generate_grid();
-  m_bulk_data->modification_end();
+  m_bulk_data.modification_end();
 }
 
 GridFixture::~GridFixture()
-{
-  // do not delete face part because the meta data owns it
-  delete m_bulk_data;
-  delete m_meta_data;
-}
+{ }
 
 void GridFixture::generate_grid()
 {
   const unsigned num_nodes = 25;
   const unsigned num_quad_faces = 16;
-  const unsigned p_rank = m_bulk_data->parallel_rank();
+  const unsigned p_rank = m_bulk_data.parallel_rank();
   std::vector<stk::mesh::Entity*> all_entities;
 
   // we don't want anything on any of the processes expect rank 0
@@ -97,16 +88,16 @@ void GridFixture::generate_grid()
 
     // declare faces
     stk::mesh::PartVector face_parts;
-    face_parts.push_back(m_quad_part);
+    face_parts.push_back(&m_quad_part);
     for (unsigned i = 0; i < num_quad_faces; ++i) {
-      stk::mesh::Entity& new_face = m_bulk_data->declare_entity(stk::mesh::Face, quad_face_ids[i],
+      stk::mesh::Entity& new_face = m_bulk_data.declare_entity(stk::mesh::Face, quad_face_ids[i],
                                                                 face_parts);
       all_entities.push_back(&new_face);
     }
 
     // declare nodes
     for (unsigned i = 0; i < num_nodes; ++i) {
-      stk::mesh::Entity& new_node = m_bulk_data->declare_entity(stk::mesh::Node, node_ids[i],
+      stk::mesh::Entity& new_node = m_bulk_data.declare_entity(stk::mesh::Node, node_ids[i],
                                                                 no_parts);
       all_entities.push_back(&new_node);
     }
@@ -125,7 +116,7 @@ void GridFixture::generate_grid()
       for (unsigned chg_itr = 0; chg_itr < 4; ++chg_itr) {
         node_id += chg_list[chg_itr];
         stk::mesh::Entity& node = *(all_entities[node_id - 1]);
-        m_bulk_data->declare_relation( face , node , chg_itr);
+        m_bulk_data.declare_relation( face , node , chg_itr);
       }
     }
   }

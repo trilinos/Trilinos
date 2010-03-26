@@ -39,22 +39,18 @@ void testLinearSystem( MPI_Comm comm )
 {
   //First create and fill MetaData and BulkData objects:
 
-  stk::mesh::MetaData meta_data( stk::mesh::fem_entity_type_names() );
+  const unsigned bucket_size = 100; //for a real application mesh, bucket_size would be much bigger...
 
-  fill_utest_mesh_meta_data( meta_data );
+  stk::mesh::MetaData meta_data( stk::mesh::fem_entity_type_names() );
+  stk::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
 
   //create a boundary-condition part for testing later:
   stk::mesh::Part& bcpart = meta_data.declare_part("bcpart");
 
-  meta_data.commit();
-
-  const unsigned bucket_size = 100; //for a real application mesh, bucket_size would be much bigger...
-
-  stk::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
+  fill_utest_mesh_meta_data( meta_data );
   fill_utest_mesh_bulk_data( bulk_data );
 
-  bulk_data.modification_end();
-
+  //------------------------------
   //put a node in our boundary-condition part. arbitrarily choose the
   //first locally-owned node:
 
@@ -76,6 +72,7 @@ void testLinearSystem( MPI_Comm comm )
   }
 
   bulk_data.modification_end();
+  //------------------------------
 
   stk::mesh::Selector select_used(meta_data.locally_used_part());
   std::vector<unsigned> count;

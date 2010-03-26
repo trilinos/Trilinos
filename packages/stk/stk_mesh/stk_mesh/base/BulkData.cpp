@@ -45,7 +45,7 @@ convert_entity_keys_to_spans( const MetaData & meta )
   const EntityId  min_id = 1 ;
   const EntityId  max_id = invalid_key.id();
 
-  const size_t rank_count = meta.entity_type_count() ;
+  const size_t rank_count = meta.entity_type_count();
 
   std::vector< parallel::DistributedIndex::KeySpan> spans( rank_count );
 
@@ -64,13 +64,13 @@ convert_entity_keys_to_spans( const MetaData & meta )
 //----------------------------------------------------------------------
 
 BulkData::BulkData( const MetaData & mesh_meta_data ,
-            ParallelMachine parallel ,
-             unsigned bucket_max_size )
-  : m_buckets(),
+                    ParallelMachine parallel ,
+                    unsigned bucket_max_size )
+  : m_entities_index( parallel, convert_entity_keys_to_spans(mesh_meta_data) ),
+    m_buckets( mesh_meta_data.entity_type_count() ),
     m_entities(),
     m_entity_comm(),
     m_ghosting(),
-    m_entities_index( parallel, convert_entity_keys_to_spans(mesh_meta_data) ),
     m_new_entities(),
     m_bucket_nil( NULL ),
 
@@ -80,21 +80,13 @@ BulkData::BulkData( const MetaData & mesh_meta_data ,
     m_parallel_rank( parallel_machine_rank( parallel ) ),
     m_bucket_capacity( bucket_max_size ),
     m_sync_count( 0 ),
-    m_sync_state( MODIFIABLE )
+    m_sync_state( MODIFIABLE ),
+    m_meta_data_verified( false )
 {
-  static const char method[] = "stk::mesh::BulkData::Mesh" ;
-
-  m_mesh_meta_data.assert_committed( method );
-
-  verify_parallel_consistency( mesh_meta_data , parallel );
-
-  m_buckets.resize( m_mesh_meta_data.entity_type_count() );
-
-  m_bucket_nil =
-    Bucket::declare_nil_bucket( *this , mesh_meta_data.get_fields().size() );
-
   create_ghosting( std::string("shared") );
   create_ghosting( std::string("shared_aura") );
+
+  m_sync_state = SYNCHRONIZED ;
 }
 
 BulkData::~BulkData()
@@ -128,7 +120,7 @@ BulkData::~BulkData()
     m_buckets.clear();
   } catch(...) {}
 
-  try { Bucket::destroy_bucket( m_bucket_nil ); } catch(...) {}
+  try { if ( m_bucket_nil ) Bucket::destroy_bucket( m_bucket_nil ); } catch(...) {}
 
   try {
     while ( ! m_entities.empty() ) {
@@ -212,6 +204,22 @@ void BulkData::assert_good_key( const char * method ,
 
 bool BulkData::modification_begin()
 {
+  static const char method[] = "stk::mesh::BulkData::modification_begin" ;
+
+  if ( ! m_meta_data_verified ) {
+    m_mesh_meta_data.assert_committed( method );
+
+    verify_parallel_consistency( m_mesh_meta_data , m_parallel_machine );
+
+    m_meta_data_verified = true ;
+
+    m_bucket_nil =
+      Bucket::declare_nil_bucket(*this,m_mesh_meta_data.get_fields().size());
+  }
+  else {
+    ++m_sync_count ;
+  }
+
   parallel_machine_barrier( m_parallel_machine );
 
   if ( m_sync_state == MODIFIABLE ) return false ;

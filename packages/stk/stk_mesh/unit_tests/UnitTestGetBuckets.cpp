@@ -23,20 +23,20 @@
 
 namespace {
 
-  using sunit::getExampleFixture;
+  using sunit::ExampleFixture;
   using sunit::getExampleBucket;
   using sunit::getPartVector;
-  using Teuchos::RCP;
 
 // (BC,2) -> B
-STKUNIT_UNIT_TEST( UnitTestGetBuckets, get_involved_parts_BC_2 ) {
-  RCP<sunit::Stk_Mesh_Fixture> fix = getExampleFixture();
+STKUNIT_UNIT_TEST( UnitTestGetBuckets, get_involved_parts_BC_2 )
+{
+  ExampleFixture fix ;
   std::vector<std::string> union_names;
   union_names.push_back("PartB");
   union_names.push_back("PartC");
-  stk::mesh::PartVector union_parts = getPartVector(*fix,union_names);
+  stk::mesh::PartVector union_parts = getPartVector(fix,union_names);
 
-  const stk::mesh::Bucket & bucket = getExampleBucket(*fix,2);
+  const stk::mesh::Bucket & bucket = getExampleBucket(fix,2);
 
   stk::mesh::PartVector partsInvolved;
   stk::mesh::get_involved_parts(union_parts,bucket,partsInvolved);
@@ -46,15 +46,16 @@ STKUNIT_UNIT_TEST( UnitTestGetBuckets, get_involved_parts_BC_2 ) {
 
 
 // (ABC,2) -> AB
-STKUNIT_UNIT_TEST( UnitTestGetBuckets, get_involved_parts_ABC_2 ) {
-  RCP<sunit::Stk_Mesh_Fixture> fix = getExampleFixture();
+STKUNIT_UNIT_TEST( UnitTestGetBuckets, get_involved_parts_ABC_2 )
+{
+  ExampleFixture fix ;
   std::vector<std::string> union_names;
   union_names.push_back("PartA");
   union_names.push_back("PartB");
   union_names.push_back("PartC");
-  stk::mesh::PartVector union_parts = getPartVector(*fix,union_names);
+  stk::mesh::PartVector union_parts = getPartVector(fix,union_names);
 
-  const stk::mesh::Bucket & bucket = getExampleBucket(*fix,2);
+  const stk::mesh::Bucket & bucket = getExampleBucket(fix,2);
 
   stk::mesh::PartVector partsInvolved;
   stk::mesh::get_involved_parts(union_parts,bucket,partsInvolved);
@@ -65,15 +66,16 @@ STKUNIT_UNIT_TEST( UnitTestGetBuckets, get_involved_parts_ABC_2 ) {
 
 
 // (ABC,5) -> {}
-STKUNIT_UNIT_TEST( UnitTestGetBuckets, get_involved_parts_ABC_5 ) {
-  RCP<sunit::Stk_Mesh_Fixture> fix = getExampleFixture();
+STKUNIT_UNIT_TEST( UnitTestGetBuckets, get_involved_parts_ABC_5 )
+{
+  ExampleFixture fix ;
   std::vector<std::string> union_names;
   union_names.push_back("PartA");
   union_names.push_back("PartB");
   union_names.push_back("PartC");
-  stk::mesh::PartVector union_parts = getPartVector(*fix,union_names);
+  stk::mesh::PartVector union_parts = getPartVector(fix,union_names);
 
-  const stk::mesh::Bucket & bucket = getExampleBucket(*fix,5);
+  const stk::mesh::Bucket & bucket = getExampleBucket(fix,5);
 
   stk::mesh::PartVector partsInvolved;
   stk::mesh::get_involved_parts(union_parts,bucket,partsInvolved);
@@ -82,12 +84,13 @@ STKUNIT_UNIT_TEST( UnitTestGetBuckets, get_involved_parts_ABC_5 ) {
 
 
 // ({},1) -> {}
-STKUNIT_UNIT_TEST( UnitTestGetBuckets, get_involved_parts_Zero_1 ) {
-  RCP<sunit::Stk_Mesh_Fixture> fix = getExampleFixture();
+STKUNIT_UNIT_TEST( UnitTestGetBuckets, get_involved_parts_Zero_1 )
+{
+  ExampleFixture fix ;
   std::vector<std::string> union_names;
-  stk::mesh::PartVector union_parts = getPartVector(*fix,union_names);
+  stk::mesh::PartVector union_parts = getPartVector(fix,union_names);
 
-  const stk::mesh::Bucket & bucket = getExampleBucket(*fix,1);
+  const stk::mesh::Bucket & bucket = getExampleBucket(fix,1);
 
   stk::mesh::PartVector partsInvolved;
   stk::mesh::get_involved_parts(union_parts,bucket,partsInvolved);

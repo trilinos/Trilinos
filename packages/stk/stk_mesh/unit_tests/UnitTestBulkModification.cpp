@@ -83,8 +83,9 @@ STKUNIT_UNIT_TEST( UnitTestParallelConsistency , testUnit )
 void UnitTestStkMeshBulkModification::test_bulkdata_not_syncronized()
 {
   RingMeshFixture ring_mesh(MPI_COMM_WORLD);
+  ring_mesh.generate_loop( true /* with aura */ );
 
-  stk::mesh::BulkData& bulk_data = ring_mesh.bulk_data();
+  stk::mesh::BulkData& bulk_data = ring_mesh.m_bulk_data ;
 
   bulk_data.modification_begin(); // Intentially make things unsynced
 
@@ -96,8 +97,9 @@ void UnitTestStkMeshBulkModification::test_bulkdata_not_syncronized()
 void UnitTestStkMeshBulkModification::test_closure_of_non_locally_used_entities()
 {
   RingMeshFixture ring_mesh(MPI_COMM_WORLD);
+  ring_mesh.generate_loop( true /* with aura */ );
 
-  stk::mesh::BulkData& bulk_data = ring_mesh.bulk_data();
+  stk::mesh::BulkData& bulk_data = ring_mesh.m_bulk_data ;
 
   const stk::mesh::Ghosting & ghost = bulk_data.shared_aura();
 
@@ -118,8 +120,9 @@ void UnitTestStkMeshBulkModification::test_closure_of_non_locally_used_entities(
 void UnitTestStkMeshBulkModification::test_all_local_nodes()
 {
   RingMeshFixture ring_mesh(MPI_COMM_WORLD);
+  ring_mesh.generate_loop( true /* with aura */ );
 
-  stk::mesh::BulkData& bulk_data = ring_mesh.bulk_data();
+  stk::mesh::BulkData& bulk_data = ring_mesh.m_bulk_data ;
 
   {
     std::vector< stk::mesh::Entity *> entities;
@@ -132,7 +135,7 @@ void UnitTestStkMeshBulkModification::test_all_local_nodes()
 
   {
     // Get a selector for the univeral part (contains local, shared, and ghosted)
-    const stk::mesh::Part& universal = ring_mesh.meta_data().universal_part();
+    const stk::mesh::Part& universal = ring_mesh.m_meta_data.universal_part();
     stk::mesh::Selector universal_selector(universal);
 
     // Get the buckets that will give us the universal nodes
@@ -157,7 +160,7 @@ void UnitTestStkMeshBulkModification::test_all_local_nodes()
     universal_entities.erase(new_end, universal_entities.end());
 
     // Get the buckets that will give us the locally used nodes
-    const stk::mesh::Part& local = ring_mesh.meta_data().locally_used_part();
+    const stk::mesh::Part& local = ring_mesh.m_meta_data.locally_used_part();
     stk::mesh::Selector locally_used_selector(local);
     stk::mesh::get_buckets(locally_used_selector, node_buckets, buckets);
 
@@ -190,11 +193,12 @@ void UnitTestStkMeshBulkModification::test_all_local_nodes()
 void UnitTestStkMeshBulkModification::test_all_local_edges()
 {
   RingMeshFixture ring_mesh(MPI_COMM_WORLD);
+  ring_mesh.generate_loop( true /* with aura */ );
 
-  stk::mesh::BulkData& bulk_data = ring_mesh.bulk_data();
+  stk::mesh::BulkData& bulk_data = ring_mesh.m_bulk_data ;
 
   {
-    const stk::mesh::Part& universal = ring_mesh.meta_data().universal_part();
+    const stk::mesh::Part& universal = ring_mesh.m_meta_data.universal_part();
     stk::mesh::Selector universal_selector(universal);
 
     const std::vector<stk::mesh::Bucket*>& node_buckets = bulk_data.buckets(stk::mesh::Node);
@@ -233,7 +237,7 @@ void UnitTestStkMeshBulkModification::test_all_local_edges()
     universal_entities.erase(new_end, universal_entities.end());
 
     // get the buckets that we need to traverse to get the locally used edges
-    const stk::mesh::Part& local = ring_mesh.meta_data().locally_used_part();
+    const stk::mesh::Part& local = ring_mesh.m_meta_data.locally_used_part();
     stk::mesh::Selector locally_used_selector(local);
     stk::mesh::get_buckets(locally_used_selector, edge_buckets, buckets);
 
@@ -267,8 +271,9 @@ void UnitTestStkMeshBulkModification::test_all_local_edges()
 void UnitTestStkMeshBulkModification::test_parallel_consistency()
 {
   RingMeshFixture ring_mesh(MPI_COMM_WORLD);
+  ring_mesh.generate_loop( true /* with aura */ );
 
-  stk::mesh::BulkData& bulk_data = ring_mesh.bulk_data();
+  stk::mesh::BulkData& bulk_data = ring_mesh.m_bulk_data ;
 
   stk::CommBroadcast all(bulk_data.parallel(), 0);
 
@@ -280,7 +285,7 @@ void UnitTestStkMeshBulkModification::test_parallel_consistency()
   if (m_rank == 0) {
     const std::vector<stk::mesh::Bucket*>& node_buckets = bulk_data.buckets(stk::mesh::Node);
 
-    const stk::mesh::Part& local = ring_mesh.meta_data().locally_used_part();
+    const stk::mesh::Part& local = ring_mesh.m_meta_data.locally_used_part();
     stk::mesh::Selector locally_used_selector(local);
 
     std::vector<stk::mesh::Bucket*> buckets;

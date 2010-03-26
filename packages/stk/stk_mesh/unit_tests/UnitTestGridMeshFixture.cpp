@@ -41,44 +41,38 @@ The following fixture creates the mesh below on proc 0
 37---38---39---40---41
 */
 
-GridMeshFixture::GridMeshFixture(ParallelMachine pm) : m_node_ids(),
-                                                       m_quad_face_ids(),
-                                                       m_shell_face_ids(),
-                                                       m_meta_data(NULL),
-                                                       m_bulk_data(NULL)
+GridMeshFixture::GridMeshFixture(ParallelMachine pm)
+  : m_meta_data( fem_entity_type_names() )
+  , m_bulk_data( m_meta_data , pm , 100 )
+  , m_quad_part( m_meta_data.declare_part("quad_part", Face))
+  , m_shell_part( m_meta_data.declare_part("shell_part", Face))
+  , m_closure()
+  , m_node_ids()
+  , m_quad_face_ids()
+  , m_shell_face_ids()
 {
-  m_meta_data = new MetaData( fem_entity_type_names() );
-  m_quad_part = &(m_meta_data->declare_part("quad_part", Face));
-  m_shell_part = &(m_meta_data->declare_part("shell_part", Face));
-  set_cell_topology<shards::Quadrilateral<4> >(*m_quad_part);
-  set_cell_topology<shards::ShellLine<2> >(*m_shell_part);
+  set_cell_topology<shards::Quadrilateral<4> >(m_quad_part);
+  set_cell_topology<shards::ShellLine<2> >(m_shell_part);
+
+  m_meta_data.commit();
+
   // Add shells from nodes 20 to 40
   // shells are considered to be a Face
 
-  m_meta_data->commit();
-
-  const size_t num_entities_per_bucket = 100;
-  m_bulk_data = new BulkData( *m_meta_data, pm, num_entities_per_bucket );
-
-  PartVector no_parts;
-
+  m_bulk_data.modification_begin();
   generate_grid();
-  m_bulk_data->modification_end();
+  m_bulk_data.modification_end();
 }
 
 GridMeshFixture::~GridMeshFixture()
-{
-  // do not delete face part because the meta data owns it
-  delete m_bulk_data;
-  delete m_meta_data;
-}
+{ }
 
 void GridMeshFixture::generate_grid()
 {
   const unsigned num_nodes = 25;
   const unsigned num_quad_faces = 16;
   const unsigned num_shell_faces = 4;
-  const unsigned p_rank = m_bulk_data->parallel_rank();
+  const unsigned p_rank = m_bulk_data.parallel_rank();
   std::vector<Entity*> all_entities;
 
   // we don't want anything on any of the processes expect rank 0
@@ -115,9 +109,9 @@ void GridMeshFixture::generate_grid()
 
     // declare faces
     PartVector face_parts;
-    face_parts.push_back(m_quad_part);
+    face_parts.push_back(&m_quad_part);
     for (unsigned i = 0; i < num_quad_faces; ++i) {
-      Entity& new_face = m_bulk_data->declare_entity(Face, m_quad_face_ids[i], face_parts);
+      Entity& new_face = m_bulk_data.declare_entity(Face, m_quad_face_ids[i], face_parts);
       quad_faces.push_back(&new_face);
       all_entities.push_back(&new_face);
       switch (m_quad_face_ids[i]) {
@@ -135,7 +129,7 @@ void GridMeshFixture::generate_grid()
 
     // declare nodes
     for (unsigned i = 0; i < num_nodes; ++i) {
-      Entity& new_node = m_bulk_data->declare_entity(Node, m_node_ids[i], no_parts);
+      Entity& new_node = m_bulk_data.declare_entity(Node, m_node_ids[i], no_parts);
       nodes.push_back(&new_node);
       all_entities.push_back(&new_node);
       switch (m_node_ids[i]) {
@@ -159,9 +153,9 @@ void GridMeshFixture::generate_grid()
 
     // declare shell faces
     PartVector shell_parts;
-    shell_parts.push_back(m_shell_part);
+    shell_parts.push_back(&m_shell_part);
     for (unsigned i = 0; i < num_shell_faces; ++i) {
-      Entity& new_shell = m_bulk_data->declare_entity(Face, m_shell_face_ids[i], shell_parts);
+      Entity& new_shell = m_bulk_data.declare_entity(Face, m_shell_face_ids[i], shell_parts);
       all_entities.push_back(&new_shell);
       shell_faces.push_back(&new_shell);
     }
@@ -183,7 +177,7 @@ void GridMeshFixture::generate_grid()
       for (unsigned chg_itr = 0; chg_itr < 4; ++chg_itr) {
         node_id += chg_list[chg_itr];
         Entity& node = *(all_entities[node_id - 1]);
-        m_bulk_data->declare_relation( face , node , chg_itr);
+        m_bulk_data.declare_relation( face , node , chg_itr);
       }
     }
 
@@ -193,8 +187,8 @@ void GridMeshFixture::generate_grid()
       Entity& shell = *(shell_faces[i]);
       Entity& node1 = *all_entities[node_list[i] - 1];
       Entity& node2 = *all_entities[node_list[i+1] - 1];
-      m_bulk_data->declare_relation(shell, node1, 0);
-      m_bulk_data->declare_relation(shell, node2, 1);
+      m_bulk_data.declare_relation(shell, node1, 0);
+      m_bulk_data.declare_relation(shell, node2, 1);
     }
   }
 }

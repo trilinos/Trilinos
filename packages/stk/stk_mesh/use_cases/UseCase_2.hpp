@@ -55,8 +55,6 @@ namespace stk {
 namespace mesh {
 namespace use_cases {
 
-
-
 typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType ;
 typedef stk::mesh::Field<double>                      ScalarFieldType ;
 
@@ -64,81 +62,24 @@ typedef stk::mesh::Field<double>                      ScalarFieldType ;
 // Node, Edge, Face, Element 
 // and two parts (partLeft and partRight)
 // and three fields (coordinates, temperature, and volume)
-class UseCase_2_MetaData
+class UseCase_2_Mesh
 {
-  public:
+public:
+  ~UseCase_2_Mesh();
 
-    const stk::mesh::MetaData & metaData() const
-    { return m_metaData; }
+  UseCase_2_Mesh( stk::ParallelMachine comm );
 
-    stk::mesh::Part & partLeft() const
-    { return m_partLeft; }
+  void populate( unsigned nleft , unsigned nright );
 
-    stk::mesh::Part & partRight() const
-    { return m_partRight; }
-
-    VectorFieldType & coordinates_field()
-    { return m_coordinates_field; }
-
-    const VectorFieldType & const_coordinates_field() const
-    { return m_coordinates_field; }
-
-    ScalarFieldType & temperature_field()
-    { return m_temperature_field; }
-
-    const ScalarFieldType & const_temperature_field() const
-    { return m_temperature_field; }
-
-    ScalarFieldType & volume_field()
-    { return m_volume_field; }
-
-    const ScalarFieldType & const_volume_field() const
-    { return m_volume_field; }
-
-  protected:
-    UseCase_2_MetaData(const std::vector<std::string> & entity_type_names);
-
-    stk::mesh::MetaData m_metaData;
-
-    stk::mesh::Part & m_partLeft;
-
-    stk::mesh::Part & m_partRight;
-
-    VectorFieldType & m_coordinates_field;
-    ScalarFieldType & m_temperature_field;
-    ScalarFieldType & m_volume_field;
-
+  stk::mesh::MetaData m_metaData;
+  stk::mesh::BulkData m_bulkData;
+  stk::mesh::Part   & m_partLeft;
+  stk::mesh::Part   & m_partRight;
+  VectorFieldType   & m_coordinates_field;
+  ScalarFieldType   & m_temperature_field;
+  ScalarFieldType   & m_volume_field;
 };
 
-
-// Mesh from two part Meta Data above plus 
-// field_data_chunk_size = 1000
-class UseCase_2_Mesh : public UseCase_2_MetaData 
-{
-  public:
-    enum {
-      field_data_chunk_size = 1000
-    };
-
-    UseCase_2_Mesh( stk::ParallelMachine comm );
-
-    ~UseCase_2_Mesh();
-
-    const stk::mesh::BulkData & bulkData() const
-    { return m_bulkData; }
-
-    stk::mesh::BulkData       & modifiableBulkData()
-    { return m_bulkData; }
-
-  private:
-
-    stk::mesh::BulkData m_bulkData;
-
-};
-
-std::vector<std::string> get_entity_type_names_2();
-
-void populate( UseCase_2_Mesh & mesh , unsigned nleft , unsigned nright );
 bool verifyMesh( const UseCase_2_Mesh & mesh, unsigned nleft, unsigned nright );
 
 // Helper functions for verifyMesh
@@ -147,10 +88,9 @@ bool verifyEntityCounts( const UseCase_2_Mesh & mesh, unsigned nleft, unsigned n
 bool verifyRelations( const UseCase_2_Mesh & mesh, unsigned nleft, unsigned nright );
 bool verifyFields( const UseCase_2_Mesh & mesh );
 
-void get_elem_node_ids_2( stk::mesh::EntityId elem_id , stk::mesh::EntityId node_ids[] );
-
 } //namespace use_cases 
 } //namespace mesh 
 } //namespace stk 
 
 #endif // Stk_Mesh_Use_Cases_UseCase_2_hpp
+

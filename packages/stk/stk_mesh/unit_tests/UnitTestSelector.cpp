@@ -7,6 +7,7 @@
 /*------------------------------------------------------------------------*/
 
 
+#include <stdexcept>
 #include <unit_tests/stk_utest_macros.hpp>
 
 #include <stk_mesh/base/Selector.hpp>
@@ -24,11 +25,10 @@
 namespace {
 
   using sunit::Stk_Mesh_Fixture;
+  using sunit::ExampleFixture ;;
   using sunit::getExamplePart;
   using sunit::getPartVector;
-  using sunit::getExampleFixture;
   using sunit::getExampleBucket;
-  using Teuchos::RCP;
 
 /** \defgroup stk_mesh_selector_unit "stk::mesh::Selector Unit Testing"
   * \addtogroup stk_mesh_selector_unit
@@ -67,7 +67,7 @@ namespace {
  * */
 STKUNIT_UNIT_TEST( UnitTestSelector, one_SelectorFixture )
 {
-  RCP<Stk_Mesh_Fixture> fix = getExampleFixture();
+  ExampleFixture fix ;
   STKUNIT_EXPECT_TRUE(true);
 }
 
@@ -78,10 +78,10 @@ STKUNIT_UNIT_TEST( UnitTestSelector, one_SelectorFixture )
 STKUNIT_UNIT_TEST( UnitTestSelector, two_SelectorFixture )
 {
   {
-    RCP<Stk_Mesh_Fixture> fix = getExampleFixture();
+    ExampleFixture fix ;
   }
   {
-    RCP<Stk_Mesh_Fixture> fix = getExampleFixture();
+    ExampleFixture fix ;
   }
   STKUNIT_EXPECT_TRUE(true);
 }
@@ -95,33 +95,33 @@ STKUNIT_UNIT_TEST( UnitTestSelector, two_SelectorFixture )
  * */
 STKUNIT_UNIT_TEST( UnitTestSelector, A_12345 )
 {
-  RCP<Stk_Mesh_Fixture> fix = getExampleFixture();
-  stk::mesh::Part* part = getExamplePart(*fix,"PartA");
+  ExampleFixture fix ;
+  stk::mesh::Part* part = getExamplePart(fix,"PartA");
   stk::mesh::Selector selector(*part);
   //std::cout << "Selector = " << selector << std::endl;
 
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,1);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,1);
     bool result = selector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,2);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,2);
     bool result = selector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,3);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,3);
     bool result = selector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,4);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,4);
     bool result = selector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,5);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,5);
     bool result = selector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
@@ -134,33 +134,33 @@ STKUNIT_UNIT_TEST( UnitTestSelector, A_12345 )
  ** */
 STKUNIT_UNIT_TEST( UnitTestSelector, Ac_12345 )
 {
-  RCP<Stk_Mesh_Fixture> fix = getExampleFixture();
-  stk::mesh::Part & partA = *getExamplePart(*fix,"PartA");
+  ExampleFixture fix ;
+  stk::mesh::Part & partA = *getExamplePart(fix,"PartA");
   stk::mesh::Selector selector = !partA;
   //std::cout << "Selector = " << selector << std::endl;
 
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,1);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,1);
     bool result = selector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,2);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,2);
     bool result = selector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,3);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,3);
     bool result = selector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,4);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,4);
     bool result = selector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,5);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,5);
     bool result = selector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
@@ -171,11 +171,11 @@ STKUNIT_UNIT_TEST( UnitTestSelector, Ac_12345 )
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, D_5 )
 {
-  RCP<Stk_Mesh_Fixture> fix = getExampleFixture();
-  stk::mesh::Part* part = getExamplePart(*fix,"PartD");
+  ExampleFixture fix ;
+  stk::mesh::Part* part = getExamplePart(fix,"PartD");
   stk::mesh::Selector selector(*part);
 
-  const stk::mesh::Bucket & bucket = getExampleBucket(*fix,5);
+  const stk::mesh::Bucket & bucket = getExampleBucket(fix,5);
 
   bool result = selector(bucket);
   STKUNIT_EXPECT_FALSE(result);
@@ -186,20 +186,20 @@ STKUNIT_UNIT_TEST( UnitTestSelector, D_5 )
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, Ac_15 )
 {
-  RCP<Stk_Mesh_Fixture> fix = getExampleFixture();
-  stk::mesh::Part & partA = *getExamplePart(*fix,"PartA");
+  ExampleFixture fix ;
+  stk::mesh::Part & partA = *getExamplePart(fix,"PartA");
 
   stk::mesh::Selector selector(partA); 
   selector.complement();
   //std::cout << "Selector = " << selector << std::endl;
 
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,1);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,1);
     bool result = selector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,5);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,5);
     bool result = selector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
@@ -211,20 +211,20 @@ STKUNIT_UNIT_TEST( UnitTestSelector, Ac_15 )
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, AiB_12 )
 {
-  RCP<Stk_Mesh_Fixture> fix = getExampleFixture();
-  stk::mesh::Part & partA = *getExamplePart(*fix,"PartA");
-  stk::mesh::Part & partB = *getExamplePart(*fix,"PartB");
+  ExampleFixture fix ;
+  stk::mesh::Part & partA = *getExamplePart(fix,"PartA");
+  stk::mesh::Part & partB = *getExamplePart(fix,"PartB");
 
   stk::mesh::Selector selector = partA & partB;
   //std::cout << "Selector = " << selector << std::endl;
 
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,1);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,1);
     bool result = selector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,2);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,2);
     bool result = selector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
@@ -236,20 +236,20 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AiB_12 )
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, AuB_14 )
 {
-  RCP<Stk_Mesh_Fixture> fix = getExampleFixture();
-  stk::mesh::Part & partA = *getExamplePart(*fix,"PartA");
-  stk::mesh::Part & partB = *getExamplePart(*fix,"PartB");
+  ExampleFixture fix ;
+  stk::mesh::Part & partA = *getExamplePart(fix,"PartA");
+  stk::mesh::Part & partB = *getExamplePart(fix,"PartB");
 
   stk::mesh::Selector selector = partA | partB;
   //std::cout << "Selector = " << selector << std::endl;
 
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,1);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,1);
     bool result = selector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,4);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,4);
     bool result = selector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
@@ -261,20 +261,20 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AuB_14 )
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, AiBc_12 )
 {
-  RCP<Stk_Mesh_Fixture> fix = getExampleFixture();
-  stk::mesh::Part & partA = *getExamplePart(*fix,"PartA");
-  stk::mesh::Part & partB = *getExamplePart(*fix,"PartB");
+  ExampleFixture fix ;
+  stk::mesh::Part & partA = *getExamplePart(fix,"PartA");
+  stk::mesh::Part & partB = *getExamplePart(fix,"PartB");
 
   stk::mesh::Selector selector = partA & !partB;
   //std::cout << "Selector = " << selector << std::endl;
 
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,1);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,1);
     bool result = selector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,2);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,2);
     bool result = selector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
@@ -286,20 +286,20 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AiBc_12 )
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, AuBc_13 )
 {
-  RCP<Stk_Mesh_Fixture> fix = getExampleFixture();
-  stk::mesh::Part & partA = *getExamplePart(*fix,"PartA");
-  stk::mesh::Part & partB = *getExamplePart(*fix,"PartB");
+  ExampleFixture fix ;
+  stk::mesh::Part & partA = *getExamplePart(fix,"PartA");
+  stk::mesh::Part & partB = *getExamplePart(fix,"PartB");
 
   stk::mesh::Selector selector = partA | !partB;
   //std::cout << "Selector = " << selector << std::endl;
 
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,1);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,1);
     bool result = selector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,3);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,3);
     bool result = selector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
@@ -313,21 +313,21 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AuBc_13 )
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, Ai_BuC_c_12 )
 {
-  RCP<Stk_Mesh_Fixture> fix = getExampleFixture();
-  stk::mesh::Part & partA = *getExamplePart(*fix,"PartA");
-  stk::mesh::Part & partB = *getExamplePart(*fix,"PartB");
-  stk::mesh::Part & partC = *getExamplePart(*fix,"PartC");
+  ExampleFixture fix ;
+  stk::mesh::Part & partA = *getExamplePart(fix,"PartA");
+  stk::mesh::Part & partB = *getExamplePart(fix,"PartB");
+  stk::mesh::Part & partC = *getExamplePart(fix,"PartC");
 
   stk::mesh::Selector selector = partA & !(partB | partC);
   //std::cout << "Selector = " << selector << std::endl;
 
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,1);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,1);
     bool result = selector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,2);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,2);
     bool result = selector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
@@ -335,12 +335,12 @@ STKUNIT_UNIT_TEST( UnitTestSelector, Ai_BuC_c_12 )
   stk::mesh::Selector newSelector(selector);
   // Should be the same:
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,1);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,1);
     bool result = newSelector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,2);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,2);
     bool result = newSelector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
@@ -353,12 +353,12 @@ STKUNIT_UNIT_TEST( UnitTestSelector, Ai_BuC_c_12 )
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, defaultConstructor )
 {
-  RCP<Stk_Mesh_Fixture> fix = getExampleFixture();
+  ExampleFixture fix ;
   stk::mesh::Selector selector;
   //std::cout << "Selector = " << selector << std::endl;
 
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,1);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,1);
     bool result = selector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
@@ -374,31 +374,31 @@ STKUNIT_UNIT_TEST( UnitTestSelector, defaultConstructor )
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, flipComplement_AuB_c )
 {
-  RCP<Stk_Mesh_Fixture> fix = getExampleFixture();
-  stk::mesh::Part & partA = *getExamplePart(*fix,"PartA");
-  stk::mesh::Part & partB = *getExamplePart(*fix,"PartB");
+  ExampleFixture fix ;
+  stk::mesh::Part & partA = *getExamplePart(fix,"PartA");
+  stk::mesh::Part & partB = *getExamplePart(fix,"PartB");
   stk::mesh::Selector notOrSelector = partA | partB;
   //std::cout << "Or Selector = " << notOrSelector << std::endl;
   notOrSelector.complement();
   //std::cout << "Not Or Selector = " << notOrSelector << std::endl;
 
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,1);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,1);
     bool result = notOrSelector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,2);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,2);
     bool result = notOrSelector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,3);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,3);
     bool result = notOrSelector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,4);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,4);
     bool result = notOrSelector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
@@ -406,22 +406,22 @@ STKUNIT_UNIT_TEST( UnitTestSelector, flipComplement_AuB_c )
   stk::mesh::Selector notNotOrSelector = !notOrSelector;
   //std::cout << "Not Not Or Selector = " << notNotOrSelector << std::endl;
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,1);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,1);
     bool result = notNotOrSelector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,2);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,2);
     bool result = notNotOrSelector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,3);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,3);
     bool result = notNotOrSelector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,4);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,4);
     bool result = notNotOrSelector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
@@ -436,31 +436,31 @@ STKUNIT_UNIT_TEST( UnitTestSelector, flipComplement_AuB_c )
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, flipComplement_AiB_c )
 {
-  RCP<Stk_Mesh_Fixture> fix = getExampleFixture();
-  stk::mesh::Part & partA = *getExamplePart(*fix,"PartA");
-  stk::mesh::Part & partB = *getExamplePart(*fix,"PartB");
+  ExampleFixture fix ;
+  stk::mesh::Part & partA = *getExamplePart(fix,"PartA");
+  stk::mesh::Part & partB = *getExamplePart(fix,"PartB");
   stk::mesh::Selector notAndSelector = partA & partB;
   //std::cout << "And Selector = " << notAndSelector << std::endl;
   notAndSelector.complement();
   //std::cout << "Not And Selector = " << notAndSelector << std::endl;
 
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,1);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,1);
     bool result = notAndSelector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,2);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,2);
     bool result = notAndSelector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,3);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,3);
     bool result = notAndSelector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,4);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,4);
     bool result = notAndSelector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
@@ -468,22 +468,22 @@ STKUNIT_UNIT_TEST( UnitTestSelector, flipComplement_AiB_c )
   stk::mesh::Selector notNotAndSelector = !notAndSelector;
   //std::cout << "Not Not And Selector = " << notNotAndSelector << std::endl;
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,1);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,1);
     bool result = notNotAndSelector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,2);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,2);
     bool result = notNotAndSelector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,3);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,3);
     bool result = notNotAndSelector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,4);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,4);
     bool result = notNotAndSelector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
@@ -496,16 +496,16 @@ STKUNIT_UNIT_TEST( UnitTestSelector, flipComplement_AiB_c )
  * 
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, complementEmpty ) {
-  RCP<Stk_Mesh_Fixture> fix = getExampleFixture();
+  ExampleFixture fix ;
   stk::mesh::Selector selector;
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,1);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,1);
     bool result = selector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
   selector.complement();
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,1);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,1);
     bool result = selector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
@@ -518,11 +518,11 @@ STKUNIT_UNIT_TEST( UnitTestSelector, complementEmpty ) {
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, AuBuCuD )
 {
-  RCP<Stk_Mesh_Fixture> fix = getExampleFixture();
-  stk::mesh::Part & partA = *getExamplePart(*fix,"PartA");
-  stk::mesh::Part & partB = *getExamplePart(*fix,"PartB");
-  stk::mesh::Part & partC = *getExamplePart(*fix,"PartC");
-  stk::mesh::Part & partD = *getExamplePart(*fix,"PartD");
+  ExampleFixture fix ;
+  stk::mesh::Part & partA = *getExamplePart(fix,"PartA");
+  stk::mesh::Part & partB = *getExamplePart(fix,"PartB");
+  stk::mesh::Part & partC = *getExamplePart(fix,"PartC");
+  stk::mesh::Part & partD = *getExamplePart(fix,"PartD");
   stk::mesh::Selector selector = partA | partB | partC | partD;
   std::cout << "A|B|C|D = " << selector << std::endl;
   std::ostringstream msg;
@@ -536,10 +536,10 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AuBuCuD )
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, AiBiC )
 {
-  RCP<Stk_Mesh_Fixture> fix = getExampleFixture();
-  stk::mesh::Part & partA = *getExamplePart(*fix,"PartA");
-  stk::mesh::Part & partB = *getExamplePart(*fix,"PartB");
-  stk::mesh::Part & partC = *getExamplePart(*fix,"PartC");
+  ExampleFixture fix ;
+  stk::mesh::Part & partA = *getExamplePart(fix,"PartA");
+  stk::mesh::Part & partB = *getExamplePart(fix,"PartB");
+  stk::mesh::Part & partC = *getExamplePart(fix,"PartC");
   stk::mesh::Selector selector = partA & partB & partC;
   std::cout << "A&B&C = " << selector << std::endl;
   std::ostringstream msg;
@@ -553,11 +553,11 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AiBiC )
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, complicated )
 {
-  RCP<Stk_Mesh_Fixture> fix = getExampleFixture();
-  stk::mesh::Part & partA = *getExamplePart(*fix,"PartA");
-  stk::mesh::Part & partB = *getExamplePart(*fix,"PartB");
-  stk::mesh::Part & partC = *getExamplePart(*fix,"PartC");
-  stk::mesh::Part & partD = *getExamplePart(*fix,"PartD");
+  ExampleFixture fix ;
+  stk::mesh::Part & partA = *getExamplePart(fix,"PartA");
+  stk::mesh::Part & partB = *getExamplePart(fix,"PartB");
+  stk::mesh::Part & partC = *getExamplePart(fix,"PartC");
+  stk::mesh::Part & partD = *getExamplePart(fix,"PartD");
   stk::mesh::Selector selector = partA | !(partA & partB | partC) & (!partD | partB);
   std::cout << "complicated selector = " << selector << std::endl;
   std::ostringstream msg;
@@ -572,35 +572,35 @@ STKUNIT_UNIT_TEST( UnitTestSelector, complicated )
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, selectIntersection )
 {
-  RCP<Stk_Mesh_Fixture> fix = getExampleFixture();
+  ExampleFixture fix ;
   std::vector<std::string> names;
   names.push_back("PartA");
   names.push_back("PartB");
-  stk::mesh::PartVector parts = getPartVector(*fix,names);
+  stk::mesh::PartVector parts = getPartVector(fix,names);
   stk::mesh::Selector selector = selectIntersection(parts);
 
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,1);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,1);
     bool result = selector(bucket);
     STKUNIT_ASSERT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,2);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,2);
     bool result = selector(bucket);
     STKUNIT_ASSERT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,3);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,3);
     bool result = selector(bucket);
     STKUNIT_ASSERT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,4);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,4);
     bool result = selector(bucket);
     STKUNIT_ASSERT_FALSE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,5);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,5);
     bool result = selector(bucket);
     STKUNIT_ASSERT_FALSE(result);
   }
@@ -617,36 +617,36 @@ STKUNIT_UNIT_TEST( UnitTestSelector, selectIntersection )
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, selectUnion )
 {
-  RCP<Stk_Mesh_Fixture> fix = getExampleFixture();
+  ExampleFixture fix ;
   std::vector<std::string> names;
   names.push_back("PartA");
   names.push_back("PartB");
   names.push_back("PartC");
-  stk::mesh::PartVector parts = getPartVector(*fix,names);
+  stk::mesh::PartVector parts = getPartVector(fix,names);
   stk::mesh::Selector selector = selectUnion(parts);
 
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,1);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,1);
     bool result = selector(bucket);
     STKUNIT_ASSERT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,2);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,2);
     bool result = selector(bucket);
     STKUNIT_ASSERT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,3);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,3);
     bool result = selector(bucket);
     STKUNIT_ASSERT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,4);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,4);
     bool result = selector(bucket);
     STKUNIT_ASSERT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,5);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,5);
     bool result = selector(bucket);
     STKUNIT_ASSERT_FALSE(result);
   }
@@ -666,10 +666,10 @@ STKUNIT_UNIT_TEST( UnitTestSelector, selectUnion )
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, orderOfOperations ) 
 {
-  RCP<Stk_Mesh_Fixture> fix = getExampleFixture();
-  stk::mesh::Part & partA = *getExamplePart(*fix,"PartA");
-  stk::mesh::Part & partB = *getExamplePart(*fix,"PartB");
-  stk::mesh::Part & partC = *getExamplePart(*fix,"PartC");
+  ExampleFixture fix ;
+  stk::mesh::Part & partA = *getExamplePart(fix,"PartA");
+  stk::mesh::Part & partB = *getExamplePart(fix,"PartB");
+  stk::mesh::Part & partC = *getExamplePart(fix,"PartC");
   {
     stk::mesh::Selector selector = partA | partB & partC;
     //std::cout << "A|B&C selector = " << selector << std::endl;
@@ -677,22 +677,22 @@ STKUNIT_UNIT_TEST( UnitTestSelector, orderOfOperations )
     msg << selector;
     STKUNIT_EXPECT_EQUAL( "!(!PartA AND !(PartB AND PartC))", msg.str() );
     {
-      const stk::mesh::Bucket & bucket = getExampleBucket(*fix,1);
+      const stk::mesh::Bucket & bucket = getExampleBucket(fix,1);
       bool result = selector(bucket);
       STKUNIT_EXPECT_TRUE(result);
     }
     {
-      const stk::mesh::Bucket & bucket = getExampleBucket(*fix,2);
+      const stk::mesh::Bucket & bucket = getExampleBucket(fix,2);
       bool result = selector(bucket);
       STKUNIT_EXPECT_TRUE(result);
     }
     {
-      const stk::mesh::Bucket & bucket = getExampleBucket(*fix,3);
+      const stk::mesh::Bucket & bucket = getExampleBucket(fix,3);
       bool result = selector(bucket);
       STKUNIT_EXPECT_TRUE(result);
     }
     {
-      const stk::mesh::Bucket & bucket = getExampleBucket(*fix,4);
+      const stk::mesh::Bucket & bucket = getExampleBucket(fix,4);
       bool result = selector(bucket);
       STKUNIT_EXPECT_FALSE(result);
     }
@@ -704,22 +704,22 @@ STKUNIT_UNIT_TEST( UnitTestSelector, orderOfOperations )
     msg << selector;
     STKUNIT_EXPECT_EQUAL( "!(!(PartB AND PartC) AND !PartA)", msg.str() );
     {
-      const stk::mesh::Bucket & bucket = getExampleBucket(*fix,1);
+      const stk::mesh::Bucket & bucket = getExampleBucket(fix,1);
       bool result = selector(bucket);
       STKUNIT_EXPECT_TRUE(result);
     }
     {
-      const stk::mesh::Bucket & bucket = getExampleBucket(*fix,2);
+      const stk::mesh::Bucket & bucket = getExampleBucket(fix,2);
       bool result = selector(bucket);
       STKUNIT_EXPECT_TRUE(result);
     }
     {
-      const stk::mesh::Bucket & bucket = getExampleBucket(*fix,3);
+      const stk::mesh::Bucket & bucket = getExampleBucket(fix,3);
       bool result = selector(bucket);
       STKUNIT_EXPECT_TRUE(result);
     }
     {
-      const stk::mesh::Bucket & bucket = getExampleBucket(*fix,4);
+      const stk::mesh::Bucket & bucket = getExampleBucket(fix,4);
       bool result = selector(bucket);
       STKUNIT_EXPECT_FALSE(result);
     }
@@ -732,19 +732,19 @@ STKUNIT_UNIT_TEST( UnitTestSelector, orderOfOperations )
  * 
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, ZeroiuZero ) {
-  RCP<Stk_Mesh_Fixture> fix = getExampleFixture();
+  ExampleFixture fix ;
   stk::mesh::Selector selectNone; 
   stk::mesh::Selector selectAll; 
   selectAll.complement();
   {
     stk::mesh::Selector selector = selectNone & selectAll;
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,1);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,1);
     bool result = selector(bucket);
     STKUNIT_EXPECT_FALSE(result);
   }
   {
     stk::mesh::Selector selector = selectNone | selectAll;
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,1);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,1);
     bool result = selector(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
@@ -759,10 +759,10 @@ STKUNIT_UNIT_TEST( UnitTestSelector, ZeroiuZero ) {
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, AibA )
 {
-  RCP<Stk_Mesh_Fixture> fix = getExampleFixture();
-  RCP<Stk_Mesh_Fixture> fixHat = getExampleFixture();
-  stk::mesh::Part & partA = *getExamplePart(*fix,"PartA");
-  stk::mesh::Part & partAhat = *getExamplePart(*fixHat,"PartA");
+  ExampleFixture fix ;
+  ExampleFixture fixHat ;
+  stk::mesh::Part & partA = *getExamplePart(fix,"PartA");
+  stk::mesh::Part & partAhat = *getExamplePart(fixHat,"PartA");
   stk::mesh::Selector selector(partA);
   STKUNIT_ASSERT_THROW(
       selector &= partAhat,
@@ -778,10 +778,10 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AibA )
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, AubA )
 {
-  RCP<Stk_Mesh_Fixture> fix = getExampleFixture();
-  RCP<Stk_Mesh_Fixture> fixHat = getExampleFixture();
-  stk::mesh::Part & partA = *getExamplePart(*fix,"PartA");
-  stk::mesh::Part & partAhat = *getExamplePart(*fixHat,"PartA");
+  ExampleFixture fix ;
+  ExampleFixture fixHat ;
+  stk::mesh::Part & partA = *getExamplePart(fix,"PartA");
+  stk::mesh::Part & partAhat = *getExamplePart(fixHat,"PartA");
   stk::mesh::Selector selector(partA);
   STKUNIT_ASSERT_THROW(
       selector |= partAhat,
@@ -799,11 +799,11 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AubA )
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, Ab1 )
 {
-  RCP<Stk_Mesh_Fixture> fix = getExampleFixture();
-  stk::mesh::Part & partA = *getExamplePart(*fix,"PartA");
+  ExampleFixture fix ;
+  stk::mesh::Part & partA = *getExamplePart(fix,"PartA");
   stk::mesh::Selector selector = partA;
-  RCP<Stk_Mesh_Fixture> fixHat = getExampleFixture();
-  const stk::mesh::Bucket & bucketHat = getExampleBucket(*fixHat,1);
+  ExampleFixture fixHat ;
+  const stk::mesh::Bucket & bucketHat = getExampleBucket(fixHat,1);
   bool result;
   STKUNIT_ASSERT_THROW(
       result = selector(bucketHat),
@@ -823,8 +823,8 @@ STKUNIT_UNIT_TEST( UnitTestSelector, Ab1 )
 
 STKUNIT_UNIT_TEST( UnitTestSelector, ZeroiuA )
 {
-  RCP<Stk_Mesh_Fixture> fix = getExampleFixture();
-  stk::mesh::Part & partA = *getExamplePart(*fix,"PartA");
+  ExampleFixture fix ;
+  stk::mesh::Part & partA = *getExamplePart(fix,"PartA");
   stk::mesh::Selector selectNone;
   stk::mesh::Selector selectAll;
   selectAll.complement();
@@ -832,12 +832,12 @@ STKUNIT_UNIT_TEST( UnitTestSelector, ZeroiuA )
   stk::mesh::Selector selectNoneOrA = selectNone | selectA;
   stk::mesh::Selector selectAllAndA = selectAll & selectA;
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,1);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,1);
     bool result = selectNoneOrA(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
   {
-    const stk::mesh::Bucket & bucket = getExampleBucket(*fix,1);
+    const stk::mesh::Bucket & bucket = getExampleBucket(fix,1);
     bool result = selectAllAndA(bucket);
     STKUNIT_EXPECT_TRUE(result);
   }
@@ -849,10 +849,10 @@ STKUNIT_UNIT_TEST( UnitTestSelector, ZeroiuA )
  */
 STKUNIT_UNIT_TEST( UnitTestSelector, copyConstructor )
 {
-  RCP<Stk_Mesh_Fixture> fix = getExampleFixture();
-  stk::mesh::Part & partA = *getExamplePart(*fix,"PartA");
-  stk::mesh::Part & partB = *getExamplePart(*fix,"PartB");
-  stk::mesh::Part & partC = *getExamplePart(*fix,"PartC");
+  ExampleFixture fix ;
+  stk::mesh::Part & partA = *getExamplePart(fix,"PartA");
+  stk::mesh::Part & partB = *getExamplePart(fix,"PartB");
+  stk::mesh::Part & partC = *getExamplePart(fix,"PartC");
   stk::mesh::Selector selectA = partA & partB | partC;
   stk::mesh::Selector anotherSelectA(selectA);
   std::ostringstream descriptionA;

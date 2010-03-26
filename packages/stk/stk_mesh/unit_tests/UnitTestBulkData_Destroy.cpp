@@ -18,6 +18,7 @@
 #include <stk_mesh/fem/EntityTypes.hpp>
 
 #include <unit_tests/UnitTestBulkData.hpp>
+#include <unit_tests/UnitTestRingMeshFixture.hpp>
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
@@ -55,10 +56,10 @@ void UnitTestBulkData::testDestroy_nodes( ParallelMachine pm )
 
   // Declare just those entities in my range of ids:
 
+  STKUNIT_ASSERT( bulk.modification_begin() );
   for ( unsigned i = id_begin ; i < id_end ; ++i ) {
     bulk.declare_entity( 0 , ids[i] , no_parts );
   }
-
   STKUNIT_ASSERT( bulk.modification_end() );
 
   // Verify that I only have entities in my range:
@@ -119,8 +120,6 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
   // const unsigned nLocalNode = nPerProc + ( 1 < p_size ? 1 : 0 );
   const unsigned nLocalEdge = nPerProc ;
  
-  std::vector<EntityId> node_ids , edge_ids ;
- 
   MetaData meta( fem_entity_type_names() );
  
   meta.commit();
@@ -136,13 +135,14 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
   //------------------------------
   { // No ghosting
     const bool aura_flag = false ;
-    BulkData bulk( meta , pm , 100 );
- 
-    generate_loop( bulk, no_parts , aura_flag, nPerProc, node_ids, edge_ids );
+
+    RingMeshFixture mesh( pm , nPerProc , false /* No edge parts */ );
+
+    mesh.generate_loop( aura_flag );
  
     // This process' first element in the loop
     // if a parallel mesh has a shared node 
-    Entity * edge = bulk.get_entity( 1 , edge_ids[ nLocalEdge * p_rank ] );
+    Entity * edge = mesh.m_bulk_data.get_entity( 1 , mesh.m_edge_ids[ nLocalEdge * p_rank ] );
     Entity * node0 = edge->relations()[0].entity();
     Entity * node1 = edge->relations()[1].entity();
 
@@ -158,23 +158,23 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
     STKUNIT_ASSERT( node1->relations()[0].entity() == edge ||
                     node1->relations()[1].entity() == edge );
 
-    bulk.modification_begin();
+    mesh.m_bulk_data.modification_begin();
 
     // Destroy the element:
-    bool result = bulk.destroy_entity( edge );
+    bool result = mesh.m_bulk_data.destroy_entity( edge );
     STKUNIT_ASSERT( true == result );
     STKUNIT_ASSERT( NULL == edge );
 
     // Destroy orphanned node:
     if ( node0->relations().size() == 0 ) {
-      STKUNIT_ASSERT( bulk.destroy_entity( node0 ) );
+      STKUNIT_ASSERT( mesh.m_bulk_data.destroy_entity( node0 ) );
       STKUNIT_ASSERT( NULL == node0 );
     }
     if ( node1->relations().size() == 0 ) {
-      STKUNIT_ASSERT( bulk.destroy_entity( node1 ) );
+      STKUNIT_ASSERT( mesh.m_bulk_data.destroy_entity( node1 ) );
       STKUNIT_ASSERT( NULL == node1 );
     }
-    STKUNIT_ASSERT( bulk.internal_modification_end( aura_flag ) );
+    STKUNIT_ASSERT( mesh.m_bulk_data.internal_modification_end( aura_flag ) );
 
     if ( NULL != node0 ) {
       STKUNIT_ASSERT_EQUAL( node0_edges - 1 , node0->relations().size() );
@@ -186,14 +186,15 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
   //------------------------------
   if ( 1 < p_size ) { // With ghosting
     const bool aura_flag = true ;
-    BulkData bulk( meta , pm , 100 );
- 
-    generate_loop( bulk, no_parts , aura_flag, nPerProc, node_ids, edge_ids );
 
+    RingMeshFixture mesh( pm , nPerProc , false /* No edge parts */ );
+
+    mesh.generate_loop( aura_flag );
+ 
     const unsigned nNotOwned = nPerProc * p_rank ;
 
     // The not-owned shared entity:
-    Entity * node = bulk.get_entity( 0 , node_ids[ nNotOwned ] );
+    Entity * node = mesh.m_bulk_data.get_entity( 0 , mesh.m_node_ids[ nNotOwned ] );
 
     STKUNIT_ASSERT( node != NULL );
     STKUNIT_ASSERT( p_rank != node->owner_rank() );
@@ -204,7 +205,7 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
     node_edge_ids[0] = node->relations()[0].entity()->identifier();
     node_edge_ids[1] = node->relations()[1].entity()->identifier();
 
-    bulk.modification_begin();
+    mesh.m_bulk_data.modification_begin();
 
     // This process' first node in the loop is shared, destroy it
     // First have to destroy attached edges.
@@ -212,29 +213,30 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
 
     while ( node->relations().size() ) {
       Entity * e = node->relations().back().entity();
-      STKUNIT_ASSERT( bulk.destroy_entity( e ) );
+      STKUNIT_ASSERT( mesh.m_bulk_data.destroy_entity( e ) );
     }
-    STKUNIT_ASSERT( bulk.destroy_entity( node ) );
+    STKUNIT_ASSERT( mesh.m_bulk_data.destroy_entity( node ) );
 
-    STKUNIT_ASSERT( bulk.internal_modification_end( aura_flag ) );
+    STKUNIT_ASSERT( mesh.m_bulk_data.internal_modification_end( aura_flag ) );
 
-    assert_is_destroyed( bulk.get_entity(0, node_ids[nNotOwned] ) );
-    assert_is_destroyed( bulk.get_entity(1, node_edge_ids[0] ) );
-    assert_is_destroyed( bulk.get_entity(1, node_edge_ids[1] ) );
+    assert_is_destroyed( mesh.m_bulk_data.get_entity(0, mesh.m_node_ids[nNotOwned] ) );
+    assert_is_destroyed( mesh.m_bulk_data.get_entity(1, node_edge_ids[0] ) );
+    assert_is_destroyed( mesh.m_bulk_data.get_entity(1, node_edge_ids[1] ) );
   }
   //------------------------------
   if ( 1 < p_size ) { // With ghosting
     const bool aura_flag = true ;
-    BulkData bulk( meta , pm , 100 );
- 
-    generate_loop( bulk, no_parts , aura_flag, nPerProc, node_ids, edge_ids );
 
+    RingMeshFixture mesh( pm , nPerProc , false /* No edge parts */ );
+
+    mesh.generate_loop( aura_flag );
+ 
     // The owned shared entity:
-    const unsigned nOwned = ( nPerProc * ( p_rank + 1 ) ) % node_ids.size();
+    const unsigned nOwned = ( nPerProc * ( p_rank + 1 ) ) % mesh.m_node_ids.size();
     const unsigned nNotOwned = nPerProc * p_rank ;
 
-    Entity * node_owned = bulk.get_entity( 0 , node_ids[ nOwned ] );
-    Entity * node_not_owned = bulk.get_entity( 0 , node_ids[ nNotOwned ] );
+    Entity * node_owned = mesh.m_bulk_data.get_entity( 0 , mesh.m_node_ids[ nOwned ] );
+    Entity * node_not_owned = mesh.m_bulk_data.get_entity( 0 , mesh.m_node_ids[ nNotOwned ] );
 
     STKUNIT_ASSERT( node_owned != NULL );
     STKUNIT_ASSERT( node_not_owned != NULL );
@@ -248,7 +250,7 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
     node_edge_ids[0] = node_owned->relations()[0].entity()->identifier();
     node_edge_ids[1] = node_owned->relations()[1].entity()->identifier();
 
-    bulk.modification_begin();
+    mesh.m_bulk_data.modification_begin();
 
     // This process' first node in the loop is shared, destroy it
     // First have to destroy attached edges.
@@ -256,19 +258,19 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
 
     while ( node_owned->relations().size() ) {
       Entity * e = node_owned->relations().back().entity();
-      STKUNIT_ASSERT( bulk.destroy_entity( e ) );
+      STKUNIT_ASSERT( mesh.m_bulk_data.destroy_entity( e ) );
     }
-    STKUNIT_ASSERT( bulk.destroy_entity( node_owned ) );
+    STKUNIT_ASSERT( mesh.m_bulk_data.destroy_entity( node_owned ) );
 
-    STKUNIT_ASSERT( bulk.internal_modification_end( aura_flag ) );
+    STKUNIT_ASSERT( mesh.m_bulk_data.internal_modification_end( aura_flag ) );
 
     // Ownership of the other process' owned, shared, and destroyed node
     // has been transferred to this process.
 
     STKUNIT_ASSERT_EQUAL( p_rank , node_not_owned->owner_rank() );
-    assert_is_destroyed( bulk.get_entity(0, node_ids[ nOwned ] ) );
-    assert_is_destroyed( bulk.get_entity(1, node_edge_ids[0] ) );
-    assert_is_destroyed( bulk.get_entity(1, node_edge_ids[1] ) );
+    assert_is_destroyed( mesh.m_bulk_data.get_entity(0, mesh.m_node_ids[ nOwned ] ) );
+    assert_is_destroyed( mesh.m_bulk_data.get_entity(1, node_edge_ids[0] ) );
+    assert_is_destroyed( mesh.m_bulk_data.get_entity(1, node_edge_ids[1] ) );
   }
 }
 

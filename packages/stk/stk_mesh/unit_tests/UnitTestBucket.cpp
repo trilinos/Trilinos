@@ -41,6 +41,7 @@ namespace mesh {
 
 void UnitTestBucket::testBucket( ParallelMachine pm )
 {
+  typedef Field<double>  ScalarFieldType;
  // static const char method[] = "stk::mesh::UnitTestBucket" ;
 
  // Create a mesh for testing buckets
@@ -54,7 +55,7 @@ void UnitTestBucket::testBucket( ParallelMachine pm )
   }
 
   MetaData meta( entity_names );
-  typedef Field<double>  ScalarFieldType;
+  BulkData bulk( meta , pm , 4 );
 
   ScalarFieldType & temperature =
        meta.declare_field < ScalarFieldType > ( "temperature" , 4 );
@@ -65,11 +66,13 @@ void UnitTestBucket::testBucket( ParallelMachine pm )
   put_field ( volume , Element , universal );
   meta.commit();
 
-  BulkData bulk( meta , pm , 4 );
 
   const int root_box[3][2] = { { 0,4 } , { 0,5 } , { 0,6 } };
   int local_box[3][2] = { { 0,0 } , { 0,0 } , { 0,0 } };
+
+  bulk.modification_begin();
   generate_boxes( bulk , false /* no aura */ , root_box , local_box );
+  bulk.modification_end();
 
   
  //  First, test for streaming IO;

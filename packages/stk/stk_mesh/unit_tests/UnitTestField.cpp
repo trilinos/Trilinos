@@ -178,6 +178,7 @@ void testFieldDataArray( stk::ParallelMachine pm )
   const std::string name3("test_field_3");
 
   stk::mesh::MetaData meta_data( stk::mesh::fem_entity_type_names() );
+  stk::mesh::BulkData bulk_data( meta_data , pm );
 
   rank_zero_field  & f0 = meta_data.declare_field< rank_zero_field >( name0 );
   rank_one_field   & f1 = meta_data.declare_field< rank_one_field >(  name1 );
@@ -215,7 +216,7 @@ void testFieldDataArray( stk::ParallelMachine pm )
 
   meta_data.commit();
 
-  stk::mesh::BulkData bulk_data( meta_data , pm );
+  bulk_data.modification_begin();
 
   for ( unsigned i = 1 ; i < 11 ; ++i ) {
     bulk_data.declare_entity( stk::mesh::Node , i ,

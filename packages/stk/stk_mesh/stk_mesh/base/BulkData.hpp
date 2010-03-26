@@ -53,9 +53,8 @@ public:
    *          \ref stk::mesh::MetaData "meta data manager" and will
    *          distribute bulk data over the given parallel machine.
    *
-   *  - The meta data manager must be committed.
    *  - The maximum number of entities per bucket may be supplied.
-   *  - The bulk data is in the "ok to modify" state.
+   *  - The bulk data is in the synchronized or "locked" state.
    */
   BulkData( const MetaData & mesh_meta_data ,
             ParallelMachine parallel ,
@@ -95,7 +94,10 @@ public:
 
   /** \brief  Begin a modification phase during which the mesh bulk data
    *          could become parallel inconsistent.  This is a parallel
-   *          synchronous call.
+   *          synchronous call.  The first time this method is called
+   *          the mesh meta data is verified to be committed and
+   *          parallel consistent.  An exception is thrown if this
+   *          verification fails.
    *
    *  \return  True if transitioned out of the guaranteed
    *           parallel consistent state to the "ok to modify" state.
@@ -347,14 +349,12 @@ private:
   BulkData & operator = ( const BulkData & );
 
 
-  // Containers:
+  /** \brief  Parallel index for entity keys */
+  parallel::DistributedIndex          m_entities_index ;
   std::vector< std::vector<Bucket*> > m_buckets ;
   EntitySet                           m_entities ;
   std::vector<Entity*>                m_entity_comm ;
   std::vector<Ghosting*>              m_ghosting ; /**< Aura is [1] */
-
-  /** \brief  Parallel index for entity keys */
-  parallel::DistributedIndex          m_entities_index ;
   std::vector<Entity*>                m_new_entities ;
   Bucket *                            m_bucket_nil ;
 
@@ -366,6 +366,7 @@ private:
   unsigned           m_bucket_capacity ;
   size_t             m_sync_count ;
   BulkDataSyncState  m_sync_state ;
+  bool               m_meta_data_verified ;
 
   unsigned determine_new_owner( Entity & ) const ;
 

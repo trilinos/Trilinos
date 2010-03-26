@@ -8,7 +8,6 @@
 
 #include <iostream>
 
-#include <use_cases/UseCase_1.hpp>
 #include <use_cases/UseCase_2.hpp>
 #include <use_cases/UseCase_3.hpp>
 #include <use_cases/UseCase_4.hpp>
@@ -33,35 +32,27 @@ int main ( int argc, char * argv[] )
 
   bool status = true;
   {
-    std::cout << "Use Case 1 ... ";
-    stk::mesh::use_cases::UseCase_1_Mesh mesh(parallel_machine);
-    stk::mesh::use_cases::populate(mesh,1,3);
-    bool local_status = stk::mesh::use_cases::verifyMesh(mesh,1,3);
-    printStatus(local_status);
-    status = status && local_status;
-  }
-  {
     std::cout << "Use Case 2 ... ";
     stk::mesh::use_cases::UseCase_2_Mesh mesh(parallel_machine);
-    stk::mesh::use_cases::populate(mesh,1,3);
-    bool local_status = stk::mesh::use_cases::verifyMesh(mesh,1,3);
+    mesh.populate(1,3);
+    const bool local_status = stk::mesh::use_cases::verifyMesh(mesh,1,3);
     printStatus(local_status);
     status = status && local_status;
   }
   {
     std::cout << "Use Case 3 ... ";
     stk::mesh::use_cases::UseCase_3_Mesh mesh(parallel_machine);
-    stk::mesh::use_cases::populate(mesh);
-    bool local_status = stk::mesh::use_cases::verifyMesh(mesh);
+    mesh.populate();
+    const bool local_status = stk::mesh::use_cases::verifyMesh(mesh);
     printStatus(local_status);
     status = status && local_status;
   }
   {
     std::cout << "Use Case 4 ... ";
     stk::mesh::use_cases::UseCase_4_Mesh mesh(parallel_machine);
-    stk::mesh::use_cases::populate(mesh);
+    mesh.populate();
     stk::mesh::use_cases::runAlgorithms(mesh);
-    bool local_status = stk::mesh::use_cases::verifyMesh(mesh);
+    const bool local_status = stk::mesh::use_cases::verifyMesh(mesh);
     printStatus(local_status);
     status = status && local_status;
   }
