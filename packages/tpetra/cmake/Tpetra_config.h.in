@@ -9,6 +9,8 @@
 /* Define if want to build teuchos-debug */
 #cmakedefine HAVE_TPETRA_DEBUG
 
+#cmakedefine HAVE_TPETRA_ENABLE_SS_TESTING
+
 /* Define if we have MPI */
 #cmakedefine HAVE_TPETRA_MPI
 

@@ -439,15 +439,8 @@ namespace Tpetra {
     }
 
     // set min/maxAllGIDs
-    {
-      GlobalOrdinal minmaxAllGIDlcl[2], minmaxAllGIDgbl[2];
-      minmaxAllGIDlcl[0] = -minMyGID_;  // negative allows us to do a single
-      minmaxAllGIDlcl[1] =  maxMyGID_;  // reduction below
-      Teuchos::reduceAll<int,GlobalOrdinal>(*comm_,Teuchos::REDUCE_MAX,2,minmaxAllGIDlcl,
-        minmaxAllGIDgbl);
-      minAllGID_ = -minmaxAllGIDgbl[0];
-      maxAllGID_ =  minmaxAllGIDgbl[1];
-    }
+    Teuchos::reduceAll<int,GlobalOrdinal>(*comm_,Teuchos::REDUCE_MIN,minMyGID_,Teuchos::outArg(minAllGID_));
+    Teuchos::reduceAll<int,GlobalOrdinal>(*comm_,Teuchos::REDUCE_MAX,maxMyGID_,Teuchos::outArg(maxAllGID_));
     contiguous_  = false;
     distributed_ = checkIsDist();
     TEST_FOR_EXCEPTION(minAllGID_ < indexBase_, std::invalid_argument,
@@ -458,60 +451,6 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::~Map () 
   {}
-
-  // inlined
-  // template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  // global_size_t Map<LocalOrdinal,GlobalOrdinal,Node>::getGlobalNumElements() const {
-  //   return numGlobalElements_;
-  // }
-
-  // inlined
-  // template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  // size_t Map<LocalOrdinal,GlobalOrdinal,Node>::getNodeNumElements() const {
-  //   return numLocalElements_;
-  // }
-
-  // inlined
-  // template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  // GlobalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getIndexBase() const {
-  //   return indexBase_;
-  // }
-
-  // inlined
-  // template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  // LocalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getMinLocalIndex() const {
-  //   return Teuchos::OrdinalTraits<LocalOrdinal>::zero();
-  // }
-
-  // inlined
-  // template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  // LocalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getMaxLocalIndex() const {
-  //   return Teuchos::as<LocalOrdinal>(numLocalElements_-1);
-  // }
-
-  // inlined
-  // template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  // GlobalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getMinGlobalIndex() const {
-  //   return minMyGID_;
-  // }
-
-  // inlined
-  // template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  // GlobalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getMaxGlobalIndex() const {
-  //   return maxMyGID_;
-  // }
-
-  // inlined
-  // template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  // GlobalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getMinAllGlobalIndex() const {
-  //   return minAllGID_;
-  // }
-
-  // inlined
-  // template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  // GlobalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getMaxAllGlobalIndex() const {
-  //   return maxAllGID_;
-  // }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   LocalOrdinal Map<LocalOrdinal,GlobalOrdinal,Node>::getLocalElement(GlobalOrdinal globalIndex) const {

@@ -26,6 +26,13 @@ PACKAGE_ADD_DEBUG_OPTION()
 #
 
 ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_SS_TESTING
+  HAVE_TPETRA_ENABLE_SS_TESTING
+  "Enabling testing of Secondary Stable Code."
+  ${${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE}
+  )
+
+ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_FLOAT
   HAVE_TPETRA_INST_FLOAT
   "If explicit instantiation is enabled, instantiate over scalar field float."
