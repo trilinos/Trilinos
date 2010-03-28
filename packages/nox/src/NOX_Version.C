@@ -37,7 +37,8 @@
 // @HEADER
 
 #include "NOX_Version.H"
+#include "Trilinos_version.h"
 
 string NOX::version() { 
-  return("NOX Version 4.0-dev - 03/01/2005"); 
+  return("NOX in Trilinos " TRILINOS_VERSION_STRING); 
 }
