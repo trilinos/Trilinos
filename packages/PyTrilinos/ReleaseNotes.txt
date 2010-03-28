@@ -1,4 +1,4 @@
-Release Notes for PyTrilinos 4.3 (Trilinos 10.1)
+Release Notes for PyTrilinos 4.3 (Trilinos 10.2)
 ================================================
 
 PyTrilinos.NOX notes:
