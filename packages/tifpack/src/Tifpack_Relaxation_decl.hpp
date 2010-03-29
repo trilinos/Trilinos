@@ -113,10 +113,7 @@ P_{GS}^{-1} = (D - E)^{-1}.
 Clearly, the role of E and F can be interchanged. However,
 Tifpack::GaussSeidel does not consider backward Gauss-Seidel methods.
 
-<P>For a list of supported parameters, please refer to page \ref ifp_params.
-
-<P>The complete list of supported parameters is reported in page \ref ifp_params. For a presentation of basic relaxation schemes, please refer to page
-\ref Tifpack::Relaxation.
+<P>For a list of supported parameters, please refer to the Relaxation::setParameters method.
 
     \author Michael Heroux, SNL 9214.
 
@@ -146,6 +143,23 @@ public:
   //@{ \name Preconditioner computation methods
 
   //! Sets all the parameters for the preconditioner
+  /**
+     Valid parameters include the following:
+     <ul>
+      <li> "relaxation: type"<br>
+        Valid values (string):<br>
+        <ul>
+         <li> "Jacobi"
+         <li> "Gauss-Seidel"
+         <li> "Symmetric Gauss-Seidel"
+        </ul>
+      <li> "relaxation: sweeps" (int)
+      <li> "relaxation: damping factor" (floating-point)
+      <li> "relaxation: min diagonal value" (floating-point)
+      <li> "relaxation: zero starting solution" (bool)
+      <li> "relaxation: backward mode" (bool)
+     </ul>
+  */
   void setParameters(const Teuchos::ParameterList& params);
 
   //! Initialize

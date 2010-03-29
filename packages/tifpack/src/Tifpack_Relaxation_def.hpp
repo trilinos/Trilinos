@@ -85,7 +85,7 @@ void Relaxation<MatrixType>::setParameters(const Teuchos::ParameterList& List)
   else if (PrecType_ == Tifpack::GS)
     PT = "Gauss-Seidel";
   else if (PrecType_ == Tifpack::SGS)
-    PT = "symmetric Gauss-Seidel";
+    PT = "Symmetric Gauss-Seidel";
 
   Tifpack::getParameter(List, "relaxation: type", PT);
 
@@ -93,7 +93,7 @@ void Relaxation<MatrixType>::setParameters(const Teuchos::ParameterList& List)
     PrecType_ = Tifpack::JACOBI;
   else if (PT == "Gauss-Seidel")
     PrecType_ = Tifpack::GS;
-  else if (PT == "symmetric Gauss-Seidel")
+  else if (PT == "Symmetric Gauss-Seidel")
     PrecType_ = Tifpack::SGS;
   else {
     std::ostringstream osstr;

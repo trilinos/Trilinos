@@ -70,21 +70,7 @@ namespace Tifpack {
 
 <P> (04/04/06) Flops are not counted in the routine apply()
 
-The list of parameters is
-- EigRatio: "chebyshev: ratio eigenvalue"
-this is the ratio to define the lower bound on the spectrum; lambda^* = LambdaMax / EigRatio;
-a typical value used in ML is 30.0 (30.0 is the default value).
-- LambdaMin: "chebyshev: min eigenvalue"
-this is the smallest eigenvalue; this parameter is optional and is only
-accessed to check whether the input matrix is equal to identity.
-- LambdaMax: "chebyshev: max eigenvalue"
-this is the largest eigenvalue of the matrix.
-- PolyDegree:  "chebyshev: degree"
-this is the polynomial degree.
-- MinDiagonalValue:  "chebyshev: min diagonal value"
-this defines the threshold for diagonal values under which they are not inverted
-- ZeroStartingSolution:  "chebyshev: zero starting solution"
-this flag allows to set a non-zero initial guess.
+For the list of parameters, see the Chebyshev::setParameters method.
 
 \author Ulrich Hetmaniuk. SNL 1416.
 
@@ -114,6 +100,26 @@ public:
   //@{ \name Preconditioner computation methods
 
   //! Sets all the parameters for the preconditioner
+  /**
+   Valid parameters include the following:
+   <ul>
+<li> "chebyshev: ratio eigenvalue" (Scalar)<br>
+this is the ratio to define the lower bound on the spectrum; lambda^* = LambdaMax / EigRatio;
+a typical value used in ML is 30.0 (30.0 is the default value).
+<li> "chebyshev: min eigenvalue" (Scalar)<br>
+this is the smallest eigenvalue; this parameter is optional and is only
+accessed to check whether the input matrix is equal to identity.
+<li> "chebyshev: max eigenvalue" (Scalar)<br>
+this is the largest eigenvalue of the matrix.
+<li> "chebyshev: degree" (int)<br>
+this is the polynomial degree.
+<li> "chebyshev: min diagonal value" (Scalar)<br>
+this defines the threshold for diagonal values under which they are not inverted
+<li> "chebyshev: zero starting solution" (bool)<br>
+Determines whether the 'x' vector is zero'd on entry to Chebyshev::apply.
+</ul>
+
+ */
   void setParameters(const Teuchos::ParameterList& params);
 
   //! Initialize

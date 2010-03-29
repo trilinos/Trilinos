@@ -68,6 +68,7 @@ namespace Tifpack {
 /*! The Tifpack::ILUT class computes an ILUT factorization with specified fill 
     and drop-tolerance, of a given Tpetra::RowMatrix. 
 
+  For all valid parameters, see the method ILUT::setParameters.
 */
 template<class MatrixType>
 class ILUT: virtual public Tifpack::Preconditioner<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> {
@@ -90,13 +91,15 @@ public:
 
   //@}
   //@{ Construction methods
-  //! Set parameters using a Teuchos::ParameterList object.
-  /* This method is only available if the Teuchos package is enabled.
-     This method recognizes five parameter names: level_fill, drop_tolerance,
-     absolute_threshold, relative_threshold and overlap_mode. These names are
-     case insensitive. For level_fill the ParameterEntry must have type int, the 
-     threshold entries must have type double and overlap_mode must have type
-     Tpetra::CombineMode.
+  //! Set parameters for the preconditioner.
+  /**
+    <ul>
+     <li> "fact: ilut level-of-fill" (int)<br>
+     <li> "fact: drop tolerance" (magnitude-type)<br>
+     <li> "fact: absolute threshold" (magnitude-type)<br>
+     <li> "fact: relative threshold" (magnitude-type)<br>
+     <li> "fact: relax value" (magnitude-type)<br>
+    </ul>
   */
   void setParameters(const Teuchos::ParameterList& params);
 
