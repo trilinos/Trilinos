@@ -65,7 +65,7 @@ void LinearOpWithSolveBase<Scalar>::solve(
 {
   const SolveStatus<Scalar> solveStatus =
     this->solve(applyConjToTrans(conj), B, Teuchos::ptr(X),
-      converToBlockSolveCriteriaToSolveCritiera(numBlocks, blockSolveCriteria)
+      convertBlockSolveCriteriaToSolveCritiera(numBlocks, blockSolveCriteria)
       );
   if (numBlocks) {
     blockSolveStatus[0] = solveStatus;
@@ -101,7 +101,7 @@ void LinearOpWithSolveBase<Scalar>::solveTranspose(
 {
   const SolveStatus<Scalar> solveStatus =
     this->solve(applyTransposeConjToTrans(conj), B, Teuchos::ptr(X),
-      converToBlockSolveCriteriaToSolveCritiera(numBlocks, blockSolveCriteria)
+      convertBlockSolveCriteriaToSolveCritiera(numBlocks, blockSolveCriteria)
       );
   if (numBlocks) {
     blockSolveStatus[0] = solveStatus;
@@ -135,7 +135,7 @@ LinearOpWithSolveBase<Scalar>::solveSupportsSolveMeasureTypeImpl(
 
 template<class Scalar>
 Ptr<const SolveCriteria<Scalar> >
-LinearOpWithSolveBase<Scalar>::converToBlockSolveCriteriaToSolveCritiera(
+LinearOpWithSolveBase<Scalar>::convertBlockSolveCriteriaToSolveCritiera(
   const int numBlocks,
   const BlockSolveCriteria<Scalar> blockSolveCriteria[]
   )

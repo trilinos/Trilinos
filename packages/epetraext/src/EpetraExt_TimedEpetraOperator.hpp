@@ -81,17 +81,17 @@ namespace EpetraExt {
     /*!
      * \brief Returns the total time applying this operator.
      */
-    virtual const double ApplyTime() const{return this->ApplyTimer->totalElapsedTime(false);};
+    virtual double ApplyTime() const{return this->ApplyTimer->totalElapsedTime(false);};
 
     /*!
      * \brief Returns the total time applying the inverse of this operator.
      */
-    virtual const double ApplyInverseTime() const{return this->ApplyInverseTimer->totalElapsedTime(false);};
+    virtual double ApplyInverseTime() const{return this->ApplyInverseTimer->totalElapsedTime(false);};
 
     /*!
      * \brief Returns a pointer to the underlying Epetra_Operator
      */
-    virtual const Teuchos::RCP<const Epetra_Operator> ReturnOperator() const{return this->A;};
+    virtual Teuchos::RCP<const Epetra_Operator> ReturnOperator() const{return this->A;};
 
   private:
     

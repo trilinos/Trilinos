@@ -54,7 +54,7 @@ std::string Utils::trimWhiteSpace( const std::string& str )
   size_type last_non_white = 0;
   for(
     last_non_white = len-1 ;
-    isWhiteSpace(str[last_non_white]) && last_non_white >= 0;
+    isWhiteSpace(str[last_non_white]) && (last_non_white != 0);
     --last_non_white
     );
   // Above, if only whitespace is found, last_non_white==0 on termination of

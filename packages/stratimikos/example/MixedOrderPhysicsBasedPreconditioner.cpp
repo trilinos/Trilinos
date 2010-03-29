@@ -381,11 +381,11 @@ int main(int argc, char* argv[])
 
     VectorPtr x = createMember(P2->domain());
     VectorPtr b = createMember(P2->range());
-    Thyra::randomize(-1.0,+1.0,&*b);
-    Thyra::assign(&*x,0.0); // Must give an initial guess!
+    Thyra::randomize(-1.0, +1.0, b.ptr());
+    Thyra::assign(x.ptr(), 0.0); // Must give an initial guess!
 
     Thyra::SolveStatus<double>
-      solveStatus = solve( *P2_lows, Thyra::NOTRANS, *b, &*x );
+      solveStatus = solve<double>( *P2_lows, Thyra::NOTRANS, *b, x.ptr() );
 
     *out << "\nSolve status:\n" << solveStatus;
 
@@ -393,7 +393,7 @@ int main(int argc, char* argv[])
 
     if(showParams) {
       *out << "\nParameter list after use:\n\n";
-      paramList->print(*out,PLPrintOptions().indent(2).showTypes(true));
+      paramList->print(*out, PLPrintOptions().indent(2).showTypes(true));
     }
 
     //
@@ -401,9 +401,9 @@ int main(int argc, char* argv[])
     //
     
     VectorPtr P2x = Thyra::createMember(b->space());
-    Thyra::apply( *P2, Thyra::NOTRANS, *x, &*P2x );
+    Thyra::apply( *P2, Thyra::NOTRANS, *x, P2x.ptr() );
     VectorPtr r = Thyra::createMember(b->space());
-    Thyra::V_VmV(&*r,*b,*P2x);
+    Thyra::V_VmV<double>(r.ptr(), *b, *P2x);
     
     double
       P2x_nrm = Thyra::norm(*P2x),

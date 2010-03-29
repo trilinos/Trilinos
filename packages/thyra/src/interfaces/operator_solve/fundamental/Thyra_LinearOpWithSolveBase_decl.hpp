@@ -447,8 +447,9 @@ protected:
 
 private:
 
+  THYRA_DEPRECATED
   static Ptr<const SolveCriteria<Scalar> >
-  converToBlockSolveCriteriaToSolveCritiera(
+  convertBlockSolveCriteriaToSolveCritiera(
     const int numBlocks,
     const BlockSolveCriteria<Scalar> blockSolveCriteria[]
     );

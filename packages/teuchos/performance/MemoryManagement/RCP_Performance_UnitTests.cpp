@@ -65,9 +65,7 @@ TEUCHOS_STATIC_SETUP()
 
 
 template<typename T>
-struct DeleteDeleter {
-  void operator()(T* ptr) { delete ptr; }
-};
+struct DeleteDeleter {};
 
 
 TEUCHOS_UNIT_TEST( RCP, _sizeofObjects )

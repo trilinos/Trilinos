@@ -137,13 +137,13 @@ namespace Sacado {
     }
 
     //! Dereference operator
-    const typename Sacado::ConstTemplateIterator<BaseT>::reference 
+    typename Sacado::ConstTemplateIterator<BaseT>::reference 
     operator*() const {
       return *(*object_iterator);
     }
 
     //! -> operator
-    const typename Sacado::ConstTemplateIterator<BaseT>::pointer 
+    typename Sacado::ConstTemplateIterator<BaseT>::pointer 
     operator->() const {
       return &(*(*object_iterator));
     }

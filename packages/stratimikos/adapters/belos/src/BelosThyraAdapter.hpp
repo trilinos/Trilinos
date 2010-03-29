@@ -215,13 +215,17 @@ namespace Belos {
          const Teuchos::SerialDenseMatrix<int,ScalarType>& B, 
          const ScalarType beta, TMVB& mv )
     {
-      int m = B.numRows();
-      int n = B.numCols();
+      using Teuchos::arrayView; using Teuchos::arcpFromArrayView;
+      const int m = B.numRows();
+      const int n = B.numCols();
       // Create a view of the B object!
       Teuchos::RCP< const TMVB >
         B_thyra = Thyra::createMembersView(
-          A.domain()
-          ,RTOpPack::ConstSubMultiVectorView<ScalarType>(0,m,0,n,&B(0,0),B.stride())
+          A.domain(),
+          RTOpPack::ConstSubMultiVectorView<ScalarType>(
+            0, m, 0, n,
+            arcpFromArrayView(arrayView(&B(0,0), B.stride()*B.numCols())), B.stride()
+            )
           );
       // perform the operation via A: mv <- alpha*A*B_thyra + beta*mv
       Thyra::apply<ScalarType>(A, Thyra::NOTRANS, *B_thyra, Teuchos::outArg(mv), alpha, beta);
@@ -253,7 +257,7 @@ namespace Belos {
     static void MvScale ( TMVB& mv, const std::vector<ScalarType>& alpha )
     {
       for (unsigned int i=0; i<alpha.size(); i++) {
-        Thyra::scale(alpha[i],mv.col(i).get());
+        Thyra::scale<ScalarType>(alpha[i], mv.col(i).ptr());
       }
     }
 
@@ -262,14 +266,18 @@ namespace Belos {
     static void MvTransMv( const ScalarType alpha, const TMVB& A, const TMVB& mv, 
                            Teuchos::SerialDenseMatrix<int,ScalarType>& B )
     { 
+      using Teuchos::arrayView; using Teuchos::arcpFromArrayView;
       // Create a multivector to hold the result (m by n)
       int m = A.domain()->dim();
       int n = mv.domain()->dim();
       // Create a view of the B object!
       Teuchos::RCP< TMVB >
         B_thyra = Thyra::createMembersView(
-          A.domain()
-          ,RTOpPack::SubMultiVectorView<ScalarType>(0,m,0,n,&B(0,0),B.stride())
+          A.domain(),
+          RTOpPack::SubMultiVectorView<ScalarType>(
+            0, m, 0, n,
+            arcpFromArrayView(arrayView(&B(0,0), B.stride()*B.numCols())), B.stride()
+            )
           );
       Thyra::apply<ScalarType>(A, Thyra::CONJTRANS, mv, B_thyra.ptr(), alpha);
     }
