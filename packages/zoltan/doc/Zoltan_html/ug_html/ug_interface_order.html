@@ -58,8 +58,8 @@ that should only be called after <a href="#Zoltan_Order">Zoltan_Order</a>.
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_gid_entries</i>, 
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_obj</i>,
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>global_ids</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>rank</i>, 
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>iperm</i>)
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b> <i>rank</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)
 </td>
 </tr>
 
@@ -73,7 +73,7 @@ that should only be called after <a href="#Zoltan_Order">Zoltan_Order</a>.
 <br>INTEGER(Zoltan_INT), INTENT(IN) :: num_gid_entries
 <br>INTEGER(Zoltan_INT), INTENT(IN) :: num_obj
 <br>INTEGER(Zoltan_INT) :: global_ids(*)
-<br>INTEGER(Zoltan_INT) :: rank(*), iperm(*)
+<br>INTEGER(Zoltan_INT) :: rank(*)
 </tr>
 
 <tr NOSAVE>
@@ -83,25 +83,22 @@ that should only be called after <a href="#Zoltan_Order">Zoltan_Order</a>.
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_gid_entries</i>, 
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int <i>num_obj</i>,
 <br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b><i>global_ids</i>,
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>rank</i>, 
-<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;int *<i>iperm</i>);
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<b><a href="ug_usage.html#Data Types for Object IDs">ZOLTAN_ID_PTR </a></b> <i>rank</i>, 
+<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;)
 </td>
 </tr>
 </table>
 
 <hr WIDTH="100%"><b>Zoltan_Order </b>invokes the ordering routine specified
 by the&nbsp; <i><a href="ug_order.html#ORDER_METHOD">ORDER_METHOD</a></i> parameter.
-Results of the ordering are returned in&nbsp; the arrays <i>rank </i>and
-<i>iperm</i> (only in sequential).
+Results of the ordering is returned in the array <i>rank </i>.
 <p>
 <li>
 <i>rank[i]</i>
-gives the rank of <i>global_ids[i] </i>in the computed ordering, which is a number between 0 and N-1 where N is the overall number of objects across all the processors.
+gives the rank of <i>global_ids[i] </i>in the computed ordering, which is a number between 0 and N-1 where N is the overall number of objects across all the processors. (Note: This will change in future versions. A permuted set of GIDs will be returned instead.)
 </li>
-<li>
-<i>iperm</i> is the inverse permutation of <i>rank, </i>that is,<i>iperm[rank[i]] = i.</i></li>
  The arrays
-<i>global_ids, rank,</i> and <i>iperm</i>
+<i>global_ids, rank,</i>
 should all be allocated by the application before
 <b>Zoltan_Order</b> is
 called. Each array must have space for (at least)
@@ -157,16 +154,6 @@ the object corresponding to
 in the ordering. (This array corresponds directly to the <i>perm </i>array
 in METIS and the <i>order</i> array in ParMETIS.) Note that the rank may
 refer to either a local or a global ordering, depending on <a href="ug_order.html#ORDER_TYPE">ORDER_TYPE</a>.&nbsp;
-Memory for this array must have been allocated before <b>Zoltan_Order</b> is
-called.</td>
-</tr>
-
-<tr>
-<td VALIGN=TOP><i>&nbsp;&nbsp;&nbsp; iperm</i></td>
-
-<td>Upon return, an&nbsp; array of length <i>num_obj </i>containing the
-inverse permutation of <i>rank</i>, only when the <a href="ug_order.html#ORDER_TYPE">ORDER_TYPE</a> is <i>local</i>. That is, <i>iperm[rank[i]] = i. </i>In
-other words, <i>iperm[j]</i> gives the <i>j</i>th object in the ordering.
 Memory for this array must have been allocated before <b>Zoltan_Order</b> is
 called.</td>
 </tr>
