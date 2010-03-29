@@ -183,16 +183,18 @@ Some other message
 
 # Test Data
 
+g_cmndinterceptsCurrentBranch = \
+  "IT: eg branch; 0; '* currentbranch'\n"
 
 g_cmndinterceptsInitialCommitPasses = \
   "IT: eg commit -a -F .*; 0; 'initial eg commit passed'\n"
 
-g_cmndinterceptsDiffOnlyPasses = \
-  "IT: eg diff --name-status.*; 0; 'M\tpackages/teuchos/CMakeLists.txt'\n"
-
 g_cmndinterceptsPullOnlyPasses = \
   "IT: eg status; 1; 'eg status shows no uncommitted files'\n" \
-  "IT: eg pull; 0; 'initial eg pull passed'\n"
+  "IT: eg pull origin currentbranch; 0; 'initial eg pull passed'\n"
+
+g_cmndinterceptsDiffOnlyPasses = \
+  "IT: eg diff --name-status.*; 0; 'M\tpackages/teuchos/CMakeLists.txt'\n"
 
 g_cmndinterceptsPullPasses = \
   g_cmndinterceptsPullOnlyPasses \
@@ -210,14 +212,14 @@ g_cmndinterceptsConfigBuildTestPasses = \
   "IT: ctest -j5; 0; '100% tests passed, 0 tests failed out of 100'\n"
 
 g_cmndinterceptsFinalPushPasses = \
-  "IT: eg pull && eg rebase --against origin; 0; 'final eg pull and rebase passed'\n" \
+  "IT: eg pull origin currentbranch && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
   "IT: eg log --oneline origin..; 0; 'Only one commit'\n" \
   "IT: eg cat-file -p HEAD; 0; 'This is the last commit message'\n" \
   "IT: eg commit --amend -F .*; 0; 'Amending the last commit passed'\n" \
   "IT: eg push; 0; 'push passes'\n"
 
 g_cmndinterceptsFinalPushNoAppendTestResultsPasses = \
-  "IT: eg pull && eg rebase --against origin; 0; 'final eg pull and rebase passed'\n" \
+  "IT: eg pull origin currentbranch && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
   "IT: eg log --oneline origin..; 0; 'Only one commit'\n" \
   "IT: eg push; 0; 'push passes'\n"
 
@@ -419,7 +421,8 @@ def g_test_do_all_without_serial_release_pass(testObject, testName):
     \
     "--make-options=-j3 --ctest-options=-j5 --without-serial-release --do-all",
     \
-    g_cmndinterceptsPullPasses \
+    g_cmndinterceptsCurrentBranch \
+    +g_cmndinterceptsPullPasses \
     +g_cmndinterceptsConfigBuildTestPasses \
     +g_cmndinterceptsSendBuildTestCaseEmail \
     +g_cmndinterceptsSendFinalEmail \
@@ -464,7 +467,8 @@ def checkin_test_configure_test(testObject, testName, optionsStr, filePassRegexS
     +" " +optionsStr \
     ,
     \
-    "IT: eg diff --name-status.*; 0; '"+modifiedFilesStr+"'\n" \
+    g_cmndinterceptsCurrentBranch \
+    +"IT: eg diff --name-status.*; 0; '"+modifiedFilesStr+"'\n" \
     +g_cmndinterceptsConfigPasses \
     ,
     \
@@ -555,7 +559,8 @@ class test_checkin_test(unittest.TestCase):
       +" --do-all --commit --push" \
       +" --execute-on-ready-to-push=\"ssh -q godel /some/dir/some_command.sh &\"",
       \
-      g_cmndinterceptsInitialCommitPasses \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsInitialCommitPasses \
       +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
@@ -635,7 +640,8 @@ class test_checkin_test(unittest.TestCase):
       +" --extra-pull-from=machine:/path/to/repo:master --local-do-all" \
       +" --execute-on-ready-to-push=\"ssh -q godel /some/dir/some_command.sh &\"",
       \
-      g_cmndinterceptsDiffOnlyPasses \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsDiffOnlyPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +g_cmndinterceptsSendFinalEmail \
@@ -669,7 +675,8 @@ class test_checkin_test(unittest.TestCase):
       " --commit-msg-header-file=cmake/python/utils/checkin_message_dummy1" \
       " --do-all --commit --force-commit-push --push",
       \
-      g_cmndinterceptsInitialCommitPasses \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsInitialCommitPasses \
       +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildPasses \
       +"IT: ctest -j5; 1; '80% tests passed, 20 tests failed out of 100'\n" \
@@ -715,7 +722,8 @@ class test_checkin_test(unittest.TestCase):
       +" --wipe-clean --pull" \
       ,
       \
-      "FT: rm -rf MPI_DEBUG\n" \
+      g_cmndinterceptsCurrentBranch \
+      +"FT: rm -rf MPI_DEBUG\n" \
       +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsSendFinalEmail \
       ,
@@ -741,7 +749,8 @@ class test_checkin_test(unittest.TestCase):
       +" --commit-msg-header-file=cmake/python/utils/checkin_message_dummy1" \
       +" --do-all --no-append-test-results --push",
       \
-      g_cmndinterceptsPullPasses \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +g_cmndinterceptsConfigBuildTestPasses \
@@ -949,7 +958,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "--without-serial-release --pull",
       \
-      g_cmndinterceptsPullPasses \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsSendFinalEmail \
       ,
       \
@@ -972,7 +982,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "--without-serial-release --pull --skip-commit-readiness-check",
       \
-      g_cmndinterceptsPullPasses \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsPullPasses \
       ,
       \
       True,
@@ -993,7 +1004,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "--pull --extra-pull-from=machine:/repo/dir/repo:master",
       \
-      g_cmndinterceptsPullOnlyPasses \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsPullOnlyPasses \
       +"IT: eg pull machine:/repo/dir/repo master; 0; 'eg extra pull passed'\n"
       +g_cmndinterceptsDiffOnlyPasses \
       +g_cmndinterceptsSendFinalEmail \
@@ -1019,7 +1031,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "--extra-pull-from=machine:master",
       \
-      g_cmndinterceptsSendFinalEmail \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsSendFinalEmail \
       ,
       \
       False,
@@ -1040,7 +1053,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "--without-serial-release --pull --configure",
       \
-      g_cmndinterceptsPullPasses \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +g_cmndinterceptsSendFinalEmail \
@@ -1067,7 +1081,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "--make-options=-j3 --without-serial-release --pull --configure --build",
       \
-      g_cmndinterceptsPullPasses \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +g_cmndinterceptsSendFinalEmail \
@@ -1170,7 +1185,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "--make-options=-j3 --ctest-options=-j5 --without-serial-release --push",
       \
-      g_cmndinterceptsDiffOnlyPasses \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsDiffOnlyPasses \
       +g_cmndinterceptsFinalPushPasses \
       +g_cmndinterceptsSendFinalEmail \
       ,
@@ -1204,7 +1220,8 @@ class test_checkin_test(unittest.TestCase):
       +" --commit-msg-header-file=cmake/python/utils/checkin_message_dummy1" \
       ,
       \
-      g_cmndinterceptsInitialCommitPasses \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsInitialCommitPasses \
       +g_cmndinterceptsDiffOnlyPasses \
       +g_cmndinterceptsFinalPushPasses \
       +g_cmndinterceptsSendFinalEmail \
@@ -1237,7 +1254,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "--make-options=-j3 --ctest-options=-j5 --without-serial-release",
       \
-      "IT: eg diff --name-status.*; 0; 'eg diff passed'\n" 
+      g_cmndinterceptsCurrentBranch \
+      +"IT: eg diff --name-status.*; 0; 'eg diff passed'\n" 
       +g_cmndinterceptsSendFinalEmail \
       ,
       \
@@ -1279,12 +1297,12 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_do_all_wrong_eg_vesion(self):
+  def test_do_all_wrong_eg_version(self):
     checkin_test_run_case(
       \
       self,
       \
-      "do_all_wrong_eg_vesion",
+      "do_all_wrong_eg_version",
       \
       "--do-all --eg-git-version-check" \
       ,
@@ -1298,7 +1316,7 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
-  def test_wrong_eg_vesion_ignore(self):
+  def test_wrong_eg_version_ignore(self):
     checkin_test_run_case(
       \
       self,
@@ -1309,6 +1327,7 @@ class test_checkin_test(unittest.TestCase):
       ,
       \
       "IT: eg --version; 1; 'eg version wrong-version'\n" \
+      +g_cmndinterceptsCurrentBranch \
       ,
       \
       True,
@@ -1430,7 +1449,8 @@ class test_checkin_test(unittest.TestCase):
       " --do-all --without-serial-release --commit" \
       ,
       \
-      "IT: eg commit -a -F .*; 1; 'initial commit failed'\n" \
+      g_cmndinterceptsCurrentBranch \
+      +"IT: eg commit -a -F .*; 1; 'initial commit failed'\n" \
       +g_cmndinterceptsSendFinalEmail \
       ,
       \
@@ -1455,8 +1475,9 @@ class test_checkin_test(unittest.TestCase):
       "do_all_without_serial_release_pull_fail",
       \
       "--do-all",
-      "IT: eg status; 1; 'eg status shows no uncommitted files'\n" \
-      "IT: eg pull; 1; 'eg pull failed'\n" \
+      g_cmndinterceptsCurrentBranch \
+      +"IT: eg status; 1; 'eg status shows no uncommitted files'\n" \
+      +"IT: eg pull origin currentbranch; 1; 'eg pull failed'\n" \
       ,
       \
       False,
@@ -1501,7 +1522,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "--without-serial-release --configure --allow-no-pull",
       \
-      g_cmndinterceptsDiffOnlyPasses \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsDiffOnlyPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +g_cmndinterceptsSendFinalEmail \
       ,
@@ -1537,8 +1559,9 @@ class test_checkin_test(unittest.TestCase):
       \
       "--do-all --without-serial-release",
       \
-      g_cmndinterceptsPullPasses+ \
-      "IT: \./do-configure; 1; 'do-configure failed'\n" \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsPullPasses \
+      +"IT: \./do-configure; 1; 'do-configure failed'\n" \
       ,
       \
       False,
@@ -1563,9 +1586,10 @@ class test_checkin_test(unittest.TestCase):
       \
       "--do-all --without-serial-release --make-options=-j3 --ctest-options=-j5",
       \
-      g_cmndinterceptsPullPasses+ \
-      "IT: \./do-configure; 0; 'do-configure passed'\n" \
-      "IT: make -j3; 1; 'make filed'\n" \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsPullPasses \
+      +"IT: \./do-configure; 0; 'do-configure passed'\n" \
+      +"IT: make -j3; 1; 'make filed'\n" \
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +g_cmndinterceptsSendFinalEmail \
       ,
@@ -1593,7 +1617,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "--do-all --without-serial-release --make-options=-j3 --ctest-options=-j5",
       \
-      g_cmndinterceptsPullPasses \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsPullPasses \
       +"IT: \./do-configure; 0; 'do-configure passed'\n" \
       +"IT: make -j3; 0; 'make passed'\n" \
       +"IT: ctest -j5; 1; '80% tests passed, 20 tests failed out of 100.\n" \
@@ -1627,10 +1652,11 @@ class test_checkin_test(unittest.TestCase):
       " --do-all --push" \
       ,
       \
-      g_cmndinterceptsPullPasses \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
-      +"IT: eg pull && eg rebase --against origin; 1; 'final eg pull FAILED'\n" \
+      +"IT: eg pull origin currentbranch && eg rebase --against origin/currentbranch; 1; 'final eg pull FAILED'\n" \
       +"IT: eg log --oneline origin..; 0; 'Only one commit'\n" \
       +g_cmndinterceptsSendFinalEmail \
       ,      \
@@ -1660,10 +1686,11 @@ class test_checkin_test(unittest.TestCase):
       " --do-all --push" \
       ,
       \
-      g_cmndinterceptsPullPasses \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
-      +"IT: eg pull && eg rebase --against origin; 0; 'final eg pull and rebase passed'\n" \
+      +"IT: eg pull origin currentbranch && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
       +"IT: eg log --oneline origin..; 0; 'Only one commit'\n" \
       +"IT: eg cat-file -p HEAD; 0; 'This is the last commit message'\n" \
       +"IT: eg commit --amend -F .*; 1; 'Amending the last commit FAILED'\n" \
@@ -1697,10 +1724,11 @@ class test_checkin_test(unittest.TestCase):
       " --do-all --push" \
       ,
       \
-      g_cmndinterceptsPullPasses \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
-      +"IT: eg pull && eg rebase --against origin; 0; 'final eg pull and rebase passed'\n" \
+      +"IT: eg pull origin currentbranch && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
       +"IT: eg log --oneline origin..; 0; 'Only one commit'\n" \
       +"IT: eg cat-file -p HEAD; 0; 'This is the last commit message'\n" \
       +"IT: eg commit --amend -F .*; 0; 'Amending the last commit passed'\n" \
@@ -1732,12 +1760,13 @@ class test_checkin_test(unittest.TestCase):
       \
       "--make-options=-j3 --ctest-options=-j5 --do-all --push",
       \
-      g_cmndinterceptsPullPasses \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
-      +"IT: eg pull && eg rebase --against origin; 0; 'final eg pull and rebase passed'\n" \
+      +"IT: eg pull origin currentbranch && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
       +"IT: eg log --oneline origin..; 0; ''\n" \
       +"IT: eg cat-file -p HEAD; 0; 'Some commit not the local commit'\n" \
       +"IT: eg push; 1; 'push FAILED due to no local commits'\n"
@@ -1770,7 +1799,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "--make-options=-j3 --ctest-options=-j5 --without-serial-release --do-all --push",
       \
-      g_cmndinterceptsPullPasses \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildPasses \
       +"IT: ctest -j5; 0; 'No tests were found!!!'\n" \
       +g_cmndinterceptsSendBuildTestCaseEmail \
@@ -1801,7 +1831,8 @@ class test_checkin_test(unittest.TestCase):
       \
       "--make-options=-j3 --ctest-options=-j5 --without-serial-release --local-do-all --push",
       \
-      g_cmndinterceptsDiffOnlyPasses \
+      g_cmndinterceptsCurrentBranch \
+      +g_cmndinterceptsDiffOnlyPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +g_cmndinterceptsSendFinalEmail \

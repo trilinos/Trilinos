@@ -207,17 +207,17 @@ def getRepoSpaceBranchFromOptionStr(extraPullFrom):
   return repo + " " + branch
 
 
-
 def executePull(inOptions, baseTestDir, outFile, pullFromRepo=None, doRebase=False):
   cmnd = "eg pull"
-  if doRebase:
-    cmnd += " && eg rebase --against origin"
   if pullFromRepo:
     repoSpaceBranch = getRepoSpaceBranchFromOptionStr(pullFromRepo)
     print "\nPulling in updates from '"+repoSpaceBranch+"' ...\n"
     cmnd += " " + repoSpaceBranch
   else:
     print "\nPulling in updates from 'origin' ...\n"
+    cmnd += " origin "+inOptions.currentBranch
+  if doRebase:
+    cmnd += " && eg rebase --against origin/"+inOptions.currentBranch
   return echoRunSysCmnd( cmnd,
     workingDir=inOptions.trilinosSrcDir,
     outFile=os.path.join(baseTestDir, outFile),
@@ -378,9 +378,20 @@ def readAndAppendCMakeOptions(fileName, cmakeOptions_inout, assertNoIllegalEnabl
 reModifiedFiles = re.compile(r"^[MA]\t(.+)$")
 
 
+def getCurrentBranchName(inOptions, baseTestDir):
+  branchesStr = getCmndOutput("eg branch", workingDir=inOptions.trilinosSrcDir)
+  for branchName in branchesStr.split('\n'):
+    #print "branchName =", branchName
+    if branchName[0] == '*':
+      currentBranch = branchName.split(' ')[1]
+      #print "currentBranch =", currentBranch
+      setattr(inOptions, "currentBranch", currentBranch)
+      break
+
+
 def getCurrentDiffOutput(inOptions, baseTestDir):
   echoRunSysCmnd(
-    "eg diff --name-status origin",
+    "eg diff --name-status origin/"+inOptions.currentBranch,
     workingDir=inOptions.trilinosSrcDir,
     outFile=os.path.join(baseTestDir, getModifiedFilesOutputFileName()),
     timeCmnd=True
@@ -1350,6 +1361,13 @@ def checkinTest(inOptions):
   try:
 
     print "\n***"
+    print "*** 0) Get the current branch name ..."
+    print "***"
+
+    getCurrentBranchName(inOptions, baseTestDir)
+    print "\nCurrent branch name = " + inOptions.currentBranch
+
+    print "\n***"
     print "*** 1) Clean old output files ..."
     print "***"
   
@@ -1850,7 +1868,7 @@ def checkinTest(inOptions):
         print "\nAttempting to do the push ..."
 
         pushRtn = echoRunSysCmnd(
-          "eg push",
+          "eg push origin "+inOptions.currentBranch,
           workingDir=inOptions.trilinosSrcDir,
           outFile=os.path.join(baseTestDir, getPushOutputFileName()),
           throwExcept=False, timeCmnd=True )
