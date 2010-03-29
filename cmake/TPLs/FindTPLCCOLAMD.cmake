@@ -1,0 +1,6 @@
+INCLUDE(TPLDeclareLibraries)
+
+TPL_DECLARE_LIBRARIES( CCOLAMD
+  REQUIRED_HEADERS ccolamd.h UFconfig.h
+  REQUIRED_LIBS_NAMES ccolamd
+  )

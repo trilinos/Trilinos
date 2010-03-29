@@ -9,9 +9,9 @@
 #include <stk_util/environment/product_registry.h>
 #include <stk_util/environment/ProductRegistry.hpp>
 #ifdef STK_BUILT_IN_SIERRA
-#include <stk_util/environment/sierra_version.hpp>
+#include <stk_util/environment/stk_version.hpp>
 #else
-#define SIERRA_VERSION "XXXXXXX"
+#define STK_VERSION "0.1a"
 #endif
 
 namespace stk {
@@ -68,9 +68,9 @@ ProductRegistry::instance()
 const char *
 ProductRegistry::version()
 {
-  // SIERRA_VERSION should be a build-time define (i.e. -D flag) passed on
+  // STK_VERSION should be a build-time define (i.e. -D flag) passed on
   // the compilation command line
-  static const char *s_version = SIERRA_VERSION;
+  static const char *s_version = STK_VERSION;
   
   return s_version;
 }

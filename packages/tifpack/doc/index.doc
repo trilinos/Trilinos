@@ -1,0 +1,44 @@
+/*! 
+    \mainpage Trilinos/Tifpack: Templated Preconditioning Package
+
+   \section tifpack_intro Introduction to Tifpack
+
+Tifpack provides templated preconditioning algorithms using linear algebra
+objects (matrices, operators, multivectors) provided by the Tpetra package.
+
+Tifpack will (when finished) provide the same functionality as the Ifpack
+package (which uses Epetra linear algebra objects).
+
+\section startup Overview of Tifpack
+
+\subsection types Templated Types in Tifpack
+
+All classes in Tifpack utilize templates. Most of the preconditioner classes
+are templated on the type of the input matrix. This allows the user to provide
+any Tpetra matrix (i.e., templated on any of the Scalar/Ordinal/Node/etc types
+that are possible with Tpetra).
+
+\subsection precs Tifpack Preconditioners
+
+All Tifpack preconditioners inherit the base class Tifpack::Preconditioner.
+
+The preconditioners that are supported in the current release are:
+<ul>
+<li> Tifpack::Relaxation
+<li> Tifpack::Chebyshev
+<li> Tifpack::ILUT
+<li> Tifpack::RILUK
+</ul>
+
+\subsection trilinos Trilinos and Tifpack
+
+Tifpack preconditioners can be used with the solver algorithms in the
+Trilinos/Belos package.
+
+\subsection Examples
+
+A test program (tifpack/test/belos) is provided which demonstrates creating
+and using Tifpack preconditioners with Belos solvers. The test program is
+entirely driven by XML input files, which specify the matrix file to be used,
+as well as parameters for the preconditioner, and the belos solver, etc.
+*/

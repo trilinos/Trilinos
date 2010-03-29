@@ -9,30 +9,37 @@
 #ifndef STK_MESH_UNITTEST_RING_MESH_FIXTURE_HPP
 #define STK_MESH_UNITTEST_RING_MESH_FIXTURE_HPP
 
-#include <stk_mesh/base/Types.hpp>
 #include <stk_util/parallel/Parallel.hpp>
+#include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/MetaData.hpp>
+#include <stk_mesh/base/BulkData.hpp>
 
-class RingMeshFixture
-{
- public:
-  RingMeshFixture(stk::ParallelMachine pm);
+class RingMeshFixture {
+public:
+  stk::mesh::MetaData   m_meta_data;
+  stk::mesh::BulkData   m_bulk_data;
+  stk::mesh::PartVector m_edge_parts ;
+  stk::mesh::Part     & m_edge_part_extra ;
+  const size_t          m_num_edge_per_proc ;
+  std::vector<stk::mesh::EntityId> m_node_ids , m_edge_ids ;
+
+  RingMeshFixture( stk::ParallelMachine pm ,
+                   unsigned num_edge_per_proc = 10 ,
+                   bool use_edge_parts = false );
 
   ~RingMeshFixture();
 
-  stk::mesh::MetaData& meta_data() { return *m_meta_data; }
-  stk::mesh::BulkData& bulk_data() { return *m_bulk_data; }
+  // Testing for a simple loop of mesh entities:
+  // node[i] : edge[i] : node[ ( i + 1 ) % node.size() ]
+  void generate_loop( bool generate_aura = true );
 
-  std::vector<stk::mesh::EntityId> m_node_ids, m_edge_ids;
+  void test_shift_loop( bool generate_aura );
 
- private:
-  void generate_loop(const stk::mesh::PartVector& edge_parts ,
-                     const bool              generate_aura ,
-                     const unsigned          nPerProc ,
-                     std::vector<stk::mesh::EntityId> & node_ids ,
-                     std::vector<stk::mesh::EntityId> & edge_ids);
+private:
 
-  stk::mesh::MetaData* m_meta_data;
-  stk::mesh::BulkData* m_bulk_data;
+   RingMeshFixture();
+   RingMeshFixture( const RingMeshFixture & );
+   RingMeshFixture & operator = ( const RingMeshFixture & );
 };
 
 #endif

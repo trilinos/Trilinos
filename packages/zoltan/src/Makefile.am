@@ -200,25 +200,32 @@ PARAMS = \
 	$(srcdir)/params/print_params.c \
 	$(srcdir)/params/set_param.c
 
-PARMETIS_H = \
-	$(srcdir)/parmetis/third_library_const.h \
-	$(srcdir)/parmetis/third_library.h \
-	$(srcdir)/parmetis/third_library_tools.h \
-	$(srcdir)/parmetis/graph_util.h 
+TPLS_H = \
+	$(srcdir)/tpls/third_library_const.h \
+	$(srcdir)/tpls/third_library.h \
+	$(srcdir)/tpls/third_library_tools.h \
+	$(srcdir)/tpls/graph_util.h 
 
-PARMETIS = \
-	$(srcdir)/parmetis/build_graph.c \
-	$(srcdir)/parmetis/postprocessing.c \
-	$(srcdir)/parmetis/preprocessing.c \
-	$(srcdir)/parmetis/scatter_graph.c \
-	$(srcdir)/parmetis/third_library.c \
-	$(srcdir)/parmetis/verify_graph.c
+TPLS = \
+	$(srcdir)/tpls/build_graph.c \
+	$(srcdir)/tpls/postprocessing.c \
+	$(srcdir)/tpls/preprocessing.c \
+	$(srcdir)/tpls/scatter_graph.c \
+	$(srcdir)/tpls/third_library.c \
+	$(srcdir)/tpls/verify_graph.c
 
-EXTRA_PARMETIS_INTERFACE_H = \
-	$(srcdir)/parmetis/parmetis_interface.h
+CCOLAMD_H = \
+	$(srcdir)/ccolamd/zoltan_ccolamd.h 
+
+CCOLAMD = \
+	$(srcdir)/ccolamd/ccolamd.c \
+	$(srcdir)/ccolamd/ccolamd_global.c 
+
+EXTRA_TPLS_INTERFACE_H = \
+	$(srcdir)/tpls/parmetis_interface.h
 
 EXTRA_PARMETIS_INTERFACE = \
-	$(srcdir)/parmetis/parmetis_interface.c
+	$(srcdir)/tpls/parmetis_interface.c
 
 if BUILD_PARMETIS
 
@@ -235,10 +242,10 @@ PARMETIS_INTERFACE =
 endif
 
 EXTRA_SCOTCH_INTERFACE_H = \
-	$(srcdir)/parmetis/scotch_interface.h
+	$(srcdir)/tpls/scotch_interface.h
 
 EXTRA_SCOTCH_INTERFACE = \
-	$(srcdir)/parmetis/scotch_interface.c
+	$(srcdir)/tpls/scotch_interface.c
 
 if BUILD_SCOTCH
 
@@ -574,7 +581,8 @@ ZOLTAN_H = \
 	$(ORDER_H) \
 	$(PAR_H) \
 	$(PARAMS_H) \
-	$(PARMETIS_H) \
+	$(TPLS_H) \
+	$(CCOLAMD_H) \
 	$(PARMETIS_INTERFACE_H) \
 	$(PHG_H) \
 	$(RCB_H) \
@@ -598,7 +606,8 @@ libzoltan_a_SOURCES = \
 	$(ORDER) \
 	$(PAR) \
 	$(PARAMS) \
-	$(PARMETIS) \
+	$(TPLS) \
+	$(CCOLAMD) \
 	$(PARMETIS_INTERFACE) \
 	$(PHG) \
 	$(RCB) \

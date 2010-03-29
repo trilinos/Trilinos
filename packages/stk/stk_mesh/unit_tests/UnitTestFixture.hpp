@@ -9,8 +9,6 @@
 #ifndef stk_mesh_unit_tests_UnitTestFixture_hpp
 #define stk_mesh_unit_tests_UnitTestFixture_hpp
 
-#include <Teuchos_RCP.hpp>
-
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Types.hpp>
@@ -20,28 +18,28 @@ namespace sunit {
   class Stk_Mesh_Fixture
   {
     public:
-      Stk_Mesh_Fixture();
-      ~Stk_Mesh_Fixture();
+      Stk_Mesh_Fixture( const std::vector<std::string> & entity_type_names );
+      virtual ~Stk_Mesh_Fixture();
 
       void createMetaData(const std::vector<std::string> & entity_type_names );
 
-      Teuchos::RCP<const stk::mesh::MetaData> get_MetaData() const;
-      Teuchos::RCP<stk::mesh::MetaData> get_NonconstMetaData();
+      const stk::mesh::MetaData & get_MetaData() const { return m_MetaData ; }
+      stk::mesh::MetaData       & get_NonconstMetaData() { return m_MetaData ; }
 
       void createBulkData();
 
-      Teuchos::RCP<const stk::mesh::BulkData> get_BulkData() const;
-      Teuchos::RCP<stk::mesh::BulkData> get_NonconstBulkData();
+      const stk::mesh::BulkData & get_BulkData() const { return m_BulkData ; }
+      stk::mesh::BulkData       & get_NonconstBulkData() { return m_BulkData ; }
 
     private:
-      Teuchos::RCP<stk::mesh::MetaData> m_MetaData;
-      Teuchos::RCP<stk::mesh::BulkData> m_BulkData;
+      stk::mesh::MetaData m_MetaData;
+      stk::mesh::BulkData m_BulkData;
+
+      Stk_Mesh_Fixture();
+      Stk_Mesh_Fixture( const Stk_Mesh_Fixture & );
+      Stk_Mesh_Fixture & operator = ( const Stk_Mesh_Fixture & );
   };
   
-  // Nonmember constructor
-  Teuchos::RCP<Stk_Mesh_Fixture> stk_Mesh_Fixture();
-  
-
   stk::mesh::PartVector getPartVector(
       const Stk_Mesh_Fixture & fix,
       const std::vector<std::string> & names
@@ -79,7 +77,12 @@ namespace sunit {
   // |          |  |       |  |          |    |             | 
   // |----------|--|-------|--|----------|    |-------------|   
   //
-  Teuchos::RCP<Stk_Mesh_Fixture> getExampleFixture();
+
+  class ExampleFixture : public Stk_Mesh_Fixture {
+  public:
+    ExampleFixture();
+    ~ExampleFixture();
+  };
 
   stk::mesh::Part* getExamplePart(
       const sunit::Stk_Mesh_Fixture & fix,

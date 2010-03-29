@@ -17,7 +17,6 @@ SET(SOURCES "")
 
 APPEND_SET(SOURCES
 GridFixture.cpp
-UseCase_1.cpp
 UseCase_2.cpp
 UseCase_3.cpp
 UseCase_4.cpp

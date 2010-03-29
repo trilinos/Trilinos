@@ -11,4 +11,5 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
     "--verbose"
 #    "--debug"
   STANDARD_PASS_OUTPUT
+  XHOST KALLIKRATES
   )

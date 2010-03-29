@@ -144,6 +144,27 @@ namespace {
   }
 
 
+#if !defined(HAVE_TPETRA_EXPLICIT_INSTANTIATION) && defined(HAVE_TPETRA_ENABLE_SS_TESTING) && defined(HAVE_TPETRA_MPI)
+  ////
+  TEUCHOS_UNIT_TEST( Map, RogersUnsignedGOBugVerification )
+  {
+    typedef Map<int,size_t> M;
+    // create a comm  
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int numImages = comm->getSize();
+    if (numImages < 2) return;
+    const int myImageID = comm->getRank();
+    const global_size_t GSTI = OrdinalTraits<global_size_t>::invalid();
+    RCP<M> m;
+    TEST_NOTHROW( m = rcp(new M(GSTI, tuple<size_t>(myImageID), 0, comm)) );
+    if (m != Teuchos::null) {
+      TEST_EQUALITY( m->getMinAllGlobalIndex(), (size_t)0 );
+      TEST_EQUALITY( m->getMaxAllGlobalIndex(), (size_t)numImages-1 );
+    }
+  }
+#endif
+
+
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Map, compatabilityTests, LO, GO )
   {

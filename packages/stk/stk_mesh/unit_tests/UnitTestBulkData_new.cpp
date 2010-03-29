@@ -20,13 +20,11 @@
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyAssertOwnerDeletedEntity )
 {
-  stk::unit_test::UnitTestMesh   fixture;
+  stk::unit_test::UnitTestMesh   fixture( MPI_COMM_WORLD );
 
-  stk::mesh::BulkData                   &bulk = fixture.nonconst_bulk_data();
-  bulk.modification_end();  // Comes out of fixture in MODIFIABLE
-
-  stk::mesh::Part                       &new_part = fixture.get_test_part ();
-  stk::mesh::PartVector                  add_part;
+  stk::mesh::BulkData         &bulk = fixture.nonconst_bulk_data();
+  stk::mesh::Part             &new_part = fixture.get_test_part ();
+  stk::mesh::PartVector        add_part;
   add_part.push_back ( &new_part );
 
   fixture.generate_boxes ();
@@ -61,13 +59,11 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyAssertOwnerDeletedEntity )
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyAssertGoodKey )
 {
-  stk::unit_test::UnitTestMesh   fixture;
+  stk::unit_test::UnitTestMesh   fixture( MPI_COMM_WORLD );
 
-  stk::mesh::BulkData                   &bulk = fixture.nonconst_bulk_data();
-  bulk.modification_end();  // Comes out of fixture in MODIFIABLE
-
-  stk::mesh::Part                       &new_part = fixture.get_test_part ();
-  stk::mesh::PartVector                  add_part;
+  stk::mesh::BulkData         &bulk = fixture.nonconst_bulk_data();
+  stk::mesh::Part             &new_part = fixture.get_test_part ();
+  stk::mesh::PartVector        add_part;
   add_part.push_back ( &new_part );
 
   stk::mesh::EntityKey bad_key1 ( 45 , 1 );  // Bad entity rank
@@ -79,19 +75,21 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyAssertGoodKey )
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyGetEntityGuards )
 {
-  stk::unit_test::UnitTestMesh   fixture;
+  stk::unit_test::UnitTestMesh   fixture( MPI_COMM_WORLD );
 
-  stk::mesh::BulkData                   &bulk = fixture.nonconst_bulk_data();
+  stk::mesh::BulkData      &bulk = fixture.nonconst_bulk_data();
   STKUNIT_ASSERT_THROW ( bulk.get_entity ( 1 , 0 ) , std::runtime_error );
 }
 
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyExplicitAddInducedPart )
 {
-  stk::unit_test::UnitTestMesh   fixture;
+  stk::unit_test::UnitTestMesh   fixture( MPI_COMM_WORLD );
   stk::mesh::BulkData     &bulk = fixture.nonconst_bulk_data ();
   stk::mesh::PartVector    empty_vector;
   stk::mesh::PartVector    cell_part_vector;
+
+  bulk.modification_begin();
 
   stk::mesh::Entity &new_cell = bulk.declare_entity ( 3 , fixture.comm_rank()+1 , empty_vector );
   stk::mesh::Entity &new_node = bulk.declare_entity ( 0 , fixture.comm_rank()+1 , empty_vector );
@@ -130,7 +128,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyCannotRemoveFromSpecialParts )
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyDefaultPartAddition )
 {
-  stk::unit_test::UnitTestMesh    fixture;
+  stk::unit_test::UnitTestMesh    fixture( MPI_COMM_WORLD );
   stk::mesh::BulkData            &bulk = fixture.nonconst_bulk_data ();
 
   bulk.modification_begin();
@@ -144,7 +142,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyDefaultPartAddition )
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyChangePartsSerial )
 {
-  stk::unit_test::UnitTestMesh    fixture;
+  stk::unit_test::UnitTestMesh    fixture( MPI_COMM_WORLD );
   stk::mesh::BulkData            &bulk = fixture.nonconst_bulk_data ();
   stk::mesh::PartVector           create_parts , remove_parts , add_parts, empty_parts;
 
@@ -190,7 +188,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyChangePartsSerial )
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyParallelAddParts )
 {
-  stk::unit_test::UnitTestMesh     fixture;
+  stk::unit_test::UnitTestMesh     fixture( MPI_COMM_WORLD );
   stk::mesh::BulkData             &bulk = fixture.nonconst_bulk_data ();
   stk::mesh::PartVector            add_part;
 
@@ -224,15 +222,19 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyParallelAddParts )
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyInducedMembership )
 {
-  stk::unit_test::UnitTestMesh     fixture;
+  stk::unit_test::UnitTestMesh     fixture( MPI_COMM_WORLD );
   stk::mesh::BulkData             &bulk = fixture.nonconst_bulk_data ();
   stk::mesh::PartVector            create_node_parts , create_cell_parts , empty_parts;
 
   create_node_parts.push_back ( &fixture.get_part_a_0() );
   create_cell_parts.push_back ( &fixture.get_cell_part() );
 
+  bulk.modification_begin();
+
   stk::mesh::Entity &node = fixture.get_new_entity ( 0 , 1 );
   stk::mesh::Entity &cell = fixture.get_new_entity ( 3 , 1 );
+
+  bulk.modification_begin();
 
   bulk.change_entity_parts ( node , create_node_parts , stk::mesh::PartVector () );
   bulk.change_entity_parts ( cell , create_cell_parts , stk::mesh::PartVector () );
@@ -251,7 +253,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyInducedMembership )
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyCanRemoveFromSetWithDifferentRankSubset )
 {
-  stk::unit_test::UnitTestMesh   fixture;
+  stk::unit_test::UnitTestMesh   fixture( MPI_COMM_WORLD );
   stk::mesh::BulkData           &bulk = fixture.nonconst_bulk_data ();
   stk::mesh::PartVector          add_parts , remove_parts, empty_parts;
 
@@ -259,6 +261,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyCanRemoveFromSetWithDifferentRa
   add_parts.push_back ( &fixture.get_part_a_superset() );
 
   remove_parts.push_back ( &fixture.get_part_a_superset() );
+
+  bulk.modification_begin();
 
   stk::mesh::Entity  &e = bulk.declare_entity ( 3 , fixture.comm_rank()+1 , add_parts );
   bulk.modification_end();
@@ -275,8 +279,10 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyCanRemoveFromSetWithDifferentRa
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyCommonGhostingName )
 {
 
-  stk::unit_test::UnitTestMesh  fixture;
+  stk::unit_test::UnitTestMesh  fixture( MPI_COMM_WORLD );
   stk::mesh::BulkData          &bulk = fixture.nonconst_bulk_data ();
+
+  bulk.modification_begin();
 
   if ( fixture.comm_size() == 1 ) return;
 
@@ -293,7 +299,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyCommonGhostingName )
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyTrivialDestroyAllGhostings )
 {
-  stk::unit_test::UnitTestMesh  fixture;
+  stk::unit_test::UnitTestMesh  fixture( MPI_COMM_WORLD );
 
   if ( fixture.comm_size() == 1 ) return;
 
@@ -358,7 +364,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyTrivialDestroyAllGhostings )
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyChangeGhostingGuards )
 {
-  stk::unit_test::UnitTestMesh   fixture1 , fixture2;
+  stk::unit_test::UnitTestMesh   fixture1( MPI_COMM_WORLD ) , fixture2( MPI_COMM_WORLD );
   stk::mesh::BulkData   &bulk1 = fixture1.nonconst_bulk_data ();
   stk::mesh::BulkData   &bulk2 = fixture2.nonconst_bulk_data ();
 
@@ -399,7 +405,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyChangeGhostingGuards )
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyOtherGhostingGuards )
 {
-  stk::unit_test::UnitTestMesh  fixture;
+  stk::unit_test::UnitTestMesh  fixture( MPI_COMM_WORLD );
   stk::mesh::BulkData          &bulk = fixture.nonconst_bulk_data ();
   fixture.generate_boxes ();
   bulk.modification_begin();
@@ -455,13 +461,15 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyOtherGhostingGuards )
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyPartsOnCreate )
 {
-   stk::unit_test::UnitTestMesh    fixture;
+   stk::unit_test::UnitTestMesh    fixture( MPI_COMM_WORLD );
    stk::mesh::BulkData           & bulk = fixture.nonconst_bulk_data ();
    stk::mesh::Part               & part_a = fixture.get_part_a_0 ();
    stk::mesh::Part               & part_b = fixture.get_part_b_0 ();
 
    stk::mesh::PartVector           create_vector;
    create_vector.push_back ( &part_a );
+
+   bulk.modification_begin();
 
    stk::mesh::Entity &node = bulk.declare_entity ( 0 , fixture.comm_rank()+1 ,create_vector );
    bulk.modification_end();
@@ -485,6 +493,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyBoxGhosting )
   if ( 8 < p_size ) { return ; }
 
   BoxMeshFixture fixture( MPI_COMM_WORLD );
+  fixture.fill_mesh();
 
   for ( size_t iz = 0 ; iz < 3 ; ++iz ) {
   for ( size_t iy = 0 ; iy < 3 ; ++iy ) {
@@ -494,7 +503,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyBoxGhosting )
     if ( NULL != node ) {
       STKUNIT_ASSERT( fixture.m_node_id[iz][iy][ix] == node->identifier() );
       BoxMeshFixture::Scalar * const node_coord =
-        stk::mesh::field_data( *fixture.m_coord_field , *node );
+        stk::mesh::field_data( fixture.m_coord_field , *node );
       STKUNIT_ASSERT( node_coord != NULL );
       if ( node_coord != NULL ) {
         BoxMeshFixture::Scalar * coord = fixture.m_node_coord[iz][iy][ix] ;
@@ -516,11 +525,11 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyBoxGhosting )
       stk::mesh::PairIterRelation elem_nodes = elem->relations();
       STKUNIT_ASSERT_EQUAL( 8u , elem_nodes.size() );
       BoxMeshFixture::Scalar ** const elem_node_coord =
-        stk::mesh::field_data( *fixture.m_coord_gather_field , *elem );
+        stk::mesh::field_data( fixture.m_coord_gather_field , *elem );
       for ( size_t j = 0 ; j < elem_nodes.size() ; ++j ) {
         STKUNIT_ASSERT_EQUAL( j , elem_nodes[j].identifier() );
         BoxMeshFixture::Scalar * const node_coord =
-          stk::mesh::field_data( *fixture.m_coord_field , *elem_nodes[j].entity() );
+          stk::mesh::field_data( fixture.m_coord_field , *elem_nodes[j].entity() );
         STKUNIT_ASSERT( node_coord == elem_node_coord[ elem_nodes[j].identifier() ] );
       }
       if ( 8u == elem_nodes.size() ) {

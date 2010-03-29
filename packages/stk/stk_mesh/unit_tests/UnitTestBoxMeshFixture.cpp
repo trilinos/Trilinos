@@ -12,42 +12,47 @@
 #include <unit_tests/stk_utest_macros.hpp>
 
 BoxMeshFixture::~BoxMeshFixture()
-{
-  delete m_bulk_data ;
-  delete m_meta_data ;
-}
+{}
 
 BoxMeshFixture::BoxMeshFixture( stk::ParallelMachine pm )
+  : m_meta_data( stk::mesh::fem_entity_type_names() ),
+    m_bulk_data( m_meta_data , pm ),
+    m_elem_block( m_meta_data.declare_part("block1", stk::mesh::Element) ),
+    m_coord_field( m_meta_data.declare_field<CoordFieldType>("Coordinates") ),
+    m_coord_gather_field(
+      m_meta_data.declare_field<CoordGatherFieldType>("GatherCoordinates") ),
+    m_quad_field( m_meta_data.declare_field<QuadFieldType>("Quad") ),
+    m_basis_field( m_meta_data.declare_field<BasisFieldType>("Basis") )
 {
   typedef shards::Hexahedron<8> Hex8 ;
   enum { SpatialDim = 3 };
   enum { NodesPerElem = Hex8::node_count };
 
-
-  m_meta_data = new stk::mesh::MetaData( stk::mesh::fem_entity_type_names() );
-
-  m_coord_field = &m_meta_data->declare_field<CoordFieldType>("Coordinates");
-  m_coord_gather_field = &m_meta_data->declare_field<CoordGatherFieldType>("GatherCoordinates");
-  m_quad_tag = &m_meta_data->declare_field<QuadTagType>("Quad");
-  m_basis_tag = &m_meta_data->declare_field<BasisTagType>("Basis");
+  // Set topology of the element block part
+  stk::mesh::set_cell_topology<shards::Hexahedron<8> >(m_elem_block);
 
   //put coord-field on all nodes:
-  stk::mesh::put_field(*m_coord_field, stk::mesh::Node, m_meta_data->universal_part(), SpatialDim );
+  stk::mesh::put_field( m_coord_field, stk::mesh::Node, m_meta_data.universal_part(), SpatialDim );
 
   //put coord-gather-field on all elements:
-  stk::mesh::put_field(*m_coord_gather_field, stk::mesh::Element, m_meta_data->universal_part(), NodesPerElem);
+  stk::mesh::put_field( m_coord_gather_field, stk::mesh::Element, m_meta_data.universal_part(), NodesPerElem);
 
-  m_meta_data->declare_field_relation(*m_coord_gather_field, stk::mesh::element_node_stencil<shards::Hexahedron<8> >, *m_coord_field);
+  // Field relation so coord-gather-field on elements points 
+  // to coord-field of the element's nodes
+  m_meta_data.declare_field_relation( m_coord_gather_field, stk::mesh::element_node_stencil<shards::Hexahedron<8> >, m_coord_field);
 
-  stk::mesh::Part& elem_block = m_meta_data->declare_part("block1", stk::mesh::Element);
-  stk::mesh::set_cell_topology<shards::Hexahedron<8> >(elem_block);
+  // Meta data is complete
+  m_meta_data.commit();
 
-  m_meta_data->commit();
+  STKUNIT_EXPECT_TRUE( NULL != stk::mesh::ElementNode::tag().name() );
+  STKUNIT_EXPECT_TRUE( NULL != stk::mesh::QuadratureTag::tag().name() );
+  STKUNIT_EXPECT_TRUE( NULL != stk::mesh::BasisTag::tag().name() );
+}
 
-  m_bulk_data = new stk::mesh::BulkData(*m_meta_data, pm);
-
-  const unsigned p_size = stk::parallel_machine_size( pm );
-  const unsigned p_rank = stk::parallel_machine_rank( pm );
+void BoxMeshFixture::fill_mesh()
+{
+  const unsigned p_size = m_bulk_data.parallel_size();
+  const unsigned p_rank = m_bulk_data.parallel_rank();
   const unsigned num_elems = 8 ;
 
   for ( int iz = 0 ; iz < 3 ; ++iz ) {
@@ -63,6 +68,8 @@ BoxMeshFixture::BoxMeshFixture( stk::ParallelMachine pm )
 
   const unsigned beg_elem = ( num_elems * p_rank ) / p_size ;
   const unsigned end_elem = ( num_elems * ( p_rank + 1 ) ) / p_size ;
+
+  m_bulk_data.modification_begin();
 
   unsigned elem = 0 ;
   for ( int iz = 0 ; iz < 2 ; ++iz ) {
@@ -91,13 +98,13 @@ BoxMeshFixture::BoxMeshFixture( stk::ParallelMachine pm )
       node_coord[6] = m_node_coord[iz+1][iy+1][ix+1] ;
       node_coord[7] = m_node_coord[iz+1][iy+1][ix  ] ;
 
-      stk::mesh::Entity& element = stk::mesh::declare_element(*m_bulk_data, elem_block, elem_id, elem_node);
+      stk::mesh::Entity& element = stk::mesh::declare_element( m_bulk_data, m_elem_block, elem_id, elem_node);
 
       stk::mesh::PairIterRelation rel = element.relations(stk::mesh::Node);
 
       for(int i=0; i< 8 ; ++i ) {
         stk::mesh::Entity& node = *rel[i].entity();
-        Scalar* data = stk::mesh::field_data(*m_coord_field, node);
+        Scalar* data = stk::mesh::field_data( m_coord_field, node);
         data[0] = node_coord[i][0];
         data[1] = node_coord[i][1];
         data[2] = node_coord[i][2];
@@ -107,14 +114,14 @@ BoxMeshFixture::BoxMeshFixture( stk::ParallelMachine pm )
   }
   }
 
-  m_bulk_data->modification_end();
+  m_bulk_data.modification_end();
 
   for ( int iz = 0 ; iz < 3 ; ++iz ) {
   for ( int iy = 0 ; iy < 3 ; ++iy ) {
   for ( int ix = 0 ; ix < 3 ; ++ix ) {
     // Find node
     stk::mesh::EntityId node_id = 1 + ix + 3 * ( iy + 3 * iz );
-    m_nodes[iz][iy][ix] = m_bulk_data->get_entity( stk::mesh::Node , node_id );
+    m_nodes[iz][iy][ix] = m_bulk_data.get_entity( stk::mesh::Node , node_id );
   }
   }
   }
@@ -124,32 +131,9 @@ BoxMeshFixture::BoxMeshFixture( stk::ParallelMachine pm )
   for ( int ix = 0 ; ix < 2 ; ++ix , ++elem ) {
     stk::mesh::EntityId elem_id = 1 + ix + 3 * ( iy + 3 * iz );
     // Find element
-    m_elems[iz][iy][ix] = m_bulk_data->get_entity( stk::mesh::Element , elem_id );
+    m_elems[iz][iy][ix] = m_bulk_data.get_entity( stk::mesh::Element , elem_id );
   }
   }
   }
-
-   const char * strNameElement = stk::mesh::ElementNode::tag().name();
-   strNameElement = "!()";
-   const char * strNameQuadrature = stk::mesh::QuadratureTag::tag().name();
-   strNameQuadrature = "!()";
-   const char * strNameBasis  = stk::mesh::BasisTag::tag().name();
-   strNameBasis = "!()";
-
-   //first test
-   std::ostringstream description1;
-   description1 << strNameElement;
-   STKUNIT_EXPECT_EQUAL( "!()", description1.str() );
-
-   //second test
-   std::ostringstream description2;
-   description2 << strNameQuadrature;
-   STKUNIT_EXPECT_EQUAL( "!()", description2.str() );
-
-   //third test
-   std::ostringstream description3;
-   description3 << strNameBasis;
-   STKUNIT_EXPECT_EQUAL( "!()", description3.str() );
-
 }
 

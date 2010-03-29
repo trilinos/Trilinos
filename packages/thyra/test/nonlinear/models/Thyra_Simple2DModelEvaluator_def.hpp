@@ -3,12 +3,15 @@
 #define THYRA_SIMPLE_2D_MODEL_EVALUATOR_DEF_HPP
 
 
-#include "Simple2DModelEvaluator_decl.hpp"
+#include "Thyra_Simple2DModelEvaluator_decl.hpp"
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_DefaultSerialDenseLinearOpWithSolveFactory.hpp"
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
 #include "Thyra_VectorStdOps.hpp"
+
+
+namespace Thyra {
 
 
 // Nonmember constuctors
@@ -171,6 +174,9 @@ Simple2DModelEvaluator<Scalar>::Simple2DModelEvaluator()
   set_x0(Teuchos::tuple<Scalar>(1.0, 1.0)());
 
 }
+
+
+} // namespace Thyra
 
 
 //

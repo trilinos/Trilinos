@@ -461,8 +461,6 @@ bool BulkData::internal_modification_end( bool regenerate_aura )
 
   // ------------------------------
 
-  ++m_sync_count ;
-
   m_sync_state = SYNCHRONIZED ;
 
   return true ;

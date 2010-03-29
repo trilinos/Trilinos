@@ -1538,11 +1538,7 @@ int main(int argc, char *argv[]) {
       delete [] comm_node_proc_ids;
    }
 
-#ifdef HAVE_MPI
-   MPI_Finalize();
-#endif
- 
-   exit(0);
+   return 0;
 }
 
 

@@ -8,7 +8,7 @@ DIR=$(dirname $0)
 cd ${DIR}
 
 # Don't prepend DIR here, since we are now in that directory.
-SIERRA_HEADER_FILE=sierra_version.hpp
+STK_HEADER_FILE=stk_version.hpp
 OVERRIDE_FILE="version"
 
 RECORD=
@@ -49,33 +49,35 @@ elif test -f "$OVERRIDE_FILE"
 then
     NEW_VERSION=$(cat ${OVERRIDE_FILE}) ||
         { 
-        echo >&2 "sierra_version_gen.sh: Unable to read file $(pwd)/${OVERRIDE_FILE}" 
+        echo >&2 "stk_version_gen.sh: Unable to read file $(pwd)/${OVERRIDE_FILE}" 
         exit 1
         }
     test "$NEW_VERSION" != 'ERROR' ||
         { 
-        echo >&2 "sierra_version_gen.sh: Invalid version 'ERROR' in $(pwd)/${OVERRIDE_FILE}. Deleting that file." 
+        echo >&2 "stk_version_gen.sh: Invalid version 'ERROR' in $(pwd)/${OVERRIDE_FILE}. Deleting that file." 
         rm -f $(pwd)/${OVERRIDE_FILE}
         exit 2
         }
 else
-    # Give up.
-    echo >&2 "sierra_version_gen.sh: No .git repository to determine git version and $(pwd)/${OVERRIDE_FILE} file not found."
+    # Give up (with an appropriate message.)
+    type -p git >/dev/null && 
+        echo >&2 "stk_version_gen.sh: No .git repository to determine git version and $(pwd)/${OVERRIDE_FILE} file not found." ||
+        echo >&2 "stk_version_gen.sh: No git binary in PATH and $(pwd)/${OVERRIDE_FILE} file not found."
     exit 3
 fi
 
 # Trim the 'v' from the beginning of the version (why is it there in the first place?)
 NEW_VERSION=$(expr "$NEW_VERSION" : v*'\(.*\)')
 
-if test -r $SIERRA_HEADER_FILE
+if test -r $STK_HEADER_FILE
 then
-    CURRENT_VERSION=$(cat $SIERRA_HEADER_FILE)
+    CURRENT_VERSION=$(cat $STK_HEADER_FILE)
 else
     CURRENT_VERSION=unset
 fi
 # Don't touch the header if it already contains this version (to prevent unwanted recompilation.)
 test "// $NEW_VERSION" = "$CURRENT_VERSION" ||
-    echo "// $NEW_VERSION" > $SIERRA_HEADER_FILE
+    echo "// $NEW_VERSION" > $STK_HEADER_FILE
 
 # Echo out so build system can use as macro definition, but only if --record was not passed.
 test -z "$RECORD" &&

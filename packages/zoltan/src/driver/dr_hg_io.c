@@ -1665,6 +1665,42 @@ int first=1;
 
   return c;
 }
+
+/*****************************************************************************/
+void mm_cleanup(MESH_INFO_PTR mesh)
+{
+/* Matrix-market files are one-based, but when we read them, we converted
+ * them to zero-based for convenience of indexing arrays.
+ * However, we should give Zoltan and the output routines IDs 
+ * that have the same base as the input (not converted from one-based 
+ * to zero-based).  So if the input was from Matrix-Market files, 
+ * add one to all GIDs.
+ */
+  
+  int i, j, sum;
+  int nhedges = mesh->nhedges;
+  int npins = mesh->hindex[nhedges];
+
+  ELEM_INFO_PTR elements = mesh->elements;
+ 
+  for (i = 0; i < mesh->num_elems; i++) {
+    ELEM_INFO_PTR current_elem = &(elements[i]);
+    current_elem->globalID++;
+    for (j = 0; j < current_elem->adj_len; j++) {
+      if (current_elem->adj[j] == -1) continue;
+      if (current_elem->adj_proc[j] != mesh->proc) {
+        current_elem->adj[j]++;
+      }
+    }
+  }
+  for (i = 0; i < nhedges; i++) mesh->hgid[i]++;
+  for (i = 0; i < npins; i++) mesh->hvertex[i]++;
+  sum = 0;
+  for (i = 0; i < mesh->necmap; i++) sum += mesh->ecmap_cnt[i];
+  for (i = 0; i < sum; i++) mesh->ecmap_neighids[i]++;
+}
+
+
 /*****************************************************************************/
 
 #ifdef __cplusplus

@@ -38,6 +38,7 @@ extern "C" {
 #ifdef ZOLTAN_METIS
 #undef ZOLTAN_METIS
 #endif
+
 #endif /* ZOLTAN_PARMETIS */
 
 #ifdef ZOLTAN_METIS
@@ -65,8 +66,12 @@ extern "C" {
 #endif /*def indextype */
 #endif /* ZOLTAN_SCOTCH */
 
+#include "zoltan_ccolamd.h"
 #ifndef indextype
-#define indextype int
+#define indextype UF_long /* UF_long is int by default */
+#endif
+
+#ifndef weighttype
 #define weighttype int
 #endif /* indextype */
 

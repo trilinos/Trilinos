@@ -63,7 +63,7 @@
 
 // Intrepid includes
 #include "Intrepid_FunctionSpaceTools.hpp"
-#include "Intrepid_FieldContainer.hpp"
+//#include "Intrepid_FieldContainer.hpp"
 #include "Intrepid_CellTools.hpp"
 #include "Intrepid_ArrayTools.hpp"
 #include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
@@ -121,7 +121,6 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  double & TotalErrorExactSol);
 
 
-using namespace std;
 using namespace Intrepid;
 
 
@@ -308,7 +307,6 @@ int main(int argc, char *argv[]) {
       error += im_ex_get_elem_conn_l(id,block_ids[b],elmt_node_linkage[b]);
     }
 
-
   // Get node-element connectivity
     int telct = 0;
     FieldContainer<int> elemToNode(numElems,numNodesPerElem);
@@ -335,7 +333,7 @@ int main(int argc, char *argv[]) {
     }
     delete [] nodeCoordx;
     delete [] nodeCoordy;
-
+    delete [] nodeCoordz;
 
     /*parallel info*/
     long long num_internal_nodes;
@@ -405,6 +403,8 @@ int main(int argc, char *argv[]) {
 
     if(MyPID==0) {cout << msg << "Global Node Nums = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
 
+
+
 #ifdef DUMP_DATA
     // Print coords
     std::stringstream fname;
@@ -466,6 +466,7 @@ int main(int argc, char *argv[]) {
 
    if(MyPID ==0) {cout << msg << "Boundary Conds   = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
 
+
 // ************************************ CUBATURE **************************************
 
   if (MyPID == 0) {
@@ -485,6 +486,7 @@ int main(int argc, char *argv[]) {
 
     hexCub->getCubature(cubPoints, cubWeights);
 
+   if(MyPID ==0) {cout << msg << "Cubature   = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
 
 // ************************************** BASIS ***************************************
 
@@ -502,6 +504,7 @@ int main(int argc, char *argv[]) {
      hexHGradBasis.getValues(hexGVals, cubPoints, OPERATOR_VALUE);
      hexHGradBasis.getValues(hexGrads, cubPoints, OPERATOR_GRAD);
 
+   if(MyPID ==0) {cout << msg << "Basis   = " << Time.ElapsedTime() << endl; Time.ResetStartTime();}
 
 // ******** LOOP OVER ELEMENTS TO CREATE LOCAL STIFFNESS MATRIX *************
 
@@ -552,7 +555,7 @@ int main(int argc, char *argv[]) {
 
 
     // Global arrays in Epetra format
-    Epetra_FECrsMatrix StiffMatrix(Copy, globalMapG, numFieldsG);
+    Epetra_FECrsMatrix StiffMatrix(Copy, globalMapG, 20*numFieldsG);
     Epetra_FEVector rhs(globalMapG);
 
     
@@ -596,6 +599,7 @@ int main(int argc, char *argv[]) {
             StiffMatrix.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
          }
       }
+
 
 // ******************************* Build right hand side ************************************
 
@@ -706,6 +710,7 @@ int main(int argc, char *argv[]) {
      double Linferr = 0.0;
      double LinferrTot = 0.0;
 
+
 #ifdef HAVE_MPI
    // Import solution onto current processor
      Epetra_Map  solnMap(numNodesGlobal, numNodesGlobal, 0, Comm);
@@ -713,6 +718,7 @@ int main(int argc, char *argv[]) {
      Epetra_Vector  uCoeff(solnMap);
      uCoeff.Import(uh, solnImporter, Insert);
 #endif
+
 
    // Get cubature points and weights for error calc (may be different from previous)
      DefaultCubatureFactory<double>  cubFactoryErr;                                   
@@ -760,8 +766,8 @@ int main(int argc, char *argv[]) {
        CellTools::setJacobianDet(hexJacobDetE, hexJacobianE );
 
       // transform integration points to physical points
-       FieldContainer<double> physCubPoints(numCells,numCubPointsErr, cubDimErr);
-       CellTools::mapToPhysicalFrame(physCubPoints, cubPointsErr, hexNodes, hex_8);
+       FieldContainer<double> physCubPointsE(numCells,numCubPointsErr, cubDimErr);
+       CellTools::mapToPhysicalFrame(physCubPointsE, cubPointsErr, hexNodes, hex_8);
 
       // transform basis values to physical coordinates 
        fst::HGRADtransformVALUE<double>(uhGValsTrans, uhGVals);
@@ -774,9 +780,9 @@ int main(int argc, char *argv[]) {
        for (int nPt = 0; nPt < numCubPointsErr; nPt++){
 
          // get exact solution and gradients
-          double x = physCubPoints(0,nPt,0);
-          double y = physCubPoints(0,nPt,1);
-          double z = physCubPoints(0,nPt,2);
+          double x = physCubPointsE(0,nPt,0);
+          double y = physCubPointsE(0,nPt,1);
+          double z = physCubPointsE(0,nPt,2);
           uExact = evalu(x, y, z);
           evalGradu(x, y, z, graduExact1, graduExact2, graduExact3);
 
@@ -799,7 +805,7 @@ int main(int argc, char *argv[]) {
           }
 
          // evaluate the error at cubature points
-          Linferr = max(Linferr, abs(uExact - uApprox));
+          Linferr = std::max(Linferr, abs(uExact - uApprox));
 
           L2errElem+=(uExact - uApprox)*(uExact - uApprox)*weightedMeasureE(0,nPt);
           H1errElem+=((graduExact1 - graduApprox1)*(graduExact1 - graduApprox1))
@@ -826,11 +832,13 @@ int main(int argc, char *argv[]) {
     LinferrTot = Linferr;
 #endif
 
+
    if (MyPID == 0) {
     std::cout << "\n" << "L2 Error:  " << sqrt(L2errTot) <<"\n";
     std::cout << "H1 Error:  " << sqrt(H1errTot) <<"\n";
     std::cout << "LInf Error:  " << LinferrTot <<"\n";
    }
+
 
    // Cleanup
    for(long long b = 0; b < numElemBlk; b++){     
@@ -842,7 +850,7 @@ int main(int argc, char *argv[]) {
    delete [] element_attributes;
    delete [] element_types;
    delete [] elmt_node_linkage;
-   delete [] ownedGIDs;
+  // delete [] ownedGIDs;
    delete [] elements;
    delete [] globalNodeIds;
    delete [] nodeIsOwned;
@@ -862,14 +870,7 @@ int main(int argc, char *argv[]) {
    // delete mesh
    Delete_Pamgen_Mesh();
    
-   // reset format state of std::cout
-//   std::cout.copyfmt(oldFormatState);
-   
-#ifdef HAVE_MPI
-   MPI_Finalize();
-#endif
- 
-   exit(0);
+   return 0;
 
 }
 
@@ -931,10 +932,6 @@ int main(int argc, char *argv[]) {
    
    return divGradu;
  }
-
-#ifdef HAVE_MPI
-
-#endif
 
 
 // Test ML

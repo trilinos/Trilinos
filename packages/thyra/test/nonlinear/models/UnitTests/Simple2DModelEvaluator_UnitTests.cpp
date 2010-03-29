@@ -1,7 +1,7 @@
 
-#include "Teuchos_UnitTestHarness.hpp"
+#include "Thyra_Simple2DModelEvaluator.hpp"
 
-#include "Simple2DModelEvaluator.hpp"
+#include "Teuchos_UnitTestHarness.hpp"
 
 
 namespace {
@@ -10,6 +10,8 @@ namespace {
 using Teuchos::null;
 using Teuchos::RCP;
 typedef Thyra::ModelEvaluatorBase MEB;
+using Thyra::Simple2DModelEvaluator;
+using Thyra::simple2DModelEvaluator;
 
 
 //

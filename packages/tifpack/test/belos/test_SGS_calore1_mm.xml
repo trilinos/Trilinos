@@ -8,7 +8,7 @@
 
   <Parameter name="Tifpack::Preconditioner" type="string" value="RELAXATION"/>
   <ParameterList name="Tifpack">
-    <Parameter name="relaxation: type" type="string" value="symmetric Gauss-Seidel"/>
+    <Parameter name="relaxation: type" type="string" value="Symmetric Gauss-Seidel"/>
   </ParameterList>
 
   <Parameter name="expectNumIters" type="int" value="19"/>
