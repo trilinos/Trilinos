@@ -30,9 +30,10 @@
 #define KOMPLEX_VERSION_H
 
 #include "Epetra_ConfigDefs.h"
+#include "Trilinos_version.h"
 
 	string Komplex_Version() { 
-		return("Komplex Version 1.5d - 11/13/2009"); 
+		return("Komplex in Trilinos " TRILINOS_VERSION_STRING); 
 	};
 
 #endif /* KOMPLEX_VERSION_H */

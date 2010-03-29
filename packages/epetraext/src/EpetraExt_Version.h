@@ -30,11 +30,12 @@
 #define EpetraExt_VERSION_H
 
 #include "EpetraExt_ConfigDefs.h"
+#include "Trilinos_version.h"
 
 namespace EpetraExt {
 
 	std::string EpetraExt_Version() { 
-		return("EpetraExt Version 3.9d - 11/13/2009"); 
+		return("EpetraExt in Trilinos " TRILINOS_VERSION_STRING); 
 	}
 } // namespace EpetraExt
 

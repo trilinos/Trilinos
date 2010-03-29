@@ -30,9 +30,10 @@
 #define TRILINOS_UTIL_VERSION_H
 
 #include "Trilinos_Util.h"
+#include "Trilinos_version.h"
 
 	string Triutils_Version() { 
-		return("Triutils Version 1.5d - 11/13/2009"); 
+		return("Triutils in Trilinos " TRILINOS_VERSION_STRING); 
 	}
 
 #endif // TRILINOS_UTIL_VERSION_H
