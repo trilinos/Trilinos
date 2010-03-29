@@ -12,11 +12,11 @@ is the  information that is stored in the variables being relative to an install
 tree versus relative to a build tree. The variables still have the same meaning
 and names regardless of which type you are using.
 
-The easiest way to use this is to add FIND_PACKAGE(Trilinos <any search paths>)
+The easiest way to use this is to add FIND_PACKAGE(Trilinos PATH <any search paths>)
 to your project's CMakeLists.txt file. Aside from the normal variables that
 CMake sets when it finds a package you will be able to make the build of your
 project consistent with how Trilinos was built. If you are only interested in a
-set of specific packages you can also use FIND_PACKAGE(<package name) for each
+set of specific packages you can also use FIND_PACKAGE(<package name>) for each
 package. All of the same information will be available, however the variables
 will reflect the name of the package and not Trilinos. Throughout the rest of
 this readme you can replace "Trilinos_" with "<package>_" for the cases where
