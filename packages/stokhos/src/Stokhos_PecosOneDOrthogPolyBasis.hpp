@@ -34,8 +34,15 @@
 #include "Stokhos_ConfigDefs.h"
 #ifdef HAVE_STOKHOS_DAKOTA
 
+// Get rid of this define to use a more recent Dakota
+#define REVERT_TO_DAKOTA_5_RELEASE 1
+
 #include "Stokhos_OneDOrthogPolyBasis.hpp"
+#ifdef  REVERT_TO_DAKOTA_5_RELEASE
+#include "OrthogonalPolynomial.H"
+#else
 #include "OrthogonalPolynomial.hpp"
+#endif
 
 namespace Stokhos {
 
@@ -53,7 +60,11 @@ namespace Stokhos {
      * printing the basis and \c p is the order of the basis.
      */
     PecosOneDOrthogPolyBasis(
+#ifdef REVERT_TO_DAKOTA_5_RELEASE
+      const Teuchos::RCP<Dakota::OrthogonalPolynomial>& pecosPoly, 
+#else
       const Teuchos::RCP<Pecos::OrthogonalPolynomial>& pecosPoly, 
+#endif
       const std::string& name, ordinal_type p);
 
     //! Destructor
@@ -189,7 +200,11 @@ namespace Stokhos {
   protected:
 
     //! Pointer to Pecos orthgonal polynomial object
+#ifdef REVERT_TO_DAKOTA_5_RELEASE
+    Teuchos::RCP<Dakota::OrthogonalPolynomial> pecosPoly;
+#else
     Teuchos::RCP<Pecos::OrthogonalPolynomial> pecosPoly;
+#endif
 
     //! Name of basis
     std::string name;

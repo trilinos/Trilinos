@@ -149,10 +149,13 @@ APPEND_SET(SOURCES
     TriKota_Version.cpp
   )
 
+# Note: "cubature" changed to sparsegrid after Dakota 5.0 
 SET(DAKOTA_LIBS
     dakota pecos lhs surfpack conmin
     ddace fsudace jega opt
-    psuade newmat ncsuopt sparsegrid coliny colin
+    psuade newmat ncsuopt 
+    quadrature
+    coliny colin
     pebbl utilib 3po nappspack appspack conveyor
     shared cdd cport amplsolver lhs
   )

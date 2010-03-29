@@ -33,5 +33,5 @@
 
 std::string Piro::Piro_Version()
 { 
-  return("Piro in Trilinos " TRILINOS_VERSION_STRING); 
+  return("Piro 10.2"); 
 }

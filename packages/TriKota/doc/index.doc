@@ -43,8 +43,13 @@ The TriKota build process requires an additional step compared
 to other packages in Trilinos: the Dakota source must be unpacked
 within TriKota. Internal to Sandia, the tarball of dakota can
 be downloaded from:
-https://development.sandia.gov/dakota/licensing/download.html
+https://development.sandia.gov/dakota/licensing/download.html. 
+External to sandia, go to:
+http://www.cs.sandia.gov/dakota/. 
 
+<b>Note: The Trilinos 10.2 release is compatible with the
+Dakota 5.0 release. </b>  The development/VOTD versions are
+kept compatible through continuous integration testing.
 
 Dakota needs to be untarred within the TriKota directory.
 To verify the paths, make sure that the following file exists: 
@@ -62,7 +67,9 @@ and do the usual "./cmake-script; make; make install;".
 
 \section trikota_adapters Using TriKota
 
-TriKota consists of two classes: TriKota::Driver and TriKota::DirectApplicInterface,
+TriKota consists of three classes: TriKota::Driver, 
+TriKota::DirectApplicInterface, and
+TriKota::ThyraDirectApplicInterface,
 and a test problem.
 
 The TriKota::Driver class wraps the library-mode usage of Dakota into two simple steps.
@@ -75,9 +82,15 @@ Trilinos and Dakota interfaces to codes. This class inherits from
 Dakota's DirectApplicInterface class so it can be passed to the
 TriKota::Driver::run method. It is constructed with an 
 EpetrExt::ModelEvaluator, which is a standard Trilinos 
-interface to codes. Note: the initial guess for the problem parameters
+interface to codes. 
+Note: the initial guess for the problem parameters
 are taken from the ModelEvaluator and overwrite any initial
-guess from the dakota input file.
+guess from the dakota input file. This is an example of 
+the hybrid version of library-mode Dakota.
+
+The TriKota::ThyraDirectApplicInterface class is also an
+adapter, but between the Thyra::ModelEvaluator (instead of
+Epetra). This class is used in the Piro package.
 
 The test problem Simple_Main.cpp shows the use case for taking a
 problem that presents itself as a EpetrExt::ModelEvaluator, and
@@ -92,6 +105,6 @@ TriKota was put together by Andy Salinger using lots of code,
 ideas, and consulting by Brian Adams, Mike Eldred, Eric Phipps,
 and Ross Bartlett. While the code is built and tested nightly,
 a very small subset of use cases have been tried out as of the
-Trilinos 10.0 Release.
+Trilinos 10.2 Release.
 
 */

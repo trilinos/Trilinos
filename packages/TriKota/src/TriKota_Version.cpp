@@ -3,5 +3,5 @@
 
 std::string TriKota::TriKota_Version()
 { 
-  return("TriKota votd"); 
+  return("TriKota 10.2"); 
 }

@@ -31,7 +31,11 @@
 template <typename ordinal_type, typename value_type>
 Stokhos::PecosOneDOrthogPolyBasis<ordinal_type, value_type>::
 PecosOneDOrthogPolyBasis(
+#ifdef REVERT_TO_DAKOTA_5_RELEASE 
+  const Teuchos::RCP<Dakota::OrthogonalPolynomial>& pecosPoly_,
+#else
   const Teuchos::RCP<Pecos::OrthogonalPolynomial>& pecosPoly_,
+#endif
   const std::string& name_, ordinal_type p_) :
   pecosPoly(pecosPoly_),
   name(name_),
@@ -200,8 +204,13 @@ getQuadPoints(ordinal_type quad_order,
 {
   ordinal_type num_points = 
     static_cast<ordinal_type>(std::ceil((quad_order+1)/2.0));
+#ifdef REVERT_TO_DAKOTA_5_RELEASE
+  const Dakota::RealArray& gp = pecosPoly->gauss_points(num_points);
+  const Dakota::RealArray& gw = pecosPoly->gauss_weights(num_points); 
+#else
   const Pecos::RealArray& gp = pecosPoly->gauss_points(num_points);
   const Pecos::RealArray& gw = pecosPoly->gauss_weights(num_points); 
+#endif
   quad_points.resize(num_points);
   quad_weights.resize(num_points);
   for (ordinal_type i=0; i<num_points; i++) {
