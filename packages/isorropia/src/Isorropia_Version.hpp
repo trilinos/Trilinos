@@ -36,7 +36,7 @@ USA
 namespace Isorropia {
 
         std::string Isorropia_Version() {
-                return("Isorropia in Trilinos 10.2");
+                return("Isorropia in Trilinos 10.3");
         }
 } // namespace Isorropia
 
