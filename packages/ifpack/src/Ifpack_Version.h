@@ -28,8 +28,9 @@
 */
 
 #include "Ifpack_ConfigDefs.h"
+#include "Trilinos_version.h"
 
 string Ifpack_Version() { 
-  return("Ifpack Version 3.5d -- 13-Oct-2009"); 
+  return("Ifpack in Trilinos " TRILINOS_VERSION_STRING); 
 }
 

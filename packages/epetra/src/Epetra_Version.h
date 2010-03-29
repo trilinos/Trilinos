@@ -27,7 +27,8 @@
 // @HEADER
 
 #include "Epetra_ConfigDefs.h"
+#include "Trilinos_version.h"
 
 string Epetra_Version() { 
-  return("Epetra Version 3.9d - 11/13/2009"); 
+  return("Epetra in Trilinos " TRILINOS_VERSION_STRING); 
 }
