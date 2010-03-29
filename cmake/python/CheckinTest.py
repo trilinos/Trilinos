@@ -1249,7 +1249,7 @@ def getLocalCommitsSummariesStr(inOptions):
 
   # Get the raw output from the last current commit log
   rawLocalCommitsStr = getCmndOutput(
-    "eg log --oneline origin..",
+    "eg log --oneline origin/"+inOptions.currentBranch+".."+inOptions.currentBranch,
     True,
     workingDir=inOptions.trilinosSrcDir
     )
@@ -1739,10 +1739,10 @@ def checkinTest(inOptions):
     print "*** 7) Do final push  ..."
     print "***"
 
-    # Attempt the final pull, commit ammend, and push
+    # Attempt the final pull, commit amend, and push
 
     pullFinalPassed = True
-    ammendFinalCommitPassed = True
+    amendFinalCommitPassed = True
     pushPassed = True
     didPush = False
     pushPassed = True
@@ -1808,11 +1808,11 @@ def checkinTest(inOptions):
       elif not okayToPush:
 
         print "\nSkippng appending test results due to prior errors!\n"
-        ammendFinalCommitPassed = False
+        amendFinalCommitPassed = False
 
       else:  # inOptions.appendTestResults and okayToPush
   
-        print "\nAttempting to ammend the final commmit message ...\n"
+        print "\nAttempting to amend the final commmit message ...\n"
 
         try:
 
@@ -1838,21 +1838,21 @@ def checkinTest(inOptions):
 
             if commitAmendRtn == 0:
               print "\nAppending test results to last commit passed!\n"
-              ammendFinalCommitPassed = True
+              amendFinalCommitPassed = True
             else:
               print "\nAppending test results to last commit failed!\n"
-              ammendFinalCommitPassed = False
+              amendFinalCommitPassed = False
 
           else:
 
-            print "\nSkipping ammending last commit because there are no local commits!\n"
+            print "\nSkipping amending last commit because there are no local commits!\n"
             
         except Exception, e:
           success = False
-          ammendFinalCommitPassed = False
+          amendFinalCommitPassed = False
           printStackTrace()
 
-      if not ammendFinalCommitPassed: okayToPush = False
+      if not amendFinalCommitPassed: okayToPush = False
 
       #
       print "\n7.c) Pushing the the local commits to the global repo ...\n"
@@ -1930,9 +1930,9 @@ def checkinTest(inOptions):
         commitEmailBodyExtra += "\n\nFailed because the final pull failed!" \
           " See '"+getFinalPullOutputFileName()+"'\n\n"
         success = False
-      elif not ammendFinalCommitPassed:
+      elif not amendFinalCommitPassed:
         subjectLine = "AMEND COMMIT FAILED"
-        commitEmailBodyExtra += "\n\nFailed because the final test commit ammend failed!" \
+        commitEmailBodyExtra += "\n\nFailed because the final test commit amend failed!" \
           " See '"+getFinalCommitOutputFileName()+"'\n\n"
         success = False
       elif inOptions.doPush and pushPassed and forcedCommitPush:

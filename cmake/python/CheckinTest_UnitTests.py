@@ -194,7 +194,7 @@ g_cmndinterceptsPullOnlyPasses = \
   "IT: eg pull origin currentbranch; 0; 'initial eg pull passed'\n"
 
 g_cmndinterceptsDiffOnlyPasses = \
-  "IT: eg diff --name-status.*; 0; 'M\tpackages/teuchos/CMakeLists.txt'\n"
+  "IT: eg diff --name-status origin/currentbranch; 0; 'M\tpackages/teuchos/CMakeLists.txt'\n"
 
 g_cmndinterceptsPullPasses = \
   g_cmndinterceptsPullOnlyPasses \
@@ -213,14 +213,14 @@ g_cmndinterceptsConfigBuildTestPasses = \
 
 g_cmndinterceptsFinalPushPasses = \
   "IT: eg pull origin currentbranch && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
-  "IT: eg log --oneline origin..; 0; 'Only one commit'\n" \
+  "IT: eg log --oneline origin/currentbranch..currentbranch; 0; 'Only one commit'\n" \
   "IT: eg cat-file -p HEAD; 0; 'This is the last commit message'\n" \
   "IT: eg commit --amend -F .*; 0; 'Amending the last commit passed'\n" \
   "IT: eg push; 0; 'push passes'\n"
 
 g_cmndinterceptsFinalPushNoAppendTestResultsPasses = \
   "IT: eg pull origin currentbranch && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
-  "IT: eg log --oneline origin..; 0; 'Only one commit'\n" \
+  "IT: eg log --oneline origin/currentbranch..currentbranch; 0; 'Only one commit'\n" \
   "IT: eg push; 0; 'push passes'\n"
 
 g_cmndinterceptsSendBuildTestCaseEmail = \
@@ -468,7 +468,7 @@ def checkin_test_configure_test(testObject, testName, optionsStr, filePassRegexS
     ,
     \
     g_cmndinterceptsCurrentBranch \
-    +"IT: eg diff --name-status.*; 0; '"+modifiedFilesStr+"'\n" \
+    +"IT: eg diff --name-status origin/currentbranch; 0; '"+modifiedFilesStr+"'\n" \
     +g_cmndinterceptsConfigPasses \
     ,
     \
@@ -1255,7 +1255,7 @@ class test_checkin_test(unittest.TestCase):
       "--make-options=-j3 --ctest-options=-j5 --without-serial-release",
       \
       g_cmndinterceptsCurrentBranch \
-      +"IT: eg diff --name-status.*; 0; 'eg diff passed'\n" 
+      +"IT: eg diff --name-status origin/currentbranch; 0; 'eg diff passed'\n" 
       +g_cmndinterceptsSendFinalEmail \
       ,
       \
@@ -1657,7 +1657,7 @@ class test_checkin_test(unittest.TestCase):
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +"IT: eg pull origin currentbranch && eg rebase --against origin/currentbranch; 1; 'final eg pull FAILED'\n" \
-      +"IT: eg log --oneline origin..; 0; 'Only one commit'\n" \
+      +"IT: eg log --oneline origin/currentbranch..currentbranch; 0; 'Only one commit'\n" \
       +g_cmndinterceptsSendFinalEmail \
       ,      \
       False,
@@ -1691,7 +1691,7 @@ class test_checkin_test(unittest.TestCase):
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +"IT: eg pull origin currentbranch && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
-      +"IT: eg log --oneline origin..; 0; 'Only one commit'\n" \
+      +"IT: eg log --oneline origin/currentbranch..currentbranch; 0; 'Only one commit'\n" \
       +"IT: eg cat-file -p HEAD; 0; 'This is the last commit message'\n" \
       +"IT: eg commit --amend -F .*; 1; 'Amending the last commit FAILED'\n" \
       +g_cmndinterceptsSendFinalEmail \
@@ -1706,7 +1706,7 @@ class test_checkin_test(unittest.TestCase):
       +g_expectedCommonOptionsSummary \
       +"A PUSH IS READY TO BE PERFORMED!\n" \
       +"Final update passed!\n" \
-      +"Attempting to ammend the final commmit message ...\n" \
+      +"Attempting to amend the final commmit message ...\n" \
       +"Appending test results to last commit failed!\n" \
       +"Not performing push due to prior errors!\n" \
       +"AMEND COMMIT FAILED: Trilinos:\n" \
@@ -1729,7 +1729,7 @@ class test_checkin_test(unittest.TestCase):
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +"IT: eg pull origin currentbranch && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
-      +"IT: eg log --oneline origin..; 0; 'Only one commit'\n" \
+      +"IT: eg log --oneline origin/currentbranch..currentbranch; 0; 'Only one commit'\n" \
       +"IT: eg cat-file -p HEAD; 0; 'This is the last commit message'\n" \
       +"IT: eg commit --amend -F .*; 0; 'Amending the last commit passed'\n" \
       +"IT: eg push; 1; 'push FAILED'\n"
@@ -1767,7 +1767,7 @@ class test_checkin_test(unittest.TestCase):
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +"IT: eg pull origin currentbranch && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
-      +"IT: eg log --oneline origin..; 0; ''\n" \
+      +"IT: eg log --oneline origin/currentbranch..currentbranch; 0; ''\n" \
       +"IT: eg cat-file -p HEAD; 0; 'Some commit not the local commit'\n" \
       +"IT: eg push; 1; 'push FAILED due to no local commits'\n"
       +g_cmndinterceptsSendFinalEmail \
@@ -1783,7 +1783,7 @@ class test_checkin_test(unittest.TestCase):
       +"1) SERIAL_RELEASE => passed: Trilinos/SERIAL_RELEASE: passed=100,notpassed=0\n" \
       +"=> A PUSH IS READY TO BE PERFORMED!\n" \
       +"No local commits exit!\n" \
-      +"Skipping ammending last commit because there are no local commits!\n" \
+      +"Skipping amending last commit because there are no local commits!\n" \
       +"Attempting to do the push ...\n" \
       +"Push failed!\n" \
       +"^PUSH FAILED: Trilinos:\n" \
