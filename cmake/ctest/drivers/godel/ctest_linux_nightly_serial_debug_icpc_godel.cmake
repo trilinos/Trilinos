@@ -10,9 +10,7 @@ SET(BUILD_TYPE DEBUG)
 SET(BUILD_DIR_NAME SERIAL_DEBUG_ICPC)
 #SET(CTEST_TEST_TYPE Experimental)
 
-SET(Trilinos_PACKAGES Teuchos RTOp GlobiPack Thyra OptiPack Stratimikos Phalanx Rythmos)
-# NOTE: We can't enable MOOCHO yet because MOOCHO can't be build
-# without Fortran yet!
+SET(Trilinos_PACKAGES Teuchos RTOp GlobiPack Thyra OptiPack Stratimikos Phalanx Rythmos MOOCHO)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DDART_TESTING_TIMEOUT:STRING=120"
