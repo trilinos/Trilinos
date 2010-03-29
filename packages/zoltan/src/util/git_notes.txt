@@ -115,7 +115,10 @@ Commands:
    delete a branch.
 
 -  git branch
-   lists available branches.
+   lists available branches in local clone.
+
+-  git branch -a
+   lists all branches available in repository.
 
 -  git branch -v
    lists last commit on each branch.
@@ -125,8 +128,12 @@ Commands:
    git branch --no-merged
    lists branches not yet merged into the HEAD branch.
 
+-  git checkout --track origin/<branchname>
+   switch to a branch that you have never switched to before.  Make git
+   track that branch for the first time.
+
 -  git checkout <branchname>
-   switch to a different branch
+   switch to a branch that git is already tracking.
 
 -  git checkout -b <branchname>
    creates a new branch and switches HEAD to it; equivalent to
