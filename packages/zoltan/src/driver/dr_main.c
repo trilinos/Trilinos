@@ -247,6 +247,11 @@ int main(int argc, char *argv[])
   /* (Useful for testing REUSE parameters in Zoltan.) */
   for (iteration = 1; iteration <= Number_Iterations; iteration++) {
 
+    if (Proc == 0) {
+      printf("Starting iteration %d\n", iteration); 
+      fflush(stdout);
+    }
+
     /*
      * now read in the mesh and element information.
      * This is the only function call to do this. Upon return,
