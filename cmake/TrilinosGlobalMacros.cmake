@@ -107,7 +107,6 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
     /packages/ITAPS
     /packages/globipack
     /packages/optipack
-    /packages/TriKota
     /packages/aristos
     /packages/claps
     /packages/external
