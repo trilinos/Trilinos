@@ -33,10 +33,10 @@ Framework Release Notes:
 - Find Trilinos capability for CMake-aware client codes
  
 CMake-aware client codes can now use the Find Trilinos capability to find
-Trilinos and it’s libraries in a more natural way.  The Find Trilinos
+Trilinos and its libraries in a more natural way.  The Find Trilinos
 capability has two variants, one for a build tree (the actual directory where
 Trilinos was built) and one for an installation tree.  It works by enabling the
-CMake function “FIND_PACKAGE(Trilinos PATHS <paths to search>)” to find a copy
+CMake function "FIND_PACKAGE(Trilinos PATHS <paths to search>)" to find a copy
 of Trilinos.  Many useful variables are available that can be used in your
 CMake files.  For example, the fully constucted link line for linking against
 Trilinos libraries is available, as well as the path(s) to Trilinos header
