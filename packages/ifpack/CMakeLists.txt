@@ -27,6 +27,11 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Euclid
   "Enable Ifpack/Euclid adapters"
   OFF )
 
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_HIPS
+  HAVE_IFPACK_HIPS
+  "Enable support for HIPS in Ifpack."
+  OFF )
+
 #
 # C) Add the libraries, tests, and examples
 #

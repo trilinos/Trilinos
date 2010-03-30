@@ -23,11 +23,11 @@ using Teuchos::rcp;
 
 Ifpack_HIPS::Ifpack_HIPS(Epetra_RowMatrix* A):
   A_(rcp(A,false)),
+  HIPS_id(-1), // Assumes user will initialze HIPS outside 
   IsParallel_(false),
   IsInitialized_(false),
   IsComputed_(false),
   Label_(),
-  HIPS_id(-1), // Assumes user will initialze HIPS outside 
   Time_(A_->Comm())
 {
   
