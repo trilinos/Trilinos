@@ -30,6 +30,7 @@
 
 #include "sparse_grid_mixed_growth.H"
 #include "sandia_rules.H"
+#include "pecos_global_defs.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
 template <typename ordinal_type, typename value_type>
@@ -55,7 +56,7 @@ SparseGridQuadrature(const Teuchos::RCP<const ProductBasis<ordinal_type,value_ty
   Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type,value_type> > > coordinate_bases = product_basis->getCoordinateBases();
 
   // Compute quad points, weights, values
-  Teuchos::Array<int> rules(d);
+  Teuchos::Array<int> rules(d), growthRules(d);
   
   Teuchos::Array< void (*) ( int order, int np, double p[], double x[] ) > compute1DPoints(d);
   Teuchos::Array< void (*) ( int order, int np, double p[], double w[] ) > compute1DWeights(d);
@@ -66,10 +67,12 @@ SparseGridQuadrature(const Teuchos::RCP<const ProductBasis<ordinal_type,value_ty
     if (rules[i] == 5) {
       compute1DPoints[i] = webbur::hermite_compute_points_np;
       compute1DWeights[i] = webbur::hermite_compute_weights_np;
+      growthRules[i] = Pecos::MODERATE_LINEAR;
     }
     else if (rules[i] == 1) {
       compute1DPoints[i] = webbur::clenshaw_curtis_compute_points_np;
       compute1DWeights[i] = webbur::clenshaw_curtis_compute_weights_np;
+      growthRules[i] = Pecos::MODERATE_EXPONENTIAL;
     }
     else if (rules[i] == 10) {
       //coordinate_bases[i].release();
@@ -78,21 +81,23 @@ SparseGridQuadrature(const Teuchos::RCP<const ProductBasis<ordinal_type,value_ty
       nparams[i]=1; 
       double * pp = (double*) &(*(coordinate_bases[i]));
       params[i] = (double) ((unsigned long int) pp);
+      growthRules[i] = Pecos::MODERATE_LINEAR;
     }
     else if (rules[i] == 4) {
       compute1DPoints[i] = webbur::legendre_compute_points_np;
       compute1DWeights[i] = webbur::legendre_compute_weights_np;
+      growthRules[i] = Pecos::MODERATE_LINEAR;
     }
   }
   int num_total_pts  =
     webbur::sparse_grid_mixed_growth_size_total(d, level, &rules[0],
-						webbur::level_to_order_default);
+						&growthRules[0]);
   ordinal_type ntot =
     webbur::sparse_grid_mixed_growth_size(d, level, &rules[0], 
 					  &nparams[0], &params[0], 
 					  &compute1DPoints[0],
 					  1e-15,
-					  webbur::level_to_order_default);
+					  &growthRules[0]);
   Teuchos::Array<int> sparse_order(ntot*d);
   Teuchos::Array<int> sparse_index(ntot*d);
   Teuchos::Array<int> sparse_unique_index(num_total_pts);
@@ -106,25 +111,25 @@ SparseGridQuadrature(const Teuchos::RCP<const ProductBasis<ordinal_type,value_ty
 						&params[0],
 						&compute1DPoints[0],
 						1e-15, ntot, num_total_pts, 
-						webbur::level_to_order_default,
+						&growthRules[0],
 						&sparse_unique_index[0]);
   webbur::sparse_grid_mixed_growth_index(d, level, &rules[0], ntot, 
 					 num_total_pts, &sparse_unique_index[0],
-					 webbur::level_to_order_default, 
+					 &growthRules[0], 
 					 &sparse_order[0], &sparse_index[0]);
   webbur::sparse_grid_mixed_growth_weight(d, level, &rules[0], 
 					  &nparams[0], &params[0], 
 					  &compute1DWeights[0],
 					  ntot, num_total_pts, 
 					  &sparse_unique_index[0], 
-					  webbur::level_to_order_default,
+					  &growthRules[0],
 					  &quad_weights[0]);
   webbur::sparse_grid_mixed_growth_point(d, level, &rules[0], 
 					 &nparams[0], &params[0], 
 					 &compute1DPoints[0],
 					 ntot, &sparse_order[0], 
 					 &sparse_index[0], 
-					 webbur::level_to_order_default, 
+					 &growthRules[0], 
 					 &gp[0]);
   
   value_type weight_factor = 1.0;
