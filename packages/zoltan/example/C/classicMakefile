@@ -5,7 +5,7 @@
 ## Location of zoltan library, also location of Zoltan_config.h if
 ## using the autoconf build harness
 
-BLD=../../../../build/packages/zoltan/src
+BLD=../../build/src
 
 ##
 ## Location of zoltan "src" directory (for header files)
@@ -61,13 +61,13 @@ all:   $(C_EXAMPLES) $(CPP_EXAMPLES)
 
 %: %.c
 	$(CC) $(CFLAGS) $(PAR_LIB_DIR)  \
-        -I$(BLD) $(MPI_INCLUDE) $(ZOLTAN_INCLUDE) $(ZOLTAN_UTIL_INCLUDE) \
+        -I$(BLD)/include $(MPI_INCLUDE) $(ZOLTAN_INCLUDE) $(ZOLTAN_UTIL_INCLUDE) \
         -o $@ $< $(BLD)/libzoltan.a $(PAR_LIBS) -lm $(MPI_LIBS)
 
 %: %.cpp
 	$(CXX) $(CFLAGS) $(CXXFLAGS) $(PAR_LIB_DIR)  \
-        -I$(BLD) $(MPI_INCLUDE) $(ZOLTAN_INCLUDE) $(ZOLTAN_UTIL_INCLUDE) \
+        -I$(BLD)/include $(MPI_INCLUDE) $(ZOLTAN_INCLUDE) $(ZOLTAN_UTIL_INCLUDE) \
         -o $@ $< $(BLD)/libzoltan.a $(PAR_LIBS) -lm $(MPI_LIBS)
 
 clean:
-	@rm -rf $(all)
+	@rm -rf  $(C_EXAMPLES) $(CPP_EXAMPLES)

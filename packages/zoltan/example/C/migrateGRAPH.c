@@ -26,10 +26,10 @@ static char *fname="graph.txt";
 typedef struct{
   int numMyVertices; /* total vertices in my partition */
 
-  int *vertexGID;    /* global ID of each of my vertices */
+  Z_INT64 *vertexGID;    /* global ID of each of my vertices */
   int *nborIndex;    /* index into nbor info, last element is total nbors */
 
-  int *nborGID;      /* nborGIDs[nborIndex[i]] is first neighbor of vertex i */
+  Z_INT64 *nborGID;      /* nborGIDs[nborIndex[i]] is first neighbor of vertex i */
   int *nborPart;     /* process owning each nbor in nborGID */
 
   int vertex_capacity;   /* size of vertexGID buffer */
@@ -341,7 +341,7 @@ static void pack_object_messages(void *data, int gidSize, int lidSize, int num_i
                      int *dests, int *sizes, int *idx, char *buf, int *ierr)
 {
   int i, j, lid, num_nbors;
-  int *nbors=NULL, *ibuf=NULL;
+  Z_INT64 *nbors=NULL, *ibuf=NULL;
   GRAPH_DATA *graph;
   *ierr = ZOLTAN_OK;
   graph = (GRAPH_DATA *)data;
@@ -353,7 +353,7 @@ static void pack_object_messages(void *data, int gidSize, int lidSize, int num_i
     nbors = graph->nborGID + graph->nborIndex[lid];
     num_nbors = graph->nborIndex[lid+1] - graph->nborIndex[lid];
 
-    ibuf = (int *)(buf + idx[i]);
+    ibuf = (Z_INT64 *)(buf + idx[i]);
 
     for (j=0; j < num_nbors; j++){
       ibuf[j] = *nbors++;
@@ -413,7 +413,7 @@ static void unpack_object_messages(void *data, int gidSize, int num_ids,
                      int *size, int *idx, char *buf, int *ierr)
 {
   int i, len, num_nbors, num_vertex, next_vertex, next_nbor;
-  int *ibuf=NULL;
+  Z_INT64 *ibuf=NULL;
   GRAPH_DATA *graph;
   *ierr = ZOLTAN_OK;
   graph = (GRAPH_DATA *)data;
@@ -434,13 +434,13 @@ static void unpack_object_messages(void *data, int gidSize, int num_ids,
   num_vertex = next_vertex + num_ids;
 
   if (num_vertex > graph->vertex_capacity){
-    graph->vertexGID = (int *)realloc(graph->vertexGID, sizeof(int) * num_vertex);
+    graph->vertexGID = (Z_INT64 *)realloc(graph->vertexGID, sizeof(Z_INT64) * num_vertex);
     graph->nborIndex = (int *)realloc(graph->nborIndex, sizeof(int) * (num_vertex+1));
     graph->vertex_capacity = num_vertex; 
   }
 
   if (num_nbors > graph->nbor_capacity){
-    graph->nborGID = (int *)realloc(graph->nborGID, sizeof(int) * num_nbors);
+    graph->nborGID = (Z_INT64 *)realloc(graph->nborGID, sizeof(Z_INT64) * num_nbors);
     graph->nborPart = (int *)realloc(graph->nborPart, sizeof(int) * num_nbors);
     graph->nbor_capacity = num_nbors;
   }
@@ -450,8 +450,8 @@ static void unpack_object_messages(void *data, int gidSize, int num_ids,
     len = size[i] / sizeof(int);
 
     if (len > 0){
-      ibuf = (int *)(buf + idx[i]);
-      memcpy(graph->nborGID + next_nbor, ibuf, len * sizeof(int));
+      ibuf = (Z_INT64 *)(buf + idx[i]);
+      memcpy(graph->nborGID + next_nbor, ibuf, len * sizeof(Z_INT64));
     }
     graph->nborIndex[next_vertex+1] = graph->nborIndex[next_vertex] + len;
     next_vertex++;
@@ -520,7 +520,8 @@ static void get_edge_list(void *data, int sizeGID, int sizeLID,
         int wgt_dim, float *ewgts, int *ierr)
 {
 int i, j, from, to;
-int *nextNbor, *nextProc;
+Z_INT64 *nextNbor;
+int *nextProc;
 
   GRAPH_DATA *graph = (GRAPH_DATA *)data;
   *ierr = ZOLTAN_OK;
@@ -532,7 +533,7 @@ int *nextNbor, *nextProc;
     return;
   }
 
-  nextNbor = (int *)nborGID;
+  nextNbor = nborGID;
   nextProc = nborPart;
 
   for (i=0; i < num_obj; i++){
@@ -737,7 +738,7 @@ int vGID;
 int i, j, procID;
 int vals[128], send_count[2];
 int *idx;
-unsigned int id;
+Z_INT64 id;
 FILE *fp;
 MPI_Status status;
 int ack_tag = 5, count_tag = 10, id_tag = 15;
@@ -765,9 +766,9 @@ GRAPH_DATA *send_graph;
 
     /* Allocate arrays to read in entire graph */
 
-    graph->vertexGID = (int *)malloc(sizeof(int) * numGlobalVertices);
+    graph->vertexGID = (Z_INT64 *)malloc(sizeof(Z_INT64) * numGlobalVertices);
     graph->nborIndex = (int *)malloc(sizeof(int) * (numGlobalVertices + 1));
-    graph->nborGID = (int *)malloc(sizeof(int) * numGlobalNeighbors);
+    graph->nborGID = (Z_INT64 *)malloc(sizeof(Z_INT64) * numGlobalNeighbors);
     graph->nborPart = (int *)malloc(sizeof(int) * numGlobalNeighbors);
 
     graph->vertex_capacity = numGlobalVertices;
@@ -803,7 +804,7 @@ GRAPH_DATA *send_graph;
     /* Assign each vertex to a process using a hash function */
 
     for (i=0; i <numGlobalNeighbors; i++){
-      id = (unsigned int)graph->nborGID[i];
+      id = (Z_INT64)graph->nborGID[i];
       graph->nborPart[i] = Zoltan_Hash(&id, 1, nproc);
     } 
 
@@ -812,14 +813,14 @@ GRAPH_DATA *send_graph;
     send_graph = (GRAPH_DATA *)calloc(sizeof(GRAPH_DATA) , nproc);
 
     for (i=0; i < numGlobalVertices; i++){
-      id = (unsigned int)graph->vertexGID[i];
+      id = (Z_INT64)graph->vertexGID[i];
       procID = Zoltan_Hash(&id, 1, nproc);
       send_graph[procID].numMyVertices++;
     }
 
     for (i=0; i < nproc; i++){
       num = send_graph[i].numMyVertices;
-      send_graph[i].vertexGID = (int *)malloc(sizeof(int) * num);
+      send_graph[i].vertexGID = (Z_INT64 *)malloc(sizeof(Z_INT64) * num);
       send_graph[i].nborIndex = (int *)calloc(sizeof(int) , (num + 1));
     }
 
@@ -827,7 +828,7 @@ GRAPH_DATA *send_graph;
 
     for (i=0; i < numGlobalVertices; i++){
 
-      id = (unsigned int)graph->vertexGID[i];
+      id = (Z_INT64)graph->vertexGID[i];
       nnbors = graph->nborIndex[i+1] - graph->nborIndex[i];
       procID = Zoltan_Hash(&id, 1, nproc);
 
@@ -842,7 +843,7 @@ GRAPH_DATA *send_graph;
 
       num = send_graph[i].nborIndex[send_graph[i].numMyVertices];
 
-      send_graph[i].nborGID = (int *)malloc(sizeof(int) * num);
+      send_graph[i].nborGID = (Z_INT64 *)malloc(sizeof(Z_INT64) * num);
       send_graph[i].nborPart= (int *)malloc(sizeof(int) * num);
     }
 
@@ -927,11 +928,11 @@ GRAPH_DATA *send_graph;
 
     if (send_count[0] > 0){
 
-      graph->vertexGID = (int *)malloc(sizeof(int) * send_count[0]);
+      graph->vertexGID = (Z_INT64 *)malloc(sizeof(Z_INT64) * send_count[0]);
       graph->nborIndex = (int *)malloc(sizeof(int) * (send_count[0] + 1));
 
       if (send_count[1] > 0){
-        graph->nborGID  = (int *)malloc(sizeof(int) * send_count[1]);
+        graph->nborGID  = (Z_INT64 *)malloc(sizeof(Z_INT64) * send_count[1]);
         graph->nborPart = (int *)malloc(sizeof(int) * send_count[1]);
       }
     }

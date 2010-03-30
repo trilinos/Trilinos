@@ -299,17 +299,17 @@ int Zoltan_set_mpi_types()
   unsigned_types[size_unsigned_int] = MPI_UNSIGNED;
   unsigned_types[size_unsigned_short] = MPI_UNSIGNED_SHORT;
 
-  /* INT64 and UINT64 may actually be 32 bit integers, if we're on a
+  /* Z_INT64 and Z_UINT64 may actually be 32 bit integers, if we're on a
    * 32-bit platform or if USE_32_BIT_ADDRESS_SPACE is defined
    */
 
-  mpi_eight_byte_int_type = signed_types[sizeof(INT64)];  
-  mpi_four_byte_int_type = signed_types[sizeof(INT32)];
-  mpi_two_byte_int_type = signed_types[sizeof(INT16)];
+  mpi_eight_byte_int_type = signed_types[sizeof(Z_INT64)];  
+  mpi_four_byte_int_type = signed_types[sizeof(Z_INT32)];
+  mpi_two_byte_int_type = signed_types[sizeof(Z_INT16)];
 
-  mpi_eight_byte_unsigned_int_type = unsigned_types[sizeof(UINT64)];
-  mpi_four_byte_unsigned_int_type = unsigned_types[sizeof(UINT32)];
-  mpi_two_byte_unsigned_int_type = unsigned_types[sizeof(UINT16)];
+  mpi_eight_byte_unsigned_int_type = unsigned_types[sizeof(Z_UINT64)];
+  mpi_four_byte_unsigned_int_type = unsigned_types[sizeof(Z_UINT32)];
+  mpi_two_byte_unsigned_int_type = unsigned_types[sizeof(Z_UINT16)];
 
   if ((mpi_two_byte_int_type == MPI_UNDEFINED) ||
       (mpi_two_byte_unsigned_int_type == MPI_UNDEFINED) ||
@@ -323,8 +323,8 @@ int Zoltan_set_mpi_types()
 
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
   if (rank == 0){
-    printf("Size of a UINT64 is %d bytes, UINT32 is %d bytes, UINT16 is %d bytes\n",
-        sizeof(UINT64), sizeof(UINT32), sizeof(UINT16));
+    printf("Size of a Z_UINT64 is %d bytes, Z_UINT32 is %d bytes, Z_UINT16 is %d bytes\n",
+        sizeof(Z_UINT64), sizeof(Z_UINT32), sizeof(Z_UINT16));
   } 
 
   return ZOLTAN_OK;

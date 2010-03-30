@@ -18,7 +18,7 @@ static char *fname="mesh.txt";
 typedef struct{
   int numGlobalPoints;
   int numMyPoints;
-  int *myGlobalIDs;
+  Z_INT64 *myGlobalIDs;
   float *x;
   float *y;
 } MESH_DATA;
@@ -39,7 +39,7 @@ static void get_geometry_list(void *data, int sizeGID, int sizeLID,
 static int get_next_line(FILE *fp, char *buf, int bufsize);
 static void input_file_error(int numProcs, int tag, int startProc);
 void read_input_objects(int myRank, int numProcs, char *fname, MESH_DATA *myData);
-void showSimpleMeshPartitions(int myProc, int numIDs, int *GIDs, int *parts);
+void showSimpleMeshPartitions(int myProc, int numIDs, Z_INT64 *GIDs, int *parts);
 
 int main(int argc, char *argv[])
 {
@@ -168,7 +168,6 @@ int main(int argc, char *argv[])
   }
 
   showSimpleMeshPartitions(myRank, myMesh.numMyPoints, myMesh.myGlobalIDs, parts);
-
 
   /******************************************************************
   ** Free the arrays allocated by Zoltan_LB_Partition, and free
@@ -316,7 +315,7 @@ char *buf;
 int bufsize = 512;
 int num, nobj, remaining, ack=0;
 int i, j;
-int *gids;
+Z_INT64 *gids;
 float *xcoord, *ycoord;
 FILE *fp;
 MPI_Status status;
@@ -342,7 +341,7 @@ int x_tag = 20, y_tag = 25;
       remaining = 0;
     }
 
-    myMesh->myGlobalIDs = (int *)malloc(sizeof(int) * nobj);
+    myMesh->myGlobalIDs = (Z_INT64 *)malloc(sizeof(Z_INT64) * nobj);
     myMesh->x = (float *)malloc(sizeof(float) * nobj);
     myMesh->y = (float *)malloc(sizeof(float) * nobj);
     myMesh->numMyPoints= nobj;
@@ -351,12 +350,11 @@ int x_tag = 20, y_tag = 25;
 
       num = get_next_line(fp, buf, bufsize);
       if (num == 0) input_file_error(numProcs, count_tag, 1);
-      num = sscanf(buf, "%d %f %f", myMesh->myGlobalIDs + i, myMesh->x + i, myMesh->y + i);
+      num = sscanf(buf, "%ld %f %f", myMesh->myGlobalIDs + i, myMesh->x + i, myMesh->y + i);
       if (num != 3) input_file_error(numProcs, count_tag, 1);
-
     }
 
-    gids = (int *)malloc(sizeof(int) * (nobj + 1));
+    gids = (Z_INT64 *)malloc(sizeof(Z_INT64) * (nobj + 1));
     xcoord = (float *)malloc(sizeof(float) * (nobj + 1));
     ycoord = (float *)malloc(sizeof(float) * (nobj + 1));
 
@@ -381,7 +379,7 @@ int x_tag = 20, y_tag = 25;
         for (j=0; j < nobj; j++){
           num = get_next_line(fp, buf, bufsize);
           if (num == 0) input_file_error(numProcs, count_tag, i);
-          num = sscanf(buf, "%d %f %f", gids + j, xcoord + j, ycoord + j);
+          num = sscanf(buf, "%ld %f %f", gids + j, xcoord + j, ycoord + j);
           if (num != 3) input_file_error(numProcs, count_tag, i);
         }
       }
@@ -390,7 +388,7 @@ int x_tag = 20, y_tag = 25;
       MPI_Recv(&ack, 1, MPI_INT, i, ack_tag, MPI_COMM_WORLD, &status);
 
       if (nobj > 0){
-        MPI_Send(gids, nobj, MPI_INT, i, id_tag, MPI_COMM_WORLD);
+        MPI_Send(gids, nobj, Z_MPI_INT64, i, id_tag, MPI_COMM_WORLD);
         MPI_Send(xcoord, nobj, MPI_FLOAT, i, x_tag, MPI_COMM_WORLD);
         MPI_Send(ycoord, nobj, MPI_FLOAT, i, y_tag, MPI_COMM_WORLD);
       }
@@ -413,11 +411,11 @@ int x_tag = 20, y_tag = 25;
     MPI_Recv(&myMesh->numMyPoints, 1, MPI_INT, 0, count_tag, MPI_COMM_WORLD, &status);
     ack = 0;
     if (myMesh->numMyPoints > 0){
-      myMesh->myGlobalIDs = (int *)malloc(sizeof(int) * myMesh->numMyPoints);
+      myMesh->myGlobalIDs = (Z_INT64 *)malloc(sizeof(Z_INT64) * myMesh->numMyPoints);
       myMesh->x = (float *)malloc(sizeof(float) * myMesh->numMyPoints);
       myMesh->y = (float *)malloc(sizeof(float) * myMesh->numMyPoints);
       MPI_Send(&ack, 1, MPI_INT, 0, ack_tag, MPI_COMM_WORLD);
-      MPI_Recv(myMesh->myGlobalIDs, myMesh->numMyPoints, MPI_INT, 0,
+      MPI_Recv(myMesh->myGlobalIDs, myMesh->numMyPoints, Z_MPI_INT64, 0,
                id_tag, MPI_COMM_WORLD, &status);
       MPI_Recv(myMesh->x, myMesh->numMyPoints, MPI_FLOAT, 0,
                x_tag, MPI_COMM_WORLD, &status);
@@ -439,7 +437,7 @@ int x_tag = 20, y_tag = 25;
     }
   }
 }
-void showSimpleMeshPartitions(int myProc, int numIDs, int *GIDs, int *parts)
+void showSimpleMeshPartitions(int myProc, int numIDs, Z_INT64 *GIDs, int *parts)
 {
 int partAssign[25], allPartAssign[25];
 int i, j, part;

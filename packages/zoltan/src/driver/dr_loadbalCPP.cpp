@@ -1804,8 +1804,8 @@ int test_both;  /* If true, test both Zoltan_*_Assign and Zoltan_*_PP_Assign. */
     double x[3] = {0., 0., 0.};
     int iierr = 0;
     ELEM_INFO_PTR current_elem = &(mesh->elements[0]);
-    UINT64 lid = 0;
-    UINT64 gid = (unsigned) (current_elem->globalID);
+    Z_INT64 lid = 0;
+    Z_INT64 gid = (unsigned) (current_elem->globalID);
 
     if (mesh->eb_nnodes[current_elem->elem_blk] == 1) {
       x[0] = current_elem->coord[0][0];

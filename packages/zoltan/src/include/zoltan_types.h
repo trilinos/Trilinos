@@ -22,27 +22,27 @@
 extern "C" {
 #endif
 
-typedef int16_t INT16;
-typedef int32_t INT32;
-typedef uint16_t UINT16;
-typedef uint32_t UINT32;
+typedef int16_t Z_INT16;
+typedef int32_t Z_INT32;
+typedef uint16_t Z_UINT16;
+typedef uint32_t Z_UINT32;
 
 /* Data type macro definitions for 64 bit platform *************************/
 #if __WORDSIZE==64
 
 #ifdef USE_32_BIT_ADDRESS_SPACE       /* compile time option for faster code */
-typedef int32_t INT64;
-typedef uint32_t UINT64;
+typedef int32_t Z_INT64;
+typedef uint32_t Z_UINT64;
 #else
-typedef int64_t INT64;
-typedef uint64_t UINT64;
+typedef int64_t Z_INT64;
+typedef uint64_t Z_UINT64;
 #endif
 
 /* Data type macro definitions for 32 bit platform *************************/
 #else
 
-typedef int32_t INT64;
-typedef uint32_t UINT64;
+typedef int32_t Z_INT64;
+typedef uint32_t Z_UINT64;
  
 #endif
 
@@ -55,12 +55,12 @@ extern MPI_Datatype mpi_two_byte_unsigned_int_type;
 extern MPI_Datatype mpi_four_byte_unsigned_int_type;
 extern MPI_Datatype mpi_eight_byte_unsigned_int_type;
 
-#define ZOLTAN_MPI_INT16  mpi_two_byte_int_type
-#define ZOLTAN_MPI_INT32  mpi_four_byte_int_type
-#define ZOLTAN_MPI_INT64  mpi_eight_byte_int_type
-#define ZOLTAN_MPI_UINT16  mpi_two_byte_unsigned_int_type
-#define ZOLTAN_MPI_UINT32  mpi_four_byte_unsigned_int_type
-#define ZOLTAN_MPI_UINT64  mpi_eight_byte_unsigned_int_type
+#define Z_MPI_INT16  mpi_two_byte_int_type
+#define Z_MPI_INT32  mpi_four_byte_int_type
+#define Z_MPI_INT64  mpi_eight_byte_int_type
+#define Z_MPI_UINT16  mpi_two_byte_unsigned_int_type
+#define Z_MPI_UINT32  mpi_four_byte_unsigned_int_type
+#define Z_MPI_UINT64  mpi_eight_byte_unsigned_int_type
 
 /*****************************************************************************/
 /*
@@ -68,7 +68,7 @@ extern MPI_Datatype mpi_eight_byte_unsigned_int_type;
  */
 /*****************************************************************************/
 
-typedef UINT64              ZOLTAN_ID_TYPE;
+typedef Z_INT64              ZOLTAN_ID_TYPE;
 typedef ZOLTAN_ID_TYPE     *ZOLTAN_ID_PTR;
 #define ZOLTAN_ID_MPI_TYPE  MPI_UNSIGNED
 
