@@ -142,7 +142,10 @@ int main(int argc, char *argv[])
   }
   stddev = sqrt(stddev / NLRs);
 
-  delete [] NNZperRow; NNZperRow = 0;
+  if (NNZperRow!=0)
+  {
+    delete [] NNZperRow; NNZperRow = 0;
+  }
 
   cout << endl << "*** Matrix statistics: " << mfn << endl;
   cout << "Number of rows: " << NLRs << endl;
@@ -204,11 +207,12 @@ int main(int argc, char *argv[])
       cout << "LevelSolver::Setup() time: " << time << endl;
       cout << "\n*** LevelSolver statistics" << endl;
    }
-   LS.Print(cout,1);
-   {
-     ofstream fout("levelinfo.dat");
-     LS.Print(fout,2);
-   }
+
+    LS.Print(cout,1);
+    {
+      ofstream fout("levelinfo.dat");
+      LS.Print(fout,2);
+    }
 
    // Verify that the level solver correctly solves the system
    verify(L,LS);
@@ -220,7 +224,11 @@ int main(int argc, char *argv[])
 
 
   // delete manually allocated matrices
-  delete L;
+   if (L!=0)
+   {
+     delete L;
+   }
+
   return 0;
 }
 ////////////////////////////////////////////////////////////////////////////////
