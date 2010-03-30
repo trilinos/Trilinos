@@ -250,11 +250,23 @@ int Epetra_LevelSolver<Node>::Analyze(const Epetra_CrsGraph &g)
 
   for (int i=0; i < nlevels; i++)
   {
-    delete [] rows[i];
+    if(rows[i]!=0)
+    {
+      delete [] rows[i];
+    }
   }
-  delete [] rows;
-  delete [] levelSize;
-  delete [] permutation;
+  if(rows!=0)
+  {
+    delete [] rows;
+  }
+  if(levelSize!=0)
+  {
+    delete [] levelSize;
+  }
+  if(permutation!=0)
+  {
+    delete [] permutation;
+  }
 
   return failed;
 }
@@ -312,8 +324,8 @@ int Epetra_LevelSolver<Node>::Setup(const Epetra_CrsMatrix &L)
     DInvblock_[i] = 1.0 / DInvblock_[i];
   }
 
-  dBuffOrig = Teuchos::arcp(const_cast<double *>(&Dblock_[0]),0,numRows_); 
-  dInvBuffOrig = Teuchos::arcp(const_cast<double *>(&DInvblock_[0]),0,numRows_); 
+  dBuffOrig = Teuchos::arcp(const_cast<double *>(&Dblock_[0]),0,numRows_,false); 
+  dInvBuffOrig = Teuchos::arcp(const_cast<double *>(&DInvblock_[0]),0,numRows_,false); 
 
   // determine number of non-zeros for each (permuted) row, neglecting the diagonal
   Teuchos::Array<size_t> NEPR(numRows_);
@@ -436,7 +448,10 @@ typedef Kokkos::DefaultSparseMultiply<double,int> MATVEC;
   tmap_RCP_ = Teuchos::rcp(new tpetraMap(importer_->SourceMap().NumGlobalElements(), aview, 0, TCommRCP,
                                                 getNode()));
 
-  delete [] tmpElementList; tmpElementList=0;  // not sure if this is good
+  if(tmpElementList!=0)
+  {
+    delete [] tmpElementList; tmpElementList=0;  // not sure if this is good
+  }
   ///////////////////////////////////////////////////////////////////                                                                          
 
   ///////////////////////////////////////////////////////////////////
@@ -451,7 +466,10 @@ typedef Kokkos::DefaultSparseMultiply<double,int> MATVEC;
   tmapPerm_RCP_ = Teuchos::rcp(new tpetraMap(importer_->TargetMap().NumGlobalElements(), aview2, 0, TCommRCP, 
  								 node_ )); 
 
-  delete [] tmpElementList; tmpElementList=0;  // not sure if this is good
+  if(tmpElementList!=0)
+  {
+    delete [] tmpElementList; tmpElementList=0;  // not sure if this is good
+  }
   ///////////////////////////////////////////////////////////////////
 
   ///////////////////////////////////////////////////////////////////
