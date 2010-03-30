@@ -52,5 +52,7 @@ MACRO(PARSE_ARGUMENTS prefix arg_names option_names)
   ENDFOREACH()
 
   SET(${prefix}_${current_arg_name} "${current_arg_list}")
+  PARSE_ARGUMENTS_DUMP_OUTPUT( "PARSE_ARGUMENTS:"
+    " ${prefix}_${current_arg_name} = '${${prefix}_${current_arg_name}}'" )
 
 ENDMACRO(PARSE_ARGUMENTS)

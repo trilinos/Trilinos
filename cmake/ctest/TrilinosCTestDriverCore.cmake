@@ -325,6 +325,62 @@ ENDMACRO()
 
 
 #
+# Call INITIALIZE_ERROR_QUEUE once at the top of TRILINOS_CTEST_DRIVER
+#
+MACRO(INITIALIZE_ERROR_QUEUE)
+  SET(TRILINOS_CTEST_DRIVER_ERROR_QUEUE "")
+ENDMACRO()
+
+
+#
+# QUEUE_ERROR should be called only for errors that are not already reported to
+# the dashboard in some other way. For example, if calling ctest_submit fails,
+# then that failure does NOT show up on the dashboard, so it is appropriate to
+# call QUEUE_ERROR for that case. For a build error or test failure, it is NOT
+# appropriate to call QUEUE_ERROR because those already show up on the
+# dashboard (assuming a good ctest_submit...)
+#
+# When adding more callers of QUEUE_ERROR, just make sure that it does not
+# duplicate an existing/reported dashboard failure.
+#
+MACRO(QUEUE_ERROR err_msg)
+  SET(TRILINOS_CTEST_DRIVER_ERROR_QUEUE
+    ${TRILINOS_CTEST_DRIVER_ERROR_QUEUE} "${err_msg}")
+ENDMACRO()
+
+
+#
+# Call REPORT_QUEUED_ERRORS once at the bottom of TRILINOS_CTEST_DRIVER
+#
+MACRO(REPORT_QUEUED_ERRORS)
+  IF("${TRILINOS_CTEST_DRIVER_ERROR_QUEUE}" STREQUAL "")
+    MESSAGE("TRILINOS_CTEST_DRIVER_ERROR_QUEUE is empty. All is well.")
+  ELSE()
+    MESSAGE("error: TRILINOS_CTEST_DRIVER_ERROR_QUEUE reports the following error message queue:")
+    FOREACH(err_msg ${TRILINOS_CTEST_DRIVER_ERROR_QUEUE})
+      MESSAGE("${err_msg}")
+    ENDFOREACH()
+  ENDIF()
+ENDMACRO()
+
+
+#
+# Override CTEST_SUBMIT to detect failed submissions and track them as
+# queued errors.
+#
+MACRO(CTEST_SUBMIT)
+  #
+  # Call the original CTEST_SUBMIT and pay attention to its RETURN_VALUE:
+  #
+  _CTEST_SUBMIT(${ARGN} RETURN_VALUE rv)
+
+  IF(NOT "${rv}" STREQUAL "0")
+    QUEUE_ERROR("error: ctest_submit failed: rv='${rv}' ARGN='${ARGN}'")
+  ENDIF()
+ENDMACRO()
+
+
+#
 # This is the core extended ctest driver script code that is platform
 # independent.  This script drives the testing process by doing an update and
 # then configuring and building the packages one at a time.
@@ -333,6 +389,8 @@ ENDMACRO()
 #
 
 FUNCTION(TRILINOS_CTEST_DRIVER)
+
+  INITIALIZE_ERROR_QUEUE()
 
   SET( CTEST_SOURCE_NAME Trilinos )
   
@@ -922,5 +980,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   EXECUTE_PROCESS(COMMAND killall -s 9 zdrive.exe)
   
   MESSAGE("\nDone with the incremental building and testing of Trilinos packages!\n")
+
+  REPORT_QUEUED_ERRORS()
 
 ENDFUNCTION()

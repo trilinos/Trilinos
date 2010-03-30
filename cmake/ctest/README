@@ -1,0 +1,119 @@
+Submitting a TrilinosDriver dashboard:
+======================================
+First, manually ensure that the following prerequisites are satisifed:
+
+Prerequisites:
+==============
+python version 2.4 or later
+eg or git version 1.6.x or later
+
+Create a base directory:
+========================
+Create a directory as a base. I always use "T" in my home directory, or "C:\T"
+on Windows, as the base directory. Inside there, clone the Trilinos repository
+and checkout whatever branch you will be testing.
+
+  cd ~    ("cd \" on Windows)
+  mkdir T
+  cd T
+  git clone software.sandia.gov:/space/git/Trilinos
+
+See [ToDo: fill in HERE] for instructions on how to set up ssh so that the git
+clone call works using just software.sandia.gov without a user name.
+
+Create machine specific content:
+================================
+Add a subdirectory named after your machine in Trilinos/cmake/ctest/drivers. If
+you name the directory exactly as your machine is named by `uname -n` then you
+simply need to add some files to that directory. You can drop ".domain.gov"
+stuff from the end of the machine name, as long as the name does not conflict
+with any other directory names already in the drivers directory.
+
+Add some ctest -S scripts to run as tests. You can base the *.cmake files in
+this directory on those used on an existing machine that is substantially
+similar to yours. If there isn't one, just copy the files from the s903186
+directory and work from there.
+
+Add a CMakeLists.txt file to the new directory for your machine. It should
+contain content something like this (from the flagship example, s903186):
+
+  # Initially:
+  #
+  TRILINOS_DRIVER_SETUP()
+
+  # Make one of these calls for each script
+  #
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    MPI_OPT
+    ctest_mac_nightly_mpi_opt_s903186.cmake
+  )
+
+  TRILINOS_DRIVER_ADD_DASHBOARD(
+    SERIAL_DEBUG
+    ctest_mac_nightly_serial_debug_s903186.cmake
+  )
+
+  # Finally:
+  #
+  TRILINOS_ADD_REQUIRED_CMAKE_INSTALLS()
+
+The first argument to TRILINOS_DRIVER_ADD_DASHBOARD calls is the test name as
+it will appear on the TrilinosDriver dashboard. The second argument is the name
+of the script in the same directory that will be run as a ctest -S script as a
+test on the driver dashboard.
+
+If you have a dashboard that must run all by itself, without any other
+dashboards being run in parallel, then you should pass the RUN_SERIAL argument.
+
+For more details on other optional arguments, see the comments at the function
+definition for TRILINOS_DRIVER_ADD_DASHBOARD in TrilinosDriverSupport.cmake.
+
+Next, add a cron_driver.sh for your machine. (Or cron_driver.bat on Windows.)
+
+You can set the environment variable TDD_PARALLEL_LEVEL to control how many
+dashboards are run in parallel (as tests) by the TrilinosDriver dashboard.
+
+Typical cron_driver.sh contents:
+
+  export TDD_PARALLEL_LEVEL=2
+  ../cron_driver.py
+
+Typical cron_driver.bat contents:
+
+  set TDD_PARALLEL_LEVEL=2
+  python "%~dp0..\cron_driver.py"
+
+Run it manually:
+================
+
+The first time you run this it *will* take a long time because it will do a
+separate git clone of the Trilinos repository for each script that it runs.
+
+Once you are done with the initial run, you can test it out interactively in a
+rapid, iterative process by setting up the following environment in your
+calling cron_driver script:
+
+export CTEST_DO_SUBMIT=FALSE
+export CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE
+export Trilinos_PACKAGES=Teuchos
+(but use set, rather than export, on Windows...)
+
+  Linux/Mac:
+  cd ~
+  cd T/Trilinos/cmake/ctest/drivers/MACHINE_NAME
+  ./cron_driver.sh
+
+  on Windows:
+  cd \
+  cd T\Trilinos\cmake\ctest\drivers\MACHINE_NAME
+  cron_driver.bat
+
+Work out any kinks you may have in your environment and your scripts.
+
+Set up a crontab entry (or a scheduled task on Windows):
+========================================================
+MAILTO=youremail@yourorg.org
+MM HH * * * bash ~/T/Trilinos/cmake/ctest/drivers/MACHINE_NAME/cron_driver.sh || cat
+
+Use a value for MM and HH that is in the very near future and then let the
+script run from the cron job.

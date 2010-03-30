@@ -55,14 +55,21 @@ if(NOT "$ENV{TDD_CRON_DRIVER_SCRIPT}" STREQUAL "")
   set(CTEST_NOTES_FILES ${CTEST_NOTES_FILES} "$ENV{TDD_CRON_DRIVER_SCRIPT}")
 endif()
 
-# Ross Bartlett: The update of Trilinos and the update of the inner
-# cmake/ctest needs to be driven inside of the underlying CMakeLists.txt file.
-# Any major error that occurs needs to be recorded as a CTest test and
-# reported to the TrilinosDriver dashboard.
+set(parallel_level "$ENV{TDD_PARALLEL_LEVEL}")
+if("${parallel_level}" STREQUAL "")
+  set(parallel_level 1)
+endif()
+
+set(git_exe "$ENV{TDD_GIT_EXE}")
+if("${git_exe}" STREQUAL "")
+  find_program(git_exe NAMES eg git git.cmd)
+endif()
+set(CTEST_UPDATE_COMMAND "${git_exe}")
 
 ctest_empty_binary_directory("${CTEST_BINARY_DIRECTORY}")
 ctest_start("Experimental")
+ctest_update(SOURCE "${CTEST_SOURCE_DIRECTORY}")
 ctest_configure(BUILD "${CTEST_BINARY_DIRECTORY}")
 ctest_build(BUILD "${CTEST_BINARY_DIRECTORY}")
-ctest_test(BUILD "${CTEST_BINARY_DIRECTORY}")
+ctest_test(BUILD "${CTEST_BINARY_DIRECTORY}" PARALLEL_LEVEL ${parallel_level})
 ctest_submit()
