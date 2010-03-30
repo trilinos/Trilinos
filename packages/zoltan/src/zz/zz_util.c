@@ -258,6 +258,79 @@ Zoltan_AllReduceInPlace(void *sndrcvbuf, int count, MPI_Datatype datatype, MPI_O
   return (ierr);
 }
 
+MPI_Datatype mpi_two_byte_int_type;
+MPI_Datatype mpi_four_byte_int_type;
+MPI_Datatype mpi_eight_byte_int_type;
+MPI_Datatype mpi_two_byte_unsigned_int_type;
+MPI_Datatype mpi_four_byte_unsigned_int_type;
+MPI_Datatype mpi_eight_byte_unsigned_int_type;
+
+int Zoltan_set_mpi_types()
+{
+  int rank;
+  MPI_Datatype signed_types[16];
+  MPI_Datatype unsigned_types[16];
+  int size_short, size_unsigned_short, i;
+  int size_int, size_unsigned_int;
+  int size_long, size_unsigned_long;
+  int size_long_long, size_unsigned_long_long;
+
+  MPI_Type_size(MPI_SHORT, &size_short);
+  MPI_Type_size(MPI_UNSIGNED_SHORT, &size_unsigned_short);
+  MPI_Type_size(MPI_INT, &size_int);
+  MPI_Type_size(MPI_UNSIGNED, &size_unsigned_int);
+  MPI_Type_size(MPI_LONG, &size_long);
+  MPI_Type_size(MPI_UNSIGNED_LONG, &size_unsigned_long);
+  MPI_Type_size(MPI_LONG_LONG, &size_long_long);
+  MPI_Type_size(MPI_UNSIGNED_LONG_LONG, &size_unsigned_long_long);
+
+  for (i=0; i < 16; i++){
+    signed_types[i] = MPI_UNDEFINED;
+    unsigned_types[i] = MPI_UNDEFINED;
+  }
+
+  signed_types[size_long_long] = MPI_LONG_LONG;
+  signed_types[size_long] = MPI_LONG;
+  signed_types[size_int] = MPI_INT;
+  signed_types[size_short] = MPI_SHORT;
+
+  unsigned_types[size_unsigned_long_long] = MPI_UNSIGNED_LONG_LONG;
+  unsigned_types[size_unsigned_long] = MPI_UNSIGNED_LONG;
+  unsigned_types[size_unsigned_int] = MPI_UNSIGNED;
+  unsigned_types[size_unsigned_short] = MPI_UNSIGNED_SHORT;
+
+  /* INT64 and UINT64 may actually be 32 bit integers, if we're on a
+   * 32-bit platform or if USE_32_BIT_ADDRESS_SPACE is defined
+   */
+
+  mpi_eight_byte_int_type = signed_types[sizeof(INT64)];  
+  mpi_four_byte_int_type = signed_types[sizeof(INT32)];
+  mpi_two_byte_int_type = signed_types[sizeof(INT16)];
+
+  mpi_eight_byte_unsigned_int_type = unsigned_types[sizeof(UINT64)];
+  mpi_four_byte_unsigned_int_type = unsigned_types[sizeof(UINT32)];
+  mpi_two_byte_unsigned_int_type = unsigned_types[sizeof(UINT16)];
+
+  if ((mpi_two_byte_int_type == MPI_UNDEFINED) ||
+      (mpi_two_byte_unsigned_int_type == MPI_UNDEFINED) ||
+      (mpi_four_byte_int_type == MPI_UNDEFINED) ||
+      (mpi_four_byte_unsigned_int_type == MPI_UNDEFINED) ||
+      (mpi_eight_byte_int_type == MPI_UNDEFINED) ||
+      (mpi_eight_byte_unsigned_int_type == MPI_UNDEFINED) ){
+
+    return ZOLTAN_FATAL;
+  }
+
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+  if (rank == 0){
+    printf("Size of a UINT64 is %d bytes, UINT32 is %d bytes, UINT16 is %d bytes\n",
+        sizeof(UINT64), sizeof(UINT32), sizeof(UINT16));
+  } 
+
+  return ZOLTAN_OK;
+}
+
+
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif

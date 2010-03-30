@@ -51,6 +51,8 @@ int mpi_flag;
     MPI_Init(&argc, &argv);
   }
 
+  Zoltan_set_mpi_types();
+
   /*
    * Now return the version so that the user knows which version of
    * the libarary is being used without having to get the source
