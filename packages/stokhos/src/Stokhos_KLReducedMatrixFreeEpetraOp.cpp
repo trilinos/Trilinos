@@ -36,6 +36,8 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Stokhos_OrthogPolyApprox.hpp"
 #include "Stokhos_MatrixFreeEpetraOp.hpp"
+#include "Stokhos_Sparse3TensorUtilities.hpp"
+#include <sstream>
 
 Stokhos::KLReducedMatrixFreeEpetraOp::KLReducedMatrixFreeEpetraOp(
  const Teuchos::RCP<const Epetra_Map>& base_map_,
@@ -43,32 +45,33 @@ Stokhos::KLReducedMatrixFreeEpetraOp::KLReducedMatrixFreeEpetraOp(
  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis_,
  const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk_,
  const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops_,
- int num_KL_,
- double drop_tolerance_,
- bool do_error_tests_) 
+ const Teuchos::RCP<Teuchos::ParameterList>& params_) 
   : label("Stokhos KL Reduced Matrix Free Operator"),
     base_map(base_map_),
     sg_map(sg_map_),
     sg_basis(sg_basis_),
     Cijk(Cijk_),
     block_ops(ops_),
+    params(params_),
     useTranspose(false),
     num_blocks(block_ops->size()),
     input_block(num_blocks),
     result_block(num_blocks),
     tmp(),
     tmp2(),
-    num_KL(num_KL_),
+    num_KL(0),
     num_KL_computed(0),
     mean(),
     block_vec_map(),
     block_vec_poly(),
     dot_products(),
     sparse_kl_coeffs(),
-    kl_blocks(),
-    drop_tolerance(drop_tolerance_),
-    do_error_tests(do_error_tests_)
+    kl_blocks()
 {
+  num_KL = params->get("Number of KL Terms", 5);
+  drop_tolerance = params->get("Sparse 3 Tensor Drop Tolerance", 1e-6);
+  do_error_tests = params->get("Do Error Tests", false);
+
   tmp2 = Teuchos::rcp(new Epetra_MultiVector(*base_map, num_blocks));
 
    // Build a vector polynomial out of matrix nonzeros
@@ -302,7 +305,17 @@ Stokhos::KLReducedMatrixFreeEpetraOp::setup()
       }
     }
   }
-    
+   
+  bool save_tensor = params->get("Save Sparse 3 Tensor To File", false);
+  if (save_tensor) {
+    static int idx = 0;
+    std::string basename = params->get("Sparse 3 Tensor Base Filename", 
+				       "sparse_KL_coeffs");
+    std::stringstream ss;
+    ss << basename << "_" << idx++ << ".mm";
+    sparse3Tensor2MatrixMarket(*sg_basis, *sparse_kl_coeffs, base_map->Comm(),
+			       ss.str());
+  }
 
   // Transform eigenvectors back to matrices
   kl_blocks.resize(num_KL_computed);

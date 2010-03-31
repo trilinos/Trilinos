@@ -59,15 +59,16 @@ int main(int argc, char **argv)
 #endif
 
     // Parse arguments
-    if (argc != 6) {
-      std::cout << "Usage:  Stokhos_sparsity_example.exe basis d p full/linear fname" << std::endl;
+    if (argc != 7) {
+      std::cout << "Usage:  Stokhos_sparsity_example.exe basis d p full/linear drop fname" << std::endl;
       exit(-1);
     }
     std::string basis_type(argv[1]);
     int d = std::atoi(argv[2]);
     int p = std::atoi(argv[3]);
     std::string Cijk_type(argv[4]);
-    std::string file(argv[5]);
+    double drop = std::atof(argv[5]);
+    std::string file(argv[6]);
 
     // Basis
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
@@ -85,7 +86,8 @@ int main(int argc, char **argv)
       }
     }
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
-      Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
+      Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases,
+								    drop));
 
     // Triple product tensor
     Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk;
