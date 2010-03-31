@@ -258,9 +258,12 @@ void insert_in_hash(
 )
 {
 int j;
+ZOLTAN_ID_TYPE gid;
+
+  gid = (ZOLTAN_ID_TYPE)globalID;
   New_Elem_Hash_Nodes[localID].globalID = globalID;
   New_Elem_Hash_Nodes[localID].localID = localID;
-  j = Zoltan_Hash((ZOLTAN_ID_PTR) &globalID,1,New_Elem_Index_Size);
+  j = Zoltan_Hash(&gid,1,New_Elem_Index_Size);
   New_Elem_Hash_Nodes[localID].next = New_Elem_Hash_Table[j];
   New_Elem_Hash_Table[j] = localID;
 }
@@ -276,7 +279,7 @@ int find_in_hash(
 int idx;
 
   ZOLTAN_ID_TYPE tmp;
-  tmp = globalID;
+  tmp = (ZOLTAN_ID_TYPE)globalID;
   idx = Zoltan_Hash(&tmp, 1, New_Elem_Index_Size);
   idx = New_Elem_Hash_Table[idx];
   while (idx != -1 && New_Elem_Hash_Nodes[idx].globalID != globalID) {
@@ -293,7 +296,7 @@ void remove_from_hash(
 int idx, hidx, prev;
 
   ZOLTAN_ID_TYPE tmp;
-  tmp = globalID;
+  tmp = (ZOLTAN_ID_TYPE)globalID;
   hidx = Zoltan_Hash(&tmp, 1, New_Elem_Index_Size);
   idx = New_Elem_Hash_Table[hidx];
   prev = -1;
@@ -446,7 +449,7 @@ char msg[256];
     if (export_procs[i] != proc) {
       /* Export is moving to a new processor */
       New_Elem_Index[exp_elem] = -1;
-      remove_from_hash(export_global_ids[gid+i*num_gid_entries]);
+      remove_from_hash((int)export_global_ids[gid+i*num_gid_entries]);
       proc_ids[exp_elem] = export_procs[i];
     }
   }
@@ -460,7 +463,7 @@ char msg[256];
         if (New_Elem_Index[j] == -1) break;
 
       New_Elem_Index[j] = import_global_ids[gid+i*num_gid_entries];
-      insert_in_hash((int) import_global_ids[gid+i*num_gid_entries], j);
+      insert_in_hash((int)import_global_ids[gid+i*num_gid_entries], j);
     }
   }
 
@@ -954,7 +957,7 @@ void migrate_unpack_elem(void *data, int num_gid_entries, ZOLTAN_ID_PTR elem_gid
 
   MPI_Comm_rank(MPI_COMM_WORLD, &proc);
 
-  idx = find_in_hash(elem_gid[gid]);
+  idx = find_in_hash((int)elem_gid[gid]);
   if (idx >= 0) 
     idx = New_Elem_Hash_Nodes[idx].localID;
   else {

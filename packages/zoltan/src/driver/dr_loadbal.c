@@ -1537,10 +1537,10 @@ void get_edge_list (void *data, int num_gid_entries, int num_lid_entries,
 
     for (k = 0; k < gid; k++) nbor_global_id[k+j*num_gid_entries] = 0;
     if (local_elem >= 0){
-      nbor_global_id[gid+j*num_gid_entries] = elem[local_elem].globalID;
+      nbor_global_id[gid+j*num_gid_entries] = (ZOLTAN_ID_TYPE)elem[local_elem].globalID;
     }
     else { /* adjacent element on another processor */
-      nbor_global_id[gid+j*num_gid_entries] = current_elem->adj[i];
+      nbor_global_id[gid+j*num_gid_entries] = (ZOLTAN_ID_TYPE)current_elem->adj[i];
     }
     nbor_procs[j] = current_elem->adj_proc[i];
 
@@ -2172,7 +2172,7 @@ int ngid = num_gid_entries-1;
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-ELEM_INFO *search_by_global_id(MESH_INFO *mesh, int global_id, int *idx)
+ELEM_INFO *search_by_global_id(MESH_INFO *mesh, ZOLTAN_ID_TYPE global_id, int *idx)
 {
 /*
  * Function that searchs for an element based upon its global ID.
@@ -2190,7 +2190,7 @@ ELEM_INFO *elem, *found_elem = NULL;
   elem = mesh->elements;
 
   for (i = 0; i < mesh->elem_array_len; i++)
-    if (elem[i].globalID == global_id) {
+    if (elem[i].globalID == (int)global_id) {
       found_elem = &elem[i];
       *idx = i;
       break;
@@ -2223,6 +2223,7 @@ int max_part, gmax_part;
 int test_both;  /* If true, test both Zoltan_*_Assign and Zoltan_*_PP_Assign. */
 		/* If false, test only Zoltan_*_PP_Assign.                    */
 		/* True if # parts == # processors.                      */
+ZOLTAN_ID_TYPE zgid, zlid;
 
   /* Find maximum part number across all processors. */
   MPI_Comm_size(MPI_COMM_WORLD, &Num_Proc);
@@ -2259,8 +2260,11 @@ int test_both;  /* If true, test both Zoltan_*_Assign and Zoltan_*_PP_Assign. */
       if (mesh->num_dims > 2)
 	x[2] = current_elem->coord[0][2];
     }
-    else
-      get_geom((void *) mesh, 1, 1, &gid, &lid, x, &iierr);
+    else{
+      zgid = (ZOLTAN_ID_TYPE)gid;
+      zlid = (ZOLTAN_ID_TYPE)lid;
+      get_geom((void *) mesh, 1, 1, &zgid, &zlid, x, &iierr);
+    }
 
     xlo[0] = x[0];
     xlo[1] = x[1];

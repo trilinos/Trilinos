@@ -120,8 +120,8 @@ int main(int argc, char *argv[])
   Test.Drops = 0;
   Test.RCB_Box = 0;
   Test.Multi_Callbacks = 0;
-  Test.Graph_Callbacks = 1;
-  Test.Hypergraph_Callbacks = 1;
+  Test.Graph_Callbacks = 0;
+  Test.Hypergraph_Callbacks = 0;
   Test.Gen_Files = 0;
   Test.Null_Lists = NONE;
   Test.Dynamic_Weights = .0;

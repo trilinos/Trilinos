@@ -2,6 +2,9 @@
 ## a basic makefile to build examples
 ##
 
+## Turn on this flag if Zoltan was built with this flag
+ADDRESS_SPACE_FLAG = -DUSE_32_BIT_ADDRESS_SPACE
+
 ## Location of zoltan library, also location of Zoltan_config.h if
 ## using the autoconf build harness
 
@@ -52,8 +55,8 @@ MPI_INCLUDE=
 MPI_LIBS=
 
 
-CFLAGS=-g -Wall
-CXXFLAGS=-g -Wall
+CFLAGS = -g -Wall $(ADDRESS_SPACE_FLAG)
+CXXFLAGS = -g -Wall $(ADDRESS_SPACE_FLAG)
 
 C_EXAMPLES = simpleBLOCK  simpleRCB simpleGRAPH simplePHG migrateGRAPH
 

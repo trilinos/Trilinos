@@ -321,6 +321,22 @@ FILE *fp;
 MPI_Status status;
 int ack_tag = 5, count_tag = 10, id_tag = 15;
 int x_tag = 20, y_tag = 25;
+char gid_specifier[16];
+
+  /* If Zoltan is compiled on a 32 bit machine, is uses 32 bit global IDs.
+   * If it is compiled on a 64 bit machine with -DUSE_32_BIT_ADDRESS_SPACE
+   * it also uses 32 bit global IDs.  Otherwise it uses 64 bit global IDs.
+   */
+
+  if (sizeof(ZOLTAN_ID_TYPE) > sizeof(long)){
+    strcpy(gid_specifier,"%ld");
+  }
+  else if (sizeof(ZOLTAN_ID_TYPE) > sizeof(long long)){
+    strcpy(gid_specifier,"%Ld");
+  }
+  else{
+    strcpy(gid_specifier,"%d");
+  }
 
   if (myRank == 0){
 
@@ -350,8 +366,14 @@ int x_tag = 20, y_tag = 25;
 
       num = get_next_line(fp, buf, bufsize);
       if (num == 0) input_file_error(numProcs, count_tag, 1);
-      num = sscanf(buf, "%ld %f %f", myMesh->myGlobalIDs + i, myMesh->x + i, myMesh->y + i);
-      if (num != 3) input_file_error(numProcs, count_tag, 1);
+
+      num = sscanf(buf, gid_specifier, myMesh->myGlobalIDs + i);
+
+      if (num != 1) input_file_error(numProcs, count_tag, 1);
+
+      num = sscanf(buf, "%f %f", myMesh->x + i, myMesh->y + i);
+
+      if (num != 2) input_file_error(numProcs, count_tag, 1);
     }
 
     gids = (Z_INT64 *)malloc(sizeof(Z_INT64) * (nobj + 1));
@@ -379,8 +401,10 @@ int x_tag = 20, y_tag = 25;
         for (j=0; j < nobj; j++){
           num = get_next_line(fp, buf, bufsize);
           if (num == 0) input_file_error(numProcs, count_tag, i);
-          num = sscanf(buf, "%ld %f %f", gids + j, xcoord + j, ycoord + j);
-          if (num != 3) input_file_error(numProcs, count_tag, i);
+          num = sscanf(buf, gid_specifier, gids + j);
+          if (num != 1) input_file_error(numProcs, count_tag, i);
+          num = sscanf(buf, "%f %f", xcoord + j, ycoord + j);
+          if (num != 2) input_file_error(numProcs, count_tag, i);
         }
       }
 

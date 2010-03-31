@@ -1725,7 +1725,7 @@ int ngid = num_gid_entries-1;
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-ELEM_INFO *search_by_global_id(MESH_INFO *mesh, int global_id, int *idx)
+ELEM_INFO *search_by_global_id(MESH_INFO *mesh, ZOLTAN_ID_TYPE global_id, int *idx)
 {
 /*
  * Function that searchs for an element based upon its global ID.
@@ -1743,7 +1743,7 @@ ELEM_INFO *elem, *found_elem = NULL;
   elem = mesh->elements;
 
   for (i = 0; i < mesh->elem_array_len; i++)
-    if (elem[i].globalID == global_id) {
+    if (elem[i].globalID == (int)global_id) {
       found_elem = &elem[i];
       *idx = i;
       break;
@@ -1775,6 +1775,7 @@ int max_part, gmax_part;
 int test_both;  /* If true, test both Zoltan_*_Assign and Zoltan_*_PP_Assign. */
 		/* If false, test only Zoltan_*_PP_Assign.                    */
 		/* True if # partitions == # processors.                      */
+ZOLTAN_ID_TYPE zgid, zlid;
 
   /* Find maximum partition number across all processors. */
   int Num_Proc = 0;
@@ -1804,8 +1805,8 @@ int test_both;  /* If true, test both Zoltan_*_Assign and Zoltan_*_PP_Assign. */
     double x[3] = {0., 0., 0.};
     int iierr = 0;
     ELEM_INFO_PTR current_elem = &(mesh->elements[0]);
-    Z_INT64 lid = 0;
-    Z_INT64 gid = (unsigned) (current_elem->globalID);
+    int lid = 0;
+    int gid = (unsigned) (current_elem->globalID);
 
     if (mesh->eb_nnodes[current_elem->elem_blk] == 1) {
       x[0] = current_elem->coord[0][0];
@@ -1814,8 +1815,11 @@ int test_both;  /* If true, test both Zoltan_*_Assign and Zoltan_*_PP_Assign. */
       if (mesh->num_dims > 2)
 	x[2] = current_elem->coord[0][2];
     }
-    else
-      get_geom((void *) mesh, 1, 1, &gid, &lid, x, &iierr);
+    else{
+      zgid = (ZOLTAN_ID_TYPE)gid;
+      zlid = (ZOLTAN_ID_TYPE)lid;
+      get_geom((void *) mesh, 1, 1, &zgid, &zlid, x, &iierr);
+    }
 
     xlo[0] = x[0];
     xlo[1] = x[1];
