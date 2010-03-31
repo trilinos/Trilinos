@@ -170,7 +170,11 @@ def DetectLatestCMakeBuilds(basedir, baseurl, vdir):
   url = ''.join([baseurl, "/", vdir, "/?C=M;O=D"])
   filename = ''.join([basedir, "/CMake_", vdir, ".html"])
 
-  createDir(basedir)
+  try:
+    createDir(basedir)
+  except:
+    if not os.path.exists(basedir):
+      raise
 
   print "Querying " + url + "..."
 
@@ -260,7 +264,11 @@ def Download(basedir, url):
 
   print 'Downloading ' + href + '...'
 
-  createDir(basedir)
+  try:
+    createDir(basedir)
+  except:
+    if not os.path.exists(basedir):
+      raise
 
   proxies = None # if None, use proxy from env var http_proxy
   if not options.httpProxy == "":
@@ -329,7 +337,12 @@ def Install(basedir, url):
   else:
     # avoid the "copytree doesn't work if dir already exists" problem by using
     # the sys command "cp"
-    createDir(options.installDir)
+    try:
+      createDir(options.installDir)
+    except:
+      if not os.path.exists(options.installDir):
+        raise
+
     echoRunSysCmnd("cp -r \"" + dirname + "/\" \"" + options.installDir + "\"")
 
 

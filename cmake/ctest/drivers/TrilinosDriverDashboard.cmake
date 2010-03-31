@@ -62,9 +62,11 @@ endif()
 
 set(git_exe "$ENV{TDD_GIT_EXE}")
 if("${git_exe}" STREQUAL "")
-  find_program(git_exe NAMES eg git git.cmd)
+  find_program(git_exe NAMES git.cmd eg git)
 endif()
-set(CTEST_UPDATE_COMMAND "${git_exe}")
+if(git_exe)
+  set(CTEST_UPDATE_COMMAND "${git_exe}")
+endif()
 
 ctest_empty_binary_directory("${CTEST_BINARY_DIRECTORY}")
 ctest_start("Experimental")

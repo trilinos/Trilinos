@@ -547,9 +547,16 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
     FIND_PROGRAM(GIT_EXE NAMES ${GIT_NAME})
     MESSAGE("GIT_EXE=${GIT_EXE}")
 
+    IF(NOT GIT_EXE)
+      QUEUE_ERROR("error: could not find git: GIT_EXE='${GIT_EXE}'")
+    ENDIF()
+    IF(NOT EXISTS "${GIT_EXE}")
+      QUEUE_ERROR("error: GIT_EXE='${GIT_EXE}' does not exist")
+    ENDIF()
+
     SET(UPDATE_TYPE "git")
     MESSAGE("UPDATE_TYPE = '${UPDATE_TYPE}'")
-    
+
     SET(CTEST_UPDATE_COMMAND "${GIT_EXE}")
     MESSAGE("CTEST_UPDATE_COMMAND='${CTEST_UPDATE_COMMAND}'")
     IF(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}")
@@ -561,11 +568,11 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
       MESSAGE("${CTEST_SOURCE_DIRECTORY} exists so skipping the initial checkout.")
     ENDIF()
   ENDIF() 
-  
+
   #
   # Empty out the binary directory
   #
-  
+
   IF (CTEST_START_WITH_EMPTY_BINARY_DIRECTORY)
     MESSAGE("Cleaning out binary directory '${CTEST_BINARY_DIRECTORY}' ...")
     CTEST_EMPTY_BINARY_DIRECTORY("${CTEST_BINARY_DIRECTORY}")
@@ -580,7 +587,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   #
   # Start up a new dashbaord
   #
-  
+
   IF(Trilinos_TRACK)
     CTEST_START(${CTEST_TEST_TYPE} TRACK ${Trilinos_TRACK})
   ELSE()
@@ -592,6 +599,12 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   #
 
   IF (CTEST_DO_UPDATES)
+
+    IF(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}")
+      QUEUE_ERROR("error: source directory does not exist just prior to CTEST_UPDATE call -- initial checkout did not work")
+      REPORT_QUEUED_ERRORS()
+      RETURN()
+    ENDIF()
 
     MESSAGE("Doing GIT update of '${CTEST_SOURCE_DIRECTORY}' ...")
     CTEST_UPDATE( SOURCE "${CTEST_SOURCE_DIRECTORY}"
@@ -630,6 +643,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
       IF(UPDATE_RETURN_VAL EQUAL 0)
         IF(NOT CTEST_START_WITH_EMPTY_BINARY_DIRECTORY) # indicator of '1st time'...
           MESSAGE("CTEST_UPDATE reported no changes for Continuous - returning early...")
+          REPORT_QUEUED_ERRORS()
           RETURN()
         ENDIF()
       ENDIF()
@@ -680,6 +694,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
     IF (CTEST_DO_SUBMIT)
       CTEST_SUBMIT( PARTS update notes )
     ENDIF()
+    REPORT_QUEUED_ERRORS()
     RETURN()
   ENDIF()
 
@@ -707,9 +722,8 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   IF (CTEST_DO_SUBMIT)
     CTEST_SUBMIT( FILES
       "${TRILINOS_CMAKE_DIR}/python/data/CDashSubprojectDependencies.xml"
-      RETURN_VALUE SUBMIT_RETURN_VAL
       )
-    MESSAGE("\nSubmitted subproject dependencies: Return='${SUBMIT_RETURN_VAL}'")
+    MESSAGE("\nSubmitted subproject dependencies")
   ENDIF()
 
   #
