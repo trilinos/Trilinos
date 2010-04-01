@@ -33,6 +33,7 @@
 #include "Tifpack_ConfigDefs.hpp"
 #include "Tifpack_Preconditioner.hpp"
 #include "Tifpack_Relaxation.hpp"
+#include "Tifpack_Diagonal.hpp"
 #include "Tifpack_Chebyshev.hpp"
 #include "Tifpack_RILUK.hpp"
 #include "Tifpack_ILUT.hpp"
@@ -56,6 +57,7 @@ create requires 3 arguments:
   overlap among the processes.
 
 The first argument can assume the following values:
+- \c "DIAGONAL"  : returns an instance of Tifpack::Diagonal.
 - \c "RELAXATION"  : returns an instance of Tifpack::Relaxation.
 - \c "CHEBYSHEV"   : returns an instance of Tifpack::Chebyshev (overlap is ignored).
 - \c "ILUT"        : returns an instance of Tifpack::ILUT.
@@ -152,6 +154,9 @@ Factory::create(const std::string& prec_type,
   }
   else if (prec_type == "CHEBYSHEV") {
     prec = Teuchos::rcp(new Tifpack::Chebyshev<MatrixType>(matrix));
+  }
+  else if (prec_type == "DIAGONAL") {
+    prec = Teuchos::rcp(new Tifpack::Diagonal<MatrixType>(matrix));
   }
   else {
     std::ostringstream os;

@@ -545,7 +545,7 @@ void ILUT<MatrixType>::apply(
                typename MatrixType::scalar_type beta) const
 {
   TEST_FOR_EXCEPTION(!isComputed(), std::runtime_error,
-    "Tifpack::ILUT::apply() ERROR, Computed() hasn't been called yet.");
+    "Tifpack::ILUT::apply() ERROR, compute() hasn't been called yet.");
 
   TEST_FOR_EXCEPTION(X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
     "Tifpack::ILUT::apply() ERROR, X.getNumVectors() != Y.getNumVectors().");
