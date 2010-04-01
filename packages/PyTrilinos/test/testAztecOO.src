@@ -110,7 +110,7 @@ class AztecOOTestCase(unittest.TestCase):
 
     def testVersion(self):
         "Test AztecOO AztecOO_Version function"
-        front   = "AztecOO Version "
+        front   = "AztecOO in Trilinos "
         version = AztecOO.AztecOO_Version()
         self.assertEquals(version[:len(front)], front)
 
