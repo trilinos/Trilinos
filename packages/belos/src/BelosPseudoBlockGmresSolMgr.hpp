@@ -267,7 +267,6 @@ namespace Belos {
     static const MagnitudeType orthoKappa_default_;
     static const int maxRestarts_default_;
     static const int maxIters_default_;
-    static const bool adaptiveBlockSize_default_;
     static const bool showMaxResNormOnly_default_;
     static const int blockSize_default_;
     static const int numBlocks_default_;
@@ -285,7 +284,7 @@ namespace Belos {
     MagnitudeType convtol_, orthoKappa_;
     int maxRestarts_, maxIters_, numIters_;
     int blockSize_, numBlocks_, verbosity_, outputStyle_, outputFreq_, defQuorum_;
-    bool adaptiveBlockSize_, showMaxResNormOnly_;
+    bool showMaxResNormOnly_;
     std::string orthoType_; 
     std::string impResScale_, expResScale_;       
  
@@ -311,9 +310,6 @@ const int PseudoBlockGmresSolMgr<ScalarType,MV,OP>::maxRestarts_default_ = 20;
 
 template<class ScalarType, class MV, class OP>
 const int PseudoBlockGmresSolMgr<ScalarType,MV,OP>::maxIters_default_ = 1000;
-
-template<class ScalarType, class MV, class OP>
-const bool PseudoBlockGmresSolMgr<ScalarType,MV,OP>::adaptiveBlockSize_default_ = true;
 
 template<class ScalarType, class MV, class OP>
 const bool PseudoBlockGmresSolMgr<ScalarType,MV,OP>::showMaxResNormOnly_default_ = false;
@@ -366,7 +362,6 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP>::PseudoBlockGmresSolMgr() :
   outputStyle_(outputStyle_default_),
   outputFreq_(outputFreq_default_),
   defQuorum_(defQuorum_default_),
-  adaptiveBlockSize_(adaptiveBlockSize_default_),
   showMaxResNormOnly_(showMaxResNormOnly_default_),
   orthoType_(orthoType_default_),
   impResScale_(impResScale_default_),
@@ -395,7 +390,6 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP>::PseudoBlockGmresSolMgr(
   outputStyle_(outputStyle_default_),
   outputFreq_(outputFreq_default_),
   defQuorum_(defQuorum_default_),
-  adaptiveBlockSize_(adaptiveBlockSize_default_),
   showMaxResNormOnly_(showMaxResNormOnly_default_),
   orthoType_(orthoType_default_),
   impResScale_(impResScale_default_),
@@ -452,14 +446,6 @@ void PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
 
     // Update parameter in our list.
     params_->set("Block Size", blockSize_);
-  }
-
-  // Check if the blocksize should be adaptive
-  if (params->isParameter("Adaptive Block Size")) {
-    adaptiveBlockSize_ = params->get("Adaptive Block Size",adaptiveBlockSize_default_);
-    
-    // Update parameter in our list.
-    params_->set("Adaptive Block Size", adaptiveBlockSize_);
   }
 
   // Check for the maximum number of blocks.
@@ -727,9 +713,6 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP>::getValidParameters() const
       "for each set of RHS solved.");
     pl->set("Block Size", blockSize_default_,
       "The number of RHS solved simultaneously.");
-    pl->set("Adaptive Block Size", adaptiveBlockSize_default_,
-      "Whether the solver manager should adapt the block size\n"
-      "based on the number of RHS to solve.");
     pl->set("Verbosity", verbosity_default_,
       "What type(s) of solver information should be outputted\n"
       "to the output stream.");
@@ -861,23 +844,10 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   int numRHS2Solve = MVT::GetNumberVecs( *(problem_->getRHS()) );
   int numCurrRHS = ( numRHS2Solve < blockSize_) ? numRHS2Solve : blockSize_;
 
-  std::vector<int> currIdx;
-  //  If an adaptive block size is allowed then only the linear systems that need to be solved are solved.
-  //  Otherwise, the index set is generated that informs the linear problem that some linear systems are augmented.
-  if ( adaptiveBlockSize_ ) {
-    blockSize_ = numCurrRHS;
-    currIdx.resize( numCurrRHS  );
-    for (int i=0; i<numCurrRHS; ++i) 
-      { currIdx[i] = startPtr+i; }
-    
-  }
-  else {
-    currIdx.resize( blockSize_ );
-    for (int i=0; i<numCurrRHS; ++i) 
-      { currIdx[i] = startPtr+i; }
-    for (int i=numCurrRHS; i<blockSize_; ++i) 
-      { currIdx[i] = -1; }
-  }
+  std::vector<int> currIdx( numCurrRHS );
+  blockSize_ = numCurrRHS;
+  for (int i=0; i<numCurrRHS; ++i) 
+    { currIdx[i] = startPtr+i; }
 
   // Inform the linear problem of the current linear system to solve.
   problem_->setLSIndex( currIdx );
@@ -1153,27 +1123,19 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       if ( numRHS2Solve > 0 ) {
 	numCurrRHS = ( numRHS2Solve < blockSize_) ? numRHS2Solve : blockSize_;
 
-	if ( adaptiveBlockSize_ ) {
-          blockSize_ = numCurrRHS;
-	  currIdx.resize( numCurrRHS  );
-	  for (int i=0; i<numCurrRHS; ++i) 
-	    { currIdx[i] = startPtr+i; }	  
+        blockSize_ = numCurrRHS;
+	currIdx.resize( numCurrRHS  );
+	for (int i=0; i<numCurrRHS; ++i) 
+	  { currIdx[i] = startPtr+i; }	  
 	  
-	  // Adapt the status test quorum if we need to.
-	  if (defQuorum_ > blockSize_) {
-	    if (impConvTest_ != Teuchos::null)
-	      impConvTest_->setQuorum( blockSize_ );
-	    if (expConvTest_ != Teuchos::null)
-	      expConvTest_->setQuorum( blockSize_ );
-	  }
+	// Adapt the status test quorum if we need to.
+	if (defQuorum_ > blockSize_) {
+	  if (impConvTest_ != Teuchos::null)
+	    impConvTest_->setQuorum( blockSize_ );
+	  if (expConvTest_ != Teuchos::null)
+	    expConvTest_->setQuorum( blockSize_ );
 	}
-	else {
-	  currIdx.resize( blockSize_ );
-	  for (int i=0; i<numCurrRHS; ++i) 
-	    { currIdx[i] = startPtr+i; }
-	  for (int i=numCurrRHS; i<blockSize_; ++i) 
-	    { currIdx[i] = -1; }
-	}
+
 	// Set the next indices.
 	problem_->setLSIndex( currIdx );
       }
