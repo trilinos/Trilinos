@@ -406,7 +406,7 @@ void BlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuchos:
   }
 
   // Check if the blocksize should be adaptive
-  if (params->isParameter("Adapative Block Size")) {
+  if (params->isParameter("Adaptive Block Size")) {
     adaptiveBlockSize_ = params->get("Adaptive Block Size",adaptiveBlockSize_default_);
     
     // Update parameter in our list.
