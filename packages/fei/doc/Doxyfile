@@ -16,7 +16,6 @@ INPUT                  = ./index.doc \
                          ../fei_base.hpp \
                          ../fei_fwd.hpp \
                          ../support-Trilinos \
-                         ../support-PETSc \
                          ../test_utils
                          
 IMAGE_PATH             =
