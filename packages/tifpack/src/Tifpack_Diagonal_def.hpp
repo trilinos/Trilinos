@@ -43,9 +43,11 @@ Diagonal<MatrixType>::Diagonal(const Teuchos::RCP<const MatrixType>& A)
    rangeMap_(A->getRangeMap()),
    matrix_(A),
    inversediag_(),
+   numInitialize_(0),
+   numCompute_(0),
+   numApply_(0),
    condEst_(-1.0)
 {
-  compute();
 }
 
 template<class MatrixType>
@@ -56,9 +58,11 @@ Diagonal<MatrixType>::Diagonal(const Teuchos::RCP<const Tpetra::Vector<Scalar,Lo
    rangeMap_(),
    matrix_(),
    inversediag_(diag),
+   numInitialize_(0),
+   numCompute_(0),
+   numApply_(0),
    condEst_(-1.0)
 {
-  compute();
 }
 
 template<class MatrixType>
@@ -74,6 +78,7 @@ void Diagonal<MatrixType>::setParameters(const Teuchos::ParameterList& /*params*
 template<class MatrixType>
 void Diagonal<MatrixType>::initialize()
 {
+  if (isInitialized_ == true) return;
   isInitialized_ = true;
   ++numInitialize_;
   //nothing to do
@@ -106,6 +111,9 @@ void Diagonal<MatrixType>::apply(const Tpetra::MultiVector<Scalar,LocalOrdinal,G
                  Scalar alpha,
                  Scalar beta) const
 {
+  TEST_FOR_EXCEPTION(!isComputed(), std::runtime_error,
+    "Tifpack::Diagonal::apply() ERROR, compute() hasn't been called yet.");
+
   ++numApply_;
   Y.elementWiseMultiply(alpha, *inversediag_, X, beta);
 }

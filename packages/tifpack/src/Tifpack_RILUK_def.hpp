@@ -43,7 +43,9 @@ RILUK<MatrixType>::RILUK(const Teuchos::RCP<const MatrixType>& Matrix_in)
     NumMyDiagonals_(0),
     isAllocated_(false),
     isInitialized_(false),
-    numInitialized_(0),
+    numInitialize_(0),
+    numCompute_(0),
+    numApply_(0),
     Factored_(false),
     RelaxValue_(0.0),
     Athresh_(0.0),
@@ -141,6 +143,8 @@ void RILUK<MatrixType>::initialize() {
   else {
     initAllValues(*A_);
   }
+
+  ++numInitialize_;
 }
 
 //==========================================================================
@@ -272,8 +276,6 @@ void RILUK<MatrixType>::compute() {
   TEST_FOR_EXCEPTION(isComputed() == true, std::runtime_error,
       "Tifpack::RILUK::compute() ERROR: Can't have already computed factors.");
 
-  setInitialized(false);
-
   // MinMachNum should be officially defined, for now pick something a little 
   // bigger than IEEE underflow value
 
@@ -400,6 +402,7 @@ void RILUK<MatrixType>::compute() {
   //UpdateFlops(total_flops); // Update flop count
 
   setFactored(true);
+  ++numCompute_;
 }
 
 //=============================================================================
@@ -407,7 +410,11 @@ template<class MatrixType>
 void RILUK<MatrixType>::apply(
        const Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X, 
              Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y,
-             Teuchos::ETransp mode, Scalar alpha, Scalar beta) const {
+             Teuchos::ETransp mode, Scalar alpha, Scalar beta) const
+{
+  TEST_FOR_EXCEPTION(!isComputed(), std::runtime_error,
+    "Tifpack::RILUK::apply() ERROR, compute() hasn't been called yet.");
+
 //
 // This function finds Y such that
 // LDU Y = X, or
@@ -439,6 +446,8 @@ void RILUK<MatrixType>::apply(
     L_->solve(*Y1, *Y1,mode);
     if (isOverlapped_) {Y.doExport(*Y1,*U_->getGraph()->getImporter(), OverlapMode_);} // Export computed Y values if needed
   } 
+
+  ++numApply_;
 }
 
 //=============================================================================
