@@ -14,6 +14,13 @@
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_EpetraRowMatrix.hpp"
 
+#ifdef HAVE_MPI
+#  include "Epetra_MpiComm.h"
+#else
+#  include "Epetra_SerialComm.h"
+#endif
+
+
 namespace Teuchos {
   template <>
     ScalarTraits<int>::magnitudeType
@@ -56,7 +63,6 @@ namespace {
   using std::swap;
   using Teuchos::Array;
   using Teuchos::ArrayView;
-  using Tpetra::InverseOperator;
   using Tpetra::Operator;
   using Tpetra::CrsMatrix;
   using Tpetra::CrsGraph;
@@ -164,9 +170,15 @@ namespace {
     TEST_EQUALITY( matrix->getGlobalNumDiags(), numImages*numLocal );
     TEST_EQUALITY( matrix->getGlobalNumEntries(), 3*numImages*numLocal - 2 );
 
+#ifdef HAVE_MPI
+    Epetra_MpiComm ecomm(MPI_COMM_WORLD);
+#else
+    Epetra_SerialComm ecomm;
+#endif
+
     //now create the EpetraRowMatrix class, which is the real target of this
     //unit-test:
-    Tpetra::EpetraRowMatrix<MAT> erowmat(matrix, MPI_COMM_WORLD);
+    Tpetra::EpetraRowMatrix<MAT> erowmat(matrix, ecomm);
 
     int myRow = numLocal/2;
     int erowmat_NumMyRowEntries = -1;
@@ -186,7 +198,6 @@ namespace {
     tmv2.putScalar(0.0);
     matrix->apply(tmv1,tmv2);
 
-    Epetra_MpiComm ecomm(MPI_COMM_WORLD);
     Epetra_BlockMap emap(numImages*numLocal, 1, 0, ecomm);
     Epetra_MultiVector emv1(emap,numVecs), emv2(emap,numVecs);
     emv1.PutScalar(1.0);

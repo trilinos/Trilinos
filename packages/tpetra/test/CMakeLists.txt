@@ -21,7 +21,6 @@ PACKAGE_ADD_LIBRARY(
 )
 
 
-IF (Tpetra_ENABLE_Epetra AND Tpetra_HAVE_MPI)
+IF (Tpetra_ENABLE_Epetra)
   ADD_SUBDIRECTORY(EpetraRowMatrix)
 ENDIF()
-

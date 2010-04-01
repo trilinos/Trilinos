@@ -3,11 +3,9 @@
 
 #include <Tpetra_ConfigDefs.hpp>
 
-#if defined(HAVE_TPETRA_EPETRA) && defined(HAVE_TPETRA_MPI)
+#if defined(HAVE_TPETRA_EPETRA)
 
-#include <mpi.h>
-
-#include <Epetra_MpiComm.h>
+#include <Epetra_Comm.h>
 #include <Epetra_BasicRowMatrix.h>
 #include <Tpetra_CrsMatrix.hpp>
 
@@ -18,7 +16,7 @@ namespace Tpetra
 template<class TpetraMatrixType>
 class EpetraRowMatrix : public Epetra_BasicRowMatrix {
 public:
-  EpetraRowMatrix(Teuchos::RCP<TpetraMatrixType> mat, MPI_Comm mpicomm);
+  EpetraRowMatrix(const Teuchos::RCP<TpetraMatrixType> &mat, const Epetra_Comm &comm);
   virtual ~EpetraRowMatrix();
 
   int ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const;
@@ -36,17 +34,18 @@ private:
 };//class EpetraRowMatrix
 
 template<class TpetraMatrixType>
-EpetraRowMatrix<TpetraMatrixType>::EpetraRowMatrix(Teuchos::RCP<TpetraMatrixType> mat, MPI_Comm mpicomm)
- : Epetra_BasicRowMatrix(Epetra_MpiComm(mpicomm)),
+EpetraRowMatrix<TpetraMatrixType>::EpetraRowMatrix(
+  const Teuchos::RCP<TpetraMatrixType> &mat, const Epetra_Comm &comm
+  )
+ : Epetra_BasicRowMatrix(comm),
    tpetra_matrix_(mat)
 {
-  Epetra_MpiComm ecomm(mpicomm);
   int globalNumRows = tpetra_matrix_->getRowMap()->getGlobalNumElements();
   int globalNumCols = tpetra_matrix_->getColMap()->getGlobalNumElements();
   Teuchos::ArrayView<const int> row_elem_list = tpetra_matrix_->getRowMap()->getNodeElementList();
   Teuchos::ArrayView<const int> col_elem_list = tpetra_matrix_->getColMap()->getNodeElementList();
-  Epetra_Map rowmap(globalNumRows, row_elem_list.size(), row_elem_list.getRawPtr(), 0, ecomm);
-  Epetra_Map colmap(globalNumCols, col_elem_list.size(), col_elem_list.getRawPtr(), 0, ecomm);
+  Epetra_Map rowmap(globalNumRows, row_elem_list.size(), row_elem_list.getRawPtr(), 0, comm);
+  Epetra_Map colmap(globalNumCols, col_elem_list.size(), col_elem_list.getRawPtr(), 0, comm);
   SetMaps(rowmap, colmap);
 }
 
@@ -89,9 +88,8 @@ int EpetraRowMatrix<TpetraMatrixType>::NumMyRowEntries(int MyRow, int & NumEntri
 
 }//namespace Tpetra
 
-//here is the #endif for defined(HAVE_TPETRA_EPETRA)&&defined(HAVE_TPETRA_MPI):
-#endif
+#endif // defined(HAVE_TPETRA_EPETRA)
 
 //here is the include-guard #endif:
-#endif
 
+#endif
