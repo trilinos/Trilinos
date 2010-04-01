@@ -155,7 +155,7 @@ example subdirectory of the PyTrilinos package:
 %include "Trilinos_Util_Version.h"
 %pythoncode
 %{
-__version__ = TriUtils_Version().split()[2]
+__version__ = TriUtils_Version().split()[3]
 %}
 
 /////////////////////////////////////////

@@ -204,7 +204,7 @@ example subdirectory of the PyTrilinos package:
 %include "AztecOO_Version.h"
 %pythoncode
 %{
-__version__ = AztecOO_Version().split()[2]
+__version__ = AztecOO_Version().split()[3]
 %}
 
 /////////////////////
