@@ -52,22 +52,22 @@ public:
   /** \brief . */
   bool isCompatible( const LinearOpBase<double> &fwdOp ) const;
   /** \brief . */
-  void getEpetraOpView(
-    const Teuchos::RCP<LinearOpBase<double> >   &fwdOp
-    ,Teuchos::RCP<Epetra_Operator>              *epetraOp
-    ,EOpTransp                                            *epetraOpTransp
-    ,EApplyEpetraOpAs                                   *epetraOpApplyAs
-    ,EAdjointEpetraOp                                   *epetraOpAdjointSupport
-    ,double                                             *epetraOpScalar
+  void getNonconstEpetraOpView(
+    const RCP<LinearOpBase<double> > &fwdOp,
+    const Ptr<RCP<Epetra_Operator> > &epetraOp,
+    const Ptr<EOpTransp> &epetraOpTransp,
+    const Ptr<EApplyEpetraOpAs> &epetraOpApplyAs,
+    const Ptr<EAdjointEpetraOp> &epetraOpAdjointSupport,
+    const Ptr<double> &epetraOpScalar
     ) const;
   /** \brief . */
   void getEpetraOpView(
-    const Teuchos::RCP<const LinearOpBase<double> >   &fwdOp
-    ,Teuchos::RCP<const Epetra_Operator>              *epetraOp
-    ,EOpTransp                                                  *epetraOpTransp
-    ,EApplyEpetraOpAs                                         *epetraOpApplyAs
-    ,EAdjointEpetraOp                                         *epetraOpAdjointSupport
-    ,double                                                   *epetraOpScalar
+    const RCP<const LinearOpBase<double> > &fwdOp,
+    const Ptr<RCP<const Epetra_Operator> > &epetraOp,
+    const Ptr<EOpTransp> &epetraOpTransp,
+    const Ptr<EApplyEpetraOpAs> &epetraOpApplyAs,
+    const Ptr<EAdjointEpetraOp> &epetraOpAdjointSupport,
+    const Ptr<double> &epetraOpScalar
     ) const;
 
   //@}

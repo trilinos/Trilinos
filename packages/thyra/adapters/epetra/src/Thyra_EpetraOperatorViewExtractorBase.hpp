@@ -58,23 +58,28 @@ public:
    * <tt>Epetra_Operator</tt> view of a <tt>Thyra::LinearOpBase</tt> object
    * and how the object is applied to implement the forward linear operator.
    *
-   * \param  fwdOp     [in] The forward linear operator that the view will be extracted from.
-   *                   This object may be a wrapped scaled/adjoint operator on input.  On output
-   *                   this object is "remembered" in the returned RCP for <tt>epetraOp</tt>.
-   * \param  epetraOp  [out] The non-<tt>const</tt> epetra operator view of <tt>*this</tt>.
-   * \param  epetraOpTransp
-   *                   [out] Determines if the operator is applied
-   *                   as its transpose or its non-transpose.
-   *                   The Client should use this value and ignore the value in
-   *                   <tt>(*epetraOp)->UseTranspose()</tt> since it has been shown to be
-   *                   problematic and error prone.
-   * \param  epetraOpApplyAs
-   *                  [out] Determines if the operator should be applied using
-   *                  <tt>(*epetraOp)->Apply(...)</tt> or using <tt>(*epetraOp)->ApplyInverse(...)</tt>.
-   * \param  epetraOpAdjointSupport
-   *                  [out] Determines if the operator supports transposes or not.
-   * \param  epetraOpScalar
-   *                  [out] The scalar from the wrapped scaled/adjoint linear operator
+   * \param fwdOp [in] The forward linear operator that the view will be
+   * extracted from.  This object may be a wrapped scaled/adjoint operator on
+   * input.  On output this object is "remembered" in the returned RCP for
+   * <tt>epetraOp</tt>.
+   *
+   * \param epetraOp [out] The non-<tt>const</tt> epetra operator view of
+   * <tt>*this</tt>.
+   *
+   * \param epetraOpTransp [out] Determines if the operator is applied as its
+   * transpose or its non-transpose.  The Client should use this value and
+   * ignore the value in <tt>(*epetraOp)->UseTranspose()</tt> since it has
+   * been shown to be problematic and error prone.
+   *
+   * \param epetraOpApplyAs [out] Determines if the operator should be applied
+   * using <tt>(*epetraOp)->Apply(...)</tt> or using
+   * <tt>(*epetraOp)->ApplyInverse(...)</tt>.
+   *
+   * \param epetraOpAdjointSupport [out] Determines if the operator supports
+   * transposes or not.
+   *
+   * \param epetraOpScalar [out] The scalar from the wrapped scaled/adjoint
+   * linear operator
    *
    * <b>Preconditions:</b></ul>
    * <li><tt>epetraOp!=NULL</tt>
@@ -85,7 +90,8 @@ public:
    *
    * <b>Posconditions:</b></ul>
    * <li><tt>epetraOp->get() != NULL</tt>
-   * <li><tt>fwdOp.count()</tt> is greater on output than on input and hense <tt>fwdOp</tt> is "remembered"
+   * <li><tt>fwdOp.count()</tt> is greater on output than on input and hense
+   *   <tt>fwdOp</tt> is "remembered"
    * </ul>
    *
    * The object accessed from <tt>*epetraOp</tt> is only guaranteed to be
@@ -100,36 +106,41 @@ public:
    * <tt>RCP</tt> object ancestor returned from this function goes
    * away, then <tt>*this</tt> will be updated to relect the change.
    */
-  virtual void getEpetraOpView(
-    const Teuchos::RCP<LinearOpBase<double> >   &fwdOp
-    ,Teuchos::RCP<Epetra_Operator>              *epetraOp
-    ,EOpTransp                                            *epetraOpTransp
-    ,EApplyEpetraOpAs                                   *epetraOpApplyAs
-    ,EAdjointEpetraOp                                   *epetraOpAdjointSupport
-    ,double                                             *epetraOpScalar
+  virtual void getNonconstEpetraOpView(
+    const RCP<LinearOpBase<double> > &fwdOp,
+    const Ptr<RCP<Epetra_Operator> > &epetraOp,
+    const Ptr<EOpTransp> &epetraOpTransp,
+    const Ptr<EApplyEpetraOpAs> &epetraOpApplyAs,
+    const Ptr<EAdjointEpetraOp> &epetraOpAdjointSupport,
+    const Ptr<double> &epetraOpScalar
     ) const = 0;
 
   /** \brief Gat a smart pointer to a <tt>const</tt>
    * <tt>Epetra_Operator</tt> view of a <tt>Thyra::LinearOpBase</tt> object
    * and how the object is applied to implement the forward linear operator.
    *
-   * \param  fwdOp     [in] The forward linear operator that the view will be extracted from.
-   *                   This object may be a wrapped scaled/adjoint operator on input.  On output
-   *                   this object is "remembered" in the returned RCP for <tt>epetraOp</tt>.
-   * \param  epetraOp  [out] The <tt>const</tt> epetra operator view of <tt>*this</tt>.
-   * \param  epetraOpTransp
-   *                   [out] Determines if the operator is applied
-   *                   as its transpose or its non-transpose.
-   *                   The Client should use this value and ignore the value in
-   *                   <tt>(*epetraOp)->UseTranspose()</tt> since it has been shown to be
-   *                   problematic and error prone.
-   * \param  epetraOpApplyAs
-   *                  [out] Determines if the operator should be applied using
-   *                  <tt>(*epetraOp)->Apply(...)</tt> or using <tt>(*epetraOp)->ApplyInverse(...)</tt>.
-   * \param  epetraOpAdjointSupport
-   *                  [out] Determines if the operator supports transposes or not.
-   * \param  epetraOpScalar
-   *                  [out] The scalar from the wrapped scaled/adjoint linear operator
+   * \param fwdOp [in] The forward linear operator that the view will be
+   * extracted from.  This object may be a wrapped scaled/adjoint operator on
+   * input.  On output this object is "remembered" in the returned RCP for
+   * <tt>epetraOp</tt>.
+   *
+   * \param epetraOp [out] The <tt>const</tt> epetra operator view of
+   * <tt>*this</tt>.
+   *
+   * \param epetraOpTransp [out] Determines if the operator is applied as its
+   * transpose or its non-transpose.  The Client should use this value and
+   * ignore the value in <tt>(*epetraOp)->UseTranspose()</tt> since it has
+   * been shown to be problematic and error prone.
+   *
+   * \param epetraOpApplyAs [out] Determines if the operator should be applied
+   * using <tt>(*epetraOp)->Apply(...)</tt> or using
+   * <tt>(*epetraOp)->ApplyInverse(...)</tt>.
+   *
+   * \param epetraOpAdjointSupport [out] Determines if the operator supports
+   * transposes or not.
+   *
+   * \param epetraOpScalar [out] The scalar from the wrapped scaled/adjoint
+   * linear operator.
    *
    * <b>Preconditions:</b></ul>
    * <li><tt>epetraOp!=NULL</tt>
@@ -156,12 +167,12 @@ public:
    * should call the non-<tt>const</tt> version of this function.
    */
   virtual void getEpetraOpView(
-    const Teuchos::RCP<const LinearOpBase<double> >   &fwdOp
-    ,Teuchos::RCP<const Epetra_Operator>              *epetraOp
-    ,EOpTransp                                                  *epetraOpTransp
-    ,EApplyEpetraOpAs                                         *epetraOpApplyAs
-    ,EAdjointEpetraOp                                         *epetraOpAdjointSupport
-    ,double                                                   *epetraOpScalar
+    const RCP<const LinearOpBase<double> > &fwdOp,
+    const Ptr<RCP<const Epetra_Operator> > &epetraOp,
+    const Ptr<EOpTransp> &epetraOpTransp,
+    const Ptr<EApplyEpetraOpAs> &epetraOpApplyAs,
+    const Ptr<EAdjointEpetraOp> &epetraOpAdjointSupport,
+    const Ptr<double> &epetraOpScalar
     ) const = 0;
 
   //@}

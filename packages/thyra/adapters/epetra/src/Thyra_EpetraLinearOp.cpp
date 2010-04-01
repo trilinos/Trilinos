@@ -220,19 +220,13 @@ EpetraLinearOp::epetra_op() const
 // Overridden from EpetraLinearOpBase
 
 
-void EpetraLinearOp::getEpetraOpView(
-  RCP<Epetra_Operator> *epetraOp,
-  EOpTransp *epetraOpTransp,
-  EApplyEpetraOpAs *epetraOpApplyAs,
-  EAdjointEpetraOp *epetraOpAdjointSupport
+void EpetraLinearOp::getNonconstEpetraOpView(
+  const Ptr<RCP<Epetra_Operator> > &epetraOp,
+  const Ptr<EOpTransp> &epetraOpTransp,
+  const Ptr<EApplyEpetraOpAs> &epetraOpApplyAs,
+  const Ptr<EAdjointEpetraOp> &epetraOpAdjointSupport
   )
 {
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(epetraOp==NULL);
-  TEST_FOR_EXCEPT(epetraOpTransp==NULL);
-  TEST_FOR_EXCEPT(epetraOpApplyAs==NULL);
-  TEST_FOR_EXCEPT(epetraOpAdjointSupport==NULL);
-#endif
   *epetraOp = op_;
   *epetraOpTransp = opTrans_;
   *epetraOpApplyAs = applyAs_;
@@ -241,18 +235,12 @@ void EpetraLinearOp::getEpetraOpView(
 
 
 void EpetraLinearOp::getEpetraOpView(
-  RCP<const Epetra_Operator> *epetraOp,
-  EOpTransp *epetraOpTransp,
-  EApplyEpetraOpAs *epetraOpApplyAs,
-  EAdjointEpetraOp *epetraOpAdjointSupport
+  const Ptr<RCP<const Epetra_Operator> > &epetraOp,
+  const Ptr<EOpTransp> &epetraOpTransp,
+  const Ptr<EApplyEpetraOpAs> &epetraOpApplyAs,
+  const Ptr<EAdjointEpetraOp> &epetraOpAdjointSupport
   ) const
 {
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(epetraOp==NULL);
-  TEST_FOR_EXCEPT(epetraOpTransp==NULL);
-  TEST_FOR_EXCEPT(epetraOpApplyAs==NULL);
-  TEST_FOR_EXCEPT(epetraOpAdjointSupport==NULL);
-#endif
   *epetraOp = op_;
   *epetraOpTransp = opTrans_;
   *epetraOpApplyAs = applyAs_;

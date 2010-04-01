@@ -102,11 +102,11 @@ public:
    * object which is providing the view!  The client must take special care in
    * the case!
    */
-  virtual void getEpetraOpView(
-    Teuchos::RCP<Epetra_Operator> *epetraOp,
-    EOpTransp *epetraOpTransp,
-    EApplyEpetraOpAs *epetraOpApplyAs,
-    EAdjointEpetraOp *epetraOpAdjointSupport
+  virtual void getNonconstEpetraOpView(
+    const Ptr<RCP<Epetra_Operator> > &epetraOp,
+    const Ptr<EOpTransp> &epetraOpTransp,
+    const Ptr<EApplyEpetraOpAs> &epetraOpApplyAs,
+    const Ptr<EAdjointEpetraOp> &epetraOpAdjointSupport
     ) = 0;
 
   /** \brief Return a smart pointer to a <tt>const</tt>
@@ -156,10 +156,10 @@ public:
    * the case!
    */
   virtual void getEpetraOpView(
-    Teuchos::RCP<const Epetra_Operator> *epetraOp,
-    EOpTransp *epetraOpTransp,
-    EApplyEpetraOpAs *epetraOpApplyAs,
-    EAdjointEpetraOp *epetraOpAdjointSupport
+    const Ptr<RCP<const Epetra_Operator> > &epetraOp,
+    const Ptr<EOpTransp> &epetraOpTransp,
+    const Ptr<EApplyEpetraOpAs> &epetraOpApplyAs,
+    const Ptr<EAdjointEpetraOp> &epetraOpAdjointSupport
     ) const = 0;
 
   //@}

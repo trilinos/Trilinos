@@ -79,14 +79,17 @@ bool IfpackPreconditionerFactory::isCompatible(
   const LinearOpSourceBase<double> &fwdOpSrc
   ) const
 {
+  using Teuchos::outArg;
   Teuchos::RCP<const Epetra_Operator> epetraFwdOp;
-  EOpTransp                                     epetraFwdOpTransp;
-  EApplyEpetraOpAs                            epetraFwdOpApplyAs;
-  EAdjointEpetraOp                            epetraFwdOpAdjointSupport;
-  double                                      epetraFwdOpScalar;
+  EOpTransp epetraFwdOpTransp;
+  EApplyEpetraOpAs epetraFwdOpApplyAs;
+  EAdjointEpetraOp epetraFwdOpAdjointSupport;
+  double epetraFwdOpScalar;
   epetraFwdOpViewExtractor_->getEpetraOpView(
-    fwdOpSrc.getOp()
-    ,&epetraFwdOp,&epetraFwdOpTransp,&epetraFwdOpApplyAs,&epetraFwdOpAdjointSupport,&epetraFwdOpScalar
+    fwdOpSrc.getOp(), 
+    outArg(epetraFwdOp), outArg(epetraFwdOpTransp),
+    outArg(epetraFwdOpApplyAs), outArg(epetraFwdOpAdjointSupport),
+    outArg(epetraFwdOpScalar)
     );
   if( !dynamic_cast<const Epetra_RowMatrix*>(&*epetraFwdOp) )
     return false;
@@ -115,6 +118,7 @@ void IfpackPreconditionerFactory::initializePrec(
   ,const ESupportSolveUse                                           supportSolveUse
   ) const
 {
+  using Teuchos::outArg;
   using Teuchos::OSTab;
   using Teuchos::dyn_cast;
   using Teuchos::RCP;
@@ -146,13 +150,15 @@ void IfpackPreconditionerFactory::initializePrec(
   // Unwrap and get the forward Epetra_Operator object
   //
   Teuchos::RCP<const Epetra_Operator> epetraFwdOp;
-  EOpTransp                                     epetraFwdOpTransp;
-  EApplyEpetraOpAs                            epetraFwdOpApplyAs;
-  EAdjointEpetraOp                            epetraFwdOpAdjointSupport;
-  double                                      epetraFwdOpScalar;
+  EOpTransp epetraFwdOpTransp;
+  EApplyEpetraOpAs epetraFwdOpApplyAs;
+  EAdjointEpetraOp epetraFwdOpAdjointSupport;
+  double epetraFwdOpScalar;
   epetraFwdOpViewExtractor_->getEpetraOpView(
-    fwdOp,&epetraFwdOp,&epetraFwdOpTransp,&epetraFwdOpApplyAs
-    ,&epetraFwdOpAdjointSupport,&epetraFwdOpScalar
+    fwdOp,
+    outArg(epetraFwdOp), outArg(epetraFwdOpTransp),
+    outArg(epetraFwdOpApplyAs), outArg(epetraFwdOpAdjointSupport),
+    outArg(epetraFwdOpScalar)
     );
   // Validate what we get is what we need
   RCP<const Epetra_RowMatrix>

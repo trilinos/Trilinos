@@ -246,18 +246,18 @@ public:
   //@{
 
   /** \brief . */
-  void getEpetraOpView(
-    RCP<Epetra_Operator> *epetraOp,
-    EOpTransp *epetraOpTransp,
-    EApplyEpetraOpAs *epetraOpApplyAs,
-    EAdjointEpetraOp *epetraOpAdjointSupport
+  void getNonconstEpetraOpView(
+    const Ptr<RCP<Epetra_Operator> > &epetraOp,
+    const Ptr<EOpTransp> &epetraOpTransp,
+    const Ptr<EApplyEpetraOpAs> &epetraOpApplyAs,
+    const Ptr<EAdjointEpetraOp> &epetraOpAdjointSupport
     );
   /** \brief . */
   void getEpetraOpView(
-    RCP<const Epetra_Operator> *epetraOp,
-    EOpTransp *epetraOpTransp,
-    EApplyEpetraOpAs *epetraOpApplyAs,
-    EAdjointEpetraOp *epetraOpAdjointSupport
+    const Ptr<RCP<const Epetra_Operator> > &epetraOp,
+    const Ptr<EOpTransp> &epetraOpTransp,
+    const Ptr<EApplyEpetraOpAs> &epetraOpApplyAs,
+    const Ptr<EAdjointEpetraOp> &epetraOpAdjointSupport
     ) const;
 
   //@}

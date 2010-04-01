@@ -442,6 +442,7 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   using Teuchos::set_extra_data;
   using Teuchos::get_optional_extra_data;
   using Teuchos::get_optional_nonconst_extra_data;
+  using Teuchos::outArg;
   typedef EpetraExt::ProductOperator PO;
 
   const Teuchos::RCP<Teuchos::FancyOStream> out = this->getOStream();
@@ -503,9 +504,9 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
   double epetra_epetraFwdOpScalar;
   epetraFwdOpViewExtractor_->getEpetraOpView(
     fwdOp,
-    &epetra_epetraFwdOp, &epetra_epetraFwdOpTransp,
-    &epetra_epetraFwdOpApplyAs, &epetra_epetraFwdOpAdjointSupport,
-    &epetra_epetraFwdOpScalar
+    outArg(epetra_epetraFwdOp), outArg(epetra_epetraFwdOpTransp),
+    outArg(epetra_epetraFwdOpApplyAs), outArg(epetra_epetraFwdOpAdjointSupport),
+    outArg(epetra_epetraFwdOpScalar)
     );
   TEST_FOR_EXCEPTION(
     epetra_epetraFwdOp.get()==NULL, std::logic_error
@@ -589,8 +590,8 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
     epetraPrecOp = rcp_dynamic_cast<const EpetraLinearOpBase>(
       wrappedPrecOp,true);
     epetraPrecOp->getEpetraOpView(
-      &epetra_epetraPrecOp,&epetra_epetraPrecOpTransp,
-      &epetra_epetraPrecOpApplyAs,&epetra_epetraPrecOpAdjointSupport);
+      outArg(epetra_epetraPrecOp), outArg(epetra_epetraPrecOpTransp),
+      outArg(epetra_epetraPrecOpApplyAs), outArg(epetra_epetraPrecOpAdjointSupport));
     TEST_FOR_EXCEPTION(
       epetra_epetraPrecOp.get()==NULL,std::logic_error
       ,"Error, The input prec object and its embedded precondtioner"

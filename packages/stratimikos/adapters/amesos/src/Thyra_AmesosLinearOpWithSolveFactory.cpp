@@ -125,16 +125,19 @@ bool AmesosLinearOpWithSolveFactory::isCompatible(
   const LinearOpSourceBase<double> &fwdOpSrc
   ) const
 {
+  using Teuchos::outArg;
   RCP<const LinearOpBase<double> >
     fwdOp = fwdOpSrc.getOp();
   RCP<const Epetra_Operator> epetraFwdOp;
-  EOpTransp                                     epetraFwdOpTransp;
-  EApplyEpetraOpAs                            epetraFwdOpApplyAs;
-  EAdjointEpetraOp                            epetraFwdOpAdjointSupport;
-  double                                      epetraFwdOpScalar;
+  EOpTransp epetraFwdOpTransp;
+  EApplyEpetraOpAs epetraFwdOpApplyAs;
+  EAdjointEpetraOp epetraFwdOpAdjointSupport;
+  double epetraFwdOpScalar;
   epetraFwdOpViewExtractor_->getEpetraOpView(
-    fwdOp
-    ,&epetraFwdOp,&epetraFwdOpTransp,&epetraFwdOpApplyAs,&epetraFwdOpAdjointSupport,&epetraFwdOpScalar
+    fwdOp,
+    outArg(epetraFwdOp), outArg(epetraFwdOpTransp),
+    outArg(epetraFwdOpApplyAs), outArg(epetraFwdOpAdjointSupport),
+    outArg(epetraFwdOpScalar)
     );
   if( !dynamic_cast<const Epetra_RowMatrix*>(&*epetraFwdOp) )
     return false;
@@ -153,6 +156,7 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
   ,const ESupportSolveUse                                          supportSolveUse
   ) const
 {
+  using Teuchos::outArg;
   TEUCHOS_FUNC_TIME_MONITOR("AmesosLOWSF");
 #ifdef TEUCHOS_DEBUG
   TEST_FOR_EXCEPT(Op==NULL);
@@ -163,12 +167,15 @@ void AmesosLinearOpWithSolveFactory::initializeOp(
   // Unwrap and get the forward Epetra_Operator object
   //
   RCP<const Epetra_Operator> epetraFwdOp;
-  EOpTransp                                     epetraFwdOpTransp;
-  EApplyEpetraOpAs                            epetraFwdOpApplyAs;
-  EAdjointEpetraOp                            epetraFwdOpAdjointSupport;
-  double                                      epetraFwdOpScalar;
+  EOpTransp epetraFwdOpTransp;
+  EApplyEpetraOpAs epetraFwdOpApplyAs;
+  EAdjointEpetraOp epetraFwdOpAdjointSupport;
+  double epetraFwdOpScalar;
   epetraFwdOpViewExtractor_->getEpetraOpView(
-    fwdOp,&epetraFwdOp,&epetraFwdOpTransp,&epetraFwdOpApplyAs,&epetraFwdOpAdjointSupport,&epetraFwdOpScalar
+    fwdOp,
+    outArg(epetraFwdOp), outArg(epetraFwdOpTransp),
+    outArg(epetraFwdOpApplyAs), outArg(epetraFwdOpAdjointSupport),
+    outArg(epetraFwdOpScalar)
     );
   // Get the AmesosLinearOpWithSolve object
   AmesosLinearOpWithSolve

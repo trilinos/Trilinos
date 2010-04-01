@@ -31,29 +31,33 @@
 
 class Epetra_Operator;
 
+
 namespace Thyra {
+
 
 // Overridden from EpetraOperatorViewExtractorBase
 
+
 bool EpetraOperatorViewExtractorStd::isCompatible( const LinearOpBase<double> &fwdOp ) const
 {
-  double                     wrappedScalar = 0.0;
-  EOpTransp                    wrappedTransp = NOTRANS;
+  double wrappedScalar = 0.0;
+  EOpTransp wrappedTransp = NOTRANS;
   const LinearOpBase<double> *wrappedFwdOp = NULL;
-  ::Thyra::unwrap(fwdOp,&wrappedScalar,&wrappedTransp,&wrappedFwdOp);
+  ::Thyra::unwrap(fwdOp, &wrappedScalar, &wrappedTransp, &wrappedFwdOp);
   const EpetraLinearOpBase *eFwdOp = NULL;
-  if( ! (eFwdOp = dynamic_cast<const EpetraLinearOpBase*>(wrappedFwdOp)) )
+  if( !(eFwdOp = dynamic_cast<const EpetraLinearOpBase*>(wrappedFwdOp)) )
     return false;
   return true;
 }
 
-void EpetraOperatorViewExtractorStd::getEpetraOpView(
-  const Teuchos::RCP<LinearOpBase<double> >   &fwdOp
-  ,Teuchos::RCP<Epetra_Operator>              *epetraOp
-  ,EOpTransp                                            *epetraOpTransp
-  ,EApplyEpetraOpAs                                   *epetraOpApplyAs
-  ,EAdjointEpetraOp                                   *epetraOpAdjointSupport
-  ,double                                             *epetraOpScalar
+
+void EpetraOperatorViewExtractorStd::getNonconstEpetraOpView(
+  const RCP<LinearOpBase<double> > &fwdOp,
+  const Ptr<RCP<Epetra_Operator> > &epetraOp,
+  const Ptr<EOpTransp> &epetraOpTransp,
+  const Ptr<EApplyEpetraOpAs> &epetraOpApplyAs,
+  const Ptr<EAdjointEpetraOp> &epetraOpAdjointSupport,
+    const Ptr<double> &epetraOpScalar
   ) const
 {
   TEST_FOR_EXCEPT(true);
@@ -61,31 +65,32 @@ void EpetraOperatorViewExtractorStd::getEpetraOpView(
   // removing the 'const' in the right places!
 }
 
+
 void EpetraOperatorViewExtractorStd::getEpetraOpView(
-  const Teuchos::RCP<const LinearOpBase<double> >   &fwdOp
-  ,Teuchos::RCP<const Epetra_Operator>              *epetraOp
-  ,EOpTransp                                                  *epetraOpTransp
-  ,EApplyEpetraOpAs                                         *epetraOpApplyAs
-  ,EAdjointEpetraOp                                         *epetraOpAdjointSupport
-  ,double                                                   *epetraOpScalar
+  const RCP<const LinearOpBase<double> > &fwdOp,
+  const Ptr<RCP<const Epetra_Operator> > &epetraOp,
+  const Ptr<EOpTransp> &epetraOpTransp,
+  const Ptr<EApplyEpetraOpAs> &epetraOpApplyAs,
+  const Ptr<EAdjointEpetraOp> &epetraOpAdjointSupport,
+    const Ptr<double> &epetraOpScalar
   ) const
 {
-#ifdef TEUCHOS_DEBUG
-  TEST_FOR_EXCEPT(epetraOp==NULL);
-  TEST_FOR_EXCEPT(epetraOpTransp==NULL);
-  TEST_FOR_EXCEPT(epetraOpApplyAs==NULL);
-  TEST_FOR_EXCEPT(epetraOpAdjointSupport==NULL);
-#endif // TEUCHOS_DEBUG
-  double                                              wrappedFwdOpScalar = 0.0;
-  EOpTransp                                             wrappedFwdOpTransp = NOTRANS;
-  Teuchos::RCP<const LinearOpBase<double> >   wrappedFwdOp; 
-  unwrap(fwdOp,&wrappedFwdOpScalar,&wrappedFwdOpTransp,&wrappedFwdOp);
-  Teuchos::RCP<const EpetraLinearOpBase>
-    epetraFwdOp = Teuchos::rcp_dynamic_cast<const EpetraLinearOpBase>(wrappedFwdOp,true);
+  using Teuchos::outArg;
+  double wrappedFwdOpScalar = 0.0;
+  EOpTransp wrappedFwdOpTransp = NOTRANS;
+  Teuchos::RCP<const LinearOpBase<double> > wrappedFwdOp; 
+  unwrap(fwdOp,&wrappedFwdOpScalar, &wrappedFwdOpTransp, &wrappedFwdOp);
+  Teuchos::RCP<const EpetraLinearOpBase> epetraFwdOp =
+    Teuchos::rcp_dynamic_cast<const EpetraLinearOpBase>(wrappedFwdOp,true);
   EOpTransp epetra_epetraOpTransp;
-  epetraFwdOp->getEpetraOpView(epetraOp,&epetra_epetraOpTransp,epetraOpApplyAs,epetraOpAdjointSupport);
-  *epetraOpTransp = trans_trans(real_trans(epetra_epetraOpTransp),wrappedFwdOpTransp);
+  epetraFwdOp->getEpetraOpView(epetraOp, outArg(epetra_epetraOpTransp),
+    epetraOpApplyAs, epetraOpAdjointSupport);
+  *epetraOpTransp = trans_trans(real_trans(epetra_epetraOpTransp), wrappedFwdOpTransp);
   *epetraOpScalar = wrappedFwdOpScalar;
 }
+
+
+// ToDo: Refactor unwrap(...) to not use raw pointers!
+
 
 } // namespace Thyra

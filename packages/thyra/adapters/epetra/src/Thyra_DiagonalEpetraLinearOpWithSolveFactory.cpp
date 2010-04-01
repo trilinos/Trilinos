@@ -26,8 +26,6 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef __SUNPRO_CC
-
 #include "Thyra_DiagonalEpetraLinearOpWithSolveFactory.hpp"
 #include "Thyra_DefaultDiagonalLinearOpWithSolve.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
@@ -38,63 +36,68 @@
 #include "Epetra_Vector.h"
 #include "Epetra_Map.h"
 
+
 namespace Thyra {
+
 
 bool DiagonalEpetraLinearOpWithSolveFactory::isCompatible(
   const LinearOpSourceBase<double> &fwdOpSrc
   ) const
 {
-  Teuchos::RCP<const LinearOpBase<double> >
+  using Teuchos::outArg;
+  RCP<const LinearOpBase<double> >
     fwdOp = fwdOpSrc.getOp();
   const EpetraLinearOpBase *eFwdOp = NULL;
   if( ! (eFwdOp = dynamic_cast<const EpetraLinearOpBase*>(&*fwdOp)) )
     return false;
-  Teuchos::RCP<const Epetra_Operator> epetraFwdOp;
-  EOpTransp                                     epetraFwdOpTransp;
-  EApplyEpetraOpAs                            epetraFwdOpApplyAs;
-  EAdjointEpetraOp                            epetraFwdOpAdjointSupport;
-  eFwdOp->getEpetraOpView(
-    &epetraFwdOp,&epetraFwdOpTransp,&epetraFwdOpApplyAs,&epetraFwdOpAdjointSupport
-    );
+  RCP<const Epetra_Operator> epetraFwdOp;
+  EOpTransp epetraFwdOpTransp;
+  EApplyEpetraOpAs epetraFwdOpApplyAs;
+  EAdjointEpetraOp epetraFwdOpAdjointSupport;
+  eFwdOp->getEpetraOpView(outArg(epetraFwdOp), outArg(epetraFwdOpTransp),
+    outArg(epetraFwdOpApplyAs), outArg(epetraFwdOpAdjointSupport) );
   if( !dynamic_cast<const Epetra_RowMatrix*>(&*epetraFwdOp) )
     return false;
   return true;
 }
 
-Teuchos::RCP<LinearOpWithSolveBase<double> >
+
+RCP<LinearOpWithSolveBase<double> >
 DiagonalEpetraLinearOpWithSolveFactory::createOp() const
 {
   return Teuchos::rcp(new DefaultDiagonalLinearOpWithSolve<double>());
 }
 
+
 void DiagonalEpetraLinearOpWithSolveFactory::initializeOp(
-  const Teuchos::RCP<const LinearOpSourceBase<double> >    &fwdOpSrc
+  const RCP<const LinearOpSourceBase<double> >    &fwdOpSrc
   ,LinearOpWithSolveBase<double>                                   *Op
   ,const ESupportSolveUse                                          supportSolveUse
   ) const
 {
+  using Teuchos::outArg;
   TEST_FOR_EXCEPT(Op==NULL);
   TEST_FOR_EXCEPT(fwdOpSrc.get()==NULL);
   TEST_FOR_EXCEPT(fwdOpSrc->getOp().get()==NULL);
-  Teuchos::RCP<const LinearOpBase<double> > fwdOp = fwdOpSrc->getOp();
+  RCP<const LinearOpBase<double> > fwdOp = fwdOpSrc->getOp();
   const EpetraLinearOpBase &eFwdOp = Teuchos::dyn_cast<const EpetraLinearOpBase>(*fwdOp);
-  Teuchos::RCP<const Epetra_Operator> epetraFwdOp;
-  EOpTransp                                     epetraFwdOpTransp;
-  EApplyEpetraOpAs                            epetraFwdOpApplyAs;
-  EAdjointEpetraOp                            epetraFwdOpAdjointSupport;
-  eFwdOp.getEpetraOpView(
-    &epetraFwdOp,&epetraFwdOpTransp,&epetraFwdOpApplyAs,&epetraFwdOpAdjointSupport
-    );
-  const Epetra_RowMatrix &eRMOp  = Teuchos::dyn_cast<const Epetra_RowMatrix>(*epetraFwdOp);
+  RCP<const Epetra_Operator> epetraFwdOp;
+  EOpTransp epetraFwdOpTransp;
+  EApplyEpetraOpAs epetraFwdOpApplyAs;
+  EAdjointEpetraOp epetraFwdOpAdjointSupport;
+  eFwdOp.getEpetraOpView(outArg(epetraFwdOp), outArg(epetraFwdOpTransp),
+    outArg(epetraFwdOpApplyAs), outArg(epetraFwdOpAdjointSupport) );
+  const Epetra_RowMatrix &eRMOp  =
+    Teuchos::dyn_cast<const Epetra_RowMatrix>(*epetraFwdOp);
   const Epetra_Map &map = eRMOp.OperatorDomainMap();
-  Teuchos::RCP<Epetra_Vector>
+  RCP<Epetra_Vector>
     e_diag = Teuchos::rcp(new Epetra_Vector(map));
   eRMOp.ExtractDiagonalCopy(*e_diag);
-  Teuchos::RCP< const VectorSpaceBase<double> >
+  RCP< const VectorSpaceBase<double> >
     space = create_VectorSpace(Teuchos::rcp(new Epetra_Map(map)));
-  Teuchos::RCP< const VectorBase<double> >
+  RCP< const VectorBase<double> >
     diag = create_Vector(e_diag,space);
-  Teuchos::set_extra_data<Teuchos::RCP<const LinearOpSourceBase<double> > >(
+  Teuchos::set_extra_data<RCP<const LinearOpSourceBase<double> > >(
     fwdOpSrc, "Thyra::DiagonalEpetraLinearOpWithSolveFactory::fwdOpSrc",
     Teuchos::inOutArg(diag)
     );
@@ -104,11 +107,12 @@ void DiagonalEpetraLinearOpWithSolveFactory::initializeOp(
   // Above cast is questionable but should be okay based on use.
 }
 
+
 void DiagonalEpetraLinearOpWithSolveFactory::uninitializeOp(
   LinearOpWithSolveBase<double>                               *Op
-  ,Teuchos::RCP<const LinearOpSourceBase<double> >    *fwdOpSrc
-  ,Teuchos::RCP<const PreconditionerBase<double> >    *prec
-  ,Teuchos::RCP<const LinearOpSourceBase<double> >    *approxFwdOpSrc
+  ,RCP<const LinearOpSourceBase<double> >    *fwdOpSrc
+  ,RCP<const PreconditionerBase<double> >    *prec
+  ,RCP<const LinearOpSourceBase<double> >    *approxFwdOpSrc
   ,ESupportSolveUse                                           *supportSolveUse
   ) const
 {
@@ -116,12 +120,12 @@ void DiagonalEpetraLinearOpWithSolveFactory::uninitializeOp(
   TEST_FOR_EXCEPT(Op==NULL);
   DefaultDiagonalLinearOpWithSolve<double>
     &diagOp = Teuchos::dyn_cast<DefaultDiagonalLinearOpWithSolve<double> >(*Op);
-  Teuchos::RCP< const VectorBase<double> >
+  RCP< const VectorBase<double> >
     diag = diagOp.getDiag();
   if( fwdOpSrc ) {
     if(diag.get()) {
       *fwdOpSrc =
-        get_extra_data<Teuchos::RCP<const LinearOpSourceBase<double> > >(
+        get_extra_data<RCP<const LinearOpSourceBase<double> > >(
           diag,"Thyra::DiagonalEpetraLinearOpWithSolveFactory::fwdOpSrc"
           );
     }
@@ -133,37 +137,42 @@ void DiagonalEpetraLinearOpWithSolveFactory::uninitializeOp(
   if(approxFwdOpSrc) *approxFwdOpSrc = Teuchos::null; // We never keep a preconditioner!
 }
 
+
 // Overridden from ParameterListAcceptor
 
+
 void DiagonalEpetraLinearOpWithSolveFactory::setParameterList(
-  Teuchos::RCP<Teuchos::ParameterList> const& paramList
+  RCP<Teuchos::ParameterList> const& paramList
   )
 {}
 
-Teuchos::RCP<Teuchos::ParameterList>
+
+RCP<Teuchos::ParameterList>
 DiagonalEpetraLinearOpWithSolveFactory::getNonconstParameterList()
 {
   return Teuchos::null;
 }
 
-Teuchos::RCP<Teuchos::ParameterList>
+
+RCP<Teuchos::ParameterList>
 DiagonalEpetraLinearOpWithSolveFactory::unsetParameterList()
 {
   return Teuchos::null;
 }
 
-Teuchos::RCP<const Teuchos::ParameterList>
+
+RCP<const Teuchos::ParameterList>
 DiagonalEpetraLinearOpWithSolveFactory::getParameterList() const
 {
   return Teuchos::null;
 }
 
-Teuchos::RCP<const Teuchos::ParameterList>
+
+RCP<const Teuchos::ParameterList>
 DiagonalEpetraLinearOpWithSolveFactory::getValidParameters() const
 {
   return Teuchos::null;
 }
 
-} // namespace Thyra
 
-#endif // __SUNPRO_CC
+} // namespace Thyra

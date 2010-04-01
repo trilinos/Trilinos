@@ -96,6 +96,7 @@ bool MLPreconditionerFactory::isCompatible(
   const LinearOpSourceBase<double> &fwdOpSrc
   ) const
 {
+  using Teuchos::outArg;
   Teuchos::RCP<const Epetra_Operator> epetraFwdOp;
   EOpTransp epetraFwdOpTransp;
   EApplyEpetraOpAs epetraFwdOpApplyAs;
@@ -105,10 +106,10 @@ bool MLPreconditionerFactory::isCompatible(
     fwdOp = fwdOpSrc.getOp();
   epetraFwdOpViewExtractor_->getEpetraOpView(
     fwdOp,
-    &epetraFwdOp,&epetraFwdOpTransp,
-    &epetraFwdOpApplyAs,
-    &epetraFwdOpAdjointSupport,
-    &epetraFwdOpScalar
+    outArg(epetraFwdOp),outArg(epetraFwdOpTransp),
+    outArg(epetraFwdOpApplyAs),
+    outArg(epetraFwdOpAdjointSupport),
+    outArg(epetraFwdOpScalar)
     );
   if( !dynamic_cast<const Epetra_RowMatrix*>(&*epetraFwdOp) )
     return false;
@@ -141,6 +142,7 @@ void MLPreconditionerFactory::initializePrec(
   const ESupportSolveUse supportSolveUse
   ) const
 {
+  using Teuchos::outArg;
   using Teuchos::OSTab;
   using Teuchos::dyn_cast;
   using Teuchos::RCP;
@@ -173,8 +175,8 @@ void MLPreconditionerFactory::initializePrec(
   EAdjointEpetraOp epetraFwdOpAdjointSupport;
   double epetraFwdOpScalar;
   epetraFwdOpViewExtractor_->getEpetraOpView(
-    fwdOp,&epetraFwdOp,&epetraFwdOpTransp,&epetraFwdOpApplyAs,
-    &epetraFwdOpAdjointSupport,&epetraFwdOpScalar
+    fwdOp,outArg(epetraFwdOp),outArg(epetraFwdOpTransp),outArg(epetraFwdOpApplyAs),
+    outArg(epetraFwdOpAdjointSupport),outArg(epetraFwdOpScalar)
                                              );
   // Validate what we get is what we need
   RCP<const Epetra_RowMatrix>
