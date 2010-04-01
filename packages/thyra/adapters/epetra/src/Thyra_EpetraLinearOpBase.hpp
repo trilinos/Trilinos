@@ -29,7 +29,10 @@
 #define THYRA_EPETRA_LINEAR_OP_BASE_HPP
 
 #include "Thyra_EpetraTypes.hpp"
-#include "Thyra_LinearOpBase.hpp"
+#include "Teuchos_Describable.hpp"
+
+
+class Epetra_Operator;
 
 
 namespace Thyra {
@@ -49,7 +52,7 @@ namespace Thyra {
  *
  * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
-class EpetraLinearOpBase : virtual public LinearOpBase<double> {
+class EpetraLinearOpBase : virtual public Teuchos::Describable {
 public:
 
   /** \name Pure virtual functions that must be overridden in subclasses. */

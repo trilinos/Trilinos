@@ -29,6 +29,7 @@
 #ifndef THYRA_EPETRA_LINEAR_OP_HPP
 #define THYRA_EPETRA_LINEAR_OP_HPP
 
+#include "Thyra_LinearOpBase.hpp"
 #include "Thyra_EpetraLinearOpBase.hpp"
 #include "Thyra_SpmdVectorSpaceBase.hpp"
 
@@ -57,7 +58,9 @@ namespace Thyra {
  *
  * \ingroup Epetra_Thyra_Op_Vec_adapters_grp
  */
-class EpetraLinearOp : virtual public EpetraLinearOpBase
+class EpetraLinearOp
+  : virtual public LinearOpBase<double>,
+    virtual public EpetraLinearOpBase
 {
 public:
 
