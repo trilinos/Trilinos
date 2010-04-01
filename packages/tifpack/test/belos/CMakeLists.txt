@@ -45,6 +45,7 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(TifpackBelosCopyFiles
   test_4_ILUT_nos1_hb.xml test_4_RILUK_nos1_hb.xml
   test_SGS_calore1_mm.xml calore1.mtx test_pseudoblockcg_small_sym_mm.xml
   test_Jacobi_small_sym_mm.xml small_sym.mtx test_gmres_small_sym_mm.xml
+  test_Diagonal_calore1_mm.xml
   test_GS_tfqmr_small_sym_mm.xml test_ILUT_tfqmr_small_sym_mm.xml
   test_tfqmr_small_sym_mm.xml test_ILUT_tfqmr_calore1_mm.xml
   5w.mtx 5w.vec 5w_bel_tif_ILUT.xml
@@ -69,6 +70,24 @@ PACKAGE_ADD_TEST(
   tif_belos TifpackBelosCopyFiles
   NAME small_pseudoblkcg_belos
   ARGS "--xml_file=test_pseudoblockcg_small_sym_mm.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+PACKAGE_ADD_TEST(
+  tif_belos TifpackBelosCopyFiles
+  NAME Diagonal_belos
+  ARGS "--xml_file=test_Diagonal_calore1_mm.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+PACKAGE_ADD_TEST(
+  tif_belos TifpackBelosCopyFiles
+  NAME Jac_sm_belos
+  ARGS "--xml_file=test_Jacobi_small_sym_mm.xml"
   COMM serial mpi
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
