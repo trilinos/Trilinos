@@ -18,8 +18,9 @@ and checkout whatever branch you will be testing.
   cd T
   git clone software.sandia.gov:/space/git/Trilinos
 
-See [ToDo: fill in HERE] for instructions on how to set up ssh so that the git
-clone call works using just software.sandia.gov without a user name.
+See the Trilinos developers website for instructions on how to set up
+ssh so that the git clone call works using just software.sandia.gov
+without a user name.
 
 Create machine specific content:
 ================================
