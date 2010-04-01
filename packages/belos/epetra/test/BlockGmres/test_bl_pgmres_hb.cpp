@@ -165,12 +165,16 @@ int main(int argc, char *argv[]) {
   if (maxiters == -1)
     maxiters = NumGlobalElements/blocksize - 1; // maximum number of iterations to run
   //
+  bool adaptiveBlockSize = true;
+  if (numrhs < blocksize)
+    adaptiveBlockSize = false;
   ParameterList belosList;
-  belosList.set( "Num Blocks", length );                 // Maximum number of blocks in Krylov factorization
-  belosList.set( "Block Size", blocksize );              // Blocksize to be used by iterative solver
-  belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
-  belosList.set( "Maximum Restarts", maxrestarts );      // Maximum number of restarts allowed
-  belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
+  belosList.set( "Num Blocks", length );                     // Maximum number of blocks in Krylov factorization
+  belosList.set( "Block Size", blocksize );                  // Blocksize to be used by iterative solver
+  belosList.set( "Adaptive Block Size", adaptiveBlockSize ); // Adapt blocksize to numrhs
+  belosList.set( "Maximum Iterations", maxiters );           // Maximum number of iterations allowed
+  belosList.set( "Maximum Restarts", maxrestarts );          // Maximum number of restarts allowed
+  belosList.set( "Convergence Tolerance", tol );             // Relative convergence tolerance requested
   if (verbose) {
     belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + 
 		   Belos::TimingDetails + Belos::StatusTestDetails );
