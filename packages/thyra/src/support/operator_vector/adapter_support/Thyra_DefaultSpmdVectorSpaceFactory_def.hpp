@@ -26,8 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef THYRA_SPMD_VECTOR_SPACE_FACTORY_STD_HPP
-#define THYRA_SPMD_VECTOR_SPACE_FACTORY_STD_HPP
+#ifndef THYRA_DEFAULT_SPMD_VECTOR_SPACE_FACTORY_HPP
+#define THYRA_DEFAULT_SPMD_VECTOR_SPACE_FACTORY_HPP
 
 #include "Thyra_DefaultSpmdVectorSpaceFactory_decl.hpp"
 #include "Thyra_VectorSpaceFactoryBase.hpp"
@@ -51,4 +51,4 @@ DefaultSpmdVectorSpaceFactory<Scalar>::createVecSpc(int dim) const
 
 } // end namespace Thyra
 
-#endif // THYRA_SPMD_VECTOR_SPACE_FACTORY_STD_HPP
+#endif // THYRA_DEFAULT_SPMD_VECTOR_SPACE_FACTORY_HPP
