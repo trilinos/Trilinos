@@ -34,6 +34,9 @@ SET(HEADERS ${HEADERS}
   Tifpack_CondestType.hpp
   Tifpack_ConfigDefs.hpp
   Tifpack_CreateOverlapGraph.hpp
+  Tifpack_Diagonal.hpp
+  Tifpack_Diagonal_decl.hpp
+  Tifpack_Diagonal_def.hpp
   Tifpack_ExplicitInstantiationHelpers.hpp
   Tifpack_Factory.hpp
   Tifpack_Heap.hpp
@@ -56,6 +59,7 @@ SET(HEADERS ${HEADERS}
 
 SET(SOURCES ${SOURCES}
   Tifpack_Chebyshev.cpp
+  Tifpack_Diagonal.cpp
   Tifpack_Factory.cpp
   Tifpack_ILUT.cpp
   Tifpack_Parameters.cpp
