@@ -60,9 +60,18 @@ public:
   //! Constructor
   Diagonal(const Teuchos::RCP<const MatrixType>& A);
 
-  //! Constructor
+  //! Constructor to create a Diagonal preconditioner using a Tpetra::Vector.
+  /**
+   * If your compiler complains about this constructor being ambigous with the
+   * other constructor overload, instead call the free-standing function
+   * Tifpack::createDiagonalPreconditioner which is located at the bottom
+   * of this header file.
+  * (This issue arises if this constructor is called with a RCP<Tpetra::Vector>
+  * that isn't const-qualified exactly as declared here.)
+  */
   Diagonal(const Teuchos::RCP<const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& diag);
 
+public:
   //! Destructor
   virtual ~Diagonal();
 
@@ -210,6 +219,27 @@ public:
 
     magnitudeType condEst_;
 };
+
+/** Function to construct Diagonal preconditioner with vector input.
+* The input vector is assumed to contain the equivalent of the inverted
+* diagonal of a matrix.
+*
+* Example usage:<br>
+* typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> TCrsMatrix;
+* typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TVector;
+* typedef Tpetra::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> TPrec;
+*
+* Teuchos::RCP<TVector> myvec = ...
+*
+* Teuchos::RCP<TPrec> prec = Tifpack::createDiagonalPreconditioner<TCrsMatrix,TVector>(myvec);
+*
+*/
+template<class MatrixType,class VectorType>
+Teuchos::RCP<Tifpack::Diagonal<MatrixType> >
+createDiagonalPreconditioner(const Teuchos::RCP<const VectorType>& invdiag)
+{
+  return Teuchos::rcp(new Tifpack::Diagonal<MatrixType>(invdiag));
+}
 
 }//namespace Tifpack
 

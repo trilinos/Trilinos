@@ -94,8 +94,56 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackDiagonal, Test0, Scalar, LocalOrdinal, 
   TEST_COMPARE_FLOATING_ARRAYS(yview, halfs(), Teuchos::ScalarTraits<Scalar>::eps());
 }
 
+//this macro declares the unit-test-class:
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackDiagonal, Test1, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+//we are now in a class method declared by the above macro, and
+//that method has these input arguments:
+//Teuchos::FancyOStream& out, bool& success
+
+  std::string version = Tifpack::Version();
+  out << "Tifpack::Version(): " << version << std::endl;
+
+  global_size_t num_rows_per_proc = 5;
+
+  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+
+  Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > crsmatrix = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
+
+  Teuchos::RCP<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > invdiag =
+        Teuchos::rcp(new Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap));
+
+  crsmatrix->getLocalDiagCopy(*invdiag);
+  invdiag->reciprocal(*invdiag);
+
+  Teuchos::RCP<const Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > const_invdiag = invdiag;
+
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> TCrsMatrix;
+  typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TVector;
+
+  Teuchos::RCP<Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec =
+     Tifpack::createDiagonalPreconditioner<TCrsMatrix,TVector>(invdiag);
+
+  prec->initialize();
+  prec->compute();
+
+  Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap,2), y(rowmap,2);
+  x.putScalar(1);
+
+  prec->apply(x, y);
+
+  Teuchos::ArrayRCP<const Scalar> yview = y.get1dView();
+
+  //y should be full of 0.5's now.
+
+  Teuchos::ArrayRCP<Scalar> halfs(num_rows_per_proc*2, 0.5);
+
+  TEST_COMPARE_FLOATING_ARRAYS(yview, halfs(), Teuchos::ScalarTraits<Scalar>::eps());
+}
+
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TifpackDiagonal, Test0, Scalar, LocalOrdinal,GlobalOrdinal)
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TifpackDiagonal, Test0, Scalar, LocalOrdinal,GlobalOrdinal) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( TifpackDiagonal, Test1, Scalar, LocalOrdinal,GlobalOrdinal)
 
 UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
 #ifndef HAVE_TIFPACK_EXPLICIT_INSTANTIATION
