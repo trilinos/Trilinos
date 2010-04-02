@@ -20,8 +20,11 @@
 #include <stk_mesh/fem/EntityTypes.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 
+
+#include <stk_mesh/fem/SkinMesh.hpp>
+
 /*
-The following fixture creates the mesh below on proc 0
+The following fixture creates the mesh below
 1-16 Quadrilateral<4>
 17-41 Nodes
 
@@ -47,9 +50,7 @@ GridFixture::GridFixture(stk::ParallelMachine pm)
 
   m_meta_data.commit();
 
-  m_bulk_data.modification_begin();
   generate_grid();
-  m_bulk_data.modification_end();
 }
 
 GridFixture::~GridFixture()
@@ -57,6 +58,8 @@ GridFixture::~GridFixture()
 
 void GridFixture::generate_grid()
 {
+  m_bulk_data.modification_begin();
+
   const unsigned num_nodes = 25;
   const unsigned num_quad_faces = 16;
   const unsigned p_rank = m_bulk_data.parallel_rank();
@@ -104,4 +107,8 @@ void GridFixture::generate_grid()
       }
     }
   }
+
+  m_bulk_data.modification_end();
+
+  skin_mesh(m_bulk_data, stk::mesh::Face, & m_boundary_part);
 }

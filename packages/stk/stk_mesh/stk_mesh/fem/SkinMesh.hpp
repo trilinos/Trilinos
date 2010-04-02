@@ -1,4 +1,4 @@
-/*------------------------------------------------------------------------*/
+
 /*                 Copyright 2010 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
@@ -6,11 +6,18 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#ifndef UseCase_ElementDeath_1_hpp
-#define UseCase_ElementDeath_1_hpp
+#ifndef stk_mesh_SkinMesh_hpp
+#define stk_mesh_SkinMesh_hpp
 
-#include <stk_util/parallel/Parallel.hpp>
 
-bool element_death_use_case(stk::ParallelMachine pm);
+namespace stk {
+namespace mesh {
 
+class BulkData;
+class Part;
+
+void skin_mesh( BulkData & mesh, unsigned closure_rank, Part * part = NULL );
+
+}
+}
 #endif

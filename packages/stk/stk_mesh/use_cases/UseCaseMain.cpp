@@ -11,7 +11,7 @@
 #include <use_cases/UseCase_2.hpp>
 #include <use_cases/UseCase_3.hpp>
 #include <use_cases/UseCase_4.hpp>
-#include <use_cases/UseCase_ElementDeath_1.hpp>
+#include <use_cases/UseCase_ElementDeath.hpp>
 #include <stk_mesh/base/Types.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
@@ -58,7 +58,7 @@ int main ( int argc, char * argv[] )
   }
   {
     std::cout << "Use Case Element Death 1 ... ";
-    bool local_status = element_death_use_case(parallel_machine);
+    bool local_status = element_death_use_case_1(parallel_machine);
     printStatus(local_status);
     status = status && local_status;
   }
