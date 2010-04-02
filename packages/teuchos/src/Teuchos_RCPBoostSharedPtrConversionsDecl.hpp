@@ -38,23 +38,23 @@ namespace Teuchos {
 
 /** \defgroup Teuchos_RCPBoostSharedPtrConversions_grp Conversion utilities for going between Teuchos::RCP and boost::shared_ptr.
 
-The smart pointer classes <tt>Teuchos::RCP</tt> and
-<tt>boost::shared_ptr</tt> are easily compatible.  The two templated
-conversion functions <tt>Teuchos::rcp( const boost::shared_ptr<T> & )</tt> and
-<tt>Teuchos::shared_pointer( const RCP<T> & )</tt> have been created
-for converting back and forth.
-
-The following code shows how to convert back and forth between these two smart
-pointer types:
+The smart pointer classes <tt>Teuchos::RCP</tt> and <tt>boost::shared_ptr</tt>
+are easily compatible.  The two templated conversion functions
+<tt>Teuchos::rcp( const boost::shared_ptr<T> & )</tt> and
+<tt>Teuchos::shared_pointer( const RCP<T> & )</tt> have been created for
+converting back and forth (see the related non-member functions <tt>rcp()</tt>
+and <tt>shared_pointer()</tt> the <tt>RCP</tt> classes' documentation).
 
 \ingroup teuchos_mem_mng_grp
 
 */
-//@{
 
 
 /** \brief <tt>Teuchos::RCP</tt> Deallocator class that wraps a
- * <tt>boost::shared_ptr</tt> */
+ * <tt>boost::shared_ptr</tt>
+ *
+ * \ingroup Teuchos_RCPBoostSharedPtrConversions_grp
+ */
 template<class T>
 class DeallocBoostSharedPtr
 {
@@ -75,6 +75,8 @@ private:
 
 /** \brief <tt>boost::shared_ptr</tt> deleter class that wraps a
  * <tt>Teuchos::RCP</tt>.
+ *
+ * \ingroup Teuchos_RCPBoostSharedPtrConversions_grp
  */
 template<class T>
 class RCPDeleter
@@ -103,6 +105,8 @@ private:
  * object, then that <tt>Teuchos::RCP</tt> object will be copied and returned.
  *
  * This function is not complicated, just look at its defintion below.
+ *
+ * \relates RCP
  */
 template<class T>
 RCP<T> rcp( const boost::shared_ptr<T> &sptr );
@@ -116,12 +120,11 @@ RCP<T> rcp( const boost::shared_ptr<T> &sptr );
  * object will be copied and returned.
  *
  * This function is not complicated, just look at its defintion below.
+ *
+ * \relates RCP
  */
 template<class T>
 boost::shared_ptr<T> shared_pointer( const RCP<T> &rcp );
-
-
-//@}
 
 
 } // namespace Teuchos
