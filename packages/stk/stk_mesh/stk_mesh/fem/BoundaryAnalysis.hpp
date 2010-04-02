@@ -27,7 +27,7 @@ NAMED_PAIR(EntitySideComponent, Entity *, entity, unsigned, side_id)
  * Most sides will have two EntitySideComponents, but degenerate cases
  * ie shells will can have sides with more than two components)
  */
-NAMED_PAIR(EntitySide, EntitySideComponent, inside, EntitySideComponent, outside)
+NAMED_PAIR(EntitySide, EntitySideComponent, inside, EntitySideComponent, outside);
 
 /**
  * A vector of EntitySide (defines a boundary)
