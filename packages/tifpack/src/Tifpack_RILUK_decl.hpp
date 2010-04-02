@@ -45,12 +45,12 @@ namespace Teuchos {
 
 namespace Tifpack {
 
-//! Tifpack_RILUK: A class for constructing and using an incomplete lower/upper (ILU) factorization of a given Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>.
+//! A class for constructing and using an incomplete lower/upper (ILU) factorization of a given Tpetra::RowMatrix.
 
-/*! The Tifpack_RILUK class computes a "Relaxed" ILU factorization with level k fill 
-    of a given Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>.
+/*! Tifpack::RILUK computes a "Relaxed" ILU factorization with level k fill 
+    of a given Tpetra::RowMatrix.
 
-For a complete list of valid parameters, see RILUK::setParameters.
+For a complete list of valid parameters, see Tifpack::RILUK::setParameters.
 
   The factorization 
     that is produced is a function of several parameters:

@@ -34,18 +34,22 @@
 
 namespace Tifpack {
 
-//! Tifpack::Diagonal: a class for diagonal preconditioning.
-/*
-Tifpack::Diagonal: a class to wrap a vector as diagonal preconditioner. The preconditioner is simply defined by
+//! A class for diagonal preconditioning.
+/**
+Tifpack::Diagonal wraps a vector as a diagonal preconditioner.
+The preconditioner is simply defined by
 \f[
 z_i = D_i r_i,
 \f]
 where \f$r,z\f$ are the vector to be preconditioned and the preconditioned vector, and \f$D_i\f$ is the i-th element of the scaling vector.
 
+When Tifpack::Diagonal is constructed with a matrix, \f$D\f$ contains the inverted diagonal elements from the matrix.
+
+When Tifpack::Diagonal is constructed with a vector, \f$D\f$ is the caller-supplied vector.
+
 \author Michael Heroux, ETHZ/D-INFK
 
-\date Last updated on 17-Apr-06
-
+\date Tifpack conversion (from Ifpack code) 31-Mar-2010
  */
 template<class MatrixType>
 class Diagonal : virtual public Tifpack::Preconditioner<typename MatrixType::scalar_type,typename MatrixType::local_ordinal_type,typename MatrixType::global_ordinal_type,typename MatrixType::node_type> {
@@ -57,7 +61,7 @@ public:
   typedef typename MatrixType::node_type Node;
   typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
 
-  //! Constructor
+  //! Constructor to create a Diagonal preconditioner using a Tpetra::CrsMatrix.
   Diagonal(const Teuchos::RCP<const MatrixType>& A);
 
   //! Constructor to create a Diagonal preconditioner using a Tpetra::Vector.
@@ -220,13 +224,13 @@ public:
     magnitudeType condEst_;
 };
 
-/** Function to construct Diagonal preconditioner with vector input.
+/** Function to construct a Diagonal preconditioner with vector input.
 * The input vector is assumed to contain the equivalent of the inverted
 * diagonal of a matrix.
 *
 * Example usage:<br>
-* typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> TCrsMatrix;
-* typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TVector;
+* typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> TCrsMatrix;<br>
+* typedef Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> TVector;<br>
 * typedef Tpetra::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> TPrec;
 *
 * Teuchos::RCP<TVector> myvec = ...

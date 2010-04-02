@@ -42,7 +42,7 @@ namespace Teuchos {
 
 namespace Tifpack {
 
-//! Tifpack_OverlapGraph: Constructs a graph for use with Tifpack preconditioners.
+//! Tifpack::OverlapGraph constructs an overlapped graph.
 
 template<class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
 class OverlapGraph : public Teuchos::Describable {

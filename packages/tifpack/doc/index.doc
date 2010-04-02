@@ -24,6 +24,7 @@ All Tifpack preconditioners inherit the base class Tifpack::Preconditioner.
 
 The preconditioners that are supported in the current release are:
 <ul>
+<li> Tifpack::Diagonal
 <li> Tifpack::Relaxation
 <li> Tifpack::Chebyshev
 <li> Tifpack::ILUT

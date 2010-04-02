@@ -38,16 +38,18 @@
 #include "Tifpack_RILUK.hpp"
 #include "Tifpack_ILUT.hpp"
 
+/** Classes and functions for templated preconditioning.  */
 namespace Tifpack {
 
 /** \brief Return true if the specified precondtioner type supports
  * unsymmetric matrices. */
 bool supportsUnsymmetric(const std::string& prec_type);
 
-//! Tifpack::Factory a factory class to create Tifpack preconditioners.
+//! A factory class to create Tifpack preconditioners.
 /*!
-Class Tifpack::Factory contains just one method: create().
-Using create(), users can easily create a variety of Tifpack preconditioners. 
+Tifpack::Factory contains just one method: create().
+Using Tifpack::Factory::create(), users can easily create a variety of
+Tifpack preconditioners. 
 
 create requires 3 arguments:
 - a string, indicating the preconditioner to be built;
@@ -61,7 +63,7 @@ The first argument can assume the following values:
 - \c "RELAXATION"  : returns an instance of Tifpack::Relaxation.
 - \c "CHEBYSHEV"   : returns an instance of Tifpack::Chebyshev (overlap is ignored).
 - \c "ILUT"        : returns an instance of Tifpack::ILUT.
-- \c "CRSRILUK"    : returns an instance of Tifpack::RILUK.
+- \c "RILUK"       : returns an instance of Tifpack::RILUK.
 - otherwise, create() returns Teuchos::null.
 
 

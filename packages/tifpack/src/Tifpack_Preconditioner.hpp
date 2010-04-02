@@ -41,7 +41,7 @@
 
 namespace Tifpack {
 
-//! Tifpack::Preconditioner: basic class for preconditioning in Tifpack
+//! Base class for all Tifpack preconditioners.
 
 /*!
   Tifpack::Preconditioner is a pure virtual class, and it defines
