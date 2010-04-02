@@ -32,7 +32,9 @@
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_OrdinalTraits.hpp"
 
+
 namespace Teuchos {
+
 
 /** \brief Concrete serial communicator subclass.
  *
@@ -128,34 +130,53 @@ public:
 	
 };
 
+
+/** \brief Nonmember constructor.
+ *
+ * \relates SerialComm
+ */
+template<typename Ordinal>
+RCP<SerialComm<Ordinal> > createSerialComm()
+{
+  return Teuchos::rcp(new SerialComm<Ordinal>);
+}
+
+
 // ////////////////////////
 // Implementations
 
+
 // Constructors
+
 
 template<typename Ordinal>
 SerialComm<Ordinal>::SerialComm()
 {}
 
+
 // Overridden from Comm
+
   
 template<typename Ordinal>
 int SerialComm<Ordinal>::getRank() const
 {
   return 0;
 }
+
   
 template<typename Ordinal>
 int SerialComm<Ordinal>::getSize() const
 {
   return 1;
 }
+
   
 template<typename Ordinal>
 void SerialComm<Ordinal>::barrier() const
 {
   // Nothing to do
 }
+
   
 template<typename Ordinal>
 void SerialComm<Ordinal>::broadcast(
@@ -164,6 +185,7 @@ void SerialComm<Ordinal>::broadcast(
 {
   // Nothing to do
 }
+
   
 template<typename Ordinal>
 void SerialComm<Ordinal>::gatherAll(
@@ -180,6 +202,7 @@ void SerialComm<Ordinal>::gatherAll(
 #endif
   std::copy(sendBuffer,sendBuffer+sendBytes,recvBuffer);
 }
+
   
 template<typename Ordinal>
 void SerialComm<Ordinal>::reduceAll(
@@ -190,6 +213,7 @@ void SerialComm<Ordinal>::reduceAll(
   (void)reductOp;
   std::copy(sendBuffer,sendBuffer+bytes,globalReducts);
 }
+
   
 template<typename Ordinal>
 void SerialComm<Ordinal>::reduceAllAndScatter(
@@ -210,6 +234,7 @@ void SerialComm<Ordinal>::reduceAllAndScatter(
 #endif
   std::copy(sendBuffer,sendBuffer+sendBytes,myGlobalReducts);
 }
+
   
 template<typename Ordinal>
 void SerialComm<Ordinal>::scan(
@@ -220,6 +245,7 @@ void SerialComm<Ordinal>::scan(
   (void)reductOp;
   std::copy(sendBuffer,sendBuffer+bytes,scanReducts);
 }
+
   
 template<typename Ordinal>
 void SerialComm<Ordinal>::send(
@@ -232,6 +258,7 @@ void SerialComm<Ordinal>::send(
     " only have one process!"
     );
 }
+
   
 template<typename Ordinal>
 int SerialComm<Ordinal>::receive(
@@ -247,6 +274,7 @@ int SerialComm<Ordinal>::receive(
   return 0; 
 }
 
+
 template<typename Ordinal>
 void SerialComm<Ordinal>::readySend(
   const ArrayView<const char> &/*sendBuffer*/,
@@ -259,7 +287,6 @@ void SerialComm<Ordinal>::readySend(
     " only have one process!"
     );
 }
-
 
 
 template<typename Ordinal>
@@ -304,6 +331,7 @@ void SerialComm<Ordinal>::wait(
 
 // Overridden from Describable
 
+
 template<typename Ordinal>
 std::string SerialComm<Ordinal>::description() const
 {
@@ -312,6 +340,8 @@ std::string SerialComm<Ordinal>::description() const
   return oss.str();
 }
 
+
 } // namespace Teuchos
+
 
 #endif // TEUCHOS_SERIAL_COMM_HPP
