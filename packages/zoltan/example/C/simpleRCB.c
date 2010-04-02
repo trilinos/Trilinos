@@ -18,7 +18,7 @@ static char *fname="mesh.txt";
 typedef struct{
   int numGlobalPoints;
   int numMyPoints;
-  Z_INT64 *myGlobalIDs;
+  Z_INT_L *myGlobalIDs;
   float *x;
   float *y;
 } MESH_DATA;
@@ -39,7 +39,7 @@ static void get_geometry_list(void *data, int sizeGID, int sizeLID,
 static int get_next_line(FILE *fp, char *buf, int bufsize);
 static void input_file_error(int numProcs, int tag, int startProc);
 void read_input_objects(int myRank, int numProcs, char *fname, MESH_DATA *myData);
-void showSimpleMeshPartitions(int myProc, int numIDs, Z_INT64 *GIDs, int *parts);
+void showSimpleMeshPartitions(int myProc, int numIDs, Z_INT_L *GIDs, int *parts);
 
 int main(int argc, char *argv[])
 {
@@ -315,28 +315,12 @@ char *buf;
 int bufsize = 512;
 int num, nobj, remaining, ack=0;
 int i, j;
-Z_INT64 *gids;
+Z_INT_L *gids;
 float *xcoord, *ycoord;
 FILE *fp;
 MPI_Status status;
 int ack_tag = 5, count_tag = 10, id_tag = 15;
 int x_tag = 20, y_tag = 25;
-char gid_specifier[16];
-
-  /* If Zoltan is compiled on a 32 bit machine, is uses 32 bit global IDs.
-   * If it is compiled on a 64 bit machine with -DUSE_32_BIT_ADDRESS_SPACE
-   * it also uses 32 bit global IDs.  Otherwise it uses 64 bit global IDs.
-   */
-
-  if (sizeof(ZOLTAN_ID_TYPE) > sizeof(long)){
-    strcpy(gid_specifier,"%ld");
-  }
-  else if (sizeof(ZOLTAN_ID_TYPE) > sizeof(long long)){
-    strcpy(gid_specifier,"%Ld");
-  }
-  else{
-    strcpy(gid_specifier,"%d");
-  }
 
   if (myRank == 0){
 
@@ -357,7 +341,7 @@ char gid_specifier[16];
       remaining = 0;
     }
 
-    myMesh->myGlobalIDs = (Z_INT64 *)malloc(sizeof(Z_INT64) * nobj);
+    myMesh->myGlobalIDs = (Z_INT_L *)malloc(sizeof(Z_INT_L) * nobj);
     myMesh->x = (float *)malloc(sizeof(float) * nobj);
     myMesh->y = (float *)malloc(sizeof(float) * nobj);
     myMesh->numMyPoints= nobj;
@@ -367,7 +351,7 @@ char gid_specifier[16];
       num = get_next_line(fp, buf, bufsize);
       if (num == 0) input_file_error(numProcs, count_tag, 1);
 
-      num = sscanf(buf, gid_specifier, myMesh->myGlobalIDs + i);
+      num = sscanf(buf, "%" Z_INT_L_SPECIFIER, myMesh->myGlobalIDs + i);
 
       if (num != 1) input_file_error(numProcs, count_tag, 1);
 
@@ -376,7 +360,7 @@ char gid_specifier[16];
       if (num != 2) input_file_error(numProcs, count_tag, 1);
     }
 
-    gids = (Z_INT64 *)malloc(sizeof(Z_INT64) * (nobj + 1));
+    gids = (Z_INT_L *)malloc(sizeof(Z_INT_L) * (nobj + 1));
     xcoord = (float *)malloc(sizeof(float) * (nobj + 1));
     ycoord = (float *)malloc(sizeof(float) * (nobj + 1));
 
@@ -401,7 +385,7 @@ char gid_specifier[16];
         for (j=0; j < nobj; j++){
           num = get_next_line(fp, buf, bufsize);
           if (num == 0) input_file_error(numProcs, count_tag, i);
-          num = sscanf(buf, gid_specifier, gids + j);
+          num = sscanf(buf, "%" Z_INT_L_SPECIFIER, gids + j);
           if (num != 1) input_file_error(numProcs, count_tag, i);
           num = sscanf(buf, "%f %f", xcoord + j, ycoord + j);
           if (num != 2) input_file_error(numProcs, count_tag, i);
@@ -412,7 +396,7 @@ char gid_specifier[16];
       MPI_Recv(&ack, 1, MPI_INT, i, ack_tag, MPI_COMM_WORLD, &status);
 
       if (nobj > 0){
-        MPI_Send(gids, nobj, Z_MPI_INT64, i, id_tag, MPI_COMM_WORLD);
+        MPI_Send(gids, nobj, Z_MPI_LONG, i, id_tag, MPI_COMM_WORLD);
         MPI_Send(xcoord, nobj, MPI_FLOAT, i, x_tag, MPI_COMM_WORLD);
         MPI_Send(ycoord, nobj, MPI_FLOAT, i, y_tag, MPI_COMM_WORLD);
       }
@@ -435,11 +419,11 @@ char gid_specifier[16];
     MPI_Recv(&myMesh->numMyPoints, 1, MPI_INT, 0, count_tag, MPI_COMM_WORLD, &status);
     ack = 0;
     if (myMesh->numMyPoints > 0){
-      myMesh->myGlobalIDs = (Z_INT64 *)malloc(sizeof(Z_INT64) * myMesh->numMyPoints);
+      myMesh->myGlobalIDs = (Z_INT_L *)malloc(sizeof(Z_INT_L) * myMesh->numMyPoints);
       myMesh->x = (float *)malloc(sizeof(float) * myMesh->numMyPoints);
       myMesh->y = (float *)malloc(sizeof(float) * myMesh->numMyPoints);
       MPI_Send(&ack, 1, MPI_INT, 0, ack_tag, MPI_COMM_WORLD);
-      MPI_Recv(myMesh->myGlobalIDs, myMesh->numMyPoints, Z_MPI_INT64, 0,
+      MPI_Recv(myMesh->myGlobalIDs, myMesh->numMyPoints, Z_MPI_LONG, 0,
                id_tag, MPI_COMM_WORLD, &status);
       MPI_Recv(myMesh->x, myMesh->numMyPoints, MPI_FLOAT, 0,
                x_tag, MPI_COMM_WORLD, &status);
@@ -461,7 +445,7 @@ char gid_specifier[16];
     }
   }
 }
-void showSimpleMeshPartitions(int myProc, int numIDs, Z_INT64 *GIDs, int *parts)
+void showSimpleMeshPartitions(int myProc, int numIDs, Z_INT_L *GIDs, int *parts)
 {
 int partAssign[25], allPartAssign[25];
 int i, j, part;

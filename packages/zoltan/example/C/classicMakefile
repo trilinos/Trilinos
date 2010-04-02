@@ -2,13 +2,13 @@
 ## a basic makefile to build examples
 ##
 
-## Turn on this flag if Zoltan was built with this flag
-ADDRESS_SPACE_FLAG = -DUSE_32_BIT_ADDRESS_SPACE
-
 ## Location of zoltan library, also location of Zoltan_config.h if
 ## using the autoconf build harness
 
-BLD=../../build/src
+BLD=../../build64/src
+#BLD=../../build/src
+
+#ADDRESS_SPACE_FLAG=-DUSE_32_BIT_ADDRESS_SPACE
 
 ##
 ## Location of zoltan "src" directory (for header files)
@@ -37,26 +37,33 @@ ZOLTAN_UTIL_INCLUDE=-I$(SRC)/zz  \
 ## to link with the ParMETIS library.
 ##
 
-PAR_LIB_DIR=-L/home/lafisk/system/parmetis/ParMetis-3.1.1
-PAR_LIBS=-lparmetis -lmetis
+#PAR_LIB_DIR=-L/home/lafisk/system/parmetis/ParMetis-3.1.1
+#PAR_LIBS=-lparmetis -lmetis
+
+#MPI_DIR=/home/lriesen/system/mpich2_32
 
 ##
 ## C compiler
 ##
+#CC=$(MPI_DIR)/bin/mpicc
+
 CC=mpicc
 
 ##
 ## C++ compiler
 ##
+#CXX=$(MPI_DIR)/bin/mpicxx
+
 CXX=mpicxx
 
 # MPI include and library options if needed
-MPI_INCLUDE=
-MPI_LIBS=
+#MPI_INCLUDE=-I$(MPI_DIR)/src/include
+#MPI_LIBS=$(MPI_DIR)//lib/libmpich.a
 
 
 CFLAGS = -g -Wall $(ADDRESS_SPACE_FLAG)
 CXXFLAGS = -g -Wall $(ADDRESS_SPACE_FLAG)
+
 
 C_EXAMPLES = simpleBLOCK  simpleRCB simpleGRAPH simplePHG migrateGRAPH
 

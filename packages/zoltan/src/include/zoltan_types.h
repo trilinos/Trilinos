@@ -15,6 +15,8 @@
 #define __ZOLTAN_TYPES_H
 
 #include <mpi.h>
+/* to get PRIdMAX, etc */
+#define __STDC_FORMAT_MACROS
 #include <inttypes.h>
 
 #ifdef __cplusplus
@@ -22,45 +24,48 @@
 extern "C" {
 #endif
 
-typedef int16_t Z_INT16;
-typedef int32_t Z_INT32;
-typedef uint16_t Z_UINT16;
-typedef uint32_t Z_UINT32;
+/* Set at runtime in Zoltan_set_mpi_integer_data_types */
+extern MPI_Datatype _mpi_int_32_type;
+extern MPI_Datatype _mpi_int_max_type;
+extern MPI_Datatype _mpi_uint_32_type;
+extern MPI_Datatype _mpi_uint_max_type;
 
-/* Data type macro definitions for 64 bit platform *************************/
-#if __WORDSIZE==64
+typedef int32_t  Z_INT;
+typedef uint32_t Z_UINT;
 
-#ifdef USE_32_BIT_ADDRESS_SPACE       /* compile time option for faster code */
-typedef int32_t Z_INT64;
-typedef uint32_t Z_UINT64;
+#ifdef USE_32_BIT_ADDRESS_SPACE
+typedef int32_t Z_INT_L;
+typedef uint32_t Z_UINT_L;
 #else
-typedef int64_t Z_INT64;
-typedef uint64_t Z_UINT64;
+typedef intmax_t  Z_INT_L;
+typedef uintmax_t Z_UINT_L;
 #endif
 
-/* Data type macro definitions for 32 bit platform *************************/
-#else
+#define Z_MPI_INT       _mpi_int_32_type
+#define Z_MPI_UNSIGNED  _mpi_uint_32_type
+#define Z_MPI_LONG          _mpi_int_max_type
+#define Z_MPI_UNSIGNED_LONG _mpi_uint_max_type
 
-typedef int32_t Z_INT64;
-typedef uint32_t Z_UINT64;
- 
+/* string to specify these types in scanf, printf, etc as a decimal
+    printf("%" Z_INT_L_SPECIFIER "\n",mygid);
+ */
+
+#ifdef USE_32_BIT_ADDRESS_SPACE
+#define Z_INT_L_SPECIFIER    PRId32
+#define Z_UINT_L_SPECIFIER   PRId32
+#else
+#define Z_INT_L_SPECIFIER    PRIdMAX 
+#define Z_UINT_L_SPECIFIER   PRIdMAX
 #endif
 
-/* We figure out which MPI datatypes to use at runtime in Zoltan_set_mpi_integer_data_types */
+#define Z_INT_SPECIFIER      PRId32
+#define Z_UINT_SPECIFIER     PRId32
 
-extern MPI_Datatype mpi_two_byte_int_type;
-extern MPI_Datatype mpi_four_byte_int_type;
-extern MPI_Datatype mpi_eight_byte_int_type;
-extern MPI_Datatype mpi_two_byte_unsigned_int_type;
-extern MPI_Datatype mpi_four_byte_unsigned_int_type;
-extern MPI_Datatype mpi_eight_byte_unsigned_int_type;
-
-#define Z_MPI_INT16  mpi_two_byte_int_type
-#define Z_MPI_INT32  mpi_four_byte_int_type
-#define Z_MPI_INT64  mpi_eight_byte_int_type
-#define Z_MPI_UINT16  mpi_two_byte_unsigned_int_type
-#define Z_MPI_UINT32  mpi_four_byte_unsigned_int_type
-#define Z_MPI_UINT64  mpi_eight_byte_unsigned_int_type
+/* A constant of type Z_INT_L can be created with the macro INTMAX_C(val)
+ *            of type Z_UINT_L                             UINTMAX_C(val)
+ *            of type Z_INT                                  INT32_C(val)
+ *            of type Z_UINT                                UINT32_C(val)
+ */
 
 /*****************************************************************************/
 /*
@@ -68,7 +73,7 @@ extern MPI_Datatype mpi_eight_byte_unsigned_int_type;
  */
 /*****************************************************************************/
 
-typedef Z_INT64              ZOLTAN_ID_TYPE;
+typedef Z_INT_L            ZOLTAN_ID_TYPE;
 typedef ZOLTAN_ID_TYPE     *ZOLTAN_ID_PTR;
 #define ZOLTAN_ID_MPI_TYPE  MPI_UNSIGNED
 
