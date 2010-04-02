@@ -953,12 +953,30 @@ Stokhos::SGModelEvaluator::get_p_sg_indices() const
 }
 
 Teuchos::Array<int> 
+Stokhos::SGModelEvaluator::get_non_p_sg_indices() const
+{
+  Teuchos::Array<int> non_sg_p_index(num_p);
+  for (int i=0; i<num_p; i++)
+    non_sg_p_index[i] = i;
+  return non_sg_p_index;
+}
+
+Teuchos::Array<int> 
 Stokhos::SGModelEvaluator::get_g_sg_indices() const
 {
   Teuchos::Array<int> sg_g_index(num_g_sg);
   for (int i=0; i<num_g_sg; i++)
     sg_g_index[i] = num_g + i;
   return sg_g_index;
+}
+
+Teuchos::Array<int> 
+Stokhos::SGModelEvaluator::get_non_g_sg_indices() const
+{
+  Teuchos::Array<int> non_sg_g_index(num_g);
+  for (int i=0; i<num_g; i++)
+    non_sg_g_index[i] = i;
+  return non_sg_g_index;
 }
 
 Teuchos::Array< Teuchos::RCP<const Epetra_Map> > 

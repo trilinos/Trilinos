@@ -39,17 +39,23 @@ Stokhos::SGInverseModelEvaluator::SGInverseModelEvaluator(
   const Teuchos::RCP<EpetraExt::ModelEvaluator>& me_,
   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis_,
   const Teuchos::Array<int>& sg_p_index_,
+  const Teuchos::Array<int>& non_sg_p_index_,
   const Teuchos::Array<int>& sg_g_index_,
+  const Teuchos::Array<int>& non_sg_g_index_,
   const Teuchos::Array< Teuchos::RCP<const Epetra_Map> >& base_p_maps_,
   const Teuchos::Array< Teuchos::RCP<const Epetra_Map> >& base_g_maps_) 
   : me(me_),
     sg_basis(sg_basis_),
     sg_p_index(sg_p_index_),
+    non_sg_p_index(non_sg_p_index_),
     sg_g_index(sg_g_index_),
+    non_sg_g_index(non_sg_g_index_),
     base_p_maps(base_p_maps_),
     base_g_maps(base_g_maps_),
     num_p_sg(sg_p_index.size()),
+    num_p(non_sg_p_index.size()),
     num_g_sg(sg_g_index.size()),
+    num_g(non_sg_g_index.size()),
     block_p(num_p_sg),
     block_g(num_g_sg),
     block_dgdp(num_g_sg)
@@ -82,9 +88,9 @@ Stokhos::SGInverseModelEvaluator::SGInverseModelEvaluator(
     block_g[i] = Teuchos::rcp(new Epetra_Vector(*sg_g_map));
     
     // Create dg/dp SG blocks
-    block_dgdp[i].resize(me_inargs.Np());
-    for (int j=0; j<me_inargs.Np(); j++) {
-      Teuchos::RCP<const Epetra_Map> p_map = me->get_p_map(j);
+    block_dgdp[i].resize(num_p);
+    for (int j=0; j<num_p; j++) {
+      Teuchos::RCP<const Epetra_Map> p_map = me->get_p_map(non_sg_p_index[j]);
       block_dgdp[i][j] = 
 	Teuchos::rcp(new Epetra_MultiVector(*sg_g_map, p_map->NumMyElements()));
     }
@@ -111,7 +117,11 @@ Teuchos::RCP<const Epetra_Map>
 Stokhos::SGInverseModelEvaluator::
 get_p_map(int l) const
 {
-  return me->get_p_map(l);
+  TEST_FOR_EXCEPTION(
+    l >= num_p || l < 0, std::logic_error,
+    std::endl << "Error!  Stokhos::SGInverseModelEvaluator::get_p_map():"
+    << "  Invalid parameter index l = " << l << std::endl);
+  return me->get_p_map(non_sg_p_index[l]);
 }
 
 Teuchos::RCP<const Epetra_Map>
@@ -129,7 +139,11 @@ Teuchos::RCP<const Epetra_Map>
 Stokhos::SGInverseModelEvaluator::
 get_g_map(int l) const
 {
-  return me->get_g_map(l);
+  TEST_FOR_EXCEPTION(
+    l >= num_g || l < 0, std::logic_error,
+    std::endl << "Error!  Stokhos::SGInverseModelEvaluator::get_g_map():"
+    << "  Invalid response index l = " << l << std::endl);
+  return me->get_g_map(non_sg_g_index[l]);
 }
 
 Teuchos::RCP<const Epetra_Map>
@@ -139,7 +153,7 @@ get_g_sg_map(int l) const
   TEST_FOR_EXCEPTION(
     l >= num_g_sg || l < 0, std::logic_error,
     std::endl << "Error!  Stokhos::SGInverseModelEvaluator::get_g_sg_map():"
-    << "  Invalid parameter index l = " << l << std::endl);
+    << "  Invalid response index l = " << l << std::endl);
   return base_g_maps[l];
 }
 
@@ -147,7 +161,11 @@ Teuchos::RCP<const Teuchos::Array<std::string> >
 Stokhos::SGInverseModelEvaluator::
 get_p_names(int l) const
 {
-  return me->get_p_names(l);
+  TEST_FOR_EXCEPTION(
+    l >= num_p || l < 0, std::logic_error,
+    std::endl << "Error!  Stokhos::SGInverseModelEvaluator::get_p_names():"
+    << "  Invalid parameter index l = " << l << std::endl);
+  return me->get_p_names(non_sg_p_index[l]);
 }
 
 Teuchos::RCP<const Teuchos::Array<std::string> >
@@ -165,7 +183,11 @@ Teuchos::RCP<const Epetra_Vector>
 Stokhos::SGInverseModelEvaluator::
 get_p_init(int l) const
 {
-  return me->get_p_init(l);
+  TEST_FOR_EXCEPTION(
+    l >= num_p || l < 0, std::logic_error,
+    std::endl << "Error!  Stokhos::SGInverseModelEvaluator::get_p_init():"
+    << "  Invalid parameter index l = " << l << std::endl);
+  return me->get_p_init(non_sg_p_index[l]);
 }
 
 Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly>
@@ -191,7 +213,7 @@ Stokhos::SGInverseModelEvaluator::createInArgs() const
   InArgs me_inargs = me->createInArgs();
 
   inArgs.setModelEvalDescription(this->description());
-  inArgs.set_Np(me_inargs.Np());
+  inArgs.set_Np(num_p);
   inArgs.set_Np_sg(num_p_sg); 
   inArgs.setSupports(IN_ARG_sg_basis, me_inargs.supports(IN_ARG_sg_basis));
   inArgs.setSupports(IN_ARG_sg_quadrature, 
@@ -210,31 +232,35 @@ Stokhos::SGInverseModelEvaluator::createOutArgs() const
 
   outArgs.setModelEvalDescription(this->description());
 
-  outArgs.set_Np_Ng(me_outargs.Np(), me_outargs.Ng());
-  for (int i=0; i<me_outargs.Ng(); i++)
-    for (int j=0; j<me_outargs.Np(); j++)
+  outArgs.set_Np_Ng(num_p, num_g);
+  for (int i=0; i<num_g; i++)
+    for (int j=0; j<num_p; j++)
       outArgs.setSupports(OUT_ARG_DgDp, i, j, 
-			  me_outargs.supports(OUT_ARG_DgDp, i, j));
+			  me_outargs.supports(OUT_ARG_DgDp, 
+					      non_sg_g_index[i], 
+					      non_sg_p_index[j]));
 
-  outArgs.set_Np_Ng_sg(me_outargs.Np(), num_g_sg);
+  outArgs.set_Np_Ng_sg(num_p, num_g_sg);
   for (int i=0; i<num_g_sg; i++)
-    for (int j=0; j<me_outargs.Np(); j++)
+    for (int j=0; j<num_p; j++)
       outArgs.setSupports(OUT_ARG_DgDp_sg, i, j, 
-			  me_outargs.supports(OUT_ARG_DgDp, sg_g_index[i], j));
+			  me_outargs.supports(OUT_ARG_DgDp, 
+					      sg_g_index[i], 
+					      non_sg_p_index[j]));
   
   return outArgs;
 }
 
 void 
 Stokhos::SGInverseModelEvaluator::evalModel(const InArgs& inArgs,
-				     const OutArgs& outArgs) const
+					    const OutArgs& outArgs) const
 {
   // Create underlying inargs
   InArgs me_inargs = me->createInArgs();
 
   // Pass parameters
-  for (int i=0; i<me_inargs.Np(); i++)
-    me_inargs.set_p(i, inArgs.get_p(i));
+  for (int i=0; i<num_p; i++)
+    me_inargs.set_p(non_sg_p_index[i], inArgs.get_p(i));
 
   // Pass SG parameters
   for (int i=0; i<num_p_sg; i++) {
@@ -257,14 +283,15 @@ Stokhos::SGInverseModelEvaluator::evalModel(const InArgs& inArgs,
   OutArgs me_outargs = me->createOutArgs();
 
   // Responses
-  for (int i=0; i<me_outargs.Ng(); i++) {
+  for (int i=0; i<num_g; i++) {
     // g
-    me_outargs.set_g(i, outArgs.get_g(i));
+    me_outargs.set_g(non_sg_g_index[i], outArgs.get_g(i));
 
     // dg/dp
-    for (int j=0; j<outArgs.Np(); j++)
+    for (int j=0; j<num_p; j++)
       if (!outArgs.supports(OUT_ARG_DgDp, i, j).none())
-	me_outargs.set_DgDp(i, j, outArgs.get_DgDp(i,j));
+	me_outargs.set_DgDp(non_sg_g_index[i], non_sg_p_index[j], 
+			    outArgs.get_DgDp(i,j));
   }
 
 
@@ -278,14 +305,14 @@ Stokhos::SGInverseModelEvaluator::evalModel(const InArgs& inArgs,
     }
 
     // dg/dp
-    for (int j=0; j<me_outargs.Np(); j++) {
+    for (int j=0; j<num_p; j++) {
       if (!outArgs.supports(OUT_ARG_DgDp_sg, i, j).none()) {
 	SGDerivative dgdp_sg = outArgs.get_DgDp_sg(i,j);
 	Teuchos::RCP< Stokhos::EpetraMultiVectorOrthogPoly > dgdp_sg_mv
 	  = dgdp_sg.getMultiVector();
 	if (dgdp_sg_mv != Teuchos::null) {
 	  dgdp_sg_mv->assignToBlockMultiVector(*(block_dgdp[i][j]));
-	  me_outargs.set_DgDp(sg_g_index[i], j, 
+	  me_outargs.set_DgDp(sg_g_index[i], non_sg_p_index[j], 
 			      Derivative(block_dgdp[i][j],
 					 dgdp_sg.getMultiVectorOrientation()));
 	}
@@ -310,7 +337,7 @@ Stokhos::SGInverseModelEvaluator::evalModel(const InArgs& inArgs,
     }
 
     // dg/dp
-    for (int j=0; j<me_outargs.Np(); j++) {
+    for (int j=0; j<num_p; j++) {
       if (!outArgs.supports(OUT_ARG_DgDp_sg, i, j).none()) {
 	SGDerivative dgdp_sg = outArgs.get_DgDp_sg(i,j);
 	Teuchos::RCP< Stokhos::EpetraMultiVectorOrthogPoly > dgdp_sg_mv

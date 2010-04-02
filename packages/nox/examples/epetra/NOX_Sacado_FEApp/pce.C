@@ -415,7 +415,11 @@ int main(int argc, char *argv[]) {
 	sg_block_solver = sg_model;
 
       // Create SG Inverse model evaluator
+      Teuchos::Array<int> non_sg_inverse_p_index = 
+	sg_model->get_non_p_sg_indices();
       Teuchos::Array<int> sg_inverse_p_index = sg_model->get_p_sg_indices();
+      Teuchos::Array<int> non_sg_inverse_g_index = 
+	sg_model->get_non_g_sg_indices();
       Teuchos::Array<int> sg_inverse_g_index = sg_model->get_g_sg_indices();
       Teuchos::Array< Teuchos::RCP<const Epetra_Map> > base_p_maps = 
 	sg_model->get_p_sg_base_maps();
@@ -427,12 +431,11 @@ int main(int argc, char *argv[]) {
 	base_g_maps.push_back(app->getMap());
       }
       Teuchos::RCP<EpetraExt::ModelEvaluator> sg_solver = 
-	Teuchos::rcp(new Stokhos::SGInverseModelEvaluator(sg_block_solver, 
-							  basis,
-							  sg_inverse_p_index, 
-							  sg_inverse_g_index, 
-							  base_p_maps, 
-							  base_g_maps));
+	Teuchos::rcp(new Stokhos::SGInverseModelEvaluator(
+		       sg_block_solver, basis, 
+		       sg_inverse_p_index, non_sg_inverse_p_index,
+		       sg_inverse_g_index, non_sg_inverse_g_index,
+		       base_p_maps, base_g_maps));
       
       // Evaluate SG responses at SG parameters
       EpetraExt::ModelEvaluator::InArgs sg_inArgs = sg_solver->createInArgs();

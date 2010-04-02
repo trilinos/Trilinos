@@ -54,7 +54,9 @@ namespace Stokhos {
       const Teuchos::RCP<EpetraExt::ModelEvaluator>& me,
       const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
       const Teuchos::Array<int>& sg_p_index,
+      const Teuchos::Array<int>& non_sg_p_index,
       const Teuchos::Array<int>& sg_g_index,
+      const Teuchos::Array<int>& non_sg_g_index,
       const Teuchos::Array< Teuchos::RCP<const Epetra_Map> >& base_p_maps,
       const Teuchos::Array< Teuchos::RCP<const Epetra_Map> >& base_g_maps);
 
@@ -115,8 +117,14 @@ namespace Stokhos {
     //! Index of stochastic parameters
     Teuchos::Array<int> sg_p_index;
 
+    //! Index of non-stochastic parameters
+    Teuchos::Array<int> non_sg_p_index;
+
     //! Index of stochastic responses
     Teuchos::Array<int> sg_g_index;
+
+    //! Index of non-stochastic responses
+    Teuchos::Array<int> non_sg_g_index;
 
     //! Base maps of block p vectors
     Teuchos::Array< Teuchos::RCP<const Epetra_Map> > base_p_maps;
@@ -130,8 +138,14 @@ namespace Stokhos {
     //! Number of stochastic parameter vectors
     int num_p_sg;
 
+    //! Number of non-stochastic parameter vectors
+    int num_p;
+
     //! Number of stochastic response vectors
     int num_g_sg;
+
+    //! Number of non-stochastic response vectors
+    int num_g;
 
     //! Block SG p vectors
     Teuchos::Array< Teuchos::RCP< Epetra_Vector > > block_p;

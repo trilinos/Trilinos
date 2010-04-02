@@ -147,12 +147,26 @@ namespace Stokhos {
      */
     Teuchos::Array<int> get_p_sg_indices() const;
 
+    //! Get indices of non-SG parameters
+    /*!
+     * These indices determine which parameter vectors that will be passed
+     * through InArgs correspond to the non-SG parameters.
+     */
+    Teuchos::Array<int> get_non_p_sg_indices() const;
+
     //! Get indices of SG responses
     /*!
      * These indices determine which response vectors that will be passed
      * through OutArgs correspond to the SG responses.
      */
     Teuchos::Array<int> get_g_sg_indices() const;
+
+    //! Get indices of non-SG responses
+    /*!
+     * These indices determine which response vectors that will be passed
+     * through OutArgs correspond to the non-SG responses.
+     */
+    Teuchos::Array<int> get_non_g_sg_indices() const;
 
     //! Get base maps of SG parameters
     Teuchos::Array< Teuchos::RCP<const Epetra_Map> > get_p_sg_base_maps() const;
