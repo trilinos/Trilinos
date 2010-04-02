@@ -109,5 +109,5 @@ void GridFixture::generate_grid()
 
   m_bulk_data.modification_end();
 
-  skin_mesh(m_bulk_data, stk::mesh::Face, & m_boundary_part);
+  skin_mesh(m_bulk_data, stk::mesh::Face);
 }
