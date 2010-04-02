@@ -11,11 +11,14 @@
 
 #define NAMED_PAIR( STRUCT_NAME , FIRST_TYPE , FIRST_NAME , SECOND_TYPE , SECOND_NAME )	\
 struct STRUCT_NAME {	\
-  FIRST_TYPE  FIRST_NAME ; \
-  SECOND_TYPE SECOND_NAME ; \
+  typedef FIRST_TYPE first_type; \
+  typedef SECOND_TYPE second_type; \
   \
-  STRUCT_NAME ( const FIRST_TYPE & arg_ ## FIRST_NAME , \
-                const SECOND_TYPE & arg_ ## SECOND_NAME ) \
+  first_type  FIRST_NAME ; \
+  second_type SECOND_NAME ; \
+  \
+  STRUCT_NAME ( const first_type & arg_ ## FIRST_NAME , \
+                const second_type & arg_ ## SECOND_NAME ) \
    : FIRST_NAME ( arg_ ## FIRST_NAME ) , \
      SECOND_NAME ( arg_ ## SECOND_NAME ) {} \
   \

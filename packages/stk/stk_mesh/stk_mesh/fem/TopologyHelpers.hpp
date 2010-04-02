@@ -61,7 +61,7 @@ void get_parts_with_topology(stk::mesh::BulkData& mesh,
   stk::mesh::PartVector::const_iterator
     iter = all_parts.begin(),
     iter_end = all_parts.end();
- 
+
   const CellTopologyData* topology = shards::getCellTopologyData<Traits>();
 
   for(; iter!=iter_end; ++iter) {
@@ -84,28 +84,28 @@ Entity & declare_element( BulkData & mesh ,
                           const IdType node_id[] )
 {
   const CellTopologyData * const top = get_cell_topology( part );
-     
+
   if ( top == NULL ) {
-    std::ostringstream msg ; 
-    msg << "stk::mesh::declare_element( mesh , " ; 
+    std::ostringstream msg ;
+    msg << "stk::mesh::declare_element( mesh , " ;
     msg << part.name();
     msg << " , " ;
     msg << elem_id ;
     msg << " , node_id[] ) ERROR, Part does not have a local topology" ;
-    throw std::runtime_error( msg.str() ); 
+    throw std::runtime_error( msg.str() );
   }
- 
+
   PartVector empty ;
   PartVector add( 1 ); add[0] = & part ;
- 
-  Entity & elem = mesh.declare_entity( Element, elem_id, add ); 
- 
+
+  Entity & elem = mesh.declare_entity( Element, elem_id, add );
+
   for ( unsigned i = 0 ; i < top->node_count ; ++i ) {
     Entity & node = mesh.declare_entity( Node, node_id[i], empty );
     mesh.declare_relation( elem , node , i );
-  }   
-  return elem ; 
-}         
+  }
+  return elem ;
+}
 
 /** \brief  Declare an element member of a Part with a CellTopology
  *          and nodes conformal to that topology.
@@ -117,26 +117,26 @@ Entity & declare_element( BulkData & mesh ,
                           Entity * node[] )
 {
   const CellTopologyData * const top = get_cell_topology( part );
-     
+
   if ( top == NULL ) {
-    std::ostringstream msg ; 
-    msg << "stk::mesh::declare_element( mesh , " ; 
+    std::ostringstream msg ;
+    msg << "stk::mesh::declare_element( mesh , " ;
     msg << part.name();
     msg << " , " ;
     msg << elem_id ;
     msg << " , node[] ) ERROR, Part does not have a local topology" ;
-    throw std::runtime_error( msg.str() ); 
+    throw std::runtime_error( msg.str() );
   }
- 
+
   PartVector add( 1 ); add[0] = & part ;
- 
-  Entity & elem = mesh.declare_entity( Element, elem_id, add ); 
- 
+
+  Entity & elem = mesh.declare_entity( Element, elem_id, add );
+
   for ( unsigned i = 0 ; i < top->node_count ; ++i ) {
     mesh.declare_relation( elem , *node[i] , i );
-  }   
-  return elem ; 
-}         
+  }
+  return elem ;
+}
 
 //----------------------------------------------------------------------
 /** \brief  Create (or find) an element side.
@@ -146,6 +146,11 @@ Entity & declare_element( BulkData & mesh ,
 Entity & declare_element_side( BulkData & mesh ,
                                const stk::mesh::EntityId global_side_id ,
                                Entity & elem ,
+                               const unsigned local_side_id ,
+                               Part * part = NULL );
+
+Entity & declare_element_side( Entity & elem ,
+                               Entity & side ,
                                const unsigned local_side_id ,
                                Part * part = NULL );
 
@@ -161,22 +166,6 @@ bool element_side_polarity( const Entity & elem ,
 int element_local_side_id( const Entity & elem ,
                            const Entity & side );
 
-/** \brief  Get the entities adjacent to the input entity.
- *
- *  The adjacent entities are of the same rank as the input entity.
- *  Adjacency is defined by the input entity sharing a common
- *  sub-cell with the adjacent entities.
- *
- *  subcell_rank defines the rank of the (potentially) common subcell
- *  subcell_identifier defined the local id of the common subcell
- *  adjacent_entities is an output parameter that contains pairs that
- *     have the adjacent entity and the local id of the common subcell
- *     with respect to the adjacent entity.
- */
-void get_adjacent_entities( const Entity & entity ,
-                            unsigned subcell_rank ,
-                            unsigned subcell_identifier ,
-                            std::vector<std::pair<Entity*, unsigned > > & adjacent_entities );
 
 /** \brief  Given an element and collection of nodes, return the
  *          local id of any side that contains those nodes

@@ -60,12 +60,8 @@ void GridFixture::generate_grid()
   const unsigned num_nodes = 25;
   const unsigned num_quad_faces = 16;
   const unsigned p_rank = m_bulk_data.parallel_rank();
+  const unsigned p_size = m_bulk_data.parallel_size();
   std::vector<stk::mesh::Entity*> all_entities;
-
-  // we don't want anything on any of the processes expect rank 0
-  if (p_rank != 0) {
-    return;
-  }
 
   // assign ids, quads, nodes, then shells
   // (we need this order to be this way in order for our connectivity setup to  work)
@@ -85,37 +81,25 @@ void GridFixture::generate_grid()
   // entity in the all_entities vector
   {
     const stk::mesh::PartVector no_parts;
+    const unsigned first_quad = (p_rank * num_quad_faces) / p_size;
+    const unsigned end_quad = ((p_rank + 1) * num_quad_faces) / p_size;
 
     // declare faces
     stk::mesh::PartVector face_parts;
     face_parts.push_back(&m_quad_part);
-    for (unsigned i = 0; i < num_quad_faces; ++i) {
-      stk::mesh::Entity& new_face = m_bulk_data.declare_entity(stk::mesh::Face, quad_face_ids[i],
-                                                                face_parts);
-      all_entities.push_back(&new_face);
-    }
+    for (unsigned i = first_quad; i < end_quad; ++i) {
 
-    // declare nodes
-    for (unsigned i = 0; i < num_nodes; ++i) {
-      stk::mesh::Entity& new_node = m_bulk_data.declare_entity(stk::mesh::Node, node_ids[i],
-                                                                no_parts);
-      all_entities.push_back(&new_node);
-    }
-  }
-
-  // declare relationships
-  {
-    // declare quad relationships
-    for (unsigned i = 0; i < num_quad_faces; ++i) {
-      stk::mesh::Entity& face = *(all_entities[i]);
       unsigned face_id = quad_face_ids[i];
       unsigned row = (face_id - 1) / 4;
 
+      stk::mesh::Entity& face = m_bulk_data.declare_entity(stk::mesh::Face, face_id, face_parts);
+
       unsigned node_id = num_quad_faces + face_id + row;
       int chg_list[4] = {0, 5, 1, -5}; // (right-hand rule) counterclockwise
+
       for (unsigned chg_itr = 0; chg_itr < 4; ++chg_itr) {
         node_id += chg_list[chg_itr];
-        stk::mesh::Entity& node = *(all_entities[node_id - 1]);
+        stk::mesh::Entity& node = m_bulk_data.declare_entity(stk::mesh::Node, node_id, no_parts);
         m_bulk_data.declare_relation( face , node , chg_itr);
       }
     }

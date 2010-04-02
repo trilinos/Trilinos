@@ -59,11 +59,17 @@ enum { DISTRIBUTED_INDEX_CHUNK_BITS = 12 }; ///< Each chunk is 4096 keys
 enum { DISTRIBUTED_INDEX_CHUNK_SIZE =
          size_t(1) << DISTRIBUTED_INDEX_CHUNK_BITS };
 
-
-inline
 DistributedIndex::ProcType
 DistributedIndex::to_which_proc( const DistributedIndex::KeyType & key ) const
-{ return ( key >> DISTRIBUTED_INDEX_CHUNK_BITS ) % m_comm_size ; }
+{
+  for ( size_t i = 0 ; i < m_span_count ; ++i ) {
+    if ( m_key_span[i].first <= key && key <= m_key_span[i].second ) {
+       const KeyType offset = key - m_key_span[i].first ;
+       return ( offset >> DISTRIBUTED_INDEX_CHUNK_BITS ) % m_comm_size ;
+    }
+  }
+  return m_comm_size ;
+}
 
 //----------------------------------------------------------------------
 
@@ -77,7 +83,6 @@ DistributedIndex::DistributedIndex (
     m_comm_size( parallel_machine_size( comm ) ),
     m_span_count(0),
     m_key_span(),
-    m_chunk_first(),
     m_key_usage()
 {
   unsigned info[2] ;
@@ -127,20 +132,6 @@ DistributedIndex::DistributedIndex (
       KeySpan( std::numeric_limits<KeyType>::min(),
                std::numeric_limits<KeyType>::max() ) );
     m_span_count = 1 ;
-  }
-
-  m_chunk_first.resize( m_span_count );
-
-  for ( size_t i = 0 ; i < m_span_count ; ++i ) {
-    const KeyType key_span_first = m_key_span[i].first ;
-    size_t chunk_iter = 0 ;
-
-    while ( m_comm_rank !=
-            to_which_proc( key_span_first +
-                           chunk_iter * DISTRIBUTED_INDEX_CHUNK_SIZE ) ) {
-      ++chunk_iter ;
-    }
-    m_chunk_first[ i ] = chunk_iter ;
   }
 }
 
@@ -213,14 +204,28 @@ void DistributedIndex::query(
   std::vector<KeyProc> request ;
 
   {
+    bool bad_key = false ;
     CommAll all( m_comm );
 
     for ( std::vector<KeyType>::const_iterator
           k = keys.begin() ; k != keys.end() ; ++k ) {
-      all.send_buffer( to_which_proc( *k ) ).pack<KeyType>( *k );
+      const ProcType p = to_which_proc( *k );
+
+      if ( p < m_comm_size ) {
+        all.send_buffer( p ).pack<KeyType>( *k );
+      }
+      else {
+        bad_key = true ;
+      }
     }
 
-    all.allocate_buffers( m_comm_size / 4 , false );
+    // Error condition becomes global:
+
+    bad_key = all.allocate_buffers( m_comm_size / 4 , false , bad_key );
+
+    if ( bad_key ) {
+      throw std::runtime_error("stk::parallel::DistributedIndex::query given a key which is out of range");
+    }
 
     for ( std::vector<KeyType>::const_iterator
           k = keys.begin() ; k != keys.end() ; ++k ) {
@@ -284,35 +289,34 @@ void DistributedIndex::update_keys(
   std::vector<unsigned long> count_remove( m_comm_size , (unsigned long)0 );
   std::vector<unsigned long> count_add(    m_comm_size , (unsigned long)0 );
 
+  size_t local_bad_input = 0 ;
+
   for ( std::vector<KeyType>::const_iterator
         i = remove_existing_keys.begin();
         i != remove_existing_keys.end(); ++i ) {
     const ProcType p = to_which_proc( *i );
-    if ( p != m_comm_rank ) {
-      ++( count_remove[ to_which_proc( *i ) ] );
+    if ( m_comm_size <= p ) {
+      // Key is not within one of the span:
+      ++local_bad_input ;
+    }
+    else if ( p != m_comm_rank ) {
+      ++( count_remove[ p ] );
     }
   }
-
-  size_t local_bad_input = 0 ;
 
   for ( std::vector<KeyType>::const_iterator
         i = add_new_keys.begin();
         i != add_new_keys.end(); ++i ) {
 
-    // Input key must be within one of the spans:
-
-    std::vector<KeySpan>::const_iterator j  = m_key_span.begin();
-    std::vector<KeySpan>::const_iterator je = m_key_span.end();
-    for ( ; j != je ; ++j ) {
-      if ( j->first <= *i && *i <= j->second ) { break ; }
-    }
-    if ( j == je ) { ++local_bad_input ; }
-
     // Count
 
     const ProcType p = to_which_proc( *i );
-    if ( p != m_comm_rank ) {
-      ++( count_add[ to_which_proc( *i ) ] );
+    if ( p == m_comm_size ) {
+      // Key is not within one of the span:
+      ++local_bad_input ;
+    }
+    else if ( p != m_comm_rank ) {
+      ++( count_add[ p ] );
     }
   }
 
@@ -454,15 +458,10 @@ void DistributedIndex::update_keys(
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
-// For efficient communication merging three reductions:
-// 1) current global counts of keys used          [ m_span_count ]
-// 2) current global counts of new keys requested [ m_span_count ]
-// 3) an input error flag.
 
-void DistributedIndex::generate_new_keys_global_counts(
+void DistributedIndex::generate_new_global_key_upper_bound(
   const std::vector<size_t>  & requests ,
-        std::vector<size_t>  & requests_global_sum ,
-        std::vector<size_t>  & existing_global_sum ) const
+        std::vector<DistributedIndex::KeyType> & global_key_upper_bound ) const
 {
   bool bad_request = m_span_count != requests.size();
 
@@ -472,12 +471,22 @@ void DistributedIndex::generate_new_keys_global_counts(
   << "sierra::parallel::DistributedIndex::generate_new_keys_global_counts( " ;
 
   std::vector<unsigned long>
-    local_counts( 2 * m_span_count + 1 , (unsigned long) 0 ),
-    global_counts( 2 * m_span_count + 1 , (unsigned long) 0 );
+    local_counts( m_span_count + 1 , (unsigned long) 0 ),
+    global_counts( m_span_count + 1 , (unsigned long) 0 );
 
-  // Count unique keys in each span
+  // Count unique keys in each span and add requested keys for
+  // final total count of keys needed.
 
-  {
+  // Append the error check to this communication to avoid
+  // and extra reduction operation.
+  local_counts[ m_span_count ] = m_span_count != requests.size();
+
+  if ( m_span_count == requests.size() ) {
+
+    for ( size_t i = 0 ; i < m_span_count ; ++i ) {
+      local_counts[i] = requests[i] ;
+    }
+
     std::vector<KeyProc>::const_iterator j = m_key_usage.begin();
 
     for ( size_t i = 0 ; i < m_span_count && j != m_key_usage.end() ; ++i ) {
@@ -488,27 +497,19 @@ void DistributedIndex::generate_new_keys_global_counts(
         while ( j != m_key_usage.end() && key == j->first ) { ++j ; }
         ++count ;
       }
-      local_counts[i] = count ;
-    }
-
-    for ( size_t i = 0 ; i < m_span_count ; ++i ) {
-      local_counts[i + m_span_count] = i < requests.size() ? requests[i] : 0 ;
+      local_counts[i] += count ;
     }
   }
 
-  // Append the error check to this communication to avoid
-  // and extra reduction operation.
-  local_counts[ 2 * m_span_count ] = m_span_count != requests.size();
-
 #if defined( STK_HAS_MPI )
   MPI_Allreduce( & local_counts[0] , & global_counts[0] ,
-                 2 * m_span_count + 1 , MPI_UNSIGNED_LONG ,
+                 m_span_count + 1 , MPI_UNSIGNED_LONG ,
                  MPI_SUM , m_comm );
 #else
   global_counts = local_counts ;
 #endif
 
-  bad_request = global_counts[2*m_span_count] != 0 ;
+  bad_request = global_counts[m_span_count] != 0 ;
 
   if ( bad_request ) {
     if ( m_span_count != requests.size() ) {
@@ -520,13 +521,13 @@ void DistributedIndex::generate_new_keys_global_counts(
   if ( ! bad_request ) {
     for ( unsigned i = 0 ; i < m_span_count ; ++i ) {
       const size_t span_available =
-        ( 1 + m_key_span[i].second - m_key_span[i].first ) - global_counts[i] ;
+        ( 1 + m_key_span[i].second - m_key_span[i].first );
 
-      const size_t span_requested = global_counts[ i + m_span_count ];
+      const size_t span_requested = global_counts[i];
 
       if ( span_available < span_requested ) {
         bad_request = true ;
-        error_msg << " global_sum( request[" << i << "] ) = "
+        error_msg << " global_sum( (existing+request)[" << i << "] ) = "
                   << span_requested
                   << " > global_sum( span_available ) = "
                   << span_available ;
@@ -538,19 +539,20 @@ void DistributedIndex::generate_new_keys_global_counts(
     throw std::runtime_error( error_msg.str() );
   }
 
-  existing_global_sum.assign( global_counts.begin() ,
-                              global_counts.begin() + m_span_count );
+  // Determine the maximum generated key
 
-  requests_global_sum.assign( global_counts.begin() + m_span_count ,
-                              global_counts.begin() + m_span_count * 2 );
+  global_key_upper_bound.resize( m_span_count );
+
+  for ( size_t i = 0 ; i < m_span_count ; ++i ) {
+     global_key_upper_bound[i] = m_key_span[i].first + global_counts[i] - 1 ;
+  }
 }
 
 //--------------------------------------------------------------------
 //--------------------------------------------------------------------
 
 void DistributedIndex::generate_new_keys_local_planning(
-  const std::vector<size_t>   & existing_global_sum ,
-  const std::vector<size_t>   & requests_global_sum ,
+  const std::vector<DistributedIndex::KeyType>  & key_global_upper_bound ,
   const std::vector<size_t>   & requests_local ,
         std::vector<long>     & new_request ,
         std::vector<KeyType>  & requested_keys ,
@@ -563,26 +565,24 @@ void DistributedIndex::generate_new_keys_local_planning(
   std::vector<KeyProc>::const_iterator j = m_key_usage.begin();
 
   for ( size_t i = 0 ; i < m_span_count ; ++i ) {
-    const size_t final_key_count =
-      existing_global_sum[i] + requests_global_sum[ i ];
-
-    const KeyType key_span_first = m_key_span[i].first ;
-    const KeyType key_global_max = key_span_first + final_key_count - 1 ;
+    // The maximum generated key from any process will
+    // not exceed this value.
+    const KeyType key_upper_bound = key_global_upper_bound[i] ;
 
     const size_t init_size = contrib_keys.size();
 
     const size_t chunk_inc = m_comm_size * DISTRIBUTED_INDEX_CHUNK_SIZE ;
 
-    for ( KeyType key_begin = key_span_first +
-                  m_chunk_first[i] * DISTRIBUTED_INDEX_CHUNK_SIZE ;
-          key_begin <= key_global_max ; key_begin += chunk_inc ) {
+    for ( KeyType key_begin = m_key_span[i].first +
+                  m_comm_rank * DISTRIBUTED_INDEX_CHUNK_SIZE ;
+          key_begin <= key_upper_bound ; key_begin += chunk_inc ) {
 
       // What is the first key of the chunk
       KeyType key_iter = key_begin ;
 
       // What is the last key belonging to this process' chunk
       const KeyType key_last =
-        std::min( key_begin + DISTRIBUTED_INDEX_CHUNK_SIZE - 1 , key_global_max );
+        std::min( key_begin + DISTRIBUTED_INDEX_CHUNK_SIZE - 1 , key_upper_bound );
 
       // Jump into the sorted used key vector to
       // the key which may be contributed
@@ -632,7 +632,6 @@ void DistributedIndex::generate_new_keys_local_planning(
 //----------------------------------------------------------------------
 
 void DistributedIndex::generate_new_keys_global_planning(
-  const std::vector<KeyType> & contrib_keys ,
   const std::vector<long>    & new_request ,
         std::vector<long>    & my_donations ) const
 {
@@ -659,8 +658,6 @@ void DistributedIndex::generate_new_keys_global_planning(
   // Now have the global receive & donate plan.
   //--------------------------------------------------------------------
   // Generate my donate plan from the global receive & donate plan.
-
-  std::vector<KeyType>::const_iterator ikey = contrib_keys.begin();
 
   for ( unsigned i = 0 ; i < m_span_count ; ++i ) {
 
@@ -718,8 +715,7 @@ void DistributedIndex::generate_new_keys(
   //--------------------------------------------------------------------
   // Develop the plan:
 
-  std::vector<size_t>  requests_global_sum ;
-  std::vector<size_t>  existing_global_sum ;
+  std::vector<KeyType> global_key_upper_bound ;
   std::vector<long>    new_request ;
   std::vector<long>    my_donations ;
   std::vector<KeyType> contrib_keys ;
@@ -729,9 +725,7 @@ void DistributedIndex::generate_new_keys(
   // current key usage and requested new keys.
   // Throw a parallel consistent exception if the input is bad.
 
-  generate_new_keys_global_counts( requests ,
-                                   requests_global_sum ,
-                                   existing_global_sum );
+  generate_new_global_key_upper_bound( requests , global_key_upper_bound );
 
   //  No exception thrown means all inputs are good and parallel consistent
 
@@ -740,47 +734,44 @@ void DistributedIndex::generate_new_keys(
   // This can reduce the subsequent communication load when
   // donating keys to another process.
 
-  generate_new_keys_local_planning( existing_global_sum ,
-                                    requests_global_sum ,
+  generate_new_keys_local_planning( global_key_upper_bound ,
                                     requests ,
                                     new_request ,
                                     new_keys ,
                                     contrib_keys );
 
   // Determine where this process will be donating 'contrib_keys'
-  generate_new_keys_global_planning( contrib_keys, new_request, my_donations );
+  generate_new_keys_global_planning( new_request, my_donations );
 
-  // Plan is done, communicate the new keys.
-  //--------------------------------------------------------------------
-  // Update counts by the number of keys this process is contributing.
-  // Both kept and donated keys.
+  // Due to using an upper bound as opposed to an exact maximum
+  // the contrib_keys is likely to contain more keys that are needed.
+  // Remove unneeded keys.
 
-  // Add kept keys to this process' key index.
-  // The key index is no longer properly ordered.
-  // It must be sorted before completion,
-  // but not until remotely donated keys are added.
-
-  for ( std::vector<KeyType>::iterator
-        ik  = new_keys.begin() ;
-        ik != new_keys.end() ; ++ik ) {
-    m_key_usage.push_back( KeyProc( *ik , m_comm_rank ) );
-  }
-
-  {
-    size_t n = 0 ;
-    for ( size_t i = 0 ; i < m_span_count ; ++i ) {
-      for ( int p = 0 ; p < m_comm_size ; ++p ) {
-        const size_t n_to_p = my_donations[ p * m_span_count + i ];
-        if ( n_to_p ) {
-          for ( size_t ik = 0; ik < n_to_p ; ++ik , ++n ) {
-            m_key_usage.push_back( KeyProc( contrib_keys[n] , p ) );
-          }
-        }
-      }
+  // Backwards to erase from the end
+  for ( size_t i = m_span_count ; 0 < i ; ) {
+    --i ;
+    size_t count = 0 ;
+    for ( int p = 0 ; p < m_comm_size ; ++p ) {
+      count += my_donations[ p * m_span_count + i ];
+    }
+    std::vector<KeyType>::iterator j_beg = contrib_keys.begin();
+    std::vector<KeyType>::iterator j_end = contrib_keys.end();
+    j_beg = std::lower_bound( j_beg , j_end , m_key_span[i].first );
+    j_end = std::upper_bound( j_beg , j_end , m_key_span[i].second );
+    const size_t n = std::distance( j_beg , j_end );
+    if ( count < n ) {
+      contrib_keys.erase( j_beg + count , j_end );
     }
   }
 
-  std::sort( m_key_usage.begin() , m_key_usage.end() , KeyProcLess() );
+  // Plan is done, communicate the new keys.
+  //--------------------------------------------------------------------
+  // Put key this process is keeping into the index.
+
+  for ( std::vector<KeyType>::iterator i = new_keys.begin();
+        i != new_keys.end() ; ++i ) {
+    m_key_usage.push_back( KeyProc( *i , m_comm_rank ) );
+  }
 
   //--------------------------------------------------------------------
 
@@ -808,11 +799,15 @@ void DistributedIndex::generate_new_keys(
         const size_t n_to_p = my_donations[ p * m_span_count + i ];
         if ( 0 < n_to_p ) {
           all.send_buffer(p).pack<KeyType>( & contrib_keys[n] , n_to_p );
-          n += n_to_p ;
+          for ( size_t k = 0 ; k < n_to_p ; ++k , ++n ) {
+            m_key_usage.push_back( KeyProc( contrib_keys[n] , p ) );
+          }
         }
       }
     }
   }
+
+  std::sort( m_key_usage.begin() , m_key_usage.end() );
 
   all.communicate();
 
@@ -831,11 +826,13 @@ void DistributedIndex::generate_new_keys(
 
   requested_keys.resize( m_span_count );
 
-  size_t n = 0 ;
-  for ( size_t i = 0 ; i < m_span_count ; ++i ) {
-    requested_keys[i].assign( new_keys.begin() + n ,
-                              new_keys.begin() + n + requests[i] );
-    n += requests[i] ;
+  {
+    std::vector<KeyType>::iterator i_beg = new_keys.begin();
+    for ( size_t i = 0 ; i < m_span_count ; ++i ) {
+      std::vector<KeyType>::iterator i_end = i_beg + requests[i] ;
+      requested_keys[i].assign( i_beg , i_end );
+      i_beg = i_end ;
+    }
   }
 
   return ;

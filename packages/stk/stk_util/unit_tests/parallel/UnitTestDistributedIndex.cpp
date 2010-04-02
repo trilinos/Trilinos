@@ -415,8 +415,8 @@ void UnitTestSTKParallelDistributedIndex::test_update_generate()
 
   stk::ParallelMachine comm = MPI_COMM_WORLD ;
 
-  int mpi_rank = stk::parallel_machine_rank(comm);
-  // int mpi_size = stk::parallel_machine_size(comm);
+  int p_rank = stk::parallel_machine_rank(comm);
+  int p_size = stk::parallel_machine_size(comm);
 
   std::vector< PDIndex::KeySpan > partition_spans ;
 
@@ -432,15 +432,18 @@ void UnitTestSTKParallelDistributedIndex::test_update_generate()
   std::vector<PDIndex::KeyType> keys_to_remove ;
 
   //------------------------------
-  // Add 10 odd keys per process
+  // Add ( 5 * j ) odd keys per process
   // starting at the beginning of the partition.
+
+  const size_t old_size_multiplier = 5 ;
 
   for ( size_t j = 0 ; j < partition_spans.size() ; ++j ) {
     PDIndex::KeyType key_first = partition_spans[j].first ;
     if ( 0 == key_first % 2 ) { ++key_first ; } // Make it odd
-    key_first += 20 * mpi_rank ;
+    key_first += old_size_multiplier * p_rank ;
 
-    for ( size_t i = 0 ; i < 10 ; ++i ) {
+    const size_t n = old_size_multiplier * j ;
+    for ( size_t i = 0 ; i < n ; ++i ) {
       PDIndex::KeyType key = key_first + 2 * i ;
       keys_to_add.push_back( key );
     }
@@ -449,17 +452,51 @@ void UnitTestSTKParallelDistributedIndex::test_update_generate()
   di.update_keys( keys_to_add , keys_to_remove );
 
   //------------------------------
+  // Request 20 new keys per process per span
+  // The maximum new key will be larger than some spans
+  // and within the gaps of other spans.
 
+  const size_t gen_count = 20 ;
   for ( size_t i = 0 ; i < requests.size() ; ++i ) {
-    requests[i] = 10 ;
+    if ( i % 2 ) {
+      requests[i] = gen_count ;
+    }
+    else {
+      requests[i] = 0 ;
+    }
   }
 
   di.generate_new_keys( requests , generated_keys );
 
   for ( size_t i = 0 ; i < requests.size() ; ++i ) {
     EXPECT_EQ( requests[i] , generated_keys[i].size() );
+
+    const size_t old_count   = p_size * old_size_multiplier * i ;
+    const size_t tot_request = p_size * requests[i] ;
+
+    PDIndex::KeyType max_gen_key = partition_spans[i].first ;
+
+    if ( 0 == tot_request ) {
+      EXPECT_TRUE( generated_keys[i].size() == 0 );
+    }
+    else if ( tot_request < old_count ) {
+      // Will only fill in gaps between odd keys
+      max_gen_key += 2 * old_count ;
+
+      EXPECT_TRUE( max_gen_key > generated_keys[i][ requests[i] - 1 ] );
+    }
+    else {
+      // Will fill in gaps contiguously after the old max key
+      max_gen_key += old_count + tot_request - 1 ;
+
+      EXPECT_TRUE( max_gen_key >= generated_keys[i][ requests[i] - 1 ] );
+    }
+
+    // Sorted
     for ( size_t j = 0 ; j < generated_keys[i].size() ; ++j ) {
-      EXPECT_TRUE( 0 == generated_keys[i][j] % 2 );
+      if ( 0 < j ) {
+        EXPECT_TRUE( generated_keys[i][j-1] < generated_keys[i][j] );
+      }
     }
   }
 }

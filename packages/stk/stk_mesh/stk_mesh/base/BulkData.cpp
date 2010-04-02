@@ -316,7 +316,8 @@ BulkData::internal_create_entity( const EntityKey & key )
 
   if ( insert_result.second )  { // A new entity
     insert_result.first->second = result.first = new Entity( key );
-    result.first->m_owner_rank   = ~0u ;
+    //result.first->m_owner_rank   = ~0u ;
+    result.first->m_owner_rank = m_parallel_rank ;
     result.first->m_sync_count   = m_sync_count ;
   }
 
@@ -373,7 +374,7 @@ Entity & BulkData::declare_entity( EntityType ent_type , EntityId ent_id ,
 
   if ( result.second ) { // A new entity
     m_new_entities.push_back( result.first );
-    result.first->m_owner_rank = m_parallel_rank ;
+    //result.first->m_owner_rank = m_parallel_rank ;
   }
 
   //------------------------------
@@ -733,21 +734,43 @@ bool BulkData::destroy_entity( Entity * & e )
 
 //----------------------------------------------------------------------
 
-void BulkData::generate_new_keys(const std::vector<size_t>& requests,
-                                 std::vector<EntityKey>& requested_keys)
+void BulkData::generate_new_entities(const std::vector<size_t>& requests,
+                                 std::vector<Entity *>& requested_entities)
 {
   typedef stk::parallel::DistributedIndex::KeyType KeyType;
-  std::vector< std::vector<KeyType> > 
+  std::vector< std::vector<KeyType> >
     requested_key_types;
   m_entities_index.generate_new_keys(requests, requested_key_types);
 
-  requested_keys.clear();
+  //generating 'owned' entities
+  Part * const owns = & m_mesh_meta_data.locally_owned_part();
+
+  std::vector<Part*> rem ;
+  std::vector<Part*> add;
+  add.push_back( owns );
+
+  requested_entities.clear();
   for (std::vector< std::vector<KeyType> >::const_iterator itr = requested_key_types.begin(); itr != requested_key_types.end(); ++itr) {
     const std::vector<KeyType>& key_types = *itr;
-    for (std::vector<KeyType>::const_iterator 
-           kitr = key_types.begin(); kitr != key_types.end(); ++kitr) {
+    for (std::vector<KeyType>::const_iterator
+        kitr = key_types.begin(); kitr != key_types.end(); ++kitr) {
       EntityKey key(&(*kitr));
-      requested_keys.push_back(key);
+      std::pair<Entity *, bool> result = internal_create_entity(key);
+
+      //if an entity is declare with the declare_entity function in the same
+      //modification cycle as the generate_new_entities function, and it happens to
+      //generate a key that was declare previously in the same cycle it is an error
+      if (! result.second) {
+        std::ostringstream msg;
+        msg << "stk::mesh::BulkData::generate_new_entities ERROR:";
+        msg << " generated ";
+        print_entity_key(msg, m_mesh_meta_data, key);
+        msg << " which was already used in this modification cycle.";
+        throw std::runtime_error(msg.str());
+      }
+      //add entity to 'owned' part
+      change_entity_parts( * result.first , add , rem );
+      requested_entities.push_back(result.first);
     }
   }
 }
