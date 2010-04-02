@@ -622,8 +622,8 @@ void AztecOOLinearOpWithSolveFactory::initializeOp_impl(
     epetraPrecOp = rcp_dynamic_cast<const EpetraLinearOpBase>(
       wrappedPrecOp,true);
     epetraPrecOp->getEpetraOpView(
-      &epetra_epetraPrecOp, &epetra_epetraPrecOpTransp,
-      &epetra_epetraPrecOpApplyAs, &epetra_epetraPrecOpAdjointSupport
+      outArg(epetra_epetraPrecOp), outArg(epetra_epetraPrecOpTransp),
+      outArg(epetra_epetraPrecOpApplyAs), outArg(epetra_epetraPrecOpAdjointSupport)
       );
     TEST_FOR_EXCEPTION(
       epetra_epetraPrecOp.get()==NULL,std::logic_error
