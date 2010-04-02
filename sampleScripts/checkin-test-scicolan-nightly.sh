@@ -17,12 +17,14 @@ EXTRA_ARGS=$@
 
 echo "
 -DTrilinos_ENABLE_Fortran:BOOL=OFF
+-D TPL_ENABLE_Boost:BOOL=ON
+-D Boost_INCLUDE_DIRS:PATH=/usr/netpub/boost_1_40_0
 " > COMMON.config
 
 echo "
--DMPI_BASE_DIR:PATH=/home/sntools/extras/mpi/mpich-1.2.7p1-gcc-4.2.4-64Bit
--DMPI_EXEC_PRE_NUMPROCS_FLAGS:STRING=--all-local
+-D MPI_BASE_DIR:PATH=/usr/netpub/mpi/OpenMPI/1.4/64Bit/gnu
 " > MPI_DEBUG.config
+
 
 echo "
 -DCMAKE_C_COMPILER:PATH=/usr/bin/gcc
