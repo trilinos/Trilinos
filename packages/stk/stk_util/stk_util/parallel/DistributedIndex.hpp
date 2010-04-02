@@ -105,17 +105,16 @@ private:
   /*------------------------------------------------------------------*/
   /** \brief  An internally used method to count communication needs.
    */
-  void generate_new_keys_global_counts(
-    const std::vector<size_t> & requests ,
-          std::vector<size_t> & requests_global_sum ,
-          std::vector<size_t> & existing_global_sum ) const ;
+  void generate_new_global_key_upper_bound(
+    const std::vector<size_t>  & requests ,
+          std::vector<DistributedIndex::KeyType> & global_key_upper_bound ) const;
+
 
   /** \brief  An internally used method to determine which
    *          keys will be kept and which will be donated.
    */
   void generate_new_keys_local_planning(
-    const std::vector<size_t>  & existing_global_sum ,
-    const std::vector<size_t>  & requests_global_sum ,
+    const std::vector<DistributedIndex::KeyType> & global_key_upper_bound ,
     const std::vector<size_t>  & requests_local ,
           std::vector<long>    & new_requests ,
           std::vector<KeyType> & requested_keys ,
@@ -125,7 +124,6 @@ private:
    *          other processes keys will be donated.
    */
   void generate_new_keys_global_planning(
-    const std::vector<KeyType> & contrib_keys ,
     const std::vector<long>    & new_request ,
           std::vector<long>    & my_donations ) const ;
 
@@ -137,12 +135,7 @@ private:
   /** \brief  An internally used method to determine to which
    *          process is responsible for knowing about the key's usage.
    */
-  inline ProcType to_which_proc( const KeyType & key ) const ;
-
-  /** \brief  An internally used method to determine the offset
-   *          of a process' chunk.
-   */
-  inline size_t chunk_offset( ProcType rank , size_t chunk ) const ;
+  ProcType to_which_proc( const KeyType & key ) const ;
 
   /*------------------------------------------------------------------*/
   /*  Disable default construction and copies. */
@@ -158,7 +151,6 @@ private:
   ProcType             m_comm_size ; ///< The number of processes
   size_t               m_span_count ;///< Number of spans of keys
   std::vector<KeySpan> m_key_span ;  ///< (min,max) for N span
-  std::vector<size_t>  m_chunk_first ; ///< This process' first chunk per span
   std::vector<KeyProc> m_key_usage ; ///< Index for all key usage
 
   /*  Unit testing of internal methods requires the unit test to have

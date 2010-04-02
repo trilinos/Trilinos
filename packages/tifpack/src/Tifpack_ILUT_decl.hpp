@@ -62,10 +62,10 @@ namespace Teuchos {
 
 namespace Tifpack {
 
-//! Tifpack::ILUT: A class for constructing and using an ILUT factorization
+//! A class for constructing and using an ILUT factorization
 // of a given Tpetra::RowMatrix.
 
-/*! The Tifpack::ILUT class computes an ILUT factorization with specified fill 
+/*! Tifpack::ILUT computes an ILUT factorization with specified fill 
     and drop-tolerance, of a given Tpetra::RowMatrix. 
 
   For all valid parameters, see the method ILUT::setParameters.

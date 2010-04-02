@@ -30,9 +30,10 @@
 #define NEW_PACKAGE_VERSION_H
 
 #include "New_Package_ConfigDefs.h"
+#include "Trilinos_version.h"
 
 string New_Package_Version() { 
-  return("New_Package Version 1.6d - 10/03/2008"); 
+  return("New_Package in Trilinos " TRILINOS_VERSION_STRING); 
 }
 
 #endif /* NEW_PACKAGE_VERSION_H */

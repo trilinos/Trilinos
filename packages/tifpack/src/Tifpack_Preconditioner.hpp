@@ -41,33 +41,33 @@
 
 namespace Tifpack {
 
-//! Tifpack::Preconditioner: basic class for preconditioning in Tifpack
+//! Base class for all Tifpack preconditioners.
 
 /*!
-  Class Tifpack_Preconditioner is a pure virtual class, and it defines
+  Tifpack::Preconditioner is a pure virtual class, and it defines
   the structure of all Tifpack preconditioners.
 
   This class is a simple extension to Tpetra::Operator. It provides 
   the following additional methods:
-  - Initialize() performs all operations based on the graph
+  - initialize() performs all operations based on the graph
     of the matrix (without considering the numerical values);
-  - IsInitialized() returns true if the preconditioner
+  - isInitialized() returns true if the preconditioner
     has been successfully initialized;
-  - Compute() computes everything required to apply the
+  - compute() computes everything required to apply the
     preconditioner, using matrix values  (and assuming that the
     sparsity of the matrix has not been changed);
-  - IsComputed() should return true if the preconditioner
+  - isComputed() should return true if the preconditioner
     has been successfully computed, false otherwise.
-  - Condest() returns an estimation of the condition number, or -1.0
+  - computeCondest() returns an estimation of the condition number, or -1.0
     if not available
-  - Matrix() returns a reference to the matrix to be preconditioned.
+  - getMatrix() returns a reference to the matrix to be preconditioned.
 
-It is required that Compute() call Initialize() if IsInitialized()
-returns false. The preconditioner is applied by ApplyInverse()
-(which returns if IsComputed() is false). Every time that Initialize()
+It is required that compute() internally call initialize() if isInitialized()
+returns false. The preconditioner is applied by apply()
+(which returns if isComputed() is false). Every time that initialize()
 is called, the object destroys all the previously allocated 
-information, and re-initialize the preconditioner. Every time
-Compute() is called, the object re-computed the actual values of
+information, and re-initializes the preconditioner. Every time
+compute() is called, the object re-computes the actual values of
 the preconditioner.
 
 <b>Estimating Preconditioner Condition Numbers</b>
@@ -81,15 +81,15 @@ floating point number system, about 15 decimal digits in IEEE double
 precision, means that any results involving \f$B\f$ or \f$B^{-1}\f$ may be
 meaningless.
 
-Method Compute() can be use to estimate of the condition number.
-Compute() requires one parameter, of type Tifpack_CondestType
-(default value is Tifpack_Cheap; other valid choices are Tifpack_CG and
-Tifpack_GMRES).
+Method compute() can be used to estimate of the condition number.
+compute() requires one parameter, of type Tifpack::CondestType
+(default value is Tifpack::Cheap; other valid choices are Tifpack::CG and
+Tifpack::GMRES).
 
-While Tifpack_CG and Tifpack_GMRES construct and AztecOO solver, and
+While Tifpack::CG and Tifpack::GMRES construct a solver, and
 use methods AZ_cg_condnum and AZ_gmres_condnum to evaluate an
 accurate (but very expensive) estimate of the condition number, 
-Tifpack_Cheap computes \f$\|(P)^{-1}e\|_\infty\f$, which is
+Tifpack::Cheap computes \f$\|(P)^{-1}e\|_\infty\f$, which is
 only a very crude estimation of the actual condition number. Note that
 this estimated number can be less than 1.0. 
 However, this approach has the following advantages:
@@ -185,7 +185,7 @@ class Preconditioner : virtual public Tpetra::Operator<Scalar,LocalOrdinal,Globa
     //! Returns the time spent in Apply().
     virtual double getApplyTime() const = 0;
 
-};
+};//class Preconditioner
 
 }//namespace Tifpack
 

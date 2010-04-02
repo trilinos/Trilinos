@@ -25,9 +25,10 @@
 // ***********************************************************************
 
 
-/*! \file Tifpack_UnitTestILUT.cpp
+/*! \file Tifpack_UnitTestFactory.cpp
 
-\brief Tifpack Unit test for the ILUT template.
+\brief Tifpack Unit test for the Factory template, and some basic tests
+for preconditioners it produces.
 */
 
 
@@ -43,6 +44,20 @@
 namespace {
 using Tpetra::global_size_t;
 typedef tif_utest::Node Node;
+
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
+void check_precond_basics(Teuchos::RCP<Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> >& precond, Teuchos::FancyOStream& out, bool& success)
+{
+  TEUCHOS_TEST_EQUALITY( precond->getNumInitialize(), 0, out, success);
+  TEUCHOS_TEST_EQUALITY( precond->getNumCompute(), 0, out, success);
+  TEUCHOS_TEST_EQUALITY( precond->getNumApply(), 0, out, success);
+
+  precond->initialize();
+  precond->compute();
+
+  TEUCHOS_TEST_EQUALITY( precond->getNumInitialize(), 1, out, success);
+  TEUCHOS_TEST_EQUALITY( precond->getNumCompute(), 1, out, success);
+}
 
 //this macro declares the unit-test-class:
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackFactory, Test0, Scalar, LocalOrdinal, GlobalOrdinal)
@@ -65,11 +80,27 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(TifpackFactory, Test0, Scalar, LocalOrdinal, G
   Teuchos::RCP<Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec_ilut = factory.create("ILUT", crsmatrix);
   TEUCHOS_TEST_EQUALITY(prec_ilut != Teuchos::null, true, out, success);
 
-  Teuchos::RCP<Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec_point = factory.create("RELAXATION", crsmatrix);
-  TEUCHOS_TEST_EQUALITY(prec_point != Teuchos::null, true, out, success);
+  check_precond_basics(prec_ilut, out, success);
+
+  Teuchos::RCP<Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec_riluk = factory.create("RILUK", crsmatrix);
+  TEUCHOS_TEST_EQUALITY(prec_riluk != Teuchos::null, true, out, success);
+
+  check_precond_basics(prec_riluk, out, success);
+
+  Teuchos::RCP<Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec_relax = factory.create("RELAXATION", crsmatrix);
+  TEUCHOS_TEST_EQUALITY(prec_relax != Teuchos::null, true, out, success);
+
+  check_precond_basics(prec_relax, out, success);
+
+  Teuchos::RCP<Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec_diag = factory.create("DIAGONAL", crsmatrix);
+  TEUCHOS_TEST_EQUALITY(prec_diag != Teuchos::null, true, out, success);
+
+  check_precond_basics(prec_diag, out, success);
 
   Teuchos::RCP<Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec_cheby = factory.create("CHEBYSHEV", crsmatrix);
   TEUCHOS_TEST_EQUALITY(prec_cheby != Teuchos::null, true, out, success);
+
+  check_precond_basics(prec_cheby, out, success);
 }
 
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \

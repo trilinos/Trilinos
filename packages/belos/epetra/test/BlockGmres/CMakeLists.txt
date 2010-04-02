@@ -55,6 +55,7 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
       COMM serial mpi
       ARGS
         "--verbose --filename=orsirr1.hb"
+        "--verbose --filename=orsirr1.hb --num-rhs=1 --blocksize=2"
         "--verbose --filename=orsirr1.hb --pseudo"
       STANDARD_PASS_OUTPUT 
       )

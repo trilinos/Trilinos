@@ -56,10 +56,10 @@ namespace Teuchos {
 
 namespace Tifpack {
 
-//! Tifpack::Chebyshev: class for preconditioning with Chebyshev polynomials
+//! A class for preconditioning with Chebyshev polynomials
 
 /*!
-  The Tifpack::Chebyshev class enables the construction of preconditioners
+  Tifpack::Chebyshev enables the construction of preconditioners
   based on Chebyshev polynomials for a Tpetra::RowMatrix.
   Tifpack::Chebyshev is derived from the Tifpack::Preconditioner class, 
   which is itself derived from Tpetra::Operator.

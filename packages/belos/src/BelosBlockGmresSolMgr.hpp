@@ -537,7 +537,7 @@ void BlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Teuch
   }
 
   // Check if the blocksize should be adaptive
-  if (params->isParameter("Adapative Block Size")) {
+  if (params->isParameter("Adaptive Block Size")) {
     adaptiveBlockSize_ = params->get("Adaptive Block Size",adaptiveBlockSize_default_);
     
     // Update parameter in our list.
@@ -986,11 +986,26 @@ ReturnType BlockGmresSolMgr<ScalarType,MV,OP>::solve() {
 
       // Create the first block in the current Krylov basis.
       Teuchos::RCP<MV> V_0;
-      if (isFlexible_)
-        V_0 = MVT::CloneCopy( *(problem_->getInitResVec()), currIdx );
-      else 
-        V_0 = MVT::CloneCopy( *(problem_->getInitPrecResVec()), currIdx );
-
+      if (isFlexible_) {
+        // Load the correct residual if the system is augmented
+        if (currIdx[blockSize_-1] == -1) {
+          V_0 = MVT::Clone( *(problem_->getInitResVec()), blockSize_ );
+          problem_->computeCurrResVec( &*V_0 );
+        }
+        else {
+          V_0 = MVT::CloneCopy( *(problem_->getInitResVec()), currIdx );
+        }
+      }
+      else { 
+        // Load the correct residual if the system is augmented
+        if (currIdx[blockSize_-1] == -1) {
+          V_0 = MVT::Clone( *(problem_->getInitPrecResVec()), blockSize_ );
+          problem_->computeCurrPrecResVec( &*V_0 );
+        }
+        else {
+          V_0 = MVT::CloneCopy( *(problem_->getInitPrecResVec()), currIdx );
+        }
+      }
 
       // Get a matrix to hold the orthonormalization coefficients.
       Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > z_0 = 

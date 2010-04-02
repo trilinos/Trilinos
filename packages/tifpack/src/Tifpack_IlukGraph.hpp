@@ -46,9 +46,9 @@
 namespace Tifpack {
 
 
-//! IlukGraph: A class for constructing level filled graphs for use with ILU(k) class preconditioners.
+//! A class for constructing level filled graphs for use with ILU(k) class preconditioners.
 
-/*! The IlukGraph class enables the construction of matrix graphs using level-fill algorithms.
+/*! Tifpack::IlukGraph enables the construction of matrix graphs using level-fill algorithms.
   The only function required for construction is a getGlobalRowView capability, i.e., the graph that is passed in
  to the constructor must implement the RowGraph interface defined in Tpetra_RowGraph.hpp 
  

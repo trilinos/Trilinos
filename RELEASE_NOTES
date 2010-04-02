@@ -1,5 +1,290 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 10.2 Release Notes                                         #
+#                                                                             #
+###############################################################################
+ 
+Overview:
+ 
+The Trilinos Project is an effort to develop algorithms and enabling
+technologies within an object-oriented software framework for the solution of
+large-scale, complex multi-physics engineering and scientific problems.
+ 
+Packages:
+ 
+The Trilinos 10.2 general release contains 45 packages: Amesos, Anasazi,
+AztecOO, Belos, Didasko, Epetra, EpetraExt, FEI, Galeri, Ifpack, Intrepid,
+Isorropia, Kokkos, Komplex, LOCA, Meros, Mesquite*, ML, Moertel, MOOCHO, NOX, 
+Optika*, Pamgen, Phalanx, PhdMesh, Piro*, Pliris, PyTrilinos, RTOp, Rythmos,
+Sacado, Shards, STK*, Stokhos^, Stratimikos, Sundace, Teuchos, ThreadPool,
+Thyra, Tifpack*, Tpetra, TriKota*, TrilinosCouplings, Triutils, and Zoltan.
+ 
+(* denotes packages that are being released externally as a part of Trilinos
+for the first time.)
+
+(^ Stokhos was not included in the initial 10.0 release, but was released
+externally starting in Trilinos 10.0.3.)
+ 
+The limited release contains an additional 2 packages, CTrilinos and
+ForTrilinos, that are scheduled for external release in the near future.
+
+Framework Release Notes:
+ 
+- Find Trilinos capability for CMake-aware client codes
+ 
+CMake-aware client codes can now use the Find Trilinos capability to find
+Trilinos and its libraries in a more natural way.  The Find Trilinos
+capability has two variants, one for a build tree (the actual directory where
+Trilinos was built) and one for an installation tree.  It works by enabling the
+CMake function "FIND_PACKAGE(Trilinos PATHS <paths to search>)" to find a copy
+of Trilinos.  Many useful variables are available that can be used in your
+CMake files.  For example, the fully constucted link line for linking against
+Trilinos libraries is available, as well as the path(s) to Trilinos header
+files, and the set of compilers and compiler flags used to build Trilinos. This
+capability can also be used to find individual Trilinos packages. For more
+information on how to use this capability and what variables are available,
+please see the documentation in Trilinos/cmake/README.Find_Trilinos or at
+http://trilinos.sandia.gov/Finding_Trilinos.txt.
+
+- Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES is ON by default
+
+The default for Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES was changed from OFF to
+ON.  Optional package features will now be available by default, however it
+will take more time to compile and link Trilinos in most cases.  If optional
+features are not of interest, the variable can be set to OFF manually.
+
+ 
+More information:
+ 
+Trilinos website: http://trilinos.sandia.gov
+ 
+===============================================================================
+ 
+Package Release Notes:
+ 
+-------------------------------------------------------------------------------
+
+Mesquite*
+
+MESQUITE is a linkable software library that applies a variety of node-movement
+algorithms to improve the quality and/or adapt a given mesh. Mesquite is
+designed to address the following commonly encountered mesh optimization
+problems:
+
+    * Untangle meshes,
+    * Provide local size control,
+    * Improve angles, orthogonality, and skew,
+    * Increase minimum edge-lengths for increased time-steps,
+    * Improve mesh smoothness,
+    * Perform anisotropic smoothing,
+    * Improve surface meshes, adapt to surface curvature,
+    * Improve hybrid meshes (including pyramids & wedges),
+    * Smooth meshes with hanging nodes,
+    * Maintain quality of moving and/or deforming meshes,
+    * Perform ALE rezoning,
+    * Improve mesh quality on and near boundaries,
+    * Improve transitions across internal boundaries,
+    * Align meshes with vector fields, and
+    * R-adapt meshes to solutions using error estimates.
+
+Mesquite improves surface or volume meshes which are structured, unstructured,
+hybrid, or non-comformal. A variety of element types are permitted. Mesquite is
+designed to be as efficient as possible so that large meshes can be improved.
+
+-------------------------------------------------------------------------------
+ 
+Optika*
+ 
+The Optika package provides trilinos users with easy access to GUI input
+methods for their programs. Optika gives developers the tools they need to
+quickly obtain information from their users, while still implementing a robust
+GUI.  The general work flow of a program utilizing the Optika package goes
+something like this:
+ 
+   1. Determine what inputs are needed from the user
+   2. Create a list specifying these inputs
+   3. Execute the GUI with the getInput() function to obtain the inputs
+      specified in step 2
+   4. Proceed with the rest of the program with the given user inputs
+ 
+An alternate work flow is also available.  In this work flow, the developer
+specifies a custom function along with the inputs.  When the GUI is executed,
+it stays active for the entire duration of the program.  Every time the user
+clicks a button, the custom function is called with the current input values.
+ 
+If you think Optika might be useful for your application, we encourage you to
+take a look at some of the examples included with the Optika package.
+ 
+-------------------------------------------------------------------------------
+
+Piro*
+
+Piro is a new package in Trilinos 10.2 that is striving to be the single
+unifying layer above all nonlinear solver, time integration, optimization,
+and UQ packages. Piro wraps the typical usage of NOX, LOCA,
+and Rythmos solvers, for applications that present themselves
+using the EpetraExt::ModelEvaluator abstraction. These solvers
+all inherit from the same base class, which can in turn be fed
+into the analysis packages. Piro wraps the black-box mode
+usage of optimization and UQ analysis libraries, including Moocho
+and Dakota, under a single call that takes a Thyra::ModelEvaluator
+and a parameter list.
+
+-------------------------------------------------------------------------------
+
+PyTrilinos
+
+PyTrilinos.NOX notes:
+
+  Updated the wrappers so that the Jacobian can be specified using the
+  NOX.Epetra.Interface.Jacobian base class.  To get this to work
+  required that the directorin %typemaps for Epetra_Operator used by
+  NOX.Epetra.Interface.Jacobian be updated to downcast the
+  Epetra_Operator argument to our best guess at the derived class.
+  Such a downcast had already been written for the EpetraExt
+  ModelEvaluator, so code was moved around to make it more generally
+  accessible.  This uncovered a memory management bug that took some
+  time to track down, but the result now is much more stable memory
+  management all-around.
+
+  The new capability is demonstrated in serial in example script
+  exNOX_2DSim.
+
+-------------------------------------------------------------------------------
+
+STK*
+
+STK (Sierra Toolkit) contains capabilities intended to support massively
+parallel multi-physics computations on dynamically changing unstructured
+meshes. The primary capability in the STK package is the mesh database which
+supports creation and manipulation of mesh entities (nodes, elements etc) and
+computational field data defined on the mesh. STK also contains sub-libraries
+that support geometric proximity searches, assembly into linear-systems, etc.
+
+-------------------------------------------------------------------------------
+
+Teuchos
+
+(*) Default debug enable of RCP node tracing: Setting Teuchos_ENABLE_DEBUG=ON
+now sets Teuchos_ENABLE_DEBUG_RCP_NODE_TRACING=ON by default.  This is a more
+strict type of checking that will catch more errors.
+
+(*) Known breaks in backward compatibility:
+
+- The type Teuchos_Ordinal has been changed from int to ptrdiff_t by default.
+On 64 bit machines, this will be 'long int' instead of 'int'.  This can be
+changed back to int by configuring with -DTeuchos_ORDINAL_TYPE:STRING=int.
+
+- The size_type typedef in Teuchos::Array has been changed from size_t to
+Teuchos_Ordinal which is now ptrdiff_t, a signed integer which is *not* int on
+a 64 bit platform.  See the argument for this in Bugzilla bug 4253.
+
+- The size_type typedef in Teuchos::ArrayView and Teuchos::ArrayRCP has also
+been changed to Teuchos_Ordinal to be consistent with Teuchos::Array.
+
+- The size_type typedef in Teuchos::Range1D has been changed to
+Teuchos_Ordinal.
+
+- Removed Teuchos_exit.h with the TEUCHOS_EXIT(...) macros.  These were a bad
+idea and where never used in Trilinos.  Hopefully no external Trilinos user
+made use of these either.
+
+- Non-member functions related to RCPNode tracing have been collected into a
+new static class Teuchos::RCPNodeTracer.  Given that no user code should ever
+be calling these functions in production code this should not affect most
+users.
+
+-------------------------------------------------------------------------------
+
+Thyra
+
+(*) Added deprecated warnings.  When using GCC, the g++ compiler will now emit
+warning messages when client code uses deprecated types and functions.  The
+developer of the client code should change over to use non-deprecated code
+because the deprecated code will be removed when Trilinos 11.0 is put out.
+
+(*) Deprecated the use of all raw C++ pointers.  All use of raw C++ pointers
+is now deprecated in all functions and classes.  For the most part, if a raw
+pointer was being used in function foo( ..., T*, ... ) the new function
+prototype is foo( ..., const Ptr<T>&, ... ).  A good way to convert from a raw
+C++ reference T& to an Ptr<T> object is to use Teuchos::outArg(...) or
+Teuchos::inOutArg(...) depending on the nature of the argument.  To convert
+from a RCP<T> to a Ptr<T> use the function RCP<T>::ptr().
+
+(*) Refactored the Thyra::LinearOp[WithSolve]Base interfaces:
+
+- LinearOpBase: Removed double templating.  Now requires overridding
+opSupportedImpl(...) and applyImpl(...).  This is a break in strict bacward
+compatibility but making these functions pure virtual was needed to make sure
+the interface is implemented correctly.  Interface should be 100% backward
+compatible for external clients through depreicated functions.
+
+- LinearOpWithSolve: Removed double templating.  Now requires overridding
+solveImpl(...).  Interface should be 100% backward compatible for external
+clients through depreicated functions.  Also, the new solve[Impl](...) 
+function only takes a single SolveCriteria object and only returns a single
+SolveStatus object to simplify usage.
+
+- Removed SingleScalarXXX node classes.  There is not need for these anymore
+now that double templating is gone.
+
+- Removed SingleRhsXXX node subclasses.  These classes just make the
+intheritance hierarchy deeper without providing a lot of value.
+
+- ExampleTridiag[Serial,Spmd]LinearOp subdclasses refactored to directly
+inherit from LinearOpDefaultBase and use the Detached[Spmd]VectorView classes
+to get vector data.
+
+(*) Explicit template instantiation: Thyra now fully supports explicit
+template instantiation.  This results in code that builds much faster and can
+avoid internal compiler error on some platforms.
+
+-------------------------------------------------------------------------------
+ 
+Tifpack*
+
+Tifpack contains preconditioners that operate on the templated linear-algebra
+objects provided by the Tpetra package. Tifpack preconditioners support using
+the same integer and floating-point types that are provided by Tpetra,
+including extended-precision types from the QD library. Tifpack is intended to
+replace the capabilities in the existing Trilinos Ifpack package, but only a
+few preconditioners are supported for this initial release. Preconditioners
+provided at this time are Relaxation (Jacobi, Gauss-Seidel, Symmetric
+Gauss-Seidel), Chebyshev, ILUT and RILUK.
+
+-------------------------------------------------------------------------------
+
+TriKota*
+
+TriKota is a new package in Trilinos 10.2. TriKota is a convenience package
+that builds the Dakota framework underneath Trilinos as if it were another
+Trilinos package. Dakota contains a wide array of algorithms for optimization
+and UQ. TriKota provides adaptors between the Trilinos (ModelEvaluator)
+interface to the Dakota interface, and wraps the typical library-mode usage of
+Dakota in a convenience class and some simple example problems. Information on
+the capabilities of the Dakota framework can seen at:
+http://www.cs.sandia.gov/dakota/index.html.
+
+-------------------------------------------------------------------------------
+
+Zoltan v3.3
+
+-  Added a local ordering method based on Hilbert Space-Filling Curves
+   for ordering data within a processor to improve cache performance.
+
+-  Simplified Zoltan_Order interface.
+
+-  Added an example that uses Zoltan's migration functions.
+
+-  Added the capability to test a new mesh partitioning model in zdrive
+   using hypergraph partitioning.
+
+-  Applied several code and documentation bug fixes.
+
+-------------------------------------------------------------------------------
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 10.0 Release Notes                                         #
 #                                                                             #
 ###############################################################################

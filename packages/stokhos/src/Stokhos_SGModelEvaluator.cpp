@@ -424,10 +424,9 @@ Stokhos::SGModelEvaluator::create_W() const
 			    x_map, sg_x_map, sg_basis, Cijk, 
 			    W_sg_blocks->getCoefficients()));
     else if (jacobianMethod == KL_REDUCED_MATRIX_FREE) {
-      int num_KL = params->get<int>("Number of KL Terms");
       my_W = Teuchos::rcp(new Stokhos::KLReducedMatrixFreeEpetraOp(
 			    x_map, sg_x_map, sg_basis, Cijk, W_sg_blocks,
-			    num_KL));
+			    params));
     }
     else if (jacobianMethod == FULLY_ASSEMBLED) {
       Teuchos::RCP<Epetra_Operator> W = me->create_W();

@@ -1,59 +1,61 @@
-project(TrilinosDriver NONE)
+if ("${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_BINARY_DIR}")
+  message(FATAL_ERROR "Error, CMAKE_CURRENT_SOURCE_DIR=${CMAKE_CURRENT_SOURCE_DIR}"
+    " == CMAKE_CURRENT_BINARY_DIR=${CMAKE_CURRENT_BINARY_DIR}"
+    " TrilinosDriver does not support in source builds!" )
+endif()
+
 cmake_minimum_required(VERSION 2.7.20090924)
+project(TrilinosDriver NONE)
+
+# We depend on some of the cmake modules in the parent Trilinos source tree:
+#
+get_filename_component(TRILINOS_HOME_DIR
+  "${CMAKE_CURRENT_SOURCE_DIR}/../../.." ABSOLUTE)
+get_filename_component(TD_BASE_DIR
+  "${TRILINOS_HOME_DIR}" PATH)
+
+set(CMAKE_MODULE_PATH
+  ${TRILINOS_HOME_DIR}
+  ${TRILINOS_HOME_DIR}/cmake
+  ${TRILINOS_HOME_DIR}/cmake/utils
+  ${TRILINOS_HOME_DIR}/cmake/package_arch
+  ${TRILINOS_HOME_DIR}/cmake/config_tests
+  ${CMAKE_CURRENT_SOURCE_DIR}
+  )
 
 include(CTest)
+include(TrilinosDriverSupport)
 
-macro(download_prebuilt_cmake _type)
-  if(NOT _type)
-    set(_type "release")
-  endif(NOT _type)
-  
-  message("Downloading prebuilt CMake binaries...")
-  execute_process(COMMAND python "${TrilinosDriver_SOURCE_DIR}/../../python/download-cmake.py"
-                  "--install-dir=${TrilinosDriver_BINARY_DIR}/cmake-prebuilt/"
-                  "--installer-type=${_type}"
-                  WORKING_DIRECTORY "${TrilinosDriver_BINARY_DIR}"
-                  ERROR_VARIABLE err
-                  RESULT_VARIABLE result
-                  OUTPUT_QUIET)
-                  
-  #file(REMOVE_RECURSE "${TrilinosDriver_SOURCE_DIR}/download_area")
-                  
-  if(${result} EQUAL 0)
-    message("Finished downloading prebuilt CMake binaries.")
-  else()
-    message(FATAL_ERROR "Error occurred while downloading prebuilt CMake: ${err}")
-  endif()
-  
-  set(DOWNLOADED_DIR "${TrilinosDriver_BINARY_DIR}/cmake-prebuilt/bin")
-  set(DOWNLOADED_CMAKE "${DOWNLOADED_DIR}/cmake")
-  set(DOWNLOADED_CTEST "${DOWNLOADED_DIR}/ctest")
-endmacro()
-
-set(SITES
-corrin
-dash2win64
-exetazo
-gabriel
-godel
-hut11
-kallikrates
-qwghlm
-s903186
-s909348
-thumper
-trilinos-test
-trilinos-test2
-)
-
-# Figure out which machine we're on
+# Now make exactly one add_subdirectory call based on the site name of the
+# machine we're running on...
+#
+# By default, use the exact site name as the subdir value:
+#
 site_name(site)
 set(subdir "${site}")
+message("site='${site}'")
 
-foreach(sitename ${SITES})
-  if("${site}" MATCHES "${sitename}")
-    set(subdir "${sitename}")
+# But if that directory does not exist as named, and there's a regex match
+# with the name of a subdirectory, use the exact subdirectory name instead:
+#
+file(GLOB filesAndDirs RELATIVE "${CMAKE_CURRENT_SOURCE_DIR}"
+  "${CMAKE_CURRENT_SOURCE_DIR}/*")
+
+set(dirs "")
+foreach(dir ${filesAndDirs})
+  if(IS_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/${dir}")
+    set(dirs ${dirs} "${dir}")
   endif()
 endforeach()
-  
+
+foreach(dir ${dirs})
+  if("${site}" MATCHES "${dir}")
+    set(subdir "${dir}")
+    message("site='${site}' MATCHES directory name dir='${dir}'")
+  endif()
+endforeach()
+
+# The one add_subdirectory call:
+#
+message("subdir='${subdir}'")
 add_subdirectory("${subdir}")

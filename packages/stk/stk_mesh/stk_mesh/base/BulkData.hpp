@@ -236,8 +236,17 @@ public:
 
   //------------------------------------
 
-  void generate_new_keys(const std::vector<size_t>& requests,
-                         std::vector<EntityKey>& requested_keys);
+  /** \brief Generate a set of entites with globally unique id's
+   *
+   *  Each processor fills a request vector asking for a number of new
+   *  entities of the given ranks.
+   *
+   *  ex. request = { 0, 4,  8}
+   *  request 0 entites of rank 0, 4 entites of rank 1, and 8 entites
+   *  of rank 2
+   */
+  void generate_new_entities(const std::vector<size_t>& requests,
+                         std::vector<Entity *>& requested_entities);
 
   //------------------------------------
   /** \brief  Declare a relation and its converse between

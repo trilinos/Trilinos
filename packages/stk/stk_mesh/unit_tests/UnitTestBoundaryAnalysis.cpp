@@ -165,12 +165,12 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   for (stk::mesh::EntitySideVector::iterator itr = boundary.begin(); itr != boundary.end(); ++itr)
   {
     stk::mesh::EntitySide& side = *itr;
-    stk::mesh::EntitySideComponent& inside_closure = side.first;
-    stk::mesh::EntityId inside_id = inside_closure.first != NULL ? inside_closure.first->identifier() : 0;
-    stk::mesh::EntityId inside_side = inside_closure.first != NULL ? inside_closure.second : 0;
-    stk::mesh::EntitySideComponent& outside_closure = side.second;
-    stk::mesh::EntityId outside_id = outside_closure.first != NULL ? outside_closure.first->identifier() : 0;
-    stk::mesh::EntityId outside_side = outside_closure.first != NULL ? outside_closure.second : 0;
+    stk::mesh::EntitySideComponent& inside_closure = side.inside;
+    stk::mesh::EntityId inside_id = inside_closure.entity != NULL ? inside_closure.entity->identifier() : 0;
+    stk::mesh::EntityId inside_side = inside_closure.entity != NULL ? inside_closure.side_id : 0;
+    stk::mesh::EntitySideComponent& outside_closure = side.outside;
+    stk::mesh::EntityId outside_id = outside_closure.entity != NULL ? outside_closure.entity->identifier() : 0;
+    stk::mesh::EntityId outside_side = outside_closure.entity != NULL ? outside_closure.side_id : 0;
 
     std::pair<unsigned, unsigned> inside(inside_id, inside_side);
     std::pair<unsigned, unsigned> outside(outside_id, outside_side);

@@ -20,11 +20,10 @@
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 
+#include <stk_util/parallel/ParallelReduce.hpp>
+
 bool element_death_use_case(stk::ParallelMachine pm)
 {
-  if (stk::parallel_machine_size(pm) > 1) {
-    return true;
-  }
 
   GridFixture fixture(pm);
   stk::mesh::BulkData& bulk_data = fixture.bulk_data();
@@ -36,11 +35,11 @@ bool element_death_use_case(stk::ParallelMachine pm)
   entity_ids_to_kill.push_back(10);
 
   std::vector<stk::mesh::Entity*> entities_to_kill;
-  if (stk::parallel_machine_rank(pm) == 0) {
-    for (std::vector<unsigned>::const_iterator itr = entity_ids_to_kill.begin();
+  for (std::vector<unsigned>::const_iterator itr = entity_ids_to_kill.begin();
          itr != entity_ids_to_kill.end(); ++itr) {
-      entities_to_kill.push_back(bulk_data.get_entity(stk::mesh::Face,
-                                                      *itr));
+    stk::mesh::Entity * temp = bulk_data.get_entity(stk::mesh::Face, *itr);
+    if (temp != NULL && temp->owner_rank() == bulk_data.parallel_rank()) {
+      entities_to_kill.push_back(temp);
     }
   }
 
@@ -49,7 +48,7 @@ bool element_death_use_case(stk::ParallelMachine pm)
   stk::mesh::find_closure(bulk_data,
                           entities_to_kill,
                           entities_closure);
-  
+
   // find the boundary of the elements we're killing
   stk::mesh::EntitySideVector boundary;
   stk::mesh::boundary_analysis(bulk_data, entities_closure,
@@ -68,30 +67,29 @@ bool element_death_use_case(stk::ParallelMachine pm)
   unsigned new_side_count = 0;
   for (stk::mesh::EntitySideVector::const_iterator itr = boundary.begin();
        itr != boundary.end(); ++itr) {
-    const stk::mesh::Entity* live_entity = itr->second.first;
-    if (live_entity &&
-        live_entity->owner_rank() == bulk_data.parallel_rank()) {
+    const stk::mesh::Entity* live_element = itr->outside.entity;
+    if (live_element &&
+        live_element->owner_rank() == bulk_data.parallel_rank()) {
       ++new_side_count;
     }
   }
 
   // Ask for new globally unique side ids
   std::vector<size_t> requests(meta_data.entity_type_count(), 0);
-  std::vector<stk::mesh::EntityKey> requested_keys;
+  std::vector<stk::mesh::Entity *> requested_entities;
   requests[stk::mesh::Edge] = new_side_count;
-  bulk_data.generate_new_keys(requests, requested_keys);
+  bulk_data.generate_new_entities(requests, requested_entities);
 
   // Create boundaries between live and dead entities
   new_side_count = 0;
   for (stk::mesh::EntitySideVector::const_iterator itr = boundary.begin();
        itr != boundary.end(); ++itr) {
-    stk::mesh::Entity* live_entity = itr->second.first;
-    const unsigned local_id = itr->second.second;
-    if (live_entity &&
-        live_entity->owner_rank() == bulk_data.parallel_rank()) {
-      stk::mesh::EntityId requested_id = 
-        stk::mesh::entity_id(requested_keys[new_side_count]);
-      stk::mesh::declare_element_side(bulk_data, requested_id, *live_entity,
+    stk::mesh::Entity* live_element = itr->outside.entity;
+    const unsigned local_id = itr->outside.side_id;
+    if (live_element &&
+        live_element->owner_rank() == bulk_data.parallel_rank()) {
+      stk::mesh::Entity & side = *requested_entities[new_side_count];
+      stk::mesh::declare_element_side(*live_element, side,
                                       local_id,
                                       fixture.boundary_part());
       ++new_side_count;
@@ -102,9 +100,9 @@ bool element_death_use_case(stk::ParallelMachine pm)
 
   // Check to see that results are correct
   // print live, print dead etc
-  bool passed = true;
+  int passed = 1;
   stk::mesh::Selector selector = !(*fixture.dead_part()) & (*fixture.quad_part());
-  const std::vector<stk::mesh::Bucket*>& buckets = 
+  const std::vector<stk::mesh::Bucket*>& buckets =
     bulk_data.buckets(stk::mesh::Face);
   std::vector<stk::mesh::Bucket*> live_buckets;
   get_buckets(selector, buckets, live_buckets);
@@ -116,11 +114,15 @@ bool element_death_use_case(stk::ParallelMachine pm)
       stk::mesh::Entity& entity = b[entity_itr];
       for (std::vector<unsigned>::const_iterator killed_itr = entity_ids_to_kill.begin(); killed_itr != entity_ids_to_kill.end(); ++killed_itr) {
         if (static_cast<unsigned>(entity.identifier()) == *killed_itr) {
-          passed = false;
+          passed = 0;
         }
       }
     }
   }
 
-  return passed;
+  stk::all_reduce(pm, stk::ReduceMin<1>(&passed));
+
+
+
+  return passed != 0;
 }

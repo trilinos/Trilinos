@@ -72,14 +72,14 @@ const CellTopologyData * get_cell_topology( const Bucket & bucket )
   }
 
   bool ok = true ;
-  
+
   for ( ; ok && i != parts.end() ; ++i ) {
     if ( bucket.entity_type() == (**i).primary_entity_type() ) {
       const CellTopologyData * const tmp = get_cell_topology( **i );
       ok = ((tmp == NULL) || (tmp == top)) ;
     }
   }
-  
+
   if ( ! ok ) {
     std::ostringstream msg ;
     msg << "stk::mesh::get_cell_topology( Bucket[" ;
@@ -101,34 +101,39 @@ const CellTopologyData * get_cell_topology( const Entity & entity )
 
 //----------------------------------------------------------------------
 
-Entity & declare_element_side(
-  BulkData & mesh ,
-  const stk::mesh::EntityId global_side_id ,
-  Entity & elem ,
-  const unsigned local_side_id ,
-  Part * part )
+namespace {
+
+void verify_declare_element_side(
+    const BulkData & mesh,
+    const Entity & elem,
+    const unsigned local_side_id
+    )
 {
   static const char method[] = "stk::mesh::declare_element_side" ;
-
   const CellTopologyData * const elem_top = get_cell_topology( elem );
 
   const CellTopologyData * const side_top =
     ( elem_top && local_side_id < elem_top->side_count )
     ? elem_top->side[ local_side_id ].topology : NULL ;
 
-  if ( NULL == side_top ) {
+  bool different_bulk_data =  &mesh != & (elem.bucket().mesh());
+  bool no_elem_top = NULL == side_top;
+  bool bad_side_id = elem_top && local_side_id >= elem_top->side_count;
+
+
+  if ( different_bulk_data || no_elem_top || bad_side_id ) {
      std::ostringstream msg ;
-     msg << method << "( mesh , "
-         << global_side_id
-         << " , " ;
+     msg << method << "( ";
      print_entity_key( msg , mesh.mesh_meta_data() , elem.key() );
      msg << " , "
          << local_side_id
          << " ) FAILED" ;
-     if ( NULL == elem_top ) {
-       msg << " Cannot discern element topology" ;
+     if ( different_bulk_data ) {
+       msg << " Bulkdata for 'elem' and 'side' are different" ;
+     } else if ( no_elem_top) {
+       msg << " No element topology found" ;
      }
-     else {
+     else { // bad_side_id
        msg << " Cell side id exceeds " ;
        msg << elem_top->name ;
        msg << ".side_count = " ;
@@ -136,6 +141,25 @@ Entity & declare_element_side(
      }
      throw std::runtime_error( msg.str() );
    }
+}
+
+}
+
+//----------------------------------------------------------------------
+
+Entity & declare_element_side(
+  Entity & elem ,
+  Entity & side,
+  const unsigned local_side_id ,
+  Part * part )
+{
+
+  BulkData & mesh = side.bucket().mesh();
+
+  verify_declare_element_side(mesh, elem, local_side_id);
+
+  const CellTopologyData * const elem_top = get_cell_topology( elem );
+  const CellTopologyData * const side_top = elem_top->side[ local_side_id ].topology;
 
   const unsigned * const side_node_map = elem_top->side[ local_side_id ].node ;
 
@@ -148,7 +172,7 @@ Entity & declare_element_side(
   if ( part ) { add_parts.push_back( part ); }
 
   //\TODO refactor: is 'dimension' the right thing to use for EntityType here???
-  Entity & side = mesh.declare_entity( side_top->dimension, global_side_id, add_parts );
+  mesh.change_entity_parts(side, add_parts);
 
   mesh.declare_relation( elem , side , local_side_id );
 
@@ -160,6 +184,25 @@ Entity & declare_element_side(
   }
 
   return side ;
+}
+
+//----------------------------------------------------------------------
+
+Entity & declare_element_side(
+  BulkData & mesh ,
+  const stk::mesh::EntityId global_side_id ,
+  Entity & elem ,
+  const unsigned local_side_id ,
+  Part * part )
+{
+  verify_declare_element_side(mesh, elem, local_side_id);
+
+  const CellTopologyData * const elem_top = get_cell_topology( elem );
+  const CellTopologyData * const side_top = elem_top->side[ local_side_id ].topology;
+  PartVector empty_parts ;
+
+  Entity & side = mesh.declare_entity( side_top->dimension , global_side_id, empty_parts );
+  return declare_element_side( elem, side, local_side_id, part);
 }
 
 //----------------------------------------------------------------------
@@ -201,7 +244,7 @@ bool element_side_polarity( const Entity & elem ,
             : elem_top->edge[ local_side_id ].topology ;
 
   const unsigned * const side_map =
-    is_side ? elem_top->side[ local_side_id ].node 
+    is_side ? elem_top->side[ local_side_id ].node
             : elem_top->edge[ local_side_id ].node ;
 
   const PairIterRelation elem_nodes = elem.relations( Node );
@@ -214,83 +257,6 @@ bool element_side_polarity( const Entity & elem ,
   return good ;
 }
 
-void get_adjacent_entities( const Entity & entity ,
-                            unsigned subcell_rank ,
-                            unsigned subcell_identifier ,
-                            std::vector<std::pair<Entity*, unsigned> > & adjacent_entities )
-{
-  adjacent_entities.clear();
-
-  // get cell topology
-  const CellTopologyData* celltopology = get_cell_topology(entity);
-  if (celltopology == NULL) {
-    return;
-  }
-
-  // valid ranks fall within the dimension of the cell topology
-  bool bad_rank = subcell_rank >= celltopology->dimension;
-
-  // local id should be < number of entities of the desired type
-  // (if you have 4 edges, their ids should be 0-3)
-  bool bad_id = false;
-  if (!bad_rank) {
-    bad_id = subcell_identifier >= celltopology->subcell_count[subcell_rank];
-  }
-
-  if (bad_rank || bad_id) {
-    std::ostringstream msg;
-    //parallel consisent throw
-    if (bad_rank) {
-      msg << "stk::mesh::get_adjacent_entities( const Entity& entity, unsigned subcell_rank, ... ) subcell_rank is >= celltopology dimension\n";
-    }
-    else if (bad_id) {
-      msg << "stk::mesh::get_adjacent_entities( const Entity& entity, unsigned subcell_rank, unsigned subcell_identifier, ... ) subcell_identifier is >= subcell count\n";
-    }
-
-    throw std::runtime_error(msg.str());
-  }
-
-  // For the potentially common subcell, get it's nodes and num_nodes
-  const unsigned* nodes = celltopology->subcell[subcell_rank][subcell_identifier].node;
-  unsigned num_nodes = celltopology->subcell[subcell_rank][subcell_identifier].topology->node_count;
-
-  // Get all the nodal relationships for this entity. We are guaranteed
-  // that, if we make it this far, the entity is guaranteed to have
-  // some relationship to nodes (we know it is a higher-order entity
-  // than Node).
-  PairIterRelation relations = entity.relations(Node);
-
-  // Get the node entities that are related to entity
-  std::vector<Entity*> node_entities;
-  for (unsigned itr = 0; itr < num_nodes; ++itr) {
-    node_entities.push_back(relations[nodes[itr]].entity());
-  }
-
-  // Given the nodes related to the original entity, find all entities
-  // of similar rank that have some relation to one or more of these nodes
-  std::vector<Entity*> elements;
-  get_entities_through_relations(node_entities, entity.entity_type(), elements);
-
-  // Make sure to remove the original entity from the list
-  bool found = false;
-  for (std::vector<Entity*>::iterator itr = elements.begin();
-       itr != elements.end(); ++itr) {
-    if (*itr == &entity) {
-      elements.erase(itr);
-      found = true;
-      break;
-    }
-  }
-  // The original entity should be related to the nodes of its subcells
-  assert(found);
-
-  // Add the local ids, from the POV of the adj entitiy, to the return value
-  for (std::vector<Entity*>::const_iterator itr = elements.begin();
-       itr != elements.end(); ++itr) {
-    unsigned local_side_num = element_local_side_id(**itr, node_entities);
-    adjacent_entities.push_back(std::pair<Entity*, unsigned>(*itr, local_side_num));
-  }
-}
 
 int element_local_side_id( const Entity & elem ,
                            const Entity & side )

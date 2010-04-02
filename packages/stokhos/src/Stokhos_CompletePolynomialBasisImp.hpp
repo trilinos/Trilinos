@@ -152,7 +152,7 @@ computeTripleProductTensor(ordinal_type order) const
 	value_type c = value_type(1.0);
 	for (ordinal_type l=0; l<d; l++)
 	  c *= (*Cijk_1d[l])(terms[i][l],terms[j][l],terms[k][l]);
-	if (std::abs(c) > sparse_tol)
+	if (std::abs(c/norms[i]) > sparse_tol)
 	  Cijk->add_term(i,j,k,c);
       }
     }

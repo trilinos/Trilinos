@@ -34,6 +34,7 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
 #include "Teuchos_Time.hpp"
+#include "Teuchos_ParameterList.hpp"
 
 #include "Epetra_Operator.h"
 #include "Epetra_Map.h"
@@ -61,9 +62,7 @@ namespace Stokhos {
      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
      const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk,
      const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops,
-     int num_KL,
-     double drop_tolerance = 1e-6,
-     bool do_error_tests = false);
+     const Teuchos::RCP<Teuchos::ParameterList>& params);
     
     //! Destructor
     virtual ~KLReducedMatrixFreeEpetraOp();
@@ -165,6 +164,9 @@ namespace Stokhos {
 
     //! Stores operators
     Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> > block_ops;
+
+    //! Algorithmic parameters
+    Teuchos::RCP<Teuchos::ParameterList> params;
 
     //! Flag indicating whether transpose was selected
     bool useTranspose;

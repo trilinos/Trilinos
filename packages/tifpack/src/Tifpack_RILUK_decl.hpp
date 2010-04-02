@@ -45,12 +45,12 @@ namespace Teuchos {
 
 namespace Tifpack {
 
-//! Tifpack_RILUK: A class for constructing and using an incomplete lower/upper (ILU) factorization of a given Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>.
+//! A class for constructing and using an incomplete lower/upper (ILU) factorization of a given Tpetra::RowMatrix.
 
-/*! The Tifpack_RILUK class computes a "Relaxed" ILU factorization with level k fill 
-    of a given Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>.
+/*! Tifpack::RILUK computes a "Relaxed" ILU factorization with level k fill 
+    of a given Tpetra::RowMatrix.
 
-For a complete list of valid parameters, see RILUK::setParameters.
+For a complete list of valid parameters, see Tifpack::RILUK::setParameters.
 
   The factorization 
     that is produced is a function of several parameters:
@@ -231,7 +231,7 @@ Not currently supported.
 
   void initialize();
   bool isInitialized() const {return isInitialized_;}
-  int getNumInitialize() const {return numInitialized_;}
+  int getNumInitialize() const {return numInitialize_;}
 
   //! Compute ILU factors L and U using the specified diagonal perturbation thresholds and relaxation parameters.
   /*! This function computes the RILU(k) factors L and U using the current:
@@ -247,8 +247,8 @@ Not currently supported.
   //! If compute() is completed, this query returns true, otherwise it returns false.
   bool isComputed() const {return(Factored_);}
   
-  int getNumCompute() const {return -1;}
-  int getNumApply() const {return -1;}
+  int getNumCompute() const {return numCompute_;}
+  int getNumApply() const {return numApply_;}
 
   double getInitializeTime() const {return -1;}
   double getComputeTime() const {return -1;}
@@ -390,7 +390,9 @@ Not currently supported.
   int NumMyDiagonals_;
   bool isAllocated_;
   bool isInitialized_;
-  int numInitialized_;
+  mutable int numInitialize_;
+  mutable int numCompute_;
+  mutable int numApply_;
   bool Factored_;
   double RelaxValue_;
   double Athresh_;

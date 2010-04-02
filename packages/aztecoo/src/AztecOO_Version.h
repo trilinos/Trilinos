@@ -30,9 +30,10 @@
 #define AZTECOO_VERSION_H
 
 #include "AztecOO.h"
+#include "Trilinos_version.h"
 
 	string AztecOO_Version() { 
-		return("AztecOO Version 3.9d - 11/13/2009"); 
+		return("AztecOO in Trilinos " TRILINOS_VERSION_STRING); 
 	}
 
 #endif /* AZTECOO_VERSION_H */

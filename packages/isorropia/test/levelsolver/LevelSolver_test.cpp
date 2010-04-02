@@ -6,6 +6,9 @@
 #include <Epetra_Time.h>
 #include <vector>
 
+#include <time.h>
+#include <sys/time.h>
+
 
 #include "LevelSolver.h"
 #include "TestUtils.h"
@@ -154,6 +157,7 @@ int main(int argc, char *argv[])
   cout << "Std dev number of non-zeros per row: " << fixed << setprecision(2) << stddev << endl;
   /////////////////////////////////////////////////////////////
 
+
   Epetra_LevelSolver<Node> LS(L->RowMap(),node);
 
 #define USE_ISORROPIA
@@ -215,12 +219,12 @@ int main(int argc, char *argv[])
     }
 
    // Verify that the level solver correctly solves the system
-   verify(L,LS);
+   //verify(L,LS);
 
    // Time the level solver 
-   //timeLevelSolver(L,LS,numTrials);
+   timeLevelSolver(L,LS,numTrials);
 
-//   timeOrigSolver(L,numTrials);
+   timeOrigSolver(L,numTrials);
 
 
   // delete manually allocated matrices
@@ -380,7 +384,6 @@ template <class nodeT>
 void timeLevelSolver(const Epetra_CrsMatrix *L, Epetra_LevelSolver<nodeT> &LS, int numTrials)
 {
   Epetra_SerialComm Comm;
-  Epetra_Time timer(Comm);
 
   typedef Tpetra::Vector<double,int,int,nodeT> TV;
 
@@ -400,18 +403,28 @@ void timeLevelSolver(const Epetra_CrsMatrix *L, Epetra_LevelSolver<nodeT> &LS, i
   //////////////////////////////
   // Level Solver solve
   //////////////////////////////
-  double time;
   // node.init(*nt);
   // LevelSolver inverse
-  timer.ResetStartTime();
+
+  struct timeval start, end;
+
+  gettimeofday(&start, NULL);
+
+
+
   for (int t=0; t<numTrials; ++t) 
   {
       LS.Apply(b_t,x_t);
   }
-  time = timer.ElapsedTime();
+
+  gettimeofday(&end, NULL);
+
+
+  double time2 =  (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec)/1000000.0;
+
   cout << setw(20) << "LevelSolver  solve, " << setw(2) << 0 << " threads, "
-       << setprecision(2) << scientific << setw(11) << time           << " total, " 
-       << setprecision(2) << scientific << setw(11) << time/numTrials << " average" 
+       << setprecision(3) << scientific << setw(11) << time2           << " total, " 
+       << setprecision(3) << scientific << setw(11) << time2/numTrials << " average" 
        << endl;
   //////////////////////////////
 }
@@ -436,17 +449,22 @@ void timeOrigSolver(const Epetra_CrsMatrix *L, int numTrials)
   //////////////////////////////
   // Original Epetra solver
   //////////////////////////////
-  double time;
-  // Epetra inverse
-  timer.ResetStartTime();
+  struct timeval start, end;
+
+  gettimeofday(&start, NULL);
+
+
   for (int t=0; t<numTrials; ++t) 
   {
     L->Solve(false,false,false,Lx,Lx);
   }
-  time = timer.ElapsedTime();
+
+  gettimeofday(&end, NULL);
+  double time2 =  (end.tv_sec - start.tv_sec) + (end.tv_usec - start.tv_usec)/1000000.0;
+
   cout << setw(20) << "Epetra_CrsMatrix solve,         "
-       << setprecision(2) << scientific << setw(11) << time            << " total, " 
-       << setprecision(2) << scientific << setw(11) << time /numTrials << " average" 
+       << setprecision(3) << scientific << setw(11) << time2            << " total, " 
+       << setprecision(3) << scientific << setw(11) << time2 /numTrials << " average" 
        << endl;
   //////////////////////////////
 

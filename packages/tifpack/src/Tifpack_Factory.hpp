@@ -33,20 +33,23 @@
 #include "Tifpack_ConfigDefs.hpp"
 #include "Tifpack_Preconditioner.hpp"
 #include "Tifpack_Relaxation.hpp"
+#include "Tifpack_Diagonal.hpp"
 #include "Tifpack_Chebyshev.hpp"
 #include "Tifpack_RILUK.hpp"
 #include "Tifpack_ILUT.hpp"
 
+/** Classes and functions for templated preconditioning.  */
 namespace Tifpack {
 
 /** \brief Return true if the specified precondtioner type supports
  * unsymmetric matrices. */
 bool supportsUnsymmetric(const std::string& prec_type);
 
-//! Tifpack::Factory a factory class to create Tifpack preconditioners.
+//! A factory class to create Tifpack preconditioners.
 /*!
-Class Tifpack::Factory contains just one method: create().
-Using create(), users can easily create a variety of Tifpack preconditioners. 
+Tifpack::Factory contains just one method: create().
+Using Tifpack::Factory::create(), users can easily create a variety of
+Tifpack preconditioners. 
 
 create requires 3 arguments:
 - a string, indicating the preconditioner to be built;
@@ -56,10 +59,11 @@ create requires 3 arguments:
   overlap among the processes.
 
 The first argument can assume the following values:
+- \c "DIAGONAL"  : returns an instance of Tifpack::Diagonal.
 - \c "RELAXATION"  : returns an instance of Tifpack::Relaxation.
 - \c "CHEBYSHEV"   : returns an instance of Tifpack::Chebyshev (overlap is ignored).
 - \c "ILUT"        : returns an instance of Tifpack::ILUT.
-- \c "CRSRILUK"    : returns an instance of Tifpack::RILUK.
+- \c "RILUK"       : returns an instance of Tifpack::RILUK.
 - otherwise, create() returns Teuchos::null.
 
 
@@ -152,6 +156,9 @@ Factory::create(const std::string& prec_type,
   }
   else if (prec_type == "CHEBYSHEV") {
     prec = Teuchos::rcp(new Tifpack::Chebyshev<MatrixType>(matrix));
+  }
+  else if (prec_type == "DIAGONAL") {
+    prec = Teuchos::rcp(new Tifpack::Diagonal<MatrixType>(matrix));
   }
   else {
     std::ostringstream os;
