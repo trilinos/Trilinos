@@ -3,6 +3,8 @@
 #
 @INCLUDE = Doxyfile.options
 @INCLUDE = rtop/doc/TagFiles # Requires @INCLUDE_PAH=$(TRILINOS_HOME)/packages
+@INCLUDE = epetra/doc/TagFiles
+@INCLUDE = tpetra/doc/TagFiles
 #
 # Package options
 #
@@ -33,6 +35,7 @@ INPUT                  = ./index.doc \
                          ../adapters/epetra/src \
                          ../adapters/epetraext/src/model_evaluator \
                          ../adapters/epetraext/src/transformer \
+                         ../adapters/tpetra/src \
                          ../example/operator_vector/exampleImplicitlyComposedLinearOperators.cpp \
                          ../example/operator_vector/ExampleTridiagSerialLinearOp.hpp \
                          ../example/operator_vector/ExampleTridiagSpmdLinearOp.hpp \

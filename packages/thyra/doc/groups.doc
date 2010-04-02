@@ -776,19 +776,11 @@ these subclasses for SPMD platforms.
 // B.2) Operator Solve Support
 //
 
-
-/** \defgroup Thyra_Op_Solve_support_grp Thyra operator solve support
+/** \defgroup OperatorVectorANASupportSoftware_grp Operator/Solve ANA Support Software
 
 \ingroup Thyra_support_grp
 
 \brief This is the \ref thyra_support_operator_solve_sec.
-
-*/
-
-
-/** \defgroup OperatorVectorANASupportSoftware_grp Operator/Solve ANA Support Software
-
-\ingroup Thyra_Op_Solve_support_grp
 
 <ul>
 
@@ -862,7 +854,7 @@ added, multiplied, blocked, etc. linear operators).
 //
 
 
-/** \defgroup Epetra_Thyra_Op_Vec_adapters_grp Epetra to Thyra Operator/Vector Adapter Code
+/** \defgroup Epetra_Thyra_Op_Vec_adapters_grp Thyra/Epetra Operator/Vector Adapter Code
 
 \ingroup thyra_adapters_grp
 
@@ -924,11 +916,23 @@ activity in object-oriented programming.
 
 
 //
+// C.2) Thyra/Tpetra adapters
+//
+
+
+/** \defgroup Tpetra_Thyra_Op_Vec_adapters_grp Thyra/Tpetra Operator/Vector Adapter Code
+
+\ingroup thyra_adapters_grp
+
+*/
+
+
+//
 // C.3) Thyra/EpetraExt adapters
 //
 
 
-/** \defgroup EpetraExt_Thyra_Op_Vec_adapters_grp EpetraExt to Thyra Adapter Code
+/** \defgroup EpetraExt_Thyra_Op_Vec_adapters_grp Thyra/EpetraExt Adapter Code
 
 \ingroup thyra_adapters_grp
 

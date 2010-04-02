@@ -35,6 +35,7 @@
   <li>\ref thyra_adapters_sec
     <ul>
     <li>\ref thyra_adapters_epetra_sec
+    <li>\ref thyra_adapters_tpetra_sec
     <li>\ref thyra_adapters_epetraext_sec
     </ul>
   <li>\ref thyra_browse_sec
@@ -80,6 +81,7 @@ href="../../browser/doc/html/dirs.html">directory structure of thyra</a>.
 
 \subsection thyra_interfaces_sec Thyra interoperability interfaces
 
+Module: \ref Thyra_interfaces_grp
 
 All of the software in the <tt>src/interfaces</tt> directory define
 fundamental interoperability interfaces needed to glue code together.  This is
@@ -90,10 +92,14 @@ interfaces.
 
 \subsubsection thyra_interfaces_operator_vector_sec Operator/Vector Interfaces
 
+Module: \ref Thyra_interfaces_grp
+
 <ul>
 
 <li> <b>Fundamental ANA Operator/Vector Interfaces</b> <a
 name="interfaces_operator_vector_ana_fundamental"></a>
+
+Module: \ref Thyra_Op_Vec_fundamental_interfaces_code_grp
 
 \image html ThyraOperatorVectorSimple.gif
 
@@ -137,6 +143,8 @@ described in the aforementioned paper.
 
 <li><b>Extended ANA Operator/Vector Interfaces</b><a
 name="interfaces_operator_vector_ana_extended"></a>
+
+Module: \ref Thyra_Op_Vec_extended_interfaces_code_grp
 
 These are some interfaces based on the
 above Fundamental ANA Operator/Vector Interfaces and provide other pieces of functionality
@@ -249,6 +257,8 @@ and include, for example, <tt>Thyra::ScaledAdjointLinearOpBase</tt>.
 <li> <b>Fundamental ANA Operator Solve Interfaces</b> <a
 name="interfaces_operator_solve_ana_fundamental"></a>
 
+  Module: \ref Thyra_Op_Solve_fundamental_interfaces_code_grp
+
   \image html PreconditionerFactory75.jpg
 
   \image html LinearOpWithSolveAndFactory75.jpg
@@ -281,6 +291,8 @@ name="interfaces_operator_solve_ana_fundamental"></a>
 <li> <b>Extended ANA Operator Solve Interfaces</b> <a
 name="interfaces_operator_solve_ana_extended"></a>
 
+  Module: \ref Thyra_Op_Solve_extended_interfaces_code_grp
+
   Included here is a variety of extended interfaces that build on the fundamental operator/solve
   interfaces.
 
@@ -309,10 +321,14 @@ name="interfaces_operator_solve_ana_extended"></a>
 
 \subsubsection thyra_interfaces_nonlinear_sec Nonlinear Interfaces
 
+Module: \ref Thyra_Nonlinear_interfaces_code_grp
+
 <ul>
 
 <li> <b>Fundamental ANA Model Evaluator Interfaces</b><a
 name="interfaces_nonlinear_model_evaluator_ana_fundamental"></a>
+
+  Module: \ref Thyra_Nonlinear_model_evaluator_interfaces_code_grp
 
   \image html ModelEvaluator75.gif
 
@@ -338,6 +354,8 @@ name="interfaces_nonlinear_model_evaluator_ana_fundamental"></a>
 <li> <b>Fundamental ANA Nonlinear Solver Interfaces</b><a
 name="interfaces_nonlinear_solvers_ana_fundamental"></a>
 
+  Module: \ref Thyra_Nonlinear_solver_interfaces_code_grp
+
   Contained here are interfaces for nonlinear equation solvers.
 
   <ul>
@@ -355,8 +373,12 @@ name="interfaces_nonlinear_solvers_ana_fundamental"></a>
 
 \subsection thyra_support_sec Thyra support software and examples
 
+Module: \ref Thyra_support_grp
+
 
 \subsubsection thyra_support_operator_vector_sec Operator/Vector Support
+
+Module: \ref Thyra_Op_Vec_support_grp
 
 Described here is a fairly large collection of ANA or client support and
 adapter support software based on the operator/vector
@@ -376,6 +398,8 @@ contains in this short description.
 
 \subsubsection thyra_support_operator_solve_sec Operator Solve Support
 
+Module: \ref OperatorVectorANASupportSoftware_grp
+
 This collection contains support software for the operator/solve interfaces.
 Examples include testing software like <tt>Thyra::LinearOpWithSolveTester</tt>
 and <em>decorator</em> subclasses like
@@ -384,12 +408,16 @@ and <em>decorator</em> subclasses like
 
 \subsubsection thyra_support_nonlinear_model_evaluator_sec Nonlinear Model Evaluator Support
 
+Module: \ref Thyra_Nonlin_ME_support_grp
+
 This includes support software for the nonlinear model evaluator interfaces.
 Examples include <tt>decorator</tt> subclasses like
 <tt>Thyra::DefaultFiniteDifferenceModelEvaluator</tt>.
 
 
 \subsubsection thyra_support_nonlinear_solvers_sec Nonlinear Solvers Support
+
+Module: \ref Thyra_Nonlin_ME_solvers_grp
 
 Contained here is support software for the nonlinear solver interfaces and
 some simple concrete implementations.  Simple concrete nonlinear equation
@@ -399,8 +427,12 @@ and <tt>Thyra::DampenedNewtonNonlinearSolver</tt>.
 
 \subsection thyra_adapters_sec Thyra adapters to other packages
 
+Module: \ref thyra_adapters_grp
 
-\subsubsection thyra_adapters_epetra_sec Epetra/Thyra adapters
+
+\subsubsection thyra_adapters_epetra_sec Thyra/Epetra adapters
+
+Module: \ref Epetra_Thyra_Op_Vec_adapters_grp
 
 This software allows the creation/conversion of Thyra objects and Epetra
 objects.  Examples include <tt>Thyra::EpetraLinearOp</tt>,
@@ -408,7 +440,19 @@ objects.  Examples include <tt>Thyra::EpetraLinearOp</tt>,
 <tt>Thyra::EpetraVectorSpace</tt>.
 
 
-\subsubsection thyra_adapters_epetraext_sec EpetraExt/Thyra adapters
+\subsubsection thyra_adapters_tpetra_sec Thyra/Tpetra adapters
+
+Module: \ref Tpetra_Thyra_Op_Vec_adapters_grp
+
+This software allows the creation/conversion of Thyra objects and Tpetra
+objects.  Examples include <tt>Thyra::TpetraLinearOp</tt>,
+<tt>Thyra::TpetraVector</tt>, <tt>Thyra::TpetraMultiVector</tt>, and
+<tt>Thyra::TpetraVectorSpace</tt>.
+
+
+\subsubsection thyra_adapters_epetraext_sec Thyra/EpetraExt adapters
+
+Module: \ref EpetraExt_Thyra_Op_Vec_adapters_grp
 
 Included here are various adapters between Epetra and EpetraExt based code and
 Thyra interfaces.  For example, one will find the
@@ -594,7 +638,7 @@ order, are:
 
 <ul>
 <li> Roscoe Bartlett (rabartl@sandia.gov) <a href="http://www.cs.sandia.gov/~rabartl">[website]</a>:
-     %Thyra lead developer, MOOCHO lead developer
+     %Thyra lead developer, Stratimikos lead developer, MOOCHO lead developer
 <li> Todd Coffey (tscoffe@sandia.gov) : Rythmos lead developer
 <li> Michael Heroux (maherou@sandia.gov): Trilinos lead, Epetra and AztecOO lead developer
 <li> Kevin Long (krlong@sandia.gov) : %Sundance lead developer
