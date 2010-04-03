@@ -15,13 +15,16 @@ Set up email notification hooks
   $ cd GIT_REPO_BASE_DIR/hooks
   $ THIS_DIR/copy_hooks_scripts.sh
 
-2) Copy configure file and customize:
+2) Copy configure file, customize, and give group ownership:
 
   $ cd GIT_REPO_BASE_DIR
   $ cp THIS_DIR/config .
   $ eg config --add hooks.mailinglist "defaultemail@something.com"
   $ eg config --add hooks.emailprefix "[Something] "
   $ THIS_DIR/setup-shared-repo.sh GROUP_NAME
+
+  NOTE: The above setup-shared-repo.sh will make sure that anyone can modify
+  the repo in the given group.
 
 3) Create a dirs_to_emails file and fill out with mapping:
 
