@@ -126,11 +126,12 @@ void DefaultProductVector<Scalar>::uninitialize()
 template<class Scalar>
 std::string DefaultProductVector<Scalar>::description() const
 {
+  const RCP<const VectorSpaceBase<Scalar> > vs = this->space();
   std::ostringstream oss;
   oss
     << Teuchos::Describable::description()
     << "{"
-    << "dim="<<this->space()->dim()
+    << "dim="<<(nonnull(vs) ? vs->dim() : 0)
     << ", numBlocks = "<<numBlocks_
     << "}";
   return oss.str();
