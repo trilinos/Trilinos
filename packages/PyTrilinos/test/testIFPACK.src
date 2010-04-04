@@ -71,7 +71,7 @@ class IFPACKTestCase(unittest.TestCase):
 
     def testVersion(self):
         "Test IFPACK Version function"
-        front   = "Ifpack Version "
+        front   = "Ifpack in Trilinos "
         version = IFPACK.Version()
         self.assertEquals(version[:len(front)], front)
 

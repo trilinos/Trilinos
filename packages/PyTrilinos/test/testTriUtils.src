@@ -75,7 +75,7 @@ class TriUtilsTestCase(unittest.TestCase):
 
     def testVersion(self):
         "Test TriUtils TriUtils_Version function"
-        front   = "Triutils Version "
+        front   = "Triutils in Trilinos "
         version = TriUtils.TriUtils_Version()
         self.assertEquals(version[:len(front)], front)
 

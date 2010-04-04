@@ -207,7 +207,7 @@ example subdirectory of the PyTrilinos package:
 %rename(Version) Ifpack_Version;
 %include "Ifpack_Version.h"
 %pythoncode %{
-__version__ = Version().split()[2]
+__version__ = Version().split()[3]
 %}
 
 //////////////////////////
