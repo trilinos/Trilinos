@@ -37,7 +37,7 @@ struct rcb_median {          /* RCB cut info */
   double    totallo, totalhi;   /* weight in each half of active partition */
   double    valuelo, valuehi;	/* position of dot(s) nearest to cut */
   double    wtlo, wthi;         /* total weight of dot(s) at that position */
-  int       countlo, counthi;   /* # of dots at that position */
+  uintmax_t countlo, counthi;   /* # of dots at that position */
   int       proclo, prochi;	/* unique proc who owns a nearest dot */
 };
 

@@ -132,8 +132,8 @@ typedef ZOLTAN_ID_TYPE     *ZOLTAN_ID_PTR;
 extern MPI_Datatype  _mpi_intmax_datatype;
 extern MPI_Datatype  _mpi_uintmax_datatype;
 
-#define ZOLTAN_INTMAX_MPI_TYPE  _mpi_intmax_datatype;
-#define ZOLTAN_UINTMAX_MPI_TYPE  _mpi_uintmax_datatype;
+#define ZOLTAN_INTMAX_MPI_TYPE  _mpi_intmax_datatype
+#define ZOLTAN_UINTMAX_MPI_TYPE  _mpi_uintmax_datatype
 
 /*****************************************************************************/
 /*

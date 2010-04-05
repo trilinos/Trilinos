@@ -19,6 +19,7 @@ extern "C" {
 #include <stdio.h>
 #include <stdlib.h>
 #include <float.h>
+#include "zoltan_types.h"
 #include "zz_const.h"
 #include "shared.h"
 #include "par_bisect_const.h"
@@ -40,7 +41,7 @@ extern "C" {
 
 struct bisector {          /* bisector cut info */
   double    valuelo, valuehi;   /* position of dot(s) nearest to cut */
-  int       countlo, counthi;   /* # of dots at that position */
+  uintmax_t countlo, counthi;   /* # of dots at that position */
   int       proclo, prochi;     /* unique proc who owns a nearest dot */
   int       nwgts;              /* number of weights (per dot) */
   double  totallo[MAX_BISECT_WGTS]; /* weight in lower half of active partition */
@@ -318,18 +319,20 @@ int Zoltan_RB_find_bisector(
   /* create MPI data and function types for bisector */
   {
     /* Describe struct bisector to MPI. Add MPI_UB at the end just to be safe. */
-    int lengths[4] = {2,5,4*MAX_BISECT_WGTS,1};
-    MPI_Aint ind[4], offset;
-    MPI_Datatype types[4] = {MPI_DOUBLE, MPI_INT, MPI_DOUBLE, MPI_UB};
+    int lengths[5] = {2,2,3,4*MAX_BISECT_WGTS,1};
+    MPI_Aint ind[5], offset;
+    MPI_Datatype types[5] = {MPI_DOUBLE, ZOLTAN_UINTMAX_MPI_TYPE, MPI_INT, MPI_DOUBLE, MPI_UB};
     MPI_Address(med, &offset);
     ind[0] = 0;
     MPI_Address(&(med->countlo), &(ind[1])); 
     ind[1] -= offset;
-    MPI_Address(&(med->totallo[0]), &(ind[2])); 
+    MPI_Address(&(med->proclo), &(ind[2])); 
     ind[2] -= offset;
-    ind[3] = sizeof(struct bisector);
+    MPI_Address(&(med->totallo[0]), &(ind[3])); 
+    ind[3] -= offset;
+    ind[4] = sizeof(struct bisector);
 
-    MPI_Type_struct(4, lengths, ind, types, &med_type);
+    MPI_Type_struct(5, lengths, ind, types, &med_type);
     MPI_Type_commit(&med_type);
 
     MPI_Op_create(&Zoltan_bisector_merge, 1, &med_op);
