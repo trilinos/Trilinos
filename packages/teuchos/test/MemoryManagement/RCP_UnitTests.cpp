@@ -570,6 +570,11 @@ TEUCHOS_UNIT_TEST( RCP, weak_strong )
 }
 
 
+//
+// circularReference
+//
+
+
 TEUCHOS_UNIT_TEST( RCP, circularReference_a_then_c )
 {
 
@@ -734,6 +739,11 @@ TEUCHOS_UNIT_TEST( RCP, multiRcpCreateError )
 #endif // TEUCHOS_DEBUG
 
 
+//
+// invertObjectOwnership
+//
+
+
 RCP<C> createCAFactory()
 {
   RCP<C> c = rcp(new C);
@@ -780,6 +790,11 @@ TEUCHOS_UNIT_TEST( RCP, invertObjectOwnership_remove_A )
   TEST_EQUALITY( a->A_g(), A_g_return );
   TEST_EQUALITY( c->C_g(), C_g_return );
 }
+
+
+//
+// createRCPWithBadDealloc
+//
 
 
 RCP<A> createRCPWithBadDealloc()
