@@ -258,49 +258,15 @@ Zoltan_AllReduceInPlace(void *sndrcvbuf, int count, MPI_Datatype datatype, MPI_O
   return (ierr);
 }
 
-MPI_Datatype _mpi_int_32_type;
-MPI_Datatype _mpi_int_max_type;
-MPI_Datatype _mpi_uint_32_type;
-MPI_Datatype _mpi_uint_max_type;
-
-char _z_int_specifier[16];
-char _z_uint_specifier[16];
-char _z_int_long_specifier[16];
-char _z_uint_long_specifier[16];
+MPI_Datatype _mpi_intmax_datatype=MPI_UNDEFINED;
+MPI_Datatype _mpi_uintmax_datatype=MPI_UNDEFINED;
 
 int Zoltan_set_mpi_types()
 {
-  int rank;
-  MPI_Datatype signed_types[16];
-  MPI_Datatype unsigned_types[16];
-  int size_short, size_unsigned_short, i;
+  int size_short, size_unsigned_short;
   int size_int, size_unsigned_int;
   int size_long, size_unsigned_long;
   int size_long_long, size_unsigned_long_long;
-
-  /* specifiers for scanf, printf, etc. */
-
-  if (sizeof(Z_INT_L) == sizeof(int)){
-    strcpy(_z_int_long_specifier,"%d");
-    strcpy(_z_uint_long_specifier,"%u");
-  }
-  else if (sizeof(Z_INT_L) == sizeof(long)){
-    strcpy(_z_int_long_specifier,"%ld");
-    strcpy(_z_uint_long_specifier,"%lu");
-  }
-  else{   /* long long */
-    strcpy(_z_int_long_specifier,"%Ld");
-    strcpy(_z_uint_long_specifier,"%Lu");
-  }
-
-  if (sizeof(Z_INT) == sizeof(long)){
-    strcpy(_z_int_specifier,"%ld");
-    strcpy(_z_uint_specifier,"%lu");
-  }
-  else{   /* int or _int32 */
-    strcpy(_z_int_specifier,"%d");
-    strcpy(_z_uint_specifier,"%u");
-  }
 
   MPI_Type_size(MPI_SHORT, &size_short);
   MPI_Type_size(MPI_UNSIGNED_SHORT, &size_unsigned_short);
@@ -311,45 +277,35 @@ int Zoltan_set_mpi_types()
   MPI_Type_size(MPI_LONG_LONG, &size_long_long);
   MPI_Type_size(MPI_UNSIGNED_LONG_LONG, &size_unsigned_long_long);
 
-  for (i=0; i < 16; i++){
-    signed_types[i] = MPI_UNDEFINED;
-    unsigned_types[i] = MPI_UNDEFINED;
+  if (sizeof(intmax_t) == size_short){
+    _mpi_intmax_datatype = MPI_SHORT;
+  }
+  else if (sizeof(intmax_t) == size_int){
+    _mpi_intmax_datatype = MPI_INT;
+  }
+  else if (sizeof(intmax_t) == size_long){
+    _mpi_intmax_datatype = MPI_LONG;
+  }
+  else if (sizeof(intmax_t) == size_long_long){
+    _mpi_intmax_datatype = MPI_LONG_LONG;
   }
 
-  signed_types[size_long_long] = MPI_LONG_LONG;
-  signed_types[size_long] = MPI_LONG;
-  signed_types[size_int] = MPI_INT;
-  signed_types[size_short] = MPI_SHORT;
-
-  unsigned_types[size_unsigned_long_long] = MPI_UNSIGNED_LONG_LONG;
-  unsigned_types[size_unsigned_long] = MPI_UNSIGNED_LONG;
-  unsigned_types[size_unsigned_int] = MPI_UNSIGNED;
-  unsigned_types[size_unsigned_short] = MPI_UNSIGNED_SHORT;
-
-  _mpi_int_32_type = signed_types[4];
-  _mpi_uint_32_type = unsigned_types[4];
-  
-  if (signed_types[sizeof(Z_INT_L)] != MPI_UNDEFINED){
-    _mpi_int_max_type = signed_types[sizeof(Z_INT_L)];
-    _mpi_uint_max_type = unsigned_types[sizeof(Z_INT_L)];
+  if (sizeof(uintmax_t) == size_short){
+    _mpi_uintmax_datatype = MPI_UNSIGNED_SHORT;
   }
-  else{
-    _mpi_int_max_type = signed_types[4];
-    _mpi_uint_max_type = unsigned_types[4];
+  else if (sizeof(uintmax_t) == size_int){
+    _mpi_uintmax_datatype = MPI_UNSIGNED;
   }
+  else if (sizeof(uintmax_t) == size_long){
+    _mpi_uintmax_datatype = MPI_UNSIGNED_LONG;
+  }
+  else if (sizeof(uintmax_t) == size_long_long){
+    _mpi_uintmax_datatype = MPI_UNSIGNED_LONG_LONG;
+  } 
 
-  if ((_mpi_int_32_type == MPI_UNDEFINED) ||
-      (_mpi_uint_32_type == MPI_UNDEFINED) ||
-      (_mpi_int_max_type == MPI_UNDEFINED) ||
-      (_mpi_uint_max_type == MPI_UNDEFINED) ){
-
+  if ((_mpi_intmax_datatype == MPI_UNDEFINED) || (_mpi_intmax_datatype == MPI_UNDEFINED)){
     return ZOLTAN_FATAL;
   }
-
-  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-  if (rank == 0){
-    printf("Size of a Z_INT_L is %d bytes, Z_INT is %d bytes\n", sizeof(Z_INT_L), sizeof(Z_INT));
-  } 
 
   return ZOLTAN_OK;
 }

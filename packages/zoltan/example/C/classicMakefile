@@ -2,13 +2,24 @@
 ## a basic makefile to build examples
 ##
 
+##
+## The default type for a Zoltan global ID is "unsigned int".  This can be changed
+## with compile-time flags like:
+##
+##   -DZOLTAN_ID_TYPE_UNSIGNED_SHORT
+##   -DZOLTAN_ID_TYPE_LONG_LONG
+##
+## and so on.  If Zoltan was compiled with one of these flags, then these examples
+## need to be compiled with the same flag.
+##
+ID_TYPE_FLAG=-DZOLTAN_ID_TYPE_INT
+##
+
+
 ## Location of zoltan library, also location of Zoltan_config.h if
 ## using the autoconf build harness
 
 BLD=../../build64/src
-#BLD=../../build/src
-
-#ADDRESS_SPACE_FLAG=-DUSE_32_BIT_ADDRESS_SPACE
 
 ##
 ## Location of zoltan "src" directory (for header files)
@@ -42,28 +53,9 @@ ZOLTAN_UTIL_INCLUDE=-I$(SRC)/zz  \
 
 #MPI_DIR=/home/lriesen/system/mpich2_32
 
-##
-## C compiler
-##
-#CC=$(MPI_DIR)/bin/mpicc
-
 CC=mpicc
 
-##
-## C++ compiler
-##
-#CXX=$(MPI_DIR)/bin/mpicxx
-
-CXX=mpicxx
-
-# MPI include and library options if needed
-#MPI_INCLUDE=-I$(MPI_DIR)/src/include
-#MPI_LIBS=$(MPI_DIR)//lib/libmpich.a
-
-
-CFLAGS = -g -Wall $(ADDRESS_SPACE_FLAG)
-CXXFLAGS = -g -Wall $(ADDRESS_SPACE_FLAG)
-
+CFLAGS = -g -Wall $(ID_TYPE_FLAG)
 
 C_EXAMPLES = simpleBLOCK  simpleRCB simpleGRAPH simplePHG migrateGRAPH
 
@@ -71,11 +63,6 @@ all:   $(C_EXAMPLES) $(CPP_EXAMPLES)
 
 %: %.c
 	$(CC) $(CFLAGS) $(PAR_LIB_DIR)  \
-        -I$(BLD)/include $(MPI_INCLUDE) $(ZOLTAN_INCLUDE) $(ZOLTAN_UTIL_INCLUDE) \
-        -o $@ $< $(BLD)/libzoltan.a $(PAR_LIBS) -lm $(MPI_LIBS)
-
-%: %.cpp
-	$(CXX) $(CFLAGS) $(CXXFLAGS) $(PAR_LIB_DIR)  \
         -I$(BLD)/include $(MPI_INCLUDE) $(ZOLTAN_INCLUDE) $(ZOLTAN_UTIL_INCLUDE) \
         -o $@ $< $(BLD)/libzoltan.a $(PAR_LIBS) -lm $(MPI_LIBS)
 

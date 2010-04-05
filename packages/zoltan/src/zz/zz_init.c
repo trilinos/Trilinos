@@ -39,7 +39,7 @@ int Zoltan_Initialize(int argc, char **argv, float *ver)
  *  uses MPI.
  */
 
-int mpi_flag;
+int mpi_flag, ierr;
 
   /* 
    *  Test whether MPI is already initialized.  If not, call MPI_Init.
@@ -51,7 +51,11 @@ int mpi_flag;
     MPI_Init(&argc, &argv);
   }
 
-  Zoltan_set_mpi_types();
+  ierr = Zoltan_set_mpi_types();
+
+  if (ierr == ZOLTAN_FATAL){
+    return ZOLTAN_FATAL;
+  }
 
   /*
    * Now return the version so that the user knows which version of

@@ -24,58 +24,116 @@
 extern "C" {
 #endif
 
-/* Set at runtime in Zoltan_set_mpi_integer_data_types */
-extern MPI_Datatype _mpi_int_32_type;
-extern MPI_Datatype _mpi_int_max_type;
-extern MPI_Datatype _mpi_uint_32_type;
-extern MPI_Datatype _mpi_uint_max_type;
+/* The default ZOLTAN_ID_TYPE is "unsigned long" but this can be over-ridden on the compile command line.  
+ *
+ * The type of a Zoltan object global ID is ZOLTAN_ID_TYPE.  A pointer to it is ZOLTAN_ID_PTR.
+ *
+ * It's decimal type specifier: printf("%" ZOLTAN_ID_SPECIFIER "\n", global_id);
+ *
+ * A constant of the same type:   ZOLTAN_ID_TYPE global_id = ZOLTAN_ID_CONSTANT(0);
+ *
+ * We assume the local number of objects fits in a 32 bit integer, but the global number may require
+ * the maximum integer width available on the machine.
+ *
+ * The type of a global count is: intmax_t or uintmax_t
+ *
+ * It's signed decimal type specifier is:    printf("%" PRIdMAX "\n",globalNum);
+ * It's unsigned decimal type specifier is:  printf("%" PRIuMAX "\n",globalNum);
+ *
+ * A constant of that type is:   intmax_t numGlobal =  INTMAX_C(0)
+ *                              uintmax_t numGlobal = UINTMAX_C(0)
+ *
+ * We don't assume a pointer is the same size as any size of int.  If we want to store
+ * a pointer in an int we use types intptr_t or uintptr_t.
+ */
 
-typedef int32_t  Z_INT;
-typedef uint32_t Z_UINT;
+#undef ZOLTAN_ID_MPI_TYPE
 
-#ifdef USE_32_BIT_ADDRESS_SPACE
-typedef int32_t Z_INT_L;
-typedef uint32_t Z_UINT_L;
-#else
-typedef intmax_t  Z_INT_L;
-typedef uintmax_t Z_UINT_L;
+#ifdef ZOLTAN_ID_TYPE_SHORT
+
+typedef short ZOLTAN_ID_TYPE;
+#define ZOLTAN_ID_MPI_TYPE  MPI_SHORT
+#define ZOLTAN_ID_SPECIFIER  "hd"
+#define ZOLTAN_ID_CONSTANT(z)  z
+
 #endif
 
-#define Z_MPI_INT       _mpi_int_32_type
-#define Z_MPI_UNSIGNED  _mpi_uint_32_type
-#define Z_MPI_LONG          _mpi_int_max_type
-#define Z_MPI_UNSIGNED_LONG _mpi_uint_max_type
+#ifdef ZOLTAN_ID_TYPE_INT
 
-/* string to specify these types in scanf, printf, etc as a decimal
-    printf("%" Z_INT_L_SPECIFIER "\n",mygid);
- */
-
-#ifdef USE_32_BIT_ADDRESS_SPACE
-#define Z_INT_L_SPECIFIER    PRId32
-#define Z_UINT_L_SPECIFIER   PRId32
-#else
-#define Z_INT_L_SPECIFIER    PRIdMAX 
-#define Z_UINT_L_SPECIFIER   PRIdMAX
+typedef int ZOLTAN_ID_TYPE;
+#define ZOLTAN_ID_MPI_TYPE  MPI_INT
+#define ZOLTAN_ID_SPECIFIER  "d"
+#define ZOLTAN_ID_CONSTANT(z)  z
 #endif
 
-#define Z_INT_SPECIFIER      PRId32
-#define Z_UINT_SPECIFIER     PRId32
+#ifdef ZOLTAN_ID_TYPE_LONG
 
-/* A constant of type Z_INT_L can be created with the macro INTMAX_C(val)
- *            of type Z_UINT_L                             UINTMAX_C(val)
- *            of type Z_INT                                  INT32_C(val)
- *            of type Z_UINT                                UINT32_C(val)
- */
+typedef long ZOLTAN_ID_TYPE;
+#define ZOLTAN_ID_MPI_TYPE  MPI_LONG
+#define ZOLTAN_ID_SPECIFIER  "ld"
+#define ZOLTAN_ID_CONSTANT(z)  z ## L
+#endif
 
-/*****************************************************************************/
-/*
- *  Data type ZOLTAN_ID for identifiers used in Zoltan.
- */
-/*****************************************************************************/
+#ifdef ZOLTAN_ID_TYPE_LONG_LONG
 
-typedef Z_INT_L            ZOLTAN_ID_TYPE;
-typedef ZOLTAN_ID_TYPE     *ZOLTAN_ID_PTR;
+typedef long long ZOLTAN_ID_TYPE;
+#define ZOLTAN_ID_MPI_TYPE  MPI_LONG_LONG
+#define ZOLTAN_ID_SPECIFIER  "Ld"
+#define ZOLTAN_ID_CONSTANT(z)  z ## LL
+#endif
+
+#ifdef ZOLTAN_ID_TYPE_UNSIGNED_SHORT
+
+typedef unsigned short ZOLTAN_ID_TYPE;
+#define ZOLTAN_ID_MPI_TYPE  MPI_UNSIGNED_SHORT
+#define ZOLTAN_ID_SPECIFIER  "hu"
+#define ZOLTAN_ID_CONSTANT(z)  z
+#endif
+
+#ifdef ZOLTAN_ID_TYPE_UNSIGNED_INT
+
+typedef unsigned int ZOLTAN_ID_TYPE;
 #define ZOLTAN_ID_MPI_TYPE  MPI_UNSIGNED
+#define ZOLTAN_ID_SPECIFIER  "u"
+#define ZOLTAN_ID_CONSTANT(z)  z ## U
+#endif
+
+#ifdef ZOLTAN_ID_TYPE_UNSIGNED_LONG
+
+typedef unsigned long ZOLTAN_ID_TYPE;
+#define ZOLTAN_ID_MPI_TYPE  MPI_UNSIGNED_LONG
+#define ZOLTAN_ID_SPECIFIER  "lu"
+#define ZOLTAN_ID_CONSTANT(z)  z ## UL
+#endif
+
+#ifdef ZOLTAN_ID_TYPE_UNSIGNED_LONG_LONG
+
+typedef unsigned long long ZOLTAN_ID_TYPE;
+#define ZOLTAN_ID_MPI_TYPE  MPI_UNSIGNED_LONG_LONG
+#define ZOLTAN_ID_SPECIFIER  "Lu"
+#define ZOLTAN_ID_CONSTANT(z)  z ## ULL
+#endif
+
+#ifndef ZOLTAN_ID_MPI_TYPE
+
+typedef unsigned int ZOLTAN_ID_TYPE;
+#define ZOLTAN_ID_MPI_TYPE  MPI_UNSIGNED
+#define ZOLTAN_ID_SPECIFIER  "u"
+#define ZOLTAN_ID_CONSTANT(z)  z ## U
+
+#endif
+
+typedef ZOLTAN_ID_TYPE     *ZOLTAN_ID_PTR;
+
+/* 
+ * The MPI_Datatype for intmax_t and uintmax_t are figured out at runtime in Zoltan_set_mpi_types.
+ */
+
+extern MPI_Datatype  _mpi_intmax_datatype;
+extern MPI_Datatype  _mpi_uintmax_datatype;
+
+#define ZOLTAN_INTMAX_MPI_TYPE  _mpi_intmax_datatype;
+#define ZOLTAN_UINTMAX_MPI_TYPE  _mpi_uintmax_datatype;
 
 /*****************************************************************************/
 /*
