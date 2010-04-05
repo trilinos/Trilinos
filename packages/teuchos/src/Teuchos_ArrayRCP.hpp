@@ -82,7 +82,8 @@ ArrayRCP<T>::ArrayRCP(size_type n, const T& val)
 
 template<class T> inline
 ArrayRCP<T>::ArrayRCP(
-  T* p, size_type lowerOffset_in, size_type upperOffset_in, bool has_ownership_in
+  T* p, size_type lowerOffset_in, size_type upperOffset_in,
+  bool has_ownership_in, const ERCPNodeLookup rcpNodeLookup
   )
   : ptr_(p),
 #ifndef TEUCHOS_DEBUG
@@ -94,7 +95,7 @@ ArrayRCP<T>::ArrayRCP(
 #ifdef TEUCHOS_DEBUG
   if (p) {
     RCPNode* existing_RCPNode = 0;
-    if (!has_ownership_in) {
+    if (!has_ownership_in && rcpNodeLookup==RCP_ENABLE_NODE_LOOKUP) {
       existing_RCPNode = RCPNodeTracer::getExistingRCPNode(p);
     }
     if (existing_RCPNode) {

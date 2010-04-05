@@ -50,13 +50,13 @@ ArrayView<T>::ArrayView( ENull )
 
 
 template<class T> inline
-ArrayView<T>::ArrayView( T* p, size_type size_in )
+ArrayView<T>::ArrayView( T* p, size_type size_in, const ERCPNodeLookup rcpNodeLookup )
   :ptr_(p), size_(size_in)
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   TEST_FOR_EXCEPT( p != 0 && size_in <= 0 );
   TEST_FOR_EXCEPT( p == 0 && size_in != 0 );
-  setUpIterators();
+  setUpIterators(rcpNodeLookup);
 #endif
 }
 
@@ -335,11 +335,11 @@ ArrayView<T>::ArrayView(T* p, size_type size_in, const ArrayRCP<T> &arcp)
 
 
 template<class T>
-void ArrayView<T>::setUpIterators()
+void ArrayView<T>::setUpIterators(const ERCPNodeLookup rcpNodeLookup)
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   if (ptr_ && arcp_.is_null()) {
-    arcp_ = arcp(ptr_, 0, size_, false);
+    arcp_ = ArrayRCP<T>(ptr_, 0, size_-1, false, rcpNodeLookup);
   }
 #endif
 }

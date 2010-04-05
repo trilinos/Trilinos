@@ -124,7 +124,8 @@ public:
 	 * <li>???
 	 * </ul>
 	 */
-	ArrayView( T* p, size_type size );
+	ArrayView( T* p, size_type size,
+    const ERCPNodeLookup rcpNodeLookup = RCP_ENABLE_NODE_LOOKUP );
 
 	/** \brief Initialize from another <tt>ArrayView<T></tt> object.
 	 *
@@ -341,7 +342,7 @@ private:
   ArrayRCP<T> arcp_;
 #endif
 
-  void setUpIterators();
+  void setUpIterators(const ERCPNodeLookup rcpNodeLookup = RCP_ENABLE_NODE_LOOKUP);
 
   // ///////////////////////
   // Private member functions

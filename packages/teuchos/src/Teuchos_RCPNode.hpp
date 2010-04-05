@@ -62,7 +62,13 @@ enum EPrePostDestruction { PRE_DESTROY, POST_DESTROY };
  */
 enum ERCPStrength { RCP_STRENGTH_INVALID=-1, RCP_STRONG=0, RCP_WEAK=1 };
 
+/** \brief Used to determine if RCPNode lookup is performed or not.
+ *
+ * \ingroup teuchos_mem_mng_grp
+ */
+enum ERCPNodeLookup { RCP_ENABLE_NODE_LOOKUP, RCP_DISABLE_NODE_LOOKUP };
 
+/** \brief . */
 inline void debugAssertStrength(ERCPStrength strength)
 {
 #ifdef TEUCHOS_DEBUG

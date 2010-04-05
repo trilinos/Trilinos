@@ -2,6 +2,7 @@
 #include "Array_UnitTest_helpers.hpp"
 #include "TestClasses.hpp"
 #include "Teuchos_ArrayRCP.hpp"
+#include "Teuchos_RCP.hpp"
 #include "Teuchos_implicit_cast.hpp"
 #include "Teuchos_as.hpp"
 #include "Teuchos_getRawPtr.hpp"
@@ -307,6 +308,46 @@ TEUCHOS_UNIT_TEST( ArrayRCP, dangling_nonowning )
   // pointer.
   TEST_NOTHROW(a_arcp2.getRawPtr());
 #endif
+}
+
+
+class WeirdDealloc {
+  int size_;
+  RCP<std::ostream > out_;
+public:
+  WeirdDealloc(int size, const RCP<std::ostream> &out) : size_(size), out_(out) {}
+  void free(void *ptr) const
+    {
+      int * const int_ptr = reinterpret_cast<int*>(ptr);
+      {
+        // Create an ArrayView that points to the same memory that is being
+        // deallocated by the owning ArrayRCP.  Here, if RCPNode tracing is
+        // enabled, this will thrown and there is really no way around it.
+        ArrayView<const int> tmpav(int_ptr, size_, Teuchos::RCP_DISABLE_NODE_LOOKUP);
+        *out_ << tmpav << std::endl;
+        // Create a copy of the ArrayView and make sure that it does not do
+        // node tracing either.
+        ArrayView<const int> tmpav2(tmpav);
+        *out_ << tmpav2 << std::endl;
+        // Assign the ArrayView and make sure that it does not do node tracing
+        // either.
+        ArrayView<const int> tmpav3;
+        tmpav3 = tmpav;
+        *out_ << tmpav3 << std::endl;
+      }
+      delete [] int_ptr;
+    }
+};
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, weirdDealloc )
+{
+  using Teuchos::rcpFromRef;
+  const int size = 4;
+  const bool ownsMem = true;
+  ArrayRCP<int> a = arcp<int>( new int[size], 0, size,
+    WeirdDealloc(size, rcpFromRef(out)), ownsMem );
+  a = Teuchos::null;
 }
 
 
@@ -663,6 +704,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ArrayRCP, outOfBounds, T )
 
 
 #endif // TEUCHOS_DEBUG
+
 
 //
 // Template Instantiations

@@ -141,7 +141,8 @@ public:
    * WARNING!  You should avoid manipulating raw pointers and use other
    * methods to construct an ArrayRCP object instead!
    */
-  inline ArrayRCP( T* p, size_type lowerOffset, size_type upperOffset, bool has_ownership );
+  inline ArrayRCP( T* p, size_type lowerOffset, size_type upperOffset,
+    bool has_ownership, const ERCPNodeLookup rcpNodeLookup = RCP_ENABLE_NODE_LOOKUP );
 
   /** \brief Construct from a raw pointer, a valid range, and a deallocator.
    *
