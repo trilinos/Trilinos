@@ -43,7 +43,7 @@ GridFixture::GridFixture(stk::ParallelMachine pm)
   : m_meta_data( stk::mesh::fem_entity_type_names() )
   , m_bulk_data( m_meta_data , pm )
   , m_quad_part( m_meta_data.declare_part("quad_part", stk::mesh::Face) )
-  , m_dead_part( m_meta_data.declare_part("dead_part", stk::mesh::Face))
+  , m_dead_part( m_meta_data.declare_part("dead_part"))
 {
   stk::mesh::set_cell_topology<shards::Quadrilateral<4> >(m_quad_part);
 
