@@ -1,0 +1,73 @@
+
+32 and 64 bit data models (ILP - integer/long/pointer):
+
+type		LP32	ILP32	ILP64	LLP64	LP64
+
+char		8	8	8	8	8
+short		16	16	16	16	16
+_int32				32
+int		16	32	64	32	32
+long		32	32	64	32	64
+long long			  	64	  
+pointer		32	32	64	64	64
+
+
+ILP32 is most widely used.
+LP64 is most widely used.
+
+LLP64 is ILP32 with new 64 bit int added to it - using for Win64.
+
+C99 standard required inttypes.h which has
+  int32_t etc
+  macros for printing ("%Ld", "ld" "d");
+
+We should require C99 compiler.
+
+For portability across machines:
+
+ptrdiff_t for difference between two pointers
+uintptr_t  for a pointer (it's unsigned)
+intptr_t   for a pointer (signed, C99)
+size_t    size of an object in bytes
+ssize_t   signed size, can be return value of function
+off_t     file size or offset
+
+Errors/Changes to look for in code:
+
+A pointer is no longer the same size as an integer, use ptrdiff_t, uintptr_t instead of int or long.
+
+Potential for integer overflow/underflow, use long long where needed.
+
+Potential for integer truncation by assigning larger size int (long long) to smaller size (int).
+
+Use of signed and unsigned ints together - sign bit can be interpreted as most significant bit,
+
+int main()
+{
+  int a;
+  unsigned long b=0xffffffff;
+  a = b;
+  printf("%ld    %d\n",b,a);
+  b += 1;
+  a = b;
+  printf("%ld    %d\n",b,a);
+}
+4294967295    -1
+4294967296    0
+
+Need to do code inspection to find all places where these errors can occur and fix them.
+Compiler can't help with this.  Also, run tests with valgrind to find buffer overruns and
+check answers of tests to find integer overflow/underflow/truncation.
+
+Use gcc -Wextra to fix mixing of signed and unsigned values (and other warnings).
+
+Buffer sizes, file sizes, use size_t and off_t.  (grep for ZOLTAN_MALLOC, ZOLTAN_REALLOC, fopen, etc.)
+
+In general use unsigned integers unless signedness is needed.
+
+To print longs: "%ld" or macros in inttypes.yh
+
+To print long longs: "%Ld" or macros in inttypes.yh
+
+Especially important in scanf's.
+
