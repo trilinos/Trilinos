@@ -36,6 +36,10 @@ INCLUDE(TrilinosVersion)
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/Trilinos_version.h.in
   Trilinos_version.h)
 
+#Automatically update the version file for sierra too.
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/Trilinos_version.h.in
+  ${CMAKE_CURRENT_SOURCE_DIR}/SIERRA/bjam/config_headers/Trilinos_version.h)
+
 #Since the version header file is now configured the root build
 #dir needs to be on the include path
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
