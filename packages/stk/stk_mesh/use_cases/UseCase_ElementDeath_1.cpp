@@ -111,9 +111,126 @@ typedef std::vector<stk::mesh::Entity *> EntityVector;
 
 namespace {
 
+//Generates a vector a entities to be killed in this iteration
 EntityVector entities_to_be_kill( const stk::mesh::BulkData & mesh, int pass);
+
+//Validates that the correct entites were killed in this iteration
 bool validate_iteration( stk::ParallelMachine pm, GridFixture & fixture, int pass);
 
+//Finds the sides that need to be created between the live and dead entities
+void find_sides_to_be_created(
+    const stk::mesh::EntitySideVector & boundary,
+    const stk::mesh::Selector & select,
+    std::vector<stk::mesh::EntitySideComponent> & sides
+    );
+
+//Finds entities from the closure of the entities_to_be_killed
+//that only have relations with dead entities
+void find_entities_to_kill(
+    const EntityVector & entities_closure,
+    unsigned closure_rank,
+    unsigned entity_rank,
+    const stk::mesh::Selector & select_owned,
+    const stk::mesh::Selector & select_live,
+    EntityVector & kill_list
+    );
+
+}
+
+bool element_death_use_case_1(stk::ParallelMachine pm)
+{
+  //setup the mesh
+  GridFixture fixture(pm);
+  stk::mesh::BulkData& mesh = fixture.bulk_data();
+  stk::mesh::MetaData& meta_data = fixture.meta_data();
+
+  stk::mesh::Part & dead_part = *fixture.dead_part();
+
+  stk::mesh::PartVector dead_parts;
+  dead_parts.push_back( & dead_part);
+
+  bool passed = true;
+  for (int iteration = 0; iteration <=6; ++iteration) {
+    //find the entities to kill in this iteration
+    EntityVector entities_to_kill = entities_to_be_kill(mesh, iteration);
+
+    // find the parallel-consistent closure of the entities to be killed
+    EntityVector entities_closure;
+    stk::mesh::find_closure(mesh,
+        entities_to_kill,
+        entities_closure);
+
+
+    // find the boundary of the entities we're killing
+    stk::mesh::EntitySideVector boundary;
+    stk::mesh::boundary_analysis(mesh,
+        entities_closure,
+        stk::mesh::Face,
+        boundary);
+
+
+    //find the sides that need to be created
+    //sides need to be created when the outside
+    //of the boundary is both live and owned and
+    //a side seperating the live and dead doesn't
+    //already exist
+    stk::mesh::Selector select_owned = meta_data.locally_owned_part();
+    stk::mesh::Selector select_live = ! dead_part ;
+    stk::mesh::Selector select_live_and_owned = select_live & select_owned;
+
+    std::vector<stk::mesh::EntitySideComponent> skin;
+    find_sides_to_be_created( boundary, select_live_and_owned, skin);
+
+
+    mesh.modification_begin();
+    // Kill entities by moving them to the dead part.
+    for (EntityVector::iterator itr = entities_to_kill.begin();
+        itr != entities_to_kill.end(); ++itr) {
+      mesh.change_entity_parts(**itr, dead_parts);
+    }
+
+
+    // Ask for new entites to represent the sides between the live and dead entities
+    std::vector<size_t> requests(meta_data.entity_type_count(), 0);
+    EntityVector requested_entities;
+    requests[stk::mesh::Edge] = skin.size();
+    mesh.generate_new_entities(requests, requested_entities);
+
+    // Create boundaries between live and dead entities
+    for ( size_t i = 0; i < skin.size(); ++i) {
+      stk::mesh::Entity & entity = *(skin[i].entity);
+      const unsigned side_id  = skin[i].side_id;
+      stk::mesh::Entity & side   = * (requested_entities[i]);
+
+      stk::mesh::declare_element_side(entity, side, side_id);
+    }
+    mesh.modification_end();
+
+    //find lower ranked entity that are only related to the dead entities
+    //and kill them
+    for (int rank = stk::mesh::Face -1; rank >= 0; --rank) {
+      EntityVector kill_list;
+      find_entities_to_kill( entities_closure, stk::mesh::Face, rank, select_owned, select_live, kill_list);
+
+      mesh.modification_begin();
+      for (EntityVector::iterator itr = kill_list.begin();
+          itr != kill_list.end(); ++itr) {
+        mesh.change_entity_parts(**itr, dead_parts);
+      }
+      mesh.modification_end();
+    }
+
+
+    passed &= validate_iteration( pm, fixture, iteration);
+  }
+
+  return passed;
+}
+
+//----------------------------------------------------------------------------------
+namespace {
+
+//----------------------------------------------------------------------------------
 void find_sides_to_be_created(
     const stk::mesh::EntitySideVector & boundary,
     const stk::mesh::Selector & select,
@@ -146,82 +263,60 @@ void find_sides_to_be_created(
   }
 }
 
-}
-
-bool element_death_use_case_1(stk::ParallelMachine pm)
+//----------------------------------------------------------------------------------
+void find_entities_to_kill(
+    const EntityVector & entities_closure,
+    unsigned closure_rank,
+    unsigned entity_rank,
+    const stk::mesh::Selector & select_owned,
+    const stk::mesh::Selector & select_live,
+    EntityVector & kill_list
+    )
 {
 
-  GridFixture fixture(pm);
-  stk::mesh::BulkData& mesh = fixture.bulk_data();
-  stk::mesh::MetaData& meta_data = fixture.meta_data();
+  kill_list.clear();
 
-  stk::mesh::Part & dead_part = *fixture.dead_part();
+  //find the first entity in the closure
+  EntityVector::const_iterator itr = std::lower_bound(entities_closure.begin(),
+      entities_closure.end(),
+      stk::mesh::EntityKey(entity_rank, 0),
+      stk::mesh::EntityLess());
 
-  stk::mesh::PartVector dead_parts;
-  dead_parts.push_back( & dead_part);
+  const EntityVector::const_iterator end = std::lower_bound(entities_closure.begin(),
+      entities_closure.end(),
+      stk::mesh::EntityKey(closure_rank, 0),
+      stk::mesh::EntityLess());
 
-  bool passed = true;
-  for (int iteration = 0; iteration <=6; ++iteration) {
-    //find the entities to kill in this iteration
-    EntityVector entities_to_kill = entities_to_be_kill(mesh, iteration);
+  for (; itr != end; ++itr) {
+    stk::mesh::Entity & entity = **itr;
 
-    // find the parallel-consistent closure of the entities to be killed
-    EntityVector entities_closure;
-    stk::mesh::find_closure(mesh,
-        entities_to_kill,
-        entities_closure);
+    if (select_owned(entity.bucket())) {
+      bool found_live = false;
 
+      for(unsigned rank = entity_rank + 1; rank<=closure_rank && !found_live; ++rank) {
 
-    // find the boundary of the entities we're killing
-    stk::mesh::EntitySideVector boundary;
-    stk::mesh::boundary_analysis(mesh,
-        entities_closure,
-        stk::mesh::Face,
-        boundary);
+        stk::mesh::PairIterRelation relations_pair = entity.relations(rank);
 
+        for (; relations_pair.first != relations_pair.second && !found_live; ++relations_pair.first) {
 
-    //find the sides that need to be created
-    stk::mesh::Selector select_owned = meta_data.locally_owned_part();
-    stk::mesh::Selector select_live = ! dead_part ;
-    stk::mesh::Selector select_live_and_owned = select_live & select_owned;
+          const stk::mesh::Bucket & b = relations_pair.first->entity()->bucket();
 
-    std::vector<stk::mesh::EntitySideComponent> skin;
-    find_sides_to_be_created( boundary, select_live_and_owned, skin);
+          if( select_live(b)) {
+            found_live = true;
+          }
+        }
+      }
 
-
-    // Now do the element death.
-    // Kill entities by moving them to the dead part.
-    mesh.modification_begin();
-    for (EntityVector::iterator itr = entities_to_kill.begin();
-        itr != entities_to_kill.end(); ++itr) {
-      mesh.change_entity_parts(**itr, dead_parts);
+      if (!found_live) {
+        kill_list.push_back(&entity);
+      }
     }
-
-    // Ask for new entites to represent the sides between the live and dead entities
-    std::vector<size_t> requests(meta_data.entity_type_count(), 0);
-    EntityVector requested_entities;
-    requests[stk::mesh::Edge] = skin.size();
-    mesh.generate_new_entities(requests, requested_entities);
-
-    // Create boundaries between live and dead entities
-    for ( size_t i = 0; i < skin.size(); ++i) {
-      stk::mesh::Entity & entity = *(skin[i].entity);
-      const unsigned side_id  = skin[i].side_id;
-      stk::mesh::Entity & side   = * (requested_entities[i]);
-
-      stk::mesh::declare_element_side(entity, side, side_id);
-    }
-    mesh.modification_end();
-
-
-    passed &= validate_iteration( pm, fixture, iteration);
   }
 
-  return passed;
 }
 
+
 //----------------------------------------------------------------------------------
-namespace {
 
 EntityVector entities_to_be_kill( const stk::mesh::BulkData & mesh, int pass) {
 
@@ -295,8 +390,7 @@ bool validate_iteration( stk::ParallelMachine pm, GridFixture & fixture, int pas
     num_live[i] = count_selected_entities( select_live, buckets);
   }
 
-  stk::all_reduce(pm, stk::ReduceSum<3>(num_dead));
-  stk::all_reduce(pm, stk::ReduceSum<3>(num_live));
+  stk::all_reduce(pm, stk::ReduceSum<3>(num_dead) & stk::ReduceSum<3>(num_live));
 
   bool correct_dead = false;
   bool correct_live = false;
@@ -304,9 +398,9 @@ bool validate_iteration( stk::ParallelMachine pm, GridFixture & fixture, int pas
   switch(pass) {
     case 0: {
               correct_dead =
-                     (0  == num_dead[0]) &&
-                     (0  == num_dead[1]) &&
-                     (0  == num_dead[2]);
+                     (0   == num_dead[0]) &&
+                     (0   == num_dead[1]) &&
+                     (0   == num_dead[2]);
 
               correct_live =
                      (25  == num_live[0]) &&
@@ -317,12 +411,12 @@ bool validate_iteration( stk::ParallelMachine pm, GridFixture & fixture, int pas
             }
     case 1: {
               correct_dead =
-                     (10 == num_dead[0]) &&
-                     (3  == num_dead[1]) &&
-                     (3  == num_dead[2]);
+                     (1   == num_dead[0]) &&
+                     (3   == num_dead[1]) &&
+                     (3   == num_dead[2]);
 
               correct_live =
-                     (15  == num_live[0]) &&
+                     (24  == num_live[0]) &&
                      (20  == num_live[1]) &&
                      (13  == num_live[2]);
 
@@ -330,12 +424,12 @@ bool validate_iteration( stk::ParallelMachine pm, GridFixture & fixture, int pas
             }
     case 2: {
               correct_dead =
-                     (14 == num_dead[0]) &&
-                     (6  == num_dead[1]) &&
-                     (5  == num_dead[2]);
+                     (3   == num_dead[0]) &&
+                     (6   == num_dead[1]) &&
+                     (5   == num_dead[2]);
 
               correct_live =
-                     (11  == num_live[0]) &&
+                     (22  == num_live[0]) &&
                      (20  == num_live[1]) &&
                      (11  == num_live[2]);
 
@@ -343,40 +437,40 @@ bool validate_iteration( stk::ParallelMachine pm, GridFixture & fixture, int pas
             }
     case 3: {
               correct_dead =
-                     (18 == num_dead[0]) &&
-                     (10 == num_dead[1]) &&
-                     (7  == num_dead[2]);
+                     (5   == num_dead[0]) &&
+                     (10  == num_dead[1]) &&
+                     (7   == num_dead[2]);
 
               correct_live =
-                     (7  == num_live[0]) &&
+                     (20  == num_live[0]) &&
                      (20  == num_live[1]) &&
-                     (9  == num_live[2]);
+                     (9   == num_live[2]);
 
               break;
             }
     case 4: {
               correct_dead =
-                     (18 == num_dead[0]) &&
-                     (14 == num_dead[1]) &&
-                     (9  == num_dead[2]);
+                     (7   == num_dead[0]) &&
+                     (14  == num_dead[1]) &&
+                     (9   == num_dead[2]);
 
               correct_live =
-                     (7  == num_live[0]) &&
+                     (18  == num_live[0]) &&
                      (18  == num_live[1]) &&
-                     (7  == num_live[2]);
+                     (7   == num_live[2]);
 
               break;
             }
     case 5: {
               correct_dead =
-                     (21 == num_dead[0]) &&
-                     (20 == num_dead[1]) &&
-                     (11 == num_dead[2]);
+                     (12  == num_dead[0]) &&
+                     (20  == num_dead[1]) &&
+                     (11  == num_dead[2]);
 
               correct_live =
-                     (4  == num_live[0]) &&
+                     (13  == num_live[0]) &&
                      (14  == num_live[1]) &&
-                     (5  == num_live[2]);
+                     (5   == num_live[2]);
 
               break;
             }
