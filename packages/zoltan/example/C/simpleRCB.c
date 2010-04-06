@@ -169,6 +169,8 @@ int main(int argc, char *argv[])
 
   showSimpleMeshPartitions(myRank, myMesh.numMyPoints, myMesh.myGlobalIDs, parts);
 
+  free(parts);
+
   /******************************************************************
   ** Free the arrays allocated by Zoltan_LB_Partition, and free
   ** the storage allocated for the Zoltan structure.

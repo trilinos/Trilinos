@@ -377,20 +377,20 @@ int Zoltan_RB_find_bisector(
 
      /* find valuemax */
      tmp[proc] = valuemax2 = localmax;
-     MPI_Allgather(&tmp[proc], 1, MPI_DOUBLE, tmp, 1, MPI_DOUBLE, local_comm);
+     MPI_Allgather(&localmax, 1, MPI_DOUBLE, tmp, 1, MPI_DOUBLE, local_comm);
      for (i = proclower; i < proclower + num_procs; i++)
         if (tmp[i] > valuemax2) valuemax2 = tmp[i];
 
      /* find valuemin */
      tmp[proc] = valuemin2 = localmin;
-     MPI_Allgather(&tmp[proc], 1, MPI_DOUBLE, tmp, 1, MPI_DOUBLE, local_comm);
+     MPI_Allgather(&localmin, 1, MPI_DOUBLE, tmp, 1, MPI_DOUBLE, local_comm);
      for (i = proclower; i < proclower + num_procs; i++)
         if (tmp[i] < valuemin2) valuemin2 = tmp[i];
 
      /* find sum of weights - should use Zoltan_RB_sum_double? */
      for (j=0; j<nwgts; j++){
        tmp[proc] = wtsum[j] = localsum[j];
-       MPI_Allgather(&tmp[proc], 1, MPI_DOUBLE, tmp, 1, MPI_DOUBLE, local_comm);
+       MPI_Allgather(localsum + j, 1, MPI_DOUBLE, tmp, 1, MPI_DOUBLE, local_comm);
        for (wtsum[j] = 0.0, i = proclower; i < proclower + num_procs; i++)
           wtsum[j] += tmp[i];
      }
