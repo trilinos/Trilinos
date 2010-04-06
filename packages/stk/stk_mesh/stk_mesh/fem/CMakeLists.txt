@@ -27,23 +27,9 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-APPEND_SET(HEADERS
-BoundaryAnalysis.hpp
-EntityTypes.hpp
-FieldDeclarations.hpp
-FieldTraits.hpp
-Stencils.hpp
-TopologyDimensions.hpp
-TopologyHelpers.hpp
-  )
+FILE(GLOB HEADERS *.hpp)
 
-APPEND_SET(SOURCES
-BoundaryAnalysis.cpp
-EntityTypes.cpp
-FieldTraits.cpp
-TopologyDimensions.cpp
-TopologyHelpers.cpp
-  )
+FILE(GLOB SOURCES *.cpp)
 
 IF (TPL_ENABLE_MPI)
 ENDIF()
