@@ -22,7 +22,7 @@ namespace mesh {
 
 Selector::Selector( )
   : m_mesh_meta_data(0), m_op()
-{ 
+{
   compoundAll();
 }
 
@@ -44,7 +44,7 @@ Selector::Selector( const Part & p )
   m_op.push_back( OpType( p.mesh_meta_data_ordinal() , 0 , 0 ) );
 }
 
-void Selector::compoundAll() 
+void Selector::compoundAll()
 {
   m_op.insert( m_op.begin(), OpType( 0, 0, m_op.size()+1 ) );
 }
@@ -56,11 +56,11 @@ Selector & Selector::complement()
   bool fullCompoundPart = (m_op[0].m_count == m_op.size());
 
   if ( !(singlePart || fullCompoundPart) ) {
-    // Turn into a compound 
+    // Turn into a compound
     compoundAll();
   }
   // Flip the bit
-  m_op[0].m_unary ^= 1; 
+  m_op[0].m_unary ^= 1;
   return *this;
 }
 
@@ -98,12 +98,12 @@ Selector & Selector::operator |= ( const Selector & B )
 
   const unsigned finalSize = 1 + m_op.size() + notB.m_op.size();
 
-  m_op.insert( 
-      m_op.end(), 
-      notB.m_op.begin(), 
+  m_op.insert(
+      m_op.end(),
+      notB.m_op.begin(),
       notB.m_op.end() );                // ! ( ! (this) & !B )
-  m_op.insert( 
-      m_op.begin(), 
+  m_op.insert(
+      m_op.begin(),
       OpType( 0 , 1 , finalSize ) );    // ! ( ! (this) & ? )
   return *this;
 }
@@ -134,19 +134,19 @@ void Selector::verify_compatible( const Bucket & B ) const
 }
 
 
-bool Selector::apply( 
-    unsigned part_id, 
-    const Bucket & candidate 
+bool Selector::apply(
+    unsigned part_id,
+    const Bucket & candidate
     ) const
 {
   // Search for 'part_id' in the bucket's list of sorted integer part ids
   return has_superset(candidate,part_id);
 }
 
-bool Selector::apply( 
+bool Selector::apply(
     std::vector<OpType>::const_iterator i,
     std::vector<OpType>::const_iterator j,
-    const Bucket & candidate 
+    const Bucket & candidate
     ) const
 {
   bool result = i != j ;
@@ -172,62 +172,68 @@ bool Selector::operator()( const Bucket & candidate ) const
   return apply( m_op.begin() , m_op.end() , candidate );
 }
 
+bool Selector::operator()( const Entity & candidate ) const
+{
+  const Bucket & b = candidate.bucket();
+  return this->operator()(b);
+}
+
 Selector operator & ( const Part & A , const Part & B )
-{ 
-  Selector S( A ); 
-  S &= Selector( B ); 
-  return S; 
+{
+  Selector S( A );
+  S &= Selector( B );
+  return S;
 }
 
 
 Selector operator & ( const Part & A , const Selector & B )
-{ 
-  Selector S( A ); 
-  S &= B; 
-  return S; 
+{
+  Selector S( A );
+  S &= B;
+  return S;
 }
 
 Selector operator & ( const Selector & A, const Part & B )
-{ 
-  Selector S( A ); 
-  S &= Selector(B); 
-  return S; 
+{
+  Selector S( A );
+  S &= Selector(B);
+  return S;
 }
 
 Selector operator & ( const Selector & A, const Selector & B )
-{ 
-  Selector S( A ); 
-  S &= Selector(B); 
-  return S; 
+{
+  Selector S( A );
+  S &= Selector(B);
+  return S;
 }
 
 Selector operator | ( const Part & A , const Part & B )
-{ 
-  Selector S( A ); 
-  S |= Selector( B ); 
-  return S; 
+{
+  Selector S( A );
+  S |= Selector( B );
+  return S;
 }
 
 
 Selector operator | ( const Part & A , const Selector & B )
-{ 
-  Selector S( A ); 
-  S |= B; 
-  return S; 
+{
+  Selector S( A );
+  S |= B;
+  return S;
 }
 
 Selector operator | ( const Selector & A, const Part & B  )
-{ 
-  Selector S( A ); 
-  S |= Selector(B); 
-  return S; 
+{
+  Selector S( A );
+  S |= Selector(B);
+  return S;
 }
 
 Selector operator | ( const Selector & A, const Selector & B  )
-{ 
-  Selector S( A ); 
-  S |= Selector(B); 
-  return S; 
+{
+  Selector S( A );
+  S |= Selector(B);
+  return S;
 }
 
 
@@ -260,7 +266,7 @@ std::string Selector::printExpression(
   if (op.m_count > 0) { // Compound
     if (op.m_unary != 0) { // Complement
       outS << "!";
-    } 
+    }
     outS << "(";
     if (op.m_count == 1) {
       outS << ")";
@@ -293,8 +299,8 @@ std::string Selector::printExpression(
 }
 
 
-Selector::OpType::OpType( const OpType & opType ) 
-  : m_part_id(opType.m_part_id), 
+Selector::OpType::OpType( const OpType & opType )
+  : m_part_id(opType.m_part_id),
     m_unary(opType.m_unary),
     m_count(opType.m_count)
 {
@@ -337,7 +343,7 @@ Selector selectIntersection( const PartVector& intersection_part_vector )
 
 
 
-} // namespace mesh 
-} // namespace stk 
+} // namespace mesh
+} // namespace stk
 
 

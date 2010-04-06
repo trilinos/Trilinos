@@ -20,18 +20,15 @@ namespace mesh {
  *  \{
  */
 
-class MetaData;
-
-
 /** \brief This is a class for selecting \ref stk::mesh::Bucket "buckets" based on a set of
- * \ref stk::mesh::Part "meshparts" and set logic.  
+ * \ref stk::mesh::Part "meshparts" and set logic.
  *
  * The selector allows complements, unions and intersections.  All of
  * this logic is converted to NAND, meaning nots and AND logic.  Each
  * operation is placed on a stack of operands where each operand is
  * either a left parenthesis with a number of operands included in the
  * compound object, or an actual meshpart.  All operands have a unary
- * bit used to complement the operand.  
+ * bit used to complement the operand.
  *
  * Please see the \ref stk_mesh_selector_unit "unit testing" for additional documentation.
  *
@@ -60,7 +57,7 @@ public:
   /** \brief  Union: this = this UNION ( expression ) */
   Selector & operator |= ( const Selector & selector);
 
-  /** \brief  Complement: this = !(this) 
+  /** \brief  Complement: this = !(this)
    * Postcondition:  this is a compound expression
    * */
   Selector & complement();
@@ -73,6 +70,11 @@ public:
    *          set defined by the selector expression.
    */
   bool operator()( const Bucket & candidate ) const ;
+
+  /** \brief  Is this entity a member of the
+   *          set defined by the selector expression.
+   */
+  bool operator()( const Entity & candidate ) const ;
 
   /** \brief  Pretty print the set-expression with part names */
   friend std::ostream & operator << ( std::ostream & out, const Selector & selector);
@@ -108,13 +110,13 @@ private:
   void verify_compatible( const Bucket & B ) const;
 
   /** \brief . */
-  bool apply( 
-      unsigned part_id , 
-      const Bucket & candidate 
+  bool apply(
+      unsigned part_id ,
+      const Bucket & candidate
       ) const;
 
   /** \brief . */
-  bool apply( 
+  bool apply(
       std::vector<OpType>::const_iterator start,
       std::vector<OpType>::const_iterator finish,
       const Bucket & candidate
@@ -131,66 +133,66 @@ private:
 
 };
 
-/** \brief . 
+/** \brief .
  * \relates Selector
  * */
 Selector operator & ( const Part & A , const Part & B );
 
-/** \brief . 
+/** \brief .
  * \relates Selector
  * */
 Selector operator & ( const Part & A , const Selector & B );
 
-/** \brief . 
+/** \brief .
  * \relates Selector
  * */
 Selector operator & ( const Selector & A, const Part & B );
 
-/** \brief . 
+/** \brief .
  * \relates Selector
  * */
 Selector operator & ( const Selector & A, const Selector & B );
 
-/** \brief . 
+/** \brief .
  * \relates Selector
  * */
 Selector operator | ( const Part & A , const Part & B );
 
-/** \brief . 
+/** \brief .
  * \relates Selector
  * */
 Selector operator | ( const Part & A , const Selector & B );
 
-/** \brief . 
+/** \brief .
  * \relates Selector
  * */
 Selector operator | ( const Selector & A, const Part & B  );
 
-/** \brief . 
+/** \brief .
  * \relates Selector
  * */
 Selector operator | ( const Selector & A , const Selector & B );
 
-/** \brief . 
+/** \brief .
  * \relates Selector
  * */
 Selector operator ! ( const Part & A );
 
 
-/** \brief . 
+/** \brief .
  * \relates Selector
  * */
 Selector selectUnion( const PartVector& union_part_vector );
 
-/** \brief . 
- * \relates Selector 
+/** \brief .
+ * \relates Selector
  * */
 Selector selectIntersection( const PartVector& intersection_part_vector );
 
 /** \} */
 
-} // namespace mesh 
-} // namespace stk 
+} // namespace mesh
+} // namespace stk
 
 #endif // stk_mesh_Selector_hpp
 
