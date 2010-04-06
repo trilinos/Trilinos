@@ -82,7 +82,7 @@ ArrayRCP<T>::ArrayRCP(size_type n, const T& val)
 
 template<class T> inline
 ArrayRCP<T>::ArrayRCP(
-  T* p, size_type lowerOffset_in, size_type upperOffset_in,
+  T* p, size_type lowerOffset_in, size_type size_in,
   bool has_ownership_in, const ERCPNodeLookup rcpNodeLookup
   )
   : ptr_(p),
@@ -90,7 +90,7 @@ ArrayRCP<T>::ArrayRCP(
     node_(ArrayRCP_createNewRCPNodeRawPtr(p, has_ownership_in)),
 #endif // TEUCHOS_DEBUG
     lowerOffset_(lowerOffset_in),
-    upperOffset_(upperOffset_in)
+    upperOffset_(size_in + lowerOffset_in - 1)
 {
 #ifdef TEUCHOS_DEBUG
   if (p) {
@@ -121,7 +121,7 @@ template<class T>
 template<class Dealloc_T>
 inline
 ArrayRCP<T>::ArrayRCP(
-  T* p, size_type lowerOffset_in, size_type upperOffset_in,
+  T* p, size_type lowerOffset_in, size_type size_in,
   Dealloc_T dealloc, bool has_ownership_in
   )
   : ptr_(p),
@@ -129,7 +129,7 @@ ArrayRCP<T>::ArrayRCP(
     node_(ArrayRCP_createNewDeallocRCPNodeRawPtr(p, dealloc, has_ownership_in)),
 #endif // TEUCHOS_DEBUG
     lowerOffset_(lowerOffset_in),
-    upperOffset_(upperOffset_in)
+    upperOffset_(size_in + lowerOffset_in - 1)
 {
 #ifdef TEUCHOS_DEBUG
   if (p) {
@@ -349,7 +349,7 @@ ArrayRCP<const T> ArrayRCP<T>::getConst() const
   if (ptr_) {
     debug_assert_valid_ptr();
     const T *cptr = ptr_; // Will not compile if not legal!
-    return ArrayRCP<const T>(cptr, lowerOffset_, upperOffset_, node_);
+    return ArrayRCP<const T>(cptr, lowerOffset_, size(), node_);
   }
   return null;
 }
@@ -360,11 +360,11 @@ ArrayRCP<T>
 ArrayRCP<T>::persistingView( size_type lowerOffset_in, size_type size_in ) const
 {
   debug_assert_valid_ptr();
-  debug_assert_in_range(lowerOffset_in,size_in);
+  debug_assert_in_range(lowerOffset_in, size_in);
   ArrayRCP<T> ptr = *this;
   ptr.ptr_ = ptr.ptr_ + lowerOffset_in;
   ptr.lowerOffset_ = 0;
-  ptr.upperOffset_ = size_in-1;
+  ptr.upperOffset_ = size_in - 1;
   return ptr;
 }
 
@@ -395,7 +395,7 @@ typename ArrayRCP<T>::size_type
 ArrayRCP<T>::size() const
 {
   debug_assert_valid_ptr();
-  return upperOffset_-lowerOffset_+1;
+  return upperOffset_ - lowerOffset_ + 1;
 }
 
 
@@ -419,15 +419,16 @@ ArrayView<T> ArrayRCP<T>::view( size_type lowerOffset_in, size_type size_in ) co
 template<class T> inline
 ArrayView<T> ArrayRCP<T>::operator()( size_type lowerOffset_in, size_type size_in ) const
 {
-  return view(lowerOffset_in,size_in);
+  return view(lowerOffset_in, size_in);
 }
 
 
 template<class T> inline
 ArrayView<T> ArrayRCP<T>::operator()() const
 {
-  if (size())
-    return view(lowerOffset_, upperOffset_-lowerOffset_+1);
+  if (size()) {
+    return view(lowerOffset_, size());
+  }
   return null;
 }
 
@@ -445,8 +446,9 @@ ArrayRCP<T>::operator ArrayView<T>() const
 template<class T> inline
 ArrayRCP<T>::operator ArrayRCP<const T>() const
 {
-  if (size())
-    return ArrayRCP<const T>(ptr_, lowerOffset_, upperOffset_, node_);
+  if (size()) {
+    return ArrayRCP<const T>(ptr_, lowerOffset_, size(), node_);
+  }
   return null;
 }
 
@@ -585,7 +587,7 @@ template<class T> inline
 ArrayRCP<T> ArrayRCP<T>::create_weak() const
 {
   debug_assert_valid_ptr();
-  return ArrayRCP<T>(ptr_, lowerOffset_, upperOffset_, node_.create_weak());
+  return ArrayRCP<T>(ptr_, lowerOffset_, size(), node_.create_weak());
 }
 
 
@@ -593,7 +595,7 @@ template<class T> inline
 ArrayRCP<T> ArrayRCP<T>::create_strong() const
 {
   debug_assert_valid_ptr();
-  return ArrayRCP<T>(ptr_, lowerOffset_, upperOffset_, node_.create_strong());
+  return ArrayRCP<T>(ptr_, lowerOffset_, size(), node_.create_strong());
 }
 
 
@@ -666,13 +668,13 @@ int ArrayRCP<T>::count() const {
 
 template<class T> inline
 ArrayRCP<T>::ArrayRCP(
-  T* p, size_type lowerOffset_in, size_type upperOffset_in,
+  T* p, size_type lowerOffset_in, size_type size_in,
   const RCPNodeHandle& node
   )
   :ptr_(p),
    node_(node),
    lowerOffset_(lowerOffset_in),
-   upperOffset_(upperOffset_in)
+   upperOffset_(size_in + lowerOffset_in - 1)
 {}
 
 
@@ -730,7 +732,7 @@ T* p, typename ArrayRCP<T>::size_type lowerOffset
   ,bool owns_mem
   )
 {
-  return ArrayRCP<T>(p, lowerOffset, lowerOffset+size_in-1, owns_mem);
+  return ArrayRCP<T>(p, lowerOffset, size_in, owns_mem);
 }
 
 
@@ -743,7 +745,7 @@ T* p, typename ArrayRCP<T>::size_type lowerOffset
   ,Dealloc_T dealloc, bool owns_mem
   )
 {
-  return ArrayRCP<T>(p, lowerOffset, lowerOffset+size_in-1, dealloc, owns_mem);
+  return ArrayRCP<T>(p, lowerOffset, size_in, dealloc, owns_mem);
 }
 
 
@@ -754,9 +756,10 @@ Teuchos::arcp( typename ArrayRCP<T>::size_type size )
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_ASSERT_INEQUALITY( size, >=, 0 );
 #endif
-  if (size == 0)
+  if (size == 0) {
     return null;
-  return ArrayRCP<T>(new T[size], 0, size-1, true);
+  }
+  return ArrayRCP<T>(new T[size], 0, size, true);
 }
 
 
@@ -975,7 +978,7 @@ Teuchos::arcp_reinterpret_cast(const ArrayRCP<T1>& p1)
   size_type upperOffset2 = ((p1.upperOffset()+1)*sizeOfT1) / sizeOfT2 - 1;
   T2 *ptr2 = reinterpret_cast<T2*>(p1.get());
   return ArrayRCP<T2>(
-    ptr2, lowerOffset2, upperOffset2,
+    ptr2, lowerOffset2, upperOffset2 - lowerOffset2 + 1,
     p1.access_private_node()
     );
   // Note: Above is just fine even if p1.get()==NULL!
@@ -990,7 +993,7 @@ Teuchos::arcp_const_cast(const ArrayRCP<T1>& p1)
   typedef typename ArrayRCP<T1>::size_type size_type;
   T2 *ptr2 = const_cast<T2*>(p1.get());
   return ArrayRCP<T2>(
-    ptr2, p1.lowerOffset(), p1.upperOffset(),
+    ptr2, p1.lowerOffset(), p1.size(),
     p1.access_private_node()
     );
   // Note: Above is just fine even if p1.get()==NULL!
@@ -1005,7 +1008,7 @@ Teuchos::arcp_implicit_cast(const ArrayRCP<T1>& p1)
   typedef typename ArrayRCP<T1>::size_type size_type;
   T2 * raw_ptr2 = p1.get();
   return ArrayRCP<T2>(
-    raw_ptr2,p1.lowerOffset(),p1.upperOffset(),
+    raw_ptr2, p1.lowerOffset(), p1.size(),
     p1.access_private_node()
     );
   // Note: Above is just fine even if p1.get()==NULL!

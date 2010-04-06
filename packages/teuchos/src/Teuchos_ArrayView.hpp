@@ -339,7 +339,7 @@ void ArrayView<T>::setUpIterators(const ERCPNodeLookup rcpNodeLookup)
 {
 #ifdef HAVE_TEUCHOS_ARRAY_BOUNDSCHECK
   if (ptr_ && arcp_.is_null()) {
-    arcp_ = ArrayRCP<T>(ptr_, 0, size_-1, false, rcpNodeLookup);
+    arcp_ = ArrayRCP<T>(ptr_, 0, size_, false, rcpNodeLookup);
   }
 #endif
 }

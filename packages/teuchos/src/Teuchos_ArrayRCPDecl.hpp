@@ -134,14 +134,14 @@ public:
    * Postconditions:<ul>
    * <li><tt>this->get() == p</tt>
    * <li><tt>this->lowerOffset() == lowerOffset</tt>
-   * <li><tt>this->upperOffset() == upperOffset</tt>
+   * <li><tt>this->upperOffset() == size + lowerOffset - 1</tt>
    * <li><tt>this->has_ownership() == has_ownership</tt>
    * </ul>
    *
    * WARNING!  You should avoid manipulating raw pointers and use other
    * methods to construct an ArrayRCP object instead!
    */
-  inline ArrayRCP( T* p, size_type lowerOffset, size_type upperOffset,
+  inline ArrayRCP( T* p, size_type lowerOffset, size_type size,
     bool has_ownership, const ERCPNodeLookup rcpNodeLookup = RCP_ENABLE_NODE_LOOKUP );
 
   /** \brief Construct from a raw pointer, a valid range, and a deallocator.
@@ -149,7 +149,7 @@ public:
    * Postconditions:<ul>
    * <li><tt>this->get() == p</tt>
    * <li><tt>this->lowerOffset() == lowerOffset</tt>
-   * <li><tt>this->upperOffset() == upperOffset</tt>
+   * <li><tt>this->upperOffset() == size + lowerOffset - 1</tt>
    * <li><tt>this->has_ownership() == has_ownership</tt>
    * </ul>
    *
@@ -157,18 +157,18 @@ public:
    * methods to construct an ArrayRCP object instead!
    */
   template<class Dealloc_T>
-  inline ArrayRCP( T* p, size_type lowerOffset, size_type upperOffset, Dealloc_T dealloc,
+  inline ArrayRCP( T* p, size_type lowerOffset, size_type size, Dealloc_T dealloc,
     bool has_ownership );
 
   /** \brief Construct allocating an array of size n and filling.
    *
    * Postconditions:<ul>
    * <li><tt>this->lowerOffset() == 0</tt>
-   * <li><tt>this->upperOffset() == n-1</tt>
+   * <li><tt>this->upperOffset() == size-1</tt>
    * <li><tt>this->has_ownership() == true</tt>
    * </ul>
    */
-  inline explicit ArrayRCP( size_type lowerOffset, const T& val = T() );
+  inline explicit ArrayRCP( size_type size, const T& val = T() );
 
   /** \brief Initialize from another <tt>ArrayRCP<T></tt> object.
    *
@@ -776,7 +776,7 @@ public:
   // this portable (i.e. using friendship etc.) in the past
   // This is a very bad breach of encapsulation that is needed since MS VC++
   // 5.0 will not allow me to declare template functions as friends.
-  ArrayRCP( T* p, size_type lowerOffset, size_type upperOffset,
+  ArrayRCP( T* p, size_type lowerOffset, size_type size,
     const RCPNodeHandle& node );
   T* access_private_ptr() const;
   RCPNodeHandle& nonconst_access_private_node();

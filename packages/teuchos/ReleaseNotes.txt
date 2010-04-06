@@ -4,6 +4,27 @@ Release Notes for Trilinos Package Teuchos
 ------------------------------------------
 
 
+Trilinos 10.4:
+--------------
+
+
+(*) Known breaks in backward compatibility:
+
+- Changed direct constructors for ArrayRCP to take (lowerOffset, size) instead
+of (lowerOffset, upperOffset) to be consistent with the nonmember constructors
+like arcp(...) and ArrayView.  This was done to make these constructors
+consistent with the non-member constructors.  As long clients were using the
+nonmember constructors this will not break backward compatibility.  However,
+if clients are using the direct constructors, upperOffset becomes size which
+means that the size will actually become one less with the upperOffset
+becoming one less.  This will therefore not result in memory access errors but
+will result in exceptions being thrown when accessing the real last element.
+Given the confusing that having diffrent arguments caused (that I got caught
+with too) I think this break with strict backward compatibiity is well worth
+it.
+
+
+
 Trilinos 10.2:
 --------------
 
