@@ -7,6 +7,7 @@ INCLUDE(PackageLibraryMacros)
 
 SET(HAVE_BOOL ON)
 SET(HAVE_STL ON)
+SET(CMAKE_Fortran_FLAGS "-qfixed=72")
 
 IF (Trilinos_ENABLE_Fortran)
   SET(HAVE_FORTRAN_SUPPORT ON)
