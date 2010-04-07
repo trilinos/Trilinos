@@ -11,7 +11,7 @@
 # Package options
 #
 PROJECT_NAME           = "Sierra Toolkit"
-OUTPUT_DIRECTORY       = ..
+OUTPUT_DIRECTORY       = .
 # OUTPUT_DIRECTORY       = /home/www/scico/sierra/codes/doxygen/stk
 # OUTPUT_DIRECTORY       = /sierra/Dev/www/stk
 #
