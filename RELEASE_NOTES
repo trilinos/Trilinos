@@ -254,6 +254,22 @@ Gauss-Seidel), Chebyshev, ILUT and RILUK.
 
 -------------------------------------------------------------------------------
 
+Tpetra/Kokkos
+
+-  Experimental support for CPU multi-threading on *nix via ThreadPool
+   (Pthreads) and cross-platform via Intel TBB.
+
+-  Experimental support for NVIDIA GPUs via CUDA/Thrust.
+
+-  Support for explicit instantiation of Tpetra classes for scalars float,
+   double, complex<float> and complex<double>.
+
+-  Numerous bug fixes and performance improvements.
+
+-  Minor interface changes to improve accessibility and extend functionality.
+
+-------------------------------------------------------------------------------
+
 TriKota*
 
 TriKota is a new package in Trilinos 10.2. TriKota is a convenience package
