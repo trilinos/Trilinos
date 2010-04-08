@@ -916,9 +916,11 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
     vtxedge_ptr[i] = pin_start_pos;
 
     if (haveGraph_){
-      rc = graph_->ExtractMyRowCopy(i, npins, num_indices, gids + pin_start_pos);
+      // Get global indices directly
+      rc = graph_->ExtractGlobalRowCopy(vtxedge_GID[i], npins, num_indices, gids + pin_start_pos);
     }
     else{
+      // Get local indices first, then convert to global
       rc = matrix_->ExtractMyRowCopy(i, npins, num_indices, tmp, gids + pin_start_pos);
     }
 
@@ -929,13 +931,15 @@ void QueryObject::My_HG_CS (int num_gid_entries, int num_row_or_col, int num_pin
       break;
     }
 
-    for (int i=pin_start_pos; i<pin_start_pos+num_indices; i++){
-      gids[i] = colMap_->GID(gids[i]); // convert to global IDs
-      if (gids[i] < base_){
-	*ierr = ZOLTAN_FATAL;
-	std::cout << "Proc:" << myProc_ << " Error: ";
-	std::cout << "QueryObject::My_HG_CS, local ID not in column map" << std::endl;
-	break;
+    if (!haveGraph_){
+      for (int i=pin_start_pos; i<pin_start_pos+num_indices; i++){
+        gids[i] = colMap_->GID(gids[i]); // convert to global IDs
+        if (gids[i] < base_){
+	  *ierr = ZOLTAN_FATAL;
+	  std::cout << "Proc:" << myProc_ << " Error: ";
+	  std::cout << "QueryObject::My_HG_CS, local ID not in column map" << std::endl;
+	  break;
+        }
       }
     }
 
