@@ -327,9 +327,9 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS value="BLAS,LAPACK"/>
-    <LIB_OPTIONAL_DEP_TPLS value="MPI,METIS,ParMETIS,ZoltanTpl,PETSC"/>
+    <LIB_OPTIONAL_DEP_TPLS value="MPI,METIS,ParMETIS,ZoltanTpl,PETSC,SuperLU"/>
     <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS value="METIS,ParMETIS,ZoltanTpl"/>
+    <TEST_OPTIONAL_DEP_TPLS value="METIS,ParMETIS,ZoltanTpl,SuperLU"/>
     <EmailAddresses>
       <Checkin address="ml-checkins@software.sandia.gov"/>
       <Regression address="ml-regression@software.sandia.gov"/>
