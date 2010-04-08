@@ -27,7 +27,7 @@ if not os.path.exists(TOOLS_DIR):
   os.makedirs(TOOLS_DIR)
   if not os.path.exists(TOOLS_DIR):
     print "error: could not create directory \"" + TOOLS_DIR + "\""
-    exit(1)
+    sys.exit(1)
 
 origDir = os.getcwd()
 os.chdir(BASE_DIR)
@@ -82,7 +82,7 @@ if 0 == len(gr):
 if 1 != len(gr):
   print "error: could not find ctest executable after download..."
   os.chdir(origDir)
-  exit(2)
+  sys.exit(2)
 
 CTEST_EXE = gr[0]
 print "CTEST_EXE: +" + CTEST_EXE + "+"
@@ -90,7 +90,7 @@ print "CTEST_EXE: +" + CTEST_EXE + "+"
 if not os.path.exists(CTEST_EXE):
   print "error: ctest does not exist after installation..."
   os.chdir(origDir)
-  exit(3)
+  sys.exit(3)
 
 # Verify ctest works with a simple --version call first:
 #
@@ -123,4 +123,4 @@ if CTEST_RESULT != 0:
 # Propagate ctest return value
 #
 os.chdir(origDir)
-exit(CTEST_RESULT)
+sys.exit(CTEST_RESULT)

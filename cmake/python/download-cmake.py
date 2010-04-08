@@ -212,7 +212,7 @@ def DetectLatestCMakeBuilds(basedir, baseurl, vdir):
     if version == "" or version == line:
       print "error: line does not match version extraction regex"
       print " line: [" + line + "]"
-      exit(1)
+      sys.exit(1)
 
     date = dateRegEx.match(version).group(1)
 
@@ -241,7 +241,7 @@ def DetectLatestCMakeBuilds(basedir, baseurl, vdir):
       w = 1
     else:
       print "error: unexpected non-matching line"
-      exit(1)
+      sys.exit(1)
 
     count = count + 1
 
@@ -331,7 +331,7 @@ def Install(basedir, url):
   if sys.platform == 'win32':
     if os.path.exists(options.installDir):
       print "error: --install-dir '" + options.installDir + "' already exists - remove it or rename it and try again -- or manually copy the source directory '" + dirname + "' to the final installation location..."
-      exit(1)
+      sys.exit(1)
 
     shutil.copytree(dirname, options.installDir)
   else:
@@ -458,7 +458,7 @@ if options.installerType == 'dev':
   binaries = cmake_dev_binaries
 if binaries == None:
   print "error: unknown --installer-type: [" + options.installerType + "]"
-  exit(1)
+  sys.exit(1)
 
 
 print ""

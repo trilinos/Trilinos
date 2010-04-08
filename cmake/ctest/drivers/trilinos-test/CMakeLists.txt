@@ -1,48 +1,23 @@
-# trilinos-test driver
+TRILINOS_DRIVER_SETUP()
 
-set(CTEST_EXE "${CMAKE_CTEST_COMMAND}")
-set(EG_EXE /home/trilinos/git/bin/eg)
-set(BASEDIR /home/bmpersc/nightly/Trilinos.base/release_10)
-set(BASEDATADIR /home/bmpersc/nightly)
-set(DRIVER_SCRIPT_DIR "${TrilinosDriver_SOURCE_DIR}/trilinos-test")
-set(workingdir "${TrilinosDriver_BINARY_DIR}")
-set(BRANCH "trilinos-release-10-0-branch")
-set(TRILINOS_REPOSITORY_LOCATION "software.sandia.gov:/space/git/Trilinos")
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  MPI_OPT_DEV
+  ctest_linux_nightly_mpi_development_opt_trilinos-test.cmake
+)
 
-#export CMAKE_LIBRARY_PATH="/home/trilinos/tpl/gcc4.1.2/exodusII_4.84/lib:/home/trilinos/tpl/gcc4.1.2/netcdf_4.0/lib"
-#export CMAKE_INCLUDE_PATH="/home/trilinos/tpl/gcc4.1.2/exodusII_4.84/include:/home/trilinos/tpl/gcc4.1.2/netcdf_4.0/include"
-#export TRILINOSDATADIRECTORY="${BASEDATADIR}/TrilinosData"
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  MPI_DEBUG_DEV
+  ctest_linux_nightly_mpi_development_debug_trilinos-test.cmake
+)
 
-#get the date for use in log files
-execute_process(COMMAND date "+%m-%d-%Y" OUTPUT_VARIABLE DATE)
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  MPI_OPT_DEV_SHARED
+  ctest_linux_nightly_mpi_development_opt_shared_trilinos-test.cmake
+)
 
-#checkout the trilinos data directory. Needed for a few tests to run
-#execute_process(COMMAND cvs -q -d :ext:software:/space/CVS co TrilinosData
-#  WORKING_DIRECTORY ${BASEDATADIR})
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  SERIAL_DEBUG_DEV
+  ctest_linux_nightly_serial_development_debug_trilinos-test.cmake
+)
 
-add_test(mpi_release
-  ${CTEST_EXE}
-  -S
-  "${CMAKE_CURRENT_SOURCE_DIR}/ctest_linux_nightly_mpi_release_trilinos-test.cmake"
-  -VV
-  --output-log
-  "${workingdir}/MPI_RELEASE_10.0_${DATE}.log"
-  )
-  
-add_test(mpi_release_shared
-  ${CTEST_EXE}
-  -S
-  "${CMAKE_CURRENT_SOURCE_DIR}/ctest_linux_nightly_mpi_release_shared_trilinos-test.cmake"
-  -VV
-  --output-log
-  "${workingdir}/MPI_RELEASE_10.0_SHARED_${DATE}.log"
-  )
-
-add_test(serial_release
-  ${CTEST_EXE}
-  -S
-  "${CMAKE_CURRENT_SOURCE_DIR}/ctest_linux_nightly_serial_release_trilinos-test.cmake"
-  -VV
-  --output-log
-  "${workingdir}/SERIAL_RELEASE_10.0_${DATE}.log"
-  )
+TRILINOS_ADD_REQUIRED_CMAKE_INSTALLS()
