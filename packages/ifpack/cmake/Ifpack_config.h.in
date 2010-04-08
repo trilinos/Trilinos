@@ -26,3 +26,7 @@
 
 /* Define if we want to use the HIPS preconditioner */
 #cmakedefine HAVE_IFPACK_HIPS
+
+/* Define if we want to build with SuperLU enabled */
+#cmakedefine HAVE_IFPACK_SUPERLU
+

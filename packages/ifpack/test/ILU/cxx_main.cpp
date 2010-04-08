@@ -81,6 +81,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::ParameterList GaleriList;
   int nx = 30; 
+
   GaleriList.set("nx", nx);
   GaleriList.set("ny", nx * Comm.NumProc());
   GaleriList.set("mx", 1);
@@ -173,6 +174,29 @@ int main(int argc, char *argv[]) {
 
   if (OldIters != NewIters)
     IFPACK_CHK_ERR(-1);
+
+
+#ifdef HAVE_IFPACK_SUPERLU
+  // Now test w/ SuperLU's ILU, if we've got it
+  Teuchos::RefCountPtr<Ifpack_Preconditioner> Prec2 = Teuchos::rcp( Factory.Create("SILU", &*A,0) ); 
+  Teuchos::ParameterList SList;
+  SList.set("fact: drop tolerance",1e-4);
+  SList.set("fact: zero pivot threshold",.1);
+  SList.set("fact: maximum fill factor",10.0);
+  // NOTE: There is a bug in SuperLU 4.0 which will crash the code if the maximum fill factor is set too low.
+  // This bug was reported to Sherry Li on 4/8/10.
+  SList.set("fact: silu drop rule",9);
+
+  IFPACK_CHK_ERR(Prec2->SetParameters(SList));
+  IFPACK_CHK_ERR(Prec2->Compute());
+
+  LHS->PutScalar(0.0);
+  solver.SetPrecOperator(&*Prec2);
+  solver.Iterate(Niters, 5.0e-5);
+  Prec2->Print(cout);
+
+#endif
+
 
 #ifdef HAVE_MPI
   MPI_Finalize() ;

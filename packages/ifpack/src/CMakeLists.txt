@@ -83,6 +83,7 @@ SET(HEADERS ${HEADERS}
   Ifpack_HIPS.h
   Ifpack_Hypre.h
   Ifpack_Euclid.h
+  Ifpack_SILU.h
   )
 
 SET(SOURCES ${SOURCES}
@@ -129,6 +130,7 @@ SET(SOURCES ${SOURCES}
   Ifpack_HIPS.cpp
   Ifpack_Hypre.cpp
   Ifpack_Euclid.cpp
+  Ifpack_SILU.cpp
   )
 
 IF (${PACKAGE_NAME}_ENABLE_Amesos)

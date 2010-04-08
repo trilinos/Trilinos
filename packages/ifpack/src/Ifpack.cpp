@@ -46,6 +46,9 @@
 #ifdef HAVE_IFPACK_HIPS
 #include "Ifpack_HIPS.h"
 #endif
+#ifdef HAVE_IFPACK_SUPERLU
+#include "Ifpack_SILU.h"
+#endif
 
 #include "Ifpack_Chebyshev.h"
 
@@ -94,6 +97,9 @@ const Ifpack::EPrecType Ifpack::precTypeValues[Ifpack::numPrecTypes] =
 #ifdef HAVE_HYPRE
   ,HYPRE
 #endif
+#ifdef HAVE_IFPACK_SUPERLU
+  ,SILU
+#endif
   ,CHEBYSHEV
 };
 
@@ -128,6 +134,9 @@ const char* Ifpack::precTypeNames[Ifpack::numPrecTypes] =
 #ifdef HAVE_HYPRE
   ,"Hypre"
 #endif
+#ifdef HAVE_IFPACK_SUPERLU
+  ,"SILU"
+#endif
   ,"Chebyshev"
 };
 
@@ -161,6 +170,9 @@ const bool Ifpack::supportsUnsymmetric[Ifpack::numPrecTypes] =
 #endif  
 #ifdef HAVE_HYPRE
   ,true
+#endif
+#ifdef HAVE_IFPACK_SUPERLU
+  ,true // SuperLU's Supernodal ILUTP
 #endif
   ,false // CHEBYSHEV
 };
@@ -220,6 +232,10 @@ Ifpack_Preconditioner* Ifpack::Create(EPrecType PrecType,
 #ifdef HAVE_HYPRE
     case HYPRE:
       return(new Ifpack_Hypre(Matrix));
+#endif
+#ifdef HAVE_IFPACK_SUPERLU
+    case SILU:
+      return(new Ifpack_SILU(Matrix));
 #endif
     case CHEBYSHEV:
       return(new Ifpack_Chebyshev(Matrix));

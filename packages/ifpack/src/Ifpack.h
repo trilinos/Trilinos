@@ -150,6 +150,9 @@ public:
 #ifdef HAVE_HYPRE
   ,HYPRE
 #endif
+#ifdef HAVE_IFPACK_SUPERLU
+  ,SILU
+#endif
     ,CHEBYSHEV
   };
 
@@ -167,6 +170,9 @@ public:
     +1
 #endif    
 #ifdef HAVE_HYPRE
+    +1
+#endif
+#ifdef HAVE_IFPACK_SUPERLU
     +1
 #endif
     +1

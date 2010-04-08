@@ -32,6 +32,12 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_HIPS
   "Enable support for HIPS in Ifpack."
   OFF )
 
+ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SuperLU
+  HAVE_IFPACK_SUPERLU
+  "Enable support for SUPERLU in Ifpack."
+  OFF )
+
+
 #
 # C) Add the libraries, tests, and examples
 #

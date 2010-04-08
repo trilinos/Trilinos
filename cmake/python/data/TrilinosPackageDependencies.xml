@@ -299,9 +299,9 @@
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES value="Galeri"/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="HIPS"/>
+    <LIB_OPTIONAL_DEP_TPLS value="HYPRE,HIPS,SuperLU"/>
     <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS value="HYPRE"/>
+    <TEST_OPTIONAL_DEP_TPLS value="HYPRE,SuperLU"/>
     <EmailAddresses>
       <Checkin address="ifpack-checkins@software.sandia.gov"/>
       <Regression address="ifpack-regression@software.sandia.gov"/>
