@@ -569,7 +569,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 #endif
     } else if( MySmoother == "IFPACK" || MySmoother == "ILU" ||
                MySmoother == "IC" || MySmoother == "ILUT"   ||
-               MySmoother == "ICT") {
+               MySmoother == "ICT" || MySmoother == "SILU") {
 
       // ====== //
       // IFPACK //

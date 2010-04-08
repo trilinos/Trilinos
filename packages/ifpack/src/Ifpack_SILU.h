@@ -60,7 +60,7 @@ namespace Teuchos {
 
 //! Ifpack_SILU: A wrapper to SuperLU 4.0's supernodal ILUT w/ partial pivoting.
 
-/*! The Ifpack_SILU class is  wrapper to SuperLU 4.0's supernodal ILUT w/ partial pivoting.
+/*! The Ifpack_SILU class is a  wrapper to SuperLU 4.0's supernodal ILUT w/ partial pivoting.
     \author Chris Siefert, SNL 1431
 
     \date Last modified on 07-Apr-10
@@ -92,14 +92,6 @@ public:
   }
 
   //! Compute ILU factors L and U using the specified graph, diagonal perturbation thresholds and relaxation parameters.
-  /*! This function computes the ILU(k) factors L and U using the current:
-    <ol>
-    <li> Ifpack_IlukGraph specifying the structure of L and U.
-    <li> Value for the ILU(k) relaxation parameter.
-    <li> Value for the \e a \e priori diagonal threshold values.
-    </ol>
-    InitValues() must be called before the factorization can proceed.
-   */
   int Compute();
 
   //! If factor is completed, this query returns true, otherwise it returns false.

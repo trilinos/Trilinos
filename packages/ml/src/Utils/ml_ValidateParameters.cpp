@@ -214,7 +214,9 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   strParam.allowString(true); 
 
   /* Allocate List for Smoothing Options */
-# ifdef HAVE_PETSC
+# if defined(HAVE_PETSC) && defined(HAVE_ML_SUPERLU)
+  const int num_smoothers=30;
+# elif defined(HAVE_PETSC) || defined(HAVE_ML_SUPERLU)
   const int num_smoothers=29;
 # else
   const int num_smoothers=28;
@@ -228,6 +230,9 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
    "Block Chebyshev","IFPACK-Block Chebyshev"
 #  ifdef HAVE_PETSC
    ,"petsc"
+#  endif
+#  ifdef HAVE_ML_SUPERLU
+   ,"SILU"
 #  endif
    };
   Array<string> smoothers(num_smoothers);
