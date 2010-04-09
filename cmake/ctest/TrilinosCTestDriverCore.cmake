@@ -346,6 +346,12 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   
   # The default track to send the build to. This can be changed to send
   # the data to a different nightly grouping on the dashboard.
+  # If the test type is set to Experimental though the track is forced
+  # to "Experimental" this is so that we can have experimental tests 
+  # on branches.
+  IF(CTEST_TEST_TYPE STREQUAL "Experimental" OR CTEST_TEST_TYPE STREQUAL "Experimental")
+    SET(Trilinos_TRACK "Experimental")
+  ENDIF()
   SET_DEFAULT_AND_FROM_ENV(Trilinos_TRACK "")
   
   # The name of the site in the dashboard (almost never need to override this)
