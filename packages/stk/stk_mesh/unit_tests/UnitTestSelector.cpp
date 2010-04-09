@@ -529,7 +529,7 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AuBuCuD )
   std::cout << "A|B|C|D = " << selector << std::endl;
   std::ostringstream msg;
   msg << selector;
-  STKUNIT_EXPECT_TRUE( msg.str() == "!(((!PartA AND !PartB) AND !PartC) AND !PartD)" );
+  STKUNIT_EXPECT_EQUAL( "!(!PartA AND !PartB AND !PartC AND !PartD)" , msg.str() );
 }
 
 
@@ -564,7 +564,7 @@ STKUNIT_UNIT_TEST( UnitTestSelector, complicated )
   std::cout << "complicated selector = " << selector << std::endl;
   std::ostringstream msg;
   msg << selector;
-  STKUNIT_EXPECT_TRUE( msg.str() == "!(!PartA AND !((!(PartA AND PartB) AND !PartC) AND !(PartD AND !PartB)))" );
+  STKUNIT_EXPECT_EQUAL( "!(!PartA AND !((!(PartA AND PartB) AND !PartC) AND !(PartD AND !PartB)))" , msg.str() );
 }
 
 
@@ -656,7 +656,7 @@ STKUNIT_UNIT_TEST( UnitTestSelector, selectUnion )
   std::ostringstream msg;
   msg << selector;
   std::cout << "msg.str() = " << msg.str() << std::endl;
-  STKUNIT_EXPECT_TRUE( msg.str() == "!((!PartA AND !PartB) AND !PartC)");
+  STKUNIT_EXPECT_EQUAL( "!(!PartA AND !PartB AND !PartC)", msg.str() );
 }
 
 // Intersection first then union
@@ -889,7 +889,7 @@ STKUNIT_UNIT_TEST( UnitTestSelector, AlliuAll )
     stk::mesh::Selector selectAllORAll = selectAll | anotherSelectAll;
     std::ostringstream description;
     description << selectAllORAll;
-    STKUNIT_EXPECT_EQUAL( "!(() AND ())", description.str() );
+    STKUNIT_EXPECT_EQUAL( "!(())", description.str() );
   }
 }
 
@@ -914,7 +914,7 @@ STKUNIT_UNIT_TEST( PerformanceTestSelector, start)
 STKUNIT_UNIT_TEST( PerformanceTestSelector, timings)
 {
   // Construction
-  size_t N = 1000;
+  size_t N = 10000;
   VariableSizeFixture fix(N);
 
   std::vector<double> selector_creation(N/2);
