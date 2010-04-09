@@ -131,7 +131,7 @@ namespace sunit {
       {
         bulkData.declare_entity(ent_type, ent_id, partMembership);
       }
-      ++ent_id;
+      bulkData.modification_end();
     }
   }
 
@@ -162,6 +162,39 @@ namespace sunit {
       part = partVector[0];
     }
     return part;
+  }
+
+  VariableSizeFixture::~VariableSizeFixture() {}
+
+  VariableSizeFixture::VariableSizeFixture(int NumParts)
+    : Stk_Mesh_Fixture( std::vector<std::string>( 1 , std::string("MyEntityType") ) )
+  {
+    // Create Parts and commit:
+    stk::mesh::MetaData & metaData = get_NonconstMetaData();
+    std::string myPartName;
+    stk::mesh::EntityType myRank = 0;
+
+    std::string partName = "Part_";
+    for (int part_i=0 ; part_i<NumParts; ++part_i) {
+      std::ostringstream localPartName(partName);
+      localPartName << part_i;
+      m_declared_part_vector.push_back(&metaData.declare_part(localPartName.str(),myRank));
+    }
+
+    metaData.commit();
+
+    // Create Entities and assign to parts:
+    stk::mesh::BulkData & bulkData = get_NonconstBulkData();
+    bulkData.modification_begin();
+    stk::mesh::EntityType ent_type = 0; // rank
+    stk::mesh::EntityId ent_id = 1; // Unique ID
+    for (int part_i = 0 ; part_i < NumParts ; ++part_i) {
+      std::vector<stk::mesh::Part*> partMembership;
+      partMembership.push_back(m_declared_part_vector[part_i]);
+      bulkData.declare_entity(ent_type, ent_id, partMembership);
+      ++ent_id;
+    }
+    bulkData.modification_end();
   }
 
 

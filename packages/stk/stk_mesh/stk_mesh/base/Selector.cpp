@@ -94,6 +94,8 @@ Selector & Selector::operator |= ( const Selector & B )
 
   // this UNION B == ! ( ! this & ! B )
 
+  // If this is a compound complement, then simply add notB to the end and increase the size of the compound
+  // Otherwise, do as normal.
   this->complement();                   //   ( ! (this) )
 
   const unsigned finalSize = 1 + m_op.size() + notB.m_op.size();

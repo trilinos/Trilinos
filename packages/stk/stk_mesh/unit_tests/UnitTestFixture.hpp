@@ -26,8 +26,6 @@ namespace sunit {
       const stk::mesh::MetaData & get_MetaData() const { return m_MetaData ; }
       stk::mesh::MetaData       & get_NonconstMetaData() { return m_MetaData ; }
 
-      void createBulkData();
-
       const stk::mesh::BulkData & get_BulkData() const { return m_BulkData ; }
       stk::mesh::BulkData       & get_NonconstBulkData() { return m_BulkData ; }
 
@@ -93,6 +91,14 @@ namespace sunit {
       const Stk_Mesh_Fixture & fix,
       stk::mesh::EntityId ent_id
       );
+
+  class VariableSizeFixture : public Stk_Mesh_Fixture {
+  public:
+    VariableSizeFixture(int NumParts);
+    ~VariableSizeFixture();
+    stk::mesh::PartVector m_declared_part_vector;
+  };
+
 
 } // namespace sunit
 
