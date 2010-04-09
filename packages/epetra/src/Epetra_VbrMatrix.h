@@ -74,6 +74,15 @@ Note that even after FillComplete() has been called, it is possible to update ex
 entries but it is \e not possible to create new entries.
 <p>
 
+<b>Using Epetra_VbrMatrix as an Epetra_RowMatrix</b>
+
+Although Epetra_VbrMatrix does inherit from Epetra_RowMatrix, 
+a design flaw in the inheritance structure of Epetra prohibits the use of
+an Epetra_VbrMatrix object as an Epetra_RowMatrix in some important situations.  Therefore we recommend the
+use of the Epetra_VbrRowMatrix class to wrap an Epetra_VbrMatrix object for use as an Epetra_RowMatrix.  The 
+Epetra_VbrRowMatrix object does not duplicate data in the Epetra_VbrMatrix object, but uses it to satisfy the
+Epetra_RowMatrix interface.
+
 <b>Epetra_Map attributes</b>
 
 Epetra_VbrMatrix objects have four Epetra_Map attributes, which are held by the Epetra_CrsGraph attribute.
