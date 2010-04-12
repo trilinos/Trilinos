@@ -7,6 +7,7 @@
 /*------------------------------------------------------------------------*/
 
 
+#include <sstream>
 #include <unit_tests/UnitTestFixture.hpp>
 
 namespace sunit {
