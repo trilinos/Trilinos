@@ -1469,6 +1469,7 @@ int *rptr=NULL, *cptr=NULL;
 
       ZOLTAN_TRACE_DETAIL(zz, yo, "done with Get_HG_CS");
 
+
       if ((ierr == ZOLTAN_OK) || (ierr == ZOLTAN_WARN)){
         ierr = Convert_To_CSR(zz,
                      np,    /* number of pins doesn't change */
@@ -1514,6 +1515,156 @@ int *rptr=NULL, *cptr=NULL;
 /* This is called "Convert_To_CSR" but it also converts CSR to CSC.  The
  * conversion is symmetric.
  */
+
+#if 0
+static int gid_size;
+
+static int compare_gids(const void *gid1, const void *gid2)
+{
+  int i;
+  ZOLTAN_ID_PTR g1 = (ZOLTAN_ID_PTR)gid1;
+  ZOLTAN_ID_PTR g2 = (ZOLTAN_ID_PTR)gid2;
+
+  for (i=0; i < gid_size; i++){
+    if (g1[i] < g2[i]){
+      return -1;
+    }
+    else if (g1[i] > g2[i]){
+      return 1;
+    }
+  }
+  return 0;
+}
+
+static int Convert_To_CSR(
+    ZZ *zz, 
+    int num_pins,         /* input: size of edg_GID array */
+    int *col_ptr,         /* input: col_ptr[i] is index into edg_GID of list i */
+    int *num_lists,       /* input/output: length of vtx_GID / length of edg_GID */
+    ZOLTAN_ID_PTR *vtx_GID,  /* input/output: object GID / list of pins for each object GID */
+    int **row_ptr,           /* output: row_ptr[i] is start of list i in vtx_GID */
+    ZOLTAN_ID_PTR *edg_GID)  /* input/output: lists of pin GID / object GID */
+{
+static char *yo = "Convert_To_CSR";
+ZOLTAN_ID_PTR rowGIDs = NULL, colGIDs = NULL, nextGID=NULL, gid=NULL;
+ZOLTAN_ID_PTR row, col;
+int i, j, numRows=0, index, p;
+int *rowSizes=NULL, *ptr=NULL;
+int ierr = ZOLTAN_OK;
+
+  if (num_pins == 0){
+    return ierr;
+  }
+  else if (num_pins == 1){
+    *row_ptr = (int *)ZOLTAN_MALLOC(sizeof(int) * 2);
+    (*row_ptr)[0] = 0;
+    (*row_ptr)[0] = 1;
+    return ierr;
+  }
+
+  gid_size = zz->Num_GID;
+
+  /* copy pin GIDs to a new array and sort it, then replace it with
+   * a list of sorted unique GIDs (this will be the new edg_GID)
+   * and count how many occurences of each GID there are.
+   */
+
+  rowGIDs = ZOLTAN_MALLOC_GID_ARRAY(zz, num_pins);
+  ptr = (int *)ZOLTAN_CALLOC(sizeof(int), num_pins + 1);
+
+  if (!rowGIDs || !ptr){
+    ierr = ZOLTAN_MEMERR;
+    goto End;
+  }
+
+  ZOLTAN_COPY_GID_ARRAY(rowGIDs, *edg_GID, zz, num_pins);
+  qsort((void *)rowGIDs, num_pins, gid_size * sizeof(ZOLTAN_ID_TYPE), compare_gids);
+
+  gid = rowGIDs + gid_size;
+  numRows = 0;
+  ptr[0] = 1;
+
+  for (i=1; i < num_pins; i++, gid += gid_size){
+
+    if (ZOLTAN_EQ_GID(zz, rowGIDs + (numRows * gid_size), gid)){
+      ptr[numRows]++;
+      continue;
+    }
+
+    numRows++;
+
+    if (gid != rowGIDs + (numRows * gid_size)){
+      ZOLTAN_COPY_GID_ARRAY(rowGIDs + (numRows * gid_size), gid, zz, 1);
+    }
+
+    ptr[numRows] = 1;
+  }
+
+  numRows++;
+
+  if (numRows < num_pins){
+    rowGIDs = ZOLTAN_REALLOC_GID_ARRAY(zz, rowGIDs, numRows);
+    ptr = (int *)realloc(ptr, sizeof(int) * (numRows + 1));
+
+    if (!rowGIDs || !ptr){
+      ierr = ZOLTAN_MEMERR;
+      goto End;
+    }
+  }
+
+
+  /* Modify the counter array so that it points to the space after the last pin for each row.
+   */
+
+  for (i=0; i < numRows; i++){
+    ptr[i+1] += ptr[i];
+  }
+
+  /* allocate a new pin GID array, read through the pins, and write them 
+   * to the new pin GID array.  (This will be the new vtx_GID.)
+   */
+
+  colGIDs = ZOLTAN_MALLOC_GID_ARRAY(zz, num_pins);
+  if (!colGIDs){
+    ierr = ZOLTAN_MEMERR;
+    goto End;
+  }
+
+  for (i=0; i < *num_lists; i++){
+    row = *vtx_GID + (i * gid_size);
+    for (j=col_ptr[i]; j < col_ptr[i+1]; j++){
+      col = *edg_GID + (j * gid_size);
+
+      gid = (ZOLTAN_ID_PTR)bsearch((void *)col, (void *)rowGIDs, numRows, 
+                       sizeof(ZOLTAN_ID_TYPE) * gid_size, compare_gids);
+
+      if (!gid){
+        ierr = ZOLTAN_FATAL;
+        goto End;
+      }
+
+      index = (gid - rowGIDs) / gid_size;
+
+      p = --ptr[index];
+
+      ZOLTAN_COPY_GID_ARRAY(colGIDs +  (p * gid_size), row, zz, 1);
+    }
+  }
+
+End:
+
+  *num_lists = numRows;
+  ZOLTAN_FREE(vtx_GID);
+  *vtx_GID = colGIDs;
+  *row_ptr = ptr;
+  ZOLTAN_FREE(edg_GID);
+  *edg_GID = rowGIDs;
+
+  ZOLTAN_TRACE_EXIT(zz, yo);
+
+  return ierr;
+}
+#else
 static int Convert_To_CSR(
     ZZ *zz, int num_pins, int *col_ptr,   /* input */
     int *num_lists,                       /* rest are input/output */
@@ -1688,6 +1839,7 @@ End:
 
   return ierr;
 }
+#endif
 /*****************************************************************************/
 
 int Zoltan_Graph_Queries( ZZ *zz, 
