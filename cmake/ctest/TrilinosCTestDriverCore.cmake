@@ -407,7 +407,7 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   # If the test type is set to Experimental though the track is forced
   # to "Experimental" this is so that we can have experimental tests 
   # on branches.
-  IF(CTEST_TEST_TYPE STREQUAL "Experimental" OR CTEST_TEST_TYPE STREQUAL "Experimental")
+  IF(CTEST_TEST_TYPE STREQUAL "Experimental" OR CTEST_TEST_TYPE STREQUAL "EXPERIMENTAL")
     SET(Trilinos_TRACK "Experimental")
   ENDIF()
   SET_DEFAULT_AND_FROM_ENV(Trilinos_TRACK "")
