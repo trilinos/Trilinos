@@ -65,8 +65,9 @@ public:
     \param[in] compute_now  if @c true, the scheduling is computed in the constructor, otherwise call Isorropia::Epetra::LevelScheduler::schedule when you want to compute the scheduling, defaults to @c false
     */
 
-  LevelScheduler(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
-	  bool compute_now=true);
+  LevelScheduler(Teuchos::RCP<const Epetra_CrsGraph> input_graph, 
+                 const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
+	         bool compute_now=true);
 
   /** Destructor */
   ~LevelScheduler(); // {} ;

@@ -92,19 +92,47 @@ Selector & Selector::operator |= ( const Selector & B )
 
   Selector notB = B; notB.complement();
 
-  // this UNION B == ! ( ! this & ! B )
+  const size_t original_size = m_op.size();
 
-  this->complement();                   //   ( ! (this) )
+  if ( 1 == original_size &&
+       m_op.front().m_count == 1 &&
+       m_op.front().m_unary == 0 ) {
+    // this == empty ; therefore,
+    // this UNION B == B
+    m_op = B.m_op ;
+  }
+  else if ( m_op.front().m_count == original_size &&
+            m_op.front().m_unary != 0 ) {
+    // This is a full-compound complement.
+    // Simply add notB to the end and increase the size of the compound
 
-  const unsigned finalSize = 1 + m_op.size() + notB.m_op.size();
+    // this == ! A ; therefore,
+    // this UNION B == ! ( ! ( ! A ) & ! B )
+    // this UNION B == ! ( A & ! B )
 
-  m_op.insert(
-      m_op.end(),
-      notB.m_op.begin(),
-      notB.m_op.end() );                // ! ( ! (this) & !B )
-  m_op.insert(
-      m_op.begin(),
-      OpType( 0 , 1 , finalSize ) );    // ! ( ! (this) & ? )
+    m_op.insert(
+        m_op.end(),
+        notB.m_op.begin(),
+        notB.m_op.end() );
+
+    m_op.front().m_count = m_op.size();
+  }
+  else {
+    // this UNION B == ! ( ! this & ! B )
+
+    this->complement();                   //   ( ! (this) )
+
+    const unsigned finalSize = 1 + m_op.size() + notB.m_op.size();
+
+    m_op.insert(
+        m_op.end(),
+        notB.m_op.begin(),
+        notB.m_op.end() );                // ! ( ! (this) & !B )
+    m_op.insert(
+        m_op.begin(),
+        OpType( 0 , 1 , finalSize ) );    // ! ( ! (this) & ? )
+  }
+
   return *this;
 }
 

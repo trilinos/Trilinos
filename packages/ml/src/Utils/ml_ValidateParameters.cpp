@@ -4,7 +4,6 @@
 /* ******************************************************************** */
 
 #include "ml_common.h"
-#include "ml_common.h"
 #if defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
 
 #include "Epetra_CrsMatrix.h"
@@ -214,9 +213,9 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   strParam.allowString(true); 
 
   /* Allocate List for Smoothing Options */
-# if defined(HAVE_PETSC) && defined(HAVE_ML_SUPERLU)
+# if defined(HAVE_PETSC) && defined(HAVE_ML_SUPERLU4_0)
   const int num_smoothers=30;
-# elif defined(HAVE_PETSC) || defined(HAVE_ML_SUPERLU)
+# elif defined(HAVE_PETSC) || defined(HAVE_ML_SUPERLU4_0)
   const int num_smoothers=29;
 # else
   const int num_smoothers=28;
@@ -231,8 +230,10 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
 #  ifdef HAVE_PETSC
    ,"petsc"
 #  endif
-#  ifdef HAVE_ML_SUPERLU
+#  ifdef HAVE_ML_SUPERLU4_0
    ,"SILU"
+#else
+#error "No SuperLU for you!"					      
 #  endif
    };
   Array<string> smoothers(num_smoothers);
