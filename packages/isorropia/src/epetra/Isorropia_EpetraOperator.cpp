@@ -68,49 +68,49 @@ namespace Isorropia {
 
 namespace Epetra {
 
-Operator::
-Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph, int base)
-  : input_graph_(input_graph),
-    input_matrix_(0),
-    input_coords_(0),
-    costs_(0),
-    weights_(0),
-    operation_already_computed_(false),
-    lib_(0),
-    base_(base)
-{
-  input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
-}
+// Operator::
+// Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph, int base)
+//   : input_graph_(input_graph),
+//     input_matrix_(0),
+//     input_coords_(0),
+//     costs_(0),
+//     weights_(0),
+//     operation_already_computed_(false),
+//     lib_(0),
+//     base_(base)
+// {
+//   input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
+// }
 
-Operator::
-Operator(Teuchos::RCP<const Epetra_BlockMap> input_map, int base)
-  : input_map_(input_map),
-    input_graph_(0),
-    input_matrix_(0),
-    input_coords_(0),
-    costs_(0),
-    weights_(0),
-    operation_already_computed_(false),
-    lib_(0),
-    base_(base)
-{
+// Operator::
+// Operator(Teuchos::RCP<const Epetra_BlockMap> input_map, int base)
+//   : input_map_(input_map),
+//     input_graph_(0),
+//     input_matrix_(0),
+//     input_coords_(0),
+//     costs_(0),
+//     weights_(0),
+//     operation_already_computed_(false),
+//     lib_(0),
+//     base_(base)
+// {
 
-}
+// }
 
-Operator::
-Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph, 
-	 Teuchos::RCP<const Epetra_MultiVector> input_coords,int base)
-  : input_graph_(input_graph),
-    input_matrix_(0),
-    input_coords_(input_coords),
-    costs_(0),
-    weights_(0),
-    operation_already_computed_(false),
-    lib_(0),
-    base_(base)
-{
-  input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
-}
+// Operator::
+// Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph, 
+// 	 Teuchos::RCP<const Epetra_MultiVector> input_coords,int base)
+//   : input_graph_(input_graph),
+//     input_matrix_(0),
+//     input_coords_(input_coords),
+//     costs_(0),
+//     weights_(0),
+//     operation_already_computed_(false),
+//     lib_(0),
+//     base_(base)
+// {
+//   input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
+// }
 
 
 Operator::
@@ -123,7 +123,12 @@ Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
     lib_(0), base_(base)
 {
   input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
-  setParameters(paramlist);
+
+  if(paramlist.name() != "EmptyParameterList")
+  {
+    setParameters(paramlist);
+  }
+
 }
 
 Operator::
@@ -135,7 +140,10 @@ Operator(Teuchos::RCP<const Epetra_BlockMap> input_map,
     operation_already_computed_(false),
     lib_(0), base_(base)
 {
-  setParameters(paramlist);
+  if(paramlist.name() != "EmptyParameterList")
+  {
+    setParameters(paramlist);
+  }
 }
 
 Operator::
@@ -149,7 +157,12 @@ Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
       lib_(0), base_(base)
 {
   input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
-  setParameters(paramlist);
+
+  if(paramlist.name() != "EmptyParameterList")
+  {
+     setParameters(paramlist);
+  }
+
 }
 
 
@@ -166,7 +179,11 @@ Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 {
 
   input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
-  setParameters(paramlist);
+
+  if(paramlist.name() != "EmptyParameterList")
+  {
+    setParameters(paramlist);
+  }
 }
 
 Operator::
@@ -183,37 +200,41 @@ Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 {
 
   input_map_ = Teuchos::rcp(&(input_graph->RowMap()), false);
-  setParameters(paramlist);
+
+  if(paramlist.name() != "EmptyParameterList")
+  {
+     setParameters(paramlist);
+  }
 }
 
-Operator::
-Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, int base)
-  : input_graph_(0),
-    input_matrix_(input_matrix),
-    input_coords_(0),
-    costs_(0),
-    weights_(0),
-    operation_already_computed_(false),
-    lib_(0),
-    base_(base)
-{
-  input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()), false);
-}
+// Operator::
+// Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, int base)
+//   : input_graph_(0),
+//     input_matrix_(input_matrix),
+//     input_coords_(0),
+//     costs_(0),
+//     weights_(0),
+//     operation_already_computed_(false),
+//     lib_(0),
+//     base_(base)
+// {
+//   input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()), false);
+// }
 
-Operator::
-Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, 
-	 Teuchos::RCP<const Epetra_MultiVector> input_coords, int base)
-  : input_graph_(0),
-    input_matrix_(input_matrix),
-    input_coords_(input_coords),
-    costs_(0),
-    weights_(0),
-    operation_already_computed_(false),
-    lib_(0),
-    base_(base)
-{
-  input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()), false);
-}
+// Operator::
+// Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, 
+// 	 Teuchos::RCP<const Epetra_MultiVector> input_coords, int base)
+//   : input_graph_(0),
+//     input_matrix_(input_matrix),
+//     input_coords_(input_coords),
+//     costs_(0),
+//     weights_(0),
+//     operation_already_computed_(false),
+//     lib_(0),
+//     base_(base)
+// {
+//   input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()), false);
+// }
 
 Operator::
 Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
@@ -226,7 +247,11 @@ Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
     base_(base)
 {
   input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()),false);
-  setParameters(paramlist);
+
+  if(paramlist.name() != "EmptyParameterList")
+  {
+     setParameters(paramlist);
+  }
 }
 
 Operator::
@@ -241,7 +266,11 @@ Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
     base_(base)
 {
   input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()),false);
-  setParameters(paramlist);
+
+  if(paramlist.name() != "EmptyParameterList")
+  {
+     setParameters(paramlist);
+  }
 }
 
 Operator::
@@ -258,7 +287,11 @@ Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
     base_(base)
 {
   input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()),false);
-  setParameters(paramlist);
+
+  if(paramlist.name() != "EmptyParameterList")
+  {
+     setParameters(paramlist);
+  }
 }
 
 Operator::
@@ -277,22 +310,26 @@ Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
     base_(base)
 {
   input_map_ = Teuchos::rcp(&(input_matrix->RowMatrixRowMap()),false);
-  setParameters(paramlist);
+
+  if(paramlist.name() != "EmptyParameterList")
+  {
+     setParameters(paramlist);
+  }
 }
 
-Operator::
-Operator(Teuchos::RCP<const Epetra_MultiVector> input_coords, int base)
-  : input_graph_(0),
-    input_matrix_(0),
-    input_coords_(input_coords),
-    costs_(0),
-    weights_(0),
-    operation_already_computed_(false),
-    lib_(0),
-    base_(base)
-{
-  input_map_ = Teuchos::rcp(&(input_coords->Map()), false);
-}
+// Operator::
+// Operator(Teuchos::RCP<const Epetra_MultiVector> input_coords, int base)
+//   : input_graph_(0),
+//     input_matrix_(0),
+//     input_coords_(input_coords),
+//     costs_(0),
+//     weights_(0),
+//     operation_already_computed_(false),
+//     lib_(0),
+//     base_(base)
+// {
+//   input_map_ = Teuchos::rcp(&(input_coords->Map()), false);
+// }
 
 Operator::
 Operator(Teuchos::RCP<const Epetra_MultiVector> input_coords,
@@ -307,7 +344,11 @@ Operator(Teuchos::RCP<const Epetra_MultiVector> input_coords,
     base_(base)
 {
   input_map_ = Teuchos::rcp(&(input_coords->Map()),false);
-  setParameters(paramlist);
+
+  if(paramlist.name() != "EmptyParameterList")
+  {
+     setParameters(paramlist);
+  }
 }
 
 Operator::
@@ -324,7 +365,11 @@ Operator(Teuchos::RCP<const Epetra_MultiVector> input_coords,
     base_(base)
 {
   input_map_ = Teuchos::rcp(&(input_coords->Map()),false);
-  setParameters(paramlist);
+
+  if(paramlist.name() != "EmptyParameterList")
+  {
+     setParameters(paramlist);
+  }
 }
 
 Operator::~Operator()

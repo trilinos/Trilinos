@@ -62,19 +62,19 @@ namespace Epetra {
 class Operator : virtual public Isorropia::Operator {
 public:
 
-  Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph, int base);
+//   Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph, int base);
 
-  Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, int base);
+//   Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, int base);
 
-  Operator(Teuchos::RCP<const Epetra_MultiVector> input_coords, int base);
+//   Operator(Teuchos::RCP<const Epetra_MultiVector> input_coords, int base);
 
-  Operator(Teuchos::RCP<const Epetra_BlockMap> input_map, int base);
+//   Operator(Teuchos::RCP<const Epetra_BlockMap> input_map, int base);
 
-  Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph, 
-	   Teuchos::RCP<const Epetra_MultiVector> input_coords, int base);
+//   Operator(Teuchos::RCP<const Epetra_CrsGraph> input_graph, 
+// 	   Teuchos::RCP<const Epetra_MultiVector> input_coords, int base);
 
-  Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, 
-	   Teuchos::RCP<const Epetra_MultiVector> input_coords, int base);
+//   Operator(Teuchos::RCP<const Epetra_RowMatrix> input_matrix, 
+// 	   Teuchos::RCP<const Epetra_MultiVector> input_coords, int base);
 
 
   /** Constructor that accepts an Epetra_CrsGraph object

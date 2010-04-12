@@ -62,79 +62,79 @@ namespace Epetra {
 class Partitioner : public Isorropia::Partitioner, public Isorropia::Epetra::Operator  {
 public:
   
-  Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
-              bool compute_partitioning_now=true);
+  //MMW  Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+  //              bool compute_partitioning_now=true);
 
   Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
-              const Teuchos::ParameterList& paramlist,
+              const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),  // Perhaps should use "" as default instead
               bool compute_partitioning_now=true);
   
   Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
               Teuchos::RCP<CostDescriber> costs,
-              const Teuchos::ParameterList& paramlist,
+              const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
               bool compute_partitioning_now=true);
 
-  Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
-              bool compute_partitioning_now=true);
+//MMW   Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+//               bool compute_partitioning_now=true);
 
   Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
-              const Teuchos::ParameterList& paramlist,
+              const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
               bool compute_partitioning_now=true);
 
   Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
               Teuchos::RCP<CostDescriber> costs,
-              const Teuchos::ParameterList& paramlist,
+              const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
               bool compute_partitioning_now=true);
 
-  Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
-              bool compute_partitioning_now=true);
+//   Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
+//               bool compute_partitioning_now=true);
 
   Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
-              const Teuchos::ParameterList& paramlist,
+              const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
               bool compute_partitioning_now=true);
 
   Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
               Teuchos::RCP<const Epetra_MultiVector> weights,
-              const Teuchos::ParameterList& paramlist,
+              const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
               bool compute_partitioning_now=true);
 
-  Partitioner(Teuchos::RCP<const Epetra_BlockMap> input_map,
-              bool compute_partitioning_now=true);
+//   Partitioner(Teuchos::RCP<const Epetra_BlockMap> input_map,
+//               bool compute_partitioning_now=true);
 
   Partitioner(Teuchos::RCP<const Epetra_BlockMap> input_map,
-              const Teuchos::ParameterList& paramlist,
+              const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
               bool compute_partitioning_now=true);
+
+//   Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+// 	      Teuchos::RCP<const Epetra_MultiVector> coords,
+//               bool compute_partitioning_now=true);
 
   Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 	      Teuchos::RCP<const Epetra_MultiVector> coords,
-              bool compute_partitioning_now=true);
-
-  Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
-	      Teuchos::RCP<const Epetra_MultiVector> coords,
-              const Teuchos::ParameterList& paramlist,
+              const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
               bool compute_partitioning_now=true);
   
   Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
               Teuchos::RCP<CostDescriber> costs,
 	      Teuchos::RCP<const Epetra_MultiVector> coords,
               Teuchos::RCP<const Epetra_MultiVector> weights,
-              const Teuchos::ParameterList& paramlist,
+              const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
               bool compute_partitioning_now=true);
+
+//   Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+// 	      Teuchos::RCP<const Epetra_MultiVector> coords,
+//               bool compute_partitioning_now=true);
 
   Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 	      Teuchos::RCP<const Epetra_MultiVector> coords,
-              bool compute_partitioning_now=true);
-
-  Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
-	      Teuchos::RCP<const Epetra_MultiVector> coords,
-              const Teuchos::ParameterList& paramlist,
+              const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
               bool compute_partitioning_now=true);
 
   Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
               Teuchos::RCP<CostDescriber> costs,
 	      Teuchos::RCP<const Epetra_MultiVector> coords,
               Teuchos::RCP<const Epetra_MultiVector> weights,
-              const Teuchos::ParameterList& paramlist,
+              const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
               bool compute_partitioning_now=true);
 
 

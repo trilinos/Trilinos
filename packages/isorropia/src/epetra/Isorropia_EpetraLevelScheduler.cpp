@@ -45,7 +45,9 @@ LevelScheduler::~LevelScheduler() {}
 
 
 LevelScheduler::LevelScheduler(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
-		 bool compute_now) : Operator(input_graph, 0)
+			       const Teuchos::ParameterList& paramlist,
+		               bool compute_now) 
+  : Operator(input_graph, paramlist,0)
 {
   if (compute_now)
     schedule(true);
