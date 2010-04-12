@@ -101,6 +101,9 @@
 /* Define if want to build with ml_superlu2 enabled */
 #cmakedefine HAVE_ML_SUPERLU2_0
 
+/* Define if want to build with ml_superlu4 enabled */
+#cmakedefine HAVE_ML_SUPERLU4_0
+
 /* Define if want to build with ml_superlu_dist enabled */
 #cmakedefine HAVE_ML_SUPERLU_DIST
 
