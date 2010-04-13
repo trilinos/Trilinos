@@ -232,8 +232,8 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
 #  endif
 #  ifdef HAVE_ML_SUPERLU4_0
    ,"SILU"
-#else
-#error "No SuperLU for you!"					      
+//#else
+//#error "No SuperLU for you!"					      
 #  endif
    };
   Array<string> smoothers(num_smoothers);
