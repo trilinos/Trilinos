@@ -30,6 +30,51 @@ USA
 #ifndef _Isorropia_EpetraPartitioner_hpp_
 #define _Isorropia_EpetraPartitioner_hpp_
 
+
+/*! \file Isorropia_EpetraPartitioner.hpp
+ *
+ * \brief Contains functionality used for partitioning Epetra
+ * matrices, maps, multivectors, etc.
+ */
+
+/** \example matrix_1.cpp
+ *
+ * This example shows a few variations for partitioning matrices.
+ *
+ */
+
+/** \example geometric/example_rcb.cpp
+ *
+ * This example shows how to use geometric partitioning methods with multivectors.
+ *
+ */
+
+/** \example vert_weights.cpp
+ *
+ * This example shows how to use graph partitioning methods with vertex weights.
+ *
+ */
+
+/** \example graphedge_weights.cpp
+ *
+ * This example shows how to use graph partitioning methods with edge weights.
+ *
+ */
+
+/** \example hgedge_weights.cpp
+ *
+ * This example shows how to use hypergraph partitioning methods with hyperedge weights.
+ *
+ */
+
+/** \example part_redist.cpp
+ *
+ * This example creates an Epetra_LinearProblem, partitions the problem, and redistributes it.
+ *
+ */
+
+
+
 #include <Isorropia_ConfigDefs.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ParameterList.hpp>
