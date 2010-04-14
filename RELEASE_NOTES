@@ -64,6 +64,19 @@ Package Release Notes:
  
 -------------------------------------------------------------------------------
 
+Epetra
+
+Epetra provides initial support for OpenMP.  The Epetra_CrsMatrix class
+supports OpenMP parallel sparse matrix-vector multiply and sparse
+matrix-multivector multiply (the Multiply() and Apply() methods).  The
+Epetra_MultiVector and Epetra_Vector classes support OpenMP parallelism for all
+computational functions.  The Epetra_CrsMatrix, Epetra_MultiVector,
+Epetra_Vector and Epetra_CrsGraph classes supports parallel data placement
+(when not constrained by user-provided data) to improve non-uniform memory
+access.
+
+-------------------------------------------------------------------------------
+
 Mesquite*
 
 MESQUITE is a linkable software library that applies a variety of node-movement
