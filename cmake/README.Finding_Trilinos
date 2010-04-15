@@ -12,15 +12,18 @@ is the  information that is stored in the variables being relative to an install
 tree versus relative to a build tree. The variables still have the same meaning
 and names regardless of which type you are using.
 
-The easiest way to use this is to add FIND_PACKAGE(Trilinos PATH <any search paths>)
-to your project's CMakeLists.txt file. Aside from the normal variables that
-CMake sets when it finds a package you will be able to make the build of your
-project consistent with how Trilinos was built. If you are only interested in a
-set of specific packages you can also use FIND_PACKAGE(<package name>) for each
-package. All of the same information will be available, however the variables
-will reflect the name of the package and not Trilinos. Throughout the rest of
-this readme you can replace "Trilinos_" with "<package>_" for the cases where
-you are looking for a specific package
+The easiest way to use this is to add FIND_PACKAGE(Trilinos PATHS <any search paths>)
+to your project's CMakeLists.txt file. You can also use 
+FIND_PACKAGE(Trilinos <version number> PATHS <any search paths> [EXACT]) if you
+want to find a version known to be compatible with the given version number or
+that exact version of Trilinos if you give the EXACT option. Aside from the
+normal variables that CMake sets when it finds a package you will be able to
+make the build of your project consistent with how Trilinos was built. If you
+are only interested in a set of specific packages you can also use
+FIND_PACKAGE(<package name>) for each package. All of the same information will
+be available, however the variables will reflect the name of the package and not
+Trilinos. Throughout the rest of this readme you can replace "Trilinos_" with
+"<package>_" for the cases where you are looking for a specific package
 
 The variables most projects will be interested in are those that store which
 Trilinos packages were enabled, their libraries, and the tpls that Trilinos was
@@ -148,6 +151,30 @@ libraries if they were compiled as static libraries. Again using a different but
 compatible archiver is generally fine, but if you want to use the same one as
 Trilinos you can use this variable.
 
+Trilinos_MPI_LIBRARIES holds the libraries for MPI specifically. These
+duplicated here to make it easier in cases where you do not use MPI wrappers for
+compiling to make sure you are using the right MPI library.
+
+Trilinos_MPI_LIBRARY_DIRS holds any directories that will need to be put on the
+link line to find the MPI libraries. These duplicated here to make it easier in
+cases where you do not use MPI wrappers for compiling to make sure you are using
+the right MPI library.
+
+Trilinos_MPI_INCLUDE_DIRS holds any directories that will need to be put on the
+compile line to find the MPI headers.  These duplicated here to make it easier
+in cases where you do not use MPI wrappers for compiling to make sure you are
+using the right MPI library.
+
+Trilinos_MPI_EXEC holds the mpi run program that was used when testing Trilinos.
+This is useful if you want to make sure you are running your tests with the same
+mpi run that Trilinos used.
+
+Trilinos_MPI_EXEC_MAX_NUMPROCS holds the maximum number of processors that
+Trilinos was tested with. This is useful if you want to make sure that you limit
+your own testing to the same parameters that Trilinos was tested with.
+
+Trilinos_MPI_EXEC_NUMPROCS_FLAG holds the flag to pass to Trilinos_MPI_EXEC to
+specify the number of processors to run on.
 
 --------------------------------------------------------------------------------
 Example CMakeLists.txt file:

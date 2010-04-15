@@ -227,6 +227,19 @@ FUNCTION(PACKAGE_WRITE_TRILINOS_CONFIG_FILE)
     DESTINATION "."
     RENAME TrilinosConfig.cmake
   )
+  
+  
+  #
+  # Configure the version file for Trilinos
+  #
+  
+  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/TrilinosConfigVersion.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/TrilinosConfigVersion.cmake @ONLY)
+
+  INSTALL(
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/TrilinosConfigVersion.cmake
+    DESTINATION "."
+  )
 
 ENDFUNCTION()
 

@@ -65,6 +65,19 @@ SET(${PROJECT_NAME}_TPL_LIBRARY_DIRS "${${PROJECT_NAME}_CONFIG_TPL_LIBRARY_DIRS}
 SET(${PROJECT_NAME}_TPL_LIBRARIES "${${PROJECT_NAME}_CONFIG_TPL_LIBRARIES}")
 
 ## ---------------------------------------------------------------------------
+## MPI specific variables
+##   These variables are provided to make it easier to get the mpi libraries
+##   and includes on systems that do not use the mpi wrappers for compiling
+## ---------------------------------------------------------------------------
+
+SET(${PROJECT_NAME}_MPI_LIBRARIES "${TPL_MPI_LIBRARIES}")
+SET(${PROJECT_NAME}_MPI_LIBRARY_DIRS "${TPL_MPI_LIBRARY_DIRS}")
+SET(${PROJECT_NAME}_MPI_INCLUDE_DIRS "${TPL_MPI_INCLUDE_DIRS}")
+SET(${PROJECT_NAME}_MPI_EXEC "${MPI_EXEC}")
+SET(${PROJECT_NAME}_MPI_EXEC_MAX_NUMPROCS "${MPI_EXEC_MAX_NUMPROCS}")
+SET(${PROJECT_NAME}_MPI_EXEC_NUMPROCS_FLAG "${MPI_EXEC_NUMPROCS_FLAG}")
+
+## ---------------------------------------------------------------------------
 ## Set useful general variables 
 ## ---------------------------------------------------------------------------
 
