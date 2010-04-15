@@ -376,6 +376,39 @@ int fei::MatrixGraph_Impl2::initConnectivityBlock(int blockID,
 }
 
 //------------------------------------------------------------------------------
+int fei::MatrixGraph_Impl2::initConnectivityBlock(int numConnectivityLists,
+                                                  int patternID,
+                                                  bool diagonal)
+{
+  int blockID = connectivityBlocks_.size();
+  if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != NULL) {
+    (*output_stream_) <<dbgprefix_<< "initConnectivityBlock symm, blkID="
+     << blockID<<", num="<<numConnectivityLists<<", patternID="
+     <<patternID<<FEI_ENDL;
+  }
+
+  std::map<int,fei::Pattern*>::iterator
+    p_iter = patterns_.find(patternID);
+
+  if (p_iter == patterns_.end()) {
+    FEI_OSTRINGSTREAM osstr;
+    osstr << "fei::MatrixGraph_Impl2::initConnectivityBlock: ERROR, patternID "
+      << patternID << " not found.";
+    throw std::runtime_error(osstr.str());
+  }
+
+  fei::Pattern* pattern = (*p_iter).second;
+
+  fei::ConnectivityBlock* cblock =
+    new fei::ConnectivityBlock(blockID, pattern, numConnectivityLists);
+
+  connectivityBlocks_.insert(std::pair<int,fei::ConnectivityBlock*>(blockID, cblock));
+  if (diagonal) cblock->setIsDiagonal(diagonal);
+
+  return(blockID);
+}
+
+//------------------------------------------------------------------------------
 int fei::MatrixGraph_Impl2::initConnectivityBlock(int blockID,
                                             int numConnectivityLists,
                                             int rowPatternID,

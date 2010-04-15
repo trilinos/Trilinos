@@ -226,6 +226,32 @@ class MatrixGraph_Impl2 : public fei::MatrixGraph, private fei::Logger {
     /** Initialize a block of connectivity contributions. An example
         is a block of elements which share a common layout of nodes/fields per
         element.<br>
+        This method accepts only one pattern-id, implying that connectivities in
+        this block describe a symmetric structure. See the other overloading of
+        this method for the non-symmetric case.
+
+        @param blockID Input. User-specified identifier for this block. Will
+        generally be required to be non-negative.
+        @param numConnectivityLists Input. Number of connectivity-lists that
+        will be supplied for this block.
+        @param patternID Input. Descriptor for the connectivities to be
+        provided. Must be a pattern that was previously defined via
+        definePattern().
+
+        @param diagonal Optional argument, defaults to false. If specified as true,
+        each connectivity list will only contribute diagonal entries to the graph.
+        This is used if the connectivity-block represents a collection of lumped-
+        mass submatrix contributions, or something similar.
+
+        @return identifier for the new connectivity-block.
+    */
+   int initConnectivityBlock(int numConnectivityLists,
+                             int patternID,
+                             bool diagonal=false);
+
+    /** Initialize a block of connectivity contributions. An example
+        is a block of elements which share a common layout of nodes/fields per
+        element.<br>
         This method accepts two pattern-ids, implying that connectivities in
         this block describe a non-symmetric structure. See the other overloading
         of this method for the symmetric case.
