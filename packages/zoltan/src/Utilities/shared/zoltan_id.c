@@ -89,12 +89,15 @@ int i;
 /*****************************************************************************/
 /*****************************************************************************/
 /*
- *  Routine to compare Global IDs.  Return 1 if equal.
- *  For performance reasons, this function has been replaced by a macro.
+ *  Routines to compare Global IDs.  
+ *  Functions are provided to test whether two IDs are equal (EQ),
+ *  less than (LT), and greater than (GT).
+ *  The negation operator can be used to test whether two IDs are 
+ *  not equal (!ZOLTAN_EQ_ID(n,a,b)), less than or equal (!ZOLTAN_GT_GID(n,a,b))
+ *  or greater than or equal (!ZOLTAN_LT_GID(n,a,b)).
  */
 /*****************************************************************************/
 
-#ifdef USE_ZOLTAN_EQ_ID_FUNC
 int ZOLTAN_EQ_ID(int n, ZOLTAN_ID_PTR a, ZOLTAN_ID_PTR b)
 {
 /* 
@@ -107,9 +110,50 @@ int i;
       return(0);
   return(1);
 }
-#endif
 
 /*****************************************************************************/
+
+#ifdef ZOLTAN_NEEDED
+/* Commented out since never used. */
+
+int ZOLTAN_LT_ID(int n, ZOLTAN_ID_PTR a, ZOLTAN_ID_PTR b)
+{
+/* 
+ * Returns 1 if a < b; 0 otherwise.
+ * a < b if for some i, a[i] < b[i] and a[j] == b[j] for all j < i.
+ */
+int i;
+  for (i = 0; i < n; i++)
+    if (a[i] == b[i])
+      continue;
+    else if (a[i] > b[i])
+      return(0);
+    else /* a[i] < b[i] */
+      return(1);
+
+  return(0); /* because a == b */
+}
+
+/*****************************************************************************/
+
+int ZOLTAN_GT_ID(int n, ZOLTAN_ID_PTR a, ZOLTAN_ID_PTR b)
+{
+/* 
+ * Returns 1 if a < b; 0 otherwise.
+ * a > b if for some i, a[i] > b[i] and a[j] == b[j] for all j < i.
+ */
+int i;
+  for (i = 0; i < n; i++)
+    if (a[i] == b[i])
+      continue;
+    else if (a[i] < b[i])
+      return(0);
+    else /* a[i] > b[i] */
+      return(1);
+
+  return(0); /* because a == b */
+}
+#endif /* ZOLTAN_NEEDED */
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */

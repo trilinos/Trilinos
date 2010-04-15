@@ -62,11 +62,13 @@ extern "C" {
 
 extern ZOLTAN_ID_PTR ZOLTAN_Malloc_ID(int n, char *file, int line);
 extern void ZOLTAN_PRINT_ID(int n, ZOLTAN_ID_PTR a);
-#ifdef USE_ZOLTAN_EQ_ID_FUNC
 extern int ZOLTAN_EQ_ID(int n, ZOLTAN_ID_PTR a, ZOLTAN_ID_PTR b);
-#else
-#define ZOLTAN_EQ_ID(n,a,b) (!memcmp((void*)(a),(void*)(b),(n)*sizeof(ZOLTAN_ID_TYPE)))
-#endif 
+
+#ifdef ZOLTAN_NEEDED
+/* Commented out since never used */
+extern int ZOLTAN_LT_ID(int n, ZOLTAN_ID_PTR a, ZOLTAN_ID_PTR b);
+extern int ZOLTAN_GT_ID(int n, ZOLTAN_ID_PTR a, ZOLTAN_ID_PTR b);
+#endif  /* ZOLTAN_NEEDED */
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
