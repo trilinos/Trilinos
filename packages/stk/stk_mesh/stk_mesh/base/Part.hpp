@@ -100,7 +100,7 @@ public:
 
   /** \brief  The primary entity type for this part.
    *
-   *   For example, the primary purpose of an Element part 
+   *   For example, the primary purpose of an Element part
    *   is to define a collection of elements.  However, the
    *   nodes of those elements are also members of an element part.
    *   Return std::numeric_limits<unsigned>::max() if no primary entity type.
@@ -153,7 +153,7 @@ private:
   explicit Part( MetaData * );
 
   /** \brief  Declare a subset part on a universal part */
-  Part & declare_part( const std::string & arg_name , EntityType arg_rank );
+  Part & declare_part( const std::string & arg_name , EntityRank arg_rank );
 
   /** \brief  Declare an intersecton part on a universal part */
   Part & declare_part( const PartVector & part_intersect );
@@ -166,7 +166,7 @@ private:
   /** Construct a subset part within a given mesh.
    *  Is used internally by the two 'declare_part' methods.
    */
-  Part( MetaData * , const std::string & , EntityType , size_t );
+  Part( MetaData * , const std::string & , EntityRank , size_t );
 
   ~Part();
   Part();
@@ -190,7 +190,7 @@ private:
 //----------------------------------------------------------------------
 /** \brief  Ordering operator for parts. */
 struct PartLess {
- 
+
   inline bool operator()( const Part & lhs , const Part & rhs ) const
     { return lhs.mesh_meta_data_ordinal() < rhs.mesh_meta_data_ordinal(); }
 
@@ -199,7 +199,7 @@ struct PartLess {
 
   inline bool operator()( const Part * lhs , const Part & rhs ) const
     { return lhs->mesh_meta_data_ordinal() < rhs.mesh_meta_data_ordinal(); }
- 
+
   inline bool operator()( const Part * lhs , const Part * rhs ) const
     { return lhs->mesh_meta_data_ordinal() < rhs->mesh_meta_data_ordinal(); }
 };

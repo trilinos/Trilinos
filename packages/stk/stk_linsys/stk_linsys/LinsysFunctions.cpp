@@ -25,14 +25,13 @@ namespace stk {
 namespace linsys {
 
 void add_connectivities(stk::linsys::LinearSystem& ls,
-                        stk::mesh::EntityType entity_type,
-                        stk::mesh::EntityType connected_entity_type,
+                        stk::mesh::EntityRank entity_type,
+                        stk::mesh::EntityRank connected_entity_type,
                         const stk::mesh::FieldBase& field,
-                        const stk::mesh::PartVector& part_intersection,
+                        const stk::mesh::Selector& selector,
                         const stk::mesh::BulkData& mesh_bulk)
 {
   const std::vector<mesh::Bucket*>& mesh_buckets = mesh_bulk.buckets(entity_type);
-  stk::mesh::Selector selector = selectIntersection(part_intersection);
   std::vector<mesh::Bucket*> part_buckets;
   stk::mesh::get_buckets(selector, mesh_buckets, part_buckets);
 
@@ -40,7 +39,7 @@ void add_connectivities(stk::linsys::LinearSystem& ls,
 
   DofMapper& dof_mapper = ls.get_DofMapper();
 
-  dof_mapper.add_dof_mappings(mesh_bulk, part_intersection, connected_entity_type, field);
+  dof_mapper.add_dof_mappings(mesh_bulk, selector, connected_entity_type, field);
 
   int field_id = dof_mapper.get_field_id(field);
 
@@ -57,14 +56,7 @@ void add_connectivities(stk::linsys::LinearSystem& ls,
     num_entities += part_buckets[i]->size();
   }
 
-  int part_ordinal_sum = 0;
-  for(size_t i=0; i<part_intersection.size(); ++i) {
-    part_ordinal_sum += part_intersection[i]->mesh_meta_data_ordinal();
-  }
-
-  int block_id = 1000*(part_ordinal_sum+1) + entity_type;
-
-  matgraph->initConnectivityBlock(block_id, num_entities, pattern_id);
+  int block_id = matgraph->initConnectivityBlock(num_entities, pattern_id);
 
   std::vector<int> connected_ids(num_connected);
 
@@ -87,7 +79,7 @@ void add_connectivities(stk::linsys::LinearSystem& ls,
 void dirichlet_bc(stk::linsys::LinearSystem& ls,
                   const stk::mesh::BulkData& mesh,
                   const stk::mesh::Part& bcpart,
-                  stk::mesh::EntityType entity_type,
+                  stk::mesh::EntityRank entity_type,
                   const stk::mesh::FieldBase& field,
                   unsigned field_component,
                   double prescribed_value)
@@ -156,7 +148,7 @@ void copy_vector_to_mesh( fei::Vector & vec,
   std::vector<double> values(num_values);
   vec.copyOut(num_values,&shared_and_owned_indices[0],&values[0]);
 
-  stk::mesh::EntityType ent_type;
+  stk::mesh::EntityRank ent_type;
   stk::mesh::EntityId ent_id;
   const stk::mesh::FieldBase * field;
   int offset_into_field;

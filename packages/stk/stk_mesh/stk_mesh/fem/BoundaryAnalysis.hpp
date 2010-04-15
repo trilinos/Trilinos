@@ -21,7 +21,7 @@ class Entity;
 /**
  * A pair of Entity* and a local side id (defined a part of a side)
  */
-NAMED_PAIR(EntitySideComponent, Entity *, entity, unsigned, side_id)
+NAMED_PAIR(EntitySideComponent, Entity *, entity, unsigned, side_ordinal)
 /**
  * A pair of EntitySideComponents (defines a side of the boundary)
  * Most sides will have two EntitySideComponents, but degenerate cases

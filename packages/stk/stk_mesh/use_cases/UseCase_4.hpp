@@ -20,7 +20,7 @@
 #include <stk_mesh/base/FieldData.hpp>
 
 #include <stk_mesh/fem/FieldTraits.hpp>
-#include <stk_mesh/fem/EntityTypes.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/Stencils.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
@@ -70,8 +70,8 @@ void runAlgorithms( const UseCase_4_Mesh & mesh );
 
 bool verifyMesh( const UseCase_4_Mesh & mesh );
 
-} //namespace use_cases 
-} //namespace mesh 
-} //namespace stk 
+} //namespace use_cases
+} //namespace mesh
+} //namespace stk
 
 #endif // Stk_Mesh_Use_Cases_UseCase_4_hpp

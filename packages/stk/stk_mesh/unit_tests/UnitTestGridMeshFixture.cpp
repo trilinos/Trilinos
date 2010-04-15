@@ -18,7 +18,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
-#include <stk_mesh/fem/EntityTypes.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 
 using namespace stk;

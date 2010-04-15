@@ -52,7 +52,7 @@ namespace sunit {
 
   const stk::mesh::Bucket & getBucketContainingEntity(
       const sunit::Stk_Mesh_Fixture & fix,
-      stk::mesh::EntityType ent_type,
+      stk::mesh::EntityRank ent_type,
       stk::mesh::EntityId ent_id
       )
   {
@@ -64,12 +64,12 @@ namespace sunit {
   ExampleFixture::~ExampleFixture() {}
 
   ExampleFixture::ExampleFixture()
-    : Stk_Mesh_Fixture( std::vector<std::string>( 1 , std::string("MyEntityType") ) )
+    : Stk_Mesh_Fixture( std::vector<std::string>( 1 , std::string("MyEntityRank") ) )
   {
     // Create Parts and commit:
     stk::mesh::MetaData & metaData = get_NonconstMetaData();
     std::string myPartName;
-    stk::mesh::EntityType myRank = 0;
+    stk::mesh::EntityRank myRank = 0;
 
     myPartName = "PartA";
     metaData.declare_part(myPartName,myRank);
@@ -89,7 +89,7 @@ namespace sunit {
     {
       stk::mesh::BulkData & bulkData = get_NonconstBulkData();
       bulkData.modification_begin();
-      stk::mesh::EntityType ent_type = 0; // rank
+      stk::mesh::EntityRank ent_type = 0; // rank
       stk::mesh::EntityId ent_id = 1; // Unique ID
       std::vector<stk::mesh::Part*> partMembership;
 
@@ -141,7 +141,7 @@ namespace sunit {
       stk::mesh::EntityId ent_id
       )
   {
-    stk::mesh::EntityType ent_type = 0;
+    stk::mesh::EntityRank ent_type = 0;
     const stk::mesh::BulkData & bulkData = fix.get_BulkData();
     return bulkData.get_entity(ent_type,ent_id)->bucket();
   }
@@ -168,12 +168,12 @@ namespace sunit {
   VariableSizeFixture::~VariableSizeFixture() {}
 
   VariableSizeFixture::VariableSizeFixture(int NumParts)
-    : Stk_Mesh_Fixture( std::vector<std::string>( 1 , std::string("MyEntityType") ) )
+    : Stk_Mesh_Fixture( std::vector<std::string>( 1 , std::string("MyEntityRank") ) )
   {
     // Create Parts and commit:
     stk::mesh::MetaData & metaData = get_NonconstMetaData();
     std::string myPartName;
-    stk::mesh::EntityType myRank = 0;
+    stk::mesh::EntityRank myRank = 0;
 
     std::string partName = "Part_";
     for (int part_i=0 ; part_i<NumParts; ++part_i) {
@@ -187,7 +187,7 @@ namespace sunit {
     // Create Entities and assign to parts:
     stk::mesh::BulkData & bulkData = get_NonconstBulkData();
     bulkData.modification_begin();
-    stk::mesh::EntityType ent_type = 0; // rank
+    stk::mesh::EntityRank ent_type = 0; // rank
     stk::mesh::EntityId ent_id = 1; // Unique ID
     for (int part_i = 0 ; part_i < NumParts ; ++part_i) {
       std::vector<stk::mesh::Part*> partMembership;

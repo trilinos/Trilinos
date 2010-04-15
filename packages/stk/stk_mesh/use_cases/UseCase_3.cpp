@@ -28,7 +28,7 @@
 
 #include <stk_mesh/fem/FieldDeclarations.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/EntityTypes.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 
 //----------------------------------------------------------------------
 
@@ -69,7 +69,7 @@ UseCase_3_Mesh::UseCase_3_Mesh( stk::ParallelMachine comm )
   put_field( m_volume_field, Element, m_block_wedge );
   put_field( m_volume_field, Element, m_block_tet );
   put_field( m_volume_field, Element, m_block_pyramid );
-  
+
   // Define the field-relation such that the values of the
   // 'element_node_coordinates_field' are pointers to the
   // element's nodal 'coordinates_field'.
@@ -83,7 +83,7 @@ UseCase_3_Mesh::UseCase_3_Mesh( stk::ParallelMachine comm )
   m_metaData.declare_field_relation(
     m_element_node_coordinates_field ,
     & element_node_stencil<void> ,
-    m_coordinates_field 
+    m_coordinates_field
     );
 
   put_field( m_element_node_coordinates_field, Element, m_block_hex, shards::Hexahedron<> ::node_count );
@@ -92,11 +92,11 @@ UseCase_3_Mesh::UseCase_3_Mesh( stk::ParallelMachine comm )
   put_field( m_element_node_coordinates_field, Element, m_block_pyramid, shards::Pyramid<> ::node_count );
   put_field( m_element_node_coordinates_field, Element, m_block_quad_shell, shards::ShellQuadrilateral<> ::node_count);
   put_field( m_element_node_coordinates_field, Element, m_block_tri_shell, shards::ShellTriangle<> ::node_count );
-  
+
   m_metaData.commit();
 }
 
-UseCase_3_Mesh::~UseCase_3_Mesh() 
+UseCase_3_Mesh::~UseCase_3_Mesh()
 { }
 
 //------------------------------------------------------------------------------
@@ -159,7 +159,7 @@ void UseCase_3_Mesh::populate()
 {
   m_bulkData.modification_begin();
 
-  EntityId elem_id = 1; 
+  EntityId elem_id = 1;
 
   for ( unsigned i = 0 ; i < number_hex ; ++i , ++elem_id ) {
     declare_element( m_bulkData, m_block_hex, elem_id, hex_node_ids[i] );
@@ -209,7 +209,7 @@ bool verify_elem_node_coord_3(
   mesh::PairIterRelation rel = elem.relations( mesh::Node );
 
   if( (unsigned) rel.size() != node_count ) {
-    std::cerr << "Error!  relation size == " << rel.size() << " != " 
+    std::cerr << "Error!  relation size == " << rel.size() << " != "
       << node_count << " == node count" << std::endl;
     result = false;
   }
@@ -220,13 +220,13 @@ bool verify_elem_node_coord_3(
   {
     const unsigned n1 = elem_node_array.dimension<0>();
     if( n1 != node_count ) {
-      std::cerr << "Error!  element node array dimension<0> == " << n1 << " != " 
+      std::cerr << "Error!  element node array dimension<0> == " << n1 << " != "
         << node_count << " == node count" << std::endl;
       result = false;
     }
     if ( (unsigned) elem_node_array.size() != node_count ) {
-      std::cerr << "Error!  element node array size == "  
-        << elem_node_array.size() << " != " << node_count << " == node count" 
+      std::cerr << "Error!  element node array size == "
+        << elem_node_array.size() << " != " << node_count << " == node count"
         << std::endl;
       result = false;
     }
@@ -242,13 +242,13 @@ bool verify_elem_node_coord_3(
     {
       const unsigned n1 = node_coord_array.dimension<0>();
       if( n1 != (unsigned) SpatialDim ) {
-        std::cerr << "Error!  node coord array dimension<0> == " << n1 << " != " 
+        std::cerr << "Error!  node coord array dimension<0> == " << n1 << " != "
           << SpatialDim << " == SpatialDim" << std::endl;
         result = false;
       }
       if( node_coord_array.size() != SpatialDim ) {
-        std::cerr << "Error!  node coord array size == " 
-          << node_coord_array.size() << " != " << SpatialDim 
+        std::cerr << "Error!  node coord array size == "
+          << node_coord_array.size() << " != " << SpatialDim
           << " == SpatialDim" << std::endl;
         result = false;
       }
@@ -256,7 +256,7 @@ bool verify_elem_node_coord_3(
 
     double * const node_data = node_coord_array.contiguous_data();
     if( elem_data[j] != node_data ) {
-      std::cerr << "Error!  elem_data[" << j << "] == " << elem_data[j] 
+      std::cerr << "Error!  elem_data[" << j << "] == " << elem_data[j]
         << " != " << node_data << " node_data" << std::endl;
       result = false;
     }
@@ -279,8 +279,8 @@ bool verify_elem_node_coord_by_part_3(
   bool result = true;
   for ( ; entity_it != entities.end() ; ++entity_it ) {
     result = result &&
-      verify_elem_node_coord_3( 
-          **entity_it , elem_node_coord , node_coord , node_count 
+      verify_elem_node_coord_3(
+          **entity_it , elem_node_coord , node_coord , node_count
           );
   }
   return result;
@@ -293,77 +293,77 @@ bool verifyMesh( const UseCase_3_Mesh & mesh )
 
   const BulkData & bulkData = mesh.m_bulkData ;
   const VectorFieldType & node_coord = mesh.m_coordinates_field ;
-  const ElementNodePointerFieldType & elem_node_coord  = 
+  const ElementNodePointerFieldType & elem_node_coord  =
     mesh.m_element_node_coordinates_field ;
-  
+
   std::vector<Bucket *> element_buckets = bulkData.buckets( Element );
-  
+
   // Verify entities in each part are set up correcty:
 
   // hex_block:
   Part & hex_block = mesh.m_block_hex ;
-  result = result && 
+  result = result &&
     verify_elem_node_coord_by_part_3(
       hex_block,
       element_buckets,
       elem_node_coord,
       node_coord,
-      shards::Hexahedron<> ::node_count 
+      shards::Hexahedron<> ::node_count
       );
 
   // wedge_block:
   Part & wedge_block = mesh.m_block_wedge ;
-  result = result && 
+  result = result &&
     verify_elem_node_coord_by_part_3(
       wedge_block,
       element_buckets,
       elem_node_coord,
       node_coord,
-      shards::Wedge<> ::node_count 
+      shards::Wedge<> ::node_count
       );
 
   // tetra_block
   Part & tetra_block = mesh.m_block_tet ;
-  result = result && 
+  result = result &&
     verify_elem_node_coord_by_part_3(
       tetra_block,
       element_buckets,
       elem_node_coord,
       node_coord,
-      shards::Tetrahedron<> ::node_count 
+      shards::Tetrahedron<> ::node_count
       );
 
   // pyramid_block
   Part & pyramid_block = mesh.m_block_pyramid ;
-  result = result && 
+  result = result &&
     verify_elem_node_coord_by_part_3(
       pyramid_block,
       element_buckets,
       elem_node_coord,
       node_coord,
-      shards::Pyramid<> ::node_count 
+      shards::Pyramid<> ::node_count
       );
 
   // quad_shell_block
   Part & quad_shell_block = mesh.m_block_quad_shell ;
-  result = result && 
+  result = result &&
     verify_elem_node_coord_by_part_3(
       quad_shell_block,
       element_buckets,
       elem_node_coord,
       node_coord,
-      shards::ShellQuadrilateral<> ::node_count 
+      shards::ShellQuadrilateral<> ::node_count
       );
 
   // tri_shell_block
   Part & tri_shell_block = mesh.m_block_tri_shell ;
-  result = result && 
+  result = result &&
     verify_elem_node_coord_by_part_3(
       tri_shell_block,
       element_buckets,
       elem_node_coord,
       node_coord,
-      shards::ShellTriangle<> ::node_count 
+      shards::ShellTriangle<> ::node_count
       );
 
   // Check that all the nodes were allocated.
@@ -379,6 +379,6 @@ bool verifyMesh( const UseCase_3_Mesh & mesh )
   return result;
 }
 
-} //namespace use_cases 
-} //namespace mesh 
+} //namespace use_cases
+} //namespace mesh
 } //namespace stk

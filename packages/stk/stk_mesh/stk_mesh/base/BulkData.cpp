@@ -256,7 +256,7 @@ const std::vector<Bucket*> & BulkData::buckets( unsigned type ) const
 //----------------------------------------------------------------------
 
 void BulkData::verify_type_and_id(const char* calling_method,
-                                  EntityType ent_type, EntityId ent_id) const
+                                  EntityRank ent_type, EntityId ent_id) const
 {
   m_mesh_meta_data.assert_entity_type( calling_method , ent_type );
 
@@ -268,7 +268,7 @@ void BulkData::verify_type_and_id(const char* calling_method,
   }
 }
 
-Entity * BulkData::get_entity( EntityType ent_type, EntityId ent_id ,
+Entity * BulkData::get_entity( EntityRank ent_type, EntityId ent_id ,
 			       const char * /*required_by*/ ) const
 {
   verify_type_and_id("BulkData::get_entity", ent_type, ent_id);
@@ -352,7 +352,7 @@ void BulkData::internal_expunge_entity( BulkData::EntitySet::iterator i )
 
 //----------------------------------------------------------------------
 
-Entity & BulkData::declare_entity( EntityType ent_type , EntityId ent_id ,
+Entity & BulkData::declare_entity( EntityRank ent_type , EntityId ent_id ,
 				   const std::vector<Part*> & parts )
 {
   const char method[] = "stk::mesh::BulkData::declare_entity" ;

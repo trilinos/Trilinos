@@ -16,7 +16,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 
 #include <stk_mesh/base/FieldData.hpp>
-#include <stk_mesh/fem/EntityTypes.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/FieldTraits.hpp>
 
 namespace {

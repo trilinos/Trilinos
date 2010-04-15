@@ -13,7 +13,7 @@
 #include <stk_mesh/base/EntityComm.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/fem/EntityTypes.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 
 namespace stk {
 namespace search_util {
@@ -132,7 +132,7 @@ void print_entity_proc_map( stk::diag::Writer & writer ,
         }
         writer << "owned ] {" ;
         for ( size_t j = 0 ; j < procs.size() ; ++j ) {
-          writer << " " << procs[j] ; 
+          writer << " " << procs[j] ;
         }
         writer << " }" << std::endl ;
       }

@@ -8,21 +8,21 @@
 #include <stk_mesh/base/Types.hpp>
 
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
-#include <stk_mesh/fem/EntityTypes.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 
 
 namespace stk {
 namespace mesh {
 
-void skin_mesh( BulkData & mesh, unsigned closure_rank, Part * part) {
+void skin_mesh( BulkData & mesh, unsigned mesh_rank, Part * part) {
 
   if (mesh.synchronized_state() ==  BulkData::MODIFIABLE) {
     throw std::runtime_error("stk::mesh::skin_mesh is not SYNCHRONIZED");
   }
 
 
-  if ( 0 == closure_rank) {
+  if ( 0 == mesh_rank) {
     return;
   }
 
@@ -30,11 +30,11 @@ void skin_mesh( BulkData & mesh, unsigned closure_rank, Part * part) {
 
   Selector owned = mesh.mesh_meta_data().locally_owned_part();
 
-  get_selected_entities( owned, mesh.buckets(fem_entity_type(closure_rank)), entities) ; // select owned
+  get_selected_entities( owned, mesh.buckets(fem_entity_type(mesh_rank)), entities) ; // select owned
   find_closure( mesh, entities, entities_closure);
 
   EntitySideVector boundary;
-  boundary_analysis( mesh, entities_closure, closure_rank, boundary);
+  boundary_analysis( mesh, entities_closure, mesh_rank, boundary);
 
   std::vector<EntitySideComponent> skin;
   //find the sides that need to be created to make a skin
@@ -43,15 +43,15 @@ void skin_mesh( BulkData & mesh, unsigned closure_rank, Part * part) {
 
     const EntitySideComponent & inside = itr->inside;
     const EntitySideComponent & outside = itr->outside;
-    const unsigned side_id = inside.side_id;
+    const unsigned side_ordinal = inside.side_ordinal;
 
     if ( inside.entity->owner_rank() == mesh.parallel_rank() &&
         outside.entity == NULL ) {
 
-      PairIterRelation existing_sides = inside.entity->relations(closure_rank -1);
+      PairIterRelation existing_sides = inside.entity->relations(mesh_rank -1);
 
       for (; existing_sides.first != existing_sides.second &&
-             existing_sides.first->identifier() != side_id ;
+             existing_sides.first->identifier() != side_ordinal ;
              ++existing_sides.first);
       //new side
       if (existing_sides.first == existing_sides.second) {
@@ -66,7 +66,7 @@ void skin_mesh( BulkData & mesh, unsigned closure_rank, Part * part) {
   std::vector<stk::mesh::Entity *> requested_entities;
 
   //request ids for the new sides
-  requests[closure_rank -1] = skin.size();
+  requests[mesh_rank -1] = skin.size();
 
   mesh.generate_new_entities(requests, requested_entities);
 
@@ -74,10 +74,10 @@ void skin_mesh( BulkData & mesh, unsigned closure_rank, Part * part) {
   //create the skin
   for ( size_t i = 0; i < skin.size(); ++i) {
     stk::mesh::Entity & entity = *(skin[i].entity);
-    const unsigned side_id  = skin[i].side_id;
+    const unsigned side_ordinal  = skin[i].side_ordinal;
     stk::mesh::Entity & side   = * (requested_entities[i]);
 
-    stk::mesh::declare_element_side(entity, side, side_id, part);
+    stk::mesh::declare_element_side(entity, side, side_ordinal, part);
   }
 
   mesh.modification_end();

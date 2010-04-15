@@ -19,7 +19,7 @@ namespace mesh {
  * \{
  */
 
-typedef unsigned EntityType ;
+typedef unsigned EntityRank ;
 typedef uint64_t EntityId ;
 
 //----------------------------------------------------------------------
@@ -37,7 +37,7 @@ typedef uint64_t EntityId ;
  *
  * EntityKey takes constructor arguments entity_type and entity_id which
  * are restricted to lie in a sub-range of what can be represented by the
- * EntityType and EntityId types. The sub-range allowed by EntityKey is
+ * EntityRank and EntityId types. The sub-range allowed by EntityKey is
  * dictated by the amount of space used to store the internal encoding of
  * those values (described further in the comments for the EntityKey
  * constructor below).
@@ -99,7 +99,7 @@ public:
     { key = rhs.key ; return *this ; }
 
   /** Constructor
-   * 
+   *
    * \param entity_rank is required to lie in the range 0 to 255 (which is
    *    the limit of what can be stored in 8 bits). This limit may be raised
    *    if we decide to use more than 8 bits for encoding an entity-type.
@@ -116,7 +116,7 @@ public:
   unsigned rank() const { return key >> id_digits ; }
 
   unsigned type() const { return rank(); }
-  
+
   bool operator==(const EntityKey &rhs) const {
     return key == rhs.key;
   }
@@ -155,12 +155,12 @@ public:
 
 /** \brief  Given an entity key, return an entity type (rank). */
 inline
-EntityType entity_rank( const EntityKey & key ) {
+EntityRank entity_rank( const EntityKey & key ) {
   return key.rank();
 }
 
 inline
-EntityType entity_type( const EntityKey & key ) {
+EntityRank entity_type( const EntityKey & key ) {
   return key.rank();
 }
 

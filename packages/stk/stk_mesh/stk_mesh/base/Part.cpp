@@ -132,7 +132,7 @@ bool contain( const PartVector & super , const PartVector & sub )
     while ( result && ip != ep ) {
       Part * const q = *ip ; ++ip ;
       iv = std::lower_bound( iv , ev , q , comp );
-      result = iv != ev && *iv == q ; 
+      result = iv != ev && *iv == q ;
     }
   }
 
@@ -291,7 +291,7 @@ void assert_rank_ordering( const Part & superset ,
     msg << "( Part[ " << subset.name();
     msg << " , rank(" << subset.primary_entity_type();
     msg << ") ] ) FAILED Rank ordering requirement" ;
-    throw std::runtime_error( msg.str() ); 
+    throw std::runtime_error( msg.str() );
   }
 }
 
@@ -325,7 +325,7 @@ Part::Part( MetaData * arg_meta_data )
 // Subset part constructor:
 Part::Part( MetaData          * arg_meta_data ,
             const std::string & arg_name ,
-            EntityType            arg_rank ,
+            EntityRank            arg_rank ,
             size_t              arg_ordinal )
   : m_name( arg_name ),
     m_attribute(),
@@ -338,7 +338,7 @@ Part::Part( MetaData          * arg_meta_data ,
 //----------------------------------------------------------------------
 // A universal part may declare named subsets
 
-Part & Part::declare_part( const std::string & arg_name , EntityType arg_rank )
+Part & Part::declare_part( const std::string & arg_name , EntityRank arg_rank )
 {
   assert_universal_part( *this , "declare_part" );
 
@@ -402,7 +402,7 @@ Part & Part::declare_part( const PartVector & part_intersect )
     // Rank is the minimum rank of the intersection members.
 
     std::string p_name ;
-    EntityType p_rank = std::numeric_limits<EntityType>::max();
+    EntityRank p_rank = std::numeric_limits<EntityRank>::max();
 
     p_name.assign("{");
     for ( PartVector::iterator

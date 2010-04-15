@@ -15,7 +15,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/fem/EntityTypes.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 
 #include <unit_tests/UnitTestBulkData.hpp>
 #include <unit_tests/UnitTestRingMeshFixture.hpp>
@@ -119,19 +119,19 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
   const unsigned p_size = parallel_machine_size( pm );
   // const unsigned nLocalNode = nPerProc + ( 1 < p_size ? 1 : 0 );
   const unsigned nLocalEdge = nPerProc ;
- 
+
   MetaData meta( fem_entity_type_names() );
- 
+
   meta.commit();
- 
+
   Selector select_owned( meta.locally_owned_part() );
   Selector select_used( meta.locally_used_part() );
   Selector select_all(  meta.universal_part() );
- 
+
   PartVector no_parts ;
- 
+
   std::vector<unsigned> local_count ;
- 
+
   //------------------------------
   { // No ghosting
     const bool aura_flag = false ;
@@ -139,9 +139,9 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
     RingMeshFixture mesh( pm , nPerProc , false /* No edge parts */ );
 
     mesh.generate_loop( aura_flag );
- 
+
     // This process' first element in the loop
-    // if a parallel mesh has a shared node 
+    // if a parallel mesh has a shared node
     Entity * edge = mesh.m_bulk_data.get_entity( 1 , mesh.m_edge_ids[ nLocalEdge * p_rank ] );
     Entity * node0 = edge->relations()[0].entity();
     Entity * node1 = edge->relations()[1].entity();
@@ -190,7 +190,7 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
     RingMeshFixture mesh( pm , nPerProc , false /* No edge parts */ );
 
     mesh.generate_loop( aura_flag );
- 
+
     const unsigned nNotOwned = nPerProc * p_rank ;
 
     // The not-owned shared entity:
@@ -230,7 +230,7 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
     RingMeshFixture mesh( pm , nPerProc , false /* No edge parts */ );
 
     mesh.generate_loop( aura_flag );
- 
+
     // The owned shared entity:
     const unsigned nOwned = ( nPerProc * ( p_rank + 1 ) ) % mesh.m_node_ids.size();
     const unsigned nNotOwned = nPerProc * p_rank ;

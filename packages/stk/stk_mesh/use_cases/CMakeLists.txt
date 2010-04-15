@@ -15,14 +15,9 @@ PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 SET(SOURCES "")
 
-APPEND_SET(SOURCES
-GridFixture.cpp
-UseCase_2.cpp
-UseCase_3.cpp
-UseCase_4.cpp
-UseCase_ElementDeath_1.cpp
-UseCaseMain.cpp
-  )
+FILE(GLOB HEADERS *.hpp)
+FILE(GLOB SOURCES *.cpp)
+
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
     stk_mesh_use_cases

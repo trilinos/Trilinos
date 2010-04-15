@@ -15,7 +15,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/fem/EntityTypes.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 
 namespace stk {
 namespace mesh {
@@ -894,7 +894,7 @@ void UnitTestMetaData::testMetaData()
 {
   const std::vector<std::string> & type_names = fem_entity_type_names();
 
-  STKUNIT_ASSERT_EQUAL( type_names.size() , (size_t) EntityTypeEnd );
+  STKUNIT_ASSERT_EQUAL( type_names.size() , (size_t) EntityRankEnd );
 
   MetaData metadata2( type_names );
   MetaData metadata3( type_names );
@@ -956,7 +956,7 @@ void UnitTestMetaData::testMetaData()
 
   STKUNIT_ASSERT( i_name2 == type_names[i] );
 
-  i = EntityTypeEnd;
+  i = EntityRankEnd;
   bool caught_throw = false;
   try {
     metadata2.entity_type_name( i );

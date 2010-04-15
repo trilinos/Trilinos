@@ -13,7 +13,7 @@
 #include <stdexcept>
 #include <Shards_CellTopologyTraits.hpp>
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/fem/EntityTypes.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 
 namespace stk {

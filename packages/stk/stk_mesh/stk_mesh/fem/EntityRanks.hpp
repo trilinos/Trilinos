@@ -6,8 +6,8 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#ifndef stk_mesh_fem_EntityTypesEnums_hpp
-#define stk_mesh_fem_EntityTypesEnums_hpp
+#ifndef stk_mesh_fem_EntityRanksEnums_hpp
+#define stk_mesh_fem_EntityRanksEnums_hpp
 
 #include <string>
 #include <vector>
@@ -21,28 +21,28 @@ namespace mesh {
  */
 /** \brief  Enumeration of types of entities.
  *
- *  The types of entities is intended to be modifiable / extensible by 
- *  - maintaining the valid types in a contiguous span [0..EntityTypeEnd),
+ *  The types of entities is intended to be modifiable / extensible by
+ *  - maintaining the valid types in a contiguous span [0..EntityRankEnd),
  *  - having the first four values correspond to the topological
  *    entity types.
  */
-enum EntityTypeEnum {
+enum EntityRankEnum {
   Node                = 0 ,
   Edge                = 1 ,
   Face                = 2 ,
   Element             = 3 ,
   Particle            = 4 ,
   Constraint          = 5 ,
-  EntityTypeEnd       = 6 ,
-  EntityTypeUndefined = -1
+  EntityRankEnd       = 6 ,
+  EntityRankUndefined = -1
 };
 
 /** \brief  Finite element entity-type names */
 const std::vector<std::string> & fem_entity_type_names();
 
 inline
-EntityTypeEnum fem_entity_type( int t )
-{ return 0 <= t && t < EntityTypeEnd ? EntityTypeEnum(t) : EntityTypeUndefined ; }
+EntityRankEnum fem_entity_type( int t )
+{ return 0 <= t && t < EntityRankEnd ? EntityRankEnum(t) : EntityRankUndefined ; }
 
 /** \} */
 

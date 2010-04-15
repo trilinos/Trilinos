@@ -11,7 +11,7 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <Shards_BasicTopologies.hpp>
-#include <stk_mesh/fem/EntityTypes.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/FieldDeclarations.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/base/Comm.hpp>
@@ -91,12 +91,9 @@ void testLinearSystem( MPI_Comm comm )
 
   fei::SharedPtr<fei::Factory> factory(new Factory_Trilinos(comm));
   stk::linsys::LinearSystem ls(comm,factory);
- 
-  stk::mesh::PartVector owned_parts;
-  owned_parts.push_back(&(meta_data.locally_owned_part()));
 
   stk::linsys::add_connectivities(ls, stk::mesh::Element, stk::mesh::Node,
-                              *temperature_field, owned_parts, bulk_data);
+                              *temperature_field, select_owned, bulk_data);
 
   ls.synchronize_mappings_and_structure();
 
@@ -108,7 +105,7 @@ void testLinearSystem( MPI_Comm comm )
   fei::MatrixGraph* mgraph_ptr = mgraph.get();
 
   STKUNIT_ASSERT_EQUAL( mgraph_ptr, (fei::MatrixGraph*)const_mgraph_ptr );
-  
+
   ls.create_fei_LinearSystem();
 
   const fei::LinearSystem* const_linsys_ptr = const_ls.get_fei_LinearSystem().get();

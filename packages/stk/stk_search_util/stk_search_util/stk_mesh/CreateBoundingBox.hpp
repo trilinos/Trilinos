@@ -50,14 +50,14 @@ struct NoOp : public Op
   {}
 };
 
-void build_axis_aligned_bbox(stk::mesh::BulkData &bulk_data, stk::mesh::EntityType type,
+void build_axis_aligned_bbox(stk::mesh::BulkData &bulk_data, stk::mesh::EntityRank type,
                              stk::mesh::VectorField *coordinates,
                              std::vector<AxisAlignedBoundingBox3D> &box_vector,
 			     bool use_universal_part = false,
 			     const Op &op = NoOp());
 
 
-void build_centroid_bbox(stk::mesh::BulkData &bulk_data,  stk::mesh::EntityType type,
+void build_centroid_bbox(stk::mesh::BulkData &bulk_data,  stk::mesh::EntityRank type,
                          stk::mesh::VectorField *coordinates,
                          std::vector<PointBoundingBox3D> &box_vector,
                          bool use_universal_part = false);

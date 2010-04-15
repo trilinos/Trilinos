@@ -20,7 +20,7 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
 
-#include <stk_mesh/fem/EntityTypes.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 
 #include <unit_tests/UnitTestRingMeshFixture.hpp>
@@ -51,7 +51,7 @@ namespace {
 STKUNIT_UNIT_TEST( UnitTestBulkDataNotSyrncronized , testUnit )
 {
   UnitTestStkMeshBulkModification unit(MPI_COMM_WORLD);
-  unit.test_bulkdata_not_syncronized(); 
+  unit.test_bulkdata_not_syncronized();
 }
 
 STKUNIT_UNIT_TEST( UnitTestClosureOfNonLocallyUsedEntities , testUnit )
@@ -330,7 +330,7 @@ void UnitTestStkMeshBulkModification::test_parallel_consistency()
   while ( buf.remaining() ) {
     buf.unpack<stk::mesh::EntityKey>(k);
     stk::mesh::Entity * e = bulk_data.get_entity(k);
-    // If a proc is not aware of a key, that means it has no relationship 
+    // If a proc is not aware of a key, that means it has no relationship
     // with that entity, so it can ignore it.
     if (e != NULL) {
       entities.push_back(e);
@@ -343,7 +343,7 @@ void UnitTestStkMeshBulkModification::test_parallel_consistency()
   entities.erase(new_end, entities.end());
 
   // If any processor had ghosted nodes that were local to proc 0, those
-  // nodes should be in the closure because proc 0 passed them in to 
+  // nodes should be in the closure because proc 0 passed them in to
   // find_closure.
   STKUNIT_ASSERT_TRUE(entities.size() == entities_closure.size());
   stk::mesh::EntityEqual ee;

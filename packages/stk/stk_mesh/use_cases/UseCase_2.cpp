@@ -28,7 +28,7 @@
 
 #include <stk_mesh/fem/FieldDeclarations.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/EntityTypes.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 
 //----------------------------------------------------------------------
 
@@ -84,7 +84,7 @@ UseCase_2_Mesh::UseCase_2_Mesh( stk::ParallelMachine comm )
 
   // Put the volume field on all elements:
   stk::mesh::put_field( m_volume_field , stk::mesh::Element , universal );
-  
+
   // Done populating the mesh meta data.
   // Commit the meta data: this locks out changes,
   // verifies consistency of potentially complex meta data relationships,
@@ -93,7 +93,7 @@ UseCase_2_Mesh::UseCase_2_Mesh( stk::ParallelMachine comm )
   m_metaData.commit();
 }
 
-UseCase_2_Mesh::~UseCase_2_Mesh() 
+UseCase_2_Mesh::~UseCase_2_Mesh()
 { }
 
 //----------------------------------------------------------------------
@@ -147,7 +147,7 @@ void UseCase_2_Mesh::populate( unsigned nleft , unsigned nright )
           node_bucket_it != node_buckets.end() ; ++node_bucket_it ) {
 
       const stk::mesh::Bucket & bucket = **node_bucket_it;
-    
+
       // Fill the nodal coordinates.
       // Create a multidimensional array view of the
       // nodal coordinates field data for this bucket of nodes.
@@ -314,7 +314,7 @@ bool verifyRelations( const UseCase_2_Mesh & mesh,
 
       for ( size_t i = 0 ; i < elem_bucket.size() ; ++i ) {
         stk::mesh::Entity & elem = elem_bucket[i] ;
-    
+
         stk::mesh::EntityId node_ids[ shards::Hexahedron<8> ::node_count ];
 
         // Query the node ids for this element.
@@ -364,7 +364,7 @@ bool verifyRelations( const UseCase_2_Mesh & mesh,
 
       for ( size_t i = 0 ; i < elem_bucket.size() ; ++i ) {
         stk::mesh::Entity & elem = elem_bucket[i] ;
-    
+
         stk::mesh::EntityId node_ids[ shards::Hexahedron<8> ::node_count ];
 
         // Query the node ids for this element.
@@ -408,7 +408,7 @@ bool verifyRelations( const UseCase_2_Mesh & mesh,
 // An example of a template function for gathering (copying)
 // field data from the nodes of an element.
 
-template< unsigned NType , stk::mesh::EntityType EType ,
+template< unsigned NType , stk::mesh::EntityRank EType ,
           unsigned NRel , class field_type >
 bool gather_field_data( const field_type & field ,
                         const stk::mesh::Entity     & entity ,
@@ -435,7 +435,7 @@ bool gather_field_data( const field_type & field ,
 
 namespace {
 
-const double element_coordinates_gold[ ElementTraits::node_count ][ SpaceDim ] = 
+const double element_coordinates_gold[ ElementTraits::node_count ][ SpaceDim ] =
   { { 0, 0, 0 } ,
     { 1, 0, 0 } ,
     { 1, 1, 0 } ,
@@ -458,7 +458,7 @@ bool verifyFields( const UseCase_2_Mesh & mesh )
 
   // All element buckets:
 
-  const std::vector<stk::mesh::Bucket*> & elem_buckets = 
+  const std::vector<stk::mesh::Bucket*> & elem_buckets =
     bulkData.buckets( stk::mesh::Element );
 
   // Verify coordinates_field by gathering the nodal coordinates
@@ -484,7 +484,7 @@ bool verifyFields( const UseCase_2_Mesh & mesh )
         result = false;
       }
 
-      double base[3] ; 
+      double base[3] ;
       base[0] = elem_coord[0][0] ;
       base[1] = elem_coord[0][1] ;
       base[2] = elem_coord[0][2] ;
@@ -501,8 +501,8 @@ bool verifyFields( const UseCase_2_Mesh & mesh )
           double gold_elem_coord = element_coordinates_gold[node_index][coord_index];
           if ( local_elem_coord != gold_elem_coord ) {
             std::cerr << "Error!  elem_coord[" << node_index << "]"
-              << "[" << coord_index << "] == " << local_elem_coord 
-              << " != " << gold_elem_coord 
+              << "[" << coord_index << "] == " << local_elem_coord
+              << " != " << gold_elem_coord
               << " == element_coordinates_gold[" << node_index << "]"
               << "[" << coord_index << "]!" << std::endl;
             result = false;
@@ -513,16 +513,16 @@ bool verifyFields( const UseCase_2_Mesh & mesh )
 
     // Verify volume_field
 
-    stk::mesh::BucketArray<ScalarFieldType> volume_array( 
-        volume_field, 
-        **element_bucket_it 
+    stk::mesh::BucketArray<ScalarFieldType> volume_array(
+        volume_field,
+        **element_bucket_it
         );
     const double volume_val_gold = 1.0;
     int num_volumes = volume_array.dimension(0);
     for ( int volume_index=0 ; volume_index < num_volumes ; ++volume_index) {
       if ( volume_array(volume_index) != volume_val_gold ) {
         std::cerr << "Error!  volume_array(" << volume_index << ") == "
-          << volume_array(volume_index) << " != " << volume_val_gold 
+          << volume_array(volume_index) << " != " << volume_val_gold
           << " == volume_val_gold " << std::endl;
         result = false;
       }
@@ -534,22 +534,22 @@ bool verifyFields( const UseCase_2_Mesh & mesh )
 
     const ScalarFieldType & temperature_field = mesh.m_temperature_field ;
 
-    const std::vector<stk::mesh::Bucket*> & node_buckets = 
+    const std::vector<stk::mesh::Bucket*> & node_buckets =
       bulkData.buckets( stk::mesh::Node );
 
     for ( std::vector<stk::mesh::Bucket*>::const_iterator
           node_bucket_it = node_buckets.begin();
           node_bucket_it != node_buckets.end() ; ++node_bucket_it ) {
       const stk::mesh::Bucket & bucket = **node_bucket_it;
-      stk::mesh::BucketArray<ScalarFieldType> temperature_array( 
-          temperature_field, 
-          bucket 
+      stk::mesh::BucketArray<ScalarFieldType> temperature_array(
+          temperature_field,
+          bucket
           );
       int num_temps = temperature_array.dimension(0);
       for ( int i=0 ; i < num_temps ; ++i) {
         if (temperature_array(i) != temperature_value_gold) {
           std::cerr << "Error!  temperature_array("<<i<<") == "
-            << temperature_array(i) << " != " << temperature_value_gold 
+            << temperature_array(i) << " != " << temperature_value_gold
             << " == temperature_value_gold" << std::endl;
           result = false;
         }
@@ -595,8 +595,8 @@ void usecase_2_node_coordinates( stk::mesh::EntityId node_id , double coord[] )
 
 }
 
-} //namespace use_cases 
-} //namespace mesh 
+} //namespace use_cases
+} //namespace mesh
 } //namespace stk
 
 

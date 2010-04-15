@@ -11,7 +11,7 @@
 
 #include <stk_util/util/StaticAssert.hpp>
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/fem/EntityTypes.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 
 namespace stk {
 namespace mesh {

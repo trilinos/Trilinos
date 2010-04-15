@@ -48,8 +48,8 @@ void throw_fei_err(const std::string& mesg, int err)
 
 void
 DofMapper::add_dof_mappings(const stk::mesh::BulkData& mesh_bulk,
-                            const stk::mesh::PartVector& part_intersection,
-                            stk::mesh::EntityType ent_type,
+                            const stk::mesh::Selector& selector,
+                            stk::mesh::EntityRank ent_type,
                             const stk::mesh::FieldBase& field)
 {
   int idType = static_cast<int>(ent_type);
@@ -58,7 +58,6 @@ DofMapper::add_dof_mappings(const stk::mesh::BulkData& mesh_bulk,
 
   int field_id = impl::map_field_to_int(m_field_id_map, field);
 
-  stk::mesh::Selector selector = selectIntersection(part_intersection);
   const std::vector<stk::mesh::Bucket*>& all_buckets = mesh_bulk.buckets(ent_type);
   std::vector<stk::mesh::Bucket*> buckets;
   stk::mesh::get_buckets(selector, all_buckets, buckets);
@@ -140,7 +139,7 @@ DofMapper::get_field_id(const stk::mesh::FieldBase& field) const
 }
 
 int
-DofMapper::get_global_index(stk::mesh::EntityType ent_type,
+DofMapper::get_global_index(stk::mesh::EntityRank ent_type,
                             stk::mesh::EntityId ent_id,
                             stk::mesh::FieldBase& field,
                             int offset_into_field)
@@ -168,7 +167,7 @@ DofMapper::get_global_index(stk::mesh::EntityType ent_type,
 
 void
 DofMapper::get_dof(int global_index,
-                   stk::mesh::EntityType& ent_type,
+                   stk::mesh::EntityRank& ent_type,
                    stk::mesh::EntityId& ent_id,
                    const stk::mesh::FieldBase*& field,
                    int& offset_into_field) const

@@ -32,15 +32,15 @@ namespace mesh {
  *
  * \param selector
  * \param mesh
- * \param count  
+ * \param count
  */
 void count_entities(
   const Selector & selector ,
   const BulkData & mesh ,
-  std::vector<EntityType> & count );
+  std::vector<EntityRank> & count );
 
 /** \brief Get all entities of the specified type, sorted by ID.  */
-void get_entities( const BulkData & , EntityType type,
+void get_entities( const BulkData & , EntityRank type,
                    std::vector< Entity*> & );
 
 /** \brief  Count entities in selected parts (selected by the

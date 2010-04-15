@@ -21,7 +21,7 @@
 #include <stk_mesh/base/EntityComm.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
-#include <stk_mesh/fem/EntityTypes.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 
 using namespace stk;
@@ -155,7 +155,7 @@ void RingMeshFixture::generate_loop( bool generate_aura )
   STKUNIT_ASSERT( local_count[0] == nLocalNode + n_extra );
   STKUNIT_ASSERT( local_count[1] == nLocalEdge + n_extra );
 
-  // Make sure that edge->owner_rank() == edge->node[1]->owner_rank() 
+  // Make sure that edge->owner_rank() == edge->node[1]->owner_rank()
   if ( 1 < p_size ) {
     Entity * const e_node_0 = m_bulk_data.get_entity( 0 , m_node_ids[id_begin] );
     if ( p_rank == e_node_0->owner_rank() ) {

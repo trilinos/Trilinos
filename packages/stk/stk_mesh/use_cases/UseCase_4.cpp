@@ -27,7 +27,7 @@
 
 #include <stk_mesh/fem/FieldDeclarations.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
-#include <stk_mesh/fem/EntityTypes.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 
 //----------------------------------------------------------------------
 
@@ -97,20 +97,20 @@ UseCase_4_Mesh::UseCase_4_Mesh( stk::ParallelMachine comm )
 
   // The boundary field only exists on nodes in the sideset part
   put_field( m_boundary_field, Node, m_side_part );
-  
+
   m_metaData.declare_field_relation(
     m_element_node_coordinates_field ,
     & element_node_stencil<void> ,
-    m_coordinates_field 
+    m_coordinates_field
     );
 
   put_field( m_element_node_coordinates_field, Element, m_block_hex20, shards::Hexahedron<20> ::node_count );
   put_field( m_element_node_coordinates_field, Element, m_block_wedge15, shards::Wedge<15> ::node_count );
-  
+
   m_metaData.commit();
 }
 
-UseCase_4_Mesh::~UseCase_4_Mesh() 
+UseCase_4_Mesh::~UseCase_4_Mesh()
 { }
 
 //------------------------------------------------------------------------------
@@ -183,7 +183,7 @@ void UseCase_4_Mesh::populate()
   EntityId elem_id = 1;
   EntityId face_id = 1;
 
-  PartVector side_add; 
+  PartVector side_add;
   insert( side_add , m_side_part );
 
   // Declare element with its nodes.
@@ -220,7 +220,7 @@ void UseCase_4_Mesh::populate()
       coord[2] = node_coord_data[i][2] ;
     }
   }
-  
+
   m_bulkData.modification_end();
 }
 
@@ -253,7 +253,7 @@ void runAlgorithms( const UseCase_4_Mesh & mesh )
 namespace {
 
 // Note:  this is a duplicate of verify_elem_node_coord_3
-bool verify_elem_node_coord_4( 
+bool verify_elem_node_coord_4(
   Entity & elem ,
   const ElementNodePointerFieldType & elem_node_coord ,
   const VectorFieldType & node_coord ,
@@ -326,8 +326,8 @@ bool verify_elem_node_coord_by_part_4(
   bool result = true;
   for ( ; entity_it != entities.end() ; ++entity_it ) {
     result = result &&
-      verify_elem_node_coord_4( 
-          **entity_it , elem_node_coord , node_coord , node_count 
+      verify_elem_node_coord_4(
+          **entity_it , elem_node_coord , node_coord , node_count
           );
   }
   return result;
@@ -514,7 +514,7 @@ bool verifyMesh( const UseCase_4_Mesh & mesh )
   Part & block_hex20 = mesh.m_block_hex20 ;
   const ElementNodePointerFieldType & elem_node_coord = mesh.m_element_node_coordinates_field ;
   const VectorFieldType & node_coord = mesh.m_coordinates_field ;
-  result = result && 
+  result = result &&
     verify_elem_node_coord_by_part_4(
         block_hex20,
         element_buckets,
@@ -522,7 +522,7 @@ bool verifyMesh( const UseCase_4_Mesh & mesh )
         node_coord,
         20
         );
-  // Verify element side node: 
+  // Verify element side node:
   const std::vector<Bucket *> face_buckets = bulk_data.buckets( Face );
   Part & side_part = mesh.m_side_part ;
   {
@@ -531,7 +531,7 @@ bool verifyMesh( const UseCase_4_Mesh & mesh )
     get_selected_entities( selector, face_buckets, entities);
     for (unsigned i=0 ; i < entities.size() ; ++i) {
       result = result &&
-        verify_elem_side_node< shards::Hexahedron<20> >( 
+        verify_elem_side_node< shards::Hexahedron<20> >(
           hex_node_ids[i], 0, *entities[i]
           );
     }
@@ -539,7 +539,7 @@ bool verifyMesh( const UseCase_4_Mesh & mesh )
 
   // block_wedge15:
   Part & block_wedge15 = mesh.m_block_wedge15 ;
-  result = result && 
+  result = result &&
     verify_elem_node_coord_by_part_4(
         block_wedge15,
         element_buckets,
@@ -547,14 +547,14 @@ bool verifyMesh( const UseCase_4_Mesh & mesh )
         node_coord,
         15
         );
-  // Verify element side node: 
+  // Verify element side node:
   {
     Selector selector = block_wedge15 & side_part;
     std::vector<Entity *> entities;
     get_selected_entities( selector, face_buckets, entities);
     for (unsigned i=0 ; i < entities.size() ; ++i) {
       result = result &&
-        verify_elem_side_node< shards::Wedge<15> >( 
+        verify_elem_side_node< shards::Wedge<15> >(
           wedge_node_ids[i], 4, *entities[i]
           );
     }
@@ -562,17 +562,17 @@ bool verifyMesh( const UseCase_4_Mesh & mesh )
 
   // Verify centroid dimensions
   const VectorFieldType & centroid_field = mesh.m_centroid_field ;
-  result = result && 
+  result = result &&
     centroid_algorithm_unit_test_dimensions< shards::Hexahedron<20> >(
         bulk_data , centroid_field , elem_node_coord , block_hex20 );
 
-  result = result && 
+  result = result &&
     centroid_algorithm_unit_test_dimensions< shards::Wedge<15> >(
         bulk_data , centroid_field , elem_node_coord , block_wedge15 );
 
   // Verify boundary field data
   const VectorFieldType & boundary_field = mesh.m_boundary_field ;
-  result = result && 
+  result = result &&
     verify_boundary_field_data( bulk_data ,
                               side_part ,
                               boundary_field );
@@ -581,24 +581,24 @@ bool verifyMesh( const UseCase_4_Mesh & mesh )
   Part & part_vertex_nodes = mesh.m_part_vertex_nodes ;
   const ScalarFieldType & pressure_field = mesh.m_pressure_field ;
   const VectorFieldType & velocity_field = mesh.m_velocity_field ;
-  result = result && 
+  result = result &&
     verify_pressure_velocity_stencil
     < shards::Hexahedron<20> , shards::Hexahedron<8>  >
     ( bulk_data , block_hex20 , part_vertex_nodes ,
       pressure_field , velocity_field );
 
   // Verify pressure velocity stencil for block_wedge15
-  result = result && 
+  result = result &&
     verify_pressure_velocity_stencil
     < shards::Wedge<15> , shards::Wedge<6>  >
     ( bulk_data , block_wedge15 , part_vertex_nodes ,
       pressure_field , velocity_field );
 
-  
+
 
   return result;
 }
 
-} //namespace use_cases 
-} //namespace mesh 
+} //namespace use_cases
+} //namespace mesh
 } //namespace stk

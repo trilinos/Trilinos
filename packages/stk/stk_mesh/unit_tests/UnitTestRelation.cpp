@@ -24,7 +24,7 @@
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/EntityComm.hpp>
-#include <stk_mesh/fem/EntityTypes.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 
 #include <unit_tests/UnitTestRelation.hpp>
 
@@ -77,7 +77,7 @@ void UnitTestRelation::testRelation( ParallelMachine pm )
   std::vector<std::string> entity_names(10);
   for ( size_t i = 0 ; i < 10 ; ++i ) {
     std::ostringstream name ;
-    name << "EntityType" << i ;
+    name << "EntityRank" << i ;
     entity_names[i] = name.str();
   }
 
@@ -243,7 +243,7 @@ void UnitTestRelation::generate_loop(
   STKUNIT_ASSERT( local_count[0] == nLocalNode + n_extra );
   STKUNIT_ASSERT( local_count[1] == nLocalEdge + n_extra );
 
-  // Make sure that edge->owner_rank() == edge->node[1]->owner_rank() 
+  // Make sure that edge->owner_rank() == edge->node[1]->owner_rank()
   if ( 1 < p_size ) {
     Entity * const e_node_0 = mesh.get_entity( 0 , node_ids[id_begin] );
     if ( p_rank == e_node_0->owner_rank() ) {
@@ -278,47 +278,47 @@ namespace {
 
 typedef int BOX[3][2] ;
 
-void box_partition( int ip , int up , int axis , 
+void box_partition( int ip , int up , int axis ,
                     const BOX box ,
                     BOX p_box[] )
-{ 
+{
   const int np = up - ip ;
   if ( 1 == np ) {
     p_box[ip][0][0] = box[0][0] ; p_box[ip][0][1] = box[0][1] ;
     p_box[ip][1][0] = box[1][0] ; p_box[ip][1][1] = box[1][1] ;
     p_box[ip][2][0] = box[2][0] ; p_box[ip][2][1] = box[2][1] ;
-  } 
-  else {  
+  }
+  else {
     const int n = box[ axis ][1] - box[ axis ][0] ;
     const int np_low = np / 2 ;  /* Rounded down */
     const int np_upp = np - np_low ;
- 
+
     const int n_upp = (int) (((double) n) * ( ((double)np_upp) / ((double)np)));
     const int n_low = n - n_upp ;
     const int next_axis = ( axis + 2 ) % 3 ;
- 
+
     if ( np_low ) { /* P = [ip,ip+np_low) */
       BOX dbox ;
       dbox[0][0] = box[0][0] ; dbox[0][1] = box[0][1] ;
       dbox[1][0] = box[1][0] ; dbox[1][1] = box[1][1] ;
       dbox[2][0] = box[2][0] ; dbox[2][1] = box[2][1] ;
- 
+
       dbox[ axis ][1] = dbox[ axis ][0] + n_low ;
- 
+
       box_partition( ip, ip + np_low, next_axis,
                      (const int (*)[2]) dbox, p_box );
     }
- 
+
     if ( np_upp ) { /* P = [ip+np_low,ip+np_low+np_upp) */
       BOX dbox ;
       dbox[0][0] = box[0][0] ; dbox[0][1] = box[0][1] ;
       dbox[1][0] = box[1][0] ; dbox[1][1] = box[1][1] ;
       dbox[2][0] = box[2][0] ; dbox[2][1] = box[2][1] ;
- 
+
       ip += np_low ;
       dbox[ axis ][0] += n_low ;
       dbox[ axis ][1]  = dbox[ axis ][0] + n_upp ;
- 
+
       box_partition( ip, ip + np_upp, next_axis,
                      (const int (*)[2]) dbox, p_box );
     }
@@ -344,7 +344,7 @@ void UnitTestRelation::generate_boxes(
 */
 
   if ( 0 == p_rank ) {
-    std::cout << "Global box = " << ngx << " x " << ngy << " x " << ngz 
+    std::cout << "Global box = " << ngx << " x " << ngy << " x " << ngz
               << std::endl ;
   }
 
@@ -452,7 +452,7 @@ void UnitTestRelation::generate_boxes(
   for ( int k = local_box[2][0] ; k <= local_box[2][1] ; ++k ) {
   for ( int j = local_box[1][0] ; j <= local_box[1][1] ; ++j ) {
   for ( int i = local_box[0][0] ; i <= local_box[0][1] ; ++i ) {
-    EntityType node_type = 0;
+    EntityRank node_type = 0;
     EntityId node_id = 1 + i + j * (ngx+1) + k * (ngx+1) * (ngy+1);
     Entity * const node = mesh.get_entity( node_type , node_id );
     STKUNIT_ASSERT( node != NULL );
@@ -479,7 +479,7 @@ void UnitTestRelation::generate_boxes(
         for ( int i = p_box[p][0][0] ; i <= p_box[p][0][1] ; ++i )
         if ( local_box[0][0] <= i && i <= local_box[0][1] ) {
 
-          EntityType node_type = 0;
+          EntityRank node_type = 0;
           EntityId node_id = 1 + i + j * (ngx+1) + k * (ngx+1) * (ngy+1);
           Entity * const node = mesh.get_entity( node_type , node_id );
           STKUNIT_ASSERT( node != NULL );

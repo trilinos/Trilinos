@@ -19,7 +19,7 @@
 #include <stk_mesh/base/GetBuckets.hpp>
 
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
-#include <stk_mesh/fem/EntityTypes.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 
 #include <unit_tests/UnitTestGridMeshFixture.hpp>
@@ -167,10 +167,10 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
     stk::mesh::EntitySide& side = *itr;
     stk::mesh::EntitySideComponent& inside_closure = side.inside;
     stk::mesh::EntityId inside_id = inside_closure.entity != NULL ? inside_closure.entity->identifier() : 0;
-    stk::mesh::EntityId inside_side = inside_closure.entity != NULL ? inside_closure.side_id : 0;
+    stk::mesh::EntityId inside_side = inside_closure.entity != NULL ? inside_closure.side_ordinal : 0;
     stk::mesh::EntitySideComponent& outside_closure = side.outside;
     stk::mesh::EntityId outside_id = outside_closure.entity != NULL ? outside_closure.entity->identifier() : 0;
-    stk::mesh::EntityId outside_side = outside_closure.entity != NULL ? outside_closure.side_id : 0;
+    stk::mesh::EntityId outside_side = outside_closure.entity != NULL ? outside_closure.side_ordinal : 0;
 
     std::pair<unsigned, unsigned> inside(inside_id, inside_side);
     std::pair<unsigned, unsigned> outside(outside_id, outside_side);

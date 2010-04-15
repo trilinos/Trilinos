@@ -58,10 +58,10 @@ class Entity {
 public:
 
   /** \brief  The rank of this entity. */
-  EntityType entity_rank() const { return stk::mesh::entity_rank( m_key ); }
+  EntityRank entity_rank() const { return stk::mesh::entity_rank( m_key ); }
 
   /** \brief  The type (a.k.a. rank) of this entity. */
-  EntityType entity_type() const { return Entity::entity_rank(); }
+  EntityRank entity_type() const { return Entity::entity_rank(); }
 
   /** \brief  Identifier for this entity which is globally unique
    *          for a given entity type.

@@ -158,11 +158,11 @@ public:
 
   //------------------------------------
   /** \brief  Query all buckets of a given entity type */
-  const std::vector<Bucket*> & buckets( EntityType type ) const ;
+  const std::vector<Bucket*> & buckets( EntityRank type ) const ;
 
   /** \brief  Get entity with a given key */
   /// \todo REFACTOR remove required_by argument
-  Entity * get_entity( EntityType ent_type , EntityId ent_id ,
+  Entity * get_entity( EntityRank ent_type , EntityId ent_id ,
                        const char * /* required_by */ = NULL  ) const ;
 
   /** \brief  Get entity with a given key */
@@ -181,7 +181,7 @@ public:
    *  and identifier then the sharing and ownership of these entities
    *  will be resolved by the call to 'modification_end'.
    */
-  Entity & declare_entity( EntityType ent_type ,
+  Entity & declare_entity( EntityRank ent_type ,
                            EntityId ent_id , const std::vector<Part*> & parts);
 
   /** \brief  Change the parallel-locally-owned entity's
@@ -347,7 +347,7 @@ public:
   //------------------------------------
 private:
   void verify_type_and_id(const char* calling_method,
-                          EntityType ent_type, EntityId ent_id) const;
+                          EntityRank ent_type, EntityId ent_id) const;
 
 #ifndef DOXYGEN_COMPILE
 

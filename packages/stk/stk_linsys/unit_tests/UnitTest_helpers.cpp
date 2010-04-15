@@ -9,7 +9,7 @@
 
 #include <iostream>
 #include <Shards_BasicTopologies.hpp>
-#include <stk_mesh/fem/EntityTypes.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/FieldDeclarations.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/base/Comm.hpp>

@@ -16,7 +16,7 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/EntityComm.hpp>
 #include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/fem/EntityTypes.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 
 #include <unit_tests/UnitTestBulkData.hpp>
 #include <unit_tests/UnitTestRingMeshFixture.hpp>
@@ -57,7 +57,7 @@ void UnitTestBulkData::testBulkData( ParallelMachine pm )
   std::vector<std::string> entity_names(10);
   for ( size_t i = 0 ; i < 10 ; ++i ) {
     std::ostringstream name ;
-    name << "EntityType" << i ;
+    name << "EntityRank" << i ;
     entity_names[i] = name.str();
   }
 
@@ -191,7 +191,7 @@ void UnitTestBulkData::testChangeOwner_nodes( ParallelMachine pm )
     STKUNIT_ASSERT( NULL != bulk.get_entity( 0 , ids[id_give+1] ) );
     STKUNIT_ASSERT( NULL == bulk.get_entity( 0 , ids[id_get] ) );
     STKUNIT_ASSERT( NULL == bulk.get_entity( 0 , ids[id_get+1] ) );
-  
+
     change.resize(2);
     change[0].first = bulk.get_entity( 0 , ids[id_give] );
     change[0].second = p_give ;
@@ -286,7 +286,7 @@ void UnitTestBulkData::testCreateMore_error( ParallelMachine pm )
       bulk.declare_entity( 0 , ids[ id_get ] , no_parts );
       bulk.declare_entity( 0 , ids[ id_get + 1 ] , no_parts );
     }
-  
+
     std::string error_msg ;
     bool exception_thrown = false ;
     try {
@@ -508,7 +508,7 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
     const unsigned n_node = p_rank == 0          ? nPerProc + 1 : (
                             p_rank + 1 == p_size ? nPerProc - 1 :
                                                    nPerProc );
-              
+
     STKUNIT_ASSERT_EQUAL( n_node , local_count[0] );
     STKUNIT_ASSERT_EQUAL( (unsigned) nPerProc , local_count[1] );
 
@@ -619,7 +619,7 @@ void donate_all_shared_nodes( BulkData & mesh , bool aura )
 
   // Donate owned shared nodes to first sharing process.
 
-  const std::vector<Entity*> & entity_comm = mesh.entity_comm(); 
+  const std::vector<Entity*> & entity_comm = mesh.entity_comm();
 
   STKUNIT_ASSERT( ! entity_comm.empty() );
 

@@ -10,7 +10,7 @@
 #define stk_mesh_FieldDeclarations_hpp
 
 #include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/fem/EntityTypes.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/FieldTraits.hpp>
 
 namespace stk {

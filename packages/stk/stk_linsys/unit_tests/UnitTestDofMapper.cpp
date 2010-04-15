@@ -11,7 +11,7 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <Shards_BasicTopologies.hpp>
-#include <stk_mesh/fem/EntityTypes.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/FieldDeclarations.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/base/Comm.hpp>
@@ -59,14 +59,13 @@ void testDofMapper( MPI_Comm comm )
   //Now we're ready to test the DofMapper:
 
   stk::linsys::DofMapper dof_mapper(comm);
- 
-  stk::mesh::PartVector part_intersection;
-  part_intersection.push_back(&(meta_data.locally_used_part()));
 
-  dof_mapper.add_dof_mappings(bulk_data, part_intersection,
+  stk::mesh::Selector select_used = meta_data.locally_used_part();
+
+  dof_mapper.add_dof_mappings(bulk_data, select_used,
                               stk::mesh::Node, *temperature_field);
 
-  stk::mesh::EntityType ent_type;
+  stk::mesh::EntityRank ent_type;
   stk::mesh::EntityId ent_id;
   const stk::mesh::FieldBase* field = NULL;
   int offset_into_field;

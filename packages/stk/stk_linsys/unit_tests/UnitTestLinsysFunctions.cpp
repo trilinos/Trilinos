@@ -12,7 +12,7 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <Shards_BasicTopologies.hpp>
-#include <stk_mesh/fem/EntityTypes.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/FieldDeclarations.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/base/Comm.hpp>
@@ -88,10 +88,6 @@ void testLinsysFunctions( MPI_Comm comm )
 
   bulk_data.modification_end();
 
-  stk::mesh::PartVector parts;
-  parts.push_back(&(meta_data.locally_used_part()));
-  parts.push_back(meta_data.get_part("block_1"));
-
   stk::mesh::Selector selector = meta_data.locally_used_part() & *meta_data.get_part("block_1");
   std::vector<unsigned> count;
   stk::mesh::count_entities(selector, bulk_data, count);
@@ -109,7 +105,7 @@ void testLinsysFunctions( MPI_Comm comm )
   stk::linsys::LinearSystem ls(comm, factory);
 
   stk::linsys::add_connectivities(ls, stk::mesh::Element, stk::mesh::Node,
-                                  *temperature_field, parts, bulk_data);
+                                  *temperature_field, selector, bulk_data);
 
   fei::SharedPtr<fei::MatrixGraph> matgraph = ls.get_fei_MatrixGraph();
   int num_blocks = matgraph->getNumConnectivityBlocks();

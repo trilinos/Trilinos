@@ -63,9 +63,9 @@ void boundary_analysis(const BulkData& bulk_data,
       if (adjacent_entities.empty()) {
         EntitySide keeper;
         keeper.inside.entity = &curr_entity;
-        keeper.inside.side_id = subcell_identifier;
+        keeper.inside.side_ordinal = subcell_identifier;
         keeper.outside.entity = NULL;
-        keeper.outside.side_id = 0;
+        keeper.outside.side_ordinal = 0;
         boundary.push_back(keeper);
         continue;
       }
@@ -87,7 +87,7 @@ void boundary_analysis(const BulkData& bulk_data,
             has_superset(curr_entity.bucket(), locally_used_part)) {
           EntitySide keeper;
           keeper.inside.entity = &curr_entity;
-          keeper.inside.side_id = subcell_identifier;
+          keeper.inside.side_ordinal = subcell_identifier;
           keeper.outside = *adj_itr;
 
           boundary.push_back(keeper);

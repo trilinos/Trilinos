@@ -34,13 +34,13 @@ class Part;
 /** \brief  Transaction journal of modifications to the bulk data
  *          during a transaction.  Since the modification transaction
  *          guarantees a path independent result of mesh entities when
- *          modification_end() is called, the transaction just notes 
+ *          modification_end() is called, the transaction just notes
  *          the state of altered mesh entities when the transaction
  *          was started.
  */
 
 
-class Transaction 
+class Transaction
 {
   public:
     /* \brief The following are the variable type and valid values for
@@ -199,7 +199,7 @@ class Transaction
      * stk::mesh::Bucket .  This returns the appropriate bucket to
      * store entity information in.
      */
-    Bucket *get_unfilled_transaction_bucket ( const unsigned *const , EntityType , BucketList & , State );
+    Bucket *get_unfilled_transaction_bucket ( const unsigned *const , EntityRank , BucketList & , State );
 
     /** \brief This method will use the declase bucket method in \ref
      * stk::mesh::Bucket .  This returns the appropriate bucket to
@@ -239,7 +239,7 @@ class Transaction
     // delete_entity.
     friend class BulkData;
     friend std::ostream & operator<< ( std::ostream &os , const Transaction &rhs );
-     
+
 };
 
 inline std::ostream &operator<< ( std::ostream &os , const Transaction &rhs )

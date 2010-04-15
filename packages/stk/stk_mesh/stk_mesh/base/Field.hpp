@@ -93,7 +93,7 @@ public:
   { return m_data_traits.type_info == typeid(Type) ; }
 
   /** \brief  Return the \ref stk::mesh::DataTraits "data traits"
-   *          for this field's type 
+   *          for this field's type
    */
   const DataTraits & data_traits() const { return m_data_traits ; }
 
@@ -153,7 +153,7 @@ public:
 
   /** \brief  A fields' restrictions are maintained in a std::vector */
   typedef std::vector<Restriction> RestrictionVector;
-  
+
   /** \brief  Vector of field restriction which is volatile until the owning
    *          \ref stk::mesh::MetaData "meta data manager" is committed.
    */
@@ -174,7 +174,7 @@ private:
    *         methods being private and the MetaData be a friend.
    */
   friend class ::stk::mesh::MetaData ;
- 
+
   /** \brief  Allow the unit test driver access */
   friend class ::stk::mesh::UnitTestMetaData ;
 
@@ -206,7 +206,7 @@ private:
                    std::vector<FieldBase*>           & arg_meta_data_fields );
 
   void insert_restriction( const char *       arg_method ,
-                           EntityType           arg_entity_type ,
+                           EntityRank           arg_entity_type ,
                            const Part       & arg_part ,
                            const unsigned   * arg_stride );
 
@@ -233,7 +233,7 @@ private:
 };
 
 //----------------------------------------------------------------------
- 
+
 void print_field_type( std::ostream                      & arg_msg ,
                        unsigned                            arg_scalar_type ,
                        unsigned                            arg_rank ,
@@ -243,11 +243,11 @@ void print_field_type( std::ostream                      & arg_msg ,
  *          If found verify its type information,
  *          throw and exception if invalid.
  */
-FieldBase * get_field(  
+FieldBase * get_field(
   const char                        * arg_method ,
   const std::string                 & arg_name ,
   const DataTraits                  & arg_traits ,
-  unsigned                            arg_rank , 
+  unsigned                            arg_rank ,
   const shards::ArrayDimTag * const * arg_dim_tags ,
   unsigned                            arg_num_states ,
   const std::vector<FieldBase*>     & arg_meta_data_fields );
@@ -336,7 +336,7 @@ public:
   typedef shards::array_traits::Helper<Scalar,shards::FortranOrder,
                                        Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,void>
     Helper ;
-  
+
   typedef Scalar data_type ; ///< \brief  Data type of the field's members
   typedef Tag1   tag1 ;      ///< \brief  Array dimension tag
   typedef Tag2   tag2 ;      ///< \brief  Array dimension tag

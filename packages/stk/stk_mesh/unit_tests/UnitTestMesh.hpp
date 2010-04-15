@@ -14,7 +14,7 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/fem/EntityTypes.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
 
 //----------------------------------------------------------------------
@@ -67,7 +67,7 @@ protected:
                               const int   root_box[][2] ,
                                     int   local_box[][2] );
 
-    void enter_modification () 
+    void enter_modification ()
     {
       m_previous_state = m_bulk_data.synchronized_state();
       if ( m_previous_state == stk::mesh::BulkData::SYNCHRONIZED )
@@ -85,7 +85,7 @@ public:
                   unsigned block_size = 1000 );
    ~UnitTestMesh () {}
 
-     const stk::mesh::BulkData & bulk_data () const { return m_bulk_data; } 
+     const stk::mesh::BulkData & bulk_data () const { return m_bulk_data; }
      stk::mesh::BulkData       & nonconst_bulk_data () { return m_bulk_data; }
 
      unsigned  comm_size() const { return m_comm_size; }
@@ -93,7 +93,7 @@ public:
 
      void  generate_boxes ( bool aura = false );
 
-     stk::mesh::Entity  &get_new_entity ( stk::mesh::EntityType rank , stk::mesh::EntityId parallel_dependent_id )
+     stk::mesh::Entity  &get_new_entity ( stk::mesh::EntityRank rank , stk::mesh::EntityId parallel_dependent_id )
      {
        return m_bulk_data.declare_entity ( rank , parallel_dependent_id*m_comm_size + m_comm_rank + 1 , std::vector<stk::mesh::Part *> () );
      }

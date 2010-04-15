@@ -62,19 +62,15 @@ class DofMapper {
 
   /** Given a mesh, an entity-type and a field, store the resulting DOF mappings.
    *  This method iterates the buckets for the specified entity-type, and for each
-   *  bucket that has the given field and is in the specified part-intersection,
+   *  bucket that has the given field and is selected by the specified selector.
    *  DOF-mappings are stored for each entity-id in the bucket.
-   *
-   *  Usage note: The specified part-intersection may be a single part such as
-   *  mesh_bulk.mesh_meta_data().locally_used_part(), although some application
-   *  scenarios will involve different parts...
    *
    *  This method may be called repeatedly, to add dof mappings for different parts,
    *  different entity-types, different fields, etc.
    */
   void add_dof_mappings( const stk::mesh::BulkData& mesh_bulk,
-                         const stk::mesh::PartVector& part_intersection,
-                         stk::mesh::EntityType ent_type,
+                         const stk::mesh::Selector& selector,
+                         stk::mesh::EntityRank ent_type,
                          const stk::mesh::FieldBase& field );
 
   /** This method internally calls fei::VectorSpace::initComplete(), which finalizes
@@ -104,7 +100,7 @@ class DofMapper {
    *
    * Note2: this method may not work correctly until after 'finalize()' has been called.
    */
-  int get_global_index(stk::mesh::EntityType ent_type,
+  int get_global_index(stk::mesh::EntityRank ent_type,
                        stk::mesh::EntityId ent_id,
                        stk::mesh::FieldBase& field,
                        int offset_into_field=0);
@@ -115,7 +111,7 @@ class DofMapper {
    * Note: this method will be const after the corresponding fei query is corrected for constness.
    */
   void get_dof(int global_index,
-               stk::mesh::EntityType& ent_type,
+               stk::mesh::EntityRank& ent_type,
                stk::mesh::EntityId& ent_id,
                const stk::mesh::FieldBase*& field,
                int& offset_into_field) const;

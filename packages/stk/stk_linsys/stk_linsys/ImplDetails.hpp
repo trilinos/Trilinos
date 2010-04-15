@@ -28,12 +28,14 @@ namespace impl {
 
 /** Given a map and a Field, return the int id that the field is mapped to.
   The field will be added to the map if not already present.
+  This is useful because FEI classes/functions use integer ids for fields.
 */
 int map_field_to_int(FieldIdMap& field_id_map,
                      const stk::mesh::FieldBase& field);
 
 /** Given a map and a Field, return the int id that the field is mapped to.
   If the field is not found in the map, an exception is thrown.
+  This is useful because FEI classes/functions use integer ids for fields.
 */
 int
 query_field_to_int_mapping(const FieldIdMap& field_id_map,
@@ -47,13 +49,15 @@ const stk::mesh::FieldBase* get_field(const FieldIdMap& field_id_map,
 
 /** Given an EntityId, return the value as an int.
   Throws an exception if id is too large to represent as an int.
+  This is useful because FEI classes/functions use integer ids for entities.
 */
 int entityid_to_int(stk::mesh::EntityId id);
 
-/** Given an EntityType, return the value as an int.
+/** Given an EntityRank, return the value as an int.
   Throws an exception if id is too large to represent as an int.
+  This is useful because FEI classes/functions use integer ids for entity-types.
 */
-int entitytype_to_int(stk::mesh::EntityType entity_type);
+int entitytype_to_int(stk::mesh::EntityRank entity_type);
 
 /** Determine whether 'id' can be converted to an int.
  * If so, do nothing. If 'id' is too large to be represented

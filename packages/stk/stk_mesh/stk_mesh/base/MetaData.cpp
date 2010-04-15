@@ -147,7 +147,7 @@ Part & MetaData::declare_part( const std::string & p_name )
   return m_universal_part->declare_part( p_name , rank );
 }
 
-Part & MetaData::declare_part( const std::string & p_name , EntityType rank )
+Part & MetaData::declare_part( const std::string & p_name , EntityRank rank )
 {
   static const char method[] = "stk::mesh::MetaData::declare_part" ;
 

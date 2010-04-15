@@ -37,7 +37,7 @@ namespace sunit {
       Stk_Mesh_Fixture( const Stk_Mesh_Fixture & );
       Stk_Mesh_Fixture & operator = ( const Stk_Mesh_Fixture & );
   };
-  
+
   stk::mesh::PartVector getPartVector(
       const Stk_Mesh_Fixture & fix,
       const std::vector<std::string> & names
@@ -50,7 +50,7 @@ namespace sunit {
 
   const stk::mesh::Bucket & getBucketContainingEntity(
       const Stk_Mesh_Fixture & fix,
-      stk::mesh::EntityType ent_type,
+      stk::mesh::EntityRank ent_type,
       stk::mesh::EntityId ent_id
       );
 
@@ -66,14 +66,14 @@ namespace sunit {
   // PartC contains Entity3, Entity4
   // PartD contains no entities
   // Entity5 is not contained in any user-defined Part
-  // 
+  //
   // |----------|--|-------|--|----------|    |-------------|
   // |<--PartA---->|       |<--PartC---->|    |   PartD     |
   // |          |<---PartB--->|          |    |             |
   // |  1       |2 |       |3 |       4  | 5  |             |
   // |          |  |       |  |          |    |             |
-  // |          |  |       |  |          |    |             | 
-  // |----------|--|-------|--|----------|    |-------------|   
+  // |          |  |       |  |          |    |             |
+  // |----------|--|-------|--|----------|    |-------------|
   //
 
   class ExampleFixture : public Stk_Mesh_Fixture {

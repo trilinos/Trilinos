@@ -16,11 +16,11 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Field.hpp>
 
-#include <stk_mesh/fem/EntityTypes.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/FieldTraits.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
-    
+
 #include <Shards_BasicTopologies.hpp>
 #include <stk_mesh/base/DataTraits.hpp>
 

@@ -6,7 +6,7 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-/** \TODO The design of the transaction logging functionality must 
+/** \TODO The design of the transaction logging functionality must
  *        be revisited / revised to clean up entity creation / deletion
  *        where two or more entities could exist with the same key.
  *        Such a condition is severely erroneous.  Until the design
@@ -26,7 +26,7 @@
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/fem/EntityTypes.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
 
 #include <unit_tests/UnitTestMesh.hpp>
@@ -132,7 +132,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkInsert)
 
 
 /** \brief When the transaction log is in bulk transaction mode,
- * modifying the state of entities in the mesh will add the parts 
+ * modifying the state of entities in the mesh will add the parts
  * of that entity to the inserted parts set.
  */
 
@@ -148,7 +148,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkModify)
 
   // This test need only run in serial
   if ( fixture.comm_size() > 1 ) return;
-  
+
   bulk.reset_transaction ( stk::mesh::Transaction::BULK );
   bulk.modification_begin ();
   stk::mesh::Entity &new_entity = bulk.declare_entity ( 0 , fixture.comm_size()*1000 + fixture.comm_rank() , add_part );
@@ -193,7 +193,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkModify)
 }
 
 /** \brief When the transaction log is in bulk transaction mode,
- * modifying the relations of entities in the mesh will add the parts 
+ * modifying the relations of entities in the mesh will add the parts
  * of that entity to the inserted parts set.
  */
 
@@ -232,7 +232,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkAddRelation)
 
 
 /** \brief When the transaction log is in bulk transaction mode,
- * deleting entities in the mesh will add the parts of that entity to the 
+ * deleting entities in the mesh will add the parts of that entity to the
  * deleted parts set.
  */
 
@@ -249,7 +249,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkDelete)
 
   // This test need only run in serial
   if ( fixture.comm_size() > 1 ) return;
-  
+
   bulk.reset_transaction ( stk::mesh::Transaction::BULK );
   bulk.modification_begin ();
   stk::mesh::Entity *new_entity = &bulk.declare_entity ( 0 , fixture.comm_size()*1000 + fixture.comm_rank() , add_part );
@@ -295,7 +295,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkDelete)
 
 /** \brief It is possible span transactions across modifications.
  * reset_transaction must be called to remove entities from a
- * transcation, 
+ * transcation,
  */
 
 STKUNIT_UNIT_TEST(UnitTestTransaction, verifyTransactionSpanningModifications)
@@ -323,7 +323,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyTransactionSpanningModifications)
 
   // This test need only run in serial
   if ( fixture.comm_size() > 1 ) return;
-  
+
 
   // Here are two modifications.  The first adds an edge to the mesh,
   // the second changes the state of a node
@@ -358,7 +358,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyTransactionSpanningModifications)
 }
 
 
-/** \brief During an incremental 
+/** \brief During an incremental
  */
 
 
@@ -507,7 +507,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalAddRelation)
   STKUNIT_ASSERT ( existing_cell.bucket().member_all ( old_parts ) );
   existing_cell.bucket().supersets ( new_parts );
   STKUNIT_ASSERT ( existing_cell.transaction_bucket()->member_all ( new_parts ) );
-  
+
 }
 
 
@@ -534,7 +534,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalDelete)
 
   // Record the old parts for testing later
   deleted_cell->bucket().supersets ( old_parts );
-  stk::mesh::EntityId  deleted_cell_id = deleted_cell->identifier(); 
+  stk::mesh::EntityId  deleted_cell_id = deleted_cell->identifier();
   bulk.destroy_entity ( deleted_cell );
   bulk.modification_end();
 
@@ -662,7 +662,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyParallelResolutionModify)
         if ( found_node_list[i] == 1 )
           if ( cur_modified_node->identifier() == found_node_id_list[i] )
             valid_change = true;
-      STKUNIT_ASSERT ( valid_change );  
+      STKUNIT_ASSERT ( valid_change );
       ++cur_modified_node;
     }
     ++cur_modified_node_bucket;

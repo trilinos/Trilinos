@@ -23,7 +23,7 @@ namespace mesh {
 
 //----------------------------------------------------------------------
 
-void get_entities( const BulkData & mesh , EntityType type ,
+void get_entities( const BulkData & mesh , EntityRank type ,
                    std::vector< Entity*> & entities )
 {
   const std::vector<Bucket*> & ks = mesh.buckets( type );
@@ -99,7 +99,7 @@ void get_selected_entities( const Selector & selector ,
 void count_entities(
   const Selector & selector ,
   const BulkData & mesh ,
-  std::vector< EntityType > & count )
+  std::vector< EntityRank > & count )
 {
   const size_t ntype = mesh.mesh_meta_data().entity_type_count();
 

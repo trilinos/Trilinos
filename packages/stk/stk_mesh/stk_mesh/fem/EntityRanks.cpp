@@ -7,7 +7,7 @@
 /*------------------------------------------------------------------------*/
 
 
-#include <stk_mesh/fem/EntityTypes.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 
 namespace stk {
 namespace mesh {

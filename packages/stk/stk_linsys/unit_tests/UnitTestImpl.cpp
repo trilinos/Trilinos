@@ -9,7 +9,7 @@
 
 #include <unit_tests/stk_utest_macros.hpp>
 
-#include <stk_mesh/fem/EntityTypes.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/FieldDeclarations.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 

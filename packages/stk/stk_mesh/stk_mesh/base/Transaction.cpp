@@ -74,9 +74,9 @@ std::ostream & Transaction::print_stream ( std::ostream &os ) const
 
 Transaction::Transaction ( BulkData &bd , TransactionType type ) : m_transaction_type(type) ,
                                                                    m_bulk_data ( bd ) ,
-                                                                   m_modified ( ) , 
-                                                                   m_deleted ( ) , 
-                                                                   m_inserted ( )  
+                                                                   m_modified ( ) ,
+                                                                   m_deleted ( ) ,
+                                                                   m_inserted ( )
 {
   allocate_bucket_lists ();
 }
@@ -335,14 +335,14 @@ void Transaction::swap_entity_between_transaction_buckets ( Entity &e , BucketLi
 // This is a wrapper around the Bucket::declare_bucket.  Each bucket
 // has no field data and has a copy of the key from the current bucket
 // the entity is in.
-Bucket *Transaction::get_unfilled_transaction_bucket ( const unsigned * const key , EntityType type , BucketList &buckets , State s )
+Bucket *Transaction::get_unfilled_transaction_bucket ( const unsigned * const key , EntityRank type , BucketList &buckets , State s )
 {
-  Bucket *new_bucket = Bucket::declare_bucket ( m_bulk_data , 
-                                                type , 
-                                                key[0] - 1 , 
-                                                key+1 , 
-                                                m_bulk_data.bucket_capacity() , 
-                                                std::vector<FieldBase *> () , 
+  Bucket *new_bucket = Bucket::declare_bucket ( m_bulk_data ,
+                                                type ,
+                                                key[0] - 1 ,
+                                                key+1 ,
+                                                m_bulk_data.bucket_capacity() ,
+                                                std::vector<FieldBase *> () ,
                                                 buckets );
 
   new_bucket->m_transaction_state = s;

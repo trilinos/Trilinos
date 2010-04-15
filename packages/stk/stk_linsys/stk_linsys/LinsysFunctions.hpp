@@ -12,7 +12,7 @@
 #include <stk_linsys/LinearSystem.hpp>
 
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/Part.hpp>
+#include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 
 #include <Teuchos_ParameterList.hpp>
@@ -23,12 +23,20 @@ namespace linsys {
 
 /** Add connectivities (matrix-graph sparsity contributions) to the
     fei::MatrixGraph object in the specified LinearSystem object.
+
+  Connectivities are connections between two types of entities that
+  are related to each other in the mesh. The most common example of
+  this is element-to-node connectivities. So when from_type is element
+  and to_connected_type is node, the matrix-graph will be populated with
+  connectivities for nodes connected to each element selected by the
+  given selector.
+
 */
 void add_connectivities(stk::linsys::LinearSystem& ls,
-                        stk::mesh::EntityType from_type,
-                        stk::mesh::EntityType to_connected_type,
+                        stk::mesh::EntityRank from_type,
+                        stk::mesh::EntityRank to_connected_type,
                         const stk::mesh::FieldBase& field,
-                        const stk::mesh::PartVector& part_intersection,
+                        const stk::mesh::Selector& selector,
                         const stk::mesh::BulkData& mesh_bulk);
 
 /** Apply a Dirichlet boundary-condition for the specified field, on
@@ -42,7 +50,7 @@ void add_connectivities(stk::linsys::LinearSystem& ls,
 void dirichlet_bc(stk::linsys::LinearSystem& ls,
                   const stk::mesh::BulkData& mesh,
                   const stk::mesh::Part& bcpart,
-                  stk::mesh::EntityType entity_type,
+                  stk::mesh::EntityRank entity_type,
                   const stk::mesh::FieldBase& field,
                   unsigned field_component,
                   double prescribed_value);

@@ -168,11 +168,11 @@ bool verify_parallel_attributes( BulkData & M , std::ostream & error_log )
 
   const unsigned p_rank = M.parallel_rank();
 
-  const size_t EntityTypeEnd = M.mesh_meta_data().entity_type_count();
+  const size_t EntityRankEnd = M.mesh_meta_data().entity_type_count();
 
   size_t comm_count = 0 ;
 
-  for ( size_t itype = 0 ; itype < EntityTypeEnd ; ++itype ) {
+  for ( size_t itype = 0 ; itype < EntityRankEnd ; ++itype ) {
     const std::vector< Bucket * > & all_buckets = M.buckets( itype );
 
     const std::vector<Bucket*>::const_iterator i_end = all_buckets.end();
@@ -226,7 +226,7 @@ bool verify_parallel_attributes( BulkData & M , std::ostream & error_log )
         // If sending as a ghost then I must own it
 
         if ( ! owns && send_ghost ) { this_result = false ; }
- 
+
         // If shared then I am owner or owner is in the shared list
 
         if ( shares && p_owner != p_rank ) {

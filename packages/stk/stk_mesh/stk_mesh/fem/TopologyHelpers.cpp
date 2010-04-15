@@ -19,7 +19,7 @@
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/fem/EntityTypes.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 
 #include <stk_util/util/StaticAssert.hpp>
@@ -171,7 +171,7 @@ Entity & declare_element_side(
 
   if ( part ) { add_parts.push_back( part ); }
 
-  //\TODO refactor: is 'dimension' the right thing to use for EntityType here???
+  //\TODO refactor: is 'dimension' the right thing to use for EntityRank here???
   mesh.change_entity_parts(side, add_parts);
 
   mesh.declare_relation( elem , side , local_side_id );

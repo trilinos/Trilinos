@@ -174,22 +174,22 @@ void verify_field_type( const char                        * arg_method ,
 
   if ( ! ok_traits || ! ok_number_states || ! ok_dimension ) {
 
-    std::ostringstream msg ;             
+    std::ostringstream msg ;
 
     msg << arg_method << " FAILED: Existing field = " ;
 
     print_field_type( msg , arg_field.data_traits() ,
-                            arg_field.rank() , 
-                            arg_field.dimension_tags() ); 
- 
+                            arg_field.rank() ,
+                            arg_field.dimension_tags() );
+
     msg << "[ name = \"" << arg_field.name();
     msg << "\" , #states = " << arg_field.number_of_states() << " ]" ;
     msg << " Expected field info = " ;
-                                           
+
     print_field_type( msg , arg_traits , arg_rank , arg_dim_tags );
     msg << "[ #states = " << arg_num_states << " ]" ;
-   
-    throw std::runtime_error( msg.str() );   
+
+    throw std::runtime_error( msg.str() );
   }
 }
 
@@ -207,7 +207,7 @@ FieldBase * get_field(
   FieldBase * f = NULL ;
 
   for ( std::vector<FieldBase*>::const_iterator
-        j =  arg_meta_data_fields.begin() ; 
+        j =  arg_meta_data_fields.begin() ;
         j != arg_meta_data_fields.end() && NULL == f ; ++j ) {
     if ( equal_case( (*j)->name() , arg_name ) ) {
 
@@ -262,7 +262,7 @@ FieldBase::declare_field(
 
   if ( NULL != f[0] ) {
     for ( unsigned i = 1 ; i < arg_num_states ; ++i ) {
-      f[i] = f[0]->m_field_states[i] ; 
+      f[i] = f[0]->m_field_states[i] ;
     }
   }
   else {
@@ -351,7 +351,7 @@ void print_restriction( std::ostream & os ,
 
 void FieldBase::insert_restriction(
   const char     * arg_method ,
-  EntityType         arg_entity_type ,
+  EntityRank         arg_entity_type ,
   const Part     & arg_part ,
   const unsigned * arg_stride )
 {
@@ -538,7 +538,7 @@ std::ostream & print( std::ostream & s ,
         i = rMap.begin() ; i != rMap.end() ; ++i ) {
     s << std::endl << b << "  " ;
     print_restriction( s, entity_type( i->key ),
-                       * all_parts[ entity_id( i->key ) ], 
+                       * all_parts[ entity_id( i->key ) ],
                        field.rank(), i->stride);
   }
   s << std::endl << b << "}" ;

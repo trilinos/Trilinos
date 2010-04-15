@@ -35,27 +35,27 @@ typedef stk::search::box::PointBoundingBox<IdentProc, double, 3> PointBoundingBo
 namespace {
 void build_node_axis_bbox(stk::mesh::Part &part,
                           stk::mesh::BulkData &bulk_data,
-                          stk::mesh::EntityType type,
+                          stk::mesh::EntityRank type,
                           stk::mesh::VectorField *coordinates,
                           std::vector<AxisAlignedBoundingBox3D> &box_vector,
                           const stk::search_util::Op &op);
 
 void build_axis_bbox(stk::mesh::Part &part,
                      stk::mesh::BulkData &bulk_data,
-                     stk::mesh::EntityType type,
+                     stk::mesh::EntityRank type,
                      stk::mesh::VectorField *coordinates,
                      std::vector<AxisAlignedBoundingBox3D> &box_vector,
                      const stk::search_util::Op &op);
 
 void build_node_cent_bbox(stk::mesh::Part &part,
                           stk::mesh::BulkData &bulk_data,
-                          stk::mesh::EntityType type,
+                          stk::mesh::EntityRank type,
                           stk::mesh::VectorField *coordinates,
                           std::vector<PointBoundingBox3D> &box_vector);
 
 void build_cent_bbox(stk::mesh::Part &part,
                      stk::mesh::BulkData &bulk_data,
-                     stk::mesh::EntityType type,
+                     stk::mesh::EntityRank type,
                      stk::mesh::VectorField *coordinates,
                      std::vector<PointBoundingBox3D> &box_vector);
 }
@@ -64,7 +64,7 @@ namespace stk {
 namespace search_util {
 
 // The adjust_box should be implemented as an Op rather than a scale and offset parameter.
-void build_axis_aligned_bbox(stk::mesh::BulkData &bulk_data, stk::mesh::EntityType type,
+void build_axis_aligned_bbox(stk::mesh::BulkData &bulk_data, stk::mesh::EntityRank type,
                              stk::mesh::VectorField *coordinates,
                              std::vector<AxisAlignedBoundingBox3D> &box_vector,
                              bool use_universal_part,
@@ -102,7 +102,7 @@ void build_axis_aligned_bbox(stk::mesh::BulkData &bulk_data, stk::mesh::EntityTy
   }
 }
 
-void build_centroid_bbox(stk::mesh::BulkData &bulk_data,  stk::mesh::EntityType type,
+void build_centroid_bbox(stk::mesh::BulkData &bulk_data,  stk::mesh::EntityRank type,
                          stk::mesh::VectorField *coordinates,
                          std::vector<PointBoundingBox3D> &box_vector,
                          bool use_universal_part)
@@ -186,7 +186,7 @@ namespace {
 
 void build_node_axis_bbox(stk::mesh::Part &part,
                           stk::mesh::BulkData &bulk_data,
-                          stk::mesh::EntityType type,
+                          stk::mesh::EntityRank type,
                           stk::mesh::VectorField *coordinates,
                           std::vector<AxisAlignedBoundingBox3D> &box_vector,
                           const stk::search_util::Op &op)
@@ -214,7 +214,7 @@ void build_node_axis_bbox(stk::mesh::Part &part,
 
 void build_axis_bbox(stk::mesh::Part &part,
                      stk::mesh::BulkData &bulk_data,
-                     stk::mesh::EntityType type,
+                     stk::mesh::EntityRank type,
                      stk::mesh::VectorField *coordinates,
                      std::vector<AxisAlignedBoundingBox3D> &box_vector,
                      const stk::search_util::Op &op)
@@ -272,7 +272,7 @@ void build_axis_bbox(stk::mesh::Part &part,
 
 void build_node_cent_bbox(stk::mesh::Part &part,
                           stk::mesh::BulkData &bulk_data,
-                          stk::mesh::EntityType type,
+                          stk::mesh::EntityRank type,
                           stk::mesh::VectorField *coordinates,
                           std::vector<PointBoundingBox3D> &box_vector)
 {
@@ -298,7 +298,7 @@ void build_node_cent_bbox(stk::mesh::Part &part,
 
 void build_cent_bbox(stk::mesh::Part &part,
                      stk::mesh::BulkData &bulk_data,
-                     stk::mesh::EntityType type,
+                     stk::mesh::EntityRank type,
                      stk::mesh::VectorField *coordinates,
                      std::vector<PointBoundingBox3D> &box_vector)
 {

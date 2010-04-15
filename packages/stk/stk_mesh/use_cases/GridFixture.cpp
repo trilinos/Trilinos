@@ -17,7 +17,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
-#include <stk_mesh/fem/EntityTypes.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 
 
@@ -79,6 +79,9 @@ void GridFixture::generate_grid()
     }
   }
 
+  // Note:  This block of code would normally be replaced with a call to stk_io
+  // to generate the mesh.
+
   // declare entities such that entity_id - 1 is the index of the
   // entity in the all_entities vector
   {
@@ -89,18 +92,20 @@ void GridFixture::generate_grid()
     // declare faces
     stk::mesh::PartVector face_parts;
     face_parts.push_back(&m_quad_part);
+    const unsigned num_nodes_per_quad = 4;
+    // (right-hand rule) counterclockwise:
+    const int stencil_for_4x4_quad_mesh[num_nodes_per_quad] = {0, 5, 1, -5};
     for (unsigned i = first_quad; i < end_quad; ++i) {
 
       unsigned face_id = quad_face_ids[i];
-      unsigned row = (face_id - 1) / 4;
+      unsigned row = (face_id - 1) / num_nodes_per_quad;
 
       stk::mesh::Entity& face = m_bulk_data.declare_entity(stk::mesh::Face, face_id, face_parts);
 
       unsigned node_id = num_quad_faces + face_id + row;
-      int chg_list[4] = {0, 5, 1, -5}; // (right-hand rule) counterclockwise
 
-      for (unsigned chg_itr = 0; chg_itr < 4; ++chg_itr) {
-        node_id += chg_list[chg_itr];
+      for (unsigned chg_itr = 0; chg_itr < num_nodes_per_quad; ++chg_itr) {
+        node_id += stencil_for_4x4_quad_mesh[chg_itr];
         stk::mesh::Entity& node = m_bulk_data.declare_entity(stk::mesh::Node, node_id, no_parts);
         m_bulk_data.declare_relation( face , node , chg_itr);
       }

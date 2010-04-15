@@ -92,7 +92,7 @@ public:
    *  When an entity of equal rank becomes a member
    *  then all related entities of lesser rank also become members.
    */
-  Part & declare_part( const std::string & , EntityType rank );
+  Part & declare_part( const std::string & , EntityRank rank );
 
   /** \brief  Declare a part of the given name and entity rank
    *          Redeclaration returns the previously declared part.
@@ -218,7 +218,7 @@ public:
   /** \todo REFACTOR eliminate this method, it does not belong here. */
   void declare_field_lock_relation( FieldBase & pointer_field ,
                                     relation_stencil_ptr stencil );
-  
+
   /** \brief  Get field relations */
   const std::vector<FieldRelation> & get_field_relations() const
     { return m_field_relations ; }
@@ -340,7 +340,7 @@ private:
                                       const std::type_info & ,
                                       unsigned = 0 ) const ;
 
-  void internal_declare_field_relation( FieldBase & , 
+  void internal_declare_field_relation( FieldBase & ,
                                         relation_stencil_ptr ,
                                         FieldBase & );
 
@@ -353,7 +353,7 @@ void verify_parallel_consistency( const MetaData & , ParallelMachine );
 /** \name  Declare field data allocation rules
  *  \{
  */
-  
+
 /** \brief  Declare a field to exist for a given entity type and Part.
  *
  *
