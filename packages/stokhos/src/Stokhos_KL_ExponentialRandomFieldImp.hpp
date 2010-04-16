@@ -38,33 +38,55 @@ ExponentialRandomField(Teuchos::ParameterList& solverParams)
 {
   // Get required parameters
   num_KL = solverParams.get<int>("Number of KL Terms");
-  mean = solverParams.get<value_type>("Mean");
-  std_dev = solverParams.get<value_type>("Standard Deviation");
-  if (solverParams.isType<std::string>("Domain Upper Bounds"))
-    domain_upper_bound = 
+  mean = solverParams.get<double>("Mean");
+  std_dev = solverParams.get<double>("Standard Deviation");
+
+  Teuchos::Array<double> domain_upper_bound_double;
+  Teuchos::Array<double> domain_lower_bound_double;
+  Teuchos::Array<double> correlation_length_double;
+
+  // Get Domain Upper Bounds
+  if (solverParams.isType<std::string>("Domain Upper Bounds")) 
+    domain_upper_bound_double =
       Teuchos::getArrayFromStringParameter<double>(
 	solverParams, "Domain Upper Bounds");
   else
-    domain_upper_bound = 
-      solverParams.get< Teuchos::Array<value_type> >("Domain Upper Bounds");
+    domain_upper_bound_double = 
+      solverParams.get< Teuchos::Array<double> >("Domain Upper Bounds");
+
+  // (Convert each element from double to value_type)
+  domain_upper_bound.resize(domain_upper_bound_double.size());
+  for (int i=0; i<domain_upper_bound.size(); i++)
+    domain_upper_bound[i]=domain_upper_bound_double[i];
     
-  if (solverParams.isType<std::string>("Domain Lower Bounds"))
-    domain_lower_bound = 
+  // Get Domain Lower Bounds
+  if (solverParams.isType<std::string>("Domain Lower Bounds")) 
+    domain_lower_bound_double =
       Teuchos::getArrayFromStringParameter<double>(
 	solverParams, "Domain Lower Bounds");
   else
-    domain_lower_bound = 
-      solverParams.get< Teuchos::Array<value_type> >("Domain Lower Bounds");
+    domain_lower_bound_double = 
+      solverParams.get< Teuchos::Array<double> >("Domain Lower Bounds");
 
-  if (solverParams.isType<std::string>("Correlation Lengths"))
-    correlation_length = 
+  // (Convert each element from double to value_type)
+  domain_lower_bound.resize(domain_lower_bound_double.size());
+  for (int i=0; i<domain_lower_bound.size(); i++)
+    domain_lower_bound[i]=domain_lower_bound_double[i];
+    
+  // Get Correlation Lengths
+  if (solverParams.isType<std::string>("Correlation Lengths")) 
+    correlation_length_double =
       Teuchos::getArrayFromStringParameter<double>(
 	solverParams, "Correlation Lengths");
   else
-    correlation_length = 
-      solverParams.get< Teuchos::Array<value_type> >("Correlation Lengths");
-  
+    correlation_length_double = 
+      solverParams.get< Teuchos::Array<double> >("Correlation Lengths");
 
+  // (Convert each element from double to value_type)
+  correlation_length.resize(correlation_length_double.size());
+  for (int i=0; i<correlation_length.size(); i++)
+    correlation_length[i]=correlation_length_double[i];
+    
   // Compute 1-D eigenfunctions for each dimension
   dim = domain_upper_bound.size();
   Teuchos::Array< Teuchos::Array< OneDEigenPair<value_type> > > eig_pairs(dim);
