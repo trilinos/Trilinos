@@ -64,6 +64,9 @@ class FillableMat {
   fei_Pool_alloc<FillableVec> vecpool_;
 }; //class FillableMat
 
+/** Print the contents of a FillableMat to the given std::ostream. */
+void print(std::ostream& os, const FillableMat& mat);
+
 /** Return the number of nonzeros in mat. */
 int count_nnz(const FillableMat& mat);
 

@@ -240,6 +240,24 @@ FillableMat::operator!=(const FillableMat& rhs) const
 }
 
 //-----------------------------------------------------------------
+void print(std::ostream& os, const FillableMat& mat)
+{
+  FillableMat::const_iterator
+    irow = mat.begin(), irowend = mat.end();
+  for(; irow!=irowend; ++irow) {
+    int row = irow->first;
+    const FillableVec* vec = irow->second;
+    os << "row " << row << ": ";
+    FillableVec::const_iterator
+      ivec = vec->begin(), ivecend = vec->end();
+    for(; ivec!=ivecend; ++ivec) {
+      os << "("<<ivec->first<<","<<ivec->second<<") ";
+    }
+    os << std::endl;
+  }
+}
+
+//-----------------------------------------------------------------
 int count_nnz(const FillableMat& mat)
 {
   int nnz = 0;

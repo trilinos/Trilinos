@@ -30,8 +30,8 @@ int SolnCheck::readSoln(const char* baseName, int np, fei::FillableMat& solution
       infile >> numDOF;
 
       for(int j=0; j<numDOF; j++) {
-	infile >> tmpValue;
-	solution.putCoef(node,j,tmpValue);
+        infile >> tmpValue;
+        solution.putCoef(node,j,tmpValue);
       }
       infile >> node;
     }
@@ -96,6 +96,10 @@ int SolnCheck::checkSolution(int localProc, int numProcs,
 
     if (solnCheckCode != 0) {
       FEI_COUT << "soln-check failed, checkFileName="<<checkFileName<<FEI_ENDL;
+      FEI_COUT << "soln: " << FEI_ENDL;
+      fei::print(FEI_COUT, soln);
+      FEI_COUT << "correctSoln: " << FEI_ENDL;
+      fei::print(FEI_COUT, correctSoln);
       return(-1);
     }
     FEI_COUT << " ok"<<FEI_ENDL;
