@@ -32,6 +32,14 @@ This will allow reliably killing timed-out tests ... This should be fixed in
 the dev version of CTest.  TODO: Verify in new version of CTest.
 
 
+(*) [CDash] [P2] (4/14/2010) Not all of the Trilinos subprojects (packages)
+are being displayed on
+http://trilinos.sandia.gov/cdash/index.php?project=Trilinos.  For example, the
+row for STK is empty but if you click on 'STK' you go to
+http://trilinos.sandia.gov/cdash/index.php?project=Trilinos&subproject=STK you
+see that it is being tested. 
+
+
 (*) [CDash] [P3] Line wrap all warning and error messages in CDash output.
 Long lines are impossible to read currently. TODO: Make a *much* lower
 priority.
