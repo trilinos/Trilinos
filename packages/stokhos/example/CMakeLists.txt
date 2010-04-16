@@ -41,6 +41,11 @@ PACKAGE_ADD_EXECUTABLE(
   COMM serial mpi
   )
 
+PACKAGE_ADD_EXECUTABLE(
+  sparsity_example
+  SOURCES sparsity_example.cpp
+  )
+
 IF(Stokhos_ENABLE_TriKota)
 
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
@@ -66,10 +71,5 @@ IF(Stokhos_ENABLE_TriKota)
      )
 
   ENDIF()
-
-PACKAGE_ADD_EXECUTABLE(
-  sparsity_example
-  SOURCES sparsity_example.cpp
-  )
 
 ENDIF()
