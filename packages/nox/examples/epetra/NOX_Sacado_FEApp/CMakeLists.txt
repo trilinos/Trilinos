@@ -43,6 +43,11 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND NOX_ENABLE_Sacado AND
       PASS_REGULAR_EXPRESSION "Test Passed"
       )
 
+    PACKAGE_ADD_EXECUTABLE(
+      SimplePCE_NOX_Example
+      SOURCES SimpleME.hpp SimpleME.cpp simple_pce_nox.C
+      )
+
     IF(Stokhos_ENABLE_Anasazi)	
       PACKAGE_ADD_EXECUTABLE(
         Sacado_FEApp_Jacobian_KL_Example
