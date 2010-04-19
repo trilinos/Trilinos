@@ -34,7 +34,7 @@ ENABLE_MEROS=OFF
 # If your system isn't organized this way, you can copy this script
 # and modify as per your system.
 #
-GCC_VERSION=4.3.2
+GCC_VERSION=4.4.2
 COMPILER_VERSION=gcc-${GCC_VERSION}
 COMPILER_ROOT=/usr/local/${COMPILER_VERSION}
 BIN_PATH=${COMPILER_ROOT}/bin
@@ -42,7 +42,7 @@ LIB_PATH=${COMPILER_ROOT}/lib
 INC_PATH=${COMPILER_ROOT}/include
 # Location of Python.h. Not needed unless you're building the
 # python wrappers.
-PYTHON_INC_PATH=${INC_PATH}/python2.5
+PYTHON_INC_PATH=${INC_PATH}/python2.6
 
 # ----------------------------------------------------------------------------
 # Set the fortran library name. On older Linux systems this will 
@@ -224,7 +224,7 @@ ${ECHO} cmake \
 -D Sundance_ENABLE_BROKEN_CODE:BOOL=OFF \
 -D Sundance_ENABLE_Python:BOOL=${PY_SUNDANCE} \
 -D Sundance_ENABLE_EXTERNAL_CHACO:BOOL=${HAVE_CHACO} \
--D Teuchos_ENABLE_DEBUG_RCP_NODE_TRACING:BOOL=OFF \
+-D Teuchos_ENABLE_DEBUG_RCP_NODE_TRACING:BOOL=ON \
 -D Trilinos_DATA_DIR:FILEPATH="${TRILINOS_DATA_DIR}" \
 -D NOX_ENABLE_LOCA:BOOL=OFF \
 -D CMAKE_INSTALL_PREFIX:PATH=${INSTALL_PREFIX} \
