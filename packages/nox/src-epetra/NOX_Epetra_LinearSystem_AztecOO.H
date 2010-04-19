@@ -678,11 +678,11 @@ protected:
   //! If true, any preconditioner error will cause a throw instead of a warning.
   bool throwErrorOnPrecFailure;
 
-#ifdef HAVE_NOX_DEBUG
+// #ifdef HAVE_NOX_DEBUG
 #ifdef HAVE_NOX_EPETRAEXT
   mutable int linearSolveCount;
 #endif
-#endif
+// #endif
 
 };
 

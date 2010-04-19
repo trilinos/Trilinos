@@ -32,15 +32,15 @@
  * | CVS File Information |
  * ------------------------
  *
- * $RCSfile$
+ * $RCSfile: az_gmresr.c,v $
  *
- * $Author$
+ * $Author: william $
  *
- * $Date$
+ * $Date: 2006/07/20 23:08:48 $
  *
- * $Revision$
+ * $Revision: 1.11 $
  *
- * $Name$
+ * $Name:  $
  *====================================================================*/
 
 #include <stdlib.h>
@@ -220,12 +220,19 @@ char *T2 = "N";
                            prefix,scaled_r_norm);
 
   iter = 0;
-  while (!converged && iter < options[AZ_max_iter]) {
+/*rst change  while (!converged && iter < options[AZ_max_iter]) { */
+  while (!(convergence_info->converged) && iter < options[AZ_max_iter] && !(convergence_info->isnan)) {
 
+    convergence_info->iteration = iter;
     i = 0;
 
-    while (i < kspace && !converged && iter < options[AZ_max_iter]) {
+/*rst change   while (i < kspace && !converged && iter < options[AZ_max_iter]) { */
+    while (i < kspace && !(convergence_info->converged) && iter < options[AZ_max_iter]
+           && !(convergence_info->isnan)) {
+
       iter++;
+    convergence_info->iteration = iter;
+
 
       /* v_i+1 = A M^-1 v_i */
 
@@ -233,10 +240,44 @@ char *T2 = "N";
 
       if (iter == 1) init_time = AZ_second();
 
+#ifdef AZ_ENABLE_TIMEMONITOR
+#ifdef HAVE_AZTECOO_TEUCHOS
+        /* Start timer. */
+      static int precID = -1;
+      precID = Teuchos_startTimer( "AztecOO: Operation Prec*x", precID );
+#endif
+#endif
       precond->prec_function(UU[i],options,proc_config,params,Amat,precond);
+#ifdef AZ_ENABLE_TIMEMONITOR
+#ifdef HAVE_AZTECOO_TEUCHOS
+      /* Stop timer. */
+      Teuchos_stopTimer( precID );
+#endif
+#endif
       if (iter == 1) status[AZ_first_precond] = AZ_second() - init_time;
-      Amat->matvec(UU[i], CC[i], Amat, proc_config);
 
+#ifdef AZ_ENABLE_TIMEMONITOR
+#ifdef HAVE_AZTECOO_TEUCHOS
+      /* Start timer. */
+      static int matvecID = -1;
+      matvecID = Teuchos_startTimer( "AztecOO: Operation Op*x", matvecID );
+#endif
+#endif
+      Amat->matvec(UU[i], CC[i], Amat, proc_config);
+#ifdef AZ_ENABLE_TIMEMONITOR
+#ifdef HAVE_AZTECOO_TEUCHOS
+      /* Stop timer. */
+      Teuchos_stopTimer( matvecID );
+#endif
+#endif
+
+#ifdef AZ_ENABLE_TIMEMONITOR
+#ifdef HAVE_AZTECOO_TEUCHOS
+      /* Start the timer. */
+      static int orthoID = -1;
+      orthoID = Teuchos_startTimer( "AztecOO: Orthogonalization", orthoID );
+#endif
+#endif
 
       /* Gram-Schmidt orthogonalization */
 
@@ -244,15 +285,39 @@ char *T2 = "N";
          for (ii = 0 ; ii < 2 ; ii++ ) {
             dble_tmp = 0.0; mm = i;
             if (N == 0) for (k = 0 ; k < i ; k++) dots[k] = 0.0;
+#ifdef AZ_ENABLE_TIMEMONITOR
+#ifdef HAVE_AZTECOO_TEUCHOS
+      /* Start the timer. */
+      static int orthoInnerProdID = -1;
+      orthoInnerProdID = Teuchos_startTimer( "AztecOO: Ortho (Inner Product)", orthoInnerProdID );
+#endif
+#endif
             DGEMV_F77(CHAR_MACRO(T[0]), &N, &mm, &doubleone, CCblock, &NN, CC[i], 
                    &one, &dble_tmp, dots, &one);
 
             AZ_gdot_vec(i, dots, tmp, proc_config);
+#ifdef AZ_ENABLE_TIMEMONITOR
+#ifdef HAVE_AZTECOO_TEUCHOS
+      Teuchos_stopTimer( orthoInnerProdID );
+#endif
+#endif
 
+#ifdef AZ_ENABLE_TIMEMONITOR
+#ifdef HAVE_AZTECOO_TEUCHOS
+      /* Start the timer. */
+      static int orthoUpdateID = -1;
+      orthoUpdateID = Teuchos_startTimer( "AztecOO: Ortho (Update)", orthoUpdateID );
+#endif
+#endif
             DGEMV_F77(CHAR_MACRO(T2[0]), &N, &mm, &minusone, CCblock, &NN, dots, 
                    &one, &doubleone, CC[i], &one);
             DGEMV_F77(CHAR_MACRO(T2[0]), &N, &mm, &minusone, UUblock, &NN, dots,
                    &one, &doubleone, UU[i], &one);
+#ifdef AZ_ENABLE_TIMEMONITOR
+#ifdef HAVE_AZTECOO_TEUCHOS
+      Teuchos_stopTimer( orthoUpdateID );
+#endif
+#endif
          }
       }
       else {                    /* modified */
@@ -266,7 +331,19 @@ char *T2 = "N";
 
       /* normalize vector */
 
+#ifdef AZ_ENABLE_TIMEMONITOR
+#ifdef HAVE_AZTECOO_TEUCHOS
+      static int orthoNormID = -1;
+      orthoNormID = Teuchos_startTimer( "AztecOO: Ortho (Norm)", orthoNormID );
+#endif
+#endif
       dble_tmp = sqrt(AZ_gdot(N, CC[i], CC[i], proc_config));
+#ifdef AZ_ENABLE_TIMEMONITOR
+#ifdef HAVE_AZTECOO_TEUCHOS
+      Teuchos_stopTimer( orthoNormID );
+#endif
+#endif
+
       if (dble_tmp  > DBL_EPSILON*r_2norm)
         dble_tmp  = 1.0 / dble_tmp;
       else
@@ -280,6 +357,12 @@ char *T2 = "N";
       dble_tmp = -dble_tmp;
       DAXPY_F77(&N, &dble_tmp, CC[i], &one, res, &one);
 
+#ifdef AZ_ENABLE_TIMEMONITOR
+#ifdef HAVE_AZTECOO_TEUCHOS
+      /* Stop the timer. */
+      Teuchos_stopTimer( orthoID );
+#endif
+#endif
 
       /* determine residual norm & test convergence */
 
@@ -301,12 +384,14 @@ char *T2 = "N";
 
       converged = scaled_r_norm < epsilon;
 
-      if ( (iter%print_freq == 0) && proc == 0)
-        (void) AZ_printf_out("%siter: %4d           residual = %e\n",
-                       prefix,iter, scaled_r_norm);
+/*rst change      if ( (iter%print_freq == 0) && proc == 0) */
+      if ( (iter%print_freq == 0) &&
+           (options[AZ_conv]!=AZTECOO_conv_test) && proc == 0)
+        (void) AZ_printf_out("%siter: %4d           residual = %e\n",prefix,iter,
+                       scaled_r_norm);
 
       i++;      /* subspace dim. counter dim(K) = i - 1 */
-
+#ifdef out
       if (options[AZ_check_update_size] & converged)
          converged = AZ_compare_update_vs_soln(N, -1.,dble_tmp, UU[i-1], x,
                                            params[AZ_update_reduction],
@@ -340,6 +425,7 @@ char *T2 = "N";
           return;
         }
       }
+#endif
     }
   }
 
@@ -348,6 +434,19 @@ char *T2 = "N";
     (void) AZ_printf_out("%siter: %4d           residual = %e\n",
 		   prefix,iter, scaled_r_norm);
 
+
+  if (convergence_info->converged) {
+    i = AZ_normal;
+    scaled_r_norm = true_scaled_r;
+  }
+  else if (convergence_info->isnan) i = AZ_breakdown;
+  else i = AZ_maxits;
+
+  AZ_terminate_status_print(i, iter, status, rec_residual, params,
+                            scaled_r_norm, actual_residual, options,
+                            proc_config);
+
+#ifdef out
   /* check if we exceeded maximum number of iterations */
 
   if (converged) {
@@ -361,5 +460,6 @@ char *T2 = "N";
                             scaled_r_norm, actual_residual, options,
                             proc_config);
 
+#endif
 } /* AZ_pgmres */
 

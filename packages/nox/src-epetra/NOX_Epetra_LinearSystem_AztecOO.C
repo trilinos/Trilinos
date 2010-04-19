@@ -72,13 +72,13 @@
 #include "Teuchos_ParameterList.hpp"
 
 // EpetraExt includes for dumping a matrix
-#ifdef HAVE_NOX_DEBUG
+// #ifdef HAVE_NOX_DEBUG
 #ifdef HAVE_NOX_EPETRAEXT
 #include "EpetraExt_BlockMapOut.h"
 #include "EpetraExt_MultiVectorOut.h"
 #include "EpetraExt_RowMatrixOut.h"
 #endif
-#endif
+// #endif
 
 #ifdef HAVE_NOX_ML_EPETRA
 #include "Teuchos_ParameterList.hpp"
@@ -325,11 +325,11 @@ reset(Teuchos::ParameterList& linearSolverParams)
   maxAgeOfPrec = linearSolverParams.get("Max Age Of Prec", 1);
   precQueryCounter = 0;
 
-#ifdef HAVE_NOX_DEBUG
+// #ifdef HAVE_NOX_DEBUG
 #ifdef HAVE_NOX_EPETRAEXT
   linearSolveCount = 0;
 #endif
-#endif
+// #endif
 
 }
 
@@ -347,6 +347,8 @@ setAztecOptions(Teuchos::ParameterList& p, AztecOO& aztec) const
     aztec.SetAztecOption(AZ_solver, AZ_cg);
   else if (linearSolver == "GMRES")
     aztec.SetAztecOption(AZ_solver, AZ_gmres);
+  else if (linearSolver == "GMRESR")
+    aztec.SetAztecOption(AZ_solver, AZ_GMRESR);
   else if (linearSolver == "CGS")
     aztec.SetAztecOption(AZ_solver, AZ_cgs);
   else if (linearSolver == "TFQMR")
@@ -616,7 +618,7 @@ applyJacobianInverse(Teuchos::ParameterList &p,
   // ************* End linear system scaling *******************
 
   // Use EpetraExt to dump linear system if debuggging
-#ifdef HAVE_NOX_DEBUG
+// #ifdef HAVE_NOX_DEBUG
 #ifdef HAVE_NOX_EPETRAEXT
 
   ++linearSolveCount;
@@ -654,7 +656,7 @@ applyJacobianInverse(Teuchos::ParameterList &p,
 
   }
 #endif
-#endif
+// #endif
 
   // Make sure preconditioner was constructed if requested
   if (!isPrecConstructed && (precAlgorithm != None_)) {
@@ -704,7 +706,7 @@ applyJacobianInverse(Teuchos::ParameterList &p,
   }
 
   // Dump solution of linear system
-#ifdef HAVE_NOX_DEBUG
+// #ifdef HAVE_NOX_DEBUG
 #ifdef HAVE_NOX_EPETRAEXT
   if (p.get("Write Linear System", false)) {
     std::string lhsFileName = prefixName + "_LHS_" + postfixName;
@@ -712,7 +714,7 @@ applyJacobianInverse(Teuchos::ParameterList &p,
 					   result.getEpetraVector());
   }
 #endif
-#endif
+// #endif
 
   double endTime = timer.WallTime();
   timeApplyJacbianInverse += (endTime - startTime);
