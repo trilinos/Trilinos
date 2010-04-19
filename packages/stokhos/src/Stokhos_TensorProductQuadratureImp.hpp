@@ -83,15 +83,6 @@ TensorProductQuadrature(const Teuchos::RCP<const ProductBasis<ordinal_type,value
   }
 
   std::cout << "Number of quadrature points = " << ntot << std::endl;
-
-//   std::cout << "Tensor product quadrature points, weights, values = " << std::endl;
-//   for (int i=0; i<n; i++) {
-//     std::cout << "\t" << this->quad_points[i][0] 
-//               << "\t" << this->quad_weights[i];
-//     for (ordinal_type j=0; j<sz; j++)
-//       std::cout << "\t" << this->quad_values[i][j];
-//     cout << std::endl;
-//   }
 }
 
 template <typename ordinal_type, typename value_type>
@@ -146,17 +137,6 @@ TensorProductQuadrature(const Teuchos::RCP<const ProductBasis<ordinal_type,value
     }
     ++cnt;
   }
-
-//  std::cout << "Number of quadrature points = " << ntot << std::endl;
-
-//   std::cout << "Tensor product quadrature points, weights, values = " << std::endl;
-//   for (int i=0; i<n; i++) {
-//     std::cout << "\t" << this->quad_points[i][0] 
-//               << "\t" << this->quad_weights[i];
-//     for (ordinal_type j=0; j<sz; j++)
-//       std::cout << "\t" << this->quad_values[i][j];
-//     cout << std::endl;
-//   }
 }
 
 template <typename ordinal_type, typename value_type>

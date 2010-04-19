@@ -300,8 +300,8 @@ int main(int argc, char *argv[]) {
         Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
       Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
         Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
-       // Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
-       // 	 Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(basis, p));
+      // Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
+      // 	Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(basis, p));
       int sz = basis->size();
       Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk =
 	basis->computeTripleProductTensor(sz);

@@ -99,7 +99,14 @@ namespace Stokhos {
     // Prohibit Assignment
     AnisoSparseGridQuadrature& operator=(const AnisoSparseGridQuadrature& b);
 
+    static void getMyPoints( int order, int dim, double x[] );
+  
+    static void getMyWeights( int order, int dim, double w[] );
+
   protected:
+
+    //! Coordinate bases
+    Teuchos::Array< Teuchos::RCP<const OneDOrthogPolyBasis<ordinal_type,value_type> > > coordinate_bases;
 
     //! Quadrature points
     Teuchos::Array< Teuchos::Array<value_type> > quad_points;
@@ -110,11 +117,10 @@ namespace Stokhos {
     //! Quadrature values
     Teuchos::Array< Teuchos::Array<value_type> >  quad_values;
 
+    //! Static pointer for VPISparseGrid interface
+    static AnisoSparseGridQuadrature *sgq;
+
   }; // class AnisoSparseGridQuadrature
-  
-  void getMyPoints( int order, int np, double p[], double x[] );
-  
-  void getMyWeights( int order, int np, double p[], double w[] );
 
 } // namespace Stokhos
 #include "Stokhos_AnisoSparseGridQuadratureImp.hpp"

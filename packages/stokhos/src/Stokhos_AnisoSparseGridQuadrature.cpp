@@ -28,14 +28,14 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Stokhos_SparseGridQuadrature.hpp"
+#include "Stokhos_AnisoSparseGridQuadrature.hpp"
 
 #ifdef HAVE_STOKHOS_DAKOTA
 
 // Instantiate the static sparse grid quadrature pointer for int/double
 // (anything else and the user has to do it)
 template <>
-Stokhos::SparseGridQuadrature<int,double>*
-Stokhos::SparseGridQuadrature<int,double>::sgq(NULL);
+Stokhos::AnisoSparseGridQuadrature<int,double>*
+Stokhos::AnisoSparseGridQuadrature<int,double>::sgq(NULL);
 
 #endif // HAVE_STOKHOS_DAKOTA

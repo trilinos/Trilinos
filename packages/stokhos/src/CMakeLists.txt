@@ -120,6 +120,7 @@ SET(HEADERS ${HEADERS}
 SET(SOURCES ${SOURCES}
   Stokhos_Version.cpp
   Stokhos_SparseGridQuadrature.cpp
+  Stokhos_AnisoSparseGridQuadrature.cpp
   Stokhos_MatrixFreeEpetraOp.cpp
   Stokhos_KLMatrixFreeEpetraOp.cpp
   Stokhos_MeanEpetraOp.cpp
