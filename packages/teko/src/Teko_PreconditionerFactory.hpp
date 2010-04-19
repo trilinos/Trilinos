@@ -60,6 +60,7 @@
 #include "Teko_InverseLibrary.hpp"
 #include "Teko_CloneFactory.hpp"
 #include "Teko_PreconditionerState.hpp"
+#include "Teko_RequestHandler.hpp"
 
 namespace Teko {
 
@@ -71,10 +72,14 @@ using Thyra::DefaultPreconditioner;
   *
   * Abstract class which block preconditioner factories in Teko should
   * be based on. All that is needed is the implementation of 
-  * "buildPreconditionerOperator".
+  * "buildPreconditionerOperator". This class also uses the 
+  * <code>RequestHandler</code> concrete interface. This is useful for
+  * extracting information from the user in an unobtrusive and modular
+  * way.
   */
 class PreconditionerFactory 
-   : public virtual Thyra::PreconditionerFactoryBase<double> {
+   : public virtual Thyra::PreconditionerFactoryBase<double>
+   , public RequestHandler {
 public:
 
    /** \brief Function that is called to build the preconditioner
@@ -217,6 +222,9 @@ public:
 protected:
    //! for ParameterListAcceptor
    Teuchos::RCP<Teuchos::ParameterList>          paramList_;
+
+   //! For handling requests and send requests back to the user
+   Teuchos::RCP<RequestHandler> callbackHandler_;
 
 private:
    //! Inverse library to be used by this factory

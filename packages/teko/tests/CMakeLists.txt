@@ -82,3 +82,12 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   COMM serial mpi
   NUM_MPI_PROCS 1-4
   )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  RequestInterface 
+  SOURCES
+    unit_tests/tRequestInterface.cpp
+    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  )
