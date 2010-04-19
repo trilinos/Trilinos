@@ -421,27 +421,6 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
       pack_field_values( buffer , entity );
     }
 
-    // Any entity that I sent and is not in an owned closure is deleted.
-    // Destroy backwards so as not to invalidate closures in the process.
-
-    for ( std::set<EntityProc,EntityLess>::iterator
-          i = send_closure.end() ; i != send_closure.begin() ; ) {
-      --i ;
-      if ( ! member_of_owned_closure( * i->first , p_rank ) ) {
-        // Need to remove this entry from the distributed index
-        parallel::DistributedIndex::KeyType tmp = i->first->key().raw_key();
-        distributed_index_remove.push_back( tmp );
-
-        // Now destroy the entity.
-        Entity * e = i->first ;
-        if ( ! destroy_entity( e ) ) {
-          throw std::logic_error(std::string("BulkData::destroy_entity FAILED"));
-        }
-      }
-    }
-
-    send_closure.clear(); // Has been invalidated
-
     comm.communicate();
 
     for ( unsigned p = 0 ; p < p_size ; ++p ) {
@@ -486,6 +465,31 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
     all_reduce( p_comm , ReduceSum<1>( & error_count ) );
 
     if ( error_count ) { throw std::runtime_error( error_msg.str() ); }
+
+    // Any entity that I sent and is not in an owned closure is deleted.
+    // The owned closure will be effected by received entities, so can
+    // only clean up after the newly owned entities have been received.
+    // Destroy backwards so as not to invalidate closures in the process.
+
+    for ( std::set<EntityProc,EntityLess>::iterator
+          i = send_closure.end() ; i != send_closure.begin() ; ) {
+      --i ;
+      if ( ! member_of_owned_closure( * i->first , p_rank ) ) {
+        // Need to remove this entry from the distributed index
+        parallel::DistributedIndex::KeyType tmp = i->first->key().raw_key();
+        distributed_index_remove.push_back( tmp );
+
+        // Now destroy the entity.
+        Entity * e = i->first ;
+        if ( ! destroy_entity( e ) ) {
+          throw std::logic_error(std::string("BulkData::destroy_entity FAILED"));
+        }
+      }
+    }
+
+    send_closure.clear(); // Has been invalidated
+
+    // Update distributed index for added and removed entities.
 
     m_entities_index.update_keys( distributed_index_add ,
                                   distributed_index_remove );
