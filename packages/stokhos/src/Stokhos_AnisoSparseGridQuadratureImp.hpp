@@ -28,7 +28,7 @@
 // ***********************************************************************
 // @HEADER
 
-#include "sgmga.H"
+#include "sandia_sgmga.H"
 #include "sandia_rules.H"
 #include "Stokhos_AnisoSparseGridQuadrature.hpp"
 
@@ -85,10 +85,10 @@ AnisoSparseGridQuadrature(
   }
 
   int num_total_pts =
-    webbur::sgmga_size_total(d,&dim_weights[0],level,&rules[0],webbur::level_to_order_default);
+    webbur::sandia_sgmga_size_total(d,&dim_weights[0],level,&rules[0],webbur::level_to_order_default);
 
   ordinal_type ntot =
-    webbur::sgmga_size(d,&dim_weights[0],level,&rules[0],
+    webbur::sandia_sgmga_size(d,&dim_weights[0],level,&rules[0],
 		    &nparams[0], &params[0],
 		    &compute1DPoints[0],
 		    1e-15,
@@ -102,7 +102,7 @@ AnisoSparseGridQuadrature(
   quad_values.resize(ntot);
   Teuchos::Array<value_type> gp(ntot*d);
 
-  webbur::sgmga_unique_index(d, &dim_weights[0], level, &rules[0],
+  webbur::sandia_sgmga_unique_index(d, &dim_weights[0], level, &rules[0],
       &nparams[0], &params[0],
       &compute1DPoints[0],
       1e-15, ntot, num_total_pts,
@@ -110,19 +110,19 @@ AnisoSparseGridQuadrature(
       &sparse_unique_index[0] );
 
 
-  webbur::sgmga_index(d, &dim_weights[0], level,
+  webbur::sandia_sgmga_index(d, &dim_weights[0], level,
 		    &rules[0], ntot, num_total_pts, &sparse_unique_index[0],
 		    webbur::level_to_order_default,
 		    &sparse_order[0], &sparse_index[0]);
 
-  webbur::sgmga_weight(d,&dim_weights[0],level,
+  webbur::sandia_sgmga_weight(d,&dim_weights[0],level,
 		    &rules[0], &nparams[0], &params[0],
 		    &compute1DWeights[0],
 		    ntot, num_total_pts, &sparse_unique_index[0],
 		    webbur::level_to_order_default,
 		    &quad_weights[0]);
 
-  webbur::sgmga_point(d, &dim_weights[0], level,
+  webbur::sandia_sgmga_point(d, &dim_weights[0], level,
     &rules[0], &nparams[0], &params[0],
     &compute1DPoints[0],
     ntot, &sparse_order[0], &sparse_index[0],
