@@ -684,7 +684,7 @@ void BulkData::internal_regenerate_shared_aura()
 
         // Higher rank and I own it, ghost to the sharing processor
         if ( erank < rel_entity->entity_rank() &&
-                     rel_entity->owner_rank() == m_parallel_rank &
+                     rel_entity->owner_rank() == m_parallel_rank &&
              ! in_shared( *rel_entity , p ) ) {
 
           EntityProc entry( rel_entity , p );
