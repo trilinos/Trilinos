@@ -48,6 +48,7 @@
 // Thyra includes
 #include "Thyra_DefaultLinearOpSource.hpp"
 #include "Thyra_DefaultInverseLinearOp.hpp"
+#include "Thyra_DefaultPreconditioner.hpp"
 
 // Stratimikos includes
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
@@ -94,9 +95,36 @@ SolveInverseFactory::SolveInverseFactory(const SolveInverseFactory & siFactory)
   */
 InverseLinearOp SolveInverseFactory::buildInverse(const LinearOp & linearOp) const
 {
+   Teko_DEBUG_SCOPE("SolveInverseFactory::buildInverse(linearOp)",10);
+
    // build and initialize inverse linear op with solve
    Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> > invLOWS = lowsFactory_->createOp();
    lowsFactory_->initializeOp(Thyra::defaultLinearOpSource(linearOp),&*invLOWS,Thyra::SUPPORT_SOLVE_FORWARD_ONLY);
+   
+   return Thyra::nonconstInverse<double>(invLOWS);
+}
+
+/** \brief Build a preconditioned inverse operator
+  * 
+  * Build the inverse operator using this factory and a user specified
+  * preconditioning operator. The default behavior is to call buildInverse
+  * ignoring the preconditioner. 
+  *
+  * \param[in] linearOp Linear operator needing to be inverted.
+  * \param[in] precOp Preconditioning operator
+  *
+  * \returns New linear operator that functions as the inverse
+  *          of <code>linearOp</code>.
+  */
+InverseLinearOp SolveInverseFactory::buildInverse(const LinearOp & linearOp,const LinearOp & precOp) const
+{ 
+   Teko_DEBUG_SCOPE("SolveInverseFactory::buildInverse(linearOp,precOp)",10);
+
+   // build and initialize inverse linear op with solve
+   Teuchos::RCP<Thyra::LinearOpWithSolveBase<double> > invLOWS = lowsFactory_->createOp();
+   lowsFactory_->initializePreconditionedOp(Thyra::defaultLinearOpSource(linearOp),
+                                                  Thyra::unspecifiedPrec(precOp),
+                                                  &*invLOWS,Thyra::SUPPORT_SOLVE_FORWARD_ONLY);
    
    return Thyra::nonconstInverse<double>(invLOWS);
 }
@@ -114,6 +142,28 @@ InverseLinearOp SolveInverseFactory::buildInverse(const LinearOp & linearOp) con
   */
 void SolveInverseFactory::rebuildInverse(const LinearOp & source,InverseLinearOp & dest) const
 {
+   RCP<Thyra::DefaultInverseLinearOp<double> > invDest = rcp_dynamic_cast<Thyra::DefaultInverseLinearOp<double> >(dest);
+   RCP<Thyra::LinearOpWithSolveBase<double> > lows = invDest->getNonconstLows();
+
+   lowsFactory_->initializeAndReuseOp(Thyra::defaultLinearOpSource(source),&*lows);
+}
+
+/** \brief Pass in an already constructed inverse operator. Update
+  *        the inverse operator based on the new source operator.
+  *
+  * Pass in an already constructed inverse operator. Update
+  * the inverse operator based on the new source operator.
+  *
+  * \param[in]     source Source operator to be inverted.
+  * \param[in]     precOp Preconditioning operator
+  * \param[in,out] dest   Pre constructed inverse operator to be
+  *                        rebuilt using the <code>source</code>
+  *                        object.
+  */
+void SolveInverseFactory::rebuildInverse(const LinearOp & source,const LinearOp & precOp,InverseLinearOp & dest) const
+{
+   TEUCHOS_ASSERT(false); // initializeAndReuseOp does not allow you to specify a new preconditioner operator! Talk to Ross!
+
    RCP<Thyra::DefaultInverseLinearOp<double> > invDest = rcp_dynamic_cast<Thyra::DefaultInverseLinearOp<double> >(dest);
    RCP<Thyra::LinearOpWithSolveBase<double> > lows = invDest->getNonconstLows();
 
@@ -210,15 +260,15 @@ InverseLinearOp PreconditionerInverseFactory::buildInverse(const LinearOp & line
   */
 InverseLinearOp PreconditionerInverseFactory::buildInverse(const LinearOp & linearOp, const PreconditionerState & parentState) const
 { 
-   Teko_DEBUG_SCOPE("PreconditionerInverseFactory::buildInverse(A,parentState)",0);
+   Teko_DEBUG_SCOPE("PreconditionerInverseFactory::buildInverse(A,parentState)",10);
    RCP<Thyra::PreconditionerBase<double> > prec = precFactory_->createPrec();
 
    {
-      Teko_DEBUG_SCOPE("Casting to Teko::Preconditioner",0);
+      Teko_DEBUG_SCOPE("Casting to Teko::Preconditioner",10);
       // pass state downward if a Teko::Preconditioner object is begin used
       RCP<Teko::Preconditioner> tekoPrec = Teuchos::rcp_dynamic_cast<Teko::Preconditioner>(prec);
       if(tekoPrec!=Teuchos::null) {
-         Teko_DEBUG_SCOPE("Merging states",0);
+         Teko_DEBUG_SCOPE("Merging states",10);
          tekoPrec->mergeStateObject(parentState);
       }
    }
@@ -379,10 +429,82 @@ InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & A)
 InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & A,
                              const PreconditionerState & parentState)
 {
-   Teko_DEBUG_SCOPE("buildInverse(factory,A,parentState)",0);
+   Teko_DEBUG_SCOPE("buildInverse(factory,A,parentState)",10);
    InverseLinearOp inv;
    try {
       inv = factory.buildInverse(A,parentState);
+   }
+   catch(std::exception & e) {
+      RCP<Teuchos::FancyOStream> out = Teko::getOutputStream();
+
+      *out << "Teko: \"buildInverse\" could not construct the inverse operator using ";
+      *out << "\"" << factory.toString() << "\"" << std::endl;
+      *out << std::endl;
+      *out << "*** THROWN EXCEPTION ***\n";
+      *out << e.what() << std::endl;
+      *out << "************************\n";
+      
+      throw e;
+   }
+
+   return inv;
+}
+
+/** Build an inverse operator using a factory and a linear operator
+  *
+  * \param[in] factory The inverse factory used to construct the inverse
+  *                    operator
+  * \param[in] precOp  Preconditioning operator
+  * \param[in] A       Linear operator whose inverse is required
+  *
+  * \returns An (approximate) inverse operator is returned for the operator <code>A</code>.
+  *
+  * \relates InverseFactory
+  */
+InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & A,const LinearOp & precOp)
+{
+   Teko_DEBUG_SCOPE("buildInverse(factory,A,precOp)",10);
+   InverseLinearOp inv;
+   try {
+      inv = factory.buildInverse(A,precOp);
+   }
+   catch(std::exception & e) {
+      RCP<Teuchos::FancyOStream> out = Teko::getOutputStream();
+
+      *out << "Teko: \"buildInverse\" could not construct the inverse operator using ";
+      *out << "\"" << factory.toString() << "\"" << std::endl;
+      *out << std::endl;
+      *out << "*** THROWN EXCEPTION ***\n";
+      *out << e.what() << std::endl;
+      *out << "************************\n";
+      
+      throw e;
+   }
+
+   return inv;
+}
+
+/** Build an inverse operator using a factory and a linear operator
+  * This functionality is only useful for Teko::PreconditionerFactory inverses.
+  *
+  * \param[in] factory The inverse factory used to construct the inverse
+  *                    operator
+  * \param[in] A       Linear operator whose inverse is required
+  * \param[in] precOp  Preconditioning operator
+  * \param[in] parentState Current state object to be used. Only useful for preconditioners.
+  *
+  * \returns An (approximate) inverse operator is returned for the operator <code>A</code>.
+  *
+  * \relates PreconditionerInverseFactory InverseFactory
+  */
+InverseLinearOp buildInverse(const InverseFactory & factory,const LinearOp & linearOp,
+                             const LinearOp & precOp,
+                             const PreconditionerState & parentState)
+{
+   Teko_DEBUG_SCOPE("buildInverse(factory,A,precOp,parentState)",10);
+   InverseLinearOp inv;
+   try {
+      inv = factory.buildInverse(linearOp,precOp,parentState);
    }
    catch(std::exception & e) {
       RCP<Teuchos::FancyOStream> out = Teko::getOutputStream();
@@ -408,6 +530,41 @@ void rebuildInverse(const InverseFactory & factory, const LinearOp & A, InverseL
    InverseLinearOp inv;
    try {
       factory.rebuildInverse(A,invA);
+   } 
+   catch(std::exception & e) {
+      RCP<Teuchos::FancyOStream> out = Teko::getOutputStream();
+
+      *out << "Teko: \"rebuildInverse\" could not construct the inverse operator using ";
+      *out << "\"" << factory.toString() << "\"" << std::endl;
+      *out << std::endl;
+      *out << "*** THROWN EXCEPTION ***\n";
+      *out << e.what() << std::endl;
+      *out << "************************\n";
+      
+      throw e;
+   }
+}
+
+/** Using a prebuilt linear operator, use factory to build an inverse operator
+  * given a new forward operator.
+  *
+  * \note This function sometimes fails depending on the underlying type
+  *       of the inverse factory.  Use with caution.
+  *
+  * \param[in] factory The inverse factory used to construct the inverse
+  *                    operator
+  * \param[in] A       Linear operator whose inverse is required
+  * \param[in] precOp  Preconditioning operator
+  * \param[in] invA    The inverse operator that is to be rebuilt using
+  *                    the <code>A</code> operator.
+  *
+  * \relates InverseFactory
+  */
+void rebuildInverse(const InverseFactory & factory, const LinearOp & A,const LinearOp & precOp, InverseLinearOp & invA)
+{
+   InverseLinearOp inv;
+   try {
+      factory.rebuildInverse(A,precOp,invA);
    } 
    catch(std::exception & e) {
       RCP<Teuchos::FancyOStream> out = Teko::getOutputStream();
