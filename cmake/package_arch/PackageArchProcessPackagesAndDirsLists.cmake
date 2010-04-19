@@ -56,18 +56,6 @@ MACRO(PACKAGE_ARCH_INSERT_STANDARD_PACKAGE_OPTIONS PACKAGE_NAME PACKAGE_CLASSIFI
   SET_CACHE_ON_OFF_EMPTY( ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}
     "${PACKAGE_ENABLE}" ${DOCSTR} )
 
-  MULTILINE_SET(DOCSTR
-    "Build tests for the package ${PACKAGE_NAME}.  Set to 'ON', 'OFF', or leave empty ''"
-     " to allow for other logic to decide."
-     )
-  SET_CACHE_ON_OFF_EMPTY( ${PACKAGE_NAME}_ENABLE_TESTS "" ${DOCSTR} )
-
-  MULTILINE_SET(DOCSTR
-    "Build examples for the package ${PACKAGE_NAME}.  Set to 'ON', 'OFF', or leave empty ''"
-     " to allow for other logic to decide."
-     )
-  SET_CACHE_ON_OFF_EMPTY( ${PACKAGE_NAME}_ENABLE_EXAMPLES "" ${DOCSTR} )
-
 ENDMACRO()
 
 

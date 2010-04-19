@@ -44,6 +44,20 @@ CREATE_DEPENCENCY_HANDLING_TEST_CASE(
 
 
 CREATE_DEPENCENCY_HANDLING_TEST_CASE(
+  EnableAllPackages_EnableTests
+  ARGS -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON -DTrilinos_ENABLE_TESTS:BOOL=ON
+  PASS_REGULAR_EXPRESSION_ALL
+    "Final set of enabled packages:  Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Stratimikos RBGen 18"
+    "Setting Teuchos_ENABLE_TESTS=ON"
+    "Setting RTOp_ENABLE_TESTS=ON"
+    "Setting Epetra_ENABLE_TESTS=ON"
+    "Setting ML_ENABLE_TESTS=ON"
+    "Setting Stratimikos_ENABLE_TESTS=ON"
+    "Setting RBGen_ENABLE_TESTS=ON"
+  )
+
+
+CREATE_DEPENCENCY_HANDLING_TEST_CASE(
   DisableEpetra_EnableAllPackages
   ARGS -DTrilinos_ENABLE_Epetra:BOOL=OFF -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON
   PASS_REGULAR_EXPRESSION_ALL
