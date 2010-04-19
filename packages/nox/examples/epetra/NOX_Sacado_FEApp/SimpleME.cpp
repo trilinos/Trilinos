@@ -43,25 +43,23 @@ SimpleME::SimpleME(const Teuchos::RCP<Epetra_Comm>& comm)
   // Importer
   importer = Teuchos::rcp(new Epetra_Import(*x_overlapped_map, *x_map));
 
-  // Initial guess, initialized to 0.5
+  // Initial guess, initialized to 1.5
   x_init = Teuchos::rcp(new Epetra_Vector(*x_map));
-  x_init->PutScalar(0.5);
+  x_init->PutScalar(1.5);
 
   // Overlapped solution vector
   x_overlapped = Teuchos::rcp(new Epetra_Vector(*x_overlapped_map));
 
   // Parameter vector map
-  p_map = Teuchos::rcp(new Epetra_LocalMap(2, 0, *comm));
+  p_map = Teuchos::rcp(new Epetra_LocalMap(1, 0, *comm));
 
   // Initial parameters
   p_init = Teuchos::rcp(new Epetra_Vector(*p_map));
-  (*p_init)[0] = 1.0;
-  (*p_init)[1] = 2.0;
+  (*p_init)[0] = 2.0;
 
   // Parameter names
-  p_names = Teuchos::rcp(new Teuchos::Array<std::string>(2));
+  p_names = Teuchos::rcp(new Teuchos::Array<std::string>(1));
   (*p_names)[0] = "alpha";
-  (*p_names)[1] = "beta";
 
   // Jacobian graph (dense 2x2 matrix)
   graph = Teuchos::rcp(new Epetra_CrsGraph(Copy, *x_map, 2));
@@ -171,9 +169,11 @@ SimpleME::createInArgs() const
   InArgsSetup inArgs;
   inArgs.setModelEvalDescription("Simple Model Evaluator");
 
+  // Deterministic InArgs
   inArgs.setSupports(IN_ARG_x,true);
   inArgs.set_Np(1);    // 1 parameter vector
 
+  // Stochastic InArgs
   inArgs.setSupports(IN_ARG_x_sg,true);
   inArgs.set_Np_sg(1); // 1 SG parameter vector
   inArgs.setSupports(IN_ARG_sg_basis,true);
@@ -189,14 +189,12 @@ SimpleME::createOutArgs() const
   OutArgsSetup outArgs;
   outArgs.setModelEvalDescription("Simple Model Evaluator");
 
+  // Deterministic OutArgs
   outArgs.set_Np_Ng(1, 0);
   outArgs.setSupports(OUT_ARG_f,true);
   outArgs.setSupports(OUT_ARG_W,true);
-  outArgs.set_W_properties(
-    DerivativeProperties(
-      DERIV_LINEARITY_UNKNOWN ,DERIV_RANK_FULL ,true)
-    );
-
+  
+  // Stochastic OutArgs
   outArgs.set_Np_Ng_sg(1, 0);
   outArgs.setSupports(OUT_ARG_f_sg,true);
   outArgs.setSupports(OUT_ARG_W_sg,true);
@@ -222,27 +220,31 @@ SimpleME::evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
   Teuchos::RCP<const Epetra_Vector> p = inArgs.get_p(0);
   if (p == Teuchos::null)
     p = p_init;
-  double alpha = (*p)[0];
-  double beta = (*p)[1];
+  double a = (*p)[0];
   
   // Residual
+  // f = |  a*a  - x0 |
+  //     | x1*x1 - x0 |
+  // where a = p[0].
   Teuchos::RCP<Epetra_Vector> f = outArgs.get_f();
   if (f != Teuchos::null) {
     int row;
     double v;
     if (x_map->MyGID(0)) {
       row = 0;
-      v = alpha*alpha - x0*x0;
+      v = a*a - x0;
       f->ReplaceGlobalValues(1, &v, &row);
     }
     if (x_map->MyGID(1)) {
       row = 1;
-      v = beta*beta - x1*x1;
+      v = x1*x1 - x0;
       f->ReplaceGlobalValues(1, &v, &row);
     }
   }
 
   // Jacobian
+  // J = | -1   0   |
+  //     | -1  2*x1 |
   Teuchos::RCP<Epetra_Operator> W = outArgs.get_W();
   if (W != Teuchos::null) {
     Teuchos::RCP<Epetra_CrsMatrix> jac = 
@@ -250,11 +252,11 @@ SimpleME::evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
     int indices[2] = { 0, 1 };
     double values[2];
     if (x_map->MyGID(0)) {
-      values[0] = -2.0*x0; values[1] = 0.0;
+      values[0] = -1.0; values[1] = 0.0;
       jac->ReplaceGlobalValues(0, 2, values, indices);
     }
     if (x_map->MyGID(1)) {
-      values[0] = 0.0; values[1] = -2.0*x1;
+      values[0] = -1.0; values[1] = 2.0*x1;
       jac->ReplaceGlobalValues(1, 2, values, indices);
     }
   }
@@ -263,6 +265,7 @@ SimpleME::evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
   // Stochastic Galerkin calculation
   //
 
+  // Get stochastic expansion data
   Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 
     inArgs.get_sg_basis();
   Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expn = 
@@ -281,38 +284,39 @@ SimpleME::evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
 
   // Stochastic parameters
   InArgs::sg_const_vector_t p_sg = inArgs.get_p_sg(0);
-  Stokhos::OrthogPolyApprox<int,double> alpha_sg(basis), beta_sg(basis);
+  Stokhos::OrthogPolyApprox<int,double> a_sg(basis);
   if (p_sg != Teuchos::null) {
     for (int i=0; i<basis->size(); i++) {
-      alpha_sg[i] = (*p_sg)[i][0];
-      beta_sg[i] = (*p_sg)[i][1];
+      a_sg[i] = (*p_sg)[i][0];
     }
   }
 
   // Stochastic residual
+  // f[i] = | <a*a - x0, psi_i>/<psi_i^2>   |
+  //        | <x1*x1 - x0, psi_i>/<psi_i^2> |
   OutArgs::sg_vector_t f_sg = outArgs.get_f_sg();
   Stokhos::OrthogPolyApprox<int,double> tmp0_sg(basis), tmp1_sg(basis);
   if (f_sg != Teuchos::null) {
     int row;
     if (x_map->MyGID(0)) {
       row = 0;
-      expn->times(tmp0_sg, alpha_sg, alpha_sg);
-      expn->times(tmp1_sg, x0_sg, x0_sg);
-      expn->minus(tmp0_sg, tmp0_sg, tmp1_sg);
+      expn->times(tmp0_sg, a_sg, a_sg);
+      expn->minus(tmp1_sg, tmp0_sg, x0_sg);
       for (int i=0; i<basis->size(); i++)
-	(*f_sg)[i].ReplaceGlobalValues(1, &tmp0_sg[i], &row);
+	(*f_sg)[i].ReplaceGlobalValues(1, &tmp1_sg[i], &row);
     }
     if (x_map->MyGID(1)) {
       row = 1;
-      expn->times(tmp0_sg, beta_sg, beta_sg);
-      expn->times(tmp1_sg, x1_sg, x1_sg);
-      expn->minus(tmp0_sg, tmp0_sg, tmp1_sg);
+      expn->times(tmp0_sg, x1_sg, x1_sg);
+      expn->minus(tmp1_sg, tmp0_sg, x0_sg);
       for (int i=0; i<basis->size(); i++)
-	(*f_sg)[i].ReplaceGlobalValues(1, &tmp0_sg[i], &row);
+	(*f_sg)[i].ReplaceGlobalValues(1, &tmp1_sg[i], &row);
     }
   }
 
   // Stochastic Jacobian
+  // J[0] = | -1     0    |,   J[i] = | 0     0    |,  i > 0
+  //        | -1  2*x0[0] |           | 0  2*x0[i] |
   OutArgs::sg_operator_t W_sg = outArgs.get_W_sg();
   if (W_sg != Teuchos::null) {
     for (int i=0; i<basis->size(); i++) {
@@ -321,11 +325,19 @@ SimpleME::evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
       int indices[2] = { 0, 1 };
       double values[2];
       if (x_map->MyGID(0)) {
-	values[0] = -2.0*x0_sg[i]; values[1] = 0.0;
+	if (i == 0)
+	  values[0] = -1.0;
+	else
+	  values[0] = 0.0;
+	values[1] = 0.0;
 	jac->ReplaceGlobalValues(0, 2, values, indices);
       }
       if (x_map->MyGID(1)) {
-	values[0] = 0.0; values[1] = -2.0*x1_sg[i];
+	if (i == 0)
+	  values[0] = -1.0;
+	else
+	  values[0] = 0.0;
+	values[1] = 2.0*x1_sg[i]; 
 	jac->ReplaceGlobalValues(1, 2, values, indices);
       }
     }

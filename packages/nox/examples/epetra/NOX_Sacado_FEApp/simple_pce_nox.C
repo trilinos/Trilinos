@@ -70,9 +70,6 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    {
-    TEUCHOS_FUNC_TIME_MONITOR("Total PCE Calculation Time");
-
     // Create a communicator for Epetra objects
     Teuchos::RCP<Epetra_Comm> Comm;
 #ifdef HAVE_MPI
@@ -85,9 +82,8 @@ int main(int argc, char *argv[]) {
     
     // Create Stochastic Galerkin basis and expansion
     int p = 5;
-    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(2); 
-    for (int i=0; i<2; i++)
-      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p));
+    Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(1); 
+    bases[0] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p));
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
     int sz = basis->size();
@@ -106,11 +102,11 @@ int main(int argc, char *argv[]) {
     Teuchos::RCP<Teuchos::ParameterList> sgParams = 
       Teuchos::rcp(new Teuchos::ParameterList);
     sgParams->set("Jacobian Method", "Matrix Free");
-    Teuchos::ParameterList& sg_precParams = 
-      sgParams->sublist("Preconditioner Parameters");
     sgParams->set("Mean Preconditioner Type", "Ifpack");
 
     // Stochastic Galerkin initial guess
+    // Set the mean to the deterministic initial guess, higher-order terms
+    // to zero
     Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> x_init_sg = 
       Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(basis, 
 						       *(model->get_x_map())));
@@ -118,6 +114,9 @@ int main(int argc, char *argv[]) {
     (*x_init_sg)[0] = *(model->get_x_init());
 
     // Stochastic Galerkin parameters
+    // Linear expansion with the mean given by the deterministic initial
+    // parameter values, linear terms equal to 1, and higher order terms
+    // equal to zero.
     Teuchos::Array< Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> > p_init_sg(1);
     p_init_sg[0] = 
       Teuchos::rcp(new Stokhos::EpetraVectorOrthogPoly(basis, 
@@ -126,7 +125,8 @@ int main(int argc, char *argv[]) {
     (*p_init_sg[0])[0] = *(model->get_p_init(0));
     for (int i=0; i<model->get_p_map(0)->NumMyElements(); i++)
       (*p_init_sg[0])[i+1][i] = 1.0;
-    std::cout << *p_init_sg[0] << std::endl;
+    std::cout << "Stochatic Galerkin parameter expansion = " << std::endl
+	      << *p_init_sg[0] << std::endl;
 
     // Create stochastic Galerkin model evaluator
     Teuchos::RCP<Stokhos::SGModelEvaluator> sg_model =
@@ -174,11 +174,9 @@ int main(int argc, char *argv[]) {
     lsParams.set("Aztec Solver", "GMRES");  
     lsParams.set("Max Iterations", 100);
     lsParams.set("Size of Krylov Subspace", 100);
-    lsParams.set("Tolerance", 1e-6); 
+    lsParams.set("Tolerance", 1e-4); 
     lsParams.set("Output Frequency", 10);
     lsParams.set("Preconditioner", "Ifpack");
-    Teuchos::ParameterList& precParams = 
-      lsParams.sublist("Ifpac");
 
     // Sublist for convergence tests
     Teuchos::ParameterList& statusParams = noxParams->sublist("Status Tests");
@@ -235,16 +233,14 @@ int main(int argc, char *argv[]) {
     const Epetra_Vector& finalSolution = 
       (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
 
-    utils.out() << "Final Solution = " << std::endl;
+    // Convert block Epetra_Vector to orthogonal polynomial of Epetra_Vector's
+    Stokhos::EpetraVectorOrthogPoly x_sg(basis, View, *(model->get_x_map()), 
+    					 finalSolution);
+
+    utils.out() << "Final Solution (block vector) = " << std::endl;
     std::cout << finalSolution << std::endl;
-      
-    if (status == NOX::StatusTest::Converged) 
-      utils.out() << "Test Passed!" << std::endl;
-
-    }
-
-    Teuchos::TimeMonitor::summarize(std::cout);
-    Teuchos::TimeMonitor::zeroOutTimers();
+    utils.out() << "Final Solution (polynomial) = " << std::endl;
+    std::cout << x_sg << std::endl;
 
   }
   

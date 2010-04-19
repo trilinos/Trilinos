@@ -42,10 +42,21 @@
 #include "Epetra_CrsGraph.h"
 #include "Epetra_CrsMatrix.h"
 
+/* Simple model evaluator demonstrating how to use the Stokhos
+ * ModelEvaluator to solve a nonlinear stochastic Galerkin problem.  
+ * It represents the simple function
+ *
+ *    f(x,a) = |  a^2  - x_0 |
+ *             | x_1^2 - x_0 |
+ *
+ * where x = [x_0 x_1]^T and a is a parameter.  It has a root at x = [ a^2, a].
+ * The parameter a may be represented by a given polynomial chaos expansion,
+ * and the corresponding expansion for x computed by Stokhos.
+ */
 class SimpleME : public EpetraExt::ModelEvaluator {
 public:
 
-  // Constructor
+  //! Constructor
   SimpleME(const Teuchos::RCP<Epetra_Comm>& comm);
 
   /** \name Overridden from EpetraExt::ModelEvaluator . */
