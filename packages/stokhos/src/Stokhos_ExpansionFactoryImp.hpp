@@ -54,8 +54,8 @@ create(Teuchos::ParameterList& sgParams)
     
   // Get 3-tensor
   Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type,value_type> > Cijk;
-  if (sgParams.template isType<Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type,value_type> > >("Sparse Triple Product"))
-    Cijk = sgParams.template get<Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type,value_type> > >("Sparse Triple Product");
+  if (sgParams.template isType<Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type,value_type> > >("Triple Product Tensor"))
+    Cijk = sgParams.template get<Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type,value_type> > >("Triple Product Tensor");
   else {
     std::string tp_type = sgParams.get("Triple Product Size", "Full");
     ordinal_type tp_sz;
@@ -70,7 +70,7 @@ create(Teuchos::ParameterList& sgParams)
 			 "Invalid triple product expansion type  " << tp_type <<
 			 std::endl);
     Cijk = basis->computeTripleProductTensor(tp_sz);
-    sgParams.set("Sparse Triple Product", Cijk);
+    sgParams.set("Triple Product Tensor", Cijk);
   }
 
   // Create expansion
@@ -111,18 +111,18 @@ create(Teuchos::ParameterList& sgParams)
   else if (exp_type == "Derivative") {
     Teuchos::RCP<const Stokhos::DerivBasis<ordinal_type,value_type> > deriv_basis = Teuchos::rcp_dynamic_cast<const Stokhos::DerivBasis<ordinal_type,value_type> >(basis, true);
     Teuchos::RCP<Teuchos::SerialDenseMatrix<ordinal_type,value_type> > Bij;
-    if (sgParams.template isType<Teuchos::RCP<const Teuchos::SerialDenseMatrix<ordinal_type,value_type> > >("Derivative Double Product"))
-      Bij = sgParams.template get<const Teuchos::RCP<Teuchos::SerialDenseMatrix<ordinal_type,value_type> > >("Derivative Double Product");
+    if (sgParams.template isType<Teuchos::RCP<const Teuchos::SerialDenseMatrix<ordinal_type,value_type> > >("Derivative Double Product Tensor"))
+      Bij = sgParams.template get<const Teuchos::RCP<Teuchos::SerialDenseMatrix<ordinal_type,value_type> > >("Derivative Double Product Tensor");
     else {
       Bij = deriv_basis->computeDerivDoubleProductTensor();
-      sgParams.set("Derivative Double Product", Bij);
+      sgParams.set("Derivative Double Product Tensor", Bij);
     }
     Teuchos::RCP<const Stokhos::Dense3Tensor<ordinal_type,value_type> > Dijk;
-    if (sgParams.template isType<Teuchos::RCP<const Stokhos::Dense3Tensor<ordinal_type,value_type> > >("Derivative Triple Product"))
-      Dijk = sgParams.template get<Teuchos::RCP<const Stokhos::Dense3Tensor<ordinal_type,value_type> > >("Derivative Triple Product");
+    if (sgParams.template isType<Teuchos::RCP<const Stokhos::Dense3Tensor<ordinal_type,value_type> > >("Derivative Triple Product Tensor"))
+      Dijk = sgParams.template get<Teuchos::RCP<const Stokhos::Dense3Tensor<ordinal_type,value_type> > >("Derivative Triple Product Tensor");
     else {
       Dijk = deriv_basis->computeDerivTripleProductTensor(Bij, Cijk);
-      sgParams.set("Derivative Triple Product", Dijk);
+      sgParams.set("Derivative Triple Product Tensor", Dijk);
     }
     expansion = 
       Teuchos::rcp(new 

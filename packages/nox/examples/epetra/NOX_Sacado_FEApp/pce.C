@@ -313,18 +313,17 @@ int main(int argc, char *argv[]) {
       Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
 	Stokhos::QuadratureFactory<int,double>::create(sgParams);
       
-      // Compute triple-product tensor
-      int sz = basis->size();
-      Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk =
-	basis->computeTripleProductTensor(sz);
-      sgParams.set("Sparse Triple Product", Cijk);
       
       // Create SG expansion
       Teuchos::ParameterList& expParams = sgParams.sublist("Expansion");
       expParams.set("Type", "Quadrature");
       Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
       	Stokhos::ExpansionFactory<int,double>::create(sgParams);
+      Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk =
+	sgParams.get< Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > >
+	("Triple Product Tensor");
 
+      int sz = basis->size();
       std::cout << "sz = " << sz << std::endl;
 
       if (SG_Method == SG_AD)
