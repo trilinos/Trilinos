@@ -308,8 +308,8 @@ int main(int argc, char *argv[]) {
       
       // Create SG quadrature
       Teuchos::ParameterList& quadParams = sgParams.sublist("Quadrature");
-      quadParams.set("Type", "Sparse Grid");
-      quadParams.set("Sparse Grid Level", p);
+      quadParams.set("Type", "Tensor Product");
+      //quadParams.set("Sparse Grid Level", p);
       Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
 	Stokhos::QuadratureFactory<int,double>::create(sgParams);
       

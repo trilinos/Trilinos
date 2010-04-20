@@ -30,6 +30,7 @@
 
 #include "Teuchos_TestForException.hpp"
 
+#include "Stokhos_BasisFactory.hpp"
 #include "Stokhos_AlgebraicOrthogPolyExpansion.hpp"
 #include "Stokhos_QuadOrthogPolyExpansion.hpp"
 #include "Stokhos_ForUQTKOrthogPolyExpansion.hpp"
@@ -40,12 +41,36 @@ Teuchos::RCP<Stokhos::OrthogPolyExpansion<ordinal_type, value_type> >
 Stokhos::ExpansionFactory<ordinal_type, value_type>::
 create(Teuchos::ParameterList& sgParams)
 {
+  // Get basis
   Teuchos::ParameterList& basisParams = sgParams.sublist("Basis");
-  Teuchos::RCP< const Stokhos::OrthogPolyBasis<ordinal_type,value_type> > basis = basisParams.template get< Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type,value_type> > >("Stochastic Galerkin Basis");
+  Teuchos::RCP< const Stokhos::OrthogPolyBasis<ordinal_type,value_type> > basis;
+  if (basisParams.template isType< Teuchos::RCP< const Stokhos::OrthogPolyBasis<ordinal_type,value_type> > >("Stochastic Galerkin Basis"))
+    basis = basisParams.template get< Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type,value_type> > >("Stochastic Galerkin Basis");
+  else
+    basis = Stokhos::BasisFactory<ordinal_type,value_type>::create(sgParams);
+    
+  // Get 3-tensor
+  Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type,value_type> > Cijk;
+  if (sgParams.template isType<Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type,value_type> > >("Sparse Triple Product"))
+    Cijk = sgParams.template get<Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type,value_type> > >("Sparse Triple Product");
+  else {
+    std::string tp_type = sgParams.get("Triple Product Size", "Full");
+    ordinal_type tp_sz;
+    if (tp_type == "Full")
+      tp_sz = basis->size();
+    else if (tp_type == "Linear")
+      tp_sz = basis->dimension()+1;
+    else
+      TEST_FOR_EXCEPTION(true, Teuchos::Exceptions::InvalidParameter,
+			 std::endl << 
+			 "Error!  Stokhos::ExpansionFactory::create():  " <<
+			 "Invalid triple product expansion type  " << tp_type <<
+			 std::endl);
+    Cijk = basis->computeTripleProductTensor(tp_sz);
+    sgParams.set("Sparse Triple Product", Cijk);
+  }
 
-  Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type,value_type> > Cijk =
-    sgParams.template get<Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type,value_type> > >("Sparse Triple Product");
-
+  // Create expansion
   Teuchos::ParameterList& expParams = sgParams.sublist("Expansion");
   std::string exp_type = expParams.get("Type", "Algebraic");
   Teuchos::RCP< Stokhos::OrthogPolyExpansion<ordinal_type,value_type> > expansion;
