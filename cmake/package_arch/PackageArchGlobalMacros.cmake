@@ -192,7 +192,7 @@ MACRO(PACKAGE_ARCH_PROCESS_TPLS_LISTS)
       "Enable support for the TPL ${TPL} in all supported ${PROJECT_NAME} packages."
       "  This can be set to 'ON', 'OFF', or left empty ''."
       )
-    SET( TPL_ENABLE_${TPL} "" CACHE STRING ${DOCSTR})
+    SET_CACHE_ON_OFF_EMPTY( TPL_ENABLE_${TPL} "" ${DOCSTR} )
 
     # 2008/11/25: rabartl: Above, we use the prefix TPL_ instead of
     # ${PROJECT_NAME}_ in order to make it clear that external TPLs are
