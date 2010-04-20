@@ -100,6 +100,7 @@ public:
       return false;
    }
 
+   void preRequest(const Teko::RequestMesg & rm) { }
 };
 
 class TSCallback : public Teko::RequestCallback<double> {
@@ -117,6 +118,7 @@ public:
       return false;
    }
 
+   void preRequest(const Teko::RequestMesg & rm) { }
 };
 
 class StringCallback : public Teko::RequestCallback<std::string> {
@@ -134,6 +136,7 @@ public:
       return false;
    }
 
+   void preRequest(const Teko::RequestMesg & rm) { }
 };
 
 ///////////////////////////////////////////////////////////
@@ -147,6 +150,13 @@ TEUCHOS_UNIT_TEST(tRequestInterface, test_request_interface)
    precFact->addRequestCallback(rcp(new TSCallback));
    precFact->addRequestCallback(rcp(new StringCallback));
 
+   {
+      Teko::RequestMesg pcdMesg("PCD Op"), tsMesg("timestep"), strMesg("name");
+      precFact->preRequest<Teko::LinearOp>(pcdMesg);
+      precFact->preRequest<double>(tsMesg);
+      precFact->preRequest<std::string>(strMesg);
+   }
+
    Teko::LinearOp A;
    Teko::LinearOp result = precFact->buildPreconditionerOperator(A,*state);
 
@@ -154,18 +164,27 @@ TEUCHOS_UNIT_TEST(tRequestInterface, test_request_interface)
    TEST_ASSERT(precFact->pcdOp_==Teuchos::null);
    TEST_ASSERT(precFact->string_=="the string");
 
+   try {
+      Teko::RequestMesg intMesg("Int Op");
+      precFact->preRequest<int>(intMesg);
+      out << "Found <int> with name \"Int Op\" in preRequest" << std::endl;
+      TEST_ASSERT(false);
+   } catch(std::exception & e) 
+   { out << "expected exception = " << e.what() << std::endl; }
 
    try {
       Teko::RequestMesg intMesg("Int Op");
       int size = precFact->request<int>(intMesg);
-      out << "Found <int> with name \"Int Op\"" << std::endl;
+      out << "Found <int> with name \"Int Op\" value=" << size << std::endl;
       TEST_ASSERT(false);
-   } catch(std::exception & e) { }
+   } catch(std::exception & e) 
+   { out << "expected exception = " << e.what() << std::endl; }
 
    try {
       Teko::RequestMesg intMesg("PCD Op");
       int lo = precFact->request<int>(intMesg);
-      out << "Found <int> with name \"PCD Op\"" << std::endl;
+      out << "Found <int> with name \"PCD Op\" value=" << lo << std::endl;
       TEST_ASSERT(false);
-   } catch(std::exception & e) { }
+   } catch(std::exception & e) 
+   { out << "expected exception = " << e.what() << std::endl; }
 }

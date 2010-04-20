@@ -38,6 +38,16 @@ public:
    template <typename DataT>
    DataT request(const RequestMesg & rm) const;
 
+   /** Send a pre-request message to the callback
+     * allowing them to do some work up front and
+     * ahead of time. This is meant to be called
+     * at construction/initialization.
+     *
+     * \param[in] rm The message describing the request.
+     */
+   template <typename DataT>
+   void preRequest(const RequestMesg & rm) const;
+
 private:
    // stores the callbacks to be used by this handler.
    mutable std::vector<Teuchos::RCP<RequestCallbackBase> > callbacks_;

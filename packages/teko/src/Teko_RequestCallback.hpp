@@ -10,6 +10,7 @@ public:
    virtual ~RequestCallbackBase() {}
 
    virtual bool handlesRequest(const RequestMesg &) = 0;
+   virtual void preRequest(const RequestMesg &) = 0;
 };
 
 template <typename DataT>

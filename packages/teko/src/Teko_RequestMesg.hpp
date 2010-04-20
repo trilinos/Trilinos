@@ -2,6 +2,7 @@
 #define __Teko_RequestMesg_hpp__
 
 #include <string>
+#include <iostream>
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_ParameterList.hpp"
@@ -51,5 +52,15 @@ protected:
 };
 
 } // end namespace Teko
+
+// simple stream interface for RequestMesg
+inline std::ostream & operator<<(std::ostream & os,const Teko::RequestMesg & rm)
+{
+   os << "RequestMesg <"
+      << "name = \"" << rm.getName() << "\", "
+      << "tag = " << rm.getTag() << ">";
+ 
+   return os;
+}
 
 #endif
