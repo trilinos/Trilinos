@@ -42,6 +42,7 @@
 #include "Stokhos_DiscretizedStieltjesBasis.hpp"
 #include "Stokhos_PecosOneDOrthogPolyBasis.hpp"
 #include "Stokhos_CompletePolynomialBasis.hpp"
+#include "Stokhos_BasisFactory.hpp"
 
 // Expansion methods
 #include "Stokhos_OrthogPolyApprox.hpp"
@@ -52,11 +53,13 @@
 #include "Stokhos_ForUQTKOrthogPolyExpansion.hpp"
 #include "Stokhos_VectorOrthogPoly.hpp"
 #include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
+#include "Stokhos_ExpansionFactory.hpp"
 
 // Quadrature methods
 #include "Stokhos_TensorProductQuadrature.hpp"
 #include "Stokhos_SparseGridQuadrature.hpp"
 #include "Stokhos_AnisoSparseGridQuadrature.hpp"
+#include "Stokhos_QuadratureFactory.hpp"
 
 // Tensors
 #include "Stokhos_Sparse3Tensor.hpp"

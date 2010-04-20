@@ -291,27 +291,39 @@ int main(int argc, char *argv[]) {
 
       TEUCHOS_FUNC_TIME_MONITOR("Total PCE Calculation Time");
     
-      // Create SG basis and expansion
-      typedef Stokhos::LegendreBasis<int,double> basis_type;
-      Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(num_KL); 
-      for (int i=0; i<num_KL; i++)
-        bases[i] = Teuchos::rcp(new basis_type(p));
-      Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis = 
-        Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(bases));
+      // Create SG basis
+      Teuchos::ParameterList& sgParams = 
+	appParams->sublist("Stochastic Galerkin Parameters");
+      Teuchos::ParameterList& basisParams = sgParams.sublist("Basis");
+      basisParams.set("Dimension", num_KL);
+      for (int i=0; i<num_KL; i++) {
+	std::ostringstream ss;
+	ss << "Basis " << i;
+	Teuchos::ParameterList& bp = basisParams.sublist(ss.str());
+	bp.set("Type", "Legendre");
+	bp.set("Order", p);
+      }
+      Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > basis = 
+        Stokhos::BasisFactory<int,double>::create(sgParams);
+      
+      // Create SG quadrature
+      Teuchos::ParameterList& quadParams = sgParams.sublist("Quadrature");
+      quadParams.set("Type", "Sparse Grid");
+      quadParams.set("Sparse Grid Level", p);
       Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
-        Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
-      // Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
-      // 	Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(basis, p));
+	Stokhos::QuadratureFactory<int,double>::create(sgParams);
+      
+      // Compute triple-product tensor
       int sz = basis->size();
-      Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk =
+      Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk =
 	basis->computeTripleProductTensor(sz);
+      sgParams.set("Sparse Triple Product", Cijk);
+      
+      // Create SG expansion
+      Teuchos::ParameterList& expParams = sgParams.sublist("Expansion");
+      expParams.set("Type", "Quadrature");
       Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
-      	Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<int,double>(basis, 
-								      Cijk,
-      								      quad));
-     // Teuchos::RCP<Stokhos::OrthogPolyExpansion<int,double> > expansion = 
-     // 	Teuchos::rcp(new Stokhos::ForUQTKOrthogPolyExpansion<int,double>(basis, 
-     // 								      Stokhos::ForUQTKOrthogPolyExpansion<int,double>::INTEGRATION, 1e-6));
+      	Stokhos::ExpansionFactory<int,double>::create(sgParams);
 
       std::cout << "sz = " << sz << std::endl;
 
@@ -379,32 +391,34 @@ int main(int argc, char *argv[]) {
 							 basis));
       }
 
-      Teuchos::RCP<Teuchos::ParameterList> sgParams = 
-	Teuchos::rcp(&(appParams->sublist("SG Parameters")),false);
+      Teuchos::RCP<Teuchos::ParameterList> sgSolverParams = 
+	Teuchos::rcp(&sgParams.sublist("Solver"), false);
       if (SG_Method != SG_NI) {
-	sgParams->set("Jacobian Method", "Matrix Free");
-	//sgParams->set("Jacobian Method", "KL Reduced Matrix Free");
-	//sgParams->set("Jacobian Method", "Fully Assembled");
-	sgParams->set("Number of KL Terms", num_KL+1);
+	sgSolverParams->set("Jacobian Method", "Matrix Free");
+	//sgSolverParams->set("Jacobian Method", "KL Reduced Matrix Free");
+	//sgSolverParams->set("Jacobian Method", "Fully Assembled");
+	sgSolverParams->set("Number of KL Terms", num_KL+1);
 	Teuchos::ParameterList& precParams = 
-	  sgParams->sublist("Preconditioner Parameters");
-	// sgParams->set("Mean Preconditioner Type", "Ifpack");
+	  sgSolverParams->sublist("Preconditioner Parameters");
+	// sgSolverParams->set("Mean Preconditioner Type", "Ifpack");
 	// precParams.set("Ifpack Preconditioner", "ILU");
 	// precParams.set("Overlap", 0);
-	sgParams->set("Mean Preconditioner Type", "ML");
+	sgSolverParams->set("Mean Preconditioner Type", "ML");
 	ML_Epetra::SetDefaults("DD", precParams);
-	sgParams->set("Evaluate W with F", false);
+	sgSolverParams->set("Evaluate W with F", false);
       }
       Teuchos::RCP<Stokhos::SGModelEvaluator> sg_model =
 	Teuchos::rcp(new Stokhos::SGModelEvaluator(model, basis, quad, 
 						   expansion, Cijk, 
-						   sgParams, Comm, sg_x, sg_p));
+						   sgSolverParams, Comm, 
+						   sg_x, sg_p));
 
       // Create SG NOX solver
       Teuchos::RCP<EpetraExt::ModelEvaluator> sg_block_solver;
       if (SG_Method != SG_NI) {
 	Teuchos::RCP<Epetra_Operator> M;
-	std::string jac_method = sgParams->get<std::string>("Jacobian Method");
+	std::string jac_method = 
+	  sgSolverParams->get<std::string>("Jacobian Method");
 	if (jac_method == "Matrix Free" || 
 	    jac_method == "KL Reduced Matrix Free")
 	  M = sg_model->create_WPrec()->PrecOp;

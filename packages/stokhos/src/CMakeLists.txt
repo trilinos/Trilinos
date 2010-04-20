@@ -61,6 +61,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_CompletePolynomialBasisImp.hpp
   Stokhos_GramSchmidtBasis.hpp
   Stokhos_GramSchmidtBasisImp.hpp
+  Stokhos_BasisFactory.hpp
+  Stokhos_BasisFactoryImp.hpp
   Stokhos_Sparse3Tensor.hpp
   Stokhos_Sparse3TensorImp.hpp
   Stokhos_Dense3Tensor.hpp
@@ -75,6 +77,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_AnisoSparseGridQuadratureImp.hpp
   Stokhos_UserDefinedQuadrature.hpp
   Stokhos_UserDefinedQuadratureImp.hpp
+  Stokhos_QuadratureFactory.hpp
+  Stokhos_QuadratureFactoryImp.hpp
   Stokhos_OrthogPolyApprox.hpp
   Stokhos_OrthogPolyApproxImp.hpp
   Stokhos_OrthogPolyExpansion.hpp
@@ -88,6 +92,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_DerivOrthogPolyExpansionImp.hpp
   Stokhos_ForUQTKOrthogPolyExpansion.hpp
   Stokhos_ForUQTKOrthogPolyExpansionImp.hpp
+  Stokhos_ExpansionFactory.hpp
+  Stokhos_ExpansionFactoryImp.hpp
   Stokhos_StieltjesGramSchmidtBuilder.hpp
   Stokhos_StieltjesGramSchmidtBuilderImp.hpp
   Stokhos_MatrixFreeEpetraOp.hpp
