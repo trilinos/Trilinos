@@ -46,7 +46,7 @@ void insert_closure_ghost( const MetaData & meta ,
     if ( result.second ) {
       // This ghost entity is new to the list, traverse its closure.
 
-      const unsigned etype = entity->entity_type();
+      const unsigned etype = entity->entity_rank();
 
       for ( PairIterRelation
             irel = entity->relations() ; ! irel.empty() ; ++irel ) {
@@ -69,7 +69,7 @@ void insert_transitive_ghost( const MetaData & meta ,
   // If this entity is a member of another entity's closure
   // then that other entity is part of the traversal.
 
-  const unsigned etype = entity->entity_type();
+  const unsigned etype = entity->entity_rank();
 
   for ( PairIterRelation rel = entity->relations(); ! rel.empty() ; ++rel ) {
     if ( etype < rel->entity_rank() ) {
@@ -90,7 +90,7 @@ void insert_closure_send(
   if ( result.second ) {
     // First time this entity was inserted into the send_list.
 
-    const unsigned etype  = send_entry.first->entity_type();
+    const unsigned etype  = send_entry.first->entity_rank();
     PairIterRelation irel = send_entry.first->relations();
 
     for ( ; ! irel.empty() ; ++irel ) {
@@ -109,7 +109,7 @@ bool member_of_owned_closure( const Entity & e , const unsigned p_rank )
 {
   bool result = p_rank == e.owner_rank();
 
-  const unsigned etype = e.entity_type();
+  const unsigned etype = e.entity_rank();
 
   // Any higher ranking entities locally owned?
   for ( PairIterRelation
@@ -153,12 +153,12 @@ void clean_and_verify_parallel_change(
     local_change.erase( i , j );
   }
 
-  for ( std::vector<EntityProc>::iterator 
+  for ( std::vector<EntityProc>::iterator
         i = local_change.begin() ; i != local_change.end() ; ) {
     std::vector<EntityProc>::iterator j = i ; ++i ;
     Entity * const entity    = j->first ;
     const unsigned new_owner = j->second ;
-  
+
     // Verification:
     // 1) If bucket has no capacity then is destined for deletion
     // 2) If not locally owned then not allowed grant ownership
@@ -238,7 +238,7 @@ void generate_parallel_change( const BulkData & mesh ,
         ip = local_change.begin() ; ip != local_change.end() ; ++ip ) {
     Entity & entity = * ip->first ;
     comm_procs( entity , procs );
-    for ( std::vector<unsigned>::iterator 
+    for ( std::vector<unsigned>::iterator
            j = procs.begin() ; j != procs.end() ; ++j ) {
       comm.send_buffer( *j ).skip<EntityKey>(1).skip<unsigned>(1);
     }
@@ -254,7 +254,7 @@ void generate_parallel_change( const BulkData & mesh ,
         ip = local_change.begin() ; ip != local_change.end() ; ++ip ) {
     Entity & entity = * ip->first ;
     comm_procs( entity , procs );
-    for ( std::vector<unsigned>::iterator 
+    for ( std::vector<unsigned>::iterator
            j = procs.begin() ; j != procs.end() ; ++j ) {
       comm.send_buffer( *j )
           .pack<EntityKey>( entity.key() )
@@ -389,7 +389,7 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
   // Send entities, along with their closure, to the new owner processes
   // Remember what is destroyed and created to update the distributed index.
   {
-    std::vector< parallel::DistributedIndex::KeyType > 
+    std::vector< parallel::DistributedIndex::KeyType >
       distributed_index_add , distributed_index_remove ;
 
     std::set< EntityProc , EntityLess > send_closure ;

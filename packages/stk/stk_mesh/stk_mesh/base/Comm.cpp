@@ -314,10 +314,10 @@ bool comm_verify( ParallelMachine comm ,
       CommBuffer & buf = comm_sparse.recv_buffer( proc );
       EntityKey entity_key;
       unsigned owner = ~0u ;
-      
+
       buf.unpack(entity_key);
       buf.unpack( owner );
-      
+
       if ( this_key   != entity_key ||
            this_owner != owner ) {
         const MetaData & meta_data = e.bucket().mesh().mesh_meta_data();
@@ -431,8 +431,8 @@ bool comm_mesh_counts( BulkData & M ,
   // Count locally owned entities
 
   const MetaData & S = M.mesh_meta_data();
-  const unsigned entity_type_count = S.entity_type_count();
-  const size_t   comm_count        = entity_type_count + 1 ;
+  const unsigned entity_rank_count = S.entity_rank_count();
+  const size_t   comm_count        = entity_rank_count + 1 ;
 
   std::vector<size_t> local(  comm_count , zero );
   std::vector<size_t> global( comm_count , zero );
@@ -440,7 +440,7 @@ bool comm_mesh_counts( BulkData & M ,
   ParallelMachine comm = M.parallel();
   Part & owns = S.locally_owned_part();
 
-  for ( unsigned i = 0 ; i < entity_type_count ; ++i ) {
+  for ( unsigned i = 0 ; i < entity_rank_count ; ++i ) {
     const std::vector<Bucket*> & ks = M.buckets( i );
 
     std::vector<Bucket*>::const_iterator ik ;
@@ -452,13 +452,13 @@ bool comm_mesh_counts( BulkData & M ,
     }
   }
 
-  local[ entity_type_count ] = local_flag ;
+  local[ entity_rank_count ] = local_flag ;
 
   all_reduce_sum( comm , & local[0] , & global[0] , comm_count );
 
-  counts.assign( global.begin() , global.begin() + entity_type_count );
+  counts.assign( global.begin() , global.begin() + entity_rank_count );
 
-  return 0 < global[ entity_type_count ] ;
+  return 0 < global[ entity_rank_count ] ;
 }
 
 //----------------------------------------------------------------------

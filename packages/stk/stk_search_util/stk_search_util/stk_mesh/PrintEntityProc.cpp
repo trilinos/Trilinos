@@ -37,9 +37,9 @@ void print_entity_map(stk::diag::Writer &writer,
       const stk::mesh::MetaData& meta2 = entity_map[i].second->bucket().mesh().mesh_meta_data();
 
       writer << "[" << i << "] "
-             << meta1.entity_type_name(stk::mesh::entity_type(key1)) << " "
+             << meta1.entity_rank_name(stk::mesh::entity_rank(key1)) << " "
              << stk::mesh::entity_id(key1) << relation
-             << meta2.entity_type_name(stk::mesh::entity_type(key2)) << " "
+             << meta2.entity_rank_name(stk::mesh::entity_rank(key2)) << " "
              << stk::mesh::entity_id(key2) << "\n";
     }
   }
@@ -70,7 +70,7 @@ void print_entity_proc_map(stk::diag::Writer &writer,
 
       writer << "[" << i << "] "
              << action
-             << meta.entity_type_name(stk::mesh::entity_type(key)) << " "
+             << meta.entity_rank_name(stk::mesh::entity_rank(key)) << " "
              << stk::mesh::entity_id(key) << " " << to_from << " processor "
              << entity_proc[i].second << "\n";
     }
@@ -90,7 +90,7 @@ void print_entity_proc_map(stk::diag::Writer &writer,
 
       writer << "[" << i << "] "
              << action
-             << meta.entity_type_name(stk::mesh::entity_type(key)) << " "
+             << meta.entity_rank_name(stk::mesh::entity_rank(key)) << " "
              << stk::mesh::entity_id(key) << " " << to_from << " processor "
              << entity_proc[i]->owner_rank() << "\n";
     }
@@ -125,7 +125,7 @@ void print_entity_proc_map( stk::diag::Writer & writer ,
 
       if ( ! procs.empty() ) {
         writer << "[" << counter << "] "
-               << meta.entity_type_name( entity.entity_rank() )
+               << meta.entity_rank_name( entity.entity_rank() )
                << "[" << entity.identifier() << " " ;
         if ( entity.owner_rank() != mesh.parallel_rank() ) {
           writer << "not_" ;
@@ -151,7 +151,7 @@ void print_entity_proc_map( stk::diag::Writer & writer ,
 void print_stk_mesh_relation_map(stk::diag::Writer &writer,
                                  IdentProcRelation relation)
 {
-  static std::vector<std::string> entity_names = stk::mesh::fem_entity_type_names();
+  static std::vector<std::string> entity_names = stk::mesh::fem_entity_rank_names();
   if (writer.shouldPrint()) {
     size_t size = relation.size();
     writer << "relation  [size " << size << "]\n";
@@ -168,11 +168,11 @@ void print_stk_mesh_relation_map(stk::diag::Writer &writer,
       stk::mesh::EntityKey range_entity_key(range.ident);
 
       writer << "[" << i << "] ("
-             << entity_names[stk::mesh::entity_type(domain_entity_key)] << " "
+             << entity_names[stk::mesh::entity_rank(domain_entity_key)] << " "
              << stk::mesh::entity_id(domain_entity_key)
              << ", proc " << domain.proc
              << "    ->    "
-             << entity_names[stk::mesh::entity_type(range_entity_key)] << " "
+             << entity_names[stk::mesh::entity_rank(range_entity_key)] << " "
              << stk::mesh::entity_id(range_entity_key)
              << ", proc " << range.proc
              << ")\n";

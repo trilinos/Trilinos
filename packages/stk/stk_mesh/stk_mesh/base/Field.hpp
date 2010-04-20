@@ -118,7 +118,7 @@ public:
   /** \brief  Maximum field data allocation size declared for this
    *          field for the given entity type.
    */
-  unsigned max_size( unsigned entity_type) const ;
+  unsigned max_size( unsigned entity_rank) const ;
 
   //----------------------------------------
 
@@ -146,7 +146,7 @@ public:
     Restriction & operator = ( const Restriction & rhs );
 
     Restriction( unsigned t , unsigned );
-    unsigned type()    const { return entity_type( key ); }
+    unsigned type()    const { return entity_rank( key ); }
     unsigned ordinal() const { return entity_id( key ); }
 #endif /* DOXYGEN_COMPILE */
   };
@@ -206,7 +206,7 @@ private:
                    std::vector<FieldBase*>           & arg_meta_data_fields );
 
   void insert_restriction( const char *       arg_method ,
-                           EntityRank           arg_entity_type ,
+                           EntityRank           arg_entity_rank ,
                            const Part       & arg_part ,
                            const unsigned   * arg_stride );
 
@@ -406,8 +406,8 @@ FieldBase::Restriction::Restriction( unsigned t , unsigned ord )
  *
  *  <b> then </b>
  *  <PRE>
- *    index = (*m_function)( e1.entity_type() ,
- *                           e2.entity_type() ,
+ *    index = (*m_function)( e1.entity_rank() ,
+ *                           e2.entity_rank() ,
  *                           rel.identifier() ,
  *                           rel.kind() );
  *

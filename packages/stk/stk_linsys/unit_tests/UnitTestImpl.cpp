@@ -24,7 +24,7 @@ void testImpl( MPI_Comm comm )
 {
   //First create and initialize a MetaData to use in our testing:
 
-  stk::mesh::MetaData meta_data( stk::mesh::fem_entity_type_names() );
+  stk::mesh::MetaData meta_data( stk::mesh::fem_entity_rank_names() );
 
   const unsigned number_of_states = 1;
 

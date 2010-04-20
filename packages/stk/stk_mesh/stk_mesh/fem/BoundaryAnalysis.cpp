@@ -31,7 +31,7 @@ void boundary_analysis(const BulkData& bulk_data,
                                                               EntityLess());
 
   // iterate over all the entities in the closure up to the iterator we computed above
-  for ( ; itr != entities_closure.end() && (*itr)->entity_type() == closure_rank; ++itr) {
+  for ( ; itr != entities_closure.end() && (*itr)->entity_rank() == closure_rank; ++itr) {
     // some temporaries for clarity
     std::vector<EntitySideComponent > adjacent_entities;
     Entity& curr_entity = **itr;
@@ -152,7 +152,7 @@ void get_adjacent_entities( const Entity & entity ,
   // Given the nodes related to the original entity, find all entities
   // of similar rank that have some relation to one or more of these nodes
   std::vector<Entity*> elements;
-  get_entities_through_relations(node_entities, entity.entity_type(), elements);
+  get_entities_through_relations(node_entities, entity.entity_rank(), elements);
 
   // Make sure to remove the original entity from the list
   bool found = false;

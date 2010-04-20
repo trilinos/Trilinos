@@ -35,7 +35,7 @@ void construct_transitive_closure( EntitySet & closure , Entity & entry )
   // A new insertion, must also insert the closure
   if ( result.second ) {
 
-    const unsigned etype = entry.entity_type();
+    const unsigned etype = entry.entity_rank();
     PairIterRelation irel  = entry.relations();
 
     for ( ; irel.first != irel.second ; ++irel.first ) {

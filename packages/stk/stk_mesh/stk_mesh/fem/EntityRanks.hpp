@@ -38,10 +38,10 @@ enum EntityRankEnum {
 };
 
 /** \brief  Finite element entity-type names */
-const std::vector<std::string> & fem_entity_type_names();
+const std::vector<std::string> & fem_entity_rank_names();
 
 inline
-EntityRankEnum fem_entity_type( int t )
+EntityRankEnum fem_entity_rank( int t )
 { return 0 <= t && t < EntityRankEnd ? EntityRankEnum(t) : EntityRankUndefined ; }
 
 /** \} */

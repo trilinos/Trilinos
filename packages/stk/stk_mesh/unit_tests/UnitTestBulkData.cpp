@@ -123,7 +123,7 @@ void UnitTestBulkData::testChangeOwner_nodes( ParallelMachine pm )
   const unsigned id_begin = nPerProc * p_rank ;
   const unsigned id_end   = nPerProc * ( p_rank + 1 );
 
-  MetaData meta( fem_entity_type_names() );
+  MetaData meta( fem_entity_rank_names() );
   BulkData bulk( meta , pm , 100 );
 
   const PartVector no_parts ;
@@ -249,7 +249,7 @@ void UnitTestBulkData::testCreateMore_error( ParallelMachine pm )
     const unsigned id_begin = nPerProc * p_rank ;
     const unsigned id_end   = nPerProc * ( p_rank + 1 );
 
-    MetaData meta( fem_entity_type_names() );
+    MetaData meta( fem_entity_rank_names() );
 
     const PartVector no_parts ;
 
@@ -660,7 +660,7 @@ void UnitTestBulkData::testChangeOwner_box( ParallelMachine pm )
   const unsigned p_rank = parallel_machine_rank( pm );
   const unsigned p_size = parallel_machine_size( pm );
 
-  MetaData meta( fem_entity_type_names() );
+  MetaData meta( fem_entity_rank_names() );
 
   meta.commit();
 

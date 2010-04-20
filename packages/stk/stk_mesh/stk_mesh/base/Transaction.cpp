@@ -94,9 +94,9 @@ Transaction::~Transaction ()
 // change in bulk data, the same change must occur here.
 void Transaction::allocate_bucket_lists ()
 {
-  m_modified.resize ( m_bulk_data.mesh_meta_data().entity_type_count() );
-  m_deleted.resize ( m_bulk_data.mesh_meta_data().entity_type_count() );
-  m_inserted.resize ( m_bulk_data.mesh_meta_data().entity_type_count() );
+  m_modified.resize ( m_bulk_data.mesh_meta_data().entity_rank_count() );
+  m_deleted.resize ( m_bulk_data.mesh_meta_data().entity_rank_count() );
+  m_inserted.resize ( m_bulk_data.mesh_meta_data().entity_rank_count() );
 }
 
 
@@ -119,7 +119,7 @@ void Transaction::modify_sole_entity ( Entity &e )
   // If this is not an incremental transaction, ignore
   if ( m_transaction_type != INCREMENTAL ) return;
 
-  Bucket *transaction_bucket = get_unfilled_transaction_bucket ( e , m_modified[e.entity_type()] , MODIFIED );
+  Bucket *transaction_bucket = get_unfilled_transaction_bucket ( e , m_modified[e.entity_rank()] , MODIFIED );
 
   add_entity_to_transaction_bucket ( e , transaction_bucket );
 }
@@ -144,14 +144,14 @@ void Transaction::modify_entity ( Entity &e )
   // If this is not an incremental transaction, ignore
   if ( m_transaction_type != INCREMENTAL ) return;
 
-  Bucket *transaction_bucket = get_unfilled_transaction_bucket ( e , m_modified[e.entity_type()] , MODIFIED );
+  Bucket *transaction_bucket = get_unfilled_transaction_bucket ( e , m_modified[e.entity_rank()] , MODIFIED );
 
   add_entity_to_transaction_bucket ( e , transaction_bucket );
 
   PairIterRelation current_relation = e.relations();
   while ( current_relation.first != current_relation.second )
   {
-    if ( current_relation->entity_rank() > e.entity_type() )
+    if ( current_relation->entity_rank() > e.entity_rank() )
       modify_sole_entity ( *(current_relation->entity()) );
     current_relation++;
   }
@@ -182,12 +182,12 @@ void Transaction::delete_entity ( Entity &e )
     if ( e.transaction_bucket()->transaction_state() == DELETED ) return;
     if ( e.transaction_bucket()->transaction_state() == MODIFIED )
     {
-      swap_entity_between_transaction_buckets ( e , m_modified[e.entity_type()] , m_deleted[e.entity_type()] , DELETED );
+      swap_entity_between_transaction_buckets ( e , m_modified[e.entity_rank()] , m_deleted[e.entity_rank()] , DELETED );
       return;
     }
     if ( e.transaction_bucket()->transaction_state() == INSERTED )
     {
-      remove_entity_from_bucket ( e , m_inserted[e.entity_type()]  );
+      remove_entity_from_bucket ( e , m_inserted[e.entity_rank()]  );
       // Need to mark this for deletion at reset since it will not be
       // stored anywhere
       m_to_delete.insert ( &e );
@@ -195,7 +195,7 @@ void Transaction::delete_entity ( Entity &e )
     }
   }
 
-  Bucket *transaction_bucket = get_unfilled_transaction_bucket ( e , m_deleted[e.entity_type()] , DELETED );
+  Bucket *transaction_bucket = get_unfilled_transaction_bucket ( e , m_deleted[e.entity_rank()] , DELETED );
   add_entity_to_transaction_bucket ( e , transaction_bucket );
 }
 
@@ -213,7 +213,7 @@ void Transaction::insert_entity ( Entity &e )
   // If this is not an incremental transaction, ignore
   if ( m_transaction_type != INCREMENTAL ) return;
 
-  Bucket *transaction_bucket = get_unfilled_transaction_bucket ( e , m_inserted[e.entity_type()] , INSERTED );
+  Bucket *transaction_bucket = get_unfilled_transaction_bucket ( e , m_inserted[e.entity_rank()] , INSERTED );
   add_entity_to_transaction_bucket ( e , transaction_bucket );
 }
 

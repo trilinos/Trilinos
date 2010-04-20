@@ -326,7 +326,7 @@ void print_restriction( std::ostream & os ,
                         unsigned rank ,
                         const FieldBase::Restriction::size_type * stride )
 {
-  os << "{ entity_type(" << type << ") part(" << part.name() << ") : " ;
+  os << "{ entity_rank(" << type << ") part(" << part.name() << ") : " ;
   os << stride[0] ;
   for ( unsigned i = 1 ; i < rank ; ++i ) {
     if ( ! stride[i] ) {
@@ -351,13 +351,13 @@ void print_restriction( std::ostream & os ,
 
 void FieldBase::insert_restriction(
   const char     * arg_method ,
-  EntityRank         arg_entity_type ,
+  EntityRank         arg_entity_rank ,
   const Part     & arg_part ,
   const unsigned * arg_stride )
 {
   FieldBase::Restriction tmp ;
 
-  tmp.key = EntityKey( arg_entity_type , arg_part.mesh_meta_data_ordinal() );
+  tmp.key = EntityKey( arg_entity_rank , arg_part.mesh_meta_data_ordinal() );
 
   {
     unsigned i = 0 ;
@@ -378,7 +378,7 @@ void FieldBase::insert_restriction(
         std::ostringstream msg ;
         msg << arg_method << " FAILED for " << *this ;
         msg << " WITH BAD STRIDE " ;
-        print_restriction( msg, arg_entity_type, arg_part, m_rank, tmp.stride);
+        print_restriction( msg, arg_entity_rank, arg_part, m_rank, tmp.stride);
         throw std::runtime_error( msg.str() );
       }
     }
@@ -397,9 +397,9 @@ void FieldBase::insert_restriction(
     else if ( Compare<MaximumFieldDimension>::not_equal(i->stride,tmp.stride) ){
       std::ostringstream msg ;
       msg << arg_method << " FAILED for " << *this << " " ;
-      print_restriction( msg, arg_entity_type, arg_part, m_rank, i->stride );
+      print_restriction( msg, arg_entity_rank, arg_part, m_rank, i->stride );
       msg << " WITH INCOMPATIBLE REDECLARATION " ;
-      print_restriction( msg, arg_entity_type, arg_part, m_rank, tmp.stride );
+      print_restriction( msg, arg_entity_rank, arg_part, m_rank, tmp.stride );
       throw std::runtime_error( msg.str() );
     }
   }
@@ -415,13 +415,13 @@ void FieldBase::verify_and_clean_restrictions(
 
   for ( i = rMap.begin() ; i != rMap.end() ; ++i ) {
     if ( i->key != invalid_key ) {
-      const unsigned typeI = entity_type( i->key );
+      const unsigned typeI = entity_rank( i->key );
       const Part   & partI = * arg_all_parts[ entity_id( i->key ) ];
       bool  found_superset = false ;
 
       for ( j = i + 1 ; j != rMap.end() && ! found_superset ; ++j ) {
         if ( j->key != invalid_key ) {
-          const unsigned typeJ = entity_type( j->key );
+          const unsigned typeJ = entity_rank( j->key );
           const Part   & partJ = * arg_all_parts[ entity_id( j->key ) ];
 
           if ( typeI == typeJ ) {
@@ -494,7 +494,7 @@ FieldBase::restriction( unsigned etype , const Part & part ) const
   return ie == i ? empty : *i ;
 }
 
-unsigned FieldBase::max_size( unsigned entity_type ) const
+unsigned FieldBase::max_size( unsigned entity_rank ) const
 {
   unsigned max = 0 ;
 
@@ -503,7 +503,7 @@ unsigned FieldBase::max_size( unsigned entity_type ) const
         std::vector<FieldBase::Restriction>::const_iterator i = rMap.begin();
 
   for ( ; i != ie ; ++i ) {
-    if ( i->type() == entity_type ) {
+    if ( i->type() == entity_rank ) {
       const unsigned len = m_rank ? i->stride[ m_rank - 1 ] : 1 ;
       if ( max < len ) { max = len ; }
     }
@@ -537,7 +537,7 @@ std::ostream & print( std::ostream & s ,
   for ( std::vector<FieldBase::Restriction>::const_iterator
         i = rMap.begin() ; i != rMap.end() ; ++i ) {
     s << std::endl << b << "  " ;
-    print_restriction( s, entity_type( i->key ),
+    print_restriction( s, entity_rank( i->key ),
                        * all_parts[ entity_id( i->key ) ],
                        field.rank(), i->stride);
   }

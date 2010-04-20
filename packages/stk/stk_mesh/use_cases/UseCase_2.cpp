@@ -61,7 +61,7 @@ typedef shards::Hexahedron<8>  ElementTraits ;
 // the constructor.
 
 UseCase_2_Mesh::UseCase_2_Mesh( stk::ParallelMachine comm )
-  : m_metaData( fem_entity_type_names() )
+  : m_metaData( fem_entity_rank_names() )
   , m_bulkData(  m_metaData , comm , field_data_chunk_size )
   , m_partLeft(  m_metaData.declare_part( "block_left", Element ))
   , m_partRight( m_metaData.declare_part( "block_right", Element ))

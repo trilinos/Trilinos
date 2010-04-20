@@ -86,7 +86,7 @@ private:
 
 public:
 
-  /** \brief Constructor 
+  /** \brief Constructor
     * \param bucket_ptr \ref stk::mesh::Bucket "bucket" pointer
     * \param offset int
     */
@@ -97,7 +97,7 @@ public:
   }
 
   /** \brief Default constructor */
-  BucketIterator() { 
+  BucketIterator() {
     m_bucket_ptr = NULL;
     m_current_entity = 0;
   }
@@ -187,18 +187,18 @@ public:
   }
 
   /** \brief Not equal */
-  inline bool operator!=(const BucketIterator &i) const { 
+  inline bool operator!=(const BucketIterator &i) const {
     if (m_bucket_ptr != i.m_bucket_ptr)
       throw_error("operator != given iterator from different bucket");
     return (m_current_entity != i.m_current_entity);
   }
 
-  inline BucketIterator & operator+=(int n) { 
+  inline BucketIterator & operator+=(int n) {
     m_current_entity += n;
     return *this;
   }
 
-  inline BucketIterator & operator-=(int n) { 
+  inline BucketIterator & operator-=(int n) {
     m_current_entity -= n;
     return *this;
   }
@@ -225,7 +225,7 @@ public:
 
 //----------------------------------------------------------------------
 /** \brief  A container for the \ref stk_mesh_field_data "field data"
- *          of a homogeneous collection of 
+ *          of a homogeneous collection of
  *          \ref stk::mesh::Entity "entities".
  *
  *  The entities are homogeneous in that they are of the same entity type
@@ -244,7 +244,7 @@ private:
   };
 
   BulkData             & m_mesh ;        // Where this bucket resides
-  const unsigned         m_entity_type ; // Type of entities for this bucket
+  const unsigned         m_entity_rank ; // Type of entities for this bucket
   const unsigned * const m_key ;         // Unique key in the bulk data
   const size_t           m_alloc_size ;  // Allocation size of this bucket
   const size_t           m_capacity ;    // Capacity for entities
@@ -282,7 +282,7 @@ public:
   BulkData & mesh() const { return m_mesh ; }
 
   /** \brief  Type of entities in this bucket */
-  unsigned entity_type() const { return m_entity_type ; }
+  unsigned entity_rank() const { return m_entity_rank ; }
 
   /** \brief  This bucket is a subset of these \ref stk::mesh::Part "parts" */
   void supersets( PartVector & ) const ;
@@ -321,11 +321,11 @@ private:
   Bucket & operator = ( const Bucket & );
 
   Bucket( BulkData & ,
-          unsigned          arg_entity_type ,
+          unsigned          arg_entity_rank ,
           const unsigned  * arg_key ,
           size_t            arg_alloc_size ,
           size_t            arg_capacity ,
-          Bucket::DataMap * arg_field_map , 
+          Bucket::DataMap * arg_field_map ,
           Entity         ** arg_entity_array );
 
   void update_state();
@@ -341,7 +341,7 @@ private:
 
   static Bucket *
     declare_bucket( BulkData & ,
-                    const unsigned entity_type ,
+                    const unsigned entity_rank ,
                     const unsigned part_count ,
                     const unsigned part_ord[] ,
                     const unsigned bucket_capacity ,

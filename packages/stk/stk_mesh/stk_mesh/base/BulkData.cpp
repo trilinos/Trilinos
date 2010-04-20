@@ -45,7 +45,7 @@ convert_entity_keys_to_spans( const MetaData & meta )
   const EntityId  min_id = 1 ;
   const EntityId  max_id = invalid_key.id();
 
-  const size_t rank_count = meta.entity_type_count();
+  const size_t rank_count = meta.entity_rank_count();
 
   std::vector< parallel::DistributedIndex::KeySpan> spans( rank_count );
 
@@ -67,7 +67,7 @@ BulkData::BulkData( const MetaData & mesh_meta_data ,
                     ParallelMachine parallel ,
                     unsigned bucket_max_size )
   : m_entities_index( parallel, convert_entity_keys_to_spans(mesh_meta_data) ),
-    m_buckets( mesh_meta_data.entity_type_count() ),
+    m_buckets( mesh_meta_data.entity_rank_count() ),
     m_entities(),
     m_entity_comm(),
     m_ghosting(),
@@ -179,16 +179,16 @@ void BulkData::assert_entity_owner( const char * method ,
 void BulkData::assert_good_key( const char * method ,
                                 const EntityKey & key ) const
 {
-  const size_t rank_count = m_mesh_meta_data.entity_type_count();
+  const size_t rank_count = m_mesh_meta_data.entity_rank_count();
   const bool ok_id   = 0 < entity_id( key );
-  const bool ok_type = entity_type( key ) < rank_count ;
+  const bool ok_type = entity_rank( key ) < rank_count ;
 
   if ( ! ok_type || ! ok_id ) {
     std::ostringstream msg ;
     msg << method ;
     msg << "( " ;
     if ( ! ok_type ) {
-      msg << entity_type( key ) << "-"
+      msg << entity_rank( key ) << "-"
           << entity_id( key ) << " : BAD KEY TYPE" ;
     }
     else {
@@ -248,7 +248,7 @@ const std::vector<Bucket*> & BulkData::buckets( unsigned type ) const
 {
   const char method[]= "stk::mesh::BulkData::buckets" ;
 
-  m_mesh_meta_data.assert_entity_type( method , type );
+  m_mesh_meta_data.assert_entity_rank( method , type );
 
   return m_buckets[ type ];
 }
@@ -258,7 +258,7 @@ const std::vector<Bucket*> & BulkData::buckets( unsigned type ) const
 void BulkData::verify_type_and_id(const char* calling_method,
                                   EntityRank ent_type, EntityId ent_id) const
 {
-  m_mesh_meta_data.assert_entity_type( calling_method , ent_type );
+  m_mesh_meta_data.assert_entity_rank( calling_method , ent_type );
 
   if (!entity_id_valid(ent_id)) {
     std::ostringstream msg;
@@ -407,9 +407,9 @@ void verify_change_parts( const char * method ,
                           const Entity     & entity ,
                           const PartVector & parts )
 {
-  const std::vector<std::string> & type_names = meta.entity_type_names();
+  const std::vector<std::string> & type_names = meta.entity_rank_names();
   const unsigned undef_rank  = std::numeric_limits<unsigned>::max();
-  const unsigned entity_rank = entity.entity_type();
+  const unsigned entity_rank = entity.entity_rank();
 
   bool ok = true ;
   std::ostringstream msg ;
@@ -418,7 +418,7 @@ void verify_change_parts( const char * method ,
         i = parts.begin() ; i != parts.end() ; ++i ) {
 
     const Part * const p = *i ;
-    const unsigned part_rank = p->primary_entity_type();
+    const unsigned part_rank = p->primary_entity_rank();
 
     const bool error_intersection = ! p->intersection_of().empty();
     const bool error_rel_target   = ! p->relations().empty() &&
@@ -634,12 +634,12 @@ void BulkData::internal_change_entity_parts(
 
   Bucket * k_new =
     Bucket::declare_bucket( *this ,
-                            e.entity_type(),
+                            e.entity_rank(),
                             parts_total.size(),
                             & parts_total[0] ,
                             m_bucket_capacity ,
                             m_mesh_meta_data.get_fields() ,
-                            m_buckets[ e.entity_type() ] );
+                            m_buckets[ e.entity_rank() ] );
 
   // If changing buckets then copy its field values from old to new bucket
 
@@ -683,7 +683,7 @@ bool BulkData::destroy_entity( Entity * & e )
         irel = entity.relations() ;
         ! irel.empty() && ! has_upward_relation ; ++irel ) {
 
-    has_upward_relation = entity.entity_type() <= irel->entity_rank();
+    has_upward_relation = entity.entity_rank() <= irel->entity_rank();
   }
 
   if ( has_upward_relation ) { return false ; }
@@ -814,7 +814,7 @@ void BulkData::remove_entity( Bucket * k , unsigned i )
     // The previous 'last' bucket becomes the
     // new 'last' bucket in the family:
 
-    std::vector<Bucket*> & bucket_set = m_buckets[ last->entity_type() ];
+    std::vector<Bucket*> & bucket_set = m_buckets[ last->entity_rank() ];
 
     std::vector<Bucket*>::iterator ik = lower_bound(bucket_set, last->m_key);
 
@@ -839,10 +839,10 @@ void BulkData::remove_entity( Bucket * k , unsigned i )
 
 void BulkData::internal_sort_bucket_entities()
 {
-  for ( unsigned entity_type = 0 ;
-                 entity_type < m_buckets.size() ; ++entity_type ) {
+  for ( unsigned entity_rank = 0 ;
+                 entity_rank < m_buckets.size() ; ++entity_rank ) {
 
-    std::vector<Bucket*> & buckets = m_buckets[ entity_type ];
+    std::vector<Bucket*> & buckets = m_buckets[ entity_rank ];
 
     size_t bk = 0 ; // Offset to first bucket of the family
     size_t ek = 0 ; // Offset to end   bucket of the family
@@ -857,7 +857,7 @@ void BulkData::internal_sort_bucket_entities()
         const unsigned         part_count = bucket_key[0] - 1 ;
         const unsigned * const part_ord   = bucket_key + 1 ;
 
-        ik_vacant = Bucket::declare_bucket( *this , entity_type ,
+        ik_vacant = Bucket::declare_bucket( *this , entity_rank ,
                                             part_count , part_ord ,
                                             m_bucket_capacity ,
                                             m_mesh_meta_data.get_fields() ,

@@ -36,7 +36,7 @@ void assert_valid_relation( const char method[] ,
 {
   const bool error_mesh_from = & mesh != & e_from.bucket().mesh();
   const bool error_mesh_to   = & mesh != & e_to.bucket().mesh();
-  const bool error_type      = e_from.entity_type() <= e_to.entity_type();
+  const bool error_type      = e_from.entity_rank() <= e_to.entity_rank();
   const bool error_nil_from  = 0 == e_from.bucket().capacity();
   const bool error_nil_to    = 0 == e_to.bucket().capacity();
 
@@ -79,7 +79,7 @@ void set_field_relations( Entity & e_from ,
   const std::vector<FieldRelation> & field_rels =
     e_from.bucket().mesh().mesh_meta_data().get_field_relations();
 
-  for ( std::vector<FieldRelation>::const_iterator 
+  for ( std::vector<FieldRelation>::const_iterator
         j = field_rels.begin() ; j != field_rels.end() ; ++j ) {
 
     const FieldRelation & fr = *j ;
@@ -94,8 +94,8 @@ void set_field_relations( Entity & e_from ,
         field_data_size(*fr.m_root,e_from) / sizeof(void*);
 
       const size_t offset =
-         (*fr.m_function)( e_from.entity_type() , 
-                           e_to.entity_type() , ident );
+         (*fr.m_function)( e_from.entity_rank() ,
+                           e_to.entity_rank() , ident );
 
       if ( offset < number ) {
         ptr[ offset ] = src ;
@@ -107,12 +107,12 @@ void set_field_relations( Entity & e_from ,
 void clear_field_relations( Entity & e_from ,
                             const unsigned type ,
                             const unsigned ident )
-                          
+
 {
   const std::vector<FieldRelation> & field_rels =
     e_from.bucket().mesh().mesh_meta_data().get_field_relations();
 
-  for ( std::vector<FieldRelation>::const_iterator 
+  for ( std::vector<FieldRelation>::const_iterator
         j = field_rels.begin() ; j != field_rels.end() ; ++j ) {
 
     const FieldRelation & fr = *j ;
@@ -125,7 +125,7 @@ void clear_field_relations( Entity & e_from ,
         field_data_size(*fr.m_root,e_from) / sizeof(void*);
 
       const size_t offset =
-        (*fr.m_function)( e_from.entity_type() , type , ident );
+        (*fr.m_function)( e_from.entity_rank() , type , ident );
 
       if ( offset < number ) {
         ptr[ offset ] = NULL ;
@@ -162,17 +162,17 @@ void BulkData::declare_relation( Entity & e_from ,
   // this case, one node of the triangle must be two different local nodes of
   // the quad.  This situation is a valid state of mesh entities.
 
-  // The second situation involves malformed stencils.  Given e_from, e_to1, 
-  // and e_to2, e_to1 and eto2 can share a relation with e_from with the same 
-  // kind and local_id.  This can arise, for instance, if an edge has three 
-  // nodes.  The local_id 1 of the edge may point to two different nodes.  
+  // The second situation involves malformed stencils.  Given e_from, e_to1,
+  // and e_to2, e_to1 and eto2 can share a relation with e_from with the same
+  // kind and local_id.  This can arise, for instance, if an edge has three
+  // nodes.  The local_id 1 of the edge may point to two different nodes.
   // This situation is disallowed in the mesh.  We now check for it.
 
   bool found_degenerate_relation = false;
   EntityKey  degenerate_key;
   if ( fi != fe )
      {
-     bool  downstream = fi->entity_rank() < e_from.entity_type();
+     bool  downstream = fi->entity_rank() < e_from.entity_rank();
      if ( is_degenerate_relation ( forward , *fi ) && downstream )
         {
         found_degenerate_relation = true;
@@ -182,7 +182,7 @@ void BulkData::declare_relation( Entity & e_from ,
   if ( fi != e_from.m_relation.begin() )
      {
      --fi;
-     bool  downstream = fi->entity_rank() < e_from.entity_type();
+     bool  downstream = fi->entity_rank() < e_from.entity_rank();
      if ( is_degenerate_relation ( forward , *fi ) && downstream )
         {
         found_degenerate_relation = true;
@@ -228,7 +228,7 @@ void BulkData::declare_relation( Entity & e_from ,
       // Deduce and set new part memberships:
 
       induced_part_membership( e_from, empty,
-                               e_to.entity_type(), local_id, add );
+                               e_to.entity_rank(), local_id, add );
 
       internal_change_entity_parts( e_to , add , empty );
 
@@ -238,12 +238,12 @@ void BulkData::declare_relation( Entity & e_from ,
      /* this is unreachable unless a friend of bulk data creates a half-edge
         in the relationship graph. */
       std::ostringstream msg ;
-      msg << method << "( from " 
+      msg << method << "( from "
           << print_entity_key( msg , m_mesh_meta_data, e_from.key() )
-          << " , to " 
+          << " , to "
           << print_entity_key( msg , m_mesh_meta_data, e_to.key() )
-          << " , id " << local_id 
-          << " ) FAILED" 
+          << " , id " << local_id
+          << " ) FAILED"
           << " Internal error - converse relation already exists" ;
       throw std::runtime_error( msg.str() );
     }
@@ -262,20 +262,20 @@ void BulkData::declare_relation( Entity & entity ,
 
   assert_ok_to_modify( method );
 
-  const unsigned etype = entity.entity_type();
+  const unsigned etype = entity.entity_rank();
 
   std::vector<Relation>::const_iterator i ;
   for ( i = rel.begin() ; i != rel.end() ; ++i ) {
     Entity & e = * i->entity();
     const unsigned n = i->identifier();
-    if ( e.entity_type() < etype ) {
+    if ( e.entity_rank() < etype ) {
       declare_relation( entity , e , n );
     }
-    else if ( etype < e.entity_type() ) {
+    else if ( etype < e.entity_rank() ) {
       declare_relation( e , entity , n );
     }
     else {
-      throw std::runtime_error( std::string("stk::mesh::BulkData::declare_relation FAILED: given entities of the same entity type") ); 
+      throw std::runtime_error( std::string("stk::mesh::BulkData::declare_relation FAILED: given entities of the same entity type") );
     }
   }
 }
@@ -303,8 +303,8 @@ void BulkData::destroy_relation( Entity & e_from , Entity & e_to )
     if ( i->entity() == & e_from ) {
       i = e_to.m_relation.erase( i );
     }
-    else if ( e_to.entity_type() < i->entity_rank() ) {
-      induced_part_membership( * i->entity(), del, e_to.entity_type(),
+    else if ( e_to.entity_rank() < i->entity_rank() ) {
+      induced_part_membership( * i->entity(), del, e_to.entity_rank(),
                                i->identifier(), keep );
     }
   }
@@ -314,10 +314,10 @@ void BulkData::destroy_relation( Entity & e_from , Entity & e_to )
     --i ;
     if ( i->entity() == & e_to ) {
 
-      induced_part_membership( e_from, keep, e_to.entity_type(),
+      induced_part_membership( e_from, keep, e_to.entity_rank(),
                                i->identifier(), del );
 
-      clear_field_relations( e_from , e_to.entity_type() ,
+      clear_field_relations( e_from , e_to.entity_rank() ,
                              i->identifier() );
 
       i = e_from.m_relation.erase( i );
@@ -352,7 +352,7 @@ void BulkData::internal_propagate_part_changes(
   Entity           & entity ,
   const PartVector & removed )
 {
-  const unsigned etype = entity.entity_type();
+  const unsigned etype = entity.entity_rank();
 
   PairIterRelation rel = entity.relations();
 
@@ -381,11 +381,11 @@ void BulkData::internal_propagate_part_changes(
 
         for ( PairIterRelation
               to_rel = e_to.relations(); ! to_rel.empty() ; ++to_rel ) {
-          if ( e_to.entity_type() < to_rel->entity_rank() &&
+          if ( e_to.entity_rank() < to_rel->entity_rank() &&
                & entity != to_rel->entity() /* Already did this entity */ ) {
             // Relation from to_rel->entity() to e_to
             induced_part_membership( * to_rel->entity(), empty,
-                                     e_to.entity_type(),
+                                     e_to.entity_rank(),
                                      to_rel->identifier(),
                                      to_add );
           }
@@ -423,7 +423,7 @@ void BulkData::internal_propagate_part_changes(
 
 void BulkData::internal_propagate_relocation( Entity & entity )
 {
-  const unsigned etype = entity.entity_type();
+  const unsigned etype = entity.entity_rank();
   PairIterRelation rel = entity.relations();
 
   for ( ; ! rel.empty() ; ++rel ) {

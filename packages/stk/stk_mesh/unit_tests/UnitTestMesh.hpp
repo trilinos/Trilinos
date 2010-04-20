@@ -24,7 +24,7 @@ namespace stk {
 namespace unit_test {
 
 // Helper function to generate a vector of entity names
-std::vector<std::string>  get_entity_type_names ( int rank );
+std::vector<std::string>  get_entity_rank_names ( int rank );
 
 class  UnitTestMesh {
 protected:

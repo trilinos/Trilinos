@@ -44,8 +44,8 @@ void testLinsysFunctions( MPI_Comm comm )
 
   const unsigned bucket_size = 100; //for a real application mesh, bucket_size would be much bigger...
 
-  stk::mesh::MetaData meta_data( stk::mesh::fem_entity_type_names() );
-  stk::mesh::MetaData meta_data2( stk::mesh::fem_entity_type_names() );
+  stk::mesh::MetaData meta_data( stk::mesh::fem_entity_rank_names() );
+  stk::mesh::MetaData meta_data2( stk::mesh::fem_entity_rank_names() );
 
   stk::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
   stk::mesh::BulkData bulk_data2( meta_data2, comm, bucket_size );

@@ -35,7 +35,7 @@ typedef uint64_t EntityId ;
  *
  * Notes on construction and validity:
  *
- * EntityKey takes constructor arguments entity_type and entity_id which
+ * EntityKey takes constructor arguments entity_rank and entity_id which
  * are restricted to lie in a sub-range of what can be represented by the
  * EntityRank and EntityId types. The sub-range allowed by EntityKey is
  * dictated by the amount of space used to store the internal encoding of
@@ -48,7 +48,7 @@ typedef uint64_t EntityId ;
  *
  * Note that an instance of stk::mesh may place further restrictions on a
  * 'valid' key, such as requiring that
- *         0 <= entity_type(key) < meta_data.entity_type_count().
+ *         0 <= entity_rank(key) < meta_data.entity_rank_count().
  *
  * Typically stk::mesh does not take EntityKeys as input. A user of
  * stk::mesh would (for instance) request that an Entity be created by
@@ -106,7 +106,7 @@ public:
    *
    * \param entity_id is required to lie in the range 1 to 2^id_digits.
    *
-   * If entity_type or entity_id lie outside these ranges an exception will
+   * If entity_rank or entity_id lie outside these ranges an exception will
    * be thrown.
    */
   EntityKey( unsigned entity_rank, raw_key_type entity_id );
@@ -156,11 +156,6 @@ public:
 /** \brief  Given an entity key, return an entity type (rank). */
 inline
 EntityRank entity_rank( const EntityKey & key ) {
-  return key.rank();
-}
-
-inline
-EntityRank entity_type( const EntityKey & key ) {
   return key.rank();
 }
 

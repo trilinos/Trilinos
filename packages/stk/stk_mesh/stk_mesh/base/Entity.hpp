@@ -60,9 +60,6 @@ public:
   /** \brief  The rank of this entity. */
   EntityRank entity_rank() const { return stk::mesh::entity_rank( m_key ); }
 
-  /** \brief  The type (a.k.a. rank) of this entity. */
-  EntityRank entity_type() const { return Entity::entity_rank(); }
-
   /** \brief  Identifier for this entity which is globally unique
    *          for a given entity type.
    */

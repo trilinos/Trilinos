@@ -15,7 +15,7 @@ BoxMeshFixture::~BoxMeshFixture()
 {}
 
 BoxMeshFixture::BoxMeshFixture( stk::ParallelMachine pm )
-  : m_meta_data( stk::mesh::fem_entity_type_names() ),
+  : m_meta_data( stk::mesh::fem_entity_rank_names() ),
     m_bulk_data( m_meta_data , pm ),
     m_elem_block( m_meta_data.declare_part("block1", stk::mesh::Element) ),
     m_coord_field( m_meta_data.declare_field<CoordFieldType>("Coordinates") ),
@@ -37,7 +37,7 @@ BoxMeshFixture::BoxMeshFixture( stk::ParallelMachine pm )
   //put coord-gather-field on all elements:
   stk::mesh::put_field( m_coord_gather_field, stk::mesh::Element, m_meta_data.universal_part(), NodesPerElem);
 
-  // Field relation so coord-gather-field on elements points 
+  // Field relation so coord-gather-field on elements points
   // to coord-field of the element's nodes
   m_meta_data.declare_field_relation( m_coord_gather_field, stk::mesh::element_node_stencil<shards::Hexahedron<8> >, m_coord_field);
 

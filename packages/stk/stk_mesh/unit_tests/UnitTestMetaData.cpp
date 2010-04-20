@@ -104,9 +104,9 @@ void UnitTestMetaData::testEntityKey()
   STKUNIT_ASSERT(   entity_key_valid( key_good_1_1 ) );
   STKUNIT_ASSERT(   entity_key_valid( key_good_2_10 ) );
 
-  STKUNIT_ASSERT( 0  == entity_type(key_good_0_1));
-  STKUNIT_ASSERT( 1  == entity_type(key_good_1_1) );
-  STKUNIT_ASSERT( 2  == entity_type(key_good_2_10) );
+  STKUNIT_ASSERT( 0  == entity_rank(key_good_0_1));
+  STKUNIT_ASSERT( 1  == entity_rank(key_good_1_1) );
+  STKUNIT_ASSERT( 2  == entity_rank(key_good_2_10) );
   STKUNIT_ASSERT( 1  == entity_id(key_good_0_1) );
   STKUNIT_ASSERT( 1  == entity_id(key_good_1_1) );
   STKUNIT_ASSERT( 10 == entity_id(key_good_2_10) );
@@ -892,7 +892,7 @@ namespace mesh {
 
 void UnitTestMetaData::testMetaData()
 {
-  const std::vector<std::string> & type_names = fem_entity_type_names();
+  const std::vector<std::string> & type_names = fem_entity_rank_names();
 
   STKUNIT_ASSERT_EQUAL( type_names.size() , (size_t) EntityRankEnd );
 
@@ -952,14 +952,14 @@ void UnitTestMetaData::testMetaData()
 
   int i = 2;
 
-  const std::string& i_name2 = metadata2.entity_type_name( i );
+  const std::string& i_name2 = metadata2.entity_rank_name( i );
 
   STKUNIT_ASSERT( i_name2 == type_names[i] );
 
   i = EntityRankEnd;
   bool caught_throw = false;
   try {
-    metadata2.entity_type_name( i );
+    metadata2.entity_rank_name( i );
   }
   catch(...) {
     caught_throw = true;

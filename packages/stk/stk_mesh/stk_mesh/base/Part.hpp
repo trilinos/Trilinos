@@ -105,7 +105,7 @@ public:
    *   nodes of those elements are also members of an element part.
    *   Return std::numeric_limits<unsigned>::max() if no primary entity type.
    */
-  unsigned primary_entity_type() const { return m_entity_rank ; }
+  unsigned primary_entity_rank() const { return m_entity_rank ; }
 
   /** \brief  Application-defined text name of this part */
   const std::string & name() const { return m_name ; }

@@ -50,7 +50,7 @@ void add_connectivities(stk::linsys::LinearSystem& ls,
 void dirichlet_bc(stk::linsys::LinearSystem& ls,
                   const stk::mesh::BulkData& mesh,
                   const stk::mesh::Part& bcpart,
-                  stk::mesh::EntityRank entity_type,
+                  stk::mesh::EntityRank entity_rank,
                   const stk::mesh::FieldBase& field,
                   unsigned field_component,
                   double prescribed_value);

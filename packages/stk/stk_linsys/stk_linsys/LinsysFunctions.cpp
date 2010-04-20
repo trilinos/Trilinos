@@ -25,13 +25,13 @@ namespace stk {
 namespace linsys {
 
 void add_connectivities(stk::linsys::LinearSystem& ls,
-                        stk::mesh::EntityRank entity_type,
-                        stk::mesh::EntityRank connected_entity_type,
+                        stk::mesh::EntityRank entity_rank,
+                        stk::mesh::EntityRank connected_entity_rank,
                         const stk::mesh::FieldBase& field,
                         const stk::mesh::Selector& selector,
                         const stk::mesh::BulkData& mesh_bulk)
 {
-  const std::vector<mesh::Bucket*>& mesh_buckets = mesh_bulk.buckets(entity_type);
+  const std::vector<mesh::Bucket*>& mesh_buckets = mesh_bulk.buckets(entity_rank);
   std::vector<mesh::Bucket*> part_buckets;
   stk::mesh::get_buckets(selector, mesh_buckets, part_buckets);
 
@@ -39,17 +39,17 @@ void add_connectivities(stk::linsys::LinearSystem& ls,
 
   DofMapper& dof_mapper = ls.get_DofMapper();
 
-  dof_mapper.add_dof_mappings(mesh_bulk, selector, connected_entity_type, field);
+  dof_mapper.add_dof_mappings(mesh_bulk, selector, connected_entity_rank, field);
 
   int field_id = dof_mapper.get_field_id(field);
 
   stk::mesh::Entity& first_entity = *(part_buckets[0]->begin());
-  stk::mesh::PairIterRelation rel = first_entity.relations(connected_entity_type);
+  stk::mesh::PairIterRelation rel = first_entity.relations(connected_entity_rank);
   int num_connected = rel.second - rel.first;
 
   fei::SharedPtr<fei::MatrixGraph> matgraph = ls.get_fei_MatrixGraph();
 
-  int pattern_id = matgraph->definePattern(num_connected, connected_entity_type, field_id);
+  int pattern_id = matgraph->definePattern(num_connected, connected_entity_rank, field_id);
 
   int num_entities = 0;
   for(size_t i=0; i<part_buckets.size(); ++i) {
@@ -66,7 +66,7 @@ void add_connectivities(stk::linsys::LinearSystem& ls,
       b_end  = part_buckets[i]->end();
     for(; b_iter != b_end; ++b_iter) {
       stk::mesh::Entity& entity = *b_iter;
-      rel = entity.relations(connected_entity_type);
+      rel = entity.relations(connected_entity_rank);
       for(int j=0; rel.first != rel.second; ++rel.first, ++j) {
         connected_ids[j] = rel.first->entity()->identifier();
       }
@@ -79,14 +79,14 @@ void add_connectivities(stk::linsys::LinearSystem& ls,
 void dirichlet_bc(stk::linsys::LinearSystem& ls,
                   const stk::mesh::BulkData& mesh,
                   const stk::mesh::Part& bcpart,
-                  stk::mesh::EntityRank entity_type,
+                  stk::mesh::EntityRank entity_rank,
                   const stk::mesh::FieldBase& field,
                   unsigned field_component,
                   double prescribed_value)
 {
   std::vector<stk::mesh::Bucket*> buckets;
   stk::mesh::Selector selector(bcpart);
-  stk::mesh::get_buckets(selector, mesh.buckets(entity_type), buckets);
+  stk::mesh::get_buckets(selector, mesh.buckets(entity_rank), buckets);
 
   int field_id = ls.get_DofMapper().get_field_id(field);
   std::vector<int> entity_ids;
@@ -104,7 +104,7 @@ void dirichlet_bc(stk::linsys::LinearSystem& ls,
 
   ls.get_fei_LinearSystem()->loadEssentialBCs(entity_ids.size(),
                                        &entity_ids[0],
-                                       stk::linsys::impl::entitytype_to_int(entity_type),
+                                       stk::linsys::impl::entitytype_to_int(entity_rank),
                                        field_id, field_component,
                                        &prescribed_values[0]);
 }
@@ -170,7 +170,7 @@ void copy_vector_to_mesh( fei::Vector & vec,
     if(!(field->type_is<double>()) || data == NULL) {
       std::ostringstream oss;
       oss << "stk::linsys::copy_vector_to_mesh ERROR, bad data type, or ";
-      oss << " field (" << field->name() << ") not found on entity with type " << entity.entity_type();
+      oss << " field (" << field->name() << ") not found on entity with type " << entity.entity_rank();
       oss << " and ID " << entity.identifier();
       std::string str = oss.str();
       throw std::runtime_error(str.c_str());

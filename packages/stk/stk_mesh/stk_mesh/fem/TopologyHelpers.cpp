@@ -40,12 +40,12 @@ void set_cell_topology( Part & p , const CellTopologyData * singleton )
 
   const CellTopologyData * t = NULL ;
 
-  if ( p.mesh_meta_data().entity_type_count() <= p.primary_entity_type() ||
+  if ( p.mesh_meta_data().entity_rank_count() <= p.primary_entity_rank() ||
        singleton == NULL ||
        singleton != ( t = m.declare_attribute_no_delete(p,singleton) ) ) {
     std::ostringstream msg ;
     msg << method << "( " << p.name();
-    msg << " entity_type(" << p.primary_entity_type() << ") , " ;
+    msg << " entity_rank(" << p.primary_entity_rank() << ") , " ;
     if ( singleton ) { msg << singleton->name ; }
     else             { msg << "NULL" ; }
     msg << " ) ERROR" ;
@@ -66,7 +66,7 @@ const CellTopologyData * get_cell_topology( const Bucket & bucket )
   PartVector::iterator i = parts.begin() ;
 
   for ( ; NULL == top && i != parts.end() ; ++i ) {
-    if ( bucket.entity_type() == (**i).primary_entity_type() ) {
+    if ( bucket.entity_rank() == (**i).primary_entity_rank() ) {
       top = get_cell_topology( **i );
     }
   }
@@ -74,7 +74,7 @@ const CellTopologyData * get_cell_topology( const Bucket & bucket )
   bool ok = true ;
 
   for ( ; ok && i != parts.end() ; ++i ) {
-    if ( bucket.entity_type() == (**i).primary_entity_type() ) {
+    if ( bucket.entity_rank() == (**i).primary_entity_rank() ) {
       const CellTopologyData * const tmp = get_cell_topology( **i );
       ok = ((tmp == NULL) || (tmp == top)) ;
     }
@@ -84,7 +84,7 @@ const CellTopologyData * get_cell_topology( const Bucket & bucket )
     std::ostringstream msg ;
     msg << "stk::mesh::get_cell_topology( Bucket[" ;
     for ( i = parts.begin() ; i != parts.end() ; ++i ) {
-      if ( bucket.entity_type() == (**i).primary_entity_type() ) {
+      if ( bucket.entity_rank() == (**i).primary_entity_rank() ) {
         const CellTopologyData * const tmp = get_cell_topology( **i );
         msg << " " << (*i)->name();
         if ( tmp ) { msg << "->" << tmp->name ; }
@@ -212,7 +212,7 @@ bool element_side_polarity( const Entity & elem ,
 {
   static const char method[] = "stk::mesh::element_side_polarity" ;
 
-  const bool is_side = side.entity_type() != Edge ;
+  const bool is_side = side.entity_rank() != Edge ;
 
   const CellTopologyData * const elem_top = get_cell_topology( elem );
 
@@ -227,7 +227,7 @@ bool element_side_polarity( const Entity & elem ,
     std::ostringstream msg ;
     msg << method ;
     msg << "( Element[" << elem.identifier() << "]" ;
-    msg << " , " << meta_data.entity_type_names()[ side.entity_type() ];
+    msg << " , " << meta_data.entity_rank_names()[ side.entity_rank() ];
     msg << "[" << side.identifier() << "]" ;
     msg << " , local_side_id = " << local_side_id << " ) FAILED: " ;
     if ( NULL == elem_top ) {

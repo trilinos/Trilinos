@@ -37,7 +37,7 @@ namespace mesh {
 namespace use_cases {
 
 UseCase_3_Mesh::UseCase_3_Mesh( stk::ParallelMachine comm )
-  : m_metaData( fem_entity_type_names() )
+  : m_metaData( fem_entity_rank_names() )
   , m_bulkData( m_metaData , comm )
   , m_block_hex(        m_metaData.declare_part( "block_1", Element ))
   , m_block_wedge(      m_metaData.declare_part( "block_2", Element ))

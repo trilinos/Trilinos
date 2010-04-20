@@ -18,10 +18,10 @@ namespace sunit {
   class Stk_Mesh_Fixture
   {
     public:
-      Stk_Mesh_Fixture( const std::vector<std::string> & entity_type_names );
+      Stk_Mesh_Fixture( const std::vector<std::string> & entity_rank_names );
       virtual ~Stk_Mesh_Fixture();
 
-      void createMetaData(const std::vector<std::string> & entity_type_names );
+      void createMetaData(const std::vector<std::string> & entity_rank_names );
 
       const stk::mesh::MetaData & get_MetaData() const { return m_MetaData ; }
       stk::mesh::MetaData       & get_NonconstMetaData() { return m_MetaData ; }
