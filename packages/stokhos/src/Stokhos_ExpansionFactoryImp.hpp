@@ -31,6 +31,7 @@
 #include "Teuchos_TestForException.hpp"
 
 #include "Stokhos_BasisFactory.hpp"
+#include "Stokhos_QuadratureFactory.hpp"
 #include "Stokhos_AlgebraicOrthogPolyExpansion.hpp"
 #include "Stokhos_QuadOrthogPolyExpansion.hpp"
 #include "Stokhos_ForUQTKOrthogPolyExpansion.hpp"
@@ -46,8 +47,10 @@ create(Teuchos::ParameterList& sgParams)
   Teuchos::RCP< const Stokhos::OrthogPolyBasis<ordinal_type,value_type> > basis;
   if (basisParams.template isType< Teuchos::RCP< const Stokhos::OrthogPolyBasis<ordinal_type,value_type> > >("Stochastic Galerkin Basis"))
     basis = basisParams.template get< Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type,value_type> > >("Stochastic Galerkin Basis");
-  else
+  else {
     basis = Stokhos::BasisFactory<ordinal_type,value_type>::create(sgParams);
+    basisParams.set("Stochastic Galerkin Basis", basis);
+  }
     
   // Get 3-tensor
   Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type,value_type> > Cijk;
@@ -79,8 +82,14 @@ create(Teuchos::ParameterList& sgParams)
       Teuchos::rcp(new Stokhos::AlgebraicOrthogPolyExpansion<ordinal_type,value_type>(basis, Cijk));
   else if (exp_type == "Quadrature") {
     Teuchos::ParameterList& quadParams = sgParams.sublist("Quadrature");
-    Teuchos::RCP<const Stokhos::Quadrature<ordinal_type,value_type> > quad =
-      quadParams.template get<Teuchos::RCP<const Stokhos::Quadrature<ordinal_type,value_type> > >("Stochastic Galerkin Quadrature");
+    Teuchos::RCP<const Stokhos::Quadrature<ordinal_type,value_type> > quad;
+    if (quadParams.template isType<Teuchos::RCP<const Stokhos::Quadrature<ordinal_type,value_type> > >("Stochastic Galerkin Quadrature"))
+      quad = quadParams.template get<Teuchos::RCP<const Stokhos::Quadrature<ordinal_type,value_type> > >("Stochastic Galerkin Quadrature");
+    else {
+      quad = 
+	Stokhos::QuadratureFactory<ordinal_type,value_type>::create(sgParams);
+      quadParams.set("Stochastic Galerkin Quadrature", quad);
+    }
     expansion = 
       Teuchos::rcp(new Stokhos::QuadOrthogPolyExpansion<ordinal_type,value_type>(basis, Cijk, quad));
   }
@@ -104,13 +113,17 @@ create(Teuchos::ParameterList& sgParams)
     Teuchos::RCP<Teuchos::SerialDenseMatrix<ordinal_type,value_type> > Bij;
     if (sgParams.template isType<Teuchos::RCP<const Teuchos::SerialDenseMatrix<ordinal_type,value_type> > >("Derivative Double Product"))
       Bij = sgParams.template get<const Teuchos::RCP<Teuchos::SerialDenseMatrix<ordinal_type,value_type> > >("Derivative Double Product");
-    else
+    else {
       Bij = deriv_basis->computeDerivDoubleProductTensor();
+      sgParams.set("Derivative Double Product", Bij);
+    }
     Teuchos::RCP<const Stokhos::Dense3Tensor<ordinal_type,value_type> > Dijk;
     if (sgParams.template isType<Teuchos::RCP<const Stokhos::Dense3Tensor<ordinal_type,value_type> > >("Derivative Triple Product"))
       Dijk = sgParams.template get<Teuchos::RCP<const Stokhos::Dense3Tensor<ordinal_type,value_type> > >("Derivative Triple Product");
-    else
+    else {
       Dijk = deriv_basis->computeDerivTripleProductTensor(Bij, Cijk);
+      sgParams.set("Derivative Triple Product", Dijk);
+    }
     expansion = 
       Teuchos::rcp(new 
 		   Stokhos::DerivOrthogPolyExpansion<ordinal_type,value_type>(
