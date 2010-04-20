@@ -37,8 +37,11 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/Trilinos_version.h.in
   Trilinos_version.h)
 
 #Automatically update the version file for sierra too.
-CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/Trilinos_version.h.in
-  ${CMAKE_CURRENT_SOURCE_DIR}/SIERRA/bjam/config_headers/Trilinos_version.h)
+IF (NOT WIN32)
+  # Only configure on non-windows system because of the dreaded ^M
+  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/Trilinos_version.h.in
+    ${CMAKE_CURRENT_SOURCE_DIR}/SIERRA/bjam/config_headers/Trilinos_version.h)
+ENDIF()
 
 #Since the version header file is now configured the root build
 #dir needs to be on the include path
