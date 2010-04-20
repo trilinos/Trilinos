@@ -42,7 +42,7 @@ The following fixture creates the mesh below on proc 0
 */
 
 GridMeshFixture::GridMeshFixture(ParallelMachine pm)
-  : m_meta_data( fem_entity_type_names() )
+  : m_meta_data( fem_entity_rank_names() )
   , m_bulk_data( m_meta_data , pm , 100 )
   , m_quad_part( m_meta_data.declare_part("quad_part", Face))
   , m_shell_part( m_meta_data.declare_part("shell_part", Face))

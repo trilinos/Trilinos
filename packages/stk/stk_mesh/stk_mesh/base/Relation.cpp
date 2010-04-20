@@ -31,7 +31,7 @@ operator << ( std::ostream & s , const Relation & rel )
   if ( e ) {
     const MetaData & meta_data = e->bucket().mesh().mesh_meta_data();
 
-    s << meta_data.entity_type_name( rel.entity_rank() );
+    s << meta_data.entity_rank_name( rel.entity_rank() );
     s << "[" << rel.identifier() << "]->" ;
     print_entity_key( s , meta_data , e->key() );
   }
@@ -60,14 +60,14 @@ Relation::attribute( unsigned rank , unsigned id )
 }
 
 Relation::Relation( Entity & entity , unsigned identifier )
-  : m_attr( Relation::attribute( entity.entity_type() , identifier ) ),
+  : m_attr( Relation::attribute( entity.entity_rank() , identifier ) ),
     m_entity( & entity )
 {}
 
 Relation::Relation( Relation::raw_attr_type attr , Entity & entity )
   : m_attr( attr ), m_entity( & entity )
 {
-  if ( entity_rank() != entity.entity_type() ) {
+  if ( entity_rank() != entity.entity_rank() ) {
     std::ostringstream msg ;
     msg << "stk::mesh::Relation::Relation( "  ;
     msg << *this ;
@@ -160,56 +160,56 @@ void get_entities_through_relations(
 
 //----------------------------------------------------------------------
 
-/** \brief  Query if a member entity of the given entity type 
+/** \brief  Query if a member entity of the given entity type
  *          has an induced membership.
  */
-bool membership_is_induced( const Part & part , unsigned entity_type )
+bool membership_is_induced( const Part & part , unsigned entity_rank )
 {
   const MetaData & meta = part.mesh_meta_data();
 
   const bool induced_by_type =
-     entity_type < part.primary_entity_type() &&
-                   part.primary_entity_type() < meta.entity_type_count() ;
- 
+     entity_rank < part.primary_entity_rank() &&
+                   part.primary_entity_rank() < meta.entity_rank_count() ;
+
   const bool induced_by_stencil =
     ! part.relations().empty() &&
       part.relations().begin()->m_target == & part ;
- 
+
   return induced_by_type || induced_by_stencil ;
 }
- 
+
 //----------------------------------------------------------------------
 
-void induced_part_membership( Part & part , 
-                              unsigned entity_type_from , 
-                              unsigned entity_type_to ,
+void induced_part_membership( Part & part ,
+                              unsigned entity_rank_from ,
+                              unsigned entity_rank_to ,
                               unsigned relation_identifier ,
                               PartVector & induced_parts )
 {
-  if ( entity_type_to < entity_type_from &&
-       part.primary_entity_type() == entity_type_from ) {
- 
+  if ( entity_rank_to < entity_rank_from &&
+       part.primary_entity_rank() == entity_rank_from ) {
+
     // Direct relationship:
- 
+
     insert( induced_parts , part );
- 
+
     // Stencil relationship where 'part' is the root:
     // The 'target' should not have subsets or supersets.
- 
+
     const std::vector<PartRelation> & part_rel = part.relations();
- 
+
     for ( std::vector<PartRelation>::const_iterator
           j = part_rel.begin() ; j != part_rel.end() ; ++j ) {
- 
+
       if ( & part == j->m_root &&
-           0 <= (* j->m_function)( entity_type_from , entity_type_to ,
+           0 <= (* j->m_function)( entity_rank_from , entity_rank_to ,
                                    relation_identifier ) ) {
         insert( induced_parts , * j->m_target );
       }
     }
   }
 }
- 
+
 //----------------------------------------------------------------------
 //  What are this entity's part memberships that can be deduced from
 //  this entity's relationship.  Can only trust 'entity_from' to be
@@ -217,16 +217,16 @@ void induced_part_membership( Part & part ,
 
 void induced_part_membership( const Entity     & entity_from ,
                               const PartVector & omit ,
-                                    unsigned     entity_type_to ,
+                                    unsigned     entity_rank_to ,
                                     unsigned     relation_identifier ,
                                     PartVector & entity_to_parts )
 {
   const Bucket   & bucket_from    = entity_from.bucket();
   const BulkData & mesh           = bucket_from.mesh();
   const unsigned local_proc_rank  = mesh.parallel_rank();
-  const unsigned entity_type_from = entity_from.entity_type();
+  const unsigned entity_rank_from = entity_from.entity_rank();
 
-  if ( entity_type_to < entity_type_from &&
+  if ( entity_rank_to < entity_rank_from &&
        local_proc_rank == entity_from.owner_rank() ) {
     const MetaData   & meta        = mesh.mesh_meta_data();
     const PartVector & all_parts   = meta.get_parts();
@@ -243,8 +243,8 @@ void induced_part_membership( const Entity     & entity_from ,
 
       if ( ! contain( omit , part ) ) {
         induced_part_membership( part,
-                                 entity_type_from ,
-                                 entity_type_to ,
+                                 entity_rank_from ,
+                                 entity_rank_to ,
                                  relation_identifier ,
                                  entity_to_parts );
       }
@@ -258,11 +258,11 @@ void induced_part_membership( const Entity     & entity ,
                               const PartVector & omit ,
                                     PartVector & induced )
 {
-  for ( PairIterRelation 
-        rel = entity.relations() ; ! rel.empty() ; ++rel ) {  
+  for ( PairIterRelation
+        rel = entity.relations() ; ! rel.empty() ; ++rel ) {
 
     induced_part_membership( * rel->entity() , omit ,
-                             entity.entity_type() ,
+                             entity.entity_rank() ,
                              rel->identifier() ,
                              induced );
   }

@@ -31,7 +31,7 @@ RingMeshFixture::RingMeshFixture(
   ParallelMachine pm ,
   unsigned        num_edge_per_proc ,
   bool            use_edge_parts )
-  : m_meta_data( fem_entity_type_names() ),
+  : m_meta_data( fem_entity_rank_names() ),
     m_bulk_data( m_meta_data, pm, 100 ),
     m_edge_parts(),
     m_edge_part_extra( m_meta_data.declare_part( "edge_extra" , Edge ) ),

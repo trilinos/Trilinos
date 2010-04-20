@@ -108,7 +108,7 @@ void BulkData::destroy_all_ghosting()
   static const char method[] = "stk::mesh::BulkData::destroy_all_ghosting" ;
 
   assert_ok_to_modify( method );
- 
+
   // Clear Ghosting data
 
   for ( std::vector<Ghosting*>::iterator
@@ -141,7 +141,7 @@ void BulkData::destroy_all_ghosting()
   }
 
   ie = std::remove( m_entity_comm.begin() ,
-                    m_entity_comm.end() , (Entity*) NULL ); 
+                    m_entity_comm.end() , (Entity*) NULL );
 
   m_entity_comm.erase( ie , m_entity_comm.end() );
 }
@@ -243,7 +243,7 @@ void BulkData::internal_change_ghosting(
   const char method[] = "stk::mesh::BulkData::internal_change_ghosting" ;
 
   const MetaData & meta = m_mesh_meta_data ;
-  const unsigned rank_count = meta.entity_type_count();
+  const unsigned rank_count = meta.entity_rank_count();
   const unsigned p_size = m_parallel_size ;
 
   //------------------------------------
@@ -263,7 +263,7 @@ void BulkData::internal_change_ghosting(
       Entity * const entity = *i ;
       if ( in_receive_ghost( ghosts , *entity ) ) {
         new_recv.insert( entity );
-      } 
+      }
     }
 
     // Remove any entities that are in the remove list.
@@ -356,7 +356,7 @@ void BulkData::internal_change_ghosting(
   }
 
   if ( removed ) {
-    std::vector<Entity*>::iterator i = 
+    std::vector<Entity*>::iterator i =
       std::remove( m_entity_comm.begin() ,
                    m_entity_comm.end() , (Entity*) NULL );
     m_entity_comm.erase( i , m_entity_comm.end() );
@@ -429,19 +429,19 @@ void BulkData::internal_change_ghosting(
 
             buf.unpack<unsigned>( this_rank );
           }
- 
+
           PartVector parts ;
           std::vector<Relation> relations ;
           EntityKey key ;
           unsigned  owner = ~0u ;
 
           unpack_entity_info( buf, *this, key, owner, parts, relations );
- 
+
           // Must not have the locally_owned_part or locally_used_part
 
           remove( parts , meta.locally_owned_part() );
           remove( parts , meta.locally_used_part() );
- 
+
           std::pair<Entity*,bool> result = internal_create_entity( key );
 
           if ( result.second ) { result.first->m_owner_rank = owner ; }
@@ -449,7 +449,7 @@ void BulkData::internal_change_ghosting(
           assert_entity_owner( method , * result.first , owner );
 
           internal_change_entity_parts( * result.first , parts , PartVector() );
- 
+
           declare_relation( * result.first , relations );
 
           if ( ! unpack_field_values( buf , * result.first , error_msg ) ) {
@@ -499,13 +499,13 @@ void insert_transitive_closure( std::set<EntityProc,EntityLess> & new_send ,
   if ( entry.second != entry.first->owner_rank() &&
        ! in_shared( * entry.first , entry.second ) ) {
 
-    std::pair< std::set<EntityProc,EntityLess>::iterator , bool > 
+    std::pair< std::set<EntityProc,EntityLess>::iterator , bool >
       result = new_send.insert( entry );
 
     if ( result.second ) {
       // A new insertion, must also insert the closure
 
-      const unsigned etype = entry.first->entity_type();
+      const unsigned etype = entry.first->entity_rank();
       PairIterRelation irel  = entry.first->relations();
 
       for ( ; ! irel.empty() ; ++irel ) {
@@ -553,7 +553,7 @@ void comm_recv_to_send(
     while ( buf.remaining() ) {
       EntityKey key ;
       buf.unpack<EntityKey>( & key , 1 );
-      EntityProc tmp( mesh.get_entity( entity_type(key), entity_id(key) , method ) , p );
+      EntityProc tmp( mesh.get_entity( entity_rank(key), entity_id(key) , method ) , p );
       new_send.insert( tmp );
     }
   }
@@ -598,7 +598,7 @@ void comm_sync_send_recv(
 
     const EntityKey &entity_key = i->first->key();
     const uint64_t &proc = i->second;
-    
+
     all.send_buffer( i->second ).pack(entity_key).pack(proc);
 
     if ( owner != parallel_rank ) {
@@ -625,7 +625,7 @@ void comm_sync_send_recv(
 
       EntityKey entity_key;
       uint64_t proc(0);
-    
+
       buf.unpack(entity_key).unpack(proc);
 
       Entity * const e = mesh.get_entity( entity_key );

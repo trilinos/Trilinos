@@ -17,7 +17,7 @@ namespace unit_test {
 
 /****************************************************************/
 
-std::vector<std::string>  get_entity_type_names ( int rank )
+std::vector<std::string>  get_entity_rank_names ( int rank )
 {
   std::vector<std::string>  ret_val;
   ret_val.push_back ( "Node" );
@@ -39,7 +39,7 @@ std::vector<std::string>  get_entity_type_names ( int rank )
 
 
 UnitTestMesh::UnitTestMesh ( stk::ParallelMachine comm , unsigned block_size )
-  : m_meta_data ( get_entity_type_names ( MAX_RANK ) ) 
+  : m_meta_data ( get_entity_rank_names ( MAX_RANK ) )
   , m_bulk_data ( m_meta_data , comm , block_size )
   , m_test_part ( m_meta_data.declare_part ( "Test Part" ) )
   , m_cell_part ( m_meta_data.declare_part ( "Cell list" , MAX_RANK ) )
@@ -88,47 +88,47 @@ namespace {
 
 typedef int BOX[3][2] ;
 
-void box_partition( int ip , int up , int axis , 
+void box_partition( int ip , int up , int axis ,
                     const BOX box ,
                     BOX p_box[] )
-{ 
+{
   const int np = up - ip ;
   if ( 1 == np ) {
     p_box[ip][0][0] = box[0][0] ; p_box[ip][0][1] = box[0][1] ;
     p_box[ip][1][0] = box[1][0] ; p_box[ip][1][1] = box[1][1] ;
     p_box[ip][2][0] = box[2][0] ; p_box[ip][2][1] = box[2][1] ;
-  } 
-  else {  
+  }
+  else {
     const int n = box[ axis ][1] - box[ axis ][0] ;
     const int np_low = np / 2 ;  /* Rounded down */
     const int np_upp = np - np_low ;
- 
+
     const int n_upp = (int) (((double) n) * ( ((double)np_upp) / ((double)np)));
     const int n_low = n - n_upp ;
     const int next_axis = ( axis + 2 ) % 3 ;
- 
+
     if ( np_low ) { /* P = [ip,ip+np_low) */
       BOX dbox ;
       dbox[0][0] = box[0][0] ; dbox[0][1] = box[0][1] ;
       dbox[1][0] = box[1][0] ; dbox[1][1] = box[1][1] ;
       dbox[2][0] = box[2][0] ; dbox[2][1] = box[2][1] ;
- 
+
       dbox[ axis ][1] = dbox[ axis ][0] + n_low ;
- 
+
       box_partition( ip, ip + np_low, next_axis,
                      (const int (*)[2]) dbox, p_box );
     }
- 
+
     if ( np_upp ) { /* P = [ip+np_low,ip+np_low+np_upp) */
       BOX dbox ;
       dbox[0][0] = box[0][0] ; dbox[0][1] = box[0][1] ;
       dbox[1][0] = box[1][0] ; dbox[1][1] = box[1][1] ;
       dbox[2][0] = box[2][0] ; dbox[2][1] = box[2][1] ;
- 
+
       ip += np_low ;
       dbox[ axis ][0] += n_low ;
       dbox[ axis ][1]  = dbox[ axis ][0] + n_upp ;
- 
+
       box_partition( ip, ip + np_upp, next_axis,
                      (const int (*)[2]) dbox, p_box );
     }
@@ -330,7 +330,7 @@ void UnitTestMesh::generate_loop(
   STKUNIT_ASSERT( local_count[0] == nLocalNode + n_extra );
   STKUNIT_ASSERT( local_count[1] == nLocalEdge + n_extra );
 
-  // Make sure that edge->owner_rank() == edge->node[1]->owner_rank() 
+  // Make sure that edge->owner_rank() == edge->node[1]->owner_rank()
   if ( 1 < p_size ) {
     Entity * const e_node_0 = mesh.get_entity( 0 , node_ids[id_begin] );
     if ( p_rank == e_node_0->owner_rank() ) {

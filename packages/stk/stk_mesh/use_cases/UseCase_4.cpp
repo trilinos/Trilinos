@@ -42,7 +42,7 @@ namespace mesh {
 namespace use_cases {
 
 UseCase_4_Mesh::UseCase_4_Mesh( stk::ParallelMachine comm )
-  : m_metaData( fem_entity_type_names() )
+  : m_metaData( fem_entity_rank_names() )
   , m_bulkData( m_metaData , comm )
 
   , m_block_hex20(       m_metaData.declare_part( "block_1", Element ))

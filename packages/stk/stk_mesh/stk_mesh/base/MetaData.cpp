@@ -58,14 +58,14 @@ void MetaData::assert_same_mesh_meta_data( const char * method ,
   }
 }
 
-void MetaData::assert_entity_type( const char * method ,
+void MetaData::assert_entity_rank( const char * method ,
                                    unsigned rank ) const
 {
-  if ( m_entity_type_names.size() <= rank ) {
+  if ( m_entity_rank_names.size() <= rank ) {
     std::ostringstream msg ;
     msg << method ;
-    msg << " FAILED: entity_type( " << rank ;
-    msg << " ) >= maximum_value( " << m_entity_type_names.size();
+    msg << " FAILED: entity_rank( " << rank ;
+    msg << " ) >= maximum_value( " << m_entity_rank_names.size();
     msg << " )" ;
     throw std::logic_error( msg.str() );
   }
@@ -73,7 +73,7 @@ void MetaData::assert_entity_type( const char * method ,
 
 //----------------------------------------------------------------------
 
-MetaData::MetaData(const std::vector<std::string>& entity_type_names)
+MetaData::MetaData(const std::vector<std::string>& entity_rank_names)
   : m_commit( false ),
     m_universal_part( NULL ),
     m_uses_part( NULL ),
@@ -81,9 +81,9 @@ MetaData::MetaData(const std::vector<std::string>& entity_type_names)
     m_fields( ),
     m_field_relations( ),
     m_properties( ),
-    m_entity_type_names( entity_type_names )
+    m_entity_rank_names( entity_rank_names )
 {
-  if ( entity_type_names.empty() ) {
+  if ( entity_rank_names.empty() ) {
     std::string msg( "stk::mesh::MetaData constructor FAILED: no entity types" );
     throw std::runtime_error( msg );
   }
@@ -99,17 +99,17 @@ MetaData::MetaData(const std::vector<std::string>& entity_type_names)
 
 //----------------------------------------------------------------------
 
-const std::string& MetaData::entity_type_name( unsigned ent_type ) const
+const std::string& MetaData::entity_rank_name( unsigned ent_type ) const
 {
-  if (ent_type >= m_entity_type_names.size()) {
+  if (ent_type >= m_entity_rank_names.size()) {
     std::ostringstream msg;
-    msg << "Error in MetaData::entity_type_name: entity-type (" << ent_type
-        << ") out of range. Must be in range [0 .. " << m_entity_type_names.size()
+    msg << "Error in MetaData::entity_rank_name: entity-type (" << ent_type
+        << ") out of range. Must be in range [0 .. " << m_entity_rank_names.size()
         << ").";
     throw std::runtime_error( msg.str() );
   }
 
-  return m_entity_type_names[ent_type];
+  return m_entity_rank_names[ent_type];
 }
 
 //----------------------------------------------------------------------
@@ -152,7 +152,7 @@ Part & MetaData::declare_part( const std::string & p_name , EntityRank rank )
   static const char method[] = "stk::mesh::MetaData::declare_part" ;
 
   assert_not_committed( method );
-  assert_entity_type( method , rank );
+  assert_entity_rank( method , rank );
 
   return m_universal_part->declare_part( p_name , rank );
 }
@@ -275,7 +275,7 @@ MetaData::declare_field_base(
 
 void MetaData::declare_field_restriction(
   FieldBase      & arg_field ,
-  unsigned         arg_entity_type ,
+  unsigned         arg_entity_rank ,
   const Part     & arg_part ,
   const unsigned * arg_stride )
 {
@@ -286,7 +286,7 @@ void MetaData::declare_field_restriction(
   assert_same_mesh_meta_data( method , arg_field.mesh_meta_data() );
   assert_same_mesh_meta_data( method , arg_part.mesh_meta_data() );
 
-  arg_field.insert_restriction( method, arg_entity_type, arg_part, arg_stride);
+  arg_field.insert_restriction( method, arg_entity_rank, arg_part, arg_stride);
 
   arg_field.verify_and_clean_restrictions( method, get_parts() );
 }

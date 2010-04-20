@@ -176,14 +176,14 @@ void get_entities_through_relations(
 /** \brief  Query if a member entity of the given entity type
  *          has an induced membership.
  */
-bool membership_is_induced( const Part & part , unsigned entity_type );
+bool membership_is_induced( const Part & part , unsigned entity_rank );
 
 /** \brief  Induce entities' part membership based upon relationships
  *          between entities. Insert the result into 'induced_parts'.
  */
 void induced_part_membership( Part & part ,
-                              unsigned entity_type_from ,
-                              unsigned entity_type_to ,
+                              unsigned entity_rank_from ,
+                              unsigned entity_rank_to ,
                               unsigned relation_identifier ,
                               PartVector & induced_parts );
 
@@ -192,7 +192,7 @@ void induced_part_membership( Part & part ,
  */
 void induced_part_membership( const Entity     & entity_from ,
                               const PartVector & omit ,
-                                    unsigned     entity_type_to ,
+                                    unsigned     entity_rank_to ,
                                     unsigned     relation_identifier ,
                                     PartVector & entity_to_parts );
 

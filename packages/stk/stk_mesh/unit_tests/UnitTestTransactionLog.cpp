@@ -38,7 +38,7 @@
 
 STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkOnCreate)
 {
-  stk::mesh::MetaData meta ( stk::unit_test::get_entity_type_names ( 3 ) );
+  stk::mesh::MetaData meta ( stk::unit_test::get_entity_rank_names ( 3 ) );
   stk::mesh::Part  &new_part = meta.declare_part ( "another part" );
   meta.commit ();
 
@@ -619,7 +619,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyParallelResolutionModify)
   stk::mesh::Entity  *node_to_modify = 0;
   for ( unsigned i = 0 ; i != shared_entities.size() ;i++ )
   {
-    if ( shared_entities[i].first->entity_type() == 0 )
+    if ( shared_entities[i].first->entity_rank() == 0 )
       if ( shared_entities[i].first->bucket().member ( meta.locally_owned_part () ) )
       {
         node_to_modify = shared_entities[i].first;

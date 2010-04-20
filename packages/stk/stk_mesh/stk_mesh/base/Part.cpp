@@ -283,13 +283,13 @@ void assert_rank_ordering( const Part & superset ,
                            const char * method ,
                            const Part & subset )
 {
-  if ( superset.primary_entity_type() < subset.primary_entity_type() ) {
+  if ( superset.primary_entity_rank() < subset.primary_entity_rank() ) {
     std::ostringstream msg ;
     msg << "stk::mesh::Part[ " << superset.name();
-    msg << " , rank(" << superset.primary_entity_type();
+    msg << " , rank(" << superset.primary_entity_rank();
     msg << ") ]." << method ;
     msg << "( Part[ " << subset.name();
-    msg << " , rank(" << subset.primary_entity_type();
+    msg << " , rank(" << subset.primary_entity_rank();
     msg << ") ] ) FAILED Rank ordering requirement" ;
     throw std::runtime_error( msg.str() );
   }
@@ -409,8 +409,8 @@ Part & Part::declare_part( const PartVector & part_intersect )
           i = pset_clean.begin() ; i != pset_clean.end() ; ++i ) {
       if ( i != pset_clean.begin() ) { p_name.append( separator ); }
       p_name.append( (*i)->name() );
-      if ( (*i)->primary_entity_type() < p_rank ) {
-        p_rank = (*i)->primary_entity_type();
+      if ( (*i)->primary_entity_rank() < p_rank ) {
+        p_rank = (*i)->primary_entity_rank();
       }
     }
     p_name.append("}");

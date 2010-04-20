@@ -12,7 +12,7 @@
 namespace stk {
 namespace mesh {
 
-const std::vector<std::string> & fem_entity_type_names()
+const std::vector<std::string> & fem_entity_rank_names()
 {
   static std::vector<std::string> names ;
   if ( names.empty() ) {

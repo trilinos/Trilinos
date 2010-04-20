@@ -30,7 +30,7 @@ void skin_mesh( BulkData & mesh, unsigned mesh_rank, Part * part) {
 
   Selector owned = mesh.mesh_meta_data().locally_owned_part();
 
-  get_selected_entities( owned, mesh.buckets(fem_entity_type(mesh_rank)), entities) ; // select owned
+  get_selected_entities( owned, mesh.buckets(fem_entity_rank(mesh_rank)), entities) ; // select owned
   find_closure( mesh, entities, entities_closure);
 
   EntitySideVector boundary;
@@ -62,7 +62,7 @@ void skin_mesh( BulkData & mesh, unsigned mesh_rank, Part * part) {
 
   mesh.modification_begin();
 
-  std::vector<size_t> requests(mesh.mesh_meta_data().entity_type_count(), 0);
+  std::vector<size_t> requests(mesh.mesh_meta_data().entity_rank_count(), 0);
   std::vector<stk::mesh::Entity *> requested_entities;
 
   //request ids for the new sides

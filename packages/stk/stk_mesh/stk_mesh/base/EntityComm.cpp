@@ -115,22 +115,22 @@ void pack_entity_info( CommBuffer & buf , const Entity & entity )
   const std::pair<const unsigned *, const unsigned *>
     part_ordinals = entity.bucket().superset_part_ordinals();
   const PairIterRelation relations = entity.relations();
- 
+
   const unsigned nparts = part_ordinals.second - part_ordinals.first ;
   const unsigned nrel   = relations.size();
- 
+
   buf.pack<EntityKey>( key );
   buf.pack<unsigned>( owner );
   buf.pack<unsigned>( nparts );
   buf.pack<unsigned>( part_ordinals.first , nparts );
   buf.pack<unsigned>( nrel );
- 
+
   for ( unsigned i = 0 ; i < nrel ; ++i ) {
     buf.pack<EntityKey>( relations[i].entity()->key() );
     buf.pack<Relation::raw_attr_type>( relations[i].attribute() );
   }
 }
- 
+
 void unpack_entity_info(
   CommBuffer       & buf,
   const BulkData   & mesh ,
@@ -141,31 +141,31 @@ void unpack_entity_info(
 {
   unsigned nparts = 0 ;
   unsigned nrel = 0 ;
- 
+
   buf.unpack<EntityKey>( key );
   buf.unpack<unsigned>( owner );
   buf.unpack<unsigned>( nparts );
- 
+
   parts.resize( nparts );
- 
+
   for ( unsigned i = 0 ; i < nparts ; ++i ) {
     unsigned part_ordinal = ~0u ;
     buf.unpack<unsigned>( part_ordinal );
     parts[i] = & mesh.mesh_meta_data().get_part( part_ordinal );
   }
- 
+
   buf.unpack( nrel );
- 
+
   relations.clear();
   relations.reserve( nrel );
- 
+
   for ( unsigned i = 0 ; i < nrel ; ++i ) {
     EntityKey rel_key ;
     Relation::raw_attr_type rel_attr = 0 ;
     buf.unpack<EntityKey>( rel_key );
     buf.unpack<Relation::raw_attr_type>( rel_attr );
     Entity * const entity =
-      mesh.get_entity( entity_type(rel_key), entity_id(rel_key) );
+      mesh.get_entity( entity_rank(rel_key), entity_id(rel_key) );
     if ( entity && entity->bucket().capacity() ) {
       Relation rel( rel_attr , * entity );
       relations.push_back( rel );

@@ -145,13 +145,13 @@ public:
   /** \brief Query entity-type names
    *
    */
-  const std::vector<std::string> & entity_type_names() const
-    { return m_entity_type_names ; }
+  const std::vector<std::string> & entity_rank_names() const
+    { return m_entity_rank_names ; }
 
-  std::vector<std::string>::size_type entity_type_count() const
-    { return m_entity_type_names.size(); }
+  std::vector<std::string>::size_type entity_rank_count() const
+    { return m_entity_rank_names.size(); }
 
-  const std::string & entity_type_name( unsigned ) const ;
+  const std::string & entity_rank_name( unsigned ) const ;
 
   /** \} */
   //------------------------------------
@@ -200,8 +200,8 @@ public:
    *  derived field data relationship maintained.
    *
    *  Let   e_root -> Relation( e_target , ord , kind )
-   *  Let   i = stencil( e_root.entity_type() ,
-   *                     e_target.entity_type() , ord , kind )
+   *  Let   i = stencil( e_root.entity_rank() ,
+   *                     e_target.entity_rank() , ord , kind )
    *  Let   Scalar ** ptr = field_data( pointer_field , e_root )
    *  then  ptr[i] = field_data( referenced_field , e_target )
    *
@@ -262,7 +262,7 @@ public:
    */
 
   /** \brief  Construct a meta data manager to own parts and fields.  */
-  explicit MetaData( const std::vector<std::string>& entity_type_names );
+  explicit MetaData( const std::vector<std::string>& entity_rank_names );
 
   /** \brief  Commit the part and field declarations so that the
    *          meta data manager can be used to create
@@ -294,7 +294,7 @@ public:
 
   void assert_same_mesh_meta_data( const char * , const MetaData & ) const ;
 
-  void assert_entity_type( const char * , unsigned ) const ;
+  void assert_entity_rank( const char * , unsigned ) const ;
 
   /** \} */
   //------------------------------------
@@ -314,7 +314,7 @@ public:
   /** \brief  Declare a field restriction via runtime type information.
    */
   void declare_field_restriction( FieldBase      & arg_field ,
-                                  unsigned         arg_entity_type ,
+                                  unsigned         arg_entity_rank ,
                                   const Part     & arg_part ,
                                   const unsigned * arg_stride );
   /** \} */
@@ -333,7 +333,7 @@ private:
   std::vector< FieldBase * >   m_fields ;
   std::vector< FieldRelation > m_field_relations ;
   std::vector< PropertyBase* > m_properties ;
-  std::vector< std::string >   m_entity_type_names ;
+  std::vector< std::string >   m_entity_rank_names ;
 
 
   Property<void> * get_property_base( const std::string & ,
@@ -360,7 +360,7 @@ void verify_parallel_consistency( const MetaData & , ParallelMachine );
  */
 template< class field_type >
 field_type & put_field( field_type & field ,
-                        unsigned  entity_type ,
+                        unsigned  entity_rank ,
                         const Part & part );
 
 /** \brief  Declare a  field to exist
@@ -368,20 +368,20 @@ field_type & put_field( field_type & field ,
  */
 template< class field_type >
 field_type & put_field( field_type & field ,
-                        unsigned  entity_type ,
+                        unsigned  entity_rank ,
                         const Part & part ,
                         unsigned     n1 );
 
 template< class field_type >
 field_type & put_field( field_type & field ,
-                        unsigned  entity_type ,
+                        unsigned  entity_rank ,
                         const Part & part ,
                         unsigned     n1 ,
                         unsigned     n2 );
 
 template< class field_type >
 field_type & put_field( field_type & field ,
-                        unsigned  entity_type ,
+                        unsigned  entity_rank ,
                         const Part & part ,
                         unsigned     n1 ,
                         unsigned     n2 ,
@@ -389,7 +389,7 @@ field_type & put_field( field_type & field ,
 
 template< class field_type >
 field_type & put_field( field_type & field ,
-                        unsigned  entity_type ,
+                        unsigned  entity_rank ,
                         const Part & part ,
                         unsigned     n1 ,
                         unsigned     n2 ,
@@ -398,7 +398,7 @@ field_type & put_field( field_type & field ,
 
 template< class field_type >
 field_type & put_field( field_type & field ,
-                        unsigned  entity_type ,
+                        unsigned  entity_rank ,
                         const Part & part ,
                         unsigned     n1 ,
                         unsigned     n2 ,
@@ -408,7 +408,7 @@ field_type & put_field( field_type & field ,
 
 template< class field_type >
 field_type & put_field( field_type & field ,
-                        unsigned  entity_type ,
+                        unsigned  entity_rank ,
                         const Part & part ,
                         unsigned     n1 ,
                         unsigned     n2 ,
@@ -419,7 +419,7 @@ field_type & put_field( field_type & field ,
 
 template< class field_type >
 field_type & put_field( field_type & field ,
-                        unsigned  entity_type ,
+                        unsigned  entity_rank ,
                         const Part & part ,
                         unsigned     n1 ,
                         unsigned     n2 ,
@@ -486,7 +486,7 @@ template< class field_type >
 inline
 field_type & put_field(
   field_type & field ,
-  unsigned entity_type ,
+  unsigned entity_rank ,
   const Part & part )
 {
   typedef FieldTraits< field_type > Traits ;
@@ -497,7 +497,7 @@ field_type & put_field(
   Helper::assign( stride );
 
   field.mesh_meta_data().
-    declare_field_restriction( field, entity_type, part, stride);
+    declare_field_restriction( field, entity_rank, part, stride);
 
   return field ;
 }
@@ -505,7 +505,7 @@ field_type & put_field(
 template< class field_type >
 inline
 field_type & put_field( field_type &field ,
-                        unsigned entity_type ,
+                        unsigned entity_rank ,
                         const Part &part ,
                         unsigned    n1 )
 {
@@ -517,7 +517,7 @@ field_type & put_field( field_type &field ,
   Helper::assign( stride , n1 );
 
   field.mesh_meta_data().
-    declare_field_restriction( field, entity_type, part, stride);
+    declare_field_restriction( field, entity_rank, part, stride);
 
   return field ;
 }
@@ -525,7 +525,7 @@ field_type & put_field( field_type &field ,
 template< class field_type >
 inline
 field_type & put_field( field_type &field ,
-                        unsigned entity_type ,
+                        unsigned entity_rank ,
                         const Part &part ,
                         unsigned    n1 ,
                         unsigned    n2 )
@@ -538,7 +538,7 @@ field_type & put_field( field_type &field ,
   Helper::assign( stride , n1 , n2 );
 
   field.mesh_meta_data().
-    declare_field_restriction( field, entity_type, part, stride);
+    declare_field_restriction( field, entity_rank, part, stride);
 
   return field ;
 }
@@ -546,7 +546,7 @@ field_type & put_field( field_type &field ,
 template< class field_type >
 inline
 field_type & put_field( field_type &field ,
-                        unsigned entity_type ,
+                        unsigned entity_rank ,
                         const Part &part ,
                         unsigned    n1 ,
                         unsigned    n2 ,
@@ -560,7 +560,7 @@ field_type & put_field( field_type &field ,
   Helper::assign( stride , n1 , n2 , n3 );
 
   field.mesh_meta_data().
-    declare_field_restriction( field, entity_type, part, stride);
+    declare_field_restriction( field, entity_rank, part, stride);
 
   return field ;
 }
@@ -568,7 +568,7 @@ field_type & put_field( field_type &field ,
 template< class field_type >
 inline
 field_type & put_field( field_type &field ,
-                        unsigned entity_type ,
+                        unsigned entity_rank ,
                         const Part &part ,
                         unsigned    n1 ,
                         unsigned    n2 ,
@@ -583,7 +583,7 @@ field_type & put_field( field_type &field ,
   Helper::assign( stride , n1 , n2 , n3 , n4 );
 
   field.mesh_meta_data().
-    declare_field_restriction( field, entity_type, part, stride);
+    declare_field_restriction( field, entity_rank, part, stride);
 
   return field ;
 }
@@ -591,7 +591,7 @@ field_type & put_field( field_type &field ,
 template< class field_type >
 inline
 field_type & put_field( field_type &field ,
-                        unsigned entity_type ,
+                        unsigned entity_rank ,
                         const Part &part ,
                         unsigned    n1 ,
                         unsigned    n2 ,
@@ -607,7 +607,7 @@ field_type & put_field( field_type &field ,
   Helper::assign( stride , n1 , n2 , n3 , n4, n5 );
 
   field.mesh_meta_data().
-    declare_field_restriction( field, entity_type, part, stride);
+    declare_field_restriction( field, entity_rank, part, stride);
 
   return field ;
 }
@@ -615,7 +615,7 @@ field_type & put_field( field_type &field ,
 template< class field_type >
 inline
 field_type & put_field( field_type &field ,
-                        unsigned entity_type ,
+                        unsigned entity_rank ,
                         const Part &part ,
                         unsigned    n1 ,
                         unsigned    n2 ,
@@ -632,7 +632,7 @@ field_type & put_field( field_type &field ,
   Helper::assign( stride , n1 , n2 , n3 , n4, n5, n6 );
 
   field.mesh_meta_data().
-    declare_field_restriction( field, entity_type, part, stride);
+    declare_field_restriction( field, entity_rank, part, stride);
 
   return field ;
 }
@@ -640,7 +640,7 @@ field_type & put_field( field_type &field ,
 template< class field_type >
 inline
 field_type & put_field( field_type &field ,
-                        unsigned entity_type ,
+                        unsigned entity_rank ,
                         const Part &part ,
                         unsigned    n1 ,
                         unsigned    n2 ,
@@ -658,7 +658,7 @@ field_type & put_field( field_type &field ,
   Helper::assign( stride , n1 , n2 , n3 , n4, n5, n6, n7 );
 
   field.mesh_meta_data().
-    declare_field_restriction( field, entity_type, part, stride);
+    declare_field_restriction( field, entity_rank, part, stride);
 
   return field ;
 }

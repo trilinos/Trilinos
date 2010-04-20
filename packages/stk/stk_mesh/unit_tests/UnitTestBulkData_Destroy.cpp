@@ -38,7 +38,7 @@ void UnitTestBulkData::testDestroy_nodes( ParallelMachine pm )
   const unsigned id_begin = nPerProc * p_rank ;
   const unsigned id_end   = nPerProc * ( p_rank + 1 );
 
-  MetaData meta( fem_entity_type_names() );
+  MetaData meta( fem_entity_rank_names() );
 
   const PartVector no_parts ;
 
@@ -120,7 +120,7 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
   // const unsigned nLocalNode = nPerProc + ( 1 < p_size ? 1 : 0 );
   const unsigned nLocalEdge = nPerProc ;
 
-  MetaData meta( fem_entity_type_names() );
+  MetaData meta( fem_entity_rank_names() );
 
   meta.commit();
 

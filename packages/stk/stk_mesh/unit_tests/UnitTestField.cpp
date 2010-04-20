@@ -177,7 +177,7 @@ void testFieldDataArray( stk::ParallelMachine pm )
   const std::string name2("test_field_2");
   const std::string name3("test_field_3");
 
-  stk::mesh::MetaData meta_data( stk::mesh::fem_entity_type_names() );
+  stk::mesh::MetaData meta_data( stk::mesh::fem_entity_rank_names() );
   stk::mesh::BulkData bulk_data( meta_data , pm );
 
   rank_zero_field  & f0 = meta_data.declare_field< rank_zero_field >( name0 );

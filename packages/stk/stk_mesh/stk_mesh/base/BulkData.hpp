@@ -258,7 +258,7 @@ public:
    *
    *  Relations between entities induces part membership as follows.
    *  1) If 'e_from' is a member of 'part' and
-   *     part.primary_entity_type() == e_from.entity_type()
+   *     part.primary_entity_rank() == e_from.entity_rank()
    *     then 'e_to' has induced membership in 'part'.
    *  2) If there exists a part relation 'part_rel' such that
    *     'e_from' is a member of part_rel.m_root and

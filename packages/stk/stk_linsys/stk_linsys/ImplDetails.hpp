@@ -57,7 +57,7 @@ int entityid_to_int(stk::mesh::EntityId id);
   Throws an exception if id is too large to represent as an int.
   This is useful because FEI classes/functions use integer ids for entity-types.
 */
-int entitytype_to_int(stk::mesh::EntityRank entity_type);
+int entitytype_to_int(stk::mesh::EntityRank entity_rank);
 
 /** Determine whether 'id' can be converted to an int.
  * If so, do nothing. If 'id' is too large to be represented

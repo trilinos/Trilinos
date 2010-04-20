@@ -213,7 +213,7 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
 
 
     // Ask for new entites to represent the sides between the live and dead entities
-    std::vector<size_t> requests(meta_data.entity_type_count(), 0);
+    std::vector<size_t> requests(meta_data.entity_rank_count(), 0);
     EntityVector requested_entities;
     requests[mesh_rank-1] = skin.size();
     mesh.generate_new_entities(requests, requested_entities);

@@ -168,7 +168,7 @@ bool verify_parallel_attributes( BulkData & M , std::ostream & error_log )
 
   const unsigned p_rank = M.parallel_rank();
 
-  const size_t EntityRankEnd = M.mesh_meta_data().entity_type_count();
+  const size_t EntityRankEnd = M.mesh_meta_data().entity_rank_count();
 
   size_t comm_count = 0 ;
 

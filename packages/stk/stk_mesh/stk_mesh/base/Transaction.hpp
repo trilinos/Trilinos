@@ -208,7 +208,7 @@ class Transaction
      */
     template <class ENTITY>
     Bucket *get_unfilled_transaction_bucket ( const ENTITY &e , BucketList &bm , State s )
-     { return get_unfilled_transaction_bucket ( e.bucket().key() , e.entity_type() , bm , s ); }
+     { return get_unfilled_transaction_bucket ( e.bucket().key() , e.entity_rank() , bm , s ); }
 
     /** \brief This method will add an entity to a transaction bucket
      */

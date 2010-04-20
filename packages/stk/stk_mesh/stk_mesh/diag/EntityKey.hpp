@@ -18,7 +18,7 @@ namespace mesh {
 
 inline
 stk::diag::Writer &operator<<(stk::diag::Writer &dout, const EntityKey &entity_key)  {
-  return dout << entity_type(entity_key) << ":" << entity_id(entity_key);
+  return dout << entity_rank(entity_key) << ":" << entity_id(entity_key);
 }
 
 } // namespace stk

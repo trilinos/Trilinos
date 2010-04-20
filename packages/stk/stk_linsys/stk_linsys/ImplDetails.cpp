@@ -67,11 +67,11 @@ get_field(const FieldIdMap& field_id_map,
   return iter->first;
 }
 
-int entitytype_to_int(stk::mesh::EntityRank entity_type)
+int entitytype_to_int(stk::mesh::EntityRank entity_rank)
 {
-  int int_type = static_cast<int>(entity_type);
+  int int_type = static_cast<int>(entity_rank);
 
-  verify_convertible_to_int(entity_type, "stk::linsys::entitytype_to_int");
+  verify_convertible_to_int(entity_rank, "stk::linsys::entitytype_to_int");
 
   return int_type;
 }

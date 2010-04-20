@@ -89,7 +89,7 @@ void build_axis_aligned_bbox(stk::mesh::BulkData &bulk_data, stk::mesh::EntityRa
     for ( stk::mesh::PartVector::const_iterator ip = all_parts.begin();
           ip != all_parts.end(); ++ip ) {
       stk::mesh::Part * const part = *ip;
-      if ( part->primary_entity_type() == type ) {
+      if ( part->primary_entity_rank() == type ) {
         if (type == stk::mesh::Node) {
           build_node_axis_bbox(*part, bulk_data, type, coordinates, box_vector, op);
         } else {
@@ -124,7 +124,7 @@ void build_centroid_bbox(stk::mesh::BulkData &bulk_data,  stk::mesh::EntityRank 
     for ( stk::mesh::PartVector::const_iterator ip = all_parts.begin();
           ip != all_parts.end(); ++ip ) {
       stk::mesh::Part * const part = *ip;
-      if ( part->primary_entity_type() == type ) {
+      if ( part->primary_entity_rank() == type ) {
         if (type == stk::mesh::Node) {
           build_node_cent_bbox(*part, bulk_data, type, coordinates, box_vector);
         } else {

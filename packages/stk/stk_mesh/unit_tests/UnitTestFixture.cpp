@@ -13,8 +13,8 @@
 namespace sunit {
 
 
-  Stk_Mesh_Fixture::Stk_Mesh_Fixture( const std::vector<std::string> & entity_type_names )
-    : m_MetaData( entity_type_names )
+  Stk_Mesh_Fixture::Stk_Mesh_Fixture( const std::vector<std::string> & entity_rank_names )
+    : m_MetaData( entity_rank_names )
     , m_BulkData( m_MetaData , MPI_COMM_WORLD )
   { }
 
