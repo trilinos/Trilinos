@@ -120,8 +120,8 @@ int main(int argc, char *argv[])
   Test.Drops = 0;
   Test.RCB_Box = 0;
   Test.Multi_Callbacks = 0;
-  Test.Graph_Callbacks = 0;
-  Test.Hypergraph_Callbacks = 0;
+  Test.Graph_Callbacks = 1;
+  Test.Hypergraph_Callbacks = 1;
   Test.Gen_Files = 0;
   Test.Null_Lists = NONE;
   Test.Dynamic_Weights = .0;
@@ -176,7 +176,7 @@ int main(int argc, char *argv[])
   pio_info.file_type		= -1;
   pio_info.chunk_reader         = 0;
   pio_info.init_dist_type	= -1;
-  pio_info.init_size		= -1;
+  pio_info.init_size		= ZOLTAN_ID_CONSTANT(-1);
   pio_info.init_dim 		= -1;
   pio_info.init_vwgt_dim 	= -1;
   pio_info.init_dist_pins       = -1;
@@ -542,6 +542,12 @@ static int read_mesh(
         return 0;
     }
   }
+  else if (pio_info->file_type == NO_FILE_GRAPH) {
+    if (!create_a_graph(Proc, Num_Proc, prob, pio_info, mesh)) {
+        Gen_Error(0, "fatal: Error returned from create_a_graph\n");
+        return 0;
+    }
+  }
   else {
     Gen_Error(0, "fatal: Invalid file type.\n");
     return 0;
@@ -609,6 +615,9 @@ int i;
       case INITIAL_CYCLIC:
         fprintf(fp," in cyclic (round robin) fashion.");
         break;
+      case INITIAL_NO_DIST:
+        fprintf(fp," not at all.  They are created as distributed.");
+        break;
     }
     fprintf(fp, "\n");
   }
@@ -648,6 +657,7 @@ static void initialize_mesh(MESH_INFO_PTR mesh, int proc)
 
   mesh->dd = NULL;
   mesh->data_type = MESH;
+  mesh->gnhedges = mesh->global_blank_count = 0;
   mesh->num_elems = mesh->num_nodes
                   = mesh->num_dims
                   = mesh->num_el_blks
@@ -655,13 +665,11 @@ static void initialize_mesh(MESH_INFO_PTR mesh, int proc)
                   = mesh->num_side_sets
                   = mesh->necmap
                   = mesh->elem_array_len
-                  = mesh->gnhedges
                   = mesh->nhedges
                   = mesh->vwgt_dim
                   = mesh->ewgt_dim
                   = mesh->hewgt_dim
                   = mesh->blank_count
-                  = mesh->global_blank_count
                   = 0;
   mesh->eb_names       = NULL;
   mesh->eb_etypes      = NULL;
@@ -690,7 +698,8 @@ static void initialize_mesh(MESH_INFO_PTR mesh, int proc)
 static void remove_random_vertices(MESH_INFO_PTR mesh, int iteration, 
                                    float blank_factor) 
 {
-int i, j, total_vertices, blankmine = (mesh->proc % 2) == (iteration % 2);
+int i, j, blankmine = (mesh->proc % 2) == (iteration % 2);
+ZOLTAN_ID_TYPE tmp, total_vertices;
 ELEM_INFO *elem;
 
   for (i=0; i < mesh->num_elems; i++){
@@ -754,16 +763,16 @@ ELEM_INFO *elem;
     }
   }
 
-  MPI_Allreduce(&mesh->blank_count, &mesh->global_blank_count, 
-             1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(&mesh->blank_count, &mesh->global_blank_count, 1, ZOLTAN_ID_MPI_TYPE, MPI_SUM, MPI_COMM_WORLD);
 
-  MPI_Reduce(&mesh->num_elems, &total_vertices, 
-             1, MPI_INT, MPI_SUM, 0, MPI_COMM_WORLD);
+  tmp = (ZOLTAN_ID_TYPE)mesh->num_elems;
+
+  MPI_Reduce(&tmp, &total_vertices, 1, ZOLTAN_ID_MPI_TYPE, MPI_SUM, 0, MPI_COMM_WORLD);
 
   if (mesh->proc == 0){
-    printf("Dynamic graph factor %0.4f, %d vertices, %d blanked (%0.2f%%)\n",
+    printf("Dynamic graph factor %0.4f, %" ZOLTAN_ID_SPECIFIER " vertices, %" ZOLTAN_ID_SPECIFIER " blanked (%0.2lf%%)\n",
             blank_factor, total_vertices, mesh->global_blank_count,
-            ((float)mesh->global_blank_count*100.0/total_vertices));
+            ((double)mesh->global_blank_count*100.0/total_vertices));
   }
   fflush(stdout);
   if (Debug_Driver > 1) {
@@ -784,9 +793,10 @@ ELEM_INFO *elem;
 #ifdef DEBUG_READ_MESH
 static void print_mesh(int proc, MESH_INFO_PTR m, int *tp, int *the, int *tv)
 {
-  int i, j, ii, adj, globalID;
+  int i, j, ii;
+  ZOLTAN_ID_TYPE globalID, adj;
   ELEM_INFO_PTR el;
-  printf("Global number of hyperedges %d\n",m->gnhedges);
+  printf("Global number of hyperedges %" ZOLTAN_ID_SPECIFIER "\n",m->gnhedges);
   if (m->format == ZOLTAN_COMPRESSED_EDGE){
     printf("Pins: %d edges\n",m->nhedges);
   }
@@ -794,10 +804,10 @@ static void print_mesh(int proc, MESH_INFO_PTR m, int *tp, int *the, int *tv)
     printf("Pins: %d vertices\n",m->nhedges);
   }
   for (i=0; i<m->nhedges; i++){
-    printf("  %d: ", m->hgid[i]);
+    printf("  %" ZOLTAN_ID_SPECIFIER ": ", m->hgid[i]);
     for (j=m->hindex[i],ii=0; j<m->hindex[i+1]; j++,ii++){
       if (ii && (ii%15==0)) printf("\n       ");
-      printf("%d ", m->hvertex[j]);
+      printf("%" ZOLTAN_ID_SPECIFIER " ", m->hvertex[j]);
     }
     printf("\n");
   }
@@ -808,7 +818,7 @@ static void print_mesh(int proc, MESH_INFO_PTR m, int *tp, int *the, int *tv)
   el = m->elements;
   
   for (i=0; i<m->num_elems; i++){
-    printf("%d (%d adj: ", el->globalID, el->nadj);
+    printf("%" ZOLTAN_ID_SPECIFIER " (%d adj: ", el->globalID, el->nadj);
     for (j=0; j<el->nadj; j++){
       adj = el->adj[j];
       if (el->adj_proc[j] == proc){
@@ -818,7 +828,7 @@ static void print_mesh(int proc, MESH_INFO_PTR m, int *tp, int *the, int *tv)
         globalID = adj;
       } 
       if (j && (j%15==0)) printf("\n       ");
-      printf("%d ",globalID);
+      printf("%" ZOLTAN_ID_SPECIFIER " ",globalID);
     }
     printf(")\n");
 

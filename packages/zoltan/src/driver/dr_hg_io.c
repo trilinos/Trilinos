@@ -54,7 +54,7 @@ static void debug_elements(int Proc, int Num_Proc, int num, ELEM_INFO_PTR el)
       printf("Process %d (%d elements):\n",i,num);
       for (e=0; e<num; e++){
 	if (e%20==0) printf("\n    ");
-	printf("%d ",el[e].globalID);
+	printf("%" ZOLTAN_ID_SPECIFIER,el[e].globalID);
       }
       printf("\n");
       fflush(stdout);
@@ -62,7 +62,7 @@ static void debug_elements(int Proc, int Num_Proc, int num, ELEM_INFO_PTR el)
     MPI_Barrier(MPI_COMM_WORLD);
   }
 }
-static void debug_lists(int Proc, int Num_Proc, int nedge, int *index, int *vtx, int *vtx_proc, int *egid)
+static void debug_lists(int Proc, int Num_Proc, int nedge, int *index, ZOLTAN_ID_TYPE *vtx, int *vtx_proc, ZOLTAN_ID_TYPE *egid)
 {
   int i,e,v,nvtxs;
   for (i=0; i<Num_Proc; i++){
@@ -70,10 +70,10 @@ static void debug_lists(int Proc, int Num_Proc, int nedge, int *index, int *vtx,
       printf("Process %d\n",i);
       for (e=0; e<nedge; e++){
 	nvtxs = index[e+1]-index[e];
-	printf("%d ) ",egid[e]);
+	printf("%" ZOLTAN_ID_SPECIFIER " ) ",egid[e]);
 	for (v=0; v<nvtxs; v++){
 	  if (v && (v%10==0)) printf("\n    ");
-	  printf("%d (%d) ",*vtx++,*vtx_proc++);
+	  printf("%" ZOLTAN_ID_SPECIFIER " (%d) ",*vtx++,*vtx_proc++);
 	}
 	printf("\n");
       }
@@ -87,6 +87,7 @@ static void debug_lists(int Proc, int Num_Proc, int nedge, int *index, int *vtx,
 static int dist_hyperedges(MPI_Comm comm, PARIO_INFO_PTR, int, int, int, int *,
 			   int *, int **, int **, int **, int **,
 			   int *, float **, short *);
+
 static int process_mtxp_file(PARIO_INFO_PTR pio_info,
   char *filebuf, int fsize,
   int nprocs, int myrank,
@@ -94,6 +95,7 @@ static int process_mtxp_file(PARIO_INFO_PTR pio_info,
   int *nMyPins, int **myPinI, int **myPinJ,
   int *nMyVtx, int **myVtxNum, float **myVtxWgts,
   int *nMyEdgeWgts, int **myEdgeNum, float **myEdgeWgts);
+
 static int create_edge_lists(int nMyPins, int *myPinI, int *myPinJ,
       int *numHEdges, int **edgeGno, int **edgeIdx, int **pinGno);
 
@@ -130,11 +132,13 @@ int read_hypergraph_file(
   const char  *yo = "read_hypergraph_file";
   char   cmesg[256];
 
-  int    i, gnvtxs, distributed_pins = 0, edge, vertex, nextEdge;
-  int    nvtxs = 0, gnhedges = 0, nhedges = 0, npins = 0;
-  int    vwgt_dim=0, hewgt_dim=0, vtx, edgeSize, global_npins;
-  int   *hindex = NULL, *hvertex = NULL, *hvertex_proc = NULL;
-  int   *hgid = NULL;
+  int    i, distributed_pins = 0, vertex, nextEdge;
+  int    nvtxs = 0, nhedges = 0, npins = 0;
+  int    vwgt_dim=0, hewgt_dim=0, vtx, edgeSize;
+  int   *hindex = NULL, *hvertex_proc = NULL;
+  int   *hgid = NULL, *hvertex = NULL;
+  int edge, global_npins, gnhedges;
+  int   gnvtxs;
   float *hewgts = NULL, *vwgts = NULL;
   ZOLTAN_FILE* fp = NULL;
   int base = 0;   /* Smallest vertex number; usually zero or one. */
@@ -390,7 +394,6 @@ int read_hypergraph_file(
     }
   }
 
-
   /* Initialize mesh structure for Hypergraph. */
   mesh->data_type = HYPERGRAPH;
   mesh->num_elems = nvtxs;
@@ -400,28 +403,40 @@ int read_hypergraph_file(
   mesh->num_dims = ch_ndim;
   mesh->num_el_blks = 1;
 
-  mesh->gnhedges = gnhedges;
+  mesh->gnhedges = (ZOLTAN_ID_TYPE)gnhedges;
   mesh->nhedges = nhedges;
   mesh->hewgt_dim = hewgt_dim;
 
-  mesh->hgid = hgid;
   mesh->hindex = hindex;
-  mesh->hvertex = hvertex;
   mesh->hvertex_proc = hvertex_proc;
   mesh->heNumWgts = nhedges;
-  mesh->heWgtId = NULL;
   mesh->hewgts = hewgts;
 
+  mesh->hgid = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * nhedges);
+  mesh->hvertex = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * hindex[nhedges]);
 
-  mesh->eb_etypes = (int *) malloc (5 * mesh->num_el_blks * sizeof(int));
+  for (i=0; i < nhedges; i++){
+    mesh->hgid[i] = (ZOLTAN_ID_TYPE)hgid[i];
+  }
+  free(hgid);
+
+  for (i=0; i < hindex[nhedges]; i++){
+    mesh->hvertex[i] = (ZOLTAN_ID_TYPE)hvertex[i];
+  }
+  free(hvertex);
+
+  mesh->heWgtId = NULL;
+
+  mesh->eb_etypes = (int *) malloc (4 * mesh->num_el_blks * sizeof(int));
   if (!mesh->eb_etypes) {
     Gen_Error(0, "fatal: insufficient memory");
     return 0;
   }
   mesh->eb_ids = mesh->eb_etypes + mesh->num_el_blks;
-  mesh->eb_cnts = mesh->eb_ids + mesh->num_el_blks;
-  mesh->eb_nnodes = mesh->eb_cnts + mesh->num_el_blks;
+  mesh->eb_nnodes = mesh->eb_ids + mesh->num_el_blks;
   mesh->eb_nattrs = mesh->eb_nnodes + mesh->num_el_blks;
+
+  mesh->eb_cnts = (ZOLTAN_ID_TYPE *) malloc ( mesh->num_el_blks * sizeof(ZOLTAN_ID_TYPE));
 
   mesh->eb_names = (char **) malloc (mesh->num_el_blks * sizeof(char *));
   if (!mesh->eb_names) {
@@ -431,7 +446,7 @@ int read_hypergraph_file(
 
   mesh->eb_etypes[0] = -1;
   mesh->eb_ids[0] = 1;
-  mesh->eb_cnts[0] = nvtxs;
+  mesh->eb_cnts[0] = (ZOLTAN_ID_TYPE)nvtxs;
   mesh->eb_nattrs[0] = 0;
   /*
    * Each element has one set of coordinates (i.e., node) if a coords file
@@ -452,8 +467,7 @@ int read_hypergraph_file(
   strcpy(mesh->eb_names[0], "hypergraph");
 
   /* allocate the element structure array */
-  mesh->elements = (ELEM_INFO_PTR) malloc (mesh->elem_array_len
-					 * sizeof(ELEM_INFO));
+  mesh->elements = (ELEM_INFO_PTR) malloc (mesh->elem_array_len * sizeof(ELEM_INFO));
   if (!(mesh->elements)) {
     Gen_Error(0, "fatal: insufficient memory");
     return 0;
@@ -471,7 +485,8 @@ int read_hypergraph_file(
    * information from the Chaco file
    * Use hypergraph vertex information and chaco edge information.
    */
-  if (!chaco_fill_elements(Proc, Num_Proc, prob, mesh, gnvtxs, nvtxs,
+
+  if (!chaco_fill_elements(Proc, Num_Proc, prob, mesh, pio_info, (ZOLTAN_ID_TYPE)gnvtxs, nvtxs,
 		     ch_start, ch_adj, vwgt_dim, vwgts, ch_ewgt_dim, ch_ewgts,
 		     ch_ndim, ch_x, ch_y, ch_z, ch_assignments, base)) {
     Gen_Error(0, "fatal: Error returned from chaco_fill_elements");
@@ -918,27 +933,53 @@ int read_mtxplus_file(
   mesh->num_dims = 0;
   mesh->num_el_blks = 1;
 
-  mesh->gnhedges = nGlobalEdges;
+  mesh->gnhedges = (ZOLTAN_ID_TYPE)nGlobalEdges;
   mesh->nhedges = numHEdges;     /* (or num vertices if CCS) */
   mesh->hewgt_dim = edgeWDim;
 
-  mesh->hgid = edgeGno;          /* (or vertex gno if CCS) */
-  mesh->hindex = edgeIdx;        /* (or vertex index if CCS) */
-  mesh->hvertex = pinGno;        /* (or gno of pin edge if CCS) */
   mesh->hvertex_proc = NULL;     /* don't know don't care */
+  mesh->hindex = edgeIdx;        /* (or vertex index if CCS) */
   mesh->heNumWgts = nMyEdgeWgts;
-  mesh->heWgtId = myEWGno;
   mesh->hewgts = myEdgeWgts;
 
-  mesh->eb_etypes = (int *) malloc (5 * mesh->num_el_blks * sizeof(int));
+  if (numHEdges){
+    mesh->hgid = (ZOLTAN_ID_TYPE *)malloc(numHEdges * sizeof(ZOLTAN_ID_TYPE));
+    for (i=0; i < numHEdges; i++){
+      mesh->hgid[i] = (ZOLTAN_ID_TYPE)edgeGno[i];
+    }
+    free(edgeGno);
+
+    if (edgeIdx[numHEdges]){
+      mesh->hvertex = (ZOLTAN_ID_TYPE *)malloc(edgeIdx[numHEdges] * sizeof(ZOLTAN_ID_TYPE));
+      for (i=0; i < edgeIdx[numHEdges]; i++){
+        mesh->hvertex[i] = (ZOLTAN_ID_TYPE)pinGno[i];
+      }
+      free(pinGno);
+    }
+  }
+
+  if (nMyEdgeWgts){
+    mesh->heWgtId = (ZOLTAN_ID_TYPE *)malloc(nMyEdgeWgts * sizeof(ZOLTAN_ID_TYPE));
+    for (i=0; i < nMyEdgeWgts; i++){
+      mesh->heWgtId[i] = (ZOLTAN_ID_TYPE)myEWGno[i];
+    }
+    free(myEWGno);
+  }
+
+  mesh->eb_etypes = (int *) malloc (4 * mesh->num_el_blks * sizeof(int));
   if (!mesh->eb_etypes) {
     Gen_Error(0, "fatal: insufficient memory");
     return 0;
   }
   mesh->eb_ids = mesh->eb_etypes + mesh->num_el_blks;
-  mesh->eb_cnts = mesh->eb_ids + mesh->num_el_blks;
-  mesh->eb_nnodes = mesh->eb_cnts + mesh->num_el_blks;
+  mesh->eb_nnodes = mesh->eb_ids + mesh->num_el_blks;
   mesh->eb_nattrs = mesh->eb_nnodes + mesh->num_el_blks;
+
+  mesh->eb_cnts = (ZOLTAN_ID_TYPE *) malloc (mesh->num_el_blks * sizeof(ZOLTAN_ID_TYPE));
+  if (!mesh->eb_cnts) {
+    Gen_Error(0, "fatal: insufficient memory");
+    return 0;
+  }
 
   mesh->eb_names = (char **) malloc (mesh->num_el_blks * sizeof(char *));
   if (!mesh->eb_names) {
@@ -974,7 +1015,7 @@ int read_mtxplus_file(
   for (i = 0; i < mesh->elem_array_len; i++) {
     initialize_element(&(mesh->elements[i]));
     if (i < mesh->num_elems){
-      mesh->elements[i].globalID = myVtxNum[i];
+      mesh->elements[i].globalID = (ZOLTAN_ID_TYPE)myVtxNum[i];
       mesh->elements[i].my_part  = Proc;
       for (j=0; j<vtxWDim; j++){
 	mesh->elements[i].cpu_wgt[j] = myVtxWgts[i*vtxWDim + j];
@@ -998,6 +1039,10 @@ int read_mtxplus_file(
  *
  * Assumption: vertex and edge global IDs in the file are
  *  consecutive integers, probably starting at 0 or 1.
+ *
+ * 64 bit global ID note: For now, we read in integers.  We convert to
+ *   ZOLTAN_ID_TYPE when we write to zdrive's structures.  This would need to
+ *   change if we acquire very large test graphs.
  */
 /*****************************************************************************/
 static char *get_token(char *line, int which, int max);
@@ -1687,7 +1732,7 @@ void mm_cleanup(MESH_INFO_PTR mesh)
     ELEM_INFO_PTR current_elem = &(elements[i]);
     current_elem->globalID++;
     for (j = 0; j < current_elem->adj_len; j++) {
-      if (current_elem->adj[j] == -1) continue;
+      if (current_elem->adj[j] == ZOLTAN_ID_CONSTANT(-1)) continue;
       if (current_elem->adj_proc[j] != mesh->proc) {
         current_elem->adj[j]++;
       }

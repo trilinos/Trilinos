@@ -76,11 +76,11 @@ int update_elem_dd(MESH_INFO_PTR mesh)
 /****************************************************************************/
 int update_hvertex_proc(MESH_INFO_PTR mesh)
 {
-  if (dd->Find((ZOLTAN_ID_TYPE *)mesh->hvertex, 
-                     NULL, NULL, NULL, 
+  if (dd->Find(mesh->hvertex, NULL, NULL, NULL, 
                      mesh->hindex[mesh->nhedges], mesh->hvertex_proc) != 0) {
     Gen_Error(0, "fatal:  NULL returned from Zoltan_DD::Find()\n");
     return 0;
   }
+
   return 1;
 }

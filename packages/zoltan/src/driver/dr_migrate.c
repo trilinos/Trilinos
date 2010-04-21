@@ -37,7 +37,6 @@
 
 #include <mpi.h>
 #include <stdlib.h>
-#include <stdio.h>
 
 #include "dr_const.h"
 #include "dr_err_const.h"
@@ -76,7 +75,7 @@ ZOLTAN_UNPACK_OBJ_MULTI_FN migrate_unpack_elem_multi;
  *  Static global variables to help with migration.
  */
 struct New_Elem_Hash_Node{
-  int globalID;
+  ZOLTAN_ID_TYPE globalID;
   int localID;
   int next;
 };
@@ -88,7 +87,7 @@ static struct New_Elem_Hash_Node *New_Elem_Hash_Nodes = NULL;
                                          decomposition; used for quick
                                          globalID -> localID lookup. */
 
-static int *New_Elem_Index = NULL;    /* Array containing globalIDs of 
+static ZOLTAN_ID_TYPE *New_Elem_Index = NULL; /* Array containing globalIDs of 
                                          elements in the new decomposition,
                                          ordered in the same order as the
                                          elements array.
@@ -253,14 +252,14 @@ char *yo = "migrate_elements";
 extern unsigned int Zoltan_Hash(ZOLTAN_ID_PTR, int, unsigned int);
 
 void insert_in_hash(
-  int globalID,
+  ZOLTAN_ID_TYPE globalID,
   int localID
 )
 {
 int j;
 ZOLTAN_ID_TYPE gid;
 
-  gid = (ZOLTAN_ID_TYPE)globalID;
+  gid = globalID;
   New_Elem_Hash_Nodes[localID].globalID = globalID;
   New_Elem_Hash_Nodes[localID].localID = localID;
   j = Zoltan_Hash(&gid,1,New_Elem_Index_Size);
@@ -273,13 +272,13 @@ ZOLTAN_ID_TYPE gid;
 /*****************************************************************************/
 /*****************************************************************************/
 int find_in_hash(
-  int globalID
+  ZOLTAN_ID_TYPE globalID
 ) 
 {
 int idx;
+ZOLTAN_ID_TYPE tmp;
 
-  ZOLTAN_ID_TYPE tmp;
-  tmp = (ZOLTAN_ID_TYPE)globalID;
+  tmp = globalID;
   idx = Zoltan_Hash(&tmp, 1, New_Elem_Index_Size);
   idx = New_Elem_Hash_Table[idx];
   while (idx != -1 && New_Elem_Hash_Nodes[idx].globalID != globalID) {
@@ -290,14 +289,12 @@ int idx;
 }
 
 void remove_from_hash(
-  int globalID
+  ZOLTAN_ID_TYPE globalID
 )
 {
 int idx, hidx, prev;
 
-  ZOLTAN_ID_TYPE tmp;
-  tmp = (ZOLTAN_ID_TYPE)globalID;
-  hidx = Zoltan_Hash(&tmp, 1, New_Elem_Index_Size);
+  hidx = Zoltan_Hash(&globalID, 1, New_Elem_Index_Size);
   idx = New_Elem_Hash_Table[hidx];
   prev = -1;
   while (idx != -1 && New_Elem_Hash_Nodes[idx].globalID != globalID) {
@@ -310,7 +307,7 @@ int idx, hidx, prev;
   else
     New_Elem_Hash_Nodes[prev].next = New_Elem_Hash_Nodes[idx].next;
 
-  New_Elem_Hash_Nodes[idx].globalID = -1;
+  New_Elem_Hash_Nodes[idx].globalID = ZOLTAN_ID_CONSTANT(-1);
   New_Elem_Hash_Nodes[idx].localID = -1;
   New_Elem_Hash_Nodes[idx].next = -1;
 }
@@ -395,7 +392,7 @@ char msg[256];
   New_Elem_Index_Size = mesh->num_elems + num_import - num_export;
   if (mesh->elem_array_len > New_Elem_Index_Size) 
     New_Elem_Index_Size = mesh->elem_array_len;
-  New_Elem_Index = (int *) malloc(New_Elem_Index_Size * sizeof(int));
+  New_Elem_Index = (ZOLTAN_ID_TYPE *) malloc(New_Elem_Index_Size * sizeof(ZOLTAN_ID_TYPE));
   New_Elem_Hash_Table = (int *) malloc(New_Elem_Index_Size * sizeof(int));
   New_Elem_Hash_Nodes = (struct New_Elem_Hash_Node *) 
            malloc(New_Elem_Index_Size * sizeof(struct New_Elem_Hash_Node));
@@ -410,7 +407,7 @@ char msg[256];
   for (i = 0; i < New_Elem_Index_Size; i++) 
     New_Elem_Hash_Table[i] = -1;
   for (i = 0; i < New_Elem_Index_Size; i++) {
-    New_Elem_Hash_Nodes[i].globalID = -1;
+    New_Elem_Hash_Nodes[i].globalID = ZOLTAN_ID_CONSTANT(-1);
     New_Elem_Hash_Nodes[i].localID = -1;
     New_Elem_Hash_Nodes[i].next = -1;
   }
@@ -436,7 +433,7 @@ char msg[256];
   }
 
   for (i = mesh->num_elems; i < New_Elem_Index_Size; i++) {
-    New_Elem_Index[i] = -1;
+    New_Elem_Index[i] = ZOLTAN_ID_CONSTANT(-1);
   }
 
   for (i = 0; i < num_export; i++) {
@@ -448,8 +445,8 @@ char msg[256];
 
     if (export_procs[i] != proc) {
       /* Export is moving to a new processor */
-      New_Elem_Index[exp_elem] = -1;
-      remove_from_hash((int)export_global_ids[gid+i*num_gid_entries]);
+      New_Elem_Index[exp_elem] = ZOLTAN_ID_CONSTANT(-1);
+      remove_from_hash(export_global_ids[gid+i*num_gid_entries]);
       proc_ids[exp_elem] = export_procs[i];
     }
   }
@@ -463,7 +460,7 @@ char msg[256];
         if (New_Elem_Index[j] == -1) break;
 
       New_Elem_Index[j] = import_global_ids[gid+i*num_gid_entries];
-      insert_in_hash((int)import_global_ids[gid+i*num_gid_entries], j);
+      insert_in_hash(import_global_ids[gid+i*num_gid_entries], j);
     }
   }
 
@@ -490,7 +487,7 @@ char msg[256];
     for (j = 0; j < elements[exp_elem].adj_len; j++) {
 
       /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
-      if (elements[exp_elem].adj[j] == -1) continue;
+      if (elements[exp_elem].adj[j] == ZOLTAN_ID_CONSTANT(-1)) continue;
 
       /* Set change flag for adjacent local elements. */
       if (elements[exp_elem].adj_proc[j] == proc) {
@@ -507,7 +504,7 @@ char msg[256];
     for (j = 0; j < elements[i].adj_len; j++) {
 
       /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
-      if (elements[i].adj[j] == -1) continue;
+      if (elements[i].adj[j] == ZOLTAN_ID_CONSTANT(-1)) continue;
 
       if (elements[i].adj_proc[j] == proc) {
         /* adjacent element is local; check whether it is moving. */
@@ -567,7 +564,7 @@ char msg[256];
       for (k = 0; k < elements[bor_elem].adj_len; k++) {
 
         /* Skip NULL adjacencies (sides that are not adj to another elem). */
-        if (elements[bor_elem].adj[k] == -1) continue;
+        if (elements[bor_elem].adj[k] == ZOLTAN_ID_CONSTANT(-1)) continue;
 
         if (elements[bor_elem].adj[k] == mesh->ecmap_neighids[offset] &&
             elements[bor_elem].adj_proc[k] == mesh->ecmap_id[i]) {
@@ -579,13 +576,13 @@ char msg[256];
             if (idx >= 0) 
               idx = New_Elem_Hash_Nodes[idx].localID;
             else {
-              sprintf(msg, "fatal: unable to locate element %d in "
+              sprintf(msg, "fatal: unable to locate element %" ZOLTAN_ID_SPECIFIER " in "
                            "New_Elem_Index", mesh->ecmap_neighids[offset]);
               Gen_Error(0, msg);
               *ierr = ZOLTAN_FATAL;
               return;
             }
-            elements[bor_elem].adj[k] = idx;
+            elements[bor_elem].adj[k] = (ZOLTAN_ID_TYPE)idx;
           }
           break;  /* from k loop */
         }
@@ -633,7 +630,7 @@ MESH_INFO_PTR mesh;
 ELEM_INFO *elements;
 int proc, num_proc;
 int i, j, k, last;
-int adj_elem;
+ZOLTAN_ID_TYPE adj_elem;
 
   if (data == NULL) {
     *ierr = ZOLTAN_FATAL;
@@ -670,7 +667,7 @@ int adj_elem;
     for (j = 0; j < elements[i].adj_len; j++) {
 
       /* Skip NULL adjacencies (sides that are not adjacent to another elem). */
-      if (elements[i].adj[j] == -1) continue;
+      if (elements[i].adj[j] == ZOLTAN_ID_CONSTANT(-1)) continue;
 
       adj_elem = elements[i].adj[j];
 
@@ -678,10 +675,10 @@ int adj_elem;
       /* for local element i.                                           */
       if (elements[i].adj_proc[j] == proc) {
         for (k = 0; k < elements[adj_elem].adj_len; k++) {
-          if (elements[adj_elem].adj[k] == last &&
+          if (elements[adj_elem].adj[k] == (ZOLTAN_ID_TYPE)last &&
               elements[adj_elem].adj_proc[k] == proc) {
             /* found adjacency entry for element last; change it to i */
-            elements[adj_elem].adj[k] = i;
+            elements[adj_elem].adj[k] = (ZOLTAN_ID_TYPE)i;
             break;
           }
         }
@@ -693,7 +690,7 @@ int adj_elem;
     New_Elem_Index[last] = -1;
 
     /* clear elements[last] */
-    elements[last].globalID = -1;
+    elements[last].globalID = ZOLTAN_ID_CONSTANT(-1);
     elements[last].border = 0;
     elements[last].my_part = -1;
     elements[last].perm_value = -1;
@@ -777,10 +774,13 @@ int idx;
 
   /* Add space for connect table. */
   if (mesh->num_dims > 0)
-    size += num_nodes * sizeof(int);
+    size += num_nodes * sizeof(ZOLTAN_ID_TYPE);
 
-  /* Add space for adjacency info (elements[].adj and elements[].adj_proc). */
-  size += current_elem->adj_len * 2 * sizeof(int);
+  /* Add space for adjacency info (elements[].adj) */
+  size += current_elem->adj_len * sizeof(ZOLTAN_ID_TYPE);
+
+  /* Add space for adjacency info (elements[].adj_proc). */
+  size += current_elem->adj_len * sizeof(int);
 
   /* Assume if one element has edge wgts, all elements have edge wgts. */
   if (Use_Edge_Wgts) {
@@ -813,6 +813,7 @@ void migrate_pack_elem(void *data, int num_gid_entries, int num_lid_entries,
   ELEM_INFO *elem, *elem_mig;
   ELEM_INFO *current_elem;
   int *buf_int;
+  ZOLTAN_ID_TYPE *buf_id_type;
   float *buf_float;
   int size;
   int i, j, idx;
@@ -851,29 +852,33 @@ void migrate_pack_elem(void *data, int num_gid_entries, int num_lid_entries,
   
   size = Zoltan_Align(size);
 
-  buf_int = (int *) (buf + size);
+  buf_id_type = (ZOLTAN_ID_TYPE *) (buf + size);
 
   /* copy the connect table */
   if (mesh->num_dims > 0) {
     for (i = 0; i < num_nodes; i++) {
-      *buf_int = current_elem->connect[i];
-      buf_int++;
+      *buf_id_type = current_elem->connect[i];
+      buf_id_type++;
     }
-    size += num_nodes * sizeof(int);
+    size += num_nodes * sizeof(ZOLTAN_ID_TYPE);
   }
 
-  /* copy the adjacency info */
-  /* send globalID for all adjacencies */
+  /* copy the adjacency info - all global IDs, then all processes owning global IDs */
+
   for (i =  0; i < current_elem->adj_len; i++) {
-    if (current_elem->adj[i] != -1 && current_elem->adj_proc[i] == proc) 
-      *buf_int = New_Elem_Index[current_elem->adj[i]];
+    if (current_elem->adj[i] != ZOLTAN_ID_CONSTANT(-1) && current_elem->adj_proc[i] == proc) 
+      *buf_id_type++ = New_Elem_Index[current_elem->adj[i]];
     else
-      *buf_int = current_elem->adj[i];
-    buf_int++;
-    *buf_int = current_elem->adj_proc[i];
-    buf_int++;
+      *buf_id_type++ = current_elem->adj[i];
   }
-  size += current_elem->adj_len * 2 * sizeof(int);
+  size += current_elem->adj_len * sizeof(ZOLTAN_ID_TYPE);
+
+  buf_int = (int *) (buf + size);
+
+  for (i =  0; i < current_elem->adj_len; i++) {
+    *buf_int++ = current_elem->adj_proc[i];
+  }
+  size += current_elem->adj_len * sizeof(int);
 
   /*
    * copy the allocated float fields for this element.
@@ -917,7 +922,7 @@ void migrate_pack_elem(void *data, int num_gid_entries, int num_lid_entries,
    * need to remove this entry from this procs list of elements
    * do so by setting the globalID to -1
    */
-  current_elem->globalID = -1;
+  current_elem->globalID = ZOLTAN_ID_CONSTANT(-1);
   free_element_arrays(current_elem, mesh);
 
   /*
@@ -940,12 +945,14 @@ void migrate_unpack_elem(void *data, int num_gid_entries, ZOLTAN_ID_PTR elem_gid
   MESH_INFO_PTR mesh;
   ELEM_INFO *elem, *elem_mig;
   ELEM_INFO *current_elem;
+  ZOLTAN_ID_TYPE *buf_id_type;
   int *buf_int;
   float *buf_float;
   int size, num_nodes;
   int i, j, idx;
   int proc;
   int gid = num_gid_entries-1;
+  size_t adjgids_len, adjprocs_len;
 
   if (data == NULL) {
     *ierr = ZOLTAN_FATAL;
@@ -979,42 +986,50 @@ void migrate_unpack_elem(void *data, int num_gid_entries, ZOLTAN_ID_PTR elem_gid
 
   /* Pad the buffer so the following casts will work.  */
   size = Zoltan_Align(size);
-  buf_int = (int *) (buf + size);
+  buf_id_type = (ZOLTAN_ID_TYPE *) (buf + size);
 
   /* copy the connect table */
   if (mesh->num_dims > 0) {
-    current_elem->connect = (int *) malloc(num_nodes * sizeof(int));
+    current_elem->connect = (ZOLTAN_ID_TYPE *) malloc(num_nodes * sizeof(ZOLTAN_ID_TYPE));
     if (current_elem->connect == NULL) {
       Gen_Error(0, "fatal: insufficient memory");
       *ierr = ZOLTAN_MEMERR;
       return;
     }
     for (i = 0; i < num_nodes; i++) {
-      current_elem->connect[i] = *buf_int;
-      buf_int++;
+      current_elem->connect[i] = *buf_id_type++;
     }
-    size += num_nodes * sizeof(int);
+    size += num_nodes * sizeof(ZOLTAN_ID_TYPE);
   }
 
   /* copy the adjacency info */
   /* globalIDs are received; convert to local IDs when adj elem is local */
+
   if (current_elem->adj_len > 0) {
-    current_elem->adj      = (int *)malloc(current_elem->adj_len * sizeof(int));
-    current_elem->adj_proc = (int *)malloc(current_elem->adj_len * sizeof(int));
+
+    adjgids_len = current_elem->adj_len * sizeof(ZOLTAN_ID_TYPE);
+    adjprocs_len = current_elem->adj_len * sizeof(int);
+
+    current_elem->adj      = (ZOLTAN_ID_TYPE *)malloc(adjgids_len);
+    current_elem->adj_proc = (int *)malloc(adjprocs_len);
+
     if (current_elem->adj == NULL || current_elem->adj_proc == NULL) {
       Gen_Error(0, "fatal: insufficient memory");
       *ierr = ZOLTAN_MEMERR;
       return;
     }
+
+    buf_id_type = (ZOLTAN_ID_TYPE *) (buf + size);
+    buf_int    = (int *) (buf + size + adjgids_len);
+
     for (i =  0; i < current_elem->adj_len; i++) {
-      current_elem->adj[i] = *buf_int;
-      buf_int++;
-      current_elem->adj_proc[i] = *buf_int;
-      buf_int++;
-      if (current_elem->adj[i] != -1 && current_elem->adj_proc[i] == proc) {
+      current_elem->adj[i] =      *buf_id_type++;
+      current_elem->adj_proc[i] = *buf_int++;
+
+      if (current_elem->adj[i] != ZOLTAN_ID_CONSTANT(-1) && current_elem->adj_proc[i] == proc) {
         int idx = find_in_hash(current_elem->adj[i]);
         if (idx >= 0) 
-          current_elem->adj[i] = New_Elem_Hash_Nodes[idx].localID;
+          current_elem->adj[i] = (ZOLTAN_ID_TYPE)New_Elem_Hash_Nodes[idx].localID;
         else {
           Gen_Error(0, "fatal: Unable to locate position for neighbor");
           *ierr = ZOLTAN_FATAL;
@@ -1022,7 +1037,7 @@ void migrate_unpack_elem(void *data, int num_gid_entries, ZOLTAN_ID_PTR elem_gid
         }     
       }
     }
-    size += current_elem->adj_len * 2 * sizeof(int);
+    size += (adjgids_len + adjprocs_len);
 
     /* copy the edge_wgt data */
     if (Use_Edge_Wgts) {

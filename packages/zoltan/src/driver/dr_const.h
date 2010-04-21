@@ -150,7 +150,7 @@ enum PARTITIONING_TYPE {
 struct Element_Description
 {
   int      border;	/* set to 1 if this element is a border element */
-  int      globalID;	/* Global ID of this element, the local ID is the
+  ZOLTAN_ID_TYPE globalID;	/* Global ID of this element, the local ID is the
 			   position in the array of elements              */
   int      elem_blk;    /* element block number which this element is in */
   int      my_part;     /* Partition to which the element is assigned; 
@@ -173,9 +173,9 @@ struct Element_Description
                              for Nemesis meshes, nodal coordinates are stored;
                              for Chaco graphs with geometry, one set of coords
                                  is stored. */
-  int     *connect;	/* list of nodes that make up this element, the node
+  ZOLTAN_ID_TYPE *connect;	/* list of nodes that make up this element, the node
 			   numbers in this list are global and not local    */
-  int     *adj;		/* list of adjacent elements .
+  ZOLTAN_ID_TYPE *adj;	/* list of adjacent elements .
                            For Nemesis input, the list is ordered by
                            side number, to encode side-number info needed to
                            rebuild communication maps.  Value -1 represents 
@@ -213,7 +213,7 @@ struct Mesh_Description
   char  **eb_names;		/* element block element names               */
   int    *eb_etypes;            /* element block element types               */
   int    *eb_ids;		/* element block ids                         */
-  int    *eb_cnts;		/* number of elements in each element block  */
+  ZOLTAN_ID_TYPE *eb_cnts;	/* number of elements in each element block  */
   int    *eb_nnodes;		/* number of nodes per element in each
 				   element block                           
                                       for Nemesis meshes, this value depends
@@ -230,7 +230,7 @@ struct Mesh_Description
                                    communication maps. (local numbering)     */
   int    *ecmap_sideids;        /* side ids of elements for all elemental 
                                    communication maps.                       */
-  int    *ecmap_neighids;       /* elements ids of neighboring elements 
+  ZOLTAN_ID_TYPE *ecmap_neighids;    /* elements ids of neighboring elements 
                                    for all elemental communication maps. 
                                    (global numbering)                        */
   int     elem_array_len;	/* length that the ELEM_INFO array is
@@ -239,8 +239,8 @@ struct Mesh_Description
   ELEM_INFO_PTR elements;       /* array of elements that are in the mesh.   */
   int     *blank;               /* 1 if my element is blanked, 0 if not      */
   int     blank_count;          /* number of my elements that are blanked    */
-  int     global_blank_count;   /* number of all elements that are blanked   */
-  int     gnhedges;             /* for hypergraphs, the number of global
+  ZOLTAN_ID_TYPE global_blank_count;   /* number of all elements that are blanked   */
+  ZOLTAN_ID_TYPE gnhedges;             /* for hypergraphs, the number of global
                                    hyperedges.*/
   int     hewgt_dim;            /* for hypergraphs, the number of weights per
                                    hyperedge.                                */
@@ -251,13 +251,13 @@ struct Mesh_Description
                                    we store vertices and their pins here. */
   int     format;               /* rows (edges) or columns (vertices) */
   int     nhedges;              /* # local edges (if cols: # pin vertices) */
-  int    *hgid;                 /* Global number for edges (or pin vertices),
+  ZOLTAN_ID_TYPE *hgid;        /* Global number for edges (or pin vertices),
                                    derived implicitly from order pins
                                    are read from file. Numbering is 0-based. */
   int    *hindex;               /* for hypergraphs, an entry for each 
                                    edge (or vertex), giving the starting index
                                    into hvertex for hyperedge (or vertex).*/ 
-  int    *hvertex;              /* row storage: global number for each pin
+  ZOLTAN_ID_TYPE *hvertex;      /* row storage: global number for each pin
                                    vertex, col storage: global number for
                                    each pin hyperedge                     */
   int    *hvertex_proc;         /* row storage: array listing the processor 
@@ -265,11 +265,11 @@ struct Mesh_Description
                                    don't care.  col storage: NULL */
 
   int    heNumWgts;             /* number of edges for which we have weights */
-  int    *heWgtId;              /* global edge ID of the heNumWgts edges,
+  ZOLTAN_ID_TYPE *heWgtId;              /* global edge ID of the heNumWgts edges,
                                     if NULL it's the same as hgid            */
   float  *hewgts;               /* for hypergraphs, an array of hyperedge
                                    weights; size = hewgt_dim * heNumWgts;  */
-  int    visible_nvtx;          /* #vertices to use, may be < num_elems */
+  ZOLTAN_ID_TYPE  visible_nvtx;          /* #vertices to use, may be < num_elems */
   int    proc;        /* my rank, want to know if adj elements are on my proc */
 };
 typedef struct Mesh_Description  MESH_INFO;

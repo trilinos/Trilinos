@@ -203,7 +203,7 @@ E_Type get_elem_type(char *elem_name, const int num_nodes,
  *----------------------------------------------------------------------------
  * This function returns various information about the input element type.
  *****************************************************************************/
-int get_elem_info(const int req, const E_Type etype, const int sid)
+int get_elem_info(const int req, const E_Type etype, const ZOLTAN_ID_TYPE sid)
 {
 
   int answer;
@@ -809,14 +809,14 @@ int get_elem_info(const int req, const E_Type etype, const int sid)
  *
  * Now supoports degenrate faces in HEX elements.
  *****************************************************************************/
-int get_side_id(E_Type etype, const int *connect, const int nsnodes,
+int get_side_id(E_Type etype, const ZOLTAN_ID_TYPE *connect, const int nsnodes,
                 int side_nodes[])
 {
   const char *func_name="get_side_id";
   char  err_buff[300];
 
-  int nnodes, i, j, num;
-  int dup, location = 0;
+  ZOLTAN_ID_TYPE nnodes, i, j, num;
+  ZOLTAN_ID_TYPE dup, location = 0;
 
   /* check if this is a degenerate face */
   dup = 0;
@@ -838,7 +838,7 @@ int get_side_id(E_Type etype, const int *connect, const int nsnodes,
   {
     for(j=0; j < nsnodes; j++)
     {
-      if(connect[i] == side_nodes[j])
+      if((int)connect[i] == side_nodes[j])
       {
         num++;
         break;
@@ -861,63 +861,63 @@ int get_side_id(E_Type etype, const int *connect, const int nsnodes,
   case S_QUAD2:
   case QUAD2:
     /* SIDE 1 */
-    if (side_nodes[0] == connect[0] &&
-        side_nodes[1] == connect[1]) return 1;
+    if (side_nodes[0] == (int)connect[0] &&
+        side_nodes[1] == (int)connect[1]) return 1;
 
     /* SIDE 2 */
-    if (side_nodes[0] == connect[1] &&
-        side_nodes[1] == connect[2]) return 2;
+    if (side_nodes[0] == (int)connect[1] &&
+        side_nodes[1] == (int)connect[2]) return 2;
 
     /* SIDE 3 */
-    if (side_nodes[0] == connect[2] &&
-        side_nodes[1] == connect[3]) return 3;
+    if (side_nodes[0] == (int)connect[2] &&
+        side_nodes[1] == (int)connect[3]) return 3;
 
     /* SIDE 4 */
-    if (side_nodes[0] == connect[3] &&
-        side_nodes[1] == connect[0]) return 4;
+    if (side_nodes[0] == (int)connect[3] &&
+        side_nodes[1] == (int)connect[0]) return 4;
 
     break;
 
   case TRI1:
   case TRI2:
     /* SIDE 1 */
-    if (side_nodes[0] == connect[0] &&
-        side_nodes[1] == connect[1]) return 1;
+    if (side_nodes[0] == (int)connect[0] &&
+        side_nodes[1] == (int)connect[1]) return 1;
 
     /* SIDE 2 */
-    if (side_nodes[0] == connect[1] &&
-        side_nodes[1] == connect[2]) return 2;
+    if (side_nodes[0] == (int)connect[1] &&
+        side_nodes[1] == (int)connect[2]) return 2;
 
     /* SIDE 3 */
-    if (side_nodes[0] == connect[2] &&
-        side_nodes[1] == connect[0]) return 3;
+    if (side_nodes[0] == (int)connect[2] &&
+        side_nodes[1] == (int)connect[0]) return 3;
 
     break;
 
   case TET1:
   case TET2:
     /* SIDE 1 */
-    if((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
-      if (side_nodes[(1 + num) % 3] == connect[1] &&
-          side_nodes[(2 + num) % 3] == connect[3]) return 1;
+    if((num = in_list2((int)connect[0], nsnodes, side_nodes)) >= 0) {
+      if (side_nodes[(1 + num) % 3] == (int)connect[1] &&
+          side_nodes[(2 + num) % 3] == (int)connect[3]) return 1;
     }
 
     /* SIDE 2 */
-    if((num = in_list(connect[1], nsnodes, side_nodes)) >= 0) {
-      if (side_nodes[(1 + num) % 3] == connect[2] &&
-          side_nodes[(2 + num) % 3] == connect[3]) return 2;
+    if((num = in_list2((int)connect[1], nsnodes, side_nodes)) >= 0) {
+      if (side_nodes[(1 + num) % 3] == (int)connect[2] &&
+          side_nodes[(2 + num) % 3] == (int)connect[3]) return 2;
     }
 
     /* SIDE 3 */
-    if((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
-      if (side_nodes[(1 + num) % 3] == connect[3] &&
-          side_nodes[(2 + num) % 3] == connect[2]) return 3;
+    if((num = in_list2((int)connect[0], nsnodes, side_nodes)) >= 0) {
+      if (side_nodes[(1 + num) % 3] == (int)connect[3] &&
+          side_nodes[(2 + num) % 3] == (int)connect[2]) return 3;
     }
 
     /* SIDE 4 */
-    if((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
-      if (side_nodes[(1 + num) % 3] == connect[2] &&
-          side_nodes[(2 + num) % 3] == connect[1]) return 4;
+    if((num = in_list2((int)connect[0], nsnodes, side_nodes)) >= 0) {
+      if (side_nodes[(1 + num) % 3] == (int)connect[2] &&
+          side_nodes[(2 + num) % 3] == (int)connect[1]) return 4;
     }
 
     break;
@@ -927,92 +927,92 @@ int get_side_id(E_Type etype, const int *connect, const int nsnodes,
   case HEX2:
   case HEXSHELL:  /* this should be the same as a HEX element */
     /* SIDE 1 */
-    if((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
-      if (side_nodes[(1 + num) % 4] == connect[1] &&
-          side_nodes[(2 + num) % 4] == connect[5] &&
-          side_nodes[(3 + num) % 4] == connect[4]) return 1;
+    if((num = in_list2((int)connect[0], nsnodes, side_nodes)) >= 0) {
+      if (side_nodes[(1 + num) % 4] == (int)connect[1] &&
+          side_nodes[(2 + num) % 4] == (int)connect[5] &&
+          side_nodes[(3 + num) % 4] == (int)connect[4]) return 1;
 
       /* if this is the duplicated node, then find the next occurence */
-      if (dup && connect[0] == side_nodes[location]) {
-        num = in_list(connect[0], (nsnodes-num), &(side_nodes[num+1]));
-        if (side_nodes[(1 + num) % 4] == connect[1] &&
-            side_nodes[(2 + num) % 4] == connect[5] &&
-            side_nodes[(3 + num) % 4] == connect[4]) return 1;
+      if (dup && (int)connect[0] == side_nodes[location]) {
+        num = in_list2((int)connect[0], (nsnodes-num), &(side_nodes[num+1]));
+        if (side_nodes[(1 + num) % 4] == (int)connect[1] &&
+            side_nodes[(2 + num) % 4] == (int)connect[5] &&
+            side_nodes[(3 + num) % 4] == (int)connect[4]) return 1;
       }
     }
 
     /* SIDE 2 */
-    if((num = in_list(connect[1], nsnodes, side_nodes)) >= 0) {
-      if (side_nodes[(1 + num) % 4] == connect[2] &&
-          side_nodes[(2 + num) % 4] == connect[6] &&
-          side_nodes[(3 + num) % 4] == connect[5]) return 2;
+    if((num = in_list2((int)connect[1], nsnodes, side_nodes)) >= 0) {
+      if (side_nodes[(1 + num) % 4] == (int)connect[2] &&
+          side_nodes[(2 + num) % 4] == (int)connect[6] &&
+          side_nodes[(3 + num) % 4] == (int)connect[5]) return 2;
 
       /* if this is the duplicated node, then find the next occurence */
-      if (dup && connect[1] == side_nodes[location]) {
-        num = in_list(connect[1], (nsnodes-num), &(side_nodes[num+1]));
-        if (side_nodes[(1 + num) % 4] == connect[2] &&
-            side_nodes[(2 + num) % 4] == connect[6] &&
-            side_nodes[(3 + num) % 4] == connect[5]) return 2;
+      if (dup && (int)connect[1] == side_nodes[location]) {
+        num = in_list2((int)connect[1], (nsnodes-num), &(side_nodes[num+1]));
+        if (side_nodes[(1 + num) % 4] == (int)connect[2] &&
+            side_nodes[(2 + num) % 4] == (int)connect[6] &&
+            side_nodes[(3 + num) % 4] == (int)connect[5]) return 2;
       }
     }
 
     /* SIDE 3 */
-    if((num = in_list(connect[2], nsnodes, side_nodes)) >= 0) {
-      if (side_nodes[(1 + num) % 4] == connect[3] &&
-          side_nodes[(2 + num) % 4] == connect[7] &&
-          side_nodes[(3 + num) % 4] == connect[6]) return 3;
+    if((num = in_list2((int)connect[2], nsnodes, side_nodes)) >= 0) {
+      if (side_nodes[(1 + num) % 4] == (int)connect[3] &&
+          side_nodes[(2 + num) % 4] == (int)connect[7] &&
+          side_nodes[(3 + num) % 4] == (int)connect[6]) return 3;
 
       /* if this is the duplicated node, then find the next occurence */
-      if (dup && connect[2] == side_nodes[location]) {
-        num = in_list(connect[2], (nsnodes-num), &(side_nodes[num+1]));
-        if (side_nodes[(1 + num) % 4] == connect[3] &&
-            side_nodes[(2 + num) % 4] == connect[7] &&
-            side_nodes[(3 + num) % 4] == connect[6]) return 3;
+      if (dup && (int)connect[2] == side_nodes[location]) {
+        num = in_list2((int)connect[2], (nsnodes-num), &(side_nodes[num+1]));
+        if (side_nodes[(1 + num) % 4] == (int)connect[3] &&
+            side_nodes[(2 + num) % 4] == (int)connect[7] &&
+            side_nodes[(3 + num) % 4] == (int)connect[6]) return 3;
       }
     }
 
     /* SIDE 4 */
-    if((num = in_list(connect[3], nsnodes, side_nodes)) >= 0) {
-      if (side_nodes[(1 + num) % 4] == connect[0] &&
-          side_nodes[(2 + num) % 4] == connect[4] &&
-          side_nodes[(3 + num) % 4] == connect[7]) return 4;
+    if((num = in_list2((int)connect[3], nsnodes, side_nodes)) >= 0) {
+      if (side_nodes[(1 + num) % 4] == (int)connect[0] &&
+          side_nodes[(2 + num) % 4] == (int)connect[4] &&
+          side_nodes[(3 + num) % 4] == (int)connect[7]) return 4;
 
       /* if this is the duplicated node, then find the next occurence */
-      if (dup && connect[3] == side_nodes[location]) {
-        num = in_list(connect[3], (nsnodes-num), &(side_nodes[num+1]));
-        if (side_nodes[(1 + num) % 4] == connect[0] &&
-            side_nodes[(2 + num) % 4] == connect[4] &&
-            side_nodes[(3 + num) % 4] == connect[7]) return 4;
+      if (dup && (int)connect[3] == side_nodes[location]) {
+        num = in_list2((int)connect[3], (nsnodes-num), &(side_nodes[num+1]));
+        if (side_nodes[(1 + num) % 4] == (int)connect[0] &&
+            side_nodes[(2 + num) % 4] == (int)connect[4] &&
+            side_nodes[(3 + num) % 4] == (int)connect[7]) return 4;
       }
     }
 
     /* SIDE 5 */
-    if((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
-      if (side_nodes[(1 + num) % 4] == connect[3] &&
-          side_nodes[(2 + num) % 4] == connect[2] &&
-          side_nodes[(3 + num) % 4] == connect[1]) return 5;
+    if((num = in_list2((int)connect[0], nsnodes, side_nodes)) >= 0) {
+      if (side_nodes[(1 + num) % 4] == (int)connect[3] &&
+          side_nodes[(2 + num) % 4] == (int)connect[2] &&
+          side_nodes[(3 + num) % 4] == (int)connect[1]) return 5;
 
       /* if this is the duplicated node, then find the next occurence */
-      if (dup && connect[0] == side_nodes[location]) {
-        num = in_list(connect[0], (nsnodes-num), &(side_nodes[num+1]));
-        if (side_nodes[(1 + num) % 4] == connect[3] &&
-            side_nodes[(2 + num) % 4] == connect[2] &&
-            side_nodes[(3 + num) % 4] == connect[1]) return 5;
+      if (dup && (int)connect[0] == side_nodes[location]) {
+        num = in_list2((int)connect[0], (nsnodes-num), &(side_nodes[num+1]));
+        if (side_nodes[(1 + num) % 4] == (int)connect[3] &&
+            side_nodes[(2 + num) % 4] == (int)connect[2] &&
+            side_nodes[(3 + num) % 4] == (int)connect[1]) return 5;
       }
     }
 
     /* SIDE 6 */
-    if((num = in_list(connect[4], nsnodes, side_nodes)) >= 0) {
-      if (side_nodes[(1 + num) % 4] == connect[5] &&
-          side_nodes[(2 + num) % 4] == connect[6] &&
-          side_nodes[(3 + num) % 4] == connect[7]) return 6;
+    if((num = in_list2((int)connect[4], nsnodes, side_nodes)) >= 0) {
+      if (side_nodes[(1 + num) % 4] == (int)connect[5] &&
+          side_nodes[(2 + num) % 4] == (int)connect[6] &&
+          side_nodes[(3 + num) % 4] == (int)connect[7]) return 6;
 
       /* if this is the duplicated node, then find the next occurence */
-      if (dup && connect[4] == side_nodes[location]) {
-        num = in_list(connect[4], (nsnodes-num), &(side_nodes[num+1]));
-        if (side_nodes[(1 + num) % 4] == connect[5] &&
-            side_nodes[(2 + num) % 4] == connect[6] &&
-            side_nodes[(3 + num) % 4] == connect[7]) return 6;
+      if (dup && (int)connect[4] == side_nodes[location]) {
+        num = in_list2((int)connect[4], (nsnodes-num), &(side_nodes[num+1]));
+        if (side_nodes[(1 + num) % 4] == (int)connect[5] &&
+            side_nodes[(2 + num) % 4] == (int)connect[6] &&
+            side_nodes[(3 + num) % 4] == (int)connect[7]) return 6;
       }
     }
 
@@ -1024,37 +1024,37 @@ int get_side_id(E_Type etype, const int *connect, const int nsnodes,
     /* 2D sides */
     if(nsnodes == 2 || nsnodes == 3) {
       /* SIDE 3 */
-      if (side_nodes[0] == connect[0] &&
-          side_nodes[1] == connect[1]) return 3;
+      if (side_nodes[0] == (int)connect[0] &&
+          side_nodes[1] == (int)connect[1]) return 3;
 
       /* SIDE 4 */
-      if (side_nodes[0] == connect[1] &&
-          side_nodes[1] == connect[2]) return 4;
+      if (side_nodes[0] == (int)connect[1] &&
+          side_nodes[1] == (int)connect[2]) return 4;
 
       /* SIDE 5 */
-      if (side_nodes[0] == connect[2] &&
-          side_nodes[1] == connect[3]) return 5;
+      if (side_nodes[0] == (int)connect[2] &&
+          side_nodes[1] == (int)connect[3]) return 5;
 
       /* SIDE 6 */
-      if (side_nodes[0] == connect[3] &&
-          side_nodes[1] == connect[0]) return 6;
+      if (side_nodes[0] == (int)connect[3] &&
+          side_nodes[1] == (int)connect[0]) return 6;
     }
 
     /* 3D faces */
     else if (nsnodes == 4 || nsnodes == 8) {
 
       /* SIDE 1 */
-      if((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
-        if (side_nodes[(1 + num) % 4] == connect[1] &&
-            side_nodes[(2 + num) % 4] == connect[2] &&
-            side_nodes[(3 + num) % 4] == connect[3]) return 1;
+      if((num = in_list2((int)connect[0], nsnodes, side_nodes)) >= 0) {
+        if (side_nodes[(1 + num) % 4] == (int)connect[1] &&
+            side_nodes[(2 + num) % 4] == (int)connect[2] &&
+            side_nodes[(3 + num) % 4] == (int)connect[3]) return 1;
       }
 
       /* SIDE 2 */
-      if((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
-        if (side_nodes[(1 + num) % 4] == connect[3] &&
-            side_nodes[(2 + num) % 4] == connect[2] &&
-            side_nodes[(3 + num) % 4] == connect[1]) return 2;
+      if((num = in_list2((int)connect[0], nsnodes, side_nodes)) >= 0) {
+        if (side_nodes[(1 + num) % 4] == (int)connect[3] &&
+            side_nodes[(2 + num) % 4] == (int)connect[2] &&
+            side_nodes[(3 + num) % 4] == (int)connect[1]) return 2;
       }
     }
 
@@ -1066,39 +1066,39 @@ int get_side_id(E_Type etype, const int *connect, const int nsnodes,
     /* quad sides */
     if (nsnodes == 4 || nsnodes == 8) {
       /* SIDE 1 */
-      if((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
-        if (side_nodes[(1 + num) % 4] == connect[1] &&
-            side_nodes[(2 + num) % 4] == connect[4] &&
-            side_nodes[(3 + num) % 4] == connect[3]) return 1;
+      if((num = in_list2((int)connect[0], nsnodes, side_nodes)) >= 0) {
+        if (side_nodes[(1 + num) % 4] == (int)connect[1] &&
+            side_nodes[(2 + num) % 4] == (int)connect[4] &&
+            side_nodes[(3 + num) % 4] == (int)connect[3]) return 1;
       }
 
       /* SIDE 2 */
-      if((num = in_list(connect[1], nsnodes, side_nodes)) >= 0) {
-        if (side_nodes[(1 + num) % 4] == connect[2] &&
-            side_nodes[(2 + num) % 4] == connect[5] &&
-            side_nodes[(3 + num) % 4] == connect[4]) return 2;
+      if((num = in_list2((int)connect[1], nsnodes, side_nodes)) >= 0) {
+        if (side_nodes[(1 + num) % 4] == (int)connect[2] &&
+            side_nodes[(2 + num) % 4] == (int)connect[5] &&
+            side_nodes[(3 + num) % 4] == (int)connect[4]) return 2;
       }
 
       /* SIDE 3 */
-      if((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
-        if (side_nodes[(1 + num) % 4] == connect[3] &&
-            side_nodes[(2 + num) % 4] == connect[5] &&
-            side_nodes[(3 + num) % 4] == connect[2]) return 3;
+      if((num = in_list2((int)connect[0], nsnodes, side_nodes)) >= 0) {
+        if (side_nodes[(1 + num) % 4] == (int)connect[3] &&
+            side_nodes[(2 + num) % 4] == (int)connect[5] &&
+            side_nodes[(3 + num) % 4] == (int)connect[2]) return 3;
       }
     }
 
     /* triangle sides */
     else if (nsnodes == 3 || nsnodes == 6) {
       /* SIDE 4 */
-      if((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
-        if (side_nodes[(1 + num) % 3] == connect[2] &&
-            side_nodes[(3 + num) % 3] == connect[1]) return 4;
+      if((num = in_list2((int)connect[0], nsnodes, side_nodes)) >= 0) {
+        if (side_nodes[(1 + num) % 3] == (int)connect[2] &&
+            side_nodes[(3 + num) % 3] == (int)connect[1]) return 4;
       }
 
       /* SIDE 5 */
-      if((num = in_list(connect[3], nsnodes, side_nodes)) >= 0) {
-        if (side_nodes[(1 + num) % 3] == connect[4] &&
-            side_nodes[(3 + num) % 3] == connect[5]) return 5;
+      if((num = in_list2((int)connect[3], nsnodes, side_nodes)) >= 0) {
+        if (side_nodes[(1 + num) % 3] == (int)connect[4] &&
+            side_nodes[(3 + num) % 3] == (int)connect[5]) return 5;
       }
     }
 
@@ -1110,16 +1110,16 @@ int get_side_id(E_Type etype, const int *connect, const int nsnodes,
     /* 2D sides */
     if(nsnodes == 2 || ((etype == TSHELL2) && (nsnodes == 3))) {
       /* SIDE 3 */
-      if (side_nodes[0] == connect[0] &&
-          side_nodes[1] == connect[1]) return 3;
+      if (side_nodes[0] == (int)connect[0] &&
+          side_nodes[1] == (int)connect[1]) return 3;
 
       /* SIDE 4 */
-      if (side_nodes[0] == connect[1] &&
-          side_nodes[1] == connect[2]) return 4;
+      if (side_nodes[0] == (int)connect[1] &&
+          side_nodes[1] == (int)connect[2]) return 4;
 
       /* SIDE 5 */
-      if (side_nodes[0] == connect[2] &&
-          side_nodes[1] == connect[0]) return 5;
+      if (side_nodes[0] == (int)connect[2] &&
+          side_nodes[1] == (int)connect[0]) return 5;
 
     }
 
@@ -1127,15 +1127,15 @@ int get_side_id(E_Type etype, const int *connect, const int nsnodes,
     else if (nsnodes == 3 || nsnodes == 6) {
 
       /* SIDE 1 */
-      if((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
-        if (side_nodes[(1 + num) % 3] == connect[1] &&
-            side_nodes[(2 + num) % 3] == connect[2]) return 1;
+      if((num = in_list2((int)connect[0], nsnodes, side_nodes)) >= 0) {
+        if (side_nodes[(1 + num) % 3] == (int)connect[1] &&
+            side_nodes[(2 + num) % 3] == (int)connect[2]) return 1;
       }
 
       /* SIDE 2 */
-      if((num = in_list(connect[0], nsnodes, side_nodes)) >= 0) {
-        if (side_nodes[(1 + num) % 3] == connect[2] &&
-            side_nodes[(2 + num) % 3] == connect[1]) return 2;
+      if((num = in_list2((int)connect[0], nsnodes, side_nodes)) >= 0) {
+        if (side_nodes[(1 + num) % 3] == (int)connect[2] &&
+            side_nodes[(2 + num) % 3] == (int)connect[1]) return 2;
       }
     }
 
@@ -1162,11 +1162,11 @@ int get_side_id(E_Type etype, const int *connect, const int nsnodes,
  * the element type, and the side id. It also returns the number of nodes
  * in that side.
  *****************************************************************************/
-int ss_to_node_list(const E_Type etype, const int *connect, int side_num,
+int ss_to_node_list(const E_Type etype, const ZOLTAN_ID_TYPE *connect, int side_num,
                     int ss_node_list[])
 
 {
-  int i;
+  ZOLTAN_ID_TYPE i;
   char msg[80];
 
   /*
@@ -1240,13 +1240,13 @@ int ss_to_node_list(const E_Type etype, const int *connect, int side_num,
   switch (etype) {
   case QUAD1:
     for (i = 0; i < 2; i++)
-      ss_node_list[i] = connect[(quad_table[side_num][i] - 1)];
+      ss_node_list[i] = (int)connect[(quad_table[side_num][i] - 1)];
     break;
 
   case S_QUAD2:
   case QUAD2:
     for (i = 0; i < 3; i++)
-      ss_node_list[i] = connect[(quad_table[side_num][i] - 1)];
+      ss_node_list[i] = (int)connect[(quad_table[side_num][i] - 1)];
     break;
 
   case SHELL1:
@@ -1254,7 +1254,7 @@ int ss_to_node_list(const E_Type etype, const int *connect, int side_num,
     case 0:
     case 1:
       for (i = 0; i < 4; i++)
-        ss_node_list[i] = connect[(shell_table[side_num][i] - 1)];
+        ss_node_list[i] = (int)connect[(shell_table[side_num][i] - 1)];
       break;
 
     default:
@@ -1263,7 +1263,7 @@ int ss_to_node_list(const E_Type etype, const int *connect, int side_num,
        * of the quad element.
        */
       for (i = 0; i < 2; i++)
-        ss_node_list[i] = connect[(quad_table[(side_num-2)][i] - 1)];
+        ss_node_list[i] = (int)connect[(quad_table[(side_num-2)][i] - 1)];
       break;
     }
     break;
@@ -1273,7 +1273,7 @@ int ss_to_node_list(const E_Type etype, const int *connect, int side_num,
     case 0:
     case 1:
       for (i = 0; i < 8; i++)
-        ss_node_list[i] = connect[(shell_table[side_num][i] - 1)];
+        ss_node_list[i] = (int)connect[(shell_table[side_num][i] - 1)];
       break;
 
     default:
@@ -1282,19 +1282,19 @@ int ss_to_node_list(const E_Type etype, const int *connect, int side_num,
        * of the quad element.
        */
       for (i = 0; i < 3; i++)
-        ss_node_list[i] = connect[(quad_table[(side_num-2)][i] - 1)];
+        ss_node_list[i] = (int)connect[(quad_table[(side_num-2)][i] - 1)];
       break;
     }
     break;
 
   case TRI1:
     for (i = 0; i < 2; i++)
-      ss_node_list[i] = connect[(tri_table[side_num][i] - 1)];
+      ss_node_list[i] = (int)connect[(tri_table[side_num][i] - 1)];
     break;
 
   case TRI2:
     for (i = 0; i < 3; i++)
-      ss_node_list[i] = connect[(tri_table[side_num][i] - 1)];
+      ss_node_list[i] = (int)connect[(tri_table[side_num][i] - 1)];
     break;
 
   case TSHELL1:
@@ -1302,7 +1302,7 @@ int ss_to_node_list(const E_Type etype, const int *connect, int side_num,
     case 0:
     case 1:
       for (i = 0; i < 3; i++)
-        ss_node_list[i] = connect[(tshell_table[side_num][i] - 1)];
+        ss_node_list[i] = (int)connect[(tshell_table[side_num][i] - 1)];
       break;
 
     default:
@@ -1311,7 +1311,7 @@ int ss_to_node_list(const E_Type etype, const int *connect, int side_num,
        * of the tri element.
        */
       for (i = 0; i < 2; i++)
-        ss_node_list[i] = connect[(tri_table[(side_num-2)][i] - 1)];
+        ss_node_list[i] = (int)connect[(tri_table[(side_num-2)][i] - 1)];
       break;
     }
     break;
@@ -1321,7 +1321,7 @@ int ss_to_node_list(const E_Type etype, const int *connect, int side_num,
     case 0:
     case 1:
       for (i = 0; i < 6; i++)
-        ss_node_list[i] = connect[(tshell_table[side_num][i] - 1)];
+        ss_node_list[i] = (int)connect[(tshell_table[side_num][i] - 1)];
       break;
 
     default:
@@ -1330,34 +1330,34 @@ int ss_to_node_list(const E_Type etype, const int *connect, int side_num,
        * of the tri element.
        */
       for (i = 0; i < 3; i++)
-        ss_node_list[i] = connect[(tri_table[(side_num-2)][i] - 1)];
+        ss_node_list[i] = (int)connect[(tri_table[(side_num-2)][i] - 1)];
       break;
     }
     break;
 
   case HEX1:
     for (i = 0; i < 4; i++)
-      ss_node_list[i] = connect[(hex_table[side_num][i] - 1)];
+      ss_node_list[i] = (int)connect[(hex_table[side_num][i] - 1)];
     break;
 
   case S_HEX2:
     for (i = 0; i < 8; i++)
-      ss_node_list[i] = connect[(hex_table[side_num][i] - 1)];
+      ss_node_list[i] = (int)connect[(hex_table[side_num][i] - 1)];
     break;
 
   case HEX2:
     for (i = 0; i < 9; i++)
-      ss_node_list[i] = connect[(hex_table[side_num][i] - 1)];
+      ss_node_list[i] = (int)connect[(hex_table[side_num][i] - 1)];
     break;
 
   case TET1:
     for (i = 0; i < 3; i++)
-      ss_node_list[i] = connect[(tetra_table[side_num][i] - 1)];
+      ss_node_list[i] = (int)connect[(tetra_table[side_num][i] - 1)];
     break;
 
   case TET2:
     for (i = 0; i < 6; i++)
-      ss_node_list[i] = connect[(tetra_table[side_num][i] - 1)];
+      ss_node_list[i] = (int)connect[(tetra_table[side_num][i] - 1)];
     break;
 
   case WEDGE1:
@@ -1365,12 +1365,12 @@ int ss_to_node_list(const E_Type etype, const int *connect, int side_num,
     case 3:
     case 4:
       for (i = 0; i < 3; i++)
-        ss_node_list[i] = connect[(wedge_table[side_num][i] - 1)];
+        ss_node_list[i] = (int)connect[(wedge_table[side_num][i] - 1)];
       break;
 
     default:
       for (i = 0; i < 4; i++)
-        ss_node_list[i] = connect[(wedge_table[side_num][i] - 1)];
+        ss_node_list[i] = (int)connect[(wedge_table[side_num][i] - 1)];
       break;
     }
     break;
@@ -1380,12 +1380,12 @@ int ss_to_node_list(const E_Type etype, const int *connect, int side_num,
     case 3:
     case 4:
       for (i = 0; i < 6; i++)
-        ss_node_list[i] = connect[(wedge_table[side_num][i] - 1)];
+        ss_node_list[i] = (int)connect[(wedge_table[side_num][i] - 1)];
       break;
 
     default:
       for (i = 0; i < 8; i++)
-        ss_node_list[i] = connect[(wedge_table[side_num][i] - 1)];
+        ss_node_list[i] = (int)connect[(wedge_table[side_num][i] - 1)];
       break;
     }
     break;
@@ -1395,12 +1395,12 @@ int ss_to_node_list(const E_Type etype, const int *connect, int side_num,
     case 5:
     case 6:
       for (i = 0; i < 4; i++)
-        ss_node_list[i] = connect[(hexshell_table[side_num][i] - 1)];
+        ss_node_list[i] = (int)connect[(hexshell_table[side_num][i] - 1)];
       break;
 
     default:
       for (i = 0; i < 6; i++)
-        ss_node_list[i] = connect[(hexshell_table[side_num][i] - 1)];
+        ss_node_list[i] = (int)connect[(hexshell_table[side_num][i] - 1)];
       break;
     }
     break;
@@ -1431,11 +1431,11 @@ int ss_to_node_list(const E_Type etype, const int *connect, int side_num,
  * given. This will be the node list of a face that is connected
  * to this element on this face.
  *****************************************************************************/
-int get_ss_mirror(const E_Type etype, const int *ss_node_list, int side_num,
-                  int mirror_node_list[])
+ZOLTAN_ID_TYPE get_ss_mirror(const E_Type etype, const ZOLTAN_ID_TYPE *ss_node_list, ZOLTAN_ID_TYPE side_num,
+                  ZOLTAN_ID_TYPE mirror_node_list[])
 
 {
-  int   i;
+  ZOLTAN_ID_TYPE   i;
   char msg[80];
 
   /*

@@ -700,7 +700,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
 	if (current_elem->fixed_part != -1 &&
 	    current_elem->fixed_part != current_elem->my_part) {
 	  errcnt++;
-	  printf("%d:  Object %d fixed to %d but assigned to %d\n",
+	  printf("%d:  Object %" ZOLTAN_ID_SPECIFIER " fixed to %d but assigned to %d\n",
 		 Proc, current_elem->globalID, current_elem->fixed_part,
 		 current_elem->my_part);
 	}
@@ -875,8 +875,8 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
       }
 
       color = (int *) malloc (mesh->num_elems * sizeof(int));
-      gids = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * sizeof(int));
-      lids = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * sizeof(int));
+      gids = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * sizeof(ZOLTAN_ID_TYPE));
+      lids = (ZOLTAN_ID_PTR) malloc(mesh->num_elems * sizeof(ZOLTAN_ID_TYPE));
 
       if (!color || !gids || !lids) {
 	  safe_free((void **)(void *) &color);
@@ -1010,7 +1010,7 @@ void get_elements(void *data, int num_gid_entries, int num_lid_entries,
 	(current_elem->globalID > mesh->visible_nvtx)) continue;
 
     for (j = 0; j < gid; j++) global_id[idx*num_gid_entries+j]=0;
-    global_id[idx*num_gid_entries+gid] = (ZOLTAN_ID_TYPE) current_elem->globalID;
+    global_id[idx*num_gid_entries+gid] = current_elem->globalID;
     if (num_lid_entries) {
       for (j = 0; j < lid; j++) local_id[idx*num_lid_entries+j]=0;
       local_id[idx*num_lid_entries+lid] = i;
@@ -1089,7 +1089,7 @@ int get_first_element(void *data, int num_gid_entries, int num_lid_entries,
     local_id[lid] = first;
   }
   for (j = 0; j < gid; j++) global_id[j]=0;
-  global_id[gid] = (ZOLTAN_ID_TYPE) current_elem->globalID;
+  global_id[gid] = current_elem->globalID;
 
   if (wdim>0){
     for (i=0; i<wdim; i++){
@@ -1537,10 +1537,10 @@ void get_edge_list (void *data, int num_gid_entries, int num_lid_entries,
 
     for (k = 0; k < gid; k++) nbor_global_id[k+j*num_gid_entries] = 0;
     if (local_elem >= 0){
-      nbor_global_id[gid+j*num_gid_entries] = (ZOLTAN_ID_TYPE)elem[local_elem].globalID;
+      nbor_global_id[gid+j*num_gid_entries] = elem[local_elem].globalID;
     }
     else { /* adjacent element on another processor */
-      nbor_global_id[gid+j*num_gid_entries] = (ZOLTAN_ID_TYPE)current_elem->adj[i];
+      nbor_global_id[gid+j*num_gid_entries] = current_elem->adj[i];
     }
     nbor_procs[j] = current_elem->adj_proc[i];
 
@@ -2046,7 +2046,7 @@ void get_hg_edge_weights(
 )
 {
   MESH_INFO_PTR mesh;
-  int *id=NULL;
+  ZOLTAN_ID_TYPE *id=NULL;
   int i, k;
   int gid = num_gid_entries-1;
   *ierr = ZOLTAN_OK;
@@ -2152,8 +2152,7 @@ int ngid = num_gid_entries-1;
   for (i = 0; i < mesh->num_elems; i++){
     if (mesh->blank && mesh->blank[i]) continue;
     if (mesh->elements[i].fixed_part != -1) {
-      fixed_gids[cnt*num_gid_entries+ngid] =
-		 (ZOLTAN_ID_TYPE) mesh->elements[i].globalID;
+      fixed_gids[cnt*num_gid_entries+ngid] =  mesh->elements[i].globalID;
       fixed_part[cnt] = mesh->elements[i].fixed_part;
       cnt++;
     }
@@ -2190,7 +2189,7 @@ ELEM_INFO *elem, *found_elem = NULL;
   elem = mesh->elements;
 
   for (i = 0; i < mesh->elem_array_len; i++)
-    if (elem[i].globalID == (int)global_id) {
+    if (elem[i].globalID == global_id) {
       found_elem = &elem[i];
       *idx = i;
       break;
@@ -2250,8 +2249,8 @@ ZOLTAN_ID_TYPE zgid, zlid;
     double x[3] = {0., 0., 0.};
     int iierr = 0;
     ELEM_INFO_PTR current_elem = &(mesh->elements[0]);
-    unsigned int lid = 0;
-    unsigned int gid = (unsigned) (current_elem->globalID);
+    ZOLTAN_ID_TYPE lid = 0;
+    ZOLTAN_ID_TYPE gid = current_elem->globalID;
 
     if (mesh->eb_nnodes[current_elem->elem_blk] == 1) {
       x[0] = current_elem->coord[0][0];
@@ -2261,8 +2260,8 @@ ZOLTAN_ID_TYPE zgid, zlid;
 	x[2] = current_elem->coord[0][2];
     }
     else{
-      zgid = (ZOLTAN_ID_TYPE)gid;
-      zlid = (ZOLTAN_ID_TYPE)lid;
+      zgid = gid;
+      zlid = lid;
       get_geom((void *) mesh, 1, 1, &zgid, &zlid, x, &iierr);
     }
 
