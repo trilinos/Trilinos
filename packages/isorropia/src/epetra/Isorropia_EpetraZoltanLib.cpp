@@ -312,12 +312,10 @@ int ZoltanLibClass::precompute()
     }
   }
 
-  if ((input_type_ == hgraph_input_) || (input_type_ == hgraph2d_finegrain_input_))
-  {
-    std::string lb_approach_str("LB_APPROACH");
-    if (!zoltanParamList_.isParameter(lb_approach_str)) {
-      zoltanParamList_.set(lb_approach_str, "PARTITION");
-    }
+  // Make LB_APPROACH = PARTITION the default in Isorropia 
+  std::string lb_approach_str("LB_APPROACH");
+  if (!zoltanParamList_.isParameter(lb_approach_str)) {
+    zoltanParamList_.set(lb_approach_str, "PARTITION");
   }
 
     // For fine-grain hypergraph, we don't want obj or (hyper)edge weights
