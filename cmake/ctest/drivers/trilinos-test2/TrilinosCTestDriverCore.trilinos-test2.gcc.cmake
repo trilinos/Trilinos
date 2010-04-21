@@ -30,6 +30,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DMEMORYCHECK_COMMAND:FILEPATH=/usr/bin/valgrind"
     "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=TRUE"
+    "-DMesquite_ENABLE_TESTS:BOOL=ON"
+    "-DCPPUNIT_LIBRARY:STRING=/home/trilinos/tpl/gcc4.1.2/cppunit-1.12.1/lib/libcppunit.a"
+    "-DCPPUNIT_INCLUDES:STRING=/home/trilinos/tpl/gcc4.1.2/cppunit-1.12.1/include"
     )
 
   IF (BUILD_TYPE STREQUAL "DEBUG")
