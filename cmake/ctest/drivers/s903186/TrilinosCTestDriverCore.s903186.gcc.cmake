@@ -28,6 +28,9 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
     "-DBoost_INCLUDE_DIRS:FILEPATH=/Users/jmwille/install/boost_1_41_0"
     "-DTrilinos_ENABLE_TriKota:BOOL=OFF"
     "-DCMAKE_VERBOSE_MAKEFILE:BOOL=TRUE"
+    "-DMesquite_ENABLE_TESTS:BOOL=ON"
+    "-DCPPUNIT_LIBRARY:STRING=/Users/jmwille/install/cppunit-1.12.1/lib/libcppunit.a"
+    "-DCPPUNIT_INCLUDES:STRING=/Users/jmwille/install/cppunit-1.12.1/include"
     )
 
   SET_DEFAULT(COMPILER_VERSION "GCC-4.4.2")
