@@ -152,13 +152,14 @@ load_balance(MPI_Comm &comm,
     return -1;    
   }
 
-  // set problem parameters
+  // set problem parameters (override Zoltan defaults)
 
   std::string dbg_level_str("DEBUG_LEVEL");
   if (!paramlist.isParameter(dbg_level_str)) {
     paramlist.set(dbg_level_str, "0");
   }
 
+  // Make LB_APPROACH = PARTITION the default in Isorropia
   std::string lb_approach_str("LB_APPROACH");
   if (!paramlist.isParameter(lb_approach_str)) {
     paramlist.set(lb_approach_str, "PARTITION");
