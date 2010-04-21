@@ -174,8 +174,14 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
     EntityVector entities_to_kill = entities_to_be_killed(mesh, iteration);
 
     // find the parallel-consistent closure of the entities to be killed
-    // Closure should be defined here.  Ask Carter.
-    // TODO 04/08/10 20 minutes
+    // The closure of an entity includes the entity and any lower ranked
+    // entities which are reachable through relations.  For example, the
+    // closure of an element consist of the element and the faces, edges,
+    // and nodes that are attached to the element through relations.
+    //
+    // The find closure function will return a sorted parallel consistent vector
+    // which contains all the entities that make up the closure of the input
+    // vector.
     EntityVector entities_closure;
     stk::mesh::find_closure(mesh,
         entities_to_kill,
@@ -212,14 +218,17 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
     }
 
 
-    // Ask for new entites to represent the sides between the live and dead entities
+    // Ask for new entities to represent the sides between the live and dead entities
+    //
     std::vector<size_t> requests(meta_data.entity_rank_count(), 0);
-    EntityVector requested_entities;
     requests[mesh_rank-1] = skin.size();
+
+    // generate_new_entities creates new blank entities of the requested ranks
+    EntityVector requested_entities;
     mesh.generate_new_entities(requests, requested_entities);
 
     // Create boundaries between live and dead entities
-    // by binding a newly created entity to the side
+    // by creating a relation between the new entities and the live entities
     for ( size_t i = 0; i < skin.size(); ++i) {
       stk::mesh::Entity & entity = *(skin[i].entity);
       const unsigned side_ordinal  = skin[i].side_ordinal;

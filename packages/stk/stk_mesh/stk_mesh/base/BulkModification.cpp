@@ -35,12 +35,12 @@ void construct_transitive_closure( EntitySet & closure , Entity & entry )
   // A new insertion, must also insert the closure
   if ( result.second ) {
 
-    const unsigned etype = entry.entity_rank();
+    const unsigned erank = entry.entity_rank();
     PairIterRelation irel  = entry.relations();
 
     for ( ; irel.first != irel.second ; ++irel.first ) {
       // insert entities with relations of lower rank into the closure
-      if ( irel.first->entity_rank() < etype ) {
+      if ( irel.first->entity_rank() < erank ) {
         Entity * tmp = irel.first->entity();
         construct_transitive_closure( closure , *tmp );
       }
