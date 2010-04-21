@@ -85,9 +85,9 @@ typedef struct ZOLTAN_Third_Vsize_ {
 /* Structure that defines an ordering output for third party libraries like ParMetis. */
 typedef struct ZOLTAN_Output_Order_ {
   int num_part;
-  int start_index;
-  int *rank;            /* rank[i] is the rank of gids[i] */
-  int *iperm;           /* inverse permutation of rank */
+  indextype start_index;
+  indextype *rank;      /* rank[i] is the rank of gids[i] */
+  indextype *iperm;     /* inverse permutation of rank */
   ZOOS *order_opt;	/* ordering options */
   ZOS *order_info;	/* ordering info */
   indextype *sep_sizes;

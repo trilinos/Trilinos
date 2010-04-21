@@ -31,9 +31,12 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
   Zoltan_Arc *tr_tab = NULL;
   int i, j, cnt;
   ZOLTAN_ID_PTR yGID = NULL;
-  int *ypid=NULL;
+  ZOLTAN_ID_TYPE *ypid=NULL;
   float *pinwgt=NULL;
   int * ybipart = NULL;
+  int gno_size_for_dd;
+
+  gno_size_for_dd = sizeof(ZOLTAN_GNO_TYPE) / sizeof(ZOLTAN_ID_TYPE);
 
   ZOLTAN_TRACE_ENTER(zz, yo);
   if (bipartite || !matrix->opts.enforceSquare) {
@@ -83,11 +86,11 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
 
   if (bipartite) {
     int endX;
-    int * yGNO = NULL;
+    ZOLTAN_GNO_TYPE * yGNO = NULL;
 
     /* Update data directories */
     yGID = ZOLTAN_MALLOC_GID_ARRAY(zz, matrix->nY);
-    ypid = (int*) ZOLTAN_MALLOC(matrix->nY*sizeof(int));
+    ypid = (ZOLTAN_ID_TYPE*) ZOLTAN_MALLOC(matrix->nY*sizeof(ZOLTAN_ID_TYPE));
 
     ybipart = (int*) ZOLTAN_MALLOC(matrix->nY*sizeof(int));
 
@@ -97,10 +100,10 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
       ybipart[endX] = 0;
     }
     /* Get Informations about X */
-    Zoltan_DD_Find (matrix->ddX, (ZOLTAN_ID_PTR)matrix->yGNO, yGID, (ZOLTAN_ID_PTR)ypid, NULL,
+    Zoltan_DD_Find (matrix->ddX, (ZOLTAN_ID_PTR)matrix->yGNO, yGID, ypid, NULL,
 		    endX, NULL);
 
-    yGNO = (int*)ZOLTAN_MALLOC(endX*sizeof(int));
+    yGNO = (ZOLTAN_GNO_TYPE*)ZOLTAN_MALLOC(endX*sizeof(ZOLTAN_GNO_TYPE));
     for (i = endX ; i < matrix->nY ; ++i) {
       yGNO[i-endX] = matrix->yGNO[i] - matrix->globalX;
       /* TODO: add a something to have the correct ypid */
@@ -120,13 +123,13 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
     matrix->globalY = matrix->globalX;
 
     /* I store : xGNO, xGID, xpid, bipart */
-    ierr = Zoltan_DD_Create (&matrix->ddX, zz->Communicator, 1, zz->Num_GID,
+    ierr = Zoltan_DD_Create (&matrix->ddX, zz->Communicator, gno_size_for_dd, zz->Num_GID,
 			     1, matrix->globalX/zz->Num_Proc, 0);
     matrix->ddY = matrix->ddX;
     /* Hope a linear assignment will help a little */
     Zoltan_DD_Set_Neighbor_Hash_Fn1(matrix->ddX, matrix->globalX/zz->Num_Proc);
     /* Associate all the data with our xyGNO */
-    Zoltan_DD_Update (matrix->ddX, (ZOLTAN_ID_PTR)matrix->yGNO, yGID, (ZOLTAN_ID_PTR)ypid, ybipart,
+    Zoltan_DD_Update (matrix->ddX, (ZOLTAN_ID_PTR)matrix->yGNO, yGID, ypid, ybipart,
 		      matrix->nY);
   }
 

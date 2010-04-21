@@ -203,7 +203,7 @@ ZOLTAN_PHG_REFINEMENT_FN *Zoltan_PHG_Set_Refinement_Fn(char*);
 extern int Zoltan_PHG_Set_2D_Proc_Distrib(ZZ *, MPI_Comm, int, int, int, int,
                                           PHGComm *);
 
-extern int Zoltan_PHG_Gno_To_Proc_Block(int gno, int*, int);
+extern int Zoltan_PHG_Gno_To_Proc_Block(ZOLTAN_GNO_TYPE gno, ZOLTAN_GNO_TYPE *, int);
     
 /*****************************/
 /* Other Function Prototypes */
@@ -231,7 +231,7 @@ extern double Zoltan_PHG_Compute_Balance(ZZ*, HGraph*, float *, int,
                                          int, Partition);
 
 extern int Zoltan_PHG_Build_Hypergraph(ZZ*, ZHG**, Partition*, PHGPartParams*);
-extern void Zoltan_PHG_Plot(int, int, int, int*, int*, int*, char*);
+extern void Zoltan_PHG_Plot(int, int, int, int*, ZOLTAN_GNO_TYPE *, int*, char*);
 extern void Zoltan_PHG_Plot_2D_Distrib(ZZ*, HGraph*);
 
 extern int Zoltan_PHG_PaToH(ZZ *, HGraph *, int, int *, PHGPartParams*);    
@@ -252,7 +252,7 @@ extern int Zoltan_PHG_2ways_hyperedge_partition (ZZ *, HGraph *, Partition, Zolt
 int Zoltan_HG_move_vertex (HGraph *hg, int vertex, int sour, int dest,
     int *part, int **cut, double *gain, HEAP *heap);
 
-int Zoltan_PHG_GIDs_to_global_numbers(ZZ *zz, int *gnos, int len, int randomize, int *num);
+int Zoltan_PHG_GIDs_to_global_numbers(ZZ *zz, ZOLTAN_GNO_TYPE *gnos, int len, int randomize, ZOLTAN_GNO_TYPE *num);
 
 int Zoltan_Get_Hypergraph_From_Queries(ZZ *, PHGPartParams *, int, ZHG *); 
 

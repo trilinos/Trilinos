@@ -72,7 +72,7 @@ Zoltan_Matrix2d_Init(Zoltan_matrix_2d *m)
 {
   memset(m, 0, sizeof(Zoltan_matrix_2d));
 
-  Zoltan_Distribute_Set(m, &Zoltan_Distribute_Origin, (void*)m);
+  Zoltan_Distribute_Set(m, (distFnct *)&Zoltan_Distribute_Origin, (void*)m);
 }
 
 int
@@ -118,7 +118,7 @@ Zoltan_Matrix_Complete(ZZ* zz,Zoltan_matrix* m)
 
   /* Update data directories */
   m->yGID = ZOLTAN_MALLOC_GID_ARRAY(zz, m->nY);
-  m->ypid = (int*) ZOLTAN_MALLOC(m->nY * sizeof(int));
+  m->ypid = (ZOLTAN_ID_TYPE*) ZOLTAN_MALLOC(m->nY * sizeof(ZOLTAN_ID_TYPE));
   if (m->bipartite)
     m->ybipart = (int*) ZOLTAN_MALLOC(m->nY * sizeof(int));
   if (m->nY && ((m->yGID == NULL) || (m->ypid == NULL) || (m->bipartite && m->ybipart == NULL)))

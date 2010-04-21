@@ -232,12 +232,12 @@ void Zoltan_HG_Mirror(
   int inlength,     /* Input:  either nVtx or nEdge */
   int *inindex,     /* Input:  index array, either vindex or hindex; 
                                length = inlength+1  */
-  int *indata,      /* Input:  non-zeros array, either vedge or hvertex;
+  ZOLTAN_GNO_TYPE *indata,      /* Input:  non-zeros array, either vedge or hvertex;
                                length = nPins */
   int outlength,    /* Input:  either nEdge or nVtx */
   int *outindex,    /* Output: index array, either hindex or vindex;
                                length = outlength+1 */
-  int *outdata      /* Output: non-zeros array, either hvertex or vedge;
+  ZOLTAN_GNO_TYPE *outdata      /* Output: non-zeros array, either hvertex or vedge;
                                length = nPins */
 )
 {
@@ -285,8 +285,9 @@ int Zoltan_HG_Create_Mirror (
 )
 {
   int inlength, outlength;   /* input/output array lengths */
-  int *index, *data;         /* pointers to input information */
-  int *outindex, *outdata;
+  int *index;         /* pointers to input information */
+  int *outindex;
+  ZOLTAN_GNO_TYPE *data, *outdata;
   char *yo = "Zoltan_HG_Create_Mirror";
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -301,7 +302,7 @@ int Zoltan_HG_Create_Mirror (
     index     = hg->hindex;
     data      = hg->hvertex;
     outindex  = hg->vindex = (int*) ZOLTAN_MALLOC((hg->nVtx+1) * sizeof(int));
-    outdata   = hg->vedge  = (int*) ZOLTAN_MALLOC (hg->nPins * sizeof(int));
+    outdata   = hg->vedge  = (ZOLTAN_GNO_TYPE*) ZOLTAN_MALLOC (hg->nPins * sizeof(ZOLTAN_GNO_TYPE));
 
     if (outindex == NULL || (hg->nPins > 0 && outdata == NULL)) {
       Zoltan_Multifree (__FILE__, __LINE__, 2, &hg->vindex, &hg->vedge);
@@ -319,7 +320,7 @@ int Zoltan_HG_Create_Mirror (
     index     = hg->vindex;
     data      = hg->vedge;
     outindex  = hg->hindex  = (int*) ZOLTAN_MALLOC((hg->nEdge+1) * sizeof(int));
-    outdata   = hg->hvertex = (int*) ZOLTAN_MALLOC(hg->nPins * sizeof(int));
+    outdata   = hg->hvertex = (ZOLTAN_GNO_TYPE*) ZOLTAN_MALLOC(hg->nPins * sizeof(ZOLTAN_GNO_TYPE));
 
     if (outindex == NULL || (hg->nPins > 0 && outdata == NULL)) {
       Zoltan_Multifree (__FILE__, __LINE__, 2, &hg->hindex, &hg->hvertex);

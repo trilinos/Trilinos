@@ -73,9 +73,8 @@ int Zoltan_Order (
   struct Zoltan_Order_Options opt;
   ZOLTAN_ID_PTR local_gids=NULL, lids=NULL;
   int local_num_obj;
-  int *local_rank = NULL;
+  ZOLTAN_ID_TYPE *local_rank = NULL;
   struct Zoltan_DD_Struct *dd = NULL;
-
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -227,7 +226,7 @@ int Zoltan_Order (
 
   /* TODO allocate all this stuff with the graph */
   local_gids = ZOLTAN_MALLOC_GID_ARRAY(zz, local_num_obj);
-  local_rank = (int*) ZOLTAN_MALLOC(local_num_obj*sizeof(int));
+  local_rank = (ZOLTAN_ID_PTR) ZOLTAN_MALLOC(local_num_obj*sizeof(ZOLTAN_ID_TYPE));
 
   lids = ZOLTAN_MALLOC_LID_ARRAY(zz, local_num_obj);
 
@@ -265,14 +264,12 @@ int Zoltan_Order (
   Zoltan_DD_Set_Neighbor_Hash_Fn1(dd, local_num_obj);
   /* Associate all the data with our xGNO */
 
-  Zoltan_DD_Update (dd, local_gids, (ZOLTAN_ID_PTR)local_rank, NULL, NULL, local_num_obj);
-
+  Zoltan_DD_Update (dd, local_gids, local_rank, NULL, NULL, local_num_obj);
 
   ZOLTAN_FREE(&local_gids);
   ZOLTAN_FREE(&local_rank);
 
-  Zoltan_DD_Find (dd, gids, (ZOLTAN_ID_PTR)permuted_global_ids, NULL, NULL,
-		  num_obj, NULL);
+  Zoltan_DD_Find (dd, gids, permuted_global_ids, NULL, NULL, num_obj, NULL);
   Zoltan_DD_Destroy(&dd);
 
   ZOLTAN_TRACE_DETAIL(zz, yo, "Done Registering results");

@@ -581,6 +581,7 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg,
   PHGComm *hgc = ohg->comm;
   char *yo = "split_hypergraph";
   double pw[2], tpw[2];
+  ZOLTAN_GNO_TYPE tmp_gno;
 
   pw[0] = pw[1] = 0; /* 0 is the part being splitted, 1 is the other part(s) */
   Zoltan_HG_HGraph_Init (nhg);
@@ -656,7 +657,7 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg,
   /* continue allocating memory for dynamic arrays in new HGraph */
   if (nhg->nEdge && !(nhg->hindex  = (int*) ZOLTAN_MALLOC ((nhg->nEdge+1) * sizeof (int))))
       MEMORY_ERROR;
-  if (nhg->nPins && !(nhg->hvertex = (int*) ZOLTAN_MALLOC (nhg->nPins * sizeof (int))))
+  if (nhg->nPins && !(nhg->hvertex = (ZOLTAN_GNO_TYPE*) ZOLTAN_MALLOC (nhg->nPins * sizeof (ZOLTAN_GNO_TYPE))))
       MEMORY_ERROR;
   if (ohg->ewgt && nhg->EdgeWeightDim && nhg->nEdge &&
       !(nhg->ewgt=(float*)ZOLTAN_MALLOC(nhg->nEdge*sizeof(float)*nhg->EdgeWeightDim)))
@@ -685,16 +686,20 @@ static int split_hypergraph (int *pins[2], HGraph *ohg, HGraph *nhg,
       nhg->hindex[nhg->nEdge] = nhg->nPins;
 
   /* We need to compute dist_x, dist_y */
-  if (!(nhg->dist_x = (int *) ZOLTAN_CALLOC((hgc->nProc_x+1), sizeof(int)))
-	 || !(nhg->dist_y = (int *) ZOLTAN_CALLOC((hgc->nProc_y+1), sizeof(int))))
+  if (!(nhg->dist_x = (ZOLTAN_GNO_TYPE *) ZOLTAN_CALLOC((hgc->nProc_x+1), sizeof(ZOLTAN_GNO_TYPE)))
+	 || !(nhg->dist_y = (ZOLTAN_GNO_TYPE *) ZOLTAN_CALLOC((hgc->nProc_y+1), sizeof(ZOLTAN_GNO_TYPE))))
       MEMORY_ERROR;
 
-  MPI_Scan(&nhg->nVtx, nhg->dist_x, 1, MPI_INT, MPI_SUM, hgc->row_comm);
-  MPI_Allgather(nhg->dist_x, 1, MPI_INT, &(nhg->dist_x[1]), 1, MPI_INT, hgc->row_comm);
+  tmp_gno = (ZOLTAN_GNO_TYPE)nhg->nVtx;
+
+  MPI_Scan(&tmp_gno, nhg->dist_x, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, hgc->row_comm);
+  MPI_Allgather(nhg->dist_x, 1, ZOLTAN_GNO_MPI_TYPE, &(nhg->dist_x[1]), 1, MPI_INT, hgc->row_comm);
   nhg->dist_x[0] = 0;
   
-  MPI_Scan(&nhg->nEdge, nhg->dist_y, 1, MPI_INT, MPI_SUM, hgc->col_comm);
-  MPI_Allgather(nhg->dist_y, 1, MPI_INT, &(nhg->dist_y[1]), 1, MPI_INT, hgc->col_comm);
+  tmp_gno = (ZOLTAN_GNO_TYPE)nhg->nEdge;
+
+  MPI_Scan(&tmp_gno, nhg->dist_y, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, hgc->col_comm);
+  MPI_Allgather(nhg->dist_y, 1, ZOLTAN_GNO_MPI_TYPE, &(nhg->dist_y[1]), 1, MPI_INT, hgc->col_comm);
   nhg->dist_y[0] = 0;
     
   ierr = Zoltan_HG_Create_Mirror (zz, nhg);

@@ -41,7 +41,7 @@ extern "C" {
 
 struct bisector {          /* bisector cut info */
   double    valuelo, valuehi;   /* position of dot(s) nearest to cut */
-  uintmax_t countlo, counthi;   /* # of dots at that position */
+  ZOLTAN_GNO_TYPE countlo, counthi;   /* # of dots at that position */
   int       proclo, prochi;     /* unique proc who owns a nearest dot */
   int       nwgts;              /* number of weights (per dot) */
   double  totallo[MAX_BISECT_WGTS]; /* weight in lower half of active partition */
@@ -321,7 +321,7 @@ int Zoltan_RB_find_bisector(
     /* Describe struct bisector to MPI. Add MPI_UB at the end just to be safe. */
     int lengths[5] = {2,2,3,4*MAX_BISECT_WGTS,1};
     MPI_Aint ind[5], offset;
-    MPI_Datatype types[5] = {MPI_DOUBLE, ZOLTAN_UINTMAX_MPI_TYPE, MPI_INT, MPI_DOUBLE, MPI_UB};
+    MPI_Datatype types[5] = {MPI_DOUBLE, ZOLTAN_GNO_MPI_TYPE, MPI_INT, MPI_DOUBLE, MPI_UB};
     MPI_Address(med, &offset);
     ind[0] = 0;
     MPI_Address(&(med->countlo), &(ind[1])); 

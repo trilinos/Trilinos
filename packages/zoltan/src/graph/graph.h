@@ -20,6 +20,7 @@ extern "C" {
 #endif
 
 #include "matrix.h"
+#include "third_library_const.h"
 
 typedef struct ZG_ {
   Zoltan_matrix_2d mtx;
@@ -33,7 +34,7 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local);
 
 int
 Zoltan_ZG_Export (ZZ* zz, const ZG* const graph, int *gvtx, int *nvtx, int *obj_wgt_dim, int *edge_wgt_dim,
-	   int **vtxdist, int **xadj, int **adjncy, int **adjproc,
+	   indextype **vtxdist, indextype **xadj, indextype **adjncy, int **adjproc,
 	   /* float **xwgt, */ float **ewgt, int **partialD2);
 
 int

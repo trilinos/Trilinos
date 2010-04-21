@@ -113,7 +113,7 @@ void Zoltan_PHG_Plot(
   int nvtx,         /* Number of vertices */
   int nparts,       /* Number of partitions; ignored if part == NULL */
   int *vindex,      /* Starting index in vedges of hyperedges for each vertex */
-  int *vedge,       /* Hyperedges for each vertex */
+  ZOLTAN_GNO_TYPE *vedge,       /* Hyperedges for each vertex */
   int *part,        /* Partition to which vertices are assigned; if NULL,
                        partition information is not plotted. */
   char *str         /* String included as comment in output files. */
@@ -163,7 +163,7 @@ int *vtx = NULL;
       }
     }
     for (j = vindex[v]; j < vindex[v+1]; j++)
-      fprintf(fp, "%d %d\n", v, -vedge[j]);
+      fprintf(fp, "%d %zd\n", v, -vedge[j]);
   }
 
   fclose(fp);

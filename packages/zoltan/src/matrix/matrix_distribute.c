@@ -83,19 +83,19 @@ Zoltan_Distribute_layout (ZZ *zz, const PHGComm * const inlayout,
 }
 
 
-int Zoltan_Distribute_Origin(int edge_gno, int vtx_gno, void* data, int *part_y)
+int Zoltan_Distribute_Origin(ZOLTAN_GNO_TYPE edge_gno, ZOLTAN_GNO_TYPE vtx_gno, void* data, int *part_y)
 {
   ZOLTAN_DIST_PART* part;
-  void *answer = NULL;
+  intptr_t answer = 0;
 
   part = (ZOLTAN_DIST_PART*) data;
-  Zoltan_Map_Find(part->zz, part->map, &edge_gno, (void**)&answer);
-  *part_y = (int)(long)answer;
+  Zoltan_Map_Find(part->zz, part->map, (void *)&edge_gno, (void**)&answer);
+  *part_y = (int)(intptr_t)answer;
 
   return (*part_y);
 }
 
-int Zoltan_Distribute_Linear(int edge_gno, int vtx_gno, void* data, int *part_y)
+int Zoltan_Distribute_Linear(ZOLTAN_GNO_TYPE edge_gno, ZOLTAN_GNO_TYPE vtx_gno, void* data, int *part_y)
 {
   Zoltan_matrix_2d *mat;
 
@@ -105,7 +105,7 @@ int Zoltan_Distribute_Linear(int edge_gno, int vtx_gno, void* data, int *part_y)
   return (*part_y);
 }
 
-int Zoltan_Distribute_Cyclic(int edge_gno, int vtx_gno, void* data, int *part_y)
+int Zoltan_Distribute_Cyclic(ZOLTAN_GNO_TYPE edge_gno, ZOLTAN_GNO_TYPE vtx_gno, void* data, int *part_y)
 {
   Zoltan_matrix_2d *mat;
 
@@ -115,20 +115,20 @@ int Zoltan_Distribute_Cyclic(int edge_gno, int vtx_gno, void* data, int *part_y)
   return (*part_y);
 }
 
-int Zoltan_Distribute_Partition(int edge_gno, int vtx_gno, void* data, int *part_y)
+int Zoltan_Distribute_Partition(ZOLTAN_GNO_TYPE edge_gno, ZOLTAN_GNO_TYPE vtx_gno, void* data, int *part_y)
 {
   ZOLTAN_DIST_PART* part;
-  void *answer;
+  intptr_t answer;
 
   part = (ZOLTAN_DIST_PART*) data;
-  Zoltan_Map_Find(part->zz, part->map, &edge_gno, (void**)&answer);
-  *part_y = (int)(long)answer;
+  Zoltan_Map_Find(part->zz, part->map, (void *)&edge_gno, (void**)&answer);
+  *part_y = (int)(intptr_t)answer;
 
   return ((int)floor((double)*part_y/((double)part->nPart/(double)part->nProc)));
 }
 
 
-void* Zoltan_Distribute_Partition_Register(ZZ* zz, int size, int* yGNO, int *part, int nProc, int nPart)
+void* Zoltan_Distribute_Partition_Register(ZZ* zz, int size, ZOLTAN_GNO_TYPE *yGNO, ZOLTAN_ID_TYPE *part, int nProc, int nPart)
 {
   ZOLTAN_DIST_PART* dist;
   int i;
@@ -139,14 +139,14 @@ void* Zoltan_Distribute_Partition_Register(ZZ* zz, int size, int* yGNO, int *par
 
   dist->zz = zz;
 
-  dist->map = Zoltan_Map_Create(zz, 0, 1, 1, size);
+  dist->map = Zoltan_Map_Create(zz, 0, sizeof(ZOLTAN_GNO_TYPE), 1, size);
   if (dist->map == NULL) {
     ZOLTAN_FREE(&dist);
     return (NULL);
   }
 
   for (i = 0 ; i < size ; ++i ) {
-    Zoltan_Map_Add(dist->zz, dist->map, &yGNO[i], (void*)(long)part[i]);
+    Zoltan_Map_Add(dist->zz, dist->map, (void *)&yGNO[i], (void*)(intptr_t)part[i]);
   }
 
   dist->nProc = nProc;
@@ -180,15 +180,15 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   int i, j, cnt;
   int *proclist = NULL;
   Zoltan_Arc *nonzeros= NULL, *sendbuf= NULL;
-  int *perm_y = NULL;
+  ZOLTAN_GNO_TYPE *perm_y = NULL;
   float *wgtarray = NULL;
   float *tmpwgtarray = NULL;
   int msg_tag = 1021982;
   ZOLTAN_COMM_OBJ *plan;
   MPI_Comm communicator = MPI_COMM_NULL;
   int nProc;
-  int *yGNO = NULL;
-  int *pinGNO = NULL;
+  ZOLTAN_GNO_TYPE *yGNO = NULL;
+  ZOLTAN_GNO_TYPE *pinGNO = NULL;
   void *partdata = NULL;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -217,22 +217,22 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   ierr = Zoltan_Matrix_Remove_Duplicates(zz, outmat->mtx, &outmat->mtx);
 
 
-  if (outmat->hashDistFct == &Zoltan_Distribute_Origin) {
+  if (outmat->hashDistFct == (distFnct *)&Zoltan_Distribute_Origin) {
     /* I need to know the original distribution */
     if (outmat->mtx.ddX != outmat->mtx.ddY) { /* No initial distribution */
-      outmat->hashDistFct = &Zoltan_Distribute_Linear;
+      outmat->hashDistFct = (distFnct *)&Zoltan_Distribute_Linear;
     }
     else {
-      int *cmember = NULL;
+      ZOLTAN_ID_TYPE *cmember = NULL;
 
-      cmember = (int*)ZOLTAN_MALLOC(outmat->mtx.nY*sizeof(int));
+      cmember = (ZOLTAN_ID_TYPE*)ZOLTAN_MALLOC(outmat->mtx.nY*sizeof(ZOLTAN_ID_TYPE));
       if (outmat->mtx.nY > 0 && cmember == NULL) MEMORY_ERROR;
-      Zoltan_DD_Find (outmat->mtx.ddY, (ZOLTAN_ID_PTR)outmat->mtx.yGNO, NULL, (ZOLTAN_ID_PTR)cmember, NULL,
+      Zoltan_DD_Find (outmat->mtx.ddY, (ZOLTAN_ID_PTR)outmat->mtx.yGNO, NULL, cmember, NULL,
 		      outmat->mtx.nY, NULL);
       partdata = Zoltan_Distribute_Partition_Register(zz, outmat->mtx.nY, outmat->mtx.yGNO,
 						      cmember, zz->Num_Proc, zz->Num_Proc);
       ZOLTAN_FREE(&cmember);
-      Zoltan_Distribute_Set(outmat, &Zoltan_Distribute_Origin, partdata);
+      Zoltan_Distribute_Set(outmat, (distFnct *)&Zoltan_Distribute_Origin, partdata);
     }
   }
 
@@ -253,12 +253,12 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
 
   cnt = 0;
   for (i = 0; i < outmat->mtx.nY; i++) {
-    int edge_gno=-1;
+    ZOLTAN_GNO_TYPE edge_gno=-1;
     /* processor row for the edge */
     edge_gno = yGNO[i];
 
     for (j = outmat->mtx.ystart[i]; j < outmat->mtx.yend[i]; j++) {
-      int vtx_gno=-1;
+      ZOLTAN_GNO_TYPE vtx_gno=-1;
       /* processor column for the vertex */
       vtx_gno = pinGNO[j];
 
@@ -286,7 +286,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
     }
   }
 
-  if (outmat->hashDistFct == &Zoltan_Distribute_Origin)
+  if (outmat->hashDistFct == (distFnct *)&Zoltan_Distribute_Origin)
     Zoltan_Distribute_Partition_Free(&outmat->hashDistData);
 
   if (outmat->mtx.yend != outmat->mtx.ystart + 1)
@@ -335,8 +335,8 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
 			       &outmat->mtx);
 
   /* Now we just have to change numbering */
-  outmat->dist_y = (int *) ZOLTAN_CALLOC((nProc_y+1), sizeof(int));
-  outmat->dist_x = (int *) ZOLTAN_CALLOC((nProc_x+1), sizeof(int));
+  outmat->dist_y = (ZOLTAN_GNO_TYPE *) ZOLTAN_CALLOC((nProc_y+1), sizeof(ZOLTAN_GNO_TYPE));
+  outmat->dist_x = (ZOLTAN_GNO_TYPE *) ZOLTAN_CALLOC((nProc_x+1), sizeof(ZOLTAN_GNO_TYPE));
   if (outmat->dist_y == NULL || outmat->dist_x == NULL) MEMORY_ERROR;
 
   /* FIXME: Work only in 1D */
@@ -348,7 +348,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   }
   outmat->dist_x[1] = outmat->mtx.globalX;
 
-  perm_y = (int *) ZOLTAN_MALLOC(outmat->mtx.nY * sizeof(int));
+  perm_y = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(outmat->mtx.nY * sizeof(ZOLTAN_GNO_TYPE));
   if (outmat->mtx.nY > 0 && perm_y == NULL) MEMORY_ERROR;
   for (i = 0 ; i < outmat->mtx.nY ; ++i)
     perm_y[i] = i + outmat->dist_y[myProc_y];

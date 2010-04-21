@@ -209,19 +209,20 @@ static int Zoltan_PHG_compute_esize(
   PHGPartParams *hgp
 )
 {
-    int  i, *lsize=NULL;
+    int  i;
+    ZOLTAN_GNO_TYPE *lsize = NULL;
     static char *yo = "Zoltan_PHG_compute_esize";
     int ierr = ZOLTAN_OK;
 
     if (hg->nEdge && !hg->esize) {
-      if (!(lsize = (int*)  ZOLTAN_MALLOC(hg->nEdge*sizeof(int))))
+      if (!(lsize = (ZOLTAN_GNO_TYPE*)  ZOLTAN_MALLOC(hg->nEdge*sizeof(ZOLTAN_GNO_TYPE))))
         MEMORY_ERROR;
-      if (!(hg->esize = (int*)  ZOLTAN_MALLOC(hg->nEdge*sizeof(int))))
+      if (!(hg->esize = (ZOLTAN_GNO_TYPE*)  ZOLTAN_MALLOC(hg->nEdge*sizeof(ZOLTAN_GNO_TYPE))))
         MEMORY_ERROR;
 
       for (i=0; i<hg->nEdge; ++i)
-          lsize[i] = hg->hindex[i+1] - hg->hindex[i];
-      MPI_Allreduce(lsize, hg->esize, hg->nEdge, MPI_INT, MPI_SUM, hg->comm->row_comm);
+          lsize[i] = (ZOLTAN_GNO_TYPE)(hg->hindex[i+1] - hg->hindex[i]);
+      MPI_Allreduce(lsize, hg->esize, hg->nEdge, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, hg->comm->row_comm);
       
 End:
       ZOLTAN_FREE(&lsize);

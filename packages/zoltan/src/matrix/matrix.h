@@ -46,10 +46,10 @@ typedef enum {MATRIX_FULL_DD=0, MATRIX_FAST, MATRIX_NO_REDIST} SpeedOpt;
 /* Hash function used to describe how to distribute data */
 /* (Y, X, data, &part_y) */
 typedef int distFnct(int, int, void *, int*);
-int Zoltan_Distribute_Origin(int edge_gno, int vtx_gno, void* data, int *part_y);
-int Zoltan_Distribute_Linear(int edge_gno, int vtx_gno, void* data, int *part_y);
-int Zoltan_Distribute_Cyclic(int edge_gno, int vtx_gno, void* data, int *part_y);
-int Zoltan_Distribute_Partition(int edge_gno, int vtx_gno, void* data, int *part_y);
+int Zoltan_Distribute_Origin(ZOLTAN_GNO_TYPE edge_gno, ZOLTAN_GNO_TYPE vtx_gno, void* data, int *part_y);
+int Zoltan_Distribute_Linear(ZOLTAN_GNO_TYPE edge_gno, ZOLTAN_GNO_TYPE vtx_gno, void* data, int *part_y);
+int Zoltan_Distribute_Cyclic(ZOLTAN_GNO_TYPE edge_gno, ZOLTAN_GNO_TYPE vtx_gno, void* data, int *part_y);
+int Zoltan_Distribute_Partition(ZOLTAN_GNO_TYPE edge_gno, ZOLTAN_GNO_TYPE vtx_gno, void* data, int *part_y);
 
 /* This structure defines how the matrix will be constructed */
 typedef struct Zoltan_matrix_options_ {
@@ -71,18 +71,18 @@ typedef struct Zoltan_matrix_ {
   int           redist;        /* HG queries have been used or matrix distribution has changed*/
   int           completed;     /* Matrix is ready to be specialized in HG or G */
   int           bipartite;
-  int           globalX;       /* Overall number on X dimension */
-  int           globalY;       /* Overall number on Y dimension */
+  ZOLTAN_GNO_TYPE globalX;       /* Overall number on X dimension */
+  ZOLTAN_GNO_TYPE globalY;       /* Overall number on Y dimension */
   int           nY;            /* Local number in Y dimension */
   int           nY_ori;        /* nY in the initial (user ?) distribution */
   int           ywgtdim;       /* Wgt dimensions for Y */
   int           nPins;         /* Local number of Pins */
   int           pinwgtdim;     /* Wgt dimensions for pins */
-  int          *yGNO;          /* Local edges gnos */
+  ZOLTAN_GNO_TYPE  *yGNO;       /* Local edges gnos */
   int          *ystart;        /* Indirection array to describe a column */
   int          *yend;          /* end of local pins, usually ystart+1
 			         (and is ystart+1 after matrix complete) */
-  int          *pinGNO;        /* array of gno of other extremtiy */
+  ZOLTAN_GNO_TYPE  *pinGNO;     /* array of gno of other extremtiy */
   float        *pinwgt;        /* Wgt for pins */
 
   /* These fields are used only before matrix_complete */
@@ -93,16 +93,18 @@ typedef struct Zoltan_matrix_ {
 
   /* These fields are used after matrix_complete */
   ZOLTAN_ID_PTR yGID;           /* Local Y GID */
-  int          *ypid;           /* Initial processor */
-  int          *ybipart;
+
+  /* This is not a zoltan global ID but it is used in Zoltan_DD_* */
+  ZOLTAN_ID_TYPE *ypid;           /* Initial processor */
+  int *ybipart;
 } Zoltan_matrix;
 
   /* Overstructure to handle distribution */
 typedef struct Zoltan_matrix_2d_ {
   Zoltan_matrix   mtx;          /* The "matrix" */
   PHGComm         *comm;        /* How data are distributed */
-  int             *dist_x;      /* Distribution on x axis */
-  int             *dist_y;      /* Distribution on y axis */
+  ZOLTAN_GNO_TYPE *dist_x;      /* Distribution on x axis */
+  ZOLTAN_GNO_TYPE *dist_y;      /* Distribution on y axis */
   distFnct        *hashDistFct; /* How to distribute nnz */
   void            *hashDistData;/* Used by hashDist */
 
@@ -110,7 +112,7 @@ typedef struct Zoltan_matrix_2d_ {
 
 /* Auxiliary struct used internaly */
 typedef struct Zoltan_Arc_ {
-    int GNO[2];
+    ZOLTAN_GNO_TYPE GNO[2];
     int part_y;
 } Zoltan_Arc;
 
@@ -158,7 +160,7 @@ Zoltan_Matrix_Delete_nnz(ZZ* zz, Zoltan_matrix* m,
  * Zoltan_Matrix2d_Distribute.
  */
 int
-Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, int* perm_y);
+Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, ZOLTAN_GNO_TYPE * perm_y);
 
 /* Distribute the matrix in the 2D layout defined by user in outmat
  * if !copy, inmat is not usable after this call */
@@ -183,7 +185,7 @@ int Zoltan_Distribute_LinearY (ZZ * zz, PHGComm *layout) ;
 int Zoltan_Distribute_Set(Zoltan_matrix_2d* mat,
 			  distFnct *hashDistFct, void * hashDistData);
 
-void* Zoltan_Distribute_Partition_Register(ZZ* zz, int size, int* yGNO, int *part, int nProc, int nPart);
+void* Zoltan_Distribute_Partition_Register(ZZ* zz, int size, ZOLTAN_GNO_TYPE * yGNO, ZOLTAN_ID_TYPE *part, int nProc, int nPart);
 void Zoltan_Distribute_Partition_Free(void** dist);
 
 

@@ -50,11 +50,12 @@ extern "C" {
 #define NSTACK        50
 
 
-static void uqsorti(int n, int *arr)
+static void uqsorti(int n, ZOLTAN_GNO_TYPE *arr)
 {
     int         i, ir=n, j, k, l=1;
     int         jstack=0, istack[NSTACK];
-    int         a, temp;
+    int         temp;
+    ZOLTAN_GNO_TYPE a;
     
     --arr;
     for (;;) {
@@ -156,7 +157,7 @@ int Zoltan_PHG_Coarsening
   PHGComm  *hgc = hg->comm;
   int   ierr=ZOLTAN_OK, i, j, count, size, me=hgc->myProc_x, idx, ni, header;
   int   *vmark=NULL, *listgno=NULL, *listlno=NULL, *listproc=NULL, *msg_size=NULL, *ip;
-  int   *ahindex=NULL, *ahvertex=NULL, *hsize=NULL, *hlsize=NULL, *ids=NULL, *iden;
+  int   *ahindex=NULL, *ahvertex=NULL, *hlsize=NULL, *hsize=NULL, *ids=NULL, *iden;
   int   *emptynets=NULL, emptynetsize, *idennets=NULL, *allemptynets=NULL, *allidennets=NULL,
 #ifdef _DEBUG1
       emptynetcnt, 
@@ -165,8 +166,10 @@ int Zoltan_PHG_Coarsening
   int   *extmatchsendcnt=NULL, extmatchrecvcnt=0, *extmatchrecvcounts=NULL;
   float *c_ewgt=NULL;
   char  *buffer=NULL, *rbuffer=NULL;
-  unsigned int           *hash=NULL, *lhash=NULL;
+  unsigned int *hash=NULL, *lhash=NULL;
   struct Zoltan_Comm_Obj *plan=NULL;
+  ZOLTAN_GNO_TYPE tmp_gno;
+  int tmp_int;
 
 #ifdef _DEBUG1
   int    totiden, totsize1;  
@@ -491,7 +494,7 @@ int Zoltan_PHG_Coarsening
   if (!(c_hg->hindex = (int*)ZOLTAN_MALLOC((c_hg->nEdge+1)*sizeof(int))))
       MEMORY_ERROR;
 
-  if (c_hg->nPins>0 && !(c_hg->hvertex = (int*)ZOLTAN_MALLOC (c_hg->nPins*sizeof(int))))
+  if (c_hg->nPins>0 && !(c_hg->hvertex = (ZOLTAN_GNO_TYPE*)ZOLTAN_MALLOC (c_hg->nPins*sizeof(ZOLTAN_GNO_TYPE))))
       MEMORY_ERROR;
 
   memset(vmark, 0xff, sizeof(int)*c_hg->nVtx);
@@ -532,15 +535,28 @@ int Zoltan_PHG_Coarsening
   t_coarse += t_cur;
   t_redhash = -t_cur;
 #endif
-  for (i=0; i < c_hg->nEdge; ++i) { /* compute size and hashvalue */
-      hlsize[i] = c_hg->hindex[i+1]-c_hg->hindex[i];
-      lhash[i] = hashValue(hg, hlsize[i], &c_hg->hvertex[c_hg->hindex[i]]);
+
+  /* TODO64: hvertex is 64 bits on a 64 bit machine.  So how should this be changed? */
+
+  if (sizeof(ZOLTAN_GNO_TYPE) == sizeof(int)){
+    for (i=0; i < c_hg->nEdge; ++i) { /* compute size and hashvalue */
+        hlsize[i] = c_hg->hindex[i+1]-c_hg->hindex[i];
+        lhash[i] = hashValue(hg, hlsize[i], (int *)&c_hg->hvertex[c_hg->hindex[i]]);
+    }
+  }
+  else{
+    for (i=0; i < c_hg->nEdge; ++i) {
+        hlsize[i] = c_hg->hindex[i+1]-c_hg->hindex[i];
+        tmp_gno = c_hg->hvertex[c_hg->hindex[i]];
+        tmp_int = (int)(tmp_gno &= 0x0000ffff);
+        lhash[i] = hashValue(hg, hlsize[i], &tmp_int);
+    }
   }
 
   /* UVC TODO to compute global hash; right now we'll use SUM (UVC TODO: try:bitwise xor);
      we need to check if this is good, if not we need to find a better way */
   if (c_hg->nEdge) 
-      MPI_Allreduce(lhash, hash, c_hg->nEdge, MPI_INT, MPI_SUM, hgc->row_comm);
+      MPI_Allreduce(lhash, hash, c_hg->nEdge, MPI_UNSIGNED, MPI_SUM, hgc->row_comm);
 
   Zoltan_Multifree(__FILE__, __LINE__, 3, &vmark, &ahvertex, &ahindex);
   
@@ -621,7 +637,7 @@ int Zoltan_PHG_Coarsening
   }
 
   /* lhash is actually global hash */
-  Zoltan_quicksort_pointer_inc_int_int (ids, (int *)lhash, hsize, 0, size-1); 
+  Zoltan_quicksort_pointer_inc_int_int(ids, lhash, hsize, 0, size-1); 
 /*  uqsort_ptr_uint_int(size, lhash, hsize, ids); */
 
 #ifdef _DEBUG1
@@ -848,13 +864,13 @@ int Zoltan_PHG_Coarsening
 
   c_hg->hindex = (int*)ZOLTAN_MALLOC((c_hg->nEdge+1)*sizeof(int));
   if (c_hg->nPins &&
-      !(c_hg->hvertex=(int*)ZOLTAN_MALLOC(c_hg->nPins*sizeof(int))))
+      !(c_hg->hvertex=(ZOLTAN_GNO_TYPE*)ZOLTAN_MALLOC(c_hg->nPins*sizeof(ZOLTAN_GNO_TYPE))))
       MEMORY_ERROR;
   if (c_hg->nEdge &&
       !(c_hg->ewgt=(float*)ZOLTAN_MALLOC(c_hg->nEdge*c_hg->EdgeWeightDim*sizeof(float))))
       MEMORY_ERROR;
   if (c_hg->nEdge &&
-      !(c_hg->esize=(int*)ZOLTAN_MALLOC(c_hg->nEdge*sizeof(int))))
+      !(c_hg->esize=(ZOLTAN_GNO_TYPE*)ZOLTAN_MALLOC(c_hg->nEdge*sizeof(ZOLTAN_GNO_TYPE))))
       MEMORY_ERROR;
 
 #ifdef _DEBUG1  
@@ -892,8 +908,8 @@ int Zoltan_PHG_Coarsening
 #endif
 
   /* We need to compute dist_x, dist_y */
-  if (!(c_hg->dist_x = (int *) ZOLTAN_CALLOC((hgc->nProc_x+1), sizeof(int)))
-	 || !(c_hg->dist_y = (int *) ZOLTAN_CALLOC((hgc->nProc_y+1), sizeof(int))))
+  if (!(c_hg->dist_x = (ZOLTAN_GNO_TYPE *) ZOLTAN_CALLOC((hgc->nProc_x+1), sizeof(ZOLTAN_GNO_TYPE)))
+	 || !(c_hg->dist_y = (ZOLTAN_GNO_TYPE *) ZOLTAN_CALLOC((hgc->nProc_y+1), sizeof(ZOLTAN_GNO_TYPE))))
       MEMORY_ERROR;
 
   MPI_Scan(&c_hg->nVtx, c_hg->dist_x, 1, MPI_INT, MPI_SUM, hgc->row_comm);

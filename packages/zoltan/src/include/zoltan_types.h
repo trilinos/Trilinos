@@ -30,18 +30,23 @@ extern "C" {
  *
  * It's decimal type specifier: printf("%" ZOLTAN_ID_SPECIFIER "\n", global_id);
  *
- * A constant of the same type:   ZOLTAN_ID_TYPE global_id = ZOLTAN_ID_CONSTANT(0);
+ * A constant of the same type:   ZOLTAN_ID_TYPE global_id = ZOLTAN_ID_CONSTANT(0);  (Do we need this?)
+ *
+ * The MPI_Datatype for a ZOLTAN_ID_TYPE is a ZOLTAN_ID_MPI_TYPE.
  *
  * We assume the local number of objects fits in a 32 bit integer, but the global number may require
  * the maximum integer width available on the machine.
  *
- * The type of a global count is: intmax_t or uintmax_t
+ * ZOLTAN_GNO_TYPE  is the global number/count type.
  *
- * It's signed decimal type specifier is:    printf("%" PRIdMAX "\n",globalNum);
- * It's unsigned decimal type specifier is:  printf("%" PRIuMAX "\n",globalNum);
+ * The underlying type is: ssize_t (signed size_t).  This will be 32 or 64
+ *   bits depending on whether the machine is a 32 or 64 bit machine.  (We use ssize_t
+ *   instead of intmax_t because intmax_t may still be
+ *   64 bits on a 32 bit machine because the compiler constructs a 64 bit int.)
  *
- * A constant of that type is:   intmax_t numGlobal =  INTMAX_C(0)
- *                              uintmax_t numGlobal = UINTMAX_C(0)
+ * It's decimal type specifier is "z":    printf("%zd\n",globalNum);
+ *
+ * The MPI_Datatype for ssize_t is ZOLTAN_GNO_MPI_TYPE.
  *
  * We don't assume a pointer is the same size as any size of int.  If we want to store
  * a pointer in an int we use types intptr_t or uintptr_t.
@@ -126,14 +131,14 @@ typedef unsigned int ZOLTAN_ID_TYPE;
 typedef ZOLTAN_ID_TYPE     *ZOLTAN_ID_PTR;
 
 /* 
- * The MPI_Datatype for intmax_t and uintmax_t are figured out at runtime in Zoltan_set_mpi_types.
+ * The MPI_Datatype for size_t and ssize_t are figured out at runtime in Zoltan_set_mpi_types.
  */
 
-extern MPI_Datatype  _mpi_intmax_datatype;
-extern MPI_Datatype  _mpi_uintmax_datatype;
+extern MPI_Datatype          _mpi_gno_datatype;
 
-#define ZOLTAN_INTMAX_MPI_TYPE  _mpi_intmax_datatype
-#define ZOLTAN_UINTMAX_MPI_TYPE  _mpi_uintmax_datatype
+#define ZOLTAN_GNO_MPI_TYPE  _mpi_gno_datatype
+
+#define ZOLTAN_GNO_TYPE      ssize_t
 
 /*****************************************************************************/
 /*

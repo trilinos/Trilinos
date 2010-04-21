@@ -401,8 +401,8 @@ void Zoltan_Print_Key_Params(ZZ const *zz)
          Zoltan_Seed(), Zoltan_Seed());
   printf("ZOLTAN Parameter %s = %s\n", Key_params[21].name, 
          zz->LB.Approach);
-  printf("Size of ZOLTAN_ID_TYPE: %d, size of uintmax_t: %d\n",
-         sizeof(ZOLTAN_ID_TYPE),sizeof(uintmax_t));
+  printf("Size of ZOLTAN_ID_TYPE: %d, size of uintmax_t: %zd, sizeof ZOLTAN_GNO_TYPE: %zd\n",
+         sizeof(ZOLTAN_ID_TYPE),sizeof(uintmax_t),sizeof(ZOLTAN_GNO_TYPE));
 }
 
 #ifdef __cplusplus
