@@ -26,6 +26,29 @@ extern "C" {
 
 /*  NOTE: See file, README, for associated documentation. (RTH) */
 
+/* Zoltan_DD_Create assumes the global object being managed by the
+ * directory is a Zoltan global ID, which is a ZOLTAN_ID_TYPE-tuple.  
+ * The "num_gid" parameter is where we specify how many ZOLTAN_ID_TYPEs 
+ * are in the object (zz->Num_GID).
+ *
+ * However, some Zoltan code uses a data directory to manage other
+ * global integer values.  When the ZOLTAN_ID_TYPE was always be an
+ * unsigned integer, that worked.  
+ *
+ * But now that the ZOLTAN_ID_TYPE can be specified at compile time,
+ * we need to be more careful.
+ *
+ * If the global value is not a Zoltan global ID, then the "num_gid"
+ * parameter should be factor which, when multiplied by a ZOLTAN_ID_TYPE,
+ * give an object of the same length as the global value.
+ *
+ * So if ZOLTAN_ID_TYPE is a 32-bit int, and the global value being
+ * managed by the data directory is a 64-bit int, "num_gid" should
+ * be "2".
+ *
+ * The "num_lid" and "user_length" parameters are also specifying
+ * the number ZOLTAN_ID_TYPEs in the local ID and the user data.
+ */
 
 /*******************  Zoltan_DD_Create()  ***************************/
 
