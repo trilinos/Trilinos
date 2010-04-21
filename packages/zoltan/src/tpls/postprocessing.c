@@ -47,11 +47,11 @@ Zoltan_Postprocess_Partition (ZZ *zz,
 			      ZOLTAN_ID_PTR       global_ids,
 			      ZOLTAN_ID_PTR       local_ids);
 
-static int Compute_Bal(ZZ *, int, indextype *, int, int *, double *);
-static int Compute_EdgeCut(ZZ *, int, int *, float *, int *, int *, double *);
-static float Compute_NetCut(ZZ *, int, int *, float *, int *, int *);
-static float Compute_ConCut(ZZ *, int, int *, float *, int *, int *);
-static int Compute_Adjpart(ZZ *, int, int *, int *, int *, int *, int *, int *);
+static int Compute_Bal(ZZ *, int, weighttype *, int, indextype *, double *);
+static int Compute_EdgeCut(ZZ *, int, indextype *, float *, indextype *, int *, double *);
+static float Compute_NetCut(ZZ *, int, indextype *, float *, indextype *, int *);
+static float Compute_ConCut(ZZ *, int, indextype *, float *, indextype *, int *);
+static int Compute_Adjpart(ZZ *, int, indextype *, indextype *, indextype *, int *, indextype *, int *);
 
 
 
@@ -242,8 +242,10 @@ Zoltan_Postprocess_Partition (ZZ *zz,
   if (zz->LB.Remap_Flag) {
     int new_map;
 
-    ierr = Zoltan_LB_Remap(zz, &new_map, gr->num_obj, newproc, prt->input_part,
-			   prt->part, 1);
+    /* This call assumes sizeof indextype equals sizeof int */
+
+    ierr = Zoltan_LB_Remap(zz, &new_map, gr->num_obj, newproc, (int *)prt->input_part,
+			   (int *)prt->part, 1);
     if (ierr < 0) {
       ZOLTAN_FREE(&newproc);
       ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL,
@@ -475,9 +477,9 @@ Zoltan_Postprocess_FinalOutput (ZZ* zz, ZOLTAN_Third_Graph *gr,
 static int Compute_Bal(
   ZZ *zz,
   int nvtx,
-  indextype *vwgts,
+  weighttype *vwgts,
   int obj_wgt_dim,
-  int *parts,
+  indextype *parts,
   double *bal
 )
 {
@@ -522,9 +524,9 @@ float *tot = NULL, *max = NULL;
 static int Compute_EdgeCut(
   ZZ *zz,
   int nvtx,
-  int *xadj,
+  indextype *xadj,
   float *ewgts,
-  int *parts,
+  indextype *parts,
   int *nborparts,
   double *cute
 )
@@ -553,9 +555,9 @@ double *cut = NULL;
 static float Compute_NetCut(
   ZZ *zz,
   int nvtx,
-  int *xadj,
+  indextype *xadj,
   float *ewgts,
-  int *parts,
+  indextype *parts,
   int *nborparts
 )
 {
@@ -593,9 +595,9 @@ int dim = zz->Edge_Weight_Dim;
 static float Compute_ConCut(
   ZZ *zz,
   int nvtx,
-  int *xadj,
+  indextype *xadj,
   float *ewgts,
-  int *parts,
+  indextype *parts,
   int *nborparts
 )
 {
@@ -637,12 +639,12 @@ int dim = zz->Edge_Weight_Dim;
 static int Compute_Adjpart(
   ZZ *zz,
   int nvtx,         /* Input:  # vtxs in this processor */
-  int *vtxdist,     /* Input:  Distribution of vertices across processors */
-  int *xadj,        /* Input:  Index of adjncy:  adjncy[xadj[i]] to 
+  indextype *vtxdist,     /* Input:  Distribution of vertices across processors */
+  indextype *xadj,        /* Input:  Index of adjncy:  adjncy[xadj[i]] to 
                                adjncy[xadj[i]+1] are all edge nbors of vtx i. */
-  int *adjncy,      /* Input:  Array of nbor vertices. */
+  indextype *adjncy,      /* Input:  Array of nbor vertices. */
   int *adjproc,     /* Input:  adjproc[j] == processor owning adjncy[j]. */
-  int *part,        /* Input:  Partition assignments of vtxs. */
+  indextype *part,        /* Input:  Partition assignments of vtxs. */
   int *adjpart      /* Output: adjpart[j] == partition owning adjncy[j] */
 )
 {

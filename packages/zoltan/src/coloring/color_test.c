@@ -28,6 +28,7 @@ extern "C" {
 #include "zz_util_const.h"
 #include "graph.h"
 #include "all_allo_const.h"
+#include "third_library_const.h"
 
 
 /*****************************************************************************/
@@ -153,7 +154,8 @@ int Zoltan_Color_Test(
 
   Zoltan_ZG_Build (zz, &graph, 0);
   Zoltan_ZG_Export (zz, &graph,
-		    &gvtx, &nvtx, NULL, NULL, &vtxdist, &xadj, &adjncy, &adjproc,
+		    &gvtx, &nvtx, NULL, NULL, 
+                    (indextype **)&vtxdist, (indextype **)&xadj, (indextype **)&adjncy, &adjproc,
 		    NULL, NULL);
 
 

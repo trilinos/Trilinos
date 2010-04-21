@@ -46,9 +46,9 @@ int Zoltan_Scatter_Graph(
   indextype **vtxdist,
   indextype **xadj,
   indextype **adjncy,
-  indextype **vwgt,
+  weighttype **vwgt,
   indextype **vsize,
-  indextype **adjwgt,
+  weighttype **adjwgt,
   float   **xyz,
   int     ndims,		/* # dimensions of xyz geometry data */
   int     vwgt_dim,
@@ -58,8 +58,9 @@ int Zoltan_Scatter_Graph(
 {
   static char *yo = "Zoltan_Scatter_Graph";
   char     msg[256];
-  indextype *old_vtxdist, *old_xadj, *old_adjncy, *old_vwgt; 
-  indextype *old_vsize, *old_adjwgt;
+  indextype *old_vtxdist, *old_xadj, *old_adjncy;
+  indextype *old_vsize;
+  weighttype *old_vwgt, *old_adjwgt;
   float   *old_xyz;
   int *ptr, *proclist = NULL, *proclist2 = NULL;
   int i, j, num_obj, old_num_obj, num_edges, nrecv;
@@ -72,7 +73,8 @@ int Zoltan_Scatter_Graph(
 
   /* Save pointers to "old" data distribution */
   old_vtxdist = old_xadj = old_adjncy = NULL;
-  old_vwgt = old_vsize = old_adjwgt = NULL;
+  old_vwgt = old_adjwgt = NULL;
+  old_vsize = NULL;
   old_xyz = NULL;
   if (vtxdist)
     old_vtxdist = *vtxdist;
@@ -109,7 +111,8 @@ int Zoltan_Scatter_Graph(
           use_graph, use_vsize);
 
   /* Reset all data pointers to NULL for now */
-  *xadj = *adjncy = *vwgt = *adjwgt = NULL;
+  *xadj = *adjncy = NULL;
+  *vwgt = *adjwgt = NULL;
   *xyz = NULL;
   if (use_vsize) *vsize = NULL;
 
@@ -127,7 +130,7 @@ int Zoltan_Scatter_Graph(
   if (use_graph)
     *xadj = (indextype *) ZOLTAN_MALLOC((num_obj+1)*sizeof(indextype));
   if (vwgt_dim)
-    *vwgt = (indextype *) ZOLTAN_MALLOC(vwgt_dim*num_obj*sizeof(indextype));
+    *vwgt = (weighttype *) ZOLTAN_MALLOC(vwgt_dim*num_obj*sizeof(weighttype));
   if (use_vsize)
     *vsize = (indextype *) ZOLTAN_MALLOC(num_obj*sizeof(indextype));
   if (ndims)
@@ -195,7 +198,7 @@ int Zoltan_Scatter_Graph(
     *adjncy = (indextype *) ZOLTAN_MALLOC(num_edges*sizeof(indextype));
   
     if (ewgt_dim)
-      *adjwgt = (indextype *) ZOLTAN_MALLOC(ewgt_dim*num_edges*sizeof(indextype));
+      *adjwgt = (weighttype *) ZOLTAN_MALLOC(ewgt_dim*num_edges*sizeof(weighttype));
   
     /* Set up the communication plan for the edge data. */
     ptr = proclist2 = (int *) ZOLTAN_MALLOC(old_xadj[old_num_obj] * sizeof(int));

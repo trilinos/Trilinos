@@ -32,11 +32,10 @@ static PARAM_VARS ZG_params[] = {
 	{ "GRAPH_SYMMETRIZE", NULL, "STRING", 0 },
 	{ "GRAPH_SYM_WEIGHT", NULL, "STRING", 0 },
 	{ "GRAPH_BIPARTITE_TYPE", NULL, "STRING", 0},
-	{ "GRAPH_BUILD_TYPE", NULL, "STRING"},
+	{ "GRAPH_BUILD_TYPE", NULL, "STRING", 0},
 	{ NULL, NULL, NULL, 0 } };
 
 #define AFFECT_NOT_NULL(ptr, src) do { if ((ptr) != NULL) (*(ptr)) = (src); } while (0)
-
 
 /* This function needs a distribution : rows then cols to work properly */
 int
@@ -205,16 +204,21 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local)
 int
 Zoltan_ZG_Export (ZZ* zz, const ZG* const graph, int *gvtx, int *nvtx,
 		  int *obj_wgt_dim, int *edge_wgt_dim,
-		  int **vtxdist, int **xadj, int **adjncy, int **adjproc,
+		  indextype **vtxdist, indextype **xadj, indextype **adjncy, int **adjproc,
 		  /* float **xwgt, */ float **ewgt, int **partialD2)
 {
   int ierr = ZOLTAN_OK;
 
+  if (sizeof(int) != sizeof(indextype)){
+    if (zz->Proc == 0) fprintf(stderr,"sizeof(int) != sizeof(indextype) in Zoltan_ZG_Export\n");
+    return ZOLTAN_FATAL;
+  }
+
   AFFECT_NOT_NULL(gvtx, graph->mtx.mtx.globalY);
   AFFECT_NOT_NULL(nvtx, graph->mtx.mtx.nY);
-  AFFECT_NOT_NULL(vtxdist, graph->mtx.dist_y);
-  AFFECT_NOT_NULL(xadj, graph->mtx.mtx.ystart);
-  AFFECT_NOT_NULL(adjncy, graph->mtx.mtx.pinGNO);
+  AFFECT_NOT_NULL(vtxdist, (indextype *)graph->mtx.dist_y);
+  AFFECT_NOT_NULL(xadj, (indextype *)graph->mtx.mtx.ystart);
+  AFFECT_NOT_NULL(adjncy, (indextype *)graph->mtx.mtx.pinGNO);
   AFFECT_NOT_NULL(partialD2, graph->fixed_vertices);
   /* I have to convert from float to int */
   AFFECT_NOT_NULL(obj_wgt_dim, graph->mtx.mtx.ywgtdim);

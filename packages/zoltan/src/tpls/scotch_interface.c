@@ -82,7 +82,7 @@ int Zoltan_Scotch_Order(
   /* The application must allocate enough space */
   ZOLTAN_ID_PTR lids,   /* List of local ids (local to this proc) */
 /* The application must allocate enough space */
-  int *rank,		/* rank[i] is the rank of gids[i] */
+  ZOLTAN_ID_PTR rank,		/* rank[i] is the rank of gids[i] */
   int *iperm,
   ZOOS *order_opt 	/* Ordering options, parsed by Zoltan_Order */
 )
@@ -420,11 +420,30 @@ int Zoltan_Scotch_Order(
   if (use_timers)
     ZOLTAN_TIMER_STOP(zz->ZTime, timer_p, zz->Communicator);
 
-  if ((ord.iperm != NULL) && (iperm != NULL))
-    memcpy(iperm, ord.iperm, gr.num_obj*sizeof(indextype));
+  if (order_opt->return_args&RETURN_RANK){
+    if (sizeof(indextype) == sizeof(ZOLTAN_ID_TYPE)){
+      memcpy(rank, ord.rank, gr.num_obj*sizeof(indextype));
+    }
+    else{
+      for (i=0; i < gr.num_obj; i++){
+        rank[i] = (ZOLTAN_ID_TYPE)ord.rank[i];
+      }
+    }
+  }
+
+  if ((ord.iperm != NULL) && (iperm != NULL)){
+    if (sizeof(indextype) == sizeof(int)){
+      memcpy(iperm, ord.iperm, gr.num_obj*sizeof(indextype));
+    }
+    else{
+      for (i=0; i < gr.num_obj; i++){
+        iperm[i] = (int)ord.iperm[i];
+      }
+    }
+  }
+
   if (ord.iperm != NULL)  ZOLTAN_FREE(&ord.iperm);
-  if (order_opt->return_args&RETURN_RANK)
-    memcpy(rank, ord.rank, gr.num_obj*sizeof(indextype));
+
   ZOLTAN_FREE(&ord.rank);
   ZOLTAN_FREE(&strat);
 

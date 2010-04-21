@@ -63,7 +63,7 @@ static int Zoltan_Compare_Ints(const void *key, const void *arg);
 /*********************************************************************/
 
 int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj, 
-       indextype *adjncy, indextype *vwgt, indextype *adjwgt, 
+       indextype *adjncy, weighttype *vwgt, weighttype *adjwgt, 
        int vwgt_dim, int ewgt_dim, 
        int graph_type, int check_graph, int output_level)
 {
@@ -73,7 +73,8 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
   int num_zeros, num_selfs, num_duplicates, num_singletons;
   indextype global_i, global_j;
   indextype *ptr1, *ptr2;
-  int *adjncy_sort=NULL, *perm=NULL, *ptr=NULL, free_adjncy_sort=0;
+  indextype *adjncy_sort=NULL, *perm=NULL, *ptr=NULL; 
+  int free_adjncy_sort=0;
   char *sendbuf=NULL, *recvbuf=NULL;
   ZOLTAN_COMM_OBJ *comm_plan;
   static char *yo = "Zoltan_Verify_Graph";
@@ -193,7 +194,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
     }
   }
   if (flag){ /* Need to sort. */
-    adjncy_sort = (int *) ZOLTAN_MALLOC(2*nedges*sizeof(int));
+    adjncy_sort = (indextype *) ZOLTAN_MALLOC(2*nedges*sizeof(indextype));
     free_adjncy_sort = 1;
     if (nedges && (!adjncy_sort)){
       /* Out of memory. */
@@ -205,8 +206,9 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
       adjncy_sort[k] = adjncy[k];
       perm[k] = k;
     }
+    /* NOTE: this assumes sizeof(indextype) == sizeof(int) */
     for (i=0; i<num_obj; i++) 
-      Zoltan_quicksort_list_inc_int(adjncy_sort, perm, xadj[i], xadj[i+1]-1);
+      Zoltan_quicksort_list_inc_int((int *)adjncy_sort, (int *)perm, (int)xadj[i], (int)xadj[i+1]-1);
   }
   else { /* Already sorted. */
     adjncy_sort = adjncy;

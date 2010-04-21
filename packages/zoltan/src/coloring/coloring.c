@@ -267,8 +267,14 @@ int Zoltan_Color(
   ierr =  Zoltan_ZG_Build (zz, &graph, 0);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Cannot construct graph.");
+
+  if (sizeof(xadj) != sizeof(indextype)){
+    ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "sizeof(xadj) != sizeof(indextype)");
+  }
+
   ierr = Zoltan_ZG_Export (zz, &graph,
-		    &gvtx, &nvtx, NULL, NULL, &vtxdist, &xadj, &adjncy, &adjproc,
+		    &gvtx, &nvtx, NULL, NULL, 
+                   (indextype **)&vtxdist, (indextype **) &xadj, (indextype **)&adjncy, &adjproc,
 		     NULL, &partialD2);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Cannot construct graph (2).");

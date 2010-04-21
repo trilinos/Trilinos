@@ -1251,7 +1251,7 @@ static int get_starting_local_index(HierPartParams *hpp, ZOLTAN_ID_TYPE gid) {
   HIER_CHECK_GID_RANGE(gid);
   if ((gid >= hpp->vtxdist[hpp->origzz->Proc]) &&
       (gid < hpp->vtxdist[hpp->origzz->Proc+1])) {
-    return gid - hpp->vtxdist[hpp->origzz->Proc];
+    return (int)(gid - hpp->vtxdist[hpp->origzz->Proc]);
   }
   
   /* it didn't start here */
@@ -1601,10 +1601,10 @@ static void Zoltan_Hier_Check_Data(HierPartParams *hpp, int *ierr) {
   int nreturn=0;
   int *proclist=NULL;
   int proc;
-  int *sendbuf=NULL, *recvbuf=NULL;
+  ZOLTAN_ID_TYPE *sendbuf=NULL, *recvbuf=NULL;
   int local_index;
   int *owners=NULL;
-  int *ddlookup=NULL;
+  ZOLTAN_ID_TYPE *ddlookup=NULL;
   char msg[256];
 
   if (hpp->output_level >= HIER_DEBUG_ALL) {
@@ -1659,19 +1659,19 @@ static void Zoltan_Hier_Check_Data(HierPartParams *hpp, int *ierr) {
 
   /* allocate space for the information we'll send and receive */
   if (hpp->num_migrated_in_gids) {
-    sendbuf = (int *)ZOLTAN_MALLOC(2*hpp->num_migrated_in_gids*sizeof(int));
+    sendbuf = (ZOLTAN_ID_TYPE *)ZOLTAN_MALLOC(2*hpp->num_migrated_in_gids*sizeof(ZOLTAN_ID_TYPE));
     for (i=0; i<hpp->num_migrated_in_gids; i++) {
       sendbuf[2*i] = hpp->migrated_in_gids[i];
-      sendbuf[2*i+1] = hpp->origzz->Proc;
+      sendbuf[2*i+1] = (ZOLTAN_ID_TYPE)hpp->origzz->Proc;
     }
   }
 
   if (nreturn) {
-    recvbuf = (int *)ZOLTAN_MALLOC(2*nreturn*sizeof(int));
+    recvbuf = (ZOLTAN_ID_TYPE *)ZOLTAN_MALLOC(2*nreturn*sizeof(ZOLTAN_ID_TYPE));
   }
 
   /* do the communication */
-  *ierr = Zoltan_Comm_Do(plan, 0, (char *)sendbuf, 2*sizeof(int), 
+  *ierr = Zoltan_Comm_Do(plan, 0, (char *)sendbuf, 2*sizeof(ZOLTAN_ID_TYPE), 
 			 (char *)recvbuf);
 
   /* check to make sure each received gid lives here, and that we know
@@ -1714,19 +1714,19 @@ static void Zoltan_Hier_Check_Data(HierPartParams *hpp, int *ierr) {
   /* check that the information we received about current locations is
      consistent with what is in the DD */
   if (nreturn) {
-    ddlookup = (int *)ZOLTAN_MALLOC(nreturn*sizeof(int));
+    ddlookup = (ZOLTAN_ID_TYPE *)ZOLTAN_MALLOC(nreturn*sizeof(ZOLTAN_ID_TYPE));
     owners = (int *)ZOLTAN_MALLOC(nreturn*sizeof(int));
     for (i=0; i<nreturn; i++) {
-      ddlookup[i]=recvbuf[2*i];
+      ddlookup[i]=(ZOLTAN_ID_TYPE)recvbuf[2*i];
     }
   }
 
-  *ierr = Zoltan_DD_Find(hpp->dd, (ZOLTAN_ID_PTR)ddlookup, NULL, NULL, NULL,
+  *ierr = Zoltan_DD_Find(hpp->dd, ddlookup, NULL, NULL, NULL,
 			 nreturn, owners);
 
   for (i=0; i<nreturn; i++) {
-    if (owners[i] != recvbuf[2*i+1]) {
-      sprintf(msg, "Owner mismatch for GID %d: DD has %d, msg came from %d\n",
+    if ((ZOLTAN_ID_TYPE)owners[i] != recvbuf[2*i+1]) {
+      sprintf(msg, "Owner mismatch for GID %" ZOLTAN_ID_SPECIFIER ": DD has %d, msg came from %" ZOLTAN_ID_SPECIFIER "\n",
 	      recvbuf[2*i], owners[i], recvbuf[2*i+1]);
       ZOLTAN_PRINT_ERROR(hpp->origzz->Proc, yo, msg);
       *ierr = ZOLTAN_FATAL;
@@ -2352,7 +2352,7 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
     printf("[%d] calling DD_Remove on %d GIDs\n", hpp->origzz->Proc, 
 	   remove_count);
     for (i=0; i<remove_count; i++) {
-      printf("[%d] DD_Remove slot %d GID %d\n",
+      printf("[%d] DD_Remove slot %d GID %" ZOLTAN_ID_SPECIFIER "\n",
 	     hpp->origzz->Proc, i, dd_updates[update_count+i]);
     }
   }
@@ -2369,7 +2369,7 @@ static void Zoltan_Hier_Mid_Migrate_Fn(void *data, int num_gid_entries,
     printf("[%d] calling DD_Update on %d GIDs\n", hpp->origzz->Proc, 
 	   update_count);
     for (i=0; i<update_count; i++) {
-      printf("[%d] DD_Update slot %d GID %d\n",
+      printf("[%d] DD_Update slot %d GID %" ZOLTAN_ID_SPECIFIER "\n",
 	     hpp->origzz->Proc, i, dd_updates[i]);
     }
   }

@@ -70,7 +70,7 @@ Zoltan_Preprocess_Scatter_Graph (ZZ *zz,
 				 ZOLTAN_Third_Geom *geo,
 				 ZOLTAN_Third_Vsize *vsp);
 
-static int scale_round_weights(float *fwgts, indextype *iwgts, int n, int dim,
+static int scale_round_weights(float *fwgts, weighttype *iwgts, int n, int dim,
 			       int mode, int max_wgt_sum, int debug_level, MPI_Comm comm);
 
 
@@ -178,8 +178,14 @@ int Zoltan_Preprocess_Graph(
 			     &gr->vtxdist, &gr->xadj, &gr->adjncy, &gr->adjproc,
 			     &float_ewgts, NULL);
     /* Find info about the graph according to the distribution */
+
+    if (sizeof(int) != sizeof(indextype)){
+      /* Zoltan_ZG_Vertex_Info thinks input_part is an int, not an indextype */
+      if (zz->Proc == 0) fprintf(stderr,"sizeof(int) != sizeof(indextype) in Zoltan_Preprocess_Graph\n");
+      return ZOLTAN_FATAL;
+    }
     if (prt)
-      ierr = Zoltan_ZG_Vertex_Info(zz, graph, global_ids, local_ids, &float_vwgt, &prt->input_part);
+      ierr = Zoltan_ZG_Vertex_Info(zz, graph, global_ids, local_ids, &float_vwgt, (int **)&prt->input_part);
     else
       ierr = Zoltan_ZG_Vertex_Info(zz, graph, global_ids, local_ids, &float_vwgt, NULL);
 
@@ -195,10 +201,10 @@ int Zoltan_Preprocess_Graph(
   else{ /* Only geometry */
     int i;
     ierr = Zoltan_Get_Obj_List(zz, &gr->num_obj, global_ids, local_ids,
-			       gr->obj_wgt_dim, &float_vwgt, &input_part);
+			       gr->obj_wgt_dim, &float_vwgt, (int **)&input_part);
     CHECK_IERR;
     if (prt) {
-      prt->input_part = input_part;
+      prt->input_part = (indextype *)input_part;
     }
     else if (input_part) { /* Ordering, dont need part */
       ZOLTAN_FREE(&input_part);
@@ -209,7 +215,7 @@ int Zoltan_Preprocess_Graph(
     }
 
     /* No graph but still needs vtxdist*/
-    gr->vtxdist = (int*) ZOLTAN_MALLOC ((zz->Num_Proc+1)*sizeof(int));
+    gr->vtxdist = (indextype*) ZOLTAN_MALLOC ((zz->Num_Proc+1)*sizeof(indextype));
     if (gr->vtxdist == NULL)
       ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
 
@@ -512,9 +518,10 @@ Zoltan_Preprocess_Extract_Vsize (ZZ *zz,
     ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR, "Out of memory.");
   }
   if (zz->Get_Obj_Size_Multi) {
+     /* assumes sizeof(indextype) == sizeof(int) */
     zz->Get_Obj_Size_Multi(zz->Get_Obj_Size_Multi_Data,
 			   num_gid_entries, num_lid_entries, gr->num_obj,
-			   *global_ids, *local_ids, vsp->vsize, &ierr);
+			   *global_ids, *local_ids, (int *)vsp->vsize, &ierr);
   }
   else if (zz->Get_Obj_Size) {
     ZOLTAN_ID_PTR lid;
@@ -632,7 +639,7 @@ Zoltan_Preprocess_Scatter_Graph (ZZ *zz,
  * rounding to zero weights.
  */
 
-static int scale_round_weights(float *fwgts, indextype *iwgts, int n, int dim,
+static int scale_round_weights(float *fwgts, weighttype *iwgts, int n, int dim,
 		 int mode, int max_wgt_sum, int debug_level, MPI_Comm comm)
 {
   int i, j, tmp, ierr, proc;
