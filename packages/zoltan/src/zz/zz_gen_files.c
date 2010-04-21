@@ -77,7 +77,8 @@ int gen_geom, int gen_graph, int gen_hg)
   ZOLTAN_ID_PTR global_ids = NULL;
   FILE *fp;
   char full_fname[256];
-  int *vtxdist, *xadj, *adjncy, *part, *adjproc, *edgeSize;
+  indextype *vtxdist, *xadj, *adjncy;
+  int *part, *adjproc, *edgeSize;
   float *float_vwgt, *ewgts, *eWgts, *wptr;
   double *xyz;
   int i, j, k, num_obj, num_geom, num_edges, reduce;
@@ -97,7 +98,8 @@ int gen_geom, int gen_graph, int gen_hg)
   /* Initialize all local pointers to NULL. This is necessary
    * because we free all non-NULL pointers upon errors.
    */
-  vtxdist = xadj = adjncy = part = edgeSize = NULL;
+  vtxdist = xadj = adjncy = NULL;
+  part = edgeSize = NULL;
   adjproc = NULL;
   float_vwgt = ewgts = eWgts = NULL;
   xyz = NULL;

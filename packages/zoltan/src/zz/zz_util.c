@@ -258,52 +258,31 @@ Zoltan_AllReduceInPlace(void *sndrcvbuf, int count, MPI_Datatype datatype, MPI_O
   return (ierr);
 }
 
-MPI_Datatype _mpi_intmax_datatype=MPI_UNDEFINED;
-MPI_Datatype _mpi_uintmax_datatype=MPI_UNDEFINED;
+MPI_Datatype _mpi_gno_datatype=MPI_UNDEFINED;
 
 int Zoltan_set_mpi_types()
 {
-  int size_short, size_unsigned_short;
-  int size_int, size_unsigned_int;
-  int size_long, size_unsigned_long;
-  int size_long_long, size_unsigned_long_long;
+  int size_short, size_int, size_long, size_long_long;
 
   MPI_Type_size(MPI_SHORT, &size_short);
-  MPI_Type_size(MPI_UNSIGNED_SHORT, &size_unsigned_short);
   MPI_Type_size(MPI_INT, &size_int);
-  MPI_Type_size(MPI_UNSIGNED, &size_unsigned_int);
   MPI_Type_size(MPI_LONG, &size_long);
-  MPI_Type_size(MPI_UNSIGNED_LONG, &size_unsigned_long);
   MPI_Type_size(MPI_LONG_LONG, &size_long_long);
-  MPI_Type_size(MPI_UNSIGNED_LONG_LONG, &size_unsigned_long_long);
 
-  if (sizeof(intmax_t) == size_short){
-    _mpi_intmax_datatype = MPI_SHORT;
+  if (sizeof(ssize_t) == size_short){
+    _mpi_gno_datatype = MPI_SHORT;
   }
-  else if (sizeof(intmax_t) == size_int){
-    _mpi_intmax_datatype = MPI_INT;
+  else if (sizeof(ssize_t) == size_int){
+    _mpi_gno_datatype = MPI_INT;
   }
-  else if (sizeof(intmax_t) == size_long){
-    _mpi_intmax_datatype = MPI_LONG;
+  else if (sizeof(ssize_t) == size_long){
+    _mpi_gno_datatype = MPI_LONG;
   }
-  else if (sizeof(intmax_t) == size_long_long){
-    _mpi_intmax_datatype = MPI_LONG_LONG;
+  else if (sizeof(ssize_t) == size_long_long){
+    _mpi_gno_datatype = MPI_LONG_LONG;
   }
 
-  if (sizeof(uintmax_t) == size_short){
-    _mpi_uintmax_datatype = MPI_UNSIGNED_SHORT;
-  }
-  else if (sizeof(uintmax_t) == size_int){
-    _mpi_uintmax_datatype = MPI_UNSIGNED;
-  }
-  else if (sizeof(uintmax_t) == size_long){
-    _mpi_uintmax_datatype = MPI_UNSIGNED_LONG;
-  }
-  else if (sizeof(uintmax_t) == size_long_long){
-    _mpi_uintmax_datatype = MPI_UNSIGNED_LONG_LONG;
-  } 
-
-  if ((_mpi_intmax_datatype == MPI_UNDEFINED) || (_mpi_intmax_datatype == MPI_UNDEFINED)){
+  if (_mpi_gno_datatype == MPI_UNDEFINED){
     return ZOLTAN_FATAL;
   }
 
