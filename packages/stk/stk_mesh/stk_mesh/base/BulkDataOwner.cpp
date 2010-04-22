@@ -90,11 +90,11 @@ void insert_closure_send(
   if ( result.second ) {
     // First time this entity was inserted into the send_list.
 
-    const unsigned etype  = send_entry.first->entity_rank();
+    const unsigned erank  = send_entry.first->entity_rank();
     PairIterRelation irel = send_entry.first->relations();
 
     for ( ; ! irel.empty() ; ++irel ) {
-      if ( irel->entity_rank() < etype ) {
+      if ( irel->entity_rank() < erank ) {
         const EntityProc rel_send_entry( irel->entity(), send_entry.second );
 
         insert_closure_send( rel_send_entry , send_list );
@@ -165,21 +165,23 @@ void clean_and_verify_parallel_change(
     // 3) New owner must be legit
     // 4) Cannot grant to two different owners
 
-    const bool bad_delete = 0 == entity->bucket().capacity();
-    const bool bad_entity = entity->owner_rank() != p_rank ;
+    const bool bad_null   = NULL == entity ;
+    const bool bad_delete = ! bad_null && 0 == entity->bucket().capacity();
+    const bool bad_entity = ! bad_null && entity->owner_rank() != p_rank ;
     const bool bad_owner  = p_size <= new_owner ;
-    const bool bad_dup    = i != local_change.end() && entity == i->first ;
+    const bool bad_dup    = ! bad_null && i != local_change.end() && entity == i->first ;
 
-    if ( bad_entity || bad_owner || bad_dup || bad_delete ) {
+    if ( bad_null || bad_entity || bad_owner || bad_dup || bad_delete ) {
       ++error_count ;
 
       error_msg << "  P" << p_rank << ": " ;
-      print_entity_key( error_msg , meta , entity->key() );
+      if ( bad_null ) { error_msg << " NULL ENTITY" ; }
+      else { print_entity_key( error_msg , meta , entity->key() ); }
       if ( bad_delete ) { error_msg << " HAS_BEEN_DELETED" ; }
       if ( bad_entity ) { error_msg << " NOT_CURRENT_OWNER" ; }
       if ( bad_owner ) {
         error_msg << " BAD_NEW_OWNER( " << new_owner << " )" ;
-       }
+      }
       if ( bad_dup ) {
         error_msg << " CONFLICTING_NEW_OWNER( " << new_owner ;
         error_msg << " != " << i->second << " )" ;
@@ -311,12 +313,12 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
   // Parallel synchronous clean up and verify the requested changes:
   clean_and_verify_parallel_change( method , *this , local_change );
 
-  std::vector<EntityProc> ghosted_change ;
-  std::vector<EntityProc> shared_change ;
-
   //----------------------------------------
   // Parallel synchronous determination of changing
   // shared and ghosted.
+
+  std::vector<EntityProc> ghosted_change ;
+  std::vector<EntityProc> shared_change ;
 
   generate_parallel_change( *this , local_change ,
                             shared_change , ghosted_change );
@@ -326,6 +328,15 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
   // If the closure of a ghost contains a changing entity
   // then that ghost must be deleted.
   // Request that all ghost entities in the closure of the ghost be deleted.
+
+  // Closure of the owner change for impacted ghost entities.
+
+  std::set< EntityProc , EntityLess > send_closure ;
+
+  for ( std::vector<EntityProc>::iterator
+        i = local_change.begin() ; i != local_change.end() ; ++i ) {
+    insert_closure_send( *i , send_closure );
+  }
 
   {
     std::set<Entity*,EntityLess> work ;
@@ -340,8 +351,8 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
       insert_transitive_ghost( meta , i->first , work );
     }
 
-    for ( std::vector<EntityProc>::const_iterator
-          i = local_change.begin() ; i != local_change.end() ; ++i ) {
+    for ( std::set<EntityProc>::const_iterator
+          i = send_closure.begin() ; i != send_closure.end() ; ++i ) {
       insert_transitive_ghost( meta , i->first , work );
     }
 
@@ -392,14 +403,8 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
     std::vector< parallel::DistributedIndex::KeyType >
       distributed_index_add , distributed_index_remove ;
 
-    std::set< EntityProc , EntityLess > send_closure ;
     std::ostringstream error_msg ;
     int error_count = 0 ;
-
-    for ( std::vector<EntityProc>::iterator
-          i = local_change.begin() ; i != local_change.end() ; ++i ) {
-      insert_closure_send( *i , send_closure );
-    }
 
     CommAll comm( p_comm );
 
