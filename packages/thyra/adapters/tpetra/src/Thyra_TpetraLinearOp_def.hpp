@@ -46,7 +46,7 @@ namespace Thyra {
 
 
 /** \brief Default class returns null. */
-template<class Scalar>
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal>
 class GetTpetraEpetraRowMatrixWrapper {
 public:
   template<class TpetraMatrixType>
@@ -59,8 +59,10 @@ public:
 };
 
 
+// NOTE: We could support other ordinal types, but we have to
+// specialize the EpetraRowMatrix
 template<>
-class GetTpetraEpetraRowMatrixWrapper<double> {
+class GetTpetraEpetraRowMatrixWrapper<double, int, int> {
 public:
   template<class TpetraMatrixType>
   static
@@ -176,7 +178,7 @@ void TpetraLinearOp<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getEpetraOpView(
   typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> TpetraRowMatrix_t;
   if (nonnull(tpetraOperator_)) {
     if (is_null(epetraOp_)) {
-      epetraOp_ = GetTpetraEpetraRowMatrixWrapper<Scalar>::get(
+      epetraOp_ = GetTpetraEpetraRowMatrixWrapper<Scalar,LocalOrdinal,GlobalOrdinal>::get(
         rcp_dynamic_cast<const TpetraRowMatrix_t>(tpetraOperator_.getConstObj(), true));
     }
     *epetraOp = epetraOp_;
