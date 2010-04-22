@@ -1,0 +1,22 @@
+
+#
+# Increase size of test output sent to CDash to increase the likelihood of
+# errors being visible on the dashboard results.
+#
+
+SET(CTEST_CUSTOM_MAXIMUM_PASSED_TEST_OUTPUT_SIZE 50000)
+
+SET(CTEST_CUSTOM_MAXIMUM_FAILED_TEST_OUTPUT_SIZE 20000000)
+
+#
+# These variables represent the maximum number of characters sent as test
+# output for an individual test in the Test.xml file that goes to the CDash
+# server. If 0, then all output is sent, regardless of size. 0 is not
+# recommended, however, because the maximum xml output that CDash can easily
+# parse (on a web server with default php and MySQL settings) appears to be in
+# the 50 to 100 MB range.
+#
+# So the sum of the output from all tests sent at one time in a Test.xml file
+# should strive to be under 50M. If output is larger than that, submissions
+# should be broken up into smaller, multiple Test.xml files...
+#

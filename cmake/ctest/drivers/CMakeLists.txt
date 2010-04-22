@@ -26,6 +26,11 @@ set(CMAKE_MODULE_PATH
 include(CTest)
 include(TrilinosDriverSupport)
 
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/CTestCustom.cmake.in
+  ${CMAKE_CURRENT_BINARY_DIR}/CTestCustom.cmake
+  )
+
 # Now make exactly one add_subdirectory call based on the site name of the
 # machine we're running on...
 #
@@ -58,4 +63,13 @@ endforeach()
 # The one add_subdirectory call:
 #
 message("subdir='${subdir}'")
+
+if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${subdir}")
+  message(FATAL_ERROR "error: there is no subdirectory matching '${subdir}'")
+endif()
+
+if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/${subdir}/CMakeLists.txt")
+  message(FATAL_ERROR "error: there is no CMakeLists.txt file in '${CMAKE_CURRENT_SOURCE_DIR}/${subdir}'")
+endif()
+
 add_subdirectory("${subdir}")
