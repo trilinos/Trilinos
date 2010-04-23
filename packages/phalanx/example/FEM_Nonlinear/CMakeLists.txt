@@ -70,4 +70,4 @@ IF (Phalanx_ENABLE_Epetra AND Phalanx_ENABLE_Belos AND Phalanx_ENABLE_Ifpack AND
     PASS_REGULAR_EXPRESSION "Run has completed successfully!"
     )
   
-ENDIF(Phalanx_ENABLE_Epetra AND Phalanx_ENABLE_Belos AND Phalanx_ENABLE_Ifpack AND Phalanx_ENABLE_ML)
+ENDIF(Phalanx_ENABLE_Epetra AND Phalanx_ENABLE_Belos AND Phalanx_ENABLE_Ifpack AND Phalanx_ENABLE_ML AND Phalanx_ENABLE_Amesos)
