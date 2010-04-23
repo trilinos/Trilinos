@@ -136,7 +136,7 @@ void GatherSolution<PHX::MyTraits::Jacobian, Traits>::
 evaluateFields(typename Traits::EvalData workset)
 { 
   const std::size_t num_eq = val.size();
-  const std::size_t num_dof = num_eq * num_nodes;
+  //const std::size_t num_dof = num_eq * num_nodes;
   std::vector<Element_Linear2D>::iterator element = workset.begin;
 
   std::size_t cell = 0;
@@ -148,7 +148,7 @@ evaluateFields(typename Traits::EvalData workset)
 
       for (std::size_t eq = 0; eq < val.size(); eq++) {
 	(val[eq])(cell,node) = 
-	  Sacado::Fad::DFad<double>(num_dof, (*x)[firstDOF + eq]);
+	  Sacado::Fad::SFad<double,8>((*x)[firstDOF + eq]);
 	(val[eq])(cell,node).fastAccessDx(num_eq * node + eq) = 1.0;
 
 	// std::cout << "val[" << eq << "](" << cell << "," << node << ") = "
@@ -204,7 +204,6 @@ void GatherSolution<PHX::MyTraits::Jv, Traits>::
 evaluateFields(typename Traits::EvalData workset)
 { 
   const std::size_t num_eq = val.size();
-  const std::size_t num_dof = num_eq * num_nodes;
   std::vector<Element_Linear2D>::iterator element = workset.begin;
 
   std::size_t cell = 0;
@@ -216,7 +215,7 @@ evaluateFields(typename Traits::EvalData workset)
 
       for (std::size_t eq = 0; eq < val.size(); eq++) {
 	(val[eq])(cell,node) = 
-	  Sacado::Fad::DFad<double>(num_dof, (*x)[firstDOF + eq]);
+	  Sacado::Fad::SFad<double,1>((*x)[firstDOF + eq]);
 	(val[eq])(cell,node).fastAccessDx(0) = (*(workset.v))[firstDOF + eq];
 	//(val[eq])(cell,node).fastAccessDx(num_eq * node + eq) = 1.0;
 
