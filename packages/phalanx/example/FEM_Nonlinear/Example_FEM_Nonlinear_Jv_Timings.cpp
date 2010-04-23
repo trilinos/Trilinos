@@ -484,7 +484,7 @@ int main(int argc, char *argv[])
     // *********************************************************
     // * Build Preconditioner (Ifpack or ML)
     // *********************************************************    
-    bool use_ml = true;
+    bool use_ml = false;
 
     RCP<Belos::EpetraPrecOp> belosPrec;
     RCP<Ifpack_Preconditioner> ifpack_prec;
