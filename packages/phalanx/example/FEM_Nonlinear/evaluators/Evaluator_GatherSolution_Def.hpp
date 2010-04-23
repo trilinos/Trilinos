@@ -161,3 +161,72 @@ evaluateFields(typename Traits::EvalData workset)
 }
 
 // **********************************************************************
+// Specialization: Jv
+// **********************************************************************
+
+template<typename Traits>
+GatherSolution<PHX::MyTraits::Jv, Traits>::
+GatherSolution(const Teuchos::ParameterList& p)
+{ 
+  const std::vector<std::string>& names = 
+    *(p.get< Teuchos::RCP< std::vector<std::string> > >("Solution Names"));
+
+  Teuchos::RCP<PHX::DataLayout> dl = 
+    p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout");
+
+  x = p.get< Teuchos::RCP<Epetra_Vector> >("Solution Vector");
+
+  val.resize(names.size());
+  for (std::size_t eq = 0; eq < names.size(); ++eq) {
+    PHX::MDField<ScalarT,Cell,Node> f(names[eq],dl);
+    val[eq] = f;
+    this->addEvaluatedField(val[eq]);
+  }
+
+  this->setName("Gather Solution");
+}
+
+// **********************************************************************
+template<typename Traits> 
+void GatherSolution<PHX::MyTraits::Jv, Traits>::
+postRegistrationSetup(typename Traits::SetupData d, 
+		      PHX::FieldManager<Traits>& fm)
+{
+  for (std::size_t eq = 0; eq < val.size(); ++eq)
+    this->utils.setFieldData(val[eq],fm);
+
+  num_nodes = val[0].dimension(1);
+}
+
+// **********************************************************************
+template<typename Traits>
+void GatherSolution<PHX::MyTraits::Jv, Traits>::
+evaluateFields(typename Traits::EvalData workset)
+{ 
+  const std::size_t num_eq = val.size();
+  const std::size_t num_dof = num_eq * num_nodes;
+  std::vector<Element_Linear2D>::iterator element = workset.begin;
+
+  std::size_t cell = 0;
+  for (; element != workset.end; ++element,++cell) {
+    
+    for (std::size_t node = 0; node < num_nodes; node++) {
+      int node_GID = element->globalNodeId(node);
+      int firstDOF = x->Map().LID(node_GID * num_eq);
+
+      for (std::size_t eq = 0; eq < val.size(); eq++) {
+	(val[eq])(cell,node) = 
+	  Sacado::Fad::DFad<double>(num_dof, (*x)[firstDOF + eq]);
+	(val[eq])(cell,node).fastAccessDx(0) = (*(workset.v))[firstDOF + eq];
+	//(val[eq])(cell,node).fastAccessDx(num_eq * node + eq) = 1.0;
+
+	// std::cout << "val[" << eq << "](" << cell << "," << node << ") = "
+// 		  << (val[eq])(cell,node) << std::endl;
+      }
+    }
+
+  }
+
+}
+
+// **********************************************************************

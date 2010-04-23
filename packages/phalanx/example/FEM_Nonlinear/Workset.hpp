@@ -35,6 +35,10 @@
 #include "Phalanx_ConfigDefs.hpp" // for std::vector
 #include "Element_Linear2D.hpp"
 
+#include "Teuchos_RCP.hpp"
+
+class Epetra_Vector;
+
 struct MyWorkset {
   
   std::size_t local_offset;
@@ -44,6 +48,10 @@ struct MyWorkset {
   std::vector<Element_Linear2D>::iterator begin;
 
   std::vector<Element_Linear2D>::iterator end;
+
+  //! For Jacobian Vector products
+  Teuchos::RCP<Epetra_Vector> v;
+  Teuchos::RCP<Epetra_Vector> Jv;
 
 };
 

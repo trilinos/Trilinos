@@ -63,13 +63,15 @@ namespace PHX {
     // Scalar types we plan to use
     typedef double RealType;
     typedef Sacado::Fad::SFad<double,8> FadType;
+    typedef Sacado::Fad::SFad<double,1> JvFadType;
     
     // ******************************************************************
     // *** Evaluation Types
     // ******************************************************************
     struct Residual { typedef RealType ScalarT; };
     struct Jacobian { typedef FadType ScalarT;  };
-    typedef Sacado::mpl::vector<Residual, Jacobian> EvalTypes;
+    struct Jv { typedef JvFadType ScalarT;  };
+    typedef Sacado::mpl::vector<Residual, Jacobian, Jv> EvalTypes;
 
     // ******************************************************************
     // *** Data Types
@@ -83,10 +85,14 @@ namespace PHX {
     // Jacobian (default scalar type is Fad<double, double>)
     typedef Sacado::mpl::vector<FadType> JacobianDataTypes;
 
+    // Jacobian Vector Product (default scalar type is Fad<double, double>)
+    typedef Sacado::mpl::vector<JvFadType> JvDataTypes;
+
     // Maps the key EvalType a vector of DataTypes
     typedef boost::mpl::map<
       boost::mpl::pair<Residual, ResidualDataTypes>,
-      boost::mpl::pair<Jacobian, JacobianDataTypes>
+      boost::mpl::pair<Jacobian, JacobianDataTypes>,
+      boost::mpl::pair<Jv, JvDataTypes>
     >::type EvalToDataMap;
 
     // ******************************************************************
@@ -118,11 +124,17 @@ namespace PHX {
   template<> struct TypeString<MyTraits::Jacobian> 
   { static const std::string value; };
 
+  template<> struct TypeString<MyTraits::Jv> 
+  { static const std::string value; };
+
   // Data Types
   template<> struct TypeString<double> 
   { static const std::string value; };
 
   template<> struct TypeString< Sacado::Fad::SFad<double,8> > 
+  { static const std::string value; };
+
+  template<> struct TypeString< Sacado::Fad::SFad<double,1> > 
   { static const std::string value; };
 
 }

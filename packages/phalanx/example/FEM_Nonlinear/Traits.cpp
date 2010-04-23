@@ -42,7 +42,12 @@ const std::string PHX::TypeString<PHX::MyTraits::Residual>::value = "Residual";
 
 const std::string PHX::TypeString<PHX::MyTraits::Jacobian>::value = "Jacobian";
 
+const std::string PHX::TypeString<PHX::MyTraits::Jv>::value = "Jv";
+
 const std::string PHX::TypeString<double>::value = "double";
 
 const std::string PHX::TypeString< Sacado::Fad::SFad<double,8> >::value = 
   "Sacado::Fad::SFad<double,8>";
+
+const std::string PHX::TypeString< Sacado::Fad::SFad<double,1> >::value = 
+  "Sacado::Fad::SFad<double,1>";

@@ -206,3 +206,87 @@ evaluateFields(typename Traits::EvalData workset)
 }
 
 // **********************************************************************
+// Specialization: Jv
+// **********************************************************************
+
+template<typename Traits>
+ScatterResidual<PHX::MyTraits::Jv, Traits>::
+ScatterResidual(const Teuchos::ParameterList& p)
+{ 
+  scatter_operation = Teuchos::rcp(new PHX::Tag<ScalarT>("Scatter",p.get< Teuchos::RCP<PHX::DataLayout> >("Dummy Data Layout")));
+
+  const std::vector<std::string>& names = 
+    *(p.get< Teuchos::RCP< std::vector<std::string> > >("Residual Names"));
+
+  Teuchos::RCP<PHX::DataLayout> dl = 
+    p.get< Teuchos::RCP<PHX::DataLayout> >("Data Layout");
+  
+  f = p.get< Teuchos::RCP<Epetra_Vector> >("Residual Vector");
+  
+  Jac = p.get< Teuchos::RCP<Epetra_CrsMatrix> >("Jacobian Matrix");
+  
+  val.resize(names.size());
+  for (std::size_t eq = 0; eq < names.size(); ++eq) {
+    PHX::MDField<ScalarT,Cell,Node> mdf(names[eq],dl);
+    val[eq] = mdf;
+    this->addDependentField(val[eq]);
+  }
+
+  this->addEvaluatedField(*scatter_operation);
+
+  this->setName("Scatter Residual(Jv)");
+}
+
+// **********************************************************************
+template<typename Traits> 
+void ScatterResidual<PHX::MyTraits::Jv, Traits>::
+postRegistrationSetup(typename Traits::SetupData d, 
+		      PHX::FieldManager<Traits>& fm)
+{
+  for (std::size_t eq = 0; eq < val.size(); ++eq)
+    this->utils.setFieldData(val[eq],fm);
+
+  num_nodes = val[0].dimension(1);
+  num_eq = val.size();
+}
+
+// **********************************************************************
+template<typename Traits>
+void ScatterResidual<PHX::MyTraits::Jv, Traits>::
+evaluateFields(typename Traits::EvalData workset)
+{ 
+  std::vector<Element_Linear2D>::iterator element = workset.begin;
+
+  std::size_t cell = 0;
+  for (; element != workset.end; ++element,++cell) {
+    
+    // Sum element residual and Jacobian into global residual, Jacobian
+    // Loop over nodes in element
+    for (int node = 0; node < num_nodes; node++) {
+      
+      int node_GID = element->globalNodeId(node);
+      int firstDOF = Jac->RowMap().LID(node_GID * num_eq);
+
+      // Loop over equations per node
+      for (int eq = 0; eq < num_eq; eq++) {
+	
+	int row = firstDOF + eq;
+	
+	// Sum residual
+	// 	if (f != Teuchos::null)
+	// 	  f->SumIntoMyValue(row, 0, val[eq](cell,node).val());
+	
+	workset.Jv->SumIntoMyValue(row, 0, 
+				     val[eq](cell,node).fastAccessDx(0));
+	
+	
+
+      } // row equations
+      
+    } // row node
+
+  } // element
+
+}
+
+// **********************************************************************

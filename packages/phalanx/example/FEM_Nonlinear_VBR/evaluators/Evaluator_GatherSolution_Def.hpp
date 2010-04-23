@@ -162,3 +162,32 @@ evaluateFields(typename Traits::EvalData workset)
 }
 
 // **********************************************************************
+// Specialization: Jv
+// **********************************************************************
+
+template<typename Traits>
+GatherSolution<PHX::MyTraits::Jv, Traits>::
+GatherSolution(const Teuchos::ParameterList& p)
+{
+  // Not implemented yet!
+}
+
+// **********************************************************************
+template<typename Traits> 
+void GatherSolution<PHX::MyTraits::Jv, Traits>::
+postRegistrationSetup(typename Traits::SetupData data,
+		      PHX::FieldManager<Traits>& fm)
+{
+  // Not implemented yet!
+}
+
+// **********************************************************************
+template<typename Traits>
+void GatherSolution<PHX::MyTraits::Jv, Traits>::
+evaluateFields(typename Traits::EvalData workset)
+{ 
+  TEST_FOR_EXCEPTION(true, std::logic_error,
+		     "Error: GatherSolution not implemented for \"Jv\" evaluation type!");
+}
+
+// **********************************************************************

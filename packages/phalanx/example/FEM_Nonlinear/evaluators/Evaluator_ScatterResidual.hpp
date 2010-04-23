@@ -123,6 +123,38 @@ private:
 };
 
 // **************************************************************
+// Jv
+// **************************************************************
+template<typename Traits>
+class ScatterResidual<PHX::MyTraits::Jv,Traits>
+  : public PHX::EvaluatorWithBaseImpl<Traits>,
+    public PHX::EvaluatorDerived<PHX::MyTraits::Jv, Traits>  {
+  
+public:
+  
+  ScatterResidual(const Teuchos::ParameterList& p);
+  
+  void postRegistrationSetup(typename Traits::SetupData d,
+			     PHX::FieldManager<Traits>& vm);
+  
+  void evaluateFields(typename Traits::EvalData d);
+  
+private:
+
+  typedef typename PHX::MyTraits::Jv::ScalarT ScalarT;
+
+  Teuchos::RCP<PHX::FieldTag> scatter_operation;
+
+  std::vector< PHX::MDField<ScalarT,Cell,Node> > val;
+ 
+  Teuchos::RCP<Epetra_Vector> f;
+  Teuchos::RCP<Epetra_CrsMatrix> Jac;
+
+  int num_nodes;
+  int num_eq;
+};
+
+// **************************************************************
 
 #ifndef PHX_ETI
 #include "Evaluator_ScatterResidual_Def.hpp"

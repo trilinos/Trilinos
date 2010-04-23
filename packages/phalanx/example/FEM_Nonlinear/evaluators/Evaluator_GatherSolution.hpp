@@ -114,6 +114,34 @@ private:
 };
 
 // **************************************************************
+// Jv
+// **************************************************************
+template<typename Traits>
+class GatherSolution<PHX::MyTraits::Jv,Traits>
+  : public PHX::EvaluatorWithBaseImpl<Traits>,
+    public PHX::EvaluatorDerived<PHX::MyTraits::Jv, Traits>  {
+  
+public:
+  
+  GatherSolution(const Teuchos::ParameterList& p);
+  
+  void postRegistrationSetup(typename Traits::SetupData d,
+			     PHX::FieldManager<Traits>& vm);
+  
+  void evaluateFields(typename Traits::EvalData d);
+  
+private:
+
+  typedef typename PHX::MyTraits::Jv::ScalarT ScalarT;
+
+  std::vector< PHX::MDField<ScalarT,Cell,Node> > val;
+ 
+  Teuchos::RCP<Epetra_Vector> x;
+
+  std::size_t num_nodes;
+};
+
+// **************************************************************
 
 #ifndef PHX_ETI
 #include "Evaluator_GatherSolution_Def.hpp"

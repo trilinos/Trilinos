@@ -12,7 +12,6 @@ IF (Phalanx_ENABLE_Epetra AND Phalanx_ENABLE_Belos AND Phalanx_ENABLE_Ifpack AND
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/evaluators)
   
   SET(example_fem_nonlinear_SOURCES
-    Example_FEM_Nonlinear.cpp
     Traits.hpp
     Traits.cpp
     FactoryTraits.hpp
@@ -45,7 +44,15 @@ IF (Phalanx_ENABLE_Epetra AND Phalanx_ENABLE_Belos AND Phalanx_ENABLE_Ifpack AND
   
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
     example_fem_nonlinear
-    SOURCES ${example_fem_nonlinear_SOURCES}
+    SOURCES Example_FEM_Nonlinear.cpp ${example_fem_nonlinear_SOURCES}
+    COMM serial mpi
+    PASS_REGULAR_EXPRESSION "Run has completed successfully!"
+    )
+
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    example_fem_nonlinear_Jv_timings
+    SOURCES Example_FEM_Nonlinear_Jv_Timings.cpp 
+            ${example_fem_nonlinear_SOURCES}
     COMM serial mpi
     PASS_REGULAR_EXPRESSION "Run has completed successfully!"
     )
