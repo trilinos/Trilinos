@@ -351,7 +351,7 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
       insert_transitive_ghost( meta , i->first , work );
     }
 
-    for ( std::set<EntityProc>::const_iterator
+    for ( std::set<EntityProc>::iterator
           i = send_closure.begin() ; i != send_closure.end() ; ++i ) {
       insert_transitive_ghost( meta , i->first , work );
     }
