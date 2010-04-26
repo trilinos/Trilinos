@@ -31,9 +31,13 @@
 #ifndef STOKHOS_STIELTJESPCEBASIS_HPP
 #define STOKHOS_STIELTJESPCEBASIS_HPP
 
+#include "Teuchos_RCP.hpp"
+#include "Teuchos_Array.hpp"
+
 #include "Stokhos_RecurrenceBasis.hpp"
 #include "Stokhos_OrthogPolyApprox.hpp"
 #include "Stokhos_Quadrature.hpp"
+#include "Stokhos_Sparse3Tensor.hpp"
 
 #include "Teuchos_SerialDenseMatrix.hpp"
 
@@ -59,11 +63,13 @@ namespace Stokhos {
      * \param normalize whether polynomials should be given unit norm
      */
     StieltjesPCEBasis(
-       ordinal_type p,
-       const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& pce,
-       const Stokhos::Quadrature<ordinal_type, value_type>& quad,
-       bool use_pce_quad_points,
-       bool normalize = false);
+      ordinal_type p,
+      const Teuchos::RCP<const Stokhos::OrthogPolyApprox<ordinal_type, value_type> >& pce,
+      const Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >& quad,
+      bool use_pce_quad_points,
+      bool normalize = false,
+      bool project_integrals = false,
+      const Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk = Teuchos::null);
 
     //! Destructor
     ~StieltjesPCEBasis();
@@ -135,14 +141,29 @@ namespace Stokhos {
      * \brief Compute \f$\int\psi^2_k(t) d\lambda(t)\f$ and 
      * \f$\int t\psi^2_k(t) d\lambda(t)\f$
      */
-    void integrateBasisSquared(ordinal_type k, 
-			       const Teuchos::Array<value_type>& a,
-			       const Teuchos::Array<value_type>& b,
-			       const Teuchos::Array<value_type>& weights,
-			       const Teuchos::Array<value_type>& points,
-			       Teuchos::Array< Teuchos::Array<value_type> >& phi_vals,
-			       value_type& val1, value_type& val2) const;
+    void integrateBasisSquared(
+      ordinal_type k, 
+      const Teuchos::Array<value_type>& a,
+      const Teuchos::Array<value_type>& b,
+      const Teuchos::Array<value_type>& weights,
+      const Teuchos::Array<value_type>& points,
+      Teuchos::Array< Teuchos::Array<value_type> >& phi_vals,
+      value_type& val1, value_type& val2) const;
 
+    /*! 
+     * \brief Compute \f$\int\psi^2_k(t) d\lambda(t)\f$ and 
+     * \f$\int t\psi^2_k(t) d\lambda(t)\f$ by projecting onto original
+     * PCE basis
+     */
+    void integrateBasisSquaredProj(
+      ordinal_type k, 
+      const Teuchos::Array<value_type>& a,
+      const Teuchos::Array<value_type>& b,
+      const Teuchos::Array<value_type>& weights,
+      const Teuchos::Array<value_type>& points,
+      Teuchos::Array< Teuchos::Array<value_type> >& phi_vals,
+      value_type& val1, value_type& val2) const;
+    
     //! Evaluate polynomials via 3-term recurrence
     void evaluateRecurrence(ordinal_type k,
 			    const Teuchos::Array<value_type>& a,
@@ -160,11 +181,20 @@ namespace Stokhos {
 
   protected:
 
-    //! Values of PCE at quadrature points
-    mutable Teuchos::Array<value_type> pce_vals;
+    //! PC expansion
+    Teuchos::RCP<const Stokhos::OrthogPolyApprox<ordinal_type, value_type> > pce;
+
+    //! Quadrature object
+    Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> > quad;
 
     //! PCE quadrature weights
-    Teuchos::Array<value_type> pce_weights;
+    const Teuchos::Array<value_type>& pce_weights;
+
+    //! Values of PCE basis functions at quadrature points
+    const Teuchos::Array< Teuchos::Array<value_type> >& basis_values;
+
+    //! Values of PCE at quadrature points
+    mutable Teuchos::Array<value_type> pce_vals;
 
     //! Values of generated polynomials at PCE quadrature points
     mutable Teuchos::Array< Teuchos::Array<value_type> > phi_vals;
@@ -174,6 +204,18 @@ namespace Stokhos {
 
     //! Matrix mapping coefficients in Stieltjes basis back to original basis
     Teuchos::SerialDenseMatrix<ordinal_type, value_type> fromStieltjesMat;
+
+    //! Project Stieltjes integrals to original PCE basis
+    bool project_integrals;
+
+    //! PCE basis (needed for integral projection method)
+    Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> > basis;
+
+    //! Triple product tensor (needed for integral projection method)
+    Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> > Cijk;
+
+    //! Array store PC expansion of generated orthogonal polynomials
+    mutable Teuchos::Array<value_type> phi_pce_coeffs;
 
   }; // class StieltjesPCEBasis
 

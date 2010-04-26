@@ -47,11 +47,9 @@ StieltjesGramSchmidtBuilder(
   // Create Stieltjes basis for each pce
   for (ordinal_type k=0; k<new_dim; k++) {
     new_coordinate_bases[k] = Teuchos::rcp(
-      new StieltjesPCEBasis<ordinal_type,value_type>(new_order,	
-						     pces[k], 
-						     *quad, 
-						     use_pce_qp, 
-						     normalize)
+      new StieltjesPCEBasis<ordinal_type,value_type>(
+	new_order, Teuchos::rcp(&(pces[k]),false), quad, use_pce_qp, 
+	normalize)
       );
   }
   

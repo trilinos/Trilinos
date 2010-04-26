@@ -124,8 +124,8 @@ struct GramSchmidt_PCE_Setup {
     
     // Compute Stieltjes basis
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<OrdinalType,ValueType> > > st_bases(2);
-    st_bases[0] = Teuchos::rcp(new Stokhos::StieltjesPCEBasis<OrdinalType,ValueType>(p, u, *quad, true));
-    st_bases[1] = Teuchos::rcp(new Stokhos::StieltjesPCEBasis<OrdinalType,ValueType>(p, v, *quad, true));
+    st_bases[0] = Teuchos::rcp(new Stokhos::StieltjesPCEBasis<OrdinalType,ValueType>(p, Teuchos::rcp(&u,false), quad, true));
+    st_bases[1] = Teuchos::rcp(new Stokhos::StieltjesPCEBasis<OrdinalType,ValueType>(p, Teuchos::rcp(&v,false), quad, true));
     Teuchos::RCP<const Stokhos::OrthogPolyBasis<OrdinalType,ValueType> > st_basis = 
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<OrdinalType,ValueType>(st_bases, 1e-15));
     Stokhos::OrthogPolyApprox<OrdinalType,ValueType> u_st(st_basis), v_st(st_basis);
@@ -145,7 +145,7 @@ struct GramSchmidt_PCE_Setup {
     st_bases[1]->getQuadPoints(p+1, st_points_1, st_weights_1, st_values_1);
     Teuchos::RCP< Teuchos::Array< Teuchos::Array<ValueType> > > st_points = 
       Teuchos::rcp(new Teuchos::Array< Teuchos::Array<ValueType> >(st_points_0.size()));
-    for (unsigned int i=0; i<st_points_0.size(); i++) {
+    for (int i=0; i<st_points_0.size(); i++) {
       (*st_points)[i].resize(2);
       (*st_points)[i][0] = st_points_0[i];
       (*st_points)[i][1] = st_points_1[i];
@@ -208,7 +208,7 @@ namespace GramSchmidtTest {
     Teuchos::SerialDenseMatrix<int,double> mat(setup.gs_sz, setup.gs_sz);
     for (int i=0; i<setup.gs_sz; i++) {
       for (int j=0; j<setup.gs_sz; j++) {
-	for (unsigned int k=0; k<weights.size(); k++)
+	for (int k=0; k<weights.size(); k++)
 	  mat(i,j) += weights[k]*values[k][i]*values[k][j];
 	mat(i,j) /= std::sqrt(norms[i]*norms[j]);
       }

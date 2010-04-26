@@ -95,11 +95,11 @@ int main(int argc, char **argv)
     // Compute tensor product Stieltjes basis for u and v
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > st_bases(2);
     st_bases[0] = 
-      Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(p, u, *quad, 
-							      true));
+      Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(
+		     p, Teuchos::rcp(&u,false), quad, true));
     st_bases[1] = 
-      Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(p, v, *quad, 
-							      true));
+      Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(
+		     p, Teuchos::rcp(&v,false), quad, true));
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > st_basis =
       Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(st_bases));
     Stokhos::OrthogPolyApprox<int,double>  u_st(st_basis), v_st(st_basis), 
@@ -119,7 +119,7 @@ int main(int argc, char **argv)
     Teuchos::Array< Teuchos::Array<double> > st_values_1;
     st_bases[1]->getQuadPoints(p+1, st_points_1, st_weights_1, st_values_1);
     Teuchos::Array< Teuchos::Array<double> > st_points(st_points_0.size());
-    for (unsigned int i=0; i<st_points_0.size(); i++) {
+    for (int i=0; i<st_points_0.size(); i++) {
       st_points[i].resize(2);
       st_points[i][0] = st_points_0[i];
       st_points[i][1] = st_points_1[i];

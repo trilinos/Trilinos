@@ -487,6 +487,12 @@ evalModel(const InArgs& inArgs, const OutArgs& outArgs) const
     // Perform integrations
     for (int qp=0; qp<quad_points.size(); qp++) {
 
+      // StieltjesPCEBasis can introduce quadrature points with zero weight
+      // Don't do those evaluations, since the model might not like the
+      // quadrature points (i.e., zero)
+      if (quad_weights[qp] == 0.0)
+	continue;
+
       {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("SGQuadModelEvaluator -- Polynomial Evaluation",
           PolyEvaluation);

@@ -35,29 +35,39 @@ template <typename ordinal_type, typename value_type>
 Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
 StieltjesPCEBasis(
    ordinal_type p,
-   const Stokhos::OrthogPolyApprox<ordinal_type, value_type>& pce,
-   const Stokhos::Quadrature<ordinal_type, value_type>& quad,
+   const Teuchos::RCP<const Stokhos::OrthogPolyApprox<ordinal_type, value_type> >& pce_,
+   const Teuchos::RCP<const Stokhos::Quadrature<ordinal_type, value_type> >& quad_,
    bool use_pce_quad_points_,
-   bool normalize) :
+   bool normalize,
+   bool project_integrals_,
+   const Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk_) :
   RecurrenceBasis<ordinal_type, value_type>("Stieltjes PCE", p, normalize),
+  pce(pce_),
+  quad(quad_),
+  pce_weights(quad->getQuadWeights()),
+  basis_values(quad->getBasisAtQuadPoints()),
   pce_vals(),
   phi_vals(),
   use_pce_quad_points(use_pce_quad_points_),
-  fromStieltjesMat(p+1,pce.size())
+  fromStieltjesMat(p+1,pce->size()),
+  project_integrals(project_integrals_),
+  basis(pce->basis()),
+  Cijk(Cijk_),
+  phi_pce_coeffs()
 {
   // Evaluate PCE at quad points
   const Teuchos::Array< Teuchos::Array<value_type> >& quad_points =
-    quad.getQuadPoints();
-  pce_weights = quad.getQuadWeights();
-  const Teuchos::Array< Teuchos::Array<value_type> >& basis_values =
-    quad.getBasisAtQuadPoints();
+    quad->getQuadPoints();
   ordinal_type nqp = pce_weights.size();
   pce_vals.resize(nqp);
   phi_vals.resize(nqp);
   for (ordinal_type i=0; i<nqp; i++) {
-    pce_vals[i] = pce.evaluate(quad_points[i], basis_values[i]);
+    pce_vals[i] = pce->evaluate(quad_points[i], basis_values[i]);
     phi_vals[i].resize(p+1);
   }
+
+  if (project_integrals)
+    phi_pce_coeffs.resize(basis->size());
   
   // Compute coefficients via Stieltjes
   stieltjes(0, p+1, pce_weights, pce_vals, this->alpha, this->beta, this->norms,
@@ -65,14 +75,14 @@ StieltjesPCEBasis(
   for (ordinal_type i=0; i<=p; i++)
     this->delta[i] = value_type(1.0);
 
-  ordinal_type sz = pce.size();
+  ordinal_type sz = pce->size();
   fromStieltjesMat.putScalar(0.0);
   for (ordinal_type i=0; i<=p; i++) {
     for (ordinal_type j=0; j<sz; j++) {
       for (ordinal_type k=0; k<nqp; k++)
 	fromStieltjesMat(i,j) += 
 	  pce_weights[k]*phi_vals[k][i]*basis_values[k][j];
-      fromStieltjesMat(i,j) /= pce.basis()->norm_squared(j);
+      fromStieltjesMat(i,j) /= basis->norm_squared(j);
     }
   }
 
@@ -115,10 +125,24 @@ getQuadPoints(ordinal_type quad_order,
   }
 
   // Call base class
+  ordinal_type num_points = 
+    static_cast<ordinal_type>(std::ceil((quad_order+1)/2.0));
+  if (quad_order > 2*this->p)
+    quad_order = 2*this->p;
   Stokhos::RecurrenceBasis<ordinal_type,value_type>::getQuadPoints(quad_order, 
 								   quad_points, 
 								   quad_weights,
 								   quad_values);
+  if (quad_weights.size() < num_points) {
+    ordinal_type old_size = quad_weights.size();
+    quad_weights.resize(num_points);
+    quad_points.resize(num_points);
+    quad_values.resize(num_points);
+    for (ordinal_type i=old_size; i<num_points; i++) {
+      quad_values[i].resize(this->p+1);
+      evaluateBases(quad_points[i], quad_values[i]);
+    }
+  }
 }
 
 template <typename ordinal_type, typename value_type>
@@ -178,14 +202,20 @@ stieltjes(ordinal_type nstart,
   value_type val1, val2;   
   ordinal_type start = nstart;
   if (nstart == 0) {
-    integrateBasisSquared(0, a, b, weights, points, phi_vals, val1, val2);
+    if (project_integrals)
+      integrateBasisSquaredProj(0, a, b, weights, points, phi_vals, val1, val2);
+    else
+      integrateBasisSquared(0, a, b, weights, points, phi_vals, val1, val2);
     nrm[0] = val1;
     a[0] = val2/val1;
     b[0] = value_type(1);
     start = 1;
   }
   for (ordinal_type i=start; i<nfinish; i++) {
-    integrateBasisSquared(i, a, b, weights, points, phi_vals, val1, val2);
+    if (project_integrals)
+      integrateBasisSquaredProj(i, a, b, weights, points, phi_vals, val1, val2);
+    else
+      integrateBasisSquared(i, a, b, weights, points, phi_vals, val1, val2);
     // std::cout << "i = " << i << " val1 = " << val1 << " val2 = " << val2
     // 	      << std::endl;
     TEST_FOR_EXCEPTION(val1 < 1.0e-14, std::logic_error,
@@ -240,6 +270,55 @@ evaluateRecurrence(ordinal_type k,
     for (ordinal_type i=0; i<np; i++)
       values[i][k] = 
 	(points[i] - a[k-1])*values[i][k-1] - b[k-1]*values[i][k-2];
+}
+
+template <typename ordinal_type, typename value_type>
+void
+Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
+integrateBasisSquaredProj(
+  ordinal_type k, 
+  const Teuchos::Array<value_type>& a,
+  const Teuchos::Array<value_type>& b,
+  const Teuchos::Array<value_type>& weights,
+  const Teuchos::Array<value_type>& points,
+  Teuchos::Array< Teuchos::Array<value_type> >& phi_vals,
+  value_type& val1, value_type& val2) const
+{
+  ordinal_type nqp = weights.size();
+  ordinal_type npc = basis->size();
+  const Teuchos::Array<value_type>& norms = basis->norm_squared();
+
+  // Compute PC expansion of phi_k in original basis
+  evaluateRecurrence(k, a, b, points, phi_vals);
+  for (ordinal_type j=0; j<npc; j++) {
+    value_type c = value_type(0);
+    for (ordinal_type i=0; i<nqp; i++)
+      c += weights[i]*phi_vals[i][k]*basis_values[i][j];
+    c /= norms[j];
+    phi_pce_coeffs[j] = c;
+  }
+
+  // Compute \int phi_k^2(\eta) d\eta
+  val1 = value_type(0);
+  for (ordinal_type j=0; j<npc; j++)
+    val1 += phi_pce_coeffs[j]*phi_pce_coeffs[j]*norms[j];
+
+  // Compute \int \eta phi_k^2(\eta) d\eta
+  val2 = value_type(0);
+  for (ordinal_type l=0; l<npc; l++) {
+    int nj = Cijk->num_j(l);
+    const Teuchos::Array<ordinal_type>& j_indices = Cijk->Jindices(l);
+    for (ordinal_type jj=0; jj<nj; jj++) {
+      ordinal_type j = j_indices[jj];
+      const Teuchos::Array<ordinal_type>& i_indices = Cijk->Iindices(l,jj);
+      const Teuchos::Array<value_type>& c_values = Cijk->values(l,jj);
+      ordinal_type ni = i_indices.size();
+      for (ordinal_type ii=0; ii<ni; ii++) {
+	ordinal_type i = i_indices[ii];
+	val2 += phi_pce_coeffs[l]*phi_pce_coeffs[i]*(*pce)[j]*c_values[ii];
+      }
+    }
+  }
 }
 
 template <typename ordinal_type, typename value_type>

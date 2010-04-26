@@ -111,7 +111,8 @@ struct Stieltjes_PCE_Setup {
     
     // Compute Stieltjes basis
     st_1d_basis = 
-      Teuchos::rcp(new Stokhos::StieltjesPCEBasis<OrdinalType,ValueType>(p, u, *quad, use_pce_quad_points));
+      Teuchos::rcp(new Stokhos::StieltjesPCEBasis<OrdinalType,ValueType>(
+		     p, Teuchos::rcp(&u,false), quad, use_pce_quad_points));
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<OrdinalType,ValueType> > > st_bases(1);
     st_bases[0] = st_1d_basis;
     st_basis = 

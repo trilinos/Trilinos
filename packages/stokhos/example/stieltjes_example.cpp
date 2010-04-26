@@ -62,11 +62,13 @@ int main(int argc, char **argv)
 {
   try {
 
-    const unsigned int d = 1;
+    const unsigned int d = 2;
     const unsigned int pmin = 1;
-    const unsigned int pmax = 12;
+    const unsigned int pmax = 10;
     const unsigned int np = pmax-pmin+1;
-    bool use_pce_quad_points = true;
+    bool use_pce_quad_points = false;
+    bool normalize = false;
+    bool project_integrals = true;
     Teuchos::Array<double> mean(np), mean_st(np), std_dev(np), std_dev_st(np);
 
     Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d); 
@@ -93,6 +95,8 @@ int main(int argc, char **argv)
       // Tensor product quadrature
       Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
       	Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
+      // Teuchos::RCP<const Stokhos::Quadrature<int,double> > quad = 
+      // 	Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(basis, p));
 
       // Triple product tensor
       Teuchos::RCP<Stokhos::Sparse3Tensor<int,double> > Cijk =
@@ -110,10 +114,12 @@ int main(int argc, char **argv)
       Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > st_bases(2);
       st_bases[0] = 
 	Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(
-		       p, u, *quad, use_pce_quad_points));
+		       p, Teuchos::rcp(&u,false), quad, use_pce_quad_points,
+		       normalize, project_integrals, Cijk));
       st_bases[1] = 
 	Teuchos::rcp(new Stokhos::StieltjesPCEBasis<int,double>(
-		       p, v, *quad, use_pce_quad_points));
+		       p, Teuchos::rcp(&v,false), quad, use_pce_quad_points,
+		       normalize, project_integrals, Cijk));
       Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > 
 	st_basis = 
 	Teuchos::rcp(new Stokhos::CompletePolynomialBasis<int,double>(st_bases));
@@ -132,8 +138,10 @@ int main(int argc, char **argv)
 	
       // Tensor product quadrature
       Teuchos::RCP<const Stokhos::Quadrature<int,double> > st_quad;
-      if (!use_pce_quad_points)
-	st_quad = Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(st_basis));
+      if (!use_pce_quad_points) {
+	//st_quad = Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(st_basis));
+	st_quad = Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(st_basis, p));
+      }
       else {
 	Teuchos::Array<double> st_points_0;
 	Teuchos::Array<double> st_weights_0;
@@ -145,7 +153,7 @@ int main(int argc, char **argv)
 	st_bases[1]->getQuadPoints(p+1, st_points_1, st_weights_1, st_values_1);
 	Teuchos::RCP< Teuchos::Array< Teuchos::Array<double> > > st_points =
 	  Teuchos::rcp(new Teuchos::Array< Teuchos::Array<double> >(st_points_0.size()));
-	for (unsigned int i=0; i<st_points_0.size(); i++) {
+	for (int i=0; i<st_points_0.size(); i++) {
 	  (*st_points)[i].resize(2);
 	  (*st_points)[i][0] = st_points_0[i];
 	  (*st_points)[i][1] = st_points_1[i];
