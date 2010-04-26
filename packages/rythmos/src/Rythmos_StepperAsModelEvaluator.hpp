@@ -290,8 +290,8 @@ void StepperAsModelEvaluator<Scalar>::evalModelImpl(
   RCP<Thyra::VectorBase<Scalar> >
     g_out = outArgs.get_g(0);
 
-  TEST_FOR_EXCEPT(
-    is_null(g_out) && "You must ask for g(0) when you call this function!"
+  TEST_FOR_EXCEPT_MSG(
+    is_null(g_out), "You must ask for g(0) when you call this function!"
     );
 
 #ifdef RYTHMOS_DEBUG
