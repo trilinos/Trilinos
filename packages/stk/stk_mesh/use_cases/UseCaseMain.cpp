@@ -12,6 +12,7 @@
 #include <use_cases/UseCase_3.hpp>
 #include <use_cases/UseCase_4.hpp>
 #include <use_cases/UseCase_ElementDeath.hpp>
+#include <use_cases/UseCase_ChangeOwner.hpp>
 #include <stk_mesh/base/Types.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
@@ -55,6 +56,12 @@ int main ( int argc, char * argv[] )
     const bool local_status = stk::mesh::use_cases::verifyMesh(mesh);
     printStatus(local_status);
     status = status && local_status;
+  }
+  {
+    std::cout << "Use Case Change Owner ... ";
+    Grid2D_Fixture test( parallel_machine );
+    const bool result = test.test_change_owner();
+    printStatus(result);
   }
   {
     std::cout << "Use Case Element Death 1 ... ";

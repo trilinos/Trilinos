@@ -21,7 +21,7 @@ namespace mesh {
    *
    *   \param entities Each entity must be in the locally_used part.
    *
-   *   \param entities_closure Parallel consisent closure of the input
+   *   \param entities_closure Parallel consistent closure of the input
    *     vector. This vector will be sorted and unique.  May include
    *     ghosted entities.
    */
