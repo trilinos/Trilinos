@@ -79,7 +79,8 @@ using Thyra::DefaultPreconditioner;
   */
 class PreconditionerFactory 
    : public virtual Thyra::PreconditionerFactoryBase<double>
-   , public RequestHandler {
+   // , public RequestHandler {
+   {
 public:
 
    /** \brief Function that is called to build the preconditioner
@@ -218,6 +219,14 @@ public:
    //! Unset the parameter list that was set using setParameterList(). 
    Teuchos::RCP< Teuchos::ParameterList > unsetParameterList();
    //@}
+
+   //! Set the request handler with pointers to the appropriate callbacks
+   void setRequestHandler(const Teuchos::RCP<RequestHandler> & rh)
+   { callbackHandler_ = rh; }
+
+   //! Get the request handler with pointers to the appropriate callbacks
+   Teuchos::RCP<RequestHandler> getRequestHandler() const 
+   { return callbackHandler_; }
 
 protected:
    //! for ParameterListAcceptor

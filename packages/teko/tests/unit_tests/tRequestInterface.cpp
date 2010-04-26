@@ -75,9 +75,9 @@ Teko::LinearOp TestFactory::buildPreconditionerOperator(Teko::LinearOp & lo,
 {
    Teko::RequestMesg pcdMesg("PCD Op"), tsMesg("timestep"), strMesg("name");
 
-   pcdOp_ = request<Teko::LinearOp>(pcdMesg);
-   timestep_ = request<double>(tsMesg);
-   string_ = request<std::string>(strMesg);
+   pcdOp_ = callbackHandler_->request<Teko::LinearOp>(pcdMesg);
+   timestep_ = callbackHandler_->request<double>(tsMesg);
+   string_ = callbackHandler_->request<std::string>(strMesg);
 
    return Teuchos::null;
 }
@@ -146,16 +146,19 @@ TEUCHOS_UNIT_TEST(tRequestInterface, test_request_interface)
    RCP<TestFactory> precFact = rcp(new TestFactory);
    RCP<Teko::PreconditionerState> state = precFact->buildPreconditionerState();
 
-   precFact->addRequestCallback(rcp(new PCDCallback));
-   precFact->addRequestCallback(rcp(new TSCallback));
-   precFact->addRequestCallback(rcp(new StringCallback));
+   RCP<Teko::RequestHandler> rh = rcp(new Teko::RequestHandler);
+
+   rh->addRequestCallback(rcp(new PCDCallback));
+   rh->addRequestCallback(rcp(new TSCallback));
+   rh->addRequestCallback(rcp(new StringCallback));
 
    {
       Teko::RequestMesg pcdMesg("PCD Op"), tsMesg("timestep"), strMesg("name");
-      precFact->preRequest<Teko::LinearOp>(pcdMesg);
-      precFact->preRequest<double>(tsMesg);
-      precFact->preRequest<std::string>(strMesg);
+      rh->preRequest<Teko::LinearOp>(pcdMesg);
+      rh->preRequest<double>(tsMesg);
+      rh->preRequest<std::string>(strMesg);
    }
+   precFact->setRequestHandler(rh);
 
    Teko::LinearOp A;
    Teko::LinearOp result = precFact->buildPreconditionerOperator(A,*state);
@@ -166,7 +169,7 @@ TEUCHOS_UNIT_TEST(tRequestInterface, test_request_interface)
 
    try {
       Teko::RequestMesg intMesg("Int Op");
-      precFact->preRequest<int>(intMesg);
+      rh->preRequest<int>(intMesg);
       out << "Found <int> with name \"Int Op\" in preRequest" << std::endl;
       TEST_ASSERT(false);
    } catch(std::exception & e) 
@@ -174,7 +177,7 @@ TEUCHOS_UNIT_TEST(tRequestInterface, test_request_interface)
 
    try {
       Teko::RequestMesg intMesg("Int Op");
-      int size = precFact->request<int>(intMesg);
+      int size = rh->request<int>(intMesg);
       out << "Found <int> with name \"Int Op\" value=" << size << std::endl;
       TEST_ASSERT(false);
    } catch(std::exception & e) 
@@ -182,7 +185,7 @@ TEUCHOS_UNIT_TEST(tRequestInterface, test_request_interface)
 
    try {
       Teko::RequestMesg intMesg("PCD Op");
-      int lo = precFact->request<int>(intMesg);
+      int lo = rh->request<int>(intMesg);
       out << "Found <int> with name \"PCD Op\" value=" << lo << std::endl;
       TEST_ASSERT(false);
    } catch(std::exception & e) 

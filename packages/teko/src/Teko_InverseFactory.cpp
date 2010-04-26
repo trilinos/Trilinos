@@ -192,9 +192,13 @@ Teuchos::RCP<const Teuchos::ParameterList> SolveInverseFactory::getParameterList
   * \param[in] precFactory Thyra PreconditionerFactoryBase used for building 
   *                        the inverse.
   */
-PreconditionerInverseFactory::PreconditionerInverseFactory(const Teuchos::RCP<Thyra::PreconditionerFactoryBase<double> > & precFactory)
+PreconditionerInverseFactory::PreconditionerInverseFactory(
+           const Teuchos::RCP<Thyra::PreconditionerFactoryBase<double> > & precFactory,
+           const Teuchos::RCP<Teko::RequestHandler> & rh)
    : precFactory_(precFactory)
-{ }
+{ 
+   setRequestHandler(rh);
+}
 
 /** \brief Constructor that takes a Thyra solve factory and 
   *        makes it look like an InverseFactory. This constructor
@@ -212,19 +216,24 @@ PreconditionerInverseFactory::PreconditionerInverseFactory(const Teuchos::RCP<Th
   */
 PreconditionerInverseFactory::PreconditionerInverseFactory(
               const Teuchos::RCP<Thyra::PreconditionerFactoryBase<double> > & precFactory,
-              const Teuchos::RCP<const Teuchos::ParameterList> & xtraParam)
+              const Teuchos::RCP<const Teuchos::ParameterList> & xtraParam,
+              const Teuchos::RCP<Teko::RequestHandler> & rh)
    : precFactory_(precFactory)
 { 
    if(xtraParam!=Teuchos::null)
       extraParams_ = rcp(new Teuchos::ParameterList(*xtraParam));
    else
       extraParams_ = Teuchos::null; // make it explicit
+
+   setRequestHandler(rh);
 }
 
 //! Copy constructor
 PreconditionerInverseFactory::PreconditionerInverseFactory(const PreconditionerInverseFactory & pFactory)
    : precFactory_(pFactory.precFactory_)
-{ }
+{ 
+   setRequestHandler(pFactory.getRequestHandler());
+}
 
 /** \brief Build an inverse operator
   *
@@ -603,7 +612,7 @@ RCP<InverseFactory> invFactoryFromParamList(const Teuchos::ParameterList & list,
       RCP<Thyra::PreconditionerFactoryBase<double> > precFact = strat.createPreconditioningStrategy(type);
 
       // string must map to a preconditioner
-      return rcp(new PreconditionerInverseFactory(precFact));
+      return rcp(new PreconditionerInverseFactory(precFact,Teuchos::null));
    }
    catch(const Teuchos::Exceptions::InvalidParameterValue & exp) { }
  

@@ -68,7 +68,7 @@ IterativePreconditionerFactory::IterativePreconditionerFactory(unsigned int corr
                             const Teuchos::RCP<Teko::PreconditionerFactory> & precFactory)
    : correctionNum_(correctionNum)
 {
-   precFactory_ = Teuchos::rcp(new Teko::PreconditionerInverseFactory(precFactory));
+   precFactory_ = Teuchos::rcp(new Teko::PreconditionerInverseFactory(precFactory,precFactory->getRequestHandler()));
 }
 
 

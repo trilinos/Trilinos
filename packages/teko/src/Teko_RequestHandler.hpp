@@ -24,7 +24,6 @@ class RequestHandler {
 public:
    explicit RequestHandler();
 
-
    /** Add a call back object to handle requests
      *
      * \param[in] callback Ref-count-pointer to a call back object.
@@ -51,6 +50,11 @@ public:
 private:
    // stores the callbacks to be used by this handler.
    mutable std::vector<Teuchos::RCP<RequestCallbackBase> > callbacks_;
+
+   // hidden from the user
+   RequestHandler(const RequestHandler & rh);
+   RequestHandler & operator=(const RequestHandler &);
+   const RequestHandler & operator=(const RequestHandler &) const;
 };
 
 #include "Teko_RequestHandler_impl.hpp"

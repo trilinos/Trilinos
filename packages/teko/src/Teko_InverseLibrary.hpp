@@ -54,6 +54,9 @@
 // Stratimikos includes
 #include "Stratimikos_DefaultLinearSolverBuilder.hpp"
 
+// Teko includes
+#include "Teko_RequestHandler.hpp"
+
 namespace Teko {
 
 class InverseLibrary {
@@ -87,6 +90,14 @@ public:
    //! Print the inverses and parameter lists available for use
    void PrintAvailableInverses(std::ostream & os) const;
 
+   //! Set the request handler with pointers to the appropriate callbacks
+   void setRequestHandler(const Teuchos::RCP<RequestHandler> & rh)
+   { callbackHandler_ = rh; }
+
+   //! Get the request handler with pointers to the appropriate callbacks
+   Teuchos::RCP<RequestHandler> getRequestHandler() const 
+   { return callbackHandler_; }
+
 protected:
 
    // stratimikos type Inverse objects: mapping the label to a parameter list
@@ -98,6 +109,9 @@ protected:
    std::vector<std::string> stratValidSolver_;
    std::vector<std::string> stratValidPrecond_;
    std::vector<std::string> blockValidPrecond_;
+
+   //! For handling requests and send requests back to the user
+   Teuchos::RCP<RequestHandler> callbackHandler_;
     
 public:
 

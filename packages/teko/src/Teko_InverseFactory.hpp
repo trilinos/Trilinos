@@ -56,6 +56,7 @@
 #include "Teko_Config.h"
 #include "Teko_Utilities.hpp"
 #include "Teko_PreconditionerState.hpp"
+#include "Teko_RequestHandler.hpp"
 
 namespace Teko {
 
@@ -201,6 +202,18 @@ public:
      */
    virtual bool updateRequestedParameters(const Teuchos::ParameterList & pl)
    { return true; }
+
+   //! Set the request handler with pointers to the appropriate callbacks
+   void setRequestHandler(const Teuchos::RCP<RequestHandler> & rh)
+   { callbackHandler_ = rh; }
+
+   //! Get the request handler with pointers to the appropriate callbacks
+   Teuchos::RCP<RequestHandler> getRequestHandler() const 
+   { return callbackHandler_; }
+
+protected:
+   //! For handling requests and send requests back to the user
+   Teuchos::RCP<RequestHandler> callbackHandler_;
 };
 
 class SolveInverseFactory : public InverseFactory {
@@ -312,7 +325,8 @@ public:
      * \param[in] precFactory Thyra PreconditionerFactoryBase used for building 
      *                        the inverse.
      */
-   PreconditionerInverseFactory(const Teuchos::RCP<Thyra::PreconditionerFactoryBase<double> > & precFactory);
+   PreconditionerInverseFactory(const Teuchos::RCP<Thyra::PreconditionerFactoryBase<double> > & precFactory,
+                                const Teuchos::RCP<Teko::RequestHandler> & rh);
 
    /** \brief Constructor that takes a Thyra solve factory and 
      *        makes it look like an InverseFactory. This constructor
@@ -329,7 +343,8 @@ public:
      * \param[in] xtraParam Parameter list containing extra parameters.
      */
    PreconditionerInverseFactory(const Teuchos::RCP<Thyra::PreconditionerFactoryBase<double> > & precFactory,
-                                const Teuchos::RCP<const Teuchos::ParameterList> & xtraParam);
+                                const Teuchos::RCP<const Teuchos::ParameterList> & xtraParam,
+                                const Teuchos::RCP<Teko::RequestHandler> & rh);
 
    //! Copy constructor
    PreconditionerInverseFactory(const PreconditionerInverseFactory & pFactory);

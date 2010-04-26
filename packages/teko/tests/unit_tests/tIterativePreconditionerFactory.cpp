@@ -125,7 +125,7 @@ TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, parameter_list_init)
    {
       RCP<Teuchos::ParameterList> pl = buildLibPL(4,"Amesos");
       RCP<Teko::IterativePreconditionerFactory> precFact = rcp(new Teko::IterativePreconditionerFactory());
-      RCP<Teko::InverseFactory> invFact = rcp(new Teko::PreconditionerInverseFactory(precFact));
+      RCP<Teko::InverseFactory> invFact = rcp(new Teko::PreconditionerInverseFactory(precFact,Teuchos::null));
 
       try {
          precFact->initializeFromParameterList(*pl);
@@ -144,7 +144,7 @@ TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, parameter_list_init)
       pl.set("Preconditioner Type","Amesos");
 
       RCP<Teko::IterativePreconditionerFactory> precFact = rcp(new Teko::IterativePreconditionerFactory());
-      RCP<Teko::InverseFactory> invFact = rcp(new Teko::PreconditionerInverseFactory(precFact));
+      RCP<Teko::InverseFactory> invFact = rcp(new Teko::PreconditionerInverseFactory(precFact,Teuchos::null));
 
       try {
          precFact->initializeFromParameterList(pl);
@@ -170,7 +170,7 @@ TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, parameter_list_init)
          out << "Failed preconditioner type" << std::endl;
 
          // these should not be executed
-         RCP<Teko::InverseFactory> invFact = rcp(new Teko::PreconditionerInverseFactory(precFact));
+         RCP<Teko::InverseFactory> invFact = rcp(new Teko::PreconditionerInverseFactory(precFact,Teuchos::null));
          Teko::LinearOp prec = Teko::buildInverse(*invFact,A);
       }
       catch(const std::exception & exp) {
@@ -200,7 +200,7 @@ TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, inverse_test)
    {
       RCP<Teko::InverseFactory> precOpFact = rcp(new Teko::StaticOpInverseFactory(iP));
       RCP<Teko::IterativePreconditionerFactory> precFact = rcp(new Teko::IterativePreconditionerFactory(9,precOpFact));
-      RCP<Teko::InverseFactory> invFact = rcp(new Teko::PreconditionerInverseFactory(precFact));
+      RCP<Teko::InverseFactory> invFact = rcp(new Teko::PreconditionerInverseFactory(precFact,Teuchos::null));
 
       Teko::LinearOp prec = Teko::buildInverse(*invFact,A);
 
@@ -234,7 +234,7 @@ TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, constructor_test)
    {
       RCP<Teko::InverseFactory> precOpFact = rcp(new Teko::StaticOpInverseFactory(iP));
       RCP<Teko::IterativePreconditionerFactory> precFact = rcp(new Teko::IterativePreconditionerFactory(0,precOpFact));
-      RCP<Teko::InverseFactory> invFact = rcp(new Teko::PreconditionerInverseFactory(precFact));
+      RCP<Teko::InverseFactory> invFact = rcp(new Teko::PreconditionerInverseFactory(precFact,Teuchos::null));
 
       Teko::LinearOp prec = Teko::buildInverse(*invFact,A);
 
@@ -252,7 +252,7 @@ TEUCHOS_UNIT_TEST(tIterativePreconditionerFactory, constructor_test)
 
       RCP<Teko::InverseFactory> precOpFact = rcp(new Teko::StaticOpInverseFactory(iP));
       RCP<Teko::IterativePreconditionerFactory> precFact = rcp(new Teko::IterativePreconditionerFactory(2,precOpFact));
-      RCP<Teko::InverseFactory> invFact = rcp(new Teko::PreconditionerInverseFactory(precFact));
+      RCP<Teko::InverseFactory> invFact = rcp(new Teko::PreconditionerInverseFactory(precFact,Teuchos::null));
 
       Teko::LinearOp prec = Teko::buildInverse(*invFact,A);
       Teko::LinearOp exact = Teko::multiply(iP,Teko::add(I,Teko::multiply(Teko::add(I,ImAiP),ImAiP))); // iP*(I+(I+X)*X)
