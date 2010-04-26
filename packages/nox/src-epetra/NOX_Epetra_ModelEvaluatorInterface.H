@@ -86,6 +86,9 @@ namespace Epetra {
     //! Set the parameter vector in inargs of the underlying model evaluator
     virtual bool inargs_set_p(const Teuchos::RCP<const Epetra_Vector> p,
                               const int l = 0);
+
+    //! Set a general inargs for the underlying model evaluator
+    virtual bool set_inargs(const EpetraExt::ModelEvaluator::InArgs& inargs_in);
     
   protected:
     

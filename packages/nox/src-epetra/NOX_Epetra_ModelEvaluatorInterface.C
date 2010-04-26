@@ -137,4 +137,13 @@ inargs_set_p(const Teuchos::RCP<const Epetra_Vector> p_, const int l)
 
 // *****************************************************************
 // *****************************************************************
+bool NOX::Epetra::ModelEvaluatorInterface::
+set_inargs(const EpetraExt::ModelEvaluator::InArgs& inargs_in)
+{
+   inargs_ = inargs_in;
+   return true;
+}
+
+// *****************************************************************
+// *****************************************************************
 #endif //HAVE_NOX_EPETRAEXT
