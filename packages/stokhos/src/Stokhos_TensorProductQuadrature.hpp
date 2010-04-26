@@ -86,6 +86,9 @@ namespace Stokhos {
     virtual const Teuchos::Array< Teuchos::Array<value_type> > & 
     getBasisAtQuadPoints() const;
 
+    //! Print quadrature data
+    virtual std::ostream& print(std::ostream& os) const;
+
   private:
 
     // Prohibit copying

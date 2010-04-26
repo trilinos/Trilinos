@@ -31,6 +31,7 @@
 #ifndef STOKHOS_QUADRATURE
 #define STOKHOS_QUADRATURE
 
+#include <ostream>
 #include "Teuchos_Array.hpp"
 
 namespace Stokhos {
@@ -69,6 +70,9 @@ namespace Stokhos {
     virtual const Teuchos::Array< Teuchos::Array<value_type> > & 
     getBasisAtQuadPoints() const = 0;
 
+    //! Print quadrature data
+    virtual std::ostream& print(std::ostream& os) const = 0;
+
   private:
 
     // Prohibit copying
@@ -78,6 +82,13 @@ namespace Stokhos {
     Quadrature& operator=(const Quadrature& b);
 
   }; // class Quadrature
+
+  //! Print quadrature object to stream
+  template <typename ordinal_type, typename value_type>
+  std::ostream& operator << (std::ostream& os,
+			     const Quadrature<ordinal_type, value_type>& quad) {
+    return quad.print(os);
+  }
 
 } // namespace Stokhos
 

@@ -76,6 +76,11 @@ SparseGridQuadrature(
     else if (rules[i] == 4) {
       growthRules[i] = Pecos::MODERATE_LINEAR;
     }
+    else 
+      TEST_FOR_EXCEPTION(true, std::logic_error,
+			 "Stokhos::SparseGridQuadrature:  " << 
+			 " Unknown rule number " << rules[i] <<
+			 " for random variable dimension " << i << std::endl);
   }
 
   // Set the static sparse grid quadrature pointer to this
@@ -190,4 +195,31 @@ getMyWeights( int order, int dim, double w[] )
       w[i] = quad_weights[i];
     }
   }
+}
+
+template <typename ordinal_type, typename value_type>
+std::ostream& 
+Stokhos::SparseGridQuadrature<ordinal_type,value_type>::
+print(std::ostream& os) const
+{
+  ordinal_type nqp = quad_weights.size();
+  os << "Sparse Grid Quadrature with " << nqp << " points:"
+     << std::endl << "Weight : Points" << std::endl;
+  for (ordinal_type i=0; i<nqp; i++) {
+    os << i << ": " << quad_weights[i] << " : ";
+    for (ordinal_type j=0; j<static_cast<ordinal_type>(quad_points[i].size()); 
+	 j++)
+      os << quad_points[i][j] << " ";
+    os << std::endl;
+  }
+  os << "Basis values at quadrature points:" << std::endl;
+  for (ordinal_type i=0; i<nqp; i++) {
+    os << i << " " << ": ";
+    for (ordinal_type j=0; j<static_cast<ordinal_type>(quad_values[i].size()); 
+	 j++)
+      os << quad_values[i][j] << " ";
+    os << std::endl;
+  }
+
+  return os;
 }
