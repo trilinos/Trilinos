@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
-gitVersion = "1.6.5.2"
-egVersion = "0.997"
+gitVersion = "1.7.0.4"
+egVersion = "1.7.0.4"
 
 #
 # General scripting support
