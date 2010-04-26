@@ -742,10 +742,12 @@ int Epetra_CrsMatrix::SumIntoMyValues(int Row, int NumEntries, double * srcValue
       ierr = 2; // Value Excluded
   }
 
-  EPETRA_CHK_ERR(ierr);
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
   NormFrob_ = -1.0;
+
+  EPETRA_CHK_ERR(ierr);
+
   return(0);
 }
 
@@ -1120,10 +1122,12 @@ int Epetra_CrsMatrix::ReplaceDiagonalValues(const Epetra_Vector & Diagonal) {
     if(DiagMissing) 
       ierr = 1; // flag a warning error
   }
-  EPETRA_CHK_ERR(ierr);
+
   NormOne_ = -1.0; // Reset Norm so it will be recomputed.
   NormInf_ = -1.0; // Reset Norm so it will be recomputed.
   NormFrob_ = -1.0;
+
+  EPETRA_CHK_ERR(ierr);
 
   return(0);
 }
