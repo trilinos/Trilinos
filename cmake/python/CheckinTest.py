@@ -21,8 +21,8 @@ import time
 
 
 # Set the official eg/git versions!
-g_officialEgVersion = "1.6.5.3"
-g_officialGitVersion = "1.6.5.2"
+g_officialEgVersion = "1.7.0.4"
+g_officialGitVersion = "1.7.0.4"
 
 
 # Read the Trilinos dependencies that will be used else where
