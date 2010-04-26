@@ -139,8 +139,8 @@ int main(int argc, char **argv)
       // Tensor product quadrature
       Teuchos::RCP<const Stokhos::Quadrature<int,double> > st_quad;
       if (!use_pce_quad_points) {
-	//st_quad = Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(st_basis));
-	st_quad = Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(st_basis, p));
+	st_quad = Teuchos::rcp(new Stokhos::TensorProductQuadrature<int,double>(st_basis));
+	//st_quad = Teuchos::rcp(new Stokhos::SparseGridQuadrature<int,double>(st_basis, p));
       }
       else {
 	Teuchos::Array<double> st_points_0;
