@@ -9,6 +9,7 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
+#include <fei_SharedPtr.hpp>
 //
 // This class provides a wrapper for the Aztec DVBR matrix data structure.
 //
@@ -23,7 +24,7 @@ class AztecDVBR_Matrix {
  
   public:
     // Constructor.
-    AztecDVBR_Matrix(Aztec_BlockMap& map, int* update);
+    AztecDVBR_Matrix(fei::SharedPtr<Aztec_BlockMap> map);
 
     //Copy constructor.
     AztecDVBR_Matrix(const AztecDVBR_Matrix& src);
@@ -32,7 +33,6 @@ class AztecDVBR_Matrix {
 
     //query functions.
 
-    int getBlockMaps(Aztec_BlockMap** rowMap, Aztec_BlockMap** colMap);
     int getNumBlocksPerRow(int blkRow, int& nnzBlksPerRow) const;
     int getNumNonzerosPerRow(int blkRow, int& nnzPerRow) const;
     int getNumBlocksPerRow(int* nnzBlksPerRow) const;
@@ -40,7 +40,7 @@ class AztecDVBR_Matrix {
     int getBlockSize(int blkRow, int blkCol, int& ptRows, int& ptCols);
 
     // Mathematical functions.
-    void matvec(const Aztec_Vector& x, Aztec_Vector& y) const;
+    void matvec(const Aztec_LSVector& x, Aztec_LSVector& y) const;
 
     void put(double s);
 
@@ -84,8 +84,6 @@ class AztecDVBR_Matrix {
     int* getRemoteBlockIndices() {return(remoteInds_);};
     int* getRemoteBlockSizes() {return(remoteBlockSizes_);};
 
-    //Aztec-specific functions:
-    int* getUpdate() {return(update_);};
     int* getUpdate_index() {return(update_index_);};
     int* getData_org() {return(data_org_);};
 
@@ -109,12 +107,11 @@ class AztecDVBR_Matrix {
                              int lenValues);
     void messageAbort(const char* mesg) const;
 
-    Aztec_BlockMap& amap_;
+    fei::SharedPtr<Aztec_BlockMap> amap_;
 
     AZ_MATRIX *Amat_;
 
     int N_update_;
-    int* update_;
     int* external_;
     int* extern_index_;
     int* update_index_;

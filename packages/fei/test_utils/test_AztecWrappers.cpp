@@ -18,7 +18,7 @@
 
 #ifdef HAVE_FEI_AZTECOO
 #include <fei_Aztec_Map.hpp>
-#include <fei_Aztec_Vector.hpp>
+#include <fei_Aztec_LSVector.hpp>
 #include <fei_AztecDMSR_Matrix.hpp>
 #endif
 
@@ -71,13 +71,13 @@ int test_AztecWrappers::test1()
   int localOffset = localSize*localProc_;
   int i;
 
-  fei_trilinos::Aztec_Map* map =
-    new fei_trilinos::Aztec_Map(globalSize, localSize, localOffset, comm_);
-
   std::vector<int> update(localSize);
   for(i=0; i<localSize; i++) update[i] = localOffset+i;
 
-  fei_trilinos::AztecDMSR_Matrix* matrix = new fei_trilinos::AztecDMSR_Matrix(*map, &update[0], true);
+  fei::SharedPtr<fei_trilinos::Aztec_Map> map(
+    new fei_trilinos::Aztec_Map(globalSize, localSize, &update[0], localOffset, comm_));
+
+  fei_trilinos::AztecDMSR_Matrix* matrix = new fei_trilinos::AztecDMSR_Matrix(map);
 
   std::vector<int> elemrows(localSize);
   std::vector<int> elemcols(globalSize);
@@ -193,7 +193,6 @@ int test_AztecWrappers::test1()
   CHK_ERR( compare_DMSR_contents(*matrix, localOffset, colIndices, values) );
 
   delete matrix;
-  delete map;
 #endif
   return(0);
 }

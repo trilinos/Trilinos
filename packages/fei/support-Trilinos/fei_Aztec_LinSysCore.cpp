@@ -43,7 +43,7 @@
 
 #include "fei_Aztec_Map.hpp"
 #include "fei_Aztec_BlockMap.hpp"
-#include "fei_Aztec_Vector.hpp"
+#include "fei_Aztec_LSVector.hpp"
 #include "fei_AztecDMSR_Matrix.hpp"
 #include "fei_AztecDVBR_Matrix.hpp"
 
@@ -62,7 +62,7 @@ Aztec_LinSysCore::Aztec_LinSysCore(MPI_Comm comm)
    lookup_(NULL),
    haveLookup_(false),
    update_(NULL),
-   map_(NULL),
+   map_(),
    A_(NULL),
    A_ptr_(NULL),
    x_(NULL),
@@ -81,7 +81,7 @@ Aztec_LinSysCore::Aztec_LinSysCore(MPI_Comm comm)
    needNewPreconditioner_(false),
    tooLateToChooseBlock_(false),
    blockMatrix_(false),
-   blkMap_(NULL),
+   blkMap_(),
    blkA_(NULL),
    blkA_ptr_(NULL),
    blkUpdate_(NULL),
@@ -153,14 +153,12 @@ Aztec_LinSysCore::~Aztec_LinSysCore() {
 
   if (blkMatrixAllocated_) {
     delete blkA_;
-    delete blkMap_;
     delete [] blkUpdate_;
     delete [] localBlockSizes_;
     blkMatrixAllocated_ = false;
   }
   if (matrixAllocated_) {
     delete A_;
-    delete map_;
     matrixAllocated_ = false;
   }
 
@@ -490,9 +488,9 @@ int Aztec_LinSysCore::allocateMatrix(int** ptColIndices,
 
   tooLateToChooseBlock_ = true;
 
-  map_ = new Aztec_Map(numGlobalEqns_, numLocalEqns_, localOffset_, comm_);
+  map_.reset( new Aztec_Map(numGlobalEqns_, numLocalEqns_, update_, localOffset_, comm_));
 
-  A_ = new AztecDMSR_Matrix(*map_, update_, true);
+  A_ = new AztecDMSR_Matrix(map_);
 
   if (A_ptr_ == NULL) A_ptr_ = A_;
 
@@ -532,10 +530,6 @@ int Aztec_LinSysCore::createBlockMatrix(int** blkColIndices,
                                          int* ptRowsPerBlkRow)
 {
   int i;
-  blkMap_ = new Aztec_BlockMap(numGlobalEqns_, numLocalEqns_,
-                               localOffset_, comm_,
-                               numGlobalEqnBlks_, numLocalEqnBlks_,
-                               localBlkOffset_, ptRowsPerBlkRow);
 
   blkUpdate_ = new int[numLocalEqnBlks_];
 
@@ -543,7 +537,13 @@ int Aztec_LinSysCore::createBlockMatrix(int** blkColIndices,
     blkUpdate_[i] = localBlkOffset_ + i;
   }
 
-  blkA_ = new AztecDVBR_Matrix(*blkMap_, blkUpdate_);
+  blkMap_.reset(new Aztec_BlockMap(numGlobalEqns_, numLocalEqns_,
+                               update_, localOffset_, comm_,
+                               numGlobalEqnBlks_, numLocalEqnBlks_,
+                               blkUpdate_,
+                               localBlkOffset_, ptRowsPerBlkRow));
+
+  blkA_ = new AztecDVBR_Matrix(blkMap_);
 
   if (blkA_ptr_ == NULL) blkA_ptr_ = blkA_;
 
@@ -1075,7 +1075,7 @@ int Aztec_LinSysCore::matrixLoadComplete() {
 
    if (matrixLoaded_ && rhsLoaded_) return(0);
 
-   Aztec_Map* tmpMap = NULL;
+   fei::SharedPtr<Aztec_Map> tmpMap;
    int* data_org = NULL;
 
    if (blockMatrix_) {
@@ -1103,19 +1103,19 @@ int Aztec_LinSysCore::matrixLoadComplete() {
    if (blockMatrix_) data_org = blkA_ptr_->getData_org();
    else data_org = A_ptr_->getAZ_MATRIX_PTR()->data_org;
 
-   Aztec_Vector* tmp = NULL;
+   Aztec_LSVector* tmp = NULL;
 
    //if x_ is not null, then it probably has a previous solution in it that
    //we might as well keep for the next initial guess unless the user has
    //specifically set an initial guess.
    if (x_ != NULL) {
-      tmp = new Aztec_Vector(*x_);
+      tmp = new Aztec_LSVector(*x_);
       *tmp = *x_;
    }
 
    //if x_ hasn't been allocated yet, we better do that now.
-   if (x_ == NULL) x_ = new Aztec_Vector(*tmpMap, data_org);
-   if (bc_ == NULL) bc_ = new Aztec_Vector(*tmpMap, data_org);
+   if (x_ == NULL) x_ = new Aztec_LSVector(tmpMap, data_org);
+   if (bc_ == NULL) bc_ = new Aztec_LSVector(tmpMap, data_org);
 
    //if we did save off a copy of x_ above, let's put it back now.
    if (tmp != NULL) {
@@ -1154,9 +1154,9 @@ int Aztec_LinSysCore::matrixLoadComplete() {
       delete [] b_;
    }
 
-   b_ = new Aztec_Vector*[numRHSs_];
+   b_ = new Aztec_LSVector*[numRHSs_];
    for(int j=0; j<numRHSs_; j++) {
-      b_[j] = new Aztec_Vector(*tmpMap, data_org);
+      b_[j] = new Aztec_LSVector(tmpMap, data_org);
       if (b_[j] == NULL) return(-1);
 
       //now fill b_[j] with the stuff we've been holding in tmp_b_[j].
@@ -1334,7 +1334,7 @@ int Aztec_LinSysCore::enforceEssentialBC(int* globalEqn,
 
     for(int j=0; j<offDiagLength2; j++) {
 
-      int col_index = A_ptr_->getTransformedEqn(offDiagIndices2[j]);
+      int col_index = A_ptr_->getAztec_Map()->getTransformedEqn(offDiagIndices2[j]);
 
       int idx = fei::binarySearch(col_index, &bcEqns[0], len, insertPoint);
       if (idx < 0) continue;
@@ -1750,7 +1750,7 @@ int Aztec_LinSysCore::enforceRemoteEssBCs(int numEqns, int* globalEqns,
 
      for(int j=0; j<colIndLen[i]; j++) {
        for(int k=0; k<rowLen; k++) {
-         if (A_ptr_->getTransformedEqn(AcolInds[k]) == colIndices[i][j]) {
+         if (A_ptr_->getAztec_Map()->getTransformedEqn(AcolInds[k]) == colIndices[i][j]) {
            double value = Acoefs[k]*coefs[i][j];
 
            double old_rhs_val = 0.0;
@@ -1966,7 +1966,7 @@ int Aztec_LinSysCore::getRHSVectorPtr(Data& data) {
 
    if (!matrixLoaded_) matrixLoadComplete();
 
-   data.setTypeName("Aztec_Vector");
+   data.setTypeName("Aztec_LSVector");
    data.setDataPtr((void*)b_ptr_);
    return(0);
 }
@@ -1976,10 +1976,10 @@ int Aztec_LinSysCore::copyInRHSVector(double scalar, const Data& data) {
 
    if (!rhsLoaded_) matrixLoadComplete();
 
-   if (strcmp("Aztec_Vector", data.getTypeName()))
-      messageAbort("copyInRHSVector: data's type string not 'Aztec_Vector'.");
+   if (strcmp("Aztec_LSVector", data.getTypeName()))
+      messageAbort("copyInRHSVector: data's type string not 'Aztec_LSVector'.");
 
-   Aztec_Vector* sourcevec = (Aztec_Vector*)data.getDataPtr();
+   Aztec_LSVector* sourcevec = (Aztec_LSVector*)data.getDataPtr();
 
    *b_ptr_ = *sourcevec;
 
@@ -1992,13 +1992,13 @@ int Aztec_LinSysCore::copyOutRHSVector(double scalar, Data& data) {
 
    if (!rhsLoaded_) matrixLoadComplete();
 
-   Aztec_Vector* outvec = new Aztec_Vector(*b_ptr_);
+   Aztec_LSVector* outvec = new Aztec_LSVector(*b_ptr_);
 
    outvec->put(0.0);
 
    outvec->addVec(scalar, *b_ptr_);
 
-   data.setTypeName("Aztec_Vector");
+   data.setTypeName("Aztec_LSVector");
    data.setDataPtr((void*)outvec);
    return(0);
 }
@@ -2008,10 +2008,10 @@ int Aztec_LinSysCore::sumInRHSVector(double scalar, const Data& data) {
 
    if (!rhsLoaded_) matrixLoadComplete();
 
-   if (strcmp("Aztec_Vector", data.getTypeName()))
-      messageAbort("sumInRHSVector: data's type string not 'Aztec_Vector'.");
+   if (strcmp("Aztec_LSVector", data.getTypeName()))
+      messageAbort("sumInRHSVector: data's type string not 'Aztec_LSVector'.");
 
-   Aztec_Vector* source = (Aztec_Vector*)data.getDataPtr();
+   Aztec_LSVector* source = (Aztec_LSVector*)data.getDataPtr();
 
    b_ptr_->addVec(scalar, *source);
    return(0);
@@ -2040,10 +2040,10 @@ int Aztec_LinSysCore::destroyMatrixData(Data& data) {
 //==============================================================================
 int Aztec_LinSysCore::destroyVectorData(Data& data) {
 
-   if (strcmp("Aztec_Vector", data.getTypeName()))
-      messageAbort("destroyVectorData: data doesn't contain a Aztec_Vector.");
+   if (strcmp("Aztec_LSVector", data.getTypeName()))
+      messageAbort("destroyVectorData: data doesn't contain a Aztec_LSVector.");
 
-   Aztec_Vector* vec = (Aztec_Vector*)data.getDataPtr();
+   Aztec_LSVector* vec = (Aztec_LSVector*)data.getDataPtr();
    delete vec;
    return(0);
 }
@@ -2161,7 +2161,7 @@ int Aztec_LinSysCore::formResidual(double* values, int len)
       update_index = blkA_ptr_->getUpdate_index();
    }
    else {
-      update_index = A_ptr_->getUpdate_index();
+      update_index = A_ptr_->getAztec_Map()->update_index;
    }
 
    AZ_reorder_vec((double*)(x_->startPointer()), azA_->data_org, update_index,
@@ -2170,7 +2170,7 @@ int Aztec_LinSysCore::formResidual(double* values, int len)
    AZ_reorder_vec((double*)(b_ptr_->startPointer()), azA_->data_org,
                   update_index, azA_->rpntr);
 
-   Aztec_Vector* r = new Aztec_Vector(*x_);
+   Aztec_LSVector* r = new Aztec_LSVector(*x_);
 
    if (blockMatrix_) blkA_ptr_->matvec(*x_, *r); //form r = A*x
    else A_ptr_->matvec(*x_, *r);
@@ -2181,7 +2181,7 @@ int Aztec_LinSysCore::formResidual(double* values, int len)
 
    //now let's get the residual r into user ordering...
 
-   Aztec_Vector* rtmp = new Aztec_Vector(*x_);
+   Aztec_LSVector* rtmp = new Aztec_LSVector(*x_);
 
    AZ_invorder_vec((double*)(r->startPointer()), azA_->data_org, update_index,
                    azA_->rpntr, (double*)rtmp->startPointer());
@@ -2515,7 +2515,7 @@ int Aztec_LinSysCore::writeA(const char* name)
 }
 
 //==============================================================================
-int Aztec_LinSysCore::writeVec(Aztec_Vector* v, const char* name)
+int Aztec_LinSysCore::writeVec(Aztec_LSVector* v, const char* name)
 {
   if (name == NULL || v == NULL) {
     return(-1);
@@ -2663,15 +2663,15 @@ int Aztec_LinSysCore::launchSolver(int& solveStatus, int& iterations) {
 
    precondCreated_ = true;
 
-   Aztec_Map* tmpMap = NULL;
+   int* proc_config = NULL;
    int* update_index = NULL;
    if (blockMatrix_) {
-      tmpMap = blkMap_;
+      proc_config = blkMap_->getProcConfig();
       update_index = blkA_ptr_->getUpdate_index();
    }
    else {
-      tmpMap = map_;
-      update_index = A_ptr_->getUpdate_index();
+      proc_config = map_->getProcConfig();
+      update_index = A_ptr_->getAztec_Map()->update_index;
    }
 
    AZ_reorder_vec((double*)(x_->startPointer()), azA_->data_org, update_index,
@@ -2683,7 +2683,7 @@ int Aztec_LinSysCore::launchSolver(int& solveStatus, int& iterations) {
    AZ_iterate((double*)(x_->startPointer()),
               (double*)(b_ptr_->startPointer()),
               aztec_options_, aztec_params_, aztec_status_,
-              tmpMap->getProcConfig(), azA_, azP_, azS_);
+              proc_config, azA_, azP_, azS_);
 
    iterations = (int)aztec_status_[AZ_its];
 
@@ -2691,7 +2691,7 @@ int Aztec_LinSysCore::launchSolver(int& solveStatus, int& iterations) {
 
    azlsc_solveCounter_++;
 
-   Aztec_Vector* xtmp = new Aztec_Vector(*x_);
+   Aztec_LSVector* xtmp = new Aztec_LSVector(*x_);
 
    //now we need to put x_ back into user-ordering for when we're asked to
    //hand out solution entries.

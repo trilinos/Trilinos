@@ -37,15 +37,18 @@ APPEND_SET(HEADERS
   fei_AztecDVBR_Matrix.hpp
   fei_Aztec_LinSysCore.hpp
   fei_Aztec_Map.hpp
-  fei_Aztec_Vector.hpp
+  fei_Aztec_LSVector.hpp
   fei_Factory_Trilinos.hpp
+  fei_Factory_Aztec.hpp
   fei_Include_Trilinos.hpp
   fei_LinProbMgr_EpetraBasic.hpp
+  fei_MatrixTraits_Aztec.hpp
   fei_MatrixTraits_Epetra.hpp
   fei_Solver_Amesos.hpp
   fei_Solver_AztecOO.hpp
   fei_Trilinos_Helpers.hpp
   fei_trilinos_macros.hpp
+  fei_VectorTraits_Aztec.hpp
   fei_VectorTraits_Epetra.hpp
   )
 
@@ -55,7 +58,8 @@ APPEND_SET(SOURCES
   fei_AztecDVBR_Matrix.cpp
   fei_Aztec_LinSysCore.cpp
   fei_Aztec_Map.cpp
-  fei_Aztec_Vector.cpp
+  fei_Aztec_LSVector.cpp
+  fei_Factory_Aztec.cpp
   fei_Factory_Trilinos.cpp
   fei_LinProbMgr_EpetraBasic.cpp
   fei_Solver_Amesos.cpp

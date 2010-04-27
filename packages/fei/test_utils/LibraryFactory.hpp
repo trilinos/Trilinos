@@ -25,7 +25,6 @@ namespace fei {
       <ul>
       <li>Aztec
       <li>FETI
-      <li>PETSc
       </ul>
 
       @return shared-pointer holding newly-created LibraryWrapper instance.

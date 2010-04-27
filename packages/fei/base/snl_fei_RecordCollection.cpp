@@ -60,6 +60,14 @@ snl_fei::RecordCollection::RecordCollection(const RecordCollection& src)
 //----------------------------------------------------------------------------
 snl_fei::RecordCollection::~RecordCollection()
 {
+  map_type::iterator
+    iter = records_.begin(),
+    iter_end = records_.end();
+
+  for(; iter != iter_end; ++iter) {
+    map_type::value_type pair = *iter;
+    recordPool_.deallocate(pair.second,1);
+  }
 }
 
 //----------------------------------------------------------------------------

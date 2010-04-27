@@ -43,7 +43,8 @@ snl_fei::Factory::Factory(MPI_Comm comm,
     lsc_(lsc),
     feData_(),
     wrapper_(),
-    outputLevel_(0)
+    outputLevel_(0),
+    blockMatrix_(false)
 {
 }
 
@@ -58,7 +59,8 @@ snl_fei::Factory::Factory(MPI_Comm comm,
     lsc_(),
     feData_(feData),
     wrapper_(NULL),
-    outputLevel_(0)
+    outputLevel_(0),
+    blockMatrix_(false)
 {
 }
 

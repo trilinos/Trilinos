@@ -31,17 +31,16 @@
 #include <az_aztec.h>
 #include <fei_Aztec_Map.hpp>
 #include <fei_Aztec_BlockMap.hpp>
-#include <fei_Aztec_Vector.hpp>
+#include <fei_Aztec_LSVector.hpp>
 #include <fei_AztecDVBR_Matrix.hpp>
 
 namespace fei_trilinos {
 
 //==============================================================================
-AztecDVBR_Matrix::AztecDVBR_Matrix(Aztec_BlockMap& map, int* update)
+AztecDVBR_Matrix::AztecDVBR_Matrix(fei::SharedPtr<Aztec_BlockMap> map)
   : amap_(map),
     Amat_(NULL),
-    N_update_(0),
-    update_(NULL),
+    N_update_(map->getNumLocalBlocks()),
     external_(NULL),
     extern_index_(NULL),
     update_index_(NULL),
@@ -55,14 +54,9 @@ AztecDVBR_Matrix::AztecDVBR_Matrix(Aztec_BlockMap& map, int* update)
     remoteInds_(NULL),
     remoteBlockSizes_(NULL)
 {
-
-    N_update_ = amap_.getNumLocalBlocks();
-
-    update_ = new int[N_update_];
     nnzPerRow_ = new int[N_update_];
 
     for(int i=0; i<N_update_; i++) {
-       update_[i] = update[i];
        nnzPerRow_[i] = 0;
     }
 
@@ -81,7 +75,6 @@ AztecDVBR_Matrix::AztecDVBR_Matrix(const AztecDVBR_Matrix& src)
  : amap_(src.amap_),
    Amat_(NULL),
    N_update_(src.N_update_),
-   update_(NULL),
    external_(NULL),
    extern_index_(NULL),
    update_index_(NULL),
@@ -106,12 +99,10 @@ AztecDVBR_Matrix::AztecDVBR_Matrix(const AztecDVBR_Matrix& src)
 //this matrix will have all arrays resulting from AZ_transform allocated too.
 //The only thing this matrix won't get is the coefficient data from src.
 //
-   update_ = new int[N_update_];
    nnzPerRow_ = new int[N_update_];
 
    int i;
    for(i=0; i<N_update_; i++) {
-      update_[i] = src.update_[i];
       nnzPerRow_[i] = src.nnzPerRow_[i];
    }
 
@@ -193,21 +184,11 @@ AztecDVBR_Matrix::~AztecDVBR_Matrix(){
       setLoaded(false);
    }
 
-   delete [] update_;
    delete [] nnzPerRow_;
    localNNZ_ = 0;
 
    AZ_matrix_destroy(&Amat_);
    Amat_ = NULL;
-}
-
-//==============================================================================
-int AztecDVBR_Matrix::getBlockMaps(Aztec_BlockMap** rowMap,
-                                   Aztec_BlockMap** colMap) {
-   *rowMap = & amap_;
-   *colMap = & amap_;
-
-   return(0);
 }
 
 //==============================================================================
@@ -240,7 +221,7 @@ int AztecDVBR_Matrix::getNumBlocksPerRow(int* nnzBlksPerRow) const {
 //
    if (!isAllocated()) return(1);
 
-   for(int i=0; i<amap_.getNumLocalBlocks(); i++) {
+   for(int i=0; i<amap_->getNumLocalBlocks(); i++) {
       nnzBlksPerRow[i] = Amat_->bpntr[i+1] - Amat_->bpntr[i];
    }
 
@@ -279,7 +260,7 @@ int AztecDVBR_Matrix::getNumNonzerosPerRow(int* nnzPerRow) const {
 //
    if (!isAllocated()) return(1);
 
-   for(int i=0; i<amap_.getNumLocalBlocks(); i++) {
+   for(int i=0; i<amap_->getNumLocalBlocks(); i++) {
       nnzPerRow[i] = nnzPerRow_[i];
    }
 
@@ -318,13 +299,13 @@ int AztecDVBR_Matrix::getBlockSize(int blkRow, int blkCol,
 }
 
 //==============================================================================
-void AztecDVBR_Matrix::matvec(const Aztec_Vector& x, Aztec_Vector& y) const {
+void AztecDVBR_Matrix::matvec(const Aztec_LSVector& x, Aztec_LSVector& y) const {
     	
 // AztecDVBR_Matrix::matvec --- form y = Ax
 
     assert(isLoaded());
 
-    int *proc_config = amap_.getProcConfig();
+    int *proc_config = amap_->getProcConfig();
     double *b = (double*)x.startPointer();
     double *c = (double*)y.startPointer();
 
@@ -377,6 +358,7 @@ int AztecDVBR_Matrix::getBlockRow(int blkRow,
 
    int offset = 0;
    int blkCounter = 0;
+   const int* blkUpdate = amap_->getBlockUpdate();
    for(int indb = Amat_->bpntr[index]; indb<Amat_->bpntr[index+1]; indb++) {
 
       int numEntries = Amat_->indx[indb+1] - Amat_->indx[indb];
@@ -385,7 +367,7 @@ int AztecDVBR_Matrix::getBlockRow(int blkRow,
       if (isLoaded()) {
          int ind = Amat_->bindx[indb];
          if (ind < N_update_) {
-            blkColInds[blkCounter++] = update_[orderingUpdate_[ind]];
+            blkColInds[blkCounter++] = blkUpdate[orderingUpdate_[ind]];
          }
          else {
             blkColInds[blkCounter++] = external_[ind-N_update_];
@@ -542,7 +524,7 @@ void AztecDVBR_Matrix::loadComplete() {
 // communication parameters and re-orders the equations for use as a
 // global distributed matrix.
 //
-   MPI_Comm thisComm = amap_.getCommunicator();
+   MPI_Comm thisComm = amap_->getCommunicator();
 
 // Sync processors.
 
@@ -553,8 +535,8 @@ void AztecDVBR_Matrix::loadComplete() {
    MPI_Comm_rank(thisComm, &thisProc);
 #endif
 
-   AZ_transform(amap_.getProcConfig(), &external_, Amat_->bindx, Amat_->val,
-                update_, &update_index_, &extern_index_, &data_org_,
+   AZ_transform(amap_->getProcConfig(), &external_, Amat_->bindx, Amat_->val,
+                amap_->getBlockUpdate(), &update_index_, &extern_index_, &data_org_,
                 N_update_, Amat_->indx, Amat_->bpntr, Amat_->rpntr,
                 &(Amat_->cpntr), AZ_VBR_MATRIX);
 
@@ -595,7 +577,7 @@ bool AztecDVBR_Matrix::readFromFile(const char *filename){
 //calls.
 //
    FILE *infile = NULL;
-   MPI_Comm thisComm = amap_.getCommunicator();
+   MPI_Comm thisComm = amap_->getCommunicator();
 
    MPI_Barrier(thisComm);
 
@@ -770,12 +752,12 @@ void AztecDVBR_Matrix::getValuesFromString(char *line, int len, double *values,
 /**=========================================================================**/
 bool AztecDVBR_Matrix::writeToFile(const char *fileName) const {
 
-   int thisProc = amap_.getProcConfig()[AZ_node];
-   int numProcs = amap_.getProcConfig()[AZ_N_procs];
-   MPI_Comm thisComm = amap_.getCommunicator();
+   int thisProc = amap_->getProcConfig()[AZ_node];
+   int numProcs = amap_->getProcConfig()[AZ_N_procs];
+   MPI_Comm thisComm = amap_->getCommunicator();
 
-   int numGlobalBlocks = amap_.getNumGlobalBlocks();
-   int numGlobalPtEqns = amap_.globalSize();
+   int numGlobalBlocks = amap_->getNumGlobalBlocks();
+   int numGlobalPtEqns = amap_->globalSize();
 
    int numLocalBlocks = N_update_;
 
@@ -822,7 +804,7 @@ bool AztecDVBR_Matrix::writeToFile(const char *fileName) const {
                int lookup = Amat_->bindx[ind];
                if (isLoaded()) {
                   if (lookup < N_update_) {
-                     globCol = update_[orderingUpdate_[lookup]];
+                     globCol = amap_->getBlockUpdate()[orderingUpdate_[lookup]];
                   }
                   else {
                      globCol = external_[lookup-N_update_];
@@ -832,8 +814,8 @@ bool AztecDVBR_Matrix::writeToFile(const char *fileName) const {
                   globCol = lookup;
                }
 
-               int globalRow = update_[brow];
-               if (isLoaded()) globalRow = update_[orderingUpdate_[brow]];
+               int globalRow = amap_->getBlockUpdate()[brow];
+               if (isLoaded()) globalRow = amap_->getBlockUpdate()[orderingUpdate_[brow]];
 
                fprintf(file, "%d %d %d %d ", globalRow, globCol,
                                           blkRowSize, nnzPts);
@@ -862,7 +844,7 @@ int AztecDVBR_Matrix::inUpdate(int globalIndex, int& localIndex) const {
 // taken from there.
 // If globalIndex is not in the update set, inUpdate returns 0.
 //
-    localIndex = AZ_find_index(globalIndex, update_, N_update_);
+    localIndex = AZ_find_index(globalIndex, amap_->getBlockUpdate(), N_update_);
 
     if(localIndex==-1)return(0);
 
@@ -883,7 +865,7 @@ void AztecDVBR_Matrix::calcRpntr() {
 //rpntr[0] = 0
 //rpntr[k+1] - rpntr[k] = size of block k
 //
-   const int* blkSizes = amap_.getBlockSizes();
+   const int* blkSizes = amap_->getBlockSizes();
 
    Amat_->rpntr = new int[N_update_+1];
 
@@ -952,7 +934,7 @@ void AztecDVBR_Matrix::calcIndx(int nnzBlks) {
    //update set, but we'll have to do some message passing to obtain the
    //sizes of blocks with column indices in other procs' update sets.
 
-   int numProcs = amap_.getProcConfig()[AZ_N_procs];
+   int numProcs = amap_->getProcConfig()[AZ_N_procs];
 
    if (numProcs > 1) {
       //form a list of the column indices that are not local.
@@ -968,7 +950,7 @@ void AztecDVBR_Matrix::calcIndx(int nnzBlks) {
 
    Amat_->indx[0] = 0;
 
-   for(int i=0; i<amap_.getNumLocalBlocks(); i++) {
+   for(int i=0; i<amap_->getNumLocalBlocks(); i++) {
       int rowBlkSize = Amat_->rpntr[i+1] - Amat_->rpntr[i];
 
       int colStart = Amat_->bpntr[i];
@@ -1020,7 +1002,7 @@ int AztecDVBR_Matrix::getBindxOffset(int blkInd,
       int globalCol = -1;
       if (isLoaded()) {
          if (ind < N_update_) {
-            globalCol = update_[orderingUpdate_[ind]];
+            globalCol = amap_->getBlockUpdate()[orderingUpdate_[ind]];
          }
          else {
             globalCol = external_[ind-N_update_];
@@ -1040,7 +1022,7 @@ void AztecDVBR_Matrix::calcRemoteInds(int*& remoteInds, int& len) {
 //Form a list of the block column indices that are not in the local
 //update set.
 //
-   int nnzBlks = Amat_->bpntr[amap_.getNumLocalBlocks()];
+   int nnzBlks = Amat_->bpntr[amap_->getNumLocalBlocks()];
    int local;
 
    for(int i=0; i<nnzBlks; i++) {
@@ -1064,9 +1046,9 @@ void AztecDVBR_Matrix::getRemoteBlkSizes(int* remoteBlkSizes,
 #ifdef FEI_SER
   return;
 #else
-  int numProcs = amap_.getProcConfig()[AZ_N_procs];
-  int thisProc = amap_.getProcConfig()[AZ_node];
-  MPI_Comm comm = amap_.getCommunicator();
+  int numProcs = amap_->getProcConfig()[AZ_N_procs];
+  int thisProc = amap_->getProcConfig()[AZ_node];
+  MPI_Comm comm = amap_->getCommunicator();
 
    int* lengths = new int[numProcs];
    lengths[0] = 0;

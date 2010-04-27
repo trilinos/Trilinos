@@ -33,57 +33,82 @@
 namespace fei_trilinos {
 
 //==============================================================================
-Aztec_Map::Aztec_Map(int globalSz, int localSz,
+Aztec_Map::Aztec_Map(int globalSz, int N_update, const int* update,
                      int localOffs, MPI_Comm comm)
-  : globalSize_(globalSz),
-    localSize_(localSz),
+ :
+    proc_config(AZ_PROC_SIZE),
+    update(update, update+N_update),
+    external(NULL),
+    update_index(NULL),
+    extern_index(NULL),
+    data_org(NULL),
+    orderingUpdate(),
+    az_transformed(false),
+    globalSize_(globalSz),
+    localSize_(N_update),
     localOffset_(localOffs),
+    N_update_(N_update),
     comm_(comm)
 {
     checkInput();
-
-    proc_config_ = new int[AZ_PROC_SIZE];
-    AZ_set_proc_config(proc_config_, comm_);
+    AZ_set_proc_config(&proc_config[0], comm_);
 }
  
 //==============================================================================
 Aztec_Map::Aztec_Map(const Aztec_Map& map) :
+    proc_config(AZ_PROC_SIZE),
+    update(map.update),
+    external(NULL),
+    update_index(NULL),
+    extern_index(NULL),
+    data_org(NULL),
+    orderingUpdate(map.orderingUpdate),
+    az_transformed(map.az_transformed),
     globalSize_(map.globalSize_),
     localSize_(map.localSize_),
     localOffset_(map.localOffset_),
+    N_update_(map.localSize_),
     comm_(map.comm_)
 {
-    proc_config_ = new int[AZ_PROC_SIZE];
-    AZ_processor_info(proc_config_);
+    AZ_processor_info(&proc_config[0]);
+    update_index = (int*)AZ_allocate(N_update_*sizeof(int));
+    for(int i=0; i<N_update_; ++i) {
+      update_index[i] = map.update_index[i];
+    }
+    external = (int*)AZ_allocate(data_org[AZ_N_external]*sizeof(int));
+    extern_index = (int*)AZ_allocate(data_org[AZ_N_external]*sizeof(int));
+    for(int i=0; i<data_org[AZ_N_external]; ++i) {
+      external[i] = map.external[i];
+      extern_index[i] = map.extern_index[i];
+    }
 }
 
 //==============================================================================
-Aztec_Map::~Aztec_Map(void)  {
+Aztec_Map::~Aztec_Map()
+{
+  globalSize_ = 0;
+  localSize_ = 0;
+  localOffset_ = 0;
 
-    globalSize_ = 0;
-    localSize_ = 0;
-    localOffset_ = 0;
-
-    delete [] proc_config_;
-    proc_config_ = NULL;
+  std::free(update_index);
+  std::free(external);
+  std::free(extern_index);
+  std::free(data_org);
 }
 
 //==============================================================================
 void Aztec_Map::checkInput() {
 
     if (globalSize_ <= 0) {
-        FEI_CERR << "Aztec_Map: ERROR, globalSize <= 0. Aborting." << FEI_ENDL;
-        abort();
+        throw std::runtime_error("Aztec_Map: ERROR, globalSize <= 0.");
     }
 
     if (localSize_ < 0) {
-        FEI_CERR << "Aztec_Map: ERROR, localSize negative. Aborting." << FEI_ENDL;
-        abort();
+        throw std::runtime_error("Aztec_Map: ERROR, localSize negative.");
     }
 
     if (localOffset_ < 0) {
-        FEI_CERR << "Aztec_Map: ERROR, localOffset negative. Aborting." << FEI_ENDL;
-        abort();
+        throw std::runtime_error("Aztec_Map: ERROR, localOffset negative.");
     }
 }
 

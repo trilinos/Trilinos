@@ -31,18 +31,18 @@
 //   coefficient on the diagonal.
 //
 #include <az_aztec.h>
+#include <fei_SharedPtr.hpp>
+#include <fei_Aztec_Map.hpp>
 
 namespace fei_trilinos {
 
-class Aztec_Map;
-class Aztec_Vector;
+class Aztec_LSVector;
 
 class AztecDMSR_Matrix {
     
   public:
     // Constructor.
-    AztecDMSR_Matrix(Aztec_Map& map, int* update,
-		     bool linearDistribution=false);
+    AztecDMSR_Matrix(fei::SharedPtr<Aztec_Map> map);
 
     //Copy constructor
     AztecDMSR_Matrix(const AztecDMSR_Matrix& src);
@@ -50,12 +50,12 @@ class AztecDMSR_Matrix {
     virtual ~AztecDMSR_Matrix ();
 
     // Mathematical functions.
-    void matvec(const Aztec_Vector& x, Aztec_Vector& y) const;
+    void matvec(const Aztec_LSVector& x, Aztec_LSVector& y) const;
 
     void put(double s);
-    void getDiagonal(Aztec_Vector& diagVector) const;
+    void getDiagonal(Aztec_LSVector& diagVector) const;
 
-    const Aztec_Map& getAztec_Map() const {return(amap_);};
+    fei::SharedPtr<Aztec_Map> getAztec_Map() const {return(amap_);};
 
     int rowLength(int row) const;
     
@@ -90,12 +90,6 @@ class AztecDMSR_Matrix {
     int getOffDiagRowPointers(int row, int*& colIndices, double*& coefs,
 			      int& offDiagRowLength);
 
-    /** Special function for enforcing an essential (dirichlet) BC.
-     */
-    //int enforceEssentialBCs(int numBCEqns, int* bcEqns, double* bcValues,
-    //		    double* rhsVector);
-
-    //inform about structure, so that val and bindx can be allocated.
     void allocate(int *rowLengths);
 
     //inform about structure, including column-indices, so that val and bindx
@@ -104,16 +98,6 @@ class AztecDMSR_Matrix {
 
     //inform that data fill is complete, so AZ_transform can be called.
     void fillComplete();
-
-    int getTransformedEqn(int eqn) const {
-      if (isFilled_) {
-	if(eqn<N_update_) return( update_[orderingUpdate_[eqn]] );
-	else return( external_[eqn-N_update_] );
-      }
-      else {
-	return( eqn );
-      }
-    }
 
     bool isFilled() const {return(isFilled_);};
     void setFilled(bool flag) {isFilled_ = flag;};
@@ -133,11 +117,7 @@ class AztecDMSR_Matrix {
 
     AZ_MATRIX* getAZ_MATRIX_PTR() {return(Amat_);};
 
-    int* getUpdate() {return(update_);};
-    int* getUpdate_index() {return(update_index_);};
-
   private:
-    int inUpdate(int globalIndex, int& localIndex) const;
     void messageAbort(const char* mesg);
     int insert(int item, int offset, int* list, int& len, int allocLen);
     int insert(double item, int offset, double* list, int& len, int allocLen);
@@ -146,12 +126,11 @@ class AztecDMSR_Matrix {
 
     bool isFilled_;
     bool isAllocated_;
-    bool linearDistribution_;
 
     int localOffset_;
     int localSize_;
 
-    Aztec_Map& amap_;
+    fei::SharedPtr<Aztec_Map> amap_;
 
     AZ_MATRIX* Amat_;
 
@@ -162,13 +141,6 @@ class AztecDMSR_Matrix {
     int nnzeros_; //val and bindx are of length nnzeros_+1
 
     int N_update_;
-    int* update_;
-
-    int* update_index_;
-    int* orderingUpdate_;
-    int* external_;
-    int* extern_index_;
-    int* data_org_;
 
     int* tmp_array_;
     int tmp_array_len_;

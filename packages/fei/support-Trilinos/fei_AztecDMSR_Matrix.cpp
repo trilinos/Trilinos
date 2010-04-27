@@ -32,27 +32,21 @@
 #include <fei_ArrayUtils.hpp>
 
 #include <fei_Aztec_Map.hpp>
-#include <fei_Aztec_Vector.hpp>
+#include <fei_Aztec_LSVector.hpp>
 #include <fei_AztecDMSR_Matrix.hpp>
 
 #define ADMSR_LOCAL_ROW_ALLOC_LEN(localRow) 1+bindx[localRow+1]-bindx[localRow]
 
 #define ADMSR_LOCAL_ROW_LEN(localRow) 1+rowLengths_[localRow]
 
-#define ADMSR_GET_GLOBAL_COL(col, index) \
-           col = index<N_update_ ? update_[orderingUpdate_[index]] : \
-                                   external_[index-N_update_];
-
 namespace fei_trilinos {
 
 //==============================================================================
-AztecDMSR_Matrix::AztecDMSR_Matrix(Aztec_Map& map, int* update,
-				   bool linearDistribution)
+AztecDMSR_Matrix::AztecDMSR_Matrix(fei::SharedPtr<Aztec_Map> map)
   : isFilled_(false),
     isAllocated_(false),
-    linearDistribution_(linearDistribution),
-    localOffset_(map.localOffset()),
-    localSize_(map.localSize()),
+    localOffset_(map->localOffset()),
+    localSize_(map->localSize()),
     amap_(map),
     Amat_(NULL),
     arraysAllocated_(false),
@@ -60,45 +54,27 @@ AztecDMSR_Matrix::AztecDMSR_Matrix(Aztec_Map& map, int* update,
     bindx(NULL),
     rowLengths_(NULL),
     nnzeros_(0),
-    N_update_(map.localSize()),
-    update_(NULL),
-    update_index_(NULL),
-    orderingUpdate_(NULL),
-    external_(NULL),
-    extern_index_(NULL),
-    data_org_(NULL),
+    N_update_(map->localSize()),
     tmp_array_(0),
     tmp_array_len_(0),
     dtmp_array_(0),
     dtmp_array_len_(0),
     azTransformed_(false)
 {
-//   if (N_update_ <= 0)
-//     messageAbort("N_update_ (map.localSize()) <= 0.");
-
    if (N_update_ > 0) {
-      update_ = new int[N_update_];
       rowLengths_ = new int[N_update_];
       for(int i=0; i<N_update_; i++) {
-         update_[i] = update[i];
-	 rowLengths_[i] = 0;
+        rowLengths_[i] = 0;
       }
    }
 
    Amat_ = AZ_matrix_create(N_update_);
-
-   update_index_ = NULL;
-   orderingUpdate_ = NULL;
-   external_ = NULL;
-   extern_index_ = NULL;
-   data_org_ = NULL;
 }
 
 //==============================================================================
 AztecDMSR_Matrix::AztecDMSR_Matrix(const AztecDMSR_Matrix& src)
   : isFilled_(src.isFilled_),
     isAllocated_(src.isAllocated_),
-    linearDistribution_(src.linearDistribution_),
     localOffset_(src.localOffset_),
     localSize_(src.localSize_),
     amap_(src.amap_),
@@ -109,12 +85,6 @@ AztecDMSR_Matrix::AztecDMSR_Matrix(const AztecDMSR_Matrix& src)
     rowLengths_(NULL),
     nnzeros_(src.nnzeros_),
     N_update_(src.N_update_),
-    update_(NULL),
-    update_index_(NULL),
-    orderingUpdate_(NULL),
-    external_(NULL),
-    extern_index_(NULL),
-    data_org_(NULL),
     tmp_array_(0),
     tmp_array_len_(0),
     dtmp_array_(0),
@@ -125,10 +95,8 @@ AztecDMSR_Matrix::AztecDMSR_Matrix(const AztecDMSR_Matrix& src)
   expand_array(dtmp_array_, dtmp_array_len_, src.dtmp_array_len_);
 
   if (N_update_ > 0) {
-    update_ = new int[N_update_];
     rowLengths_ = new int[N_update_];
     for(int i=0; i<N_update_; i++) {
-      update_[i] = src.update_[i];
       rowLengths_[i] = src.rowLengths_[i];
     }
   }
@@ -145,31 +113,7 @@ AztecDMSR_Matrix::AztecDMSR_Matrix(const AztecDMSR_Matrix& src)
     }
 
     if (isFilled_) {
-      int j;
-      int data_org_len = src.data_org_[AZ_total_send]+AZ_send_list;
-      data_org_ = (int*)AZ_allocate(data_org_len*sizeof(int));
-      for(j=0; j<data_org_len; ++j) data_org_[j] = src.data_org_[j];
-
-      update_index_ = (int*)AZ_allocate((N_update_+1)*sizeof(int));
-      orderingUpdate_ = new int[N_update_];
-
-      for(j=0; j<N_update_+1; ++j) {
-	update_index_[j] = src.update_index_[j];
-      }
-      for(j=0; j<N_update_; ++j) {
-	orderingUpdate_[j] = src.orderingUpdate_[j];
-      }
-
-      int ext_len = data_org_[AZ_N_external]+1;
-      external_ = (int*)AZ_allocate(ext_len*sizeof(int));
-      extern_index_ = (int*)AZ_allocate(ext_len*sizeof(int));
-
-      for(j=0; j<ext_len; ++j) {
-	external_[j] = src.external_[j];
-	extern_index_[j] = src.extern_index_[j];
-      }
-
-      AZ_set_MSR(Amat_, bindx, val, data_org_, 0, NULL, AZ_LOCAL);
+      AZ_set_MSR(Amat_, bindx, val, amap_->data_org, 0, NULL, AZ_LOCAL);
     }
   }
 }
@@ -177,18 +121,6 @@ AztecDMSR_Matrix::AztecDMSR_Matrix(const AztecDMSR_Matrix& src)
 //==============================================================================
 AztecDMSR_Matrix::~AztecDMSR_Matrix()
 {
-  //
-  //Destructor.
-  //
-  //The four arrays
-  //   update_index_
-  //   external_
-  //   extern_index_
-  //   data_org_
-  //are allocated by an Aztec C function, and so will be
-  //freed using 'free' instead of delete[].
-  //
-
   if (arraysAllocated_) {
     delete [] val;
     val = NULL;
@@ -198,25 +130,12 @@ AztecDMSR_Matrix::~AztecDMSR_Matrix()
   }
 
   if (N_update_ > 0) {
-    delete [] update_;
-    update_ = NULL;
     delete [] rowLengths_;
     rowLengths_ = NULL;
     N_update_ = 0;
   }
 
   if (azTransformed_) {
-    free(update_index_);
-    update_index_ = NULL;
-    delete [] orderingUpdate_;
-    orderingUpdate_ = NULL;
-    free(external_);
-    external_ = NULL;
-    free(extern_index_);
-    extern_index_ = NULL;
-    free(data_org_);
-    data_org_ = NULL;
-
     azTransformed_ = false;
   }
 
@@ -269,8 +188,8 @@ void AztecDMSR_Matrix::scale(double scalar)
 }
 
 //==============================================================================
-void AztecDMSR_Matrix::matvec(const Aztec_Vector& x,
-                              Aztec_Vector& y) const
+void AztecDMSR_Matrix::matvec(const Aztec_LSVector& x,
+                              Aztec_LSVector& y) const
 {
   //
   // This function forms the product y = Ax
@@ -278,7 +197,7 @@ void AztecDMSR_Matrix::matvec(const Aztec_Vector& x,
 
   assert(isFilled());
 
-  int *proc_config = amap_.getProcConfig();
+  int *proc_config = amap_->getProcConfig();
   //    int *idummy = 0, one=1;
   double *b = (double*)x.startPointer();
   double *c = (double*)y.startPointer();
@@ -309,7 +228,7 @@ int AztecDMSR_Matrix::rowLength(int row) const
 
   int thisRow = row;
 
-  if(inUpdate(thisRow,localRow)){
+  if(amap_->inUpdate(thisRow,localRow)){
     return(ADMSR_LOCAL_ROW_ALLOC_LEN(localRow));
   }
   else {
@@ -325,7 +244,7 @@ int AztecDMSR_Matrix::setDiagEntry(int row, double value)
 {
   int thisRow = row;
   int localRow = -1;
-  if(!inUpdate(thisRow,localRow)){
+  if(!amap_->inUpdate(thisRow,localRow)){
     FEI_CERR << "AztecDMSR_Matrix::setDiagEntry: ERROR - row " << row 
 	 << " not in local update set." << FEI_ENDL;
     abort(); return(-1);
@@ -340,7 +259,7 @@ double AztecDMSR_Matrix::getDiagEntry(int row) const
 {
   int thisRow = row;
   int localRow = -1;
-  if(!inUpdate(thisRow,localRow)){
+  if(!amap_->inUpdate(thisRow,localRow)){
     FEI_CERR << "AztecDMSR_Matrix::getDiagEntry: ERROR - row " << row 
 	 << " not in local update set." << FEI_ENDL;
     abort(); return val[0];
@@ -356,7 +275,7 @@ int AztecDMSR_Matrix::getOffDiagRowPointers(int row, int*& colIndices,
 {
   int thisRow = row;
   int localRow = -1;
-  if(!inUpdate(thisRow,localRow)){
+  if(!amap_->inUpdate(thisRow,localRow)){
     FEI_CERR << "AztecDMSR_Matrix::getOffDiagRowPointers: ERROR - row " << row 
 	 << " not in local update set." << FEI_ENDL;
     abort(); return(-1);
@@ -388,7 +307,7 @@ void AztecDMSR_Matrix::getRow(int row,
 
   int thisRow = row;
 
-  if(!inUpdate(thisRow,localRow)){
+  if(!amap_->inUpdate(thisRow,localRow)){
     FEI_CERR << "AztecDMSR_Matrix::getRow: ERROR - row " << row 
 	 << " not in local update set." << FEI_ENDL;
     length = 0;
@@ -401,12 +320,7 @@ void AztecDMSR_Matrix::getRow(int row,
   j = 0;
   for(int i=start; i<=end; i++){
     coefs[j] = val[i];
-    if (isFilled()) {
-      ADMSR_GET_GLOBAL_COL(colInd[j], bindx[i])
-    }
-    else {
-      colInd[j] = bindx[i];
-    }
+    colInd[j] = amap_->getTransformedEqn(bindx[i]);
 
     if (colInd[j]==row) {
       //we're at the diagonal element, so put it in.
@@ -444,7 +358,7 @@ int AztecDMSR_Matrix::putRow(int row, int len, const double *coefs,
 
   int thisRow = row;
 
-  if (!inUpdate(thisRow,localRow)){
+  if (!amap_->inUpdate(thisRow,localRow)){
     FEI_CERR << "AztecDMSR_Matrix::putRow: ERROR row " << row
 	 << " not in local update set." << FEI_ENDL;
     return(-1);
@@ -479,11 +393,11 @@ int AztecDMSR_Matrix::putRow(int row, int len, const double *coefs,
       int colIndex = colStart;
       int col = colInd[i];
       while (j <= jLimit) {
-	ADMSR_GET_GLOBAL_COL(globalColIndex, colIndex)
+	      globalColIndex = amap_->getTransformedEqn(colIndex);
 
-	if (globalColIndex == col) break;
+        if (globalColIndex == col) break;
 
-	colIndex = bindx[++j];
+        colIndex = bindx[++j];
       }
 
       //now put the coefficient in if we haven't gone too far
@@ -558,10 +472,10 @@ int AztecDMSR_Matrix::sumIntoRow(int numRows, const int* rows,
   for(int i=0; i<numRows; ++i) {
     int row = rows[i];
     int localRow;
-    if (!inUpdate(row, localRow)) {
+    if (!amap_->inUpdate(row, localRow)) {
       FEI_CERR << "AztecDMSR_Matrix::sumIntoRow: ERROR row " << row
-         << " not in local update set [" << update_[0] << " ... "
-         << update_[N_update_-1] << "]." << FEI_ENDL;
+         << " not in local update set [" << amap_->getUpdate()[0] << " ... "
+         << amap_->getUpdate()[N_update_-1] << "]." << FEI_ENDL;
       return(-1);
     }
 
@@ -587,10 +501,10 @@ int AztecDMSR_Matrix::sumIntoRow(int numRows, const int* rows,
 
   for(int i=0; i<numRows; ++i) {
     row = rows[i];
-    if (!inUpdate(row, localRow)) {
+    if (!amap_->inUpdate(row, localRow)) {
       FEI_CERR << "AztecDMSR_Matrix::sumIntoRow: ERROR row " << row
-         << " not in local update set [" << update_[0] << " ... "
-         << update_[N_update_-1] << "]." << FEI_ENDL;
+         << " not in local update set [" << amap_->getUpdate()[0] << " ... "
+         << amap_->getUpdate()[N_update_-1] << "]." << FEI_ENDL;
       return(-1);
     }
 
@@ -600,7 +514,7 @@ int AztecDMSR_Matrix::sumIntoRow(int numRows, const int* rows,
     int rowLen= bindx[localRow+1]-jStart;
 
     for(int jj=0; jj<rowLen; ++jj) {
-      ADMSR_GET_GLOBAL_COL(tmp_array_[jj], rowColInds[jj]);
+      tmp_array_[jj] = amap_->getTransformedEqn(rowColInds[jj]);
     }
 
     const double* coefs_i = coefs[i];
@@ -666,7 +580,7 @@ int AztecDMSR_Matrix::sumIntoRow(int row, int len, const double *coefs,
 
   int localRow, thisRow = row ;
 
-  if (!inUpdate(thisRow,localRow)) {
+  if (!amap_->inUpdate(thisRow,localRow)) {
     FEI_CERR << "AztecDMSR_Matrix::sumIntoRow: ERROR row " << row
 	 << " not in local update set." << FEI_ENDL;
     return(-1);
@@ -684,7 +598,7 @@ int AztecDMSR_Matrix::sumIntoRow(int row, int len, const double *coefs,
       expand_array(dtmp_array_, dtmp_array_len_, len);
     }
     for(int jj=0; jj<jLen; ++jj) {
-      ADMSR_GET_GLOBAL_COL(tmp_array_[jj], colInds[jj])
+      tmp_array_[jj] = amap_->getTransformedEqn(colInds[jj]);
     }
 
     int* incols = &tmp_array_[jLen];
@@ -832,7 +746,7 @@ int AztecDMSR_Matrix::insert(double item, int offset, double* list,
 }
 
 //==============================================================================
-void AztecDMSR_Matrix::getDiagonal(Aztec_Vector& diagVector) const {
+void AztecDMSR_Matrix::getDiagonal(Aztec_LSVector& diagVector) const {
 	
 /** AztecDMSR_Matrix::getDiagonal --- form a Vector of the diagonals of 
     the matrix **/
@@ -895,7 +809,7 @@ void AztecDMSR_Matrix::allocate(int *rowLengths)
   //val[N_update_] not used by aztec but we'll initialize it anyway...
   val[N_update_] = 0.0;
 
-  AZ_set_MSR(Amat_, bindx, val, data_org_, 0, NULL, AZ_LOCAL);
+  AZ_set_MSR(Amat_, bindx, val,amap_->data_org, 0, NULL, AZ_LOCAL);
 
   setAllocated(true);
   return;
@@ -939,7 +853,7 @@ double AztecDMSR_Matrix::rowMax(int row) const {
     int localRow;
     double max = 0.0;
 
-    if(!inUpdate(row,localRow)){
+    if(!amap_->inUpdate(row,localRow)){
         FEI_CERR << "AztecDMSR_Matrix::rowMax: ERROR row " << row 
              << " not in local update set." << FEI_ENDL;
         return(-1.0);
@@ -966,45 +880,47 @@ void AztecDMSR_Matrix::fillComplete() {
     return;
   }
 
-    int *proc_config = amap_.getProcConfig();
+    int *proc_config = amap_->getProcConfig();
     int *dummy = 0;
 
    //before we turn Aztec loose on the matrix, lets do a quick check on the
    //indices to try to make sure none of them are garbage...
-   int globalSize = amap_.globalSize();
+   int globalSize = amap_->globalSize();
    for(int i=N_update_+1; i<nnzeros_+1; i++) {
       if (bindx[i] < 0 || bindx[i] >= globalSize) {
          FEI_CERR << "AztecDMSR_Matrix: ERROR, bindx["<<i<<"]: " << bindx[i]
               << ", globalSize: " << globalSize << FEI_ENDL;
 #ifndef FEI_SER
-         MPI_Comm thisComm = amap_.getCommunicator();
+         MPI_Comm thisComm = amap_->getCommunicator();
          MPI_Abort(thisComm, -1);
 #endif
       }
    }
 
-    AZ_transform(proc_config, &external_, bindx, val, update_, &update_index_,
-                 &extern_index_, &data_org_, N_update_,
+    AZ_transform(proc_config, &amap_->external, bindx, val,
+                 amap_->getUpdate(), &amap_->update_index,
+                 &amap_->extern_index, &amap_->data_org, N_update_,
                  dummy, dummy, dummy, &dummy, AZ_MSR_MATRIX);
 
 //AZ_transform allocates these arrays:
-//  external_
-//  update_index_
-//  extern_index_
-//  data_org_
+//  amap_->external
+//  amap_->update_index
+//  amap_->extern_index
+//  amap_->data_org
 //
 //On return from AZ_transform, the array update_index contains a mapping
 //to the local re-ordering of the indices of the update array. Now we will fill
 //the orderingUpdate array with the reverse of that mapping. i.e., a record
 //of how to get back to the original ordering of the update indices.
 
-    AZ_set_MSR(Amat_, bindx, val, data_org_, 0, NULL, AZ_LOCAL);
+    AZ_set_MSR(Amat_, bindx, val, amap_->data_org, 0, NULL, AZ_LOCAL);
 
-    orderingUpdate_ = new int[N_update_];
+    amap_->orderingUpdate.resize(N_update_);
     for(int ii=0; ii<N_update_; ii++) {
-      orderingUpdate_[update_index_[ii]] = ii;
+      amap_->orderingUpdate[amap_->update_index[ii]] = ii;
     }
 
+    amap_->az_transformed = true;
     azTransformed_ = true;
 
     setFilled(true);
@@ -1018,12 +934,6 @@ void AztecDMSR_Matrix::copyStructure(AztecDMSR_Matrix& source)
   //This function copies the structure (essentially just the bindx and
   //rowLengths_ arrays) and other relevant variables from the 'source' matrix.
   //The result is that 'this' matrix is laid out the same as 'source'.
-  //
-  //This is not the greatest C++, it would be better to use a copy-
-  //constructor, but there are also reasons why a copy-constructor isn't
-  //always a good thing for high-performance computing. (e.g., I don't want
-  //people passing one of these matrices by value.) For now, this
-  //function is a suitable band-aid solution.
   //
   nnzeros_ = source.nnzeros_;
 
@@ -1044,32 +954,12 @@ void AztecDMSR_Matrix::copyStructure(AztecDMSR_Matrix& source)
 
   for(i=0; i<N_update_; ++i) rowLengths_[i] = source.rowLengths_[i];
 
-  AZ_set_MSR(Amat_, bindx, val, data_org_, 0, NULL, AZ_LOCAL);
+  amap_ = source.amap_;
 
-  if (source.isFilled_) {
-    if (!isFilled_) {
+  AZ_set_MSR(Amat_, bindx, val, amap_->data_org, 0, NULL, AZ_LOCAL);
 
-      update_index_ = (int*)AZ_allocate(N_update_*sizeof(int));
-      orderingUpdate_ = new int[N_update_];
-      for(i=0; i<N_update_; ++i) {
-	update_index_[i] = source.update_index_[i];
-	orderingUpdate_[i] = source.orderingUpdate_[i];
-      }
-
-      int dlen = AZ_COMM_SIZE + source.data_org_[AZ_total_send];
-      data_org_ = (int*)AZ_allocate(dlen*sizeof(int));
-      for(i=0; i<dlen; ++i) data_org_[i] = source.data_org_[i];
-
-      external_ = (int*)AZ_allocate(data_org_[AZ_N_external]*sizeof(int));
-      extern_index_ = (int*)AZ_allocate(data_org_[AZ_N_external]*sizeof(int));
-      for(i=0; i<data_org_[AZ_N_external]; ++i) {
-	external_[i] = source.external_[i];
-	extern_index_[i] = source.extern_index_[i];
-      }
-      isFilled_ = source.isFilled_;
-      azTransformed_ = true;
-    }
-  }
+  isFilled_ = source.isFilled_;
+  azTransformed_ = source.azTransformed_;
 
   arraysAllocated_ = true;
   setAllocated(true);
@@ -1122,7 +1012,7 @@ bool AztecDMSR_Matrix::readFromFile(const char *filename)
     }
     sscanf(line,"%d %d %le",&i,&j,&value);
 
-    if(inUpdate(i, dummy)) {
+    if(amap_->inUpdate(i, dummy)) {
       if (putRow(i, 1, &value, &j) != 0) return(false);
     }
   }
@@ -1141,15 +1031,15 @@ bool AztecDMSR_Matrix::writeToFile(const char *fileName) const
      .
   */
 
-  int numProcs = amap_.getProcConfig()[AZ_N_procs];
-  int thisProc = amap_.getProcConfig()[AZ_node];
+  int numProcs = amap_->getProcConfig()[AZ_N_procs];
+  int thisProc = amap_->getProcConfig()[AZ_node];
   int masterRank = 0;
 
 
   int localNNZ = nnzeros_;
   int globalNNZ = localNNZ;
 #ifndef FEI_SER
-  MPI_Comm thisComm = amap_.getCommunicator();
+  MPI_Comm thisComm = amap_->getCommunicator();
   MPI_Allreduce(&localNNZ, &globalNNZ, 1, MPI_INT, MPI_SUM, thisComm);
 #endif
 
@@ -1170,7 +1060,7 @@ bool AztecDMSR_Matrix::writeToFile(const char *fileName) const
 	//Write the matrix dimensions n and n (rows==cols) into the file,
 	//along with the global number-of-nonzeros globalNNZ.
 
-	int n = amap_.globalSize();
+	int n = amap_->globalSize();
 	fprintf(file,"%d %d %d\n",n, n, globalNNZ);
       }
       else {
@@ -1183,7 +1073,7 @@ bool AztecDMSR_Matrix::writeToFile(const char *fileName) const
 	int row = localOffset_+i;
 
 	int localRow = -1;
-	if (!inUpdate(row, localRow)) return(false);
+	if (!amap_->inUpdate(row, localRow)) return(false);
 
 	int offDiagRowLen = ADMSR_LOCAL_ROW_LEN(localRow) - 1;
 	if (isFilled_) offDiagRowLen = ADMSR_LOCAL_ROW_ALLOC_LEN(localRow) - 1;
@@ -1195,7 +1085,7 @@ bool AztecDMSR_Matrix::writeToFile(const char *fileName) const
 	  int col = colInds[j];
 	  int globalCol = col;
 	  if (isFilled()) {
-	    ADMSR_GET_GLOBAL_COL(globalCol, col)
+	    globalCol = amap_->getTransformedEqn(col);
 	  }
 
 	  if (globalCol >= row && !wroteDiagonal) {
@@ -1217,32 +1107,6 @@ bool AztecDMSR_Matrix::writeToFile(const char *fileName) const
   }
 
   return(true);
-}
-
-//==============================================================================
-int AztecDMSR_Matrix::inUpdate(int globalIndex, int& localIndex) const
-{
-  //
-  // This function determines whether globalIndex is in the local update set,
-  // and if it is, returns in localIndex the local index for it. If update_index_
-  // has already been allocated and set (by AZ_transform) then localIndex is
-  // taken from there.
-  // If globalIndex is not in the update set, inUpdate returns 0.
-  //
-  if (linearDistribution_) {
-    localIndex = globalIndex - localOffset_;
-  }
-  else {
-    localIndex = AZ_find_index(globalIndex, update_, N_update_);
-  }
-
-  if(localIndex<0 || localIndex>=localSize_) {localIndex = -1; return(0); }
-
-  if(azTransformed_){
-    localIndex = update_index_[localIndex];
-  }
-
-  return(1);
 }
 
 //==============================================================================

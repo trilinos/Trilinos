@@ -13,6 +13,7 @@
 #include <fei_defs.h>
 #include <fei_Data.hpp>
 #include <fei_LinearSystemCore.hpp>
+#include <fei_SharedPtr.hpp>
 
 #include <string>
 #include <map>
@@ -26,7 +27,7 @@ namespace fei_trilinos {
 
 class Aztec_Map;
 class Aztec_BlockMap;
-class Aztec_Vector;
+class Aztec_LSVector;
 class AztecDMSR_Matrix;
 class AztecDVBR_Matrix;
 
@@ -322,7 +323,7 @@ class Aztec_LinSysCore: public LinearSystemCore {
    void debugOutput(const char* msg) const;
 
    int writeA(const char* name);
-   int writeVec(Aztec_Vector* v, const char* name);
+   int writeVec(Aztec_LSVector* v, const char* name);
 
    int messageAbort(const char* msg) const;
 
@@ -338,15 +339,15 @@ class Aztec_LinSysCore: public LinearSystemCore {
    int masterProc_;
 
    int* update_;
-   Aztec_Map *map_;
+   fei::SharedPtr<Aztec_Map> map_;
    AztecDMSR_Matrix *A_;
    AztecDMSR_Matrix *A_ptr_;
-   Aztec_Vector *x_, **b_, *bc_;
+   Aztec_LSVector *x_, **b_, *bc_;
    int* essBCindices_;
    int numEssBCs_;
    bool bcsLoaded_;
    bool explicitDirichletBCs_;
-   Aztec_Vector *b_ptr_;
+   Aztec_LSVector *b_ptr_;
    bool matrixAllocated_;
    bool vectorsAllocated_;
    bool blkMatrixAllocated_;
@@ -356,7 +357,7 @@ class Aztec_LinSysCore: public LinearSystemCore {
 
    bool tooLateToChooseBlock_;
    bool blockMatrix_;
-   Aztec_BlockMap* blkMap_;
+   fei::SharedPtr<Aztec_BlockMap> blkMap_;
    AztecDVBR_Matrix *blkA_;
    AztecDVBR_Matrix *blkA_ptr_;
    int* blkUpdate_;

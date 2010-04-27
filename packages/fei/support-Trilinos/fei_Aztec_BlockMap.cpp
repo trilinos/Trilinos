@@ -34,12 +34,13 @@
 namespace fei_trilinos {
 
 //==============================================================================
-Aztec_BlockMap::Aztec_BlockMap(int globalSz, int localSz, int localOffs,
+Aztec_BlockMap::Aztec_BlockMap(int globalSz, int N_update, const int* update, int localOffs,
                           MPI_Comm comm,
                           int numGlobalBlocks, int numLocalBlocks,
+                          const int* blkUpdate,
                           int localBlockOffset, int* blockSizes)
 
-  : Aztec_Map(globalSz, localSz, localOffs, comm),
+  : Aztec_Map(globalSz, N_update, update, localOffs, comm),
     numGlobalBlocks_(numGlobalBlocks),
     numLocalBlocks_(numLocalBlocks),
     localBlockOffset_(localBlockOffset)
@@ -47,24 +48,28 @@ Aztec_BlockMap::Aztec_BlockMap(int globalSz, int localSz, int localOffs,
     checkInput();
 
     blockSizes_ = new int[numLocalBlocks_];
+    blockUpdate_ = new int[numLocalBlocks_];
 
     for(int i=0; i<numLocalBlocks_; i++) {
         blockSizes_[i] = blockSizes[i];
+        blockUpdate_[i] = blkUpdate[i];
     }
 }
  
 //==============================================================================
 Aztec_BlockMap::Aztec_BlockMap(const Aztec_BlockMap& map)
-  : Aztec_Map(map.globalSize(), map.localSize(), map.localOffset(),
+  : Aztec_Map(map.globalSize(), map.localSize(), &map.update[0], map.localOffset(),
               map.getCommunicator()),
     numGlobalBlocks_(map.numGlobalBlocks_),
     numLocalBlocks_(map.numLocalBlocks_),
     localBlockOffset_(map.localBlockOffset_)
 {
     blockSizes_ = new int[numLocalBlocks_];
+    blockUpdate_ = new int[numLocalBlocks_];
 
     for(int i=0; i<numLocalBlocks_; i++) {
         blockSizes_[i] = map.blockSizes_[i];
+        blockUpdate_[i] = map.blockUpdate_[i];
     }
 }
 
@@ -73,6 +78,9 @@ Aztec_BlockMap::~Aztec_BlockMap(void)  {
 
     delete [] blockSizes_;
     blockSizes_ = NULL;
+
+    delete [] blockUpdate_;
+    blockUpdate_ = NULL;
 
     numGlobalBlocks_ = 0;
     numLocalBlocks_ = 0;

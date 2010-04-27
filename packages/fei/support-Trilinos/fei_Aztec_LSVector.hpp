@@ -1,5 +1,5 @@
-#ifndef _fei_Aztec_Vector_hpp_
-#define _fei_Aztec_Vector_hpp_
+#ifndef _fei_Aztec_LSVector_hpp_
+#define _fei_Aztec_LSVector_hpp_
 
 /*--------------------------------------------------------------------*/
 /*    Copyright 2005 Sandia Corporation.                              */
@@ -9,13 +9,15 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
+#include <fei_SharedPtr.hpp>
+
 //
 // This class provides a vector that can be used with the AztecDMSR_matrix
 // and the AztecDVBR_Matrix.
 //
 // An important restriction to note:
 //
-// * An Aztec_Vector can not be constructed until AFTER the AztecDMSR_Matrix
+// * An Aztec_LSVector can not be constructed until AFTER the AztecDMSR_Matrix
 //   (or AztecDVBR_Matrix) that it is to be used with has been completely
 //   initialized and filled (e.g., A.loadComplete() has been called (which
 //   means, most importantly, that AZ_transform has been called)). This is
@@ -26,9 +28,9 @@
 //   AZ_transform has been called.
 //
 // * Also, the calling code is responsible for keeping track of any 
-//   re-ordering that AZ_transform has done. i.e., Aztec_Vector is just
+//   re-ordering that AZ_transform has done. i.e., Aztec_LSVector is just
 //   like a raw array with respect to indexing of entries. If v is an
-//   instantiation of an Aztec_Vector, then v[9] literally returns the
+//   instantiation of an Aztec_LSVector, then v[9] literally returns the
 //   entry at position 9 (the 10th entry, since indexing is 0-based).
 //
 namespace fei_trilinos {
@@ -36,27 +38,26 @@ namespace fei_trilinos {
 class Aztec_Map;
 
 /**==========================================================================**/
-class Aztec_Vector {
+class Aztec_LSVector {
   public:
     // Constructor.
-    Aztec_Vector(const Aztec_Map& map, int* data_org);
+    Aztec_LSVector(fei::SharedPtr<Aztec_Map> map, int* data_org);
 
-    Aztec_Vector(const Aztec_Vector& source);  // copy constructor
+    Aztec_LSVector(const Aztec_LSVector& source);  // copy constructor
 
-    virtual ~Aztec_Vector ();
+    virtual ~Aztec_LSVector ();
 
-    Aztec_Vector* newVector() const;
+    Aztec_LSVector* newVector() const;
 
     // Mathematical functions.
-    double dotProd (const Aztec_Vector& y) const;
+    double dotProd (const Aztec_LSVector& y) const;
     void scale (double s);
-    void linComb (const Aztec_Vector& b, double s, const Aztec_Vector& c);
-    void addVec (double s, const Aztec_Vector& c);
+    void addVec (double s, const Aztec_LSVector& c);
     double norm () const;
     double norm1 () const;
  
     // operator=
-    Aztec_Vector& operator = (const Aztec_Vector& rhs);
+    Aztec_LSVector& operator = (const Aztec_LSVector& rhs);
     
     // Access functions.
     double& operator [] (int index);
@@ -71,13 +72,13 @@ class Aztec_Vector {
     bool writeToFile(const char *fileName) const;
     
   protected:
-    virtual void assign(const Aztec_Vector& rhs);
+    virtual void assign(const Aztec_LSVector& rhs);
     
   private:
     void checkInput();
     int inUpdate(int globalIndex, int& localIndex) const;
 
-    const Aztec_Map& amap_;
+    fei::SharedPtr<Aztec_Map> amap_;
     double *localCoeffs_;        // local vector coefficients
     int length_;
 };
