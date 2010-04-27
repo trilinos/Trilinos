@@ -151,6 +151,12 @@ public:
    //! Merge internal storage of another PreconditionerState object into this one
    virtual void merge(const PreconditionerState & ps,int position=-1);
 
+   //! Get the tag for this operator
+   unsigned int getTag() const;
+
+   //! Set the tag for this operator
+   void setTag(unsigned int tag);
+
 protected:
    //! for ParameterListAcceptor
    Teuchos::RCP<Teuchos::ParameterList>          paramList_;
@@ -165,6 +171,8 @@ protected:
 
    //! Stores the initialization state 
    bool isInitialized_;
+
+   unsigned int tag_;
 };
 
 } // end namespace Teko

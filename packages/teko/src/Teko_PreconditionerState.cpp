@@ -90,6 +90,18 @@ void PreconditionerState::merge(const PreconditionerState & ps,int position)
    }
 }
 
+//! Get the tag for this operator
+unsigned int PreconditionerState::getTag() const
+{
+   return tag_;
+}
+
+//! Set the tag for this operator
+void PreconditionerState::setTag(unsigned int tag)
+{
+   tag_ = tag;
+}
+
 /////////////////////////////////////////////////////
 
 } // end namespace Teko
