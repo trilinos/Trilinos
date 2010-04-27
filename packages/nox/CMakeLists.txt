@@ -26,10 +26,14 @@ OPTION(${PACKAGE_NAME}_ENABLE_LOCA
   ON )
 
 # MF support
+SET(NOX_ENABLE_MF_default OFF)
+IF(TPL_ENABLE_MF)
+  SET(NOX_ENABLE_MF_default ON)
+ENDIF()
 ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_MF
   HAVE_LOCA_MF
   "Enable Multifario (MF) support in LOCA"
-  ${TPL_ENABLE_MF} )
+  ${NOX_ENABLE_MF_default} )
 
 # Ignoring these flags - should be fixed in more recent compilers
 # AC_CXX_STL_MAP_KEY_CONST
