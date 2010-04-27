@@ -30,6 +30,7 @@
 
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_BLAS.hpp"
+#include "Teuchos_TimeMonitor.hpp"
 
 template <typename ordinal_type, typename value_type>
 Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
@@ -116,6 +117,8 @@ getQuadPoints(ordinal_type quad_order,
 	      Teuchos::Array<value_type>& quad_weights,
 	      Teuchos::Array< Teuchos::Array<value_type> >& quad_values) const
 {
+  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::StieltjesPCEBasis -- compute Gauss points");
+
   // Use underlying pce's quad points, weights, values
   if (use_pce_quad_points) {
     quad_points = pce_vals;
@@ -175,6 +178,8 @@ stieltjes(ordinal_type nstart,
 	  Teuchos::Array<value_type>& nrm,
 	  Teuchos::Array< Teuchos::Array<value_type> >& phi_vals) const
 {
+  TEUCHOS_FUNC_TIME_MONITOR("Stokhos::StieltjesPCEBasis -- Discretized Stieltjes Procedure");
+
   value_type val1, val2;   
   ordinal_type start = nstart;
   if (nstart == 0) {
