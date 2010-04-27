@@ -146,30 +146,6 @@ getQuadPoints(ordinal_type quad_order,
 }
 
 template <typename ordinal_type, typename value_type>
-ordinal_type 
-Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
-getRule() const
-{
-  return 10;
-}
-
-template <typename ordinal_type, typename value_type>
-value_type 
-Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
-getQuadWeightFactor() const
-{
-  return 1.0;
-}
-
-template <typename ordinal_type, typename value_type>
-value_type 
-Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
-getQuadPointFactor() const
-{
-  return 1.0;
-}
-
-template <typename ordinal_type, typename value_type>
 void
 Stokhos::StieltjesPCEBasis<ordinal_type, value_type>::
 computeRecurrenceCoefficients(ordinal_type n,

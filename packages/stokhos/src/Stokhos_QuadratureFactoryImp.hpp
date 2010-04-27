@@ -58,8 +58,8 @@ create(Teuchos::ParameterList& sgParams)
       Teuchos::rcp(new Stokhos::TensorProductQuadrature<ordinal_type,value_type>(product_basis));
   else if (quad_type == "Sparse Grid") {
 #ifdef HAVE_STOKHOS_DAKOTA
-    if (sgParams.isType<ordinal_type>("Sparse Grid Level")) {
-      ordinal_type level = sgParams.get<ordinal_type>("Sparse Grid Level");
+    if (quadParams.isType<ordinal_type>("Sparse Grid Level")) {
+      ordinal_type level = quadParams.get<ordinal_type>("Sparse Grid Level");
       quad = 
 	Teuchos::rcp(new Stokhos::SparseGridQuadrature<ordinal_type,value_type>(
 		       product_basis, level));

@@ -67,34 +67,6 @@ namespace Stokhos {
     
     //! Destructor
     ~DiscretizedStieltjesBasis();
-
-    //! \name Implementation of Stokhos::OneDOrthogPolyBasis methods
-    //@{ 
-
-    //! Get sparse grid rule number as defined by Dakota's \c webbur package
-    /*!
-     * This method is needed for building Smolyak sparse grids out of this 
-     * basis.  A rule number of 10 is not defined by the webbur package, and
-     * this rule number is used internally by Stokhos::SparseGridQuadrature
-     * to pass an arbitrary one-dimensional basis to that package.
-     */
-    virtual ordinal_type getRule() const { return 10; }
-
-    //! Get quadrature weight factor as defined by Dakota's \c webbur package
-    /*!
-     * This method is needed for building Smolyak sparse grids out of this 
-     * basis.
-     */
-    virtual value_type getQuadWeightFactor() const { return 1; }
-
-    //! Get quadrature point factor as defined by Dakota's \c webbur package
-    /*!
-     * This method is needed for building Smolyak sparse grids out of this 
-     * basis.
-     */
-    virtual value_type getQuadPointFactor() const { return 1; }
-
-    //@}
     
     //!Evaluate inner product of two basis functions to test orthogonality.
     value_type eval_inner_product(const ordinal_type& order1, 

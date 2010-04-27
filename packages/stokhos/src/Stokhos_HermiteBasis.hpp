@@ -68,28 +68,14 @@ namespace Stokhos {
     //! \name Implementation of Stokhos::OneDOrthogPolyBasis methods
     //@{ 
 
+#ifdef HAVE_STOKHOS_DAKOTA
     //! Get sparse grid rule number as defined by Dakota's \c webbur package
     /*!
      * This method is needed for building Smolyak sparse grids out of this 
      * basis.
      */
-    virtual ordinal_type getRule() const { return 5; }
-
-    //! Get quadrature weight factor as defined by Dakota's \c webbur package
-    /*!
-     * This method is needed for building Smolyak sparse grids out of this 
-     * basis.
-     */
-    virtual value_type getQuadWeightFactor() const { 
-      return 0.5/std::sqrt(std::atan(1.0)); // 1/sqrt(pi)
-    }
-
-    //! Get quadrature point factor as defined by Dakota's \c webbur package
-    /*!
-     * This method is needed for building Smolyak sparse grids out of this 
-     * basis.
-     */
-    virtual value_type getQuadPointFactor() const { return std::sqrt(2.0); }
+    virtual int getSparseGridRule() const { return 5; }
+#endif 
 
     //@}
 

@@ -37,6 +37,11 @@
 #include "Teuchos_Array.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 
+#include "Stokhos_ConfigDefs.h"
+#ifdef HAVE_STOKHOS_DAKOTA
+#include "pecos_global_defs.hpp"
+#endif
+
 //! Top-level namespace for Stokhos classes and functions.
 namespace Stokhos {
 
@@ -147,26 +152,34 @@ namespace Stokhos {
 		  Teuchos::Array<value_type>& weights,
 		  Teuchos::Array< Teuchos::Array<value_type> >& values) const = 0;
 
+#ifdef HAVE_STOKHOS_DAKOTA
     //! Get sparse grid rule number as defined by Dakota's \c webbur package
     /*!
      * This method is needed for building Smolyak sparse grids out of this 
-     * basis.
+     * basis.  The current rule definitions are:
+     * 1  Clenshaw-Curtis
+     * 2  Fejer Type 2
+     * 3  Gauss-Patterson
+     * 4  Gauss-Legendre
+     * 5  Gauss-Hermite
+     * 6  Generalized Gauss-Hermite
+     * 7  Gauss-Laguerre
+     * 8  Generalized Gauss-Laguerre
+     * 9  Gauss-Jacobi
+     * 10 Golub-Welsch (Gauss points for arbitrary weight function)
      */
-    virtual ordinal_type getRule() const = 0;
+    virtual int getSparseGridRule() const = 0;
 
-    //! Get quadrature weight factor as defined by Dakota's \c webbur package
+    /*! 
+     * \brief Get sparse grid rule growth rule as defined by 
+     * Dakota's \c webbur package
+     */
     /*!
      * This method is needed for building Smolyak sparse grids out of this 
      * basis.
      */
-    virtual value_type getQuadWeightFactor() const = 0;
-
-    //! Get quadrature point factor as defined by Dakota's \c webbur package
-    /*!
-     * This method is needed for building Smolyak sparse grids out of this 
-     * basis.
-     */
-    virtual value_type getQuadPointFactor() const = 0;
+    virtual int getSparseGridGrowthRule() const = 0;
+#endif
 
   private:
 

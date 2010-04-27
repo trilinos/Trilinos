@@ -63,19 +63,8 @@ AnisoSparseGridQuadrature(
   for (ordinal_type i=0; i<d; i++) {
     compute1DPoints[i] = &(getMyPoints);
     compute1DWeights[i] = &(getMyWeights);
-    rules[i] = coordinate_bases[i]->getRule();
-    if (rules[i] == 5) {
-      growthRules[i] = Pecos::MODERATE_LINEAR;
-    }
-    else if (rules[i] == 1) {
-      growthRules[i] = Pecos::MODERATE_EXPONENTIAL;
-    }
-    else if (rules[i] == 10) {
-      growthRules[i] = Pecos::MODERATE_LINEAR;
-    }
-    else if (rules[i] == 4) {
-      growthRules[i] = Pecos::MODERATE_LINEAR;
-    }
+    rules[i] = coordinate_bases[i]->getSparseGridRule();
+    growthRules[i] = coordinate_bases[i]->getSparseGridGrowthRule();
   }
 
   // Set the static sparse grid quadrature pointer to this
@@ -165,7 +154,7 @@ void
 Stokhos::AnisoSparseGridQuadrature<ordinal_type,value_type>::
 getMyPoints( int order, int dim, double x[] )
 {
-  if (sgq->coordinate_bases[dim]->getRule() == 1)
+  if (sgq->coordinate_bases[dim]->getSparseGridRule() == 1)
     webbur::clenshaw_curtis_compute_points(order, x);
   else {
     Teuchos::Array<double> quad_points;
@@ -184,7 +173,7 @@ void
 Stokhos::AnisoSparseGridQuadrature<ordinal_type,value_type>::
 getMyWeights( int order, int dim, double w[] )
 {
-  if (sgq->coordinate_bases[dim]->getRule() == 1) {
+  if (sgq->coordinate_bases[dim]->getSparseGridRule() == 1) {
     webbur::clenshaw_curtis_compute_weights(order, w);
     for (int i=0; i<order; i++)
       w[i] *= 0.5;

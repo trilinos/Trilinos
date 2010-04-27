@@ -84,29 +84,6 @@ namespace Stokhos {
 		  Teuchos::Array<value_type>& weights,
 		  Teuchos::Array< Teuchos::Array<value_type> >& values) const;
 
-    //! Get sparse grid rule number as defined by Dakota's \c webbur package
-    /*!
-     * This method is needed for building Smolyak sparse grids out of this 
-     * basis.  A rule number of 10 is not defined by the webbur package, and
-     * this rule number is used internally by Stokhos::SparseGridQuadrature
-     * to pass an arbitrary one-dimensional basis to that package.
-     */
-    virtual ordinal_type getRule() const;
-
-    //! Get quadrature weight factor as defined by Dakota's \c webbur package
-    /*!
-     * This method is needed for building Smolyak sparse grids out of this 
-     * basis.
-     */
-    virtual value_type getQuadWeightFactor() const;
-
-    //! Get quadrature point factor as defined by Dakota's \c webbur package
-    /*!
-     * This method is needed for building Smolyak sparse grids out of this 
-     * basis.
-     */
-    virtual value_type getQuadPointFactor() const;
-
     //@}
 
     //! Map expansion coefficients from this basis to original

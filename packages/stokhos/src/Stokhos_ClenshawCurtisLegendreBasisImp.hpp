@@ -30,8 +30,9 @@
 
 template <typename ordinal_type, typename value_type>
 Stokhos::ClenshawCurtisLegendreBasis<ordinal_type, value_type>::
-ClenshawCurtisLegendreBasis(ordinal_type p, bool normalize) :
-  RecurrenceBasis<ordinal_type, value_type>("Legendre", p, normalize)
+ClenshawCurtisLegendreBasis(ordinal_type p, bool normalize, bool isotropic_) :
+  RecurrenceBasis<ordinal_type, value_type>("Legendre", p, normalize),
+  isotropic(isotropic_)
 {
   // Compute coefficients in 3-term recurrsion
   computeRecurrenceCoefficients(p+1, this->alpha, this->beta, this->delta);

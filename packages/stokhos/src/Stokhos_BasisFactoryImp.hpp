@@ -52,15 +52,17 @@ create(Teuchos::ParameterList& sgParams)
     Teuchos::ParameterList& bp = basisParams.sublist(ss.str());
     std::string type = bp.get("Type","Legendre");
     ordinal_type order = bp.get("Order", 3);
+    bool normalize = bp.get("Normalize", false);
     if (type == "Legendre")
-      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(order));
-    else if (type == "Clenshaw-Curtis")
-      bases[i] = Teuchos::rcp(new Stokhos::ClenshawCurtisLegendreBasis<ordinal_type,value_type>(order));
+      bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<ordinal_type,value_type>(order, normalize));
+    else if (type == "Clenshaw-Curtis") {
+      bool isotropic = bp.get("Isotropic", false);
+      bases[i] = Teuchos::rcp(new Stokhos::ClenshawCurtisLegendreBasis<ordinal_type,value_type>(order, normalize, isotropic));
+    }
     else if (type == "Hermite")
-      bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<ordinal_type,value_type>(order));
+      bases[i] = Teuchos::rcp(new Stokhos::HermiteBasis<ordinal_type,value_type>(order, normalize));
     else if (type == "Rys") {
       value_type cut = bp.get("Weight Cut", 1.0);
-      bool normalize = bp.get("Normalize", false);
       bases[i] = Teuchos::rcp(new Stokhos::RysBasis<ordinal_type,value_type>(order, cut,
 								normalize));
     }

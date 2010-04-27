@@ -50,7 +50,8 @@ namespace Stokhos {
      * \param p order of the basis
      * \param normalize whether polynomials should be given unit norm
      */
-    ClenshawCurtisLegendreBasis(ordinal_type p, bool normalize = false);
+    ClenshawCurtisLegendreBasis(ordinal_type p, bool normalize = false,
+				bool isotropic = false);
 
     //! Destructor
     ~ClenshawCurtisLegendreBasis();
@@ -58,26 +59,30 @@ namespace Stokhos {
     //! \name Implementation of Stokhos::OneDOrthogPolyBasis methods
     //@{ 
 
+#ifdef HAVE_STOKHOS_DAKOTA
     //! Get sparse grid rule number as defined by Dakota's \c webbur package
     /*!
      * This method is needed for building Smolyak sparse grids out of this 
      * basis.
      */
-    virtual ordinal_type getRule() const { return 1; }
+    virtual int getSparseGridRule() const { return 1; }
 
-    //! Get quadrature weight factor as defined by Dakota's \c webbur package
+    /*! 
+     * \brief Get sparse grid rule growth rule as defined by 
+     * Dakota's \c webbur package
+     */
     /*!
      * This method is needed for building Smolyak sparse grids out of this 
-     * basis.
+     * basis.  Returns growth rule appropriate for Clenshaw-Curtis quadrature 
+     * points.  Full expoential growth works well for isotropic case, but not
+     * otherwise.
      */
-    virtual value_type getQuadWeightFactor() const { return 0.5; }
-
-    //! Get quadrature point factor as defined by Dakota's \c webbur package
-    /*!
-     * This method is needed for building Smolyak sparse grids out of this 
-     * basis.
-     */
-    virtual value_type getQuadPointFactor() const { return 1.0; }
+    virtual int getSparseGridGrowthRule() const { 
+      if (isotropic)
+	return Pecos::FULL_EXPONENTIAL;
+      return Pecos::MODERATE_EXPONENTIAL;
+    };
+#endif 
 
     //@}
 
@@ -102,6 +107,11 @@ namespace Stokhos {
 
     // Prohibit Assignment
     ClenshawCurtisLegendreBasis& operator=(const ClenshawCurtisLegendreBasis& b);
+
+  protected:
+
+    //! Flag determining if expansion is iostropic (same basis in every dim)
+    bool isotropic;
 
   }; // class ClenshawCurtisLegendreBasis
 

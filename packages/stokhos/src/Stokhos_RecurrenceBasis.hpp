@@ -153,6 +153,28 @@ namespace Stokhos {
 		  Teuchos::Array<value_type>& weights,
 		  Teuchos::Array< Teuchos::Array<value_type> >& values) const;
 
+#ifdef HAVE_STOKHOS_DAKOTA
+    //! Get sparse grid rule number as defined by Dakota's \c webbur package
+    /*!
+     * This method is needed for building Smolyak sparse grids out of this 
+     * basis.  A rule number of 10 is not defined by the webbur package, and
+     * this rule number is used internally by Stokhos::SparseGridQuadrature
+     * to pass an arbitrary one-dimensional basis to that package.
+     */
+    virtual int getSparseGridRule() const { return 10; }
+
+    /*! 
+     * \brief Get sparse grid rule growth rule as defined by 
+     * Dakota's \c webbur package
+     */
+    /*!
+     * This method is needed for building Smolyak sparse grids out of this 
+     * basis.  Returns growth rule appropriate for Gaussian quadrature points.
+     */
+    virtual int getSparseGridGrowthRule() const { 
+      return Pecos::MODERATE_LINEAR; };
+#endif 
+
     //@}
 
     //! Return recurrence coefficients defined by above formula
