@@ -63,7 +63,7 @@ Ifpack_SILU::Ifpack_SILU(Epetra_RowMatrix* Matrix_in) :
   NumMyDiagonals_(0),
   DropTol_(1e-4),
   FillTol_(1e-2),
-  FillFactor_(2.0),
+  FillFactor_(10.0),
   DropRule_(9), 
   Condest_(-1.0),
   IsInitialized_(false),
@@ -92,6 +92,7 @@ void Ifpack_SILU::Destroy()
   if(IsInitialized_){
     // SuperLU cleanup
     StatFree(&stat_);
+
     Destroy_CompCol_Permuted(&SAc_);
     Destroy_SuperNode_Matrix(&SL_);
     Destroy_CompCol_Matrix(&SU_);
@@ -258,15 +259,14 @@ int Ifpack_SILU::Compute()
   // Call the factorization
   int panel_size = sp_ienv(1);
   int relax      = sp_ienv(2);
-  int info;
+  int info=0;
   dgsitrf(&options_,&SAc_,relax,panel_size,etree_,NULL,0,perm_c_,perm_r_,&SL_,&SU_,&stat_,&info);
-  if(!info) IFPACK_CHK_ERR(info);
+  if(info<0) IFPACK_CHK_ERR(info);
 
   IsComputed_ = true;
   NumCompute_++;
   ComputeTime_ += Time_.ElapsedTime();
-
-  return(info);
+  return 0;
 }
 
 //=============================================================================
