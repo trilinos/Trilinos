@@ -61,6 +61,9 @@
 
 //#define DUMP_DATA
 
+// TrilinosCouplings includes
+#include "TrilinosCouplings_config.h"
+
 // Intrepid includes
 #include "Intrepid_FunctionSpaceTools.hpp"
 //#include "Intrepid_FieldContainer.hpp"
@@ -110,6 +113,16 @@
 #include "ml_MultiLevelPreconditioner.h"
 #include "ml_epetra_utils.h"
 
+#ifdef TrilinosCouplings_ENABLE_Isorropia
+#define TC_HAVE_ZOLTAN
+#endif
+
+#ifdef TC_HAVE_ZOLTAN
+// Isorropia includes
+#include "Isorropia_Epetra.hpp"
+#include "Isorropia_EpetraRedistributor.hpp"
+#include "Isorropia_EpetraPartitioner.hpp"
+#endif
 
 int TestMultiLevelPreconditionerLaplace(char ProblemType[],
 				 Teuchos::ParameterList   & MLList,
@@ -224,6 +237,11 @@ int main(int argc, char *argv[]) {
 
   // Get pamgen mesh definition
     std::string meshInput = Teuchos::getParameter<std::string>(inputMeshList,"meshInput");
+
+    // Get Isorropia and Zoltan parameters.
+    Teuchos::ParameterList iso_paramlist = inputMeshList.sublist
+                                                    ("Isorropia Input") ;
+    iso_paramlist.print(std::cout,2,true,true);
 
 
 // *********************************** CELL TOPOLOGY **********************************
@@ -669,6 +687,66 @@ int main(int argc, char *argv[]) {
 
     delete [] BCNodes;
 
+#ifdef TC_HAVE_ZOLTAN
+    if(MyPID==0)
+	{
+		cout << msg << "Adjust Matrix = " << Time.ElapsedTime() << endl;
+        cout << "rows = " << StiffMatrix.NumGlobalRows() << endl ;
+        cout << "cols = " << StiffMatrix.NumGlobalCols() << endl ;
+        cout << "nnzs = " << StiffMatrix.NumGlobalNonzeros() << endl ;
+		Time.ResetStartTime();
+	}
+
+    /* ****************** Call Isorropia to partition the matrix *********** */
+    Teuchos::RCP <const Epetra_RowMatrix> rowmat = Teuchos::rcpFromRef
+                                                    (StiffMatrix) ;
+
+    // Create the partitioner.
+    Isorropia::Epetra::Partitioner iso_part (rowmat, iso_paramlist) ;
+    Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner =
+                                                Teuchos::rcpFromRef (iso_part) ;
+    if (MyPID == 0)
+    {
+        cout << msg << "Partition Time = " << Time.ElapsedTime() << endl;
+        Time.ResetStartTime();
+    }
+
+    // Create the redistributor
+    Isorropia::Epetra::Redistributor redist(partitioner) ;
+
+    Teuchos::RCP<Epetra_CrsMatrix> bal_matrix ;
+    Teuchos::RCP<Epetra_MultiVector> bal_rhs ;
+    Teuchos::RCP<Epetra_Map> iso_bal_map ;
+    try
+    {
+        // Redistribute the matrix and the rhs.
+        bal_matrix = redist.redistribute(StiffMatrix) ;
+        bal_rhs = redist.redistribute(rhs) ;
+    }
+    catch (std::exception& exc)
+    {
+        std::cout << "example_Poisson: Isorropia exception ' "
+            << exc.what() << " ' on proc " << MyPID  << std::endl ;
+        return  1;
+    }
+
+    if (MyPID == 0)
+    {
+        cout << msg << "Redistribute Time = " << Time.ElapsedTime() << endl;
+        Time.ResetStartTime();
+    }
+
+    // Get the map from Isorropia for lhs.
+    iso_bal_map = iso_part.createNewMap() ;
+    globalMapG = *iso_bal_map ;
+
+    if(MyPID==0)
+	{
+		cout << msg << "Isorropia create new map = " << Time.ElapsedTime()
+                     << endl;
+		Time.ResetStartTime();
+	}
+#endif
 
 #ifdef DUMP_DATA   
   // Dump matrices to disk
@@ -699,8 +777,15 @@ int main(int argc, char *argv[]) {
        
    char probType[10] = "laplace";
    
-    TestMultiLevelPreconditionerLaplace(probType,MLList,StiffMatrix,xexact,rhs,uh,
-                                       TotalErrorResidual, TotalErrorExactSol);
+#ifdef TC_HAVE_ZOLTAN
+    TestMultiLevelPreconditionerLaplace(probType, MLList, *bal_matrix, xexact,
+                                       *bal_rhs, uh, TotalErrorResidual,
+                                        TotalErrorExactSol);
+#else
+    TestMultiLevelPreconditionerLaplace(probType, MLList, StiffMatrix, xexact,
+                                        rhs, uh, TotalErrorResidual,
+                                        TotalErrorExactSol);
+#endif
 
    // ********  Calculate Error in Solution *************** 
      double L2err = 0.0;

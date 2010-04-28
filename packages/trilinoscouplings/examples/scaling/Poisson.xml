@@ -21,4 +21,12 @@
        end
      end"
    />
+    <ParameterList name="Isorropia Input">
+        <!--Parameter name="partitioning method" type="string" value="graph" /-->
+        <ParameterList name="Zoltan">
+        <!--Parameter name="phg_use_timers" type="string" value="7" /-->
+        <!--Parameter name="graph_package" type="string" value="Parmetis" /-->
+        <!--Parameter name="parmetis_output_level" type="string" value="7" /-->
+        </ParameterList>
+    </ParameterList>
 </ParameterList>
