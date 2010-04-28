@@ -1,29 +1,37 @@
+======================================
 Submitting a TrilinosDriver dashboard:
 ======================================
+
 First, manually ensure that the following prerequisites are satisifed:
 
-Prerequisites:
-==============
+
+A) Prerequisites:
+=================
+
 python version 2.4 or later
 eg or git version 1.6.x or later
 
-Create a base directory:
-========================
+
+B) Create a base directory:
+===========================
+
 Create a directory as a base. I always use "T" in my home directory, or "C:\T"
 on Windows, as the base directory. Inside there, clone the Trilinos repository
 and checkout whatever branch you will be testing.
 
-  cd ~    ("cd \" on Windows)
-  mkdir T
-  cd T
-  git clone software.sandia.gov:/space/git/Trilinos
+  $ cd ~    # cd \" on Windows
+  $ mkdir T
+  $ cd T
+  $ git clone software.sandia.gov:/space/git/Trilinos
 
-See the Trilinos developers website for instructions on how to set up
-ssh so that the git clone call works using just software.sandia.gov
-without a user name.
+See the Trilinos developers website for instructions on how to set up ssh so
+that the git clone call works using just software.sandia.gov without a user
+name and without you having to type a passowrd.
 
-Create machine specific content:
-================================
+
+C) Create machine specific content:
+===================================
+
 Add a subdirectory named after your machine in Trilinos/cmake/ctest/drivers. If
 you name the directory exactly as your machine is named by `uname -n` then you
 simply need to add some files to that directory. You can drop ".domain.gov"
@@ -84,8 +92,9 @@ Typical cron_driver.bat contents:
   set TDD_PARALLEL_LEVEL=2
   python "%~dp0..\cron_driver.py"
 
-Run it manually:
-================
+
+D) Run it manually:
+===================
 
 The first time you run this it *will* take a long time because it will do a
 separate git clone of the Trilinos repository for each script that it runs.
@@ -100,19 +109,21 @@ export Trilinos_PACKAGES=Teuchos
 (but use set, rather than export, on Windows...)
 
   Linux/Mac:
-  cd ~
-  cd T/Trilinos/cmake/ctest/drivers/MACHINE_NAME
-  ./cron_driver.sh
+  $ cd ~
+  $ cd T/Trilinos/cmake/ctest/drivers/MACHINE_NAME
+  $ ./cron_driver.sh
 
   on Windows:
-  cd \
-  cd T\Trilinos\cmake\ctest\drivers\MACHINE_NAME
-  cron_driver.bat
+  $ cd \
+  $ cd T\Trilinos\cmake\ctest\drivers\MACHINE_NAME
+  $ cron_driver.bat
 
 Work out any kinks you may have in your environment and your scripts.
 
-Set up a crontab entry (or a scheduled task on Windows):
-========================================================
+
+E) Set up a crontab entry (or a scheduled task on Windows):
+===========================================================
+
 MAILTO=youremail@yourorg.org
 MM HH * * * bash ~/T/Trilinos/cmake/ctest/drivers/MACHINE_NAME/cron_driver.sh || cat
 
