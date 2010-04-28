@@ -85,7 +85,7 @@ namespace fei {
     fei::SharedPtr<T> getMatrix() { return( matrix_ ); }
     const fei::SharedPtr<T> getMatrix() const { return( matrix_ ); }
 
-    fei::SharedPtr<fei::MatrixGraph> getMatrixGraph()
+    fei::SharedPtr<fei::MatrixGraph> getMatrixGraph() const
       {return( Matrix_core::getMatrixGraph() ); }
 
     /** Set the fei::MatrixGraph associated with this matrix */

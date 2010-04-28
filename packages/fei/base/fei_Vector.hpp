@@ -134,7 +134,7 @@ namespace fei {
     virtual int gatherFromOverlap(bool accumulate = true) = 0;
 
     /** Query for the VectorSpace object associated with this vector. */
-    virtual fei::SharedPtr<fei::VectorSpace> getVectorSpace() = 0;
+    virtual fei::SharedPtr<fei::VectorSpace> getVectorSpace() const = 0;
 
     /** Set the VectorSpace object associated with this vector. */
     virtual void setVectorSpace(fei::SharedPtr<fei::VectorSpace> vecSpace) = 0;

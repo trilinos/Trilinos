@@ -110,7 +110,7 @@ Vector_Local::copyIn(int numValues, const int* indices, const double* values,
 }
 
 fei::SharedPtr<fei::VectorSpace>
-Vector_Local::getVectorSpace()
+Vector_Local::getVectorSpace() const
 { return( vecSpace_ ); }
 
 void

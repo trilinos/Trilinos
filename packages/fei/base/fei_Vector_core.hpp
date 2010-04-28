@@ -108,7 +108,7 @@ class Vector_core : protected fei::Logger {
 			    bool matrixMarketFormat=true);
 
   /** Return vector-space that describes that size/layout of this vector. */
-  fei::SharedPtr<fei::VectorSpace> get_vector_space()
+  fei::SharedPtr<fei::VectorSpace> get_vector_space() const
     {
       return( vecSpace_ );
     }

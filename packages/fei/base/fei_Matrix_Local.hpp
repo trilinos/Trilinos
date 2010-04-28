@@ -39,7 +39,7 @@ class Matrix_Local : public fei::Matrix {
   int parameters(int numParams, const char* const* paramStrings);
 
     /** Obtain the fei::MatrixGraph associated with this matrix */
-    fei::SharedPtr<fei::MatrixGraph> getMatrixGraph();
+    fei::SharedPtr<fei::MatrixGraph> getMatrixGraph() const;
 
     /** Set the fei::MatrixGraph associated with this matrix */
     void setMatrixGraph(fei::SharedPtr<fei::MatrixGraph> matrixGraph);

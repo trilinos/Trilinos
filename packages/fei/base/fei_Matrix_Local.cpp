@@ -60,7 +60,7 @@ Matrix_Local::parameters(int /*numParams*/, const char* const* /*paramStrings*/)
 }
 
 fei::SharedPtr<fei::MatrixGraph>
-Matrix_Local::getMatrixGraph()
+Matrix_Local::getMatrixGraph() const
 { return( matrixGraph_ ); }
 
 void

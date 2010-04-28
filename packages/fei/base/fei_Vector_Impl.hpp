@@ -106,7 +106,7 @@ namespace fei {
 
     /** Obtain the VectorSpace associated with this vector.
      */
-    fei::SharedPtr<fei::VectorSpace> getVectorSpace()
+    fei::SharedPtr<fei::VectorSpace> getVectorSpace() const
       { return(get_vector_space()); }
 
     /** Set the VectorSpace associated with this vector.

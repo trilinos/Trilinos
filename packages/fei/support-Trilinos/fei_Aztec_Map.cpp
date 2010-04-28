@@ -11,9 +11,7 @@
 
 #ifdef HAVE_FEI_AZTECOO
 
-#include <assert.h>
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdlib>
 
 #include <fei_mpi.h>
 

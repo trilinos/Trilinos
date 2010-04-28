@@ -60,7 +60,7 @@ class Vector_Local : public fei::Vector {
 
     /** Obtain the VectorSpace associated with this vector.
      */
-    fei::SharedPtr<fei::VectorSpace> getVectorSpace();
+    fei::SharedPtr<fei::VectorSpace> getVectorSpace() const;
 
     /** Set the VectorSpace associated with this vector.
      */

@@ -46,7 +46,7 @@ namespace fei {
      */
     int parameters(const fei::ParameterSet& paramset);
 
-    fei::SharedPtr<fei::MatrixGraph> getMatrixGraph()
+    fei::SharedPtr<fei::MatrixGraph> getMatrixGraph() const
       {return( target_->getMatrixGraph() ); }
 
     /** Set the fei::MatrixGraph associated with this matrix */

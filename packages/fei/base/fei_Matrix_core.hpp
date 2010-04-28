@@ -78,7 +78,7 @@ class Matrix_core : protected fei::Logger {
   */
   void setSlaveInfo(fei::SharedPtr<fei::MatrixGraph> matrixGraph);
 
-  fei::SharedPtr<fei::MatrixGraph> getMatrixGraph() { return( matrixGraph_ ); }
+  fei::SharedPtr<fei::MatrixGraph> getMatrixGraph() const { return( matrixGraph_ ); }
 
   std::vector<FillableMat*>& getRemotelyOwnedMatrix() { return( remotelyOwned_ ); }
 

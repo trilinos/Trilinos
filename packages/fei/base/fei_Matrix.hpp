@@ -53,7 +53,7 @@ namespace fei {
     virtual int parameters(const fei::ParameterSet& paramset) = 0;
 
     /** Obtain the fei::MatrixGraph associated with this matrix */
-    virtual fei::SharedPtr<fei::MatrixGraph> getMatrixGraph() = 0;
+    virtual fei::SharedPtr<fei::MatrixGraph> getMatrixGraph() const = 0;
 
     /** Set the fei::MatrixGraph associated with this matrix */
     virtual void setMatrixGraph(fei::SharedPtr<fei::MatrixGraph> matrixGraph) = 0;
