@@ -84,6 +84,27 @@ void copy_vector_to_mesh( fei::Vector & vec,
                           stk::mesh::BulkData & mesh_bulk_data
                         );
 
+/** Scale matrix by a scalar: matrix = scalar*matrix
+ */
+void scale_matrix(double scalar, fei::Matrix& matrix);
+
+/** Add a scaled matrix to another: dest += scalar*src
+ */
+void add_matrix_to_matrix(double scalar,
+                          const fei::Matrix& src_matrix,
+                          fei::Matrix& dest_matrix);
+
+/** Scale vector by a scalar: vec = scalar*vec
+ */
+void scale_vector(double scalar,
+                  fei::Vector& vec);
+
+/** Add a scaled vector to another: dest += scalar*src
+ */
+void add_vector_to_vector(double scalar,
+                          const fei::Vector& src_vector,
+                          fei::Vector& dest_vector);
+
 }//namespace linsys
 }//namespace stk
 

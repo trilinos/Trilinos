@@ -329,9 +329,12 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
   // then that ghost must be deleted.
   // Request that all ghost entities in the closure of the ghost be deleted.
 
+  typedef std::set<EntityProc,EntityLess> EntityProcSet;
+  typedef std::set<Entity*,EntityLess> EntitySet;
+
   // Closure of the owner change for impacted ghost entities.
 
-  std::set< EntityProc , EntityLess > send_closure ;
+  EntityProcSet send_closure ;
 
   for ( std::vector<EntityProc>::iterator
         i = local_change.begin() ; i != local_change.end() ; ++i ) {
@@ -339,7 +342,7 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
   }
 
   {
-    std::set<Entity*,EntityLess> work ;
+    EntitySet work ;
 
     for ( std::vector<EntityProc>::const_iterator
           i = ghosted_change.begin() ; i != ghosted_change.end() ; ++i ) {
@@ -351,7 +354,7 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
       insert_transitive_ghost( meta , i->first , work );
     }
 
-    for ( std::set<EntityProc>::iterator
+    for ( EntityProcSet::iterator
           i = send_closure.begin() ; i != send_closure.end() ; ++i ) {
       insert_transitive_ghost( meta , i->first , work );
     }

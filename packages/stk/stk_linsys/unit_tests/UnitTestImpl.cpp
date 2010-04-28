@@ -106,7 +106,7 @@ void testImpl( MPI_Comm comm )
 
 } // namespace stk_linsys_unit_tests
 
-STKUNIT_UNIT_TEST(UnitTestingOfLinsysImplementation, testUnit)
+STKUNIT_UNIT_TEST(UnitTestImpl, testUnit)
 {
   MPI_Barrier( MPI_COMM_WORLD );
   stk_linsys_unit_tests::testImpl ( MPI_COMM_WORLD );

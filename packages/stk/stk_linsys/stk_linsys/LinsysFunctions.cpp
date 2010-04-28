@@ -183,6 +183,69 @@ void copy_vector_to_mesh( fei::Vector & vec,
   }
 }
 
+void scale_matrix(double scalar, fei::Matrix& matrix)
+{
+  fei::SharedPtr<fei::VectorSpace> vspace = matrix.getMatrixGraph()->getRowSpace();
+
+  int numRows = vspace->getNumIndices_Owned();
+  std::vector<int> rows(numRows);
+  vspace->getIndices_Owned(numRows, &rows[0], numRows);
+
+  std::vector<int> indices;
+  std::vector<double> coefs;
+
+  for(size_t i=0; i<rows.size(); ++i) {
+    int rowlen = 0;
+    matrix.getRowLength(rows[i], rowlen);
+
+    if ((int)indices.size() < rowlen) {
+      indices.resize(rowlen);
+      coefs.resize(rowlen);
+    }
+
+    matrix.copyOutRow(rows[i], rowlen, &coefs[0], &indices[0]);
+
+    for(int j=0; j<rowlen; ++j) {
+      coefs[j] *= scalar;
+    }
+
+    double* coefPtr = &coefs[0];
+    matrix.copyIn(1, &rows[i], rowlen, &indices[0], &coefPtr);
+  }
+}
+
+void add_matrix_to_matrix(double scalar,
+                          const fei::Matrix& src_matrix,
+                          fei::Matrix& dest_matrix)
+{
+}
+
+void scale_vector(double scalar,
+                  fei::Vector& vec)
+{
+  fei::SharedPtr<fei::VectorSpace> vspace = vec.getVectorSpace();
+
+  int numIndices = vspace->getNumIndices_Owned();
+  std::vector<int> indices(numIndices);
+  vspace->getIndices_Owned(numIndices, &indices[0], numIndices);
+
+  std::vector<double> coefs(numIndices);
+
+  vec.copyOut(numIndices, &indices[0], &coefs[0]);
+
+  for(size_t j=0; j<coefs.size(); ++j) {
+    coefs[j] *= scalar;
+  }
+
+  vec.copyIn(numIndices, &indices[0], &coefs[0]);
+}
+
+void add_vector_to_vector(double scalar,
+                          const fei::Vector& src_vector,
+                          fei::Vector& dest_vector)
+{
+}
+
 }//namespace linsys
 }//namespace stk
 
