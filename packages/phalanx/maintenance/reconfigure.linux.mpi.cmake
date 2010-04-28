@@ -8,6 +8,7 @@ cmake \
       -D Trilinos_ENABLE_TESTS:BOOL=OFF \
       -D Phalanx_ENABLE_TESTS:BOOL=ON \
       -D Phalanx_ENABLE_EXAMPLES:BOOL=ON \
+      -D Phalanx_EXPLICIT_TEMPLATE_INSTANTIATION=ON \
       -D TPL_ENABLE_MPI:BOOL=ON \
       -D MPI_BASE_DIR:PATH="/home/rppawlo/local" \
       -D MPIEXEC_MAX_NUMPROCS:STRING=4 \
