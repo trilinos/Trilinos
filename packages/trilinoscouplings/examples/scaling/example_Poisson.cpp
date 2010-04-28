@@ -114,10 +114,10 @@
 #include "ml_epetra_utils.h"
 
 #ifdef TrilinosCouplings_ENABLE_Isorropia
-#define TC_HAVE_ZOLTAN
+#define TC_HAVE_ISORROPIA
 #endif
 
-#ifdef TC_HAVE_ZOLTAN
+#ifdef TC_HAVE_ISORROPIA
 // Isorropia includes
 #include "Isorropia_Epetra.hpp"
 #include "Isorropia_EpetraRedistributor.hpp"
@@ -687,7 +687,7 @@ int main(int argc, char *argv[]) {
 
     delete [] BCNodes;
 
-#ifdef TC_HAVE_ZOLTAN
+#ifdef TC_HAVE_ISORROPIA
     if(MyPID==0)
 	{
 		cout << msg << "Adjust Matrix = " << Time.ElapsedTime() << endl;
@@ -777,7 +777,7 @@ int main(int argc, char *argv[]) {
        
    char probType[10] = "laplace";
    
-#ifdef TC_HAVE_ZOLTAN
+#ifdef TC_HAVE_ISORROPIA
     TestMultiLevelPreconditionerLaplace(probType, MLList, *bal_matrix, xexact,
                                        *bal_rhs, uh, TotalErrorResidual,
                                         TotalErrorExactSol);
