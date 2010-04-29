@@ -1701,6 +1701,7 @@ int numGID = zz->Num_GID;
    * vertices for each edge.
    */
 
+  /* SRSR : Guess numVerts == numEdges for hash table size.  */
   ht_size = Zoltan_Recommended_Hash_Size(numVerts) ;
 
   hash_table =
