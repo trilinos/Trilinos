@@ -116,6 +116,7 @@ SET(SOURCES ${SOURCES}
   Ifpack_Graph_Epetra_RowMatrix.cpp
   Ifpack_Graph_Epetra_CrsGraph.cpp
   Ifpack_Utils.cpp
+  Ifpack_SPARSKIT.cpp
   Ifpack_Chebyshev.cpp
   Ifpack_OverlappingPartitioner.cpp
   Ifpack_LinearPartitioner.cpp

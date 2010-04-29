@@ -37,6 +37,10 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_SuperLU
   "Enable support for SUPERLU in Ifpack."
   OFF )
 
+IF(${PACKAGE_NAME}_ENABLE_SPARSKIT)
+  SET(HAVE_IFPACK_SPARSKIT ON )
+ENDIF()
+
 
 #
 # C) Add the libraries, tests, and examples

@@ -30,3 +30,6 @@
 /* Define if we want to build with SuperLU enabled */
 #cmakedefine HAVE_IFPACK_SUPERLU
 
+/* Define if we want to build with SPARSKIT enabled */
+#cmakedefine HAVE_IFPACK_SPARSKIT
+
