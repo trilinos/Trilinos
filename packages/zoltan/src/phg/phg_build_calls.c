@@ -1696,9 +1696,7 @@ int numGID = zz->Num_GID;
    * vertices for each edge.
    */
 
-  ht_size = (int)sqrt((double)num_pins);
-
-  if (ht_size < 10) ht_size = num_pins;
+  ht_size = Zoltan_Recommended_Hash_Size(numVerts) ;
 
   hash_table =
     (struct _hash_node **)ZOLTAN_CALLOC(ht_size, sizeof(struct _hash_node *));
@@ -1728,6 +1726,11 @@ int numGID = zz->Num_GID;
        }
      }
      if (!found){
+       /* O(numEdges) calls to malloc may be costlier in some platforms. An
+        * array of size O(numVerts) allocated first, and the reallocated if
+        * numVerts < numEdges could be useful then. SRSR : The performance 
+        * improvement in octopi was small.
+        */
        hn = (struct _hash_node *)ZOLTAN_MALLOC(sizeof(struct _hash_node));
        if (!hn){
          ierr = ZOLTAN_MEMERR;
