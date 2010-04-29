@@ -23,6 +23,9 @@ SET(TRILINOS_HOME_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL "")
 SET(TRILINOS_BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE INTERNAL "")
 # Above, we put these in the cache so we can grep them out
 
+MESSAGE("-- " "TRILINOS_HOME_DIR = ${TRILINOS_HOME_DIR}")
+MESSAGE("-- " "TRILINOS_BUILD_DIR = ${TRILINOS_BUILD_DIR}")
+
 SET( CMAKE_MODULE_PATH
    ${TRILINOS_HOME_DIR}
    ${TRILINOS_HOME_DIR}/cmake
@@ -184,11 +187,11 @@ PACKAGE_ARCH_READ_ALL_PACKAGE_DEPENDENCIES()
 
 IF (NOT (WIN32 AND NOT CYGWIN))
 
-  SET(Trilinos_ENABLED_PACKGES_LIST)
+  SET(Trilinos_ENABLED_PACKAGES_LIST)
   SET(Trilinos_ENABLED_PACKAGES_CMAKE_ARG_LIST)
   FOREACH(PACKAGE ${Trilinos_PACKAGES})
     IF (Trilinos_ENABLE_${PACKAGE})
-      IF (Trilinos_ENABLED_PACKGES_LIST)
+      IF (Trilinos_ENABLED_PACKAGES_LIST)
         SET(Trilinos_ENABLED_PACKGES_LIST
           "${Trilinos_ENABLED_PACKGES_LIST}\;${PACKAGE}") 
       ELSE()
@@ -206,16 +209,29 @@ IF (NOT (WIN32 AND NOT CYGWIN))
   
   ADD_CUSTOM_TARGET(dashboard
   
+    # WARNING: The echoed command and the actual commands are duplicated!  You have to reproduce them!
+    COMMAND echo
+    COMMAND echo \"***************************************************\"
+    COMMAND echo \"*** Running incremental experimental dashboard *** \"
+    COMMAND echo \"***************************************************\"
+    COMMAND echo
+    COMMAND echo \"Trilinos_ENABLED_PACKAGES_LIST = ${Trilinos_ENABLED_PACKAGES_LIST}\"
+    COMMAND echo
+
     COMMAND echo
     COMMAND echo \"***\"
     COMMAND echo \"*** Clean out the list of packages\"
     COMMAND echo \"***\"
     COMMAND echo
     COMMAND echo Running: ${CMAKE_COMMAND} -DTrilinos_UNENABLE_ENABLED_PACKAGES:BOOL=TRUE
-      -DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON \"${TRILINOS_HOME_DIR}\"
+      -DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \"${TRILINOS_HOME_DIR}\"
     COMMAND echo
     COMMAND ${CMAKE_COMMAND} -DTrilinos_UNENABLE_ENABLED_PACKAGES:BOOL=TRUE
-      -DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON \"${TRILINOS_HOME_DIR}\"
+      -DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \"${TRILINOS_HOME_DIR}\"
+
+    # NOTE: Above, if Trilinos_ENABLE_ALL_PACKAGES was set in CMakeCache.txt, then setting
+    # -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=OFF will turn it off in the cache.  Note that it will
+    # never be turned on again which means that the list of packages will be set explicitly below.
   
     COMMAND echo
     COMMAND echo \"***\"
@@ -223,12 +239,12 @@ IF (NOT (WIN32 AND NOT CYGWIN))
     COMMAND echo \"***\"
     COMMAND echo
     COMMAND echo Running: env ${EXPR_CMND_ARGS}
-      Trilinos_PACKAGES=\"${Trilinos_ENABLED_PACKGES_LIST}\"
+      Trilinos_PACKAGES=\"${Trilinos_ENABLED_PACKAGES_LIST}\"
       ${CMAKE_CTEST_COMMAND} -S
         \"${TRILINOS_HOME_DIR}/cmake/ctest/experimental_build_test.cmake\"
     COMMAND echo
     COMMAND env ${EXPR_CMND_ARGS}
-      Trilinos_PACKAGES=\"${Trilinos_ENABLED_PACKGES_LIST}\"
+      Trilinos_PACKAGES=\"${Trilinos_ENABLED_PACKAGES_LIST}\"
       ${CMAKE_CTEST_COMMAND} -S
         \"${TRILINOS_HOME_DIR}/cmake/ctest/experimental_build_test.cmake\" || echo
 
