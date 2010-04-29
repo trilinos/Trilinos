@@ -21,7 +21,6 @@
 # tflop, cplant, dec, sgi32, sgi64}.
 # Alternatively, give a run command with the -cmd option.
 #
-
 # Chaco problems to run
 set ch_name  = (simple nograph vwgt ewgt bug degenerate degenerateAA onedbug grid20x19 hammond)
 set ch_nproc = (4 4 3 4 3 6 6 3 5 8) # no. of procs
@@ -67,6 +66,7 @@ set yes_fortran = $?ZOLTAN_YES_FORTRAN
 set yes_cpp = $?ZOLTAN_YES_CPP
 set yes_serial = $?ZOLTAN_YES_SERIAL
 set old_interface = $?ZOLTAN_OLD_INTERFACE
+set exit_on_failure = $?ZOLTAN_EXIT_ON_FAILURE
 set no_hier = $?ZOLTAN_NO_HIER
 set yes_drum = $?ZOLTAN_YES_DRUM
 
@@ -119,6 +119,8 @@ while ( $#argv )
      @ yes_drum = 1
   else if ( "$1" == "-old_interface" ) then
      @ old_interface = 1
+  else if ( "$1" == "-exit_on_failure" ) then
+     @ exit_on_failure = 1
   else if ( "$1" == "-logfile" || "$1" == "-log" ) then
 
     if ( $#argv < 2 ) then
@@ -279,7 +281,6 @@ endif
 if ( $old_interface) then
    set no_reftree = 1
 endif
-
 
 # Find the right zdrive to run
 @ found = 0
@@ -650,7 +651,6 @@ echo "Executable = $zdrive" >> $logfile
 echo "Old Interf = $old_interface" >> $logfile
 echo " " >> $logfile
 
-
 # Loop over Chaco problems
 if (! $no_chaco ) then
   @ nprob = $#ch_name
@@ -697,6 +697,13 @@ if (! $no_chaco ) then
       @ droptest = 0
       @ skip = 0  # Was used to skip certain methods in previous versions.
       setenv PURIFYOPTIONS "-windows=no -log-file=./purifylog.${mtd} "
+
+      if ( ($mtd  == "order-metis-v3") || ($mtd == "partkway-order-metis-v3") ) then
+        if ($np != "1") then
+          set skip = 1
+          echo "Warning: skip $mtd because test is not serial" | tee -a ../$logfile
+        endif
+      endif
 
       if (! $skip ) then
 
@@ -762,6 +769,12 @@ if (! $no_chaco ) then
 	  if ( $fail ) then
 	    @ nfailed = $nfailed + 1
 	    echo "Test problem ${ch_name[1]} with method ${mtd} FAILED" | tee -a ../$logfile
+	    if ( $exit_on_failure ) then
+               echo "Exiting because of --exit_on_failure"
+               echo "Test final = `date`" >> ../$logfile
+               cd ..
+               exit 0
+            endif
 	  else
 	    echo "Test problem ${ch_name[1]} with method ${mtd} OK" | tee -a ../$logfile
 	  endif
@@ -771,6 +784,12 @@ if (! $no_chaco ) then
 	    if ( $dropfail ) then
 	      @ ndropfailed = $ndropfailed + 1
 	      echo "Test problem ${ch_name[1]} with method ${mtd} drop tests FAILED" | tee -a ../$logfile
+	      if ( $exit_on_failure ) then
+                echo "Exiting because of --exit_on_failure"
+                echo "Test final = `date`" >> ../$logfile
+                cd ..
+                exit 0
+              endif
 	    else
 	      echo "Test problem ${ch_name[1]} with method ${mtd} drop tests OK" | tee -a ../$logfile
 	    endif
@@ -897,6 +916,12 @@ if ( $yes_nemesis ) then
 	  if ( $fail ) then
 	    @ nfailed = $nfailed + 1
 	    echo "Test problem ${nem_name[1]} with method ${mtd} FAILED" | tee -a ../$logfile
+            if ( $exit_on_failure ) then
+              echo "Exiting because of --exit_on_failure"
+              echo "Test final = `date`" >> ../$logfile
+              cd ..
+              exit 0
+            endif
 	  else
 	    echo "Test problem ${nem_name[1]} with method ${mtd} OK" | tee -a ../$logfile
 	  endif
@@ -905,6 +930,12 @@ if ( $yes_nemesis ) then
 	    if ( $dropfail ) then
 	      @ ndropfailed = $ndropfailed + 1
 	      echo "Test problem ${nem_name[1]} with method ${mtd} drop tests FAILED" | tee -a ../$logfile
+	      if ( $exit_on_failure ) then
+                echo "Exiting because of --exit_on_failure"
+                echo "Test final = `date`" >> ../$logfile
+                cd ..
+                exit 0
+              endif
 	    else
 	      echo "Test problem ${nem_name[1]} with method ${mtd} drop tests OK" | tee -a ../$logfile
 	    endif
@@ -1118,6 +1149,12 @@ if (! $no_hg) then
 	  if ( $fail ) then
 	    @ nfailed = $nfailed + 1
 	    echo "Test problem ${hg_name[1]}/${mtd} FAILED" | tee -a ../$logfile
+	    if ( $exit_on_failure ) then
+               echo "Exiting because of --exit_on_failure"
+               echo "Test final = `date`" >> ../$logfile
+               cd ..
+               exit 0
+            endif
 	  else
 	    echo "Test problem ${hg_name[1]}/${mtd} OK" | tee -a ../$logfile
 	  endif
@@ -1162,6 +1199,7 @@ usage:
   echo "Other options:"
   echo "   -logfile filename"
   echo "   -exe filename"
+  echo "   -exit_on_failure"
   echo "   -no_rcb"
   echo "   -no_rib"
   echo "   -no_hsfc"
