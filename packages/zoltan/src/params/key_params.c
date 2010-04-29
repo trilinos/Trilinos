@@ -401,8 +401,10 @@ void Zoltan_Print_Key_Params(ZZ const *zz)
          Zoltan_Seed(), Zoltan_Seed());
   printf("ZOLTAN Parameter %s = %s\n", Key_params[21].name, 
          zz->LB.Approach);
-  printf("Size of ZOLTAN_ID_TYPE: %d, size of uintmax_t: %zd, sizeof ZOLTAN_GNO_TYPE: %zd\n",
-         sizeof(ZOLTAN_ID_TYPE),sizeof(uintmax_t),sizeof(ZOLTAN_GNO_TYPE));
+  printf("Size of ZOLTAN_ID_TYPE: %d, sizeof ZOLTAN_GNO_TYPE: %zd\n",
+         sizeof(ZOLTAN_ID_TYPE),sizeof(ZOLTAN_GNO_TYPE));
+  printf("MPI_Datatype for ZOLTAN_ID_TYPE: %s, MPI_Datatype for ZOLTAN_GNO_TYPE: %s\n",
+         _mpi_id_datatype_name, _mpi_gno_datatype_name);
 }
 
 #ifdef __cplusplus
