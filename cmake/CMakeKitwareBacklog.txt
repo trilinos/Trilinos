@@ -6,8 +6,7 @@ This is a list of prioritized and unprioritized backlog issues for the
 contract with Kitware to improve issues related to the CMake suite of tools
 needed for Trilinos.  These items are prioritized both by categories (P1 to
 P5) and are also prioritized within a category by position (most
-urgent/important on top).  P1 items are needed for the release of Trilinos
-10.0 and to remove the need for autotools.  The items are segregated into
+urgent/important on top).  The items are segregated into
 different categories depending on what will need explicit changes to
 CMake/CTest/CDash and those items that we can do okay without making any
 changes to the tools.
@@ -23,13 +22,10 @@ A.1) Prioritized Backlog Items that require changes to CMake/CTest/CDash:
 -------------------------------------------------------------------------
 
 
-(*) [CTest] [P2] Not all Zoltan tests are being run nightly.  See Bugzilla bug
-4511 ... This shoud be fixed now.  TODO: Move to DONE
-
-
-(*) [CTest] [P2] Use set_pgroups to allow killing all children that get run.
-This will allow reliably killing timed-out tests ... This should be fixed in
-the dev version of CTest.  TODO: Verify in new version of CTest.
+(*) [CDash] [P2] Some submissions to the nightly dashboard are failing.
+These failed submissions should be prevented in most cases, and should be
+logged by the TrilinosDriver dashboard in all cases where the tests are
+running through the TrilinosDriver scripts.
 
 
 (*) [CDash] [P2] (4/14/2010) Not all of the Trilinos subprojects (packages)
@@ -38,46 +34,6 @@ http://trilinos.sandia.gov/cdash/index.php?project=Trilinos.  For example, the
 row for STK is empty but if you click on 'STK' you go to
 http://trilinos.sandia.gov/cdash/index.php?project=Trilinos&subproject=STK you
 see that it is being tested. 
-
-
-(*) [CDash] [P3] Line wrap all warning and error messages in CDash output.
-Long lines are impossible to read currently. TODO: Make a *much* lower
-priority.
-
-
-(*) [CTest] [P3] Fully finish the ctest -jN option: The -jN option needs to
-provide good parallel scalability.  It also needs to be able to write the
-needed output files for submitting to the dashboard.  We also need to be able
-to invoke -jN functionality from advanced CTest scripts when calling
-CTEST_TEST(...) and the other such commands like CTEST_MEMCHECK(...) and
-CTEST_COVERAGE(...).  Improved support might include remembering what tests
-are most expensive and launching them first.  Note that this will be
-sufficient for serial runs but when running with MPI, we need to consider the
-numbers of processes a test is using (see below).  ... TODO: This should be
-done, we just need to verify this in a new version of CTest.
-
-
-(*) [CDash] [P3] Support for user-defined configure, build, and test status:
-Currently, CTest/CDash only supports the test statues of 'Passed', 'Failed',
-and 'Not Run'.  There are many projects, however, that would like to support
-finer grained test status like 'Diff','Segfault', and 'Timeout'.  It would be
-good if CTest/CDash would allow you to define new categories of test statuses
-and then display then on the CDash dashboard and new columns and in each test.
-Also, when a package fails to configure because it was disabled it would be
-nice if this had a special status.  It would also be good if a user-defined
-status could also define a color and for a 'Legend' button on CDash to give
-the mapping of status to color.  Good colors to choose from would be 'green',
-'red', 'yellow', 'orange', 'pink' and perhaps other shades from 'green' to
-'red' ... TODO: Make this a lower priority since this is an annoyance but you
-can see timeouts by looking at the detailed output.  A project like SIERRA
-that likes diffs can fund this on thier own.
-
-
-(*) [CMake] [P3] Add support for drop-down 'ON', 'OFF', '' for the function
-SET_CACHE_ON_OFF_EMPTY(...) in all the GUI interfaces (e.g. curses).  This
-items has been brought up independently by multiple users ... TODO: Make this
-a lower priority since this is already supported by the QT GUI and who cares
-about ccmake and curses.
 
 
 (*) [CDash] [P3] Separate out coverage results for library code and
@@ -90,6 +46,14 @@ separately from the renaming code which is assumed to be production
 code (library code in the case of Trilinos).  CDash would then need to
 write two columns in the coverage results, one for 'Production' code,
 and one for 'Test' code.
+
+
+(*) [CMake] [P3] Install path is being searched for TPLs: The Trilinos install
+path (specified by CMAKE_INSTALL_PREFIX) is being searched when the
+include/library paths are searched for TPLs, moreover this path is searched
+before other systems paths.  Rarely would one think that the install of
+Trilinos would contain a TPL, but it does in fact when TriKota is enabled.  
+https://software.sandia.gov/bugzilla/show_bug.cgi?id=4627
 
 
 (*) [CTest] [P4] Support an EXEC_DEPENDENCIES property for tests to deal with
@@ -143,6 +107,30 @@ considering the "last build".  Currently, CDash thinks the last build
 is the last subproject build.  This messes up everything related to
 the "last build" like the increase (or decrease) in the number of
 tests, the links on the various results pages, etc.
+
+
+(*) [CDash] [P4] Line wrap all warning and error messages in CDash output.
+Long lines are impossible to read currently. 
+
+
+(*) [CMake] [P3] Add support for drop-down 'ON', 'OFF', '' for the function
+SET_CACHE_ON_OFF_EMPTY(...) in all the GUI interfaces (e.g. curses).  This
+items has been brought up independently by multiple users.  Note this is
+already supported by the QT GUI.
+
+
+(*) [CDash] [P5] Support for user-defined configure, build, and test status:
+Currently, CTest/CDash only supports the test statues of 'Passed', 'Failed',
+and 'Not Run'.  There are many projects, however, that would like to support
+finer grained test status like 'Diff','Segfault', and 'Timeout'.  It would be
+good if CTest/CDash would allow you to define new categories of test statuses
+and then display then on the CDash dashboard and new columns and in each test.
+Also, when a package fails to configure because it was disabled it would be
+nice if this had a special status.  It would also be good if a user-defined
+status could also define a color and for a 'Legend' button on CDash to give
+the mapping of status to color.  Good colors to choose from would be 'green',
+'red', 'yellow', 'orange', 'pink' and perhaps other shades from 'green' to
+'red'.
 
 
 (*) [CTest, CDash] [Epic] Implement strong automated testing of CTest/CDash:
@@ -232,13 +220,6 @@ LastTestFailed.log file, re-run just those tests, and then write a new
 LastTest.log file replacing the tests that got rerun.
 
 
-(*) [CMake] [P3] Improve BLAS library detection.  Brad said there is a BLAS
-finding macro that we are currently not using.  It would also be nice if the
-BLAS finding capability could handle finding library dependencies of BLAS
-(e.g. -lgfortran for static Atlas installations).  TODO: Make a lower
-priority.
-
-
 (*) [CDash] [P3] General handling of data files in different test directories:
 Right now Ctest/CDash only handle STDOUT for tests and not any other files
 that might get written.  Therefore, currently, we would have to manually
@@ -269,6 +250,12 @@ ability to set the correct run time but that is a minor issue.  Also, we might
 be able to manipulate the submission XML to set the correct time.  This would
 be easier if some basic changes were made to CTest but we can do this on our
 own.
+
+
+(*) [CMake] [P4] Improve BLAS library detection.  Brad said there is a BLAS
+finding macro that we are currently not using.  It would also be nice if the
+BLAS finding capability could handle finding library dependencies of BLAS
+(e.g. -lgfortran for static Atlas installations).  
 
 
 
@@ -516,12 +503,6 @@ can see how the build and run times for particular packages and entire
 builds is changing over time.
 
 
-(*) [CTest] Direct support for running (multiple) programs to post-process the
-output from a test (both the console and any output files): Workaround: This
-is already supported through the cmake function
-PACKAGE_ADD_ADVANCED_TEST(...).  TODO: Remove this item!
-
-
 (*) Show aggregate Trilinos coverage stats on the front results page, rather
 than one package to run for the coverage run.  Right now, for each coverage
 build, one Trilinos package's coverage stats are displayed on the front page.
@@ -626,6 +607,14 @@ Only the first package in the build sequence shows updated files.  All the
 packages (i.e. Labels) in a build sequence need to show the updated files.
 
 
+(*) [CTest] [P2] Not all Zoltan tests are being run nightly.  See Bugzilla bug
+4511.
+
+
+(*) [CTest] [P2] Use set_pgroups to allow killing all children that get run.
+This will allow reliably killing timed-out tests.
+
+
 (*) [CTest] [P3] Define the number of processors to be used when
 running a parallel test: Currently, ctest has no way of knowing how
 many processors a test will use when it runs.  For example, it has no
@@ -712,4 +701,15 @@ Passed   20.5 sec
 Total CPU time = 1050 sec
 
 =========================================================
+
+
+(*) [CTest] [P3] Fully finish the ctest -jN option: The -jN option needs to
+provide good parallel scalability.  It also needs to be able to write the
+needed output files for submitting to the dashboard.  We also need to be able
+to invoke -jN functionality from advanced CTest scripts when calling
+CTEST_TEST(...) and the other such commands like CTEST_MEMCHECK(...) and
+CTEST_COVERAGE(...).  Improved support might include remembering what tests
+are most expensive and launching them first.  Note that this will be
+sufficient for serial runs but when running with MPI, we need to consider the
+numbers of processes a test is using.
 
