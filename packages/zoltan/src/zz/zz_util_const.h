@@ -28,6 +28,7 @@ extern "C" {
 /*****************************************************************************/
 
 extern unsigned int Zoltan_Hash(ZOLTAN_ID_PTR, int, unsigned int);
+extern unsigned int Zoltan_Recommended_Hash_Size (unsigned int n);
 extern int Zoltan_Clean_String(const char *, char **);
 extern char *Zoltan_Strdup(const char *);
 void Zoltan_Transform_Point( double *p, double (*m)[3], int *a, int d,
