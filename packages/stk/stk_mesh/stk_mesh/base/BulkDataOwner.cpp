@@ -519,32 +519,27 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
 
       const std::vector< parallel::DistributedIndex::KeyProc >::iterator i = j ;
       const EntityKey key( & i->first );
+
       Entity & entity = * get_entity( key );
 
-      std::vector< EntityCommInfo > entity_comm ;
+      const bool old_comm_empty = entity.comm().empty();
 
-      // Revised sharing:
+      // Erase old sharing information:
+      entity.erase( * m_ghosting[0] );
+
+      // Insert updated sharing information:
       for ( ; j != sharing.end() && i->first == j->first ; ++j ) {
         if ( (int) p_rank != j->second ) {
-          entity_comm.push_back( EntityCommInfo( 0 , j->second ) );
+          entity.insert( EntityCommInfo( 0 , j->second ) );
         }
       }
 
-      // Current ghosting:
-      {
-        std::vector< EntityCommInfo >::iterator k = entity.m_comm.begin();
-        for ( ; k != entity.m_comm.end() && k->ghost_id == 0 ; ++k );
-        entity_comm.insert( entity_comm.end() , k , entity.m_comm.end() );
-      }
+      const bool has_new_comm = ! entity.comm().empty();
 
-      if ( entity_comm != entity.m_comm ) {
-        if ( entity.m_comm.empty() && ! entity_comm.empty() ) {
-          // Add to communicated entity list
-          m_entity_comm.push_back( & entity );
-          added = true ;
-        }
-
-        entity.m_comm.swap( entity_comm );
+      if ( old_comm_empty && has_new_comm ) {
+        // Add to communicated entity list
+        m_entity_comm.push_back( & entity );
+        added = true ;
       }
     }
 
@@ -552,7 +547,7 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
       bool removed = false ;
       std::vector<Entity*>::iterator i = m_entity_comm.begin();
       for ( ; i != m_entity_comm.end() ; ++i ) {
-        if ( (**i).m_comm.empty() ) { *i = NULL ; removed = true ; }
+        if ( (**i).comm().empty() ) { *i = NULL ; removed = true ; }
       }
       if ( removed ) {
         i = std::remove( m_entity_comm.begin() ,

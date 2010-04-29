@@ -126,15 +126,13 @@ void BulkData::destroy_all_ghosting()
     Entity * entity = *--ie ;
 
     if ( in_receive_ghost( *entity ) ) {
-      entity->m_comm.clear();
+      entity->comm_clear();
       destroy_entity( entity );
       *ie = NULL ;
     }
     else {
-      std::vector< EntityCommInfo >::iterator j = entity->m_comm.begin();
-      while ( j != entity->m_comm.end() && j->ghost_id == 0 ) { ++j ; }
-      entity->m_comm.erase( j , entity->m_comm.end() );
-      if ( entity->m_comm.empty() ) {
+      entity->comm_clear_ghosting();
+      if ( entity->comm().empty() ) {
         *ie = NULL ;
       }
     }
@@ -326,27 +324,33 @@ void BulkData::internal_change_ghosting(
     Entity * entity = *--i ;
 
     const bool is_owner = entity->owner_rank() == m_parallel_rank ;
+    const bool remove_recv = ( ! is_owner ) &&
+                             0 == new_recv.count( entity );
 
-    bool remove_recv = false ;
+    if ( is_owner ) {
+      // Is owner, potentially removing ghost-sends
+      // Have to make a copy
 
-    std::vector< EntityCommInfo >::iterator j = entity->m_comm.end();
+      std::vector<EntityCommInfo> comm_ghost ;
 
-    while ( j != entity->m_comm.begin() ) {
-      --j ;
-      if ( j->ghost_id == ghosts.ordinal() ) {
+      {
+        const PairIterEntityComm ec = entity->comm( ghosts );
+        comm_ghost.assign( ec.first , ec.second );
+      }
 
-        remove_recv = ( ! is_owner ) && 0 == new_recv.count( entity );
+      for ( ; ! comm_ghost.empty() ; comm_ghost.pop_back() ) {
+        const EntityCommInfo tmp = comm_ghost.back();
 
-        const bool remove_send =
-          is_owner && 0 == new_send.count( EntityProc( entity , j->proc ) );
-
-        if ( remove_recv || remove_send ) {
-          j = entity->m_comm.erase( j );
+        if ( 0 == new_send.count( EntityProc( entity , tmp.proc ) ) ) {
+          entity->erase( tmp );
         }
       }
     }
+    else if ( remove_recv ) {
+      entity->erase( ghosts );
+    }
 
-    if ( entity->m_comm.empty() ) {
+    if ( entity->comm().empty() ) {
       removed = true ;
       *i = NULL ; // No longer communicated
       if ( remove_recv ) {

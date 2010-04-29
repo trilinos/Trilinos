@@ -47,11 +47,29 @@ Entity::Entity( const EntityKey & arg_key )
     m_bucket( NULL ),
     m_bucket_ord(0),
     m_owner_rank(0),
-    m_sync_count(0)
+    m_sync_count(0),
+    m_mod_log( LogNoChange )
 {}
 
 Entity::~Entity()
 {}
+
+void Entity::log_clear()
+{ m_mod_log = LogNoChange ; }
+
+void Entity::log_created()
+{
+  if ( LogNoChange == m_mod_log ) {
+    m_mod_log = LogCreated ;
+  }
+}
+
+void Entity::log_modified()
+{
+  if ( LogNoChange == m_mod_log ) {
+    m_mod_log = LogModified ;
+  }
+}
 
 //----------------------------------------------------------------------
 
@@ -112,6 +130,48 @@ bool Entity::insert( const EntityCommInfo & val )
 
   return result ;
 }
+
+bool Entity::erase( const EntityCommInfo & val )
+{
+  std::vector< EntityCommInfo >::iterator i =
+    std::lower_bound( m_comm.begin() , m_comm.end() , val );
+
+  const bool result = i != m_comm.end() && val == *i ;
+
+  if ( result ) { m_comm.erase( i ); }
+
+  return result ;
+}
+
+bool Entity::erase( const Ghosting & ghost )
+{
+  typedef std::vector< EntityCommInfo > EntityComm ;
+
+  const EntityCommInfo s_begin( ghost.ordinal() ,     0 );
+  const EntityCommInfo s_end(   ghost.ordinal() + 1 , 0 );
+
+  EntityComm::iterator i = m_comm.begin();
+  EntityComm::iterator e = m_comm.end();
+
+  i = std::lower_bound( i , e , s_begin );
+  e = std::lower_bound( i , e , s_end );
+
+  const bool result = i != e ;
+
+  if ( result ) { m_comm.erase( i , e ); }
+
+  return result ;
+}
+
+void Entity::comm_clear_ghosting()
+{
+  std::vector< EntityCommInfo >::iterator j = m_comm.begin();
+  while ( j != m_comm.end() && j->ghost_id == 0 ) { ++j ; }
+  m_comm.erase( j , m_comm.end() );
+}
+
+void Entity::comm_clear()
+{ m_comm.clear(); }
 
 //----------------------------------------------------------------------
 

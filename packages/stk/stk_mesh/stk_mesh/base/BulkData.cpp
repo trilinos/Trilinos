@@ -71,7 +71,6 @@ BulkData::BulkData( const MetaData & mesh_meta_data ,
     m_entities(),
     m_entity_comm(),
     m_ghosting(),
-    m_new_entities(),
     m_bucket_nil( NULL ),
 
     m_mesh_meta_data( mesh_meta_data ),
@@ -206,6 +205,10 @@ bool BulkData::modification_begin()
 {
   static const char method[] = "stk::mesh::BulkData::modification_begin" ;
 
+  parallel_machine_barrier( m_parallel_machine );
+
+  if ( m_sync_state == MODIFIABLE ) return false ;
+
   if ( ! m_meta_data_verified ) {
     m_mesh_meta_data.assert_committed( method );
 
@@ -218,26 +221,27 @@ bool BulkData::modification_begin()
   }
   else {
     ++m_sync_count ;
-  }
 
-  parallel_machine_barrier( m_parallel_machine );
+    // Clear out the previous transaction information
+    // m_transaction_log.flush();
 
-  if ( m_sync_state == MODIFIABLE ) return false ;
 
-  m_sync_state = MODIFIABLE ;
+   for ( EntitySet::iterator
+         i = m_entities.begin() ; i != m_entities.end() ; ) {
+     const EntitySet::iterator j = i ; ++i ;
 
-  // Clear out the previous transaction information
-  // m_transaction_log.flush();
-
-  // Clear out the entities destroyed in the previous modification.
-  // They were retained for change-logging purposes.
-
-  for ( EntitySet::iterator i = m_entities.begin() ; i != m_entities.end() ; ) {
-    const EntitySet::iterator j = i ; ++i ;
-    if ( j->second->m_bucket == m_bucket_nil ) {
-      internal_expunge_entity( j );
+     if ( j->second->m_bucket == m_bucket_nil ) {
+       // Clear out the entities destroyed in the previous modification.
+       // They were retained for change-logging purposes.
+       internal_expunge_entity( j );
+      }
+      else {
+       j->second->log_clear();
+      }
     }
   }
+
+  m_sync_state = MODIFIABLE ;
 
   return true ;
 }
@@ -316,9 +320,8 @@ BulkData::internal_create_entity( const EntityKey & key )
 
   if ( insert_result.second )  { // A new entity
     insert_result.first->second = result.first = new Entity( key );
-    //result.first->m_owner_rank   = ~0u ;
     result.first->m_owner_rank = m_parallel_rank ;
-    result.first->m_sync_count   = m_sync_count ;
+    result.first->m_sync_count = m_sync_count ;
   }
 
   return result ;
@@ -371,10 +374,9 @@ Entity & BulkData::declare_entity( EntityRank ent_type , EntityId ent_id ,
     // An existing entity, the owner must match.
     assert_entity_owner( method , * result.first , m_parallel_rank );
   }
-
-  if ( result.second ) { // A new entity
-    m_new_entities.push_back( result.first );
-    //result.first->m_owner_rank = m_parallel_rank ;
+  else {
+    // A new application-created entity
+    result.first->log_created();
   }
 
   //------------------------------
@@ -692,8 +694,6 @@ bool BulkData::destroy_entity( Entity * & e )
     // Cannot already be destroyed.
     return false ;
   }
-  // Add destroyed entity to the transaction
-
   //------------------------------
   // Immediately remove it from relations and buckets.
   // Postpone deletion until modification_end to be sure that
@@ -708,8 +708,6 @@ bool BulkData::destroy_entity( Entity * & e )
     destroy_relation( entity , * entity.m_relation.back().entity() );
   }
 
-  // m_transaction_log.delete_entity ( *e );
-
   remove_entity( entity.m_bucket , entity.m_bucket_ord );
 
   // Set the bucket to 'bucket_nil' which:
@@ -722,6 +720,12 @@ bool BulkData::destroy_entity( Entity * & e )
 
   entity.m_bucket     = m_bucket_nil ;
   entity.m_bucket_ord = 0 ;
+
+  // Record modification in the change log.
+  entity.log_modified();
+
+  // Add destroyed entity to the transaction
+  // m_transaction_log.delete_entity ( *e );
 
   // Set the calling entity-pointer to NULL;
   // hopefully the user-code will clean up any outstanding

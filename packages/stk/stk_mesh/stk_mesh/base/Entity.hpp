@@ -113,22 +113,42 @@ public:
 
 private:
 
+  ~Entity();
+  explicit Entity( const EntityKey & arg_key );
+
+  /** Change log to reflect change from before 'modification_begin'
+   *  to the current status.
+   */
+  enum ModificationLog { LogNoChange = 0 ,
+                         LogCreated  = 1 ,
+                         LogModified = 2 };
+
   const EntityKey              m_key ;       ///< Globally unique key
   std::vector<Relation>        m_relation ;  ///< This entity's relationships
   std::vector<EntityCommInfo>  m_comm ;      ///< This entity's communications
-  Bucket *                     m_bucket ;    ///< Bucket for the entity's field data
-  unsigned              m_bucket_ord ;       ///< Ordinal within the bucket
-  unsigned              m_owner_rank ;       ///< Owner processors' rank
-  size_t                m_sync_count ;       ///< Last membership change
-
-  ~Entity();
-  explicit Entity( const EntityKey & arg_key );
+  Bucket        * m_bucket ;     ///< Bucket for the entity's field data
+  unsigned        m_bucket_ord ; ///< Ordinal within the bucket
+  unsigned        m_owner_rank ; ///< Owner processors' rank
+  size_t          m_sync_count ; ///< Last membership change
+  ModificationLog m_mod_log ;
 
   Entity(); ///< Default constructor not allowed
   Entity( const Entity & ); ///< Copy constructor not allowed
   Entity & operator = ( const Entity & ); ///< Assignment operator not allowed
 
+  // Communication info access:
+
   bool insert( const EntityCommInfo & );
+  bool erase(  const EntityCommInfo & ); ///< Erase this entry
+  bool erase(  const Ghosting & );       ///< Erase this ghosting info.
+  void comm_clear_ghosting(); ///< Clear ghosting
+  void comm_clear(); ///< Clear everything
+
+  // Change log access:
+  ModificationLog log_query() const { return m_mod_log ; }
+  void log_clear();
+  void log_created();
+  void log_modified();
 
 #ifndef DOXYGEN_COMPILE
   friend class BulkData ;

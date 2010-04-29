@@ -128,29 +128,29 @@ bool send_to_shared_and_ghost_recv( const BulkData                & mesh ,
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
-void BulkData::internal_update_parallel_index(
-  const std::vector<Entity*> & del_entities ,
+void BulkData::internal_update_distributed_index(
         std::vector<Entity*> & shared_new )
 {
   static const char method[] =
-    "stk::mesh::BulkData::internal_update_parallel_index" ;
-
-  const size_t new_count = m_new_entities.size();
-  const size_t del_count =   del_entities.size();
+    "stk::mesh::BulkData::internal_update_distributed_index" ;
 
   std::vector< parallel::DistributedIndex::KeyType >
-    new_entities_keys(new_count),
-    del_entities_keys(del_count);
+    new_entities_keys , del_entities_keys ;
 
   std::vector< parallel::DistributedIndex::KeyProc >
     new_entities_keyprocs ;
 
-  for ( size_t i = 0 ; i < new_count ; ++i ) {
-    new_entities_keys[i] = m_new_entities[i]->key().raw_key();
-  }
-
-  for ( size_t i = 0 ; i < del_count ; ++i ) {
-    del_entities_keys[i] = del_entities[i]->key().raw_key();
+  for ( EntitySet::iterator
+        i = m_entities.begin() ; i != m_entities.end() ; ++i ) {
+    Entity & entity = * i->second ;
+    if ( Entity::LogCreated == entity.log_query() ) {
+      new_entities_keys.push_back( entity.key().raw_key() );
+    }
+    else if ( Entity::LogModified == entity.log_query() &&
+              m_bucket_nil == & entity.bucket() ) {
+      // Destroyed
+      del_entities_keys.push_back( entity.key().raw_key() );
+    }
   }
 
   //------------------------------
@@ -226,8 +226,10 @@ void BulkData::internal_resolve_parallel_create_delete(
   // 'del_entities' is guaranteed unique and sorted
 
   {
-    std::vector<int> local_flags( m_ghosting.size() , 0 );
-    std::vector<int> global_flags( m_ghosting.size() , 0 );
+    const size_t ghosting_count = m_ghosting.size();
+
+    std::vector<int> local_flags(  ghosting_count , 0 );
+    std::vector<int> global_flags( ghosting_count , 0 );
     std::vector<EntityProc> del_entities_remote ;
  
     bool global_delete_flag =
@@ -242,7 +244,7 @@ void BulkData::internal_resolve_parallel_create_delete(
       for ( ; ! del_entities_remote.empty() ; del_entities_remote.pop_back() ) {
         Entity *       entity = del_entities_remote.back().first ;
         const unsigned proc   = del_entities_remote.back().second ;
-        const bool     owner  = entity->owner_rank() == proc ;
+        const bool     remote_owner  = entity->owner_rank() == proc ;
         const bool     shared = in_shared( *entity , proc );
         const bool     g_recv = in_receive_ghost( *entity );
         const bool     g_send = in_send_ghost( *entity , proc );
@@ -252,16 +254,9 @@ void BulkData::internal_resolve_parallel_create_delete(
           // A shared entity is being deleted on the remote process.
           // Remove it from the sharing.
 
-          for ( std::vector<EntityCommInfo>::iterator
-                j = entity->m_comm.begin();
-                j != entity->m_comm.end() && j->ghost_id == 0 ; ++j ) {
-            if ( j->proc == proc ) {
-              entity->m_comm.erase( j );
-              break ;
-            }
-          }
+          entity->erase( EntityCommInfo( 0 , proc ) );
 
-          if ( owner ) {
+          if ( remote_owner ) {
             // Remote owner is deleting a shared entity.
             // Have to determine new owner from remaining sharing processes.
 
@@ -282,22 +277,19 @@ void BulkData::internal_resolve_parallel_create_delete(
         if ( g_send ) {
           // Remotely ghosted entity is being destroyed,
           // remove from ghosting list
-          for ( std::vector<EntityCommInfo>::iterator
-                j = entity->m_comm.end(); j != entity->m_comm.begin() ; ) {
-            --j ;
-            if ( j->ghost_id != 0 && j->proc == proc ) {
-              local_flags[ j->ghost_id ] = 1 ;
-              j = entity->m_comm.erase( j );
+          for ( size_t j = ghosting_count ; j-- ; ) {
+            if ( entity->erase( EntityCommInfo( j , proc ) ) ) {
+              local_flags[ j ] = 1 ;
             }
           }
         }
-        else if ( owner && g_recv ) {
+        else if ( remote_owner && g_recv ) {
           // Remotely owned entity is being destroyed.
-          // This receive ghost then it must be destroyed.
-          while ( ! entity->m_comm.empty() ) {
-            local_flags[ entity->m_comm.back().ghost_id ] = 1 ;
-            entity->m_comm.pop_back();
+          // This receive ghost must be destroyed.
+          for ( PairIterEntityComm ec = entity->comm() ; ! ec.empty() ; ++ec ) {
+            local_flags[ ec->ghost_id ] = 1 ;
           }
+          entity->comm_clear();
           destroy_entity( entity );
         }
       }
@@ -317,10 +309,10 @@ void BulkData::internal_resolve_parallel_create_delete(
           entity->m_sync_count = m_sync_count ;
         }
 
-        while ( ! entity->m_comm.empty() ) {
-          local_flags[ entity->m_comm.back().ghost_id ] = 1 ;
-          entity->m_comm.pop_back();
+        for ( PairIterEntityComm ec = entity->comm() ; ! ec.empty() ; ++ec ) {
+          local_flags[ ec->ghost_id ] = 1 ;
         }
+        entity->comm_clear();
       }
 
       all_reduce_sum( m_parallel_machine ,
@@ -357,7 +349,7 @@ void BulkData::internal_resolve_parallel_create_delete(
 
     // Update the parallel index and
     // output sharing of created entities.
-    internal_update_parallel_index( del_entities , shared_created );
+    internal_update_distributed_index( shared_created );
 
     // Update shared created entities.
     // - Revise ownership to selected processor
@@ -406,19 +398,23 @@ bool BulkData::internal_modification_end( bool regenerate_aura )
 {
   if ( m_sync_state == SYNCHRONIZED ) { return false ; }
 
+  int local_change_count[2] = { 0 , 0 };
+  int global_change_count[2] = { 0 , 0 };
+
   std::vector<Entity*> del_entities ;
 
   for ( EntitySet::iterator
         i = m_entities.begin() ; i != m_entities.end() ; ++i ) {
-    if ( i->second->m_bucket == m_bucket_nil ) {
-      del_entities.push_back( i->second );
+   Entity * entity = i->second ;
+    if ( Entity::LogCreated == entity->log_query() ) {
+      ++ local_change_count[0] ; // Created
+    }
+    else if ( Entity::LogModified == entity->log_query() &&
+              m_bucket_nil == & entity->bucket() ) {
+      del_entities.push_back( entity );
+      ++ local_change_count[1] ; // Deleted
     }
   }
-
-  int local_change_count[2] ;
-  int global_change_count[2] ;
-  local_change_count[0] = m_new_entities.size();
-  local_change_count[1] =   del_entities.size();
 
   all_reduce_sum( m_parallel_machine ,
                   local_change_count , global_change_count , 2 );
@@ -428,8 +424,6 @@ bool BulkData::internal_modification_end( bool regenerate_aura )
     if ( 1 < m_parallel_size ) {
       internal_resolve_parallel_create_delete( del_entities );
     }
-
-    m_new_entities.clear();
   }
 
   // Parallel distribution considerations:

@@ -364,7 +364,6 @@ private:
   EntitySet                           m_entities ;
   std::vector<Entity*>                m_entity_comm ;
   std::vector<Ghosting*>              m_ghosting ; /**< Aura is [1] */
-  std::vector<Entity*>                m_new_entities ;
   Bucket *                            m_bucket_nil ;
 
   // Other information:
@@ -402,9 +401,7 @@ private:
                                  const std::vector<EntityProc> & add_send ,
                                  const std::vector<Entity*> & remove_receive );
 
-  void internal_update_parallel_index(
-    const std::vector<Entity*> & del_entities ,
-          std::vector<Entity*> & shared_new );
+  void internal_update_distributed_index( std::vector<Entity*> & shared_new );
 
   void internal_resolve_parallel_create_delete(
     const std::vector<Entity*> & del_entities );
