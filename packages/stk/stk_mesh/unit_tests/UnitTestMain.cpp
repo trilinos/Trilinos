@@ -7,8 +7,8 @@
 /*------------------------------------------------------------------------*/
 
 
-#include <stdlib.h>
-#include <string.h>
+#include <cstdlib>
+#include <cstring>
 #include <iostream>
 #include <utility>
 #include <unit_tests/stk_utest_macros.hpp>
