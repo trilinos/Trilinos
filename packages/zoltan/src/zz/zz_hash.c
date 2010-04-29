@@ -202,6 +202,7 @@ unsigned int Zoltan_Recommended_Hash_Size (unsigned int n)
     {
         if (n <= primes[i])
         {
+            /*hsize = (i == 0 ? n : primes[i-1]) ;*/
             hsize = primes[i] ;
             break ;
         }
