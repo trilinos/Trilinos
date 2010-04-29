@@ -24,7 +24,7 @@ extern "C" {
 #include "graph_util.h"
 
 /* comparison routine for bsearch */
-static int Zoltan_Compare_Ints(const void *key, const void *arg);
+static int Zoltan_Compare_GNOs(const void *key, const void *arg);
 
 #include "zz_sort.h"
 
@@ -62,23 +62,25 @@ static int Zoltan_Compare_Ints(const void *key, const void *arg);
 /*                                                                   */
 /*********************************************************************/
 
-int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj, 
-       indextype *adjncy, weighttype *vwgt, weighttype *adjwgt, 
+int Zoltan_Verify_Graph(MPI_Comm comm, ZOLTAN_GNO_TYPE *vtxdist, int *xadj, 
+       ZOLTAN_GNO_TYPE *adjncy, weighttype *vwgt, weighttype *adjwgt, 
        int vwgt_dim, int ewgt_dim, 
        int graph_type, int check_graph, int output_level)
 {
-  int i, j, ii, k, num_obj, nedges, ierr;
-  int flag, cross_edges = 0, mesg_size, sum, global_sum;
+  int ii, k, ierr;
+  int flag, cross_edges = 0, mesg_size, sum;
   int nprocs, proc, *proclist, errors, global_errors;
-  int num_zeros, num_selfs, num_duplicates, num_singletons;
-  indextype global_i, global_j;
-  indextype *ptr1, *ptr2;
-  indextype *adjncy_sort=NULL, *perm=NULL, *ptr=NULL; 
+  int *perm=NULL; 
   int free_adjncy_sort=0;
-  char *sendbuf=NULL, *recvbuf=NULL;
   ZOLTAN_COMM_OBJ *comm_plan;
   static char *yo = "Zoltan_Verify_Graph";
   char msg[256];
+  ZOLTAN_GNO_TYPE *ptr, *ptr1, *ptr2;
+  ZOLTAN_GNO_TYPE global_i, global_j, gnoidx, global_sum;
+  ZOLTAN_GNO_TYPE num_zeros, nedges, num_selfs, num_obj;
+  ZOLTAN_GNO_TYPE num_duplicates, num_singletons;
+  ZOLTAN_GNO_TYPE i, j;
+  ZOLTAN_GNO_TYPE *sendgno=NULL, *recvgno=NULL, *adjncy_sort=NULL;
 
 
   ierr = ZOLTAN_OK;
@@ -96,7 +98,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
 
   /* Check number of vertices (objects) */
   num_obj = vtxdist[proc+1] - vtxdist[proc];
-  MPI_Reduce(&num_obj, &global_sum, 1, MPI_INT, MPI_SUM, 0, comm);
+  MPI_Reduce(&num_obj, &global_sum, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, comm);
   if ((proc==0) && (global_sum==0)){
     if (ierr == ZOLTAN_OK) ierr = ZOLTAN_WARN;
     if (output_level>0)
@@ -126,19 +128,19 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
           if (ierr == ZOLTAN_OK) ierr = ZOLTAN_WARN;
        }
     }
-    MPI_Reduce(&num_zeros, &global_sum, 1, MPI_INT, MPI_SUM, 0, comm);
+    MPI_Reduce(&num_zeros, &global_sum, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, comm);
     if ((proc==0) && (global_sum>0)){
       if (ierr == ZOLTAN_OK) ierr = ZOLTAN_WARN;
       if (output_level>0){
-        sprintf(msg, "%d objects have zero weights.", global_sum);
+        sprintf(msg, "%zd objects have zero weights.", global_sum);
         ZOLTAN_PRINT_WARN(proc, yo, msg);
       }
     }
   }
 
   /* Check number of edges */
-  nedges = xadj[num_obj];
-  MPI_Reduce(&nedges, &global_sum, 1, MPI_INT, MPI_SUM, 0, comm);
+  nedges = (ZOLTAN_GNO_TYPE)xadj[num_obj];
+  MPI_Reduce(&nedges, &global_sum, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, comm);
   if ((proc==0) && (global_sum==0)){
     if (ierr == ZOLTAN_OK) ierr = ZOLTAN_WARN;
     if (output_level>0)
@@ -169,7 +171,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
       }
     }
 
-    MPI_Reduce(&num_zeros, &global_sum, 1, MPI_INT, MPI_SUM, 0, comm);
+    MPI_Reduce(&num_zeros, &global_sum, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, comm);
     if ((proc==0) && (global_sum>0)){
       if (ierr == ZOLTAN_OK) ierr = ZOLTAN_WARN;
       if (output_level>0){
@@ -194,21 +196,21 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
     }
   }
   if (flag){ /* Need to sort. */
-    adjncy_sort = (indextype *) ZOLTAN_MALLOC(2*nedges*sizeof(indextype));
+    adjncy_sort = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(nedges*sizeof(ZOLTAN_GNO_TYPE));
+    perm = (int *) ZOLTAN_MALLOC(nedges*sizeof(int));
     free_adjncy_sort = 1;
-    if (nedges && (!adjncy_sort)){
+    if (nedges && (!adjncy_sort || !perm)){
       /* Out of memory. */
       ZOLTAN_PRINT_ERROR(proc, yo, "Out of memory.");
       ierr = ZOLTAN_MEMERR;
     }
-    perm = adjncy_sort + nedges; /* Permutation for sorting. */
     for (k=0; k<nedges; k++){
       adjncy_sort[k] = adjncy[k];
       perm[k] = k;
     }
-    /* NOTE: this assumes sizeof(indextype) == sizeof(int) */
+
     for (i=0; i<num_obj; i++) 
-      Zoltan_quicksort_list_inc_int((int *)adjncy_sort, (int *)perm, (int)xadj[i], (int)xadj[i+1]-1);
+      Zoltan_quicksort_list_inc_gno(adjncy_sort, perm, xadj[i], xadj[i+1]-1);
   }
   else { /* Already sorted. */
     adjncy_sort = adjncy;
@@ -220,15 +222,17 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
   num_duplicates = 0;
   num_singletons = 0;
   for (i=0; i<num_obj; i++){
-    if (IS_GLOBAL_GRAPH(graph_type))
+    if (IS_GLOBAL_GRAPH(graph_type)){
       global_i = vtxdist[proc]+i;
-    else /* graph_type == LOCAL_GRAPH */
+    }
+    else{ /* graph_type == LOCAL_GRAPH */
       global_i = i; /* A bit confusingly, global_i = i for local graphs */
+    }
     /* Singleton? */
     if (xadj[i] == xadj[i+1]){
       num_singletons++;
       if (output_level>1){
-        sprintf(msg, "Vertex %d has no edges.", global_i);
+        sprintf(msg, "Vertex %zd has no edges.", global_i);
         ZOLTAN_PRINT_WARN(proc, yo, msg);
       }
     }
@@ -239,7 +243,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
            ((global_j < vtxdist[0]) || (global_j >= vtxdist[nprocs])))
           || (IS_LOCAL_GRAPH(graph_type) && 
            ((global_j < 0) || (global_j >= num_obj)))){
-        sprintf(msg, "Edge to invalid vertex %d detected.", global_j);
+        sprintf(msg, "Edge to invalid vertex %zd detected.", global_j);
         ZOLTAN_PRINT_ERROR(proc, yo, msg);
         ierr = ZOLTAN_FATAL;
       }
@@ -247,7 +251,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
       if (global_j == global_i){
         num_selfs++;
         if (output_level>1){
-          sprintf(msg, "Self edge for vertex %d detected.", global_i);
+          sprintf(msg, "Self edge for vertex %zd detected.", global_i);
           ZOLTAN_PRINT_WARN(proc, yo, msg);
         }
       }
@@ -255,7 +259,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
       if ((ii+1<xadj[i+1]) && (adjncy_sort[ii]==adjncy_sort[ii+1])){
         num_duplicates++;
         if (output_level>1){
-          sprintf(msg, "Duplicate edge (%d,%d) detected.", global_i, global_j);
+          sprintf(msg, "Duplicate edge (%zd,%zd) detected.", global_i, global_j);
           ZOLTAN_PRINT_WARN(proc, yo, msg);
         }
       }
@@ -268,8 +272,8 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
         else /* graph_type == LOCAL_GRAPH */
           j = global_j;
         /* Binary search for edge (global_j, global_i) */
-        ptr = bsearch(&global_i, &adjncy_sort[xadj[j]], xadj[j+1]-xadj[j],
-              sizeof(int), Zoltan_Compare_Ints);
+        ptr = (ZOLTAN_GNO_TYPE *)bsearch(&global_i, &adjncy_sort[xadj[j]], xadj[j+1]-xadj[j],
+              sizeof(ZOLTAN_GNO_TYPE), Zoltan_Compare_GNOs);
         if (ptr){
           /* OK, found edge (global_j, global_i) */
           if ((adjncy_sort==adjncy) && ewgt_dim){
@@ -286,14 +290,14 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
             }
             if (flag<0 && output_level>0){
               sprintf(msg, "Graph is numerically nonsymmetric "
-                "in edge (%d,%d)", global_i, global_j);
+                "in edge (%zd,%zd)", global_i, global_j);
               ZOLTAN_PRINT_WARN(proc, yo, msg);
             }
           }
         }
         else { /* bsearch failed */
           sprintf(msg, "Graph is not symmetric. "
-                  "Edge (%d,%d) exists, but no edge (%d,%d).", 
+                  "Edge (%zd,%zd) exists, but no edge (%zd,%zd).", 
                   global_i, global_j, global_j, global_i);
           ZOLTAN_PRINT_ERROR(proc, yo, msg);
           ierr = ZOLTAN_FATAL;
@@ -306,27 +310,27 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
   }
 
   /* Sum up warnings so far. */
-  MPI_Reduce(&num_selfs, &global_sum, 1, MPI_INT, MPI_SUM, 0, comm);
+  MPI_Reduce(&num_selfs, &global_sum, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, comm);
   if ((proc==0) && (global_sum>0)){
     ierr = ZOLTAN_WARN;
     if (output_level>0){
-      sprintf(msg, "%d self-edges in graph.", global_sum);
+      sprintf(msg, "%zd self-edges in graph.", global_sum);
       ZOLTAN_PRINT_WARN(proc, yo, msg);
     }
   }
-  MPI_Reduce(&num_duplicates, &global_sum, 1, MPI_INT, MPI_SUM, 0, comm);
+  MPI_Reduce(&num_duplicates, &global_sum, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, comm);
   if ((proc==0) && (global_sum>0)){
     ierr = ZOLTAN_WARN;
     if (output_level>0){
-      sprintf(msg, "%d duplicate edges in graph.", global_sum);
+      sprintf(msg, "%zd duplicate edges in graph.", global_sum);
       ZOLTAN_PRINT_WARN(proc, yo, msg);
     }
   }
-  MPI_Reduce(&num_singletons, &global_sum, 1, MPI_INT, MPI_SUM, 0, comm);
+  MPI_Reduce(&num_singletons, &global_sum, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, comm);
   if ((proc==0) && (global_sum>0)){
     ierr = ZOLTAN_WARN;
     if (output_level>0){
-      sprintf(msg, "%d vertices in the graph are singletons (have no edges).", global_sum);
+      sprintf(msg, "%zd vertices in the graph are singletons (have no edges).", global_sum);
       ZOLTAN_PRINT_WARN(proc, yo, msg);
     }
   }
@@ -346,6 +350,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
   if (global_errors & 4){
     /* Fatal error: return now */
     if (free_adjncy_sort) ZOLTAN_FREE(&adjncy_sort);
+    if (free_adjncy_sort) ZOLTAN_FREE(&perm);
     return ZOLTAN_FATAL;
   }
 
@@ -353,19 +358,19 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
     /* Test for consistency across processors. */
 
     /* Allocate space for off-proc data */
-    mesg_size = (2+ewgt_dim)*sizeof(indextype);
-    sendbuf = (char *) ZOLTAN_MALLOC(cross_edges*mesg_size);
-    recvbuf = (char *) ZOLTAN_MALLOC(cross_edges*mesg_size);
+    mesg_size = (2+ewgt_dim)*sizeof(ZOLTAN_GNO_TYPE);
+    sendgno = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(cross_edges*mesg_size);
+    recvgno = (ZOLTAN_GNO_TYPE  *) ZOLTAN_MALLOC(cross_edges*mesg_size);
     proclist = (int *) ZOLTAN_MALLOC(cross_edges*sizeof(int));
 
-    if (cross_edges && !(sendbuf && recvbuf && proclist)){
+    if (cross_edges && !(sendgno && recvgno && proclist)){
        ZOLTAN_PRINT_ERROR(proc, yo, "Out of memory.");
        ierr = ZOLTAN_MEMERR;
     }
 
     /* Second pass: Copy data to send buffer */
     nedges = 0;
-    ptr1 = (indextype *) sendbuf;
+    ptr1 = (ZOLTAN_GNO_TYPE *) sendgno;
     for (i=0; i<num_obj; i++){
       global_i = vtxdist[proc]+i;
       for (ii=xadj[i]; ii<xadj[i+1]; ii++){
@@ -376,19 +381,18 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
            k=0; 
            while (global_j >= vtxdist[k+1]) k++;
            proclist[nedges++] = k;
-           /* Copy (global_i, global_j) and corresponding weights to sendbuf */
+           /* Copy (global_i, global_j) and corresponding weights to sendgno */
            *ptr1++ = global_i;
            *ptr1++ = global_j;
            for (k=0; k<ewgt_dim; k++){
-             *ptr1++ = adjwgt[ii*ewgt_dim+k];
+             *ptr1++ = (ZOLTAN_GNO_TYPE)adjwgt[ii*ewgt_dim+k];
            }
         }
       }
     }
 
     /* Do the irregular communication */
-    ierr = Zoltan_Comm_Create(&comm_plan, cross_edges, proclist, comm, 
-                          TAG1, &k);
+    ierr = Zoltan_Comm_Create(&comm_plan, cross_edges, proclist, comm, TAG1, &k);
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
       sprintf(msg, "Error %s returned from Zoltan_Comm_Create.", 
               (ierr == ZOLTAN_MEMERR ? "ZOLTAN_MEMERR" : "ZOLTAN_FATAL"));
@@ -401,7 +405,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
         ierr = ZOLTAN_FATAL;
       }
 
-      ierr = Zoltan_Comm_Do(comm_plan, TAG2, sendbuf, mesg_size, recvbuf);
+      ierr = Zoltan_Comm_Do(comm_plan, TAG2, (char *)sendgno, mesg_size, (char *)recvgno);
       Zoltan_Comm_Destroy(&comm_plan);
       if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) {
         sprintf(msg, "Error %s returned from Zoltan_Comm_Do.",
@@ -411,13 +415,11 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
       else {
 
         /* Third pass: Compare on-proc data to the off-proc data we received */
-        /* sendbuf and recvbuf should contain the same data except (i,j) is  */
+        /* sendgno and recvgno should contain the same data except (i,j) is  */
         /* (j,i)                                                             */
-        for (i=0, ptr1=(indextype *)sendbuf; i<cross_edges; 
-             i++, ptr1 += (2+ewgt_dim)){
+        for (i=0, ptr1=sendgno; i<cross_edges; i++, ptr1 += (2+ewgt_dim)){
           flag = 0;
-          for (j=0, ptr2=(indextype *)recvbuf; j<cross_edges; 
-               j++, ptr2 += (2+ewgt_dim)){
+          for (j=0, ptr2=recvgno; j<cross_edges; j++, ptr2 += (2+ewgt_dim)){
             if ((ptr2[0] == ptr1[1]) && (ptr2[1] == ptr1[0])){
               /* Found matching edge */
               flag = 1;
@@ -429,7 +431,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
                 }
               }
               if (flag<0 && output_level>0){
-                  sprintf(msg, "Edge weight (%d,%d) is not symmetric",
+                  sprintf(msg, "Edge weight (%zd,%zd) is not symmetric",
                           ptr1[0], ptr1[1]);
                   ZOLTAN_PRINT_WARN(proc, yo, msg);
               }
@@ -437,7 +439,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
           }
           if (!flag){
             sprintf(msg, "Graph is not symmetric.  "
-                    "Edge (%d,%d) exists, but not (%d,%d).", 
+                    "Edge (%zd,%zd) exists, but not (%zd,%zd).", 
                     ptr1[0], ptr1[1], ptr1[1], ptr1[0]);
             ZOLTAN_PRINT_ERROR(proc, yo, msg);
             ierr = ZOLTAN_FATAL;
@@ -447,12 +449,13 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
     }
 
     /* Free memory */
-    ZOLTAN_FREE(&sendbuf);
-    ZOLTAN_FREE(&recvbuf);
+    ZOLTAN_FREE(&sendgno);
+    ZOLTAN_FREE(&recvgno);
     ZOLTAN_FREE(&proclist);
   }
 
   if (free_adjncy_sort) ZOLTAN_FREE(&adjncy_sort);
+  if (free_adjncy_sort) ZOLTAN_FREE(&perm);
 
   /* Compute global error code */
   errors = 0;
@@ -485,10 +488,10 @@ int Zoltan_Verify_Graph(MPI_Comm comm, indextype *vtxdist, indextype *xadj,
 }
 
 /* comparison routine for bsearch */
-static int Zoltan_Compare_Ints(const void *key, const void *arg)
+static int Zoltan_Compare_GNOs(const void *key, const void *arg)
 {
-   if ( *(int*) key > (*(int*) arg))  return  1;
-   if ( *(int*) key < (*(int*) arg))  return -1;
+   if ( *(ZOLTAN_GNO_TYPE*) key > (*(ZOLTAN_GNO_TYPE*) arg))  return  1;
+   if ( *(ZOLTAN_GNO_TYPE*) key < (*(ZOLTAN_GNO_TYPE*) arg))  return -1;
 
    return 0;  /* equal */
 }

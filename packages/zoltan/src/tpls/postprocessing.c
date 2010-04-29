@@ -51,7 +51,7 @@ static int Compute_Bal(ZZ *, int, weighttype *, int, indextype *, double *);
 static int Compute_EdgeCut(ZZ *, int, indextype *, float *, indextype *, int *, double *);
 static float Compute_NetCut(ZZ *, int, indextype *, float *, indextype *, int *);
 static float Compute_ConCut(ZZ *, int, indextype *, float *, indextype *, int *);
-static int Compute_Adjpart(ZZ *, int, indextype *, indextype *, indextype *, int *, indextype *, int *);
+static int Compute_Adjpart(ZZ *, int, ZOLTAN_GNO_TYPE *, int *, ZOLTAN_GNO_TYPE *, int *, indextype *, int *);
 
 
 
@@ -317,6 +317,7 @@ Zoltan_Postprocess_FinalOutput (ZZ* zz, ZOLTAN_Third_Graph *gr,
 				int use_timers, double itr)
 {
 #define FOMAXDIM 10
+  static char * yo = "Zoltan_Postprocess_FinalOutput";
   static int nRuns=0;
   static double balsum[FOMAXDIM], cutesum[FOMAXDIM];
   static double balmax[FOMAXDIM], cutemax[FOMAXDIM];
@@ -339,7 +340,7 @@ Zoltan_Postprocess_FinalOutput (ZZ* zz, ZOLTAN_Third_Graph *gr,
   int edim;
   indextype *vsizeBACKUP = NULL;
   indextype *input_part;
-  int i;
+  int i,rc;
 
 /* #define UVC_DORUK_COMP_OBJSIZE */
 #ifdef UVC_DORUK_COMP_OBJSIZE
@@ -365,11 +366,23 @@ Zoltan_Postprocess_FinalOutput (ZZ* zz, ZOLTAN_Third_Graph *gr,
   edim = MAX(zz->Edge_Weight_Dim,1);
 
   if (gr->obj_wgt_dim < FOMAXDIM && zz->Edge_Weight_Dim < FOMAXDIM) {
-    adjpart = (int *) ZOLTAN_MALLOC(gr->xadj[gr->num_obj] * sizeof(int));
+    if (gr->xadj[gr->num_obj]){
+      adjpart = (int *) ZOLTAN_MALLOC(gr->xadj[gr->num_obj] * sizeof(int));
+      if (!adjpart){
+        ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR,
+			 "Error 1 returned from Zoltan_Postprocess_FinalOutput");
+      }
+    }
 
     Compute_Bal(zz, gr->num_obj, gr->vwgt, gr->obj_wgt_dim, prt->part, bal);
-    Compute_Adjpart(zz, gr->num_obj, gr->vtxdist, gr->xadj, gr->adjncy,
+
+    rc = Compute_Adjpart(zz, gr->num_obj, gr->vtxdist, gr->xadj, gr->adjncy,
                     gr->adjproc, prt->part, adjpart);
+
+    if (rc != ZOLTAN_OK){
+      ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR,
+			 "Error 2 returned from Zoltan_Postprocess_FinalOutput");
+    }
     Compute_EdgeCut(zz, gr->num_obj, gr->xadj, gr->float_ewgts, 
                     prt->part, adjpart, cute);
     cutl = Compute_ConCut(zz, gr->num_obj, gr->xadj,  gr->float_ewgts,
@@ -639,12 +652,12 @@ int dim = zz->Edge_Weight_Dim;
 static int Compute_Adjpart(
   ZZ *zz,
   int nvtx,         /* Input:  # vtxs in this processor */
-  indextype *vtxdist,     /* Input:  Distribution of vertices across processors */
-  indextype *xadj,        /* Input:  Index of adjncy:  adjncy[xadj[i]] to 
+  ZOLTAN_GNO_TYPE *vtxdist,     /* Input:  Distribution of vertices across processors */
+  int *xadj,        /* Input:  Index of adjncy:  adjncy[xadj[i]] to 
                                adjncy[xadj[i]+1] are all edge nbors of vtx i. */
-  indextype *adjncy,      /* Input:  Array of nbor vertices. */
+  ZOLTAN_GNO_TYPE *adjncy,      /* Input:  Array of nbor vertices. */
   int *adjproc,     /* Input:  adjproc[j] == processor owning adjncy[j]. */
-  indextype *part,        /* Input:  Partition assignments of vtxs. */
+  int *part,        /* Input:  Partition assignments of vtxs. */
   int *adjpart      /* Output: adjpart[j] == partition owning adjncy[j] */
 )
 {
@@ -653,25 +666,33 @@ static int Compute_Adjpart(
  */
 ZOLTAN_COMM_OBJ *plan;
 int i;
-int start = vtxdist[zz->Proc];  /* First vertex on this processor */
+ZOLTAN_GNO_TYPE start = vtxdist[zz->Proc];  /* First vertex on this processor */
+ZOLTAN_GNO_TYPE *recv_gno= NULL;
+int *send_int=NULL;
 int nrecv;
-int *vtxs = NULL;
 int tag = 24542;
 
-  Zoltan_Comm_Create(&plan, xadj[nvtx], adjproc, zz->Communicator, tag++,
-                     &nrecv);
+  Zoltan_Comm_Create(&plan, xadj[nvtx], adjproc, zz->Communicator, tag++, &nrecv);
 
-  vtxs = (int *) ZOLTAN_MALLOC(nrecv * sizeof(int));
+  if (nrecv){
+    recv_gno = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(nrecv * sizeof(ZOLTAN_GNO_TYPE));
+    send_int = (int *) ZOLTAN_MALLOC(nrecv * sizeof(int));
+    if (!recv_gno || !send_int){
+      return ZOLTAN_MEMERR;
+    }
+  }
 
-  Zoltan_Comm_Do(plan, tag++, (char *) adjncy, sizeof(int), (char *) vtxs);
+  Zoltan_Comm_Do(plan, tag++, (char *) adjncy, sizeof(ZOLTAN_GNO_TYPE), (char *) recv_gno);
 
-  for (i = 0; i < nrecv; i++)
-    vtxs[i] = part[vtxs[i]-start];
+  for (i = 0; i < nrecv; i++){
+    send_int[i] = part[recv_gno[i] - start];
+  }
 
-  Zoltan_Comm_Do_Reverse(plan, tag, (char *) vtxs, sizeof(int), NULL,
-                         (char *) adjpart);
+  ZOLTAN_FREE(&recv_gno);
 
-  ZOLTAN_FREE(&vtxs);
+  Zoltan_Comm_Do_Reverse(plan, tag, (char *)send_int, sizeof(int), NULL, (char *) adjpart);
+
+  ZOLTAN_FREE(&send_int);
 
   Zoltan_Comm_Destroy(&plan);
 

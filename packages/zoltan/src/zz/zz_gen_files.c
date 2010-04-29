@@ -27,16 +27,16 @@ extern "C" {
 
 /* Temporary prototypes. These functions are HG routines
    currently not compiled into Zoltan, but duplicated in this file. */
-static int Zoltan_HG_Get_Pins(ZZ *zz, int *nEdges, int **edgeSize,
+static ZOLTAN_GNO_TYPE Zoltan_HG_Get_Pins(ZZ *zz, int *nEdges, int **edgeSize,
                    ZOLTAN_ID_PTR *edgeIds, ZOLTAN_ID_PTR *vtxIds, 
                    int *nEwgts, ZOLTAN_ID_PTR *eWgtIds, float **eWgts);
 static int turn_off_reduce_dimensions(ZZ *zz);
-static int merge_gids(ZZ *zz, ZOLTAN_ID_PTR *merged_egids, int size_merged,
-           ZOLTAN_ID_PTR idbuf, int numIds, void *htptr, int htSize);
+static ZOLTAN_GNO_TYPE merge_gids(ZZ *zz, ZOLTAN_ID_PTR *merged_egids, ZOLTAN_GNO_TYPE size_merged,
+           ZOLTAN_ID_PTR idbuf, ZOLTAN_GNO_TYPE numIds, void *htptr, ZOLTAN_GNO_TYPE htSize);
 static int augment_search_structure(ZZ *zz, void *htptr,
-     int maxEdges, ZOLTAN_ID_PTR merged_egids, int size_merged, 
-     int prev_size_merged);
-static int fan_in_edge_global_ids(ZZ *zz, int numEdges, ZOLTAN_ID_PTR egids);
+     ZOLTAN_GNO_TYPE maxEdges, ZOLTAN_ID_PTR merged_egids, ZOLTAN_GNO_TYPE size_merged, 
+     ZOLTAN_GNO_TYPE prev_size_merged);
+static ZOLTAN_GNO_TYPE fan_in_edge_global_ids(ZZ *zz, int numEdges, ZOLTAN_ID_PTR egids);
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -77,13 +77,15 @@ int gen_geom, int gen_graph, int gen_hg)
   ZOLTAN_ID_PTR global_ids = NULL;
   FILE *fp;
   char full_fname[256];
-  indextype *vtxdist, *xadj, *adjncy;
+  int *xadj;
+  ZOLTAN_GNO_TYPE *vtxdist, *adjncy;
   int *part, *adjproc, *edgeSize;
   float *float_vwgt, *ewgts, *eWgts, *wptr;
   double *xyz;
   int i, j, k, num_obj, num_geom, num_edges, reduce;
-  int glob_nvtxs, glob_edges=0, glob_hedges=0, glob_pins, glob_ewgts;
-  int minid, maxid, minEdgeId, maxEdgeId, minVtxId, maxVtxId;
+  ZOLTAN_GNO_TYPE glob_nvtxs, glob_edges=0, glob_hedges=0, glob_pins, glob_ewgts;
+  ZOLTAN_GNO_TYPE minid, maxid, minEdgeId, maxEdgeId, minVtxId, maxVtxId;
+  ZOLTAN_GNO_TYPE tmp_gno;
   int numPins, edgeOffset=0, vtxOffset=0;
   int print_vtx_num = ZOLTAN_PRINT_VTX_NUM;
   int have_pin_callbacks=0;
@@ -98,7 +100,8 @@ int gen_geom, int gen_graph, int gen_hg)
   /* Initialize all local pointers to NULL. This is necessary
    * because we free all non-NULL pointers upon errors.
    */
-  vtxdist = xadj = adjncy = NULL;
+  vtxdist = adjncy = NULL;
+  xadj = NULL;
   part = edgeSize = NULL;
   adjproc = NULL;
   float_vwgt = ewgts = eWgts = NULL;
@@ -132,8 +135,8 @@ int gen_geom, int gen_graph, int gen_hg)
   }
   else{
     /* Compute global number of vertices. */
-    MPI_Allreduce(&num_obj, &glob_nvtxs, 1, MPI_INT, MPI_SUM, 
-                  zz->Communicator);  
+    tmp_gno = (ZOLTAN_GNO_TYPE)num_obj;
+    MPI_Allreduce(&tmp_gno, &glob_nvtxs, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, zz->Communicator);  
   }
 
   /* Local number of edges. */
@@ -142,8 +145,8 @@ int gen_geom, int gen_graph, int gen_hg)
   else
     num_edges = xadj[num_obj];
   /* Compute global number of edges. */
-  MPI_Reduce(&num_edges, &glob_edges, 1, MPI_INT, MPI_SUM, 0, 
-      zz->Communicator);  
+  tmp_gno = (ZOLTAN_GNO_TYPE)num_edges;
+  MPI_Reduce(&num_edges, &glob_edges, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, zz->Communicator);  
   /* Assume no self-edges! */
   glob_edges /= 2;
 
@@ -527,7 +530,7 @@ static int turn_off_reduce_dimensions(ZZ *zz)
   return reduce;
 }
 
-static int Zoltan_HG_Get_Pins(ZZ *zz, int *nEdges, int **edgeSize,
+static ZOLTAN_GNO_TYPE Zoltan_HG_Get_Pins(ZZ *zz, int *nEdges, int **edgeSize,
             ZOLTAN_ID_PTR *edgeIds, ZOLTAN_ID_PTR *vtxIds, 
             int *nEwgts, ZOLTAN_ID_PTR *eWgtIds, float **eWgts)
 {
@@ -539,7 +542,7 @@ static int Zoltan_HG_Get_Pins(ZZ *zz, int *nEdges, int **edgeSize,
   int dim = zz->Edge_Weight_Dim;
   int ew_num_edges = 0;
   int ierr = ZOLTAN_OK;
-  int globalNumEdges = -1;
+  ZOLTAN_GNO_TYPE globalNumEdges = -1;
   int numEdges = 0;
   int *esize=NULL;
 
@@ -615,19 +618,20 @@ End:
   return globalNumEdges;
 }
 
-static int fan_in_edge_global_ids(ZZ *zz, int numEdges, ZOLTAN_ID_PTR egids)
+static ZOLTAN_GNO_TYPE fan_in_edge_global_ids(ZZ *zz, int numEdges, ZOLTAN_ID_PTR egids)
 {
-int maxEdges, size_merged;
+ZOLTAN_GNO_TYPE maxEdges, size_merged, prev_size_merged;
 int lenGID = zz->Num_GID;
 struct _gidht{
   int gidIdx;
   struct _gidht *next;
 } *gidNode, *gidNext;
 struct _gidht **ht=NULL;
-int proc, myrank, nprocs, nbits, mask, i, prev_size_merged, numIds;
+int proc, myrank, nprocs, mask, i;
+unsigned int nbits;
 ZOLTAN_ID_PTR merged_egids, idbuf;
-int allEdges;
-int idbufSize = 0;
+ZOLTAN_GNO_TYPE allEdges, numIds, nEdges;
+ZOLTAN_GNO_TYPE idbufSize = 0;
 int gidTag = 0x1000;  /* any reason tags should not be these values? */
 int sizeTag = 0x1001;
 MPI_Status stat;
@@ -647,7 +651,9 @@ MPI_Status stat;
    * in a debugging mode, so hopefully this won't be a problem.
    */
 
-  MPI_Allreduce(&numEdges, &maxEdges, 1, MPI_INT, MPI_MAX, zz->Communicator);  
+  nEdges = (ZOLTAN_GNO_TYPE)numEdges;
+
+  MPI_Allreduce(&nEdges, &maxEdges, 1, ZOLTAN_GNO_MPI_TYPE, MPI_MAX, zz->Communicator);  
 
   if (maxEdges == 0){
     return 0;
@@ -661,9 +667,9 @@ MPI_Status stat;
   ht = (struct _gidht **)ZOLTAN_CALLOC(sizeof(struct _gidht *), maxEdges);
   prev_size_merged = 0;
 
-  merged_egids = ZOLTAN_MALLOC_GID_ARRAY(zz, numEdges);
-  ZOLTAN_COPY_GID_ARRAY(merged_egids, egids, zz, numEdges);
-  size_merged = numEdges;
+  merged_egids = ZOLTAN_MALLOC_GID_ARRAY(zz, nEdges);
+  ZOLTAN_COPY_GID_ARRAY(merged_egids, egids, zz, nEdges);
+  size_merged = nEdges;
 
   /* Do the fan in (bit switching logarithmic fan-in) */
 
@@ -684,15 +690,14 @@ MPI_Status stat;
 
     if (proc < nprocs){
       if (proc < myrank){
-        MPI_Send(&size_merged, 1, MPI_INT, proc, sizeTag, zz->Communicator);
+        MPI_Send(&size_merged, 1, ZOLTAN_GNO_MPI_TYPE, proc, sizeTag, zz->Communicator);
         if (size_merged > 0){
-          MPI_Send(merged_egids, size_merged * lenGID, MPI_INT,
-                 proc, gidTag, zz->Communicator);
+          MPI_Send(merged_egids, size_merged * lenGID, ZOLTAN_ID_MPI_TYPE, proc, gidTag, zz->Communicator);
         }
       }
  
       else{
-        MPI_Recv(&numIds, 1, MPI_INT, proc, sizeTag, zz->Communicator, &stat);
+        MPI_Recv(&numIds, 1, ZOLTAN_GNO_MPI_TYPE, proc, sizeTag, zz->Communicator, &stat);
 
         if (numIds > 0){
 
@@ -700,16 +705,13 @@ MPI_Status stat;
             idbuf = ZOLTAN_REALLOC_GID_ARRAY(zz, idbuf, numIds);
             idbufSize = numIds;
           }
-          MPI_Recv(idbuf, numIds * lenGID, MPI_INT, 
-                   proc, gidTag, zz->Communicator, &stat);
+          MPI_Recv(idbuf, numIds * lenGID, ZOLTAN_ID_MPI_TYPE, proc, gidTag, zz->Communicator, &stat);
 
-          augment_search_structure(zz, ht, maxEdges,
-            merged_egids, size_merged, prev_size_merged);
+          augment_search_structure(zz, ht, maxEdges, merged_egids, size_merged, prev_size_merged);
 
           prev_size_merged = size_merged;
 
-          size_merged = merge_gids(zz, &merged_egids, size_merged,
-                         idbuf, numIds, ht, maxEdges);
+          size_merged = merge_gids(zz, &merged_egids, size_merged, idbuf, numIds, ht, maxEdges);
         }
       }
     }
@@ -737,13 +739,13 @@ MPI_Status stat;
     allEdges = size_merged;
   }
 
-  MPI_Bcast(&allEdges, 1, MPI_INT, 0, zz->Communicator);
+  MPI_Bcast(&allEdges, 1, ZOLTAN_GNO_MPI_TYPE, 0, zz->Communicator);
 
   return allEdges;
 }
 static int augment_search_structure(ZZ *zz, void *htptr,
-     int maxEdges, ZOLTAN_ID_PTR merged_egids, int size_merged, 
-     int prev_size_merged)
+     ZOLTAN_GNO_TYPE maxEdges, ZOLTAN_ID_PTR merged_egids, ZOLTAN_GNO_TYPE size_merged, 
+     ZOLTAN_GNO_TYPE prev_size_merged)
 {
 struct _gidht{
   int gidIdx;
@@ -751,7 +753,8 @@ struct _gidht{
 } *gidNode;
 struct _gidht **ht=NULL;
 int lenGID = zz->Num_GID;
-int i, j;
+int j;
+ZOLTAN_GNO_TYPE i;
 ZOLTAN_ID_PTR eptr;
 
   if (prev_size_merged == size_merged) return ZOLTAN_OK;
@@ -762,7 +765,7 @@ ZOLTAN_ID_PTR eptr;
 
   for (i=prev_size_merged; i<size_merged; i++){
 
-    j = Zoltan_Hash(eptr, lenGID, maxEdges);
+    j = Zoltan_Hash(eptr, lenGID, (int)maxEdges);
 
     gidNode = (struct _gidht *)ZOLTAN_MALLOC(sizeof(struct _gidht));
     gidNode->gidIdx = i;
@@ -775,15 +778,16 @@ ZOLTAN_ID_PTR eptr;
 
   return ZOLTAN_OK;
 }
-static int merge_gids(ZZ *zz, ZOLTAN_ID_PTR *merged_egids, int size_merged,
-           ZOLTAN_ID_PTR idbuf, int numIds, void *htptr, int htSize)
+static ZOLTAN_GNO_TYPE merge_gids(ZZ *zz, ZOLTAN_ID_PTR *merged_egids, ZOLTAN_GNO_TYPE size_merged,
+           ZOLTAN_ID_PTR idbuf, ZOLTAN_GNO_TYPE numIds, void *htptr, ZOLTAN_GNO_TYPE htSize)
 {
 struct _gidht{
   int gidIdx;
   struct _gidht *next;
 } *gidNode;
 struct _gidht **ht=NULL;
-int numMerged, i, j;
+ZOLTAN_GNO_TYPE numMerged, i;
+int j;
 int lenGID = zz->Num_GID;
 ZOLTAN_ID_PTR newIds, mergedPtr, inPtr;
 
@@ -801,7 +805,7 @@ ZOLTAN_ID_PTR newIds, mergedPtr, inPtr;
 
   for (i=0; i<numIds; i++){
 
-    j = Zoltan_Hash(inPtr, lenGID, htSize);
+    j = Zoltan_Hash(inPtr, lenGID, (int)htSize);
 
     gidNode = ht[j];
     while (gidNode){

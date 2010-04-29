@@ -76,6 +76,8 @@ int Zoltan_Order (
   ZOLTAN_ID_TYPE *local_rank = NULL;
   struct Zoltan_DD_Struct *dd = NULL;
 
+int i, j;
+
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   if (zz->Proc == zz->Debug_Proc && zz->Debug_Level >= ZOLTAN_DEBUG_PARAMS)
@@ -237,6 +239,19 @@ int Zoltan_Order (
 
   ierr = (*Order_fn)(zz, local_num_obj, local_gids, lids, local_rank, NULL, &opt);
   ZOLTAN_FREE(&lids);
+
+for (j=0; j < zz->Num_Proc; j++){
+  if (j == zz->Proc){
+    printf("Process %d ordering returns for %d ids:\n",j,local_num_obj);
+    for (i=0; i < local_num_obj; i++){
+      printf("gid %" ZOLTAN_ID_SPECIFIER " local rank %" ZOLTAN_ID_SPECIFIER "\n",local_gids[i],local_rank[i]);
+    }
+    fflush(stdout);
+  }
+  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(MPI_COMM_WORLD);
+}
 
   if (ierr) {
     sprintf(msg, "Ordering routine returned error code %d.", ierr);

@@ -252,6 +252,147 @@ int Zoltan_Third_Export_User(ZOLTAN_Output_Part *part,
   return (ZOLTAN_OK);
 }
 
+int Zoltan_matrix_Print(Zoltan_matrix *m, char *s)
+{
+int i, j, k;
+float *wgts;
+
+  if (s) fprintf(stderr,"Zoltan_matrix, %s\n",s);
+  fprintf(stderr,"\nOptions: enforceSquare %d, pinwgtop %s, randomize %d, pinwgt %d\n",
+     m->opts.enforceSquare,
+     ((m->opts.pinwgtop == 0) ? "add weight" : ((m->opts.pinwgtop == 1) ? "max weight" : "cmp weight")),
+     m->opts.randomize, m->opts.pinwgt);
+
+  fprintf(stderr,"Options: local %d, final_output %d, symmetrize %d keep_distribution %d speed %s\n",
+    m->opts.local, m->opts.final_output, m->opts.symmetrize, m->opts.keep_distribution,
+     ((m->opts.speed == 0) ? "full dd" : ((m->opts.speed == 1) ? "fast" : "no redist")));
+   
+  fprintf(stderr,"redist %d, completed %d, bipartite %d\n", m->redist, m->completed, m->bipartite);
+
+  fprintf(stderr,"globalX %zd, globalY %zd, nY %d, nY_ori %d, ywgtdim %d, nPins %d\n",
+                m->globalX, m->globalY, m->nY, m->nY_ori, m->ywgtdim, m->nPins);
+  fprintf(stderr,"Edges and non-zeroes:\n");
+  wgts = m->pinwgt;
+  if (m->yGNO && m->pinGNO){
+    for (i=0; i < m->nY; i++){
+      fprintf(stderr,"%zd: ",m->yGNO[i]);
+      for (j=m->ystart[i]; j < m->ystart[i+1]; j++){
+        fprintf(stderr,"%zd ", m->pinGNO[j]);
+        if (wgts && (m->pinwgtdim > 0)){
+          fprintf(stderr,"("); 
+          for (k=0; k < m->pinwgtdim; k++){
+            fprintf(stderr,"%f ",*wgts++);
+          }
+          fprintf(stderr,") "); 
+        }
+      }
+      fprintf(stderr,"\n");
+    }
+  }
+  else{
+    fprintf(stderr,"not set");
+  }
+  fprintf(stderr,"\n");
+  fflush(stderr);
+}
+
+int Zoltan_ZG_Print(ZZ *zz, ZG *gr, char *s)
+{
+int i, j, k, me, proc;
+me = zz->Proc;
+Zoltan_matrix_2d *m2d = &gr->mtx;
+Zoltan_matrix *m = &m2d->mtx;
+float *wgts;
+int nproc_x = m2d->comm->nProc_x;
+int nproc_y = m2d->comm->nProc_y;
+
+  for (proc=0; proc < zz->Num_Proc; proc++){
+    if (proc == me){
+      if (proc == 0) fprintf(stderr,"\n%s\n",s);
+      fprintf(stderr,"Process: %d) flags: bipartite %d fixObj %d, fixed vertices buffer %p:\n",
+               zz->Proc, gr->bipartite, gr->fixObj, gr->fixed_vertices);
+      fprintf(stderr,"hash function: %p (Distribute_Origin %p, Distribute_Linear %p)\n",
+             m2d->hashDistFct, &Zoltan_Distribute_Origin, &Zoltan_Distribute_Linear);
+      fprintf(stderr,"GNO distribution in x direction: ");
+      if (m2d->dist_x){
+        for (i=0; i <= nproc_x; i++){
+          fprintf(stderr,"%zd ",m2d->dist_x[i]);
+        }
+      }
+      else{
+        fprintf(stderr,"not set");
+      }
+      fprintf(stderr,"\nGNO distribution in y direction: ");
+      if (m2d->dist_y){
+        for (i=0; i <= nproc_y; i++){
+          fprintf(stderr,"%zd ",m2d->dist_y[i]);
+        }
+      }
+      else{
+        fprintf(stderr,"not set");
+      }
+
+      Zoltan_matrix_Print(m, NULL);
+  
+      fflush(stderr);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
+  }
+  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(MPI_COMM_WORLD);
+}
+int Zoltan_Third_Graph_Print(ZZ *zz, ZOLTAN_Third_Graph *gr, char *s)
+{
+int i, j, me, proc, numvtx, offset;
+me = zz->Proc;
+
+  for (proc=0; proc < zz->Num_Proc; proc++){
+    if (proc == me){
+      if (proc == 0) fprintf(stderr,"\n%s\n",s);
+      fprintf(stderr,"Process: %d) graph type %d, check graph %d, final output %d, showMoveVol %d, scatter %d\n",
+      me, gr->graph_type, gr->check_graph, gr->final_output, gr->showMoveVol, gr->scatter);
+      fprintf(stderr,"scatter min %d, get data %d, obj wgt dim %d, edge wgt dim %d\n",
+      gr->scatter_min, gr->get_data, gr->obj_wgt_dim, gr->edge_wgt_dim);
+      fprintf(stderr,"num obj %d, num obj orig %d, num edges %d\n",
+      gr->num_obj, gr->num_obj_orig, gr->num_edges);
+  
+      if (gr->vtxdist){
+        numvtx = gr->vtxdist[proc+1] - gr->vtxdist[proc];
+        offset = gr->vtxdist[proc];
+        fprintf(stderr,"Num vertices: %d\n",numvtx);
+        if (gr->xadj){
+          fprintf(stderr,"Num edges: %d\n",gr->xadj[numvtx]);
+        }
+
+        for (i=0; i < numvtx; i++){
+          fprintf(stderr,"%d: ",i+offset);
+          if (gr->xadj){
+            for (j=gr->xadj[i];j < gr->xadj[i+1]; j++){
+              if (gr->adjncy){
+                fprintf(stderr,"gid %d ",gr->adjncy[j]);
+              }
+              if (gr->adjproc){
+                fprintf(stderr,"proc %d ",gr->adjproc[j]);
+              }
+            }
+          }
+          else{
+            fprintf(stderr,"adjacency info is null");
+          }
+          fprintf(stderr,"\n");
+        }
+      }
+  
+      fflush(stderr);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+    MPI_Barrier(MPI_COMM_WORLD);
+  }
+  MPI_Barrier(MPI_COMM_WORLD);
+  MPI_Barrier(MPI_COMM_WORLD);
+}
+
 
 #ifdef __cplusplus
 }

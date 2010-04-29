@@ -202,9 +202,9 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local)
 }
 
 int
-Zoltan_ZG_Export (ZZ* zz, const ZG* const graph, int *gvtx, int *nvtx,
+Zoltan_ZG_Export (ZZ* zz, const ZG* const graph, ZOLTAN_GNO_TYPE *gvtx, int *nvtx,
 		  int *obj_wgt_dim, int *edge_wgt_dim,
-		  indextype **vtxdist, indextype **xadj, indextype **adjncy, int **adjproc,
+		  ZOLTAN_GNO_TYPE **vtxdist, int **xadj, ZOLTAN_GNO_TYPE **adjncy, int **adjproc,
 		  /* float **xwgt, */ float **ewgt, int **partialD2)
 {
   int ierr = ZOLTAN_OK;
@@ -216,15 +216,16 @@ Zoltan_ZG_Export (ZZ* zz, const ZG* const graph, int *gvtx, int *nvtx,
 
   AFFECT_NOT_NULL(gvtx, graph->mtx.mtx.globalY);
   AFFECT_NOT_NULL(nvtx, graph->mtx.mtx.nY);
-  AFFECT_NOT_NULL(vtxdist, (indextype *)graph->mtx.dist_y);
-  AFFECT_NOT_NULL(xadj, (indextype *)graph->mtx.mtx.ystart);
-  AFFECT_NOT_NULL(adjncy, (indextype *)graph->mtx.mtx.pinGNO);
-  AFFECT_NOT_NULL(partialD2, graph->fixed_vertices);
+  AFFECT_NOT_NULL(vtxdist, graph->mtx.dist_y);
+  AFFECT_NOT_NULL(xadj, graph->mtx.mtx.ystart); 
+  AFFECT_NOT_NULL(adjncy, graph->mtx.mtx.pinGNO);
+  AFFECT_NOT_NULL(partialD2, graph->fixed_vertices);    /* TODO64 fixed_vertices never set, OK? */
   /* I have to convert from float to int */
   AFFECT_NOT_NULL(obj_wgt_dim, graph->mtx.mtx.ywgtdim);
   AFFECT_NOT_NULL(edge_wgt_dim, graph->mtx.mtx.pinwgtdim);
 /*   AFFECT_NOT_NULL(xwgt, graph->mtx.mtx.ywgt); */
   AFFECT_NOT_NULL(ewgt, graph->mtx.mtx.pinwgt);
+
 
 /*   /\* TODO: convert wgt to int to be able to call Zoltan_Verify_Graph *\/ */
 /*   ierr = Zoltan_Verify_Graph(zz->Communicator, *vtxdist, *xadj, */

@@ -54,10 +54,14 @@ extern "C" {
 
 #undef ZOLTAN_ID_MPI_TYPE
 
+/* TODO64 - I think some things may break of ZOLTAN_ID_TYPE is smaller than int.  Need to
+ *   check this, and not allow short if that's the case.  (Like Zoltan_DD_*)
+ */
 #ifdef ZOLTAN_ID_TYPE_SHORT
 
 typedef short ZOLTAN_ID_TYPE;
 #define ZOLTAN_ID_MPI_TYPE  MPI_SHORT
+#define _mpi_id_datatype_name "MPI_SHORT"
 #define ZOLTAN_ID_SPECIFIER  "hd"
 #define ZOLTAN_ID_CONSTANT(z)  z
 
@@ -67,6 +71,7 @@ typedef short ZOLTAN_ID_TYPE;
 
 typedef int ZOLTAN_ID_TYPE;
 #define ZOLTAN_ID_MPI_TYPE  MPI_INT
+#define _mpi_id_datatype_name "MPI_INT"
 #define ZOLTAN_ID_SPECIFIER  "d"
 #define ZOLTAN_ID_CONSTANT(z)  z
 #endif
@@ -75,6 +80,7 @@ typedef int ZOLTAN_ID_TYPE;
 
 typedef long ZOLTAN_ID_TYPE;
 #define ZOLTAN_ID_MPI_TYPE  MPI_LONG
+#define _mpi_id_datatype_name "MPI_LONG"
 #define ZOLTAN_ID_SPECIFIER  "ld"
 #define ZOLTAN_ID_CONSTANT(z)  z ## L
 #endif
@@ -83,6 +89,7 @@ typedef long ZOLTAN_ID_TYPE;
 
 typedef long long ZOLTAN_ID_TYPE;
 #define ZOLTAN_ID_MPI_TYPE  MPI_LONG_LONG
+#define _mpi_id_datatype_name "MPI_LONG_LONG"
 #define ZOLTAN_ID_SPECIFIER  "Ld"
 #define ZOLTAN_ID_CONSTANT(z)  z ## LL
 #endif
@@ -91,6 +98,7 @@ typedef long long ZOLTAN_ID_TYPE;
 
 typedef unsigned short ZOLTAN_ID_TYPE;
 #define ZOLTAN_ID_MPI_TYPE  MPI_UNSIGNED_SHORT
+#define _mpi_id_datatype_name "MPI_UNSIGNED_SHORT"
 #define ZOLTAN_ID_SPECIFIER  "hu"
 #define ZOLTAN_ID_CONSTANT(z)  z
 #endif
@@ -99,6 +107,7 @@ typedef unsigned short ZOLTAN_ID_TYPE;
 
 typedef unsigned int ZOLTAN_ID_TYPE;
 #define ZOLTAN_ID_MPI_TYPE  MPI_UNSIGNED
+#define _mpi_id_datatype_name "MPI_UNSIGNED"
 #define ZOLTAN_ID_SPECIFIER  "u"
 #define ZOLTAN_ID_CONSTANT(z)  z ## U
 #endif
@@ -107,6 +116,7 @@ typedef unsigned int ZOLTAN_ID_TYPE;
 
 typedef unsigned long ZOLTAN_ID_TYPE;
 #define ZOLTAN_ID_MPI_TYPE  MPI_UNSIGNED_LONG
+#define _mpi_id_datatype_name "MPI_UNSIGNED_LONG"
 #define ZOLTAN_ID_SPECIFIER  "lu"
 #define ZOLTAN_ID_CONSTANT(z)  z ## UL
 #endif
@@ -115,6 +125,7 @@ typedef unsigned long ZOLTAN_ID_TYPE;
 
 typedef unsigned long long ZOLTAN_ID_TYPE;
 #define ZOLTAN_ID_MPI_TYPE  MPI_UNSIGNED_LONG_LONG
+#define _mpi_id_datatype_name "MPI_UNSIGNED_LONG_LONG"
 #define ZOLTAN_ID_SPECIFIER  "Lu"
 #define ZOLTAN_ID_CONSTANT(z)  z ## ULL
 #endif
@@ -123,6 +134,7 @@ typedef unsigned long long ZOLTAN_ID_TYPE;
 
 typedef unsigned int ZOLTAN_ID_TYPE;
 #define ZOLTAN_ID_MPI_TYPE  MPI_UNSIGNED
+#define _mpi_id_datatype_name "MPI_UNSIGNED"
 #define ZOLTAN_ID_SPECIFIER  "u"
 #define ZOLTAN_ID_CONSTANT(z)  z ## U
 
@@ -135,10 +147,13 @@ typedef ZOLTAN_ID_TYPE     *ZOLTAN_ID_PTR;
  */
 
 extern MPI_Datatype          _mpi_gno_datatype;
+extern char _mpi_gno_datatype_name[];
 
 #define ZOLTAN_GNO_MPI_TYPE  _mpi_gno_datatype
 
 #define ZOLTAN_GNO_TYPE      ssize_t
+
+#define ZOLTAN_GNO_SPECIFIER   "zd"
 
 /*****************************************************************************/
 /*

@@ -57,7 +57,7 @@ struct HierPartParamsStruct {
 					gids during hierarchical balancing */
   int allocsize_gids_of_interest;    /* size of gids_of_interest array */
   int num_gids_of_interest;          /* num gids in gids_of_interest */
-  ZOLTAN_ID_PTR gids_of_interest;    /* list of gids of interest, used
+  ZOLTAN_GNO_TYPE *gids_of_interest;    /* list of gids of interest, used
 					when looking up remote proc locations
 					for graph edge callbacks */
   int *gids_of_interest_procs;       /* list of procs where gids of interest
@@ -69,8 +69,9 @@ struct HierPartParamsStruct {
   int obj_wgt_dim, edge_wgt_dim;     /* object and edge weight dimensions */
   float *vwgt;                       /* vector of vertex weights */
   int *input_parts;                  /* Initial partitions for objects. */
-  indextype *vtxdist, *xadj;           /* intermediate graph structure storage */
-  ZOLTAN_ID_PTR adjncy;              /*    see Zoltan_Build_Graph */
+  ZOLTAN_GNO_TYPE *vtxdist;          /* intermediate graph structure storage */
+  int *xadj;                         /* intermediate graph structure storage */
+  ZOLTAN_GNO_TYPE *adjncy;              /*    see Zoltan_Build_Graph */
   float *ewgts;                      /* edge weights for intermediate struct */
   int *adjproc;                      /* adjacent proc for each edge */
   int ndims;                         /* number of dimensions for geom data */
@@ -79,7 +80,7 @@ struct HierPartParamsStruct {
   int num_migrated_in_gids;          /* number of gids migrated to this proc */
   int alloc_migrated_in_gids;        /* size of allocated array of migrated
 					in gids */
-  ZOLTAN_ID_PTR migrated_in_gids;    /* ordered array of gids migrated in */
+  ZOLTAN_GNO_TYPE *migrated_in_gids;    /* ordered array of gids migrated in */
   void **migrated_in_data;           /* data migrated in, parallel array to
 					migrated_in_gids */
 };

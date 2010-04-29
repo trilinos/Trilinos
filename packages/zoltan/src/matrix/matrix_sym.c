@@ -31,7 +31,7 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
   Zoltan_Arc *tr_tab = NULL;
   int i, j, cnt;
   ZOLTAN_ID_PTR yGID = NULL;
-  ZOLTAN_ID_TYPE *ypid=NULL;
+  ZOLTAN_ID_TYPE *ypid=NULL;   /* actually process rank - stored in ID_TYPE for DD */
   float *pinwgt=NULL;
   int * ybipart = NULL;
   int gno_size_for_dd;

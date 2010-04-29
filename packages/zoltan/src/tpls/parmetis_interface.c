@@ -60,6 +60,53 @@ int mylog2(int x)
   return (i-1);
 }
 
+static int _zoltan_warned = 0;
+
+static int *Zoltan_convert_for_tpl(ZZ *zz, ZOLTAN_GNO_TYPE *gnos, int len)
+{
+int i;
+int *tmp_int=NULL;
+ZOLTAN_GNO_TYPE tmp_gno;
+char *yo = "Zoltan_convert_for_tpl";
+char msg[256];
+
+  if (!len || (gnos == NULL)){
+    return NULL;
+  }
+
+  if (sizeof(ZOLTAN_GNO_TYPE) != sizeof(int)){
+    if (zz->Proc == zz->Debug_Proc && zz->Debug_Level >= ZOLTAN_DEBUG_PARAMS && !_zoltan_warned){
+      sprintf(msg, "Global numbers are being copied from %d byte integers to %d",
+                   sizeof(ZOLTAN_GNO_TYPE), sizeof(int));
+      ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
+      _zoltan_warned = 1;
+    }
+    tmp_int = (int *)ZOLTAN_MALLOC(sizeof(int) * len);  /* TODO64: int or indextype? */
+    if (!tmp_int){
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Out of memory in Zoltan_convert_for_tpl.");
+      return NULL;
+    }
+
+    for (i=0; i < len; i++){
+      tmp_int[i] = (int)gnos[i];
+
+/*    TODO64 - check for integer overflow - this doesn't work
+      This code caused "i" and "gno" to be corrupted...
+      tmp_gno = (ZOLTAN_GNO_TYPE)tmp_int[i];
+      if (tmp_gno != gnos[i]){ 
+        ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Integer truncation error");
+        return NULL;
+      }
+*/
+
+    }
+  }
+  else{
+    tmp_int = (int *)gnos;
+  }
+
+  return tmp_int;
+}
 
 int
 Zoltan_Parmetis_Parse(ZZ* zz, int *options, char* alg, float* itr, double *pmv3_itr, ZOLTAN_Output_Order*);
@@ -109,6 +156,8 @@ int Zoltan_ParMetis(
   int  options[MAX_OPTIONS];
   char alg[MAX_PARAM_STRING_LEN+1];
 
+  int *tmp_vtx=NULL, *tmp_nbor=NULL;
+
   int i;
   float *imb_tols;
   int  ncon;
@@ -118,6 +167,8 @@ int Zoltan_ParMetis(
   int num_part = zz->LB.Num_Global_Parts;/* passed to Jostle/ParMETIS. Don't */
   MPI_Comm comm = zz->Communicator;/* want to risk letting external packages */
                                    /* change our zz struct.                  */
+
+  _zoltan_warned = 0;
 
 #ifndef ZOLTAN_PARMETIS
   ZOLTAN_PRINT_ERROR(zz->Proc, yo,
@@ -266,19 +317,30 @@ int Zoltan_ParMetis(
 
   /* Now we can call ParMetis */
 
+  /* Zoltan_Third_Graph_Print(zz, &gr, "Before calling parmetis"); */
+
 #ifdef ZOLTAN_PARMETIS
   if (!IS_LOCAL_GRAPH(gr.graph_type)) { /* May be GLOBAL or NO GRAPH */
+
+    tmp_vtx = Zoltan_convert_for_tpl(zz, gr.vtxdist, zz->Num_Proc+1);
+    if (gr.adjncy){
+      tmp_nbor = Zoltan_convert_for_tpl(zz, gr.adjncy, gr.xadj[gr.num_obj]);
+    }
+    else{
+      tmp_nbor = NULL;
+    }
+    
     /* First check for ParMetis 3 routines */
     if (strcmp(alg, "PARTKWAY") == 0){
       ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library ParMETIS_V3_PartKway");
-      ParMETIS_V3_PartKway(gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt, gr.ewgts,
+      ParMETIS_V3_PartKway(tmp_vtx, gr.xadj, tmp_nbor, gr.vwgt, gr.ewgts,
 			   &wgtflag, &numflag, &ncon, &num_part, prt.part_sizes,
 			   imb_tols, options, &edgecut, prt.part, &comm);
       ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
     }
     else if (strcmp(alg, "PARTGEOMKWAY") == 0){
       ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library ParMETIS_V3_PartGeomKway");
-      ParMETIS_V3_PartGeomKway(gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt,gr.ewgts,
+      ParMETIS_V3_PartGeomKway(tmp_vtx, gr.xadj, tmp_nbor, gr.vwgt,gr.ewgts,
                                &wgtflag, &numflag, &geo->ndims, geo->xyz, &ncon,
                                &num_part, prt.part_sizes,
 			       imb_tols, options, &edgecut, prt.part, &comm);
@@ -286,12 +348,12 @@ int Zoltan_ParMetis(
     }
     else if (strcmp(alg, "PARTGEOM") == 0){
       ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library ParMETIS_V3_PartGeom");
-      ParMETIS_V3_PartGeom(gr.vtxdist, &geo->ndims, geo->xyz, prt.part, &comm);
+      ParMETIS_V3_PartGeom(tmp_vtx, &geo->ndims, geo->xyz, prt.part, &comm);
       ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
     }
     else if (strcmp(alg, "ADAPTIVEREPART") == 0){
       ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library ParMETIS_V3_AdaptiveRepart");
-      ParMETIS_V3_AdaptiveRepart(gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt,
+      ParMETIS_V3_AdaptiveRepart(tmp_vtx, gr.xadj, tmp_nbor, gr.vwgt,
                                  vsp.vsize, gr.ewgts, &wgtflag, &numflag, &ncon,
                                  &num_part, prt.part_sizes, imb_tols,
 				 &itr, options, &edgecut, prt.part, &comm);
@@ -299,7 +361,7 @@ int Zoltan_ParMetis(
     }
     else if (strcmp(alg, "REFINEKWAY") == 0){
       ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library ParMETIS_V3_RefineKway");
-      ParMETIS_V3_RefineKway(gr.vtxdist, gr.xadj, gr.adjncy, gr.vwgt, gr.ewgts,
+      ParMETIS_V3_RefineKway(tmp_vtx, gr.xadj, tmp_nbor, gr.vwgt, gr.ewgts,
 			     &wgtflag, &numflag, &ncon, &num_part,
                              prt.part_sizes, imb_tols,
 			     options, &edgecut, prt.part, &comm);
@@ -310,6 +372,13 @@ int Zoltan_ParMetis(
       char msg[256];
       sprintf(msg, "Unknown ParMetis algorithm %s.", alg);
       ZOLTAN_THIRD_ERROR(ZOLTAN_FATAL, msg);
+    }
+
+    if (tmp_nbor != (int *)gr.adjncy){
+      ZOLTAN_FREE(&tmp_nbor);
+    }
+    if (tmp_vtx != (int *)gr.vtxdist){
+      ZOLTAN_FREE(&tmp_vtx);
     }
   }
 #endif /* ZOLTAN_PARMETIS */
@@ -377,6 +446,7 @@ int Zoltan_Parmetis_Check_Error (ZZ *zz,
 				 ZOLTAN_Third_Graph *gr,
 				 ZOLTAN_Third_Part *prt)
 {
+ZOLTAN_GNO_TYPE tmp_gno;
 #if (PARMETIS_MAJOR_VERSION >= 3) && (PARMETIS_MINOR_VERSION == 0)
   /* Special error checks to avoid incorrect results from ParMetis 3.0.
    * ParMETIS 3.0 Partkway ignores partition sizes for problems with
@@ -384,8 +454,9 @@ int Zoltan_Parmetis_Check_Error (ZZ *zz,
    */
   if (!strcmp(alg, "PARTKWAY") && !(zz->LB.Uniform_Parts)
       && (zz->Obj_Weight_Dim <= 1)) {
-    int gsum;
-    MPI_Allreduce(&gr->num_obj, &gsum, 1, MPI_INT, MPI_SUM, comm);
+    ZOLTAN_GNO_TYPE gsum;
+    tmp_gno = (ZOLTAN_GNO_TYPE)gr->num_obj;
+    MPI_Allreduce(&tmp_gno, &gsum, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, comm);
     if (gsum < 10000) {
       char str[256];
       sprintf(str, "Total objects %d < 10000 causes ParMETIS 3.0 PARTKWAY "
@@ -560,6 +631,7 @@ int Zoltan_ParMetis_Order(
 {
   static char *yo = "Zoltan_ParMetis_Order";
   int i, n, ierr;
+  int *tmp_vtx = NULL, *tmp_nbor = NULL;
   ZOLTAN_Output_Order ord;
   ZOLTAN_Third_Graph gr;
 
@@ -577,10 +649,9 @@ int Zoltan_ParMetis_Order(
   int  options[MAX_OPTIONS];
   char alg[MAX_PARAM_STRING_LEN+1];
 
-
-
-
   ZOLTAN_TRACE_ENTER(zz, yo);
+
+  _zoltan_warned = 0;
 
   memset(&gr, 0, sizeof(ZOLTAN_Third_Graph));
   memset(&ord, 0, sizeof(ZOLTAN_Output_Order));
@@ -690,9 +761,25 @@ int Zoltan_ParMetis_Order(
 #ifdef ZOLTAN_PARMETIS
   if (IS_GLOBAL_GRAPH(gr.graph_type)){
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the ParMETIS 3 library");
-    ParMETIS_V3_NodeND (gr.vtxdist, gr.xadj, gr.adjncy,
+
+    tmp_vtx = Zoltan_convert_for_tpl(zz, gr.vtxdist, zz->Num_Proc+1);
+    if (gr.adjncy){
+      tmp_nbor = Zoltan_convert_for_tpl(zz, gr.adjncy, gr.xadj[gr.num_obj]);
+    }
+    else{
+      tmp_nbor = NULL;
+    }
+
+    ParMETIS_V3_NodeND (tmp_vtx, gr.xadj, tmp_nbor, 
 			&numflag, options, ord.rank, ord.sep_sizes, &comm);
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the ParMETIS library");
+
+    if (tmp_nbor != (int *)gr.adjncy){
+      ZOLTAN_FREE(&tmp_nbor);
+    }
+    if (tmp_vtx != (int *)gr.vtxdist){
+      ZOLTAN_FREE(&tmp_vtx);
+    }
   }
   else
 #endif /* ZOLTAN_PARMETIS */
@@ -701,9 +788,21 @@ int Zoltan_ParMetis_Order(
     ZOLTAN_TRACE_DETAIL(zz, yo, "Calling the METIS library");
     options[0] = 0;  /* Use default options for METIS. */
     order_opt->return_args = RETURN_RANK|RETURN_IPERM; /* We provide directly all the permutations */
-    METIS_NodeND (&gr.num_obj, gr.xadj, gr.adjncy,
-		  &numflag, options, ord.iperm, ord.rank);
+
+    if (gr.adjncy){
+      tmp_nbor = Zoltan_convert_for_tpl(zz, gr.adjncy, gr.xadj[gr.num_obj]);
+    }
+    else{
+      tmp_nbor = NULL;
+    }
+
+    METIS_NodeND (&gr.num_obj, gr.xadj, tmp_nbor, &numflag, options, ord.iperm, ord.rank);
+
     ZOLTAN_TRACE_DETAIL(zz, yo, "Returned from the METIS library");
+
+    if (tmp_nbor != (int *)gr.adjncy){
+      ZOLTAN_FREE(&tmp_nbor);
+    }
   }
 #endif /* ZOLTAN_METIS */
 
@@ -775,14 +874,13 @@ int Zoltan_ParMetis_Order(
   }
 
   /* Correct because no redistribution */
-  memcpy(gids, l_gids, n*zz->Num_GID*sizeof(int));
-  memcpy(lids, l_lids, n*zz->Num_GID*sizeof(int));
+  memcpy(gids, l_gids, n*zz->Num_GID*sizeof(ZOLTAN_ID_TYPE));
+  memcpy(lids, l_lids, n*zz->Num_LID*sizeof(ZOLTAN_ID_TYPE));
 
   ierr = Zoltan_Postprocess_Graph (zz, l_gids, l_lids, &gr, NULL, NULL, NULL, &ord, NULL);
 
   ZOLTAN_FREE(&l_gids);
   ZOLTAN_FREE(&l_lids);
-
 
   /* Get a time here */
   if (get_times) times[3] = Zoltan_Time(zz->Timer);

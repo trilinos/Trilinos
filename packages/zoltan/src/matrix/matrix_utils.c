@@ -105,7 +105,7 @@ Zoltan_Matrix_Complete(ZZ* zz,Zoltan_matrix* m)
       if (m->ystart[y] == m->yend[y-1]) /* No hole */
 	continue;
       length = m->yend[y]-m->ystart[y];
-      memcpy(m->pinGNO+m->yend[y-1], m->pinGNO+m->ystart[y], length*sizeof(int));
+      memcpy(m->pinGNO+m->yend[y-1], m->pinGNO+m->ystart[y], length*sizeof(ZOLTAN_GNO_TYPE));
       memcpy(m->pinwgt+m->yend[y-1]*m->pinwgtdim,
 	     m->pinGNO+m->ystart[y]*m->pinwgtdim, length*sizeof(float)*m->pinwgtdim);
       m->ystart[y] = m->yend[y-1];

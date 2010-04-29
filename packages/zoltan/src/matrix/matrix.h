@@ -75,7 +75,7 @@ typedef struct Zoltan_matrix_ {
   ZOLTAN_GNO_TYPE globalY;       /* Overall number on Y dimension */
   int           nY;            /* Local number in Y dimension */
   int           nY_ori;        /* nY in the initial (user ?) distribution */
-  int           ywgtdim;       /* Wgt dimensions for Y */
+  int           ywgtdim;       /* Wgt dimensions for Y  TODO: where are the weights*/
   int           nPins;         /* Local number of Pins */
   int           pinwgtdim;     /* Wgt dimensions for pins */
   ZOLTAN_GNO_TYPE  *yGNO;       /* Local edges gnos */

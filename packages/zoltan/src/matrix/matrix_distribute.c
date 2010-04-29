@@ -189,6 +189,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   int nProc;
   ZOLTAN_GNO_TYPE *yGNO = NULL;
   ZOLTAN_GNO_TYPE *pinGNO = NULL;
+  ZOLTAN_GNO_TYPE tmp_gno;
   void *partdata = NULL;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
@@ -213,9 +214,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   myProc_x = outmat->comm->myProc_x;
   myProc_y = outmat->comm->myProc_y;
 
-
   ierr = Zoltan_Matrix_Remove_Duplicates(zz, outmat->mtx, &outmat->mtx);
-
 
   if (outmat->hashDistFct == (distFnct *)&Zoltan_Distribute_Origin) {
     /* I need to know the original distribution */
@@ -312,8 +311,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   if (outmat->mtx.nPins && nonzeros == NULL) MEMORY_ERROR;
 
   msg_tag--;
-  Zoltan_Comm_Do(plan, msg_tag, (char *) sendbuf, sizeof(Zoltan_Arc),
-		 (char *) nonzeros);
+  Zoltan_Comm_Do(plan, msg_tag, (char *) sendbuf, sizeof(Zoltan_Arc), (char *) nonzeros);
   ZOLTAN_FREE(&sendbuf);
 
   if (outmat->mtx.pinwgtdim) { /* We have to take care about weights */
@@ -329,7 +327,6 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
 
   /* Unpack the non-zeros received. */
 
-
   /* TODO: do take care about singletons */
   Zoltan_Matrix_Remove_DupArcs(zz, outmat->mtx.nPins, (Zoltan_Arc*)nonzeros, tmpwgtarray,
 			       &outmat->mtx);
@@ -340,9 +337,8 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
   if (outmat->dist_y == NULL || outmat->dist_x == NULL) MEMORY_ERROR;
 
   /* FIXME: Work only in 1D */
-  MPI_Allgather(&outmat->mtx.nY, 1, MPI_INT,
-		outmat->dist_y+1, 1, MPI_INT,
-		communicator);
+  tmp_gno = (ZOLTAN_GNO_TYPE)outmat->mtx.nY;
+  MPI_Allgather(&tmp_gno, 1, ZOLTAN_GNO_MPI_TYPE, outmat->dist_y+1, 1, ZOLTAN_GNO_MPI_TYPE, communicator);
   for (i = 1 ; i <= nProc_y ; i ++) {
     outmat->dist_y[i] += outmat->dist_y[i-1];
   }
@@ -350,8 +346,9 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
 
   perm_y = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(outmat->mtx.nY * sizeof(ZOLTAN_GNO_TYPE));
   if (outmat->mtx.nY > 0 && perm_y == NULL) MEMORY_ERROR;
-  for (i = 0 ; i < outmat->mtx.nY ; ++i)
+  for (i = 0 ; i < outmat->mtx.nY ; ++i){
     perm_y[i] = i + outmat->dist_y[myProc_y];
+  }
 
   Zoltan_Matrix_Permute(zz, &outmat->mtx, perm_y);
 

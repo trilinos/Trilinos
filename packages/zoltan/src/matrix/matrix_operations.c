@@ -98,8 +98,8 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   int i;
   ZOLTAN_MAP *nnz_map=NULL, *y_map = NULL;
   int *ysize = NULL;
-  int *ptrGNO;
-  int *tabGNO;
+  ZOLTAN_GNO_TYPE *ptrGNO;
+  ZOLTAN_GNO_TYPE *tabGNO;
   int *perm;
   int *iperm;
   intptr_t indexptr ;        /* for typecasting integers, not a "true" pointer */
@@ -478,7 +478,7 @@ Zoltan_Matrix_Delete_nnz(ZZ* zz, Zoltan_matrix* m,
       else lenght = m->yend[y];
 
       lenght -= nnz[i]+1; /* We remove at least nnz[i] */
-      memmove(m->pinGNO+nnz[i], m->pinGNO+nnz[i]+1, lenght*sizeof(int));
+      memmove(m->pinGNO+nnz[i], m->pinGNO+nnz[i]+1, lenght*sizeof(ZOLTAN_GNO_TYPE));
       memmove(m->pinwgt+nnz[i]*m->pinwgtdim, m->pinwgt+(nnz[i]+1)*m->pinwgtdim,
 	     lenght*sizeof(float)*m->pinwgtdim);
       n_removed ++;
@@ -558,6 +558,7 @@ Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, ZOLTAN_GNO_TYPE * perm_y)
   }
 
   Zoltan_DD_Update (m->ddY, (ZOLTAN_ID_PTR)perm_y, yGID, tmpgid, ybipart, m->nY);
+
   ZOLTAN_FREE (&yGID);
   ZOLTAN_FREE (&ypid);
   ZOLTAN_FREE (&ybipart);
@@ -570,6 +571,7 @@ Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, ZOLTAN_GNO_TYPE * perm_y)
 
   Zoltan_DD_Update (dd, (ZOLTAN_ID_PTR)m->yGNO, (ZOLTAN_ID_PTR)perm_y, NULL, NULL, m->nY);
   memcpy (m->yGNO, perm_y, m->nY*sizeof(ZOLTAN_GNO_TYPE));
+
 
   pinGNO = (ZOLTAN_GNO_TYPE*)ZOLTAN_MALLOC(m->nPins*sizeof(ZOLTAN_GNO_TYPE));
   if (m->nPins && pinGNO == NULL)

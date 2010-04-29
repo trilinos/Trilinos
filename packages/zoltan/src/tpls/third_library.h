@@ -47,12 +47,12 @@ typedef struct ZOLTAN_Third_Graph_ {
   int get_data;                         /* Construct edge datas */
   int obj_wgt_dim;                      /* Number of weights by vertex */
   int edge_wgt_dim;                     /* Number of weights by edge */
-  int num_obj;                          /* Number of vertices */
-  int num_obj_orig;                     /* Number of vertices in original graph */
-  int num_edges;                        /* Number of edges */
-  indextype * vtxdist;                  /* How vertices are distributed */
-  indextype * xadj;                     /* Indexes on adjency array */
-  indextype * adjncy;                   /* adjency array (CSR) */
+  int num_obj;                          /* Local number of vertices */
+  int num_obj_orig;                     /* Local number of vertices in original graph */
+  int num_edges;                        /* Local number of edges */
+  ZOLTAN_GNO_TYPE *vtxdist;             /* How vertices are distributed */
+  int * xadj;                           /* Indexes on adjency array */
+  ZOLTAN_GNO_TYPE *adjncy;              /* adjency array (CSR) */
   weighttype * vwgt;                    /* Array of vertex weights */
   weighttype * ewgts;                   /* Array of edge weights */
   float * float_ewgts;
@@ -66,6 +66,11 @@ typedef struct ZOLTAN_Third_Geom_ {
   int ndims;                            /* Number of dimensions */
   float *xyz;                           /* Coordinates */
 } ZOLTAN_Third_Geom;
+
+/* TODO64 - do we want to continue to use indextype and weighttype?  Do the differ in
+ * the different third party libraries?  The code that uses input_part, etc assumes
+ * it is the same size as an int.
+ */
 
 /* Structure that defines a partition for third party libraries like ParMetis. */
 typedef struct ZOLTAN_Third_Part_ {
@@ -167,6 +172,10 @@ Zoltan_Postprocess_FinalOutput (ZZ* zz, ZOLTAN_Third_Graph *gr,
 				ZOLTAN_Third_Part *prt, ZOLTAN_Third_Vsize *vsp,
 				int use_timers, double itr);
 
+
+int Zoltan_matrix_Print(Zoltan_matrix *m, char *s);
+int Zoltan_Third_Graph_Print(ZZ *zz, ZOLTAN_Third_Graph *gr, char *s);
+int Zoltan_ZG_Print(ZZ *zz, ZG *gr, char *s);
 
 
 #ifdef __cplusplus

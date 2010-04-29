@@ -75,7 +75,7 @@ static int scale_round_weights(float *fwgts, weighttype *iwgts, int n, int dim,
 
 
 static int
-give_proc (indextype vertex, const indextype *vtxdist, int numProc, int *myproc);
+give_proc (ZOLTAN_GNO_TYPE vertex, const ZOLTAN_GNO_TYPE *vtxdist, int numProc, int *myproc);
 
 /**
  *  This function fills data structures in order to call a third party
@@ -93,6 +93,7 @@ int Zoltan_Preprocess_Graph(
 )
 {
   static char *yo = "Zoltan_Preprocess_Graph";
+  ZOLTAN_GNO_TYPE tmp_gno;
 
   int ierr;
   float *float_vwgt=NULL, *float_ewgts=NULL;
@@ -108,7 +109,8 @@ int Zoltan_Preprocess_Graph(
   /* Initialize all local pointers to NULL. This is necessary
    * because we free all non-NULL pointers upon errors.
    */
-  gr->vtxdist = gr->xadj = gr->adjncy = NULL;
+  gr->xadj = NULL;
+  gr->vtxdist = gr->adjncy = NULL;
   gr->vwgt = gr->ewgts = NULL;
   float_vwgt = float_ewgts = NULL;
 
@@ -173,10 +175,12 @@ int Zoltan_Preprocess_Graph(
 
     ierr = Zoltan_ZG_Build (zz, graph, local); /* Normal graph */
     CHECK_IERR;
+
     ierr = Zoltan_ZG_Export (zz, graph,
-			     &gr->num_obj, &gr->num_obj, &gr->obj_wgt_dim, &gr->edge_wgt_dim,
+			     &tmp_gno, &gr->num_obj, &gr->obj_wgt_dim, &gr->edge_wgt_dim,
 			     &gr->vtxdist, &gr->xadj, &gr->adjncy, &gr->adjproc,
 			     &float_ewgts, NULL);
+
     /* Find info about the graph according to the distribution */
 
     if (sizeof(int) != sizeof(indextype)){
@@ -215,12 +219,13 @@ int Zoltan_Preprocess_Graph(
     }
 
     /* No graph but still needs vtxdist*/
-    gr->vtxdist = (indextype*) ZOLTAN_MALLOC ((zz->Num_Proc+1)*sizeof(indextype));
+    gr->vtxdist = (ZOLTAN_GNO_TYPE*) ZOLTAN_MALLOC ((zz->Num_Proc+1)*sizeof(ZOLTAN_GNO_TYPE));
     if (gr->vtxdist == NULL)
       ZOLTAN_PARMETIS_ERROR(ZOLTAN_MEMERR, "Out of memory.");
 
     gr->vtxdist[0] = 0;
-    MPI_Allgather(&gr->num_obj, 1, MPI_INT, gr->vtxdist+1, 1, MPI_INT, zz->Communicator);
+    tmp_gno = (ZOLTAN_GNO_TYPE)gr->num_obj;
+    MPI_Allgather(&tmp_gno, 1, ZOLTAN_GNO_MPI_TYPE, gr->vtxdist+1, 1, ZOLTAN_GNO_MPI_TYPE, zz->Communicator);
     for (i=1 ; i <= zz->Num_Proc ; ++i) {
       gr->vtxdist[i] += gr->vtxdist[i-1];
     }
@@ -334,7 +339,6 @@ int Zoltan_Preprocess_Graph(
 
     ierr = Zoltan_Verify_Graph(zz->Communicator, gr->vtxdist, gr->xadj, gr->adjncy, gr->vwgt,
 	      gr->ewgts, gr->obj_wgt_dim, gr->edge_wgt_dim, gr->graph_type, gr->check_graph, flag);
-
   }
 
  End:
@@ -795,7 +799,7 @@ void Zoltan_Third_DisplayTime(ZZ* zz, double* times)
 }
 
 static int
-give_proc (indextype vertex, const indextype *vtxdist, int numProc, int *myproc)
+give_proc (ZOLTAN_GNO_TYPE vertex, const ZOLTAN_GNO_TYPE *vtxdist, int numProc, int *myproc)
 {
   int currentproc;
 
@@ -805,7 +809,7 @@ give_proc (indextype vertex, const indextype *vtxdist, int numProc, int *myproc)
     return (*myproc);
   }
 
-  currentproc = vertex / (vtxdist[1]-vtxdist[0]);  /* Assume that vertices are balanced */
+  currentproc = (int)(vertex / (vtxdist[1]-vtxdist[0]));  /* Assume that vertices are balanced */
 
   if (currentproc >= numProc)
     currentproc = numProc - 1;
