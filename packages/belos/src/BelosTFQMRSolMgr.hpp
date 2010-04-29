@@ -287,7 +287,7 @@ namespace Belos {
 
 // Default solver values.
 template<class ScalarType, class MV, class OP>
-const typename Teuchos::ScalarTraits<ScalarType>::magnitudeType TFQMRSolMgr<ScalarType,MV,OP>::convtol_default_ = 1e-8;
+const typename TFQMRSolMgr<ScalarType,MV,OP>::MagnitudeType TFQMRSolMgr<ScalarType,MV,OP>::convtol_default_ = 1e-8;
 
 template<class ScalarType, class MV, class OP>
 const int TFQMRSolMgr<ScalarType,MV,OP>::maxIters_default_ = 1000;

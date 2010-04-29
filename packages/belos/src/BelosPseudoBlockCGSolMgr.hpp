@@ -281,7 +281,7 @@ namespace Belos {
   
 // Default solver values.
 template<class ScalarType, class MV, class OP>
-const typename Teuchos::ScalarTraits<ScalarType>::magnitudeType PseudoBlockCGSolMgr<ScalarType,MV,OP>::convtol_default_ = 1e-8;
+const typename PseudoBlockCGSolMgr<ScalarType,MV,OP>::MagnitudeType PseudoBlockCGSolMgr<ScalarType,MV,OP>::convtol_default_ = 1e-8;
 
 template<class ScalarType, class MV, class OP>
 const int PseudoBlockCGSolMgr<ScalarType,MV,OP>::maxIters_default_ = 1000;
