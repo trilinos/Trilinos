@@ -22,6 +22,7 @@ INCLUDE(AddOptionAndDefine)
 #     [ENABLE_SHADOWING_WARNINGS]
 #     [DISABLE_STRONG_WARNINGS]
 #     [CLEANED]
+#     [DISABLE_CIRCULAR_REF_DETECTION_FAILURE]
 #     )
 #
 # The arguments are:
@@ -48,6 +49,13 @@ INCLUDE(AddOptionAndDefine)
 #     If specified, then warnings will be promoted to errors for all defined
 #     warnings.
 #
+#   DISABLE_CIRCULAR_REF_DETECTION_FAILURE
+#
+#     If specified, then the standard grep looking for RCPNode circular
+#     references that causes tests to fail will be disabled.  Note that if
+#     these warnings are being produced then it means that the test is leaking
+#     memory and user like may also be leaking memory.
+#
 
 MACRO(PACKAGE PACKAGE_NAME_IN)
 
@@ -65,7 +73,7 @@ MACRO(PACKAGE PACKAGE_NAME_IN)
     #lists
     ""
     #options
-    "CLEANED;ENABLE_SHADOWING_WARNINGS;DISABLE_STRONG_WARNINGS"
+    "CLEANED;ENABLE_SHADOWING_WARNINGS;DISABLE_STRONG_WARNINGS;DISABLE_CIRCULAR_REF_DETECTION_FAILURE"
     ${ARGN}
     )
 
@@ -109,8 +117,6 @@ MACRO(PACKAGE PACKAGE_NAME_IN)
 
   # Set up strong warning flags
 
-  
-
   IF (NOT PARSE_DISABLE_STRONG_WARNINGS)
     PACKAGE_ARCH_SETUP_STRONG_COMPILE_WARNINGS(${PARSE_ENABLE_SHADOWING_WARNINGS})
   ENDIF()
@@ -141,6 +147,14 @@ MACRO(PACKAGE PACKAGE_NAME_IN)
       MESSAGE(STATUS "Setting up for C++ warnings as errors just in this package ...")
       PRINT_VAR(CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE})
     ENDIF()
+  ENDIF()
+
+  # Set up circular reference detection test failure
+
+  IF (PARSE_DISABLE_CIRCULAR_REF_DETECTION_FAILURE)
+    SET(${PACKAGE_NAME}_ENABLE_CIRCULAR_REF_DETECTION_FAILURE OFF)
+  ELSE()
+    SET(${PACKAGE_NAME}_ENABLE_CIRCULAR_REF_DETECTION_FAILURE ON)
   ENDIF()
 
   #
