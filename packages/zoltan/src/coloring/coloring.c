@@ -130,6 +130,14 @@ static void PrintGraph(ZZ *zz, char *name, int base, int nvtx, int *xadj, int *a
 /*****************************************************************************/
 /* Interface routine for Graph Coloring */
 
+/* TODO64: Zoltan_Color has not been modified to work with the Zoltan_ZG_Export interface
+ * and with the ZOLTAN_GNO_TYPE data type.  Some difficulties: It looks like the hash
+ * table length is equal to the number of vertices in the graph.  It looks like the
+ * adjncy value (a neighbor global number) is an index into the xadj array (which is
+ * usually indexing in to the adjncy array of global numbers).  So this code needs
+ * to be looked at much more carefully before it can be changed to use ZOLTAN_GNO_TYPEs.
+ */
+
 int Zoltan_Color(
     ZZ *zz,                   /* Zoltan structure */
     int num_gid_entries,     /* # of entries for a global id */
@@ -178,6 +186,11 @@ int Zoltan_Color(
   MPI_Barrier(zz->Communicator);
   times[0] = Zoltan_Time(zz->Timer);
 #endif
+
+  if ((sizeof(ZOLTAN_GNO_TYPE) != sizeof(int)) ||
+      (sizeof(ZOLTAN_ID_TYPE) != sizeof(int))    ){    /* TODO64 */
+    ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Zoltan_Color is not ready for ints of more than one size");
+  }
   
   /* PARAMETER SETTINGS */
 
