@@ -291,10 +291,10 @@ namespace Belos {
 
 // Default solver values.
 template<class ScalarType, class MV, class OP>
-const typename Teuchos::ScalarTraits<ScalarType>::magnitudeType BlockCGSolMgr<ScalarType,MV,OP>::convtol_default_ = 1e-8;
+const typename BlockCGSolMgr<ScalarType,MV,OP>::MagnitudeType BlockCGSolMgr<ScalarType,MV,OP>::convtol_default_ = 1e-8;
 
 template<class ScalarType, class MV, class OP>
-const typename Teuchos::ScalarTraits<ScalarType>::magnitudeType BlockCGSolMgr<ScalarType,MV,OP>::orthoKappa_default_ = -1.0;
+const typename BlockCGSolMgr<ScalarType,MV,OP>::MagnitudeType BlockCGSolMgr<ScalarType,MV,OP>::orthoKappa_default_ = -1.0;
 
 template<class ScalarType, class MV, class OP>
 const int BlockCGSolMgr<ScalarType,MV,OP>::maxIters_default_ = 1000;

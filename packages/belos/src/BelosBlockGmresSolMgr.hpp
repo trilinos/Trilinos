@@ -312,10 +312,10 @@ private:
 
 // Default solver values.
 template<class ScalarType, class MV, class OP>
-const typename Teuchos::ScalarTraits<ScalarType>::magnitudeType BlockGmresSolMgr<ScalarType,MV,OP>::convtol_default_ = 1e-8;
+const typename BlockGmresSolMgr<ScalarType,MV,OP>::MagnitudeType BlockGmresSolMgr<ScalarType,MV,OP>::convtol_default_ = 1e-8;
 
 template<class ScalarType, class MV, class OP>
-const typename Teuchos::ScalarTraits<ScalarType>::magnitudeType BlockGmresSolMgr<ScalarType,MV,OP>::orthoKappa_default_ = -1.0;
+const typename BlockGmresSolMgr<ScalarType,MV,OP>::MagnitudeType BlockGmresSolMgr<ScalarType,MV,OP>::orthoKappa_default_ = -1.0;
 
 template<class ScalarType, class MV, class OP>
 const int BlockGmresSolMgr<ScalarType,MV,OP>::maxRestarts_default_ = 20;

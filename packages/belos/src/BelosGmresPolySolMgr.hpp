@@ -330,13 +330,13 @@ private:
 
 // Default solver values.
 template<class ScalarType, class MV, class OP>
-const typename Teuchos::ScalarTraits<ScalarType>::magnitudeType GmresPolySolMgr<ScalarType,MV,OP>::polytol_default_ = 1e-12;
+const typename GmresPolySolMgr<ScalarType,MV,OP>::MagnitudeType GmresPolySolMgr<ScalarType,MV,OP>::polytol_default_ = 1e-12;
 
 template<class ScalarType, class MV, class OP>
-const typename Teuchos::ScalarTraits<ScalarType>::magnitudeType GmresPolySolMgr<ScalarType,MV,OP>::convtol_default_ = 1e-8;
+const typename GmresPolySolMgr<ScalarType,MV,OP>::MagnitudeType GmresPolySolMgr<ScalarType,MV,OP>::convtol_default_ = 1e-8;
 
 template<class ScalarType, class MV, class OP>
-const typename Teuchos::ScalarTraits<ScalarType>::magnitudeType GmresPolySolMgr<ScalarType,MV,OP>::orthoKappa_default_ = -1.0;
+const typename GmresPolySolMgr<ScalarType,MV,OP>::MagnitudeType GmresPolySolMgr<ScalarType,MV,OP>::orthoKappa_default_ = -1.0;
 
 template<class ScalarType, class MV, class OP>
 const int GmresPolySolMgr<ScalarType,MV,OP>::maxDegree_default_ = 25;

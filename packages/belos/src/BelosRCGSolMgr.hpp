@@ -362,7 +362,7 @@ namespace Belos {
 
 // Default solver values.
 template<class ScalarType, class MV, class OP>
-const typename Teuchos::ScalarTraits<ScalarType>::magnitudeType RCGSolMgr<ScalarType,MV,OP>::convtol_default_ = 1e-8;
+const typename RCGSolMgr<ScalarType,MV,OP>::MagnitudeType RCGSolMgr<ScalarType,MV,OP>::convtol_default_ = 1e-8;
 
 template<class ScalarType, class MV, class OP>
 const int RCGSolMgr<ScalarType,MV,OP>::maxIters_default_ = 1000;
