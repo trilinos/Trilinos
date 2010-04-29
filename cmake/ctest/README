@@ -22,7 +22,7 @@ and checkout whatever branch you will be testing.
   $ cd ~    # cd \" on Windows
   $ mkdir T
   $ cd T
-  $ git clone software.sandia.gov:/space/git/Trilinos
+  $ git clone software.sandia.gov:/space/git/nightly/Trilinos
 
 See the Trilinos developers website for instructions on how to set up ssh so
 that the git clone call works using just software.sandia.gov without a user
@@ -129,3 +129,20 @@ MM HH * * * bash ~/T/Trilinos/cmake/ctest/drivers/MACHINE_NAME/cron_driver.sh ||
 
 Use a value for MM and HH that is in the very near future and then let the
 script run from the cron job.
+
+
+F) Commit changes to the driver scripts:
+========================================
+
+You must commit and push changes in Trilinos/cmake/ctest/drivers into the main
+Trilinos git repository.  To do this, do:
+
+  $ cd $DASHBOARD_BASE_DIR/Trilinos
+  $ eg remote add trilinos software:/space/git/Trilinos
+  $ eg pull trilinos
+  $ eg commit
+  $ eg rebase --against trilinos/origin
+  $ eg push
+
+Hopefully, that should push you changes back and you should be ready to let
+the cron job run on its own every day.
