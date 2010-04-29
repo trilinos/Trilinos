@@ -24,8 +24,9 @@ Teuchos::RCP<Epetra_LinearProblem> build_problem_mm(Teuchos::ParameterList& test
 
   Epetra_MultiVector* x = new Epetra_MultiVector(rowmap, 1);
   if (b == NULL) {
+std::cout << "creating b = A*random" << std::endl;
     b = new Epetra_MultiVector(rowmap, 1);
-    x->PutScalar(1);
+    x->Random();
 
     A->Apply(*x, *b);
   }
@@ -44,7 +45,7 @@ build_problem(Teuchos::ParameterList& test_params,
   timer.start();
 
   Epetra_CrsMatrix* A;
-  Epetra_MultiVector* b = NULL;
+  Epetra_Vector* b = NULL;
 
   std::string mm_file("not specified");
   std::string rhs_mm_file("not specified");
@@ -66,8 +67,7 @@ build_problem(Teuchos::ParameterList& test_params,
     }
   }
   else if (hb_file != "not specified") {
-    throw std::runtime_error("Harwell-Boeing not yet supported by test driver.");
-    std::cout << "Harwell-Boeing file: " << hb_file << std::endl;
+    read_matrix_hb(hb_file, comm, A, b);
   }
   else {
     throw std::runtime_error("No matrix file specified.");

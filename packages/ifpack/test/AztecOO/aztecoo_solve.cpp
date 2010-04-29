@@ -133,7 +133,8 @@ int main(int argc, char*argv[])
   if (test_params.isParameter("expectNumIters")) {
     int expected_iters = 0;
     helper::GetParameter(test_params, "expectNumIters", expected_iters);
-    if (ret == 0 && actual_iters == expected_iters && norm < 1.e-7) {
+    double eps = 2.e-6;
+    if (ret == 0 && actual_iters <= expected_iters && norm < eps) {
       if (Comm.MyPID() == 0) {
         std::cout << "End Result: TEST PASSED" << std::endl;
       }
@@ -141,8 +142,8 @@ int main(int argc, char*argv[])
     else {
       if (Comm.MyPID() == 0) {
         std::cout << "Actual iters("<<actual_iters
-           <<") != expected number of iterations ("
-              <<expected_iters<<"), or resid-norm(" << norm << ") >= 1.e-7"<<std::endl;
+           <<") > expected number of iterations ("
+              <<expected_iters<<"), or resid-norm(" << norm << ") >= "<<eps <<std::endl;
       }
     }
   }
