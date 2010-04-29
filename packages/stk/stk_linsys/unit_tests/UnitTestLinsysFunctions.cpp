@@ -83,8 +83,13 @@ bool confirm_matrix_values(const fei::Matrix& mat, double expected_value)
 
 //------------- LinsysFunctions unit-tests... -----------------------
 
-bool testLinsysFunctions1( MPI_Comm comm )
+
+
+
+STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test1)
 {
+  MPI_Barrier( MPI_COMM_WORLD );
+  MPI_Comm comm = MPI_COMM_WORLD;
   //First create and fill MetaData and BulkData objects:
 
   const unsigned bucket_size = 100; //for a real application mesh, bucket_size would be much bigger...
@@ -238,11 +243,13 @@ bool testLinsysFunctions1( MPI_Comm comm )
   //is (I think) only 1.e-6.
   bc_node_data_is_correct = std::abs(bc_node_data[0] - 9.0) < 1.e-6;
   STKUNIT_ASSERT( bc_node_data_is_correct );
-  return bc_node_data_is_correct;
+  STKUNIT_ASSERT(bc_node_data_is_correct);
 }
 
-bool testLinsysFunctions2( MPI_Comm comm )
+STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test2)
 {
+  MPI_Barrier( MPI_COMM_WORLD );
+  MPI_Comm comm = MPI_COMM_WORLD;
   //First create and fill MetaData and BulkData objects:
 
   const unsigned bucket_size = 100; //for a real application mesh, bucket_size would be much bigger...
@@ -313,24 +320,7 @@ bool testLinsysFunctions2( MPI_Comm comm )
 //create another matrix and vector:
 //  fei::SharedPtr<fei::Matrix> mat2 = factory.createMatrix(matgraph);
 //  fei::SharedPtr<fei::Vector> vec2 = factory.createVector(matgraph);
-  return result;
+  STKUNIT_ASSERT(result);
 }
 
 } // namespace stk_linsys_unit_tests
-
-STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test1)
-{
-  MPI_Barrier( MPI_COMM_WORLD );
-  bool result = stk_linsys_unit_tests::testLinsysFunctions1( MPI_COMM_WORLD );
-  STKUNIT_ASSERT(result);
-  success = result;
-}
-
-STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test2)
-{
-  MPI_Barrier( MPI_COMM_WORLD );
-  bool result = stk_linsys_unit_tests::testLinsysFunctions2( MPI_COMM_WORLD );
-  STKUNIT_ASSERT(result);
-  success = result;
-}
-
