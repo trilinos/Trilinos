@@ -37,10 +37,6 @@ def getBuildSpecificConfigFileName(buildTestCaseName):
   return buildTestCaseName+".config"
 
 
-def getStatusOutputFileName():
-  return "status.out"
-
-
 def getInitialPullOutputFileName():
   return "pullInitial.out"
 
@@ -1376,7 +1372,6 @@ def checkinTest(inOptions):
       removeIfExists(getInitialCommitOutputFileName())
 
     if inOptions.doPull:
-      removeIfExists(getStatusOutputFileName())
       removeIfExists(getInitialPullOutputFileName())
       removeIfExists(getInitialExtraPullOutputFileName())
       removeIfExists(getInitialPullSuccessFileName())
@@ -1472,13 +1467,12 @@ def checkinTest(inOptions):
       print "\n3.a) Check that there are no uncommited files before doing the pull(s) ...\n"
       #
 
-      statusRtn = echoRunSysCmnd(
-        "eg status",
-        workingDir=inOptions.trilinosSrcDir,
-        outFile=os.path.join(baseTestDir, getStatusOutputFileName()),
-        throwExcept=False, timeCmnd=True )
-      if statusRtn != 1:
-        print "\n'eg status' returned "+str(statusRtn)+": There are uncommitted changes, can not do the pull!\n"
+      changesSummary = getCmndOutput("eg diff --shortstat", True,
+        workingDir=inOptions.trilinosSrcDir)
+
+      if changesSummary:
+        print "\n'eg diff --shortstat' returned: "+changesSummary+"\n\n" \
+          +"There are uncommitted changes, cannot do pull!\n"
         pullPassed = False
 
     if doingAtLeastOnePull and pullPassed:
