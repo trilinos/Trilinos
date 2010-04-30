@@ -98,7 +98,7 @@ SetAztecSolveState::SetAztecSolveState(
       // there is not much that we can do to improve the layout of the
       // indentation so just leave it!
       fancyOStream_= Teuchos::tab(
-        fancyOStream,
+        fancyOStream.create_weak(),
         0, // Don't indent since AztecOO already puts in two tabs (not spaces!)
         Teuchos::implicit_cast<std::string>("AZTECOO")
         );
