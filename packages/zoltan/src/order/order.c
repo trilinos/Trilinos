@@ -240,19 +240,6 @@ int i, j;
   ierr = (*Order_fn)(zz, local_num_obj, local_gids, lids, local_rank, NULL, &opt);
   ZOLTAN_FREE(&lids);
 
-for (j=0; j < zz->Num_Proc; j++){
-  if (j == zz->Proc){
-    printf("Process %d ordering returns for %d ids:\n",j,local_num_obj);
-    for (i=0; i < local_num_obj; i++){
-      printf("gid %" ZOLTAN_ID_SPECIFIER " local rank %" ZOLTAN_ID_SPECIFIER "\n",local_gids[i],local_rank[i]);
-    }
-    fflush(stdout);
-  }
-  MPI_Barrier(MPI_COMM_WORLD);
-  MPI_Barrier(MPI_COMM_WORLD);
-  MPI_Barrier(MPI_COMM_WORLD);
-}
-
   if (ierr) {
     sprintf(msg, "Ordering routine returned error code %d.", ierr);
     if (ierr == ZOLTAN_WARN){

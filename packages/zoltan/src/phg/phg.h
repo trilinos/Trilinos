@@ -129,7 +129,7 @@ struct PHGPartParamsStruct {
   int use_timers;       /* Flag indicating whether to time the PHG code. */
   float EdgeSizeThreshold;  /* % of global vtxs beyond which an edge is 
                                considered to be dense. */
-  int MatchEdgeSizeThreshold;  /* Edges with sizes bigger than this threshold
+  ZOLTAN_GNO_TYPE MatchEdgeSizeThreshold;  /* Edges with sizes bigger than this threshold
                                considered to be dense for matching and ignored. */
   float hybrid_keep_factor; /* h-ipm only: keep matches with i.p. values
                                greater than this factor times the mean */

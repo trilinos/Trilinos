@@ -290,6 +290,8 @@ int Zoltan_HG_Create_Mirror (
   ZOLTAN_GNO_TYPE *data, *outdata;
   char *yo = "Zoltan_HG_Create_Mirror";
 
+int i, j, k, p, npins;
+
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   /* determine which data to "mirror" and set corresponding data pointers. */
@@ -303,6 +305,34 @@ int Zoltan_HG_Create_Mirror (
     data      = hg->hvertex;
     outindex  = hg->vindex = (int*) ZOLTAN_MALLOC((hg->nVtx+1) * sizeof(int));
     outdata   = hg->vedge  = (ZOLTAN_GNO_TYPE*) ZOLTAN_MALLOC (hg->nPins * sizeof(ZOLTAN_GNO_TYPE));
+
+for (p=0; p < zz->Num_Proc; p++){
+if (p == zz->Proc){
+fprintf(stderr,"%d   data length %d  outdata length %d out index length %d\n",zz->Proc,hg->nEdge, hg->nPins, hg->nVtx + 1);
+/*
+for (i=0, k=0; i < hg->nEdge; i++){
+  npins = hg->hindex[i+1]-hg->hindex[i];
+  fprintf(stderr,"Edge %d, %d pin vertex gnos: ",i,npins);
+  for (j=0, k=0; j < npins; j++, k++){
+    fprintf(stderr,"%zd ", hg->hvertex[hg->hindex[i] + k]);
+  }
+  fprintf(stderr,"\n");
+}
+*/
+fprintf(stderr,"Indices: ");
+for (i=0; i <= hg->nEdge; i++){
+  fprintf(stderr,"%d ",hg->hindex[i]);
+}
+fprintf(stderr,"\n");
+fprintf(stderr,"Vertex gnos: ");
+for (i=0; i < hg->hindex[hg->nEdge]; i++){
+  fprintf(stderr,"%zd ",hg->hvertex[i]);
+}
+fprintf(stderr,"\n");
+fflush(stderr);
+}
+MPI_Barrier(MPI_COMM_WORLD);
+}
 
     if (outindex == NULL || (hg->nPins > 0 && outdata == NULL)) {
       Zoltan_Multifree (__FILE__, __LINE__, 2, &hg->vindex, &hg->vedge);
@@ -321,6 +351,22 @@ int Zoltan_HG_Create_Mirror (
     data      = hg->vedge;
     outindex  = hg->hindex  = (int*) ZOLTAN_MALLOC((hg->nEdge+1) * sizeof(int));
     outdata   = hg->hvertex = (ZOLTAN_GNO_TYPE*) ZOLTAN_MALLOC(hg->nPins * sizeof(ZOLTAN_GNO_TYPE));
+
+for (p=0; p < zz->Num_Proc; p++){
+if (p == zz->Proc){
+fprintf(stderr,"%d   data length %d  outdata length %d out index length %d\n",zz->Proc,hg->nVtx, hg->nPins, hg->nEdge + 1);
+for (i=0, k=0; i < hg->nVtx; i++){
+  npins = hg->vindex[i+1]-hg->vindex[i];
+  fprintf(stderr,"Vertex %d, %d pin edge gnos: ",i,npins);
+  for (j=0, k=0; j < npins; j++, k++){
+    fprintf(stderr,"%zd ", hg->vedge[hg->vindex[i] + k]);
+  }
+  fprintf(stderr,"\n");
+}
+fflush(stderr);
+}
+MPI_Barrier(MPI_COMM_WORLD);
+}
 
     if (outindex == NULL || (hg->nPins > 0 && outdata == NULL)) {
       Zoltan_Multifree (__FILE__, __LINE__, 2, &hg->hindex, &hg->hvertex);

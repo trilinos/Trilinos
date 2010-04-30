@@ -175,7 +175,7 @@ int left = root*2 + 1, right = root*2 + 2, largest = root;
 
 /* Changes the value of an element in the heap and restores the
    heap property. This can take O(log(n)) time */
-int Zoltan_Heap_Change_Value (HEAP *h, int element, float value)
+int Zoltan_Heap_Change_Value (HEAP *h, ZOLTAN_GNO_TYPE element, float value)
 {
 int position, father;
 

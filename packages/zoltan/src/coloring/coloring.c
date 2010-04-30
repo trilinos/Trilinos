@@ -164,7 +164,7 @@ int Zoltan_Color(
   int *vtxdist=NULL, *xadj=NULL, *adjncy=NULL; /* arrays to store the graph structure */
   int *adjproc=NULL;
   int nvtx = num_obj;               /* number of vertices */
-  int gvtx;                         /* number of global vertices */
+  ZOLTAN_GNO_TYPE gvtx;                         /* number of global vertices */
 
   int *color=NULL;                  /* array to store colors of local and D1
 				       neighbor vertices */
@@ -287,7 +287,7 @@ int Zoltan_Color(
 
   ierr = Zoltan_ZG_Export (zz, &graph,
 		    &gvtx, &nvtx, NULL, NULL, 
-                   (indextype **)&vtxdist, (indextype **) &xadj, (indextype **)&adjncy, &adjproc,
+                   (ZOLTAN_GNO_TYPE **)&vtxdist, (indextype **) &xadj, (ZOLTAN_GNO_TYPE **)&adjncy, &adjproc,
 		     NULL, &partialD2);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN)
     ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Cannot construct graph (2).");

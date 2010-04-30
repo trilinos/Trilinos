@@ -248,7 +248,7 @@ int Zoltan_PHG_Partition (
 	 && ((hg->dist_x[hgc->nProc_x] < (int) (COARSEN_FRACTION_LIMIT * prevVcnt + 0.5)) /* prevVcnt initialized to 2*hg->dist_x[hgc->nProc_x] */
 	     || (hg->dist_y[hgc->nProc_y] < (int) (COARSEN_FRACTION_LIMIT * prevVedgecnt + 0.5))) /* prevVedgecnt initialized to 2*hg->dist_y[hgc->nProc_y] */
     && hg->dist_y[hgc->nProc_y] && hgp->matching) {
-      int *match = NULL;
+      ZOLTAN_GNO_TYPE *match = NULL;
       VCycle *coarser=NULL, *redistributed=NULL;
         
       prevVcnt     = hg->dist_x[hgc->nProc_x];
@@ -290,7 +290,7 @@ int Zoltan_PHG_Partition (
       }
 
       /* Allocate and initialize Matching Array */
-      if (hg->nVtx && !(match = (int*) ZOLTAN_MALLOC (hg->nVtx*sizeof(int)))) {
+      if (hg->nVtx && !(match = (ZOLTAN_GNO_TYPE*) ZOLTAN_MALLOC (hg->nVtx*sizeof(ZOLTAN_GNO_TYPE)))) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory: Matching array");
         return ZOLTAN_MEMERR;
       }

@@ -122,6 +122,24 @@ double denom = ZOLTAN_RAND_MAX + 1.0;
   }
 }
 
+/* Randomly permute an array of ZOLTAN_GNO_TYPEs. TODO64 - still a good permutation for 8 byte ints? */
+
+void Zoltan_Rand_Perm_Gno (ZOLTAN_GNO_TYPE *data, ZOLTAN_GNO_TYPE n, unsigned int *myidum)
+{
+ZOLTAN_GNO_TYPE i, number, temp;
+double denom = ZOLTAN_RAND_MAX + 1.0;
+/* Scaling of random number to appropriate range is done as recommended
+ * in Numerical Recipes in C.
+ */
+
+  for (i = n; i > 0; i--) {
+    number       = (ZOLTAN_GNO_TYPE) ((double) i * (double) Zoltan_Rand(myidum) / denom);
+    temp         = data[number];
+    data[number] = data[i-1];
+    data[i-1]    = temp;
+  }
+}
+
 
 
 #ifdef __cplusplus

@@ -44,7 +44,7 @@ void Zoltan_Heap_Free         (HEAP*);
 int  Zoltan_Heap_Check        (HEAP*);
 int  Zoltan_Heap_Input        (HEAP*, int, float);
 int  Zoltan_Heap_Make         (HEAP*);
-int  Zoltan_Heap_Change_Value (HEAP*, int, float);
+int  Zoltan_Heap_Change_Value (HEAP*, ZOLTAN_GNO_TYPE, float);
 int  Zoltan_Heap_Extract_Max  (HEAP*);
 int  Zoltan_Heap_Extract      (HEAP*, int);
 

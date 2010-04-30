@@ -148,6 +148,7 @@ int Zoltan_PHG_ParKway(
     
     constraint = hgp->bal_tol-1.0;
     
+    /* TODO64 - The hvertex array may need to be copied to an array of ints */
     
     Zoltan_ParaPartKway(nVtx, hg->nEdge, &ivwgts[hgc->myProc*anVtx], iewgts,
                         hg->hindex, hg->hvertex, nparts,

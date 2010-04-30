@@ -34,8 +34,8 @@ static int Zoltan_PHG_match_isolated(ZZ* zz, HGraph* hg, PHGPartParams* hgp,
 static int Zoltan_PHG_compute_esize(ZZ* zz, HGraph* hg, PHGPartParams* hgp);
 
 typedef struct triplet {
-    int candidate;      /* gno of candidate vertex */
-    int partner;        /* gno of best match found so far */
+    ZOLTAN_GNO_TYPE candidate;      /* gno of candidate vertex */
+    ZOLTAN_GNO_TYPE partner;        /* gno of best match found so far */
     float ip;           /* total inner product between candidate and partner */
 } Triplet;
 
@@ -304,16 +304,17 @@ End:
 static int matching_ipm(ZZ *zz, HGraph *hg, PHGPartParams *hgp,
                         Matching match, int *limit)
 {
-    int   i, j, k, n, v1, v2, edge, maxindex;
+    int   i, j, k, n, maxindex;
     float maxip;
-    int   *adj = NULL;
     int   *order = NULL;
     float *ips = NULL; 
+    ZOLTAN_GNO_TYPE v1, v2, edge;
+    ZOLTAN_GNO_TYPE *adj = NULL;
     char  *yo = "matching_ipm";
 
     if (hg->nVtx && 
         (!(ips = (float*) ZOLTAN_MALLOC(hg->nVtx * sizeof(float))) 
-     || !(adj = (int*) ZOLTAN_MALLOC(hg->nVtx * sizeof(int)))
+     || !(adj = (ZOLTAN_GNO_TYPE*) ZOLTAN_MALLOC(hg->nVtx * sizeof(ZOLTAN_GNO_TYPE)))
      || !(order = (int*) ZOLTAN_MALLOC(hg->nVtx * sizeof(int))))) {
         Zoltan_Multifree(__FILE__, __LINE__, 3, &ips, &adj, &order);
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory.");
@@ -387,7 +388,7 @@ static int matching_ipm(ZZ *zz, HGraph *hg, PHGPartParams *hgp,
           printf("%2d ",i);
       printf("\n");
       for(i = 0; i < hg->nVtx; i++)
-          printf("%2d ",match[i]);
+          printf("%2zd ",match[i]);
       printf("\n");
     */
 
@@ -523,7 +524,7 @@ static int pmatching_hybrid_ipm(
 /* Forward declaration for a routine that encapsulates the common calls to use
 ** the Zoltan unstructured communications library for the matching code */
 static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size, 
- int scale, int* send, int* reccnt, int* recsize, int* nRec, int** rec,
+ int scale, ZOLTAN_GNO_TYPE * send, int* reccnt, int* recsize, int* nRec, ZOLTAN_GNO_TYPE ** rec,
  MPI_Comm comm, int tag);
 
 
@@ -591,7 +592,7 @@ static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size,
 /* currently ZOLTAN_REALLOC aborts on any error and doesn't return - But... */
 #define MACRO_REALLOC(new_size, old_size, buffer)  {\
   old_size = (new_size); \
-  if (!(buffer = (int*) ZOLTAN_REALLOC (buffer, (old_size) * sizeof(int) ))) \
+  if (!(buffer = (ZOLTAN_GNO_TYPE*) ZOLTAN_REALLOC (buffer, (old_size) * sizeof(ZOLTAN_GNO_TYPE) ))) \
     MEMORY_ERROR; \
   } 
 
@@ -600,19 +601,39 @@ static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size,
   if ((new_size)>(old_size)) {\
     old_size = (new_size);\
     ZOLTAN_FREE(&buffer);\
-    if (!(buffer = (int*) ZOLTAN_MALLOC (old_size * sizeof(int)))) \
+    if (!(buffer = (ZOLTAN_GNO_TYPE*) ZOLTAN_MALLOC (old_size * sizeof(ZOLTAN_GNO_TYPE)))) \
         MEMORY_ERROR; \
     } \
 } 
+
+/* we know the ZOLTAN_GNO_TYPE in this case is a value that will fit into a float */
+#define MEMCPY_GNO_TO_FLOAT(fptr, gnoptr, len) \
+  if (sizeof(ZOLTAN_GNO_TYPE) == sizeof(float)){                       \
+    memcpy((fptr), (gnoptr), len * sizeof(ZOLTAN_GNO_TYPE));                       \
+  }                       \
+  else{                       \
+    int iii;                       \
+    for (iii=0; iii < len; iii++){                       \
+      (fptr)[iii] = (float)(gnoptr)[iii];                        \
+    }                       \
+  }
  
-
-
+#define MEMCPY_FLOAT_TO_GNO(gnoptr, fptr, len) \
+  if (sizeof(ZOLTAN_GNO_TYPE) == sizeof(float)){                       \
+    memcpy((gnoptr), (fptr), len * sizeof(float));                       \
+  }                       \
+  else{                       \
+    int iii;                       \
+    for (iii=0; iii < len; iii++){                       \
+      (gnoptr)[iii] = (ZOLTAN_GNO_TYPE)(fptr)[iii];                        \
+    }                       \
+  }
   
 /****************************************************************************/
 /* Because this calculation is done in two locations it has been converted to a
 ** subroutine to assure consistancy. Inline is not yet always available!
 ** ERIK: need to calculate nCandidates based on # of unmatched vertices     */
-static int calc_nCandidates (int num_vtx, int procs)
+static ZOLTAN_GNO_TYPE calc_nCandidates (int num_vtx, int procs)
 {
   /* Constant 2 below because each match pairs 2 vertices */
   return num_vtx ? 1 + num_vtx/(2 * procs * ROUNDS_CONSTANT) : 0;
@@ -625,27 +646,41 @@ static int pmatching_ipm (ZZ *zz,
   Matching match,
   PHGPartParams *hgp)
 {
-  int i, j = 0, k, n, m, round, vindex;                    /* loop counters  */
-  int *r = NULL, *s;                         /* pointers to send/rec buffers */
-  int lno, count = 0, kstart, old_kstart;                  /* temp variables */
-  int candidate_gno = 0;                         /* gno of current candidate */
-  int sendcnt, sendsize, reccnt, recsize, msgsize;         /* temp variables */
+  int i, j = 0, n, m, round, vindex;                    /* loop counters  */
+  ZOLTAN_GNO_TYPE lno, bestlno, count = 0;                        /* temp variables */
   int nRounds;                /* # of matching rounds to be performed;       */
                               /* identical on all procs in hgc->Communicator.*/
-  int nCandidates;            /* # of candidates on this proc; identical     */
-                              /* on all procs in hgc->col_comm.              */
-  int total_nCandidates;      /* Sum of nCandidates across row. */
-  int *send = NULL,    nSend,             /* working buffers and their sizes */
-      *dest = NULL,    nDest,  
+
+  ZOLTAN_GNO_TYPE nCandidates;            /* # of candidates on this proc; identical     */
+                                          /* on all procs in hgc->col_comm.              */
+  ZOLTAN_GNO_TYPE candidate_gno = 0;             /* gno of current candidate */
+  ZOLTAN_GNO_TYPE total_nCandidates;      /* Sum of nCandidates across row. */
+  ZOLTAN_GNO_TYPE candidate_index = 0, first_candidate_index = 0;
+
+  int *dest = NULL,    nDest,  
       *size = NULL,    nSize,
-      *rec = NULL,     nRec,
-      *index = NULL,   nIndex,
-      *edgebuf = NULL, nEdgebuf,  /* holds candidates for processing (ipm)   */
       *aux = NULL;
-  int *visit = NULL,       /* candidate visit order (all candidates) */
-      *cmatch = NULL,      /* working copy of match array */
-      *select = NULL,      /* current selected candidates (this round) */
+
+  int *visit = NULL,      /* candidate visit order (all candidates) */
       *permute = NULL;    /* reorder of candidates after global communication */
+
+  ZOLTAN_GNO_TYPE *cmatch = NULL;  /* working copy of match array */
+
+  ZOLTAN_GNO_TYPE *select = NULL, *recbuf = NULL, *sendbuf = NULL, *edgebuf = NULL, *index = NULL;
+
+  ZOLTAN_GNO_TYPE *r = NULL, *s;                         /* pointers to send/rec buffers */
+
+  ZOLTAN_GNO_TYPE  partner_gno, edge, len, nTotal;
+  ZOLTAN_GNO_TYPE  k, kstart, old_kstart;
+
+  /* TODO64 These seven variables are ints, but is seems likely that if the global
+   * number of vertices or edges requires a 64 bit integer, that these counts, sizes,
+   * etc. may at some point also need those storage sizes.  But they are passed to MPI
+   * and Zoltan_Comm_*, which both expect ints.
+   */
+
+  int nRec, nSend, reccnt=0, sendcnt, recsize, sendsize, msgsize, nEdgebuf, nIndex;
+
   float bestsum;      /* holds current best inner product */
   float *sums = NULL, /* holds candidate's inner products with each local vtx */
         *f = NULL;    /* used to stuff floating value into integer message */
@@ -653,13 +688,11 @@ static int pmatching_ipm (ZZ *zz,
   int ierr = ZOLTAN_OK;
   int max_nPins, max_nVtx;       /* Global max # pins/proc and vtx/proc */
   int *rows = NULL;              /* used only in merging process */
-  int bestlno, partner_gno, edge;
   Triplet *master_data = NULL, *global_best = NULL;
   int *master_procs = NULL;
   int cFLAG;                    /* if set, do only a column matching, c-ipm */
   MPI_Op phasethreeop;
   MPI_Datatype phasethreetype;
-  int candidate_index = 0, first_candidate_index = 0;
   int pref = 0, num_matches_considered = 0;
   double ipsum = 0.;
   struct phg_timer_indices *timer = Zoltan_PHG_LB_Data_timers(zz);
@@ -698,7 +731,8 @@ static int pmatching_ipm (ZZ *zz,
   }
   else  {
     MPI_Allreduce(&hg->nPins, &max_nPins, 1, MPI_INT,MPI_MAX,hgc->Communicator);
-    max_nVtx = total_nCandidates = 0;
+    max_nVtx = 0;
+    total_nCandidates = 0;
     for (i = 0; i < hgc->nProc_x; i++)  {
       count = hg->dist_x[i+1] - hg->dist_x[i]; /* number of vertices on proc i */
       if (count > max_nVtx)
@@ -721,38 +755,37 @@ static int pmatching_ipm (ZZ *zz,
   nEdgebuf = max_nPins;   /* <candidate_gno, candidate_index, #pins, <pins>> */
 
   if (hg->nVtx)  
-    if (!(cmatch = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
+    if (!(cmatch = (ZOLTAN_GNO_TYPE*)   ZOLTAN_MALLOC (hg->nVtx * sizeof(ZOLTAN_GNO_TYPE)))
      || !(visit  = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))
      || !(aux    = (int*)   ZOLTAN_MALLOC (hg->nVtx * sizeof(int)))     
      || !(sums   = (float*) ZOLTAN_CALLOC (hg->nVtx,  sizeof(float))))
         MEMORY_ERROR;
 
   if (!cFLAG && total_nCandidates && (hgc->myProc_y == 0)) {  /* Master row */
-    i = total_nCandidates * sizeof(Triplet);  
-    if (!(master_data = (Triplet*) ZOLTAN_MALLOC(i))
-     || !(global_best = (Triplet*) ZOLTAN_MALLOC(i)))
+    len = total_nCandidates * sizeof(Triplet);  
+    if (!(master_data = (Triplet*) ZOLTAN_MALLOC(len))
+     || !(global_best = (Triplet*) ZOLTAN_MALLOC(len)))
         MEMORY_ERROR;
-    for (i = 0; i < total_nCandidates; i++) {
-      master_data[i].candidate = -1;
-      master_data[i].partner   = -1;
-      master_data[i].ip        = -1.0;
+    for (len = 0; len < total_nCandidates; len++) {
+      master_data[len].candidate = -1;
+      master_data[len].partner   = -1;
+      master_data[len].ip        = -1.0;
     }
   } 
 
   if (!cFLAG)
-    if (!(edgebuf = (int*) ZOLTAN_MALLOC (nEdgebuf * sizeof(int))))
+    if (!(edgebuf = (ZOLTAN_GNO_TYPE*) ZOLTAN_MALLOC (nEdgebuf * sizeof(ZOLTAN_GNO_TYPE))))
         MEMORY_ERROR;
   
   if (!(dest    = (int*) ZOLTAN_MALLOC (nDest              * sizeof(int)))
    || !(size    = (int*) ZOLTAN_MALLOC (nSize              * sizeof(int)))
-   || !(index   = (int*) ZOLTAN_MALLOC (nIndex             * sizeof(int)))
+   || !(index   = (ZOLTAN_GNO_TYPE*) ZOLTAN_MALLOC (nIndex             * sizeof(ZOLTAN_GNO_TYPE)))
    || !(rows    = (int*) ZOLTAN_MALLOC ((hgc->nProc_y + 1) * sizeof(int)))
-   || (nSend && !(send = (int*) ZOLTAN_MALLOC (nSend * sizeof(int))))
-   || (nRec  && !(rec  = (int*) ZOLTAN_MALLOC (nRec  * sizeof(int))))
+   || (nSend && !(sendbuf = (ZOLTAN_GNO_TYPE*) ZOLTAN_MALLOC (nSend * sizeof(ZOLTAN_GNO_TYPE))))
+   || (nRec  && !(recbuf  = (ZOLTAN_GNO_TYPE*) ZOLTAN_MALLOC (nRec  * sizeof(ZOLTAN_GNO_TYPE))))
    || (total_nCandidates && !(permute = (int*) ZOLTAN_MALLOC (total_nCandidates
    * sizeof(int))))
-   || (total_nCandidates && !(select = (int*) ZOLTAN_MALLOC (total_nCandidates
-   * sizeof(int)))))
+   || (total_nCandidates && !(select = (ZOLTAN_GNO_TYPE*) ZOLTAN_MALLOC (total_nCandidates * sizeof(ZOLTAN_GNO_TYPE)))))
       MEMORY_ERROR;
   
   /* Compute candidates' vertex visit order (selection). Random is default. */
@@ -773,12 +806,11 @@ static int pmatching_ipm (ZZ *zz,
     
     /************************ PHASE 1: ****************************************/
     
-    memcpy (cmatch, match, hg->nVtx * sizeof(int));  /* for temporary locking */    
+    memcpy (cmatch, match, hg->nVtx * sizeof(ZOLTAN_GNO_TYPE));  /* for temporary locking */    
     if (cFLAG)  {
-      int nTotal;
       /* select upto nCandidates unmatched vertices to locally match */
-      for (i = 0; i < total_nCandidates; i++)
-        permute[i] = -1;                       /* to flag missing candidates  */
+      for (len = 0; len < total_nCandidates; len++)
+        permute[len] = -1;                       /* to flag missing candidates  */
         
       for (nTotal = 0; nTotal < nCandidates && vindex < hg->nVtx; vindex++)
         if (cmatch [visit[vindex]] == visit[vindex])  {         /* unmatched */
@@ -786,8 +818,8 @@ static int pmatching_ipm (ZZ *zz,
           cmatch [visit[vindex]] = -visit[vindex]-1;  /* mark as pending match */
         }
       total_nCandidates = nTotal;
-      for (i = 0; i < total_nCandidates; i++)
-        select[i] = i;      
+      for (len = 0; len < total_nCandidates; len++)
+        select[len] = len;      
     }
     else  {       
       /* Select upto nCandidates unmatched vertices to globally match. */
@@ -800,17 +832,17 @@ static int pmatching_ipm (ZZ *zz,
       /* assure send buffer is large enough by first computing required size */
       sendsize = 0;
       for (i = 0; i < sendcnt; i++)  {
-        lno = select[i];
+        lno = (int)select[i];
         if (hg->vindex[lno+1] > hg->vindex[lno])
             sendsize += hg->vindex[lno+1] - hg->vindex[lno] + HEADER_SIZE 
                 + (hgp->UsePrefPart ? 1 : 0); 
       }
       if (sendsize > nSend)
-        MACRO_REALLOC (1.2 * sendsize, nSend, send);    /* resize send buffer */    
+        MACRO_REALLOC (1.2 * sendsize, nSend, sendbuf);    /* resize send buffer */    
       /* put <candidate_gno, candidate_index, count, <edge>> into send buffer */
-      s = send;
+      s = sendbuf;
       for (i = 0; i < sendcnt; i++)   {
-        lno = select[i];
+        lno = (int)select[i];
         if (hg->vindex[lno+1] > hg->vindex[lno]) {
           *s++ = VTX_LNO_TO_GNO(hg, lno);                  /* gno of candidate */
           *s++ = i + first_candidate_index;                 /* candidate index */
@@ -821,7 +853,7 @@ static int pmatching_ipm (ZZ *zz,
             *s++ = hg->vedge[j];                                   /* edge lno */
         }
       }
-      sendsize = s - send;
+      sendsize = s - sendbuf;
          
       /* communication to determine global size of rec buffer */
       MPI_Allgather (&sendsize, 1, MPI_INT, size, 1, MPI_INT, hgc->row_comm);
@@ -829,7 +861,7 @@ static int pmatching_ipm (ZZ *zz,
       /* determine size of the rec buffer & reallocate bigger iff necessary */
       recsize = 0;
       for (i = 0; i < hgc->nProc_x; i++)
-        recsize += size[i];          /* compute total size of edgebuf in ints */
+        recsize += size[i];          /* compute total size of edgebuf in ZOLTAN_GNO_TYPEs*/
       if (recsize > nEdgebuf)
         MACRO_REALLOC (1.2 * recsize, nEdgebuf, edgebuf);  /* enlarge edgebuf */
     
@@ -839,23 +871,22 @@ static int pmatching_ipm (ZZ *zz,
         dest[i] = dest[i-1] + size[i-1];
 
       /* communicate vertices & their edges to all row neighbors */
-      MPI_Allgatherv(send, sendsize, MPI_INT, edgebuf, size, dest, MPI_INT,
-       hgc->row_comm);
+      MPI_Allgatherv(sendbuf, sendsize, ZOLTAN_GNO_MPI_TYPE, edgebuf, size, dest, ZOLTAN_GNO_MPI_TYPE, hgc->row_comm);
          
       /* Communication has grouped candidates by processor, rescramble!     */
       /* Otherwise all candidates from proc column 0 will be matched first, */
-      for (i = 0; i < total_nCandidates; i++)
-        select[i] = i;
-      Zoltan_Rand_Perm_Int (select, total_nCandidates, &(hgc->RNGState_col));
+      for (len = 0; len < total_nCandidates; len++)
+        select[len] = len;
+      Zoltan_Rand_Perm_Gno (select, total_nCandidates, &(hgc->RNGState_col));
       
-      for (i = 0; i < total_nCandidates; i++)
-        permute[i] = -1;                 /* to flag missing sparse candidates */
+      for (len = 0; len < total_nCandidates; len++)
+        permute[len] = -1;                 /* to flag missing sparse candidates */
       for (i = 0 ; i < recsize; i += count)   {
         int indx        = i++;              /* position of next gno in edgebuf */
         candidate_index = edgebuf[i++];
         if (hgp->UsePrefPart)        
-            pref        = edgebuf[i++];   /* skip over pref vertex information */
-        count           = edgebuf[i++];     /* count of edges */      
+            pref        = (int)edgebuf[i++];   /* skip over pref vertex information */
+        count           = (int)edgebuf[i++];     /* count of edges */      
         permute[candidate_index] = indx ;   /* save position of gno in edgebuf */
       }
     }            /* DONE:  if (cFLAG) else ...  */                          
@@ -872,7 +903,7 @@ static int pmatching_ipm (ZZ *zz,
         rows[i] = -1;                  /* to flag data not found for that row */
       sendsize = 0;                    /* position in send buffer */
       sendcnt  = 0;                    /* count of messages in send buffer */
-      s        = send;                 /* start at send buffer origin */
+      s        = sendbuf;                 /* start at send buffer origin */
       for (k = kstart; k < total_nCandidates; k++)  {
         if (permute[select[k]] == -1) 
           continue;                /* don't have this sparse candidate locally */
@@ -936,8 +967,8 @@ static int pmatching_ipm (ZZ *zz,
         /* iff necessary, resize send buffer to fit at least first message */
         msgsize = HEADER_SIZE + 2 * count;
         if (sendcnt == 0 && (msgsize > nSend)) {
-          MACRO_REALLOC (1.2 * msgsize, nSend, send);  /* increase buffer size */
-          s = send;         
+          MACRO_REALLOC (1.2 * msgsize, nSend, sendbuf);  /* increase buffer size */
+          s = sendbuf;         
         }
         
         /* message is <candidate_gno, candidate_index, count, <lno, psum>> */
@@ -974,11 +1005,11 @@ static int pmatching_ipm (ZZ *zz,
     
       /* synchronize all rows in this column to next kstart value */
       old_kstart = kstart;
-      MPI_Allreduce (&k, &kstart, 1, MPI_INT, MPI_MIN, hgc->col_comm);
+      MPI_Allreduce (&k, &kstart, 1, ZOLTAN_GNO_MPI_TYPE, MPI_MIN, hgc->col_comm);
 
       /* Send inner product data in send buffer to appropriate rows */
-      ierr = communication_by_plan (zz, sendcnt, dest, size, 1, send, &reccnt, 
-       &recsize, &nRec, &rec, hgc->col_comm, IPM_TAG);
+      ierr = communication_by_plan (zz, sendcnt, dest, size, 1, sendbuf, &reccnt, 
+       &recsize, &nRec, &recbuf, hgc->col_comm, IPM_TAG);
 
       
       if (ierr != ZOLTAN_OK)
@@ -988,28 +1019,28 @@ static int pmatching_ipm (ZZ *zz,
       for (i = 0; i < hgc->nProc_y; i++)
         rows[i] = recsize;       /* sentinal in case no row's data available */
       k = 0;
-      for (r = rec; r < rec+recsize; r+=(HEADER_SIZE+2*(*(r+2)))) {
+      for (r = recbuf; r < recbuf+recsize; r+=(HEADER_SIZE+2*(*(r+2)))) {
         if (*(r+1) < 0)  {
           *(r+1) = -(*(r+1)) - 1;           /* make sentinal candidate_index positive */
-          rows[k++] = (r - rec);  /* points to gno */
+          rows[k++] = (r - recbuf);  /* points to gno */
         }
       }
 
     
       /* merge partial i.p. sum data to compute total inner products */
-      s = send; 
+      s = sendbuf; 
       for (n = old_kstart; n < kstart; n++) {
         m = 0;       
         for (i = 0; i < hgc->nProc_y; i++) 
-          if (rows[i] < recsize && rec [rows[i]+1] == select[n])  {
-            candidate_gno   = rec [rows[i]++];
-            candidate_index = rec [rows[i]++];
-            count           = rec [rows[i]++];
+          if (rows[i] < recsize && recbuf [rows[i]+1] == select[n])  {
+            candidate_gno   = recbuf [rows[i]++];
+            candidate_index = recbuf [rows[i]++];
+            count           = recbuf [rows[i]++];
             for (j = 0; j < count; j++)  {
-              lno = rec [rows[i]++];                    
+              lno = recbuf [rows[i]++];                    
               if (sums[lno] == 0.0)       /* is this first time for this lno? */
                 aux[m++] = lno;           /* then save the lno */
-              f = (float*) (rec + rows[i]++);        
+              f = (float*) (recbuf + rows[i]++);        
               sums[lno] += *f;            /* sum the psums */
             }
           }
@@ -1022,10 +1053,10 @@ static int pmatching_ipm (ZZ *zz,
 
         /* Put <candidate_gno, candidate_index, count, <lno, tsum>> into send */
         if (count > 0)  {
-          if (s - send + HEADER_SIZE + 2 * count > nSend ) {
-            sendsize = s - send;
-            MACRO_REALLOC (1.2*(sendsize + HEADER_SIZE + 2*count), nSend, send);
-            s = send + sendsize;         /* since realloc buffer could move */
+          if (s - sendbuf + HEADER_SIZE + 2 * count > nSend ) {
+            sendsize = s - sendbuf;
+            MACRO_REALLOC (1.2*(sendsize + HEADER_SIZE + 2*count), nSend, sendbuf);
+            s = sendbuf + sendsize;         /* since realloc buffer could move */
           }      
           *s++ = candidate_gno;
           *s++ = candidate_index;
@@ -1041,7 +1072,7 @@ static int pmatching_ipm (ZZ *zz,
           sums[lno] = 0.0;  
         }     
       }
-      sendsize = s - send;   /* size (in ints) of send buffer */
+      sendsize = s - sendbuf;   /* size (in ZOLTAN_GNO_TYPEs) of send buffer */
     
       /* Communicate total inner product results to MASTER ROW */
       MPI_Gather(&sendsize, 1, MPI_INT, size, 1, MPI_INT, 0, hgc->col_comm);
@@ -1056,15 +1087,15 @@ static int pmatching_ipm (ZZ *zz,
           dest[i] = dest[i-1] + size[i-1];
         
         if (recsize > nRec)
-          MACRO_REALLOC (1.2 * recsize, nRec, rec);      /* make rec buffer bigger */
+          MACRO_REALLOC (1.2 * recsize, nRec, recbuf);      /* make rec buffer bigger */
       }
 
-      MPI_Gatherv (send, sendsize, MPI_INT, rec, size, dest, MPI_INT, 0,
+      MPI_Gatherv (sendbuf, sendsize, ZOLTAN_GNO_MPI_TYPE, recbuf, size, dest, ZOLTAN_GNO_MPI_TYPE, 0,
                    hgc->col_comm);
        
       /* Determine best vertex and best sum for each candidate */
       if (hgc->myProc_y == 0) {   /* do following only if I am the MASTER ROW */
-        for (r = rec; r < rec + recsize;)  {
+        for (r = recbuf; r < recbuf + recsize;)  {
           candidate_gno   = *r++;
           candidate_index = *r++;
           count           = *r++;                    /* count of nonzero pairs */
@@ -1122,18 +1153,18 @@ static int pmatching_ipm (ZZ *zz,
       /* Look through array of "winners" and update match array. */
       /* Local numbers are used for local matches, otherwise
          -(gno+1) is used in the match array.                    */
-      for (i = 0; i < total_nCandidates; i++) {
+      for (len = 0; len < total_nCandidates; len++) {
         int cproc, vproc;
-        candidate_gno = global_best[i].candidate;
+        candidate_gno = global_best[len].candidate;
 
         /* Reinitialize master_data for next round */
-        master_data[i].candidate = -1;
-        master_data[i].partner   = -1;
-        master_data[i].ip        = -1.0;
+        master_data[len].candidate = -1;
+        master_data[len].partner   = -1;
+        master_data[len].ip        = -1.0;
         if (candidate_gno == -1)
           continue;
 
-        partner_gno = global_best[i].partner;
+        partner_gno = global_best[len].partner;
         cproc = VTX_TO_PROC_X(hg, candidate_gno);
         vproc = VTX_TO_PROC_X(hg, partner_gno);
         if (cproc == hgc->myProc_x) {
@@ -1152,7 +1183,7 @@ static int pmatching_ipm (ZZ *zz,
     } /* End (hgc->myProc_y == 0) */
 
     /* broadcast match array to the entire column */
-    MPI_Bcast (match, hg->nVtx, MPI_INT, 0, hgc->col_comm);
+    MPI_Bcast (match, hg->nVtx, ZOLTAN_GNO_MPI_TYPE, 0, hgc->col_comm);
     MACRO_TIMER_STOP (4);                       /* end of phase 3 */
   }                                             /* DONE: loop over rounds */
   
@@ -1193,21 +1224,22 @@ static int pmatching_ipm (ZZ *zz,
       dest[i] = dest[i-1] + size[i-1];
   
     if (nRec < recsize)
-      MACRO_REALLOC (recsize, nRec, rec); /* make rec buffer bigger */
-    MPI_Allgatherv (cmatch, hg->nVtx, MPI_INT, rec, size, dest, MPI_INT,
+      MACRO_REALLOC (recsize, nRec, recbuf);
+
+    MPI_Allgatherv (cmatch, hg->nVtx, ZOLTAN_GNO_MPI_TYPE, recbuf, size, dest, ZOLTAN_GNO_MPI_TYPE,
      hgc->row_comm);
 
     if (nSend < recsize)
-      MACRO_REALLOC (recsize, nSend, send);  /* make send buffer bigger */
+      MACRO_REALLOC (recsize, nSend, sendbuf);  /* make send buffer bigger */
   
     for (i = 0; i < recsize; i++)
-      send[i] = 0;
+      sendbuf[i] = 0;
     for (i = 0; i < recsize; i++)
-      ++send[rec[i]];
+      ++sendbuf[recbuf[i]];
 
     count = 0;
     for (i = 0; i < recsize; i++)
-      if (send[i] != 1)
+      if (sendbuf[i] != 1)
         count++;
     if (count)    
       uprintf (hgc, "RTHRTH %d FINAL MATCH ERRORS of %d\n", count, recsize); 
@@ -1221,8 +1253,8 @@ End:
     ZOLTAN_FREE(&global_best);
   }
   
-  Zoltan_Multifree (__FILE__, __LINE__, 15, &cmatch, &visit, &sums, &send,
-   &dest, &size, &rec, &index, &aux, &permute, &edgebuf, &select, &rows,
+  Zoltan_Multifree (__FILE__, __LINE__, 15, &cmatch, &visit, &sums, &sendbuf,
+   &dest, &size, &recbuf, &index, &aux, &permute, &edgebuf, &select, &rows,
    &master_data, &master_procs);
   ZOLTAN_TRACE_EXIT(zz, yo);
   return ierr;
@@ -1231,9 +1263,10 @@ End:
 
   
 /****************************************************************************/
+
 static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size, 
- int scale, int* send, int* reccnt, int *recsize, int* nRec, int** rec,
- MPI_Comm comm, int tag)
+ int scale, ZOLTAN_GNO_TYPE * send, 
+ int* reccnt, int *recsize, int * nRec, ZOLTAN_GNO_TYPE ** rec, MPI_Comm comm, int tag)
 {
    ZOLTAN_COMM_OBJ *plan = NULL;
    int err;
@@ -1260,7 +1293,7 @@ static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size,
    
    /* realloc rec buffer if necessary */  
    if (*recsize > *nRec)  {   
-     if (!(*rec = (int*) ZOLTAN_REALLOC (*rec, *recsize * sizeof(int)))){
+     if (!(*rec = (ZOLTAN_GNO_TYPE*) ZOLTAN_REALLOC (*rec, *recsize * sizeof(ZOLTAN_GNO_TYPE)))){
        ZOLTAN_PRINT_ERROR (zz->Proc, yo, "Memory error");
        return ZOLTAN_MEMERR;
      }
@@ -1268,8 +1301,7 @@ static int communication_by_plan (ZZ* zz, int sendcnt, int* dest, int* size,
    }
    
    /* send messages from send buffer to destinations */      
-   err = Zoltan_Comm_Do (plan, tag+2, (char*) send, scale * sizeof(int),
-    (char*) *rec);
+   err = Zoltan_Comm_Do (plan, tag+2, (char*) send, scale * sizeof(ZOLTAN_GNO_TYPE), (char*) *rec);
    if (err != ZOLTAN_OK)  {
      ZOLTAN_PRINT_ERROR (zz->Proc, yo, "failed in Comm_Do");
      return err;
@@ -1290,51 +1322,56 @@ static int pmatching_agg_ipm (ZZ *zz,
                               PHGPartParams *hgp)
 {
   int ierr = ZOLTAN_OK;    
-  int i, j, k, n, m, round, vindex;                        /* loop counters  */
-  int *r, *s;                                /* pointers to send/rec buffers */
-  int lno, count, kstart, old_kstart;                      /* temp variables */
-  int candidate_gno = 0;                         /* gno of current candidate */
+  int i, j, n, m, round, vindex;                        /* loop counters  */
   int sendcnt, sendsize, reccnt=0, recsize, msgsize;       /* temp variables */
   int nRounds;                /* # of matching rounds to be performed;       */
-  /* identical on all procs in hgc->Communicator.*/
-  int nCandidates;            /* # of candidates on this proc; identical     */
-  /* on all procs in hgc->col_comm.              */
-  int total_nCandidates = 0;      /* Sum of nCandidates across row. */
-  int *send = NULL,    nSend,             /* working buffers and their sizes */
+  int nSend,             /* working buffers and their sizes */
     *dest = NULL,    nDest,  
     *size = NULL,    nSize,
-    *rec = NULL,     nRec,
+     nRec,
     *aux = NULL,   
-    *edgebuf = NULL, nEdgebuf;  /* holds candidates for processing (ipm)   */
+     nEdgebuf;  /* holds candidates for processing (ipm)   */
   char *visited = NULL;
   int *visit = NULL,       /* candidate visit order (all candidates) */
     *lhead = NULL,       /* to accumulate ipm values correctly */
     *lheadpref = NULL,
-    *locCandidates = NULL, locCandCnt,      /* current selected candidates (this round) & number */
-    *candvisit=NULL,   /* to randomize visit order of candidates*/
     *idxptr = NULL;    /* reorder of candidates after global communication */
   float bestsum;      /* holds current best inner product */
   float *sums = NULL, /* holds candidate's inner products with each local vtx */
     *cw = NULL,   /* current vertex weight */
     *tw=NULL, *maxw = NULL, *candw = NULL,
-    *f = NULL;    /* used to stuff floating value into integer message */
+    *f = NULL,    /* used to stuff floating value into integer message */
+    *fptr;
   PHGComm *hgc = hg->comm;
   int max_nPins, max_nVtx;       /* Global max # pins/proc and vtx/proc */
   int *rows = NULL;              /* used only in merging process */
-  int bestlno, partner_gno;
+  int bestlno, lno;
   Triplet *master_data = NULL, *global_best = NULL;
   int *master_procs = NULL;
   MPI_Op phasethreeop;
   MPI_Datatype phasethreetype;
-  int candidate_index = 0, *candIdx;
   int VtxDim = (hg->VtxWeightDim>0) ? hg->VtxWeightDim : 1;
   int pref = 0;
   int replycnt;
   struct phg_timer_indices *timer = Zoltan_PHG_LB_Data_timers(zz);
   char *yo = "pmatching_agg_ipm";
   KVHash hash;
-  
-  
+
+  ZOLTAN_GNO_TYPE candidate_gno = 0;                         /* gno of current candidate */
+  /* identical on all procs in hgc->Communicator.*/
+  ZOLTAN_GNO_TYPE nCandidates;            /* # of candidates on this proc; identical     */
+  /* on all procs in hgc->col_comm.              */
+  ZOLTAN_GNO_TYPE total_nCandidates = 0;      /* Sum of nCandidates across row. */
+  ZOLTAN_GNO_TYPE candidate_index = 0, *candIdx;
+  ZOLTAN_GNO_TYPE *locCandidates = NULL, locCandCnt,      /* current selected candidates (this round) & number */
+                  *candvisit=NULL;                      /* to randomize visit order of candidates*/
+
+  ZOLTAN_GNO_TYPE count=0, kstart, old_kstart;                      /* temp variables */
+  ZOLTAN_GNO_TYPE k, partner_gno, edge, len;
+
+  ZOLTAN_GNO_TYPE *sendbuf=NULL, *recbuf=NULL, *edgebuf=NULL;
+  ZOLTAN_GNO_TYPE *r, *s;                                /* pointers to send/rec buffers */
+
   ZOLTAN_TRACE_ENTER (zz, yo);
   MACRO_TIMER_START (0, "matching setup", 0);
   Zoltan_Srand_Sync (Zoltan_Rand(NULL), &(hgc->RNGState_col), hgc->col_comm);
@@ -1356,14 +1393,15 @@ static int pmatching_agg_ipm (ZZ *zz,
      otherwise use nVtx/3 to allow some matching
   */
   nCandidates = MAX(1, MIN(hgp->nCand, hg->nVtx/3));
-  if (!(candIdx = (int*) ZOLTAN_MALLOC ((1+hgc->nProc_x) * sizeof(int)))) 
+  if (!(candIdx = (ZOLTAN_GNO_TYPE*) ZOLTAN_MALLOC ((1+hgc->nProc_x) * sizeof(ZOLTAN_GNO_TYPE)))) 
     MEMORY_ERROR;
 
     
   /* determine maximum number of Vtx and Pins for storage allocation */
   /* determine initial sum of all candidates = total_nCandidates==>allocation */
   MPI_Allreduce(&hg->nPins, &max_nPins, 1, MPI_INT,MPI_MAX,hgc->Communicator);
-  max_nVtx = total_nCandidates = 0;
+  max_nVtx = 0;
+  total_nCandidates = 0;
   for (i = 0; i < hgc->nProc_x; i++)  {
     count = hg->dist_x[i+1] - hg->dist_x[i]; /* number of vertices on proc i */
     if (count > max_nVtx)
@@ -1402,29 +1440,29 @@ static int pmatching_agg_ipm (ZZ *zz,
       MEMORY_ERROR;
 
   if (hgc->myProc_y==0 && total_nCandidates ) {  
-    i = total_nCandidates * sizeof(Triplet);  
-    if (!(master_data = (Triplet*) ZOLTAN_MALLOC(i))
-        || !(global_best = (Triplet*) ZOLTAN_MALLOC(i)))
+    len = total_nCandidates * sizeof(Triplet);  
+    if (!(master_data = (Triplet*) ZOLTAN_MALLOC(len))
+        || !(global_best = (Triplet*) ZOLTAN_MALLOC(len)))
       MEMORY_ERROR;
-    for (i = 0; i < total_nCandidates; i++) {
-      master_data[i].candidate = -1;
-      master_data[i].partner   = -1;
-      master_data[i].ip        = -1.0;
+    for (len = 0; len < total_nCandidates; len++) {
+      master_data[len].candidate = -1;
+      master_data[len].partner   = -1;
+      master_data[len].ip        = -1.0;
     }
   } 
 
   
-  if (!(edgebuf = (int*) ZOLTAN_MALLOC (nEdgebuf * sizeof(int)))
+  if (!(edgebuf = (ZOLTAN_GNO_TYPE*) ZOLTAN_MALLOC (nEdgebuf * sizeof(ZOLTAN_GNO_TYPE)))
       || !(dest    = (int*) ZOLTAN_MALLOC (nDest              * sizeof(int)))
       || !(size    = (int*) ZOLTAN_MALLOC (nSize              * sizeof(int)))
       || !(rows    = (int*) ZOLTAN_MALLOC ((hgc->nProc_y + 1) * sizeof(int)))
-      || (nSend && !(send = (int*) ZOLTAN_MALLOC (nSend * sizeof(int))))
-      || (nRec  && !(rec  = (int*) ZOLTAN_MALLOC (nRec  * sizeof(int)))))
+      || (nSend && !(sendbuf = (ZOLTAN_GNO_TYPE*) ZOLTAN_MALLOC (nSend * sizeof(ZOLTAN_GNO_TYPE))))
+      || (nRec  && !(recbuf  = (ZOLTAN_GNO_TYPE*) ZOLTAN_MALLOC (nRec  * sizeof(ZOLTAN_GNO_TYPE)))))
     MEMORY_ERROR;
   if (total_nCandidates) {
     if (!(idxptr   = (int*)   ZOLTAN_MALLOC (total_nCandidates * sizeof(int)))
-        || !(candvisit = (int*)   ZOLTAN_MALLOC (total_nCandidates * sizeof(int)))                
-        || !(locCandidates = (int*)   ZOLTAN_MALLOC (nCandidates * sizeof(int)))
+        || !(candvisit = (ZOLTAN_GNO_TYPE*)   ZOLTAN_MALLOC (total_nCandidates * sizeof(ZOLTAN_GNO_TYPE)))                
+        || !(locCandidates = (ZOLTAN_GNO_TYPE*)   ZOLTAN_MALLOC (nCandidates * sizeof(ZOLTAN_GNO_TYPE)))
         || !(candw  = (float*) ZOLTAN_MALLOC (VtxDim * total_nCandidates * sizeof(float))))
       MEMORY_ERROR;
     if (hgc->myProc_y==0) {
@@ -1484,11 +1522,11 @@ static int pmatching_agg_ipm (ZZ *zz,
         match[v] = -match[v] - 1;
       }
     }
-/*    uprintf(hgc, "Round %d:   locCandCnt=%d\n", round, locCandCnt); */
+/*    uprintf(hgc, "Round %d:   locCandCnt=%zd\n", round, locCandCnt); */
     /* assure send buffer is large enough by first computing required size */
     sendsize = 0;
-    for (i = 0; i < locCandCnt; i++)  {
-      lno = locCandidates[i];
+    for (len = 0; len < locCandCnt; len++)  {
+      lno = locCandidates[len];
       /* UVCUVC: CHECK if it is possible to use sparse communication
          current code only works if all candidates have been communicated */
 /*      if (hg->vindex[lno+1] > hg->vindex[lno]) */
@@ -1497,15 +1535,16 @@ static int pmatching_agg_ipm (ZZ *zz,
     sendsize += locCandCnt * ( hg->VtxWeightDim + HEADER_SIZE 
                               + (hgp->UsePrefPart ? 1 : 0) ); 
     if (sendsize > nSend)
-      MACRO_RESIZE (1.2 * sendsize, nSend, send);    /* resize send buffer */    
+      MACRO_RESIZE (1.2 * sendsize, nSend, sendbuf);    /* resize send buffer */    
     /* put <candidate_gno, candidate_index, weight(s), [pref], count, <edge>> into send buffer */
-    s = send;
-    for (i = 0; i < locCandCnt; i++)   {
-      lno = locCandidates[i];
+    s = sendbuf;
+    for (len = 0; len < locCandCnt; len++)   {
+      lno = locCandidates[len];
 /*      if (hg->vindex[lno+1] > hg->vindex[lno]) { */  /* UVCUVC CHECK sparse comm? */
         *s++ = VTX_LNO_TO_GNO(hg, lno);                  /* gno of candidate */
         *s++ = candIdx[hgc->myProc_x] + i;               /* candidate index */
-        memcpy(s, &cw[lno*VtxDim], sizeof(float) * VtxDim);
+/*        memcpy(s, &cw[lno*VtxDim], sizeof(float) * VtxDim);*/
+        MEMCPY_FLOAT_TO_GNO(s, &cw[lno*VtxDim], VtxDim);
         s += VtxDim;
         if (hgp->UsePrefPart)          
           *s++ = hg->pref_part[lno];       /* pref partition info */
@@ -1514,7 +1553,7 @@ static int pmatching_agg_ipm (ZZ *zz,
           *s++ = hg->vedge[j];                                   /* edge lno */
 /*      } */
     }
-    sendsize = s - send;
+    sendsize = s - sendbuf;
          
     /* communication to determine global size of rec buffer */
     MPI_Allgather (&sendsize, 1, MPI_INT, size, 1, MPI_INT, hgc->row_comm);
@@ -1523,8 +1562,9 @@ static int pmatching_agg_ipm (ZZ *zz,
     recsize = 0;
     for (i = 0; i < hgc->nProc_x; i++)
       recsize += size[i];          /* compute total size of edgebuf in ints */
-    if (recsize > nEdgebuf)
+    if (recsize > nEdgebuf){
       MACRO_RESIZE (1.2 * recsize, nEdgebuf, edgebuf);  /* enlarge edgebuf */
+    }
     
     /* setup displacement array necessary for MPI_Allgatherv */
     dest[0] = 0;
@@ -1532,14 +1572,14 @@ static int pmatching_agg_ipm (ZZ *zz,
       dest[i] = dest[i-1] + size[i-1];
     
     /* communicate vertices & their edges to all row neighbors */
-    MPI_Allgatherv(send, sendsize, MPI_INT, edgebuf, size, dest, MPI_INT,
+    MPI_Allgatherv(sendbuf, sendsize, ZOLTAN_GNO_MPI_TYPE, edgebuf, size, dest, ZOLTAN_GNO_MPI_TYPE,
                    hgc->row_comm);
-    
+
     /* Communication has grouped candidates by processor, rescramble!     */
     /* Otherwise all candidates from proc column 0 will be matched first, */
-    for (i = 0; i < total_nCandidates; i++)
-      candvisit[i] = i;
-    Zoltan_Rand_Perm_Int (candvisit, total_nCandidates, &(hgc->RNGState_col));
+    for (len = 0; len < total_nCandidates; len++)
+      candvisit[len] = len;
+    Zoltan_Rand_Perm_Gno (candvisit, total_nCandidates, &(hgc->RNGState_col));
     
     for (i = 0; i < total_nCandidates; i++)
       idxptr[i] = -1;                 /* to flag missing sparse candidates */
@@ -1547,7 +1587,10 @@ static int pmatching_agg_ipm (ZZ *zz,
       int indx        = i++;              /* position of next gno in edgebuf */
       candidate_index = edgebuf[i++];
       idxptr[candidate_index] = indx ;    /* save position of gno in edgebuf */
-      memcpy(&candw[candidate_index*VtxDim], &edgebuf[i], sizeof(float)*VtxDim);
+
+/*    memcpy(&candw[candidate_index*VtxDim], &edgebuf[i], sizeof(float)*VtxDim); */
+      MEMCPY_GNO_TO_FLOAT(candw + candidate_index*VtxDim, edgebuf + i, VtxDim);
+      
       i += VtxDim;
       if (hgp->UsePrefPart)        
         pref   = edgebuf[i++];   /* skip over pref vertex information */
@@ -1567,7 +1610,7 @@ static int pmatching_agg_ipm (ZZ *zz,
         rows[i] = -1;                  /* to flag data not found for that row */
       sendsize = 0;                    /* position in send buffer */
       sendcnt  = 0;                    /* count of messages in send buffer */
-      s        = send;                 /* start at send buffer origin */
+      s        = sendbuf;                 /* start at send buffer origin */
       for (k = kstart; k < total_nCandidates; k++)  {
         if (idxptr[candvisit[k]] == -1) 
           continue;                /* don't have this sparse candidate locally */
@@ -1607,8 +1650,8 @@ static int pmatching_agg_ipm (ZZ *zz,
         /* iff necessary, resize send buffer to fit at least first message */
         msgsize = HEADER_SIZE + 2 * count;
         if (sendcnt == 0 && (msgsize > nSend)) {
-          MACRO_RESIZE (1.2 * msgsize, nSend, send);  /* increase buffer size */
-          s = send;         
+          MACRO_RESIZE (1.2 * msgsize, nSend, sendbuf);  /* increase buffer size */
+          s = sendbuf;         
         }
 
 /*        uprintf(hgc, "cand=%d  sendsize(%d) + msgsize(%d) <= nSend (%d)\n", candidate_gno, sendsize, msgsize, nSend);*/
@@ -1651,8 +1694,8 @@ static int pmatching_agg_ipm (ZZ *zz,
       MPI_Allreduce (&k, &kstart, 1, MPI_INT, MPI_MIN, hgc->col_comm);
 
       /* Send inner product data in send buffer to appropriate rows */
-      ierr = communication_by_plan (zz, sendcnt, dest, size, 1, send, &reccnt, 
-                                    &recsize, &nRec, &rec, hgc->col_comm, IPM_TAG);
+      ierr = communication_by_plan (zz, sendcnt, dest, size, 1, sendbuf, &reccnt, 
+                                    &recsize, &nRec, &recbuf, hgc->col_comm, IPM_TAG);
       if (ierr != ZOLTAN_OK)
         goto End;
     
@@ -1660,10 +1703,10 @@ static int pmatching_agg_ipm (ZZ *zz,
       for (i = 0; i < hgc->nProc_y; i++)
         rows[i] = recsize;       /* sentinal in case no row's data available */
       k = 0;
-      for (r = rec; r < rec+recsize; r+=(HEADER_SIZE+2*(*(r+2)))) {
+      for (r = recbuf; r < recbuf+recsize; r+=(HEADER_SIZE+2*(*(r+2)))) {
         if (*(r+1) < 0)  {
           *(r+1) = -(*(r+1)) - 1;           /* make sentinal candidate_index positive */
-          rows[k++] = (r - rec);  /* points to gno */
+          rows[k++] = (r - recbuf);  /* points to gno */
         }
       }
 
@@ -1672,17 +1715,17 @@ static int pmatching_agg_ipm (ZZ *zz,
           errexit("k(%d)!=nProc_y(%d) recsize %d", k, hgc->nProc_y, recsize);
     
       /* merge partial i.p. sum data to compute total inner products */
-      s = send; 
+      s = sendbuf; 
       for (n = old_kstart; n < kstart; n++) {
         m = 0;       
         for (i = 0; i < hgc->nProc_y; i++) 
-          if (rows[i] < recsize && rec [rows[i]+1] == candvisit[n])  {
-            candidate_gno   = rec [rows[i]++];
-            candidate_index = rec [rows[i]++];
-            count           = rec [rows[i]++];
+          if (rows[i] < recsize && recbuf [rows[i]+1] == candvisit[n])  {
+            candidate_gno   = recbuf [rows[i]++];
+            candidate_index = recbuf [rows[i]++];
+            count           = recbuf [rows[i]++];
             for (j = 0; j < count; j++)  {
-              lno = rec [rows[i]++];
-              f = (float *) (rec + rows[i]++);
+              lno = recbuf [rows[i]++];
+              f = (float *) (recbuf + rows[i]++);
               if (sums[lno] == 0.0)   /* is this first time for this lno? */ 
                   aux[m++] = lno;     /* then save the lno */
               sums[lno] += *f;    /* sum the psums */
@@ -1708,7 +1751,7 @@ static int pmatching_agg_ipm (ZZ *zz,
           if (mcw==0.0)
               mcw = 1.0;
           val = sums[lno] / mcw;
-/*          printf("[v=%d (lno=%d) ip=%f mcw=%f val=%f] ", VTX_LNO_TO_GNO(hg, lno), lno, sums[lno], mcw, val); */
+/*          printf("[v=%d (lno=%zd) ip=%f mcw=%f val=%f] ", VTX_LNO_TO_GNO(hg, lno), lno, sums[lno], mcw, val); */
           if (val > bestsum && match[lno]>=0)  {
             bestsum = val;
             bestlno = lno;
@@ -1723,11 +1766,11 @@ static int pmatching_agg_ipm (ZZ *zz,
         
         /* Put <candidate_gno, candidate_index, count, <lno, tsum>> into send */
         if (bestlno >= 0)  {
-          if (s - send + HEADER_SIZE + 2 * m > nSend ) {
-            sendsize = s - send;
+          if (s - sendbuf + HEADER_SIZE + 2 * m > nSend ) {
+            sendsize = s - sendbuf;
             uprintf(hgc, "resize with nSend=%d sendsize=%d m=%d\n", nSend, sendsize, m);
-            MACRO_REALLOC (1.2*(sendsize + HEADER_SIZE + 2*m), nSend, send);
-            s = send + sendsize;         /* since realloc buffer could move */
+            MACRO_REALLOC (1.2*(sendsize + HEADER_SIZE + 2*m), nSend, sendbuf);
+            s = sendbuf + sendsize;         /* since realloc buffer could move */
           }      
           *s++ = candidate_gno;
           *s++ = candidate_index;            
@@ -1737,7 +1780,7 @@ static int pmatching_agg_ipm (ZZ *zz,
 /*          uprintf(hgc, "cand_gno=%d partner_lno=%d with ip=%f\n", candidate_gno, bestlno, bestsum);*/
         }     
       }
-      sendsize = s - send;   /* size (in ints) of send buffer */ 
+      sendsize = s - sendbuf;   /* size (in ints) of send buffer */ 
     
       /* Communicate total inner product results to MASTER ROW */
       MPI_Gather(&sendsize, 1, MPI_INT, size, 1, MPI_INT, 0, hgc->col_comm);
@@ -1752,24 +1795,24 @@ static int pmatching_agg_ipm (ZZ *zz,
           dest[i] = dest[i-1] + size[i-1];
           
         if (recsize > nRec)
-          MACRO_RESIZE (1.2 * recsize, nRec, rec);      /* make rec buffer bigger */
+          MACRO_RESIZE (1.2 * recsize, nRec, recbuf);      /* make rec buffer bigger */
       }
       
-      MPI_Gatherv (send, sendsize, MPI_INT, rec, size, dest, MPI_INT, 0,
+      MPI_Gatherv (sendbuf, sendsize, ZOLTAN_GNO_MPI_TYPE, recbuf, size, dest, ZOLTAN_GNO_MPI_TYPE, 0,
                    hgc->col_comm);
 
 /*      uprintf(hgc, "recsize=%d\n", recsize);*/
       
       /* Determine best vertex and best sum for each candidate */
       if (hgc->myProc_y == 0) {   /* do following only if I am the MASTER ROW */
-        for (r = rec; r < rec + recsize;)  {
+        for (r = recbuf; r < recbuf + recsize;)  {
           candidate_gno   = *r++;
           candidate_index = *r++;
           bestlno         = *r++;                    /* count of nonzero pairs */
           f               =  (float*) r++;
           bestsum         = *f;
         
-/*          uprintf(hgc, "local best for cand %d (idx=%d) is %d with ip=%f\n", candidate_gno, candidate_index, (bestlno<0) ? -1 : match[bestlno], bestsum);*/
+/*          uprintf(hgc, "local best for cand %zd (idx=%d) is %d with ip=%f\n", candidate_gno, candidate_index, (bestlno<0) ? -1 : match[bestlno], bestsum);*/
           master_data[candidate_index].candidate = candidate_gno;
           master_data[candidate_index].partner = match[bestlno];          
           master_data[candidate_index].ip = bestsum;
@@ -1788,39 +1831,40 @@ static int pmatching_agg_ipm (ZZ *zz,
     replycnt=0;
     if (hgc->myProc_y == 0) {      
       HG_Ptr = hg;
+      int int_for_mpi = (int)total_nCandidates;
 
-      MPI_Allreduce(master_data, global_best, total_nCandidates,
+      MPI_Allreduce(master_data, global_best, int_for_mpi,
                     phasethreetype, phasethreeop, hgc->row_comm);
 
       /*
       uprintf(hgc, "Cand\tPartner\tIP\n");
-      for (i = 0; i < total_nCandidates; i++)
-        uprintf(hgc, "%d\t%d\t%.3f\n",  global_best[i].candidate,
-                global_best[i].partner, global_best[i].ip);
+      for (len = 0; len < total_nCandidates; len++)
+        uprintf(hgc, "%d\t%d\t%.3f\n",  global_best[len].candidate,
+                global_best[len].partner, global_best[len].ip);
       */
 
       /* Reinitialize master_data for next round */
-      for (i = 0; i < total_nCandidates; i++) {        
-        master_data[i].candidate = -1;
-        master_data[i].partner   = -1;
-        master_data[i].ip        = -1.0;
+      for (len = 0; len < total_nCandidates; len++) {        
+        master_data[len].candidate = -1;
+        master_data[len].partner   = -1;
+        master_data[len].ip        = -1.0;
       }
 
 
 
       msgsize = total_nCandidates*(2+VtxDim+(hgp->UsePrefPart ? 1: 0));
       if (msgsize > nSend) 
-        MACRO_RESIZE (msgsize, nSend, send);  /* increase buffer size */
-      s = send;         
+        MACRO_RESIZE (msgsize, nSend, sendbuf);  /* increase buffer size */
+      s = sendbuf;         
       
-      for (i = 0; i < total_nCandidates; i++) {
+      for (len = 0; len < total_nCandidates; len++) {
         int cproc, pproc;
-        candidate_gno = global_best[i].candidate;
+        candidate_gno = global_best[len].candidate;
         
         if (candidate_gno == -1)
           continue;
         
-        partner_gno = global_best[i].partner;
+        partner_gno = global_best[len].partner;
         cproc = VTX_TO_PROC_X(hg, candidate_gno);
         pproc = VTX_TO_PROC_X(hg, partner_gno);
         if (pproc == hgc->myProc_x)   { /* partner is mine */
@@ -1828,10 +1872,10 @@ static int pmatching_agg_ipm (ZZ *zz,
           
           int plno = VTX_GNO_TO_LNO(hg, partner_gno);
           for (j=0; j<VtxDim; ++j)
-            if (cw[plno*VtxDim+j]+candw[i*VtxDim+j]>maxw[j])
+            if (cw[plno*VtxDim+j]+candw[len*VtxDim+j]>maxw[j])
               break;
           dest[replycnt++] = cproc;
-          *s++ = i;
+          *s++ = len;
           *s++ = plno;
           if (hgp->UsePrefPart)
               *s++ = lheadpref[plno];
@@ -1839,7 +1883,7 @@ static int pmatching_agg_ipm (ZZ *zz,
           if (j<VtxDim) { /* reject due to weight constraint*/
             *f = -1.0; /* negative means rejected */
             f += VtxDim;
-/*            uprintf(hgc, "I'm rejecting (%d, %d)\n", candidate_gno, partner_gno); */
+/*            uprintf(hgc, "I'm rejecting (%zd, %zd)\n", candidate_gno, partner_gno); */
           } else { /* accept */ 
             for (j=0; j<VtxDim; ++j) { /* modify weight immediately */
               cw[plno*VtxDim+j] += candw[i*VtxDim+j];
@@ -1851,15 +1895,15 @@ static int pmatching_agg_ipm (ZZ *zz,
 */
             /* was partner a candidate ?*/
             if (match[plno]<0) 
-              errexit("HEY HEY HEY  match[%d(gno=%d)]=%d\n", plno, partner_gno, match[plno]);
+              errexit("HEY HEY HEY  match[%d(gno=%zd)]=%zd\n", plno, partner_gno, match[plno]);
           }
-          s = (int *)f;
+          s = (ZOLTAN_GNO_TYPE *)f;
         }
       }
     }
 
-    for (i=0; i<locCandCnt; ++i) {
-        int lno=locCandidates[i];
+    for (len=0; len<locCandCnt; ++len) {
+        int lno=locCandidates[len];
         if (match[lno]<0)
             match[lno] = -match[lno]-1;
         else
@@ -1871,13 +1915,13 @@ static int pmatching_agg_ipm (ZZ *zz,
     MPI_Bcast (&replycnt, 1, MPI_INT, 0, hgc->col_comm);
     
     if (hgc->myProc_y!=0 && replycnt*(2+VtxDim+(hgp->UsePrefPart ? 1: 0))>nSend)
-      MACRO_REALLOC (replycnt*(2+VtxDim+(hgp->UsePrefPart ? 1: 0)), nSend, send);  /* increase buffer size */
+      MACRO_REALLOC (replycnt*(2+VtxDim+(hgp->UsePrefPart ? 1: 0)), nSend, sendbuf);  /* increase buffer size */
     
-    MPI_Bcast (send, replycnt*(2+VtxDim+(hgp->UsePrefPart ? 1: 0)), MPI_INT, 0, hgc->col_comm);
+    MPI_Bcast (sendbuf, replycnt*(2+VtxDim+(hgp->UsePrefPart ? 1: 0)), ZOLTAN_GNO_MPI_TYPE, 0, hgc->col_comm);
     if (hgc->myProc_y!=0) {
       int plno;
       
-      s = send;
+      s = sendbuf;
       for (i=0; i<replycnt; ++i) {
         ++s; /* skip candidate_index*/
 
@@ -1888,7 +1932,10 @@ static int pmatching_agg_ipm (ZZ *zz,
         } else {
 /*        uprintf(hgc, "Set visited flag of %d (gno=%d)\n", plno, VTX_LNO_TO_GNO(hg, plno)); */
           visited[plno] = 1;          
-          memcpy(&cw[plno*VtxDim], s, sizeof(float)*VtxDim);
+
+/*        memcpy(&cw[plno*VtxDim], s, sizeof(float)*VtxDim); */
+          MEMCPY_GNO_TO_FLOAT(&cw[plno*VtxDim], s, VtxDim);
+
         }
         s += VtxDim;
       }      
@@ -1897,13 +1944,13 @@ static int pmatching_agg_ipm (ZZ *zz,
 
     if (hgc->myProc_y == 0) {    
       /* send accept/reject message */
-      communication_by_plan(zz, replycnt, dest, NULL, 2+VtxDim+(hgp->UsePrefPart ? 1: 0), send,
-                            &reccnt, &recsize, &nRec, &rec, hgc->row_comm, CONFLICT_TAG);
+      communication_by_plan(zz, replycnt, dest, NULL, 2+VtxDim+(hgp->UsePrefPart ? 1: 0), sendbuf,
+                            &reccnt, &recsize, &nRec, &recbuf, hgc->row_comm, CONFLICT_TAG);
 
       if (reccnt*(3+VtxDim+(hgp->UsePrefPart ? 1: 0)) > nSend) 
-        MACRO_RESIZE (reccnt*(3+VtxDim+(hgp->UsePrefPart ? 1: 0)), nSend, send);  /* increase buffer size */
-      s = send;         
-      for (r = rec; r < rec + recsize;) {
+        MACRO_RESIZE (reccnt*(3+VtxDim+(hgp->UsePrefPart ? 1: 0)), nSend, sendbuf);  /* increase buffer size */
+      s = sendbuf;         
+      for (r = recbuf; r < recbuf + recsize;) {
         int ci=*r++, lno=VTX_GNO_TO_LNO(hg, global_best[ci].candidate),
             lheadno, partner=global_best[ci].partner, pref=-1;
 
@@ -1914,7 +1961,7 @@ static int pmatching_agg_ipm (ZZ *zz,
         if (*f<0.0) { /* rejected */
           f += VtxDim;
           lheadno = -1;
-/*          uprintf(hgc, "(%d, %d) has been rejected\n", global_best[ci].candidate, global_best[ci].partner);*/
+/*          uprintf(hgc, "(%zd, %zd) has been rejected\n", global_best[ci].candidate, global_best[ci].partner);*/
         } else { /* accepted */
           lheadno = Zoltan_KVHash_Insert(&hash, partner, lno); 
 
@@ -1926,29 +1973,32 @@ static int pmatching_agg_ipm (ZZ *zz,
           lhead[lno] = lheadno;
           match[lno] = partner;
           
-/*          uprintf(hgc, "(%d, %d) has been accepted\n", global_best[ci].candidate, global_best[ci].partner);*/
+/*          uprintf(hgc, "(%zd, %zd) has been accepted\n", global_best[ci].candidate, global_best[ci].partner);*/
         }
-        r = (int *) f;
+        r = (ZOLTAN_GNO_TYPE *) f;
         *s++ = lno;
         *s++ = lheadno;
         *s++ = partner;
         if (hgp->UsePrefPart)
             *s++ = pref;
-        if (lheadno!=-1)
-          memcpy(s, &cw[lheadno*VtxDim], sizeof(float)*VtxDim);
+        if (lheadno!=-1){
+/*        memcpy(s, &cw[lheadno*VtxDim], sizeof(float)*VtxDim); */
+          MEMCPY_FLOAT_TO_GNO(s, &cw[lheadno*VtxDim], VtxDim);
+        }
+        
         s += VtxDim;
       }
     }
     
-    recsize = s - send;
+    recsize = s - sendbuf;
     MPI_Bcast (&recsize, 1, MPI_INT, 0, hgc->col_comm); /* bcase nSend */
     if (recsize>nSend) /* for procs other than 0; that might be true */
-      MACRO_RESIZE (recsize, nSend, send);  /* increase buffer size */
+      MACRO_RESIZE (recsize, nSend, sendbuf);  /* increase buffer size */
 
-    MPI_Bcast (send, recsize, MPI_INT, 0, hgc->col_comm);
+    MPI_Bcast (sendbuf, recsize, MPI_INT, 0, hgc->col_comm);
 
     if (hgc->myProc_y !=0) { /* master row already done this */
-      for (s = send; s < send + recsize; ) {
+      for (s = sendbuf; s < sendbuf + recsize; ) {
         int lno     = *s++;
         int lheadno = *s++;
         int partner = *s++, pref = 0;
@@ -1958,7 +2008,8 @@ static int pmatching_agg_ipm (ZZ *zz,
         if (lheadno!=-1) { 
           lhead[lno] = lheadno;
           match[lno] = partner;
-          memcpy(&cw[lheadno*VtxDim], s, sizeof(float)*VtxDim);
+/*        memcpy(&cw[lheadno*VtxDim], s, sizeof(float)*VtxDim);    */
+          MEMCPY_GNO_TO_FLOAT(&cw[lheadno*VtxDim], s, VtxDim);
           if (hgp->UsePrefPart)
               lheadpref[lheadno] = pref;
         }
@@ -1985,7 +2036,7 @@ static int pmatching_agg_ipm (ZZ *zz,
     Zoltan_KVHash_Destroy(&hash);
     
   Zoltan_Multifree (__FILE__, __LINE__, 22, &candIdx, &cw, &tw, &maxw, &candw, &lhead, &lheadpref,
-                    &visit, &visited, &sums, &send, &dest, &size, &rec, &aux, &idxptr, &candvisit,
+                    &visit, &visited, &sums, &sendbuf, &dest, &size, &recbuf, &aux, &idxptr, &candvisit,
                     &edgebuf, &locCandidates, &rows, &master_data, &master_procs);
   ZOLTAN_TRACE_EXIT(zz, yo);
     

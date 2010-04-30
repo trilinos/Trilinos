@@ -14,6 +14,7 @@
 #define __ZZ_RAND_H
 
 #include <mpi.h>
+#include <zoltan_types.h>
 
 #ifdef __cplusplus
 /* if C++, define the rest of this header file as extern C */
@@ -27,7 +28,8 @@ extern unsigned int Zoltan_Seed();
 extern unsigned int Zoltan_Rand(unsigned int *);
 extern unsigned int Zoltan_Rand_InRange(unsigned int *, unsigned int);
 extern void Zoltan_Srand(unsigned int, unsigned int *);
-extern void Zoltan_Rand_Perm_Int(int*, int, unsigned int *);
+extern void Zoltan_Rand_Perm_Int(int*,              int,             unsigned int *);
+extern void Zoltan_Rand_Perm_Gno(ZOLTAN_GNO_TYPE *, ZOLTAN_GNO_TYPE , unsigned int *);
 extern void Zoltan_Srand_Sync(unsigned int, unsigned int *, MPI_Comm);
 
 

@@ -199,7 +199,7 @@ typedef struct Zoltan_HGraph ZHG;
  * j, and k are being contracted together to form one new vertex,
  * Matching[i] == j; Matching[j] == k; and Matching[k] == i;
  * The cycle describes the contraction. */
-typedef int *Matching;  /* length |V|, matching information of vertices */
+typedef ZOLTAN_GNO_TYPE *Matching;  /* length |V|, matching information of vertices */
 typedef int *Packing;   /* length |V|, packing information of vertices */
 typedef int *Grouping;  /* length |V|, grouping information of vertices */
 

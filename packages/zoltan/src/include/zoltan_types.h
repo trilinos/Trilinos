@@ -15,6 +15,7 @@
 #define __ZOLTAN_TYPES_H
 
 #include <mpi.h>
+#include <unistd.h>
 /* to get PRIdMAX, etc */
 #define __STDC_FORMAT_MACROS
 #include <inttypes.h>
