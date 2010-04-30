@@ -1669,12 +1669,15 @@ static int Convert_To_CSR(
 {
 static char *yo = "Convert_To_CSR";
 int numVerts = *num_lists;
-int numEdges, ierr, ht_size, loc;
+int numEdges, ierr, ht_size ;
+int edg_cnt ;
 ZOLTAN_ID_PTR egid, vgid;
 int v, e, idx, found, npins;
 struct _hash_node {
   ZOLTAN_ID_PTR egid;
-  int loc;
+  int loc; /* Will be used as counter for #vertices in an edge and later as
+            * as bucket pointer to write the vertices. The value is -(#vertices)
+            * when used as a counter */
   struct _hash_node *next;
 } *hn=NULL, *tmp;
 struct _hash_node **hash_table=NULL;
@@ -1718,7 +1721,7 @@ int numGID = zz->Num_GID;
 
      while (hn){
        if (ZOLTAN_EQ_GID(zz, hn->egid, egid)){
-         hn->loc++;
+         hn->loc--;
          found = 1;
          break;
        }
@@ -1738,7 +1741,7 @@ int numGID = zz->Num_GID;
          goto End;
        }
        hn->egid = egid;
-       hn->loc = 1;
+       hn->loc = -1;
        hn->next = hash_table[idx];
        hash_table[idx] = hn;
        numEdges++;
@@ -1759,7 +1762,7 @@ int numGID = zz->Num_GID;
     ierr = ZOLTAN_MEMERR;
   }
 
-  vIdx[0] = 0;
+  /*vIdx[0] = 0;
 
   for (idx=0, e = 0; idx < ht_size; idx++){
     hn = hash_table[idx];
@@ -1771,7 +1774,7 @@ int numGID = zz->Num_GID;
       hn = hn->next;
       e++;
     }
-  }
+  }*/
 
   /* Write out pins */
 
@@ -1786,6 +1789,8 @@ int numGID = zz->Num_GID;
   egid = *edg_GID;
   eIdx = col_ptr;
 
+  vIdx[0] = 0;
+  edg_cnt = 0 ;
   for (v=0; v < numVerts; v++){
     npins = eIdx[v+1] - eIdx[v];
 
@@ -1795,6 +1800,14 @@ int numGID = zz->Num_GID;
 
       while (hn){
         if (ZOLTAN_EQ_GID(zz, hn->egid, egid)){
+            if (hn->loc < 0) {
+                /* Never seen this edge before */
+                hn->loc = -(hn->loc) ;
+                vIdx[edg_cnt+1] = vIdx[edg_cnt] + hn->loc ;
+                ZOLTAN_SET_GID(zz, edges + edg_cnt*numGID, hn->egid);
+                hn->loc = vIdx[edg_cnt]; /* Use loc as the bucket pointer now */
+                edg_cnt++ ;
+            }
 
           ZOLTAN_SET_GID(zz, pins + (numGID * hn->loc), vgid);
           hn->loc++;
