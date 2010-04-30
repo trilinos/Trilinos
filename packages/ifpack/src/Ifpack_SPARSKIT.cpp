@@ -159,6 +159,9 @@ int Ifpack_SPARSKIT::Compute()
     Matrix().ExtractMyRowCopy(i, MaxNumEntries, NumEntries, &Values[0], 
                               &Indices[0]);
 
+    // NOTE: There might be some issues here with the ILU(0) if the column indices aren't sorted.
+    // The other factorizations are probably OK.
+
     for (int j = 0 ; j < NumEntries ; ++j)
     {
       if (Indices[j] < n) // skip non-local columns
@@ -182,7 +185,7 @@ int Ifpack_SPARSKIT::Compute()
   else if (Type_ == "ILUK")
     iwk = (2 * lfil_ + 1) * nnz + 1;
   else if (Type_ == "ILU0")
-    iwk = nnz;
+    iwk = nnz+2;
 
   int ierr = 0;
 
@@ -239,7 +242,6 @@ int Ifpack_SPARSKIT::Compute()
     F77_ILU0(&n, &a[0], &ja[0], &ia[0], 
              &alu_[0], &jlu_[0], &ju_[0], &jw[0], &ierr);
   }
-
   IFPACK_CHK_ERR(ierr);
 
   IsComputed_ = true;
@@ -260,20 +262,18 @@ int Ifpack_SPARSKIT::ApplyInverse(const Epetra_MultiVector& X,
   int n = Matrix().NumMyRows();
 
   for (int i = 0 ; i < X.NumVectors() ; ++i)
-      F77_LUSOL(&n, (double*)Y(i)->Values(), X(i)->Values(), (double*)&alu_[0], 
+    F77_LUSOL(&n, (double*)X(i)->Values(), Y(i)->Values(), (double*)&alu_[0], 
                 (int*)&jlu_[0], (int*)&ju_[0]);
 
-#if 0 
   // still need to fix support for permutation
   if (Type_ == "ILUTP" || Type_ == "ILUDP")
   {
     vector<double> tmp(n);
     for (int j = 0 ; j < n ; ++j)
-      tmp[j] = Y[0][iperm_[j]];
+      tmp[iperm_[j]] = Y[0][j];
     for (int j = 0 ; j < n ; ++j)
       Y[0][j] = tmp[j];
   }
-#endif
 
   ++NumApplyInverse_;
   return(0);
