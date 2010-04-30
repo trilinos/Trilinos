@@ -6,7 +6,7 @@ INCLUDE(AddOptionAndDefine)
 # A) Define the package
 #
 
-PACKAGE(Ifpack)
+PACKAGE(Ifpack  DISABLE_CIRCULAR_REF_DETECTION_FAILURE)
 
 #
 # B) Set up package-specific options

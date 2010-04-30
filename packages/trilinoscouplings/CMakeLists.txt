@@ -6,7 +6,7 @@ INCLUDE(AddOptionAndDefine)
 # A) Define the package
 #
 
-PACKAGE(TrilinosCouplings)
+PACKAGE(TrilinosCouplings  DISABLE_CIRCULAR_REF_DETECTION_FAILURE)
 
 #
 # B) Set up package-specific options

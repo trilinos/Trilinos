@@ -7,7 +7,7 @@ INCLUDE(DualScopeSet)
 # A) Define the package
 #
 
-PACKAGE(ML)
+PACKAGE(ML  DISABLE_CIRCULAR_REF_DETECTION_FAILURE)
 
 #
 # B) Set up package-specific options

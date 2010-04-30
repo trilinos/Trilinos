@@ -6,7 +6,7 @@ INCLUDE(CombinedOption)
 # A) Define the package
 #
 
-PACKAGE(NOX)
+PACKAGE(NOX  DISABLE_CIRCULAR_REF_DETECTION_FAILURE)
 
 #
 # B) Set up package-specific options
