@@ -241,7 +241,10 @@ int main(int argc, char *argv[]) {
     // Get Isorropia and Zoltan parameters.
     Teuchos::ParameterList iso_paramlist = inputMeshList.sublist
                                                     ("Isorropia Input") ;
-    iso_paramlist.print(std::cout,2,true,true);
+    if (MyPID == 0) {
+      std::cout << "Isorropia/Zoltan parameters" << std::endl;
+        iso_paramlist.print(std::cout,2,true,true);
+    }
 
 
 // *********************************** CELL TOPOLOGY **********************************
