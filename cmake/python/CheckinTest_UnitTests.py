@@ -190,7 +190,7 @@ g_cmndinterceptsInitialCommitPasses = \
   "IT: eg commit -a -F .*; 0; 'initial eg commit passed'\n"
 
 g_cmndinterceptsPullOnlyPasses = \
-  "IT: eg status; 1; 'eg status shows no uncommitted files'\n" \
+  "IT: eg diff --shortstat; 0; ''\n" \
   "IT: eg pull origin currentbranch; 0; 'initial eg pull passed'\n"
 
 g_cmndinterceptsDiffOnlyPasses = \
@@ -587,7 +587,6 @@ class test_checkin_test(unittest.TestCase):
       +"Running: ssh -q godel /some/dir/some_command.sh &\n" \
       ,
       [
-      (getStatusOutputFileName(), "eg status shows no uncommitted files\n"),
       (getInitialCommitOutputFileName(), "initial eg commit passed\n"),
       (getInitialPullOutputFileName(), "initial eg pull passed\n"),
       (getModifiedFilesOutputFileName(), "M\tpackages/teuchos/CMakeLists.txt\n"),
@@ -1476,7 +1475,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "--do-all",
       g_cmndinterceptsCurrentBranch \
-      +"IT: eg status; 1; 'eg status shows no uncommitted files'\n" \
+      +"IT: eg diff --shortstat; 0; ''\n" \
       +"IT: eg pull origin currentbranch; 1; 'eg pull failed'\n" \
       ,
       \
