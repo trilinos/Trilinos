@@ -296,6 +296,17 @@ errors.  Workaround: I am not sure there is any robust workaround for this
 problem.  Only a built-in capability to CMake can address this issue fully.
 
 
+(*) [CDash] Have CDash log each call to each PHP script storing a) what the
+arguments where, b) when the script was called, c) who called the script, and
+d) how long the script took to complete.  From these logs, we can do simple
+queries and compute simple statistics for responce time (e.g. min time, max
+time, mean time, standard deviation, etc.) for each of the PHP scripts.  We
+can also use this information to see if the server running CDash is having
+problems with responsiveness (i.e. where the same query takes radically
+different amounts of time).  We would also be able to use this info to see if
+there are certain CDash queries that are habitually taking too long.
+
+
 (*) [CDash] Add a general query filter for the main
 project/subprojects page: Currently, the main project/subprojects page
 shows all results for all builds for the current day for all nightly
