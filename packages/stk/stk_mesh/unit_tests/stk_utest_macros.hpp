@@ -30,16 +30,18 @@
 #define STKUNIT_UNIT_TEST(testclass,testmethod) TEUCHOS_UNIT_TEST(testclass,testmethod)
 
 #define STKUNIT_ASSERT(A) \
-    {bool success; TEUCHOS_TEST_ASSERT(A,std::cout,success)}
+    {bool success = true; TEUCHOS_TEST_ASSERT(A,std::cout,success); if (!success) throw 1;}
 #define STKUNIT_ASSERT_EQUAL(A,B) \
-    {bool success; TEUCHOS_TEST_EQUALITY(B,A,std::cout,success)}
+    {bool success = true; TEUCHOS_TEST_EQUALITY(B,A,std::cout,success); if (!success) throw 1;}
 #define STKUNIT_EXPECT_EQUAL(A,B) STKUNIT_ASSERT_EQUAL(A,B)
 #define STKUNIT_ASSERT_THROW(A,B) \
-    {bool success; TEUCHOS_TEST_THROW(A,B,std::cout,success)}
+    {bool success = true; TEUCHOS_TEST_THROW(A,B,std::cout,success); if (!success) throw 1;}
+#define STKUNIT_ASSERT_NO_THROW(A) \
+    {TEUCHOS_TEST_NOTHROW(A,out,success)}
 #define STKUNIT_EXPECT_TRUE(A) \
-    {bool success; TEUCHOS_TEST_ASSERT(A,std::cout,success) }
+    {bool success = true; TEUCHOS_TEST_ASSERT(A,std::cout,success); if (!success) throw 1;}
 #define STKUNIT_EXPECT_FALSE(A) \
-    {bool success; TEUCHOS_TEST_ASSERT(!(A),std::cout,success) }
+    {bool success = true; TEUCHOS_TEST_ASSERT(!(A),std::cout,success); if (!success) throw 1;}
 #define STKUNIT_ASSERT_TRUE(A) STKUNIT_EXPECT_TRUE(A)
 #define STKUNIT_ASSERT_FALSE(A) STKUNIT_EXPECT_FALSE(A)
 
@@ -122,6 +124,7 @@ int main(int argc, char ** argv) \
 #define STKUNIT_ASSERT_EQUAL(A,B) ASSERT_EQ(A,B)
 #define STKUNIT_EXPECT_EQUAL(A,B) EXPECT_EQ(A,B)
 #define STKUNIT_ASSERT_THROW(A,B) ASSERT_THROW(A,B)
+#define STKUNIT_ASSERT_NO_THROW(A) ASSERT_NO_THROW(A)
 #define STKUNIT_EXPECT_TRUE(A) EXPECT_TRUE(A)
 #define STKUNIT_EXPECT_FALSE(A) EXPECT_FALSE(A)
 #define STKUNIT_ASSERT_TRUE(A) ASSERT_TRUE(A)

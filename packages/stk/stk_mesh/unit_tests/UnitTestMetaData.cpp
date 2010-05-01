@@ -412,18 +412,21 @@ void UnitTestMetaData::testPartVector()
 
   vresult.clear();
   STKUNIT_ASSERT_EQUAL( size_t(2) , intersect( vabc , vbcd ) );
-  STKUNIT_ASSERT_EQUAL( size_t(2) , intersect( vabc , vbcd , vresult ) );
+  size_t intersect_size = intersect( vabc , vbcd , vresult );
+  STKUNIT_ASSERT_EQUAL( size_t(2) , intersect_size );
   STKUNIT_ASSERT_EQUAL( pb , vresult[0] );
   STKUNIT_ASSERT_EQUAL( pc , vresult[1] );
 
   vresult.clear();
   STKUNIT_ASSERT_EQUAL( size_t(1) , intersect( vdef , vbcd ) );
-  STKUNIT_ASSERT_EQUAL( size_t(1) , intersect( vdef , vbcd , vresult ) );
+  intersect_size = intersect( vdef , vbcd , vresult );
+  STKUNIT_ASSERT_EQUAL( size_t(1) , intersect_size );
   STKUNIT_ASSERT_EQUAL( pd , vresult[0] );
 
   vresult.clear();
   STKUNIT_ASSERT_EQUAL( size_t(0) , intersect( vdef , vabc ) );
-  STKUNIT_ASSERT_EQUAL( size_t(0) , intersect( vdef , vabc , vresult ) );
+  intersect_size = intersect( vdef , vabc , vresult );
+  STKUNIT_ASSERT_EQUAL( size_t(0) , intersect_size );
   STKUNIT_ASSERT_EQUAL( size_t(0) , vresult.size() );
 
   Part * const pabc = & universal.declare_part( std::string("abc") , 0 );

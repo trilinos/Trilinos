@@ -37,7 +37,7 @@ namespace {
 STKUNIT_UNIT_TEST(TestDataTraits, testUnit)
 {
   int mpi_rank = 0;
-  int mpi_size = 0;
+  int mpi_size = 1;
   
 #ifdef STK_HAS_MPI
   STKUNIT_ASSERT_EQUAL(MPI_SUCCESS, MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank) );
