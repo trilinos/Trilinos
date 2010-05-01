@@ -61,6 +61,9 @@ NOX.Epetra provides the following user-level classes:
 // System includes
 #include <vector>
 
+// Configuration
+#include "PyTrilinos_config.h"
+
 // Teuchos includes
 #ifdef HAVE_INTTYPES_H
 #undef HAVE_INTTYPES_H
@@ -315,6 +318,10 @@ using namespace NOX::Epetra;
 %include "Epetra_Base.i"
 %include "Epetra_Maps.i"
 %include "Epetra_Operators.i"
+
+// EpetraExt import
+%ignore EpetraExt::Add;
+%include "EpetraExt.i"
 
 // NOX import
 %import "NOX.Abstract.i"
