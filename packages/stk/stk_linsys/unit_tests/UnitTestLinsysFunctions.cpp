@@ -26,6 +26,7 @@
 
 #include <stk_linsys/DofMapper.hpp>
 #include <stk_linsys/LinsysFunctions.hpp>
+#include <stk_linsys/LinearSystem.hpp>
 #include <stk_linsys/ImplDetails.hpp>
 
 #include <fei_Factory_Trilinos.hpp>
@@ -255,18 +256,12 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test2)
   const unsigned bucket_size = 100; //for a real application mesh, bucket_size would be much bigger...
 
   stk::mesh::MetaData meta_data( stk::mesh::fem_entity_rank_names() );
-  stk::mesh::MetaData meta_data2( stk::mesh::fem_entity_rank_names() );
 
   stk::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
-  stk::mesh::BulkData bulk_data2( meta_data2, comm, bucket_size );
 
   fill_utest_mesh_meta_data( meta_data );
 
-  bool use_temperature=false;
-  fill_utest_mesh_meta_data( meta_data2, use_temperature );
-
   fill_utest_mesh_bulk_data( bulk_data );
-  fill_utest_mesh_bulk_data( bulk_data2 );
 
   //set owner-processors to lowest-sharing (stk::mesh defaults to
   //highest-sharing) If highest-sharing owns, then it isn't correct for the
@@ -316,10 +311,86 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test2)
   STKUNIT_ASSERT( result );
   result = confirm_matrix_values(*mat, 6);
   STKUNIT_ASSERT( result );
+}
 
-//create another matrix and vector:
-//  fei::SharedPtr<fei::Matrix> mat2 = factory.createMatrix(matgraph);
-//  fei::SharedPtr<fei::Vector> vec2 = factory.createVector(matgraph);
+STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test3)
+{
+  MPI_Barrier( MPI_COMM_WORLD );
+  MPI_Comm comm = MPI_COMM_WORLD;
+  //First create and fill MetaData and BulkData objects:
+
+  const unsigned bucket_size = 100; //for a real application mesh, bucket_size would be much bigger...
+
+  stk::mesh::MetaData meta_data( stk::mesh::fem_entity_rank_names() );
+
+  stk::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
+
+  fill_utest_mesh_meta_data( meta_data );
+
+  fill_utest_mesh_bulk_data( bulk_data );
+
+  //set owner-processors to lowest-sharing (stk::mesh defaults to
+  //highest-sharing) If highest-sharing owns, then it isn't correct for the
+  //way the fei library sets ownership of shared nodes for vectors etc.
+  stk::mesh::set_owners<stk::mesh::LowestRankSharingProcOwns>( bulk_data );
+
+  stk::mesh::Selector selector = meta_data.locally_used_part() & *meta_data.get_part("block_1");
+  std::vector<unsigned> count;
+  stk::mesh::count_entities(selector, bulk_data, count);
+
+  STKUNIT_ASSERT_EQUAL( count[stk::mesh::Element], (unsigned)4 );
+  STKUNIT_ASSERT_EQUAL( count[stk::mesh::Node],    (unsigned)20 );
+
+  stk::mesh::ScalarField* temperature_field =
+      meta_data.get_field<stk::mesh::ScalarField>("temperature");
+
+  //Create a fei Factory and stk::linsys::LinearSystem object:
+
+  fei::SharedPtr<fei::Factory> factory(new Factory_Trilinos(comm));
+
+  stk::linsys::LinearSystem ls(comm, factory);
+
+  stk::linsys::add_connectivities(ls, stk::mesh::Element, stk::mesh::Node,
+                                  *temperature_field, selector, bulk_data);
+
+  fei::SharedPtr<fei::MatrixGraph> matgraph = ls.get_fei_MatrixGraph();
+  int num_blocks = matgraph->getNumConnectivityBlocks();
+
+  STKUNIT_ASSERT_EQUAL( num_blocks, (int)1 );
+
+  ls.synchronize_mappings_and_structure();
+  ls.create_fei_LinearSystem();
+
+  //put 3 throughout the matrix and 3 throughout the rhs:
+  fei::SharedPtr<fei::Matrix> mat = ls.get_fei_LinearSystem()->getMatrix();
+  mat->putScalar(3.0);
+  ls.get_fei_LinearSystem()->getRHS()->putScalar(3.0);
+
+  fei::SharedPtr<fei::Vector> rhsvec = ls.get_fei_LinearSystem()->getRHS();
+
+  stk::linsys::scale_vector(2, *rhsvec);
+  stk::linsys::scale_matrix(2, *mat);
+
+  //now the rhs and matrix contain 6.
+
+  //create another matrix and vector:
+  fei::SharedPtr<fei::Matrix> mat2 = factory->createMatrix(matgraph);
+  fei::SharedPtr<fei::Vector> vec2 = factory->createVector(matgraph);
+  mat2->putScalar(3.0);
+  vec2->putScalar(3.0);
+
+  //add 3*mat to mat2
+  stk::linsys::add_matrix_to_matrix(3.0, *mat, *mat2);
+
+  //confirm that mat2 contains 21:
+  bool result = confirm_matrix_values(*mat2, 21);
+  STKUNIT_ASSERT(result);
+
+  //add 3*rhsvec to vec2:
+  stk::linsys::add_vector_to_vector(3.0, *rhsvec, *vec2);
+
+  //confirm that vec2 contains 21:
+  result = confirm_vector_values(*vec2, 21);
   STKUNIT_ASSERT(result);
 }
 

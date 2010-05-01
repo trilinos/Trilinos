@@ -11,6 +11,7 @@
 
 #include <stk_linsys/FeiBaseIncludes.hpp>
 #include <stk_linsys/DofMapper.hpp>
+#include <stk_linsys/LinearSystemInterface.hpp>
 
 #include <Teuchos_ParameterList.hpp>
 
@@ -20,7 +21,7 @@ namespace linsys {
 /** Container of linear-system (matrix, vectors) and mapping objects.
  *
  */
-class LinearSystem {
+class LinearSystem : public LinearSystemInterface {
  public:
   /** Constructor */
   LinearSystem(MPI_Comm comm, fei::SharedPtr<fei::Factory> factory);
@@ -93,7 +94,7 @@ class LinearSystem {
   fei::SharedPtr<fei::MatrixGraph> m_fei_mgraph;
 
   fei::SharedPtr<fei::LinearSystem> m_fei_linearsystem;
-};//struct LinearSystem
+};//class LinearSystem
 
 }//namespace linsys
 }//namespace stk

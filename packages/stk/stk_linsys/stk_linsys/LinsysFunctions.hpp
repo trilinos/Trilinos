@@ -9,7 +9,7 @@
 #ifndef stk_linsys_LinsysFunctions_hpp
 #define stk_linsys_LinsysFunctions_hpp
 
-#include <stk_linsys/LinearSystem.hpp>
+#include <stk_linsys/LinearSystemInterface.hpp>
 
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Selector.hpp>
@@ -22,7 +22,7 @@ namespace stk {
 namespace linsys {
 
 /** Add connectivities (matrix-graph sparsity contributions) to the
-    fei::MatrixGraph object in the specified LinearSystem object.
+    fei::MatrixGraph object in the specified LinearSystemInterface object.
 
   Connectivities are connections between two types of entities that
   are related to each other in the mesh. The most common example of
@@ -32,7 +32,7 @@ namespace linsys {
   given selector.
 
 */
-void add_connectivities(stk::linsys::LinearSystem& ls,
+void add_connectivities(stk::linsys::LinearSystemInterface& ls,
                         stk::mesh::EntityRank from_type,
                         stk::mesh::EntityRank to_connected_type,
                         const stk::mesh::FieldBase& field,
@@ -45,9 +45,9 @@ void add_connectivities(stk::linsys::LinearSystem& ls,
  * Obtains the list of entity-ids and passes that along with
  * the prescribed value, etc., to the fei::LinearSystem object.
  * The corresponding modifications to the matrix and vector will be made
- * when LinearSystem::finalize_assembly() is called.
+ * when LinearSystemInterface::finalize_assembly() is called.
  */
-void dirichlet_bc(stk::linsys::LinearSystem& ls,
+void dirichlet_bc(stk::linsys::LinearSystemInterface& ls,
                   const stk::mesh::BulkData& mesh,
                   const stk::mesh::Part& bcpart,
                   stk::mesh::EntityRank entity_rank,

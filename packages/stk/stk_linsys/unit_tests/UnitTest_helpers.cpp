@@ -15,6 +15,8 @@
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/GetBuckets.hpp>
+#include <stk_linsys/LinearSystemInterface.hpp>
 
 void fill_utest_mesh_meta_data(stk::mesh::MetaData& meta_data, bool use_temperature)
 {
@@ -112,5 +114,139 @@ void fill_utest_mesh_bulk_data(stk::mesh::BulkData& bulk_data)
   }
 
   bulk_data.modification_end();
+}
+
+void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, stk::mesh::ScalarField& field, stk::linsys::LinearSystemInterface& ls)
+{
+  const std::vector<stk::mesh::Bucket*>& mesh_buckets = mesh.buckets(stk::mesh::Element);
+  std::vector<stk::mesh::Bucket*> part_buckets;
+  stk::mesh::Selector select_owned(mesh.mesh_meta_data().locally_owned_part());
+  stk::mesh::get_buckets(select_owned, mesh_buckets, part_buckets);
+
+  stk::linsys::DofMapper& dof_mapper = ls.get_DofMapper();
+
+  int field_id = dof_mapper.get_field_id(field);
+
+  stk::mesh::Entity& first_entity = *(part_buckets[0]->begin());
+  stk::mesh::PairIterRelation rel = first_entity.relations(stk::mesh::Node);
+  int num_nodes_per_elem = rel.second - rel.first;
+
+  fei::SharedPtr<fei::MatrixGraph> matgraph = ls.get_fei_MatrixGraph();
+  int pattern_id = matgraph->definePattern(num_nodes_per_elem, stk::mesh::Node, field_id);
+
+  std::vector<int> node_ids(num_nodes_per_elem);
+
+  const int field_size = dof_mapper.get_fei_VectorSpace()->getFieldSize(field_id);
+  const int matsize = num_nodes_per_elem*field_size*num_nodes_per_elem*field_size;
+  const int vecsize = num_nodes_per_elem*field_size;
+
+  std::vector<double> elem_matrix_1d(matsize, 0);
+  std::vector<double*> elem_matrix_2d(vecsize);
+
+  std::vector<double> elem_vector(vecsize, 0);
+
+  for(size_t i=0; i<elem_matrix_2d.size(); ++i) {
+    elem_matrix_2d[i] = &elem_matrix_1d[i*vecsize];
+  }
+
+  //fill our dummy elem-matrix:
+  //This dummy matrix will be the same for every element. A real application
+  //would form a different elem-matrix for each element.
+  for(size_t i=0; i<elem_matrix_2d.size(); ++i) {
+    double* row = elem_matrix_2d[i];
+    if (i>=1) row[i-1] = -1;
+    row[i] = 2;
+    if (i<elem_matrix_2d.size()-1) row[i+1] = -1;
+
+    elem_vector[i] = 1;
+  }
+
+  std::vector<int> eqn_indices(vecsize);
+  fei::SharedPtr<fei::Matrix> matrix = ls.get_fei_LinearSystem()->getMatrix();
+  fei::SharedPtr<fei::Vector> rhs = ls.get_fei_LinearSystem()->getRHS();
+
+  for(size_t i=0; i<part_buckets.size(); ++i) {
+    stk::mesh::Bucket::iterator
+      b_iter = part_buckets[i]->begin(),
+             b_end  = part_buckets[i]->end();
+    for(; b_iter != b_end; ++b_iter) {
+      stk::mesh::Entity& elem = *b_iter;
+      rel = elem.relations(stk::mesh::Node);
+      for(int j=0; rel.first != rel.second; ++rel.first, ++j) {
+        node_ids[j] = rel.first->entity()->identifier();
+      }
+
+      matgraph->getPatternIndices(pattern_id, &node_ids[0], eqn_indices);
+
+      matrix->sumIn(vecsize, &eqn_indices[0], vecsize, &eqn_indices[0],
+                    &elem_matrix_2d[0]);
+      rhs->sumIn(vecsize, &eqn_indices[0], &elem_vector[0]);
+    }
+  }
+}
+
+void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, stk::mesh::ScalarField& field, stk::linsys::DofMapper& dof_mapper, fei::Matrix& matrix, fei::Vector& rhs)
+{
+  const std::vector<stk::mesh::Bucket*>& mesh_buckets = mesh.buckets(stk::mesh::Element);
+  std::vector<stk::mesh::Bucket*> part_buckets;
+  stk::mesh::Selector select_owned(mesh.mesh_meta_data().locally_owned_part());
+  stk::mesh::get_buckets(select_owned, mesh_buckets, part_buckets);
+
+  int field_id = dof_mapper.get_field_id(field);
+
+  stk::mesh::Entity& first_entity = *(part_buckets[0]->begin());
+  stk::mesh::PairIterRelation rel = first_entity.relations(stk::mesh::Node);
+  int num_nodes_per_elem = rel.second - rel.first;
+
+  fei::SharedPtr<fei::MatrixGraph> matgraph = matrix.getMatrixGraph();
+  int pattern_id = matgraph->definePattern(num_nodes_per_elem, stk::mesh::Node, field_id);
+
+  std::vector<int> node_ids(num_nodes_per_elem);
+
+  const int field_size = dof_mapper.get_fei_VectorSpace()->getFieldSize(field_id);
+  const int matsize = num_nodes_per_elem*field_size*num_nodes_per_elem*field_size;
+  const int vecsize = num_nodes_per_elem*field_size;
+
+  std::vector<double> elem_matrix_1d(matsize, 0);
+  std::vector<double*> elem_matrix_2d(vecsize);
+
+  std::vector<double> elem_vector(vecsize, 0);
+
+  for(size_t i=0; i<elem_matrix_2d.size(); ++i) {
+    elem_matrix_2d[i] = &elem_matrix_1d[i*vecsize];
+  }
+
+  //fill our dummy elem-matrix:
+  //This dummy matrix will be the same for every element. A real application
+  //would form a different elem-matrix for each element.
+  for(size_t i=0; i<elem_matrix_2d.size(); ++i) {
+    double* row = elem_matrix_2d[i];
+    if (i>=1) row[i-1] = -1;
+    row[i] = 2;
+    if (i<elem_matrix_2d.size()-1) row[i+1] = -1;
+
+    elem_vector[i] = 1;
+  }
+
+  std::vector<int> eqn_indices(vecsize);
+
+  for(size_t i=0; i<part_buckets.size(); ++i) {
+    stk::mesh::Bucket::iterator
+      b_iter = part_buckets[i]->begin(),
+             b_end  = part_buckets[i]->end();
+    for(; b_iter != b_end; ++b_iter) {
+      stk::mesh::Entity& elem = *b_iter;
+      rel = elem.relations(stk::mesh::Node);
+      for(int j=0; rel.first != rel.second; ++rel.first, ++j) {
+        node_ids[j] = rel.first->entity()->identifier();
+      }
+
+      matgraph->getPatternIndices(pattern_id, &node_ids[0], eqn_indices);
+
+      matrix.sumIn(vecsize, &eqn_indices[0], vecsize, &eqn_indices[0],
+                    &elem_matrix_2d[0]);
+      rhs.sumIn(vecsize, &eqn_indices[0], &elem_vector[0]);
+    }
+  }
 }
 

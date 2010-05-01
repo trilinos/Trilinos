@@ -18,6 +18,9 @@ INCLUDE(PackageLibraryMacros)
 SET(HEADERS "")
 SET(SOURCES "")
 
+FILE(GLOB HEADERS *.hpp)
+FILE(GLOB SOURCES *.cpp)
+
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../)
@@ -27,22 +30,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../)
 #
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
-
-APPEND_SET(HEADERS
-DofMapper.hpp
-FeiBaseIncludes.hpp
-FieldIdMap.hpp
-ImplDetails.hpp
-LinearSystem.hpp
-LinsysFunctions.hpp
-  )
-
-APPEND_SET(SOURCES
-DofMapper.cpp
-ImplDetails.cpp
-LinearSystem.cpp
-LinsysFunctions.cpp
-  )
 
 IF (TPL_ENABLE_MPI)
 ENDIF()
