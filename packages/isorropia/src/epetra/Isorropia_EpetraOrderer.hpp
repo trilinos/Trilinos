@@ -56,7 +56,7 @@ namespace Epetra {
 
 /** An implementation of the Orderer interface that operates on
     Epetra matrices and linear systems.
-
+\ingroup ordering_grp
 */
 
 class Orderer : public Isorropia::Orderer, public Isorropia::Epetra::Operator {
@@ -73,19 +73,11 @@ public:
   /** Destructor */
   ~Orderer() {} ;
 
-  /** Method which does the work of computing a new partitioning.
-     Implementations of this interface will typically be constructed
-     with an object or information describing the existing ('old')
-     partitioning. This method computes a 'new' rebalanced
-     partitioning for that input data.
+  /** Method which does the work of computing a new ordering.
 
-     \param force_repartitioning Optional argument defaults to false.
-        Depending on the implementation, compute_partitioning() should
-        only perform a repartitioning the first time it is called, and
-        subsequent repeated calls are no-ops. If the user's intent is
-        to re-compute the partitioning (e.g., if parameters or other
-        inputs have been changed), then setting this flag to true
-        will force a new partitioning to be computed.
+     \param force_ordering Optional argument defaults to false.
+
+\ingroup ordering_grp
    */
   void order(bool force_ordering=false);
 

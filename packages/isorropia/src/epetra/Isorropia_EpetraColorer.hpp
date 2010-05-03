@@ -60,6 +60,7 @@ namespace Epetra {
 /** An implementation of the Colorer interface that operates on
     Epetra matrices and linear systems.
 
+\ingroup coloring_grp
 */
 
 class Colorer : public Isorropia::Colorer, public Isorropia::Epetra::Operator {
@@ -70,6 +71,8 @@ public:
     \param[in] input_graph the graph which is to have colors assigned to its rows
     \param[in] paramlist this parameter list may be used to pass parameters to Zoltan
     \param[in] compute_now  if @c true, the coloring is computed in the constructor, otherwise call Isorropia::Epetra::Colorer::color when you want to compute the coloring, defaults to @c true
+
+\ingroup coloring_grp
     */
 
   Colorer(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
@@ -81,6 +84,8 @@ public:
     \param[in] input_matrix the matrix which is to have colors assigned to its rows
     \param[in] paramlist this parameter list may be used to pass parameters to Zoltan
     \param[in] compute_now  if @c true, the coloring is computed in the constructor, otherwise call Isorropia::Epetra::Colorer::color when you want to compute the coloring, defaults to @c true
+
+\ingroup coloring_grp
   */
 
   Colorer(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
@@ -94,6 +99,8 @@ public:
        Isorropia::Epetra::Colorer::compute
 
     \param[in] force_coloring if @c true recompute the coloring even if it has already been computed, defaults to @c false
+
+\ingroup coloring_grp
     */
 
   void color(bool force_coloring=false);
@@ -102,6 +109,8 @@ public:
        Isorropia::Epetra::Colorer::color
 
     \param[in] force_compute if @c true recompute the coloring even if it has already been computed, defaults to @c false
+
+\ingroup coloring_grp
     */
 
   void compute(bool force_compute=false) {
@@ -125,6 +134,8 @@ public:
 
   Provide access on the coloring thru the EpetraEXT color class @c Epetra_MapColoring.
   This methods requires EpetraEXT support.
+
+\ingroup coloring_grp
   */
   Teuchos::RCP<Epetra_MapColoring> generateRowMapColoring() ;
 
@@ -132,6 +143,8 @@ public:
 
   Provide access on the coloring thru the EpetraEXT color class @c Epetra_MapColoring.
   This methods requires EpetraEXT support.
+
+\ingroup coloring_grp
   */
   Teuchos::RCP<Epetra_MapColoring> generateColMapColoring() ;
 

@@ -51,6 +51,7 @@ namespace Epetra {
     Epetra matrices and linear systems.  The Prober currently works only on structurally
     symmetric problems.  Support for structually non-symmetric problems is under development.
 
+\ingroup probing_grp
 */
 
 class Prober {
@@ -61,6 +62,8 @@ public:
     \param[in] input_graph the graph whose sparsity pattern is to guide the probing.
     \param[in] paramlist this parameter list may be used to pass parameters to the colorer.
     \param[in] compute_now  if @c true, the coloring is computed in the constructor, otherwise call Isorropia::Epetra::Prober::color when you want to compute the coloring, defaults to @c false
+
+\ingroup probing_grp
     */
 
   Prober(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
@@ -72,6 +75,8 @@ public:
     \param[in] input_matrix the matrix whose sparsity pattern is to guide the probing.
     \param[in] paramlist this parameter list may be used to pass parameters to the colorer.
     \param[in] compute_now  if @c true, the coloring is computed in the constructor, otherwise call Isorropia::Epetra::Prober::color when you want to compute the coloring, defaults to @c true
+
+\ingroup probing_grp
   */
 
   Prober(Teuchos::RCP<const Epetra_CrsMatrix> input_matrix,
@@ -97,19 +102,23 @@ public:
   void setGraph(Teuchos::RCP<const Epetra_CrsGraph> input_graph){input_graph_=input_graph; has_colored=false;}  
 
   /** Compute the coloring.
+\ingroup probing_grp
     */
   void color();
   
   /** Perform the actual probing.
    \param[in] op is the operator we are probing
    \param[in/out] out_matrix is the matrix 
-  
+
+\ingroup probing_grp  
     */
   int probe(const Epetra_Operator & op, Epetra_CrsMatrix & out_matrix);
 
  /** Perform the actual probing.
    \param[in] op is the operator we are probing
    \param[out] return value is a RCP to the matrix
+\ingroup probing_grp
+
     */
   Teuchos::RCP<Epetra_CrsMatrix> probe(const Epetra_Operator & op);
   

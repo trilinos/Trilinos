@@ -30,13 +30,6 @@ USA
 #ifndef _Isorropia_EpetraRedistributor_hpp_
 #define _Isorropia_EpetraRedistributor_hpp_
 
-/** \example part_redist.cpp
- *
- * This example creates an Epetra_LinearProblem, partitions the problem, and redistributes it.
- *
- */
-
-
 #include <Isorropia_Redistributor.hpp>
 #include <Isorropia_ConfigDefs.hpp>
 #include <Teuchos_RCP.hpp>
