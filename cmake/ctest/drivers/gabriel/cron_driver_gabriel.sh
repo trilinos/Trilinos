@@ -5,6 +5,7 @@ echo "Starting nightly Trilinos testing on gabriel: `date`"
 echo
 
 export TDD_PARALLEL_LEVEL=2
+#export TDD_PARALLEL_LEVEL=1
 export TDD_HTTP_PROXY="http://wwwproxy.sandia.gov:80/"
 time ../cron_driver.py
 
