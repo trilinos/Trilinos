@@ -1,3 +1,34 @@
+
+MESSAGE(
+ "\n***"
+ "\n*** TrilinosDriverDashboard.cmake"
+ "\n***\n"
+ )
+
+# Get the base diretory for the Trilinos source.  We only assume that the
+# CTest script that is being called is under Trilinos/cmake.
+STRING(REGEX MATCH "(.+/Trilinos)/cmake" TRILINOS_CMAKE_DIR
+  "${CTEST_SCRIPT_DIRECTORY}" )
+IF("${TRILINOS_CMAKE_DIR}" STREQUAL "")
+  STRING(REGEX MATCH "(.+)/cmake" TRILINOS_CMAKE_DIR
+    "${CTEST_SCRIPT_DIRECTORY}" )
+ENDIF()
+  
+MESSAGE("TRILINOS_CMAKE_DIR = ${TRILINOS_CMAKE_DIR}")
+
+SET( CMAKE_MODULE_PATH
+   "${TRILINOS_CMAKE_DIR}/utils"
+   )
+
+#MESSAGE("CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}")
+
+INCLUDE(PrintVar)
+INCLUDE(SetDefaultAndFromEnv)
+
+#
+# A) Set up the environment get options
+#
+
 set(CTEST_SITE "$ENV{CTEST_SITE}")
 if("${CTEST_SITE}" STREQUAL "")
   site_name(CTEST_SITE)
@@ -39,6 +70,9 @@ set(CTEST_TEST_TIMEOUT "$ENV{CTEST_TEST_TIMEOUT}")
 if("${CTEST_TEST_TIMEOUT}" STREQUAL "")
   set(CTEST_TEST_TIMEOUT 7200)
 endif()
+  
+# Submit the results to the dashboard or not
+SET_DEFAULT_AND_FROM_ENV( TDD_DO_SUBMIT TRUE )
 
 get_filename_component(CTEST_SOURCE_DIRECTORY
   "${CTEST_SCRIPT_DIRECTORY}" ABSOLUTE)
@@ -68,11 +102,46 @@ if(git_exe)
   set(CTEST_UPDATE_COMMAND "${git_exe}")
 endif()
 
+#
+# Run the outer dashboard
+#
+
+message("\nA) Empty out ${CTEST_BINARY_DIRECTORY} ...")
 ctest_empty_binary_directory("${CTEST_BINARY_DIRECTORY}")
+
+# rabartl: ToDo: This category should be variable!
 ctest_start("Experimental")
+
+message("\nB) Update ${CTEST_SOURCE_DIRECTORY} ...")
 ctest_update(SOURCE "${CTEST_SOURCE_DIRECTORY}")
+message("NOTE: Ignore the above warning 'Cannot find UpdateCommand configuration key',"
+  " this is a git repository and this warning is harmess!")
+
+message("\nC) Configure ${CTEST_BINARY_DIRECTORY} ...")
 ctest_configure(BUILD "${CTEST_BINARY_DIRECTORY}")
+
 ctest_read_custom_files(BUILD "${CTEST_BINARY_DIRECTORY}")
-ctest_build(BUILD "${CTEST_BINARY_DIRECTORY}")
+
+message("\nD) Build ${CTEST_BINARY_DIRECTORY} ...")
+ctest_build(BUILD "${CTEST_BINARY_DIRECTORY}" APPEND)
+
+message("\nE) Submitting update configure notes build ...")
+if (TDD_DO_SUBMIT)
+  ctest_submit(PARTS update configure notes build)
+else()
+  message("\nSkipping submit!")
+endif()
+
+message("\nF) Run tests (which run all everything really) from ${CTEST_BINARY_DIRECTORY} ...")
 ctest_test(BUILD "${CTEST_BINARY_DIRECTORY}" PARALLEL_LEVEL ${parallel_level})
-ctest_submit()
+
+message("\nG) Submitting Test ...")
+if (TDD_DO_SUBMIT)
+  ctest_submit(PARTS Test)
+else()
+  message("\nSkipping submit!")
+endif()
+
+MESSAGE(
+ "\n*** Finished TrilinosDriverDashboard.cmake ***\n"
+ )

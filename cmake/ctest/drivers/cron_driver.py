@@ -9,9 +9,19 @@ import shutil
 import subprocess
 import sys
 
+
+print "\n*********************************************************"
+print "***        TrilinosDriver cron_driver.py              ***" 
+print "*********************************************************\n"
+
+print "\nPWD=\""+os.getcwd()+"\"...\n"
+
 # SCRIPT_DIR is the directory where *this* script is:
 #
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+sys.path.insert(0, SCRIPT_DIR+"/../../python")
+from GeneralScriptSupport import *
 
 # BASE_DIR is the parent directory of our containing "Trilinos" source tree,
 # which we compute relative to SCRIPT_DIR:
@@ -42,35 +52,54 @@ CMAKE_DIR = TOOLS_DIR + "/cmake-TDD"
 
 TDD_CMAKE_INSTALLER_TYPE = "release"
 if "TDD_CMAKE_INSTALLER_TYPE" in os.environ:
-  if (os.environ["TDD_CMAKE_INSTALLER_TYPE"] != ""):
-    TDD_CMAKE_INSTALLER_TYPE = os.environ["TDD_CMAKE_INSTALLER_TYPE"]
+  TDD_CMAKE_INSTALLER_TYPE = os.environ["TDD_CMAKE_INSTALLER_TYPE"]
 
-TDD_FORCE_CMAKE_INSTALL = 0
+TDD_FORCE_CMAKE_INSTALL = "0"
 if "TDD_FORCE_CMAKE_INSTALL" in os.environ:
-  if (os.environ["TDD_FORCE_CMAKE_INSTALL"] != ""):
-    TDD_FORCE_CMAKE_INSTALL = os.environ["TDD_FORCE_CMAKE_INSTALL"]
+  TDD_FORCE_CMAKE_INSTALL = os.environ["TDD_FORCE_CMAKE_INSTALL"]
+
+TDD_HTTP_PROXY = ""
+if "TDD_HTTP_PROXY" in os.environ:
+  TDD_HTTP_PROXY = os.environ["TDD_HTTP_PROXY"]
 
 # Only install cmake-TDD if necessary or if requested.
 # (Requires network connectivity; avoid when possible.)
 #
-if not os.path.exists(CMAKE_DIR) or TDD_FORCE_CMAKE_INSTALL != 0:
-  print "Downloading and installing CMake to \"" + CMAKE_DIR + "\"..."
+
+print "\n***"
+print "*** Downloading and installing CMake to \"" + CMAKE_DIR + "\"..."
+print "***\n"
+
+installMasterCMake = False
+if not os.path.exists(CMAKE_DIR):
+  print "Forcing install of master CMake because '"+CMAKE_DIR+"' does not exist!"
+  installMasterCMake = True
+elif TDD_FORCE_CMAKE_INSTALL != "0":
+  print "Forcing install of master CMake because" \
+    + " TDD_FORCE_CMAKE_INSTALL="+TDD_FORCE_CMAKE_INSTALL+" != 0!"
+  installMasterCMake = True
+else:
+  print "Leaving current CMake in place ..." \
+
+if installMasterCMake:
 
   if os.path.exists(CMAKE_DIR):
     shutil.rmtree(CMAKE_DIR)
 
-  cmake_installer_output = (subprocess.Popen([
-    sys.executable
-    , BASE_DIR + "/Trilinos/cmake/python/download-cmake.py"
-    , "--skip-detect"
-    , "--install-dir="+CMAKE_DIR
-    , "--installer-type="+TDD_CMAKE_INSTALLER_TYPE
-    ], stdout=subprocess.PIPE).communicate()[0])
+  cmnd =  sys.executable + " " \
+    + BASE_DIR+"/Trilinos/cmake/python/download-cmake.py" \
+    + " --skip-detect" \
+    + " --install-dir="+CMAKE_DIR \
+    + " --installer-type="+TDD_CMAKE_INSTALLER_TYPE
 
-  print cmake_installer_output
+  if TDD_HTTP_PROXY:
+    cmnd += " --http-proxy="+TDD_HTTP_PROXY
 
-else:
-  print "Skipped download and install of CMake"
+  echoRunSysCmnd( cmnd,
+    timeCmnd = True,
+    workingDir = TOOLS_DIR \
+    )
+
 
 # Find ctest under CMAKE_DIR:
 #
@@ -85,7 +114,7 @@ if 1 != len(gr):
   sys.exit(2)
 
 CTEST_EXE = gr[0]
-print "CTEST_EXE: +" + CTEST_EXE + "+"
+print "\nCTEST_EXE: +" + CTEST_EXE + "+"
 
 if not os.path.exists(CTEST_EXE):
   print "error: ctest does not exist after installation..."
@@ -94,27 +123,24 @@ if not os.path.exists(CTEST_EXE):
 
 # Verify ctest works with a simple --version call first:
 #
-CTEST_VERSION = (subprocess.Popen([
-  CTEST_EXE
-  , "--version"
-  ], stdout=subprocess.PIPE).communicate()[0])
-CTEST_VERSION = CTEST_VERSION.strip()
+
+CTEST_VERSION = getCmndOutput(CTEST_EXE+" --version", True)
 print "CTEST_VERSION: +" + CTEST_VERSION + "+"
 
 # Run one TrilinosDriver dashboard for this Trilinos source tree:
 #
-print "Running ctest -S TrilinosDriverDashboard.cmake..."
 
-pr = (subprocess.Popen([
-  CTEST_EXE
-  , "-S"
-  , SCRIPT_DIR+"/TrilinosDriverDashboard.cmake"
-  ], stdout=subprocess.PIPE, stderr=subprocess.STDOUT))
+print "\n***"
+print "*** Running the main dashboards as CTest tests .."
+print "***\n"
 
-CTEST_OUTPUT = pr.communicate()[0]
-print CTEST_OUTPUT
+CTEST_RESULT = echoRunSysCmnd(
+  CTEST_EXE + " -S" + " " + SCRIPT_DIR+"/TrilinosDriverDashboard.cmake",
+  throwExcept=False,
+  timeCmnd=True,
+  workingDir=BASE_DIR
+  )
 
-CTEST_RESULT = pr.returncode
 print "CTEST_RESULT: +" + str(CTEST_RESULT) + "+"
 
 if CTEST_RESULT != 0:

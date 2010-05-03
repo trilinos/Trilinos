@@ -77,19 +77,31 @@ dashboards being run in parallel, then you should pass the RUN_SERIAL argument.
 For more details on other optional arguments, see the comments at the function
 definition for TRILINOS_DRIVER_ADD_DASHBOARD in TrilinosDriverSupport.cmake.
 
+WARNING: The name of the build (the first argument, e.g. MPI_OPT) should be
+the same as the name of the build set in the *.cmake driver file (the second
+argument, e.g. ctest_mac_nightly_mpi_opt_s903186.cmake).  There are no checks
+in place to make sure that this is true.  You have been warned.
+
 Next, add a cron_driver.sh for your machine. (Or cron_driver.bat on Windows.)
 
 You can set the environment variable TDD_PARALLEL_LEVEL to control how many
 dashboards are run in parallel (as tests) by the TrilinosDriver dashboard.
 
+You may alos need to set the environment variable TDD_HTTP_PROXY for your http
+proxy which is needed if the script download-cmake.py can't figure it out the
+proxy automatically.  For Sandia machines, this is
+http://wwwproxy.sandia.gov:80/.
+
 Typical cron_driver.sh contents:
 
   export TDD_PARALLEL_LEVEL=2
+  export TDD_HTTP_PROXY="http://wwwproxy.sandia.gov:80/"
   ../cron_driver.py
 
 Typical cron_driver.bat contents:
 
   set TDD_PARALLEL_LEVEL=2
+  set TDD_HTTP_PROXY="http://wwwproxy.sandia.gov:80/"
   python "%~dp0..\cron_driver.py"
 
 
@@ -103,9 +115,11 @@ Once you are done with the initial run, you can test it out interactively in a
 rapid, iterative process by setting up the following environment in your
 calling cron_driver script:
 
-export CTEST_DO_SUBMIT=FALSE
+export TDD_DO_SUBMIT=FALSE # If you don't want to submit outer stuff
+export CTEST_DO_SUBMIT=FALSE # If you don't want to submit inner stuff
 export CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE
-export Trilinos_PACKAGES=Teuchos
+export Trilinos_PACKAGES=Teuchos # Just a single package to be fast ...
+export TDD_FORCE_CMAKE_INSTALL=1 # If you want to force outer CMake upgrade
 (but use set, rather than export, on Windows...)
 
   Linux/Mac:
@@ -121,7 +135,35 @@ export Trilinos_PACKAGES=Teuchos
 Work out any kinks you may have in your environment and your scripts.
 
 
-E) Set up a crontab entry (or a scheduled task on Windows):
+E) Debugging problems:
+======================
+
+When first getting the scripts to run, there can be problems that you will
+have to debug.  The output to the console from the cron_driver.py script is
+very sparse.  However, almost all of the output from the various stages are
+contained under the base test directy.
+
+The build directory for the outer CTest TrilinosDriver is in:
+
+  T/TDD_BUILD
+
+You can find the output from the various configure, build, tests in:
+
+  T/TDD_BUILD/Testing/Temporary/
+
+Note that you will also find the output from the TrilinosCTestDriverCore.cmake
+script as the test output in:
+
+  T/TDD_BUILD/Testing/Temporary/LastTest_XXX.log
+
+Also, of course all of the output for each build case (BUILD_CASE) is in:
+
+  T/BUILD_CASE/Testing/Temporary/
+
+where BUILD_CASE = MPI_OPT, SERIAL_DEBUG etc.
+
+
+F) Set up a crontab entry (or a scheduled task on Windows):
 ===========================================================
 
 MAILTO=youremail@yourorg.org
@@ -131,7 +173,7 @@ Use a value for MM and HH that is in the very near future and then let the
 script run from the cron job.
 
 
-F) Commit changes to the driver scripts:
+G) Commit changes to the driver scripts:
 ========================================
 
 You must commit and push changes in Trilinos/cmake/ctest/drivers into the main

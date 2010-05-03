@@ -1,4 +1,5 @@
 include(ParseVariableArguments)
+INCLUDE(SetDefaultAndFromEnv)
 
 
 #
@@ -25,6 +26,7 @@ endfunction()
 # of CMake are required to run all the dashboards on this machine.
 #
 function(TRILINOS_DRIVER_ADD_TEST_THAT_INSTALLS_CMAKE cmake_type)
+
   set(known 0)
   if("${cmake_type}" STREQUAL "min" OR
      "${cmake_type}" STREQUAL "release" OR
@@ -44,12 +46,21 @@ function(TRILINOS_DRIVER_ADD_TEST_THAT_INSTALLS_CMAKE cmake_type)
 
   find_program(PYTHON_EXE python)
 
+  SET_DEFAULT_AND_FROM_ENV( TDD_HTTP_PROXY "" )  
+  IF (TDD_HTTP_PROXY) 
+    SET(TDD_HTTP_PROXY_ARG "--http-proxy=${TDD_HTTP_PROXY}")
+  ELSE()
+    SET(TDD_HTTP_PROXY_ARG "")
+  ENDIF()
+
   add_test(install-cmake-${cmake_type} ${PYTHON_EXE}
     "${TRILINOS_HOME_DIR}/cmake/python/download-cmake.py"
     "--skip-detect"
     "--install-dir=${TD_BASE_DIR}/tools/cmake-${cmake_type}"
     "--installer-type=${cmake_type}"
+    "${TDD_HTTP_PROXY_ARG}"
     )
+
 endfunction()
 
 
