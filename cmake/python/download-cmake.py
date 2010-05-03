@@ -445,6 +445,27 @@ def ReadWriteCMakeVersionsFile(download_dir, detected):
 # The main script
 #
 
+print ""
+print "**************************************************************************"
+print "Script: downoad-cmake.py \\"
+
+if options.allPlatforms:
+  print "  --all-platforms \\"
+print "  --http-proxy="+options.httpProxy+" \\"
+print "  --install-dir="+options.installDir+" \\"
+print "  --installer-type="+options.installerType+" \\"
+if options.skipDetect:
+  print "  --skip-detect \\"
+if options.skipDownload:
+  print "  --skip-download \\"
+if options.skipExtract:
+  print "  --skip-extract \\"
+if options.skipInstall:
+  print "  --skip-install \\"
+
+if not options.httpProxy and not default_http_proxy:
+  print "\nWARNING: Could not detect default http proxy for '"+hostname+"'!"
+
 download_dir = "download_area"
 
 binaries = None
@@ -459,7 +480,6 @@ if options.installerType == 'dev':
 if binaries == None:
   print "error: unknown --installer-type: [" + options.installerType + "]"
   sys.exit(1)
-
 
 print ""
 print ""
