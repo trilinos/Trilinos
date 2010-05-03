@@ -1,0 +1,12 @@
+###############################################################################
+#                                                                             #
+# Trilinos Release 10.2 Changelog                                             #
+#                                                                             #
+###############################################################################
+
+Release update 10.2.1 May 03, 2010
+
+1. Isorropia - Bug: 4757. Set LB_APPROACH to PARTITION in all cases and not just
+               for hyper graph.
+
+2. Belos - Fix a compile issue with typedefs when using gnu 4.5.0. 
