@@ -1,0 +1,19 @@
+
+
+INCLUDE(SetDefault)
+INCLUDE(PrintVar)
+
+
+MACRO(SET_DEFAULT_AND_FROM_ENV VAR DEFAULT_VAL)
+
+  SET_DEFAULT(${VAR} "${DEFAULT_VAL}")
+  
+  SET(ENV_${VAR} $ENV{${VAR}})
+  IF (NOT "${ENV_${VAR}}" STREQUAL "")
+    PRINT_VAR(ENV_${VAR})
+    SET(${VAR} ${ENV_${VAR}})
+  ENDIF()
+
+  PRINT_VAR(${VAR})
+
+ENDMACRO()

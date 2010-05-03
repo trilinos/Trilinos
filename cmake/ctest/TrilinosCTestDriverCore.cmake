@@ -39,43 +39,12 @@ SET( CMAKE_MODULE_PATH
 #MESSAGE("CMAKE_MODULE_PATH = ${CMAKE_MODULE_PATH}")
 
 INCLUDE(PrintVar)
+INCLUDE(SetDefaultAndFromEnv)
 INCLUDE(AssertDefined)
 INCLUDE(AppendSet)
 INCLUDE(AppendStringVar)
 INCLUDE(PackageArchProcessPackagesAndDirsLists)
 INCLUDE(PackageArchAdjustPackageEnables)
-
-
-#
-# Helper macros
-#
-
-
-FUNCTION(PRINT_VAR VAR)
-  MESSAGE("${VAR} = '${${VAR}}'")
-ENDFUNCTION()
-
-
-MACRO(SET_DEFAULT VAR)
-  IF ("${${VAR}}" STREQUAL "")
-    SET(${VAR} ${ARGN})
-  ENDIF()
-ENDMACRO()
-
-
-MACRO(SET_DEFAULT_AND_FROM_ENV VAR DEFAULT_VAL)
-
-  SET_DEFAULT(${VAR} "${DEFAULT_VAL}")
-  
-  SET(ENV_${VAR} $ENV{${VAR}})
-  IF (NOT "${ENV_${VAR}}" STREQUAL "")
-    PRINT_VAR(ENV_${VAR})
-    SET(${VAR} ${ENV_${VAR}})
-  ENDIF()
-
-  PRINT_VAR(${VAR})
-
-ENDMACRO()
 
 
 
