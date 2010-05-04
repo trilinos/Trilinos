@@ -2,7 +2,7 @@
 Submitting a TrilinosDriver dashboard:
 ======================================
 
-First, manually ensure that the following prerequisites are satisifed:
+First, manually ensure that the following prerequisites are satisfied:
 
 
 A) Prerequisites:
@@ -26,7 +26,7 @@ and checkout whatever branch you will be testing.
 
 See the Trilinos developers website for instructions on how to set up ssh so
 that the git clone call works using just software.sandia.gov without a user
-name and without you having to type a passowrd.
+name and without you having to type a password.
 
 
 C) Create machine specific content:
@@ -87,7 +87,7 @@ Next, add a cron_driver.sh for your machine. (Or cron_driver.bat on Windows.)
 You can set the environment variable TDD_PARALLEL_LEVEL to control how many
 dashboards are run in parallel (as tests) by the TrilinosDriver dashboard.
 
-You may alos need to set the environment variable TDD_HTTP_PROXY for your http
+You may also need to set the environment variable TDD_HTTP_PROXY for your http
 proxy which is needed if the script download-cmake.py can't figure it out the
 proxy automatically.  For Sandia machines, this is
 http://wwwproxy.sandia.gov:80/.
@@ -141,7 +141,7 @@ E) Debugging problems:
 When first getting the scripts to run, there can be problems that you will
 have to debug.  The output to the console from the cron_driver.py script is
 very sparse.  However, almost all of the output from the various stages are
-contained under the base test directy.
+contained under the base test directory.
 
 The build directory for the outer CTest TrilinosDriver is in:
 
