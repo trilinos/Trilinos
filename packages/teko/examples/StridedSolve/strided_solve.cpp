@@ -99,7 +99,7 @@
 #include "AztecOO.h"
 #include "AztecOO_Operator.h"
 
-#include <EcUtils++/directory.h>
+// #include <EcUtils++/directory.h>
 
 #include <iostream>
 #include <fstream>

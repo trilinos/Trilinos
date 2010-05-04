@@ -19,6 +19,7 @@ PACKAGE(Teko)
 ADD_SUBDIRECTORY(src)
 
 PACKAGE_ADD_TEST_DIRECTORIES(tests)
+PACKAGE_ADD_EXAMPLE_DIRECTORIES(examples)
 
 #
 # D) Do standard postprocessing
