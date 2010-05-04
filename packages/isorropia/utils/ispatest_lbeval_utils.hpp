@@ -117,7 +117,7 @@ int compute_hypergraph_metrics(const Epetra_RowMatrix &matrix,
     The goal weight for a process is the proportion of the total vertex (row)
     weights that were to be assigned to this process under repartitioning.  If
     all processes are to get an equal proportion of the weight, set this 
-    value to (1.0 / #processes).  This value is needed in order to compute
+    value to (1.0 / # processes).  This value is needed in order to compute
     how close the repartitioning is to being perfectly balanced.
 
     If the CostDescriber has no weights in it, reasonable defaults
@@ -137,7 +137,7 @@ int compute_graph_metrics(const Epetra_RowMatrix &matrix,
     The goal weight for a process is the proportion of the total vertex (row)
     weights that were to be assigned to this process under repartitioning.  If
     all processes are to get an equal proportion of the weight, set this 
-    value to (1.0 / #processes).  This value is needed in order to compute
+    value to (1.0 / # processes).  This value is needed in order to compute
     how close the repartitioning is to being perfectly balanced.
 
     If the CostDescriber has no weights in it, reasonable defaults

@@ -36,8 +36,8 @@ Epetra objects, including Epetra_CrsGraph and Epetra_RowMatrix (which includes
 Epetra_CrsMatrix and Epetra_VbrMatrix).
 In addition to matrix/graph partitioning, Isorropia has the capability to partition 
 1, 2 or 3-dimensional real coordinates into balanced spatial regions.  The coordinates are represented as an Epetra_MultiVector.
-<br>
 
+<br>
 
 \section partitionParameters  Load-balancing parameters
 

@@ -106,19 +106,17 @@ public:
     */
   void color();
   
-  /** Perform the actual probing.
+  /** @ingroup probing_grp  
+      Perform the actual probing.
    \param[in] op is the operator we are probing
-   \param[in/out] out_matrix is the matrix 
-
-\ingroup probing_grp  
+   \param[in,out] out_matrix is the matrix 
     */
   int probe(const Epetra_Operator & op, Epetra_CrsMatrix & out_matrix);
 
- /** Perform the actual probing.
+ /** @ingroup probing_grp
+     Perform the actual probing.
    \param[in] op is the operator we are probing
-   \param[out] return value is a RCP to the matrix
-\ingroup probing_grp
-
+   \return RCP to the matrix
     */
   Teuchos::RCP<Epetra_CrsMatrix> probe(const Epetra_Operator & op);
   

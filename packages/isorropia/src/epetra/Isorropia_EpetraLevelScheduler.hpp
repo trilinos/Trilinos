@@ -62,6 +62,7 @@ public:
     /** Constructor
 
     \param[in] input_graph the graph representing the non-zeros of the matrix
+    \param[in] paramlist list of parameters
     \param[in] compute_now  if @c true, the scheduling is computed in the constructor, otherwise call Isorropia::Epetra::LevelScheduler::schedule when you want to compute the scheduling, defaults to @c false
     */
 

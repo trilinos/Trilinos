@@ -53,14 +53,16 @@ namespace Isorropia {
 namespace Epetra {
   class Partitioner;
 
-/** Class which is constructed with a Partitioner instance, and
+/** @ingroup partitioning_grp
+     Class which is constructed with a Partitioner instance, and
      provides several methods for redistributing Epetra objects
      given the partitioning computed by the Partitioner object.
 */
 
 class Redistributor : public Isorropia::Redistributor {
 public:
-  /** This constructor calls the Isorropia::Epetra::Partitioner::partition
+  /** @ingroup partitioning_rcp_grp
+      This constructor calls the Isorropia::Epetra::Partitioner::partition
       method on the @c partitioner if it has not already been called.
  
       \param[in] partitioner this input partitioner determines the new partitioning
@@ -72,14 +74,16 @@ public:
    */
   virtual ~Redistributor();
 
-  /** Method to redistribute a Epetra_SrcDistObject into a
+  /** @ingroup partitioning_rcp_grp
+      Method to redistribute a Epetra_SrcDistObject into a
       Epetra_DistObject. The caller is required to have constructed
       the target object using the correct target map.
   */
   void redistribute(const Epetra_SrcDistObject& src,
 		    Epetra_DistObject& target);
 
-  /** Method to accept a Epetra_CrsGraph object, and
+  /** @ingroup partitioning_rcp_grp
+      Method to accept a Epetra_CrsGraph object, and
       return a redistributed Epetra_CrsGraph object.
 
       \param[in] input_graph the graph for which we want a new graph that is distributed
@@ -97,7 +101,8 @@ public:
   Teuchos::RCP<Epetra_CrsGraph>
      redistribute(const Epetra_CrsGraph& input_graph, bool callFillComplete= true);
 
-  /** Method to accept a Epetra_CrsMatrix object, and
+  /** @ingroup partitioning_rcp_grp
+      Method to accept a Epetra_CrsMatrix object, and
       return a redistributed Epetra_CrsMatrix object.
 
       \param[in] input_matrix the matrix for which we want a new matrix that is distributed
@@ -115,7 +120,8 @@ public:
   Teuchos::RCP<Epetra_CrsMatrix>
      redistribute(const Epetra_CrsMatrix& input_matrix, bool callFillComplete= true);
 
-  /** Method to accept a Epetra_RowMatrix object, and
+  /** @ingroup partitioning_rcp_grp
+      Method to accept a Epetra_RowMatrix object, and
       return a redistributed Epetra_CrsMatrix object.
 
       \param[in] input_matrix the row matrix for which we want a new matrix that is distributed
@@ -133,7 +139,8 @@ public:
   Teuchos::RCP<Epetra_CrsMatrix>
      redistribute(const Epetra_RowMatrix& input_matrix, bool callFillComplete= true);
 
-  /** Method to accept a Epetra_Vector object, and
+  /** @ingroup partitioning_rcp_grp
+      Method to accept a Epetra_Vector object, and
       return a redistributed Epetra_Vector object.
 
       \param[in] input_vector the vector for which we want a new vector that is distributed
@@ -145,7 +152,8 @@ public:
   Teuchos::RCP<Epetra_Vector>
      redistribute(const Epetra_Vector& input_vector);
 
-  /** Method to accept a Epetra_MultiVector object, and
+  /** @ingroup partitioning_rcp_grp 
+      Method to accept a Epetra_MultiVector object, and
       return a redistributed Epetra_MultiVector object.
 
       \param[in] input_vector the multi vector for which we want a new multi vector that is distributed
@@ -153,27 +161,30 @@ public:
                       created.
 
       \return a reference counted pointer to the new redistributed multi vector
+
   */
   Teuchos::RCP<Epetra_MultiVector>  
      redistribute(const Epetra_MultiVector& input_vector);
 
-  /** Reverse redistribute an Epetra_Vector.
+  /** @ingroup partitioning_rcp_grp 
+      Reverse redistribute an Epetra_Vector.
 
       \param[in] input_vector a vector that is distributed according to the partitioner that was used to create this Redistributor
 
       \param[out] output_vector a copy of the @c input_vector which has been redistributed according
                     to the reverse of the partitioner that was used to create this Redistributor
+
   */
   void
      redistribute_reverse(const Epetra_Vector& input_vector, Epetra_Vector& output_vector);
 
-  /** Reverse redistribute an Epetra_MultiVector.
+  /** @ingroup partitioning_rcp_grp 
+      Reverse redistribute an Epetra_MultiVector.
 
       \param[in] input_vector a multi vector that is distributed according to the partitioner that was used to create this Redistributor
 
       \param[out] output_vector a copy of the @c input_vector which has been redistributed according
                     to the reverse of the partitioner that was used to create this Redistributor
-
   */
   void
      redistribute_reverse(const Epetra_MultiVector& input_vector, Epetra_MultiVector& output_vector);

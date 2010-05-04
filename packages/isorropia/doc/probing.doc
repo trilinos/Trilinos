@@ -12,7 +12,7 @@ common use case of probing is when the matrix is not explicitly stored, but the 
 entries are necessary for some other procedure (e.g. preconditioning).  In certain 
 applications, an exact reconstruction of the matrix is needed.  In others, an approximation 
 based on <em>a priori</em> knowledge of the "significant" matrix entries suffices.  Isorropia's probing
-functionality works in both cases.  See \ref probing for an example of how probing is used.
+functionality works in both cases. 
 
 Currently, Isorropia's probing functionality is limited to structurally symmetric matrices but we expect 
 to support nonsymmetric matrices (e.g. Jacobians) in the future.

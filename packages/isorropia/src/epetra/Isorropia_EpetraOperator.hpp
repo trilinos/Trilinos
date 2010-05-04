@@ -82,8 +82,10 @@ public:
      \param input_graph Matrix-graph object for which a new operation
         is to be computed. 
 
-     \param paramlist Teuchos::ParameterList which will be copied to an
+     \param[in] paramlist Teuchos::ParameterList which will be copied to an
         internal ParameterList attribute. 
+    
+     \param[in] base index base
 
   If the ParameterList object contains a sublist named "Zoltan", then
   the Zoltan library is used to perform the operation. Also, any
@@ -96,12 +98,13 @@ public:
 
   /** Constructor that accepts an Epetra_BlockMap object
 
-     \param input_map  BlockMap object for which a new operation
+     \param[in] input_map  BlockMap object for which a new operation
         is to be computed. 
 
-     \param paramlist Teuchos::ParameterList which will be copied to an
+     \param[in] paramlist Teuchos::ParameterList which will be copied to an
         internal ParameterList attribute. 
 
+     \param[in] base
   If the ParameterList object contains a sublist named "Zoltan", then
   the Zoltan library is used to perform the operation. Also, any
   parameters in the "Zoltan" sublist will be relayed directly to Zoltan.
@@ -118,11 +121,13 @@ public:
      \param input_graph Matrix-graph object for which a new operation
         is to be computed. 
 
-     \param coords The input geometric coordinates (represented in a
+     \param[in] input_coords The input geometric coordinates (represented in a
                     multivector)
 
-     \param paramlist Teuchos::ParameterList which will be copied to an
+     \param[in] paramlist Teuchos::ParameterList which will be copied to an
         internal ParameterList attribute. 
+
+     \param[in] base
 
   If the ParameterList object contains a sublist named "Zoltan", then
   the Zoltan library is used to perform the operation. Also, any
@@ -146,6 +151,8 @@ public:
 
      \param paramlist Teuchos::ParameterList which will be copied to an
         internal ParameterList attribute. 
+
+     \param[in] base
 
   If the ParameterList object contains a sublist named "Zoltan", then
   the Zoltan library is used to perform the operation. Also, any
@@ -172,8 +179,10 @@ public:
      \param weights A one or more dimensional weight for each of the
                     The input geometric coordinates
 
-     \param paramlist Teuchos::ParameterList which will be copied to an
+     \param[in] paramlist Teuchos::ParameterList which will be copied to an
         internal ParameterList attribute. 
+
+     \param[in] base
 
   If the ParameterList object contains a sublist named "Zoltan", then
   the Zoltan library is used to perform the operation. Also, any
@@ -192,8 +201,10 @@ public:
      \param input_matrix Matrix object for which a new operation is
         to be computed. 
 
-     \param paramlist Teuchos::ParameterList which will be copied to an
+     \param[in] paramlist Teuchos::ParameterList which will be copied to an
         internal ParameterList attribute. 
+
+     \param[in] base Index base
 
   If the ParameterList object contains a sublist named "Zoltan", then
   the Zoltan library is used to perform the operation. Also, any
@@ -213,8 +224,10 @@ public:
      \param coords The input geometric coordinates (represented in a
                     multivector)
 
-     \param paramlist Teuchos::ParameterList which will be copied to an
+     \param[in] paramlist Teuchos::ParameterList which will be copied to an
         internal ParameterList attribute. 
+
+     \param[in] base
 
   If the ParameterList object contains a sublist named "Zoltan", then
   the Zoltan library is used to perform the operation. Also, any
@@ -235,8 +248,10 @@ public:
      \param costs CostDescriber object which allows for user-specified
        weights 
 
-     \param paramlist Teuchos::ParameterList which will be copied to an
+     \param[in] paramlist Teuchos::ParameterList which will be copied to an
         internal ParameterList attribute. 
+
+     \param[in] base
 
   If the ParameterList object contains a sublist named "Zoltan", then
   the Zoltan library is used to perform the operation. Also, any
@@ -264,8 +279,10 @@ public:
      \param weights A one or more dimensional weight for each of the                
                     The input geometric coordinates
 
-     \param paramlist Teuchos::ParameterList which will be copied to an
+     \param[in] paramlist Teuchos::ParameterList which will be copied to an
         internal ParameterList attribute. 
+
+     \param[in] base
 
   If the ParameterList object contains a sublist named "Zoltan", then
   the Zoltan library is used to perform the operation. Also, any
@@ -285,8 +302,10 @@ public:
      \param coords The input geometric coordinates (represented in a
                     multivector)
 
-     \param paramlist Teuchos::ParameterList which will be copied to an
+     \param[in] paramlist Teuchos::ParameterList which will be copied to an
         internal ParameterList attribute. 
+
+     \param[in] base index base
 
   If the ParameterList object contains a sublist named "Zoltan", then
   the Zoltan library is used to perform the operation. Also, any
@@ -305,9 +324,11 @@ public:
      \param weights A one or more dimensional weight for each of the
                     The input geometric coordinates 
 
-     \param paramlist Teuchos::ParameterList which will be copied to an
+     \param[in] paramlist Teuchos::ParameterList which will be copied to an
         internal ParameterList attribute. 
-
+     
+     \param[in] base index base
+ 
   If the ParameterList object contains a sublist named "Zoltan", then
   the Zoltan library is used to perform the operation. Also, any
   parameters in the "Zoltan" sublist will be relayed directly to Zoltan.

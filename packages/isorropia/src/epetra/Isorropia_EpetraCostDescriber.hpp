@@ -137,9 +137,9 @@ public:
       representing real
       coordinates, then the weights represent the weight assigned to each coordinate.
 
-      \param vwgts  vector of weights, one for each vertex
+      \param[in] vwgts  vector of weights, one for each vertex
    */
-  void setVertexWeights(Teuchos::RCP<const Epetra_Vector> vwts);
+  void setVertexWeights(Teuchos::RCP<const Epetra_Vector> vwgts);
 
   /** setGraphEdgeWeights is called by a process to supply the weights for
       each of the edges of its vertices.  An edge corresponds to a non-zero
@@ -183,7 +183,7 @@ public:
    */
   void setHypergraphEdgeWeights(int numHGedges, const int *hgGIDs, const float *hgEwgts);
 
-  /** \copydoc Isorropia::Epetra::CostDescriber::setHypergraphEdgeWeights(Teuchos::RCP<const Epetra_Vector>
+  /** \copydoc Isorropia::Epetra::CostDescriber::setHypergraphEdgeWeights(int numHGedges, const int *hgGIDs, const float *hgEwgts)
    */
 
   void setHypergraphEdgeWeights(int numHGedges, const int *hgGIDs, const double *hgEwgts);
@@ -255,7 +255,7 @@ private:
    /** Return the CostDescribers hypergraph edge weights as a map from hyperedge (column)
        global ID to weight.
   
-       \wgtMap will be set to a map from hyperedge global ID to hyperedge weight
+       \param wgtMap will be set to a map from hyperedge global ID to hyperedge weight
    */
    int getHypergraphEdgeWeights(std::map<int, float> &wgtMap) const;
 
@@ -336,7 +336,7 @@ private:
       Self edges are not included.
 
       \param vertexGID the global ID of the vertex (must be one owned by calling process)
-      \param length of preallocated nborGID and weights arrays
+      \param len of preallocated nborGID and weights arrays
       \param nborGID on return contains the global ID of each vertex neighboring vertexGID,
                          allocated by caller      
       \param weights on return contains the weight for each edge formed by the vertices in nborGID

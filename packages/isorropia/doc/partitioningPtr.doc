@@ -1,0 +1,15 @@
+/** \defgroup partitioning_ptr_grp Isorropia Partitioning and Load Balancing Methods with Pointers
+
+    \brief Here we describe the partitioning interface that uses Pointers
+
+
+\section partitionPtrIntro  Partitioning and Load-balancing with Pointers
+
+
+NOT YET SUPPORTED
+
+
+\ingroup partitioning_grp
+
+*/
+
