@@ -10,9 +10,9 @@ TRILINOS_DRIVER_ADD_DASHBOARD(
   ctest_linux_nightly_serial_release_gabriel.cmake
   )
 
-#TRILINOS_DRIVER_ADD_DASHBOARD(
-#  SERIAL_DEBUG_BOOST_TRACE
-#  ctest_linux_nightly_serial_debug_boost_tracing_gabriel.cmake
-#  )
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  SERIAL_DEBUG_NOTRACE
+  ctest_linux_nightly_serial_debug_notracing_gabriel.cmake
+  )
 
 TRILINOS_ADD_REQUIRED_CMAKE_INSTALLS()
