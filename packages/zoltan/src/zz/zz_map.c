@@ -51,6 +51,11 @@ static int key_match(int key_size, int *key1, int *key2);
  *
  * The Zoltan_Map can store a copy of the key, or just store a pointer to
  * the caller's copy of the key.
+ *
+ * NOTE:
+ * Zoltan_Map will not be efficient when num_entries = 0, in Zoltan_Map_Create
+ * and later large number of entries are added. The hash table size is hard
+ * coded to 1000. num_entries in the same order should be ok.
  */
 
 /*****************************************************************
@@ -72,6 +77,7 @@ ZOLTAN_MAP* Zoltan_Map_Create(ZZ *zz,     /* just need this for error messages *
   ZOLTAN_ENTRY **entries = NULL;
   ZOLTAN_MAP* map = NULL;
   int *keys = NULL;
+  int my_range ;
 
   if ((num_id_entries < 1) || (num_entries < 0) || (hash_range_max < 0)){
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Bad parameters\n");
@@ -100,14 +106,18 @@ ZOLTAN_MAP* Zoltan_Map_Create(ZZ *zz,     /* just need this for error messages *
 
   /* hash table */
 
-  if (hash_range_max == 0){  /* we should give this more thought */
+  if (hash_range_max == 0){
     if (num_entries > 0){
-      if (num_entries > 10000)
-	hash_range_max = 10000;
-      else
-	hash_range_max = num_entries;
+      /* SRSR : This hash range maximum will be a prime number closer to
+      num_entries for smaller problems and closer to num_entries/2 for larger
+      problems. For very small problems hash_range_max can be larger than
+      num_entries, but choosing hash_range_max = num_entries may lead to
+      too many collisions. */
+      my_range = (int) pow((double)num_entries, 0.90) ;
+      hash_range_max = Zoltan_Recommended_Hash_Size(2*my_range) ;
     }
     else{
+      /* This could be a performance bottleneck depending on num_entries.  */
       hash_range_max = 1000;
     }
   }
