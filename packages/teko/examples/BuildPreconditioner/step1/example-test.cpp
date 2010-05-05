@@ -64,8 +64,8 @@
 #include "Teko_Utilities.hpp"
 #include "Teko_InverseFactory.hpp"
 #include "Teko_InverseLibrary.hpp"
-#include "Epetra/Teko_EpetraOperatorWrapper.hpp"
-#include "Epetra/Teko_EpetraBlockPreconditioner.hpp"
+#include "Teko_EpetraOperatorWrapper.hpp"
+#include "Teko_EpetraBlockPreconditioner.hpp"
 
 #include "ExamplePreconditionerFactory.cpp"
 

@@ -65,11 +65,11 @@
 #include "Teko_Utilities.hpp"
 #include "Teko_InverseFactory.hpp"
 #include "Teko_InverseLibrary.hpp"
-#include "Epetra/Teko_StridedEpetraOperator.hpp"
-#include "Epetra/Teko_EpetraBlockPreconditioner.hpp"
-#include "NS/Teko_LSCPreconditionerFactory.hpp"
-#include "NS/Teko_InvLSCStrategy.hpp"
-#include "NS/Teko_SIMPLEPreconditionerFactory.hpp"
+#include "Teko_StridedEpetraOperator.hpp"
+#include "Teko_EpetraBlockPreconditioner.hpp"
+#include "Teko_LSCPreconditionerFactory.hpp"
+#include "Teko_InvLSCStrategy.hpp"
+#include "Teko_SIMPLEPreconditionerFactory.hpp"
 
 // Aztec includes
 #include "AztecOO.h"

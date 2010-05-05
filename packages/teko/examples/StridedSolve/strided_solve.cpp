@@ -90,10 +90,10 @@
 // Teko-Package includes
 #include "Teko_Utilities.hpp"
 #include "Teko_InverseFactory.hpp"
-#include "NS/Teko_SIMPLEPreconditionerFactory.hpp"
-#include "NS/Teko_LSCPreconditionerFactory.hpp"
-#include "Epetra/Teko_StridedEpetraOperator.hpp"
-#include "Epetra/Teko_EpetraBlockPreconditioner.hpp"
+#include "Teko_SIMPLEPreconditionerFactory.hpp"
+#include "Teko_LSCPreconditionerFactory.hpp"
+#include "Teko_StridedEpetraOperator.hpp"
+#include "Teko_EpetraBlockPreconditioner.hpp"
 
 // Aztec includes
 #include "AztecOO.h"

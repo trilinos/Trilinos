@@ -1,4 +1,6 @@
 ADD_SUBDIRECTORY(StridedSolve)
+ADD_SUBDIRECTORY(AddMultiplyPrecs)
+ADD_SUBDIRECTORY(BuildPreconditioner)
 
 INCLUDE(PackageCopyFilesToBinaryDir)
 
