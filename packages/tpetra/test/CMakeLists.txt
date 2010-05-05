@@ -2,6 +2,7 @@ INCLUDE(AddSubdirectories)
 
 ADD_SUBDIRECTORIES(
   Platform
+  BlockMap
   Map
   Distributor
   Directory
