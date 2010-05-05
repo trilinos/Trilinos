@@ -72,8 +72,8 @@ bool confirm_matrix_values(const fei::Matrix& mat, double expected_value)
     coefs.resize(rowlength);
     mat.copyOutRow(rows[i], rowlength, &coefs[0], &indices[0]);
   
-    for(size_t i=0; i<indices.size(); ++i) {
-      if (std::abs(coefs[i] - expected_value) > 1.e-13) {
+    for(size_t j=0; j<indices.size(); ++j) {
+      if (std::abs(coefs[j] - expected_value) > 1.e-13) {
         result = false;
         break;
       }
