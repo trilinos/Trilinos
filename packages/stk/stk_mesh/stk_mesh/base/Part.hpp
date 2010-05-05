@@ -17,6 +17,7 @@
 
 #include <stk_util/util/CSet.hpp>
 #include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/baseImpl/PartImpl.hpp>
 
 //----------------------------------------------------------------------
 
@@ -138,6 +139,8 @@ public:
   const A * attribute() const { return m_attribute.template get<A>(); }
 
 private:
+
+  impl::PartImpl m_partImpl;
 
   /* \brief  A part is owned by a MetaData, as such only the owning
    *         MetaData can create, delete, or modify a part.

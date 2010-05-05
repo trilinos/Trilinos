@@ -18,7 +18,11 @@ INCLUDE(PackageLibraryMacros)
 SET(HEADERS "")
 SET(SOURCES "")
 
+SET(HEADERS_IMPL "")
+SET(SOURCES_IMPL "")
+
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../baseImpl/)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../stk_util)
@@ -30,60 +34,11 @@ INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS}/..)
 
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-APPEND_SET(HEADERS
-Bucket.hpp
-BulkData.hpp
-BulkModification.hpp
-Comm.hpp
-DataTraitsClass.hpp
-DataTraitsEnum.hpp
-DataTraits.hpp
-EntityComm.hpp
-Entity.hpp
-EntityKey.hpp
-FieldData.hpp
-Field.hpp
-FieldParallel.hpp
-GetBuckets.hpp
-GetEntities.hpp
-Ghosting.hpp
-MetaData.hpp
-Part.hpp
-Property.hpp
-Relation.hpp
-Selector.hpp
-SetOwners.hpp
-Transaction.hpp
-Types.hpp
-  )
+FILE(GLOB HEADERS *.hpp)
+FILE(GLOB SOURCES *.cpp)
 
-APPEND_SET(SOURCES
-Bucket.cpp
-BulkData.cpp
-BulkDataEndSync.cpp
-BulkDataGhosting.cpp
-BulkDataOwner.cpp
-BulkDataParallelVerify.cpp
-BulkDataRelation.cpp
-BulkModification.cpp
-Comm.cpp
-DataTraits.cpp
-EntityComm.cpp
-Entity.cpp
-EntityKey.cpp
-Field.cpp
-FieldData.cpp
-FieldParallel.cpp
-GetBuckets.cpp
-GetEntities.cpp
-Ghosting.cpp
-MetaData.cpp
-Part.cpp
-Property.cpp
-Relation.cpp
-Selector.cpp
-Transaction.cpp
-  )
+FILE(GLOB HEADERS_IMPL ${CMAKE_CURRENT_SOURCE_DIR}../baseImpl/*.hpp)
+FILE(GLOB SOURCES_IMPL ${CMAKE_CURRENT_SOURCE_DIR}../baseImpl/*.cpp)
 
 IF (TPL_ENABLE_MPI)
 ENDIF()
@@ -94,9 +49,12 @@ ENDIF()
 
 PACKAGE_ADD_LIBRARY(
   stk_mesh_base
-  NOINSTALLHEADERS ${HEADERS}
-  SOURCES ${SOURCES}
+  NOINSTALLHEADERS ${HEADERS} ${HEADERS_IMPL}
+  SOURCES ${SOURCES} ${SOURCES_IMPL}
   )
 
 INSTALL(FILES ${HEADERS} DESTINATION
     ${CMAKE_INSTALL_PREFIX}/include/stk_mesh/base/)
+
+INSTALL(FILES ${HEADERS_IMPL} DESTINATION
+    ${CMAKE_INSTALL_PREFIX}/include/stk_mesh/baseImpl/)
