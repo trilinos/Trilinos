@@ -50,6 +50,19 @@ void sort_unique( std::vector<DistributedIndex::KeyProc> & key_usage )
   key_usage.erase( i , j );
 }
 
+void sort_unique( std::vector<DistributedIndex::KeyType> & keys )
+{
+  std::vector<DistributedIndex::KeyType>::iterator
+    i = keys.begin() ,
+    j = keys.end() ;
+
+  std::sort( i , j );
+
+  i = std::unique( i , j );
+
+  keys.erase( i , j );
+}
+
 }
 
 //----------------------------------------------------------------------
@@ -140,6 +153,34 @@ DistributedIndex::DistributedIndex (
 
 namespace {
 
+void query_pack_to_usage(
+  const std::vector<DistributedIndex::KeyProc> & key_usage ,
+  const std::vector<DistributedIndex::KeyType> & request ,
+  CommAll & all )
+{
+  std::vector<DistributedIndex::KeyProc>::const_iterator i = key_usage.begin();
+  std::vector<DistributedIndex::KeyType>::const_iterator k = request.begin();
+
+  for ( ; k != request.end() && i != key_usage.end() ; ++k ) {
+
+    for ( ; i != key_usage.end() && i->first < *k ; ++i );
+
+    std::vector<DistributedIndex::KeyProc>::const_iterator j = i ;
+    for ( ; j != key_usage.end() && j->first == *k ; ++j );
+
+    for ( std::vector<DistributedIndex::KeyProc>::const_iterator
+          jsend = i ; jsend != j ; ++jsend ) {
+
+      for ( std::vector<DistributedIndex::KeyProc>::const_iterator
+            jinfo = i ; jinfo != j ; ++jinfo ) {
+
+        all.send_buffer( jsend->second )
+           .pack<DistributedIndex::KeyProc>( *jinfo );
+      }
+    }
+  }
+}
+
 void query_pack( const std::vector<DistributedIndex::KeyProc> & key_usage ,
                  const std::vector<DistributedIndex::KeyProc> & request ,
                  CommAll & all )
@@ -189,7 +230,6 @@ void DistributedIndex::query(
 
   std::sort( sharing_of_keys.begin() , sharing_of_keys.end() );
 }
-
 
 void DistributedIndex::query(
   std::vector<DistributedIndex::KeyProc> & sharing_of_local_keys ) const
@@ -248,6 +288,79 @@ void DistributedIndex::query(
   sort_unique( request );
 
   query( request , sharing_keys );
+}
+
+void DistributedIndex::query_to_usage(
+  const std::vector<DistributedIndex::KeyType> & keys ,
+        std::vector<DistributedIndex::KeyProc> & sharing_keys ) const
+{
+  std::vector<KeyType> request ;
+
+  {
+    bool bad_key = false ;
+    CommAll all( m_comm );
+
+    for ( std::vector<KeyType>::const_iterator
+          k = keys.begin() ; k != keys.end() ; ++k ) {
+      const ProcType p = to_which_proc( *k );
+
+      if ( p < m_comm_size ) {
+        all.send_buffer( p ).pack<KeyType>( *k );
+      }
+      else {
+        bad_key = true ;
+      }
+    }
+
+    // Error condition becomes global:
+
+    bad_key = all.allocate_buffers( m_comm_size / 4 , false , bad_key );
+
+    if ( bad_key ) {
+      throw std::runtime_error("stk::parallel::DistributedIndex::query given a key which is out of range");
+    }
+
+    for ( std::vector<KeyType>::const_iterator
+          k = keys.begin() ; k != keys.end() ; ++k ) {
+      all.send_buffer( to_which_proc( *k ) ).pack<KeyType>( *k );
+    }
+
+    all.communicate();
+
+    for ( ProcType p = 0 ; p < m_comm_size ; ++p ) {
+      CommBuffer & buf = all.recv_buffer( p );
+      KeyType key ;
+      while ( buf.remaining() ) {
+        buf.unpack<KeyType>( key );
+        request.push_back( key );
+      }
+    }
+  }
+
+  sort_unique( request );
+
+  {
+    CommAll all( m_comm );
+
+    query_pack_to_usage( m_key_usage , request , all ); // Sizing
+
+    all.allocate_buffers( m_comm_size / 4 , false );
+
+    query_pack_to_usage( m_key_usage , request , all ); // Packing
+
+    all.communicate();
+
+    for ( ProcType p = 0 ; p < m_comm_size ; ++p ) {
+      CommBuffer & buf = all.recv_buffer( p );
+      while ( buf.remaining() ) {
+        KeyProc kp ;
+        buf.unpack( kp );
+        sharing_keys.push_back( kp );
+      }
+    }
+
+    std::sort( sharing_keys.begin() , sharing_keys.end() );
+  }
 }
 
 //----------------------------------------------------------------------

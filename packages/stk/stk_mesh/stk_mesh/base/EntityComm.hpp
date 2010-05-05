@@ -43,6 +43,11 @@ bool in_send_ghost( const Entity & entity , unsigned proc );
 /** \brief  Is in ghosting either send to 'p' or receive from 'p' */
 bool in_ghost( const Ghosting & ghost , const Entity & entity , unsigned p );
 
+/** \brief  Is in owned closure of the given process,
+ *          typically the local process.
+ */
+bool in_owned_closure( const Entity & entity , unsigned proc );
+
 /** \brief  List of all entity communication processes, sorted */
 void comm_procs( const Entity & entity , std::vector<unsigned> & procs );
 
@@ -51,6 +56,7 @@ void comm_procs( const Ghosting & ghost ,
                  const Entity & entity , std::vector<unsigned> & procs );
 
 
+//----------------------------------------------------------------------
 
 void pack_entity_info( CommBuffer & buf , const Entity & entity );
  

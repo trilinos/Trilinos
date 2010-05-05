@@ -131,21 +131,6 @@ bool comm_mesh_verify_parallel_consistency(
 
 namespace {
 
-bool in_owned_closure( const Entity & entity , unsigned p_local )
-{
-  if ( entity.owner_rank() == p_local ) { return true ; }
-
-  const unsigned erank = entity.entity_rank();
-
-  for ( PairIterRelation rel = entity.relations(); ! rel.empty() ; ++rel ) {
-    if ( erank < rel->entity_rank() &&
-         p_local == rel->entity()->owner_rank() ) {
-      return true ;
-    }
-  }
-  return false ;
-}
-
 bool ordered_comm( const Entity & entity )
 {
   const PairIterEntityComm ec = entity.comm();

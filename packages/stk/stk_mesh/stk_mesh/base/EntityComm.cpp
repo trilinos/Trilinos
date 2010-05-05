@@ -81,6 +81,25 @@ bool in_ghost( const Ghosting & ghost , const Entity & entity , unsigned p )
   return i != entity.comm().end() && tmp == *i ;
 }
 
+/** \brief  Is in owned closure of the given process,
+ *          typically the local process.
+ */
+bool in_owned_closure( const Entity & entity , unsigned proc )
+{
+  bool result = entity.owner_rank() == proc ;
+  
+  if ( ! result ) {
+    const unsigned erank = entity.entity_rank();
+
+    for ( PairIterRelation
+          rel = entity.relations(); ! result && ! rel.empty() ; ++rel ) {
+      result =  erank < rel->entity_rank() &&
+                proc == rel->entity()->owner_rank();
+    }
+  }
+
+  return result ;
+}
 
 void comm_procs( const Entity & entity , std::vector<unsigned> & procs )
 {

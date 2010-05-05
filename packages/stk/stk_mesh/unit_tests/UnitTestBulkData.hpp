@@ -21,7 +21,7 @@ namespace mesh {
 class UnitTestBulkData {
 public:
   static void testBulkData( ParallelMachine );
-  static void testCreateMore_error( ParallelMachine );
+  static void testCreateMore( ParallelMachine );
   static void testChangeOwner_nodes( ParallelMachine );
   static void testChangeOwner_loop( ParallelMachine );
   static void testChangeOwner_box( ParallelMachine );

@@ -70,6 +70,13 @@ public:
   void query( const std::vector<KeyType> & keys , 
               std::vector<KeyProc> & sharing_of_keys ) const ;
 
+  /** \brief  Query which processors added the given keys.
+   *          The results of the query are pushed to the processes
+   *          on which the keys are used.
+   */
+  void query_to_usage( const std::vector<KeyType> & keys , 
+                       std::vector<KeyProc> & sharing_of_keys ) const ;
+
   /*------------------------------------------------------------------*/
   /** \brief  Update a parallel index with new and changed keys.
    *          FIRST: Remove this process' participation in the existing keys.

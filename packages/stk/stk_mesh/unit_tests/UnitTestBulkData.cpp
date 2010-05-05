@@ -28,7 +28,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testUnit)
   stk::mesh::UnitTestBulkData::testChangeOwner_nodes( MPI_COMM_WORLD );
   stk::mesh::UnitTestBulkData::testChangeOwner_loop( MPI_COMM_WORLD );
   stk::mesh::UnitTestBulkData::testChangeOwner_box( MPI_COMM_WORLD );
-  stk::mesh::UnitTestBulkData::testCreateMore_error( MPI_COMM_WORLD );
+  stk::mesh::UnitTestBulkData::testCreateMore( MPI_COMM_WORLD );
   stk::mesh::UnitTestBulkData::testChangeParts( MPI_COMM_WORLD );
   stk::mesh::UnitTestBulkData::testChangeParts_loop( MPI_COMM_WORLD );
   stk::mesh::UnitTestBulkData::testDestroy_nodes( MPI_COMM_WORLD );
@@ -227,9 +227,9 @@ void UnitTestBulkData::testChangeOwner_nodes( ParallelMachine pm )
 }
 
 //----------------------------------------------------------------------
-// Testing for error using mesh entities without relations
+// Testing for creating existing mesh entities without relations
 
-void UnitTestBulkData::testCreateMore_error( ParallelMachine pm )
+void UnitTestBulkData::testCreateMore( ParallelMachine pm )
 {
   enum { nPerProc = 10 };
 
@@ -240,8 +240,8 @@ void UnitTestBulkData::testCreateMore_error( ParallelMachine pm )
 
     std::cout << std::endl
               << "P" << p_rank
-              << ": UnitTestBulkData::testCreateMore_error( NP = "
-              << p_size << " ) TESTING FOR PARALLEL ERROR CATCHING"
+              << ": UnitTestBulkData::testCreateMore( NP = "
+              << p_size << " )"
               << std::endl ;
     std::cout.flush();
 
@@ -287,26 +287,16 @@ void UnitTestBulkData::testCreateMore_error( ParallelMachine pm )
       bulk.declare_entity( 0 , ids[ id_get + 1 ] , no_parts );
     }
 
-    std::string error_msg ;
-    bool exception_thrown = false ;
-    try {
-      bulk.modification_end();
-    }
-    catch( const std::exception & x ) {
-      exception_thrown = true ;
-      error_msg.append( x.what() );
-      std::cerr.flush();
-    }
+    bulk.modification_end();
 
-    STKUNIT_ASSERT( exception_thrown );
-
-    std::cout << std::endl
-              << "P" << p_rank
-              << ": UnitTestBulkData::testCreateMore_error( NP = "
-              << p_size << " ) SUCCESSFULLY CAUGHT "
-              << error_msg
-              << std::endl ;
-    std::cout.flush();
+    if ( 1 == p_rank ) {
+      Entity * e0 = bulk.get_entity( 0 , ids[id_get] );
+      Entity * e1 = bulk.get_entity( 0 , ids[id_get+1] );
+      STKUNIT_ASSERT( NULL != e0 );
+      STKUNIT_ASSERT( NULL != e1 );
+      STKUNIT_ASSERT( 0 == e0->owner_rank() );
+      STKUNIT_ASSERT( 0 == e1->owner_rank() );
+    }
   }
 }
 
