@@ -35,17 +35,17 @@ The one option that you may need to change if you do not have root privileges
 is the --install-dir option which is set to /usr/local/bin by default.  For
 example, you might just type:
 
-  $ SOME_DIR/install-git.py --install-dir=$HOME --do-all
+  $ SOME_DIR/install-git.py --install-dir=<some_dir> --do-all
 
-and then it would install git/eg and the other executables in $HOME/bin.
+and then it would install git/eg and the other executables in <some_dir>/bin.
 NOTE: You will have to update your PATH variable to include whatever directory
 you choose to install git/eg in.
 
 NOTE: If you need to use sudo to install in /usr/local/bin or some other place
 that needs root privileges, do:
 
-  $ SOME_DIR/install-git.py --install-dir=$HOME --checkout --untar --configure --build
-  $ sudo SOME_DIR/install-git.py --install-dir=$HOME --install
+  $ SOME_DIR/install-git.py --install-dir=<some_dir> --checkout --untar --configure --build
+  $ sudo SOME_DIR/install-git.py --install-dir=<some_dir> --install
 
 This appears to work on some systems.
 
