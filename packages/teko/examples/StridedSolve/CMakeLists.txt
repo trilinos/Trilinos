@@ -7,7 +7,7 @@ PACKAGE_ADD_EXECUTABLE(
    StridedSolve_Example
    SOURCES 
       strided_solve.cpp
-   COMM mpi
+   COMM mpi serial
    )
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(strided_solve_example_copyfiles
