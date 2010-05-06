@@ -39,6 +39,8 @@ void UnitTestBulkData::testChangeParts( ParallelMachine pm )
   const unsigned p_size = parallel_machine_size( pm );
   const unsigned p_rank = parallel_machine_rank( pm );
 
+  if ( 1 < p_size ) return ;
+
   // Meta data with entity ranks [0..9]
   std::vector<std::string> entity_names(10);
   for ( size_t i = 0 ; i < 10 ; ++i ) {

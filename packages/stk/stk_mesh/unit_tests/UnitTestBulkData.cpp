@@ -8,6 +8,7 @@
 
 
 #include <sstream>
+#include <stdexcept>
 
 #include <unit_tests/stk_utest_macros.hpp>
 
@@ -77,20 +78,22 @@ void UnitTestBulkData::testBulkData( ParallelMachine pm )
 
   Entity * e[10] ;
 
+  const unsigned id = bulk.parallel_rank() + 1 ;
+
   STKUNIT_ASSERT( bulk.modification_begin() );
   for ( size_t i = 0 ; i < 10 ; ++i ) {
-    e[i] = & bulk.declare_entity(  i , 1 , no_parts );
+    e[i] = & bulk.declare_entity(  i , id , no_parts );
   }
   STKUNIT_ASSERT( bulk.modification_end() );
 
   for ( size_t i = 0 ; i < 10 ; ++i ) {
-    STKUNIT_ASSERT( e[i] == bulk.get_entity( i , 1 ) );
+    STKUNIT_ASSERT( e[i] == bulk.get_entity( i , id ) );
   }
 
   bool ok = false ;
   STKUNIT_ASSERT( bulk.modification_begin() );
   try {
-    bulk.declare_entity( 11 , 1 , no_parts );
+    bulk.declare_entity( 11 , id , no_parts );
   }
   catch( const std::exception & x ) {
     std::cout << method << " correctly caught: " << x.what() << std::endl ;
@@ -102,10 +105,9 @@ void UnitTestBulkData::testBulkData( ParallelMachine pm )
   // Catch not-ok-to-modify
   ok = false ;
   try {
-    bulk.declare_entity( 0 , 2 , no_parts );
+    bulk.declare_entity( 0 , id + 1 , no_parts );
   }
   catch( const std::exception & x ) {
-    std::cout << method << " correctly caught: " << x.what() << std::endl ;
     ok = true ;
   }
   STKUNIT_ASSERT( ok );
@@ -283,8 +285,17 @@ void UnitTestBulkData::testCreateMore( ParallelMachine pm )
     STKUNIT_ASSERT( bulk.modification_begin() );
 
     if ( 1 == p_rank ) {
-      bulk.declare_entity( 0 , ids[ id_get ] , no_parts );
-      bulk.declare_entity( 0 , ids[ id_get + 1 ] , no_parts );
+      // These declarations create entities that already exist,
+      // which will be an error.  Must create an owned entity
+      // to use them, thus they become shared.
+
+      Entity & e0 = bulk.declare_entity( 0 , ids[ id_get ] , no_parts );
+      Entity & e1 = bulk.declare_entity( 0 , ids[ id_get + 1 ] , no_parts );
+
+      Entity & eU = bulk.declare_entity( 1 , 1 , no_parts );
+
+      bulk.declare_relation( eU , e0 , 0 );
+      bulk.declare_relation( eU , e1 , 1 );
     }
 
     bulk.modification_end();
@@ -297,6 +308,17 @@ void UnitTestBulkData::testCreateMore( ParallelMachine pm )
       STKUNIT_ASSERT( 0 == e0->owner_rank() );
       STKUNIT_ASSERT( 0 == e1->owner_rank() );
     }
+
+    // Now test tripping the error condition
+
+    bulk.modification_begin();
+
+    if ( 0 == p_rank ) {
+      bulk.declare_entity( 0 , ids[ id_get ] , no_parts );
+      bulk.declare_entity( 0 , ids[ id_get + 1 ] , no_parts );
+    }
+
+    STKUNIT_ASSERT_THROW( bulk.modification_end() , std::runtime_error );
   }
 }
 

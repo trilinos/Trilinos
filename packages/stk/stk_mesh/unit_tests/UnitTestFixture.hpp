@@ -15,46 +15,6 @@
 
 namespace sunit {
 
-  class Stk_Mesh_Fixture
-  {
-    public:
-      Stk_Mesh_Fixture( const std::vector<std::string> & entity_rank_names );
-      virtual ~Stk_Mesh_Fixture();
-
-      void createMetaData(const std::vector<std::string> & entity_rank_names );
-
-      const stk::mesh::MetaData & get_MetaData() const { return m_MetaData ; }
-      stk::mesh::MetaData       & get_NonconstMetaData() { return m_MetaData ; }
-
-      const stk::mesh::BulkData & get_BulkData() const { return m_BulkData ; }
-      stk::mesh::BulkData       & get_NonconstBulkData() { return m_BulkData ; }
-
-    private:
-      stk::mesh::MetaData m_MetaData;
-      stk::mesh::BulkData m_BulkData;
-
-      Stk_Mesh_Fixture();
-      Stk_Mesh_Fixture( const Stk_Mesh_Fixture & );
-      Stk_Mesh_Fixture & operator = ( const Stk_Mesh_Fixture & );
-  };
-
-  stk::mesh::PartVector getPartVector(
-      const Stk_Mesh_Fixture & fix,
-      const std::vector<std::string> & names
-      );
-
-  stk::mesh::Part* getPart(
-      const Stk_Mesh_Fixture & fix,
-      const std::string name
-      );
-
-  const stk::mesh::Bucket & getBucketContainingEntity(
-      const Stk_Mesh_Fixture & fix,
-      stk::mesh::EntityRank ent_type,
-      stk::mesh::EntityId ent_id
-      );
-
-
   // Example Mesh primarily used for testing Selectors:
   //
   // PartA, PartB, PartC, PartD
@@ -76,27 +36,50 @@ namespace sunit {
   // |----------|--|-------|--|----------|    |-------------|
   //
 
-  class ExampleFixture : public Stk_Mesh_Fixture {
+  class ExampleFixture {
   public:
     ExampleFixture();
     ~ExampleFixture();
+
+    const stk::mesh::MetaData & get_MetaData() const { return m_MetaData ; }
+    stk::mesh::MetaData       & get_NonconstMetaData() { return m_MetaData ; }
+
+    const stk::mesh::BulkData & get_BulkData() const { return m_BulkData ; }
+    stk::mesh::BulkData       & get_NonconstBulkData() { return m_BulkData ; }
+
+    stk::mesh::MetaData m_MetaData ;
+    stk::mesh::BulkData m_BulkData ;
+
+    stk::mesh::Part & m_partA ;
+    stk::mesh::Part & m_partB ;
+    stk::mesh::Part & m_partC ;
+    stk::mesh::Part & m_partD ;
+
+    stk::mesh::Entity * m_entity1 ;
+    stk::mesh::Entity * m_entity2 ;
+    stk::mesh::Entity * m_entity3 ;
+    stk::mesh::Entity * m_entity4 ;
+    stk::mesh::Entity * m_entity5 ;
+
+  private:
+    ExampleFixture( const ExampleFixture & );
+    ExampleFixture & operator = ( const ExampleFixture & );
   };
 
-  stk::mesh::Part* getExamplePart(
-      const sunit::Stk_Mesh_Fixture & fix,
-      const std::string name
-      );
-
-  const stk::mesh::Bucket & getExampleBucket(
-      const Stk_Mesh_Fixture & fix,
-      stk::mesh::EntityId ent_id
-      );
-
-  class VariableSizeFixture : public Stk_Mesh_Fixture {
+  class VariableSizeFixture {
   public:
     VariableSizeFixture(int NumParts);
     ~VariableSizeFixture();
+
+    stk::mesh::MetaData m_MetaData ;
+    stk::mesh::BulkData m_BulkData ;
+
     stk::mesh::PartVector m_declared_part_vector;
+    std::vector<stk::mesh::Entity*> m_entities ;
+
+  private:
+    VariableSizeFixture( const VariableSizeFixture & );
+    VariableSizeFixture & operator = ( const VariableSizeFixture & );
   };
 
 

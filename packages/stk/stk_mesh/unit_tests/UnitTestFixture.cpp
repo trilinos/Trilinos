@@ -13,165 +13,78 @@
 namespace sunit {
 
 
-  Stk_Mesh_Fixture::Stk_Mesh_Fixture( const std::vector<std::string> & entity_rank_names )
-    : m_MetaData( entity_rank_names )
-    , m_BulkData( m_MetaData , MPI_COMM_WORLD )
-  { }
-
-  Stk_Mesh_Fixture::~Stk_Mesh_Fixture() {}
-
-  std::vector<stk::mesh::Part*> getPartVector(
-      const sunit::Stk_Mesh_Fixture & fix,
-      const std::vector<std::string> & names
-      )
-  {
-    std::vector<stk::mesh::Part*> partVector;
-    const stk::mesh::MetaData & metaData = fix.get_MetaData();
-    const std::vector<std::string>::const_iterator it_begin = names.begin();
-    std::vector<std::string>::const_iterator it = it_begin;
-    const std::vector<std::string>::const_iterator it_end = names.end();
-    for ( ; it != it_end ; ++it ) {
-      stk::mesh::Part *part = metaData.get_part(*it);
-      partVector.push_back(part);
-    }
-    return partVector;
-  }
-
-
-  stk::mesh::Part* getPart(
-      const sunit::Stk_Mesh_Fixture & fix,
-      const std::string name
-      )
-  {
-    std::vector<std::string> names;
-    names.push_back(name);
-    std::vector<stk::mesh::Part*> partVector = getPartVector(fix,names);
-    return partVector[0];
-  }
-
-
-  const stk::mesh::Bucket & getBucketContainingEntity(
-      const sunit::Stk_Mesh_Fixture & fix,
-      stk::mesh::EntityRank ent_type,
-      stk::mesh::EntityId ent_id
-      )
-  {
-    const stk::mesh::BulkData & bulkData = fix.get_BulkData();
-    return bulkData.get_entity(ent_type,ent_id)->bucket();
-  }
-
-
   ExampleFixture::~ExampleFixture() {}
 
   ExampleFixture::ExampleFixture()
-    : Stk_Mesh_Fixture( std::vector<std::string>( 1 , std::string("MyEntityRank") ) )
+    : m_MetaData( std::vector<std::string>(1, std::string("MyEntityRank")) )
+    , m_BulkData( m_MetaData , MPI_COMM_WORLD )
+    , m_partA( m_MetaData.declare_part( "PartA" , 0 ) )
+    , m_partB( m_MetaData.declare_part( "PartB" , 0 ) )
+    , m_partC( m_MetaData.declare_part( "PartC" , 0 ) )
+    , m_partD( m_MetaData.declare_part( "PartD" , 0 ) )
+    , m_entity1( NULL )
+    , m_entity2( NULL )
+    , m_entity3( NULL )
+    , m_entity4( NULL )
+    , m_entity5( NULL )
   {
-    // Create Parts and commit:
-    stk::mesh::MetaData & metaData = get_NonconstMetaData();
-    std::string myPartName;
-    stk::mesh::EntityRank myRank = 0;
+    m_MetaData.commit();
 
-    myPartName = "PartA";
-    metaData.declare_part(myPartName,myRank);
+    m_BulkData.modification_begin();
 
-    myPartName = "PartB";
-    metaData.declare_part(myPartName,myRank);
+    const unsigned entity_count = 5 ;
 
-    myPartName = "PartC";
-    metaData.declare_part(myPartName,myRank);
-
-    myPartName = "PartD";
-    metaData.declare_part(myPartName,myRank);
-
-    metaData.commit();
+    stk::mesh::EntityRank ent_type = 0; // rank
 
     // Create Entities and assign to parts:
-    {
-      stk::mesh::BulkData & bulkData = get_NonconstBulkData();
-      bulkData.modification_begin();
-      stk::mesh::EntityRank ent_type = 0; // rank
-      stk::mesh::EntityId ent_id = 1; // Unique ID
-      std::vector<stk::mesh::Part*> partMembership;
+    stk::mesh::EntityId ent_id =
+      1 + entity_count * m_BulkData.parallel_rank(); // Unique ID
 
-      // Entity1 is contained in PartA
-      partMembership.clear();
-      partMembership.push_back(metaData.get_part("PartA"));
-      {
-        bulkData.declare_entity(ent_type, ent_id, partMembership);
-      }
-      ++ent_id;
+    std::vector<stk::mesh::Part*> partMembership;
 
-      // Entity2 is contained in PartA and PartB
-      partMembership.clear();
-      partMembership.push_back(metaData.get_part("PartA"));
-      partMembership.push_back(metaData.get_part("PartB"));
-      {
-        bulkData.declare_entity(ent_type, ent_id, partMembership);
-      }
-      ++ent_id;
+    // Entity1 is contained in PartA
+    partMembership.clear();
+    partMembership.push_back( & m_partA );
+    m_entity1 = & m_BulkData.declare_entity(ent_type, ent_id, partMembership);
+    ++ent_id;
 
-      // Entity3 is contained in PartB and PartC
-      partMembership.clear();
-      partMembership.push_back(metaData.get_part("PartB"));
-      partMembership.push_back(metaData.get_part("PartC"));
-      {
-        bulkData.declare_entity(ent_type, ent_id, partMembership);
-      }
-      ++ent_id;
+    // Entity2 is contained in PartA and PartB
+    partMembership.clear();
+    partMembership.push_back( & m_partA );
+    partMembership.push_back( & m_partB );
+    m_entity2 = & m_BulkData.declare_entity(ent_type, ent_id, partMembership);
+    ++ent_id;
 
-      // Entity4 is contained in PartC
-      partMembership.clear();
-      partMembership.push_back(metaData.get_part("PartC"));
-      {
-        bulkData.declare_entity(ent_type, ent_id, partMembership);
-      }
-      ++ent_id;
+    // Entity3 is contained in PartB and PartC
+    partMembership.clear();
+    partMembership.push_back( & m_partB );
+    partMembership.push_back( & m_partC );
+    m_entity3 = & m_BulkData.declare_entity(ent_type, ent_id, partMembership);
+    ++ent_id;
 
-      // Entity5 is not contained in any Part
-      partMembership.clear();
-      {
-        bulkData.declare_entity(ent_type, ent_id, partMembership);
-      }
-      bulkData.modification_end();
-    }
+    // Entity4 is contained in PartC
+    partMembership.clear();
+    partMembership.push_back( & m_partC );
+    m_entity4 = & m_BulkData.declare_entity(ent_type, ent_id, partMembership);
+    ++ent_id;
+
+    // Entity5 is not contained in any Part
+    partMembership.clear();
+    m_entity5 = & m_BulkData.declare_entity(ent_type, ent_id, partMembership);
+
+    m_BulkData.modification_end();
   }
 
-  const stk::mesh::Bucket & getExampleBucket(
-      const sunit::Stk_Mesh_Fixture & fix,
-      stk::mesh::EntityId ent_id
-      )
-  {
-    stk::mesh::EntityRank ent_type = 0;
-    const stk::mesh::BulkData & bulkData = fix.get_BulkData();
-    return bulkData.get_entity(ent_type,ent_id)->bucket();
-  }
-
-
-
-  stk::mesh::Part* getExamplePart(
-      const sunit::Stk_Mesh_Fixture & fix,
-      const std::string name
-      )
-  {
-    stk::mesh::Part* part;
-    if (name == "PartU") {
-      part = &(fix.get_MetaData().universal_part());
-    } else {
-      std::vector<std::string> names;
-      names.push_back(name);
-      std::vector<stk::mesh::Part*> partVector = getPartVector(fix,names);
-      part = partVector[0];
-    }
-    return part;
-  }
+  //--------------------------------------------------------------------------
 
   VariableSizeFixture::~VariableSizeFixture() {}
 
   VariableSizeFixture::VariableSizeFixture(int NumParts)
-    : Stk_Mesh_Fixture( std::vector<std::string>( 1 , std::string("MyEntityRank") ) )
+    : m_MetaData( std::vector<std::string>(1, std::string("MyEntityRank")) )
+    , m_BulkData( m_MetaData , MPI_COMM_WORLD )
+    , m_declared_part_vector()
   {
     // Create Parts and commit:
-    stk::mesh::MetaData & metaData = get_NonconstMetaData();
     std::string myPartName;
     stk::mesh::EntityRank myRank = 0;
 
@@ -179,25 +92,32 @@ namespace sunit {
     for (int part_i=0 ; part_i<NumParts; ++part_i) {
       std::ostringstream localPartName(partName);
       localPartName << part_i;
-      m_declared_part_vector.push_back(&metaData.declare_part(localPartName.str(),myRank));
+      stk::mesh::Part * part =
+        & m_MetaData.declare_part(localPartName.str(),myRank);
+      m_declared_part_vector.push_back( part );
     }
 
-    metaData.commit();
+    m_MetaData.commit();
 
     // Create Entities and assign to parts:
-    stk::mesh::BulkData & bulkData = get_NonconstBulkData();
-    bulkData.modification_begin();
+
+    m_BulkData.modification_begin();
+
     stk::mesh::EntityRank ent_type = 0; // rank
-    stk::mesh::EntityId ent_id = 1; // Unique ID
+    stk::mesh::EntityId ent_id =
+      1 + NumParts * m_BulkData.parallel_rank(); // Unique ID
+
     for (int part_i = 0 ; part_i < NumParts ; ++part_i) {
       std::vector<stk::mesh::Part*> partMembership;
       partMembership.push_back(m_declared_part_vector[part_i]);
-      bulkData.declare_entity(ent_type, ent_id, partMembership);
+      stk::mesh::Entity * e =
+        & m_BulkData.declare_entity(ent_type, ent_id, partMembership);
+      m_entities.push_back( e );
       ++ent_id;
     }
-    bulkData.modification_end();
-  }
 
+    m_BulkData.modification_end();
+  }
 
 
 } // namespace sunit

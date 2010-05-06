@@ -24,78 +24,52 @@
 namespace {
 
   using sunit::ExampleFixture;
-  using sunit::getExampleBucket;
-  using sunit::getPartVector;
 
-// (BC,2) -> B
-STKUNIT_UNIT_TEST( UnitTestGetBuckets, get_involved_parts_BC_2 )
+STKUNIT_UNIT_TEST( UnitTestGetBuckets, ExampleFixture )
 {
   ExampleFixture fix ;
-  std::vector<std::string> union_names;
-  union_names.push_back("PartB");
-  union_names.push_back("PartC");
-  stk::mesh::PartVector union_parts = getPartVector(fix,union_names);
 
-  const stk::mesh::Bucket & bucket = getExampleBucket(fix,2);
+  {
+    const stk::mesh::Bucket & bucket = fix.m_entity1->bucket();
+    STKUNIT_ASSERT_TRUE(  bucket.member( fix.m_partA ) );
+    STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partB ) );
+    STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partC ) );
+    STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partD ) );
+  }
 
-  stk::mesh::PartVector partsInvolved;
-  stk::mesh::get_involved_parts(union_parts,bucket,partsInvolved);
-  STKUNIT_ASSERT_TRUE(partsInvolved.size() == 1);
-  STKUNIT_EXPECT_TRUE(partsInvolved[0]->name() == "PartB");
+  {
+    const stk::mesh::Bucket & bucket = fix.m_entity2->bucket();
+    STKUNIT_ASSERT_TRUE( bucket.member( fix.m_partA ) );
+    STKUNIT_ASSERT_TRUE( bucket.member( fix.m_partB ) );
+    STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partC ) );
+    STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partD ) );
+  }
+
+  {
+    const stk::mesh::Bucket & bucket = fix.m_entity3->bucket();
+    STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partA ) );
+    STKUNIT_ASSERT_TRUE( bucket.member( fix.m_partB ) );
+    STKUNIT_ASSERT_TRUE( bucket.member( fix.m_partC ) );
+    STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partD ) );
+  }
+
+  {
+    const stk::mesh::Bucket & bucket = fix.m_entity4->bucket();
+    STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partA ) );
+    STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partB ) );
+    STKUNIT_ASSERT_TRUE( bucket.member( fix.m_partC ) );
+    STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partD ) );
+  }
+
+  {
+    const stk::mesh::Bucket & bucket = fix.m_entity5->bucket();
+    STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partA ) );
+    STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partB ) );
+    STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partC ) );
+    STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partD ) );
+  }
+
 }
-
-
-// (ABC,2) -> AB
-STKUNIT_UNIT_TEST( UnitTestGetBuckets, get_involved_parts_ABC_2 )
-{
-  ExampleFixture fix ;
-  std::vector<std::string> union_names;
-  union_names.push_back("PartA");
-  union_names.push_back("PartB");
-  union_names.push_back("PartC");
-  stk::mesh::PartVector union_parts = getPartVector(fix,union_names);
-
-  const stk::mesh::Bucket & bucket = getExampleBucket(fix,2);
-
-  stk::mesh::PartVector partsInvolved;
-  stk::mesh::get_involved_parts(union_parts,bucket,partsInvolved);
-  STKUNIT_ASSERT_TRUE(partsInvolved.size() == 2);
-  STKUNIT_EXPECT_TRUE(partsInvolved[0]->name() == "PartA");
-  STKUNIT_EXPECT_TRUE(partsInvolved[1]->name() == "PartB");
-}
-
-
-// (ABC,5) -> {}
-STKUNIT_UNIT_TEST( UnitTestGetBuckets, get_involved_parts_ABC_5 )
-{
-  ExampleFixture fix ;
-  std::vector<std::string> union_names;
-  union_names.push_back("PartA");
-  union_names.push_back("PartB");
-  union_names.push_back("PartC");
-  stk::mesh::PartVector union_parts = getPartVector(fix,union_names);
-
-  const stk::mesh::Bucket & bucket = getExampleBucket(fix,5);
-
-  stk::mesh::PartVector partsInvolved;
-  stk::mesh::get_involved_parts(union_parts,bucket,partsInvolved);
-  STKUNIT_ASSERT_TRUE(partsInvolved.size() == 0);
-}
-
-
-// ({},1) -> {}
-STKUNIT_UNIT_TEST( UnitTestGetBuckets, get_involved_parts_Zero_1 )
-{
-  ExampleFixture fix ;
-  std::vector<std::string> union_names;
-  stk::mesh::PartVector union_parts = getPartVector(fix,union_names);
-
-  const stk::mesh::Bucket & bucket = getExampleBucket(fix,1);
-
-  stk::mesh::PartVector partsInvolved;
-  stk::mesh::get_involved_parts(union_parts,bucket,partsInvolved);
-  STKUNIT_ASSERT_TRUE(partsInvolved.size() == 0);
-}
-
 
 } // namespace 
+

@@ -199,6 +199,9 @@ void BulkData::internal_update_distributed_index(
 void BulkData::internal_resolve_parallel_create_delete(
   const std::vector<Entity*> & del_entities )
 {
+  static const char method[] =
+    "stk::mesh::BulkData::internal_resolve_parallel_create_delete" ;
+
   // 'del_entities' is guaranteed unique and sorted
 
   {
@@ -378,19 +381,23 @@ void BulkData::internal_resolve_parallel_create_delete(
       }
     }
 
-
     // Update shared created entities.
     // - Revise ownership to selected processor
     // - Update sharing.
+    // - Work backward so the 'in_owned_closure' function
+    //   can evaluate related higher ranking entities.
+
+    std::ostringstream error_msg ;
+    int error_flag = 0 ;
 
     PartVector add_parts , remove_parts ;
     add_parts.push_back( & m_mesh_meta_data.locally_used_part() );
     remove_parts.push_back( & m_mesh_meta_data.locally_owned_part() );
 
     for ( std::vector<Entity*>::const_iterator 
-          i = shared_modified.begin() ; i != shared_modified.end() ; ++i ) {
+          i = shared_modified.end() ; i != shared_modified.begin() ; ) {
      
-      Entity * entity = *i ;
+      Entity * entity = *--i ;
 
       if ( entity->owner_rank() == m_parallel_rank &&
            entity->log_query() == Entity::LogCreated ) {
@@ -407,6 +414,36 @@ void BulkData::internal_resolve_parallel_create_delete(
         entity->m_sync_count = m_sync_count ;
         internal_change_entity_parts( *entity , add_parts , remove_parts );
       }
+
+      // Newly created shared entity had better be in the owned closure
+      if ( ! in_owned_closure( *entity , m_parallel_rank ) ) {
+        if ( 0 == error_flag ) {
+          error_flag = 1 ;
+          error_msg
+            << std::endl
+            << "P" << m_parallel_rank << ": " << method << " FAILED"
+            << std::endl
+            << "  The following entities were declared on multiple processors,"
+            << std::endl
+            << "  cannot be parallel-shared, and were declared with"
+            << "  parallel-ghosting information. { "
+            << std::endl ;
+        }
+        error_msg << "    " ;
+        print_entity_key( error_msg , m_mesh_meta_data , entity->key() );
+        error_msg << " also declared on" ;
+        for ( PairIterEntityComm ec = entity->sharing(); ! ec.empty() ; ++ec ) {
+          error_msg << " P" << ec->proc ;
+        }
+        error_msg << std::endl ;
+      }
+    }
+    if ( error_flag ) { error_msg << "}" << std::endl ; }
+
+    all_reduce( m_parallel_machine , ReduceMax<1>( & error_flag ) );
+
+    if ( error_flag ) {
+      throw std::runtime_error( error_msg.str() );
     }
 
     const size_t n_old = m_entity_comm.size();

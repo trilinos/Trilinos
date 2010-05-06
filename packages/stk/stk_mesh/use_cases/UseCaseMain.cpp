@@ -30,25 +30,46 @@ void printStatus(bool status)
 int main ( int argc, char * argv[] )
 {
   stk::ParallelMachine parallel_machine = stk::parallel_machine_init(&argc, &argv);
+  const bool single_process =
+    stk::parallel_machine_size( parallel_machine ) <= 1 ;
 
   bool status = true;
-  {
+
+  if ( single_process ) {
     std::cout << "Use Case 2 ... ";
-    stk::mesh::use_cases::UseCase_2_Mesh mesh(parallel_machine);
-    mesh.populate(1,3);
-    const bool local_status = stk::mesh::use_cases::verifyMesh(mesh,1,3);
-    printStatus(local_status);
+    bool local_status = true ;
+    try {
+      stk::mesh::use_cases::UseCase_2_Mesh mesh(parallel_machine);
+      mesh.populate(1,3);
+      local_status = stk::mesh::use_cases::verifyMesh(mesh,1,3);
+      printStatus(local_status);
+    }
+    catch ( const std::exception & x ) {
+      local_status = false ;
+      printStatus(local_status);
+      std::cout << x.what();
+    }
     status = status && local_status;
   }
-  {
+
+  if ( single_process ) {
     std::cout << "Use Case 3 ... ";
-    stk::mesh::use_cases::UseCase_3_Mesh mesh(parallel_machine);
-    mesh.populate();
-    const bool local_status = stk::mesh::use_cases::verifyMesh(mesh);
-    printStatus(local_status);
+    bool local_status = true ;
+    try {
+      stk::mesh::use_cases::UseCase_3_Mesh mesh(parallel_machine);
+      mesh.populate();
+      local_status = stk::mesh::use_cases::verifyMesh(mesh);
+      printStatus(local_status);
+    }
+    catch ( const std::exception & x ) {
+      local_status = false ;
+      printStatus(local_status);
+      std::cout << x.what();
+    }
     status = status && local_status;
   }
-  {
+
+  if ( single_process ) {
     std::cout << "Use Case 4 ... ";
     stk::mesh::use_cases::UseCase_4_Mesh mesh(parallel_machine);
     mesh.populate();
@@ -57,12 +78,14 @@ int main ( int argc, char * argv[] )
     printStatus(local_status);
     status = status && local_status;
   }
+
   {
     std::cout << "Use Case Change Owner ... ";
     Grid2D_Fixture test( parallel_machine );
     const bool result = test.test_change_owner();
     printStatus(result);
   }
+
   {
     std::cout << "Use Case Element Death 1 ... ";
     bool local_status = element_death_use_case_1(parallel_machine);
