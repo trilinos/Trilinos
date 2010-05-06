@@ -62,6 +62,17 @@ Redistributor::Redistributor(Teuchos::RCP<Isorropia::Epetra::Partitioner> partit
   }
 }
 
+Redistributor::Redistributor(Isorropia::Epetra::Partitioner *partitioner)
+  : partitioner_(Teuchos::RCP<Isorropia::Epetra::Partitioner>(partitioner,false)),
+  importer_(),
+  target_map_(),
+  created_importer_(false)
+{
+  if (!partitioner_->alreadyComputed()) {
+    partitioner_->partition();
+  }
+}
+
 Redistributor::~Redistributor()
 {
 }
@@ -86,6 +97,15 @@ Redistributor::redistribute(const Epetra_SrcDistObject& src,
 
 Teuchos::RCP<Epetra_CrsGraph>
 Redistributor::redistribute(const Epetra_CrsGraph& input_graph, bool callFillComplete)
+{
+  Epetra_CrsGraph *outputGraphPtr=0;
+  redistribute(input_graph, outputGraphPtr, callFillComplete);
+
+  return Teuchos::RCP<Epetra_CrsGraph>(outputGraphPtr);
+}
+
+void 
+Redistributor::redistribute(const Epetra_CrsGraph& input_graph, Epetra_CrsGraph * &outputGraphPtr, bool callFillComplete)
 {
   if (!created_importer_) {
     create_importer(input_graph.RowMap());
@@ -117,47 +137,55 @@ Redistributor::redistribute(const Epetra_CrsGraph& input_graph, bool callFillCom
 
   // Receive new rows, send old rows
 
-  Teuchos::RCP<Epetra_CrsGraph> new_graph =
-    Teuchos::rcp(new Epetra_CrsGraph(Copy, *target_map_, rowSize, true));
+  outputGraphPtr = new Epetra_CrsGraph(Copy, *target_map_, rowSize, true);
 
   if (myNewRows)
     delete [] rowSize;
 
-  new_graph->Import(input_graph, *importer_, Insert);
+  outputGraphPtr->Import(input_graph, *importer_, Insert);
 
   // Set the new domain map such that
   // (a) if old DomainMap == old RangeMap, preserve this property,
   // (b) otherwise, let the new DomainMap be the old DomainMap 
   const Epetra_BlockMap *newDomainMap;
   if (input_graph.DomainMap().SameAs(input_graph.RangeMap()))
-     newDomainMap = &(new_graph->RangeMap());
+     newDomainMap = &(outputGraphPtr->RangeMap());
   else
      newDomainMap = &(input_graph.DomainMap());
 
-  if (callFillComplete && (!new_graph->Filled()))
-    new_graph->FillComplete(*newDomainMap, *target_map_);
+  if (callFillComplete && (!outputGraphPtr->Filled()))
+    outputGraphPtr->FillComplete(*newDomainMap, *target_map_);
 
-  return( new_graph );
+  return;
 }
 
 Teuchos::RCP<Epetra_CrsMatrix>
-Redistributor::redistribute(const Epetra_CrsMatrix& input_matrix, bool callFillComplete)
+Redistributor::redistribute(const Epetra_CrsMatrix& inputMatrix, bool callFillComplete)
+{
+  Epetra_CrsMatrix *outputMatrix=0;
+  redistribute(inputMatrix, outputMatrix, callFillComplete);
+
+  return Teuchos::RCP<Epetra_CrsMatrix>(outputMatrix);
+}
+
+void 
+Redistributor::redistribute(const Epetra_CrsMatrix& inputMatrix, Epetra_CrsMatrix * &outputMatrix, bool callFillComplete)
 {
   if (!created_importer_) {
-    create_importer(input_matrix.RowMap());
+    create_importer(inputMatrix.RowMap());
   }
 
   // First obtain the length of each of my new rows
 
-  int myOldRows = input_matrix.NumMyRows();
+  int myOldRows = inputMatrix.NumMyRows();
   int myNewRows = target_map_->NumMyElements();
 
   double *nnz = new double [myOldRows];
   for (int i=0; i < myOldRows; i++){
-    nnz[i] = input_matrix.NumMyEntries(i);
+    nnz[i] = inputMatrix.NumMyEntries(i);
   }
 
-  Epetra_Vector oldRowSizes(Copy, input_matrix.RowMap(), nnz);
+  Epetra_Vector oldRowSizes(Copy, inputMatrix.RowMap(), nnz);
 
   if (myOldRows)
     delete [] nnz;
@@ -176,49 +204,56 @@ Redistributor::redistribute(const Epetra_CrsMatrix& input_matrix, bool callFillC
 
   // Receive new rows, send old rows
 
-  Teuchos::RCP<Epetra_CrsMatrix> new_matrix =
-    Teuchos::rcp(new Epetra_CrsMatrix(Copy, *target_map_, rowSize, true));
+  outputMatrix = new Epetra_CrsMatrix(Copy, *target_map_, rowSize, true);
 
   if (myNewRows)
     delete [] rowSize;
 
-  new_matrix->Import(input_matrix, *importer_, Insert);
+  outputMatrix->Import(inputMatrix, *importer_, Insert);
 
   // Set the new domain map such that
   // (a) if old DomainMap == old RangeMap, preserve this property,
   // (b) otherwise, let the new DomainMap be the old DomainMap 
   const Epetra_Map *newDomainMap;
-  if (input_matrix.DomainMap().SameAs(input_matrix.RangeMap()))
-     newDomainMap = &(new_matrix->RangeMap());
+  if (inputMatrix.DomainMap().SameAs(inputMatrix.RangeMap()))
+     newDomainMap = &(outputMatrix->RangeMap());
   else
-     newDomainMap = &(input_matrix.DomainMap());
+     newDomainMap = &(inputMatrix.DomainMap());
 
-  if (callFillComplete && (!new_matrix->Filled()))
-    new_matrix->FillComplete(*newDomainMap,  *target_map_);
+  if (callFillComplete && (!outputMatrix->Filled()))
+    outputMatrix->FillComplete(*newDomainMap,  *target_map_);
 
-  return( new_matrix );
+  return;
 }
 
 Teuchos::RCP<Epetra_CrsMatrix>
-Redistributor::redistribute(const Epetra_RowMatrix& input_matrix, bool callFillComplete)
+Redistributor::redistribute(const Epetra_RowMatrix& inputMatrix, bool callFillComplete)
+{
+  Epetra_CrsMatrix *outputMatrix = 0;
+  redistribute(inputMatrix,outputMatrix,callFillComplete);
+  return Teuchos::RCP<Epetra_CrsMatrix>(outputMatrix);
+}
+
+void
+Redistributor::redistribute(const Epetra_RowMatrix& inputMatrix, Epetra_CrsMatrix * &outputMatrix, bool callFillComplete)
 {
   if (!created_importer_) {
-    create_importer(input_matrix.RowMatrixRowMap());
+    create_importer(inputMatrix.RowMatrixRowMap());
   }
  // First obtain the length of each of my new rows
 
-  int myOldRows = input_matrix.NumMyRows();
+  int myOldRows = inputMatrix.NumMyRows();
   int myNewRows = target_map_->NumMyElements();
 
 
   double *nnz = new double [myOldRows];
   int val;
   for (int i=0; i < myOldRows; i++){
-    input_matrix.NumMyRowEntries(i, val);
+    inputMatrix.NumMyRowEntries(i, val);
     nnz[i] = static_cast<double>(val);
   }
 
-  Epetra_Vector oldRowSizes(Copy, input_matrix.RowMatrixRowMap(), nnz);
+  Epetra_Vector oldRowSizes(Copy, inputMatrix.RowMatrixRowMap(), nnz);
 
   if (myOldRows)
     delete [] nnz;
@@ -234,58 +269,85 @@ Redistributor::redistribute(const Epetra_RowMatrix& input_matrix, bool callFillC
 
   // Receive new rows, send old rows
 
-  Teuchos::RCP<Epetra_CrsMatrix> new_matrix =
-    Teuchos::rcp(new Epetra_CrsMatrix(Copy, *target_map_, rowSize, true));
+  outputMatrix = new Epetra_CrsMatrix(Copy, *target_map_, rowSize, true);
 
   if (myNewRows)
     delete [] rowSize;
 
-  new_matrix->Import(input_matrix, *importer_, Insert);
+  outputMatrix->Import(inputMatrix, *importer_, Insert);
 
   // Set the new domain map such that
   // (a) if old DomainMap == old RangeMap, preserve this property,
   // (b) otherwise, use the original OperatorDomainMap
-  //if (input_matrix.NumGlobalRows() == input_matrix.NumGlobalCols()){
-  if (input_matrix.OperatorDomainMap().SameAs(input_matrix.OperatorRangeMap())){
-    if (callFillComplete && (!new_matrix->Filled()))
-      new_matrix->FillComplete();
+  //if (inputMatrix.NumGlobalRows() == inputMatrix.NumGlobalCols()){
+  if (inputMatrix.OperatorDomainMap().SameAs(inputMatrix.OperatorRangeMap())){
+    if (callFillComplete && (!outputMatrix->Filled()))
+      outputMatrix->FillComplete();
   }
   else {
-    if (callFillComplete && (!new_matrix->Filled()))
-      new_matrix->FillComplete(input_matrix.OperatorDomainMap(), *target_map_);
+    if (callFillComplete && (!outputMatrix->Filled()))
+      outputMatrix->FillComplete(inputMatrix.OperatorDomainMap(), *target_map_);
   }
 
-  return( new_matrix );
+  return;
 }
 
 Teuchos::RCP<Epetra_Vector>
 Redistributor::redistribute(const Epetra_Vector& input_vector)
 {
+  Epetra_Vector *outputVector = 0;
+  redistribute(input_vector,outputVector);
+
+  return Teuchos::RCP<Epetra_Vector>(outputVector);
+}
+
+void
+Redistributor::redistribute(const Epetra_Vector& inputVector, Epetra_Vector * &outputVector)
+{
   if (!created_importer_) {
-    create_importer(input_vector.Map());
+    create_importer(inputVector.Map());
   }
 
-  Teuchos::RCP<Epetra_Vector> new_vec = Teuchos::rcp(new Epetra_Vector(*target_map_));
+  outputVector = new Epetra_Vector(*target_map_);
 
-  new_vec->Import(input_vector, *importer_, Insert);
+  outputVector->Import(inputVector, *importer_, Insert);
 
-  return( new_vec );
+  return;
 }
 
 Teuchos::RCP<Epetra_MultiVector>
 Redistributor::redistribute(const Epetra_MultiVector& input_vector)
 {
+  Epetra_MultiVector *outputVector=0;
+  redistribute(input_vector,outputVector);
+
+  return Teuchos::RCP<Epetra_MultiVector>(outputVector);
+}
+
+
+void
+Redistributor::redistribute(const Epetra_MultiVector& inputVector, Epetra_MultiVector * &outputVector)
+{
   if (!created_importer_) {
-    create_importer(input_vector.Map());
+    create_importer(inputVector.Map());
   }
 
-  Teuchos::RCP<Epetra_MultiVector> new_vec =
-    Teuchos::rcp(new Epetra_MultiVector(*target_map_, input_vector.NumVectors()));
+  outputVector = new Epetra_MultiVector(*target_map_, inputVector.NumVectors());
 
-  new_vec->Import(input_vector, *importer_, Insert);
+  outputVector->Import(inputVector, *importer_, Insert);
 
-  return( new_vec );
+  return;
 }
+
+
+
+
+
+
+
+
+
+
 
 // Reverse redistribute methods (for vectors). 
 

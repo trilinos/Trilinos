@@ -62,15 +62,8 @@ namespace Isorropia {
 
 namespace Epetra {
 
-//MMW Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
-// 			 bool compute_partitioning_now):
-//   Operator (input_graph, 0),
-//   partGIDs(NULL), partSizes(NULL), numPartSizes(0)
-// {
-//   if (compute_partitioning_now)
-//     partition(true);
-// }
-
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
@@ -80,111 +73,23 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
   if (compute_partitioning_now)
     partition(true);
 }
+////////////////////////////////////////////////////////////////////////////////
 
-
-// Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
-// 			 bool compute_partitioning_now):
-//   Operator (input_matrix, 0) ,
-//   partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
-// {
-//   if (compute_partitioning_now)
-//     partition(true);
-// }
-
-Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Partitioner::Partitioner(const Epetra_CrsGraph *input_graph,
 			 const Teuchos::ParameterList& paramlist,
 			 bool compute_partitioning_now):
-  Operator (input_matrix, paramlist, 0) ,
-  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
-{
-  if (compute_partitioning_now)
-    partition(true);
-}
-
-
-// Partitioner::Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
-// 			 bool compute_partitioning_now):
-//   Operator (coords, 0) ,
-//   partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
-// {
-//   if (compute_partitioning_now)
-//     partition(true);
-// }
-
-Partitioner::Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
-			 const Teuchos::ParameterList& paramlist,
-			 bool compute_partitioning_now):
-  Operator (coords, paramlist, 0) ,
-  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
-{
-  if (compute_partitioning_now)
-    partition(true);
-}
-
-
-// Partitioner::Partitioner(Teuchos::RCP<const Epetra_BlockMap> input_map,
-// 			 bool compute_partitioning_now):
-//   Operator (input_map, 0),
-//   partGIDs(NULL), partSizes(NULL), numPartSizes(0)
-// {
-//   if (compute_partitioning_now)
-//     partition(true);
-// }
-
-Partitioner::Partitioner(Teuchos::RCP<const Epetra_BlockMap> input_map,
-			 const Teuchos::ParameterList& paramlist,
-			 bool compute_partitioning_now):
-  Operator (input_map, paramlist, 0),
+  Operator (Teuchos::RCP<const Epetra_CrsGraph>(input_graph,false), paramlist, 0),
   partGIDs(NULL), partSizes(NULL), numPartSizes(0)
 {
   if (compute_partitioning_now)
     partition(true);
 }
+////////////////////////////////////////////////////////////////////////////////
 
-
-// Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
-// 			 Teuchos::RCP<const Epetra_MultiVector> coords,
-// 			 bool compute_partitioning_now):
-//   Operator (input_graph, coords, 0),
-//   partGIDs(NULL), partSizes(NULL), numPartSizes(0)
-// {
-//   if (compute_partitioning_now)
-//     partition(true);
-// }
-
-Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
-                         Teuchos::RCP<const Epetra_MultiVector> coords,
-			 const Teuchos::ParameterList& paramlist,
-			 bool compute_partitioning_now):
-  Operator (input_graph, coords, paramlist, 0),
-  partGIDs(NULL), partSizes(NULL), numPartSizes(0)
-{
-  if (compute_partitioning_now)
-    partition(true);
-}
-
-// Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
-// 			 Teuchos::RCP<const Epetra_MultiVector> coords,
-// 			 bool compute_partitioning_now):
-//   Operator (input_matrix, coords, 0) ,
-//   partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
-// {
-//   if (compute_partitioning_now)
-//     partition(true);
-// }
-
-Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
-                         Teuchos::RCP<const Epetra_MultiVector> coords,
-			 const Teuchos::ParameterList& paramlist,
-			 bool compute_partitioning_now):
-  Operator (input_matrix, coords, paramlist, 0) ,
-  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
-{
-  if (compute_partitioning_now)
-    partition(true);
-}
-
-
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 			 Teuchos::RCP<CostDescriber> costs,
 			 const Teuchos::ParameterList& paramlist,
@@ -195,7 +100,51 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
   if (compute_partitioning_now)
     partition(true);
 }
+////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Partitioner::Partitioner(const Epetra_CrsGraph *input_graph,
+			 CostDescriber *costs,
+			 const Teuchos::ParameterList& paramlist,
+			 bool compute_partitioning_now):
+  Operator (Teuchos::RCP<const Epetra_CrsGraph>(input_graph,false), 
+            Teuchos::RCP<CostDescriber>(costs,false), paramlist, 0),
+  partGIDs(NULL), partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+			 const Teuchos::ParameterList& paramlist,
+			 bool compute_partitioning_now):
+  Operator (input_matrix, paramlist, 0) ,
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Partitioner::Partitioner(const Epetra_RowMatrix *input_matrix,
+			 const Teuchos::ParameterList& paramlist,
+			 bool compute_partitioning_now):
+  Operator (Teuchos::RCP<const Epetra_RowMatrix>(input_matrix,false), paramlist, 0) ,
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 			 Teuchos::RCP<CostDescriber> costs,
 			 const Teuchos::ParameterList& paramlist,
@@ -206,7 +155,51 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
   if (compute_partitioning_now)
     partition(true);
 }
+////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Partitioner::Partitioner(const Epetra_RowMatrix *input_matrix,
+			 CostDescriber *costs,
+			 const Teuchos::ParameterList& paramlist,
+			 bool compute_partitioning_now):
+  Operator (Teuchos::RCP<const Epetra_RowMatrix>(input_matrix,false), 
+            Teuchos::RCP<CostDescriber>(costs,false), paramlist, 0) ,
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Partitioner::Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
+			 const Teuchos::ParameterList& paramlist,
+			 bool compute_partitioning_now):
+  Operator (coords, paramlist, 0) ,
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Partitioner::Partitioner(const Epetra_MultiVector *coords,
+			 const Teuchos::ParameterList& paramlist,
+			 bool compute_partitioning_now):
+  Operator (Teuchos::RCP<const Epetra_MultiVector>(coords,false), paramlist, 0) ,
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 Partitioner::Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
                          Teuchos::RCP<const Epetra_MultiVector> weights,
 			 const Teuchos::ParameterList& paramlist,
@@ -217,7 +210,80 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_MultiVector> coords,
   if (compute_partitioning_now)
     partition(true);
 }
+////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Partitioner::Partitioner(const Epetra_MultiVector *coords,
+                         const Epetra_MultiVector *weights,
+			 const Teuchos::ParameterList& paramlist,
+			 bool compute_partitioning_now):
+  Operator (Teuchos::RCP<const Epetra_MultiVector>(coords,false), 
+            Teuchos::RCP<const Epetra_MultiVector>(weights,false), paramlist, 0) ,
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Partitioner::Partitioner(Teuchos::RCP<const Epetra_BlockMap> input_map,
+			 const Teuchos::ParameterList& paramlist,
+			 bool compute_partitioning_now):
+  Operator (input_map, paramlist, 0),
+  partGIDs(NULL), partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Partitioner::Partitioner(const Epetra_BlockMap *input_map,
+			 const Teuchos::ParameterList& paramlist,
+			 bool compute_partitioning_now):
+  Operator (Teuchos::RCP<const Epetra_BlockMap>(input_map,false), paramlist, 0),
+  partGIDs(NULL), partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+                         Teuchos::RCP<const Epetra_MultiVector> coords,
+			 const Teuchos::ParameterList& paramlist,
+			 bool compute_partitioning_now):
+  Operator (input_graph, coords, paramlist, 0),
+  partGIDs(NULL), partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Partitioner::Partitioner(const Epetra_CrsGraph *input_graph,
+                         const Epetra_MultiVector *coords,
+			 const Teuchos::ParameterList& paramlist,
+			 bool compute_partitioning_now):
+  Operator (Teuchos::RCP<const Epetra_CrsGraph>(input_graph,false), 
+            Teuchos::RCP<const Epetra_MultiVector>(coords,false), paramlist, 0),
+  partGIDs(NULL), partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 			 Teuchos::RCP<CostDescriber> costs,
                          Teuchos::RCP<const Epetra_MultiVector> coords,
@@ -230,7 +296,58 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
   if (compute_partitioning_now)
     partition(true);
 }
+////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Partitioner::Partitioner(const Epetra_CrsGraph *input_graph,
+			 CostDescriber *costs,
+                         const Epetra_MultiVector *coords,
+                         const Epetra_MultiVector *weights,
+			 const Teuchos::ParameterList& paramlist,
+			 bool compute_partitioning_now):
+  Operator (Teuchos::RCP<const Epetra_CrsGraph>(input_graph,false), 
+            Teuchos::RCP<CostDescriber>(costs,false), 
+            Teuchos::RCP<const Epetra_MultiVector>(coords,false), 
+            Teuchos::RCP<const Epetra_MultiVector>(weights,false), paramlist, 0) ,
+  partGIDs(NULL), partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+                         Teuchos::RCP<const Epetra_MultiVector> coords,
+			 const Teuchos::ParameterList& paramlist,
+			 bool compute_partitioning_now):
+  Operator (input_matrix, coords, paramlist, 0) ,
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Partitioner::Partitioner(const Epetra_RowMatrix *input_matrix,
+                         const Epetra_MultiVector *coords,
+			 const Teuchos::ParameterList& paramlist,
+			 bool compute_partitioning_now):
+  Operator (Teuchos::RCP<const Epetra_RowMatrix>(input_matrix,false), 
+            Teuchos::RCP<const Epetra_MultiVector>(coords,false), paramlist, 0) ,
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 			 Teuchos::RCP<CostDescriber> costs,
                          Teuchos::RCP<const Epetra_MultiVector> coords,
@@ -243,6 +360,26 @@ Partitioner::Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
   if (compute_partitioning_now)
     partition(true);
 }
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Partitioner::Partitioner(const Epetra_RowMatrix *input_matrix,
+			 CostDescriber *costs,
+                         const Epetra_MultiVector *coords,
+                         const Epetra_MultiVector *weights,
+			 const Teuchos::ParameterList& paramlist,
+			 bool compute_partitioning_now):
+  Operator (Teuchos::RCP<const Epetra_RowMatrix>(input_matrix,false), 
+            Teuchos::RCP<CostDescriber>(costs,false), 
+            Teuchos::RCP<const Epetra_MultiVector>(coords,false), 
+            Teuchos::RCP<const Epetra_MultiVector>(weights,false), paramlist, 0) ,
+  partGIDs(NULL),  partSizes(NULL), numPartSizes(0)
+{
+  if (compute_partitioning_now)
+    partition(true);
+}
+////////////////////////////////////////////////////////////////////////////////
 
 Partitioner::~Partitioner(){}
 

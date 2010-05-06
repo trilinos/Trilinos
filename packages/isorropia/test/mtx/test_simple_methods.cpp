@@ -66,9 +66,15 @@ int getMatrixDim(char *mmfilename, Epetra_Comm &comm,
 
 int read_matrixmarket_linear(const char *, Epetra_Comm &, Epetra_CrsMatrix *&);
 
-bool testPartitioningMVInput(Teuchos::RCP<const Epetra_MultiVector> mv, const char *method, int worldsize, int myrank);
-bool testPartitioningMatrixInput(Teuchos::RCP<const Epetra_RowMatrix> mat, const char *method, int worldsize, int myrank);
-bool testPartitioningMapInput(Teuchos::RCP<const Epetra_BlockMap> map, const char *method, int worldsize, int myrank);
+bool testPartitioningMVRCPInput(Teuchos::RCP<const Epetra_MultiVector> mv, const char *method, int worldsize, int myrank);
+bool testPartitioningMVPtrInput(const Epetra_MultiVector *mv, const char *method, int worldsize, int myrank);
+
+bool testPartitioningMatrixRCPInput(Teuchos::RCP<const Epetra_RowMatrix> mat, const char *method, int worldsize, int myrank);
+bool testPartitioningMatrixPtrInput(const Epetra_CrsMatrix *mat, const char *method, int worldsize, int myrank);
+
+bool testPartitioningMapRCPInput(Teuchos::RCP<const Epetra_BlockMap> map, const char *method, int worldsize, int myrank);
+bool testPartitioningMapPtrInput(const Epetra_BlockMap *map, const char *method, int worldsize, int myrank);
+
 bool checkPartition1(const Isorropia::Epetra::Partitioner &partitioner);
 bool checkPartition2(const Isorropia::Epetra::Partitioner &partitioner, const Epetra_BlockMap &map, const char* method);
 bool checkPartition4(const Isorropia::Epetra::Partitioner &partitioner, const Epetra_BlockMap &map, const char* method);
@@ -100,30 +106,55 @@ int main(int argc, char** argv)
   /////////////////////////////////////////////////////////////
 
   /////////////////////////////////////////////////////////////
-  // Test partitioning with matrix input
+  // Test partitioning with matrix ptr input
+  /////////////////////////////////////////////////////////////
+  success = success && testPartitioningMatrixPtrInput(A,"BLOCK",worldsize,myrank);
+  success = testPartitioningMatrixPtrInput(A,"CYCLIC",worldsize,myrank) && success; // test lhs of && so it is run
+  /////////////////////////////////////////////////////////////
+
+  /////////////////////////////////////////////////////////////
+  // Test partitioning with matrix rcp input
   /////////////////////////////////////////////////////////////
   Teuchos::RCP<const Epetra_RowMatrix> rowmatrix = Teuchos::rcp(A);
 
-  success = success && testPartitioningMatrixInput(rowmatrix,"BLOCK",worldsize,myrank);
-  success = testPartitioningMatrixInput(rowmatrix,"CYCLIC",worldsize,myrank) && success; // test lhs of && so it is run
+  success = testPartitioningMatrixRCPInput(rowmatrix,"BLOCK",worldsize,myrank) && success;
+  success = testPartitioningMatrixRCPInput(rowmatrix,"CYCLIC",worldsize,myrank) && success; // test lhs of && so it is run
   /////////////////////////////////////////////////////////////
 
   /////////////////////////////////////////////////////////////
-  // Test partitioning with multivector input
+  // Test partitioning with multivector ptr input
   /////////////////////////////////////////////////////////////
-  Teuchos::RCP<const Epetra_MultiVector> mv = Teuchos::rcp(new Epetra_MultiVector(A->RowMap(),1));
+  const Epetra_MultiVector *mvPtr = new Epetra_MultiVector(A->RowMap(),1);
 
-  success = testPartitioningMVInput(mv,"BLOCK",worldsize,myrank) && success;
-  success = testPartitioningMVInput(mv,"CYCLIC",worldsize,myrank) && success;
+  success = testPartitioningMVPtrInput(mvPtr,"BLOCK",worldsize,myrank) && success;
+  success = testPartitioningMVPtrInput(mvPtr,"CYCLIC",worldsize,myrank) && success;
   /////////////////////////////////////////////////////////////
 
   /////////////////////////////////////////////////////////////
-  // Test partitioning with BlockMap input
+  // Test partitioning with multivector rcp input
   /////////////////////////////////////////////////////////////
-  Teuchos::RCP<const Epetra_BlockMap> map = Teuchos::rcp(&(A->RowMap()),false);
+  Teuchos::RCP<const Epetra_MultiVector> mv = Teuchos::rcp(mvPtr);
 
-  success = testPartitioningMapInput(map,"BLOCK",worldsize,myrank) && success;
-  success = testPartitioningMapInput(map,"CYCLIC",worldsize,myrank) && success;
+  success = testPartitioningMVRCPInput(mv,"BLOCK",worldsize,myrank) && success;
+  success = testPartitioningMVRCPInput(mv,"CYCLIC",worldsize,myrank) && success;
+  /////////////////////////////////////////////////////////////
+
+  /////////////////////////////////////////////////////////////
+  // Test partitioning with BlockMap ptr input
+  /////////////////////////////////////////////////////////////
+  const Epetra_BlockMap *mapPtr = &(A->RowMap());
+
+  success = testPartitioningMapPtrInput(mapPtr,"BLOCK",worldsize,myrank) && success;
+  success = testPartitioningMapPtrInput(mapPtr,"CYCLIC",worldsize,myrank) && success;
+  /////////////////////////////////////////////////////////////
+
+  /////////////////////////////////////////////////////////////
+  // Test partitioning with BlockMap rcp input
+  /////////////////////////////////////////////////////////////
+  Teuchos::RCP<const Epetra_BlockMap> map = Teuchos::rcp(mapPtr,false);
+
+  success = testPartitioningMapRCPInput(map,"BLOCK",worldsize,myrank) && success;
+  success = testPartitioningMapRCPInput(map,"CYCLIC",worldsize,myrank) && success;
   /////////////////////////////////////////////////////////////
 
 #ifdef EPETRA_MPI
@@ -141,7 +172,7 @@ int main(int argc, char** argv)
 
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
-bool testPartitioningMVInput(Teuchos::RCP<const Epetra_MultiVector> mv, const char *method, int worldsize, int myrank)
+bool testPartitioningMVRCPInput(Teuchos::RCP<const Epetra_MultiVector> mv, const char *method, int worldsize, int myrank)
 {
   bool success=true;
 
@@ -218,7 +249,84 @@ bool testPartitioningMVInput(Teuchos::RCP<const Epetra_MultiVector> mv, const ch
 
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
-bool testPartitioningMatrixInput(Teuchos::RCP<const Epetra_RowMatrix> mat, const char *method, int worldsize, int myrank)
+bool testPartitioningMVPtrInput(const Epetra_MultiVector *mv, const char *method, int worldsize, int myrank)
+{
+  bool success=true;
+
+  /////////////////////////////////////////////////////////////
+  // Partition
+  /////////////////////////////////////////////////////////////
+  Teuchos::ParameterList paramlist;
+  paramlist.set("IMBALANCE TOL","1.03");
+
+  if(strcmp(method,"BLOCK")==0)
+  {
+    paramlist.set("PARTITIONING_METHOD", "BLOCK");
+  }
+  else if(strcmp(method,"CYCLIC")==0)
+  {
+    paramlist.set("PARTITIONING_METHOD", "CYCLIC");
+  }
+  else 
+  {
+    if(myrank==0)
+    {
+      std::cout   << "Error in testPartitionMVInput() with method argument " << method << "." << std::endl
+                  << "      Method must be 'BLOCK' or 'CYCLIC'" << std::endl;
+    }
+    return(false);
+  }
+
+  Isorropia::Epetra::Partitioner partitioner(mv, paramlist, false);
+  partitioner.partition();
+  /////////////////////////////////////////////////////////////
+
+  /////////////////////////////////////////////////////////////
+  /// Check partition
+  /////////////////////////////////////////////////////////////
+  if (worldsize==1)
+  {
+    success = checkPartition1(partitioner);
+  }
+  else if (worldsize==2)
+  {
+    success = checkPartition2(partitioner,mv->Map(),method);
+  }
+  else if (worldsize==4)
+  {
+    success = checkPartition4(partitioner,mv->Map(),method);
+  }
+  else 
+  {
+    if(myrank==0)
+    {
+      std::cout << "WARNING for testPartitionMVInput() with number of processors = " << worldsize << std::endl
+                << "        Number of processes not supported .... (by default) returning success" << std::endl;
+    }
+  }
+
+  if(myrank==0)
+  {
+    if (success == false)
+    {
+      std::cout   << "Failure in testPartitionMVInput(), method argument " << method 
+                  << ", numProcs = " << worldsize << std::endl;
+    }
+    else
+    {
+      std::cout   << "Success in testPartitionMVInput(), method argument " << method 
+                  << ", numProcs = " << worldsize << std::endl;
+    }
+  }
+  /////////////////////////////////////////////////////////////
+
+  return success;
+}
+////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+bool testPartitioningMatrixRCPInput(Teuchos::RCP<const Epetra_RowMatrix> mat, const char *method, int worldsize, int myrank)
 {
   bool success=true;
 
@@ -295,7 +403,161 @@ bool testPartitioningMatrixInput(Teuchos::RCP<const Epetra_RowMatrix> mat, const
 
 ////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////
-bool testPartitioningMapInput(Teuchos::RCP<const Epetra_BlockMap> map, const char *method, int worldsize, int myrank)
+bool testPartitioningMatrixPtrInput(const Epetra_CrsMatrix *mat, const char *method, int worldsize, int myrank)
+{
+  bool success=true;
+
+  /////////////////////////////////////////////////////////////
+  // Partition
+  /////////////////////////////////////////////////////////////
+  Teuchos::ParameterList paramlist;
+  paramlist.set("IMBALANCE TOL","1.03");
+
+  if(strcmp(method,"BLOCK")==0)
+  {
+    paramlist.set("PARTITIONING_METHOD", "BLOCK");
+  }
+  else if(strcmp(method,"CYCLIC")==0)
+  {
+    paramlist.set("PARTITIONING_METHOD", "CYCLIC");
+  }
+  else 
+  {
+    if(myrank==0) 
+    {
+      std::cout   << "Error in testPartitionMatrixInput() with method argument " << method << "." << std::endl
+                  << "      Method must be 'BLOCK' or 'CYCLIC'" << std::endl;
+    }
+    return(false);
+  }
+
+  Isorropia::Epetra::Partitioner partitioner(mat, paramlist, false);
+  partitioner.partition();
+  /////////////////////////////////////////////////////////////
+
+  /////////////////////////////////////////////////////////////
+  /// Check partition
+  /////////////////////////////////////////////////////////////
+  if (worldsize==1)
+  {
+    success = checkPartition1(partitioner);
+  }
+  else if (worldsize==2)
+  {
+    success = checkPartition2(partitioner,mat->Map(),method);
+  }
+  else if (worldsize==4)
+  {
+    success = checkPartition4(partitioner,mat->Map(),method);
+  }
+  else 
+  {
+    if(myrank==0)
+    {
+      std::cout << "WARNING for testPartitionMatrixInput() with number of processors = " << worldsize << std::endl
+                << "        Number of processes not supported .... (by default) returning success" << std::endl;
+    }
+  }
+
+  if(myrank==0)
+  {
+    if (success == false)
+    {
+      std::cout   << "Failure in testPartitionMatrixInput(), method argument " << method 
+                  << ", numProcs = " << worldsize << std::endl;
+    }
+    else
+    {
+      std::cout   << "Success in testPartitionMatrixInput(), method argument " << method 
+                  << ", numProcs = " << worldsize << std::endl;
+    }
+  }
+  /////////////////////////////////////////////////////////////
+
+  return success;
+}
+////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+bool testPartitioningMapRCPInput(Teuchos::RCP<const Epetra_BlockMap> map, const char *method, int worldsize, int myrank)
+{
+  bool success=true;
+
+  /////////////////////////////////////////////////////////////
+  // Partition
+  /////////////////////////////////////////////////////////////
+  Teuchos::ParameterList paramlist;
+  paramlist.set("IMBALANCE TOL","1.03");
+
+  if(strcmp(method,"BLOCK")==0)
+  {
+    paramlist.set("PARTITIONING_METHOD", "BLOCK");
+  }
+  else if(strcmp(method,"CYCLIC")==0)
+  {
+    paramlist.set("PARTITIONING_METHOD", "CYCLIC");
+  }
+  else 
+  {
+    if(myrank==0)
+    {
+      std::cout   << "Error in testPartitionMapInput() with method argument " << method << "." << std::endl
+                  << "      Method must be 'BLOCK' or 'CYCLIC'" << std::endl;
+    }
+    return(false);
+  }
+
+  Isorropia::Epetra::Partitioner partitioner(map, paramlist, false);
+  partitioner.partition();
+  /////////////////////////////////////////////////////////////
+
+  /////////////////////////////////////////////////////////////
+  /// Check partition
+  /////////////////////////////////////////////////////////////
+  if (worldsize==1)
+  {
+    success = checkPartition1(partitioner);
+  }
+  else if (worldsize==2)
+  {
+    success = checkPartition2(partitioner,*map, method);
+  }
+  else if (worldsize==4)
+  {
+    success = checkPartition4(partitioner,*map, method);
+  }
+  else
+  {
+    if(myrank==0)
+    {
+      std::cout << "WARNING for testPartitionMapInput() with number of processors = " << worldsize << std::endl
+                << "        Number of processes not supported .... (by default) returning success" << std::endl;
+    }
+  }
+
+  if(myrank==0)
+  {
+    if (success == false)
+    {
+      std::cout   << "Failure in testPartitionMapInput(), method argument " << method 
+                  << ", numProcs = " << worldsize << std::endl;
+    }
+    else
+    {
+      std::cout   << "Success in testPartitionMapInput(), method argument " << method 
+                  << ", numProcs = " << worldsize << std::endl;
+    }
+  }
+  /////////////////////////////////////////////////////////////
+
+  return success;
+}
+////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+bool testPartitioningMapPtrInput(const Epetra_BlockMap *map, const char *method, int worldsize, int myrank)
 {
   bool success=true;
 

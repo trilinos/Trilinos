@@ -61,6 +61,7 @@ namespace Epetra {
 
 class Redistributor : public Isorropia::Redistributor {
 public:
+
   /** @ingroup partitioning_rcp_grp
       This constructor calls the Isorropia::Epetra::Partitioner::partition
       method on the @c partitioner if it has not already been called.
@@ -69,6 +70,15 @@ public:
             to be created when Isorropia::Epetra::Redistributor::redistribute is called
    */
   Redistributor(Teuchos::RCP<Isorropia::Epetra::Partitioner> partitioner);
+
+  /** @ingroup partitioning_ptr_grp
+      This constructor calls the Isorropia::Epetra::Partitioner::partition
+      method on the @c partitioner if it has not already been called.
+ 
+      \param[in] partitioner this input partitioner determines the new partitioning
+            to be created when Isorropia::Epetra::Redistributor::redistribute is called
+   */
+  Redistributor(Isorropia::Epetra::Partitioner *partitioner);
 
   /** Destructor
    */
@@ -101,6 +111,25 @@ public:
   Teuchos::RCP<Epetra_CrsGraph>
      redistribute(const Epetra_CrsGraph& input_graph, bool callFillComplete= true);
 
+  /** @ingroup partitioning_ptr_grp
+      Method to accept a Epetra_CrsGraph object, and
+      return a redistributed Epetra_CrsGraph object.
+
+      \param[in] input_graph the graph for which we want a new graph that is distributed
+                      according to the partitioner with which this Redistributor was
+                      created.
+
+      \param[out] outputGraphPointer pointer to the new redistributed graph 
+
+      \param[in] callFillComplete The new graph is FillComplete'd if callFillComplete is @c true. 
+      In that case, the range map is set to equal the row map. 
+      The domain map will equal the range map, unless the
+      input_graph has different domain and range maps, in which case
+      the original domain map is preserved.  By default callFillComplete is @c true.
+
+  */
+  void redistribute(const Epetra_CrsGraph& input_graph, Epetra_CrsGraph * &outputGraphPtr, bool callFillComplete= true);
+
   /** @ingroup partitioning_rcp_grp
       Method to accept a Epetra_CrsMatrix object, and
       return a redistributed Epetra_CrsMatrix object.
@@ -119,6 +148,25 @@ public:
   */
   Teuchos::RCP<Epetra_CrsMatrix>
      redistribute(const Epetra_CrsMatrix& input_matrix, bool callFillComplete= true);
+
+  /** @ingroup partitioning_ptr_grp
+      Method to accept a Epetra_CrsMatrix object, and
+      return a redistributed Epetra_CrsMatrix object.
+
+      \param[in] input_matrix the matrix for which we want a new matrix that is distributed
+                      according to the partitioner with which this Redistributor was
+                      created.
+
+      \param[out] outputMatrix pointer to the new redistributed matrix
+
+      \param[in] callFillComplete The new matrix is FillComplete'd if callFillComplete is @c true. 
+      In that case, the range map is set to equal the row map. 
+      The domain map will equal the range map, unless the
+      input_matrix has different domain and range maps, in which case
+      the original domain map is preserved.  By default callFillComplete is @c true.
+  */
+
+  void redistribute(const Epetra_CrsMatrix& inputMatrix, Epetra_CrsMatrix * &outputMatrix, bool callFillComplete= true);
 
   /** @ingroup partitioning_rcp_grp
       Method to accept a Epetra_RowMatrix object, and
@@ -139,6 +187,35 @@ public:
   Teuchos::RCP<Epetra_CrsMatrix>
      redistribute(const Epetra_RowMatrix& input_matrix, bool callFillComplete= true);
 
+
+  /** @ingroup partitioning_ptr_grp
+      Method to accept a Epetra_RowMatrix object, and
+      return a redistributed Epetra_CrsMatrix object.
+
+      \param[in] input_matrix the row matrix for which we want a new matrix that is distributed
+                      according to the partitioner with which this Redistributor was
+                      created.
+
+      \param[out] outMatrix pointer to the new redistributed matrix
+
+      \param[in] callFillComplete The new matrix is FillComplete'd if callFillComplete is @c true. 
+      In that case, the range map is set to equal the row map. 
+      The domain map will equal the range map, unless the
+      input_matrix has different domain and range maps, in which case
+      the original domain map is preserved.  By default callFillComplete is @c true.
+  */
+     void 
+     redistribute(const Epetra_RowMatrix& inputMatrix, Epetra_CrsMatrix * &outMatrix, bool callFillComplete= true);
+
+
+
+
+
+
+
+
+
+
   /** @ingroup partitioning_rcp_grp
       Method to accept a Epetra_Vector object, and
       return a redistributed Epetra_Vector object.
@@ -151,6 +228,19 @@ public:
   */
   Teuchos::RCP<Epetra_Vector>
      redistribute(const Epetra_Vector& input_vector);
+
+  /** @ingroup partitioning_ptr_grp
+      Method to accept a Epetra_Vector object, and
+      return a redistributed Epetra_Vector object.
+
+      \param[in] inputVector the vector for which we want a new vector that is distributed
+                      according to the partitioner with which this Redistributor was
+                      created.
+
+      \param[out] outputVector pointer to the new redistributed vector
+  */
+  void
+  redistribute(const Epetra_Vector& inputVector, Epetra_Vector * &outputVector);
 
   /** @ingroup partitioning_rcp_grp 
       Method to accept a Epetra_MultiVector object, and
@@ -165,6 +255,21 @@ public:
   */
   Teuchos::RCP<Epetra_MultiVector>  
      redistribute(const Epetra_MultiVector& input_vector);
+
+
+  /** @ingroup partitioning_ptr_grp 
+      Method to accept a Epetra_MultiVector object, and
+      return a redistributed Epetra_MultiVector object.
+
+      \param[in] inputVector the multi vector for which we want a new multi vector that is distributed
+                      according to the partitioner with which this Redistributor was
+                      created.
+
+      \param[out] outputVector a reference counted pointer to the new redistributed multi vector
+
+  */
+  void 
+  redistribute(const Epetra_MultiVector& inputVector, Epetra_MultiVector * &outputVector);
 
   /** @ingroup partitioning_rcp_grp 
       Reverse redistribute an Epetra_Vector.
