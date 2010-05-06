@@ -82,7 +82,7 @@ inline void
 Sacado::LFad::LogicalSparseImp<ValT,LogT>::
 diff(const int ith, const int n) 
 { 
-  if (this->size() == 0) 
+  if (this->size() != n) 
     this->resize(n);
 
   this->zero();

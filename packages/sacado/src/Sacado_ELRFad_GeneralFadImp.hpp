@@ -136,7 +136,7 @@ template <typename T, typename Storage>
 inline void 
 Sacado::ELRFad::GeneralFad<T,Storage>::diff(const int ith, const int n) 
 { 
-  if (this->size() == 0) 
+  if (this->size() != n) 
     this->resize(n);
 
   this->zero();
