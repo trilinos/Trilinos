@@ -44,8 +44,7 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
 }
 
 bool comm_mesh_verify_parallel_consistency(
-  BulkData & M ,
-  std::ostream & error_log )
+  BulkData & M , std::ostream & error_log )
 {
   int result = 1 ;
 
@@ -72,59 +71,6 @@ bool comm_mesh_verify_parallel_consistency(
 
     all_reduce( M.parallel() , ReduceMin<1>( & result ) );
   }
-
-#if 0
-  // Verify sharing against parallel index
-  if ( result ) {
-    std::vector< stk::parallel::DistributedIndex::KeyProc > index ;
-
-    m_entities_index.query( index );
-
-    std::vector< stk::parallel::DistributedIndex::KeyProc >::iterator
-      j_index = index.begin();
-    std::vector< Entity * >::iterator i_entity = m_entity_comm.begin();
-
-    while ( j_index != index.end() ) {
-      std::vector< stk::parallel::DistributedIndex::KeyProc >::iterator
-        i_index = j_index ;
-
-      while ( j_index != index.end() && i_index->first == j_index->first ) {
-        ++j_index ;
-      }
-
-      const EntityKey key( & i_index->first );
-
-      for ( ; i_entity != m_entity_comm.end() &&
-              (**i_entity).key() < key ; ++i_entity );
-
-      bool this_result = i_entity != m_entity_comm.end() &&
-                         (**i_entity).key() == key ;
-
-      if ( this_result ) {
-        Entity & entity = **i_entity ;
-        PairIterEntityComm ec = entity.sharing();
-        for ( ; ! ec.empty() && i_index != j_index &&
-                ec->proc == i_index->second ; ++ec , ++i_index );
-        this_result = ! ec.empty() || i_index != j_index ;
-      }
-
-      if ( ! this_result ) {
-        error_log << "P" << m_parallel_rank ;
-        error_log << ": Parallel index " ;
-        print_entity_key( error_log , mesh_meta_data(), key );
-        error_log << " != " ;
-        if ( i_entity == m_entity_comm.end() ) {
-          error_log << " NULL" ;
-        }
-        else {
-          print_entity_key( error_log , mesh_meta_data(), (**i_entity).key() );
-        }
-        result = 0 ;
-      }
-    }
-    all_reduce( M.parallel() , ReduceMin<1>( & result ) );
-  }
-#endif
 
   return result == 1 ;
 }

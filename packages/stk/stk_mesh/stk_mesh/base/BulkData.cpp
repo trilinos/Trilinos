@@ -250,7 +250,7 @@ bool BulkData::modification_begin()
 
 const std::vector<Bucket*> & BulkData::buckets( unsigned type ) const
 {
-  const char method[]= "stk::mesh::BulkData::buckets" ;
+  static const char method[]= "stk::mesh::BulkData::buckets" ;
 
   m_mesh_meta_data.assert_entity_rank( method , type );
 
@@ -358,7 +358,7 @@ void BulkData::internal_expunge_entity( BulkData::EntitySet::iterator i )
 Entity & BulkData::declare_entity( EntityRank ent_type , EntityId ent_id ,
 				   const std::vector<Part*> & parts )
 {
-  const char method[] = "stk::mesh::BulkData::declare_entity" ;
+  static const char method[] = "stk::mesh::BulkData::declare_entity" ;
 
   assert_ok_to_modify( method );
 
@@ -467,7 +467,7 @@ void BulkData::change_entity_parts(
   const std::vector<Part*> & add_parts ,
   const std::vector<Part*> & remove_parts )
 {
-  const char method[] = "stk::mesh::BulkData::change_entity_parts" ;
+  static const char method[] = "stk::mesh::BulkData::change_entity_parts" ;
 
   assert_ok_to_modify( method );
 
@@ -591,7 +591,6 @@ void BulkData::internal_change_entity_parts(
                        ? e.m_bucket : (Bucket *) NULL ;
   const unsigned i_old = e.m_bucket_ord ;
 
-
   if ( k_old && k_old->member_all( add_parts ) &&
               ! k_old->member_any( remove_parts ) ) {
     // Is already a member of all add_parts,
@@ -600,7 +599,8 @@ void BulkData::internal_change_entity_parts(
     return ;
   }
 
-  // m_transaction_log.modify_entity ( e );
+  e.log_modified();
+
   PartVector parts_removed ;
 
   std::vector<unsigned> parts_total ; // The final part list
@@ -783,16 +783,18 @@ void BulkData::generate_new_entities(const std::vector<size_t>& requests,
 
 void BulkData::remove_entity( Bucket * k , unsigned i )
 {
-  Bucket * const first = bucket_counter( k->m_key ) ? k->m_bucket : k ;
-  Bucket * const last  = first->m_bucket ;
+  const unsigned entity_rank = k->entity_rank();
 
-  // Only move if not the last entity being removed
+  // Last bucket in the family of buckets with the same parts.
+  // The last bucket is the only non-full bucket in the family.
+
+  Bucket * const last = Bucket::last_bucket_in_family( k );
+
+  // Fill in the gap if it is not the last entity being removed
 
   if ( last != k || k->m_size != i + 1 ) {
 
-    // Not the same bucket or not the last entity
-
-    // Copy last entity in last to ik slot i
+    // Copy last entity in last bucket to bucket *k slot i
 
     Entity * const entity = last->m_entities[ last->m_size - 1 ];
 
@@ -809,33 +811,10 @@ void BulkData::remove_entity( Bucket * k , unsigned i )
 
   --( last->m_size );
 
-  if ( last->m_size != 0 ) {
-    last->m_entities[ last->m_size ] = NULL ;
-  }
-  else {
+  last->m_entities[ last->m_size ] = NULL ;
 
-    // The current 'last' bucket is to be deleted.
-    // The previous 'last' bucket becomes the
-    // new 'last' bucket in the family:
-
-    std::vector<Bucket*> & bucket_set = m_buckets[ last->entity_rank() ];
-
-    std::vector<Bucket*>::iterator ik = lower_bound(bucket_set, last->m_key);
-
-    if ( ik == bucket_set.end() || last != *ik ) {
-      if ( ik == bucket_set.end() )
-        std::cout << "Case 1 is met" << std::endl;
-      if ( *ik != last )
-        std::cout << "Case 2 is met" << std::endl;
-      throw std::runtime_error(
-        std::string("stk::mesh::BulkData::remove_entity INTERNAL FAILURE") );
-    }
-
-    ik = bucket_set.erase( ik );
-
-    if ( first != last ) { first->m_bucket = *--ik ; }
-
-    Bucket::destroy_bucket( last );
+  if ( 0 == last->m_size ) {
+    Bucket::destroy_bucket( m_buckets[ entity_rank ] , last );
   }
 }
 
@@ -852,7 +831,8 @@ void BulkData::internal_sort_bucket_entities()
     size_t ek = 0 ; // Offset to end   bucket of the family
 
     for ( ; bk < buckets.size() ; bk = ek ) {
-      Bucket * ik_vacant = buckets[bk]->m_bucket ; // Last bucket, need space
+      Bucket * b_scratch = NULL ;
+      Bucket * ik_vacant = Bucket::last_bucket_in_family( buckets[bk] );
       unsigned ie_vacant = ik_vacant->size();
 
       if ( ik_vacant->capacity() <= ie_vacant ) {
@@ -861,11 +841,13 @@ void BulkData::internal_sort_bucket_entities()
         const unsigned         part_count = bucket_key[0] - 1 ;
         const unsigned * const part_ord   = bucket_key + 1 ;
 
-        ik_vacant = Bucket::declare_bucket( *this , entity_rank ,
+        b_scratch = Bucket::declare_bucket( *this , entity_rank ,
                                             part_count , part_ord ,
                                             m_bucket_capacity ,
                                             m_mesh_meta_data.get_fields() ,
                                             buckets );
+
+        ik_vacant = b_scratch ;
         ie_vacant = 0 ;
       }
 
@@ -935,6 +917,12 @@ void BulkData::internal_sort_bucket_entities()
 
           if ( change_this_family ) { internal_propagate_relocation( **j ); }
         }
+      }
+
+      if ( b_scratch ) {
+        // Created a last bucket, now have to destroy it.
+        Bucket::destroy_bucket( buckets , b_scratch );
+        --ek ;
       }
     }
   }

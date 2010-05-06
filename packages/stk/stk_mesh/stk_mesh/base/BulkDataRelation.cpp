@@ -249,8 +249,10 @@ void BulkData::declare_relation( Entity & e_from ,
     }
   }
 
+  // This entity's owned-closure may have changed.
+  e_to.log_modified();
+
   // m_transaction_log.modify_entity ( e_from );
-  // m_transaction_log.modify_sole_entity ( e_to );
 }
 
 //----------------------------------------------------------------------
@@ -336,6 +338,9 @@ void BulkData::destroy_relation( Entity & e_from , Entity & e_to )
     PartVector add ;
     internal_change_entity_parts( e_to , add , del );
   }
+
+  // This entity's owned-closure may have changed.
+  e_to.log_modified();
 
   // Mark e_from and e_to as modified
   // m_transaction_log.modify_entity ( e_from );

@@ -421,6 +421,47 @@ void * local_malloc( size_t n )
 Bucket::~Bucket()
 {}
 
+// The current 'last' bucket in a family is to be deleted.
+// The previous 'last' bucket becomes the new 'last' bucket in the family.
+
+void Bucket::destroy_bucket( std::vector<Bucket*> & bucket_set , Bucket * last )
+{
+  static const char method[] = "stk::mesh::Bucket::destroy_bucket" ;
+
+  Bucket * const first = bucket_counter( last->m_key ) ? last->m_bucket : last ;
+
+  if ( 0 != last->m_size || last != first->m_bucket ) {
+    throw std::logic_error(std::string(method));
+  }
+
+  std::vector<Bucket*>::iterator ik = lower_bound(bucket_set, last->m_key);
+
+  if ( ik == bucket_set.end() ) {
+    throw std::logic_error(std::string(method));
+  }
+
+  if ( last != *ik ) {
+    throw std::logic_error(std::string(method));
+  }
+
+  ik = bucket_set.erase( ik );
+
+  if ( first != last ) {
+
+    if ( ik == bucket_set.begin() ) {
+      throw std::logic_error(std::string(method));
+    }
+
+    first->m_bucket = *--ik ;
+
+    if ( 0 == first->m_bucket->m_size ) {
+      throw std::logic_error(std::string(method));
+    }
+  }
+
+  Bucket::destroy_bucket( last );
+}
+
 void Bucket::destroy_bucket( Bucket * k )
 {
   if ( 0 == bucket_counter( k->m_key ) ) {
@@ -430,6 +471,24 @@ void Bucket::destroy_bucket( Bucket * k )
   k->~Bucket();
 
   free( k );
+}
+
+//----------------------------------------------------------------------
+// Every bucket in the family points to the first bucket,
+// except the first bucket which points to the last bucket.
+
+Bucket * Bucket::last_bucket_in_family( Bucket * b )
+{
+  static const char method[] = "stk::mesh::Bucket::last_bucket_in_family" ;
+
+  Bucket * const first = bucket_counter( b->m_key ) ? b->m_bucket : b ;
+  Bucket * const last  = first->m_bucket ;
+
+  if ( NULL == last || 0 == last->m_size ) {
+    throw std::logic_error( std::string(method) );
+  }
+
+  return last ;
 }
 
 //----------------------------------------------------------------------
@@ -500,6 +559,10 @@ Bucket::declare_bucket( BulkData & mesh ,
     key[ key[0] ] = 0 ; // Set the key's family count to zero
   }
   else { // Last bucket present, can it hold one more entity?
+
+    if ( 0 == last_bucket->m_size ) {
+      throw std::logic_error( std::string(method) );
+    }
 
     field_map = last_bucket->m_field_map ;
 

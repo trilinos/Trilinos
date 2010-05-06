@@ -384,6 +384,7 @@ void BulkData::internal_resolve_parallel_create_delete(
     // - Update sharing.
 
     PartVector add_parts , remove_parts ;
+    add_parts.push_back( & m_mesh_meta_data.locally_used_part() );
     remove_parts.push_back( & m_mesh_meta_data.locally_owned_part() );
 
     for ( std::vector<Entity*>::const_iterator 
@@ -402,7 +403,7 @@ void BulkData::internal_resolve_parallel_create_delete(
       }
 
       if ( entity->owner_rank() != m_parallel_rank ) {
-        // Removing locally owned.
+        // Removing locally owned and keeping locally_used
         entity->m_sync_count = m_sync_count ;
         internal_change_entity_parts( *entity , add_parts , remove_parts );
       }

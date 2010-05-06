@@ -335,6 +335,11 @@ private:
 
   static void zero_fields( Bucket & k_dst , unsigned i_dst );
 
+  static Bucket * last_bucket_in_family( Bucket * );
+
+  // Destroy the last empty bucket in a family:
+  static void destroy_bucket( std::vector<Bucket*> & bucket_set , Bucket * );
+
   static void destroy_bucket( Bucket * );
 
   static Bucket * declare_nil_bucket( BulkData & , unsigned );
