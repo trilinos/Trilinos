@@ -11,6 +11,13 @@
 
 //----------------------------------------------------------------------
 
+#include <iosfwd>
+#include <string>
+#include <vector>
+
+#include <stk_util/util/CSet.hpp>
+#include <stk_mesh/base/Types.hpp>
+
 //----------------------------------------------------------------------
 
 namespace stk {
@@ -19,10 +26,108 @@ namespace impl {
 
 class PartImpl {
 public:
-  PartImpl(); 
+
+  /** \brief  The \ref stk::mesh::MetaData "meta data manager"
+   *          that owns this part
+   */
+  MetaData & mesh_meta_data() const { return *m_mesh_meta_data ; }
+
+  /** \brief  The primary entity type for this part.
+   *
+   *   For example, the primary purpose of an Element part
+   *   is to define a collection of elements.  However, the
+   *   nodes of those elements are also members of an element part.
+   *   Return std::numeric_limits<unsigned>::max() if no primary entity type.
+   */
+  unsigned primary_entity_rank() const { return m_entity_rank ; }
+
+  /** \brief  Application-defined text name of this part */
+  const std::string & name() const { return m_name ; }
+
+  /** \brief  Internally generated ordinal of this part that is unique
+   *          within the owning \ref stk::mesh::MetaData "meta data manager".
+   */
+  unsigned mesh_meta_data_ordinal() const { return m_universe_ordinal ; }
+
+  /** \brief  Parts that are supersets of this part. */
+  const PartVector & supersets() const { return m_supersets ; }
+
+  /** \brief  Parts that are subsets of this part. */
+  const PartVector & subsets() const { return m_subsets ; }
+
+  /** \brief  Parts for which this part is defined as the intersection.  */
+  const PartVector & intersection_of() const { return m_intersect ; }
+
+  /** \brief  PartRelations for which this part is a member, root or target */
+  const std::vector<PartRelation> & relations() const { return m_relations ; }
+
+  /** \brief  Equality comparison */
+  bool operator == ( const PartImpl & rhs ) const { return this == & rhs ; }
+
+  /** \brief  Inequality comparison */
+  bool operator != ( const PartImpl & rhs ) const { return this != & rhs ; }
+
+  /** \brief  Query attribute that has been attached to this part */
+  template<class A>
+  const A * attribute() const { return m_attribute.template get<A>(); }
+
+  explicit PartImpl( MetaData * );
+
+  void add_part_to_subset( Part & part);
+  void add_part_to_superset( Part & part );
+  void add_relation( PartRelation relation );
+  template<class T>
+  const T * declare_attribute_with_delete( const T *);
+  template<class T>
+  const T * declare_attribute_no_delete( const T *);
+  PartVector & non_const_subsets() { return m_subsets ; }
+  PartVector & non_const_supersets() { return m_supersets ; }
+  PartVector & non_const_intersection_of() { return m_intersect ; }
+  
+
+  /** Construct a subset part within a given mesh.
+   *  Is used internally by the two 'declare_part' methods.
+   */
+  PartImpl( MetaData * meta, const std::string & name, EntityRank rank, size_t ordinal);
   ~PartImpl();
+
+private:
+
+#ifndef DOXYGEN_COMPILE
+
+  PartImpl();
+  PartImpl( const PartImpl & );
+  PartImpl & operator = ( const PartImpl & );
+
+  const std::string         m_name ;
+  CSet                      m_attribute ;
+  PartVector                m_subsets ;
+  PartVector                m_supersets ;
+  PartVector                m_intersect ;
+  std::vector<PartRelation> m_relations ;
+  MetaData          * const m_mesh_meta_data ;
+  const unsigned            m_universe_ordinal ;
+  const unsigned            m_entity_rank ;
+
+#endif /* DOXYGEN_COMPILE */
+
 };
 
+template<class T>
+inline
+const T *
+PartImpl::declare_attribute_with_delete( const T * a )
+{
+  return m_attribute.template insert_with_delete<T>( a );
+}
+
+template<class T>
+inline
+const T *
+PartImpl::declare_attribute_no_delete( const T * a )
+{
+  return m_attribute.template insert_no_delete<T>( a );
+}
 
 } // namespace impl 
 } // namespace mesh

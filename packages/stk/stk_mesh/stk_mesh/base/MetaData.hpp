@@ -21,6 +21,7 @@
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Property.hpp>
+#include <stk_mesh/base/PartRepository.hpp>
 
 namespace stk {
 namespace mesh {
@@ -325,7 +326,8 @@ private:
   MetaData & operator = ( const MetaData & );  ///< \brief  Not allowed
 
   bool   m_commit ;
-  Part * m_universal_part ; /* Subset list contains all other parts */
+  PartRepository m_part_repo ;
+  Part * m_universal_part ; 
   Part * m_uses_part ;
   Part * m_owns_part ;
 
@@ -444,7 +446,7 @@ namespace mesh {
 
 inline
 Part & MetaData::get_part( unsigned ord ) const
-{ return * m_universal_part->m_subsets[ord] ; }
+{ return * m_universal_part->subsets()[ord] ; }
 
 template< class field_type >
 inline
@@ -669,7 +671,7 @@ const T *
 MetaData::declare_attribute_with_delete( Part & p , const T * a )
 {
   assert_not_committed( "stk::mesh::MetaData::declare_attribute_with_delete" );
-  return p.m_attribute.template insert_with_delete<T>( a );
+  return m_part_repo.declare_attribute_with_delete( p, a );
 }
 
 template<class T>
@@ -678,7 +680,7 @@ const T *
 MetaData::declare_attribute_no_delete( Part & p , const T * a )
 {
   assert_not_committed( "stk::mesh::MetaData::declare_attribute_no_delete" );
-  return p.m_attribute.template insert_no_delete<T>( a );
+  return m_part_repo.declare_attribute_no_delete( p, a );
 }
 
 template<class T>

@@ -75,6 +75,7 @@ void MetaData::assert_entity_rank( const char * method ,
 
 MetaData::MetaData(const std::vector<std::string>& entity_rank_names)
   : m_commit( false ),
+    m_part_repo( this ),
     m_universal_part( NULL ),
     m_uses_part( NULL ),
     m_owns_part( NULL ),
@@ -90,10 +91,9 @@ MetaData::MetaData(const std::vector<std::string>& entity_rank_names)
 
   // Declare the predefined parts
 
-  m_universal_part = new Part( this );
+  m_universal_part = m_part_repo.universal_part();
   m_uses_part = & declare_part( std::string("{USES}") );
   m_owns_part = & declare_part( std::string("{OWNS}") );
-
   declare_part_subset( * m_uses_part , * m_owns_part );
 }
 
@@ -144,8 +144,9 @@ Part & MetaData::declare_part( const std::string & p_name )
 
   assert_not_committed( method );
 
-  return m_universal_part->declare_part( p_name , rank );
+  return *m_part_repo.declare_part( p_name, rank );
 }
+
 
 Part & MetaData::declare_part( const std::string & p_name , EntityRank rank )
 {
@@ -154,7 +155,7 @@ Part & MetaData::declare_part( const std::string & p_name , EntityRank rank )
   assert_not_committed( method );
   assert_entity_rank( method , rank );
 
-  return m_universal_part->declare_part( p_name , rank );
+  return *m_part_repo.declare_part( p_name , rank );
 }
 
 namespace {
@@ -190,7 +191,7 @@ Part & MetaData::declare_part( const PartVector & part_intersect )
     assert_not_relation_target( method , *i );
   }
 
-  return m_universal_part->declare_part( part_intersect );
+  return *m_part_repo.declare_part( part_intersect );
 }
 
 void MetaData::declare_part_subset( Part & superset , Part & subset )
@@ -203,16 +204,14 @@ void MetaData::declare_part_subset( Part & superset , Part & subset )
   assert_not_relation_target( method , & superset );
   assert_not_relation_target( method , & subset );
 
-  superset.declare_subset( subset );
+  m_part_repo.declare_subset( superset, subset );
 
   // The new superset / subset relationship can cause a
   // field restriction to become incompatible or redundant.
 
-  const std::vector<Part*> & all_parts = m_universal_part->subsets();
-
   for ( std::vector<FieldBase *>::iterator
         f = m_fields.begin() ; f != m_fields.end() ; ++f ) {
-    (*f)->verify_and_clean_restrictions( method , all_parts );
+    (*f)->verify_and_clean_restrictions( method , m_part_repo.all_parts() );
   }
 }
 
@@ -249,8 +248,7 @@ void MetaData::declare_part_relation(
   tmp.m_target = & target_part ;
   tmp.m_function = stencil ;
 
-  root_part.m_relations.push_back( tmp );
-  target_part.m_relations.push_back( tmp );
+  m_part_repo.declare_part_relation( root_part, tmp, target_part );
 }
 
 //----------------------------------------------------------------------
@@ -352,9 +350,7 @@ MetaData::~MetaData()
     m_fields.clear();
   } catch(...) {}
 
-  try {
-    delete m_universal_part ;
-  } catch(...){}
+  // PartRepository is member data
 }
 
 //----------------------------------------------------------------------
@@ -508,6 +504,7 @@ void verify_parallel_consistency( const MetaData & s , ParallelMachine pm )
     throw std::logic_error( msg.str() );
   }
 }
+
 
 //----------------------------------------------------------------------
 
