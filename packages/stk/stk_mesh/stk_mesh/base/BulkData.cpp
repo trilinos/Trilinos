@@ -230,13 +230,13 @@ bool BulkData::modification_begin()
          i = m_entities.begin() ; i != m_entities.end() ; ) {
      const EntitySet::iterator j = i ; ++i ;
 
-     if ( j->second->m_bucket == m_bucket_nil ) {
+     if ( j->second->m_entityImpl.get_bucket() == m_bucket_nil ) {
        // Clear out the entities destroyed in the previous modification.
        // They were retained for change-logging purposes.
        internal_expunge_entity( j );
       }
       else {
-       j->second->log_clear();
+       j->second->m_entityImpl.log_clear();
       }
     }
   }
@@ -320,8 +320,8 @@ BulkData::internal_create_entity( const EntityKey & key )
 
   if ( insert_result.second )  { // A new entity
     insert_result.first->second = result.first = new Entity( key );
-    result.first->m_owner_rank = m_parallel_rank ;
-    result.first->m_sync_count = m_sync_count ;
+    result.first->m_entityImpl.set_owner_rank( m_parallel_rank );
+    result.first->m_entityImpl.set_sync_count( m_sync_count );
   }
 
   return result ;
@@ -376,7 +376,7 @@ Entity & BulkData::declare_entity( EntityRank ent_type , EntityId ent_id ,
   }
   else {
     // A new application-created entity
-    result.first->log_created();
+    result.first->m_entityImpl.log_created();
   }
 
   //------------------------------
@@ -587,9 +587,9 @@ void BulkData::internal_change_entity_parts(
   const PartVector & add_parts ,
   const PartVector & remove_parts )
 {
-  Bucket * const k_old = e.m_bucket != m_bucket_nil
-                       ? e.m_bucket : (Bucket *) NULL ;
-  const unsigned i_old = e.m_bucket_ord ;
+  Bucket * const k_old = e.m_entityImpl.get_bucket() != m_bucket_nil
+                       ? e.m_entityImpl.get_bucket() : (Bucket *) NULL ;
+  const unsigned i_old = e.bucket_ordinal() ;
 
   if ( k_old && k_old->member_all( add_parts ) &&
               ! k_old->member_any( remove_parts ) ) {
@@ -599,7 +599,7 @@ void BulkData::internal_change_entity_parts(
     return ;
   }
 
-  e.log_modified();
+  e.m_entityImpl.log_modified();
 
   PartVector parts_removed ;
 
@@ -653,8 +653,7 @@ void BulkData::internal_change_entity_parts(
   }
 
   // Set the new bucket
-  e.m_bucket     = k_new ;
-  e.m_bucket_ord = k_new->m_size ;
+  e.m_entityImpl.set_bucket_and_ordinal( k_new, k_new->m_size );
   k_new->m_entities[ k_new->m_size ] = & e ;
   ++( k_new->m_size );
 
@@ -662,7 +661,7 @@ void BulkData::internal_change_entity_parts(
   if ( k_old ) { remove_entity( k_old , i_old ); }
 
   // Update the change counter to the current cycle.
-  e.m_sync_count = m_sync_count ;
+  e.m_entityImpl.set_sync_count( m_sync_count );
 
   // Propagate part changes through the entity's relations.
 
@@ -690,7 +689,7 @@ bool BulkData::destroy_entity( Entity * & e )
 
   if ( has_upward_relation ) { return false ; }
 
-  if ( 0 == entity.m_bucket->capacity() ) {
+  if ( 0 == entity.bucket().capacity() ) {
     // Cannot already be destroyed.
     return false ;
   }
@@ -704,11 +703,11 @@ bool BulkData::destroy_entity( Entity * & e )
   //
   // Must clean up the parallel lists before fully deleting the entity.
 
-  while ( ! entity.m_relation.empty() ) {
-    destroy_relation( entity , * entity.m_relation.back().entity() );
+  while ( ! entity.m_entityImpl.get_relations().empty() ) {
+    destroy_relation( entity , * entity.m_entityImpl.get_relations().back().entity() );
   }
 
-  remove_entity( entity.m_bucket , entity.m_bucket_ord );
+  remove_entity( entity.m_entityImpl.get_bucket() , entity.bucket_ordinal() );
 
   // Set the bucket to 'bucket_nil' which:
   //   1) has no parts at all
@@ -718,11 +717,10 @@ bool BulkData::destroy_entity( Entity * & e )
   // This keeps the entity-bucket methods from catastrophically failing
   // with a bad bucket pointer.
 
-  entity.m_bucket     = m_bucket_nil ;
-  entity.m_bucket_ord = 0 ;
+  entity.m_entityImpl.set_bucket_and_ordinal( m_bucket_nil, 0 );
 
   // Record modification in the change log.
-  entity.log_modified();
+  entity.m_entityImpl.log_modified();
 
   // Add destroyed entity to the transaction
   // m_transaction_log.delete_entity ( *e );
@@ -801,8 +799,7 @@ void BulkData::remove_entity( Bucket * k , unsigned i )
     Bucket::copy_fields( *k , i , *last , last->m_size - 1 );
 
     k->m_entities[i]     = entity ;
-    entity->m_bucket     = k ;
-    entity->m_bucket_ord = i ;
+    entity->m_entityImpl.set_bucket_and_ordinal( k, i );
 
     // Entity field data has relocated
 
@@ -891,20 +888,18 @@ void BulkData::internal_sort_bucket_entities()
             if ( current ) {
               // Move current entity to the vacant spot
               Bucket::copy_fields( *ik_vacant , ie_vacant , b, i );
-              current->m_bucket     = ik_vacant ;
-              current->m_bucket_ord = ie_vacant ;
+              current->m_entityImpl.set_bucket_and_ordinal( ik_vacant, ie_vacant );
               ik_vacant->m_entities[ ie_vacant ] = current ;
             }
 
             // Set the vacant spot to where the required entity is now.
-            ik_vacant = (*j)->m_bucket ;
-            ie_vacant = (*j)->m_bucket_ord ;
+            ik_vacant = (*j)->m_entityImpl.get_bucket() ;
+            ie_vacant = (*j)->bucket_ordinal() ;
             ik_vacant->m_entities[ ie_vacant ] = NULL ;
 
             // Move required entity to the required spot
             Bucket::copy_fields( b, i, *ik_vacant , ie_vacant );
-            (*j)->m_bucket     = & b ;
-            (*j)->m_bucket_ord = i ;
+            (*j)->m_entityImpl.set_bucket_and_ordinal( & b, i );
             b.m_entities[i]    = *j ;
 
             change_this_family = true ;

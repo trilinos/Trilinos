@@ -12,7 +12,6 @@
 #include <utility>
 #include <vector>
 
-#include <stk_util/util/NamedPair.hpp>
 #include <stk_util/util/PairIter.hpp>
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Bucket.hpp>
@@ -28,24 +27,8 @@ namespace mesh {
  */
 
 //----------------------------------------------------------------------
-/** \brief  Span of a sorted relations for a given domain entity.
- *
- *  The span is sorted by
- *  -# range entity rank,
- *  -# relation identifier, and
- *  -# range entity global identifier.
- */
-typedef PairIter< std::vector<Relation>::const_iterator > PairIterRelation ;
 
-//----------------------------------------------------------------------
 
-NAMED_PAIR( EntityCommInfo , unsigned , ghost_id , unsigned , proc )
-
-/** \brief  Span of ( communication-subset-ordinal , process-rank ) pairs
- *          for the communication of an entity.
- */
-typedef PairIter< std::vector< EntityCommInfo >::const_iterator >
-  PairIterEntityComm ;
 
 //----------------------------------------------------------------------
 /** \brief  A fundamental unit within the discretization of a problem domain,
@@ -60,23 +43,23 @@ class Entity {
 public:
 
   /** \brief  The rank of this entity. */
-  EntityRank entity_rank() const { return stk::mesh::entity_rank( m_key ); }
+  EntityRank entity_rank() const { return m_entityImpl.entity_rank(); }
 
   /** \brief  Identifier for this entity which is globally unique
    *          for a given entity type.
    */
-  EntityId identifier() const { return stk::mesh::entity_id( m_key ); }
+  EntityId identifier() const { return m_entityImpl.identifier(); }
 
   /** \brief  The globally unique key ( entity type + identifier )
    *          of this entity.
    */
-  const EntityKey & key() const { return m_key ; }
+  const EntityKey & key() const { return m_entityImpl.key(); }
 
   /** \brief  The bucket which holds this mesh entity's field data */
-  const Bucket & bucket() const { return *m_bucket ; }
+  const Bucket & bucket() const { return m_entityImpl.bucket(); }
 
   /** \brief  The ordinal for this entity within its bucket. */
-  unsigned bucket_ordinal() const { return m_bucket_ord ; }
+  unsigned bucket_ordinal() const { return m_entityImpl.bucket_ordinal(); }
 
   /** \brief  The mesh bulk data synchronized_count when this entity's
    *          part membership was most recently modified.
@@ -85,31 +68,31 @@ public:
    *       mesh.synchronized_count() == entity.synchronized_count() )
    *  then entity was modified during this modification phase.
    */
-  size_t synchronized_count() const { return m_sync_count ; }
+  size_t synchronized_count() const { return m_entityImpl.synchronized_count(); }
 
   //------------------------------------
   /** \brief  All \ref stk::mesh::Relation "Entity relations"
    *          for which this entity is a member.
    */
-  PairIterRelation relations() const { return PairIterRelation( m_relation ); }
+  PairIterRelation relations() const { return m_entityImpl.relations(); }
 
   /** \brief  \ref stk::mesh::Relation "Entity relations" for which this
    *          entity is a member, the other entity is of a given type.
    */
-  PairIterRelation relations( unsigned type ) const ;
+  PairIterRelation relations( unsigned type ) const { return m_entityImpl.relations(type); }
 
   //------------------------------------
   /** \brief  Parallel processor rank of the processor which owns this entity */
-  unsigned owner_rank() const { return m_owner_rank ; }
+  unsigned owner_rank() const { return m_entityImpl.owner_rank(); }
 
   /** \brief  Parallel processes which share this entity. */
-  PairIterEntityComm sharing() const ;
+  PairIterEntityComm sharing() const { return m_entityImpl.sharing(); }
 
   /** \brief  Complete communicaiton list for this entity */
-  PairIterEntityComm comm() const { return PairIterEntityComm( m_comm ); }
+  PairIterEntityComm comm() const { return m_entityImpl.comm(); }
 
   /** \brief  Subset communicaiton list for this entity */
-  PairIterEntityComm comm( const Ghosting & ) const ;
+  PairIterEntityComm comm( const Ghosting & sub ) const { return m_entityImpl.comm( sub ); }
 
   //------------------------------------
 
@@ -120,39 +103,9 @@ private:
   ~Entity();
   explicit Entity( const EntityKey & arg_key );
 
-  /** Change log to reflect change from before 'modification_begin'
-   *  to the current status.
-   */
-  enum ModificationLog { LogNoChange = 0 ,
-                         LogCreated  = 1 ,
-                         LogModified = 2 };
-
-  const EntityKey              m_key ;       ///< Globally unique key
-  std::vector<Relation>        m_relation ;  ///< This entity's relationships
-  std::vector<EntityCommInfo>  m_comm ;      ///< This entity's communications
-  Bucket        * m_bucket ;     ///< Bucket for the entity's field data
-  unsigned        m_bucket_ord ; ///< Ordinal within the bucket
-  unsigned        m_owner_rank ; ///< Owner processors' rank
-  size_t          m_sync_count ; ///< Last membership change
-  ModificationLog m_mod_log ;
-
   Entity(); ///< Default constructor not allowed
   Entity( const Entity & ); ///< Copy constructor not allowed
   Entity & operator = ( const Entity & ); ///< Assignment operator not allowed
-
-  // Communication info access:
-
-  bool insert( const EntityCommInfo & );
-  bool erase(  const EntityCommInfo & ); ///< Erase this entry
-  bool erase(  const Ghosting & );       ///< Erase this ghosting info.
-  void comm_clear_ghosting(); ///< Clear ghosting
-  void comm_clear(); ///< Clear everything
-
-  // Change log access:
-  ModificationLog log_query() const { return m_mod_log ; }
-  void log_clear();
-  void log_created();
-  void log_modified();
 
 #ifndef DOXYGEN_COMPILE
   friend class BulkData ;

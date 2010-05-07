@@ -150,8 +150,8 @@ void BulkData::declare_relation( Entity & e_from ,
 
   const Relation forward( e_to , local_id );
 
-  const std::vector<Relation>::iterator fe = e_from.m_relation.end();
-        std::vector<Relation>::iterator fi = e_from.m_relation.begin();
+  const std::vector<Relation>::iterator fe = e_from.m_entityImpl.get_relations().end();
+        std::vector<Relation>::iterator fi = e_from.m_entityImpl.get_relations().begin();
 
   fi = std::lower_bound( fi , fe , forward , LessRelation() );
 
@@ -179,7 +179,7 @@ void BulkData::declare_relation( Entity & e_from ,
         degenerate_key = fi->entity()->key();
         }
      }
-  if ( fi != e_from.m_relation.begin() )
+  if ( fi != e_from.m_entityImpl.get_relations().begin() )
      {
      --fi;
      bool  downstream = fi->entity_rank() < e_from.entity_rank();
@@ -211,17 +211,17 @@ void BulkData::declare_relation( Entity & e_from ,
     // A new relation and its converse
 
     const Relation converse( e_from , local_id );
-    const std::vector<Relation>::iterator ce = e_to.m_relation.end();
-          std::vector<Relation>::iterator ci = e_to.m_relation.begin();
+    const std::vector<Relation>::iterator ce = e_to.m_entityImpl.get_relations().end();
+          std::vector<Relation>::iterator ci = e_to.m_entityImpl.get_relations().begin();
 
     ci = std::lower_bound( ci , ce , converse , LessRelation() );
 
     if ( ce == ci || converse != *ci ) {
-      fi = e_from.m_relation.insert( fi , forward );
-      ci = e_to  .m_relation.insert( ci , converse );
+      fi = e_from.m_entityImpl.get_relations().insert( fi , forward );
+      ci = e_to  .m_entityImpl.get_relations().insert( ci , converse );
 
-      e_from.m_sync_count = m_sync_count ;
-      e_to  .m_sync_count = m_sync_count ;
+      e_from.m_entityImpl.set_sync_count( m_sync_count );
+      e_to  .m_entityImpl.set_sync_count( m_sync_count );
 
       PartVector add , empty ;
 
@@ -250,7 +250,7 @@ void BulkData::declare_relation( Entity & e_from ,
   }
 
   // This entity's owned-closure may have changed.
-  e_to.log_modified();
+  e_to.m_entityImpl.log_modified();
 
   // m_transaction_log.modify_entity ( e_from );
 }
@@ -300,10 +300,10 @@ void BulkData::destroy_relation( Entity & e_from , Entity & e_to )
   PartVector del , keep ;
 
   for ( std::vector<Relation>::iterator
-        i = e_to.m_relation.end() ; i != e_to.m_relation.begin() ; ) {
+        i = e_to.m_entityImpl.get_relations().end() ; i != e_to.m_entityImpl.get_relations().begin() ; ) {
     --i ;
     if ( i->entity() == & e_from ) {
-      i = e_to.m_relation.erase( i );
+      i = e_to.m_entityImpl.get_relations().erase( i );
     }
     else if ( e_to.entity_rank() < i->entity_rank() ) {
       induced_part_membership( * i->entity(), del, e_to.entity_rank(),
@@ -312,7 +312,7 @@ void BulkData::destroy_relation( Entity & e_from , Entity & e_to )
   }
 
   for ( std::vector<Relation>::iterator
-        i = e_from.m_relation.end() ; i != e_from.m_relation.begin() ; ) {
+        i = e_from.m_entityImpl.get_relations().end() ; i != e_from.m_entityImpl.get_relations().begin() ; ) {
     --i ;
     if ( i->entity() == & e_to ) {
 
@@ -322,7 +322,7 @@ void BulkData::destroy_relation( Entity & e_from , Entity & e_to )
       clear_field_relations( e_from , e_to.entity_rank() ,
                              i->identifier() );
 
-      i = e_from.m_relation.erase( i );
+      i = e_from.m_entityImpl.get_relations().erase( i );
     }
   }
 
@@ -340,7 +340,7 @@ void BulkData::destroy_relation( Entity & e_from , Entity & e_to )
   }
 
   // This entity's owned-closure may have changed.
-  e_to.log_modified();
+  e_to.m_entityImpl.log_modified();
 
   // Mark e_from and e_to as modified
   // m_transaction_log.modify_entity ( e_from );

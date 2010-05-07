@@ -126,12 +126,12 @@ void BulkData::destroy_all_ghosting()
     Entity * entity = *--ie ;
 
     if ( in_receive_ghost( *entity ) ) {
-      entity->comm_clear();
+      entity->m_entityImpl.comm_clear();
       destroy_entity( entity );
       *ie = NULL ;
     }
     else {
-      entity->comm_clear_ghosting();
+      entity->m_entityImpl.comm_clear_ghosting();
       if ( entity->comm().empty() ) {
         *ie = NULL ;
       }
@@ -342,12 +342,12 @@ void BulkData::internal_change_ghosting(
         const EntityCommInfo tmp = comm_ghost.back();
 
         if ( 0 == new_send.count( EntityProc( entity , tmp.proc ) ) ) {
-          entity->erase( tmp );
+          entity->m_entityImpl.erase( tmp );
         }
       }
     }
     else if ( remove_recv ) {
-      entity->erase( ghosts );
+      entity->m_entityImpl.erase( ghosts );
     }
 
     if ( entity->comm().empty() ) {
@@ -407,7 +407,7 @@ void BulkData::internal_change_ghosting(
         pack_entity_info(  buf , entity );
         pack_field_values( buf , entity );
 
-        entity.insert( EntityCommInfo(ghosts.ordinal(),j->second) );
+        entity.m_entityImpl.insert( EntityCommInfo(ghosts.ordinal(),j->second) );
 
         m_entity_comm.push_back( & entity );
       }
@@ -450,7 +450,7 @@ void BulkData::internal_change_ghosting(
 
           if ( result.second                          /* Created */ ||
                result.first->bucket().capacity() == 0 /* Re-created */ ) {
-            result.first->m_owner_rank = owner ;
+            result.first->m_entityImpl.set_owner_rank( owner );
           }
 
           assert_entity_owner( method , * result.first , owner );
@@ -465,7 +465,7 @@ void BulkData::internal_change_ghosting(
 
           const EntityCommInfo tmp( ghosts.ordinal() , owner );
 
-          if ( result.first->insert( tmp ) ) {
+          if ( result.first->m_entityImpl.insert( tmp ) ) {
             m_entity_comm.push_back( result.first );
           }
         }

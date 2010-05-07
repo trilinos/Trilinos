@@ -393,12 +393,12 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
       // Giving ownership, change the parts first and then
       // the owner rank to pass the ownership test.
       change_entity_parts( * i->first , PartVector() , owned );
-      i->first->m_owner_rank = i->second ;
+      i->first->m_entityImpl.set_owner_rank( i->second );
     }
 
     for ( std::vector<EntityProc>::iterator
           i = shared_change.begin() ; i != shared_change.end() ; ++i ) {
-      i->first->m_owner_rank = i->second ;
+      i->first->m_entityImpl.set_owner_rank( i->second );
       if ( p_rank == i->second ) { // I receive ownership
         change_entity_parts( * i->first , owned , PartVector() );
       }
@@ -459,7 +459,7 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
 
         std::pair<Entity*,bool> result = internal_create_entity( key );
 
-        result.first->m_owner_rank = owner ;
+        result.first->m_entityImpl.set_owner_rank( owner );
 
         internal_change_entity_parts( *result.first , parts , PartVector() );
 
@@ -542,12 +542,12 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
       const bool old_comm_empty = entity.comm().empty();
 
       // Erase old sharing information:
-      entity.erase( * m_ghosting[0] );
+      entity.m_entityImpl.erase( * m_ghosting[0] );
 
       // Insert updated sharing information:
       for ( ; j != sharing.end() && i->first == j->first ; ++j ) {
         if ( (int) p_rank != j->second ) {
-          entity.insert( EntityCommInfo( 0 , j->second ) );
+          entity.m_entityImpl.insert( EntityCommInfo( 0 , j->second ) );
         }
       }
 

@@ -18,6 +18,7 @@
 
 #include <stk_util/util/PairIter.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
+#include <stk_util/util/NamedPair.hpp>
 
 namespace stk {
 namespace mesh {
@@ -89,6 +90,16 @@ typedef std::pair<Entity*,unsigned> EntityProc ;
 typedef PairIter< std::vector< EntityProc >::const_iterator >
   PairIterEntityProc ;
 
+NAMED_PAIR( EntityCommInfo , unsigned , ghost_id , unsigned , proc )
+
+/** \brief  Span of ( communication-subset-ordinal , process-rank ) pairs
+ *          for the communication of an entity.
+ */
+typedef PairIter< std::vector< EntityCommInfo >::const_iterator >
+  PairIterEntityComm ;
+
+typedef std::vector<EntityCommInfo> EntityCommInfoVector;
+
 /** \} */
 
 //----------------------------------------------------------------------
@@ -109,6 +120,17 @@ typedef PairIter< std::vector< EntityProc >::const_iterator >
 typedef int ( * relation_stencil_ptr )( unsigned  from_type ,
                                         unsigned  to_type ,
                                         unsigned  identifier );
+
+//----------------------------------------------------------------------
+/** \brief  Span of a sorted relations for a given domain entity.
+ *
+ *  The span is sorted by
+ *  -# range entity rank,
+ *  -# relation identifier, and
+ *  -# range entity global identifier.
+ */
+typedef PairIter< std::vector<Relation>::const_iterator > PairIterRelation ;
+typedef std::vector<Relation> RelationVector;
 
 //----------------------------------------------------------------------
 
