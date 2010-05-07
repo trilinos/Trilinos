@@ -21,7 +21,7 @@
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Property.hpp>
-#include <stk_mesh/base/PartRepository.hpp>
+#include <stk_mesh/baseImpl/PartRepository.hpp>
 
 namespace stk {
 namespace mesh {
@@ -326,7 +326,7 @@ private:
   MetaData & operator = ( const MetaData & );  ///< \brief  Not allowed
 
   bool   m_commit ;
-  PartRepository m_part_repo ;
+  impl::PartRepository m_part_repo ;
   Part * m_universal_part ; 
   Part * m_uses_part ;
   Part * m_owns_part ;

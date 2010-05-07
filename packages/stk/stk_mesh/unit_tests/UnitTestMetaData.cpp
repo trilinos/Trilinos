@@ -143,7 +143,7 @@ void UnitTestMetaData::testPart()
 {
   MetaData * const m = NULL ;
 
-  PartRepository partRepo(m);
+  impl::PartRepository partRepo(m);
 
   Part & universal = *partRepo.universal_part();
 
@@ -381,7 +381,7 @@ void UnitTestMetaData::testPartVector()
 
   stk::mesh::MetaData m( dummy_names );
 
-  PartRepository partRepo(&m);
+  impl::PartRepository partRepo(&m);
 
   Part * const pa = partRepo.declare_part( std::string("a") , 0 );
   Part * const pb = partRepo.declare_part( std::string("b") , 0 );
@@ -730,7 +730,7 @@ void UnitTestMetaData::testFieldRestriction()
 
   stk::mesh::MetaData m( dummy_names );
 
-  PartRepository partRepo( &m );
+  impl::PartRepository partRepo( &m );
   Part & universal = * partRepo.universal_part();
 
   Part & pA = * partRepo.declare_part( std::string("A") , 0 );

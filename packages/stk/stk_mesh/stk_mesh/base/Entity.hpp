@@ -18,6 +18,8 @@
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Relation.hpp>
 
+#include <stk_mesh/baseImpl/EntityImpl.hpp>
+
 namespace stk {
 namespace mesh {
 
@@ -112,6 +114,8 @@ public:
   //------------------------------------
 
 private:
+
+  impl::EntityImpl m_entityImpl;
 
   ~Entity();
   explicit Entity( const EntityKey & arg_key );

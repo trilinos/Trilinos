@@ -25,7 +25,9 @@
 namespace stk {
 namespace mesh {
 
-class PartRepository;
+namespace impl {
+  class PartRepository;
+} // namespace impl
 
 /** \addtogroup stk_mesh_module
  *  \{
@@ -101,7 +103,7 @@ private:
    *         a private data object on the Part and the PartRepository is a
    *         friend.
    */
-  friend class ::stk::mesh::PartRepository ;
+  friend class ::stk::mesh::impl::PartRepository ;
 
 #ifndef DOXYGEN_COMPILE
 

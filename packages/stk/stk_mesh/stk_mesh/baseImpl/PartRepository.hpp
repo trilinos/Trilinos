@@ -19,6 +19,9 @@ namespace mesh {
 
 class MetaData;
 
+namespace impl {
+
+
 class PartRepository {
 public:
   explicit PartRepository(MetaData * meta);
@@ -67,6 +70,7 @@ PartRepository::declare_attribute_no_delete( Part & p, const T * a )
 }
 
 
+} // namespace impl 
 } // namespace mesh
 } // namespace stk
 

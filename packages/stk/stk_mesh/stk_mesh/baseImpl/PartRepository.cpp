@@ -10,11 +10,12 @@
 #include <sstream>
 
 #include <stk_mesh/base/Part.hpp>
-#include <stk_mesh/base/PartRepository.hpp>
 #include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/baseImpl/PartRepository.hpp>
 
 namespace stk {
 namespace mesh {
+namespace impl {
 
 namespace {
 
@@ -321,6 +322,7 @@ PartRepository::~PartRepository()
   } catch(...){}
 }
 
+} // namespace impl 
 } // namespace mesh 
 } // namespace stk 
 
