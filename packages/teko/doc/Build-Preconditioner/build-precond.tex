@@ -284,6 +284,54 @@ behaves exactly like an Epetra\_Operator with the correct range and column space
 The remaining lines of the \code{main} function simply invoke the AztecOO solver using
 the Epetra wrapped Teko preconditioner.
 
+\section{Improving Performance}
+
+\subsection{Reusing Inverse Operators}
+One of the primary wastes from a naive or early implementation of a Teko preconditioner
+is in unecessary reconstruction of inverse operators. Often these operators can reuse
+allocated memory, avoid recomputing sparsity patterns, or construct prolongation operators
+only once. Clearly this depends on the system and the algorithms used.  However, because
+the inverse factories are treated abstractly and the preconditioner has no idea about the
+specifics of any of them it makes sense to attempt to rebuild all of them. Teko provides
+capabilities to make this relatively easy. In this section, we go through how to do this
+and provide helpful suggestions on how these operators can be structured.
+
+For instance, on line~\ref{lne1:invP} of Listing~\ref{lst:step1} any previous information 
+about \code{invP} that could be reused is simply thrown out. Instead, the code fragment
+in listing~\ref{lst:rebuild-inverse} attempts to rebuild the inverse, reusing any available internals.
+\begin{framed}
+\begin{lstlisting}[caption=\footnotesize ``Rebuilding an inverse'', label=lst:rebuild-inverse]
+Teko::LinearOp ExamplePreconditionerFactory
+   ::buildPreconditionerOperator(Teko::BlockedLinearOp & blockOp,
+                                 Teko::BlockPreconditionerState & state) const
+{
+   ...
+
+   // try to snag inv(P) from state object
+   Teko::ModifiableLinearOp & invP = state.getModifiableOp("invP"); /*@ \label{lne4:from-state} @*/
+   
+   if(invP==Teuchos::null) // check if it needs to built /*@ \label{lne4:null-check} @*/
+      invP  = Teko::buildInverse(*inverse_,P); /*@ \label{lne4:build-inverse} @*/
+   else  // rebuild if required
+      Teko::rebuildInverse(*inverse_,P,invP); /*@ \label{lne4:rebuild-inverse} @*/
+   
+   ...
+}
+\end{lstlisting}
+\end{framed}
+Listing~\ref{lst:rebuild-inverse} shows how to rebuild an inverse operator. Line~\ref{lne4:from-state}
+grabs \emph{a reference} from the state object. Under the hood this is a reference to a
+\code{Teuchos::RCP} object stored by the state. As a result, assigning another pointer to this
+object will change the reference stored in the \code{Teko::BlockPreconditionerState}. This reference
+is stored internally in a way that associates it with the string ``invP''. Line~\ref{lne4:null-check}
+checks to see if \code{invP} has been previously initialized, if not the operator is build on
+line~\ref{lne4:build-inverse}. Otherwise, the inverse operator is rebuilt using the
+\code{Teko::rebuildInverse} function. This is very easy functionality to encapsulate into
+a simple function that takes a string, an inverse factory, an operator and a state object. This
+function would then return the inverse and store it in the preconditioner state object.
+
+\subsection{Reusing ``Explicit'' Operators}
+
 \section{Overview of Thyra/Teko interactions}\label{sec:thyra-pb}
 At the core of Teko is the use of the Thyra abstractions for linear operators
 and vectors. For convenience these have been renamed in Teko and a handful of casting
