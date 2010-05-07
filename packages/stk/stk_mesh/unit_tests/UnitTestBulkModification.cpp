@@ -160,8 +160,10 @@ void UnitTestStkMeshBulkModification::test_all_local_nodes()
     universal_entities.erase(new_end, universal_entities.end());
 
     // Get the buckets that will give us the locally used nodes
-    const stk::mesh::Part& local = ring_mesh.m_meta_data.locally_used_part();
-    stk::mesh::Selector locally_used_selector(local);
+    stk::mesh::Selector locally_used_selector =
+      ring_mesh.m_meta_data.locally_owned_part() |
+      ring_mesh.m_meta_data.globally_shared_part();
+
     stk::mesh::get_buckets(locally_used_selector, node_buckets, buckets);
 
     // Get the locally used nodes
@@ -237,8 +239,10 @@ void UnitTestStkMeshBulkModification::test_all_local_edges()
     universal_entities.erase(new_end, universal_entities.end());
 
     // get the buckets that we need to traverse to get the locally used edges
-    const stk::mesh::Part& local = ring_mesh.m_meta_data.locally_used_part();
-    stk::mesh::Selector locally_used_selector(local);
+    stk::mesh::Selector locally_used_selector =
+      ring_mesh.m_meta_data.locally_owned_part() |
+      ring_mesh.m_meta_data.globally_shared_part();
+
     stk::mesh::get_buckets(locally_used_selector, edge_buckets, buckets);
 
     // get the locally used edges and store them in entities
@@ -285,8 +289,9 @@ void UnitTestStkMeshBulkModification::test_parallel_consistency()
   if (m_rank == 0) {
     const std::vector<stk::mesh::Bucket*>& node_buckets = bulk_data.buckets(stk::mesh::Node);
 
-    const stk::mesh::Part& local = ring_mesh.m_meta_data.locally_used_part();
-    stk::mesh::Selector locally_used_selector(local);
+    stk::mesh::Selector locally_used_selector =
+      ring_mesh.m_meta_data.locally_owned_part() |
+      ring_mesh.m_meta_data.globally_shared_part();
 
     std::vector<stk::mesh::Bucket*> buckets;
     stk::mesh::get_buckets(locally_used_selector, node_buckets, buckets);

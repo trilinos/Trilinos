@@ -235,6 +235,13 @@ void BulkData::internal_resolve_parallel_create_delete(
 
           entity->m_entityImpl.erase( EntityCommInfo( 0 , proc ) );
 
+          PartVector add_part , remove_part ;
+
+          if ( entity->sharing().empty() ) {
+            // No longer shared, remove the shared part.
+            remove_part.push_back( & m_mesh_meta_data.globally_shared_part() );
+          }
+
           if ( remote_owner ) {
             // Remote owner is deleting a shared entity.
             // Have to determine new owner from remaining sharing processes.
@@ -246,10 +253,12 @@ void BulkData::internal_resolve_parallel_create_delete(
 
             if ( new_owner == m_parallel_rank ) {
               // Changing remotely owned to locally owned
-              PartVector add( 1 );
-              add[0] = & m_mesh_meta_data.locally_owned_part();
-              internal_change_entity_parts( *entity , add , PartVector() );
+              add_part.push_back( & m_mesh_meta_data.locally_owned_part() );
             }
+          }
+
+          if ( ! add_part.empty() || ! remove_part.empty() ) {
+            internal_change_entity_parts( *entity , add_part , remove_part );
           }
         }
 
@@ -390,9 +399,9 @@ void BulkData::internal_resolve_parallel_create_delete(
     std::ostringstream error_msg ;
     int error_flag = 0 ;
 
-    PartVector add_parts , remove_parts ;
-    add_parts.push_back( & m_mesh_meta_data.locally_used_part() );
-    remove_parts.push_back( & m_mesh_meta_data.locally_owned_part() );
+    PartVector shared_part , owned_part ;
+    shared_part.push_back( & m_mesh_meta_data.globally_shared_part() );
+    owned_part.push_back(  & m_mesh_meta_data.locally_owned_part() );
 
     for ( std::vector<Entity*>::const_iterator 
           i = shared_modified.end() ; i != shared_modified.begin() ; ) {
@@ -410,9 +419,20 @@ void BulkData::internal_resolve_parallel_create_delete(
       }
 
       if ( entity->owner_rank() != m_parallel_rank ) {
-        // Removing locally owned and keeping locally_used
+        // Do not own it and still have it.
+        // Remove the locally owned, add the globally_shared
         entity->m_entityImpl.set_sync_count( m_sync_count );
-        internal_change_entity_parts( *entity , add_parts , remove_parts );
+        internal_change_entity_parts( *entity , shared_part , owned_part );
+      }
+      else if ( ! entity->sharing().empty() ) {
+        // Own it and has sharing information.
+        // Add the globally_shared
+        internal_change_entity_parts( *entity , shared_part , PartVector() );
+      }
+      else {
+        // Own it and does not have sharing information.
+        // Remove the globally_shared
+        internal_change_entity_parts( *entity , PartVector() , shared_part );
       }
 
       // Newly created shared entity had better be in the owned closure
@@ -456,10 +476,12 @@ void BulkData::internal_resolve_parallel_create_delete(
                         m_entity_comm.end() ,
                         EntityLess() );
 
-    std::vector<Entity*>::iterator i =
-      std::unique( m_entity_comm.begin() , m_entity_comm.end() );
+    {
+      std::vector<Entity*>::iterator i =
+        std::unique( m_entity_comm.begin() , m_entity_comm.end() );
 
-    m_entity_comm.erase( i , m_entity_comm.end() );
+      m_entity_comm.erase( i , m_entity_comm.end() );
+   }
   }
 }
 
@@ -539,7 +561,9 @@ bool BulkData::internal_modification_end( bool regenerate_aura )
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
-enum { OWNERSHIP_PART_COUNT = 3 };
+enum { PART_ORD_UNIVERSAL = 0 };
+enum { PART_ORD_OWNED     = 1 };
+enum { PART_ORD_SHARED    = 2 };
 
 namespace {
 
@@ -601,8 +625,8 @@ void generate_send_list( const size_t sync_count ,
   }
 }
 
-void pack_memberships( CommAll & comm ,
-                       const std::vector<EntityProc> & send_list )
+void pack_part_memberships( CommAll & comm ,
+                            const std::vector<EntityProc> & send_list )
 {
   for ( std::vector<EntityProc>::const_iterator
         i = send_list.begin() ; i != send_list.end() ; ++i ) {
@@ -615,14 +639,21 @@ void pack_memberships( CommAll & comm ,
     // I am the owner; therefore, the first three members are
     // universal, uses, and owns.  Don't send them.
 
-    const unsigned count =
-      ( part_ord.second - part_ord.first ) - OWNERSHIP_PART_COUNT ;
+    // I am the owner.  The first two memberships are
+    // universal_part and locally_owned_part.  The third
+    // membership may be globally_shared_part ;
 
-    const unsigned * const start = part_ord.first + OWNERSHIP_PART_COUNT ;
+    const unsigned count_all  = part_ord.second - part_ord.first ;
+    const unsigned count_skip =
+      ( 2 < count_all && part_ord.first[2] == PART_ORD_SHARED ) ? 3 : 2 ;
+
+    const unsigned count_send = count_all - count_skip ;
+
+    const unsigned * const start_send = part_ord.first + count_skip ;
 
     comm.send_buffer( i->second ).pack<EntityKey>( entity.key() )
-                                 .pack<unsigned>( count )
-                                 .pack<unsigned>( start , count );
+                                 .pack<unsigned>( count_send )
+                                 .pack<unsigned>( start_send , count_send );
   }
 }
 
@@ -649,11 +680,15 @@ void BulkData::internal_resolve_shared_membership()
   const unsigned  p_size = m_parallel_size ;
   const PartVector & all_parts = meta.get_parts();
 
+  const Part & part_universal = meta.universal_part();
+  const Part & part_owned  = meta.locally_owned_part();
+  const Part & part_shared = meta.globally_shared_part();
+
   // Quick verification of part ordinal assumptions
 
-  if ( OWNERSHIP_PART_COUNT <= meta.universal_part().mesh_meta_data_ordinal() ||
-       OWNERSHIP_PART_COUNT <= meta.locally_used_part().mesh_meta_data_ordinal() ||
-       OWNERSHIP_PART_COUNT <= meta.locally_owned_part().mesh_meta_data_ordinal() ) {
+  if ( PART_ORD_UNIVERSAL != part_universal.mesh_meta_data_ordinal() ||
+       PART_ORD_OWNED     != part_owned.mesh_meta_data_ordinal() ||
+       PART_ORD_SHARED    != part_shared.mesh_meta_data_ordinal() ) {
     throw std::logic_error( std::string( method ) );
   }
 
@@ -725,11 +760,11 @@ void BulkData::internal_resolve_shared_membership()
     
     CommAll comm( p_comm );
 
-    pack_memberships( comm , send_list );
+    pack_part_memberships( comm , send_list );
 
     comm.allocate_buffers( p_size / 4 );
 
-    pack_memberships( comm , send_list );
+    pack_part_memberships( comm , send_list );
 
     comm.communicate();
 
@@ -755,9 +790,13 @@ void BulkData::internal_resolve_shared_membership()
 
         for ( PartVector::iterator
               ip = current_parts.begin() ; ip != current_parts.end() ; ++ip ) {
-          if ( OWNERSHIP_PART_COUNT <= (*ip)->mesh_meta_data_ordinal() &&
-               ! contain( owner_parts , **ip ) ) {
-            remove_parts.push_back( *ip );
+          Part * const p = *ip ;
+          const unsigned part_ord = p->mesh_meta_data_ordinal();
+          if ( PART_ORD_UNIVERSAL != part_ord &&
+               PART_ORD_OWNED     != part_ord &&
+               PART_ORD_SHARED    != part_ord &&
+               ! contain( owner_parts , *p ) ) {
+            remove_parts.push_back( p );
           }
         }
 

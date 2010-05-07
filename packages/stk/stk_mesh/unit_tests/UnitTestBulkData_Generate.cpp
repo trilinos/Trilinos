@@ -163,7 +163,8 @@ void UnitTestBulkData::generate_boxes(
   }
 
   Selector select_owned( mesh.mesh_meta_data().locally_owned_part() );
-  Selector select_used( mesh.mesh_meta_data().locally_used_part() );
+  Selector select_used = mesh.mesh_meta_data().locally_owned_part() |
+                         mesh.mesh_meta_data().globally_shared_part();
   Selector select_all(  mesh.mesh_meta_data().universal_part() );
 
   count_entities( select_used , mesh , local_count );

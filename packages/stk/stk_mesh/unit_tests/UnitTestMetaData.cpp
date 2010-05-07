@@ -876,11 +876,8 @@ void UnitTestMetaData::testProperty()
   STKUNIT_ASSERT_EQUAL( pa.size() , 5u );
 
   meta_data.put_property( pi , meta_data.locally_owned_part() );
-  meta_data.put_property( px , meta_data.locally_used_part() );
 
   STKUNIT_ASSERT( stk::mesh::property_data( pi , meta_data.locally_owned_part() ) != NULL);
-  STKUNIT_ASSERT( stk::mesh::property_data( px , meta_data.locally_used_part() ) != NULL);
-  STKUNIT_ASSERT( ! stk::mesh::property_data( pi , meta_data.locally_used_part() ) );
   STKUNIT_ASSERT( ! stk::mesh::property_data( px , meta_data.locally_owned_part() ) );
 }
 

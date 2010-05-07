@@ -125,7 +125,7 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
   meta.commit();
 
   Selector select_owned( meta.locally_owned_part() );
-  Selector select_used( meta.locally_used_part() );
+  Selector select_used = meta.locally_owned_part() | meta.globally_shared_part();
   Selector select_all(  meta.universal_part() );
 
   PartVector no_parts ;

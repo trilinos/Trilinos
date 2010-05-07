@@ -77,8 +77,8 @@ MetaData::MetaData(const std::vector<std::string>& entity_rank_names)
   : m_commit( false ),
     m_part_repo( this ),
     m_universal_part( NULL ),
-    m_uses_part( NULL ),
     m_owns_part( NULL ),
+    m_shares_part( NULL ),
     m_fields( ),
     m_field_relations( ),
     m_properties( ),
@@ -92,9 +92,8 @@ MetaData::MetaData(const std::vector<std::string>& entity_rank_names)
   // Declare the predefined parts
 
   m_universal_part = m_part_repo.universal_part();
-  m_uses_part = & declare_part( std::string("{USES}") );
   m_owns_part = & declare_part( std::string("{OWNS}") );
-  declare_part_subset( * m_uses_part , * m_owns_part );
+  m_shares_part = & declare_part( std::string("{SHARES}") );
 }
 
 //----------------------------------------------------------------------

@@ -341,8 +341,9 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
 
     ring_mesh.generate_loop( false /* no aura */ );
 
-    const Selector select_used(  ring_mesh.m_meta_data.locally_used_part() );
-    const Selector select_all(   ring_mesh.m_meta_data.universal_part() );
+    const Selector select_used = ring_mesh.m_meta_data.locally_owned_part() |
+                                 ring_mesh.m_meta_data.globally_shared_part() ;
+    const Selector select_all = ring_mesh.m_meta_data.universal_part() ;
 
     count_entities( select_used , ring_mesh.m_bulk_data , local_count );
     STKUNIT_ASSERT_EQUAL( local_count[0] , nLocalNode );
@@ -375,7 +376,8 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
     ring_mesh.generate_loop( true /* with aura */ );
 
     const Selector select_owned( ring_mesh.m_meta_data.locally_owned_part() );
-    const Selector select_used(  ring_mesh.m_meta_data.locally_used_part() );
+    const Selector select_used = ring_mesh.m_meta_data.locally_owned_part() |
+                                 ring_mesh.m_meta_data.globally_shared_part() ;
     const Selector select_all(   ring_mesh.m_meta_data.universal_part() );
 
     count_entities( select_used , ring_mesh.m_bulk_data , local_count );
@@ -412,7 +414,8 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
     ring_mesh.generate_loop( true /* with aura */ );
 
     const Selector select_owned( ring_mesh.m_meta_data.locally_owned_part() );
-    const Selector select_used(  ring_mesh.m_meta_data.locally_used_part() );
+    const Selector select_used = ring_mesh.m_meta_data.locally_owned_part() |
+                                 ring_mesh.m_meta_data.globally_shared_part() ;
     const Selector select_all(   ring_mesh.m_meta_data.universal_part() );
 
     count_entities( select_used , ring_mesh.m_bulk_data , local_count );
@@ -499,7 +502,8 @@ void UnitTestBulkData::testChangeOwner_loop( ParallelMachine pm )
     ring_mesh.generate_loop( true /* with aura */ );
 
     const Selector select_owned( ring_mesh.m_meta_data.locally_owned_part() );
-    const Selector select_used(  ring_mesh.m_meta_data.locally_used_part() );
+    const Selector select_used = ring_mesh.m_meta_data.locally_owned_part() |
+                                 ring_mesh.m_meta_data.globally_shared_part() ;
     const Selector select_all(   ring_mesh.m_meta_data.universal_part() );
 
     std::vector<EntityProc> change ;
@@ -622,7 +626,8 @@ void donate_all_shared_nodes( BulkData & mesh , bool aura )
 {
   const unsigned p_rank = mesh.parallel_rank();
 
-  Selector select_used( mesh.mesh_meta_data().locally_used_part() );
+  const Selector select_used = mesh.mesh_meta_data().locally_owned_part() |
+                               mesh.mesh_meta_data().globally_shared_part() ;
 
   std::vector<unsigned> before_count ;
   std::vector<unsigned> after_count ;
@@ -676,9 +681,10 @@ void UnitTestBulkData::testChangeOwner_box( ParallelMachine pm )
 
   meta.commit();
 
-  Selector select_owned( meta.locally_owned_part() );
-  Selector select_used(  meta.locally_used_part() );
-  Selector select_all(   meta.universal_part() );
+  const Selector select_owned( meta.locally_owned_part() );
+  const Selector select_used = meta.locally_owned_part() |
+                               meta.globally_shared_part() ;
+  const Selector select_all(   meta.universal_part() );
 
   //------------------------------
   {

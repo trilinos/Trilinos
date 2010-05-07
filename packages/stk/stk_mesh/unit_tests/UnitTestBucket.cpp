@@ -81,13 +81,13 @@ void UnitTestBucket::testBucket( ParallelMachine pm )
  // Parallel and Serial runs have different part intersections for the first
  // bucket
     if ( bulk.parallel_size() == 1 )
-       gold1 = "Bucket( EntityRank0 : {UNIVERSAL} {USES} {OWNS} )";
+       gold1 = "Bucket( EntityRank0 : {UNIVERSAL} {OWNS} )";
     else
        gold1 = "Bucket( EntityRank0 : {UNIVERSAL} )";
     Bucket *b1 = bulk.buckets(0)[0];
     std::stringstream  out1_str;
     out1_str << (*b1);
-    STKUNIT_ASSERT ( out1_str.str() == gold1 );
+    STKUNIT_ASSERT_EQUAL ( out1_str.str() , gold1 );
 
  // Need to validate print against parallel gold string
     std::stringstream  gold2;
@@ -112,9 +112,12 @@ void UnitTestBucket::testBucket( ParallelMachine pm )
 
  // Fourth, check has_superset (...) and membership functions
   {
-    STKUNIT_ASSERT_EQUAL ( has_superset ( *bulk.buckets(0)[0] , meta.get_parts() ) , bulk.parallel_size() == 1 );
-    STKUNIT_ASSERT ( bulk.buckets(0)[0]->member_any ( meta.get_parts() ) );
-    STKUNIT_ASSERT_EQUAL ( bulk.buckets(0)[0]->member_all ( meta.get_parts() ) , bulk.parallel_size() == 1 );
+    PartVector tmp(2) ;
+    tmp[0] = & meta.universal_part();
+    tmp[1] = & meta.locally_owned_part();
+    STKUNIT_ASSERT_EQUAL ( has_superset ( *bulk.buckets(0)[0] , tmp ) , bulk.parallel_size() == 1 );
+    STKUNIT_ASSERT ( bulk.buckets(0)[0]->member_any ( tmp ) );
+    STKUNIT_ASSERT_EQUAL ( bulk.buckets(0)[0]->member_all ( tmp ) , bulk.parallel_size() == 1 );
     STKUNIT_ASSERT ( bulk.buckets(0)[0]->member ( **meta.get_parts().begin() ) );
   }
 
@@ -177,7 +180,7 @@ void UnitTestBucket::generate_loop(
   }
 
   Selector select_owned( mesh.mesh_meta_data().locally_owned_part() );
-  Selector select_used( mesh.mesh_meta_data().locally_used_part() );
+  Selector select_used = select_owned | mesh.mesh_meta_data().globally_shared_part();
   Selector select_all(  mesh.mesh_meta_data().universal_part() );
 
   count_entities( select_used , mesh , local_count );
@@ -399,7 +402,7 @@ void UnitTestBucket::generate_boxes(
   }
 
   Selector select_owned( mesh.mesh_meta_data().locally_owned_part() );
-  Selector select_used( mesh.mesh_meta_data().locally_used_part() );
+  Selector select_used = select_owned | mesh.mesh_meta_data().globally_shared_part();
   Selector select_all(  mesh.mesh_meta_data().universal_part() );
 
   count_entities( select_used , mesh , local_count );

@@ -54,15 +54,15 @@ public:
    */
   Part & universal_part() const { return *m_universal_part; }
 
-  /** \brief  Subset for the problem domain that is used by the
-   *          local processor.  Ghost entities are not members of this part.
-   */
-  Part & locally_used_part() const { return *m_uses_part ; }
-
   /** \brief  Subset for the problem domain that is owned by the
-   *          local processor.  A subset of the locally_used_part.
+   *          local process.  Ghost entities are not members of this part.
    */
   Part & locally_owned_part()  const { return *m_owns_part ; }
+
+  /** \brief  Subset for the problem domain that is shared with another
+   *          process.  Ghost entities are not members of this part.
+   */
+  Part & globally_shared_part() const { return *m_shares_part ; }
 
   /** \} */
   //------------------------------------
@@ -328,8 +328,8 @@ private:
   bool   m_commit ;
   impl::PartRepository m_part_repo ;
   Part * m_universal_part ; 
-  Part * m_uses_part ;
   Part * m_owns_part ;
+  Part * m_shares_part ;
 
 
   std::vector< FieldBase * >   m_fields ;

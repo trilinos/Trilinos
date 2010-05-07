@@ -139,7 +139,7 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test1)
 
   bulk_data.modification_end();
 
-  stk::mesh::Selector selector = meta_data.locally_used_part() & *meta_data.get_part("block_1");
+  stk::mesh::Selector selector = ( meta_data.locally_owned_part() | meta_data.globally_shared_part() ) & *meta_data.get_part("block_1");
   std::vector<unsigned> count;
   stk::mesh::count_entities(selector, bulk_data, count);
 
@@ -268,7 +268,7 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test2)
   //way the fei library sets ownership of shared nodes for vectors etc.
   stk::mesh::set_owners<stk::mesh::LowestRankSharingProcOwns>( bulk_data );
 
-  stk::mesh::Selector selector = meta_data.locally_used_part() & *meta_data.get_part("block_1");
+  stk::mesh::Selector selector = ( meta_data.locally_owned_part() | meta_data.globally_shared_part() ) & *meta_data.get_part("block_1");
   std::vector<unsigned> count;
   stk::mesh::count_entities(selector, bulk_data, count);
 
@@ -334,7 +334,7 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test3)
   //way the fei library sets ownership of shared nodes for vectors etc.
   stk::mesh::set_owners<stk::mesh::LowestRankSharingProcOwns>( bulk_data );
 
-  stk::mesh::Selector selector = meta_data.locally_used_part() & *meta_data.get_part("block_1");
+  stk::mesh::Selector selector = ( meta_data.locally_owned_part() | meta_data.globally_shared_part() ) & *meta_data.get_part("block_1");
   std::vector<unsigned> count;
   stk::mesh::count_entities(selector, bulk_data, count);
 

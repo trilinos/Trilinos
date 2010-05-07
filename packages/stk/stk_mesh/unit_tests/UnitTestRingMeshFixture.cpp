@@ -99,7 +99,8 @@ void RingMeshFixture::generate_loop( bool generate_aura )
   }
 
   Selector select_owned( m_bulk_data.mesh_meta_data().locally_owned_part() );
-  Selector select_used( m_bulk_data.mesh_meta_data().locally_used_part() );
+  Selector select_used = m_bulk_data.mesh_meta_data().locally_owned_part() |
+                         m_bulk_data.mesh_meta_data().globally_shared_part();
   Selector select_all(  m_bulk_data.mesh_meta_data().universal_part() );
 
   stk::mesh::count_entities( select_used , m_bulk_data , local_count );
@@ -198,7 +199,8 @@ void RingMeshFixture::test_shift_loop( bool generate_aura )
   const unsigned id_send = id_end - 2 ;
   const unsigned id_recv = ( id_begin + id_total - 2 ) % id_total ;
 
-  Selector select_used( m_meta_data.locally_used_part() );
+  Selector select_used = m_meta_data.locally_owned_part() |
+                         m_meta_data.globally_shared_part();
 
   std::vector<unsigned> local_count ;
   std::vector<EntityProc> change ;

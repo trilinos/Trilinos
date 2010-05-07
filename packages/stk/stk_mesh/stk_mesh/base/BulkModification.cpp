@@ -10,11 +10,13 @@
 #include <stdexcept>
 #include <sstream>
 
+#include <stk_util/parallel/ParallelComm.hpp>
+
 #include <stk_mesh/base/BulkModification.hpp>
 
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
-#include <stk_util/parallel/ParallelComm.hpp>
+#include <stk_mesh/base/EntityComm.hpp>
 
 
 namespace stk {
@@ -81,23 +83,17 @@ void construct_communication_set( const BulkData & bulk, const EntitySet & closu
 
 size_t count_non_used_entities( const BulkData & bulk, const EntityVector & entities)
 {
-
+  const unsigned proc_local = bulk.parallel_rank();
   size_t non_used_entities = 0;
 
-  const Part & locally_used_part = bulk.mesh_meta_data().locally_used_part();
-
-  //Check that entities are only in the locally_used part
-  for (EntityVector::const_iterator i = entities.begin();
-      i != entities.end(); ++i)
-  {
-    const Bucket & b = (**i).bucket();
-    if ( ! has_superset(b, locally_used_part)) {
+  for ( EntityVector::const_iterator
+        i = entities.begin(); i != entities.end(); ++i ) {
+    if ( ! in_owned_closure( **i , proc_local ) ) {
       ++non_used_entities;
     }
   }
 
   return non_used_entities;
-
 }
 
 }

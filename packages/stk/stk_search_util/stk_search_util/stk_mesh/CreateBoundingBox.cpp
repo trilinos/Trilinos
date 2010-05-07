@@ -194,7 +194,7 @@ void build_node_axis_bbox(stk::mesh::Part &part,
   const stk::mesh::MetaData& meta_data = bulk_data.mesh_meta_data();
 
   std::vector<stk::mesh::Entity *> entities;
-  stk::mesh::Selector selector = part & meta_data.locally_used_part();
+  stk::mesh::Selector selector = part & ( meta_data.locally_owned_part() | meta_data.globally_shared_part() );
   get_selected_entities(selector, bulk_data.buckets(type), entities);
   size_t num_entities = entities.size();
 
@@ -228,7 +228,7 @@ void build_axis_bbox(stk::mesh::Part &part,
   const int nodes_per_entity = cell_topo->node_count;
 
   std::vector<stk::mesh::Entity *> entities;
-  stk::mesh::Selector selector = part & meta_data.locally_used_part();
+  stk::mesh::Selector selector = part & ( meta_data.locally_owned_part() | meta_data.globally_shared_part() );
   get_selected_entities(selector, bulk_data.buckets(type), entities);
   size_t num_entities = entities.size();
 
@@ -279,7 +279,7 @@ void build_node_cent_bbox(stk::mesh::Part &part,
   const stk::mesh::MetaData& meta_data = bulk_data.mesh_meta_data();
 
   std::vector<stk::mesh::Entity *> entities;
-  stk::mesh::Selector selector = part & meta_data.locally_used_part();
+  stk::mesh::Selector selector = part & ( meta_data.locally_owned_part() | meta_data.globally_shared_part() );
   get_selected_entities(selector, bulk_data.buckets(type), entities);
   size_t num_entities = entities.size();
 
@@ -305,7 +305,7 @@ void build_cent_bbox(stk::mesh::Part &part,
   const stk::mesh::MetaData& meta_data = bulk_data.mesh_meta_data();
 
   std::vector<stk::mesh::Entity *> entities;
-  stk::mesh::Selector selector = part & meta_data.locally_used_part();
+  stk::mesh::Selector selector = part & ( meta_data.locally_owned_part() | meta_data.globally_shared_part() );
   get_selected_entities(selector, bulk_data.buckets(type), entities);
   size_t num_entities = entities.size();
 

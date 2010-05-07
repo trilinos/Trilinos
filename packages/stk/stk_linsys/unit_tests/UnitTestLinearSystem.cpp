@@ -102,7 +102,7 @@ STKUNIT_UNIT_TEST(UnitTestLinearSystem, test1)
   bulk_data.modification_end();
   //------------------------------
 
-  stk::mesh::Selector select_used(meta_data.locally_used_part());
+  stk::mesh::Selector select_used = meta_data.locally_owned_part() | meta_data.globally_shared_part() ;
   std::vector<unsigned> count;
   stk::mesh::count_entities(select_used, bulk_data, count);
 
@@ -206,7 +206,7 @@ STKUNIT_UNIT_TEST(UnitTestAggregateLinearSystem, test1)
   bulk_data.modification_end();
   //------------------------------
 
-  stk::mesh::Selector select_used(meta_data.locally_used_part());
+  stk::mesh::Selector select_used = meta_data.locally_owned_part() | meta_data.globally_shared_part() ;
   std::vector<unsigned> count;
   stk::mesh::count_entities(select_used, bulk_data, count);
 

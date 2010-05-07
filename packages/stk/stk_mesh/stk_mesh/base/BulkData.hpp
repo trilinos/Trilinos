@@ -215,19 +215,18 @@ public:
    *  entity then ownership of the entity will be transfered to
    *  a sharing process during modification_end.
    *
-   * \paragraph destroy_locally_used  Destroy Locally Used
+   * \paragraph destroy_globally_shared  Destroy Locally Used
    *
-   *  Entities in the 'locally_used_part' but not in the
-   *  'locally_owned_part' are shared.  These entities are deleted
+   *  Entities in the 'globally_shared_part' are deleted
    *  on the local process and removed from the sharing lists on
    *  other processes during modication_end.
    *
    * \paragraph destroy_ghosted  Destroy Ghosted
    *
-   *  Entities not in the 'locally_used_part' are ghosted.
+   *  Entities not in the 'locally_owned_part' and 'globally_shared_part'
+   *  are ghosted.
    *  These entities are removed from all ghosting lists
    *  during 'modification_end'.
-   *  processes by modification_end.
    *
    *  \return  True if the request for destruction is accepted; i.e.,
    *           if the entity is not the 'to' member of a relation.

@@ -43,7 +43,7 @@ void testDofMapper( MPI_Comm comm )
   fill_utest_mesh_meta_data( meta_data );
   fill_utest_mesh_bulk_data( bulk_data );
 
-  stk::mesh::Selector selector(meta_data.locally_used_part());
+  stk::mesh::Selector selector = meta_data.locally_owned_part() | meta_data.globally_shared_part() ;
   std::vector<unsigned> count;
   stk::mesh::count_entities(selector, bulk_data, count);
 
@@ -60,7 +60,7 @@ void testDofMapper( MPI_Comm comm )
 
   stk::linsys::DofMapper dof_mapper(comm);
 
-  stk::mesh::Selector select_used = meta_data.locally_used_part();
+  const stk::mesh::Selector select_used = meta_data.locally_owned_part() | meta_data.globally_shared_part();
 
   dof_mapper.add_dof_mappings(bulk_data, select_used,
                               stk::mesh::Node, *temperature_field);
@@ -81,7 +81,7 @@ void testDofMapper( MPI_Comm comm )
 
   //find a node that is in the locally-used part:
   size_t i_node = 0;
-  while(!nodes[i_node]->bucket().member(meta_data.locally_used_part()) && i_node<nodes.size()) {
+  while(! select_used( nodes[i_node]->bucket() ) && i_node<nodes.size()) {
     ++i_node;
   }
 

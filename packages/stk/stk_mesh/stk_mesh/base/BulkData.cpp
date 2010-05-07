@@ -503,8 +503,8 @@ void BulkData::change_entity_parts(
       throw std::runtime_error ( "Cannot remove entity from universal part" );
     if ( m_mesh_meta_data.locally_owned_part() == **ir )
       throw std::runtime_error ( "Cannot remove entity from locally owned part" );
-    if ( m_mesh_meta_data.locally_used_part() == **ir )
-      throw std::runtime_error ( "Cannot remove entity from locally used part" );
+    if ( m_mesh_meta_data.globally_shared_part() == **ir )
+      throw std::runtime_error ( "Cannot remove entity from globally shared part" );
     */
 
     if ( ! contain( a_parts , **ir ) ) {

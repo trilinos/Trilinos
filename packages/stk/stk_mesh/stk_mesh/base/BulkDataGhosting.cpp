@@ -441,10 +441,10 @@ void BulkData::internal_change_ghosting(
 
           unpack_entity_info( buf, *this, key, owner, parts, relations );
 
-          // Must not have the locally_owned_part or locally_used_part
+          // Must not have the locally_owned_part or globally_shared_part
 
           remove( parts , meta.locally_owned_part() );
-          remove( parts , meta.locally_used_part() );
+          remove( parts , meta.globally_shared_part() );
 
           std::pair<Entity*,bool> result = internal_create_entity( key );
 

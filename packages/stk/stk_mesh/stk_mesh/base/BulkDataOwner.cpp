@@ -32,11 +32,11 @@ namespace mesh {
 
 namespace {
 
-void insert_closure_ghost( const MetaData & meta ,
-                           Entity * const entity ,
+void insert_closure_ghost( Entity * const entity ,
+                           const unsigned proc_local ,
                            std::set<Entity*,EntityLess> & remove_list )
 {
-  if ( ! entity->bucket().member( meta.locally_used_part() ) ) {
+  if ( ! in_owned_closure( *entity , proc_local ) ) {
     // This entity is a ghost, put it on the remove_list
     // along with all ghosts in its closure
 
@@ -52,18 +52,18 @@ void insert_closure_ghost( const MetaData & meta ,
             irel = entity->relations() ; ! irel.empty() ; ++irel ) {
 
         if ( irel->entity_rank() < etype ) {
-          insert_closure_ghost( meta , irel->entity() , remove_list );
+          insert_closure_ghost( irel->entity() , proc_local ,remove_list );
         }
       }
     }
   }
 }
 
-void insert_transitive_ghost( const MetaData & meta ,
-                              Entity * const entity ,
+void insert_transitive_ghost( Entity * const entity ,
+                              const unsigned proc_local ,
                               std::set<Entity*,EntityLess> & remove_list )
 {
-  insert_closure_ghost( meta , entity , remove_list );
+  insert_closure_ghost( entity , proc_local , remove_list );
 
   // Transitive:
   // If this entity is a member of another entity's closure
@@ -73,7 +73,7 @@ void insert_transitive_ghost( const MetaData & meta ,
 
   for ( PairIterRelation rel = entity->relations(); ! rel.empty() ; ++rel ) {
     if ( etype < rel->entity_rank() ) {
-      insert_transitive_ghost( meta , rel->entity() , remove_list );
+      insert_transitive_ghost( rel->entity() , proc_local , remove_list );
     }
   }
 }
@@ -352,17 +352,17 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
 
     for ( std::vector<EntityProc>::const_iterator
           i = ghosted_change.begin() ; i != ghosted_change.end() ; ++i ) {
-      insert_transitive_ghost( meta , i->first , work );
+      insert_transitive_ghost( i->first , m_parallel_rank , work );
     }
 
     for ( std::vector<EntityProc>::const_iterator
           i = shared_change.begin() ; i != shared_change.end() ; ++i ) {
-      insert_transitive_ghost( meta , i->first , work );
+      insert_transitive_ghost( i->first , m_parallel_rank , work );
     }
 
     for ( EntityProcSet::iterator
           i = send_closure.begin() ; i != send_closure.end() ; ++i ) {
-      insert_transitive_ghost( meta , i->first , work );
+      insert_transitive_ghost( i->first , m_parallel_rank , work );
     }
 
     // The ghosted change list will become invalid
@@ -409,9 +409,6 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
   // Send entities, along with their closure, to the new owner processes
   // Remember what is destroyed and created to update the distributed index.
   {
-    std::vector< parallel::DistributedIndex::KeyType >
-      distributed_index_add , distributed_index_remove ;
-
     std::ostringstream error_msg ;
     int error_count = 0 ;
 
@@ -468,11 +465,6 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
         if ( ! unpack_field_values( buf , * result.first , error_msg ) ) {
           ++error_count ;
         }
-
-        // Successfully added entity with 'key',
-        // need to add this to the distributed index
-        parallel::DistributedIndex::KeyType tmp = key.raw_key();
-        distributed_index_add.push_back( tmp );
       }
     }
 
@@ -499,11 +491,6 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
         if ( entity != e ) {
           entity = e ;
           if ( ! member_of_owned_closure( *e , p_rank ) ) {
-            // Need to remove this entry from the distributed index
-            parallel::DistributedIndex::KeyType tmp = e->key().raw_key();
-            distributed_index_remove.push_back( tmp );
-
-            // Now destroy the entity.
             if ( ! destroy_entity( e ) ) {
               throw std::logic_error(std::string("BulkData::destroy_entity FAILED"));
             }
@@ -513,69 +500,6 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
     }
 
     send_closure.clear(); // Has been invalidated
-
-    // Update distributed index for added and removed entities.
-
-    m_entities_index.update_keys( distributed_index_add ,
-                                  distributed_index_remove );
-  }
-
-  //------------------------------
-  // Regenerate sharing information for existing entities.
-
-  {
-    std::vector< parallel::DistributedIndex::KeyProc >  sharing ;
-
-    m_entities_index.query( sharing );
-
-    bool added = false ;
-
-    // 'sharing' is sorted by key and then process
-    for ( std::vector< parallel::DistributedIndex::KeyProc >::iterator
-          j = sharing.begin() ; j != sharing.end() ; ) {
-
-      const std::vector< parallel::DistributedIndex::KeyProc >::iterator i = j ;
-      const EntityKey key( & i->first );
-
-      Entity & entity = * get_entity( key );
-
-      const bool old_comm_empty = entity.comm().empty();
-
-      // Erase old sharing information:
-      entity.m_entityImpl.erase( * m_ghosting[0] );
-
-      // Insert updated sharing information:
-      for ( ; j != sharing.end() && i->first == j->first ; ++j ) {
-        if ( (int) p_rank != j->second ) {
-          entity.m_entityImpl.insert( EntityCommInfo( 0 , j->second ) );
-        }
-      }
-
-      const bool has_new_comm = ! entity.comm().empty();
-
-      if ( old_comm_empty && has_new_comm ) {
-        // Add to communicated entity list
-        m_entity_comm.push_back( & entity );
-        added = true ;
-      }
-    }
-
-    {
-      bool removed = false ;
-      std::vector<Entity*>::iterator i = m_entity_comm.begin();
-      for ( ; i != m_entity_comm.end() ; ++i ) {
-        if ( (**i).comm().empty() ) { *i = NULL ; removed = true ; }
-      }
-      if ( removed ) {
-        i = std::remove( m_entity_comm.begin() ,
-                         m_entity_comm.end() , (Entity*) NULL );
-        m_entity_comm.erase( i , m_entity_comm.end() );
-      }
-    }
-
-    if ( added ) {
-      std::sort( m_entity_comm.begin(), m_entity_comm.end(), EntityLess() );
-    }
   }
 }
 

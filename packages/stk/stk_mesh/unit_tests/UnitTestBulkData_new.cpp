@@ -120,7 +120,7 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyCannotRemoveFromSpecialParts )
   test_parts.push_back ( &fixture.meta_data().locally_owned_part() );
   STKUNIT_ASSERT_THROW ( bulk.change_entity_parts ( new_cell , empty_vector , test_parts ) , std::runtime_error );
   test_parts.clear();
-  test_parts.push_back ( &fixture.meta_data().locally_used_part() );
+  test_parts.push_back ( &fixture.meta_data().globally_shared_part() );
   STKUNIT_ASSERT_THROW ( bulk.change_entity_parts ( new_cell , empty_vector , test_parts ) , std::runtime_error );
 }
  */
@@ -137,7 +137,6 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyDefaultPartAddition )
 
   STKUNIT_ASSERT ( new_cell.bucket().member ( fixture.meta_data().universal_part() ) );
   STKUNIT_ASSERT ( new_cell.bucket().member ( fixture.meta_data().locally_owned_part() ) );
-  STKUNIT_ASSERT ( new_cell.bucket().member ( fixture.meta_data().locally_used_part() ) );
 }
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyChangePartsSerial )
@@ -183,7 +182,6 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyChangePartsSerial )
   //Verify still a member of default parts
   STKUNIT_ASSERT ( new_cell.bucket().member ( fixture.meta_data().universal_part() ) );
   STKUNIT_ASSERT ( new_cell.bucket().member ( fixture.meta_data().locally_owned_part() ) );
-  STKUNIT_ASSERT ( new_cell.bucket().member ( fixture.meta_data().locally_used_part() ) );
 }
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyParallelAddParts )

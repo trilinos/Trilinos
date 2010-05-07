@@ -94,8 +94,8 @@ bool verify_parallel_attributes( BulkData & M , std::ostream & error_log )
   bool result = true ;
 
   const MetaData & S = M.mesh_meta_data();
-  Part & uses_part = S.locally_used_part();
   Part & owns_part = S.locally_owned_part();
+  Part & shares_part = S.globally_shared_part();
 
   const unsigned p_rank = M.parallel_rank();
 
@@ -112,8 +112,8 @@ bool verify_parallel_attributes( BulkData & M , std::ostream & error_log )
     while ( i != i_end ) {
       Bucket & bucket = **i ; ++i ;
 
-      const bool uses = has_superset( bucket , uses_part );
-      const bool owns = has_superset( bucket , owns_part );
+      const bool has_owns_part   = has_superset( bucket , owns_part );
+      const bool has_shares_part = has_superset( bucket , shares_part );
 
       const Bucket::iterator j_end = bucket.end();
             Bucket::iterator j     = bucket.begin();
@@ -134,29 +134,25 @@ bool verify_parallel_attributes( BulkData & M , std::ostream & error_log )
 
         // Owner consistency:
 
-        if (   owns && p_owner != p_rank ) { this_result = false ; }
-        if ( ! owns && p_owner == p_rank ) { this_result = false ; }
+        if (   has_owns_part && p_owner != p_rank ) { this_result = false ; }
+        if ( ! has_owns_part && p_owner == p_rank ) { this_result = false ; }
 
-        // Owns is defined to be a subset of uses
+        if ( has_shares_part != shares ) { this_result = false ; }
 
-        if ( owns && ! uses ) { this_result = false ; }
+        // Definition of 'closure'
 
-        // Definition of 'uses'
+        if ( ( has_owns_part || has_shares_part ) != owned_closure ) {
+          this_result = false ;
+        }
 
-        if ( uses != owned_closure ) { this_result = false ; }
+        // Must be either owned_closure or recv_ghost but not both.
 
-        // Shared is defined to be a subset of uses.
-
-        if ( shares && ! uses ) { this_result = false ; }
-
-        // Must be either uses or recv_ghost but not both.
-
-        if (   uses &&   recv_ghost ) { this_result = false ; }
-        if ( ! uses && ! recv_ghost ) { this_result = false ; }
+        if (   owned_closure &&   recv_ghost ) { this_result = false ; }
+        if ( ! owned_closure && ! recv_ghost ) { this_result = false ; }
 
         // If sending as a ghost then I must own it
 
-        if ( ! owns && send_ghost ) { this_result = false ; }
+        if ( ! has_owns_part && send_ghost ) { this_result = false ; }
 
         // If shared then I am owner or owner is in the shared list
 
@@ -173,8 +169,8 @@ bool verify_parallel_attributes( BulkData & M , std::ostream & error_log )
           error_log << "P" << M.parallel_rank() << ": " ;
           print_entity_key( error_log , M.mesh_meta_data(), entity.key() );
           error_log << " ERROR: owner(" << p_owner
-                    << ") owns(" << owns
-                    << ") uses(" << uses
+                    << ") owns(" << has_owns_part
+                    << ") shares(" << has_shares_part
                     << ") owned_closure(" << owned_closure
                     << ") recv_ghost(" << recv_ghost
                     << ") send_ghost(" << send_ghost
@@ -311,9 +307,9 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
                               std::ostream & error_log )
 {
   const MetaData & meta = mesh.mesh_meta_data();
-  Part * const       owns_part  = & meta.locally_owned_part();
-  Part * const       uses_part  = & meta.locally_used_part();
-  const PartVector & mesh_parts = meta.get_parts();
+  Part * const       owns_part   = & meta.locally_owned_part();
+  Part * const       shares_part = & meta.globally_shared_part();
+  const PartVector & mesh_parts  = meta.get_parts();
   const unsigned     p_rank = mesh.parallel_rank();
   const std::vector<Entity*> & entity_comm = mesh.entity_comm();
 
@@ -390,15 +386,15 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
 
         for ( ; ! bad_part && ip != recv_parts.end() ; ++ip ) {
           if ( owns_part != *ip ) {
-            if ( uses_part != *ip ) {
-              // All not-owned and not-uses parts must match:
+            if ( shares_part != *ip ) {
+              // All not-owned and not-shares parts must match:
               bad_part = k == part_ordinals.second ||
                          (*ip)->mesh_meta_data_ordinal() != *k ;
               ++k ;
             }
             else if ( k != part_ordinals.second &&
-                     *k == uses_part->mesh_meta_data_ordinal() ) {
-              // Uses-part matches
+                     *k == shares_part->mesh_meta_data_ordinal() ) {
+              // shares-part matches
               ++k ;
             }
           }

@@ -21,7 +21,8 @@ void boundary_analysis(const BulkData& bulk_data,
                        unsigned closure_rank,
                        EntitySideVector& boundary)
 {
-  Part& locally_used_part = bulk_data.mesh_meta_data().locally_used_part();
+  const Selector locally_used = bulk_data.mesh_meta_data().locally_owned_part()
+                              | bulk_data.mesh_meta_data().globally_shared_part();
 
   // find an iterator that points to the last item in the closure that is of a
   // lower-order than the closure_rank
@@ -83,8 +84,7 @@ void boundary_analysis(const BulkData& bulk_data,
         }
 
         // if neighbor or curr_entity is locally-used, add it to keeper
-        if (has_superset(neighbor.bucket(), locally_used_part) ||
-            has_superset(curr_entity.bucket(), locally_used_part)) {
+        if ( locally_used( neighbor.bucket()) || locally_used( curr_entity.bucket() ) ) {
           EntitySide keeper;
           keeper.inside.entity = &curr_entity;
           keeper.inside.side_ordinal = subcell_identifier;
