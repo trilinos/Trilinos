@@ -448,7 +448,10 @@ void BulkData::internal_change_ghosting(
 
           std::pair<Entity*,bool> result = internal_create_entity( key );
 
-          if ( result.second ) { result.first->m_owner_rank = owner ; }
+          if ( result.second                          /* Created */ ||
+               result.first->bucket().capacity() == 0 /* Re-created */ ) {
+            result.first->m_owner_rank = owner ;
+          }
 
           assert_entity_owner( method , * result.first , owner );
 

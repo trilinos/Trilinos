@@ -141,9 +141,9 @@ bool verify_parallel_attributes( BulkData & M , std::ostream & error_log )
 
         if ( owns && ! uses ) { this_result = false ; }
 
-        /// \TODO This error check needs to be introduced,
-        ///       causes an existing unit test to fail.
-        // if ( uses != owned_closure ) { this_result = false ; }
+        // Definition of 'uses'
+
+        if ( uses != owned_closure ) { this_result = false ; }
 
         // Shared is defined to be a subset of uses.
 

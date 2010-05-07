@@ -1,5 +1,6 @@
 
 #include <iostream>
+#include <set>
 
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
@@ -98,6 +99,28 @@ bool Grid2D_Fixture::test_change_owner( unsigned nx , unsigned ny )
     std::vector< stk::mesh::EntityProc > change ;
 
     if ( p_rank == 0 ) {
+      if ( p_size == 3 ) {
+        const unsigned nnx = nx + 1 ;
+        const unsigned nny = ny + 1 ;
+        for ( unsigned iy = nny / 2 ; iy < nny ; ++iy ) {
+          for ( unsigned ix = 0 ; ix < nnx ; ++ix ) {
+            stk::mesh::EntityId id = 1 + ix + iy * nnx ;
+            unsigned proc = ix < nx/2 ? 1 : 2;
+            stk::mesh::EntityProc tmp( m_bulk_data.get_entity( stk::mesh::Node , id ) , proc );
+            change.push_back( tmp );
+          }
+        }
+        for ( unsigned iy = ny / 2 ; iy < ny ; ++iy ) {
+          for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
+            stk::mesh::EntityId id = 1 + ix + iy * nx ;
+            unsigned proc = ix < nx/2 ? 1 : 2;
+            stk::mesh::EntityProc tmp( m_bulk_data.get_entity( stk::mesh::Element , id ) , proc );
+            change.push_back( tmp );
+          }
+        }
+      }
+      else
+      {
       const unsigned nnx = nx + 1 ;
       const unsigned nny = ny + 1 ;
       for ( unsigned iy = nny / 2 ; iy < nny ; ++iy ) {
@@ -114,6 +137,7 @@ bool Grid2D_Fixture::test_change_owner( unsigned nx , unsigned ny )
           change.push_back( tmp );
         }
       }
+    }
     }
 
     m_bulk_data.modification_begin();
@@ -145,6 +169,35 @@ bool Grid2D_Fixture::test_change_owner( unsigned nx , unsigned ny )
     m_bulk_data.change_entity_owner( change );
     m_bulk_data.modification_end();
 
+    if ( p_size == 3 ) {
+      change.clear();
+
+      if ( p_rank == 2 ) {
+        const unsigned nnx = nx + 1 ;
+        const unsigned nny = ny + 1 ;
+        for ( unsigned iy = nny / 2 ; iy < nny ; ++iy ) {
+          for ( unsigned ix = nx / 2 ; ix < nnx ; ++ix ) {
+            stk::mesh::EntityId id = 1 + ix + iy * nnx ;
+            unsigned proc = 1;
+            stk::mesh::EntityProc tmp( m_bulk_data.get_entity( stk::mesh::Node , id ) , proc );
+            change.push_back( tmp );
+          }
+        }
+        for ( unsigned iy = ny / 2 ; iy < ny ; ++iy ) {
+          for ( unsigned ix = nx / 2 ; ix < nx ; ++ix ) {
+            stk::mesh::EntityId id = 1 + ix + iy * nx ;
+            unsigned proc = 1;
+            stk::mesh::EntityProc tmp( m_bulk_data.get_entity( stk::mesh::Element , id ) , proc );
+            change.push_back( tmp );
+          }
+        }
+      }
+
+      m_bulk_data.modification_begin();
+      m_bulk_data.change_entity_owner( change );
+      m_bulk_data.modification_end();
+    }
+
     // Only P1 has any nodes or elements
     if ( p_rank == 1 ) {
       result = ! m_bulk_data.buckets( 0 ).empty() &&
@@ -160,4 +213,3 @@ bool Grid2D_Fixture::test_change_owner( unsigned nx , unsigned ny )
 
   return result ;
 }
-

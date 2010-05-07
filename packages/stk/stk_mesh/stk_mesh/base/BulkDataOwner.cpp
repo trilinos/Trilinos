@@ -84,6 +84,12 @@ void insert_closure_send(
   const EntityProc                  send_entry ,
   std::set<EntityProc,EntityLess> & send_list )
 {
+  const bool is_destroyed = send_entry.first->bucket().capacity() == 0 ;
+
+  if ( is_destroyed ) {
+    throw std::logic_error( std::string("Cannot send destroyed entity") );
+  }
+
   std::pair< std::set<EntityProc,EntityLess>::iterator , bool >
     result = send_list.insert( send_entry );
 
@@ -479,18 +485,29 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
     // only clean up after the newly owned entities have been received.
     // Destroy backwards so as not to invalidate closures in the process.
 
-    for ( std::set<EntityProc,EntityLess>::iterator
-          i = send_closure.end() ; i != send_closure.begin() ; ) {
-      --i ;
-      if ( ! member_of_owned_closure( * i->first , p_rank ) ) {
-        // Need to remove this entry from the distributed index
-        parallel::DistributedIndex::KeyType tmp = i->first->key().raw_key();
-        distributed_index_remove.push_back( tmp );
+    {
+      Entity * entity = NULL ;
 
-        // Now destroy the entity.
-        Entity * e = i->first ;
-        if ( ! destroy_entity( e ) ) {
-          throw std::logic_error(std::string("BulkData::destroy_entity FAILED"));
+      for ( std::set<EntityProc,EntityLess>::iterator
+            i = send_closure.end() ; i != send_closure.begin() ; ) {
+
+        Entity * e = (--i)->first ;
+
+        // The same entity may be sent to more than one process.
+        // Only evaluate it once.
+
+        if ( entity != e ) {
+          entity = e ;
+          if ( ! member_of_owned_closure( *e , p_rank ) ) {
+            // Need to remove this entry from the distributed index
+            parallel::DistributedIndex::KeyType tmp = e->key().raw_key();
+            distributed_index_remove.push_back( tmp );
+
+            // Now destroy the entity.
+            if ( ! destroy_entity( e ) ) {
+              throw std::logic_error(std::string("BulkData::destroy_entity FAILED"));
+            }
+          }
         }
       }
     }
