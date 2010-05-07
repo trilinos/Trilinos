@@ -92,7 +92,7 @@ public:
       \return Global number of values for properties
 
       \remark Infact, it returns the upper bound of the interval of
-      taken values. For example, for the colors "1,2,4"" , it will
+      taken values. For example, for the colors "1,2,4" , it will
       return "4"
    */
   virtual int numProperties() const = 0;

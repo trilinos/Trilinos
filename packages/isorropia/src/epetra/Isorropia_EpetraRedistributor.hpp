@@ -119,7 +119,7 @@ public:
                       according to the partitioner with which this Redistributor was
                       created.
 
-      \param[out] outputGraphPointer pointer to the new redistributed graph 
+      \param[out] outputGraphPtr pointer to the new redistributed graph 
 
       \param[in] callFillComplete The new graph is FillComplete'd if callFillComplete is @c true. 
       In that case, the range map is set to equal the row map. 
@@ -153,7 +153,7 @@ public:
       Method to accept a Epetra_CrsMatrix object, and
       return a redistributed Epetra_CrsMatrix object.
 
-      \param[in] input_matrix the matrix for which we want a new matrix that is distributed
+      \param[in] inputMatrix the matrix for which we want a new matrix that is distributed
                       according to the partitioner with which this Redistributor was
                       created.
 
@@ -192,11 +192,11 @@ public:
       Method to accept a Epetra_RowMatrix object, and
       return a redistributed Epetra_CrsMatrix object.
 
-      \param[in] input_matrix the row matrix for which we want a new matrix that is distributed
+      \param[in] inputMatrix the row matrix for which we want a new matrix that is distributed
                       according to the partitioner with which this Redistributor was
                       created.
 
-      \param[out] outMatrix pointer to the new redistributed matrix
+      \param[out] outputMatrix pointer to the new redistributed matrix
 
       \param[in] callFillComplete The new matrix is FillComplete'd if callFillComplete is @c true. 
       In that case, the range map is set to equal the row map. 
@@ -205,7 +205,7 @@ public:
       the original domain map is preserved.  By default callFillComplete is @c true.
   */
      void 
-     redistribute(const Epetra_RowMatrix& inputMatrix, Epetra_CrsMatrix * &outMatrix, bool callFillComplete= true);
+     redistribute(const Epetra_RowMatrix& inputMatrix, Epetra_CrsMatrix * &outputMatrix, bool callFillComplete= true);
 
 
 
