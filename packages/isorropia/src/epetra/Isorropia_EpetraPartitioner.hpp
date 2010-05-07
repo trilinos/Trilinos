@@ -336,7 +336,7 @@ public:
     elemsWithProperty(part, elementList, len);
   }
 
-  /** @ingroup partitioning_grp
+  /** @ingroup partitioning_rcp_grp
       Create a new @c Epetra_Map corresponding to the new partition.
 
       This method is essentially used by the
@@ -348,6 +348,19 @@ public:
       number of processors.
   */
   Teuchos::RCP<Epetra_Map> createNewMap();
+
+  /** @ingroup partitioning_ptr_grp
+      Create a new @c Epetra_Map corresponding to the new partition.
+
+      This method is essentially used by the
+      Isorropia::Epetra::Redistributor object.
+
+      \param[out] outputMap @c Epetra_Map that contains the new distribution of elements.
+
+      \pre The number of parts might be the same or lower than the
+      number of processors.
+  */
+  void createNewMap(Epetra_Map *&outputMap);
 
 private:
   int *partGIDs;
