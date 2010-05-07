@@ -53,7 +53,7 @@ namespace Isorropia {
 namespace Epetra {
   class Partitioner;
 
-/** @ingroup partitioning_grp
+/** @ingroup partitioning_grp partitioning_rcp_grp partitioning_ptr_grp
      Class which is constructed with a Partitioner instance, and
      provides several methods for redistributing Epetra objects
      given the partitioning computed by the Partitioner object.
@@ -80,11 +80,12 @@ public:
    */
   Redistributor(Isorropia::Epetra::Partitioner *partitioner);
 
-  /** Destructor
+  /** 
+       Destructor
    */
   virtual ~Redistributor();
 
-  /** @ingroup partitioning_rcp_grp
+  /** @ingroup partitioning_grp
       Method to redistribute a Epetra_SrcDistObject into a
       Epetra_DistObject. The caller is required to have constructed
       the target object using the correct target map.
@@ -207,15 +208,6 @@ public:
      void 
      redistribute(const Epetra_RowMatrix& inputMatrix, Epetra_CrsMatrix * &outputMatrix, bool callFillComplete= true);
 
-
-
-
-
-
-
-
-
-
   /** @ingroup partitioning_rcp_grp
       Method to accept a Epetra_Vector object, and
       return a redistributed Epetra_Vector object.
@@ -271,7 +263,7 @@ public:
   void 
   redistribute(const Epetra_MultiVector& inputVector, Epetra_MultiVector * &outputVector);
 
-  /** @ingroup partitioning_rcp_grp 
+  /** @ingroup partitioning_grp 
       Reverse redistribute an Epetra_Vector.
 
       \param[in] input_vector a vector that is distributed according to the partitioner that was used to create this Redistributor
@@ -283,7 +275,7 @@ public:
   void
      redistribute_reverse(const Epetra_Vector& input_vector, Epetra_Vector& output_vector);
 
-  /** @ingroup partitioning_rcp_grp 
+  /** @ingroup partitioning_grp 
       Reverse redistribute an Epetra_MultiVector.
 
       \param[in] input_vector a multi vector that is distributed according to the partitioner that was used to create this Redistributor
@@ -294,8 +286,8 @@ public:
   void
      redistribute_reverse(const Epetra_MultiVector& input_vector, Epetra_MultiVector& output_vector);
 private:
-  /** Create an importer object to be used in the redistribution
-
+  /** @ingroup partitioning_grp
+      Create an importer object to be used in the redistribution
       \param[in] src_map the map describing the pattern of the import operation
    */
   void create_importer(const Epetra_BlockMap& src_map);

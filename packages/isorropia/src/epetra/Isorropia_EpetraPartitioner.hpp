@@ -106,30 +106,29 @@ namespace Epetra {
 /** An implementation of the Partitioner interface that operates on
     Epetra matrices and linear systems.
 
-\ingroup partitioning_grp 
+\ingroup partitioning_grp partitioning_rcp_grp partitioning_ptr_grp
 */
 
 class Partitioner : public Isorropia::Partitioner, public Isorropia::Epetra::Operator  {
 public:
   
-  /** 
-      \ingroup partitioning_rcp_grp 
+  /** @ingroup partitioning_rcp_grp 
   */
-  Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+  Partitioner(Teuchos::RCP<const Epetra_CrsGraph> inputGraph,
               const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),  
               bool compute_partitioning_now=true);
 
   /** 
       \ingroup partitioning_ptr_grp 
   */
-  Partitioner(const Epetra_CrsGraph *input_graph,
+  Partitioner(const Epetra_CrsGraph *inputGraph,
               const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),  
               bool compute_partitioning_now=true);
 
   /** 
       \ingroup partitioning_rcp_grp 
   */
-  Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+  Partitioner(Teuchos::RCP<const Epetra_CrsGraph> inputGraph,
               Teuchos::RCP<CostDescriber> costs,
               const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
               bool compute_partitioning_now=true);
@@ -137,7 +136,7 @@ public:
   /** 
       \ingroup partitioning_ptr_grp 
   */
-  Partitioner(const Epetra_CrsGraph *input_graph,
+  Partitioner(const Epetra_CrsGraph *inputGraph,
               CostDescriber* costs,
               const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
               bool compute_partitioning_now=true);
@@ -145,21 +144,21 @@ public:
   /** 
       \ingroup partitioning_rcp_grp 
   */
-  Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+  Partitioner(Teuchos::RCP<const Epetra_RowMatrix> inputMatrix,
               const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
               bool compute_partitioning_now=true);
 
   /** 
       \ingroup partitioning_ptr_grp 
   */
-  Partitioner(const Epetra_RowMatrix *input_matrix,
+  Partitioner(const Epetra_RowMatrix *inputMatrix,
               const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
               bool compute_partitioning_now=true);
 
   /** 
       \ingroup partitioning_rcp_grp 
   */
-  Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+  Partitioner(Teuchos::RCP<const Epetra_RowMatrix> inputMatrix,
               Teuchos::RCP<CostDescriber> costs,
               const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
               bool compute_partitioning_now=true);
@@ -167,7 +166,7 @@ public:
   /** 
       \ingroup partitioning_ptr_grp 
   */
-  Partitioner(const Epetra_RowMatrix *input_matrix,
+  Partitioner(const Epetra_RowMatrix *inputMatrix,
               CostDescriber *costs,
               const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
               bool compute_partitioning_now=true);
@@ -203,26 +202,26 @@ public:
 
   /** @ingroup partitioning_rcp_grp 
   */
-  Partitioner(Teuchos::RCP<const Epetra_BlockMap> input_map,
+  Partitioner(Teuchos::RCP<const Epetra_BlockMap> inputMap,
               const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
               bool compute_partitioning_now=true);
 
   /** @ingroup partitioning_ptr_grp 
   */
-  Partitioner(const Epetra_BlockMap *input_map,
+  Partitioner(const Epetra_BlockMap *inputMap,
               const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
               bool compute_partitioning_now=true);
 
   /** @ingroup partitioning_rcp_grp 
   */
-  Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+  Partitioner(Teuchos::RCP<const Epetra_CrsGraph> inputGraph,
 	      Teuchos::RCP<const Epetra_MultiVector> coords,
               const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
               bool compute_partitioning_now=true);
 
   /** @ingroup partitioning_ptr_grp 
   */
-  Partitioner(const Epetra_CrsGraph *input_graph,
+  Partitioner(const Epetra_CrsGraph *inputGraph,
 	      const Epetra_MultiVector *coords,
               const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
               bool compute_partitioning_now=true);
@@ -230,7 +229,7 @@ public:
 
   /** @ingroup partitioning_rcp_grp 
   */
-  Partitioner(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
+  Partitioner(Teuchos::RCP<const Epetra_CrsGraph> inputGraph,
               Teuchos::RCP<CostDescriber> costs,
 	      Teuchos::RCP<const Epetra_MultiVector> coords,
               Teuchos::RCP<const Epetra_MultiVector> weights,
@@ -239,7 +238,7 @@ public:
 
   /** @ingroup partitioning_ptr_grp 
   */
-  Partitioner(const Epetra_CrsGraph *input_graph,
+  Partitioner(const Epetra_CrsGraph *inputGraph,
               CostDescriber *costs,
 	      const Epetra_MultiVector *coords,
               const Epetra_MultiVector *weights,
@@ -248,21 +247,21 @@ public:
 
   /** @ingroup partitioning_rcp_grp 
   */
-  Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+  Partitioner(Teuchos::RCP<const Epetra_RowMatrix> inputMatrix,
 	      Teuchos::RCP<const Epetra_MultiVector> coords,
               const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
               bool compute_partitioning_now=true);
 
   /** @ingroup partitioning_ptr_grp 
   */
-  Partitioner(const Epetra_RowMatrix *input_matrix,
+  Partitioner(const Epetra_RowMatrix *inputMatrix,
 	      const Epetra_MultiVector *coords,
               const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
               bool compute_partitioning_now=true);
 
   /** @ingroup partitioning_rcp_grp 
   */
-  Partitioner(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+  Partitioner(Teuchos::RCP<const Epetra_RowMatrix> inputMatrix,
               Teuchos::RCP<CostDescriber> costs,
 	      Teuchos::RCP<const Epetra_MultiVector> coords,
               Teuchos::RCP<const Epetra_MultiVector> weights,
@@ -271,7 +270,7 @@ public:
 
   /** @ingroup partitioning_ptr_grp 
   */
-  Partitioner(const Epetra_RowMatrix *input_matrix,
+  Partitioner(const Epetra_RowMatrix *inputMatrix,
               CostDescriber *costs,
 	      const Epetra_MultiVector *coords,
               const Epetra_MultiVector *weights,
@@ -279,10 +278,13 @@ public:
               bool compute_partitioning_now=true);
 
 
-  /** Destructor */
+  /** @ingroup partitioning_grp
+      Destructor 
+  */
   virtual ~Partitioner();
 
-   /* Set the relative number of objects in each part.  The default is to
+   /* @ingroup partitioning_grp
+    * Set the relative number of objects in each part.  The default is to
     * evenly divide objects across parts.  The numbers can be fractions of
     * one, or whole numbers.  Zoltan adds the values supplied and takes the sizes
     * as proportional to that whole.
@@ -299,12 +301,13 @@ public:
 
   void setPartSizes(int len, int *global_part_id, float *part_size);
 
-  /*
+  /* @ingroup partitioning_grp
    * Free the memory allocated to store part sizes.
    */
   void clearPartSizes();
 
-  /**  partition is the method that computes 
+  /** @ingroup partitioning_grp 
+      partition is the method that computes 
        a rebalanced partitioning for the data in the object
       that this class was constructed with.
 
@@ -317,17 +320,24 @@ public:
    */
   void partition(bool force_repartitioning=false);
 
+  /** @ingroup partitioning_grp
+   */
   virtual void compute(bool forceRecomputing=false);
 
+  /** @ingroup partitioning_grp
+   */
   int numElemsInPart(int part) const {
     return (numElemsWithProperty(part));
   }
 
+  /** @ingroup partitioning_grp
+   */
   void elemsInPart(int part, int* elementList, int len) const {
     elemsWithProperty(part, elementList, len);
   }
 
-  /** Create a new @c Epetra_Map corresponding to the new partition.
+  /** @ingroup partitioning_grp
+      Create a new @c Epetra_Map corresponding to the new partition.
 
       This method is essentially used by the
       Isorropia::Epetra::Redistributor object.

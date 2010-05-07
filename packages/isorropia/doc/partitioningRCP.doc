@@ -7,7 +7,7 @@
 
 The safer interface to the partitioning in Isorropia is to use the Teuchos reference
 counter pointer (RCP) and pass a RCP to the Epetra object to the Isorropia partitioner.
-We suggest using interface in order to prevent memory if you are familiar with RCPs and
+We suggest using interface in order to prevent memory leaks if you are familiar with RCPs and
 willing to learn the basics of Teuchos::RCP.
 The following example demonstrates how to partition a matrix with hypergraph partitioning 
 using the RCP interface.
@@ -45,8 +45,6 @@ redistributor works with the RCP interface.
   // loadMatrix() allocates and reads in an Epetra_RowMatrix from a file
   Teuchos::RCP<const Epetra_RowMatrix> rowmatrix = loadMatrix(filename);
 
-  using Isorropia::Epetra::Partitioner;
-
   Teuchos::ParameterList params;
   params.set("IMBALANCE TOL","1.03");
   params.set("BALANCE OBJECTIVE","NONZEROS");
@@ -62,6 +60,10 @@ redistributor works with the RCP interface.
 </dd>
 </dl>
 
+Additional information and functionality for partitioning, in general, is documented here:
+<ul>
+<li> \ref partitioning_grp
+</ul>
 
 \ingroup partitioning_grp
 */

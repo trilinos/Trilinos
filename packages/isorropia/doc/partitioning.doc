@@ -94,7 +94,30 @@ For graphs and matrices, the default method (LB_METHOD) is HYPERGRAPH. The defau
 
 <br>
 
-<a name="example_programs"> </a>
+\section partitionInterfaces Partitioning with RCPs and pointers
+
+With Isorropia, we provide two interfaces to the partitioning objects, a 
+reference counting pointer (RCP) based interface and a pointer based interface.
+The safer interface to the partitioning is the RCP based interface, which a RCP to the Epetra object 
+to the Isorropia partitioner. We suggest using interface in order to prevent memory leaks 
+if you are familiar with RCPs and willing to learn the basics of Teuchos::RCP.
+However, we also provide a pointer interface for the convenience of those that are more familiar
+with this type of interface.  
+
+More information on these interfaces, as well as functions specific to the interface can be found
+here:
+
+
+<ul>
+<li> \ref partitioning_rcp_grp 
+<li> \ref partitioning_ptr_grp
+</ul>
+
+
+
+<br>
+
+
 \section isorropia_example Example Programs
 
 A number of example programs which demonstrate using Isorropia are
