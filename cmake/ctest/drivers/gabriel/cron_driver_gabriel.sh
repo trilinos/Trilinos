@@ -1,8 +1,12 @@
 #!/bin/bash
 
+# This script must be run from this directory!
+
 echo
 echo "Starting nightly Trilinos testing on gabriel: `date`"
 echo
+
+source bash_profile
 
 export TDD_PARALLEL_LEVEL=2
 #export TDD_PARALLEL_LEVEL=1
