@@ -6,7 +6,6 @@
 import glob
 import os
 import shutil
-import subprocess
 import sys
 
 
@@ -124,7 +123,7 @@ if not os.path.exists(CTEST_EXE):
 # Verify ctest works with a simple --version call first:
 #
 
-CTEST_VERSION = getCmndOutput(CTEST_EXE+" --version", True)
+CTEST_VERSION = getCmndOutput(CTEST_EXE+" --version", True, False)
 print "CTEST_VERSION: +" + CTEST_VERSION + "+"
 
 # Run one TrilinosDriver dashboard for this Trilinos source tree:
