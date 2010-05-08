@@ -6,12 +6,15 @@ echo
 echo "Starting nightly Trilinos testing on gabriel: `date`"
 echo
 
-source bash_profile
+SCRIPT_DIR=$PWD
+cd $HOME
+source $SCRIPT_DIR/bash_profile
+cd -
 
 export TDD_PARALLEL_LEVEL=2
 #export TDD_PARALLEL_LEVEL=1
 export TDD_HTTP_PROXY="http://wwwproxy.sandia.gov:80/"
-time ../cron_driver.py
+time /usr/local/bin/python ../cron_driver.py
 
 echo
 echo "Ending nightly Trilinos testing on gabriel: `date`"
