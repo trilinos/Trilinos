@@ -10,7 +10,7 @@
 //#include <stdexcept>
 //#include <iostream>
 //#include <sstream>
-//#include <algorithm>
+#include <algorithm>
 
 #include <stk_mesh/base/Ghosting.hpp>
 
