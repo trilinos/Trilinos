@@ -162,7 +162,9 @@ void SolveInverseFactory::rebuildInverse(const LinearOp & source,InverseLinearOp
   */
 void SolveInverseFactory::rebuildInverse(const LinearOp & source,const LinearOp & precOp,InverseLinearOp & dest) const
 {
-   TEUCHOS_ASSERT(false); // initializeAndReuseOp does not allow you to specify a new preconditioner operator! Talk to Ross!
+   bool SolveInverseFactory_rebuildInverse__not_implemented = false;
+   TEUCHOS_ASSERT(SolveInverseFactory_rebuildInverse__not_implemented); 
+      // initializeAndReuseOp does not allow you to specify a new preconditioner operator! Talk to Ross!
 
    RCP<Thyra::DefaultInverseLinearOp<double> > invDest = rcp_dynamic_cast<Thyra::DefaultInverseLinearOp<double> >(dest);
    RCP<Thyra::LinearOpWithSolveBase<double> > lows = invDest->getNonconstLows();
