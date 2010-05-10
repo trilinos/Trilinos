@@ -434,8 +434,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, debugWithNodeTracingPrint, T )
         << "  0: RCPNode (map_key_void_ptr=" << rcpNodeKey << ")\n"
         << "       Information = {T="<<T_name<<", ConcreteT="<<concreateT_name<<", p="<<p<<", has_ownership="<<has_ownership<<"}\n"
         << "       RCPNode address = " << node << "\n"
-        << "       Call number = " << RCPNodeTracer::getAddNewRCPNodeCallNumber()
-        << "\n";
+        << "       insertionNumber = " << node->insertion_number()
+        << "\n\n"
+        << RCPNodeTracer::getCommonDebugNotesString();
 
     std::ostringstream printActiveRCPNodes_out;
     RCPNodeTracer::printActiveRCPNodes(printActiveRCPNodes_out);

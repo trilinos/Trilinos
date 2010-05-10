@@ -132,6 +132,9 @@ public:
   /** \brief . */
   RCPNode(bool has_ownership_in)
     : has_ownership_(has_ownership_in), extra_data_map_(NULL)
+#ifdef TEUCHOS_DEBUG
+    ,insertion_number_(-1)
+#endif // TEUCHOS_DEBUG
     {
       count_[RCP_STRONG] = 0;
       count_[RCP_WEAK] = 0;
@@ -250,6 +253,18 @@ private:
   RCPNode();
   RCPNode(const RCPNode&);
   RCPNode& operator=(const RCPNode&);
+#ifdef TEUCHOS_DEBUG
+  int insertion_number_;
+public:
+  void set_insertion_number(int insertion_number_in)
+    {
+      insertion_number_ = insertion_number_in;
+    }
+  int insertion_number() const
+    {
+      return insertion_number_;
+    }
+#endif // TEUCHOS_DEBUG
 };
 
 
@@ -430,12 +445,21 @@ public:
       return getExistingRCPNodeGivenLookupKey(getRCPNodeBaseObjMapKeyVoidPtr(p));
     }
 
-  /** \brief Exposed to be used in unit testing. */
-  static TEUCHOS_LIB_DLL_EXPORT int getAddNewRCPNodeCallNumber();
+  /** \brief Common error message string on how to debug RCPNode problems. */
+  static TEUCHOS_LIB_DLL_EXPORT std::string getCommonDebugNotesString();
 
   //@}
 
 };
+
+
+#ifdef TEUCHOS_DEBUG
+#  define TEUCHOS_RCP_INSERION_NUMBER_STR() \
+      "  insertionNumber:      " << rcp_node_ptr->insertion_number() << "\n"
+#else
+#  define TEUCHOS_RCP_INSERION_NUMBER_STR()
+#endif
+
 
 /** \brief Templated implementation class of <tt>RCPNode</tt> that has the
  * responsibility for deleting the reference-counted object.
@@ -539,6 +563,7 @@ public:
         0
 #endif
         ;
+      TEUCHOS_ASSERT(rcp_node_ptr);
       TEST_FOR_EXCEPTION( true, DanglingReferenceError,
         "Error, an attempt has been made to dereference the underlying object\n"
         "from a weak smart pointer object where the underling object has already\n"
@@ -549,17 +574,12 @@ public:
         "  RCP type:             " << rcp_type_name << "\n"
         "  RCP address:          " << rcp_ptr << "\n"
         "  RCPNode type:         " << typeName(*this) << "\n"
-        "  RCPNode address       " << rcp_node_ptr << "\n"
+        "  RCPNode address:      " << rcp_node_ptr << "\n"
+        TEUCHOS_RCP_INSERION_NUMBER_STR()
         "  RCP ptr address:      " << rcp_obj_ptr << "\n"
         "  Concrete ptr address: " << deleted_ptr << "\n"
         "\n"
-        "Hint: Open your debugger, run the program again (which will result in\n"
-        "new pointer addresses) and then set conditional breakpoints using these\n"
-        "pointer addresses in the various routines involved where this node object\n"
-        "is first created with this concrete object and in all of the RCP objects\n"
-        "of the type given above use this node object.  Debugging an error like this\n"
-        "may take a little work in setting up your debugging session but at least\n"
-        "you don't have to try to track down a segfault that would occur otherwise!"
+        << RCPNodeTracer::getCommonDebugNotesString()
         );
       // 2008/09/22: rabartl: Above, we do not provide the concreate object
       // type or the concrete object address.  In the case of the concrete

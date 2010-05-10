@@ -1,5 +1,6 @@
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_getConst.hpp"
+#include "Teuchos_getBaseObjVoidPtr.hpp"
 #ifdef HAVE_TEUCHOS_BOOST
 #  include "Teuchos_RCPBoostSharedPtrConversions.hpp"
 #endif
