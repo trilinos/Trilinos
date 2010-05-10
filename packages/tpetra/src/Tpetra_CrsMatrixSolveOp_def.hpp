@@ -31,6 +31,15 @@
 
 #include "Tpetra_CrsMatrix.hpp"
 
+#ifdef DOXYGEN_USE_ONLY
+  #include "Tpetra_CrsMatrixSolveOp_decl.hpp"
+#endif
+
+/*! \file Tpetra_CrsMatrixSolveOp_def.hpp 
+
+    The implementations for the members of Tpetra::CrsMatrixSolveOp and related non-member constructors.
+ */
+
 namespace Tpetra {
 
   template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
@@ -241,11 +250,10 @@ namespace Tpetra {
 
 } // end of namespace Tpetra
 
-//! Non-member function to create Tpetra::CrsMatrixSolveOp
 template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
 Teuchos::RCP< Tpetra::CrsMatrixSolveOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> >
 Tpetra::createCrsMatrixSolveOp(const Teuchos::RCP<const Tpetra::CrsMatrix<MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> > &A) {
-  return rcp(new Tpetra::CrsMatrixSolveOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>(A) );
+  return Teuchos::rcp(new Tpetra::CrsMatrixSolveOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>(A) );
 }
 
 //
@@ -254,6 +262,7 @@ Tpetra::createCrsMatrixSolveOp(const Teuchos::RCP<const Tpetra::CrsMatrix<MatSca
 // Must be expanded from within the Tpetra namespace!
 //
 
+//! Explicit instantiation macro supporting the CrsMatrixSolveOp class. Instantiates the class, the non-member constructor, and the necessary CrsMatrix::solve() member.
 #define TPETRA_CRSMATRIX_SOLVEOP_INSTANT(OPSCALAR,MATSCALAR,LO,GO,NODE) \
   \
   template class CrsMatrixSolveOp< OPSCALAR , MATSCALAR , LO , GO , NODE >; \

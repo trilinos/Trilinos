@@ -32,6 +32,10 @@
 // TODO: filter column indices first in insertLocalIndices()
 // TODO: filter column indices first in insertGlobalIndices()
 
+#ifdef DOXYGEN_USE_ONLY
+  #include "Tpetra_CrsGraph_decl.hpp"
+#endif
+
 namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>

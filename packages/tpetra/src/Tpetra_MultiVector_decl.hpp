@@ -40,6 +40,7 @@
 #include <Kokkos_MultiVector.hpp>
 #include <Kokkos_DefaultArithmetic.hpp>
 
+#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_DistObject.hpp"
 #include "Tpetra_Map.hpp"
 

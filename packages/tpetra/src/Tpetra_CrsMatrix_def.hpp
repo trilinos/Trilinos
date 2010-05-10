@@ -41,11 +41,16 @@
 
 #include "Tpetra_CrsMatrixMultiplyOp.hpp" // must include for implicit instantiation to work
 
-//! Comparison operator for Tpetra::CrsIJV objects, used by Tpetra::CrsMatrix
+#ifdef DOXYGEN_USE_ONLY
+  #include "Tpetra_CrsMatrix_decl.hpp"
+#endif
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 template <class Ordinal, class Scalar>
 bool std::operator<(const Tpetra::CrsIJV<Ordinal,Scalar> &ijv1, const Tpetra::CrsIJV<Ordinal,Scalar> &ijv2) {
   return ijv1.i < ijv2.i;
 }
+#endif
 
 namespace Tpetra {
 

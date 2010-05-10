@@ -38,12 +38,15 @@
 
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
+#include <Teuchos_SerializationTraits.hpp>
 
+#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_RowMatrix.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrixMultiplyOp_decl.hpp"
 
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
 namespace Tpetra {
   // struct for i,j,v triplets
   template <class Ordinal, class Scalar>
@@ -67,6 +70,7 @@ namespace std {
   template <class Ordinal, class Scalar>
   bool operator<(const Tpetra::CrsIJV<Ordinal,Scalar> &ijv1, const Tpetra::CrsIJV<Ordinal,Scalar> &ijv2);
 }
+#endif
 
 namespace Tpetra {
 

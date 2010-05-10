@@ -18,6 +18,7 @@ ADD_SUBDIRECTORIES(
 PACKAGE_ADD_LIBRARY(
   tpetratestlib
   SOURCES UnitTestMissingExplicitInstantiations.cpp
+  DEPLIBS tpetra teuchos
   TESTONLY
 )
 

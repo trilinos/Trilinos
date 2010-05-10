@@ -31,6 +31,15 @@
 
 #include "Tpetra_CrsMatrix.hpp"
 
+#ifdef DOXYGEN_USE_ONLY
+  // #include "Tpetra_CrsMatrixMultiplyOp_decl.hpp"
+#endif
+
+/*! \file Tpetra_CrsMatrixMultiplyOp_def.hpp 
+
+    The implementations for the members of Tpetra::CrsMatrixMultiplyOp and related non-member constructors.
+ */
+
 namespace Tpetra {
 
   template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
@@ -325,12 +334,12 @@ namespace Tpetra {
     return matrix_->getRangeMap();
   }
 
-}
+} // Tpetra namespace
 
 template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
 Teuchos::RCP< Tpetra::CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> >
 Tpetra::createCrsMatrixMultiplyOp(const Teuchos::RCP<const Tpetra::CrsMatrix<MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> > &A) {
-  return rcp(new Tpetra::CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>(A) );
+  return Teuchos::rcp(new Tpetra::CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>(A) );
 }
 
 //
@@ -339,6 +348,7 @@ Tpetra::createCrsMatrixMultiplyOp(const Teuchos::RCP<const Tpetra::CrsMatrix<Mat
 // Must be expanded from within the Tpetra namespace!
 //
 
+//! Explicit instantiation macro supporting the CrsMatrixMultiplyOp class. Instantiates the class, the non-member constructor, and the necessary CrsMatrix::multiply() member.
 #define TPETRA_CRSMATRIX_MULTIPLYOP_INSTANT(OPSCALAR,MATSCALAR,LO,GO,NODE) \
   \
   template class CrsMatrixMultiplyOp< OPSCALAR , MATSCALAR , LO , GO , NODE >; \

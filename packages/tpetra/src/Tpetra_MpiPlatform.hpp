@@ -46,6 +46,7 @@ namespace Tpetra {
   template<class Node=Kokkos::DefaultNode::DefaultNodeType>
 	class MpiPlatform : public Teuchos::Describable {
     public:
+    //! Typedef indicating the node type over which the platform is templated. This default to the Kokkos default node type.
       typedef Node NodeType;
       //! @name Constructor/Destructor Methods
       //@{ 
@@ -73,6 +74,7 @@ namespace Tpetra {
       //@}
 
     protected: 
+      //! Node object instantiated for the platform.
       Teuchos::RCP<Node> node_;
 
     private:

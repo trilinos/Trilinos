@@ -39,6 +39,10 @@
 #include "Tpetra_Distributor.hpp"
 #include "Tpetra_Map.hpp"
 
+#ifdef DOXYGEN_USE_ONLY
+  #include "Tpetra_Directory_decl.hpp"
+#endif
+
 namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>

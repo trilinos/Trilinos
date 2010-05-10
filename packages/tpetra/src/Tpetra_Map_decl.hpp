@@ -38,6 +38,11 @@
 // enums and defines
 #include "Tpetra_ConfigDefs.hpp"
 
+/** \file Tpetra_Map_decl.hpp 
+
+    The declarations for the class Tpetra::Map and related non-member constructors.
+ */
+
 namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -45,8 +50,8 @@ namespace Tpetra {
   template <class LO, class GO, class N> class Directory;
 #endif
 
-  //! A class for partitioning distributed objects.
-  /*!
+  /** \brief A class for partitioning distributed objects.
+
    This class is templated on \c LocalOrdinal and \c GlobalOrdinal. 
    The \c GlobalOrdinal type, if omitted, defaults to the \c LocalOrdinal type.
   */
@@ -58,7 +63,7 @@ namespace Tpetra {
     //! @name Constructor/Destructor Methods
     //@{ 
 
-    /*! \brief Map constructor with Tpetra-defined contiguous uniform distribution.
+    /** \brief Map constructor with Tpetra-defined contiguous uniform distribution.
      *   The elements are distributed among nodes so that the subsets of global elements
      *   are non-overlapping and contiguous and as evenly distributed across the nodes as 
      *   possible.
@@ -66,7 +71,7 @@ namespace Tpetra {
     Map(global_size_t numGlobalElements, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
         LocalGlobal lg=GloballyDistributed, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
 
-    /*! \brief Map constructor with a user-defined contiguous distribution.
+    /** \brief Map constructor with a user-defined contiguous distribution.
      *  The elements are distributed among the nodes so that the subsets of global elements
      *  are non-overlapping and contiguous 
      *  
@@ -79,7 +84,7 @@ namespace Tpetra {
         const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
         
 
-    /*! \brief Map constructor with user-defined non-contiguous (arbitrary) distribution.
+    /** \brief Map constructor with user-defined non-contiguous (arbitrary) distribution.
      *  
      *  If numGlobalElements == Teuchos::OrdinalTraits<global_size_t>::invalid(), it will be computed via a global communication.
      *  Otherwise, it must be equal to the sum of the local elements across all 
@@ -126,15 +131,15 @@ namespace Tpetra {
     inline GlobalOrdinal getMaxAllGlobalIndex() const { return maxAllGID_; }
 
     //! \brief Return the local index for a given global index
-    /*! If the global index is not owned by this node, returns Teuchos::OrdinalTraits<LocalOrdinal>::invalid(). */
+    /** If the global index is not owned by this node, returns Teuchos::OrdinalTraits<LocalOrdinal>::invalid(). */
     LocalOrdinal getLocalElement(GlobalOrdinal globalIndex) const;
 
     //! Return the global index for a given local index
-    /*! If the local index is not valid for this node, returns Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(). */
+    /** If the local index is not valid for this node, returns Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(). */
     GlobalOrdinal getGlobalElement(LocalOrdinal localIndex) const;
 
     //! Returns the node IDs and corresponding local indices for a given list of global indices.
-    /*! 
+    /** 
       \returns IDNotPresent indicates that at least one global ID was not present in the directory. 
                Otherwise, returns AllIDsPresent.
      */
@@ -143,7 +148,7 @@ namespace Tpetra {
                                     const Teuchos::ArrayView<       LocalOrdinal> & LIDList) const;
 
     //! Returns the node IDs for a given list of global indices.
-    /*! 
+    /** 
       \returns IDNotPresent indicates that at least one global ID was not present in the directory. 
                Otherwise, returns AllIDsPresent.
      */
@@ -245,18 +250,9 @@ namespace Tpetra {
 
   }; // Map class
 
-  //! Returns true if \c map is identical to this Map. Implemented in isSameAs().
-  /*! \relates Map */
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool operator== (const Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Map<LocalOrdinal,GlobalOrdinal,Node> &map2);
+  /** \brief Non-member function to create a locally replicated Map with the default node.
 
-  //! Returns true if \c map is not identical to this Map. Implemented in isSameAs().
-  /*! \relates Map */
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool operator!= (const Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Map<LocalOrdinal,GlobalOrdinal,Node> &map2);
-
-  //! \brief Non-member function to create a locally replicated Tpetra::Map with the default node.
-  /*! This method returns a Map instantiated on the Kokkos default node type, Kokkos::DefaultNode::DefaultNodeType.
+      This method returns a Map instantiated on the Kokkos default node type, Kokkos::DefaultNode::DefaultNodeType.
 
       The Map is configured to use zero-based indexing.
 
@@ -266,14 +262,25 @@ namespace Tpetra {
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
   createLocalMap(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
 
-  //! Non-member function to create a locally replicated Tpetra::Map with a specified node.
-  /*! The Map is configured to use zero-based indexing.
+  /** \brief Non-member function to create a locally replicated Map with a specified node.
+
+      The Map is configured to use zero-based indexing.
 
       \relates Map
    */
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
   createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node);
+
+  /** \brief  Returns true if \c map is identical to this map. Implemented in Tpetra::Map::isSameAs().
+      \relates Tpetra::Map */
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool operator== (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2);
+
+  /** \brief Returns true if \c map is not identical to this map. Implemented in Tpetra::Map::isSameAs().
+      \relates Tpetra::Map */
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool operator!= (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2);
 
 } // Tpetra namespace
 

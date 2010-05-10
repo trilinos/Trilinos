@@ -33,7 +33,13 @@
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultSparseMultiply.hpp>
 #include <Kokkos_DefaultSparseSolve.hpp>
+#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Operator.hpp"
+
+/*! \file Tpetra_CrsMatrixMultiplyOp_decl.hpp 
+
+    The declarations for the class Tpetra::CrsMatrixMultiplyOp and related non-member constructors.
+ */
 
 namespace Tpetra {
 
@@ -97,7 +103,10 @@ namespace Tpetra {
                              OpScalar alpha, OpScalar beta) const;
   };
 
-  //! Non-member function to create CrsMatrixMultiplyOp
+  /*! \brief Non-member function to create CrsMatrixMultiplyOp
+
+      \relates CrsMatrixMultiplyOp
+   */
   template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
   Teuchos::RCP< CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> >
   createCrsMatrixMultiplyOp(const Teuchos::RCP<const CrsMatrix<MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> > &A);

@@ -32,6 +32,10 @@
 #include "Tpetra_ConfigDefs.hpp"
 #include "Teuchos_Array.hpp"
 
+#ifdef DOXYGEN_USE_ONLY
+  #include "Tpetra_BlockMap_decl.hpp"
+#endif
+
 namespace Tpetra {
 
 template<class LocalOrdinal,class GlobalOrdinal,class Node>

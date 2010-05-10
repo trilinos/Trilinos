@@ -85,20 +85,27 @@ namespace Tpetra {
 
     private:
       HybridPlatform(const HybridPlatform &platform); // not supported
+      //! Teuchos::Comm object instantiated for the platform.
       const Teuchos::RCP<const Teuchos::Comm<int> > comm_;
       Teuchos::ParameterList instList_;
+      //! Kokkos::SerialNode object, potentially instantiated for the platform.
       Teuchos::RCP<Kokkos::SerialNode>    serialNode_;
+      //! Boolean indicating that the node object has been instantiated.
       bool nodeCreated_;
 #ifdef HAVE_KOKKOS_TBB
+      //! Kokkos::TBBNode object, potentially instantiated for the platform.
       Teuchos::RCP<Kokkos::TBBNode>       tbbNode_;
 #endif
 #ifdef HAVE_KOKKOS_THREADPOOL
+      //! Kokkos::TPINode object, potentially instantiated for the platform.
       Teuchos::RCP<Kokkos::TPINode>       tpiNode_;
 #endif
 #ifdef HAVE_KOKKOS_THRUST
+      //! Kokkos::ThrustGPUNode object, potentially instantiated for the platform.
       Teuchos::RCP<Kokkos::ThrustGPUNode> thrustNode_;
 #endif
 
+      //! Enum indicating the node type for the platform on this rank.
       enum NodeType {
         SERIALNODE
 #ifdef HAVE_KOKKOS_TBB

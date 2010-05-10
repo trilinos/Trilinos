@@ -39,6 +39,10 @@
 
 #include "Tpetra_Vector.hpp"
 
+#ifdef DOXYGEN_USE_ONLY
+  #include "Tpetra_MultiVector_decl.hpp"
+#endif
+
 namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

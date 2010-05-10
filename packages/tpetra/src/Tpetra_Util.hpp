@@ -34,8 +34,8 @@
 #include <Teuchos_Utils.hpp>
 #include <Teuchos_TestForException.hpp>
 
-// handle an efficiency warning, according to HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS and HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS
 #if defined(HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS) || defined(HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS)
+//! Handle an efficiency warning, according to HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS and HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS
 #define TPETRA_EFFICIENCY_WARNING(throw_exception_test,Exception,msg)                                 \
 {                                                                                                     \
   std::string err = Teuchos::typeName(*this) + msg;                                                   \
@@ -45,11 +45,13 @@
   TEST_FOR_EXCEPTION(TPETRA_THROWS_EFFICIENCY_WARNINGS && (throw_exception_test), Exception, err);    \
 }
 #else
+//! Handle an efficiency warning, according to HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS and HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS
 #define TPETRA_EFFICIENCY_WARNING(throw_exception_test,Exception,msg)
 #endif
 
 // handle an abuse warning, according to HAVE_TPETRA_THROW_ABUSE_WARNINGS and HAVE_TPETRA_PRINT_ABUSE_WARNINGS
 #if defined(HAVE_TPETRA_THROW_ABUSE_WARNINGS) || defined(HAVE_TPETRA_PRINT_ABUSE_WARNINGS)
+//! Handle an efficiency warning, according to HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS and HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS
 #define TPETRA_ABUSE_WARNING(throw_exception_test,Exception,msg)                               \
 {                                                                                              \
   std::string err = Teuchos::typeName(*this) + msg;                                            \
@@ -59,13 +61,14 @@
   TEST_FOR_EXCEPTION(TPETRA_THROWS_ABUSE_WARNINGS && (throw_exception_test), Exception, err);  \
 }
 #else
+//! Handle an efficiency warning, according to HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS and HAVE_TPETRA_PRINT_EFFICIENCY_WARNINGS
 #define TPETRA_ABUSE_WARNING(throw_exception_test,Exception,msg)
 #endif
 
 
-// shared test for exception
-// just like Teuchos TEST_FOR_EXCEPTION, but with the assurance 
-// that all nodes test and throw the exception together
+/** Shared test for exception
+   Just like Teuchos TEST_FOR_EXCEPTION, but with the assurance that all nodes test and throw the exception together.
+ */
 #define SHARED_TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg,comm) \
 { \
     using Teuchos::outArg; \
@@ -76,14 +79,14 @@
                        msg << " Failure on node " << gbl_throw-1 << "." << std::endl); \
 }
 
-// if TEUCHOS_DEBUG is defined, then it calls SHARED_TEST_FOR_EXCEPTION
-// otherwise, it calls TEST_FOR_EXCEPTION
 #ifdef HAVE_TEUCHOS_DEBUG
+//! If TEUCHOS_DEBUG is defined, then it calls SHARED_TEST_FOR_EXCEPTION. Otherwise, it calls TEST_FOR_EXCEPTION
 #define SWITCHED_TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg,comm) \
 { \
     SHARED_TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg,comm); \
 }
 #else 
+//! If TEUCHOS_DEBUG is defined, then it calls SHARED_TEST_FOR_EXCEPTION. Otherwise, it calls TEST_FOR_EXCEPTION
 #define SWITCHED_TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg,comm) \
 { \
     TEST_FOR_EXCEPTION(throw_exception_test,Exception,msg); \
@@ -114,9 +117,10 @@ namespace Tpetra {
     </ul>
   */
 
-  // efficientAddOrUpdate is taken from Scott Meyers' "Effective STL", Item 24.
-  // if m already contains an entry with key k, use operator [].
-  // if it doesn't, insert is used.
+  /** efficientAddOrUpdate is taken from Scott Meyers' "Effective STL", Item 24.
+     if m already contains an entry with key k, use operator [].
+     if it doesn't, insert is used.
+   */
   template<typename MapType, typename KeyArgType, typename ValueArgType>
   typename MapType::iterator efficientAddOrUpdate(MapType& m, 
                           const KeyArgType & k, 
@@ -134,12 +138,11 @@ namespace Tpetra {
   }
 
 
-  // sort function for multiple arrays
-  // The values in sortVals will be sorted in ascending order.
-  // The same permutation required to sort sortVals will be applied
-  // to otherVals.
-
-  // for two arrays
+  /** sort function for two arrays
+     The values in sortVals will be sorted in ascending order.
+     The same permutation required to sort sortVals will be applied
+     to otherVals.
+   */
   template<class IT1, class IT2>
   void sort2(const IT1 &first1, const IT1 &last1, const IT2 &first2) {
     typedef typename std::iterator_traits<IT1>::value_type KT;
@@ -165,7 +168,11 @@ namespace Tpetra {
     }
   }
 
-  // for three arrays
+  /** sort function for three arrays
+     The values in sortVals will be sorted in ascending order.
+     The same permutation required to sort sortVals will be applied
+     to otherVals.
+   */
   template<class IT1, class IT2, class IT3>
   void sort3(const IT1 &first1, const IT1 &last1, const IT2 &first2, const IT3 &first3)
   {

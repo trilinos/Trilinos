@@ -69,9 +69,14 @@
 #include <Teuchos_ConfigDefs.hpp>
 #include <Kokkos_ConfigDefs.hpp>
 
-// Used in all Tpetra code that explicitly must a type (like a loop index)
-// that is used with the Teuchos::Array[View,RCP] classes.
-namespace Tpetra { typedef Teuchos_Ordinal Array_size_type; }
+//! %Tpetra namespace
+namespace Tpetra { 
+  // Used in all Tpetra code that explicitly must a type (like a loop index)
+  // that is used with the Teuchos::Array[View,RCP] classes.
+
+  //! Size type for Teuchos Array objects.
+  typedef Teuchos_Ordinal Array_size_type; 
+}
 
 // these make some of the macros in Tpetra_Util.hpp much easier to describe
 #ifdef HAVE_TPETRA_THROW_EFFICIENCY_WARNINGS
@@ -99,6 +104,13 @@ namespace Tpetra { typedef Teuchos_Ordinal Array_size_type; }
 #endif
 
 namespace Tpetra {
+  /** \brief Global size_t object. 
+  
+      Set at configure time, this type is intended to support scenarios where the global memory allocation is larger than that of a single node.
+
+      Currently, it is typedefed to size_t.
+   */
+      
   typedef size_t global_size_t;
 
   /*! Local versus global allocation of Map elements */

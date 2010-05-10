@@ -33,8 +33,14 @@
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_DefaultSparseMultiply.hpp>
 #include <Kokkos_DefaultSparseSolve.hpp>
+#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Operator.hpp"
 #include "Tpetra_CrsMatrix.hpp"
+
+/*! \file Tpetra_CrsMatrixSolveOp_decl.hpp 
+
+    The declarations for the class Tpetra::CrsMatrixSolveOp and related non-member constructors.
+ */
 
 namespace Tpetra {
 
@@ -89,7 +95,10 @@ namespace Tpetra {
       void applyTranspose(const MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &Y) const;
   };
 
-  //! Non-member function to create Tpetra::CrsMatrixSolveOp
+  /*! \brief Non-member function to create CrsMatrixSolveOp
+
+      \relates CrsMatrixSolveOp
+   */
   template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
   Teuchos::RCP< CrsMatrixSolveOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> >
   createCrsMatrixSolveOp(const Teuchos::RCP<const CrsMatrix<MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> > &A);

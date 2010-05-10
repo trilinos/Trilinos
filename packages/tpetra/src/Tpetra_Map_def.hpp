@@ -35,9 +35,18 @@
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_CommHelpers.hpp>
 #include <Teuchos_as.hpp>
-#include "Tpetra_Directory.hpp"
+#include "Tpetra_Directory.hpp" // must include for implicit instantiation to work
 #include "Tpetra_Util.hpp"
 #include <stdexcept>
+
+#ifdef DOXYGEN_USE_ONLY
+  #includee "Tpetra_Map_decl.hpp"
+#endif
+
+/** \file Tpetra_Map_def.hpp 
+
+    The implementations for the members of Tpetra::Map and related non-member constructors.
+ */
 
 //
 // compute isDistributed. it will be global.
@@ -761,34 +770,32 @@ namespace Tpetra {
     return global;
   }
 
-  //! Returns true if \c map is identical to this Map. Implemented in isSameAs().
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool operator== (const Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Map<LocalOrdinal,GlobalOrdinal,Node> &map2) {
-    return map1.isSameAs(map2);
-  }
-
-  //! Returns true if \c map is not identical to this Map. Implemented in isSameAs().
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool operator!= (const Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Map<LocalOrdinal,GlobalOrdinal,Node> &map2) {
-    return !map1.isSameAs(map2);
-  }
-
 } // Tpetra namespace
 
 template <class LocalOrdinal, class GlobalOrdinal>
 Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
 Tpetra::createLocalMap(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
-  return createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType>(numElements, comm, Kokkos::DefaultNode::getDefaultNode());
+  return Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType>(numElements, comm, Kokkos::DefaultNode::getDefaultNode());
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
 Tpetra::createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) {
   Teuchos::RCP< Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map;
-  map = rcp( new Map<LocalOrdinal,GlobalOrdinal,Node>((global_size_t)numElements,                     // num elements, global and local
-                                                      Teuchos::OrdinalTraits<GlobalOrdinal>::zero(),  // index base is zero
-                                                      comm, LocallyReplicated, node) );
+  map = Teuchos::rcp( new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>((global_size_t)numElements,                     // num elements, global and local
+                                                                       Teuchos::OrdinalTraits<GlobalOrdinal>::zero(),  // index base is zero
+                                                                       comm, LocallyReplicated, node) );
   return map.getConst();
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+bool operator== (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2) {
+  return map1.isSameAs(map2);
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+bool operator!= (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2) {
+  return !map1.isSameAs(map2);
 }
 
 //
@@ -797,6 +804,7 @@ Tpetra::createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teu
 // Must be expanded from within the Tpetra namespace!
 //
 
+//! Explicit instantiation macro supporting the Map class. Instantiates the class and the non-member constructors.
 #define TPETRA_MAP_INSTANT(LO,GO,NODE) \
   \
   template class Map< LO , GO , NODE >; \

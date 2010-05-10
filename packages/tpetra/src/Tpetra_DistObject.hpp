@@ -126,9 +126,10 @@ namespace Tpetra {
 
   protected:
 
+    //! Enum indicating whether the transer should be performed in forward or reverse mode.
     enum ReverseOption {
-      DoForward,
-      DoReverse
+      DoForward, //*!< Indicates that the transfer should be performed in forward mode.
+      DoReverse  //*!< Indicates that the transfer should be performed in reverse mode.
     };
 
     //! Perform transfer (redistribution) of data across memory images.
