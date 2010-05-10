@@ -162,14 +162,13 @@ void SolveInverseFactory::rebuildInverse(const LinearOp & source,InverseLinearOp
   */
 void SolveInverseFactory::rebuildInverse(const LinearOp & source,const LinearOp & precOp,InverseLinearOp & dest) const
 {
-   bool SolveInverseFactory_rebuildInverse__not_implemented = false;
-   TEUCHOS_ASSERT(SolveInverseFactory_rebuildInverse__not_implemented); 
-      // initializeAndReuseOp does not allow you to specify a new preconditioner operator! Talk to Ross!
-
    RCP<Thyra::DefaultInverseLinearOp<double> > invDest = rcp_dynamic_cast<Thyra::DefaultInverseLinearOp<double> >(dest);
    RCP<Thyra::LinearOpWithSolveBase<double> > lows = invDest->getNonconstLows();
 
-   lowsFactory_->initializeAndReuseOp(Thyra::defaultLinearOpSource(source),&*lows);
+   // lowsFactory_->initializeAndReuseOp(Thyra::defaultLinearOpSource(source),&*lows);
+   lowsFactory_->initializePreconditionedOp(Thyra::defaultLinearOpSource(source),
+                                                  Thyra::unspecifiedPrec(precOp),
+                                                  &*lows,Thyra::SUPPORT_SOLVE_FORWARD_ONLY);
 }
 
 /** \brief A function that permits inspection of the parameters used to create
