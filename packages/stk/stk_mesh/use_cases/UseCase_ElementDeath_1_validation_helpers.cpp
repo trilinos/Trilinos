@@ -529,21 +529,17 @@ bool validate_sides( GridFixture & fixture, int iteration) {
   }
 
   stk::mesh::BulkData& mesh = fixture.bulk_data();
-  stk::mesh::MetaData& meta_data = fixture.meta_data();
-
   stk::mesh::Part & dead_part = *fixture.dead_part();
 
-  stk::mesh::Selector select_dead = dead_part & meta_data.locally_owned_part();
-  stk::mesh::Selector select_live = !dead_part & meta_data.locally_owned_part();
+  // Select live or dead from owned, shared, and ghosted
+  stk::mesh::Selector select_dead = dead_part ;
+  stk::mesh::Selector select_live = !dead_part ;
 
   //check live sides
   for (std::vector<entity_side>::const_iterator itr = live_sides.begin();
       itr != live_sides.end(); ++itr) {
     stk::mesh::Entity * entity = mesh.get_entity(stk::mesh::Face, itr->entity_id);
-    //select the entity only if the current process in the owner
-    // TODO fix the aura to correctly ghost the sides
-    if (entity != NULL && entity->owner_rank() == mesh.parallel_rank()) {
-    //if (entity != NULL) {
+    if (entity != NULL) {
       //make sure the side exist
       const unsigned side_ordinal = itr->side_ordinal;
       stk::mesh::PairIterRelation existing_sides = entity->relations(entity->entity_rank()-1);
