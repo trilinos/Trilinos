@@ -22,6 +22,9 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Comm.hpp>
 
+
+#include <stk_mesh/baseImpl/FieldBaseImpl.hpp>
+
 namespace stk {
 namespace mesh {
 
@@ -210,7 +213,7 @@ void MetaData::declare_part_subset( Part & superset , Part & subset )
 
   for ( std::vector<FieldBase *>::iterator
         f = m_fields.begin() ; f != m_fields.end() ; ++f ) {
-    (*f)->verify_and_clean_restrictions( method , m_part_repo.all_parts() );
+    (*f)->m_impl.verify_and_clean_restrictions( method , m_part_repo.all_parts() );
   }
 }
 
@@ -264,10 +267,15 @@ MetaData::declare_field_base(
 
   assert_not_committed( method );
 
-  return FieldBase::declare_field( arg_name , arg_traits ,
-                                   arg_rank , arg_dim_tags ,
-                                   arg_num_states ,
-                                   this , m_fields );
+  return impl::declare_field(
+                arg_name,
+                arg_traits,
+                arg_rank,
+                arg_dim_tags,
+                arg_num_states,
+                this,
+                m_fields
+               );
 }
 
 void MetaData::declare_field_restriction(
@@ -283,9 +291,9 @@ void MetaData::declare_field_restriction(
   assert_same_mesh_meta_data( method , arg_field.mesh_meta_data() );
   assert_same_mesh_meta_data( method , arg_part.mesh_meta_data() );
 
-  arg_field.insert_restriction( method, arg_entity_rank, arg_part, arg_stride);
+  arg_field.m_impl.insert_restriction( method, arg_entity_rank, arg_part, arg_stride);
 
-  arg_field.verify_and_clean_restrictions( method, get_parts() );
+  arg_field.m_impl.verify_and_clean_restrictions( method, get_parts() );
 }
 
 
@@ -506,6 +514,8 @@ void verify_parallel_consistency( const MetaData & s , ParallelMachine pm )
 
 
 //----------------------------------------------------------------------
+
+
 
 } // namespace mesh
 } // namespace stk

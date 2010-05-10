@@ -23,6 +23,8 @@
 #include <stk_mesh/base/Property.hpp>
 #include <stk_mesh/baseImpl/PartRepository.hpp>
 
+#include <stk_mesh/baseImpl/FieldBaseImpl.hpp>
+
 namespace stk {
 namespace mesh {
 
@@ -33,6 +35,7 @@ namespace mesh {
 /** \brief  Print an entity key for this meta data */
 std::ostream &
 print_entity_key( std::ostream & , const MetaData & , const EntityKey & );
+
 
 //----------------------------------------------------------------------
 /** \brief  The manager of an integrated collection of
@@ -327,7 +330,8 @@ private:
 
   bool   m_commit ;
   impl::PartRepository m_part_repo ;
-  Part * m_universal_part ; 
+
+  Part * m_universal_part ;
   Part * m_owns_part ;
   Part * m_shares_part ;
 
@@ -461,7 +465,7 @@ field_type * MetaData::get_field( const std::string & name ) const
   Traits::assign_tags( tags );
 
   FieldBase * const field =
-    stk::mesh::get_field( "stk::mesh::MetaData::get_field" ,
+    stk::mesh::impl::get_field( "stk::mesh::MetaData::get_field" ,
                           name , dt , Traits::Rank , tags , 0 , m_fields );
 
   return static_cast< field_type * >( field );
@@ -689,7 +693,7 @@ const T *
 MetaData::declare_attribute_with_delete( FieldBase & f , const T * a )
 {
   assert_not_committed( "stk::mesh::MetaData::declare_attribute_with_delete" );
-  return f.m_attribute.template insert_with_delete<T>( a );
+  return f.m_impl.declare_attribute_with_delete(a);
 }
 
 template<class T>
@@ -698,7 +702,7 @@ const T *
 MetaData::declare_attribute_no_delete( FieldBase & f , const T * a )
 {
   assert_not_committed( "stk::mesh::MetaData::declare_attribute_no_delete" );
-  return f.m_attribute.template insert_no_delete<T>( a );
+  return f.m_impl.declare_attribute_no_delete(a);
 }
 
 //----------------------------------------------------------------------

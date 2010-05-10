@@ -6,9 +6,7 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-/**
- * @author H. Carter Edwards
- */
+#include <stk_mesh/baseImpl/FieldBaseImpl.hpp>
 
 #include <cstring>
 #include <stdexcept>
@@ -20,111 +18,13 @@
 #include <stk_util/util/string_case_compare.hpp>
 
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/Field.hpp>
+#include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 
-using std::strlen;
-
 namespace stk {
 namespace mesh {
-
-//----------------------------------------------------------------------
-
-const char * field_state_name( FieldState s )
-{
-  static const char * name_list[] = {
-    "StateNew" ,
-    "StateOld" ,
-    "StateNM1" ,
-    "StateNM2" ,
-    "StateNM3" ,
-    "StateNM4" ,
-    "ERROR" };
-
-  unsigned i = s ;
-  if ( StateNM4 < i ) { i = MaximumFieldStates ; }
-  return name_list[i] ;
-}
-
-//----------------------------------------------------------------------
-
-namespace {
-
-struct RestrictionLess {
-  bool operator()( const FieldBase::Restriction & lhs ,
-                   const FieldBase::Restriction & rhs ) const
-    { return lhs.key < rhs.key ; }
-
-  bool operator()( const FieldBase::Restriction & lhs ,
-                   const EntityKey & rhs ) const
-    { return lhs.key < rhs ; }
-};
-
-std::vector<FieldBase::Restriction>::const_iterator
-find( const std::vector<FieldBase::Restriction> & v ,
-      const EntityKey & key )
-{
-  std::vector<FieldBase::Restriction>::const_iterator
-    i = std::lower_bound( v.begin() , v.end() , key , RestrictionLess() );
-
-  if ( i != v.end() && i->key != key ) { i = v.end(); }
-
-  return i ;
-}
-
-}
-
-//----------------------------------------------------------------------
-
-FieldBase::~Field()
-{ }
-
-FieldBase::Field(
-  MetaData * arg_mesh_meta_data ,
-  unsigned   arg_ordinal ,
-  const std::string & arg_name ,
-  const DataTraits & arg_traits ,
-  unsigned   arg_number_of_states ,
-  FieldState arg_this_state )
-: m_name( arg_name ),
-  m_attribute(),
-  m_data_traits( arg_traits ),
-  m_mesh_meta_data( arg_mesh_meta_data ),
-  m_mesh_meta_data_ordinal( arg_ordinal ),
-  m_num_states( arg_number_of_states ),
-  m_this_state( arg_this_state ),
-  m_rank( 0 ),
-  m_dim_map()
-{
-  FieldBase * const pzero = NULL ;
-  const shards::ArrayDimTag * const dzero = NULL ;
-  Copy<MaximumFieldStates>(    m_field_states , pzero );
-  Copy<MaximumFieldDimension>( m_dim_tags ,     dzero );
-}
-
-const std::vector<FieldBase::Restriction> & FieldBase::restrictions() const
-{ return m_field_states[0]->m_dim_map ; }
-
-std::vector<FieldBase::Restriction> & FieldBase::restrictions()
-{ return m_field_states[0]->m_dim_map ; }
-
-//----------------------------------------------------------------------
-//----------------------------------------------------------------------
-
-void
-print_field_type( std::ostream                      & arg_msg ,
-                  const DataTraits                  & arg_traits ,
-                  unsigned                            arg_rank ,
-                  const shards::ArrayDimTag * const * arg_tags )
-{
-  arg_msg << "Field<" ;
-  arg_msg << arg_traits.name ;
-  for ( unsigned i = 0 ; i < arg_rank ; ++i ) {
-    arg_msg << "," << arg_tags[i]->name();
-  }
-  arg_msg << ">" ;
-}
+namespace impl {
 
 namespace {
 
@@ -140,6 +40,19 @@ void throw_name_suffix( const char * method ,
   msg << suffix ;
   msg << "\"" ;
   throw std::runtime_error( msg.str() );
+}
+
+void print_field_type( std::ostream                      & arg_msg ,
+                  const DataTraits                  & arg_traits ,
+                  unsigned                            arg_rank ,
+                  const shards::ArrayDimTag * const * arg_tags )
+{
+  arg_msg << "FieldBase<" ;
+  arg_msg << arg_traits.name ;
+  for ( unsigned i = 0 ; i < arg_rank ; ++i ) {
+    arg_msg << "," << arg_tags[i]->name();
+  }
+  arg_msg << ">" ;
 }
 
 // Check for compatibility:
@@ -192,8 +105,9 @@ void verify_field_type( const char                        * arg_method ,
     throw std::runtime_error( msg.str() );
   }
 }
+} //unamed namespace
 
-}
+//----------------------------------------------------------------------
 
 FieldBase * get_field(
   const char                        * arg_method ,
@@ -221,10 +135,7 @@ FieldBase * get_field(
 }
 
 
-//----------------------------------------------------------------------
-
-FieldBase *
-FieldBase::declare_field(
+FieldBase * declare_field(
   const std::string                 & arg_name ,
   const DataTraits                  & arg_traits ,
   unsigned                            arg_rank ,
@@ -262,7 +173,7 @@ FieldBase::declare_field(
 
   if ( NULL != f[0] ) {
     for ( unsigned i = 1 ; i < arg_num_states ; ++i ) {
-      f[i] = f[0]->m_field_states[i] ;
+      f[i] = f[0]->m_impl.field_state(i);
     }
   }
   else {
@@ -285,30 +196,22 @@ FieldBase::declare_field(
 
     for ( unsigned i = 0 ; i < arg_num_states ; ++i ) {
 
-      f[i] = new FieldBase( arg_meta_data , arg_meta_data_fields.size() ,
-                            field_names[i] , arg_traits ,
-                            arg_num_states , static_cast<FieldState>(i) );
+      f[i] = new FieldBase(
+          arg_meta_data ,
+          arg_meta_data_fields.size() ,
+          field_names[i] ,
+          arg_traits ,
+          arg_rank,
+          arg_dim_tags,
+          arg_num_states ,
+          static_cast<FieldState>(i)
+          );
 
       arg_meta_data_fields.push_back( f[i] );
     }
 
     for ( unsigned i = 0 ; i < arg_num_states ; ++i ) {
-      for ( unsigned j = 0 ; j < arg_num_states ; ++j ) {
-        f[i]->m_field_states[j] = f[j] ;
-      }
-    }
-  }
-
-  // Update the rank and dimension tags
-
-  const unsigned old_rank = f[0]->m_rank ;
-
-  if ( old_rank < arg_rank ) {
-    for ( unsigned j = 0 ; j < arg_num_states ; ++j ) {
-      f[j]->m_rank = arg_rank ;
-      for ( unsigned i = old_rank ; i < arg_rank ; ++i ) {
-        f[j]->m_dim_tags[i] = arg_dim_tags[i] ;
-      }
+      f[i]->m_impl.set_field_states( f );
     }
   }
 
@@ -320,11 +223,78 @@ FieldBase::declare_field(
 
 namespace {
 
+struct FieldRestrictionLess {
+  bool operator()( const FieldRestriction & lhs ,
+                   const FieldRestriction & rhs ) const
+    { return lhs.key < rhs.key ; }
+
+  bool operator()( const FieldRestriction & lhs ,
+                   const EntityKey & rhs ) const
+    { return lhs.key < rhs ; }
+};
+
+FieldRestrictionVector::const_iterator
+  find( const FieldRestrictionVector & v , const EntityKey & key )
+{
+  FieldRestrictionVector::const_iterator
+    i = std::lower_bound( v.begin() , v.end() , key , FieldRestrictionLess() );
+
+  if ( i != v.end() && i->key != key ) { i = v.end(); }
+
+  return i ;
+}
+
+}
+
+//----------------------------------------------------------------------
+//----------------------------------------------------------------------
+
+FieldBaseImpl::FieldBaseImpl(
+    MetaData                   * arg_mesh_meta_data ,
+    unsigned                     arg_ordinal ,
+    const std::string          & arg_name ,
+    const DataTraits           & arg_traits ,
+    unsigned                     arg_rank,
+    const shards::ArrayDimTag  * const * arg_dim_tags,
+    unsigned                     arg_number_of_states ,
+    FieldState                   arg_this_state
+    )
+: m_name( arg_name ),
+  m_attribute(),
+  m_data_traits( arg_traits ),
+  m_meta_data( arg_mesh_meta_data ),
+  m_ordinal( arg_ordinal ),
+  m_num_states( arg_number_of_states ),
+  m_this_state( arg_this_state ),
+  m_rank( arg_rank ),
+  m_dim_map()
+{
+  FieldBase * const pzero = NULL ;
+  const shards::ArrayDimTag * const dzero = NULL ;
+  Copy<MaximumFieldStates>(    m_field_states , pzero );
+  Copy<MaximumFieldDimension>( m_dim_tags ,     dzero );
+
+  for ( unsigned i = 0 ; i < arg_rank ; ++i ) {
+    m_dim_tags[i] = arg_dim_tags[i];
+  }
+}
+
+const FieldRestrictionVector & FieldBaseImpl::restrictions() const
+{ return m_field_states[0]->m_impl.m_dim_map ; }
+
+FieldRestrictionVector & FieldBaseImpl::restrictions()
+{ return m_field_states[0]->m_impl.m_dim_map ; }
+
+
+//----------------------------------------------------------------------
+
+namespace {
+
 void print_restriction( std::ostream & os ,
                         unsigned type ,
                         const Part & part ,
                         unsigned rank ,
-                        const FieldBase::Restriction::size_type * stride )
+                        const FieldRestriction::size_type * stride )
 {
   os << "{ entity_rank(" << type << ") part(" << part.name() << ") : " ;
   os << stride[0] ;
@@ -344,18 +314,19 @@ void print_restriction( std::ostream & os ,
 
 }
 
+
 // Setting the dimension for one field sets the dimension
 // for the corresponding fields of the FieldState array.
 // If subset exists then replace it.
 // If exists or superset exists then do nothing.
 
-void FieldBase::insert_restriction(
+void FieldBaseImpl::insert_restriction(
   const char     * arg_method ,
   EntityRank         arg_entity_rank ,
   const Part     & arg_part ,
   const unsigned * arg_stride )
 {
-  FieldBase::Restriction tmp ;
+  FieldRestriction tmp ;
 
   tmp.key = EntityKey( arg_entity_rank , arg_part.mesh_meta_data_ordinal() );
 
@@ -385,11 +356,11 @@ void FieldBase::insert_restriction(
   }
 
   {
-    FieldBase::RestrictionVector & rMap = restrictions();
+    FieldRestrictionVector & rMap = restrictions();
 
-    FieldBase::RestrictionVector::iterator i = rMap.begin(), j = rMap.end();
+    FieldRestrictionVector::iterator i = rMap.begin(), j = rMap.end();
 
-    i = std::lower_bound(i,j,tmp,RestrictionLess());
+    i = std::lower_bound(i,j,tmp,FieldRestrictionLess());
 
     if ( i == j || i->key != tmp.key ) {
       rMap.insert( i , tmp );
@@ -405,13 +376,13 @@ void FieldBase::insert_restriction(
   }
 }
 
-void FieldBase::verify_and_clean_restrictions(
+void FieldBaseImpl::verify_and_clean_restrictions(
   const char       * arg_method ,
   const PartVector & arg_all_parts )
 {
   const EntityKey invalid_key ;
-  RestrictionVector & rMap = restrictions();
-  RestrictionVector::iterator i , j ;
+  FieldRestrictionVector & rMap = restrictions();
+  FieldRestrictionVector::iterator i , j ;
 
   for ( i = rMap.begin() ; i != rMap.end() ; ++i ) {
     if ( i->key != invalid_key ) {
@@ -466,41 +437,42 @@ void FieldBase::verify_and_clean_restrictions(
   rMap.erase( i , j );
 }
 
+
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 // This part or any superset of this part
 
-const FieldBase::Restriction &
-FieldBase::restriction( unsigned etype , const Part & part ) const
+const FieldRestriction &
+FieldBaseImpl::restriction( unsigned entity_rank , const Part & part ) const
 {
-  static const FieldBase::Restriction empty ;
+  static const FieldRestriction empty ;
 
-  const std::vector<FieldBase::Restriction> & rMap = restrictions();
-  const std::vector<FieldBase::Restriction>::const_iterator ie = rMap.end() ;
-        std::vector<FieldBase::Restriction>::const_iterator i ;
+  const FieldRestrictionVector & rMap = restrictions();
+  const FieldRestrictionVector::const_iterator ie = rMap.end() ;
+        FieldRestrictionVector::const_iterator i ;
 
   const PartVector::const_iterator ipe = part.supersets().end();
         PartVector::const_iterator ip  = part.supersets().begin() ;
 
   // Start with this part:
-  EntityKey key = EntityKey( etype , part.mesh_meta_data_ordinal() );
+  EntityKey key = EntityKey( entity_rank , part.mesh_meta_data_ordinal() );
 
   while ( ie == ( i = find( rMap , key ) ) && ipe != ip ) {
     // Not found try another superset part:
-    key = EntityKey( etype , (*ip)->mesh_meta_data_ordinal() );
+    key = EntityKey( entity_rank , (*ip)->mesh_meta_data_ordinal() );
     ++ip ;
   }
 
   return ie == i ? empty : *i ;
 }
 
-unsigned FieldBase::max_size( unsigned entity_rank ) const
+unsigned FieldBaseImpl::max_size( unsigned entity_rank ) const
 {
   unsigned max = 0 ;
 
-  const std::vector<FieldBase::Restriction> & rMap = restrictions();
-  const std::vector<FieldBase::Restriction>::const_iterator ie= rMap.end();
-        std::vector<FieldBase::Restriction>::const_iterator i = rMap.begin();
+  const FieldRestrictionVector & rMap = restrictions();
+  const FieldRestrictionVector::const_iterator ie = rMap.end() ;
+        FieldRestrictionVector::const_iterator i = rMap.begin();
 
   for ( ; i != ie ; ++i ) {
     if ( i->type() == entity_rank ) {
@@ -514,10 +486,17 @@ unsigned FieldBase::max_size( unsigned entity_rank ) const
 
 //----------------------------------------------------------------------
 
-std::ostream & operator << ( std::ostream & s , const FieldBase & field )
+//----------------------------------------------------------------------
+
+std::ostream & operator << ( std::ostream & s , const FieldBaseImpl & field )
 {
-  print_field_type( s , field.data_traits() ,
-                        field.rank() , field.dimension_tags() );
+  s << "FieldBaseImpl<" ;
+  s << field.data_traits().name ;
+  for ( unsigned i = 0 ; i < field.rank() ; ++i ) {
+    s << "," << field.dimension_tags()[i]->name();
+  }
+  s << ">" ;
+
   s << "[ name = \"" ;
   s << field.name() ;
   s << "\" , #states = " ;
@@ -528,13 +507,13 @@ std::ostream & operator << ( std::ostream & s , const FieldBase & field )
 
 std::ostream & print( std::ostream & s ,
                       const char * const b ,
-                      const FieldBase & field )
+                      const FieldBaseImpl & field )
 {
-  const PartVector & all_parts = field.mesh_meta_data().get_parts();
-  const std::vector<FieldBase::Restriction> & rMap = field.restrictions();
+  const PartVector & all_parts = field.meta_data().get_parts();
+  const FieldRestrictionVector & rMap = field.restrictions();
   s << field ;
   s << " {" ;
-  for ( std::vector<FieldBase::Restriction>::const_iterator
+  for ( FieldRestrictionVector::const_iterator
         i = rMap.begin() ; i != rMap.end() ; ++i ) {
     s << std::endl << b << "  " ;
     print_restriction( s, entity_rank( i->key ),
@@ -547,6 +526,9 @@ std::ostream & print( std::ostream & s ,
 
 //----------------------------------------------------------------------
 
+
+
+
+} // namespace impl
 } // namespace mesh
 } // namespace stk
-

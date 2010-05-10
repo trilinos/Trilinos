@@ -494,7 +494,7 @@ void UnitTestMetaData::testField()
   // Not an array; therefore, is rank zero.
   // Test the query methods for accuracy.
   FieldBase * const fA =
-    FieldBase::declare_field( std::string("A"),
+    impl::declare_field( std::string("A"),
                               data_traits<double>() ,
                               0     /* # Ranks */ ,
                               NULL  /* dimension tags */ ,
@@ -518,7 +518,7 @@ void UnitTestMetaData::testField()
     FieldBase * tmp = NULL ;
     bool caught = false ;
     try {
-      tmp = FieldBase::declare_field( "A_OLD" ,
+      tmp = impl::declare_field( "A_OLD" ,
                                       data_traits<double>() ,
                                       0     /* # Ranks */ ,
                                       NULL  /* dimension tags */ ,
@@ -541,7 +541,7 @@ void UnitTestMetaData::testField()
   // Test the query methods for accuracy.
 
   FieldBase * const fB =
-    FieldBase::declare_field( std::string("B"),
+    impl::declare_field( std::string("B"),
                               data_traits<int>(),
                               0     /* # Ranks */ ,
                               NULL  /* dimension tags */ ,
@@ -566,7 +566,7 @@ void UnitTestMetaData::testField()
   // Redeclare field must give back the previous field:
 
   FieldBase * const fB_redundant =
-    FieldBase::declare_field( std::string("B"),
+    impl::declare_field( std::string("B"),
                               data_traits<int>(),
                               0     /* # Ranks */ ,
                               NULL  /* dimension tags */ ,
@@ -585,7 +585,7 @@ void UnitTestMetaData::testField()
     { & ATAG::tag() , & BTAG::tag() , & CTAG::tag() , & DTAG::tag() };
 
   FieldBase * const fC =
-    FieldBase::declare_field( std::string("C"),
+    impl::declare_field( std::string("C"),
                               data_traits<double>(),
                               3         /* # Ranks */ ,
                               dim_tags  /* dimension tags */ ,
@@ -604,25 +604,25 @@ void UnitTestMetaData::testField()
   FieldBase * const fC_nm1 = allocated_fields[5] ;
   FieldBase * const fC_nm2 = allocated_fields[6] ;
 
-  STKUNIT_ASSERT( fC     == fC->m_field_states[ StateNP1 ] );
-  STKUNIT_ASSERT( fC_n   == fC->m_field_states[ StateN ] );
-  STKUNIT_ASSERT( fC_nm1 == fC->m_field_states[ StateNM1 ] );
-  STKUNIT_ASSERT( fC_nm2 == fC->m_field_states[ StateNM2 ] );
+  STKUNIT_ASSERT( fC     == fC->field_state( StateNP1 ) );
+  STKUNIT_ASSERT( fC_n   == fC->field_state( StateN ) );
+  STKUNIT_ASSERT( fC_nm1 == fC->field_state( StateNM1 ) );
+  STKUNIT_ASSERT( fC_nm2 == fC->field_state( StateNM2 ) );
 
-  STKUNIT_ASSERT( fC     == fC_n->m_field_states[ StateNP1 ] );
-  STKUNIT_ASSERT( fC_n   == fC_n->m_field_states[ StateN ] );
-  STKUNIT_ASSERT( fC_nm1 == fC_n->m_field_states[ StateNM1 ] );
-  STKUNIT_ASSERT( fC_nm2 == fC_n->m_field_states[ StateNM2 ] );
+  STKUNIT_ASSERT( fC     == fC_n->field_state( StateNP1 ) );
+  STKUNIT_ASSERT( fC_n   == fC_n->field_state( StateN ) );
+  STKUNIT_ASSERT( fC_nm1 == fC_n->field_state( StateNM1 ) );
+  STKUNIT_ASSERT( fC_nm2 == fC_n->field_state( StateNM2 ) );
 
-  STKUNIT_ASSERT( fC     == fC_nm1->m_field_states[ StateNP1 ] );
-  STKUNIT_ASSERT( fC_n   == fC_nm1->m_field_states[ StateN ] );
-  STKUNIT_ASSERT( fC_nm1 == fC_nm1->m_field_states[ StateNM1 ] );
-  STKUNIT_ASSERT( fC_nm2 == fC_nm1->m_field_states[ StateNM2 ] );
+  STKUNIT_ASSERT( fC     == fC_nm1->field_state( StateNP1 ) );
+  STKUNIT_ASSERT( fC_n   == fC_nm1->field_state( StateN ) );
+  STKUNIT_ASSERT( fC_nm1 == fC_nm1->field_state( StateNM1 ) );
+  STKUNIT_ASSERT( fC_nm2 == fC_nm1->field_state( StateNM2 ) );
 
-  STKUNIT_ASSERT( fC     == fC_nm2->m_field_states[ StateNP1 ] );
-  STKUNIT_ASSERT( fC_n   == fC_nm2->m_field_states[ StateN ] );
-  STKUNIT_ASSERT( fC_nm1 == fC_nm2->m_field_states[ StateNM1 ] );
-  STKUNIT_ASSERT( fC_nm2 == fC_nm2->m_field_states[ StateNM2 ] );
+  STKUNIT_ASSERT( fC     == fC_nm2->field_state( StateNP1 ) );
+  STKUNIT_ASSERT( fC_n   == fC_nm2->field_state( StateN ) );
+  STKUNIT_ASSERT( fC_nm1 == fC_nm2->field_state( StateNM1 ) );
+  STKUNIT_ASSERT( fC_nm2 == fC_nm2->field_state( StateNM2 ) );
 
   STKUNIT_ASSERT( fC_n->name() == std::string("C_N") );
   STKUNIT_ASSERT( fC_n->type_is<double>() );
@@ -680,7 +680,7 @@ void UnitTestMetaData::testFieldRestriction()
   // Declare a rank two and one state:
 
   FieldBase * const f2 =
-    FieldBase::declare_field( std::string("F2"),
+    impl::declare_field( std::string("F2"),
                               data_traits<int>(),
                               2         /* # ranks */ ,
                               dim_tags  /* dimension tags */ ,
@@ -691,14 +691,14 @@ void UnitTestMetaData::testFieldRestriction()
   // Declare a rank three and two states:
 
   FieldBase * const f3 =
-    FieldBase::declare_field( std::string("F3"),
+    impl::declare_field( std::string("F3"),
                               data_traits<int>(),
                               3         /* # ranks */ ,
                               dim_tags  /* dimension tags */ ,
                               2         /* # states */ ,
                               meta_null , allocated_fields );
 
-  FieldBase * const f3_old = f3->m_field_states[ StateOld ] ;
+  FieldBase * const f3_old = f3->m_impl.field_state( StateOld ) ;
 
   //------------------------------
   // Test for correctness of vector of declared fields.
@@ -709,14 +709,14 @@ void UnitTestMetaData::testFieldRestriction()
   //------------------------------
   // Test for correctness of field internal state access:
 
-  STKUNIT_ASSERT( f2     == f2->m_field_states[ StateNone ] );
-  STKUNIT_ASSERT( NULL   == f2->m_field_states[ StateOld ] );
-  STKUNIT_ASSERT( f3     == f3->m_field_states[ StateNew ] );
-  STKUNIT_ASSERT( f3_old == f3->m_field_states[ StateOld ] );
-  STKUNIT_ASSERT( NULL   == f3->m_field_states[ StateNM1 ] );
-  STKUNIT_ASSERT( f3     == f3_old->m_field_states[ StateNew ] );
-  STKUNIT_ASSERT( f3_old == f3_old->m_field_states[ StateOld ] );
-  STKUNIT_ASSERT( NULL   == f3_old->m_field_states[ StateNM1 ] );
+  STKUNIT_ASSERT( f2     == f2->field_state( StateNone ) );
+  STKUNIT_ASSERT( NULL   == f2->field_state( StateOld ) );
+  STKUNIT_ASSERT( f3     == f3->field_state( StateNew ) );
+  STKUNIT_ASSERT( f3_old == f3->field_state( StateOld ) );
+  STKUNIT_ASSERT( NULL   == f3->field_state( StateNM1 ) );
+  STKUNIT_ASSERT( f3     == f3_old->field_state( StateNew ) );
+  STKUNIT_ASSERT( f3_old == f3_old->field_state( StateOld ) );
+  STKUNIT_ASSERT( NULL   == f3_old->field_state( StateNM1 ) );
 
   STKUNIT_ASSERT( f2->rank() == 2 );
   STKUNIT_ASSERT( f3->rank() == 3 );
@@ -740,9 +740,9 @@ void UnitTestMetaData::testFieldRestriction()
 
   // Declare three restrictions:
 
-  f3->insert_restriction( method , 0 , pA , stride );
-  f3->insert_restriction( method , 1 , pB , stride + 1 );
-  f3->insert_restriction( method , 2 , pC , stride + 2 );
+  f3->m_impl.insert_restriction( method , 0 , pA , stride );
+  f3->m_impl.insert_restriction( method , 1 , pB , stride + 1 );
+  f3->m_impl.insert_restriction( method , 2 , pC , stride + 2 );
 
   // Check for correctness of restrictions:
 
@@ -754,7 +754,7 @@ void UnitTestMetaData::testFieldRestriction()
   STKUNIT_ASSERT( f3->restrictions()[2].key ==
                   EntityKey( 2 , pC.mesh_meta_data_ordinal() ) );
 
-  f3->insert_restriction( method , 0 , pB , stride + 1 );
+  f3->m_impl.insert_restriction( method , 0 , pB , stride + 1 );
 
   STKUNIT_ASSERT_EQUAL( f3->max_size( 0 ) , stride[3] );
 
@@ -764,7 +764,7 @@ void UnitTestMetaData::testFieldRestriction()
     bool caught = false ;
     try {
       unsigned bad_stride[4] = { 5 , 4 , 6 , 3 };
-      f3->insert_restriction( method , 0 , pA , bad_stride );
+      f3->m_impl.insert_restriction( method , 0 , pA , bad_stride );
     }
     catch( const std::exception & x ) {
       caught = true ;
@@ -779,7 +779,7 @@ void UnitTestMetaData::testFieldRestriction()
   {
     bool caught = false ;
     try {
-      f3->insert_restriction( method , 0 , pA , stride + 1 );
+      f3->m_impl.insert_restriction( method , 0 , pA , stride + 1 );
     }
     catch( const std::exception & x ) {
       caught = true ;
@@ -791,8 +791,8 @@ void UnitTestMetaData::testFieldRestriction()
 
   // Verify and clean out any redundant restructions:
 
-  f2->verify_and_clean_restrictions( method , universal.subsets() );
-  f3->verify_and_clean_restrictions( method , universal.subsets() );
+  f2->m_impl.verify_and_clean_restrictions( method , universal.subsets() );
+  f3->m_impl.verify_and_clean_restrictions( method , universal.subsets() );
 
   STKUNIT_ASSERT( f3->restrictions().size() == 4 );
 
@@ -801,12 +801,12 @@ void UnitTestMetaData::testFieldRestriction()
   // check that it was cleaned.
 
   partRepo.declare_subset( pD, pA );
-  f2->insert_restriction( method , 0 , pA , stride );
-  f2->insert_restriction( method , 0 , pD , stride );
+  f2->m_impl.insert_restriction( method , 0 , pA , stride );
+  f2->m_impl.insert_restriction( method , 0 , pD , stride );
 
   STKUNIT_ASSERT( f2->restrictions().size() == 2 );
 
-  f2->verify_and_clean_restrictions( method , universal.subsets() );
+  f2->m_impl.verify_and_clean_restrictions( method , universal.subsets() );
 
   STKUNIT_ASSERT( f2->restrictions().size() == 1 );
 
@@ -824,12 +824,12 @@ void UnitTestMetaData::testFieldRestriction()
   // Check that the verify_and_clean_restrictions method detects
   // this error condition.
   {
-    f2->insert_restriction( method , 0 , pB , stride + 1 );
-    f2->verify_and_clean_restrictions( method , universal.subsets() );
+    f2->m_impl.insert_restriction( method , 0 , pB , stride + 1 );
+    f2->m_impl.verify_and_clean_restrictions( method , universal.subsets() );
     partRepo.declare_subset( pD, pB );
     bool caught = false ;
     try {
-      f2->verify_and_clean_restrictions( method , universal.subsets() );
+      f2->m_impl.verify_and_clean_restrictions( method , universal.subsets() );
     }
     catch( const std::exception & x ) {
       caught = true ;

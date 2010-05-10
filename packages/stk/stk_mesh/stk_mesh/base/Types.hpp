@@ -36,16 +36,17 @@ class Part ;      // Defined subset of the mesh
  */
 typedef std::vector< Part * > PartVector ;
 
+class FieldBase;
+
 template< typename Scalar = void ,
           class Tag1 = void , class Tag2 = void ,
           class Tag3 = void , class Tag4 = void ,
           class Tag5 = void , class Tag6 = void ,
           class Tag7 = void >
-class Field ;
+  class Field ;
 
-typedef Field< void, void, void, void, void, void, void, void > FieldBase ;
 
-template< class Field, class Relation > 
+template< class Field, class Relation >
 class GatherField ;
 
 
@@ -85,7 +86,7 @@ template< class FieldType > struct FieldTraits ;
 typedef std::pair<Entity*,unsigned> EntityProc ;
 
 /** \brief  Spans of a vector of entity-processor pairs are common.
- * 
+ *
  */
 typedef PairIter< std::vector< EntityProc >::const_iterator >
   PairIterEntityProc ;
@@ -112,7 +113,7 @@ typedef std::vector<EntityCommInfo> EntityCommInfoVector;
  *  -  0 = relation_stencil( Element , Node , 0 )
  *  -  1 = relation_stencil( Element , Node , 1 )
  *  -  2 = relation_stencil( Element , Node , 2 )
- *  
+ *
  *  If the input entity relationship is within the stencil then
  *  a stencil function returns a non-negative integer;
  *  otherwise a stencil function returns a negative value.
