@@ -95,9 +95,11 @@ int SolnCheck::checkSolution(int localProc, int numProcs,
     int solnCheckCode = SolnCheck::compareSoln(soln, correctSoln);
 
     if (solnCheckCode != 0) {
+      FEI_COUT << "soln file-name: " << soln_c_str << FEI_ENDL;
       FEI_COUT << "soln-check failed, checkFileName="<<checkFileName<<FEI_ENDL;
       FEI_COUT << "soln: " << FEI_ENDL;
       fei::print(FEI_COUT, soln);
+      FEI_COUT << "correctSoln file-name: " << check_c_str << FEI_ENDL;
       FEI_COUT << "correctSoln: " << FEI_ENDL;
       fei::print(FEI_COUT, correctSoln);
       return(-1);

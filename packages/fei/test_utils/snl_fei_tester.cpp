@@ -531,6 +531,8 @@ int snl_fei_tester::save_block_node_soln(DataReader& data, fei::Vector* vec,
   std::vector<double> solnData;
   std::vector<int> fieldList;
 
+  int totalSize = 0;
+
   for(int i=0; i<numLocalNodes; i++) {
     int idType = idTypes_[nodeTypeOffset_];
     int ID = nodeList[i];
@@ -543,6 +545,7 @@ int snl_fei_tester::save_block_node_soln(DataReader& data, fei::Vector* vec,
     outfile << ID << " " << numDOF << FEI_ENDL;
     for(int j=0; j<numFields; ++j) {
       int fieldSize = vecSpace_->getFieldSize(fieldList[j]);
+      totalSize += fieldSize;
 
       CHK_ERR( vec->copyOutFieldData(fieldList[j], idType,
                                      1, &ID, &solnData[0]) );
@@ -553,6 +556,8 @@ int snl_fei_tester::save_block_node_soln(DataReader& data, fei::Vector* vec,
     }
     outfile << FEI_ENDL;
   }
+
+  FEI_COUT << "save-node-soln: wrote " << totalSize << " entries for " << numLocalNodes << " nodes to " << fileName.str() << FEI_ENDL;
 
   delete [] nodeList;
 
