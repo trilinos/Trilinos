@@ -790,13 +790,13 @@ void BulkData::internal_resolve_shared_membership()
 
         for ( PartVector::iterator
               ip = current_parts.begin() ; ip != current_parts.end() ; ++ip ) {
-          Part * const p = *ip ;
-          const unsigned part_ord = p->mesh_meta_data_ordinal();
+          Part * const part = *ip ;
+          const unsigned part_ord = part->mesh_meta_data_ordinal();
           if ( PART_ORD_UNIVERSAL != part_ord &&
                PART_ORD_OWNED     != part_ord &&
                PART_ORD_SHARED    != part_ord &&
-               ! contain( owner_parts , *p ) ) {
-            remove_parts.push_back( p );
+               ! contain( owner_parts , *part ) ) {
+            remove_parts.push_back( part );
           }
         }
 
