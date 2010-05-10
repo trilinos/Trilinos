@@ -47,18 +47,17 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> piroPa
 {
   //piroParams->validateParameters(*Piro::getValidPiroParameters(),0);
 
-  Teuchos::RCP<Teuchos::ParameterList> noxParams =
-	Teuchos::rcp(&(piroParams->sublist("NOX")),false);
-  Teuchos::ParameterList& printParams = noxParams->sublist("Printing");
+  Teuchos::ParameterList& noxParams = piroParams->sublist("NOX");
+  Teuchos::ParameterList& printParams = noxParams.sublist("Printing");
 
   string jacobianSource = piroParams->get("Jacobian Operator", "Have Jacobian");
 
-  Teuchos::ParameterList& noxstratlsParams = noxParams->
+  Teuchos::ParameterList& noxstratlsParams = noxParams.
         sublist("Direction").sublist("Newton").sublist("Stratimikos Linear Solver");
 
   // Inexact Newton must be set in a second sublist when using 
   // Stratimikos: This code snippet sets it automatically
-  bool inexact = (noxParams->sublist("Direction").sublist("Newton").
+  bool inexact = (noxParams.sublist("Direction").sublist("Newton").
                   get("Forcing Term Method", "Constant") != "Constant");
   noxstratlsParams.sublist("NOX Stratimikos Options").
                    set("Use Linear Solve Tolerance From NOX", inexact);
@@ -82,12 +81,11 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> piroPa
   currentSolution = Teuchos::rcp(new NOX::Epetra::Vector(*u));
 
   // Create Epetra factory
-  Teuchos::RefCountPtr<LOCA::Abstract::Factory> epetraFactory =
+  Teuchos::RCP<LOCA::Abstract::Factory> epetraFactory =
 	Teuchos::rcp(new LOCA::Epetra::Factory);
 
   // Create global data object
-  Teuchos::RefCountPtr<LOCA::GlobalData> globalData =
-	LOCA::createGlobalData(piroParams, epetraFactory);
+  globalData = LOCA::createGlobalData(piroParams, epetraFactory);
 
   // Create LOCA interface
   interface = Teuchos::rcp(
@@ -154,8 +152,7 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> piroPa
                           noxstratlsParams, iJac, A, *currentSolution));
   }
 
-  Teuchos::RefCountPtr<LOCA::Epetra::Interface::TimeDependent> iTime =
-    interface;
+  Teuchos::RCP<LOCA::Epetra::Interface::TimeDependent> iTime = interface;
 
   // Create the LOCA Group
   grp = Teuchos::rcp(new LOCA::Epetra::Group(globalData, printParams, iTime,
@@ -164,7 +161,7 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> piroPa
   grp->setDerivUtils(interface);
   
   // Create the Solver convergence test
-  Teuchos::ParameterList& statusParams = noxParams->sublist("Status Tests");
+  Teuchos::ParameterList& statusParams = noxParams.sublist("Status Tests");
   Teuchos::RCP<NOX::StatusTest::Generic> statusTests =
     NOX::StatusTest::buildStatusTests(statusParams,
                                       *(globalData->locaUtils));
@@ -186,6 +183,8 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> piroPa
 
 Piro::Epetra::LOCASolver::~LOCASolver()
 {
+  LOCA::destroyGlobalData(globalData);
+
   // Release saveEigenData RCP
   Teuchos::ParameterList& eigParams =
       piroParams->sublist("LOCA").sublist("Stepper").sublist("Eigensolver");

@@ -103,6 +103,7 @@ LOCA::Eigensolver::AnasaziStrategy::AnasaziStrategy(
 
 LOCA::Eigensolver::AnasaziStrategy::~AnasaziStrategy() 
 {
+  eigenParams->set( "Sort Manager", Teuchos::null );
 }
 
 NOX::Abstract::Group::ReturnType

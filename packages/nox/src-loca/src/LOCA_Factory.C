@@ -63,8 +63,6 @@ LOCA::Factory::Factory(
   mooreSpencePitchforkSolverFactory(global_data),
   mooreSpenceHopfSolverFactory(global_data)
 {
-  // Set the factory member of the global data
-  globalData->locaFactory = Teuchos::rcp(this, false);
 }
 
 LOCA::Factory::Factory(
@@ -88,13 +86,12 @@ LOCA::Factory::Factory(
 {
   // Initialize user-defined factory
   factory->init(globalData);
-  
-  // Set the factory member of the global data
-  globalData->locaFactory = Teuchos::rcp(this, false);
 }
 
 LOCA::Factory::~Factory()
 {
+  // Release RCP
+ // if (haveFactory) factory->init(Teuchos::null);
 }
 
 Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>

@@ -5,7 +5,7 @@ INCLUDE(AddOptionAndDefine)
 # A) Define the package
 #
 
-PACKAGE(Piro DISABLE_STRONG_WARNINGS DISABLE_CIRCULAR_REF_DETECTION_FAILURE)
+PACKAGE(Piro DISABLE_STRONG_WARNINGS)
 
 #
 # B) Set up package-specific options

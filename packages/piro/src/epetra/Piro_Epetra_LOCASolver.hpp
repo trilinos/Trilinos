@@ -134,6 +134,7 @@ class LOCASolver
    int num_g;
 
    Teuchos::RCP<LOCA::Epetra::Group> grp;
+   Teuchos::RCP<LOCA::GlobalData> globalData;
 };
 
 }
