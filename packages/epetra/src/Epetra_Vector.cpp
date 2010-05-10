@@ -94,13 +94,13 @@ int Epetra_Vector::ReplaceMyValues(int NumEntries, double * Values, int * Indice
   return(0);
 }
 //=========================================================================
-int Epetra_Vector::SumIntoGlobalValues(int NumEntries, double * Values, int * Indices) {
+int Epetra_Vector::SumIntoGlobalValues(int NumEntries, const double * Values, const int * Indices) {
   // Use the more general method below
   EPETRA_CHK_ERR(ChangeValues(NumEntries, 0, Values, Indices, true, true));
   return(0);
 }
 //=========================================================================
-int Epetra_Vector::SumIntoMyValues(int NumEntries, double * Values, int * Indices) {
+int Epetra_Vector::SumIntoMyValues(int NumEntries, const double * Values, const int * Indices) {
   // Use the more general method below
   EPETRA_CHK_ERR(ChangeValues(NumEntries, 0, Values, Indices, false, true));
   return(0);
@@ -118,19 +118,19 @@ int Epetra_Vector::ReplaceMyValues(int NumEntries, int BlockOffset, double * Val
   return(0);
 }
 //=========================================================================
-int Epetra_Vector::SumIntoGlobalValues(int NumEntries, int BlockOffset, double * Values, int * Indices) {
+int Epetra_Vector::SumIntoGlobalValues(int NumEntries, int BlockOffset, const double * Values, const int * Indices) {
   // Use the more general method below
   EPETRA_CHK_ERR(ChangeValues(NumEntries, BlockOffset, Values, Indices, true, true));
   return(0);
 }
 //=========================================================================
-int Epetra_Vector::SumIntoMyValues(int NumEntries, int BlockOffset, double * Values, int * Indices) {
+int Epetra_Vector::SumIntoMyValues(int NumEntries, int BlockOffset, const double * Values, const int * Indices) {
   // Use the more general method below
   EPETRA_CHK_ERR(ChangeValues(NumEntries, BlockOffset, Values, Indices, false, true));
   return(0);
 }
 //=========================================================================
-int Epetra_Vector::ChangeValues(int NumEntries, int BlockOffset, double * Values, int * Indices,
+int Epetra_Vector::ChangeValues(int NumEntries, int BlockOffset, const double * Values, const int * Indices,
 				bool IndicesGlobal, bool SumInto) {
 
   int cur_index;

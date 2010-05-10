@@ -241,7 +241,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Vector : public Epetra_MultiVector {
 
     \return Integer error code, set to 0 if successful, set to 1 if one or more indices are not associated with calling processor.
   */
-  int SumIntoGlobalValues(int NumEntries, double * Values, int * Indices);
+  int SumIntoGlobalValues(int NumEntries, const double * Values, const int * Indices);
 
   //! Sum values into a vector with a given indexed list of values, indices are in local index space.
   /*!
@@ -257,7 +257,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Vector : public Epetra_MultiVector {
 
     \return Integer error code, set to 0 if successful, set to 1 if one or more indices are not associated with calling processor.
   */
-  int SumIntoMyValues(int NumEntries, double * Values, int * Indices);
+  int SumIntoMyValues(int NumEntries, const double * Values, const int * Indices);
 
   // Blockmap Versions
 
@@ -322,7 +322,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Vector : public Epetra_MultiVector {
 
     \return Integer error code, set to 0 if successful, set to 1 if one or more indices are not associated with calling processor.
   */
-  int SumIntoGlobalValues(int NumEntries, int BlockOffset, double * Values, int * Indices);
+  int SumIntoGlobalValues(int NumEntries, int BlockOffset, const double * Values, const int * Indices);
 
   //! Sum values into a vector with a given indexed list of values at the specified BlockOffset, indices are in local index space.
   /*!
@@ -343,7 +343,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Vector : public Epetra_MultiVector {
 
     \return Integer error code, set to 0 if successful, set to 1 if one or more indices are not associated with calling processor.
   */
-  int SumIntoMyValues(int NumEntries, int BlockOffset, double * Values, int * Indices);
+  int SumIntoMyValues(int NumEntries, int BlockOffset, const double * Values, const int * Indices);
   //@}
 
   //! @name Extraction methods
@@ -444,7 +444,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Vector : public Epetra_MultiVector {
 	//@}
  private:
 
-    int ChangeValues(int NumEntries, int BlockOffset, double * Values, int * Indices, bool IndicesGlobal, bool SumInto);
+    int ChangeValues(int NumEntries, int BlockOffset, const double * Values, const int * Indices, bool IndicesGlobal, bool SumInto);
 
 };
 

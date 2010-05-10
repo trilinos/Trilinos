@@ -316,7 +316,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsMatrix: public Epetra_DistObject, public E
 
     \pre IndicesAreLocal()==false && IndicesAreContiguous()==false
   */
-  virtual int SumIntoGlobalValues(int GlobalRow, int NumEntries, double* Values, int* Indices);
+  virtual int SumIntoGlobalValues(int GlobalRow, int NumEntries, const double* Values, const int* Indices);
 
   //! Insert a list of elements in a given local row of the matrix.
   /*!
@@ -363,7 +363,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsMatrix: public Epetra_DistObject, public E
     \post The given Values at the given Indices have been summed into the
     entries of MyRow.
   */
-  int SumIntoMyValues(int MyRow, int NumEntries, double* Values, int* Indices);
+  int SumIntoMyValues(int MyRow, int NumEntries, const double* Values, const int* Indices);
 
   //! Replaces diagonal values of the matrix with those in the user-provided vector.
   /*! This routine is meant to allow replacement of {\bf existing} diagonal values.
@@ -1155,7 +1155,7 @@ or if the number of entries in this row exceed the Length parameter.
 
   int InsertOffsetValues(int GlobalRow, int NumEntries, double *Values, int *Indices);
   int ReplaceOffsetValues(int GlobalRow, int NumEntries, double *Values, int *Indices);
-  int SumIntoOffsetValues(int GlobalRow, int NumEntries, double *Values, int *Indices);
+  int SumIntoOffsetValues(int GlobalRow, int NumEntries, const double *Values, const int *Indices);
   void UpdateImportVector(int NumVectors) const;
   void UpdateExportVector(int NumVectors) const;
   void GeneralMV(double * x, double * y) const;

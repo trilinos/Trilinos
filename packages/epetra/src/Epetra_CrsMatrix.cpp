@@ -667,8 +667,8 @@ int Epetra_CrsMatrix::ReplaceOffsetValues(int Row, int NumEntries,
 //==========================================================================
 int Epetra_CrsMatrix::SumIntoGlobalValues(int Row,
 					  int NumEntries,
-					  double * srcValues,
-					  int *Indices)
+					  const double * srcValues,
+					  const int *Indices)
 {
   int j;
   int ierr = 0;
@@ -720,7 +720,7 @@ int Epetra_CrsMatrix::SumIntoGlobalValues(int Row,
 }
 
 //==========================================================================
-int Epetra_CrsMatrix::SumIntoMyValues(int Row, int NumEntries, double * srcValues, int *Indices) {
+int Epetra_CrsMatrix::SumIntoMyValues(int Row, int NumEntries, const double * srcValues, const int *Indices) {
 
   if (!IndicesAreLocal()) 
     EPETRA_CHK_ERR(-4); // Indices must be local.
@@ -752,7 +752,7 @@ int Epetra_CrsMatrix::SumIntoMyValues(int Row, int NumEntries, double * srcValue
 }
 
 //==========================================================================
-int Epetra_CrsMatrix::SumIntoOffsetValues(int Row, int NumEntries, double * srcValues, int *Offsets) {
+int Epetra_CrsMatrix::SumIntoOffsetValues(int Row, int NumEntries, const double * srcValues, const int *Offsets) {
 
   int j;
   int ierr = 0;
