@@ -204,7 +204,7 @@ Part * PartRepository::declare_part( const PartVector & part_intersect )
 
       // Define the part to be an intersection of the given parts:
 
-      p->m_partImpl.non_const_intersection_of() = pset_clean ; // Copy
+      p->m_partImpl.set_intersection_of( pset_clean );
 
       for ( PartVector::iterator
             i = pset_clean.begin() ; i != pset_clean.end() ; ++i ) {
@@ -258,22 +258,22 @@ void PartRepository::declare_subset( Part & superset, Part & subset )
 
     // Transitive:
 
-    PartVector & subset_subsets = subset.m_partImpl.non_const_subsets();
-    for ( PartVector::iterator
+    const PartVector & subset_subsets = subset.subsets();
+    for ( PartVector::const_iterator
           i =  subset_subsets.begin() ; i != subset_subsets.end() ; ++i ) {
       declare_subset( superset, **i );
     }
 
-    PartVector & superset_supersets = superset.m_partImpl.non_const_supersets();
-    for ( PartVector::iterator
+    const PartVector & superset_supersets = superset.supersets();
+    for ( PartVector::const_iterator
           i =  superset_supersets.begin() ; i != superset_supersets.end() ; ++i ) {
       declare_subset( **i, subset );
     }
 
     // Induced intersection-part membership:
 
-    PartVector & superset_subsets = superset.m_partImpl.non_const_subsets();
-    for ( PartVector::iterator
+    const PartVector & superset_subsets = superset.subsets();
+    for ( PartVector::const_iterator
           i =  superset_subsets.begin() ;
           i != superset_subsets.end() ; ++i ) {
 
@@ -313,12 +313,20 @@ PartRepository::PartRepository(MetaData * meta)
 
 PartRepository::~PartRepository()
 {
-  const PartVector & all_parts = m_universal_part->subsets();
+  // The universal part is the 0^th entry in the subset vector.
+  // Delete all but the universal part in the loop, deleting
+  // the universal part will invalidate the universal part subset vector.
+  // Thus delete the universal part outside of the loop.
+
   try {
-    PartVector::const_iterator i = all_parts.begin();
-    for ( ++i ; i != all_parts.end() ; ++i ) {
-      try { delete *i ; } catch(...) {}
+    for ( PartVector::const_iterator
+          i = m_universal_part->subsets().end() ;
+          --i != m_universal_part->subsets().begin() ; ) {
+      Part * part = *i ;
+      try { delete part ; } catch(...) {}
     }
+    try { delete m_universal_part ; } catch(...) {}
+    m_universal_part = NULL ;
   } catch(...){}
 }
 

@@ -42,6 +42,12 @@ void PartImpl::add_relation( PartRelation relation )
   m_relations.push_back(relation);
 }
 
+void PartImpl::set_intersection_of( const PartVector & pv )
+{
+  m_intersect = pv ;
+}
+
+
 PartImpl::~PartImpl()
 {
 }

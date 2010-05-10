@@ -76,19 +76,19 @@ public:
   void add_part_to_subset( Part & part);
   void add_part_to_superset( Part & part );
   void add_relation( PartRelation relation );
+  void set_intersection_of( const PartVector & );
+
   template<class T>
   const T * declare_attribute_with_delete( const T *);
   template<class T>
   const T * declare_attribute_no_delete( const T *);
-  PartVector & non_const_subsets() { return m_subsets ; }
-  PartVector & non_const_supersets() { return m_supersets ; }
-  PartVector & non_const_intersection_of() { return m_intersect ; }
-  
 
   /** Construct a subset part within a given mesh.
    *  Is used internally by the two 'declare_part' methods.
    */
-  PartImpl( MetaData * meta, const std::string & name, EntityRank rank, size_t ordinal);
+  PartImpl( MetaData * meta, const std::string & name,
+            EntityRank rank, size_t ordinal);
+
   ~PartImpl();
 
 private:
