@@ -54,10 +54,11 @@ void process_command_line(int argc, char*argv[], std::string& xml_file);
 
 int main(int argc, char*argv[])
 {
+  Teuchos::GlobalMPISession mpisess(&argc,&argv,&std::cout);
+
   Teuchos::Time timer("total");
   timer.start();
 
-  Teuchos::GlobalMPISession mpisess(&argc,&argv,&std::cout);
 #ifdef HAVE_MPI
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
