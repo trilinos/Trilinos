@@ -23,6 +23,7 @@ PACKAGE_ADD_EXECUTABLE(
 PACKAGE_COPY_FILES_TO_BINARY_DIR(IfpackAztecOOCopyFiles
   DEST_FILES
   test_ILUT_tfqmr_small_sym_mm.xml small_sym.mtx test_gmres_small_sym_mm.xml
+  test_az_ILUT_tfqmr_small_sym_mm.xml
   test_2_ILUT_nos1_hb.xml nos1.rsa
   SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}
   DEST_DIR ${CMAKE_CURRENT_BINARY_DIR}
@@ -44,6 +45,24 @@ PACKAGE_ADD_TEST(
   ARGS "--xml_file=test_ILUT_tfqmr_small_sym_mm.xml"
   COMM serial mpi
   NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+PACKAGE_ADD_TEST(
+  ifp_aztecoo IfpackAztecOOCopyFiles
+  NAME small_az_ILUT_tfqmr
+  ARGS "--xml_file=test_az_ILUT_tfqmr_small_sym_mm.xml"
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  STANDARD_PASS_OUTPUT
+)
+
+PACKAGE_ADD_TEST(
+  ifp_aztecoo IfpackAztecOOCopyFiles
+  NAME small_az_ILUT_tfqmr_p3
+  ARGS "--xml_file=test_az_ILUT_tfqmr_small_sym_mm.xml"
+  COMM mpi
+  NUM_MPI_PROCS 3
   STANDARD_PASS_OUTPUT
 )
 

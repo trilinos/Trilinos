@@ -17,32 +17,32 @@ read_matrix_mm(const std::string& mm_file,
   int nnz_per_row = 0;
 
   std::ifstream* infile = NULL;
+  infile = new std::ifstream(mm_file.c_str());
+  if (infile == NULL || !*infile) {
+    throw std::runtime_error("Failed to open file "+mm_file);
+  }
+
+  std::ifstream& in = *infile;
+
+  //first skip over the file header, which has
+  //lines beginning with '%'.
+  std::string line;
+  do {
+    getline(in, line);
+  } while(line[0] == '%');
+
+  //now get the matrix dimensions.
+
+  int numrows, numcols, nnz;
+  std::istringstream isstr(line);
+  isstr >> numrows >> numcols >> nnz;
+
+  //make sure we successfully read the three ints from that line.
+  if (isstr.fail()) {
+    throw std::runtime_error("Failed to parse matrix-market header.");
+  }
+
   if (my_proc == 0) {
-    infile = new std::ifstream(mm_file.c_str());
-    if (infile == NULL || !*infile) {
-      throw std::runtime_error("Failed to open file "+mm_file);
-    }
-
-    std::ifstream& in = *infile;
-
-    //first skip over the file header, which has
-    //lines beginning with '%'.
-    std::string line;
-    do {
-      getline(in, line);
-    } while(line[0] == '%');
-
-    //now get the matrix dimensions.
-
-    int numrows, numcols, nnz;
-    std::istringstream isstr(line);
-    isstr >> numrows >> numcols >> nnz;
-
-    //make sure we successfully read the three ints from that line.
-    if (isstr.fail()) {
-      throw std::runtime_error("Failed to parse matrix-market header.");
-    }
-
     num_global_rows = numrows;
     nnz_per_row = nnz/numrows;
   }
@@ -55,28 +55,36 @@ read_matrix_mm(const std::string& mm_file,
 
   Epetra_CrsMatrix* A = new Epetra_CrsMatrix(Copy, rowmap, nnz_per_row);
 
-  if (my_proc == 0) {
-    Teuchos::Array<int> col(1,0);
-    Teuchos::Array<double> coef(1,0);
+  Teuchos::Array<int> col;
+  Teuchos::Array<double> coef;
 
-    int irow=0, icol=0;
-    double val=0;
+  int irow=0, icol=0;
+  int g_row=-1, last_row=-1;
+  double val=0;
 
-    std::string line;
-    std::ifstream& in = *infile;
-    while(!in.eof()) {
-      getline(in, line);
-      std::istringstream isstr(line);
-      isstr >> irow >> icol >> val;
-    
-      if (isstr.fail()) continue;
+  while(!in.eof()) {
+    getline(in, line);
+    std::istringstream isstr(line);
+    isstr >> irow >> icol >> val;
+  
+    if (isstr.fail()) continue;
+    if (!rowmap.MyGID(irow-1)) continue;
 
-      int g_row = irow-1;
-      col[0] = icol-1;
-      coef[0] = val;
-
-      A->InsertGlobalValues(g_row, 1, &coef[0], &col[0] );
+    g_row = irow-1;
+    if (g_row != last_row) {
+      if (col.size() > 0) {
+        A->InsertGlobalValues(last_row, col.size(), &coef[0], &col[0] );
+        col.clear();
+        coef.clear();
+      }
+      last_row = g_row;
     }
+    col.push_back(icol-1);
+    coef.push_back(val);
+  }
+
+  if (col.size() > 0) {
+    A->InsertGlobalValues(g_row, col.size(), &coef[0], &col[0]);
   }
 
   A->FillComplete();
