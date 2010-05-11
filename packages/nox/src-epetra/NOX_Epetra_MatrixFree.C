@@ -330,6 +330,6 @@ void MatrixFree::setGroupForComputeF(const NOX::Abstract::Group& group)
 void MatrixFree::setSolverForComputeJacobian(const Teuchos::RCP<NOX::Solver::Generic>& slvr)
 {
   useSolverForComputeJacobian = true;
-  slvrPtr = slvr;
+  slvrPtr = slvr.create_weak();
   return;
 }
