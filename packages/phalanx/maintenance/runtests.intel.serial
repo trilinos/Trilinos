@@ -1,2 +1,0 @@
-#!/bin/sh
-/projects/charon/people/rppawlo/Trilinos9/commonTools/test/utilities/runtests --trilinos-dir=/projects/charon/people/rppawlo/Trilinos9 --comm=serial --build-dir=/projects/charon/people/rppawlo/Trilinos9/TBIRD.MPI --category=FRAMEWORK --package=phalanx --output-dir=/projects/charon/people/rppawlo/junk/TrilinosTestResults
