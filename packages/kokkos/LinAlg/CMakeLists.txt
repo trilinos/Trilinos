@@ -39,6 +39,7 @@ APPEND_SET(HEADERS
     Kokkos_CrsGraph.hpp
     Kokkos_CrsMatrix.hpp
     Kokkos_MultiVector.hpp
+    Kokkos_VbrMatrix.hpp
     # computation
     Kokkos_DefaultSparseMultiplyKernelOps.hpp
     Kokkos_DefaultSparseSolveKernelOps.hpp

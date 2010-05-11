@@ -225,22 +225,22 @@ namespace {
     const int N = 5;
     ArrayRCP< ArrayRCP<int> > bufs, views;
     bufs = arcp< ArrayRCP<int> >(N);
-    for (size_t i=0; i < N; ++i) {
+    for (int i=0; i < N; ++i) {
       bufs[i] = node->template allocBuffer<int>(i+1);
     }
     // get views, set data, delete them
     views = ArrayOfViewsHelper<NODE>::template getArrayOfNonConstViews<int>(node, Kokkos::WriteOnly, bufs);
-    TEST_EQUALITY_CONST( (unsigned int)views.size(), N );
-    for (size_t i=0; i < N; ++i) {
-      TEST_EQUALITY( (unsigned int)views[i].size(), i+1 );
+    TEST_EQUALITY_CONST( (int)views.size(), N );
+    for (int i=0; i < N; ++i) {
+      TEST_EQUALITY( (int)views[i].size(), i+1 );
       std::fill( views[i].begin(), views[i].end(), i+1 );
     }
     views = Teuchos::null; 
     // get views, verify data, delete them
     views = ArrayOfViewsHelper<NODE>::template getArrayOfNonConstViews<int>(node, Kokkos::ReadWrite, bufs);
-    TEST_EQUALITY_CONST( (unsigned int)views.size(), N );
-    for (size_t i=0; i < N; ++i) {
-      TEST_EQUALITY( (unsigned int)views[i].size(), i+1 );
+    TEST_EQUALITY_CONST( (int)views.size(), N );
+    for (int i=0; i < N; ++i) {
+      TEST_EQUALITY( (int)views[i].size(), i+1 );
       Array<int> exp(i+1,i+1);      
       TEST_COMPARE_ARRAYS( (views[i])(), exp() ); 
     }
