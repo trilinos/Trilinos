@@ -2,7 +2,6 @@ INCLUDE(AddSubdirectories)
 
 ADD_SUBDIRECTORIES(
   Platform
-  BlockMap
   Map
   Distributor
   Directory
@@ -13,6 +12,8 @@ ADD_SUBDIRECTORIES(
   Utils
   CrsGraph
   CrsMatrix
+  BlockMap
+  BlockMultiVector
   )
 
 PACKAGE_ADD_LIBRARY(

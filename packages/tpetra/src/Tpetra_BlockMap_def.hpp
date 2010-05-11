@@ -101,6 +101,9 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(global_size_t numGlobalBlock
        "Tpetra::BlockMap::BlockMap ERROR: blockSize must be greater than 0.");
 
   global_size_t numGlobalPoints = numGlobalBlocks*blockSize;
+  if (numGlobalBlocks == Teuchos::OrdinalTraits<global_size_t>::invalid()) {
+    numGlobalPoints = Teuchos::OrdinalTraits<global_size_t>::invalid();
+  }
 
   size_t numLocalPoints = numLocalBlocks*blockSize;
 
@@ -240,6 +243,18 @@ Teuchos::ArrayView<const LocalOrdinal>
 BlockMap<LocalOrdinal,GlobalOrdinal,Node>::getFirstPointInBlocks() const
 {
   return firstPointInBlock_();
+}
+
+template<class LocalOrdinal,class GlobalOrdinal,class Node>
+GlobalOrdinal
+BlockMap<LocalOrdinal,GlobalOrdinal,Node>::getGlobalBlockID(LocalOrdinal localBlockID) const
+{
+  LocalOrdinal invalid = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
+  if (localBlockID < 0 || localBlockID >= myGlobalBlockIDs_.size()) {
+    return invalid;
+  }
+
+  return myGlobalBlockIDs_[localBlockID];
 }
 
 template<class LocalOrdinal,class GlobalOrdinal,class Node>

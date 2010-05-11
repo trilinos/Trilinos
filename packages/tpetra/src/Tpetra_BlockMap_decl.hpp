@@ -88,6 +88,11 @@ class BlockMap : public Teuchos::Describable {
 
   Teuchos::ArrayView<const LocalOrdinal> getFirstPointInBlocks() const;
 
+  //! Return the globalBlockID corresponding to the given localBlockID
+  /*! If localBlockID is not present on this processor, returns Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
+  */
+  GlobalOrdinal getGlobalBlockID(LocalOrdinal localBlockID) const;
+
   //! Return the localBlockID corresponding to the given globalBlockID
   /*! If globalBlockID is not present on this processor, returns Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
   */
