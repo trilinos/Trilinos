@@ -122,6 +122,10 @@ int main(int argc, char *argv[])
       em.sortAndOrderEvaluators();
       cout << "Passed!" << endl;
 
+      cout << "\nTesting writeGraphvizFile()...";
+      em.writeGraphvizFile("graph.dot");
+      cout << "Passed!" << endl;
+
       cout << "\nPrinting EvaluatorManager:\n";
       cout << em << endl;
 

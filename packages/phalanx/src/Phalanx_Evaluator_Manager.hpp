@@ -104,6 +104,8 @@ namespace PHX {
 
     bool sortingCalled() const;
 
+    void writeGraphvizFile(const std::string filename) const;
+
     //! Printing
     void print(std::ostream& os) const;
     

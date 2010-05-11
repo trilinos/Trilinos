@@ -184,6 +184,14 @@ bool PHX::EvaluationContainer<EvalT, Traits>::setupCalled() const
 
 // *************************************************************************
 template <typename EvalT, typename Traits>
+const std::string PHX::EvaluationContainer<EvalT, Traits>::
+evaluationType() const
+{
+  return PHX::typeAsString<EvalT>();
+}
+
+// *************************************************************************
+template <typename EvalT, typename Traits>
 void PHX::EvaluationContainer<EvalT, Traits>::print(std::ostream& os) const
 {
   std::string type = PHX::typeAsString<EvalT>();

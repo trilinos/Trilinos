@@ -229,7 +229,11 @@ int main(int argc, char *argv[])
       }
 
       cout << fm << endl;
-      
+
+      fm.writeGraphvizFile<MyTraits::Residual>("graph_residual.dot");
+      fm.writeGraphvizFile<MyTraits::Jacobian>("graph_jacobian.dot");
+      fm.writeGraphvizFile("all_graph", ".dot");      
+
       // Create Workset information: Cells and EvalData objects
       std::vector<MyCell> cells(num_local_cells);
       for (std::size_t i = 0; i < cells.size(); ++i)

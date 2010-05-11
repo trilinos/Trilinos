@@ -105,6 +105,14 @@ namespace PHX {
     //! Return iterator to last EvaluationContainer
     typename FieldManager::iterator end();
 
+    //! Writes graphviz dot file for the evaluation type
+    template<typename EvalT>
+    void writeGraphvizFile(const std::string filename = "graph.dot") const;
+
+    //! Writes graphviz dot file for all evaluation types (adds eval type to filename).
+    void writeGraphvizFile(const std::string base_filename = "graph",
+			   const std::string file_extension = ".dot") const;
+
     void print(std::ostream& os) const;
 
   private:

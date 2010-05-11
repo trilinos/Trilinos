@@ -75,6 +75,8 @@ namespace PHX {
     //! Return true if the postRegistrationSetupMethod has been called
     bool setupCalled() const;
 
+    const std::string evaluationType() const;
+
     void print(std::ostream& os) const;
 
   protected:

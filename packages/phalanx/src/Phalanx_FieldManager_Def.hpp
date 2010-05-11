@@ -32,6 +32,7 @@
 #ifndef PHX_FIELD_MANAGER_DEF_HPP
 #define PHX_FIELD_MANAGER_DEF_HPP
 
+#include "Teuchos_TestForException.hpp"
 #include "Sacado_mpl_size.hpp"
 #include "Sacado_mpl_find.hpp"
 #include "boost/mpl/at.hpp"
@@ -225,6 +226,32 @@ typename PHX::FieldManager<Traits>::iterator
 PHX::FieldManager<Traits>::end()
 {
   return m_eval_containers.end();
+}
+
+// **************************************************************
+template<typename Traits>
+template<typename EvalT>
+inline
+void PHX::FieldManager<Traits>::
+writeGraphvizFile(const std::string filename) const
+{
+  m_eval_containers.template getAsBase<EvalT>()->writeGraphvizFile(filename);
+}
+
+// **************************************************************
+template<typename Traits>
+inline
+void PHX::FieldManager<Traits>::
+writeGraphvizFile(const std::string base_filename, 
+		  const std::string file_extension) const 
+{
+  typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
+  typename SCTM::const_iterator it = m_eval_containers.begin();
+  for (; it != m_eval_containers.end(); ++it) {
+    std::string name = base_filename + "_" + it->evaluationType() +
+      file_extension;
+    it->writeGraphvizFile(name);
+  }
 }
 
 // **************************************************************
