@@ -87,7 +87,8 @@ void UnitTestBucket::testBucket( ParallelMachine pm )
     Bucket *b1 = bulk.buckets(0)[0];
     std::stringstream  out1_str;
     out1_str << (*b1);
-    STKUNIT_ASSERT_EQUAL ( out1_str.str() , gold1 );
+    bool result = out1_str.str() == gold1;
+    STKUNIT_ASSERT_EQUAL ( result , true );
 
  // Need to validate print against parallel gold string
     std::stringstream  gold2;
