@@ -6,16 +6,13 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#ifndef stk_mesh_Entity_hpp
-#define stk_mesh_Entity_hpp
+#ifndef stk_mesh_base_Entity_hpp
+#define stk_mesh_base_Entity_hpp
 
 #include <utility>
 #include <vector>
 
-#include <stk_util/util/PairIter.hpp>
 #include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/Relation.hpp>
 
 #include <stk_mesh/baseImpl/EntityImpl.hpp>
 
@@ -203,5 +200,5 @@ public:
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
-#endif /* stk_mesh_Entity_hpp */
+#endif /* stk_mesh_base_Entity_hpp */
 

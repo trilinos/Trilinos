@@ -15,9 +15,12 @@
 #include <vector>
 #include <algorithm>
 
+#include <stk_mesh/baseImpl/BucketImpl.hpp>
+
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Part.hpp>
+#include <stk_mesh/base/Entity.hpp>
 
 //----------------------------------------------------------------------
 
@@ -234,25 +237,10 @@ public:
 class Bucket {
 private:
   friend class BulkData ;
+  friend class impl::BucketImpl ;
 
-  struct DataMap {
-    typedef FieldBase::Restriction::size_type size_type ;
+  impl::BucketImpl       m_bucketImpl ;
 
-    const size_type * m_stride ;
-    size_type         m_base ;
-    size_type         m_size ;
-  };
-
-  BulkData             & m_mesh ;        // Where this bucket resides
-  const unsigned         m_entity_rank ; // Type of entities for this bucket
-  const unsigned * const m_key ;         // Unique key in the bulk data
-  const size_t           m_alloc_size ;  // Allocation size of this bucket
-  const size_t           m_capacity ;    // Capacity for entities
-  size_t                 m_size ;        // Number of entities
-  Bucket               * m_bucket ;
-  DataMap        * const m_field_map ;   // Field value data map, shared
-  Entity        ** const m_entities ;    // Array of entity pointers,
-                                         // begining of field value memory.
 public:
 
   //--------------------------------
@@ -264,25 +252,47 @@ public:
   inline iterator begin() const { return iterator(this,0); }
 
   /** \brief End of the bucket */
-  inline iterator end() const { return iterator(this,m_size); }
+  inline iterator end() const { return iterator(this,size()); }
 
   /** \brief  Number of entities associated with this bucket */
-  size_t size() const { return m_size ; }
+  size_t size() const { return m_bucketImpl.size() ; }
 
   /** \brief  Capacity of this bucket */
-  size_t capacity() const { return m_capacity ; }
+  size_t capacity() const { return m_bucketImpl.capacity() ; }
 
   /** \brief  Query the i^th entity */
-  Entity & operator[] ( size_t i ) const { return *(m_entities[i]) ; }
+  Entity & operator[] ( size_t i ) const { return m_bucketImpl[i] ; }
+
+  /** \brief  Query the size of this field data specified by FieldBase */
+  unsigned field_data_size(const FieldBase & field) const
+  { return m_bucketImpl.field_data_size(field); }
+
+  /** \brief  Query the stride of this field data specified by FieldBase */
+  const FieldBase::Restriction::size_type * field_data_stride( const FieldBase & field ) const
+  { return m_bucketImpl.field_data_stride(field); }
+  
+  /** \brief  Query the location of this field data specified by FieldBase and Entity */
+  unsigned char * field_data_location( const FieldBase & field, const Entity & entity ) const
+  { return m_bucketImpl.field_data_location(field,entity); }
+
+  /** \brief  Query the location of this field data specified by FieldBase */
+  unsigned char * field_data_location( const FieldBase & field ) const
+  { return m_bucketImpl.field_data_location(field); }
+
+  /** \brief  Query the location of this field data specified by FieldBase and Entity */
+  template< class field_type >
+  typename FieldTraits< field_type >::data_type *
+  field_data( const field_type & field , const Entity & entity ) const
+  { return m_bucketImpl.field_data(field,entity.bucket_ordinal()); }
 
   //--------------------------------
   /** \brief  The \ref stk::mesh::BulkData "bulk data manager"
    *          that owns this bucket.
    */
-  BulkData & mesh() const { return m_mesh ; }
+  BulkData & mesh() const { return m_bucketImpl.mesh(); }
 
   /** \brief  Type of entities in this bucket */
-  unsigned entity_rank() const { return m_entity_rank ; }
+  unsigned entity_rank() const { return m_bucketImpl.entity_rank(); }
 
   /** \brief  This bucket is a subset of these \ref stk::mesh::Part "parts" */
   void supersets( PartVector & ) const ;
@@ -300,18 +310,14 @@ public:
   //--------------------------------
   /** Query bucket's supersets' ordinals. */
   std::pair<const unsigned *, const unsigned *>
-    superset_part_ordinals() const
-    {
-      return std::pair<const unsigned *, const unsigned *>
-             ( m_key + 1 , m_key + m_key[0] );
-    }
+    superset_part_ordinals() const { return m_bucketImpl.superset_part_ordinals() ; }
 
 #ifndef DOXYGEN_COMPILE
-  const unsigned * key() const { return m_key ; }
+  const unsigned * key() const { return m_bucketImpl.key() ; }
 #endif /* DOXYGEN_COMPILE */
 
   /** \brief  The allocation size, in bytes, of this bucket */
-  unsigned allocation_size() const { return m_alloc_size ; }
+  unsigned allocation_size() const { return m_bucketImpl.allocation_size() ; }
 
 private:
 
@@ -320,55 +326,14 @@ private:
   Bucket( const Bucket & );
   Bucket & operator = ( const Bucket & );
 
-  Bucket( BulkData & ,
+  Bucket( BulkData        & arg_mesh ,
           unsigned          arg_entity_rank ,
           const unsigned  * arg_key ,
           size_t            arg_alloc_size ,
           size_t            arg_capacity ,
-          Bucket::DataMap * arg_field_map ,
+          impl::BucketImpl::DataMap * arg_field_map ,
           Entity         ** arg_entity_array );
 
-  void update_state();
-
-  static void copy_fields( Bucket & k_dst , unsigned i_dst ,
-                           Bucket & k_src , unsigned i_src );
-
-  static void zero_fields( Bucket & k_dst , unsigned i_dst );
-
-  static Bucket * last_bucket_in_family( Bucket * );
-
-  // Destroy the last empty bucket in a family:
-  static void destroy_bucket( std::vector<Bucket*> & bucket_set , Bucket * );
-
-  static void destroy_bucket( Bucket * );
-
-  static Bucket * declare_nil_bucket( BulkData & , unsigned );
-
-  static Bucket *
-    declare_bucket( BulkData & ,
-                    const unsigned entity_rank ,
-                    const unsigned part_count ,
-                    const unsigned part_ord[] ,
-                    const unsigned bucket_capacity ,
-                    const std::vector< FieldBase * > & field_set ,
-                          std::vector<Bucket*>       & bucket_set );
-
-
-  friend
-  unsigned field_data_size( const FieldBase & f , const Bucket & k );
-
-  template< class field_type >
-    friend
-    typename FieldTraits< field_type >::data_type *
-    field_data( const field_type & f , const Bucket::iterator &i );
-
-  template< class field_type >
-  friend
-  typename FieldTraits< field_type >::data_type *
-  field_data( const field_type & f , const Entity & e );
-
-  template< class field_type > friend struct EntityArray ;
-  template< class field_type > friend struct BucketArray ;
 };
 
 
@@ -399,7 +364,7 @@ namespace mesh {
 
 inline Entity & BucketIterator::entity( const size_t i ) const
 {
-  if ( ! m_bucket_ptr ) { throw_error("is NULL"); }
+  //if ( ! m_bucket_ptr ) { throw_error("is NULL"); }
   return (*m_bucket_ptr)[ m_current_entity + i ] ;
 }
 

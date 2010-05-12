@@ -19,6 +19,7 @@
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Entity.hpp>
+#include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 

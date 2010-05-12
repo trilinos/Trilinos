@@ -26,6 +26,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/EntityComm.hpp>
+#include <stk_mesh/base/Bucket.hpp>
 
 //----------------------------------------------------------------------
 

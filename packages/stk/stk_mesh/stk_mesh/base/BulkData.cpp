@@ -110,7 +110,7 @@ BulkData::~BulkData()
         std::vector<Bucket*> & kset = *--i ;
 
         while ( ! kset.empty() ) {
-          try { Bucket::destroy_bucket( kset.back() ); } catch(...) {}
+          try { impl::BucketImpl::destroy_bucket( kset.back() ); } catch(...) {}
           kset.pop_back();
         }
         kset.clear();
@@ -119,7 +119,7 @@ BulkData::~BulkData()
     m_buckets.clear();
   } catch(...) {}
 
-  try { if ( m_bucket_nil ) Bucket::destroy_bucket( m_bucket_nil ); } catch(...) {}
+  try { if ( m_bucket_nil ) impl::BucketImpl::destroy_bucket( m_bucket_nil ); } catch(...) {}
 
   try {
     while ( ! m_entities.empty() ) {
@@ -140,7 +140,7 @@ void BulkData::update_field_data_states() const
 
     for ( std::vector<Bucket*>::const_iterator
           ik = kset.begin() ; ik != kset.end() ; ++ik ) {
-      (*ik)->update_state();
+      (*ik)->m_bucketImpl.update_state();
     }
   }
 }
@@ -217,7 +217,7 @@ bool BulkData::modification_begin()
     m_meta_data_verified = true ;
 
     m_bucket_nil =
-      Bucket::declare_nil_bucket(*this,m_mesh_meta_data.get_fields().size());
+      impl::BucketImpl::declare_nil_bucket(*this,m_mesh_meta_data.get_fields().size());
   }
   else {
     ++m_sync_count ;
@@ -635,7 +635,7 @@ void BulkData::internal_change_entity_parts(
   // Move the entity to the new bucket.
 
   Bucket * k_new =
-    Bucket::declare_bucket( *this ,
+    impl::BucketImpl::declare_bucket( *this ,
                             e.entity_rank(),
                             parts_total.size(),
                             & parts_total[0] ,
@@ -646,16 +646,16 @@ void BulkData::internal_change_entity_parts(
   // If changing buckets then copy its field values from old to new bucket
 
   if ( k_old ) {
-    Bucket::copy_fields( *k_new , k_new->m_size , *k_old , i_old );
+    impl::BucketImpl::copy_fields( *k_new , k_new->size() , *k_old , i_old );
   }
   else {
-    Bucket::zero_fields( *k_new , k_new->m_size );
+    impl::BucketImpl::zero_fields( *k_new , k_new->size() );
   }
 
   // Set the new bucket
-  e.m_entityImpl.set_bucket_and_ordinal( k_new, k_new->m_size );
-  k_new->m_entities[ k_new->m_size ] = & e ;
-  ++( k_new->m_size );
+  e.m_entityImpl.set_bucket_and_ordinal( k_new, k_new->size() );
+  k_new->m_bucketImpl.replace_entity( k_new->size() , & e ) ;
+  k_new->m_bucketImpl.increment_size();
 
   // If changing buckets then remove the entity from the bucket,
   if ( k_old ) { remove_entity( k_old , i_old ); }
@@ -786,19 +786,19 @@ void BulkData::remove_entity( Bucket * k , unsigned i )
   // Last bucket in the family of buckets with the same parts.
   // The last bucket is the only non-full bucket in the family.
 
-  Bucket * const last = Bucket::last_bucket_in_family( k );
+  Bucket * const last = impl::BucketImpl::last_bucket_in_family( k );
 
   // Fill in the gap if it is not the last entity being removed
 
-  if ( last != k || k->m_size != i + 1 ) {
+  if ( last != k || k->size() != i + 1 ) {
 
     // Copy last entity in last bucket to bucket *k slot i
 
-    Entity * const entity = last->m_entities[ last->m_size - 1 ];
+    Entity * const entity = last->m_bucketImpl.nonconst_entity( last->size() - 1 );
 
-    Bucket::copy_fields( *k , i , *last , last->m_size - 1 );
+    impl::BucketImpl::copy_fields( *k , i , *last , last->size() - 1 );
 
-    k->m_entities[i]     = entity ;
+    k->m_bucketImpl.replace_entity(i, entity ) ;
     entity->m_entityImpl.set_bucket_and_ordinal( k, i );
 
     // Entity field data has relocated
@@ -806,12 +806,12 @@ void BulkData::remove_entity( Bucket * k , unsigned i )
     internal_propagate_relocation( *entity );
   }
 
-  --( last->m_size );
+  last->m_bucketImpl.decrement_size();
 
-  last->m_entities[ last->m_size ] = NULL ;
+  last->m_bucketImpl.replace_entity( last->size() , NULL ) ;
 
-  if ( 0 == last->m_size ) {
-    Bucket::destroy_bucket( m_buckets[ entity_rank ] , last );
+  if ( 0 == last->size() ) {
+    impl::BucketImpl::destroy_bucket( m_buckets[ entity_rank ] , last );
   }
 }
 
@@ -829,16 +829,16 @@ void BulkData::internal_sort_bucket_entities()
 
     for ( ; bk < buckets.size() ; bk = ek ) {
       Bucket * b_scratch = NULL ;
-      Bucket * ik_vacant = Bucket::last_bucket_in_family( buckets[bk] );
+      Bucket * ik_vacant = impl::BucketImpl::last_bucket_in_family( buckets[bk] );
       unsigned ie_vacant = ik_vacant->size();
 
       if ( ik_vacant->capacity() <= ie_vacant ) {
         // Have to create a bucket just for the scratch space...
-        const unsigned * const bucket_key = buckets[bk]->m_key ;
+        const unsigned * const bucket_key = buckets[bk]->key() ;
         const unsigned         part_count = bucket_key[0] - 1 ;
         const unsigned * const part_ord   = bucket_key + 1 ;
 
-        b_scratch = Bucket::declare_bucket( *this , entity_rank ,
+        b_scratch = impl::BucketImpl::declare_bucket( *this , entity_rank ,
                                             part_count , part_ord ,
                                             m_bucket_capacity ,
                                             m_mesh_meta_data.get_fields() ,
@@ -848,7 +848,7 @@ void BulkData::internal_sort_bucket_entities()
         ie_vacant = 0 ;
       }
 
-      ik_vacant->m_entities[ ie_vacant ] = NULL ;
+      ik_vacant->m_bucketImpl.replace_entity( ie_vacant , NULL ) ;
 
       // Determine offset to the end bucket in this family:
       while ( ek < buckets.size() && ik_vacant != buckets[ek] ) { ++ek ; }
@@ -867,7 +867,7 @@ void BulkData::internal_sort_bucket_entities()
         Bucket & b = * buckets[ik];
         const unsigned n = b.size();
         for ( unsigned i = 0 ; i < n ; ++i , ++j ) {
-          *j = b.m_entities[i] ;
+          *j = b.m_bucketImpl.nonconst_entity(i) ;
         }
       }
 
@@ -881,26 +881,26 @@ void BulkData::internal_sort_bucket_entities()
         Bucket & b = * buckets[ik];
         const unsigned n = b.size();
         for ( unsigned i = 0 ; i < n ; ++i , ++j ) {
-          Entity * const current = b.m_entities[i] ;
+          Entity * const current = b.m_bucketImpl.nonconst_entity(i) ;
 
           if ( current != *j ) {
 
             if ( current ) {
               // Move current entity to the vacant spot
-              Bucket::copy_fields( *ik_vacant , ie_vacant , b, i );
+              impl::BucketImpl::copy_fields( *ik_vacant , ie_vacant , b, i );
               current->m_entityImpl.set_bucket_and_ordinal( ik_vacant, ie_vacant );
-              ik_vacant->m_entities[ ie_vacant ] = current ;
+              ik_vacant->m_bucketImpl.replace_entity( ie_vacant , current ) ;
             }
 
             // Set the vacant spot to where the required entity is now.
             ik_vacant = (*j)->m_entityImpl.get_bucket() ;
             ie_vacant = (*j)->bucket_ordinal() ;
-            ik_vacant->m_entities[ ie_vacant ] = NULL ;
+            ik_vacant->m_bucketImpl.replace_entity( ie_vacant , NULL ) ;
 
             // Move required entity to the required spot
-            Bucket::copy_fields( b, i, *ik_vacant , ie_vacant );
+            impl::BucketImpl::copy_fields( b, i, *ik_vacant , ie_vacant );
             (*j)->m_entityImpl.set_bucket_and_ordinal( & b, i );
-            b.m_entities[i]    = *j ;
+            b.m_bucketImpl.replace_entity( i, *j );
 
             change_this_family = true ;
           }
@@ -916,7 +916,7 @@ void BulkData::internal_sort_bucket_entities()
 
       if ( b_scratch ) {
         // Created a last bucket, now have to destroy it.
-        Bucket::destroy_bucket( buckets , b_scratch );
+        impl::BucketImpl::destroy_bucket( buckets , b_scratch );
         --ek ;
       }
     }

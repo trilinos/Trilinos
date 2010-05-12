@@ -65,8 +65,7 @@ bool field_data_valid( const FieldBase & f ,
 inline
 unsigned field_data_size( const FieldBase & f , const Bucket & k )
 {
-  const Bucket::DataMap & pd = k.m_field_map[ f.mesh_meta_data_ordinal() ];
-  return pd.m_size ;
+  return k.field_data_size(f);
 }
 
 /** \brief  Size, in bytes, of the field data for each entity */
@@ -83,22 +82,7 @@ inline
 typename FieldTraits< field_type >::data_type *
 field_data( const field_type & f , const Bucket::iterator &i ) 
 {
-  typedef unsigned char * byte_p ;
-  typedef typename FieldTraits< field_type >::data_type * data_p ;
-
-  data_p ptr = NULL ;
-
-  {
-    const Bucket          & b  = * i.m_bucket_ptr ;
-    const Bucket::DataMap & pd = b.m_field_map[ f.mesh_meta_data_ordinal() ];
-
-    if ( pd.m_size ) {
-      ptr = (data_p)( ((byte_p)(b.m_entities)) +
-                      pd.m_base + pd.m_size * i.m_current_entity );
-    }
-  }
-  return ptr ;
-
+  return i.m_bucket_ptr->field_data( f, *i );
 }
 
 
@@ -108,22 +92,7 @@ inline
 typename FieldTraits< field_type >::data_type *
 field_data( const field_type & f , const Entity & e )
 {
-  typedef unsigned char * byte_p ;
-  typedef typename FieldTraits< field_type >::data_type * data_p ;
-
-  data_p ptr = NULL ;
-
-  {
-    const Bucket & b = e.bucket();
-
-    const Bucket::DataMap & pd = b.m_field_map[ f.mesh_meta_data_ordinal() ];
-
-    if ( pd.m_size ) {
-      ptr = (data_p)( ((byte_p)(b.m_entities)) +
-                      pd.m_base + pd.m_size * e.bucket_ordinal() );
-    }
-  }
-  return ptr ;
+  return e.bucket().field_data( f, e );
 }
 
 //----------------------------------------------------------------------
@@ -176,13 +145,11 @@ public:
   EntityArray( const field_type & f , const Entity & e ) : array_type()
   {
     const Bucket          & b = e.bucket();
-    const Bucket::DataMap & pd = b.m_field_map[ f.mesh_meta_data_ordinal() ];
-
-    if ( pd.m_size ) {
-      array_type::assign_stride( 
-        (ScalarType*)( (byte_p)(b.m_entities) +
-                       pd.m_base + pd.m_size * e.bucket_ordinal() ),
-        pd.m_stride );
+    if (b.field_data_size(f)) {
+      array_type::assign_stride(
+          (ScalarType*)(b.field_data_location(f, e ) ), 
+          b.field_data_stride(f)
+          );
     }
   }
 #endif /* DOXYGEN_COMPILE */
@@ -232,11 +199,10 @@ public:
 
   BucketArray( const field_type & f , const Bucket & k )
   {
-    const Bucket::DataMap & pd = k.m_field_map[ f.mesh_meta_data_ordinal() ];
-
-    if ( pd.m_size ) {
-      array_type::assign( (ScalarType*)( (byte_p)(k.m_entities) + pd.m_base ) ,
+    if (k.field_data_size(f)) {
+      array_type::assign( (ScalarType*)( k.field_data_location(f,k[0]) ) ,
                           k.size() );
+
     }
   }
 
@@ -244,15 +210,11 @@ public:
                const Bucket::iterator & i,
                const Bucket::iterator & j) 
   {
-    const Bucket::DataMap & pd =
-      i.m_bucket_ptr->m_field_map[ f.mesh_meta_data_ordinal() ];
-
     const ptrdiff_t n = j - i ;
 
-    if ( pd.m_size && 0 < n ) {
+    if ( i.m_bucket_ptr->field_data_size(f) && 0 < n ) {
       array_type::assign(
-        (ScalarType*)( (byte_p)(i.m_bucket_ptr->m_entities) +
-                       pd.m_base + pd.m_size * i.m_current_entity ),
+        (ScalarType*)( i.m_bucket_ptr->field_data_location( f, *i ) ),
         (typename array_type::size_type) n );
     }
   }
@@ -288,12 +250,10 @@ public:
 
   BucketArray( const field_type & f , const Bucket & b )
   {
-    const Bucket::DataMap & pd = b.m_field_map[ f.mesh_meta_data_ordinal() ];
-
-    if ( pd.m_size ) {
+    if ( b.field_data_size(f) ) {
       array_type::assign_stride(
-        (ScalarType*)( ((byte_p) b.m_entities ) + pd.m_base ),
-        pd.m_stride , (typename array_type::size_type) b.size() );
+        (ScalarType*)( b.field_data_location(f,b[0]) ),
+        b.field_data_stride(f) , (typename array_type::size_type) b.size() );
     }
   }
 
@@ -306,13 +266,11 @@ public:
     if ( 0 < distance ) {
 
       const Bucket          & b  = * i.m_bucket_ptr ;
-      const Bucket::DataMap & pd = b.m_field_map[ f.mesh_meta_data_ordinal() ];
 
-      if ( pd.m_size ) {
+      if ( b.field_data_size(f) ) {
         array_type::assign_stride(
-          (ScalarType*)( ((byte_p) b.m_entities ) +
-                         pd.m_base + pd.m_size * i.m_current_entity ),
-          pd.m_stride , (typename array_type::size_type) distance );
+          (ScalarType*)( b.field_data_location(f,*i) ),
+          b.field_data_stride(f) , (typename array_type::size_type) distance );
       }
     }
   }

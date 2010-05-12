@@ -13,6 +13,7 @@
 #include <stk_mesh/base/EntityComm.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
 
 namespace stk {
