@@ -3,7 +3,10 @@
 
 #include "Teuchos_RefCountPtr.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_Time.hpp"
 #include "Epetra_LinearProblem.h"
+#include "Epetra_Map.h"
+#include "Epetra_Comm.h"
 #include "AztecOO.h"
 #include "Ifpack.h"
 
@@ -34,8 +37,16 @@ build_solver(Teuchos::ParameterList& test_params,
       Teuchos::ParameterList& ifparams = test_params.sublist("Ifpack");
       precond->SetParameters(ifparams);
     }
+    Teuchos::Time prec_time("precond");
+    prec_time.start();
     precond->Initialize();
     precond->Compute();
+    prec_time.stop();
+    int my_proc = problem->GetMatrix()->RowMatrixRowMap().Comm().MyPID();
+    if (my_proc == 0) {
+      std::cout << "Time to initialize/compute preconditioner: " << prec_time.totalElapsedTime() << "s" << std::endl;
+    }
+    
     solver->SetPrecOperator(precond);
   }
 

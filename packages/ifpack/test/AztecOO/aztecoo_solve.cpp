@@ -95,7 +95,23 @@ int main(int argc, char*argv[])
   int max_iters = solver->GetAllAztecOptions()[AZ_max_iter];
   double tol    = solver->GetAllAztecParams()[AZ_tol];
 
+  Teuchos::Time prec_time("precond");
+  prec_time.start();
+  double cond_est = 0;
+  int err_code = -1;
+  if (solver->GetAllAztecOptions()[AZ_precond] != AZ_user_precond) {
+    err_code = solver->ConstructPreconditioner(cond_est);
+  }
+  prec_time.stop();
+  if (Comm.MyPID() == 0 && err_code == 0) {
+    std::cout << "Time to compute preconditioner: " << prec_time.totalElapsedTime() << "s"<<std::endl;
+  }
+
   int ret = solver->Iterate(max_iters, tol);
+
+  if (err_code == 0) {
+    solver->DestroyPreconditioner();
+  }
 
   int actual_iters = (int)solver->GetAztecStatus()[AZ_its];
 
