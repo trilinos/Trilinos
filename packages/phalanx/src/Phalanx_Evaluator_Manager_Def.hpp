@@ -318,6 +318,8 @@ template<typename Traits>
 void PHX::EvaluatorManager<Traits>::
 writeGraphvizFile(const std::string filename) const
 {
+#ifdef PHALANX_BUG_IN_BOOST_WRITE_GRAPHVIZ
+
   using std::string;
   using std::vector;
   using std::map;
@@ -390,6 +392,7 @@ writeGraphvizFile(const std::string filename) const
   boost::write_graphviz(outfile, g_dot);
   outfile.close();
 
+#endif // PHALANX_BUG_IN_BOOST_WRITE_GRAPHVIZ
 }
 
 //=======================================================================
