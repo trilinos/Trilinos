@@ -537,9 +537,23 @@ int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList 
     PreList.set("smoother: Block Chebyshev number of blocks",List.get("smoother: Block Chebyshev number of blocks",-1));
     PreList.set("smoother: Block Chebyshev block list",List.get("smoother: Block Chebyshev block list",(int*)0));
     PreList.set("smoother: Block Chebyshev block starts",List.get("smoother: Block Chebyshev block starts",(int*)0));
+
+    // Ifpack smoothing
     PreList.set("smoother: ifpack list",List.sublist("smoother: ifpack list"));
-    
-    // EXPERIMENTAL: Normal Equations
+    PreList.set("smoother: ifpack type",List.get("smoother: ifpack type","ILU"));
+
+    // Self smoothing
+    PreList.set("smoother: self overlap",List.get("smoother: self overlap",0));
+    PreList.set("smoother: self list",List.sublist("smoother: self list"));
+
+    // Aztec smoothing
+    Teuchos::RCP<vector<int> >    ridummy;
+    Teuchos::RCP<vector<double> > rddummy;
+    PreList.set("smoother: Aztec options",List.get("smoother: Aztec options",ridummy));
+    PreList.set("smoother: Aztec params",List.get("smoother: Aztec params",rddummy));
+    PreList.set("smoother: Aztec as solver",List.get("smoother: Aztec as solver",false));
+
+    // Normal Equations smoothing
     PreList.set("smoother: chebyshev solve normal equations",List.get("smoother: chebyshev solve normal equations",false));
 
     Teuchos::ParameterList PostList(PreList);
