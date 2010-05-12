@@ -24,6 +24,7 @@
 #include <stk_mesh/baseImpl/PartRepository.hpp>
 
 #include <stk_mesh/baseImpl/FieldBaseImpl.hpp>
+#include <stk_mesh/baseImpl/FieldRepository.hpp>
 
 namespace stk {
 namespace mesh {
@@ -174,7 +175,9 @@ public:
   field_type * get_field( const std::string & name ) const ;
 
   /** \brief  Get all defined fields */
-  const std::vector< FieldBase * > & get_fields() const { return m_fields ; }
+  const FieldVector & get_fields() const {
+    return m_field_repo.get_fields() ;
+  }
 
   /** \brief  Declare a field of the given
    *          \ref stk::mesh::Field "field_type", test name,
@@ -336,7 +339,8 @@ private:
   Part * m_shares_part ;
 
 
-  std::vector< FieldBase * >   m_fields ;
+  impl::FieldRepository        m_field_repo ;
+
   std::vector< FieldRelation > m_field_relations ;
   std::vector< PropertyBase* > m_properties ;
   std::vector< std::string >   m_entity_rank_names ;
@@ -465,8 +469,8 @@ field_type * MetaData::get_field( const std::string & name ) const
   Traits::assign_tags( tags );
 
   FieldBase * const field =
-    stk::mesh::impl::get_field( "stk::mesh::MetaData::get_field" ,
-                          name , dt , Traits::Rank , tags , 0 , m_fields );
+    m_field_repo.get_field( "stk::mesh::MetaData::get_field" ,
+                          name , dt , Traits::Rank , tags , 0 );
 
   return static_cast< field_type * >( field );
 }
@@ -693,7 +697,7 @@ const T *
 MetaData::declare_attribute_with_delete( FieldBase & f , const T * a )
 {
   assert_not_committed( "stk::mesh::MetaData::declare_attribute_with_delete" );
-  return f.m_impl.declare_attribute_with_delete(a);
+  return m_field_repo.declare_attribute_with_delete(f, a);
 }
 
 template<class T>
@@ -702,7 +706,7 @@ const T *
 MetaData::declare_attribute_no_delete( FieldBase & f , const T * a )
 {
   assert_not_committed( "stk::mesh::MetaData::declare_attribute_no_delete" );
-  return f.m_impl.declare_attribute_no_delete(a);
+  return m_field_repo.declare_attribute_no_delete(f, a);
 }
 
 //----------------------------------------------------------------------

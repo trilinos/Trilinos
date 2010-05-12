@@ -23,7 +23,7 @@
 #include <stk_mesh/base/Comm.hpp>
 
 
-#include <stk_mesh/baseImpl/FieldBaseImpl.hpp>
+#include <stk_mesh/baseImpl/FieldRepository.hpp>
 
 namespace stk {
 namespace mesh {
@@ -82,7 +82,7 @@ MetaData::MetaData(const std::vector<std::string>& entity_rank_names)
     m_universal_part( NULL ),
     m_owns_part( NULL ),
     m_shares_part( NULL ),
-    m_fields( ),
+    m_field_repo(),
     m_field_relations( ),
     m_properties( ),
     m_entity_rank_names( entity_rank_names )
@@ -210,11 +210,7 @@ void MetaData::declare_part_subset( Part & superset , Part & subset )
 
   // The new superset / subset relationship can cause a
   // field restriction to become incompatible or redundant.
-
-  for ( std::vector<FieldBase *>::iterator
-        f = m_fields.begin() ; f != m_fields.end() ; ++f ) {
-    (*f)->m_impl.verify_and_clean_restrictions( method , m_part_repo.all_parts() );
-  }
+  m_field_repo.verify_and_clean_restrictions( method , m_part_repo.all_parts() );
 }
 
 void MetaData::declare_part_relation(
@@ -267,14 +263,13 @@ MetaData::declare_field_base(
 
   assert_not_committed( method );
 
-  return impl::declare_field(
+  return m_field_repo.declare_field(
                 arg_name,
                 arg_traits,
                 arg_rank,
                 arg_dim_tags,
                 arg_num_states,
-                this,
-                m_fields
+                this
                );
 }
 
@@ -291,9 +286,14 @@ void MetaData::declare_field_restriction(
   assert_same_mesh_meta_data( method , arg_field.mesh_meta_data() );
   assert_same_mesh_meta_data( method , arg_part.mesh_meta_data() );
 
-  arg_field.m_impl.insert_restriction( method, arg_entity_rank, arg_part, arg_stride);
-
-  arg_field.m_impl.verify_and_clean_restrictions( method, get_parts() );
+  m_field_repo.declare_field_restriction(
+      method,
+      arg_field,
+      arg_entity_rank,
+      arg_part,
+      m_part_repo.all_parts(),
+      arg_stride
+      );
 }
 
 
@@ -347,17 +347,8 @@ MetaData::~MetaData()
     m_properties.clear();
   } catch(...) {}
 
-  // Destroy the fields, used 'new' to allocate so now use 'delete'
-
-  try {
-    std::vector<FieldBase * >::iterator j = m_fields.begin();
-
-    for ( ; j != m_fields.end() ; ++j ) { delete *j ; }
-
-    m_fields.clear();
-  } catch(...) {}
-
   // PartRepository is member data
+  // FieldRepository is member data
 }
 
 //----------------------------------------------------------------------

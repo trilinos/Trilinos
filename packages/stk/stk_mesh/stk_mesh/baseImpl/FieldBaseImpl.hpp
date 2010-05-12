@@ -26,25 +26,6 @@ namespace mesh {
 namespace impl {
 
 
-FieldBase * get_field(
-  const char                        * arg_method ,
-  const std::string                 & arg_name ,
-  const DataTraits                  & arg_traits ,
-  unsigned                            arg_rank ,
-  const shards::ArrayDimTag * const * arg_dim_tags ,
-  unsigned                            arg_num_states ,
-  const std::vector<FieldBase*>     & arg_meta_data_fields );
-
-
-
-FieldBase * declare_field(
-  const std::string                 & arg_name ,
-  const DataTraits                  & arg_traits ,
-  unsigned                            arg_rank ,
-  const shards::ArrayDimTag * const * arg_dim_tags ,
-  unsigned                            arg_num_states ,
-  MetaData                          * arg_meta_data ,
-  std::vector<FieldBase*>           & arg_meta_data_fields );
 
 
 class FieldBaseImpl {

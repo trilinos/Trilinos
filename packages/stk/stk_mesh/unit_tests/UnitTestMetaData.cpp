@@ -487,19 +487,20 @@ void UnitTestMetaData::testField()
   // per state of the field.  These fields are inserted
   // into a vector of fields of the base class.
 
-  std::vector<FieldBase*> allocated_fields ;
+  impl::FieldRepository field_repo;
+  const FieldVector  & allocated_fields = field_repo.get_fields();
 
   //------------------------------
   // Declare a double precision scalar field of one state.
   // Not an array; therefore, is rank zero.
   // Test the query methods for accuracy.
   FieldBase * const fA =
-    impl::declare_field( std::string("A"),
+    field_repo.declare_field( std::string("A"),
                               data_traits<double>() ,
                               0     /* # Ranks */ ,
                               NULL  /* dimension tags */ ,
                               1     /* # States */ ,
-                              meta_null , allocated_fields );
+                              meta_null );
 
   STKUNIT_ASSERT( allocated_fields.size() == 1 );
   STKUNIT_ASSERT( fA != NULL );
@@ -518,12 +519,12 @@ void UnitTestMetaData::testField()
     FieldBase * tmp = NULL ;
     bool caught = false ;
     try {
-      tmp = impl::declare_field( "A_OLD" ,
+      tmp = field_repo.declare_field( "A_OLD" ,
                                       data_traits<double>() ,
                                       0     /* # Ranks */ ,
                                       NULL  /* dimension tags */ ,
                                       1     /* # States */ ,
-                                      meta_null , allocated_fields );
+                                      meta_null );
     }
     catch( const std::exception & x ) {
       std::cout << "Field: Correctly caught " << x.what() << std::endl ;
@@ -541,12 +542,12 @@ void UnitTestMetaData::testField()
   // Test the query methods for accuracy.
 
   FieldBase * const fB =
-    impl::declare_field( std::string("B"),
+    field_repo.declare_field( std::string("B"),
                               data_traits<int>(),
                               0     /* # Ranks */ ,
                               NULL  /* dimension tags */ ,
                               2     /* # States */ ,
-                              meta_null , allocated_fields );
+                              meta_null );
 
   STKUNIT_ASSERT( allocated_fields.size() == 3 );
   STKUNIT_ASSERT( fB != NULL );
@@ -556,7 +557,7 @@ void UnitTestMetaData::testField()
   STKUNIT_ASSERT( fB->state() == StateNew );
   STKUNIT_ASSERT( fB->rank() == 0 );
 
-  FieldBase * const fB_old = allocated_fields[2] ;
+  const FieldBase * const fB_old = allocated_fields[2] ;
   STKUNIT_ASSERT( fB_old->name() == std::string("B_OLD") );
   STKUNIT_ASSERT( fB_old->type_is<int>() );
   STKUNIT_ASSERT( fB_old->state() == StateOld );
@@ -566,12 +567,12 @@ void UnitTestMetaData::testField()
   // Redeclare field must give back the previous field:
 
   FieldBase * const fB_redundant =
-    impl::declare_field( std::string("B"),
+    field_repo.declare_field( std::string("B"),
                               data_traits<int>(),
                               0     /* # Ranks */ ,
                               NULL  /* dimension tags */ ,
                               2     /* # States */ ,
-                              meta_null , allocated_fields );
+                              meta_null );
 
   STKUNIT_ASSERT( allocated_fields.size() == 3 );
   STKUNIT_ASSERT( fB == fB_redundant );
@@ -585,12 +586,12 @@ void UnitTestMetaData::testField()
     { & ATAG::tag() , & BTAG::tag() , & CTAG::tag() , & DTAG::tag() };
 
   FieldBase * const fC =
-    impl::declare_field( std::string("C"),
+    field_repo.declare_field( std::string("C"),
                               data_traits<double>(),
                               3         /* # Ranks */ ,
                               dim_tags  /* dimension tags */ ,
                               4         /* # States */ ,
-                              meta_null , allocated_fields );
+                              meta_null );
 
   STKUNIT_ASSERT( allocated_fields.size() == 7 );
   STKUNIT_ASSERT( fC != NULL );
@@ -600,9 +601,9 @@ void UnitTestMetaData::testField()
   STKUNIT_ASSERT( fC->state() == StateNew );
   STKUNIT_ASSERT( fC->rank() == 3 );
 
-  FieldBase * const fC_n = allocated_fields[4] ;
-  FieldBase * const fC_nm1 = allocated_fields[5] ;
-  FieldBase * const fC_nm2 = allocated_fields[6] ;
+  const FieldBase * const fC_n = allocated_fields[4] ;
+  const FieldBase * const fC_nm1 = allocated_fields[5] ;
+  const FieldBase * const fC_nm2 = allocated_fields[6] ;
 
   STKUNIT_ASSERT( fC     == fC->field_state( StateNP1 ) );
   STKUNIT_ASSERT( fC_n   == fC->field_state( StateN ) );
@@ -642,12 +643,10 @@ void UnitTestMetaData::testField()
   //------------------------------
   // Redeclare field must give back the previous field:
   //------------------------------
-  // Delete the allocated fields.
 
   for ( unsigned i = 0 ; i < allocated_fields.size() ; ++i ) {
     FieldBase * const f = allocated_fields[i] ;
     STKUNIT_ASSERT( f->mesh_meta_data_ordinal() == i );
-    delete f ;
   }
 
   std::cout << std::endl ;
@@ -674,29 +673,30 @@ void UnitTestMetaData::testFieldRestriction()
 
   MetaData * const meta_null = NULL ;
 
-  std::vector<FieldBase*> allocated_fields ;
+  impl::FieldRepository field_repo;
+  const FieldVector  & allocated_fields = field_repo.get_fields();
 
   //------------------------------
   // Declare a rank two and one state:
 
   FieldBase * const f2 =
-    impl::declare_field( std::string("F2"),
+    field_repo.declare_field( std::string("F2"),
                               data_traits<int>(),
                               2         /* # ranks */ ,
                               dim_tags  /* dimension tags */ ,
                               1         /* # states */ ,
-                              meta_null , allocated_fields );
+                              meta_null );
 
   //------------------------------
   // Declare a rank three and two states:
 
   FieldBase * const f3 =
-    impl::declare_field( std::string("F3"),
+    field_repo.declare_field( std::string("F3"),
                               data_traits<int>(),
                               3         /* # ranks */ ,
                               dim_tags  /* dimension tags */ ,
                               2         /* # states */ ,
-                              meta_null , allocated_fields );
+                              meta_null );
 
   FieldBase * const f3_old = f3->m_impl.field_state( StateOld ) ;
 
@@ -836,13 +836,6 @@ void UnitTestMetaData::testFieldRestriction()
       std::cout << "Field: Correctly caught: " << x.what() << std::endl ;
     }
     STKUNIT_ASSERT( caught );
-  }
-
-  //------------------------------
-  // Delete allocated fields:
-
-  for ( unsigned i = 0 ; i < allocated_fields.size() ; ++i ) {
-    delete allocated_fields[i] ;
   }
 
   std::cout << std::endl ;

@@ -31,6 +31,10 @@
 namespace stk {
 namespace mesh {
 
+namespace impl {
+  class FieldRepository;
+}
+
   //----------------------------------------------------------------------
 /** \ingroup stk_stk_mesh_module
  *  \brief  Field base class with an anonymous data type and
@@ -118,26 +122,12 @@ public:
 
 private:
 
-  /* \brief  A field is owned by a MetaData, as such only the owning
-   *         MetaData can create, delete, or modify a field.
-   *         The owner-modifies rule is enforced by all non-const
-   *         methods being private and the MetaData be a friend.
-   */
-  friend class ::stk::mesh::MetaData ;
+  friend class ::stk::mesh::impl::FieldRepository ;
   friend class ::stk::mesh::impl::FieldBaseImpl ;
 
   /** \brief  Allow the unit test driver access */
   friend class ::stk::mesh::UnitTestMetaData ;
 
-  friend FieldBase * impl::declare_field(
-                   const std::string                 & arg_name ,
-                   const DataTraits                  & arg_traits ,
-                   unsigned                            arg_rank ,
-                   const shards::ArrayDimTag * const * arg_dim_tags ,
-                   unsigned                            arg_num_states ,
-                   MetaData                          * arg_meta_data ,
-                   std::vector<FieldBase*>           & arg_meta_data_fields
-                   );
 
   FieldBase(
       MetaData                   * arg_mesh_meta_data ,
