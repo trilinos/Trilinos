@@ -230,13 +230,11 @@ int Ifpack_ILUT::Compute()
   IFPACK_CHK_ERR(L_->InsertGlobalValues(0,1,&(RowValuesU[0]),
                                         &(RowIndicesU[0])));
 
-  int hash_size = 128;
-  while (hash_size < (int) 1.5 * A_.MaxNumEntries() * LevelOfFill())
-    hash_size *= 2;
+  int max_keys =  (int) 10 * A_.MaxNumEntries() * LevelOfFill() ;
+  Ifpack_HashTable SingleRowU(max_keys , 1);
+  Ifpack_HashTable SingleRowL(max_keys , 1);
 
-  Ifpack_HashTable SingleRowU(hash_size - 1, 1);
-  Ifpack_HashTable SingleRowL(hash_size - 1, 1);
-
+  int hash_size = SingleRowU.getRecommendedHashSize(max_keys) ;
   vector<int> keys;      keys.reserve(hash_size * 10);
   vector<double> values; values.reserve(hash_size * 10);
   vector<double> AbsRow; AbsRow.reserve(hash_size * 10);
@@ -296,7 +294,7 @@ int Ifpack_ILUT::Compute()
     for (int i = 0 ; i < RowNnzU ; ++i) {
         SingleRowU.set(RowIndicesU[i], RowValuesU[i]);
     }
-      
+
     // for the multipliers
     SingleRowL.reset();
 
@@ -312,37 +310,39 @@ int Ifpack_ILUT::Compute()
       double* ColValuesK;
       int     ColNnzK;
 
-      IFPACK_CHK_ERR(U_->ExtractGlobalRowView(col_k, ColNnzK, ColValuesK, 
-                                              ColIndicesK));
-
-      // FIXME: can keep trace of diagonals
-      double DiagonalValueK = 0.0;
-      for (int i = 0 ; i < ColNnzK ; ++i) {
-        if (ColIndicesK[i] == col_k) {
-          DiagonalValueK = ColValuesK[i];
-          break;
-        }
-      }
-      
-      // FIXME: this should never happen!
-      if (DiagonalValueK == 0.0)
-        DiagonalValueK = AbsoluteThreshold();
-      
       double xxx = SingleRowU.get(col_k);
+      // This factorization is too "relaxed". Leaving it as it is, as Tifpack
+      // does it correctly.
       if (IFPACK_ABS(xxx) > DropTolerance()) {
-        SingleRowL.set(col_k, xxx / DiagonalValueK);
-        ++flops;
+          IFPACK_CHK_ERR(U_->ExtractGlobalRowView(col_k, ColNnzK, ColValuesK, 
+                                                  ColIndicesK));
 
-        for (int j = 0 ; j < ColNnzK ; ++j) {
-          int col_j = ColIndicesK[j];
+          // FIXME: can keep trace of diagonals
+          double DiagonalValueK = 0.0;
+          for (int i = 0 ; i < ColNnzK ; ++i) {
+            if (ColIndicesK[i] == col_k) {
+              DiagonalValueK = ColValuesK[i];
+              break;
+            }
+          }
 
-          if (col_j < col_k) continue;
+          // FIXME: this should never happen!
+          if (DiagonalValueK == 0.0)
+            DiagonalValueK = AbsoluteThreshold();
 
-          double yyy = SingleRowL.get(col_k);
-          if (yyy !=  0.0)
+          double yyy = xxx / DiagonalValueK ;
+          SingleRowL.set(col_k, yyy);
+          ++flops;
+
+          for (int j = 0 ; yyy != 0.0 && j < ColNnzK ; ++j)
+          {
+            int col_j = ColIndicesK[j];
+
+            if (col_j < col_k) continue;
+
             SingleRowU.set(col_j, -yyy * ColValuesK[j], true);
-          flops += 2;
-        }
+            flops += 2;
+          }
       }
     }
 

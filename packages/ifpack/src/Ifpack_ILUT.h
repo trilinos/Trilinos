@@ -54,7 +54,11 @@ namespace Teuchos {
 /*! The Ifpack_ILUT class computes a "Relaxed" ILUT factorization with level k fill 
     of a given Epetra_RowMatrix. 
 
-    <P> Please refer to \ref ifp_ilu for a general description of the ILU algorithm.
+    <P> This implementation does not use the algorithm that is described
+    in \ref ifp_ilu. The algorithm drops entries in a row (i) of matrix A that 
+    are smaller than drop_tolerance even before the factorization of row i 
+    then computes the factorization for that row. This is different than the 
+    usual algorithm where the drop tolerance is applied to the factored rows.
 
     <P>The complete list of supported parameters is reported in page \ref ifp_params. 
 

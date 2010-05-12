@@ -51,9 +51,10 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
 // 1) Instantiate a object,
 //
-//    Ifpack_HashTable Hash(size);
+//    Ifpack_HashTable Hash(n_keys);
 //
-//    size should be a prime number, like 2^k - 1.
+//    n_keys - maximum number of keys (This will be the n_keys with zero 
+//             collisons.)
 //
 // 3) use it, then delete it:
 //
@@ -79,7 +80,7 @@ class Ifpack_HashTable
     //! constructor.
     Ifpack_HashTable(const int n_keys = 1031, const int n_sets = 1)
     {
-      n_keys_ = n_keys;
+      n_keys_ = getRecommendedHashSize(n_keys) ;
       n_sets_ = n_sets;
       seed_ = (2654435761U);
 
@@ -190,6 +191,37 @@ class Ifpack_HashTable
     {
       cout << "n_keys = " << n_keys_ << endl;
       cout << "n_sets = " << n_sets_ << endl;
+    }
+
+    int getRecommendedHashSize (int n)
+    {
+        /* Prime number approximately in the middle of the range [2^x..2^(x+1)]
+         * is in primes[x-1]. Every prime number stored is approximately two 
+         * times the previous one, so hash table size doubles every time.
+         */
+        int primes[] = {
+        3, 7, 13, 23, 53, 97, 193, 389, 769, 1543, 3079, 6151, 12289, 24593,
+        49157, 98317, 196613, 393241, 786433, 1572869, 3145739, 6291469,
+        12582917, 25165842, 50331653, 100663319, 201326611, 402653189,
+        805306457, 1610612741 } ;
+        int i, hsize ;
+
+        /* SRSR : err on the side of performance and choose the next largest 
+         * prime number. One can also choose primes[i-1] below to cut the 
+         * memory by half.
+         */
+        hsize = primes[29] ;
+        for (i = 6 ; i < 30 ; i++)
+        {
+            if (n <= primes[i])
+            {
+                /*hsize = (i == 0 ? n : primes[i-1]) ;*/
+                hsize = primes[i] ;
+                break ;
+            }
+        }
+
+        return hsize ;
     }
 
   private:

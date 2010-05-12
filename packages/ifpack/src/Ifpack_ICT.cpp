@@ -211,11 +211,10 @@ int Ifpack_ICT::Compute()
 
   int oldSize = RowNnz;
 
-  // this is a bit magic
-  int hash_size = 1024;
-  while (hash_size < (int)(A_.MaxNumEntries() * LevelOfFill()))
-    hash_size *= 2;
-  Ifpack_HashTable Hash(hash_size - 1, 1);
+  // The 10 is just a small constant to limit collisons as the actual keys
+  // we store are the indices and not integers
+  // [0..A_.MaxNumEntries()*LevelofFill()].
+  Ifpack_HashTable Hash( 10 * A_.MaxNumEntries() * LevelOfFill(), 1);
 
   // start factorization for line 1
   for (int row_i = 1 ; row_i < NumMyRows_ ; ++row_i) {
