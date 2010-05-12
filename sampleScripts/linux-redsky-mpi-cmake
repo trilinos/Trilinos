@@ -1,0 +1,21 @@
+#!/bin/bash
+
+EXTRA_ARGS=$@
+
+# 2010/05/12: jmwille: Script I used to get Trilinos to build with CMake for
+# MPI on redsky.
+# Use this command first: module load libraries/intel-mkl-11.1.064
+
+~/install/bin/cmake \
+-DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
+-DTPL_LAPACK_LIBRARIES:STRING="-L/projects/global/x86_64/compilers/intel/intel-11.1-cproc-064/mkl/lib/em64t -lmkl_lapack" \
+-DTPL_BLAS_LIBRARIES:STRING="-L/projects/global/x86_64/compilers/intel/intel-11.1-cproc-064/mkl/lib/em64t -L/projects/global/x86_64/compilers/intel/intel-11.1-cproc-064/lib/intel64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5" \
+-D TPL_ENABLE_MPI:BOOL=ON \
+-D DART_TESTING_TIMEOUT:STRING=600 \
+-D Trilinos_ENABLE_TESTS:BOOL=ON \
+-D Trilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON \
+-DCMAKE_BUILD_TYPE:STRING=RELEASE \
+-DTrilinos_ENABLE_DEBUG:BOOL=OFF \
+$EXTRA_ARGS \
+../Trilinos
+
