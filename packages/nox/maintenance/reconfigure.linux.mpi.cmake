@@ -1,6 +1,7 @@
 #!/usr/bin/tcsh
 cmake \
       -D CMAKE_INSTALL_PREFIX="/home/rppawlo/JUNK15" \
+      -D Trilinos_ENABLE_DEBUG=OFF \
       -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
       -D Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES=ON \
       -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=ON \
@@ -22,6 +23,7 @@ cmake \
       -D Trilinos_ENABLE_STRONG_CXX_COMPILE_WARNINGS=OFF \
       -D Trilinos_ENABLE_STRONG_C_COMPILE_WARNINGS=OFF \
       -D Trilinos_ENABLE_SHADOW_WARNINGS=OFF \
+      -D CMAKE_BUILD_TYPE:STRING=NONE \
        ../Trilinos
 
 ##      -D CMAKE_EXE_LINKER_FLAGS:STRING="-L/usr/lib -lgfortran" \
