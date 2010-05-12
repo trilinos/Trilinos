@@ -76,6 +76,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
+#include "Teuchos_GlobalMPISession.hpp"
 
 // Added to allow timings
 #include "Epetra_Time.h"
@@ -109,6 +110,10 @@ void getPrecPrintParams(Teuchos::ParameterList *p, int MyPID);
 
 int main(int argc, char *argv[])
 {
+  
+  // Initialize MPI
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+
   int ierr = 0;
   int MyPID = 0;
   double alpha = 1.00; // stable steady state
@@ -120,11 +125,6 @@ int main(int argc, char *argv[])
   int numTimeSteps   = 100;  // default
   
   try {
-
-    // Initialize MPI
-#ifdef HAVE_MPI
-    MPI_Init(&argc,&argv);
-#endif
 
     // Check for verbose output
     bool verbose = false;
@@ -420,10 +420,6 @@ int main(int argc, char *argv[])
     else
       std::cout << ierr << " test(s) failed!" << std::endl;
   }
-
-#ifdef HAVE_MPI
-  MPI_Finalize() ;
-#endif
 
   return ierr;
 }

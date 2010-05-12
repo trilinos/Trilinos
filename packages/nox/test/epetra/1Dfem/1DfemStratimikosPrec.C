@@ -70,6 +70,7 @@
 #include "1DfemInterface.H" 
 
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
 using namespace std;
 
@@ -77,9 +78,7 @@ int main(int argc, char *argv[])
 {
  
   // Initialize MPI
-#ifdef HAVE_MPI
-  MPI_Init(&argc,&argv);
-#endif
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
   // Create a communicator for Epetra objects
 #ifdef HAVE_MPI
@@ -309,10 +308,6 @@ int main(int argc, char *argv[])
   else 
     printing.out() << "Test failed!" << endl;
   
-#ifdef HAVE_MPI
-  MPI_Finalize();
-#endif
-
   printing.out() << "Status = " << status << endl;
 
   // Final return value (0 = successfull, non-zero = failure)

@@ -7,6 +7,7 @@
 #endif
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
+#include "Teuchos_GlobalMPISession.hpp"
 
 // ParaCont headers
 #include "ContinuationManager.H"
@@ -16,12 +17,12 @@
 int main( int argc, char **argv )
 {
 
+  // Initialise MPI
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
+
   try {
   
 #ifdef HAVE_MPI
-    // Initialise MPI
-    MPI_Init(&argc, &argv);
-
     // Create a communicator
     Teuchos::RefCountPtr <Epetra_MpiComm> comm = 
       Teuchos::rcp(new Epetra_MpiComm(MPI_COMM_WORLD));
@@ -68,11 +69,6 @@ int main( int argc, char **argv )
   catch (...) {
     std::cout << "Caught unknown exception!" << std::endl;
   }
-
-#ifdef HAVE_MPI
-  // Finalise MPI
-  MPI_Finalize();
-#endif
 
   return(EXIT_SUCCESS);
 

@@ -93,6 +93,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
+#include "Teuchos_GlobalMPISession.hpp"
 
 // Added to allow timings
 #include "Epetra_Time.h"
@@ -126,9 +127,7 @@ using namespace std;
 int main(int argc, char *argv[])
 {
   // Initialize MPI
-#ifdef HAVE_MPI
-  MPI_Init(&argc,&argv);
-#endif
+  Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
   // Get the number of elements from the command line
   int NumGlobalNodes = 100 + 1;
@@ -539,10 +538,6 @@ int main(int argc, char *argv[])
 	      << " sec." << endl << endl;
 
   LOCA::destroyGlobalData(globalData);
-
-#ifdef HAVE_MPI
-  MPI_Finalize() ;
-#endif
 
 return 0 ;
 }
