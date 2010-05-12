@@ -209,18 +209,18 @@ int PerformOneSolveAndTest( const char* AmesosClass,
   Epetra_Vector RangeDiff(*RangeMap);
 
   Epetra_LinearProblem Problem;
-  Amesos_BaseSolver* Abase ; 
+  Teuchos::RCP<Amesos_BaseSolver> Abase ; 
   Amesos Afactory;
 
 
 
 
-  Abase = Afactory.Create( AmesosClass, Problem ) ; 
+  Abase = Teuchos::rcp(Afactory.Create( AmesosClass, Problem )) ; 
 
   relerror = 0 ; 
   relresidual = 0 ; 
 
-  if ( Abase == 0 ) 
+  if ( Abase == Teuchos::null ) 
     assert( false ) ; 
   else {
 
@@ -517,8 +517,6 @@ int PerformOneSolveAndTest( const char* AmesosClass,
 	errors += 1 ; 
       }
     }
-
-    delete Abase;
   }
 
   return errors;
