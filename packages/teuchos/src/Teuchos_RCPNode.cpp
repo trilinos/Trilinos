@@ -58,7 +58,25 @@ struct RCPNodeInfo {
 };
 
 
+typedef std::pair<const void*, RCPNodeInfo> VoidPtrNodeRCPInfoPair_t;
+
+
 typedef std::multimap<const void*, RCPNodeInfo> rcp_node_list_t;
+
+
+class RCPNodeInfoListPred {
+public:
+  bool operator()(const rcp_node_list_t::value_type &v1,
+    const rcp_node_list_t::value_type &v2
+    ) const
+    {
+#ifdef TEUCHOS_DEBUG
+      return v1.second.nodePtr->insertion_number() < v2.second.nodePtr->insertion_number();
+#else
+      return v1.first < v2.first;
+#endif
+    }
+};
 
 
 //
@@ -317,17 +335,19 @@ void RCPNodeTracer::printActiveRCPNodes(std::ostream &out)
 #endif // TEUCHOS_SHOW_ACTIVE_REFCOUNTPTR_NODE_TRACE
   if (loc_isTracingActiveRCPNodes()) {
     TEST_FOR_EXCEPT(0==rcp_node_list());
-    rcp_node_list_t::const_iterator itr = rcp_node_list()->begin();
-    if(itr != rcp_node_list()->end()) {
-      out
-        << "\n***"
-        << "\n*** Warning! The following Teuchos::RCPNode objects were created but have"
-        << "\n*** not been destroyed yet.  This may be an indication that these objects may"
-        << "\n*** be involved in a circular dependency!  A memory checking tool may complain"
-        << "\n*** that these objects are not destroyed correctly."
-        << "\n***\n";
+    if (rcp_node_list()->size() > 0) {
+      out << getActiveRCPNodeHeaderString();
+      // Create a sorted-by-insertionNumber list
+      // NOTE: You have to use std::vector and *not* Teuchos::Array rcp here
+      // because this called at the very end and uses RCPNode itself in a
+      // debug-mode build.
+      typedef std::vector<VoidPtrNodeRCPInfoPair_t> rcp_node_vec_t;
+      rcp_node_vec_t rcp_node_vec(rcp_node_list()->begin(), rcp_node_list()->end());
+      std::sort(rcp_node_vec.begin(), rcp_node_vec.end(), RCPNodeInfoListPred());
+      // Print the RCPNode objects sorted by insertion number
+      typedef rcp_node_vec_t::const_iterator itr_t;
       int i = 0;
-      while( itr != rcp_node_list()->end() ) {
+      for ( itr_t itr = rcp_node_vec.begin(); itr != rcp_node_vec.end(); ++itr ) {
         const rcp_node_list_t::value_type &entry = *itr;
         TEUCHOS_ASSERT(entry.second.nodePtr);
         out
@@ -340,7 +360,6 @@ void RCPNodeTracer::printActiveRCPNodes(std::ostream &out)
           << "       insertionNumber = " << entry.second.nodePtr->insertion_number()
 #endif
           ;
-        ++itr;
         ++i;
       }
       out << "\n\n"
@@ -519,10 +538,37 @@ RCPNode* RCPNodeTracer::getExistingRCPNodeGivenLookupKey(const void* p)
 }
 
 
+std::string RCPNodeTracer::getActiveRCPNodeHeaderString()
+{
+  return std::string(
+    "\n***"
+    "\n*** Warning! The following Teuchos::RCPNode objects were created but have"
+    "\n*** not been destroyed yet.  A memory checking tool may complain that these"
+    "\n*** objects are not destroyed correctly."
+    "\n***"
+    "\n*** There can be many possible reasons that this might occur including:"
+    "\n***"
+    "\n***   a) The program called abort() or exit() before main() was finished."
+    "\n***      All of the objects that would have been freed through destructors"
+    "\n***      are not freed but some compilers (e.g. GCC) will still call the"
+    "\n***      destructors on static objects (which is what causes this message"
+    "\n***      to be printed)."
+    "\n***"
+    "\n***   b) The program is using raw new/delete to manage some objects and"
+    "\n***      delete was not called correctly and the objects not deleted hold"
+    "\n***      other objects through reference-counted pointers."
+    "\n***"
+    "\n***   c) This may be an indication that these objects may be involved in"
+    "\n***      a circular dependency of reference-counted managed objects."
+    "\n***\n"
+    );
+}
+
+
 std::string RCPNodeTracer::getCommonDebugNotesString()
 {
   return std::string(
-    "NOTE: To debug issues, open a debugger, and set a break point in the function where the\n"
+    "NOTE: To debug issues, open a debugger, and set a break point in the function where\n"
     "the RCPNode object is first created to determine the context where the object first\n"
     "gets created.  Each RCPNode object is given a unique insertionNumber to allow setting\n"
     "breakpoints in the code.  For example, in GDB one can perform:\n"

@@ -424,12 +424,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( RCPNodeHandle, debugWithNodeTracingPrint, T )
 
     std::ostringstream expendedOutput_oss;
     expendedOutput_oss
-        << "\n***"
-        << "\n*** Warning! The following Teuchos::RCPNode objects were created but have"
-        << "\n*** not been destroyed yet.  This may be an indication that these objects may"
-        << "\n*** be involved in a circular dependency!  A memory checking tool may complain"
-        << "\n*** that these objects are not destroyed correctly."
-        << "\n***\n"
+        << RCPNodeTracer::getActiveRCPNodeHeaderString()
         << "\n"
         << "  0: RCPNode (map_key_void_ptr=" << rcpNodeKey << ")\n"
         << "       Information = {T="<<T_name<<", ConcreteT="<<concreateT_name<<", p="<<p<<", has_ownership="<<has_ownership<<"}\n"

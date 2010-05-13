@@ -445,6 +445,9 @@ public:
       return getExistingRCPNodeGivenLookupKey(getRCPNodeBaseObjMapKeyVoidPtr(p));
     }
 
+  /** \brief Header string used in printActiveRCPNodes(). */
+  static TEUCHOS_LIB_DLL_EXPORT std::string getActiveRCPNodeHeaderString();
+
   /** \brief Common error message string on how to debug RCPNode problems. */
   static TEUCHOS_LIB_DLL_EXPORT std::string getCommonDebugNotesString();
 
