@@ -190,7 +190,7 @@ g_cmndinterceptsInitialCommitPasses = \
   "IT: eg commit -a -F .*; 0; 'initial eg commit passed'\n"
 
 g_cmndinterceptsPullOnlyPasses = \
-  "IT: eg diff --shortstat; 0; ''\n" \
+  "IT: eg status; 0; '(on master branch)'\n" \
   "IT: eg pull origin currentbranch; 0; 'initial eg pull passed'\n"
 
 g_cmndinterceptsDiffOnlyPasses = \
@@ -1466,6 +1466,75 @@ class test_checkin_test(unittest.TestCase):
       )
 
 
+  def test_do_all_without_serial_release_unstaged_changed_files_fail(self):
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "do_all_without_serial_release_pull_fail",
+      \
+      "--do-all",
+      g_cmndinterceptsCurrentBranch \
+      +"IT: eg status; 0; 'Changed but not updated'\n" \
+      ,
+      \
+      False,
+      \
+      "ERROR: There are changed unstaged uncommitted files => cannot continue!\n" \
+      "Update failed!\n" \
+      "Not running any build/test cases because the update (pull) failed!\n" \
+      "A COMMIT IS \*NOT\* OKAY TO BE PERFORMED!\n" \
+      "A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
+      "INITIAL PULL FAILED: Trilinos:\n"
+      )
+
+
+  def test_do_all_without_serial_release_staged_uncommitted_files_fail(self):
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "do_all_without_serial_release_pull_fail",
+      \
+      "--do-all",
+      g_cmndinterceptsCurrentBranch \
+      +"IT: eg status; 0; 'Changes ready to be committed'\n" \
+      ,
+      \
+      False,
+      \
+      "ERROR: There are changed staged uncommitted files => cannot continue!\n" \
+      "Update failed!\n" \
+      "Not running any build/test cases because the update (pull) failed!\n" \
+      "A COMMIT IS \*NOT\* OKAY TO BE PERFORMED!\n" \
+      "A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
+      "INITIAL PULL FAILED: Trilinos:\n"
+      )
+
+
+  def test_do_all_without_serial_release_unknown_files_fail(self):
+    checkin_test_run_case(
+      \
+      self,
+      \
+      "do_all_without_serial_release_pull_fail",
+      \
+      "--do-all",
+      g_cmndinterceptsCurrentBranch \
+      +"IT: eg status; 0; 'Newly created unknown files'\n" \
+      ,
+      \
+      False,
+      \
+      "ERROR: There are newly created uncommitted files => Cannot continue!\n" \
+      "Update failed!\n" \
+      "Not running any build/test cases because the update (pull) failed!\n" \
+      "A COMMIT IS \*NOT\* OKAY TO BE PERFORMED!\n" \
+      "A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
+      "INITIAL PULL FAILED: Trilinos:\n"
+      )
+
+
   def test_do_all_without_serial_release_pull_fail(self):
     checkin_test_run_case(
       \
@@ -1475,7 +1544,7 @@ class test_checkin_test(unittest.TestCase):
       \
       "--do-all",
       g_cmndinterceptsCurrentBranch \
-      +"IT: eg diff --shortstat; 0; ''\n" \
+      +"IT: eg status; 0; '(on master branch)'\n" \
       +"IT: eg pull origin currentbranch; 1; 'eg pull failed'\n" \
       ,
       \

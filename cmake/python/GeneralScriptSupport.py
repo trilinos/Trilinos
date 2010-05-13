@@ -52,11 +52,15 @@ def getScriptName():
 
 
 def findInSequence(seq, item):
- for i in range(0, len(seq)):
-   if seq[i] == item:
-     return i
- return -1
-   
+  for i in range(0, len(seq)):
+    if seq[i] == item:
+      return i
+  return -1
+
+
+def isSubstrInMultiLineString(inputStr, findStr):
+  return inputStr.find(findStr) >= 0
+     
 
 def joinDirs(dirArray):
   """

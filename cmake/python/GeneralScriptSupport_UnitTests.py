@@ -268,6 +268,31 @@ IT: ./do-configure; 5; ''
       g_sysCmndInterceptor.clear()
 
 
+  def get_isSubstrInMultiLineString_inputStr(self):
+    return \
+      "(On branch master)\n" \
+      "(You have 1 stash(es).  Use 'eg stash list' to see them.)\n" \
+      "Changed but not updated (\"unstaged\"):\n" \
+      "        modified:   cmake/python/CheckinTest.py\n" \
+      "Newly created unknown files:\n" \
+      "        someSillyFileToBeDeleted.txt\n"
+
+
+  def test_isSubstrInMultiLineString_01(self):
+    inputStr = self.get_isSubstrInMultiLineString_inputStr()
+    self.assertEqual(isSubstrInMultiLineString(inputStr, "Changed but not updated"), True)
+
+
+  def test_isSubstrInMultiLineString_02(self):
+    inputStr = self.get_isSubstrInMultiLineString_inputStr()
+    self.assertEqual(isSubstrInMultiLineString(inputStr, "Newly created unknown files"), True)
+
+
+  def test_isSubstrInMultiLineString_03(self):
+    inputStr = self.get_isSubstrInMultiLineString_inputStr()
+    self.assertEqual(isSubstrInMultiLineString(inputStr, "Will not find this"), False)
+
+
 def suite():
     suite = unittest.TestSuite()
     suite.addTest(unittest.makeSuite(testGeneralScriptSupport))

@@ -1464,15 +1464,41 @@ def checkinTest(inOptions):
     if doingAtLeastOnePull and pullPassed:
 
       #
-      print "\n3.a) Check that there are no uncommited files before doing the pull(s) ...\n"
+      print "\n3.a) Check that there are no uncommited and no new unknown files before doing the pull(s) ...\n"
       #
 
-      changesSummary = getCmndOutput("eg diff --shortstat", True,
+      egStatusOutput = getCmndOutput("eg status", True, throwOnError=False,
         workingDir=inOptions.trilinosSrcDir)
 
-      if changesSummary:
-        print "\n'eg diff --shortstat' returned: "+changesSummary+"\n\n" \
-          +"There are uncommitted changes, cannot do pull!\n"
+      print \
+        "\nOutput from 'eg status':\n" + \
+        "\n--------------------------------------------------------------\n" + \
+        egStatusOutput + \
+        "\n--------------------------------------------------------------\n"
+
+      repoIsClean = True
+
+      if isSubstrInMultiLineString(egStatusOutput, "Changed but not updated"):
+        print "\nERROR: There are changed unstaged uncommitted files => cannot continue!"
+        repoIsClean = False
+
+      if isSubstrInMultiLineString(egStatusOutput, "Changes ready to be committed"):
+        print "\nERROR: There are changed staged uncommitted files => cannot continue!"
+        repoIsClean = False
+
+      if isSubstrInMultiLineString(egStatusOutput, "Newly created unknown files"):
+        print "\nERROR: There are newly created uncommitted files => Cannot continue!"
+        repoIsClean = False
+
+      if not repoIsClean:
+        print \
+           "\nExplanation: In order to do a meaningful test to allow a push, all files\n" \
+           "in the local repo must be committed.  Otherwise, if there are changed but not\n" \
+           "committed files or new unknown files that are used in the build or the test, then\n" \
+           "what you are testing is *not* what you will be pushing.  If you have changes that\n" \
+           "you don't want to push, then try using 'eg stash' before you run this script to\n" \
+           "stash away all of the changes you don't want to push.  That way, what you are testing\n" \
+           "will be consistent with what you will be pushing.\n"
         pullPassed = False
 
     if doingAtLeastOnePull and pullPassed:
