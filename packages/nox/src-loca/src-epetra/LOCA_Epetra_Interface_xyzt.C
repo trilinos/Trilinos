@@ -151,6 +151,7 @@ xyzt( const Teuchos::RCP<LOCA::Epetra::Interface::TimeDependent> &interface_,
 LOCA::Epetra::Interface::xyzt::
 ~xyzt()
 {
+  delete preconditioner;
   delete solution;
   delete solutionOverlap;
   delete overlapImporter;

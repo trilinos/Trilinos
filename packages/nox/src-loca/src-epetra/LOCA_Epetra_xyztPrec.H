@@ -227,22 +227,22 @@ namespace LOCA {
       std::vector<Teuchos::RCP<Epetra_Vector> > diagBlockSubdiag;
       
       //! Pointer to global XYZT residual vector.
-      EpetraExt::BlockVector *residual;
+      Teuchos::RCP<EpetraExt::BlockVector> residual;
       
       //! Pointer to split (spatial) input vector of current iteration.
-      Epetra_Vector *splitVec;
+      Teuchos::RCP<Epetra_Vector> splitVec;
       
       //! Pointer to split (spatial) residual vector of current iteration.
-      Epetra_Vector *splitRes;
+      Teuchos::RCP<Epetra_Vector> splitRes;
       
       //! Pointer to split (spatial) input vector from previous iteration.
-      Epetra_Vector *splitVecOld;
+      Teuchos::RCP<Epetra_Vector> splitVecOld;
       
       //! View of split residual vector.
-      NOX::Epetra::Vector *splitRes_NEV;
+      Teuchos::RCP<NOX::Epetra::Vector> splitRes_NEV;
       
       //! View of split input vector.
-      NOX::Epetra::Vector *splitVec_NEV;
+      Teuchos::RCP<NOX::Epetra::Vector> splitVec_NEV;
       
       //! Flag indicating whether XYZT system is periodic.
       bool  isPeriodic;

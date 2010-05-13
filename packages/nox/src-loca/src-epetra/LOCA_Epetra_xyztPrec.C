@@ -66,10 +66,6 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
   jacobianBlock(std::vector<Teuchos::RCP<Epetra_CrsMatrix> >(1 + globalComm_->NumTimeStepsOnDomain())),
   massBlock(std::vector<Teuchos::RCP<Epetra_CrsMatrix> >(1 + globalComm_->NumTimeStepsOnDomain())),
   diagBlockSubdiag(std::vector<Teuchos::RCP<Epetra_Vector> >(globalComm_->NumTimeStepsOnDomain())),
-  residual(0),
-  splitVec(0),
-  splitRes(0),
-  splitVecOld(0), 
   isPeriodic(precLSParams_.get("Periodic",false))
 {
 
@@ -120,14 +116,14 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
     }
     
     // Create temporary space for Epetra vectors and NOX vies of same space
-    splitVecOld = new Epetra_Vector(splitJac.RowMap());
-    splitVec = new Epetra_Vector(splitJac.RowMap());
-    splitRes = new Epetra_Vector(splitJac.RowMap());
-    splitRes_NEV = new NOX::Epetra::Vector(Teuchos::rcp(splitRes, false),
-		                           NOX::Epetra::Vector::CreateView);
-    splitVec_NEV = new NOX::Epetra::Vector(Teuchos::rcp(splitVec, false),
-		                           NOX::Epetra::Vector::CreateView);
-    residual = new EpetraExt::BlockVector(solution);
+    splitVecOld = Teuchos::rcp(new Epetra_Vector(splitJac.RowMap()));
+    splitVec = Teuchos::rcp(new Epetra_Vector(splitJac.RowMap()));
+    splitRes = Teuchos::rcp(new Epetra_Vector(splitJac.RowMap()));
+    splitRes_NEV = Teuchos::rcp(new NOX::Epetra::Vector(splitRes,
+		                           NOX::Epetra::Vector::CreateView));
+    splitVec_NEV = Teuchos::rcp(new NOX::Epetra::Vector(splitVec,
+		                           NOX::Epetra::Vector::CreateView));
+    residual = Teuchos::rcp(new EpetraExt::BlockVector(solution));
 
     // Create the Linear System
     int imax = globalComm->NumTimeStepsOnDomain();
@@ -164,19 +160,12 @@ xyztPrec(EpetraExt::BlockCrsMatrix &jacobian_,
 LOCA::Epetra::xyztPrec::
 ~xyztPrec()
 {
-  if (splitVec) delete splitVec;
-  if (splitRes) delete splitRes;
-  if (splitVecOld) delete splitVecOld;
-  if (splitRes_NEV) delete splitRes_NEV;
-  if (splitVec_NEV) delete splitVec_NEV;
-  if (residual) delete residual;
-
   string prec = lsParams.get("XYZTPreconditioner","None");
 
   int imax=0;
   if (prec == "Global") 
      imax =  1;
-  else if (prec == "Sequential" || prec == "Parallel" || prec == "BlockDiagonal") 
+  else if (prec == "Sequential" || prec == "Parallel" || prec == "BlockDiagonal" || prec == "BDSDT") 
      imax =  globalComm->NumTimeStepsOnDomain();
   else if (prec == "Parareal") 
      imax =  1 + globalComm->NumTimeStepsOnDomain();

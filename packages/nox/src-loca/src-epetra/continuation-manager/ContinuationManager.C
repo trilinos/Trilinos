@@ -73,6 +73,7 @@ ContinuationManager(
 ContinuationManager::
 ~ContinuationManager()
 {
+  destroyGlobalData(locaGlobalData);
 }
 
 bool ContinuationManager::
