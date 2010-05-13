@@ -1,40 +1,16 @@
-# s909348 driver
+TRILINOS_DRIVER_SETUP()
 
-set(CTEST_EXE "${CMAKE_CTEST_COMMAND}")
-set(workingdir "${TrilinosDriver_BINARY_DIR}")
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  MPI_OPT
+  ctest_mac_nightly_mpi_opt_s909348.cmake
+  TIMEOUT_MINUTES 240
+)
 
-add_test(mpi_release
-  ${CTEST_EXE}
-  -S
-  "${CMAKE_CURRENT_SOURCE_DIR}/ctest_mac_nightly_mpi_release_s909348.cmake"
-  -VV
-  --output_log
-  "${workingdir}/MPI_RELEASE_10.0.log"
-  )
+TRILINOS_DRIVER_ADD_DASHBOARD(
+  SERIAL_DEBUG
+  ctest_mac_nightly_serial_debug_s909348.cmake
+  RUN_SERIAL
+  TIMEOUT_MINUTES 240
+)
 
-add_test(serial_release
-  ${CTEST_EXE}
-  -S
-  "${CMAKE_CURRENT_SOURCE_DIR}/ctest_mac_nightly_serial_release_s909348.cmake"
-  -VV
-  --output-log
-  "${workingdir}/SERIAL_RELEASE_10.0.log"
-  )
-
-add_test(mpi_optimized
-  ${CTEST_EXE}
-  -S
-  "${CMAKE_CURRENT_SOURCE_DIR}/ctest_mac_nightly_mpi_opt_s909348.cmake"
-  -VV
-  --output_log
-  "${workingdir}/MPI_OPT_DEV.log"
-  )
-
-add_test(serial_debug
-  ${CTEST_EXE}
-  -S
-  "${CMAKE_CURRENT_SOURCE_DIR}/ctest_mac_nightly_serial_debug_s909348.cmake"
-  -VV
-  --output-log
-  "${workingdir}/SERIAL_DEBUG_DEV.log"
-  )
+TRILINOS_ADD_REQUIRED_CMAKE_INSTALLS()

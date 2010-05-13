@@ -120,6 +120,12 @@ if not os.path.exists(CTEST_EXE):
   os.chdir(origDir)
   sys.exit(3)
 
+# Escape any spaces in the path of the ctest exe. This has to be done
+# here instead of where we set the CTEST_EXE the first time because
+# the check for existence cannot handle the "\"
+#
+CTEST_EXE = CTEST_EXE.replace(" ",  "\ ")
+
 # Verify ctest works with a simple --version call first:
 #
 
