@@ -6,8 +6,8 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <stk_util/util/GeneratedMesh.hpp>
-#include <stk_util/util/tokenize.hpp>
+#include <stk_util/unit_test_support/GeneratedMesh.hpp>
+#include <stk_util/unit_test_support/tokenize.hpp>
 
 #include <cmath>
 #include <cstring>
