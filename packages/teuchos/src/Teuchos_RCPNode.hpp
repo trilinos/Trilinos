@@ -482,14 +482,14 @@ public:
       dealloc_(dealloc)
     {}
   /** \brief For undefined types . */
-  RCPNodeTmpl(T* p, Dealloc_T dealloc, bool has_ownership_in, ENull null_arg)
+  RCPNodeTmpl(T* p, Dealloc_T dealloc, bool has_ownership_in, ENull)
     : RCPNode(has_ownership_in), ptr_(p),
 #ifdef TEUCHOS_DEBUG
       base_obj_map_key_void_ptr_(0),
       deleted_ptr_(0),
 #endif
       dealloc_(dealloc)
-    {(void)null_arg;}
+    {}
   /** \brief . */
   Dealloc_T& get_nonconst_dealloc()
     { return dealloc_; }
