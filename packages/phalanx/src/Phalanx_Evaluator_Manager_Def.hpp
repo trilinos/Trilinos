@@ -261,7 +261,17 @@ void PHX::EvaluatorManager<Traits>::createProviderEvaluationOrder()
     }  // for (std::size_t var = 0; var < tmpList.size(); var++) {
 
     if (!removedVariable) {
-      std::string msg = "EvaluatorManager";
+      std::string msg;
+
+      msg += "\n**************************\n";
+      msg += "\nError in EvaluatorManager:\n";
+      msg += "\n**************************\n";
+      msg += "\nPrinting EvaluatorManager:\n";
+      std::ostringstream ost2;
+      ost2 << *this << std::endl;
+      msg += ost2.str();
+
+      msg += "EvaluatorManager: ";
       msg += evaluation_type_name_;
       msg += " \nCould not meet dependencies!\n";
       msg += "The following variables either have no provider or have a\n";
@@ -270,15 +280,18 @@ void PHX::EvaluatorManager<Traits>::createProviderEvaluationOrder()
       for (std::size_t i = 0; i < tmpList.size(); i++)
 	ost << *(tmpList[i]) << std::endl;
       msg += ost.str();
-      msg += "\nPrinting EvaluatorManager:\n";
-      std::ostringstream ost2;
-      ost2 << *this << std::endl;
-      msg += ost2.str();
 
+      msg += "\nPlease look at the EvaluatorManager output above, or \n";
+      msg += "visually inspect the error graph that was dumped by \n";
+      msg += "running the graphviz dot program on the file error.dot: \n";
+      msg += "> dot -Tpng -o error.png error.dot\n\n";
+      msg += "The above command generates a png file, \"error.png\"\n";
+      msg += "that you can view in any web browser/graphics program.\n";
+	
       std::string filename = "error.dot";
       this->writeGraphvizFile(filename, true, true, true);
 
-      TEST_FOR_EXCEPTION(true, std::logic_error, msg);
+      TEST_FOR_EXCEPTION(!removedVariable, std::logic_error, msg);
     }
     
   } // While tmpList.size() != 0
