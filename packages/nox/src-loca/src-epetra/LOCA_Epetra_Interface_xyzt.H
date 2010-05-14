@@ -249,7 +249,7 @@ namespace LOCA {
 	Teuchos::ParameterList* precLSParams;
 	
 	//! Pointer to XYZT preconditioner operator.
-	LOCA::Epetra::xyztPrec* preconditioner;
+	Teuchos::RCP<LOCA::Epetra::xyztPrec> preconditioner;
 	
 	//! Pointer to split (spatial) Jacobian matrix in CRS matrix form.
 	Epetra_CrsMatrix* splitJacCrs;

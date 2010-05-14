@@ -76,6 +76,7 @@
 #include "Epetra_Map.h"
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
+#include "Teuchos_GlobalMPISession.hpp"
 
 // Added to allow timings
 #include "Epetra_Time.h"
@@ -120,9 +121,7 @@ int main(int argc, char *argv[])
   try {
 
     // Initialize MPI
-#ifdef HAVE_MPI
-    MPI_Init(&argc,&argv);
-#endif
+    Teuchos::GlobalMPISession mpiSession(&argc,&argv);
 
     // Check for verbose output
     bool verbose = false;
@@ -397,10 +396,6 @@ int main(int argc, char *argv[])
     else
       std::cout << ierr << " test(s) failed!" << std::endl;
   }
-
-#ifdef HAVE_MPI
-  MPI_Finalize() ;
-#endif
 
   return ierr;
 }

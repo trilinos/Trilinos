@@ -459,9 +459,6 @@ PrintLOCAStepperStatistics()
   if (comm->MyPID() == 0) 
     std::cout << " Number of failed continuation Steps = " << numFailedSteps << std::endl;
 
-  // Destroying global data
-  LOCA::destroyGlobalData(locaGlobalData);
-
   return true;
 }
 

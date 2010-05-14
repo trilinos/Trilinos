@@ -142,16 +142,15 @@ xyzt( const Teuchos::RCP<LOCA::Epetra::Interface::TimeDependent> &interface_,
      }
 
      preconditioner = 
-       new LOCA::Epetra::xyztPrec(*jacobian, *splitJacCrs, *solution,
+       Teuchos::rcp(new LOCA::Epetra::xyztPrec(*jacobian, *splitJacCrs, *solution,
                                   *solutionOverlap, *overlapImporter,
-                                  *precPrintParams, *precLSParams, globalComm);
+                                  *precPrintParams, *precLSParams, globalComm));
    }
 }
 
 LOCA::Epetra::Interface::xyzt::
 ~xyzt()
 {
-  delete preconditioner;
   delete solution;
   delete solutionOverlap;
   delete overlapImporter;
