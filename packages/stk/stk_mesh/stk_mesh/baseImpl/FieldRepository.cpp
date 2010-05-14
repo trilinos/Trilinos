@@ -6,6 +6,7 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <sstream>
 #include <stk_mesh/baseImpl/FieldRepository.hpp>
 #include <stdexcept>
 #include <stk_util/util/string_case_compare.hpp>
