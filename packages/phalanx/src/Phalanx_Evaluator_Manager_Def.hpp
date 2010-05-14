@@ -318,7 +318,7 @@ template<typename Traits>
 void PHX::EvaluatorManager<Traits>::
 writeGraphvizFile(const std::string filename) const
 {
-#ifdef PHALANX_BUG_IN_BOOST_WRITE_GRAPHVIZ
+  //#ifdef PHALANX_BUG_IN_BOOST_WRITE_GRAPHVIZ
 
   using std::string;
   using std::vector;
@@ -328,17 +328,24 @@ writeGraphvizFile(const std::string filename) const
 
   TEST_FOR_EXCEPTION(!sorting_called_, std::logic_error, "Error sorting of evaluators must be done before writing graphviz file.");
 
-  map<string,std::size_t> field_to_evaluator_index;
+  std::vector< Teuchos::RCP<PHX::Evaluator<Traits> > > evaluators;
   for (vector<int>::const_iterator index = providerEvalOrderIndex.begin(); 
-       index != providerEvalOrderIndex.end(); ++index) {
+       index != providerEvalOrderIndex.end(); ++index)
+    evaluators.push_back(varProviders[*index]);
+
+  map<string,std::size_t> field_to_evaluator_index;
+  int index = 0;
+  for (typename vector< RCP<PHX::Evaluator<Traits> > >::const_iterator evaluator = 
+	 evaluators.begin(); evaluator != evaluators.end(); ++evaluator,
+	 ++index) {
 
     const vector< RCP<FieldTag> >& eval_fields = 
-      (varProviders[*index])->evaluatedFields();
+      (*evaluator)->evaluatedFields();
 
     for (vector< RCP<FieldTag> >::const_iterator tag = 
 	   eval_fields.begin(); tag != eval_fields.end(); ++tag) {
       
-      field_to_evaluator_index[(*tag)->identifier()] = *index;
+      field_to_evaluator_index[(*tag)->identifier()] = index;
     }
   }
 
@@ -360,7 +367,7 @@ writeGraphvizFile(const std::string filename) const
        field != field_to_evaluator_index.end(); ++field) {
 
     const vector< RCP<FieldTag> >& dep_fields = 
-      (varProviders[field->second])->dependentFields();
+      (evaluators[field->second])->dependentFields();
 
     for (vector< RCP<FieldTag> >::const_iterator dep_field = 
 	   dep_fields.begin(); dep_field != dep_fields.end(); ++dep_field) {
@@ -392,7 +399,7 @@ writeGraphvizFile(const std::string filename) const
   boost::write_graphviz(outfile, g_dot);
   outfile.close();
 
-#endif // PHALANX_BUG_IN_BOOST_WRITE_GRAPHVIZ
+  //#endif // PHALANX_BUG_IN_BOOST_WRITE_GRAPHVIZ
 }
 
 //=======================================================================
