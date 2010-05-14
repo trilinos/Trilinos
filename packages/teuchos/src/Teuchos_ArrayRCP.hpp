@@ -40,7 +40,7 @@
 namespace Teuchos {
 
 
-// Helper functions
+// Helper code (not for general clients)
 
 
 template<class T> inline
@@ -60,6 +60,43 @@ RCPNode* ArrayRCP_createNewDeallocRCPNodeRawPtr(
 {
     return new RCPNodeTmpl<T,Dealloc_T>(p, dealloc, has_ownership_in);
 }
+
+
+template<class T2, class T1>
+class ArcpReinterpretCastEmbeddedObj
+{
+public:
+  typedef T2 ptr_t;
+  ArcpReinterpretCastEmbeddedObj()
+    : arcp_pod_(null)
+    {}
+  ArcpReinterpretCastEmbeddedObj(const ArrayRCP<T1> &arcp_pod)
+    : arcp_pod_(arcpCloneNode(arcp_pod)) // Unique reference count!
+    {}
+  // NOTE: The default copy constructor is allowed and does the right thing
+  ~ArcpReinterpretCastEmbeddedObj()
+    { freeMemory(); }
+  ArcpReinterpretCastEmbeddedObj&
+  operator=(const ArcpReinterpretCastEmbeddedObj& arceo)
+    {
+      assert(is_null(arceo.arcp_pod_)); // Can only be a catestrophic programming error!
+      freeMemory();
+      return *this;
+    }
+private:
+  ArrayRCP<T1> arcp_pod_; 
+  void freeMemory()
+    {
+      typedef typename ArrayRCP<T2>::iterator itr_t;
+      if (arcp_pod_.strong_count() == 1) {
+        ArrayRCP<T2> arcp2 = arcp_reinterpret_cast<T2>(arcp_pod_);
+        for (itr_t itr = arcp2.begin(); itr != arcp2.end(); ++itr) {
+          itr->~T2();
+        }
+        arcp_pod_ = null;
+      }
+    }
+};
 
 
 // Constructors/Destructors/Initializers 
@@ -765,6 +802,18 @@ Teuchos::arcp( typename ArrayRCP<T>::size_type size )
 
 template<class T> inline
 Teuchos::ArrayRCP<T>
+Teuchos::arcpCloneNode(const ArrayRCP<T> &a)
+{
+  if (is_null(a)) {
+    return null;
+  }
+  return arcpWithEmbeddedObj(a.getRawPtr(), a.lowerOffset(), a.size(),
+    a, false);
+}
+
+
+template<class T> inline
+Teuchos::ArrayRCP<T>
 Teuchos::arcpClone( const ArrayView<const T> &v )
 {
   const ArrayRCP<T> new_arcp = arcp<T>(v.size());
@@ -982,6 +1031,25 @@ Teuchos::arcp_reinterpret_cast(const ArrayRCP<T1>& p1)
     p1.access_private_node()
     );
   // Note: Above is just fine even if p1.get()==NULL!
+}
+
+
+template<class T2, class T1>
+Teuchos::ArrayRCP<T2>
+Teuchos::arcp_reinterpret_cast_nonpod(const ArrayRCP<T1>& p1)
+{
+  typedef typename ArrayRCP<T2>::iterator itr_t;
+  ArrayRCP<T2> arcp2 = arcp_reinterpret_cast<T2>(p1);
+  for (itr_t itr = arcp2.begin(); itr != arcp2.end(); ++itr) {
+    new (&*itr) T2;
+  }
+  return arcpWithEmbeddedObj(
+    arcp2.getRawPtr(), 0, arcp2.size(),
+    ArcpReinterpretCastEmbeddedObj<T2, T1>(p1),
+    false);
+  // Above, the ownership of the memory is totally owned by the embedded
+  // object and the default deallocator policy object does not do anything.
+  // This is just fine.
 }
 
 

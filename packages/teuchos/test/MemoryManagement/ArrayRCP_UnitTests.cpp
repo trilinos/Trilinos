@@ -21,7 +21,9 @@ using Teuchos::RCP;
 using Teuchos::ArrayRCP;
 using Teuchos::Array;
 using Teuchos::arcp;
+using Teuchos::arcpCloneNode;
 using Teuchos::arcp_reinterpret_cast;
+using Teuchos::arcp_reinterpret_cast_nonpod;
 using Teuchos::ArrayView;
 using Teuchos::getConst;
 using Teuchos::DuplicateOwningRCPError;
@@ -272,6 +274,132 @@ TEUCHOS_UNIT_TEST( ArrayRCP, evil_reinterpret_cast )
 }
 
 
+//
+// Test arcpCloneNode(...)
+//
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, arcpCloneNode_null )
+{
+  ECHO(ArrayRCP<ArrayRCP<int> > arcp1 = null);
+  ECHO(ArrayRCP<ArrayRCP<int> > arcp2 = arcpCloneNode(arcp1));
+  TEST_EQUALITY(arcp2, null);
+}
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, arcpCloneNode_basic )
+{
+
+  ECHO(ArrayRCP<int> arcp1 = arcp<int>(n));
+
+  ECHO(ArrayRCP<int> arcp2 = arcpCloneNode(arcp1));
+  TEST_ASSERT(nonnull(arcp2));
+  TEST_EQUALITY(arcp1.count(), 2);
+  TEST_EQUALITY(arcp2.count(), 1);
+
+  ECHO(ArrayRCP<int> arcp3 = arcp2);
+  TEST_EQUALITY(arcp1.count(), 2);
+  TEST_EQUALITY(arcp2.count(), 2);
+  TEST_EQUALITY(arcp3.count(), 2);
+
+  ECHO(ArrayRCP<int> arcp4 = arcp1);
+  TEST_EQUALITY(arcp1.count(), 3);
+  TEST_EQUALITY(arcp2.count(), 2);
+  TEST_EQUALITY(arcp3.count(), 2);
+
+  ECHO(arcp4 = null);
+  TEST_EQUALITY(arcp1.count(), 2);
+  TEST_EQUALITY(arcp2.count(), 2);
+  TEST_EQUALITY(arcp3.count(), 2);
+  TEST_EQUALITY(arcp4.count(), 0);
+
+  ECHO(arcp1 = null);
+  TEST_EQUALITY(arcp1.count(), 0);
+  TEST_EQUALITY(arcp2.count(), 2);
+  TEST_EQUALITY(arcp3.count(), 2);
+  TEST_EQUALITY(arcp4.count(), 0);
+
+  ECHO(arcp2 = null);
+  TEST_EQUALITY(arcp2.count(), 0);
+  TEST_EQUALITY(arcp3.count(), 1);
+
+  ECHO(arcp3 = null);
+  TEST_EQUALITY(arcp3.count(), 0);
+
+}
+
+
+//
+// Test arcp_reinterpret_cast_nonpod(...)
+//
+
+
+class MockObject {
+  int member_;
+public:
+
+  MockObject() : member_(1) { ++(numConstructorsCalled()); }
+  ~MockObject() { ++(numDestructorsCalled()); }
+  int member() const { return member_; }
+
+  static int & numConstructorsCalled()
+    { static int s_numConstructorsCalled = 0; return s_numConstructorsCalled; }
+  static int & numDestructorsCalled()
+    { static int s_numDestructorsCalled = 0; return s_numDestructorsCalled; }
+  static void reset() { numConstructorsCalled() = numDestructorsCalled() = 0; }
+
+};
+
+
+TEUCHOS_UNIT_TEST( ArrayRCP, arcp_reinterpret_cast_nonpod )
+{
+
+  const int sizeOfMockObject = sizeof(MockObject);
+  const int sizeOfChar = sizeof(char);
+  const int num_objs = n;
+  const int num_chars = (num_objs*sizeOfMockObject)/sizeOfChar;
+  out << "num_objs = " << num_objs << "\n";
+  out << "num_chars = " << num_chars << "\n";
+
+  ECHO(ArrayRCP<char> arcp_chars = arcp<char>(num_chars));
+
+  ECHO(MockObject::reset());
+  TEST_EQUALITY(MockObject::numConstructorsCalled(), 0);
+  TEST_EQUALITY(MockObject::numDestructorsCalled(), 0);
+  ECHO(ArrayRCP<MockObject> arcp_objs = arcp_reinterpret_cast_nonpod<MockObject>(arcp_chars));
+  TEST_EQUALITY(arcp_objs.size(), num_objs);
+  TEST_EQUALITY(MockObject::numConstructorsCalled(), num_objs);
+  TEST_EQUALITY(MockObject::numDestructorsCalled(), 0);
+  {
+    int sum = 0; for (int i=0; i < num_objs; ++i) sum += arcp_objs[i].member();
+    TEST_EQUALITY(sum, num_objs);
+  }
+
+  ECHO(ArrayRCP<MockObject> arcp_objs2 = arcp_objs);
+  TEST_EQUALITY(arcp_objs.size(), num_objs);
+  TEST_EQUALITY(MockObject::numConstructorsCalled(), num_objs);
+  TEST_EQUALITY(MockObject::numDestructorsCalled(), 0);
+  {
+    int sum = 0; for (int i=0; i < num_objs; ++i) sum += arcp_objs[i].member();
+    TEST_EQUALITY(sum, num_objs);
+  }
+
+  ECHO(arcp_objs = null);
+  TEST_EQUALITY(MockObject::numConstructorsCalled(), num_objs);
+  TEST_EQUALITY(MockObject::numDestructorsCalled(), 0);
+
+  ECHO(arcp_objs2 = null);
+  TEST_EQUALITY(MockObject::numConstructorsCalled(), num_objs);
+  TEST_EQUALITY(MockObject::numDestructorsCalled(), num_objs);
+
+}
+
+
+//
+// Test catching of duplicate owning ArrayRCP objects
+//
+
+
 TEUCHOS_UNIT_TEST( ArrayRCP, duplicate_arcp_owning )
 {
   SET_RCPNODE_TRACING();
@@ -324,16 +452,19 @@ public:
         // deallocated by the owning ArrayRCP.  Here, if RCPNode tracing is
         // enabled, this will thrown and there is really no way around it.
         ArrayView<const int> tmpav(int_ptr, size_, Teuchos::RCP_DISABLE_NODE_LOOKUP);
+        assert(tmpav[0] == int_ptr[0]);
         *out_ << tmpav << std::endl;
         // Create a copy of the ArrayView and make sure that it does not do
         // node tracing either.
         ArrayView<const int> tmpav2(tmpav);
+        assert(tmpav2[0] == int_ptr[0]);
         *out_ << tmpav2 << std::endl;
         // Assign the ArrayView and make sure that it does not do node tracing
         // either.
         ArrayView<const int> tmpav3;
         tmpav3 = tmpav;
-        *out_ << tmpav3 << std::endl;
+        assert(tmpav3[0] == int_ptr[0]);
+        *out_ << tmpav2 << std::endl;
       }
       delete [] int_ptr;
     }
@@ -345,7 +476,9 @@ TEUCHOS_UNIT_TEST( ArrayRCP, weirdDealloc )
   using Teuchos::rcpFromRef;
   const int size = 4;
   const bool ownsMem = true;
-  ArrayRCP<int> a = arcp<int>( new int[size], 0, size,
+  int *int_ptr = new int[size];
+  std::fill_n(int_ptr, size, 0);
+  ArrayRCP<int> a = arcp<int>( int_ptr , 0, size,
     WeirdDealloc(size, rcpFromRef(out)), ownsMem );
   a = Teuchos::null;
 }

@@ -844,6 +844,23 @@ template<class T>
 ArrayRCP<T> arcp( typename ArrayRCP<T>::size_type size );
 
  
+/** \brief Allocate a new ArrayRCP object with a new RCPNode with memory
+ * pointing to the initial node.
+ *
+ * The purpose of this function is to create a new "handle" to the array of
+ * memory with its own seprate reference count.  The new ArrayRCP object will
+ * have a new RCPNodeTmpl object that has a copy of the input ArrayRCP object
+ * embedded in it.  This maintains the correct reference counting behaviors
+ * but now gives a private count.  One would want to use arcpCloneNode(...) 
+ * whenever it is important to keep a private reference count which is needed
+ * for some types of use cases.
+ *
+ * \relates ArrayRCP
+ */
+template<class T>
+ArrayRCP<T> arcpCloneNode( const ArrayRCP<T> &a );
+
+ 
 /** \brief Allocate a new array by cloning data from an input array view.
  *
  * \relates ArrayRCP
@@ -1064,6 +1081,7 @@ operator-( const ArrayRCP<T> &p1, const ArrayRCP<T> &p2 );
  * \relates ArrayRCP
  */
 template<class T2, class T1>
+inline
 ArrayRCP<T2> arcp_const_cast(const ArrayRCP<T1>& p1);
 
 
@@ -1081,6 +1099,28 @@ ArrayRCP<T2> arcp_const_cast(const ArrayRCP<T1>& p1);
  */
 template<class T2, class T1>
 ArrayRCP<T2> arcp_reinterpret_cast(const ArrayRCP<T1>& p1);
+
+
+/** \brief Reinterpret cast of underlying <tt>ArrayRCP</tt> type from
+ * <tt>T1*</tt> to <tt>T2*</tt> where <tt>T2</tt> is a non-POD
+ * (non-plain-old-data).
+ *
+ * The function will compile only if (<tt>reinterpret_cast<T2*>(p1.get());</tt>) compiles.
+ *
+ * This function is used to reinterpret cast an array of plain-old-data (POD)
+ * (e.g. <tt>int>/tt> or <tt>char</tt>) into an array of real objects.  The
+ * constructors will be called on each of the memory locations with placement
+ * new and the destructors will get called when the last RCP goes away.
+ *
+ * <b>Warning!</b> Do not use this function unless you absolutely know what
+ * you are doing. Doing a reinterpret cast is always a tricking thing and
+ * must only be done by developers who are 100% comfortable with what they are
+ * doing.
+ *
+ * \relates ArrayRCP
+ */
+template<class T2, class T1>
+ArrayRCP<T2> arcp_reinterpret_cast_nonpod(const ArrayRCP<T1>& p1);
 
 
 /** \brief Implicit case the underlying <tt>ArrayRCP</tt> type from
@@ -1109,6 +1149,7 @@ ArrayRCP<T2> arcp_reinterpret_cast(const ArrayRCP<T1>& p1);
  * \relates ArrayRCP
  */
 template<class T2, class T1>
+inline
 ArrayRCP<T2> arcp_implicit_cast(const ArrayRCP<T1>& p1);
 
 
