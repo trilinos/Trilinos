@@ -132,7 +132,7 @@ am__libzoltan_a_SOURCES_DIST = $(srcdir)/all/all_allo.c \
 	$(srcdir)/tpls/build_graph.c $(srcdir)/tpls/postprocessing.c \
 	$(srcdir)/tpls/preprocessing.c $(srcdir)/tpls/scatter_graph.c \
 	$(srcdir)/tpls/third_library.c $(srcdir)/tpls/verify_graph.c \
-	$(srcdir)/ccolamd/ccolamd.c $(srcdir)/ccolamd/ccolamd_global.c \
+	$(srcdir)/ccolamd/ccolamd.c \
 	$(srcdir)/tpls/parmetis_interface.c $(srcdir)/phg/phg_build.c \
 	$(srcdir)/phg/phg_build_calls.c $(srcdir)/phg/phg.c \
 	$(srcdir)/phg/phg_lookup.c $(srcdir)/phg/phg_verbose.c \
@@ -229,7 +229,7 @@ am__objects_13 = assign_param_vals.$(OBJEXT) bind_param.$(OBJEXT) \
 am__objects_14 = build_graph.$(OBJEXT) postprocessing.$(OBJEXT) \
 	preprocessing.$(OBJEXT) scatter_graph.$(OBJEXT) \
 	third_library.$(OBJEXT) verify_graph.$(OBJEXT)
-am__objects_15 = ccolamd.$(OBJEXT) ccolamd_global.$(OBJEXT)
+am__objects_15 = ccolamd.$(OBJEXT)
 am__objects_16 = parmetis_interface.$(OBJEXT)
 @BUILD_PARMETIS_TRUE@am__objects_17 = $(am__objects_16)
 am__objects_18 = phg_build.$(OBJEXT) phg_build_calls.$(OBJEXT) \
@@ -638,11 +638,10 @@ TPLS = \
 	$(srcdir)/tpls/verify_graph.c
 
 CCOLAMD_H = \
-	$(srcdir)/ccolamd/zoltan_ccolamd.h 
+	$(srcdir)/ccolamd/zoltan_ccolamd.h
 
 CCOLAMD = \
-	$(srcdir)/ccolamd/ccolamd.c \
-	$(srcdir)/ccolamd/ccolamd_global.c 
+	$(srcdir)/ccolamd/ccolamd.c
 
 EXTRA_TPLS_INTERFACE_H = \
 	$(srcdir)/tpls/parmetis_interface.h
@@ -1292,7 +1291,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/build_graph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/build_machine_desc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ccolamd.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ccolamd_global.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_param.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/color_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/coloring.Po@am__quote@
@@ -2481,20 +2479,6 @@ ccolamd.obj: $(srcdir)/ccolamd/ccolamd.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ccolamd/ccolamd.c' object='ccolamd.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ccolamd.obj `if test -f '$(srcdir)/ccolamd/ccolamd.c'; then $(CYGPATH_W) '$(srcdir)/ccolamd/ccolamd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ccolamd/ccolamd.c'; fi`
-
-ccolamd_global.o: $(srcdir)/ccolamd/ccolamd_global.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ccolamd_global.o -MD -MP -MF $(DEPDIR)/ccolamd_global.Tpo -c -o ccolamd_global.o `test -f '$(srcdir)/ccolamd/ccolamd_global.c' || echo '$(srcdir)/'`$(srcdir)/ccolamd/ccolamd_global.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/ccolamd_global.Tpo $(DEPDIR)/ccolamd_global.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ccolamd/ccolamd_global.c' object='ccolamd_global.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ccolamd_global.o `test -f '$(srcdir)/ccolamd/ccolamd_global.c' || echo '$(srcdir)/'`$(srcdir)/ccolamd/ccolamd_global.c
-
-ccolamd_global.obj: $(srcdir)/ccolamd/ccolamd_global.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ccolamd_global.obj -MD -MP -MF $(DEPDIR)/ccolamd_global.Tpo -c -o ccolamd_global.obj `if test -f '$(srcdir)/ccolamd/ccolamd_global.c'; then $(CYGPATH_W) '$(srcdir)/ccolamd/ccolamd_global.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ccolamd/ccolamd_global.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/ccolamd_global.Tpo $(DEPDIR)/ccolamd_global.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ccolamd/ccolamd_global.c' object='ccolamd_global.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ccolamd_global.obj `if test -f '$(srcdir)/ccolamd/ccolamd_global.c'; then $(CYGPATH_W) '$(srcdir)/ccolamd/ccolamd_global.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ccolamd/ccolamd_global.c'; fi`
 
 parmetis_interface.o: $(srcdir)/tpls/parmetis_interface.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT parmetis_interface.o -MD -MP -MF $(DEPDIR)/parmetis_interface.Tpo -c -o parmetis_interface.o `test -f '$(srcdir)/tpls/parmetis_interface.c' || echo '$(srcdir)/'`$(srcdir)/tpls/parmetis_interface.c
