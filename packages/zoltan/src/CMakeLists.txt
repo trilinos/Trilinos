@@ -89,7 +89,6 @@ APPEND_SET(NOINSTALLHEADERS
 
 APPEND_SET(SOURCES
   ccolamd/ccolamd.c
-  ccolamd/ccolamd_global.c
   )
 
 #
