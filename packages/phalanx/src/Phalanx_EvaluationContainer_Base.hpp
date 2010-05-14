@@ -64,7 +64,10 @@ namespace PHX {
 
     virtual void postEvaluate(typename Traits::PostEvalData d) = 0;
 
-    virtual void writeGraphvizFile(const std::string filename) const;
+    virtual void writeGraphvizFile(const std::string filename,
+				   bool writeEvaluatedFields,
+				   bool writeDependentFields,
+				   bool useAllRegisteredEvaluators) const;
 
     virtual const std::string evaluationType() const = 0;
 

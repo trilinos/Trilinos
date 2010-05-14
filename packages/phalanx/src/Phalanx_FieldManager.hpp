@@ -107,11 +107,17 @@ namespace PHX {
 
     //! Writes graphviz dot file for the evaluation type
     template<typename EvalT>
-    void writeGraphvizFile(const std::string filename = "graph.dot") const;
+    void writeGraphvizFile(const std::string filename = "graph.dot",
+			   bool writeEvaluatedFields = true,
+			   bool writeDependentFields = false,
+			   bool useAllRegisteredEvaluators = false) const;
 
     //! Writes graphviz dot file for all evaluation types (adds eval type to filename).
     void writeGraphvizFile(const std::string base_filename = "graph",
-			   const std::string file_extension = ".dot") const;
+			   const std::string file_extension = ".dot",
+			   bool writeEvaluatedFields = true,
+			   bool writeDependentFields = false,
+			   bool useAllRegisteredEvaluators = false) const;
 
     void print(std::ostream& os) const;
 

@@ -123,7 +123,7 @@ int main(int argc, char *argv[])
       cout << "Passed!" << endl;
 
       cout << "\nTesting writeGraphvizFile()...";
-      em.writeGraphvizFile("graph.dot");
+      em.writeGraphvizFile("graph.dot",true,true,false);
       cout << "Passed!" << endl;
 
       cout << "\nPrinting EvaluatorManager:\n";

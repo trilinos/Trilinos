@@ -66,9 +66,15 @@ registerEvaluator(const Teuchos::RCP<PHX::Evaluator<Traits> >& e)
 // **************************************************************************
 template<typename Traits>
 void PHX::EvaluationContainerBase<Traits>::
-writeGraphvizFile(const std::string filename) const 
+writeGraphvizFile(const std::string filename,
+		  bool writeEvaluatedFields,
+		  bool writeDependentFields,
+		  bool useAllRegisteredEvaluators) const 
 { 
-  vp_manager_.writeGraphvizFile(filename);
+  vp_manager_.writeGraphvizFile(filename, 
+				writeEvaluatedFields, 
+				writeDependentFields, 
+				useAllRegisteredEvaluators);
 }
     
 // **************************************************************************

@@ -39,7 +39,10 @@
 #include <vector>
 #include <algorithm>
 #include <fstream>
+#include <utility>
+#include <typeinfo>
 #include "Teuchos_TestForException.hpp"
+#include "Teuchos_TypeNameTraits.hpp"
 #include "Phalanx_ConfigDefs.hpp"
 #include "Phalanx_Evaluator.hpp"
 #include "Phalanx_FieldTag_STL_Functors.hpp"
@@ -271,6 +274,10 @@ void PHX::EvaluatorManager<Traits>::createProviderEvaluationOrder()
       std::ostringstream ost2;
       ost2 << *this << std::endl;
       msg += ost2.str();
+
+      std::string filename = "error.dot";
+      this->writeGraphvizFile(filename, true, true, true);
+
       TEST_FOR_EXCEPTION(true, std::logic_error, msg);
     }
     
@@ -316,28 +323,51 @@ setEvaluationTypeName(const std::string& evaluation_type_name)
 //=======================================================================
 template<typename Traits>
 void PHX::EvaluatorManager<Traits>::
-writeGraphvizFile(const std::string filename) const
+writeGraphvizFile(const std::string filename,
+		  bool writeEvaluatedFields,
+		  bool writeDependentFields,
+		  bool useAllRegisteredEvaluators) const
 {
   //#ifdef PHALANX_BUG_IN_BOOST_WRITE_GRAPHVIZ
 
   using std::string;
   using std::vector;
   using std::map;
+  using std::pair;
   using Teuchos::RCP;
   using PHX::FieldTag;
 
   TEST_FOR_EXCEPTION(!sorting_called_, std::logic_error, "Error sorting of evaluators must be done before writing graphviz file.");
 
-  std::vector< Teuchos::RCP<PHX::Evaluator<Traits> > > evaluators;
-  for (vector<int>::const_iterator index = providerEvalOrderIndex.begin(); 
-       index != providerEvalOrderIndex.end(); ++index)
-    evaluators.push_back(varProviders[*index]);
+  // Create the Graph object and attribute vectors
+  typedef boost::GraphvizDigraph Graph;
+  Graph g_dot;
 
-  map<string,std::size_t> field_to_evaluator_index;
-  int index = 0;
-  for (typename vector< RCP<PHX::Evaluator<Traits> > >::const_iterator evaluator = 
-	 evaluators.begin(); evaluator != evaluators.end(); ++evaluator,
-	 ++index) {
+  boost::property_map<Graph,boost::vertex_attribute_t>::type
+    vertex_attr_map = get(boost::vertex_attribute, g_dot);
+  
+  boost::property_map<Graph,boost::edge_attribute_t>::type
+    edge_attr_map = get(boost::edge_attribute, g_dot);
+
+  typedef typename boost::graph_traits<Graph>::vertex_descriptor vertex_t;
+  typedef typename boost::graph_traits<Graph>::edge_descriptor edge_t;
+
+  // link fields to their evaluators
+  std::vector< Teuchos::RCP<PHX::Evaluator<Traits> > > evaluators;
+  if (!useAllRegisteredEvaluators) {
+    for (vector<int>::const_iterator index = providerEvalOrderIndex.begin(); 
+	 index != providerEvalOrderIndex.end(); ++index)
+      evaluators.push_back(varProviders[*index]);
+  }
+  else{
+    evaluators = varProviders;
+  }
+
+  map<string,vertex_t> field_to_evaluator_index;
+  vertex_t index = 0;
+  for (typename vector< RCP<PHX::Evaluator<Traits> > >::const_iterator 
+	 evaluator = evaluators.begin(); evaluator != evaluators.end(); 
+       ++evaluator, ++index) {
 
     const vector< RCP<FieldTag> >& eval_fields = 
       (*evaluator)->evaluatedFields();
@@ -350,19 +380,8 @@ writeGraphvizFile(const std::string filename) const
     }
   }
 
-  typedef boost::GraphvizDigraph Graph;
-  Graph g_dot;
-
-  boost::property_map<Graph,boost::vertex_attribute_t>::type
-    vertex_attr_map = get(boost::vertex_attribute, g_dot);
-  
-  boost::property_map<Graph,boost::edge_attribute_t>::type
-    edge_attr_map = get(boost::edge_attribute, g_dot);
-
-  typename std::vector<std::pair<boost::graph_traits<Graph>::vertex_descriptor,
-    boost::graph_traits<Graph>::vertex_descriptor> > edge_vec;
-
-  // Create edge graph between evaluators
+  // Create an edgelist with unique edges (by insterting into a map)
+  map<string,pair<vertex_t,vertex_t> > graph_edges;
   for (map<string,std::size_t>::const_iterator field = 
 	 field_to_evaluator_index.begin(); 
        field != field_to_evaluator_index.end(); ++field) {
@@ -372,28 +391,72 @@ writeGraphvizFile(const std::string filename) const
 
     for (vector< RCP<FieldTag> >::const_iterator dep_field = 
 	   dep_fields.begin(); dep_field != dep_fields.end(); ++dep_field) {
-
-      //! \todo remove redundant edges from graphviz plotter
       
-      typename std::pair <boost::graph_traits<Graph>::edge_descriptor, bool> 
-	e = 
-	boost::add_edge(field->second, 
-			field_to_evaluator_index[(*dep_field)->identifier()], 
-			g_dot);
-      
-      edge_attr_map[e.first]["label"] =  (*dep_field)->name() + ":" +
-	(*dep_field)->dataLayout().identifier();
-
+      std::ostringstream edge_name;
+      edge_name << field->second << ":" 
+		<< field_to_evaluator_index[(*dep_field)->identifier()];
+	       
+      graph_edges[edge_name.str()] = std::pair<vertex_t,vertex_t>
+	(field->second, field_to_evaluator_index[(*dep_field)->identifier()]);
     }
+  }
 
+
+  // Create edge graph between evaluators
+  for (map<string,pair<vertex_t,vertex_t> >::const_iterator edge = 
+	 graph_edges.begin(); edge != graph_edges.end(); ++edge) {
+
+    std::pair<edge_t, bool> boost_edge = 
+      boost::add_edge(edge->second.first, edge->second.second, g_dot);
+    //boost::add_edge(0, 1, g_dot);
+
+    edge_attr_map[boost_edge.first]["label"] = edge->first;
   }
 
   boost::graph_traits<boost::GraphvizDigraph>::vertex_iterator vi, vi_end;
   for (boost::tie(vi, vi_end) = vertices(g_dot); vi != vi_end; ++vi) {
-    vertex_attr_map[*vi]["label"] = evaluators[*vi]->getName();
+    
+    string label = evaluators[*vi]->getName();
+
+    if (writeEvaluatedFields) {
+    
+      const vector< RCP<FieldTag> >& eval_fields = 
+	(evaluators[*vi])->evaluatedFields();
+      
+      label += "\\n   Evaluates:";
+      if (eval_fields.size() > 0)
+	for (vector< RCP<FieldTag> >::const_iterator field = eval_fields.begin();
+	     field != eval_fields.end(); ++field) {
+	  label += "\\n     ";
+	  label += (*field)->name()  
+	    + " : " + (*field)->dataLayout().identifier()
+	    + " : " + Teuchos::demangleName((*field)->dataTypeInfo().name());
+	}
+      else 
+	label += " None!";
+    
+    }
+
+    if (writeDependentFields) {
+      const vector< RCP<FieldTag> >& dep_fields = 
+	(evaluators[*vi])->dependentFields();
+
+      label += "\\n   Dependencies:";
+      if (dep_fields.size() > 0)
+	for (vector< RCP<FieldTag> >::const_iterator field = dep_fields.begin();
+	     field != dep_fields.end(); ++field){
+	  label += "\\n     ";
+	  label += (*field)->name() 
+	    + " : " + (*field)->dataLayout().identifier()
+	    + " : " + Teuchos::demangleName((*field)->dataTypeInfo().name());
+	}
+      else 
+	label += " None!";
+
+    }
+
+    vertex_attr_map[*vi]["label"] = label;
   }
-
-
 
   std::ofstream outfile;
   outfile.open (filename.c_str());
