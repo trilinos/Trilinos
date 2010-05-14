@@ -50,7 +50,7 @@ namespace Teuchos {
   class ParameterList;
 }
 
-//! Ifpack_IKLU: A class for constructing and using an incomplete Cholesky factorization of a given Epetra_RowMatrix.
+//! Ifpack_IKLU: A class for constructing and using an incomplete LU factorization of a given Epetra_RowMatrix.
 
 /*! The Ifpack_IKLU class computes a "Relaxed" IKLU factorization with level k fill 
     of a given Epetra_RowMatrix. 

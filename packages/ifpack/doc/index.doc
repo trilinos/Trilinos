@@ -656,7 +656,7 @@ Elements in [+2.477897e+07, +2.753219e+07) =          3 ( =  0.02 %)
 /*! \page ifp_ilu General description of incomplete factorizations
 
   The IFPACK incomplete factorizations (IC, ICT, ILU, ILUT) compute a "Relaxed" LDL^T or ILU factorization 
-  with level k fill of a given Epetra_RowMatrix.  The factorization that is produced is a function of several parameters.
+  of a given Epetra_RowMatrix.  The factorization that is produced is a function of several parameters.
 
 <ol>
   <li> The pattern of the matrix (for Ifpack_IC and Ifpack_ILU) - All fill is
@@ -680,6 +680,10 @@ Elements in [+2.477897e+07, +2.753219e+07) =          3 ( =  0.02 %)
     fill-in-value * nonzeros-in-row elements with largest magnitude are kept
     (fill-in-value is the specified level of fill, and nonzeros-in-row is the
     number of nonzeros in the original matrix nonzero structure). 
+
+  <li> Drop tolerance (for Ifpack_ICT and Ifpack_ILUT) - (double value)
+    Entries with magnitude less than the drop tolerance will be dropped. 
+    Ifpack may perform this dropping on the original matrix A instead of the factors L and U. Thus, Ifpack_ILUT will give a slightly different preconditioner than the standard ILUT.
 
   <li>  Fraction of relaxation - Ifpack_ILU computes the ILU factorization
      row-by-row.  As entries at a given row are computed, some number of them

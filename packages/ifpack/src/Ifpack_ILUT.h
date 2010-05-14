@@ -49,10 +49,9 @@ namespace Teuchos {
   class ParameterList;
 }
 
-//! Ifpack_ILUT: A class for constructing and using an incomplete Cholesky factorization of a given Epetra_RowMatrix.
+//! Ifpack_ILUT: A class for constructing and using an incomplete LU factorization of a given Epetra_RowMatrix.
 
-/*! The Ifpack_ILUT class computes a "Relaxed" ILUT factorization with level k fill 
-    of a given Epetra_RowMatrix. 
+/*! The Ifpack_ILUT class computes a "Relaxed" ILUT factorization with dual threshold dropping of small elements of a given Epetra_RowMatrix. 
 
     <P> This implementation does not use the algorithm that is described
     in \ref ifp_ilu. The algorithm drops entries in a row (i) of matrix A that 
