@@ -326,7 +326,7 @@ void PHX::EvaluatorManager<Traits>::
 writeGraphvizFile(const std::string filename,
 		  bool writeEvaluatedFields,
 		  bool writeDependentFields,
-		  bool useAllRegisteredEvaluators) const
+		  bool debugRegisteredEvaluators) const
 {
   //#ifdef PHALANX_BUG_IN_BOOST_WRITE_GRAPHVIZ
 
@@ -337,7 +337,7 @@ writeGraphvizFile(const std::string filename,
   using Teuchos::RCP;
   using PHX::FieldTag;
 
-  TEST_FOR_EXCEPTION(!sorting_called_, std::logic_error, "Error sorting of evaluators must be done before writing graphviz file.");
+  TEST_FOR_EXCEPTION(!sorting_called_ && !debugRegisteredEvaluators, std::logic_error, "Error sorting of evaluators must be done before writing graphviz file.");
 
   // Create the Graph object and attribute vectors
   typedef boost::GraphvizDigraph Graph;
@@ -354,7 +354,7 @@ writeGraphvizFile(const std::string filename,
 
   // link fields to their evaluators
   std::vector< Teuchos::RCP<PHX::Evaluator<Traits> > > evaluators;
-  if (!useAllRegisteredEvaluators) {
+  if (!debugRegisteredEvaluators) {
     for (vector<int>::const_iterator index = providerEvalOrderIndex.begin(); 
 	 index != providerEvalOrderIndex.end(); ++index)
       evaluators.push_back(varProviders[*index]);
@@ -391,13 +391,19 @@ writeGraphvizFile(const std::string filename,
 
     for (vector< RCP<FieldTag> >::const_iterator dep_field = 
 	   dep_fields.begin(); dep_field != dep_fields.end(); ++dep_field) {
-      
-      std::ostringstream edge_name;
-      edge_name << field->second << ":" 
-		<< field_to_evaluator_index[(*dep_field)->identifier()];
-	       
-      graph_edges[edge_name.str()] = std::pair<vertex_t,vertex_t>
-	(field->second, field_to_evaluator_index[(*dep_field)->identifier()]);
+
+      // Only add the edge of the out node exists
+      map<string,vertex_t>::const_iterator search = 
+	field_to_evaluator_index.find((*dep_field)->identifier());
+      if (search != field_to_evaluator_index.end()) {
+
+	std::ostringstream edge_name;
+	edge_name << field->second << ":" 
+		  << field_to_evaluator_index[(*dep_field)->identifier()];
+	
+	graph_edges[edge_name.str()] = std::pair<vertex_t,vertex_t>
+	  (field->second, field_to_evaluator_index[(*dep_field)->identifier()]);
+      }
     }
   }
 
@@ -424,14 +430,15 @@ writeGraphvizFile(const std::string filename,
 	(evaluators[*vi])->evaluatedFields();
       
       label += "\\n   Evaluates:";
-      if (eval_fields.size() > 0)
-	for (vector< RCP<FieldTag> >::const_iterator field = eval_fields.begin();
-	     field != eval_fields.end(); ++field) {
+      if (eval_fields.size() > 0) {
+	for (vector< RCP<FieldTag> >::const_iterator field = 
+	       eval_fields.begin(); field != eval_fields.end(); ++field) {
 	  label += "\\n     ";
 	  label += (*field)->name()  
 	    + " : " + (*field)->dataLayout().identifier()
 	    + " : " + Teuchos::demangleName((*field)->dataTypeInfo().name());
 	}
+      }
       else 
 	label += " None!";
     
@@ -442,14 +449,33 @@ writeGraphvizFile(const std::string filename,
 	(evaluators[*vi])->dependentFields();
 
       label += "\\n   Dependencies:";
-      if (dep_fields.size() > 0)
-	for (vector< RCP<FieldTag> >::const_iterator field = dep_fields.begin();
-	     field != dep_fields.end(); ++field){
-	  label += "\\n     ";
+      if (dep_fields.size() > 0) {
+	for (vector< RCP<FieldTag> >::const_iterator field = 
+	       dep_fields.begin(); field != dep_fields.end(); ++field) {
+
+	  // Mark any broken evaluators in red
+	  bool found = true;
+	  if (debugRegisteredEvaluators) {
+
+	    map<string,vertex_t>::const_iterator testing = 
+	      field_to_evaluator_index.find((*field)->identifier());
+	    if (testing == field_to_evaluator_index.end()) {
+	      found = false;
+	      vertex_attr_map[*vi]["fontcolor"] = "red";
+	    }
+
+	  }
+	  
+	  if (found)
+	    label += "\\n     ";
+	  else
+	    label += "\\n     *****MISSING**** ";
+	    
 	  label += (*field)->name() 
 	    + " : " + (*field)->dataLayout().identifier()
 	    + " : " + Teuchos::demangleName((*field)->dataTypeInfo().name());
 	}
+      }
       else 
 	label += " None!";
 

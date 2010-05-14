@@ -107,7 +107,7 @@ namespace PHX {
     void writeGraphvizFile(const std::string filename,
 			   bool writeEvaluatedFields,
 			   bool writeDependentFields,
-			   bool useAllRegisteredEvaluators) const;
+			   bool debugRegisteredEvaluators) const;
 
     //! Printing
     void print(std::ostream& os) const;

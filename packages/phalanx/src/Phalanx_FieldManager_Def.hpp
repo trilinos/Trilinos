@@ -236,11 +236,11 @@ void PHX::FieldManager<Traits>::
 writeGraphvizFile(const std::string filename,
 		  bool writeEvaluatedFields,
 		  bool writeDependentFields,
-		  bool useAllRegisteredEvaluators) const
+		  bool debugRegisteredEvaluators) const
 {
   m_eval_containers.template getAsBase<EvalT>()->
     writeGraphvizFile(filename, writeEvaluatedFields,
-		      writeDependentFields, useAllRegisteredEvaluators);
+		      writeDependentFields, debugRegisteredEvaluators);
 }
 
 // **************************************************************
@@ -251,7 +251,7 @@ writeGraphvizFile(const std::string base_filename,
 		  const std::string file_extension,
 		  bool writeEvaluatedFields,
 		  bool writeDependentFields,
-		  bool useAllRegisteredEvaluators) const 
+		  bool debugRegisteredEvaluators) const 
 {
   typedef PHX::EvaluationContainer_TemplateManager<Traits> SCTM;
   typename SCTM::const_iterator it = m_eval_containers.begin();
@@ -259,7 +259,7 @@ writeGraphvizFile(const std::string base_filename,
     std::string name = base_filename + "_" + it->evaluationType() +
       file_extension;
     it->writeGraphvizFile(name, writeEvaluatedFields, writeDependentFields,
-			  useAllRegisteredEvaluators);
+			  debugRegisteredEvaluators);
   }
 }
 

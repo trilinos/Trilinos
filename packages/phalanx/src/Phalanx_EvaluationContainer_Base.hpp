@@ -67,7 +67,7 @@ namespace PHX {
     virtual void writeGraphvizFile(const std::string filename,
 				   bool writeEvaluatedFields,
 				   bool writeDependentFields,
-				   bool useAllRegisteredEvaluators) const;
+				   bool debugRegisteredEvaluators) const;
 
     virtual const std::string evaluationType() const = 0;
 

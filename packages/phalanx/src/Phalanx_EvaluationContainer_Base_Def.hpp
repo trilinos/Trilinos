@@ -69,12 +69,12 @@ void PHX::EvaluationContainerBase<Traits>::
 writeGraphvizFile(const std::string filename,
 		  bool writeEvaluatedFields,
 		  bool writeDependentFields,
-		  bool useAllRegisteredEvaluators) const 
+		  bool debugRegisteredEvaluators) const 
 { 
   vp_manager_.writeGraphvizFile(filename, 
 				writeEvaluatedFields, 
 				writeDependentFields, 
-				useAllRegisteredEvaluators);
+				debugRegisteredEvaluators);
 }
     
 // **************************************************************************
