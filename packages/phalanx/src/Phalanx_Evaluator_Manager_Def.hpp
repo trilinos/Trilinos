@@ -346,6 +346,7 @@ writeGraphvizFile(const std::string filename) const
 	   eval_fields.begin(); tag != eval_fields.end(); ++tag) {
       
       field_to_evaluator_index[(*tag)->identifier()] = index;
+
     }
   }
 
@@ -389,7 +390,7 @@ writeGraphvizFile(const std::string filename) const
 
   boost::graph_traits<boost::GraphvizDigraph>::vertex_iterator vi, vi_end;
   for (boost::tie(vi, vi_end) = vertices(g_dot); vi != vi_end; ++vi) {
-    vertex_attr_map[*vi]["label"] = varProviders[*vi]->getName();
+    vertex_attr_map[*vi]["label"] = evaluators[*vi]->getName();
   }
 
 
