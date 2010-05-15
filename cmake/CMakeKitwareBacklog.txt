@@ -195,6 +195,21 @@ These capabilities are critical for the robustness and maintainability of the
 automated testing system run by CTest.
 
 
+(*) [CTest] [P2] Add a --rerun-failed option to 'ctest' to make CTest only
+rerun failing tests and then create a new output file that contains all of the
+previously run passing tests as well as the newly run test results.  When you
+have a very large test suite you sometimes need to rerun a few failing tests
+but want to assume that the others will still be okay.  This happens, for
+instance, when there are some random annoying MPI errors that go away when you
+run the tests again.  This will become more critical as more people do proper
+pre-checkin testing with the checkin-test.py script.  It would be nice if
+Kitware could add this to CTest proper.  Workaround: We could write our own
+code to read the LastTestFailed.log file, re-run just those tests, and then
+write a new LastTest.log file replacing the tests that got rerun.  This tool
+would not be all that hard to write in an external tool actually, but again,
+this is a feature that should go into CTest proper.
+
+
 (*) [CTest] [P2] Write a unit testing harness for the Trilinos CTest Driver.
 
 
@@ -205,19 +220,6 @@ automated testing system run by CTest.
 provides a standard development environment for Trilinos developers.  This may
 look similar to the CSE that was set up for another Kitware customer.  We can
 do this for ourselves and don't need Kitware.
-
-
-(*) [CTest] [P3] Add a --rerun-failed option to 'ctest' to make CTest only
-rerun failing tests and then create a new output file that contains all of the
-previously run passing tests as well as the newly run test results.  When you
-have a very large test suite you sometimes need to rerun a few failing tests
-but want to assume that the others will still be okay.  This happens, for
-instance, when there are some random annoying MPI errors that go away when you
-run the tests again.  This will become more critical as more people do proper
-pre-checkin testing with the checkin-test.py script.  We need Kitware to add
-this to CTest proper.  Workaround: We could write our own code to read the
-LastTestFailed.log file, re-run just those tests, and then write a new
-LastTest.log file replacing the tests that got rerun.
 
 
 (*) [CDash] [P3] General handling of data files in different test directories:
