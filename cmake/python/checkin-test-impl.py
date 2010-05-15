@@ -10,9 +10,10 @@ from CheckinTest import *
 usageHelp = r"""checkin-test.py [OPTIONS]
 
 This tool does checkin testing for Trilinos with CMake/CTest and can actually
-do the checkin itself using eg/git in a safe way.  In fact, it is recommended
+do the push itself using eg/git in a safe way.  In fact, it is recommended
 that you use this script to push since it will append the commit message with
-a summary of the builds and tests run with results.
+a summary of the builds and tests run with results.  It is recommended that
+you commit your local changes before running this script.
 
 
 Quickstart:
@@ -21,8 +22,7 @@ Quickstart:
 In order to do a solid checkin, perform the following recommended workflow
 (different variations on this workflow are described below):
 
-1) Review the changes that you have made to make sure it is safe to
-commit/push:
+1) Review the changes that you have made to make sure it is safe to push:
 
   $ cd $TRILINOS_HOME
   $ eg status                                # Look at state of working dir
@@ -32,30 +32,23 @@ commit/push:
   NOTE: If you see any files/directories that are listed as 'unknown' returned
   from 'eg status', then you will need to do an 'eg add' to track them or add
   them to the ignore list *before* you run the checkin-test.py script.  The eg
-  script will not allow you to commit if there are new 'unknown' files.
+  script will not allow you to push if there are new 'unknown' files or
+  uncommitted changes.
 
-  NOTE: In case you don't want to commit all local changes, you will need to
-  stage files that you want to commit first and then stash the rest of the
-  files away that you don't before you run this script. i.e.:
+2) Commit the changes to the lcoal repo:
 
-    $ eg stage <files you want to commit>
-    $ eg stash
+  # Stage the files you want to commit (optional)
+  $ eg stage <files you want to commit>
 
-2) Create a commit log file in the main source directory:
+  # Create you local commits
+  $ eg commit -- SOMETHING
+  $ eg commit -- SOMETHING_ELSE
+  ...
 
-  $ cd $TRILINOS_HOME
-  $ xemacs -nw checkin_message
+  # Stash the files you don't want to test/push (optional)
+  $ eg stash
 
-  NOTE: Fill out this checkin message listing what you have changed.  Please
-  use the Trilinos checkin template for this file and try to list a bug number
-  in the commit message.
-
-  NOTE: Alternatively, you can just do the local commit yourself with eg/git
-  in any way you would like and avoid letting the checkin-test.py script do
-  the commit.  That way, you can do as many local commits as you would like
-  and organize them any way you would like.  However, if you only decide to
-  stage and commit a subset of the changed files, you must stash the rest of
-  the changed files away with 'eg stash'.
+  NOTE: You can group your commits any way that you would like.
 
 3) Set up the checkin base build directory (first time only):
 
@@ -73,34 +66,27 @@ commit/push:
 
     Trilinos/sampmleScripts/checkin-test-*
 
-4) Do the checkin test, (optional) commit, and push:
+4) Do the checkin build, test, and push:
 
   $ cd $TRILINOS_HOME
   $ cd CHECKIN
-  $ ../checkin-test.py -j4 [--commit -commit-msg-header-file=checkin_message] \
-      --do-all --push
+  $ ../checkin-test.py -j4 --do-all --push
 
-  NOTE: The above will: a) (optionally) commit local changes, b) pull updates
-  from the global repo, c) automatically enable the correct packages, d) build
-  the code, e) run the tests, f) send you emails about what happened, g) do a
-  final pull to from the global repo, h) amend the last local commit with the
-  test results, and i) finally push local commits to the global repo if
-  everything passes.
+  NOTE: The above will: a) pull updates from the global repo, b) automatically
+  enable the correct packages, c) build the code, d) run the tests, e) send
+  you emails about what happened, f) do a final pull to from the global repo,
+  g) amend the last local commit with the test results, and h) finally push
+  local commits to the global repo if everything passes.
 
   NOTE: You must have installed the official versions of eg/git with the
   install-git.py script in order to run this script.  If you don't, the script
   will die right away with an error message telling you what the problem is.
 
-  NOTE: You can do the local commit(s) yourself with eg/git before running
-  this script.  In that case, you must take off the --commit argument or the
-  script will fail if there are no uncommitted changes.
-
-  NOTE: If you do not specify the --commit argument, you must not have any
-  uncommitted changes or the 'eg pull && eg rebase --against origin' command
-  will fail on the final pull/rebase befor ethe push and therefore the whole
-  script will fail.  To still run the script, you will need to use 'eg stash'
-  to stash away your unstaged/uncommitted changes *before* running this
-  script.
+  NOTE: You must not have any uncommitted changes or the 'eg pull && eg rebase
+  --against origin' command will fail on the final pull/rebase before the push
+  and therefore the whole script will fail.  To still run the script, you will
+  may need to use 'eg stash' to stash away your unstaged/uncommitted changes
+  *before* running this script.
 
   NOTE: You need to have SSH public/private keys set up to software.sandia.gov
   for the git commands invoked in the script to work without you having to
@@ -113,7 +99,7 @@ commit/push:
 
   NOTE: Once you start running the checkin-test.py script, you can go off and
   do something else and just check your email to see if all the builds and
-  tests passed and if the commit happened or not.
+  tests passed and if the push happened or not.
 
 For more details on using this script, see below.
 
@@ -140,12 +126,15 @@ The following approximate steps are performed by this script:
 
 ----------------------------------------------------------------------------
 
-1) [Optional] Do the local commit (done if --commit is set)
+1) Check to see if the local repo is clean:
 
-  NOTE: You can do all of your commits yourself and skip the --commit
-  argument.
+  $ eg status
 
-2) Do a 'eg pull' to update the code (done if --pull or --do-all is set).
+  NOTE: If any modified or any unknown files are shown, the process will be
+  aborted.  The local repo working directory must be clean and ready to push
+  *everything* that is not stashed away.
+
+2) Do a 'eg pull' to update the code (done if --pull or --do-all is set):
 
   NOTE: If not doing a pull, use --allow-no-pull or --local-do-all.
 
@@ -242,55 +231,43 @@ NOTE: Before running this script, you should first do an 'eg status' and 'eg
 diff --name-status origin..' and examine what files are changed to make sure
 you want to commit what you have in your local working directory.  Also,
 please look out for unknown files that you may need to add to the git
-repository with 'eg add' or add to your ignores list.  Your working directory
-needs to be 100% ready to commit before running this script.  Alternatively,
-you can just do the local commit(s) yourself before running this script.
+repository with 'eg add' or add to your ignores list.  There can not be any
+uncommitted changes in the local repo before running this script.
 
 NOTE: You don't need to run this script if you have not changed any files that
 affect the build or the tests.  For example, if all you have changed are
-documentation files, then you don't need to run this script before committing
+documentation files, then you don't need to run this script before pushing
 manually.
 
 
 Common Use Cases (examples):
 ----------------------------
 
-(*) Basic full testing without push:
+(*) Basic full testing with integrating with global repo without push:
 
-  ../checkin-test.py --do-all [--commit --commit-msg-header-file=commit_msg]
+  ../checkin-test.py --do-all
 
-  NOTE: This will result in a set of emails getting sent to your email
-  address for the different configurations and an overall commit readiness
-  status email.
-
-  NOTE: If you have any local uncommitted changes you will need to pass in
-  --commit and --commit-msg-header-file.
+  NOTE: This will result in a set of emails getting sent to your email address
+  for the different configurations and an overall push readiness status email.
 
   NOTE: If everything passed, you can follow this up with a --push (see
   below).
 
-(*) Basic full testing with push:
+(*) Basic full testing with integrating with local repo and push:
 
-  ../checkin-test.py --do-all --push [--commit --commit-msg-header-file=commit_msg]
-
-  NOTE: If the commit criteria is not satisfied, the commit will get backed
-  out and you will get an email telling you that.
-
-  NOTE: If you have any local uncommitted changes you will need to pass in
-  --commit and --commit-msg-header-file.
+  ../checkin-test.py --do-all --push
 
 (*) Push to global repo after a completed set of tests have finished:
 
-  ../checkin-test.py \
-    [other options] --push  [--commit --commit-msg-header-file=<SOME_FILE_NAME>]
+  ../checkin-test.py [other options] --push
 
   NOTE: This will pick up the results for the last completed test runs with
-  [other options] and append the results of those tests to the
-  checkin-message of the most recent commit.
+  [other options] and append the results of those tests to the checkin-message
+  of the most recent commit.
 
-  NOTE: Take the action options for the prior run and replace --do-all and
-  --commit (for example) with --push but keep all of the rest of the options
-  the same.  For example, if you did:
+  NOTE: Take the action options for the prior run and replace --do-all with
+  --push but keep all of the rest of the options the same.  For example, if
+  you did:
 
     ../checkin-test.py --enable-packages=Blah --without-serial-release --do-all
 
@@ -298,9 +275,9 @@ Common Use Cases (examples):
 
     ../checkin-test.py --enable-packages=Blah --without-serial-release --push
 
-  NOTE: This is a common use case when some tests are failing and the initial
-  push failed but you determine it is okay to push anyway and do so with
-  --force-commit-and-push.
+  NOTE: This is a common use case when some tests are failing which aborted
+  the initial push but you determine it is okay to push anyway and do so with
+  --force-commit-and-push (or just --force for short).
 
 (*) Test only the packages modified and not the forward dependent packages:
 
@@ -397,20 +374,16 @@ Common Use Cases (examples):
   changes to another faster remote workstation machine and do a more complete
   set of tests and push from there.
 
-  On your slow local development machine mymachine, do the local test/commit
+  On your slow local development machine mymachine, do the limited testing
   with:
-  
-    ../checkin-test.py \
-      --local-do-all --no-enable-fwd-packages [--commit --commit-msg-header-file=cmtmsg]
+
+    ../checkin-test.py --do-all --no-enable-fwd-packages
   
   On your fast remote test machine, do a full test and push with:
   
     ../checkin-test.py \
       --extra-pull-from=mymachine:/some/dir/to/your/trilinos/src:master \
       --do-all --push
-  
-  NOTE: You can of course do the local commit yourself first and avoid the
-  --commit argument.
   
   NOTE: You can of course adjust the packages and/or build/test cases that get
   enabled on the different machines.
@@ -424,16 +397,20 @@ Common Use Cases (examples):
   development machine and then do the process over again.
 
   NOTE: If you alter the commits on the remote machine (such as squashing
-  commits), you may have trouble merging back on our local machine.
+  commits), you will have trouble merging back on our local machine.
   Therefore, if you have to to fix problems, make new commits and don't alter
   the ones you pulled from your local machine.
+
+  NOTE: Git will resolve the duplicated commits when you pull the commits
+  pushed from the remote machine.  Git knows that the commits are the same and
+  will do the right thing (almost always anyway).
   
 (*) Check commit readiness status:
 
   ../checkin-test.py
 
-  NOTE: This will examine results for the last testing process and send out
-  an email stating if the a commit is ready to perform or not.
+  NOTE: This will examine results for the last testing process and send out an
+  email stating if the a push is ready to perform or not.
 
 (*) See the default option values without doing anything:
 
@@ -442,9 +419,9 @@ Common Use Cases (examples):
   NOTE: This is the easiest way to figure out what all of the default options
   are.
 
-Hopefully the above documentation, the documentation of the command-line
-arguments below, and some experimentation will be enough to get you going
-using this script for all of the pre-checkin testing and global commits.  If
+Hopefully the above documentation, the example use cases, the documentation of
+the command-line arguments below, and some experimentation will be enough to
+get you going using this script for all of pre-checkin testing and pushes.  If
 that is not sufficient, send email to trilinos-framework@software.sandia.gov
 to ask for help.
 
@@ -455,7 +432,7 @@ Conventions for Command-Line Arguments:
 The command-line arguments are segregated into three broad categories: a)
 action commands, b) aggregate action commands, and c) others.
 
-a) The action commands are those such as --commit, --build etc. and are shown
+a) The action commands are those such as --build, --test, etc. and are shown
 with [ACTION] in their documentation.  These action commands have no off
 complement.  If the action command appears, then the action will be performed.
 
@@ -729,9 +706,9 @@ clp.add_option(
 clp.add_option(
   "--push", dest="doPush", action="store_true", default=False,
   help="[ACTION] Push the committed changes in the local repo into to global repo" \
-    +" 'origin'.  Note: If you have uncommitted changes this command will fail." \
-    +"  You would usually use the --commit option as well to do these together." \
-    +"  Note: You must have SSH public/private keys set up with" \
+    +" 'origin' for the current branch.  Note: If you have uncommitted changes this" \
+    +" command will fail.  You would usually use the --commit option as well to do" \
+    +" these together.  Note: You must have SSH public/private keys set up with" \
     +" the origin machine (e.g. software.sandia.gov) for the push to happen without" \
     +" having to type your password." )
 
