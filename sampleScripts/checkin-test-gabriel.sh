@@ -31,7 +31,9 @@ EXTRA_ARGS=$@
 # Set up configuration files
 #
 
-echo "-DBUILD_SHARED_LIBS:BOOL=ON" > COMMON.config
+echo "
+-DBUILD_SHARED_LIBS:BOOL=ON
+" > COMMON.config
 
 echo "
 -DCMAKE_BUILD_TYPE:STRING=RELEASE
@@ -87,7 +89,6 @@ echo "
 ../../Trilinos/checkin-test.py \
 -j8 \
 --ctest-timeout=180 \
---commit-msg-header-file=checkin_message \
 $EXTRA_ARGS  
 
 #
@@ -96,11 +97,9 @@ $EXTRA_ARGS
 # (*) Enabling shared libaries makes relinks go *much* faster and massively
 # speeds up the checkin testing process when rebulding!
 #
-# (*) Be sure to set --make-options="-jN" to speed up building.  It makes a
-# *big* difference.
+# (*) Be sure to set --make-options="-jN" (or just -jN) to speed up building.
+# It makes a *big* difference.
 #
-# (*) Passing -jN to ctest with --ctest-options="-jN" can speed up running
-# the tests but I have not seen very good speedup in general and some people
-# have reported no speedup at all.  You should experiment with ctest -jN to
-# see what number N works well on your machine.
+# (*) Passing -jN to ctest with --ctest-options="-jN" (or just -jN) can speed
+# up running the tests.
 #
