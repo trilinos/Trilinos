@@ -47,8 +47,10 @@
 #include "Phalanx_Evaluator.hpp"
 #include "Phalanx_FieldTag_STL_Functors.hpp"
 
+#ifdef PHX_HAVE_BOOST_GRAPHVIZ
 #include "boost/graph/graphviz.hpp"
 #include "boost/tuple/tuple.hpp"
+#endif
 
 //=======================================================================
 template<typename Traits>
@@ -341,7 +343,7 @@ writeGraphvizFile(const std::string filename,
 		  bool writeDependentFields,
 		  bool debugRegisteredEvaluators) const
 {
-  //#ifdef PHALANX_BUG_IN_BOOST_WRITE_GRAPHVIZ
+#ifdef PHX_HAVE_BOOST_GRAPHVIZ
 
   using std::string;
   using std::vector;
@@ -502,7 +504,11 @@ writeGraphvizFile(const std::string filename,
   boost::write_graphviz(outfile, g_dot);
   outfile.close();
 
-  //#endif // PHALANX_BUG_IN_BOOST_WRITE_GRAPHVIZ
+#else
+
+  std::cout << "WARNING: writeGraphvizFile was called but support was not enalbed.  \nPlease rebuild Trilinos with the define: \n \"-D Phalanx_ENABLE_GRAPHVIZ:BOOL=ON\"." << std::endl; 
+
+#endif // PHX_HAVE_BOOST_GRAPHVIZ
 }
 
 //=======================================================================
