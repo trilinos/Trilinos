@@ -1036,12 +1036,12 @@ Teuchos::arcp_reinterpret_cast(const ArrayRCP<T1>& p1)
 
 template<class T2, class T1>
 Teuchos::ArrayRCP<T2>
-Teuchos::arcp_reinterpret_cast_nonpod(const ArrayRCP<T1>& p1)
+Teuchos::arcp_reinterpret_cast_nonpod(const ArrayRCP<T1>& p1, const T2& val)
 {
   typedef typename ArrayRCP<T2>::iterator itr_t;
   ArrayRCP<T2> arcp2 = arcp_reinterpret_cast<T2>(p1);
   for (itr_t itr = arcp2.begin(); itr != arcp2.end(); ++itr) {
-    new (&*itr) T2;
+    new (&*itr) T2(val);
   }
   return arcpWithEmbeddedObj(
     arcp2.getRawPtr(), 0, arcp2.size(),

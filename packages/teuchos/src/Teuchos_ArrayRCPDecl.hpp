@@ -1120,7 +1120,7 @@ ArrayRCP<T2> arcp_reinterpret_cast(const ArrayRCP<T1>& p1);
  * \relates ArrayRCP
  */
 template<class T2, class T1>
-ArrayRCP<T2> arcp_reinterpret_cast_nonpod(const ArrayRCP<T1>& p1);
+ArrayRCP<T2> arcp_reinterpret_cast_nonpod(const ArrayRCP<T1>& p1, const T2& val=T2());
 
 
 /** \brief Implicit case the underlying <tt>ArrayRCP</tt> type from
