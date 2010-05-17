@@ -220,7 +220,8 @@ inline BlockedMultiVector deepcopy(const BlockedMultiVector & v)
   *
   * Copy the contents of a multivector to a new vector. If the destination
   * vector is null, a deep copy of the source multivector is made to a newly allocated
-  * vector.
+  * vector. Also, if the destination and the source do not match, a new destination
+  * object is allocated and returned to the user.
   *
   * \param[in] src Source multivector to be copied.
   * \param[in] dst Destination multivector.  If null a new multivector will be allocated.
@@ -232,6 +233,13 @@ inline MultiVector datacopy(const MultiVector & src,MultiVector & dst)
 { 
    if(dst==Teuchos::null)
       return deepcopy(src);
+
+   bool rangeCompat = src->range()->isCompatible(*dst->range());
+   bool domainCompat = src->domain()->isCompatible(*dst->domain());
+ 
+   if(not (rangeCompat && domainCompat))
+      return deepcopy(src);
+
    // perform data copy
    Thyra::assign<double>(dst.ptr(),*src);
    return dst;
@@ -241,7 +249,8 @@ inline MultiVector datacopy(const MultiVector & src,MultiVector & dst)
   *
   * Copy the contents of a blocked multivector to a new vector. If the destination
   * vector is null, a deep copy of the source multivector is made to a newly allocated
-  * vector.
+  * vector. Also, if the destination and the source do not match, a new destination
+  * object is allocated and returned to the user.
   *
   * \param[in] src Source multivector to be copied.
   * \param[in] dst Destination multivector.  If null a new multivector will be allocated.
@@ -253,6 +262,13 @@ inline BlockedMultiVector datacopy(const BlockedMultiVector & src,BlockedMultiVe
 { 
    if(dst==Teuchos::null)
       return deepcopy(src);
+
+   bool rangeCompat = src->range()->isCompatible(*dst->range());
+   bool domainCompat = src->domain()->isCompatible(*dst->domain());
+
+   if(not (rangeCompat && domainCompat))
+      return deepcopy(src);
+
    // perform data copy
    Thyra::assign<double>(dst.ptr(),*src);
    return dst;
