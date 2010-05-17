@@ -11,7 +11,8 @@ cmake \
           -D Trilinos_ENABLE_Teuchos:BOOL=ON \
           -D Trilinos_ENABLE_CTrilinos:BOOL=ON \
           -D Trilinos_ENABLE_ForTrilinos:BOOL=ON \
-          -D Trilinos_ENABLE_TESTS:BOOL=OFF \
+          -D Trilinos_ENABLE_TESTS:BOOL=ON \
+          -D Trilinos_ENABLE_EXAMPLES:BOOL=ON \
           -D CTrilinos_ENABLE_TESTS:BOOL=ON \
           -D CTrilinos_ENABLE_EXAMPLES:BOOL=ON \
           -D ForTrilinos_ENABLE_TESTS:BOOL=ON \
@@ -35,6 +36,7 @@ cmake \
           -D LAPACK_LIBRARY_DIRS:FILEPATH="/home/knmorri/lapack-3.2.1" \
           -D LAPACK_LIBRARY_NAMES:STRING="lapack_AIX.a" \
           -D CMAKE_CXX_FLAGS:STRING="-qrtti=all" \
+          -D CMAKE_Fortran_FLAGS:STRING="-qfixed=72" \
           -D CMAKE_INSTALL_PREFIX="/home/knmorri/Git_Trilinos/Trilinos-MPI-10.0" \
           ${EXTRA_ARGS} \
           ${TRILINOS_PATH}
