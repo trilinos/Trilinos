@@ -1,10 +1,21 @@
-
 INCLUDE(PackageAddExecutableAndTest)
 INCLUDE(PackageCopyFilesToBinaryDir)
 
 
 INCLUDE_DIRECTORIES(${PACKAGE_SOURCE_DIR}/../thyra/example/operator_solve)
 
+
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_Amesos)
+IF (${PACKAGE_NAME}_ENABLE_Belos)
+   PACKAGE_ADD_EXECUTABLE_AND_TEST(
+     Belos_GCRODR_strattest 
+     SOURCES
+       test_belos_gcrodr.cpp
+       ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+     COMM serial mpi
+     NUM_MPI_PROCS 4
+     )
+ENDIF()
 
 PACKAGE_ADD_EXECUTABLE(
   test_single_stratimikos_solver_driver
@@ -35,6 +46,7 @@ PACKAGE_COPY_FILES_TO_BINARY_DIR(CopyTestXMLFiles
     FourByFour.belos.np.xml
     FourByFour.belos.ifpack.xml
     FourByFour.belos.ml.xml
+    BelosGCRODRTest.xml
   SOURCE_PREFIX "_"
   EXEDEPS test_single_stratimikos_solver_driver
   )
