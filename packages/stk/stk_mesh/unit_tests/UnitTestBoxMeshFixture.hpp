@@ -42,6 +42,8 @@ public:
   stk::mesh::MetaData    m_meta_data ;
   stk::mesh::BulkData    m_bulk_data ;
   stk::mesh::Part      & m_elem_block ;
+  stk::mesh::Part      & m_elem_block2 ;
+  stk::mesh::Part      & m_elem_block3 ;
   CoordFieldType       & m_coord_field ;
   CoordGatherFieldType & m_coord_gather_field ;
   QuadFieldType        & m_quad_field ;

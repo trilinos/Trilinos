@@ -21,6 +21,7 @@
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <stk_mesh/fem/EntityRanks.hpp>
 
 #include <unit_tests/UnitTestGridMeshFixture.hpp>
 
@@ -177,4 +178,35 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
     results.push_back(std::pair<std::pair<unsigned, unsigned>, std::pair<unsigned, unsigned> >(inside, outside));
   }
   STKUNIT_EXPECT_TRUE(results == expected_results);
+
+  //test on boundary_analysis for closure with a NULL topology - coverage of lines 39-40 of BoundaryAnalysis.cpp
+  {
+
+    //create new meta, bulk and boundary2 for this test
+    stk::mesh::MetaData meta( stk::mesh::fem_entity_rank_names() );
+
+    //declare part with topology = NULL
+    stk::mesh::Part & quad_part = meta.declare_part("quad_part", stk::mesh::Face);
+    meta.commit();
+
+    stk::ParallelMachine comm(MPI_COMM_WORLD);
+    stk::mesh::BulkData bulk ( meta , comm , 100 );
+
+    stk::mesh::EntitySideVector boundary2;
+    std::vector<stk::mesh::Entity*> newclosure;
+
+    stk::mesh::PartVector face_parts;
+    face_parts.push_back(&quad_part);
+
+    bulk.modification_begin();
+    stk::mesh::Entity & new_face = bulk.declare_entity(stk::mesh::Face, 1, face_parts);
+
+    newclosure.push_back(&new_face);
+
+    stk::mesh::boundary_analysis(bulk, newclosure, stk::mesh::Face, boundary2);
+    STKUNIT_EXPECT_TRUE(!boundary.empty());
+
+    bulk.modification_end();
+  }
+
 }

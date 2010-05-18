@@ -396,6 +396,10 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyChangeGhostingGuards )
   stk::mesh::Ghosting &ghosting = bulk1.create_ghosting ( "Ghost 1" );
   STKUNIT_ASSERT_THROW ( bulk2.change_ghosting ( ghosting , to_send , empty_vector ) , std::runtime_error );
   STKUNIT_ASSERT_THROW ( bulk1.change_ghosting ( bulk1.shared_aura() , to_send , empty_vector ) , std::runtime_error );
+
+  ghosting.receive_list(empty_vector);
+  ghosting.send_list(to_send);
+
   bulk1.modification_end();
   bulk2.modification_end();
 }
