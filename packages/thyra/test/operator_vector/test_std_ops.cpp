@@ -35,7 +35,6 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Teuchos_DefaultComm.hpp"
-#include "Teuchos_arrayArg.hpp"
 
 namespace Thyra {
 
