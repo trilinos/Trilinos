@@ -48,10 +48,10 @@ Zoltan_Postprocess_Partition (ZZ *zz,
 			      ZOLTAN_ID_PTR       local_ids);
 
 static int Compute_Bal(ZZ *, int, weighttype *, int, indextype *, double *);
-static int Compute_EdgeCut(ZZ *, int, indextype *, float *, indextype *, int *, double *);
-static float Compute_NetCut(ZZ *, int, indextype *, float *, indextype *, int *);
-static float Compute_ConCut(ZZ *, int, indextype *, float *, indextype *, int *);
-static int Compute_Adjpart(ZZ *, int, ZOLTAN_GNO_TYPE *, int *, ZOLTAN_GNO_TYPE *, int *, indextype *, int *);
+static int Compute_EdgeCut(ZZ *, int, int *, float *, indextype *, int *, double *);
+static float Compute_NetCut(ZZ *, int, int *, float *, indextype *, int *);
+static float Compute_ConCut(ZZ *, int, int *, float *, indextype *, int *);
+static int Compute_Adjpart(ZZ *, int, ZOLTAN_GNO_TYPE *, int *, ZOLTAN_GNO_TYPE *, int *, int *, int *);
 
 
 
@@ -383,7 +383,7 @@ Zoltan_Postprocess_FinalOutput (ZZ* zz, ZOLTAN_Third_Graph *gr,
       ZOLTAN_THIRD_ERROR(ZOLTAN_MEMERR,
 			 "Error 2 returned from Zoltan_Postprocess_FinalOutput");
     }
-    Compute_EdgeCut(zz, gr->num_obj, gr->xadj, gr->float_ewgts, 
+    Compute_EdgeCut(zz, gr->num_obj, gr->xadj, gr->float_ewgts,
                     prt->part, adjpart, cute);
     cutl = Compute_ConCut(zz, gr->num_obj, gr->xadj,  gr->float_ewgts,
                           prt->part, adjpart);
@@ -537,7 +537,7 @@ float *tot = NULL, *max = NULL;
 static int Compute_EdgeCut(
   ZZ *zz,
   int nvtx,
-  indextype *xadj,
+  int *xadj,
   float *ewgts,
   indextype *parts,
   int *nborparts,
@@ -568,7 +568,7 @@ double *cut = NULL;
 static float Compute_NetCut(
   ZZ *zz,
   int nvtx,
-  indextype *xadj,
+  int *xadj,
   float *ewgts,
   indextype *parts,
   int *nborparts
@@ -608,7 +608,7 @@ int dim = zz->Edge_Weight_Dim;
 static float Compute_ConCut(
   ZZ *zz,
   int nvtx,
-  indextype *xadj,
+  int *xadj,
   float *ewgts,
   indextype *parts,
   int *nborparts

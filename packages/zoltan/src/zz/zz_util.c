@@ -258,8 +258,8 @@ Zoltan_AllReduceInPlace(void *sndrcvbuf, int count, MPI_Datatype datatype, MPI_O
   return (ierr);
 }
 
-MPI_Datatype _mpi_gno_datatype=MPI_UNDEFINED;
-char _mpi_gno_datatype_name[32];
+MPI_Datatype zoltan_mpi_gno_datatype=(MPI_Datatype)MPI_UNDEFINED;
+char zoltan_mpi_gno_datatype_name[32];
 
 int Zoltan_set_mpi_types()
 {
@@ -271,24 +271,24 @@ int Zoltan_set_mpi_types()
   MPI_Type_size(MPI_LONG_LONG, &size_long_long);
 
   if (sizeof(ssize_t) == size_short){
-    _mpi_gno_datatype = MPI_SHORT;
-    strcpy(_mpi_gno_datatype_name, "MPI_SHORT");
+    zoltan_mpi_gno_datatype = MPI_SHORT;
+    strcpy(zoltan_mpi_gno_datatype_name, "MPI_SHORT");
   }
   else if (sizeof(ssize_t) == size_int){
-    _mpi_gno_datatype = MPI_INT;
-    strcpy(_mpi_gno_datatype_name, "MPI_INT");
+    zoltan_mpi_gno_datatype = MPI_INT;
+    strcpy(zoltan_mpi_gno_datatype_name, "MPI_INT");
   }
   else if (sizeof(ssize_t) == size_long){
-    _mpi_gno_datatype = MPI_LONG;
-    strcpy(_mpi_gno_datatype_name, "MPI_LONG");
+    zoltan_mpi_gno_datatype = MPI_LONG;
+    strcpy(zoltan_mpi_gno_datatype_name, "MPI_LONG");
   }
   else if (sizeof(ssize_t) == size_long_long){
-    _mpi_gno_datatype = MPI_LONG_LONG;
-    strcpy(_mpi_gno_datatype_name, "MPI_LONG_LONG");
+    zoltan_mpi_gno_datatype = MPI_LONG_LONG;
+    strcpy(zoltan_mpi_gno_datatype_name, "MPI_LONG_LONG");
   }
 
-  if (_mpi_gno_datatype == MPI_UNDEFINED){
-    strcpy(_mpi_gno_datatype_name, "no type");
+  if (zoltan_mpi_gno_datatype == (MPI_Datatype)MPI_UNDEFINED){
+    strcpy(zoltan_mpi_gno_datatype_name, "no type");
     return ZOLTAN_FATAL;
   }
 
