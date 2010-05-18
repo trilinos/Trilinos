@@ -661,12 +661,13 @@ Section H: Dashboard testing
   
 (*) Reconfiguring from scratch
   
-      $ rm -rf CMakeCache.txt CMakeFiles ; ./do-configure
+      $ rm CMakeCache.txt ; find . -name CMakeFiles -exec rm -rf {} \;
+      $ ./do-configure
   
-    NOTE: Removing the CMakeCache.txt file is often needed when
-    removing variables from the configure line.  Removing the
-    CMakeFiles directory is needed if there are changes in some CMake
-    modules or the CMake version itself.
+    NOTE: Removing the CMakeCache.txt file is often needed when removing
+    variables from the configure line.  Removing the CMakeFiles directories is
+    needed if there are changes in some CMake modules or the CMake version
+    itself.
 
 
 (*) Viewing configure errors
