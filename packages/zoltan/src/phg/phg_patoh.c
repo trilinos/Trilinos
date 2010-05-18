@@ -83,8 +83,6 @@ char *yo = "Zoltan_HG_PaToH";
   if (hgp->patoh_alloc_pool1>0)
     pargs.MemMul_Pins = hgp->patoh_alloc_pool1; 
 
-  /* TODO64 hvertex array may need to be copied from array of ZOLTAN_GNO_TYPEs to an array of ints */
-    
   PaToH_Alloc(&pargs, hg->nVtx, hg->nEdge, hg->VtxWeightDim, 
               ivwgts, iewgts, hg->hindex, hg->hvertex);
 

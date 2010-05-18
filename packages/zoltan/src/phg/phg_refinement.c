@@ -89,7 +89,7 @@ int Zoltan_HG_move_vertex (HGraph *hg, int vertex, int sour, int dest,
  int *part, int **cut, double *gain, HEAP *heap)
 {
 int i, j;
-ZOLTAN_GNO_TYPE v, edge;
+int v, edge;
 
   gain[vertex] = 0.0;
   part[vertex] = dest;
@@ -417,7 +417,7 @@ static void fm2_move_vertex_oneway(int v, HGraph *hg, Partition part,
     lweights[vto] += (hg->vwgt ? hg->vwgt[v*hg->VtxWeightDim] : 1.0);
 
     for (j = hg->vindex[v]; j < hg->vindex[v+1]; j++) {
-        ZOLTAN_GNO_TYPE n = hg->vedge[j];
+        int n = hg->vedge[j];
         float w = hg->ewgt ? hg->ewgt[n] : 1.0;
     
         --pins[pno][n];
@@ -435,7 +435,7 @@ static void fm2_move_vertex_oneway(int v, HGraph *hg, Partition part,
 
         if (pins[pno][n]==1) {
             for (i = hg->hindex[n]; i < hg->hindex[n+1]; ++i) {
-                ZOLTAN_GNO_TYPE u = hg->hvertex[i]; 
+                int u = hg->hvertex[i]; 
                 if (part[u]==pno) {
                     gain[u] += w;
                     if (!mark[u]) {
@@ -489,7 +489,7 @@ static void fm2_move_vertex_oneway_nonroot(int v, HGraph *hg, Partition part,
     lweights[vto] += (hg->vwgt ? hg->vwgt[v*hg->VtxWeightDim] : 1.0);
 
     for (j = hg->vindex[v]; j < hg->vindex[v+1]; j++) {
-        ZOLTAN_GNO_TYPE n = hg->vedge[j];
+        int n = hg->vedge[j];
     
         --lpins[pno][n];
         ++lpins[vto][n];
@@ -535,7 +535,6 @@ static int refine_fm2 (ZZ *zz,
     int do_timing = (hgp->use_timers > 2);
     int detail_timing = (hgp->use_timers > 3);
 
-    
     ZOLTAN_TRACE_ENTER(zz, yo);
 
     if (p != 2) {
@@ -681,8 +680,9 @@ static int refine_fm2 (ZZ *zz,
     if (detail_timing)         
         ZOLTAN_TIMER_START(zz->ZTime, timer->rfpins, hgc->Communicator);                        
     for (i = 0; i < hg->nEdge; ++i)
-        for (j = hg->hindex[i]; j < hg->hindex[i+1]; ++j)
+        for (j = hg->hindex[i]; j < hg->hindex[i+1]; ++j){
             ++(lpins[part[hg->hvertex[j]]][i]);
+        }
     if (detail_timing)         
         ZOLTAN_TIMER_STOP(zz->ZTime, timer->rfpins, hgc->Communicator);                    
     
@@ -778,7 +778,7 @@ static int refine_fm2 (ZZ *zz,
             lgain[i] = 0.0;
             if ((part[i]==from) && (!hgp->UseFixedVtx || hg->fixed_part[i]<0))
                 for (j = hg->vindex[i]; j < hg->vindex[i+1]; j++) {
-                    ZOLTAN_GNO_TYPE edge = hg->vedge[j];
+                    int edge = hg->vedge[j];
                     if ((pins[0][edge]+pins[1][edge])>1) { /* if they have at least 2 pins :) */
                         if (pins[part[i]][edge] == 1)
                             lgain[i] += (hg->ewgt ? hg->ewgt[edge] : 1.0);

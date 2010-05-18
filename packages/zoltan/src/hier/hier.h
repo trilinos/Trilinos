@@ -57,7 +57,7 @@ struct HierPartParamsStruct {
 					gids during hierarchical balancing */
   int allocsize_gids_of_interest;    /* size of gids_of_interest array */
   int num_gids_of_interest;          /* num gids in gids_of_interest */
-  ZOLTAN_GNO_TYPE *gids_of_interest;    /* list of gids of interest, used
+  ZOLTAN_ID_TYPE *gids_of_interest;    /* list of gids of interest, used
 					when looking up remote proc locations
 					for graph edge callbacks */
   int *gids_of_interest_procs;       /* list of procs where gids of interest
@@ -80,7 +80,7 @@ struct HierPartParamsStruct {
   int num_migrated_in_gids;          /* number of gids migrated to this proc */
   int alloc_migrated_in_gids;        /* size of allocated array of migrated
 					in gids */
-  ZOLTAN_GNO_TYPE *migrated_in_gids;    /* ordered array of gids migrated in */
+  ZOLTAN_ID_TYPE *migrated_in_gids;    /* ordered array of gids migrated in */
   void **migrated_in_data;           /* data migrated in, parallel array to
 					migrated_in_gids */
 };

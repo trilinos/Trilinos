@@ -56,11 +56,11 @@ typedef struct {
 
   /* arrays to look up vertices given a hyperedge */
   int *hindex;      /* length nEdge+1 index into hvertex, last is nPins */
-  ZOLTAN_GNO_TYPE *hvertex;     /* length nPins array containing associated vertices */
+  int *hvertex;     /* length nPins array containing associated vertices */
 
   /* arrays to look up hyperedges given a vertex */
   int *vindex;      /* length nVtx+1 index into vedge, last is nPins */
-  ZOLTAN_GNO_TYPE *vedge;       /* length nPins array containing associated hyperedges */
+  int *vedge;       /* length nPins array containing associated hyperedges */
 
   /* UVCUVC: todo vmap, ratio and redl should be removed from HGraph
      and some could go to VCycle struct in RB code */
@@ -199,7 +199,7 @@ typedef struct Zoltan_HGraph ZHG;
  * j, and k are being contracted together to form one new vertex,
  * Matching[i] == j; Matching[j] == k; and Matching[k] == i;
  * The cycle describes the contraction. */
-typedef ZOLTAN_GNO_TYPE *Matching;  /* length |V|, matching information of vertices */
+typedef int *Matching;  /* length |V|, matching information of vertices */
 typedef int *Packing;   /* length |V|, packing information of vertices */
 typedef int *Grouping;  /* length |V|, grouping information of vertices */
 
@@ -211,7 +211,7 @@ typedef int *Partition; /* length |V|, partition ID for each vertex */
 extern void Zoltan_HG_HGraph_Init (HGraph*);
 extern int Zoltan_HG_HGraph_Free  (HGraph*);
 extern int Zoltan_HG_Create_Mirror(ZZ*, HGraph*);
-extern void Zoltan_HG_Mirror(int, int*, ZOLTAN_GNO_TYPE *, int, int*, ZOLTAN_GNO_TYPE *);
+extern void Zoltan_HG_Mirror(int, int*, int*, int, int*, int*);
 
 extern int Zoltan_HG_Info         (ZZ*, HGraph*);
 extern int Zoltan_HG_Check        (ZZ*, HGraph*);

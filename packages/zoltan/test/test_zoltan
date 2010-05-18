@@ -723,6 +723,7 @@ if (! $no_chaco ) then
 	  endif
 
 	  # Run the driver
+	  echo "Run test problem ${ch_name[1]} with method ${mtd}" | tee -a ../$logfile
           echo "start = `date`" | tee -a ../$logfile
 	  if (! $?run ) then
 	    # serial case
@@ -869,6 +870,7 @@ if ( $yes_nemesis ) then
 	  /bin/rm ${outdir}/${nem_name[1]}.$mtd.drops.$np.*
 
 	  # Run the driver
+	  echo "Run test problem ${nem_name[1]} with method ${mtd}" | tee -a ../$logfile
 	  $run $np ../$zdrive
 
 	  # Save and compare output files
@@ -1105,6 +1107,7 @@ if (! $no_hg) then
 
 	  # Run the driver
           echo "start = `date`" | tee -a ../$logfile
+	  echo "Run test problem ${hg_name[1]}/${mtd}" | tee -a ../$logfile
 	  $run $np $zdrive
           echo "end   = `date`" | tee -a ../$logfile
 

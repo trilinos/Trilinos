@@ -66,7 +66,6 @@ static int *Zoltan_convert_for_tpl(ZZ *zz, ZOLTAN_GNO_TYPE *gnos, int len)
 {
 int i;
 int *tmp_int=NULL;
-ZOLTAN_GNO_TYPE tmp_gno;
 char *yo = "Zoltan_convert_for_tpl";
 char msg[256];
 
@@ -76,7 +75,7 @@ char msg[256];
 
   if (sizeof(ZOLTAN_GNO_TYPE) != sizeof(int)){
     if (zz->Proc == zz->Debug_Proc && zz->Debug_Level >= ZOLTAN_DEBUG_PARAMS && !_zoltan_warned){
-      sprintf(msg, "Global numbers are being copied from %d byte integers to %d",
+      sprintf(msg, "Global numbers are being copied from %zd byte integers to %zd",
                    sizeof(ZOLTAN_GNO_TYPE), sizeof(int));
       ZOLTAN_PRINT_WARN(zz->Proc, yo, msg);
       _zoltan_warned = 1;
@@ -446,7 +445,7 @@ int Zoltan_Parmetis_Check_Error (ZZ *zz,
 				 ZOLTAN_Third_Graph *gr,
 				 ZOLTAN_Third_Part *prt)
 {
-ZOLTAN_GNO_TYPE tmp_gno;
+
 #if (PARMETIS_MAJOR_VERSION >= 3) && (PARMETIS_MINOR_VERSION == 0)
   /* Special error checks to avoid incorrect results from ParMetis 3.0.
    * ParMETIS 3.0 Partkway ignores partition sizes for problems with

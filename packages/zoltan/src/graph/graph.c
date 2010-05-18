@@ -160,10 +160,10 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local)
 #endif
 
   if (bipartite) {
-    int vertlno;
-    int limit;
-    int offset;
 
+/*    int vertlno; */
+/*    int limit; */
+/*    int offset; */
     graph->bipartite = 1;
     graph->fixed_vertices = graph->mtx.mtx.ybipart;
 /*     graph->fixed_vertices = (int*) ZOLTAN_MALLOC(graph->mtx.mtx.nY*sizeof(int)); */
@@ -207,8 +207,6 @@ Zoltan_ZG_Export (ZZ* zz, const ZG* const graph, ZOLTAN_GNO_TYPE *gvtx, int *nvt
 		  ZOLTAN_GNO_TYPE **vtxdist, int **xadj, ZOLTAN_GNO_TYPE **adjncy, int **adjproc,
 		  /* float **xwgt, */ float **ewgt, int **partialD2)
 {
-  int ierr = ZOLTAN_OK;
-
   if (sizeof(int) != sizeof(indextype)){
     if (zz->Proc == 0) fprintf(stderr,"sizeof(int) != sizeof(indextype) in Zoltan_ZG_Export\n");
     return ZOLTAN_FATAL;
@@ -309,7 +307,7 @@ Zoltan_ZG_Register(ZZ* zz, ZG* graph, int* properties)
     GID = graph->mtx.mtx.yGID;
     if (graph->mtx.mtx.ddY == NULL) {
       ierr = Zoltan_DD_Create (&graph->mtx.mtx.ddY, zz->Communicator, 1, zz->Num_GID,
-			       1, graph->mtx.mtx.globalY/zz->Num_Proc, 0);
+			       sizeof(ZOLTAN_ID_TYPE), graph->mtx.mtx.globalY/zz->Num_Proc, 0);
       CHECK_IERR;
       /* Hope a linear assignment will help a little */
       Zoltan_DD_Set_Neighbor_Hash_Fn1(graph->mtx.mtx.ddY, graph->mtx.mtx.globalX/zz->Num_Proc);

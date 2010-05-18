@@ -43,7 +43,7 @@ typedef struct tagVCycle {
     int              *vlno;       /* vlno size = hg->nVtx 
                                      vlno[i] is the local vertex number of vtx
 				     i on proc vdest[i]. */
-    int              *LevelMap;   /* necessary to uncoarsen                  */
+    ZOLTAN_GNO_TYPE  *LevelMap;   /* necessary to uncoarsen                  */
                                   /* LevelMap size = hg->nVtx 
                                      LevelMap[i] is the vtx number of the
                                      coarse vertex containing fine vtx i 
@@ -133,7 +133,7 @@ static int allocVCycle(VCycle *v)
     return ZOLTAN_MEMERR;
  
   if (!v->LevelMap 
-   && !(v->LevelMap = (int*) ZOLTAN_CALLOC (v->hg->nVtx, sizeof(int))))
+   && !(v->LevelMap = (ZOLTAN_GNO_TYPE*) ZOLTAN_CALLOC (v->hg->nVtx, sizeof(ZOLTAN_GNO_TYPE))))
      return ZOLTAN_MEMERR;
 
   return ZOLTAN_OK;
@@ -290,7 +290,7 @@ int Zoltan_PHG_Partition (
       }
 
       /* Allocate and initialize Matching Array */
-      if (hg->nVtx && !(match = (ZOLTAN_GNO_TYPE*) ZOLTAN_MALLOC (hg->nVtx*sizeof(ZOLTAN_GNO_TYPE)))) {
+      if (hg->nVtx && !(match = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC (hg->nVtx*sizeof(ZOLTAN_GNO_TYPE)))) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Insufficient memory: Matching array");
         return ZOLTAN_MEMERR;
       }
@@ -298,7 +298,9 @@ int Zoltan_PHG_Partition (
         match[i] = i;
         
       /* Calculate matching (packing or grouping) */
+
       err = Zoltan_PHG_Matching (zz, hg, match, hgp);
+
       if (err != ZOLTAN_OK && err != ZOLTAN_WARN) {
         ZOLTAN_FREE (&match);
         goto End;
@@ -332,6 +334,7 @@ int Zoltan_PHG_Partition (
       err = Zoltan_PHG_Coarsening (zz, hg, match, coarser->hg, vcycle->LevelMap,
        &vcycle->LevelCnt, &vcycle->LevelSndCnt, &vcycle->LevelData, 
        &vcycle->comm_plan, hgp);
+
       if (err != ZOLTAN_OK && err != ZOLTAN_WARN) 
         goto End;
 
@@ -454,7 +457,9 @@ int Zoltan_PHG_Partition (
   }
 
   /****** Coarse Partitioning ******/
+
   err = Zoltan_PHG_CoarsePartition (zz, hg, p, part_sizes, vcycle->Part, hgp);
+
   if (err != ZOLTAN_OK && err != ZOLTAN_WARN)
     goto End;
 

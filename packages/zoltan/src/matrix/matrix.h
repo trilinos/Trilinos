@@ -94,8 +94,7 @@ typedef struct Zoltan_matrix_ {
   /* These fields are used after matrix_complete */
   ZOLTAN_ID_PTR yGID;           /* Local Y GID */
 
-  /* This is not a zoltan global ID but it is used in Zoltan_DD_* */
-  ZOLTAN_ID_TYPE *ypid;           /* Initial processor */
+  int *ypid;           /* Initial processor */
   int *ybipart;
 } Zoltan_matrix;
 
@@ -185,7 +184,7 @@ int Zoltan_Distribute_LinearY (ZZ * zz, PHGComm *layout) ;
 int Zoltan_Distribute_Set(Zoltan_matrix_2d* mat,
 			  distFnct *hashDistFct, void * hashDistData);
 
-void* Zoltan_Distribute_Partition_Register(ZZ* zz, int size, ZOLTAN_GNO_TYPE * yGNO, ZOLTAN_ID_TYPE *part, int nProc, int nPart);
+void* Zoltan_Distribute_Partition_Register(ZZ* zz, int size, ZOLTAN_GNO_TYPE * yGNO, int *part, int nProc, int nPart);
 void Zoltan_Distribute_Partition_Free(void** dist);
 
 

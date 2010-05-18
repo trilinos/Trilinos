@@ -123,7 +123,6 @@ int local_coarse_part = hgp->LocalCoarsePartition;
 /* 10 when p=1, and 1 when p is large. */
 const int num_coarse_iter = 1 + 9/zz->Num_Proc; 
 
-
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   if (fine_timing) {

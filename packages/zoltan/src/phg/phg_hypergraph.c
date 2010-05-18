@@ -232,12 +232,12 @@ void Zoltan_HG_Mirror(
   int inlength,     /* Input:  either nVtx or nEdge */
   int *inindex,     /* Input:  index array, either vindex or hindex; 
                                length = inlength+1  */
-  ZOLTAN_GNO_TYPE *indata,      /* Input:  non-zeros array, either vedge or hvertex;
+  int *indata,      /* Input:  non-zeros array, either vedge or hvertex;
                                length = nPins */
   int outlength,    /* Input:  either nEdge or nVtx */
   int *outindex,    /* Output: index array, either hindex or vindex;
                                length = outlength+1 */
-  ZOLTAN_GNO_TYPE *outdata      /* Output: non-zeros array, either hvertex or vedge;
+  int *outdata      /* Output: non-zeros array, either hvertex or vedge;
                                length = nPins */
 )
 {
@@ -287,10 +287,8 @@ int Zoltan_HG_Create_Mirror (
   int inlength, outlength;   /* input/output array lengths */
   int *index;         /* pointers to input information */
   int *outindex;
-  ZOLTAN_GNO_TYPE *data, *outdata;
+  int *data, *outdata;
   char *yo = "Zoltan_HG_Create_Mirror";
-
-int i, j, k, p, npins;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -304,35 +302,7 @@ int i, j, k, p, npins;
     index     = hg->hindex;
     data      = hg->hvertex;
     outindex  = hg->vindex = (int*) ZOLTAN_MALLOC((hg->nVtx+1) * sizeof(int));
-    outdata   = hg->vedge  = (ZOLTAN_GNO_TYPE*) ZOLTAN_MALLOC (hg->nPins * sizeof(ZOLTAN_GNO_TYPE));
-
-for (p=0; p < zz->Num_Proc; p++){
-if (p == zz->Proc){
-fprintf(stderr,"%d   data length %d  outdata length %d out index length %d\n",zz->Proc,hg->nEdge, hg->nPins, hg->nVtx + 1);
-/*
-for (i=0, k=0; i < hg->nEdge; i++){
-  npins = hg->hindex[i+1]-hg->hindex[i];
-  fprintf(stderr,"Edge %d, %d pin vertex gnos: ",i,npins);
-  for (j=0, k=0; j < npins; j++, k++){
-    fprintf(stderr,"%zd ", hg->hvertex[hg->hindex[i] + k]);
-  }
-  fprintf(stderr,"\n");
-}
-*/
-fprintf(stderr,"Indices: ");
-for (i=0; i <= hg->nEdge; i++){
-  fprintf(stderr,"%d ",hg->hindex[i]);
-}
-fprintf(stderr,"\n");
-fprintf(stderr,"Vertex gnos: ");
-for (i=0; i < hg->hindex[hg->nEdge]; i++){
-  fprintf(stderr,"%zd ",hg->hvertex[i]);
-}
-fprintf(stderr,"\n");
-fflush(stderr);
-}
-MPI_Barrier(MPI_COMM_WORLD);
-}
+    outdata   = hg->vedge  = (int*) ZOLTAN_MALLOC (hg->nPins * sizeof(int));
 
     if (outindex == NULL || (hg->nPins > 0 && outdata == NULL)) {
       Zoltan_Multifree (__FILE__, __LINE__, 2, &hg->vindex, &hg->vedge);
@@ -350,23 +320,7 @@ MPI_Barrier(MPI_COMM_WORLD);
     index     = hg->vindex;
     data      = hg->vedge;
     outindex  = hg->hindex  = (int*) ZOLTAN_MALLOC((hg->nEdge+1) * sizeof(int));
-    outdata   = hg->hvertex = (ZOLTAN_GNO_TYPE*) ZOLTAN_MALLOC(hg->nPins * sizeof(ZOLTAN_GNO_TYPE));
-
-for (p=0; p < zz->Num_Proc; p++){
-if (p == zz->Proc){
-fprintf(stderr,"%d   data length %d  outdata length %d out index length %d\n",zz->Proc,hg->nVtx, hg->nPins, hg->nEdge + 1);
-for (i=0, k=0; i < hg->nVtx; i++){
-  npins = hg->vindex[i+1]-hg->vindex[i];
-  fprintf(stderr,"Vertex %d, %d pin edge gnos: ",i,npins);
-  for (j=0, k=0; j < npins; j++, k++){
-    fprintf(stderr,"%zd ", hg->vedge[hg->vindex[i] + k]);
-  }
-  fprintf(stderr,"\n");
-}
-fflush(stderr);
-}
-MPI_Barrier(MPI_COMM_WORLD);
-}
+    outdata   = hg->hvertex = (int*) ZOLTAN_MALLOC(hg->nPins * sizeof(int));
 
     if (outindex == NULL || (hg->nPins > 0 && outdata == NULL)) {
       Zoltan_Multifree (__FILE__, __LINE__, 2, &hg->hindex, &hg->hvertex);
@@ -551,7 +505,7 @@ char *yo = "Zoltan_HG_Print";
   /* Print Vertex Info */
   fprintf(fp, "%s Vertices:  (edges)\n", str);
   for (i = 0; i < hg->nVtx; i++) {
-    fprintf(fp, "%d (%d) in part %d:  ", 
+    fprintf(fp, "%d (%zd) in part %d:  ", 
             i, VTX_LNO_TO_GNO(hg, i), (parts ? parts[i] : -1));
     fprintf(fp, "(");
     for (j = hg->vindex[i]; j < hg->vindex[i+1]; j++)
@@ -563,7 +517,7 @@ char *yo = "Zoltan_HG_Print";
     for (j = 0; j < num_vwgt; j++) sum[j] = 0;
     fprintf(fp, "%s Vertices: [weights])\n", str);
     for (i = 0; i < hg->nVtx; i++) {
-      fprintf(fp, "%d (%d):  [", i, VTX_LNO_TO_GNO(hg, i));
+      fprintf(fp, "%d (%zd):  [", i, VTX_LNO_TO_GNO(hg, i));
       for (j = 0; j < num_vwgt; j++) {
         fprintf(fp, "%f ", hg->vwgt[i*num_vwgt + j]);
         sum[j] += hg->vwgt[i*num_vwgt + j];
@@ -578,7 +532,7 @@ char *yo = "Zoltan_HG_Print";
   /* Print Hyperedge Info */
   fprintf(fp, "%s Hyperedges:  (vertices)\n", str);
   for (i = 0; i < hg->nEdge; i++) {
-    fprintf(fp, "%d (%d):  ", i, EDGE_LNO_TO_GNO(hg, i));
+    fprintf(fp, "%d (%zd):  ", i, EDGE_LNO_TO_GNO(hg, i));
     fprintf(fp, "(");
     for (j = hg->hindex[i]; j < hg->hindex[i+1]; j++)
       fprintf(fp, "%d ", hg->hvertex[j]);
@@ -589,7 +543,7 @@ char *yo = "Zoltan_HG_Print";
     for (j = 0; j < num_ewgt; j++) sum[j] = 0;
     fprintf(fp, "%s Hyperedge Weights:  [weights]\n", str);
     for (i = 0; i < hg->nEdge; i++) {
-      fprintf(fp, "%d (%d):  ", i, EDGE_LNO_TO_GNO(hg, i));
+      fprintf(fp, "%d (%zd):  ", i, EDGE_LNO_TO_GNO(hg, i));
       fprintf(fp, "[");
       for (j = 0; j < num_ewgt; j++) {
         fprintf(fp, "%f ", hg->ewgt[i*num_ewgt + j]);
@@ -621,6 +575,7 @@ void Zoltan_HG_HGraph_Print(
  * Lots of output; synchronized across processors, so is a bottleneck.
  */
   int i;
+int p;
   int num_gid = zz->Num_GID;
   int num_lid = zz->Num_LID;
   char *yo = "Zoltan_HG_HGraph_Print";
@@ -630,7 +585,12 @@ void Zoltan_HG_HGraph_Print(
     return;
   }
 
+#if 0
   Zoltan_Print_Sync_Start (zz->Communicator, 1);
+#else
+for (p=0; p < zz->Num_Proc; p++){
+  if (p == zz->Proc){
+#endif
 
   /* Print Vertex Info */
   fprintf (fp, "%s Proc %d\n", yo, zz->Proc);
@@ -644,7 +604,19 @@ void Zoltan_HG_HGraph_Print(
   }
   Zoltan_HG_Print(zz, hg, parts, fp, "Build");
   fflush(fp);
+
+#if 0
   Zoltan_Print_Sync_End(zz->Communicator, 1);
+#else
+  }
+  MPI_Barrier(zz->Communicator);
+  MPI_Barrier(zz->Communicator);
+  MPI_Barrier(zz->Communicator);
+}
+MPI_Barrier(zz->Communicator);
+MPI_Barrier(zz->Communicator);
+MPI_Barrier(zz->Communicator);
+#endif
 }
 
 /****************************************************************************/

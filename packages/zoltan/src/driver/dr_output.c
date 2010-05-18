@@ -66,7 +66,7 @@ ELEM_INFO_PTR current_elem;
     printf("\nElement block #%d\n", (i+1));
     printf("\tID:                 %d\n", mesh->eb_ids[i]);
     printf("\tElement Type:       %s\n", mesh->eb_names[i]);
-    printf("\tElement Count:      %d\n", mesh->eb_cnts[i]);
+    printf("\tElement Count:      %" ZOLTAN_ID_SPECIFIER "\n", mesh->eb_cnts[i]);
     printf("\tNodes Per Element:  %d\n", mesh->eb_nnodes[i]);
     printf("\tAttrib Per Element: %d\n", mesh->eb_nattrs[i]);
   }
@@ -79,7 +79,7 @@ ELEM_INFO_PTR current_elem;
     printf("%" ZOLTAN_ID_SPECIFIER " in part %d (%f):\n", current_elem->globalID, 
            current_elem->my_part, current_elem->cpu_wgt[0]);
     for (j = 0; j < mesh->eb_nnodes[current_elem->elem_blk]; j++) {
-      printf("\t%" PRIuMAX " |", current_elem->connect[j]);
+      printf("\t%" ZOLTAN_ID_SPECIFIER " |", current_elem->connect[j]);
       for (k = 0; k < mesh->num_dims; k++) {
         printf(" %f", current_elem->coord[j][k]);
       }

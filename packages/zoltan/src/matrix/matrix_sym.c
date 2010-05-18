@@ -31,7 +31,7 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
   Zoltan_Arc *tr_tab = NULL;
   int i, j, cnt;
   ZOLTAN_ID_PTR yGID = NULL;
-  ZOLTAN_ID_TYPE *ypid=NULL;   /* actually process rank - stored in ID_TYPE for DD */
+  int *ypid=NULL;
   float *pinwgt=NULL;
   int * ybipart = NULL;
   int gno_size_for_dd;
@@ -90,7 +90,7 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
 
     /* Update data directories */
     yGID = ZOLTAN_MALLOC_GID_ARRAY(zz, matrix->nY);
-    ypid = (ZOLTAN_ID_TYPE*) ZOLTAN_MALLOC(matrix->nY*sizeof(ZOLTAN_ID_TYPE));
+    ypid = (int*) ZOLTAN_MALLOC(matrix->nY*sizeof(int));
 
     ybipart = (int*) ZOLTAN_MALLOC(matrix->nY*sizeof(int));
 
@@ -100,7 +100,7 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
       ybipart[endX] = 0;
     }
     /* Get Informations about X */
-    Zoltan_DD_Find (matrix->ddX, (ZOLTAN_ID_PTR)matrix->yGNO, yGID, ypid, NULL,
+    Zoltan_DD_Find (matrix->ddX, (ZOLTAN_ID_PTR)matrix->yGNO, yGID, (char *)ypid, NULL,
 		    endX, NULL);
 
     yGNO = (ZOLTAN_GNO_TYPE*)ZOLTAN_MALLOC(endX*sizeof(ZOLTAN_GNO_TYPE));
@@ -124,12 +124,12 @@ Zoltan_Matrix_Sym(ZZ* zz, Zoltan_matrix *matrix, int bipartite)
 
     /* I store : xGNO, xGID, xpid, bipart */
     ierr = Zoltan_DD_Create (&matrix->ddX, zz->Communicator, gno_size_for_dd, zz->Num_GID,
-			     1, matrix->globalX/zz->Num_Proc, 0);
+			     sizeof(int), matrix->globalX/zz->Num_Proc, 0);
     matrix->ddY = matrix->ddX;
     /* Hope a linear assignment will help a little */
     Zoltan_DD_Set_Neighbor_Hash_Fn1(matrix->ddX, matrix->globalX/zz->Num_Proc);
     /* Associate all the data with our xyGNO */
-    Zoltan_DD_Update (matrix->ddX, (ZOLTAN_ID_PTR)matrix->yGNO, yGID, ypid, ybipart,
+    Zoltan_DD_Update (matrix->ddX, (ZOLTAN_ID_PTR)matrix->yGNO, yGID, (char *)ypid, ybipart,
 		      matrix->nY);
   }
 

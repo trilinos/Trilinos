@@ -83,7 +83,7 @@ struct Zoltan_DD_Struct {
   int gid_length;         /* = zz->Num_GID -- avoid needing Zoltan_Struct */
   int lid_length;         /* = zz->Num_LID -- avoid needing Zoltan_Struct */
   int max_id_length;      /* max (gid_length, lid_length)           */
-  int user_data_length;   /* Optional user data stored as ZOLTAN_ID_PTR */
+  int user_data_length;   /* Optional user data length in chars */
   int table_length;       /* # of heads of linked lists             */
   int node_size;          /* Malloc'd to include GID & LID storage  */
   int find_msg_size;      /* Total allocation for DD_FIND_MSG       */

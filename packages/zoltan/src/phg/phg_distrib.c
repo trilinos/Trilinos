@@ -350,7 +350,7 @@ static int Zoltan_PHG_Redistribute_Hypergraph(
         /* Unpack the pins received. */
         cnt = (int *) ZOLTAN_CALLOC(nhg->nVtx + 1, sizeof(int));
         nhg->vindex = (int *) ZOLTAN_CALLOC(nhg->nVtx + 1, sizeof(int));
-        nhg->vedge = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(nhg->nPins * sizeof(ZOLTAN_GNO_TYPE));
+        nhg->vedge = (int *) ZOLTAN_MALLOC(nhg->nPins * sizeof(int));
         
         if (!cnt || !nhg->vindex || (nPins && !nhg->vedge))
             MEMORY_ERROR;

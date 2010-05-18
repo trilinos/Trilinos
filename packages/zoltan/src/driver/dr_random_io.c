@@ -465,7 +465,6 @@ int create_a_graph(
   ZOLTAN_ID_TYPE    left=0, right=0, gid;
   int    vwgt_dim=0, ewgt_dim=0;
   int    ndim = 0, next;
-  int    no_geom = FALSE;
 
   int *start;
   ZOLTAN_ID_TYPE *adj = NULL;
@@ -500,7 +499,7 @@ int create_a_graph(
   gnvtxs = (ZOLTAN_ID_TYPE)nvtxs * Num_Proc;
 
   if (Proc == 0){
-    printf("create_a_graph: Graph will have %" ZOLTAN_ID_SPECIFIER " vertices, %d on each process\n",
+    printf("create_a_graph: Graph will have %" ZOLTAN_ID_SPECIFIER " vertices, %" ZOLTAN_ID_SPECIFIER " on each process\n",
                gnvtxs, nvtxs);
   }
 

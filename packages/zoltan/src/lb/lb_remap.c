@@ -584,7 +584,7 @@ float with_oldremap = 0;      /* Amount of data that overlaps between old and
     hg.EdgeWeightDim = 1;
     hg.ewgt = (float *) ZOLTAN_MALLOC(total_HEcnt * sizeof(float));
     hg.hindex = (int *) ZOLTAN_MALLOC((total_HEcnt + 1) * sizeof(int));
-    hg.hvertex = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC((hg.nPins) * sizeof(ZOLTAN_GNO_TYPE));
+    hg.hvertex = (int *) ZOLTAN_MALLOC((hg.nPins) * sizeof(int));
     if (!hg.ewgt || !hg.hindex || !hg.hvertex) {
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Memory error.");
       ierr = ZOLTAN_MEMERR;
@@ -595,7 +595,7 @@ float with_oldremap = 0;      /* Amount of data that overlaps between old and
       tmp = i * HEINFO_ENTRIES;
       hg.hindex[i] = i+i; 
       hg.hvertex[i+i] = recvbuf[tmp];
-      hg.hvertex[i+i+1] = (ZOLTAN_GNO_TYPE)recvbuf[tmp+1]+max0;
+      hg.hvertex[i+i+1] = (int)recvbuf[tmp+1]+max0;
       hg.ewgt[i] = recvbuf[tmp+2];
     }
     hg.hindex[total_HEcnt] = total_HEcnt + total_HEcnt;
@@ -731,7 +731,7 @@ int tmp, i;
   for (i = 0; i < hg->nEdge; i++) {
     tmp = i + i;
     if (remapvec) {
-      if (hg->hvertex[tmp] == (ZOLTAN_GNO_TYPE)remapvec[hg->hvertex[tmp+1]-max0]) 
+      if (hg->hvertex[tmp] == (int)remapvec[hg->hvertex[tmp+1]-max0]) 
         stay += hg->ewgt[i];
     }
     else {

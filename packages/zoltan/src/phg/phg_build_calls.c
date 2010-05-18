@@ -323,11 +323,6 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
 
     /* send edge size and edge GID together */
 
-    if (sizeof(ZOLTAN_ID_TYPE) != sizeof(int)){
-      ZOLTAN_PRINT_ERROR(zz->Proc, yo, "BAD CODING ASSUMPTION"); 
-      exit(1);
-    }
-
     cnt = 1 + gid_size;
 
     if (nRequests > 0){
@@ -391,7 +386,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
     for (i=0; i<nRequests; i++){
       j = phg_lookup_GID(lookup_myHshEdges, gid_buf + (i*gid_size));
       if (j < 0) FATAL_ERROR("Invalid global edge ID received");
-      zhg->Esize[j] += recvIdBuf[i];
+      zhg->Esize[j] += (int)recvIdBuf[i];
     }
 
     for (j=0; j < zhg->nHedges; j++){
@@ -478,7 +473,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
         fromID += gid_size;
       }
 
-      pinIdx[j] += recvIdBuf[i];
+      pinIdx[j] += (int)recvIdBuf[i];
     }
 
     ZOLTAN_FREE(&recvIdBuf);

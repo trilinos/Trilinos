@@ -67,7 +67,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, ZOLTAN_GNO_TYPE *vtxdist, int *xadj,
        int vwgt_dim, int ewgt_dim, 
        int graph_type, int check_graph, int output_level)
 {
-  int ii, k, ierr;
+  int ii, k, ierr, i, j;
   int flag, cross_edges = 0, mesg_size, sum;
   int nprocs, proc, *proclist, errors, global_errors;
   int *perm=NULL; 
@@ -75,11 +75,10 @@ int Zoltan_Verify_Graph(MPI_Comm comm, ZOLTAN_GNO_TYPE *vtxdist, int *xadj,
   ZOLTAN_COMM_OBJ *comm_plan;
   static char *yo = "Zoltan_Verify_Graph";
   char msg[256];
+  int num_zeros, nedges, num_selfs, num_obj;
+  int num_duplicates, num_singletons;
   ZOLTAN_GNO_TYPE *ptr, *ptr1, *ptr2;
-  ZOLTAN_GNO_TYPE global_i, global_j, gnoidx, global_sum;
-  ZOLTAN_GNO_TYPE num_zeros, nedges, num_selfs, num_obj;
-  ZOLTAN_GNO_TYPE num_duplicates, num_singletons;
-  ZOLTAN_GNO_TYPE i, j;
+  ZOLTAN_GNO_TYPE global_i, global_j, global_sum;
   ZOLTAN_GNO_TYPE *sendgno=NULL, *recvgno=NULL, *adjncy_sort=NULL;
 
 
@@ -97,7 +96,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, ZOLTAN_GNO_TYPE *vtxdist, int *xadj,
   MPI_Comm_rank(comm, &proc);
 
   /* Check number of vertices (objects) */
-  num_obj = vtxdist[proc+1] - vtxdist[proc];
+  num_obj = (int)(vtxdist[proc+1] - vtxdist[proc]);
   MPI_Reduce(&num_obj, &global_sum, 1, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, 0, comm);
   if ((proc==0) && (global_sum==0)){
     if (ierr == ZOLTAN_OK) ierr = ZOLTAN_WARN;
@@ -175,7 +174,7 @@ int Zoltan_Verify_Graph(MPI_Comm comm, ZOLTAN_GNO_TYPE *vtxdist, int *xadj,
     if ((proc==0) && (global_sum>0)){
       if (ierr == ZOLTAN_OK) ierr = ZOLTAN_WARN;
       if (output_level>0){
-        sprintf(msg, "%d edges have zero weights.", global_sum);
+        sprintf(msg, "%zd edges have zero weights.", global_sum);
         ZOLTAN_PRINT_WARN(proc, yo, msg);
       }
     }

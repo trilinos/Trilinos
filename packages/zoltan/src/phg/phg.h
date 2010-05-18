@@ -33,7 +33,7 @@ extern "C" {
 /* Function types for options to hypergraph partitioning */
 struct PHGPartParamsStruct;  /* Forward declaration */
 
-typedef int ZOLTAN_PHG_MATCHING_FN(ZZ*, HGraph*, Matching, 
+typedef int ZOLTAN_PHG_MATCHING_FN(ZZ*, HGraph*, ZOLTAN_GNO_TYPE *, 
                                    struct PHGPartParamsStruct*);
 typedef int ZOLTAN_PHG_COARSEPARTITION_FN(ZZ*, HGraph*, int, float *, Partition,
                                           struct PHGPartParamsStruct*);
@@ -170,7 +170,7 @@ typedef struct PHGPartParamsStruct PHGPartParams;
 /**********************/
 /* Matching functions */
 /**********************/
-int Zoltan_PHG_Matching (ZZ*, HGraph*, Matching, PHGPartParams*);
+int Zoltan_PHG_Matching (ZZ*, HGraph*, ZOLTAN_GNO_TYPE *, PHGPartParams*);
 int Zoltan_PHG_Set_Matching_Fn (PHGPartParams*);
 int Zoltan_PHG_Scale_Edges (ZZ*, HGraph*, float*, int);
 int Zoltan_PHG_Scale_Vtx (ZZ*, HGraph*, PHGPartParams*);
@@ -179,7 +179,7 @@ int Zoltan_PHG_Vertex_Visit_Order (ZZ*, HGraph*, PHGPartParams*, int*);
 /**************/
 /* Coarsening */
 /**************/
-int Zoltan_PHG_Coarsening(ZZ*, HGraph*, Matching, HGraph*, int*, int*, int*,
+int Zoltan_PHG_Coarsening(ZZ*, HGraph*, ZOLTAN_GNO_TYPE *, HGraph*, ZOLTAN_GNO_TYPE *, int*, int*,
  int**, struct Zoltan_Comm_Obj**, PHGPartParams*);
  
 /*********************************/
@@ -231,7 +231,7 @@ extern double Zoltan_PHG_Compute_Balance(ZZ*, HGraph*, float *, int,
                                          int, Partition);
 
 extern int Zoltan_PHG_Build_Hypergraph(ZZ*, ZHG**, Partition*, PHGPartParams*);
-extern void Zoltan_PHG_Plot(int, int, int, int*, ZOLTAN_GNO_TYPE *, int*, char*);
+extern void Zoltan_PHG_Plot(int, int, int, int*, int *, int*, char*);
 extern void Zoltan_PHG_Plot_2D_Distrib(ZZ*, HGraph*);
 
 extern int Zoltan_PHG_PaToH(ZZ *, HGraph *, int, int *, PHGPartParams*);    

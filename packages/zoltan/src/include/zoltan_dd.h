@@ -35,8 +35,11 @@ typedef struct Zoltan_DD_Struct Zoltan_DD_Directory;
 
 /***********  Distributed Directory Function Prototypes ************/
 
-int Zoltan_DD_Create (Zoltan_DD_Directory **dd, MPI_Comm comm, int num_gid,
- int num_lid, int user_length,  int table_length, int debug_level) ;
+int Zoltan_DD_Create (Zoltan_DD_Directory **dd, MPI_Comm comm, 
+ int num_gid,  /* number of ZOLTAN_ID_TYPEs in a GID */
+ int num_lid,  /* number of ZOLTAN_ID_TYPEs in an LID (optional) */
+ int user_length,  /* number of chars in the user data (optional) */
+ int table_length, int debug_level) ;
 
 int Zoltan_DD_Copy_To(Zoltan_DD_Directory **toptr, Zoltan_DD_Directory *from);
 Zoltan_DD_Directory *Zoltan_DD_Copy(Zoltan_DD_Directory *from);
@@ -44,10 +47,10 @@ Zoltan_DD_Directory *Zoltan_DD_Copy(Zoltan_DD_Directory *from);
 void Zoltan_DD_Destroy (Zoltan_DD_Directory **dd) ;
 
 int Zoltan_DD_Update (Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR gid,
- ZOLTAN_ID_PTR lid, ZOLTAN_ID_PTR user, int *partition, int count) ;
+ ZOLTAN_ID_PTR lid, char *user, int *partition, int count) ;
 
 int Zoltan_DD_Find (Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR gid,
- ZOLTAN_ID_PTR lid, ZOLTAN_ID_PTR data, int *partition, int count,
+ ZOLTAN_ID_PTR lid, char *data, int *partition, int count,
  int *owner) ;
 
 int Zoltan_DD_GetLocalKeys(Zoltan_DD_Directory *dd, ZOLTAN_ID_PTR* gid, int* size);

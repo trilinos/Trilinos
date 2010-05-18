@@ -118,14 +118,14 @@ Zoltan_Matrix_Complete(ZZ* zz,Zoltan_matrix* m)
 
   /* Update data directories */
   m->yGID = ZOLTAN_MALLOC_GID_ARRAY(zz, m->nY);
-  m->ypid = (ZOLTAN_ID_TYPE*) ZOLTAN_MALLOC(m->nY * sizeof(ZOLTAN_ID_TYPE));
+  m->ypid = (int*) ZOLTAN_MALLOC(m->nY * sizeof(int));
   if (m->bipartite)
     m->ybipart = (int*) ZOLTAN_MALLOC(m->nY * sizeof(int));
   if (m->nY && ((m->yGID == NULL) || (m->ypid == NULL) || (m->bipartite && m->ybipart == NULL)))
     MEMORY_ERROR;
 
   /* Get Informations about Y */
-  Zoltan_DD_Find (m->ddY, (ZOLTAN_ID_PTR)m->yGNO, m->yGID, (ZOLTAN_ID_PTR)m->ypid, m->ybipart,
+  Zoltan_DD_Find (m->ddY, (ZOLTAN_ID_PTR)m->yGNO, m->yGID, (char *)m->ypid, m->ybipart,
 		  m->nY, NULL);
 
   if (m->ddY != m->ddX) {

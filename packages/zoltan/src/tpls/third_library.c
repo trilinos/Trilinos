@@ -294,15 +294,15 @@ float *wgts;
   }
   fprintf(stderr,"\n");
   fflush(stderr);
+  return ZOLTAN_OK;
 }
 
 int Zoltan_ZG_Print(ZZ *zz, ZG *gr, char *s)
 {
-int i, j, k, me, proc;
+int i, me, proc;
 me = zz->Proc;
 Zoltan_matrix_2d *m2d = &gr->mtx;
 Zoltan_matrix *m = &m2d->mtx;
-float *wgts;
 int nproc_x = m2d->comm->nProc_x;
 int nproc_y = m2d->comm->nProc_y;
 
@@ -341,6 +341,7 @@ int nproc_y = m2d->comm->nProc_y;
   }
   MPI_Barrier(MPI_COMM_WORLD);
   MPI_Barrier(MPI_COMM_WORLD);
+  return ZOLTAN_OK;
 }
 int Zoltan_Third_Graph_Print(ZZ *zz, ZOLTAN_Third_Graph *gr, char *s)
 {
@@ -370,7 +371,7 @@ me = zz->Proc;
           if (gr->xadj){
             for (j=gr->xadj[i];j < gr->xadj[i+1]; j++){
               if (gr->adjncy){
-                fprintf(stderr,"gid %d ",gr->adjncy[j]);
+                fprintf(stderr,"gid %zd ",gr->adjncy[j]);
               }
               if (gr->adjproc){
                 fprintf(stderr,"proc %d ",gr->adjproc[j]);
@@ -391,6 +392,7 @@ me = zz->Proc;
   }
   MPI_Barrier(MPI_COMM_WORLD);
   MPI_Barrier(MPI_COMM_WORLD);
+  return ZOLTAN_OK;
 }
 
 

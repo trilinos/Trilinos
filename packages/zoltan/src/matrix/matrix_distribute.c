@@ -128,7 +128,7 @@ int Zoltan_Distribute_Partition(ZOLTAN_GNO_TYPE edge_gno, ZOLTAN_GNO_TYPE vtx_gn
 }
 
 
-void* Zoltan_Distribute_Partition_Register(ZZ* zz, int size, ZOLTAN_GNO_TYPE *yGNO, ZOLTAN_ID_TYPE *part, int nProc, int nPart)
+void* Zoltan_Distribute_Partition_Register(ZZ* zz, int size, ZOLTAN_GNO_TYPE *yGNO, int *part, int nProc, int nPart)
 {
   ZOLTAN_DIST_PART* dist;
   int i;
@@ -222,11 +222,11 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
       outmat->hashDistFct = (distFnct *)&Zoltan_Distribute_Linear;
     }
     else {
-      ZOLTAN_ID_TYPE *cmember = NULL;
+      int *cmember = NULL;
 
-      cmember = (ZOLTAN_ID_TYPE*)ZOLTAN_MALLOC(outmat->mtx.nY*sizeof(ZOLTAN_ID_TYPE));
+      cmember = (int*)ZOLTAN_MALLOC(outmat->mtx.nY*sizeof(int));
       if (outmat->mtx.nY > 0 && cmember == NULL) MEMORY_ERROR;
-      Zoltan_DD_Find (outmat->mtx.ddY, (ZOLTAN_ID_PTR)outmat->mtx.yGNO, NULL, cmember, NULL,
+      Zoltan_DD_Find (outmat->mtx.ddY, (ZOLTAN_ID_PTR)outmat->mtx.yGNO, NULL, (char *)cmember, NULL,
 		      outmat->mtx.nY, NULL);
       partdata = Zoltan_Distribute_Partition_Register(zz, outmat->mtx.nY, outmat->mtx.yGNO,
 						      cmember, zz->Num_Proc, zz->Num_Proc);

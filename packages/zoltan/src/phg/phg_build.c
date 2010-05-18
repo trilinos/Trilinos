@@ -188,7 +188,8 @@ ZOLTAN_GNO_TYPE *sendbuf = NULL;
 int *tmparray = NULL;
 int *hindex = NULL;
 ZOLTAN_GNO_TYPE *dist_x = NULL, *dist_y = NULL;
-ZOLTAN_GNO_TYPE *nonzeros = NULL, *hvertex=NULL;
+ZOLTAN_GNO_TYPE *nonzeros = NULL; 
+int *hvertex=NULL;
 int nEdge, nVtx, nwgt = 0;
 int nrecv = 0; 
 ZOLTAN_GNO_TYPE *recv_gno = NULL; 
@@ -416,7 +417,7 @@ int nRepartEdge = 0, nRepartVtx = 0;
 
   tmparray = (int *) ZOLTAN_CALLOC(nEdge + 1, sizeof(int));
   hindex = (int *) ZOLTAN_CALLOC(nEdge + 1 + nRepartEdge, sizeof(int));
-  hvertex = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC((nnz + 2 * nRepartEdge) * sizeof(ZOLTAN_GNO_TYPE)); 
+  hvertex = (int *) ZOLTAN_MALLOC((nnz + 2 * nRepartEdge) * sizeof(int)); 
                                   /* worst case size */
 
   if (!tmparray || !hindex || ((nnz || nRepartEdge) && !hvertex)){
@@ -1056,7 +1057,7 @@ int nrecv = 0;
 int *tmp_hindex;                     /* Pointers into phg->hindex and 
                                         phg->hvertex; set to start of entries
                                         for repartition edges. */
-ZOLTAN_GNO_TYPE *tmp_hvertex;
+int *tmp_hvertex;
 float *tmp_ewgt = NULL;              /* Edge weights for local repartion
                                         edges */
 int *pins_per_edge = NULL;           /* # of pins in each repartition edge. */

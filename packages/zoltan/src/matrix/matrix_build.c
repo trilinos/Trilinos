@@ -53,7 +53,7 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
   int * Input_Parts=NULL;
   struct Zoltan_DD_Struct *dd = NULL;
   int *proclist = NULL;
-  ZOLTAN_ID_TYPE *xpid = NULL;
+  int *xpid = NULL;
   int i;
   int gno_size_for_dd;
 
@@ -123,18 +123,18 @@ Zoltan_Matrix_Build (ZZ* zz, Zoltan_matrix_options *opt, Zoltan_matrix* matrix)
   /* I store : xGNO, xGID, xpid,  */
 
   ierr = Zoltan_DD_Create (&matrix->ddX, zz->Communicator, gno_size_for_dd, zz->Num_GID,
-			   1, matrix->globalX/zz->Num_Proc, 0);
+			   sizeof(int), matrix->globalX/zz->Num_Proc, 0);
   CHECK_IERR;
 
   /* Hope a linear assignment will help a little */
   Zoltan_DD_Set_Neighbor_Hash_Fn1(matrix->ddX, matrix->globalX/zz->Num_Proc);
   /* Associate all the data with our xGNO */
-  xpid = (ZOLTAN_ID_TYPE*)ZOLTAN_MALLOC(nX*sizeof(ZOLTAN_ID_TYPE));
+  xpid = (int*)ZOLTAN_MALLOC(nX*sizeof(int));
   if (nX >0 && xpid == NULL) MEMORY_ERROR;
   for (i = 0 ; i < nX ; ++i)
-    xpid[i] = (ZOLTAN_ID_TYPE)zz->Proc;
+    xpid[i] = zz->Proc;
 
-  Zoltan_DD_Update (matrix->ddX, (ZOLTAN_ID_PTR)xGNO, xGID, xpid, NULL, nX);
+  Zoltan_DD_Update (matrix->ddX, (ZOLTAN_ID_PTR)xGNO, xGID, (char *)xpid, NULL, nX);
   ZOLTAN_FREE(&xpid);
 
   if (matrix->opts.pinwgt)
@@ -306,19 +306,18 @@ Zoltan_Matrix_Vertex_Info(ZZ* zz, const Zoltan_matrix * const m,
 			     zz->Obj_Weight_Dim, &l_xwgt,
 			     &l_input_part);
 
-  ierr = Zoltan_DD_Create (&dd, zz->Communicator, zz->Num_GID, zz->Num_LID,
-			   zz->Obj_Weight_Dim*sizeof(float)/sizeof(ZOLTAN_ID_TYPE),
-			   nX, 0);
+  ierr = Zoltan_DD_Create (&dd, zz->Communicator, zz->Num_GID, zz->Num_LID, 
+                           sizeof(float) * zz->Obj_Weight_Dim, nX, 0);
   CHECK_IERR;
 
     /* Make our new numbering public */
-  Zoltan_DD_Update (dd, l_gid, l_lid, (ZOLTAN_ID_PTR) l_xwgt,l_input_part, nX);
+  Zoltan_DD_Update (dd, l_gid, l_lid, (char *) l_xwgt,l_input_part, nX);
   ZOLTAN_FREE(&l_gid);
   ZOLTAN_FREE(&l_lid);
   ZOLTAN_FREE(&l_xwgt);
   ZOLTAN_FREE(&l_input_part);
 
-  ierr = Zoltan_DD_Find (dd, m->yGID, lid, (ZOLTAN_ID_PTR)wwgt, input_part,
+  ierr = Zoltan_DD_Find (dd, m->yGID, lid, (char *)wwgt, input_part,
 		    m->nY, NULL);
 
  End:

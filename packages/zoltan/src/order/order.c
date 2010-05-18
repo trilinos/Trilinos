@@ -76,8 +76,6 @@ int Zoltan_Order (
   ZOLTAN_ID_TYPE *local_rank = NULL;
   struct Zoltan_DD_Struct *dd = NULL;
 
-int i, j;
-
   ZOLTAN_TRACE_ENTER(zz, yo);
 
   if (zz->Proc == zz->Debug_Proc && zz->Debug_Level >= ZOLTAN_DEBUG_PARAMS)
@@ -287,7 +285,7 @@ int i, j;
     for (i = 0; i < num_obj; i++) {
       printf("GID = ");
       ZOLTAN_PRINT_GID(zz, &(gids[i*(num_gid_entries)]));
-      printf(", rank = %3d\n", permuted_global_ids[i]);
+      printf(", rank = %3" ZOLTAN_ID_SPECIFIER "\n", permuted_global_ids[i]);
     }
     printf("\n");
     Zoltan_Print_Sync_End(zz->Communicator, TRUE);

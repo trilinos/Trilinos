@@ -18,6 +18,7 @@ extern "C" {
 
 #include <math.h>
 #include "zz_const.h"
+#include "zz_sort.h"
 #include "zz_util_const.h"
 #include "zoltan_dd.h"
 #include "phg.h"
@@ -508,10 +509,10 @@ Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, ZOLTAN_GNO_TYPE * perm_y)
   ZOLTAN_GNO_TYPE *pinGNO = NULL;
   ZOLTAN_ID_PTR yGID=NULL;
   struct Zoltan_DD_Struct *dd;
-  ZOLTAN_ID_TYPE *ypid;
+  int *ypid;
   int *ybipart;
   int gno_size_for_dd;
-  ZOLTAN_ID_TYPE *tmpgid;
+  int *tmpgid;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 
@@ -526,7 +527,7 @@ Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, ZOLTAN_GNO_TYPE * perm_y)
     if (m->ddY == NULL || m->ddY != m->ddX) { /* We have to create again the DD */
       /* We have to define ddY : yGNO, yGID, ypid */
       ierr = Zoltan_DD_Create (&m->ddY, zz->Communicator, gno_size_for_dd, zz->Num_GID,
-			       1, m->globalY/zz->Num_Proc, 0);
+			       sizeof(int), m->globalY/zz->Num_Proc, 0);
       /* Hope a linear assignment will help a little */
       Zoltan_DD_Set_Neighbor_Hash_Fn1(m->ddY, m->globalY/zz->Num_Proc);
     }
@@ -537,27 +538,27 @@ Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, ZOLTAN_GNO_TYPE * perm_y)
   else { /* We have to get these fields */
     /* Update data directories */
     yGID = ZOLTAN_MALLOC_GID_ARRAY(zz, m->nY);
-    ypid = (ZOLTAN_ID_TYPE*) ZOLTAN_MALLOC(m->nY*sizeof(ZOLTAN_ID_TYPE));
+    ypid = (int*) ZOLTAN_MALLOC(m->nY*sizeof(int));
     if (m->bipartite)
       ybipart = (int*) ZOLTAN_MALLOC(m->nY*sizeof(int));
     else
       ybipart = NULL;
 
     /* Get Informations about Y */
-    Zoltan_DD_Find (m->ddY, (ZOLTAN_ID_PTR)m->yGNO, yGID, ypid, ybipart, m->nY, NULL);
+    Zoltan_DD_Find (m->ddY, (ZOLTAN_ID_PTR)m->yGNO, yGID, (char *)ypid, ybipart, m->nY, NULL);
   }
 
   if (ybipart){
-    tmpgid = ZOLTAN_MALLOC_GID_ARRAY(zz, m->nY);
+    tmpgid = (int *)ZOLTAN_MALLOC(sizeof(int) * m->nY);
     for (i=0; i < m->nY; i++){
-      tmpgid[i] = (ZOLTAN_ID_TYPE)ybipart[i];
+      tmpgid[i] = ybipart[i];
     }
   }
   else{
     tmpgid = NULL;
   }
 
-  Zoltan_DD_Update (m->ddY, (ZOLTAN_ID_PTR)perm_y, yGID, tmpgid, ybipart, m->nY);
+  Zoltan_DD_Update (m->ddY, (ZOLTAN_ID_PTR)perm_y, yGID, (char *)tmpgid, ybipart, m->nY);
 
   ZOLTAN_FREE (&yGID);
   ZOLTAN_FREE (&ypid);
@@ -565,7 +566,7 @@ Zoltan_Matrix_Permute(ZZ* zz, Zoltan_matrix *m, ZOLTAN_GNO_TYPE * perm_y)
   ZOLTAN_FREE (&tmpgid);
 
   /* We have to define dd : old_yGNO, new_yGNO */
-  ierr = Zoltan_DD_Create (&dd, zz->Communicator, gno_size_for_dd, gno_size_for_dd, 1, m->globalY/zz->Num_Proc, 0);
+  ierr = Zoltan_DD_Create (&dd, zz->Communicator, gno_size_for_dd, gno_size_for_dd, 0, m->globalY/zz->Num_Proc, 0);
   /* Hope a linear assignment will help a little */
   Zoltan_DD_Set_Neighbor_Hash_Fn1(dd, m->globalY/zz->Num_Proc);
 

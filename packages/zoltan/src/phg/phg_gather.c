@@ -48,9 +48,9 @@ int *each = NULL,
     *disp = NULL;      /* Size and displacement arrays for MPI_Allgatherv */
 int *send_buf = NULL;    /* Buffer of values to be sent */
 int send_size;           /* Size of buffer send_buf */
-ZOLTAN_GNO_TYPE *col_vedge = NULL;   /* vedge array for the proc-column hypergraph */
+int *col_vedge = NULL;   /* vedge array for the proc-column hypergraph */
 int *col_vindex = NULL;  /* vindex array for the proc-column hypergraph */
-ZOLTAN_GNO_TYPE *col_hvertex = NULL; /* hvertex array for the proc-column hypergraph */
+int *col_hvertex = NULL; /* hvertex array for the proc-column hypergraph */
 int *col_hindex = NULL;  /* hindex array for the proc-column hypergraph */
 int col_nVtx;            /* Number of vertices in processor column */
 int col_nEdge;           /* Number of edges in processor column */
@@ -60,8 +60,6 @@ int *recv_size = NULL;   /* nPins for each proc in col or row */
 
 HGraph *shg;             /* Pointer to the serial hypergraph to be
                             returned by this function. */
-int *tmp_int = NULL;
-ZOLTAN_GNO_TYPE tmp_gno;
 
 int myProc_x = phg->comm->myProc_x;
 int nProc_x = phg->comm->nProc_x;
@@ -170,10 +168,10 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
     
     /* Allocate arrays for column hypergraph */
     col_hindex = (int *) ZOLTAN_CALLOC((col_nEdge+1), sizeof(int));
-    col_hvertex = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(col_nPin * sizeof(ZOLTAN_GNO_TYPE));
+    col_hvertex = (int *) ZOLTAN_MALLOC(col_nPin * sizeof(int));
   
     col_vindex = (int *) ZOLTAN_CALLOC((col_nVtx+1), sizeof(int));
-    col_vedge = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(col_nPin * sizeof(ZOLTAN_GNO_TYPE));
+    col_vedge = (int *) ZOLTAN_MALLOC(col_nPin * sizeof(int));
   
     if (!col_vindex || !col_hindex || 
         (col_nPin && (!col_vedge || !col_hvertex)))
@@ -204,34 +202,18 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
   
     for (i = 0; i < nProc_y; i++) 
       each[i] = phg->dist_y[i+1] - phg->dist_y[i];
+
+    disp[0] = 0;  /* Can't use dist_y because it may not be sizeof(int) */
+    for (i=1; i < nProc_y; i++){
+      disp[i] = disp[i-1] + each[i-1];
+    }
   
     /* SCHEMEA can use phg->dist_y for displacement array.
      * SCHEMEB requires separate displacement array. */
 
-   if (sizeof(ZOLTAN_GNO_TYPE) != sizeof(int)){
-     tmp_int = (int *)ZOLTAN_MALLOC(sizeof(int) * zz->Num_Proc);
-     if (!tmp_int)
-       MEMORY_ERROR;
-     for (i=0; i < zz->Num_Proc; i++){
-       tmp_int[i] = phg->dist_y[i];
-       tmp_gno = (ZOLTAN_GNO_TYPE)tmp_int[i];
-       if (tmp_gno != phg->dist_y[i]){
-         /* TODO64 Displacement values do not fit into an integer, can not use
-            MPI_Allgatherv for this purpose */
-       }
-     }
-   }
-   else{
-     tmp_int = (int *)phg->dist_y;
-   }
-  
     MPI_Allgatherv(send_buf, phg->nEdge, MPI_INT, 
-                   col_hindex, each, tmp_int, MPI_INT, phg->comm->col_comm);
+                   col_hindex, each, disp, MPI_INT, phg->comm->col_comm);
   
-    if (tmp_int != (int *)phg->dist_y){
-      ZOLTAN_FREE(&tmp_int);
-    }
-
     /* Perform prefix sum on col_hindex */
     sum = 0;
     for (i = 0; i < col_nEdge; i++) {
@@ -313,9 +295,9 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
     shg->nPins = tmp;
   
     shg->vindex = (int *) ZOLTAN_CALLOC((shg->nVtx+1), sizeof(int));
-    shg->vedge = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(shg->nPins * sizeof(ZOLTAN_GNO_TYPE));
+    shg->vedge = (int *) ZOLTAN_MALLOC(shg->nPins * sizeof(int));
     shg->hindex = (int *) ZOLTAN_CALLOC((shg->nEdge+1), sizeof(int));
-    shg->hvertex = (ZOLTAN_GNO_TYPE *) ZOLTAN_MALLOC(shg->nPins * sizeof(ZOLTAN_GNO_TYPE));
+    shg->hvertex = (int *) ZOLTAN_MALLOC(shg->nPins * sizeof(int));
    
     if (!shg->vindex || !shg->hindex ||
         (shg->nPins && (!shg->vedge || !shg->hvertex)))
@@ -343,35 +325,18 @@ int max_nProc_xy = MAX(nProc_x, nProc_y);
   
     for (i = 0; i < nProc_x; i++) 
       each[i] = phg->dist_x[i+1] - phg->dist_x[i];
-  
+
+    disp[0] = 0;  /* Can't use dist_x, may not be sizeof(int) */
+    for (i = 1; i < nProc_x; i++) 
+      disp[i] = disp[i-1] + each[i-1];
+
     /* SCHEMEA can use phg->dist_x as displacement array;
      * SCHEMEB requires separate displacement array. */
 
-   if (sizeof(ZOLTAN_GNO_TYPE) != sizeof(int)){
-     tmp_int = (int *)ZOLTAN_MALLOC(sizeof(int) * zz->Num_Proc);
-     if (!tmp_int)
-       MEMORY_ERROR;
-     for (i=0; i < zz->Num_Proc; i++){
-       tmp_int[i] = phg->dist_x[i];
-       tmp_gno = (ZOLTAN_GNO_TYPE)tmp_int[i];
-       if (tmp_gno != phg->dist_x[i]){
-         /* TODO64 Displacement values do not fit into an integer, can not use
-            MPI_Allgatherv for this purpose */
-       }
-     }
-   }
-   else{
-     tmp_int = (int *)phg->dist_x;
-   }
-  
     MPI_Allgatherv(send_buf, col_nVtx, MPI_INT, 
-                   shg->vindex, each, tmp_int,
+                   shg->vindex, each, disp,
                    MPI_INT, phg->comm->row_comm);
 
-    if (tmp_int != (int *)phg->dist_x){
-      ZOLTAN_FREE(&tmp_int);
-    }
-  
     /* Perform prefix sum on shg->vindex */
     sum = 0;
     for (i = 0; i < shg->nVtx; i++) {

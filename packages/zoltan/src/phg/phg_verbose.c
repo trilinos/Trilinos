@@ -34,10 +34,10 @@ int i, k;
   k = 0;
   for (i=0; i<z->nHedges; i++){
     if (z->edgeHash){
-      printf("  GID %d, hashed to %d, num pins %d\n", z->edgeGID[i], z->edgeHash[i], z->esizes[i]);
+      printf("  GID %" ZOLTAN_ID_SPECIFIER ", hashed to %d, num pins %d\n", z->edgeGID[i], z->edgeHash[i], z->esizes[i]);
     }
     else{
-      printf("  GID %d, num pins locally %d\n", z->edgeGID[i], z->esizes[i]);
+      printf("  GID %" ZOLTAN_ID_SPECIFIER ", num pins locally %d\n", z->edgeGID[i], z->esizes[i]);
     }
   }
   printf("\n");
@@ -52,7 +52,8 @@ void print_hypergraph(ZZ *zz, ZHG *zhg, int sumWeight)
   float sum;
   float *wgt, *vwgt;
   int *owner;
-  ZOLTAN_GNO_TYPE *pin, *lno;
+  ZOLTAN_GNO_TYPE *pin;
+  int *lno;
   HGraph *hg = &zhg->HG;
   int p = zz->Proc;
 
@@ -68,7 +69,7 @@ void print_hypergraph(ZZ *zz, ZHG *zhg, int sumWeight)
 
   wgt = zhg->objWeight;
 
-  printf("(%d) %d INPUT VERTICES (out of %d) : gno (gid/lid) (weights) nhedges fixed inpart outpart objSize)\n",p, zhg->nObj, zhg->globalObj);
+  printf("(%d) %d INPUT VERTICES (out of %zd) : gno (gid/lid) (weights) nhedges fixed inpart outpart objSize)\n",p, zhg->nObj, zhg->globalObj);
 
   for (i=0; i<zhg->nObj; i++){
 
@@ -80,7 +81,7 @@ void print_hypergraph(ZZ *zz, ZHG *zhg, int sumWeight)
       printf("-/");
 
     if (zhg->objLID)
-      printf("%d) (",zhg->objLID[i]);
+      printf("%" ZOLTAN_ID_SPECIFIER ") (",zhg->objLID[i]);
     else
       printf("/-) (");
 
@@ -122,7 +123,7 @@ void print_hypergraph(ZZ *zz, ZHG *zhg, int sumWeight)
   pin = zhg->pinGNO;
   owner = zhg->Pin_Procs;
    
-  printf("(%d) %d INPUT or REMOVED EDGES (out of %d), %d pins: gno size (weights) (pinGNO/pinProc)\n",
+  printf("(%d) %d INPUT or REMOVED EDGES (out of %zd), %d pins: gno size (weights) (pinGNO/pinProc)\n",
                   p, zhg->nHedges, zhg->globalHedges, zhg->nPins);
 
   for (i=0; i < zhg->nHedges; i++){
@@ -162,7 +163,7 @@ void print_hypergraph(ZZ *zz, ZHG *zhg, int sumWeight)
     }
     printf("\n %d pins: ", npins);
     for (j=0; j<npins; j++){
-      printf("%zd ", *lno++);
+      printf("%d ", *lno++);
     }
     printf("\n");
   }
@@ -221,14 +222,14 @@ void debug_graph_to_hg(
     printf("GID ");
     for (j=0; j<lenGID; j++) printf("%" ZOLTAN_ID_SPECIFIER " ", egids[i*lenGID+ j]);
     printf(" LID ");
-    for (j=0; j<lenLID; j++) printf("%d ", elids[i*lenLID+ j]);
+    for (j=0; j<lenLID; j++) printf("%" ZOLTAN_ID_SPECIFIER " ", elids[i*lenLID+ j]);
     printf(" weights ");
     for (j=0; j<ewgtdim; j++) printf("%f ", ewgts[i*ewgtdim+ j]);
     printf(" size %d\n",esizes[i]);
 
     for (j=0; j < esizes[i]; j++){
       printf("  ");
-      for (k=0; k<lenGID; k++) printf("%d ", *nextpin++);
+      for (k=0; k<lenGID; k++) printf("%" ZOLTAN_ID_SPECIFIER " ", *nextpin++);
       printf(" (%d), ",*nextproc++);
       if (j && (j%10==0)) printf("\n");
     }
