@@ -14,6 +14,7 @@ ADD_SUBDIRECTORIES(
   CrsMatrix
   BlockMap
   BlockMultiVector
+  VbrMatrix
   )
 
 PACKAGE_ADD_LIBRARY(

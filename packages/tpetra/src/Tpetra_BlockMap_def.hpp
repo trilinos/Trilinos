@@ -33,7 +33,7 @@
 #include "Teuchos_Array.hpp"
 
 #ifdef DOXYGEN_USE_ONLY
-  #include "Tpetra_BlockMap_decl.hpp"
+#include "Tpetra_BlockMap_decl.hpp"
 #endif
 
 namespace Tpetra {
