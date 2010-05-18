@@ -1088,7 +1088,7 @@ static int pmatching_ipm (ZZ *zz,
         r += sizeof(ZOLTAN_GNO_TYPE) + ((2 + count) * sizeof(int)) + (count * sizeof(float));
       }
 
-      /* TODO64 merge partial i.p. sum data to compute total inner products */
+      /* merge partial i.p. sum data to compute total inner products */
       s = sendbuf; 
       for (n = old_kstart; n < kstart; n++) {
         m = 0;       
@@ -1905,20 +1905,20 @@ static int pmatching_agg_ipm (ZZ *zz,
             gnoptr = (ZOLTAN_GNO_TYPE *)(recvbuf + rows[i]);
             intptr = (int *)(gnoptr + 1);
 
-            candidate_index = *intptr++;
+            if (intptr[0] == candvisit[n])  {
 
-            if (candidate_index == candvisit[n])  {
-
-              candidate_gno   = *gnoptr;
-              count           = *intptr++;
-              floatptr = (float *)(intptr + count);
+              candidate_index = intptr[0];
+              candidate_gno   = gnoptr[0];
+              count           = intptr[1];
+              floatptr = (float *)(intptr + 2 + count);
 
               for (j = 0; j < count; j++)  {
-                lno = *intptr++;
+                lno = intptr[2+j];
                 if (sums[lno] == 0.0)   /* is this first time for this lno? */ 
                     aux[m++] = lno;     /* then save the lno */
                 sums[lno] += *floatptr++;    /* sum the psums */
               }
+              rows[i] = (char *)floatptr - recvbuf;
             }
           }
         }
@@ -1969,7 +1969,7 @@ static int pmatching_agg_ipm (ZZ *zz,
           floatptr = (float *)(intptr + 2);
 
           *gnoptr = candidate_gno;
-          *intptr++ = candidate_index;            
+          *intptr++ = candidate_index;
           *intptr++ = bestlno;
           *floatptr = bestsum;
 /*          uprintf(hgc, "cand_gno=%d partner_lno=%d with ip=%f\n", candidate_gno, bestlno, bestsum);*/
@@ -1998,8 +1998,6 @@ static int pmatching_agg_ipm (ZZ *zz,
 
 /*      uprintf(hgc, "recsize=%d\n", recsize);*/
       
-/* TODO - should all candidates across columns in master_data be the same? */
-
       /* Determine best vertex and best sum for each candidate */
       if (hgc->myProc_y == 0) {   /* do following only if I am the MASTER ROW */
         for (r = recvbuf; r < recvbuf + recsize;)  {
@@ -2013,7 +2011,7 @@ static int pmatching_agg_ipm (ZZ *zz,
           candidate_index = *intptr++;
           bestlno         = *intptr++;                    /* count of nonzero pairs */
           bestsum         = *floatptr;
-        
+
 /*          uprintf(hgc, "local best for cand %zd (idx=%d) is %d with ip=%f\n", candidate_gno, candidate_index, (bestlno<0) ? -1 : match[bestlno], bestsum);*/
           master_data[candidate_index].candidate = candidate_gno;
           master_data[candidate_index].partner = match[bestlno];          
@@ -2190,7 +2188,7 @@ static int pmatching_agg_ipm (ZZ *zz,
           lheadno = Zoltan_KVHash_Insert(&hash, partner, lno); 
 
           for (j=0; j<VtxDim; ++j) 
-            cw[lheadno*VtxDim+j] = floatptr[j];     /* invalid write TODO */
+            cw[lheadno*VtxDim+j] = floatptr[j];
           if (hgp->UsePrefPart)
               lheadpref[lno] = pref;
           lhead[lno] = lheadno;
