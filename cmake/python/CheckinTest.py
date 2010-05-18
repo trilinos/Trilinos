@@ -211,7 +211,9 @@ def executePull(inOptions, baseTestDir, outFile, pullFromRepo=None, doRebase=Fal
     cmnd += " " + repoSpaceBranch
   else:
     print "\nPulling in updates from 'origin' ...\n"
-    cmnd += " origin "+inOptions.currentBranch
+    # NOTE: If you do 'eg pull origin <branch>', then the list of locally
+    # modified files will be wrong.  I don't know why this is but if instead
+    # you do a raw 'eg pull', then the right list of files shows up.
   if doRebase:
     cmnd += " && eg rebase --against origin/"+inOptions.currentBranch
   return echoRunSysCmnd( cmnd,

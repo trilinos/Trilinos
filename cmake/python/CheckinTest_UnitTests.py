@@ -191,7 +191,7 @@ g_cmndinterceptsInitialCommitPasses = \
 
 g_cmndinterceptsPullOnlyPasses = \
   "IT: eg status; 0; '(on master branch)'\n" \
-  "IT: eg pull origin currentbranch; 0; 'initial eg pull passed'\n"
+  "IT: eg pull; 0; 'initial eg pull passed'\n"
 
 g_cmndinterceptsDiffOnlyPasses = \
   "IT: eg diff --name-status origin/currentbranch; 0; 'M\tpackages/teuchos/CMakeLists.txt'\n"
@@ -212,14 +212,14 @@ g_cmndinterceptsConfigBuildTestPasses = \
   "IT: ctest -j5; 0; '100% tests passed, 0 tests failed out of 100'\n"
 
 g_cmndinterceptsFinalPushPasses = \
-  "IT: eg pull origin currentbranch && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
+  "IT: eg pull && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
   "IT: eg log --oneline origin/currentbranch..currentbranch; 0; 'Only one commit'\n" \
   "IT: eg cat-file -p HEAD; 0; 'This is the last commit message'\n" \
   "IT: eg commit --amend -F .*; 0; 'Amending the last commit passed'\n" \
   "IT: eg push; 0; 'push passes'\n"
 
 g_cmndinterceptsFinalPushNoAppendTestResultsPasses = \
-  "IT: eg pull origin currentbranch && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
+  "IT: eg pull && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
   "IT: eg log --oneline origin/currentbranch..currentbranch; 0; 'Only one commit'\n" \
   "IT: eg push; 0; 'push passes'\n"
 
@@ -1545,7 +1545,7 @@ class test_checkin_test(unittest.TestCase):
       "--do-all",
       g_cmndinterceptsCurrentBranch \
       +"IT: eg status; 0; '(on master branch)'\n" \
-      +"IT: eg pull origin currentbranch; 1; 'eg pull failed'\n" \
+      +"IT: eg pull; 1; 'eg pull failed'\n" \
       ,
       \
       False,
@@ -1724,7 +1724,7 @@ class test_checkin_test(unittest.TestCase):
       +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
-      +"IT: eg pull origin currentbranch && eg rebase --against origin/currentbranch; 1; 'final eg pull FAILED'\n" \
+      +"IT: eg pull && eg rebase --against origin/currentbranch; 1; 'final eg pull FAILED'\n" \
       +"IT: eg log --oneline origin/currentbranch..currentbranch; 0; 'Only one commit'\n" \
       +g_cmndinterceptsSendFinalEmail \
       ,      \
@@ -1758,7 +1758,7 @@ class test_checkin_test(unittest.TestCase):
       +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
-      +"IT: eg pull origin currentbranch && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
+      +"IT: eg pull && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
       +"IT: eg log --oneline origin/currentbranch..currentbranch; 0; 'Only one commit'\n" \
       +"IT: eg cat-file -p HEAD; 0; 'This is the last commit message'\n" \
       +"IT: eg commit --amend -F .*; 1; 'Amending the last commit FAILED'\n" \
@@ -1796,7 +1796,7 @@ class test_checkin_test(unittest.TestCase):
       +g_cmndinterceptsPullPasses \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
-      +"IT: eg pull origin currentbranch && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
+      +"IT: eg pull && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
       +"IT: eg log --oneline origin/currentbranch..currentbranch; 0; 'Only one commit'\n" \
       +"IT: eg cat-file -p HEAD; 0; 'This is the last commit message'\n" \
       +"IT: eg commit --amend -F .*; 0; 'Amending the last commit passed'\n" \
@@ -1834,7 +1834,7 @@ class test_checkin_test(unittest.TestCase):
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
-      +"IT: eg pull origin currentbranch && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
+      +"IT: eg pull && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
       +"IT: eg log --oneline origin/currentbranch..currentbranch; 0; ''\n" \
       +"IT: eg cat-file -p HEAD; 0; 'Some commit not the local commit'\n" \
       +"IT: eg push; 1; 'push FAILED due to no local commits'\n"

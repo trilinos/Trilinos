@@ -82,6 +82,12 @@ In order to do a solid checkin, perform the following recommended workflow
   install-git.py script in order to run this script.  If you don't, the script
   will die right away with an error message telling you what the problem is.
 
+  NOTE: The current branch will be used to pull and push to.  A raw 'eg pull'
+  is performed which will get all of the branches from 'origin'.  This means
+  that your current branch must be a tracking branch so that it will get
+  updated correctly.  The branch 'master' is the most common branch but
+  release tracking branches also common.
+
   NOTE: You must not have any uncommitted changes or the 'eg pull && eg rebase
   --against origin' command will fail on the final pull/rebase before the push
   and therefore the whole script will fail.  To still run the script, you will
