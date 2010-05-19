@@ -60,17 +60,17 @@ namespace PHX {
     { }
     
     void reset() {
-      setup_called_ = false;
-      total_bytes_ = 0;
-      offset_ = 0;
-      chunk_ = Teuchos::null;
+      m_setup_called = false;
+      m_total_bytes = 0;
+      m_offset = 0;
+      m_memory = Teuchos::null;
     }
 
     //! data_type_size is the size of a single element of the data type and num_elements is the number of elements of the data type that need to be allocated.
     void addRequiredChunk(std::size_t size_of_data_type, 
 			  std::size_t num_elements)
     { 
-      if (setup_called_) {
+      if (m_setup_called) {
 	std::string msg = "ERROR - PHX::ContiguousAllocator::addRequiredByte() - The method addRequiredBytes() has been called after the setup() has been called!  Please fix your logic.";
 	TEST_FOR_EXCEPTION(true, std::logic_error, msg);
       }
@@ -79,25 +79,25 @@ namespace PHX {
       std::size_t residual = size_of_data_type % alignment_size;
       std::size_t element_size = size_of_data_type + residual;
 
-      total_bytes_ += num_elements * element_size;
+      m_total_bytes += num_elements * element_size;
     }
     
     //! Called after all byte requirements are registered.  Allocates the contiguous array.
     void setup()
     {
-      if (total_bytes_ != 0) {
-        chunk_ = Teuchos::arcp<char>(total_bytes_);
+      if (m_total_bytes > 0) {
+        m_memory = Teuchos::arcp<char>(m_total_bytes);
       }
       else {
-        chunk_ = Teuchos::null;
+        m_memory = Teuchos::null;
       }
-      setup_called_ = true;
+      m_setup_called = true;
     }
 
     template<class DataT> 
     Teuchos::ArrayRCP<DataT> allocate(std::size_t num_elements)
     {       
-      TEST_FOR_EXCEPTION(!setup_called_, std::logic_error, 
+      TEST_FOR_EXCEPTION(!m_setup_called, std::logic_error, 
 			 "setup() has not been called.  The memory block has therefore not been allocated yet!  Please call setup before calling allocate().");
 
       std::size_t size_of_data_type = sizeof(DataT);
@@ -105,42 +105,48 @@ namespace PHX {
       std::size_t residual = size_of_data_type % alignment_size;
       std::size_t element_size = size_of_data_type + residual;
 
-      int required_bytes = num_elements * element_size;
+      std::size_t required_bytes = num_elements * element_size;
 
-      TEST_FOR_EXCEPTION(offset_ + required_bytes > total_bytes_, 
+      TEST_FOR_EXCEPTION(m_offset + required_bytes > m_total_bytes, 
 			 std::logic_error, 
 			 "The requested number of bytes is larger than the size of the allocated contiguous block!");
 
-      char* raw_data = chunk_.get();
-      char* offset_data = &raw_data[offset_];
-      DataT* data = reinterpret_cast<DataT*>(offset_data);
+      Teuchos::ArrayRCP<DataT> array;
 
-      Teuchos::ArrayRCP<DataT> array = 
-	Teuchos::arcpWithEmbeddedObjPostDestroy(data, 0, num_elements, 
-						chunk_, false);
-      offset_ += required_bytes;
-
-      // call ctor on each element
-      for (std::size_t i=0; i < num_elements; ++i)
-	new (&data[i]) DataT;
+      if (required_bytes > 0) {
+	
+	Teuchos::ArrayRCP<char> chunk = 
+	  m_memory.persistingView(m_offset, required_bytes);
+	
+	// This call sets up the arcp to call the ctor and dtor for the
+	// DataT when the last rcp goes away.
+	// nonpod = non-plain old data
+	array = Teuchos::arcp_reinterpret_cast_nonpod<DataT>(chunk);
+	
+	m_offset += required_bytes;
+      }
 
       return array;
     }
     
     int getTotalBytes() const
     {
-      return total_bytes_;
+      return m_total_bytes;
     }
 
   private:
 
-    bool setup_called_;
+    //! True if setup() has been called
+    bool m_setup_called;
 
-    long int total_bytes_;
+    //! Total size of memory to allocate
+    std::size_t m_total_bytes;
 
-    int offset_;
+    //! Current offset into the allocator
+    std::size_t m_offset;
     
-    Teuchos::ArrayRCP<char> chunk_;
+    //! Pointer to block of all contiguous memory
+    Teuchos::ArrayRCP<char> m_memory;
     
   };
 

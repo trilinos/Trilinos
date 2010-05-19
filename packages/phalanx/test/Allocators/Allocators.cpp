@@ -37,6 +37,7 @@
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_TimeMonitor.hpp"
 
+#include "mock_object.hpp"
 
 template<typename T>
 bool arrayCompare(Teuchos::ArrayRCP<T> a, Teuchos::ArrayRCP<T> b, double tol)
@@ -53,19 +54,6 @@ bool arrayCompare(Teuchos::ArrayRCP<T> a, Teuchos::ArrayRCP<T> b, double tol)
   
   return false;
 }
-
-class MyObject {
-public:
-  static bool destructor_called;
-  MyObject() {}
-  ~MyObject() 
-  {
-    destructor_called = true;
-    std::cout << "      In Destructor!" << std::endl;
-  }
-};
-
-bool MyObject::destructor_called = false;
 
 int main(int argc, char *argv[]) 
 {
@@ -183,37 +171,77 @@ int main(int argc, char *argv[])
       ca.reset();
       cout << "passed!" << endl;
 
-      
-      {
-	cout << "  Testing that ArrayRCP embedded object is destroyed properly:" << endl;
-
-	cout << "    building objects...";
-	int size = 5;
-	ArrayRCP<MyObject> contiguous_block = arcp<MyObject>(size);
-	MyObject* ptr = &contiguous_block[3];
-	ArrayRCP<MyObject> subview = 
-	  arcpWithEmbeddedObjPostDestroy( ptr, 0, 2, contiguous_block, false);
-	cout << "finished" << endl;
-	
-	cout << "    deleting contiguous_block ptr...";
-	TEST_FOR_EXCEPTION(MyObject::destructor_called, std::logic_error,
-			   "MyObject is not initialized correctly!");
-	contiguous_block = null;
-	TEST_FOR_EXCEPTION(MyObject::destructor_called, std::logic_error,
-			   "MyObject array should not be destroyed yet!");
-	cout << "finished" << endl;
-
-	cout << "    deleting subview ptr (should print destructor message "
-	     << size << " times):" << endl;
-	subview = null;
-	TEST_FOR_EXCEPTION(!MyObject::destructor_called, std::logic_error,
-			   "Failed to destroy objects correctly!");
-
-	cout << "  Testing that ArrayRCP embedded object is destroyed properly...passed" << endl;
-      }
-      
     }
 
+
+    //! This is a mock test to verify allocated objects have their dtor
+    //called correctly
+    {
+      cout << "  Testing that ArrayRCP casted objects are destroyed properly:" 
+	   << endl;
+      {
+	ArrayRCP<MockObject<int> > mo_block_1;
+	ArrayRCP<MockObject<int> > mo_block_2;
+	
+	{
+	  const int array_size = 10;
+	  const int sizeof_mock_obj = sizeof(MockObject<int>);
+	  int total_num_bytes = array_size * sizeof_mock_obj;
+	  ArrayRCP<char> raw_array = arcp<char>(total_num_bytes);
+	  
+	  int length = 5 * sizeof_mock_obj;
+	  ArrayRCP<char> view_1 = raw_array.persistingView(0, length);
+	  ArrayRCP<char> view_2 = raw_array.persistingView(length,length);
+	  
+	  MockObject<int> mo(8);
+	  
+	  mo_block_1 = arcp_reinterpret_cast_nonpod<MockObject<int> >(view_1);
+	  
+	  mo_block_2 = arcp_reinterpret_cast_nonpod<MockObject<int> >(view_2, mo);
+	}
+      
+      }
+      print_num_ctor_dtor_calls<int>(std::cout);
+      
+      TEST_FOR_EXCEPTION(MockObject<int>::m_num_times_empty_ctor_called != 1,
+			 std::runtime_error,
+			 "Empty ctors are not being called correctly!");
+      
+      TEST_FOR_EXCEPTION(MockObject<int>::m_num_times_sized_ctor_called != 1,
+			 std::runtime_error,
+			 "Sized ctors are not being called correctly!");
+      
+      TEST_FOR_EXCEPTION(MockObject<int>::m_num_times_copy_ctor_called != 10,
+			 std::runtime_error,
+			 "Copy ctors are not being called correctly!");
+      
+      TEST_FOR_EXCEPTION(MockObject<int>::m_num_times_dtor_called != 12,
+			 std::runtime_error,
+			 "dtors are not being called correctly!");
+      
+      cout << "  Testing that ArrayRCP casted objects are destroyed "
+	   << "properly...passed" << endl;
+    }
+
+
+    // Reproduce current errors
+    {
+      ContiguousAllocator<double> ca;
+      std::size_t size = 10;
+      ca.addRequiredChunk(sizeof(MockObject<int>), size); 
+      ca.addRequiredChunk(sizeof(MockObject<int>), size);   
+      ca.setup();
+      ArrayRCP<MockObject<int> > a = ca.allocate<MockObject<int> >(size);  
+      ArrayRCP<MockObject<int> > b = ca.allocate<MockObject<int> >(size);      
+      
+      MockObject<int> mo(8);
+      for (ArrayRCP<MockObject<int> >::iterator i = a.begin();
+	   i != a.end(); ++i)
+	*i = mo;
+
+      
+    }
+    
     // *********************************************************************
     // *********************************************************************
     std::cout << "\nTest passed!\n" << std::endl; 
