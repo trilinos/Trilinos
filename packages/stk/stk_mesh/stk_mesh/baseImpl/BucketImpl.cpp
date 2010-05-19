@@ -7,6 +7,7 @@
 /*------------------------------------------------------------------------*/
 
 //----------------------------------------------------------------------
+#include <cstring>
 #include <stdexcept>
 #include <stk_mesh/baseImpl/BucketImpl.hpp>
 #include <stk_mesh/base/Bucket.hpp>
@@ -36,10 +37,10 @@ void * local_malloc( size_t n )
 
 
 void memory_copy( unsigned char * dst , unsigned char * src , unsigned n )
-{ memcpy( dst , src , n ); }
+{ std::memcpy( dst , src , n ); }
 
 void memory_zero( unsigned char * dst , unsigned n )
-{ memset( dst , 0 , n ); }
+{ std::memset( dst , 0 , n ); }
 
 } // namespace
 

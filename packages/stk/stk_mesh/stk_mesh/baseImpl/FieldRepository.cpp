@@ -6,6 +6,7 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <cstring>
 #include <sstream>
 #include <stk_mesh/baseImpl/FieldRepository.hpp>
 #include <stdexcept>
@@ -141,7 +142,7 @@ FieldBase * FieldRepository::declare_field(
 
   for ( unsigned i = 0 ; i < 6 ; ++i ) {
     const int len_name   = arg_name.size();
-    const int len_suffix = strlen( reserved_state_suffix[i] );
+    const int len_suffix = std::strlen( reserved_state_suffix[i] );
     const int offset     = len_name - len_suffix ;
     if ( 0 <= offset ) {
       const char * const name_suffix = arg_name.c_str() + offset ;

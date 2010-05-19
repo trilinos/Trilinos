@@ -6,6 +6,8 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <algorithm>
+
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 
 #include <stk_mesh/base/BulkData.hpp>
