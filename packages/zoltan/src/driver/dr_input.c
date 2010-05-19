@@ -255,6 +255,7 @@ int read_cmd_file (
       }
       else if (strcmp(value, "create-a-graph") == 0){
         pio_info->file_type = NO_FILE_GRAPH;         /* zdrive creates a graph */
+	strcpy(pio_info->pexo_fname, "zdrive-created-graph");
 	pio_info->init_dist_type = INITIAL_NO_DIST;  /* it's already distributed */
 
 	pio_info->init_size     = 10000;       /* default */
