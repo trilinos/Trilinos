@@ -22,6 +22,7 @@ namespace impl {
 //----------------------------------------------------------------------
 namespace {
 
+
 void * local_malloc( size_t n )
 {
   void * const ptr = malloc( n );
@@ -39,34 +40,10 @@ void * local_malloc( size_t n )
 void memory_copy( unsigned char * dst , unsigned char * src , unsigned n )
 { std::memcpy( dst , src , n ); }
 
+
 void memory_zero( unsigned char * dst , unsigned n )
 { std::memset( dst , 0 , n ); }
 
-} // namespace
-
-//----------------------------------------------------------------------
-BucketImpl::BucketImpl( BulkData        & arg_mesh ,
-                unsigned          arg_entity_rank ,
-                const unsigned  * arg_key ,
-                size_t            arg_alloc_size ,
-                size_t            arg_capacity ,
-                impl::BucketImpl::DataMap * arg_field_map ,
-                Entity         ** arg_entity_array )
-: m_mesh( arg_mesh ) ,
-  m_entity_rank( arg_entity_rank ) ,
-  m_key( arg_key ) ,
-  m_alloc_size( arg_alloc_size ) ,
-  m_capacity( arg_capacity ) ,
-  m_size( 0 ) ,
-  m_bucket() ,
-  m_field_map( arg_field_map ) ,
-  m_entities( arg_entity_array )
-{}
-
-
-//----------------------------------------------------------------------
-
-namespace {
 
 inline unsigned align( size_t nb )
 {
@@ -76,17 +53,20 @@ inline unsigned align( size_t nb )
   return nb ;
 }
 
+
 struct FieldRestrictionLess {
   bool operator()( const FieldBase::Restriction & lhs ,
                    const EntityKey & rhs ) const
     { return lhs.key < rhs ; }
 };
 
+
 const FieldBase::Restriction & empty_field_restriction()
 {
   static const FieldBase::Restriction empty ;
   return empty ;
 }
+
 
 const FieldBase::Restriction & dimension( const FieldBase & field ,
                                           unsigned etype ,
@@ -133,6 +113,27 @@ const FieldBase::Restriction & dimension( const FieldBase & field ,
 }
 
 } // namespace
+
+//----------------------------------------------------------------------
+
+BucketImpl::BucketImpl( BulkData        & arg_mesh ,
+                unsigned          arg_entity_rank ,
+                const unsigned  * arg_key ,
+                size_t            arg_alloc_size ,
+                size_t            arg_capacity ,
+                impl::BucketImpl::DataMap * arg_field_map ,
+                Entity         ** arg_entity_array )
+: m_mesh( arg_mesh ) ,
+  m_entity_rank( arg_entity_rank ) ,
+  m_key( arg_key ) ,
+  m_alloc_size( arg_alloc_size ) ,
+  m_capacity( arg_capacity ) ,
+  m_size( 0 ) ,
+  m_bucket() ,
+  m_field_map( arg_field_map ) ,
+  m_entities( arg_entity_array )
+{}
+
 
 //----------------------------------------------------------------------
 // The current 'last' bucket in a family is to be deleted.
