@@ -549,8 +549,10 @@ int ML_Epetra::RefMaxwellPreconditioner::SetEdgeSmoother(Teuchos::ParameterList 
     // Aztec smoothing
     Teuchos::RCP<vector<int> >    ridummy;
     Teuchos::RCP<vector<double> > rddummy;
-    PreList.set("smoother: Aztec options",List.get("smoother: Aztec options",ridummy));
-    PreList.set("smoother: Aztec params",List.get("smoother: Aztec params",rddummy));
+    if(List.isParameter("smoother: Aztec options"))
+      PreList.set("smoother: Aztec options",List.get("smoother: Aztec options",ridummy));
+    if(List.isParameter("smoother: Aztec params"))
+      PreList.set("smoother: Aztec params",List.get("smoother: Aztec params",rddummy));
     PreList.set("smoother: Aztec as solver",List.get("smoother: Aztec as solver",false));
 
     // Normal Equations smoothing
