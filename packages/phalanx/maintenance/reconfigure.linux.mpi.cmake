@@ -10,12 +10,11 @@ cmake \
       -D Phalanx_ENABLE_TESTS:BOOL=ON \
       -D Phalanx_ENABLE_EXAMPLES:BOOL=ON \
       -D Phalanx_EXPLICIT_TEMPLATE_INSTANTIATION=ON \
-      -D Phalanx_ENABLE_GRAPHVIZ:BOOL=ON \
       -D TPL_ENABLE_MPI:BOOL=ON \
       -D MPI_BASE_DIR:PATH="/home/rppawlo/local" \
       -D MPIEXEC_MAX_NUMPROCS:STRING=4 \
       -D TPL_ENABLE_Boost:BOOL=ON \
-      -D Boost_INCLUDE_DIRS:FILEPATH="/home/rppawlo/Libs/Boost/boost_1_42_0" \
+      -D Boost_INCLUDE_DIRS:FILEPATH="/home/rppawlo/Libs/Boost/boost_1_43_0" \
       -D TPL_ENABLE_TVMET:BOOL=ON \
       -D TVMET_INCLUDE_DIRS:FILEPATH="/home/rppawlo/junk/include" \
       -D CMAKE_CXX_COMPILER:FILEPATH="/home/rppawlo/local/bin/mpiCC" \

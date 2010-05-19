@@ -8,5 +8,3 @@
 #cmakedefine PHX_USE_COMPILETIME_ARRAY
 
 #cmakedefine HAVE_PHALANX_TVMET
-
-#cmakedefine PHX_HAVE_BOOST_GRAPHVIZ

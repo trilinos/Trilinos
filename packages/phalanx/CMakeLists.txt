@@ -26,11 +26,6 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_COMPILETIME_ARRAY_CHECK
   "Enables compile time checking of the rank accessors in the MDArray. This adds safety of checking the rank accessors at compile time.  This can be very inefficient in runtime mode so checking is only done for debug builds if this flag is disabled.  The default is to disable compile time checking.  NOTE: Compile time checking must be OFF for MDFields to be interoperable with Intrepid!"
   OFF )
 
-ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_GRAPHVIZ
-  PHX_HAVE_BOOST_GRAPHVIZ
-  "Builds phalanx with boost graphviz support so that the dependency graph can be visually inspected.  Only verified to work on gnu 4.4 compilers."
-  OFF )
-
 #
 # C) Add the libraries, tests, and examples
 #

@@ -47,7 +47,8 @@
 #include "Phalanx_Evaluator.hpp"
 #include "Phalanx_FieldTag_STL_Functors.hpp"
 
-#ifdef PHX_HAVE_BOOST_GRAPHVIZ
+#include "boost/version.hpp"
+#if defined(BOOST_VERSION)&&(BOOST_VERSION>=104200)
 #include "boost/graph/graphviz.hpp"
 #include "boost/tuple/tuple.hpp"
 #endif
@@ -343,7 +344,7 @@ writeGraphvizFile(const std::string filename,
 		  bool writeDependentFields,
 		  bool debugRegisteredEvaluators) const
 {
-#ifdef PHX_HAVE_BOOST_GRAPHVIZ
+#if defined(BOOST_VERSION)&&(BOOST_VERSION>=104200)
 
   using std::string;
   using std::vector;
@@ -506,9 +507,9 @@ writeGraphvizFile(const std::string filename,
 
 #else
 
-  std::cout << "WARNING: writeGraphvizFile was called but support was not enalbed.  \nPlease rebuild Trilinos with the define: \n \"-D Phalanx_ENABLE_GRAPHVIZ:BOOL=ON\"." << std::endl; 
+  std::cout << "WARNING: writeGraphvizFile() was called, but this requires a boost library version 1.42 or higher.  \nPlease rebuild Trilinos with a more recent version of boost." << std::endl; 
 
-#endif // PHX_HAVE_BOOST_GRAPHVIZ
+#endif // defined(BOOST_VERSION)&&(BOOST_VERSION>=104200)
 }
 
 //=======================================================================
