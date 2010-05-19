@@ -54,11 +54,6 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_RAD_NO_USING_STDCC
   "Enable if the compiler is confused by std::sin, etc., within namespace"
   OFF )
 
-OPTION(${PACKAGE_NAME}_ENABLE_PERFORMANCE_TESTS
-  "Override enable ${PACKAGE_NAME} performance tests."
-  ${Trilinos_ENABLE_PERFORMANCE_TESTS}
-  )
-
 COMBINED_OPTION( Sacado_ENABLE_FEApp
   DEP_OPTIONS_NAMES Sacado_ENABLE_Epetra Sacado_ENABLE_EpetraExt
   DOCSTR "Enables compiling FEApp example finite element application"
@@ -78,10 +73,6 @@ ADD_SUBDIRECTORY(src)
 # This way packages that wish to use FEApp do not need to enable
 # Sacado examples
 ADD_SUBDIRECTORY(example/FEApp)
-
-# This adds directories for non-performance tests as well
-PACKAGE_ADD_PERFORMANCE_TEST_DIRECTORIES(
-  test/performance)
 
 # Must be after the performance tests so dependency on test/utils is picked
 # up.

@@ -1,4 +1,5 @@
 
+INCLUDE(PackageAddTestHelpers)
 INCLUDE(ParseVariableArguments)
 
 
@@ -16,6 +17,7 @@ INCLUDE(ParseVariableArguments)
 #     [DEST_DIR destDir]
 #     [EXEDEPS exeDep1 exeDep2 ...]
 #     [NOEXEPREFIX]
+#     [CATEGORIES <category1>  <category2> ...]
 #     )
 #
 #   In this case, the names of the source files and the destination files
@@ -30,6 +32,7 @@ INCLUDE(ParseVariableArguments)
 #     [DEST_DIR destDir]
 #     [EXEDEPS exeDep1 exeDep2 ...]
 #     [NOEXEPREFIX]
+#     [CATEGORIES <category1>  <category2> ...]
 #     )
 #
 #   In this case, the source files have the same basic name as the
@@ -45,6 +48,7 @@ INCLUDE(ParseVariableArguments)
 #     [DEST_DIR destDir]
 #     [EXEDEPS exeDep1 exeDep2 ...]
 #     [NOEXEPREFIX]
+#     [CATEGORIES <category1>  <category2> ...]
 #     )
 #
 #   In this case, the source files and destination files have completely
@@ -95,11 +99,17 @@ FUNCTION(PACKAGE_COPY_FILES_TO_BINARY_DIR TARGET_NAME)
     #prefix
     PARSE
     #lists
-    "SOURCE_DIR;SOURCE_FILES;SOURCE_PREFIX;DEST_DIR;DEST_FILES;EXEDEPS"
+    "SOURCE_DIR;SOURCE_FILES;SOURCE_PREFIX;DEST_DIR;DEST_FILES;EXEDEPS;CATEGORIES"
     #options
     "NOEXEPREFIX"
     ${ARGN}
     )
+
+  SET(ADD_THE_TEST FALSE)
+  PACKAGE_ADD_TEST_PROCESS_CATEGORIES(ADD_THE_TEST)
+  IF (NOT ADD_THE_TEST)
+    RETURN()
+  ENDIF()
 
   IF (NOT PARSE_SOURCE_DIR)
     SET(PARSE_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR})

@@ -1,5 +1,6 @@
 
 INCLUDE(PackageAddExecutableTestHelpers)
+INCLUDE(PackageAddTestHelpers)
 INCLUDE(PackageGeneralMacros)
 
 INCLUDE(PrintVar)
@@ -13,13 +14,15 @@ INCLUDE(ParseVariableArguments)
 # PACKAGE_ADD_EXECUTABLE(
 #   <execName>
 #   SOURCES <src1> <src2> ...
-#   [ NOEXEPREFIX ]
-#   [ DIRECTORY <dir> ]
-#   [ DEPLIBS <lib1> <lib2> ... ]
-#   [ COMM [serial] [mpi] ]
-#   [ LINKER_LANGUAGE [C|CXX|Fortran] ]
-#   [ ADD_DIR_TO_NAME ]
-#   [ DEFINES <-DSOMEDEFINE>]
+#   [CATEGORIES <category1>  <category2> ...]
+#   [NOEXEPREFIX ]
+#   [DIRECTORY <dir> ]
+#   [DEPLIBS <lib1> <lib2> ... ]
+#   [COMM [serial] [mpi] ]
+#   [LINKER_LANGUAGE [C|CXX|Fortran] ]
+#   [ADD_DIR_TO_NAME ]
+#   [DEFINES <-DSOMEDEFINE>]
+#   )
 #   
 #
 # 
@@ -34,11 +37,17 @@ FUNCTION(PACKAGE_ADD_EXECUTABLE EXE_NAME)
     #prefix
     PARSE
     #lists
-    "SOURCES;DIRECTORY;DEPLIBS;COMM;LINKER_LANGUAGE;DEFINES"
+    "SOURCES;CATEGORIES;DIRECTORY;DEPLIBS;COMM;LINKER_LANGUAGE;DEFINES"
     #options
     "NOEXEPREFIX;ADD_DIR_TO_NAME"
     ${ARGN}
     )
+
+  SET(ADD_THE_TEST FALSE)
+  PACKAGE_ADD_TEST_PROCESS_CATEGORIES(ADD_THE_TEST)
+  IF (NOT ADD_THE_TEST)
+    RETURN()
+  ENDIF()
 
   PACKAGE_PROCESS_COMM_ARGS(ADD_SERIAL_EXE  ADD_MPI_EXE  ${PARSE_COMM})
   IF (NOT ADD_SERIAL_EXE AND NOT ADD_MPI_EXE)

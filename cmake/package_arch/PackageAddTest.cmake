@@ -18,6 +18,7 @@ INCLUDE(PackageAddTestHelpers)
 #     [KEYWORDS <keyword1> <keyword2> ...]
 #     [COMM [serial] [mpi]]
 #     [NUM_MPI_PROCS <numProcs>]
+#     [CATEGORIES <category1>  <category2> ...]
 #     [HOST <host1> <host2> ...]
 #     [XHOST <host1> <host2> ...]
 #     [HOSTTYPE <hosttype1> <hosttype2> ...]
@@ -148,6 +149,14 @@ INCLUDE(PackageAddTestHelpers)
 #     the 'HOST' list if it should exist.  Therefore, this list exclusion list
 #     overrides the 'HOST' inclusion list.
 #
+#   CATEGORIES <category1> <category2> ...
+#
+#     If specified, gives the specific categories of the test.  Valid test
+#     categories include BASIC, NIGHLY, and PERFORMANCE.  Other test
+#     categories will be added as needed.  By default, the category is BASIC.
+#     When the category is BASIC it will also match
+#     ${PROJECT_NAME}_TEST_CATEGORIES==NIGHLY.
+#
 #   HOSTTYPE <hosttype1> <hosttype2> ...
 #
 #     If specified, gives the names of the host system type (given by
@@ -201,7 +210,7 @@ FUNCTION(PACKAGE_ADD_TEST EXE_NAME)
      #prefix
      PARSE
      #lists
-     "DIRECTORY;KEYWORDS;COMM;NUM_MPI_PROCS;ARGS;${POSTFIX_AND_ARGS_LIST};NAME;NAME_POSTFIX;HOST;XHOST;HOSTTYPE;XHOSTTYPE;PASS_REGULAR_EXPRESSION;FAIL_REGULAR_EXPRESSION"
+     "DIRECTORY;KEYWORDS;COMM;NUM_MPI_PROCS;ARGS;${POSTFIX_AND_ARGS_LIST};NAME;NAME_POSTFIX;CATEGORIES;HOST;XHOST;HOSTTYPE;XHOSTTYPE;PASS_REGULAR_EXPRESSION;FAIL_REGULAR_EXPRESSION"
      #options
      "NOEXEPREFIX;NOEXESUFFIX;STANDARD_PASS_OUTPUT;ADD_DIR_TO_NAME;CREATE_WORKING_DIR"
      ${ARGN}
@@ -224,10 +233,16 @@ FUNCTION(PACKAGE_ADD_TEST EXE_NAME)
   ENDIF()
   
   #
-  # B) Do not add any tests if host/hostname or xhost/xhostname says not to
+  # B) Add or don't add tests based on a number of criteria
   #
 
-  SET(ADD_THE_TEST TRUE)
+  SET(ADD_THE_TEST FALSE)
+  PACKAGE_ADD_TEST_PROCESS_CATEGORIES(ADD_THE_TEST)
+  IF (NOT ADD_THE_TEST)
+    RETURN()
+  ENDIF()
+
+  SET(ADD_THE_TEST FALSE)
   PACKAGE_ADD_TEST_PROCESS_HOST_HOSTTYPE(ADD_THE_TEST)
   IF (NOT ADD_THE_TEST)
     RETURN()

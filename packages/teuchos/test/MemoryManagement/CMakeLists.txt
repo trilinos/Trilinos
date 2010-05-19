@@ -168,3 +168,91 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 #  PASS_REGULAR_EXPRESSION
 #    "error: attempt to dereference a past-the-end iterator"
 #  )
+
+
+
+#############################
+# Performance tests
+#############################
+
+
+#
+# RCP_PerforamnceTests
+#
+
+
+# Build the executable no matter what
+PACKAGE_ADD_EXECUTABLE(
+  RCP_PerformanceTests
+  CATEGORIES BASIC PERFORMANCE
+  COMM serial mpi  
+  SOURCES
+    RCP_Performance_UnitTests.cpp
+    ${PACKAGE_SOURCE_DIR}/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+  )
+
+# This form of the test just makes sure that it runs without crashing
+# basically
+PACKAGE_ADD_TEST(
+  RCP_PerformanceTests
+  CATEGORIES BASIC PERFORMANCE
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  POSTFIX_AND_ARGS_0 base
+    --show-test-details=ALL --max-array-size=100000
+  STANDARD_PASS_OUTPUT
+  )
+
+PACKAGE_ADD_TEST(
+  RCP_PerformanceTests
+  CATEGORIES PERFORMANCE
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  POSTFIX_AND_ARGS_0 performance
+    --rel-cpu-speed=${${PROJECT_NAME}_REL_CPU_SPEED}
+    --show-test-details=ALL --max-array-size=100000
+    --max-rcp-create-destroy-ratio=1.05
+    --max-rcp-raw-adjust-ref-count-ratio=20.0 --max-rcp-sp-adjust-ref-count-ratio=1.7
+    --max-rcp-raw-obj-access-ratio=1.02
+  STANDARD_PASS_OUTPUT
+  )
+
+#
+# Array_PerforamnceTests
+#
+
+# Build the executable no matter what
+PACKAGE_ADD_EXECUTABLE(
+  Array_PerformanceTests
+  CATEGORIES BASIC PERFORMANCE
+  COMM serial mpi  
+  SOURCES
+    Array_Performance_UnitTests.cpp
+    ${PACKAGE_SOURCE_DIR}/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+  )
+
+# This form of the test just makes sure that it runs without crashing
+# basically
+PACKAGE_ADD_TEST(
+  Array_PerformanceTests
+  CATEGORIES BASIC PERFORMANCE
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  POSTFIX_AND_ARGS_0 base
+    --show-test-details=ALL --max-array-size=100000
+  STANDARD_PASS_OUTPUT
+  )
+
+PACKAGE_ADD_TEST(
+  Array_PerformanceTests
+  CATEGORIES PERFORMANCE
+  COMM serial mpi
+  NUM_MPI_PROCS 1
+  POSTFIX_AND_ARGS_0 performance
+    --rel-cpu-speed=${${PROJECT_NAME}_REL_CPU_SPEED}
+    --details=ALL --max-array-size=100000
+    --max-array-bracket-ratio=1.02 --max-array-iter-ratio=1.02
+    --max-arrayrcp-self-iter-ratio=1.5
+  STANDARD_PASS_OUTPUT
+  )
+

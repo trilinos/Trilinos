@@ -77,6 +77,8 @@ ENDFUNCTION()
 
 FUNCTION(PACKAGE_ADD_TEST_PROCESS_HOST_HOSTTYPE  ADD_THE_TEST_OUT)
 
+  SET(ADD_THE_TEST TRUE)
+
   IF (NOT PARSE_HOST)
     SET (PARSE_HOST ${${PROJECT_NAME}_HOSTNAME})
   ENDIF()  
@@ -110,6 +112,49 @@ FUNCTION(PACKAGE_ADD_TEST_PROCESS_HOST_HOSTTYPE  ADD_THE_TEST_OUT)
   ENDIF()
 
   SET(${ADD_THE_TEST_OUT} ${ADD_THE_TEST} PARENT_SCOPE)
+
+ENDFUNCTION()
+
+
+#
+# Determine if to add the test or not based on CATEGORIES arguments
+#
+#
+# Warning: Argument CATEGORIES is passed in implicitly due to scoping of CMake.
+# 
+
+FUNCTION(PACKAGE_ADD_TEST_PROCESS_CATEGORIES  ADD_THE_TEST_OUT)
+
+  SET(ADD_THE_TEST FALSE)
+
+  # Set the default test-specific cateogry to basic if it is not set
+  IF (NOT PARSE_CATEGORIES)
+    SET (PARSE_CATEGORIES BASIC)
+  ENDIF()
+
+  #PRINT_VAR(${PROJECT_NAME}_TEST_CATEGORIES)
+  #PRINT_VAR(PARSE_CATEGORIES)
+
+  # Process the test categories
+  ASSERT_DEFINED(${PROJECT_NAME}_TEST_CATEGORIES)
+  FOREACH(CATEGORY_IN ${${PROJECT_NAME}_TEST_CATEGORIES})
+    #PRINT_VAR(CATEGORY_IN)
+    #PRINT_VAR(PARSE_CATEGORIES)
+    FOREACH(CATEGORY ${PARSE_CATEGORIES})
+      IF (CATEGORY_IN STREQUAL ${CATEGORY})
+        # Exact match for the category, add the test
+        SET(ADD_THE_TEST TRUE)
+      ELSEIF(CATEGORY_IN STREQUAL "NIGHTLY" AND CATEGORY STREQUAL "BASIC")
+        # All basic tests are run as part of nighly tests
+        SET(ADD_THE_TEST TRUE)
+      ELSE()
+        # No matches for the category, don't add the test
+      ENDIF()
+    ENDFOREACH()
+  ENDFOREACH()
+
+  SET(${ADD_THE_TEST_OUT} ${ADD_THE_TEST} PARENT_SCOPE)
+  #PRINT_VAR(${ADD_THE_TEST_OUT})
 
 ENDFUNCTION()
 

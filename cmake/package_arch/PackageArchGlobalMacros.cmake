@@ -121,6 +121,14 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
 
   ADVANCED_SET( ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE OFF CACHE BOOL
     "Allow secondary stable packages and code to be implicitly enabled." )
+  
+  ADVANCED_SET(${PROJECT_NAME}_TEST_CATEGORIES NIGHTLY CACHE STRING
+    "List of categories of tests to enable, BASIC, NIGHLY, or PERFORMANCE (default NIGHLY)."
+    )
+  
+  ADVANCED_SET(${PROJECT_NAME}_REL_CPU_SPEED 1.0 CACHE STRING
+    "Relative CPU speed of the computer used to scale performance tests (default 1.0)."
+    )
 
   ADVANCED_SET( ${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE
     ON  #NOTE: Change this to 'OFF' in a release branch!

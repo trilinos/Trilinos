@@ -4,3 +4,4 @@ IF (TPL_ENABLE_CppUnit)
 ENDIF()
 
 ADD_SUBDIRECTORY(tradoptest)
+ADD_SUBDIRECTORY(performance)

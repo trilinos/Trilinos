@@ -3,6 +3,18 @@ INCLUDE(PackageAddAdvancedTest)
 INCLUDE(UnitTestHelpers)
 INCLUDE(GlobalSet)
 
+#####################################################################
+#
+# Unit tests for PACKAGE_XXX(...) CMake commands run as CMake code
+#
+# This file contains a set of unit tests for the package_arch macros
+# PACKAGE_ADD_XXX(...) functions.  These unit tests are written in CMake
+# itself.  This is not a very advanced unit testing system and it not that
+# easy to work with.  However, it does perform some pretty strong testing and
+# is much better than doing nothing.
+#
+#####################################################################
+
 
 #
 # Set up unit test functions that will be called below to actually run the
@@ -16,6 +28,10 @@ INCLUDE(GlobalSet)
 
 
 FUNCTION(UNITEST_PACKAGE_ADD_TEST_BASIC)
+
+  MESSAGE("\n***")
+  MESSAGE("*** Testing basic functionality of PACKAGE_ADD_TEST(...)")
+  MESSAGE("***\n")
 
   # Needed by PACKAGE_ADD_TEST(...)
   SET(PACKAGE_NAME PackageA)
@@ -190,7 +206,77 @@ FUNCTION(UNITEST_PACKAGE_ADD_TEST_BASIC)
 ENDFUNCTION()
 
 
+FUNCTION(UNITEST_PACKAGE_ADD_TEST_CATEGORIES)
+
+  MESSAGE("\n***")
+  MESSAGE("*** Testing PACKAGE_ADD_TEST( ... CATEGORIES ... )")
+  MESSAGE("***\n")
+
+  # Needed by PACKAGE_ADD_TEST(...)
+  SET(PACKAGE_NAME PackageA)
+
+  SET(${PROJECT_NAME}_TEST_CATEGORIES "")
+
+  # Used locally
+  SET(EXEN SomeExec)
+  SET(PACKEXEN ${PACKAGE_NAME}_${EXEN})
+
+  MESSAGE("Test no category matching NIGHLY category set by client")
+  SET(${PROJECT_NAME}_TEST_CATEGORIES NIGHTLY)
+  PACKAGE_ADD_TEST( ${EXEN} )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN};${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe"
+    )
+
+  MESSAGE("Test no category matching BASIC category set by client")
+  SET(${PROJECT_NAME}_TEST_CATEGORIES BASIC)
+  PACKAGE_ADD_TEST( ${EXEN} )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN};${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe"
+    )
+
+  MESSAGE("Test NIGHLY category *not* matching BASIC category set by client")
+  SET(${PROJECT_NAME}_TEST_CATEGORIES BASIC)
+  PACKAGE_ADD_TEST( ${EXEN} CATEGORIES NIGHLY )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    ""
+    )
+
+  MESSAGE("Test BASIC category matching BASIC category set by client")
+  SET(${PROJECT_NAME}_TEST_CATEGORIES BASIC)
+  PACKAGE_ADD_TEST( ${EXEN} CATEGORIES BASIC )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN};${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe"
+    )
+
+  MESSAGE("Test no category *not* matching PERFORMANCE category set by client")
+  SET(${PROJECT_NAME}_TEST_CATEGORIES PERFORMANCE)
+  PACKAGE_ADD_TEST( ${EXEN} )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    ""
+    )
+
+  MESSAGE("Test PERFORMANCE category matching PERFORMANCE category set by client")
+  SET(${PROJECT_NAME}_TEST_CATEGORIES PERFORMANCE)
+  PACKAGE_ADD_TEST( ${EXEN} CATEGORIES PERFORMANCE )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_TEST_ADD_TEST_INPUT
+    "${PACKEXEN};${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}.exe"
+    )
+
+ENDFUNCTION()
+
+
 FUNCTION(UNITEST_PACKAGE_ADD_TEST_COMM)
+
+  MESSAGE("\n***")
+  MESSAGE("*** Testing PACKAGE_ADD_TEST( ... COMM ... )")
+  MESSAGE("***\n")
 
   # Needed by PACKAGE_ADD_TEST(...)
   SET(PACKAGE_NAME PackageB)
@@ -312,12 +398,11 @@ FUNCTION(UNITEST_PACKAGE_ADD_TEST_COMM)
 ENDFUNCTION()
 
 
-#
-# PACKAGE_ADD_ADVANCED_TEST(...) UnitTest Stuff
-#
-
-
 FUNCTION(UNITEST_PACKAGE_ADD_ADVANCED_TEST_BASIC)
+
+  MESSAGE("\n***")
+  MESSAGE("*** Testing basic functionality of PACKAGE_ADD_ADVANCED_TEST(...)")
+  MESSAGE("***\n")
 
   # Needed by PACKAGE_ADD_ADVANCED_TEST(...)
   SET(PACKAGE_NAME PackageA)
@@ -479,7 +564,72 @@ FUNCTION(UNITEST_PACKAGE_ADD_ADVANCED_TEST_BASIC)
 ENDFUNCTION()
 
 
+FUNCTION(UNITEST_PACKAGE_ADD_ADVANCED_TEST_CATEGORIES)
+
+  MESSAGE("\n***")
+  MESSAGE("*** Testing PACKAGE_ADD_ADVANCED_TEST( ... CATEGORIES ... )")
+  MESSAGE("***\n")
+
+  # Needed by PACKAGE_ADD_TEST(...)
+  SET(PACKAGE_NAME PackageA)
+
+  SET(${PROJECT_NAME}_TEST_CATEGORIES "")
+
+  # Used locally
+  SET(EXEN SomeExec)
+  SET(PACKEXEN ${PACKAGE_NAME}_${EXEN}.exe)
+
+  MESSAGE("Test no category matching NIGHLY category set by client")
+  SET(TEST_NAME PackageAddAdvancedTestCategory_Empty_Nighly)
+  SET(${PROJECT_NAME}_TEST_CATEGORIES NIGHTLY)
+  PACKAGE_ADD_ADVANCED_TEST_UNITTEST_RESET()
+  PACKAGE_ADD_ADVANCED_TEST( ${TEST_NAME} TEST_0 EXEC ${EXEN} )
+  UNITTEST_FILE_REGEX(
+    "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_${TEST_NAME}.cmake"
+    REGEX_STRINGS
+      "TEST_0_CMND \"${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}\""
+      "NUM_CMNDS 1"
+    )
+
+  MESSAGE("Test no category *not* matching PERFORMANCE category set by client")
+  SET(TEST_NAME PackageAddAdvancedTestCategory_Empty_Performance)
+  SET(${PROJECT_NAME}_TEST_CATEGORIES PERFORMANCE)
+  PACKAGE_ADD_ADVANCED_TEST_UNITTEST_RESET()
+  PACKAGE_ADD_ADVANCED_TEST( ${TEST_NAME} TEST_0 EXEC ${EXEN} )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_CMND_ARRAY_0
+    ""
+    )
+  UNITTEST_COMPARE_CONST(
+    PACKAGE_ADD_ADVANCED_TEST_NUM_CMNDS
+    ""
+    )
+
+  MESSAGE("Test PERFORMANCE category matching PERFORMANCE category set by client")
+  SET(TEST_NAME PackageAddAdvancedTestCategory_Performance_Performance)
+  SET(${PROJECT_NAME}_TEST_CATEGORIES PERFORMANCE)
+  PACKAGE_ADD_ADVANCED_TEST_UNITTEST_RESET()
+  PACKAGE_ADD_ADVANCED_TEST( ${TEST_NAME} TEST_0 EXEC ${EXEN} CATEGORIES PERFORMANCE )
+  UNITTEST_FILE_REGEX(
+    "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}_${TEST_NAME}.cmake"
+    REGEX_STRINGS
+      "TEST_0_CMND \"${CMAKE_CURRENT_BINARY_DIR}/${PACKEXEN}\""
+      "NUM_CMNDS 1"
+    )
+
+  # NOTE: The above tests ensure that the CATEGORIES argument is accepted and
+  # processed correctly.  The unit tests in
+  # UNIT_TEST_PACKAGE_ADD_TEST_CATEGORIES() test the behavior of the logic for
+  # selecting tests based on CATEGORIES.
+
+ENDFUNCTION()
+
+
 FUNCTION(UNITEST_PACKAGE_ADD_ADVANCED_TEST_COMM)
+
+  MESSAGE("\n***")
+  MESSAGE("*** Testing PACKAGE_ADD_ADVANCED_TEST( ... COMM ... )")
+  MESSAGE("***\n")
 
   # Needed by PACKAGE_ADD_ADVANCED_TEST(...)
   SET(PACKAGE_NAME PackageA)
@@ -566,6 +716,14 @@ ENDFUNCTION()
 #
 
 
+# Must set the project name that gets used
+SET(PROJECT_NAME DummyProject)
+
+
+# Must set the default test category
+SET(${PROJECT_NAME}_TEST_CATEGORIES NIGHTLY)
+
+
 # Set up some global environment stuff
 SET(${PROJECT_NAME}_HOSTNAME testhost.nowhere.com)
 
@@ -583,19 +741,20 @@ SET( PACKAGE_ADD_TEST_ADD_TEST_SKIP TRUE )
 
 
 MESSAGE("\n***")
-MESSAGE("*** Testing basic usage of PACAKGE_ADD_TEST(...)")
+MESSAGE("*** Testing PACAKGE_ADD_TEST(...)")
 MESSAGE("***\n")
 
 UNITEST_PACKAGE_ADD_TEST_BASIC()
-
+UNITEST_PACKAGE_ADD_TEST_CATEGORIES()
 UNITEST_PACKAGE_ADD_TEST_COMM()
 
+
 MESSAGE("\n***")
-MESSAGE("*** Testing basic usage of PACAKGE_ADD_ADVANCED_TEST(...)")
+MESSAGE("*** Testing PACAKGE_ADD_ADVANCED_TEST(...)")
 MESSAGE("***\n")
 
 UNITEST_PACKAGE_ADD_ADVANCED_TEST_BASIC()
-
+UNITEST_PACKAGE_ADD_ADVANCED_TEST_CATEGORIES()
 UNITEST_PACKAGE_ADD_ADVANCED_TEST_COMM()
 
 MESSAGE("\n***")
@@ -603,4 +762,4 @@ MESSAGE("*** Determine final result of all unit tests")
 MESSAGE("***\n")
 
 # Pass in the number of expected tests that must pass!
-UNITTEST_FINAL_RESULT(71)
+UNITTEST_FINAL_RESULT(83)

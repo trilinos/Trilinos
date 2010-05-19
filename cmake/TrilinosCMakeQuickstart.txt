@@ -620,6 +620,16 @@ Section H: Dashboard testing
   tree will speed up successive re-configures by a few seconds.
 
 
+(*) Enabling different test categories:
+
+    -D Trilinos_TEST_CATEGORIES:STRING="<CATEGORY1>;<CATEGORY2>;..." 
+
+  Valid categories include BASIC, NIGHTLY, and PERFORMANCE.  BASIC tests get
+  built and run for pre-push testing and nighly testing.  NIGHTY tests are for
+  pos-push and nighly testing.  PERFORAMNCE tests are for perforamnce testing
+  only.
+
+
 (*) Enabling support for coverage testing:
 
     -D Trilinos_ENABLE_COVERAGE_TESTING:BOOL=ON 

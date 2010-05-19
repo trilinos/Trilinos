@@ -90,10 +90,6 @@ ADVANCED_SET(Trilinos_DATA_DIR
   CACHE PATH
   "Path TrilinosData directory to find more tests and other stuff" )
 
-ADVANCED_OPTION(Trilinos_ENABLE_PERFORMANCE_TESTS
-  "Enable performance tests in all packages that support them"
-  OFF )
-
 ADVANCED_OPTION(Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING
   "Shortcircut after dependency handling is complete"
   OFF )
