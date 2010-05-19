@@ -866,6 +866,8 @@ def runBuildTestCase(inOptions, buildTestCase, timings):
     cmakeBaseOptions = []
   
     cmakeBaseOptions.append("-DTrilinos_ENABLE_TESTS:BOOL=ON")
+  
+    cmakeBaseOptions.append("-DTrilinos_TEST_CATEGORIES:STRING=BASIC")
 
     if inOptions.ctestTimeOut:
       cmakeBaseOptions.append(("-DDART_TESTING_TIMEOUT:STRING="+str(inOptions.ctestTimeOut)))
