@@ -519,7 +519,8 @@ int snl_fei_tester::save_block_node_soln(DataReader& data, fei::Vector* vec,
 
   FEI_OSTRINGSTREAM fileName;
   fileName<< solnFileName<<".node."<<solveCounter<<"."<<numProcs<<"."<<localProc;
-  FEI_OFSTREAM outfile(fileName.str().c_str());
+  std::string str = fileName.str();
+  FEI_OFSTREAM outfile(str.c_str());
 
   if (!outfile || outfile.bad()) {
     FEI_CERR << "ERROR opening solution output file " << fileName << FEI_ENDL;
@@ -557,10 +558,11 @@ int snl_fei_tester::save_block_node_soln(DataReader& data, fei::Vector* vec,
     outfile << FEI_ENDL;
   }
 
-  FEI_COUT << "save-node-soln: wrote " << totalSize << " entries for " << numLocalNodes << " nodes to " << fileName.str() << FEI_ENDL;
+  FEI_COUT << "save-node-soln: wrote " << totalSize << " entries for " << numLocalNodes << " nodes to " << str << FEI_ENDL;
 
   delete [] nodeList;
 
+  outfile.close();
   return(0);
 }
 
@@ -585,7 +587,8 @@ int snl_fei_tester::save_block_elem_soln(DataReader& data, fei::Vector* vec,
 
   FEI_OSTRINGSTREAM fileName;
   fileName<< solnFileName<<".elem."<<solveCounter<<"."<<numProcs<<"."<<localProc;
-  FEI_OFSTREAM outfile(fileName.str().c_str());
+  std::string str = fileName.str();
+  FEI_OFSTREAM outfile(str.c_str());
 
   if (!outfile || outfile.bad()) {
     FEI_CERR << "ERROR opening solution output file " << fileName << FEI_ENDL;
@@ -620,6 +623,7 @@ int snl_fei_tester::save_block_elem_soln(DataReader& data, fei::Vector* vec,
 
   delete [] elemList;
 
+  outfile.close();
   return(0);
 }
 
@@ -660,7 +664,8 @@ int snl_fei_tester::save_multiplier_soln(DataReader& data, fei::Vector* vec,
 
   FEI_OSTRINGSTREAM fileName;
   fileName<< solnFileName<<".mult."<<solveCounter<<"."<<numProcs<<"."<<localProc;
-  FEI_OFSTREAM outfile(fileName.str().c_str());
+  std::string str = fileName.str();
+  FEI_OFSTREAM outfile(str.c_str());
 
   if (!outfile || outfile.bad()) {
     FEI_CERR << "ERROR opening solution output file " << fileName << FEI_ENDL;
@@ -690,5 +695,6 @@ int snl_fei_tester::save_multiplier_soln(DataReader& data, fei::Vector* vec,
     outfile << FEI_ENDL;
   }
 
+  outfile.close();
   return(0);
 }

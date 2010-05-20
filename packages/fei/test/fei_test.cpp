@@ -45,6 +45,8 @@
 #include <snl_fei_Utils.hpp>
 #include <fei_ParameterSet.hpp>
 
+#include <Teuchos_GlobalMPISession.hpp>
+
 #include "test_utils/poisson_beam_mains.hpp"
 
 #undef fei_file
@@ -80,8 +82,8 @@ int main(int argc, char** argv) {
 
   double start_time = fei::utils::cpu_time();
 
-  int numProcs, localProc;
-  CHK_ERR( fei_test_utils::initialize_mpi(argc, argv, localProc, numProcs) );
+  Teuchos::GlobalMPISession mpi_session(&argc, &argv, &std::cout);
+  int localProc = mpi_session.getRank();
 
   if (localProc == 0) {
     FEI_COUT << "FEI version: " << fei::utils::version() << FEI_ENDL;
@@ -123,10 +125,6 @@ int main(int argc, char** argv) {
 
   int global_err_code = 0;
   fei::GlobalSum(MPI_COMM_WORLD, errcode, global_err_code);
-
-#ifndef FEI_SER
-  if (MPI_Finalize() != MPI_SUCCESS) ERReturn(-1);
-#endif
 
   if (localProc == 0) {
     double elapsedTime = fei::utils::cpu_time() - start_time;
