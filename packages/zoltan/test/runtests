@@ -1,0 +1,25 @@
+#!/bin/bash
+##   -logfile filename
+##   -exe filename
+##   -no_rcb
+##   -no_rib
+##   -no_hsfc
+##   -no_oct     - have to use this, oct fails
+##   -no_parmetis
+##   -no_scotch            - have to use this
+##   -no_reftree
+##   -no_order
+##   -no_color     - have to use this
+##   -no_chaco
+##   -no_hg
+##   -no_hier
+##   -yes_nemesis
+##   -yes_fortran
+##   -yes_cpp
+##   -yes_jostle
+##   -yes_drum
+##   -old_interface
+
+ZDRIVE=/home/lriesen/projects/trilinos/TrilinosHead/packages/zoltan/build/src/driver/zdrive.exe
+
+test_zoltan -logfile test_zoltan.log -exe $ZDRIVE -arch generic -no_color -no_oct -failure_detail | tee test_zoltan_output.txt
