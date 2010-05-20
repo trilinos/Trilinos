@@ -270,6 +270,16 @@ B.1) Unprioritized Backlog Items that require changes to CMake/CTest/CDash:
 ---------------------------------------------------------------------------
 
 
+(*) [CTest] CTest needs to print out the list of available labels that can be
+used to select and deselect tests.  Currently, as of 2.8.1, ctest supports the
+arguments -L and -LE to include or exclude tests based on their labels, not
+even with -N -VV.  What CTest needs is to a) show the labels associated with a
+test when you run the test or just pass in -N -VV, and b) add a new option
+called --print-labels that will have CTest print all of the currently defined
+labels.  Without this, labels are not very useful because no-one can figure
+out what labels there are to use in selecting tests.
+
+
 (*) [CMake] When cross compiling it would be nice to have the ability to specify
 absolute directories that contain libraries and headers instead of having to
 rely on the prefix only system. This is a problem for many of our TPLS and since
