@@ -906,6 +906,7 @@ what this script does.  This set of options can be found by doing:
 Currently, this options includes:
 
   SET_DEFAULT_AND_FROM_ENV( CTEST_TEST_TYPE Nightly )
+  SET_DEFAULT_AND_FROM_ENV(Trilinos_TRACK "")
   SET_DEFAULT_AND_FROM_ENV( CTEST_SITE ${CTEST_SITE_DEFAULT} )
   SET_DEFAULT_AND_FROM_ENV( CTEST_DASHBOARD_ROOT "" )
   SET_DEFAULT_AND_FROM_ENV( BUILD_TYPE NONE )
@@ -913,13 +914,16 @@ Currently, this options includes:
   SET_DEFAULT_AND_FROM_ENV( CTEST_BUILD_NAME
   SET_DEFAULT_AND_FROM_ENV( CTEST_START_WITH_EMPTY_BINARY_DIRECTORY TRUE )
   SET_DEFAULT_AND_FROM_ENV( CTEST_WIPE_CACHE TRUE )
-  SET_DEFAULT_AND_FROM_ENV( CTEST_CMAKE_GENERATOR "Unix Makefiles")
+  SET_DEFAULT_AND_FROM_ENV( CTEST_CMAKE_GENERATOR ${DEFAULT_GENERATOR})
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_UPDATES TRUE )
   SET_DEFAULT_AND_FROM_ENV( CTEST_GENERATE_DEPS_XML_OUTPUT_FILE FALSE )
-  SET_DEFAULT_AND_FROM_ENV( CTEST_UPDATE_ARGS "-q -z3")
+  SET_DEFAULT_AND_FROM_ENV( CTEST_UPDATE_ARGS "")
+  SET_DEFAULT_AND_FROM_ENV( CTEST_UPDATE_OPTIONS "")
   SET_DEFAULT_AND_FROM_ENV( CTEST_BUILD_FLAGS "-j2")
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_BUILD TRUE )
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_TEST TRUE )
+  SET_DEFAULT_AND_FROM_ENV( MPI_EXEC_MAX_NUMPROCS 4 )
+  SET_DEFAULT_AND_FROM_ENV( CTEST_PARALLEL_LEVEL 1 )
   SET_DEFAULT_AND_FROM_ENV( Trilinos_WARNINGS_AS_ERRORS_FLAGS "" )
   SET_DEFAULT_AND_FROM_ENV( CTEST_DO_COVERAGE_TESTING FALSE )
   SET_DEFAULT_AND_FROM_ENV( CTEST_COVERAGE_COMMAND gcov )
@@ -929,7 +933,10 @@ Currently, this options includes:
   SET_DEFAULT_AND_FROM_ENV( Trilinos_ENABLE_SECONDARY_STABLE_CODE OFF )
   SET_DEFAULT_AND_FROM_ENV( Trilinos_ADDITIONAL_PACKAGES "" )
   SET_DEFAULT_AND_FROM_ENV( Trilinos_EXCLUDE_PACKAGES "" )
+  SET_DEFAULT_AND_FROM_ENV( Trilinos_BRANCH "" )
+  SET_DEFAULT_AND_FROM_ENV( Trilinos_REPOSITORY_LOCATION "software.sandia.gov:/space/git/${CTEST_SOURCE_NAME}" )
   SET_DEFAULT_AND_FROM_ENV( Trilinos_PACKAGES "${Trilinos_PACKAGES_DEFAULT}" )
+  SET_DEFAULT_AND_FROM_ENV( CTEST_SELECT_MODIFIED_PACKAGES_ONLY OFF )
 
 For example, to run an experimental build and in the process change the build
 name and the options to pass to 'make', use:
@@ -940,19 +947,24 @@ name and the options to pass to 'make', use:
 After this finishes running, look for the build 'MyBuild' (or whatever build
 name you used above) in the Trilinos CDash dashboard.
 
+NOTE: The 'make dashboard' target sets 
+
 NOTE: It is useful to set CTEST_BUILD_NAME to some unique name to make it
 easier to find your results in the CDash dashboard.
 
-NOTE: A number of the defaults set in TrilinosCTestDriverCore.cmake are
-overridden from experimental_build_test.cmake so you will want to look at
-experimental_build_test.cmake to see how these are changed.  The script
-experimental_build_test.cmake sets reasonable values for these options in
-order to use the 'make dashboard' target in iterative development.
+NOTE: A number of the defaults set in TrilinosCTestDriverCore.cmake
+are overridden from experimental_build_test.cmake (such as
+CTEST_TEST_TYPE=Experimental) so you will want to look at
+experimental_build_test.cmake to see how these are changed.  The
+script experimental_build_test.cmake sets reasonable values for these
+options in order to use the 'make dashboard' target in iterative
+development for experimental builds.
 
-NOTE: The target 'dashboard' is not directly related to the built-in CMake
-targets 'Experimental*' that run a standard dashboard with CTest without the
-custom package-by-package driver in TrilinosCTestDriverCore.cmake.  The
-package-by-package extended CTest driver is more appropriate for Trilinos.
+NOTE: The target 'dashboard' is not directly related to the built-in
+CMake targets 'Experimental*' that run standard dashboards with CTest
+without the custom package-by-package driver in
+TrilinosCTestDriverCore.cmake.  The package-by-package extended CTest
+driver is more appropriate for Trilinos.
 
 NOTE: Once you configure with -DTrilinos_ENABLE_COVERAGE_TESTING:BOOL=ON, the
 environment variable CTEST_DO_COVERAGE_TESTING=TRUE is automatically set by the
