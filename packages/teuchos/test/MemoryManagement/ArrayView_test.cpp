@@ -205,8 +205,8 @@ bool testArrayView( const int n, Teuchos::FancyOStream &out )
 
   {
     out << "\nTest shallow implicit conversion from const std::vector<T> to ArrayView<const T> ...\n";
-    std::vector<T> v2 = Teuchos::createVector(cav);
-    ArrayView<const T> cav2(getConst(v2));
+    const std::vector<T> v2 = Teuchos::createVector(cav);
+    ArrayView<const T> cav2(v2);
     TEST_COMPARE_ARRAYS( cav2, av );
   }
 
