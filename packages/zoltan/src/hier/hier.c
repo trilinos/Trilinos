@@ -424,9 +424,7 @@ int Zoltan_Hier(
      location as determined by the gid value (index into global
      ordering) and the vtxdist array */
 
-  gno_size = sizeof(ZOLTAN_GNO_TYPE) / sizeof(ZOLTAN_ID_TYPE);
-
-  ierr = Zoltan_DD_Create(&hpp.dd, zz->Communicator, gno_size, 0, 0, 0, 0);
+  ierr = Zoltan_DD_Create(&hpp.dd, zz->Communicator, zz->Num_GID, 0, 0, 0, 0);
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN){
       ZOLTAN_HIER_ERROR(ierr, "Zoltan_DD_Create returned error.");
   }
@@ -1712,8 +1710,7 @@ static void Zoltan_Hier_Check_Data(HierPartParams *hpp, int *ierr) {
     }
   }
 
-  *ierr = Zoltan_DD_Find(hpp->dd, ddlookup, NULL, NULL, NULL,
-			 nreturn, owners);
+  *ierr = Zoltan_DD_Find(hpp->dd, ddlookup, NULL, NULL, NULL, nreturn, owners);
 
   for (i=0; i<nreturn; i++) {
     if ((ZOLTAN_ID_TYPE)owners[i] != recvbuf[2*i+1]) {
