@@ -24,8 +24,8 @@ INCLUDE(PackageAddTestHelpers)
 #     [HOSTTYPE <hosttype1> <hosttype2> ...]
 #     [XHOSTTYPE <hosttype1> <hosttype2> ...]
 #     [STANDARD_PASS_OUTPUT
-#       | PASS_REGULAR_EXPRESSION "<regex1>;<regex2>;..." 
-#       | FAIL_REGULAR_EXPRESSION "<regex1>;<regex2>;..."]
+#       | PASS_REGULAR_EXPRESSION "<regex1>;<regex2>;..."]
+#     [FAIL_REGULAR_EXPRESSION "<regex1>;<regex2>;..."]
 #     )
 #  
 # The arguments to the function are as followes:
@@ -191,6 +191,11 @@ INCLUDE(PackageAddTestHelpers)
 
 FUNCTION(PACKAGE_ADD_TEST EXE_NAME)
 
+  IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    MESSAGE("")
+    MESSAGE("PACKAGE_ADD_TEST: ${EXE_NAME} ${ARGN}")
+  ENDIF()
+
   GLOBAL_SET(PACKAGE_ADD_TEST_ADD_TEST_INPUT "")
    
   #
@@ -286,24 +291,14 @@ FUNCTION(PACKAGE_ADD_TEST EXE_NAME)
   #MESSAGE("PACKAGE_ADD_TEST: ${EXE_NAME}: EXECUTABLE_PATH = ${EXECUTABLE_PATH}")
 
   #
-  # D) Append keywords to the name of the test
-  #
-  
-  IF(PARSE_KEYWORDS)
-    FOREACH(KEYWORD ${PARSE_KEYWORDS})
-      SET(TEST_NAME ${TEST_NAME}_${KEYWORD})
-    ENDFOREACH()
-  ENDIF()
-
-  #
-  # E) Determine if we will add the serial or MPI tests based on input COMM
+  # D) Determine if we will add the serial or MPI tests based on input COMM
   # and TPL_ENABLE_MPI
   #
 
   PACKAGE_PROCESS_COMM_ARGS(ADD_SERIAL_TEST  ADD_MPI_TEST  ${PARSE_COMM})
 
   #
-  # F) Get the MPI options
+  # E) Get the MPI options
   #
     
   PACKAGE_ADD_TEST_GET_NUM_PROCS_USED("${PARSE_NUM_MPI_PROCS}" NUM_PROCS_USED)
@@ -312,7 +307,7 @@ FUNCTION(PACKAGE_ADD_TEST EXE_NAME)
   ENDIF()
 
   #
-  # G) Add the tests
+  # F) Add the tests
   #
 
   IF (NOT ADD_SERIAL_TEST AND NOT ADD_MPI_TEST)
@@ -320,21 +315,23 @@ FUNCTION(PACKAGE_ADD_TEST EXE_NAME)
   ENDIF()
 
   IF (TPL_ENABLE_MPI)
-    SET(TEST_NAME "${TEST_NAME}_MPI_${NUM_PROCS_USED}")
+    SET(MPI_NAME_POSTFIX "_MPI_${NUM_PROCS_USED}")
+  ELSE()
+    SET(MPI_NAME_POSTFIX "")
   ENDIF()
 
   IF (PARSE_ARGS)
 
-    # G.1) Add tests with simple lists of arguments
+    # F.1) Add tests with simple lists of arguments
   
     SET(COUNTER 0)
   
     FOREACH(PARSE_ARG ${PARSE_ARGS})
   
       IF(${NUM_PARSE_ARGS} EQUAL 1)
-        SET(TEST_NAME_INSTANCE "${TEST_NAME}")
+        SET(TEST_NAME_INSTANCE "${TEST_NAME}${MPI_NAME_POSTFIX}")
       ELSE()
-        SET(TEST_NAME_INSTANCE "${TEST_NAME}_${COUNTER}")
+        SET(TEST_NAME_INSTANCE "${TEST_NAME}_${COUNTER}${MPI_NAME_POSTFIX}")
       ENDIF()
       IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
         MESSAGE(STATUS "TEST_NAME = ${TEST_NAME_INSTANCE}")
@@ -355,7 +352,7 @@ FUNCTION(PACKAGE_ADD_TEST EXE_NAME)
 
   ELSEIF (PARSE_POSTFIX_AND_ARGS_0)
 
-    # G.2) Add tests with different postfixes for each set of arguments
+    # F.2) Add tests with different postfixes for each set of arguments
 
     FOREACH( POSTFIX_AND_ARGS_IDX RANGE ${MAX_NUM_POSTFIX_AND_ARGS_IDX})
 
@@ -373,7 +370,7 @@ FUNCTION(PACKAGE_ADD_TEST EXE_NAME)
       SET( INARGS  ${POSTFIX_AND_ARGS} ) # Initially contains postfix as ele 0
       LIST( REMOVE_AT  INARGS  0 ) # Strip off the postfix name
 
-      SET(TEST_NAME_INSTANCE "${TEST_NAME}_${POSTFIX}")
+      SET(TEST_NAME_INSTANCE "${TEST_NAME}_${POSTFIX}${MPI_NAME_POSTFIX}")
 
       PACKAGE_ADD_TEST_ADD_TEST_ALL( ${TEST_NAME_INSTANCE}
         "${EXECUTABLE_PATH}"  "${NUM_PROCS_USED}" ${PARSE_CREATE_WORKING_DIR}

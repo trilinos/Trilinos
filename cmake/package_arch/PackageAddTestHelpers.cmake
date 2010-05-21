@@ -6,6 +6,7 @@ INCLUDE(GlobalSet)
 INCLUDE(AppendGlobalSet)
 INCLUDE(PrintVar)
 INCLUDE(AdvancedSet)
+INCLUDE(MessageWrapper)
 
 
 #
@@ -119,11 +120,13 @@ ENDFUNCTION()
 #
 # Determine if to add the test or not based on CATEGORIES arguments
 #
-#
-# Warning: Argument CATEGORIES is passed in implicitly due to scoping of CMake.
+# Warning: Argument PARSE_CATEGORIES is passed in implicitly due to scoping of
+# CMake.
 # 
 
 FUNCTION(PACKAGE_ADD_TEST_PROCESS_CATEGORIES  ADD_THE_TEST_OUT)
+
+  PACKAGE_ARCH_ASSERT_VALID_CATEGORIES(${PARSE_CATEGORIES})
 
   SET(ADD_THE_TEST FALSE)
 
@@ -137,14 +140,14 @@ FUNCTION(PACKAGE_ADD_TEST_PROCESS_CATEGORIES  ADD_THE_TEST_OUT)
 
   # Process the test categories
   ASSERT_DEFINED(${PROJECT_NAME}_TEST_CATEGORIES)
-  FOREACH(CATEGORY_IN ${${PROJECT_NAME}_TEST_CATEGORIES})
-    #PRINT_VAR(CATEGORY_IN)
+  FOREACH(CATEGORY_USR_SET ${${PROJECT_NAME}_TEST_CATEGORIES})
+    #PRINT_VAR(CATEGORY_USR_SET)
     #PRINT_VAR(PARSE_CATEGORIES)
     FOREACH(CATEGORY ${PARSE_CATEGORIES})
-      IF (CATEGORY_IN STREQUAL ${CATEGORY})
+      IF (CATEGORY STREQUAL ${CATEGORY_USR_SET})
         # Exact match for the category, add the test
         SET(ADD_THE_TEST TRUE)
-      ELSEIF(CATEGORY_IN STREQUAL "NIGHTLY" AND CATEGORY STREQUAL "BASIC")
+      ELSEIF(CATEGORY STREQUAL "BASIC" AND CATEGORY_USR_SET STREQUAL "NIGHTLY")
         # All basic tests are run as part of nighly tests
         SET(ADD_THE_TEST TRUE)
       ELSE()

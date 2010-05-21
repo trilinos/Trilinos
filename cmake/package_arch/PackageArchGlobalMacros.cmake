@@ -2,6 +2,7 @@
 INCLUDE(PackageArchProcessPackagesAndDirsLists)
 INCLUDE(PackageArchAdjustPackageEnables)
 INCLUDE(PackageArchSetupMPI)
+INCLUDE(PackageArchCategories)
 
 INCLUDE(AddOptionAndDefine)
 INCLUDE(AdvancedOption)
@@ -123,8 +124,9 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
     "Allow secondary stable packages and code to be implicitly enabled." )
   
   ADVANCED_SET(${PROJECT_NAME}_TEST_CATEGORIES NIGHTLY CACHE STRING
-    "List of categories of tests to enable, BASIC, NIGHLY, or PERFORMANCE (default NIGHLY)."
+    "List of categories of tests to enable: '${${PROJECT_NAME}_VALID_CATEGORIES_STR}' (default NIGHLY)."
     )
+  PACKAGE_ARCH_ASSERT_VALID_CATEGORIES(${${PROJECT_NAME}_TEST_CATEGORIES})
   
   ADVANCED_SET(${PROJECT_NAME}_REL_CPU_SPEED 1.0 CACHE STRING
     "Relative CPU speed of the computer used to scale performance tests (default 1.0)."

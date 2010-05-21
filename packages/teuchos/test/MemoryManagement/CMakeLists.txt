@@ -182,24 +182,14 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 
 
 # Build the executable no matter what
-PACKAGE_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   RCP_PerformanceTests
+  NAME_POSTFIX basic
   CATEGORIES BASIC PERFORMANCE
-  COMM serial mpi  
   SOURCES
     RCP_Performance_UnitTests.cpp
     ${PACKAGE_SOURCE_DIR}/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
-  )
-
-# This form of the test just makes sure that it runs without crashing
-# basically
-PACKAGE_ADD_TEST(
-  RCP_PerformanceTests
-  CATEGORIES BASIC PERFORMANCE
-  COMM serial mpi
   NUM_MPI_PROCS 1
-  POSTFIX_AND_ARGS_0 base
-    --show-test-details=ALL --max-array-size=100000
   STANDARD_PASS_OUTPUT
   )
 
@@ -222,24 +212,14 @@ PACKAGE_ADD_TEST(
 #
 
 # Build the executable no matter what
-PACKAGE_ADD_EXECUTABLE(
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   Array_PerformanceTests
+  NAME_POSTFIX basic
   CATEGORIES BASIC PERFORMANCE
-  COMM serial mpi  
   SOURCES
     Array_Performance_UnitTests.cpp
     ${PACKAGE_SOURCE_DIR}/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
-  )
-
-# This form of the test just makes sure that it runs without crashing
-# basically
-PACKAGE_ADD_TEST(
-  Array_PerformanceTests
-  CATEGORIES BASIC PERFORMANCE
-  COMM serial mpi
   NUM_MPI_PROCS 1
-  POSTFIX_AND_ARGS_0 base
-    --show-test-details=ALL --max-array-size=100000
   STANDARD_PASS_OUTPUT
   )
 
