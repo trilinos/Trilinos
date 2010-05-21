@@ -2,11 +2,11 @@
 Submitting a TrilinosDriver dashboard:
 ======================================
 
-First, manually ensure that the following prerequisites are satisfied:
-
 
 A) Prerequisites:
 =================
+
+First, manually ensure that the following prerequisites are satisfied:
 
 python version 2.4 or later
 eg or git version 1.6.x or later
@@ -80,7 +80,7 @@ definition for TRILINOS_DRIVER_ADD_DASHBOARD in TrilinosDriverSupport.cmake.
 WARNING: The name of the build (the first argument, e.g. MPI_OPT) should be
 the same as the name of the build set in the *.cmake driver file (the second
 argument, e.g. ctest_mac_nightly_mpi_opt_s903186.cmake).  There are no checks
-in place to make sure that this is true.  You have been warned.
+in place to make sure that this is true.  You have been warned!
 
 Next, add a cron_driver.sh for your machine. (Or cron_driver.bat on Windows.)
 
@@ -105,51 +105,136 @@ Typical cron_driver.bat contents:
   python "%~dp0..\cron_driver.py"
 
 
-D) Run it manually:
-===================
+D) Run the scripts manually to test them:
+=========================================
 
-The first time you run this it *will* take a long time because it will do a
-separate git clone of the Trilinos repository for each script that it runs.
+Before setting up the final cron job, you should test the individual
+CTest driver scripts and the outer TrilinosDriver script.
 
-Once you are done with the initial run, you can test it out interactively in a
-rapid, iterative process by setting up the following environment in your
-calling cron_driver script:
 
-export TDD_DO_SUBMIT=FALSE # If you don't want to submit outer stuff
-export CTEST_DO_SUBMIT=FALSE # If you don't want to submit inner stuff
-export CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE
-export Trilinos_PACKAGES=Teuchos # Just a single package to be fast ...
-export TDD_FORCE_CMAKE_INSTALL=1 # If you want to force outer CMake upgrade
-(but use set, rather than export, on Windows...)
+D.1) Test out individual CTest dashboard builds first:
+------------------------------------------------------
+
+Before running your outer cron driver script, you would be wise to
+first test out your individual CTest driver scripts (e.g. MPI_OPT,
+SERIAL_DEBUG, etc.).  You can test individual basic ctest driver
+scripts to clone Trilinos and create the BUILD directroy by creating
+your own temp base directory and then overridding CTEST_DASHBOARD_ROOT
+for example as:
+
+  $ mkdir MOCK_MPI_OPT
+  $ cd MOCK_MPI_OPT
+  $ env  CTEST_DASHBOARD_ROOT=$PWD  Trilinos_PACKAGES=Teuchos  CTEST_TEST_TYPE=Experimental \
+     CTEST_DO_SUBMIT=OFF \
+     ctest -VV -S ${TRILINOS_SRC}/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
+
+Running the above will clone Trilinos into MOCK_MPI_OPT/Trilinos and
+will create the build directory in MOCK_MPI_OPT/BUILD.  After the
+initial clone performed above, you can speed up subsequent testing by
+additionally setting CTEST_DO_UPDATES=FALSE and
+CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE on the environment.  You
+can keep running this 'env ... ctest -S ...' command until you get
+everything working.  All of the info needed to debug problems should
+be present in the output from 'ctest -VV -S' (which you should pipe to
+a file and then examine).
+
+After the local CTest processes are working, just to make sure the
+submit works, you can run a final trial build with:
+
+  $ env  CTEST_DASHBOARD_ROOT=$PWD  Trilinos_PACKAGES=Teuchos  CTEST_TEST_TYPE=Experimental \
+     CTEST_DO_SUBMIT=ON  CTEST_DO_UPDATES=FALSE  CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE \
+     ctest -VV -S ${TRILINOS_SRC}/cmake/ctest/drivers/s903186/ctest_mac_nightly_mpi_opt_s903186.cmake
+
+If this submits to the 'Experimental' CDash dashbaord, you should be
+in good shape for the nightly test.  If you can't find you
+experimental build on the CDash dashboard, then something is wrong.
+
+
+D.2) Testing the outer cron driver script:
+------------------------------------------
+
+To test this script manually, so something like:
 
   Linux/Mac:
+
   $ cd ~
   $ cd T/Trilinos/cmake/ctest/drivers/MACHINE_NAME
   $ ./cron_driver.sh
 
   on Windows:
+
   $ cd \
   $ cd T\Trilinos\cmake\ctest\drivers\MACHINE_NAME
   $ cron_driver.bat
 
-Work out any kinks you may have in your environment and your scripts.
+The first time you run this it *will* take a long time because it will
+do a separate git clone of the Trilinos repository for each ctest
+dashboard script that it runs.  In this first run, make it go faster
+by setting Trilinos_PACKAGES=Teuchos and CTEST_DO_SUBMIT=FALSE on the
+environment such as:
+
+  $ cd ~
+  $ cd T/Trilinos/cmake/ctest/drivers/MACHINE_NAME
+  $ env  Trilinos_PACKAGES=Teuchos  CTEST_DO_SUBMIT=FALSE  TDD_DO_SUBMIT=FALSE \
+      CTEST_TEST_TYPE=Experimental \
+      ./cron_driver.sh
+
+Once you are done with the initial run, you can test it out
+interactively in a rapid, iterative process by setting up the
+following additionial environment variables:
+
+  $ env  Trilinos_PACKAGES=Teuchos  CTEST_DO_SUBMIT=FALSE  TDD_DO_SUBMIT=FALSE \
+      CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE  CTEST_TEST_TYPE=Experimental \
+      TDD_FORCE_CMAKE_INSTALL=1 # If you want to force outer CMake upgrade \
+      ./cron_driver.sh
+
+(of course you must use set commands on Windows).
+
+Work out any kinks you may have in your environment and your scripts
+by running this over and over again.
+
+Once you are confident that your driver script is working correctly,
+you should try to run this as a cron job using the command (see the
+entire command below in the "cron driver" section):
+
+  $ env  Trilinos_PACKAGES=Teuchos  CTEST_DO_SUBMIT=ON  TDD_DO_SUBMIT=ON \
+      CTEST_START_WITH_EMPTY_BINARY_DIRECTORY=FALSE  CTEST_TEST_TYPE=Experimental \
+      TDD_FORCE_CMAKE_INSTALL=1 # If you want to force outer CMake upgrade \
+      ./cron_driver.sh
+
+Note the submits variables are turned on which means that the inner
+and outer submits will be performed to the Trilinos and TrilinosDriver
+dashboards, respectively.  If this submits to the CDash dashboards,
+you should be ready to set up your final cron job driver (see below).
+
+WARNING: Blow away all of the base dashboard directories that get
+created during this process before running the final cron job!  You
+must do this so that the correct Trilinos git nightly repository will
+get cloned in the inner CTest dashboards.  You would do this with:
+
+  $ cd ~/T
+  $ rm -rf MPI_DEBUG SERIAL_RELEASE ...
 
 
 E) Debugging problems:
 ======================
 
-When first getting the scripts to run, there can be problems that you will
-have to debug.  The output to the console from the cron_driver.py script is
-very sparse.  However, almost all of the output from the various stages are
-contained under the base test directory.
+Debugging the inner CTest dashbaords should be more straightforward as
+descrtibed in D.1 above.
 
-The build directory for the outer CTest TrilinosDriver is in:
+When first getting the outer TrilinosDriver script to run, there can
+be problems that you will have to debug.  The output to the console
+from the cron_driver.py script is very sparse but will be of some
+help.  Almost all of the output from the various stages are contained
+under the base build/test directory.  The base build directory for the
+outer CTest TrilinosDriver script is in:
 
-  T/TDD_BUILD
+  ~/T/TDD_BUILD
 
-You can find the output from the various configure, build, tests in:
+You can find the output from the various configure, build, tests in
+the date-specific subdirectory under:
 
-  T/TDD_BUILD/Testing/Temporary/
+  ~/T/TDD_BUILD/Testing/Temporary/
 
 Note that you will also find the output from the TrilinosCTestDriverCore.cmake
 script as the test output in:
@@ -162,15 +247,28 @@ Also, of course all of the output for each build case (BUILD_CASE) is in:
 
 where BUILD_CASE = MPI_OPT, SERIAL_DEBUG etc.
 
+Good luck in debugging!
+
 
 F) Set up a crontab entry (or a scheduled task on Windows):
 ===========================================================
 
-MAILTO=youremail@yourorg.org
-MM HH * * * bash ~/T/Trilinos/cmake/ctest/drivers/MACHINE_NAME/cron_driver.sh || cat
+After you have successfully manually testing the inner and outer
+driver scripts, you will be ready to create the final crontab entry.
+You can set this with 'crontab -e' or install the cron driver script
+in whole.
 
-Use a value for MM and HH that is in the very near future and then let the
-script run from the cron job.
+The contents of your cron driver should look like:
+
+  MAILTO=youremail@yourorg.org
+  10 00 * * * cd  ~/T/Trilinos/cmake/ctest/drivers/MACHINE_NAME && ./cron_driver.sh &> ~/T/cron_driver.log
+
+Typical values are MM=10 and HH=00 which starts things off at 10
+minutes after midnight.  The Trilinos testing day time may move
+earlier (e.g. 8 PM MST) but it will not start after Midnight so that
+value is safe.  You can start your cron driver at any time after the
+beginning of a new testing day (as defined by CTest/CDash
+configuration).
 
 
 G) Commit changes to the driver scripts:
@@ -179,12 +277,26 @@ G) Commit changes to the driver scripts:
 You must commit and push changes in Trilinos/cmake/ctest/drivers into the main
 Trilinos git repository.  To do this, do:
 
-  $ cd $DASHBOARD_BASE_DIR/Trilinos
+  $ cd ~/T/Trilinos
   $ eg remote add trilinos software:/space/git/Trilinos
   $ eg pull trilinos
   $ eg commit
   $ eg rebase --against trilinos/origin
   $ eg push
 
-Hopefully, that should push you changes back and you should be ready to let
-the cron job run on its own every day.
+Hopefully, that should push you changes back and you should be ready
+to let the cron job run on its own every day.  If that does not work,
+cherry-pick your commits into a different local Trilinos repo cloned
+directly from software:/space/git/Trilinos and do the push from there
+(this is what I have had to do in the past).  Do this as:
+
+  $ cd $SOME_OTHER_BASE/Trilinos
+  $ eg remote add nighly_cdash ~/T/Trilinos
+  $ eg pull nighly_cdash master
+  $ eg pull
+  $ eg rebase --against origin/master
+  $ eg push
+
+Of course, if you change anything other than what is in your
+driver/MACHINE_NAME directory, you should use the checkin-test.py
+script to test and push your commits.
