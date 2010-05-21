@@ -2,14 +2,22 @@
 #
 # Trilinos platform-independent ctest core driver
 #
-# This assumes that the script driving this will always be in the
-# directory:
+# This assumes that the outer CTest script driving this CTest code
+# will always be in a sub-directory of:
 #
 #   Trilinos/cmake/ctest
 #
-# which is set to CTEST_SCRIPT_DIRECTORY.
+# which is set to CTEST_SCRIPT_DIRECTORY automatically by CTest.
 #
-# All paths are relative to this directory.
+# All include and module paths are relative to this assumed directory
+# structure.
+#
+# This script can be run from anywhere by by default and will find the
+# right related CMake files to run but it requires that the client set
+# CTEST_DASHBOARD_ROOT (or override this in the env) before running
+# this script.  The varible CTEST_DASHBOARD_ROOT determines where the
+# Trilinos source code will be cloned to and determines where the
+# build directly will be put.
 #
 
 
@@ -384,7 +392,8 @@ FUNCTION(TRILINOS_CTEST_DRIVER)
   # The name of the site in the dashboard (almost never need to override this)
   SET_DEFAULT_AND_FROM_ENV( CTEST_SITE ${CTEST_SITE_DEFAULT} )
 
-  # The root of the dasbhoard (almost never need to override this)
+  # The root of the dasbhoard where Trilinos will be cloned and the
+  # BUILD directory will be create (only override for separate testing)
   SET_DEFAULT_AND_FROM_ENV( CTEST_DASHBOARD_ROOT "" )
 
   # The build type (e.g. DEBUG, RELEASE, NONE)
