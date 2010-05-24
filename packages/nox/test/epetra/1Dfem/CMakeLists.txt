@@ -190,15 +190,37 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA)
   ENDIF()
 
   IF(NOX_ENABLE_Stratimikos)
-    PACKAGE_ADD_EXECUTABLE_AND_TEST(
-      1DfemStratimikos
-      SOURCES 
-      1DfemInterface.H
-      1DfemInterface.C
-      1DfemStratimikos.C
-      COMM serial mpi
-      PASS_REGULAR_EXPRESSION "Test passed!"
-      )
+    IF(NOX_ENABLE_Belos)
+      PACKAGE_ADD_EXECUTABLE_AND_TEST(
+        1DfemStratimikos
+        SOURCES 
+        1DfemInterface.H
+        1DfemInterface.C
+        1DfemStratimikos.C
+        COMM serial mpi
+        PASS_REGULAR_EXPRESSION "Test passed!"
+        )
+
+      PACKAGE_ADD_EXECUTABLE_AND_TEST(
+        1DfemStratimikosReuse
+        SOURCES 
+        1DfemInterface.H
+        1DfemInterface.C
+        1DfemStratimikosReuse.C
+        COMM serial mpi
+        PASS_REGULAR_EXPRESSION "Test passed!"
+        )
+
+      PACKAGE_ADD_EXECUTABLE_AND_TEST(
+        1DfemStratimikosInexact
+        SOURCES 
+        1DfemInterface.H
+        1DfemInterface.C
+        1DfemStratimikosInexact.C
+        COMM serial mpi
+        PASS_REGULAR_EXPRESSION "Test passed!"
+        )
+    ENDIF()
 
     PACKAGE_ADD_EXECUTABLE_AND_TEST(
       1DfemStratimikosPrec
@@ -206,39 +228,6 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA)
       1DfemInterface.H
       1DfemInterface.C
       1DfemStratimikosPrec.C
-      COMM serial mpi
-      PASS_REGULAR_EXPRESSION "Test passed!"
-      )
-
-    PACKAGE_ADD_EXECUTABLE_AND_TEST(
-      1DfemStratimikosReuse
-      SOURCES 
-      1DfemInterface.H
-      1DfemInterface.C
-      1DfemStratimikosReuse.C
-      COMM serial mpi
-      PASS_REGULAR_EXPRESSION "Test passed!"
-      )
-
-    PACKAGE_ADD_EXECUTABLE_AND_TEST(
-      1DfemStratimikosInexact
-      SOURCES 
-      1DfemInterface.H
-      1DfemInterface.C
-      1DfemStratimikosInexact.C
-      COMM serial mpi
-      PASS_REGULAR_EXPRESSION "Test passed!"
-      )
-  ENDIF()
-  
-  
-  IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_BELOS)
-    PACKAGE_ADD_EXECUTABLE_AND_TEST(
-      1DfemBelos
-      SOURCES 
-      1DfemInterface.H
-      1DfemInterface.C
-      1DfemBelos.C
       COMM serial mpi
       PASS_REGULAR_EXPRESSION "Test passed!"
       )
