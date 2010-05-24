@@ -1,37 +1,37 @@
 /*! 
-    \mainpage Trilinos/Tpetra: Templated Linear Algebra Services Package
+\mainpage Trilinos/Tpetra: Templated Linear Algebra Services Package
 
-   \section tpetra_intro Introduction to Tpetra
+\section tpetra_intro Introduction to Tpetra
 
-Tpetra is an attempt at applying generic algorithm techniques to the
+%Tpetra is an attempt at applying generic algorithm techniques to the
 serial and parallel linear algebra libraries of Epetra.  It is hoped that
-Tpetra will complement Epetra by providing an alternative foundation 
+%Tpetra will complement Epetra by providing an alternative foundation 
 for future Trilinos solvers.  The lessons learned and discoveries made 
-while creating Tpetra are also being applied to improving their Epetra cousins.
+while creating %Tpetra are also being applied to improving their Epetra cousins.
 
-Tpetra provides the same functionality as Epetra: the fundamental construction
+%Tpetra provides the same functionality as Epetra: the fundamental construction
 routines and services functions that are required for serial and parallel
-linear algebra libraries.  Unlike Epetra, Tpetra makes extensive use of
+linear algebra libraries.  Unlike Epetra, %Tpetra makes extensive use of
 templates and the Standard Template Library (STL).  This provides numerous
 benefits, including the ability to template the ordinal and scalar fields on
 any well-defined types, and the use of automatic resource allocation. 
 
-Tpetra captures a significant subset of the functionality present in the Epetra
+%Tpetra captures a significant subset of the functionality present in the Epetra
 package. Functionality not included is either a consequence of different design
-motivations or of Tpetra's status as a work in progress.
+motivations or of %Tpetra's status as a work in progress.
 
 \section startup Overview of Tpetra
 
 \subsection types Templated Types in Tpetra
 
-All of all classes in Tpetra utilize templates, which allows the user to
+All of all classes in %Tpetra utilize templates, which allows the user to
 specify any type they want. In some cases, the choice of data type allows
 increased functionality. For example, 64-bit ordinals allow for problem sizes
 to break the 2 billion element barrier present in Epetra, whereas complex
 scalar types allow the native description and solution of complex-valued
 problems.
 
-Most of the classes in Tpetra are templated according to the data types which constitute the class. 
+Most of the classes in %Tpetra are templated according to the data types which constitute the class. 
 These are the following:
     - \c Scalar: A \c Scalar is the data structure used for storing values.
        This is the type most likely to be changed by many users. The most common use cases are \c float,
@@ -59,7 +59,7 @@ be used to communicate values of different type.
 
 \subsection formulations Tpetra Classes
 
-Tpetra contains a number of classes. The primary parallel classes, employed by most users, are:
+%Tpetra contains a number of classes. The primary parallel classes, employed by most users, are:
 
  -  Map class: Tpetra::Map <br>
      Contain information used to distribute vectors, matrices and other objects. This class is analogous
@@ -80,7 +80,7 @@ Tpetra contains a number of classes. The primary parallel classes, employed by m
 
  - Platform classes: Tpetra::HybridPlatform, Tpetra::SerialPlatform, Tpetra::MpiPlatform, Tpetra::DefaultPlatform.<br>
    Platform objects are not required for using Tpetra. However, they provide functionality needed to 
-   use other Tpetra classes. Specifically, platform objects allow the easy creation of Teuchos::Comm and 
+   use other %Tpetra classes. Specifically, platform objects allow the easy creation of Teuchos::Comm and 
    Kokkos node objects needed to create Tpetra::Map objects. 
      - Tpetra::DefaultPlatform specifies and creates the default platform object (one of the three platform objects below), based on 
        configure time specifications.
@@ -93,7 +93,7 @@ Tpetra contains a number of classes. The primary parallel classes, employed by m
 
 \subsection trilinos Trilinos and Tpetra
 
-Tpetra can be used mostly as a stand-alone package, with explicit dependencies on Teuchos and Kokkos. There are adapters allowing the 
-use of Tpetra operators and multivectors in both the Belos linear solver package and the Anasazi eigensolver package.
+%Tpetra can be used mostly as a stand-alone package, with explicit dependencies on Teuchos and Kokkos. There are adapters allowing the 
+use of %Tpetra operators and multivectors in both the Belos linear solver package and the Anasazi eigensolver package.
 
 */
