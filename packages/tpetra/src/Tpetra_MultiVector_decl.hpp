@@ -322,6 +322,15 @@ namespace Tpetra {
 
   }; // class MultiVector
 
+  /** \brief Non-member function to create a MultiVector from a specified Map.
+
+      \relates MultiVector
+   */
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP< const MultiVector<LocalOrdinal,GlobalOrdinal,Node> >
+  createMultiVector(const Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, size_t numVectors);
+
+
 } // namespace Tpetra
 
 

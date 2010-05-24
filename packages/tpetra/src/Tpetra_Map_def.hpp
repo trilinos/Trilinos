@@ -774,6 +774,22 @@ namespace Tpetra {
 
 template <class LocalOrdinal, class GlobalOrdinal>
 Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
+Tpetra::createUniformContigMap(global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
+  return createUniformContigMapWithNode<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType>(numElements, comm, Kokkos::DefaultNode::getDefaultNode());
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
+Tpetra::createUniformContigMapWithNode(global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP<Node> &node) {
+  Teuchos::RCP< Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map;
+  map = rcp( new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(numElements,                                    // num elements, global and local
+                                                              Teuchos::OrdinalTraits<GlobalOrdinal>::zero(),  // index base is zero
+                                                              comm, GloballyDistributed, node) );
+  return map.getConst();
+}
+
+template <class LocalOrdinal, class GlobalOrdinal>
+Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
 Tpetra::createLocalMap(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
   return Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType>(numElements, comm, Kokkos::DefaultNode::getDefaultNode());
 }
@@ -786,6 +802,52 @@ Tpetra::createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teu
                                                                        Teuchos::OrdinalTraits<GlobalOrdinal>::zero(),  // index base is zero
                                                                        comm, LocallyReplicated, node) );
   return map.getConst();
+}
+
+template <class LocalOrdinal, class GlobalOrdinal>
+Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
+Tpetra::createContigMap(Tpetra::global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm) {
+  return Tpetra::createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType>(numElements, localNumElements, comm, Kokkos::DefaultNode::getDefaultNode());
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
+Tpetra::createContigMapWithNode(Tpetra::global_size_t numElements, size_t localNumElements, 
+                                const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) {
+  Teuchos::RCP< Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map;
+  map = rcp( new Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>(numElements,localNumElements,
+                                                              Teuchos::OrdinalTraits<GlobalOrdinal>::zero(),  // index base is zero
+                                                              comm, node) );
+  return map.getConst();
+}
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
+Tpetra::createWeightedContigMapWithNode(int myWeight, Tpetra::global_size_t numElements, 
+                                        const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node) {
+  Teuchos::RCP< Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > map;
+  int sumOfWeights, elemsLeft, localNumElements;
+  const int numImages = comm->getSize(), 
+            myImageID = comm->getRank();
+  Teuchos::reduceAll<int>(*comm,Teuchos::REDUCE_SUM,myWeight,Teuchos::outArg(sumOfWeights));
+  const double myShare = ((double)myWeight) / ((double)sumOfWeights);
+  localNumElements = (int)std::floor( myShare * ((double)numElements) );
+  // std::cout << "numElements: " << numElements << "  myWeight: " << myWeight << "  sumOfWeights: " << sumOfWeights << "  myShare: " << myShare << std::endl;
+  Teuchos::reduceAll<int>(*comm,Teuchos::REDUCE_SUM,localNumElements,Teuchos::outArg(elemsLeft));
+  elemsLeft = numElements - elemsLeft;
+  // std::cout << "(before) localNumElements: " << localNumElements << "  elemsLeft: " << elemsLeft << std::endl;
+  // i think this is true. just test it for now.
+  TEST_FOR_EXCEPT(elemsLeft < -numImages || numImages < elemsLeft);
+  if (elemsLeft < 0) {
+    // last elemsLeft nodes lose an element
+    if (myImageID >= numImages-elemsLeft) --localNumElements;
+  }
+  else if (elemsLeft > 0) {
+    // first elemsLeft nodes gain an element
+    if (myImageID < elemsLeft) ++localNumElements;
+  }
+  // std::cout << "(after) localNumElements: " << localNumElements << std::endl;
+  return createContigMapWithNode<LocalOrdinal,GlobalOrdinal,Node>(numElements,localNumElements,comm,node);
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -811,6 +873,19 @@ bool operator!= (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const
   \
   template Teuchos::RCP< const Map<LO,GO,NODE> > \
   createLocalMapWithNode<LO,GO,NODE>(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< NODE > &node); \
+  \
+  template Teuchos::RCP< const Map<LO,GO,NODE> > \
+  createContigMapWithNode<LO,GO,NODE>(global_size_t numElements, size_t localNumElements, \
+                                      const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< NODE > &node); \
+  \
+  template Teuchos::RCP< const Map<LO,GO,NODE> > \
+  createUniformContigMapWithNode<LO,GO,NODE>(global_size_t numElements, \
+                                             const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< NODE > &node); \
+  \
+  template Teuchos::RCP< const Map<LO,GO,NODE> > \
+  createWeightedContigMapWithNode<LO,GO,NODE>(int thisNodeWeight, global_size_t numElements, \
+                                              const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< NODE > &node); \
+
 
 
 #endif // TPETRA_MAP_DEF_HPP

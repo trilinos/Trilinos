@@ -31,6 +31,7 @@ namespace {
   using Tpetra::ADD;
   using std::ostream_iterator;
   using std::endl;
+  using Tpetra::createContigMap;
 
   typedef DefaultPlatform::DefaultPlatformType::NodeType Node;
 
@@ -63,7 +64,6 @@ namespace {
   // 
 
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( CrsGraphImportExport, doImport, Ordinal ) {
-    const Ordinal indexBase = OrdinalTraits<Ordinal>::zero();
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -79,11 +79,11 @@ namespace {
     if (myImageID == 0) src_num_local_elements = numImages*target_num_local_elements;
 
     // create Maps
-    RCP<const Map<Ordinal,Ordinal,Node> > src_map = rcp(new Map<Ordinal,Ordinal,Node>(INVALID,src_num_local_elements,indexBase,comm) ),
-                                          target_map = rcp(new Map<Ordinal,Ordinal,Node>(INVALID, target_num_local_elements,indexBase,comm) );
+    RCP<const Map<Ordinal,Ordinal,Node> >    src_map = createContigMap<Ordinal,Ordinal>(INVALID,   src_num_local_elements,comm), 
+                                          target_map = createContigMap<Ordinal,Ordinal>(INVALID,target_num_local_elements,comm);
 
     // create CrsGraph objects
-    RCP<CrsGraph<Ordinal,Ordinal,Node> > src_graph = rcp(new CrsGraph<Ordinal,Ordinal,Node>(src_map, 1));
+    RCP<CrsGraph<Ordinal,Ordinal,Node> >    src_graph = rcp(new CrsGraph<Ordinal,Ordinal,Node>(   src_map, 1));
     RCP<CrsGraph<Ordinal,Ordinal,Node> > target_graph = rcp(new CrsGraph<Ordinal,Ordinal,Node>(target_map, 1));
 
     //Create a simple diagonal src-graph:
@@ -120,10 +120,10 @@ namespace {
     if (myImageID%2 == 0) src_num_local = 3;
     Ordinal target_num_local = 4;
 
-    RCP<const Map<Ordinal,Ordinal,Node> > src_map2 = rcp(new Map<Ordinal,Ordinal,Node>(INVALID,src_num_local,indexBase,comm) ),
-                                          target_map2 = rcp(new Map<Ordinal,Ordinal,Node>(INVALID,target_num_local,indexBase,comm) );
+    RCP<const Map<Ordinal,Ordinal,Node> >    src_map2 = createContigMap<Ordinal,Ordinal>(INVALID,   src_num_local_elements,comm),  
+                                          target_map2 = createContigMap<Ordinal,Ordinal>(INVALID,target_num_local_elements,comm);  
 
-    RCP<CrsGraph<Ordinal,Ordinal,Node> > src_graph2 = rcp(new CrsGraph<Ordinal,Ordinal,Node>(src_map2, 24));
+    RCP<CrsGraph<Ordinal,Ordinal,Node> >    src_graph2 = rcp(new CrsGraph<Ordinal,Ordinal,Node>(   src_map2, 24));
     RCP<CrsGraph<Ordinal,Ordinal,Node> > target_graph2 = rcp(new CrsGraph<Ordinal,Ordinal,Node>(target_map2, 24));
 
     //This time make src_graph2 be a full lower-triangle:

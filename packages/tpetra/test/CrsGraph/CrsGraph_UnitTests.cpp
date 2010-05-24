@@ -25,6 +25,7 @@ namespace {
   using Tpetra::DoOptimizeStorage;
   using Tpetra::DoNotOptimizeStorage;
   using Tpetra::DefaultPlatform;
+  using Tpetra::createContigMap;
   using Tpetra::global_size_t;
   using std::sort;
   using Teuchos::arrayView;
@@ -118,9 +119,8 @@ namespace {
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    const GO indexBase = 0;
     const size_t numLocal = 10;
-    RCP<const Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,indexBase,comm) );
+    RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,numLocal,comm);
     {
       // bad constructor
       TEST_THROW( GRAPH badgraph(map,INVALID), std::runtime_error ); // allocation hint must be >= 0
@@ -151,9 +151,8 @@ namespace {
     const int myImageID = comm->getRank();
     const int numImages = comm->getSize();
     // create a Map
-    const GO indexBase = 0;
     const size_t numLocal = 10;
-    RCP<const Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,indexBase,comm) );
+    RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,numLocal,comm);
     {
       Array<GO> gids(1);
       gids[0] = myImageID*numLocal+numLocal;    // off this node, except on the last proc, where it is off the map
@@ -196,9 +195,8 @@ namespace {
     const int myImageID = comm->getRank();
     const int numImages = comm->getSize();
     // create a Map
-    const GO indexBase = 0;
     const size_t numLocal = 10;
-    RCP<const Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,indexBase,comm) );
+    RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,numLocal,comm);
     {
       // bad lids on the last node, not in the column map, ignored
       Array<LO> lids(1);
@@ -238,7 +236,7 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map with numLocal entries per node
     const size_t numLocal = 10;
-    RCP<Map<LO,GO> > map = rcp( new Map<LO,GO>(INVALID,numLocal,0,comm) );
+    RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,numLocal,comm);
     {
       // create static-profile matrix, fill-complete without inserting (and therefore, without allocating)
       GRAPH graph(map,1,StaticProfile);
@@ -259,9 +257,8 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
     // create a Map
-    const GO indexBase = 0;
     const size_t numLocal = 10;
-    RCP<const Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,indexBase,comm) );
+    RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,numLocal,comm);
     {
       Array<LO> lids(1);
       lids[0] = myImageID;
@@ -296,9 +293,8 @@ namespace {
     const int numImages = comm->getSize();
     if (numImages < 2) return;
     // create a Map, one row per processor
-    const GO indexBase = 0;
     const size_t numLocal = 1;
-    RCP<const Map<LO,GO,Node> > rmap = rcp( new Map<LO,GO,Node>(INVALID,numLocal,indexBase,comm) );
+    RCP<const Map<LO,GO> > rmap = createContigMap<LO,GO>(INVALID,numLocal,comm);
     GO myrowind = rmap->getGlobalElement(0);
     // specify the column map to control ordering
     // construct tridiagonal graph
@@ -379,9 +375,8 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
     // create a Map, one row per processor
-    const GO indexBase = 0;
     const size_t numLocal = 1;
-    RCP<const Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,indexBase,comm) );
+    RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,numLocal,comm);
     {
       // add too many entries to a static graph
       // let node i contribute to row i+1, where node the last node contributes to row 0
@@ -408,9 +403,8 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     int numImages = size(*comm);
     // create a Map
-    const GO indexBase = 0;
     const size_t numLocal = 10;
-    RCP<const Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,indexBase,comm) );
+    RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,numLocal,comm);
     // create the empty graph
     RCP<RowGraph<LO,GO> > zero;
     {
@@ -453,9 +447,8 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     int numImages = size(*comm);
     // create a Map
-    const GO indexBase = 0;
     const size_t numLocal = 10;
-    RCP<const Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,indexBase,comm) );
+    RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,numLocal,comm);
     // create the empty graph
     RCP<RowGraph<LO,GO> > zero;
     {
@@ -497,9 +490,8 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     // create a Map, three rows per processor
-    const GO indexBase = 0;
     const size_t numLocal = 3;
-    RCP<const Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,indexBase,comm) );
+    RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,numLocal,comm);
     GO mymiddle = map->getGlobalElement(1);  // get my middle row
     for (int T=0; T<4; ++T) {
       ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : DynamicProfile;
@@ -555,9 +547,8 @@ namespace {
     const int myImageID = comm->getRank();
     const int numImages = comm->getSize();
     // create a Map, one row per processor
-    const GO indexBase = 0;
     const size_t numLocal = 1;
-    RCP<const Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,indexBase,comm) );
+    RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,numLocal,comm);
     GO myrowind = map->getGlobalElement(0);
     for (int T=0; T<4; ++T) {
       ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : DynamicProfile;
@@ -660,7 +651,7 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
     // create Map
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,static_cast<size_t>(3),0,comm) );
+    RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,3,comm);
     {
       GRAPH graph(map,1,StaticProfile);
       // test labeling

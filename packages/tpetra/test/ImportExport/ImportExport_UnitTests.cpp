@@ -34,6 +34,8 @@ namespace {
   using std::ostream_iterator;
   using std::endl;
 
+  using Tpetra::createContigMap;
+
   typedef DefaultPlatform::DefaultPlatformType::NodeType Node;
 
   bool testMpi = true;
@@ -65,13 +67,12 @@ namespace {
   // 
 
   TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( ImportExport, basic, Ordinal ) {
-    const Ordinal indexBase = OrdinalTraits<Ordinal>::zero();
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create Maps
-    RCP<const Map<Ordinal,Ordinal,Node> > source = rcp(new Map<Ordinal,Ordinal,Node>(INVALID,10,indexBase,comm) ),
-                                          target = rcp(new Map<Ordinal,Ordinal,Node>(INVALID, 5,indexBase,comm) );
+    RCP<const Map<Ordinal,Ordinal,Node> > source = createContigMap<Ordinal,Ordinal>(INVALID,10,comm),
+                                          target = createContigMap<Ordinal,Ordinal>(INVALID, 5,comm);
     // create Import object
     Import<Ordinal> importer(source, target);
     
@@ -99,7 +100,6 @@ namespace {
               myImageID = comm->getRank();
     if (numImages < 2) return;
     // create a Map
-    const Ordinal indexBase = OrdinalTraits<Ordinal>::zero();
     const size_t numLocal  = 1,
                  numVectors = 5;
     // my neighbors: myImageID-1, me, myImageID+1
@@ -108,8 +108,8 @@ namespace {
     neighbors.push_back(myImageID);
     if (myImageID != numImages-1) neighbors.push_back(myImageID+1);
     // two maps: one has one entries per node, the other is the 1-D neighbors
-    RCP<const Map<Ordinal,Ordinal,Node> > smap = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm) ),
-                                          tmap = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,neighbors(),indexBase,comm) );
+    RCP<const Map<Ordinal,Ordinal,Node> > smap = createContigMap<Ordinal,Ordinal>(INVALID,numLocal,comm),
+                                          tmap = rcp(new Map<Ordinal,Ordinal,Node>(INVALID,neighbors(),0,comm) );
     for (size_t tnum=0; tnum < 2; ++tnum) {
       RCP<MV> mvMine, mvWithNeighbors;
       // for tnum=0, these are contiguously allocated multivectors 
@@ -207,7 +207,6 @@ namespace {
               myImageID = comm->getRank();
     if (numImages < 2) return;
     // create a Map
-    const Ordinal indexBase = OrdinalTraits<Ordinal>::zero();
     const size_t numLocal = 1,
                numVectors = 5;
     // my neighbors: myImageID-1, me, myImageID+1
@@ -216,8 +215,8 @@ namespace {
     neighbors.push_back(myImageID);
     if (myImageID != numImages-1) neighbors.push_back(myImageID+1);
     // two maps: one has one entries per node, the other is the 1-D neighbors
-    RCP<const Map<Ordinal,Ordinal,Node> > smap = rcp(new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm) ),
-                                          tmap = rcp(new Map<Ordinal,Ordinal,Node>(INVALID,neighbors(),indexBase,comm) );
+    RCP<const Map<Ordinal,Ordinal,Node> > smap = createContigMap<Ordinal,Ordinal>(INVALID,numLocal,comm),
+                                          tmap = rcp(new Map<Ordinal,Ordinal,Node>(INVALID,neighbors(),0,comm) );
     for (size_t tnum=0; tnum < 2; ++tnum) {
       RCP<MV> mvMine, mvWithNeighbors;
       // for tnum=0, these are contiguously allocated multivectors 

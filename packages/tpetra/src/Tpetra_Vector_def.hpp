@@ -247,6 +247,12 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::RCP< Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+Tpetra::createLocalMapWithNode(const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > &map) {
+  return Tpetra::createMultiVector(map,1);
+}
+
 //
 // Explicit instantiation macro
 //

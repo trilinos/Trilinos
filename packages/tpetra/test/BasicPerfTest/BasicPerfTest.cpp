@@ -291,7 +291,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( BasicPerfTest, MatrixAndMultiVector, LO, GO, 
 template <class LO, class GO, class Scalar>
 void GenerateCrsProblem(int * xoff, int * yoff, int nrhs,
             const Platform<Scalar> &platform, 
-            RCP<Map<LO,GO> > &map,
+            RCP<const Map<LO,GO> > &map,
             RCP<CrsMatrix<Scalar,LO,GO> > &A,
             RCP<MultiVector<Scalar,LO,GO> > &b,
             RCP<MultiVector<Scalar,LO,GO> > &bt,
@@ -310,7 +310,7 @@ void GenerateCrsProblem(int * xoff, int * yoff, int nrhs,
   myGlobalElements = null;
   GO numGlobalEquations = map->getNumGlobalEntries();
 
-  A = rcp(new CrsMatrix<Scalar,LO,GO>(*map,numPoints));
+  A = rcp(new CrsMatrix<Scalar,LO,GO>(map,numPoints));
 
   Array<GO> indices(numPoints);
   Array<Scalar>   values(numPoints);
@@ -346,14 +346,14 @@ void GenerateCrsProblem(int * xoff, int * yoff, int nrhs,
       << "Time to complete fill        = " << fillCompleteTime << endl;
 
   if (nrhs<=1) {  
-    b = rcp(new Vector<Scalar,LO,GO>(*map));
-    bt = rcp(new Vector<Scalar,LO,GO>(*map));
-    xexact = rcp(new Vector<Scalar,LO,GO>(*map));
+    b = createVector<Scalar>(map);
+    bt = createVector<Scalar>(map);
+    xexact = createVector<Scalar>(map);
   }
   else {
-    b = rcp(new MultiVector<Scalar,LO,GO>(*map, nrhs));
-    bt = rcp(new MultiVector<Scalar,LO,GO>(*map, nrhs));
-    xexact = rcp(new MultiVector<Scalar,LO,GO>(*map, nrhs));
+    b = createMultiVector<Scalar>(map,nrhs);
+    bt = createMultiVector<Scalar>(map,nrhs);
+    xexact = createMultiVector<Scalar>(map,nrhs);
   }
 
   xexact->random(); // Fill xexact with random values

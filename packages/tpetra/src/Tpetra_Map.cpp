@@ -4,8 +4,6 @@
 
 // #include "Tpetra_ExplicitInstantiationHelpers.hpp"
 
-#include "Tpetra_Map_def.hpp"
-
 #include <Kokkos_SerialNode.hpp>
 #if defined(HAVE_KOKKOS_TBB)
 #  include <Kokkos_TBBNode.hpp>
@@ -17,11 +15,17 @@
 #  include <Kokkos_ThrustGPUNode.hpp>
 #endif
 
+#include "Tpetra_Map_def.hpp"
+
 namespace Tpetra {
 
   // for default node
   template Teuchos::RCP< const Map<int,int,Kokkos::DefaultNode::DefaultNodeType> >
+  createContigMap<int,int>(size_t numElements, size_t numLocalElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
+  template Teuchos::RCP< const Map<int,int,Kokkos::DefaultNode::DefaultNodeType> >
   createLocalMap<int,int>(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
+  template Teuchos::RCP< const Map<int,int,Kokkos::DefaultNode::DefaultNodeType> >
+  createUniformContigMap<int,int>(global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
 
   TPETRA_MAP_INSTANT(int,int,Kokkos::SerialNode)
 #if defined(HAVE_KOKKOS_TBB)

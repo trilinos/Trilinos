@@ -98,6 +98,7 @@ namespace {
   using Tpetra::RowMatrix;
   using Tpetra::Import;
   using Tpetra::global_size_t;
+  using Tpetra::createContigMapWithNode;
   using Tpetra::createLocalMapWithNode;
   using Tpetra::createCrsMatrixSolveOp;
   using Tpetra::createCrsMatrixMultiplyOp;
@@ -256,7 +257,7 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
     const size_t numLocal = 10;
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,static_cast<GO>(0),comm,node) );
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
     MV mv1(map,1), mv2(map,2), mv3(map,3);
     // create the zero matrix
     RCP<RowMatrix<Scalar,LO,GO,Node> > zero;
@@ -292,7 +293,7 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map with numLocal entries per node
     const size_t numLocal = 10;
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm,node) );
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
     {
       // create static-profile matrix, fill-complete without inserting (and therefore, without allocating)
       MAT matrix(map,1,StaticProfile);
@@ -321,7 +322,7 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map with numLocal entries per node
     const size_t numLocal = 10;
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm,node) );
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
     {
       CrsGraph<LO,GO,Node> diaggraph(map,1,StaticProfile);
       // A pre-constructed graph must be fill complete before being used to construct a CrsMatrix
@@ -395,7 +396,7 @@ namespace {
     const size_t numImages = size(*comm);
     // create a Map with numLocal entries per node
     const size_t numLocal = 10;
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm,node) );
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
     {
       //////////////////////////////////
       // create a simple tridiagonal graph
@@ -527,7 +528,7 @@ namespace {
     const size_t numImages = size(*comm);
     // create a Map
     const size_t numLocal = 10;
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm,node) );
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
     CrsGraph<LO,GO,Node> graph(map,3,StaticProfile);
     for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {
       if (r == map->getMinAllGlobalIndex()) {
@@ -590,7 +591,7 @@ namespace {
     const size_t numImages = size(*comm);
     // create a Map
     const size_t numLocal = 10;
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm,node) );
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
     {
       MAT matrix(map,1,StaticProfile);
       // room for one on each row
@@ -639,7 +640,7 @@ namespace {
     const size_t numImages = size(*comm);
     // create a Map
     const size_t numLocal = 1; // change to 10
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm,node) );
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
     {
       // room for two on each row
       MAT matrix(map,2,StaticProfile);
@@ -701,9 +702,8 @@ namespace {
     const size_t myImageID = rank(*comm);
     if (numImages < 2) return;
     // create a Map, one row per processor
-    const GO indexBase = 0;
     const size_t numLocal = 1;
-    RCP<Map<LO,GO,Node> > rmap = rcp( new Map<LO,GO,Node>(INVALID,numLocal,indexBase,comm,node) );
+    RCP<const Map<LO,GO,Node> > rmap = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
     GO myrowind = rmap->getGlobalElement(0);
     // specify the column map to control ordering
     // construct tridiagonal graph
@@ -794,7 +794,7 @@ namespace {
     // create a Map
     const size_t numLocal = 10;
     const size_t numVecs  = 5;
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm,node) );
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
     MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
     mvrand.randomize();
     // create the identity matrix
@@ -881,8 +881,7 @@ namespace {
     // 
     // 
     const size_t numVecs  = 3;
-    RCP<Map<LO,GO,Node> > rowmap = rcp( new Map<LO,GO,Node>(INVALID,M,static_cast<GO>(0),comm,node) );
-    rowmap->setObjectLabel("Row Map");
+    RCP<const Map<LO,GO,Node> > rowmap = createContigMapWithNode<LO,GO>(INVALID,M,comm,node);
     RCP<const Map<LO,GO,Node> > lclmap = createLocalMapWithNode<LO,GO,Node>(P,comm,node);
 
     // create the matrix
@@ -977,7 +976,7 @@ namespace {
     //   k=0
     // 
     const size_t numVecs  = 3;
-    RCP<Map<LO,GO,Node> > rowmap = rcp( new Map<LO,GO,Node>(INVALID,M,0,comm,node) );
+    RCP<const Map<LO,GO,Node> > rowmap = createContigMapWithNode<LO,GO>(INVALID,M,comm,node);
     RCP<const Map<LO,GO,Node> > lclmap = createLocalMapWithNode<LO,GO,Node>(P,comm,node);
     // create the matrix
     MAT A(rowmap,P);
@@ -1150,7 +1149,7 @@ namespace {
     // create a Map
     const size_t numLocal = 10;
     const size_t numVecs  = 5;
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm,node) );
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
     MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
     mvrand.randomize();
     // create the identity matrix
@@ -1206,7 +1205,7 @@ namespace {
     const size_t myImageID = comm->getRank();
     if (numImages < 2) return;
     // create a Map
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,ONE,0,comm,node) );
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,ONE,comm,node);
     // create a multivector ones(n,1)
     MV ones(map,ONE,false), threes(map,ONE,false);
     ones.putScalar(ST::one());
@@ -1282,7 +1281,7 @@ namespace {
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,static_cast<GO>(0),comm,node) );
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
 
     /* Create a triangular matrix with no entries, for testing implicit diagonals.
       We test with Transpose and Non-Transpose application solve (these should be equivalent for the identity matrix)
@@ -1335,7 +1334,7 @@ namespace {
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,static_cast<GO>(0),comm,node) );
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
     Scalar SONE = static_cast<Scalar>(1.0);
 
     /* Create one of the following locally triangular matries:
@@ -1470,7 +1469,7 @@ namespace {
     const size_t myImageID = comm->getRank();
     if (numImages < 3) return;
     // create a Map
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,ONE,0,comm,node) );
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,ONE,comm,node);
 
     // RCP<FancyOStream> fos = Teuchos::fancyOStream(rcp(&std::cout,false));
     
@@ -1555,7 +1554,7 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const size_t myImageID = comm->getRank();
     // create a Map
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,THREE,0,comm,node) );
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,THREE,comm,node);
 
     /* Create the identity matrix, three rows per proc */
     RCP<OP> AOp;
@@ -1601,7 +1600,7 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const size_t myImageID = comm->getRank();
     // create a Map
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,THREE,0,comm,node) );
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,THREE,comm,node);
 
     /* Create the integer identity matrix, three rows per proc, wrapped in a Op<Scalar>  */
     RCP<OP> AOp;
@@ -1645,7 +1644,7 @@ namespace {
     const size_t numImages = comm->getSize();
     // create a Map
     const size_t numLocal = 10;
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm,node) );
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
     {
       // create the matrix
       MAT A(map,1);
@@ -1682,7 +1681,7 @@ namespace {
     // create a Map
     const size_t numLocal = 10;
     const size_t numVecs  = 5;
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,static_cast<GO>(0),comm,node) );
+    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
     MV mvrand(map,numVecs,false), mvres(map,numVecs,false);
     mvrand.randomize();
     // create the zero matrix

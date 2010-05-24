@@ -82,12 +82,9 @@ int main(int argc, char *argv[]) {
     return -1;
   }
 
-  // Construct a Map that puts approximately the same number of 
-  // equations on each processor.
+  // Construct a Map that puts approximately the same number of equations on each processor.
 
-  const Ordinal indexBase = 0;
-  Teuchos::RCP<const Tpetra::Map<Ordinal> > map; 
-  map = Teuchos::rcp( new Tpetra::Map<Ordinal>(numGlobalElements, indexBase, comm) );
+  Teuchos::RCP<const Tpetra::Map<Ordinal> > map = Tpetra::createUniformContigMap<Ordinal,Ordinal>(numGlobalElements, comm);
 
   // Get update list and number of local equations from newly created map.
 

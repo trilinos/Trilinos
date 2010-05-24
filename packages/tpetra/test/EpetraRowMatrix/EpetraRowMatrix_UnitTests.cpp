@@ -147,7 +147,7 @@ namespace {
     // create a Map
     const size_t numLocal = 10;
     const size_t numVecs = 5;
-    RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
+    RCP<const Map<LO,GO> > map = Tpetra::createContigMap<LO,GO>(INVALID,numLocal,comm);
     // create a matrix, modeled closely on Chris' CrsMatrix unit-tests.
     RCP<MAT> matrix(new MAT(map, 3));
     for (GO r=map->getMinGlobalIndex(); r <= map->getMaxGlobalIndex(); ++r) {

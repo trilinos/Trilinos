@@ -272,17 +272,75 @@ namespace Tpetra {
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
   createLocalMapWithNode(size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node);
 
-  /** \brief  Returns true if \c map is identical to this map. Implemented in Tpetra::Map::isSameAs().
-      \relates Tpetra::Map */
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool operator== (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2);
+  /** \brief Non-member function to create a uniform, contiguous Map with a user-specified node.
 
-  /** \brief Returns true if \c map is not identical to this map. Implemented in Tpetra::Map::isSameAs().
-      \relates Tpetra::Map */
+      The Map is configured to use zero-based indexing.
+
+      \relates Map
+   */
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  bool operator!= (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2);
+  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
+  createUniformContigMapWithNode(global_size_t numElements,
+                                 const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node);
+
+  /** \brief Non-member function to create a uniform, contiguous Map with the default node.
+
+      This method returns a Map instantiated on the Kokkos default node type, Kokkos::DefaultNode::DefaultNodeType.
+
+      The Map is configured to use zero-based indexing.
+
+      \relates Map
+   */
+  template <class LocalOrdinal, class GlobalOrdinal>
+  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
+  createUniformContigMap(global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
+
+  /** \brief Non-member function to create a (potentially) non-uniform, contiguous Map with the default node.
+
+      This method returns a Map instantiated on the Kokkos default node type, Kokkos::DefaultNode::DefaultNodeType.
+
+      The Map is configured to use zero-based indexing.
+
+      \relates Map
+   */
+  template <class LocalOrdinal, class GlobalOrdinal>
+  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Kokkos::DefaultNode::DefaultNodeType> >
+  createContigMap(global_size_t numElements, size_t localNumElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
+
+  /** \brief Non-member function to create a (potentially) non-uniform, contiguous Map with a user-specified node.
+
+      The Map is configured to use zero-based indexing.
+
+      \relates Map
+   */
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
+  createContigMapWithNode(global_size_t numElements, size_t localNumElements, 
+                          const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node);
+
+  /** \brief Non-member function to create a contiguous Map with user-defined weights and a user-specified node.
+
+      The Map is configured to use zero-based indexing.
+
+      \relates Map
+   */
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
+  createWeightedContigMapWithNode(int thisNodeWeight, global_size_t numElements, 
+                                  const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node);
+
 
 } // Tpetra namespace
 
-#endif // TPETRA_MAP_DECL_HPP
+/** \brief  Returns true if \c map is identical to this map. Implemented in Tpetra::Map::isSameAs().
+    \relates Tpetra::Map */
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+bool operator== (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2);
 
+/** \brief Returns true if \c map is not identical to this map. Implemented in Tpetra::Map::isSameAs().
+    \relates Tpetra::Map */
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+bool operator!= (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2);
+
+
+#endif // TPETRA_MAP_DECL_HPP

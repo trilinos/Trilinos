@@ -141,6 +141,14 @@ namespace Tpetra {
 
   }; // class Vector
 
+  /** \brief Non-member function to create a Vector from a specified Map.
+
+      \relates Vector
+   */
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP< const Vector<LocalOrdinal,GlobalOrdinal,Node> >
+  createVector(const Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map);
+
 } // namespace Tpetra
 
 #endif // TPETRA_VECTOR_DECL_HPP

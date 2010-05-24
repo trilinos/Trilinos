@@ -81,6 +81,7 @@ namespace {
   using Tpetra::DefaultPlatform;
   using Tpetra::GloballyDistributed;
 
+  using Tpetra::createContigMapWithNode;
   using Tpetra::createLocalMapWithNode;
 
   using Kokkos::SerialNode;
@@ -194,7 +195,7 @@ namespace {
     // create a Map
     const size_t numLocal = 13;
     const size_t numVecs  = 7;
-    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,0,comm,node) );
+    RCP<const Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     MV mvec(map,numVecs,true);
     TEST_EQUALITY( mvec.getNumVectors(), numVecs );
     TEST_EQUALITY( mvec.getLocalLength(), numLocal );
@@ -223,7 +224,7 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
     const size_t numLocal = 13;
-    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,0,comm,node) );
+    RCP<const Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     TEST_THROW(MV mvec(map,0),  std::invalid_argument);
     if (std::numeric_limits<size_t>::is_signed) {
       TEST_THROW(MV mvec(map,-1), std::invalid_argument);
@@ -243,11 +244,10 @@ namespace {
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
-    const Ordinal indexBase = 0;
     const size_t numLocal = 2;
     const size_t numVecs = 2;
     // multivector has two vectors, each proc having two values per vector
-    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm,node) );
+    RCP<const Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     // we need 4 scalars to specify values on each proc
     Array<Scalar> values(4);
 #ifdef HAVE_TPETRA_DEBUG
@@ -277,10 +277,9 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    const Ordinal indexBase = 0;
     const size_t numLocal = 53; // making this larger reduces the change that A below will have no non-zero entries, i.e., that C = abs(A) is still equal to A (we assume it is not)
     const size_t numVecs = 7;
-    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm,node) );
+    RCP<const Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     //
     // we will create a non-contig subview of the vector; un-viewed vectors should not be changed
     Tuple<size_t,4> inView1 = tuple<size_t>(1,4,3,2);
@@ -476,7 +475,7 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
     // create Map
-    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(3),0,comm,node) );
+    RCP<const Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,3,comm,node);
     // test labeling
     const string lbl("mvecA");
     MV mvecA(map,2);
@@ -548,8 +547,8 @@ namespace {
     }
     // case 2: C(local) = A^T(distr) * B  (distr)  : one of these
     {
-      RCP<Map<Ordinal,Ordinal,Node> > map3n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(3),0,comm,node) ),
-                                      map2n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(2),0,comm,node) );
+      RCP<const Map<Ordinal,Ordinal,Node> > map3n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,3,comm,node),
+                                            map2n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node);
       RCP<const Map<Ordinal,Ordinal,Node> > map2l = createLocalMapWithNode<Ordinal,Ordinal,Node>(2,comm,node),
                                             map3l = createLocalMapWithNode<Ordinal,Ordinal,Node>(3,comm,node);
       MV mv3nx2(map3n,2),
@@ -568,8 +567,8 @@ namespace {
     }
     // case 3: C(distr) = A  (distr) * B^X(local)  : two of these
     {
-      RCP<Map<Ordinal,Ordinal,Node> > map3n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(3),0,comm,node) ),
-                                      map2n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(2),0,comm,node) );
+      RCP<const Map<Ordinal,Ordinal,Node> > map3n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,3,comm,node), 
+                                            map2n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node); 
       RCP<const Map<Ordinal,Ordinal,Node> > map2l = createLocalMapWithNode<Ordinal,Ordinal,Node>(2,comm,node),
                                             map3l = createLocalMapWithNode<Ordinal,Ordinal,Node>(3,comm,node);
       MV mv3nx2(map3n,2),
@@ -597,10 +596,9 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
-    const Ordinal indexBase = 0;
     // create a Map
-    RCP<Map<Ordinal,Ordinal,Node> > map3n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(3),indexBase,comm,node) ),
-                                    map2n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(2),indexBase,comm,node) );
+    RCP<const Map<Ordinal,Ordinal,Node> > map3n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,3,comm,node), 
+                                          map2n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node); 
     RCP<const Map<Ordinal,Ordinal,Node> > lmap3 = createLocalMapWithNode<Ordinal,Ordinal,Node>(3,comm,node),
                                           lmap2 = createLocalMapWithNode<Ordinal,Ordinal,Node>(2,comm,node);
     const Scalar S1 = ScalarTraits<Scalar>::one(),
@@ -731,9 +729,8 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     RCP<Node> node = getNode<Node>();
-    const Ordinal indexBase = 0;
     // create a Map
-    RCP<Map<Ordinal,Ordinal,Node> > map3n = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(3),indexBase,comm,node) );
+    RCP<const Map<Ordinal,Ordinal,Node> > map3n = createContigMapWithNode<Ordinal,Ordinal>(INVALID,3,comm,node);
     const Mag    M0 = ScalarTraits<Mag>::zero();
     const Scalar S1 = ScalarTraits<Scalar>::one();
     const Scalar S0 = ScalarTraits<Scalar>::zero();
@@ -770,11 +767,9 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    const Ordinal indexBase = 0;
-    const size_t numLocal = 2;
     // multivector has two vectors, each proc having two values per vector
-    RCP<Map<Ordinal,Ordinal,Node> > map2 = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(numLocal  ),indexBase,comm,node) ),
-                                    map3 = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(numLocal+1),indexBase,comm,node) );
+    RCP<const Map<Ordinal,Ordinal,Node> > map2 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node),
+                                          map3 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,3,comm,node);
     // we need 4 scalars to specify values on each proc
     Array<Scalar> values(4);
     Array<ArrayView<const Scalar> > arrOfarr(2,ArrayView<const Scalar>(Teuchos::null));
@@ -799,10 +794,9 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    const Ordinal indexBase = 0;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    RCP<Map<Ordinal,Ordinal,Node> > map1 = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(1),indexBase,comm,node) ),
-                                    map2 = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(2),indexBase,comm,node) );
+    RCP<const Map<Ordinal,Ordinal,Node> > map1 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,1,comm,node),
+                                          map2 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node);
     {
       MV mv12(map1,1),
          mv21(map2,1),
@@ -846,10 +840,9 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     // create a Map
-    const Ordinal indexBase = 0;
     const size_t numLocal = 2;
     const size_t numVectors = 3;
-    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm,node) );
+    RCP<const Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     const bool zeroOut = true;
     MV mvec1(map,numVectors,zeroOut),
        mvec2(map,numVectors,zeroOut);
@@ -919,10 +912,9 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    const Ordinal indexBase = 0;
     const size_t numLocal = 7;
     const size_t numVectors = 13;
-    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm,node) );
+    RCP<const Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     MV A(map,numVectors,false);
     {
       A.randomize();
@@ -1132,11 +1124,10 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    const Ordinal indexBase = 0;
     const size_t numLocal = 2;
     const size_t numVectors = 2;
     const size_t LDA = 2;
-    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm,node) );
+    RCP<const Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     Array<Scalar> values(6);
     // values = {1, 1, 2, 2, 4, 4}
     // values(0,4) = {1, 1, 2, 2} = [1 2]
@@ -1221,10 +1212,9 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    const Ordinal indexBase = 0;
     const size_t numLocal = 23;
     const size_t numVectors = 11;
-    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm,node) );
+    RCP<const Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     // Use random multivector A
     // Set B = A * 2 manually.
     // Therefore, if C = 2*A, then C == B
@@ -1340,7 +1330,7 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(2),0,comm,node) );
+    RCP<const Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node);
     Array<Scalar> values(6);
     // values = {1, 1, 2, 2}
     // values(0,2) = {1, 1} = [1]
@@ -1424,10 +1414,9 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    const Ordinal indexBase = 0;
     const size_t numLocal = 13;
     const size_t numVectors = 7;
-    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm,node) );
+    RCP<const Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     {
       // create random MV
       MV mvorig(map,numVectors);
@@ -1494,7 +1483,7 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(2),0,comm,node) );
+    RCP<const Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node);
     // create random MV
     V morig(map);
     morig.randomize();
@@ -1534,7 +1523,7 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(100),0,comm,node) );
+    RCP<const Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,100,comm,node);
     // create two random Vector objects
     V v1(map), v2(map);
     v1.randomize();
@@ -1575,10 +1564,9 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    const Ordinal indexBase = 0;
     const size_t numLocal = 10;
     const size_t numVectors = 6;
-    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm,node) );
+    RCP<const Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     // create random MV
     MV mv(map,numVectors);
     mv.randomize();
@@ -1627,10 +1615,9 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     // create a Map
-    const Ordinal indexBase = 0;
     const size_t numLocal = 2;
     const size_t numVectors = 3;
-    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm,node) );
+    RCP<const Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     Array<Scalar> values(6);
     // values = {0, 0, 1, 1, 2, 2} = [0 1 2]
     //                               [0 1 2]
@@ -1670,11 +1657,10 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     // create a Map
-    const Ordinal indexBase = 0;
     const size_t numLocal = 2;
     const size_t numVectors = 3;
     const size_t LDA = 3;
-    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm,node) );
+    RCP<const Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     Array<Scalar> values(9);
     // A = {0, 0, -1, 1, 1, -1, 2, 2, -1} = [0   1  2]
     //                                      [0   1  2]
@@ -1720,10 +1706,9 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     // create a Map
-    const Ordinal indexBase = 0;
     const size_t numLocal = 2;
     const size_t numVectors = 3;
-    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm,node) );
+    RCP<const Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     Array<Scalar> values(6);
     // values = {0, 0, 1, 1, 2, 2} = [0 1 2]
     //                               [0 1 2]
@@ -1772,10 +1757,9 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    const Ordinal indexBase = 0;
     const size_t numLocal = 2;
     const size_t numVectors = 3;
-    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm,node) );
+    RCP<const Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     Array<Scalar> values(6);
     // values = {0, 0, 1, 1, 2, 2} = [0 1 2]
     //                               [0 1 2]
@@ -1810,10 +1794,9 @@ namespace {
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
     // create a Map
-    const Ordinal indexBase = 0;
     const size_t numLocal = 13;
     const size_t numVectors = 7;
-    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm,node) );
+    RCP<const Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     MV mvec(map,numVectors);
     // randomize the multivector
     mvec.randomize();
@@ -1846,10 +1829,9 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int numImages = comm->getSize();
     // create a Map
-    const Ordinal indexBase = 0;
     const size_t numLocal = 13;
     const size_t numVectors = 7;
-    RCP<Map<Ordinal,Ordinal,Node> > map = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,numLocal,indexBase,comm,node) );
+    RCP<const Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
     MV    mvec(map,numVectors),
        weights(map,numVectors),
        weight1(map,1);
@@ -1900,11 +1882,10 @@ namespace {
     RCP<const Comm<int> > comm = getDefaultComm();
     const int myImageID = comm->getRank();
     // create a Map
-    const Ordinal indexBase = 0;
     const Scalar rnd = ScalarTraits<Scalar>::random();
     // two maps: one has two entires per node, the other disagrees on node 0
-    RCP<Map<Ordinal,Ordinal,Node> > map1 = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(2),indexBase,comm,node) ),
-                                    map2 = rcp( new Map<Ordinal,Ordinal,Node>(INVALID,as<size_t>(myImageID == 0 ? 1 : 2),indexBase,comm,node) );
+    RCP<const Map<Ordinal,Ordinal,Node> > map1 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,2,comm,node),
+                                          map2 = createContigMapWithNode<Ordinal,Ordinal>(INVALID,myImageID == 0 ? 1 : 2,comm,node);
     // multivectors from different maps are incompatible for all ops
     // multivectors from the same map are compatible only if they have the same number of
     //    columns
