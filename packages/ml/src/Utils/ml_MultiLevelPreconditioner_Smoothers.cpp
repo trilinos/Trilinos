@@ -520,6 +520,32 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       
       if( verbose_ ) {
 	cout << msg << "Aztec";
+	if( MyAztecSmootherAsASolver){
+	  switch (MySmootherOptionsPtr[AZ_solver]){
+	  case AZ_cg:
+	  case AZ_cg_condnum:
+	    cout<<"-CG";
+	    break;
+	  case AZ_gmres:
+	  case AZ_gmres_condnum:
+	    cout<<"-GMRES";
+	    break;
+	  case AZ_cgs:
+	    cout<<"-CGS";
+	    break;
+	  case AZ_tfqmr:
+	    cout<<"-TSQMR";
+	    break;
+	  case AZ_bicgstab:
+	    cout<<"-TSQMR";
+	    break;
+	  case AZ_GMRESR:
+	    cout<<"-GMRESR";
+	    break;	    
+	  }
+	  cout<<"("<<aztec_its<<")";
+	}
+
 	if( MySmootherOptionsPtr[AZ_precond] == AZ_dom_decomp ) {
 	  cout << " DD, overlap=" << MySmootherOptionsPtr[AZ_overlap] << ", ";
 	  if( MySmootherOptionsPtr[AZ_reorder] == 1 ) cout << "reord, ";
@@ -545,15 +571,15 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
 	    break;
 	  }
 	} else if( MySmootherOptionsPtr[AZ_precond] == AZ_Jacobi ) {
-	  cout << msg << " Jacobi preconditioner";
+	  cout << " Jacobi preconditioner, sweeps = " << MySmootherOptionsPtr[AZ_poly_ord];
 	} else if( MySmootherOptionsPtr[AZ_precond] == AZ_Neumann ) {
-	  cout << msg << " Neumann preconditioner, order = " << MySmootherOptionsPtr[AZ_poly_ord];
+	  cout << " Neumann preconditioner, order = " << MySmootherOptionsPtr[AZ_poly_ord];
 	} else if( MySmootherOptionsPtr[AZ_precond] == AZ_ls ) {
-	  cout << msg << " LS preconditioner, order = " << MySmootherOptionsPtr[AZ_poly_ord];
+	  cout << " LS preconditioner, order = " << MySmootherOptionsPtr[AZ_poly_ord];
 	} else if( MySmootherOptionsPtr[AZ_precond] == AZ_sym_GS ) {
-	  cout << msg << " symmetric Gauss-Seidel preconditioner, sweeps = " << MySmootherOptionsPtr[AZ_poly_ord];
+	  cout << " symmetric Gauss-Seidel preconditioner, sweeps = " << MySmootherOptionsPtr[AZ_poly_ord];
 	} else if( MySmootherOptionsPtr[AZ_precond] == AZ_none ) {
-	  cout << msg << " with no preconditioning";
+	  cout << " No preconditioning";
 	}
 	cout << ", "  << MyPreOrPostSmoother << endl;
       }
