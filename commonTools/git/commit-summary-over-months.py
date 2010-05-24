@@ -154,9 +154,14 @@ for month_i in range(options.startMonthAgo, options.endMonthAgo):
 
           fileStatArray = authorCommitsThisMonthLines[line_i].split("\t")
           if options.debug: print "\nfileStatArray =", fileStatArray
+
           fileName = fileStatArray[2].strip()
           if options.debug: print "fileName =", fileName
-          numLinesAdded = int(fileStatArray[0])
+
+          if fileStatArray[0] == "-":
+            numLinesAdded = 0
+          else:
+            numLinesAdded = int(fileStatArray[0])
           if options.debug: print "numLinesAdded =", numLinesAdded
 
           if len(excludeFilesList):
