@@ -557,6 +557,15 @@ public:
   
   */
   const Epetra_CrsMatrix* M() const { return M_.get();}
+
+  /*!
+   */
+  RefCountPtr<MOERTEL::Interface> GetInterface(int idx) { return interface_[idx]; }
+
+  /*!
+   */
+  RefCountPtr<Epetra_Map> GetSaddleMap() { return saddlemap_; }
+
   //@}
 
 private:  
