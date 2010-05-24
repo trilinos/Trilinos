@@ -145,7 +145,7 @@ public:
   \brief Return view of the local coordinates of the projection in the segment
   
   */
-  const double* Xi() { return xi_; }
+  double* Xi() { return xi_; }
   
   /*!
   \brief Return pointer to segment this pojrection is in

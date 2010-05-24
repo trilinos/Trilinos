@@ -333,7 +333,17 @@ public:
   does not have a projection onto an opposing segment.
   */
   RefCountPtr<MOERTEL::ProjectedNode>  GetProjectedNode();
+
+  /*!
+  \brief Store a pointer to a projected node
+  */
+  void SetProjNode(RefCountPtr<MOERTEL::ProjectedNode> pnode);
   
+  /*!
+  \brief Returns a view of the projection of this node
+  */
+  RefCountPtr<MOERTEL::ProjectedNode>  GetProjNode();
+
   /*!
   \brief Add a Lagrange multiplier id to this node's list
   
@@ -442,6 +452,18 @@ public:
   
   //@}
   
+  /*!
+   *
+   */
+  double *GetProjCoord() { return prcoord_; }
+
+  void SetProjCoords(double x, double y, double z = 0.0)
+  {
+    prcoord_[0] = x;
+    prcoord_[1] = y;
+    prcoord_[2] = z;
+  }
+
 protected:  
   // don't want = operator
   Node operator = (const Node& old);
@@ -473,6 +495,9 @@ protected:
   RefCountPtr<vector<map<int,double> > > Mmodrow_; // scalar rows of Mmod
 
   vector< RefCountPtr<MOERTEL::ProjectedNode> > pnode_;    // the projected node on some segment
+
+  RefCountPtr<MOERTEL::ProjectedNode> proj_node_;		/// projection of the node
+  double prcoord_[3];			// physical coordinates of the projected node
 
 };
 
