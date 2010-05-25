@@ -77,10 +77,10 @@ clp.add_option(
 #
 
 authorsList = options.authors.split(",")
-print "authorsList =", authorsList
+#print "authorsList =", authorsList
 
 excludeFilesList = options.excludeFiles.split(",")
-print "excludeFilesList =", excludeFilesList
+#print "excludeFilesList =", excludeFilesList
 
 # Gather the number of commits for each author over the given range of months
 
@@ -200,10 +200,13 @@ for month_i in range(options.startMonthAgo, options.endMonthAgo):
 # Output the statistics
 #
 
-monthWidth = 7
-authorCountWidth = 7
-paddingWidth = 2
+maxAuthorName = 7
+for author in authorsList:
+  maxAuthorName = max(maxAuthorName, len(author))
 
+paddingWidth = 2
+monthWidth = 7
+authorCountWidth = maxAuthorName
 
 def printTableSeprators():
   monthSepStr = "-"*monthWidth
