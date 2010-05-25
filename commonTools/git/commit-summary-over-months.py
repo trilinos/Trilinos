@@ -98,7 +98,7 @@ for month_i in range(options.startMonthAgo, options.endMonthAgo):
 
     #print "author =", author
 
-    cmnd = "eg log --pretty=format:'%h \"%s\" <%ae> [%ad] (%ar)'" + \
+    cmnd = "eg log --pretty=format:'%n%h \"%s\" <%ae> [%ad] (%ar)'" + \
       " --after=\""+str(month_i+1)+" months ago\"" + \
       " --numstat" + \
       " --before=\""+str(month_i)+" months ago\"" + \
@@ -130,8 +130,13 @@ for month_i in range(options.startMonthAgo, options.endMonthAgo):
 
       while line_i < len(authorCommitsThisMonthLines):
 
-        if authorCommitsThisMonthLines[line_i] == "":
+        if options.debug:
+          print "\nTOP: authorCommitsThisMonthLines[line_i] = '"+authorCommitsThisMonthLines[line_i]+"'"
+
+        # Skip empty lines between commits
+        if authorCommitsThisMonthLines[line_i].strip() == "":
           line_i += 1
+          continue
 
         # Process current commit (i.e. ThisCommit)
 
@@ -139,7 +144,7 @@ for month_i in range(options.startMonthAgo, options.endMonthAgo):
 
         commitMsg = authorCommitsThisMonthLines[line_i]
         if options.debug:
-          print "commitMsg =", commitMsg
+          print "\ncommitMsg =", commitMsg
         line_i += 1
 
         commitSHA1 = commitMsg.split(" ")[0].strip()
@@ -148,12 +153,20 @@ for month_i in range(options.startMonthAgo, options.endMonthAgo):
 
         # Process modified files (until a newline is found)
 
+        if options.debug:
+          print "\nLoop through changed files:\n"
+
         while line_i < len(authorCommitsThisMonthLines) \
           and authorCommitsThisMonthLines[line_i].strip() != "" \
           :
 
+          if options.debug: print ""
+
+          if options.debug:
+            print "\nauthorCommitsThisMonthLines[line_i] = '"+authorCommitsThisMonthLines[line_i]+"'"
+
           fileStatArray = authorCommitsThisMonthLines[line_i].split("\t")
-          if options.debug: print "\nfileStatArray =", fileStatArray
+          if options.debug: print "fileStatArray =", fileStatArray
 
           fileName = fileStatArray[2].strip()
           if options.debug: print "fileName =", fileName
@@ -167,8 +180,8 @@ for month_i in range(options.startMonthAgo, options.endMonthAgo):
           if len(excludeFilesList):
             for excludeFile in excludeFilesList:
               if excludeFile and re.match(excludeFile, fileName):
-                if options.showCommits:
-                  print "NOTE: Excluding the file "+fileName+" because it matches "+excludeFile+"!"
+                if options.showCommits or options.showLogCmnd:
+                  print "NOTE: Excluding the file "+fileName+" in commit "+commitSHA1+" because it matches "+excludeFile+"!"
                 # Don't increment authorNumLinesAddedThisCommit
               else:
                 authorNumLinesAddedThisCommit += numLinesAdded
@@ -183,7 +196,7 @@ for month_i in range(options.startMonthAgo, options.endMonthAgo):
           authorNumLinesAddedThisMonth += authorNumLinesAddedThisCommit
         else:
           if options.showLogCmnd or options.showCommits:
-            print "NOTE: Excluding commit "+commitSHA1+" because all files matched exclude pattern(s)!"
+            print "NOTE: Excluding commit "+commitSHA1+" because all files matched exclude pattern(s) or is merge commit!"
 
     if options.showLogCmnd:
       print "authorNumCommitsThisMonth =", authorNumCommitsThisMonth
