@@ -120,8 +120,8 @@ namespace {
     if (myImageID%2 == 0) src_num_local = 3;
     Ordinal target_num_local = 4;
 
-    RCP<const Map<Ordinal,Ordinal,Node> >    src_map2 = createContigMap<Ordinal,Ordinal>(INVALID,   src_num_local_elements,comm),  
-                                          target_map2 = createContigMap<Ordinal,Ordinal>(INVALID,target_num_local_elements,comm);  
+    RCP<const Map<Ordinal,Ordinal,Node> >    src_map2 = createContigMap<Ordinal,Ordinal>(INVALID,   src_num_local,comm),  
+                                          target_map2 = createContigMap<Ordinal,Ordinal>(INVALID,target_num_local,comm);  
 
     RCP<CrsGraph<Ordinal,Ordinal,Node> >    src_graph2 = rcp(new CrsGraph<Ordinal,Ordinal,Node>(   src_map2, 24));
     RCP<CrsGraph<Ordinal,Ordinal,Node> > target_graph2 = rcp(new CrsGraph<Ordinal,Ordinal,Node>(target_map2, 24));

@@ -327,7 +327,7 @@ namespace Tpetra {
       \relates MultiVector
    */
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP< const MultiVector<LocalOrdinal,GlobalOrdinal,Node> >
+  Teuchos::RCP< MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   createMultiVector(const Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, size_t numVectors);
 
 

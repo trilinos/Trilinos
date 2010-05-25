@@ -146,7 +146,7 @@ namespace Tpetra {
       \relates Vector
    */
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP< const Vector<LocalOrdinal,GlobalOrdinal,Node> >
+  Teuchos::RCP< Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   createVector(const Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map);
 
 } // namespace Tpetra

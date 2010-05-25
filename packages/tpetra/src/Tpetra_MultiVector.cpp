@@ -4,8 +4,6 @@
 
 // #include "Tpetra_ExplicitInstantiationHelpers.hpp"
 
-#include "Tpetra_MultiVector_def.hpp"
-
 #include <Kokkos_SerialNode.hpp>
 #if defined(HAVE_KOKKOS_TBB)
 #  include <Kokkos_TBBNode.hpp>
@@ -16,6 +14,8 @@
 #if defined(HAVE_KOKKOS_THRUST)
 #  include <Kokkos_ThrustGPUNode.hpp>
 #endif
+
+#include "Tpetra_MultiVector_def.hpp"
 
 namespace Tpetra {
 
@@ -72,7 +72,6 @@ namespace Tpetra {
 //    TPETRA_MULTIVECTOR_INSTANT(double,int,int,Kokkos::ThrustGPUNode)
 //#endif
 #endif
-
 
 } // namespace Tpetra
 
