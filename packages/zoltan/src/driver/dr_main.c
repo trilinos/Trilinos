@@ -28,6 +28,7 @@
 #include <string.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <signal.h>
 
 #include "dr_const.h"
 #include "dr_input_const.h"
@@ -65,9 +66,32 @@ static void remove_random_vertices(MESH_INFO_PTR mesh, int iter, float factor);
 static void print_mesh(int proc, MESH_INFO_PTR m, int *tp, int *the, int *tv);
 #endif
 
-extern void safe_free(void **ptr);
+static int my_rank=-1;
 
-#include <unistd.h>
+void meminfo_signal_handler(int sig)
+{
+  char msg[128];
+
+#ifdef _GNU_SOURCE
+  sprintf(msg,"(%d) Received signal %d: %s\n",my_rank,sig,strsignal(sig));
+#else
+  sprintf(msg,"(%d) Received signal %d\n",my_rank,sig);
+#endif
+
+  // Signal handler for Linux that helps us to understand
+  // whether failure was due to insufficient memory.
+
+  signal(SIGINT, SIG_IGN);
+  signal(SIGTERM, SIG_IGN);
+  signal(SIGABRT, SIG_IGN);
+  signal(SIGSEGV, SIG_IGN);
+  signal(SIGFPE, SIG_IGN);
+
+  Zoltan_write_linux_meminfo(my_rank, msg);
+
+  exit(sig);
+}
+
 
 #ifdef VAMPIR
 #include <VT.h>
@@ -107,6 +131,16 @@ int main(int argc, char *argv[])
   /* get some machine information */
   MPI_Comm_rank(MPI_COMM_WORLD, &Proc);
   MPI_Comm_size(MPI_COMM_WORLD, &Num_Proc);
+
+  my_rank = Proc;
+
+#ifdef HOST_LINUX
+  signal(SIGSEGV, meminfo_signal_handler);
+  signal(SIGINT, meminfo_signal_handler);
+  signal(SIGTERM, meminfo_signal_handler);
+  signal(SIGABRT, meminfo_signal_handler);
+  signal(SIGFPE, meminfo_signal_handler);
+#endif
 
 #ifdef ZOLTAN_PURIFY
   printf("%d of %d ZDRIVE LAUNCH pid = %d file = %s\n", 

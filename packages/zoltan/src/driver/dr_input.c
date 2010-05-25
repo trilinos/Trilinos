@@ -100,6 +100,19 @@ int read_cmd_file (
 	continue;
       }
     }
+    else if (sscanf(line, " zoltan debug level" SKIPEQ "%s", value) == 1) {
+      if (strcmp(value, "1")) {
+	Zoltan_Memory_Debug(1);
+      }
+      else if (strcmp(value, "2")) {
+	Zoltan_Memory_Debug(2);
+      }
+      else {
+	Zoltan_Memory_Debug(3);  /* highest level */
+      }
+      continue;
+    }
+
 
     else if (sscanf(line, " file type" LASTARG "%n", value, &n) == 1) {
       if ((!strcmp(value, "chaco")) || (!strcmp(value, "graph")))  {
