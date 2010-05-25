@@ -98,7 +98,7 @@ for month_i in range(options.startMonthAgo, options.endMonthAgo):
 
     #print "author =", author
 
-    cmnd = "eg log --pretty=format:'%n%h \"%s\" <%ae> [%ad] (%ar)'" + \
+    cmnd = "eg log --pretty=format:'%n%h \"%s\" <%ae> [%ad] (%ar)' -w" + \
       " --after=\""+str(month_i+1)+" months ago\"" + \
       " --numstat" + \
       " --before=\""+str(month_i)+" months ago\"" + \
@@ -177,18 +177,19 @@ for month_i in range(options.startMonthAgo, options.endMonthAgo):
             numLinesAdded = int(fileStatArray[0])
           if options.debug: print "numLinesAdded =", numLinesAdded
 
+          excludeThisFile = False
+
           if len(excludeFilesList):
             for excludeFile in excludeFilesList:
               if excludeFile and re.match(excludeFile, fileName):
                 if options.showCommits or options.showLogCmnd:
                   print "NOTE: Excluding the file "+fileName+" in commit "+commitSHA1+" because it matches "+excludeFile+"!"
-                # Don't increment authorNumLinesAddedThisCommit
-              else:
-                authorNumLinesAddedThisCommit += numLinesAdded
-          else:
+                excludeThisFile = True
+                break
+
+          if not excludeThisFile:
             authorNumLinesAddedThisCommit += numLinesAdded
             
-
           line_i += 1
 
         if authorNumLinesAddedThisCommit > 0:
