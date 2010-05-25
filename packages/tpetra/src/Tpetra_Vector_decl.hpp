@@ -146,11 +146,7 @@ namespace Tpetra {
       \relates Vector
    */
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-<<<<<<< HEAD
   Teuchos::RCP< Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-=======
-  Teuchos::RCP< const Vector<LocalOrdinal,GlobalOrdinal,Node> >
->>>>>>> Adding more non-members constructors, for Map, Vector and MultiVector.
   createVector(const Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> > &map);
 
 } // namespace Tpetra
