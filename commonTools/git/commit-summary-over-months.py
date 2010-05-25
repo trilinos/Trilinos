@@ -98,7 +98,7 @@ for month_i in range(options.startMonthAgo, options.endMonthAgo):
 
     #print "author =", author
 
-    cmnd = "eg log --pretty=format:'%n%h \"%s\" <%ae> [%ad] (%ar)' -w" + \
+    cmnd = "eg log --pretty=format:'%n%h \"%s\" <%ae> [%ad] (%ar)' -w -C" + \
       " --after=\""+str(month_i+1)+" months ago\"" + \
       " --numstat" + \
       " --before=\""+str(month_i)+" months ago\"" + \
