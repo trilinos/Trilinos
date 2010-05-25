@@ -6,18 +6,16 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-//#include <stddef.h>
-//#include <stdexcept>
-//#include <iostream>
-//#include <sstream>
 #include <algorithm>
+#include <sstream>
+#include <stdexcept>
 
 #include <stk_mesh/base/Ghosting.hpp>
 
-//#include <stk_mesh/base/BulkData.hpp>
-//#include <stk_mesh/base/MetaData.hpp>
-
 #include <stk_mesh/baseImpl/EntityImpl.hpp>
+#include <stk_mesh/base/Bucket.hpp>
+#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/MetaData.hpp>
 
 namespace stk {
 namespace mesh {
@@ -93,7 +91,10 @@ bool EntityImpl::insert( const EntityCommInfo & val )
 
   const bool result = i == m_comm.end() || val != *i ;
 
-  if ( result ) { m_comm.insert( i , val ); }
+  if ( result ) {
+    m_comm.insert( i , val );
+    log_modified();
+  }
 
   return result ;
 }
@@ -106,7 +107,10 @@ bool EntityImpl::erase( const EntityCommInfo & val )
 
   const bool result = i != m_comm.end() && val == *i ;
 
-  if ( result ) { m_comm.erase( i ); }
+  if ( result ) {
+    m_comm.erase( i );
+    log_modified();
+  }
 
   return result ;
 }
@@ -127,7 +131,10 @@ bool EntityImpl::erase( const Ghosting & ghost )
 
   const bool result = i != e ;
 
-  if ( result ) { m_comm.erase( i , e ); }
+  if ( result ) {
+    m_comm.erase( i , e );
+    log_modified();
+  }
 
   return result ;
 }
@@ -138,33 +145,157 @@ void EntityImpl::comm_clear_ghosting()
   std::vector< EntityCommInfo >::iterator j = m_comm.begin();
   while ( j != m_comm.end() && j->ghost_id == 0 ) { ++j ; }
   m_comm.erase( j , m_comm.end() );
+
+  log_modified();
 }
 
 
-void EntityImpl::comm_clear()
-{ m_comm.clear(); }
+void EntityImpl::comm_clear() {
+  m_comm.clear();
+  log_modified();
+}
 
-void EntityImpl::log_clear()
-{ m_mod_log = LogNoChange ; }
+bool EntityImpl::marked_for_destruction() const{
+  return 0 == bucket().capacity();
+}
 
+namespace {
 
-void EntityImpl::log_created()
+bool is_degenerate_relation ( const Relation &r1 , const Relation &r2 )
 {
-  if ( LogNoChange == m_mod_log ) {
-    m_mod_log = LogCreated ;
-  }
+  return r1.attribute() == r2.attribute() && r1.entity() != r2.entity() ;
 }
 
+}
 
-void EntityImpl::log_modified()
+void EntityImpl::declare_relation( Entity & e_from, Entity & e_to , const unsigned local_id, unsigned sync_count )
 {
-  if ( LogNoChange == m_mod_log ) {
-    m_mod_log = LogModified ;
+  const MetaData & meta_data = e_from.bucket().mesh().mesh_meta_data();
+
+  static const char method[] = "stk::mesh::impl::EntityImpl::declare_relation" ;
+
+  const Relation forward( e_to , local_id );
+
+  const std::vector<Relation>::iterator fe = e_from.m_entityImpl.m_relation.end();
+        std::vector<Relation>::iterator fi = e_from.m_entityImpl.m_relation.begin();
+
+  fi = std::lower_bound( fi , fe , forward , LessRelation() );
+
+  // The ordering of the Relations allows for two situations that do
+  // not arise often in meshes.  The first situation is 2 relations between
+  // e_from and e_to with the same kind but different local_ids.  This
+  // can happen if, for example, a triangle should be used as a quad.  In
+  // this case, one node of the triangle must be two different local nodes of
+  // the quad.  This situation is a valid state of mesh entities.
+
+  // The second situation involves malformed stencils.  Given e_from, e_to1,
+  // and e_to2, e_to1 and eto2 can share a relation with e_from with the same
+  // kind and local_id.  This can arise, for instance, if an edge has three
+  // nodes.  The local_id 1 of the edge may point to two different nodes.
+  // This situation is disallowed in the mesh.  We now check for it.
+
+  bool found_degenerate_relation = false;
+  EntityKey  degenerate_key;
+  if ( fi != fe )
+     {
+     bool  downstream = fi->entity_rank() < e_from.entity_rank();
+     if ( is_degenerate_relation ( forward , *fi ) && downstream )
+        {
+        found_degenerate_relation = true;
+        degenerate_key = fi->entity()->key();
+        }
+     }
+  if ( fi != e_from.m_entityImpl.m_relation.begin() )
+     {
+     --fi;
+     bool  downstream = fi->entity_rank() < e_from.entity_rank();
+     if ( is_degenerate_relation ( forward , *fi ) && downstream )
+        {
+        found_degenerate_relation = true;
+        degenerate_key = fi->entity()->key();
+        }
+     ++fi;
+     }
+  if ( found_degenerate_relation )
+     {
+     std::ostringstream msg ;
+     msg << method << "( from " ;
+     print_entity_key( msg , meta_data, e_from.key() );
+     msg << " , to " ;
+     print_entity_key( msg , meta_data, e_to.key() );
+     msg << " , id " << local_id ;
+     msg << " ) FAILED ";
+     msg << " Relation already exists to " ;
+     print_entity_key( msg , meta_data, degenerate_key );
+     throw std::runtime_error( msg.str() );
+     }
+
+  // If the relation is not degenerate, we add it and its converse
+
+  if ( fe == fi || forward.attribute() != fi->attribute() ) {
+
+    // A new relation and its converse
+
+    const Relation converse( e_from , local_id );
+    const std::vector<Relation>::iterator ce = e_to.m_entityImpl.m_relation.end();
+          std::vector<Relation>::iterator ci = e_to.m_entityImpl.m_relation.begin();
+
+    ci = std::lower_bound( ci , ce , converse , LessRelation() );
+
+    if ( ce == ci || converse != *ci ) {
+      fi = e_from.m_entityImpl.m_relation.insert( fi , forward );
+      ci = e_to.m_entityImpl.m_relation.insert( ci , converse );
+
+      e_from.m_entityImpl.set_sync_count( sync_count );
+      e_to.m_entityImpl.set_sync_count( sync_count );
+
+    }
+    else {
+     /* this is unreachable unless a friend of bulk data creates a half-edge
+        in the relationship graph. */
+      std::ostringstream msg ;
+      msg << method << "( from "
+          << print_entity_key( msg , meta_data, e_from.key() )
+          << " , to "
+          << print_entity_key( msg , meta_data, e_to.key() )
+          << " , id " << local_id
+          << " ) FAILED"
+          << " Internal error - converse relation already exists" ;
+      throw std::runtime_error( msg.str() );
+    }
   }
+
+  // This entity's owned-closure may have changed.
+  e_to.m_entityImpl.log_modified();
+  e_from.m_entityImpl.log_modified();
+}
+
+void EntityImpl::destroy_relation( Entity & e_from , Entity & e_to )
+{
+
+  for ( std::vector<Relation>::iterator
+        i = e_to.m_entityImpl.m_relation.end() ; i != e_to.m_entityImpl.m_relation.begin() ; ) {
+    --i ;
+    if ( i->entity() == & e_from ) {
+      i = e_to.m_entityImpl.m_relation.erase( i );
+    }
+  }
+
+  for ( std::vector<Relation>::iterator
+        i = e_from.m_entityImpl.m_relation.end() ; i != e_from.m_entityImpl.m_relation.begin() ; ) {
+    --i ;
+    if ( i->entity() == & e_to ) {
+
+      i = e_from.m_entityImpl.m_relation.erase( i );
+    }
+  }
+
+  e_to.m_entityImpl.log_modified();
+  e_from.m_entityImpl.log_modified();
 }
 
 
-} // namespace impl 
+} // namespace impl
 } // namespace mesh
 } // namespace stk
 

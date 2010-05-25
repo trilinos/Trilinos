@@ -20,9 +20,10 @@
 #include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Entity.hpp>
+#include <stk_mesh/baseImpl/EntityRepository.hpp>
 #include <stk_mesh/base/Ghosting.hpp>
 #include <stk_mesh/base/Selector.hpp>
+#include <stk_mesh/baseImpl/BucketRepository.hpp>
 
 //----------------------------------------------------------------------
 
@@ -77,7 +78,7 @@ public:
   /** \brief  Query the upper bound on the number of mesh entities
     *         that may be associated with a single bucket.
     */
-  unsigned bucket_capacity() const { return m_bucket_capacity ; }
+  unsigned bucket_capacity() const { return m_bucket_repository.bucket_capacity(); }
 
   //------------------------------------
   /** \brief  Bulk data has two states:
@@ -141,8 +142,6 @@ public:
    */
   void change_entity_owner( const std::vector<EntityProc> & );
 
-  //------------------------------------
-
   /** \brief  Rotate the field data of multistate fields.
    *
    *  <PRE>
@@ -154,19 +153,24 @@ public:
    *    StateNM3 <- StateNM2
    *  </PRE>
    */
-  void update_field_data_states() const ;
+  void update_field_data_states() const { m_bucket_repository.update_field_data_states(); }
 
   //------------------------------------
   /** \brief  Query all buckets of a given entity type */
-  const std::vector<Bucket*> & buckets( EntityRank type ) const ;
+  const std::vector<Bucket*> & buckets( EntityRank type ) const
+  { return m_bucket_repository.buckets(type); }
 
   /** \brief  Get entity with a given key */
   /// \todo REFACTOR remove required_by argument
-  Entity * get_entity( EntityRank ent_type , EntityId ent_id ,
-                       const char * /* required_by */ = NULL  ) const ;
+  Entity * get_entity( EntityRank entity_rank , EntityId entity_id , const char * /* required_by */ = NULL  ) const {
+    verify_type_and_id("BulkData::get_entity", entity_rank, entity_id);
+    return m_entity_repo.get_entity( EntityKey(entity_rank, entity_id));
+  }
 
   /** \brief  Get entity with a given key */
-  Entity * get_entity( const EntityKey key ) const ;
+  Entity * get_entity( const EntityKey key ) const  {
+    return m_entity_repo.get_entity(key);
+  }
   //------------------------------------
   /** \brief  Create or retrieve a locally owned entity of a
    *          given type and id.
@@ -350,7 +354,6 @@ private:
 
 #ifndef DOXYGEN_COMPILE
 
-  typedef std::map<EntityKey,Entity*> EntitySet ;
 
   BulkData();
   BulkData( const BulkData & );
@@ -359,8 +362,8 @@ private:
 
   /** \brief  Parallel index for entity keys */
   parallel::DistributedIndex          m_entities_index ;
-  std::vector< std::vector<Bucket*> > m_buckets ;
-  EntitySet                           m_entities ;
+  impl::BucketRepository              m_bucket_repository ;
+  impl::EntityRepository              m_entity_repo ;
   std::vector<Entity*>                m_entity_comm ;
   std::vector<Ghosting*>              m_ghosting ; /**< Aura is [1] */
   Bucket *                            m_bucket_nil ;
@@ -370,7 +373,6 @@ private:
   ParallelMachine    m_parallel_machine ;
   unsigned           m_parallel_size ;
   unsigned           m_parallel_rank ;
-  unsigned           m_bucket_capacity ;
   size_t             m_sync_count ;
   BulkDataSyncState  m_sync_state ;
   bool               m_meta_data_verified ;
@@ -382,19 +384,11 @@ private:
    *  2) Change parts => update forward relations via part relation
    *                  => update via field relation
    */
-  void remove_entity( Bucket * , unsigned );
-
-  void internal_expunge_entity( EntitySet::iterator );
-
-  std::pair<Entity*,bool> internal_create_entity( const EntityKey & key );
-
   void internal_change_entity_parts( Entity & ,
                                      const PartVector & add_parts ,
                                      const PartVector & remove_parts );
 
   void internal_propagate_part_changes( Entity & , const PartVector & removed );
-
-  void internal_propagate_relocation( Entity & );
 
   void internal_change_ghosting( Ghosting & ,
                                  const std::vector<EntityProc> & add_send ,
@@ -408,8 +402,6 @@ private:
   void internal_resolve_shared_membership();
 
   bool internal_modification_end( bool regenerate_aura );
-
-  void internal_sort_bucket_entities();
 
   /** \brief  Put owned entity in send list for off-process
    *          parallel index, shared, and ghosted.
@@ -428,6 +420,14 @@ private:
 };
 
 /** \} */
+
+/** \brief Free function for setting relations on entities.
+ * \relates BulkData
+ * \relates BucketRepository
+ */
+void set_field_relations( Entity & e_from ,
+                          Entity & e_to ,
+                          const unsigned ident );
 
 } // namespace mesh
 } // namespace stk

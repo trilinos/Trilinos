@@ -40,9 +40,7 @@ bool comm_mesh_verify_parallel_consistency(
 
 unsigned BulkData::determine_new_owner( Entity & entity ) const
 {
-  const bool keeping = entity.bucket().capacity();
-
-  unsigned new_owner = keeping ? m_parallel_rank : ~0u ;
+  unsigned new_owner = entity.marked_for_destruction() ? ~0u : m_parallel_rank;
 
   for ( PairIterEntityComm
         share = entity.sharing(); ! share.empty() ; ++share ) {
@@ -138,12 +136,12 @@ void BulkData::internal_update_distributed_index(
   std::vector< parallel::DistributedIndex::KeyProc >
     new_entities_keyprocs ;
 
-  for ( EntitySet::iterator
-        i = m_entities.begin() ; i != m_entities.end() ; ++i ) {
+  for ( impl::EntityRepository::iterator
+        i = m_entity_repo.begin() ; i != m_entity_repo.end() ; ++i ) {
 
     Entity & entity = * i->second ;
 
-    if ( m_bucket_nil == & entity.bucket() ) {
+    if ( entity.marked_for_destruction() ) {
       // Has been destroyed
       del_entities_keys.push_back( entity.key().raw_key() );
     }
@@ -177,14 +175,10 @@ void BulkData::internal_update_distributed_index(
         // Another process also created or updated this entity.
 
         if ( entity == NULL || entity->key() != key ) {
-          // Have not looked this entity up by key 
-          const EntitySet::iterator j = m_entities.find( key );
-          entity = j->second ;
+          // Have not looked this entity up by key
+          entity = get_entity( key );
 
           shared_new.push_back( entity );
-
-          // Entity was changed here or on another process
-          entity->m_entityImpl.log_modified();
         }
 
         // Add the other_process to the entity's sharing info.
@@ -211,7 +205,7 @@ void BulkData::internal_resolve_parallel_create_delete(
     std::vector<int> local_flags(  ghosting_count , 0 );
     std::vector<int> global_flags( ghosting_count , 0 );
     std::vector<EntityProc> del_entities_remote ;
- 
+
     bool global_delete_flag =
       send_to_shared_and_ghost_recv( *this, del_entities, del_entities_remote );
 
@@ -404,9 +398,9 @@ void BulkData::internal_resolve_parallel_create_delete(
     shared_part.push_back( & m_mesh_meta_data.globally_shared_part() );
     owned_part.push_back(  & m_mesh_meta_data.locally_owned_part() );
 
-    for ( std::vector<Entity*>::const_iterator 
+    for ( std::vector<Entity*>::const_iterator
           i = shared_modified.end() ; i != shared_modified.begin() ; ) {
-     
+
       Entity * entity = *--i ;
 
       if ( entity->owner_rank() == m_parallel_rank &&
@@ -468,11 +462,11 @@ void BulkData::internal_resolve_parallel_create_delete(
     }
 
     const size_t n_old = m_entity_comm.size();
-     
-    m_entity_comm.insert( m_entity_comm.end() ,  
+
+    m_entity_comm.insert( m_entity_comm.end() ,
                           shared_modified.begin() , shared_modified.end() );
-     
-    std::inplace_merge( m_entity_comm.begin() ,  
+
+    std::inplace_merge( m_entity_comm.begin() ,
                         m_entity_comm.begin() + n_old ,
                         m_entity_comm.end() ,
                         EntityLess() );
@@ -502,14 +496,14 @@ bool BulkData::internal_modification_end( bool regenerate_aura )
 
   std::vector<Entity*> del_entities ;
 
-  for ( EntitySet::iterator
-        i = m_entities.begin() ; i != m_entities.end() ; ++i ) {
+  for ( impl::EntityRepository::iterator
+        i = m_entity_repo.begin() ; i != m_entity_repo.end() ; ++i ) {
    Entity * entity = i->second ;
     if ( impl::EntityImpl::LogCreated == entity->m_entityImpl.log_query() ) {
       ++ local_change_count[0] ; // Created
     }
     else if ( impl::EntityImpl::LogModified == entity->m_entityImpl.log_query() &&
-              m_bucket_nil == & entity->bucket() ) {
+              entity->marked_for_destruction() ) {
       del_entities.push_back( entity );
       ++ local_change_count[1] ; // Deleted
     }
@@ -550,7 +544,7 @@ bool BulkData::internal_modification_end( bool regenerate_aura )
   // is independent of the order in which a set of changes were
   // performed.
 
-  internal_sort_bucket_entities();
+  m_bucket_repository.internal_sort_bucket_entities();
 
   // ------------------------------
 
@@ -758,7 +752,7 @@ void BulkData::internal_resolve_shared_membership()
     std::vector<EntityProc> send_list ;
 
     generate_send_list( m_sync_count, p_rank, m_entity_comm, send_list);
-    
+
     CommAll comm( p_comm );
 
     pack_part_memberships( comm , send_list );

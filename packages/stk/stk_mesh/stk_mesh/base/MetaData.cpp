@@ -312,20 +312,6 @@ void MetaData::internal_declare_field_relation(
 
 //----------------------------------------------------------------------
 
-void MetaData::declare_field_lock_relation(
-  FieldBase & pointer_field ,
-  relation_stencil_ptr stencil )
-{
-  FieldRelation tmp ;
-  tmp.m_root   = & pointer_field ;
-  tmp.m_target = 0 ;
-  tmp.m_function = stencil ;
-
-  m_field_relations.push_back( tmp );
-}
-
-//----------------------------------------------------------------------
-
 void MetaData::commit()
 {
   static const char method[] = "stk::mesh::MetaData::commit" ;

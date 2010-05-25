@@ -27,6 +27,10 @@
 namespace stk {
 namespace mesh {
 
+namespace impl {
+class BucketRepository;
+} // namespace impl
+
 
 /** \addtogroup stk_mesh_module
  *  \{
@@ -40,12 +44,6 @@ std::ostream & operator << ( std::ostream & , const Bucket & );
 /** \brief  Print the parts and entities of this bucket */
 std::ostream &
 print( std::ostream & , const std::string & indent , const Bucket & );
-
-// BucketKey key = ( part-count , { part-ordinals } , counter )
-//  key[ key[0] ] == counter
-inline
-unsigned bucket_counter( const unsigned * const key )
-{ return key[ *key ]; }
 
 // The part count and parts are equal
 bool bucket_part_equal( const unsigned * lhs , const unsigned * rhs );
@@ -236,7 +234,7 @@ public:
  */
 class Bucket {
 private:
-  friend class BulkData ;
+  friend class impl::BucketRepository ;
   friend class impl::BucketImpl ;
 
   impl::BucketImpl       m_bucketImpl ;

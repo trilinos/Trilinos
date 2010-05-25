@@ -19,6 +19,11 @@
 namespace stk {
 namespace mesh {
 
+namespace impl {
+class EntityRepository;
+class BucketRepository;
+}
+
 /** \addtogroup stk_mesh_module
  * \{
  */
@@ -92,6 +97,9 @@ public:
   PairIterEntityComm comm( const Ghosting & sub ) const { return m_entityImpl.comm( sub ); }
 
   //------------------------------------
+  bool marked_for_destruction() const {
+    return m_entityImpl.marked_for_destruction();
+  }
 
 private:
 
@@ -105,6 +113,9 @@ private:
   Entity & operator = ( const Entity & ); ///< Assignment operator not allowed
 
 #ifndef DOXYGEN_COMPILE
+  friend class impl::EntityRepository ;
+  friend class impl::EntityImpl ;
+  friend class impl::BucketRepository ;
   friend class BulkData ;
 #endif /* DOXYGEN_COMPILE */
 };

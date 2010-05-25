@@ -16,6 +16,9 @@
 namespace stk {
 namespace mesh {
 
+FieldBase::~FieldBase()
+{}
+
 
 namespace {
 

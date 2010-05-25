@@ -446,10 +446,10 @@ void BulkData::internal_change_ghosting(
           remove( parts , meta.locally_owned_part() );
           remove( parts , meta.globally_shared_part() );
 
-          std::pair<Entity*,bool> result = internal_create_entity( key );
+          std::pair<Entity*,bool> result = m_entity_repo.internal_create_entity( key );
 
           if ( result.second                          /* Created */ ||
-               result.first->bucket().capacity() == 0 /* Re-created */ ) {
+               result.first->marked_for_destruction() /* Re-created */ ) {
             result.first->m_entityImpl.set_owner_rank( owner );
           }
 

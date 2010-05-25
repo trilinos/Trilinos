@@ -27,51 +27,6 @@
 namespace stk {
 namespace mesh {
 
-namespace {
-
-void assert_valid_relation( const char method[] ,
-                            const BulkData & mesh ,
-                            const Entity   & e_from ,
-                            const Entity   & e_to )
-{
-  const bool error_mesh_from = & mesh != & e_from.bucket().mesh();
-  const bool error_mesh_to   = & mesh != & e_to.bucket().mesh();
-  const bool error_type      = e_from.entity_rank() <= e_to.entity_rank();
-  const bool error_nil_from  = 0 == e_from.bucket().capacity();
-  const bool error_nil_to    = 0 == e_to.bucket().capacity();
-
-  if ( error_mesh_from || error_mesh_to || error_type ||
-       error_nil_from || error_nil_to ) {
-    std::ostringstream msg ;
-    msg << method << "( from " ;
-    print_entity_key( msg , mesh.mesh_meta_data(), e_from.key() );
-    if ( error_mesh_from ) {
-      msg << " NOT MEMBER OF THIS MESH" ;
-    }
-    if ( error_nil_from ) {
-      msg << " WAS DESTROYED" ;
-    }
-    msg << " , to " ;
-    print_entity_key( msg , mesh.mesh_meta_data(), e_to.key() );
-    if ( error_mesh_to ) {
-      msg << " NOT MEMBER OF THIS MESH" ;
-    }
-    if ( error_nil_to ) {
-      msg << " WAS DESTROYED" ;
-    }
-    msg << " ) FAILED" ;
-    if ( error_type ) {
-      msg << " A relation must be from higher to lower ranking entity" ;
-    }
-    throw std::runtime_error( msg.str() );
-  }
-}
-
-bool is_degenerate_relation ( const Relation &r1 , const Relation &r2 )
-{
-  return r1.attribute() == r2.attribute() && r1.entity() != r2.entity() ;
-}
-
 void set_field_relations( Entity & e_from ,
                           Entity & e_to ,
                           const unsigned ident )
@@ -103,6 +58,48 @@ void set_field_relations( Entity & e_from ,
     }
   }
 }
+
+
+namespace {
+
+void assert_valid_relation( const char method[] ,
+                            const BulkData & mesh ,
+                            const Entity   & e_from ,
+                            const Entity   & e_to )
+{
+  const bool error_mesh_from = & mesh != & e_from.bucket().mesh();
+  const bool error_mesh_to   = & mesh != & e_to.bucket().mesh();
+  const bool error_type      = e_from.entity_rank() <= e_to.entity_rank();
+  const bool error_nil_from  = e_from.marked_for_destruction();
+  const bool error_nil_to    = e_to.marked_for_destruction();
+
+  if ( error_mesh_from || error_mesh_to || error_type ||
+       error_nil_from || error_nil_to ) {
+    std::ostringstream msg ;
+    msg << method << "( from " ;
+    print_entity_key( msg , mesh.mesh_meta_data(), e_from.key() );
+    if ( error_mesh_from ) {
+      msg << " NOT MEMBER OF THIS MESH" ;
+    }
+    if ( error_nil_from ) {
+      msg << " WAS DESTROYED" ;
+    }
+    msg << " , to " ;
+    print_entity_key( msg , mesh.mesh_meta_data(), e_to.key() );
+    if ( error_mesh_to ) {
+      msg << " NOT MEMBER OF THIS MESH" ;
+    }
+    if ( error_nil_to ) {
+      msg << " WAS DESTROYED" ;
+    }
+    msg << " ) FAILED" ;
+    if ( error_type ) {
+      msg << " A relation must be from higher to lower ranking entity" ;
+    }
+    throw std::runtime_error( msg.str() );
+  }
+}
+
 
 void clear_field_relations( Entity & e_from ,
                             const unsigned type ,
@@ -148,111 +145,19 @@ void BulkData::declare_relation( Entity & e_from ,
 
   assert_valid_relation( method , *this , e_from , e_to );
 
-  const Relation forward( e_to , local_id );
+  impl::EntityImpl::declare_relation( e_from, e_to, local_id, m_sync_count);
 
-  const std::vector<Relation>::iterator fe = e_from.m_entityImpl.get_relations().end();
-        std::vector<Relation>::iterator fi = e_from.m_entityImpl.get_relations().begin();
 
-  fi = std::lower_bound( fi , fe , forward , LessRelation() );
+  PartVector add , empty ;
 
-  // The ordering of the Relations allows for two situations that do
-  // not arise often in meshes.  The first situation is 2 relations between
-  // e_from and e_to with the same kind but different local_ids.  This
-  // can happen if, for example, a triangle should be used as a quad.  In
-  // this case, one node of the triangle must be two different local nodes of
-  // the quad.  This situation is a valid state of mesh entities.
+  // Deduce and set new part memberships:
 
-  // The second situation involves malformed stencils.  Given e_from, e_to1,
-  // and e_to2, e_to1 and eto2 can share a relation with e_from with the same
-  // kind and local_id.  This can arise, for instance, if an edge has three
-  // nodes.  The local_id 1 of the edge may point to two different nodes.
-  // This situation is disallowed in the mesh.  We now check for it.
+  induced_part_membership( e_from, empty,
+      e_to.entity_rank(), local_id, add );
 
-  bool found_degenerate_relation = false;
-  EntityKey  degenerate_key;
-  if ( fi != fe )
-     {
-     bool  downstream = fi->entity_rank() < e_from.entity_rank();
-     if ( is_degenerate_relation ( forward , *fi ) && downstream )
-        {
-        found_degenerate_relation = true;
-        degenerate_key = fi->entity()->key();
-        }
-     }
-  if ( fi != e_from.m_entityImpl.get_relations().begin() )
-     {
-     --fi;
-     bool  downstream = fi->entity_rank() < e_from.entity_rank();
-     if ( is_degenerate_relation ( forward , *fi ) && downstream )
-        {
-        found_degenerate_relation = true;
-        degenerate_key = fi->entity()->key();
-        }
-     ++fi;
-     }
-  if ( found_degenerate_relation )
-     {
-     std::ostringstream msg ;
-     msg << method << "( from " ;
-     print_entity_key( msg , m_mesh_meta_data, e_from.key() );
-     msg << " , to " ;
-     print_entity_key( msg , m_mesh_meta_data, e_to.key() );
-     msg << " , id " << local_id ;
-     msg << " ) FAILED ";
-     msg << " Relation already exists to " ;
-     print_entity_key( msg , m_mesh_meta_data, degenerate_key );
-     throw std::runtime_error( msg.str() );
-     }
+  internal_change_entity_parts( e_to , add , empty );
 
-  // If the relation is not degenerate, we add it and its converse
-
-  if ( fe == fi || forward.attribute() != fi->attribute() ) {
-
-    // A new relation and its converse
-
-    const Relation converse( e_from , local_id );
-    const std::vector<Relation>::iterator ce = e_to.m_entityImpl.get_relations().end();
-          std::vector<Relation>::iterator ci = e_to.m_entityImpl.get_relations().begin();
-
-    ci = std::lower_bound( ci , ce , converse , LessRelation() );
-
-    if ( ce == ci || converse != *ci ) {
-      fi = e_from.m_entityImpl.get_relations().insert( fi , forward );
-      ci = e_to  .m_entityImpl.get_relations().insert( ci , converse );
-
-      e_from.m_entityImpl.set_sync_count( m_sync_count );
-      e_to  .m_entityImpl.set_sync_count( m_sync_count );
-
-      PartVector add , empty ;
-
-      // Deduce and set new part memberships:
-
-      induced_part_membership( e_from, empty,
-                               e_to.entity_rank(), local_id, add );
-
-      internal_change_entity_parts( e_to , add , empty );
-
-      set_field_relations( e_from , e_to , local_id );
-    }
-    else {
-     /* this is unreachable unless a friend of bulk data creates a half-edge
-        in the relationship graph. */
-      std::ostringstream msg ;
-      msg << method << "( from "
-          << print_entity_key( msg , m_mesh_meta_data, e_from.key() )
-          << " , to "
-          << print_entity_key( msg , m_mesh_meta_data, e_to.key() )
-          << " , id " << local_id
-          << " ) FAILED"
-          << " Internal error - converse relation already exists" ;
-      throw std::runtime_error( msg.str() );
-    }
-  }
-
-  // This entity's owned-closure may have changed.
-  e_to.m_entityImpl.log_modified();
-
-  // m_transaction_log.modify_entity ( e_from );
+  set_field_relations( e_from , e_to , local_id );
 }
 
 //----------------------------------------------------------------------
@@ -299,30 +204,24 @@ void BulkData::destroy_relation( Entity & e_from , Entity & e_to )
 
   PartVector del , keep ;
 
-  for ( std::vector<Relation>::iterator
-        i = e_to.m_entityImpl.get_relations().end() ; i != e_to.m_entityImpl.get_relations().begin() ; ) {
-    --i ;
-    if ( i->entity() == & e_from ) {
-      i = e_to.m_entityImpl.get_relations().erase( i );
-    }
-    else if ( e_to.entity_rank() < i->entity_rank() ) {
-      induced_part_membership( * i->entity(), del, e_to.entity_rank(),
-                               i->identifier(), keep );
+  for ( PairIterRelation i = e_to.relations() ; i.first != i.second ; ++(i.first) ) {
+
+    if ( !( i.first->entity() == & e_from )  &&
+        ( e_to.entity_rank() < i.first->entity_rank() ) )
+    {
+      induced_part_membership( * i.first->entity(), del, e_to.entity_rank(),
+                               i.first->identifier(), keep );
     }
   }
 
-  for ( std::vector<Relation>::iterator
-        i = e_from.m_entityImpl.get_relations().end() ; i != e_from.m_entityImpl.get_relations().begin() ; ) {
-    --i ;
-    if ( i->entity() == & e_to ) {
+  for ( PairIterRelation i = e_from.relations() ; i.first != i.second ; ++(i.first) ) {
+    if ( i.first->entity() == & e_to ) {
 
       induced_part_membership( e_from, keep, e_to.entity_rank(),
-                               i->identifier(), del );
+                               i.first->identifier(), del );
 
       clear_field_relations( e_from , e_to.entity_rank() ,
-                             i->identifier() );
-
-      i = e_from.m_entityImpl.get_relations().erase( i );
+                             i.first->identifier() );
     }
   }
 
@@ -339,12 +238,8 @@ void BulkData::destroy_relation( Entity & e_from , Entity & e_to )
     internal_change_entity_parts( e_to , add , del );
   }
 
-  // This entity's owned-closure may have changed.
-  e_to.m_entityImpl.log_modified();
-
-  // Mark e_from and e_to as modified
-  // m_transaction_log.modify_entity ( e_from );
-  // m_transaction_log.modify_sole_entity ( e_to );
+  //delete relations from the entities
+  impl::EntityImpl::destroy_relation( e_from, e_to);
 
 }
 
@@ -420,28 +315,6 @@ void BulkData::internal_propagate_part_changes(
       Entity & e_from = * rel->entity();
 
       set_field_relations( e_from, entity, rel_ident );
-    }
-  }
-}
-
-//----------------------------------------------------------------------
-
-void BulkData::internal_propagate_relocation( Entity & entity )
-{
-  const unsigned etype = entity.entity_rank();
-  PairIterRelation rel = entity.relations();
-
-  for ( ; ! rel.empty() ; ++rel ) {
-    const unsigned rel_type = rel->entity_rank();
-    if ( rel_type < etype ) {
-      Entity & e_to = * rel->entity();
-
-      set_field_relations( entity, e_to, rel->identifier() );
-    }
-    else if ( etype < rel_type ) {
-      Entity & e_from = * rel->entity();
-
-      set_field_relations( e_from, entity, rel->identifier() );
     }
   }
 }

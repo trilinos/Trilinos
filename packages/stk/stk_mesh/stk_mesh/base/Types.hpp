@@ -45,11 +45,6 @@ template< typename Scalar = void ,
           class Tag7 = void >
   class Field ;
 
-
-template< class Field, class Relation >
-class GatherField ;
-
-
 /** \brief Maximum
  *  \ref shards::Array "multi-dimenaional array" dimension of a
  *  \ref stk::mesh::Field "field"

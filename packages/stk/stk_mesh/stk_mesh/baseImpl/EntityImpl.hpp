@@ -46,7 +46,7 @@ public:
   unsigned bucket_ordinal() const { return m_bucket_ord ; }
   unsigned owner_rank() const { return m_owner_rank ; }
   size_t synchronized_count() const { return m_sync_count ; }
-  
+
   // Exposed in internal interface:
 
   /** Change log to reflect change from before 'modification_begin'
@@ -55,9 +55,11 @@ public:
   enum ModificationLog { LogNoChange = 0 ,
                          LogCreated  = 1 ,
                          LogModified = 2 };
-  RelationVector & get_relations() { return m_relation; }
-  const EntityCommInfoVector & get_const_entity_comm_info_vector() const { return m_comm; }
-  EntityCommInfoVector & get_nonconst_entity_comm_info_vector() { return m_comm; }
+
+
+  static void declare_relation( Entity & e_from, Entity & e_to, const unsigned local_id, unsigned sync_count);
+  static void destroy_relation( Entity & e_from, Entity & e_to);
+
   // Communication info access:
   bool insert( const EntityCommInfo & );
   bool erase(  const EntityCommInfo & ); ///< Erase this entry
@@ -65,18 +67,42 @@ public:
   void comm_clear_ghosting(); ///< Clear ghosting
   void comm_clear(); ///< Clear everything
   // Miscellaneous accessors:
-  Bucket * get_bucket() { return m_bucket; }
-  void set_bucket_and_ordinal( Bucket * bucket, unsigned ordinal ) 
-  { m_bucket = bucket; m_bucket_ord = ordinal; }
-  void set_owner_rank( unsigned owner_rank ) { m_owner_rank = owner_rank; }
-  void set_sync_count( size_t sync_count ) { m_sync_count = sync_count; }
+  Bucket * get_bucket() const { return m_bucket; }
+
+  void set_bucket_and_ordinal( Bucket * bucket, unsigned ordinal ) {
+    m_bucket = bucket;
+    m_bucket_ord = ordinal;
+    log_modified();
+  }
+
+  void set_owner_rank( unsigned owner_rank ) {
+    m_owner_rank = owner_rank;
+    log_modified();
+  }
+
+  void set_sync_count( size_t sync_count ) {
+    m_sync_count = sync_count;
+    log_modified();
+  }
+
   // Change log access:
   ModificationLog log_query() const { return m_mod_log ; }
-  void log_clear();
-  void log_created();
-  void log_modified();
 
-// private:
+  void log_clear() {
+    m_mod_log = LogNoChange;
+  }
+  void log_created() {
+    m_mod_log = LogCreated;
+  }
+  void log_modified() {
+    if ( LogCreated != m_mod_log) {
+      m_mod_log = LogModified;
+    }
+  }
+
+  bool marked_for_destruction() const;
+
+ private:
 
   const EntityKey         m_key ;        ///< Globally unique key
   RelationVector          m_relation ;   ///< This entity's relationships

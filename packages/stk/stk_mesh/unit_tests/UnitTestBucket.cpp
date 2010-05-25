@@ -39,6 +39,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testUnit)
 {
   MPI_Barrier( MPI_COMM_WORLD );
   stk::mesh::UnitTestBucket::testBucket ( MPI_COMM_WORLD );
+  stk::mesh::UnitTestBucket::testTopologyHelpers( MPI_COMM_WORLD );
 }
 
 //----------------------------------------------------------------------
@@ -137,84 +138,78 @@ void UnitTestBucket::testBucket( ParallelMachine pm )
   {
     STKUNIT_ASSERT_THROW ( throw_field_data_array ( *meta.get_fields()[0] , 10 ) , std::runtime_error );
   }
+}
 
-  /*
-  bool result = true;
-  */
-
+void UnitTestBucket::testTopologyHelpers( ParallelMachine pm )
+{
   // Tests to complete coverage of TopologyHelpers.cpp - C.Brickley - 12 May 2010
 
-  stk::mesh::MetaData meta4 ( stk::unit_test::get_entity_rank_names ( 3 ) );
+  stk::mesh::MetaData meta ( stk::unit_test::get_entity_rank_names ( 3 ) );
 
-  /*
-  stk::mesh::Part &new_part4 = meta4.declare_part ( "another part");
-  */
+  stk::mesh::Part &new_part4 = meta.declare_part ( "another part");
 
-  stk::mesh::Part & m_partLeft_1 = meta4.declare_part( "block_left_1", Element );
-  stk::mesh::set_cell_topology< shards::Tetrahedron<4>  >( m_partLeft_1 );
+  stk::mesh::Part & partLeft_1 = meta.declare_part( "block_left_1", Element );
+  stk::mesh::set_cell_topology< shards::Tetrahedron<4>  >( partLeft_1 );
 
-  stk::mesh::Part & m_partLeft_2 = meta4.declare_part( "block_left_2", Element );
-  stk::mesh::set_cell_topology< shards::Wedge<15>  >( m_partLeft_2 );
+  stk::mesh::Part & partLeft_2 = meta.declare_part( "block_left_2", Element );
+  stk::mesh::set_cell_topology< shards::Wedge<15>  >( partLeft_2 );
 
-  stk::mesh::Part & m_partLeft_3 = meta4.declare_part( "block_left_3", Element );
-  stk::mesh::set_cell_topology< shards::Tetrahedron<4>  >( m_partLeft_3 );
+  stk::mesh::Part & partLeft_3 = meta.declare_part( "block_left_3", Element );
+  stk::mesh::set_cell_topology< shards::Tetrahedron<4>  >( partLeft_3 );
 
-  stk::mesh::Part & part_A_3 = meta4.declare_part( "A_3", Element);
+  stk::mesh::Part & part_A_3 = meta.declare_part( "A_3", Element);
   stk::mesh::set_cell_topology< shards::Quadrilateral<4>  >( part_A_3 );
 
-  /*
-  stk::mesh::Part & part_B_3 = meta4.declare_part( "B_3", Element);
-  */
+  stk::mesh::Part & part_B_3 = meta.declare_part( "B_3", Element);
 
-  meta4.commit ();
+  meta.commit();
 
-  /*
-  stk::ParallelMachine comm4(MPI_COMM_WORLD);
-  stk::mesh::BulkData bulk5 ( meta4 , comm4 , 100 );
+  stk::mesh::BulkData bulk ( meta , pm , 100 );
   std::vector<stk::mesh::Part *>  add_part4;
   add_part4.push_back ( &new_part4 );
 
   int  size , rank;
-  rank = stk::parallel_machine_rank( comm4 );
-  size = stk::parallel_machine_size( comm4 );
+  rank = stk::parallel_machine_rank( pm );
+  size = stk::parallel_machine_size( pm );
   PartVector tmp(1);
 
-  bulk5.modification_begin();
+  bulk.modification_begin();
 
-  for ( int i = 0 ; i != 93 ; i++ )
+  int id_base = 0;
+  for ( id_base = 0 ; id_base < 93 ; ++id_base )
   {
-    int new_id = size*i+rank;
-    bulk5.declare_entity ( 0 , new_id+1 , add_part4 );
+    int new_id = size * id_base + rank;
+    bulk.declare_entity( 0 , new_id+1 , add_part4 );
   }
 
-  int new_id = size*93+rank;
-  Entity & elem  = bulk5.declare_entity( 3 , new_id+1 , add_part4 );
+  int new_id = size * (++id_base) + rank;
+  Entity & elem  = bulk.declare_entity( 3 , new_id+1 , add_part4 );
 
-  new_id = size*94+rank;
-  Entity & elem1  = bulk5.declare_entity( 3 , new_id+1 , add_part4 );
+  new_id = size * (++id_base) + rank;
+  Entity & elem1  = bulk.declare_entity( 3 , new_id+1 , add_part4 );
 
-  new_id = size*95+rank;
-  Entity & elem2  = bulk5.declare_entity( 3 , new_id+1 , add_part4 );
+  new_id = size * (++id_base) + rank;
+  Entity & elem2  = bulk.declare_entity( 3 , new_id+1 , add_part4 );
 
-  new_id = size*96+rank;
-  Entity & elem3  = bulk5.declare_entity( 3 , new_id+1 , add_part4 );
+  new_id = size * (++id_base) + rank;
+  Entity & elem3  = bulk.declare_entity( 3 , new_id+1 , add_part4 );
 
-  new_id = size*97+rank;
-  Entity & elem4  = bulk5.declare_entity( 3 , new_id+1 , add_part4 );
+  new_id = size * (++id_base) + rank;
+  Entity & elem4  = bulk.declare_entity( 3 , new_id+1 , add_part4 );
 
-  new_id = size*98+rank;
-  Entity & element2  = bulk5.declare_entity( 3 , new_id+1 , add_part4 );
+  new_id = size * (++id_base) + rank;
+  Entity & element2  = bulk.declare_entity( 3 , new_id+1 , add_part4 );
 
-  new_id = size*99+rank;
-  Entity & element3  = bulk5.declare_entity( 3 , new_id+1 , add_part4 );
+  new_id = size * (++id_base) + rank;
+  Entity & element3  = bulk.declare_entity( 3 , new_id+1 , add_part4 );
 
   // More coverage obtained for assert_entity_owner in BulkData.cpp:
-
-  stk::mesh::Entity &n = *  bulk5.buckets(1)[0]->begin();
+  /*
+  stk::mesh::Entity &n = *bulk.buckets(1)[0]->begin();
   {
     int ok = 0 ;
     try {
-      bulk5.change_entity_parts ( n , add_part4 );
+      bulk.change_entity_parts ( n , add_part4 );
     }
     catch( const std::exception & x ) {
       ok = 1 ;
@@ -227,22 +222,26 @@ void UnitTestBucket::testBucket( ParallelMachine pm )
       throw std::runtime_error("UnitTestBucket FAILED to catch error for change_entity_parts");
     }
   }
+  */
 
   // Coverage for get_cell_topology in TopologyHelpers.cpp
 
   tmp[0] = & part_A_3;
-  bulk5.change_entity_parts ( elem1 , tmp );
-  bulk5.change_entity_parts ( elem1 , tmp );
+  bulk.change_entity_parts ( elem1 , tmp );
+  bulk.change_entity_parts ( elem1 , tmp );
   tmp[0] = & part_B_3;
-  bulk5.change_entity_parts ( elem1 , tmp );
+  bulk.change_entity_parts ( elem1 , tmp );
 
   const CellTopologyData * elem1_topology = stk::mesh::get_cell_topology( elem1 );
 
-  if (elem1_topology != shards::getCellTopologyData< shards::Wedge<15> >()) {
-    result = false;
-  }
+  {
+    bool result = true;
+    if (elem1_topology != shards::getCellTopologyData< shards::Wedge<15> >()) {
+      result = false;
+    }
 
-  STKUNIT_ASSERT_EQUAL(result, false);
+    STKUNIT_ASSERT_EQUAL(result, false);
+  }
 
   // Coverage for get_cell_topology in TopologyHelpers.cpp; (FAILED WITH MULTIPLE LOCAL TOPOLOGIES)
 
@@ -252,21 +251,24 @@ void UnitTestBucket::testBucket( ParallelMachine pm )
       //assign 3 different parts with different topologies:
 
       tmp[0] = & part_A_3;
-      bulk5.change_entity_parts ( elem , tmp );
+      bulk.change_entity_parts ( elem , tmp );
 
-      tmp[0] = & m_partLeft_1;
-      bulk5.change_entity_parts ( elem , tmp );
+      tmp[0] = & partLeft_1;
+      bulk.change_entity_parts ( elem , tmp );
 
-      tmp[0] = & m_partLeft_2;
-      bulk5.change_entity_parts ( elem , tmp );
+      tmp[0] = & partLeft_2;
+      bulk.change_entity_parts ( elem , tmp );
 
       const CellTopologyData * elem_topology = stk::mesh::get_cell_topology( elem );
 
-      if (elem_topology != shards::getCellTopologyData< shards::Triangle<3> >()) {
-        result = false;
-      }
+      {
+        bool result = true;
+        if (elem_topology != shards::getCellTopologyData< shards::Triangle<3> >()) {
+          result = false;
+        }
 
-      STKUNIT_ASSERT_EQUAL(result, false);
+        STKUNIT_ASSERT_EQUAL(result, false);
+      }
     }
     catch( const std::exception & x ) {
       ok = 1 ;
@@ -294,7 +296,7 @@ void UnitTestBucket::testBucket( ParallelMachine pm )
     try {
       //assign a Quadrilateral part
       tmp[0] = & part_A_3;
-      bulk5.change_entity_parts ( elem3 , tmp );
+      bulk.change_entity_parts ( elem3 , tmp );
 
       std::vector<EntitySideComponent> adjacent_entities2;
 
@@ -341,7 +343,8 @@ void UnitTestBucket::testBucket( ParallelMachine pm )
   {
     int ok = 0 ;
     try {
-      stk::mesh::Entity &face = stk::mesh::declare_element_side( bulk5, 3, elem4, 0, &m_partLeft_2);
+      new_id = size * (++id_base) + rank;
+      stk::mesh::Entity &face = stk::mesh::declare_element_side( bulk, 3, elem4, new_id+1, &partLeft_2);
       stk::mesh::PairIterRelation rel = face.relations(stk::mesh::Node);
     }
     catch( const std::exception & x ) {
@@ -365,11 +368,11 @@ void UnitTestBucket::testBucket( ParallelMachine pm )
   elem_node[2] = 3 ;
   elem_node[3] = 4 ;
 
-  stk::mesh::EntityId elem_id = 1;
+  stk::mesh::EntityId elem_id(size * (++id_base) + rank + 1);
+  stk::mesh::Entity& element = stk::mesh::declare_element(bulk, part_A_3, elem_id, elem_node );
 
-  stk::mesh::Entity& element = stk::mesh::declare_element(bulk5, part_A_3, elem_id, elem_node );
-
-  stk::mesh::Entity &face2 = stk::mesh::declare_element_side( bulk5, 1, element, 0);
+  new_id = size * (++id_base) + rank;
+  stk::mesh::Entity &face2 = stk::mesh::declare_element_side( bulk, new_id+1, element, 0);
 
   stk::mesh::PairIterRelation rel2 = face2.relations(stk::mesh::Node);
 
@@ -377,11 +380,14 @@ void UnitTestBucket::testBucket( ParallelMachine pm )
 
   bool state = false;
 
-  if (state != element_side_polarity( element, face2, 0) ) {
-    result = false;
-  }
+  {
+    bool result = true;
+    if (state != element_side_polarity( element, face2, 0) ) {
+      result = false;
+    }
 
-  STKUNIT_ASSERT_EQUAL(result, false);
+    STKUNIT_ASSERT_EQUAL(result, false);
+  }
 
   // Coverage of element_side_polarity in TopologyHelpers.cpp
 
@@ -389,7 +395,7 @@ void UnitTestBucket::testBucket( ParallelMachine pm )
     int ok = 0 ;
     try {
       tmp[0] = & part_A_3;
-      bulk5.change_entity_parts ( element2 , tmp );
+      bulk.change_entity_parts ( element2 , tmp );
 
       element_side_polarity( element2, face2, -1);
     }
@@ -411,7 +417,7 @@ void UnitTestBucket::testBucket( ParallelMachine pm )
     int ok = 0 ;
     try {
       tmp[0] = & part_B_3;
-      bulk5.change_entity_parts ( element3 , tmp );
+      bulk.change_entity_parts ( element3 , tmp );
 
       element_side_polarity( element3, face2, 0);
     }
@@ -430,7 +436,7 @@ void UnitTestBucket::testBucket( ParallelMachine pm )
   //Coverage of TopologyHelpers element_local_side_id(const Entity & elem, const Entity & side )
 
   tmp[0] = & part_A_3;
-  bulk5.change_entity_parts ( element3 , tmp );
+  bulk.change_entity_parts ( element3 , tmp );
 
   int localSide;
 
@@ -443,7 +449,7 @@ void UnitTestBucket::testBucket( ParallelMachine pm )
   const CellTopologyData* celltopology = get_cell_topology(element);
 
   unsigned subcell_rank = 1;
-  unsigned subcell_identifier= celltopology->subcell_count[subcell_rank] - 1;
+  unsigned subcell_identifier = celltopology->subcell_count[subcell_rank] - 1;
   const unsigned* nodes = celltopology->subcell[subcell_rank][subcell_identifier].node;
 
   unsigned num_nodes =  celltopology->subcell[subcell_rank][subcell_identifier].topology->node_count;
@@ -456,9 +462,11 @@ void UnitTestBucket::testBucket( ParallelMachine pm )
     node_entities.push_back(relations[nodes[itr]].entity());
   }
 
-  localSide = element_local_side_id ( face2, node_entities);
+  /*
+  localSide = element_local_side_id ( face2, node_entities); //uninitialized memory access within node_entities!!
 
   STKUNIT_ASSERT_EQUAL(localSide, -1);
+  */
 
   //Checks line 337 in TopologyHelpers for element_local_side_id(const Entity & elem, const std::vector<Entity*>& entity_nodes)
 
@@ -468,8 +476,7 @@ void UnitTestBucket::testBucket( ParallelMachine pm )
 
   STKUNIT_ASSERT_EQUAL(localSide, -1);
 
-  bulk5.modification_end();
-  */
+  bulk.modification_end();
 }
 
 //----------------------------------------------------------------------

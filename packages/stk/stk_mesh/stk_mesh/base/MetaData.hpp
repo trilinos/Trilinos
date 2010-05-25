@@ -222,10 +222,6 @@ public:
                                relation_stencil_ptr stencil ,
                                ReferencedFieldType & referenced_field );
 
-  /** \todo REFACTOR eliminate this method, it does not belong here. */
-  void declare_field_lock_relation( FieldBase & pointer_field ,
-                                    relation_stencil_ptr stencil );
-
   /** \brief  Get field relations */
   const std::vector<FieldRelation> & get_field_relations() const
     { return m_field_relations ; }

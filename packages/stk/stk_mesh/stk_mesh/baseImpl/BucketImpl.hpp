@@ -23,7 +23,7 @@ namespace impl {
 
 class BucketImpl {
   public:
-  ~BucketImpl() {}
+  ~BucketImpl();
 
   struct DataMap {
     typedef FieldBase::Restriction::size_type size_type ;
@@ -79,24 +79,8 @@ class BucketImpl {
   //
   void increment_size() { ++m_size ; }
   void decrement_size() { --m_size ; }
-  // Destroy the last empty bucket in a family:
-  static void destroy_bucket( std::vector<Bucket*> & bucket_set , Bucket * );
-  static void destroy_bucket( Bucket * );
-  static Bucket * declare_nil_bucket( BulkData & , unsigned );
-  static Bucket * declare_bucket( BulkData & ,
-                    const unsigned entity_rank ,
-                    const unsigned part_count ,
-                    const unsigned part_ord[] ,
-                    const unsigned bucket_capacity ,
-                    const std::vector< FieldBase * > & field_set ,
-                          std::vector<Bucket*>       & bucket_set );
-  static Bucket * last_bucket_in_family( Bucket * );
-  Entity * nonconst_entity(unsigned entity_ordinal) const { return m_entities[entity_ordinal] ; }
   void replace_entity(unsigned entity_ordinal, Entity * entity ) { m_entities[entity_ordinal] = entity ; }
   void update_state();
-  static void copy_fields( Bucket & k_dst , unsigned i_dst ,
-                           Bucket & k_src , unsigned i_src );
-  static void zero_fields( Bucket & k_dst , unsigned i_dst );
 
   template< class field_type >
   typename FieldTraits< field_type >::data_type *
@@ -105,6 +89,20 @@ class BucketImpl {
     typedef typename FieldTraits< field_type >::data_type * data_p ;
     return (data_p)(field_data_location_impl(f.mesh_meta_data_ordinal(),entity_ordinal));
   }
+
+  // BucketKey key = ( part-count , { part-ordinals } , counter )
+  //  key[ key[0] ] == counter
+  unsigned bucket_counter() const { return m_key[ *m_key ]; }
+
+  Bucket * last_bucket_in_family();
+  Bucket * first_bucket_in_family();
+  void set_last_bucket_in_family( Bucket * last_bucket );
+  void set_first_bucket_in_family( Bucket * first_bucket );
+  DataMap * get_field_map();
+  void zero_fields( unsigned i_dst );
+  void replace_fields( unsigned i_dst , Bucket & k_src , unsigned i_src );
+  void set_bucket_family_pointer( Bucket * bucket ) { m_bucket = bucket; }
+  const Bucket * get_bucket_family_pointer() const { return m_bucket; }
 
   private:
   BucketImpl();
@@ -130,13 +128,14 @@ class BucketImpl {
     }
     return ptr ;
   }
+  Bucket * last_bucket_in_family_impl();
 };
 
 
 
-} // namespace impl 
-} // namespace mesh 
-} // namespace stk 
+} // namespace impl
+} // namespace mesh
+} // namespace stk
 
 
 #endif // stk_mesh_BucketImpl_hpp

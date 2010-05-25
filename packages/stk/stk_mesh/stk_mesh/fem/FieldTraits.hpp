@@ -17,18 +17,16 @@
 namespace stk {
 namespace mesh {
 
-using shards::ArrayDimTag;
-
 /** \addtogroup stk_mesh_field_dimension_tags
  *  \{
  */
 
 /**
- *   \brief Implement an ArrayDimTag for Cartesian coordinate dimensions.
+ *   \brief Implement an shards::ArrayDimTag for Cartesian coordinate dimensions.
  *
  *   A Cartesian coordinate has up to three dimensions in X, Y, Z order.
  */
-struct Cartesian : public ArrayDimTag {
+struct Cartesian : public shards::ArrayDimTag {
 
   enum { Size = 3 };                    ///< default size
 
@@ -46,12 +44,12 @@ private:
 };
 
 /**
- *   \brief Implement an ArrayDimTag for Cylindrical coordinate dimensions.
+ *   \brief Implement an shards::ArrayDimTag for Cylindrical coordinate dimensions.
  *
  *   A Cylindral coordinate has up to three dimensions in
  *   radius, angle, and longitudinal-distance order.
  */
-struct Cylindrical : public ArrayDimTag {
+struct Cylindrical : public shards::ArrayDimTag {
 
   enum { Radius = 0 , R = 0 ,           ///< Identifiers for each dimension
          Angle = 1 ,  A = 1 ,
@@ -69,12 +67,12 @@ private:
 };
 
 /**
- *  \brief Implement an ArrayDimTag for FullTensor.
+ *  \brief Implement an shards::ArrayDimTag for FullTensor.
  *
  * \todo REFACTOR  Where should FullTensor live, in the application,
  *                 in the toolkit or a common application header?
  */
-struct FullTensor : public ArrayDimTag {
+struct FullTensor : public shards::ArrayDimTag {
 
   enum { Size = 9 };
 
@@ -96,12 +94,12 @@ private:
 //----------------------------------------------------------------------
 
 /**
- *  \brief Implement an ArrayDimTag for SymmetricTensor.
+ *  \brief Implement an shards::ArrayDimTag for SymmetricTensor.
  *
  * \todo REFACTOR  Where should SymmetricTensor live, in the application,
  *                 in the toolkit or a common application header?
  */
-struct SymmetricTensor : public ArrayDimTag {
+struct SymmetricTensor : public shards::ArrayDimTag {
 
   enum { Size = 6 };
 

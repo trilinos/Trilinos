@@ -19,6 +19,7 @@ namespace mesh {
 class UnitTestBucket {
 public:
   static void testBucket ( ParallelMachine );
+  static void testTopologyHelpers ( ParallelMachine );
 
   /** Generate simple edge-loop mesh with 'nPerProc' edges
    *  on each processor.  Fill the 'node_ids' and 'edge_ids'
