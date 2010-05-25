@@ -6,4 +6,4 @@ eg config --global user.email rabartl@sandia.gov
 eg config --global color.ui true
 # Set up some shortcut commands
 _SCRIPT_DIR=`echo $0 | sed "s/\(.*\)\/.*\.sh/\1/g"`
-$_SCRIPT_DIR/git-config-alias.sh
+$_SCRIPT_DIR/../../commonTools/git/git-config-alias.sh
