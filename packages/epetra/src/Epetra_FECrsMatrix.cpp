@@ -421,7 +421,7 @@ int Epetra_FECrsMatrix::InsertGlobalValues(int numRows, const int* rows,
 
 //----------------------------------------------------------------------------
 int Epetra_FECrsMatrix::SumIntoGlobalValues(int GlobalRow, int NumEntries,
-                                            double* Values, int* Indices)
+                                            const double* Values, const int* Indices)
 {
   return(InputGlobalValues(1, &GlobalRow,
                            NumEntries, Indices, Values,
@@ -430,7 +430,7 @@ int Epetra_FECrsMatrix::SumIntoGlobalValues(int GlobalRow, int NumEntries,
 
 //----------------------------------------------------------------------------
 int Epetra_FECrsMatrix::InsertGlobalValues(int GlobalRow, int NumEntries,
-                                            double* Values, int* Indices)
+                                            const double* Values, const int* Indices)
 {
   return(InputGlobalValues(1, &GlobalRow,
                            NumEntries, Indices, Values,
@@ -439,7 +439,7 @@ int Epetra_FECrsMatrix::InsertGlobalValues(int GlobalRow, int NumEntries,
 
 //----------------------------------------------------------------------------
 int Epetra_FECrsMatrix::ReplaceGlobalValues(int GlobalRow, int NumEntries,
-                                            double* Values, int* Indices)
+                                            const double* Values, const int* Indices)
 {
   return(InputGlobalValues(1, &GlobalRow,
                            NumEntries, Indices, Values,

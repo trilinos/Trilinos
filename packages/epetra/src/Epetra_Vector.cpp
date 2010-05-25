@@ -82,13 +82,13 @@ const double& Epetra_Vector::operator [] (int Index) const  {
 */
 
 //=========================================================================
-int Epetra_Vector::ReplaceGlobalValues(int NumEntries, double * Values, int * Indices) {
+int Epetra_Vector::ReplaceGlobalValues(int NumEntries, const double * Values, const int * Indices) {
   // Use the more general method below
   EPETRA_CHK_ERR(ChangeValues(NumEntries, 0, Values, Indices, true, false));
   return(0);
 }
 //=========================================================================
-int Epetra_Vector::ReplaceMyValues(int NumEntries, double * Values, int * Indices) {
+int Epetra_Vector::ReplaceMyValues(int NumEntries, const double * Values, const int * Indices) {
   // Use the more general method below
   EPETRA_CHK_ERR(ChangeValues(NumEntries, 0, Values, Indices, false, false));
   return(0);
@@ -106,13 +106,13 @@ int Epetra_Vector::SumIntoMyValues(int NumEntries, const double * Values, const 
   return(0);
 }
 //=========================================================================
-int Epetra_Vector::ReplaceGlobalValues(int NumEntries, int BlockOffset, double * Values, int * Indices) {
+int Epetra_Vector::ReplaceGlobalValues(int NumEntries, int BlockOffset, const double * Values, const int * Indices) {
   // Use the more general method below
   EPETRA_CHK_ERR(ChangeValues(NumEntries, BlockOffset, Values, Indices, true, false));
   return(0);
 }
 //=========================================================================
-int Epetra_Vector::ReplaceMyValues(int NumEntries, int BlockOffset, double * Values, int * Indices) {
+int Epetra_Vector::ReplaceMyValues(int NumEntries, int BlockOffset, const double * Values, const int * Indices) {
   // Use the more general method below
   EPETRA_CHK_ERR(ChangeValues(NumEntries, BlockOffset, Values, Indices, false, false));
   return(0);
