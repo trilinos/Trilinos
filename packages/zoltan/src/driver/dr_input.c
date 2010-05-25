@@ -100,7 +100,7 @@ int read_cmd_file (
 	continue;
       }
     }
-    else if (sscanf(line, " zoltan debug level" SKIPEQ "%s", value) == 1) {
+    else if (sscanf(line, " zoltan memory debug level" SKIPEQ "%s", value) == 1) {
       if (strcmp(value, "1")) {
 	Zoltan_Memory_Debug(1);
       }
