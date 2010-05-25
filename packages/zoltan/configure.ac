@@ -68,6 +68,27 @@ AM_MAINTAINER_MODE
 
 AC_CANONICAL_TARGET
 
+# Note in header file and Makefile conditional what the host OS is
+  
+AM_CONDITIONAL(HOST_CYGWIN, false)
+AM_CONDITIONAL(HOST_LINUX, false)
+AM_CONDITIONAL(HOST_SOLARIS, false)
+
+case $host_os in
+  cygwin)
+    AM_CONDITIONAL(HOST_CYGWIN, true)
+    AC_DEFINE(HOST_CYGWIN,1,[software host will be cygwin])
+    ;;
+  linux*)
+    AM_CONDITIONAL(HOST_LINUX, true)
+    AC_DEFINE(HOST_LINUX,1,[software host will be linux])
+    ;;
+  solaris*)
+    AM_CONDITIONAL(HOST_SOLARIS, true)
+    AC_DEFINE(HOST_SOLARIS,1,[software host will be solaris])
+    ;;
+esac
+
 # Use automake
 
 #  - Required version of automake.
