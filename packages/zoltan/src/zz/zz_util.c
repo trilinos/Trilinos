@@ -19,7 +19,13 @@ extern "C" {
 
 
 #include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 #include <ctype.h>
+#include <string.h>
+#include <errno.h>
 
 #include "zz_util_const.h"
 #include "zoltan_mem.h"
@@ -295,6 +301,55 @@ int Zoltan_set_mpi_types()
 
   return ZOLTAN_OK;
 }
+
+/* On a linux node, try to write the contents of /proc/meminfo to a file
+*/
+void Zoltan_write_linux_meminfo(int append, char *msg)
+{
+int rank;
+int f;
+size_t fsize, rc;
+char *c=NULL;
+char fbuf[64],buf[2048];
+struct stat info;
+
+  MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+
+  f = open("/proc/meminfo", O_RDONLY);
+  if (f == -1) return;
+
+  c = buf;
+  rc = read(f, (void *)c++, 1);
+
+  while ((rc == 1) && (c - buf < 2047)){
+    rc = read(f, (void *)c++, 1);
+  }
+
+  fsize = c-buf;
+
+  close(f);
+
+  sprintf(fbuf,"meminfo_%d.txt",rank);
+
+  if (append){
+    f = open(fbuf,O_WRONLY | O_APPEND | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+  }
+  else{
+    f = open(fbuf,O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+  }
+
+  if (f == -1) return;
+
+  if (msg != NULL){
+    write(f, msg, strlen(msg));
+  }
+
+  write(f,buf,fsize);
+
+  fsync(f);
+  close(f);
+}
+
 
 
 #ifdef __cplusplus
