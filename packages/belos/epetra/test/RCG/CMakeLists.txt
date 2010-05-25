@@ -10,7 +10,6 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
     rcg_hb
     SOURCES test_rcg_hb.cpp createEpetraProblem.cpp
     COMM serial mpi
-    XHOST gabriel.sandia.gov
     ARGS
       "--verbose --tol=1e-6 --filename=bcsstk14.hb --num-rhs=10 --max-subspace=100 --recycle=10 --max-iters=4000"
     STANDARD_PASS_OUTPUT 
