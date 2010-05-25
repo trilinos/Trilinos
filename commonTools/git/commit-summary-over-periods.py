@@ -14,11 +14,11 @@ from GeneralScriptSupport import *
 # Commandline options
 #
 
-usageHelp = r"""commit-summary-over-months.py [OPTION]
+usageHelp = r"""commit-summary-over-periods.py [OPTION]
 
 This script collects statistics for the number of commit by the given authors
-over a number of months and produces a summary table sutable for import and
-ploting.
+over a number of time periods (default months) and produces a summary table
+sutable for import and plotting.
 """
 
 from optparse import OptionParser
@@ -26,12 +26,18 @@ from optparse import OptionParser
 clp = OptionParser(usage=usageHelp)
 
 clp.add_option(
-  "--start-month-ago", dest="startMonthAgo", type="int",
+  "--period-unit", dest="periodUnit", type="string",
+  default="month",
+  help="The unit of time period used in --before and --after log arguments"
+  );
+
+clp.add_option(
+  "--start-ago", dest="startAgo", type="int",
   default=0
   );
 
 clp.add_option(
-  "--end-month-ago", dest="endMonthAgo", type="int",
+  "--end-ago", dest="endAgo", type="int",
   default=12
   );
 
@@ -60,7 +66,7 @@ clp.add_option(
 
 clp.add_option(
   "--show-commits", dest="showCommits", action="store_true",
-  help="Show the actual commits in the output.",
+  help="Show the actual commits in the output (implies --show-log-cmnd).",
   default=False )
 
 clp.add_option(
@@ -70,6 +76,10 @@ clp.add_option(
 
 
 (options, args) = clp.parse_args()
+
+
+if options.showCommits:
+  options.showLogCmnd = True
 
 
 #
@@ -82,26 +92,26 @@ authorsList = options.authors.split(",")
 excludeFilesList = options.excludeFiles.split(",")
 #print "excludeFilesList =", excludeFilesList
 
-# Gather the number of commits for each author over the given range of months
+# Gather the number of commits for each author over the given range of periods
 
 authorsNumCommits = []
 authorsNumLinesAdded = []
 
-for month_i in range(options.startMonthAgo, options.endMonthAgo):
+for period_i in range(options.startAgo, options.endAgo):
 
-  #print "month_i =", month_i
+  #print "period_i =", period_i
 
-  authorsNumCommitsThisMonth = []
-  authorsNumLinesAddedThisMonth = []
+  authorsNumCommitsThisPeriod = []
+  authorsNumLinesAddedThisPeriod = []
 
   for author in authorsList:
 
     #print "author =", author
 
     cmnd = "eg log --pretty=format:'%n%h \"%s\" <%ae> [%ad] (%ar)' -w -C" + \
-      " --after=\""+str(month_i+1)+" months ago\"" + \
+      " --before=\""+str(period_i)+" "+options.periodUnit+" ago\"" + \
+      " --after=\""+str(period_i+1)+" "+options.periodUnit+" ago\"" + \
       " --numstat" + \
-      " --before=\""+str(month_i)+" months ago\"" + \
       " --author="+author
     if options.files:
       cmnd += " -- " + " ".join(options.files.split(","))
@@ -109,32 +119,32 @@ for month_i in range(options.startMonthAgo, options.endMonthAgo):
     if options.showLogCmnd:
       print "\n"+cmnd
 
-    authorCommitsThisMonth = getCmndOutput(cmnd, True)
+    authorCommitsThisPeriod = getCmndOutput(cmnd, True)
 
     if options.showCommits:
-      print authorCommitsThisMonth
+      print authorCommitsThisPeriod
 
-    authorNumCommitsThisMonth = 0
-    authorNumLinesAddedThisMonth = 0;
+    authorNumCommitsThisPeriod = 0
+    authorNumLinesAddedThisPeriod = 0;
 
-    if authorCommitsThisMonth != "":
+    if authorCommitsThisPeriod != "":
 
-      authorNumCommitsThisMonth = 0
-      authorNumLinesAddedThisMonth = 0
+      authorNumCommitsThisPeriod = 0
+      authorNumLinesAddedThisPeriod = 0
 
-      authorCommitsThisMonthLines = authorCommitsThisMonth.split("\n")
+      authorCommitsThisPeriodLines = authorCommitsThisPeriod.split("\n")
 
       # Loop through the commits
 
       line_i = 0
 
-      while line_i < len(authorCommitsThisMonthLines):
+      while line_i < len(authorCommitsThisPeriodLines):
 
         if options.debug:
-          print "\nTOP: authorCommitsThisMonthLines[line_i] = '"+authorCommitsThisMonthLines[line_i]+"'"
+          print "\nTOP: authorCommitsThisPeriodLines[line_i] = '"+authorCommitsThisPeriodLines[line_i]+"'"
 
         # Skip empty lines between commits
-        if authorCommitsThisMonthLines[line_i].strip() == "":
+        if authorCommitsThisPeriodLines[line_i].strip() == "":
           line_i += 1
           continue
 
@@ -142,7 +152,7 @@ for month_i in range(options.startMonthAgo, options.endMonthAgo):
 
         authorNumLinesAddedThisCommit = 0
 
-        commitMsg = authorCommitsThisMonthLines[line_i]
+        commitMsg = authorCommitsThisPeriodLines[line_i]
         if options.debug:
           print "\ncommitMsg =", commitMsg
         line_i += 1
@@ -156,16 +166,16 @@ for month_i in range(options.startMonthAgo, options.endMonthAgo):
         if options.debug:
           print "\nLoop through changed files:\n"
 
-        while line_i < len(authorCommitsThisMonthLines) \
-          and authorCommitsThisMonthLines[line_i].strip() != "" \
+        while line_i < len(authorCommitsThisPeriodLines) \
+          and authorCommitsThisPeriodLines[line_i].strip() != "" \
           :
 
           if options.debug: print ""
 
           if options.debug:
-            print "\nauthorCommitsThisMonthLines[line_i] = '"+authorCommitsThisMonthLines[line_i]+"'"
+            print "\nauthorCommitsThisPeriodLines[line_i] = '"+authorCommitsThisPeriodLines[line_i]+"'"
 
-          fileStatArray = authorCommitsThisMonthLines[line_i].split("\t")
+          fileStatArray = authorCommitsThisPeriodLines[line_i].split("\t")
           if options.debug: print "fileStatArray =", fileStatArray
 
           fileName = fileStatArray[2].strip()
@@ -182,7 +192,7 @@ for month_i in range(options.startMonthAgo, options.endMonthAgo):
           if len(excludeFilesList):
             for excludeFile in excludeFilesList:
               if excludeFile and re.match(excludeFile, fileName):
-                if options.showCommits or options.showLogCmnd:
+                if options.showLogCmnd:
                   print "NOTE: Excluding the file "+fileName+" in commit "+commitSHA1+" because it matches "+excludeFile+"!"
                 excludeThisFile = True
                 break
@@ -193,21 +203,21 @@ for month_i in range(options.startMonthAgo, options.endMonthAgo):
           line_i += 1
 
         if authorNumLinesAddedThisCommit > 0:
-          authorNumCommitsThisMonth += 1
-          authorNumLinesAddedThisMonth += authorNumLinesAddedThisCommit
+          authorNumCommitsThisPeriod += 1
+          authorNumLinesAddedThisPeriod += authorNumLinesAddedThisCommit
         else:
-          if options.showLogCmnd or options.showCommits:
+          if options.showLogCmnd:
             print "NOTE: Excluding commit "+commitSHA1+" because all files matched exclude pattern(s) or is merge commit!"
 
     if options.showLogCmnd:
-      print "authorNumCommitsThisMonth =", authorNumCommitsThisMonth
-      print "authorNumLinesAddedThisMonth =", authorNumLinesAddedThisMonth
+      print "authorNumCommitsThisPeriod =", authorNumCommitsThisPeriod
+      print "authorNumLinesAddedThisPeriod =", authorNumLinesAddedThisPeriod
 
-    authorsNumCommitsThisMonth.append(authorNumCommitsThisMonth)
-    authorsNumLinesAddedThisMonth.append(authorNumLinesAddedThisMonth)
+    authorsNumCommitsThisPeriod.append(authorNumCommitsThisPeriod)
+    authorsNumLinesAddedThisPeriod.append(authorNumLinesAddedThisPeriod)
 
-  authorsNumCommits.append(authorsNumCommitsThisMonth)
-  authorsNumLinesAdded.append(authorsNumLinesAddedThisMonth)
+  authorsNumCommits.append(authorsNumCommitsThisPeriod)
+  authorsNumLinesAdded.append(authorsNumLinesAddedThisPeriod)
 
 
 #
@@ -219,13 +229,13 @@ for author in authorsList:
   maxAuthorName = max(maxAuthorName, len(author))
 
 paddingWidth = 2
-monthWidth = 7
+periodWidth = 7
 authorCountWidth = maxAuthorName
 
 def printTableSeprators():
-  monthSepStr = "-"*monthWidth
+  periodSepStr = "-"*periodWidth
   authorSepStr = "-"*authorCountWidth
-  print monthSepStr.ljust(monthWidth),
+  print periodSepStr.ljust(periodWidth),
   for author_i in range(0,len(authorsList)):
     print "".rjust(paddingWidth) + authorSepStr.rjust(authorCountWidth),
   print ""
@@ -233,27 +243,27 @@ def printTableSeprators():
 
 def printTable(tableData):
   # Top line
-  print "month".rjust(monthWidth),
+  print options.periodUnit.rjust(periodWidth),
   for author in authorsList:
     print "".rjust(paddingWidth) + author.ljust(authorCountWidth),
   print ""
   printTableSeprators()
-  # Month lines
+  # Period lines
   totals = []
   for author_i in range(0,len(authorsList)):
     totals.append(0)
-  for month_i in range(options.startMonthAgo, options.endMonthAgo):
-    print repr(month_i).rjust(monthWidth),
-    month_idx = month_i - options.startMonthAgo
+  for period_i in range(options.startAgo, options.endAgo):
+    print repr(period_i).rjust(periodWidth),
+    period_idx = period_i - options.startAgo
     for author_i in range(0,len(authorsList)):
-      #print "month_i="+str(month_i)+", month_idx="+str(month_idx)+", author_i="+str(author_i)
-      amount = tableData[month_idx][author_i]
+      #print "period_i="+str(period_i)+", period_idx="+str(period_idx)+", author_i="+str(author_i)
+      amount = tableData[period_idx][author_i]
       print "".rjust(paddingWidth) + repr(amount).rjust(authorCountWidth),
       totals[author_i] += amount
     print ""
   # Totals
   printTableSeprators()
-  print "totals".rjust(monthWidth),
+  print "totals".rjust(periodWidth),
   for author_i in range(0,len(authorsList)):
     print "".rjust(paddingWidth) + repr(totals[author_i]).rjust(authorCountWidth),
   print ""
@@ -266,8 +276,8 @@ def printTable(tableData):
 
 print "\n\n"+getCmndOutput("date").strip()
 
-print "\n\nNumber of commits by each author over several months ago:\n"
+print "\n\nNumber of commits by each author over several "+options.periodUnit+"s ago:\n"
 printTable(authorsNumCommits)
 
-print "\n\nNumber of lines added by each author over several months ago\n"
+print "\n\nNumber of lines added by each author over several "+options.periodUnit+"s ago:\n"
 printTable(authorsNumLinesAdded)
