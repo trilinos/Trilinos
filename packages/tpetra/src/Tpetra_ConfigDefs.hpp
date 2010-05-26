@@ -156,4 +156,41 @@ namespace Tpetra {
 
 }
 
+// Delete any previous definition of EPETRA_NO_ERROR_REPORTS
+
+#ifdef TPETRA_CHK_ERR
+#undef TPETRA_CHK_ERR
+#endif
+#ifdef TPETRA_CHK_PTR
+#undef TPETRA_CHK_PTR
+#endif
+#ifdef TPETRA_CHK_REF
+#undef TPETRA_CHK_REF
+#endif
+
+// Great little macro obtained from Alan Williams (modified for dynamic switching on/off)
+
+#define TPETRA_CHK_ERR(a) { { int tpetra_err = a; \
+                              if ((tpetra_err < 0 && Tpetra_Object::GetTracebackMode() > 0) || \
+                                  (tpetra_err > 0 && Tpetra_Object::GetTracebackMode() > 1)) { \
+                      Tpetra_Object::GetTracebackStream() << "Tpetra ERROR " << tpetra_err << ", " \
+                           << __FILE__ << ", line " << __LINE__ << endl; }\
+                      if (tpetra_err != 0) return(tpetra_err);  }\
+                   }
+
+// Extension of same macro for pointer, returns zero if bad
+
+#define TPETRA_CHK_PTR(a) { if (a == 0 && Tpetra_Object::GetTracebackMode() > 0) { \
+                      Tpetra_Object::GetTracebackStream() << "Tpetra returning zero pointer " << ", " \
+                           << __FILE__ << ", line " << __LINE__ << endl; } \
+                      return(a); \
+                   }
+// Extension of same macro for reference, returns a default reference
+
+#define TPETRA_CHK_REF(a) { if (Tpetra_Object::GetTracebackMode() > 0) {\
+                      Tpetra_Object::GetTracebackStream() << "Tpetra returning default reference " << ", " \
+                           << __FILE__ << ", line " << __LINE__ << endl; } \
+                      return(a); \
+                   }
+
 #endif // TPETRA_CONFIGDEFS_HPP
