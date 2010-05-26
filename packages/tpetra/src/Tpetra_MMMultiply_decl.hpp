@@ -57,7 +57,7 @@ class MatrixMatrixMultiply{
 		MatrixMatrixMultiply(
  			const Teuchos::RCP<const RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &A, 
   			const Teuchos::RCP<const RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> > &B,
-  			Teuchos::RCP<RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &C
+  			Teuchos::RCP< RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &C
   		);
 
    		//! Destructor
@@ -69,7 +69,7 @@ class MatrixMatrixMultiply{
 	protected:
 		// underlying Matricies
 		const Teuchos::RCP<const RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > matrixA, matrixB;
-		Teuchos::RCP<RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > matrixC;
+		Teuchos::RCP< RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > matrixC, matrixTB;
 };
 
 #endif // TPETRA_MMMULTIPLY_DECL_HPP

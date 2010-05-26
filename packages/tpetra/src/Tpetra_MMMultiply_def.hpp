@@ -41,28 +41,51 @@
  */
 namespace Tpetra {
 
+
 	MatrixMatrixMultiply::MatrixMatrixMultiply(
  		const Teuchos::RCP<const RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &A, 
-  		const Teuchos::RCP<const RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> > &B,
+  		const Teuchos::RCP<const RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &B,
   		Teuchos::RCP<RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &C
   	):matrixA(A), matrixB(B), matrixC(C){}
 
 	int MatrixMatrixMultiply::multiply(){
-		TEST_FOR_EXCEPTION(matrixA.getGlobalNumRows() != matrixB.getGlobalNumCols(), std::runtime_error,
+		TEST_FOR_EXCEPTION(matrixA->getGlobalNumRows() != matrixB->getGlobalNumCols(), std::runtime_error,
 			"Uh oh. Looks like there's a bit of a problem here. No worries though. We'll help you figure it out. You're "
 			"a fantastic programer and this just a minor bump in the road! Maybe the information below can help you out a bit."
 			"\n\n" << Teuchos::typeName(*this) << "::multiply(): Matrix A must have the same number of rows as Matrix B has columns.");
 
-		TEST_FOR_EXCEPTION(matrixA.getGlobalNumRows() != matrixC.getGlobalNumRows(), std::runtime_error,
+		TEST_FOR_EXCEPTION(matrixA->getGlobalNumRows() != matrixC->getGlobalNumRows(), std::runtime_error,
 			"Uh oh. Looks like there's a bit of a problem here. No worries though. We'll help you figure it out. You're "
 			"a fantastic programer and this just a minor bump in the road! Maybe the information below can help you out a bit."
 			"\n\n" << Teuchos::typeName(*this) << "::multiply(): Matrix A must have the same number of rows as Matrix C.");
 
-		TEST_FOR_EXCEPTION(matrixB.getGlobalNumCols() != matrixC.getGlobalNumCols(), std::runtime_error,
+		TEST_FOR_EXCEPTION(matrixB->getGlobalNumCols() != matrixC->getGlobalNumCols(), std::runtime_error,
 			"Uh oh. Looks like there's a bit of a problem here. No worries though. We'll help you figure it out. You're "
 			"a fantastic programer and this just a minor bump in the road! Maybe the information below can help you out a bit."
 			"\n\n" << Teuchos::typeName(*this) << "::multiply(): Matrix B must have the same number of rows as Matrix C.");
+
+		TEST_FOR_EXCEPTION(!matrixA->isFillComplete(), std::runtime_error,
+			"Uh oh. Looks like there's a bit of a problem here. No worries though. We'll help you figure it out. You're "
+			"a fantastic programer and this just a minor bump in the road! Maybe the information below can help you out a bit."
+			"\n\n" << Teuchos::typeName(*this) << "::multiply(): Matrix A is not fill complete.");
+
+		TEST_FOR_EXCEPTION(!matrixB->isFillComplete(), std::runtime_error,
+			"Uh oh. Looks like there's a bit of a problem here. No worries though. We'll help you figure it out. You're "
+			"a fantastic programer and this just a minor bump in the road! Maybe the information below can help you out a bit."
+			"\n\n" << Teuchos::typeName(*this) << "::multiply(): Matrix B is not fill complete.");
 		
 	}
+
+//
+// Explicit instantiation macro
+//
+// Must be expanded from within the Tpetra namespace!
+//
+
+#define TPETRA_MATRIXMATRIXMULTIPLY_INSTANT(LO,GO,NODE) \
+  \
+  template class MatrixMatrixMultiply< LO , GO , NODE >;
+
+
 }
 #endif // TPETRA_MMMULTIPLY_DEF_HPP
