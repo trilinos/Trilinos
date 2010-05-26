@@ -325,7 +325,7 @@ struct stat info;
     rc = read(f, (void *)c++, 1);
   }
 
-  fsize = c-buf;
+  fsize = c-buf-1;
 
   close(f);
 
