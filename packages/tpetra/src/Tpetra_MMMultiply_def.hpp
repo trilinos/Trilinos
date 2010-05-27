@@ -29,10 +29,11 @@
 #ifndef TPETRA_MMMULTIPLY_DEF_HPP
 #define TPETRA_MMMULTIPLY_DEF_HPP
 
+#include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_RowMatrix.hpp"
 
 #ifdef DOXYGEN_USE_ONLY
-  // #include "Tpetra_MMMultiply_decl.hpp"
+//#include "Tpetra_MMMultiply_decl.hpp"
 #endif
 
 /*! \file Tpetra_MMMultiply_def.hpp 
@@ -42,13 +43,15 @@
 namespace Tpetra {
 
 
-	MatrixMatrixMultiply::MatrixMatrixMultiply(
- 		const Teuchos::RCP<const RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &A, 
-  		const Teuchos::RCP<const RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &B,
-  		Teuchos::RCP<RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &C
-  	):matrixA(A), matrixB(B), matrixC(C){}
+	template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+	MatrixMatrixMultiply<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MatrixMatrixMultiply( 
+		const Teuchos::RCP<const RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A,
+		const Teuchos::RCP<const RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > B, 
+		Teuchos::RCP<RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > C)
+	:matrixA(A), matrixB(B), matrixC(C){}
 
-	int MatrixMatrixMultiply::multiply(){
+	template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+	int MatrixMatrixMultiply<Scalar, LocalOrdinal, GlobalOrdinal, Node>::multiply(){
 		TEST_FOR_EXCEPTION(matrixA->getGlobalNumRows() != matrixB->getGlobalNumCols(), std::runtime_error,
 			"Uh oh. Looks like there's a bit of a problem here. No worries though. We'll help you figure it out. You're "
 			"a fantastic programer and this just a minor bump in the road! Maybe the information below can help you out a bit."
@@ -82,10 +85,9 @@ namespace Tpetra {
 // Must be expanded from within the Tpetra namespace!
 //
 
-#define TPETRA_MATRIXMATRIXMULTIPLY_INSTANT(LO,GO,NODE) \
+#define TPETRA_MATRIXMATRIXMULTIPLY_INSTANT(SCALAR,LO,GO,NODE) \
   \
-  template class MatrixMatrixMultiply< LO , GO , NODE >;
-
+  template class MatrixMatrixMultiply< SCALAR , LO , GO , NODE >;
 
 }
 #endif // TPETRA_MMMULTIPLY_DEF_HPP

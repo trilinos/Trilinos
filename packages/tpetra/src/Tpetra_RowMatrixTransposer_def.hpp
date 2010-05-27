@@ -27,8 +27,6 @@
 // ************************************************************************
 //@HEADER
 
-#include "Tpetra_RowMatrix.hpp"
-#include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_Export.hpp"
@@ -37,7 +35,8 @@
 #endif
 
 namespace Tpetra{
-RowMatrixTransposer::RowMatrixTransposer(const Teuchos::RCP<const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > OrigMatrix)
+	template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RowMatrixTransposer(const Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > OrigMatrix)
   : OrigMatrix_(OrigMatrix),
     TransposeMatrix_(0),
     TransposeExporter_(0),
@@ -47,17 +46,18 @@ RowMatrixTransposer::RowMatrixTransposer(const Teuchos::RCP<const RowMatrix<Scal
     NumMyRows_(0),
     NumMyCols_(0),
     MaxNumEntries_(0),
-    Indices_(NULL),
-    Values_(NULL),
-    TransNumNz_(NULL),
-    TransIndices_(NULL),
-    TransValues_(NULL),
-    TransMyGlobalEquations_(NULL),
+    //Indices_(NULL),
+    //Values_(NULL),
+    //TransNumNz_(NULL),
+    //TransIndices_(NULL),
+    //TransValues_(NULL),
+    //TransMyGlobalEquations_(NULL),
     OrigMatrixIsCrsMatrix_(false)
 {
 }
 //=============================================================================
-Tpetra_RowMatrixTransposer::Tpetra_RowMatrixTransposer(const Tpetra_RowMatrixTransposer& Source)
+/*	template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::RowMatrixTransposer(const RowMatrixTransposer& Source)
   :OrigMatrix_(Source.OrigMatrix_),
    TransposeMatrix_(0),
    TransposeExporter_(0),
@@ -67,57 +67,60 @@ Tpetra_RowMatrixTransposer::Tpetra_RowMatrixTransposer(const Tpetra_RowMatrixTra
    NumMyRows_(0),
    NumMyCols_(0),
    MaxNumEntries_(0),
-   Indices_(NULL),
-   Values_(NULL),
-   TransNumNz_(NULL),
-   TransIndices_(NULL),
-   TransValues_(NULL),
-   TransMyGlobalEquations_(NULL),
+   //Indices_(NULL),
+   //Values_(NULL),
+   //TransNumNz_(NULL),
+   //TransIndices_(NULL),
+   //TransValues_(NULL),
+   //TransMyGlobalEquations_(NULL),
    OrigMatrixIsCrsMatrix_(false)
 {
-  TransposeMatrix_ = Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(new CrsMatrix(*Source.TransposeMatrix_));
+  TransposeMatrix_ = Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(new CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(*Source.TransposeMatrix_));
   if (MakeDataContiguous_) TransposeMatrix_->MakeDataContiguous();
-  TransposeExporter_ = Teuchos::RCP<Export<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(new Export(*Source.TransposeExporter_));
-}
+  TransposeExporter_ = Teuchos::RCP<Export<LocalOrdinal, GlobalOrdinal, Node> >(new Export<LocalOrdinal, GlobalOrdinal, Node>(*Source.TransposeExporter_));
+}*/
 //=========================================================================
-Tpetra_RowMatrixTransposer::~Tpetra_RowMatrixTransposer(){
+	template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::~RowMatrixTransposer(){
 
   DeleteData();
 
 }
 
 //=========================================================================
-void Tpetra_RowMatrixTransposer::DeleteData (){
+	template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+void RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::DeleteData (){
 
-  size_t i;
+//  size_t i;
 
-  if (TransposeMatrix_!=0) {delete TransposeMatrix_; TransposeMatrix_=0;}
-  if (TransposeExporter_!=0) {delete TransposeExporter_; TransposeExporter_=0;}
+  //if (TransposeMatrix_!=0) {delete TransposeMatrix_; TransposeMatrix_=0;}
+  //if (TransposeExporter_!=0) {delete TransposeExporter_; TransposeExporter_=0;}
 
   // Delete any intermediate storage
 
-  if (!OrigMatrixIsCrsMatrix_) {
+  /*if (!OrigMatrixIsCrsMatrix_) {
     delete [] Indices_;
     delete [] Values_;
-  }
+  }*/
 	
 	
-  for(i=0; i<NumMyCols_; i++) {
+  /*for(i=0; i<NumMyCols_; i++) {
     int NumIndices = TransNumNz_[i];
     if (NumIndices>0) {
       delete [] TransIndices_[i];
       delete [] TransValues_[i];
     }
-  }
-  delete [] TransNumNz_;
-  delete [] TransIndices_;
-  delete [] TransValues_;
-  delete [] TransMyGlobalEquations_;
+  }*/
+  //delete [] TransNumNz_;
+  //delete [] TransIndices_;
+  //delete [] TransValues_;
+  //delete [] TransMyGlobalEquations_;
 }
 
 //=========================================================================
-int Tpetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous);//, 
-						 Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > TransposeMatrix, 
+	template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+int RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CreateTranspose (const bool MakeDataContiguous, 
+						 Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > TransposeMatrix){
 						 //Tpetra_Map * TransposeRowMap_in) {
 
   size_t i, j;
@@ -125,9 +128,10 @@ int Tpetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous);
   if (TransposeCreated_) DeleteData(); // Get rid of existing data first
 
   //if (TransposeRowMap_in==0)
-    TransposeRowMap_ = (Tpetra_Map *) &(OrigMatrix_->OperatorDomainMap()); // Should be replaced with refcount =
+    //TransposeRowMap_ = (Map<LocalOrdinal, GlobalOrdinal, Node> *) &(OrigMatrix_->getDomainMap()); // Should be replaced with refcount =
   /*else
     TransposeRowMap_ = TransposeRowMap_in; */
+  //TransposeRowMap_ = OrigMatrix_->getDomainMap(); 
 
   // This routine will work for any RowMatrix object, but will attempt cast the matrix to a CrsMatrix if
   // possible (because we can then use a View of the matrix and graph, which is much cheaper).
@@ -136,22 +140,25 @@ int Tpetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous);
   // transpose graph on each processor
 
 
-  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > OrigCrsMatrix = dynamic_cast<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(OrigMatrix_);
+  //Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > OrigCrsMatrix = Teuchos::rcp_dynamic_cast<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(OrigMatrix_);
 
-  OrigMatrixIsCrsMatrix_ = (OrigCrsMatrix!=0); // If this pointer is non-zero, the cast to CrsMatrix worked
+  //OrigMatrixIsCrsMatrix_ = (OrigCrsMatrix.get()!=0); // If this pointer is non-zero, the cast to CrsMatrix worked
 
   NumMyRows_ = OrigMatrix_->getNodeNumRows();
   NumMyCols_ = OrigMatrix_->getNodeNumCols();
   //NumMyRows_ = OrigMatrix_->NumMyRows();
-  TransNumNz_ = new size_t[NumMyCols_];
-  TransIndices_ = new Local_Ordinal*[NumMyCols_];
-  TransValues_ = new Scalar*[NumMyCols_];
+  //TransNumNz_ = new size_t[NumMyCols_];
+  TransNumNz_ = Teuchos::ArrayRCP<size_t>(NumMyCols_);
+  //TransIndices_ = new LocalOrdinal*[NumMyCols_];
+  TransIndices_ = Teuchos::Array<Teuchos::ArrayRCP<LocalOrdinal> >(NumMyCols_);
+  //TransValues_ = new Scalar*[NumMyCols_];
+  TransValues_ = Teuchos::Array<Teuchos::ArrayRCP<Scalar> >(NumMyCols_);
 
 
-  size_t NumIndices;
+  //size_t NumIndices;
 
-  if (OrigMatrixIsCrsMatrix_) {
-/*
+/*  if (OrigMatrixIsCrsMatrix_) {
+
 
     Teuchos::RCP<const CrsGraph<Scalar, LocalOrdinal, GlobalOrdinal, Node> > OrigGraph = OrigCrsMatrix->Graph(); // Get matrix graph
 
@@ -159,12 +166,13 @@ int Tpetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous);
     for (i=0; i<NumMyRows_; i++) {
       OrigGraph->ExtractMyRowView(i, Indices_, NumIndices); // Get view of ith row
       for (j=0; j<NumIndices; j++) ++TransNumNz_[Indices_[j]];
-    }*/
+    }
 
-  }
-  else { // OrigMatrix is not a CrsMatrix
+  }*/
+  //else { // OrigMatrix is not a CrsMatrix
 
-    /*MaxNumEntries_ = 0;
+	/*
+    MaxNumEntries_ = 0;
     size_t NumEntries;
     for (i=0; i<NumMyRows_; i++) {
       OrigMatrix_->NumMyRowEntries(i, NumEntries);
@@ -179,18 +187,19 @@ int Tpetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous);
       // Get ith row
       //EPETRA_CHK_ERR(OrigMatrix_->ExtractMyRowCopy(i, MaxNumEntries_, NumIndices, Values_, Indices_)); 
 	  OrigMatrix_->getLocalRowView(i, Indices_, Values_);
-      for (j=0; j<NumIndices; j++) ++TransNumNz_[Indices_[j]];
+      //for (j=0; j<NumIndices; j++) ++TransNumNz_[Indices_[j]];
+      for (j=0; j<OrigMatrix_->getNumEntriesInLocalRow(i); j++) ++TransNumNz_[Indices_[j]];
     }
-  }
+  //}
 
 
   // Most of remaining code is common to both cases
 
   for(i=0; i<NumMyCols_; i++) {
-    NumIndices = TransNumNz_[i];
+    size_t NumIndices = TransNumNz_[i];
     if (NumIndices>0) {
-      TransIndices_[i] = new LocalOrdinal[NumIndices];
-      TransValues_[i] = new Scalar[NumIndices];
+      TransIndices_[i] = Teuchos::ArrayRCP<LocalOrdinal>(NumIndices);
+      TransValues_[i] = Teuchos::ArrayRCP<Scalar>(NumIndices);
     }
   }
 
@@ -198,17 +207,17 @@ int Tpetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous);
 
   for (i=0;i<NumMyCols_; i++) TransNumNz_[i] = 0; // Reset transpose NumNz counter
   for (i=0; i<NumMyRows_; i++) {
-    if (OrigMatrixIsCrsMatrix_) {
+    /*if (OrigMatrixIsCrsMatrix_) {
       //EPETRA_CHK_ERR(OrigCrsMatrix->ExtractMyRowView(i, NumIndices, Values_, Indices_));
     }
     else {
       //EPETRA_CHK_ERR(OrigMatrix_->ExtractMyRowCopy(i, MaxNumEntries_, NumIndices, Values_, Indices_));
-	  OrigMatrix_->getLocalRowView(i, Indices_, Values_);
-    }
+    }*/
+	OrigMatrix_->getLocalRowView(i, Indices_, Values_);
 
     //int ii = OrigMatrix_->RowMatrixRowMap().GID(i);
-    GlobalOrdinal ii = OrigMatrix_->RowMap().getGlobalElement(i);
-    for (j=0; j<NumIndices; j++) {
+    GlobalOrdinal ii = OrigMatrix_->getRowMap()->getGlobalElement(i);
+    for (j=0; j<OrigMatrix_->getNumEntriesInLocalRow(i); j++) {
       LocalOrdinal TransRow = Indices_[j];
       size_t loc = TransNumNz_[TransRow];
       TransIndices_[TransRow][loc] = ii;
@@ -222,9 +231,9 @@ int Tpetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous);
 
   const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > TransMap = OrigMatrix_->getColMap();
 
-  CrsMatrix TempTransA1(TransMap, TransNumNz_);
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> TempTransA1(TransMap, TransNumNz_);
   //TransMyGlobalEquations_ = new int[NumMyCols_];
-  TransMyGlobalEquations_ = TransMap.getNodeElementList();
+  TransMyGlobalEquations_ = TransMap->getNodeElementList();
   
   /* Add  rows one-at-a-time */
 
@@ -232,7 +241,8 @@ int Tpetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous);
     {
    //   EPETRA_CHK_ERR(TempTransA1.InsertGlobalValues(TransMyGlobalEquations_[i], 
 	//					    TransNumNz_[i], TransValues_[i], TransIndices_[i]));
-	TempTransA1.insertGlobalValues(TransMyGlobalEquations_[i],TransNumNz_[i], TransValues_[i], TransIndices_[i]); 
+//	TempTransA1.insertGlobalValues(TransMyGlobalEquations_[i], Teuchos::ArrayView<LocalOrdinal>(TransIndices_[i](), TransNumNz_[i]), Teuchos::ArrayView<Scalar>(TransValues_[i](),TransNumNz_[i])); 
+	TempTransA1.insertGlobalValues(TransMyGlobalEquations_[i], TransIndices_[i](), TransValues_[i]()); 
     }
  
   // Note: The following call to FillComplete is currently necessary because
@@ -241,26 +251,30 @@ int Tpetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous);
   const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &domain_map = OrigMatrix_->getDomainMap();
   const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &range_map = OrigMatrix_->getRangeMap();
 
-  TempTransA1.FillComplete(range_map, domain_map, false);
+  TempTransA1.fillComplete(range_map, domain_map, DoNotOptimizeStorage);
 
   // Now that transpose matrix with shared rows is entered, create a new matrix that will
   // get the transpose with uniquely owned rows (using the same row distribution as A).
 
-  TransposeMatrix_ = Teuchos::RCP<RowMatrixnScalar, LocalOrdinal, GlobalOrdinal, Node> >(new CrsMatrix(Copy, *TransposeRowMap_,0));
+  //TransposeMatrix_ = Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(new CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(TransposeRowMap_,0));
+  TransposeMatrix_ = Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(new CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(OrigMatrix_->getDomainMap(),0));
 
   // Create an Export object that will move TempTransA around
 
-  TransposeExporter_ = Teuchos::RCP<Export<LocalOrdinal, GlobalOrdinal, Node> >(new Export(TransMap, *TransposeRowMap_));
+  //TransposeExporter_ = Teuchos::RCP<Export<LocalOrdinal, GlobalOrdinal, Node> >(new Export(TransMap, *TransposeRowMap_));
 
   //EPETRA_CHK_ERR(TransposeMatrix_->Export(TempTransA1, *TransposeExporter_, Add));
-  TransposeMatrix_->Export(TempTransA1, *TransposeExporter_, Add);
+  //TransposeMatrix_->doExport(TempTransA1, *TransposeExporter_, Add);
   
   //EPETRA_CHK_ERR(TransposeMatrix_->FillComplete(range_map, domain_map));
-  TransposeMatrix_->FillComplete(range_map, domain_map);
+  //TransposeMatrix_->FillComplete(range_map, domain_map);
 
   if (MakeDataContiguous) {
     //EPETRA_CHK_ERR(TransposeMatrix_->MakeDataContiguous());
-    TransposeMatrix_->MakeDataContiguous();
+    TransposeMatrix_->fillComplete(DoOptimizeStorage);
+  }
+  else{
+    TransposeMatrix_->fillComplete(DoNotOptimizeStorage);
   }
 
   TransposeMatrix = TransposeMatrix_;
@@ -344,8 +358,9 @@ int Tpetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous);
   return(0);
 }*/
 
-RowMatrixTransposer&
-RowMatrixTransposer::operator=(const RowMatrixTransposer& src)
+	template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>&
+RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::operator=(const RowMatrixTransposer& src)
 {
   (void)src;//prevents unused variable compiler warning
 
@@ -372,4 +387,4 @@ RowMatrixTransposer::operator=(const RowMatrixTransposer& src)
 
 
 }
-}
+

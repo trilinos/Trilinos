@@ -31,8 +31,8 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Kokkos_DefaultNode.hpp>
-#include <Kokkos_DefaultSparseMultiply.hpp>
-#include <Kokkos_DefaultSparseSolve.hpp>
+//#include <Kokkos_DefaultSparseMultiply.hpp>
+//#include <Kokkos_DefaultSparseSolve.hpp>
 #include "Tpetra_ConfigDefs.hpp"
 
 /*! \file Tpetra_MMMultiply_decl.hpp 
@@ -55,9 +55,9 @@ class MatrixMatrixMultiply{
 
 		//! Constructor
 		MatrixMatrixMultiply(
- 			const Teuchos::RCP<const RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &A, 
-  			const Teuchos::RCP<const RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> > &B,
-  			Teuchos::RCP< RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > &C
+  			const Teuchos::RCP<const RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A,
+  			const Teuchos::RCP<const RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > B,
+  			Teuchos::RCP< RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > C
   		);
 
    		//! Destructor
@@ -72,5 +72,6 @@ class MatrixMatrixMultiply{
 		Teuchos::RCP< RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > matrixC, matrixTB;
 };
 
+}
 #endif // TPETRA_MMMULTIPLY_DECL_HPP
 

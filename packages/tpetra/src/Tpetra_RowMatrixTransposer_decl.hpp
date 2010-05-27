@@ -31,20 +31,34 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 
 #ifndef TPETRA_ROWMATRIXTRANSPOSER_HPP
 #define TPETRA_ROWMATRIXTRANSPOSER_HPP
-#include <Tpetra_Object.h>
-class Tpetra_RowMatrix;
-class Tpetra_CrsMatrix;
-class Tpetra_Map;
-class Tpetra_Export;
+#include <Teuchos_RCP.hpp>
+#include <Kokkos_DefaultNode.hpp>
+#include "Tpetra_CrsMatrix.hpp"
+//#include <Kokkos_DefaultSparseMultiply.hpp>
+//#include <Kokkos_DefaultSparseSolve.hpp>
+#include "Tpetra_ConfigDefs.hpp"
 
 //! Tpetra_RowMatrixTransposer: A class for transposing an Tpetra_RowMatrix object.
 
+namespace Tpetra {
+#ifndef DOXYGEN_SHOULD_SKIP_THIS  
+	// forward declarations
+//template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+//class RowMatrix;
+//template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+//class CrsMatrix;
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+class Map;
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
+class Export;
+
+#endif
 /*! This class provides capabilities to construct a transpose matrix of an existing Tpetra_RowMatrix
 	  object and (optionally) redistribute it across a parallel distributed memory machine.
 */
 
 template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
-class Tpetra_RowMatrixTransposer {
+class RowMatrixTransposer {
     
   public:
 
@@ -58,15 +72,15 @@ class Tpetra_RowMatrixTransposer {
     \return Pointer to a Tpetra_RowMatrixTransposer object.
 
   */ 
-  Tpetra_RowMatrixTransposer(const Teuchos::RCP<const RowMatrxix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > OrigMatrix);
+  RowMatrixTransposer(const Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > OrigMatrix);
 
   //! Tpetra_RowMatrixTransposer copy constructor.
   
-  Tpetra_RowMatrixTransposer(const Tpetra_RowMatrixTransposer& Source);
+//  RowMatrixTransposer(const RowMatrixTransposer& Source);
   
   //! Tpetra_RowMatrixTransposer destructor.
   
-  virtual ~Tpetra_RowMatrixTransposer();
+  virtual ~RowMatrixTransposer();
   //@}
   
   //! @name Forward transformation methods
@@ -87,7 +101,7 @@ class Tpetra_RowMatrixTransposer {
 					 
   */
   int CreateTranspose(const bool MakeDataContiguous,
-											Tpetra_CrsMatrix *& TransposeMatrix);//,
+											Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > TransposeMatrix);//,
 											//Tpetra_Map * TransposeRowMap = 0);
 
 	
@@ -120,36 +134,42 @@ class Tpetra_RowMatrixTransposer {
 		  the original linear problem map, or with the RedistMap().
 			\warning Must not be called before CreateTranspose()is called.
   */
-  const Tpetra_Map & TransposeRowMap() const {return(*TransposeRowMap_);};
+  const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >  TransposeRowMap() const {return(TransposeRowMap_);};
   //! Returns const reference to the Tpetra_Export object used to redistribute the original matrix.
   /*! The TransposeExporter object can be used to redistribute other Tpetra_DistObject objects whose maps are compatible with
 		  the original matrix. 
 			\warning Must not be called before CreateTranspose() is called.
   */
-  const Tpetra_Export & TransposeExporter() const{return(*TransposeExporter_);};
+  const Teuchos::RCP<const Export<LocalOrdinal, GlobalOrdinal, Node> > TransposeExporter() const{return(TransposeExporter_);};
   //@}
   
  private: 
   void DeleteData();
-  Tpetra_RowMatrixTransposer& operator=(const Tpetra_RowMatrixTransposer& src);
+  RowMatrixTransposer& operator=(const RowMatrixTransposer& src);
 
 	const Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > OrigMatrix_;
-	Teuchos::RCP<RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > TransposeMatrix_;
+	Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > TransposeMatrix_;
 	Teuchos::RCP<Export<LocalOrdinal, GlobalOrdinal, Node> > TransposeExporter_;
-	Teuchos::RCP<Map<Scalar, LocalOrdinal, GlobalOrdinal, Node> > TransposeRowMap_;
+	const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > TransposeRowMap_;
 	bool TransposeCreated_;
 	bool MakeDataContiguous_;
 	size_t NumMyRows_;
 	size_t NumMyCols_;
 	size_t MaxNumEntries_;
-	const Teuchos::ArrayRCP<LocalOrdinal> Indices_;
-	const Teuchos::ArrayRCP<Scalar> Values_;
-	size_t * TransNumNz_;
-	local_ordinal ** TransIndices_;
-	Scalar ** TransValues_;
-	Teuchos::ArrayView<GlobalOrdinal> TransMyGlobalEquations_;
+	Teuchos::ArrayRCP<const LocalOrdinal> Indices_;
+	Teuchos::ArrayRCP<const Scalar> Values_;
+//	size_t * TransNumNz_;
+	Teuchos::ArrayRCP<size_t> TransNumNz_;
+	//LocalOrdinal ** TransIndices_;
+	Teuchos::Array<Teuchos::ArrayRCP<LocalOrdinal> > TransIndices_;
+	//Scalar ** TransValues_;
+	Teuchos::Array<Teuchos::ArrayRCP<Scalar> > TransValues_;
+	Teuchos::ArrayView<const GlobalOrdinal> TransMyGlobalEquations_;
 	bool OrigMatrixIsCrsMatrix_;
 
 };
+
+
+}
 
 #endif /* TPETRA_ROWMATRIXTRANSPOSER_DECL_HPP */
