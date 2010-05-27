@@ -3,7 +3,7 @@
 /*
 ************************************************************************
 
-              Epetra: Linear Algebra Services Package 
+              Tpetra: Linear Algebra Services Package 
                 Copyright (2001) Sandia Corporation
 
 Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -29,50 +29,51 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 */
 //@HEADER
 
-#ifndef EPETRA_CRSMATRIXTRANSPOSER_H
-#define EPETRA_CRSMATRIXTRANSPOSER_H
-#include <Epetra_Object.h>
-class Epetra_RowMatrix;
-class Epetra_CrsMatrix;
-class Epetra_Map;
-class Epetra_Export;
+#ifndef TPETRA_ROWMATRIXTRANSPOSER_HPP
+#define TPETRA_ROWMATRIXTRANSPOSER_HPP
+#include <Tpetra_Object.h>
+class Tpetra_RowMatrix;
+class Tpetra_CrsMatrix;
+class Tpetra_Map;
+class Tpetra_Export;
 
-//! Epetra_RowMatrixTransposer: A class for transposing an Epetra_RowMatrix object.
+//! Tpetra_RowMatrixTransposer: A class for transposing an Tpetra_RowMatrix object.
 
-/*! This class provides capabilities to construct a transpose matrix of an existing Epetra_RowMatrix
+/*! This class provides capabilities to construct a transpose matrix of an existing Tpetra_RowMatrix
 	  object and (optionally) redistribute it across a parallel distributed memory machine.
 */
 
-class EPETRA_LIB_DLL_EXPORT Epetra_RowMatrixTransposer {
+template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+class Tpetra_RowMatrixTransposer {
     
   public:
 
     //! @name Constructors/destructors
   //@{ 
-  //! Primary Epetra_RowMatrixTransposer constructor.
+  //! Primary Tpetra_RowMatrixTransposer constructor.
   /*!
-    \param Matrix (In) An existing Epetra_RowMatrix object.  The Epetra_RowMatrix, the LHS and RHS pointers
+    \param Matrix (In) An existing Tpetra_RowMatrix object.  The Tpetra_RowMatrix, the LHS and RHS pointers
 		       do not need to be defined before this constructor is called.
 
-    \return Pointer to a Epetra_RowMatrixTransposer object.
+    \return Pointer to a Tpetra_RowMatrixTransposer object.
 
   */ 
-  Epetra_RowMatrixTransposer(Epetra_RowMatrix * OrigMatrix);
+  Tpetra_RowMatrixTransposer(const Teuchos::RCP<const RowMatrxix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > OrigMatrix);
 
-  //! Epetra_RowMatrixTransposer copy constructor.
+  //! Tpetra_RowMatrixTransposer copy constructor.
   
-  Epetra_RowMatrixTransposer(const Epetra_RowMatrixTransposer& Source);
+  Tpetra_RowMatrixTransposer(const Tpetra_RowMatrixTransposer& Source);
   
-  //! Epetra_RowMatrixTransposer destructor.
+  //! Tpetra_RowMatrixTransposer destructor.
   
-  virtual ~Epetra_RowMatrixTransposer();
+  virtual ~Tpetra_RowMatrixTransposer();
   //@}
   
   //! @name Forward transformation methods
   //@{ 
   
-  //! Generate a new Epetra_CrsMatrix as the transpose of an Epetra_RowMatrix passed into the constructor.
-  /*! Constructs a new Epetra_CrsMatrix that is a copy of the Epetra_RowMatrix passed in to the constructor.
+  //! Generate a new Tpetra_CrsMatrix as the transpose of an Tpetra_RowMatrix passed into the constructor.
+  /*! Constructs a new Tpetra_CrsMatrix that is a copy of the Tpetra_RowMatrix passed in to the constructor.
 		
 		\param MakeDataContiguous (In) Causes the output matrix, LHS and RHS to be stored in a form compatible with
 		       Fortran-style solvers.  The output matrix will be compatible with the Harwell-Boeing compressed
@@ -86,8 +87,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_RowMatrixTransposer {
 					 
   */
   int CreateTranspose(const bool MakeDataContiguous,
-											Epetra_CrsMatrix *& TransposeMatrix,
-											Epetra_Map * TransposeRowMap = 0);
+											Tpetra_CrsMatrix *& TransposeMatrix);//,
+											//Tpetra_Map * TransposeRowMap = 0);
 
 	
   //! Update the values of an already-redistributed problem.
@@ -97,58 +98,58 @@ class EPETRA_LIB_DLL_EXPORT Epetra_RowMatrixTransposer {
 
     \param MatrixWithNewValues (In) The values from MatrixWithNewValues will be copied into the TransposeMatrix.  The
 		       MatrixWithNewValues object must be identical in structure to the original matrix object used to create
-					 this instance of Epetra_RowMatrixTransposer.
+					 this instance of Tpetra_RowMatrixTransposer.
 
 		\return Integer error code, 0 if no errors.  Negative if some fatal error occured.
 					 
   */
-  int UpdateTransposeValues(Epetra_RowMatrix * MatrixWithNewValues);
+ // int UpdateTransposeValues(Tpetra_RowMatrix * MatrixWithNewValues);
   //@}
   
   //! @name Reverse transformation methods
   //@{ 
   //! Update values of original matrix (Not implemented and not sure if we will implement this).
-   int UpdateOriginalMatrixValues();
+//   int UpdateOriginalMatrixValues();
   //@}
   
   //! @name Attribute accessor methods
   //@{ 
 
-  //! Returns const reference to the Epetra_Map object describing the row distribution of the transpose matrix.
-  /*! The RedistExporter object can be used to redistribute other Epetra_DistObject objects whose maps are compatible with
+  //! Returns const reference to the Tpetra_Map object describing the row distribution of the transpose matrix.
+  /*! The RedistExporter object can be used to redistribute other Tpetra_DistObject objects whose maps are compatible with
 		  the original linear problem map, or with the RedistMap().
 			\warning Must not be called before CreateTranspose()is called.
   */
-  const Epetra_Map & TransposeRowMap() const {return(*TransposeRowMap_);};
-  //! Returns const reference to the Epetra_Export object used to redistribute the original matrix.
-  /*! The TransposeExporter object can be used to redistribute other Epetra_DistObject objects whose maps are compatible with
+  const Tpetra_Map & TransposeRowMap() const {return(*TransposeRowMap_);};
+  //! Returns const reference to the Tpetra_Export object used to redistribute the original matrix.
+  /*! The TransposeExporter object can be used to redistribute other Tpetra_DistObject objects whose maps are compatible with
 		  the original matrix. 
 			\warning Must not be called before CreateTranspose() is called.
   */
-  const Epetra_Export & TransposeExporter() const{return(*TransposeExporter_);};
+  const Tpetra_Export & TransposeExporter() const{return(*TransposeExporter_);};
   //@}
   
  private: 
   void DeleteData();
-  Epetra_RowMatrixTransposer& operator=(const Epetra_RowMatrixTransposer& src);
+  Tpetra_RowMatrixTransposer& operator=(const Tpetra_RowMatrixTransposer& src);
 
-	Epetra_RowMatrix * OrigMatrix_;
-	Epetra_CrsMatrix * TransposeMatrix_;
-	Epetra_Export * TransposeExporter_;
-	Epetra_Map * TransposeRowMap_;
+	const Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > OrigMatrix_;
+	Teuchos::RCP<RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > TransposeMatrix_;
+	Teuchos::RCP<Export<LocalOrdinal, GlobalOrdinal, Node> > TransposeExporter_;
+	Teuchos::RCP<Map<Scalar, LocalOrdinal, GlobalOrdinal, Node> > TransposeRowMap_;
 	bool TransposeCreated_;
 	bool MakeDataContiguous_;
-	int NumMyRows_;
-	int NumMyCols_;
-	int MaxNumEntries_;
-	int * Indices_;
-	double * Values_;
-	int * TransNumNz_;
-	int ** TransIndices_;
-	double ** TransValues_;
-	int * TransMyGlobalEquations_;
+	size_t NumMyRows_;
+	size_t NumMyCols_;
+	size_t MaxNumEntries_;
+	const Teuchos::ArrayRCP<LocalOrdinal> Indices_;
+	const Teuchos::ArrayRCP<Scalar> Values_;
+	size_t * TransNumNz_;
+	local_ordinal ** TransIndices_;
+	Scalar ** TransValues_;
+	Teuchos::ArrayView<GlobalOrdinal> TransMyGlobalEquations_;
 	bool OrigMatrixIsCrsMatrix_;
 
 };
 
-#endif /* EPETRA_CRSMATRIXTRANSPOSER_H */
+#endif /* TPETRA_ROWMATRIXTRANSPOSER_DECL_HPP */

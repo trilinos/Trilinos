@@ -2,7 +2,7 @@
 //@HEADER
 // ************************************************************************
 // 
-//               Epetra: Linear Algebra Services Package 
+//               Tpetra: Linear Algebra Services Package 
 //                 Copyright (2001) Sandia Corporation
 // 
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -27,14 +27,17 @@
 // ************************************************************************
 //@HEADER
 
-#include "Epetra_RowMatrixTransposer.h"
-#include "Epetra_RowMatrix.h"
-#include "Epetra_CrsMatrix.h"
-#include "Epetra_CrsGraph.h"
-#include "Epetra_Map.h"
-#include "Epetra_Export.h"
-//=============================================================================
-Epetra_RowMatrixTransposer::Epetra_RowMatrixTransposer(Epetra_RowMatrix * OrigMatrix)
+#include "Tpetra_RowMatrix.hpp"
+#include "Tpetra_CrsMatrix.hpp"
+#include "Tpetra_CrsGraph.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_Export.hpp"
+#ifdef DOXYGEN_USE_ONLY
+  // #include "Tpetra_RowMatrixTransposer_decl.hpp"
+#endif
+
+namespace Tpetra{
+RowMatrixTransposer::RowMatrixTransposer(const Teuchos::RCP<const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > OrigMatrix)
   : OrigMatrix_(OrigMatrix),
     TransposeMatrix_(0),
     TransposeExporter_(0),
@@ -54,7 +57,7 @@ Epetra_RowMatrixTransposer::Epetra_RowMatrixTransposer(Epetra_RowMatrix * OrigMa
 {
 }
 //=============================================================================
-Epetra_RowMatrixTransposer::Epetra_RowMatrixTransposer(const Epetra_RowMatrixTransposer& Source)
+Tpetra_RowMatrixTransposer::Tpetra_RowMatrixTransposer(const Tpetra_RowMatrixTransposer& Source)
   :OrigMatrix_(Source.OrigMatrix_),
    TransposeMatrix_(0),
    TransposeExporter_(0),
@@ -72,21 +75,21 @@ Epetra_RowMatrixTransposer::Epetra_RowMatrixTransposer(const Epetra_RowMatrixTra
    TransMyGlobalEquations_(NULL),
    OrigMatrixIsCrsMatrix_(false)
 {
-  TransposeMatrix_ = new Epetra_CrsMatrix(*Source.TransposeMatrix_);
+  TransposeMatrix_ = Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(new CrsMatrix(*Source.TransposeMatrix_));
   if (MakeDataContiguous_) TransposeMatrix_->MakeDataContiguous();
-  TransposeExporter_ = new Epetra_Export(*Source.TransposeExporter_);
+  TransposeExporter_ = Teuchos::RCP<Export<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(new Export(*Source.TransposeExporter_));
 }
 //=========================================================================
-Epetra_RowMatrixTransposer::~Epetra_RowMatrixTransposer(){
+Tpetra_RowMatrixTransposer::~Tpetra_RowMatrixTransposer(){
 
   DeleteData();
 
 }
 
 //=========================================================================
-void Epetra_RowMatrixTransposer::DeleteData (){
+void Tpetra_RowMatrixTransposer::DeleteData (){
 
-  int i;
+  size_t i;
 
   if (TransposeMatrix_!=0) {delete TransposeMatrix_; TransposeMatrix_=0;}
   if (TransposeExporter_!=0) {delete TransposeExporter_; TransposeExporter_=0;}
@@ -113,18 +116,18 @@ void Epetra_RowMatrixTransposer::DeleteData (){
 }
 
 //=========================================================================
-int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous, 
-						 Epetra_CrsMatrix *& TransposeMatrix, 
-						 Epetra_Map * TransposeRowMap_in) {
+int Tpetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous);//, 
+						 Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > TransposeMatrix, 
+						 //Tpetra_Map * TransposeRowMap_in) {
 
-  int i, j;
+  size_t i, j;
 
   if (TransposeCreated_) DeleteData(); // Get rid of existing data first
 
-  if (TransposeRowMap_in==0)
-    TransposeRowMap_ = (Epetra_Map *) &(OrigMatrix_->OperatorDomainMap()); // Should be replaced with refcount =
-  else
-    TransposeRowMap_ = TransposeRowMap_in; 
+  //if (TransposeRowMap_in==0)
+    TransposeRowMap_ = (Tpetra_Map *) &(OrigMatrix_->OperatorDomainMap()); // Should be replaced with refcount =
+  /*else
+    TransposeRowMap_ = TransposeRowMap_in; */
 
   // This routine will work for any RowMatrix object, but will attempt cast the matrix to a CrsMatrix if
   // possible (because we can then use a View of the matrix and graph, which is much cheaper).
@@ -133,46 +136,49 @@ int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous,
   // transpose graph on each processor
 
 
-  Epetra_CrsMatrix * OrigCrsMatrix = dynamic_cast<Epetra_CrsMatrix *>(OrigMatrix_);
+  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > OrigCrsMatrix = dynamic_cast<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> >(OrigMatrix_);
 
   OrigMatrixIsCrsMatrix_ = (OrigCrsMatrix!=0); // If this pointer is non-zero, the cast to CrsMatrix worked
 
-  NumMyRows_ = OrigMatrix_->NumMyRows();
-  NumMyCols_ = OrigMatrix_->NumMyCols();
-  NumMyRows_ = OrigMatrix_->NumMyRows();
-  TransNumNz_ = new int[NumMyCols_];
-  TransIndices_ = new int*[NumMyCols_];
-  TransValues_ = new double*[NumMyCols_];
+  NumMyRows_ = OrigMatrix_->getNodeNumRows();
+  NumMyCols_ = OrigMatrix_->getNodeNumCols();
+  //NumMyRows_ = OrigMatrix_->NumMyRows();
+  TransNumNz_ = new size_t[NumMyCols_];
+  TransIndices_ = new Local_Ordinal*[NumMyCols_];
+  TransValues_ = new Scalar*[NumMyCols_];
 
 
-  int NumIndices;
+  size_t NumIndices;
 
   if (OrigMatrixIsCrsMatrix_) {
+/*
 
-
-    const Epetra_CrsGraph & OrigGraph = OrigCrsMatrix->Graph(); // Get matrix graph
+    Teuchos::RCP<const CrsGraph<Scalar, LocalOrdinal, GlobalOrdinal, Node> > OrigGraph = OrigCrsMatrix->Graph(); // Get matrix graph
 
     for (i=0;i<NumMyCols_; i++) TransNumNz_[i] = 0;
     for (i=0; i<NumMyRows_; i++) {
-      EPETRA_CHK_ERR(OrigGraph.ExtractMyRowView(i, NumIndices, Indices_)); // Get view of ith row
+      OrigGraph->ExtractMyRowView(i, Indices_, NumIndices); // Get view of ith row
       for (j=0; j<NumIndices; j++) ++TransNumNz_[Indices_[j]];
-    }
+    }*/
+
   }
   else { // OrigMatrix is not a CrsMatrix
 
-    MaxNumEntries_ = 0;
-    int NumEntries;
+    /*MaxNumEntries_ = 0;
+    size_t NumEntries;
     for (i=0; i<NumMyRows_; i++) {
       OrigMatrix_->NumMyRowEntries(i, NumEntries);
       MaxNumEntries_ = EPETRA_MAX(MaxNumEntries_, NumEntries);
-    }
-    Indices_ = new int[MaxNumEntries_];
-    Values_ = new double[MaxNumEntries_];
+    }*/
+	//MaxNumEntries_ = getNodeMaxNumRowEntries();
+    //Indices_ = new LocalOrdinal[MaxNumEntries_];
+    //Values_ = new Scalar[MaxNumEntries_];
 
     for (i=0;i<NumMyCols_; i++) TransNumNz_[i] = 0;
     for (i=0; i<NumMyRows_; i++) {
       // Get ith row
-      EPETRA_CHK_ERR(OrigMatrix_->ExtractMyRowCopy(i, MaxNumEntries_, NumIndices, Values_, Indices_)); 
+      //EPETRA_CHK_ERR(OrigMatrix_->ExtractMyRowCopy(i, MaxNumEntries_, NumIndices, Values_, Indices_)); 
+	  OrigMatrix_->getLocalRowView(i, Indices_, Values_);
       for (j=0; j<NumIndices; j++) ++TransNumNz_[Indices_[j]];
     }
   }
@@ -183,8 +189,8 @@ int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous,
   for(i=0; i<NumMyCols_; i++) {
     NumIndices = TransNumNz_[i];
     if (NumIndices>0) {
-      TransIndices_[i] = new int[NumIndices];
-      TransValues_[i] = new double[NumIndices];
+      TransIndices_[i] = new LocalOrdinal[NumIndices];
+      TransValues_[i] = new Scalar[NumIndices];
     }
   }
 
@@ -193,16 +199,18 @@ int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous,
   for (i=0;i<NumMyCols_; i++) TransNumNz_[i] = 0; // Reset transpose NumNz counter
   for (i=0; i<NumMyRows_; i++) {
     if (OrigMatrixIsCrsMatrix_) {
-      EPETRA_CHK_ERR(OrigCrsMatrix->ExtractMyRowView(i, NumIndices, Values_, Indices_));
+      //EPETRA_CHK_ERR(OrigCrsMatrix->ExtractMyRowView(i, NumIndices, Values_, Indices_));
     }
     else {
-      EPETRA_CHK_ERR(OrigMatrix_->ExtractMyRowCopy(i, MaxNumEntries_, NumIndices, Values_, Indices_));
+      //EPETRA_CHK_ERR(OrigMatrix_->ExtractMyRowCopy(i, MaxNumEntries_, NumIndices, Values_, Indices_));
+	  OrigMatrix_->getLocalRowView(i, Indices_, Values_);
     }
 
-    int ii = OrigMatrix_->RowMatrixRowMap().GID(i);
+    //int ii = OrigMatrix_->RowMatrixRowMap().GID(i);
+    GlobalOrdinal ii = OrigMatrix_->RowMap().getGlobalElement(i);
     for (j=0; j<NumIndices; j++) {
-      int TransRow = Indices_[j];
-      int loc = TransNumNz_[TransRow];
+      LocalOrdinal TransRow = Indices_[j];
+      size_t loc = TransNumNz_[TransRow];
       TransIndices_[TransRow][loc] = ii;
       TransValues_[TransRow][loc] = Values_[j];
       ++TransNumNz_[TransRow]; // increment counter into current transpose row
@@ -212,43 +220,47 @@ int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous,
   //  Build Transpose matrix with some rows being shared across processors.
   //  We will use a view here since the matrix will not be used for anything else
 
-  const Epetra_Map & TransMap = OrigMatrix_->RowMatrixColMap();
+  const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > TransMap = OrigMatrix_->getColMap();
 
-  Epetra_CrsMatrix TempTransA1(View, TransMap, TransNumNz_);
-  TransMyGlobalEquations_ = new int[NumMyCols_];
-  TransMap.MyGlobalElements(TransMyGlobalEquations_);
+  CrsMatrix TempTransA1(TransMap, TransNumNz_);
+  //TransMyGlobalEquations_ = new int[NumMyCols_];
+  TransMyGlobalEquations_ = TransMap.getNodeElementList();
   
   /* Add  rows one-at-a-time */
 
   for (i=0; i<NumMyCols_; i++)
     {
-      EPETRA_CHK_ERR(TempTransA1.InsertGlobalValues(TransMyGlobalEquations_[i], 
-						    TransNumNz_[i], TransValues_[i], TransIndices_[i]));
+   //   EPETRA_CHK_ERR(TempTransA1.InsertGlobalValues(TransMyGlobalEquations_[i], 
+	//					    TransNumNz_[i], TransValues_[i], TransIndices_[i]));
+	TempTransA1.insertGlobalValues(TransMyGlobalEquations_[i],TransNumNz_[i], TransValues_[i], TransIndices_[i]); 
     }
  
   // Note: The following call to FillComplete is currently necessary because
   //       some global constants that are needed by the Export () are computed in this routine
 
-  const Epetra_Map& domain_map = OrigMatrix_->OperatorDomainMap();
-  const Epetra_Map& range_map = OrigMatrix_->OperatorRangeMap();
+  const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &domain_map = OrigMatrix_->getDomainMap();
+  const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > &range_map = OrigMatrix_->getRangeMap();
 
-  EPETRA_CHK_ERR(TempTransA1.FillComplete(range_map, domain_map, false));
+  TempTransA1.FillComplete(range_map, domain_map, false);
 
   // Now that transpose matrix with shared rows is entered, create a new matrix that will
   // get the transpose with uniquely owned rows (using the same row distribution as A).
 
-  TransposeMatrix_ = new Epetra_CrsMatrix(Copy, *TransposeRowMap_,0);
+  TransposeMatrix_ = Teuchos::RCP<RowMatrixnScalar, LocalOrdinal, GlobalOrdinal, Node> >(new CrsMatrix(Copy, *TransposeRowMap_,0));
 
   // Create an Export object that will move TempTransA around
 
-  TransposeExporter_ = new Epetra_Export(TransMap, *TransposeRowMap_);
+  TransposeExporter_ = Teuchos::RCP<Export<LocalOrdinal, GlobalOrdinal, Node> >(new Export(TransMap, *TransposeRowMap_));
 
-  EPETRA_CHK_ERR(TransposeMatrix_->Export(TempTransA1, *TransposeExporter_, Add));
+  //EPETRA_CHK_ERR(TransposeMatrix_->Export(TempTransA1, *TransposeExporter_, Add));
+  TransposeMatrix_->Export(TempTransA1, *TransposeExporter_, Add);
   
-  EPETRA_CHK_ERR(TransposeMatrix_->FillComplete(range_map, domain_map));
+  //EPETRA_CHK_ERR(TransposeMatrix_->FillComplete(range_map, domain_map));
+  TransposeMatrix_->FillComplete(range_map, domain_map);
 
   if (MakeDataContiguous) {
-    EPETRA_CHK_ERR(TransposeMatrix_->MakeDataContiguous());
+    //EPETRA_CHK_ERR(TransposeMatrix_->MakeDataContiguous());
+    TransposeMatrix_->MakeDataContiguous();
   }
 
   TransposeMatrix = TransposeMatrix_;
@@ -257,7 +269,7 @@ int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous,
   return(0);
 }
 //=========================================================================
-int Epetra_RowMatrixTransposer::UpdateTransposeValues(Epetra_RowMatrix * MatrixWithNewValues){
+/*int Tpetra_RowMatrixTransposer::UpdateTransposeValues(Tpetra_RowMatrix * MatrixWithNewValues){
 
   int i, j, NumIndices;
 
@@ -273,7 +285,7 @@ int Epetra_RowMatrixTransposer::UpdateTransposeValues(Epetra_RowMatrix * MatrixW
     }
   }
 
-  Epetra_CrsMatrix * OrigCrsMatrix = dynamic_cast<Epetra_CrsMatrix *>(MatrixWithNewValues);
+  Tpetra_CrsMatrix * OrigCrsMatrix = dynamic_cast<Tpetra_CrsMatrix *>(MatrixWithNewValues);
 
 	
   OrigMatrixIsCrsMatrix_ = (OrigCrsMatrix!=0); // If this pointer is non-zero, the cast to CrsMatrix worked
@@ -303,14 +315,14 @@ int Epetra_RowMatrixTransposer::UpdateTransposeValues(Epetra_RowMatrix * MatrixW
   //  Build Transpose matrix with some rows being shared across processors.
   //  We will use a view here since the matrix will not be used for anything else
 
-  const Epetra_Map & TransMap = OrigMatrix_->RowMatrixColMap();
+  const Tpetra_Map & TransMap = OrigMatrix_->RowMatrixColMap();
 
-  Epetra_CrsMatrix TempTransA1(View, TransMap, TransNumNz_);
-  TransMap.MyGlobalElements(TransMyGlobalEquations_);
+  Tpetra_CrsMatrix TempTransA1(View, TransMap, TransNumNz_);
+  TransMap.MyGlobalElements(TransMyGlobalEquations_);*/
   
   /* Add  rows one-at-a-time */
 
-  for (i=0; i<NumMyCols_; i++)
+  /*for (i=0; i<NumMyCols_; i++)
     {
       EPETRA_CHK_ERR(TempTransA1.InsertGlobalValues(TransMyGlobalEquations_[i], 
 						    TransNumNz_[i], TransValues_[i], TransIndices_[i]));
@@ -318,8 +330,8 @@ int Epetra_RowMatrixTransposer::UpdateTransposeValues(Epetra_RowMatrix * MatrixW
  
   // Note: The following call to FillComplete is currently necessary because
   //       some global constants that are needed by the Export () are computed in this routine
-  const Epetra_Map& domain_map = OrigMatrix_->OperatorDomainMap();
-  const Epetra_Map& range_map = OrigMatrix_->OperatorRangeMap();
+  const Tpetra_Map& domain_map = OrigMatrix_->OperatorDomainMap();
+  const Tpetra_Map& range_map = OrigMatrix_->OperatorRangeMap();
 
   EPETRA_CHK_ERR(TempTransA1.FillComplete(range_map, domain_map, false));
 
@@ -330,10 +342,10 @@ int Epetra_RowMatrixTransposer::UpdateTransposeValues(Epetra_RowMatrix * MatrixW
   EPETRA_CHK_ERR(TransposeMatrix_->Export(TempTransA1, *TransposeExporter_, Add));
 
   return(0);
-}
+}*/
 
-Epetra_RowMatrixTransposer&
-Epetra_RowMatrixTransposer::operator=(const Epetra_RowMatrixTransposer& src)
+RowMatrixTransposer&
+RowMatrixTransposer::operator=(const RowMatrixTransposer& src)
 {
   (void)src;//prevents unused variable compiler warning
 
@@ -341,10 +353,23 @@ Epetra_RowMatrixTransposer::operator=(const Epetra_RowMatrixTransposer& src)
   bool throw_error = true;
   if (throw_error) {
     std::cerr << std::endl
-	      << "Epetra_RowMatrixTransposer::operator= not supported."
+	      << "RowMatrixTransposer::operator= not supported."
 	      <<std::endl;
     throw -1;
   }
 
   return(*this);
+}
+//
+// Explicit instantiation macro
+//
+// Must be expanded from within the Tpetra namespace!
+//
+
+#define TPETRA_ROWMATRIXTRANSPOSE_INSTANT(LO,GO,NODE) \
+  \
+  template class RowMatrixTransposer< LO , GO , NODE >;
+
+
+}
 }
