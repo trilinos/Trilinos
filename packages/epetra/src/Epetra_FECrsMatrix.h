@@ -144,15 +144,15 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FECrsMatrix : public Epetra_CrsMatrix {
 
    /** override base-class Epetra_CrsMatrix::SumIntoGlobalValues method */
    int SumIntoGlobalValues(int GlobalRow, int NumEntries,
-                           double* Values, int* Indices);
+                           const double* Values, const int* Indices);
 
    /** override base-class Epetra_CrsMatrix::InsertGlobalValues method */
    int InsertGlobalValues(int GlobalRow, int NumEntries,
-                           double* Values, int* Indices);
+                           const double* Values, const int* Indices);
 
    /** override base-class Epetra_CrsMatrix::ReplaceGlobalValues method */
    int ReplaceGlobalValues(int GlobalRow, int NumEntries,
-                           double* Values, int* Indices);
+                           const double* Values, const int* Indices);
 
    /** Sum a Fortran-style table (single-dimensional packed-list) of
        coefficients into the matrix, adding them to any coefficients that

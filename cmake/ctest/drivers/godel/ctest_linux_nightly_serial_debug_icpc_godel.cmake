@@ -10,7 +10,7 @@ SET(BUILD_TYPE DEBUG)
 SET(BUILD_DIR_NAME SERIAL_DEBUG_ICPC)
 #SET(CTEST_TEST_TYPE Experimental)
 
-SET(Trilinos_PACKAGES Teuchos RTOp GlobiPack Thyra OptiPack Stratimikos Phalanx Rythmos MOOCHO)
+SET(Trilinos_PACKAGES Teuchos RTOp GlobiPack Tpetra Thyra OptiPack Stratimikos Phalanx Rythmos MOOCHO)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DDART_TESTING_TIMEOUT:STRING=120"

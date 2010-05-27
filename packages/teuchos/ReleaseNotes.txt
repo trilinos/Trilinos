@@ -19,9 +19,18 @@ if clients are using the direct constructors, upperOffset becomes size which
 means that the size will actually become one less with the upperOffset
 becoming one less.  This will therefore not result in memory access errors but
 will result in exceptions being thrown when accessing the real last element.
-Given the confusing that having diffrent arguments caused (that I got caught
-with too) I think this break with strict backward compatibiity is well worth
-it.
+Given the confusion that having diffrent arguments caused (that I got caught
+with too) and the inherent safety inthe change, I think this break with strict
+backward compatibiity is well worth the (minor) problems it might cause to
+users.
+
+- Removed define of TEUCHOS_PRIVIATE_DELETE_NOT_SUPPORTED for _AIX.  The macro
+TEUCHOS_PRIVIATE_DELETE_NOT_SUPPORTED was designed to be used only internally
+within Teuchos (and perhaps other parts of Trilinos) but at some point all use
+of this macro was removed (apparently in all of Trilinos).  If client code
+used this macro for their own purposes, then this change will break client
+code when _AIX is defined.  However, it seems unlikely that there will be such
+client code around.
 
 
 

@@ -10,7 +10,6 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
     gcrodr_hb
     SOURCES test_gcrodr_hb.cpp createEpetraProblem.cpp
     COMM serial mpi
-    XHOST gabriel.sandia.gov
     ARGS
       "--debug --verbose --filename=sherman5.hb --tol=1e-4 --num-rhs=2 --max-subspace=61 --recycle=23 --max-cycles=75"
     STANDARD_PASS_OUTPUT 
@@ -29,7 +28,6 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils AND ${PACKAGE_NAME}_ENABLE_EpetraExt)
       prec_gcrodr_hb
       SOURCES test_prec_gcrodr_hb.cpp createEpetraProblem.cpp
       COMM serial mpi
-      XHOST gabriel.sandia.gov
       ARGS
         "--debug --verbose --filename=sherman5.hb --tol=1e-4 --num-rhs=2 --max-subspace=61 --recycle=23 --max-cycles=75"
         "--debug --verbose --filename=sherman5.hb --tol=1e-10 --num-rhs=2 --max-subspace=10 --recycle=2"

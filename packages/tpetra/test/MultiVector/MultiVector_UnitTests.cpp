@@ -182,6 +182,27 @@ namespace {
   // UNIT TESTS
   // 
 
+  //// 
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, NonMemberConstructors, Ordinal, Scalar , Node )
+  {
+    RCP<Node> node = getNode<Node>();
+    typedef Tpetra::MultiVector<Scalar,Ordinal,Ordinal,Node> MV;
+    typedef Tpetra::Vector<Scalar,Ordinal,Ordinal,Node> V;
+    typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm and node
+    RCP<const Comm<int> > comm = getDefaultComm();
+    // create a Map
+    const size_t numLocal = 13;
+    const size_t numVecs  = 7;
+    RCP<const Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<MV> mvec = Tpetra::createMultiVector<Scalar>(map,numVecs);
+    RCP<V>   vec = Tpetra::createVector<Scalar>(map);
+    TEST_EQUALITY(mvec->getNumVectors(), numVecs);
+    TEST_EQUALITY_CONST(vec->getNumVectors(), 1);
+  }
+
+
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVector, basic, Ordinal, Scalar , Node )
   {
@@ -1949,6 +1970,7 @@ typedef std::complex<double> ComplexDouble;
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, basic             , ORDINAL, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, NonMemberConstructors, ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, BadConstNumVecs   , ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, BadConstLDA       , ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( MultiVector, BadConstAA        , ORDINAL, SCALAR, NODE ) \

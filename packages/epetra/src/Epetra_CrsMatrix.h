@@ -258,6 +258,35 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsMatrix: public Epetra_DistObject, public E
     \post All values of \e this have been multiplied by ScalarConstant.
   */
   int Scale(double ScalarConstant);
+
+  //! Insert a list of elements in a given global row of the matrix.
+  /*!
+    This method is used to construct a matrix for the first time.  It cannot
+    be used if the matrix structure has already been fixed (via a call to FillComplete()).
+    If multiple values are inserted for the same matrix entry, the values are initially
+    stored separately, so memory use will grow as a result.  However, when FillComplete is called
+    the values will be summed together and the additional memory will be released.
+
+    For example, if the values 2.0, 3.0 and 4.0 are all inserted in Row 1, Column 2, extra storage
+    is used to store each of the three values separately.  In this way, the insert process does not 
+    require any searching and can be faster.  However, when FillComplete() is called, the values
+    will be summed together to equal 9.0 and only a single entry will remain in the matrix for
+    Row 1, Column 2.
+
+    \param GlobalRow - (In) Row number (in global coordinates) to put elements.
+    \param NumEntries - (In) Number of entries.
+    \param Values - (In) Values to enter.
+    \param Indices - (In) Global column indices corresponding to values.
+		
+    \return Integer error code, set to 0 if successful. Note that if the
+    allocated length of the row has to be expanded, a positive warning code
+    will be returned.
+
+    \warning This method may not be called once FillComplete() has been called.
+
+    \pre IndicesAreLocal()==false && IndicesAreContiguous()==false
+  */
+  virtual int InsertGlobalValues(int GlobalRow, int NumEntries, const double* Values, const int* Indices);
 	
   //! Insert a list of elements in a given global row of the matrix.
   /*!
@@ -301,7 +330,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsMatrix: public Epetra_DistObject, public E
 
     \pre IndicesAreLocal()==false && IndicesAreContiguous()==false
   */
-  virtual int ReplaceGlobalValues(int GlobalRow, int NumEntries, double* Values, int* Indices);
+  virtual int ReplaceGlobalValues(int GlobalRow, int NumEntries, const double* Values, const int* Indices);
 	
   //! Add this list of entries to existing values for a given global row of the matrix.
   /*!
@@ -332,6 +361,22 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsMatrix: public Epetra_DistObject, public E
     \post The given local row of the matrix has been updated as described above.
  
   */
+  int InsertMyValues(int MyRow, int NumEntries, const double* Values, const int* Indices);
+
+  //! Insert a list of elements in a given local row of the matrix.
+  /*!
+    \param MyRow - (In) Row number (in local coordinates) to put elements.
+    \param NumEntries - (In) Number of entries.
+    \param Values - (In) Values to enter.
+    \param Indices - (In) Local column indices corresponding to values.
+		
+    \return Integer error code, set to 0 if successful. Note that if the
+    allocated length of the row has to be expanded, a positive warning code
+    will be returned.
+    \pre IndicesAreGlobal()==false && (IndicesAreContiguous()==false || CV_==View)
+    \post The given local row of the matrix has been updated as described above.
+ 
+  */
   int InsertMyValues(int MyRow, int NumEntries, double* Values, int* Indices);
 
   //! Replace current values with this list of entries for a given local row of the matrix.
@@ -347,7 +392,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_CrsMatrix: public Epetra_DistObject, public E
     \pre IndicesAreLocal()==true
     \post MyRow contains the given list of Values at the given Indices.
   */
-  int ReplaceMyValues(int MyRow, int NumEntries, double* Values, int* Indices);
+  int ReplaceMyValues(int MyRow, int NumEntries, const double* Values, const int* Indices);
 
   //! Add this list of entries to existing values for a given local row of the matrix.
   /*!
@@ -1152,9 +1197,11 @@ or if the number of entries in this row exceed the Length parameter.
   int Allocate();
 
   int InsertValues(int LocalRow, int NumEntries, double* Values, int* Indices);
+  int InsertValues(int LocalRow, int NumEntries, const double* Values, const int* Indices);
 
   int InsertOffsetValues(int GlobalRow, int NumEntries, double *Values, int *Indices);
-  int ReplaceOffsetValues(int GlobalRow, int NumEntries, double *Values, int *Indices);
+  int InsertOffsetValues(int GlobalRow, int NumEntries, const double *Values, const int *Indices);
+  int ReplaceOffsetValues(int GlobalRow, int NumEntries, const double *Values, const int *Indices);
   int SumIntoOffsetValues(int GlobalRow, int NumEntries, const double *Values, const int *Indices);
   void UpdateImportVector(int NumVectors) const;
   void UpdateExportVector(int NumVectors) const;

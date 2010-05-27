@@ -249,8 +249,9 @@ namespace Tpetra {
 
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 Teuchos::RCP< Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
-Tpetra::createLocalMapWithNode(const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > &map) {
-  return Tpetra::createMultiVector(map,1);
+Tpetra::createVector(const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > &map) {
+  const bool DO_INIT_TO_ZERO = true;
+  return Teuchos::rcp( new Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(map,DO_INIT_TO_ZERO) );
 }
 
 //
@@ -261,7 +262,10 @@ Tpetra::createLocalMapWithNode(const Teuchos::RCP< const Tpetra::Map<LocalOrdina
 
 #define TPETRA_VECTOR_INSTANT(SCALAR,LO,GO,NODE) \
   \
-  template class Vector< SCALAR , LO , GO , NODE >;
+  template class Vector< SCALAR , LO , GO , NODE >; \
+  \
+  template Teuchos::RCP< Vector<SCALAR,LO,GO,NODE> > \
+  createVector<SCALAR,LO,GO,NODE>(const Teuchos::RCP< const Tpetra::Map<LO,GO,NODE> > &map);
 
 
 #endif // TPETRA_VECTOR_DEF_HPP

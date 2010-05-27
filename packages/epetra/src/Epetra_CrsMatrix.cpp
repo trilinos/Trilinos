@@ -434,6 +434,24 @@ int Epetra_CrsMatrix::Scale(double ScalarConstant)
   }
   return(0);
 }
+
+//==========================================================================
+int Epetra_CrsMatrix::InsertGlobalValues(int Row, int NumEntries,
+					 const double* Values,
+					 const int* Indices)
+{
+  if(IndicesAreLocal()) 
+    EPETRA_CHK_ERR(-2); // Cannot insert global values into local graph
+  if(IndicesAreContiguous()) 
+    EPETRA_CHK_ERR(-3); // Indices cannot be individually deleted and newed
+  Graph_.SetIndicesAreGlobal(true);
+  Row = Graph_.LRID(Row); // Find local row number for this global row index
+
+  EPETRA_CHK_ERR( InsertValues(Row, NumEntries, Values, Indices) );
+
+  return(0);
+}
+
 //==========================================================================
 int Epetra_CrsMatrix::InsertGlobalValues(int Row, int NumEntries,
 					 double* Values,
@@ -453,6 +471,23 @@ int Epetra_CrsMatrix::InsertGlobalValues(int Row, int NumEntries,
 
 //==========================================================================
 int Epetra_CrsMatrix::InsertMyValues(int Row, int NumEntries,
+				     const double* Values,
+				     const int* Indices)
+{
+  if(IndicesAreGlobal()) 
+    EPETRA_CHK_ERR(-2); // Cannot insert global values into filled graph
+  if(IndicesAreContiguous() && CV_==Copy) 
+    EPETRA_CHK_ERR(-3); // Indices cannot be individually deleted and new
+  Graph_.SetIndicesAreLocal(true);
+
+  EPETRA_CHK_ERR( InsertValues(Row, NumEntries, Values, Indices) );
+
+  return(0);
+
+}
+
+//==========================================================================
+int Epetra_CrsMatrix::InsertMyValues(int Row, int NumEntries,
 				     double* Values,
 				     int* Indices)
 {
@@ -466,6 +501,24 @@ int Epetra_CrsMatrix::InsertMyValues(int Row, int NumEntries,
 
   return(0);
 
+}
+
+//==========================================================================
+int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
+				   const double* Values,
+				   const int* Indices)
+{
+  if(CV_ == View){
+    //cannot allow View mode with const pointers
+    EPETRA_CHK_ERR(-4);
+  }
+  else{
+    //to avoid code duplication I am using a cheap tactic of removing the constness of
+    //Values and Indices. Since this is only called in copy mode the passed in variables
+    //will not be modified.
+    return(InsertValues(Row, NumEntries, const_cast<double*>(Values), const_cast<int*>(Indices)));
+  }
+  return 0;
 }
 
 //==========================================================================
@@ -511,7 +564,7 @@ int Epetra_CrsMatrix::InsertValues(int Row, int NumEntries,
     int tmpNumEntries = NumEntries;
 		
     if(Graph_.HaveColMap()) { //must insert only valid indices, values
-      double* tmpValues = Values;
+      const double* tmpValues = Values;
       Values = new double[NumEntries];
       int loc = 0;
       if(IndicesAreLocal()) {
@@ -578,7 +631,7 @@ int Epetra_CrsMatrix::InsertOffsetValues(int Row, int NumEntries,
 }
 
 //==========================================================================
-int Epetra_CrsMatrix::ReplaceGlobalValues(int Row, int NumEntries, double * srcValues, int *Indices) {
+int Epetra_CrsMatrix::ReplaceGlobalValues(int Row, int NumEntries, const double * srcValues, const int *Indices) {
 
   int j;
   int ierr = 0;
@@ -607,7 +660,7 @@ int Epetra_CrsMatrix::ReplaceGlobalValues(int Row, int NumEntries, double * srcV
 }
 
 //==========================================================================
-int Epetra_CrsMatrix::ReplaceMyValues(int Row, int NumEntries, double * srcValues, int *Indices) {
+int Epetra_CrsMatrix::ReplaceMyValues(int Row, int NumEntries, const double * srcValues, const int *Indices) {
 
   if (!IndicesAreLocal()) 
     EPETRA_CHK_ERR(-4); // Indices must be local.
@@ -639,7 +692,7 @@ int Epetra_CrsMatrix::ReplaceMyValues(int Row, int NumEntries, double * srcValue
 
 //==========================================================================
 int Epetra_CrsMatrix::ReplaceOffsetValues(int Row, int NumEntries,
-					  double * srcValues, int *Offsets)
+					  const double * srcValues, const int *Offsets)
 {
   int j;
   int ierr = 0;
