@@ -328,14 +328,14 @@ collect_timers(
   bool                  checkpoint,
   ParallelMachine       comm)
 {
-  const int parallel_root = 0 ;
-  const int parallel_size = parallel_machine_size(comm);
-  const int parallel_rank = parallel_machine_rank(comm);
-
   Marshal mout;
   mout << root_timer;
 
 #ifdef STK_HAS_MPI
+  const int parallel_root = 0 ;
+  const int parallel_size = parallel_machine_size(comm);
+  const int parallel_rank = parallel_machine_rank(comm);
+
   // Gather the send counts on root processor
   std::string send_string(mout.str());
   int send_count = send_string.size();
