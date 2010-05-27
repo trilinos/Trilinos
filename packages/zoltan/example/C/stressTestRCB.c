@@ -14,6 +14,8 @@
 #include <math.h>
 #include "zoltan.h"
 
+static int myRank, numProcs;
+
 /* Mesh data */
 
 #define NUM_GLOBAL_VERTICES     2500000000
@@ -26,6 +28,7 @@ static float *v_y=NULL;
 static float *v_z=NULL;
 static float *vertex_weight=NULL;
 static ZOLTAN_ID_TYPE *vertex_gid=NULL;
+int *vertex_part=NULL;
 static ZOLTAN_ID_TYPE first_gid;
 
 static int create_vertices(ZOLTAN_GNO_TYPE gnvtxs, int ndim, int vwgt_dim, int nprocs, int rank);
@@ -41,10 +44,12 @@ static int get_num_geometry(void *data, int *ierr);
 static void get_geometry_list(void *data, int sizeGID, int sizeLID,
              int num_obj, ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
              int num_dim, double *geom_vec, int *ierr);
+static void get_partition_list(void *data, int sizeGID, int sizeLID, int num_obj,
+        ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID, int*parts, int *ierr);
 
 int main(int argc, char *argv[])
 {
-  int rc, myRank, numProcs;
+  int rc, i; 
   ZOLTAN_GNO_TYPE numGlobalVertices;
   float ver;
   char dimstring[16];
@@ -133,6 +138,7 @@ int main(int argc, char *argv[])
   Zoltan_Set_Obj_List_Fn(zz, get_object_list, NULL);
   Zoltan_Set_Num_Geom_Fn(zz, get_num_geometry, NULL);
   Zoltan_Set_Geom_Multi_Fn(zz, get_geometry_list, NULL);
+  Zoltan_Set_Part_Multi_Fn(zz, get_partition_list, NULL);
 
   /******************************************************************
   ** Zoltan can now partition the vertices in the simple mesh.
@@ -168,6 +174,61 @@ int main(int argc, char *argv[])
   }
 
   /******************************************************************
+  ** Check the balance of the partitions before running zoltan.
+  ** The query function get_partition_list() will give the 
+  ** partitions of the vertices before we called Zoltan.
+  ******************************************************************/
+
+  if (myRank == 0){
+    printf("\nBALANCE before running Zoltan\n");
+  }
+
+  rc = Zoltan_LB_Eval_Balance(zz, 1, NULL);
+
+  if (rc != ZOLTAN_OK){
+    printf("sorry first LB_Eval_Balance...\n");
+    MPI_Finalize();
+    Zoltan_Destroy(&zz);
+    exit(0);
+  }
+
+  /******************************************************************
+  ** Print out the balance of the new partitions.
+  ******************************************************************/
+ 
+  vertex_part = (int *)malloc(sizeof(int) * numLocalVertices);
+
+  if (!vertex_part){
+    printf("sorry memory error...\n");
+    MPI_Finalize();
+    Zoltan_Destroy(&zz);
+    exit(0);
+  }
+
+  for (i=0; i < numLocalVertices; i++){
+    vertex_part[i] = myRank;
+  }
+
+  if (numExport > 0){
+    for (i=0; i < numExport; i++){
+      vertex_part[exportLocalGids[i]] = exportToPart[i];
+    }
+  }
+
+  if (myRank == 0){
+    printf("\nBALANCE after running Zoltan\n");
+  }
+
+  rc = Zoltan_LB_Eval_Balance(zz, 1, NULL);
+
+  if (rc != ZOLTAN_OK){
+    printf("sorry second LB_Eval_Balance...\n");
+    MPI_Finalize();
+    Zoltan_Destroy(&zz);
+    exit(0);
+  }
+
+  /******************************************************************
   ** Free the arrays allocated by Zoltan_LB_Partition, and free
   ** the storage allocated for the Zoltan structure.
   ******************************************************************/
@@ -183,6 +244,7 @@ int main(int argc, char *argv[])
 
   Zoltan_Destroy(&zz);
 
+  if (vertex_part) free(vertex_part);
   if (v_x) free(v_x);
   if (v_y) free(v_y);
   if (v_z) free(v_z);
@@ -256,6 +318,28 @@ double *dest = geom_vec;
   return;
 }
 
+static void get_partition_list(void *data, int sizeGID, int sizeLID, int num_obj,
+        ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID, int*parts, int *ierr)
+{
+  int i;
+  *ierr = ZOLTAN_OK;
+
+  if (vertex_part == NULL){
+    /* All vertices are in my partition, we have not repartitioned yet */
+    for (i=0; i < num_obj; i++){
+      parts[i] = myRank;
+    }
+  }
+  else{
+    /* We have repartitioned the vertices */
+    for (i=0; i < num_obj; i++){
+      parts[i] = vertex_part[localID[i]];
+    }
+  }
+  return;
+}
+
+
 static void initialize_vertex_global_id_info(int numMyGIDs, int numProc)
 {
   int i;
@@ -272,6 +356,7 @@ static int create_vertices(ZOLTAN_GNO_TYPE gnvtxs, int ndim, int vwgt_dim, int n
 {
   int    nvtxs, num4, i, j;
   double theta, delta, radius, m, length, step;
+  int heavyProc = ((rank % 3 == 0));
 
   /* for simplicity coerce number of vertices on a process to a multiple of 4 */
 
@@ -366,18 +451,26 @@ static int create_vertices(ZOLTAN_GNO_TYPE gnvtxs, int ndim, int vwgt_dim, int n
     }
   }
 
+  srand(0);
   for (i = 0; i < nvtxs; i++)  {
     if (vwgt_dim == 0) /* Unit weights if no weights were requested. */
       vertex_weight[i] = 1.0;
     else
-      srand(0);
-      for (j = 0; j < vwgt_dim; j++)  {
-        /* Only assign one of the weight dimensions a weight>0. */
-        /* Modify to get more complicated test cases. */
-        if (j == i%vwgt_dim)
-          vertex_weight[i*vwgt_dim+j] = ((float) rand())/RAND_MAX;
-        else
-          vertex_weight[i*vwgt_dim+j] = 0.0;
+      if (heavyProc){
+        for (j = 0; j < vwgt_dim; j++)  {
+          if (j == i%vwgt_dim)
+            vertex_weight[i*vwgt_dim+j] = .2 + ((float) rand())/RAND_MAX;
+          else
+            vertex_weight[i*vwgt_dim+j] = 0.0;
+        }
+      }
+      else{
+        for (j = 0; j < vwgt_dim; j++)  {
+          if (j == i%vwgt_dim)
+            vertex_weight[i*vwgt_dim+j] = ((float) rand())/RAND_MAX;
+          else
+            vertex_weight[i*vwgt_dim+j] = 0.0;
+        }
       }
   }
 
