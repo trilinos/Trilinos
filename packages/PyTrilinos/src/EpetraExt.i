@@ -131,8 +131,9 @@ example subdirectory of the PyTrilinos package:
 #include "Epetra_NumPyFEVector.h"
 
 // EpetraExt includes
-#include "EpetraExt_ConfigDefs.h"
+#include "EpetraExt_config.h"
 #include "EpetraExt_Version.h"
+#include "EpetraExt_Exception.h"
 #include "EpetraExt_MapColoring.h"
 #include "EpetraExt_MapColoringIndex.h"
 #include "EpetraExt_BlockMapOut.h"
@@ -152,6 +153,10 @@ example subdirectory of the PyTrilinos package:
 // EpetraExt python includes
 #include "EpetraExt_PyUtil.h"
 %}
+
+// PyTrilinos configuration
+%include "PyTrilinos_config.h"
+%include "EpetraExt_config.h"
 
 // Standard exception handling
 %include "exception.i"
@@ -198,6 +203,11 @@ example subdirectory of the PyTrilinos package:
   try
   {
     $action
+  }
+  catch(EpetraExt::Exception & eee)
+  {
+    eee.Print();
+    SWIG_exception(SWIG_UnknownError, "EpetraExt exception");
   }
   catch(Teuchos::EmptyXMLError & e)
   {
@@ -251,39 +261,99 @@ __version__ = EpetraExt_Version().split()[2]
 ////////////////////////////
 // EpetraExt_HDF5 support //
 ////////////////////////////
+%feature("autodoc",
+"ReadBlockMapProperties(str groupName) -> (numGlobalElements, numGlobalPoints,
+                                           indexBase, numProc)
+
+Return the properties of a BlockMap from an HDF5 file.")
+EpetraExt::HDF5::ReadBlockMapProperties;
 %feature("docstring")
 EpetraExt::HDF5::ReadBlockMap
 "
-Return a BlockMap read from an HDF5 file specified by filename 'name'.
+Return a BlockMap read from an open HDF5 file with group name 'name'.
 "
+%feature("autodoc",
+"ReadMapProperties(str groupName) -> (numGlobalElements, indexBase, numProc)
+
+Return the properties of a Map from an HDF5 file.")
+EpetraExt::HDF5::ReadMapProperties;
 %feature("docstring")
 EpetraExt::HDF5::ReadMap
 "
-Return a Map read from an HDF5 file specified by filename 'name'.
+Return a Map read from an open HDF5 file with group name 'name'.
 "
+%feature("autodoc",
+"ReadIntVectorProperties(str groupName) -> int globalLength
+
+Return the global length of an IntVector from an HDF5 file.")
+EpetraExt::HDF5::ReadIntVectorProperties;
 %feature("docstring")
 EpetraExt::HDF5::ReadIntVector
 "
-Return an IntVector read from an HDF5 file specified by filename
-'name'.
+Return an IntVector read from an open HDF5 file with group name 'name'.
 "
+%feature("autodoc",
+"ReadMultiVectorProperties(str groupName) -> (globalLength, numVectors)
+
+Return the properties of a MultiVector from an HDF5 file.")
+EpetraExt::HDF5::ReadMultiVectorProperties;
 %feature("docstring")
 EpetraExt::HDF5::ReadMultiVector
 "
-Return a MultiVector read from an HDF5 file specified by filename
-'name'.
+Return a MultiVector read from an open HDF5 file with group name 'name'.
 "
+%feature("autodoc",
+"ReadCrsGraphProperties(str groupName) -> (numGlobalRows, numGlobalCols,
+                                           numGlobalNonzeros, numGlobalDiagonals,
+                                           maxNumIndices)
+
+Return the properties of a CrsGraph from an HDF5 file.")
+EpetraExt::HDF5::ReadCrsGraphProperties;
 %feature("docstring")
 EpetraExt::HDF5::ReadCrsGraph
 "
-Return a CrsGraph read from an HDF5 file specified by filename 'name'.
+Return a CrsGraph read from an open HDF5 file with group name 'name'.
 "
+%feature("autodoc",
+"ReadCrsMatrixProperties(str groupName) -> (numGlobalRows, numGlobalCols,
+                                           numNonzeros, numGlobalDiagonals,
+                                           maxNumEntries, normOne, normInf)
+
+Return the properties of a CrsMatrix from an HDF5 file.")
+EpetraExt::HDF5::ReadCrsMatrixProperties;
 %feature("docstring")
 EpetraExt::HDF5::ReadCrsMatrix
 "
-Return a CrsMatrix read from an HDF5 file specified by filename
-'name'.
+Return a CrsMatrix read from an open HDF5 file with group name 'name'.
 "
+// There are a series of referenced arguments for the ReadComment()
+// and Read*Properties() methods that need to be changed to python
+// output arguments
+%typemap(in,numinputs=0) string& Comment ""
+%typemap(argout) string& Comment
+{
+  SWIG_Python_AppendOutput($result, PyString_FromString($1->c_str()));
+}
+%typemap(in,numinputs=0) int& NUM ""
+%typemap(argout) int& NUM { SWIG_Python_AppendOutput($result, PyInt_FromLong((long)*$1)); }
+%apply int& NUM {int& GlobalLength,
+                 int& IndexBase,
+                 int& MaxNumEntries,
+                 int& MaxNumIndices,
+                 int& NumGlobalCols,
+                 int& NumGlobalDiagonals,
+                 int& NumGlobalElements,
+                 int& NumGlobalNonzeros,
+                 int& NumGlobalPoints,
+                 int& NumGlobalRows,
+                 int& NumNonzeros,
+                 int& NumProc,
+                 int& NumVectors,
+                 int& RowSize};
+%typemap(in,numinputs=0) double& NORM ""
+%typemap(argout) double& NORM { SWIG_Python_AppendOutput($result, PyFloat_FromDouble(*$1)); }
+%apply double& NORM {double& NormInf,
+                     double& NormInf};
 %ignore EpetraExt::HDF5::Read;
 %include "EpetraExt_HDF5.h"
 namespace EpetraExt
