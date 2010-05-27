@@ -58,10 +58,13 @@ ENDIF(PyTrilinos_ENABLE_TriUtils)
 IF(PyTrilinos_ENABLE_EpetraExt)
   IF(PyTrilinos_ENABLE_Epetra)
     PyTrilinos_MAKE_TEST(exEpetraExt_IO_MatrixMarket)
+    PyTrilinos_MAKE_TEST(exEpetraExt_MatrixMatrix   )
+    IF(EpetraExt_USING_HDF5)
+      PyTrilinos_MAKE_TEST(exEpetraExt_IO_HDF5)
+    ENDIF(EpetraExt_USING_HDF5)
     # Until expat is integrated as an official TPL, the following
     # example script is doomed to failure
-    #PyTrilinos_MAKE_TEST(exEpetraExt_IO_XML         )
-    PyTrilinos_MAKE_TEST(exEpetraExt_MatrixMatrix   )
+    #PyTrilinos_MAKE_TEST(exEpetraExt_IO_XML)
   ENDIF(PyTrilinos_ENABLE_Epetra)
 ENDIF(PyTrilinos_ENABLE_EpetraExt)
 
