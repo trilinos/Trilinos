@@ -32,6 +32,8 @@
 // TODO: filter column indices first in insertLocalIndices()
 // TODO: filter column indices first in insertGlobalIndices()
 
+#include <Kokkos_NodeTrace.hpp>
+
 #ifdef DOXYGEN_USE_ONLY
   #include "Tpetra_CrsGraph_decl.hpp"
 #endif
@@ -187,6 +189,7 @@ namespace Tpetra {
         //
         // determine how many entries to allocate and setup offsets into 1D arrays
         pbuf_rowOffsets_ = node->template allocBuffer<size_t>(numRows+1);
+        KOKKOS_NODE_TRACE("CrsGraph::allocateIndices()")
         view_rowOffsets_ = node->template viewBufferNonConst<size_t>(Kokkos::WriteOnly,numRows+1,pbuf_rowOffsets_);
         if (numAllocPerRow_ != null) {
           // allocate offsets, get host view
@@ -213,10 +216,12 @@ namespace Tpetra {
         if (nodeNumAllocated_ > 0) {
           if (lorg == AllocateLocal) {
             pbuf_lclInds1D_ = node->template allocBuffer<LocalOrdinal>(nodeNumAllocated_);
+            KOKKOS_NODE_TRACE("CrsGraph::allocateIndices()")
             view_lclInds1D_ = node->template viewBufferNonConst<LocalOrdinal>(Kokkos::WriteOnly, pbuf_lclInds1D_.size(), pbuf_lclInds1D_);
           }
           else {
             pbuf_gblInds1D_ = node->template allocBuffer<GlobalOrdinal>(nodeNumAllocated_);
+            KOKKOS_NODE_TRACE("CrsGraph::allocateIndices()")
             view_gblInds1D_ = node->template viewBufferNonConst<GlobalOrdinal>(Kokkos::WriteOnly, pbuf_gblInds1D_.size(), pbuf_gblInds1D_);
           }
         }
@@ -524,6 +529,7 @@ namespace Tpetra {
       if (getProfileType() == StaticProfile) {
         Teuchos::RCP<Node> node = lclGraph_.getNode();
         if (view_rowOffsets_ == Teuchos::null) {
+          KOKKOS_NODE_TRACE("CrsGraph::getRowInfo()")
           Teuchos::ArrayRCP<const size_t> offs = node->template viewBuffer<size_t>(2,pbuf_rowOffsets_+myRow);
           ret.offset1D = offs[0];
           ret.allocSize = offs[1] - ret.offset1D;
@@ -574,6 +580,7 @@ namespace Tpetra {
       Teuchos::RCP<Node> node = lclGraph_.getNode();
       if (getProfileType() == StaticProfile) {
         if (view_lclInds1D_ == Teuchos::null) {
+          KOKKOS_NODE_TRACE("CrsGraph::getFullLocalView()")
           indices = node->template viewBuffer<LocalOrdinal>(sizeInfo.allocSize, pbuf_lclInds1D_ + sizeInfo.offset1D);
         }
         else {
@@ -582,6 +589,7 @@ namespace Tpetra {
       }
       else {  // dynamic profile
         if (view_lclInds2D_ == Teuchos::null) {
+        KOKKOS_NODE_TRACE("CrsGraph::getFullLocalView()")
           indices = node->template viewBuffer<LocalOrdinal>(sizeInfo.allocSize, pbuf_lclInds2D_[myRow]);
         }
         else {
@@ -616,6 +624,7 @@ namespace Tpetra {
       Kokkos::ReadWriteOption rw = (sizeInfo.numEntries == 0 ? Kokkos::WriteOnly : Kokkos::ReadWrite);
       if (getProfileType() == StaticProfile) {
         if (view_lclInds1D_ == Teuchos::null) {
+          KOKKOS_NODE_TRACE("CrsGraph::getFullLocalViewNonConst()")
           indices = node->template viewBufferNonConst<LocalOrdinal>(rw, sizeInfo.allocSize, pbuf_lclInds1D_ + sizeInfo.offset1D);
         }
         else {
@@ -624,6 +633,7 @@ namespace Tpetra {
       }
       else {  // dynamic profile
         if (view_lclInds2D_ == Teuchos::null) {
+          KOKKOS_NODE_TRACE("CrsGraph::getFullLocalViewNonConst()")
           indices = node->template viewBufferNonConst<LocalOrdinal>(rw, sizeInfo.allocSize, pbuf_lclInds2D_[myRow]);
         }
         else {
@@ -657,6 +667,7 @@ namespace Tpetra {
       // if there are no valid entries, then this view can be constructed WriteOnly
       if (getProfileType() == StaticProfile) {
         if (view_gblInds1D_ == Teuchos::null) {
+          KOKKOS_NODE_TRACE("CrsGraph::getFullGlobalView()")
           indices = node->template viewBuffer<GlobalOrdinal>(sizeInfo.allocSize, pbuf_gblInds1D_ + sizeInfo.offset1D);
         }
         else {
@@ -665,6 +676,7 @@ namespace Tpetra {
       }
       else {  // dynamic profile
         if (view_gblInds2D_ == Teuchos::null) {
+          KOKKOS_NODE_TRACE("CrsGraph::getFullGlobalView()")
           indices = node->template viewBuffer<GlobalOrdinal>(sizeInfo.allocSize, pbuf_gblInds2D_[myRow]);
         } 
         else {
@@ -699,6 +711,7 @@ namespace Tpetra {
       Kokkos::ReadWriteOption rw = (sizeInfo.numEntries == 0 ? Kokkos::WriteOnly : Kokkos::ReadWrite);
       if (getProfileType() == StaticProfile) {
         if (view_gblInds1D_ == Teuchos::null) {
+          KOKKOS_NODE_TRACE("CrsGraph::getFullGlobalViewNonConst()")
           indices = node->template viewBufferNonConst<GlobalOrdinal>(rw, sizeInfo.allocSize, pbuf_gblInds1D_ + sizeInfo.offset1D);
         }
         else {
@@ -707,6 +720,7 @@ namespace Tpetra {
       }
       else {  // dynamic profile
         if (view_gblInds2D_ == Teuchos::null) {
+          KOKKOS_NODE_TRACE("CrsGraph::getFullGlobalViewNonConst()")
           indices = node->template viewBufferNonConst<GlobalOrdinal>(rw, sizeInfo.allocSize, pbuf_gblInds2D_[myRow]);
         }
         else {
@@ -854,6 +868,7 @@ namespace Tpetra {
     if (view_lclInds2D_ == Teuchos::null) {
       // no views
       if (rnnz) {
+        KOKKOS_NODE_TRACE("CrsGraph::updateLocalAllocation()")
         node->template copyBuffers<LocalOrdinal>(rnnz, old_alloc, pbuf_lclInds2D_[lrow]);
       }
       old_alloc = Teuchos::null;
@@ -864,6 +879,7 @@ namespace Tpetra {
       // use views
       ArrayRCP<LocalOrdinal> old_view;
       old_view = view_lclInds2D_[lrow];
+      KOKKOS_NODE_TRACE("CrsGraph::updateLocalAllocation()")
       view_lclInds2D_[lrow] = node->template viewBufferNonConst<LocalOrdinal>(Kokkos::WriteOnly, allocSize, pbuf_lclInds2D_[lrow]);
       std::copy( old_view.begin(), old_view.begin() + rnnz, view_lclInds2D_[lrow].begin() );
       old_view = Teuchos::null;
@@ -910,6 +926,7 @@ namespace Tpetra {
     if (view_gblInds2D_ == Teuchos::null) {
       // no views
       if (rnnz) {
+        KOKKOS_NODE_TRACE("CrsGraph::updateGlobalAllocation()")
         node->template copyBuffers<GlobalOrdinal>(rnnz, old_alloc, pbuf_gblInds2D_[lrow]);
       }
       old_alloc = Teuchos::null;
@@ -920,6 +937,7 @@ namespace Tpetra {
       // use views
       ArrayRCP<GlobalOrdinal> old_view;
       old_view = view_gblInds2D_[lrow];
+      KOKKOS_NODE_TRACE("CrsGraph::updateGlobalAllocation()")
       view_gblInds2D_[lrow] = node->template viewBufferNonConst<GlobalOrdinal>(Kokkos::WriteOnly, allocSize, pbuf_gblInds2D_[lrow]);
       std::copy( old_view.begin(), old_view.begin() + rnnz, view_gblInds2D_[lrow].begin() );
       old_view = Teuchos::null;
@@ -1125,6 +1143,7 @@ namespace Tpetra {
     else { // pftype_ == StaticProfile)
       if (pbuf_rowOffsets_ != Teuchos::null) {
         if (view_rowOffsets_ == Teuchos::null) {
+          KOKKOS_NODE_TRACE("CrsGraph::checkInternalState()")
           Teuchos::ArrayRCP<const size_t> last_offset = node->template viewBuffer<size_t>(1,pbuf_rowOffsets_+getNodeNumRows());
           actualNumAllocated = last_offset[0];
         }
@@ -1843,6 +1862,7 @@ namespace Tpetra {
       if (nodeNumAllocated_ > 0) {
         if (getProfileType() == StaticProfile) {
           if (view_gblInds1D_ == Teuchos::null) {
+            KOKKOS_NODE_TRACE("CrsGraph::makeIndicesLocal()")
             view_gblInds1D_ = node->template viewBufferNonConst<GlobalOrdinal>(Kokkos::ReadWrite, pbuf_gblInds1D_.size(), pbuf_gblInds1D_);
           }
           // do the conversion in situ. this must be done from front to back.
@@ -1878,6 +1898,7 @@ namespace Tpetra {
               ArrayRCP<GlobalOrdinal> view_ginds;
               ArrayRCP< LocalOrdinal> view_linds;
               if (view_gblInds2D_ == Teuchos::null) {
+                KOKKOS_NODE_TRACE("CrsGraph::makeIndicesLocal()")
                 view_ginds = node->template viewBufferNonConst<GlobalOrdinal>(Kokkos::ReadWrite,rna,pbuf_gblInds2D_[r]);
               }
               else {
@@ -2055,7 +2076,7 @@ namespace Tpetra {
 
       // Copy the Remote GIDs into myColumns
       std::copy(RemoteGIDSet.begin(), RemoteGIDSet.end(), RemoteColGIDs.begin());
-      // We will make a list of correspodning node IDs
+      // We will make a list of corresponding node IDs
       Array<int> RemoteImageIDs(numRemoteColGIDs);
       // Lookup the Remote Nodes IDs in the Domain map
       {
@@ -2219,6 +2240,7 @@ namespace Tpetra {
         view_lclInds2D_ = Teuchos::null;
         // allocate single memory block
         pbuf_rowOffsets_ = node->template allocBuffer<size_t>(nlrs+1);
+        KOKKOS_NODE_TRACE("CrsGraph::optimizeStorage()")
         view_rowOffsets_ = node->template viewBufferNonConst<size_t>(Kokkos::WriteOnly,nlrs+1,pbuf_rowOffsets_);
         if (nodeNumEntries_ > 0) {
           pbuf_lclInds1D_ = node->template allocBuffer<LocalOrdinal>(nodeNumEntries_);
@@ -2227,6 +2249,7 @@ namespace Tpetra {
           for (size_t r=0; r<nlrs; ++r) {
             const size_t rne = numEntriesPerRow_[r];
             if (rne > 0) {
+              KOKKOS_NODE_TRACE("CrsGraph::optimizeStorage()")
               node->template copyBuffers<LocalOrdinal>(rne, pbuf_lclInds2D_[r], curptr);
             }
             view_rowOffsets_[r] = sofar;
@@ -2251,6 +2274,7 @@ namespace Tpetra {
         // storage is already allocated; just need to pack
         if (nodeNumEntries_ > 0) {
           if (view_rowOffsets_ == Teuchos::null) {
+            KOKKOS_NODE_TRACE("CrsGraph::optimizeStorage()")
             view_rowOffsets_ = node->template viewBufferNonConst<size_t>(Kokkos::ReadWrite,nlrs+1,pbuf_rowOffsets_);
           }
           ArrayRCP<LocalOrdinal> curptr = pbuf_lclInds1D_,
@@ -2260,6 +2284,7 @@ namespace Tpetra {
             const size_t rne = numEntriesPerRow_[r],
                           na = view_rowOffsets_[r+1] - view_rowOffsets_[r];
             if (curptr != oldptr) {
+              KOKKOS_NODE_TRACE("CrsGraph::optimizeStorage()")
               node->template copyBuffers<LocalOrdinal>(rne, oldptr, curptr);
               view_rowOffsets_[r] = sofar;
             }

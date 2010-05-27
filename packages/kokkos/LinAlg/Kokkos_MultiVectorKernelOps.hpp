@@ -149,7 +149,7 @@ namespace Kokkos {
     typedef  Magnitude ReductionType;
     inline static Magnitude identity() {return Teuchos::ScalarTraits<Magnitude>::zero();}
     inline static Magnitude reduce(Magnitude x, Magnitude y) {return x+y;}
-    Magnitude generate(int i) {
+    inline Magnitude generate(int i) {
       return SCT::magnitude((x[i]));
     }
   };
@@ -162,7 +162,7 @@ namespace Kokkos {
     typedef  Magnitude ReductionType;
     inline static Magnitude identity() {return Teuchos::ScalarTraits<Magnitude>::zero();}
     inline static Magnitude reduce(Magnitude x, Magnitude y) {return x+y;}
-    Magnitude generate(int i) {
+    inline Magnitude generate(int i) {
       Scalar tmp = x[i] / w[i];
       return SCT::real( SCT::conjugate(tmp)*tmp );
     }
@@ -174,7 +174,7 @@ namespace Kokkos {
     typedef  Scalar ReductionType;
     inline static Scalar identity() {return Teuchos::ScalarTraits<Scalar>::zero();}
     inline static Scalar reduce(Scalar x, Scalar y) {return x+y;}
-    Scalar generate(int i) { return x[i]; }
+    inline Scalar generate(int i) { return x[i]; }
   };
 
   template <typename Scalar>
@@ -198,7 +198,7 @@ namespace Kokkos {
     typedef  Magnitude ReductionType;
     inline static Magnitude identity() {return Teuchos::ScalarTraits<Magnitude>::zero();}
     inline static Magnitude reduce(Magnitude x, Magnitude y) {return x+y;}
-    Magnitude generate(int i) {
+    inline Magnitude generate(int i) {
       Scalar xi = x[i]; 
       return SCT::real( SCT::conjugate(xi)*xi );
     }
@@ -211,7 +211,7 @@ namespace Kokkos {
     typedef  Scalar ReductionType;
     inline static Scalar identity() {return SCT::zero();}
     inline static Scalar reduce(Scalar x, Scalar y) {return x+y;}
-    Scalar generate(int i) {
+    inline Scalar generate(int i) {
       Scalar xi = x[i]; Scalar yi = y[i];
       return SCT::conjugate(xi)*yi;
     }

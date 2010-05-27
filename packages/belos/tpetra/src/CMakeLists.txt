@@ -25,13 +25,11 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 APPEND_SET(HEADERS
-  BelosEpetraAdapter.hpp 
-  BelosEpetraOperator.h 
+  BelosTpetraAdapter.hpp 
   )
 
 APPEND_SET(SOURCES
-  BelosEpetraAdapter.cpp
-  BelosEpetraOperator.cpp
+  BelosTpetraAdapter.cpp
   )
 
 #
@@ -39,8 +37,8 @@ APPEND_SET(SOURCES
 #
 
 PACKAGE_ADD_LIBRARY(
-  belosepetra
+  belostpetra
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
-  DEPLIBS belos epetra
+  DEPLIBS belos tpetra kokkos
   )

@@ -479,7 +479,7 @@ namespace Tpetra {
       Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >   pbuf_values2D_, view_values2D_;
 
       // a map between a (non-local) row and a list of (col,val)
-      std::map<GlobalOrdinal, std::list<std::pair<GlobalOrdinal,Scalar> > > nonlocals_;
+      std::map<GlobalOrdinal, Teuchos::Array<std::pair<GlobalOrdinal,Scalar> > > nonlocals_;
 
       // a wrapper around multiply, for use in apply; it contains a non-owning RCP to *this, therefore, it is not allowed 
       // to persist past the destruction of *this. therefore, we may not share it.

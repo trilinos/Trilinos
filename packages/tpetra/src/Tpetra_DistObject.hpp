@@ -222,6 +222,10 @@ namespace Tpetra {
                                   Distributor &distor,
                                   CombineMode CM) = 0;
 
+    virtual void createViews() const {}
+    virtual void createViewsNonConst(Kokkos::ReadWriteOption rwo) {}
+    virtual void releaseViews() const {}
+
   private:
 
     Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > map_;
@@ -327,6 +331,15 @@ namespace Tpetra {
   {
     TEST_FOR_EXCEPTION( checkSizes(source) == false, std::runtime_error, 
         "Tpetra::DistObject::doTransfer(): checkSizes() indicates that DistOjbects are not size-compatible.");
+    Kokkos::ReadWriteOption rwo = Kokkos::ReadWrite;
+    if (CM == INSERT || CM == REPLACE) {
+      if (numSameIDs + permuteToLIDs.size() + remoteLIDs.size() == this->getMap()->getNodeNumElements()) {
+        // we are overwriting, and everything will be overwritten
+        rwo = Kokkos::WriteOnly;
+      }
+    }
+    source.createViews();
+    this->createViewsNonConst(rwo); 
     if (numSameIDs + permuteToLIDs.size()) {
       copyAndPermute(source,numSameIDs,permuteToLIDs,permuteFromLIDs);
     }
@@ -334,6 +347,7 @@ namespace Tpetra {
     numExportPacketsPerLID_.resize(exportLIDs.size());
     numImportPacketsPerLID_.resize(remoteLIDs.size());
     packAndPrepare(source,exportLIDs,exports_,numExportPacketsPerLID_(),constantNumPackets,distor);
+    source.releaseViews();
     if (constantNumPackets != 0) {
       size_t rbufLen = remoteLIDs.size()*constantNumPackets;
       imports_.resize(rbufLen);
@@ -375,6 +389,7 @@ namespace Tpetra {
       }
       unpackAndCombine(remoteLIDs,imports_(),numImportPacketsPerLID_(), constantNumPackets, distor,CM);
     }
+    this->releaseViews();
   }
 
   template <class Packet, class LocalOrdinal, class GlobalOrdinal, class Node>

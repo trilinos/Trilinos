@@ -320,10 +320,16 @@ namespace Tpetra {
                           Distributor &distor,
                           CombineMode CM);
 
+  mutable Teuchos::ArrayRCP<Scalar> ncview_;
+  mutable Teuchos::ArrayRCP<const Scalar> cview_;
+
+  void createViews() const;
+  void createViewsNonConst(Kokkos::ReadWriteOption rwo);
+  void releaseViews() const;
+
   }; // class MultiVector
 
   /** \brief Non-member function to create a MultiVector from a specified Map.
-
       \relates MultiVector
    */
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

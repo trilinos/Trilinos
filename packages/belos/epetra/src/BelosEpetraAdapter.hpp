@@ -103,7 +103,13 @@ namespace Belos {
     //  a pointer to the pure virtual class. std::vector values are 
     //  shared and hence no memory is allocated for the columns.
     //
-    MultiVec<double> * CloneView ( const std::vector<int>& index );
+    MultiVec<double> * CloneViewNonConst ( const std::vector<int>& index );
+    //
+    //  the following is a virtual view constructor returning
+    //  a pointer to the pure virtual class. std::vector values are 
+    //  shared and hence no memory is allocated for the columns.
+    //
+    const MultiVec<double> * CloneView ( const std::vector<int>& index ) const;
     //
     //  this routine sets a subblock of the multivector, which
     //  need not be contiguous, and is given by the indices.
@@ -250,7 +256,7 @@ namespace Belos {
       return Teuchos::rcp( new Epetra_MultiVector(Copy, mv, &tmp_index[0], index.size()) ); 
     }
     ///
-    static Teuchos::RCP<Epetra_MultiVector> CloneView( Epetra_MultiVector& mv, const std::vector<int>& index )
+    static Teuchos::RCP<Epetra_MultiVector> CloneViewNonConst( Epetra_MultiVector& mv, const std::vector<int>& index )
     { 
       std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
       return Teuchos::rcp( new Epetra_MultiVector(View, mv, &tmp_index[0], index.size()) ); 

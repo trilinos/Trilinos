@@ -2,12 +2,18 @@
 #define KOKKOS_CUDA_NODE_MEMORY_MODEL_HPP_
 
 #include "Kokkos_NodeAPIConfigDefs.hpp"
+#include <Teuchos_RCP.hpp>
 
 // forward declarations of Teuchos classes
+namespace std {
+  template <typename CharT> class char_traits;
+}
 namespace Teuchos {
   class ParameterList;
   template <typename T> class ArrayRCP;
   template <typename T> class ArrayView;
+  template <typename CharT, typename Traits> class basic_FancyOStream;
+  typedef basic_FancyOStream<char, std::char_traits<char> > FancyOStream;
 }
 
 namespace Kokkos {
@@ -92,11 +98,12 @@ namespace Kokkos {
 
       //@{ Book-keeping information
 
-      void printStatistics() const;
+      void printStatistics(const Teuchos::RCP< Teuchos::FancyOStream > &os) const;
 
       //@}
 
-    private:
+    public:
+      size_t allocSize_;
       size_t numCopiesD2H_, numCopiesH2D_, numCopiesD2D_;
       size_t bytesCopiedD2H_, bytesCopiedH2D_, bytesCopiedD2D_;
   };

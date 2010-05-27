@@ -1,10 +1,13 @@
 #ifndef TPETRA_MATRIX_IO_DECL
 #define TPETRA_MATRIX_IO_DECL
 
+#include <string>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_CommHelpers.hpp>
-#include <Tpetra_CrsMatrix.hpp>
+#include <Teuchos_ParameterList.hpp>
+#include "Tpetra_Map.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 
 namespace Tpetra {
   namespace Utils {
@@ -22,10 +25,19 @@ namespace Tpetra {
 
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
     void
+    generateMatrix(const Teuchos::RCP<Teuchos::ParameterList> &plist,
+                   const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
+                   const Teuchos::RCP<Node> &node,
+                   Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> > &A);
+
+    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+    void
     readHBMatrix(const std::string &filename, 
-                         const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
-                         const Teuchos::RCP<Node> &node,
-                         Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> > &A);
+                 const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
+                 const Teuchos::RCP<Node> &node,
+                 Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> > &A,
+                 Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap = Teuchos::null);
+
   } // end of Tpetra::Utils namespace
 } // end of Tpetra namespace
 

@@ -446,7 +446,7 @@ namespace Belos {
       
       for (int i=0; i<numRHS_; ++i) {
         index[0] = i;
-        RCP<MV> cur_block_copy_vec = MVT::CloneView( *currentUpdate, index );
+        RCP<MV> cur_block_copy_vec = MVT::CloneViewNonConst( *currentUpdate, index );
         //
         //  Make a view and then copy the RHS of the least squares problem.  DON'T OVERWRITE IT!
         //
@@ -545,7 +545,7 @@ namespace Belos {
         std::vector<int> nevind(curDim_+1);
         for (int j=0; j<curDim_+1; j++) nevind[j] = j;
         Teuchos::RCP<const MV> newV = MVT::CloneView( *newstate.V[i], nevind );
-        Teuchos::RCP<MV> lclV = MVT::CloneView( *V_[i], nevind );
+        Teuchos::RCP<MV> lclV = MVT::CloneViewNonConst( *V_[i], nevind );
         const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
         const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
         MVT::MvAddMv( one, *newV, zero, *newV, *lclV );
@@ -687,7 +687,6 @@ namespace Belos {
     std::vector<int> index(1);
     std::vector<int> index2(1);
     index[0] = curDim_;
-    Teuchos::RCP<MV> tmp_vec;
     Teuchos::RCP<MV> U_vec = MVT::Clone( *V_[0], numRHS_ );
 
     // Create AU_vec to hold A*U_vec.
@@ -695,8 +694,9 @@ namespace Belos {
 
     for (int i=0; i<numRHS_; ++i) {
       index2[0] = i;
-      tmp_vec = MVT::CloneView( *V_[i], index );
-      MVT::MvAddMv( one, *tmp_vec, zero, *tmp_vec, *MVT::CloneView( *U_vec, index2 ) );
+      RCP<const MV> tmp_vec = MVT::CloneView( *V_[i], index );
+      RCP<MV> U_vec_view = MVT::CloneViewNonConst( *U_vec, index2 );
+      MVT::MvAddMv( one, *tmp_vec, zero, *tmp_vec, *U_vec_view );
     }
     
     ////////////////////////////////////////////////////////////////
@@ -727,13 +727,13 @@ namespace Belos {
 	//
 	// Get previous Krylov vectors.
 	//
-	RCP<MV> V_prev = MVT::CloneView( *V_[i], index );
+	RCP<const MV> V_prev = MVT::CloneView( *V_[i], index );
 	Teuchos::Array< RCP<const MV> > V_array( 1, V_prev );
 	//
 	// Get a view of the new candidate std::vector.
 	//
 	index2[0] = i;
-	RCP<MV> V_new = MVT::CloneView( *AU_vec, index2 );
+	RCP<MV> V_new = MVT::CloneViewNonConst( *AU_vec, index2 );
 	//
 	// Get a view of the current part of the upper-hessenberg matrix.
 	//
@@ -755,7 +755,7 @@ namespace Belos {
 	// be copied back in when V_new is changed.  
 	//
 	index2[0] = curDim_+1;
-	tmp_vec = MVT::CloneView( *V_[i], index2 );
+	RCP<MV> tmp_vec = MVT::CloneViewNonConst( *V_[i], index2 );
 	MVT::MvAddMv( one, *V_new, zero, *V_new, *tmp_vec );
       }
       // 

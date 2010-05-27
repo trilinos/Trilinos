@@ -969,6 +969,7 @@ void GCRODRSolMgr<ScalarType,MV,OP>::initializeStateStorage() {
 // solve()
 template<class ScalarType, class MV, class OP>
 ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
+  using Teuchos::RCP;
 
   // Set the current parameters if they were not set before.
   // NOTE:  This may occur if the user generated the solver manager with the default constructor and 
@@ -1017,7 +1018,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
   //////////////////////////////////////////////////////////////////////////////////////
   // GCRODR solver
   
-  Teuchos::RCP<GCRODRIter<ScalarType,MV,OP> > gcrodr_iter;
+  RCP<GCRODRIter<ScalarType,MV,OP> > gcrodr_iter;
   gcrodr_iter = Teuchos::rcp( new GCRODRIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,plist) );
   // Number of iterations required to generate initial recycle space (if needed)
   int prime_iterations = 0;
@@ -1043,10 +1044,11 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	// Compute image of U_ under the new operator
 	index.resize(keff);
 	for (int ii=0; ii<keff; ++ii) { index[ii] = ii; }
-	Teuchos::RCP<MV> Ctmp  = MVT::CloneView( *C_, index );
-	Teuchos::RCP<MV> Utmp  = MVT::CloneView( *U_, index );
-	Teuchos::RCP<MV> U1tmp = MVT::CloneView( *U1_, index );
+	RCP<const MV> Utmp  = MVT::CloneView( *U_, index );
+	RCP<MV> Ctmp  = MVT::CloneViewNonConst( *C_, index );
 	problem_->apply( *Utmp, *Ctmp );
+
+	RCP<MV> U1tmp = MVT::CloneViewNonConst( *U1_, index );
 
 	// Orthogonalize this block
 	// Get a matrix to hold the orthonormalization coefficients.
@@ -1070,16 +1072,12 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	
         // U_ = U1_; (via a swap)
 	MVT::MvTimesMatAddMv( one, *Utmp, Rtmp, zero, *U1tmp );
-        Teuchos::RCP<MV> Uswap;
-        Uswap = U_;
-	U_ = U1_;
-        U1_ = Uswap;
-        Uswap = Teuchos::null;
+        std::swap(U_, U1_);
 
         // Must reinitialize after swap
 	index.resize(keff);
 	for (int ii=0; ii<keff; ++ii) { index[ii] = ii; }
-	Ctmp  = MVT::CloneView( *C_, index );
+	Ctmp  = MVT::CloneViewNonConst( *C_, index );
 	Utmp  = MVT::CloneView( *U_, index );
 
 	// Compute C_'*r_
@@ -1109,20 +1107,20 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
         primeList.set("Recycled Blocks",0);
 	
 	//  Create GCRODR iterator object to perform one cycle of GMRES.
-	Teuchos::RCP<GCRODRIter<ScalarType,MV,OP> > gcrodr_prime_iter;
+	RCP<GCRODRIter<ScalarType,MV,OP> > gcrodr_prime_iter;
 	gcrodr_prime_iter = Teuchos::rcp( new GCRODRIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,primeList) );
 	
 	// Create the first block in the current Krylov basis (residual).
 	problem_->computeCurrPrecResVec( &*r_ );
         index.resize( 1 ); index[0] = 0;
-	Teuchos::RCP<MV> v0 =  MVT::CloneView( *V_,  index );
+	RCP<MV> v0 =  MVT::CloneViewNonConst( *V_,  index );
 	MVT::SetBlock(*r_,index,*v0); // V(:,0) = r
 
 	// Set the new state and initialize the solver.
 	GCRODRIterState<ScalarType,MV> newstate;
         index.resize( numBlocks_+1 );
         for (int ii=0; ii<(numBlocks_+1); ++ii) { index[ii] = ii; }
-        newstate.V  = MVT::CloneView( *V_,  index );
+        newstate.V  = MVT::CloneViewNonConst( *V_,  index );
 	newstate.U = Teuchos::null;
 	newstate.C = Teuchos::null;
         newstate.H = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *H2_, numBlocks_+1, numBlocks_, recycledBlocks_+1, recycledBlocks_+1 ) );
@@ -1160,7 +1158,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
         prime_iterations = gcrodr_prime_iter->getNumIters();
            
 	// Update the linear problem.
-	Teuchos::RCP<MV> update = gcrodr_prime_iter->getCurrentUpdate();
+	RCP<MV> update = gcrodr_prime_iter->getCurrentUpdate();
 	problem_->updateSolution( update, true );
 
 	// Get the state.
@@ -1174,7 +1172,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	//        too early, move on to the next linear system and try to generate a subspace again.
 	if (recycledBlocks_ < p+1) {
 	  int info = 0;
-          Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > PPtmp = rcp (new Teuchos::SerialDenseMatrix<int,ScalarType> ( Teuchos::View, *PP_, p, recycledBlocks_+1 ) );
+          RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > PPtmp = rcp (new Teuchos::SerialDenseMatrix<int,ScalarType> ( Teuchos::View, *PP_, p, recycledBlocks_+1 ) );
           // getHarmonicVecs1 assumes PP has recycledBlocks_+1 columns available
 	  keff = getHarmonicVecs1( p, *newstate.H, *PPtmp );
           // Hereafter, only keff columns of PP are needed
@@ -1182,12 +1180,12 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
           // Now get views into C, U, V
           index.resize(keff);
           for (int ii=0; ii<keff; ++ii) { index[ii] = ii; }
-          Teuchos::RCP<MV> Ctmp  = MVT::CloneView( *C_, index );
-          Teuchos::RCP<MV> Utmp  = MVT::CloneView( *U_, index );
-          Teuchos::RCP<MV> U1tmp = MVT::CloneView( *U1_, index );
+          RCP<MV> Ctmp  = MVT::CloneViewNonConst( *C_, index );
+          RCP<MV> Utmp  = MVT::CloneViewNonConst( *U_, index );
+          RCP<MV> U1tmp = MVT::CloneViewNonConst( *U1_, index );
 	  index.resize(p);
           for (int ii=0; ii < p; ++ii) { index[ii] = ii; }
-	  Teuchos::RCP<const MV> Vtmp = MVT::CloneView( *V_, index );
+	  RCP<const MV> Vtmp = MVT::CloneView( *V_, index );
 
 	  // Form U (the subspace to recycle)
           // U = newstate.V(:,1:p) * PP;
@@ -1286,18 +1284,18 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
       // Compute the residual after the priming solve, it will be the first block in the current Krylov basis.
       problem_->computeCurrPrecResVec( &*r_ );
       index.resize( 1 ); index[0] = 0;
-      Teuchos::RCP<MV> v0 =  MVT::CloneView( *V_,  index );
+      RCP<MV> v0 =  MVT::CloneViewNonConst( *V_,  index );
       MVT::SetBlock(*r_,index,*v0); // V(:,0) = r
 
       // Set the new state and initialize the solver.
       GCRODRIterState<ScalarType,MV> newstate;
       index.resize( numBlocks_+1 );
       for (int ii=0; ii<(numBlocks_+1); ++ii) { index[ii] = ii; }
-      newstate.V  = MVT::CloneView( *V_,  index );
+      newstate.V  = MVT::CloneViewNonConst( *V_,  index );
       index.resize( keff );
       for (int ii=0; ii<keff; ++ii) { index[ii] = ii; }
-      newstate.C  = MVT::CloneView( *C_,  index );
-      newstate.U  = MVT::CloneView( *U_,  index );
+      newstate.C  = MVT::CloneViewNonConst( *C_,  index );
+      newstate.U  = MVT::CloneViewNonConst( *U_,  index );
       newstate.B = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *H2_,         keff, numBlocks_,    0, keff ) );
       newstate.H = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *H2_, numBlocks_+1, numBlocks_, keff, keff ) );
       newstate.curDim = 0;
@@ -1306,13 +1304,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
       // variables needed for inner loop
       int numRestarts = 0;
       std::vector<MagnitudeType> d(keff);
-      Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > H2tmp;
-      Teuchos::RCP<MV> Utmp;
-      Teuchos::RCP<MV> Ctmp;
-      Teuchos::RCP<MV> U1tmp;
-      Teuchos::RCP<MV> C1tmp;
-      Teuchos::RCP<MV> Vtmp;
-      Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > PPtmp;
+      RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > H2tmp;
       while(1) {
 	
 	// tell gcrodr_iter to iterate
@@ -1352,20 +1344,22 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
             int p = oldState.curDim;	   
 
             // Update the linear problem.
-            Teuchos::RCP<MV> update = gcrodr_iter->getCurrentUpdate();
+            RCP<MV> update = gcrodr_iter->getCurrentUpdate();
             problem_->updateSolution( update, true );
 
             // Take the norm of the recycled vectors
-            index.resize(keff);
-            for (int ii=0; ii<keff; ++ii) { index[ii] = ii; }
-            Teuchos::RCP<MV> Utmp  = MVT::CloneView( *U_, index );
-            d.resize(keff);
-            MVT::MvNorm( *Utmp, d );
-            for (int i=0; i<keff; ++i) {
-	      d[i] = one / d[i];
-	    }
-	    MVT::MvScale( *Utmp, d );
-          
+            {
+              index.resize(keff);
+              for (int ii=0; ii<keff; ++ii) { index[ii] = ii; }
+              RCP<MV> Utmp  = MVT::CloneViewNonConst( *U_, index );
+              d.resize(keff);
+              MVT::MvNorm( *Utmp, d );
+              for (int i=0; i<keff; ++i) {
+                d[i] = one / d[i];
+              }
+              MVT::MvScale( *Utmp, d );
+            }
+
             // Get view into current "full" upper Hessnburg matrix
             H2tmp = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *H2_, p+keff+1, p+keff ) );
 
@@ -1376,8 +1370,11 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
             
             // Compute the harmoic Ritz pairs for the generalized eigenproblem
             // getHarmonicVecs2 assumes PP has recycledBlocks_+1 columns available
-            PPtmp = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType> ( Teuchos::View, *PP_, p+keff, recycledBlocks_+1 ) );
-	    int keff_new = getHarmonicVecs2( keff, p, *H2tmp, oldState.V, *PPtmp );
+	    int keff_new;
+            {
+              Teuchos::SerialDenseMatrix<int,ScalarType> PPtmp( Teuchos::View, *PP_, p+keff, recycledBlocks_+1 );
+              keff_new = getHarmonicVecs2( keff, p, *H2tmp, oldState.V, PPtmp );
+            }
 
 	    printer_->stream(Debug) << " Generated new recycled subspace using RHS index " << currIdx[0] << " of dimension " << keff_new << std::endl << std::endl;
 
@@ -1385,26 +1382,33 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	    // U = [U V(:,1:p)] * P; (in two steps)
 
 	    // U(:,1:keff) = matmul(U(:,1:keff_old),PP(1:keff_old,1:keff)) (step 1)
-            index.resize( keff );
-            for (int ii=0; ii<keff; ++ii) { index[ii] = ii; }
-            Utmp  = MVT::CloneView( *U_,  index );
-            index.resize( keff_new );
-            for (int ii=0; ii<keff_new; ++ii) { index[ii] = ii; }
-            U1tmp  = MVT::CloneView( *U1_,  index );
-            PPtmp = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType> ( Teuchos::View, *PP_, keff, keff_new ) );
-	    MVT::MvTimesMatAddMv( one, *Utmp, *PPtmp, zero, *U1tmp );
+            RCP<MV> U1tmp;
+            {
+              index.resize( keff );
+              for (int ii=0; ii<keff; ++ii) { index[ii] = ii; }
+              RCP<const MV> Utmp  = MVT::CloneView( *U_,  index );
+              index.resize( keff_new );
+              for (int ii=0; ii<keff_new; ++ii) { index[ii] = ii; }
+              U1tmp  = MVT::CloneViewNonConst( *U1_,  index );
+              Teuchos::SerialDenseMatrix<int,ScalarType> PPtmp( Teuchos::View, *PP_, keff, keff_new );
+              MVT::MvTimesMatAddMv( one, *Utmp, PPtmp, zero, *U1tmp );
+            }
 
-	    // U(:,1:keff) = U(:,1:keff) + matmul(V(:,1:m-k),PP(keff_old+1:m-k+keff_old,1:keff)) (step 2)
-	    index.resize(p);
-	    for (int ii=0; ii < p; ii++) { index[ii] = ii; }
-	    Vtmp = MVT::CloneView( *V_, index );
-            PPtmp = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType> ( Teuchos::View, *PP_, p, keff_new, keff ) );
-	    MVT::MvTimesMatAddMv( one, *Vtmp, *PPtmp, one, *U1tmp );
-	   
-	    // Form HP = H*P
-            PPtmp = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType> ( Teuchos::View, *PP_, p+keff, keff_new ) );
+            // U(:,1:keff) = U(:,1:keff) + matmul(V(:,1:m-k),PP(keff_old+1:m-k+keff_old,1:keff)) (step 2)
+            {
+              index.resize(p);
+              for (int ii=0; ii < p; ii++) { index[ii] = ii; }
+              RCP<const MV> Vtmp = MVT::CloneView( *V_, index );
+              Teuchos::SerialDenseMatrix<int,ScalarType> PPtmp( Teuchos::View, *PP_, p, keff_new, keff );
+              MVT::MvTimesMatAddMv( one, *Vtmp, PPtmp, one, *U1tmp );
+            }
+
+            // Form HP = H*P
             Teuchos::SerialDenseMatrix<int,ScalarType> HPtmp( Teuchos::View, *HP_, p+keff+1, keff_new );
-	    HPtmp.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*H2tmp,*PPtmp,zero);
+            {
+              Teuchos::SerialDenseMatrix<int,ScalarType> PPtmp( Teuchos::View, *PP_, p+keff, keff_new );
+              HPtmp.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,one,*H2tmp,PPtmp,zero);
+            }
 
 	    // Workspace size query for QR factorization of HP (the worksize will be placed in work_[0])
 	    int info = 0, lwork = -1;
@@ -1427,29 +1431,32 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	    // Form orthonormalized C and adjust U accordingly so that C = A*U	    
 	    // C = [C V] * Q;
 
-	    // C(:,1:keff) = matmul(C(:,1:keff_old),QQ(1:keff_old,1:keff))
-	    index.resize(keff);
-	    for (int i=0; i < keff; i++) { index[i] = i; }
-            Ctmp  = MVT::CloneView( *C_,  index );
-	    index.resize(keff_new);
-	    for (int i=0; i < keff_new; i++) { index[i] = i; }
-            C1tmp  = MVT::CloneView( *C1_,  index );
-            PPtmp = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType> ( Teuchos::View, *HP_, keff, keff_new ) );
-	    MVT::MvTimesMatAddMv( one, *Ctmp, *PPtmp, zero, *C1tmp );
+            // C(:,1:keff) = matmul(C(:,1:keff_old),QQ(1:keff_old,1:keff))
+            {
+              RCP<MV> C1tmp;
+              {
+                index.resize(keff);
+                for (int i=0; i < keff; i++) { index[i] = i; }
+                RCP<const MV> Ctmp  = MVT::CloneView( *C_,  index );
+                index.resize(keff_new);
+                for (int i=0; i < keff_new; i++) { index[i] = i; }
+                C1tmp  = MVT::CloneViewNonConst( *C1_,  index );
+                Teuchos::SerialDenseMatrix<int,ScalarType> PPtmp( Teuchos::View, *HP_, keff, keff_new );
+                MVT::MvTimesMatAddMv( one, *Ctmp, PPtmp, zero, *C1tmp );
+              }
 
-	    // Now compute C += V(:,1:p+1) * Q 
-	    index.resize( p+1 );
-	    for (int i=0; i < p+1; ++i) { index[i] = i; }
-	    Vtmp = MVT::CloneView( *V_, index );
-            PPtmp = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType> ( Teuchos::View, *HP_, p+1, keff_new, keff, 0 ) );
-	    MVT::MvTimesMatAddMv( one, *Vtmp, *PPtmp, one, *C1tmp );
+              // Now compute C += V(:,1:p+1) * Q 
+              {
+                index.resize( p+1 );
+                for (int i=0; i < p+1; ++i) { index[i] = i; }
+                RCP<const MV> Vtmp = MVT::CloneView( *V_, index );
+                Teuchos::SerialDenseMatrix<int,ScalarType> PPtmp( Teuchos::View, *HP_, p+1, keff_new, keff, 0 );
+                MVT::MvTimesMatAddMv( one, *Vtmp, PPtmp, one, *C1tmp );
+              }
+            }
 
             // C_ = C1_; (via a swap)
-            Teuchos::RCP<MV> Cswap;
-            Cswap = C_;
-            C_ = C1_;
-            C1_ = Cswap;
-            Cswap = Teuchos::null;
+            std::swap(C_, C1_);
 
 	    // Finally, compute U_ = U_*R^{-1}	
 	    // First, compute LU factorization of R
@@ -1463,10 +1470,12 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	    lapack.GETRI(Rtmp.numRows(),Rtmp.values(),Rtmp.stride(),&ipiv_[0],&work_[0],lwork,&info);
 	    TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GETRI failed to compute an LU factorization.");
 	  
-	    index.resize(keff_new);
-	    for (int i=0; i < keff_new; i++) { index[i] = i; }
-            Utmp  = MVT::CloneView( *U_,  index );
-	    MVT::MvTimesMatAddMv( one, *U1tmp, Rtmp, zero, *Utmp );
+            {
+              index.resize(keff_new);
+              for (int i=0; i < keff_new; i++) { index[i] = i; }
+              RCP<MV> Utmp  = MVT::CloneViewNonConst( *U_,  index );
+              MVT::MvTimesMatAddMv( one, *U1tmp, Rtmp, zero, *Utmp );
+            }
 
             // NOTE:  If we have hit the maximum number of restarts then quit
 	    if ( numRestarts >= maxRestarts_ ) {
@@ -1480,7 +1489,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
             // Create the restart vector (first block in the current Krylov basis)
             problem_->computeCurrPrecResVec( &*r_ );
             index.resize( 1 ); index[0] = 0;
-            Teuchos::RCP<MV> v0 =  MVT::CloneView( *V_,  index );
+            RCP<MV> v0 =  MVT::CloneViewNonConst( *V_,  index );
             MVT::SetBlock(*r_,index,*v0); // V(:,0) = r
 	    
 	    // Set the current number of recycled blocks and subspace dimension with the GCRO-DR iteration.
@@ -1495,11 +1504,11 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 	    GCRODRIterState<ScalarType,MV> restartState;
             index.resize( numBlocks_+1 );
             for (int ii=0; ii<(numBlocks_+1); ++ii) { index[ii] = ii; }
-            restartState.V  = MVT::CloneView( *V_,  index );
+            restartState.V  = MVT::CloneViewNonConst( *V_,  index );
             index.resize( keff );
             for (int ii=0; ii<keff; ++ii) { index[ii] = ii; }
-            restartState.U  = MVT::CloneView( *U_,  index );
-            restartState.C  = MVT::CloneView( *C_,  index );
+            restartState.U  = MVT::CloneViewNonConst( *U_,  index );
+            restartState.C  = MVT::CloneViewNonConst( *C_,  index );
             restartState.B = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *H2_, keff,         numBlocks_,    0, keff ) );
             restartState.H = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>( Teuchos::View, *H2_, numBlocks_+1, numBlocks_, keff, keff ) );
             restartState.curDim = 0;
@@ -1538,7 +1547,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
      
       // Compute the current solution.
       // Update the linear problem.
-      Teuchos::RCP<MV> update = gcrodr_iter->getCurrentUpdate();
+      RCP<MV> update = gcrodr_iter->getCurrentUpdate();
       problem_->updateSolution( update, true );
 
       // Inform the linear problem that we are finished with this block linear system.
@@ -1709,8 +1718,8 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keff, int m,
   // A_tmp(1:keff,1:keff) = C' * U;
   index.resize(keff);
   for (int i=0; i<keff; ++i) { index[i] = i; }
-  Teuchos::RCP<MV> Ctmp  = MVT::CloneView( *C_, index );
-  Teuchos::RCP<MV> Utmp  = MVT::CloneView( *U_, index );
+  Teuchos::RCP<const MV> Ctmp  = MVT::CloneView( *C_, index );
+  Teuchos::RCP<const MV> Utmp  = MVT::CloneView( *U_, index );
   Teuchos::SerialDenseMatrix<int,ScalarType> A11( Teuchos::View, A_tmp, keff, keff );
   MVT::MvTransMv( one, *Ctmp, *Utmp, A11 );
 

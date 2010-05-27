@@ -4,8 +4,6 @@
 
 // #include "Tpetra_ExplicitInstantiationHelpers.hpp"
 
-#include "Tpetra_Directory_def.hpp"
-
 #include <Kokkos_SerialNode.hpp>
 #if defined(HAVE_KOKKOS_TBB)
 #  include <Kokkos_TBBNode.hpp>
@@ -16,6 +14,8 @@
 #if defined(HAVE_KOKKOS_THRUST)
 #  include <Kokkos_ThrustGPUNode.hpp>
 #endif
+
+#include "Tpetra_Directory_def.hpp"
 
 namespace Tpetra {
 

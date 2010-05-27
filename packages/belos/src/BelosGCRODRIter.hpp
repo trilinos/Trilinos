@@ -536,7 +536,7 @@ namespace Belos {
     setSize( recycledBlocks_, numBlocks_ );
     
     Teuchos::RCP<MV> Vnext;
-    Teuchos::RCP<MV> Vprev;
+    Teuchos::RCP<const MV> Vprev;
     std::vector<int> curind(1);
 
     // z_ must be zeroed out in order to compute Givens rotations correctly
@@ -544,7 +544,7 @@ namespace Belos {
 
     // Orthonormalize the new V_0
     curind[0] = 0;
-    Vnext = MVT::CloneView(*V_,curind);
+    Vnext = MVT::CloneViewNonConst(*V_,curind);
     // Orthonormalize first column
     // First, get a monoelemental matrix to hold the orthonormalization coefficients
     Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > z0 = rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(1,1) );
@@ -567,7 +567,7 @@ namespace Belos {
 
         // Get next index in basis
         curind[0] = lclDim;
-        Vnext = MVT::CloneView(*V_,curind);
+        Vnext = MVT::CloneViewNonConst(*V_,curind);
 
         // Get previous index in basis
         curind[0] = curDim_;
@@ -618,7 +618,7 @@ namespace Belos {
 
         // Get the current part of the basis.
         curind[0] = lclDim;
-        Vnext = MVT::CloneView(*V_,curind);
+        Vnext = MVT::CloneViewNonConst(*V_,curind);
 
         // Get a view of the previous vectors.
         // This is used for orthogonalization and for computing V^H K H

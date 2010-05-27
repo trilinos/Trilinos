@@ -101,13 +101,12 @@ void Tpetra::Utils::readHBHeader(std::ifstream &fin, Teuchos::ArrayRCP<char> &Ti
 void Tpetra::Utils::readHBInfo(const std::string &filename, int &M, int &N, int &nz, Teuchos::ArrayRCP<char> &Type, int &Nrhs) {
   std::ifstream fin;
   int Ptrcrd, Indcrd, Valcrd, Rhscrd; 
-  int Nrow, Ncol, Nnzero;
   Teuchos::ArrayRCP<char> Title, Key, Rhstype, Ptrfmt, Indfmt, Valfmt, Rhsfmt;
   try {
     fin.open(filename.c_str(),std::ifstream::in);
-    Tpetra::Utils::readHBHeader(fin, Title, Key, Type, Nrow, Ncol, Nnzero, Nrhs,
-                          Ptrfmt, Indfmt, Valfmt, Rhsfmt, 
-                          Ptrcrd, Indcrd, Valcrd, Rhscrd, Rhstype);
+    Tpetra::Utils::readHBHeader(fin, Title, Key, Type, M, N, nz, Nrhs,
+                                Ptrfmt, Indfmt, Valfmt, Rhsfmt, 
+                                Ptrcrd, Indcrd, Valcrd, Rhscrd, Rhstype);
     fin.close();
   }
   catch (std::exception &e) {
@@ -288,28 +287,28 @@ namespace Tpetra {
   namespace Utils {
 
 #if defined(HAVE_TPETRA_INST_FLOAT)
-  TPETRA_READHBMATRIX_INSTANT(float,int,int,Kokkos::SerialNode)
+  TPETRA_MATRIXIO_INSTANT(float,int,int,Kokkos::SerialNode)
 # ifdef HAVE_KOKKOS_TBB
-    TPETRA_READHBMATRIX_INSTANT(float,int,int,Kokkos::TBBNode)
+    TPETRA_MATRIXIO_INSTANT(float,int,int,Kokkos::TBBNode)
 # endif
 # ifdef HAVE_KOKKOS_THREADPOOL
-    TPETRA_READHBMATRIX_INSTANT(float,int,int,Kokkos::TPINode)
+    TPETRA_MATRIXIO_INSTANT(float,int,int,Kokkos::TPINode)
 # endif
 # if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_FLOAT)
-    TPETRA_READHBMATRIX_INSTANT(float,int,int,Kokkos::ThrustGPUNode)
+    TPETRA_MATRIXIO_INSTANT(float,int,int,Kokkos::ThrustGPUNode)
 # endif
 #endif
 
 #if defined(HAVE_TPETRA_INST_DOUBLE)
-  TPETRA_READHBMATRIX_INSTANT(double,int,int,Kokkos::SerialNode)
+  TPETRA_MATRIXIO_INSTANT(double,int,int,Kokkos::SerialNode)
 # ifdef HAVE_KOKKOS_TBB
-    TPETRA_READHBMATRIX_INSTANT(double,int,int,Kokkos::TBBNode)
+    TPETRA_MATRIXIO_INSTANT(double,int,int,Kokkos::TBBNode)
 # endif
 # ifdef HAVE_KOKKOS_THREADPOOL
-    TPETRA_READHBMATRIX_INSTANT(double,int,int,Kokkos::TPINode)
+    TPETRA_MATRIXIO_INSTANT(double,int,int,Kokkos::TPINode)
 # endif
 # if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
-    TPETRA_READHBMATRIX_INSTANT(double,int,int,Kokkos::ThrustGPUNode)
+    TPETRA_MATRIXIO_INSTANT(double,int,int,Kokkos::ThrustGPUNode)
 # endif
 #endif
 

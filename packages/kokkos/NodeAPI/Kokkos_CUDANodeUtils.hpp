@@ -5,14 +5,23 @@
 #include <cuda_runtime.h>
 
 #include "Kokkos_CUDA_util_inline_runtime.h"
+#define KOKKOS_NO_INCLUDE_INSTANTIATIONS
+#include "Kokkos_CUDANodeMemoryModel.hpp"
 
 #include <Teuchos_ArrayRCP.hpp>
+#include <Teuchos_ArrayView.hpp>
 
 namespace Kokkos {
 
   class CUDANodeDeallocator {
     public:
-      static void free(void *ptr);
+      CUDANodeDeallocator(size_t sizeInBytes, const Teuchos::RCP<CUDANodeMemoryModel> &node);
+      void free(void *ptr);
+    private:
+#ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
+      const Teuchos::RCP<CUDANodeMemoryModel> node_;
+      const size_t allocSize_;
+#endif
   };
 
   //! \class CUDANodeCopyBackDeallocator
@@ -22,7 +31,7 @@ namespace Kokkos {
   template <class T>
   class CUDANodeCopyBackDeallocator {
     public:
-      CUDANodeCopyBackDeallocator(const Teuchos::ArrayRCP<T> &buffer);
+      CUDANodeCopyBackDeallocator(const Teuchos::ArrayRCP<T> &buffer, const Teuchos::RCP<CUDANodeMemoryModel> &node);
 
       //! Allocate the buffer, returning a Teuchos::ArrayRCP of the requested type, with the 
       Teuchos::ArrayRCP<T> alloc()const ;
@@ -31,16 +40,20 @@ namespace Kokkos {
     private:
       // we have to keep a copy of this ArrayRCP, to know whether the underlying memory was deleted
       const Teuchos::ArrayRCP<T> devbuf_;
+      const Teuchos::RCP<CUDANodeMemoryModel> node_;
 #ifdef HAVE_KOKKOS_DEBUG
       mutable T * originalHostPtr_;
 #endif
   };
 
   template <class T>
-  CUDANodeCopyBackDeallocator<T>::CUDANodeCopyBackDeallocator(const Teuchos::ArrayRCP<T> &buffer)
+  CUDANodeCopyBackDeallocator<T>::CUDANodeCopyBackDeallocator(const Teuchos::ArrayRCP<T> &buffer,   
+                                                              const Teuchos::RCP<CUDANodeMemoryModel> &node)
   : devbuf_(buffer.create_weak())
+  , node_(node)
   { 
 #ifdef HAVE_KOKKOS_DEBUG
+    TEST_FOR_EXCEPT(node_ == Teuchos::null);
     originalHostPtr_ = NULL;
 #endif
   }
@@ -69,13 +82,17 @@ namespace Kokkos {
 #ifdef HAVE_KOKKOS_DEBUG
     TEST_FOR_EXCEPTION( hostPtr != originalHostPtr_, std::logic_error,
         Teuchos::typeName(*this) << "::free(): pointer to free not consistent with originally allocated pointer." );
-    orginalHostPtr_ = NULL;
+    originalHostPtr_ = NULL;
 #endif
-    // only perform the cop back if the device ptr is still valid
+    // only perform the copy back if the device ptr is still valid
     if (devbuf_.is_valid_ptr()) {
-      cutilSafeCallNoSync( cudaMemcpy( devbuf_.getRawPtr(), hostPtr, devbuf_.size()*sizeof(T), cudaMemcpyHostToDevice) );
+      // create temporary ArrayView for use with copyToBuffer
+      // we must disable the lookup, or a debug build of Teuchos will freak out
+      Teuchos::ArrayView<const T> tmpav((const T*)hostPtr, devbuf_.size(), Teuchos::RCP_DISABLE_NODE_LOOKUP);
+      node_->template copyToBuffer<T>(devbuf_.size(), tmpav, devbuf_);
     }
     cutilSafeCallNoSync( cudaFreeHost( (void**)hostPtr ) );
+    hostPtr = NULL;
   }
 
 }

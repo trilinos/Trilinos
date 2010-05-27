@@ -4,10 +4,6 @@
 
 // #include "Tpetra_ExplicitInstantiationHelpers.hpp"
 
-#include "Tpetra_CrsMatrixMultiplyOp_def.hpp"
-// need this to instantiate CrsMatrix::multiply()
-#include "Tpetra_CrsMatrix_def.hpp"
-
 #include <Kokkos_SerialNode.hpp>
 #if defined(HAVE_KOKKOS_TBB)
 #  include <Kokkos_TBBNode.hpp>
@@ -18,6 +14,10 @@
 #if defined(HAVE_KOKKOS_THRUST)
 #  include <Kokkos_ThrustGPUNode.hpp>
 #endif
+
+#include "Tpetra_CrsMatrixMultiplyOp_def.hpp"
+// need this to instantiate CrsMatrix::multiply()
+#include "Tpetra_CrsMatrix_def.hpp"
 
 namespace Tpetra {
 

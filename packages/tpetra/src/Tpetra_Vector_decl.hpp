@@ -142,7 +142,7 @@ namespace Tpetra {
   }; // class Vector
 
   /** \brief Non-member function to create a Vector from a specified Map.
-
+  
       \relates Vector
    */
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

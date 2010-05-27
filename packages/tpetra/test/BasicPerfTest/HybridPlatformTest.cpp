@@ -57,7 +57,7 @@ Scalar power_method(const Teuchos::RCP<const Tpetra::Operator<Scalar,Ordinal,Ord
 template <class Node>
 class runTest {
   public:
-  static void run(const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node) {
+  static void run(Teuchos::ParameterList &myMachPL, const Teuchos::RCP<const Teuchos::Comm<int> > &comm, const Teuchos::RCP<Node> &node) {
     using std::cout; 
     using std::endl;
     cout << "Running test with Node==" << Teuchos::typeName(*node) << " on rank " << comm->getRank() << "/" << comm->getSize() << endl;

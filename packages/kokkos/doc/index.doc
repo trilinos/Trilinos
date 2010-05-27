@@ -2,10 +2,8 @@
 \htmlonly
 \endhtmlonly
 
-<!-- 
-
 \section intro Introduction
-%Kokkos is a collection of the handful of sparse and dense kernels that determine the much
+Kokkos is a collection of the handful of sparse and dense kernels that determine the much
 of the performance for preconditioned Krylov methods.  In particular, it contains
 function class for sparse matrix vector multiplication and triangular solves, and also
 for dense kernels that are not part of the standard BLAS.  
@@ -16,14 +14,14 @@ the small sections of code that are unique for a given platform or architectures
 In this way we hope to provide optimal implementations of these algorithms for a broad
 set of platforms from scalar microprocessors to vector multiprocessors.
 
-%Kokkos is not intended as a user package, but to be incorporated into other packages that
+Kokkos is not intended as a user package, but to be incorporated into other packages that
 need high performance kernels.
 
-\section startup Overview of %Kokkos.
+\section startup Overview of Kokkos.
 
-\subsection formulations %Kokkos Classes
+\subsection formulations Kokkos Classes
 
-%Kokkos contains a number of classes.  They can be categorized as follows:
+Kokkos contains a number of classes.  They can be categorized as follows:
 
 <ul> 
 
@@ -31,15 +29,15 @@ need high performance kernels.
 
 <ol>
 
-<li> Kokkos::CisMatrix class:  The base class describing the functionality that %Kokkos needs from
+<li> Kokkos::CisMatrix class:  The base class describing the functionality that Kokkos needs from
 a sparse matrix object.  The Kokkos::HbMatrix is a default implementation.
 
 <li> Kokkos::MultiVector class: The base class specifying the interface that 
-any multivector interfacing to %Kokkos Operators classes must implement. The 
+any multivector interfacing to Kokkos Operators classes must implement. The 
 Kokkos::DenseMultiVector is the default implementation.
 
 <li> Kokkos::Vector class: The base class specifying the interface that any 
-vector class interfacing to the %Kokkos Operators classes must implement.  At 
+vector class interfacing to the Kokkos Operators classes must implement.  At 
 this time, the primary function provided by Kokkos::Vector is access to vector 
 data.  The Kokkos::DenseVector is the default implementation.
 
@@ -72,7 +70,7 @@ sparse matrix times vector, or sparse matrix times multivector operations.
 
 <li> Floating point operation class: Kokkos::Flops - Provides floating point operations (FLOPS)
      counting and reporting functions for the purposes of performance analysis.  All
-     %Kokkos computational
+     Kokkos computational
      classes accumulate FLOP counts associated with the \e this object of the computations.
 
 <li> Kokkos::CompObject class: Supports the registration of a Kokkos::Flops 
@@ -84,7 +82,5 @@ object with a Kokkos::SparseOperation object.
 \subsection trilinos Trilinos and Kokkos
 
 Kokkos can be used as a stand-alone package.  However, it also provides functionality for Epetra and Tpetra.
-
--->
 
 */

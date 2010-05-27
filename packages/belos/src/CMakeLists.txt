@@ -98,15 +98,6 @@ APPEND_SET(HEADERS
   BelosTFQMRIter.hpp
   )
 
-ASSERT_DEFINED(Belos_ENABLE_Tpetra)
-IF (Belos_ENABLE_Tpetra)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../tpetra/src)
-  APPEND_SET(HEADERS
-    ../tpetra/src/BelosTpetraAdapter.hpp
-    )
-ENDIF()
-
-
 #
 # C) Define the targets for package's library(s)
 #
