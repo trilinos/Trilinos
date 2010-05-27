@@ -1,0 +1,386 @@
+/***************************************************************
+** Example of using Zoltan to compute an RCB partitioning
+** of a possibly very large collection of vertices and weights.
+** Really a stress test for Zoltan developers.
+**
+** usage  stressTestRCB [global number of vertices] [vertex weight dim] [vertex dim]
+**
+** Compile with a math library.
+***************************************************************/
+
+#include <mpi.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <math.h>
+#include "zoltan.h"
+
+/* Mesh data */
+
+#define NUM_GLOBAL_VERTICES     2500000000
+#define VERTEX_WEIGHT_DIMENSION 1
+#define VERTEX_DIMENSION        3
+
+static int numLocalVertices=0;
+static float *v_x=NULL;
+static float *v_y=NULL;
+static float *v_z=NULL;
+static float *vertex_weight=NULL;
+static ZOLTAN_ID_TYPE *vertex_gid=NULL;
+static ZOLTAN_ID_TYPE first_gid;
+
+static int create_vertices(ZOLTAN_GNO_TYPE gnvtxs, int ndim, int vwgt_dim, int nprocs, int rank);
+static int vertexDim, vertexWeightDim;
+
+/* Application defined query functions */
+
+static int get_number_of_objects(void *data, int *ierr);
+static void get_object_list(void *data, int sizeGID, int sizeLID,
+            ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
+                  int wgt_dim, float *obj_wgts, int *ierr);
+static int get_num_geometry(void *data, int *ierr);
+static void get_geometry_list(void *data, int sizeGID, int sizeLID,
+             int num_obj, ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
+             int num_dim, double *geom_vec, int *ierr);
+
+int main(int argc, char *argv[])
+{
+  int rc, myRank, numProcs;
+  ZOLTAN_GNO_TYPE numGlobalVertices;
+  float ver;
+  char dimstring[16];
+
+  struct Zoltan_Struct *zz;
+  int changes, numGidEntries, numLidEntries, numImport, numExport;
+  ZOLTAN_ID_PTR importGlobalGids, importLocalGids, exportGlobalGids, exportLocalGids; 
+  int *importProcs, *importToPart, *exportProcs, *exportToPart;
+
+  /******************************************************************
+  ** Problem size
+  ******************************************************************/
+
+  numGlobalVertices = NUM_GLOBAL_VERTICES;
+  vertexWeightDim = VERTEX_WEIGHT_DIMENSION;
+  vertexDim = VERTEX_DIMENSION;
+
+  if (argc > 1){
+    numGlobalVertices = atoi(argv[1]);
+    if (argc > 2){
+      vertexWeightDim = atoi(argv[2]);
+      if (argc > 3){
+        vertexDim = atoi(argv[3]);
+      }
+    }
+  }
+
+  sprintf(dimstring,"%d",vertexWeightDim);
+
+  /******************************************************************
+  ** Initialize MPI and Zoltan
+  ******************************************************************/
+
+  MPI_Init(&argc, &argv);
+  MPI_Comm_rank(MPI_COMM_WORLD, &myRank);
+  MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
+
+  rc = Zoltan_Initialize(argc, argv, &ver);
+
+  if (rc != ZOLTAN_OK){
+    printf("sorry...\n");
+    MPI_Finalize();
+    exit(1);
+  }
+
+  /******************************************************************
+  ** Create vertices
+  ******************************************************************/
+
+  rc = create_vertices(numGlobalVertices, vertexDim, vertexWeightDim, numProcs, myRank);
+
+  if (rc){
+    fprintf(stderr,"Process rank %d: insufficient memory\n",myRank);
+    MPI_Finalize();
+    exit(1);
+  }
+
+  first_gid = vertex_gid[myRank];
+
+  /******************************************************************
+  ** Create a Zoltan library structure for this instance of load
+  ** balancing.  Set the parameters and query functions that will
+  ** govern the library's calculation.  See the Zoltan User's
+  ** Guide for the definition of these and many other parameters.
+  ******************************************************************/
+
+  zz = Zoltan_Create(MPI_COMM_WORLD);
+
+  /* General parameters */
+
+  Zoltan_Set_Param(zz, "DEBUG_LEVEL", "0");
+  Zoltan_Set_Param(zz, "LB_METHOD", "RCB");
+  Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); 
+  Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1");
+  Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", dimstring);
+  Zoltan_Set_Param(zz, "RETURN_LISTS", "ALL");
+
+  /* RCB parameters */
+
+  Zoltan_Set_Param(zz, "RCB_OUTPUT_LEVEL", "0");
+  Zoltan_Set_Param(zz, "RCB_RECTILINEAR_BLOCKS", "0");
+
+  /* Query functions, to provide geometry to Zoltan */
+
+  Zoltan_Set_Num_Obj_Fn(zz, get_number_of_objects, NULL);
+  Zoltan_Set_Obj_List_Fn(zz, get_object_list, NULL);
+  Zoltan_Set_Num_Geom_Fn(zz, get_num_geometry, NULL);
+  Zoltan_Set_Geom_Multi_Fn(zz, get_geometry_list, NULL);
+
+  /******************************************************************
+  ** Zoltan can now partition the vertices in the simple mesh.
+  ** In this simple example, we assume the number of partitions is
+  ** equal to the number of processes.  Process rank 0 will own
+  ** partition 0, process rank 1 will own partition 1, and so on.
+  ******************************************************************/
+
+  if (myRank == 0){
+    printf("Run Zoltan\n");
+  }
+
+  rc = Zoltan_LB_Partition(zz, /* input (all remaining fields are output) */
+        &changes,        /* 1 if partitioning was changed, 0 otherwise */ 
+        &numGidEntries,  /* Number of integers used for a global ID */
+        &numLidEntries,  /* Number of integers used for a local ID */
+        &numImport,      /* Number of vertices to be sent to me */
+        &importGlobalGids,  /* Global IDs of vertices to be sent to me */
+        &importLocalGids,   /* Local IDs of vertices to be sent to me */
+        &importProcs,    /* Process rank for source of each incoming vertex */
+        &importToPart,   /* New partition for each incoming vertex */
+        &numExport,      /* Number of vertices I must send to other processes*/
+        &exportGlobalGids,  /* Global IDs of the vertices I must send */
+        &exportLocalGids,   /* Local IDs of the vertices I must send */
+        &exportProcs,    /* Process to which I send each of the vertices */
+        &exportToPart);  /* Partition to which each vertex will belong */
+
+  if (rc != ZOLTAN_OK){
+    printf("sorry...\n");
+    MPI_Finalize();
+    Zoltan_Destroy(&zz);
+    exit(0);
+  }
+
+  /******************************************************************
+  ** Free the arrays allocated by Zoltan_LB_Partition, and free
+  ** the storage allocated for the Zoltan structure.
+  ******************************************************************/
+
+  if (myRank == 0){
+    printf("Free structures\n");
+  }
+
+  Zoltan_LB_Free_Part(&importGlobalGids, &importLocalGids, 
+                      &importProcs, &importToPart);
+  Zoltan_LB_Free_Part(&exportGlobalGids, &exportLocalGids, 
+                      &exportProcs, &exportToPart);
+
+  Zoltan_Destroy(&zz);
+
+  if (v_x) free(v_x);
+  if (v_y) free(v_y);
+  if (v_z) free(v_z);
+  if (vertex_weight) free(vertex_weight);
+  if (vertex_gid) free(vertex_gid);
+
+  /**********************
+  ** all done ***********
+  **********************/
+
+  MPI_Finalize();
+
+  return 0;
+}
+
+/* Application defined query functions */
+
+static int get_number_of_objects(void *data, int *ierr)
+{
+  *ierr = ZOLTAN_OK;
+  return numLocalVertices;
+}
+
+static void get_object_list(void *data, int sizeGID, int sizeLID,
+            ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
+                  int wgt_dim, float *obj_wgts, int *ierr)
+{
+int i,j;
+float *src, *dest;
+
+  *ierr = ZOLTAN_OK;
+
+  src = vertex_weight;
+  dest = obj_wgts;
+
+  for (i=0; i < numLocalVertices; i++){
+    globalID[i] = first_gid + i;
+    localID[i] = i;
+    for (j=0; j < vertexWeightDim; j++){
+      *dest++ = *src++;
+    }
+  }
+}
+
+static int get_num_geometry(void *data, int *ierr)
+{
+  *ierr = ZOLTAN_OK;
+  return vertexDim;
+}
+
+static void get_geometry_list(void *data, int sizeGID, int sizeLID,
+                      int num_obj,
+             ZOLTAN_ID_PTR globalID, ZOLTAN_ID_PTR localID,
+             int num_dim, double *geom_vec, int *ierr)
+{
+int i;
+double *dest = geom_vec;
+
+  *ierr = ZOLTAN_OK;
+
+  for (i=0;  i < num_obj ; i++){
+    *dest++ = (double)v_x[localID[i]];
+    if (num_dim > 1){
+      *dest++ = (double)v_y[localID[i]];
+      if (num_dim > 2){
+        *dest++ = (double)v_z[localID[i]];
+      }
+    }
+  }
+
+  return;
+}
+
+static void initialize_vertex_global_id_info(int numMyGIDs, int numProc)
+{
+  int i;
+  vertex_gid = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * (numProc + 1));
+  vertex_gid[0] = 0;
+
+  for (i=1; i <= numProc; i++){
+    vertex_gid[i] = vertex_gid[i-1] + numMyGIDs;
+  }
+}
+
+
+static int create_vertices(ZOLTAN_GNO_TYPE gnvtxs, int ndim, int vwgt_dim, int nprocs, int rank)
+{
+  int    nvtxs, num4, i, j;
+  double theta, delta, radius, m, length, step;
+
+  /* for simplicity coerce number of vertices on a process to a multiple of 4 */
+
+  nvtxs = (int)(gnvtxs / nprocs);
+
+  if (nvtxs > 4){
+    num4 = nvtxs / 4;
+    nvtxs = num4 * 4;
+  }
+  else{
+    num4 = 1;
+    nvtxs = 4;
+  }
+
+  gnvtxs = (ZOLTAN_GNO_TYPE)nvtxs;
+  gnvtxs *= nprocs;
+  numLocalVertices = nvtxs;
+
+  if (rank == 0){
+    printf("Graph will have %zd vertices, %d on each process\n", gnvtxs, nvtxs);
+  }
+
+  /* Each process has the same number of vertices.  Let's determine their global IDs */
+
+  initialize_vertex_global_id_info(nvtxs, nprocs);
+
+  /* Calculate vertex coordinates */
+
+  v_x = (float *) malloc(nvtxs * sizeof(float));
+  if (ndim > 1) v_y = (float *) malloc(nvtxs * sizeof(float));
+  if (ndim > 2) v_z = (float *) malloc(nvtxs * sizeof(float));
+  vertex_weight = (float *) malloc(vwgt_dim*nvtxs * sizeof(float));
+  if (!v_x || (ndim > 1 && !v_y) || (ndim > 2 && !v_z) || !vertex_weight) {
+    return 1;
+  }
+
+  if (ndim == 1){
+    /* a line */
+
+    step = 1.0 / 500.0;
+    length = (double)nvtxs * step;
+    v_x[0] = length * (float)rank;
+
+    for (i=1; i < nvtxs; i++){
+      v_x[i] = v_x[i+1] + step;
+    }
+  }
+  else if (ndim == 2){
+    /* a circle */
+    radius = (double)nvtxs/500.0;
+    theta = (2 * M_PI ) / (double)nprocs;
+    delta = theta / (double)nvtxs;
+    m = (theta * rank);
+
+    for (i=0; i < nvtxs; i++, m += delta){
+      v_x[i] = radius * cos(m);
+      v_y[i] = radius * sin(m);
+    }
+  }
+  else if (ndim == 3){
+    /* a cylinder */
+
+    radius = (double)nvtxs/500.0;
+    delta = M_PI_2 / (double)(num4 + 1);
+    theta = delta;
+    i = 0;
+
+    while (theta < M_PI_2){
+      /* points along first quadrant of a circle in the plane z=rank */
+      v_x[i] = radius * cos(theta);
+      v_y[i] = radius * sin(theta);
+      v_z[i] = (float)rank;
+      theta += delta;
+      i++;
+    }
+
+    for (i=0; i < num4; i++){
+      /* second quadrant */
+      v_x[num4+i] = -v_x[num4 - i - 1];
+      v_y[num4+i] = v_y[num4 - i - 1];
+      v_z[num4+i] = (float)rank;
+
+      /* third quadrant */
+      v_x[2*num4+i] = -v_x[i];
+      v_y[2*num4+i] = -v_y[i];
+      v_z[2*num4+i] = (float)rank;
+
+      /* third quadrant */
+      v_x[3*num4+i] = v_x[num4 - i - 1];
+      v_y[3*num4+i] = -v_y[num4 - i - 1];
+      v_z[3*num4+i] = (float)rank;
+    }
+  }
+
+  for (i = 0; i < nvtxs; i++)  {
+    if (vwgt_dim == 0) /* Unit weights if no weights were requested. */
+      vertex_weight[i] = 1.0;
+    else
+      srand(0);
+      for (j = 0; j < vwgt_dim; j++)  {
+        /* Only assign one of the weight dimensions a weight>0. */
+        /* Modify to get more complicated test cases. */
+        if (j == i%vwgt_dim)
+          vertex_weight[i*vwgt_dim+j] = ((float) rand())/RAND_MAX;
+        else
+          vertex_weight[i*vwgt_dim+j] = 0.0;
+      }
+  }
+
+  return 0;
+}
+
