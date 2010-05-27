@@ -183,7 +183,7 @@ int main(int argc,char * argv[])
 
    // build solver
    std::cout << "Setting solver parameters" << std::endl;
-   AztecOO::AztecOO solver(problem);
+   AztecOO solver(problem);
    solver.SetAztecOption(AZ_solver,AZ_gmres);
    solver.SetAztecOption(AZ_precond,AZ_none);
    solver.SetAztecOption(AZ_kspace,50);

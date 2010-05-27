@@ -242,7 +242,7 @@ bool tLSCIntegrationTest::test_withmassStable(int verbosity,std::ostream & os)
    // build Epetra problem
    Epetra_LinearProblem problem(&*sA_,&x,&*rhs_); // this doesn't take const arguments!
 
-   AztecOO::AztecOO solver(problem);
+   AztecOO solver(problem);
    solver.SetAztecOption(AZ_solver,AZ_gmres);
    solver.SetAztecOption(AZ_precond,AZ_none);
    solver.SetAztecOption(AZ_kspace,50);
@@ -308,7 +308,7 @@ bool tLSCIntegrationTest::test_nomassStable(int verbosity,std::ostream & os)
    // build Epetra problem
    Epetra_LinearProblem problem(&*sA_,&x,&*rhs_); // this doesn't take const arguments!
 
-   AztecOO::AztecOO solver(problem);
+   AztecOO solver(problem);
    solver.SetAztecOption(AZ_solver,AZ_gmres);
    solver.SetAztecOption(AZ_precond,AZ_none);
    solver.SetAztecOption(AZ_kspace,50);
