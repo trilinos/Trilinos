@@ -218,7 +218,8 @@ void BulkData::internal_resolve_parallel_create_delete(
       for ( ; ! del_entities_remote.empty() ; del_entities_remote.pop_back() ) {
         Entity *       entity = del_entities_remote.back().first ;
         const unsigned proc   = del_entities_remote.back().second ;
-        const bool     remote_owner  = entity->owner_rank() == proc ;
+        const bool     destroyed = entity->marked_for_destruction();
+        const bool     remote_owner = entity->owner_rank() == proc ;
         const bool     shared = in_shared( *entity , proc );
         const bool     g_recv = in_receive_ghost( *entity );
         const bool     g_send = in_send_ghost( *entity , proc );
@@ -252,7 +253,7 @@ void BulkData::internal_resolve_parallel_create_delete(
             }
           }
 
-          if ( ! add_part.empty() || ! remove_part.empty() ) {
+          if ( ! destroyed && ( ! add_part.empty() || ! remove_part.empty() ) ) {
             internal_change_entity_parts( *entity , add_part , remove_part );
           }
         }

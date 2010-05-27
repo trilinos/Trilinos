@@ -93,6 +93,12 @@ int main ( int argc, char * argv[] )
   }
 
   {
+    std::cout << "Use Case Change Owner #2 ... ";
+    const bool result = test_change_owner_2( parallel_machine );
+    printStatus(result);
+  }
+
+  {
     std::cout << "Use Case Element Death 1 ... ";
     bool local_status = element_death_use_case_1(parallel_machine);
     printStatus(local_status);

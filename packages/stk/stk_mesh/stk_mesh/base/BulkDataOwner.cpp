@@ -445,7 +445,11 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
 
         unpack_entity_info( buf, *this, key, owner, parts, relations );
 
-        // Received entity information will be correct, modulo the owned part
+        // Received entity information will be correct,
+        // modulo the owned and shared parts
+
+        remove( parts , meta.globally_shared_part() );
+
         if ( owner == p_rank ) {
           // Must have the locally_owned_part
           insert( parts , meta.locally_owned_part() );
@@ -455,7 +459,8 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
           remove( parts , meta.locally_owned_part() );
         }
 
-        std::pair<Entity*,bool> result = m_entity_repo.internal_create_entity( key );
+        std::pair<Entity*,bool> result =
+          m_entity_repo.internal_create_entity( key );
 
         result.first->m_entityImpl.set_owner_rank( owner );
 
