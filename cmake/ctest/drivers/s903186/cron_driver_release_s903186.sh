@@ -3,7 +3,7 @@
 #get the date for use in log files
 DATE=`date "+%m-%d-%Y"`
 
-CTEST_EXE=/usr/local/bin/ctest
+CTEST_EXE=/usr/local/CMake2.8.1/Contents/bin/ctest
 EG_EXE=/Users/jmwille/bin/eg
 BASEDIR=/Users/jmwille/TrilinosTestHarness/Trilinos10.2
 DRIVER_SCRIPT_DIR=$BASEDIR/Trilinos/cmake/ctest/drivers/s903186
