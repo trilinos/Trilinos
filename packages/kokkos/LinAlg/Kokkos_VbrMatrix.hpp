@@ -26,8 +26,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef KOKKOS_VBRMATRIX_H
-#define KOKKOS_VBRMATRIX_H
+#ifndef KOKKOS_VBRMATRIX_HPP
+#define KOKKOS_VBRMATRIX_HPP
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
@@ -41,12 +41,13 @@ namespace Kokkos {
 
   //! Kokkos::VbrMatrix: Kokkos variable block row matrix class.
 
-  template <class Scalar, class Node = DefaultNode::DefaultNodeType>
+  template <class Scalar, class Ordinal, class Node = DefaultNode::DefaultNodeType>
   class VbrMatrix {
   public:
 
     typedef typename Node::size_t size_t;
     typedef Scalar  ScalarType;
+    typedef Ordinal OrdinalType;
     typedef Node    NodeType;
 
     //! @name Constructors/Destructor
@@ -71,20 +72,16 @@ namespace Kokkos {
     //! @name Data entry and accessor methods.
     //@{
 
-    //! Submit the values for a 1D storage.
-    void setPackedValues(const Teuchos::ArrayRCP<const Scalar> &allvals);
+    //! Submit the values for 1D storage.
+    void setPackedValues(const Teuchos::ArrayRCP<const Scalar>& allvals,
+                         const Teuchos::ArrayRCP<const Ordinal>& rptr,
+                         const Teuchos::ArrayRCP<const Ordinal>& cptr,
+                         const Teuchos::ArrayRCP<const Ordinal>& bptr,
+                         const Teuchos::ArrayRCP<const Ordinal>& bindx,
+                         const Teuchos::ArrayRCP<const Ordinal>& indx);
 
     //! Submit the values for one row of block-entries.
     void setBlockRow(size_t row, const Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > &blockEntry);
-
-    //! Retrieve the values for 1D storage.
-    Teuchos::ArrayRCP<const Scalar> getPackedValues() const;
-
-    //! Retrieve the values for one block row of 2D storage.
-    /** Each row is an array of block-entries, where each block-entry is an array.
-     * That is why this method returns an array-of-arrays...
-     */
-    Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > getBlockRow(size_t row) const;
 
     //! Indicates whether or not the matrix entries are packed.
     bool isPacked() const;
@@ -98,6 +95,13 @@ namespace Kokkos {
     //! Release data associated with this matrix.
     void clear();
 
+    const Teuchos::ArrayRCP<const Scalar>& get_values() const { return pbuf_values1D_; }
+    const Teuchos::ArrayRCP<const Ordinal>& get_rptr() const { return pbuf_rptr_; }
+    const Teuchos::ArrayRCP<const Ordinal>& get_cptr() const { return pbuf_cptr_; }
+    const Teuchos::ArrayRCP<const Ordinal>& get_bptr() const { return pbuf_bptr_; }
+    const Teuchos::ArrayRCP<const Ordinal>& get_bindx() const { return pbuf_bindx_; }
+    const Teuchos::ArrayRCP<const Ordinal>& get_indx() const { return pbuf_indx_; }
+
     //@}
 
   private:
@@ -108,14 +112,13 @@ namespace Kokkos {
     size_t numRows_;
     bool isInitialized_, isPacked_, isEmpty_;
 
-    Teuchos::ArrayRCP<const Scalar>                      pbuf_values1D_;
+    Teuchos::ArrayRCP<const Scalar> pbuf_values1D_;
+    Teuchos::ArrayRCP<const Ordinal> pbuf_rptr_;
+    Teuchos::ArrayRCP<const Ordinal> pbuf_cptr_;
+    Teuchos::ArrayRCP<const Ordinal> pbuf_bptr_;
+    Teuchos::ArrayRCP<const Ordinal> pbuf_bindx_;
+    Teuchos::ArrayRCP<const Ordinal> pbuf_indx_;
     
-    Teuchos::ArrayRCP< Teuchos::ArrayRCP< Teuchos::ArrayRCP<const Scalar> > > pbuf_values2D_;
-    //We use the name 'pbuf_values2D_' even though it's a 3D structure...
-    //It's a 3D structure because each row is a collection of block-entries.
-    //The outer-most array is an array of rows, each row is an array of block-entries,
-    //and each block-entry is an array of scalars.
-    //Logically speaking, it is a 2D structure of block-entries.
     //Logically/mathematically, each block-entry is a dense matrix (a rectangular
     //array).
     //In keeping with the tradition of Aztec's DVBR and Epetra_VbrMatrix, each block-entry
@@ -125,8 +128,8 @@ namespace Kokkos {
 
 
   //==============================================================================
-  template <class Scalar, class Node>
-  VbrMatrix<Scalar,Node>::VbrMatrix(typename Node::size_t numRows, const Teuchos::RCP<Node> &node)
+  template <class Scalar, class Ordinal, class Node>
+  VbrMatrix<Scalar,Ordinal,Node>::VbrMatrix(typename Node::size_t numRows, const Teuchos::RCP<Node> &node)
   : node_(node)
   , numRows_(numRows)
   , isInitialized_(false)
@@ -135,100 +138,70 @@ namespace Kokkos {
   }
 
   //==============================================================================
-  template <class Scalar, class Node>
-  VbrMatrix<Scalar,Node>::~VbrMatrix() {
+  template <class Scalar, class Ordinal, class Node>
+  VbrMatrix<Scalar,Ordinal,Node>::~VbrMatrix() {
   }
 
   //==============================================================================
-  template <class Scalar, class Node>
-  Teuchos::RCP<Node> VbrMatrix<Scalar,Node>::getNode() const {
+  template <class Scalar, class Ordinal, class Node>
+  Teuchos::RCP<Node> VbrMatrix<Scalar,Ordinal,Node>::getNode() const {
     return node_;
   }
 
   //==============================================================================
-  template <class Scalar, class Node>
-  void VbrMatrix<Scalar,Node>::clear() { 
+  template <class Scalar, class Ordinal, class Node>
+  void VbrMatrix<Scalar,Ordinal,Node>::clear() { 
     pbuf_values1D_ = Teuchos::null;
-    pbuf_values2D_ = Teuchos::null;
+    pbuf_rptr_ = Teuchos::null;
+    pbuf_cptr_ = Teuchos::null;
+    pbuf_bptr_ = Teuchos::null;
+    pbuf_bindx_ = Teuchos::null;
+    pbuf_indx_ = Teuchos::null;
     isInitialized_ = false;
     isEmpty_       = true;
     isPacked_      = false;
   }
 
   //==============================================================================
-  template <class Scalar, class Node>
-  void VbrMatrix<Scalar,Node>::setPackedValues(
-                        const Teuchos::ArrayRCP<const Scalar> &allvals) {
+  template <class Scalar, class Ordinal, class Node>
+  void VbrMatrix<Scalar,Ordinal,Node>::setPackedValues(
+                        const Teuchos::ArrayRCP<const Scalar> &allvals,
+                         const Teuchos::ArrayRCP<const Ordinal>& rptr,
+                         const Teuchos::ArrayRCP<const Ordinal>& cptr,
+                         const Teuchos::ArrayRCP<const Ordinal>& bptr,
+                         const Teuchos::ArrayRCP<const Ordinal>& bindx,
+                         const Teuchos::ArrayRCP<const Ordinal>& indx)
+{
 #ifdef HAVE_KOKKOS_DEBUG
     TEST_FOR_EXCEPTION(isInitialized_ == true, std::runtime_error,
         Teuchos::typeName(*this) << "::setPackedValues(): matrix is already initialized. Call clear() before reinitializing.");
 #endif
     isEmpty_ = (allvals == Teuchos::null);
     pbuf_values1D_ = allvals;
+    pbuf_rptr_ = rptr;
+    pbuf_cptr_ = cptr;
+    pbuf_bptr_ = bptr;
+    pbuf_bindx_ = bindx;
+    pbuf_indx_ = indx;
     isInitialized_ = true;
     isPacked_ = (allvals != Teuchos::null);
   }
 
   //==============================================================================
-  template <class Scalar, class Node>
-  void VbrMatrix<Scalar,Node>::setBlockRow(
-                              typename Node::size_t row,
-                              const Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > &rowvals) {
-#ifdef HAVE_KOKKOS_DEBUG
-    TEST_FOR_EXCEPTION(isPacked_ == true, std::runtime_error,
-        Teuchos::typeName(*this) << "::setBlockRow(): matrix is already initialized with 1D (packed) structure. Call clear() before reinitializing.");
-#endif
-    if (isInitialized_ == false) {
-      pbuf_values2D_ = Teuchos::arcp<Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > >(numRows_);
-      isInitialized_ = true;
-    }
-#ifdef HAVE_KOKKOS_DEBUG
-    TEST_FOR_EXCEPTION((row < 1 && row != 0) || row > numRows_, std::runtime_error,
-        Teuchos::typeName(*this) << "::setBlockRow(): specified row is invalid.");
-#endif
-    isEmpty_ = isEmpty_ && (rowvals == Teuchos::null);
-    pbuf_values2D_[row] = rowvals;
-  }
-
-  //==============================================================================
-  template <class Scalar, class Node>
-  Teuchos::ArrayRCP<const Scalar> 
-  VbrMatrix<Scalar,Node>::getPackedValues() const {
-#ifdef HAVE_KOKKOS_DEBUG
-    TEST_FOR_EXCEPTION(isPacked_ == false, std::runtime_error,
-        Teuchos::typeName(*this) << "::getPackedValues(): matrix is uninitialized or not packed.");
-#endif
-    return pbuf_values1D_;
-  }
-
-  //==============================================================================
-  template <class Scalar, class Node>
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> >
-  VbrMatrix<Scalar,Node>::getBlockRow(typename Node::size_t row) const {
-#ifdef HAVE_KOKKOS_DEBUG
-    TEST_FOR_EXCEPTION(isInitialized_ == false || isPacked_ == true, std::runtime_error,
-        Teuchos::typeName(*this) << "::getBlockRow(): matrix is uninitialized or initialized packed.");
-    TEST_FOR_EXCEPTION((row < 1 && row != 0) || row > numRows_, std::runtime_error,
-        Teuchos::typeName(*this) << "::getBlockRow(): row number is invalid.");
-#endif
-    return pbuf_values2D_[row];
-  }
-
-  //==============================================================================
-  template <class Scalar, class Node>
-  bool VbrMatrix<Scalar,Node>::isPacked() const {
+  template <class Scalar, class Ordinal, class Node>
+  bool VbrMatrix<Scalar,Ordinal,Node>::isPacked() const {
     return isPacked_;
   }
 
   //==============================================================================
-  template <class Scalar, class Node>
-  bool VbrMatrix<Scalar,Node>::isEmpty() const {
+  template <class Scalar, class Ordinal, class Node>
+  bool VbrMatrix<Scalar,Ordinal,Node>::isEmpty() const {
     return isEmpty_;
   }
 
   //==============================================================================
-  template <class Scalar, class Node>
-  typename Node::size_t VbrMatrix<Scalar,Node>::getNumBlockRows() const {
+  template <class Scalar, class Ordinal, class Node>
+  typename Node::size_t VbrMatrix<Scalar,Ordinal,Node>::getNumBlockRows() const {
     return numRows_;
   }
 
