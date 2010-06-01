@@ -35,6 +35,8 @@
 #include <Kokkos_DefaultSparseSolve.hpp>
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Operator.hpp"
+#include <Teuchos_TimeMonitor.hpp>
+
 
 /*! \file Tpetra_CrsMatrixMultiplyOp_decl.hpp 
 
@@ -94,6 +96,10 @@ namespace Tpetra {
 
       // multivectors used for import/export dest/source in apply()
       mutable Teuchos::RCP<MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> > importMV_, exportMV_;
+
+#ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
+    Teuchos::RCP<Teuchos::Time> importTimer_, exportTimer_;
+#endif
 
       // private methods for transpose or non-transpose
       void applyTranspose(const MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<OpScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, 

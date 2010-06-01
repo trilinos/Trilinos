@@ -1,0 +1,15 @@
+
+----------------------------------------
+Release Notes for Trilinos Package Belos
+----------------------------------------
+
+
+Trilinos 10.4:
+--------------
+
+(*) Replaced non-const MultiVecTraits::CloneView(MV) with explicit MultiVecTraits::CloneViewNonConst(MV).
+
+This is a non-backwards-compatible change to Belos::MultiVecTraits, requiring changes through Belos solver, solver managers, and orthomanagers. 
+The result is that it is much harder to accidentally create a non-const view when a const view is sufficient. To do so requires CloneViewNonConst() be called
+explicitly, all such calls being manually invoked during this refactorization.
+

@@ -26,20 +26,29 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef KOKKOS_NODEAPICONFIGDEFS_HPP
-#define KOKKOS_NODEAPICONFIGDEFS_HPP
+#ifndef KOKKOS_NODETRACE_HPP
+#define KOKKOS_NODETRACE_HPP
 
-#include <Kokkos_ConfigDefs.hpp>
 #include <sstream>
-#include <Teuchos_TypeTraits.hpp>
+#include <iostream>
 
+// forward declarations
 namespace Kokkos {
-
-  enum ReadWriteOption {
-    ReadWrite,
-    WriteOnly
-  };
-
+  class ThrustGPUNode;
 }
 
-#endif // KOKKOS_NODEAPICONFIGDEFS_HPP
+#ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_TRACE
+#  define KOKKOS_NODE_TRACE(lbl) \
+     { \
+       if (Teuchos::TypeTraits::is_same<Node,Kokkos::ThrustGPUNode>::value == true) { \
+         std::ostringstream omsg; \
+         omsg << lbl << " -> "; \
+         std::cerr << omsg.str(); \
+       } \
+     }
+#else
+#  define KOKKOS_NODE_TRACE(lbl)
+#endif
+
+
+#endif // KOKKOS_NODETRACE_HPP

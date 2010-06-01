@@ -329,7 +329,6 @@ namespace Tpetra {
   createWeightedContigMapWithNode(int thisNodeWeight, global_size_t numElements, 
                                   const Teuchos::RCP< const Teuchos::Comm< int > > &comm, const Teuchos::RCP< Node > &node);
 
-
 } // Tpetra namespace
 
 /** \brief  Returns true if \c map is identical to this map. Implemented in Tpetra::Map::isSameAs().
@@ -342,5 +341,5 @@ bool operator== (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const
 template <class LocalOrdinal, class GlobalOrdinal, class Node>
 bool operator!= (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1, const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2);
 
-
 #endif // TPETRA_MAP_DECL_HPP
+

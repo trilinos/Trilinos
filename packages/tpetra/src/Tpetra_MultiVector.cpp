@@ -73,6 +73,7 @@ namespace Tpetra {
 //#endif
 #endif
 
+
 } // namespace Tpetra
 
 #endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION

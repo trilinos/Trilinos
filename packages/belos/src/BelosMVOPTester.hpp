@@ -497,7 +497,7 @@ namespace Belos {
       B = MVT::Clone(*A,numvecs); 
       MVT::MvRandom(*B);
       MVT::MvNorm(*B, norms);
-      C = MVT::CloneView(*B,ind);
+      C = MVT::CloneViewNonConst(*B,ind);
       MVT::MvNorm(*C, norms2);
       if ( MVT::GetNumberVecs(*C) != numvecs_2 ) {
         om->stream(Warnings)
@@ -513,23 +513,10 @@ namespace Belos {
           return false;
         }
       }
-      /*
-      MVT::MvInit(*B,zero);
-      MVT::MvNorm(*C, &norms2); 
-      for (i=0; i<numvecs_2; i++) {
-        if ( norms2[i] != zero ) {
-          if ( om->isVerbosityAndPrint(Warnings) ) {
-            out << "*** ERROR *** MultiVecTraits::CloneView(ind)." << endl
-                << "Copied vectors were not dependent." << endl;
-          }
-          return false;
-        }
-      }
-      */
     }
 
 
-    /*********** const CloneView(MV,std::vector<int>) and MvNorm() ************
+    /*********** CloneView(const MV,std::vector<int>) and MvNorm() ************
        Check that we have a view of the selected vectors.
        1) Check quantity
        2) Check value of norms for agreement
@@ -537,7 +524,7 @@ namespace Belos {
     *********************************************************************/
     {
       Teuchos::RCP<MV> B;
-      Teuchos::RCP<const MV> constB, C;
+      Teuchos::RCP<const MV> C;
       std::vector<MagType> normsB(numvecs), normsC(numvecs_2);
       std::vector<int> allind(numvecs);
       for (i=0; i<numvecs; i++) {
@@ -546,10 +533,8 @@ namespace Belos {
 
       B = MVT::Clone(*A,numvecs);
       MVT::MvRandom( *B );
-      // need a const MV to test const CloneView
-      constB = MVT::CloneView(*B,allind);
-      MVT::MvNorm(*constB, normsB);
-      C = MVT::CloneView(*constB,ind);
+      MVT::MvNorm(*B, normsB);
+      C = MVT::CloneView(*B,ind);
       MVT::MvNorm(*C, normsC);
       if ( MVT::GetNumberVecs(*C) != numvecs_2 ) {
         om->stream(Warnings)
@@ -565,19 +550,6 @@ namespace Belos {
           return false;
         }
       }
-      /*
-      MVT::MvInit(const_cast<MV&>(*C),zero);
-      MVT::MvNorm(*constB, &normsB); 
-      for (i=0; i<numvecs_2; i++) {
-        if ( normsB[ind[i]] != SCT::zero() ) {
-          if ( om->isVerbosityAndPrint(Warnings) ) {
-            out << "*** ERROR *** const MultiVecTraits::CloneView(ind)." << endl
-                << "Copied vectors were not dependent." << endl;
-          }
-          return false;
-        }
-      }
-      */
     }
 
 
@@ -1056,7 +1028,8 @@ namespace Belos {
     *********************************************************************/
     {
       const int p = 7;
-      Teuchos::RCP<MV> B, C, D;
+      Teuchos::RCP<MV> B, D;
+      Teuchos::RCP<const MV> C;
       std::vector<MagType> normsB(p),
                            normsD(p);
       std::vector<int> lclindex(p);
@@ -1064,7 +1037,7 @@ namespace Belos {
 
       B = MVT::Clone(*A,p);
       C = MVT::CloneView(*B,lclindex);
-      D = MVT::CloneView(*B,lclindex);
+      D = MVT::CloneViewNonConst(*B,lclindex);
 
       MVT::MvRandom(*B);
       MVT::MvNorm(*B,normsB);

@@ -32,6 +32,7 @@
 // TODO: row-wise insertion of entries in globalAssemble() may be more efficient
 
 #include <Kokkos_NodeHelpers.hpp>
+#include <Kokkos_NodeTrace.hpp>
 
 #include <Teuchos_SerialDenseMatrix.hpp>
 #include <Teuchos_CommHelpers.hpp>
@@ -40,12 +41,12 @@
 #include <Teuchos_TypeNameTraits.hpp>
 
 #include "Tpetra_CrsMatrixMultiplyOp.hpp" // must include for implicit instantiation to work
-
 #ifdef DOXYGEN_USE_ONLY
   #include "Tpetra_CrsMatrix_decl.hpp"
 #endif
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
+//! Comparison operator for Tpetra::CrsIJV objects, used by Tpetra::CrsMatrix
 template <class Ordinal, class Scalar>
 bool std::operator<(const Tpetra::CrsIJV<Ordinal,Scalar> &ijv1, const Tpetra::CrsIJV<Ordinal,Scalar> &ijv2) {
   return ijv1.i < ijv2.i;
@@ -453,9 +454,11 @@ namespace Tpetra {
           wdp.x   = rbh.addNonConstBuffer(pbuf_values1D_);
           rbh.end();
           node->template parallel_for<Kokkos::InitOp<Scalar> >(0,nta,wdp);
+          KOKKOS_NODE_TRACE("CrsMatrix::allocateValues()")
           view_values1D_ = node->template viewBufferNonConst<Scalar>(Kokkos::ReadWrite,nta,pbuf_values1D_);
         }
         else {
+          KOKKOS_NODE_TRACE("CrsMatrix::allocateValues()")
           // a simple WriteOnly view will suffice
           view_values1D_ = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly,nta,pbuf_values1D_);
         }
@@ -583,6 +586,7 @@ namespace Tpetra {
       Teuchos::RCP<Node> node = getNode();
       if (getCrsGraph()->getProfileType() == StaticProfile) {
         if (view_values1D_ == Teuchos::null) {
+          KOKKOS_NODE_TRACE("CrsMatrix::getFullView()")
           values = node->template viewBuffer<Scalar>(sizeInfo.allocSize, pbuf_values1D_ + sizeInfo.offset1D);
         }
         else {
@@ -591,6 +595,7 @@ namespace Tpetra {
       }
       else {  // dynamic profile
         if (view_values2D_ == Teuchos::null) {
+          KOKKOS_NODE_TRACE("CrsMatrix::getFullView()")
           values = node->template viewBuffer<Scalar>(sizeInfo.allocSize, pbuf_values2D_[myRow]);
         }
         else {
@@ -622,6 +627,7 @@ namespace Tpetra {
       Kokkos::ReadWriteOption rw = (sizeInfo.numEntries == 0 ? Kokkos::WriteOnly : Kokkos::ReadWrite);
       if (getCrsGraph()->getProfileType() == StaticProfile) {
         if (view_values1D_ == Teuchos::null) {
+          KOKKOS_NODE_TRACE("CrsMatrix::getFullViewNonConst()")
           values = node->template viewBufferNonConst<Scalar>(rw, sizeInfo.allocSize, pbuf_values1D_ + sizeInfo.offset1D);
         }
         else {
@@ -630,6 +636,7 @@ namespace Tpetra {
       }
       else {  // dynamic profile
         if (view_values2D_ == Teuchos::null) {
+          KOKKOS_NODE_TRACE("CrsMatrix::getFullViewNonConst()")
           values = node->template viewBufferNonConst<Scalar>(rw, sizeInfo.allocSize, pbuf_values2D_[myRow]);
         }
         else {
@@ -675,6 +682,7 @@ namespace Tpetra {
     if (view_values2D_ == Teuchos::null) {
       // no views
       if (sizeInfo.numEntries) {
+        KOKKOS_NODE_TRACE("CrsMatrix::updateAllocation()")
         node->template copyBuffers<Scalar>(sizeInfo.numEntries,old_alloc,pbuf_values2D_[lrow]);
       }
       old_alloc = Teuchos::null;
@@ -685,6 +693,7 @@ namespace Tpetra {
       // use the views to copy the data
       ArrayRCP<Scalar> old_view;
       old_view = view_values2D_[lrow];
+      KOKKOS_NODE_TRACE("CrsMatrix::updateAllocation()")
       view_values2D_[lrow] = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly, allocSize, pbuf_values2D_[lrow]);
       std::copy( old_view.begin(), old_view.begin() + sizeInfo.numEntries, view_values2D_[lrow].begin() );
       old_view = Teuchos::null;
@@ -907,6 +916,7 @@ namespace Tpetra {
     else {
       typename Teuchos::ArrayView<const GlobalOrdinal>::iterator ind = indices.begin();
       typename Teuchos::ArrayView<const Scalar       >::iterator val =  values.begin();
+      nonlocals_[globalRow].reserve( nonlocals_[globalRow].size() + indices.size() );
       for (; val != values.end(); ++val, ++ind) {
         nonlocals_[globalRow].push_back(std::make_pair(*ind, *val));
       }
@@ -1419,11 +1429,11 @@ namespace Tpetra {
     using Teuchos::ArrayRCP;
     using Teuchos::rcp;
     using Teuchos::outArg;
-    using std::list;
     using std::pair;
     using std::make_pair;
     using Teuchos::tuple;
-    typedef typename std::map<GlobalOrdinal,std::list<pair<GlobalOrdinal,Scalar> > >::const_iterator NLITER;
+    typedef typename std::map<GlobalOrdinal,Teuchos::Array<pair<GlobalOrdinal,Scalar> > >::const_iterator NLITER;
+    typedef typename Teuchos::Array<pair<GlobalOrdinal,Scalar> >::const_iterator NLRITER;
     const int numImages = getComm()->getSize();
     const int myImageID = getComm()->getRank();
     // Determine if any nodes have global entries to share
@@ -1528,7 +1538,7 @@ namespace Tpetra {
         TEST_FOR_EXCEPTION(sendIDs[numSends] != id, std::logic_error, Teuchos::typeName(*this) << "::globalAssemble(): internal logic error. Contact Tpetra team.");
       }
       // copy data for row into contiguous storage
-      for (typename list<pair<GlobalOrdinal,Scalar> >::const_iterator jv = nonlocals_[row].begin(); jv != nonlocals_[row].end(); ++jv)
+      for (NLRITER jv = nonlocals_[row].begin(); jv != nonlocals_[row].end(); ++jv)
       {
         IJVSendBuffer.push_back( CrsIJV<GlobalOrdinal,Scalar>(row,jv->first,jv->second) );
         sendSizes[numSends]++;
@@ -1825,6 +1835,7 @@ namespace Tpetra {
           for (size_t row=0; row<nlrs; ++row) {
             RowInfo sizeInfo = myGraph_->getRowInfo(row);
             if (sizeInfo.numEntries > 0) {
+              KOKKOS_NODE_TRACE("CrsMatrix::optimizeStorage()")
               node->template copyBuffers<Scalar>( sizeInfo.numEntries, pbuf_values2D_[row], pbuf_values1D_ + sofar );
               pbuf_values2D_[row] = Teuchos::null;
             }
@@ -1849,6 +1860,7 @@ namespace Tpetra {
           for (size_t row=0; row<nlrs; ++row) {
             RowInfo sizeInfo = myGraph_->getRowInfo(row);
             if (sizeInfo.numEntries > 0 && sizeInfo.offset1D != sofar) {
+              KOKKOS_NODE_TRACE("CrsMatrix::optimizeStorage()")
               node->template copyBuffers<Scalar>( sizeInfo.numEntries, 
                                                   pbuf_values1D_ + sizeInfo.offset1D,
                                                   pbuf_values1D_ + sofar );
@@ -2035,8 +2047,13 @@ namespace Tpetra {
         getRowMap()->describe(out,vl);
         //
         if (getColMap() != Teuchos::null) {
-          if (myImageID == 0) out << "\nColumn map: " << std::endl;
-          getColMap()->describe(out,vl);
+          if (getColMap() == getRowMap()) {
+            if (myImageID == 0) out << "\nColumn map is row map.";
+          }
+          else {
+            if (myImageID == 0) out << "\nColumn map: " << std::endl;
+            getColMap()->describe(out,vl);
+          }
         }
         if (getDomainMap() != Teuchos::null) {
           if (getDomainMap() == getRowMap()) {

@@ -412,8 +412,8 @@ namespace Belos {
       for (i=0; i<numRHS_; ++i) {
         beta(i,i) = rHz[i] / rHz_old[i];
 	index[0] = i;
-	Teuchos::RCP<MV> Z_i = MVT::CloneView( *Z_, index );
-	Teuchos::RCP<MV> P_i = MVT::CloneView( *P_, index );
+	Teuchos::RCP<const MV> Z_i = MVT::CloneView( *Z_, index );
+	Teuchos::RCP<MV> P_i = MVT::CloneViewNonConst( *P_, index );
         MVT::MvAddMv( one, *Z_i, beta(i,i), *P_i, *P_i );
       }
       //      

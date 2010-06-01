@@ -756,7 +756,7 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP>::solve() {
         std::cout  << "Solver Manager:  dimU_ = " << dimU_ << std::endl;
         Teuchos::SerialDenseMatrix<int,ScalarType> Z( dimU_, 1 );
 
-        Teuchos::RCP<MV> Uactive, Cactive;
+        Teuchos::RCP<const MV> Uactive, Cactive;
         std::vector<int> active_columns( dimU_ );
         for (int i=0; i < dimU_; ++i) active_columns[i] = i;
         Uactive = MVT::CloneView(*U_, active_columns);
@@ -980,12 +980,12 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP>::solve() {
         for (int i=0; i < dimU_; ++i) active_columns[i] = i;
         for (int i=0; i < deflatedBlocks_; ++i) def_cols[i] = i;
 
-        Teuchos::RCP<MV> Uactive = MVT::CloneView(*U_, def_cols);
+        Teuchos::RCP<MV> Uactive = MVT::CloneViewNonConst(*U_, def_cols);
         Teuchos::RCP<MV> Ucopy = MVT::CloneCopy( *U_, active_columns );
         MVT::MvTimesMatAddMv( one, *Ucopy, V, zero, *Uactive ); //  U:= U*V
         Ucopy   = Teuchos::null;
         Uactive = Teuchos::null;
-        Teuchos::RCP<MV> Cactive = MVT::CloneView(*C_, def_cols);
+        Teuchos::RCP<MV> Cactive = MVT::CloneViewNonConst(*C_, def_cols);
         Teuchos::RCP<MV> Ccopy = MVT::CloneCopy( *C_, active_columns );
         MVT::MvTimesMatAddMv( one, *Ccopy, V, zero, *Cactive ); //  C:= C*V
         Ccopy  = Teuchos::null;
@@ -1032,6 +1032,7 @@ ReturnType PCPGSolMgr<ScalarType,MV,OP>::solve() {
 template<class ScalarType, class MV, class OP>
 int PCPGSolMgr<ScalarType,MV,OP>::ARRQR(int p, int q, const Teuchos::SerialDenseMatrix<int,ScalarType>& D)
 {
+  using Teuchos::RCP;
   ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
   ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
 
@@ -1039,11 +1040,6 @@ int PCPGSolMgr<ScalarType,MV,OP>::ARRQR(int p, int q, const Teuchos::SerialDense
   Teuchos::SerialDenseMatrix<int,ScalarType> alpha( 1, 1 );
   Teuchos::SerialDenseMatrix<int,ScalarType> gamma( 1, 1 );
   Teuchos::SerialDenseMatrix<int,ScalarType> anorm( 1, 1 );
-  Teuchos::RCP<MV> P;
-  Teuchos::RCP<MV> AP;
-  Teuchos::RCP<MV> Q;
-  Teuchos::RCP<MV> AQ;
-  Teuchos::RCP<MV> LocalVector;
   std::vector<int> curind(1);
   std::vector<int> ipiv(p - q); // RRQR Pivot indices
   std::vector<ScalarType> Pivots(p); // RRQR Pivots
@@ -1054,13 +1050,11 @@ int PCPGSolMgr<ScalarType,MV,OP>::ARRQR(int p, int q, const Teuchos::SerialDense
   for( int i = q ; i < p ; i++ ){
     ipiv[i-q] = i;
     curind[0] = i;
-    P = MVT::CloneView(*U_,curind);
-    AP = MVT::CloneView(*C_,curind);
+    RCP<MV> P = MVT::CloneViewNonConst(*U_,curind);
+    RCP<MV> AP = MVT::CloneViewNonConst(*C_,curind);
     anorm(0,0) = one / Teuchos::ScalarTraits<ScalarType>::squareroot( D(i-q,i-q) ) ;
     MVT::MvAddMv( anorm(0,0), *P, zero, *AP, *P );
     MVT::MvAddMv( zero, *P, anorm(0,0), *AP, *AP );
-    P = Teuchos::null;
-    AP = Teuchos::null;
     Pivots[i]  = one;
   }
 
@@ -1088,11 +1082,9 @@ int PCPGSolMgr<ScalarType,MV,OP>::ARRQR(int p, int q, const Teuchos::SerialDense
     }
     else{ // anorm(0,0) = sqrt( U(:,k)'*C(:,k) );
       curind[0] = k;
-      P = MVT::CloneView(*U_,curind);
-      AP = MVT::CloneView(*C_,curind);
+      RCP<const MV> P = MVT::CloneView(*U_,curind);
+      RCP<const MV> AP = MVT::CloneView(*C_,curind);
       MVT::MvTransMv( one, *P, *AP, anorm );
-      P = Teuchos::null;
-      AP = Teuchos::null;
       anorm(0,0) = Teuchos::ScalarTraits<ScalarType>::squareroot( anorm(0,0) ) ;
     }
     if( rteps <= anorm(0,0) && anorm(0,0) < 9.765625e-4){
@@ -1114,23 +1106,23 @@ int PCPGSolMgr<ScalarType,MV,OP>::ARRQR(int p, int q, const Teuchos::SerialDense
        break; 
     }
     curind[0] = k;
-    P = MVT::CloneView(*U_,curind);
-    AP = MVT::CloneView(*C_,curind);
+    RCP<MV> P = MVT::CloneViewNonConst(*U_,curind);
+    RCP<MV> AP = MVT::CloneViewNonConst(*C_,curind);
     MVT::MvAddMv( anorm(0,0), *P, zero, *AP, *P ); // U(:,k) = U(:,k)/anorm;
     MVT::MvAddMv( zero, *P, anorm(0,0), *AP, *AP ); // C(:,k) = C(:,k)/anorm;
     P = Teuchos::null;
     AP = Teuchos::null;
     Pivots[k] = one;                 // delete,  for diagonostic purposes
-    P = MVT::CloneView(*U_,curind);  // U(:,k)
-    AP = MVT::CloneView(*C_,curind); // C(:,k)
+    P = MVT::CloneViewNonConst(*U_,curind);  // U(:,k)
+    AP = MVT::CloneViewNonConst(*C_,curind); // C(:,k)
     for( j = i+1 ; j < p ; j++ ){
       l = ipiv[j-q];   // ahhh
       curind[0] = l;
-      Q = MVT::CloneView(*U_,curind); // segmentation fault,  j=i+1=5
+      RCP<MV> Q = MVT::CloneViewNonConst(*U_,curind); // segmentation fault,  j=i+1=5
       MVT::MvTransMv( one, *Q, *AP, alpha); // alpha(0,0) = U(:,l)'*C(:,k);
       MVT::MvAddMv( -alpha(0,0), *P, one, *Q, *Q ); // U(:,l) -= U(:,k) * alpha(0,0);
       Q = Teuchos::null;
-      AQ = MVT::CloneView(*C_,curind);
+      RCP<MV> AQ = MVT::CloneViewNonConst(*C_,curind);
       MVT::MvAddMv( -alpha(0,0), *AP, one, *AQ, *AQ ); // C(:,l) -= C(:,l) - C(:,k) * alpha(0,0);
       AQ = Teuchos::null;
       gamma(0,0) = ( Pivots[l] - alpha(0,0))*( Pivots[l] + alpha(0,0));

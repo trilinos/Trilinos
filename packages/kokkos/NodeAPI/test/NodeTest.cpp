@@ -156,11 +156,11 @@ namespace {
     ArrayRCP<int> x, y;
     RCP<NODE> node = getNode<NODE>();
     ReadyBufferHelper<NODE> rbh(node);
-    const unsigned int N = 4096;
-    // const unsigned int N = 1000000;
-    const unsigned int Xoff  = 1024;
-    const unsigned int Xsize = N + 2*Xoff;  // 6144
-    const unsigned int Yoffs[5] = {0, N, 2*N, 3*N, 4*N};
+    const int N = 4096;
+    // const int N = 1000000;
+    const int Xoff  = 1024;
+    const int Xsize = N + 2*Xoff;  // 6144
+    const int Yoffs[5] = {0, N, 2*N, 3*N, 4*N};
     // allocate two compute buffers: 
     x = node->template allocBuffer<int>(Xsize);
     y = node->template allocBuffer<int>(Yoffs[4]);

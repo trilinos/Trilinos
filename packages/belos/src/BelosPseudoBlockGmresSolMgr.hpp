@@ -128,7 +128,7 @@ namespace Belos {
      *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence.
      */
     PseudoBlockGmresSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-		            const Teuchos::RCP<Teuchos::ParameterList> &pl );
+                            const Teuchos::RCP<Teuchos::ParameterList> &pl );
     
     //! Destructor.
     virtual ~PseudoBlockGmresSolMgr() {};
@@ -236,7 +236,7 @@ namespace Belos {
         return Belos::None;
       } else 
         TEST_FOR_EXCEPTION( true ,std::logic_error,
-			    "Belos::PseudoBlockGmresSolMgr(): Invalid residual scaling type.");
+            "Belos::PseudoBlockGmresSolMgr(): Invalid residual scaling type.");
     }
 
     // Method for checking current status test against defined linear problem.
@@ -376,8 +376,8 @@ PseudoBlockGmresSolMgr<ScalarType,MV,OP>::PseudoBlockGmresSolMgr() :
 // Basic Constructor
 template<class ScalarType, class MV, class OP>
 PseudoBlockGmresSolMgr<ScalarType,MV,OP>::PseudoBlockGmresSolMgr( 
-								 const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-								 const Teuchos::RCP<Teuchos::ParameterList> &pl ) : 
+                                        const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+                                        const Teuchos::RCP<Teuchos::ParameterList> &pl ) : 
   problem_(problem),
   outputStream_(outputStream_default_),
   convtol_(convtol_default_),
@@ -442,7 +442,7 @@ void PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
   if (params->isParameter("Block Size")) {
     blockSize_ = params->get("Block Size",blockSize_default_);    
     TEST_FOR_EXCEPTION(blockSize_ <= 0, std::invalid_argument,
-		       "Belos::PseudoBlockGmresSolMgr: \"Block Size\" must be strictly positive.");
+        "Belos::PseudoBlockGmresSolMgr: \"Block Size\" must be strictly positive.");
 
     // Update parameter in our list.
     params_->set("Block Size", blockSize_);
@@ -452,7 +452,7 @@ void PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
   if (params->isParameter("Num Blocks")) {
     numBlocks_ = params->get("Num Blocks",numBlocks_default_);
     TEST_FOR_EXCEPTION(numBlocks_ <= 0, std::invalid_argument,
-		       "Belos::PseudoBlockGmresSolMgr: \"Num Blocks\" must be strictly positive.");
+        "Belos::PseudoBlockGmresSolMgr: \"Num Blocks\" must be strictly positive.");
 
     // Update parameter in our list.
     params_->set("Num Blocks", numBlocks_);
@@ -476,24 +476,24 @@ void PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
     std::string tempOrthoType = params->get("Orthogonalization",orthoType_default_);
     TEST_FOR_EXCEPTION( tempOrthoType != "DGKS" && tempOrthoType != "ICGS" && tempOrthoType != "IMGS", 
                         std::invalid_argument,
-			"Belos::PseudoBlockGmresSolMgr: \"Orthogonalization\" must be either \"DGKS\",\"ICGS\", or \"IMGS\".");
+                        "Belos::PseudoBlockGmresSolMgr: \"Orthogonalization\" must be either \"DGKS\",\"ICGS\", or \"IMGS\".");
     if (tempOrthoType != orthoType_) {
       orthoType_ = tempOrthoType;
       // Create orthogonalization manager
       if (orthoType_=="DGKS") {
-	if (orthoKappa_ <= 0) {
-	  ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
-	}
-	else {
-	  ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
-	  Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
-	}
+        if (orthoKappa_ <= 0) {
+          ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
+        }
+        else {
+          ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
+          Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
+        }
       }
       else if (orthoType_=="ICGS") {
-	ortho_ = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>( label_ ) );
+        ortho_ = Teuchos::rcp( new ICGSOrthoManager<ScalarType,MV,OP>( label_ ) );
       } 
       else if (orthoType_=="IMGS") {
-	ortho_ = Teuchos::rcp( new IMGSOrthoManager<ScalarType,MV,OP>( label_ ) );
+        ortho_ = Teuchos::rcp( new IMGSOrthoManager<ScalarType,MV,OP>( label_ ) );
       } 
     }  
   }
@@ -506,7 +506,7 @@ void PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
     params_->set("Orthogonalization Constant",orthoKappa_);
     if (orthoType_=="DGKS") {
       if (orthoKappa_ > 0 && ortho_ != Teuchos::null) {
-	Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
+        Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
       }
     } 
   }
@@ -599,14 +599,14 @@ void PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
           impConvTest_->defineScaleForm( impResScaleType, Belos::TwoNorm );
         }
         catch (std::exception& e) {
-	  // Make sure the convergence test gets constructed again.
+          // Make sure the convergence test gets constructed again.
           isSTSet_ = false;
-	  newImpResTest = true;
+          newImpResTest = true;
         }
       }
     }      
   }
-  
+
   if (params->isParameter("Explicit Residual Scaling")) {
     std::string tempExpResScale = Teuchos::getParameter<std::string>( *params, "Explicit Residual Scaling" );
 
@@ -622,9 +622,9 @@ void PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
           expConvTest_->defineScaleForm( expResScaleType, Belos::TwoNorm );
         }
         catch (std::exception& e) {
-	  // Make sure the convergence test gets constructed again.
+          // Make sure the convergence test gets constructed again.
           isSTSet_ = false;
-	  newExpResTest = true;
+          newExpResTest = true;
         }
       }
     }      
@@ -648,7 +648,7 @@ void PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
   if (params->isParameter("Deflation Quorum")) {
     defQuorum_ = params->get("Deflation Quorum", defQuorum_);
     TEST_FOR_EXCEPTION(defQuorum_ > blockSize_, std::invalid_argument,
-		       "Belos::PseudoBlockGmresSolMgr: \"Deflation Quorum\" cannot be larger than \"Block Size\".");
+        "Belos::PseudoBlockGmresSolMgr: \"Deflation Quorum\" cannot be larger than \"Block Size\".");
     params_->set("Deflation Quorum", defQuorum_);
     if (impConvTest_ != Teuchos::null)
       impConvTest_->setQuorum( defQuorum_ );
@@ -660,11 +660,11 @@ void PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
   if (ortho_ == Teuchos::null) {
     if (orthoType_=="DGKS") {
       if (orthoKappa_ <= 0) {
-	ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
+        ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
       }
       else {
-	ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
-	Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
+        ortho_ = Teuchos::rcp( new DGKSOrthoManager<ScalarType,MV,OP>( label_ ) );
+        Teuchos::rcp_dynamic_cast<DGKSOrthoManager<ScalarType,MV,OP> >(ortho_)->setDepTol( orthoKappa_ );
       }
     }
     else if (orthoType_=="ICGS") {
@@ -675,7 +675,7 @@ void PseudoBlockGmresSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP
     } 
     else {
       TEST_FOR_EXCEPTION(orthoType_!="ICGS"&&orthoType_!="DGKS"&&orthoType_!="IMGS",std::logic_error,
-			 "Belos::PseudoBlockGmresSolMgr(): Invalid orthogonalization type.");
+          "Belos::PseudoBlockGmresSolMgr(): Invalid orthogonalization type.");
     }  
   }
 
@@ -862,7 +862,7 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
   loaDetected_ = false;
 
   // Assume convergence is achieved, then let any failed convergence set this to false.
-  bool isConverged = true;	
+  bool isConverged = true;
 
   //////////////////////////////////////////////////////////////////////////////////////
   // BlockGmres solver
@@ -899,20 +899,20 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       newState.V.resize( blockSize_ );
       newState.Z.resize( blockSize_ );
       for (int i=0; i<blockSize_; ++i) {
-	index[0]=i;
-	tmpV = MVT::CloneView( *R_0, index );
-	
-	// Get a matrix to hold the orthonormalization coefficients.
-	Teuchos::RCP<Teuchos::SerialDenseVector<int,ScalarType> > tmpZ
-	  = Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>( 1 ));
-      
-	// Orthonormalize the new V_0
-	int rank = ortho_->normalize( *tmpV, tmpZ );
-	TEST_FOR_EXCEPTION(rank != 1, PseudoBlockGmresSolMgrOrthoFailure,
-			   "Belos::PseudoBlockGmresSolMgr::solve(): Failed to compute initial block of orthonormal vectors.");
+        index[0]=i;
+        tmpV = MVT::CloneViewNonConst( *R_0, index );
 
-	newState.V[i] = tmpV;
-	newState.Z[i] = tmpZ;
+        // Get a matrix to hold the orthonormalization coefficients.
+        Teuchos::RCP<Teuchos::SerialDenseVector<int,ScalarType> > tmpZ
+          = Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>( 1 ));
+
+        // Orthonormalize the new V_0
+        int rank = ortho_->normalize( *tmpV, tmpZ );
+        TEST_FOR_EXCEPTION(rank != 1, PseudoBlockGmresSolMgrOrthoFailure,
+            "Belos::PseudoBlockGmresSolMgr::solve(): Failed to compute initial block of orthonormal vectors.");
+
+        newState.V[i] = tmpV;
+        newState.Z[i] = tmpZ;
       }
 
       newState.curDim = 0;
@@ -920,186 +920,186 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       int numRestarts = 0;
 
       while(1) {
-	
-	// tell block_gmres_iter to iterate
-	try {
-	  block_gmres_iter->iterate();
-	  
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  //
-	  // check convergence first
-	  //
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  if ( convTest_->getStatus() == Passed ) {
-
-	    if ( expConvTest_->getLOADetected() ) {
+        
+        // tell block_gmres_iter to iterate
+        try {
+          block_gmres_iter->iterate();
+          
+          ////////////////////////////////////////////////////////////////////////////////////
+          //
+          // check convergence first
+          //
+          ////////////////////////////////////////////////////////////////////////////////////
+          if ( convTest_->getStatus() == Passed ) {
+        
+            if ( expConvTest_->getLOADetected() ) {
               // we don't have convergence but we will deflate out the linear systems and move on.
               loaDetected_ = true;
               isConverged = false;
             }
-
-	    // Figure out which linear systems converged.
-	    std::vector<int> convIdx = expConvTest_->convIndices();
-
-	    // If the number of converged linear systems is equal to the
+        
+            // Figure out which linear systems converged.
+            std::vector<int> convIdx = expConvTest_->convIndices();
+        
+            // If the number of converged linear systems is equal to the
             // number of current linear systems, then we are done with this block.
-	    if (convIdx.size() == currRHSIdx.size())
-	      break;  // break from while(1){block_gmres_iter->iterate()}
-
-	    // Get a new state struct and initialize the solver.
-	    PseudoBlockGmresIterState<ScalarType,MV> defState;
-
-	    // Inform the linear problem that we are finished with this current linear system.
-	    problem_->setCurrLS();
-
-	    // Get the state.
-	    PseudoBlockGmresIterState<ScalarType,MV> oldState = block_gmres_iter->getState();
-	    int curDim = oldState.curDim;
-
-	    // Get a new state struct and reset currRHSIdx to have the right-hand sides that 
-	    // are left to converge for this block.
-	    int have = 0;
-	    std::vector<int> oldRHSIdx( currRHSIdx );
-	    std::vector<int> defRHSIdx;
-	    for (unsigned int i=0; i<currRHSIdx.size(); ++i) {
-	      bool found = false;
-	      for (unsigned int j=0; j<convIdx.size(); ++j) {
-		if (currRHSIdx[i] == convIdx[j]) {
-		  found = true;
-		  break;
-		}
-	      }
-	      if (found) {
-		defRHSIdx.push_back( i );
-	      }
-	      else {
-		defState.V.push_back( Teuchos::rcp_const_cast<MV>( oldState.V[i] ) );
-		defState.Z.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseVector<int,ScalarType> >( oldState.Z[i] ) );
-		defState.H.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseMatrix<int,ScalarType> >( oldState.H[i] ) );
-		defState.sn.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseVector<int,ScalarType> >( oldState.sn[i] ) );
-		defState.cs.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseVector<int,MagnitudeType> >(oldState.cs[i] ) );
-		currRHSIdx[have] = currRHSIdx[i];
-		have++;
-	      }
-	    }
-	    defRHSIdx.resize(currRHSIdx.size()-have);
-	    currRHSIdx.resize(have);
-
-	    // Compute the current solution that needs to be deflated if this solver has taken any steps.
-	    if (curDim) {
-	      Teuchos::RCP<MV> update = block_gmres_iter->getCurrentUpdate();
-	      Teuchos::RCP<MV> defUpdate = MVT::CloneView( *update, defRHSIdx );
-	      
-	      // Set the deflated indices so we can update the solution.
-	      problem_->setLSIndex( convIdx );
-	      
-	      // Update the linear problem.
-	      problem_->updateSolution( defUpdate, true );
-	    }
-	    
-	    // Set the remaining indices after deflation.
-	    problem_->setLSIndex( currRHSIdx );
-	    
-	    // Set the dimension of the subspace, which is the same as the old subspace size.
-	    defState.curDim = curDim;
-	    
-	    // Initialize the solver with the deflated system.
-	    block_gmres_iter->initialize(defState);
-	  }
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  //
-	  // check for maximum iterations
-	  //
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  else if ( maxIterTest_->getStatus() == Passed ) {
-	    // we don't have convergence
-	    isConverged = false;
-	    break;  // break from while(1){block_gmres_iter->iterate()}
-	  }
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  //
-	  // check for restarting, i.e. the subspace is full
-	  //
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  else if ( block_gmres_iter->getCurSubspaceDim() == block_gmres_iter->getMaxSubspaceDim() ) {
-	
-	    if ( numRestarts >= maxRestarts_ ) {
-	      isConverged = false;
-	      break; // break from while(1){block_gmres_iter->iterate()}
-	    }
-	    numRestarts++;
-
-	    printer_->stream(Debug) << " Performing restart number " << numRestarts << " of " << maxRestarts_ << std::endl << std::endl;
-	    
-	    // Update the linear problem.
-	    Teuchos::RCP<MV> update = block_gmres_iter->getCurrentUpdate();
-	    problem_->updateSolution( update, true );
-	    
-	    // Get the state.
-	    PseudoBlockGmresIterState<ScalarType,MV> oldState = block_gmres_iter->getState();
-	    
-	    // Set the new state.
-	    PseudoBlockGmresIterState<ScalarType,MV> newstate;
-	    newstate.V.resize(currRHSIdx.size());
-	    newstate.Z.resize(currRHSIdx.size());
-
-	    // Compute the restart vectors
-	    // NOTE: Force the linear problem to update the current residual since the solution was updated.
-	    R_0 = MVT::Clone( *(problem_->getInitPrecResVec()), currRHSIdx.size() );
-	    problem_->computeCurrPrecResVec( &*R_0 );
-	    for (unsigned int i=0; i<currRHSIdx.size(); ++i) {
-	      index[0] = i;  // index(1) vector declared on line 891
-	
-	      tmpV = MVT::CloneView( *R_0, index );
-	
-	      // Get a matrix to hold the orthonormalization coefficients.
-	      Teuchos::RCP<Teuchos::SerialDenseVector<int,ScalarType> > tmpZ
-		= Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>( 1 ));
-	      
-	      // Orthonormalize the new V_0
-	      int rank = ortho_->normalize( *tmpV, tmpZ );
-	      TEST_FOR_EXCEPTION(rank != 1 ,PseudoBlockGmresSolMgrOrthoFailure,
-				 "Belos::PseudoBlockGmresSolMgr::solve(): Failed to compute initial block of orthonormal vectors after the restart.");
-	      
-	      newstate.V[i] = tmpV;
-	      newstate.Z[i] = tmpZ;
-	    }
-
-	    // Initialize the solver.
-	    newstate.curDim = 0;
-	    block_gmres_iter->initialize(newstate);
-
-	  } // end of restarting
-
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  //
-	  // we returned from iterate(), but none of our status tests Passed.
-	  // something is wrong, and it is probably our fault.
-	  //
-	  ////////////////////////////////////////////////////////////////////////////////////
-
-	  else {
-	    TEST_FOR_EXCEPTION(true,std::logic_error,
-			       "Belos::PseudoBlockGmresSolMgr::solve(): Invalid return from PseudoBlockGmresIter::iterate().");
-	  }
-	}
-        catch (const PseudoBlockGmresIterOrthoFailure &e) {
-     
-	  // Try to recover the most recent least-squares solution
-	  block_gmres_iter->updateLSQR( block_gmres_iter->getCurSubspaceDim() );
-
-	  // Check to see if the most recent least-squares solution yielded convergence.
-	  sTest_->checkStatus( &*block_gmres_iter );
-	  if (convTest_->getStatus() != Passed)
-	    isConverged = false;
-	  break;
+            if (convIdx.size() == currRHSIdx.size())
+              break;  // break from while(1){block_gmres_iter->iterate()}
+        
+            // Get a new state struct and initialize the solver.
+            PseudoBlockGmresIterState<ScalarType,MV> defState;
+        
+            // Inform the linear problem that we are finished with this current linear system.
+            problem_->setCurrLS();
+        
+            // Get the state.
+            PseudoBlockGmresIterState<ScalarType,MV> oldState = block_gmres_iter->getState();
+            int curDim = oldState.curDim;
+        
+            // Get a new state struct and reset currRHSIdx to have the right-hand sides that 
+            // are left to converge for this block.
+            int have = 0;
+            std::vector<int> oldRHSIdx( currRHSIdx );
+            std::vector<int> defRHSIdx;
+            for (unsigned int i=0; i<currRHSIdx.size(); ++i) {
+              bool found = false;
+              for (unsigned int j=0; j<convIdx.size(); ++j) {
+                if (currRHSIdx[i] == convIdx[j]) {
+                  found = true;
+                  break;
+                }
+              }
+              if (found) {
+                defRHSIdx.push_back( i );
+              }
+              else {
+                defState.V.push_back( Teuchos::rcp_const_cast<MV>( oldState.V[i] ) );
+                defState.Z.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseVector<int,ScalarType> >( oldState.Z[i] ) );
+                defState.H.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseMatrix<int,ScalarType> >( oldState.H[i] ) );
+                defState.sn.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseVector<int,ScalarType> >( oldState.sn[i] ) );
+                defState.cs.push_back( Teuchos::rcp_const_cast<Teuchos::SerialDenseVector<int,MagnitudeType> >(oldState.cs[i] ) );
+                currRHSIdx[have] = currRHSIdx[i];
+                have++;
+              }
+            }
+            defRHSIdx.resize(currRHSIdx.size()-have);
+            currRHSIdx.resize(have);
+        
+            // Compute the current solution that needs to be deflated if this solver has taken any steps.
+            if (curDim) {
+              Teuchos::RCP<MV> update = block_gmres_iter->getCurrentUpdate();
+              Teuchos::RCP<MV> defUpdate = MVT::CloneViewNonConst( *update, defRHSIdx );
+              
+              // Set the deflated indices so we can update the solution.
+              problem_->setLSIndex( convIdx );
+              
+              // Update the linear problem.
+              problem_->updateSolution( defUpdate, true );
+            }
+            
+            // Set the remaining indices after deflation.
+            problem_->setLSIndex( currRHSIdx );
+            
+            // Set the dimension of the subspace, which is the same as the old subspace size.
+            defState.curDim = curDim;
+            
+            // Initialize the solver with the deflated system.
+            block_gmres_iter->initialize(defState);
+          }
+          ////////////////////////////////////////////////////////////////////////////////////
+          //
+          // check for maximum iterations
+          //
+          ////////////////////////////////////////////////////////////////////////////////////
+          else if ( maxIterTest_->getStatus() == Passed ) {
+            // we don't have convergence
+            isConverged = false;
+            break;  // break from while(1){block_gmres_iter->iterate()}
+          }
+          ////////////////////////////////////////////////////////////////////////////////////
+          //
+          // check for restarting, i.e. the subspace is full
+          //
+          ////////////////////////////////////////////////////////////////////////////////////
+          else if ( block_gmres_iter->getCurSubspaceDim() == block_gmres_iter->getMaxSubspaceDim() ) {
+        
+            if ( numRestarts >= maxRestarts_ ) {
+              isConverged = false;
+              break; // break from while(1){block_gmres_iter->iterate()}
+            }
+            numRestarts++;
+        
+            printer_->stream(Debug) << " Performing restart number " << numRestarts << " of " << maxRestarts_ << std::endl << std::endl;
+            
+            // Update the linear problem.
+            Teuchos::RCP<MV> update = block_gmres_iter->getCurrentUpdate();
+            problem_->updateSolution( update, true );
+            
+            // Get the state.
+            PseudoBlockGmresIterState<ScalarType,MV> oldState = block_gmres_iter->getState();
+            
+            // Set the new state.
+            PseudoBlockGmresIterState<ScalarType,MV> newstate;
+            newstate.V.resize(currRHSIdx.size());
+            newstate.Z.resize(currRHSIdx.size());
+        
+            // Compute the restart vectors
+            // NOTE: Force the linear problem to update the current residual since the solution was updated.
+            R_0 = MVT::Clone( *(problem_->getInitPrecResVec()), currRHSIdx.size() );
+            problem_->computeCurrPrecResVec( &*R_0 );
+            for (unsigned int i=0; i<currRHSIdx.size(); ++i) {
+              index[0] = i;  // index(1) vector declared on line 891
+        
+              tmpV = MVT::CloneViewNonConst( *R_0, index );
+        
+              // Get a matrix to hold the orthonormalization coefficients.
+              Teuchos::RCP<Teuchos::SerialDenseVector<int,ScalarType> > tmpZ
+                = Teuchos::rcp( new Teuchos::SerialDenseVector<int,ScalarType>( 1 ));
+              
+              // Orthonormalize the new V_0
+              int rank = ortho_->normalize( *tmpV, tmpZ );
+              TEST_FOR_EXCEPTION(rank != 1 ,PseudoBlockGmresSolMgrOrthoFailure,
+                  "Belos::PseudoBlockGmresSolMgr::solve(): Failed to compute initial block of orthonormal vectors after the restart.");
+              
+              newstate.V[i] = tmpV;
+              newstate.Z[i] = tmpZ;
+            }
+        
+            // Initialize the solver.
+            newstate.curDim = 0;
+            block_gmres_iter->initialize(newstate);
+        
+          } // end of restarting
+        
+          ////////////////////////////////////////////////////////////////////////////////////
+          //
+          // we returned from iterate(), but none of our status tests Passed.
+          // something is wrong, and it is probably our fault.
+          //
+          ////////////////////////////////////////////////////////////////////////////////////
+        
+          else {
+            TEST_FOR_EXCEPTION(true,std::logic_error,
+                "Belos::PseudoBlockGmresSolMgr::solve(): Invalid return from PseudoBlockGmresIter::iterate().");
+          }
         }
-	catch (const std::exception &e) {
-	  printer_->stream(Errors) << "Error! Caught std::exception in PseudoBlockGmresIter::iterate() at iteration " 
-				  << block_gmres_iter->getNumIters() << std::endl 
-				  << e.what() << std::endl;
-	  throw;
-	}
+        catch (const PseudoBlockGmresIterOrthoFailure &e) {
+        
+          // Try to recover the most recent least-squares solution
+          block_gmres_iter->updateLSQR( block_gmres_iter->getCurSubspaceDim() );
+        
+          // Check to see if the most recent least-squares solution yielded convergence.
+          sTest_->checkStatus( &*block_gmres_iter );
+          if (convTest_->getStatus() != Passed)
+            isConverged = false;
+          break;
+        }
+        catch (const std::exception &e) {
+          printer_->stream(Errors) << "Error! Caught std::exception in PseudoBlockGmresIter::iterate() at iteration " 
+                                   << block_gmres_iter->getNumIters() << std::endl 
+                                   << e.what() << std::endl;
+          throw;
+        }
       }
       
       // Compute the current solution.
@@ -1121,30 +1121,30 @@ ReturnType PseudoBlockGmresSolMgr<ScalarType,MV,OP>::solve() {
       startPtr += numCurrRHS;
       numRHS2Solve -= numCurrRHS;
       if ( numRHS2Solve > 0 ) {
-	numCurrRHS = ( numRHS2Solve < blockSize_) ? numRHS2Solve : blockSize_;
+        numCurrRHS = ( numRHS2Solve < blockSize_) ? numRHS2Solve : blockSize_;
 
         blockSize_ = numCurrRHS;
-	currIdx.resize( numCurrRHS  );
-	for (int i=0; i<numCurrRHS; ++i) 
-	  { currIdx[i] = startPtr+i; }	  
-	  
-	// Adapt the status test quorum if we need to.
-	if (defQuorum_ > blockSize_) {
-	  if (impConvTest_ != Teuchos::null)
-	    impConvTest_->setQuorum( blockSize_ );
-	  if (expConvTest_ != Teuchos::null)
-	    expConvTest_->setQuorum( blockSize_ );
-	}
+        currIdx.resize( numCurrRHS  );
+        for (int i=0; i<numCurrRHS; ++i) 
+        { currIdx[i] = startPtr+i; }
 
-	// Set the next indices.
-	problem_->setLSIndex( currIdx );
+        // Adapt the status test quorum if we need to.
+        if (defQuorum_ > blockSize_) {
+          if (impConvTest_ != Teuchos::null)
+            impConvTest_->setQuorum( blockSize_ );
+          if (expConvTest_ != Teuchos::null)
+            expConvTest_->setQuorum( blockSize_ );
+        }
+
+        // Set the next indices.
+        problem_->setLSIndex( currIdx );
       }
       else {
         currIdx.resize( numRHS2Solve );
       }
-      
+
     }// while ( numRHS2Solve > 0 )
-    
+
   }
 
   // print final summary

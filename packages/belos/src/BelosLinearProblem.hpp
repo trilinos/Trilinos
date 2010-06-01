@@ -529,7 +529,7 @@ namespace Belos {
       solutionUpdated_ = false;
     }
     else {
-      curX_ = MVT::CloneView( *X_, rhsIndex_ );
+      curX_ = MVT::CloneViewNonConst( *X_, rhsIndex_ );
       curB_ = rcp_const_cast<MV>(MVT::CloneView( *B_, rhsIndex_ ));
     }
     //
@@ -560,7 +560,7 @@ namespace Belos {
           validIdx++;
         }	
       }
-      RCP<MV> tptr = MVT::CloneView( *curX_, newIndex );
+      RCP<MV> tptr = MVT::CloneViewNonConst( *curX_, newIndex );
       MVT::SetBlock( *tptr, vldIndex, *X_ );
     }
     //

@@ -697,11 +697,11 @@ namespace Belos {
       // Get a view of the std::vector currently being worked on.
       std::vector<int> index(1);
       index[0] = numX;
-      Teuchos::RCP<MV> Xj = MVT::CloneView( X, index );
+      Teuchos::RCP<MV> Xj = MVT::CloneViewNonConst( X, index );
       Teuchos::RCP<MV> MXj;
       if ((this->_hasOp)) {
         // MXj is a view of the current std::vector in MX
-        MXj = MVT::CloneView( *MX, index );
+        MXj = MVT::CloneViewNonConst( *MX, index );
       }
       else {
         // MXj is a pointer to Xj, and MUST NOT be modified
@@ -1095,9 +1095,9 @@ namespace Belos {
       
       // Get a view of the current std::vector in X to orthogonalize.
       indX[0] = j;
-      Xj = MVT::CloneView( X, indX );
+      Xj = MVT::CloneViewNonConst( X, indX );
       if (this->_hasOp) {
-	MXj = MVT::CloneView( *MX, indX );
+	MXj = MVT::CloneViewNonConst( *MX, indX );
       }
       else {
 	MXj = Xj;

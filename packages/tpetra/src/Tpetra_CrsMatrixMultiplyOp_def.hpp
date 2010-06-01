@@ -46,6 +46,10 @@ namespace Tpetra {
   CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::CrsMatrixMultiplyOp(const Teuchos::RCP<const CrsMatrix<MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> > &A) 
   : matrix_(A) {
     // we don't require that A is fill complete; we will query for the importer/exporter at apply()-time
+#ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
+    importTimer_ = Teuchos::TimeMonitor::getNewTimer( "CrsMatrixMultiplyOp::import" );
+    exportTimer_ = Teuchos::TimeMonitor::getNewTimer( "CrsMatrixMultiplyOp::export" );
+#endif
   }
 
   template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
@@ -143,7 +147,12 @@ namespace Tpetra {
 
     // If we have a non-trivial importer, we must import elements that are permuted or are on other processors
     if (importer != null) {
-      importMV_->doImport(X_in, *importer, INSERT);
+      {
+#ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
+        Teuchos::TimeMonitor lcltimer(*importTimer_);
+#endif
+        importMV_->doImport(X_in, *importer, INSERT);
+      }
       // multiply out of importMV_
       X = importMV_;
 #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
@@ -165,7 +174,12 @@ namespace Tpetra {
 #endif
       if (Y_is_overwritten) Y_in.putScalar(ST::zero());
       else                  Y_in.scale(beta);
-      Y_in.doExport(*exportMV_, *exporter, ADD);
+      {
+#ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
+        Teuchos::TimeMonitor lcltimer(*exportTimer_);
+#endif
+        Y_in.doExport(*exportMV_, *exporter, ADD);
+      }
     }
     // otherwise, multiply into Y
     else {
@@ -265,7 +279,12 @@ namespace Tpetra {
 
     // If we have a non-trivial exporter, we must import elements that are permuted or are on other processors
     if (exporter != null) {
-      exportMV_->doImport(X_in,*exporter,INSERT);
+      {
+#ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
+        Teuchos::TimeMonitor lcltimer(*importTimer_);
+#endif
+        exportMV_->doImport(X_in,*exporter,INSERT);
+      }
       // multiply out of exportMV_
       X = exportMV_;
 #ifdef TPETRA_CRSMATRIX_MULTIPLY_DUMP
@@ -287,7 +306,13 @@ namespace Tpetra {
 #endif
       if (Y_is_overwritten) Y_in.putScalar(ST::zero());
       else                  Y_in.scale(beta);
-      Y_in.doExport(*importMV_,*importer,ADD);
+      //
+      {
+#ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
+        Teuchos::TimeMonitor lcltimer(*importTimer_);
+#endif
+        Y_in.doExport(*importMV_,*importer,ADD);
+      }
     }
     // otherwise, multiply into Y
     else {
@@ -339,7 +364,7 @@ namespace Tpetra {
 template <class OpScalar, class MatScalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
 Teuchos::RCP< Tpetra::CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> >
 Tpetra::createCrsMatrixMultiplyOp(const Teuchos::RCP<const Tpetra::CrsMatrix<MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> > &A) {
-  return Teuchos::rcp(new Tpetra::CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>(A) );
+  return rcp(new Tpetra::CrsMatrixMultiplyOp<OpScalar,MatScalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>(A) );
 }
 
 //

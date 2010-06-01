@@ -108,17 +108,18 @@ namespace Belos {
     // Initialize vector storage.
     if (V_ == Teuchos::null) {
       V_ = MVT::Clone( x, dim_ );
-      if (LP_ != Teuchos::null)
+      if (LP_ != Teuchos::null) {
         wL_ = MVT::Clone( y, 1 );
-      if (RP_ != Teuchos::null)
+      }
+      if (RP_ != Teuchos::null) {
         wR_ = MVT::Clone( y, 1 );
+      }
     }
     //
     // Apply polynomial to x.
     // 
     int n = MVT::GetNumberVecs( x );
     std::vector<int> idxi(1), idxi2, idxj(1);
-    Teuchos::RCP<MV> v_curr, v_next, v_prev;
 
     // Select vector x[j].
     for (int j=0; j<n; ++j) {
@@ -126,70 +127,73 @@ namespace Belos {
       idxi[0] = 0;
       idxj[0] = j;
       Teuchos::RCP<const MV> x_view = MVT::CloneView( x, idxj );
-      Teuchos::RCP<MV> y_view = MVT::CloneView( y, idxj );
+      Teuchos::RCP<MV> y_view = MVT::CloneViewNonConst( y, idxj );
       if (LP_ != Teuchos::null) {
-	v_curr = MVT::CloneView( *V_, idxi );
-	problem_->applyLeftPrec( *x_view, *v_curr ); // Left precondition x into the first vector of V
+        Teuchos::RCP<MV> v_curr = MVT::CloneViewNonConst( *V_, idxi );
+        problem_->applyLeftPrec( *x_view, *v_curr ); // Left precondition x into the first vector of V
       } else {
-	MVT::SetBlock( *x_view, idxi, *V_ );  // Set x as the first vector of V
+        MVT::SetBlock( *x_view, idxi, *V_ );  // Set x as the first vector of V
       }
-      
+
       for (int i=0; i<dim_-1; ++i) {
-	
-	// Get views into the current and next vectors
-	idxi2.resize(i+1);
-	for (int ii=0; ii<i+1; ++ii) { idxi2[ii] = ii; }
-	v_prev = MVT::CloneView( *V_, idxi2 );
-	v_curr = MVT::CloneView( *V_, idxi );
-	idxi[0] = i+1;
-	v_next = MVT::CloneView( *V_, idxi );
-	
-	//---------------------------------------------
-	// Apply operator to next vector
-	//---------------------------------------------
-	// 1) Apply right preconditioner, if we have one.
-	if (RP_ != Teuchos::null) {
-	  problem_->applyRightPrec( *v_curr, *wR_ );
-	} else {
-	  wR_ = v_curr;
-	}
-	// 2) Check for right preconditioner, if none exists, point at the next vector.
-	if (LP_ == Teuchos::null) {
-	  wL_ = v_next;
-	}
-	// 3) Apply operator A.
-	problem_->applyOp( *wR_, *wL_ );
-	// 4) Apply left preconditioner, if we have one.
-	if (LP_ != Teuchos::null) {
-	  problem_->applyLeftPrec( *wL_, *v_next );
-	}
-	
-	// Compute A*v_curr - v_prev*H(1:i,i)
-	Teuchos::SerialDenseMatrix<int,ScalarType> h(Teuchos::View,*H_,i+1,1,0,i);
-	MVT::MvTimesMatAddMv( -SCT::one(), *v_prev, h, SCT::one(), *v_next );
-	
-	// Scale by H(i+1,i)
-	MVT::MvScale( *v_next, SCT::one()/(*H_)(i+1,i) );  
+
+        // Get views into the current and next vectors
+        idxi2.resize(i+1);
+        for (int ii=0; ii<i+1; ++ii) { idxi2[ii] = ii; }
+        Teuchos::RCP<const MV> v_prev = MVT::CloneView( *V_, idxi2 );
+        // the tricks below with wR_ and wL_ (potentially set to v_curr and v_next) unfortunately imply that 
+        // v_curr and v_next must be non-const views.
+        Teuchos::RCP<MV> v_curr = MVT::CloneViewNonConst( *V_, idxi );
+        idxi[0] = i+1;
+        Teuchos::RCP<MV> v_next = MVT::CloneViewNonConst( *V_, idxi );
+
+        //---------------------------------------------
+        // Apply operator to next vector
+        //---------------------------------------------
+        // 1) Apply right preconditioner, if we have one.
+        if (RP_ != Teuchos::null) {
+          problem_->applyRightPrec( *v_curr, *wR_ );
+        } else {
+          wR_ = v_curr;
+        }
+        // 2) Check for right preconditioner, if none exists, point at the next vector.
+        if (LP_ == Teuchos::null) {
+          wL_ = v_next;
+        }
+        // 3) Apply operator A.
+        problem_->applyOp( *wR_, *wL_ );
+        // 4) Apply left preconditioner, if we have one.
+        if (LP_ != Teuchos::null) {
+          problem_->applyLeftPrec( *wL_, *v_next );
+        }
+
+        // Compute A*v_curr - v_prev*H(1:i,i)
+        Teuchos::SerialDenseMatrix<int,ScalarType> h(Teuchos::View,*H_,i+1,1,0,i);
+        MVT::MvTimesMatAddMv( -SCT::one(), *v_prev, h, SCT::one(), *v_next );
+
+        // Scale by H(i+1,i)
+        MVT::MvScale( *v_next, SCT::one()/(*H_)(i+1,i) );  
       }
-      
+
       // Compute output y = V*y_./r0_
       if (RP_ != Teuchos::null) {
-	MVT::MvTimesMatAddMv( SCT::one()/(*r0_)(0), *V_, *y_, SCT::zero(), *wR_ );
-	problem_->applyRightPrec( *wR_, *y_view );
-      } else {
-	MVT::MvTimesMatAddMv( SCT::one()/(*r0_)(0), *V_, *y_, SCT::zero(), *y_view );
+        MVT::MvTimesMatAddMv( SCT::one()/(*r0_)(0), *V_, *y_, SCT::zero(), *wR_ );
+        problem_->applyRightPrec( *wR_, *y_view );
+      } 
+      else {
+        MVT::MvTimesMatAddMv( SCT::one()/(*r0_)(0), *V_, *y_, SCT::zero(), *y_view );
       }
     } // (int j=0; j<n; ++j)
   } // end Apply()
-    
+
   ////////////////////////////////////////////////////////////////////
   //
   // Implementation of the Belos::OperatorTraits for Belos::GmresPolyOp 
   //
   ////////////////////////////////////////////////////////////////////  
-  
+
   /*!  \brief Template specialization of Belos::OperatorTraits class using Belos::GmresPolyOp
-  */
+   */
 
   template <class ScalarType, class MV, class OP> 
   class OperatorTraits < ScalarType, MV, GmresPolyOp<ScalarType,MV,OP> > 

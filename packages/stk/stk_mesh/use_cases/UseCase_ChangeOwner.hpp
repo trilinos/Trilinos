@@ -45,4 +45,8 @@ public:
   bool test_change_owner() { return test_change_owner(2,2); }
 };
 
+bool test_change_owner_with_constraint( stk::ParallelMachine pm );
+bool test_change_owner_2( stk::ParallelMachine pm );
+
 #endif
+

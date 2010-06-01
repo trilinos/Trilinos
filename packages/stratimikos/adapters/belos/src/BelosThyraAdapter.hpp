@@ -116,7 +116,7 @@ namespace Belos {
     The index of the \c numvecs vectors shallow copied from \c mv are indicated by the indices given in \c index.
     \return Reference-counted pointer to the new MultiVectorBase.
     */      
-    static Teuchos::RCP<TMVB> CloneView( TMVB& mv, const std::vector<int>& index )
+    static Teuchos::RCP<TMVB> CloneViewNonConst( TMVB& mv, const std::vector<int>& index )
     {
       int numvecs = index.size();
 

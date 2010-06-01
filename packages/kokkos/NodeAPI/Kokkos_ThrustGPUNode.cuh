@@ -1,6 +1,8 @@
 #ifndef KOKKOS_THRUSTGPUNODE_CUH_
 #define KOKKOS_THRUSTGPUNODE_CUH_
 
+#include "Kokkos_CUDA_util_inline_runtime.h"
+
 #include <thrust/for_each.h>
 #include <thrust/transform_reduce.h>
 #include <thrust/iterator/counting_iterator.h>
@@ -56,6 +58,9 @@ namespace Kokkos {
     thrust::counting_iterator<int,thrust::device_space_tag> bit(begin),
                                                             eit(end);
     thrust::for_each( bit, eit, body );
+#ifdef HAVE_KOKKOS_DEBUG
+    cutilCheckMsg(__FUNCTION__);
+#endif
   };
 
   template <class WDP>
@@ -67,8 +72,12 @@ namespace Kokkos {
                                                             eit(end);
     ThrustReduceWrapper<WDP> ROp(wd);
     ThrustGenerateWrapper<WDP> TOp(wd);
-    typename WDP::ReductionType init = wd.identity();
-    return thrust::transform_reduce( bit, eit, TOp, init, ROp );
+    typename WDP::ReductionType init = wd.identity(), ret;
+    ret = thrust::transform_reduce( bit, eit, TOp, init, ROp );
+#ifdef HAVE_KOKKOS_DEBUG
+    cutilCheckMsg(__FUNCTION__);
+#endif
+    return ret;
   }
 
 }

@@ -598,9 +598,9 @@ namespace Belos {
           std::vector<int> index(prevUdim_);
           for (int i=0; i< prevUdim_; ++i)  
             index[i] = i; 
-          Teuchos::RCP<MV> Ukeff = MVT::CloneView( *newstate.U, index );
+          Teuchos::RCP<const MV> Ukeff = MVT::CloneView( *newstate.U, index );
           newstate.C = MVT::Clone( *newstate.U, prevUdim_ ); 
-          Teuchos::RCP<MV> Ckeff = MVT::CloneView( *newstate.C, index );    
+          Teuchos::RCP<MV> Ckeff = MVT::CloneViewNonConst( *newstate.C, index );    
           lp_->apply( *Ukeff, *Ckeff );
         }
         curDim_ = prevUdim_ ;
@@ -683,8 +683,8 @@ namespace Belos {
 
     // GenOrtho Project Stubs
     std::vector<int> prevInd;
-    Teuchos::RCP<MV> Uprev;
-    Teuchos::RCP<MV> Cprev;
+    Teuchos::RCP<const MV> Uprev;
+    Teuchos::RCP<const MV> Cprev;
     Teuchos::SerialDenseMatrix<int,ScalarType> CZ;
 
     if( prevUdim_ ){
@@ -710,14 +710,13 @@ namespace Belos {
     const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
     const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
 
-    Teuchos::RCP<MV> P; 
-    Teuchos::RCP<MV> AP;
 
     std::vector<int> curind(1);
     std::vector<ScalarType> rnorm(MVT::GetNumberVecs(*cur_soln_vec));
     if (prevUdim_ > 0){                 // A-orthonalize P=Z to Uprev
+      Teuchos::RCP<MV> P; 
       curind[0] = curDim_ - 1;          // column = dimension - 1 
-      P = MVT::CloneView(*U_,curind); 
+      P = MVT::CloneViewNonConst(*U_,curind); 
       MVT::MvTransMv( one, *Cprev, *P, CZ );
       MVT::MvTimesMatAddMv( -one, *Uprev, CZ, one, *P );       // P -= U*(C'Z)
 
@@ -737,11 +736,12 @@ namespace Belos {
     // Compute first <r,z> a.k.a. rHz
     MVT::MvTransMv( one, *R_, *Z_, rHz );
 
-
     ////////////////////////////////////////////////////////////////
     // iterate until the status test is satisfied
     //
     while (stest_->checkStatus(this) != Passed ) {
+      Teuchos::RCP<const MV> P; 
+      Teuchos::RCP<MV> AP;
       iter_++;                          // The next iteration begins.
       //std::vector<int> curind(1);
       curind[0] = curDim_ - 1;          // column = dimension - 1 
@@ -751,12 +751,12 @@ namespace Belos {
       }
       if( prevUdim_ + iter_ < savedBlocks_ ){
         P = MVT::CloneView(*U_,curind); 
-        AP = MVT::CloneView(*C_,curind); 
+        AP = MVT::CloneViewNonConst(*C_,curind); 
         lp_->applyOp( *P, *AP );
         MVT::MvTransMv( one, *P, *AP, pAp );
       }else{
         if( prevUdim_ + iter_ == savedBlocks_ ){
-          AP = MVT::CloneView(*C_,curind); 
+          AP = MVT::CloneViewNonConst(*C_,curind); 
           lp_->applyOp( *P_, *AP );
           MVT::MvTransMv( one, *P_, *AP, pAp );
         }else{
@@ -815,7 +815,7 @@ namespace Belos {
       if( curDim_ < savedBlocks_ ){
          curDim_++;                                                         // update basis dim
          curind[0] = curDim_ - 1;
-         Teuchos::RCP<MV> Pnext = MVT::CloneView(*U_,curind);
+         Teuchos::RCP<MV> Pnext = MVT::CloneViewNonConst(*U_,curind);
          MVT::MvAddMv( one, *Z_, beta(0,0), *P, *Pnext );
          if( prevUdim_ ){ // Deflate seed space 
              MVT::MvTransMv( one, *Cprev, *Z_, CZ );
@@ -846,6 +846,12 @@ namespace Belos {
              }
          }
       }
+      // CGB: 5/26/2010
+      // this RCP<const MV> P was previously a variable outside the loop. however, it didn't appear to be see any use between
+      // loop iterations. therefore, I moved it inside to avoid scoping errors with previously used variables named P.
+      // to ensure that this wasn't a bug, I verify below that we have set P == null, i.e., that we are not going to use it again
+      // same for AP
+      TEST_FOR_EXCEPTION( AP != Teuchos::null || P != Teuchos::null, std::logic_error, "Loop recurrence violated. Please contact Belos team.");
     } // end coupled two-term recursion
     if( prevUdim_ + iter_ < savedBlocks_ ) --curDim_; // discard negligible search direction
   }

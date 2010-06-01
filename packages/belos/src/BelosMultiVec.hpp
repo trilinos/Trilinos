@@ -96,7 +96,16 @@ public:
     \return Pointer to the new multivector	
   */
   
-  virtual MultiVec<ScalarType> * CloneView ( const std::vector<int>& index ) = 0;
+  virtual MultiVec<ScalarType> * CloneViewNonConst ( const std::vector<int>& index ) = 0;
+  
+  /*! \brief Creates a new %Belos::MultiVec that shares the selected contents of \c *this.
+    The index of the \c numvecs vectors copied from \c *this are indicated by the
+    indices given in \c index.
+    
+    \return Pointer to the new multivector	
+  */
+  
+  virtual const MultiVec<ScalarType> * CloneView ( const std::vector<int>& index ) const = 0;
   //@}
   
   //! @name Dimension information methods	
@@ -205,8 +214,8 @@ public:
     static Teuchos::RCP<MultiVec<ScalarType> > CloneCopy( const MultiVec<ScalarType>& mv, const std::vector<int>& index )
     { return Teuchos::rcp( const_cast<MultiVec<ScalarType>&>(mv).CloneCopy(index) ); }
     ///
-    static Teuchos::RCP<MultiVec<ScalarType> > CloneView( MultiVec<ScalarType>& mv, const std::vector<int>& index )
-    { return Teuchos::rcp( mv.CloneView(index) ); }
+    static Teuchos::RCP<MultiVec<ScalarType> > CloneViewNonConst( MultiVec<ScalarType>& mv, const std::vector<int>& index )
+    { return Teuchos::rcp( mv.CloneViewNonConst(index) ); }
     ///
     static Teuchos::RCP<const MultiVec<ScalarType> > CloneView( const MultiVec<ScalarType>& mv, const std::vector<int>& index )
     { return Teuchos::rcp( const_cast<MultiVec<ScalarType>&>(mv).CloneView(index) ); }

@@ -512,7 +512,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
       //  Compute the current update.
       //
       std::vector<int> index(curDim_);
-      for ( int i=0; i<curDim_; i++ ) {   
+      for ( int i=0; i<curDim_; i++ ) {
         index[i] = i;
       }
       RCP<const MV> Vjp1 = MVT::CloneView( *V_, index );
@@ -592,7 +592,7 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
         std::vector<int> nevind(curDim_+blockSize_);
         for (int i=0; i<curDim_+blockSize_; i++) nevind[i] = i;
 	Teuchos::RCP<const MV> newV = MVT::CloneView( *newstate.V, nevind );
-	Teuchos::RCP<MV> lclV = MVT::CloneView( *V_, nevind );
+	Teuchos::RCP<MV> lclV = MVT::CloneViewNonConst( *V_, nevind );
         MVT::MvAddMv( 1.0, *newV, 0.0, *newV, *lclV );
 
         // done with local pointers
@@ -668,12 +668,12 @@ class BlockGmresIter : virtual public GmresIteration<ScalarType,MV,OP> {
       // Get the current part of the basis.
       std::vector<int> curind(blockSize_);
       for (int i=0; i<blockSize_; i++) { curind[i] = lclDim + i; }
-      Teuchos::RCP<MV> Vnext = MVT::CloneView(*V_,curind);
+      Teuchos::RCP<MV> Vnext = MVT::CloneViewNonConst(*V_,curind);
 
       // Get a view of the previous vectors.
       // This is used for orthogonalization and for computing V^H K H
       for (int i=0; i<blockSize_; i++) { curind[i] = curDim_ + i; }
-      Teuchos::RCP<MV> Vprev = MVT::CloneView(*V_,curind);
+      Teuchos::RCP<const MV> Vprev = MVT::CloneView(*V_,curind);
 
       // Compute the next std::vector in the Krylov basis:  Vnext = Op*Vprev
       lp_->apply(*Vprev,*Vnext);

@@ -25,14 +25,16 @@ namespace Kokkos {
   CUDANodeMemoryModel::allocBuffer(size_t size) {
     // FINISH: if possible, check that there is room; else, boot someone
     T * devptr = NULL;
+    const size_t sizeInBytes = sizeof(T)*size;
     if (size > 0) {
-      cutilSafeCallNoSync( cudaMalloc( (void**)&devptr, sizeof(T)*size ) );
+      cutilSafeCallNoSync( cudaMalloc( (void**)&devptr, sizeInBytes ) );
+#ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
+      allocSize_ += sizeInBytes;
+#endif
     }
-    CUDANodeDeallocator dealloc;
+    CUDANodeDeallocator dealloc(sizeInBytes,Teuchos::rcpFromRef(*this));
     const bool OwnsMem = true;
-    const typename Teuchos::ArrayRCP<T>::Ordinal 
-        LowerBound = 0;
-    Teuchos::ArrayRCP<T> buff(devptr,LowerBound,size,dealloc,OwnsMem);
+    Teuchos::ArrayRCP<T> buff = Teuchos::arcp<T>(devptr,0,size,dealloc,OwnsMem);
     MARK_COMPUTE_BUFFER(buff);
     return buff;
   }
@@ -42,14 +44,28 @@ namespace Kokkos {
     CHECK_COMPUTE_BUFFER(buffSrc);
     TEST_FOR_EXCEPTION( (size_t)buffSrc.size() < size || (size_t)hostDest.size() < size, std::runtime_error,
         "CUDANode::copyFromBuffer: invalid copy.");
+#ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
+    ++numCopiesD2H_;
+    bytesCopiedD2H_ += size*sizeof(T);
+#endif
+#ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_TRACE
+    std::cerr << "copyFromBuffer<" << Teuchos::TypeNameTraits<T>::name() << "> of size " << sizeof(T) * size << std::endl;
+#endif
     cutilSafeCallNoSync( cudaMemcpy( hostDest.getRawPtr(), buffSrc.getRawPtr(), size*sizeof(T), cudaMemcpyDeviceToHost) );
   }
 
   template <class T> inline
   void CUDANodeMemoryModel::copyToBuffer(size_t size, const Teuchos::ArrayView<const T> &hostSrc, const Teuchos::ArrayRCP<T> &buffDest) {
     CHECK_COMPUTE_BUFFER(buffDest);
-    TEST_FOR_EXCEPTION( hostSrc.size() < size || buffDest.size() < size, std::runtime_error,
-        "CUDANode::copyFromBuffer: invalid copy.");
+    TEST_FOR_EXCEPTION( hostSrc.size() < size, std::runtime_error, "CUDANode::copyFromBuffer: invalid copy.");
+    TEST_FOR_EXCEPTION( buffDest.size() < size, std::runtime_error, "CUDANode::copyFromBuffer: invalid copy.");
+#ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
+    ++numCopiesH2D_;
+    bytesCopiedH2D_ += size*sizeof(T);
+#endif
+#ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_TRACE
+    std::cerr << "copyToBuffer<" << Teuchos::TypeNameTraits<T>::name() << "> of size " << sizeof(T) * size << std::endl;
+#endif
     cutilSafeCallNoSync( cudaMemcpy( buffDest.getRawPtr(), hostSrc.getRawPtr(), size*sizeof(T), cudaMemcpyHostToDevice) );
   }
 
@@ -59,6 +75,13 @@ namespace Kokkos {
     CHECK_COMPUTE_BUFFER(buffDest);
     TEST_FOR_EXCEPTION( buffSrc.size() < size || buffDest.size() < size, std::runtime_error,
         "CUDANode::copyFromBuffer: invalid copy.");
+#ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
+    ++numCopiesD2D_;
+    bytesCopiedD2D_ += size*sizeof(T);
+#endif
+#ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_TRACE
+    std::cerr << "copyBuffers<" << Teuchos::TypeNameTraits<T>::name() << "> of size " << sizeof(T) * size << std::endl;
+#endif
     cutilSafeCallNoSync( cudaMemcpy( buffDest.getRawPtr(), buffSrc.getRawPtr(), size*sizeof(T), cudaMemcpyDeviceToDevice) );
   }
 
@@ -69,6 +92,9 @@ namespace Kokkos {
     Teuchos::ArrayRCP<T> hostBuff;
     if (size != 0) {
       hostBuff = Teuchos::arcp<T>(size);
+#ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_TRACE
+      std::cerr << "viewBuffer() -> ";
+#endif
       this->template copyFromBuffer<T>(size,buff,hostBuff());
     }
     return hostBuff;
@@ -79,12 +105,20 @@ namespace Kokkos {
   CUDANodeMemoryModel::viewBufferNonConst(ReadWriteOption rw, size_t size, const Teuchos::ArrayRCP<T> &buff) {
     CHECK_COMPUTE_BUFFER(buff);
     // create a copy-back deallocator that copies back to "buff"
-    CUDANodeCopyBackDeallocator<T> dealloc(buff.persistingView(0,size));
+    CUDANodeCopyBackDeallocator<T> dealloc(buff.persistingView(0,size), Teuchos::rcpFromRef(*this));
     // it allocates a host buffer with the appropriate deallocator embedded
     Teuchos::ArrayRCP<T> hostBuff = dealloc.alloc();
     if (rw == ReadWrite) {
+#ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_TRACE
+      std::cerr << "viewBufferNonConst(ReadWrite) -> ";
+#endif
       this->template copyFromBuffer<T>(size, buff, hostBuff());
     }  
+    else {
+#ifdef HAVE_KOKKOS_CUDA_NODE_MEMORY_TRACE
+      std::cerr << "viewBufferNonConst(WriteOnly)" << std::endl;
+#endif
+    }
     // else rw == WriteOnly, and we need no copy
     return hostBuff;
   }

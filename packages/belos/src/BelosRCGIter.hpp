@@ -558,7 +558,7 @@ namespace Belos {
     //
     // also break if our basis is full
     //
-    Teuchos::RCP<MV> p_ = Teuchos::null;
+    Teuchos::RCP<const MV> p_ = Teuchos::null;
     Teuchos::RCP<MV> pnext_ = Teuchos::null;
     while (stest_->checkStatus(this) != Passed && curDim_+1 <= searchDim) {
 
@@ -608,7 +608,7 @@ namespace Belos {
       // get pointer for next p
       index.resize( 1 );
       index[0] = i_+1;
-      pnext_ = MVT::CloneView( *P_,  index );
+      pnext_ = MVT::CloneViewNonConst( *P_,  index );
 
       if (existU_) {
         // mu = UTAU \ (AU'*z);

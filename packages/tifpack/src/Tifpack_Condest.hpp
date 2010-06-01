@@ -61,12 +61,7 @@ Condest(const Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node>& T
     Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> OnesResult(TIFP.getRangeMap());
     // Compute the effect of the solve on the vector of ones
     TIFP.apply(Ones, OnesResult);
-    // Make all values non-negative
-    OnesResult.abs(OnesResult);
-    // Get the maximum value across all processors
-    Teuchos::Array<Scalar> cne(1,0);
-    OnesResult.normInf(cne());
-    ConditionNumberEstimate = Teuchos::ScalarTraits<Scalar>::magnitude(cne[0]);
+    ConditionNumberEstimate = OnesResult.normInf();
   }
   else if (CT == Tifpack::CG) {
 

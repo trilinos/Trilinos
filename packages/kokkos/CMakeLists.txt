@@ -55,6 +55,20 @@ ADD_OPTION_AND_DEFINE(
   OFF
 )
 
+ADD_OPTION_AND_DEFINE(
+  Kokkos_CUDA_NODE_MEMORY_PROFILING
+  HAVE_KOKKOS_CUDA_NODE_MEMORY_PROFILING
+  "Enable profiling of memory transfers for CUDA nodes."
+  OFF
+)
+
+ADD_OPTION_AND_DEFINE(
+  Kokkos_CUDA_NODE_MEMORY_TRACE
+  HAVE_KOKKOS_CUDA_NODE_MEMORY_TRACE
+  "Enable memory movement trace for CUDA nodes."
+  OFF
+)
+
 #
 # C) Add the libraries, tests, and examples
 #

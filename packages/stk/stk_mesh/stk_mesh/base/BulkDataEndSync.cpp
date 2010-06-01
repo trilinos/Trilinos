@@ -218,7 +218,8 @@ void BulkData::internal_resolve_parallel_create_delete(
       for ( ; ! del_entities_remote.empty() ; del_entities_remote.pop_back() ) {
         Entity *       entity = del_entities_remote.back().first ;
         const unsigned proc   = del_entities_remote.back().second ;
-        const bool     remote_owner  = entity->owner_rank() == proc ;
+        const bool     destroyed = entity->marked_for_destruction();
+        const bool     remote_owner = entity->owner_rank() == proc ;
         const bool     shared = in_shared( *entity , proc );
         const bool     g_recv = in_receive_ghost( *entity );
         const bool     g_send = in_send_ghost( *entity , proc );
@@ -252,7 +253,7 @@ void BulkData::internal_resolve_parallel_create_delete(
             }
           }
 
-          if ( ! add_part.empty() || ! remove_part.empty() ) {
+          if ( ! destroyed && ( ! add_part.empty() || ! remove_part.empty() ) ) {
             internal_change_entity_parts( *entity , add_part , remove_part );
           }
         }
@@ -482,6 +483,58 @@ void BulkData::internal_resolve_parallel_create_delete(
 
 //----------------------------------------------------------------------
 
+namespace {
+
+// Enforce that shared entities must be in the owned closure:
+
+void destroy_dependent_ghosts( BulkData & mesh , Entity * entity )
+{
+  static const char method[] =
+    "stk::mesh::BulkData::modification_end() { destroy_dependent_ghosts() }" ;
+
+  for ( ; ; ) {
+    PairIterRelation rel = entity->relations();
+
+    if ( rel.empty() ) { break ; }
+
+    Entity * e = rel.back().entity();
+
+    if ( e->entity_rank() < entity->entity_rank() ) { break ; }
+
+    if ( in_owned_closure( *e , mesh.parallel_rank() ) ) {
+      throw std::logic_error( std::string(method) );
+    }
+
+    destroy_dependent_ghosts( mesh , e );
+  }
+
+  mesh.destroy_entity( entity );
+}
+
+void resolve_modified_shared( BulkData & mesh )
+{
+  for ( std::vector<Entity*>::const_iterator 
+        i =  mesh.entity_comm().end() ;
+        i != mesh.entity_comm().begin() ; ) {
+
+    Entity * entity = *--i ;
+
+    if ( ! entity->sharing().empty() &&
+         ! in_owned_closure( *entity , mesh.parallel_rank() ) ) {
+      // An entity with sharing information is not in
+      // the owned closure; therefore, the entity cannot
+      // be shared and must be destroyed.  If it should be
+      // ghosted it will be subsequently re-ghosted.
+
+      destroy_dependent_ghosts( mesh , entity );
+    }
+  }
+}
+
+}
+
+//----------------------------------------------------------------------
+
 bool BulkData::modification_end()
 {
   return internal_modification_end( true );
@@ -490,6 +543,13 @@ bool BulkData::modification_end()
 bool BulkData::internal_modification_end( bool regenerate_aura )
 {
   if ( m_sync_state == SYNCHRONIZED ) { return false ; }
+
+  // If a shared entity is modified such that
+  // it is no longer in the owned closure
+  // then destroy that entity and all ghost
+  // entities that depend upon it.
+
+  resolve_modified_shared( *this );
 
   int local_change_count[2] = { 0 , 0 };
   int global_change_count[2] = { 0 , 0 };

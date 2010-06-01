@@ -5,6 +5,8 @@
 #include <cstdlib>
 #include <cuda_runtime.h>
 
+namespace Kokkos {
+
 // We define these calls here, so the user doesn't need to include __FILE__ and __LINE__
 // The advantage is the developers gets to use the inline function so they can debug
 #define cutilSafeCallNoSync(err)     __cudaSafeCallNoSync(err, __FILE__, __LINE__)
@@ -48,7 +50,7 @@ inline void __cutilCheckMsg( const char *errorMessage, const char *file, const i
                 errorMessage, file, line, cudaGetErrorString( err) );
         exit(-1);
     }
-#ifdef _DEBUG
+#ifdef HAVE_KOKKOS_DEBUG
     err = cudaThreadSynchronize();
     if( cudaSuccess != err) {
         fprintf(stderr, "cutilCheckMsg cudaThreadSynchronize error: %s in file <%s>, line %i : %s.\n",
@@ -56,6 +58,8 @@ inline void __cutilCheckMsg( const char *errorMessage, const char *file, const i
         exit(-1);
     }
 #endif
+}
+
 }
 
 #endif // _CUTIL_INLINE_FUNCTIONS_RUNTIME_H_

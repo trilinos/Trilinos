@@ -371,8 +371,6 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
   const int sizeS = MVT::GetNumberVecs(*S);
   const int sizeX1 = MVT::GetNumberVecs(*X1);
   const int sizeX2 = MVT::GetNumberVecs(*X2);
-  const int sizeX1t = MVT::GetVecLength(*X1);
-  const int sizeX2t = MVT::GetVecLength(*X2);
   int numerr = 0;
   std::ostringstream sout;
   //

@@ -85,27 +85,20 @@ namespace Tpetra {
 
     private:
       HybridPlatform(const HybridPlatform &platform); // not supported
-      //! Teuchos::Comm object instantiated for the platform.
       const Teuchos::RCP<const Teuchos::Comm<int> > comm_;
       Teuchos::ParameterList instList_;
-      //! Kokkos::SerialNode object, potentially instantiated for the platform.
       Teuchos::RCP<Kokkos::SerialNode>    serialNode_;
-      //! Boolean indicating that the node object has been instantiated.
       bool nodeCreated_;
 #ifdef HAVE_KOKKOS_TBB
-      //! Kokkos::TBBNode object, potentially instantiated for the platform.
       Teuchos::RCP<Kokkos::TBBNode>       tbbNode_;
 #endif
 #ifdef HAVE_KOKKOS_THREADPOOL
-      //! Kokkos::TPINode object, potentially instantiated for the platform.
       Teuchos::RCP<Kokkos::TPINode>       tpiNode_;
 #endif
 #ifdef HAVE_KOKKOS_THRUST
-      //! Kokkos::ThrustGPUNode object, potentially instantiated for the platform.
       Teuchos::RCP<Kokkos::ThrustGPUNode> thrustNode_;
 #endif
 
-      //! Enum indicating the node type for the platform on this rank.
       enum NodeType {
         SERIALNODE
 #ifdef HAVE_KOKKOS_TBB
@@ -184,6 +177,9 @@ namespace Tpetra {
           if (M <= myrank && myrank <= N) {
             matchFound = true;
           }
+        }
+        if (name == "default") {
+          matchFound = true;
         }
         if (matchFound) {
           try {
@@ -271,21 +267,21 @@ namespace Tpetra {
     createNode();
     switch (nodeType_) {
       case SERIALNODE:
-        UserCode<Kokkos::SerialNode>::run(comm_, serialNode_);
+        UserCode<Kokkos::SerialNode>::run(instList_,comm_, serialNode_);
         break;
 #ifdef HAVE_KOKKOS_TBB
       case TBBNODE:
-        UserCode<Kokkos::TBBNode>::run(comm_, tbbNode_);
+        UserCode<Kokkos::TBBNode>::run(instList_,comm_, tbbNode_);
         break;
 #endif        
 #ifdef HAVE_KOKKOS_THREADPOOL
       case TPINODE:
-        UserCode<Kokkos::TPINode>::run(comm_, tpiNode_);
+        UserCode<Kokkos::TPINode>::run(instList_,comm_, tpiNode_);
         break;
 #endif        
 #ifdef HAVE_KOKKOS_THRUST
       case THRUSTGPUNODE:
-        UserCode<Kokkos::ThrustGPUNode>::run(comm_, thrustNode_);
+        UserCode<Kokkos::ThrustGPUNode>::run(instList_,comm_, thrustNode_);
         break;
 #endif        
       default:

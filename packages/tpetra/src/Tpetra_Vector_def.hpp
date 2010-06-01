@@ -29,6 +29,8 @@
 #ifndef TPETRA_VECTOR_DEF_HPP
 #define TPETRA_VECTOR_DEF_HPP
 
+#include <Kokkos_NodeTrace.hpp>
+
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
 #include <Teuchos_TypeNameTraits.hpp>
@@ -224,6 +226,7 @@ namespace Tpetra {
               // VERB_HIGH and higher prints isConstantStride() and stride()
               if (vl == VERB_EXTREME && this->getLocalLength() > 0) {
                 Teuchos::RCP<Node> node = this->lclMV_.getNode();
+                KOKKOS_NODE_TRACE("Vector::describe()")
                 Teuchos::ArrayRCP<const Scalar> myview = node->template viewBuffer<Scalar>(
                                                                this->getLocalLength(), 
                                                                MVT::getValues(this->lclMV_) );

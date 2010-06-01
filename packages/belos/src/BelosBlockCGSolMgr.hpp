@@ -736,7 +736,7 @@ ReturnType BlockCGSolMgr<ScalarType,MV,OP>::solve() {
       outputTest_->resetNumCalls();
 
       // Get the current residual for this block of linear systems.
-      Teuchos::RCP<MV> R_0 = MVT::CloneView( *(Teuchos::rcp_const_cast<MV>(problem_->getInitResVec())), currIdx );
+      Teuchos::RCP<MV> R_0 = MVT::CloneViewNonConst( *(Teuchos::rcp_const_cast<MV>(problem_->getInitResVec())), currIdx );
 
       // Set the new state and initialize the solver.
       CGIterationState<ScalarType,MV> newstate;

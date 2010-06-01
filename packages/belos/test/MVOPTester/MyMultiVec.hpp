@@ -126,7 +126,7 @@ public:
   }
   
   //! Returns a view of current std::vector (shallow copy)
-  MyMultiVec* CloneView(const std::vector< int > &index) 
+  MyMultiVec* CloneViewNonConst(const std::vector< int > &index) 
   {
     int size = index.size();
     std::vector<ScalarType*> values(size);
