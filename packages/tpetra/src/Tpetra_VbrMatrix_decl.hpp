@@ -121,16 +121,16 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
   void setGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<GlobalOrdinal,Scalar>& blockEntry);
 
+  void setGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry);
+
   //@}
 
   //! @name Transformational Methods
   //@{
 
-  void fillComplete(const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockDomainMap, const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockRangeMap, OptimizeOption opt = DoOptimizeStorage);
+  void fillComplete(const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockDomainMap, const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockRangeMap);
 
-  void fillComplete(OptimizeOption opt = DoOptimizeStorage);
-
-  void optimizeStorage();
+  void fillComplete();
   //@}
 
   //! @name Extraction Methods
@@ -150,6 +150,8 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
                                                     size_t rowsPerBlock = 0,
                                                     size_t colsPerBlock = 0);
   Teuchos::RCP<Node> getNode();
+
+  void optimizeStorage();
   void fillLocalMatrix();
   void fillLocalMatVec();
 
