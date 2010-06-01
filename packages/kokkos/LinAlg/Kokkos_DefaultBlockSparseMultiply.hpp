@@ -180,6 +180,8 @@ namespace Kokkos {
     typedef DefaultBlockSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar, 1>  Op1;
     TEST_FOR_EXCEPTION(valsInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::multiply(): operation not fully initialized.");
+    TEST_FOR_EXCEPTION(X.getNumCols() != 1, std::runtime_error,
+     "Kokkos::DefaultBlockSparseMultiply::multiply ERROR, currently multi-vector inputs must have only 1 column. Implementation in progress.");
     TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
     ReadyBufferHelper<Node> rbh(node_);
     if (isEmpty_ == true) {
@@ -225,6 +227,8 @@ namespace Kokkos {
     typedef DefaultBlockSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar, 0>  Op1;
     TEST_FOR_EXCEPTION(valsInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::multiply(): operation not fully initialized.");
+    TEST_FOR_EXCEPTION(X.getNumCols() != 1, std::runtime_error,
+     "Kokkos::DefaultBlockSparseMultiply::multiply ERROR, currently multi-vector inputs must have only 1 column. Implementation in progress.");
     TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
     ReadyBufferHelper<Node> rbh(node_);
     if (isEmpty_ == true) {
