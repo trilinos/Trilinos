@@ -50,10 +50,17 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::Vbr
    blkGraph_(),
    lclMatrix_(blkRowMap->getNodeNumBlocks(), blkRowMap->getPointMap()->getNode()),
    pbuf_values1D_(),
+   pbuf_rptr_(),
+   pbuf_cptr_(),
+   pbuf_bptr_(),
+   pbuf_bindx_(),
+   pbuf_indx_(),
    lclMatVec_(blkRowMap->getPointMap()->getNode()),
    col_ind_2D_global_(),
    col_ind_2D_local_(),
-   pbuf_values2D_()
+   pbuf_values2D_(),
+   is_fill_completed_(false),
+   is_storage_optimized_(false)
 {
   //The graph of this VBR matrix will be a CrsGraph where each entry in the graph
   //corresponds to a block-entry in the matrix.
@@ -98,7 +105,10 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::app
                Scalar alpha,
                Scalar beta) const
 {
-  throw std::runtime_error("Tpetra::VbrMatrix::apply not yet implemented!");
+  const Kokkos::MultiVector<Scalar,Node> *lclX = &X.getLocalMV();
+  Kokkos::MultiVector<Scalar,Node>        *lclY = &Y.getLocalMVNonConst();
+
+  lclMatVec_.template multiply<Scalar,Scalar>(mode,alpha,*lclX,beta,*lclY);
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
@@ -154,6 +164,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::get
 
   if (pbuf_values1D_ != Teuchos::null) {
     //still need to implement the packed (storage-optimized) stuff...
+    throw std::runtime_error("Tpetra::VbrMatrix ERROR, packed storage not yet implemented.");
   }
   else {
     if (pbuf_values2D_.size() == 0) {
@@ -184,7 +195,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::get
 
     size_t blockSize = rowsPerBlock*colsPerBlock;
     blockEntryView = node->template allocBuffer<Scalar>(blockSize);
-    pbuf_values2D_[globalBlockRow].push_back(blockEntryView);
+    pbuf_values2D_[localBlockRow].push_back(blockEntryView);
     blkrow.insert(std::make_pair(globalBlockCol, blockEntryView));
     blkGraph_->insertGlobalIndices(globalBlockRow, Teuchos::ArrayView<GlobalOrdinal>(&globalBlockCol, 1));
   }
@@ -223,7 +234,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::get
 {
   //obtain pointer to internal storage.
   //(This will throw if it doesn't already exist, since we're not specifying
-  //the dimensions of the block-entry.)
+  //the default arguments that are the dimensions of the block-entry.)
   blockEntry = getGlobalBlockEntryView(globalBlockRow, globalBlockCol);
 
   LocalOrdinal localBlockID = blkRowMap_->getLocalBlockID(globalBlockRow);
@@ -237,10 +248,129 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::get
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
 void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::optimizeStorage()
+{
+  if (is_storage_optimized_ == true) return;
+
+  size_t num_block_rows = blkGraph_->getNodeNumRows();
+  size_t num_block_cols = blkGraph_->getNodeNumCols();
+  size_t num_block_nonzeros = blkGraph_->getNodeNumEntries();
+
+  //need to count the number of point-entries:
+  size_t num_point_entries = 0;
+  typedef typename Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > >::size_type Tsize_t;
+  for(Tsize_t r=0; r<pbuf_values2D_.size(); ++r) {
+    Tsize_t rlen = pbuf_values2D_[r].size();
+    for(Tsize_t c=0; c<rlen; ++c) {
+      num_point_entries += pbuf_values2D_[r][c].size();
+    }
+  }
+
+  const Teuchos::RCP<Node>& node = blkRowMap_->getPointMap()->getNode();
+
+  //Don't change these allocation sizes unless you know what you're doing!
+  //The '+1's are in the right place. (Trust me, I'm a trained professional.)
+  pbuf_rptr_ = node->template allocBuffer<LocalOrdinal>(num_block_rows+1);
+  pbuf_cptr_ = node->template allocBuffer<LocalOrdinal>(num_block_cols+1);
+  pbuf_bptr_ = node->template allocBuffer<LocalOrdinal>(num_block_rows+1);
+  pbuf_bindx_= node->template allocBuffer<LocalOrdinal>(num_block_nonzeros);
+  pbuf_indx_ = node->template allocBuffer<LocalOrdinal>(num_block_nonzeros+1);
+  pbuf_values1D_ = node->template allocBuffer<Scalar>(num_point_entries);
+
+  size_t roffset = 0;
+  size_t pt_r_offset = 0;
+  size_t ioffset = 0;
+  size_t offset = 0;
+  for(Tsize_t r=0; r<pbuf_values2D_.size(); ++r) {
+    pbuf_rptr_[r] = pt_r_offset;
+    LocalOrdinal rsize = blkRowMap_->getBlockSize(r);
+    pt_r_offset += rsize;
+
+    pbuf_bptr_[r] = roffset;
+    Tsize_t rlen = pbuf_values2D_[r].size();
+    roffset += rlen;
+
+    Teuchos::ArrayRCP<const LocalOrdinal> blk_row_inds = blkGraph_->getLocalRowView(r);
+
+    for(Tsize_t c=0; c<rlen; ++c) {
+      pbuf_bindx_[ioffset] = blk_row_inds[c];
+      pbuf_indx_[ioffset++] = offset;
+
+      Tsize_t blkSize = pbuf_values2D_[r][c].size(); 
+      //Here we're putting blk-col-size in cptr.
+      //Later we will convert cptr to offsets.
+      pbuf_cptr_[blk_row_inds[c]] = blkSize/rsize;
+
+      for(Tsize_t n=0; n<blkSize; ++n) {
+        pbuf_values1D_[offset++] = pbuf_values2D_[r][c][n];
+      }
+    }
+  }
+  pbuf_rptr_[num_block_rows] = pt_r_offset;
+  pbuf_bptr_[num_block_rows] = roffset;
+  pbuf_indx_[ioffset] = offset;
+
+  //now convert cptr from sizes to offsets;
+  LocalOrdinal coffset = 0;
+  //we know that pbuf_cptr_.size() is always strictly greater than 0:
+  for(Tsize_t c=0; c<pbuf_cptr_.size()-1; ++c) {
+    LocalOrdinal csz = pbuf_cptr_[c];
+    pbuf_cptr_[c] = coffset;
+    coffset += csz; 
+  }
+  pbuf_cptr_[num_block_cols] = coffset;
+
+  is_storage_optimized_ = true;
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+void VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::fillLocalMatrix()
+{
+  TEST_FOR_EXCEPTION(is_storage_optimized_ != true, std::runtime_error,
+    "Tpetra::VbrMatrix::fillLocalMatrix ERROR, optimizeStorage is required to have already been called.");
+
+  //This is a currently a trivial one-statement function.
+  //But in the future, perhaps setting up the local matrix will be
+  //less trivial...
+
+  lclMatrix_.setPackedValues(pbuf_values1D_,
+                              pbuf_rptr_,
+                              pbuf_cptr_,
+                              pbuf_bptr_,
+                              pbuf_bindx_,
+                              pbuf_indx_);
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+void VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::fillLocalMatVec()
+{
+  TEST_FOR_EXCEPTION(is_storage_optimized_ != true, std::runtime_error,
+    "Tpetra::VbrMatrix::fillLocalMatrix ERROR, optimizeStorage is required to have already been called.");
+  //This is a currently a trivial one-statement function.
+  //But in the future, perhaps setting up the local mat-vec will be
+  //less trivial...
+
+  lclMatVec_.initializeValues(lclMatrix_);
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+void
 VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::fillComplete(const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockDomainMap, const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockRangeMap, OptimizeOption opt)
 {
+  //should we return now if is_fill_completed_ is already true ??
+
   blkGraph_->fillComplete(opt);
-  throw std::runtime_error("Tpetra::VbrMatrix::fillComplete(domainMap,rangeMap) not yet implemented!");
+  if (opt==DoOptimizeStorage) {
+    optimizeStorage();
+  }
+  else {
+    throw std::runtime_error("Tpetra::VbrMatrix::fillComplete ERROR: OptimizeOption must equal DoOptimizeStorage. This class always optimizes storage during fillComplete.");
+  }
+
+  fillLocalMatrix();
+  fillLocalMatVec();
+
+  is_fill_completed_ = true;
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
