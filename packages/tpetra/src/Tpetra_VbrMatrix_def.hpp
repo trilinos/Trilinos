@@ -57,9 +57,9 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::Vbr
    pbuf_bindx_(),
    pbuf_indx_(),
    lclMatVec_(blkRowMap->getPointMap()->getNode()),
-   col_ind_2D_global_(),
-   col_ind_2D_local_(),
-   pbuf_values2D_(),
+   col_ind_2D_global_(Teuchos::rcp(new Teuchos::Array<std::map<GlobalOrdinal,Teuchos::ArrayRCP<Scalar> > >)),
+   col_ind_2D_local_(Teuchos::rcp(new Teuchos::Array<std::map<LocalOrdinal,Teuchos::ArrayRCP<Scalar> > >)),
+   pbuf_values2D_(Teuchos::rcp(new Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > >)),
    is_fill_completed_(false),
    is_storage_optimized_(false)
 {
@@ -178,9 +178,9 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::get
     throw std::runtime_error("Tpetra::VbrMatrix ERROR, packed storage not yet implemented.");
   }
   else {
-    if (pbuf_values2D_.size() == 0) {
-      pbuf_values2D_.resize(numBlockRows);
-      col_ind_2D_global_.resize(numBlockRows);
+    if (pbuf_values2D_->size() == 0) {
+      pbuf_values2D_->resize(numBlockRows);
+      col_ind_2D_global_->resize(numBlockRows);
     }
   }
 
@@ -191,7 +191,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::get
      std::runtime_error,
      "Tpetra::VbrMatrix::getGlobalBlockEntryView, globalBlockRow not local.");
 
-  MapGlobalArrayRCP& blkrow = col_ind_2D_global_[localBlockRow];
+  MapGlobalArrayRCP& blkrow = (*col_ind_2D_global_)[localBlockRow];
   typename MapGlobalArrayRCP::iterator col_iter = blkrow.find(globalBlockCol);
 
   if (col_iter != blkrow.end()) {
@@ -206,7 +206,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::get
 
     size_t blockSize = rowsPerBlock*colsPerBlock;
     blockEntryView = node->template allocBuffer<Scalar>(blockSize);
-    pbuf_values2D_[localBlockRow].push_back(blockEntryView);
+    (*pbuf_values2D_)[localBlockRow].push_back(blockEntryView);
     blkrow.insert(std::make_pair(globalBlockCol, blockEntryView));
     blkGraph_->insertGlobalIndices(globalBlockRow, Teuchos::ArrayView<GlobalOrdinal>(&globalBlockCol, 1));
   }
@@ -297,10 +297,10 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::opt
   //need to count the number of point-entries:
   size_t num_point_entries = 0;
   typedef typename Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > >::size_type Tsize_t;
-  for(Tsize_t r=0; r<pbuf_values2D_.size(); ++r) {
-    Tsize_t rlen = pbuf_values2D_[r].size();
+  for(Tsize_t r=0; r<pbuf_values2D_->size(); ++r) {
+    Tsize_t rlen = (*pbuf_values2D_)[r].size();
     for(Tsize_t c=0; c<rlen; ++c) {
-      num_point_entries += pbuf_values2D_[r][c].size();
+      num_point_entries += (*pbuf_values2D_)[r][c].size();
     }
   }
 
@@ -319,13 +319,14 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::opt
   size_t pt_r_offset = 0;
   size_t ioffset = 0;
   size_t offset = 0;
-  for(Tsize_t r=0; r<pbuf_values2D_.size(); ++r) {
+  Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > >& pbuf_vals2D = *pbuf_values2D_;
+  for(Tsize_t r=0; r<pbuf_vals2D.size(); ++r) {
     pbuf_rptr_[r] = pt_r_offset;
     LocalOrdinal rsize = blkRowMap_->getBlockSize(r);
     pt_r_offset += rsize;
 
     pbuf_bptr_[r] = roffset;
-    Tsize_t rlen = pbuf_values2D_[r].size();
+    Tsize_t rlen = pbuf_vals2D[r].size();
     roffset += rlen;
 
     Teuchos::ArrayRCP<const LocalOrdinal> blk_row_inds = blkGraph_->getLocalRowView(r);
@@ -334,13 +335,13 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::opt
       pbuf_bindx_[ioffset] = blk_row_inds[c];
       pbuf_indx_[ioffset++] = offset;
 
-      Tsize_t blkSize = pbuf_values2D_[r][c].size(); 
+      Tsize_t blkSize = pbuf_vals2D[r][c].size(); 
       //Here we're putting blk-col-size in cptr.
       //Later we will convert cptr to offsets.
       pbuf_cptr_[blk_row_inds[c]] = blkSize/rsize;
 
       for(Tsize_t n=0; n<blkSize; ++n) {
-        pbuf_values1D_[offset++] = pbuf_values2D_[r][c][n];
+        pbuf_values1D_[offset++] = pbuf_vals2D[r][c][n];
       }
     }
   }
@@ -357,6 +358,11 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::opt
     coffset += csz; 
   }
   pbuf_cptr_[num_block_cols] = coffset;
+
+  //Final step: release memory for the "2D" storage:
+  col_ind_2D_global_ = Teuchos::null;
+  col_ind_2D_local_ = Teuchos::null;
+  pbuf_values2D_ = Teuchos::null;
 
   is_storage_optimized_ = true;
 }

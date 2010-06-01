@@ -182,9 +182,9 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
   //We use 3 arrays (well, arrays-of-maps, arrays-of-arrays...) to
   //represent the variable-block-row matrix in un-packed '2D' form.
-  Teuchos::Array<std::map<GlobalOrdinal,Teuchos::ArrayRCP<Scalar> > > col_ind_2D_global_;
-  Teuchos::Array<std::map<LocalOrdinal,Teuchos::ArrayRCP<Scalar> > > col_ind_2D_local_;
-  Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > > pbuf_values2D_;
+  Teuchos::RCP<Teuchos::Array<std::map<GlobalOrdinal,Teuchos::ArrayRCP<Scalar> > > > col_ind_2D_global_;
+  Teuchos::RCP<Teuchos::Array<std::map<LocalOrdinal,Teuchos::ArrayRCP<Scalar> > > > col_ind_2D_local_;
+  Teuchos::RCP<Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > > > pbuf_values2D_;
 
   bool is_fill_completed_;
   bool is_storage_optimized_;
