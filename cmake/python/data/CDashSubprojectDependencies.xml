@@ -687,7 +687,7 @@
     <Dependency name="Stratimikos" type="LR"/>
     <Dependency name="Anasazi" type="LR"/>
     <Dependency name="TriKota" type="ILO"/>
-    <Dependency name="Stokhos" type="ILO"/>
+    <Dependency name="Stokhos" type="LR"/>
     <Dependency name="Sacado" type="ILR"/>
     <Dependency name="Intrepid" type="LR"/>
     <Dependency name="NOX" type="LR"/>
