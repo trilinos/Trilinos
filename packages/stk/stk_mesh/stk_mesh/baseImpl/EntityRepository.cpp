@@ -81,7 +81,7 @@ EntityRepository::internal_create_entity( const EntityKey & key )
   return result ;
 }
 
-Entity * EntityRepository::get_entity( EntityKey key) const
+Entity * EntityRepository::get_entity(const EntityKey &key) const
 {
   const bool valid_key = entity_key_valid( key );
 
