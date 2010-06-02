@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <signal.h>
 #include "zoltan.h"
 
 static int myRank, numProcs;
@@ -31,6 +32,32 @@ static int *nborIndex=NULL;
 ZOLTAN_ID_TYPE *nborGID=NULL;
 
 static int create_a_graph();
+extern void Zoltan_write_linux_meminfo(int, char *);
+
+void meminfo_signal_handler(int sig)
+{
+  char msg[128];
+
+#ifdef _GNU_SOURCE
+  sprintf(msg,"(%d) Received signal %d: %s\n",myRank,sig,strsignal(sig));
+#else
+  sprintf(msg,"(%d) Received signal %d\n",myRank,sig);
+#endif
+
+  // Signal handler for Linux that helps us to understand
+  // whether failure was due to insufficient memory.
+
+  signal(SIGINT, SIG_IGN);
+  signal(SIGTERM, SIG_IGN);
+  signal(SIGABRT, SIG_IGN);
+  signal(SIGSEGV, SIG_IGN);
+  signal(SIGFPE, SIG_IGN);
+
+  Zoltan_write_linux_meminfo(myRank, msg);
+
+  exit(sig);
+}
+
 
 /* Zoltan hypergraph query functions. */
 
@@ -127,6 +154,14 @@ int main(int argc, char *argv[])
   int changes, numGidEntries, numLidEntries, numImport, numExport;
   ZOLTAN_ID_PTR importGlobalGids, importLocalGids, exportGlobalGids, exportLocalGids;
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
+
+#ifdef HOST_LINUX
+  signal(SIGSEGV, meminfo_signal_handler);
+  signal(SIGINT, meminfo_signal_handler);
+  signal(SIGTERM, meminfo_signal_handler);
+  signal(SIGABRT, meminfo_signal_handler);
+  signal(SIGFPE, meminfo_signal_handler);
+#endif
 
   /******************************************************************
   ** Initialize MPI and Zoltan
