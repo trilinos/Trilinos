@@ -12,8 +12,8 @@ SET(COMPILER_VERSION "GCC-4.5.0")
 
 SET(Trilinos_ENABLE_SECONDARY_STABLE_CODE ON)
 #Stokhos is explicitly disabled below to prevent the package from being
-#implicitly enabled.
-SET(EXTRA_EXCLUDE_PACKAGES Phalanx Stokhos)
+#implicitly enabled.  Sundance depends on Stokhos.
+SET(EXTRA_EXCLUDE_PACKAGES Phalanx Stokhos Sundance)
 
 SET( EXTRA_CONFIGURE_OPTIONS
   "-DDART_TESTING_TIMEOUT:STRING=120"

@@ -309,6 +309,54 @@ namespace {
   }
 
   ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( VbrMatrix, SetAndGetBlockEntry2, LO, GO, Scalar, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+    typedef ScalarTraits<Scalar> ST;
+    typedef BlockMultiVector<Scalar,LO,GO,Node> BMV;
+    typedef VbrMatrix<Scalar,LO,GO,Node> MAT;
+    typedef typename ST::magnitudeType Mag;
+    typedef ScalarTraits<Mag> MT;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    GO indexBase = 0;
+    // create a Map
+    const size_t numLocalBlocks = 2;
+    const LO blockSize = 2;
+    const size_t maxEntriesPerRow = 2;
+    RCP<BlockMap<LO,GO,Node> > rowmap = rcp( new BlockMap<LO,GO,Node>(INVALID,numLocalBlocks,blockSize,indexBase,comm,node) );
+    // create the matrix
+    {
+      RCP<MAT> vbr = rcp( new MAT(rowmap,maxEntriesPerRow,DynamicProfile) );
+      Teuchos::ArrayView<const GO> blk_rows = rowmap->getBlockIDs();
+      for(int i=0; i<blk_rows.size(); ++i) {
+        GO row = blk_rows[i];
+        for(int j=0; j<blk_rows.size(); ++j) {
+          GO col = blk_rows[j];
+          Teuchos::Array<Scalar> blkEntry(blockSize * blockSize, row+col+1);
+          vbr->setGlobalBlockEntry(row, col, blockSize, blockSize, blockSize, blkEntry());
+        }
+      }
+      for(int i=0; i<blk_rows.size(); ++i) {
+        GO row = blk_rows[i];
+        for(int j=0; j<blk_rows.size(); ++j) {
+          GO col = blk_rows[j];
+          LO numPtRows, numPtCols;
+          Teuchos::ArrayRCP<const Scalar> blockEntry;
+          vbr->getGlobalBlockEntry(row, col, numPtRows, numPtCols, blockEntry);
+ 
+          Teuchos::SerialDenseMatrix<GO,Scalar> blk(blockSize,blockSize);
+          blk.putScalar(row+col+1);
+
+          Teuchos::ArrayRCP<const Scalar> blk_values(blk.values(), 0, blockSize*blockSize, false);
+          TEST_COMPARE_FLOATING_ARRAYS( blockEntry, blk_values, 2*Teuchos::ScalarTraits<Scalar>::eps());
+        }
+      }
+    }
+  }
+
+  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( VbrMatrix, apply1, LO, GO, Scalar, Node )
   {
     RCP<Node> node = getNode<Node>();
@@ -343,12 +391,60 @@ namespace {
           GO col = blk_rows[j];
           Teuchos::SerialDenseMatrix<GO,Scalar> blkEntry(blockSize, blockSize);
           blkEntry.putScalar(row+col+1);
-          val += row+col+1;
+          val += (row+col+1)*blockSize;
           vbr->setGlobalBlockEntry(row, col, blkEntry);
         }
         for(int k=0; k<blockSize; ++k) v3[row_offset++] = val;
       }
 
+      vbr->fillComplete();
+      vbr->apply(*bmv1, *bmv2);
+      ArrayRCP<Scalar> v2 = bmv2->get1dViewNonConst();
+      TEST_COMPARE_FLOATING_ARRAYS( v2, v3, 2*Teuchos::ScalarTraits<Scalar>::eps());
+    }
+  }
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( VbrMatrix, apply2, LO, GO, Scalar, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+    typedef ScalarTraits<Scalar> ST;
+    typedef BlockMultiVector<Scalar,LO,GO,Node> BMV;
+    typedef VbrMatrix<Scalar,LO,GO,Node> MAT;
+    typedef typename ST::magnitudeType Mag;
+    typedef ScalarTraits<Mag> MT;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    GO indexBase = 0;
+    // create a Map
+    const size_t numLocalBlocks = 2;
+    const LO blockSize = 2;
+    const size_t maxEntriesPerRow = 2;
+    RCP<BlockMap<LO,GO,Node> > rowmap = rcp( new BlockMap<LO,GO,Node>(INVALID,numLocalBlocks,blockSize,indexBase,comm,node) );
+    // create the matrix
+    {
+      RCP<BMV> bmv1 = rcp(new BMV(rowmap, 1));
+      RCP<BMV> bmv2 = rcp(new BMV(rowmap, 1));
+      RCP<BMV> bmv3 = rcp(new BMV(rowmap, 1));
+      bmv1->putScalar(1.0);
+      ArrayRCP<Scalar> v3 = bmv3->get1dViewNonConst();
+      RCP<MAT> vbr = rcp( new MAT(rowmap,maxEntriesPerRow,DynamicProfile) );
+      Teuchos::ArrayView<const GO> blk_rows = rowmap->getBlockIDs();
+      LO row_offset = 0;
+      for(int i=0; i<blk_rows.size(); ++i) {
+        Scalar val = 0;
+        GO row = blk_rows[i];
+        for(int j=0; j<blk_rows.size(); ++j) {
+          GO col = blk_rows[j];
+          Teuchos::Array<Scalar> blkEntry(blockSize * blockSize, row+col+1);
+          val += (row+col+1)*blockSize;
+          vbr->setGlobalBlockEntry(row, col, blockSize, blockSize, blockSize, blkEntry());
+        }
+        for(int k=0; k<blockSize; ++k) v3[row_offset++] = val;
+      }
+
+      vbr->fillComplete();
       vbr->apply(*bmv1, *bmv2);
       ArrayRCP<Scalar> v2 = bmv2->get1dViewNonConst();
       TEST_COMPARE_FLOATING_ARRAYS( v2, v3, 2*Teuchos::ScalarTraits<Scalar>::eps());
@@ -368,9 +464,11 @@ typedef std::complex<float>  ComplexFloat;
 typedef std::complex<double> ComplexDouble;
 
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, Basic, LO, GO, SCALAR, NODE )
-//      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, SetAndGetBlockEntry1, LO, GO, SCALAR, NODE )
-//      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, apply1, LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, Basic, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, SetAndGetBlockEntry1, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, SetAndGetBlockEntry2, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, apply1, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, apply2, LO, GO, SCALAR, NODE )
 
 
 #define UNIT_TEST_SERIALNODE(LO, GO, SCALAR) \

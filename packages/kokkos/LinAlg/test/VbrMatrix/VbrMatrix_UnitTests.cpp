@@ -44,8 +44,7 @@ namespace {
 
   typedef Kokkos::DefaultNode::DefaultNodeType Node;
 
-  int N = 100;
-
+  int N;
   TEUCHOS_STATIC_SETUP()
   {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
@@ -65,18 +64,20 @@ namespace {
     RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
     // test non-empty
     {
-      VbrMatrix<Scalar,Node> A(N,node);
+      VbrMatrix<Scalar,Ordinal,Node> A(N,node);
       TEST_EQUALITY( A.getNumBlockRows(), N );
       TEST_EQUALITY_CONST( A.isPacked(), false );
       TEST_EQUALITY_CONST( A.isEmpty(),  true );
       //
-      ArrayRCP<size_t> offsets = node->template allocBuffer<size_t>(N+1);
-      ArrayRCP<Ordinal> inds   = node->template allocBuffer<Ordinal>(2*N);
       ArrayRCP<Scalar>  vals   = node->template allocBuffer<Scalar>(2*N);
-      A.setPackedValues(vals);
+      ArrayRCP<Ordinal> rptr   = node->template allocBuffer<Ordinal>(2*N);
+      ArrayRCP<Ordinal> cptr   = node->template allocBuffer<Ordinal>(2*N);
+      ArrayRCP<Ordinal> bptr   = node->template allocBuffer<Ordinal>(2*N);
+      ArrayRCP<Ordinal> bindx   = node->template allocBuffer<Ordinal>(2*N);
+      ArrayRCP<Ordinal> indx   = node->template allocBuffer<Ordinal>(2*N);
+      A.setPackedValues(vals,rptr,cptr,bptr,bindx,indx);
       TEST_EQUALITY_CONST( A.isPacked(), true );
       TEST_EQUALITY_CONST( A.isEmpty(), false );
-      TEST_EQUALITY_CONST( A.getPackedValues(),  vals );
       //
       A.clear();
       TEST_EQUALITY( A.getNumBlockRows(), N );
@@ -85,72 +86,20 @@ namespace {
     }
     // test empty
     {
-      VbrMatrix<Scalar,Node> A(N,node);
+      VbrMatrix<Scalar,Ordinal,Node> A(N,node);
       TEST_EQUALITY( A.getNumBlockRows(), N );
       TEST_EQUALITY_CONST( A.isPacked(), false );
       TEST_EQUALITY_CONST( A.isEmpty(),  true );
       //
-      ArrayRCP<size_t> offsets;
-      ArrayRCP<Ordinal> inds;
       ArrayRCP<Scalar>  vals;
-      A.setPackedValues(vals);
+      ArrayRCP<Ordinal> rptr;
+      ArrayRCP<Ordinal> cptr;
+      ArrayRCP<Ordinal> bptr;
+      ArrayRCP<Ordinal> bindx;
+      ArrayRCP<Ordinal> indx;
+      A.setPackedValues(vals,rptr,cptr,bptr,bindx,indx);
       TEST_EQUALITY_CONST( A.isPacked(), false );
       TEST_EQUALITY_CONST( A.isEmpty(),  true );
-      TEST_EQUALITY_CONST( A.getPackedValues(),  vals );
-      //
-      A.clear();
-      TEST_EQUALITY( A.getNumBlockRows(), N );
-      TEST_EQUALITY_CONST( A.isPacked(), false );
-      TEST_EQUALITY_CONST( A.isEmpty(),  true );
-    }
-  }
-
-  // intialize using nonpacked data
-  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( VbrMatrix, NonPackedData, Scalar, Ordinal )
-  {
-    const size_t N = 3;
-    typedef typename Node::size_t size;
-    RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
-    // test sort of empty
-    {
-      VbrMatrix<Scalar,Node> A(N,node);
-      TEST_EQUALITY( A.getNumBlockRows(), N );
-      TEST_EQUALITY_CONST( A.isPacked(), false );
-      TEST_EQUALITY_CONST( A.isEmpty(),  true );
-      //
-      ArrayRCP<Ordinal> inds   = node->template allocBuffer<Ordinal>(1);
-      ArrayRCP<Scalar>  vals   = node->template allocBuffer<Scalar>(1);
-      ArrayRCP<const Scalar> const_vals(vals);
-      Array<ArrayRCP<const Scalar> > rowvals(1, const_vals);
-      A.setBlockRow(1,arcpFromArray(rowvals) );
-      TEST_EQUALITY_CONST( A.isPacked(), false );
-      TEST_EQUALITY_CONST( A.isEmpty(),  false );
-      TEST_EQUALITY_CONST( A.getBlockRow( 0), Teuchos::null );
-      TEST_EQUALITY_CONST( A.getBlockRow( 1), arcpFromArray(rowvals) );
-      TEST_EQUALITY_CONST( A.getBlockRow( 2), Teuchos::null );
-      //
-      A.clear();
-      TEST_EQUALITY( A.getNumBlockRows(), N );
-      TEST_EQUALITY_CONST( A.isPacked(), false );
-      TEST_EQUALITY_CONST( A.isEmpty(),  true );
-    }
-    // test empty
-    {
-      VbrMatrix<Scalar,Node> A(N,node);
-      TEST_EQUALITY( A.getNumBlockRows(), N );
-      TEST_EQUALITY_CONST( A.isPacked(), false );
-      TEST_EQUALITY_CONST( A.isEmpty(),  true );
-      // 
-      ArrayRCP<Ordinal> inds;
-      Array<ArrayRCP<const Scalar> > rowvals;
-      A.setBlockRow(0,arcpFromArray(rowvals));
-      A.setBlockRow(1,arcpFromArray(rowvals));
-      A.setBlockRow(2,arcpFromArray(rowvals));
-      TEST_EQUALITY_CONST( A.isPacked(), false );
-      TEST_EQUALITY_CONST( A.isEmpty(),  true );
-      for (int i=0; i<3; ++i) {
-        TEST_EQUALITY_CONST( A.getBlockRow( i), Teuchos::null );
-      }
       //
       A.clear();
       TEST_EQUALITY( A.getNumBlockRows(), N );
@@ -160,8 +109,7 @@ namespace {
   }
 
  #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
-       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( VbrMatrix,    PackedData,  SCALAR, ORDINAL ) \
-       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( VbrMatrix, NonPackedData,  SCALAR, ORDINAL )
+       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( VbrMatrix,    PackedData,  SCALAR, ORDINAL )
  
  #define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
           UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, int) \

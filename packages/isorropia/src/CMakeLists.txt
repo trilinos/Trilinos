@@ -6,6 +6,7 @@ INCLUDE(PackageLibraryMacros)
 #
 
 SET(HAVE_EPETRA ON)
+SET(HAVE_ISORROPIA_TPETRA OFF)
 SET(HAVE_ISORROPIA_ZOLTAN ON)
 SET(HAVE_EPETRAEXT ${PACKAGE_NAME}_ENABLE_EpetraExt)
 
@@ -80,6 +81,51 @@ SET(SOURCES ${SOURCES}
   epetra/Isorropia_EpetraLibrary.cpp
   epetra/Isorropia_EpetraLevelScheduler.cpp
   )
+
+#
+# src/tpetra
+#
+
+IF (${PACKAGE_NAME}_ENABLE_TPETRA)
+#   SET(HAVE_ISORROPIA_TPETRA ON)
+
+   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/tpetra)
+
+   SET(HEADERS ${HEADERS}
+       tpetra/Isorropia_TpetraCostDescriber.hpp
+       tpetra/Isorropia_TpetraOperator.hpp
+       tpetra/Isorropia_TpetraPartitioner.hpp
+       tpetra/Isorropia_TpetraLibrary.hpp
+       tpetra/Isorropia_TpetraLevelScheduler.hpp
+      )
+
+   SET(SOURCES ${SOURCES}
+       tpetra/Isorropia_TpetraCostDescriber.cpp
+       tpetra/Isorropia_TpetraOperator.cpp
+       tpetra/Isorropia_TpetraPartitioner.cpp
+       tpetra/Isorropia_TpetraLibrary.cpp
+       tpetra/Isorropia_TpetraLevelScheduler.cpp
+      )
+
+   # Zoltan
+   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/tpetra/zoltanLib)
+
+   SET(HEADERS ${HEADERS}
+       tpetra/zoltanLib/Isorropia_TpetraQueryObject.hpp
+       tpetra/Isorropia_TpetraZoltanLib.hpp
+      )
+
+   SET(SOURCES ${SOURCES}
+       tpetra/zoltanLib/Isorropia_TpetraQueryObject.cpp
+       tpetra/Isorropia_TpetraZoltanLib.cpp
+      )
+
+
+
+ENDIF()
+
+
+
 
 # zoltan
 

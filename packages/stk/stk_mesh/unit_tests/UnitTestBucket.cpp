@@ -450,7 +450,6 @@ void UnitTestBucket::testTopologyHelpers( ParallelMachine pm )
 
   unsigned subcell_rank = 1;
   unsigned subcell_identifier = celltopology->subcell_count[subcell_rank] - 1;
-  const unsigned* nodes = celltopology->subcell[subcell_rank][subcell_identifier].node;
 
   unsigned num_nodes =  celltopology->subcell[subcell_rank][subcell_identifier].topology->node_count;
 
@@ -459,7 +458,7 @@ void UnitTestBucket::testTopologyHelpers( ParallelMachine pm )
   std::vector<Entity*> node_entities;
 
   for (unsigned itr = 0; itr < num_nodes; ++itr) {
-    node_entities.push_back(relations[nodes[itr]].entity());
+    node_entities.push_back(relations[itr].entity());
   }
 
   /*
