@@ -67,9 +67,9 @@ void RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createTrans
 		Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > tColMap = Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> >(new Map<LocalOrdinal, GlobalOrdinal, Node>(origGlobalNumRows, origMatrix_->getIndexBase(), comm_));
 
 		//Teuchos::ArrayRCP<size_t> origColLengths = Teuchos::ArrayRCP<size_t>((LocalOrdinal)origMatrix_->getNodeNumCols(), (LocalOrdinal)0);
-		Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > sourceMap = Teuchos::rcp(Map<LocalOrdinal, GlobalOrdinal, Node>(origGlobalNumCols, origGlobalNumCols, GST0, comm_));
-		Vector<global_size_t> origColLengths = Vector<global_size_t>(sourceMap);
-		//Teuchos::ArrayRCP<global_size_t> origColLengths = Teuchos::ArrayRCP<global_size_t>(origGlobalNumCols, GST0);
+		//Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > sourceMap = Teuchos::rcp(Map<LocalOrdinal, GlobalOrdinal, Node>(origGlobalNumCols, origGlobalNumCols, GST0, comm_));
+		//Vector<global_size_t> origColLengths = Vector<global_size_t>(sourceMap);
+		Teuchos::ArrayRCP<global_size_t> origColLengths = Teuchos::ArrayRCP<global_size_t>(origGlobalNumCols, GST0);
 
 		for(size_t i = LST0; i < origMatrix_->getNodeNumRows(); ++i){
 			Teuchos::ArrayRCP<const LocalOrdinal> indicies;
@@ -81,11 +81,11 @@ void RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createTrans
 			}
 		}
 
-		/*Teuchos::reduceAll(*comm_, Teuchos::REDUCE_SUM, origColLengths.size(), origColLengths.getRawPtr(), origColLengths.getRawPtr());
+		Teuchos::reduceAll<typename Teuchos::ArrayRCP<global_size_t>, global_size_t>(*comm_, Teuchos::REDUCE_SUM, origColLengths.size(), origColLengths.getRawPtr(), origColLengths.getRawPtr());
 		if(myRank == 0){
 			std::cout << "original col lengths " << origColLengths() << "\n";
-		}*/
-		global_size_t targetNumElements;
+		}
+		/*global_size_t targetNumElements;
 		if(myRank ==0){
 			targetNumElements = origGlobalNumCols;
 		}
@@ -94,7 +94,7 @@ void RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createTrans
 		}
 		Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > targetMap = Teuchos::rcp(Map<LocalOrdinal, GlobalOrdinal, Node>(origGlobalNumCols, targetNumElements, GST0, comm_));
 		Import importer<LocalOrdinal, GlobalOrdinal, Node>(sourceMap, targetMap);
-		Vector target(targetMap);
+		Vector target(targetMap);*/
 
 
 
