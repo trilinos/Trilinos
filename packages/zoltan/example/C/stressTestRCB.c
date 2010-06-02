@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
   vertexDim = VERTEX_DIMENSION;
 
   if (argc > 1){
-    numGlobalVertices = atoi(argv[1]);
+    sscanf(argv[1], "%zd", &numGlobalVertices);
     if (argc > 2){
       vertexWeightDim = atoi(argv[2]);
       if (argc > 3){

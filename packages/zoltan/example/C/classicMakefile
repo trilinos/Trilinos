@@ -19,7 +19,7 @@ ID_TYPE_FLAG=-DZOLTAN_ID_TYPE_INT
 ## Location of zoltan library, also location of Zoltan_config.h if
 ## using the autoconf build harness
 
-BLD=../../build64/src
+BLD=../../build/src
 
 ##
 ## Location of zoltan "src" directory (for header files)
@@ -48,8 +48,8 @@ ZOLTAN_UTIL_INCLUDE=-I$(SRC)/zz  \
 ## to link with the ParMETIS library.
 ##
 
-#PAR_LIB_DIR=-L/home/lriesen/system/parmetis/ParMetis-3.1.1
-#PAR_LIBS=-lparmetis -lmetis
+PAR_LIB_DIR=-L/home/lafisk/system/parmetis/ParMetis-3.1.1
+PAR_LIBS=-lparmetis -lmetis
 
 #MPI_DIR=/home/lriesen/system/mpich2_32
 
@@ -57,7 +57,7 @@ CC=mpicc
 
 CFLAGS = -g -Wall $(ID_TYPE_FLAG)
 
-C_EXAMPLES = simpleBLOCK  simpleRCB simpleGRAPH simplePHG migrateGRAPH stressTestRCB
+C_EXAMPLES = simpleBLOCK  simpleRCB simpleGRAPH simplePHG migrateGRAPH stressTestRCB stressTestPHG
 
 all:   $(C_EXAMPLES) $(CPP_EXAMPLES)
 
