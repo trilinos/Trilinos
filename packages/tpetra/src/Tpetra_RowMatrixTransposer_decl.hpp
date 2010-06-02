@@ -36,6 +36,9 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_ConfigDefs.hpp"
 
+template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+class Map;
+
 //! Tpetra_RowMatrixTransposer: A class for transposing an Tpetra_RowMatrix object.
 
 namespace Tpetra {
@@ -48,11 +51,11 @@ class RowMatrixTransposer {
     
   public:
 
-    //! @name Constructors/destructors
+  //! @name Constructors/destructors
   //@{ 
   //! Primary Tpetra_RowMatrixTransposer constructor.
   /*!
-    \param Matrix (In) An existing Tpetra_RowMatrix object.  The Tpetra_RowMatrix, the LHS and RHS pointers
+    \param origMatrix An existing Tpetra_RowMatrix object.  The Tpetra_RowMatrix, the LHS and RHS pointers
 		       do not need to be defined before this constructor is called.
 
     \return Pointer to a Tpetra_RowMatrixTransposer object.
@@ -60,10 +63,6 @@ class RowMatrixTransposer {
   */ 
   RowMatrixTransposer(const Teuchos::RCP<const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > origMatrix);
 
-  //! Tpetra_RowMatrixTransposer copy constructor.
-  
-//  RowMatrixTransposer(const RowMatrixTransposer& Source);
-  
   //! Tpetra_RowMatrixTransposer destructor.
   
   virtual ~RowMatrixTransposer();
@@ -75,25 +74,23 @@ class RowMatrixTransposer {
   //! Generate a new Tpetra_CrsMatrix as the transpose of an Tpetra_RowMatrix passed into the constructor.
   /*! Constructs a new Tpetra_CrsMatrix that is a copy of the Tpetra_RowMatrix passed in to the constructor.
 		
-		\param MakeDataContiguous (In) Causes the output matrix, LHS and RHS to be stored in a form compatible with
-		       Fortran-style solvers.  The output matrix will be compatible with the Harwell-Boeing compressed
-					 column format.  The RHS and LHS will be stored such that the last value in column j of the 
-					 multivector is stored next to the first value in column j+1.
-		\param TransposeRowMap (Optional/In) If this argument is defined, the transpose matrix will be distributed
-		       using this map as the row map for the transpose.  If it is set to zero, the transpose matrix will use
-					 the OrigMatrix->RowMatrixDomainMap as the row map.
-
-		\return Integer error code, 0 if no errors.  Negative if some fatal error occured.
-					 
+		\param optimizeTranspose Optimizes the storage of the newly created Transpose matrix
+		\param transposeMatrix The matrix in which the result of the tranpose operation will be put.
+		\param TransposeRowMap If this argument is defined, the transpose matrix will be distributed
+		       using this map as the row map for the transpose.	If null, the function will evenly distribute
+			   the rows of the tranpose matrix.
   */
-  int createTranspose(const OptimizeOption optimizeTranspose, Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &transposeMatrix);
+  void createTranspose(const OptimizeOption optimizeTranspose, Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &transposeMatrix, Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > transposeRowMap = Teuchos::null);
 
 	
  private: 
+	//The original matrix to be transposed.
 	const Teuchos::RCP<const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > origMatrix_;
+	//The matrix in which the result of the tranpose is placed.
 	Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > transposeMatrix_;
-	bool transposeCreated_;
+	//Whether or not to optimize the storage of the transpose matrix.
 	OptimizeOption optimizeTranspose_;	
+	const Teuchos::RCP<const Teuchos::Comm<int> > comm_;
 };
 
 
