@@ -4,6 +4,12 @@
 #                                                                             #
 ###############################################################################
 
+Release update 10.2.2 June 02, 2010
+
+1. Zoltan - Reduce memory used by "Convert_To_CSR"
+
+2. Zoltan - Efficiency improvements in hash table algorithim.
+
 Release update 10.2.1 May 03, 2010
 
 1. Isorropia - Bug: 4757. Set LB_APPROACH to PARTITION in all cases and not just
