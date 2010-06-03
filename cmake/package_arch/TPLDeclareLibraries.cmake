@@ -34,7 +34,7 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
      #prefix
      PARSE
      #lists
-     "REQUIRED_HEADERS;REQUIRED_LIBS_NAMES"
+     "REQUIRED_HEADERS;REQUIRED_LIBS_NAMES;LIBRARY_DIR_HINT"
      #options
      ""
      ${ARGN}
@@ -63,7 +63,14 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
       " same directories as the library, you do not need to set"
       " ${TPL_NAME}_LIBRARY_DIRS."
       )
-    ADVANCED_SET(${TPL_NAME}_LIBRARY_DIRS "" CACHE PATH ${DOCSTR})
+
+	# If the user has specified a hint for where the libraries are, set the library dir variable to
+	# that hint
+  	IF (PARSE_LIBRARY_DIR_HINT)
+    	ADVANCED_SET(${TPL_NAME}_LIBRARY_DIRS ${PARSE_LIBRARY_DIR_HINT} CACHE PATH ${DOCSTR})
+	ELSE()
+    	ADVANCED_SET(${TPL_NAME}_LIBRARY_DIRS "" CACHE PATH ${DOCSTR})
+	ENDIF()
 
     # Libraries
   
