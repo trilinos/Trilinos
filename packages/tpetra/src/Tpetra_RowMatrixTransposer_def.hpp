@@ -82,28 +82,20 @@ void RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createTrans
 		//Teuchos::reduceAll<typename Teuchos::ArrayRCP<global_size_t>, global_size_t>(*comm_, Teuchos::REDUCE_SUM, origColLengths.size(), origColLengths.getRawPtr(), masterOrigColLengths.getRawPtr());
 		//Teuchos::reduceAll(*comm_, Teuchos::REDUCE_SUM, (int)origColLengths.size(), origColLengths.getRawPtr(), masterOrigColLengths.getRawPtr());
 		Teuchos::reduceAll(*comm_, Teuchos::REDUCE_SUM, origColLengths.size(), origColLengths.getRawPtr(), masterOrigColLengths.getRawPtr());
+		size_t maxOrigColLength = masterOrigColLengths[0];
 		if(myRank == 0){
 			std::cout << "original col lengths " << masterOrigColLengths() << "\n";
-		}
-		/*global_size_t targetNumElements;
-		if(myRank ==0){
-			targetNumElements = origGlobalNumCols;
-		}
-		else{
-			targetNumElements = GST0;
-		}
-		Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > targetMap = Teuchos::rcp(Map<LocalOrdinal, GlobalOrdinal, Node>(origGlobalNumCols, targetNumElements, GST0, comm_));
-		Import importer<LocalOrdinal, GlobalOrdinal, Node>(sourceMap, targetMap);
-		Vector target(targetMap);*/
-
-
-
-		size_t maxOrigColLength = origColLengths[0];
-		for(size_t i = 1; i<(size_t)origColLengths.size(); i++){
-			if(origColLengths[i]>maxOrigColLength){
-				maxOrigColLength = origColLengths[i];
+			for(size_t i = 1; i<(size_t)origColLengths.size(); i++){
+				if(masterOrigColLengths[i]>maxOrigColLength){
+					maxOrigColLength = masterOrigColLengths[i];
+				}
 			}
+			std::cout << "max col length = "<< maxOrigColLength << "\n";
 		}
+		if(myRank == 1){
+			std::cout << "original col lengths " << masterOrigColLengths() << "\n";
+		}
+
 		transposeMatrix_ = rcp(new CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tRowMap, tColMap, maxOrigColLength));
 		for(size_t i=0; i<transposeMatrix_->getNodeNumRows(); ++i){
 			Teuchos::ArrayRCP<LocalOrdinal> rowToInsertIndicies = Teuchos::ArrayRCP<LocalOrdinal>(origColLengths[i], (LocalOrdinal)0);
