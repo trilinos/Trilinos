@@ -778,23 +778,24 @@ Section H: Dashboard testing
 
 (*) [Recommended] Testing using 'ctest'
 
-    $ ctest -W 100
+    $ ctest -j4
 
   (see output in Testing/Temporary/LastTest.log)
 
-  NOTE: The -W argument is only supported in the CVS version of CMake obtained
-  as explained above.
+  NOTE: The -jN argument allows CTest to use more processes to run
+  tests but will not exceed the max number of processes specified at
+  configure time.
 
   See detailed test output with:
 
-    $ ctest -VV
+    $ ctest -j4 -VV
 
 
 (*) Only running tests for a single package
 
   Running a single package test:
 
-    $ ctest -W 100 -R '^<PACKAGE>_'
+    $ ctest -j4 -R '^<PACKAGE>_'
 
   (e.g. PACKAGE = Teuchos, Epetra, etc.)
   (see output in Testing/Temporary/LastTest.log)
@@ -802,7 +803,7 @@ Section H: Dashboard testing
   or:
 
     $ cd packages/<PACKAGE>
-    $ ctest -W 100
+    $ ctest -j4
 
 
 (*) Running a single test with full output to the console:
