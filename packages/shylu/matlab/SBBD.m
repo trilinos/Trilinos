@@ -1,12 +1,12 @@
 function [partr, partc, permr, permc] = SBBD(A, k)
 %function [partr, partc, permr, permc] = SBBD(A, k)
 %
-% Partition/permute a sparse matrix to 
+% Partition/permute a sparse matrix to
 % singly bordered block diagonal (SBBD) form.
 %
 % Note this function needs PaToH to get good results!
 %
-% Input: 
+% Input:
 %   A, a sparse matrix to partition/permute
 %   k, the desired number of diagonal blocks
 %
@@ -18,7 +18,7 @@ function [partr, partc, permr, permc] = SBBD(A, k)
 %
 % Author: Erik Boman, Sandia National Labs, 2010.
 
-if (k < 1) 
+if (k < 1)
   error('Input argument k must be at least 1.');
   return;
 end
@@ -33,7 +33,7 @@ else
   partr = ceil(k*(1:m)/m);
 end
 
-% Compute column blocks 
+% Compute column blocks
 % Modify A so we can find internal and cut nets (columns)
 A = spones(A);
 % TODO: Row scaling as matrix multiply?

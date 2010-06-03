@@ -11,7 +11,7 @@ k = LUdata.nblocks;
 A = LUdata.A;
 
 % Modify rhs for Schur complement.
-Bhat = []
+Bhat = [];
 for i= 1:k
   % b_i = b_i - \bar{A_i} * (A_i \ b_i)
   Bi = B(LUdata.Sr{i},:) - A(LUdata.Sr{i},LUdata.c{i}) *(A(LUdata.r{i},LUdata.c{i}) \ B(LUdata.r{i},:));
@@ -30,10 +30,12 @@ for i= 1:k
 end
 
 % Assemble solution in X.
-start=1;
+%start=1;
 for i= 1:k
-  X(LUdata.r{i},:) = Xhat{i};
-  startnext = start+length(LUdata.Sr{i});
-  X(LUdata.Sr{i},:) = Xhat{k+1}(start:startnext-1,:);
-  start = startnext;
+  X(LUdata.c{i},:) = Xhat{i};
+  %X(LUdata.r{i},:) = Xhat{i};
+  %startnext = start+length(LUdata.Sr{i});
+  %X(LUdata.Sr{i},:) = Xhat{k+1}(start:startnext-1,:);
+  %start = startnext;
 end
+X(LUdata.c{k+1},:) = Xhat{k+1};

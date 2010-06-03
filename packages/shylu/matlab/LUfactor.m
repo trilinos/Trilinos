@@ -53,8 +53,8 @@ for i=1:k
   [L, U, p, q] = lu(A(r,c), 'vector');
   LUdata.L{i} = L;
   LUdata.U{i} = U;
-  LUdata.p{i} = p;
-  LUdata.q{i} = q;
+  LUdata.p{i} = r(p);
+  LUdata.q{i} = c(q);
   % Form local Schur complement
   Sc = find(partc==k+1); % columns in local Schur comp.
   % S = S - (A_ki * inv(A_i) * A_ik), where A_i(p,q) = LU
@@ -65,14 +65,18 @@ LUdata.c{k+1} = Sc;
 
 % Assemble and factor global Schur complement
 S = [];
+Sr = [];
 for i=1:k
   S = [S; LUdata.S{i}];
+  Sr = [Sr; LUdata.Sr{i}];
 end
 % Store global S (TODO: Not required if we have all the local S{i}?)
 LUdata.S{k+1} = S;
 
 i= k+1; % Store Schur complement factors as block k+1
-[LUdata.L{i}, LUdata.U{i}, LUdata.p{i}, LUdata.q{i}] = lu(S);
+[LUdata.L{i}, LUdata.U{i}, p, q] = lu(S, 'vector');
+LUdata.p{i} = Sr(p) ;
+LUdata.q{i} = Sc(q) ;
 
 % Compute stats
 nnzlu = 0;
