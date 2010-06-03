@@ -48,15 +48,16 @@ void RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createTrans
           Teuchos::typeName(*this) << "::createTranspose(): The matrix to transpose must not be fill complete before calling this function.");
 	}
 	optimizeTranspose_ = optimizeTranspose;
-	int myRank = comm_->getRank(); 
+	//int myRank = comm_->getRank(); 
     const global_size_t GST0 = Teuchos::OrdinalTraits<global_size_t>::zero();
     const global_size_t GST1 = Teuchos::OrdinalTraits<global_size_t>::one();
     const size_t LST0 = Teuchos::OrdinalTraits<size_t>::zero();
+    const Scalar SST0 = Teuchos::ScalarTraits<Scalar>::zero();
+	global_size_t origGlobalNumCols = (global_size_t)origMatrix_->getDomainMap()->getGlobalNumElements();
+	global_size_t origGlobalNumRows = (global_size_t)origMatrix_->getRangeMap()->getGlobalNumElements();
 	if(origMatrix_->isLocallyIndexed()){
 		Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > tRowMap;
 		
-		global_size_t origGlobalNumCols = (global_size_t)origMatrix_->getDomainMap()->getGlobalNumElements();
-		global_size_t origGlobalNumRows = (global_size_t)origMatrix_->getRangeMap()->getGlobalNumElements();
 		if(transposeRowMap.is_null()){
 			tRowMap = Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> >(new Map<LocalOrdinal, GlobalOrdinal, Node>(origGlobalNumCols, origMatrix_->getIndexBase(), comm_));
 		}
@@ -67,11 +68,11 @@ void RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createTrans
 
 		Teuchos::ArrayRCP<global_size_t> origColLengths = Teuchos::ArrayRCP<global_size_t>(origGlobalNumCols, GST0);
 
+		GlobalOrdinal minColIndex = origMatrix_->getColMap()->getMinGlobalIndex();
 		for(size_t i = LST0; i < origMatrix_->getNodeNumRows(); ++i){
 			Teuchos::ArrayRCP<const LocalOrdinal> indicies;
 			Teuchos::ArrayRCP<const Scalar> values;
 			origMatrix_->getLocalRowView(i, indicies, values);
-			GlobalOrdinal minColIndex = origMatrix_->getColMap()->getMinGlobalIndex();
 			for(LocalOrdinal j=0; j<indicies.size(); ++j){
 				origColLengths[indicies[j]+minColIndex] = origColLengths[indicies[j]+minColIndex] +GST1;
 			}
@@ -79,25 +80,40 @@ void RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createTrans
 
 		
 		Teuchos::ArrayRCP<global_size_t> masterOrigColLengths = Teuchos::ArrayRCP<global_size_t>(origGlobalNumCols, GST0);
-		//Teuchos::reduceAll<typename Teuchos::ArrayRCP<global_size_t>, global_size_t>(*comm_, Teuchos::REDUCE_SUM, origColLengths.size(), origColLengths.getRawPtr(), masterOrigColLengths.getRawPtr());
-		//Teuchos::reduceAll(*comm_, Teuchos::REDUCE_SUM, (int)origColLengths.size(), origColLengths.getRawPtr(), masterOrigColLengths.getRawPtr());
 		Teuchos::reduceAll(*comm_, Teuchos::REDUCE_SUM, origColLengths.size(), origColLengths.getRawPtr(), masterOrigColLengths.getRawPtr());
 		size_t maxOrigColLength = masterOrigColLengths[0];
-		if(myRank == 0){
-			std::cout << "original col lengths " << masterOrigColLengths() << "\n";
-			for(size_t i = 1; i<(size_t)origColLengths.size(); i++){
-				if(masterOrigColLengths[i]>maxOrigColLength){
-					maxOrigColLength = masterOrigColLengths[i];
-				}
+		for(size_t i = 1; i<(size_t)origColLengths.size(); i++){
+			if(masterOrigColLengths[i]>maxOrigColLength){
+				maxOrigColLength = masterOrigColLengths[i];
 			}
-			std::cout << "max col length = "<< maxOrigColLength << "\n";
-		}
-		if(myRank == 1){
-			std::cout << "original col lengths " << masterOrigColLengths() << "\n";
 		}
 
-		transposeMatrix_ = rcp(new CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tRowMap, tColMap, maxOrigColLength));
-		for(size_t i=0; i<transposeMatrix_->getNodeNumRows(); ++i){
+		//transposeMatrix_ = rcp(new CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tRowMap, tColMap, maxOrigColLength));
+		transposeMatrix_ = rcp(new CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tRowMap, maxOrigColLength));
+		
+		for(global_size_t i=0; i<transposeMatrix_->getGlobalNumRows(); ++i){
+			Teuchos::ArrayRCP<GlobalOrdinal> rowToInsertIndicies = Teuchos::ArrayRCP<GlobalOrdinal>(masterOrigColLengths[i], GST0);
+			Teuchos::ArrayRCP<Scalar> rowToInsertVals=Teuchos::ArrayRCP<Scalar>(masterOrigColLengths[i], SST0);
+			GlobalOrdinal toInsertCounter =0;
+			for(global_size_t j = 0; j < origMatrix_->getNodeNumRows(); ++j){
+				Teuchos::ArrayRCP<const GlobalOrdinal> indicies;
+				Teuchos::ArrayRCP<const Scalar> values;
+				origMatrix_->getLocalRowView(j, indicies, values);
+				for(size_t k=LST0; k<(size_t)indicies.size(); k++){
+					if((size_t)indicies[k] ==i){
+						rowToInsertIndicies[toInsertCounter] = j+minColIndex;
+						rowToInsertVals[toInsertCounter] = values[k];
+						toInsertCounter++;
+						break;
+					}
+				}
+				if(toInsertCounter >= (GlobalOrdinal)masterOrigColLengths[i]){
+					break;
+				}
+			}
+			transposeMatrix_->insertGlobalValues(i, rowToInsertIndicies(), rowToInsertVals());
+		}
+	/*	for(size_t i=0; i<transposeMatrix_->getNodeNumRows(); ++i){
 			Teuchos::ArrayRCP<LocalOrdinal> rowToInsertIndicies = Teuchos::ArrayRCP<LocalOrdinal>(origColLengths[i], (LocalOrdinal)0);
 			Teuchos::ArrayRCP<Scalar> rowToInsertVals=Teuchos::ArrayRCP<Scalar>(origColLengths[i], (Scalar)0);
 			LocalOrdinal toInsertCounter =0;
@@ -118,7 +134,7 @@ void RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createTrans
 				}
 			}
 			transposeMatrix_->insertLocalValues(i, rowToInsertIndicies(), rowToInsertVals());
-		}
+		}*/
 	}
 	else{
 		Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > tRowMap;
@@ -169,11 +185,16 @@ void RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createTrans
 			transposeMatrix_->insertGlobalValues(i, rowToInsertIndicies(), rowToInsertVals());
 		}
 	}
+
+	Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > tDomainMap = Teuchos::rcp(new Map<LocalOrdinal,GlobalOrdinal,Node>(origGlobalNumCols,origMatrix_->getIndexBase(), comm_));
+	Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > tRangeMap = Teuchos::rcp(new Map<LocalOrdinal,GlobalOrdinal,Node>(origGlobalNumRows,origMatrix_->getIndexBase(), comm_));
 	if(optimizeTranspose == DoOptimizeStorage){
 		transposeMatrix_->fillComplete(DoOptimizeStorage);
+		//transposeMatrix_->fillComplete(tDomainMap, tRangeMap, DoOptimizeStorage);
 	}
 	else{
 		transposeMatrix_->fillComplete(DoNotOptimizeStorage);
+		//transposeMatrix_->fillComplete(tDomainMap, tRangeMap, DoNotOptimizeStorage);
 	}
 	transposeMatrix = transposeMatrix_;
 }
