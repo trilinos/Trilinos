@@ -140,9 +140,9 @@ void UnitTestBucket::testBucket( ParallelMachine pm )
        meta2.declare_field < ScalarFieldType > ( "temperature2" , 4 );
     ScalarFieldType & volume2 =
        meta2.declare_field < ScalarFieldType > ( "volume2" , 4 );
-    Part  & universal     = meta2.universal_part ();
-    put_field ( temperature2 , Node , universal );
-    put_field ( volume2 , Element , universal );
+    Part  & universal2     = meta2.universal_part ();
+    put_field ( temperature2 , Node , universal2 );
+    put_field ( volume2 , Element , universal2 );
     meta2.commit();
 
     //Cover line containing messsage for wrong MetaData used
