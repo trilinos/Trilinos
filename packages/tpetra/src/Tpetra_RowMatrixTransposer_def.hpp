@@ -58,7 +58,6 @@ void RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createTrans
 		global_size_t origGlobalNumCols = (global_size_t)origMatrix_->getDomainMap()->getGlobalNumElements();
 		global_size_t origGlobalNumRows = (global_size_t)origMatrix_->getRangeMap()->getGlobalNumElements();
 		if(transposeRowMap.is_null()){
-			//tRowMap = Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> >(new Map<LocalOrdinal, GlobalOrdinal, Node>(origMatrix_->getNodeNumCols(), origMatrix_->getIndexBase(), comm_));
 			tRowMap = Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> >(new Map<LocalOrdinal, GlobalOrdinal, Node>(origGlobalNumCols, origMatrix_->getIndexBase(), comm_));
 		}
 		else{
@@ -66,9 +65,6 @@ void RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createTrans
 		}
 		Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > tColMap = Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> >(new Map<LocalOrdinal, GlobalOrdinal, Node>(origGlobalNumRows, origMatrix_->getIndexBase(), comm_));
 
-		//Teuchos::ArrayRCP<size_t> origColLengths = Teuchos::ArrayRCP<size_t>((LocalOrdinal)origMatrix_->getNodeNumCols(), (LocalOrdinal)0);
-		//Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > sourceMap = Teuchos::rcp(Map<LocalOrdinal, GlobalOrdinal, Node>(origGlobalNumCols, origGlobalNumCols, GST0, comm_));
-		//Vector<global_size_t> origColLengths = Vector<global_size_t>(sourceMap);
 		Teuchos::ArrayRCP<global_size_t> origColLengths = Teuchos::ArrayRCP<global_size_t>(origGlobalNumCols, GST0);
 
 		for(size_t i = LST0; i < origMatrix_->getNodeNumRows(); ++i){
@@ -81,9 +77,13 @@ void RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createTrans
 			}
 		}
 
-		Teuchos::reduceAll<typename Teuchos::ArrayRCP<global_size_t>, global_size_t>(*comm_, Teuchos::REDUCE_SUM, origColLengths.size(), origColLengths.getRawPtr(), origColLengths.getRawPtr());
+		
+		Teuchos::ArrayRCP<global_size_t> masterOrigColLengths = Teuchos::ArrayRCP<global_size_t>(origGlobalNumCols, GST0);
+		//Teuchos::reduceAll<typename Teuchos::ArrayRCP<global_size_t>, global_size_t>(*comm_, Teuchos::REDUCE_SUM, origColLengths.size(), origColLengths.getRawPtr(), masterOrigColLengths.getRawPtr());
+		//Teuchos::reduceAll(*comm_, Teuchos::REDUCE_SUM, (int)origColLengths.size(), origColLengths.getRawPtr(), masterOrigColLengths.getRawPtr());
+		Teuchos::reduceAll(*comm_, Teuchos::REDUCE_SUM, origColLengths.size(), origColLengths.getRawPtr(), masterOrigColLengths.getRawPtr());
 		if(myRank == 0){
-			std::cout << "original col lengths " << origColLengths() << "\n";
+			std::cout << "original col lengths " << masterOrigColLengths() << "\n";
 		}
 		/*global_size_t targetNumElements;
 		if(myRank ==0){
