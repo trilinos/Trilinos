@@ -24,7 +24,7 @@ class EntityRepository {
     EntityRepository() : m_entities() {}
     ~EntityRepository();
 
-    Entity * get_entity( const EntityKey key ) const ;
+    Entity * get_entity( const EntityKey &key ) const;
 
     iterator begin() const { return m_entities.begin(); }
     iterator end() const { return m_entities.end(); }

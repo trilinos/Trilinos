@@ -89,6 +89,7 @@ SET(Trilinos_TPLS_AND_CLASSIFICATIONS
   MATLAB         EX
   CASK           EX
   SPARSKIT       SS
+  Qt             SS
   )
 
 # NOTES:
