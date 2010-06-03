@@ -4,7 +4,7 @@ SET(TPL_QT_QMAKE_EXECUTABLE "" CACHE STRING "A Trilinos specific variable that d
 
 IF(TPL_QT_QMAKE_EXECUTABLE AND QT_QMAKE_EXECUTABLE)
 	IF(NOT(${TPL_QT_QMAKE_EXECUTABLE} EQUAL ${QT_QMAKE_EXECUTABLE}))
-		MESSAGE(FATAL_ERROR "WOW! REALLY? Why did you set both the TPL_QT_QMAKE_EXECUTABLE and QT_QMAKE_EXECUTABLE variables, let alone set them differently. Geeze, either only set one or make sure they have the same value.")
+		MESSAGE(FATAL_ERROR "Uh oh. Looks like you set both the TPL_QT_QMAKE_EXECUTABLE and QT_QMAKE_EXECUTABLE variables and set them differently. You only need to set one.")
 	ENDIF()
 ENDIF()
 
