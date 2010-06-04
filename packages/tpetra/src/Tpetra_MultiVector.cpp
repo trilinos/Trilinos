@@ -20,24 +20,19 @@
 namespace Tpetra {
 
   TPETRA_MULTIVECTOR_INSTANT(int,int,int,Kokkos::SerialNode)
-#if defined(HAVE_KOKKOS_TBB)
-  TPETRA_MULTIVECTOR_INSTANT(int,int,int,Kokkos::TBBNode)
-#endif
-#if defined(HAVE_KOKKOS_THREADPOOL)
-  TPETRA_MULTIVECTOR_INSTANT(int,int,int,Kokkos::TPINode)
-#endif
-#if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_FLOAT)
-  TPETRA_MULTIVECTOR_INSTANT(int,int,int,Kokkos::ThrustGPUNode)
-#endif
 
 #if defined(HAVE_TPETRA_INST_FLOAT)
+  TPETRA_MULTIVECTOR_INSTANT(float,int,int,Kokkos::SerialNode)
 #if defined(HAVE_KOKKOS_TBB)
+  TPETRA_MULTIVECTOR_INSTANT(int,int,int,Kokkos::TBBNode)
   TPETRA_MULTIVECTOR_INSTANT(float,int,int,Kokkos::TBBNode)
 #endif
 #if defined(HAVE_KOKKOS_THREADPOOL)
+    TPETRA_MULTIVECTOR_INSTANT(int,int,int,Kokkos::TPINode)
     TPETRA_MULTIVECTOR_INSTANT(float,int,int,Kokkos::TPINode)
 #endif
 #if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_FLOAT)
+    TPETRA_MULTIVECTOR_INSTANT(int,int,int,Kokkos::ThrustGPUNode)
     TPETRA_MULTIVECTOR_INSTANT(float,int,int,Kokkos::ThrustGPUNode)
 #endif
 #endif

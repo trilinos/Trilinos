@@ -174,14 +174,6 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::get
 
 //-------------------------------------------------------------------
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
-bool
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::isFillComplete() const
-{
-  return is_fill_completed_;
-}
-
-//-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
 void
 VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::apply(
          const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
@@ -190,9 +182,6 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::app
                Scalar alpha,
                Scalar beta) const
 {
-  TEST_FOR_EXCEPTION(!isFillComplete(), std::runtime_error,
-    "Tpetra::VbrMatrix::apply ERROR, apply may only be called after fillComplete has been called.");
-
   const Kokkos::MultiVector<Scalar,Node> *lclX = &X.getLocalMV();
   Kokkos::MultiVector<Scalar,Node>        *lclY = &Y.getLocalMVNonConst();
 
