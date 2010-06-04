@@ -391,6 +391,16 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LAPACK {
   void LAMCH ( const char CMACH, double & T) const;
   //@}
 
+    //@}
+
+    //! @name Triangular solve
+  //@{ 
+  //! Epetra_LAPACK wrapper for TRTRS routine.
+  void TRTRS(const char UPLO, const char TRANS, const char DIAG, const int N, const int NRHS, const float *A,
+                         const int LDA, float *B, const int LDB, int *INFO) const; 
+  //! Epetra_LAPACK wrapper for TRTRS routine.
+  void TRTRS(const char UPLO, const char TRANS, const char DIAG, const int N, const int NRHS, const double *A,
+                         const int LDA, double *B, const int LDB, int *INFO) const; 
 };
 
 // Epetra_LAPACK constructor

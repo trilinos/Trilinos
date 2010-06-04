@@ -89,6 +89,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define DSYGVX_F77  SSYGVX
 #define DTREVC_F77  STREVC
 #define DTREXC_F77  STREXC
+#define DTRTRS_F77  STRTRS
 /* Done with T3X double precision */
 #endif
 
@@ -179,7 +180,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define DSPEV_F77   F77_BLAS_MANGLE(dspev,DSPEV)
 #define DSPGV_F77   F77_BLAS_MANGLE(dspgv,DSPGV)
 #define DSTEV_F77   F77_BLAS_MANGLE(dstev,DSTEV)
-#define DSYEVD_F77   F77_BLAS_MANGLE(dsyevd,DSYEVD)
+#define DSYEVD_F77  F77_BLAS_MANGLE(dsyevd,DSYEVD)
 #define DSYEV_F77   F77_BLAS_MANGLE(dsyev,DSYEV)
 #define DSYEVR_F77  F77_BLAS_MANGLE(dsyevr,DSYEVR)
 #define DSYEVX_F77  F77_BLAS_MANGLE(dsyevx,DSYEVX)
@@ -187,6 +188,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define DSYGVX_F77  F77_BLAS_MANGLE(dsygvx,DSYGVX)
 #define DTREVC_F77  F77_BLAS_MANGLE(dtrevc,DTREVC)
 #define DTREXC_F77  F77_BLAS_MANGLE(dtrexc,DTREXC)
+#define DTRTRS_F77  F77_BLAS_MANGLE(dtrtrs,DTRTRS)
 
 /* End of defines for double precision when not on a T3X */
 
@@ -231,7 +233,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define SSPEV_F77   F77_BLAS_MANGLE(sspev,SSPEV)
 #define SSPGV_F77   F77_BLAS_MANGLE(sspgv,SSPGV)
 #define SSTEV_F77   F77_BLAS_MANGLE(sstev,SSTEV)
-#define SSYEVD_F77   F77_BLAS_MANGLE(ssyevd,SSYEVD)
+#define SSYEVD_F77  F77_BLAS_MANGLE(ssyevd,SSYEVD)
 #define SSYEV_F77   F77_BLAS_MANGLE(ssyev,SSYEV)
 #define SSYEVR_F77  F77_BLAS_MANGLE(ssyevr,SSYEVR)
 #define SSYEVX_F77  F77_BLAS_MANGLE(ssyevx,SSYEVX)
@@ -239,6 +241,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define SSYGVX_F77  F77_BLAS_MANGLE(ssygvx,SSYGVX)
 #define STREVC_F77  F77_BLAS_MANGLE(strevc,STREVC)
 #define STREXC_F77  F77_BLAS_MANGLE(strexc,STREXC)
+#define STRTRS_F77  F77_BLAS_MANGLE(strtrs,STRTRS)
 
 #ifdef __cplusplus
 extern "C" {
@@ -346,6 +349,8 @@ extern "C" {
 			 double * work, int * info); 
   void PREFIX DTREXC_F77(Epetra_fcd, const int * n, double * t, const int * ldt, double * q, const int * ldq, 
 			 int * ifst, int * ilst, double * work, int * info); 
+  void PREFIX DTRTRS_F77(Epetra_fcd uplo, Epetra_fcd trans, Epetra_fcd diag, const int *n, const int *nrhs, const double *a,
+                         const int *lda, double *b, const int *ldb, int *info); 
 
 
   void PREFIX SGECON_F77(Epetra_fcd norm, const int* n, const float* a, const int* lda, const float *anorm, float * rcond, 
@@ -449,6 +454,8 @@ extern "C" {
 			 float * work, int * info); 
   void PREFIX STREXC_F77(Epetra_fcd, const int * n, float * t, const int * ldt, float * q, const int * ldq, 
 			 int * ifst, int * ilst, float * work, int * info); 
+  void PREFIX STRTRS_F77(Epetra_fcd uplo, Epetra_fcd trans, Epetra_fcd diag, const int *n, const int *nrhs, const float *a,
+                         const int *lda, float *b, const int *ldb, int *info); 
 
 
 #ifdef __cplusplus

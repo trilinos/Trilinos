@@ -62,6 +62,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define DSYMM_F77   SSYMM
 #define DTRMM_F77   STRMM
 #define DTRSM_F77   STRSM
+#define DSYRK_F77   SSYRK
 #define EPETRA_DCRSMV_F77   EPETRA_DCRSMV
 #define EPETRA_DCRSMM_F77   EPETRA_DCRSMM
 #define EPETRA_DCRSSV_F77   EPETRA_DCRSSV
@@ -149,6 +150,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define DSYMM_F77   F77_BLAS_MANGLE(dsymm,DSYMM)
 #define DTRMM_F77   F77_BLAS_MANGLE(dtrmm,DTRMM)
 #define DTRSM_F77   F77_BLAS_MANGLE(dtrsm,DTRSM)
+#define DSYRK_F77   F77_BLAS_MANGLE(dsyrk,DSYRK)
 
 #ifndef FORTRAN_DISABLED
 
@@ -191,6 +193,7 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #define SSYMM_F77   F77_BLAS_MANGLE(ssymm,SSYMM)
 #define STRMM_F77   F77_BLAS_MANGLE(strmm,STRMM)
 #define STRSM_F77   F77_BLAS_MANGLE(strsm,STRSM)
+#define SSYRK_F77   F77_BLAS_MANGLE(ssyrk,SSYRK)
     
 /* Explicitly define each F77 name for all BLAS kernels */
 
@@ -255,6 +258,9 @@ void PREFIX EPETRA_DCRSSV_F77(const int *, const int *, const int *, const int *
 void PREFIX EPETRA_DCRSSM_F77(const int *, const int *, const int *, const int *, const int *, 
 			      const int *, const double *, const int *, const int *, double *, 
 			      const int *, double *, const int *, const int *, const int *);
+void PREFIX DSYRK_F77(Epetra_fcd uplo, Epetra_fcd trans, const int *n, const int *k,
+                  const double *alpha, const double *a, const int *lda, const double *beta,
+                  double *c, const int *ldc);
 
 /* Single precision BLAS 3 */
 void PREFIX SGEMM_F77(Epetra_fcd, Epetra_fcd, const int *m, const int *
@@ -270,6 +276,10 @@ void PREFIX STRSM_F77(Epetra_fcd, Epetra_fcd, Epetra_fcd, Epetra_fcd,
 		      lda, float *b, const int *ldb);
 
 void PREFIX XERBLA_F77(Epetra_fcd, int *info);
+
+void PREFIX SSYRK_F77(Epetra_fcd uplo, Epetra_fcd trans, const int *n, const int *k,
+                      const float *alpha, const float *a, const int *lda, const float *beta,
+                      float *c, const int *ldc);
 
 #ifdef __cplusplus
 }

@@ -601,5 +601,14 @@ void Epetra_LAPACK::GGLSE(const int M, const int N, const int P, float* A, const
 			  float* C, float* D, float* X, float* WORK, const int LWORK, int* INFO) const{
   SGGLSE_F77(&M, &N, &P, A, &LDA, B, &LDB, C, D, X, WORK, &LWORK,  INFO);
 }
-
+//=============================================================================
+void Epetra_LAPACK::TRTRS(const char UPLO, const char TRANS, const char DIAG, const int N, const int NRHS, const float *A,
+                          const int LDA, float *B, const int LDB, int *INFO) const{
+  STRTRS_F77(CHAR_MACRO(UPLO), CHAR_MACRO(TRANS), CHAR_MACRO(DIAG), &N, &NRHS, A, &LDA, B, &LDB, INFO);
+}
+//=============================================================================
+void Epetra_LAPACK::TRTRS(const char UPLO, const char TRANS, const char DIAG, const int N, const int NRHS, const double *A,
+                          const int LDA, double *B, const int LDB, int *INFO) const{
+  DTRTRS_F77(CHAR_MACRO(UPLO), CHAR_MACRO(TRANS), CHAR_MACRO(DIAG), &N, &NRHS, A, &LDA, B, &LDB, INFO);
+}
 

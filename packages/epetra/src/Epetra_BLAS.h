@@ -154,6 +154,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_BLAS {
   void TRMM(const char SIDE, const char UPLO, const char TRANSA, const char DIAG, const int M, const int N,
 	    const double ALPHA, const double * A, const int LDA, double * B,
 	    const int LDB) const;
+  //! Eperta_BLAS symetric rank k funtion (ssyrk)
+  void SYRK(const char UPLO, const char TRANS, const int N, const int K, const float ALPHA, const float *A,
+            const int LDA, const float BETA, float *C, const int LDC) const;
+  //! Eperta_BLAS symetric rank k funtion (dsyrk)
+  void SYRK(const char UPLO, const char TRANS, const int N, const int K, const double ALPHA, const double *A,
+            const int LDA, const double BETA, double *C, const int LDC) const;
   //@}
 };
 
