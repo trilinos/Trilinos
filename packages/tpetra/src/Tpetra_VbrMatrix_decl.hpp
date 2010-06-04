@@ -114,6 +114,9 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
   //! Returns the point-column map.
   const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getPointColMap() const;
+
+  //! Return true if fillComplete has been called, false otherwise.
+  bool isFillComplete() const;
   //@}
 
   //! @name Insertion/Removal Methods
