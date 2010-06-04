@@ -281,7 +281,8 @@ TestStatus StatusTestWithOrdering<ScalarType,MV,OP>::checkStatus( Eigensolver<Sc
   }
 
   // make list, with length quorum, of most significant values, if there are that many
-  int numsig = quorum_ < numallval ? quorum_ : numallval;
+  //  int numsig = quorum_ < numallval ? quorum_ : numallval;
+  int numsig = cwhch.size() + numauxval;
   std::vector<int> mostsig(numsig);
   for (int i=0; i<numsig; ++i) {
     mostsig[i] = perm[i];
