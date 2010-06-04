@@ -91,6 +91,7 @@ class RowMatrixTransposer {
 	//Whether or not to optimize the storage of the transpose matrix.
 	OptimizeOption optimizeTranspose_;	
 	const Teuchos::RCP<const Teuchos::Comm<int> > comm_;
+	GlobalOrdinal indexBase_;
 };
 
 
