@@ -6,10 +6,6 @@
 #
 # Options to run with:
 #
-#  For the extra builds pass in (some subset of):
-#
-#    --extra-builds=SERIAL_DEBUG_BOOST_TRACE,SERIAL_DEBUG_TRACE,SERIAL_DEBUG_BOOST,MPI_DEBUG_INT,MPI_OPT
-#
 # To automatically invoke a remote pull/test/push on trilinos-test2, you can
 # use the argument:
 #

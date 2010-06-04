@@ -681,9 +681,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( DefaultMpiComm, NonblockingSendReceiveSet, Or
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( DefaultMpiComm, ReadySend, ORDINAL, PAIROFPACKETS )
 
 
-typedef std::pair<char,char>     PairOfChars;
-typedef std::pair<int,int>       PairOfInts;
-typedef std::pair<float,float>   PairOfFloats;
+typedef std::pair<short, short> PairOfShorts;
+typedef std::pair<int,int> PairOfInts;
+typedef std::pair<float,float> PairOfFloats;
 typedef std::pair<double,double> PairOfDoubles;
 
 
@@ -704,7 +704,7 @@ typedef std::pair<double,double> PairOfDoubles;
 
 #  define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( DefaultMpiComm, basic, ORDINAL ) \
-    UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, char) \
+    UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, short) \
     UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, int) \
     UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, float) \
     UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, double) \
@@ -719,18 +719,14 @@ typedef std::pair<double,double> PairOfDoubles;
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, ReadySend1, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, ReadySend, ORDINAL)
 
-  // can't test ordinal char with pair<double,double>
-  // char is too small to hold too many pair<double,double> objects, which each require 16 bytes
-  // can't test dd_real/qd_real either, for the same reason
-  // use a separate macro
 #  define UNIT_TEST_GROUP_ORDINAL_WITH_PAIRS_AND_QD( ORDINAL ) \
     TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( DefaultMpiComm, basic, ORDINAL ) \
-    UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, char) \
+    UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, short)			\
     UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, int) \
     UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, float) \
     UNIT_TEST_GROUP_ORDINAL_PACKET(ORDINAL, double) \
     UNIT_TEST_GROUP_ORDINAL_QD(ORDINAL) \
-    UNIT_TEST_GROUP_ORDINAL_PAIROFPACKETS(ORDINAL, PairOfChars) \
+    UNIT_TEST_GROUP_ORDINAL_PAIROFPACKETS(ORDINAL, PairOfShorts) \
     UNIT_TEST_GROUP_ORDINAL_PAIROFPACKETS(ORDINAL, PairOfInts) \
     UNIT_TEST_GROUP_ORDINAL_PAIROFPACKETS(ORDINAL, PairOfFloats) \
     UNIT_TEST_GROUP_ORDINAL_PAIROFPACKETS(ORDINAL, PairOfDoubles) \
@@ -745,7 +741,6 @@ typedef std::pair<double,double> PairOfDoubles;
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, ReadySend1, ORDINAL) \
     UNIT_TEST_TEMPLATE_2_INSTANT_COMPLEX_DOUBLE(DefaultMpiComm, ReadySend, ORDINAL)
 
-  UNIT_TEST_GROUP_ORDINAL(char)
   typedef short int ShortInt;
   UNIT_TEST_GROUP_ORDINAL(ShortInt)
   UNIT_TEST_GROUP_ORDINAL_WITH_PAIRS_AND_QD(int)
