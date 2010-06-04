@@ -1,0 +1,33 @@
+INCLUDE(PackageLibraryMacros)
+INCLUDE(CheckIncludeFile)
+
+SET(HEADERS "")
+SET(SOURCES "")
+
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
+APPEND_GLOB(HEADERS ${DIR}/*.h)
+APPEND_GLOB(SOURCES ${DIR}/*.C)
+
+INCLUDE_DIRECTORIES(
+  "${CMAKE_CURRENT_SOURCE_DIR}/../"
+  "${CMAKE_CURRENT_BINARY_DIR}/../"
+)
+
+ADD_DEFINITIONS(-DIOSS_STANDALONE)
+ASSERT_DEFINED(${PACKAGE_NAME}_ENABLE_XDMF)
+IF (NOT ${PACKAGE_NAME}_ENABLE_XDMF)
+ADD_DEFINITIONS(-DNO_XDMF_SUPPORT)
+ENDIF()
+
+
+ADD_EXECUTABLE(cth_pressure_map cth_pressure_map.C)
+ADD_EXECUTABLE(io_shell         io_shell.C)
+ADD_EXECUTABLE(shell_to_hex     shell_to_hex.C)
+ADD_EXECUTABLE(io_info          io_info.C)
+
+TARGET_LINK_LIBRARIES(cth_pressure_map Ionit)
+TARGET_LINK_LIBRARIES(io_shell         Ionit)
+TARGET_LINK_LIBRARIES(shell_to_hex     Ionit)
+TARGET_LINK_LIBRARIES(io_info          Ionit)
+
+

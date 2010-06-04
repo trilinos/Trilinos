@@ -1,0 +1,25 @@
+#ifndef __nemesis_cfg_h
+#define __nemesis_cfg_h
+
+#define NEMESIS_VERSION_MAJOR @NEMESIS_VERSION_MAJOR@
+#define NEMESIS_VERSION_MINOR @NEMESIS_VERSION_MINOR@
+#define NEMESIS_VERSION_PATCH @NEMESIS_VERSION_PATCH@
+#define NEMESIS_VERSION "@NEMESIS_VERSION_MAJOR@.@NEMESIS_VERSION_MINOR@.@NEMESIS_VERSION_PATCH@"
+
+#if defined(_WIN32) && !defined(WIN32)
+# define WIN32
+#endif
+
+#cmakedefine NEMESIS_BUILD_SHARED_LIBS
+#if defined(WIN32) && defined(NEMESIS_BUILD_SHARED_LIBS)
+#  if defined(nemc_EXPORTS)
+#    define NEMESIS_EXPORT __declspec( dllexport ) extern
+#  else
+#    define NEMESIS_EXPORT __declspec( dllimport ) extern
+#  endif
+#else
+#  define NEMESIS_EXPORT extern
+#endif
+
+#endif
+

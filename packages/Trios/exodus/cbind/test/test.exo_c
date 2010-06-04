@@ -1,0 +1,40 @@
+CDF
+
+	time_stepnum_dim	num_nodesnum_elem
+num_el_blk
+len_string	len_lineQfournum_node_setsnum_side_setsnum_el_in_blk10num_nod_per_el10num_att_in_blk10num_el_in_blk11num_nod_per_el11num_att_in_blk11num_nod_ns20num_nod_ns21num_el_ss30num_nod_ss30
+num_qa_recnum_infonum_glo_varnum_nod_varnum_elem_vartyperversion?G®titleThis is a test 
+time_wholeL	el_blk_id¼node_set_idsÄside_set_ids	Ìcoord@Ğ
+coor_names	elem_map	$	connect10
+	elem_type	quadjunk	,	connect11	elem_type	quadjunk	<attrib10
+	Lattrib11	P	node_ns20	Tdist_fact_ns20	h	node_ns21	|dist_fact_ns21	ˆ	elem_ss30	”	node_ss30	œdist_fact_ss30	¬
+qa_recordsH	¼info_recordsô
+vals_glo_varPname_glo_var
+øvals_nod_var@Tname_nod_varname_elem_varvals_elem_var1eb10
+”vals_elem_var2eb10
+˜vals_elem_var3eb10
+œvals_elem_var1eb11 vals_elem_var2eb11¤vals_elem_var3eb11¨elem_var_tab4
+?€?€?€@@?€?€?€?€?€xcoorycoor@IĞ@Ä‡èdefgh?€@@@@€@ ÈÉÊ?ŒÌÍ@ff@FffPRONTO2Dpronto2d3/10/9215:41:33FASTQfastq2/10/9211:41:33This is the first information record.This is the second information record.This is the third information record.glo_varsnod_var0nod_var1ele_var0ele_var1ele_var2?€?€?€?€?€?€?€?€@@@@@@@@@@@€@ @€@ @À<#×
+<#×
+?€?G®?‚\?ƒ×
+?…¸?†ff?‡®?ˆõÃ@@£×@G®@ë…@\@33@×
+@zá@@@€@ @€@ @À<£×
+<£×
+?€?‚\?…¸?‡®?Š=q?ŒÌÍ?\)?‘ë…@@G®@\@×
+@¸@ff@®@õÃ@@@€@ @€@ @À<õÂ<õÂ?€?ƒ×
+?‡®?‹…?\)?“33?—
+=?šáH@@ë…@×
+@Â@®@	™š@…@p¤@@@€@ @€@ @À=#×
+=#×
+?€?…¸?Š=q?\)?”zá?™™š?¸R?£×
+@@\@¸@®@
+=q@ÌÍ@\)@ë…@@@€@ @€@ @À=LÌÍ=LÌÍ?€?†ff?ŒÌÍ?“33?™™š? ?¦ff?¬ÌÍ@@33@ff@	™š@ÌÍ@@33@ff@@@€@ @€@ @À=uÂ=uÂ?€?‡®?\)?—
+=?¸R?¦ff?®{?µÂ@@×
+@®@…@\)@33@
+=@áH@@@€@ @€@ @À=\)=\)?€?ˆõÃ?‘ë…?šáH?£×
+?¬ÌÍ?µÂ?¾¸R@@zá@õÃ@p¤@ë…@ff@áH@\)@@@€@ @€@ @À=£×
+=£×
+?€?Š=q?”zá?¸R?¨õÂ?³33?½p¤?Ç®@@¸@
+=q@\)@zá@™š@¸R@#×
+@@@€@ @€@ @À=¸Qì=¸Qì?€?‹…?—
+>?¢\?®{?¹™š?Å¸?Ğ£×@@Â@…@G®@

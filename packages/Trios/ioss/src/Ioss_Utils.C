@@ -1,0 +1,348 @@
+/*--------------------------------------------------------------------*/
+/*    Copyright 2000, 2007, 2008 Sandia Corporation.                        */
+/*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
+/*    non-exclusive license for use of this work by or on behalf      */
+/*    of the U.S. Government.  Export of this program may require     */
+/*    a license from the United States Government.                    */
+/*--------------------------------------------------------------------*/
+
+// Copyright 1997 Sandia Corporation, Albuquerque, NM.
+
+#include <Ioss_Utils.h>
+
+#include <time.h>
+#include <sstream>
+#include <string>
+#include <cstring>
+#include <cstdlib>
+#include <cctype>
+#include <assert.h>
+
+#include <algorithm>
+
+#ifndef _WIN32
+#include <sys/utsname.h>
+#endif
+
+#ifndef IOSS_STANDALONE
+#include <stk_util/environment/ProgramOptions.hpp>
+#endif
+#include <Ioss_ElementTopology.h>
+#include <Ioss_GroupingEntity.h>
+#include <Ioss_EntityBlock.h>
+#include <Ioss_ElementBlock.h>
+#include <Ioss_Region.h>
+#include <Ioss_SerializeIO.h>
+#include <Ioss_Field.h>
+
+#include <iostream>
+#include <fstream>
+
+Ioss::Utils::Utils() {}
+  
+void Ioss::Utils::time_and_date(char* time_string, char* date_string,
+				size_t length)
+{
+  time_t calendar_time = time(NULL);
+  struct tm *local_time = localtime(&calendar_time);
+
+  strftime(time_string, length, "%H:%M:%S", local_time);
+  if (length == 8) {
+    const char *fmt = "%y/%m/%d";
+    strftime(date_string, length, fmt, local_time);
+    date_string[8] = '\0';
+
+  } else if (length >= 10) {
+    strftime(date_string, length, "%Y/%m/%d", local_time);
+    date_string[10] = '\0';
+  }
+  time_string[8] = '\0';
+}
+
+std::string Ioss::Utils::decode_filename(const std::string &filename, int processor, int num_processors)
+{
+  std::string decoded_filename(filename);
+  // Current format for per-processor file names is:
+  // PREFIX/basename.num_proc.cur_proc
+  // the 'cur_proc' field is padded to be the same width as
+  // the 'num_proc' field
+  // Examples: basename.8.1, basename.64.03, basename.128.001
+
+  // Create a std::string containing the total number of processors
+  std::string num_proc = to_string(num_processors);
+  size_t proc_width = num_proc.length();
+
+  // Create a std::string containing the current processor number
+  std::string cur_proc = to_string(processor);
+  size_t cur_width = cur_proc.length();
+
+  // Build the filename
+  decoded_filename += ".";
+  decoded_filename += num_proc;
+  decoded_filename += ".";
+
+  // Now, pad with zeros so that 'cur_proc' portion is same
+  // width as 'num_proc' portion.
+  while (cur_width++ < proc_width) {
+    decoded_filename += "0";
+  }
+
+  decoded_filename += cur_proc;
+  return decoded_filename;
+}
+
+int Ioss::Utils::decode_entity_name(const std::string &entity_name)
+{
+  // ExodusII stores block, nodeset, and sideset ids as integers
+  // Sierra   stores these as std::strings. The string is created by
+  // concatenating the type, the character '_' and the id.
+  // This function reverses the process and returns the original id.
+
+  const char *name = entity_name.c_str();
+  while (*name != '_')
+    name++;
+  // Increment one more time to get past '_'
+  assert(*name == '_');
+  name++;
+
+  // name now points to beginning of id portion of string
+  assert(*name >= '0' && *name <= '9');
+  int id = std::atoi(name);
+
+  return id;
+}
+
+std::string Ioss::Utils::encode_entity_name(const std::string &entity_type, int id)
+{
+  // ExodusII stores block, nodeset, and sideset ids as integers
+  // Sierra   stores these as std::strings. The string is created by
+  // concatenating the type, the character '_' and the id.
+
+  std::string id_string = to_string(id);
+  std::string entity_name = entity_type;
+  entity_name += "_";
+  entity_name += id_string;
+  return entity_name;
+}
+
+void Ioss::Utils::abort()
+{
+  std::ostringstream errmsg("I/O abort");
+  IOSS_ERROR(errmsg);
+}
+
+std::string Ioss::Utils::local_filename(const std::string& relative_filename,
+					const std::string& type)
+{
+#ifndef IOSS_STANDALONE
+  if (relative_filename[0] == '/' || type == "generated") {
+    return relative_filename;
+  } else {
+    std::string filename = working_directory();
+    filename += relative_filename;
+    return filename;
+  }
+#else
+  return relative_filename;
+#endif
+}
+
+
+std::string Ioss::Utils::working_directory()
+{
+#ifndef IOSS_STANDALONE
+//  return std::string(sierra::Env::working_directory());
+  if (stk::get_variables_map().count("directory"))
+    return stk::get_variables_map()["directory"].as<std::string>();
+  else
+    return std::string("./");    
+#else
+  return std::string("./");
+#endif
+}
+
+
+int Ioss::Utils::field_warning(const Ioss::GroupingEntity *ge,
+			       const Ioss::Field &field, const std::string& inout)
+{
+  IOSS_WARNING << ge->type() << " '" << ge->name()
+	       << "'. Unknown " << inout << " field '"
+	       << field.get_name() << "'";
+  return -4;
+}
+
+std::string Ioss::Utils::platform_information()
+{
+  // Return a string containing the 'uname' output.
+  // This is used as information data in the created results file
+  // to help in tracking when/where/... the file was created
+#ifndef _WIN32
+  struct utsname sys_info;
+  uname(&sys_info);
+
+  std::string info = "Node: ";
+  info += sys_info.nodename;
+  info += ", OS: ";
+  info += sys_info.sysname;
+  info += " ";
+  info += sys_info.release;
+  info += ", ";
+  info += sys_info.version;
+  info += ", Machine: ";
+  info += sys_info.machine;
+#else
+  std::string info = "Node: Unknown, OS: Unknown, Machine: Unknown";
+#endif
+  return info;
+}
+
+namespace {
+  bool block_is_omitted(Ioss::ElementBlock *block) {
+    bool omitted = false;
+    if (block->property_exists("omitted"))
+      omitted = (block->get_property("omitted").get_int() == 1);
+    return omitted;
+  }
+}
+void Ioss::Utils::calculate_faceblock_membership(IntVector &face_is_member,
+						const Ioss::EntityBlock *ef_blk,
+						const int *element, const int *sides,
+						int number_sides,
+						const Ioss::Region *region)
+{
+  // Topology of faces in this face block...
+  const ElementTopology *ftopo = ef_blk->topology();
+
+  // Topology of parent element for faces in this face block
+  const ElementTopology *parent_topo = ef_blk->parent_element_topology();
+
+  // If split by element block then parent_block will be non-NULL
+  const ElementBlock *parent_block = ef_blk->parent_element_block();
+
+  // The element block containing the face we are working on...
+  Ioss::ElementBlock *block = NULL;
+
+  // Topology of face/edge in current element block
+  const ElementTopology *common_ftopo = NULL;
+
+  // Topology of elements in the element block containing this element
+  const ElementTopology *block_topo = NULL;
+
+  // Topology of the face we are currently working with...
+  const ElementTopology *topo = NULL;
+
+  // The element side that the current face is on the element...
+  int current_side = -1;
+
+  for (int iel = 0; iel < number_sides; iel++) {
+    int elem_id = element[iel];
+
+    // Get the element block containing this face...
+    if (block == NULL || !block->contains(elem_id)) {
+      block = region->get_element_block(elem_id);
+      block_topo = block->topology();
+      // NULL if hetero face/edge on element
+      common_ftopo = block->topology()->boundary_type(0);
+      if (common_ftopo != NULL)
+	topo = common_ftopo;
+      current_side = -1;
+    }
+
+    // If the element topology of the element block containing this
+    // face has heterogeneous topology (eg. wedge), then determine the
+    // topology corresponding to the current side..
+    if (common_ftopo == NULL && sides[iel] != current_side) {
+      current_side = sides[iel];
+      topo = block->topology()->boundary_type(sides[iel]);
+    }
+
+    // See if the face topology and the parent element topology for
+    // the current face match the topology associated with this face block.
+    if (topo == ftopo && block_topo == parent_topo &&
+	(parent_block == NULL || parent_block == block )
+	&& !block_is_omitted(block)) {
+      // This face/edge  belongs in the face/edge block
+      face_is_member[iel] = 1;
+    } else {
+      face_is_member[iel] = 0;
+    }
+  }
+}
+
+unsigned int Ioss::Utils::hash (const std::string& name)
+{
+  // Hash function from Aho, Sethi, Ullman "Compilers: Principles,
+  // Techniques, and Tools.  Page 436
+
+  const char* symbol = name.c_str();
+  unsigned int hashval;
+  unsigned int g;
+  for (hashval = 0; *symbol != '\0'; symbol++) {
+    hashval = (hashval << 4) + *symbol;
+    g = hashval&0xf0000000;
+    if (g != 0) {
+      hashval = hashval ^ (g >> 24);
+      hashval = hashval ^ g;
+    }
+  }
+  return hashval;
+}
+
+void Ioss::Utils::input_file(std::vector<std::string> *lines, size_t max_line_length)
+{
+#ifndef IOSS_STANDALONE
+  // Create an ifstream for the input file. This does almost the same
+  // function as sierra::Env::input() except this is for a single
+  // processor and the sierra::Env::input() is for parallel...
+
+  std::string file;
+
+  if (stk::get_variables_map().count("input-deck")) {
+    const std::string file_name = stk::get_variables_map()["input-deck"].as<std::string>();
+    if (file_name.length() != 0) {
+      if (file_name[0] != '/' && stk::get_variables_map().count("directory")) {
+        const std::string directory = stk::get_variables_map()["directory"].as<std::string>();
+        file = directory + file_name;
+      }
+      else {
+        file = file_name;
+      }
+
+      // Should have the filename now; open it and read into the vector...
+      std::string input_line;
+      std::ifstream infile(file.c_str());
+      lines->push_back(file);
+      while (!std::getline(infile, input_line).fail()) {
+        if (max_line_length == 0 || input_line.length() <= max_line_length) {
+          lines->push_back(input_line);
+        } else {
+          // Split the line into pieces of length "max_line_length-1"
+          // and append a "\" to all but the last. Don't worry about
+          // splitting at whitespace...
+          size_t ibeg = 0;
+          do {
+            std::string sub = input_line.substr(ibeg, max_line_length-1);
+            if (ibeg+max_line_length-1 < input_line.length()) {
+              sub += "\\";
+            }
+            lines->push_back(sub);
+            ibeg += max_line_length-1;
+          } while (ibeg < input_line.length());
+        }
+      }
+    }
+  }
+#endif
+}
+
+int Ioss::Utils::case_strcmp(const std::string &s1, const std::string &s2)
+{
+  const char *c1 = s1.c_str();
+  const char *c2 = s2.c_str();
+  for ( ; ; c1++, c2++) {
+    if (std::tolower(*c1) != std::tolower(*c2))
+      return (std::tolower(*c1) - std::tolower(*c2));
+    if (*c1 == '\0')
+      return 0;
+  }
+}

@@ -1,0 +1,569 @@
+/*--------------------------------------------------------------------*/
+/*    Copyright 2002 Sandia Corporation.                              */
+/*    Under the terms of Contract DE-AC04-94AL85000, there is a       */
+/*    non-exclusive license for use of this work by or on behalf      */
+/*    of the U.S. Government.  Export of this program may require     */
+/*    a license from the United States Government.                    */
+/*--------------------------------------------------------------------*/
+
+#include <generated/Iogn_DatabaseIO.h>
+#include <generated/Iogn_GeneratedMesh.h>
+
+#include <Ioss_CodeTypes.h>
+#include <Ioss_SubSystem.h>
+#include <Ioss_Utils.h>
+#include <string>
+
+namespace Iogn {
+
+  // ========================================================================
+  const IOFactory* IOFactory::factory()
+  {
+    static IOFactory registerThis;
+    return &registerThis;
+  }
+
+  IOFactory::IOFactory()
+    : Ioss::IOFactory("generated")
+  {}
+
+  Ioss::DatabaseIO* IOFactory::make_IO(const std::string& filename,
+				       Ioss::DatabaseUsage db_usage,
+				       MPI_Comm communicator) const
+  { return new DatabaseIO(NULL, filename, db_usage, communicator); }
+
+  // ========================================================================
+  DatabaseIO::DatabaseIO(Ioss::Region *region, const std::string& filename,
+			 Ioss::DatabaseUsage db_usage,
+			 MPI_Comm communicator) :
+    Ioss::DatabaseIO(region, filename, db_usage, communicator), 
+    m_generatedMesh(NULL),  spatialDimension(3), nodeCount(0),
+    elementCount(0), nodeBlockCount(0),
+    elementBlockCount(0), nodesetCount(0), sidesetCount(0),
+    sequentialNG2L(false), sequentialEG2L(false)
+  {
+    if (is_input()) {
+      dbState = Ioss::STATE_UNKNOWN;
+    } else {
+      std::ostringstream errmsg;
+      errmsg << "Generated mesh option is only valid for input mesh.";
+      IOSS_ERROR(errmsg);
+    }
+  }
+
+  DatabaseIO::~DatabaseIO()
+  {
+    delete m_generatedMesh;
+  }
+
+  void DatabaseIO::read_meta_data()
+  {
+    m_generatedMesh = new GeneratedMesh(get_filename(), util().parallel_size() , util().parallel_rank());
+
+    spatialDimension = 3;
+    nodeCount = m_generatedMesh->node_count_proc();
+    elementCount = m_generatedMesh->element_count_proc();
+    elementBlockCount =  m_generatedMesh->block_count();
+    nodesetCount = m_generatedMesh->nodeset_count();
+    sidesetCount = m_generatedMesh->sideset_count();
+    
+    get_nodeblocks();
+    get_elemblocks();
+    get_nodesets();
+    get_facesets();
+    
+    Ioss::Region *this_region = get_region();
+    this_region->property_add(Ioss::Property(std::string("title"), std::string("GeneratedMesh: ") += get_filename()));
+    this_region->property_add(Ioss::Property(std::string("spatial_dimension"), 3));
+  }
+
+  bool DatabaseIO::begin(Ioss::State /* state */)
+  {
+    return true;
+  }
+
+  bool   DatabaseIO::end(Ioss::State /* state */)
+  {
+    return true;
+  }
+
+  bool DatabaseIO::begin_state(Ioss::Region *region, int /* state */, double time )
+  {
+    return true;
+  }
+
+  bool   DatabaseIO::end_state(Ioss::Region */* region */, int /* state */, double /* time */)
+  {
+    return true;
+  }
+
+  int DatabaseIO::get_field_internal(const Ioss::NodeBlock* nb,
+				     const Ioss::Field& field,
+				     void *data, size_t data_size) const
+  {
+    size_t num_to_get = field.verify(data_size);
+    if (num_to_get > 0) {
+
+      Ioss::Field::RoleType role = field.get_role();
+      if (role == Ioss::Field::MESH) {
+	if (field.get_name() == "mesh_model_coordinates") {
+	  // Cast 'data' to correct size -- double
+	  double *rdata = static_cast<double*>(data);
+	  std::vector<double> xyz(3*num_to_get);
+	  m_generatedMesh->coordinates(xyz);
+	  std::copy(xyz.begin(), xyz.end(), rdata);
+	}
+
+	else if (field.get_name() == "ids") {
+	  // Map the local ids in this node block
+	  // (1...node_count) to global node ids.
+	  const Ioss::MapContainer &map = get_node_map();
+	  int *ids = static_cast<int*>(data);
+	  
+	  for (size_t i=0; i < num_to_get; i++) {
+	    ids[i] = map[1 + i];
+	  }
+	}
+	else if (field.get_name() == "connectivity") {
+	  // Do nothing, just handles an idiosyncracy of the GroupingEntity
+	}
+	else {
+	  num_to_get = Ioss::Utils::field_warning(nb, field, "input");
+	}
+	return num_to_get;
+      } else {
+	num_to_get = Ioss::Utils::field_warning(nb, field, "input");
+      }
+    }
+    return num_to_get;
+  }
+
+  int DatabaseIO::get_field_internal(const Ioss::Region* /* reg */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+
+  int DatabaseIO::get_field_internal(const Ioss::ElementBlock* eb, const Ioss::Field& field,
+				     void *data, size_t data_size) const
+  {
+    size_t num_to_get = field.verify(data_size);
+    if (num_to_get > 0) {
+
+      int id = eb->get_property("id").get_int();
+      int element_count = eb->get_property("entity_count").get_int();
+      Ioss::Field::RoleType role = field.get_role();
+
+      if (role == Ioss::Field::MESH) {
+	// Handle the MESH fields required for an ExodusII file model.
+	// (The 'genesis' portion)
+
+	if (field.get_name() == "connectivity") {
+	  assert(field.raw_storage()->component_count() == m_generatedMesh->topology_type(id).second);
+
+	  // The generated mesh connectivity is returned in a vector.  Ids are global
+	  std::vector<int> connectivity;
+	  m_generatedMesh->connectivity(id, connectivity);
+	  int *connect = static_cast<int*>(data);
+	  std::copy(connectivity.begin(), connectivity.end(), connect);
+	}
+	else if (field.get_name() == "ids") {
+	  // Map the local ids in this element block
+	  // (eb_offset+1...eb_offset+1+element_count) to global element ids.
+	  const Ioss::MapContainer &map = get_element_map();
+	  int eb_offset = eb->get_offset();
+	  int *ids = static_cast<int*>(data);
+
+	  for (size_t i=0; i < num_to_get; i++) {
+	    ids[i] = map[eb_offset + 1 + i];
+	  }
+	}
+	else {
+	  num_to_get = Ioss::Utils::field_warning(eb, field, "input");
+	}
+      }
+
+      else if (role == Ioss::Field::ATTRIBUTE) {
+	if (element_count > 0) {
+	  int attribute_count = eb->get_property("attribute_count").get_int();
+	  if (attribute_count > 0) {
+	    double *attr = static_cast<double*>(data);
+	    for (size_t i=0; i < num_to_get; i++) {
+	      attr[i] = 1.0;
+	    }
+	  }
+	}
+      }
+
+      else if (role == Ioss::Field::TRANSIENT) {
+	// Check if the specified field exists on this element block.
+	// Note that 'higher-order' storage types (e.g. SYM_TENSOR)
+	// exist on the database as scalars with the appropriate
+	// extensions.
+
+	// Read in each component of the variable and transfer into
+	// 'data'.  Need temporary storage area of size 'number of
+	// elements in this block.
+	num_to_get = Ioss::Utils::field_warning(eb, field, "transient");
+      } else if (role == Ioss::Field::REDUCTION) {
+	num_to_get = Ioss::Utils::field_warning(eb, field, "input reduction");
+      }
+    }
+    return num_to_get;
+  }
+
+  int DatabaseIO::get_field_internal(const Ioss::FaceBlock* ef_blk,
+				     const Ioss::Field& field,
+				     void *data, size_t data_size) const
+  {
+    size_t num_to_get = field.verify(data_size);
+    if (num_to_get > 0) {
+
+      int id = ef_blk->get_property("id").get_int();
+      size_t entity_count = ef_blk->get_property("entity_count").get_int();
+      if (num_to_get != entity_count) {
+	std::ostringstream errmsg;
+	errmsg << "Partial field input not implemented for face/edge blocks";
+	IOSS_ERROR(errmsg);
+      }
+
+      Ioss::Field::RoleType role = field.get_role();
+      if (role == Ioss::Field::MESH) {
+
+	if (field.get_name() == "face_ids") {
+	}
+
+	else if (field.get_name() == "ids") {
+	}
+
+	else if (field.get_name() == "element_side") {
+	  // Since we only have a single array, we need to allocate an extra
+	  // array to store all of the data.  Note also that the element_id
+	  // is the global id but only the local id is stored so we need to
+	  // map from local_to_global prior to generating the face/edge  id...
+
+	  std::vector<int> elem_side;
+	  m_generatedMesh->sideset_elem_sides(id, elem_side);
+
+	  int *element_side = static_cast<int*>(data);
+	  for (size_t i=0; i < num_to_get; i++) {
+	    element_side[2*i+0] = elem_side[2*i+0];
+	    element_side[2*i+1] = elem_side[2*i+1] + 1;
+	  }
+	}
+
+	else if (field.get_name() == "distribution_factors") {
+	  double *dist_fact = static_cast<double*>(data);
+	  int comp_count = ef_blk->get_field("distribution_factors").transformed_storage()->component_count();
+	  for (size_t i=0; i < num_to_get * comp_count; i++) {
+	    dist_fact[i] = 1.0;
+	  }
+	}
+
+	else {
+	  num_to_get = Ioss::Utils::field_warning(ef_blk, field, "input");
+	}
+      } else if (role == Ioss::Field::TRANSIENT) {
+	num_to_get = Ioss::Utils::field_warning(ef_blk, field, "transient");
+      }
+    }
+    return num_to_get;
+  }
+
+  int DatabaseIO::get_field_internal(const Ioss::EdgeBlock* /* eb */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+
+  int DatabaseIO::get_field_internal(const Ioss::NodeSet* ns,
+				     const Ioss::Field& field,
+				     void *data, size_t data_size) const
+  {
+    size_t num_to_get = field.verify(data_size);
+    if (num_to_get > 0) {
+
+      int id = ns->get_property("id").get_int();
+      Ioss::Field::RoleType role = field.get_role();
+      if (role == Ioss::Field::MESH) {
+
+	if (field.get_name() == "ids") {
+	  std::vector<int> nodes;
+	  m_generatedMesh->nodeset_nodes(id, nodes);
+	  int *ids = static_cast<int*>(data);
+	  std::copy(nodes.begin(), nodes.end(), ids);
+	} else if (field.get_name() == "distribution_factors") {
+	  double *rdata = static_cast<double*>(data);
+	  for (size_t i=0; i < num_to_get; i++)
+	    rdata[i] = 1.0;
+	} else {
+	  num_to_get = Ioss::Utils::field_warning(ns, field, "input");
+	}
+      } else if (role == Ioss::Field::TRANSIENT) {
+	num_to_get = Ioss::Utils::field_warning(ns, field, "transient");
+      }
+    }
+    return num_to_get;
+  }
+    
+  int DatabaseIO::get_field_internal(const Ioss::EdgeSet* /* es */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int DatabaseIO::get_field_internal(const Ioss::FaceSet* /* fs */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int DatabaseIO::get_field_internal(const Ioss::CommSet* /* cs */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+
+  int DatabaseIO::put_field_internal(const Ioss::Region* /* region */, const Ioss::Field& /* field */,
+				     void * /* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+
+  int DatabaseIO::put_field_internal(const Ioss::ElementBlock* /* eb */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int DatabaseIO::put_field_internal(const Ioss::FaceBlock* /* fb */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int DatabaseIO::put_field_internal(const Ioss::EdgeBlock* /* nb */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int DatabaseIO::put_field_internal(const Ioss::NodeBlock* /* nb */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+
+  int DatabaseIO::put_field_internal(const Ioss::NodeSet* /* ns */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int DatabaseIO::put_field_internal(const Ioss::EdgeSet* /* es */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int DatabaseIO::put_field_internal(const Ioss::FaceSet* /* fs */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+  int DatabaseIO::put_field_internal(const Ioss::CommSet* /* cs */, const Ioss::Field& /* field */,
+				     void */* data */, size_t /* data_size */) const
+  {
+    return -1;
+  }
+
+  const Ioss::MapContainer& DatabaseIO::get_node_map() const
+  {
+    // Allocate space for node number map and read it in...
+    // Can be called multiple times, allocate 1 time only
+    if (nodeMap.empty()) {
+      nodeMap.resize(nodeCount+1);
+
+      if (is_input()) {
+	std::vector<int> map;
+	m_generatedMesh->node_map(map);
+
+	// Map needed for Ioss starts at position 1 since the
+	// sequential/non-sequential flag is at position 0...
+	std::copy(map.begin(), map.end(), &nodeMap[1]);
+
+	// Check for sequential node map.
+	// If not, build the reverse G2L node map...
+	sequentialNG2L = true;
+	for (int i=1; i < nodeCount+1; i++) {
+	  if (i != nodeMap[i]) {
+	    sequentialNG2L = false;
+	    nodeMap[0] = 1;
+	    break;
+	  }
+	}
+
+	if (!sequentialNG2L) {
+	  Ioss::Map::build_reverse_map(&reverseNodeMap,
+				       &nodeMap[1], nodeCount, 0,
+				       "node", myProcessor);
+	} else {
+	  // Sequential map
+	  sequentialNG2L = true;
+	  nodeMap[0] = -1;
+	}
+
+      } else {
+	// Output database; nodeMap not set yet... Build a default map.
+	for (int i=1; i < nodeCount+1; i++) {
+	  nodeMap[i] = i;
+	}
+	// Sequential map
+	sequentialNG2L = true;
+	nodeMap[0] = -1;
+      }
+    }
+    return nodeMap;
+  }
+
+  const Ioss::MapContainer& DatabaseIO::get_element_map() const
+  {
+    // Allocate space for elemente number map and read it in...
+    // Can be called multiple times, allocate 1 time only
+    if (elementMap.empty()) {
+      elementMap.resize(elementCount+1);
+
+      if (is_input()) {
+	std::vector<int> map;
+	m_generatedMesh->element_map(map);
+
+	// Map needed for Ioss starts at position 1 since the
+	// sequential/non-sequential flag is at position 0...
+	std::copy(map.begin(), map.end(), &elementMap[1]);
+
+	// Check for sequential element map.
+	// If not, build the reverse G2L element map...
+	sequentialEG2L = true;
+	for (int i=1; i < elementCount+1; i++) {
+	  if (i != elementMap[i]) {
+	    sequentialEG2L = false;
+	    elementMap[0] = 1;
+	    break;
+	  }
+	}
+
+	if (!sequentialEG2L) {
+	  Ioss::Map::build_reverse_map(&reverseElementMap,
+				       &elementMap[1], elementCount, 0,
+				       "element", myProcessor);
+	} else {
+	  // Sequential map
+	  sequentialEG2L = true;
+	  elementMap[0] = -1;
+	}
+
+      } else {
+	// Output database; elementMap not set yet... Build a default map.
+	for (int i=1; i < elementCount+1; i++) {
+	  elementMap[i] = i;
+	}
+	// Sequential map
+	sequentialEG2L = true;
+	elementMap[0] = -1;
+      }
+    }
+    return elementMap;
+  }
+
+  void DatabaseIO::get_nodeblocks()
+  {
+    std::string block_name = "nodeblock_1";
+    Ioss::NodeBlock *block = new Ioss::NodeBlock(this, block_name,
+						 m_generatedMesh->node_count_proc(), 3);
+    block->property_add(Ioss::Property("id", 1));
+    get_region()->add(block);
+  }
+
+  void DatabaseIO::get_elemblocks()
+  {
+    // Attributes of an element block are:
+    // -- id
+    // -- name
+    // -- element type
+    // -- number of elements
+    // -- number of attributes per element
+    // -- number of nodes per element (derivable from type)
+    // -- number of faces per element (derivable from type)
+    // -- number of edges per element (derivable from type)
+
+    int block_count = m_generatedMesh->block_count();
+    for (int i=0; i < block_count; i++) {
+      std::string name = Ioss::Utils::encode_entity_name("block", i+1);
+      std::string type = m_generatedMesh->topology_type(i+1).first;
+      int attribute_count = i == 0 ? 0 : 1;
+      Ioss::ElementBlock *block = new Ioss::ElementBlock(this, name, type,
+							 m_generatedMesh->element_count_proc(i+1),
+							 attribute_count);
+
+      block->property_add(Ioss::Property("id", i+1));
+      
+      // Maintain block order on output database...
+      block->property_add(Ioss::Property("original_block_order", i));
+      block->property_add(Ioss::Property("global_entity_count", (int)m_generatedMesh->element_count(i+1)));
+      
+      if (attribute_count > 0) {
+	block->field_add(Ioss::Field("thickness", Ioss::Field::REAL, "scalar", Ioss::Field::ATTRIBUTE,
+				     (int)m_generatedMesh->element_count_proc(i+1)));
+      }
+      
+      get_region()->add(block);
+    }
+  }
+
+  void DatabaseIO::get_nodesets()
+  {
+    // Attributes of a nodeset are:
+    // -- id
+    // -- name
+    // -- number of nodes
+    // -- number of distribution factors (see next comment)
+    // ----the #distribution factors should equal #nodes or 0, any
+    //     other value does not make sense. If it is 0, then a substitute
+    //     list will be created returning 1.0 for the factor
+
+    // In a parallel execution, it is possible that a nodeset will have
+    // no nodes or distribution factors on a particular processor...
+
+    // Get nodeset metadata
+    for (int ins = 0; ins < nodesetCount; ins++) {
+      int number_nodes = m_generatedMesh->nodeset_node_count_proc(ins+1);
+      
+      std::string name = Ioss::Utils::encode_entity_name("nodelist", ins+1);
+      Ioss::NodeSet *nodeset = new Ioss::NodeSet(this, name, number_nodes);
+      nodeset->property_add(Ioss::Property("id", ins+1));
+      get_region()->add(nodeset);
+    }
+  }
+
+  void DatabaseIO::get_facesets()
+  {
+    for (int ifs = 0; ifs < sidesetCount; ifs++) {
+      std::string name = Ioss::Utils::encode_entity_name("surface", ifs+1);
+      Ioss::FaceSet *faceset = new Ioss::FaceSet(this, name);
+      faceset->property_add(Ioss::Property("id", ifs+1));
+      get_region()->add(faceset);
+
+      std::string ef_block_name = name + "_quad4";
+      std::string side_topo_name = "quad4";
+      std::string elem_topo_name = "unknown";
+      int number_faces = m_generatedMesh->sideset_side_count_proc(ifs+1);
+
+      Ioss::FaceBlock *ef_block = new Ioss::FaceBlock(this, ef_block_name,
+						      side_topo_name,
+						      elem_topo_name,
+						      number_faces);
+      faceset->add(ef_block);
+      ef_block->property_add(Ioss::Property("id", ifs+1));
+
+      std::string storage = "Real[";
+      storage += Ioss::Utils::to_string(4);
+      storage += "]";
+      ef_block->field_add(Ioss::Field("distribution_factors",
+				      Ioss::Field::REAL, storage,
+				      Ioss::Field::MESH, number_faces));
+    }
+  }
+}

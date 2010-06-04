@@ -1,0 +1,336 @@
+<?xml version="1.0"?>
+<!-- Ioss_MeshInput.xml -->
+<!-- XML File for individual Sierra Commands -->
+<?xml-stylesheet href="http://www.engsci.sandia.gov/Sierra/codes/scms/xml_html/sierra.xsl" type="text/xsl"?><?cocoon-process type="xslt"?><sierraCommandSyntax version="1.0">
+  <enumerations>
+    <enum general="0">
+      <name>CoordinateSystem</name>
+      <enum_entry>Axisymmetric</enum_entry>
+      <enum_entry>Barycentric</enum_entry>
+      <enum_entry>Cartesian</enum_entry>
+      <enum_entry>Cyclidic</enum_entry>
+      <enum_entry>Cylindrical</enum_entry>
+      <enum_entry>Polar</enum_entry>
+      <enum_entry>Quadriplanar</enum_entry>
+      <enum_entry>Skew</enum_entry>
+      <enum_entry>Spherical</enum_entry>
+      <enum_entry>Toroidal</enum_entry>
+      <enum_entry>Trilinear</enum_entry>
+    </enum>
+    <enum general="0">
+      <name>DatabaseTypes</name>
+      <description>
+         Specifies the supported database formats which are
+         potentially supported by all Sierra-based
+         applications.</description>
+      <enum_entry>exodusII<definition>The exodusII database
+      format. Described at http://jal.sandia.gov/SEACAS/Documentation/SEACAS.html. For use in
+      parallel executions, there is a file per processor. The SEACAS
+      system provides tools to manipulate exodusII
+      files.</definition></enum_entry>
+      <enum_entry>exodus<definition>Alias for exodusII.</definition></enum_entry>
+      <enum_entry>genesis<definition>Alias for exodusII.</definition></enum_entry>
+      <enum_entry>generated<definition>The database will be generated internally based on the parameters
+        specified in the filename. The form of the filename
+       is "IxJxK" where I, J, and K are  the number of intervals
+       in the X, Y, and Z directions respectively and the "x" are
+       literal 'x' characters.
+
+       Additional valid options are:
+       - help -- no argument, shows valid options
+       - show -- no argument, prints out a summary of the
+       generated mesh parameters. 
+
+       - shell -- argument = xXyYzZ which specifies whether there is a shell
+       block at that location. 'x' is minimum x face, 'X' is maximum x face,
+       similarly for y and z.  Note that the argument string is a single
+       multicharacter string.  You can add multiple shell blocks to a face,
+       for example, shell:xxx would add three layered shell blocks on the
+       minimum x face.  An error is output if a non xXyYzZ character is
+       found, but execution continues.
+
+       - nodeset -- argument = xXyYzZ which specifies whether there is
+       a nodeset at that location. 'x' is minimum x face, 'X' is
+       maximum x face, similarly for y and z.  Note that the argument
+       string is a single multicharacter string.  You can add multiple
+       nodesets to a face, for example, nodeset:xxx would add three
+       nodesets on the minimum x face.  An error is output if a non
+       xXyYzZ character is found, but execution continues.
+
+       - sideset -- argument = xXyYzZ which specifies whether there is
+       a sideset at that location. 'x' is minimum x face, 'X' is
+       maximum x face, similarly for y and z.  Note that the argument
+       string is a single multicharacter string.  You can add multiple
+       sidesets to a face, for example, sideset:xxx would add three
+       sidesets on the minimum x face.  An error is output if a non
+       xXyYzZ character is found, but execution continues.  If there
+       is a shell block specified on that face, then the sideset will
+       be on the shell elements; else the sideset will be on the hex
+       elements.
+
+       - zdecomp -- argument = n0, n1, n2, ..., n#proc-1 which are the number
+       of intervals in the z direction for each processor in a pallel run.
+       If this option is specified, then the total number of intervals in the
+       z direction is the sum of the n0, n1, ... An interval count must be
+       specified for each processor.  If this option is not specified, then
+       the number of intervals on each processor in the z direction is
+       numZ/numProc with the extras added to the lower numbered processors.
+
+       - scale -- argument = xs, ys, zs which are the scale factors in the x,
+       y, and z directions. All three must be specified if this option is
+       present.
+
+       - offset -- argument = xoff, yoff, zoff which are the offsets in the
+       x, y, and z directions.  All three must be specified if this option
+       is present.
+
+       - bbox -- argument = xmin, ymin, zmin, xmax, ymax, zmax
+       which specify the lower left and upper right corners of
+       the bounding box for the generated mesh.  This will
+       calculate the scale and offset which will fit the mesh in
+       the specified box.  All calculations are based on the currently
+       active interval settings. If scale or offset or zdecomp
+       specified later in the option list, you may not get the
+       desired bounding box.
+
+       - rotate -- argument = axis,angle,axis,angle,...
+       where axis is 'x', 'y', or 'z' and angle is the rotation angle in
+       degrees. Multiple rotations are cumulative. The composite rotation
+       matrix is applied at the time the coordinates are retrieved after
+       scaling and offset are applied.
+
+       If an unrecognized option is specified, an error message will be
+       output and execution will continue.
+
+       An example of valid input is:
+       "10x20x40|scale:1,0.5,0.25|offset:-5,-5,-5|shell:xX"
+
+       This would create a mesh with 10 intervals in x, 20 in y, 40 in z
+       The mesh would be centered on 0,0,0 with a range of 10 in each
+       direction. There would be a shell layer on the min and max
+       x faces.
+
+       NOTE: All options are processed in the order they appear in
+       the parameters string (except rotate which is applied at the
+       time the coordinates are generated/retrieved)</definition></enum_entry>
+      <enum_entry>xdmf<definition>The new xdmf parallel file
+      format. Xdmf is based on XML and HDF5 and currently there are two files per processor</definition></enum_entry>
+    </enum>
+  </enumerations>
+<!--
+  [NOTE: The (Y) or (N) at the beginning of the line indicates whether
+         the command is supported at current time]
+
+  Begin Mesh Definition {name}
+  (Y)  DATABASE NAME = {filename}
+  (Y)  DATABASE TYPE = {exodusII|dmf|auto}
+  (Y)  COORDINATE SYSTEM [{Axisymmetric|...}]
+  (N)  PARAMETERS FILE = {name of external file with parallel info....}
+  (Y)  ALIAS {name_in_database} AS {name_in_sierra}  
+  End Mesh Definition
+
+  Begin Mesh Definition B61_Impact
+    Database Name = b61_mod37-2.e
+    Database Type = exodusII
+    Alias block_1   as Case
+    Alias block_10  as Fin
+    Alias block_12  as Nose
+    Alias surface_1 as Nose_Case_Interface
+    Alias surface_2 as OuterBoundary
+  End Mesh Definition B61_Impact
+
+  NOTE: This example shows the 'BEGIN MESH DEFINITION' block at the
+  'root' level of the command tree.  This would typically be inside a
+  REGION block and there would be one (or more?)  MESH DEFINITION
+  block for each region.  -->
+  
+  <block_command usage="DBIO" physics="MESH" instance="1" min_occurs="0" max_occurs="unbounded">
+    <keyword>FINITE ELEMENT MODEL</keyword>
+    <line_parameter name="Label" taglist="Finite-Element-Model"/>
+    <summary>Describes the location and type of the input stream used
+             for defining a geometry model for the enclosing region.</summary>
+
+    <line_command usage="DBIO" physics="MESH" instance="2" min_occurs="0" max_occurs="unbounded">
+      <keyword>Database Name</keyword>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>
+      <parameter name="StreamName" type="STRING" count="1"/>
+      <summary>The base name of the database containing the output
+      results. If the filename begins with the '/' character, it is an
+      absolute path; otherwise, the path to the current directory will
+      be prepended to the name.</summary>
+    </line_command>
+
+    <line_command usage="DBIO" physics="MESH" instance="7" min_occurs="0" max_occurs="unbounded">
+      <keyword>Database Type</keyword>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>
+      <parameter name="DatabaseTypes" type="ENUMERATED" enumeration="DatabaseTypes" count="1"><default>ExodusII</default></parameter>
+      <summary>The database type/format used for the mesh.</summary>
+     </line_command>
+ 
+    <line_command usage="DBIO" physics="MESH" instance="3" min_occurs="0" max_occurs="unbounded">
+      <keyword>Coordinate System</keyword>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>      
+      <parameter name="CoordinateSystem" type="ENUMERATED" enumeration="CoordinateSystem" count="1"/>
+      <summary>The interpretation of the geometry data stored in this
+               database. Optional. Defaults to Cartesian.</summary>
+    </line_command>
+
+    <line_command usage="DBIO" physics="MESH" instance="4" min_occurs="0" max_occurs="unbounded">
+      <keyword>Parameters File</keyword>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>
+      <parameter name="Filename" type="STRING" count="1"/>
+      <summary>Optional file containing data about this database.  If
+               not specified, default conventions are used.</summary>
+    </line_command>
+
+    <line_command usage="DBIO" physics="MESH" instance="5" min_occurs="0" max_occurs="unbounded">
+      <keyword>ALIAS</keyword>
+      <parameter name="DatabaseName" type="STRING" count="1"/>
+      <parameter name="AS" type="TOKEN" token="AS" count="1"/>
+      <parameter name="InternalName" type="STRING" count="1"/>
+      <summary>Name the database entity "DatabaseName" as
+"InternalName"</summary>
+      <description>
+      This "InternalName" may then be referenced in the data file in
+addition to the original name.
+      </description>
+    </line_command>
+
+    <line_command usage="DBIO" physics="MESH" instance="20" min_occurs="0" max_occurs="unbounded">
+      <keyword>COMPONENT SEPARATOR CHARACTER</keyword>
+      <parameter name="Is|=" type="ENUMERATED" enumeration="is|=" count="1"/>
+      <parameter name="Separator" type="STRING" count="1"/>
+      <summary>The separator is the single character used to separate
+      the output variable basename (e.g. "stress") from the suffices
+      (e.g. "xx", "yy") when displaying the names of the individual
+      variable components.  For example, the default separator is "_",
+      which results in names similar to "stress_xx", "stress_yy", ... 
+      "stress_zx".  To eliminate the separator, specify an empty
+      string ("") or NONE.</summary>
+    </line_command>
+
+    <line_command usage="DBIO" physics="MESH" instance="21" min_occurs="0" max_occurs="unbounded">
+      <keyword>GLOBAL ID MAPPING BACKWARD COMPATIBILITY</keyword>
+      <parameter name="Is|=" type="ENUMERATED" enumeration="is|=" count="1"/>
+      <parameter name="OFF|ON|TRUE|FALSE|YES|NO" type="ENUMERATED" enumeration="OFF|ON|TRUE|FALSE|YES|NO" count="1"/>
+      <summary>Set this to retain the old method of mapping node and element global 
+      ids.  The old method is to not use the global id maps for the mesh file on a
+      serial problem and to never use the "original global id map" for nodes or 
+      elements in a parallel problem.  This is currently enabled by default.
+      </summary>
+    </line_command>
+
+<!-- SWB added as an alternative to the verbose DBIO.MESH.6 -->
+    <line_command usage="DBIO" physics="MESH" instance="8" min_occurs="0" max_occurs="unbounded">
+      <keyword>USE MATERIAL</keyword>
+      <parameter name="MaterialName" type="STRING" count="1"/>
+      <parameter name="FOR" type="TOKEN" token="FOR" count="1"/>
+      <parameter name="VolumeList" type="STRING" count="1:"/>
+      <summary>Associate the given volumes with the indicated material
+     name.
+    </summary>
+    </line_command>
+
+
+    <line_command usage="DBIO" physics="MESH" instance="9" min_occurs="0" max_occurs="unbounded">
+      <keyword>OMIT VOLUME</keyword>
+      <parameter name="VolumeList" type="STRING" count="1:"/>
+      <summary>Specifies that the  volumes named in the volumeList be omitted from the analysis.
+    </summary>
+      <description>
+If a volume is omitted, then it is illegal to refer to it later in the
+input file e.g an initial condition may not be specified on an omitted
+volume. The elements, faces, etc are never created and it is as if
+the omitted volumes did not exist in the mesh file. If a surface is
+completely determined by the omitted volume, then it is illegal to
+specify boundary conditions on that surface. However, if the surface
+spans multiple volumes, boundary conditions may be applied on the
+portion of the surface supported by the volumes that are not omitted.
+      </description>
+    </line_command>
+
+    <line_command usage="DBIO" physics="MESH" instance="14" min_occurs="0" max_occurs="unbounded">
+      <keyword>OMIT BLOCK</keyword> <parameter name="BlockList" type="STRING" count="1:"/> <summary>Specifies that the
+      element blocks named in the blockList be omitted from the
+      analysis.
+    </summary>
+      <description>
+If an element block is omitted, then it is illegal to refer to it
+later in the input file e.g an initial condition may not be specified
+on an omitted element block. The elements, faces, etc are never
+created and it is as if the omitted element blocks did not exist in
+the mesh file. If a surface is completely determined by the omitted
+element block, then it is illegal to specify boundary conditions on
+that surface. However, if the surface spans multiple element blocks, boundary
+conditions may be applied on the portion of the surface supported by
+the element blocks that are not omitted.
+      </description>
+    </line_command>
+
+<!-- tookusa added as an alternative to the verbose DBIO.MESH.10 -->
+    <line_command usage="DBIO" physics="MESH" instance="10" min_occurs="0" max_occurs="unbounded">
+      <keyword>SHELL THICKNESS MULTIPLIER</keyword>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="delimiter" count="1"/>   
+      <parameter name="Var" type="REAL" count="1"/>
+      <parameter name="FOR" type="TOKEN" token="FOR" count="1"/>
+      <parameter name="VolumeList" type="STRING" count="1:"/>
+      <summary>Set shell thickness multiplier for (specified) volume.
+      </summary>
+      <description>
+      Shell element thickness is currently defined as an attribute of
+a volume within the Exodus file. For rapid prototyping, it is
+sometimes desirable to be able to quickly change this shell thickness
+without having to make modifications to the Exodus file. Specification
+of a multiplier allows the user to do this.
+      </description>
+    </line_command>
+
+    <line_command usage="DBIO" physics="MESH" instance="11" min_occurs="0" max_occurs="unbounded">
+      <keyword>USE LINEAR GRADIENT SHELLS</keyword>
+      <parameter name="FOR" type="TOKEN" token="FOR" count="1"/>
+      <parameter name="VolumeList" type="STRING" count="1:"/>
+      <summary>Associate the given volumes with the linear gradient shell.
+    </summary>
+    </line_command>
+    <line_command usage="DBIO" physics="MESH" instance="12" min_occurs="0" max_occurs="unbounded"><!--cn -->
+      <keyword>USE QUADRATIC GRADIENT SHELLS</keyword>
+      <parameter name="FOR" type="TOKEN" token="FOR" count="1"/>
+      <parameter name="VolumeList" type="STRING" count="1:"/>
+      <summary>Associate the given volumes with the quadratic gradient shell.
+    </summary>
+    </line_command>
+    <line_command usage="DBIO" physics="MESH" instance="13" min_occurs="0" max_occurs="unbounded">
+      <keyword>BAR AREA MULTIPLIER</keyword>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="delimiter" count="1"/>   
+      <parameter name="Var" type="REAL" count="1"/>
+      <parameter name="FOR" type="TOKEN" token="FOR" count="1"/>
+      <parameter name="VolumeList" type="STRING" count="1:"/>
+      <summary>Set bar area multiplier for (specified) volume.
+      </summary>
+      <description>
+       Bar area is currently defined as an attribute of
+a volume within the Exodus file. For rapid prototyping, it is
+sometimes desirable to be able to quickly change this area
+without having to make modifications to the Exodus file. Specification
+of a multiplier allows the user to do this.
+      </description>
+    </line_command>
+  </block_command>
+
+
+  <line_command usage="DBIO" physics="MESH" instance="100" min_occurs="0" max_occurs="unbounded">
+    <!-- Need to specify a parent, or a parent must specify as a child -->
+    <keyword>Use Finite Element Model</keyword>
+    <parameter name="Model_name" type="STRING" count="1" in_taglist="Finite-Element-Model"/>
+    <optional>
+      <parameter name="Model" type="TOKEN" token="Model" count="1"/>
+      <parameter name="Coordinates" type="TOKEN" token="Coordinates" count="1"/>
+      <parameter name="Are" type="TOKEN" token="are" count="1"/>
+      <parameter name="Nodal_variable_name" type="STRING" count="1"/>
+    </optional>
+    <summary>Associates a predefined finite element model with this region.
+ </summary>
+  </line_command>
+
+
+</sierraCommandSyntax>

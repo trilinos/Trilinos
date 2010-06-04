@@ -1,0 +1,104 @@
+### Copyright (c) 2005 Sandia Corporation. Under the terms of Contract
+### DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
+### retains certain rights in this software.
+### 
+### Redistribution and use in source and binary forms, with or without
+### modification, are permitted provided that the following conditions are
+### met:
+### 
+###     * Redistributions of source code must retain the above copyright
+###       notice, this list of conditions and the following disclaimer.
+### 
+###     * Redistributions in binary form must reproduce the above
+###       copyright notice, this list of conditions and the following
+###       disclaimer in the documentation and/or other materials provided
+###       with the distribution.  
+### 
+###     * Neither the name of Sandia Corporation nor the names of its
+###       contributors may be used to endorse or promote products derived
+###       from this software without specific prior written permission.
+### 
+### THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+### "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+### LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+### A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
+### OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
+### SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+### LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+### DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+### THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+### (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+### OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+### 
+
+### Imakefile --- 
+
+INCLUDES = -I../include
+
+EXOIITEST = -L../.. -lexoIIv2c
+LOCALEXO = ../../libexoIIv2c.a
+LIBS = $(EXOIITEST) -L$(USRLIBDIR) $(NETCDF) $(EXTRANETCDFLIB)
+
+PROGS = testwt testwtd testrd testrd1 testrdd testwt1 testwt2 testwtm \
+	testwt_ss testwt_nossnsdf testrd_ss testrdwt testcp testcpd testcp_nl  \
+	testcp_ln testwt_clb testwt_nc testrd_nc testwt-zeroe testwt-zeron \
+	testrdv testwt-one-attrib create_mesh rd_wt_mesh \
+	testrd-partial testwt-partial testwt-nsided testrd-nsided testwt-nfaced \
+	testrd-nfaced
+
+#if 0
+	CreateEdgeFace ReadEdgeFace
+#endif
+
+all:: check
+
+NormalProgramTarget(testwt,    testwt.o,    $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(testwt_clb,testwt_clb.o,$(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(testwtd,   testwtd.o,   $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(testrd,    testrd.o,    $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(testrd1,   testrd1.o,   $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(testrdd,   testrdd.o,   $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(testrdv,   testrdv.o,   $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(testwt1,   testwt1.o,   $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(testwt2,   testwt2.o,   $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(testwtm,   testwtm.o,   $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(testwt_ss, testwt_ss.o, $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(testwt_nossnsdf, testwt_nossnsdf.o, $(LOCALEXO), /**/, $(LIBS))
+
+NormalProgramTarget(testrd_ss, testrd_ss.o, $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(testrdwt,  testrdwt.o,  $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(testcp,    testcp.o,    $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(testcpd,   testcpd.o,   $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(testcp_nl ,testcp_nl.o, $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(testcp_ln ,testcp_ln.o, $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(testwt_nc, testwt_nc.o, $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(testrd_nc, testrd_nc.o, $(LOCALEXO), /**/, $(LIBS))
+
+NormalProgramTarget(testwt-zeroe, testwt-zeroe.o, $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(testwt-zeron, testwt-zeron.o, $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(testwt-one-attrib, testwt-one-attrib.o, $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(testwt-partial, testwt-partial.o, $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(testrd-partial, testrd-partial.o, $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(testwt-nsided, testwt-nsided.o, $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(testrd-nsided, testrd-nsided.o, $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(testwt-nfaced, testwt-nfaced.o, $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(testrd-nfaced, testrd-nfaced.o, $(LOCALEXO), /**/, $(LIBS))
+
+NormalProgramTarget(create_mesh, create_mesh.o, $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(rd_wt_mesh,  rd_wt_mesh.o, $(LOCALEXO), /**/, $(LIBS))
+
+NormalProgramTarget(CreateEdgeFace, CreateEdgeFace.o, $(LOCALEXO), /**/, $(LIBS))
+NormalProgramTarget(ReadEdgeFace,   ReadEdgeFace.o,   $(LOCALEXO), /**/, $(LIBS))
+
+testall: testall.in1 $(CONFIGDIR)/$(MACROFILE)
+	rm -f testall
+	$(ETCDIR)/MsubCmd +R"@<" -R">@" testall.in1 >testall
+
+test:  check
+check: $(PROGS) testall
+	csh -f ./testall
+
+ExtraStuffToClean(*.res)
+ExtraStuffToClean(*.exo)
+ExtraStuffToClean(test.output)
+ExtraStuffToClean(testall)

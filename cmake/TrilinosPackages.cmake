@@ -107,6 +107,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Mesquite              mesquite                       PS
   Stalix                stalix                         EX
   Lyno                  lyno                           EX
+  Trios                 Trios                          EX # Depends on netcdf, optionally hdf5, xdmf
   )
 
 

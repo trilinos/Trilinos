@@ -1,0 +1,16 @@
+* Builds in standalone (non-sierra) mode.  All tests pass
+
+* Building in sierra mode with "-D
+  Trios_ENABLE_USE_WITH_SIERRA:BOOL=TRUE" works except for linking the
+  executables.  There is an issue that the Boost programs_options is
+  in a library, where most of the other Boost usages is header only.
+
+* C API for both nemesis and exodus installed; need to also install
+  Fortran API.  Currently waiting for minor refactoring of how the
+  fortran libraries are built in SEAMS.
+
+* Need to activate the exodus "old tests".
+
+* Add more tests
+
+* Better handling of xdmf

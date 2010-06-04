@@ -1,0 +1,340 @@
+
+after ex_open
+         I/O word size 4
+after ex_get_init, error =   0
+database parameters:
+title =  'This is a test'
+num_dim =   3
+num_nodes =  33
+num_elem =   0
+num_elem_blk =   0
+num_node_sets =   2
+num_side_sets =   0
+
+after ex_get_coord, error =   0
+x coords = 
+  0.0
+  1.0
+  1.0
+  0.0
+  1.0
+  2.0
+  2.0
+  1.0
+  0.0
+ 10.0
+ 10.0
+  1.0
+  1.0
+ 10.0
+ 10.0
+  1.0
+  0.0
+  1.0
+ 10.0
+  7.0
+  3.0
+  6.0
+  0.0
+  3.0
+  6.0
+  0.0
+  2.7
+  6.0
+  5.7
+  3.7
+  0.0
+ 10.0
+ 10.0
+y coords = 
+  0.0
+  0.0
+  1.0
+  1.0
+  0.0
+  0.0
+  1.0
+  1.0
+  0.0
+  0.0
+  0.0
+  0.0
+ 10.0
+ 10.0
+ 10.0
+ 10.0
+  0.0
+  0.0
+  0.0
+  5.0
+  0.0
+  0.0
+  0.0
+  2.0
+  2.0
+  2.0
+  1.7
+  1.7
+  1.7
+  0.0
+  0.0
+  0.0
+ 10.0
+z coords = 
+  0.0
+  0.0
+  0.0
+  0.0
+  0.0
+  0.0
+  0.0
+  0.0
+  0.0
+  0.0
+-10.0
+-10.0
+  0.0
+  0.0
+-10.0
+-10.0
+  0.0
+  5.0
+  2.0
+  3.0
+  6.0
+  0.0
+  0.0
+  6.0
+  2.0
+  0.0
+  2.7
+  3.3
+  1.7
+  2.3
+  0.0
+  0.0
+ 10.0
+
+after ex_get_coord_names, error =   0
+x coord name = 'xcoor'
+y coord name = 'ycoor'
+num nodal attributes = 0
+
+after ex_get_map, error =   0
+
+after ex_get_node_set_ids, error =   0
+
+after ex_get_names, error =   0
+
+after ex_get_node_set_param, error =   0
+
+node set 20 parameters: 
+num_nodes =  5
+name = ''
+
+after ex_get_node_set, error =   0
+
+after ex_get_node_set_dist_fact, error =   0
+
+node list for node set 20
+100
+101
+102
+103
+104
+dist factors for node set 20
+ 1.00
+ 2.00
+ 3.00
+ 4.00
+ 5.00
+num nodeset attributes for nodeset 20 = 0
+
+after ex_get_node_set_param, error =   0
+
+node set 21 parameters: 
+num_nodes =  3
+name = ''
+
+after ex_get_node_set, error =   0
+
+after ex_get_node_set_dist_fact, error =   0
+
+node list for node set 21
+200
+201
+202
+dist factors for node set 21
+ 1.10
+ 2.10
+ 3.10
+num nodeset attributes for nodeset 21 = 0
+
+after ex_inquire, error = 0
+
+There are  3 properties for each node set
+after ex_get_prop_names, error = 0
+node set  1, property( 1): 'ID'=    20
+node set  2, property( 1): 'ID'=    21
+node set  1, property( 2): 'FACE'=     4
+node set  2, property( 2): 'FACE'=     5
+node set  1, property( 3): 'VELOCITY'=  1000
+node set  2, property( 3): 'VELOCITY'=  2000
+
+after ex_inquire, error =   0
+
+after ex_inquire: EX_INQ_NS_NODE_LEN = 8, error =   0
+
+after ex_inquire: EX_INQ_NS_DF_LEN = 8, error =   0
+
+after ex_get_concat_node_sets, error =   0
+
+concatenated node set info
+ids = 
+ 20
+ 21
+num_nodes_per_set = 
+  5
+  3
+node_ind = 
+  0
+  5
+node_list = 
+100
+101
+102
+103
+104
+200
+201
+202
+dist_fact = 
+1.000
+2.000
+3.000
+4.000
+5.000
+1.100
+2.100
+3.100
+
+after ex_get_qa, error =   0
+QA records = 
+ 'TESTWT'
+ 'testwt'
+ '07/07/93'
+ '15:41:33'
+ ''
+ ''
+ ''
+ ''
+
+after ex_inquire, error =   0
+
+after ex_get_info, error =   0
+info records = 
+ 'This is the first information record.'
+ ''
+ ''
+
+after ex_get_var_param, error =   0
+
+after ex_get_var_names, error =   0
+There are  1 global variables; their names are :
+ 'glo_vars'
+
+after ex_get_var_param, error =   0
+
+after ex_get_var_names, error =   0
+There are  2 nodal variables; their names are :
+ 'node_variable_a_very_long_name_0'
+ 'nod_var1'
+
+after ex_get_var_param, error =   0
+
+after ex_inquire, error =   0
+There are 10 time steps in the database.
+
+after ex_get_time, error =   0
+time value at time step  3 = 0.030
+
+after ex_get_all_times, error =   0
+time values at all time steps are:
+0.010
+0.020
+0.030
+0.040
+0.050
+0.060
+0.070
+0.080
+0.090
+0.100
+
+after ex_get_glob_vars, error =   0
+global variable values at time step  3
+0.060
+
+after ex_get_glob_var_time, error =   0
+global variable  1 values through time:
+0.020
+0.040
+0.060
+0.080
+0.100
+0.120
+0.140
+0.160
+0.180
+0.200
+
+after ex_get_nodal_var, error =   0
+nodal variable  1 values at time step  3
+1.030
+1.060
+1.090
+1.120
+1.150
+1.180
+1.210
+1.240
+1.270
+1.300
+1.330
+1.360
+1.390
+1.420
+1.450
+1.480
+1.510
+1.540
+1.570
+1.600
+1.630
+1.660
+1.690
+1.720
+1.750
+1.780
+1.810
+1.840
+1.870
+1.900
+1.930
+1.960
+1.990
+
+after ex_get_nodal_var_time, error =   0
+nodal variable  1 values for node  1 through time:
+1.010
+1.020
+1.030
+1.040
+1.050
+1.060
+1.070
+1.080
+1.090
+1.100
+
+after ex_close, error =   0

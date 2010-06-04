@@ -1,0 +1,444 @@
+<?xml version="1.0"?>
+<!-- XML File for individual Sierra Commands -->
+<?xml-stylesheet href="http://www.engsci.sandia.gov/Sierra/codes/scms/xml_html/sierra.xsl" type="text/xsl"?><?cocoon-process type="xslt"?><sierraCommandSyntax version="1.0">
+  <enumerations>
+    <enum general="0">
+      <name>FluidMaterialModels</name>
+      <enum_entry>Low_Mach_Incompressible</enum_entry>
+    </enum>
+  </enumerations>
+<!--
+    BEGIN PARAMETERS FOR BLOCK blockname
+-->
+  <block_command usage="DBIO" physics="MESH" instance="6" min_occurs="0" max_occurs="unbounded">
+    <keyword>PARAMETERS FOR BLOCK</keyword>
+    <line_parameter name="Blockname"/>
+    <summary>
+      Specifies analysis parameters associated with each element block.
+    </summary>
+<!--
+    MATERIAL matname, { SOLID | THERMAL | FLUID } MECHANICS MODEL modelname
+-->
+    <line_command usage="DBIO" physics="GENERIC" instance="1" min_occurs="0" max_occurs="unbounded">
+      <keyword>MATERIAL</keyword>
+      <parameter name="MatName" type="STRING" count="1"/>
+      <summary>
+        Associates this element block with its material properties.
+      </summary>
+    </line_command>
+
+<!--
+    SECTION = SectionName
+-->
+    <line_command usage="SECTION" physics="STRUCTURAL" instance="1" min_occurs="0" max_occurs="unbounded">
+      <keyword>SECTION</keyword>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>
+      <parameter name="SectionName" type="STRING" count="1" in_taglist="Section"/>
+      <summary>Specifies the section to use for this element block.</summary>
+    </line_command>
+
+<!--
+    DEVIATORIC PARAMETER = alpha
+-->
+    <line_command usage="DBIO" physics="STRUCTURAL" instance="15" min_occurs="0" max_occurs="unbounded">
+      <keyword>DEVIATORIC PARAMETER</keyword>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>
+      <parameter name="Alpha" type="REAL" count="1"><minInclusive>0.0</minInclusive><maxInclusive>1.0</maxInclusive></parameter>
+      <summary>
+
+      This line command is required for selective deviatoric
+      hexahedron or the selective deviatoric membrane. Its value,
+      which is valid from 0.0 to 1.0, indicates how much of the
+      deviatoric response should be taken from a uniform gradient
+      integration and how much should be taken from a full integration
+      of the element. A value of 0.0 will give a pure uniform gradient
+      response with no hourglass control. Thus, this value is of
+      little practical use. A value of 1.0 will give a
+      fully-integrated deviatoric response. Although any value between
+      0.0 and 1.0 is perfectly valid, lower values are generally
+      preferred.
+
+      The selective deviatoric elements, when used with a parameter
+      greater than 0.0, provide hourglass control without artificial
+      hourglass parameters.
+
+      </summary>
+    </line_command>
+
+<!--
+
+    ELEMENT INITIAL STRAINXX = istrainxx
+-->
+    <line_command usage="DBIO" physics="STRUCTURAL" instance="22" min_occurs="0" max_occurs="unbounded">
+      <keyword>ELEMENT INITIAL STRAINXX</keyword>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>
+      <parameter name="Istrainxx" type="REAL" count="1"/>
+      <summary>
+        Specifies element initial strainxx to use for this block.
+      </summary>
+    </line_command>
+<!--
+
+    ELEMENT INITIAL STRAINYY = istrainyy
+-->
+    <line_command usage="DBIO" physics="STRUCTURAL" instance="23" min_occurs="0" max_occurs="unbounded">
+      <keyword>ELEMENT INITIAL STRAINYY</keyword>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>
+      <parameter name="Istrainyy" type="REAL" count="1"/>
+      <summary>
+        Specifies element initial strainyy to use for this block.
+      </summary>
+    </line_command>
+<!--
+
+    ELEMENT INITIAL STRAINZZ = istrainzz
+-->
+    <line_command usage="DBIO" physics="STRUCTURAL" instance="24" min_occurs="0" max_occurs="unbounded">
+      <keyword>ELEMENT INITIAL STRAINZZ</keyword>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>
+      <parameter name="Istrainzz" type="REAL" count="1"/>
+      <summary>
+        Specifies element initial strainzz to use for this block.
+      </summary>
+    </line_command>
+<!--
+
+    ELEMENT INITIAL STRAINXY = istrainxy
+-->
+    <line_command usage="DBIO" physics="STRUCTURAL" instance="25" min_occurs="0" max_occurs="unbounded">
+      <keyword>ELEMENT INITIAL STRAINXY</keyword>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>
+      <parameter name="Istrainxy" type="REAL" count="1"/>
+      <summary>
+        Specifies element initial strainxy to use for this block.
+      </summary>
+    </line_command>
+<!--
+
+    ELEMENT INITIAL STRAINXZ = istrainxz
+-->
+    <line_command usage="DBIO" physics="STRUCTURAL" instance="26" min_occurs="0" max_occurs="unbounded">
+      <keyword>ELEMENT INITIAL STRAINXZ</keyword>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>
+      <parameter name="Istrainxz" type="REAL" count="1"/>
+      <summary>
+        Specifies element initial strainxz to use for this block.
+      </summary>
+    </line_command>
+<!--
+
+    ELEMENT INITIAL STRAINYZ = istrainyz
+-->
+    <line_command usage="DBIO" physics="STRUCTURAL" instance="27" min_occurs="0" max_occurs="unbounded">
+      <keyword>ELEMENT INITIAL STRAINYZ</keyword>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>
+      <parameter name="Istrainyz" type="REAL" count="1"/>
+      <summary>
+        Specifies element initial strainyz to use for this block.
+      </summary>
+    </line_command>
+<!--
+
+   ELEMENT COORDINATE SYSTEM IS { RECTANGULAR | CYLINDRICAL | SPHERICAL }
+-->
+    <line_command usage="DBIO" physics="STRUCTURAL" instance="28" min_occurs="0" max_occurs="unbounded">
+      <keyword>ELEMENT COORDINATE SYSTEM</keyword>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>
+      <parameter name="Rectangular|cylindrical|spherical" type="ENUMERATED" enumeration="rectangular|cylindrical|spherical" count="1"/>
+      <summary>
+        Provides a model name for the coordinate system specification:
+        (1) xyz
+        (2) cylindrical
+        (3) spherical
+      </summary>
+    </line_command>
+<!--
+
+    POINT AX = ax
+-->
+    <line_command usage="DBIO" physics="STRUCTURAL" instance="29" min_occurs="0" max_occurs="unbounded">
+      <keyword>POINT AX</keyword>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>
+      <parameter name="Ax" type="REAL" count="1"/>
+      <summary>
+       Global x-component of vector defining coordinate system direction A.
+       It is not necessary to input A as a unit vector.
+      </summary>
+    </line_command>
+<!--
+    POINT AY = ay
+-->
+    <line_command usage="DBIO" physics="STRUCTURAL" instance="30" min_occurs="0" max_occurs="unbounded">
+      <keyword>POINT AY</keyword>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>
+      <parameter name="Ay" type="REAL" count="1"/>
+      <summary>
+       Global y-component of vector defining coordinate system direction A.
+       It is not necessary to input A as a unit vector.
+      </summary>
+    </line_command>
+<!--
+    POINT AZ = az
+-->
+    <line_command usage="DBIO" physics="STRUCTURAL" instance="31" min_occurs="0" max_occurs="unbounded">
+      <keyword>POINT AZ</keyword>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>
+      <parameter name="Az" type="REAL" count="1"/>
+      <summary>
+       Global z-component of vector defining coordinate system direction A.
+       It is not necessary to input A as a unit vector.
+      </summary>
+    </line_command>
+<!--
+
+   POINT BX = bx
+-->
+    <line_command usage="DBIO" physics="STRUCTURAL" instance="32" min_occurs="0" max_occurs="unbounded">
+      <keyword>POINT BX</keyword>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>
+      <parameter name="Bx" type="REAL" count="1"/>
+      <summary>
+       Nominally the global x-component of vector defining coord system direction B.
+       However, it is only necessary that the supplied B vector lie in
+       the A-B plane, because C is constructed as (A x B) and B is redefined to
+       be (C x A).  It is not necessary to input B as a unit vector.
+      </summary>
+    </line_command>
+<!--
+    POINT BY = by
+-->
+    <line_command usage="DBIO" physics="STRUCTURAL" instance="33" min_occurs="0" max_occurs="unbounded">
+      <keyword>POINT BY</keyword>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>
+      <parameter name="By" type="REAL" count="1"/>
+      <summary>
+       Nominally the global y-component of vector defining coord system direction B.
+       However, it is only necessary that the supplied B vector lie in
+       the A-B plane, because C is constructed as (A x B) and B is redefined to
+       be (C x A).  It is not necessary to input B as a unit vector.
+      </summary>
+    </line_command>
+<!--
+    POINT BZ = bz
+-->
+    <line_command usage="DBIO" physics="STRUCTURAL" instance="34" min_occurs="0" max_occurs="unbounded">
+      <keyword>POINT BZ</keyword>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>
+      <parameter name="Bz" type="REAL" count="1"/>
+      <summary>
+       Nominally the global z-component of vector defining coord system direction B.
+       However, it is only necessary that the supplied B vector lie in
+       the A-B plane, because C is constructed as (A x B) and B is redefined to
+       be (C x A).  It is not necessary to input B as a unit vector.
+      </summary>
+    </line_command>
+
+<!--
+    HOURGLASS [ STIFFNESS | VISCOSITY ] = hgval
+-->
+    <line_command usage="DBIO" physics="STRUCTURAL" instance="4" min_occurs="0" max_occurs="unbounded">
+      <keyword>HOURGLASS</keyword>
+      <parameter name="Stiffness|Viscosity" type="ENUMERATED" enumeration="Stiffness|Viscosity" count="1"/>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>
+      <parameter name="Hgval" type="REAL" count="1"><nonnegative/></parameter>
+      <summary>
+        Supplies the hourglass parameters for this element block.
+      </summary>
+    </line_command>
+<!--
+    MEMBRANE HOURGLASS [STIFFNESS | VISCOSITY ] = mhgval
+-->
+    <line_command usage="DBIO" physics="STRUCTURAL" instance="40" min_occurs="0" max_occurs="unbounded">
+      <keyword>MEMBRANE HOURGLASS</keyword>
+      <parameter name="Stiffness|Viscosity" type="ENUMERATED" enumeration="Stiffness|Viscosity" count="1"/>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>
+      <parameter name="Hgval" type="REAL" count="1"><nonnegative/></parameter>
+      <summary>
+        Supplies the hourglass parameters for membrane deformation
+        in a shell or membrane element block.
+      </summary>
+    </line_command>
+
+<!--
+    BENDING HOURGLASS [STIFFNESS | VISCOSITY ] = bhgval
+-->
+    <line_command usage="DBIO" physics="STRUCTURAL" instance="41" min_occurs="0" max_occurs="unbounded">
+      <keyword>BENDING HOURGLASS</keyword>
+      <parameter name="Stiffness|Viscosity" type="ENUMERATED" enumeration="Stiffness|Viscosity" count="1"/>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>
+      <parameter name="Hgval" type="REAL" count="1"><nonnegative/></parameter>
+      <summary>
+        Supplies the hourglass parameters for bending deformation in
+        a shell element block.
+      </summary>
+    </line_command>
+
+<!--
+    TRANSVERSE SHEAR HOURGLASS [STIFFNESS | VISCOSITY ] = tshgval
+-->
+    <line_command usage="DBIO" physics="STRUCTURAL" instance="42" min_occurs="0" max_occurs="unbounded">
+      <keyword>TRANSVERSE SHEAR HOURGLASS</keyword>
+      <parameter name="Stiffness|Viscosity" type="ENUMERATED" enumeration="Stiffness|Viscosity" count="1"/>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>
+      <parameter name="Hgval" type="REAL" count="1"><nonnegative/></parameter>
+      <summary>
+        Supplies the hourglass parameters for transverse shear
+        deformation in a shell element block.
+      </summary>
+    </line_command>
+<!--
+    LINEAR BULK VISCOSITY = lbv
+-->
+    <line_command usage="DBIO" physics="STRUCTURAL" instance="6" min_occurs="0" max_occurs="unbounded">
+      <keyword>LINEAR BULK VISCOSITY</keyword>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>
+      <parameter name="Lbv" type="REAL" count="1"/>
+      <summary>
+        Supplies the linear coefficient for the bulk viscosity computations.
+      </summary>
+    </line_command>
+<!--
+    QUADRATIC BULK VISCOSITY = qbv
+-->
+    <line_command usage="DBIO" physics="STRUCTURAL" instance="7" min_occurs="0" max_occurs="unbounded">
+      <keyword>QUADRATIC BULK VISCOSITY</keyword>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>
+      <parameter name="Qbv" type="REAL" count="1"/>
+      <summary>
+        Supplies the quadratic coefficient for the bulk viscosity computations.
+      </summary>
+    </line_command>
+<!--
+    SOLID MECHANICS USE MODEL modelname
+-->
+    <line_command usage="DBIO" physics="STRUCTURAL" instance="8" min_occurs="0" max_occurs="unbounded">
+      <keyword>SOLID MECHANICS USE MODEL</keyword>
+      <parameter name="Modelname" type="STRING" count="1"/>
+      <summary>
+        Associates a solid mechanics material model with this element block.
+        The material parameters for this block are specified in the 
+        material denoted by the MATERIAL command.
+      </summary>
+    </line_command>
+<!--
+    DEPOSIT SPECIFIC INTERNAL ENERGY edep OVER TIME tdep STARTING AT TIME tinit
+-->
+    <line_command usage="DBIO" physics="STRUCTURAL" instance="10" min_occurs="0" max_occurs="unbounded">
+      <keyword>DEPOSIT SPECIFIC INTERNAL ENERGY</keyword>
+      <parameter name="Edep" type="REAL" count="1"><positive/></parameter>
+      <optional>
+        <parameter name="OVER" type="TOKEN" token="OVER" count="1"/>
+        <parameter name="TIME" type="TOKEN" token="TIME" count="1"/>
+        <parameter name="Tdep" type="REAL" count="1"><nonnegative/></parameter>
+        <parameter name="STARTING" type="TOKEN" token="STARTING" count="1"/>
+        <parameter name="AT" type="TOKEN" token="AT" count="1"/>
+        <parameter name="TIME" type="TOKEN" token="TIME" count="1"/>
+        <parameter name="Tinit" type="REAL" count="1"><nonnegative/></parameter>
+      </optional>
+      <summary>
+        Defines the amount of specific (per unit mass) internal energy
+        to be deposited in the material. The energy is deposited over
+        time tdep, beginning at time tinit. The optional parameters
+        tdep and tinit both default to zero, so the energy will be
+        deposited instantaneously at time zero if they are not specified.
+        The deposition is uniform in space, so each element in the block
+        has the same amount edep added to its specific internal energy. 
+      </summary>
+    </line_command>
+<!--
+    ELEMENT NUMERICAL FORMULATION IS { OLD | NEW }
+-->
+    <line_command usage="DBIO" physics="STRUCTURAL" instance="11" min_occurs="0" max_occurs="unbounded">
+      <keyword>ELEMENT NUMERICAL FORMULATION</keyword>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>
+      <parameter name="Old|New" type="ENUMERATED" enumeration="Old|New" count="1"/>
+      <summary>
+        Specifies which element numerical formulation to use for this
+        block.
+      </summary>
+    </line_command>
+<!--
+    EFFECTIVE MODULI MODEL = [elastic|current|presto|pronto]
+-->
+    <line_command usage="DBIO" physics="STRUCTURAL" instance="50" min_occurs="0" max_occurs="unbounded">
+      <keyword>EFFECTIVE MODULI MODEL</keyword>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>
+      <parameter name="Elastic|current|presto|pronto" type="ENUMERATED" enumeration="elastic|current|presto|pronto" count="1"><nonnegative/></parameter>
+      <summary>
+        Specifies the method used to determine the effective moduli. This
+        choice can have a significant effect on the resulting hourglassing
+        behavior.  The models are:
+           elastic: use the initial elastic moduli 
+           current: use the tangent moduli without correction for edge
+                    conditions (e.g. very small stiffnesses, softening
+                    materials)
+           presto:  use the PRESTO version of the pronto routine, which
+                    includes some fairly clear errors. This is included 
+                    only for backward compatibility with old PRESTO runs.
+           pronto:  use the old PRONTO method for computing elastic moduli
+                    this approach is straight out of PRONTO, PRESTO's
+                    predecessor.
+      </summary>
+    </line_command>
+<!--
+    MAX ENERGY ITERATIONS = mei
+-->
+    <line_command usage="DBIO" physics="STRUCTURAL" instance="60" min_occurs="0" max_occurs="unbounded">
+      <keyword>MAX ENERGY ITERATIONS</keyword>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>
+      <parameter name="Mei" type="INTEGER" count="1"><positive/></parameter>
+      <summary>
+        Specifies the maximum number of iterations to take in solving
+        the implicit internal energy update equation. Applicable when
+        using EOS material models with extracted energy updates.
+      </summary>
+    </line_command>
+<!--
+    ENERGY ITERATION TOLERANCE = eit
+-->
+    <line_command usage="DBIO" physics="STRUCTURAL" instance="61" min_occurs="0" max_occurs="unbounded">
+      <keyword>ENERGY ITERATION TOLERANCE</keyword>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>
+      <parameter name="Eit" type="REAL" count="1"><positive/></parameter>
+      <summary>
+        Specifies the tolerance criteria for exiting the iterative
+        solve of the implicit internal energy update equation.
+        Applicable when using EOS material models with extracted
+        energy updates.
+      </summary>
+    </line_command>
+<!--
+    DEACTIVATE {mechanics}
+-->
+    <line_command usage="DBIO" physics="GENERIC" instance="100" min_occurs="0" max_occurs="unbounded">
+      <keyword>DEACTIVATE</keyword>
+      <parameter name="CodeName" type="STRING" count="1"/>
+      <summary>
+        Deactivate this elemenent block for this mechanics.
+      </summary>
+    </line_command>
+  </block_command><!-- END PARAMETERS FOR BLOCK blockname -->
+  
+<!--
+    BEGIN PARAMETERS FOR PHASE phase_name
+-->
+  <block_command usage="DBIO" physics="LEVELSET" instance="1" min_occurs="0" max_occurs="unbounded">
+    <keyword>PARAMETERS FOR PHASE</keyword>
+    <line_parameter name="Phase Name"/>
+    <summary>
+      Specifies analysis parameters associated with each phase.
+    </summary>
+<!--
+    WHERE {level set name} IS {negative|positive}
+-->
+    <line_command usage="DBIO" physics="LEVELSET" instance="10" min_occurs="0" max_occurs="unbounded">
+      <keyword>WHERE</keyword>
+      <parameter name="LevelSetName" type="STRING" count="1"/>
+      <parameter name="Delimiter" type="ENUMERATED" enumeration="Delimiter" count="1"/>
+      <parameter name="Negative|positive" type="ENUMERATED" enumeration="negative|positive" count="1"/>
+      <summary>
+        Specifies where this phase is defined with respect to the given level set field.
+      </summary>
+    </line_command>
+  </block_command><!-- END PARAMETERS FOR PHASE blockname -->
+</sierraCommandSyntax>

@@ -1,0 +1,34 @@
+INCLUDE(PackageLibraryMacros)
+INCLUDE(CheckIncludeFile)
+
+CHECK_INCLUDE_FILE( malloc.h EX_HAVE_MALLOC_H )
+
+CONFIGURE_FILE(
+  ${CMAKE_CURRENT_SOURCE_DIR}/include/exodusII_cfg.h.in
+  ${CMAKE_CURRENT_BINARY_DIR}/include/exodusII_cfg.h
+  @ONLY IMMEDIATE)
+
+INCLUDE_DIRECTORIES(
+  "${CMAKE_CURRENT_SOURCE_DIR}/include"
+  "${CMAKE_CURRENT_BINARY_DIR}/include"
+)
+
+SET(SOURCES "")
+SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
+APPEND_GLOB(SOURCES ${DIR}/src/*.c)
+
+SET(HEADERS
+  include/exodusII.h
+  include/exodusII_ext.h
+  include/exodusII_int.h
+)
+
+PACKAGE_ADD_LIBRARY(
+	exodus
+	HEADERS	${HEADERS}
+	SOURCES ${SOURCES}
+)
+
+PACKAGE_ADD_TEST_DIRECTORIES(test)
+

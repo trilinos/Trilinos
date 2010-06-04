@@ -1,0 +1,101 @@
+netcdf test-nfaced {
+dimensions:
+	len_string = 33 ;
+	len_line = 81 ;
+	four = 4 ;
+	time_step = UNLIMITED ; // (0 currently)
+	num_dim = 3 ;
+	num_nodes = 14 ;
+	num_elem = 3 ;
+	num_face = 15 ;
+	num_el_blk = 1 ;
+	num_fa_blk = 1 ;
+	num_fa_in_blk1 = 15 ;
+	num_nod_per_fa1 = 58 ;
+	num_el_in_blk1 = 3 ;
+	num_fac_per_el1 = 17 ;
+	num_qa_rec = 2 ;
+	num_info = 3 ;
+variables:
+	float time_whole(time_step) ;
+	int eb_status(num_el_blk) ;
+	int eb_prop1(num_el_blk) ;
+		eb_prop1:name = "ID" ;
+	int fa_status(num_fa_blk) ;
+	int fa_prop1(num_fa_blk) ;
+		fa_prop1:name = "ID" ;
+	float coordx(num_nodes) ;
+	float coordy(num_nodes) ;
+	float coordz(num_nodes) ;
+	char eb_names(num_el_blk, len_string) ;
+	char fa_names(num_fa_blk, len_string) ;
+	char coor_names(num_dim, len_string) ;
+	int fbconn1(num_nod_per_fa1) ;
+		fbconn1:elem_type = "nsided" ;
+	int fbepecnt1(num_fa_in_blk1) ;
+		fbepecnt1:entity_type1 = "NODE" ;
+		fbepecnt1:entity_type2 = "FACE" ;
+	int facconn1(num_fac_per_el1) ;
+		facconn1:elem_type = "nfaced" ;
+	int ebepecnt1(num_el_in_blk1) ;
+		ebepecnt1:entity_type1 = "FACE" ;
+		ebepecnt1:entity_type2 = "ELEM" ;
+	char qa_records(num_qa_rec, four, len_string) ;
+	char info_records(num_info, len_line) ;
+
+// global attributes:
+		:floating_point_word_size = 4 ;
+		:file_size = 1 ;
+		:title = "This is a test" ;
+data:
+
+ eb_status = 1 ;
+
+ eb_prop1 = 10 ;
+
+ fa_status = 1 ;
+
+ fa_prop1 = 10 ;
+
+ coordx = 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2, 0, 2 ;
+
+ coordy = 0, 0, 2, 2, 0, 0, 2, 2, 3.5, 3.5, 3, 3, 3, 3 ;
+
+ coordz = 0, 0, 0, 0, 2, 2, 2, 2, 1, 1, 1.5, 1.5, 0.5, 0.5 ;
+
+ eb_names =
+  "nfaced_1" ;
+
+ fa_names =
+  "face_block_1" ;
+
+ coor_names =
+  "x",
+  "y",
+  "z" ;
+
+ fbconn1 = 5, 6, 8, 2, 1, 4, 6, 2, 4, 8, 8, 4, 1, 5, 1, 2, 6, 5, 5, 8, 7, 1, 
+    3, 4, 7, 8, 4, 3, 7, 3, 1, 5, 8, 4, 14, 10, 12, 7, 11, 9, 13, 3, 7, 8, 
+    12, 11, 11, 12, 10, 9, 9, 10, 14, 13, 13, 14, 4, 3 ;
+
+ fbepecnt1 = 3, 3, 4, 4, 4, 3, 3, 4, 4, 5, 5, 4, 4, 4, 4 ;
+
+ facconn1 = 1, 2, 3, 4, 5, 4, 6, 7, 8, 9, 8, 10, 11, 12, 13, 14, 15 ;
+
+ ebepecnt1 = 5, 5, 7 ;
+
+ qa_records =
+  "TESTWT-NFACED",
+  "testwt-nfaced",
+  "2010/02/15",
+  "06:35:15",
+  "",
+  "                            ",
+  "",
+  "                        " ;
+
+ info_records =
+  "This is the first information record.",
+  "",
+  "                                     " ;
+}
