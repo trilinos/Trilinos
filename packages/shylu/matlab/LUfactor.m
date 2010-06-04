@@ -38,27 +38,35 @@ LUdata.A = A;
 for i=1:k
   r = find(partr==i); % rows in block i
   c = find(partc==i); % columns in block i
+  [nc, dummy] = size(c) ;
   LUdata.c{i} = c;
   % Check more rows than columns
   if (length(r) < length(c))
     error('Diagonal block has less rows than columns!');
   end
+
   % dmperm matching to get zero-free diagonal (avoid rank-deficiency)
-  dm = dmperm(A(r,c));
-  Sr = r; Sr(dm) = []; % rows in local Schur complement
-  LUdata.Sr{i} = Sr;
-  r = r(dm);           % rows to eliminate
-  LUdata.r{i} = r;
-  % LU factorization on (square) diagonal blocks
+  %dm = dmperm(A(r,c)) ;
+  %Sr = r; Sr(dm) = []; % rows in local Schur complement
+  %LUdata.Sr{i} = Sr;
+  %r = r(dm);           % rows to eliminate
+  %r = r(1:nc);           % rows to eliminate
+  %LUdata.r{i} = r;
+
+  % LU factorization on (rectangular) diagonal blocks
   [L, U, p, q] = lu(A(r,c), 'vector');
+  pr = r(p(1:nc)) ; % pivot rows from the rectangular LU
+  Sr = r(p(nc+1:end)) ; % rows in local Schur complement
+  LUdata.r{i} = pr ;
+  LUdata.Sr{i} = Sr ;
   LUdata.L{i} = L;
   LUdata.U{i} = U;
-  LUdata.p{i} = r(p);
+  LUdata.p{i} = pr;
   LUdata.q{i} = c(q);
   % Form local Schur complement
   Sc = find(partc==k+1); % columns in local Schur comp.
   % S = S - (A_ki * inv(A_i) * A_ik), where A_i(p,q) = LU
-  LUdata.S{i} = A(Sr,Sc) - A(Sr,c) * (A(r,c) \ A(r,Sc)); % Naive method
+  LUdata.S{i} = A(Sr,Sc) - A(Sr,c) * (A(pr,c) \ A(pr,Sc)); % Naive method
   %LUdata.S{i} = A(Sr,Sc) - (A(Sr,c(q))/U) * (L\A(r(p),Sc)); % Optimized 
 end
 LUdata.c{k+1} = Sc;
