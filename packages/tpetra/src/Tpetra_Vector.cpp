@@ -19,15 +19,20 @@
 
 namespace Tpetra {
 
+  TPETRA_VECTOR_INSTANT(int,int,int,Kokkos::SerialNode)
+
 #if defined(HAVE_TPETRA_INST_FLOAT)
   TPETRA_VECTOR_INSTANT(float,int,int,Kokkos::SerialNode)
 #if defined(HAVE_KOKKOS_TBB)
+  TPETRA_VECTOR_INSTANT(int,int,int,Kokkos::TBBNode)
   TPETRA_VECTOR_INSTANT(float,int,int,Kokkos::TBBNode)
 #endif
 #if defined(HAVE_KOKKOS_THREADPOOL)
+    TPETRA_VECTOR_INSTANT(int,int,int,Kokkos::TPINode)
     TPETRA_VECTOR_INSTANT(float,int,int,Kokkos::TPINode)
 #endif
 #if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_FLOAT)
+    TPETRA_VECTOR_INSTANT(int,int,int,Kokkos::ThrustGPUNode)
     TPETRA_VECTOR_INSTANT(float,int,int,Kokkos::ThrustGPUNode)
 #endif
 #endif
