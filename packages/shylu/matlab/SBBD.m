@@ -33,6 +33,12 @@ else
   partr = ceil(k*(1:m)/m);
 end
 
+% Support older version of Patoh that returns row vectors.
+[nr, nc] = size(partr);
+if (nc ~= 1)
+  partr = partr';
+end
+
 % Compute column blocks
 % Modify A so we can find internal and cut nets (columns)
 A = spones(A);
