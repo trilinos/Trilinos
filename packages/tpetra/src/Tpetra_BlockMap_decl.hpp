@@ -84,6 +84,8 @@ class BlockMap : public Teuchos::Describable {
 
   Teuchos::ArrayView<const GlobalOrdinal> getBlockIDs() const;
 
+  bool isBlockSizeConstant() const;
+
   Teuchos::ArrayView<const LocalOrdinal> getBlockSizes() const;
 
   Teuchos::ArrayView<const LocalOrdinal> getFirstPointInBlocks() const;
