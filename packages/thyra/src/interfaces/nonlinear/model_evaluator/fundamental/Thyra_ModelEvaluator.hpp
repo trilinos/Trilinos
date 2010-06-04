@@ -553,7 +553,18 @@ namespace Thyra {
  * one component each (e.g. <tt>get_p_space(l)->dim()==1</tt>).
  *
  * </ul>
- * 
+ *
+ * \section Thyra_ME_failed_evals_sec Failed evaluations
+ *
+ * The way for a ModelEvalutor object to return a failed evaluation is to set
+ * NaN in one or more of the output objects.  If an algebraic model executes
+ * and happens to pass a negative number to a squareroot or something, then a
+ * NaN is what will get created anyway (even if the ModelEvaluator object does
+ * not detect this).  Therefore, clients of the ME interface really need to be
+ * searching for a NaN to see if an evaluation has faield.  Also, a ME object
+ * can set the isFailed flag on the outArgs object on the return from the
+ * <tt>evalModel()</tt> function if it knows that the evaluation has failed
+ * for some reason.
  *
  * \section Thyra_ME_checking_sec Compile-Time and Run-Time Safety and Checking
  *
@@ -926,7 +937,11 @@ public:
    * derivatives that are to be computed at the given point.  This object must
    * have been created by <tt>this->createOutArgs()</tt> before being set up
    * by the client.  Only functions and derivatives that are set will be
-   * computed.
+   * computed.  The client should check for NaN in any of objects computed to
+   * see if the evaluation failed.  Also, if the underlying object knows that
+   * the evaluation failed, then <tt>outArgs.isFailed()</tt> will be
+   * <tt>true</tt> on output.  The client needs to check for both NaN and
+   * <tt>outArgs.isFailed()</tt> to be sure.
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>this->createInArgs().isCompatible(inArgs)==true</tt>
