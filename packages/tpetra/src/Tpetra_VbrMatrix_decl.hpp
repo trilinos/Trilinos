@@ -62,7 +62,7 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   //! @name Constructor/Destructor Methods
   //@{
 
-  //! Constructor specifying the row-map and the max number of non-zeros for all rows.
+  //! Constructor specifying the row-map and the max number of (block) non-zeros for all rows.
   VbrMatrix(const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > &blkRowMap, size_t maxNumEntriesPerRow, ProfileType pftype = DynamicProfile);
 
   //! Destructor
@@ -166,7 +166,7 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   Kokkos::VbrMatrix<Scalar,LocalOrdinal,Node> lclMatrix_;
 
   //It takes 6 arrays to adequately represent a variable-block-row
-  //matrix in packed (optimized) form. For a description of these
+  //matrix in packed (contiguous storage) form. For a description of these
   //arrays, see the text at the bottom of this file.
   Teuchos::ArrayRCP<Scalar> pbuf_values1D_;
   Teuchos::ArrayRCP<LocalOrdinal> pbuf_rptr_;
@@ -182,8 +182,8 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
   //We use 3 arrays (well, arrays-of-maps, arrays-of-arrays...) to
   //represent the variable-block-row matrix in un-packed '2D' form.
-  Teuchos::RCP<Teuchos::Array<std::map<GlobalOrdinal,Teuchos::ArrayRCP<Scalar> > > > col_ind_2D_global_;
-  Teuchos::RCP<Teuchos::Array<std::map<LocalOrdinal,Teuchos::ArrayRCP<Scalar> > > > col_ind_2D_local_;
+  Teuchos::RCP<Teuchos::Array<MapGlobalArrayRCP> > col_ind_2D_global_;
+  Teuchos::RCP<Teuchos::Array<MapLocalArrayRCP> > col_ind_2D_local_;
   Teuchos::RCP<Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > > > pbuf_values2D_;
 
   bool is_fill_completed_;

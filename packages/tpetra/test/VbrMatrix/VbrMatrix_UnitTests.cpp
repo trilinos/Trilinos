@@ -451,6 +451,77 @@ namespace {
     }
   }
 
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( VbrMatrix, ColMap1, LO, GO, Scalar, Node )
+  {
+    //This test will fill a matrix such that in parallel the column-map
+    //should have an overlapping set of entries (i.e., different than
+    //the row-map), and verify that the column-map is correct.
+
+    RCP<Node> node = getNode<Node>();
+    typedef ScalarTraits<Scalar> ST;
+    typedef BlockMultiVector<Scalar,LO,GO,Node> BMV;
+    typedef VbrMatrix<Scalar,LO,GO,Node> MAT;
+    typedef typename ST::magnitudeType Mag;
+    typedef ScalarTraits<Mag> MT;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    GO indexBase = 0;
+    // create a Map
+    const size_t numLocalBlocks = 2;
+    GO maxGlobalBlock = numLocalBlocks*comm->getSize();
+    const LO blockSize = 2;
+    const size_t maxEntriesPerRow = 3;
+    RCP<BlockMap<LO,GO,Node> > rowmap = rcp( new BlockMap<LO,GO,Node>(INVALID,numLocalBlocks,blockSize,indexBase,comm,node) );
+
+    //now set up the list of block-column-ids that we expect the
+    //column-map to contain after fillComplete:
+    size_t numLocalColBlocks = numLocalBlocks;
+    if (comm->getRank() != 0) ++numLocalColBlocks;
+    if (comm->getRank() != comm->getSize()-1) ++numLocalColBlocks;
+    Array<GO> blockColIDs(numLocalColBlocks);
+    typedef typename Array<GO>::size_type Tsize_t;
+    Teuchos::ArrayView<const GO> blk_rows = rowmap->getBlockIDs();
+    GO first_row = blk_rows[0];
+    Tsize_t offset = 0;
+    if (comm->getRank() != 0) {
+      blockColIDs[offset++] = first_row - 1;
+    }
+    GO last_row = 0;
+    for(LO i=0; i<blk_rows.size(); ++i) {
+      blockColIDs[offset++] = blk_rows[i];
+      last_row = blk_rows[i];
+    }
+    if (offset < blockColIDs.size()) blockColIDs[offset++] = last_row + 1;
+
+    // create the matrix
+    RCP<MAT> vbr = rcp( new MAT(rowmap,maxEntriesPerRow,DynamicProfile) );
+    for(int i=0; i<blk_rows.size(); ++i) {
+      GO row = blk_rows[i];
+      {
+        GO col = row;
+        Teuchos::Array<Scalar> blkEntry(blockSize * blockSize, row+col+1);
+        vbr->setGlobalBlockEntry(row, col, blockSize, blockSize, blockSize, blkEntry());
+      }
+      if (row > indexBase) {
+        GO col = row - 1;
+        Teuchos::Array<Scalar> blkEntry(blockSize * blockSize, row+col+1);
+        vbr->setGlobalBlockEntry(row, col, blockSize, blockSize, blockSize, blkEntry());
+      }
+      if (row < maxGlobalBlock-1) {
+        GO col = row + 1;
+        Teuchos::Array<Scalar> blkEntry(blockSize * blockSize, row+col+1);
+        vbr->setGlobalBlockEntry(row, col, blockSize, blockSize, blockSize, blkEntry());
+      }
+    }
+    vbr->fillComplete();
+    RCP<const BlockMap<LO,GO,Node> > colmap = vbr->getBlockColMap();
+    ArrayView<const GO> blk_cols = colmap->getBlockIDs();
+    TEST_EQUALITY(blk_cols.size(), blockColIDs.size());
+    TEST_COMPARE_ARRAYS(blk_cols, blockColIDs() );
+  }
+
 // 
 // INSTANTIATIONS
 //
@@ -468,7 +539,8 @@ typedef std::complex<double> ComplexDouble;
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, SetAndGetBlockEntry1, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, SetAndGetBlockEntry2, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, apply1, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, apply2, LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, apply2, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, ColMap1, LO, GO, SCALAR, NODE )
 
 
 #define UNIT_TEST_SERIALNODE(LO, GO, SCALAR) \
