@@ -38,6 +38,13 @@ ENDIF()
 
 
 FIND_PACKAGE(Qt4 4.5.0 COMPONENTS QtCore QtGui)
+IF(NOT(TPL_QT_INCLUDE_DIRS))
+	SET(TPL_QT_INCLUDE_DIRS ${QT_INCLUDE_DIR})
+ENDIF()
+
+IF(NOT(TPL_QT_LIBRARY_DIRS))
+	SET(TPL_QT_LIBRARY_DIRS ${QT_LIBRARY_DIR})
+ENDIF()
 
 TPL_DECLARE_LIBRARIES( QT
   REQUIRED_HEADERS QMainWindow QDialog QAbstratItemModel QTreeView QItemDelegate QPushButton QGridLayout QSpinBox QComboBox QLineEdit QLabel QScrollArea QDir QXmlStreamWriter QXmlStreamReader QStringList
