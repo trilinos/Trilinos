@@ -35,22 +35,14 @@ namespace Tpetra {
 
   // int matrix support for CrsMatrix unit test
 #if defined(HAVE_TPETRA_INST_DOUBLE) || defined(HAVE_TPETRA_INST_COMPLEX_FLOAT)
-  TPETRA_MULTIVECTOR_INSTANT(int,int,int,Kokkos::SerialNode)
-  TPETRA_VECTOR_INSTANT(int,int,int,Kokkos::SerialNode)
   TPETRA_CRSMATRIX_INSTANT(int,int,int,Kokkos::SerialNode)
 # if defined(HAVE_KOKKOS_TBB)
-    TPETRA_MULTIVECTOR_INSTANT(int,int,int,Kokkos::TBBNode)
-    TPETRA_VECTOR_INSTANT(int,int,int,Kokkos::TBBNode)
     TPETRA_CRSMATRIX_INSTANT(int,int,int,Kokkos::TBBNode)
 # endif
 # if defined(HAVE_KOKKOS_THREADPOOL)
-    TPETRA_MULTIVECTOR_INSTANT(int,int,int,Kokkos::TPINode)
-    TPETRA_VECTOR_INSTANT(int,int,int,Kokkos::TPINode)
     TPETRA_CRSMATRIX_INSTANT(int,int,int,Kokkos::TPINode)
 # endif
 # if defined(HAVE_KOKKOS_THRUST)
-    TPETRA_MULTIVECTOR_INSTANT(int,int,int,Kokkos::ThrustGPUNode)
-    TPETRA_VECTOR_INSTANT(int,int,int,Kokkos::ThrustGPUNode)
     TPETRA_CRSMATRIX_INSTANT(int,int,int,Kokkos::ThrustGPUNode)
 # endif
 #endif

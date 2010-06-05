@@ -48,6 +48,9 @@ namespace Tpetra {
 //! \brief VbrMatrix: Variable block row matrix.
 /**
 This class is under construction, not yet usable.
+Several significant development tasks remain to be done before this
+class is ready to be used in a general setting.
+Those still-to-be-done tasks are listed in the file Tpetra_VbrMatrix_todo.txt.
 */
 template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatVec = Kokkos::DefaultBlockSparseMultiply<Scalar,LocalOrdinal,Node>, class LocalMatSolve = Kokkos::DefaultSparseSolve<Scalar,LocalOrdinal,Node> >
 class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
