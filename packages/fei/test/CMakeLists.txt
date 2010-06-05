@@ -347,29 +347,29 @@ IF(FEI_ENABLE_AztecOO)
     EXEDEPS fei_test
   )
 
-  PACKAGE_ADD_TEST(
-    fei_test FEITestCRSlave20QuadCopyFiles
-    NAME slave_20quad
-    ARGS "-d ./cr_slave_20quad -i slave.i"
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    )
-
-  PACKAGE_ADD_TEST(
-    fei_test FEITestCRSlave20QuadCopyFiles
-    NAME slave_20quad
-    ARGS "-d ./cr_slave_20quad -i slave.i"
-    COMM serial mpi
-    NUM_MPI_PROCS 2
-    )
-
-  PACKAGE_ADD_TEST(
-    fei_test FEITestCRSlave20QuadCopyFiles
-    NAME slave_20quad
-    ARGS "-d ./cr_slave_20quad -i slave.i"
-    COMM serial mpi
-    NUM_MPI_PROCS 4
-    )
+#  PACKAGE_ADD_TEST(
+#    fei_test FEITestCRSlave20QuadCopyFiles
+#    NAME slave_20quad
+#    ARGS "-d ./cr_slave_20quad -i slave.i"
+#    COMM serial mpi
+#    NUM_MPI_PROCS 1
+#    )
+#
+#  PACKAGE_ADD_TEST(
+#    fei_test FEITestCRSlave20QuadCopyFiles
+#    NAME slave_20quad
+#    ARGS "-d ./cr_slave_20quad -i slave.i"
+#    COMM serial mpi
+#    NUM_MPI_PROCS 2
+#    )
+#
+#  PACKAGE_ADD_TEST(
+#    fei_test FEITestCRSlave20QuadCopyFiles
+#    NAME slave_20quad
+#    ARGS "-d ./cr_slave_20quad -i slave.i"
+#    COMM serial mpi
+#    NUM_MPI_PROCS 4
+#    )
 
   PACKAGE_COPY_FILES_TO_BINARY_DIR( FEITestCRSlave20QuadOldCopyFiles
     DEST_FILES
