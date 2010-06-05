@@ -158,6 +158,10 @@ class AztecOO {
     replaced, they must set the optional bool argument 'call_SetPrecMatrix'
     to true, which will force this function to call SetPrecMatrix().
 
+    \warning The first time this method is called, the default options and parameters 
+    are set.  Therefore, this method should be called \e before setting any
+    individual options or parameters.
+
     \warning If a preconditioner has been pre-built and associated with this
      AztecOO object, the Epetra_LinearProblem being passed in to this method
      \e must have compatible domain and range maps.
@@ -167,8 +171,7 @@ class AztecOO {
 
   //! AztecOO User Operator Set
   /*! Associates an already defined Epetra_Operator as the linear operator for the linear system
-    system that will be solved during
-    iterations.
+    system that will be solved during iterations.
     This set method allows the user to pass any type of linear operator to AztecOO, as long
     as the operator implements the Epetra_Operator pure virtual class, and has proper
     domain and range map dimensions. Epetra_CrsMatrix and Epetra_VbrMatrix objects can be passed in through
