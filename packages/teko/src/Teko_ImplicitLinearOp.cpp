@@ -54,11 +54,16 @@ using Teuchos::RCP;
 
 using Thyra::MultiVectorBase;
 
-void ImplicitLinearOp::apply(const Thyra::EConj conj, 
-           const Thyra::MultiVectorBase<double> & x, Thyra::MultiVectorBase<double> * y,
-           const double alpha, const double beta) const
+bool ImplicitLinearOp::opSupportedImpl(const Thyra::EOpTransp M_trans) const
 {
-   TEST_FOR_EXCEPTION(conj!=Thyra::NONCONJ_ELE,std::runtime_error,
+  return (M_trans == Thyra::NOTRANS);
+}
+
+void ImplicitLinearOp::applyImpl(const Thyra::EOpTransp M_trans, const Thyra::MultiVectorBase<double> & x,
+                                 const Teuchos::Ptr<Thyra::MultiVectorBase<double> > & y, 
+                                 const double alpha, const double beta) const
+{
+   TEST_FOR_EXCEPTION(M_trans!=Thyra::NOTRANS,std::runtime_error,
                            "Linear operators of inherited type Teko::ImplicitLinearOp "
                            "cannot handle conjugation (yet!)");
 

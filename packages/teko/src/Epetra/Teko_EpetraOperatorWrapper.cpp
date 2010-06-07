@@ -163,7 +163,7 @@ int EpetraOperatorWrapper::Apply(const Epetra_MultiVector& X, Epetra_MultiVector
        mapStrategy_->copyEpetraIntoThyra(X, tX.ptr(),*this);
 
        // perform matrix vector multiplication
-       thyraOp_->apply(Thyra::NONCONJ_ELE,*tX,&*tY);
+       thyraOp_->apply(Thyra::NOTRANS,*tX,tY.ptr(),1.0,0.0);
 
        // copy thyra Y into epetra Y
        mapStrategy_->copyThyraIntoEpetra(tY, Y,*this);
