@@ -59,15 +59,15 @@ for i=1:k
   Sr = r(p(nc+1:end)) ; % rows in local Schur complement
   LUdata.r{i} = pr ;
   LUdata.Sr{i} = Sr ;
-  LUdata.L{i} = L;
-  LUdata.U{i} = U;
+  LUdata.L{i} = L(1:nc, :); % store the square L and throw away the rest.
+  LUdata.U{i} = U; % U is square
   LUdata.p{i} = pr;
   LUdata.q{i} = c(q);
   % Form local Schur complement
   Sc = find(partc==k+1); % columns in local Schur comp.
   % S = S - (A_ki * inv(A_i) * A_ik), where A_i(p,q) = LU
-  LUdata.S{i} = A(Sr,Sc) - A(Sr,c) * (A(pr,c) \ A(pr,Sc)); % Naive method
-  %LUdata.S{i} = A(Sr,Sc) - (A(Sr,c(q))/U) * (L\A(r(p),Sc)); % Optimized 
+  %LUdata.S{i} = A(Sr,Sc) - A(Sr,c) * (A(pr,c) \ A(pr,Sc)); % Naive method
+  LUdata.S{i} = A(Sr,Sc) - (A(Sr,c(q))/U) * (L(1:nc, :)\A(pr,Sc)); % Optimized 
 end
 LUdata.c{k+1} = Sc;
 
@@ -83,7 +83,8 @@ LUdata.S{k+1} = S;
 
 i= k+1; % Store Schur complement factors as block k+1
 [LUdata.L{i}, LUdata.U{i}, p, q] = lu(S, 'vector');
-LUdata.p{i} = Sr(p) ;
+%LUdata.p{i} = Sr(p) ;
+LUdata.p{i} = p ;  % TODO: Using local index for the Schur complement rows
 LUdata.q{i} = Sc(q) ;
 
 % Compute stats
