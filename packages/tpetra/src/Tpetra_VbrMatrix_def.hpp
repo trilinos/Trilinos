@@ -66,6 +66,12 @@ makeBlockColumnMap(const Teuchos::RCP<const Tpetra::BlockMap<LocalOrdinal,Global
   global_size_t numGlobalBlocks = Teuchos::OrdinalTraits<global_size_t>::invalid();
   Teuchos::ArrayView<const GlobalOrdinal> blockIDs = ptColMap->getNodeElementList();
   Teuchos::ArrayView<const LocalOrdinal> blockSizes = blockMap->getBlockSizes();
+  Teuchos::Array<GlobalOrdinal> points(blockIDs.size());
+
+  typedef typename Teuchos::ArrayView<const LocalOrdinal>::size_type Tsize_t;
+  for(Tsize_t i=0; i<blockSizes.size(); ++i) {
+    points[i] = blockMap->getFirstGlobalPointInBlock(i);
+  }
 
   //We will create a block-map where each block corresponds to a point in
   //the input-map 'ptColMap', and where each block's size is obtained from
@@ -75,41 +81,41 @@ makeBlockColumnMap(const Teuchos::RCP<const Tpetra::BlockMap<LocalOrdinal,Global
   //we know that blockMap is distributed the same as ptColMap:
   int numProcessors = ptColMap->getComm()->getSize();
   if (numProcessors == 1) {
-    if (blockMap->isBlockSizeConstant()) {
     return Teuchos::rcp(new Tpetra::BlockMap<LocalOrdinal,GlobalOrdinal,Node>(
-        numGlobalBlocks, blockIDs, blockSizes,
+        numGlobalBlocks, blockIDs, points(), blockSizes,
         ptColMap->getIndexBase(), ptColMap->getComm(), ptColMap->getNode()
     ));
-    }
-    else {
-    return Teuchos::rcp(new Tpetra::BlockMap<LocalOrdinal,GlobalOrdinal,Node>(
-        numGlobalBlocks, blockIDs, blockSizes,
-        ptColMap->getIndexBase(), ptColMap->getComm(), ptColMap->getNode()
-    ));
-    }
   }
 
-  //if we get to here, we're running on multiple processors, which means
-  //blockMap is possibly (probably) not distributed the same as ptColMap,
-  //so we have to do some communication to get the block-sizes from blockMap
-  //corresponding to the blockIDs we got from ptColMap.
+  //If we get to here, we're running on multiple processors, and blockMap
+  //is probably not distributed the same as ptColMap, so we have to do
+  //some communication to get the block-sizes from blockMap corresponding
+  //to the blockIDs we got from ptColMap.
+  //We also have to do communication to get the global first-points-in-block
+  //for the blocks in the new block-column-map.
   //
   //I think the simplest way to do this is to create vectors where the values
-  //are block-sizes, and import one to the other.
-  typedef Tpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> OrdVec;
+  //are block-sizes (or first-points-in-block), and import one to the other.
+  typedef Tpetra::Vector<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> GOVec;
+  typedef Tpetra::Vector<LocalOrdinal,LocalOrdinal,GlobalOrdinal,Node> LOVec;
 
   Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > blkPtMap =
       convertBlockMapToPointMap(blockMap);
 
-  OrdVec source(blkPtMap, blockSizes);
-  OrdVec target(ptColMap);
+  LOVec source_sizes(blkPtMap, blockSizes);
+  GOVec source_points(blkPtMap, points());
+  LOVec target_sizes(ptColMap);
+  GOVec target_points(ptColMap);
+
   Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> importer(blkPtMap, ptColMap);
-  target.doImport(source, importer, REPLACE);
-  blockSizes = target.get1dView()();
+  target_sizes.doImport(source_sizes, importer, REPLACE);
+  target_points.doImport(source_points, importer, REPLACE);
+
+  blockSizes = target_sizes.get1dView()();
 
   //now we can create our block-column-map:
   return Teuchos::rcp(new Tpetra::BlockMap<LocalOrdinal,GlobalOrdinal,Node>(
-    numGlobalBlocks, blockIDs, blockSizes,
+    numGlobalBlocks, blockIDs, target_points.get1dView()(), blockSizes,
     ptColMap->getIndexBase(), ptColMap->getComm(), ptColMap->getNode()
   ));
 }
@@ -130,6 +136,8 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::Vbr
    pbuf_bindx_(),
    pbuf_indx_(),
    lclMatVec_(blkRowMap->getPointMap()->getNode()),
+   importer_(),
+   exporter_(),
    col_ind_2D_global_(Teuchos::rcp(new Teuchos::Array<std::map<GlobalOrdinal,Teuchos::ArrayRCP<Scalar> > >)),
    col_ind_2D_local_(Teuchos::rcp(new Teuchos::Array<std::map<LocalOrdinal,Teuchos::ArrayRCP<Scalar> > >)),
    pbuf_values2D_(Teuchos::rcp(new Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > >)),
@@ -182,21 +190,49 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::isF
 
 //-------------------------------------------------------------------
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+template <class DomainScalar, class RangeScalar>
 void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::apply(
-         const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-               MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
-               Teuchos::ETransp mode,
-               Scalar alpha,
-               Scalar beta) const
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const
 {
   TEST_FOR_EXCEPTION(!isFillComplete(), std::runtime_error,
-    "Tpetra::VbrMatrix::apply ERROR, apply may only be called after fillComplete has been called.");
+    "Tpetra::VbrMatrix::multiply ERROR, multiply may only be called after fillComplete has been called.");
 
   const Kokkos::MultiVector<Scalar,Node> *lclX = &X.getLocalMV();
   Kokkos::MultiVector<Scalar,Node>        *lclY = &Y.getLocalMVNonConst();
 
-  lclMatVec_.template multiply<Scalar,Scalar>(mode,alpha,*lclX,beta,*lclY);
+  lclMatVec_.template multiply<Scalar,Scalar>(trans,alpha,*lclX,beta,*lclY);
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::updateImport(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X) const
+{
+  if (importedX_ == Teuchos::null || importedX_->getNumVectors() != X.getNumVectors()) {
+    importedX_ = Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(blkColMap_->getPointMap(), X.getNumVectors()));
+  }
+
+  importedX_->doImport(X, *importer_, REPLACE);
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::apply(
+         const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+               MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
+               Teuchos::ETransp trans,
+               Scalar alpha,
+               Scalar beta) const
+{
+  if (trans == Teuchos::NO_TRANS) {
+    updateImport(X);
+  }
+  else {
+    throw std::runtime_error("Tpetra::VbrMatrix::apply ERROR, transpose apply not yet implemented.");
+  }
+
+  this->template multiply<Scalar,Scalar>(*importedX_, Y, trans, alpha, beta);
 }
 
 //-------------------------------------------------------------------
@@ -486,7 +522,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, clas
 void
 VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::fillComplete(const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockDomainMap, const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockRangeMap)
 {
-  //should we return now if is_fill_completed_ is already true ??
+  if (isFillComplete()) return;
 
   blkDomainMap_ = blockDomainMap;
   blkRangeMap_  = blockRangeMap;
@@ -494,13 +530,16 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::fil
   blkGraph_->fillComplete(convertBlockMapToPointMap(blockDomainMap),
                           convertBlockMapToPointMap(blockRangeMap));
 
-  //Now we need to take the column-map from blkGraph_ and create a
+  //Now we need to take the point-column-map from blkGraph_ and create a
   //corresponding block-column-map.
-  //Our block-column-map will have the same distribution as the
+  //Our block-column-map will have the same distribution as
   //blkGraph_->getColMap, and we'll get block-size info from the
   //blkDomainMap_. This will require some communication in cases
   //where blkDomainMap is distributed differently.
   blkColMap_ = makeBlockColumnMap(blkDomainMap_, blkGraph_->getColMap());
+
+  importer_ = Teuchos::rcp(new Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>(blkDomainMap_->getPointMap(), blkColMap_->getPointMap()));
+  exporter_ = Teuchos::rcp(new Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node>(blkRowMap_->getPointMap(), blkRangeMap_->getPointMap()));
 
   optimizeStorage();
 

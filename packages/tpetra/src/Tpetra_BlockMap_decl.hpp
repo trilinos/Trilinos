@@ -52,10 +52,11 @@ class BlockMap : public Teuchos::Describable {
       const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
       const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
 
-  /*! \brief BlockMap constructor specifying numGlobalBlocks and lists of local blocks and blockSizes.
+  /*! \brief BlockMap constructor specifying numGlobalBlocks and lists of local blocks first-global-point-in-blocks, and blockSizes.
    */
   BlockMap(global_size_t numGlobalBlocks,
       const Teuchos::ArrayView<const GlobalOrdinal>& myGlobalBlockIDs,
+      const Teuchos::ArrayView<const GlobalOrdinal>& myFirstGlobalPointInBlocks,
       const Teuchos::ArrayView<const LocalOrdinal>& myBlockSizes,
       GlobalOrdinal indexBase,
       const Teuchos::RCP<const Teuchos::Comm<int> > &comm,

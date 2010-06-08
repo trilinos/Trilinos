@@ -148,6 +148,7 @@ namespace {
 
     // create a BlockMap with 2 blocks per node, one block size 1 , the other size 3
     Array<GO> blkIDs( tuple<GO>(myImageID*2, myImageID*2+1) );
+    Array<GO> points( tuple<GO>(myImageID*4, myImageID*4+1) );
     Array<LO> blkLIDs( tuple<LO>(0, 1) );
     Array<LO> blkSzs( tuple<LO>(1,3) );
     Array<LO> firstPt( tuple<LO>(0,1) );
@@ -161,7 +162,7 @@ namespace {
     TEST_EQUALITY_CONST(blkmap.getFirstLocalPointInBlock(blkLIDs[1]), firstPt[1]);
 
     // create the same BlockMap with a different constructor:
-    BM blkmap2(numImages*2, blkIDs(), blkSzs(), indexBase, comm);
+    BM blkmap2(numImages*2, blkIDs(), points(), blkSzs(), indexBase, comm);
     // this BlockMap should pass the same tests:
     TEST_EQUALITY_CONST(blkmap2.getNodeNumBlocks(), 2);
     TEST_EQUALITY_CONST(blkmap2.getLocalBlockID(blkIDs[0]), blkLIDs[0]);

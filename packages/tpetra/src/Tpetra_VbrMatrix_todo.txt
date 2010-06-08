@@ -3,15 +3,14 @@ Still need to do the following:
 
 1. make apply work with multivectors that have more than 1 column
 
-2. make apply work in parallel (import/export vectors)
+2. implement apply for transpose
+  (including in parallel)
 
-3. implement apply for transpose
-
-4. add more data accessors/manipulators:
+3. add more data accessors/manipulators:
   - putScalar
   - sumInto for both local and global block-entries
   - set for local block-entries
   - get for local block-entries
 
-5. make set/suminto/get work after fillComplete has been called.
+4. make set/suminto/get work after fillComplete has been called.
 

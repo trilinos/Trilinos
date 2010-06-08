@@ -124,7 +124,7 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(global_size_t numGlobalBlock
 }
 
 template<class LocalOrdinal,class GlobalOrdinal,class Node>
-BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(global_size_t numGlobalBlocks, const Teuchos::ArrayView<const GlobalOrdinal>& myGlobalBlockIDs, const Teuchos::ArrayView<const LocalOrdinal>& blockSizes, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(global_size_t numGlobalBlocks, const Teuchos::ArrayView<const GlobalOrdinal>& myGlobalBlockIDs, const Teuchos::ArrayView<const GlobalOrdinal>& myFirstGlobalPointInBlocks, const Teuchos::ArrayView<const LocalOrdinal>& blockSizes, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
       const Teuchos::RCP<Node> &node)
  : pointMap_(),
    myGlobalBlockIDs_(myGlobalBlockIDs),
@@ -137,13 +137,20 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(global_size_t numGlobalBlock
              "Tpetra::BlockMap::BlockMap ERROR: input myGlobalBlockIDs and blockSizes arrays must have the same length.");
 
   size_t sum_blockSizes = 0;
+  Teuchos::Array<GlobalOrdinal> myGlobalPoints;
   typename Teuchos::Array<LocalOrdinal>::const_iterator
     iter = blockSizes_.begin(), iend = blockSizes_.end();
+  size_t i = 0;
   for(; iter!=iend; ++iter) {
-    sum_blockSizes += *iter;
+    LocalOrdinal bsize = *iter;
+    sum_blockSizes += bsize;
+    GlobalOrdinal firstPoint = myFirstGlobalPointInBlocks[i++];
+    for(LocalOrdinal j=0; j<bsize; ++j) {
+      myGlobalPoints.push_back(firstPoint+j);
+    }
   }
 
-  pointMap_ = Teuchos::rcp(new Map<LocalOrdinal,GlobalOrdinal,Node>(Teuchos::OrdinalTraits<global_size_t>::invalid(), sum_blockSizes, indexBase, comm, node));
+  pointMap_ = Teuchos::rcp(new Map<LocalOrdinal,GlobalOrdinal,Node>(Teuchos::OrdinalTraits<global_size_t>::invalid(), myGlobalPoints(), indexBase, comm, node));
 
   iter = blockSizes_.begin();
   LocalOrdinal firstBlockSize = *iter;

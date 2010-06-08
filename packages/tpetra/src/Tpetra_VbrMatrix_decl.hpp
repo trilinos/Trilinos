@@ -73,6 +73,19 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
   //@}
 
+  //! @name Advanced Matrix-vector multiplication method
+
+  //! Multiply this matrix by a MultiVector.
+  /*! \c X is required to be post-imported, i.e., described by the column map
+      of the matrix. \c Y is required to be pre-exported, i.e., described by
+      the row map of the matrix.
+      See also the Operator::apply method which is implemented below.
+  */
+  template <class DomainScalar, class RangeScalar>
+      void multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const;
+
+  //@}
+
   //! @name Operator Methods
   //@{
 
@@ -87,14 +100,14 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
 
     //! \brief Computes the operator-multivector application.
-    /*! Loosely, performs \f$Y = \alpha \cdot A^{\textrm{mode}} \cdot X + \beta \cdot Y\f$. However, the details of operation
+    /*! Loosely, performs \f$Y = \alpha \cdot A^{\textrm{trans}} \cdot X + \beta \cdot Y\f$. However, the details of operation
         vary according to the values of \c alpha and \c beta. Specifically
         - if <tt>beta == 0</tt>, apply() <b>must</b> overwrite \c Y, so that any values in \c Y (including NaNs) are ignored.
         - if <tt>alpha == 0</tt>, apply() <b>may</b> short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
      */
     void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
                MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
-               Teuchos::ETransp mode = Teuchos::NO_TRANS,
+               Teuchos::ETransp trans = Teuchos::NO_TRANS,
                Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
                Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
 
@@ -157,6 +170,8 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
                                                     size_t colsPerBlock = 0);
   Teuchos::RCP<Node> getNode();
 
+  void updateImport(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X) const;
+
   void optimizeStorage();
   void fillLocalMatrix();
   void fillLocalMatVec();
@@ -182,6 +197,9 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   Teuchos::ArrayRCP<LocalOrdinal> pbuf_indx_;
 
   LocalMatVec lclMatVec_;
+  Teuchos::RCP<Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer_;
+  mutable Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > importedX_;
+  Teuchos::RCP<Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node> > exporter_;
 
   typedef typename std::map<GlobalOrdinal,Teuchos::ArrayRCP<Scalar> > MapGlobalArrayRCP;
   typedef typename std::map<LocalOrdinal,Teuchos::ArrayRCP<Scalar> > MapLocalArrayRCP;
