@@ -770,7 +770,6 @@ int main(int argc, char *argv[]) {
            numEdgeOnBndy++;
         }
      }   
-    
 
 
 // **************************** INCIDENCE MATRIX **************************************

@@ -134,6 +134,7 @@ int TestMultiLevelPreconditionerLaplace(char ProblemType[],
                                  double & TotalErrorExactSol);
 
 
+using namespace std;
 using namespace Intrepid;
 
 
