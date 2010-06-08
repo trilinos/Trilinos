@@ -54,8 +54,9 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(global_size_t numGlobalBlock
 
   global_size_t numGlobalPoints = numGlobalBlocks*blockSize;
 
-  //we compute numLocalPoints to make sure that Tpetra::Map doesn't split numGlobalPoints
-  //in a way that would separate the points within a block onto different mpi processors.
+  //we compute numLocalPoints to make sure that Tpetra::Map doesn't split
+  //numGlobalPoints in a way that would separate the points within a block
+  //onto different mpi processors.
 
   size_t numLocalPoints = numGlobalBlocks/comm->getSize();
   int remainder = numGlobalBlocks%comm->getSize();
@@ -72,10 +73,8 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(global_size_t numGlobalBlock
   TEST_FOR_EXCEPTION(numLocalBlocks != checkLocalBlocks, std::runtime_error,
        "Tpetra::BlockMap::BlockMap ERROR: internal failure, numLocalBlocks not consistent with point-map.");
   
-  //we don't need to allocate or fill the blockSizes_ array since blockSize is
-  //constant.
-
   myGlobalBlockIDs_.resize(numLocalBlocks);
+  blockSizes_.resize(numLocalBlocks, blockSize);
   firstPointInBlock_.resize(numLocalBlocks);
   LocalOrdinal firstPoint = pointMap_->getMinLocalIndex();
   GlobalOrdinal blockID = pointMap_->getMinGlobalIndex()/blockSize;
@@ -92,7 +91,7 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(global_size_t numGlobalBlock
       const Teuchos::RCP<Node> &node)
  : pointMap_(),
    myGlobalBlockIDs_(),
-   blockSizes_(),
+   blockSizes_(numLocalBlocks, blockSize),
    firstPointInBlock_(),
    blockIDsAreContiguous_(true),
    constantBlockSize_(blockSize)
@@ -230,6 +229,11 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::getBlockIDs() const
 {
   return myGlobalBlockIDs_();
 }
+
+template<class LocalOrdinal,class GlobalOrdinal,class Node>
+bool
+BlockMap<LocalOrdinal,GlobalOrdinal,Node>::isBlockSizeConstant() const
+{ return constantBlockSize_ != 0; }
 
 template<class LocalOrdinal,class GlobalOrdinal,class Node>
 Teuchos::ArrayView<const LocalOrdinal>

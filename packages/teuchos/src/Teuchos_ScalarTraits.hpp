@@ -151,6 +151,7 @@ struct ScalarTraits<short int>
   static inline short int conjugate(short int x) { return x; }
   static inline short int real(short int x) { return x; }
   static inline short int imag(short int) { return 0; }
+  static inline bool isnaninf(short int) { return false; }
   static inline void seedrandom(unsigned int s) { 
     std::srand(s); 
 #ifdef __APPLE__

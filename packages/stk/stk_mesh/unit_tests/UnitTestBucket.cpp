@@ -23,6 +23,7 @@
 #include <stk_mesh/base/Part.hpp>
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
+#include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/BulkModification.hpp>
 
 #include <stk_mesh/fem/EntityRanks.hpp>
@@ -35,11 +36,19 @@
 
 #include <Shards_BasicTopologies.hpp>
 
+#include <stk_mesh/base/Entity.hpp>
+#include <stk_mesh/base/Bucket.hpp>
+#include <stk_mesh/base/Transaction.hpp>
+#include <stk_mesh/baseImpl/BucketImpl.hpp>
+
+
 STKUNIT_UNIT_TEST(UnitTestingOfBucket, testUnit)
 {
   MPI_Barrier( MPI_COMM_WORLD );
   stk::mesh::UnitTestBucket::testBucket ( MPI_COMM_WORLD );
   stk::mesh::UnitTestBucket::testTopologyHelpers( MPI_COMM_WORLD );
+  stk::mesh::UnitTestBucket::test_get_involved_parts( MPI_COMM_WORLD );
+  stk::mesh::UnitTestBucket::testBucket2( MPI_COMM_WORLD );
 }
 
 //----------------------------------------------------------------------
@@ -117,10 +126,29 @@ void UnitTestBucket::testBucket( ParallelMachine pm )
 
  // Third, checking field_data_valid (...)
   {
+
     const std::vector< FieldBase * > &field_bases = meta.get_fields();
     STKUNIT_ASSERT_THROW(field_data_valid ( *field_bases[0] , *bulk.buckets(3)[0] , 1 , "error" ) , std::runtime_error);
     STKUNIT_ASSERT_EQUAL(field_data_valid ( *field_bases[0] , *bulk.buckets(0)[0] , 1 , "no_error" ) , true);
     STKUNIT_ASSERT_THROW(field_data_valid ( *field_bases[0] , *bulk.buckets(3)[0] , 99 , "error" ) , std::runtime_error);
+
+
+    stk::mesh::MetaData meta2 ( entity_names );
+    BulkData bulk2( meta2 , pm , 4 );
+
+    ScalarFieldType & temperature2 =
+       meta2.declare_field < ScalarFieldType > ( "temperature2" , 4 );
+    ScalarFieldType & volume2 =
+       meta2.declare_field < ScalarFieldType > ( "volume2" , 4 );
+    Part  & universal2     = meta2.universal_part ();
+    put_field ( temperature2 , Node , universal2 );
+    put_field ( volume2 , Element , universal2 );
+    meta2.commit();
+
+    //Cover line containing messsage for wrong MetaData used
+    const std::vector< FieldBase * > &field_bases2 = meta2.get_fields();
+    STKUNIT_ASSERT_THROW(field_data_valid ( *field_bases2[0] , *bulk.buckets(0)[0] , 1 , "error" ) , std::runtime_error);
+
   }
 
  // Fourth, check has_superset (...) and membership functions
@@ -829,6 +857,278 @@ void UnitTestBucket::generate_boxes(
   STKUNIT_ASSERT_EQUAL( count_shared_entities , count_shared_node_pairs );
 
   delete[] p_box ;
+}
+
+
+void UnitTestBucket::test_get_involved_parts(ParallelMachine pm)
+{
+
+  // Tests to cover get_involved_parts for GetBuckets.cpp - C.Brickley - 12 May 2010
+
+  stk::mesh::MetaData meta ( stk::unit_test::get_entity_rank_names ( 3 ) );
+
+  PartVector involved_parts(2) ;
+  involved_parts[0] = & meta.universal_part();
+  involved_parts[1] = & meta.locally_owned_part();
+
+  stk::mesh::Part & partLeft_1 = meta.declare_part( "block_left_1", Element );
+  stk::mesh::set_cell_topology< shards::Tetrahedron<4>  >( partLeft_1 );
+
+  stk::mesh::Part & partLeft_2 = meta.declare_part( "block_left_2", Element );
+  stk::mesh::set_cell_topology< shards::Tetrahedron<4>  >( partLeft_2 );
+
+  stk::mesh::Part & partLeft_3 = meta.declare_part( "block_left_3", Element );
+  stk::mesh::set_cell_topology< shards::Tetrahedron<4>  >( partLeft_3 );
+
+  meta.commit();
+
+  PartVector union_parts;
+  union_parts.push_back(&partLeft_1);
+  union_parts.push_back(&partLeft_2);
+
+  BulkData bulk( meta , pm , 100 );
+  PartVector add_part4, no_part;
+  add_part4.push_back ( &partLeft_1 );
+
+  bulk.modification_begin();
+  int  size , rank;
+  rank = stk::parallel_machine_rank( pm );
+  size = stk::parallel_machine_size( pm );
+
+  for ( int id_base = 0 ; id_base < 99 ; ++id_base )
+  {
+    int new_id = size * id_base + rank + 1;
+    bulk.declare_entity( 3 , new_id , add_part4 );
+    bulk.declare_entity( Node , new_id , no_part );
+  }
+
+  bulk.modification_end();
+
+  const std::vector<Bucket*> & buckets = bulk.buckets( Element );
+
+  std::vector<Bucket*>::const_iterator k;
+
+  k = buckets.begin();
+
+  //test 1 covers aecond section of "if" statement in while loop
+  stk::mesh::get_involved_parts( union_parts, **k, involved_parts);
+
+  //test 2 covers union_parts.size() = 0
+  PartVector union_parts2(0) ;
+  stk::mesh::get_involved_parts( union_parts2, **k, involved_parts);
+
+  //test 3 covers first section of "if" statement in while loop
+  const std::vector<Bucket*> & buckets2 = bulk.buckets( Node );
+  std::vector<Bucket*>::const_iterator k2;
+
+  k2 = buckets2.begin();
+  stk::mesh::get_involved_parts( union_parts, **k2, involved_parts);
+
+  // tests on throw_error and BucketIterator in bucket.cpp/hpp
+
+  std::vector<std::string> entity_names(10);
+  for ( size_t i = 0 ; i < 10 ; ++i ) {
+    std::ostringstream name ;
+    name << "EntityRank" << i ;
+    entity_names[i] = name.str();
+  }
+  typedef Field<double>  ScalarFieldType;
+
+  stk::mesh::MetaData meta2 ( entity_names );
+  BulkData bulk2( meta2 , pm , 4 );
+
+  ScalarFieldType & temperature2 =
+     meta2.declare_field < ScalarFieldType > ( "temperature2" , 4 );
+  ScalarFieldType & volume2 =
+     meta2.declare_field < ScalarFieldType > ( "volume2" , 4 );
+  Part  & universal     = meta2.universal_part ();
+  put_field ( temperature2 , Node , universal );
+  put_field ( volume2 , Element , universal );
+  meta2.commit();
+
+  bulk2.modification_begin();
+  bulk2.declare_entity( Edge , rank+1 , no_part );
+  bulk2.modification_end();
+
+  const std::vector<Bucket*> & buckets3 = bulk2.buckets( Edge );
+
+  std::vector<Bucket*>::const_iterator k3;
+
+  k3 = buckets3.begin();
+
+  stk::mesh::Bucket& b3 = **k3;
+  stk::mesh::BucketIterator bitr3 = b3.begin();
+
+  stk::mesh::Bucket& b2 = **k2;
+  stk::mesh::BucketIterator bitr2 = b2.begin();
+
+  //tests operator != given iterator from different bucket - bucket.hpp
+
+  {
+    int ok = 0 ;
+    try {
+
+      if ( bitr2  !=  bitr3 ){
+        // bitr3.throw_error("is NULL") ;
+      }
+
+    }
+    catch( const std::exception & x ) {
+      ok = 1 ;
+      std::cout << "UnitTestBucket CORRECTLY caught error for : "
+                << x.what()
+                << std::endl ;
+    }
+
+    if ( ! ok ) {
+      throw std::runtime_error("UnitTestBucket FAILED to catch error for throw_error");
+    }
+  }
+
+  //tests operator - given iterator from different bucket - bucket.hpp
+  {
+    int ok = 0 ;
+    try {
+
+    const ptrdiff_t n = bitr2 - bitr3 ;
+
+      if ( n  !=  0 ){
+        // bitr3.throw_error("is NULL") ;
+      }
+    }
+    catch( const std::exception & x ) {
+      ok = 1 ;
+      std::cout << "UnitTestBucket CORRECTLY caught error for : "
+                << x.what()
+                << std::endl ;
+    }
+
+    if ( ! ok ) {
+      throw std::runtime_error("UnitTestBucket FAILED to catch error for iterator from a different bucket");
+    }
+  }
+
+}
+
+
+void UnitTestBucket::testBucket2(ParallelMachine pm)
+{
+
+  // Tests to cover print, has_superset and BucketLess::operator() for Buckets.cpp - C.Brickley - 2nd June 2010
+
+  stk::mesh::MetaData meta ( stk::unit_test::get_entity_rank_names ( 3 ) );
+
+  PartVector involved_parts(2) ;
+  involved_parts[0] = & meta.universal_part();
+  involved_parts[1] = & meta.locally_owned_part();
+
+  stk::mesh::Part & partLeft_1 = meta.declare_part( "block_left_1", Element );
+
+  stk::mesh::Part & partLeft_2 = meta.declare_part( "block_left_2", Element );
+  stk::mesh::set_cell_topology< shards::Tetrahedron<4>  >( partLeft_2 );
+
+  stk::mesh::Part & partLeft_3 = meta.declare_part( "block_left_3", Element );
+  stk::mesh::set_cell_topology< shards::Tetrahedron<4>  >( partLeft_3 );
+
+  meta.commit();
+
+  BulkData bulk( meta , pm , 100 );
+  std::vector<stk::mesh::Part *>  add_part4;
+  add_part4.push_back ( &partLeft_1 );
+
+  bulk.modification_begin();
+  int  size , rank;
+  rank = stk::parallel_machine_rank( pm );
+  size = stk::parallel_machine_size( pm );
+
+  for ( int id_base = 0 ; id_base < 99 ; ++id_base )
+  {
+    int new_id = size * id_base + rank;
+    bulk.declare_entity( 3 , new_id+1 , add_part4 );
+  }
+
+  bulk.modification_end();
+
+  const std::vector<Bucket*> & buckets2 = bulk.buckets( Element );
+
+  std::vector<Bucket*>::const_iterator k2;
+
+  k2 = buckets2.begin();
+
+  stk::mesh::Bucket& b2 = **k2;
+  stk::mesh::BucketIterator bitr2 = b2.begin();
+
+  //define a new meta and bulkdata
+  std::vector<std::string> entity_names(10);
+
+  for ( size_t i = 0 ; i < 10 ; ++i ) {
+    std::ostringstream name ;
+    name << "EntityRank" << i ;
+    entity_names[i] = name.str();
+  }
+
+  typedef Field<double>  ScalarFieldType;
+
+  stk::mesh::MetaData meta2 ( entity_names );
+  BulkData bulk2( meta2 , pm , 4 );
+
+  ScalarFieldType & temperature2 =
+       meta2.declare_field < ScalarFieldType > ( "temperature2" , 4 );
+  ScalarFieldType & volume2 =
+       meta2.declare_field < ScalarFieldType > ( "volume2" , 4 );
+  Part  & universal     = meta2.universal_part ();
+  put_field ( temperature2 , Node , universal );
+  put_field ( volume2 , Element , universal );
+
+  typedef Field<double>  VectorFieldType;
+  typedef Field<double>  ElementNodePointerFieldType;
+
+  meta2.commit();
+
+  //Test to cover print function in Bucket.cpp
+  std::cout << std::endl << "Bucket test" << std::endl ;
+  stk::mesh::print(std::cout, "  ", b2);
+
+  //Test to cover has_superset function in Bucket.cpp
+  STKUNIT_ASSERT_EQUAL ( has_superset ( b2 , partLeft_3 ) , false );
+
+  //Test on BucketLess::operator() in Bucket.cpp/hpp
+
+  enum { KEY_TMP_BUFFER_SIZE = 64 };
+
+  const unsigned max = ~(0u);
+
+  unsigned key_tmp_buffer[ KEY_TMP_BUFFER_SIZE ];
+
+  std::vector<unsigned> key_tmp_vector ;
+
+  const unsigned key_size = 2 + 3 ;
+
+  unsigned * const key =
+    ( key_size <= KEY_TMP_BUFFER_SIZE )
+    ? key_tmp_buffer
+    : ( key_tmp_vector.resize( key_size ) , & key_tmp_vector[0] );
+
+
+  key[ key[0] = 3 + 1 ] = max;
+
+  {
+    unsigned * const k = key + 1 ;
+    for ( unsigned i = 0 ; i < 3 ; ++i ) { k[i] = 1 ; }
+  }
+
+  /*
+  impl::BucketImpl::last_bucket_in_family( *k2 );
+
+  const unsigned * t = key;
+  const Bucket * u = last_bucket;
+
+  BucketLess Buck;
+
+  bool res = Buck(  &t[0], &u[0] );
+
+  STKUNIT_EXPECT_EQUAL( res, false );
+  */
 }
 
 //----------------------------------------------------------------------
