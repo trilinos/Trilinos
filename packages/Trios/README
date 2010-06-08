@@ -91,7 +91,7 @@ cmake \
 -D TPL_ENABLE_Boost:BOOL=${STK} \
 -D TPL_ENABLE_MPI:BOOL=${MPI} \
 -D Trilinos_ENABLE_MPI:BOOL=${MPI} \
--D Boost_INCLUDE_DIRS:PATH=/sierra/Dev/william/sierra_code/TPLs_src/boost/1.38.0 \
+-D TPL_Boost_INCLUDE_DIRS:PATH=/sierra/Dev/gdsjaar/boost_1_43_0 \
 $EXTRA_ARGS \
 ../
 --------------------------------cut here--------------------------------
