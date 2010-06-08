@@ -60,6 +60,10 @@ extern int Zoltan_RB_Send_Dots(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
   struct Dot_Struct **, int **, int *, int, int *, int *, int, int *, double,
   int, int *, int, MPI_Comm);
 
+extern int Zoltan_RB_Send_Dots_less_memory(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
+  struct Dot_Struct **, int **, int *, int, int *, int *, int, int *, double,
+  int, int *, int, MPI_Comm);
+
 extern int Zoltan_RB_Remap(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, 
   struct Dot_Struct **, int *, int *, int *, double, int , int *, int);
 

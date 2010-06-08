@@ -65,6 +65,7 @@ typedef struct RCB_Struct {
   struct rcb_box *Box;
   int Num_Dim;    /* Number of dimensions in the input geometry. */
   ZZ_Transform Tran;        /* transformation for degenerate geometry */
+  int weight_dim;           /* number of weights per dot */
 } RCB_STRUCT;
 
 extern int Zoltan_RCB_Build_Structure(ZZ *, int *, int *, int, double, int);

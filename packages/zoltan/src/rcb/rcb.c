@@ -488,6 +488,7 @@ static int rcb_fn(
   start_time = Zoltan_Time(zz->Timer);
   ierr = Zoltan_RCB_Build_Structure(zz, &pdotnum, &dotmax, wgtflag, overalloc,
                                     use_ids);
+
   if (ierr < 0) {
     ZOLTAN_PRINT_ERROR(proc, yo, 
                    "Error returned from Zoltan_RCB_Build_Structure.");
@@ -532,7 +533,7 @@ static int rcb_fn(
   /* create mark and list arrays for dots */
 
   allocflag = 0;
-  wgtdim = (wgtflag>0 ? wgtflag : 1);
+  rcb->weight_dim = wgtdim = (wgtflag>0 ? wgtflag : 1);
   if (dotmax > 0) {
     if (!(dotmark = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))
      || !(coord = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double)))
@@ -583,12 +584,21 @@ static int rcb_fn(
 
       /* move dots */
       allocflag = 0;
+#if 0
       ierr = Zoltan_RB_Send_Dots(zz, &(rcb->Global_IDs), &(rcb->Local_IDs),
                                  &(rcb->Dots), &dotmark, 
                                  proc_list, outgoing, 
                                  &dotnum, &dotmax, proc, &allocflag,
                                  overalloc, stats, reuse_count, use_ids,
                                  zz->Communicator);
+#else
+      ierr = Zoltan_RB_Send_Dots_less_memory(zz, &(rcb->Global_IDs), &(rcb->Local_IDs),
+                                 &(rcb->Dots), &dotmark, 
+                                 proc_list, outgoing, 
+                                 &dotnum, &dotmax, proc, &allocflag,
+                                 overalloc, stats, reuse_count, use_ids,
+                                 zz->Communicator);
+#endif
       if (ierr < 0) {
         ZOLTAN_PRINT_ERROR(proc, yo, 
                            "Error returned from Zoltan_RB_Send_Dots.");
