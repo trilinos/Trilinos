@@ -80,7 +80,7 @@ class RowMatrixTransposer {
 		       using this map as the row map for the transpose.	If null, the function will evenly distribute
 			   the rows of the tranpose matrix.
   */
-  void createTranspose(const OptimizeOption optimizeTranspose, Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &transposeMatrix, Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > transposeRowMap = Teuchos::null);
+  void createTranspose(const OptimizeOption optimizeTranspose, Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &transposeMatrix, Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transposeRowMap = Teuchos::null);
 
 	
  private: 

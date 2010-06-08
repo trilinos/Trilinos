@@ -173,3 +173,13 @@ void Epetra_BLAS::TRMM(const char SIDE, const char UPLO, const char TRANSA, cons
   DTRMM_F77(CHAR_MACRO(SIDE), CHAR_MACRO(UPLO), CHAR_MACRO(TRANSA), CHAR_MACRO(DIAG), 
 	    &M, &N, &ALPHA, A, &LDA, B, &LDB);
 }
+//=============================================================================
+void Epetra_BLAS::SYRK(const char UPLO, const char TRANS, const int N, const int K, const float ALPHA, const float *A,
+                       const int LDA, const float BETA, float *C, const int LDC) const{
+  SSYRK_F77(CHAR_MACRO(UPLO), CHAR_MACRO(TRANS), &N, &K, &ALPHA, A, &LDA, &BETA, C, &LDC);
+}
+//=============================================================================
+void Epetra_BLAS::SYRK(const char UPLO, const char TRANS, const int N, const int K, const double ALPHA, const double *A,
+                       const int LDA, const double BETA, double *C, const int LDC) const{
+  DSYRK_F77(CHAR_MACRO(UPLO), CHAR_MACRO(TRANS), &N, &K, &ALPHA, A, &LDA, &BETA, C, &LDC);
+}
