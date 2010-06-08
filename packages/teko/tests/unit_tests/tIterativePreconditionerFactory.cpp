@@ -64,6 +64,7 @@
 #include "Teko_InverseLibrary.hpp"
 #include "Teko_InverseFactory.hpp"
 #include "Teko_IterativePreconditionerFactory.hpp"
+#include "Teko_PreconditionerInverseFactory.hpp"
 
 // Thyra includes
 #include "Thyra_EpetraLinearOp.hpp"

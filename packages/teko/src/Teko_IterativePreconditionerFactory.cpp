@@ -46,6 +46,8 @@
 // Teko includes
 #include "Teko_IterativePreconditionerFactory.hpp"
 
+#include "Teko_PreconditionerInverseFactory.hpp"
+
 namespace Teko {
 
 //! Default constructor, for use with the AutoClone class.

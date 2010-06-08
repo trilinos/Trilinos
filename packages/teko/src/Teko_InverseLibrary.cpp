@@ -45,6 +45,8 @@
 
 #include "Teko_InverseLibrary.hpp"
 
+#include "Teko_SolveInverseFactory.hpp"
+#include "Teko_PreconditionerInverseFactory.hpp"
 #include "Teko_BlockPreconditionerFactory.hpp"
 
 #include "Teko_NeumannSeriesPreconditionerFactory.hpp"
