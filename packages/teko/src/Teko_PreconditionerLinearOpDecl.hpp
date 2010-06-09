@@ -99,12 +99,14 @@ public:
    //! Get a constant <code>PreconditionerBase</code> object
    virtual Teuchos::RCP<const Thyra::PreconditionerBase<ScalarT> > getPreconditioner() const;
 
+   //! Get teko linear operator
+   Teko::LinearOp getOperator() const { return getOperator_cnoc().getConstObj(); }
 protected:
    //! get operator associated with the preconditioner
-   Teuchos::ConstNonconstObjectContainer<Thyra::LinearOpBase<ScalarT> > getOperator() const;
+   Teuchos::ConstNonconstObjectContainer<Thyra::LinearOpBase<ScalarT> > getOperator_cnoc() const;
 
    //! get operator associated with the preconditioner
-   Teuchos::ConstNonconstObjectContainer<Thyra::LinearOpBase<ScalarT> > getOperator();
+   Teuchos::ConstNonconstObjectContainer<Thyra::LinearOpBase<ScalarT> > getOperator_cnoc();
 
    Teuchos::ConstNonconstObjectContainer<Thyra::PreconditionerBase<ScalarT> > preconditioner_;
 };

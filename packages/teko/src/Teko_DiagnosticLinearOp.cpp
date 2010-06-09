@@ -53,7 +53,7 @@ namespace Teko {
   *        that needs to be wrapped and a string for output that describes
   *        the diagnostics.
   */
-DiagnosticLinearOp::DiagnosticLinearOp(Teuchos::RCP<std::ostream> & ostrm, const LinearOp & A,const std::string & diagnosticString)
+DiagnosticLinearOp::DiagnosticLinearOp(const Teuchos::RCP<std::ostream> & ostrm, const ModifiableLinearOp & A,const std::string & diagnosticString)
    : outputStream_(ostrm), wrapOpA_(A), diagString_(diagnosticString), timer_(diagnosticString)
 {
 }

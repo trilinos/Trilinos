@@ -55,6 +55,7 @@
 #include "Teko_MultPreconditionerFactory.hpp"
 #include "Teko_LU2x2PreconditionerFactory.hpp"
 #include "Teko_IterativePreconditionerFactory.hpp"
+#include "Teko_DiagnosticPreconditionerFactory.hpp"
 #include "NS/Teko_LSCPreconditionerFactory.hpp"
 #include "NS/Teko_SIMPLEPreconditionerFactory.hpp"
 
@@ -274,6 +275,9 @@ void PreconditionerFactory::initializePrecFactoryBuilder()
 
    clone = rcp(new AutoClone<IterativePreconditionerFactory>());
    precFactoryBuilder_.addClone("Iterative Preconditioner",clone);
+
+   clone = rcp(new AutoClone<DiagnosticPreconditionerFactory>());
+   precFactoryBuilder_.addClone("Diagnostic Inverse",clone);
 }
 
 void PreconditionerFactory::getPreconditionerFactoryNames(std::vector<std::string> & names)

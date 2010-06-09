@@ -96,21 +96,21 @@ void PreconditionerLinearOp<ScalarT>::uninitialize()
 template <typename ScalarT>
 Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > PreconditionerLinearOp<ScalarT>::range() const
 {
-   return getOperator()->range();
+   return getOperator_cnoc()->range();
 }
 
 /** @brief Domain space of this operator */
 template <typename ScalarT>
 Teuchos::RCP<const Thyra::VectorSpaceBase<ScalarT> > PreconditionerLinearOp<ScalarT>::domain() const
 {
-   return getOperator()->domain();
+   return getOperator_cnoc()->domain();
 }
 
 template <typename ScalarT>
 bool PreconditionerLinearOp<ScalarT>::opSupportedImpl(
   const Thyra::EOpTransp M_trans) const
 {
-  return getOperator()->opSupported(M_trans);
+  return getOperator_cnoc()->opSupported(M_trans);
 }
 
 template <typename ScalarT>
@@ -122,7 +122,7 @@ void PreconditionerLinearOp<ScalarT>::applyImpl(
   const ScalarT beta
   ) const
 {
-   getOperator()->apply(M_trans, x, y, alpha, beta);
+   getOperator_cnoc()->apply(M_trans, x, y, alpha, beta);
 }
 
 
@@ -142,7 +142,7 @@ Teuchos::RCP<const Thyra::PreconditionerBase<ScalarT> > PreconditionerLinearOp<S
 
 //! get operator associated with the preconditioner
 template <typename ScalarT>
-Teuchos::ConstNonconstObjectContainer<Thyra::LinearOpBase<ScalarT> > PreconditionerLinearOp<ScalarT>::getOperator() const
+Teuchos::ConstNonconstObjectContainer<Thyra::LinearOpBase<ScalarT> > PreconditionerLinearOp<ScalarT>::getOperator_cnoc() const
 {
    Teuchos::ConstNonconstObjectContainer<Thyra::LinearOpBase<ScalarT> > oper;
    oper.initialize(preconditioner_.getConstObj()->getUnspecifiedPrecOp());
@@ -152,7 +152,7 @@ Teuchos::ConstNonconstObjectContainer<Thyra::LinearOpBase<ScalarT> > Preconditio
 
 //! get operator associated with the preconditioner
 template <typename ScalarT>
-Teuchos::ConstNonconstObjectContainer<Thyra::LinearOpBase<ScalarT> > PreconditionerLinearOp<ScalarT>::getOperator()
+Teuchos::ConstNonconstObjectContainer<Thyra::LinearOpBase<ScalarT> > PreconditionerLinearOp<ScalarT>::getOperator_cnoc()
 {
    Teuchos::ConstNonconstObjectContainer<Thyra::LinearOpBase<ScalarT> > oper;
    oper.initialize(preconditioner_.getNonconstObj()->getNonconstUnspecifiedPrecOp());

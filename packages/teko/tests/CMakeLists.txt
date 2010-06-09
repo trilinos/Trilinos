@@ -66,7 +66,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  LU2x2InverseOp
+  LU2x2InverseOp_test
   SOURCES
     unit_tests/tLU2x2InverseOp.cpp
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
@@ -75,7 +75,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  StridedEpetraOperator
+  StridedEpetraOperator_test
   SOURCES
     unit_tests/tStridedEpetraOperator.cpp
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
@@ -84,7 +84,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  RequestInterface 
+  RequestInterface_test 
   SOURCES
     unit_tests/tRequestInterface.cpp
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
@@ -93,7 +93,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
-  DiagnosticLinearOp 
+  DiagnosticLinearOp_test 
   SOURCES
     unit_tests/tDiagnosticLinearOp.cpp
     ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp

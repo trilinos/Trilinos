@@ -71,7 +71,7 @@ public:
      *        that needs to be wrapped and a string for output that describes
      *        the diagnostics.
      */
-   DiagnosticLinearOp(Teuchos::RCP<std::ostream> & ostrm,const LinearOp & A,const std::string & diagnosticString);
+   DiagnosticLinearOp(const Teuchos::RCP<std::ostream> & ostrm,const ModifiableLinearOp & A,const std::string & diagnosticString);
 
    /** \brief Destructor prints out timing information about this operator.
      */
@@ -109,10 +109,16 @@ public:
    int numApplications() const { return timer_.numCalls(); }
    double totalTime() const { return timer_.totalElapsedTime(); }
 
+   ModifiableLinearOp getModifiableOp() const
+   { return wrapOpA_; } 
+
+   LinearOp getLinearOp() const
+   { return wrapOpA_; } 
+
 protected:
    // fundamental operators to use
    Teuchos::RCP<std::ostream> outputStream_;
-   const LinearOp wrapOpA_;      ///< inverse of \f$ S \f$
+   ModifiableLinearOp wrapOpA_;      ///< inverse of \f$ S \f$
    std::string diagString_;
  
    mutable Teuchos::Time timer_;
@@ -135,7 +141,7 @@ private:
   * 
   * \relates LU2x2InverseOp
   */
-inline LinearOp createDiagonsticLinearOp(Teuchos::RCP<std::ostream> & os,LinearOp & A,const std::string & label)
+inline ModifiableLinearOp createDiagnosticLinearOp(const Teuchos::RCP<std::ostream> & os,const ModifiableLinearOp & A,const std::string & label)
 {
    return Teuchos::rcp(new DiagnosticLinearOp(os,A,label));
 }

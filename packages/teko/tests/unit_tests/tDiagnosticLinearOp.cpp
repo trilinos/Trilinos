@@ -63,39 +63,58 @@
 // Teko-Package includes
 #include "Teko_Utilities.hpp"
 #include "Teko_DiagnosticLinearOp.hpp"
+#include "Teko_DiagnosticPreconditionerFactory.hpp"
+#include "Teko_PreconditionerInverseFactory.hpp"
+#include "Teko_PreconditionerLinearOp.hpp"
 
 #include "Thyra_EpetraLinearOp.hpp"
 
 // Test-rig
 
 using Teuchos::rcp;
+using Teuchos::rcp_dynamic_cast;
 using Teuchos::RCP;
 using Teuchos::rcpFromRef;
 using Thyra::epetraLinearOp;
 
-const RCP<const Thyra::LinearOpBase<double> > build2x2(const Epetra_Comm & comm,double a,double b,double c,double d)
+const RCP<Thyra::LinearOpBase<double> > buildSystem(const Epetra_Comm & comm,int size)
 {
-   RCP<Epetra_Map> map = rcp(new Epetra_Map(2,0,comm));
+   Epetra_Map map(size,0,comm);
 
-   int indicies[2];
-   double row0[2];
-   double row1[2];
+   RCP<Epetra_CrsMatrix> mat = rcp(new Epetra_CrsMatrix(Copy,map,0));
 
-   indicies[0] = 0;
-   indicies[1] = 1;
+   double values[] = { -1.0, 2.0, -1.0};
+   int iTemp[] = {-1,0,1}, indices[3];
+   double * vPtr;
+   int * iPtr;
+   for(int i=0;i<map.NumMyElements();i++) {
+      int count = 3;
+      int gid = map.GID(i);
 
-   // build a CrsMatrix
-   RCP<Epetra_CrsMatrix> blk  = rcp(new Epetra_CrsMatrix(Copy,*map,2));
-   row0[0] = a; row0[1] = b;  // do a transpose here!
-   row1[0] = c; row1[1] = d;
-   blk->InsertGlobalValues(0,2,&row0[0],&indicies[0]);
-   blk->InsertGlobalValues(1,2,&row1[0],&indicies[0]);
-   blk->FillComplete();
+      vPtr = values;
+      iPtr = indices;
 
-   return Thyra::epetraLinearOp(blk);
+      indices[0] = gid+iTemp[0];
+      indices[1] = gid+iTemp[1];
+      indices[2] = gid+iTemp[2];
+      
+      if(gid==0) {
+         vPtr = &values[1];
+         iPtr = &indices[1];
+         count = 2;
+      }
+      else if(gid==map.MaxAllGID())
+         count = 2;
+
+      mat->InsertGlobalValues(gid,count,vPtr,iPtr);
+   }
+
+   mat->FillComplete();
+
+   return Thyra::nonconstEpetraLinearOp(mat);
 }
 
-TEUCHOS_UNIT_TEST(tDiagnosticLinearOp, construction_test)
+TEUCHOS_UNIT_TEST(tDiagnosticLinearOp, application_test)
 {
    // build global (or serial communicator)
    #ifdef HAVE_MPI
@@ -104,14 +123,13 @@ TEUCHOS_UNIT_TEST(tDiagnosticLinearOp, construction_test)
       Epetra_SerialComm Comm;
    #endif
 
-   Teko::LinearOp  A_00 = build2x2(Comm,1,2,3,4);
-   Teko::LinearOp  A_01 = build2x2(Comm,5,6,7,8);
-   Teko::LinearOp  A_10 = build2x2(Comm,9,10,11,12);
-   Teko::LinearOp  A_11 = build2x2(Comm,-13,-14,-15,-16);
-   Teko::BlockedLinearOp A = Teko::toBlockedLinearOp(Thyra::block2x2(A_00,A_01,A_10,A_11));
+   RCP<Teko::InverseLibrary> invLibrary = Teko::InverseLibrary::buildFromStratimikos();
+   RCP<Teko::InverseFactory> invFact = invLibrary->getInverseFactory("Amesos");
+   Teko::LinearOp A = buildSystem(Comm,10000);
+   Teko::ModifiableLinearOp invA = Teko::buildInverse(*invFact,A);
 
    Teuchos::RCP<std::ostream> rcp_out = Teuchos::rcpFromRef(out);
-   Teuchos::RCP<Teko::DiagnosticLinearOp> diag_A = rcp(new Teko::DiagnosticLinearOp(rcp_out,A,"descriptive_label"));
+   Teuchos::RCP<Teko::DiagnosticLinearOp> diag_A = rcp(new Teko::DiagnosticLinearOp(rcp_out,invA,"descriptive_label"));
    Teko::LinearOp diag_Alo = diag_A;
 
    Teko::MultiVector x = Thyra::createMember(A->domain());
@@ -119,11 +137,92 @@ TEUCHOS_UNIT_TEST(tDiagnosticLinearOp, construction_test)
    Thyra::randomize(-1.0,1.0,x.ptr());
 
    Teuchos::Time timer("test-time");
-   int count = 500;
+   int count = 50;
    for(int i=0;i<count;i++) {
       Teuchos::TimeMonitor monitor(timer,false);
       Teko::applyOp(diag_Alo,x,y);
    }
-   TEST_FLOATING_EQUALITY(timer.totalElapsedTime(),diag_A->totalTime(),1e-2); // within 1% should be good enough
+   // TEST_FLOATING_EQUALITY(timer.totalElapsedTime(),diag_A->totalTime(),0.05); // within 5% should be good enough
    TEST_EQUALITY(count,diag_A->numApplications());
+}
+
+TEUCHOS_UNIT_TEST(tDiagnosticPreconditionerFactory, inverse_lib_test)
+{
+   // build global (or serial communicator)
+   #ifdef HAVE_MPI
+      Epetra_MpiComm Comm(MPI_COMM_WORLD);
+   #else
+      Epetra_SerialComm Comm;
+   #endif
+
+   // setup diagnostic inverse parameter list: uses Amesos under neady
+   Teuchos::ParameterList pl;
+   Teuchos::ParameterList & diagList = pl.sublist("Diagnostic");
+   diagList.set<std::string>("Type","Diagnostic Inverse");
+   diagList.set<std::string>("Inverse Factory","Amesos");
+   diagList.set<std::string>("Descriptive Label","the_descriptive_label");
+
+   // build inverse factory
+   RCP<Teko::InverseLibrary> invLibrary = Teko::InverseLibrary::buildFromParameterList(pl);
+   RCP<Teko::InverseFactory> invFact = invLibrary->getInverseFactory("Diagnostic");
+
+   // build inverse operator
+   Teko::LinearOp A = buildSystem(Comm,2000);
+   Teko::LinearOp invA = Teko::buildInverse(*invFact,A);
+
+   // apply inverse
+   Teko::MultiVector x = Thyra::createMember(invA->domain());
+   Teko::MultiVector y = Thyra::createMember(invA->range());
+   Thyra::randomize(-1.0,1.0,x.ptr());
+   Teko::applyOp(invA,x,y);
+}
+
+TEUCHOS_UNIT_TEST(tDiagnosticPreconditionerFactory, construction_test)
+{
+   // build global (or serial communicator)
+   #ifdef HAVE_MPI
+      Epetra_MpiComm Comm(MPI_COMM_WORLD);
+   #else
+      Epetra_SerialComm Comm;
+   #endif
+
+   // build operator and solver
+   Teko::LinearOp A = buildSystem(Comm,2000);
+   RCP<Teko::InverseLibrary> invLibrary = Teko::InverseLibrary::buildFromStratimikos();
+   RCP<Teko::InverseFactory> direct = invLibrary->getInverseFactory("Ifpack");
+
+   // build diagnostic preconditioner
+   Teko::DiagnosticPreconditionerFactory dpf(direct,"Direct Diagnostic",Teuchos::rcpFromRef(out));
+   RCP<Teko::InverseFactory> invFact = Teuchos::rcp(new Teko::PreconditionerInverseFactory(Teuchos::rcpFromRef(dpf),Teuchos::null));
+
+   // test rebuild functionality
+   int count = 10;
+   Teuchos::Time buildTime("build-time");
+   Teko::ModifiableLinearOp invA;
+   for(int i=0;i<count;i++) {
+      // do a timed build of linear operators
+      {
+         Teuchos::TimeMonitor monitor(buildTime,false);
+         invA = Teko::buildInverse(*invFact,A);
+      }
+
+      RCP<const Teko::PreconditionerLinearOp<double> > precOp = rcp_dynamic_cast<const Teko::PreconditionerLinearOp<double> >(invA,true); 
+      RCP<const Teko::DiagnosticLinearOp> diagOp =     rcp_dynamic_cast<const Teko::DiagnosticLinearOp>(precOp->getOperator(),true); 
+   }
+   TEST_EQUALITY(dpf.numInitialBuilds(),buildTime.numCalls());  
+   // TEST_FLOATING_EQUALITY(dpf.totalInitialBuildTime(),
+   //                        buildTime.totalElapsedTime(),0.05);  // within 5% should be good enough 
+
+   // test rebuild functionality
+   Teuchos::Time rebuildTime("rebuild-time");
+   for(int i=0;i<count;i++) {
+      // do a timed build of linear operators
+      {
+         Teuchos::TimeMonitor monitor(rebuildTime,false);
+         Teko::rebuildInverse(*invFact,A,invA);
+      }
+   }
+   TEST_EQUALITY(dpf.numRebuilds(),rebuildTime.numCalls());  
+   // TEST_FLOATING_EQUALITY(dpf.totalRebuildTime(),
+   //                        rebuildTime.totalElapsedTime(),0.05);  // within 5% should be good enough 
 }
