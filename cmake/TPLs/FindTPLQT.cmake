@@ -49,6 +49,5 @@ ENDIF()
 TPL_DECLARE_LIBRARIES( QT
   REQUIRED_HEADERS QMainWindow QDialog QAbstratItemModel QTreeView QItemDelegate QPushButton QGridLayout QSpinBox QComboBox QLineEdit QLabel QScrollArea QDir QXmlStreamWriter QXmlStreamReader QStringList
   REQUIRED_LIBS_NAMES QtCore QtGui
-  LIBRARY_DIR_HINT ${QT_LIBRARY_DIR} 
   )
 
