@@ -153,7 +153,7 @@ Constraint(const LOCA::TurningPoint::MinimallyAugmented::Constraint& source,
   nullVecScaling(source.nullVecScaling),
   multiplyMass(source.multiplyMass),
   tdGrp(source.tdGrp),
-  tmp_mass(source.tmp_mass)
+  tmp_mass(source.tmp_mass->clone(type))
 {
   if (source.isValidConstraints && type == NOX::DeepCopy)
     isValidConstraints = true;
@@ -247,7 +247,6 @@ copy(const LOCA::MultiContinuation::ConstraintInterface& src)
       source.updateVectorsEveryIteration;
     nullVecScaling = source.nullVecScaling;
     multiplyMass = source.multiplyMass;
-    tdGrp = source.tdGrp;
 
     // Instantiate bordered solvers
     borderedSolver = 

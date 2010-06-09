@@ -49,6 +49,7 @@
 #include "LOCA_Parameter_SublistParser.H"
 #include "NOX_Utils.H"
 #include "LOCA_ErrorCheck.H"
+#include "LOCA_TimeDependent_AbstractGroup.H"
 
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup(
 	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
@@ -77,7 +78,11 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup(
     bifParamID(1), 
     isValidF(false),
     isValidJacobian(false),
-    isValidNewton(false)
+    isValidNewton(false),
+    updateVectorsEveryContinuationStep(false),
+    multiplyMass(false),
+    tdGrp(),
+    tmp_mass()
 {
   const char *func = "LOCA::TurningPoint::MooreSpence::ExtendedGroup()";
 
@@ -116,10 +121,24 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup(
   double perturbSize = turningPointParams->get(
 						 "Relative Perturbation Size", 
 						 1.0e-3);
+  
+  updateVectorsEveryContinuationStep = 
+    turningPointParams->get("Update Null Vectors Every Continuation Step", 
+			    false);
+   multiplyMass = 
+    turningPointParams->get("Multiply Null Vectors by Mass Matrix", false);
+  if (multiplyMass && tdGrp == Teuchos::null) {
+    globalData->locaErrorCheck->throwError(
+       "LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup()",
+       "Group must be derived from LOCA::TimeDependent::AbstractGroup to multiply null vectors by mass matrix");
+  }
 
   lengthMultiVec = 
     lenVecPtr->createMultiVector(1, NOX::DeepCopy);
   *(xMultiVec.getColumn(0)->getNullVec()) = *nullVecPtr;
+
+  tdGrp = Teuchos::rcp_dynamic_cast<LOCA::TimeDependent::AbstractGroup>(grpPtr);
+  tmp_mass = grpPtr->getX().clone(NOX::ShapeCopy);
 
   // Instantiate solver strategy
   solverStrategy = 
@@ -156,7 +175,11 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup(
     bifParamID(source.bifParamID),
     isValidF(source.isValidF),
     isValidJacobian(source.isValidJacobian),
-    isValidNewton(source.isValidNewton) 
+    isValidNewton(source.isValidNewton),
+    updateVectorsEveryContinuationStep(source.updateVectorsEveryContinuationStep),
+    multiplyMass(source.multiplyMass),
+    tdGrp(source.tdGrp),
+    tmp_mass(source.tmp_mass->clone(type))
 {
 
   // Instantiate solver strategy
@@ -739,6 +762,9 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::copy(
     isValidF = source.isValidF;
     isValidJacobian = source.isValidJacobian;
     isValidNewton = source.isValidNewton;
+    updateVectorsEveryContinuationStep = 
+      source.updateVectorsEveryContinuationStep;
+    multiplyMass = source.multiplyMass;
 
     // set up views again just to be safe
     setupViews();
@@ -856,6 +882,22 @@ void
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::preProcessContinuationStep(
 			 LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
+  // Rescale length vector so that the normalization condition is met
+  double lVecDotNullVec = lTransNorm(*(xVec->getNullVec()));
+
+  if (lVecDotNullVec == 0.0) {
+    globalData->locaErrorCheck->throwError(
+      "LOCA::TurningPoint::MooreSpence::ExtendedGroup::preProcessContinuationStep()",
+      "null vector can be orthogonal to length-scaling vector");
+  }
+  if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
+    globalData->locaUtils->out() << 
+	"\tIn LOCA::TurningPoint::MooreSpence::ExtendedGroup::preProcessContinuationStep(), " << 
+	"scaling null vector by:" << 
+	globalData->locaUtils->sciformat(1.0 / lVecDotNullVec) << std::endl;
+  }
+  xVec->getNullVec()->scale(1.0/lVecDotNullVec);
+
   grpPtr->preProcessContinuationStep(stepStatus);
 }
 
@@ -863,6 +905,17 @@ void
 LOCA::TurningPoint::MooreSpence::ExtendedGroup::postProcessContinuationStep(
 			 LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
+  if (stepStatus == LOCA::Abstract::Iterator::Successful && 
+      updateVectorsEveryContinuationStep) {
+    if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
+      globalData->locaUtils->out() << 
+      "\n\tUpdating null vector for the next continuation step" << std::endl;
+    }
+    *lengthVec = *(xVec->getNullVec());
+
+    scaleNullVector(*lengthVec);
+  }
+
   grpPtr->postProcessContinuationStep(stepStatus);
 }
 
@@ -1038,6 +1091,9 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::init(bool perturbSoln,
 {
   xVec->getBifParam() = getBifParam();
 
+  // Rescale null vector
+  scaleNullVector(*lengthVec);
+
   // Rescale length vector so that the normalization condition is met
   double lVecDotNullVec = lTransNorm(*(xVec->getNullVec()));
 
@@ -1070,3 +1126,34 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::init(bool perturbSoln,
   }
 }
 
+void
+LOCA::TurningPoint::MooreSpence::ExtendedGroup::
+scaleNullVector(NOX::Abstract::Vector& a)
+{
+  string callingFunction = 
+    "LOCA::TurningPoint::MooreSpence::ExtendedGroup::scaleNullVector()";
+  NOX::Abstract::Group::ReturnType status;
+  NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
+
+  if (multiplyMass && tdGrp != Teuchos::null) {
+    status = tdGrp->computeShiftedMatrix(0.0, 1.0);
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
+    *tmp_mass = a;
+    status = tdGrp->applyShiftedMatrix(*tmp_mass, a);
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
+    status = tdGrp->computeJacobian();
+    finalStatus = 
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
+							     finalStatus,
+							     callingFunction);
+  }
+
+  double dn = a.length();
+  a.scale(std::sqrt(dn) / a.norm());
+}
