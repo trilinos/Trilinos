@@ -105,32 +105,38 @@ struct DefaultBlockSparseMultiplyOp1 {
   // mv data
   const DomainScalar  *x;
   RangeScalar         *y;
+  size_t xstride, ystride;
+  size_t numVecs;
 
   inline KERNEL_PREFIX void execute(size_t i) {
     const size_t row = i;
-    const Ordinal Nrows = rptr[row+1]-rptr[row];
-    Scalar* yy = &y[rptr[row]];
-
-    for(Ordinal i=0; i<Nrows; ++i) yy[i] = beta*yy[i];
-
-    for (Ordinal b=bptr[row]; b<bptr[row+1]; ++b) {
-      const Ordinal col = bindx[b];
-      const Ordinal Ncols = cptr[col+1]-cptr[col];
-
-      const Scalar* A = &vals[indx[b]];
-      const Scalar* xx = &x[cptr[col]];
-
-      if (Nrows == Ncols) {
-        switch(Nrows) {
-        case 1: dense_matvec_1x1(alpha, A, xx, yy); break;
-        case 2: dense_matvec_2x2(alpha, A, xx, yy); break;
-        case 3: dense_matvec_3x3(alpha, A, xx, yy); break;
-        case 4: dense_matvec_4x4(alpha, A, xx, yy); break;
-        default: densematvec(Nrows, Ncols, alpha, A, xx, yy);
+    for(size_t v=0; v<numVecs; ++v) {
+      const Ordinal Nrows = rptr[row+1]-rptr[row];
+      const DomainScalar* xvec = x+v*xstride;
+      RangeScalar* yvec = y+v*ystride;
+      RangeScalar* yy = &yvec[rptr[row]];
+  
+      for(Ordinal i=0; i<Nrows; ++i) yy[i] = beta*yy[i];
+  
+      for (Ordinal b=bptr[row]; b<bptr[row+1]; ++b) {
+        const Ordinal col = bindx[b];
+        const Ordinal Ncols = cptr[col+1]-cptr[col];
+  
+        const Scalar* A = &vals[indx[b]];
+        const Scalar* xx = &xvec[cptr[col]];
+  
+        if (Nrows == Ncols) {
+          switch(Nrows) {
+          case 1: dense_matvec_1x1(alpha, A, xx, yy); break;
+          case 2: dense_matvec_2x2(alpha, A, xx, yy); break;
+          case 3: dense_matvec_3x3(alpha, A, xx, yy); break;
+          case 4: dense_matvec_4x4(alpha, A, xx, yy); break;
+          default: densematvec(Nrows, Ncols, alpha, A, xx, yy);
+          }
         }
-      }
-      else {
-        densematvec(Nrows,Ncols,alpha,A,xx,yy);
+        else {
+          densematvec(Nrows,Ncols,alpha,A,xx,yy);
+        }
       }
     }
   }

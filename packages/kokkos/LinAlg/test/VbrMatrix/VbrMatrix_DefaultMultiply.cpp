@@ -209,6 +209,33 @@ namespace {
     xdat = null;
     axdat = null;
     ax_check = null;
+
+    //now check the case where x and ax have 3 columns instead of 1.
+    size_t numVecs = 3;
+    xdat  = node->template allocBuffer<Scalar>(num_point_rows*numVecs);
+    axdat = node->template allocBuffer<Scalar>(num_point_rows*numVecs);
+    ax_check = node->template allocBuffer<Scalar>(num_point_rows*numVecs);
+    ax_check[0] = 6;
+    ax_check[1] = 6;
+    ax_check[2] = 14;
+    ax_check[3] = 14;
+    ax_check[4] = 6;
+    ax_check[5] = 6;
+    ax_check[6] = 14;
+    ax_check[7] = 14;
+    ax_check[8] = 6;
+    ax_check[9] = 6;
+    ax_check[10] = 14;
+    ax_check[11] = 14;
+    X.initializeValues( num_point_rows,numVecs, xdat,num_point_rows);
+    AX.initializeValues(num_point_rows,numVecs,axdat,num_point_rows);
+    DefaultArithmetic<MV>::Init(X,1);
+    dbsm.multiply(Teuchos::NO_TRANS,Teuchos::ScalarTraits<Scalar>::one(),X,Teuchos::ScalarTraits<Scalar>::zero(),AX);
+    axview = node->template viewBuffer<Scalar>(num_point_rows*numVecs,axdat);
+    TEST_COMPARE_FLOATING_ARRAYS(axview, ax_check, Teuchos::ScalarTraits<Scalar>::zero());
+    xdat = null;
+    axdat = null;
+    ax_check = null;
   }
 
 #define ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, NODE ) \
