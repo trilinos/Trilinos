@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
   int ierr = 0;
   int MyPID = 0;
   double alpha = 0.25;
-  double beta = 0.0;
+  double beta = 1.5;
   double D1 = 1.0/40.0;
   double D2 = 1.0/40.0;
   int maxNewtonIters = 10;
@@ -167,7 +167,7 @@ int main(int argc, char *argv[])
     stepperList.set("Bordered Solver Method", "Householder");
     stepperList.set("Continuation Parameter", "beta");
     stepperList.set("Initial Value", beta);
-    stepperList.set("Max Value", 2.0);
+    stepperList.set("Max Value", 1.6);
     stepperList.set("Min Value", 0.0);
     stepperList.set("Max Steps", 100);
     stepperList.set("Max Nonlinear Iterations", maxNewtonIters);
@@ -179,6 +179,16 @@ int main(int argc, char *argv[])
     aList.set("Method", "Anasazi");
     if (!verbose)
       aList.set("Verbosity", Anasazi::Errors);
+    aList.set("Block Size", 1);        // Size of blocks
+    aList.set("Num Blocks", 50);       // Size of Arnoldi factorization
+    aList.set("Num Eigenvalues", 3);   // Number of eigenvalues
+    aList.set("Convergence Tolerance", 1.0e-7);          // Tolerance
+    aList.set("Step Size", 1);         // How often to check convergence
+    aList.set("Maximum Restarts",1);   // Maximum number of restarts
+    aList.set("Operator", "Cayley");
+    aList.set("Cayley Pole", 0.1);
+    aList.set("Cayley Zero", -0.1);
+    aList.set("Sorting Order", "CA");
 #else
     stepperList.set("Compute Eigenvalues",false);
 #endif
@@ -190,9 +200,9 @@ int main(int argc, char *argv[])
 
     // Create step size sublist
     Teuchos::ParameterList& stepSizeList = locaParamsList.sublist("Step Size");
-    stepSizeList.set("Initial Step Size", 0.1);
+    stepSizeList.set("Initial Step Size", 0.01);
     stepSizeList.set("Min Step Size", 1.0e-3);
-    stepSizeList.set("Max Step Size", 10.0);
+    stepSizeList.set("Max Step Size", 0.01);
     stepSizeList.set("Aggressiveness", 0.1);
 
     // Create the "Solver" parameters sublist to be used with NOX Solvers
@@ -251,6 +261,9 @@ int main(int argc, char *argv[])
       Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
 							iReq, iJac, A, soln));
                                                         //&scaling);
+    Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> shiftedLinSys = 
+      Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
+							iReq, iJac, A, soln));
 
     // Create initial guess
     NOX::Epetra::Vector initialGuess(Teuchos::rcp(&soln,false), 
@@ -273,10 +286,11 @@ int main(int argc, char *argv[])
       LOCA::createGlobalData(paramList, epetraFactory);
 
     // Create the Group
+    Teuchos::RCP<LOCA::Epetra::Interface::TimeDependent> iTime = interface;
     Teuchos::RCP<LOCA::Epetra::Group> grp =
       Teuchos::rcp(new LOCA::Epetra::Group(globalData, printParams,
-					   iReq, initialGuess, linSys, 
-					   pVector));
+					   iTime, initialGuess, linSys, 
+					   shiftedLinSys, pVector));
 
     grp->computeF();
 
@@ -330,7 +344,7 @@ int main(int argc, char *argv[])
 
     // Check number of continuation steps
     int numSteps = stepper.getStepNumber();
-    int numSteps_expected = 14;
+    int numSteps_expected = 11;
     ierr += testCompare.testValue(numSteps, numSteps_expected, 0.0,
 				  "number of continuation steps",
 				  NOX::TestCompare::Absolute);
@@ -344,7 +358,7 @@ int main(int argc, char *argv[])
 
     // Check final value of continuation parameter
     double beta_final = finalGroup->getParam("beta");
-    double beta_expected = 2.0;
+    double beta_expected = 1.6;
     ierr += testCompare.testValue(beta_final, beta_expected, 1.0e-14,
 				  "final value of continuation parameter", 
 				  NOX::TestCompare::Relative);
@@ -357,7 +371,7 @@ int main(int argc, char *argv[])
       final_x_expected.getEpetraVector()[2*i+1] = beta_final/alpha;
     }
     ierr += testCompare.testVector(finalSolution, final_x_expected, 
-				   1.0e-10, 1.0e-10,
+				   1.0e-6, 1.0e-6,
 				   "value of final solution");
 
     LOCA::destroyGlobalData(globalData);
