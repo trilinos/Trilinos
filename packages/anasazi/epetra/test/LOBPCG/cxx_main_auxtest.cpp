@@ -130,7 +130,8 @@ int main(int argc, char *argv[])
   // Shared parameters
   RCP<Anasazi::BasicEigenproblem<ScalarType,MV,OP> > problem;
   Anasazi::Eigensolution<ScalarType,MV> sol1, sol21, sol22, sol23;
-  RCP<MV> cpoint, ev2 = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), FIRST_BS+SECOND_BS+THIRD_BS) );
+  RCP<const MV> cpoint;
+  RCP<MV> ev2 = rcp( new Epetra_MultiVector(K->OperatorDomainMap(), FIRST_BS+SECOND_BS+THIRD_BS) );
   Anasazi::ReturnType returnCode;
   //
   // Verbosity level

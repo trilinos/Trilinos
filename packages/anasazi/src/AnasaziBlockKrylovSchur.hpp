@@ -853,7 +853,7 @@ namespace Anasazi {
         for (int i=0; i<lclDim; i++) { dimind2[i] = i; }
 
         // alloc newV as a view of the first block of V
-        Teuchos::RCP<MV> newV1 = MVT::CloneView(*V_,dimind2);
+        Teuchos::RCP<MV> newV1 = MVT::CloneViewNonConst(*V_,dimind2);
 
         // copy the initial vectors into the first lclDim vectors of V
         MVT::SetBlock(*ivec,dimind2,*newV1);
@@ -863,12 +863,12 @@ namespace Anasazi {
         for (int i=0; i<blockSize_-lclDim; i++) { dimind2[i] = lclDim + i; }
 
         // initialize the rest of the vectors with random vectors
-        Teuchos::RCP<MV> newV2 = MVT::CloneView(*V_,dimind2);
+        Teuchos::RCP<MV> newV2 = MVT::CloneViewNonConst(*V_,dimind2);
         MVT::MvRandom(*newV2);
       }
       else {
         // alloc newV as a view of the first block of V
-        Teuchos::RCP<MV> newV1 = MVT::CloneView(*V_,bsind);
+        Teuchos::RCP<MV> newV1 = MVT::CloneViewNonConst(*V_,bsind);
        
         // get a view of the first block of initial vectors
         Teuchos::RCP<const MV> ivecV = MVT::CloneView(*ivec,bsind);
@@ -878,7 +878,7 @@ namespace Anasazi {
       }
 
       // get pointer into first block of V
-      Teuchos::RCP<MV> newV = MVT::CloneView(*V_,bsind);
+      Teuchos::RCP<MV> newV = MVT::CloneViewNonConst(*V_,bsind);
 
       // remove auxVecs from newV and normalize newV
       if (auxVecs_.size() > 0) {
@@ -975,12 +975,12 @@ namespace Anasazi {
       // Get the current part of the basis.
       std::vector<int> curind(blockSize_);
       for (int i=0; i<blockSize_; i++) { curind[i] = lclDim + i; }
-      Teuchos::RCP<MV> Vnext = MVT::CloneView(*V_,curind);
+      Teuchos::RCP<MV> Vnext = MVT::CloneViewNonConst(*V_,curind);
 
       // Get a view of the previous vectors
       // this is used for orthogonalization and for computing V^H K H
       for (int i=0; i<blockSize_; i++) { curind[i] = curDim_ + i; }
-      Teuchos::RCP<MV> Vprev = MVT::CloneView(*V_,curind);
+      Teuchos::RCP<const MV> Vprev = MVT::CloneView(*V_,curind);
       // om_->stream(Debug) << "Vprev: " << std::endl;
       // MVT::MvPrint(*Vprev,om_->stream(Debug));
 
@@ -1106,7 +1106,8 @@ namespace Anasazi {
     std::vector<int> bsind(blockSize_);
     for (int i=0; i<blockSize_; i++) { bsind[i] = curDim_ + i; }
     
-    Teuchos::RCP<MV> lclV,lclF,lclAV;
+    Teuchos::RCP<const MV> lclV,lclF;
+    Teuchos::RCP<MV> lclAV;
     if (curDim_)
       lclV = MVT::CloneView(*V_,lclind);
     lclF = MVT::CloneView(*V_,bsind);
@@ -1259,7 +1260,7 @@ namespace Anasazi {
         // Get a view of the current Krylov-Schur basis vectors and Schur vectors
         std::vector<int> curind( curDim_ );
         for (int i=0; i<curDim_; i++) { curind[i] = i; }
-        Teuchos::RCP<MV> Vtemp = MVT::CloneView( *V_, curind );
+        Teuchos::RCP<const MV> Vtemp = MVT::CloneView( *V_, curind );
         if (problem_->isHermitian()) {
           // Get a view into the current Schur vectors
           Teuchos::SerialDenseMatrix<int,ScalarType> subQ( Teuchos::View, *Q_, curDim_, numRitzVecs_ );
@@ -1302,7 +1303,7 @@ namespace Anasazi {
           
           // Convert back to Ritz vectors of the operator.
           curind.resize( numRitzVecs_ );  // This is already initialized above
-          Teuchos::RCP<MV> view_ritzVectors = MVT::CloneView( *ritzVectors_, curind );
+          Teuchos::RCP<MV> view_ritzVectors = MVT::CloneViewNonConst( *ritzVectors_, curind );
           MVT::MvTimesMatAddMv( ST_ONE, *tmpritzVectors_, subCopyQ, ST_ZERO, *view_ritzVectors );
 
           // Compute the norm of the new Ritz vectors
@@ -1323,7 +1324,7 @@ namespace Anasazi {
               std::vector<int> newind(2);
               newind[0] = i; newind[1] = i+1;
               tmpritzVectors_ = MVT::CloneCopy( *ritzVectors_, newind );
-              view_ritzVectors = MVT::CloneView( *ritzVectors_, newind );
+              view_ritzVectors = MVT::CloneViewNonConst( *ritzVectors_, newind );
               MVT::MvAddMv( ritzScale, *tmpritzVectors_, ST_ZERO, *tmpritzVectors_, *view_ritzVectors );
 
               // Increment counter for imaginary part
@@ -1334,7 +1335,7 @@ namespace Anasazi {
               std::vector<int> newind(1);
               newind[0] = i;
               tmpritzVectors_ = MVT::CloneCopy( *ritzVectors_, newind );
-              view_ritzVectors = MVT::CloneView( *ritzVectors_, newind );
+              view_ritzVectors = MVT::CloneViewNonConst( *ritzVectors_, newind );
               MVT::MvAddMv( ST_ONE/ritzNrm[i], *tmpritzVectors_, ST_ZERO, *tmpritzVectors_, *view_ritzVectors );
             }              
           }

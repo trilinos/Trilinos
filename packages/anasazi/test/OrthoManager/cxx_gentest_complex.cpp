@@ -476,7 +476,7 @@ int main(int argc, char *argv[])
       for (int i=0; i<sizeS; i++) {
         std::vector<int> ind(1); 
         ind[0] = i;
-        RCP<MV> Si = MVT::CloneView(*S,ind);
+        RCP<MV> Si = MVT::CloneViewNonConst(*S,ind);
         MVT::MvAddMv(SCT::random(),*one,ZERO,*one,*Si);
       }
       
@@ -653,8 +653,8 @@ int testProjectAndNormalizeGen(RCP<GenOrthoManager<ST,MV,OP> > OM,
       // test all outputs for equivalence
 
       // here is where the outputs go
-      Array<RCP<MV> > S_outs;
-      Array<RCP<MV> > MS_outs;
+      Array<RCP<const MV> > S_outs;
+      Array<RCP<const MV> > MS_outs;
       Array<Array<RCP<SerialDenseMatrix<int,ST> > > > C_outs;
       Array<RCP<SerialDenseMatrix<int,ST> > > B_outs;
       RCP<MV> Scopy, MScopy;

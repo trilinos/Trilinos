@@ -96,7 +96,15 @@ public:
 	    \return Pointer to the new multivector	
 	*/
 
-	virtual MultiVec<ScalarType> * CloneView ( const std::vector<int>& index ) = 0;
+	virtual const MultiVec<ScalarType> * CloneView ( const std::vector<int>& index ) const = 0;
+	/*! \brief Creates a new Anasazi::MultiVec that shares the selected contents of \c *this.
+	    The index of the \c numvecs vectors shallow copied from \c *this are indicated by the
+	    indices given in \c index.
+
+	    \return Pointer to the new multivector	
+	*/
+
+	virtual MultiVec<ScalarType> * CloneViewNonConst ( const std::vector<int>& index ) = 0;
 	//@}
 
   //! @name Attribute methods	
@@ -242,8 +250,8 @@ public:
     The index of the \c numvecs vectors shallow copied from \c mv are indicated by the indices given in \c index.
     \return Reference-counted pointer to the new \c Anasazi::MultiVec.
     */    
-    static Teuchos::RCP<MultiVec<ScalarType> > CloneView( MultiVec<ScalarType>& mv, const std::vector<int>& index )
-    { return Teuchos::rcp( mv.CloneView(index) ); }
+    static Teuchos::RCP<MultiVec<ScalarType> > CloneViewNonConst( MultiVec<ScalarType>& mv, const std::vector<int>& index )
+    { return Teuchos::rcp( mv.CloneViewNonConst(index) ); }
 
     /*! \brief Creates a new const \c Anasazi::MultiVec that shares the selected contents of \c mv (shallow copy).
 

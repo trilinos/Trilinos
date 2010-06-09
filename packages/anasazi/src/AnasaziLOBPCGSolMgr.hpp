@@ -625,23 +625,23 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
             // make a copy of the current X,MX state
             std::vector<int> bsind(blockSize_); 
             for (int i=0; i<blockSize_; i++) bsind[i] = i;
-            newstateX = MVT::CloneView(*workMV,bsind);
+            newstateX = MVT::CloneViewNonConst(*workMV,bsind);
             MVT::SetBlock(*state.X,bsind,*newstateX);
 
             if (state.MX != Teuchos::null) {
               std::vector<int> block3(blockSize_);
               for (int i=0; i<blockSize_; i++) block3[i] = 2*blockSize_+i;
-              newstateMX = MVT::CloneView(*workMV,block3);
+              newstateMX = MVT::CloneViewNonConst(*workMV,block3);
               MVT::SetBlock(*state.MX,bsind,*newstateMX);
             }
             //
             // get select part, set to random, apply M
             {
-              Teuchos::RCP<MV> newX = MVT::CloneView(*newstateX,indnew);
+              Teuchos::RCP<MV> newX = MVT::CloneViewNonConst(*newstateX,indnew);
               MVT::MvRandom(*newX);
 
               if (newstateMX != Teuchos::null) {
-                Teuchos::RCP<MV> newMX = MVT::CloneView(*newstateMX,indnew);
+                Teuchos::RCP<MV> newMX = MVT::CloneViewNonConst(*newstateMX,indnew);
                 OPT::Apply(*problem_->getM(),*newX,*newMX);
               }
             }
@@ -656,13 +656,13 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
               // get P and optionally MP, orthogonalize against X and auxiliary vectors
               std::vector<int> block2(blockSize_);
               for (int i=0; i<blockSize_; i++) block2[i] = blockSize_+i;
-              newstateP = MVT::CloneView(*workMV,block2);
+              newstateP = MVT::CloneViewNonConst(*workMV,block2);
               MVT::SetBlock(*state.P,bsind,*newstateP);
 
               if (state.MP != Teuchos::null) {
                 std::vector<int> block4(blockSize_);
                 for (int i=0; i<blockSize_; i++) block4[i] = 3*blockSize_+i;
-                newstateMP = MVT::CloneView(*workMV,block4);
+                newstateMP = MVT::CloneViewNonConst(*workMV,block4);
                 MVT::SetBlock(*state.MP,bsind,*newstateMP);
               }
 
@@ -721,12 +721,12 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         {
           std::vector<int> recind(localsize);
           for (int i=0; i<localsize; i++) recind[i] = i;
-          restart = MVT::CloneView(*workMV,recind);
+          restart = MVT::CloneViewNonConst(*workMV,recind);
         }
         {
           std::vector<int> recind(localsize);
           for (int i=0; i<localsize; i++) recind[i] = localsize+i;
-          Krestart = MVT::CloneView(*workMV,recind);
+          Krestart = MVT::CloneViewNonConst(*workMV,recind);
         }
         if (hasM) {
           Mrestart = Krestart;
@@ -798,8 +798,8 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
           std::vector<int> redind(localsize);
           for (int i=0; i<localsize; i++) redind[i] = i;
           // grab the first part of restart,Krestart
-          restart = MVT::CloneView(*restart,redind);
-          Krestart = MVT::CloneView(*Krestart,redind);
+          restart = MVT::CloneViewNonConst(*restart,redind);
+          Krestart = MVT::CloneViewNonConst(*Krestart,redind);
           if (hasM) {
             Mrestart = Krestart;
           }
@@ -848,7 +848,7 @@ LOBPCGSolMgr<ScalarType,MV,OP>::solve() {
         {
           std::vector<int> bsind(blockSize_);
           for (int i=0; i<blockSize_; i++) bsind[i] = i;
-          newX = MVT::CloneView(*Krestart,bsind);
+          newX = MVT::CloneViewNonConst(*Krestart,bsind);
         }
         MVT::MvTimesMatAddMv(1.0,*restart,S1,0.0,*newX);
         // send X and theta into the solver

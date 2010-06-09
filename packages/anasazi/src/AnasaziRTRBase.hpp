@@ -30,8 +30,6 @@
   \brief Base class for Implicit Riemannian Trust-Region solvers
 */
 
-// FINISH: make sure that cloneview(const) is called where appropriate
-
 #ifndef ANASAZI_RTRBASE_HPP
 #define ANASAZI_RTRBASE_HPP
 
@@ -1067,9 +1065,9 @@ namespace Anasazi {
     {
       std::vector<int> ind(blockSize_);
       for (int i=0; i<blockSize_; ++i) ind[i] = numAuxVecs_+i;
-      X = MVT::CloneView(*V_,ind);
+      X = MVT::CloneViewNonConst(*V_,ind);
       if (hasBOp_) {
-        BX = MVT::CloneView(*BV_,ind);
+        BX = MVT::CloneViewNonConst(*BV_,ind);
       }
       else {
         BX = X;
@@ -1191,7 +1189,7 @@ namespace Anasazi {
       if (blockSize_ > initSize) {
         std::vector<int> ind(blockSize_ - initSize);
         for (int i=0; i<blockSize_ - initSize; i++) ind[i] = initSize + i;
-        Teuchos::RCP<MV> rX = MVT::CloneView(*X,ind);
+        Teuchos::RCP<MV> rX = MVT::CloneViewNonConst(*X,ind);
         MVT::MvRandom(*rX);
         rX = Teuchos::null;
       }

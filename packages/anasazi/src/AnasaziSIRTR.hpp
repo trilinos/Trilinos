@@ -271,7 +271,7 @@ namespace Anasazi {
     {
       std::vector<int> ind(this->blockSize_);
       for (int i=0; i<this->blockSize_; ++i) ind[i] = this->numAuxVecs_+i;
-      Teuchos::RCP<MV> PBX = MVT::CloneView(*this->PBV_,ind);
+      Teuchos::RCP<MV> PBX = MVT::CloneViewNonConst(*this->PBV_,ind);
       {
         TimeMonitor prectimer( *this->timerPrec_ );
         OPT::Apply(*this->Prec_,*this->BX_,*PBX);
@@ -948,9 +948,9 @@ namespace Anasazi {
         std::vector<int> ind(this->blockSize_);
         for (int i=0; i<this->blockSize_; ++i) ind[i] = this->numAuxVecs_+i;
         Teuchos::RCP<MV> X, BX;
-        X = MVT::CloneView(*this->V_,ind);
+        X = MVT::CloneViewNonConst(*this->V_,ind);
         if (this->hasBOp_) {
-          BX = MVT::CloneView(*this->BV_,ind);
+          BX = MVT::CloneViewNonConst(*this->BV_,ind);
         }
         // compute ritz vectors, A,B products into X,AX,BX
         {

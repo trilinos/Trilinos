@@ -945,7 +945,7 @@ namespace Anasazi {
         }
         MVT::SetBlock(*newstate.V,nevind,*V_);
       }
-      lclV = MVT::CloneView(*V_,nevind);
+      lclV = MVT::CloneViewNonConst(*V_,nevind);
 
       // put data into KK_
       lclKK = Teuchos::rcp( new Teuchos::SerialDenseMatrix<int,ScalarType>(Teuchos::View,*KK_,curDim_,curDim_) );
@@ -1005,7 +1005,7 @@ namespace Anasazi {
       // get pointer to first curDim vector in V_
       std::vector<int> dimind(curDim_);
       for (int i=0; i<curDim_; ++i) dimind[i] = i;
-      lclV = MVT::CloneView(*V_,dimind);
+      lclV = MVT::CloneViewNonConst(*V_,dimind);
       if (userand) {
         // generate random vector data
         MVT::MvRandom(*lclV);
@@ -1022,7 +1022,7 @@ namespace Anasazi {
         // partition V_ = [lclV tmpVecs _leftover_]
         std::vector<int> block2(curDim_);
         for (int i=0; i<curDim_; ++i) block2[i] = curDim_+i;
-        tmpVecs = MVT::CloneView(*V_,block2);
+        tmpVecs = MVT::CloneViewNonConst(*V_,block2);
       }
       else {
         // allocate space for tmpVecs
@@ -1273,7 +1273,7 @@ namespace Anasazi {
       // get the current part of the basis
       std::vector<int> curind(blockSize_);
       for (int i=0; i<blockSize_; ++i) curind[i] = curDim_ + i;
-      H_ = MVT::CloneView(*V_,curind);
+      H_ = MVT::CloneViewNonConst(*V_,curind);
       
       // Apply the preconditioner on the residuals: H <- Prec*R
       // H = Prec*R
@@ -1304,7 +1304,7 @@ namespace Anasazi {
       // this is used for orthogonalization and for computing V^H K H
       std::vector<int> prevind(curDim_);
       for (int i=0; i<curDim_; ++i) prevind[i] = i;
-      Teuchos::RCP<MV> Vprev = MVT::CloneView(*V_,prevind);
+      Teuchos::RCP<const MV> Vprev = MVT::CloneView(*V_,prevind);
 
       // Orthogonalize H against the previous vectors and the auxiliary vectors, and normalize
       {
@@ -1554,7 +1554,7 @@ namespace Anasazi {
     // V and friends
     std::vector<int> lclind(curDim_);
     for (int i=0; i<curDim_; ++i) lclind[i] = i;
-    Teuchos::RCP<MV> lclV;
+    Teuchos::RCP<const MV> lclV;
     if (initialized_) {
       lclV = MVT::CloneView(*V_,lclind);
     }

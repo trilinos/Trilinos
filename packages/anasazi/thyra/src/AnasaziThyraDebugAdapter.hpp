@@ -176,11 +176,27 @@ namespace Anasazi {
     
     \returns Pointer to an ThyraMultiVec
     */
-    MultiVec<ScalarType> * CloneView ( const std::vector<int>& index ) 
+    MultiVec<ScalarType> * CloneViewNonConst ( const std::vector<int>& index ) 
     {
       Teuchos::TimeMonitor timer(*_timerClone); 
       std::vector<Teuchos::RCP<Teuchos::Time> >  myTimers = getTimers();
-      return new ThyraMultiVec<ScalarType>( MVT::CloneView( *Thyra_MV, index ), myTimers ); 
+      return new ThyraMultiVec<ScalarType>( MVT::CloneViewNonConst( *Thyra_MV, index ), myTimers ); 
+    }
+
+    /*! \brief Creates a new ThyraMultiVec that shares the selected contents of \c *this.
+      
+    The index of the \c numvecs vectors shallow copied from \c *this are indicated by the
+    indices given in \c index.
+    
+    \returns Pointer to an ThyraMultiVec
+    */
+    const MultiVec<ScalarType> * CloneView ( const std::vector<int>& index ) const
+    {
+      Teuchos::TimeMonitor timer(*_timerClone); 
+      std::vector<Teuchos::RCP<Teuchos::Time> >  myTimers = getTimers();
+      Teuchos::RCP<Thyra::MultiVectorBase<ScalarType> > nonconst_ptr_to_const_view = Teuchos::rcp_const_cast<Thyra::MultiVectorBase<ScalarType> >( MVT::CloneView(*Thyra_MV,index) );
+      const MultiVec<ScalarType> * const_ret = new ThyraMultiVec<ScalarType>( nonconst_ptr_to_const_view, myTimers );
+      return const_ret;
     }
 
     //@}

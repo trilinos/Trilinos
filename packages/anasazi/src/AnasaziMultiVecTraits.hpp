@@ -66,27 +66,27 @@ namespace Anasazi {
   class MultiVecTraits 
   {
   public:
-    
+
     //! @name Creation methods
-    //@{ 
+    //@{
 
     /*! \brief Creates a new empty \c MV containing \c numvecs columns.
-      
+
     \return Reference-counted pointer to the new multivector of type \c MV.
     */
     static Teuchos::RCP<MV> Clone( const MV& mv, const int numvecs )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
 
     /*! \brief Creates a new \c MV and copies contents of \c mv into the new vector (deep copy).
-      
+
       \return Reference-counted pointer to the new multivector of type \c MV.
     */
     static Teuchos::RCP<MV> CloneCopy( const MV& mv )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
 
-    /*! \brief Creates a new \c MV and copies the selected contents of \c mv into the new vector (deep copy).  
+    /*! \brief Creates a new \c MV and copies the selected contents of \c mv into the new vector (deep copy).
 
-      The copied vectors from \c mv are indicated by the \c index.size() indices in \c index.      
+      The copied vectors from \c mv are indicated by the \c index.size() indices in \c index.
       \return Reference-counted pointer to the new multivector of type \c MV.
     */
     static Teuchos::RCP<MV> CloneCopy( const MV& mv, const std::vector<int>& index )
@@ -96,22 +96,22 @@ namespace Anasazi {
 
     The index of the \c numvecs vectors shallow copied from \c mv are indicated by the indices given in \c index.
     \return Reference-counted pointer to the new multivector of type \c MV.
-    */      
-    static Teuchos::RCP<MV> CloneView( MV& mv, const std::vector<int>& index )
+    */
+    static Teuchos::RCP<MV> CloneViewNonConst( MV& mv, const std::vector<int>& index )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
 
     /*! \brief Creates a new const \c MV that shares the selected contents of \c mv (shallow copy).
 
     The index of the \c numvecs vectors shallow copied from \c mv are indicated by the indices given in \c index.
     \return Reference-counted pointer to the new const multivector of type \c MV.
-    */      
+    */
     static Teuchos::RCP<const MV> CloneView( const MV& mv, const std::vector<int>& index )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); return Teuchos::null; }     
 
     //@}
 
     //! @name Attribute methods
-    //@{ 
+    //@{
 
     //! Obtain the vector length of \c mv.
     static int GetVecLength( const MV& mv )
@@ -124,13 +124,13 @@ namespace Anasazi {
     //@}
 
     //! @name Update methods
-    //@{ 
+    //@{
 
     /*! \brief Update \c mv with \f$ \alpha AB + \beta mv \f$.
      */
     static void MvTimesMatAddMv( const ScalarType alpha, const MV& A, 
-				 const Teuchos::SerialDenseMatrix<int,ScalarType>& B, 
-				 const ScalarType beta, MV& mv )
+                                 const Teuchos::SerialDenseMatrix<int,ScalarType>& B, 
+                                 const ScalarType beta, MV& mv )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
 
     /*! \brief Replace \c mv with \f$\alpha A + \beta B\f$.
@@ -138,39 +138,31 @@ namespace Anasazi {
     static void MvAddMv( const ScalarType alpha, const MV& A, const ScalarType beta, const MV& B, MV& mv )
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
 
-    /*! \brief Compute a dense matrix \c B through the matrix-matrix multiply \f$ \alpha A^Hmv \f$.
-    */
-    static void MvTransMv( const ScalarType alpha, const MV& A, const MV& mv, Teuchos::SerialDenseMatrix<int,ScalarType>& B
-#ifdef HAVE_ANASAZI_EXPERIMENTAL
-			   , ConjType conj = Anasazi::CONJ
-#endif
-			   )
-    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
-    
-    /*! \brief Compute a vector \c b where the components are the individual dot-products of the \c i-th columns of \c A and \c mv, i.e.\f$b[i] = A[i]^Hmv[i]\f$.
-     */
-    static void MvDot ( const MV& mv, const MV& A, std::vector<ScalarType> &b
-#ifdef HAVE_ANASAZI_EXPERIMENTAL
-			, ConjType conj = Anasazi::CONJ
-#endif
-			) 
-    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
-    
     /*! \brief Scale each element of the vectors in \c mv with \c alpha.
      */
     static void MvScale ( MV& mv, const ScalarType alpha )
-    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }
     
     /*! \brief Scale each element of the \c i-th vector in \c mv with \c alpha[i].
      */
     static void MvScale ( MV& mv, const std::vector<ScalarType>& alpha )
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }
+
+    /*! \brief Compute a dense matrix \c B through the matrix-matrix multiply \f$ \alpha A^Hmv \f$.
+    */
+    static void MvTransMv( const ScalarType alpha, const MV& A, const MV& mv, Teuchos::SerialDenseMatrix<int,ScalarType>& B)
     { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
-    
+
+    /*! \brief Compute a vector \c b where the components are the individual dot-products of the \c i-th columns of \c A and \c mv, i.e.\f$b[i] = A[i]^Hmv[i]\f$.
+     */
+    static void MvDot ( const MV& mv, const MV& A, std::vector<ScalarType> &b) 
+    { UndefinedMultiVecTraits<ScalarType, MV>::notDefined(); }     
+
     //@}
     //! @name Norm method
-    //@{ 
+    //@{
 
-    /*! \brief Compute the 2-norm of each individual vector of \c mv.  
+    /*! \brief Compute the 2-norm of each individual vector of \c mv.
       Upon return, \c normvec[i] holds the value of \f$||mv_i||_2\f$, the \c i-th column of \c mv.
     */
     static void MvNorm( const MV& mv, std::vector<typename Teuchos::ScalarTraits<ScalarType>::magnitudeType> &normvec )
@@ -179,7 +171,7 @@ namespace Anasazi {
     //@}
 
     //! @name Initialization methods
-    //@{ 
+    //@{
     /*! \brief Copy the vectors in \c A to a set of vectors in \c mv indicated by the indices given in \c index.
 
     The \c numvecs vectors in \c A are copied to a subset of vectors in \c mv indicated by the indices given in \c index,
@@ -201,7 +193,7 @@ namespace Anasazi {
     //@}
 
     //! @name Print method
-    //@{ 
+    //@{
 
     /*! \brief Print the \c mv multi-vector to the \c os output stream.
      */

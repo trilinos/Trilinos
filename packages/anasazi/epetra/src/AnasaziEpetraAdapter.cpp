@@ -103,7 +103,13 @@ namespace Anasazi {
   }
   
   
-  MultiVec<double>* EpetraMultiVec::CloneView ( const std::vector<int>& index ) 
+  MultiVec<double>* EpetraMultiVec::CloneViewNonConst ( const std::vector<int>& index ) 
+  {
+    EpetraMultiVec * ptr_apv = new EpetraMultiVec(View, *this, index);
+    return ptr_apv; // safe upcast.
+  }
+  
+  const MultiVec<double>* EpetraMultiVec::CloneView ( const std::vector<int>& index ) const
   {
     EpetraMultiVec * ptr_apv = new EpetraMultiVec(View, *this, index);
     return ptr_apv; // safe upcast.

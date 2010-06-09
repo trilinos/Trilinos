@@ -824,7 +824,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
             {
               std::vector<int> curind(curdim);
               for (int i=0; i<curdim; i++) curind[i] = i;
-              Teuchos::RCP<MV> oldV = MVT::CloneView(*solverbasis,curind);
+              Teuchos::RCP<MV> oldV = MVT::CloneViewNonConst(*solverbasis,curind);
               msutils::applyHouse(newdim,*oldV,Sr,tau,workMV);
             }
             // 
@@ -842,7 +842,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
             for (int i=0; i<curdim; i++) curind[i] = i;
             for (int i=0; i<newdim; i++) newind[i] = i;
             Teuchos::RCP<const MV> oldV = MVT::CloneView(*state.V,curind);
-            Teuchos::RCP<MV>       newV = MVT::CloneView(*workMV ,newind);
+            Teuchos::RCP<MV>       newV = MVT::CloneViewNonConst(*workMV ,newind);
 
             MVT::MvTimesMatAddMv(ONE,*oldV,Sr,ZERO,*newV);
             // 
@@ -985,14 +985,14 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
             // this actually performs oldV*[Su Sl*M] = [defV lockV], for some unitary M
             // we are actually interested in only the first numUnlocked vectors of the result
             {
-              Teuchos::RCP<MV> oldV = MVT::CloneView(*solverbasis,curind);
+              Teuchos::RCP<MV> oldV = MVT::CloneViewNonConst(*solverbasis,curind);
               msutils::applyHouse(numUnlocked,*oldV,copySu,tau,workMV);
             }
             std::vector<int> defind(numUnlocked), augind(numNewLocked);
             for (int i=0; i<numUnlocked ; i++) defind[i] = i;
             for (int i=0; i<numNewLocked; i++) augind[i] = numUnlocked+i;
-            defV = MVT::CloneView(*solverbasis,defind);
-            augV = MVT::CloneView(*solverbasis,augind);
+            defV = MVT::CloneViewNonConst(*solverbasis,defind);
+            augV = MVT::CloneViewNonConst(*solverbasis,augind);
           }
           else { // inSituRestart == false)
             // defV = oldV*Su, explicitly. workspace is in workMV
@@ -1000,8 +1000,8 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
             for (int i=0; i<numUnlocked ; i++) defind[i] = i;
             for (int i=0; i<numNewLocked; i++) augind[i] = numUnlocked+i;
             Teuchos::RCP<const MV> oldV = MVT::CloneView(*state.V,curind);
-            defV = MVT::CloneView(*workMV,defind);
-            augV = MVT::CloneView(*workMV,augind);
+            defV = MVT::CloneViewNonConst(*workMV,defind);
+            augV = MVT::CloneViewNonConst(*workMV,augind);
 
             MVT::MvTimesMatAddMv(ONE,*oldV,Su,ZERO,*defV);
           }
@@ -1032,7 +1032,7 @@ BlockDavidsonSolMgr<ScalarType,MV,OP>::solve() {
             // setup augTmp
             std::vector<int> augtmpind(numNewLocked); 
             for (int i=0; i<numNewLocked; i++) augtmpind[i] = curNumLocked+i;
-            augTmp = MVT::CloneView(*lockvecs,augtmpind);
+            augTmp = MVT::CloneViewNonConst(*lockvecs,augtmpind);
             // setup newLocked
             newLocked = MVT::CloneView(*bd_solver->getRitzVectors(),lockind);
           }

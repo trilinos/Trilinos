@@ -153,7 +153,16 @@ namespace Anasazi {
     
     \returns Pointer to an EpetraMultiVec
     */
-    MultiVec<double> * CloneView ( const std::vector<int>& index );
+    MultiVec<double> * CloneViewNonConst ( const std::vector<int>& index );
+
+    /*! \brief Creates a new EpetraMultiVec that shares the selected contents of \c *this.
+      
+    The index of the \c numvecs vectors shallow copied from \c *this are indicated by the
+    indices given in \c index.
+    
+    \returns Pointer to an EpetraMultiVec
+    */
+    const MultiVec<double> * CloneView ( const std::vector<int>& index ) const;
 
     //@}
 
@@ -695,15 +704,15 @@ namespace Anasazi {
     The index of the \c numvecs vectors shallow copied from \c mv are indicated by the indices given in \c index.
     \return Reference-counted pointer to the new Epetra_MultiVector.
     */      
-    static Teuchos::RCP<Epetra_MultiVector> CloneView( Epetra_MultiVector& mv, const std::vector<int>& index )
+    static Teuchos::RCP<Epetra_MultiVector> CloneViewNonConst( Epetra_MultiVector& mv, const std::vector<int>& index )
     { 
 #ifdef TEUCHOS_DEBUG
       TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
-          "Anasazi::MultiVecTraits<double,Epetra_MultiVector>::CloneView(mv,index): numvecs must be greater than zero.");
+          "Anasazi::MultiVecTraits<double,Epetra_MultiVector>::CloneViewNonConst(mv,index): numvecs must be greater than zero.");
       TEST_FOR_EXCEPTION( *std::min_element(index.begin(),index.end()) < 0, std::invalid_argument,
-          "Anasazi::MultiVecTraits<double,Epetra_MultiVector>::CloneView(mv,index): indices must be >= zero.");
+          "Anasazi::MultiVecTraits<double,Epetra_MultiVector>::CloneViewNonConst(mv,index): indices must be >= zero.");
       TEST_FOR_EXCEPTION( *std::max_element(index.begin(),index.end()) >= mv.NumVectors(), std::invalid_argument,
-          "Anasazi::MultiVecTraits<double,Epetra_MultiVector>::CloneView(mv,index): indices must be < mv.NumVectors().");
+          "Anasazi::MultiVecTraits<double,Epetra_MultiVector>::CloneViewNonConst(mv,index): indices must be < mv.NumVectors().");
 #endif
       std::vector<int>& tmp_index = const_cast<std::vector<int> &>( index );
       return Teuchos::rcp( new Epetra_MultiVector(::View, mv, &tmp_index[0], index.size()) ); 
@@ -875,7 +884,7 @@ namespace Anasazi {
     { 
       TEST_FOR_EXCEPTION((unsigned int)A.NumVectors() != index.size(),std::invalid_argument,
           "Anasazi::MultiVecTraits<double,Epetra_MultiVector>::SetBlock(A,index,mv): index must be the same size as A");
-      Teuchos::RCP<Epetra_MultiVector> mv_sub = CloneView(mv,index);
+      Teuchos::RCP<Epetra_MultiVector> mv_sub = CloneViewNonConst(mv,index);
       *mv_sub = A;
     }
 

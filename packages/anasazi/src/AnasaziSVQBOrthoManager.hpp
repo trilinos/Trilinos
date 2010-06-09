@@ -793,10 +793,10 @@ namespace Anasazi {
               ind2[i] = i;
             }
             Teuchos::RCP<MV> Xnull,MXnull;
-            Xnull = MVT::CloneView(X,ind2);
+            Xnull = MVT::CloneViewNonConst(X,ind2);
             MVT::MvRandom(*Xnull);
             if (this->_hasOp) {
-              MXnull = MVT::CloneView(*MX,ind2);
+              MXnull = MVT::CloneViewNonConst(*MX,ind2);
               OPT::Apply(*(this->_Op),*Xnull,*MXnull);
               this->_OpCounter += MVT::GetNumberVecs(*Xnull);
               MXnull = Teuchos::null;
