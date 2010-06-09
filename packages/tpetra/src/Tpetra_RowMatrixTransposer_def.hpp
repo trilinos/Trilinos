@@ -93,10 +93,16 @@ void RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createTrans
 	Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> > globalTransIndicies = transIndicies;
 	for(LocalOrdinal i=LO0;(size_t)i<numMyCols;++i) transNumNz[i]=0;
 	for(LocalOrdinal i=LO0;(size_t)i<numMyRows;++i){
-		std::cout << "Rank " << myRank << " doing row " << i <<"\n";
 		origMatrix_->getLocalRowView(i,indicies,values);
 		GlobalOrdinal ii = origMatrix_->getRowMap()->getGlobalElement(i);
-		for(LocalOrdinal j=LO0;(size_t)j<numIndicies;++j){
+		if(myRank == 1){
+			std::cout <<  "doing row " << i <<"\n";
+			std::cout <<  "ii: " << ii << "\n";
+			std::cout << "indicies " << indicies() << "\n";
+			std::cout << "values " << values() << "\n";
+		}
+		
+		for(LocalOrdinal j=LO0; j<indicies.size();++j){
 			LocalOrdinal transRow= indicies[j];
 			size_t loc= transNumNz[transRow];
 			globalTransIndicies[transRow][loc] = ii;

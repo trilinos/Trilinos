@@ -91,6 +91,7 @@ int main(int argc, char* argv[]){
 		}
 	}
 
+	/*
 	for (size_t i=0; i<numMyElements; i++) {
 		if (myGlobalElements[i] == 0) {
 			AT->insertGlobalValues( myGlobalElements[i],
@@ -112,22 +113,20 @@ int main(int argc, char* argv[]){
 			Teuchos::tuple<Ordinal>( myGlobalElements[i]-1, myGlobalElements[i], myGlobalElements[i]+1 ),
 			Teuchos::tuple<Scalar> ( negOne, two, negOne ) );
 		}
-	}
+	}*/
 	
 	// Finish up
 	A->fillComplete(Tpetra::DoOptimizeStorage);
 	AT->fillComplete(Tpetra::DoOptimizeStorage);
 	
-	if (verbose) {
-//		A->describe(*out, Teuchos::VERB_EXTREME); 
+	//	A->describe(*out, Teuchos::VERB_EXTREME); 
 //		AT->describe(*out, Teuchos::VERB_EXTREME); 
-	}
 	Tpetra::RowMatrixTransposer<Scalar, Ordinal> transposer = Tpetra::RowMatrixTransposer<Scalar, Ordinal>(A);
 	transposer.createTranspose(Tpetra::DoOptimizeStorage, TestMatrix);
 
-	if (verbose) {
-		TestMatrix->describe(*out, Teuchos::VERB_EXTREME); 
-	}
+//	if (verbose) {
+	TestMatrix->describe(*out, Teuchos::VERB_EXTREME); 
+	//}
 	
 
 	return 0;
