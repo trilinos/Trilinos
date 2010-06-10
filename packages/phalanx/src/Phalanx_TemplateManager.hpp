@@ -88,7 +88,7 @@ namespace PHX {
 
     template <typename BuilderOpT>
     struct BuildObject {
-      mutable std::vector< Teuchos::RCP<BaseT> >& objects;
+      std::vector< Teuchos::RCP<BaseT> >& objects;
       const BuilderOpT& builder;
       BuildObject(std::vector< Teuchos::RCP<BaseT> >& objects_,
 		  const BuilderOpT& builder_) :
