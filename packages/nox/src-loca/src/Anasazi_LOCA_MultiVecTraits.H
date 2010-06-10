@@ -114,7 +114,7 @@ namespace Anasazi {
      * indicated by the indices given in \c index.
      * \return Reference-counted pointer to the new multivector of type \c MV.
      */      
-    static Teuchos::RCP<MV> CloneView( MV& mv, 
+    static Teuchos::RCP<MV> CloneViewNonConst( MV& mv, 
 					       const std::vector<int>& index )
     {
       return mv.subView(index);
@@ -132,7 +132,7 @@ namespace Anasazi {
     static Teuchos::RCP<const MV> CloneView( const MV& mv, 
 						     const std::vector<int>& index ) 
     {
-      return mv.subView(index);
+      return mv.subView(index).getConst();
     }
 
     //@}
