@@ -76,6 +76,8 @@ namespace Tpetra {
 			"Uh oh. Looks like there's a bit of a problem here. No worries though. We'll help you figure it out. You're "
 			"a fantastic programer and this just a minor bump in the road! Maybe the information below can help you out a bit."
 			"\n\n" << Teuchos::typeName(*this) << "::multiply(): Matrix B is not fill complete.");
+
+		
 		
 	}
 
