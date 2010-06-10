@@ -80,6 +80,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup(
     isValidJacobian(false),
     isValidNewton(false),
     updateVectorsEveryContinuationStep(false),
+    nullVecScaling(NVS_OrderN),
     multiplyMass(false),
     tdGrp(),
     tmp_mass()
@@ -125,6 +126,18 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup(
   updateVectorsEveryContinuationStep = 
     turningPointParams->get("Update Null Vectors Every Continuation Step", 
 			    false);
+  std::string nullVecScalingMethod = 
+    turningPointParams->get("Null Vector Scaling", "Order N");
+  if (nullVecScalingMethod == "None")
+    nullVecScaling = NVS_None;
+  else if (nullVecScalingMethod == "Order 1")
+    nullVecScaling = NVS_OrderOne;
+  else if (nullVecScalingMethod == "Order N")
+    nullVecScaling = NVS_OrderN;
+  else
+    globalData->locaErrorCheck->throwError(
+       "LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup()",
+       string("Unknown null vector scaling method:  ") + nullVecScalingMethod);
    multiplyMass = 
     turningPointParams->get("Multiply Null Vectors by Mass Matrix", false);
   if (multiplyMass && tdGrp == Teuchos::null) {
@@ -177,6 +190,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::ExtendedGroup(
     isValidJacobian(source.isValidJacobian),
     isValidNewton(source.isValidNewton),
     updateVectorsEveryContinuationStep(source.updateVectorsEveryContinuationStep),
+    nullVecScaling(source.nullVecScaling),
     multiplyMass(source.multiplyMass),
     tdGrp(source.tdGrp),
     tmp_mass(source.tmp_mass->clone(type))
@@ -764,6 +778,7 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::copy(
     isValidNewton = source.isValidNewton;
     updateVectorsEveryContinuationStep = 
       source.updateVectorsEveryContinuationStep;
+    nullVecScaling = source.nullVecScaling;
     multiplyMass = source.multiplyMass;
 
     // set up views again just to be safe
@@ -1153,7 +1168,11 @@ scaleNullVector(NOX::Abstract::Vector& a)
 							     finalStatus,
 							     callingFunction);
   }
-
-  double dn = a.length();
-  a.scale(std::sqrt(dn) / a.norm());
+  if (nullVecScaling == NVS_OrderOne) {
+    a.scale(1.0 / a.norm());
+  }
+  else if (nullVecScaling == NVS_OrderN) {
+    double dn = a.length();
+    a.scale(std::sqrt(dn) / a.norm());
+  }
 }

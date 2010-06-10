@@ -131,6 +131,14 @@ namespace LOCA {
             indicating whether to perturb the initial solution
        <li> "Relative Perturbation Size" -- [double] (default: 1.0e-3) 
             Relative perturbation size if perturbing the initial solution
+       <li> "Null Vector Scaling" -- [string] (default:  "Order N") - 
+             Method to scale \f$l\f$.  This determines the norm of \f$l\f$
+	     (and hence, \f$n\f$).  Valid choices are:
+             <ul>
+             <li> "None" -- Use initial scaling
+             <li> "Order 1" -- Scale to unit norm
+             <li> "Order N" -- Use vector length scaling
+             </ul>
        <li> "Update Null Vectors Every Continuation Step"  -- 
            [bool] (default: false) - 
            Flag indicating whether to update length normalization vector 
@@ -491,6 +499,13 @@ namespace LOCA {
 
       protected:
 
+	//! Enumerated type determining type of scaling
+	enum NullVectorScaling {
+	  NVS_None,      //! No scaling
+	  NVS_OrderOne,  //! Scale to O(1)
+	  NVS_OrderN     //! Scale to O(N) when N is the vector length
+	};
+
 	//! Set bifurcation parameter
 	void setBifParam(double param);
 
@@ -578,6 +593,9 @@ namespace LOCA {
 	 * every continuation step.
 	 */
 	bool updateVectorsEveryContinuationStep;
+
+	//! Null vector scaling method
+	NullVectorScaling nullVecScaling;
 
 	//! Multiply null vectors by mass matrix
 	bool multiplyMass;
