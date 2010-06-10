@@ -70,7 +70,8 @@ int Zoltan_RB_find_median(
   int proc,             /* this proc number (rank)                           */
   double fractionlo,    /* fraction of weight that should be in bottom half  */
   MPI_Comm local_comm,  /* MPI communicator on which to find median          */
-  double *valuehalf,    /* on entry - first guess at median (if first_guess set)                           on exit - the median value                        */
+  double *valuehalf,    /* on entry - first guess at median (if first_guess set)
+                           on exit - the median value                        */
   int first_guess,      /* if set, use value in valuehalf as first guess     */
   int nprocs,           /* Total number of processors (Tflops_Special)       */
   int num_procs,        /* Number of procs in set (Tflops_Special)     */

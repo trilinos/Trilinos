@@ -304,6 +304,9 @@ int Zoltan_set_mpi_types()
 
 /* On a linux node, try to write the contents of /proc/meminfo to a file
 */
+extern int less_memory_flag;
+static char msgplus[256];
+
 void Zoltan_write_linux_meminfo(int append, char *msg)
 {
 int rank;
@@ -329,7 +332,7 @@ struct stat info;
 
   close(f);
 
-  sprintf(fbuf,"meminfo_%d.txt",rank);
+  sprintf(fbuf,"meminfo_%05d.txt",rank);
 
   if (append){
     f = open(fbuf,O_WRONLY | O_APPEND | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
@@ -340,8 +343,15 @@ struct stat info;
 
   if (f == -1) return;
 
+if (less_memory_flag) sprintf(msgplus,"COMPLETED: %s\n",msg);
+else sprintf(msgplus,"NOT COMPLETED: %s\n",msg);
+
+
   if (msg != NULL){
+#if 0
     write(f, msg, strlen(msg));
+#endif
+    write(f, msgplus, strlen(msgplus));
   }
 
   write(f,buf,fsize);

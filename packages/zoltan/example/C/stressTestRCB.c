@@ -54,11 +54,7 @@ void meminfo_signal_handler(int sig)
 {
   char msg[128];
 
-#ifdef _GNU_SOURCE
-  sprintf(msg,"(%d) Received signal %d: %s\n",myRank,sig,strsignal(sig));
-#else
   sprintf(msg,"(%d) Received signal %d\n",myRank,sig);
-#endif
 
   // Signal handler for Linux that helps us to understand
   // whether failure was due to insufficient memory.
@@ -69,7 +65,7 @@ void meminfo_signal_handler(int sig)
   signal(SIGSEGV, SIG_IGN);
   signal(SIGFPE, SIG_IGN);
 
-  Zoltan_write_linux_meminfo(myRank, msg);
+  Zoltan_write_linux_meminfo(1, msg);
 
   exit(sig);
 }
@@ -87,13 +83,11 @@ int main(int argc, char *argv[])
   ZOLTAN_ID_PTR importGlobalGids, importLocalGids, exportGlobalGids, exportLocalGids; 
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
 
-#ifdef HOST_LINUX
   signal(SIGSEGV, meminfo_signal_handler);
   signal(SIGINT, meminfo_signal_handler);
   signal(SIGTERM, meminfo_signal_handler);
   signal(SIGABRT, meminfo_signal_handler);
   signal(SIGFPE, meminfo_signal_handler);
-#endif
 
   /******************************************************************
   ** Problem size
@@ -156,7 +150,7 @@ int main(int argc, char *argv[])
 
   /* General parameters */
 
-  Zoltan_Set_Param(zz, "DEBUG_LEVEL", "0");
+  Zoltan_Set_Param(zz, "DEBUG_LEVEL", "5");
   Zoltan_Set_Param(zz, "LB_METHOD", "RCB");
   Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); 
   Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1");

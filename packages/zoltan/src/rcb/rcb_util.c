@@ -55,6 +55,7 @@ int i, ierr = 0;
     rcb->Global_IDs = NULL;
     rcb->Local_IDs = NULL;
     rcb->Dots = NULL;
+    rcb->weight_dim = wgtflag;
 
     Zoltan_Initialize_Transformation(&(rcb->Tran));
 

@@ -664,7 +664,7 @@ int Zoltan_PHG_Coarsening
   }
 
   /* lhash is actually global hash */
-  Zoltan_quicksort_pointer_inc_int_int(ids, lhash, hsize, 0, size-1); 
+  Zoltan_quicksort_pointer_inc_int_int((int *)ids, (int *)lhash, hsize, 0, size-1); 
 /*  uqsort_ptr_uint_int(size, lhash, hsize, ids); */
 
 #ifdef _DEBUG1

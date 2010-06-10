@@ -50,22 +50,22 @@ extern void Zoltan_RB_Print_All(ZZ *, ZOLTAN_ID_PTR , struct Dot_Struct *,
 
 extern int Zoltan_RB_Send_Outgoing(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
   struct Dot_Struct **, int **, int *, int *, int *, int, int *, double, int,
-  int *, int, MPI_Comm, int, int, int, int);
+  ZOLTAN_GNO_TYPE *, int, MPI_Comm, int, int, int, int);
 
 extern int Zoltan_RB_Send_To_Part(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
   struct Dot_Struct **, int **, int *, int *, int *, int *, double, int,
-  int *, int);
+  ZOLTAN_GNO_TYPE *, int);
 
 extern int Zoltan_RB_Send_Dots(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
   struct Dot_Struct **, int **, int *, int, int *, int *, int, int *, double,
-  int, int *, int, MPI_Comm);
+  int, ZOLTAN_GNO_TYPE *, int, MPI_Comm);
 
 extern int Zoltan_RB_Send_Dots_less_memory(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
   struct Dot_Struct **, int **, int *, int, int *, int *, int, int *, double,
-  int, int *, int, MPI_Comm);
+  int, ZOLTAN_GNO_TYPE *, int, MPI_Comm);
 
 extern int Zoltan_RB_Remap(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, 
-  struct Dot_Struct **, int *, int *, int *, double, int , int *, int);
+  struct Dot_Struct **, int *, int *, int *, double, int , ZOLTAN_GNO_TYPE *, int);
 
 extern int Zoltan_RB_Return_Arguments(ZZ *, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, 
   struct Dot_Struct *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **, 
@@ -77,7 +77,8 @@ extern int Zoltan_RB_check_geom_output(ZZ *, struct Dot_Struct *, float *,
   int, int, int, int, void *);
 
 extern void Zoltan_RB_stats(ZZ *, double, struct Dot_Struct *, int , 
-                            float *, double *, int *, int, int *, void *, int);
+                            float *, double *, ZOLTAN_GNO_TYPE *, int, 
+                            ZOLTAN_GNO_TYPE *, void *, int);
 
 extern int Zoltan_RB_Use_IDs(ZZ *);
 

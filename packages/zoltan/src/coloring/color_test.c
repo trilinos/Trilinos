@@ -153,6 +153,9 @@ int Zoltan_Color_Test(
 
 
   Zoltan_ZG_Build (zz, &graph, 0);
+
+  /* TODO64 the indextype* arrays are the wrong size if ZOLTAN_GNO_TYPE > indextype */
+
   Zoltan_ZG_Export (zz, &graph,
 		    &gvtx, &nvtx, NULL, NULL, 
                     (indextype **)&vtxdist, (indextype **)&xadj, (indextype **)&adjncy, &adjproc,

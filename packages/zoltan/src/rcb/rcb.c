@@ -100,7 +100,7 @@ static int set_preset_dir(int, int, int, struct rcb_box *, int **);
 static int serial_rcb(ZZ *, struct Dot_Struct *, int *, int *, int, int,
   struct rcb_box *, double *, int, int, int *, int *, int, int, int, int,
   int, int, int, int, int, int, int, int, MPI_Op, MPI_Datatype,
-  int, int *, struct rcb_tree *, int *, int,
+  int, ZOLTAN_GNO_TYPE *, struct rcb_tree *, int *, int,
   double *, double *, float *, double *, int, int, double);
 static void compute_RCB_box(struct rcb_box *, int, struct Dot_Struct *, int *,
   MPI_Op, MPI_Datatype, MPI_Comm, int, int, int, int);
@@ -367,7 +367,7 @@ static int rcb_fn(
 				      1 = time before median iterations
 				      2 = time in median iterations
 				      3 = communication time */
-  int     counters[7];              /* diagnostic counts
+  ZOLTAN_GNO_TYPE counters[7];        /* diagnostic counts
 			              0 = unused
 				      1 = # of dots sent
 				      2 = # of dots received
@@ -375,7 +375,7 @@ static int rcb_fn(
 				      4 = most dot memory this proc ever allocs
 				      5 = # of times a previous cut is re-used
 				      6 = # of reallocs of dot array  */
-  int     reuse_count[7];           /* counter (as above) for reuse to record
+  ZOLTAN_GNO_TYPE reuse_count[7];   /* counter (as above) for reuse to record
                                        the number of dots premoved */
   int     i,j;                      /* local variables */
   int     use_ids;                  /* When true, global and local IDs will be
@@ -518,9 +518,17 @@ static int rcb_fn(
   counters[6] = 0;
   for (i = 0; i < 7; i++) reuse_count[i] = 0;
 
-  MPI_Allreduce(&dotnum, &i, 1, MPI_INT, MPI_MAX, zz->Communicator);
+  /* Ensure there are dots, and determine whether any process defined
+   * migration size query functions.
+   */
 
-  if (i == 0){
+  tmp_tfs[0] = dotnum;
+  tmp_tfs[1] = ((zz->Get_Obj_Size_Multi) || (zz->Get_Obj_Size));
+  MPI_Allreduce(tmp_tfs, tfs, 2, MPI_INT, MPI_MAX, zz->Communicator);
+
+  rcb->obj_sizes = tfs[1];
+
+  if (tfs[0] == 0){
     if (proc == 0){
       ZOLTAN_PRINT_WARN(proc, yo, "RCB partitioning called with no objects");
     }
@@ -533,7 +541,7 @@ static int rcb_fn(
   /* create mark and list arrays for dots */
 
   allocflag = 0;
-  rcb->weight_dim = wgtdim = (wgtflag>0 ? wgtflag : 1);
+  wgtdim = (wgtflag>0 ? wgtflag : 1);
   if (dotmax > 0) {
     if (!(dotmark = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))
      || !(coord = (double *) ZOLTAN_MALLOC(dotmax*sizeof(double)))
@@ -1456,7 +1464,7 @@ static int serial_rcb(
   MPI_Datatype box_type,     /* Data type needed if recompute_box */
   int average_cuts,          /* Flag forcing median line to be drawn halfway
                                 between two closest objects. */
-  int counters[],            /* diagnostic counts */
+  ZOLTAN_GNO_TYPE counters[],            /* diagnostic counts */
   struct rcb_tree *treept,   /* tree of RCB cuts */
   int *dim_spec,             /* specified direction for preset_dir */
   int level,                 /* recursion level of RCB for preset_dir */

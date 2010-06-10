@@ -18,7 +18,8 @@ extern "C" {
 #endif
 
 
-#include "zz_const.h"
+#include "zz_sort.h"
+#include "zz_util_const.h"
 #include "rcb.h"
 #include "rib.h"
 #include "par_median_const.h"
@@ -91,6 +92,10 @@ int i;
   *max_obj = (int)(overalloc * *num_obj) + 1;
   *global_ids = ZOLTAN_REALLOC_GID_ARRAY(zz, *global_ids, (*max_obj));
   *local_ids  = ZOLTAN_REALLOC_LID_ARRAY(zz, *local_ids, (*max_obj));
+
+  /* TODO use only one weight is Dot_Struct.  If there are more, allocate a
+   * struct for the extra weights.  Too save memory in the common case.
+   */
   *dots = (struct Dot_Struct *)ZOLTAN_MALLOC((*max_obj)*sizeof(struct Dot_Struct));
 
   if (!(*global_ids) || (zz->Num_LID && !(*local_ids)) || !(*dots)) {
@@ -247,7 +252,7 @@ int Zoltan_RB_Send_Outgoing(
                                        of dot array must be done.
                                        1.0 = no extra; 1.5 = 50% extra; etc. */
   int stats,                        /* Print timing & count summary? */
-  int counters[],                   /* diagnostic counts
+  ZOLTAN_GNO_TYPE counters[],         /* diagnostic counts
                                        0 = # of median iterations
                                        1 = # of dots sent
                                        2 = # of dots received
@@ -340,7 +345,7 @@ int Zoltan_RB_Send_To_Part(
                                        of dot array must be done.
                                        1.0 = no extra; 1.5 = 50% extra; etc. */
   int stats,                        /* Print timing & count summary? */
-  int counters[],                   /* diagnostic counts
+  ZOLTAN_GNO_TYPE counters[],         /* diagnostic counts
                                        0 = # of median iterations
                                        1 = # of dots sent
                                        2 = # of dots received
@@ -439,12 +444,13 @@ int Zoltan_RB_Send_Dots(
                                        of dot array must be done.
                                        1.0 = no extra; 1.5 = 50% extra; etc. */
   int stats,                        /* Print timing & count summary? */
-  int counters[],                   /* diagnostic counts
+  ZOLTAN_GNO_TYPE counters[],         /* diagnostic counts
                                        0 = # of median iterations
                                        1 = # of dots sent
                                        2 = # of dots received
                                        3 = most dots this proc ever owns
-                                       4 = most dot memory this proc ever allocs                                       5 = # of times a previous cut is re-used
+                                       4 = most dot memory this proc ever allocs
+                                       5 = # of times a previous cut is re-used
                                        6 = # of reallocs of dot array */
   int use_ids,                      /* true if global and local IDs are to be
                                        kept for RCB or RIB (for LB.Return_Lists 
@@ -612,6 +618,10 @@ End:
 /*****************************************************************************/
 /*****************************************************************************/
 
+static char memmsg[128];
+int less_memory_flag=0;
+int debug_pid;
+
 #define COMM_DO_ERROR \
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) { \
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Zoltan_Comm_Do."); \
@@ -624,7 +634,7 @@ int Zoltan_RB_Send_Dots_less_memory(
   ZOLTAN_ID_PTR *lidpt,             /* pointer to Local_IDs array.  */
   struct Dot_Struct **dotpt,        /* pointer to Dots array. */
   int **dotmark,                    /* which side of median for each dot */
-  int *proc_list,                   /* list of processors to send dots to */
+  int *proc_list,                   /* list of processors to send dots to GETS REORDERED*/
   int outgoing,                     /* message exchange counters */
   int *dotnum,                      /* number of dots */
   int *dotmax,                      /* max # of dots arrays can hold */
@@ -634,7 +644,7 @@ int Zoltan_RB_Send_Dots_less_memory(
                                        of dot array must be done.
                                        1.0 = no extra; 1.5 = 50% extra; etc. */
   int stats,                        /* Print timing & count summary? */
-  int counters[],                   /* diagnostic counts
+  ZOLTAN_GNO_TYPE counters[],         /* diagnostic counts
                                        0 = # of median iterations
                                        1 = # of dots sent
                                        2 = # of dots received
@@ -654,6 +664,10 @@ int Zoltan_RB_Send_Dots_less_memory(
  * This is slower but uses the minimum amount of memory.
  */
 
+/* TODO64 we can save memory if we get rid of Dot_Struct and have it's data be arrays
+ * in RCB_STRUCT.  Then we don't need recvbuf, and receive doesn't require a copy.
+ */
+
   char *yo = "Zoltan_RB_Send_Dots_less_memory";
   int dotnew;                       /* # of new dots after send/recv */
   int startIncoming, incoming;               /* message exchange counters */
@@ -662,16 +676,46 @@ int Zoltan_RB_Send_Dots_less_memory(
   int message_tag = 32760;          /* message tag */
   int num_gid_entries = zz->Num_GID;
   int num_lid_entries = zz->Num_LID;
-  int i, j, ierr = ZOLTAN_OK;
+  int i, ii, j, ierr = ZOLTAN_OK;
+  int firstStaying, firstGoingReordered;
   RCB_STRUCT *problem;
   ZOLTAN_ID_PTR ids;
   double *dval;
-  int *ival;
+  int *ival, *reorder=NULL;
   struct Dot_Struct *dots=NULL;
   ZOLTAN_COMM_OBJ *cobj = NULL;     /* pointer for communication object */
+  ZOLTAN_GNO_TYPE verify[4];
 
   ZOLTAN_TRACE_ENTER(zz, yo);
   incoming = 0;
+
+  /* Re-order the data to be sent so that data per proc is contiguous.  This
+   * saves memory in Zoltan_Comm_*.  The proc_list input array is reordered here.
+   */
+
+  reorder = (int *)ZOLTAN_MALLOC(sizeof(int) * outgoing);
+  if (outgoing && !reorder){
+    MEMORY_ERROR;
+  }
+
+  firstStaying = *dotnum;       /* location of first dot that is staying */
+
+  for (i=0,j=0; i < *dotnum; i++){
+    if ((*dotmark)[i] != set) {  /* going */
+      reorder[j++] = i;
+    }
+    else{
+      if (i < firstStaying){
+        firstStaying = i;
+      }
+    }
+  }
+
+  /* seems to be a bug in quicksort call */
+
+  Zoltan_quicksort_list_inc_int(proc_list, reorder, 0, outgoing - 1);
+
+  /* Create comm object TODO64 - in Zoltan_Comm verify that incoming fits in an integer */
 
   ierr = Zoltan_Comm_Create(&cobj, outgoing, proc_list, local_comm, message_tag, &incoming);
 
@@ -680,9 +724,23 @@ int Zoltan_RB_Send_Dots_less_memory(
     goto End;
   }
 
-  /* check if need to malloc more space */
-
   dotnew = *dotnum - outgoing + incoming;
+
+  if (sizeof(ZOLTAN_GNO_TYPE) > sizeof(int)){
+    verify[0] = (ZOLTAN_GNO_TYPE)*dotnum;
+    verify[1] = (ZOLTAN_GNO_TYPE)outgoing;
+    verify[2] = (ZOLTAN_GNO_TYPE)incoming;
+    verify[3] = verify[0] - verify[1] + verify[2];
+
+    if (verify[3] != (ZOLTAN_GNO_TYPE)dotnew){
+      ierr = ZOLTAN_FATAL;
+      ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
+            "Error: Number of incoming objects does not fit in an integer.\n");
+      goto End;
+    }
+  }
+
+  /* check if need to malloc more space */
 
   startIncoming = *dotnum - outgoing;
 
@@ -721,6 +779,11 @@ int Zoltan_RB_Send_Dots_less_memory(
   if ((sizeof(double) * problem->weight_dim) > bufsize)    /* to send weights */
     bufsize = sizeof(double) * problem->weight_dim;
 
+  if (incoming > 0){
+    recvbuf = (char *)ZOLTAN_MALLOC(bufsize * incoming);
+    if (!recvbuf) MEMORY_ERROR;
+  }
+
   if (use_ids){
     if ((sizeof(ZOLTAN_ID_TYPE) * num_gid_entries) > bufsize)  /* to send GIDs */
       bufsize = sizeof(ZOLTAN_ID_TYPE) * num_gid_entries; 
@@ -734,87 +797,25 @@ int Zoltan_RB_Send_Dots_less_memory(
     if (!sendbuf) MEMORY_ERROR;
   }
 
-  if (incoming > 0){
-    recvbuf = (char *)ZOLTAN_MALLOC(bufsize * incoming);
-    if (!recvbuf) MEMORY_ERROR;
-  }
-
-  if (use_ids){
-
-    /***** Send/receive global IDs *****/
-
-    if (outgoing > 0){
-      outgoing = next = 0;
-      ids = (ZOLTAN_ID_PTR)sendbuf;
-  
-      for (i = 0; i < *dotnum; i++) {
-        if ((*dotmark)[i] != set) {
-          ZOLTAN_SET_GID(zz, &(ids[outgoing*num_gid_entries]), &((*gidpt)[i*num_gid_entries]));
-          outgoing++;
-        }
-        else {
-          if (i > next){
-            ZOLTAN_SET_GID(zz, &((*gidpt)[next*num_gid_entries]), &((*gidpt)[i*num_gid_entries]));
-          }
-          next++;
-        }
-      }
-    }
-
-    ierr = Zoltan_Comm_Do(cobj, message_tag++, sendbuf, 
-                      sizeof(ZOLTAN_ID_TYPE)*num_gid_entries,
-                      (char *) &((*gidpt)[startIncoming*num_gid_entries]));
-
-    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) COMM_DO_ERROR;
-
-    if (num_lid_entries){
-
-      /***** Send/receive local IDs *****/
-  
-      if (outgoing > 0){
-        outgoing = next = 0;
-        for (i = 0; i < *dotnum; i++) {
-          if ((*dotmark)[i] != set) {
-            ZOLTAN_SET_LID(zz, &(ids[outgoing*num_lid_entries]), &((*lidpt)[i*num_lid_entries]));
-            outgoing++;
-          }
-          else {
-            if (i > next){
-              ZOLTAN_SET_LID(zz, &((*lidpt)[next*num_lid_entries]), &((*lidpt)[i*num_lid_entries])); 
-            }
-            next++;
-          }
-        }
-      }
-
-      ierr = Zoltan_Comm_Do(cobj, message_tag++, (char *) sendbuf, 
-                        sizeof(ZOLTAN_ID_TYPE)*num_lid_entries,
-                        (char *) &((*lidpt)[startIncoming*num_lid_entries]));
-
-      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) COMM_DO_ERROR;
-    }
-  }
-
   dots = *dotpt;
 
   /***** Send/receive coordinates *****/
 
+  next = 0;
+
   if (outgoing > 0){
-    outgoing = next = 0;
     dval = (double *)sendbuf;
-  
-    for (i = 0; i < *dotnum; i++) {
-      if ((*dotmark)[i] != set) {
-        for (j=0; j < problem->Num_Dim; j++){
-          *dval++ = dots[i].X[j];
-        }
-        outgoing++;
+
+    for (i=0; i < outgoing; i++){
+      for (j=0; j < problem->Num_Dim; j++){
+        *dval++ = dots[reorder[i]].X[j];
       }
-      else{
-        if (i > next){
-          for (j=0; j < problem->Num_Dim; j++){
-            dots[next].X[j] = dots[i].X[j];
-          }
+    }
+
+    for (i = firstStaying; i < *dotnum; i++) {
+      if ((*dotmark)[i] == set) {
+        for (j=0; j < problem->Num_Dim; j++){
+          dots[next].X[j] = dots[i].X[j];
         }
         next++;
       }
@@ -828,36 +829,84 @@ int Zoltan_RB_Send_Dots_less_memory(
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) COMM_DO_ERROR;
 
   if (incoming > 0){
-    next = startIncoming;
     dval = (double *)recvbuf;
   
-    for (i=0; i < incoming; i++){
+    for (i=0; i < incoming; i++,next++){
       for (j=0; j < problem->Num_Dim; j++){
         dots[next].X[j] = *dval++;
       }
-      next++;
+    }
+  }
+
+  if (use_ids){
+
+    /***** Send/receive global IDs *****/
+
+    if (outgoing > 0){
+      ids = (ZOLTAN_ID_PTR)sendbuf;
+      for (i = 0; i < outgoing; i++) {
+        ZOLTAN_SET_GID(zz, ids, *gidpt + (reorder[i]*num_gid_entries));
+        ids += num_gid_entries;
+      }
+
+      ids = *gidpt;
+      for (i = firstStaying; i < *dotnum; i++) {
+        if ((*dotmark)[i] == set) {
+          ZOLTAN_SET_GID(zz, ids, *gidpt + (i*num_gid_entries));
+          ids += num_gid_entries;
+        }
+      }
+    }
+
+    ierr = Zoltan_Comm_Do(cobj, message_tag++, sendbuf, 
+                      sizeof(ZOLTAN_ID_TYPE)*num_gid_entries, (char *)ids);
+
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) COMM_DO_ERROR;
+
+    if (num_lid_entries){
+
+      /***** Send/receive local IDs *****/
+
+      if (outgoing > 0){
+        ids = (ZOLTAN_ID_PTR)sendbuf;
+        for (i = 0; i < outgoing; i++) {
+          ZOLTAN_SET_LID(zz, ids, *lidpt + (reorder[i]*num_lid_entries));
+          ids += num_lid_entries;
+        }
+  
+        ids = *lidpt;
+        for (i = firstStaying; i < *dotnum; i++) {
+          if ((*dotmark)[i] == set) {
+            ZOLTAN_SET_LID(zz, ids, *lidpt + (i*num_lid_entries));
+            ids += num_lid_entries;
+          }
+        }
+      }
+    
+      ierr = Zoltan_Comm_Do(cobj, message_tag++, (char *) sendbuf, 
+                        sizeof(ZOLTAN_ID_TYPE)*num_lid_entries, (char *)ids);
+
+      if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) COMM_DO_ERROR;
     }
   }
 
   /***** Send/receive weights *****/
 
   if (problem->weight_dim > 0){
+
     if (outgoing > 0){
-      outgoing = next = 0;
       dval = (double *)sendbuf;
     
-      for (i = 0; i < *dotnum; i++) {
-        if ((*dotmark)[i] != set) {
-          for (j=0; j < problem->weight_dim; j++){
-            *dval++ = dots[i].Weight[j];
-          }
-          outgoing++;
+      for (i = 0; i < outgoing; i++) {
+        for (j=0; j < problem->weight_dim; j++){
+          *dval++ = dots[reorder[i]].Weight[j];
         }
-        else{
-          if (i > next){
-            for (j=0; j < problem->weight_dim; j++){
-              dots[next].Weight[j] = dots[i].Weight[j];
-            }
+      }
+
+      for (i = firstStaying, next=0; i < *dotnum; i++) {
+        if ((*dotmark)[i] == set) {
+          for (j=0; j < problem->weight_dim; j++){
+            dots[next].Weight[j] = dots[i].Weight[j];
           }
           next++;
         }
@@ -871,71 +920,64 @@ int Zoltan_RB_Send_Dots_less_memory(
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) COMM_DO_ERROR;
   
     if (incoming > 0){
-      next = startIncoming;
       dval = (double *)recvbuf;
     
-      for (i=0; i < incoming; i++){
+      for (i=startIncoming; i < dotnew; i++){
         for (j=0; j < problem->weight_dim; j++){
-          dots[next].Weight[j] = *dval++;
+          dots[i].Weight[j] = *dval++;
         }
-        next++;
       }
+    }
+  }
+  else{
+    /* Zoltan set all weights to 1.0 */
+    for (i=startIncoming; i < dotnew; i++){
+      dots[i].Weight[0] = 1.0;
     }
   }
 
   /***** Send/receive process owning the dot *****/
 
   if (outgoing > 0){
-    outgoing = next = 0;
     ival = (int *)sendbuf;
   
-    for (i = 0; i < *dotnum; i++) {
-      if ((*dotmark)[i] != set) {
-        *ival++ = dots[i].Proc;
-        outgoing++;
+    for (i = 0; i < outgoing; i++) {
+      *ival++ = dots[reorder[i]].Proc;
+    }
+
+    for (i = firstStaying, next=0; i < *dotnum; i++) {
+      if ((*dotmark)[i] == set) {
+        dots[next++].Proc = dots[i].Proc;
       }
-      else{
-        if (i > next){
-          dots[next].Proc = dots[i].Proc;
-        }
-        next++;
-      } 
     }
   }
 
   ierr = Zoltan_Comm_Do(cobj, message_tag++, (char *) sendbuf, 
-                    sizeof(int),
-                    (char *) recvbuf);
+                    sizeof(int), (char *) recvbuf);
 
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) COMM_DO_ERROR;
 
   if (incoming > 0){
-    next = startIncoming;
     ival = (int *)recvbuf;
   
-    for (i=0; i < incoming; i++){
-      dots[next].Proc = *ival++;
-      next++;
+    for (i=startIncoming; i < dotnew; i++){
+      dots[i].Proc = *ival++;
     }
   }
 
   /***** Send/receive dot's original part *****/
 
   if (outgoing > 0){
-    outgoing = next = 0;
     ival = (int *)sendbuf;
   
-    for (i = 0; i < *dotnum; i++) {
-      if ((*dotmark)[i] != set) {
-        *ival++ = dots[i].Input_Part;
-        outgoing++;
+    for (i = 0; i < outgoing; i++) {
+      *ival++ = dots[reorder[i]].Input_Part;
+    }
+
+    for (i = firstStaying,next=0; i < *dotnum; i++) {
+      if ((*dotmark)[i] == set) {
+        dots[next++].Input_Part = dots[i].Input_Part;
       }
-      else{
-        if (i > next){
-          dots[next].Input_Part = dots[i].Input_Part;
-        }
-        next++;
-      } 
     }
   }
 
@@ -946,32 +988,26 @@ int Zoltan_RB_Send_Dots_less_memory(
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) COMM_DO_ERROR;
 
   if (incoming > 0){
-    next = startIncoming;
     ival = (int *)recvbuf;
   
-    for (i=0; i < incoming; i++){
-      dots[next].Input_Part= *ival++;
-      next++;
+    for (i=startIncoming; i < dotnew; i++){
+      dots[i].Input_Part = *ival++;
     }
   }
 
   /***** Send/receive dot's new part *****/
 
   if (outgoing > 0){
-    outgoing = next = 0;
     ival = (int *)sendbuf;
   
-    for (i = 0; i < *dotnum; i++) {
-      if ((*dotmark)[i] != set) {
-        *ival++ = dots[i].Part;
-        outgoing++;
+    for (i = 0; i < outgoing; i++) {
+      *ival++ = dots[reorder[i]].Part;
+    }
+
+    for (i = firstStaying,next=0; i < *dotnum; i++) {
+      if ((*dotmark)[i] == set) {
+        dots[next++].Part = dots[i].Part;
       }
-      else{
-        if (i > next){
-          dots[next].Part = dots[i].Part;
-        }
-        next++;
-      } 
     }
   }
 
@@ -982,48 +1018,49 @@ int Zoltan_RB_Send_Dots_less_memory(
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) COMM_DO_ERROR;
 
   if (incoming > 0){
-    next = startIncoming;
     ival = (int *)recvbuf;
   
-    for (i=0; i < incoming; i++){
-      dots[next].Part= *ival++;
-      next++;
+    for (i=startIncoming; i < dotnew; i++){
+      dots[i].Part = *ival++;
     }
   }
 
   /***** Send/receive dot's migration size *****/
 
-  if (outgoing > 0){
-    outgoing = next = 0;
-    ival = (int *)sendbuf;
-  
-    for (i = 0; i < *dotnum; i++) {
-      if ((*dotmark)[i] != set) {
-        *ival++ = dots[i].Size;
-        outgoing++;
+  /* If no processes have defined a migration size query, we can skip this */
+
+  if (problem->obj_sizes){
+    if (outgoing > 0){
+      ival = (int *)sendbuf;
+    
+      for (i = 0; i < outgoing; i++) {
+        *ival++ = dots[reorder[i]].Size;
       }
-      else{
-        if (i > next){
-          dots[next].Size = dots[i].Size;
+
+      for (i = firstStaying, next=0; i < *dotnum; i++) {
+        if ((*dotmark)[i] == set) {
+          dots[next++].Size = dots[i].Size;
         }
-        next++;
-      } 
+      }
+    }
+  
+    ierr = Zoltan_Comm_Do(cobj, message_tag++, (char *) sendbuf, 
+                      sizeof(int),
+                      (char *) recvbuf);
+  
+    if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) COMM_DO_ERROR;
+
+    if (incoming > 0){
+      ival = (int *)recvbuf;
+    
+      for (i=startIncoming; i < dotnew; i++){
+        dots[i].Size = *ival++;
+      }
     }
   }
-
-  ierr = Zoltan_Comm_Do(cobj, message_tag++, (char *) sendbuf, 
-                    sizeof(int),
-                    (char *) recvbuf);
-
-  if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) COMM_DO_ERROR;
-
-  if (incoming > 0){
-    next = startIncoming;
-    ival = (int *)recvbuf;
-  
-    for (i=0; i < incoming; i++){
-      dots[next].Size= *ival++;
-      next++;
+  else{
+    for (i=startIncoming; i < dotnew; i++){
+      dots[i].Size = 1;
     }
   }
 
@@ -1034,7 +1071,9 @@ int Zoltan_RB_Send_Dots_less_memory(
 
 End:
 
+less_memory_flag=1;
   ZOLTAN_FREE(&sendbuf);
+  ZOLTAN_FREE(&reorder);
   ZOLTAN_FREE(&recvbuf);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
@@ -1093,12 +1132,13 @@ int Zoltan_RB_Remap(
                                        of dot array must be done.
                                        1.0 = no extra; 1.5 = 50% extra; etc. */
   int stats,                        /* Print timing & count summary? */
-  int counters[],                   /* diagnostic counts
+  ZOLTAN_GNO_TYPE counters[],                   /* diagnostic counts
                                        0 = # of median iterations
                                        1 = # of dots sent
                                        2 = # of dots received
                                        3 = most dots this proc ever owns
-                                       4 = most dot memory this proc ever allocs                                       5 = # of times a previous cut is re-used
+                                       4 = most dot memory this proc ever allocs
+                                       5 = # of times a previous cut is re-used
                                        6 = # of reallocs of dot array */
   int use_ids                       /* true if global and local IDs are to be
                                        kept for RCB or RIB (for LB.Return_Lists 
@@ -1486,12 +1526,13 @@ int Zoltan_RB_check_geom_output(
 
 void Zoltan_RB_stats(ZZ *zz, double timetotal, struct Dot_Struct *dotpt,
                  int dotnum, float *part_sizes,
-                 double *timers, int *counters, int stats,
-                 int *reuse_count, void *rcbbox_arg, int reuse)
+                 double *timers, ZOLTAN_GNO_TYPE *counters, int stats,
+                 ZOLTAN_GNO_TYPE *reuse_count, void *rcbbox_arg, int reuse)
 
 {
   char *yo = "Zoltan_RB_stats";
-  int i,proc,nprocs,sum,min,max,print_proc;
+  int i,proc,nprocs,print_proc;
+  ZOLTAN_GNO_TYPE sum, min, max;
   double ave,rsum,rmin,rmax;
   double weight,wttot,wtmin,wtmax;
   struct rcb_box *rcbbox = (struct rcb_box *) rcbbox_arg;
@@ -1548,89 +1589,89 @@ void Zoltan_RB_stats(ZZ *zz, double timetotal, struct Dot_Struct *dotpt,
   
     /* counter info */
   
-    MPI_Allreduce(&counters[1],&sum,1,MPI_INT,MPI_SUM,zz->Communicator);
-    MPI_Allreduce(&counters[1],&min,1,MPI_INT,MPI_MIN,zz->Communicator);
-    MPI_Allreduce(&counters[1],&max,1,MPI_INT,MPI_MAX,zz->Communicator);
+    MPI_Allreduce(&counters[1],&sum,1,ZOLTAN_GNO_MPI_TYPE,MPI_SUM,zz->Communicator);
+    MPI_Allreduce(&counters[1],&min,1,ZOLTAN_GNO_MPI_TYPE,MPI_MIN,zz->Communicator);
+    MPI_Allreduce(&counters[1],&max,1,ZOLTAN_GNO_MPI_TYPE,MPI_MAX,zz->Communicator);
     ave = ((double) sum)/nprocs;
     if (proc == print_proc) 
-      printf(" Send count: ave = %g, min = %d, max = %d\n",ave,min,max);
+      printf(" Send count: ave = %g, min = %zd, max = %zd\n",ave,min,max);
     MPI_Barrier(zz->Communicator);
     if (stats > 1) 
-      printf("    Proc %d send count = %d\n",proc,counters[1]);
+      printf("    Proc %d send count = %zd\n",proc,counters[1]);
     
-    MPI_Allreduce(&counters[2],&sum,1,MPI_INT,MPI_SUM,zz->Communicator);
-    MPI_Allreduce(&counters[2],&min,1,MPI_INT,MPI_MIN,zz->Communicator);
-    MPI_Allreduce(&counters[2],&max,1,MPI_INT,MPI_MAX,zz->Communicator);
+    MPI_Allreduce(&counters[2],&sum,1,ZOLTAN_GNO_MPI_TYPE,MPI_SUM,zz->Communicator);
+    MPI_Allreduce(&counters[2],&min,1,ZOLTAN_GNO_MPI_TYPE,MPI_MIN,zz->Communicator);
+    MPI_Allreduce(&counters[2],&max,1,ZOLTAN_GNO_MPI_TYPE,MPI_MAX,zz->Communicator);
     ave = ((double) sum)/nprocs;
     if (proc == print_proc) 
-      printf(" Recv count: ave = %g, min = %d, max = %d\n",ave,min,max);
+      printf(" Recv count: ave = %g, min = %zd, max = %zd\n",ave,min,max);
     MPI_Barrier(zz->Communicator);
     if (stats > 1) 
-      printf("    Proc %d recv count = %d\n",proc,counters[2]);
+      printf("    Proc %d recv count = %zd\n",proc,counters[2]);
   
     if (reuse) {
-      MPI_Allreduce(&reuse_count[1],&max,1,MPI_INT,MPI_MAX,zz->Communicator);
-      MPI_Allreduce(&reuse_count[1],&sum,1,MPI_INT,MPI_SUM,zz->Communicator);
-      MPI_Allreduce(&reuse_count[1],&min,1,MPI_INT,MPI_MIN,zz->Communicator);
+      MPI_Allreduce(&reuse_count[1],&max,1,ZOLTAN_GNO_MPI_TYPE,MPI_MAX,zz->Communicator);
+      MPI_Allreduce(&reuse_count[1],&sum,1,ZOLTAN_GNO_MPI_TYPE,MPI_SUM,zz->Communicator);
+      MPI_Allreduce(&reuse_count[1],&min,1,ZOLTAN_GNO_MPI_TYPE,MPI_MIN,zz->Communicator);
       ave = ((double) sum)/nprocs;
       if (proc == print_proc) 
-        printf(" Presend count: ave = %g, min = %d, max = %d\n",ave,min,max);
+        printf(" Presend count: ave = %g, min = %zd, max = %zd\n",ave,min,max);
       MPI_Barrier(zz->Communicator);
       if (stats > 1) 
-        printf("    Proc %d presend count = %d\n",proc,reuse_count[1]);
+        printf("    Proc %d presend count = %zd\n",proc,reuse_count[1]);
     
-      MPI_Allreduce(&reuse_count[2],&sum,1,MPI_INT,MPI_SUM,zz->Communicator);
-      MPI_Allreduce(&reuse_count[2],&min,1,MPI_INT,MPI_MIN,zz->Communicator);
-      MPI_Allreduce(&reuse_count[2],&max,1,MPI_INT,MPI_MAX,zz->Communicator);
+      MPI_Allreduce(&reuse_count[2],&sum,1,ZOLTAN_GNO_MPI_TYPE,MPI_SUM,zz->Communicator);
+      MPI_Allreduce(&reuse_count[2],&min,1,ZOLTAN_GNO_MPI_TYPE,MPI_MIN,zz->Communicator);
+      MPI_Allreduce(&reuse_count[2],&max,1,ZOLTAN_GNO_MPI_TYPE,MPI_MAX,zz->Communicator);
       ave = ((double) sum)/nprocs;
       if (proc == print_proc) 
-        printf(" Prerecv count: ave = %g, min = %d, max = %d\n",ave,min,max);
+        printf(" Prerecv count: ave = %g, min = %zd, max = %zd\n",ave,min,max);
       MPI_Barrier(zz->Communicator);
       if (stats > 1) 
-        printf("    Proc %d prerecv count = %d\n",proc,reuse_count[2]);
+        printf("    Proc %d prerecv count = %zd\n",proc,reuse_count[2]);
     }
   
-    MPI_Allreduce(&counters[3],&sum,1,MPI_INT,MPI_SUM,zz->Communicator);
-    MPI_Allreduce(&counters[3],&min,1,MPI_INT,MPI_MIN,zz->Communicator);
-    MPI_Allreduce(&counters[3],&max,1,MPI_INT,MPI_MAX,zz->Communicator);
+    MPI_Allreduce(&counters[3],&sum,1,ZOLTAN_GNO_MPI_TYPE,MPI_SUM,zz->Communicator);
+    MPI_Allreduce(&counters[3],&min,1,ZOLTAN_GNO_MPI_TYPE,MPI_MIN,zz->Communicator);
+    MPI_Allreduce(&counters[3],&max,1,ZOLTAN_GNO_MPI_TYPE,MPI_MAX,zz->Communicator);
     ave = ((double) sum)/nprocs;
     if (proc == print_proc) 
-      printf(" Max dots: ave = %g, min = %d, max = %d\n",ave,min,max);
+      printf(" Max dots: ave = %g, min = %zd, max = %zd\n",ave,min,max);
     MPI_Barrier(zz->Communicator);
     if (stats > 1) 
-      printf("    Proc %d max dots = %d\n",proc,counters[3]);
+      printf("    Proc %d max dots = %zd\n",proc,counters[3]);
   
-    MPI_Allreduce(&counters[4],&sum,1,MPI_INT,MPI_SUM,zz->Communicator);
-    MPI_Allreduce(&counters[4],&min,1,MPI_INT,MPI_MIN,zz->Communicator);
-    MPI_Allreduce(&counters[4],&max,1,MPI_INT,MPI_MAX,zz->Communicator);
+    MPI_Allreduce(&counters[4],&sum,1,ZOLTAN_GNO_MPI_TYPE,MPI_SUM,zz->Communicator);
+    MPI_Allreduce(&counters[4],&min,1,ZOLTAN_GNO_MPI_TYPE,MPI_MIN,zz->Communicator);
+    MPI_Allreduce(&counters[4],&max,1,ZOLTAN_GNO_MPI_TYPE,MPI_MAX,zz->Communicator);
     ave = ((double) sum)/nprocs;
     if (proc == print_proc) 
-      printf(" Max memory: ave = %g, min = %d, max = %d\n",ave,min,max);
+      printf(" Max memory: ave = %g, min = %zd, max = %zd\n",ave,min,max);
     MPI_Barrier(zz->Communicator);
     if (stats > 1) 
-      printf("    Proc %d max memory = %d\n",proc,counters[4]);
+      printf("    Proc %d max memory = %zd\n",proc,counters[4]);
     
     if (reuse) {
-      MPI_Allreduce(&counters[5],&sum,1,MPI_INT,MPI_SUM,zz->Communicator);
-      MPI_Allreduce(&counters[5],&min,1,MPI_INT,MPI_MIN,zz->Communicator);
-      MPI_Allreduce(&counters[5],&max,1,MPI_INT,MPI_MAX,zz->Communicator);
+      MPI_Allreduce(&counters[5],&sum,1,ZOLTAN_GNO_MPI_TYPE,MPI_SUM,zz->Communicator);
+      MPI_Allreduce(&counters[5],&min,1,ZOLTAN_GNO_MPI_TYPE,MPI_MIN,zz->Communicator);
+      MPI_Allreduce(&counters[5],&max,1,ZOLTAN_GNO_MPI_TYPE,MPI_MAX,zz->Communicator);
       ave = ((double) sum)/nprocs;
       if (proc == print_proc) 
-        printf(" # of Reuse: ave = %g, min = %d, max = %d\n",ave,min,max);
+        printf(" # of Reuse: ave = %g, min = %zd, max = %zd\n",ave,min,max);
       MPI_Barrier(zz->Communicator);
       if (stats > 1) 
-        printf("    Proc %d # of Reuse = %d\n",proc,counters[5]);
+        printf("    Proc %d # of Reuse = %zd\n",proc,counters[5]);
     }
   
-    MPI_Allreduce(&counters[6],&sum,1,MPI_INT,MPI_SUM,zz->Communicator);
-    MPI_Allreduce(&counters[6],&min,1,MPI_INT,MPI_MIN,zz->Communicator);
-    MPI_Allreduce(&counters[6],&max,1,MPI_INT,MPI_MAX,zz->Communicator);
+    MPI_Allreduce(&counters[6],&sum,1,ZOLTAN_GNO_MPI_TYPE,MPI_SUM,zz->Communicator);
+    MPI_Allreduce(&counters[6],&min,1,ZOLTAN_GNO_MPI_TYPE,MPI_MIN,zz->Communicator);
+    MPI_Allreduce(&counters[6],&max,1,ZOLTAN_GNO_MPI_TYPE,MPI_MAX,zz->Communicator);
     ave = ((double) sum)/nprocs;
     if (proc == print_proc) 
-      printf(" # of OverAlloc: ave = %g, min = %d, max = %d\n",ave,min,max);
+      printf(" # of OverAlloc: ave = %g, min = %zd, max = %zd\n",ave,min,max);
     MPI_Barrier(zz->Communicator);
     if (stats > 1) 
-      printf("    Proc %d # of OverAlloc = %d\n",proc,counters[6]);
+      printf("    Proc %d # of OverAlloc = %zd\n",proc,counters[6]);
 
     par_median_print_counts(zz->Communicator, print_proc);
   }

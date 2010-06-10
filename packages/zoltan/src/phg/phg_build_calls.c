@@ -818,7 +818,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       for (j=0; j < zhg->Esize[i]; j++, iptr++){
          gnos[0] = zhg->objGNO[i];
          gnos[1] = zhg->pinGNO[iptr];
-         ierr = Zoltan_Map_Add(zz, map2, (void *)gnos, (void *)iptr + 1);
+         ierr = Zoltan_Map_Add(zz, map2, (void *)gnos, (void *)(iptr + 1));
          if (ierr != ZOLTAN_OK) goto End;
       }
     }

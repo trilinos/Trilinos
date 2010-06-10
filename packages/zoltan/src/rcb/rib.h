@@ -44,6 +44,8 @@ typedef struct RIB_Struct {
     struct rib_tree   *Tree_Ptr;
     int                Num_Geom;
     ZZ_Transform       Tran;     /* transformation for degenerate geometry */
+    int weight_dim;           /* # of weights/dot (if 0, indicates 1-D unit weights) */
+    int obj_sizes;            /* 1 - we have migration sizes, 0 - we do not */
 } RIB_STRUCT;
 
 extern int Zoltan_RIB_Build_Structure(ZZ *, int *, int *, int, double, int);

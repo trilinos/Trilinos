@@ -240,7 +240,7 @@ static int rib_fn(
                                  1 = time before median iterations
                                  2 = time in median iterations
                                  3 = communication time */
-  int     counters[7];        /* diagnostic counts
+  ZOLTAN_GNO_TYPE counters[7];  /* diagnostic counts
                                  0 = unused
                                  1 = # of dots sent
                                  2 = # of dots received
@@ -339,9 +339,17 @@ static int rib_fn(
   counters[5] = 0;
   counters[6] = 0;
 
-  MPI_Allreduce(&dotnum, &i, 1, MPI_INT, MPI_MAX, zz->Communicator);
+  /* Ensure there are dots, and determine whether any process defined
+   * migration size query functions.
+   */
+    
+  tmp_tfs[0] = dotnum;
+  tmp_tfs[1] = ((zz->Get_Obj_Size_Multi) || (zz->Get_Obj_Size));
+  MPI_Allreduce(tmp_tfs, tfs, 2, MPI_INT, MPI_MAX, zz->Communicator);
+  
+  rib->obj_sizes = tfs[1];
 
-  if (i == 0){
+  if (tfs[0] == 0){
     if (proc == 0){
       ZOLTAN_PRINT_WARN(proc, yo, "RIB partitioning called with no objects");
     }
