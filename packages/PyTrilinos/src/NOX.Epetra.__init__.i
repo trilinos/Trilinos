@@ -207,7 +207,7 @@ using namespace NOX::Epetra;
 
 // Make Epetra_Vector and NOX::Epetra::Vector input arguments
 // interchangeable
-%typemap(in) NOX::Epetra::Vector & (void* argp=0, int res=0)
+%typemap(in) NOX::Epetra::Vector & (void* argp=0, int res=0, int new_nev=0)
 {
   res = SWIG_ConvertPtr($input, &argp, $descriptor, %convertptr_flags);
   if (!SWIG_IsOK(res))
@@ -222,6 +222,7 @@ using namespace NOX::Epetra;
       %argument_nullref("$type", $symname, $argnum);
     }
     $1 = new NOX::Epetra::Vector(*%reinterpret_cast( argp, Epetra_Vector*));
+    new_nev = 1;
   }
   else
   {
@@ -237,9 +238,9 @@ using namespace NOX::Epetra;
     $1 = SWIG_CheckState(SWIG_ConvertPtr($input, &argp, $descriptor(Epetra_Vector*),
                                          %convertptr_flags)) ? 1 : 0;
 }
-%typemap(freearg) NOX::Epetra::Vector
+%typemap(freearg) NOX::Epetra::Vector &
 {
-  if ($1 != NULL) delete $1;
+  if (new_nev$argnum) delete $1;
 }
 
 // Convert NOX::Abstract::Vector return arguments to Epetra.Vectors
