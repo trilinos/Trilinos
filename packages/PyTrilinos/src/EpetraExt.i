@@ -233,15 +233,23 @@ example subdirectory of the PyTrilinos package:
 // overloaded Read() methods with a python version that has the type
 // in the method name.  For example,
 //
-//   void HDF5::Read(std::string, Epetra_Map *&)
+//   void HDF5::Read(const std::string &, Epetra_Map *&)
 //
 // is translated from C++ to python as
 //
 //   HDF5.ReadMap(str) -> Epetra.Map
 //
-// These translations are made possible by the following macro:
-%define %epetraext_read_method(ClassName)
-Epetra_ ## ClassName * Read ## ClassName(std::string name)
+// These translations are made possible by the following macros:
+%define %epetraext_primitive_read_method(readtype,TypeName,initVal)
+readtype Read ## TypeName(const std::string & group, const std::string & name)
+{
+  readtype obj = initVal;
+  self->Read(group, name, obj);
+  return obj;
+}
+%enddef
+%define %epetraext_epetra_read_method(ClassName)
+Epetra_ ## ClassName * Read ## ClassName(const std::string & name)
 {
   Epetra_ ## ClassName * obj = NULL;
   self->Read(name, obj);
@@ -329,13 +337,16 @@ Return a CrsMatrix read from an open HDF5 file with group name 'name'.
 // There are a series of referenced arguments for the ReadComment()
 // and Read*Properties() methods that need to be changed to python
 // output arguments
-%typemap(in,numinputs=0) string& Comment ""
-%typemap(argout) string& Comment
+%typemap(in,numinputs=0) std::string& Comment (std::string temp = "") { $1 = &temp; }
+%typemap(argout) std::string& Comment
 {
-  SWIG_Python_AppendOutput($result, PyString_FromString($1->c_str()));
+  $result = SWIG_Python_AppendOutput($result, PyString_FromString($1->c_str()));
 }
-%typemap(in,numinputs=0) int& NUM ""
-%typemap(argout) int& NUM { SWIG_Python_AppendOutput($result, PyInt_FromLong((long)*$1)); }
+%typemap(in,numinputs=0) int& NUM (int temp = 0) { $1 = &temp; }
+%typemap(argout) int& NUM
+{
+  $result = SWIG_Python_AppendOutput($result, PyInt_FromLong((long)(*$1)));
+}
 %apply int& NUM {int& GlobalLength,
                  int& IndexBase,
                  int& MaxNumEntries,
@@ -350,26 +361,33 @@ Return a CrsMatrix read from an open HDF5 file with group name 'name'.
                  int& NumProc,
                  int& NumVectors,
                  int& RowSize};
-%typemap(in,numinputs=0) double& NORM ""
-%typemap(argout) double& NORM { SWIG_Python_AppendOutput($result, PyFloat_FromDouble(*$1)); }
-%apply double& NORM {double& NormInf,
+%typemap(in,numinputs=0) double& NORM (double temp = 0.0) { $1 = &temp; }
+%typemap(argout) double& NORM
+{
+  $result = SWIG_Python_AppendOutput($result, PyFloat_FromDouble(*$1));
+}
+%apply double& NORM {double& NormOne,
                      double& NormInf};
-%ignore EpetraExt::HDF5::Read;
-%include "EpetraExt_HDF5.h"
+
+#ifdef HAVE_EPETRAEXT_HDF5
 namespace EpetraExt
 {
-#ifdef HAVE_EPETRAEXT_HDF5
-  %extend HDF5
-  {
-    %epetraext_read_method(BlockMap   )
-    %epetraext_read_method(Map        )
-    %epetraext_read_method(MultiVector)
-    %epetraext_read_method(CrsGraph   )
-    %epetraext_read_method(CrsMatrix  )
-    %epetraext_read_method(IntVector  )
-  } // HDF5
-#endif
+%extend HDF5
+{
+  %epetraext_primitive_read_method(int        , Int   , 0  )
+  %epetraext_primitive_read_method(double     , Float , 0.0)
+  %epetraext_primitive_read_method(std::string, String, "" )
+  %epetraext_epetra_read_method(BlockMap   )
+  %epetraext_epetra_read_method(Map        )
+  %epetraext_epetra_read_method(MultiVector)
+  %epetraext_epetra_read_method(CrsGraph   )
+  %epetraext_epetra_read_method(CrsMatrix  )
+  %epetraext_epetra_read_method(IntVector  )
+} // HDF5
 }
+%ignore EpetraExt::HDF5::Read;
+%include "EpetraExt_HDF5.h"
+#endif
 
 /////////////////////////////////
 // EpetraExt_XMLReader support //
@@ -401,10 +419,10 @@ namespace EpetraExt
 {
   %extend XMLReader
   {
-    %epetraext_read_method(Map        )
-    %epetraext_read_method(MultiVector)
-    %epetraext_read_method(CrsGraph   )
-    %epetraext_read_method(CrsMatrix  )
+    %epetraext_epetra_read_method(Map        )
+    %epetraext_epetra_read_method(MultiVector)
+    %epetraext_epetra_read_method(CrsGraph   )
+    %epetraext_epetra_read_method(CrsMatrix  )
   } // XMLReader
 }
 
