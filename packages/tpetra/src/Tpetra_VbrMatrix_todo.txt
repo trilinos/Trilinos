@@ -7,8 +7,4 @@ Still need to do the following:
 2. add more data accessors/manipulators:
   - putScalar
   - sumInto for both local and global block-entries
-  - set for local block-entries
-  - get for local block-entries
-
-3. make set/suminto/get work after fillComplete has been called.
 

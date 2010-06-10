@@ -139,7 +139,6 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::Vbr
    importer_(),
    exporter_(),
    col_ind_2D_global_(Teuchos::rcp(new Teuchos::Array<std::map<GlobalOrdinal,Teuchos::ArrayRCP<Scalar> > >)),
-   col_ind_2D_local_(Teuchos::rcp(new Teuchos::Array<std::map<LocalOrdinal,Teuchos::ArrayRCP<Scalar> > >)),
    pbuf_values2D_(Teuchos::rcp(new Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > >)),
    is_fill_completed_(false),
    is_storage_optimized_(false)
@@ -277,66 +276,198 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::get
 
 //-------------------------------------------------------------------
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
-Teuchos::ArrayRCP<Scalar>
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getGlobalBlockEntryView(
+void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getGlobalBlockEntryViewNonConst(
     GlobalOrdinal globalBlockRow,
     GlobalOrdinal globalBlockCol,
-    size_t rowsPerBlock,
-    size_t colsPerBlock)
+    LocalOrdinal& numPtRows,
+    LocalOrdinal& numPtCols,
+    Teuchos::ArrayRCP<Scalar>& blockEntry)
 {
-  //This private method returns a block-entry (as an ArrayRCP),
-  //creating/allocating the block-entry if it doesn't already exist.
+  //Return a non-const, read-write view of a block-entry (as an ArrayRCP),
+  //creating/allocating the block-entry if it doesn't already exist, (but only
+  //if fillComplete hasn't been called yet, and if the optional arguments
+  //numPtRows and numPtCols have been specified).
 
-  Teuchos::ArrayRCP<Scalar> blockEntryView;
+  if (is_storage_optimized_) {
+    TEST_FOR_EXCEPTION(!isFillComplete(), std::runtime_error,
+      "Tpetra::VbrMatrix::getGlobalBlockEntryViewNonConst internal ERROR, storage is optimized but isFillComplete() is false.");
 
-  LocalOrdinal numBlockRows = blkGraph_->getNodeNumRows();
-  Teuchos::RCP<Node> node = getNode();
+    LocalOrdinal localBlockRow = blkRowMap_->getLocalBlockID(globalBlockRow);
+    LocalOrdinal localBlockCol = blkColMap_->getLocalBlockID(globalBlockCol);
 
-  if (pbuf_values1D_ != Teuchos::null) {
-    //still need to implement the packed (storage-optimized) stuff...
-    throw std::runtime_error("Tpetra::VbrMatrix ERROR, packed storage not yet implemented.");
-  }
-  else {
-    if (pbuf_values2D_->size() == 0) {
-      pbuf_values2D_->resize(numBlockRows);
-      col_ind_2D_global_->resize(numBlockRows);
-    }
+    getLocalBlockEntryViewNonConst(localBlockRow, localBlockCol,
+                                   numPtRows, numPtCols, blockEntry);
+    return;
   }
 
+  //If we get to here, fillComplete hasn't been called yet, and the matrix data
+  //is stored in un-packed '2D' form.
+
+  if (pbuf_values2D_->size() == 0) {
+    LocalOrdinal numBlockRows = blkGraph_->getNodeNumRows();
+    pbuf_values2D_->resize(numBlockRows);
+    col_ind_2D_global_->resize(numBlockRows);
+  }
+
+  //this acts as a range-check for globalBlockRow:
   LocalOrdinal localBlockRow = blkRowMap_->getLocalBlockID(globalBlockRow);
-
-  //this is essentially a range-check for globalBlockRow:
   TEST_FOR_EXCEPTION( localBlockRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(),
      std::runtime_error,
-     "Tpetra::VbrMatrix::getGlobalBlockEntryView, globalBlockRow not local.");
+     "Tpetra::VbrMatrix::getGlobalBlockEntryViewNonConst, globalBlockRow not on the local processor.");
 
   MapGlobalArrayRCP& blkrow = (*col_ind_2D_global_)[localBlockRow];
   typename MapGlobalArrayRCP::iterator col_iter = blkrow.find(globalBlockCol);
 
   if (col_iter != blkrow.end()) {
-    blockEntryView = col_iter->second;
+    blockEntry = col_iter->second;
   }
   else {
-    //block-entry doesn't already exist, so we will create it.
+    //blockEntry doesn't already exist, so we will create it.
 
     //make sure block-size is specified:
-    TEST_FOR_EXCEPTION(rowsPerBlock==0 || colsPerBlock==0, std::runtime_error,
-      "Tpetra::VbrMatrix::getGlobalBlockEntryView ERROR: creating block-entry, but rowsPerBlock and/or colsPerBlock is 0.");
+    TEST_FOR_EXCEPTION(numPtRows==0 || numPtCols==0, std::runtime_error,
+      "Tpetra::VbrMatrix::getGlobalBlockEntryViewNonConst ERROR: creating block-entry, but numPtRows and/or numPtCols is 0.");
 
-    size_t blockSize = rowsPerBlock*colsPerBlock;
-    blockEntryView = node->template allocBuffer<Scalar>(blockSize);
-    (*pbuf_values2D_)[localBlockRow].push_back(blockEntryView);
-    blkrow.insert(std::make_pair(globalBlockCol, blockEntryView));
+    Teuchos::RCP<Node> node = getNode();
+    size_t blockSize = numPtRows*numPtCols;
+    blockEntry = node->template allocBuffer<Scalar>(blockSize);
+    (*pbuf_values2D_)[localBlockRow].push_back(blockEntry);
+    blkrow.insert(std::make_pair(globalBlockCol, blockEntry));
     blkGraph_->insertGlobalIndices(globalBlockRow, Teuchos::ArrayView<GlobalOrdinal>(&globalBlockCol, 1));
   }
+}
 
-  return blockEntryView;
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getGlobalBlockEntryView(
+      GlobalOrdinal globalBlockRow,
+      GlobalOrdinal globalBlockCol,
+      LocalOrdinal& numPtRows,
+      LocalOrdinal& numPtCols,
+      Teuchos::ArrayRCP<const Scalar>& blockEntry) const
+{
+  //This method returns a const-view of a block-entry (as an ArrayRCP).
+  //Throws an exception if the block-entry doesn't already exist.
+
+  if (is_storage_optimized_) {
+    TEST_FOR_EXCEPTION(!isFillComplete(), std::runtime_error,
+      "Tpetra::VbrMatrix::getGlobalBlockEntryView internal ERROR, storage is optimized but isFillComplete() is false.");
+
+    LocalOrdinal localBlockRow = blkRowMap_->getLocalBlockID(globalBlockRow);
+    LocalOrdinal localBlockCol = blkColMap_->getLocalBlockID(globalBlockCol);
+    getLocalBlockEntryView(localBlockRow, localBlockCol, numPtRows, numPtCols, blockEntry);
+    return;
+  }
+
+  TEST_FOR_EXCEPTION(pbuf_values2D_->size() == 0, std::runtime_error,
+    "Tpetra::VbrMatrix::getGlobalBlockEntryView ERROR, matrix storage not yet allocated, can't return a const view.");
+
+  //this acts as a range-check for globalBlockRow:
+  LocalOrdinal localBlockRow = blkRowMap_->getLocalBlockID(globalBlockRow);
+  TEST_FOR_EXCEPTION( localBlockRow == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(),
+     std::runtime_error,
+     "Tpetra::VbrMatrix::getGlobalBlockEntryView, globalBlockRow not on the local processor.");
+
+  MapGlobalArrayRCP& blkrow = (*col_ind_2D_global_)[localBlockRow];
+  typename MapGlobalArrayRCP::iterator col_iter = blkrow.find(globalBlockCol);
+
+  if (col_iter == blkrow.end()) {
+    throw std::runtime_error("Tpetra::VbrMatrix::getGlobalBlockEntryView ERROR, specified block-entry doesn't exist.");
+  }
+
+  numPtRows = blkRowMap_->getBlockSize(localBlockRow);
+
+  TEST_FOR_EXCEPTION(numPtRows == 0, std::runtime_error,
+    "Tpetra::VbrMatrix::getGlobalBlockEntryView ERROR, numPtRows == 0.");
+
+  blockEntry = col_iter->second;
+  numPtCols = blockEntry.size() / numPtRows;
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getLocalBlockEntryViewNonConst(
+    LocalOrdinal localBlockRow,
+    LocalOrdinal localBlockCol,
+    LocalOrdinal& numPtRows,                     
+    LocalOrdinal& numPtCols,
+    Teuchos::ArrayRCP<Scalar>& blockEntry)
+{
+  //This method returns a non-constant view of a block-entry (as an ArrayRCP).
+
+  TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error,
+   "Tpetra::VbrMatrix::getLocalBlockEntryViewNonConst ERROR, this method can only be called after fillComplete() has been called.");
+
+  TEST_FOR_EXCEPTION(is_storage_optimized_ == false, std::runtime_error,
+   "Tpetra::VbrMatrix::getLocalBlockEntryViewNonConst ERROR, this method can only be called if storage is optimized.");
+
+  LocalOrdinal bindx_offset = pbuf_bptr_[localBlockRow];
+  LocalOrdinal length = pbuf_bptr_[localBlockRow+1] - bindx_offset;
+  LocalOrdinal* bindx_begin = &pbuf_bindx_[bindx_offset];
+  LocalOrdinal* bindx_end   = bindx_begin + length;
+
+  LocalOrdinal* it = std::lower_bound(bindx_begin, bindx_end, localBlockCol);
+
+  TEST_FOR_EXCEPTION(it == bindx_end || *it != localBlockCol, std::runtime_error,
+    "Tpetra::VbrMatrix::getLocalBlockEntryView ERROR, specified localBlockCol not found.");
+
+  numPtRows = pbuf_rptr_[localBlockRow+1]-pbuf_rptr_[localBlockRow];
+  numPtCols = pbuf_cptr_[localBlockCol+1]-pbuf_cptr_[localBlockCol];
+  LocalOrdinal blkSize = numPtRows*numPtCols;
+
+  LocalOrdinal offset = pbuf_indx_[pbuf_bptr_[localBlockRow]+it-bindx_begin];
+
+  Teuchos::RCP<Node> node = getNode();
+
+  blockEntry = node->template viewBufferNonConst<Scalar>(Kokkos::ReadWrite, blkSize, pbuf_values1D_ + offset);
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getLocalBlockEntryView(
+      LocalOrdinal localBlockRow,
+      LocalOrdinal localBlockCol,
+      LocalOrdinal& numPtRows,
+      LocalOrdinal& numPtCols,
+      Teuchos::ArrayRCP<const Scalar>& blockEntry) const
+{
+  //This method returns a constant view of a block-entry (as an ArrayRCP).
+
+  TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error,
+   "Tpetra::VbrMatrix::getLocalBlockEntryView ERROR, this method can only be called after fillComplete() has been called.");
+
+  TEST_FOR_EXCEPTION(is_storage_optimized_ == false, std::runtime_error,
+   "Tpetra::VbrMatrix::getLocalBlockEntryView ERROR, this method can only be called if storage is optimized.");
+
+  LocalOrdinal bindx_offset = pbuf_bptr_[localBlockRow];
+  LocalOrdinal length = pbuf_bptr_[localBlockRow+1] - bindx_offset;
+  LocalOrdinal* bindx_begin = &pbuf_bindx_[bindx_offset];
+  LocalOrdinal* bindx_end   = bindx_begin + length;
+
+  LocalOrdinal* it = std::lower_bound(bindx_begin, bindx_end, localBlockCol);
+
+  TEST_FOR_EXCEPTION(it == bindx_end || *it != localBlockCol, std::runtime_error,
+    "Tpetra::VbrMatrix::getLocalBlockEntryView ERROR, specified localBlockCol not found.");
+
+  numPtRows = pbuf_rptr_[localBlockRow+1]-pbuf_rptr_[localBlockRow];
+  numPtCols = pbuf_cptr_[localBlockCol+1]-pbuf_cptr_[localBlockCol];
+  LocalOrdinal blkSize = numPtRows*numPtCols;
+
+  LocalOrdinal offset = pbuf_indx_[pbuf_bptr_[localBlockRow]+it-bindx_begin];
+
+  Teuchos::RCP<Node> node = getNode();
+
+  blockEntry = node->template viewBuffer<Scalar>(blkSize, pbuf_values1D_ + offset);
 }
 
 //-------------------------------------------------------------------
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
 Teuchos::RCP<Node>
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getNode()
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getNode() const
 {
   return blkRowMap_->getPointMap()->getNode();
 }
@@ -347,12 +478,15 @@ void
 VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::setGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<GlobalOrdinal,Scalar>& blockEntry)
 {
   //first get an ArrayRCP for the internal storage for this block-entry:
-  Teuchos::ArrayRCP<Scalar> internalBlockEntry = getGlobalBlockEntryView(globalBlockRow,globalBlockCol, blockEntry.numRows(), blockEntry.numCols());
+  Teuchos::ArrayRCP<Scalar> internalBlockEntry;
+  LocalOrdinal blkRowSize = blockEntry.numRows();
+  LocalOrdinal blkColSize = blockEntry.numCols();
+  getGlobalBlockEntryViewNonConst(globalBlockRow,globalBlockCol, blkRowSize, blkColSize, internalBlockEntry);
 
   //now copy the incoming block-entry into internal storage:
   size_t offset = 0;
-  for(GlobalOrdinal col=0; col<blockEntry.numCols(); ++col) {
-    for(GlobalOrdinal row=0; row<blockEntry.numRows(); ++row) {
+  for(GlobalOrdinal col=0; col<blkColSize; ++col) {
+    for(GlobalOrdinal row=0; row<blkRowSize; ++row) {
       internalBlockEntry[offset++] = blockEntry[col][row];
     }
   }
@@ -364,7 +498,8 @@ void
 VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::setGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry)
 {
   //first get an ArrayRCP for the internal storage for this block-entry:
-  Teuchos::ArrayRCP<Scalar> internalBlockEntry = getGlobalBlockEntryView(globalBlockRow,globalBlockCol, blkRowSize, blkColSize);
+  Teuchos::ArrayRCP<Scalar> internalBlockEntry;
+  getGlobalBlockEntryViewNonConst(globalBlockRow,globalBlockCol, blkRowSize, blkColSize, internalBlockEntry);
 
   LocalOrdinal blk_size = blockEntry.size();
   TEST_FOR_EXCEPTION(blkColSize*LDA > blk_size, std::runtime_error,
@@ -379,27 +514,6 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::set
     }
     src_offset += LDA;
   }
-}
-
-//-------------------------------------------------------------------
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
-void
-VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::getGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol,
-                           LocalOrdinal& numPtRows, LocalOrdinal& numPtCols,
-                           Teuchos::ArrayRCP<const Scalar>& blockEntry)
-{
-  //obtain pointer to internal storage.
-  //(This will throw if it doesn't already exist, since we're not specifying
-  //the default arguments that are the dimensions of the block-entry.)
-  blockEntry = getGlobalBlockEntryView(globalBlockRow, globalBlockCol);
-
-  LocalOrdinal localBlockID = blkRowMap_->getLocalBlockID(globalBlockRow);
-  numPtRows = blkRowMap_->getBlockSize(localBlockID);
-
-  TEST_FOR_EXCEPTION(numPtRows == 0, std::runtime_error,
-    "Tpetra::VbrMatrix::getGlobalBlockEntry ERROR, numPtRows == 0.");
-
-  numPtCols = blockEntry.size() / numPtRows;
 }
 
 //-------------------------------------------------------------------
@@ -480,7 +594,6 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::opt
 
   //Final step: release memory for the "2D" storage:
   col_ind_2D_global_ = Teuchos::null;
-  col_ind_2D_local_ = Teuchos::null;
   pbuf_values2D_ = Teuchos::null;
 
   is_storage_optimized_ = true;
@@ -541,12 +654,12 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::fil
   importer_ = Teuchos::rcp(new Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>(blkDomainMap_->getPointMap(), blkColMap_->getPointMap()));
   exporter_ = Teuchos::rcp(new Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node>(blkRowMap_->getPointMap(), blkRangeMap_->getPointMap()));
 
+  is_fill_completed_ = true;
+
   optimizeStorage();
 
   fillLocalMatrix();
   fillLocalMatVec();
-
-  is_fill_completed_ = true;
 }
 
 //-------------------------------------------------------------------
