@@ -198,6 +198,7 @@ example subdirectory of the PyTrilinos package:
 ////////////////////////////
 // IFPACK factory support //
 ////////////////////////////
+%newobject Ifpack::Create;
 %rename(Factory) Ifpack;
 %include "Ifpack.h"
 
