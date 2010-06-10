@@ -5,6 +5,7 @@ Still need to do the following:
   (including in parallel)
 
 2. add more data accessors/manipulators:
-  - putScalar
-  - sumInto for both local and global block-entries
+  - sumInto for local block-entries
+
+3. testing, profiling and optimizing on large matrices
 

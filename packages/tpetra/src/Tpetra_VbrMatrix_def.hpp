@@ -29,6 +29,8 @@
 #ifndef TPETRA_VBRMATRIX_DEF_HPP
 #define TPETRA_VBRMATRIX_DEF_HPP
 
+#include <algorithm>
+
 #include <Kokkos_NodeHelpers.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_CommHelpers.hpp>
@@ -118,6 +120,18 @@ makeBlockColumnMap(const Teuchos::RCP<const Tpetra::BlockMap<LocalOrdinal,Global
     numGlobalBlocks, blockIDs, target_points.get1dView()(), blockSizes,
     ptColMap->getIndexBase(), ptColMap->getComm(), ptColMap->getNode()
   ));
+}
+
+template<class Scalar,class Node>
+void fill_device_ArrayRCP(Teuchos::RCP<Node>& node, Teuchos::ArrayRCP<Scalar>& ptr, Scalar value)
+{
+  Kokkos::ReadyBufferHelper<Node> rbh(node);
+  Kokkos::InitOp<Scalar> wdp;
+  wdp.alpha = value;
+  rbh.begin();
+  wdp.x = rbh.addNonConstBuffer(ptr);
+  rbh.end();
+  node->template parallel_for<Kokkos::InitOp<Scalar> >(0, ptr.size(), wdp);
 }
 
 //-------------------------------------------------------------------
@@ -331,7 +345,8 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::get
 
     Teuchos::RCP<Node> node = getNode();
     size_t blockSize = numPtRows*numPtCols;
-    blockEntry = node->template allocBuffer<Scalar>(blockSize);
+    blockEntry = Teuchos::arcp(new Scalar[blockSize], 0, blockSize);
+    std::fill(blockEntry.begin(), blockEntry.end(), 0);
     (*pbuf_values2D_)[localBlockRow].push_back(blockEntry);
     blkrow.insert(std::make_pair(globalBlockCol, blockEntry));
     blkGraph_->insertGlobalIndices(globalBlockRow, Teuchos::ArrayView<GlobalOrdinal>(&globalBlockCol, 1));
@@ -475,6 +490,53 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::get
 //-------------------------------------------------------------------
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
 void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::putScalar(Scalar s)
+{
+  Teuchos::RCP<Node> node = getNode();
+
+  if (isFillComplete()) {
+    fill_device_ArrayRCP(node, pbuf_values1D_, s);
+  }
+  else {
+    typedef typename Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > >::size_type Tsize_t;
+    Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > >& pbuf_vals2D = *pbuf_values2D_;
+    LocalOrdinal numBlockRows = blkGraph_->getNodeNumRows();
+    for(LocalOrdinal r=0; r<numBlockRows; ++r) {
+      for(Tsize_t c=0; c<pbuf_vals2D[r].size(); ++c) {
+        std::fill(pbuf_vals2D[r][c].begin(), pbuf_vals2D[r][c].end(), s);
+      }
+    }
+  }
+}
+
+//-------------------------------------------------------------------
+template<class ArrayType1,class ArrayType2,class Ordinal>
+void set_array_values(ArrayType1& dest, ArrayType2& src, Ordinal rows, Ordinal cols, Ordinal stride, Tpetra::CombineMode mode)
+{
+  size_t offset = 0;
+  size_t src_offset = 0;
+
+  if (mode == ADD) {
+    for(Ordinal col=0; col<cols; ++col) {
+      for(Ordinal row=0; row<rows; ++row) {
+        dest[offset++] += src[src_offset + row];
+      }
+      src_offset += stride;
+    }
+  }
+  else {
+    for(Ordinal col=0; col<cols; ++col) {
+      for(Ordinal row=0; row<rows; ++row) {
+        dest[offset++] = src[src_offset + row];
+      }
+      src_offset += stride;
+    }
+  }
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+void
 VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::setGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<GlobalOrdinal,Scalar>& blockEntry)
 {
   //first get an ArrayRCP for the internal storage for this block-entry:
@@ -484,12 +546,24 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::set
   getGlobalBlockEntryViewNonConst(globalBlockRow,globalBlockCol, blkRowSize, blkColSize, internalBlockEntry);
 
   //now copy the incoming block-entry into internal storage:
-  size_t offset = 0;
-  for(GlobalOrdinal col=0; col<blkColSize; ++col) {
-    for(GlobalOrdinal row=0; row<blkRowSize; ++row) {
-      internalBlockEntry[offset++] = blockEntry[col][row];
-    }
-  }
+  const Scalar* inputvalues = blockEntry.values();
+  set_array_values(internalBlockEntry, inputvalues, blkRowSize, blkColSize, blockEntry.stride(), REPLACE);
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::sumIntoGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<GlobalOrdinal,Scalar>& blockEntry)
+{
+  //first get an ArrayRCP for the internal storage for this block-entry:
+  Teuchos::ArrayRCP<Scalar> internalBlockEntry;
+  LocalOrdinal blkRowSize = blockEntry.numRows();
+  LocalOrdinal blkColSize = blockEntry.numCols();
+  getGlobalBlockEntryViewNonConst(globalBlockRow,globalBlockCol, blkRowSize, blkColSize, internalBlockEntry);
+
+  //now sum (add) the incoming block-entry into internal storage:
+  const Scalar* inputvalues = blockEntry.values();
+  set_array_values(internalBlockEntry, inputvalues, blkRowSize, blkColSize, blockEntry.stride(), ADD);
 }
 
 //-------------------------------------------------------------------
@@ -506,14 +580,24 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::set
     "Tpetra::VbrMatrix::setGlobalBlockEntry ERROR, inconsistent block-entry sizes.");
 
   //copy the incoming block-entry into internal storage:
-  size_t offset = 0;
-  size_t src_offset = 0;
-  for(GlobalOrdinal col=0; col<blkColSize; ++col) {
-    for(GlobalOrdinal row=0; row<blkRowSize; ++row) {
-      internalBlockEntry[offset++] = blockEntry[src_offset + row];
-    }
-    src_offset += LDA;
-  }
+  set_array_values(internalBlockEntry, blockEntry, blkRowSize, blkColSize, LDA, REPLACE);
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::sumIntoGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry)
+{
+  //first get an ArrayRCP for the internal storage for this block-entry:
+  Teuchos::ArrayRCP<Scalar> internalBlockEntry;
+  getGlobalBlockEntryViewNonConst(globalBlockRow,globalBlockCol, blkRowSize, blkColSize, internalBlockEntry);
+
+  LocalOrdinal blk_size = blockEntry.size();
+  TEST_FOR_EXCEPTION(blkColSize*LDA > blk_size, std::runtime_error,
+    "Tpetra::VbrMatrix::setGlobalBlockEntry ERROR, inconsistent block-entry sizes.");
+
+  //copy the incoming block-entry into internal storage:
+  set_array_values(internalBlockEntry, blockEntry, blkRowSize, blkColSize, LDA, ADD);
 }
 
 //-------------------------------------------------------------------
@@ -548,49 +632,56 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::opt
   pbuf_indx_ = node->template allocBuffer<LocalOrdinal>(num_block_nonzeros+1);
   pbuf_values1D_ = node->template allocBuffer<Scalar>(num_point_entries);
 
+  Teuchos::ArrayRCP<LocalOrdinal> v_rptr = node->template viewBufferNonConst<LocalOrdinal>(Kokkos::WriteOnly, num_block_rows+1, pbuf_rptr_);
+  Teuchos::ArrayRCP<LocalOrdinal> v_cptr = node->template viewBufferNonConst<LocalOrdinal>(Kokkos::WriteOnly, num_block_cols+1, pbuf_cptr_);
+  Teuchos::ArrayRCP<LocalOrdinal> v_bptr = node->template viewBufferNonConst<LocalOrdinal>(Kokkos::WriteOnly, num_block_rows+1, pbuf_bptr_);
+  Teuchos::ArrayRCP<LocalOrdinal> v_bindx = node->template viewBufferNonConst<LocalOrdinal>(Kokkos::WriteOnly, num_block_nonzeros, pbuf_bindx_);
+  Teuchos::ArrayRCP<LocalOrdinal> v_indx = node->template viewBufferNonConst<LocalOrdinal>(Kokkos::WriteOnly, num_block_nonzeros+1, pbuf_indx_);
+  Teuchos::ArrayRCP<Scalar> v_values1D = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly, num_point_entries, pbuf_values1D_);
+
   size_t roffset = 0;
   size_t pt_r_offset = 0;
   size_t ioffset = 0;
   size_t offset = 0;
   Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > >& pbuf_vals2D = *pbuf_values2D_;
   for(Tsize_t r=0; r<pbuf_vals2D.size(); ++r) {
-    pbuf_rptr_[r] = pt_r_offset;
+    v_rptr[r] = pt_r_offset;
     LocalOrdinal rsize = blkRowMap_->getBlockSize(r);
     pt_r_offset += rsize;
 
-    pbuf_bptr_[r] = roffset;
+    v_bptr[r] = roffset;
     Tsize_t rlen = pbuf_vals2D[r].size();
     roffset += rlen;
 
     Teuchos::ArrayRCP<const LocalOrdinal> blk_row_inds = blkGraph_->getLocalRowView(r);
 
     for(Tsize_t c=0; c<rlen; ++c) {
-      pbuf_bindx_[ioffset] = blk_row_inds[c];
-      pbuf_indx_[ioffset++] = offset;
+      v_bindx[ioffset] = blk_row_inds[c];
+      v_indx[ioffset++] = offset;
 
       Tsize_t blkSize = pbuf_vals2D[r][c].size(); 
       //Here we're putting blk-col-size in cptr.
       //Later we will convert cptr to offsets.
-      pbuf_cptr_[blk_row_inds[c]] = blkSize/rsize;
+      v_cptr[blk_row_inds[c]] = blkSize/rsize;
 
       for(Tsize_t n=0; n<blkSize; ++n) {
-        pbuf_values1D_[offset++] = pbuf_vals2D[r][c][n];
+        v_values1D[offset++] = pbuf_vals2D[r][c][n];
       }
     }
   }
-  pbuf_rptr_[num_block_rows] = pt_r_offset;
-  pbuf_bptr_[num_block_rows] = roffset;
-  pbuf_indx_[ioffset] = offset;
+  v_rptr[num_block_rows] = pt_r_offset;
+  v_bptr[num_block_rows] = roffset;
+  v_indx[ioffset] = offset;
 
   //now convert cptr from sizes to offsets;
   LocalOrdinal coffset = 0;
-  //we know that pbuf_cptr_.size() is always strictly greater than 0:
-  for(Tsize_t c=0; c<pbuf_cptr_.size()-1; ++c) {
-    LocalOrdinal csz = pbuf_cptr_[c];
-    pbuf_cptr_[c] = coffset;
+  //we know that v_cptr.size() is always strictly greater than 0:
+  for(Tsize_t c=0; c<v_cptr.size()-1; ++c) {
+    LocalOrdinal csz = v_cptr[c];
+    v_cptr[c] = coffset;
     coffset += csz; 
   }
-  pbuf_cptr_[num_block_cols] = coffset;
+  v_cptr[num_block_cols] = coffset;
 
   //Final step: release memory for the "2D" storage:
   col_ind_2D_global_ = Teuchos::null;

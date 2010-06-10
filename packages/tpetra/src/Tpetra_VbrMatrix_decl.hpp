@@ -142,6 +142,9 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   //! @name Insertion Methods
   //@{
 
+  //! Set the specified scalar throughout the matrix.
+  void putScalar(Scalar s);
+
   //!Copy the contents of the input block-entry into the matrix.
   /*!
     This method will create the specified block-entry if it doesn't already exist, but
@@ -152,6 +155,16 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   */
   void setGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<GlobalOrdinal,Scalar>& blockEntry);
 
+  //!Add the contents of the input block-entry into the matrix.
+  /*!
+    This method will create the specified block-entry if it doesn't already exist,
+    but only if fillComplete() has not yet been called.
+
+    If the specified block-entry already exists in the matrix, the contents of the
+    input block-entry will be added to the values that are already present.
+  */
+  void sumIntoGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<GlobalOrdinal,Scalar>& blockEntry);
+
   //!Copy the contents of the input block-entry into the matrix.
   /*!
     This method will create the specified block-entry if it doesn't already exist, but
@@ -161,6 +174,16 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
     over-written by the input block-entry.
   */
   void setGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry);
+
+  //!Add the contents of the input block-entry into the matrix.
+  /*!
+    This method will create the specified block-entry if it doesn't already exist,
+    but only if fillComplete() has not yet been called.
+
+    If the specified block-entry already exists in the matrix, the contents of the
+    input block-entry will be added to the values that are already present.
+  */
+  void sumIntoGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry);
 
   //@}
 
@@ -191,6 +214,12 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   /*! Creates the block-entry if it doesn't already exist, and if:
      - the optional arguments rowsPerBlock and colsPerBlock are specified (and nonzero),
      - and if fillComplete() has not yet been called.
+
+     Important Note: Be very careful managing the lifetime of this view.
+       If fillComplete() has been called, and if you are running on a GPU,
+       this view may be a copy of memory from the GPU, and your changes to the
+       view won't be copied back to the GPU until your ArrayRCP is destroyed
+       or set to Teuchos::null.
   */
   void getGlobalBlockEntryViewNonConst(GlobalOrdinal globalBlockRow,
                                        GlobalOrdinal globalBlockCol,
@@ -219,6 +248,12 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
     The stride (LDA in Blas terminology) is equal to numPtRows.
     Throws an exception if fillComplete() has not yet been called, or if the
     specified block-entry doesn't exist.
+
+     Important Note: Be very careful managing the lifetime of this view.
+       If fillComplete() has been called, and if you are running on a GPU,
+       this view may be a copy of memory from the GPU, and your changes to the
+       view won't be copied back to the GPU until your ArrayRCP is destroyed
+       or set to Teuchos::null.
   */
   void getLocalBlockEntryViewNonConst(LocalOrdinal localBlockRow,
                                       LocalOrdinal localBlockCol,
@@ -252,6 +287,10 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   //It takes 6 arrays to adequately represent a variable-block-row
   //matrix in packed (contiguous storage) form. For a description of these
   //arrays, see the text at the bottom of this file.
+  //
+  //These arrays are handled as if they may point to memory that resides on
+  //a separate device (e.g., a GPU). In other words, when the contents of these
+  //arrays are manipulated, we use views or buffers obtained from the Node object.
   Teuchos::ArrayRCP<Scalar> pbuf_values1D_;
   Teuchos::ArrayRCP<LocalOrdinal> pbuf_rptr_;
   Teuchos::ArrayRCP<LocalOrdinal> pbuf_cptr_;
@@ -269,6 +308,10 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
   //We use 2 arrays (well, array-of-maps, array-of-array-of-arrays...) to
   //represent the variable-block-row matrix in un-packed '2D' form.
+  //
+  //Note that these arrays are assumed to be resident in CPU memory. It doesn't
+  //make sense to copy this kind of data back and forth to a separate
+  //compute device (e.g., a GPU).
   Teuchos::RCP<Teuchos::Array<MapGlobalArrayRCP> > col_ind_2D_global_;
   Teuchos::RCP<Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > > > pbuf_values2D_;
 
