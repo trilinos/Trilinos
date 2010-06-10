@@ -143,6 +143,9 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   //@{
 
   //! Set the specified scalar throughout the matrix.
+  /*!
+    This method may be called any time (before or after fillComplete()).
+  */
   void putScalar(Scalar s);
 
   //!Copy the contents of the input block-entry into the matrix.
@@ -152,6 +155,8 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
     If the specified block-entry already exists in the matrix, the contents will be
     over-written by the input block-entry.
+
+    This method may be called any time (before or after fillComplete()).
   */
   void setGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<GlobalOrdinal,Scalar>& blockEntry);
 
@@ -162,6 +167,8 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
     If the specified block-entry already exists in the matrix, the contents of the
     input block-entry will be added to the values that are already present.
+
+    This method may be called any time (before or after fillComplete()).
   */
   void sumIntoGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<GlobalOrdinal,Scalar>& blockEntry);
 
@@ -172,6 +179,8 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
     If the specified block-entry already exists in the matrix, the contents will be
     over-written by the input block-entry.
+
+    This method may be called any time (before or after fillComplete()).
   */
   void setGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry);
 
@@ -182,6 +191,8 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
     If the specified block-entry already exists in the matrix, the contents of the
     input block-entry will be added to the values that are already present.
+
+    This method may be called any time (before or after fillComplete()).
   */
   void sumIntoGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry);
 
@@ -203,6 +214,9 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
     The arguments numPtRows and numPtCols are set to the dimensions of the block-entry
     on output.
     The stride (LDA in Blas terminology) is equal to numPtRows.
+
+    This method may be called any time (before or after fillComplete()), but will throw
+    an exception if the specified block-entry doesn't already exist.
   */
   void getGlobalBlockEntryView(GlobalOrdinal globalBlockRow,
                                GlobalOrdinal globalBlockCol,
@@ -234,6 +248,9 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
     The stride (LDA in Blas terminology) is equal to numPtRows.
     Throws an exception if fillComplete() has not yet been called, or if the
     specified block-entry doesn't exist.
+
+    This method may only be called after fillComplete() has been called, and will throw
+    an exception if the specified block-entry doesn't already exist.
   */
   void getLocalBlockEntryView(LocalOrdinal localBlockRow,
                               LocalOrdinal localBlockCol,
@@ -254,6 +271,9 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
        this view may be a copy of memory from the GPU, and your changes to the
        view won't be copied back to the GPU until your ArrayRCP is destroyed
        or set to Teuchos::null.
+
+    This method may only be called after fillComplete() has been called, and will throw
+    an exception if the specified block-entry doesn't already exist.
   */
   void getLocalBlockEntryViewNonConst(LocalOrdinal localBlockRow,
                                       LocalOrdinal localBlockCol,
