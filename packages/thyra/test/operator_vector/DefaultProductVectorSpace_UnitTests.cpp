@@ -2,6 +2,7 @@
 #include "Thyra_DefaultSpmdVectorSpace.hpp"
 #include "Thyra_DefaultProductVectorSpace.hpp"
 #include "Thyra_DefaultProductVector.hpp"
+#include "Thyra_DefaultProductMultiVector.hpp"
 #include "Thyra_DetachedSpmdVectorView.hpp"
 #include "Thyra_DetachedVectorView.hpp"
 #include "Thyra_VectorStdOps.hpp"
@@ -194,6 +195,51 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultProductVectorSpace, dynamicCast_fail,
 }
 THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultProductVectorSpace,
   dynamicCast_fail )
+
+
+//
+// Make sure that DefaultProductVectorSpace::createMember() returns a
+// DefaultProductVector object.
+//
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultProductVectorSpace, DefaultProductVector,
+  Scalar )
+{
+  using Teuchos::rcp_dynamic_cast;
+  const RCP<const VectorSpaceBase<Scalar> >
+    vs = defaultSpmdVectorSpace<Scalar>(g_localDim),
+    pvs = productVectorSpace<Scalar>(tuple(vs)());
+  const RCP<VectorBase<Scalar> > v1 = createMember(pvs);
+  const RCP<DefaultProductVector<Scalar> > pv1 =
+    rcp_dynamic_cast<DefaultProductVector<Scalar> >(v1, true);
+  TEST_EQUALITY(pvs.get(), pv1->space().get());
+}
+THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultProductVectorSpace,
+  DefaultProductVector )
+
+
+//
+// Make sure that DefaultProductVectorSpace::createMembers() returns a
+// DefaultProductMultiVector object.
+//
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultProductVectorSpace, DefaultProductMultiVector,
+  Scalar )
+{
+  using Teuchos::as;
+  using Teuchos::rcp_dynamic_cast;
+  const RCP<const VectorSpaceBase<Scalar> >
+    vs = defaultSpmdVectorSpace<Scalar>(g_localDim),
+    pvs = productVectorSpace<Scalar>(tuple(vs)());
+  const int numCols = 2;
+  const RCP<MultiVectorBase<Scalar> > mv1 = createMembers(pvs, numCols);
+  const RCP<DefaultProductMultiVector<Scalar> > pmv1 =
+    rcp_dynamic_cast<DefaultProductMultiVector<Scalar> >(mv1, true);
+  TEST_EQUALITY(pvs.get(), pmv1->range().get());
+  TEST_EQUALITY(as<int>(pmv1->domain()->dim()), numCols);
+}
+THYRA_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultProductVectorSpace,
+  DefaultProductMultiVector )
 
 
 //
