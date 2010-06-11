@@ -27,46 +27,49 @@ if (k<1)
 end
 
 % Singly bordered block diagonal form.
-[partr, partc] = SBBD(A, k);
+[partr, partc, permr, permc] = SBBD(A, k);
+% Save permutation to SBBD form from partitioning
+LUdata.Spermr = permr;
+LUdata.Spermc = permc;
+
+% Save explicit permutation to DBBD form after factoring diagonal blocks and
+% Schur complement.
+LUdata.Dpermr = [];
+LUdata.Dpermc = [];
 
 LUdata.nblocks = k;
 
 % Store original matrix (TODO: we probably only need store parts of A)
 LUdata.A = A;
 
+Sc = find(partc==k+1); % columns in local Schur comp.
+
 % Factor diagonal blocks (could be done in parallel)
 for i=1:k
   r = find(partr==i); % rows in block i
   c = find(partc==i); % columns in block i
-  [nc, dummy] = size(c) ;
-  LUdata.c{i} = c;
+  [nc, dummy] = size(c);
   % Check more rows than columns
   if (length(r) < length(c))
     error('Diagonal block has less rows than columns!');
   end
 
-  % dmperm matching to get zero-free diagonal (avoid rank-deficiency)
-  %dm = dmperm(A(r,c)) ;
-  %Sr = r; Sr(dm) = []; % rows in local Schur complement
-  %LUdata.Sr{i} = Sr;
-  %r = r(dm);           % rows to eliminate
-  %r = r(1:nc);           % rows to eliminate
-  %LUdata.r{i} = r;
-
   % LU factorization on (rectangular) diagonal blocks
   [L, U, p, q] = lu(A(r,c), 'vector');
-  pr = r(p(1:nc)) ; % pivot rows from the rectangular LU
-  Sr = r(p(nc+1:end)) ; % rows in local Schur complement
-  LUdata.r{i} = pr ;
-  LUdata.Sr{i} = Sr ;
+  pr = r(p(1:nc));     % pivot rows from the rectangular LU
+  Sr = r(p(nc+1:end)); % rows in local Schur complement
+  LUdata.c{i} = c;
+  LUdata.r{i} = pr;
+  LUdata.Sr{i} = Sr;
   LUdata.L{i} = L(1:nc, :); % store the square L and throw away the rest.
-  LUdata.U{i} = U; % U is square
-  LUdata.p{i} = pr;
+  LUdata.U{i} = U;  % U is square
+  LUdata.p{i} = pr; % same as r{i} when dmperm is not used.
   LUdata.q{i} = c(q);
+  LUdata.Dpermr = [LUdata.Dpermr; LUdata.p{i}];
+  LUdata.Dpermc = [LUdata.Dpermc; LUdata.q{i}];
+
   % Form local Schur complement
-  Sc = find(partc==k+1); % columns in local Schur comp.
   % S = S - (A_ki * inv(A_i) * A_ik), where A_i(p,q) = LU
-  %LUdata.S{i} = A(Sr,Sc) - A(Sr,c) * (A(pr,c) \ A(pr,Sc)); % Naive method
   LUdata.S{i} = A(Sr,Sc) - (A(Sr,c(q))/U) * (L(1:nc, :)\A(pr,Sc)); % Optimized 
 end
 LUdata.c{k+1} = Sc;
@@ -81,11 +84,14 @@ end
 % Store global S (TODO: Not required if we have all the local S{i}?)
 LUdata.S{k+1} = S;
 
+% This is not required, if LUdriver is used. L and U needed if LUsolve is called
+% after LUfactor.
 i= k+1; % Store Schur complement factors as block k+1
 [LUdata.L{i}, LUdata.U{i}, p, q] = lu(S, 'vector');
-%LUdata.p{i} = Sr(p) ;
-LUdata.p{i} = p ;  % TODO: Using local index for the Schur complement rows
-LUdata.q{i} = Sc(q) ;
+LUdata.p{i} = p';  % Using local index for the Schur complement rows
+LUdata.q{i} = Sc(q);
+LUdata.Dpermr = [LUdata.Dpermr; Sr(p)]; % Using global index for the permutation
+LUdata.Dpermc = [LUdata.Dpermc; LUdata.q{i}];
 
 % Compute stats
 nnzlu = 0;
