@@ -263,14 +263,11 @@ DefaultSpmdMultiVector<Scalar>::nonconstColImpl(Ordinal j)
 
 
 template<class Scalar>
-RCP<MultiVectorBase<Scalar> >
-DefaultSpmdMultiVector<Scalar>::nonconstContigSubViewImpl(
+RCP<const MultiVectorBase<Scalar> >
+DefaultSpmdMultiVector<Scalar>::contigSubViewImpl(
   const Range1D& col_rng_in
-  )
+  ) const
 {
-#ifdef THYRA_DEFAULT_SPMD_MULTI_VECTOR_VERBOSE_TO_ERROR_OUT
-  std::cerr << "\nSpmdMultiVectorStd<Scalar>::subView() called!\n";
-#endif
   const Range1D colRng = this->validateColRange(col_rng_in);
   return Teuchos::rcp(
     new DefaultSpmdMultiVector<Scalar>(
@@ -283,6 +280,23 @@ DefaultSpmdMultiVector<Scalar>::nonconstContigSubViewImpl(
       leadingDim_
       )
     );
+}
+
+
+template<class Scalar>
+RCP<MultiVectorBase<Scalar> >
+DefaultSpmdMultiVector<Scalar>::nonconstContigSubViewImpl(
+  const Range1D& col_rng_in
+  )
+{
+  return Teuchos::rcp_const_cast<MultiVectorBase<Scalar> >(
+    this->contigSubViewImpl(col_rng_in));
+  // Have the nonconst version call the const version.  Note that in this case
+  // we just need to take the const off of the returned MultiVectorBase object
+  // because the localValues is already handled as nonconst.  This is the
+  // perfect instance where the advice in Item 3 in "Effective C++ 3rd
+  // edition" where Scott Meyers recommends having the nonconst version call
+  // the const version.
 }
 
 

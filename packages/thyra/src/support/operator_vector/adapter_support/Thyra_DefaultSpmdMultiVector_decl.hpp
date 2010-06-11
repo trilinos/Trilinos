@@ -114,7 +114,7 @@ public:
    * <tt>j=0...domainSpace->dim()-1</tt>.
    *
    * \param leadingDim [in] The leading dimension of the multi-vector.  If -1,
-   * then is taken to be localValues.size().
+   * then is taken to be spmdRangeSpace->localSubDim().
    *
    * <b>Preconditions:</b><ul>
    * <li><tt>spmdRangeSpace.get()!=NULL</tt>
@@ -161,14 +161,17 @@ protected:
   /** \brief . */
   RCP<VectorBase<Scalar> > nonconstColImpl(Ordinal j);
   /** \brief . */
+  RCP<const MultiVectorBase<Scalar> >
+  contigSubViewImpl(const Range1D& colRng) const;
+  /** \brief . */
   RCP<MultiVectorBase<Scalar> >
-  nonconstContigSubViewImpl( const Range1D& colRng );
+  nonconstContigSubViewImpl(const Range1D& colRng);
   /** \brief . */
   RCP<const MultiVectorBase<Scalar> >
-  nonContigSubViewImpl( const ArrayView<const int> &cols ) const;
+  nonContigSubViewImpl(const ArrayView<const int> &cols) const;
   /** \brief . */
   RCP<MultiVectorBase<Scalar> >
-  nonconstNonContigSubViewImpl( const ArrayView<const int> &cols );
+  nonconstNonContigSubViewImpl(const ArrayView<const int> &cols);
   //@}
 
   /** @name Overridden protected functions from SpmdMultiVectorBase */
