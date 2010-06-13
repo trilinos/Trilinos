@@ -12,8 +12,11 @@
 #include <signal.h>
 #include "zoltan.h"
 
-static int myRank, numProcs;
+static int myRank, numProcs, numPins, nborCount;
 static int *vertex_part = NULL;
+
+/* saves memory to use unit weights */
+#define UNIT_WEIGHTS yes
 
 /* Graph (Zoltan will create a hypergraph from it) */
 
@@ -24,25 +27,23 @@ static int *vertex_part = NULL;
 static ZOLTAN_GNO_TYPE numGlobalVertices;
 static int vwgt_dim, ewgt_dim;
 static ZOLTAN_ID_TYPE *vertexGIDs=NULL;
+#ifndef UNIT_WEIGHTS
 static float *vwgts=NULL;
+#endif
 static int edgeCutCost;
 
 static int numMyVertices;
-static int *nborIndex=NULL;
-ZOLTAN_ID_TYPE *nborGID=NULL;
 
 static int create_a_graph();
 extern void Zoltan_write_linux_meminfo(int, char *);
+
+#define proc_vertex_gid(proc, lid) (vertexGIDs[proc] + lid)
 
 void meminfo_signal_handler(int sig)
 {
   char msg[128];
 
-#ifdef _GNU_SOURCE
-  sprintf(msg,"(%d) Received signal %d: %s\n",myRank,sig,strsignal(sig));
-#else
   sprintf(msg,"(%d) Received signal %d\n",myRank,sig);
-#endif
 
   // Signal handler for Linux that helps us to understand
   // whether failure was due to insufficient memory.
@@ -53,7 +54,7 @@ void meminfo_signal_handler(int sig)
   signal(SIGSEGV, SIG_IGN);
   signal(SIGFPE, SIG_IGN);
 
-  Zoltan_write_linux_meminfo(myRank, msg);
+  Zoltan_write_linux_meminfo(1, msg);
 
   exit(sig);
 }
@@ -75,9 +76,14 @@ static void get_vertex_list(void *data, int sizeGID, int sizeLID,
   *ierr = ZOLTAN_OK;
 
   for (i=0; i < numMyVertices; i++){
-    globalID[i] = vertexGIDs[myRank] + i;
+    globalID[i] = proc_vertex_gid(myRank, i);
     localID[i] = i;
+#ifndef UNIT_WEIGHTS
     obj_wgts[i] = vwgts[i];
+#else
+    obj_wgts[i] = 1.0;
+#else
+#endif
   }
 }
 
@@ -89,7 +95,7 @@ static void get_local_hypergraph_size(void *data,
 
   *ierr = ZOLTAN_OK;
   *num_lists = numMyVertices;
-  *num_pins = nborIndex[numMyVertices];
+  *num_pins = numPins;
   *format = ZOLTAN_COMPRESSED_EDGE;
 }                    
 
@@ -97,11 +103,40 @@ static void get_local_hypergraph(void *data,
          int sizeGID, int num_edges, int num_pins, int format,
          ZOLTAN_ID_PTR edgeGID, int *index, ZOLTAN_ID_PTR pinGID, int *ierr)
 {
+  int i, next;
+  ZOLTAN_ID_TYPE left, right;
   *ierr = ZOLTAN_OK;
 
-  memcpy(edgeGID, vertexGIDs, sizeof(ZOLTAN_ID_TYPE) * numMyVertices);
-  memcpy(index, nborIndex, sizeof(int) * numMyVertices);
-  memcpy(pinGID, nborGID, sizeof(ZOLTAN_ID_TYPE) * numMyVertices);
+  for (i=0,next=0; i < num_edges; i++){
+    edgeGID[i] = proc_vertex_gid(myRank, i);
+    index[i] = i * nborCount;
+
+    if (i==0){
+      left = proc_vertex_gid(myRank, num_edges - 1);
+    }
+    else{
+      left = edgeGID[i] - 1;
+    }
+    if (i==num_edges-1){
+      right = proc_vertex_gid(myRank, 0);
+    }
+    else{
+      right = edgeGID[i] + 1;
+    }
+
+    pinGID[next++] = edgeGID[i];
+
+    pinGID[next++] = left;
+
+    pinGID[next++] = right;
+
+    if (myRank > 0){
+      pinGID[next++] = edgeGID[i] - num_edges;
+    }
+    if (myRank < numProcs-1){
+      pinGID[next++] = edgeGID[i] + num_edges;
+    }
+  }
 }
 
 static void get_edge_weights_size(void *data, int *num_edges, int *ierr)
@@ -116,8 +151,8 @@ static void get_edge_weights(void *data, int sizeGID, int sizeLID,
 {
   int i;
 
-  memcpy(edgeGID, vertexGIDs, sizeof(ZOLTAN_ID_TYPE) * numMyVertices);
   for (i=0; i < numMyVertices; i++){
+    edgeGID[i] = proc_vertex_gid(myRank, i);
     edgeWeight[i] = (float)edgeCutCost;
   }
 }
@@ -155,13 +190,11 @@ int main(int argc, char *argv[])
   ZOLTAN_ID_PTR importGlobalGids, importLocalGids, exportGlobalGids, exportLocalGids;
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
 
-#ifdef HOST_LINUX
   signal(SIGSEGV, meminfo_signal_handler);
   signal(SIGINT, meminfo_signal_handler);
   signal(SIGTERM, meminfo_signal_handler);
   signal(SIGABRT, meminfo_signal_handler);
   signal(SIGFPE, meminfo_signal_handler);
-#endif
 
   /******************************************************************
   ** Initialize MPI and Zoltan
@@ -216,7 +249,7 @@ int main(int argc, char *argv[])
 
   /* General parameters */
 
-  Zoltan_Set_Param(zz, "DEBUG_LEVEL", "0");
+  Zoltan_Set_Param(zz, "DEBUG_LEVEL", "5");
   Zoltan_Set_Param(zz, "LB_METHOD", "HYPERGRAPH");   /* partitioning method */
   Zoltan_Set_Param(zz, "HYPERGRAPH_PACKAGE", "PHG"); /* version of method */
   Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1");/* global IDs are integers */
@@ -250,6 +283,7 @@ int main(int argc, char *argv[])
   ** equal to the number of processes.  Process rank 0 will own
   ** partition 0, process rank 1 will own partition 1, and so on.
   ******************************************************************/
+
 
   rc = Zoltan_LB_Partition(zz, /* input (all remaining fields are output) */
         &changes,        /* 1 if partitioning was changed, 0 otherwise */ 
@@ -348,10 +382,9 @@ int main(int argc, char *argv[])
   MPI_Finalize();
 
   if (vertex_part) free(vertex_part);
-  if (vertexGIDs) free(vertexGIDs);
+#ifndef UNIT_WEIGHTS
   if (vwgts) free(vwgts);
-  if (nborIndex) free(nborIndex);
-  if (nborGID ) free(nborGID);
+#endif
 
   return 0;
 }
@@ -362,11 +395,12 @@ int main(int argc, char *argv[])
  */
 static int create_a_graph()
 {
-  ZOLTAN_ID_TYPE left, right, gid;
   int i, nvtxs, num4, nborCount, mid;
-  int next, nvtx;
+  int nvtx;
+#ifndef UNIT_WEIGHTS
   int random_weights = (vwgt_dim > 0);
   int heavyPart = (myRank % 3 == 0);
+#endif
 
   nvtxs = (int)(numGlobalVertices / numProcs);
 
@@ -382,6 +416,18 @@ static int create_a_graph()
   numGlobalVertices = (ZOLTAN_GNO_TYPE)nvtxs * numProcs;
   numMyVertices = nvtxs;
 
+  if (numProcs == 1){
+    nborCount = 3;
+  }
+  else if ((myRank == 0) || (myRank == (numProcs-1))){
+    nborCount = 4;
+  }
+  else{
+    nborCount = 5;
+  }
+
+  numPins = numMyVertices * nborCount;
+
   vertexGIDs = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * (numProcs + 1));
   vertexGIDs[0] = 0;
 
@@ -396,6 +442,7 @@ static int create_a_graph()
   if (vwgt_dim == 0) 
     vwgt_dim = 1;
 
+#ifndef UNIT_WEIGHTS
   vwgts = (float *)calloc( vwgt_dim * nvtxs, sizeof(float));
   if (!vwgts) return 1;
   
@@ -412,65 +459,12 @@ static int create_a_graph()
       }
     }
   }
+#endif
 
   /* Make edge cut costs higher in the "center" */
 
   mid = (int)(numProcs / 2.0);
   edgeCutCost = ((myRank < mid) ? myRank + 1 : numProcs - myRank);
-
-  /* each vertex has 2 neighbors on this process, and one or two off process,
-   * add the vertex itself to the neighbor list, since it is included in the hyperedge,
-   */
-
-  nborIndex = (int *)malloc(sizeof(int) * (nvtxs + 1));
-  if (!nborIndex) return 1;
-
-  if (numProcs == 1){
-    nborCount = 3;
-  }
-  else if ((myRank == 0) || (myRank == (numProcs-1))){
-    nborCount = 4;
-  }
-  else{
-    nborCount = 5;
-  }
-
-  nborGID = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * nborCount * nvtxs);
-  if (!nborGID) return 1;
-
-  nborIndex[0] = 0;
-  next = 0;
-
-  for (i=0; i < nvtxs; i++){
-    gid = vertexGIDs[myRank] + i;
-    if (i==0){
-      left = vertexGIDs[myRank] + nvtxs - 1;
-    }
-    else{
-      left = gid - 1;
-    }
-    if (i==nvtx-1){
-      right = vertexGIDs[myRank];
-    }
-    else{
-      right = gid + 1;
-    }
-
-    nborIndex[i+1] = nborIndex[i] + nborCount;
-
-    nborGID[next++] = gid;
-
-    nborGID[next++] = left;
-
-    nborGID[next++] = right;
-
-    if (myRank > 0){
-      nborGID[next++] = gid - nvtxs;
-    }
-    if (myRank < numProcs-1){
-      nborGID[next++] = gid + nvtxs;
-    }
-  }
 
   return 0;
 }
