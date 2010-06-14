@@ -12,6 +12,7 @@
 #include <use_cases/UseCase_3.hpp>
 #include <use_cases/UseCase_4.hpp>
 #include <use_cases/UseCase_ElementDeath.hpp>
+#include <use_cases/UseCase_Skinning.hpp>
 #include <use_cases/UseCase_ChangeOwner.hpp>
 #include <stk_mesh/base/Types.hpp>
 
@@ -101,6 +102,12 @@ int main ( int argc, char * argv[] )
   {
     std::cout << "Use Case Element Death 1 ... ";
     bool local_status = element_death_use_case_1(parallel_machine);
+    printStatus(local_status);
+    status = status && local_status;
+  }
+  {
+    std::cout << "Use Case Skinning 1 ... ";
+    bool local_status = skinning_use_case_1(parallel_machine);
     printStatus(local_status);
     status = status && local_status;
   }

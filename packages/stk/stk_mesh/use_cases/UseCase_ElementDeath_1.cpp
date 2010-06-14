@@ -128,7 +128,6 @@ const int NUM_ITERATIONS = 7;
 const int NUM_RANK = 3;
 
 
-typedef std::vector<stk::mesh::Entity *> EntityVector;
 
 namespace {
 
@@ -143,12 +142,12 @@ void find_sides_to_be_created(
 //Finds entities from the closure of the entities_to_be_killed
 //that only have relations with dead entities
 void find_lower_rank_entities_to_kill(
-    const EntityVector & entities_closure,
+    const stk::mesh::EntityVector & entities_closure,
     unsigned closure_rank,
     unsigned entity_rank,
     const stk::mesh::Selector & select_owned,
     const stk::mesh::Selector & select_live,
-    EntityVector & kill_list
+    stk::mesh::EntityVector & kill_list
     );
 
 }
@@ -177,7 +176,7 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
 
   for (int iteration = 0; iteration <NUM_ITERATIONS; ++iteration) {
     //find the entities to kill in this iteration
-    EntityVector entities_to_kill = entities_to_be_killed(mesh, iteration);
+    stk::mesh::EntityVector entities_to_kill = entities_to_be_killed(mesh, iteration);
 
     // find the parallel-consistent closure of the entities to be killed
     // The closure of an entity includes the entity and any lower ranked
@@ -188,7 +187,7 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
     // The find closure function will return a sorted parallel consistent vector
     // which contains all the entities that make up the closure of the input
     // vector.
-    EntityVector entities_closure;
+    stk::mesh::EntityVector entities_closure;
     stk::mesh::find_closure(mesh,
         entities_to_kill,
         entities_closure);
@@ -218,7 +217,7 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
     mesh.modification_begin();
 
     // Kill entities by moving them to the dead part.
-    for (EntityVector::iterator itr = entities_to_kill.begin();
+    for (stk::mesh::EntityVector::iterator itr = entities_to_kill.begin();
         itr != entities_to_kill.end(); ++itr) {
       mesh.change_entity_parts(**itr, dead_parts);
     }
@@ -230,7 +229,7 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
     requests[mesh_rank-1] = skin.size();
 
     // generate_new_entities creates new blank entities of the requested ranks
-    EntityVector requested_entities;
+    stk::mesh::EntityVector requested_entities;
     mesh.generate_new_entities(requests, requested_entities);
 
     // Create boundaries between live and dead entities
@@ -250,7 +249,7 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
     //find lower ranked entity that are only related to the dead entities
     //and kill them
     for (int rank = mesh_rank -1; rank >= 0; --rank) {
-      EntityVector kill_list;
+      stk::mesh::EntityVector kill_list;
       find_lower_rank_entities_to_kill(
           entities_closure,
           mesh_rank,
@@ -263,7 +262,7 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
       //need to communicate killing the higher ranking entities among
       //processors before killing the lower.
       mesh.modification_begin();
-      for (EntityVector::iterator itr = kill_list.begin();
+      for (stk::mesh::EntityVector::iterator itr = kill_list.begin();
           itr != kill_list.end(); ++itr) {
         mesh.change_entity_parts(**itr, dead_parts);
       }
@@ -318,24 +317,24 @@ void find_sides_to_be_created(
 
 //----------------------------------------------------------------------------------
 void find_lower_rank_entities_to_kill(
-    const EntityVector & entities_closure,
+    const stk::mesh::EntityVector & entities_closure,
     unsigned mesh_rank,
     unsigned entity_rank,
     const stk::mesh::Selector & select_owned,
     const stk::mesh::Selector & select_live,
-    EntityVector & kill_list
+    stk::mesh::EntityVector & kill_list
     )
 {
 
   kill_list.clear();
 
   //find the first entity in the closure
-  EntityVector::const_iterator itr = std::lower_bound(entities_closure.begin(),
+  stk::mesh::EntityVector::const_iterator itr = std::lower_bound(entities_closure.begin(),
       entities_closure.end(),
       stk::mesh::EntityKey(entity_rank, 0),
       stk::mesh::EntityLess());
 
-  const EntityVector::const_iterator end = std::lower_bound(entities_closure.begin(),
+  const stk::mesh::EntityVector::const_iterator end = std::lower_bound(entities_closure.begin(),
       entities_closure.end(),
       stk::mesh::EntityKey(entity_rank+1, 0),
       stk::mesh::EntityLess());

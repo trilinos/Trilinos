@@ -22,7 +22,6 @@
 namespace stk {
 namespace mesh {
 
-typedef std::vector<Entity *> EntityVector;
 typedef std::set<Entity *, EntityLess> EntitySet;
 typedef std::set<EntityProc , EntityLess> EntityProcSet;
 

@@ -68,6 +68,8 @@ class Entity ;   // Individual entity within the mesh
 class Relation ; // Relation pair of local mesh entities
 class Ghosting ;
 
+typedef std::vector<Entity *> EntityVector;
+
 template< class FieldType > struct EntityArray ;
 template< class FieldType > struct BucketArray ;
 template< class FieldType > struct FieldTraits ;
