@@ -66,7 +66,17 @@ set yes_fortran = $?ZOLTAN_YES_FORTRAN
 set yes_cpp = $?ZOLTAN_YES_CPP
 set yes_serial = $?ZOLTAN_YES_SERIAL
 set old_interface = $?ZOLTAN_OLD_INTERFACE
+#
+# If a test fails, exit
+#
 set exit_on_failure = $?ZOLTAN_EXIT_ON_FAILURE
+#
+# Distinguish between failures where the test didn't complete, and
+#  where the test completed but got a different answer.  If
+#  exit_on_failure, don't exit if the test gets a different answer,
+#  only if it fails to complete.
+#
+set failure_detail = $?ZOLTAN_FAILURE_DETAIL
 set no_hier = $?ZOLTAN_NO_HIER
 set yes_drum = $?ZOLTAN_YES_DRUM
 
@@ -121,6 +131,9 @@ while ( $#argv )
      @ old_interface = 1
   else if ( "$1" == "-exit_on_failure" ) then
      @ exit_on_failure = 1
+  else if ( "$1" == "-failure_detail" ) then
+     @ failure_detail = 1
+
   else if ( "$1" == "-logfile" || "$1" == "-log" ) then
 
     if ( $#argv < 2 ) then
@@ -655,6 +668,7 @@ echo " " >> $logfile
 if (! $no_chaco ) then
   @ nprob = $#ch_name
   @ nfailed = 0
+  @ ndifffailed = 0
   @ ndropfailed = 0
   while ( $#ch_name )
 
@@ -694,6 +708,7 @@ if (! $no_chaco ) then
       # Clear fail flag
       @ fail = 0
       @ dropfail = 0
+      @ difffail = 0
       @ droptest = 0
       @ skip = 0  # Was used to skip certain methods in previous versions.
       setenv PURIFYOPTIONS "-windows=no -log-file=./purifylog.${mtd} "
@@ -723,8 +738,9 @@ if (! $no_chaco ) then
 	  endif
 
 	  # Run the driver
-	  echo "Run test problem ${ch_name[1]} with method ${mtd}" | tee -a ../$logfile
           echo "start = `date`" | tee -a ../$logfile
+          echo "Run test problem ${ch_name[1]} with method ${mtd}" | tee -a ../$logfile
+
 	  if (! $?run ) then
 	    # serial case
 	    $zdrive
@@ -736,47 +752,64 @@ if (! $no_chaco ) then
 
 	  # Save and compare output files
 	  @ i = 0
-	  while ( $i < $np )
-	    /bin/mv ${ch_name[1]}.$out_tag.$np.$i  ${outdir}/${ch_name[1]}.$mtd.$np.$i
-	    if (-e ${answers}/${ch_name[1]}.$mtd.$np.$i.$suffix ) then
-	      set answerfile = ${answers}/${ch_name[1]}.$mtd.$np.$i.$suffix
-	    else
-	      set answerfile = ${answers}/${ch_name[1]}.$mtd.$np.$i
-	    endif
-	    diff -ciw ${outdir}/${ch_name[1]}.$mtd.$np.$i $answerfile >> ../$logfile
-	    if ( $status ) then
-	      @ fail = 1
-	    endif
 
-	    # If drop files were created, test them.
-	    if (-e ${ch_name[1]}.drops.$np.$i ) then
-	      @ droptest = 1
-	      /bin/mv ${ch_name[1]}.drops.$np.$i  ${outdir}/${ch_name[1]}.$mtd.drops.$np.$i
-	      if (-e ${answers}/${ch_name[1]}.$mtd.drops.$np.$i.$suffix ) then
-		set answerfile = ${answers}/${ch_name[1]}.$mtd.drops.$np.$i.$suffix
-	      else
-		set answerfile = ${answers}/${ch_name[1]}.$mtd.drops.$np.$i
-	      endif
-	      diff -ciw ${outdir}/${ch_name[1]}.$mtd.drops.$np.$i $answerfile >> ../$logfile
-	      if ( $status ) then
-		@ dropfail = 1
-	      endif
-	    endif
+	  if (-e ${ch_name[1]}.$out_tag.$np.0 ) then           # if we have output files
 
-	    @ i = $i + 1
-	  end
+  	    while ( $i < $np )
+  	      /bin/mv ${ch_name[1]}.$out_tag.$np.$i  ${outdir}/${ch_name[1]}.$mtd.$np.$i
+  	      if (-e ${answers}/${ch_name[1]}.$mtd.$np.$i.$suffix ) then
+  	        set answerfile = ${answers}/${ch_name[1]}.$mtd.$np.$i.$suffix
+  	      else
+  	        set answerfile = ${answers}/${ch_name[1]}.$mtd.$np.$i
+  	      endif
+  	      diff -ciw ${outdir}/${ch_name[1]}.$mtd.$np.$i $answerfile >> ../$logfile
+  	      if ( $status ) then
+                if ( $failure_detail ) then
+    	          @ difffail = 1
+                else
+    	          @ fail = 1
+                endif
+  	      endif
+  
+  	      # If drop files were created, test them.
+  	      if (-e ${ch_name[1]}.drops.$np.$i ) then
+  	        @ droptest = 1
+  	        /bin/mv ${ch_name[1]}.drops.$np.$i  ${outdir}/${ch_name[1]}.$mtd.drops.$np.$i
+  	        if (-e ${answers}/${ch_name[1]}.$mtd.drops.$np.$i.$suffix ) then
+  		  set answerfile = ${answers}/${ch_name[1]}.$mtd.drops.$np.$i.$suffix
+  	        else
+  		  set answerfile = ${answers}/${ch_name[1]}.$mtd.drops.$np.$i
+  	        endif
+  	        diff -ciw ${outdir}/${ch_name[1]}.$mtd.drops.$np.$i $answerfile >> ../$logfile
+  	        if ( $status ) then
+  		  @ dropfail = 1
+  	        endif
+  	      endif
+  
+  	      @ i = $i + 1
+  	    end      
+
+          else                                        # if we do NOT have output files
+            @ fail = 1
+          endif
 
 	  # Report success or failure
 	  if ( $fail ) then
 	    @ nfailed = $nfailed + 1
-	    echo "Test problem ${ch_name[1]} with method ${mtd} FAILED" | tee -a ../$logfile
+            if ( $failure_detail ) then
+	      echo "Test problem ${ch_name[1]} with method ${mtd} FAILED to complete" | tee -a ../$logfile
+            else
+	      echo "Test problem ${ch_name[1]} with method ${mtd} FAILED" | tee -a ../$logfile
+            endif
 	    if ( $exit_on_failure ) then
-               echo "Exiting because of --exit_on_failure"
                echo "Test final = `date`" >> ../$logfile
                cd ..
                exit 0
             endif
-	  else
+	  else if ( $difffail ) then
+	    @ ndifffailed = $ndifffailed + 1
+	    echo "Test problem ${ch_name[1]} with method ${mtd} FAILED to get archived answer" | tee -a ../$logfile
+          else
 	    echo "Test problem ${ch_name[1]} with method ${mtd} OK" | tee -a ../$logfile
 	  endif
 
@@ -786,7 +819,6 @@ if (! $no_chaco ) then
 	      @ ndropfailed = $ndropfailed + 1
 	      echo "Test problem ${ch_name[1]} with method ${mtd} drop tests FAILED" | tee -a ../$logfile
 	      if ( $exit_on_failure ) then
-                echo "Exiting because of --exit_on_failure"
                 echo "Test final = `date`" >> ../$logfile
                 cd ..
                 exit 0
@@ -817,9 +849,14 @@ if (! $no_chaco ) then
   # Print failure summary
   echo " " | tee -a $logfile
   if ( $nfailed == 0 ) then
-    echo "Success: all Chaco problems passed." | tee -a $logfile
+    echo "Success: all Chaco problems completed." | tee -a $logfile
   else
-    echo "Failure: $nfailed Chaco problems failed." | tee -a $logfile
+    echo "Failure: $nfailed Chaco problems failed to complete." | tee -a $logfile
+  endif
+  if ( $ndifffailed == 0 ) then
+    echo "Success: all Chaco problems obtained the archived answers." | tee -a $logfile
+  else
+    echo "Failure: $ndifffailed Chaco problems completed but did not get the archived answers." | tee -a $logfile
   endif
   echo " " | tee -a $logfile
   if ( $ndropfailed == 0 ) then
@@ -835,6 +872,7 @@ endif # chaco
 if ( $yes_nemesis ) then
   @ nprob = $#nem_name
   @ nfailed = 0
+  @ ndifffailed = 0
   @ ndropfailed = 0
   while ( $#nem_name )
 
@@ -857,6 +895,7 @@ if ( $yes_nemesis ) then
       # Clear fail flag
       @ fail = 0
       @ dropfail = 0
+      @ difffail = 0
       @ droptest = 0
       @ skip = 0
       setenv PURIFYOPTIONS "-windows=no -log-file=./purifylog.${mtd} "
@@ -870,7 +909,7 @@ if ( $yes_nemesis ) then
 	  /bin/rm ${outdir}/${nem_name[1]}.$mtd.drops.$np.*
 
 	  # Run the driver
-	  echo "Run test problem ${nem_name[1]} with method ${mtd}" | tee -a ../$logfile
+          echo "Run test problem ${nem_name[1]} with method ${mtd}" | tee -a ../$logfile
 	  $run $np ../$zdrive
 
 	  # Save and compare output files
@@ -883,14 +922,25 @@ if ( $yes_nemesis ) then
 	       set pdir = pio_${pdirno}
 	    endif
 	    /bin/mv ${pdir}/${nem_name[1]}-m${np}-r.par.out.$np.$i  ${outdir}/${nem_name[1]}.$mtd.$np.$i
-	    if (-e ${answers}/${nem_name[1]}.$mtd.$np.$i.$suffix ) then
-	      set answerfile = ${answers}/${nem_name[1]}.$mtd.$np.$i.$suffix
-	    else
-	      set answerfile = ${answers}/${nem_name[1]}.$mtd.$np.$i
-	    endif
-	    diff -ciw ${outdir}/${nem_name[1]}.$mtd.$np.$i $answerfile >> ../$logfile
-	    if ( $status ) then
-	      @ fail = 1
+
+	    if (-e ${outdir}/${nem_name[1]}.$mtd.$np.$i ) then     # have output files
+
+  	      if (-e ${answers}/${nem_name[1]}.$mtd.$np.$i.$suffix ) then
+	        set answerfile = ${answers}/${nem_name[1]}.$mtd.$np.$i.$suffix
+	      else
+	        set answerfile = ${answers}/${nem_name[1]}.$mtd.$np.$i
+	      endif
+	      diff -ciw ${outdir}/${nem_name[1]}.$mtd.$np.$i $answerfile >> ../$logfile
+	      if ( $status ) then
+                if ( $failure_detail ) then
+    	          @ difffail = 1
+                else
+    	          @ fail = 1
+                endif
+	      endif
+  
+            else                                          # no output files
+	        @ fail = 1
 	    endif
 
 	    if (-e ${pdir}/${nem_name[1]}-m${np}-r.par.drops.$np.$i ) then
@@ -917,14 +967,20 @@ if ( $yes_nemesis ) then
 	  # Report success or failure
 	  if ( $fail ) then
 	    @ nfailed = $nfailed + 1
-	    echo "Test problem ${nem_name[1]} with method ${mtd} FAILED" | tee -a ../$logfile
+            if ( $failure_detail ) then
+	      echo "Test problem ${nem_name[1]} with method ${mtd} FAILED to complete" | tee -a ../$logfile
+            else
+	      echo "Test problem ${nem_name[1]} with method ${mtd} FAILED" | tee -a ../$logfile
+            endif
             if ( $exit_on_failure ) then
-              echo "Exiting because of --exit_on_failure"
               echo "Test final = `date`" >> ../$logfile
               cd ..
               exit 0
             endif
-	  else
+	  else if ( $difffail ) then
+	    @ ndifffailed = $ndifffailed + 1
+	    echo "Test problem ${nem_name[1]} with method ${mtd} FAILED to get archived answer" | tee -a ../$logfile
+          else 
 	    echo "Test problem ${nem_name[1]} with method ${mtd} OK" | tee -a ../$logfile
 	  endif
 
@@ -933,7 +989,6 @@ if ( $yes_nemesis ) then
 	      @ ndropfailed = $ndropfailed + 1
 	      echo "Test problem ${nem_name[1]} with method ${mtd} drop tests FAILED" | tee -a ../$logfile
 	      if ( $exit_on_failure ) then
-                echo "Exiting because of --exit_on_failure"
                 echo "Test final = `date`" >> ../$logfile
                 cd ..
                 exit 0
@@ -964,9 +1019,14 @@ if ( $yes_nemesis ) then
   # Print failure summary
   echo " " | tee -a $logfile
   if ( $nfailed == 0 ) then
-    echo "Success: all Nemesis problems passed." | tee -a $logfile
+    echo "Success: all Nemesis problems completed." | tee -a $logfile
   else
-    echo "Failure: $nfailed Nemesis problems failed." | tee -a $logfile
+    echo "Failure: $nfailed Nemesis problems failed to complete." | tee -a $logfile
+  endif
+  if ( $ndifffailed == 0 ) then
+    echo "Success: all Nemesis problems reported the archived answers." | tee -a $logfile
+  else
+    echo "Failure: $ndifffailed Nemesis problems failed to get the archived answers." | tee -a $logfile
   endif
   echo " " | tee -a $logfile
   if ( $ndropfailed == 0 ) then
@@ -1074,6 +1134,7 @@ if (! $no_hg) then
 
   @ nprob = $#hg_name
   @ nfailed = 0
+  @ ndifffailed = 0
   while ( $#hg_name )
 
     # Go to the next test directory, initialize
@@ -1096,6 +1157,7 @@ if (! $no_hg) then
       foreach mtd ( $hg_methods )
 	# Clear fail flag
 	@ fail = 0
+	@ difffail = 0
 
 	# Run zdrive and check the output against stored answer
 
@@ -1107,7 +1169,8 @@ if (! $no_hg) then
 
 	  # Run the driver
           echo "start = `date`" | tee -a ../$logfile
-	  echo "Run test problem ${hg_name[1]}/${mtd}" | tee -a ../$logfile
+          echo "Run test problem ${hg_name[1]}/${mtd}" | tee -a ../$logfile
+
 	  $run $np $zdrive
           echo "end   = `date`" | tee -a ../$logfile
 
@@ -1134,16 +1197,25 @@ if (! $no_hg) then
 	      end
 	    endif
 
-	    /bin/mv ${hg_name[1]}.$out_tag.$np.$field  ${outdir}/${outfile}
-	    if (-e ${answers}/${outfile}.$suffix ) then
-	      set answerfile = ${answers}/${outfile}.$suffix
-	    else
-	      set answerfile = ${answers}/${outfile}
-	    endif
-	    diff -ciw ${outdir}/${outfile} $answerfile >> ../$logfile
-	    if ( $status ) then
-	      @ fail = 1
-	    endif
+            if (-e ${hg_name[1]}.$out_tag.$np.$field) then             # we have an output file
+
+ 	      /bin/mv ${hg_name[1]}.$out_tag.$np.$field  ${outdir}/${outfile}
+	      if (-e ${answers}/${outfile}.$suffix ) then
+	        set answerfile = ${answers}/${outfile}.$suffix
+	      else
+	        set answerfile = ${answers}/${outfile}
+	      endif
+	      diff -ciw ${outdir}/${outfile} $answerfile >> ../$logfile
+	      if ( $status ) then
+                if ( $failure_detail ) then
+    	          @ difffail = 1
+                else
+    	          @ fail = 1
+                endif
+	      endif
+            else
+	        @ fail = 1                  # we do not have an output file
+            endif
 
 	    @ i = $i + 1
 	  end
@@ -1151,13 +1223,19 @@ if (! $no_hg) then
 	  # Report success or failure
 	  if ( $fail ) then
 	    @ nfailed = $nfailed + 1
-	    echo "Test problem ${hg_name[1]}/${mtd} FAILED" | tee -a ../$logfile
-	    if ( $exit_on_failure ) then
-               echo "Exiting because of --exit_on_failure"
+            if ( $failure_detail ) then
+	      echo "Test problem ${hg_name[1]}/${mtd} FAILED to complete" | tee -a ../$logfile
+            else
+	      echo "Test problem ${hg_name[1]}/${mtd} FAILED" | tee -a ../$logfile
+            endif
+	    if ( !$exit_on_failure ) then
                echo "Test final = `date`" >> ../$logfile
                cd ..
                exit 0
             endif
+	  else if ( $difffail ) then
+	    @ ndifffailed = $ndifffailed + 1
+	    echo "Test problem ${hg_name[1]}/${mtd} FAILED to get archived answer" | tee -a ../$logfile
 	  else
 	    echo "Test problem ${hg_name[1]}/${mtd} OK" | tee -a ../$logfile
 	  endif
@@ -1178,9 +1256,14 @@ if (! $no_hg) then
   # Print failure summary
   echo " " | tee -a $logfile
   if ( $nfailed == 0 ) then
-    echo "Success: all hypergraph problems passed." | tee -a $logfile
+    echo "Success: all hypergraph problems completed." | tee -a $logfile
   else
-    echo "Failure: $nfailed hypergraph problems failed." | tee -a $logfile
+    echo "Failure: $nfailed hypergraph problems failed to complete." | tee -a $logfile
+  endif
+  if ( $ndifffailed == 0 ) then
+    echo "Success: all hypergraph problems obtained the archived answers." | tee -a $logfile
+  else
+    echo "Failure: $ndifffailed hypergraph problems failed to get the archived answers." | tee -a $logfile
   endif
   echo " " | tee -a $logfile
 
@@ -1202,7 +1285,6 @@ usage:
   echo "Other options:"
   echo "   -logfile filename"
   echo "   -exe filename"
-  echo "   -exit_on_failure"
   echo "   -no_rcb"
   echo "   -no_rib"
   echo "   -no_hsfc"
@@ -1221,5 +1303,7 @@ usage:
   echo "   -yes_jostle"
   echo "   -yes_drum"
   echo "   -old_interface"
+  echo "   -exit_on_failure (exit on any test failure)"
+  echo "   -failure_detail (distinguish between crash and wrong answer)"
   echo "The default is to run all methods (except Jostle) and file formats."
   exit -1

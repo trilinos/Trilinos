@@ -22,4 +22,4 @@
 
 ZDRIVE=/home/lriesen/projects/trilinos/TrilinosHead/packages/zoltan/build/src/driver/zdrive.exe
 
-test_zoltan -logfile test_zoltan.log -exe $ZDRIVE -arch generic -no_color -no_oct -failure_detail | tee test_zoltan_output.txt
+test_zoltan -logfile test_zoltan.log -exe $ZDRIVE -arch generic -no_color -no_scotch -no_oct -failure_detail | tee test_zoltan_output.txt
