@@ -81,23 +81,6 @@ namespace Tpetra {
 
 	template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 	int MatrixMatrixMultiply<Scalar, LocalOrdinal, GlobalOrdinal, Node>::multiply(){
-		TEST_FOR_EXCEPTION(matrixA->getGlobalNumRows() != matrixB->getGlobalNumCols(), std::runtime_error,
-			"Uh oh. Looks like there's a bit of a problem here. No worries though. We'll help you figure it out. You're "
-			"a fantastic programer and this just a minor bump in the road! Maybe the information below can help you out a bit."
-			"\n\n" << Teuchos::typeName(*this) << "::multiply(): Matrix A must have the same number of rows as Matrix B has columns.");
-
-		TEST_FOR_EXCEPTION(matrixA->getGlobalNumRows() != matrixC->getGlobalNumRows(), std::runtime_error,
-			"Uh oh. Looks like there's a bit of a problem here. No worries though. We'll help you figure it out. You're "
-			"a fantastic programer and this just a minor bump in the road! Maybe the information below can help you out a bit."
-			"\n\n" << Teuchos::typeName(*this) << "::multiply(): Matrix A must have the same number of rows as Matrix C.");
-
-		if(matrixC->hasColMap()){
-			TEST_FOR_EXCEPTION(matrixB->getGlobalNumCols() != matrixC->getGlobalNumCols(), std::runtime_error,
-				"Uh oh. Looks like there's a bit of a problem here. No worries though. We'll help you figure it out. You're "
-				"a fantastic programer and this just a minor bump in the road! Maybe the information below can help you out a bit."
-				"\n\n" << Teuchos::typeName(*this) << "::multiply(): Matrix B must have the same number of rows as Matrix C.");
-		}
-
 		TEST_FOR_EXCEPTION(!matrixA->isFillComplete(), std::runtime_error,
 			"Uh oh. Looks like there's a bit of a problem here. No worries though. We'll help you figure it out. You're "
 			"a fantastic programer and this just a minor bump in the road! Maybe the information below can help you out a bit."
@@ -107,6 +90,23 @@ namespace Tpetra {
 			"Uh oh. Looks like there's a bit of a problem here. No worries though. We'll help you figure it out. You're "
 			"a fantastic programer and this just a minor bump in the road! Maybe the information below can help you out a bit."
 			"\n\n" << Teuchos::typeName(*this) << "::multiply(): Matrix B is not fill complete.");
+		TEST_FOR_EXCEPTION(matrixA->getDomainMap()->getGlobalNumElements() != matrixB->getRangeMap()->getGlobalNumElements(), std::runtime_error,
+			"Uh oh. Looks like there's a bit of a problem here. No worries though. We'll help you figure it out. You're "
+			"a fantastic programer and this just a minor bump in the road! Maybe the information below can help you out a bit."
+			"\n\n" << Teuchos::typeName(*this) << "::multiply(): Matrix A must have the same number of rows as Matrix B has columns.\n\n");
+
+		/*if(!matrixC.is_null()){
+		TEST_FOR_EXCEPTION(matrixA->getDomainMap()->getGlobalNumElements() != matrixC->getDomainMap()->getGlobalNumElements(), std::runtime_error,
+			"Uh oh. Looks like there's a bit of a problem here. No worries though. We'll help you figure it out. You're "
+			"a fantastic programer and this just a minor bump in the road! Maybe the information below can help you out a bit."
+			"\n\n" << Teuchos::typeName(*this) << "::multiply(): Matrix A must have the same number of rows as Matrix C.");
+
+		TEST_FOR_EXCEPTION(matrixB->getRangeMap()->getGlobalNumElements() != matrixC->getRangeMap()->getGlobalNumElements(), std::runtime_error,
+				"Uh oh. Looks like there's a bit of a problem here. No worries though. We'll help you figure it out. You're "
+				"a fantastic programer and this just a minor bump in the road! Maybe the information below can help you out a bit."
+				"\n\n" << Teuchos::typeName(*this) << "::multiply(): Matrix B must have the same number of rows as Matrix C.");
+		}*/
+
 
 
 
@@ -199,12 +199,18 @@ namespace Tpetra {
 		typedef Teuchos::map<GlobalOrdinal, Teuchos::ArrayView<int> > DestinationMap;
 		DestinationMap mySendTos;
 		Teuchos::ArrayRCP<const GlobalOrdinal> curRowIndicies;
+		//
+		//!!!!!!!!LEFT OFF HERE
+		//ok so we can't use the graph. we need to use the matrix
 		for(LocalOrdinal i = LO0; (size_t)i< tBGraph->getNodeNumRows(); i++){
+			std::cout << "actual view " << tBGraph->getLocalRowView(i)() << "\n";
 			curRowIndicies = convertLocalIndicesToGlobal(tBGraph->getLocalRowView(i), tBGraph->getRowMap());
+			std::cout << "Node row " << i << " cur row indicies " << curRowIndicies() << "\n";
 			if((global_size_t)curRowIndicies.size() != GST0){
-				mySendTos.insert(std::pair<GlobalOrdinal, const Teuchos::ArrayView<int> >(i, Teuchos::ArrayView<int>()));
+				//mySendTos.insert(std::pair<GlobalOrdinal, const Teuchos::ArrayView<int> >(i, Teuchos::ArrayView<int>()));
 				const Teuchos::ArrayView<int> nodesToSendTo;
-				mAGraph->getColMap()->getRemoteIndexList(curRowIndicies(), mySendTos[i]);
+				mAGraph->getColMap()->getRemoteIndexList(curRowIndicies(), nodesToSendTo);
+				mySendTos[i] = nodesToSendTo;
 			}
 		}
 
