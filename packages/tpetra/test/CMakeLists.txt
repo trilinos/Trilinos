@@ -16,6 +16,7 @@ ADD_SUBDIRECTORIES(
   BlockMultiVector
   VbrMatrix
   RowMatrixTransposer
+  MatrixMatrix
   )
 
 PACKAGE_ADD_LIBRARY(

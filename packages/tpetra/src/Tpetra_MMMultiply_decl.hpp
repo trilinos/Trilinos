@@ -30,10 +30,12 @@
 #define TPETRA_MMMULTIPLY_DECL_HPP
 
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_ArrayRCP.hpp>
 #include <Kokkos_DefaultNode.hpp>
 //#include <Kokkos_DefaultSparseMultiply.hpp>
 //#include <Kokkos_DefaultSparseSolve.hpp>
 #include "Tpetra_ConfigDefs.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 
 /*! \file Tpetra_MMMultiply_decl.hpp 
 
@@ -57,7 +59,7 @@ class MatrixMatrixMultiply{
 		MatrixMatrixMultiply(
   			const Teuchos::RCP<const RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A,
   			const Teuchos::RCP<const RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > B,
-  			Teuchos::RCP< RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > C
+  			Teuchos::RCP< CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > C
   		);
 
    		//! Destructor
@@ -67,9 +69,15 @@ class MatrixMatrixMultiply{
 		int multiply();
 
 	protected:
-		// underlying Matricies
+	// underlying Matricies
 		const Teuchos::RCP<const RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > matrixA, matrixB;
-		Teuchos::RCP< RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > matrixC, matrixTB;
+		Teuchos::RCP< CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > matrixC, matrixTB;
+		void getAndSendBRows(
+			Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &tB, 
+			Teuchos::ArrayRCP<const GlobalOrdinal> &importedBRowIndicies, 
+			Teuchos::ArrayRCP<Teuchos::ArrayRCP<const GlobalOrdinal> > &importedBIndicies, 
+			Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > &importedBValues
+		);
 };
 
 }
