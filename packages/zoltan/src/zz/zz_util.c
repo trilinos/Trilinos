@@ -302,18 +302,19 @@ int Zoltan_set_mpi_types()
   return ZOLTAN_OK;
 }
 
-/* On a linux node, try to write the contents of /proc/meminfo to a file
-*/
-extern int less_memory_flag;
-static char msgplus[256];
-
-void Zoltan_write_linux_meminfo(int append, char *msg)
+/* On a linux node, try to write the contents of /proc/meminfo to a file.
+ * If committedOnly, then only write the Committed_AS line.  This is the
+ * amount of memory that has been granted for memory allocation requests.
+ * It may exceed the amount of physical memory, which will cause a fault
+ * on a system that doesn't swap if that memory is written to.
+ */
+void Zoltan_write_linux_meminfo(int append, char *msg, int committedOnly)
 {
 int rank;
-int f;
+int f, n;
 size_t fsize, rc;
-char *c=NULL;
-char fbuf[64],buf[2048];
+char *c=NULL, *next=NULL, *c_end;
+char fbuf[64],buf[2048],label[64],value[64],units[64];
 struct stat info;
 
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -332,7 +333,7 @@ struct stat info;
 
   close(f);
 
-  sprintf(fbuf,"meminfo_%05d.txt",rank);
+  sprintf(fbuf,"meminfo_%d.txt",rank);
 
   if (append){
     f = open(fbuf,O_WRONLY | O_APPEND | O_CREAT, S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
@@ -343,15 +344,31 @@ struct stat info;
 
   if (f == -1) return;
 
-if (less_memory_flag) sprintf(msgplus,"COMPLETED: %s\n",msg);
-else sprintf(msgplus,"NOT COMPLETED: %s\n",msg);
+  if (committedOnly){
 
+    c = buf;
+    c_end = buf + fsize;
 
-  if (msg != NULL){
-#if 0
-    write(f, msg, strlen(msg));
-#endif
-    write(f, msgplus, strlen(msgplus));
+    while( c < c_end){
+      next = strchr(c, '\n');
+      *next = 0;
+      n = sscanf(c, "%s %s %s", label, value, units);
+      if (n == 3){
+        if (strcmp(label, "Committed_AS:") == 0){
+          if (msg != NULL) sprintf(buf,"%s: \t%s \t%s %s\n",msg,label,value,units);
+          else             sprintf(buf,"%s %s %s\n",label,value,units);
+
+          fsize = strlen(buf);
+          break;
+        }
+      }
+      c = next + 1;
+    }
+  }
+  else{
+    if (msg != NULL){
+      write(f, msg, strlen(msg));
+    }
   }
 
   write(f,buf,fsize);
@@ -359,7 +376,6 @@ else sprintf(msgplus,"NOT COMPLETED: %s\n",msg);
   fsync(f);
   close(f);
 }
-
 
 
 #ifdef __cplusplus

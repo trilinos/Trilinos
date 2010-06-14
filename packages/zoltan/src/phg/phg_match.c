@@ -2031,6 +2031,8 @@ static int pmatching_agg_ipm (ZZ *zz,
     MACRO_TIMER_START (4, "Matching Phase 3&4", 1);
 
     replycnt=0;
+    msgsize =  header_size * sizeof(int) + VtxDim * sizeof(float);
+
     if (hgc->myProc_y == 0) {      
       HG_Ptr = hg;
 
@@ -2051,12 +2053,9 @@ static int pmatching_agg_ipm (ZZ *zz,
         master_data[i].ip        = -1.0;
       }
 
-      /* upper bound on message size */
-
-      msgsize =  header_size * sizeof(int) + VtxDim * sizeof(float);
-
       if (total_nCandidates * msgsize > nSend) 
         MACRO_RESIZE (total_nCandidates * msgsize, nSend, sendbuf);  /* increase buffer size */
+
       s = sendbuf;         
       
       for (i = 0; i < total_nCandidates; i++) {
@@ -2084,6 +2083,7 @@ static int pmatching_agg_ipm (ZZ *zz,
 
           *intptr++ = i;
           *intptr++ = plno;
+
           if (hgp->UsePrefPart)
               *intptr++ = lheadpref[plno];
 
@@ -2132,18 +2132,16 @@ static int pmatching_agg_ipm (ZZ *zz,
 
         intptr = (int *)s;
         floatptr = (float *)(intptr + header_size);
-
-        s = (char *)(floatptr + VtxDim);
+        s = (char *)(floatptr + VtxDim); 
 
         intptr++; /* skip candidate_index*/
 
         plno=*intptr++;
-        if (hgp->UsePrefPart) ++intptr; /* skip fixed vertex */
 
         if (*floatptr < 0.0) { /* reject due to weight constraint*/
         } else {
 /*        uprintf(hgc, "Set visited flag of %d (gno=%d)\n", plno, VTX_LNO_TO_GNO(hg, plno)); */
-          visited[plno] = 1;          
+          visited[plno] = 1; 
 
           memcpy(&cw[plno*VtxDim], floatptr, sizeof(float)*VtxDim); 
         }
@@ -2211,9 +2209,9 @@ static int pmatching_agg_ipm (ZZ *zz,
           memcpy(floatptr, &cw[lheadno*VtxDim], sizeof(float)*VtxDim);
         }
       }
+      recsize = s - sendbuf;
     }
 
-    recsize = s - sendbuf;
     MPI_Bcast (&recsize, 1, MPI_INT, 0, hgc->col_comm); /* bcase nSend */
     if (recsize>nSend) /* for procs other than 0; that might be true */
       MACRO_RESIZE (recsize, nSend, sendbuf);  /* increase buffer size */

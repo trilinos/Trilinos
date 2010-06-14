@@ -394,7 +394,7 @@ ZOLTAN_ID_PTR gid;
 
 #ifdef HOST_LINUX
     if ((error == ZOLTAN_MEMERR) && (Zoltan_Memory_Get_Debug() > 0)){
-      Zoltan_write_linux_meminfo(0, "State of /proc/meminfo after malloc failure\n");
+      Zoltan_write_linux_meminfo(0, "State of /proc/meminfo after malloc failure\n", 0);
     }
 #endif
 

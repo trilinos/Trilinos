@@ -72,11 +72,7 @@ void meminfo_signal_handler(int sig)
 {
   char msg[128];
 
-#ifdef _GNU_SOURCE
-  sprintf(msg,"(%d) Received signal %d: %s\n",my_rank,sig,strsignal(sig));
-#else
   sprintf(msg,"(%d) Received signal %d\n",my_rank,sig);
-#endif
 
   // Signal handler for Linux that helps us to understand
   // whether failure was due to insufficient memory.
@@ -87,7 +83,7 @@ void meminfo_signal_handler(int sig)
   signal(SIGSEGV, SIG_IGN);
   signal(SIGFPE, SIG_IGN);
 
-  Zoltan_write_linux_meminfo(my_rank, msg);
+  Zoltan_write_linux_meminfo(0, msg,0);
 
   exit(sig);
 }

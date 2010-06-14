@@ -383,6 +383,8 @@ static int rcb_fn(
                                        When false, storage, manipulation, and
                                        communication of IDs is avoided.     
                                        Set by call to Zoltan_RB_Use_IDs(). */
+  int   use_obj_sizes;              /* When false, no process defined object
+                                       size queryies */
   RCB_STRUCT *rcb = NULL;           /* Pointer to data structures for RCB.  */
   struct rcb_box *rcbbox = NULL;    /* bounding box of final RCB sub-domain */
   struct rcb_tree *treept = NULL;   /* tree of RCB cuts - only single cut on 
@@ -526,7 +528,7 @@ static int rcb_fn(
   tmp_tfs[1] = ((zz->Get_Obj_Size_Multi) || (zz->Get_Obj_Size));
   MPI_Allreduce(tmp_tfs, tfs, 2, MPI_INT, MPI_MAX, zz->Communicator);
 
-  rcb->obj_sizes = tfs[1];
+  use_obj_sizes = tfs[1];
 
   if (tfs[0] == 0){
     if (proc == 0){
@@ -605,7 +607,7 @@ static int rcb_fn(
                                  proc_list, outgoing, 
                                  &dotnum, &dotmax, proc, &allocflag,
                                  overalloc, stats, reuse_count, use_ids,
-                                 zz->Communicator);
+                                 use_obj_sizes, zz->Communicator);
 #endif
       if (ierr < 0) {
         ZOLTAN_PRINT_ERROR(proc, yo, 
@@ -987,11 +989,13 @@ static int rcb_fn(
     }
 
     allocflag = 0;
+
     ierr = Zoltan_RB_Send_Outgoing(zz, &(rcb->Global_IDs), &(rcb->Local_IDs),
                                &(rcb->Dots), &dotmark,
                                &dottop, &dotnum, &dotmax,
                                set, &allocflag, overalloc,
-                               stats, counters, use_ids, local_comm, proclower,
+                               stats, counters, use_ids, use_obj_sizes, 
+                                local_comm, proclower,
                                old_nprocs, partlower, partmid);
     if (ierr < 0) {
       ZOLTAN_PRINT_ERROR(proc, yo,
@@ -1035,7 +1039,7 @@ static int rcb_fn(
   ierr = Zoltan_RB_Send_To_Part(zz, &(rcb->Global_IDs), &(rcb->Local_IDs),
                                &(rcb->Dots), &dotmark, &dottop,
                                &dotnum, &dotmax, &allocflag, overalloc,
-                               stats, counters, use_ids);
+                               stats, counters, use_ids, use_obj_sizes);
   if (ierr < 0) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                        "Error returned from Zoltan_RB_Send_To_Part");
@@ -1115,7 +1119,7 @@ EndReporting:
   if (zz->LB.Remap_Flag) {
     ierr = Zoltan_RB_Remap(zz, &(rcb->Global_IDs), &(rcb->Local_IDs),
                            &(rcb->Dots), &dotnum, &dotmax,
-                           &allocflag, overalloc, stats, counters, use_ids);
+                &allocflag, overalloc, stats, counters, use_ids, use_obj_sizes);
     /* Note:  dottop is no longer valid after remapping.  Remapping might
        destroy the nice local-followed-by-non-local ordering of the 
        dots array.  Do not use dottop after remapping. */

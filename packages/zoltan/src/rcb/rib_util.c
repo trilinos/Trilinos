@@ -49,7 +49,6 @@ int            i, ierr = 0;
     rib->Global_IDs = NULL;
     rib->Local_IDs = NULL;
     rib->Dots = NULL;
-    rib->weight_dim = wgtflag;
 
     Zoltan_Initialize_Transformation(&(rib->Tran));
 

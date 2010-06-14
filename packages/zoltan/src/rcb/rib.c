@@ -254,6 +254,7 @@ static int rib_fn(
                                  When false, storage, manipulation, and
                                  communication of IDs is avoided.     
                                  Set by call to Zoltan_RB_Use_IDs().         */
+  int use_obj_sizes;
 
 
   RIB_STRUCT *rib = NULL;     /* Pointer to data structures for RIB */
@@ -347,7 +348,7 @@ static int rib_fn(
   tmp_tfs[1] = ((zz->Get_Obj_Size_Multi) || (zz->Get_Obj_Size));
   MPI_Allreduce(tmp_tfs, tfs, 2, MPI_INT, MPI_MAX, zz->Communicator);
   
-  rib->obj_sizes = tfs[1];
+  use_obj_sizes = tfs[1];
 
   if (tfs[0] == 0){
     if (proc == 0){
@@ -561,7 +562,8 @@ static int rib_fn(
                                &(rib->Dots), &dotmark,
                                &dottop, &dotnum, &dotmax,
                                set, &allocflag, overalloc,
-                               stats, counters, use_ids, local_comm, proclower,
+                               stats, counters, use_ids, use_obj_sizes, 
+                                local_comm, proclower,
                                old_nprocs, partlower, partmid);
     if (ierr < 0) {
       ZOLTAN_PRINT_ERROR(proc, yo,
@@ -605,7 +607,7 @@ static int rib_fn(
   ierr = Zoltan_RB_Send_To_Part(zz, &(rib->Global_IDs), &(rib->Local_IDs),
                                &(rib->Dots), &dotmark, &dottop,
                                &dotnum, &dotmax, &allocflag, overalloc,
-                               stats, counters, use_ids);
+                               stats, counters, use_ids, use_obj_sizes);
 
   if (ierr < 0) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo,
@@ -682,7 +684,7 @@ EndReporting:
   if (zz->LB.Remap_Flag) {
     ierr = Zoltan_RB_Remap(zz, &(rib->Global_IDs), &(rib->Local_IDs),
                                &(rib->Dots), &dotnum, &dotmax,
-                           &allocflag, overalloc, stats, counters, use_ids);
+                  &allocflag, overalloc, stats, counters, use_ids, use_obj_sizes);
     /* Note:  dottop is no longer valid after remapping.  Remapping might
        destroy the nice local-followed-by-non-local ordering of the 
        dots array.  Do not use dottop after remapping. */

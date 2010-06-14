@@ -150,7 +150,7 @@ int main(int argc, char *argv[])
 
   /* General parameters */
 
-  Zoltan_Set_Param(zz, "DEBUG_LEVEL", "5");
+  Zoltan_Set_Param(zz, "DEBUG_LEVEL", "0");
   Zoltan_Set_Param(zz, "LB_METHOD", "RCB");
   Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); 
   Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1");

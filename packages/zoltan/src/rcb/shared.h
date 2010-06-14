@@ -24,7 +24,7 @@ extern "C" {
 /* Definitions shared by parallel RCB and RIB */
 #define DEFAULT_CHECK_GEOM 1
 #define TINY 1.0e-6
-#define RB_MAX_WGTS 4
+#define RB_MAX_WGTS 1     /* TODO64 - only store what's needed */
 
 /* Data structures shared by parallel RCB and RIB */
 /* dot to balance on for RCB and RIB */ 
@@ -40,7 +40,9 @@ struct Dot_Struct {	        /* dot = point in 3-space */
   int Part;                     /* New partition to which the dot is 
                                    assigned.  */
   int Size;                     /* Migration size */
+  int Dim;                      /* geometric dimension */
 };
+
 
 extern int Zoltan_RB_Build_Structure(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, 
   struct Dot_Struct **, int *, int *, int *, int, double, int);
@@ -50,11 +52,11 @@ extern void Zoltan_RB_Print_All(ZZ *, ZOLTAN_ID_PTR , struct Dot_Struct *,
 
 extern int Zoltan_RB_Send_Outgoing(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
   struct Dot_Struct **, int **, int *, int *, int *, int, int *, double, int,
-  ZOLTAN_GNO_TYPE *, int, MPI_Comm, int, int, int, int);
+  ZOLTAN_GNO_TYPE *, int, int, MPI_Comm, int, int, int, int);
 
 extern int Zoltan_RB_Send_To_Part(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
   struct Dot_Struct **, int **, int *, int *, int *, int *, double, int,
-  ZOLTAN_GNO_TYPE *, int);
+  ZOLTAN_GNO_TYPE *, int, int);
 
 extern int Zoltan_RB_Send_Dots(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
   struct Dot_Struct **, int **, int *, int, int *, int *, int, int *, double,
@@ -62,10 +64,11 @@ extern int Zoltan_RB_Send_Dots(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
 
 extern int Zoltan_RB_Send_Dots_less_memory(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *,
   struct Dot_Struct **, int **, int *, int, int *, int *, int, int *, double,
-  int, ZOLTAN_GNO_TYPE *, int, MPI_Comm);
+  int, ZOLTAN_GNO_TYPE *, int, int, MPI_Comm);
 
 extern int Zoltan_RB_Remap(ZZ *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, 
-  struct Dot_Struct **, int *, int *, int *, double, int , ZOLTAN_GNO_TYPE *, int);
+  struct Dot_Struct **, int *, int *, int *, double, int , ZOLTAN_GNO_TYPE *, 
+  int, int);
 
 extern int Zoltan_RB_Return_Arguments(ZZ *, ZOLTAN_ID_PTR, ZOLTAN_ID_PTR, 
   struct Dot_Struct *, int *, ZOLTAN_ID_PTR *, ZOLTAN_ID_PTR *, int **, int **, 

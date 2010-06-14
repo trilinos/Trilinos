@@ -93,9 +93,11 @@ int i;
   *global_ids = ZOLTAN_REALLOC_GID_ARRAY(zz, *global_ids, (*max_obj));
   *local_ids  = ZOLTAN_REALLOC_LID_ARRAY(zz, *local_ids, (*max_obj));
 
-  /* TODO use only one weight is Dot_Struct.  If there are more, allocate a
+  /* TODO64 use only one weight is Dot_Struct.  If there are more, allocate a
    * struct for the extra weights.  Too save memory in the common case.
+   * Or just keep each array in RCB_STRUCT.
    */
+
   *dots = (struct Dot_Struct *)ZOLTAN_MALLOC((*max_obj)*sizeof(struct Dot_Struct));
 
   if (!(*global_ids) || (zz->Num_LID && !(*local_ids)) || !(*dots)) {
@@ -104,6 +106,9 @@ int i;
     goto End;
   }
 
+/* TODO64 - can we write a low memory alternate for when the size of
+      every object is the same - a query like "get_uniform_object_size()
+*/
   if (*num_obj && ((zz->Get_Obj_Size_Multi) || (zz->Get_Obj_Size))) {
 
     objSizes = (int *) ZOLTAN_MALLOC(*num_obj * sizeof(int));
@@ -197,6 +202,7 @@ double *geom_vec = NULL;
 struct Dot_Struct *dot;
 char *yo = "initialize_dot";
 
+
   ierr = Zoltan_Get_Coordinates(zz, num_obj, gid, lid, num_geom, &geom_vec);
   if (ierr == ZOLTAN_FATAL || ierr == ZOLTAN_MEMERR) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
@@ -263,6 +269,7 @@ int Zoltan_RB_Send_Outgoing(
   int use_ids,                      /* true if global and local IDs are to be
                                        kept for RCB or RIB.  The IDs must be
                                        communicated if use_ids is true.  */
+  int use_obj_sizes,
   MPI_Comm local_comm,
   int proclower,                    /* smallest processor for Tflops_Special */
   int numprocs,                     /* number of processors for Tflops_Special*/
@@ -316,7 +323,7 @@ int Zoltan_RB_Send_Outgoing(
 #else
   ierr = Zoltan_RB_Send_Dots_less_memory(zz, gidpt, lidpt, dotpt, dotmark, proc_list, 
                          outgoing, dotnum, dotmax, set, allocflag, overalloc, 
-                         stats, counters, use_ids, local_comm);
+                         stats, counters, use_ids, use_obj_sizes, local_comm);
 #endif
 
 End:
@@ -353,9 +360,10 @@ int Zoltan_RB_Send_To_Part(
                                        4 = most dot memory this proc ever allocs
                                        5 = # of times a previous cut is re-used
                                        6 = # of reallocs of dot array */
-  int use_ids                       /* true if global and local IDs are to be
+  int use_ids,                      /* true if global and local IDs are to be
                                        kept for RCB or RIB.  The IDs must be
                                        communicated if use_ids is true.  */
+  int use_obj_sizes
 )
 {
 /* When parallel partitioning is done, send dots that are on the wrong
@@ -379,6 +387,7 @@ int num_gid = zz->Num_GID;
 int set = 0;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
+
   if (zz->LB.PartDist == NULL)
     return ierr;  /* Check is not needed for uniform k == p */
   
@@ -414,7 +423,7 @@ int set = 0;
 #else
   ierr = Zoltan_RB_Send_Dots_less_memory(zz, gidpt, lidpt, dotpt, dotmark, proc_list,
                          outgoing, dotnum, dotmax, set, allocflag, overalloc, 
-                         stats, counters, use_ids, zz->Communicator);
+                         stats, counters, use_ids, use_obj_sizes, zz->Communicator);
 #endif
 
 End:
@@ -618,10 +627,6 @@ End:
 /*****************************************************************************/
 /*****************************************************************************/
 
-static char memmsg[128];
-int less_memory_flag=0;
-int debug_pid;
-
 #define COMM_DO_ERROR \
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) { \
       ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error returned from Zoltan_Comm_Do."); \
@@ -656,6 +661,7 @@ int Zoltan_RB_Send_Dots_less_memory(
                                        kept for RCB or RIB (for LB.Return_Lists 
                                        or high Debug_Levels).  The IDs must be
                                        communicated if use_ids is true.  */
+  int use_obj_sizes,                /* if not true, then object sizes are all 1 */
   MPI_Comm local_comm
 )
 {
@@ -678,16 +684,22 @@ int Zoltan_RB_Send_Dots_less_memory(
   int num_lid_entries = zz->Num_LID;
   int i, ii, j, ierr = ZOLTAN_OK;
   int firstStaying, firstGoingReordered;
-  RCB_STRUCT *problem;
   ZOLTAN_ID_PTR ids;
   double *dval;
   int *ival, *reorder=NULL;
   struct Dot_Struct *dots=NULL;
   ZOLTAN_COMM_OBJ *cobj = NULL;     /* pointer for communication object */
   ZOLTAN_GNO_TYPE verify[4];
+  int num_dim;
+  int weight_dim = ( (zz->Obj_Weight_Dim > 0) ? zz->Obj_Weight_Dim : 1);
 
   ZOLTAN_TRACE_ENTER(zz, yo);
   incoming = 0;
+
+  num_dim = zz->Get_Num_Geom(zz->Get_Num_Geom_Data, &ierr);
+  if (ierr != ZOLTAN_OK){
+    goto End;
+  }
 
   /* Re-order the data to be sent so that data per proc is contiguous.  This
    * saves memory in Zoltan_Comm_*.  The proc_list input array is reordered here.
@@ -710,8 +722,6 @@ int Zoltan_RB_Send_Dots_less_memory(
       }
     }
   }
-
-  /* seems to be a bug in quicksort call */
 
   Zoltan_quicksort_list_inc_int(proc_list, reorder, 0, outgoing - 1);
 
@@ -770,14 +780,12 @@ int Zoltan_RB_Send_Dots_less_memory(
     if (*dotmax > counters[4]) counters[4] = *dotmax;
   }
 
-  problem = (RCB_STRUCT *)(zz->LB.Data_Structure);
-
   /* Figure out the size of the largest single send/recv and allocate buffers of that size */
 
-  bufsize = sizeof(double) * problem->Num_Dim;     /* to send coordinates */
+  bufsize = sizeof(double) * num_dim;             /* to send coordinates */
   
-  if ((sizeof(double) * problem->weight_dim) > bufsize)    /* to send weights */
-    bufsize = sizeof(double) * problem->weight_dim;
+  if ((sizeof(double) * weight_dim) > bufsize)    /* to send weights */
+    bufsize = sizeof(double) * weight_dim;
 
   if (incoming > 0){
     recvbuf = (char *)ZOLTAN_MALLOC(bufsize * incoming);
@@ -807,14 +815,14 @@ int Zoltan_RB_Send_Dots_less_memory(
     dval = (double *)sendbuf;
 
     for (i=0; i < outgoing; i++){
-      for (j=0; j < problem->Num_Dim; j++){
+      for (j=0; j < num_dim; j++){
         *dval++ = dots[reorder[i]].X[j];
       }
     }
 
     for (i = firstStaying; i < *dotnum; i++) {
       if ((*dotmark)[i] == set) {
-        for (j=0; j < problem->Num_Dim; j++){
+        for (j=0; j < num_dim; j++){
           dots[next].X[j] = dots[i].X[j];
         }
         next++;
@@ -823,16 +831,17 @@ int Zoltan_RB_Send_Dots_less_memory(
   }
 
   ierr = Zoltan_Comm_Do(cobj, message_tag++, (char *) sendbuf, 
-                    sizeof(double)*problem->Num_Dim,
+                    sizeof(double)*num_dim,
                     (char *) recvbuf);
 
   if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) COMM_DO_ERROR;
+
 
   if (incoming > 0){
     dval = (double *)recvbuf;
   
     for (i=0; i < incoming; i++,next++){
-      for (j=0; j < problem->Num_Dim; j++){
+      for (j=0; j < num_dim; j++){
         dots[next].X[j] = *dval++;
       }
     }
@@ -892,20 +901,20 @@ int Zoltan_RB_Send_Dots_less_memory(
 
   /***** Send/receive weights *****/
 
-  if (problem->weight_dim > 0){
+  if (weight_dim > 0){
 
     if (outgoing > 0){
       dval = (double *)sendbuf;
     
       for (i = 0; i < outgoing; i++) {
-        for (j=0; j < problem->weight_dim; j++){
+        for (j=0; j < weight_dim; j++){
           *dval++ = dots[reorder[i]].Weight[j];
         }
       }
 
       for (i = firstStaying, next=0; i < *dotnum; i++) {
         if ((*dotmark)[i] == set) {
-          for (j=0; j < problem->weight_dim; j++){
+          for (j=0; j < weight_dim; j++){
             dots[next].Weight[j] = dots[i].Weight[j];
           }
           next++;
@@ -914,7 +923,7 @@ int Zoltan_RB_Send_Dots_less_memory(
     }
   
     ierr = Zoltan_Comm_Do(cobj, message_tag++, (char *) sendbuf, 
-                      sizeof(double)*problem->weight_dim,
+                      sizeof(double)*weight_dim,
                       (char *) recvbuf);
   
     if (ierr != ZOLTAN_OK && ierr != ZOLTAN_WARN) COMM_DO_ERROR;
@@ -923,7 +932,7 @@ int Zoltan_RB_Send_Dots_less_memory(
       dval = (double *)recvbuf;
     
       for (i=startIncoming; i < dotnew; i++){
-        for (j=0; j < problem->weight_dim; j++){
+        for (j=0; j < weight_dim; j++){
           dots[i].Weight[j] = *dval++;
         }
       }
@@ -1029,7 +1038,8 @@ int Zoltan_RB_Send_Dots_less_memory(
 
   /* If no processes have defined a migration size query, we can skip this */
 
-  if (problem->obj_sizes){
+  if (use_obj_sizes){
+
     if (outgoing > 0){
       ival = (int *)sendbuf;
     
@@ -1071,7 +1081,6 @@ int Zoltan_RB_Send_Dots_less_memory(
 
 End:
 
-less_memory_flag=1;
   ZOLTAN_FREE(&sendbuf);
   ZOLTAN_FREE(&reorder);
   ZOLTAN_FREE(&recvbuf);
@@ -1140,10 +1149,11 @@ int Zoltan_RB_Remap(
                                        4 = most dot memory this proc ever allocs
                                        5 = # of times a previous cut is re-used
                                        6 = # of reallocs of dot array */
-  int use_ids                       /* true if global and local IDs are to be
+  int use_ids,                       /* true if global and local IDs are to be
                                        kept for RCB or RIB (for LB.Return_Lists 
                                        or high Debug_Levels).  The IDs must be
                                        communicated if use_ids is true.  */
+   int use_obj_sizes
 )
 {
 char *yo = "Zoltan_RB_Remap";
@@ -1213,7 +1223,7 @@ int i;
       ierr = Zoltan_RB_Send_Dots_less_memory(zz, gidpt, lidpt, dotpt, &proc, proc_list,
                                  outgoing, dotnum, dotmax, zz->Proc, allocflag,
                                  overalloc, stats, counters, use_ids,
-                                 zz->Communicator);
+                                 use_obj_sizes, zz->Communicator);
 #endif
       if (ierr < 0) {
         ZOLTAN_PRINT_ERROR(zz->Proc, yo,

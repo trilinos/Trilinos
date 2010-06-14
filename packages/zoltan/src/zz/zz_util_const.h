@@ -38,7 +38,7 @@ void Zoltan_Transform_Box_Points(double *lo, double *hi, double (*m)[3],
   int *a, int d, int ndims, double (*v)[3]);
 int Zoltan_AllReduceInPlace(void *, int , MPI_Datatype , MPI_Op , MPI_Comm );
 int Zoltan_set_mpi_types();
-void Zoltan_write_linux_meminfo(int append, char *msg);
+void Zoltan_write_linux_meminfo(int append, char *msg, int committedOnly);
 
 /* A Zoltan_Map is like a C++ STL map.  It uses Zoltan_Hash.
  */
