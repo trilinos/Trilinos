@@ -200,7 +200,7 @@ void LSCPreconditionerFactory::initializeFromParameterList(const Teuchos::Parame
       stratPL = Teuchos::rcpFromRef(pl.sublist("Strategy Settings"));
 
    // build the strategy object
-   RCP<LSCStrategy> strategy = buildStrategy(name,*stratPL,invLib);
+   RCP<LSCStrategy> strategy = buildStrategy(name,*stratPL,invLib,getRequestHandler());
  
    // strategy could not be built
    if(strategy==Teuchos::null) {
@@ -246,8 +246,9 @@ CloneFactory<LSCStrategy> LSCPreconditionerFactory::strategyBuilder_;
   *          a pointer is returned, otherwise Teuchos::null is returned.
   */
 RCP<LSCStrategy> LSCPreconditionerFactory::buildStrategy(const std::string & name, 
-                                                             const Teuchos::ParameterList & settings,
-                                                             const RCP<const InverseLibrary> & invLib)
+                                                         const Teuchos::ParameterList & settings,
+                                                         const RCP<const InverseLibrary> & invLib,
+                                                         const RCP<RequestHandler> & rh)
 {
    Teko_DEBUG_SCOPE("LSCPreconditionerFactory::buildStrategy",10);
 
@@ -262,6 +263,7 @@ RCP<LSCStrategy> LSCPreconditionerFactory::buildStrategy(const std::string & nam
 
    // now that inverse library has been set,
    // pass in the parameter list
+   strategy->setRequestHandler(rh);
    strategy->initializeFromParameterList(settings,*invLib);
 
    return strategy;

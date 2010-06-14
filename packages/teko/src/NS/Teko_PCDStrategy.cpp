@@ -48,6 +48,8 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teko_Utilities.hpp"
 
+#define Teko_DEBUG_INT 11
+
 namespace Teko {
 namespace NS {
 
@@ -116,15 +118,11 @@ PCDStrategy::getInvS(const Teko::BlockedLinearOp & A,BlockPreconditionerState & 
 void PCDStrategy::initializeState(const Teko::BlockedLinearOp & A,BlockPreconditionerState & state) const
 {
    Teko_DEBUG_SCOPE("PCDStrategy::initializeState",10);
+   TEUCHOS_ASSERT(getRequestHandler()!=Teuchos::null);
 
    std::string pcdStr      = getPCDString();
    std::string presLapStr  = getPressureLaplaceString();
    std::string presMassStr = getPressureMassString();
-
-   // sanity checks
-   TEUCHOS_ASSERT(state.getLinearOp(pcdStr)      !=Teuchos::null);
-   TEUCHOS_ASSERT(state.getLinearOp(presLapStr)  !=Teuchos::null);
-   TEUCHOS_ASSERT(state.getLinearOp(presMassStr) !=Teuchos::null);
 
    // no work to be done
    if(state.isInitialized())
@@ -138,7 +136,8 @@ void PCDStrategy::initializeState(const Teko::BlockedLinearOp & A,BlockPrecondit
    LinearOp B  = Teko::getBlock(1,0,A);
    LinearOp C  = Teko::getBlock(1,1,A);
 
-   LinearOp  Qp = state.getLinearOp(presMassStr);
+   LinearOp  Qp = getRequestHandler()->request<LinearOp>(presMassStr);
+   TEUCHOS_ASSERT(Qp!=Teuchos::null);
 
    // build the inverse Laplacian complement
    /////////////////////////////////////////////
@@ -163,10 +162,10 @@ void PCDStrategy::initializeState(const Teko::BlockedLinearOp & A,BlockPrecondit
    /////////////////////////////////////////////
    ModifiableLinearOp & invLaplace = state.getModifiableOp("invLaplace");
    {
-      Teko_DEBUG_SCOPE("Building inv(Laplace)",10);
       Teuchos::TimeMonitor timer(*invSTimer_,true);
 
-      LinearOp laplace = state.getLinearOp(presLapStr);
+      LinearOp laplace = getRequestHandler()->request<Teko::LinearOp>(presLapStr);
+      TEUCHOS_ASSERT(laplace!=Teuchos::null);
       if(invLaplace==Teuchos::null)
          invLaplace = buildInverse(*invFactoryS_,laplace);
       else
@@ -180,7 +179,8 @@ void PCDStrategy::initializeState(const Teko::BlockedLinearOp & A,BlockPrecondit
       Teuchos::TimeMonitor timer(*opsTimer_,true);
 
       // build Schur-complement
-      LinearOp pcd = state.getLinearOp(pcdStr);
+      LinearOp pcd = getRequestHandler()->request<Teko::LinearOp>(pcdStr);
+      TEUCHOS_ASSERT(pcd!=Teuchos::null);
       LinearOp invL = invLaplace;
       LinearOp invS = multiply(iQp,pcd,invL);
 
@@ -258,6 +258,11 @@ void PCDStrategy::initializeFromParameterList(const Teuchos::ParameterList & pl,
       invFactoryS_ = invFactoryF_;
    else
       invFactoryS_ = invLib.getInverseFactory(invSStr);
+
+   // setup a request for required operators
+   getRequestHandler()->preRequest<Teko::LinearOp>(getPressureMassString());
+   getRequestHandler()->preRequest<Teko::LinearOp>(getPCDString());
+   getRequestHandler()->preRequest<Teko::LinearOp>(getPressureLaplaceString());
 }
 
 //! For assiting in construction of the preconditioner
@@ -282,10 +287,6 @@ Teuchos::RCP<Teuchos::ParameterList> PCDStrategy::getRequestedParameters() const
          pl->setEntry(itr->first,itr->second);
    }
 
-   pl->set("Pressure Mass Operator", false,"Pressure mass matrix");
-   pl->set("Pressure Laplace Operator", false,"Pressure Laplacian matrix");
-   pl->set("PCD Operator", false,"Pressure convection-diffusion matrix");
-
    return pl;
 }
 
@@ -298,18 +299,6 @@ bool PCDStrategy::updateRequestedParameters(const Teuchos::ParameterList & pl)
    // update requested parameters in solvers
    result &= invFactoryF_->updateRequestedParameters(pl);
    result &= invFactoryS_->updateRequestedParameters(pl);
-
-   Teuchos::ParameterList hackList(pl);
-   // get required operator acknowledgment...user must set these to true
-   bool pmo = hackList.get<bool>("Pressure Mass Operator",false);
-   bool plo = hackList.get<bool>("Pressure Laplace Operator",false);
-   bool pcdo = hackList.get<bool>("PCD Operator", false);
-   
-   if(not pmo)  { Teko_DEBUG_MSG("User must acknowledge the use of the \"Pressure Mass Operator\"!",0); }
-   if(not plo)  { Teko_DEBUG_MSG("User must acknowledge the use of the \"Pressure Laplace Operator\"!",0); }
-   if(not pcdo) { Teko_DEBUG_MSG("User must acknowledge the use of the \"PCD Operator\"!",0); }
-
-   result &= (pmo & plo & pcdo);
 
    return result;
 }

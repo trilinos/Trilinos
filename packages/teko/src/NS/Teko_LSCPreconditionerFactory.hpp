@@ -156,7 +156,8 @@ public:
    static RCP<LSCStrategy> 
    buildStrategy(const std::string & name, 
                  const Teuchos::ParameterList & settings,
-                 const RCP<const InverseLibrary> & invLib);
+                 const RCP<const InverseLibrary> & invLib,
+                 const RCP<RequestHandler> & rh);
 
    /** \brief Add a strategy to the builder. This is done using the
      *        clone pattern. 

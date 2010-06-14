@@ -211,6 +211,18 @@ public:
 
    //! For assiting in construction of the preconditioner
    virtual bool updateRequestedParameters(const Teuchos::ParameterList & pl) { return true; }
+
+   //! This method sets the request handler for this object
+   void setRequestHandler(const Teuchos::RCP<RequestHandler> & rh)
+   { requestHandler_ = rh; }
+
+   //! This method gets the request handler uses by this object
+   Teuchos::RCP<RequestHandler> getRequestHandler() const
+   { return requestHandler_; }
+
+private:
+   Teuchos::RCP<RequestHandler> requestHandler_;
+
 };
 
 } // end namespace NS

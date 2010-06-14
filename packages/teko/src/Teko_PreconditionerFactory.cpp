@@ -214,8 +214,10 @@ PreconditionerFactory::buildPreconditionerFactory(const std::string & name,
       return Teuchos::null;
 
    // add in the inverse library
-   if(invLib!=Teuchos::null)
+   if(invLib!=Teuchos::null) {
       precFact->setInverseLibrary(invLib);
+      precFact->setRequestHandler(invLib->getRequestHandler());
+   }
 
    // now that inverse library has been set,
    // pass in the parameter list

@@ -473,6 +473,15 @@ void InvLSCStrategy::initializeFromParameterList(const Teuchos::ParameterList & 
    // set other parameters
    setUseFullLDU(useLDU);
    setRowZeroing(rowZeroing);
+
+   if(useMass_) {
+      Teuchos::RCP<Teko::RequestHandler> rh = getRequestHandler();
+      rh->preRequest<Teko::LinearOp>(Teko::RequestMesg("Velocity Mass Matrix"));
+      Teko::LinearOp mass 
+            = rh->request<Teko::LinearOp>(Teko::RequestMesg("Velocity Mass Matrix"));
+      setMassMatrix(mass);
+   }
+
 }
 
 //! For assiting in construction of the preconditioner
@@ -500,12 +509,6 @@ Teuchos::RCP<Teuchos::ParameterList> InvLSCStrategy::getRequestedParameters() co
    }
 
    // use the mass matrix
-   if(useMass_) {
-      pl->set<Teko::LinearOp>("Velocity Mass Matrix", Teuchos::null,"Velocity mass matrix");
-      result = pl;
-   }
-
-   // use the mass matrix
    if(useWScaling_) {
       pl->set<Teko::LinearOp>("W-Scaling Vector", Teuchos::null,"W-Scaling Vector");
       result = pl;
@@ -523,17 +526,6 @@ bool InvLSCStrategy::updateRequestedParameters(const Teuchos::ParameterList & pl
    // update requested parameters in solvers
    result &= invFactoryF_->updateRequestedParameters(pl);
    result &= invFactoryS_->updateRequestedParameters(pl);
-
-   // set the mass matrix: throw if the strategy is not the right type
-   if(useMass_) {
-      Teko::LinearOp mass = pl.get<Teko::LinearOp>("Velocity Mass Matrix");
-
-      // we must have a mass matrix
-      if(mass==Teuchos::null)
-         result &= false;
-      else
-         setMassMatrix(mass);
-   }
 
    // use W scaling matrix
    if(useWScaling_) {

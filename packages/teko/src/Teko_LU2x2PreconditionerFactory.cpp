@@ -123,7 +123,7 @@ void LU2x2PreconditionerFactory::initializeFromParameterList(const Teuchos::Para
    // build strategy object
    std::string stratName = settings.get<std::string>("Strategy Name");
    const Teuchos::ParameterList & pl = settings.sublist("Strategy Settings");
-   invOpsStrategy_ = buildStrategy(stratName,pl,getInverseLibrary());
+   invOpsStrategy_ = buildStrategy(stratName,pl,getInverseLibrary(),getRequestHandler());
 }
 
 /** \brief Request the additional parameters this preconditioner factory
@@ -186,7 +186,8 @@ CloneFactory<LU2x2Strategy> LU2x2PreconditionerFactory::strategyBuilder_;
   */
 RCP<LU2x2Strategy> LU2x2PreconditionerFactory::buildStrategy(const std::string & name, 
                                                              const Teuchos::ParameterList & settings,
-                                                             const RCP<const InverseLibrary> & invLib)
+                                                             const RCP<const InverseLibrary> & invLib,
+                                                             const RCP<RequestHandler> & rh)
 {
    Teko_DEBUG_SCOPE("LU2x2PreconditionerFactory::buildStrategy",0);
 
@@ -197,7 +198,7 @@ RCP<LU2x2Strategy> LU2x2PreconditionerFactory::buildStrategy(const std::string &
       std::vector<std::string> names;
       strategyBuilder_.getCloneNames(names); 
       DEBUG_STREAM << "Strategy names = "; 
-      for(int i=0;i<names.size();i++)
+      for(std::size_t i=0;i<names.size();i++)
          DEBUG_STREAM << names[i] << ", ";
       DEBUG_STREAM << std::endl;
    Teko_DEBUG_MSG_END()
@@ -213,6 +214,7 @@ RCP<LU2x2Strategy> LU2x2PreconditionerFactory::buildStrategy(const std::string &
 
    // now that inverse library has been set,
    // pass in the parameter list
+   strategy->setRequestHandler(rh);
    strategy->initializeFromParameterList(settings,*invLib);
 
    return strategy;

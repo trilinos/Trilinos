@@ -37,6 +37,14 @@ public:
    template <typename DataT>
    DataT request(const RequestMesg & rm) const;
 
+   /** Get the data for a particular request. Short hand version.
+     *
+     * \param[in] rm The message describing the request.
+     */
+   template <typename DataT>
+   inline DataT request(const std::string & rm) const
+   { return request<DataT>(RequestMesg(rm)); }
+
    /** Send a pre-request message to the callback
      * allowing them to do some work up front and
      * ahead of time. This is meant to be called
@@ -46,6 +54,17 @@ public:
      */
    template <typename DataT>
    void preRequest(const RequestMesg & rm) const;
+
+   /** Send a pre-request message to the callback
+     * allowing them to do some work up front and
+     * ahead of time. This is meant to be called
+     * at construction/initialization. Short hand version.
+     *
+     * \param[in] rm The message describing the request.
+     */
+   template <typename DataT>
+   inline void preRequest(const std::string & rm) const
+   { preRequest<DataT>(RequestMesg(rm)); }
 
 private:
    // stores the callbacks to be used by this handler.

@@ -313,6 +313,14 @@ void SIMPLEPreconditionerFactory::initializeFromParameterList(const Teuchos::Par
    // based on parameter type build a strategy
    invVelFactory_ = invVFact; 
    invPrsFactory_ = invPFact;
+
+   if(useMass_) {
+      Teuchos::RCP<Teko::RequestHandler> rh = getRequestHandler();
+      rh->preRequest<Teko::LinearOp>(Teko::RequestMesg("Velocity Mass Matrix"));
+      Teko::LinearOp mass 
+            = rh->request<Teko::LinearOp>(Teko::RequestMesg("Velocity Mass Matrix"));
+      setMassMatrix(mass);
+   }
 }
 
 //! For assiting in construction of the preconditioner
@@ -350,12 +358,6 @@ Teuchos::RCP<Teuchos::ParameterList> SIMPLEPreconditionerFactory::getRequestedPa
       }
    }
 
-   // use the mass matrix
-   if(useMass_) {
-      pl->set<Teko::LinearOp>("Velocity Mass Matrix", Teuchos::null,"Velocity mass matrix");
-      result = pl;
-   }
-
    return result;
 }
 
@@ -370,17 +372,6 @@ bool SIMPLEPreconditionerFactory::updateRequestedParameters(const Teuchos::Param
    result &= invPrsFactory_->updateRequestedParameters(pl);
    if(customHFactory_!=Teuchos::null)
       result &= customHFactory_->updateRequestedParameters(pl);
-
-   // set the mass matrix: throw if the strategy is not the right type
-   if(useMass_) {
-      Teko::LinearOp mass = pl.get<Teko::LinearOp>("Velocity Mass Matrix");
-
-      // we must have a mass matrix
-      if(mass==Teuchos::null)
-         result &= false;
-      else
-         setMassMatrix(mass);
-   }
 
    return result;
 }

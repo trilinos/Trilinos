@@ -174,7 +174,7 @@ public:
 
    static std::string getPCDString() { return "PCD Operator"; }
    static std::string getPressureLaplaceString() { return "Pressure Laplace Operator"; }
-   static std::string getPressureMassString() { return "Pressure Mass Operator"; }
+   static std::string getPressureMassString() { return "Pressure Mass Matrix"; }
 };
 
 } // end namespace NS

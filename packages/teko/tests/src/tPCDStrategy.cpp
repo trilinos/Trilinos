@@ -75,6 +75,7 @@
 // Teko includes
 #include "NS/Teko_PCDStrategy.hpp"
 #include "Teko_InverseLibrary.hpp"
+#include "Teko_StaticRequestCallback.hpp"
 
 namespace Teko {
 namespace Test {
@@ -171,9 +172,6 @@ bool tPCDStrategy::test_PCDStrategy(int verbosity,std::ostream & os)
    tester.show_all_tests(true);
    tester.set_all_error_tol(tolerance_);
 
-   RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos();
-   RCP<Teko::InverseFactory> inverseFact = invLib->getInverseFactory("Amesos");
-
    Teko::LinearOp M1 = buildExampleOp(1,*GetComm(),1.0);
    Teko::LinearOp M2 = buildExampleOp(2,*GetComm(),1.0);
    Teko::LinearOp A = Thyra::nonconstBlock2x2<double>(buildExampleOp(2,*GetComm(),1.0),
@@ -190,6 +188,21 @@ bool tPCDStrategy::test_PCDStrategy(int verbosity,std::ostream & os)
    std::string presLapStr  = Teko::NS::PCDStrategy::getPressureLaplaceString();
    std::string presMassStr = Teko::NS::PCDStrategy::getPressureMassString();
 
+   RCP<Teko::StaticRequestCallback<Teko::LinearOp> > pcdCb
+         = rcp(new Teko::StaticRequestCallback<Teko::LinearOp>(pcdStr,Fp));
+   RCP<Teko::StaticRequestCallback<Teko::LinearOp> > lapCb
+         = rcp(new Teko::StaticRequestCallback<Teko::LinearOp>(presLapStr,laplace));
+   RCP<Teko::StaticRequestCallback<Teko::LinearOp> > massCb
+         = rcp(new Teko::StaticRequestCallback<Teko::LinearOp>(presMassStr,Qp));
+
+   RCP<Teko::RequestHandler> rh = rcp(new Teko::RequestHandler);
+   rh->addRequestCallback(pcdCb);
+   rh->addRequestCallback(lapCb);
+   rh->addRequestCallback(massCb);
+
+   RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos();
+   RCP<Teko::InverseFactory> inverseFact = invLib->getInverseFactory("Amesos");
+
    // test the inverse of the 00 block
    {
       bool result;
@@ -199,11 +212,12 @@ bool tPCDStrategy::test_PCDStrategy(int verbosity,std::ostream & os)
       Teko::LinearOp invA00 = inverseFact->buildInverse(M2);
       Teko::BlockPreconditionerState state;
       Teko::NS::PCDStrategy strategy(inverseFact,inverseFact);
+      strategy.setRequestHandler(rh);
 
       // build the state object
-      state.addLinearOp(presLapStr,  laplace);
-      state.addLinearOp(pcdStr,      Fp);
-      state.addLinearOp(presMassStr, Qp);
+      // state.addLinearOp(presLapStr,  laplace);
+      // state.addLinearOp(pcdStr,      Fp);
+      // state.addLinearOp(presMassStr, Qp);
 
       // test the 0,0 block inverses: hat
       Teko::LinearOp hatInvA00 = strategy.getHatInvA00(blkA,state);
@@ -238,11 +252,12 @@ bool tPCDStrategy::test_PCDStrategy(int verbosity,std::ostream & os)
 
       Teko::BlockPreconditionerState state;
       Teko::NS::PCDStrategy strategy(inverseFact,inverseFact);
+      strategy.setRequestHandler(rh);
 
       // build the state object
-      state.addLinearOp(presLapStr,  laplace);
-      state.addLinearOp(pcdStr,      Fp);
-      state.addLinearOp(presMassStr, Qp);
+      // state.addLinearOp(presLapStr,  laplace);
+      // state.addLinearOp(pcdStr,      Fp);
+      // state.addLinearOp(presMassStr, Qp);
 
       // test the 0,0 block inverses: hat
       Teko::LinearOp invS_strategy = strategy.getInvS(blkA,state);
