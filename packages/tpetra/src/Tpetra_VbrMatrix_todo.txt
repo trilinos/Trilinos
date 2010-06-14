@@ -1,16 +1,11 @@
 
 Still need to do the following:
 
-1. make apply work with multivectors that have more than 1 column
-
-2. implement apply for transpose
+1. implement apply for transpose
   (including in parallel)
 
-3. add more data accessors/manipulators:
-  - putScalar
-  - sumInto for both local and global block-entries
-  - set for local block-entries
-  - get for local block-entries
+2. add more data accessors/manipulators:
+  - sumInto for local block-entries
 
-4. make set/suminto/get work after fillComplete has been called.
+3. testing, profiling and optimizing on large matrices
 

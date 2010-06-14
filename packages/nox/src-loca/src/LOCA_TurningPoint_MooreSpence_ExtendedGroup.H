@@ -63,6 +63,10 @@ namespace LOCA {
       class SolverStrategy;
     }
   }
+
+  namespace TimeDependent {
+    class AbstractGroup;
+  }
 }
 namespace LOCA { 
 
@@ -127,6 +131,26 @@ namespace LOCA {
             indicating whether to perturb the initial solution
        <li> "Relative Perturbation Size" -- [double] (default: 1.0e-3) 
             Relative perturbation size if perturbing the initial solution
+       <li> "Null Vector Scaling" -- [string] (default:  "Order N") - 
+             Method to scale \f$l\f$.  This determines the norm of \f$l\f$
+	     (and hence, \f$n\f$).  Valid choices are:
+             <ul>
+             <li> "None" -- Use initial scaling
+             <li> "Order 1" -- Scale to unit norm
+             <li> "Order N" -- Use vector length scaling
+             </ul>
+       <li> "Update Null Vectors Every Continuation Step"  -- 
+           [bool] (default: false) - 
+           Flag indicating whether to update length normalization vector 
+	   \f$l\f$ via \f$l = n\f$ every continuation step
+       <li> "Multiply Null Vectors by Mass Matrix"  -- 
+           [bool] (default: false) - 
+           Flag indicating whether to multiply length scaling vector \f$l\f$ by
+           the mass matrix \f$M = \partial f/\partial\dot{x}\f$ at the start
+           of a turning point calculation, and each time it is
+           updated.  This can improve the scaling of this vector, and
+           may orthogonalize it against structural null spaces (i.e., 
+           pressure null space for incompressible Navier-Stokes).
        </ul>
        */
 
@@ -475,6 +499,13 @@ namespace LOCA {
 
       protected:
 
+	//! Enumerated type determining type of scaling
+	enum NullVectorScaling {
+	  NVS_None,      //! No scaling
+	  NVS_OrderOne,  //! Scale to O(1)
+	  NVS_OrderN     //! Scale to O(N) when N is the vector length
+	};
+
 	//! Set bifurcation parameter
 	void setBifParam(double param);
 
@@ -483,6 +514,9 @@ namespace LOCA {
 
 	//! Initializes group
 	void init(bool perturbSoln = false, double perturbSize = 0.0);
+
+	//! Scale null vector
+	void scaleNullVector(NOX::Abstract::Vector& a);
 
       private:
 
@@ -553,6 +587,24 @@ namespace LOCA {
 
 	//! Is Newton vector valid
 	bool isValidNewton;
+
+	/*! 
+	 * \brief Flag indicating whether to update \f$n\f$
+	 * every continuation step.
+	 */
+	bool updateVectorsEveryContinuationStep;
+
+	//! Null vector scaling method
+	NullVectorScaling nullVecScaling;
+
+	//! Multiply null vectors by mass matrix
+	bool multiplyMass;
+
+	//! Time dependent group interface for multiplying by mass matrix
+	Teuchos::RCP<LOCA::TimeDependent::AbstractGroup> tdGrp;
+
+	//! Temporary vector for mulplying null vectors by mass matrix
+	Teuchos::RCP<NOX::Abstract::Vector> tmp_mass;
 
       }; // class ExtendedGroup
 

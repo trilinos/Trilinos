@@ -245,7 +245,7 @@ int main(int argc, char *argv[]) {
         // The problem is non-Hermitian.
         vector<int> curind(1);
         vector<MT> resnorm(1), tempnrm(1);
-        Teuchos::RCP<MV> Av_r, Av_i, Bv_r, Bv_i;
+        Teuchos::RCP<const MV> Av_r, Av_i, Bv_r, Bv_i;
         Epetra_MultiVector Aevec(*Map,numev), Bevec(*Map,numev), res(*Map,1);
 
         // Compute A*evecs, B*evecs

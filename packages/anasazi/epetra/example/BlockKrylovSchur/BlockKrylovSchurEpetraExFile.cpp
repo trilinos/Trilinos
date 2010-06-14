@@ -188,7 +188,8 @@ int main(int argc, char *argv[]) {
       int i=0;
       std::vector<int> curind(1);
       std::vector<double> resnorm(1), tempnrm(1);
-      Teuchos::RCP<MV> tempeveci, tempKevec, tempMevec, Mevecs;
+      Teuchos::RCP<MV> tempKevec, Mevecs;
+      Teuchos::RCP<const MV> tempeveci, tempMevec;
       Epetra_MultiVector Kevecs(*Map,numev);
       
       // Compute K*evecs

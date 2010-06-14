@@ -64,9 +64,7 @@ int main (int argc, char **argv)
   char *block_names[10];
   char *elem_type[10];
   char name[MAX_STR_LENGTH+1];
-  char *cdum;
-
-  cdum = 0;
+  char *cdum = 0;
 
   CPU_word_size = 0;                    /* sizeof(float) */
   IO_word_size = 0;                     /* use what is stored in file */

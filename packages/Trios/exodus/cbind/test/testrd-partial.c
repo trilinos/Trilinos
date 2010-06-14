@@ -94,10 +94,8 @@ int main (int argc, char **argv)
   char *attrib_names[10];
   char name[MAX_STR_LENGTH+1];
   char title[MAX_LINE_LENGTH+1], elem_type[MAX_STR_LENGTH+1];
-  char *cdum;
+  char *cdum = 0;
   char *prop_names[3];
-
-  cdum = 0;
 
   CPU_word_size = 0;                    /* sizeof(float) */
   IO_word_size = 0;                     /* use what is stored in file */

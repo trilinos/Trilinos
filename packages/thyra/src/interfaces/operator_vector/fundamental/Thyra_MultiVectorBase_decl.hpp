@@ -1078,17 +1078,17 @@ public:
   //@{
 
   /** \brief Deprecated. */
-  RCP<const MultiVectorBase<Scalar> >
+  THYRA_DEPRECATED RCP<const MultiVectorBase<Scalar> >
   subView( const int numCols, const int cols[] ) const
     { return subView( Teuchos::arrayView<const int>(cols,numCols) ); }
 
   /** \brief Deprecated. */
-  RCP<MultiVectorBase<Scalar> >
+  THYRA_DEPRECATED RCP<MultiVectorBase<Scalar> >
   subView( const int numCols, const int cols[] )
     { return subView( Teuchos::arrayView<const int>(cols,numCols) ); }
 
   /** \brief Deprecated. */
-  void applyOp(
+  THYRA_DEPRECATED void applyOp(
     const RTOpPack::RTOpT<Scalar> &primary_op,
     const int num_multi_vecs,
     const MultiVectorBase<Scalar>*const multi_vecs_in[],
@@ -1099,7 +1099,7 @@ public:
     ) const;
 
   /** \brief Deprecated. */
-  void applyOp(
+  THYRA_DEPRECATED void applyOp(
     const RTOpPack::RTOpT<Scalar> &primary_op,
     const RTOpPack::RTOpT<Scalar> &secondary_op,
     const int num_multi_vecs,
@@ -1184,7 +1184,7 @@ void applyOp(
  * \relates MultiVectorBase
  */
 template<class Scalar>
-inline
+THYRA_DEPRECATED inline
 void applyOp(
   const RTOpPack::RTOpT<Scalar> &primary_op,
   const int num_multi_vecs,
@@ -1215,7 +1215,7 @@ void applyOp(
  * \relates MultiVectorBase
  */
 template<class Scalar>
-inline
+THYRA_DEPRECATED inline
 void applyOp(
   const RTOpPack::RTOpT<Scalar> &primary_op,
   const RTOpPack::RTOpT<Scalar> &secondary_op,

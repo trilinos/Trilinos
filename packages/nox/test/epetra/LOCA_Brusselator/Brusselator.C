@@ -56,8 +56,8 @@ Brusselator::Brusselator(int numGlobalNodes, Epetra_Comm& comm) :
   ColumnToOverlapImporter(0),
   AA(0),
   A(0),
-  alpha(0.6),
-  beta(2.0),
+  alpha(0.25),
+  beta(1.5),
   D1(1.0/40.0),
   D2(1.0/40.0)
 {
@@ -302,7 +302,7 @@ bool Brusselator::evaluate(FillType fType,
               column1=OverlapMap->GID(NumSpecies * (ne+j));
               column2=OverlapMap->GID(NumSpecies * (ne+j) + 1);
               jac11=basis.wt*basis.dx
-		*(mass_coeff*basis.phi[j]*basis.phi[i]
+		*(-mass_coeff*basis.phi[j]*basis.phi[i]
 		  +jac_coeff*
 		  ((1.0/(basis.dx*basis.dx))*D1*basis.dphide[j]*
 		   basis.dphide[i] + 
@@ -316,7 +316,7 @@ bool Brusselator::evaluate(FillType fType,
 		  *(-beta*basis.phi[j]
 		    + 2.0*basis.uu[0]*basis.phi[j]*basis.uu[1]) );
               jac22=basis.wt*basis.dx
-		*(mass_coeff*basis.phi[j]*basis.phi[i]
+		*(-mass_coeff*basis.phi[j]*basis.phi[i]
 		  +jac_coeff*
 		  ((1.0/(basis.dx*basis.dx))*D2*basis.dphide[j]*
 		   basis.dphide[i]

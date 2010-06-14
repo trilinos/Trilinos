@@ -149,8 +149,8 @@ namespace Anasazi {
     const MagType    zero_mag = Teuchos::ScalarTraits<MagType>::zero();
 
     // Don't change these two without checking the initialization of ind below
-    const unsigned int numvecs   = 10;
-    const unsigned int numvecs_2 = 5;
+    const int numvecs   = 10;
+    const int numvecs_2 = 5;
 
     std::vector<int> ind(numvecs_2);
 
@@ -202,7 +202,7 @@ namespace Anasazi {
     {
       Teuchos::RCP<MV> B = MVT::Clone(*A,numvecs);
       std::vector<MagType> norms(numvecs);
-      if ( (unsigned int)MVT::GetNumberVecs(*B) != numvecs ) {
+      if ( MVT::GetNumberVecs(*B) != numvecs ) {
         om->stream(Warnings)
           << "*** ERROR *** MultiVecTraits::Clone()." << endl
           << "Did not allocate requested number of vectors." << endl;
@@ -215,12 +215,12 @@ namespace Anasazi {
         return false;
       }
       MVT::MvNorm(*B, norms);
-      if ( norms.size() != (unsigned int)numvecs ) {
+      if ( (int)norms.size() != numvecs ) {
         om->stream(Warnings)
           << "*** ERROR *** MultiVecTraits::MvNorm()." << endl
           << "Method resized the output vector." << endl;
       }
-      for (unsigned int i=0; i<numvecs; i++) {
+      for (int i=0; i<numvecs; i++) {
         if ( norms[i] < zero_mag ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::Clone()." << endl
@@ -252,7 +252,7 @@ namespace Anasazi {
 
       MVT::MvInit(*B);
       MVT::MvNorm(*B, norms);
-      for (unsigned int i=0; i<numvecs; i++) {
+      for (int i=0; i<numvecs; i++) {
         if ( norms[i] != zero_mag ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvInit() "
@@ -265,7 +265,7 @@ namespace Anasazi {
       MVT::MvNorm(*B, norms);
       MVT::MvRandom(*B);
       MVT::MvNorm(*B, norms2);
-      for (unsigned int i=0; i<numvecs; i++) {
+      for (int i=0; i<numvecs; i++) {
         if ( norms[i] == zero_mag || norms2[i] == zero_mag ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvRandom()." << endl
@@ -302,7 +302,7 @@ namespace Anasazi {
       MVT::MvRandom(*B);
       MVT::MvScale(*B,SCT::zero());
       MVT::MvNorm(*B, norms);
-      for (unsigned int i=0; i<numvecs; i++) {
+      for (int i=0; i<numvecs; i++) {
         if ( norms[i] != zero_mag ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvScale(alpha) "
@@ -315,7 +315,7 @@ namespace Anasazi {
       std::vector<ScalarType> zeros(numvecs,SCT::zero());
       MVT::MvScale(*B,zeros);
       MVT::MvNorm(*B, norms);
-      for (unsigned int i=0; i<numvecs; i++) {
+      for (int i=0; i<numvecs; i++) {
         if ( norms[i] != zero_mag ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvScale(alphas) "
@@ -346,7 +346,7 @@ namespace Anasazi {
       MVT::MvInit(*B,one);
       MVT::MvNorm(*B, norms);
       bool BadNormWarning = false;
-      for (unsigned int i=0; i<numvecs; i++) {
+      for (int i=0; i<numvecs; i++) {
         if ( norms[i] < zero_mag ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvRandom()." << endl
@@ -377,7 +377,7 @@ namespace Anasazi {
       std::vector<MagType> norms(numvecs);
       MVT::MvInit(*B, zero_mag);
       MVT::MvNorm(*B, norms);
-      for (unsigned int i=0; i<numvecs; i++) {
+      for (int i=0; i<numvecs; i++) {
         if ( norms[i] < zero_mag ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvInit()." << endl
@@ -408,7 +408,7 @@ namespace Anasazi {
       MVT::MvNorm(*B, norms);
       C = MVT::CloneCopy(*B,ind);
       MVT::MvNorm(*C, norms2);
-      if ( (unsigned int)MVT::GetNumberVecs(*C) != numvecs_2 ) {
+      if ( MVT::GetNumberVecs(*C) != numvecs_2 ) {
         om->stream(Warnings)
           << "*** ERROR *** MultiVecTraits::CloneCopy(ind)." << endl
           << "Wrong number of vectors." << endl;
@@ -420,7 +420,7 @@ namespace Anasazi {
           << "Vector lengths don't match." << endl;
         return false;
       }
-      for (unsigned int i=0; i<numvecs_2; i++) {
+      for (int i=0; i<numvecs_2; i++) {
         if ( norms2[i] != norms[ind[i]] ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::CloneCopy(ind)." << endl
@@ -431,7 +431,7 @@ namespace Anasazi {
       }
       MVT::MvInit(*B,zero);
       MVT::MvNorm(*C, norms2); 
-      for (unsigned int i=0; i<numvecs_2; i++) {
+      for (int i=0; i<numvecs_2; i++) {
         if ( norms2[i] != norms2[i] ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::CloneCopy(ind)." << endl
@@ -456,13 +456,13 @@ namespace Anasazi {
       MVT::MvNorm(*B, norms);
       C = MVT::CloneCopy(*B);
       MVT::MvNorm(*C, norms2);
-      if ( (unsigned int)MVT::GetNumberVecs(*C) != numvecs ) {
+      if ( MVT::GetNumberVecs(*C) != numvecs ) {
         om->stream(Warnings)
           << "*** ERROR *** MultiVecTraits::CloneCopy()." << endl
           << "Wrong number of vectors." << endl;
         return false;
       }
-      for (unsigned int i=0; i<numvecs; i++) {
+      for (int i=0; i<numvecs; i++) {
         if ( norms2[i] != norms[i] ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::CloneCopy()." << endl
@@ -472,7 +472,7 @@ namespace Anasazi {
       }
       MVT::MvInit(*B,zero);
       MVT::MvNorm(*C, norms); 
-      for (unsigned int i=0; i<numvecs; i++) {
+      for (int i=0; i<numvecs; i++) {
         if ( norms2[i] != norms[i] ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::CloneCopy()." << endl
@@ -496,15 +496,15 @@ namespace Anasazi {
       B = MVT::Clone(*A,numvecs); 
       MVT::MvRandom(*B);
       MVT::MvNorm(*B, norms);
-      C = MVT::CloneView(*B,ind);
+      C = MVT::CloneViewNonConst(*B,ind);
       MVT::MvNorm(*C, norms2);
-      if ( (unsigned int)MVT::GetNumberVecs(*C) != numvecs_2 ) {
+      if ( MVT::GetNumberVecs(*C) != numvecs_2 ) {
         om->stream(Warnings)
           << "*** ERROR *** MultiVecTraits::CloneView(ind)." << endl
           << "Wrong number of vectors." << endl;
         return false;
       }
-      for (unsigned int i=0; i<numvecs_2; i++) {
+      for (int i=0; i<numvecs_2; i++) {
         if ( norms2[i] != norms[ind[i]] ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::CloneView(ind)." << endl
@@ -512,19 +512,6 @@ namespace Anasazi {
           return false;
         }
       }
-      /*
-      MVT::MvInit(*B,zero);
-      MVT::MvNorm(*C, norms2); 
-      for (unsigned int i=0; i<numvecs_2; i++) {
-        if ( norms2[i] != zero ) {
-          if ( om->isVerbosityAndPrint(Warnings) ) {
-            out << "*** ERROR *** MultiVecTraits::CloneView(ind)." << endl
-                << "Copied vectors were not dependent." << endl;
-          }
-          return false;
-        }
-      }
-      */
     }
 
 
@@ -539,24 +526,22 @@ namespace Anasazi {
       Teuchos::RCP<const MV> constB, C;
       std::vector<MagType> normsB(numvecs), normsC(ind.size());
       std::vector<int> allind(numvecs);
-      for (unsigned int i=0; i<numvecs; i++) {
+      for (int i=0; i<numvecs; i++) {
         allind[i] = i;
       }
 
       B = MVT::Clone(*A,numvecs);
       MVT::MvRandom( *B );
-      // need a const MV to test const CloneView
-      constB = MVT::CloneView(*B,allind);
-      MVT::MvNorm(*constB, normsB);
-      C = MVT::CloneView(*constB,ind);
+      MVT::MvNorm(*B, normsB);
+      C = MVT::CloneView(*B,ind);
       MVT::MvNorm(*C, normsC);
-      if ( (unsigned int)MVT::GetNumberVecs(*C) != numvecs_2 ) {
+      if ( MVT::GetNumberVecs(*C) != numvecs_2 ) {
         om->stream(Warnings)
           << "*** ERROR *** const MultiVecTraits::CloneView(ind)." << endl
           << "Wrong number of vectors." << endl;
         return false;
       }
-      for (unsigned int i=0; i<numvecs_2; i++) {
+      for (int i=0; i<numvecs_2; i++) {
         if ( normsC[i] != normsB[ind[i]] ) {
           om->stream(Warnings)
             << "*** ERROR *** const MultiVecTraits::CloneView(ind)." << endl
@@ -564,19 +549,6 @@ namespace Anasazi {
           return false;
         }
       }
-      /*
-      MVT::MvInit(const_cast<MV&>(*C),zero);
-      MVT::MvNorm(*constB, normsB); 
-      for (unsigned int i=0; i<numvecs_2; i++) {
-        if ( normsB[ind[i]] != SCT::zero() ) {
-          if ( om->isVerbosityAndPrint(Warnings) ) {
-            out << "*** ERROR *** const MultiVecTraits::CloneView(ind)." << endl
-                << "Copied vectors were not dependent." << endl;
-          }
-          return false;
-        }
-      }
-      */
     }
 
 
@@ -600,7 +572,7 @@ namespace Anasazi {
       C = MVT::Clone(*A,numvecs_2);
       // Just do every other one, interleaving the vectors of C into B
       ind.resize(numvecs_2);
-      for (unsigned int i=0; i<numvecs_2; i++) {
+      for (int i=0; i<numvecs_2; i++) {
         ind[i] = 2*i;
       }
       MVT::MvRandom(*B);
@@ -613,7 +585,7 @@ namespace Anasazi {
       MVT::MvNorm(*C,normsC2);
 
       // check that C was not changed by SetBlock
-      for (unsigned int i=0; i<numvecs_2; i++) {
+      for (int i=0; i<numvecs_2; i++) {
         if ( normsC1[i] != normsC2[i] ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
@@ -623,7 +595,7 @@ namespace Anasazi {
       }
       // check that the correct vectors of B were modified
       // and the others were not
-      for (unsigned int i=0; i<numvecs; i++) {
+      for (int i=0; i<numvecs; i++) {
         if (i % 2 == 0) {
           // should be a vector from C
           if ( normsB2[i] != normsC1[i/2] ) {
@@ -646,7 +618,7 @@ namespace Anasazi {
       MVT::MvInit(*C,zero);
       MVT::MvNorm(*B,normsB1);
       // verify that we copied and didn't reference
-      for (unsigned int i=0; i<numvecs; i++) {
+      for (int i=0; i<numvecs; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::SetBlock()." << endl
@@ -677,8 +649,8 @@ namespace Anasazi {
         Epetra does (and crashes if it isn't.)
     *********************************************************************/
     {
-      const unsigned int p = 7;
-      const unsigned int q = 9;
+      const int p = 7;
+      const int q = 9;
       Teuchos::RCP<MV> B, C;
       std::vector<MagType> normsB(p), normsC(q);
       Teuchos::SerialDenseMatrix<int,ScalarType> SDM(p,q);
@@ -696,7 +668,7 @@ namespace Anasazi {
       MVT::MvTransMv( zero, *B, *C, SDM );
    
       // check the sizes: not allowed to have shrunk
-      if ( (unsigned int)SDM.numRows() != p || (unsigned int)SDM.numCols() != q ) {
+      if ( SDM.numRows() != p || SDM.numCols() != q ) {
         om->stream(Warnings)
           << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
           << "Routine resized SerialDenseMatrix." << endl;
@@ -716,8 +688,8 @@ namespace Anasazi {
    
       // check the norms: a^H b = |a| |b| cos(theta) <= |a| |b|
       // with equality only when a and b are colinear
-      for (unsigned int i=0; i<p; i++) {
-        for (unsigned int j=0; j<q; j++) {
+      for (int i=0; i<p; i++) {
+        for (int j=0; j<q; j++) {
           if (   SCT::magnitude(SDM(i,j)) 
                > SCT::magnitude(normsB[i]*normsC[j]) ) {
             om->stream(Warnings)
@@ -734,8 +706,8 @@ namespace Anasazi {
       MVT::MvInit(*C);
       MVT::MvRandom(*B);
       MVT::MvTransMv( one, *B, *C, SDM );
-      for (unsigned int i=0; i<p; i++) {
-        for (unsigned int j=0; j<q; j++) {
+      for (int i=0; i<p; i++) {
+        for (int j=0; j<q; j++) {
           if ( SDM(i,j) != zero ) {
             om->stream(Warnings)
               << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
@@ -747,8 +719,8 @@ namespace Anasazi {
       MVT::MvInit(*B);
       MVT::MvRandom(*C);
       MVT::MvTransMv( one, *B, *C, SDM );
-      for (unsigned int i=0; i<p; i++) {
-        for (unsigned int j=0; j<q; j++) {
+      for (int i=0; i<p; i++) {
+        for (int j=0; j<q; j++) {
           if ( SDM(i,j) != zero ) {
             om->stream(Warnings)
               << "*** ERROR *** MultiVecTraits::MvTransMv()." << endl
@@ -767,7 +739,7 @@ namespace Anasazi {
         3) Zero vectors give zero inner products
     *********************************************************************/
     {
-      const unsigned int p = 7;
+      const int p = 7;
       Teuchos::RCP<MV> B, C;
       std::vector<ScalarType> iprods(p);
       std::vector<MagType> normsB(p), normsC(p);
@@ -780,13 +752,13 @@ namespace Anasazi {
       MVT::MvNorm(*B,normsB);
       MVT::MvNorm(*C,normsC);
       MVT::MvDot( *B, *C, iprods );
-      if ( iprods.size() != p ) {
+      if ( (int)iprods.size() != p ) {
         om->stream(Warnings)
           << "*** ERROR *** MultiVecTraits::MvDot." << endl
           << "Routine resized results vector." << endl;
         return false;
       }
-      for (unsigned int i=0; i<p; i++) {
+      for (int i=0; i<p; i++) {
         if ( SCT::magnitude(iprods[i]) 
              > SCT::magnitude(normsB[i]*normsC[i]) ) {
           om->stream(Warnings)
@@ -798,7 +770,7 @@ namespace Anasazi {
       MVT::MvInit(*B);
       MVT::MvRandom(*C);
       MVT::MvDot( *B, *C, iprods );
-      for (unsigned int i=0; i<p; i++) {
+      for (int i=0; i<p; i++) {
         if ( iprods[i] != zero ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvDot()." << endl
@@ -809,7 +781,7 @@ namespace Anasazi {
       MVT::MvInit(*C);
       MVT::MvRandom(*B);
       MVT::MvDot( *B, *C, iprods );
-      for (unsigned int i=0; i<p; i++) {
+      for (int i=0; i<p; i++) {
         if ( iprods[i] != zero ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvDot()." << endl
@@ -828,7 +800,7 @@ namespace Anasazi {
        4) Check that input arguments are not modified 
     *********************************************************************/
     {
-      const unsigned int p = 7;
+      const int p = 7;
       Teuchos::RCP<MV> B, C, D;
       std::vector<MagType> normsB1(p), normsB2(p),
                            normsC1(p), normsC2(p),
@@ -850,7 +822,7 @@ namespace Anasazi {
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
       MVT::MvNorm(*D,normsD1);
-      for (unsigned int i=0; i<p; i++) {
+      for (int i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
@@ -876,7 +848,7 @@ namespace Anasazi {
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
       MVT::MvNorm(*D,normsD1);
-      for (unsigned int i=0; i<p; i++) {
+      for (int i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
@@ -905,7 +877,7 @@ namespace Anasazi {
       MVT::MvNorm(*C,normsC2);
       MVT::MvNorm(*D,normsD1);
       // check that input args are not modified
-      for (unsigned int i=0; i<p; i++) {
+      for (int i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
@@ -927,7 +899,7 @@ namespace Anasazi {
       MVT::MvNorm(*D,normsD2);
       // check that input args are not modified and that D is the same
       // as the above test
-      for (unsigned int i=0; i<p; i++) {
+      for (int i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvAddMv()." << endl
@@ -968,16 +940,17 @@ namespace Anasazi {
        2) Use alpha==1,beta==0 and check that D == B
     *********************************************************************/
     {
-      const unsigned int p = 7;
-      Teuchos::RCP<MV> B, C, D;
+      const int p = 7;
+      Teuchos::RCP<MV> B, D;
+      Teuchos::RCP<const MV> C;
       std::vector<MagType> normsB(p),
                            normsD(p);
       std::vector<int> lclindex(p);
-      for (unsigned int i=0; i<p; i++) lclindex[i] = i;
+      for (int i=0; i<p; i++) lclindex[i] = i;
 
       B = MVT::Clone(*A,p);
       C = MVT::CloneView(*B,lclindex);
-      D = MVT::CloneView(*B,lclindex);
+      D = MVT::CloneViewNonConst(*B,lclindex);
 
       MVT::MvRandom(*B);
       MVT::MvNorm(*B,normsB);
@@ -985,7 +958,7 @@ namespace Anasazi {
       // check that 0*B+1*C == C
       MVT::MvAddMv(zero,*B,one,*C,*D);
       MVT::MvNorm(*D,normsD);
-      for (unsigned int i=0; i<p; i++) {
+      for (int i=0; i<p; i++) {
         if ( normsB[i] != normsD[i] ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvAddMv() #2" << endl
@@ -997,7 +970,7 @@ namespace Anasazi {
       // check that 1*B+0*C == B
       MVT::MvAddMv(one,*B,zero,*C,*D);
       MVT::MvNorm(*D,normsD);
-      for (unsigned int i=0; i<p; i++) {
+      for (int i=0; i<p; i++) {
         if ( normsB[i] != normsD[i] ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvAddMv() #2" << endl
@@ -1019,7 +992,7 @@ namespace Anasazi {
        6) Always check that input arguments are not modified 
     *********************************************************************/
     {
-      const unsigned int p = 7, q = 5;
+      const int p = 7, q = 5;
       Teuchos::RCP<MV> B, C;
       Teuchos::SerialDenseMatrix<int,ScalarType> SDM(p,q);
       std::vector<MagType> normsC1(q), normsC2(q),
@@ -1037,7 +1010,7 @@ namespace Anasazi {
       MVT::MvTimesMatAddMv(zero,*B,SDM,one,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
-      for (unsigned int i=0; i<p; i++) {
+      for (int i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
@@ -1045,7 +1018,7 @@ namespace Anasazi {
           return false;
         }
       }
-      for (unsigned int i=0; i<q; i++) {
+      for (int i=0; i<q; i++) {
         if ( normsC1[i] != normsC2[i] ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
@@ -1063,7 +1036,7 @@ namespace Anasazi {
       MVT::MvTimesMatAddMv(zero,*B,SDM,zero,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
-      for (unsigned int i=0; i<p; i++) {
+      for (int i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
@@ -1071,7 +1044,7 @@ namespace Anasazi {
           return false;
         }
       }
-      for (unsigned int i=0; i<q; i++) {
+      for (int i=0; i<q; i++) {
         if ( normsC2[i] != zero ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
@@ -1091,13 +1064,13 @@ namespace Anasazi {
       MVT::MvNorm(*B,normsB1);
       MVT::MvNorm(*C,normsC1);
       SDM.scale(zero);
-      for (unsigned int i=0; i<q; i++) {
+      for (int i=0; i<q; i++) {
         SDM(i,i) = one;
       }
       MVT::MvTimesMatAddMv(one,*B,SDM,zero,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
-      for (unsigned int i=0; i<p; i++) {
+      for (int i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
@@ -1105,7 +1078,7 @@ namespace Anasazi {
           return false;
         }
       }
-      for (unsigned int i=0; i<q; i++) {
+      for (int i=0; i<q; i++) {
         if ( normsB1[i] != normsC2[i] ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
@@ -1127,7 +1100,7 @@ namespace Anasazi {
       MVT::MvTimesMatAddMv(one,*B,SDM,one,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
-      for (unsigned int i=0; i<p; i++) {
+      for (int i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
@@ -1135,7 +1108,7 @@ namespace Anasazi {
           return false;
         }
       }
-      for (unsigned int i=0; i<q; i++) {
+      for (int i=0; i<q; i++) {
         if ( normsC1[i] != normsC2[i] ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
@@ -1155,7 +1128,7 @@ namespace Anasazi {
        6) Always check that input arguments are not modified 
     *********************************************************************/
     {
-      const unsigned int p = 5, q = 7;
+      const int p = 5, q = 7;
       Teuchos::RCP<MV> B, C;
       Teuchos::SerialDenseMatrix<int,ScalarType> SDM(p,q);
       std::vector<MagType> normsC1(q), normsC2(q),
@@ -1173,7 +1146,7 @@ namespace Anasazi {
       MVT::MvTimesMatAddMv(zero,*B,SDM,one,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
-      for (unsigned int i=0; i<p; i++) {
+      for (int i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
@@ -1181,7 +1154,7 @@ namespace Anasazi {
           return false;
         }
       }
-      for (unsigned int i=0; i<q; i++) {
+      for (int i=0; i<q; i++) {
         if ( normsC1[i] != normsC2[i] ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
@@ -1199,7 +1172,7 @@ namespace Anasazi {
       MVT::MvTimesMatAddMv(zero,*B,SDM,zero,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
-      for (unsigned int i=0; i<p; i++) {
+      for (int i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
@@ -1207,7 +1180,7 @@ namespace Anasazi {
           return false;
         }
       }
-      for (unsigned int i=0; i<q; i++) {
+      for (int i=0; i<q; i++) {
         if ( normsC2[i] != zero ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
@@ -1226,13 +1199,13 @@ namespace Anasazi {
       MVT::MvNorm(*B,normsB1);
       MVT::MvNorm(*C,normsC1);
       SDM.scale(zero);
-      for (unsigned int i=0; i<p; i++) {
+      for (int i=0; i<p; i++) {
         SDM(i,i) = one;
       }
       MVT::MvTimesMatAddMv(one,*B,SDM,zero,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
-      for (unsigned int i=0; i<p; i++) {
+      for (int i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
@@ -1240,7 +1213,7 @@ namespace Anasazi {
           return false;
         }
       }
-      for (unsigned int i=0; i<p; i++) {
+      for (int i=0; i<p; i++) {
         if ( normsB1[i] != normsC2[i] ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
@@ -1248,7 +1221,7 @@ namespace Anasazi {
           return false;
         }
       }
-      for (unsigned int i=p; i<q; i++) {
+      for (int i=p; i<q; i++) {
         if ( normsC2[i] != zero ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
@@ -1266,7 +1239,7 @@ namespace Anasazi {
       MVT::MvTimesMatAddMv(one,*B,SDM,one,*C);
       MVT::MvNorm(*B,normsB2);
       MVT::MvNorm(*C,normsC2);
-      for (unsigned int i=0; i<p; i++) {
+      for (int i=0; i<p; i++) {
         if ( normsB1[i] != normsB2[i] ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
@@ -1274,7 +1247,7 @@ namespace Anasazi {
           return false;
         }
       }
-      for (unsigned int i=0; i<q; i++) {
+      for (int i=0; i<q; i++) {
         if ( normsC1[i] != normsC2[i] ) {
           om->stream(Warnings)
             << "*** ERROR *** MultiVecTraits::MvTimesMatAddMv()." << endl
@@ -1315,7 +1288,7 @@ namespace Anasazi {
     typedef OperatorTraits<ScalarType, MV, OP> OPT;
     typedef typename SCT::magnitudeType        MagType;
 
-    const unsigned int numvecs = 10;
+    const int numvecs = 10;
 
     Teuchos::RCP<MV> B = MVT::Clone(*A,numvecs), 
                              C = MVT::Clone(*A,numvecs);
@@ -1337,7 +1310,7 @@ namespace Anasazi {
     OPT::Apply(*M,*B,*C);
     MVT::MvNorm(*B,normsB2);
     MVT::MvNorm(*C,normsC2);
-    for (unsigned int i=0; i<numvecs; i++) {
+    for (int i=0; i<numvecs; i++) {
       if (normsB2[i] != normsB1[i]) {
         om->stream(Warnings)
           << "*** ERROR *** OperatorTraits::Apply() [1]" << endl
@@ -1359,7 +1332,7 @@ namespace Anasazi {
     MVT::MvNorm(*B,normsB2);
     MVT::MvNorm(*C,normsC2);
     bool ZeroWarning = false;
-    for (unsigned int i=0; i<numvecs; i++) {
+    for (int i=0; i<numvecs; i++) {
       if (normsB2[i] != normsB1[i]) {
         om->stream(Warnings)
           << "*** ERROR *** OperatorTraits::Apply() [2]" << endl
@@ -1381,7 +1354,7 @@ namespace Anasazi {
     OPT::Apply(*M,*B,*C);
     MVT::MvNorm(*B,normsB2);
     MVT::MvNorm(*C,normsC1);
-    for (unsigned int i=0; i<numvecs; i++) {
+    for (int i=0; i<numvecs; i++) {
       if (normsB2[i] != normsB1[i]) {
         om->stream(Warnings)
           << "*** ERROR *** OperatorTraits::Apply() [3]" << endl
@@ -1392,7 +1365,7 @@ namespace Anasazi {
 
     // Apply operator with C init'd to random
     // Check that result is the same as before; warn if not.
-    // This could be a result of a bug, or a non-constant
+    // This could be a result of a bug, or a stochastic
     //   operator. We do not want to prejudice against a 
     //   stochastic operator.
     MVT::MvRandom(*C);
@@ -1400,7 +1373,7 @@ namespace Anasazi {
     MVT::MvNorm(*B,normsB2);
     MVT::MvNorm(*C,normsC2);
     NonDeterministicWarning = false;
-    for (unsigned int i=0; i<numvecs; i++) {
+    for (int i=0; i<numvecs; i++) {
       if (normsB2[i] != normsB1[i]) {
         om->stream(Warnings)
           << "*** ERROR *** OperatorTraits::Apply() [4]" << endl

@@ -22,6 +22,7 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
 using Teuchos::inOutArg;
+using Teuchos::Range1D;
 using Thyra::VectorSpaceBase;
 using Thyra::MultiVectorBase;
 using Thyra::createMembers;
@@ -93,12 +94,54 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdMultiVector, memberAccess,
   RCP<MultiVectorBase<Scalar> > mv = createMembers(vs, g_numCols);
   Thyra::assign<Scalar>(mv.ptr(), ST::zero());
   RCP<DefaultSpmdMultiVector<Scalar> > spmdMv = 
-    rcp_dynamic_cast<DefaultSpmdMultiVector<Scalar> >(mv);
+    rcp_dynamic_cast<DefaultSpmdMultiVector<Scalar> >(mv, true);
   TEST_ASSERT(nonnull(spmdMv->spmdSpace()));
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdMultiVector,
   memberAccess )
+
+
+//
+// Make sure that DefaultSpmdMultiVector::subview(...) return a
+// DefaultSpmdMultiVector object!
+//
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdMultiVector, constContigSubViewImpl,
+  Scalar )
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  RCP<const VectorSpaceBase<Scalar> > vs = createSpmdVectorSpace<Scalar>(g_localDim);
+  RCP<MultiVectorBase<Scalar> > mv = createMembers(vs, g_numCols);
+  Thyra::assign<Scalar>(mv.ptr(), ST::zero());
+  RCP<const MultiVectorBase<Scalar> > mvv = mv.getConst()->subView(Range1D(0, 1));
+  RCP<const DefaultSpmdMultiVector<Scalar> > spmdMvv = 
+    rcp_dynamic_cast<const DefaultSpmdMultiVector<Scalar> >(mvv, true);
+  TEST_ASSERT(nonnull(spmdMvv->spmdSpace()));
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdMultiVector,
+  constContigSubViewImpl )
+
+
+//
+// Make sure that DefaultSpmdMultiVector::subview(...) return a
+// DefaultSpmdMultiVector object!
+//
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( DefaultSpmdMultiVector, nonconstContigSubViewImpl,
+  Scalar )
+{
+  typedef Teuchos::ScalarTraits<Scalar> ST;
+  RCP<const VectorSpaceBase<Scalar> > vs = createSpmdVectorSpace<Scalar>(g_localDim);
+  RCP<MultiVectorBase<Scalar> > mv = createMembers(vs, g_numCols);
+  Thyra::assign<Scalar>(mv.ptr(), ST::zero());
+  RCP<MultiVectorBase<Scalar> > mvv = mv->subView(Range1D(0, 1));
+  RCP<DefaultSpmdMultiVector<Scalar> > spmdMvv = 
+    rcp_dynamic_cast<DefaultSpmdMultiVector<Scalar> >(mvv, true);
+  TEST_ASSERT(nonnull(spmdMvv->spmdSpace()));
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_SCALAR_TYPES( DefaultSpmdMultiVector,
+  nonconstContigSubViewImpl )
 
 
 //

@@ -94,15 +94,15 @@ namespace Anasazi {
       return mv.subCopy(Teuchos::Range1D(index.front(),index.back()));
     }
 
-    static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > CloneView( Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
+    static Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > CloneViewNonConst( Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
     {
       TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
-          "Anasazi::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneView(mv,index): numvecs must be greater than zero.");
+          "Anasazi::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneViewNonConst(mv,index): numvecs must be greater than zero.");
 #ifdef HAVE_TPETRA_DEBUG
       TEST_FOR_EXCEPTION( *std::min_element(index.begin(),index.end()) < 0, std::invalid_argument,
-          "Anasazi::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneView(mv,index): indices must be >= zero.");
+          "Anasazi::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneViewNonConst(mv,index): indices must be >= zero.");
       TEST_FOR_EXCEPTION( (size_t)*std::max_element(index.begin(),index.end()) >= mv.getNumVectors(), std::invalid_argument,
-          "Anasazi::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneView(mv,index): indices must be < mv.getNumVectors().");
+          "Anasazi::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneViewNonConst(mv,index): indices must be < mv.getNumVectors().");
 #endif
       for (typename std::vector<int>::size_type j=1; j<index.size(); ++j) {
         if (index[j] != index[j-1]+1) {
@@ -115,7 +115,7 @@ namespace Anasazi {
       return mv.subViewNonConst(Teuchos::Range1D(index.front(),index.back()));
     }
 
-    static Teuchos::RCP<const Tpetra::MultiVector<Scalar,LO,GO,Node> > CloneView( const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
+    static Teuchos::RCP<const Tpetra::MultiVector<Scalar,LO,GO,Node> > CloneView(const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, const std::vector<int>& index )
     {
       TEST_FOR_EXCEPTION(index.size() == 0,std::invalid_argument,
           "Anasazi::MultiVecTraits<Scalar,Tpetra::MultiVector>::CloneView(mv,index): numvecs must be greater than zero.");
@@ -209,7 +209,7 @@ namespace Anasazi {
       TEST_FOR_EXCEPTION((typename std::vector<int>::size_type)A.getNumVectors() < index.size(),std::invalid_argument,
           "Anasazi::MultiVecTraits<Scalar,Tpetra::MultiVector>::SetBlock(A,index,mv): index must be the same size as A.");
 #endif
-      Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > mvsub = CloneView(mv,index);
+      Teuchos::RCP<Tpetra::MultiVector<Scalar,LO,GO,Node> > mvsub = CloneViewNonConst(mv,index);
       if ((typename std::vector<int>::size_type)A.getNumVectors() > index.size()) {
         Teuchos::RCP<const Tpetra::MultiVector<Scalar,LO,GO,Node> > Asub = A.subView(Teuchos::Range1D(0,index.size()-1));
         (*mvsub) = (*Asub);

@@ -182,21 +182,25 @@ __version__ = Galeri_Version().split()[2]
 //////////////////////////
 // Galeri_Utils support //
 //////////////////////////
+%newobject Galeri::CreateCartesianCoordinates;
 %include "Galeri_Utils.h"
 
 /////////////////////////
 // Galeri_Maps support //
 /////////////////////////
+%newobject Galeri::CreateMap;
 %include "Galeri_Maps.h"
 
 ////////////////////////////////
 // Galeri_CrsMatrices support //
 ////////////////////////////////
+%newobject Galeri::CreatCrsMatrix;
 %include "Galeri_CrsMatrices.h"
 
 ////////////////////////////////
 // Galeri_VbrMatrices support //
 ////////////////////////////////
+%newobject Galeri::CreateVbrMatrix;
 %include "Galeri_VbrMatrices.h"
 
 ///////////////////////////

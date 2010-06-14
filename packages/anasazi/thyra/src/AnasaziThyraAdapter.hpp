@@ -112,7 +112,7 @@ namespace Anasazi {
     The index of the \c numvecs vectors shallow copied from \c mv are indicated by the indices given in \c index.
     \return Reference-counted pointer to the new MultiVectorBase.
     */      
-    static Teuchos::RCP< Thyra::MultiVectorBase< ScalarType > > CloneView(  Thyra::MultiVectorBase< ScalarType > & mv, const std::vector<int>& index )
+    static Teuchos::RCP< Thyra::MultiVectorBase< ScalarType > > CloneViewNonConst(  Thyra::MultiVectorBase< ScalarType > & mv, const std::vector<int>& index )
     {
       int numvecs = index.size();
 

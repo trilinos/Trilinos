@@ -64,13 +64,7 @@ FUNCTION(TPL_DECLARE_LIBRARIES TPL_NAME)
       " ${TPL_NAME}_LIBRARY_DIRS."
       )
 
-	# If the user has specified a hint for where the libraries are, set the library dir variable to
-	# that hint
-  	IF (PARSE_LIBRARY_DIR_HINT)
-    	ADVANCED_SET(${TPL_NAME}_LIBRARY_DIRS ${PARSE_LIBRARY_DIR_HINT} CACHE PATH ${DOCSTR})
-	ELSE()
-    	ADVANCED_SET(${TPL_NAME}_LIBRARY_DIRS "" CACHE PATH ${DOCSTR})
-	ENDIF()
+   	ADVANCED_SET(${TPL_NAME}_LIBRARY_DIRS "" CACHE PATH ${DOCSTR})
 
     # Libraries
   

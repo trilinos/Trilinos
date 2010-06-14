@@ -31,8 +31,18 @@
 
 #include "Tpetra_Map.hpp"
 
+/** \file Tpetra_BlockMap_decl.hpp
+
+  Declarations for the class Tpetra::BlockMap.
+*/
+
 namespace Tpetra {
 
+/** \brief Block-entry counterpart to Tpetra::Map.
+
+  BlockMap doesn't inherit Tpetra::Map, but always holds a Tpetra::Map as
+  a class-member attribute.
+*/
 template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
 class BlockMap : public Teuchos::Describable {
  public:

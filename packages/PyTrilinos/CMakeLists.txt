@@ -157,13 +157,21 @@ INCLUDE(UseSWIG)
 MESSAGE(STATUS "Enabled ${PACKAGE_NAME} modules:")
 MESSAGE(STATUS "    ${${PACKAGE_NAME}_PACKAGES}")
 
-# Determine the installation directory prefix.  If not set by the
-# user, then the path is set to the value of python's sys.prefix.
+# Determine the PyTrilinos default installation directory prefix.  If
+# CMAKE_INSTALL_PREFIX is set by the user, then use it.  Else the
+# prefix is set to the value of python's sys.prefix.
 EXECUTE_PROCESS(COMMAND ${PYTHON_EXECUTABLE} -c "import sys; print sys.prefix"
   OUTPUT_VARIABLE PYTHON_PREFIX
   OUTPUT_STRIP_TRAILING_WHITESPACE
   )
-SET(PyTrilinos_INSTALL_PREFIX ${PYTHON_PREFIX}
+IF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  SET(PyTrilinos_DEFAULT_INSTALL_PREFIX ${PYTHON_PREFIX})
+ELSE(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+  SET(PyTrilinos_DEFAULT_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
+ENDIF(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+
+# Set the PyTrilinos install prefix
+SET(PyTrilinos_INSTALL_PREFIX ${PyTrilinos_DEFAULT_INSTALL_PREFIX}
   CACHE PATH "The path prefix for where PyTrilinos will be installed, e.g. /usr/local")
 
 # Add the src directory, which builds the pytrilinos library,

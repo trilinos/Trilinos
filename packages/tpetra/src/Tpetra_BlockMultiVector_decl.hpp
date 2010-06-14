@@ -32,8 +32,17 @@
 #include "Tpetra_BlockMap.hpp"
 #include "Tpetra_MultiVector.hpp"
 
+/** \file Tpetra_BlockMultiVector_decl.hpp
+
+  Declarations for the class Tpetra::BlockMultiVector.
+*/
 namespace Tpetra {
 
+/** \brief Block-entry specialization of Tpetra::MultiVector.
+
+  This class inherits (is-a) Tpetra::MultiVector, adding block-entry
+  functionality for referencing/accessing data.
+*/
 template <class Scalar, class LocalOrdinal=int, class GlobalOrdinal=LocalOrdinal, class Node=Kokkos::DefaultNode::DefaultNodeType>
 class BlockMultiVector : public MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
  public:

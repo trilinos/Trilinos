@@ -43,11 +43,15 @@
 #include "Tpetra_BlockMap.hpp"
 #include "Tpetra_CrsGraph.hpp"
 
+/** \file Tpetra_VbrMatrix_decl.hpp
+
+  Declarations for the class Tpetra::VbrMatrix.
+*/
 namespace Tpetra {
 
 //! \brief VbrMatrix: Variable block row matrix.
 /**
-This class is under construction, not yet usable.
+This class is under construction, not yet ready for general use.
 Several significant development tasks remain to be done before this
 class is ready to be used in a general setting.
 Those still-to-be-done tasks are listed in the file Tpetra_VbrMatrix_todo.txt.
@@ -135,12 +139,62 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   bool isFillComplete() const;
   //@}
 
-  //! @name Insertion/Removal Methods
+  //! @name Insertion Methods
   //@{
 
+  //! Set the specified scalar throughout the matrix.
+  /*!
+    This method may be called any time (before or after fillComplete()).
+  */
+  void putScalar(Scalar s);
+
+  //!Copy the contents of the input block-entry into the matrix.
+  /*!
+    This method will create the specified block-entry if it doesn't already exist, but
+    only if fillComplete() has not yet been called.
+
+    If the specified block-entry already exists in the matrix, the contents will be
+    over-written by the input block-entry.
+
+    This method may be called any time (before or after fillComplete()).
+  */
   void setGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<GlobalOrdinal,Scalar>& blockEntry);
 
+  //!Add the contents of the input block-entry into the matrix.
+  /*!
+    This method will create the specified block-entry if it doesn't already exist,
+    but only if fillComplete() has not yet been called.
+
+    If the specified block-entry already exists in the matrix, the contents of the
+    input block-entry will be added to the values that are already present.
+
+    This method may be called any time (before or after fillComplete()).
+  */
+  void sumIntoGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<GlobalOrdinal,Scalar>& blockEntry);
+
+  //!Copy the contents of the input block-entry into the matrix.
+  /*!
+    This method will create the specified block-entry if it doesn't already exist, but
+    only if fillComplete() has not yet been called.
+
+    If the specified block-entry already exists in the matrix, the contents will be
+    over-written by the input block-entry.
+
+    This method may be called any time (before or after fillComplete()).
+  */
   void setGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry);
+
+  //!Add the contents of the input block-entry into the matrix.
+  /*!
+    This method will create the specified block-entry if it doesn't already exist,
+    but only if fillComplete() has not yet been called.
+
+    If the specified block-entry already exists in the matrix, the contents of the
+    input block-entry will be added to the values that are already present.
+
+    This method may be called any time (before or after fillComplete()).
+  */
+  void sumIntoGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry);
 
   //@}
 
@@ -155,20 +209,84 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   //! @name Extraction Methods
   //@{
 
-  void getGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol,
-                           LocalOrdinal& numPtRows, LocalOrdinal& numPtCols,
-                           Teuchos::ArrayRCP<const Scalar>& blockEntry);
+  //! Returns a const read-only view of a block-entry.
+  /*!
+    The arguments numPtRows and numPtCols are set to the dimensions of the block-entry
+    on output.
+    The stride (LDA in Blas terminology) is equal to numPtRows.
+
+    This method may be called any time (before or after fillComplete()), but will throw
+    an exception if the specified block-entry doesn't already exist.
+  */
+  void getGlobalBlockEntryView(GlobalOrdinal globalBlockRow,
+                               GlobalOrdinal globalBlockCol,
+                               LocalOrdinal& numPtRows,
+                               LocalOrdinal& numPtCols,
+                               Teuchos::ArrayRCP<const Scalar>& blockEntry) const;
+
+  //! Returns a non-const read-write view of a block-entry.
+  /*! Creates the block-entry if it doesn't already exist, and if:
+     - the optional arguments rowsPerBlock and colsPerBlock are specified (and nonzero),
+     - and if fillComplete() has not yet been called.
+
+     Important Note: Be very careful managing the lifetime of this view.
+       If fillComplete() has been called, and if you are running on a GPU,
+       this view may be a copy of memory from the GPU, and your changes to the
+       view won't be copied back to the GPU until your ArrayRCP is destroyed
+       or set to Teuchos::null.
+  */
+  void getGlobalBlockEntryViewNonConst(GlobalOrdinal globalBlockRow,
+                                       GlobalOrdinal globalBlockCol,
+                                       LocalOrdinal& numPtRows,
+                                       LocalOrdinal& numPtCols,
+                                       Teuchos::ArrayRCP<Scalar>& blockEntry);
+
+  //! Returns a const read-only view of a block-entry.
+  /*!
+    The arguments numPtRows and numPtCols are set to the dimensions of the block-entry
+    on output.
+    The stride (LDA in Blas terminology) is equal to numPtRows.
+    Throws an exception if fillComplete() has not yet been called, or if the
+    specified block-entry doesn't exist.
+
+    This method may only be called after fillComplete() has been called, and will throw
+    an exception if the specified block-entry doesn't already exist.
+  */
+  void getLocalBlockEntryView(LocalOrdinal localBlockRow,
+                              LocalOrdinal localBlockCol,
+                              LocalOrdinal& numPtRows, 
+                              LocalOrdinal& numPtCols,
+                              Teuchos::ArrayRCP<const Scalar>& blockEntry) const;
+
+  //! Returns a non-const read-write view of a block-entry.
+  /*!
+    The arguments numPtRows and numPtCols are set to the dimensions of the block-entry
+    on output.
+    The stride (LDA in Blas terminology) is equal to numPtRows.
+    Throws an exception if fillComplete() has not yet been called, or if the
+    specified block-entry doesn't exist.
+
+     Important Note: Be very careful managing the lifetime of this view.
+       If fillComplete() has been called, and if you are running on a GPU,
+       this view may be a copy of memory from the GPU, and your changes to the
+       view won't be copied back to the GPU until your ArrayRCP is destroyed
+       or set to Teuchos::null.
+
+    This method may only be called after fillComplete() has been called, and will throw
+    an exception if the specified block-entry doesn't already exist.
+  */
+  void getLocalBlockEntryViewNonConst(LocalOrdinal localBlockRow,
+                                      LocalOrdinal localBlockCol,
+                                      LocalOrdinal& numPtRows,
+                                      LocalOrdinal& numPtCols,
+                                      Teuchos::ArrayRCP<Scalar>& blockEntry);
 
   //@}
 
  private:
   //private methods:
 
-  Teuchos::ArrayRCP<Scalar> getGlobalBlockEntryView(GlobalOrdinal globalBlockRow,
-                                                    GlobalOrdinal globalBlockCol,
-                                                    size_t rowsPerBlock = 0,
-                                                    size_t colsPerBlock = 0);
-  Teuchos::RCP<Node> getNode();
+  Teuchos::RCP<Node> getNode() const;
 
   void updateImport(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X) const;
 
@@ -189,6 +307,10 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   //It takes 6 arrays to adequately represent a variable-block-row
   //matrix in packed (contiguous storage) form. For a description of these
   //arrays, see the text at the bottom of this file.
+  //
+  //These arrays are handled as if they may point to memory that resides on
+  //a separate device (e.g., a GPU). In other words, when the contents of these
+  //arrays are manipulated, we use views or buffers obtained from the Node object.
   Teuchos::ArrayRCP<Scalar> pbuf_values1D_;
   Teuchos::ArrayRCP<LocalOrdinal> pbuf_rptr_;
   Teuchos::ArrayRCP<LocalOrdinal> pbuf_cptr_;
@@ -204,10 +326,13 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   typedef typename std::map<GlobalOrdinal,Teuchos::ArrayRCP<Scalar> > MapGlobalArrayRCP;
   typedef typename std::map<LocalOrdinal,Teuchos::ArrayRCP<Scalar> > MapLocalArrayRCP;
 
-  //We use 3 arrays (well, arrays-of-maps, arrays-of-arrays...) to
+  //We use 2 arrays (well, array-of-maps, array-of-array-of-arrays...) to
   //represent the variable-block-row matrix in un-packed '2D' form.
+  //
+  //Note that these arrays are assumed to be resident in CPU memory. It doesn't
+  //make sense to copy this kind of data back and forth to a separate
+  //compute device (e.g., a GPU).
   Teuchos::RCP<Teuchos::Array<MapGlobalArrayRCP> > col_ind_2D_global_;
-  Teuchos::RCP<Teuchos::Array<MapLocalArrayRCP> > col_ind_2D_local_;
   Teuchos::RCP<Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > > > pbuf_values2D_;
 
   bool is_fill_completed_;

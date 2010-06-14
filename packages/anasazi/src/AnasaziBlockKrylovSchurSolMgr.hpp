@@ -588,34 +588,35 @@ BlockKrylovSchurSolMgr<ScalarType,MV,OP>::solve() {
             // we are interested in only the first cur_nevBlocks vectors of the result
             curind.resize(curDim);
             for (int i=0; i<curDim; i++) curind[i] = i;
-            Teuchos::RCP<MV> oldV = MVT::CloneView(*solverbasis,curind);
-            msutils::applyHouse(cur_nevBlocks,*oldV,copyQnev,tau,workMV);
-            // clear pointer
-            oldV = Teuchos::null;
+            {
+              Teuchos::RCP<MV> oldV = MVT::CloneViewNonConst(*solverbasis,curind);
+              msutils::applyHouse(cur_nevBlocks,*oldV,copyQnev,tau,workMV);
+            }
             // multiply newV*D
             // get pointer to new basis
             curind.resize(cur_nevBlocks);
             for (int i=0; i<cur_nevBlocks; i++) { curind[i] = i; }
-            oldV = MVT::CloneView( *solverbasis, curind );
-            MVT::MvScale(*oldV,d);
-            oldV = Teuchos::null;
+            {
+              Teuchos::RCP<MV> newV = MVT::CloneViewNonConst( *solverbasis, curind );
+              MVT::MvScale(*newV,d);
+            }
             // get pointer to new location for F
             curind.resize(_blockSize);
             for (int i=0; i<_blockSize; i++) { curind[i] = cur_nevBlocks + i; }
-            newF = MVT::CloneView( *solverbasis, curind );
+            newF = MVT::CloneViewNonConst( *solverbasis, curind );
           }
           else {
             // get pointer to first part of work space
             curind.resize(cur_nevBlocks);
             for (int i=0; i<cur_nevBlocks; i++) { curind[i] = i; }
-            Teuchos::RCP<MV> tmp_newV = MVT::CloneView(*workMV, curind );
+            Teuchos::RCP<MV> tmp_newV = MVT::CloneViewNonConst(*workMV, curind );
             // perform V*Qnev
             MVT::MvTimesMatAddMv( one, *basistemp, Qnev, zero, *tmp_newV );
             tmp_newV = Teuchos::null;
             // get pointer to new location for F
             curind.resize(_blockSize);
             for (int i=0; i<_blockSize; i++) { curind[i] = cur_nevBlocks + i; }
-            newF = MVT::CloneView( *workMV, curind );
+            newF = MVT::CloneViewNonConst( *workMV, curind );
           }
 
           // Move the current factorization residual block (F) to the last block of newV.

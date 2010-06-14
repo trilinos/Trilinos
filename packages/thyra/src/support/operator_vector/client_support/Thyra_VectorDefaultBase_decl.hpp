@@ -40,10 +40,6 @@ namespace Thyra {
  * subclasses that relies on a default <tt>MultiVectorBase</tt>
  * implementation.
  *
- * This node subclass provides as many default implementations as possible for
- * virtual functions based on the default multi-vector implementation
- * <tt>DefaultColumnwiseMultiVector</tt>.
- *
  * <b>Notes for subclass developers</b>
  *
  * In order to create a concrete subclass of this interface, only two

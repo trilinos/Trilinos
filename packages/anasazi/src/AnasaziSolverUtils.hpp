@@ -244,9 +244,9 @@ namespace Anasazi {
       // Swap corresponding vectors
       index[0] = j;
       Teuchos::RCP<MV> tmpQ = MVT::CloneCopy( Q, index );
-      Teuchos::RCP<MV> tmpQj = MVT::CloneView( Q, index );
+      Teuchos::RCP<MV> tmpQj = MVT::CloneViewNonConst( Q, index );
       index[0] = i;
-      Teuchos::RCP<MV> tmpQi = MVT::CloneView( Q, index );
+      Teuchos::RCP<MV> tmpQi = MVT::CloneViewNonConst( Q, index );
       MVT::MvAddMv( one, *tmpQi, zero, *tmpQi, *tmpQj );
       MVT::MvAddMv( one, *tmpQ, zero, *tmpQ, *tmpQi );
     }
@@ -302,7 +302,7 @@ namespace Anasazi {
     else if (MVT::GetNumberVecs(*workMV) > 1) {
       std::vector<int> first(1);
       first[0] = 0;
-      workMV = MVT::CloneView(*workMV,first);
+      workMV = MVT::CloneViewNonConst(*workMV,first);
     }
     else {
       TEST_FOR_EXCEPTION(MVT::GetNumberVecs(*workMV) < 1,std::invalid_argument,"Anasazi::SolverUtils::applyHouse(): work multivector was empty.");
@@ -320,7 +320,7 @@ namespace Anasazi {
       // because of the structure of v_i+1, this transform does not affect the first i columns of V
       std::vector<int> activeind(n-i);
       for (int j=0; j<n-i; j++) activeind[j] = j+i;
-      Teuchos::RCP<MV> actV = MVT::CloneView(V,activeind);
+      Teuchos::RCP<MV> actV = MVT::CloneViewNonConst(V,activeind);
 
       // note, below H_i, v_i and tau_i are mathematical objects which use 1-based indexing
       // while H, v and tau are data structures using 0-based indexing

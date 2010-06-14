@@ -365,7 +365,8 @@ int main(int argc, char *argv[]) {
       int i=0;
       std::vector<int> curind(1);
       std::vector<double> resnorm(1), tempnrm(1);
-      Teuchos::RCP<MV> evecr, eveci, tempAevec;
+      Teuchos::RCP<MV> tempAevec;
+      Teuchos::RCP<const MV> evecr, eveci;
       Epetra_MultiVector Aevec(Map,numev);
       
       // Compute A*evecs

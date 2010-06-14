@@ -1189,13 +1189,13 @@ namespace Anasazi {
         Teuchos::RCP<MV> curS, curMS;
         std::vector<int> ind(1);
         ind[0] = rank;
-        curS  = MVT::CloneView(S,ind);
+        curS  = MVT::CloneViewNonConst(S,ind);
         MVT::MvRandom(*curS);
         if (this->_hasOp) {
 #ifdef ANASAZI_ICGS_DEBUG
           *out << "Applying operator to random vector.\n";
 #endif
-          curMS = MVT::CloneView(*MS,ind);
+          curMS = MVT::CloneViewNonConst(*MS,ind);
           OPT::Apply( *(this->_Op), *curS, *curMS );
           this->_OpCounter += MVT::GetNumberVecs(*curS);
         }
@@ -1294,11 +1294,11 @@ namespace Anasazi {
       // Get a view of the vector currently being worked on.
       std::vector<int> index(1);
       index[0] = j;
-      Teuchos::RCP<MV> Xj = MVT::CloneView( X, index );
+      Teuchos::RCP<MV> Xj = MVT::CloneViewNonConst( X, index );
       Teuchos::RCP<MV> MXj;
       if ((this->_hasOp)) {
         // MXj is a view of the current vector in MX
-        MXj = MVT::CloneView( *MX, index );
+        MXj = MVT::CloneViewNonConst( *MX, index );
       }
       else {
         // MXj is a pointer to Xj, and MUST NOT be modified

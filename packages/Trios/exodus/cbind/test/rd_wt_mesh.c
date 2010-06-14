@@ -722,10 +722,10 @@ int read_exo_mesh (char *file_name, int rank, int *num_dim, int num_domains,
     fprintf(stderr, "   Exodus Read Results                                          \n" );
     fprintf(stderr, "                                                                \n" );
     fprintf(stderr, "      Sizes (bytes)                                             \n" );
-    fprintf(stderr, "         File         %14ld                                   \n", glob_file_size);
-    fprintf(stderr, "         Raw Data     %14ld                                   \n", glob_raw_data_vol);
+    fprintf(stderr, "         File         %14ld                                   \n", (long)glob_file_size);
+    fprintf(stderr, "         Raw Data     %14ld                                   \n", (long)glob_raw_data_vol);
     fprintf(stderr, "         Difference   %14ld (%5.2f%%)                         \n",
-	    glob_file_size - glob_raw_data_vol,
+	    (long)(glob_file_size - glob_raw_data_vol),
 	    (1.0*glob_file_size-1.0*glob_raw_data_vol)/(0.01*glob_file_size) );
     fprintf(stderr, "                                                                \n" );
     fprintf(stderr, "      Times (sec)                 \t Minimum\t Maximum\t Average\n" );
@@ -1188,10 +1188,10 @@ int write_exo_mesh (char *file_name, int rank, int num_dim, int num_domains, int
     fprintf(stderr, "   Exodus Write Results                                         \n" );
     fprintf(stderr, "                                                                \n" );
     fprintf(stderr, "      Sizes (bytes)                                             \n" );
-    fprintf(stderr, "         File         %14ld                                   \n", glob_file_size);
-    fprintf(stderr, "         Raw Data     %14ld                                   \n", glob_raw_data_vol);
+    fprintf(stderr, "         File         %14ld                                   \n", (long)glob_file_size);
+    fprintf(stderr, "         Raw Data     %14ld                                   \n", (long)glob_raw_data_vol);
     fprintf(stderr, "         Difference   %14ld (%5.2f%%)                         \n",
-	    glob_file_size - glob_raw_data_vol,
+	    (long)(glob_file_size - glob_raw_data_vol),
 	    (1.0*glob_file_size-1.0*glob_raw_data_vol)/(0.01*glob_file_size) );
     fprintf(stderr, "                                                                \n" );
     fprintf(stderr, "      Times                       \t Minimum\t Maximum\t Average\n" );

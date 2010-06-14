@@ -734,7 +734,8 @@ namespace Anasazi {
         oldind[i] = i;
       }
 
-      Teuchos::RCP<MV> newV, newMV, newKV, newR, src;
+      Teuchos::RCP<MV> newV, newMV, newKV, newR;
+      Teuchos::RCP<const MV> src;
       // allocate R and newV
       newR = MVT::Clone(*tmp,newBS);
       newV = MVT::Clone(*tmp,newBS*3);
@@ -869,10 +870,10 @@ namespace Anasazi {
     for (int i=0; i<blockSize_; i++) {
       ind[i] = i;
     }
-    X_  = MVT::CloneView(*V_,ind);
-    KX_ = MVT::CloneView(*KV_,ind);
+    X_  = MVT::CloneViewNonConst(*V_,ind);
+    KX_ = MVT::CloneViewNonConst(*KV_,ind);
     if (hasM_) {
-      MX_ = MVT::CloneView(*MV_,ind);
+      MX_ = MVT::CloneViewNonConst(*MV_,ind);
     }
     else {
       MX_ = X_;
@@ -881,10 +882,10 @@ namespace Anasazi {
     for (int i=0; i<blockSize_; i++) {
       ind[i] += blockSize_;
     }
-    H_  = MVT::CloneView(*V_,ind);
-    KH_ = MVT::CloneView(*KV_,ind);
+    H_  = MVT::CloneViewNonConst(*V_,ind);
+    KH_ = MVT::CloneViewNonConst(*KV_,ind);
     if (hasM_) {
-      MH_ = MVT::CloneView(*MV_,ind);
+      MH_ = MVT::CloneViewNonConst(*MV_,ind);
     }
     else {
       MH_ = H_;
@@ -893,10 +894,10 @@ namespace Anasazi {
     for (int i=0; i<blockSize_; i++) {
       ind[i] += blockSize_;
     }
-    P_  = MVT::CloneView(*V_,ind);
-    KP_ = MVT::CloneView(*KV_,ind);
+    P_  = MVT::CloneViewNonConst(*V_,ind);
+    KP_ = MVT::CloneViewNonConst(*KV_,ind);
     if (hasM_) {
-      MP_ = MVT::CloneView(*MV_,ind);
+      MP_ = MVT::CloneViewNonConst(*MV_,ind);
     }
     else {
       MP_ = P_;
@@ -1071,7 +1072,7 @@ namespace Anasazi {
       if (blockSize_ > initSize) {
         std::vector<int> ind(blockSize_ - initSize);
         for (int i=0; i<blockSize_ - initSize; i++) ind[i] = initSize + i;
-        Teuchos::RCP<MV> rX = MVT::CloneView(*X_,ind);
+        Teuchos::RCP<MV> rX = MVT::CloneViewNonConst(*X_,ind);
         MVT::MvRandom(*rX);
         rX = Teuchos::null;
       }

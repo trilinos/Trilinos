@@ -188,7 +188,7 @@ int main(int argc, char *argv[]) {
     std::vector<int> index(numev);
     for (i=0; i<numev; i++) { index[i] = i; }
     Anasazi::EpetraMultiVec Av(RowMap,numev), u(RowMap,numev);
-    Anasazi::EpetraMultiVec* evecs = dynamic_cast<Anasazi::EpetraMultiVec* >(sol.Evecs->CloneView( index ));
+    Anasazi::EpetraMultiVec* evecs = dynamic_cast<Anasazi::EpetraMultiVec* >(sol.Evecs->CloneViewNonConst( index ));
     Teuchos::SerialDenseMatrix<int,double> S(numev,numev);
     A->Apply( *evecs, Av );
     Av.MvNorm( tempnrm );
