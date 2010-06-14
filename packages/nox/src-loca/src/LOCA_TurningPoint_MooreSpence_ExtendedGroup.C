@@ -911,7 +911,9 @@ LOCA::TurningPoint::MooreSpence::ExtendedGroup::preProcessContinuationStep(
 	"scaling null vector by:" << 
 	globalData->locaUtils->sciformat(1.0 / lVecDotNullVec) << std::endl;
   }
-  xVec->getNullVec()->scale(1.0/lVecDotNullVec);
+  if (updateVectorsEveryContinuationStep) {
+    xVec->getNullVec()->scale(1.0/lVecDotNullVec);
+  }
 
   grpPtr->preProcessContinuationStep(stepStatus);
 }
