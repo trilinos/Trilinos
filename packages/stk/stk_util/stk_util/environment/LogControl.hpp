@@ -252,6 +252,10 @@ private:
   std::ostream &        m_logStream;            ///< Log stream under control
   std::streambuf *      m_logStreambuf;         ///< Log stream original stream buffer
   std::ostringstream    m_cacheStream;          ///< Cache stream
+
+  // Do not implement...
+  LogControl(const LogControl&);
+  LogControl & operator = (const LogControl&);
 };
 
 } // namespace stk
