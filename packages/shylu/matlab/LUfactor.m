@@ -31,6 +31,7 @@ end
 % Save permutation to SBBD form from partitioning
 LUdata.Spermr = permr;
 LUdata.Spermc = permc;
+% Save the connectivity graph of the partitions
 LUdata.domain = domain;
 
 % Save explicit permutation to DBBD form after factoring diagonal blocks and
@@ -84,6 +85,17 @@ for i=1:k
 end
 % Store global S (TODO: Not required if we have all the local S{i}?)
 LUdata.S{k+1} = S;
+
+[Snr, dummy] = size(S);
+% Assign part numbers to rows of S. Used only in ilu.
+LUdata.Spartr = zeros(Snr, 1);
+crow = 0;
+% TODO: Can extract this from partr
+for i=1:k
+  [Sinr, dummy] = size(LUdata.S{i});
+  LUdata.Spartr(crow+1 : crow+Sinr) = i;
+  crow = crow + Sinr;
+end
 
 % This is not required, if LUdriver is used. L and U needed if LUsolve is called
 % after LUfactor.
