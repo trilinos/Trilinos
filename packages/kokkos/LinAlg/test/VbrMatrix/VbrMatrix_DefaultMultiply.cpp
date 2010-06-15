@@ -238,8 +238,107 @@ namespace {
     ax_check = null;
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VbrMatrix, SparseMultiply1Transpose, Ordinal, Scalar, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+    typedef VbrMatrix<Scalar,Ordinal,Node>  VBR;
+    typedef MultiVector<Scalar,Node> MV;
+    typedef typename Node::size_t size_t;
+    // generate small 2x2 block matrix:
+    // [ 1  2    2  3 ]
+    // [ 1  1    2  2 ]
+    //
+    // [ 3  4    4  5 ]
+    // [ 3  3    4  4 ]
+
+    // allocate buffers
+    const size_t num_point_rows = 4;
+    const size_t num_block_rows = 2;
+    const size_t num_block_cols = 2;
+    const size_t num_block_nz = 4;
+    const size_t totalNNZ = 16;
+    ArrayRCP<Ordinal> rptr = node->template allocBuffer<Ordinal> (num_block_rows+1);
+    ArrayRCP<Ordinal> cptr = node->template allocBuffer<Ordinal> (num_block_cols+1);
+    ArrayRCP<Ordinal> bptr = node->template allocBuffer<Ordinal> (num_block_rows+1);
+    ArrayRCP<Ordinal> bindx = node->template allocBuffer<Ordinal>(num_block_nz);
+    ArrayRCP<Ordinal> indx = node->template allocBuffer<Ordinal>(num_block_nz+1);
+    ArrayRCP<Scalar>  vals = node->template allocBuffer<Scalar >(totalNNZ);
+    // fill the buffers on the host
+    {
+      ArrayRCP<Ordinal>  rptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_rows+1,rptr);
+      ArrayRCP<Ordinal>  cptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_cols+1,cptr);
+      ArrayRCP<Ordinal>  bptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_rows+1,bptr);
+      ArrayRCP<Ordinal>  bindx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz,bindx);
+      ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz+1,indx);
+      ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(Kokkos::WriteOnly,totalNNZ,vals);
+
+      rptr_h[0] = 0; rptr_h[1] = 2; rptr_h[2] = 4;
+      cptr_h[0] = 0; cptr_h[1] = 2; cptr_h[2] = 4;
+      bptr_h[0] = 0; bptr_h[1] = 2; bptr_h[2] = 4;
+      bindx_h[0] = 0; bindx_h[1] = 1; bindx_h[2] = 0; bindx_h[3] = 1;
+      indx_h[0] = 0; indx_h[1] = 4; indx_h[2] = 8; indx_h[3] = 12; indx_h[4] = 16;
+
+      vals_h[0] = 1; vals_h[1] = 1; vals_h[2] = 2; vals_h[3] = 1;
+      vals_h[4] = 2; vals_h[5] = 2; vals_h[6] = 3; vals_h[7] = 2;
+      vals_h[8] = 3; vals_h[9] = 3; vals_h[10] = 4; vals_h[11] = 3;
+      vals_h[12] = 4; vals_h[13] = 4; vals_h[14] = 5; vals_h[15] = 4;
+
+    }
+    VBR  A(num_block_rows,node);
+    A.setPackedValues(vals,rptr,cptr,bptr,bindx,indx);
+    DefaultBlockSparseMultiply<Scalar,Ordinal,Node> dbsm(node);
+    dbsm.initializeValues(A);
+
+    ArrayRCP<Scalar> xdat, axdat, ax_check;
+    xdat  = node->template allocBuffer<Scalar>(num_point_rows);
+    axdat = node->template allocBuffer<Scalar>(num_point_rows);
+    ax_check = node->template allocBuffer<Scalar>(num_point_rows);
+    ax_check[0] = 8;
+    ax_check[1] = 10;
+    ax_check[2] = 12;
+    ax_check[3] = 14;
+    MV X(node), AX(node);
+    X.initializeValues( num_point_rows,1, xdat,num_point_rows);
+    AX.initializeValues(num_point_rows,1,axdat,num_point_rows);
+    DefaultArithmetic<MV>::Init(X,1);
+    dbsm.multiply(Teuchos::TRANS,Teuchos::ScalarTraits<Scalar>::one(),X,Teuchos::ScalarTraits<Scalar>::zero(),AX);
+    ArrayRCP<const Scalar> axview = node->template viewBuffer<Scalar>(num_point_rows,axdat);
+    TEST_COMPARE_FLOATING_ARRAYS(axview, ax_check, Teuchos::ScalarTraits<Scalar>::zero());
+    xdat = null;
+    axdat = null;
+    ax_check = null;
+
+    //now check the case where x and ax have 3 columns instead of 1.
+    size_t numVecs = 3;
+    xdat  = node->template allocBuffer<Scalar>(num_point_rows*numVecs);
+    axdat = node->template allocBuffer<Scalar>(num_point_rows*numVecs);
+    ax_check = node->template allocBuffer<Scalar>(num_point_rows*numVecs);
+    ax_check[0] = 8;
+    ax_check[1] = 10;
+    ax_check[2] = 12;
+    ax_check[3] = 14;
+    ax_check[4] = 8;
+    ax_check[5] = 10;
+    ax_check[6] = 12;
+    ax_check[7] = 14;
+    ax_check[8] = 8;
+    ax_check[9] = 10;
+    ax_check[10] = 12;
+    ax_check[11] = 14;
+    X.initializeValues( num_point_rows,numVecs, xdat,num_point_rows);
+    AX.initializeValues(num_point_rows,numVecs,axdat,num_point_rows);
+    DefaultArithmetic<MV>::Init(X,1);
+    dbsm.multiply(Teuchos::TRANS,Teuchos::ScalarTraits<Scalar>::one(),X,Teuchos::ScalarTraits<Scalar>::zero(),AX);
+    axview = node->template viewBuffer<Scalar>(num_point_rows*numVecs,axdat);
+    TEST_COMPARE_FLOATING_ARRAYS(axview, ax_check, Teuchos::ScalarTraits<Scalar>::zero());
+    xdat = null;
+    axdat = null;
+    ax_check = null;
+  }
+
 #define ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( VbrMatrix, SparseMultiply1, ORDINAL, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( VbrMatrix, SparseMultiply1, ORDINAL, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( VbrMatrix, SparseMultiply1Transpose, ORDINAL, SCALAR, NODE )
 
 #define UNIT_TEST_SERIALNODE(ORDINAL, SCALAR) \
       ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, SerialNode )

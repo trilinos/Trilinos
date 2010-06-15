@@ -55,6 +55,20 @@ void densematvec(Ordinal Nrows, Ordinal Ncols,
   }
 }
 
+/** Form dense transpose-matrix-vector product y = A*x */
+template<class Scalar,class Ordinal,class DomainScalar,class RangeScalar>
+void densematvec_trans(Ordinal Nrows, Ordinal Ncols,
+                       Scalar alpha, const Scalar* A,
+                       const DomainScalar* x, RangeScalar* y)
+{
+  unsigned offset = 0;
+  for(Ordinal c=0; c<Ncols; ++c) {
+    for(Ordinal r=0; r<Nrows; ++r) {
+      y[c] += alpha*A[offset++]*x[r];
+    }
+  }
+}
+
 /** Form dense matrix-vector product y = A*x */
 template<class Scalar,class DomainScalar,class RangeScalar>
 void dense_matvec_1x1( Scalar alpha, const Scalar* A,
@@ -91,6 +105,36 @@ void dense_matvec_4x4(Scalar alpha, const Scalar* A,
   y[1] += alpha*(A[1]*x[0] + A[5]*x[1] + A[9]*x[2] + A[13]*x[3]);
   y[2] += alpha*(A[2]*x[0] + A[6]*x[1] + A[10]*x[2] + A[14]*x[3]);
   y[3] += alpha*(A[3]*x[0] + A[7]*x[1] + A[11]*x[2] + A[15]*x[3]);
+}
+
+/** Form dense matrix-vector product y = A*x */
+template<class Scalar,class DomainScalar,class RangeScalar>
+void dense_matvec_trans_2x2(Scalar alpha, const Scalar* A,
+                 const DomainScalar* x, RangeScalar* y)
+{
+  y[0] += alpha*(A[0]*x[0] + A[1]*x[1]);
+  y[1] += alpha*(A[2]*x[0] + A[3]*x[1]);
+}
+
+/** Form dense matrix-vector product y = A*x */
+template<class Scalar,class DomainScalar,class RangeScalar>
+void dense_matvec_trans_3x3(Scalar alpha, const Scalar* A,
+                 const DomainScalar* x, RangeScalar* y)
+{
+  y[0] += alpha*(A[0]*x[0] + A[1]*x[1] + A[2]*x[2]);
+  y[1] += alpha*(A[3]*x[0] + A[4]*x[1] + A[5]*x[2]);
+  y[2] += alpha*(A[6]*x[0] + A[7]*x[1] + A[8]*x[2]);
+}
+
+/** Form dense matrix-vector product y = A*x */
+template<class Scalar,class DomainScalar,class RangeScalar>
+void dense_matvec_trans_4x4(Scalar alpha, const Scalar* A,
+                 const DomainScalar* x, RangeScalar* y)
+{
+  y[0] += alpha*(A[0]*x[0] + A[1]*x[1] + A[2]*x[2] + A[3]*x[3]);
+  y[1] += alpha*(A[4]*x[0] + A[5]*x[1] + A[6]*x[2] + A[7]*x[3]);
+  y[2] += alpha*(A[8]*x[0] + A[9]*x[1] + A[10]*x[2] + A[11]*x[3]);
+  y[3] += alpha*(A[12]*x[0] + A[13]*x[1] + A[14]*x[2] + A[15]*x[3]);
 }
 
 template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar, int NO_BETA_AND_OVERWRITE>
@@ -136,6 +180,53 @@ struct DefaultBlockSparseMultiplyOp1 {
         }
         else {
           densematvec(Nrows,Ncols,alpha,A,xx,yy);
+        }
+      }
+    }
+  }
+};
+
+template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar>
+struct DefaultBlockSparseMultiplyOp1Transpose {
+  // mat data
+  const Ordinal *rptr, *cptr, *bptr;
+  const Ordinal *bindx, *indx;
+  const Scalar  *vals;
+  // matvec params
+  RangeScalar        alpha;
+  size_t numBlockRows;
+  // mv data
+  const DomainScalar  *x;
+  RangeScalar         *y;
+  size_t xstride, ystride;
+  size_t numVecs;
+
+  inline KERNEL_PREFIX void execute(size_t i) {
+    const size_t row = i;
+    for(size_t v=0; v<numVecs; ++v) {
+      const Ordinal Nrows = rptr[row+1]-rptr[row];
+      const DomainScalar* xvec = x+v*xstride;
+      const Scalar* xx = &xvec[rptr[row]];
+  
+      for (Ordinal b=bptr[row]; b<bptr[row+1]; ++b) {
+        const Ordinal col = bindx[b];
+        const Ordinal Ncols = cptr[col+1]-cptr[col];
+  
+        const Scalar* A = &vals[indx[b]];
+        RangeScalar* yvec = y+v*ystride;
+        RangeScalar* yy = &yvec[cptr[col]];
+  
+        if (Nrows == Ncols) {
+          switch(Nrows) {
+          case 1: dense_matvec_1x1(alpha, A, xx, yy); break;
+          case 2: dense_matvec_trans_2x2(alpha, A, xx, yy); break;
+          case 3: dense_matvec_trans_3x3(alpha, A, xx, yy); break;
+          case 4: dense_matvec_trans_4x4(alpha, A, xx, yy); break;
+          default: densematvec_trans(Nrows, Ncols, alpha, A, xx, yy);
+          }
+        }
+        else {
+          densematvec_trans(Nrows,Ncols,alpha,A,xx,yy);
         }
       }
     }
