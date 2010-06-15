@@ -34,11 +34,11 @@ else
 fi
 
 
-echo
-echo "Doing mpi optimized development build: `date`"
-echo
-
-time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_mac_nightly_mpi_opt_s909348.cmake -VV &> "MPI_OPT_DEV_$DATE.log"
+#echo
+#echo "Doing mpi optimized development build: `date`"
+#echo
+#
+#time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_mac_nightly_mpi_opt_s909348.cmake -VV &> "MPI_OPT_DEV_$DATE.log"
 
 echo
 echo "Doing serial debug development build: `date`"
