@@ -303,7 +303,6 @@ int Zoltan_Hier(
   ZOLTAN_ID_PTR hier_export_gids=NULL, hier_export_lids=NULL;
   int *hier_export_procs=NULL, *hier_export_to_part=NULL;
   int graph_type = 0;
-  int gno_size;
 
   ZOLTAN_TRACE_ENTER(zz, yo);
 

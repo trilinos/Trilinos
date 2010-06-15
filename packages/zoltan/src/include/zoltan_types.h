@@ -58,15 +58,6 @@ extern "C" {
 /* TODO64 - I think some things may break of ZOLTAN_ID_TYPE is smaller than int.  Need to
  *   check this, and not allow short if that's the case.  (Like Zoltan_DD_*)
  */
-#ifdef ZOLTAN_ID_TYPE_SHORT
-
-typedef short ZOLTAN_ID_TYPE;
-#define ZOLTAN_ID_MPI_TYPE  MPI_SHORT
-#define zoltan_mpi_id_datatype_name "MPI_SHORT"
-#define ZOLTAN_ID_SPECIFIER  "hd"
-#define ZOLTAN_ID_CONSTANT(z)  z
-
-#endif
 
 #ifdef ZOLTAN_ID_TYPE_INT
 
@@ -93,15 +84,6 @@ typedef long long ZOLTAN_ID_TYPE;
 #define zoltan_mpi_id_datatype_name "MPI_LONG_LONG"
 #define ZOLTAN_ID_SPECIFIER  "Ld"
 #define ZOLTAN_ID_CONSTANT(z)  z ## LL
-#endif
-
-#ifdef ZOLTAN_ID_TYPE_UNSIGNED_SHORT
-
-typedef unsigned short ZOLTAN_ID_TYPE;
-#define ZOLTAN_ID_MPI_TYPE  MPI_UNSIGNED_SHORT
-#define zoltan_mpi_id_datatype_name "MPI_UNSIGNED_SHORT"
-#define ZOLTAN_ID_SPECIFIER  "hu"
-#define ZOLTAN_ID_CONSTANT(z)  z
 #endif
 
 #ifdef ZOLTAN_ID_TYPE_UNSIGNED_INT

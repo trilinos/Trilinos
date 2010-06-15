@@ -462,8 +462,6 @@ char *recv_data)		/* array of data I'll own after comm */
 *  process does one receive at a time.
 */
 
-static char memmsg[256];
-
 int       Zoltan_Comm_Do_AlltoAll(
 ZOLTAN_COMM_OBJ * plan,		/* communication data structure */
 char *send_data,		/* array of data I currently own */

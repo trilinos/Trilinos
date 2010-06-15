@@ -22,7 +22,12 @@ extern "C" {
 
 #include "zoltan_util.h"
 
+/* TODO64: define a printf descriptor for the indextype and weightype, the way
+ *  they are defined for ZOLTAN_ID_TYPE in zoltan_types.h.
+ */
+
 #ifdef indextype
+#undef INDEXTYPE_SPECIFIER
 #undef indextype
 #endif
 

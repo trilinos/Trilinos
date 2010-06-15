@@ -121,9 +121,6 @@ int Zoltan_RB_find_bisector(
 /* Local declarations. */
   char    yo[] = "Zoltan_find_bisector";
   int     proc   = zz->Proc;         /* My proc rank. */
-  int     rank = proc - proclower;   /* rank in partition (Tflops_Special) */
-  int     loopCount = 0;
-  int     ierr = ZOLTAN_OK;          /* error code */
 
 #if (RB_MAX_WGTS <= 1)
 
@@ -132,6 +129,9 @@ int Zoltan_RB_find_bisector(
 
 #else /* RB_MAX_WGTS > 1 */
 
+  int     rank = proc - proclower;   /* rank in partition (Tflops_Special) */
+  int     loopCount = 0;
+  int     ierr = ZOLTAN_OK;          /* error code */
   struct bisector *med = NULL;       /* bisector data */
   struct bisector *medme = NULL;     /* bisector data */
   double  localmax, localmin;        /* lower/upper bounds on this proc */

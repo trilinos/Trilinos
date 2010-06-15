@@ -40,7 +40,6 @@ struct Dot_Struct {	        /* dot = point in 3-space */
   int Part;                     /* New partition to which the dot is 
                                    assigned.  */
   int Size;                     /* Migration size */
-  int Dim;                      /* geometric dimension */
 };
 
 

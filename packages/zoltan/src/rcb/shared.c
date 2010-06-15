@@ -682,9 +682,9 @@ int Zoltan_RB_Send_Dots_less_memory(
   int message_tag = 32760;          /* message tag */
   int num_gid_entries = zz->Num_GID;
   int num_lid_entries = zz->Num_LID;
-  int i, ii, j, ierr = ZOLTAN_OK;
-  int firstStaying, firstGoingReordered;
-  ZOLTAN_ID_PTR ids;
+  int i, j, ierr = ZOLTAN_OK;
+  int firstStaying;
+  ZOLTAN_ID_PTR ids=NULL;
   double *dval;
   int *ival, *reorder=NULL;
   struct Dot_Struct *dots=NULL;
@@ -694,7 +694,6 @@ int Zoltan_RB_Send_Dots_less_memory(
   int weight_dim = ( (zz->Obj_Weight_Dim > 0) ? zz->Obj_Weight_Dim : 1);
 
   ZOLTAN_TRACE_ENTER(zz, yo);
-  incoming = 0;
 
   num_dim = zz->Get_Num_Geom(zz->Get_Num_Geom_Data, &ierr);
   if (ierr != ZOLTAN_OK){
@@ -705,25 +704,31 @@ int Zoltan_RB_Send_Dots_less_memory(
    * saves memory in Zoltan_Comm_*.  The proc_list input array is reordered here.
    */
 
-  reorder = (int *)ZOLTAN_MALLOC(sizeof(int) * outgoing);
-  if (outgoing && !reorder){
-    MEMORY_ERROR;
-  }
-
-  firstStaying = *dotnum;       /* location of first dot that is staying */
-
-  for (i=0,j=0; i < *dotnum; i++){
-    if ((*dotmark)[i] != set) {  /* going */
-      reorder[j++] = i;
+  if (outgoing > 0){
+    reorder = (int *)ZOLTAN_MALLOC(sizeof(int) * outgoing);
+    if (outgoing && !reorder){
+      MEMORY_ERROR;
     }
-    else{
-      if (i < firstStaying){
-        firstStaying = i;
+  
+    firstStaying = *dotnum;       /* location of first dot that is staying */
+    startIncoming = *dotnum - outgoing; /* location of first new dot in new array*/
+  
+    for (i=0,j=0; i < *dotnum; i++){
+      if ((*dotmark)[i] != set) {  /* going */
+        reorder[j++] = i;
+      }
+      else{
+        if (i < firstStaying){
+          firstStaying = i;
+        }
       }
     }
+    Zoltan_quicksort_list_inc_int(proc_list, reorder, 0, outgoing - 1);
   }
-
-  Zoltan_quicksort_list_inc_int(proc_list, reorder, 0, outgoing - 1);
+  else{
+    firstStaying = 0;
+    startIncoming = *dotnum;
+  }
 
   /* Create comm object TODO64 - in Zoltan_Comm verify that incoming fits in an integer */
 
@@ -752,8 +757,6 @@ int Zoltan_RB_Send_Dots_less_memory(
 
   /* check if need to malloc more space */
 
-  startIncoming = *dotnum - outgoing;
-
   if (dotnew > *dotmax) {
     *allocflag = 1;
 
@@ -780,6 +783,8 @@ int Zoltan_RB_Send_Dots_less_memory(
     if (*dotmax > counters[4]) counters[4] = *dotmax;
   }
 
+  dots = *dotpt;
+
   /* Figure out the size of the largest single send/recv and allocate buffers of that size */
 
   bufsize = sizeof(double) * num_dim;             /* to send coordinates */
@@ -805,11 +810,7 @@ int Zoltan_RB_Send_Dots_less_memory(
     if (!sendbuf) MEMORY_ERROR;
   }
 
-  dots = *dotpt;
-
   /***** Send/receive coordinates *****/
-
-  next = 0;
 
   if (outgoing > 0){
     dval = (double *)sendbuf;
@@ -820,7 +821,7 @@ int Zoltan_RB_Send_Dots_less_memory(
       }
     }
 
-    for (i = firstStaying; i < *dotnum; i++) {
+    for (i = firstStaying, next=0; i < *dotnum; i++) {
       if ((*dotmark)[i] == set) {
         for (j=0; j < num_dim; j++){
           dots[next].X[j] = dots[i].X[j];
@@ -840,9 +841,12 @@ int Zoltan_RB_Send_Dots_less_memory(
   if (incoming > 0){
     dval = (double *)recvbuf;
   
-    for (i=0; i < incoming; i++,next++){
+    for (i=startIncoming; i < dotnew; i++){
       for (j=0; j < num_dim; j++){
-        dots[next].X[j] = *dval++;
+        dots[i].X[j] = *dval++;
+      }
+      for (j=num_dim; j < 3; j++){
+        dots[i].X[j] = 0.0;
       }
     }
   }
@@ -865,6 +869,9 @@ int Zoltan_RB_Send_Dots_less_memory(
           ids += num_gid_entries;
         }
       }
+    }
+    else{
+      ids = *gidpt + startIncoming;
     }
 
     ierr = Zoltan_Comm_Do(cobj, message_tag++, sendbuf, 
@@ -890,6 +897,9 @@ int Zoltan_RB_Send_Dots_less_memory(
             ids += num_lid_entries;
           }
         }
+      }
+      else{
+        ids = *lidpt + startIncoming;
       }
     
       ierr = Zoltan_Comm_Do(cobj, message_tag++, (char *) sendbuf, 
@@ -1452,7 +1462,7 @@ int Zoltan_RB_check_geom_output(
 /* Routine to check output of geometric methods for consistency. */
 
   char *yo = "Zoltan_RB_check_geom_output";
-  char msg[256];
+  char msg[1024];
   int dd,i,iflag,proc,nprocs,input[2],total[2];
   double *wtsum,tolerance;
   struct rcb_box *rcbbox = (struct rcb_box *) rcbbox_arg;
@@ -1516,11 +1526,17 @@ int Zoltan_RB_check_geom_output(
     for (i = 0; i < dotnum; i++) {
       if (dotpt[i].X[0] < rcbbox->lo[0] || dotpt[i].X[0] > rcbbox->hi[0] ||
           dotpt[i].X[1] < rcbbox->lo[1] || dotpt[i].X[1] > rcbbox->hi[1] ||
-  	  dotpt[i].X[2] < rcbbox->lo[2] || dotpt[i].X[2] > rcbbox->hi[2])
+  	  dotpt[i].X[2] < rcbbox->lo[2] || dotpt[i].X[2] > rcbbox->hi[2]){
         iflag++;
+        dd=i;
+      }
     }
     if (iflag > 0) {
-      sprintf(msg, "%d points are out-of-box on proc %d.", iflag, proc);
+      sprintf(msg, "\n%d points are out-of-box on proc %d.\n" 
+        "Example (%g, %g, %g) is not in (%g, %g) , (%g, %g), (%g, %g)\n",
+        iflag, proc, dotpt[dd].X[0], dotpt[dd].X[1], dotpt[dd].X[2],
+      rcbbox->lo[0], rcbbox->hi[0] , rcbbox->lo[1], rcbbox->hi[1], rcbbox->lo[2], rcbbox->hi[2]);
+
       ZOLTAN_PRINT_ERROR(proc, yo, msg);
       ierr = ZOLTAN_FATAL;
     }

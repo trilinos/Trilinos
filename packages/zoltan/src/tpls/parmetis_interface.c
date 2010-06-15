@@ -155,7 +155,11 @@ int Zoltan_ParMetis(
   int  options[MAX_OPTIONS];
   char alg[MAX_PARAM_STRING_LEN+1];
 
+#ifdef ZOLTAN_PARMETIS
   int *tmp_vtx=NULL, *tmp_nbor=NULL;
+  MPI_Comm comm = zz->Communicator;/* want to risk letting external packages */
+                                   /* change our zz struct.                  */
+#endif
 
   int i;
   float *imb_tols;
@@ -164,8 +168,6 @@ int Zoltan_ParMetis(
   int wgtflag;
   int   numflag = 0;
   int num_part = zz->LB.Num_Global_Parts;/* passed to Jostle/ParMETIS. Don't */
-  MPI_Comm comm = zz->Communicator;/* want to risk letting external packages */
-                                   /* change our zz struct.                  */
 
   _zoltan_warned = 0;
 
@@ -630,13 +632,16 @@ int Zoltan_ParMetis_Order(
 {
   static char *yo = "Zoltan_ParMetis_Order";
   int i, n, ierr;
-  int *tmp_vtx = NULL, *tmp_nbor = NULL;
   ZOLTAN_Output_Order ord;
   ZOLTAN_Third_Graph gr;
 
+#ifdef ZOLTAN_PARMETIS
+  int *tmp_vtx = NULL, *tmp_nbor = NULL;
   MPI_Comm comm = zz->Communicator;/* don't want to risk letting external 
                                       packages changing our communicator */
   int numflag = 0;
+#endif
+
   int timer_p = 0;
   int get_times = 0;
   int use_timers = 0;

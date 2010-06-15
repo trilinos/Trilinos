@@ -43,7 +43,7 @@ int Zoltan_RB_Create_Proc_List(
      int  nprocs;             /* number of processors in partition */
      int  rank;               /* my processor number in partition */
      int  np_other = 0;       /* number of processors in other group */
-     int  i, j, k;            /* loop indexes */
+     int  i, k;            /* loop indexes */
      int  err = ZOLTAN_OK;    /* error code */
 
      ZOLTAN_GNO_TYPE *send;         /* array of number of dots outgoing */

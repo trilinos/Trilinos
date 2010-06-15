@@ -315,7 +315,6 @@ int f, n;
 size_t fsize, rc;
 char *c=NULL, *next=NULL, *c_end;
 char fbuf[64],buf[2048],label[64],value[64],units[64];
-struct stat info;
 
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);
 

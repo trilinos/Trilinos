@@ -79,10 +79,6 @@ int Zoltan_Memory_Get_Debug() {
 /******************************************************************************
  *
  *                    Dynamic Allocation of Multidimensional Arrays
-
-/******************************************************************************
- *
- *                    Dynamic Allocation of Multidimensional Arrays
  *-----------------------------------------------------------------------------
  *
  * Example Usage:

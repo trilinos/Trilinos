@@ -51,7 +51,7 @@ static int Compute_Bal(ZZ *, int, weighttype *, int, indextype *, double *);
 static int Compute_EdgeCut(ZZ *, int, int *, float *, indextype *, int *, double *);
 static float Compute_NetCut(ZZ *, int, int *, float *, indextype *, int *);
 static float Compute_ConCut(ZZ *, int, int *, float *, indextype *, int *);
-static int Compute_Adjpart(ZZ *, int, ZOLTAN_GNO_TYPE *, int *, ZOLTAN_GNO_TYPE *, int *, int *, int *);
+static int Compute_Adjpart(ZZ *, int, ZOLTAN_GNO_TYPE *, int *, ZOLTAN_GNO_TYPE *, int *, indextype *, int *);
 
 
 
@@ -657,7 +657,7 @@ static int Compute_Adjpart(
                                adjncy[xadj[i]+1] are all edge nbors of vtx i. */
   ZOLTAN_GNO_TYPE *adjncy,      /* Input:  Array of nbor vertices. */
   int *adjproc,     /* Input:  adjproc[j] == processor owning adjncy[j]. */
-  int *part,        /* Input:  Partition assignments of vtxs. */
+  indextype *part,        /* Input:  Partition assignments of vtxs. */
   int *adjpart      /* Output: adjpart[j] == partition owning adjncy[j] */
 )
 {
