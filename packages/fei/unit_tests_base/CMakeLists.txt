@@ -11,25 +11,7 @@ PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
 
 SET(SOURCES "")
 
-APPEND_SET(SOURCES
-fei_UBase_CSRMat_CSVec.cpp
-fei_UBase_CommMap.cpp
-fei_UBase_CommUtils.cpp
-fei_UBase_DirBC.cpp
-fei_UBase_DofMapper.cpp
-fei_UBase_LinearDecomposition.cpp
-fei_UBase_MatrixGraph.cpp
-fei_UBase_MatrixTraits.cpp
-fei_UBase_Params.cpp
-fei_UBase_Pattern.cpp
-fei_UBase_Reducer.cpp
-fei_UBase_ReverseMapper.cpp
-fei_UBase_exchangeCommMapData.cpp
-fei_UBase_set_dof_mappings.cpp
-fei_UBase_set_shared_ids.cpp
-fei_UBase_utils.cpp
-fei_ubase.cpp
-  )
+FILE(GLOB SOURCES *.cpp)
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
     fei_ubase

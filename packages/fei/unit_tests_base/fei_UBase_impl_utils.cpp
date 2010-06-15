@@ -103,7 +103,8 @@ TEUCHOS_UNIT_TEST(impl_utils, pack_unpack_FillableMat)
     throw std::runtime_error("pack/unpack FillableMat, wrong number of nonzeros");
   }
 
-  TEUCHOS_TEST_EQUALITY(fm, fm2, out, success);
+  bool result = fm == fm2;
+  TEUCHOS_TEST_EQUALITY(result, true, out, success);
 }
 
 TEUCHOS_UNIT_TEST(impl_utils, separateBCEqns)
