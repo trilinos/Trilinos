@@ -20,34 +20,52 @@ int main(int argc, char* argv[]){
 	RCP<CrsMatrix<double, int> > matrixB = rcp(new CrsMatrix<double, int>(rowMap, 2));
 
 
-	if(comm->getRank()==0){
-	matrixA->insertGlobalValues(0, tuple<int>(0,1), tuple<double>(1,4));
-	matrixA->insertGlobalValues(1, tuple<int>(1,2), tuple<double>(2,6));
+	if(comm->getSize() > 1){
+		if(comm->getRank()==0){
+			matrixA->insertGlobalValues(0, tuple<int>(0,1), tuple<double>(1,4));
+			matrixA->insertGlobalValues(1, tuple<int>(1,2), tuple<double>(2,6));
+		}else{
+			matrixA->insertGlobalValues(2, tuple<int>(2,3), tuple<double>(3,7));
+			matrixA->insertGlobalValues(3, tuple<int>(3), tuple<double>(4));
+		}
 	}else{
-	matrixA->insertGlobalValues(2, tuple<int>(2,3), tuple<double>(3,7));
-	matrixA->insertGlobalValues(3, tuple<int>(3), tuple<double>(4));
+		matrixA->insertGlobalValues(0, tuple<int>(0,1), tuple<double>(1,4));
+		matrixA->insertGlobalValues(1, tuple<int>(1,2), tuple<double>(2,6));
+		matrixA->insertGlobalValues(2, tuple<int>(2,3), tuple<double>(3,7));
+		matrixA->insertGlobalValues(3, tuple<int>(3), tuple<double>(4));
 	}
 
 
-	if(comm->getRank()==1){
-	matrixB->insertGlobalValues(0, tuple<int>(0), tuple<double>(8));
-	matrixB->insertGlobalValues(1, tuple<int>(0,1), tuple<double>(9,1));
-	}else{
-	matrixB->insertGlobalValues(2, tuple<int>(1,2), tuple<double>(2,7));
-	matrixB->insertGlobalValues(3, tuple<int>(3), tuple<double>(3));
+	
+	if(comm->getSize() > 1){
+		if(comm->getRank()==0){
+			matrixB->insertGlobalValues(0, tuple<int>(0), tuple<double>(8));
+			matrixB->insertGlobalValues(1, tuple<int>(0,1), tuple<double>(9,1));
+		}else if(comm->getRank()==1){
+			matrixB->insertGlobalValues(2, tuple<int>(1,2), tuple<double>(2,7));
+			matrixB->insertGlobalValues(3, tuple<int>(3), tuple<double>(3));
+		}
 	}
+	else{
+		matrixB->insertGlobalValues(0, tuple<int>(0), tuple<double>(8));
+		matrixB->insertGlobalValues(1, tuple<int>(0,1), tuple<double>(9,1));
+		matrixB->insertGlobalValues(2, tuple<int>(1,2), tuple<double>(2,7));
+		matrixB->insertGlobalValues(3, tuple<int>(3), tuple<double>(3));
+	}
+
 
 
 	std::cout << "just before fillCompletes \n";
 	matrixA->fillComplete(rowMap, rowMap);
 	matrixB->fillComplete(rowMap, rowMap);
+	Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+	matrixB->describe(*out, VERB_EXTREME);
 
 	std::cout << "just after fillCompletes \n";
 	RCP<CrsMatrix<double, int> > matrixC = rcp(new CrsMatrix<double,int>(rowMap, 4));
 
 	MatrixMatrixMultiply<double, int> multiplier(matrixA, matrixB, matrixC);
 	multiplier.multiply();
-	Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
 	matrixC->describe(*out, Teuchos::VERB_EXTREME);
 
 	return 0;
