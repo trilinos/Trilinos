@@ -1,5 +1,5 @@
-function [partr, partc, permr, permc] = SBBD(A, k)
-%function [partr, partc, permr, permc] = SBBD(A, k)
+function [partr, partc, permr, permc, domain] = SBBD(A, k)
+%function [partr, partc, permr, permc, domain] = SBBD(A, k)
 %
 % Partition/permute a sparse matrix to
 % singly bordered block diagonal (SBBD) form.
@@ -56,11 +56,16 @@ for j= 1:n
   minpart(j) = min(val(find(jj==j)));
 end
 partc = zeros(n,1);
+domain = zeros(k, k);
 for j= 1:n
+  x = zeros(k,1);
   if (minpart(j)==maxpart(j))
     partc(j) = minpart(j);
   else
     partc(j) = k+1; % Cut net (column)
+    dno = unique(val(find(jj == j))) ;
+    x(dno) = 1;
+    domain = domain + (x * x') ;
   end
 end
 

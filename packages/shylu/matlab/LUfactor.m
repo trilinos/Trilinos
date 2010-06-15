@@ -27,10 +27,11 @@ if (k<1)
 end
 
 % Singly bordered block diagonal form.
-[partr, partc, permr, permc] = SBBD(A, k);
+[partr, partc, permr, permc, domain] = SBBD(A, k);
 % Save permutation to SBBD form from partitioning
 LUdata.Spermr = permr;
 LUdata.Spermc = permc;
+LUdata.domain = domain;
 
 % Save explicit permutation to DBBD form after factoring diagonal blocks and
 % Schur complement.
