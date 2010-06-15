@@ -98,6 +98,7 @@ namespace {
   using Tpetra::RowMatrix;
   using Tpetra::Import;
   using Tpetra::global_size_t;
+  using Tpetra::createUniformContigMapWithNode;
   using Tpetra::createContigMapWithNode;
   using Tpetra::createLocalMapWithNode;
   using Tpetra::createCrsMatrixSolveOp;
@@ -1827,7 +1828,7 @@ typedef std::complex<double> ComplexDouble;
   UNIT_TEST_DOUBLE(int, int)
 #endif
 
-#if !defined(FAST_DEVELOPMENT_BUILD)
+#if !defined(FAST_DEVELOPMENT_UNIT_TEST_BUILD)
 # if defined(HAVE_TPETRA_INST_FLOAT)
     UNIT_TEST_FLOAT(int, int)
 # endif 

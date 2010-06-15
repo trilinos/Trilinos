@@ -25,6 +25,7 @@ namespace {
   using Tpetra::DoOptimizeStorage;
   using Tpetra::DoNotOptimizeStorage;
   using Tpetra::DefaultPlatform;
+  using Tpetra::createUniformContigMap;
   using Tpetra::createContigMap;
   using Tpetra::global_size_t;
   using std::sort;
@@ -83,7 +84,7 @@ namespace {
   {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
     clp.setOption(
-        "filedir",&filedir,"Directory of expected matrix files.");
+        "filedir",&filedir,"Directory of expected input files.");
     clp.addOutputSetupOptions(true);
     clp.setOption(
         "test-mpi", "test-serial", &testMpi,
@@ -238,12 +239,12 @@ namespace {
     const size_t numLocal = 10;
     RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,numLocal,comm);
     {
-      // create static-profile matrix, fill-complete without inserting (and therefore, without allocating)
+      // create static-profile graph, fill-complete without inserting (and therefore, without allocating)
       GRAPH graph(map,1,StaticProfile);
       graph.fillComplete(DoOptimizeStorage);
     }
     {
-      // create dynamic-profile matrix, fill-complete without inserting (and therefore, without allocating)
+      // create dynamic-profile graph, fill-complete without inserting (and therefore, without allocating)
       GRAPH graph(map,1,DynamicProfile);
       graph.fillComplete(DoOptimizeStorage);
     }
@@ -278,6 +279,36 @@ namespace {
         TEST_EQUALITY(as<Array_size_type>(diaggraph.getNumEntriesInLocalRow(row)), lids.size())
       }
     }
+  }
+
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, WithColMap, LO, GO )
+  {
+    typedef CrsGraph<LO,GO,Node> GRAPH;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int numImages = comm->getSize();
+    // test filtering
+    if (numImages > 1) {
+      const size_t numLocal = 1;
+      const RCP<const Map<LO,GO> > rmap = createContigMap<LO,GO>(INVALID,numLocal,comm);
+      const RCP<const Map<LO,GO> > cmap = createContigMap<LO,GO>(INVALID,numLocal,comm);
+      // must allocate enough for all submitted indices, not accounting for filtering.
+      RCP< CrsGraph<LO,GO> > G = rcp(new CrsGraph<LO,GO>(rmap,cmap,2,StaticProfile) );
+      TEST_EQUALITY_CONST( G->hasColMap(), true );
+      const GO myrowind = rmap->getGlobalElement(0);
+      TEST_NOTHROW( G->insertGlobalIndices( myrowind, tuple<GO>(myrowind,myrowind+1) ) );
+      TEST_NOTHROW( G->fillComplete(DoOptimizeStorage) );
+      TEST_EQUALITY( G->getRowMap(), rmap );
+      TEST_EQUALITY( G->getColMap(), cmap );
+      TEST_EQUALITY( G->getNumEntriesInGlobalRow(myrowind), 1 );
+    }
+    // All procs fail if any node fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
 
@@ -724,6 +755,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, DottedDiag , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, WithStaticProfile , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, CopiesAndViews, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, WithColMap,     LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, Describable   , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, EmptyFillComplete, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, Typedefs      , LO, GO )
