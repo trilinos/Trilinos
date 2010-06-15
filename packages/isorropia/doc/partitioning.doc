@@ -46,8 +46,8 @@ Note that Isorropia parameters are case insensitive.
 
 <ul>
 <li>STRUCTURALLY SYMMETRIC [NO/yes] (is symmetrization required?) </li>
-<li>PARTITIONING METHOD [block/cyclic/random/rcb/hsfc/graph/HYPERGRAPH] </li>
-<li>NUM PARTS [int n] (global number of parts) </li>
+<li>PARTITIONING METHOD [block/cyclic/random/rcb/rib/hsfc/graph/HYPERGRAPH] </li>
+<li>NUM PARTS [int k] (global number of parts) </li>
 <li>IMBALANCE TOL [float tol] (1.0 is perfect balance)</li>
 <li>BALANCE OBJECTIVE [ROWS/nonzeros] </li>
 <li>DISTANCE [1/2] (for coloring only; two is default) </li>

@@ -531,7 +531,7 @@ partition(bool force_repartitioning)
       sublist.set("LB_METHOD", "HIER");
       input_type = Library::hgraph_graph_geometric_input_;
     }
-    else
+    else // Default case: copy partitioning_method (e.g., RCB, RIB, HSFC)
     {
       sublist.set("LB_METHOD", partitioning_method);
       input_type = Library::geometric_input_;
