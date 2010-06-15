@@ -1,0 +1,90 @@
+##############################################################################
+#
+# Make variables for use by ${PROJECT_NAME}/${PACKAGE_NAME} clients. 
+#
+# ${DISCOURAGE_EDITING}
+#
+##############################################################################
+
+
+## ---------------------------------------------------------------------------
+## Compilers used by ${PROJECT_NAME}/${PACKAGE_NAME} build
+## ---------------------------------------------------------------------------
+
+${PACKAGE_NAME}_CXX_COMPILER=${CMAKE_CXX_COMPILER}
+
+${PACKAGE_NAME}_C_COMPILER=${CMAKE_C_COMPILER}
+
+${PACKAGE_NAME}_FORTRAN_COMPILER=${CMAKE_Fortran_COMPILER}
+
+
+## ---------------------------------------------------------------------------
+## Compiler flags used by ${PROJECT_NAME}/${PACKAGE_NAME} build
+## ---------------------------------------------------------------------------
+
+## Set compiler flags, including those determined by build type
+${PACKAGE_NAME}_CXX_FLAGS=${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${CMAKE_BUILD_TYPE}}
+
+${PACKAGE_NAME}_C_FLAGS=${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE}}
+
+${PACKAGE_NAME}_FORTRAN_FLAGS=${CMAKE_FORTRAN_FLAGS} ${CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE}}
+
+## Extra link flags (e.g., specification of fortran libraries)
+${PACKAGE_NAME}_EXTRA_LD_FLAGS=${Trilinos_EXTRA_LINK_FLAGS}
+
+## This is the command-line entry used for setting rpaths. In a build
+## with static libraries it will be empty. 
+${PACKAGE_NAME}_SHARED_LIB_RPATH_COMMAND=${SHARED_LIB_RPATH_COMMAND}
+${PACKAGE_NAME}_BUILD_SHARED_LIBS=${BUILD_SHARED_LIBS}
+
+${PACKAGE_NAME}_LINKER=${CMAKE_LINKER}
+${PACKAGE_NAME}_AR=${CMAKE_AR}
+
+## ---------------------------------------------------------------------------
+## Set library specifications and paths 
+## ---------------------------------------------------------------------------
+
+## Extra link flags (e.g., specification of fortran libraries)
+${PACKAGE_NAME}_EXTRA_LD_FLAGS=${${PROJECT_NAME}_EXTRA_LINK_FLAGS}
+
+## List of package include dirs
+${PACKAGE_NAME}_INCLUDE_DIRS=${MAKEFILE_INCLUDE_DIRS}
+
+## List of package library paths
+${PACKAGE_NAME}_LIBRARY_DIRS=${MAKEFILE_LIBRARY_DIRS}
+
+## List of package libraries
+${PACKAGE_NAME}_LIBRARIES=${MAKEFILE_FULL_LIBRARY_SET}
+
+## Specification of directories for TPL headers
+${PACKAGE_NAME}_TPL_INCLUDE_DIRS=${MAKEFILE_${PACKAGE_NAME}_TPL_INCLUDE_DIRS}
+
+## Specification of directories for TPL libraries
+${PACKAGE_NAME}_TPL_LIBRARY_DIRS=${MAKEFILE_${PACKAGE_NAME}_TPL_LIBRARY_DIRS}
+
+## List of required TPLs
+${PACKAGE_NAME}_TPL_LIBRARIES=${MAKEFILE_${PACKAGE_NAME}_TPL_LIBRARIES}
+
+## ---------------------------------------------------------------------------
+## MPI specific variables
+##   These variables are provided to make it easier to get the mpi libraries
+##   and includes on systems that do not use the mpi wrappers for compiling
+## ---------------------------------------------------------------------------
+
+${PACKAGE_NAME}_MPI_LIBRARIES=${MAKEFILE_TPL_MPI_LIBRARIES}
+${PACKAGE_NAME}_MPI_LIBRARY_DIRS=${MAKEFILE_TPL_MPI_LIBRARY_DIRS}
+${PACKAGE_NAME}_MPI_INCLUDE_DIRS=${MAKEFILE_TPL_MPI_INCLUDE_DIRS}
+${PACKAGE_NAME}_MPI_EXEC=${MPI_EXEC}
+${PACKAGE_NAME}_MPI_EXEC_MAX_NUMPROCS=${MPI_EXEC_MAX_NUMPROCS}
+${PACKAGE_NAME}_MPI_EXEC_NUMPROCS_FLAG=${MPI_EXEC_NUMPROCS_FLAG}
+
+## ---------------------------------------------------------------------------
+## Set useful general variables 
+## ---------------------------------------------------------------------------
+
+## The packages enabled for this project
+${PACKAGE_NAME}_PACKAGE_LIST=${MAKEFILE_FULL_PACKAGE_SET}
+
+## The TPLs enabled for this project
+${PACKAGE_NAME}_TPL_LIST=${MAKEFILE_ORDERED_FULL_TPL_SET}
+
