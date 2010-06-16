@@ -22,17 +22,15 @@
 #include <Ioss_Utils.h>
 #include <Ioss_SurfaceSplit.h>
 
+#ifndef NO_MPI
+#include <mpi.h>
+#endif
+
 #ifndef NO_XDMF_SUPPORT
 #include <xdmf/Ioxf_Initializer.h>
 #endif
 
-#ifndef IOSS_STANDALONE
-//#define OUTPUT sierra::Env::outputP0()
 #define OUTPUT std::cerr
-#include <Slib_Env.h>
-#else
-#define OUTPUT std::cerr
-#endif
 
 // ========================================================================
 
@@ -47,6 +45,7 @@ namespace {
     double maximum_time;
     double minimum_time;
     int  surface_split_type;
+    std::string working_directory;
   };
 
   void show_usage(const std::string &prog);
@@ -93,32 +92,12 @@ namespace {
   std::string version = "1.0";
 }
 
-#ifndef IOSS_STANDALONE
-namespace {
-
-void bootstrap()
-{
-  // Add my command line options to the option descriptions.
-  boost::program_options::options_description desc("Use case options");
-  desc.add_options()
-    ("input-deck,i", boost::program_options::value<std::string>(), "Analysis input file")
-    ("restart-time,r", boost::program_options::value<std::string>(), "Restart time")
-    ("parser-database,p", boost::program_options::value<std::string>(), "Parser database")
-
-    ("Maximum_Time", boost::program_options::value<std::string>(), "Maximum time to read from file")
-    ("Minimum_Time", boost::program_options::value<std::string>(), "Minimum time to read from file")
-    ("Surface_Split_Scheme", boost::program_options::value<std::string>(), "Scheme to use for splitting surfaces into homogenous parts. Valid settings are 'TOPOLOGY', 'ELEMENT_BLOCK' or 'NO_SPLIT'");
-
-  stk::get_options_description().add(desc);
-}
-
-stk::Bootstrap x(&bootstrap);
-
-} // namespace <unnamed>
-#endif
-
 int main(int argc, char *argv[])
 {
+#ifndef NO_MPI
+  MPI_Init(&argc, &argv);
+#endif
+  
   std::string in_type = "exodusII";
 
   Globals globals;
@@ -132,10 +111,6 @@ int main(int argc, char *argv[])
   if (ind != std::string::npos)
     codename = codename.substr(ind+1, codename.size());
 
-#ifndef IOSS_STANDALONE
-  sierra::Env::Startup startup__(&argc, &argv, codename.c_str(), __DATE__ " " __TIME__); //, opts);
-#endif
-
   Ioss::Init::Initializer io;
 #ifndef NO_XDMF_SUPPORT
   Ioxf::Initializer ioxf;
@@ -144,7 +119,12 @@ int main(int argc, char *argv[])
   // Skip past any options...
   int i=1;
   while (i < argc && argv[i][0] == '-') {
-    if (std::strcmp("-Maximum_Time", argv[i]) == 0) {
+    if (std::strcmp("-directory", argv[i]) == 0 ||
+	std::strcmp("-d", argv[i]) == 0) {
+      i++;
+      globals.working_directory = argv[i++];
+    }
+    else if (std::strcmp("-Maximum_Time", argv[i]) == 0) {
       i++;
       globals.maximum_time = std::strtod(argv[i++], NULL);
     }
@@ -173,27 +153,8 @@ int main(int argc, char *argv[])
     }
   }
 
-  std::string in_file;
-
   // Last argument is the filename...
-  in_file   = Ioss::Utils::local_filename(argv[argc-1], in_type);
-
-#ifndef IOSS_STANDALONE
-  const std::string &maximum_time_option = sierra::Env::get_param("Maximum_Time");
-  globals.maximum_time = std::strtod(maximum_time_option.c_str(), NULL);
-  
-  const std::string &minimum_time_option = sierra::Env::get_param("Minimum_Time");
-  globals.minimum_time = std::strtod(minimum_time_option.c_str(), NULL);
-  
-  const std::string &split_type_option = sierra::Env::get_param("Surface_Split_Scheme");
-  if (split_type_option == "TOPOLOGY")
-    globals.surface_split_type = 1;
-  else if (split_type_option == "ELEMENT_BLOCK")
-    globals.surface_split_type = 2;
-  else if (split_type_option == "NO_SPLIT")
-    globals.surface_split_type = 3;
-  
-#endif
+  std::string in_file   = Ioss::Utils::local_filename(argv[argc-1], in_type, globals.working_directory);
 
   OUTPUT << "Input:    '" << in_file  << "', Type: " << in_type  << '\n';
   OUTPUT << '\n';

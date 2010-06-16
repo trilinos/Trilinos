@@ -35,7 +35,7 @@ namespace Ioss {
 
 namespace Iogn {
   class GeneratedMesh;
-  
+
   class IOFactory : public Ioss::IOFactory
     {
     public:
@@ -45,8 +45,6 @@ namespace Iogn {
       Ioss::DatabaseIO* make_IO(const std::string& filename,
 				Ioss::DatabaseUsage db_usage,
 				MPI_Comm communicator) const;
-      
-      void register_library_versions() const {} // Nothing to register
     };
 
   class DatabaseIO : public Ioss::DatabaseIO
@@ -74,15 +72,21 @@ namespace Iogn {
       bool begin_state(Ioss::Region *region, int state, double time);
       bool   end_state(Ioss::Region *region, int state, double time);
 
+      const GeneratedMesh* get_generated_mesh() const
+      { return m_generatedMesh; }
+
+      const std::vector<std::string>& get_faceset_names() const
+      { return m_faceset_names; }
     private:
       void get_nodeblocks();
       void get_elemblocks();
       void get_nodesets();
       void get_facesets();
-      
+      void get_commsets();
+
       const Ioss::MapContainer& get_node_map() const;
       const Ioss::MapContainer& get_element_map() const;
-      
+
       int get_field_internal(const Ioss::Region* reg, const Ioss::Field& field,
 			     void *data, size_t data_size) const;
 
@@ -130,6 +134,7 @@ namespace Iogn {
       DatabaseIO& operator=(const DatabaseIO& from); // do not implement
 
       GeneratedMesh *m_generatedMesh;
+      std::vector<std::string> m_faceset_names;
 
       int spatialDimension;
       int nodeCount;

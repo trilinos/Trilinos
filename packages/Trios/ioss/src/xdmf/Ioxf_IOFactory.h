@@ -27,10 +27,6 @@ namespace Ioxf {
 				Ioss::DatabaseUsage db_usage,
 				MPI_Comm communicator) const;
 
-      /**
-       * Call the sierra product registry and register all dependent third-party libraries
-       */
-      void register_library_versions() const;
     };
 }
 #endif // SIERRA_Ioxf_IOFactory_h

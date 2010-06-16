@@ -17,10 +17,6 @@
 
 #include <string>
 
-#ifndef IOSS_STANDALONE
-#include <stk_util/environment/product_registry.h>
-#endif
-
 #include <Ioss_CodeTypes.h>
 #include <Ioss_SubSystem.h>
 #include <Ioss_Utils.h>
@@ -2946,22 +2942,6 @@ namespace Ioxf {
     if (cycleCount > 0)
       local_step %= cycleCount;
     return local_step + 1;
-  }
-
-#define make_version(maj, min, rel, ann) make_version_internal(maj, min, rel, ann)
-#define make_version_internal(maj, min, rel, ann) #maj "." #min "." #rel
-
-  void Ioxf::DatabaseIO::register_library_versions()
-  {
-#ifndef IOSS_STANDALONE
-    const char *hdf = make_version(H5_VERS_MAJOR,
-				   H5_VERS_MINOR,
-				   H5_VERS_RELEASE,
-				   H5_VERS_SUBRELEASE);
-
-    product_registry_add_tpl("xdmf", "1.00", "(used by Ioxf)");
-    product_registry_add_tpl("hdf5", hdf, "(used by Ioxf)");
-#endif
   }
 }
 

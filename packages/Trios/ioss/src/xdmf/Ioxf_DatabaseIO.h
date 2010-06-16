@@ -72,7 +72,6 @@ namespace Ioxf {
 		 Ioss::DatabaseUsage db_usage, MPI_Comm communicator);
       ~DatabaseIO();
       static void finalize();
-      static void register_library_versions();
 
       void InitXML(std::ostringstream *XML);
       void WriteMetaXdmfNodesets(std::ostringstream *XML, const std::vector<Ioxf::NodeSet> &nodesets);

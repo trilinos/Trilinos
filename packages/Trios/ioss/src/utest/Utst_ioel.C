@@ -13,17 +13,11 @@
 #include <vector>
 #include <string>
 
-#ifndef IOSS_STANDALONE
-#include <stk_util/environment/ProgramOptions.hpp>
-#include <stk_util/util/Bootstrap.hpp>
-#define OUTPUT sierra::Env::outputP0()
-#include <Slib_Env.h>
-#include <Slib_ProductRegistry.h>
-
-#else
-#define OUTPUT std::cerr
+#ifndef NO_MPI
+#include <mpi.h>
 #endif
 
+#define OUTPUT std::cerr
 
 #include <Ioss_ConcreteVariableType.h>
 #include <Ioss_Initializer.h>
@@ -41,34 +35,14 @@ static void test_aliases(const NameList &elements);
 static bool test_element(const std::string& type);
 // ========================================================================
 
-#ifndef IOSS_STANDALONE
-namespace {
-
-void bootstrap()
-{
-  // Add my command line options to the option descriptions.
-  boost::program_options::options_description desc("Use case options");
-  desc.add_options()
-    ("input-deck,i", boost::program_options::value<std::string>(), "Analysis input file")
-    ("restart-time,r", boost::program_options::value<std::string>(), "Restart time")
-    ("parser-database,p", boost::program_options::value<std::string>(), "Parser database");
-  
-  stk::get_options_description().add(desc);
-}
-
-stk::Bootstrap x(&bootstrap);
-
-} // namespace <unnamed>
-#endif
-
 int main(int argc, char *argv[])
 {
-  StorageInitializer initialize_storage;
-  Ioss::Initializer        initialize_topologies;
-
-#ifndef IOSS_STANDALONE
-  sierra::Env::Startup startup__(&argc, &argv, "Utst_ioel-1.1", __DATE__ " " __TIME__); //, opts);
+#ifndef NO_MPI
+  MPI_Init(&argc, &argv);
 #endif
+
+  StorageInitializer initialize_storage;
+  Ioss::Initializer  initialize_topologies;
 
   int err_count = test_all_elements();
   OUTPUT << "\n" << argv[0];;

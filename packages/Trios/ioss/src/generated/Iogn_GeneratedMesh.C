@@ -597,6 +597,15 @@ namespace Iogn {
     }
   }
 
+  size_t GeneratedMesh::communication_node_count_proc() const
+  {
+    size_t count = (numX+1) * (numY+1);
+    if (myProcessor != 0 && myProcessor != processorCount-1)
+      count *= 2;
+    
+    return count;
+  }
+
   void GeneratedMesh::node_communication_map(std::vector<int> &map, std::vector<int> &proc)
   {
     size_t count = (numX+1) * (numY+1);
@@ -888,7 +897,7 @@ namespace Iogn {
       }
     } else { // Shell blocks....
       ShellLocation loc = shellBlocks[block_number-2];
-      connect.resize(element_count(block_number)*4);
+      connect.resize(element_count_proc(block_number)*4);
 
       size_t cnt = 0;
       switch (loc) {
@@ -967,6 +976,7 @@ namespace Iogn {
 	}
 	break;
       }
+      assert(cnt == 4 * element_count_proc(block_number));
     }
     return;
   }

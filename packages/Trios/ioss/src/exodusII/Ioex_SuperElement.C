@@ -80,7 +80,7 @@ Ioex::SuperElement::SuperElement(const std::string &filename,
 
   // Check that file specified by filename exists...
   // Add working directory if needed.
-  std::string local_filename = Ioss::Utils::local_filename(fileName, "exodusII");
+  std::string local_filename = fileName;
 
   int status = nc_open(local_filename.c_str(), NC_NOWRITE, &filePtr);
   if (status != NC_NOERR) {

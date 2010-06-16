@@ -6,6 +6,7 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
+
 #include <Ioss_CodeTypes.h>
 
 #include <assert.h>
@@ -24,16 +25,15 @@
 #include <Ioss_SurfaceSplit.h>
 #include <Ioss_Transform.h>
 
+#ifndef NO_MPI
+#include <mpi.h>
+#endif
+
 #ifndef NO_XDMF_SUPPORT
 #include <xdmf/Ioxf_Initializer.h>
 #endif
 
-#ifndef IOSS_STANDALONE
-#define OUTPUT sierra::Env::outputP0()
-#include <Slib_Env.h>
-#else
 #define OUTPUT std::cerr
-#endif
 
 // ========================================================================
 
@@ -49,6 +49,7 @@ namespace {
     double maximum_time;
     double minimum_time;
     int  surface_split_type;
+    std::string working_directory;
   };
 
   void show_usage(const std::string &prog);
@@ -97,33 +98,12 @@ namespace {
   std::string version = "1.0";
 }
 
-#ifndef IOSS_STANDALONE
-namespace {
-
-void bootstrap()
-{
-  // Add my command line options to the option descriptions.
-  boost::program_options::options_description desc("Use case options");
-  desc.add_options()
-    ("input-deck,i", boost::program_options::value<std::string>(), "Analysis input file")
-    ("restart-time,r", boost::program_options::value<std::string>(), "Restart time")
-    ("parser-database,p", boost::program_options::value<std::string>(), "Parser database")
-
-    ("debug", "Output information about input and output mesh")
-    ("Maximum_Time", boost::program_options::value<std::string>(), "Maximum time to transfer to the output file")
-    ("Minimum_Time", boost::program_options::value<std::string>(), "Minimum time to transfer to the output file. This will be time=0.0 on output database and all subsequent times will be adjusted.")
-    ("Surface_Split_Scheme", boost::program_options::value<std::string>(), "Scheme to use for splitting surfaces into homogenous parts. Valid settings are 'TOPOLOGY', 'ELEMENT_BLOCK' or 'NO_SPLIT'");
-
-  stk::get_options_description().add(desc);
-}
-
-stk::Bootstrap x(&bootstrap);
-
-} // namespace <unnamed>
-#endif
-
 int main(int argc, char *argv[])
 {
+#ifndef NO_MPI
+  MPI_Init(&argc, &argv);
+#endif
+  
   std::string in_type = "exodusII";
   std::string out_type = "exodusII";
   std::string ss_type = "exodusII";
@@ -151,21 +131,27 @@ int main(int argc, char *argv[])
     codename = "io_shell";
   }
 
-#ifndef IOSS_STANDALONE
-  sierra::Env::Startup startup__(&argc, &argv, codename.c_str(), __DATE__ " " __TIME__); //, opts);
-#endif
-
   Ioss::Init::Initializer io;
 #ifndef NO_XDMF_SUPPORT
   Ioxf::Initializer ioxf;
 #endif
 
+  std::string input_file;
   globals.debug = false;
 
   // Skip past any options...
   int i=1;
   while (i < argc && argv[i][0] == '-') {
-    if (std::strcmp("--debug", argv[i]) == 0) {
+    if (std::strcmp("-directory", argv[i]) == 0 ||
+	std::strcmp("-d", argv[i]) == 0) {
+      i++;
+      globals.working_directory = argv[i++];
+    }
+    else if (std::strcmp("-i", argv[i]) == 0) {
+      i++;
+      input_file = argv[i++];
+    }
+    else if (std::strcmp("--debug", argv[i]) == 0) {
       i++;
       globals.debug = true;
     }
@@ -208,13 +194,19 @@ int main(int argc, char *argv[])
   // the input and output files to be converted.
   // The file types are assumed to be as 'hardwired' above...
 
-  if (argc - i == 2) {
-    in_file   = Ioss::Utils::local_filename(argv[i++], in_type);
-    out_file  = Ioss::Utils::local_filename(argv[i++], out_type);
-  }
-  else if (argc - i == 1) {
-    std::string input_file = Ioss::Utils::local_filename(argv[i++], "text");
+  std::string cwd = globals.working_directory;
 
+  if (input_file.empty()) {
+    if (argc - i == 2) {
+      in_file   = Ioss::Utils::local_filename(argv[i++], in_type, cwd);
+      out_file  = Ioss::Utils::local_filename(argv[i++], out_type, cwd);
+    }
+    else if (argc - i == 1) {
+      input_file = Ioss::Utils::local_filename(argv[i++], "text", cwd);
+    }
+  }
+
+  if (!input_file.empty()) {
     std::ifstream input(input_file.c_str());
     if (!input) {
       OUTPUT << "Error opening file '" << input_file << "'.\n";
@@ -225,56 +217,16 @@ int main(int argc, char *argv[])
     // Last line should be output_file_name output_file_type
     std::string tmp;
     input >> tmp >> in_type;
-    in_file = Ioss::Utils::local_filename(tmp, in_type);
+    in_file = Ioss::Utils::local_filename(tmp, in_type, cwd);
 
     input >> tmp >> out_type;
-    out_file = Ioss::Utils::local_filename(tmp, out_type);
+    out_file = Ioss::Utils::local_filename(tmp, out_type, cwd);
   }
-#ifndef IOSS_STANDALONE
-  else if (argc <= i) {
-    const std::string &maximum_time_option = sierra::Env::get_param("Maximum_Time");
-    globals.maximum_time = std::strtod(maximum_time_option.c_str(), NULL);
 
-    const std::string &minimum_time_option = sierra::Env::get_param("Minimum_Time");
-    globals.minimum_time = std::strtod(minimum_time_option.c_str(), NULL);
-
-    const std::string &split_type_option = sierra::Env::get_param("Surface_Split_Scheme");
-    if (split_type_option == "TOPOLOGY")
-      globals.surface_split_type = 1;
-    else if (split_type_option == "ELEMENT_BLOCK")
-      globals.surface_split_type = 2;
-    else if (split_type_option == "NO_SPLIT")
-      globals.surface_split_type = 3;
-
-    std::string input_file(sierra::Env::get_param("input-deck"));
-    if (input_file == "") {
-      OUTPUT << "Error: No input file specified\n";
-      show_usage(codename);
-      return (EXIT_FAILURE);
-    }
-    input_file = Ioss::Utils::local_filename(input_file, "text");
-    std::ifstream input(input_file.c_str());
-    if (!input) {
-      OUTPUT << "Error opening file '" << input_file  << "'.\n";
-      show_usage(codename);
-      return (EXIT_FAILURE);
-    }
-    // First line should be input_file_name input_file_type
-    // Second line should be output_file_name output_file_type
-
-    std::string tmp;
-    input >> tmp >> in_type;
-    in_file = Ioss::Utils::local_filename(tmp, in_type);
-
-    input >> tmp >> out_type;
-    out_file = Ioss::Utils::local_filename(tmp, out_type);
-  }
-#else
-  else {
+  if (in_file.empty() || out_file.empty()) {
     show_usage(codename);
     return(EXIT_FAILURE);
   }
-#endif
 
   OUTPUT << "Input:    '" << in_file  << "', Type: " << in_type  << '\n';
   OUTPUT << "Output:   '" << out_file << "', Type: " << out_type << '\n';

@@ -251,6 +251,8 @@ namespace Ioss {
       //       assuming that the blocks exist in the model...
       std::vector<std::string> blockOmissions;  
 
+      std::vector<std::string> informationRecords;
+      
     private:
       virtual int get_field_internal(const Region* reg, const Field& field,
 				     void *data, size_t data_size) const = 0;

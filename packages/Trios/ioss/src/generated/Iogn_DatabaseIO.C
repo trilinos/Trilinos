@@ -58,7 +58,7 @@ namespace Iogn {
 
   void DatabaseIO::read_meta_data()
   {
-    m_generatedMesh = new GeneratedMesh(get_filename(), util().parallel_size() , util().parallel_rank());
+    m_generatedMesh = new GeneratedMesh(get_filename(), util().parallel_size(), util().parallel_rank());
 
     spatialDimension = 3;
     nodeCount = m_generatedMesh->node_count_proc();
@@ -71,6 +71,7 @@ namespace Iogn {
     get_elemblocks();
     get_nodesets();
     get_facesets();
+    get_commsets();
     
     Ioss::Region *this_region = get_region();
     this_region->property_add(Ioss::Property(std::string("title"), std::string("GeneratedMesh: ") += get_filename()));
@@ -316,59 +317,57 @@ namespace Iogn {
   {
     return -1;
   }
-  int DatabaseIO::get_field_internal(const Ioss::CommSet* /* cs */, const Ioss::Field& /* field */,
-				     void */* data */, size_t /* data_size */) const
+  int DatabaseIO::get_field_internal(const Ioss::CommSet* cs, const Ioss::Field& field,
+				     void *data, size_t data_size) const
   {
-    return -1;
+    size_t num_to_get = field.verify(data_size);
+
+    if (num_to_get > 0) {
+      int entity_count = cs->get_property("entity_count").get_int();
+
+      // Return the <entity (node or face), processor> pair
+      if (field.get_name() == "entity_processor") {
+
+	// Check type -- node or face
+	std::string type = cs->get_property("entity_type").get_string();
+
+	if (type == "node") {
+	  // Allocate temporary storage space
+	  Ioss::IntVector entities(num_to_get);
+	  Ioss::IntVector procs(num_to_get);
+	  m_generatedMesh->node_communication_map(entities, procs);
+	  
+	  // and store in 'data' ...
+	  int* entity_proc = static_cast<int*>(data);
+
+	  int j=0;
+	  for (int i=0; i < entity_count; i++) {
+	    entity_proc[j++] = entities[i];
+	    entity_proc[j++] = procs[i];
+	  }
+	} else {
+	  std::ostringstream errmsg;
+	  errmsg << "Invalid commset type " << type;
+	  IOSS_ERROR(errmsg);
+	}
+
+      } else {
+	num_to_get = Ioss::Utils::field_warning(cs, field, "input");
+      }
+    }
+    return num_to_get;
   }
 
-  int DatabaseIO::put_field_internal(const Ioss::Region* /* region */, const Ioss::Field& /* field */,
-				     void * /* data */, size_t /* data_size */) const
-  {
-    return -1;
-  }
-
-  int DatabaseIO::put_field_internal(const Ioss::ElementBlock* /* eb */, const Ioss::Field& /* field */,
-				     void */* data */, size_t /* data_size */) const
-  {
-    return -1;
-  }
-  int DatabaseIO::put_field_internal(const Ioss::FaceBlock* /* fb */, const Ioss::Field& /* field */,
-				     void */* data */, size_t /* data_size */) const
-  {
-    return -1;
-  }
-  int DatabaseIO::put_field_internal(const Ioss::EdgeBlock* /* nb */, const Ioss::Field& /* field */,
-				     void */* data */, size_t /* data_size */) const
-  {
-    return -1;
-  }
-  int DatabaseIO::put_field_internal(const Ioss::NodeBlock* /* nb */, const Ioss::Field& /* field */,
-				     void */* data */, size_t /* data_size */) const
-  {
-    return -1;
-  }
-
-  int DatabaseIO::put_field_internal(const Ioss::NodeSet* /* ns */, const Ioss::Field& /* field */,
-				     void */* data */, size_t /* data_size */) const
-  {
-    return -1;
-  }
-  int DatabaseIO::put_field_internal(const Ioss::EdgeSet* /* es */, const Ioss::Field& /* field */,
-				     void */* data */, size_t /* data_size */) const
-  {
-    return -1;
-  }
-  int DatabaseIO::put_field_internal(const Ioss::FaceSet* /* fs */, const Ioss::Field& /* field */,
-				     void */* data */, size_t /* data_size */) const
-  {
-    return -1;
-  }
-  int DatabaseIO::put_field_internal(const Ioss::CommSet* /* cs */, const Ioss::Field& /* field */,
-				     void */* data */, size_t /* data_size */) const
-  {
-    return -1;
-  }
+  // Input only database -- these will never be called...
+  int DatabaseIO::put_field_internal(const Ioss::Region*,      const Ioss::Field&, void*, size_t) const {return -1;}
+  int DatabaseIO::put_field_internal(const Ioss::ElementBlock*,const Ioss::Field&, void*, size_t) const {return -1;}
+  int DatabaseIO::put_field_internal(const Ioss::FaceBlock*,   const Ioss::Field&, void*, size_t) const {return -1;}
+  int DatabaseIO::put_field_internal(const Ioss::EdgeBlock*,   const Ioss::Field&, void*, size_t) const {return -1;}
+  int DatabaseIO::put_field_internal(const Ioss::NodeBlock*,   const Ioss::Field&, void*, size_t) const {return -1;}
+  int DatabaseIO::put_field_internal(const Ioss::NodeSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
+  int DatabaseIO::put_field_internal(const Ioss::EdgeSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
+  int DatabaseIO::put_field_internal(const Ioss::FaceSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
+  int DatabaseIO::put_field_internal(const Ioss::CommSet*,     const Ioss::Field&, void*, size_t) const {return -1;}
 
   const Ioss::MapContainer& DatabaseIO::get_node_map() const
   {
@@ -494,8 +493,8 @@ namespace Iogn {
       std::string name = Ioss::Utils::encode_entity_name("block", i+1);
       std::string type = m_generatedMesh->topology_type(i+1).first;
       int attribute_count = i == 0 ? 0 : 1;
-      Ioss::ElementBlock *block = new Ioss::ElementBlock(this, name, type,
-							 m_generatedMesh->element_count_proc(i+1),
+      size_t element_count =  m_generatedMesh->element_count_proc(i+1);
+      Ioss::ElementBlock *block = new Ioss::ElementBlock(this, name, type, element_count, 
 							 attribute_count);
 
       block->property_add(Ioss::Property("id", i+1));
@@ -540,8 +539,10 @@ namespace Iogn {
 
   void DatabaseIO::get_facesets()
   {
+    m_faceset_names.reserve(sidesetCount);
     for (int ifs = 0; ifs < sidesetCount; ifs++) {
       std::string name = Ioss::Utils::encode_entity_name("surface", ifs+1);
+      m_faceset_names.push_back(name);
       Ioss::FaceSet *faceset = new Ioss::FaceSet(this, name);
       faceset->property_add(Ioss::Property("id", ifs+1));
       get_region()->add(faceset);
@@ -564,6 +565,19 @@ namespace Iogn {
       ef_block->field_add(Ioss::Field("distribution_factors",
 				      Ioss::Field::REAL, storage,
 				      Ioss::Field::MESH, number_faces));
+    }
+  }
+
+  void DatabaseIO::get_commsets()
+  {
+    if (util().parallel_size() > 1) {
+      // Get size of communication map...
+      size_t my_node_count = m_generatedMesh->communication_node_count_proc();
+	
+      // Create a single node commset 
+      Ioss::CommSet *commset = new Ioss::CommSet(this, "commset_node", "node", my_node_count);
+      commset->property_add(Ioss::Property("id", 1));
+      get_region()->add(commset);
     }
   }
 }

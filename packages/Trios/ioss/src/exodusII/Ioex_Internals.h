@@ -223,8 +223,6 @@ namespace Ioex {
     void update_last_time_attribute(double value);
     bool read_last_time_attribute(double *value);
 
-    static void register_library_versions();
-
   private:
     Internals(const Internals& from); // do not implement
     Internals& operator=(const Internals& from); // do not implement

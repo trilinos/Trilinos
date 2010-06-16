@@ -6,6 +6,10 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
+#ifndef NO_MPI
+#include <mpi.h>
+#endif
+
 #include <Ioss_CodeTypes.h>
 
 #include <assert.h>
@@ -16,10 +20,6 @@
 #include <math.h>
 #include <string>
 #include <cstring>
-
-#ifndef IOSS_STANDALONE
-#include <Slib_Env.h>
-#endif
 
 #include <init/Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
@@ -41,6 +41,7 @@ namespace {
     bool do_normals;
     bool reverse_normals;
     double thickness;
+    std::string working_directory;
   };
 
   void show_usage(const std::string &prog);
@@ -64,45 +65,20 @@ namespace {
 }
 // ========================================================================
 
-#ifdef IOSS_STANDALONE
-// Global variables, yes, global...
-std::string codename;
-std::string version = "$Revision$";
-#else
 namespace {
   std::string codename;
   std::string version = "$Revision$";
 }
-#endif
-
-#ifndef IOSS_STANDALONE
-namespace {
-
-void bootstrap()
-{
-  // Add my command line options to the option descriptions.
-  boost::program_options::options_description desc("Use case options");
-  desc.add_options()
-    ("input-deck,i",      boost::program_options::value<std::string>(), "Analysis input file")
-    ("restart-time,r",    boost::program_options::value<std::string>(), "Restart time")
-    ("parser-database,p", boost::program_options::value<std::string>(), "Parser database")
-    ("Calculate_Normals", "Calculate surface normal fields")
-    ("Reverse_Normals",   "Reverse Normals")
-    ("thickness",         boost::program_options::value<std::string>(), "Thickness of generated hex elements");
-  
-  stk::get_options_description().add(desc);
-}
-
-stk::Bootstrap x(&bootstrap);
-
-} // namespace <unnamed>
-#endif
 
 int main(int argc, char *argv[])
 {
-  std::string in_type = "exodusII";
+#ifndef NO_MPI
+  MPI_Init(&argc, &argv);
+#endif
+
+  std::string in_type  = "exodusII";
   std::string out_type = "exodusII";
-  std::string ss_type = "exodusII";
+  std::string ss_type  = "exodusII";
 
   Globals globals;
 
@@ -127,25 +103,23 @@ int main(int argc, char *argv[])
     codename = "SIERRA";
   }
 
-#ifndef IOSS_STANDALONE
-  sierra::Env::Startup startup__(&argc, &argv, codename.c_str(), __DATE__ " " __TIME__); //, opts);
-#endif
-
   Ioss::Init::Initializer io;
 #ifndef NO_XDMF_SUPPORT
   Ioxf::Initializer ioxf;
 #endif
 
-#ifdef IOSS_STANDALONE
   globals.debug = false;
-#else
-  globals.debug = true;
-#endif
 
   // Skip past any options...
   int i=1;
   while (i < argc && argv[i][0] == '-') {
-    if (std::strcmp("--reverse", argv[i]) == 0) {
+    if (std::strcmp("-directory", argv[i]) == 0 ||
+	std::strcmp("--directory", argv[i]) == 0 ||
+	std::strcmp("-d", argv[i]) == 0) {
+      i++;
+      globals.working_directory = argv[i++];
+    }
+    else if (std::strcmp("--reverse", argv[i]) == 0) {
       globals.reverse_normals = true;
       i++;
     }
@@ -183,11 +157,11 @@ int main(int argc, char *argv[])
   // The file types are assumed to be as 'hardwired' above...
 
   if (argc - i == 2) {
-    in_file   = Ioss::Utils::local_filename(argv[i++], in_type);
-    out_file  = Ioss::Utils::local_filename(argv[i++], out_type);
+    in_file   = Ioss::Utils::local_filename(argv[i++], in_type, globals.working_directory);
+    out_file  = Ioss::Utils::local_filename(argv[i++], out_type, globals.working_directory);
   }
   else if (argc - i == 1) {
-    std::string input_file = Ioss::Utils::local_filename(argv[i++], "text");
+    std::string input_file = Ioss::Utils::local_filename(argv[i++], "text", globals.working_directory);
 
     std::ifstream input(input_file.c_str());
     if (!input) {
@@ -199,52 +173,15 @@ int main(int argc, char *argv[])
     // Last line should be output_file_name output_file_type
     std::string tmp;
     input >> tmp >> in_type;
-    in_file = Ioss::Utils::local_filename(tmp, in_type);
+    in_file = Ioss::Utils::local_filename(tmp, in_type, globals.working_directory);
 
     input >> tmp >> out_type;
-    out_file = Ioss::Utils::local_filename(tmp, out_type);
+    out_file = Ioss::Utils::local_filename(tmp, out_type, globals.working_directory);
   }
-#ifndef IOSS_STANDALONE
-  else if (argc <= i) {
-    const std::string &calc_normals_option    = sierra::Env::get_param("Calculate_Normals");
-    const std::string &reverse_normals_option = sierra::Env::get_param("Reverse_Normals");
-    const std::string &thickness = sierra::Env::get_param("thickness");
-    globals.thickness = std::strtod(thickness.c_str(), NULL);
-
-    if (!calc_normals_option.empty())
-      globals.do_normals = true;
-    if (!reverse_normals_option.empty())
-      globals.reverse_normals = true;
-
-    std::string input_file(sierra::Env::get_param("input-deck"));
-    if (input_file == "") {
-      std::cerr  << "Error: No input file specified\n";
-      show_usage(codename);
-      return (EXIT_FAILURE);
-    }
-    input_file = Ioss::Utils::local_filename(input_file, "text");
-    std::ifstream input(input_file.c_str());
-    if (!input) {
-      std::cerr  << "Error opening file '" << input_file  << "'.\n";
-      show_usage(codename);
-      return (EXIT_FAILURE);
-    }
-    // First line should be input_file_name input_file_type
-    // Second line should be output_file_name output_file_type
-
-    std::string tmp;
-    input >> tmp >> in_type;
-    in_file = Ioss::Utils::local_filename(tmp, in_type);
-
-    input >> tmp >> out_type;
-    out_file = Ioss::Utils::local_filename(tmp, out_type);
-  }
-#else
   else {
     show_usage(codename);
     return(EXIT_FAILURE);
   }
-#endif
 
   std::cerr  << "Input:    '" << in_file  << "', Type: " << in_type  << '\n';
   std::cerr  << "Output:   '" << out_file << "', Type: " << out_type << '\n';

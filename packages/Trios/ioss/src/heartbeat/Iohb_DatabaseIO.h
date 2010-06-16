@@ -49,9 +49,6 @@ namespace Iohb {
       Ioss::DatabaseIO* make_IO(const std::string& filename,
 				Ioss::DatabaseUsage db_usage,
 				MPI_Comm communicator) const;
-      
-      void register_library_versions() const {} // Nothing to register
-      //  static const IOFactory registerThis;
     };
 
   class DatabaseIO : public Ioss::DatabaseIO
