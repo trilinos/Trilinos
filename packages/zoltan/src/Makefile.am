@@ -218,8 +218,7 @@ CCOLAMD_H = \
 	$(srcdir)/ccolamd/zoltan_ccolamd.h 
 
 CCOLAMD = \
-	$(srcdir)/ccolamd/ccolamd.c \
-	$(srcdir)/ccolamd/ccolamd_global.c 
+	$(srcdir)/ccolamd/ccolamd.c
 
 EXTRA_TPLS_INTERFACE_H = \
 	$(srcdir)/tpls/parmetis_interface.h

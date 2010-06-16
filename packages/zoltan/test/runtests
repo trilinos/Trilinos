@@ -12,7 +12,7 @@
 ##   -no_color     - have to use this
 ##   -no_chaco
 ##   -no_hg
-##   -no_hier
+##   -no_hier           uses parmetis
 ##   -yes_nemesis
 ##   -yes_fortran
 ##   -yes_cpp
@@ -22,6 +22,6 @@
 
 ZDRIVE=/home/lriesen/projects/Trilinos/packages/zoltan/build/src/driver/zdrive.exe
 
-#test_zoltan -logfile test_zoltan.log -exe $ZDRIVE -arch generic -no_color -no_scotch -no_oct -failure_detail | tee test_zoltan_output.txt
+test_zoltan -logfile test_zoltan.log -exe $ZDRIVE -arch generic  -no_hier -no_parmetis -no_color -no_scotch -no_oct -failure_detail | tee test_zoltan_output.txt
 
-test_zoltan -logfile test_zoltan.log -exe $ZDRIVE -arch generic -no_parmetis -no_color -no_scotch -no_oct -exit_on_failure | tee test_zoltan_output.txt
+#test_zoltan -logfile test_zoltan.log -exe $ZDRIVE -arch generic -no_parmetis -no_color -no_scotch -no_oct -exit_on_failure | tee test_zoltan_output.txt

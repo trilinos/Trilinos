@@ -169,6 +169,49 @@ unsigned int Zoltan_Hash(ZOLTAN_ID_PTR key, int num_id_entries, unsigned int n)
 }
 #endif /* ZZ_NEW_HASH */
 
+
+/* Zoltan_Recommended_Hash_Size recommends a hash table size that can be used
+ * with Zoltan_Hash.
+ *
+ * Input : #entries that will be stored in the hash table. 
+ * 
+ * Output : recommended size for the the hash table. This is also the range for 
+ * Zoltan_Hash. This is a simple 
+ * implementation that tries to bring the collisons to almost zero. The 
+ * recommeded hash size is the next largest prime number that is approximately 
+ * in the middle of 2^x and 2^(x+1) for some x.
+ * */
+unsigned int Zoltan_Recommended_Hash_Size (unsigned int n)
+{
+    /* Prime number approximately in the middle of the range [2^x..2^(x+1)]
+     * is in primes[x-1]. Every prime number stored is approximately two times
+     * the previous one, so hash table size doubles every time.
+     */
+    unsigned int primes[] = {
+    3, 7, 13, 23, 53, 97, 193, 389, 769, 1543, 3079, 6151, 12289, 24593,
+    49157, 98317, 196613, 393241, 786433, 1572869, 3145739, 6291469,
+    12582917, 25165842, 50331653, 100663319, 201326611, 402653189,
+    805306457, 1610612741 } ;
+    int i, hsize ;
+
+    /* SRSR : err on the side of performance and choose the next largest prime 
+     * number. One can also choose primes[i-1] below to cut the memory by half.
+     */
+    hsize = primes[29] ;
+    for (i = 0 ; i < 30 ; i++)
+    {
+        if (n <= primes[i])
+        {
+            /*hsize = (i == 0 ? n : primes[i-1]) ;*/
+            hsize = primes[i] ;
+            break ;
+        }
+    }
+
+    return hsize ;
+}
+
+
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
 #endif
