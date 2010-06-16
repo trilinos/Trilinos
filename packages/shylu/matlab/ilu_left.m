@@ -1,24 +1,26 @@
-function [L,U,P] = ilu_left (A, droptol)
+function [L,U,P] = ilu_left (A, setup)
 %ILU_LEFT left-looking ILU factorization.
 % Example:
-%   [L,U,P] = ilu_left (A, droptol)
+%   [L,U,P] = ilu_left (A, setup)
 % See also: cs_demo
 
 %   Copyright 2006-2007, Timothy A. Davis.
 %   http://www.cise.ufl.edu/research/sparse
 %
-%   Modified by Erik Boman for ILU
+%   Modified by Erik Boman for ILU.
+%   The setup argument is compatible with Matlab's ilu.
 
 if (nargin<2)
-  droptol = 0; % default is complete LU
+  setup.droptol = 0;                    % default is complete LU
 end
+
 n = size (A,1) ;
 P = eye (n) ;
 L = zeros (n) ;
 U = zeros (n) ;
 for k = 1:n
     x = [ L(:,1:k-1) [ zeros(k-1,n-k+1) ; eye(n-k+1) ]] \ (P * A (:,k)) ;
-    keep = (abs(x)/A(k,k) >= droptol);  % keep large entries
+    keep = (abs(x)/norm(A(:,k)) > setup.droptol);  
     keep(k) = 1;                        % always keep diagonal
     x = x .* keep;                      % drop small entries in x
     U (1:k-1,k) = x (1:k-1) ;           % the column of U
