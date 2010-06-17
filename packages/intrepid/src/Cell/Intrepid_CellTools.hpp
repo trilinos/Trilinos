@@ -48,6 +48,7 @@
 #include "Intrepid_HGRAD_TET_C1_FEM.hpp"
 #include "Intrepid_HGRAD_WEDGE_C1_FEM.hpp"
 #include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
+
 #include "Intrepid_HGRAD_LINE_C1_FEM.hpp"
 
 #include "Intrepid_HGRAD_TRI_C2_FEM.hpp"
@@ -1243,7 +1244,9 @@ public:
 } // namespace Intrepid
 
 // include templated function definitions
+#ifndef __PGI
 #include "Intrepid_CellToolsDef.hpp"
+#endif
 
 #endif
 

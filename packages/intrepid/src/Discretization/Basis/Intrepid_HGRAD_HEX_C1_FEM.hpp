@@ -112,6 +112,8 @@ public:
 };
 }// namespace Intrepid
 
+#ifndef __PGI
 #include "Intrepid_HGRAD_HEX_C1_FEMDef.hpp"
+#endif
 
 #endif
