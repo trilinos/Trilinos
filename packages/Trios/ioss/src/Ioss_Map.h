@@ -6,8 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef SIERRA_Ioss_Map_h
-#define SIERRA_Ioss_Map_h
+#ifndef IOSS_Ioss_Map_h
+#define IOSS_Ioss_Map_h
 
 #include <Ioss_CodeTypes.h>
 #include <vector>
@@ -86,4 +86,4 @@ namespace Ioss {
   };
 }
 
-#endif // SIERRA_Ioss_Map_h
+#endif // IOSS_Ioss_Map_h

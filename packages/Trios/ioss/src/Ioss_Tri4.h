@@ -7,8 +7,8 @@
 /*--------------------------------------------------------------------*/
 
 // -*- Mode: c++ -*-
-#ifndef SIERRA_Ioss_Tri4_h
-#define SIERRA_Ioss_Tri4_h
+#ifndef IOSS_Ioss_Tri4_h
+#define IOSS_Ioss_Tri4_h
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_ElementTopology.h>

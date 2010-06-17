@@ -6,8 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef SIERRA_Ioss_FileInfo_h
-#define SIERRA_Ioss_FileInfo_h
+#ifndef IOSS_Ioss_FileInfo_h
+#define IOSS_Ioss_FileInfo_h
 
 #include <string>
 #include <iosfwd>
@@ -92,5 +92,5 @@ namespace Ioss {
     bool readable_; //<! this is used frequently, check on creation
   };
 }
-#endif // SIERRA_Ioss_FileInfo_h
+#endif // IOSS_Ioss_FileInfo_h
 

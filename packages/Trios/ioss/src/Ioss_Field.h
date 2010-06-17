@@ -6,8 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef SIERRA_Ioss_Field_h
-#define SIERRA_Ioss_Field_h
+#ifndef IOSS_Ioss_Field_h
+#define IOSS_Ioss_Field_h
 
 #include <Ioss_CodeTypes.h>
 #include <string>

@@ -6,8 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef SIERRA_Ioxf_Initializer_h
-#define SIERRA_Ioxf_Initializer_h
+#ifndef IOSS_Ioxf_Initializer_h
+#define IOSS_Ioxf_Initializer_h
 
 namespace Ioxf {
   class Initializer

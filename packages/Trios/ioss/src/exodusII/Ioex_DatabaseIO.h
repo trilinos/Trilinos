@@ -7,8 +7,8 @@
 /*--------------------------------------------------------------------*/
 
 // -*- Mode: c++ -*-
-#ifndef SIERRA_Ioex_DatabaseIO_h
-#define SIERRA_Ioex_DatabaseIO_h
+#ifndef IOSS_Ioex_DatabaseIO_h
+#define IOSS_Ioex_DatabaseIO_h
 
 #include <Ioss_DatabaseIO.h>
 #include <Ioss_Field.h>

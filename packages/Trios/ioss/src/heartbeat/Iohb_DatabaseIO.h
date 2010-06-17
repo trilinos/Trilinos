@@ -6,8 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef SIERRA_Iohb_DatabaseIO_h
-#define SIERRA_Iohb_DatabaseIO_h
+#ifndef IOSS_Iohb_DatabaseIO_h
+#define IOSS_Iohb_DatabaseIO_h
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DatabaseIO.h>
@@ -138,4 +138,4 @@ namespace Iohb {
       enum Format fileFormat;
     };
 }
-#endif // SIERRA_Iohb_DatabaseIO_h
+#endif // IOSS_Iohb_DatabaseIO_h

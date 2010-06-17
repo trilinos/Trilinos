@@ -7,8 +7,8 @@
 /*--------------------------------------------------------------------*/
 
 // -*- Mode: c++ -*-
-#ifndef SIERRA_Ioss_Element_Topology_h
-#define SIERRA_Ioss_Element_Topology_h
+#ifndef IOSS_Ioss_Element_Topology_h
+#define IOSS_Ioss_Element_Topology_h
 
 #include <Ioss_CodeTypes.h>
 #include <string>

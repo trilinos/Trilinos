@@ -6,8 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef SIERRA_Iotr_Initializer_h
-#define SIERRA_Iotr_Initializer_h
+#ifndef IOSS_Iotr_Initializer_h
+#define IOSS_Iotr_Initializer_h
 
 namespace Iotr {
   class Initializer
@@ -18,4 +18,4 @@ namespace Iotr {
       // Assignment operator
     };
 }
-#endif // SIERRA_Iotr_Initializer_h
+#endif // IOSS_Iotr_Initializer_h

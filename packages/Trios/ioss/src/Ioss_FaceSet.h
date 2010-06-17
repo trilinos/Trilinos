@@ -6,8 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef SIERRA_Ioss_FaceSet_h
-#define SIERRA_Ioss_FaceSet_h
+#ifndef IOSS_Ioss_FaceSet_h
+#define IOSS_Ioss_FaceSet_h
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_Property.h>

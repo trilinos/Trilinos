@@ -6,8 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef SIERRA_Ioex_IOFactory_h
-#define SIERRA_Ioex_IOFactory_h
+#ifndef IOSS_Ioex_IOFactory_h
+#define IOSS_Ioex_IOFactory_h
 
 #include <Ioss_IOFactory.h>
 #include <Ioss_DBUsage.h>
@@ -28,4 +28,4 @@ namespace Ioex {
 				MPI_Comm communicator) const;
     };
 }
-#endif // SIERRA_Ioex_IOFactory_h
+#endif // IOSS_Ioex_IOFactory_h

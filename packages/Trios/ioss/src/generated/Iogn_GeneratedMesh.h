@@ -6,8 +6,8 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#ifndef SIERRA_Iogn_GeneratedMesh_h
-#define SIERRA_Iogn_GeneratedMesh_h
+#ifndef IOSS_Iogn_GeneratedMesh_h
+#define IOSS_Iogn_GeneratedMesh_h
 #include <string>
 #include <vector>
 

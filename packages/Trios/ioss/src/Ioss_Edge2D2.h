@@ -6,8 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef SIERRA_Ioss_Edge2D2_h
-#define SIERRA_Ioss_Edge2D2_h
+#ifndef IOSS_Ioss_Edge2D2_h
+#define IOSS_Ioss_Edge2D2_h
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_ElementTopology.h>
@@ -52,4 +52,4 @@ namespace Ioss {
     Edge2D2(const Edge2D2&); // Do not implement
   };
 }
-#endif // SIERRA_Ioss_Edge2D2_h
+#endif // IOSS_Ioss_Edge2D2_h

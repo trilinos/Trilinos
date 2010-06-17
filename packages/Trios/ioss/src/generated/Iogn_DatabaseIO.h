@@ -6,8 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef SIERRA_Iogn_DatabaseIO_h
-#define SIERRA_Iogn_DatabaseIO_h
+#ifndef IOSS_Iogn_DatabaseIO_h
+#define IOSS_Iogn_DatabaseIO_h
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DatabaseIO.h>
@@ -170,4 +170,4 @@ namespace Iogn {
 				   // sequential (local==global)
     };
 }
-#endif // SIERRA_Iogn_DatabaseIO_h
+#endif // IOSS_Iogn_DatabaseIO_h

@@ -6,8 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef SIERRA_Ioxf_IOFactory_h
-#define SIERRA_Ioxf_IOFactory_h
+#ifndef IOSS_Ioxf_IOFactory_h
+#define IOSS_Ioxf_IOFactory_h
 
 #include <Ioss_IOFactory.h>
 #include <Ioss_DBUsage.h>
@@ -29,4 +29,4 @@ namespace Ioxf {
 
     };
 }
-#endif // SIERRA_Ioxf_IOFactory_h
+#endif // IOSS_Ioxf_IOFactory_h

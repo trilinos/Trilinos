@@ -7,8 +7,8 @@
 /*--------------------------------------------------------------------*/
 
 // -*- Mode: c++ -*-
-#ifndef SIERRA_Ioss_Wedge6_h
-#define SIERRA_Ioss_Wedge6_h
+#ifndef IOSS_Ioss_Wedge6_h
+#define IOSS_Ioss_Wedge6_h
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_ElementTopology.h>

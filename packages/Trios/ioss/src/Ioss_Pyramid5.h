@@ -7,8 +7,8 @@
 /*--------------------------------------------------------------------*/
 
 // -*- Mode: c++ -*-
-#ifndef SIERRA_Ioss_Pyramid5_h
-#define SIERRA_Ioss_Pyramid5_h
+#ifndef IOSS_Ioss_Pyramid5_h
+#define IOSS_Ioss_Pyramid5_h
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_ElementTopology.h>
@@ -56,4 +56,4 @@ namespace Ioss {
     Pyramid5(const Pyramid5&); // Do not implement
   };
 }
-#endif // SIERRA_Ioss_Pyramid5_h
+#endif // IOSS_Ioss_Pyramid5_h

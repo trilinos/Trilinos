@@ -1,5 +1,5 @@
-#ifndef SIERRA_Ioss_EntityType_H
-#define SIERRA_Ioss_EntityType_H
+#ifndef IOSS_Ioss_EntityType_H
+#define IOSS_Ioss_EntityType_H
 
 namespace Ioss {
   enum EntityType {NODEBLOCK    =   1,

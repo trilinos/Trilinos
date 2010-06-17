@@ -6,8 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef SIERRA_Ioss_Transform_h
-#define SIERRA_Ioss_Transform_h
+#ifndef IOSS_Ioss_Transform_h
+#define IOSS_Ioss_Transform_h
 
 #include <string>
 #include <vector>
@@ -66,4 +66,4 @@ namespace Iotr {
   };
 }
 
-#endif // SIERRA_Ioss_Transform_h
+#endif // IOSS_Ioss_Transform_h

@@ -6,8 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef SIERRA_Iohb_Layout_h
-#define SIERRA_Iohb_Layout_h
+#ifndef IOSS_Iohb_Layout_h
+#define IOSS_Iohb_Layout_h
 
 #include <iostream>
 #include <sstream>
@@ -46,4 +46,4 @@ namespace Iohb {
     };
 }
 
-#endif // SIERRA_Iohb_Layout_h
+#endif // IOSS_Iohb_Layout_h

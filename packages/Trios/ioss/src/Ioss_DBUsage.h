@@ -6,8 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef SIERRA_Ioss_DBUsage_h
-#define SIERRA_Ioss_DBUsage_h
+#ifndef IOSS_Ioss_DBUsage_h
+#define IOSS_Ioss_DBUsage_h
 
 namespace Ioss {
 
@@ -25,4 +25,4 @@ inline bool is_input_event(Ioss::DatabaseUsage db_usage) {
 }
 
 }
-#endif // SIERRA_Ioss_DBUsage_h
+#endif // IOSS_Ioss_DBUsage_h
