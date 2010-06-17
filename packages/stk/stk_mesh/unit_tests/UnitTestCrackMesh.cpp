@@ -15,40 +15,6 @@
 
 namespace {
 
-void copy_node_and_break_relations( stk::mesh::BulkData  & mesh,
-                                    stk::mesh::Entity    & old_node,
-                                    stk::mesh::Entity    & new_node )
-{
-
-
-  std::vector<std::pair<stk::mesh::Entity *, unsigned> > relation_and_side_ordinal;
-
-  stk::mesh::PairIterRelation rel = old_node.relations();
-
-  for (; rel.first != rel.second; ++rel.first) {
-    stk::mesh::Entity * entity = (rel.first->entity());
-    unsigned side_ordinal = rel.first->identifier();
-
-    relation_and_side_ordinal.push_back(
-        std::pair<stk::mesh::Entity *, unsigned>(entity,side_ordinal)
-        );
-  }
-
-  for ( std::vector<std::pair<stk::mesh::Entity *, unsigned > >::iterator
-      itr = relation_and_side_ordinal.begin();
-      itr != relation_and_side_ordinal.end();
-      ++itr
-      )
-  {
-    stk::mesh::Entity & entity = *(itr->first);
-    unsigned side_ordinal = itr->second;
-
-    mesh.destroy_relation( entity, old_node);
-    mesh.declare_relation( entity , new_node, side_ordinal);
-  }
-
-
-}
 }
 
 STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
@@ -63,23 +29,49 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
   fixture.fill_mesh();
 
   stk::mesh::Entity & old_node = * fixture.m_nodes[0][0][1];
-  unsigned old_node_id = old_node.identifier();
+
+  stk::mesh::Entity & right_element = * fixture.m_elems[0][0][1];
+
+  unsigned right_ordinal = 0;
+  {
+    stk::mesh::PairIterRelation rel = old_node.relations();
+
+    for (; rel.first != rel.second; ++rel) {
+      if ( (rel.first->entity()) == & right_element) {
+        right_ordinal = rel.first->identifier();
+      }
+    }
+  }
+
 
   unsigned new_node_id = 28;
-  const stk::mesh::PartVector no_parts;
 
   mesh.modification_begin();
 
-  stk::mesh::Entity & new_node = mesh.declare_entity(stk::mesh::Node, new_node_id, no_parts);
+  //only crack the mesh if I own the element
+  if (mesh.parallel_rank() == right_element.owner_rank()) {
+    const stk::mesh::PartVector no_parts;
+    stk::mesh::Entity & new_node = mesh.declare_entity(stk::mesh::Node, new_node_id, no_parts);
 
-  copy_node_and_break_relations(mesh, old_node, new_node);
+    mesh.destroy_relation(right_element, old_node);
+    mesh.declare_relation(right_element, new_node, right_ordinal);
+
+
+  }
+
+  //copy parts
+
+  //copy field data
 
   mesh.modification_end();
 
-  stk::mesh::Entity * old_node_ptr = mesh.get_entity(stk::mesh::Node, old_node_id);
-  STKUNIT_EXPECT_TRUE( NULL == old_node_ptr || 0 == old_node_ptr->relations().size());
+  {
+    stk::mesh::PairIterRelation rel = right_element.relations();
+    stk::mesh::Entity & new_node = * (rel.first[right_ordinal].entity());
 
-  STKUNIT_EXPECT_TRUE( 2 == new_node.relations().size());
+    STKUNIT_EXPECT_TRUE ( new_node.identifier() == new_node_id );
+
+  }
 
 }
 
