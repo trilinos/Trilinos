@@ -9,6 +9,12 @@
 #ifndef IOSS_code_types_h
 #define IOSS_code_types_h
 
+#if !defined(HAVE_MPI)
+#if !defined(NO_MPI)
+#define NO_MPI
+#endif
+#endif
+
 #if defined(NO_MPI)
 #ifndef MPI_COMM_WORLD
 typedef int MPI_Comm;

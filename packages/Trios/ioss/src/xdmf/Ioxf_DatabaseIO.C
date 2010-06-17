@@ -2309,7 +2309,7 @@ namespace Ioxf {
     Ioss::FileInfo filename(get_filename()+".xmf");
     // std::ostringstream *XML = NULL;
 
-#ifndef NO_MPI
+#ifdef HAVE_MPI
     MPI_Barrier(util().communicator());
 #endif
     if ((myProcessor == 0) && isParallel) {

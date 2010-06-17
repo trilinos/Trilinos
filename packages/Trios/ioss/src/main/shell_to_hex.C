@@ -6,7 +6,7 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef NO_MPI
+#ifdef HAVE_MPI
 #include <mpi.h>
 #endif
 
@@ -72,7 +72,7 @@ namespace {
 
 int main(int argc, char *argv[])
 {
-#ifndef NO_MPI
+#ifdef HAVE_MPI
   MPI_Init(&argc, &argv);
 #endif
 

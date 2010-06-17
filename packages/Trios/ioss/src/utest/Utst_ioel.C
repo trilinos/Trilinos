@@ -13,7 +13,7 @@
 #include <vector>
 #include <string>
 
-#ifndef NO_MPI
+#ifdef HAVE_MPI
 #include <mpi.h>
 #endif
 
@@ -37,7 +37,7 @@ static bool test_element(const std::string& type);
 
 int main(int argc, char *argv[])
 {
-#ifndef NO_MPI
+#ifdef HAVE_MPI
   MPI_Init(&argc, &argv);
 #endif
 

@@ -1,6 +1,10 @@
 INCLUDE(PackageLibraryMacros)
 INCLUDE(CheckIncludeFile)
 
+IF (Trilinos_ENABLE_MPI)
+ADD_DEFINITIONS(-DHAVE_MPI)
+ENDIF()
+
 ADD_SUBDIRECTORY(exodusII)
 ADD_SUBDIRECTORY(generated)
 ADD_SUBDIRECTORY(heartbeat)

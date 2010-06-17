@@ -1256,7 +1256,7 @@ namespace Ioex {
       }
     }
     
-#ifndef NO_MPI    
+#ifdef HAVE_MPI    
     if (isParallel) {
       // Get contributions from other processors...
       // Get the communication map...
@@ -1419,7 +1419,7 @@ namespace Ioex {
       }
     }
 	
-#ifndef NO_MPI
+#ifdef HAVE_MPI
     if (isParallel) {
       // Sync across all processors...
       size_t word_size = sizeof(int) * 8;
@@ -6596,7 +6596,7 @@ bool check_block_order(const Ioss::ElementBlockContainer &blocks)
 				  int my_processor, const std::string& filename,
 				  const Ioss::ParallelUtils &util)
   {
-#ifndef NO_MPI    
+#ifdef HAVE_MPI    
     std::vector<int> var_counts(5);
     var_counts[0] = gv_count;
     var_counts[1] = nv_count;

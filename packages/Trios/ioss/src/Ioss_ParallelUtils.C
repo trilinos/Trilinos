@@ -17,7 +17,7 @@
 #include <algorithm>
 
 #include <string>
-#ifndef NO_MPI
+#ifdef HAVE_MPI
 #include <mpi.h>
 #endif
 
@@ -32,7 +32,7 @@ Ioss::ParallelUtils::ParallelUtils(MPI_Comm the_communicator)
   
 bool Ioss::ParallelUtils::get_environment(const std::string &name, std::string &value, bool sync_parallel) const
 {
-#ifndef NO_MPI
+#ifdef HAVE_MPI
   char *result_string = NULL;
   char *broadcast_string = NULL;
   int string_length = 0;
@@ -92,7 +92,7 @@ bool Ioss::ParallelUtils::get_environment(const std::string &name, bool sync_par
 {
   // Return true if 'name' defined, no matter what the value.
   // Return false if 'name' not defined.
-#ifndef NO_MPI
+#ifdef HAVE_MPI
   char *result_string = NULL;
   int string_length = 0;
 
@@ -130,7 +130,7 @@ std::string Ioss::ParallelUtils::decode_filename(const std::string &filename, bo
 int Ioss::ParallelUtils::parallel_size() const
 {
   int my_size = 1;
-#ifndef NO_MPI
+#ifdef HAVE_MPI
   MPI_Comm_size(communicator_, &my_size);
 #endif
   return my_size;
@@ -139,7 +139,7 @@ int Ioss::ParallelUtils::parallel_size() const
 int Ioss::ParallelUtils::parallel_rank() const
 {
   int my_rank = 0;
-#ifndef NO_MPI
+#ifdef HAVE_MPI
   MPI_Comm_rank(communicator_, &my_rank);
 #endif
   return my_rank;
@@ -147,7 +147,7 @@ int Ioss::ParallelUtils::parallel_rank() const
 
 void Ioss::ParallelUtils::attribute_reduction( const int length , char buffer[]) const
 {
-#ifndef NO_MPI
+#ifdef HAVE_MPI
   if ( 1 < parallel_size() ) {
     assert( sizeof(char) == 1 );
 
@@ -178,7 +178,7 @@ void Ioss::ParallelUtils::global_count(const IntVector &local_counts, IntVector 
   // contains the total number of objects on all processors.
   // Assumes that ordering is the same on all processors
   global_counts.resize(local_counts.size());
-#ifndef NO_MPI
+#ifdef HAVE_MPI
   if (local_counts.size() > 0 && parallel_size() > 1) {
     if (Ioss::SerializeIO::isEnabled() && Ioss::SerializeIO::inBarrier()) {
       std::ostringstream errmsg;
@@ -206,7 +206,7 @@ double Ioss::ParallelUtils::global_minmax(double local_minmax, Ioss::ParallelUti
 {
   double minmax = local_minmax;
 
-#ifndef NO_MPI
+#ifdef HAVE_MPI
   if (parallel_size() > 1) {
     if (Ioss::SerializeIO::isEnabled() && Ioss::SerializeIO::inBarrier()) {
       std::ostringstream errmsg;
@@ -239,7 +239,7 @@ int Ioss::ParallelUtils::global_minmax(int local_minmax, Ioss::ParallelUtils::Mi
 {
   int minmax = local_minmax;
 
-#ifndef NO_MPI
+#ifdef HAVE_MPI
   if (parallel_size() > 1) {
     if (Ioss::SerializeIO::isEnabled() && Ioss::SerializeIO::inBarrier()) {
       std::ostringstream errmsg;
@@ -272,7 +272,7 @@ unsigned int Ioss::ParallelUtils::global_minmax(unsigned int local_minmax, Ioss:
 {
   unsigned int minmax = local_minmax;
 
-#ifndef NO_MPI
+#ifdef HAVE_MPI
   if (parallel_size() > 1) {
     if (Ioss::SerializeIO::isEnabled() && Ioss::SerializeIO::inBarrier()) {
       std::ostringstream errmsg;
@@ -303,7 +303,7 @@ unsigned int Ioss::ParallelUtils::global_minmax(unsigned int local_minmax, Ioss:
 
 void Ioss::ParallelUtils::global_array_minmax(int *local_minmax, size_t count, Ioss::ParallelUtils::MinMax which) const
 {
-#ifndef NO_MPI
+#ifdef HAVE_MPI
   if (parallel_size() > 1 && count > 0) {
     if (Ioss::SerializeIO::isEnabled() && Ioss::SerializeIO::inBarrier()) {
       std::ostringstream errmsg;
@@ -338,7 +338,7 @@ void Ioss::ParallelUtils::global_array_minmax(int *local_minmax, size_t count, I
 void Ioss::ParallelUtils::global_array_minmax(unsigned int *local_minmax, size_t count,
 				      Ioss::ParallelUtils::MinMax which) const
 {
-#ifndef NO_MPI
+#ifdef HAVE_MPI
   if (parallel_size() > 1 && count > 0) {
     if (Ioss::SerializeIO::isEnabled() && Ioss::SerializeIO::inBarrier()) {
       std::ostringstream errmsg;
@@ -372,7 +372,7 @@ void Ioss::ParallelUtils::global_array_minmax(unsigned int *local_minmax, size_t
 
 void Ioss::ParallelUtils::global_array_minmax(double *local_minmax, size_t count, Ioss::ParallelUtils::MinMax which) const
 {
-#ifndef NO_MPI
+#ifdef HAVE_MPI
   if (parallel_size() > 1 && count > 0) {
     if (Ioss::SerializeIO::isEnabled() && Ioss::SerializeIO::inBarrier()) {
       std::ostringstream errmsg;
@@ -409,7 +409,7 @@ void Ioss::ParallelUtils::gather(int my_value, std::vector<int> &result) const
   if (parallel_rank() == 0) {
     result.resize(parallel_size());
   }
-#ifndef NO_MPI
+#ifdef HAVE_MPI
   if (parallel_size() > 1) {
     const int success = MPI_Gather((void*)&my_value,  1, MPI_INT,
 				   (void*)&result[0], 1, MPI_INT,
@@ -433,7 +433,7 @@ void Ioss::ParallelUtils::gather(std::vector<int> &my_values, std::vector<int> &
   if (parallel_rank() == 0) {
     result.resize(count * parallel_size());
   }
-#ifndef NO_MPI
+#ifdef HAVE_MPI
   if (parallel_size() > 1) {
     const int success = MPI_Gather((void*)&my_values[0],  count, MPI_INT,
 				   (void*)&result[0], count, MPI_INT,
