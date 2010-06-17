@@ -1,0 +1,20 @@
+This is a file suggested by Denis Ridzal (dridzal@sandia.gov) to track Sierra developer initiated changes
+to Trilinos packages, e.g., compiler compatability fixes.  It is in the format with "|" separators for
+easy pasting into a spreadsheet.
+
+---------|--------------|---------------------------------|------------| ------------|------------------------------------------------------------------------------
+Date     | Package      | File(s)                         |Platform    | @sandia.gov | Detail
+---------|--------------|---------------------------------|------------| ------------|------------------------------------------------------------------------------
+06/17/10 | Intrepid     | Intrepid_CellTools.hpp          |PGI 7.1     | srkenno     | The pgi compilers have a known issue with switch statements in template      
+         |              | Intrepid_HGRAD_HEX_C1_FEMDef.hpp|            |             | definition code.  Workaround is to avoid including the XXXDef.hpp file in    
+         |              |                                 |            |             | the parent header file and include that Def file in client code (once).      
+         |              |                                 |            |             | Note: the other Basis headers will be changed later once this single   
+         |              |                                 |            |             | change has been validated.                                          
+---------|--------------|---------------------------------|------------| ------------|------------------------------------------------------------------------------
+         |              |                                 |            |             |
+         |              |                                 |            |             |
+         |              |                                 |            |             |
+         |              |                                 |            |             |
+         |              |                                 |            |             |
+         |              |                                 |            |             |
+                                                           
