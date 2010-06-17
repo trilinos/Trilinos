@@ -25,6 +25,8 @@ PACKAGE_ADD_DEBUG_OPTION()
 # B) Set up package-specific options
 #
 
+PACKAGE_ARCH_SET_SS_FOR_DEV_MODE(SS_FOR_DEV_PS_FOR_RELEASE)
+
 ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_SS_TESTING
   HAVE_TPETRA_ENABLE_SS_TESTING
@@ -36,7 +38,7 @@ ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_FLOAT
   HAVE_TPETRA_INST_FLOAT
   "If explicit instantiation is enabled, instantiate over scalar field float."
-  ${${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE}
+  ${SS_FOR_DEV_PS_FOR_RELEASE}
   )
 
 ADD_OPTION_AND_DEFINE(
@@ -50,14 +52,14 @@ ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_COMPLEX_FLOAT
   HAVE_TPETRA_INST_COMPLEX_FLOAT
   "If explicit instantiation is enabled, instantiate over scalar field complex<float>."
-  ${${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE}
+  ${SS_FOR_DEV_PS_FOR_RELEASE}
   )
 
 ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_INST_COMPLEX_DOUBLE
   HAVE_TPETRA_INST_COMPLEX_DOUBLE
   "If explicit instantiation is enabled, instantiate over scalar field complex<double>."
-  ${${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE}
+  ${SS_FOR_DEV_PS_FOR_RELEASE}
   )
 
 ADD_OPTION_AND_DEFINE(

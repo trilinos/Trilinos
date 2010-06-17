@@ -11,11 +11,13 @@ PACKAGE(Sacado)
 #
 # B) Set up package-specific options
 #
+PACKAGE_ARCH_SET_SS_FOR_DEV_MODE(SS_FOR_DEV_PS_FOR_RELEASE)
+
 ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_COMPLEX
   HAVE_SACADO_COMPLEX
   "Enable Sacado features for complex data type."
-  ON
+  ${SS_FOR_DEV_PS_FOR_RELEASE}
   )
 
 OPTION(${PACKAGE_NAME}_ENABLE_PARAMLIB
