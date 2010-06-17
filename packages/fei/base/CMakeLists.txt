@@ -43,6 +43,7 @@ fei_CommMap.hpp
 fei_CommUtils.hpp
 fei_ConnectivityBlock.hpp
 fei_ConnectivityTable.hpp
+fei_constants.hpp
 fei_CSRMat.hpp
 fei_CSVec.hpp
 fei_ctg_set.hpp

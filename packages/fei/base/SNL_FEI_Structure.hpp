@@ -71,7 +71,28 @@ class SNL_FEI_Structure : public Lookup {
    */
    int parameters(int numParams, const char*const* paramStrings);
 
-   int initFields(int numFields, const int* fieldSizes, const int* fieldIDs);
+   /** Define fields that will occur in this solution space. <br>
+        Example: a temperature field might be defined as fieldID 0, size 1.<br>
+        Example: a velocity field might be defined as fieldID 5, size 3.<br>
+
+        @param numFields Input. Length of the fieldIDs and fieldSizes lists.
+
+        @param fieldIDs Input. List of user-supplied field-identifiers.
+           Convention: Active solution-space fields should generally be denoted
+           by non-negative field-identifiers, while "other" fields (such as
+           geometric coordinates) should be denoted by negative field-identifiers.
+
+        @param fieldSizes Input. List of user-specified field-sizes. A
+           field-size is the number of scalar components that make up a field.
+
+        @param fieldTypes Input. List of user-specified field-types in the form
+           of ints as defined in fei_constants.hpp. If not specified, fei::UNKNOWN will
+           be used as a default. If you are specifying a vector-field such as
+           displacement, use field-size==3 and field-type==fei::DISPLACEMENT. Internally,
+           fei will map the scalar components of the field to DISPLACEMENT_X,
+           DISPLACEMENT_Y, etc.
+    */
+   int initFields(int numFields, const int* fieldSizes, const int* fieldIDs, const int* fieldTypes = NULL);
 
    int initElemBlock(GlobalID elemBlockID,
 		     int numElements,

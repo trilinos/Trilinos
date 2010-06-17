@@ -356,7 +356,8 @@ int SNL_FEI_Structure::getOwnerProcForEqn(int eqn)
 //------------------------------------------------------------------------------
 int SNL_FEI_Structure::initFields(int numFields, 
 				 const int *fieldSizes, 
-				 const int *fieldIDs)
+				 const int *fieldIDs,
+         const int * /*fieldTypes */)
 {
   // store the incoming solution fields
   //

@@ -258,7 +258,8 @@ void fei::VectorSpace::setParameters(const fei::ParameterSet& paramset)
 //----------------------------------------------------------------------------
 void fei::VectorSpace::defineFields(int numFields,
                                     const int* fieldIDs,
-                                    const int* fieldSizes)
+                                    const int* fieldSizes,
+                                    const int* /* fieldTypes */ )
 {
   if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != NULL) {
     FEI_OSTREAM& os = *output_stream_;
