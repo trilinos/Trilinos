@@ -52,7 +52,7 @@ int main (int argc, char **argv)
    int num_face_in_block[10], num_total_faces_per_blk[10];
    int num_node_sets, error;
    int i, j, *connect;
-   int bids[10], nnpe[10];
+   int bids, nnpe[10];
    int  num_qa_rec, num_info;
    int CPU_word_size,IO_word_size;
 
@@ -158,9 +158,9 @@ int main (int argc, char **argv)
    block_names[0] = "face_block_1";
    num_face_in_block[0] = 15;
    num_total_nodes_per_blk[0] = 58;
-   bids[0] = 10;
+   bids = 10;
 
-   error = ex_put_block (exoid, EX_FACE_BLOCK, bids[0], "nsided",
+   error = ex_put_block (exoid, EX_FACE_BLOCK, bids, "nsided",
 			 num_face_in_block[0],
 			 num_total_nodes_per_blk[0],
 			 0, 0, 0);
@@ -280,7 +280,7 @@ int main (int argc, char **argv)
    assert(i == num_total_nodes_per_blk[0]);
    assert(j == num_face_in_block[0]);
 
-   error = ex_put_conn (exoid, EX_FACE_BLOCK, bids[0], connect, NULL, NULL);
+   error = ex_put_conn (exoid, EX_FACE_BLOCK, bids, connect, NULL, NULL);
    printf ("after ex_put_conn, error = %d\n", error);
 
    if (error) {
@@ -291,7 +291,7 @@ int main (int argc, char **argv)
    free (connect);
    connect = NULL;
 
-   error = ex_put_entity_count_per_polyhedra(exoid, EX_FACE_BLOCK, bids[0], nnpe);
+   error = ex_put_entity_count_per_polyhedra(exoid, EX_FACE_BLOCK, bids, nnpe);
    printf ("after ex_put_entity_count_per_polyhedra, error = %d\n", error);
 
    if (error) {
@@ -305,9 +305,9 @@ int main (int argc, char **argv)
    num_elem_in_block[0] = 3;
    num_total_faces_per_blk[0] = 5 + 5 + 7;
 
-   bids[0] = 10;
+   bids = 10;
 
-   error = ex_put_block (exoid, EX_ELEM_BLOCK, bids[0], "nfaced",
+   error = ex_put_block (exoid, EX_ELEM_BLOCK, bids, "nfaced",
 			 num_elem_in_block[0],
 			 0, 
 			 0,
@@ -361,7 +361,7 @@ int main (int argc, char **argv)
    assert(i == num_total_faces_per_blk[0]);
    assert(j == num_elem_in_block[0]);
 
-   error = ex_put_conn (exoid, EX_ELEM_BLOCK, bids[0], NULL, NULL, connect);
+   error = ex_put_conn (exoid, EX_ELEM_BLOCK, bids, NULL, NULL, connect);
    printf ("after ex_put_conn, error = %d\n", error);
 
    if (error) {
@@ -371,7 +371,7 @@ int main (int argc, char **argv)
 
    free (connect);
 
-   error = ex_put_entity_count_per_polyhedra(exoid, EX_ELEM_BLOCK, bids[0], nnpe);
+   error = ex_put_entity_count_per_polyhedra(exoid, EX_ELEM_BLOCK, bids, nnpe);
    printf ("after ex_put_entity_count_per_polyhedra, error = %d\n", error);
 
    if (error) {
