@@ -106,106 +106,110 @@ namespace snl_fei {
 
   private:
     int setStructure()
-      {
-	if (matrixGraph_.get() == NULL) ERReturn(-1);
-	if (setStructure_ == true) return(0);
+    {
+      if (matrixGraph_.get() == NULL) ERReturn(-1);
+      if (setStructure_ == true) return(0);
 
-	lookup_ = new fei::Lookup_Impl(matrixGraph_, nodeIDType_);
+      lookup_ = new fei::Lookup_Impl(matrixGraph_, nodeIDType_);
 
-	CHK_ERR( feData_->setLookup(*lookup_) );
+      CHK_ERR( feData_->setLookup(*lookup_) );
 
-	fei::SharedPtr<fei::VectorSpace> vspace = matrixGraph_->getRowSpace();
+      fei::SharedPtr<fei::VectorSpace> vspace = matrixGraph_->getRowSpace();
 
-	int numLocalNodes = vspace->getNumOwnedAndSharedIDs(nodeIDType_);
+      int numLocalNodes = vspace->getNumOwnedAndSharedIDs(nodeIDType_);
 
-	int numElemBlocks = matrixGraph_->getNumConnectivityBlocks();
+      int numElemBlocks = matrixGraph_->getNumConnectivityBlocks();
 
-	int* intData = new int[numElemBlocks*3];
-	int* numElemsPerBlock =       intData;
-	int* numNodesPerElem =        intData+numElemBlocks;
-	int* elemMatrixSizePerBlock = intData+2*numElemBlocks;
-	int i;
+      int* intData = new int[numElemBlocks*3];
+      int* numElemsPerBlock =       intData;
+      int* numNodesPerElem =        intData+numElemBlocks;
+      int* elemMatrixSizePerBlock = intData+2*numElemBlocks;
+      int i;
 
-        std::vector<int> elemBlockIDs;
-	CHK_ERR( matrixGraph_->getConnectivityBlockIDs( elemBlockIDs) );
+      std::vector<int> elemBlockIDs;
+      CHK_ERR( matrixGraph_->getConnectivityBlockIDs( elemBlockIDs) );
 
-	for(i=0; i<numElemBlocks; ++i) {
-	  const fei::ConnectivityBlock* cblock =
-	    matrixGraph_->getConnectivityBlock(elemBlockIDs[i]);
-	  if (cblock==NULL) return(-1);
-	  numElemsPerBlock[i] = cblock->getConnectivityIDs().size();
-	  numNodesPerElem[i] = cblock->getRowPattern()->getNumIDs();
-	  elemMatrixSizePerBlock[i] = cblock->getRowPattern()->getNumIndices();
-	}
-
-	int numSharedNodes = 0;
-	CHK_ERR( vspace->getNumSharedIDs(nodeIDType_, numSharedNodes) );
-
-	int numLagrangeConstraints = matrixGraph_->getLocalNumLagrangeConstraints();
-
-	CHK_ERR( feData_->describeStructure(numElemBlocks,
-					    numElemsPerBlock,
-					    numNodesPerElem,
-					    elemMatrixSizePerBlock,
-					    numLocalNodes,
-					    numSharedNodes,
-					    numLagrangeConstraints) );
-
-	std::map<int,fei::ConnectivityBlock*>::const_iterator
-	  cdb_iter = matrixGraph_->getConnectivityBlocks().begin();
-
-	std::vector<int> nodeNumbers, numDofPerNode;
-
-	for(i=0; i<numElemBlocks; ++i, ++cdb_iter) {
-	  fei::ConnectivityBlock* cblock = (*cdb_iter).second;
-	  fei::Pattern* pattern = cblock->getRowPattern();
-
-	  int numConnectedNodes = pattern->getNumIDs();
-	  nodeNumbers.resize(numConnectedNodes);
-	  numDofPerNode.resize(numConnectedNodes);
-	  int* nodeNumPtr = &nodeNumbers[0];
-	  int* numDofPtr = &numDofPerNode[0];
-
-	  //For the calls to FiniteElementData::setConnectivity, we're going to
-	  //need a list of num-dof-per-node. So construct that now.
-	  const int* numFieldsPerID = pattern->getNumFieldsPerID();
-	  const int* fieldIDs = pattern->getFieldIDs();
-
-	  int foffset = 0;
-	  for(int ii=0; ii<numConnectedNodes; ++ii) {
-	    int dof = 0;
-	    for(int f=0; f<numFieldsPerID[ii]; ++f) {
-	      dof += vspace->getFieldSize(fieldIDs[foffset++]);
-	    }
-	    numDofPtr[ii] = dof;
-	  }
-
-	  ////
-	  //Next we'll loop over the connectivity-lists in this block,
-	  //making a call to FiniteElementData::setConnectivity for each one.
-
-	  std::map<int,int>& elemIDs = cblock->getConnectivityIDs();
-	  int numElems = elemIDs.size();
-	  fei::Record<int>** nodes = &(cblock->getRowConnectivities()[0]);
-
-	  int offset = 0;
-	  for(int elem=0; elem<numElems; ++elem) {
-	    for(int n=0; n<numConnectedNodes; ++n) {
-	      fei::Record<int>* node = nodes[offset++];
-	      nodeNumPtr[n] = node->getNumber();
-	    }
-
-	    CHK_ERR( feData_->setConnectivity(elemBlockIDs[i], elem,
-					      numConnectedNodes,
-					      nodeNumPtr, numDofPtr));
-	  }//end for(...numElems...)
-	}//end for(...numElemBlocks...)
-
-	delete [] intData;
-
-	setStructure_ = true;
-	return(0);
+      for(i=0; i<numElemBlocks; ++i) {
+        const fei::ConnectivityBlock* cblock =
+          matrixGraph_->getConnectivityBlock(elemBlockIDs[i]);
+        if (cblock==NULL) return(-1);
+        numElemsPerBlock[i] = cblock->getConnectivityIDs().size();
+        numNodesPerElem[i] = cblock->getRowPattern()->getNumIDs();
+        elemMatrixSizePerBlock[i] = cblock->getRowPattern()->getNumIndices();
       }
+
+      int numSharedNodes = 0;
+      CHK_ERR( vspace->getNumSharedIDs(nodeIDType_, numSharedNodes) );
+
+      int numLagrangeConstraints = matrixGraph_->getLocalNumLagrangeConstraints();
+
+      CHK_ERR( feData_->describeStructure(numElemBlocks,
+            numElemsPerBlock,
+            numNodesPerElem,
+            elemMatrixSizePerBlock,
+            numLocalNodes,
+            numSharedNodes,
+            numLagrangeConstraints) );
+
+      std::map<int,fei::ConnectivityBlock*>::const_iterator
+        cdb_iter = matrixGraph_->getConnectivityBlocks().begin();
+
+      std::vector<int> nodeNumbers, numDofPerNode, dof_ids;
+      int total_num_dof = 0;
+      for(i=0; i<numElemBlocks; ++i, ++cdb_iter) {
+        fei::ConnectivityBlock* cblock = (*cdb_iter).second;
+        fei::Pattern* pattern = cblock->getRowPattern();
+
+        int numConnectedNodes = pattern->getNumIDs();
+        nodeNumbers.resize(numConnectedNodes);
+        numDofPerNode.resize(numConnectedNodes);
+        int* nodeNumPtr = &nodeNumbers[0];
+        int* numDofPtr = &numDofPerNode[0];
+
+        //For the calls to FiniteElementData::setConnectivity, we're going to
+        //need a list of num-dof-per-node. So construct that now.
+        const int* numFieldsPerID = pattern->getNumFieldsPerID();
+        const int* fieldIDs = pattern->getFieldIDs();
+
+        int foffset = 0;
+        for(int ii=0; ii<numConnectedNodes; ++ii) {
+          int dof = 0;
+          for(int f=0; f<numFieldsPerID[ii]; ++f) {
+            dof += vspace->getFieldSize(fieldIDs[foffset++]);
+          }
+          numDofPtr[ii] = dof;
+          total_num_dof += dof;
+        }
+
+        dof_ids.resize(total_num_dof, 0);
+        int* dof_ids_ptr = &dof_ids[0];
+
+        ////
+        //Next we'll loop over the connectivity-lists in this block,
+        //making a call to FiniteElementData::setConnectivity for each one.
+
+        std::map<int,int>& elemIDs = cblock->getConnectivityIDs();
+        int numElems = elemIDs.size();
+        fei::Record<int>** nodes = &(cblock->getRowConnectivities()[0]);
+
+        int offset = 0;
+        for(int elem=0; elem<numElems; ++elem) {
+          for(int n=0; n<numConnectedNodes; ++n) {
+            fei::Record<int>* node = nodes[offset++];
+            nodeNumPtr[n] = node->getNumber();
+          }
+
+          CHK_ERR( feData_->setConnectivity(elemBlockIDs[i], elem,
+                numConnectedNodes,
+                nodeNumPtr, numDofPtr, dof_ids_ptr));
+        }//end for(...numElems...)
+      }//end for(...numElemBlocks...)
+
+      delete [] intData;
+
+      setStructure_ = true;
+      return(0);
+    }
 
     fei::SharedPtr<FiniteElementData> feData_;
     fei::SharedPtr<fei::MatrixGraph> matrixGraph_;

@@ -35,9 +35,10 @@ namespace snl_fei {
 			       int numNodes,
 			       const int* nodeNumbers,
 			       const int* dofPerNode,
+             const int* dof_ids,
 			       const double *const * coefs)
       { return( mat->setElemMatrix(elemBlockID, elemID, numNodes,
-				   nodeNumbers, dofPerNode, coefs) ); }
+				   nodeNumbers, dofPerNode, dof_ids, coefs) ); }
 
     /** specify dirichlet BCs */
     static int setDirichletBCs(FiniteElementData* mat,

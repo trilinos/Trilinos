@@ -423,6 +423,8 @@ int FEDataFilter::initLinSysCore()
 
   numRegularElems_ = 0;
   std::vector<int> numDofPerNode;
+  std::vector<int> dof_ids;
+  fei::FieldDofMap<int>& fdmap = problemStructure_->getFieldDofMap();
 
   for(int i=0; i<numElemBlocks; i++) {
     BlockDescriptor* block = NULL;
@@ -439,6 +441,7 @@ int FEDataFilter::initLinSysCore()
     int** fieldIDsTable = block->fieldIDsTablePtr();
 
     numDofPerNode.resize(0);
+    int total_num_dof = 0;
     for(int nn=0; nn<numNodesPerElem[i]; nn++) {
       if (fieldsPerNode[nn] <= 0) ERReturn(-1);
       numDofPerNode.push_back(0);
@@ -446,6 +449,18 @@ int FEDataFilter::initLinSysCore()
 
       for(int nf=0; nf<fieldsPerNode[nn]; nf++) {
         numDofPerNode[indx] += problemStructure_->getFieldSize(fieldIDsTable[nn][nf]);
+      }
+      total_num_dof += numDofPerNode[indx];
+    }
+
+    dof_ids.resize(total_num_dof);
+    int doffset = 0;
+    for(int nn=0; nn<numNodesPerElem[i]; ++nn) {
+      for(int nf=0; nf<fieldsPerNode[nn]; ++nf) {
+        int fieldSize = problemStructure_->getFieldSize(fieldIDsTable[nn][nf]);
+        for(int dof_offset=0; dof_offset<fieldSize; ++dof_offset) {
+          dof_ids[doffset++] = fdmap.get_dof_id(fieldIDsTable[nn][nf], dof_offset);
+        }
       }
     }
 
@@ -464,7 +479,8 @@ int FEDataFilter::initLinSysCore()
       CHK_ERR( feData_->setConnectivity(i, ctbl.elemNumbers[j],
                                         block->getNumNodesPerElement(),
                                         &cNodeList[0],
-                                        &numDofPerNode[0]) );
+                                        &numDofPerNode[0],
+                                        &dof_ids[0]) );
     }
   }
 
@@ -481,6 +497,21 @@ int FEDataFilter::initLinSysCore()
       ERReturn(-1);
     }
 
+    int total_num_dof = 0;
+    std::vector<int>& masterFieldIDs = cr.getMasterFieldIDs();
+    for(size_t k=0; k<masterFieldIDs.size(); ++k) {
+      total_num_dof += problemStructure_->getFieldSize(masterFieldIDs[k]);
+    }
+
+    dof_ids.resize(total_num_dof);
+    int doffset = 0;
+    for(size_t k=0; k<masterFieldIDs.size(); ++k) {
+      int field_size = problemStructure_->getFieldSize(masterFieldIDs[k]);
+      for(int dof_offset=0; dof_offset<field_size; ++dof_offset) {
+        dof_ids[doffset++] = fdmap.get_dof_id(masterFieldIDs[k], dof_offset);
+      }
+    }
+
     int blockNum = numElemBlocks + index;
 
     nodeNumbers.resize(nNodes);
@@ -493,7 +524,8 @@ int FEDataFilter::initLinSysCore()
     int offset = constraintNodeOffsets_[index];
     CHK_ERR( feData_->setConnectivity(blockNum, numRegularElems_+i++,
                                       nNodes, &nodeNumbers[0],
-                                      &packedFieldSizes_[offset]) );
+                                      &packedFieldSizes_[offset],
+                                      &dof_ids[0]) );
     ++cr_iter;
   }
 
@@ -876,6 +908,8 @@ int FEDataFilter::generalElemInput(GlobalID elemBlockID,
     ERReturn(-1);
   }
 
+  fei::FieldDofMap<int>& fdmap = problemStructure_->getFieldDofMap();
+
   int elemIndex = iter->second;
 
   int elemNumber = connTable.elemNumbers[elemIndex];
@@ -885,24 +919,40 @@ int FEDataFilter::generalElemInput(GlobalID elemBlockID,
   int** fieldIDsTable = block->fieldIDsTablePtr();
 
   int numDistinctFields = block->getNumDistinctFields();
+  int dof_id = 0;
   int fieldSize = 0;
+  int total_num_dofs = 0;
   if (numDistinctFields == 1) {
     fieldSize = problemStructure_->getFieldSize(fieldIDsTable[0][0]);
+    for(int i=0; i<numNodes; ++i) {
+      total_num_dofs += fieldSize*fieldsPerNode[i];
+    }
+    dof_id = fdmap.get_dof_id(fieldIDsTable[0][0], 0);
+  }
+  else {
+    for(int i=0; i<numNodes; ++i) {
+      for(int nf=0; nf<fieldsPerNode[i]; ++nf) {
+        total_num_dofs += problemStructure_->getFieldSize(fieldIDsTable[i][nf]);
+      }
+    }
   }
 
   static std::vector<int> iwork;
-  iwork.resize(2*numNodes);
+  iwork.resize(2*numNodes+total_num_dofs);
 
   int* dofsPerNode = &iwork[0];
+  int* nodeNumbers = dofsPerNode+numNodes;
+  int* dof_ids = nodeNumbers+numNodes;
+
   for(int i=0; i<numNodes; ++i) {
     dofsPerNode[i] = 0;
   }
 
-  int* nodeNumbers = dofsPerNode+numNodes;
 
   NodeDescriptor** elemNodes =
     &((*connTable.elem_conn_ptrs)[elemIndex*numNodes]);
 
+  int doffset = 0;
   for(int nn=0; nn<numNodes; nn++) {
     NodeDescriptor* node = elemNodes[nn];
     nodeNumbers[nn] = node->getNodeNumber();
@@ -910,23 +960,31 @@ int FEDataFilter::generalElemInput(GlobalID elemBlockID,
     if (numDistinctFields == 1) {
       for(int nf=0; nf<fieldsPerNode[nn]; nf++) {
         dofsPerNode[nn] += fieldSize;
+        for(int dof_offset=0; dof_offset<fieldSize; ++dof_offset) {
+          dof_ids[doffset++] = dof_id;
+        }
       }
     }
     else {
       for(int nf=0; nf<fieldsPerNode[nn]; nf++) {
-        dofsPerNode[nn] += problemStructure_->getFieldSize(fieldIDsTable[nn][nf]);
+        int fieldSize = problemStructure_->getFieldSize(fieldIDsTable[nn][nf]);
+        int dof_id = fdmap.get_dof_id(fieldIDsTable[nn][nf], 0);
+        dofsPerNode[nn] += fieldSize;
+        for(int dof_offset=0; dof_offset<fieldSize; ++dof_offset) {
+          dof_ids[doffset++] = dof_id + dof_offset;
+        }
       }
     }
   }
 
   if (stiff != NULL) {
     CHK_ERR( feData_->setElemMatrix(blockNumber, elemNumber, numNodes,
-                                    nodeNumbers, dofsPerNode, stiff) );
+                                    nodeNumbers, dofsPerNode, dof_ids, stiff) );
   }
 
   if (load != NULL) {
     CHK_ERR( feData_->setElemVector(blockNumber, elemNumber, numNodes,
-                                    nodeNumbers, dofsPerNode, load) );
+                                    nodeNumbers, dofsPerNode, dof_ids, load) );
   }
 
   return(FEI_SUCCESS);
@@ -1133,9 +1191,11 @@ int FEDataFilter::loadFEDataPenCR(int CRID,
 
   std::vector<int> nodeNumbers;
   std::vector<int> dofsPerNode;
+  std::vector<int> dof_ids;
   std::vector<double> weights;
 
   NodeDatabase& nodeDB = problemStructure_->getNodeDatabase();
+  fei::FieldDofMap<int>& fdmap = problemStructure_->getFieldDofMap();
 
   int offset = 0;
   for(int i=0; i<numCRNodes; i++) {
@@ -1152,6 +1212,7 @@ int FEDataFilter::loadFEDataPenCR(int CRID,
     dofsPerNode.push_back(fieldSize);
 
     for(int f=0; f<fieldSize; f++) {
+      dof_ids.push_back(fdmap.get_dof_id(CRFields[i], f));
       double weight = CRWeights[offset++];
       weights.push_back(weight);
     }
@@ -1180,10 +1241,11 @@ int FEDataFilter::loadFEDataPenCR(int CRID,
                                   nodeNumbers.size(),
                                   &nodeNumbers[0],
                                   &dofsPerNode[0],
+                                  &dof_ids[0],
                                   &matrixCoefs[0]) );
 
   CHK_ERR( feData_->setElemVector(blockNum, elemNum, nodeNumbers.size(),
-                                  &nodeNumbers[0], &dofsPerNode[0], &rhsCoefs[0]) );
+                                  &nodeNumbers[0], &dofsPerNode[0], &dof_ids[0], &rhsCoefs[0]) );
 
   newData_ = true;
 

@@ -36,6 +36,7 @@ namespace snl_fei {
 			       int numNodes,
 			       const int* nodeNumbers,
 			       const int* dofPerNode,
+             const int* dof_ids,
 			       const double *const * coefs)
       { return(-1); }
 

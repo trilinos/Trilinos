@@ -14,6 +14,7 @@
 #include "fei_TemplateUtils.hpp"
 #include <snl_fei_PointBlockMap.hpp>
 #include <fei_EqnBuffer.hpp>
+#include <fei_FieldDofMap.hpp>
 #include <fei_CSRMat.hpp>
 #include <fei_CSVec.hpp>
 
@@ -151,6 +152,9 @@ class SNL_FEI_Structure : public Lookup {
 
        return(f_iter != fieldDatabase_->end() ? (*f_iter).second : -1);
      }
+
+   fei::FieldDofMap<int>& getFieldDofMap()
+     { return fieldDofMap_; }
 
    /** implementation of Lookup::isInLocalElement */
    bool isInLocalElement(int nodeNumber);
@@ -350,17 +354,17 @@ class SNL_FEI_Structure : public Lookup {
      {return(multCRs_);};
 
    int getMultConstRecord(int CRID, snl_fei::Constraint<GlobalID>*& multCR)
-     {
-       std::map<int,snl_fei::Constraint<GlobalID>*>::iterator
-	 cr_iter = multCRs_.find(CRID);
-       int returncode = -1;
-       if (cr_iter != multCRs_.end()) {
-	 multCR = (*cr_iter).second;
-	 returncode = 0;
-       }
-
-       return( returncode );
+   {
+     std::map<int,snl_fei::Constraint<GlobalID>*>::iterator
+       cr_iter = multCRs_.find(CRID);
+     int returncode = -1;
+     if (cr_iter != multCRs_.end()) {
+       multCR = (*cr_iter).second;
+       returncode = 0;
      }
+
+     return( returncode );
+   }
 
    int getNumPenConstRecords() {return(penCRs_.size());}
    std::map<GlobalID,snl_fei::Constraint<GlobalID>*>&
@@ -368,17 +372,17 @@ class SNL_FEI_Structure : public Lookup {
      { return(penCRs_); }
 
    int getPenConstRecord(int CRID, snl_fei::Constraint<GlobalID>*& penCR)
-     {
-       std::map<int,snl_fei::Constraint<GlobalID>*>::iterator
-	 cr_iter = penCRs_.find(CRID);
-       int returncode = -1;
-       if (cr_iter != penCRs_.end()) {
-	 penCR = (*cr_iter).second;
-	 returncode = 0;
-       }
-
-       return( returncode );
+   {
+     std::map<int,snl_fei::Constraint<GlobalID>*>::iterator
+       cr_iter = penCRs_.find(CRID);
+     int returncode = -1;
+     if (cr_iter != penCRs_.end()) {
+       penCR = (*cr_iter).second;
+       returncode = 0;
      }
+
+     return( returncode );
+   }
 
    void addSlaveVariable(SlaveVariable* svar) {slaveVars_->push_back(svar);}
 
@@ -612,6 +616,7 @@ class SNL_FEI_Structure : public Lookup {
    int localProc_, masterProc_, numProcs_;
 
    std::map<int,int>* fieldDatabase_;
+   fei::FieldDofMap<int> fieldDofMap_;
    std::vector<int> workarray_;
 
    std::vector<GlobalID> blockIDs_;

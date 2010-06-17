@@ -101,7 +101,8 @@ class FEData : public virtual FiniteElementData {
 		       int elemID,
 		       int numNodes,
 		       const int* nodeNumbers,
-		       const int* numDofPerNode)
+		       const int* numDofPerNode,
+           const int* dof_ids)
      {
        dbgOut() << "setConnectivity" << FEI_ENDL
 	 << "   elemBlockID: " << elemBlockID << ", elemID: " << elemID 
@@ -127,6 +128,7 @@ class FEData : public virtual FiniteElementData {
 		     int numNodes,
 		     const int* nodeNumbers,
 		     const int* dofPerNode,
+         const int* dof_ids,
 		     const double *const * coefs)
      {
        dbgOut() << "setElemMatrix" << FEI_ENDL
@@ -161,6 +163,7 @@ class FEData : public virtual FiniteElementData {
 		     int numNodes,
 		     const int* nodeNumbers,
 		     const int* dofPerNode,
+         const int* dof_ids,
 		     const double* coefs)
      {
        dbgOut() << "setElemVector" << FEI_ENDL

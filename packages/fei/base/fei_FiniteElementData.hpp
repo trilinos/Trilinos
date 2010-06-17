@@ -3,37 +3,31 @@
 
 #include <fei_Lookup.hpp>
 
-/** This interface is used to pass finite-element data through to a
-  solver library, from the FEI implementation. This is primarily intended
-  to be an internal interface in the FEI implementation, acting as an
-  abstraction between the FEI and underlying solvers. The FEI layer is the
-  'data-source', and this FiniteElementData interface is the 'pipe' through
-  which data passes to the solver that's assembling an underlying set of
-  data-structures.
-  This interface is an alternative to the LinearSystemCore and ESI interfaces,
-  which are the other major 'pipes' for passing data through to solver
-  libraries. The difference is, LinearSystemCore and ESI interfaces accept
-  almost entirely algebraic data, e.g., equation-numbered matrix/vector
-  contributions, whereas this FiniteElementData interface accepts data in terms
-  of nodeNumbers and degree-of-freedom offsets. Equation numbers don't appear
-  in this interface.
+/** This interface is used to pass finite-element data from the FEI
+  implementation to a solver library. This is primarily intended to
+  be an internal interface in the FEI implementation, acting as an
+  abstraction between the FEI and underlying solvers.
+  This interface is an alternative to the LinearSystemCore and
+  other purely algebraic interfaces. The purely algebraic interfaces
+  accept almost entirely algebraic data, e.g., equation-numbered
+  matrix/vector contributions, whereas this FiniteElementData
+  interface accepts data in terms of nodeNumbers and degree-of-freedom
+  ids. Equation numbers don't appear in this interface.
 
-  Currently (as of August 2001) the only implementation of this interface is
-  for the FETI solver. FETI, as well as the FETI implementation of
-  FiniteElementData, are written by Kendall Pierson.
+  elemBlockID's and elemID's are not necessarily globally unique.
+  In certain problems (e.g., multi-physics, in parallel) element-
+  blocks may span processor boundaries, in which case the implementer
+  of FiniteElementData may assume that elemBlockID's are globally
+  unique. Elements are never shared between processors, so elemID's
+  don't need to be globally unique. They may be assumed to be
+  locally zero-based numbers.
 
-  Note: This interface may eventually be either replaced or combined with
-  Charles Tong's FiniteElementGrid interface.
+  nodeNumbers are globally unique, and are globally contiguous and
+  zero-based.
 
-  Note2: Three types of "ID"s appear in this interface: elemBlockID, elemID
-   and nodeNumbers. elemBlockID's and elemID's are not-necessarily globally
-   unique. In certain problems where it matters (e.g., multi-physics, in
-   parallel) element-blocks may span processor boundaries, in which case the
-   implementer of FiniteElementData may assume that elemBlockID's are globally
-   unique. In most cases it won't matter. Elements are never shared between
-   processors, and so elemID's don't need to be globally unique. They may be
-   assumed to be locally zero-based numbers. nodeNumbers are globally unique,
-   and are also globally contiguous and zero-based.
+  dof_ids are contiguous and zero-based. The total set of solution-fields
+  for the problem is mapped to a contiguous, zero-based set of dof_ids.
+  There is a unique dof_id for each scalar component of each solution-field.
 */
 
 class FiniteElementData {
@@ -83,18 +77,23 @@ class FiniteElementData {
                                 int numMultCRs) = 0;
 
    /** For passing element-connectivity arrays.
+      dof_ids are contiguous and zero-based. The total set of solution-fields
+      for the problem is mapped to a contiguous, zero-based set of dof_ids.
+      There is a unique dof_id for each scalar component of each solution-field.
        @param elemBlockID Identifier for the element-block that this element
         belongs to.
         @param elemID Locally zero-based identifier for this element.
         @param numNodes Number of nodes for this element.
         @param nodeNumbers List of length numNodes.
         @param numDofPerNode List of length numNodes.
+        @param dof_ids List of length sum(numDofPerNode[i])
    */
    virtual int setConnectivity(int elemBlockID,
                                int elemID,
                                int numNodes,
                                const int* nodeNumbers,
-                               const int* numDofPerNode) = 0;
+                               const int* numDofPerNode,
+                               const int* dof_ids) = 0;
 
    /** For passing element-stiffness arrays.
     @param elemBlockID Identifier for the element-block that these elements
@@ -102,7 +101,8 @@ class FiniteElementData {
     @param elemID Locally zero-based identifier for this element.
     @param numNodes Number of nodes on this element.
     @param nodeNumbers List of length numNodes
-    @param dofPerNode List of length numNodes.
+    @param numDofPerNode List of length numNodes.
+    @param dof_ids List of length sum(numDofPerNode[i])
     @param coefs C-style table (list of pointers). Each row of the table is of
     length sum(dofPerNode[i]), and that is also the number of rows.
    */
@@ -110,7 +110,8 @@ class FiniteElementData {
                              int elemID,
                              int numNodes,
                              const int* nodeNumbers,
-                             const int* dofPerNode,
+                             const int* numDofPerNode,
+                             const int* dof_ids,
                              const double *const * coefs) = 0;
 
    /** For passing element-load vectors.
@@ -119,37 +120,56 @@ class FiniteElementData {
     @param elemID Locally zero-based identifier for this element.
     @param numNodes Number of nodes on this element.
     @param nodeNumbers
-    @param dofPerNode
+    @param numDofPerNode
+    @param dof_ids
     @param coefs Packed list, length sum(dofPerNode[i]).
    */
    virtual int setElemVector(int elemBlockID,
                              int elemID,
                              int numNodes,
                              const int* nodeNumbers,
-                             const int* dofPerNode,
+                             const int* numDofPerNode,
+                             const int* dof_ids,
                              const double* coefs) = 0;
 
+   /** Specify dirichlet boundary-condition values.
+    @param numBCs Number of boundary-condition values.
+    @param nodeNumbers List of length numBCs.
+    @param dof_ids List of length numBCs.
+    @param values List of length numBCs.
+   */
    virtual int setDirichletBCs(int numBCs,
                                const int* nodeNumbers,
-                               const int* dofOffsets,
+                               const int* dof_ids,
                                const double* values) = 0;
 
+   /** Sum coefficients into the matrix.
+    This may be used to pass a dense rectangular block of coefs, or
+    a diagonal band of coefs, or an arbitrary sparse block of coefs.
+    @param numRowNodes
+    @param rowNodeNumbers List of length numRowNodes
+    @param row_dof_ids List of length numRowNodes
+    @param numColNodesPerRow List of length numRowNodes
+    @param colNodeNumbers List of length sum(numColNodesPerRow[i])
+    @param col_dof_ids List of length sum(numColNodesPerRow[i])
+    @param coefs List of length sum(numColNodesPerRow[i])
+   */
    virtual int sumIntoMatrix(int numRowNodes,
                              const int* rowNodeNumbers,
-                             const int* rowDofOffsets,
+                             const int* row_dof_ids,
                              const int* numColNodesPerRow,
                              const int* colNodeNumbers,
-                             const int* colDofOffsets,
+                             const int* col_dof_ids,
                              const double* coefs) = 0;
 
    virtual int sumIntoRHSVector(int numNodes,
                              const int* nodeNumbers,
-                             const int* dofOffsets,
+                             const int* dof_ids,
                              const double* coefs) = 0;
 
    virtual int putIntoRHSVector(int numNodes,
                              const int* nodeNumbers,
-                             const int* dofOffsets,
+                             const int* dof_ids,
                              const double* coefs) = 0;
 
    /** Function called to signal to the FiniteElementData implementation that
@@ -184,11 +204,16 @@ class FiniteElementData {
    */
    virtual int deleteConstraints() = 0;
 
+   /** Get solution value from the underlying solver.
+    @param nodeNumber
+    @param dof_id
+    @param value
+   */
    virtual int getSolnEntry(int nodeNumber,
-                            int dofOffset,
+                            int dof_id,
                             double& value) = 0;
 
-   /** Function for requesting the solution value of a Lagrange Multiplier.
+   /** Get solution value of a Lagrange Multiplier from the solver.
     */
    virtual int getMultiplierSoln(int CRID, double& lagrangeMultiplier) = 0;
 
@@ -209,17 +234,21 @@ class FiniteElementData {
                                  const int* nodeNumbers,
                                  const double* coefs) = 0;
 
+   /** Specify lagrange-multipler constraint-relation.
+   */
    virtual int setMultiplierCR(int CRID,
                                int numNodes,
                                const int* nodeNumbers,
-                               const int* dofOffsets,
+                               const int* dof_ids,
                                const double* coefWeights,
                                double rhsValue) = 0;
 
+   /** Specify penalty constraint-relation.
+   */
    virtual int setPenaltyCR(int CRID,
                             int numNodes,
                             const int* nodeNumbers,
-                            const int* dofOffsets,
+                            const int* dof_ids,
                             const double* coefWeights,
                             double penaltyValue,
                             double rhsValue) = 0;

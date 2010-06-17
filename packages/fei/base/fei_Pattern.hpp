@@ -44,7 +44,7 @@ namespace fei {
 	    const int* fieldIDs, const int* fieldSizes);
 
     /** Constructor, Pattern::PatternType == GENERAL
-	There may be multiple id-types as well as multiple fields-per-id.
+      There may be multiple id-types as well as multiple fields-per-id.
      */
     Pattern(int numIDs, const int* idTypes,
 	    const int* numFieldsPerID,
@@ -70,17 +70,17 @@ namespace fei {
 
     /** Return list of length getNumIDs() */
     const int* getNumIndicesPerID() const
-      {
-	return( numIndicesPerID_ );
-      }
+    {
+      return( numIndicesPerID_ );
+    }
 
     /** total-num-fields = sum(numFieldsPerID) */
     int getTotalNumFields() const { return( totalNumFields_ ); }
 
     /** Return the total number of scalar indices represented by this pattern.
-	This is the number of identifiers if no fields are associated with them,
-	otherwise it is the sum of the field-sizes of the fields associated with
-	the identifiers.
+     This is the number of identifiers if no fields are associated with them,
+     otherwise it is the sum of the field-sizes of the fields associated with
+     the identifiers.
     */
     int getNumIndices() const { return( numIndices_ ); }
 
