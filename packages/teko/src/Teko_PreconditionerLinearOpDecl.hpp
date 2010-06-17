@@ -101,6 +101,9 @@ public:
 
    //! Get teko linear operator
    Teko::LinearOp getOperator() const { return getOperator_cnoc().getConstObj(); }
+
+   // Inherited from Teuchos::Describable
+   void describe(Teuchos::FancyOStream & out_arg,const Teuchos::EVerbosityLevel verbLevel) const;
 protected:
    //! get operator associated with the preconditioner
    Teuchos::ConstNonconstObjectContainer<Thyra::LinearOpBase<ScalarT> > getOperator_cnoc() const;
