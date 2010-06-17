@@ -78,7 +78,7 @@ class Segment;
 
 
 
-\author Michael W. Gee (mwgee@sandia.gov)
+\author Glen Hansen (Glen.Hansen@inl.gov)
 
 */
 class Function 

@@ -22,7 +22,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-# Questions? Contact Michael Gee (mwgee@sandia.gov)
+# Questions? Contact Glen Hansen (Glen.Hansen@inl.gov)
 #
 # ************************************************************************
 #@HEADER
@@ -104,7 +104,7 @@ and a Newton method is applied here involving a dense 3x3 solve in each Newton s
 These projections make up for a pretty good share of the overall computational cost
 of the mortar method though convergence in the Newton iterations is usually excellent.
 
-\author Michael W. Gee (mwgee@sandia.gov)
+\author Glen Hansen (Glen.Hansen@inl.gov)
 
 */
 class  Projector 

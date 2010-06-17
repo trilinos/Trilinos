@@ -186,10 +186,19 @@ methods for large deformation frictional sliding", IJNME, Vol. 62, pp. 1183-1225
 
 \subsection author Author and Acknowledgements
 
-\author Michael W. Gee (mwgee@sandia.gov), Sandia National Laboratories, Org. 1414.
+Moertel was conceived and developed by Michael W. Gee 
 
 I would like to thank Barbara Wohlmuth, Stefan Huuber, Raymond Tuminaro and
 Pavel Bochev for discussions and support in creating this work.  
+
+Moertel is currently being maintained and extended by:
+
+Glen Hansen 
+David Andrs
+
+Glen.Hansen@inl.gov
+Multiphysics Methods Group
+Idaho National Laboratory
 
 <br>
 <br>

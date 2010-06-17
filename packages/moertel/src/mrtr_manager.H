@@ -22,7 +22,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-# Questions? Contact Michael Gee (mwgee@sandia.gov)
+# Questions? Contact Glen Hansen (Glen.Hansen@inl.gov)
 #
 # ************************************************************************
 #@HEADER
@@ -143,7 +143,7 @@ For background information on Mortar methods, we refer to <br>
 Wohlmuth, B.:"Discretization Methods and Iterative Solvers Based on Domain Decomposition", 
 Springer, New York, 2001, ISBN 3-540-41083-X
 
-\author Michael W. Gee (mwgee@sandia.gov)
+\author Glen Hansen (Glen.Hansen@inl.gov)
 
 */
 class Manager 
