@@ -61,6 +61,7 @@ fei_ErrMacros.hpp
 fei_Factory.hpp
 fei_FEDataFilter.hpp
 fei_FEI_Impl.hpp
+fei_FieldDofMap.hpp
 fei_FieldMask.hpp
 fei_FillableMat.hpp
 fei_FillableVec.hpp
