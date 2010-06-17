@@ -8,7 +8,7 @@
 
 
 #include <stk_util/parallel/Parallel.hpp>
-#include <unit_tests/stk_utest_macros.hpp>
+#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 STKUNIT_UNIT_TEST(UnitTestTemplate, testUnit)
 {

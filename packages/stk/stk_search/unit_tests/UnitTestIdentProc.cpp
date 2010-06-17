@@ -7,7 +7,7 @@
 /*------------------------------------------------------------------------*/
 
 
-#include <unit_tests/stk_utest_macros.hpp>
+#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 #include <stk_util/use_cases/UseCaseEnvironment.hpp>
 

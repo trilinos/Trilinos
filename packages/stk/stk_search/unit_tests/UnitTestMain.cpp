@@ -13,6 +13,6 @@
 #include <utility>
 #include <mpi.h>
 
-#include <unit_tests/stk_utest_macros.hpp>
+#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 STKUNIT_MAIN(argc,argv)

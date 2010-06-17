@@ -6,7 +6,7 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <unit_tests/stk_utest_macros.hpp>
+#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <Shards_BasicTopologies.hpp>
 
 #include <stk_util/parallel/Parallel.hpp>
