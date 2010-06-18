@@ -231,9 +231,9 @@ class SerializationTraits<Ordinal,double>
   : public DirectSerializationTraits<Ordinal,double>
 {};
 
-template<typename Ordinal, typename Packet>
-class SerializationTraits<Ordinal,std::pair<Packet,Packet> >
-  : public DirectSerializationTraits<Ordinal,std::pair<Packet,Packet> >
+template<typename Ordinal, typename P1, typename P2>
+class SerializationTraits<Ordinal,std::pair<P1,P2> >
+  : public DirectSerializationTraits<Ordinal,std::pair<P1,P2> >
 {};
 
 #ifdef HAVE_TEUCHOS_QD
