@@ -51,6 +51,7 @@ static void test_drops(int, MESH_INFO_PTR, PARIO_INFO_PTR,
    struct Zoltan_Struct *);
 
 
+extern int my_rank;
 
 extern int Zoltan_Order_Test(struct Zoltan_Struct *zz, int *num_gid_entries,  int *num_lid_entries,
   int num_obj,  ZOLTAN_ID_PTR global_ids,  ZOLTAN_ID_PTR local_ids,  int *rank,  int *iperm);
@@ -562,6 +563,7 @@ int run_zoltan(struct Zoltan_Struct *zz, int Proc, PROB_INFO_PTR prob,
   char fname[128];
   ELEM_INFO *current_elem = NULL;
 
+int j;
 /***************************** BEGIN EXECUTION ******************************/
 
   DEBUG_TRACE_START(Proc, yo);
@@ -989,6 +991,7 @@ void get_elements(void *data, int num_gid_entries, int num_lid_entries,
   int gid = num_gid_entries-1;
   int lid = num_lid_entries-1;
 
+int ii;
   START_CALLBACK_TIMER;
 
 
@@ -998,6 +1001,10 @@ void get_elements(void *data, int num_gid_entries, int num_lid_entries,
     *ierr = ZOLTAN_FATAL;
     return;
   }
+
+MPI_Barrier(MPI_COMM_WORLD);
+for (ii=0; ii < 2; ii++){
+if (my_rank == ii){
 
   mesh = (MESH_INFO_PTR) data;
   elem = mesh->elements;
@@ -1023,6 +1030,10 @@ void get_elements(void *data, int num_gid_entries, int num_lid_entries,
     }
     idx++;
   }
+}
+MPI_Barrier(MPI_COMM_WORLD);
+}
+MPI_Barrier(MPI_COMM_WORLD);
 
   STOP_CALLBACK_TIMER;
 }
@@ -2222,7 +2233,6 @@ int max_part, gmax_part;
 int test_both;  /* If true, test both Zoltan_*_Assign and Zoltan_*_PP_Assign. */
 		/* If false, test only Zoltan_*_PP_Assign.                    */
 		/* True if # parts == # processors.                      */
-ZOLTAN_ID_TYPE zgid, zlid;
 
   /* Find maximum part number across all processors. */
   MPI_Comm_size(MPI_COMM_WORLD, &Num_Proc);
@@ -2260,9 +2270,7 @@ ZOLTAN_ID_TYPE zgid, zlid;
 	x[2] = current_elem->coord[0][2];
     }
     else{
-      zgid = gid;
-      zlid = lid;
-      get_geom((void *) mesh, 1, 1, &zgid, &zlid, x, &iierr);
+      get_geom((void *) mesh, 1, 1, &gid, &lid, x, &iierr);
     }
 
     xlo[0] = x[0];

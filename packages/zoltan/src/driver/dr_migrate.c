@@ -53,6 +53,7 @@
 extern "C" {
 #endif
 
+extern int my_rank;
 
 /*
  *  PROTOTYPES for load-balancer interface functions.
@@ -257,12 +258,10 @@ void insert_in_hash(
 )
 {
 int j;
-ZOLTAN_ID_TYPE gid;
 
-  gid = globalID;
   New_Elem_Hash_Nodes[localID].globalID = globalID;
   New_Elem_Hash_Nodes[localID].localID = localID;
-  j = Zoltan_Hash(&gid,1,New_Elem_Index_Size);
+  j = Zoltan_Hash(&globalID,1,New_Elem_Index_Size);
   New_Elem_Hash_Nodes[localID].next = New_Elem_Hash_Table[j];
   New_Elem_Hash_Table[j] = localID;
 }
@@ -276,10 +275,8 @@ int find_in_hash(
 ) 
 {
 int idx;
-ZOLTAN_ID_TYPE tmp;
 
-  tmp = globalID;
-  idx = Zoltan_Hash(&tmp, 1, New_Elem_Index_Size);
+  idx = Zoltan_Hash(&globalID, 1, New_Elem_Index_Size);
   idx = New_Elem_Hash_Table[idx];
   while (idx != -1 && New_Elem_Hash_Nodes[idx].globalID != globalID) {
     idx = New_Elem_Hash_Nodes[idx].next;
@@ -301,7 +298,6 @@ int idx, hidx, prev;
     prev = idx;
     idx = New_Elem_Hash_Nodes[idx].next;
   }
-  
   if (prev == -1) 
     New_Elem_Hash_Table[hidx] = New_Elem_Hash_Nodes[idx].next;
   else
@@ -390,8 +386,10 @@ char msg[256];
    */
 
   New_Elem_Index_Size = mesh->num_elems + num_import - num_export;
+
   if (mesh->elem_array_len > New_Elem_Index_Size) 
     New_Elem_Index_Size = mesh->elem_array_len;
+
   New_Elem_Index = (ZOLTAN_ID_TYPE *) malloc(New_Elem_Index_Size * sizeof(ZOLTAN_ID_TYPE));
   New_Elem_Hash_Table = (int *) malloc(New_Elem_Index_Size * sizeof(int));
   New_Elem_Hash_Nodes = (struct New_Elem_Hash_Node *) 

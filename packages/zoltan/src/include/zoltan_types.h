@@ -54,9 +54,13 @@ extern "C" {
  */
 
 #undef ZOLTAN_ID_MPI_TYPE
+#undef ZOLTAN_ID_SPECIFIER
+#undef ZOLTAN_ID_CONSTANT
 
-/* TODO64 - I think some things may break of ZOLTAN_ID_TYPE is smaller than int.  Need to
- *   check this, and not allow short if that's the case.  (Like Zoltan_DD_*)
+/* 
+ * The ZOLTAN_ID_TYPE can be any signed integral type greater in size or equal to an int.
+ *  (Zoltan code uses "-1" to indicate "unset".  This should be changed in "new zoltan".
+ *   There is code in Zoltan that assumes the global ID is at least as large as an int.)
  */
 
 #ifdef ZOLTAN_ID_TYPE_INT
@@ -86,40 +90,13 @@ typedef long long ZOLTAN_ID_TYPE;
 #define ZOLTAN_ID_CONSTANT(z)  z ## LL
 #endif
 
-#ifdef ZOLTAN_ID_TYPE_UNSIGNED_INT
-
-typedef unsigned int ZOLTAN_ID_TYPE;
-#define ZOLTAN_ID_MPI_TYPE  MPI_UNSIGNED
-#define zoltan_mpi_id_datatype_name "MPI_UNSIGNED"
-#define ZOLTAN_ID_SPECIFIER  "u"
-#define ZOLTAN_ID_CONSTANT(z)  z ## U
-#endif
-
-#ifdef ZOLTAN_ID_TYPE_UNSIGNED_LONG
-
-typedef unsigned long ZOLTAN_ID_TYPE;
-#define ZOLTAN_ID_MPI_TYPE  MPI_UNSIGNED_LONG
-#define zoltan_mpi_id_datatype_name "MPI_UNSIGNED_LONG"
-#define ZOLTAN_ID_SPECIFIER  "lu"
-#define ZOLTAN_ID_CONSTANT(z)  z ## UL
-#endif
-
-#ifdef ZOLTAN_ID_TYPE_UNSIGNED_LONG_LONG
-
-typedef unsigned long long ZOLTAN_ID_TYPE;
-#define ZOLTAN_ID_MPI_TYPE  MPI_UNSIGNED_LONG_LONG
-#define zoltan_mpi_id_datatype_name "MPI_UNSIGNED_LONG_LONG"
-#define ZOLTAN_ID_SPECIFIER  "Lu"
-#define ZOLTAN_ID_CONSTANT(z)  z ## ULL
-#endif
-
 #ifndef ZOLTAN_ID_MPI_TYPE
 
-typedef unsigned int ZOLTAN_ID_TYPE;
-#define ZOLTAN_ID_MPI_TYPE  MPI_UNSIGNED
-#define zoltan_mpi_id_datatype_name "MPI_UNSIGNED"
-#define ZOLTAN_ID_SPECIFIER  "u"
-#define ZOLTAN_ID_CONSTANT(z)  z ## U
+typedef int ZOLTAN_ID_TYPE;
+#define ZOLTAN_ID_MPI_TYPE  MPI_INT
+#define zoltan_mpi_id_datatype_name "MPI_INT"
+#define ZOLTAN_ID_SPECIFIER  "d"
+#define ZOLTAN_ID_CONSTANT(z)  z
 
 #endif
 

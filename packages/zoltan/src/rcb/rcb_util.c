@@ -54,7 +54,7 @@ int i, ierr = 0;
     rcb->Box = NULL;
     rcb->Global_IDs = NULL;
     rcb->Local_IDs = NULL;
-    rcb->Dots = NULL;
+    memset(&(rcb->Dots), 0, sizeof(struct Dot_Struct));
 
     Zoltan_Initialize_Transformation(&(rcb->Tran));
 
@@ -79,13 +79,13 @@ int i, ierr = 0;
     rcb = (RCB_STRUCT *) zz->LB.Data_Structure;
     ZOLTAN_FREE(&(rcb->Global_IDs));
     ZOLTAN_FREE(&(rcb->Local_IDs));
-    ZOLTAN_FREE(&(rcb->Dots));
+    Zoltan_Free_And_Reset_Dot_Structure(&rcb->Dots);
   }
 
   ierr = Zoltan_RB_Build_Structure(zz, &(rcb->Global_IDs), &(rcb->Local_IDs),
                                &(rcb->Dots), num_obj, max_obj,
                                &(rcb->Num_Dim),
-                               wgtflag, overalloc, use_ids);
+                               wgtflag, overalloc, use_ids, 1);
   if (ierr) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, 
                        "Error returned from Zoltan_RB_Build_Structure.");
@@ -114,8 +114,9 @@ RCB_STRUCT *rcb;                      /* Data structure for RCB.             */
     ZOLTAN_FREE(&(rcb->Box));
     ZOLTAN_FREE(&(rcb->Global_IDs));
     ZOLTAN_FREE(&(rcb->Local_IDs));
-    ZOLTAN_FREE(&(rcb->Dots));
+    Zoltan_Free_And_Reset_Dot_Structure(&rcb->Dots);
     ZOLTAN_FREE(&(zz->LB.Data_Structure));
+
   }
 }
 
@@ -173,7 +174,6 @@ void Zoltan_RCB_Print_Structure(ZZ *zz, int howMany)
 {
   int num_obj, i, len;
   RCB_STRUCT *rcb;
-  struct Dot_Struct dot;
   struct rcb_tree r;
   struct rcb_box *b;
   int printed = 0;
@@ -182,6 +182,8 @@ void Zoltan_RCB_Print_Structure(ZZ *zz, int howMany)
   num_obj = Zoltan_Print_Obj_List(zz, rcb->Global_IDs, rcb->Local_IDs, 
     0, NULL, NULL, howMany);
 
+#if 0               /* TODO64 fix this */
+  struct Dot_Struct dot;
   for (i=0; rcb->Dots && (i<num_obj); i++){
     dot = rcb->Dots[i];
     printf("(Dots %d) (%6.4f %6.4f %6.4f) (%6.4f %6.4f %6.4f %6.4f) proc %d, part %d, new part %dn",
@@ -193,7 +195,7 @@ void Zoltan_RCB_Print_Structure(ZZ *zz, int howMany)
   if (!printed){
     printf("Dots: NULL\n");
   }
-
+#endif
   len = zz->LB.Num_Global_Parts;
   printed = 0;
 

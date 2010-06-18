@@ -66,7 +66,7 @@ static void remove_random_vertices(MESH_INFO_PTR mesh, int iter, float factor);
 static void print_mesh(int proc, MESH_INFO_PTR m, int *tp, int *the, int *tv);
 #endif
 
-static int my_rank=-1;
+int my_rank=-1;
 
 void meminfo_signal_handler(int sig)
 {

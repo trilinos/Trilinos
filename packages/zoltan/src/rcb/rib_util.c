@@ -48,7 +48,6 @@ int            i, ierr = 0;
     rib->Tree_Ptr = NULL;
     rib->Global_IDs = NULL;
     rib->Local_IDs = NULL;
-    rib->Dots = NULL;
 
     Zoltan_Initialize_Transformation(&(rib->Tran));
 
@@ -77,7 +76,7 @@ int            i, ierr = 0;
 
   ierr = Zoltan_RB_Build_Structure(zz, &(rib->Global_IDs), &(rib->Local_IDs),
                                &(rib->Dots), num_obj, max_obj, &(rib->Num_Geom),
-                               wgtflag, overalloc, use_ids);
+                               wgtflag, overalloc, use_ids, 0);
   if (ierr) {
     ZOLTAN_PRINT_ERROR(zz->Proc, yo,
                        "Error returned from Zoltan_RB_Build_Structure.");
@@ -103,7 +102,7 @@ RIB_STRUCT    *rib;                   /* Data structure for RIB. */
     ZOLTAN_FREE(&(rib->Tree_Ptr));
     ZOLTAN_FREE(&(rib->Global_IDs));
     ZOLTAN_FREE(&(rib->Local_IDs));
-    ZOLTAN_FREE(&(rib->Dots));
+    Zoltan_Free_And_Reset_Dot_Structure(&rib->Dots);
     ZOLTAN_FREE(&(zz->LB.Data_Structure));
   }
 }
@@ -157,7 +156,6 @@ void Zoltan_RIB_Print_Structure(ZZ *zz, int howMany)
 {
   int num_obj, i, len;
   RIB_STRUCT *rib;
-  struct Dot_Struct dot;
   struct rib_tree r;
   int printed = 0;
 
@@ -165,6 +163,8 @@ void Zoltan_RIB_Print_Structure(ZZ *zz, int howMany)
   num_obj = Zoltan_Print_Obj_List(zz, rib->Global_IDs, rib->Local_IDs,
     0, NULL, NULL, howMany);
 
+#if 0
+  struct Dot_Struct dot;
   for (i=0; rib->Dots && (i<num_obj); i++){
     dot = rib->Dots[i];
     printf("(Dots %d) (%6.4f %6.4f %6.4f) (%6.4f %6.4f %6.4f %6.4f) proc %d, part %d, new part %dn",
@@ -176,6 +176,7 @@ void Zoltan_RIB_Print_Structure(ZZ *zz, int howMany)
   if (!printed){
     printf("Dots: NULL\n");
   }
+#endif
 
   len = zz->LB.Num_Global_Parts;
   printed = 0;

@@ -61,7 +61,8 @@ int Zoltan_RB_find_median(
                            of communicators should be done (to avoid memory
                            leaks in tflops' Comm_Dup and Comm_Split).        */
   double *dots,         /* array of coordinates                              */
-  double *wgts,         /* array of weights associated with dots             */
+  double *wgts,         /* array of weights associated with dots, or NULL    */
+  double uniformWeight, /* weight of every dot, or 0.0 if wgts != NULL */ 
   int *dotmark,         /* returned list of which side of the median
                            each dot is on:
                                 0 - dot is < valuehalf
@@ -96,6 +97,7 @@ int Zoltan_RB_find_median(
   double  targetlo, targethi;        /* desired wt in lower half */
   double  weightlo, weighthi;        /* wt in lower/upper half of non-active */
   double  tmp_half = 0.0;
+  double  tmp_wgt;
 
   int     i, j, k, numlist;
   int     first_iteration;
@@ -239,30 +241,30 @@ int Zoltan_RB_find_median(
       for (j = 0; j < numlist; j++) {
         i = dotlist[j];
         if (dots[i] <= tmp_half) {            /* in lower part */
-          medme.totallo += wgts[i];
+          medme.totallo += (wgts ? wgts[i] : uniformWeight);
           dotmark[i] = 0;
           if (dots[i] > medme.valuelo) {       /* my closest dot */
             medme.valuelo = dots[i];
-            medme.wtlo = wgts[i];
+            medme.wtlo = (wgts ? wgts[i] : uniformWeight);
             medme.countlo = 1;
             indexlo = i;
           }                                            /* tied for closest */
           else if (dots[i] == medme.valuelo) {
-            medme.wtlo += wgts[i];
+            medme.wtlo += (wgts ? wgts[i] : uniformWeight);
             medme.countlo++;
           }
         }
         else {                                         /* in upper part */
-          medme.totalhi += wgts[i];
+          medme.totalhi += (wgts ? wgts[i] : uniformWeight);
           dotmark[i] = 1;
           if (dots[i] < medme.valuehi) {       /* my closest dot */
             medme.valuehi = dots[i];
-            medme.wthi = wgts[i];
+            medme.wthi = (wgts ? wgts[i] : uniformWeight);
             medme.counthi = 1;
             indexhi = i;
           }                                            /* tied for closest */
           else if (dots[i] == medme.valuehi) {
-            medme.wthi += wgts[i];
+            medme.wthi += (wgts ? wgts[i] : uniformWeight);
             medme.counthi++;
           }
         }
@@ -332,9 +334,10 @@ int Zoltan_RB_find_median(
           for (j = 0, wtsum = 0.0; j < numlist && wtsum < wtok; j++) {
             i = dotlist[j];
             if (dots[i] == med.valuehi) { /* only move if better */
-              if (wtsum + wgts[i] - wtok < wtok - wtsum) {
+              tmp_wgt = (wgts ? wgts[i] : uniformWeight);
+              if (wtsum + tmp_wgt - wtok < wtok - wtsum) {
                 dotmark[i] = 0;
-                wtsum += wgts[i];  /* KDD Moved sum inside if test 1/2002 */
+                wtsum += tmp_wgt;  /* KDD Moved sum inside if test 1/2002 */
               }
             }
           }
@@ -403,9 +406,10 @@ int Zoltan_RB_find_median(
           for (j = 0, wtsum = 0.0; j < numlist && wtsum < wtok; j++) {
             i = dotlist[j];
             if (dots[i] == med.valuelo) { /* only move if better */
-              if (wtsum + wgts[i] - wtok < wtok - wtsum) {
+              tmp_wgt = (wgts ? wgts[i] : uniformWeight);
+              if (wtsum + tmp_wgt - wtok < wtok - wtsum) {
                 dotmark[i] = 1;
-                wtsum += wgts[i]; /* KDD Moved sum inside if test 1/2002 */
+                wtsum += tmp_wgt; /* KDD Moved sum inside if test 1/2002 */
               }
             }
           }

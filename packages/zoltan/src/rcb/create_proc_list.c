@@ -82,7 +82,7 @@ int Zoltan_RB_Create_Proc_List(
         send[rank] = outgoing;
         send[rank+nprocs] = dotnum - outgoing;
         send[rank+2*nprocs] = set;
-        Zoltan_RB_Gather(send, tmp_send, proclower, rank, nprocs, comm);  /* TODO64 use ZOLTAN_GNO_TYPEs */
+        Zoltan_RB_Gather(send, tmp_send, proclower, rank, nprocs, comm);
      }
      else {
         for (i = 3*nprocs-1; i >= 0; i--)

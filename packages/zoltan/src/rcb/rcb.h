@@ -60,7 +60,7 @@ typedef struct RCB_Struct {
                                 reallocated separately from Dots. 
                                 This array is NOT used if Zoltan_RB_Use_IDs 
                                 returns FALSE.   */
-  struct Dot_Struct *Dots;     
+  struct Dot_Struct Dots;       /* coordinates, weights, etc */
   struct rcb_tree *Tree_Ptr;
   struct rcb_box *Box;
   int Num_Dim;    /* Number of dimensions in the input geometry. */
