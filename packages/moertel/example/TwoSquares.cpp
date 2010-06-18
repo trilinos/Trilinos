@@ -50,6 +50,10 @@
 #include "Galeri_Utils.h"
 #include "Galeri_FiniteElements.h"
 
+#ifdef EXODUS_OUTPUT
+#include "ExodusInterface.h"
+#endif
+
 using namespace Galeri;
 using namespace Galeri::FiniteElements;
 
@@ -118,6 +122,8 @@ int main(int argc, char *argv[])
   Epetra_SerialComm Comm;
 #endif
 
+  int status = 0; // return status
+
   try {
 
     // this example is in serial only
@@ -163,7 +169,8 @@ int main(int argc, char *argv[])
     // ------------------------------------------------------------- //
     // create an empty MOERTEL::Interface, in this example just one
     // ------------------------------------------------------------- //
-    int printlevel = 9; // ( moertel takes values 0 - 10 )
+    int printlevel = 0; // ( moertel takes values 0 - 10 )
+    //int printlevel = 9; // ( moertel takes values 0 - 10 )
     MOERTEL::Interface interface(0,true,Comm,printlevel);
     
     // ------------------------------------------------------------- //
@@ -451,12 +458,22 @@ int main(int argc, char *argv[])
     //manager.SetInputMatrix(&A,false);
     //manager.Solve(list,LHS,RHS);
 
+#ifdef EXODUS_OUTPUT
+
+    // ==================    //
+    // Output using ExodusII //
+    // ==================    //
+    ExodusInterface exodus(Comm);
+    exodus.Write(Grid, "output", LHS);
+#else
+
     // ================== //
     // Output using MEDIT //
     // ================== //
     
     MEDITInterface MEDIT(Comm);
     MEDIT.Write(Grid, "output", LHS);
+#endif
 
   }
   catch (int e) {
@@ -466,9 +483,18 @@ int main(int argc, char *argv[])
     cerr << "Caught generic exception" << endl;
   }
 
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
-  return(0);
+    if (status == 0) 
+      std::cout << "\nTest passed!" << endl;
+    else
+      std::cout << "\nTest Failed!" << endl;
+
+
+ // Final return value (0 = successfull, non-zero = failure)
+
+  return status;
 }
