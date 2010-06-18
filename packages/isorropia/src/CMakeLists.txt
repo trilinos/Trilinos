@@ -95,6 +95,8 @@ IF (${PACKAGE_NAME}_ENABLE_TPETRA)
        tpetra/Isorropia_TpetraCostDescriber.hpp
        tpetra/Isorropia_TpetraOperator.hpp
        tpetra/Isorropia_TpetraPartitioner.hpp
+       tpetra/Isorropia_Tpetra.hpp
+       tpetra/Isorropia_TpetraRedistributor.hpp
        tpetra/Isorropia_TpetraLibrary.hpp
        tpetra/Isorropia_TpetraLevelScheduler.hpp
       )
@@ -103,6 +105,8 @@ IF (${PACKAGE_NAME}_ENABLE_TPETRA)
        tpetra/Isorropia_TpetraCostDescriber.cpp
        tpetra/Isorropia_TpetraOperator.cpp
        tpetra/Isorropia_TpetraPartitioner.cpp
+       tpetra/Isorropia_Tpetra.cpp
+       tpetra/Isorropia_TpetraRedistributor.cpp
        tpetra/Isorropia_TpetraLibrary.cpp
        tpetra/Isorropia_TpetraLevelScheduler.cpp
       )
