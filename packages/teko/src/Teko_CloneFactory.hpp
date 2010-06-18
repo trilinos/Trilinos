@@ -65,16 +65,30 @@ public:
    virtual Teuchos::RCP<Cloneable> clone() const = 0;
 };
 
+/** Class that simply prevents the autoclone object
+  * from uneccessarily calling a constructor.
+  */
+class AutoCloneDummy {};
+
 /** Class that provides an easy way to create a cloneable
   * class. All that is required is that the user implements
   * a default constructor. This also serves as a model for
   * creating other AutoClone-like interfaces. 
   *
-  * \note Use of this class assumes the BaseType class has
-  *       a default constructor and does not override
-  *       the clone method.
+  * The template parameter <code>CloneType</code> describes
+  * the type of cloned object to returned. An object returned
+  * from <code>AutoClone::clone</code> will be typed as
+  * <code>CloneType</code>. The <code>BaseType</code> is the
+  * parent type of the cloned object created. It is included,
+  * with default <code>AutoCloneDummy</code>, so that no
+  * instantiaions of <code>CloneType</code> are unnecessarily
+  * created.
+  *
+  * \note Use of this class assumes the CloneType and BaseType 
+  *       classes have a default constructor and does not
+  *       override the clone method.
   */
-template <class BaseType>
+template <class CloneType,class BaseType=AutoCloneDummy>
 class AutoClone : public Cloneable, public BaseType {
 public:
    virtual ~AutoClone() {}
@@ -94,7 +108,7 @@ public:
      *          type is returned
      */
    virtual Teuchos::RCP<Cloneable> clone() const
-   { return Teuchos::rcp(new AutoClone<BaseType>()); }
+   { return Teuchos::rcp(new AutoClone<CloneType,CloneType>()); }
 
 private:
    // hidden

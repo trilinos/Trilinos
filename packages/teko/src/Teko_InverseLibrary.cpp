@@ -374,7 +374,7 @@ void InverseLibrary::PrintAvailableInverses(std::ostream & os) const
       os << std::endl;
    }
 
-   os << "Block Preconditioners: " << std::endl;
+   os << "Teko Preconditioners: " << std::endl;
    os << "********************************" << std::endl;
    for(itr=blockPrecond_.begin();itr!=blockPrecond_.end();++itr) {
       os << "name = \"" << itr->first << "\"" << std::endl;
