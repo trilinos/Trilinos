@@ -10,7 +10,6 @@
 #define _fei_VectorSpace_hpp_
 
 #include <fei_macros.hpp>
-#include <fei_constants.hpp>
 #include <fei_fwd.hpp>
 #include <fei_SharedPtr.hpp>
 #include <fei_Logger.hpp>
@@ -95,26 +94,16 @@ namespace fei {
         Example: a velocity field might be defined as fieldID 5, size 3.<br>
 
         @param numFields Input. Length of the fieldIDs and fieldSizes lists.
-
         @param fieldIDs Input. List of user-supplied field-identifiers.
-           Convention: Active solution-space fields should generally be denoted
-           by non-negative field-identifiers, while "other" fields (such as
-           geometric coordinates) should be denoted by negative field-identifiers.
-
+        Convention: Active solution-space fields should generally be denoted
+        by non-negative field-identifiers, while "other" fields (such as
+        geometric coordinates) should be denoted by negative field-identifiers.
         @param fieldSizes Input. List of user-specified field-sizes. A
-           field-size is the number of scalar components that make up a field.
-
-        @param fieldTypes Input. List of user-specified field-types in the form
-           of ints as defined in fei_constants.hpp. If not specified, fei::UNKNOWN will
-           be used as a default. If you are specifying a vector-field such as
-           displacement, use field-size==3 and field-type==fei::DISPLACEMENT. Internally,
-           fei will map the scalar components of the field to DISPLACEMENT_X,
-           DISPLACEMENT_Y, etc.
+        field-size is the number of scalar components that make up a field.
     */
     void defineFields(int numFields,
                       const int* fieldIDs,
-                      const int* fieldSizes,
-                      const int* fieldTypes = NULL);
+                      const int* fieldSizes);
 
     /** Define identifier-types in this solution space. <br>
         For example, define node-identifiers to be type 0, edge-identifiers to

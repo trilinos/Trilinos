@@ -44,10 +44,10 @@ namespace snl_fei {
     static int setDirichletBCs(FiniteElementData* mat,
 			       int numBCs,
 			       const int* nodeNumbers,
-			       const int* dofOffsets,
+			       const int* dof_ids,
 			       const double* values)
       { return( mat->setDirichletBCs(numBCs, nodeNumbers,
-				     dofOffsets, values) ); }
+				     dof_ids, values) ); }
 
   };//struct FEMatrixTraits
 }//namespace snl_fei

@@ -131,8 +131,7 @@ namespace fei {
     int getAssociatedNodeID(int eqnNumber);
 
     /** Implementation of Lookup:: method */
-    int getAssociatedFieldID(int eqnNumber)
-      { return(-1); }
+    int getAssociatedFieldID(int eqnNumber);
 
     /** Implementation of Lookup:: method */
     bool isInLocalElement(int nodeNumber);

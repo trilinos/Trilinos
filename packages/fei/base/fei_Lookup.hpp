@@ -5,16 +5,9 @@
 
 /**  
   This interface is intended to be used by a LinearSystemCore implementation
-  (or a ESI_Broker or FiniteElementData implementation) to look up various
+  or a FiniteElementData implementation to look up various
   information about the structure of the finite-element problem being assembled
   into LinearSystemCore by a FEI implementation.
-  
-  Lookup basically provides the query functions from the FEI implementation's
-  SNL_FEI_Structure class. However, unlike the SNL_FEI_Structure header, this 
-  header can be included without also including a  bunch of other non-public
-  FEI implementation headers. SNL_FEI_Structure also provides a lot of 
-  functions for *setting* the structural information, which the
-  LinearSystemCore object doesn't need access to.
   
   Background:
     The finite element problem consists of a set of element-blocks, each of
@@ -55,7 +48,7 @@ class Lookup {
  */
    virtual int getNumFields() = 0;
 
-  /** Given a fieldID, obtain the associated fieldSize
+  /** Given a fieldID, obtain the associated fieldSize (number of scalar components)
      @param fieldID integer identifier for a field
   */
    virtual int getFieldSize(int fieldID) = 0;
@@ -72,7 +65,7 @@ class Lookup {
    virtual const int* getFieldSizesPtr() = 0;
 
 
-  /** Returns the number of element-blocks in the (local) finite-element
+  /** Return the number of element-blocks in the (local) finite-element
     problem.
   */
    virtual int getNumElemBlocks() = 0;

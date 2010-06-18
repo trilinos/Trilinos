@@ -105,6 +105,51 @@ int fei::Lookup_Impl::getAssociatedNodeID(int eqnNumber)
   return( node->getID() );
 }
 
+//----------------------------------------------------------------------------
+int fei::Lookup_Impl::getAssociatedFieldID(int eqnNumber)
+{
+  std::map<int,fei::Record<int>*>::iterator
+    enp_iter = eqnnumPairs_.find(eqnNumber);
+
+  if (enp_iter == eqnnumPairs_.end()) return(-1);
+
+  fei::Record<int>* node = (*enp_iter).second;
+
+  fei::FieldMask* fm = node->getFieldMask();
+  const std::vector<int>& fieldIDs = fm->getFieldIDs();
+  const std::vector<int>& fieldSizes = fm->getFieldSizes();
+
+  const std::vector<int>& eqnNumbers = vspace_->getEqnNumbers();
+
+  int baseEqnOffset = node->getOffsetIntoEqnNumbers();
+  int numNodalEqns = fm->getNumIndices();
+
+  if (baseEqnOffset + numNodalEqns > (int)eqnNumbers.size()) {
+    throw std::runtime_error("fei::Lookup_Impl::getAssociatedFieldID ERROR, nodal eqn offset out of range.");
+  }
+
+  int offset = 0;
+  int eqn = eqnNumbers[baseEqnOffset];
+  while(eqn < eqnNumber && offset < numNodalEqns) {
+    eqn = eqnNumbers[baseEqnOffset + ++offset];
+  }
+
+  if (eqn != eqnNumber) {
+    throw std::runtime_error("fei::Lookup_Impl::getAssociatedFieldID ERROR, eqnNumber not found");
+  }
+
+  int fieldSize_total = 0;
+  for(size_t i=0; i<fieldSizes.size(); ++i) {
+    fieldSize_total += fieldSizes[i];
+    if (fieldSize_total > offset) {
+      return fieldIDs[i];
+    }
+  }
+
+  return -1;
+}
+
+//----------------------------------------------------------------------------
 bool fei::Lookup_Impl::isInLocalElement(int nodeNumber)
 {
   std::map<int,std::vector<int>* >::iterator

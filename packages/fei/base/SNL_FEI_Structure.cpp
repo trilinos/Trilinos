@@ -356,8 +356,7 @@ int SNL_FEI_Structure::getOwnerProcForEqn(int eqn)
 //------------------------------------------------------------------------------
 int SNL_FEI_Structure::initFields(int numFields, 
 				 const int *fieldSizes, 
-				 const int *fieldIDs,
-         const int * /*fieldTypes */)
+				 const int *fieldIDs)
 {
   // store the incoming solution fields
   //
@@ -379,7 +378,9 @@ int SNL_FEI_Structure::initFields(int numFields,
 
   for (int i=0; i<numFields; i++) {
     fieldDatabase_->insert(std::pair<int,int>(fieldIDs[i], fieldSizes[i]));
-    fieldDofMap_.add_field(fieldIDs[i], fieldSizes[i]);
+    if (fieldIDs[i] >= 0) {
+      fieldDofMap_.add_field(fieldIDs[i], fieldSizes[i]);
+    }
   }
 
   return(FEI_SUCCESS);

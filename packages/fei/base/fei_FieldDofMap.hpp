@@ -10,7 +10,6 @@
 #define _fei_FieldDofMap_hpp_
 
 #include <fei_macros.hpp>
-#include <fei_constants.hpp>
 
 namespace fei {
 

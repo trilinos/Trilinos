@@ -104,6 +104,33 @@ bool NodeDescriptor::getFieldEqnNumber(int fieldID, int& eqnNumber) const
 }
 
 //==============================================================================
+void NodeDescriptor::getFieldID(int eqnNumber, int& fieldID, int& offset_into_field) const
+{
+  if (numFields_ < 1) {
+    throw std::runtime_error("fei::NodeDescriptor::getFieldID ERROR, no nodal dofs on this node.");
+  }
+
+  int firstNodalEqn = fieldEqnNumbers_[0];
+  if (eqnNumber - firstNodalEqn > numNodalDOF_) {
+    throw std::runtime_error("fei::NodeDescriptor::getFieldID ERROR, eqnNumber out of range.");
+  }
+
+  bool found_field = false;
+  for(int i=numFields_-1; i>=0; --i) {
+    if (fieldEqnNumbers_[i] <= eqnNumber) {
+      fieldID = fieldIDList_[i];
+      offset_into_field = eqnNumber - fieldEqnNumbers_[i];
+      found_field = true;
+      break;
+    }
+  }
+
+  if (!found_field) {
+    throw std::runtime_error("fei::NodeDescriptor::getFieldID ERROR, fieldID not found for eqnNumber.");
+  }
+}
+
+//==============================================================================
 bool NodeDescriptor::containedInBlock(GlobalID blk) const
 {
   //return true if this node is contained in element-block 'blk'.

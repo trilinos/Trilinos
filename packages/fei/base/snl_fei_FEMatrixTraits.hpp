@@ -44,7 +44,7 @@ namespace snl_fei {
     static int setDirichletBCs(T* mat,
 			       int numBCs,
 			       const int* nodeNumbers,
-			       const int* dofOffsets,
+			       const int* dof_ids,
 			       const double* values)
       { return(-1); }
 
