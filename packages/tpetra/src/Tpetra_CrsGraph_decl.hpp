@@ -310,7 +310,7 @@ namespace Tpetra {
 
       //@}
 
-      //! @name Overridden from Tpetra::DistObject
+      //! @name Methods implementing Tpetra::DistObject
       //@{
 
       bool checkSizes(const DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>& source);
