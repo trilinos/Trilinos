@@ -31,7 +31,7 @@
 
 #
 # System imports
-from   numpy    import *
+import numpy
 from   optparse import *
 import sys
 import unittest
@@ -54,6 +54,7 @@ options,args = parser.parse_args()
 # we want to be able to control whether we import from the build directory or
 # from a system-installed version of PyTrilinos.
 from testutil import fromPyTrilinosImport
+Teuchos   = fromPyTrilinosImport('Teuchos'  , options.testharness)
 Epetra    = fromPyTrilinosImport('Epetra'   , options.testharness)
 EpetraExt = fromPyTrilinosImport('EpetraExt', options.testharness)
 
@@ -168,6 +169,62 @@ class HDF5TestCase(unittest.TestCase):
         self.assertEqual(props[4], crsg.MaxNumIndices()     )
         self.hdf5.Close()
 
+    def testIntVector(self):
+        "Test EpetraExt HDF5 IntVector write/read"
+        start = self.comm.MyPID()*9
+        stop  = start + 9
+        data = numpy.arange(start, stop)
+        iv = Epetra.IntVector(self.map, data)
+        self.hdf5.Create(self.name)
+        group = "IntVector"
+        self.hdf5.Write(group, iv)
+        self.hdf5.Close()
+        self.hdf5.Open(self.name)
+        self.failUnless(self.hdf5.IsContained(group))
+        iv2 = self.hdf5.ReadIntVector(group)
+        self.failUnless((iv[:] == data[:]).all())
+        props = self.hdf5.ReadIntVectorProperties(group)
+        self.assertEqual(props, self.size)
+        self.hdf5.Close()
+
+    def testMultiVector(self):
+        "Test EpetraExt HDF5 MultiVector write/read"
+        start = self.comm.MyPID()*9.0
+        stop  = start + 9.0
+        data = numpy.arange(start, stop)
+        mv = Epetra.MultiVector(self.map, data)
+        self.hdf5.Create(self.name)
+        group = "MultiVector"
+        self.hdf5.Write(group, mv)
+        self.hdf5.Close()
+        self.hdf5.Open(self.name)
+        self.failUnless(self.hdf5.IsContained(group))
+        mv2 = self.hdf5.ReadMultiVector(group)
+        self.failUnless((mv[:] == data[:]).all())
+        props = self.hdf5.ReadMultiVectorProperties(group)
+        self.assertEqual(props[0], self.size)
+        self.assertEqual(props[1], 1        )
+        self.hdf5.Close()
+
+    def testVector(self):
+        "Test EpetraExt HDF5 Vector write/read"
+        start = self.comm.MyPID()*9.0
+        stop  = start + 9.0
+        data = numpy.arange(start, stop)
+        v = Epetra.Vector(self.map, data)
+        self.hdf5.Create(self.name)
+        group = "Vector"
+        self.hdf5.Write(group, v)
+        self.hdf5.Close()
+        self.hdf5.Open(self.name)
+        self.failUnless(self.hdf5.IsContained(group))
+        v2 = self.hdf5.ReadMultiVector(group)
+        self.failUnless((v[:] == data[:]).all())
+        props = self.hdf5.ReadMultiVectorProperties(group)
+        self.assertEqual(props[0], self.size)
+        self.assertEqual(props[1], 1        )
+        self.hdf5.Close()
+
     def testCrsMatrix(self):
         "Test EpetraExt HDF5 CrsMatrix write/read"
         crsm = Epetra.CrsMatrix(Epetra.Copy, self.map, 3)
@@ -196,6 +253,23 @@ class HDF5TestCase(unittest.TestCase):
         self.assertEqual(props[4], crsm.MaxNumEntries()     )
         self.assertEqual(props[5], crsm.NormOne()           )
         self.assertEqual(props[6], crsm.NormInf()           )
+        self.hdf5.Close()
+
+    def testParameterList(self):
+        "Test EpetraExt HDF5 Teuchos.ParameterList write/read"
+        plDict = {"title"     : "Simulation",
+                  "tolerance" : 1.0e-6,
+                  "max iters" : 100          }
+        #tpl = Teuchos.ParameterList(plDict)
+        self.hdf5.Create(self.name)
+        group = "ParameterList"
+        self.hdf5.Write(group, plDict)
+        self.hdf5.Close()
+        self.hdf5.Open(self.name)
+        self.failUnless(self.hdf5.IsContained(group))
+        tpl = self.hdf5.ReadParameterList(group)
+        self.failUnless(isinstance(tpl, Teuchos.ParameterList))
+        self.assertEqual(tpl, plDict)
         self.hdf5.Close()
 
 ####################################################################
