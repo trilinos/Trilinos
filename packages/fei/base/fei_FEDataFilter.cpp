@@ -499,13 +499,13 @@ int FEDataFilter::initLinSysCore()
 
     int total_num_dof = 0;
     std::vector<int>& masterFieldIDs = cr.getMasterFieldIDs();
-    for(size_t k=0; k<masterFieldIDs.size(); ++k) {
+    for(int k=0; k<masterFieldIDs.size(); ++k) {
       total_num_dof += problemStructure_->getFieldSize(masterFieldIDs[k]);
     }
 
     dof_ids.resize(total_num_dof);
     int doffset = 0;
-    for(size_t k=0; k<masterFieldIDs.size(); ++k) {
+    for(int k=0; k<masterFieldIDs.size(); ++k) {
       int field_size = problemStructure_->getFieldSize(masterFieldIDs[k]);
       for(int dof_offset=0; dof_offset<field_size; ++dof_offset) {
         dof_ids[doffset++] = fdmap.get_dof_id(masterFieldIDs[k], dof_offset);
