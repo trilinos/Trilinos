@@ -160,6 +160,13 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test)
       Epetra_SerialComm Comm;
    #endif
 
+   // build linear op tester
+   bool result;
+   Thyra::LinearOpTester<double> tester;
+   tester.show_all_tests(true);
+   tester.set_all_error_tol(1e-14);
+
+   // build operators and factories
    RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos();
    RCP<Teko::InverseFactory> subsolve = invLib->getInverseFactory("Amesos");
 
@@ -168,14 +175,22 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test)
    RCP<Teko::PreconditionerFactory> dspf = rcp(new Teko::DiagonallyScaledPreconditionerFactory(subsolve));
    RCP<Teko::InverseFactory> invFact = rcp(new Teko::PreconditionerInverseFactory(dspf,Teuchos::null));
 
-   Teko::LinearOp invA = Teko::buildInverse(*invFact,A);
+   // test build inverse capability
+   Teko::ModifiableLinearOp invA = Teko::buildInverse(*invFact,A);
    Teko::LinearOp invExactA = Teko::buildInverse(*subsolve,A);
 
-   Thyra::LinearOpTester<double> tester;
-   tester.show_all_tests(true);
-   tester.set_all_error_tol(1e-14);
+   result = tester.compare( *invA, *invExactA, &out);
+   if (!result) {
+      out << "Apply 0: FAILURE" << std::endl;
+      success = false;
+   }
+   else
+      out << "Apply 0: SUCCESS" << std::endl;
 
-   const bool result = tester.compare( *invA, *invExactA, &out);
+   // test Diagonally scaled rebuild capability
+   Teko::rebuildInverse(*invFact,A,invA);
+
+   result = tester.compare( *invA, *invExactA, &out);
    if (!result) {
       out << "Apply 0: FAILURE" << std::endl;
       success = false;
