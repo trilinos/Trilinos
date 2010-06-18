@@ -42,6 +42,7 @@
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_RowMatrix.hpp"
+#include "Tpetra_DistObject.hpp"
 #include "Tpetra_CrsGraph.hpp"
 #include "Tpetra_Vector.hpp"
 #include "Tpetra_CrsMatrixMultiplyOp_decl.hpp"
@@ -92,7 +93,8 @@ namespace Tpetra {
    *
    */
   template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatVec = Kokkos::DefaultSparseMultiply<Scalar,LocalOrdinal,Node>, class LocalMatSolve = Kokkos::DefaultSparseSolve<Scalar,LocalOrdinal,Node> >
-  class CrsMatrix : public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
+  class CrsMatrix : public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
+                    public DistObject<char, LocalOrdinal,GlobalOrdinal,Node> {
     public:
       typedef Scalar        scalar_type;
       typedef LocalOrdinal  local_ordinal_type;
@@ -412,6 +414,31 @@ namespace Tpetra {
 
       //@}
 
+      //! @name Methods implementing Tpetra::DistObject
+      //@{
+
+      bool checkSizes(const DistObject<char, LocalOrdinal,GlobalOrdinal,Node>& source);
+
+      void copyAndPermute(const DistObject<char, LocalOrdinal,GlobalOrdinal,Node>& source,
+                          size_t numSameIDs,
+                          const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
+                          const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs);
+
+      void packAndPrepare(const DistObject<char, LocalOrdinal,GlobalOrdinal,Node>& source,
+                          const Teuchos::ArrayView<const LocalOrdinal> &exportLIDs,
+                          Teuchos::Array<char> &exports,
+                          const Teuchos::ArrayView<size_t> & numPacketsPerLID,
+                          size_t& constantNumPackets,
+                          Distributor &distor);
+
+      void unpackAndCombine(const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
+                            const Teuchos::ArrayView<const char> &imports,
+                            const Teuchos::ArrayView<size_t> &numPacketsPerLID,
+                            size_t constantNumPackets,
+                            Distributor &distor,
+                            CombineMode CM);
+      //@}
+
     private:
       // copy constructor disabled
       CrsMatrix(const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> &Source);
@@ -428,6 +455,7 @@ namespace Tpetra {
         GraphAlreadyAllocated,
         GraphNotYetAllocated
       };
+
       void allocateValues( typename CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::AllocateLocalGlobal lg, Scalar alpha, GraphAllocationStatus gas);
       void sortEntries();
       void mergeRedundantEntries();
