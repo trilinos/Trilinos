@@ -190,8 +190,8 @@ namespace {
                                tgt_map = createContigMap<Ordinal,Ordinal>(INVALID,tgt_num_local_elements,comm);
 
       // create CrsGraph objects
-      RCP<CrsMatrix<Scalar,Ordinal> > src_mat = rcp(new CrsMatrix<Scalar,Ordinal>(src_map, 1)),
-                                      tgt_mat = rcp(new CrsMatrix<Scalar,Ordinal>(tgt_map, 1));
+      RCP<CrsMatrix<Scalar,Ordinal> > src_mat = rcp(new CrsMatrix<Scalar,Ordinal>(src_map, 1)), // finish: staticprofile
+                                      tgt_mat = rcp(new CrsMatrix<Scalar,Ordinal>(tgt_map, 1)); // finish: staticprofile
 
       // Create a simple diagonal src-graph:
       for (Ordinal globalrow = src_map->getMinGlobalIndex(); globalrow <= src_map->getMaxGlobalIndex(); ++globalrow) 

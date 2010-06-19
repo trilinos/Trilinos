@@ -2282,56 +2282,69 @@ namespace Tpetra {
     size_t maxExpRowLength = 0;
     for (size_t i=0; i<(size_t)exportLIDs.size(); ++i) {
       GlobalOrdinal expGID = src_mat.getMap()->getGlobalElement(exportLIDs[i]);
-      size_t row_length = src_mat.getNumEntriesInGlobalRow(expGID);
+      const size_t row_length = src_mat.getNumEntriesInGlobalRow(expGID);
       numPacketsPerLID[i] = row_length * SizeOfOrdValPair;
       totalNumEntries += row_length;
       maxExpRowLength = (row_length > maxExpRowLength ? row_length : maxExpRowLength);
     }
 
-    // exports is an array of char (bytes). it needs room for all of the indices and values
-    const size_t totalNumBytes = totalNumEntries * SizeOfOrdValPair;
-    exports.resize(totalNumBytes);
-    // get two views: one for the indices and one for the values
-    // exports = [indices values]
-    ArrayView<char> avIndsC = exports(                                    0,totalNumEntries*sizeof(GlobalOrdinal));
-    ArrayView<char> avValsC = exports(totalNumEntries*sizeof(GlobalOrdinal),totalNumEntries*sizeof(Scalar)       );
-    // cast these to arrayview for GlobalOrdinal and Scalar
-    ArrayView<GlobalOrdinal> avInds = Teuchos::av_reinterpret_cast<GlobalOrdinal>(avIndsC);
-    ArrayView<Scalar>        avVals = Teuchos::av_reinterpret_cast<Scalar>(avValsC);
-    // this is checking the post-conditions on av_reinterpret_cast
-    TEST_FOR_EXCEPTION((size_t)avInds.size() != totalNumEntries || (size_t)avVals.size() != totalNumEntries, std::logic_error,
-        Teuchos::typeName(*this) << "::packAndPrepare(): Internal logic error. Please contact Tpetra team.");
-    typename ArrayView<GlobalOrdinal>::iterator curIndPtr = avInds.begin();
-    typename ArrayView<Scalar       >::iterator curValPtr = avVals.begin();
+    // Need to do the following:
+    // [inds_row0 vals_row0 inds_row1 vals_row1 ... inds_rowN vals_rowN]
+    if (totalNumEntries > 0) {
+      // exports is an array of char (bytes). it needs room for all of the indices and values
+      const size_t totalNumBytes = totalNumEntries * SizeOfOrdValPair;
+      exports.resize(totalNumBytes);
 
-    // if global indices exist in the source, then we can use view semantics
-    // otherwise, we are forced to use copy semantics (for the indices; for simplicity, we'll use them for values as well)
-    if (src_is_locally_indexed) {
-      Array<GlobalOrdinal> row_inds(maxExpRowLength);
-      Array<Scalar>        row_vals(maxExpRowLength);
+      ArrayView<char> avIndsC, avValsC;
+      ArrayView<GlobalOrdinal> avInds;
+      ArrayView<Scalar>        avVals;
+
       // now loop again and pack rows of indices into exports:
-      for (size_t i=0; i<(size_t)exportLIDs.size(); ++i) {
-        const GlobalOrdinal GID = src_mat.getMap()->getGlobalElement(exportLIDs[i]);
-        size_t rowSize;
-        src_mat.getGlobalRowCopy(GID, row_inds(), row_vals(), rowSize);
-        std::copy( row_inds.begin(), row_inds.begin()+rowSize, curIndPtr);
-        curIndPtr += rowSize;
-        std::copy( row_vals.begin(), row_vals.begin()+rowSize, curValPtr);
-        curValPtr += rowSize;
+      // if global indices exist in the source, then we can use view semantics
+      // otherwise, we are forced to use copy semantics (for the indices; for simplicity, we'll use them for values as well)
+      size_t curOffsetInBytes = 0;
+      if (src_is_locally_indexed) {
+        Array<GlobalOrdinal> row_inds(maxExpRowLength);
+        Array<Scalar>        row_vals(maxExpRowLength);
+        for (size_t i=0; i<(size_t)exportLIDs.size(); ++i) {
+          // get copy
+          const GlobalOrdinal GID = src_mat.getMap()->getGlobalElement(exportLIDs[i]);
+          size_t rowSize;
+          src_mat.getGlobalRowCopy(GID, row_inds(), row_vals(), rowSize);
+          // get export views
+          avIndsC = exports(curOffsetInBytes,rowSize*sizeof(GlobalOrdinal));
+          avValsC = exports(curOffsetInBytes+rowSize*sizeof(GlobalOrdinal),rowSize*sizeof(Scalar));
+          avInds = Teuchos::av_reinterpret_cast<GlobalOrdinal>(avIndsC);
+          avVals = Teuchos::av_reinterpret_cast<Scalar       >(avValsC);
+          // copy
+          std::copy( row_inds.begin(), row_inds.begin()+rowSize, avInds.begin());
+          std::copy( row_vals.begin(), row_vals.begin()+rowSize, avVals.begin());
+          curOffsetInBytes += SizeOfOrdValPair * rowSize;
+        }
       }
-    }
-    else {
-      ArrayRCP<const GlobalOrdinal> row_inds;
-      ArrayRCP<const Scalar>        row_vals;
-      // now loop again and pack rows of indices into exports:
-      for (size_t i=0; i<(size_t)exportLIDs.size(); ++i) {
-        const GlobalOrdinal GID = src_mat.getMap()->getGlobalElement(exportLIDs[i]);
-        src_mat.getGlobalRowView(GID, row_inds, row_vals);
-        std::copy( row_inds.begin(), row_inds.end(), curIndPtr);
-        curIndPtr += row_inds.size();
-        std::copy( row_vals.begin(), row_vals.end(), curValPtr);
-        curValPtr += row_inds.size();
+      else {
+        ArrayRCP<const GlobalOrdinal> row_inds;
+        ArrayRCP<const Scalar>        row_vals;
+        for (size_t i=0; i<(size_t)exportLIDs.size(); ++i) {
+          // get view
+          const GlobalOrdinal GID = src_mat.getMap()->getGlobalElement(exportLIDs[i]);
+          src_mat.getGlobalRowView(GID, row_inds, row_vals);
+          const size_t rowSize = (size_t)row_inds.size();
+          // get export views
+          avIndsC = exports(curOffsetInBytes,rowSize*sizeof(GlobalOrdinal));
+          avValsC = exports(curOffsetInBytes+rowSize*sizeof(GlobalOrdinal),rowSize*sizeof(Scalar));
+          avInds = Teuchos::av_reinterpret_cast<GlobalOrdinal>(avIndsC);
+          avVals = Teuchos::av_reinterpret_cast<Scalar       >(avValsC);
+          // copy
+          std::copy( row_inds.begin(), row_inds.end(), avInds.begin());
+          std::copy( row_vals.begin(), row_vals.end(), avVals.begin());
+          curOffsetInBytes += SizeOfOrdValPair * rowSize;
+        }
       }
+#ifdef HAVE_TPETRA_DEBUG
+      TEST_FOR_EXCEPTION(curOffsetInBytes != totalNumBytes, std::logic_error,
+          Teuchos::typeName(*this) << "::packAndPrepare(): Internal logic error. Please contact Tpetra team.");
+#endif
     }
   }
 
@@ -2361,24 +2374,32 @@ namespace Tpetra {
     const size_t totalNumBytes = imports.size(); // * sizeof(char), which is one.
     const size_t totalNumEntries = totalNumBytes / SizeOfOrdValPair;
 
-    // get two views in imports: one for the indices and one for the values
-    // imports = [indices values]
-    ArrayView<const char> avIndsC = imports(                                    0,totalNumEntries*sizeof(GlobalOrdinal));
-    ArrayView<const char> avValsC = imports(totalNumEntries*sizeof(GlobalOrdinal),totalNumEntries*sizeof(Scalar)       );
-    // cast these to arrayview for GlobalOrdinal and Scalar
-    ArrayView<const GlobalOrdinal> avInds = Teuchos::av_reinterpret_cast<const GlobalOrdinal>(avIndsC);
-    ArrayView<const Scalar>        avVals = Teuchos::av_reinterpret_cast<const Scalar>(avValsC);
-    // this is checking the post-conditions on av_reinterpret_cast
-    TEST_FOR_EXCEPTION((size_t)avInds.size() != totalNumEntries || (size_t)avVals.size() != totalNumEntries, std::logic_error,
-        Teuchos::typeName(*this) << "::packAndPrepare(): Internal logic error. Please contact Tpetra team.");
+    if (totalNumEntries > 0) {
+      // data packed as follows:
+      // [inds_row0 vals_row0 inds_row1 vals_row1 ...]
+      ArrayView<const char> avIndsC, avValsC;
+      ArrayView<const GlobalOrdinal> avInds;
+      ArrayView<const Scalar>        avVals;
 
-    size_t curOffset = 0;
-    for (size_t i=0; i<(size_t)importLIDs.size(); ++i) {
-      const LocalOrdinal LID = importLIDs[i];
-      const GlobalOrdinal myGID = this->getMap()->getGlobalElement(LID);
-      const size_t row_length = numPacketsPerLID[i] / SizeOfOrdValPair;
-      insertGlobalValues(myGID, avInds(curOffset,row_length), avVals(curOffset,row_length));
-      curOffset += row_length;
+      size_t curOffsetInBytes = 0;
+      for (size_t i=0; i<(size_t)importLIDs.size(); ++i) {
+        // get row info
+        const LocalOrdinal LID = importLIDs[i];
+        const GlobalOrdinal myGID = this->getMap()->getGlobalElement(LID);
+        const size_t rowSize = numPacketsPerLID[i] / SizeOfOrdValPair;
+        // get import views
+        avIndsC = imports(curOffsetInBytes,rowSize*sizeof(GlobalOrdinal));
+        avValsC = imports(curOffsetInBytes+rowSize*sizeof(GlobalOrdinal),rowSize*sizeof(Scalar));
+        avInds = Teuchos::av_reinterpret_cast<const GlobalOrdinal>(avIndsC);
+        avVals = Teuchos::av_reinterpret_cast<const Scalar       >(avValsC);
+        // do insert
+        insertGlobalValues(myGID, avInds(), avVals());
+        curOffsetInBytes += rowSize * SizeOfOrdValPair;
+      }
+#ifdef HAVE_TPETRA_DEBUG
+      TEST_FOR_EXCEPTION(curOffsetInBytes != totalNumBytes, std::logic_error,
+          Teuchos::typeName(*this) << "::packAndPrepare(): Internal logic error. Please contact Tpetra team.");
+#endif
     }
   }
 
