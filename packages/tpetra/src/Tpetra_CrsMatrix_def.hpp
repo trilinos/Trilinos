@@ -165,8 +165,7 @@ namespace Tpetra {
   , constructedWithOptimizedGraph_(false)
   , fillComplete_(false) {
     try {
-      // FINISH: bug. not passing col map to CrsGraph constructor.
-      myGraph_ = Teuchos::rcp( new CrsGraph<LocalOrdinal,GlobalOrdinal,Node>(rowMap,NumEntriesPerRowToAlloc,pftype) );
+      myGraph_ = Teuchos::rcp( new CrsGraph<LocalOrdinal,GlobalOrdinal,Node>(rowMap,colMap,NumEntriesPerRowToAlloc,pftype) );
     }
     catch (std::exception &e) {
       TEST_FOR_EXCEPTION(true, std::runtime_error,

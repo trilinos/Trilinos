@@ -1,8 +1,6 @@
 
 * [Bugs] Possible bug: CrsGraph import/export checks fillComplete() when perhaps it should check indicesAreLocal/indicesAreGlobal. See if this makes a bug.
 
-* [Bugs] Demonstrate/Fix bug in CrsMatrix(CrsGraph,...) constructor (marked in comments as FINISH)
- 
 * Add first-touch
 
 * Add new resumeFill()
