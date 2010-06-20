@@ -1,9 +1,7 @@
 
-* Finish import/export capability in Tpetra::CrsMatrix (IN PROGRESS)
+* [Bugs] Possible bug: CrsGraph import/export checks fillComplete() when perhaps it should check indicesAreLocal/indicesAreGlobal. See if this makes a bug.
 
-* Possible bug: CrsGraph import/export checks fillComplete() when perhaps it should check indicesAreLocal/indicesAreGlobal. See if this makes a bug.
-
-* Demonstrate/Fix bug in CrsMatrix(CrsGraph,...) constructor (marked in comments as FINISH)
+* [Bugs] Demonstrate/Fix bug in CrsMatrix(CrsGraph,...) constructor (marked in comments as FINISH)
  
 * Add first-touch
 
@@ -24,10 +22,8 @@
 
 * Coalesce LocalMatVec and LocalMatSolvein CrsMatrix
   + Node dependency.
-  
-* Address REPLACE mode in CrsMatrix/CrsGraph import/export
 
-* Test 
+* Address REPLACE mode in CrsMatrix/CrsGraph import/export
 
 * add Kokkos-level parallelCopy() and parallelPermute() (compute kernels, not node-member memory primitives)
   - may need to address overlapping
@@ -39,7 +35,7 @@
 * Coalesce fillComplete() code from CrsMatrix into CrsGraph (fill with values)
   - Do this with other duplicated methods where possible (i.e., insertion methods)
   - Don't worry about multi-matrix/one-graph yet; prolly wait for varaidic templates
- 
+
 * Determine appropriate impelementation of checkSizes() in CrsGraph/CrsMatrix
 
 * [As needed in the future] Add Tpetra::MultiScalarOperator abstract interface.
