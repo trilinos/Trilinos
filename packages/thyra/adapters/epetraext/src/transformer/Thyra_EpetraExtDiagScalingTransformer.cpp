@@ -178,15 +178,23 @@ void EpetraExtDiagScalingTransformer::transform(
    if(rightScale) {
       RCP<const Epetra_Vector> v = get_Epetra_Vector(epetra_A->OperatorDomainMap(),dB->getDiag());
 
-      // notice that this does not reuse anything! => could be more efficient
-      epetra_op = Teuchos::rcp(new Epetra_CrsMatrix(*epetra_A));
+      // if needed allocate a new operator, otherwise use old one assuming
+      // constant sparsity
+      if(epetra_op==Teuchos::null)
+         epetra_op = Teuchos::rcp(new Epetra_CrsMatrix(*epetra_A));
+      else
+         *epetra_op = *epetra_A;
       epetra_op->RightScale(*v);
    }
    else {
       RCP<const Epetra_Vector> v = get_Epetra_Vector(epetra_B->OperatorRangeMap(),dA->getDiag());
 
-      // notice that this does not reuse anything! => could be more efficient
-      epetra_op = Teuchos::rcp(new Epetra_CrsMatrix(*epetra_B));
+      // if needed allocate a new operator, otherwise use old one assuming
+      // constant sparsity
+      if(epetra_op==Teuchos::null)
+         epetra_op = Teuchos::rcp(new Epetra_CrsMatrix(*epetra_B));
+      else
+         *epetra_op = *epetra_B;
       epetra_op->LeftScale(*v);
    }
 
