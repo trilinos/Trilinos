@@ -77,8 +77,18 @@ namespace PHX {
 
       std::size_t field_size = size_of_data_type * num_elements;
       std::size_t alignment_size = sizeof(AlignmentT);
-      std::size_t padding = field_size % alignment_size;
+      std::size_t remainder = field_size % alignment_size;
+      std::size_t padding = 0;
+      if (remainder != 0)
+	padding = alignment_size - remainder;
       std::size_t field_size_with_padding = field_size + padding;
+
+//       std::cout << "\nSize of alignment type = " 
+// 		<< alignment_size << std::endl;
+//       std::cout << "Size of field no padding = " << field_size << std::endl;
+//       std::cout << "Size of padding = " << padding << std::endl;
+//       std::cout << "Size of field with padding = " 
+// 		<< field_size_with_padding << std::endl;      
 
       m_total_bytes += field_size_with_padding;
     }
@@ -87,7 +97,25 @@ namespace PHX {
     void setup()
     {
       if (m_total_bytes > 0) {
-        m_memory = Teuchos::arcp<char>(m_total_bytes);
+
+// 	std::cout << "Size of total_bytes = " << m_total_bytes << std::endl;
+// 	std::cout << "Size of alginment type = " 
+// 		  << sizeof(AlignmentT) << std::endl;
+
+	// Make sure the alignment is correct
+	TEST_FOR_EXCEPTION(m_total_bytes % sizeof(AlignmentT) != 0,
+			   std::logic_error,
+			   "Error - a remainder of " 
+			   << m_total_bytes % sizeof(AlignmentT) 
+			   << " exists for the total array size divided by the alignment type size.  The total memory is not aligned with the data type of the contiguous allocator.  This should never happen.  Please contact the Phalanx development team.");
+	
+	// Allocate using alignment type so that the boundaries are correct
+	Teuchos::ArrayRCP<AlignmentT> aligned_memory = 
+	  Teuchos::arcp<AlignmentT>(m_total_bytes / sizeof(AlignmentT));
+
+	m_memory = Teuchos::arcp_reinterpret_cast<char>(aligned_memory);
+
+        //m_memory = Teuchos::arcp<char>(m_total_bytes);
       }
       else {
         m_memory = Teuchos::null;
@@ -104,7 +132,10 @@ namespace PHX {
       std::size_t size_of_data_type = sizeof(DataT);
       std::size_t field_size = size_of_data_type * num_elements;
       std::size_t alignment_size = sizeof(AlignmentT);
-      std::size_t padding = field_size % alignment_size;
+      std::size_t remainder = field_size % alignment_size;
+      std::size_t padding = 0;
+      if (remainder != 0)
+	padding = alignment_size - remainder;
       std::size_t field_size_with_padding = field_size + padding;
 
       TEST_FOR_EXCEPTION(m_offset + field_size_with_padding > m_total_bytes, 
