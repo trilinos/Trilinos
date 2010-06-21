@@ -81,6 +81,19 @@ public:
 
     /** Constructor
 
+    \param[in] input_graph the graph which is to have colors assigned to its rows
+    \param[in] paramlist this parameter list may be used to pass parameters to Zoltan
+    \param[in] compute_now  if @c true, the coloring is computed in the constructor, otherwise call Isorropia::Epetra::Colorer::color when you want to compute the coloring, defaults to @c true
+
+\ingroup coloring_grp
+    */
+
+  Colorer(const Epetra_CrsGraph * input_graph,
+	  const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
+	  bool compute_now=true);
+
+    /** Constructor
+
     \param[in] input_matrix the matrix which is to have colors assigned to its rows
     \param[in] paramlist this parameter list may be used to pass parameters to Zoltan
     \param[in] compute_now  if @c true, the coloring is computed in the constructor, otherwise call Isorropia::Epetra::Colorer::color when you want to compute the coloring, defaults to @c true
@@ -91,6 +104,21 @@ public:
   Colorer(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 	  const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
 	  bool compute_now=true);
+
+
+    /** Constructor
+
+    \param[in] input_matrix the matrix which is to have colors assigned to its rows
+    \param[in] paramlist this parameter list may be used to pass parameters to Zoltan
+    \param[in] compute_now  if @c true, the coloring is computed in the constructor, otherwise call Isorropia::Epetra::Colorer::color when you want to compute the coloring, defaults to @c true
+
+\ingroup coloring_grp
+  */
+
+  Colorer(const Epetra_RowMatrix * input_matrix,
+	  const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
+	  bool compute_now=true);
+
 
   /** Destructor */
   ~Colorer() {} ;

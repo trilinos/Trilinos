@@ -66,7 +66,15 @@ public:
 	  const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
 	  bool compute_now=true);
 
+  Orderer(const Epetra_CrsGraph *input_graph,
+	  const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
+	  bool compute_now=true);
+
   Orderer(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+	  const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
+	  bool compute_now=true);
+
+  Orderer(const Epetra_RowMatrix * input_matrix,
 	  const Teuchos::ParameterList& paramlist=Teuchos::ParameterList("EmptyParameterList"),
 	  bool compute_now=true);
 
