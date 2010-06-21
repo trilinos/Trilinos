@@ -43,8 +43,8 @@ namespace Ioex {
   typedef std::map<std::string, const std::string, std::less<const std::string> > FaceSetMap;
 
   struct TopologyMapCompare {
-    bool operator() (const std::pair<const std::string, const Ioss::ElementTopology*> &lhs,
-                     const std::pair<const std::string, const Ioss::ElementTopology*> &rhs) const
+    bool operator() (const std::pair<std::string, const Ioss::ElementTopology*> &lhs,
+                     const std::pair<std::string, const Ioss::ElementTopology*> &rhs) const
     {
       assert(lhs.second != NULL);
       assert(rhs.second != NULL);
@@ -52,7 +52,7 @@ namespace Ioex {
     }
   };
 
-  typedef std::map<std::pair<const std::string, const Ioss::ElementTopology*>, int, TopologyMapCompare > TopologyMap;
+  typedef std::map<std::pair<std::string, const Ioss::ElementTopology*>, int, TopologyMapCompare > TopologyMap;
   typedef TopologyMap::value_type TopoMapPair;
 }
 
@@ -1633,7 +1633,7 @@ namespace Ioex {
 
 	  } else if (split_type == Ioss::SPLIT_BY_DONT_SPLIT) {
 	    const Ioss::ElementTopology *mixed_topo = Ioss::ElementTopology::factory("unknown");
-	    topo_map[std::make_pair("unknown",mixed_topo)] = number_sides;
+	    topo_map[std::make_pair(std::string("unknown"),mixed_topo)] = number_sides;
 
 	  } else if (in_fs_map) {
 	    std::vector<std::string> tokens = tokenize(ef_set_name, recognize("_"));
@@ -6106,7 +6106,7 @@ bool set_id(const Ioss::GroupingEntity *entity, ex_entity_type type, Ioex::Entit
     int id = entity->get_property(id_prop).get_int();
 
     // See whether it already exists...
-    succeed = idset->insert(std::make_pair(type,id)).second;
+    succeed = idset->insert(std::make_pair((int)type,id)).second;
     if (!succeed) {
       // Need to remove the property so it doesn't cause problems
       // later...
@@ -6190,12 +6190,12 @@ int get_id(const Ioss::GroupingEntity *entity, ex_entity_type type, Ioex::Entity
   // At this point, we either have an id equal to '1' or we have an id
   // extracted from the entities name. Increment it until it is
   // unique...
-  while (idset->find(std::make_pair(type, id)) != idset->end()) {
+  while (idset->find(std::make_pair(int(type), id)) != idset->end()) {
     ++id;
   }
 
   // 'id' is a unique id for this entity type...
-  idset->insert(std::make_pair(type,id));
+  idset->insert(std::make_pair((int)type,id));
   Ioss::GroupingEntity *new_entity = const_cast<Ioss::GroupingEntity*>(entity);
   new_entity->property_add(Ioss::Property(id_prop, id));
   return id;
