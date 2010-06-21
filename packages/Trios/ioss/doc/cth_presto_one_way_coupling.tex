@@ -1,0 +1,532 @@
+% This file was converted to LaTeX by Writer2LaTeX ver. 0.4
+% see http://www.hj-gym.dk/~hj/writer2latex for more info
+\documentclass[11pt,twoside]{article}
+\usepackage{alltt}
+\usepackage{calc}
+\usepackage{amsmath,amssymb,amsfonts,textcomp}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue, filecolor=blue, pagecolor=blue, urlcolor=blue}
+% Text styles
+\newcommand\textstyleInternetlink[1]{\textcolor{blue}{#1}}
+\newcommand\textstyleFootnoteSymbol[1]{\textsuperscript{#1}}
+% Outline numbering
+\setcounter{secnumdepth}{0}
+\newcommand{\cmd}[1]
+   {\mbox{\tt #1}\null}
+\newcommand{\code}[1]
+   {\mbox{\bf\tt #1}\null}
+\newcommand{\file}[1]
+   {\mbox{\bf\em #1}\null}
+\newcommand{\param}[1]
+   {\mbox{\{\em #1\}}\null}
+
+% Pages styles (master pages)
+\setlength\parindent{0in}
+\setlength{\parskip}{1ex plus 0.5ex minus 0.2ex}
+\setlength\textwidth{6.5in}
+\makeatletter
+\newcommand\ps@Standard{%
+\renewcommand\@oddhead{}%
+\renewcommand\@evenhead{}%
+\renewcommand\@oddfoot{}%
+\renewcommand\@evenfoot{}%
+\setlength\paperwidth{8.5in}\setlength\paperheight{11in}\setlength\voffset{-1in}\setlength\hoffset{-1in}\setlength\topmargin{1in}\setlength\headheight{12pt}\setlength\headsep{0cm}\setlength\footskip{12pt+0cm}\setlength\textheight{11in-1in-1in-0cm-12pt-0cm-12pt}\setlength\oddsidemargin{1in}\setlength\textwidth{8.5in-1in-1in}
+\renewcommand\thepage{\arabic{page}}
+\setlength{\skip\footins}{0.0398in}\renewcommand\footnoterule{\vspace*{-0.0071in}\noindent\textcolor{black}{\rule{0.25\columnwidth}{0.0071in}}\vspace*{0.0398in}}
+}
+\makeatother
+\pagestyle{plain}
+% footnotes configuration
+\makeatletter
+\renewcommand\thefootnote{\arabic{footnote}}
+\makeatother
+
+\newenvironment{source}
+{\small\begin{quote}\begin{alltt}}
+{\end{alltt}\end{quote}\normalsize}
+
+\begin{document}
+\clearpage\pagestyle{Standard}
+\section[CHSSI CTH Presto One{}-Way Coupling Procedure]{CHSSI CTH Presto
+One{}-Way Coupling Procedure}
+{Version: \centering \today}
+
+Points of contact at SNL:
+\begin{quote}
+David Crawford,
+\href{mailto:dacrawf@sandia.gov}{\nolinkurl{dacrawf@sandia.gov}}
+505{}-845{}-8975  (CTH)
+
+Arne Gullerud,
+\href{mailto:asgulle@sandia.gov}{\nolinkurl{asgulle@sandia.gov}}
+505{}-844{}-4326  (Presto)
+
+Greg Sjaardema,
+\href{mailto:gdsjaar@sandia.gov}{\nolinkurl{gdsjaar@sandia.gov}}
+505{}-844{}-2701 (one{}-way coupling tools, this document)
+\end{quote}
+
+\section{Overview}
+The CHSSI-sponsored One{}-Way coupling of the Eulerian code \code{CTH}
+and the Lagrangian finite element code \code{Presto} is primarily
+focused on simulating the response of structures due to blast loads.
+The one-way coupling capability assumes that the structural response
+time is much greater than the characteristic time of the impinging
+pressure wave from the explosion and, therefore, the pressure loading
+response can be calculated by CTH on a rigid representation of the
+structural model.  These pressures are then read by Presto and applied
+as time-varying boundary conditions to the finite element
+representation of the structural model to calculate the structural
+response.  There is no feedback or communication of data from the
+\code{presto} analysis back to \code{CTH}; all communication is
+one{}-way from \code{CTH} to \code{presto}. 
+
+The codes involved in this process include CTH, Presto, and a few
+utility programs (described below) used to facilitate the data
+movement and data manipulation.
+
+\section{Procedure Overview}
+The one{}-way coupling procedure consists of the following steps:
+\begin{enumerate}
+\item
+Generate finite element mesh of the structural model. The model must
+consist entirely of volume elements (hexes, tetrahedrons, wedges) at
+this time; structural elements (shells, beams, trusses) are not yet
+supported. A workaround for shell models is discussed in Section~\ref{sec:shell}. 
+
+\item Generate a model consisting of the exposed surface (`skin') of the
+structural model.
+
+\item Embed the exposed surface model in the CTH grid using a \cmd{diatom} package.
+
+\item Perform CTH blast analysis and export time{}-averaged pressures on the
+surface model.
+
+\item Merge the CTH pressure data with the original finite element mesh for
+use by Presto.
+
+\item Perform the Presto structural analysis using transient pressure data.
+\end{enumerate}
+
+\subsection{Step 1: Generate finite element model}
+NOTE: This step is outside the scope of this document; the finite
+element model for the structural mesh can be generated using any
+finite element mesh generation package.
+
+
+\subsection{Step 2:  Generation of exposed surface model}\label{sec:surfmodel}
+
+The Sierra application \code{skinner} is used to generate an exodusII
+file containing the exposed surface facets and outward pointing normals
+of the structural mesh as required by CTH.  The \code{skinner}
+application requires an input file that defines the filename of the
+structural finite{}-element model (exodusII format) and the filename
+for output.  The input file format is:
+\begin{source}
+BEGIN SIERRA \textit{label}
+BEGIN FINITE ELEMENT MODEL \textit{model\_label}
+  DATABASE NAME = \file{structural\_model.g}
+  OMIT BLOCK block\_[?]      # optional 
+ END 
+
+ BEGIN MODEL TO SKIN
+  USE FINITE ELEMENT MODEL \textit{model\_label}
+
+  BEGIN RESULTS OUTPUT
+    DATABASE NAME = \file{surface\_model.g}
+    OUTPUT MESH IS EXPOSED SURFACE
+  END
+END
+END SIERRA
+\end{source}
+Note that the Sierra parsing service dictates the syntax of this input
+file and is somewhat verbose.  All data in uppercase font is required
+(although it can be entered in either upper or lowercase).  The data
+in lowercase italics is arbitrary, but whatever is entered for
+\textit{model\_label} must match in both locations.  The \file{bold
+lowercase} data specify filenames.  If the filenames do not start with
+a slash (`/'), then the specified path is relative to the location
+where the user starts the application. If the filenames do start with a
+slash (`/'), then the specified path is assumed to be an absolute path
+to the location of the files.  The `\cmd{OMIT BLOCK}' commands can
+be used to limit the element blocks inserted into the CTH simulation.
+
+
+The \code{skinner} application is run similarly to other Sierra
+applications.  Assuming that the user has the \code{sierra} script in their
+path and that the input file is named \file{input\_file.i}, one way to
+run the application would be:
+\begin{source}
+sierra skinner {-}i \file{input\_file.i}
+\end{source}
+There may be other methods for running sierra applications depending on
+specifics at the various installation sites.  If everything runs
+correctly, the result of the above command should be a new file
+(\file{surface\_model.g} in the above example) containing surface
+elements defining the exposed surface of the structural model. This
+file will also contain data defining the outward normal vector at each
+node and face as needed by CTH.
+
+\subsection{Steps 3 and 4: Define CTH Model and Run CTH Analysis}
+CTH handles one{}-way coupling with Presto as a special
+option within the \cmd{diatom} material insertion interface.  It treats the
+Presto mesh as an absolutely rigid material using the \cmd{rigid} capability
+that has been in CTH for some time.  \cmd{rigid} needs to be invoked when
+using one{}-way coupling by inserting a \cmd{rigid} keyword in the \cmd{control}
+section of the input deck as follows:
+\begin{source}
+control
+${\ldots}$*(other keywords)
+rigid
+${\ldots}$*(other keywords)
+endc
+\end{source}
+
+All the example problems included with this primer invoke \cmd{rigid}
+in this way.  It is assumed that CTH is being used in GEN{}-less mode
+when using the one-way capability.
+
+The actual insertion of Presto geometry and the harvesting of
+resultant pressures for handoff to Presto are handled by \cmd{diatom}.
+Insertion of the surface description is handled by a special \cmd{one{}-way
+diatom} package. Typical usage is:
+\begin{source}
+diatom
+${\ldots}$
+  package 'My Presto Mesh'
+    one_way
+    dt_out = 1e-6
+    insert exodus_surf
+      file = \file{surface\_model.g}
+      inch-psi
+      *d_scale=2.54
+      *p_scale=14.5e-6
+      *bl = nn
+    endi
+  endp
+${\ldots}$
+* (other packages of normal CTH materials to fill out the rest of the problem)
+${\ldots}$
+enddiatom
+\end{source}
+The \cmd{one\_way} keyword denotes the package as containing an
+\cmd{exodus\_surf} description. The \cmd{dt\_out} keyword specifies how often
+coupling data is to be added to the output Exodus file (described
+below). The \cmd{inch{}-psi} keyword specifies the units to be used
+by the \cmd{exodus\_surf} file; default units are cgs (cm,
+dynes/cm\textsuperscript{2}). The optional keyword \cmd{d\_scale} is
+the factor for converting \cmd{exodus\_surf} distance to
+centimeters and the keyword \cmd{p\_scale} is the factor for
+converting dynes/cm\textsuperscript{2} to \cmd{exodus\_surf}
+pressure units. The \cmd{inch{}-psi} keyword will set the
+\cmd{d\_scale} and \cmd{p\_scale} to 2.54 and 14.5e{}-6
+respectively\footnote{More shortcut conversion specifiers like
+\cmd{inch{}-psi} can be added as needed. Please contact the CTH developers if you have a specific request for
+this.}. The optional keyword \cmd{bl} can be used to specify a
+particular element block (an integer number) from the Exodus file for
+insertion into the CTH mesh. If \cmd{bl} is not specified then all
+element blocks are inserted.  You may use as many \cmd{one\_way} packages
+as desired.  It is recommended that you place \cmd{one\_way} packages
+(actually all \cmd{rigid} packages) at the beginning of the \cmd{diatom}
+description to reflect the fact that they will always be inserted
+before regular CTH materials (regardless of their placement in the
+\cmd{diatom} section).
+
+Ordering of the \cmd{one\_way} packages should not matter.  It is not
+recommended that \cmd{one\_way} packages be allowed to physically
+overlap (or to overlap with other rigid material) as this will lead to
+incorrect behavior.
+
+
+The output file produced by CTH for coupling with Presto is named
+\file{\param{name}.cthpres}, where \file{\param{name}} is the name of
+the exodusII mesh file used to define the rigid geometry
+(\file{surface\_model} in the above example).  This output file
+contains an extra element variable called \cmd{CTH\_Pressure}; this
+variable is the time{}-varying pressure computed by CTH on each of the
+faces in the rigid geometry.  These pressures may be viewed and
+animated in any visualization software supporting the exodusII file
+format.  However, additional processing is needed before they can be
+used as input to Presto as described in step~5 below.
+
+The Presto mesh inserted into CTH via the \cmd{exodus\_surf} description is
+assumed to be non{}-moving and non{}-deforming.  It is modeled
+internally as an absolutely rigid, frictionless material (i.e. the
+normal velocity component is zeroed at the surface of the Presto
+material but tangential velocity component is unaffected).  Because
+CTH uses a rectilinear grid and face centered velocity components, the
+rigid approximation is not perfect, however, and some artifacts may
+occur. There is a natural tendency for material to `bounce' off of the
+rigid material as a consequence of conservation of momentum and the
+finite size of CTH cells.  This `bouncy' behavior leads occasionally
+to regions of zero pressure (void) against the surface of the Presto
+mesh.  Typically, these regions are small and the zero pressure values
+last only briefly.  Because momentum is conserved however, the total
+impulse passed to the Presto mesh is correct even in the presence of
+occasional zero pressures.
+
+A unique aspect of the algorithm being used in the one\_way coupling
+capability is our use of a time{}-integral for computing the average
+pressure on each facet of the surface exodus mesh.  Typically the
+\cmd{dt\_out} time interval specified is much longer than the average CTH
+time step.  CTH internally accumulates an average value of the
+pressure acting on each facet across the entire \cmd{dt\_out} time
+interval.  Consequently, typical pressure values sent to the output
+exodus file are time{}-integrated averages across multiple CTH cycles.
+
+\subsection{Step 5:  Merge Pressure Data With Original Structural Model}
+
+One of the outputs from the CTH analysis should be a file
+(`\file{surf\_model.cthpres}' in the above example) containing the calculated
+pressures as a function of time on each face.  This data must be
+merged with the original finite element model.  The merged file is
+then used as the finite element model for the Presto analysis.  The sierra application
+\code{cth\_pressure\_map}\footnote{In earlier releases of the
+CTH--Presto one-way coupling process, the name for this code was
+\code{io\_shell}. If \code{cth\_pressure\_map} does not exist, use
+\code{io\_shell} instead.} is used for this.  The basic minimal
+command line for this is:
+\begin{source}
+sierra cth\_pressure\_map {-}i \file{merge\_file.i} 
+\end{source}
+The \file{merge\_file.i} file contains three lines:
+\begin{source}
+\file{structural\_model.g} exodusII
+\file{surface\_model.cthpres} exodusII
+\file{structural\_model\_with\_pressures.g} exodusII
+\end{source}
+where \file{structural\_model.g} is the original structural finite element
+model, \file{surface\_model.cthpres} is the surface model with pressures
+created by CTH, and \file{structural\_model\_with\_pressures.g} is the
+output file containing the structural finite element model merged with
+the pressure data which will be used as input to the Presto analysis.
+
+There are several ways in which the pressure data can be modified to
+suit the needs of the Presto analysis.  Each of these modifications is
+controlled by an option passed to the \code{cth\_pressure\_map} application.  By
+default, \textit{all} data calculated by CTH is merged unchanged with
+the finite element model.  The following modifications are supported:
+
+\begin{description}
+\item [Convert from absolute pressure to gage pressure.]  The pressure data
+calculated by CTH is \textit{absolute} pressure while Presto analyses
+typically use \textit{gage} pressure.  The option `\cmd{{}-O
+{--}Convert\_Gage}'\footnote{ The strange `\cmd{{-}O "{--}option
+value"}' syntax is dictated by the sierra script as a method for
+passing `uncommon' options.  If the executable is run directly without
+using the sierra script, then the `\cmd{{-}O}' and the double quotes
+can be omitted.  Note that typing `\cmd{{}-O option}' instead of
+`\cmd{{}-O {--}option}' is a common error; always make sure that the
+option has the required double-dash (`{}--`).} will convert the
+absolute pressures to gage pressure.  The pressure data at time 0.0 is
+assumed to be the ambient absolute pressure value.
+\item [Specify maximum time to be merged.]  If the analyst does not want all
+data on the pressure file to be merged with the structural model, the
+data can be limited by specifying the time up to which the data is
+desired.  The option is `\cmd{{-}O "{--}Maximum\_Time
+\param{max\_time}"}' where `\param{max\_time}' is the maximum time
+desired.
+\item [Pressure values at long time.]  One of the assumptions of the one{}-way
+coupling is that the blast time is much less than the structural
+response time.  Thus the pressure data should only exist for a small
+portion of the structural analysis time.  \textit{By default in Presto
+the pressure value existing at the end of the pressure data file will
+be used for all times after that time. } If the CTH blast analysis
+were run to a quasistatic equilibrium state, this would be the correct
+behavior.  However, the CTH analysis is typically not run for such a
+long physical time period and therefore the pressure data will not have
+reached an equilibrium state.  The user can specify the pressure
+values to use for all times beyond the time period of the CTH analysis.
+The options are:
+
+\begin{enumerate}
+\item \cmd{{-}O "{--}Final\_Pressure ZERO"  }(The long{}-time
+pressures are all zero.)
+\item \cmd{{-}O "{--}Final\_Pressure INITIAL"}  (The long{}-time
+pressures are the same as the pressures at time = 0.0 on the pressure
+data file.  Note that if the \cmd{Convert\_Gage }option is
+specified, then \cmd{ZERO} and \cmd{INITIAL} will give the same
+results.)
+\item \cmd{{-}O "{--}Final\_Pessure FINAL"}  (The calculated
+pressures at the end of the file will be used from that time onward.)
+\item \cmd{{-}O "{--}Final\_Pressure OFFSET"}  (The long{}-time
+pressures are the same as the pressure value specified via the
+\cmd{Offset\_pressure} option. Note that if the \cmd{Convert\_Gage }option is
+specified, then the final pressures will also be modified by the gage
+pressure correction.
+\end{enumerate}
+
+\item [Long time pressure time.]  If the `\cmd{{--}Final\_Pressure}' option
+is specified, the merging code adds a new time step with the specified
+final pressure. By default, the delta time between the last calculated
+pressures and the final pressure data is the same as the delta time
+between the last two calculated pressures. Depending on the pressure
+state at which the CTH analysis was terminated, this may result in a
+sharp pressure gradient at this time.  If a longer delta time is
+wanted, it can be specified via the \cmd{{}-O
+"{--}Final\_Time\_Delta \param{dt}"} option where
+\param{dt} is the desired time delta. This
+option has no affect if the \cmd{{--}Final\_Pressure} option is
+not specified.
+\item [Short time.]  If the \cmd{{}--Minimum\_time} option is specified the
+merging code deletes the pressures for times less than the specified
+value. All output time values will be offset by the time value of the
+first timestep with a time larger than the specified minimum time.
+\item [Offset time.] If the \cmd{{}--Offset\_time} option is specified,
+then all output time values will be offset by the specified value from
+the input fime values.  In addition, an initial time step at time 0.0
+will be output with all pressure values set to 0.0 (or the pressure
+offset value if specified).
+
+\item [Offset pressure.] If the \cmd{{}--Offset\_pressure} option is
+specified, then the specified value will be added to all output pressures
+\end{description}
+
+A more complicated example of running the pressure merging step is:
+
+\begin{source}
+sierra cth_pressure_map -i \file{merge\_file.i}
+   {-}O "{--}Final\_Pressure ZERO"
+   {-}O "{--}Maximum\_Time 0.0015"
+   {-}O {--}Convert\_Gage
+   {-}O "{--}Final\_Time\_Delta 0.001"
+   {-}O "{--}Minimum\_time 0.0001"
+\end{source}
+
+In this example pressures are merged with structural finite element
+model, converted from absolute pressure to gage pressure.  The
+pressure data is only merged after time 0.0001 up to time 0.0015.
+ After that time the pressure data is zeroed and the zeroed data is
+written at time 0.0025 (0.0015 + 0.001).
+
+\subsection{Step 6: Perform Presto Structural Analysis}\label{sec:step6}
+
+Within Presto, the pressure data and the finite element model are read
+from the same exodusII database 
+(\file{structural\_model\_with\_pressures.g }in the above example). 
+The following `pressure block' located in the `region scope' tells
+presto where to find the pressure data:
+
+\begin{source}
+begin pressure
+   surface = ssblock\_1
+   read variable = cth\_pressure
+end
+\end{source}
+
+Here, \cmd{ssblock\_1} is the new surface created by the merge process in
+step~5 above.  The actual surface name can be
+determined via the \cmd{grope} exodusII query program.  The syntax and
+output is:
+\begin{source}
+grope structural_model_with_presssures.g
+GROPE> list ssets
+GROPE> exit
+
+ Set    1 (#1):     11520 elements (index=1)     ... name = "surface_hex8_quadface4_1"
+ Set    2 (#2):      1440 elements (index=11521) ... name = "surface_hex8_quadface4_2"
+ Set    3 (#3):     51264 elements (index=12961) ... name = "ssblock_1"
+    cth_pressure
+\end{source}
+Note that sideset 3 which is named \cmd{ssblock\_1} has the variable
+\cmd{cth\_pressure} defined on it and is the last sideset in the model.
+
+\section{Notes}
+
+\begin{itemize}
+\item It is important to note that the pressure mapping from the CTH generated
+results to the Presto input mesh is \em{topological} and not \em{spatial}.
+ Thus, the finite element mesh skinned and used in the CTH simulation
+must have the same connectivity and numbering when used in the Presto
+simulation, albeit with possible additional elements.  Thus, it is
+somewhat `tricky' to modify the structural finite{}-element model
+without rerunning the CTH analysis, although it can be done with care.
+ A general spatial mapping routine could be implemented as well for
+increased flexibility.
+
+\item We recommend having at least three CTH cells through any solid material
+(through thickness) in order to avoid any `bleed through' of pressure
+from one side to the other, e.g on thin plates.  
+
+\item The pressure distributions can be spatially clipped within Presto input
+deck by using the `\cmd{remove surface}' option within the
+\cmd{pressure} block. 
+
+\item Care must be exercised when solid material in the CTH simulation is in
+contact with the inserted finite{}-element model as only the scalar
+hydrostatic pressure is mapped and not the traction vector.  Future
+enhancements could include mapping of the full traction vector obtained
+from the stress tensor.
+
+\item It is possible to export to the exodus output file the CTH pressure
+contribution to the external force vector in the Presto simulation.
+ These values can also be summed over a surface using commands within
+the Presto input deck for output to the exodus history file.
+
+\end{itemize}
+
+\section{Shell Workaround}\label{sec:shell}
+
+The one-way coupling process is currently only supported for finite
+element models consisting of hexahedral elements.  The reason for this
+limitation is that the \code{CTH} mesh embedding process requires that the
+surface description be ``watertight'' and that the ``back'' of a
+surface face must extend out of the \code{CTH} cell that the front
+face is in.  Basically, the problem is that the zero-thickness shells
+can provide an ambiguous surface description.
+
+However, since many models are composed of geometries for which shell
+elements would be the logical element type to use in the \code{Presto}
+structural response calculations, a ``kluge'' or ``workaround'' has
+been developed which gives the analyst the capability to use shell
+elements in the \code{Presto} analysis and still provide \code{CTH}
+with a well-defined surface mesh. The workaround involves some extra
+work for the analyst.
+
+The workaround is to add one or more layers of hex elements to the
+``back'' (away from the pressure source) of the shell structure. The
+hexes are then deleted from the model when the structural code is
+run. The hex elements are only needed to provide a non-zero thickness
+surface geometry for the \code{CTH} analysis and are not present in
+the \code{Presto} analysis.  The hex-shell interface {\em must} be
+contiguous; that is, the hexes and shells at the interface must share
+the nodes. The process for doing this varies in the different mesh
+generation programs, but it is a common meshing procedure so it should
+be supported in all of the programs.
+
+The one-way coupling process for structures containing shells is
+executed as described earlier in this document except for a couple
+modifications:
+\begin{itemize}
+\item The \cmd{OMIT BLOCK} command is used to delete the hex elements
+which have been added as backing to the shells (If they are truly not
+part of the structural model). The syntax for this is shown in
+Step~2; the command would be added to the
+\cmd{BEGIN FINITE ELEMENT MODEL} command block in the \code{Presto} input file in Step~6.
+\item If the \code{Presto} analysis is run in parallel, then the load
+balancing can be skewed by the hex elements which will be omitted
+which can cause the analysis to be unbalanced.  To fix this, the load
+balancing script \code{loadbal} is told to ``weight'' the retained
+element blocks much more than the deleted element blocks. For example,
+if the model contains a shell element block with id 10 and the hex
+elements to be deleted are in element block 20; a loadbal command to
+run this model on 16 processors would be:
+\begin{source}
+ loadbal -n "-w eb=10:1000 -w eb=20:1" -p 16 -inertial \ldots
+\end{source}
+\begin{quote}
+Where:
+\begin{description}
+   \item[\cmd{-n}] indicates to pass the following option on to the \code{nem\_slice} procsss.
+   \item[\cmd{"\ldots"}] is the option that will be passed to \code{nem\_slice}.
+   \item[\cmd{-w eb=10:1000}] specifies that the element block with the id of
+10 has a weight of 1000.  This is the shell element block that will be
+retained in the analysis.
+   \item[\cmd{-w eb=20:1}] specifies that the element block with the id of 20
+has a weight of 1.  This is the hex element block that will be omitted
+from the analysis.
+\end{description}
+This will typically give a good load balance for the retained element blocks.
+\end{quote}
+\end{itemize}
+\end{document}
