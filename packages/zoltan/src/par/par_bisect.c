@@ -99,7 +99,7 @@ int Zoltan_RB_find_bisector(
                                 0 - dot is < valuehalf
                                 1 - dot is > valuehalf                       */
   int dotnum,           /* number of dots (length of three previous arrays   */
-  int nwgts,            /* number of weights (per dot)                       */
+  int nwgts,            /* number of weights (per dot) in wgts array         */
   int mcnorm,           /* norm to be used for multiweights: 1,2, or 3       */
   double *fraclo,       /* fraction of weight that should be in bottom half  */
   MPI_Comm local_comm,  /* MPI communicator on which to find bisector        */
@@ -352,7 +352,6 @@ int Zoltan_RB_find_bisector(
   if (!wgts){
     localsum[0] = uniformWeight * dotnum;
   }
-
   if (Tflops_Special) {
      tmp = (double *) ZOLTAN_MALLOC(nprocs*sizeof(double));
      if (!tmp) {
@@ -698,9 +697,10 @@ int Zoltan_RB_find_bisector(
             /* move some dots and all done */
             /* scan to figure out how many dots to move */
             /* wtupto will contain cumulative sum up to current proc */
-            if (Tflops_Special)
+            if (Tflops_Special){
               Zoltan_RB_scan_double(localsum, wtupto, nwgts, local_comm, 
                 proc, rank, num_procs);
+            }
             else
               MPI_Scan(localsum, wtupto, nwgts, MPI_DOUBLE, MPI_SUM, local_comm);
             /* MPI_Scan is inclusive, we want to exclude my local weight */
@@ -776,9 +776,10 @@ int Zoltan_RB_find_bisector(
             /* copy wtsum into wtupto, then sum across procs */
             for (k=0; k<nwgts; k++)
               wtupto[k] = wtsum[k];
-            if (Tflops_Special)
+            if (Tflops_Special){
               Zoltan_RB_sum_double(wtsum, nwgts, proclower, rank, num_procs, 
                 local_comm);
+            }
             else
               MPI_Allreduce(wtupto, wtsum, nwgts, MPI_DOUBLE, MPI_SUM, 
                 local_comm);
@@ -869,9 +870,10 @@ int Zoltan_RB_find_bisector(
             /* move some dots and all done */
             /* scan to figure out how many dots to move */
             /* wtupto will contain cumulative sum up to current proc */
-            if (Tflops_Special)
+            if (Tflops_Special){
                Zoltan_RB_scan_double(localsum, wtupto, nwgts, local_comm, 
                  proc, rank, num_procs);
+           }
             else
                MPI_Scan(localsum, wtupto, nwgts, MPI_DOUBLE, MPI_SUM, local_comm);
             /* MPI_Scan is inclusive, we want to exclude my local weight */
@@ -944,9 +946,10 @@ int Zoltan_RB_find_bisector(
             /* copy wtsum into wtupto, then sum across procs */
             for (k=0; k<nwgts; k++)
               wtupto[k] = wtsum[k];
-            if (Tflops_Special)
+            if (Tflops_Special){
               Zoltan_RB_sum_double(wtsum, nwgts, proclower, rank, num_procs, 
                 local_comm);
+}
             else
               MPI_Allreduce(wtupto, wtsum, nwgts, MPI_DOUBLE, MPI_SUM, 
                 local_comm);

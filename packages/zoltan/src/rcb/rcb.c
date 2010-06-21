@@ -629,7 +629,7 @@ static int rcb_fn(
   }
   else {
     /* put sum of weights in weightlo */
-    for (j=0; j<wgtflag; j++){
+    for (j=0; j<dotpt->nWeights; j++){
       weightlo[j] = 0.0;
       wgt = dotpt->Weight + j;
       for (i=0; i < dotnum; i++){
@@ -643,12 +643,15 @@ static int rcb_fn(
 
   /* Set weight scaling factors. */
 
-  for (j=0; j<wgtdim; j++){
-    if (obj_wgt_comp || (weight[j]==0.0))
-      wgtscale[j] = 1.0;
-    else{
-      wgtscale[j] = 1.0/weight[j]; /* normalize to make sum 1.0 */
-      weight[j] = 1.0;
+  wgtscale[0] = 1.0;
+  if (wgtdim > 1){
+    for (j=0; j<wgtdim; j++){
+      if (obj_wgt_comp || (weight[j]==0.0))
+        wgtscale[j] = 1.0;
+      else{
+        wgtscale[j] = 1.0/weight[j]; /* normalize to make sum 1.0 */
+        weight[j] = 1.0;
+      }
     }
   }
 
@@ -657,7 +660,7 @@ static int rcb_fn(
   }
   else{
     /* scale the weights */
-    for (j=0; j<wgtflag; j++){
+    for (j=0; j<dotpt->nWeights; j++){
       wgt = dotpt->Weight + j;
       for (i=0; i < dotnum; i++){
         newwgt = *wgt * wgtscale[j];
@@ -792,7 +795,7 @@ static int rcb_fn(
     breakflag= 0;
     dim_best = -1;
     norm_best = -1.;
-    one_cut_dir = (wgtflag<=1) || lock_direction || preset_dir;
+    one_cut_dir = (wgtdim<=1) || lock_direction || preset_dir;
     if (!one_cut_dir){
       if (!(dotmark0 = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))
        || !(dotmark_best = (int *) ZOLTAN_MALLOC(dotmax*sizeof(int)))){
@@ -894,7 +897,7 @@ static int rcb_fn(
               (!tfs_disregard_results && (norm_max < norm_best)))) {
           norm_best = norm_max; 
           dim_best = dim;
-          for (j=0; j<wgtflag; j++){
+          for (j=0; j<wgtdim; j++){
             weightlo_best[j] = weightlo[j];
             weighthi_best[j] = weighthi[j];
           }
@@ -922,7 +925,7 @@ static int rcb_fn(
         goto End;
       }
       dim = dim_best;
-      for (j=0; j<wgtflag; j++){
+      for (j=0; j<wgtdim; j++){
         weightlo[j] = weightlo_best[j];
         weighthi[j] = weighthi_best[j];
       }
@@ -943,9 +946,9 @@ static int rcb_fn(
     }
 
     if (set)    /* set weight for current partition */
-      for (j=0; j<wgtflag; j++) weight[j] = weighthi[j];
+      for (j=0; j<wgtdim; j++) weight[j] = weighthi[j];
     else
-      for (j=0; j<wgtflag; j++) weight[j] = weightlo[j];
+      for (j=0; j<wgtdim; j++) weight[j] = weightlo[j];
 
     if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
       time3 = Zoltan_Time(zz->Timer);
@@ -1497,6 +1500,7 @@ static int serial_rcb(
   int first_guess;
   int new_nparts;
   int partmid;
+  int wgtdim;
   double valuehalf;
   double fractionlo[RB_MAX_WGTS];    /* desired weight in lower half */
   double weightlo[RB_MAX_WGTS];      /* weight in lower half */
@@ -1514,6 +1518,7 @@ static int serial_rcb(
   double *c, *w;
   double uniformWeight;
 
+  wgtdim = (wgtflag>0 ? wgtflag : 1);
 
   if (num_parts == 1) {
     for (i = 0; i < dotnum; i++)
@@ -1649,7 +1654,7 @@ static int serial_rcb(
              (norm_max < norm_best))) {
           norm_best = norm_max; 
           dim_best = dim;
-          for (j=0; j<wgtflag; j++){
+          for (j=0; j<wgtdim; j++){
             weightlo_best[j] = weightlo[j];
             weighthi_best[j] = weighthi[j];
           }
@@ -1677,7 +1682,7 @@ static int serial_rcb(
         goto End;
       }
       dim = dim_best;
-      for (j=0; j<wgtflag; j++){
+      for (j=0; j<wgtdim; j++){
         weightlo[j] = weightlo_best[j];
         weighthi[j] = weighthi_best[j];
       }

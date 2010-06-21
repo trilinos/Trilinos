@@ -56,6 +56,7 @@ struct median {          /* median cut info */
 /*****************************************************************************/
 /*****************************************************************************/
 
+
 int Zoltan_RB_find_median(
   int Tflops_Special,   /* Flag indicating whether Tflops_Special handling 
                            of communicators should be done (to avoid memory
@@ -78,7 +79,7 @@ int Zoltan_RB_find_median(
   int num_procs,        /* Number of procs in set (Tflops_Special)     */
   int proclower,        /* Lowest numbered proc in set (Tflops_Special)*/
   int num_parts,        /* Number of partitions in set (Tflops_Special) */
-  int wgtflag,          /* True if user supplied weights */
+  int wgtflag,          /* Number of user supplied weights in wgts array */
   double valuemin,      /* minimum value in partition (input) */
   double valuemax,      /* maximum value in partition (input) */
   double weight,        /* weight of entire partition (input) */
@@ -125,7 +126,6 @@ int Zoltan_RB_find_median(
 #endif
 
   rank = proc - proclower;
-
 
 /***************************** BEGIN EXECUTION ******************************/
 
@@ -212,6 +212,7 @@ int Zoltan_RB_find_median(
     /* use old value on 1st iteration if old cut dimension is the same */
     /* on 2nd option: could push valuehalf towards geometric center 
        with "1.0-factor" to force overshoot */
+
 
       if (first_iteration && first_guess) {
         tmp_half = *valuehalf;
@@ -450,7 +451,6 @@ int Zoltan_RB_find_median(
         if (dotmark[i] == markactive) dotlist[k++] = i;
       }
       numlist = k;
-
     }
   }
   else { /* if one processor set all dots to 0 (Tflops_Special) */

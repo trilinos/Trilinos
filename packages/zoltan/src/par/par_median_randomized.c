@@ -105,7 +105,7 @@ int Zoltan_RB_find_median_randomized(
   int num_procs,        /* Number of procs in set (Tflops_Special)     */
   int proclower,        /* Lowest numbered proc in set (Tflops_Special)*/
   int num_parts,        /* Number of partitions in set (Tflops_Special) */
-  int wgtflag,          /* True if user supplied weights */
+  int wgtflag,          /* Number of user supplied weights in wgts array */
   double valuemin,      /* minimum value in partition (input) */
   double valuemax,      /* maximum value in partition (input) */
   double weight,        /* weight of entire partition (input) */
