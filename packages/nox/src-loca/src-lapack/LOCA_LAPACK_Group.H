@@ -48,6 +48,8 @@
 #include "LOCA_Parameter_Vector.H"             // class data element
 #include "LOCA_LAPACK_Interface.H"             // class data element
 
+#include "Teuchos_ConfigDefs.hpp"              // for complex<double>
+
 namespace LOCA {
 
   //! %LOCA BLAS/LAPACK support
@@ -372,6 +374,8 @@ namespace LOCA {
 	return shiftedSolver.getMatrix();
       }
 
+#ifdef HAVE_TEUCHOS_COMPLEX
+
       //! Return reference to complex matrix
       NOX::LAPACK::Matrix< std::complex<double> >& getComplexMatrix() {
 	return complexSolver.getMatrix();
@@ -382,6 +386,8 @@ namespace LOCA {
       getComplexMatrix() const {
 	return complexSolver.getMatrix();
       }
+
+#endif
 
     protected:
 
@@ -408,8 +414,10 @@ namespace LOCA {
       //! Flag indicating whether complex matrix is valid
       bool isValidComplex;
 
+#ifdef HAVE_TEUCHOS_COMPLEX
       //! Complex matrix
       mutable NOX::LAPACK::LinearSolver< std::complex<double> > complexSolver;
+#endif
       
     };
 

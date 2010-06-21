@@ -61,7 +61,9 @@ LOCA::BorderedSolver::LAPACKDirectSolve::LAPACKDirectSolve(
   B(),
   C(),
   augJacSolver(),
+#ifdef HAVE_TEUCHOS_COMPLEX
   augComplexSolver(),
+#endif
   n(0),
   m(0),
   N(0),
@@ -208,6 +210,7 @@ LOCA::BorderedSolver::LAPACKDirectSolve::setMatrixBlocks(
 
   }
   else if (complexOp != Teuchos::null) {
+#ifdef HAVE_TEUCHOS_COMPLEX
     Teuchos::RCP<const LOCA::Hopf::ComplexMultiVector> cA;
     Teuchos::RCP<const LOCA::Hopf::ComplexMultiVector> cB;
     Teuchos::RCP<const NOX::Abstract::MultiVector> A_real;
@@ -313,7 +316,11 @@ LOCA::BorderedSolver::LAPACKDirectSolve::setMatrixBlocks(
 	  augmentedMat(i+n,j+n) = std::complex<double>((*C)(i,2*j), 
 						       (*C)(i+m,2*j));
     }
-
+#else
+    globalData->locaErrorCheck->throwError(
+    callingFunction,
+    "TEUCHOS_COMPLEX must be enabled for complex support!  Reconfigure with -D Teuchos_ENABLE_COMPLEX");
+#endif
   }
 
   else {
@@ -571,6 +578,7 @@ LOCA::BorderedSolver::LAPACKDirectSolve::solve(
   }
 
   else {
+#ifdef HAVE_TEUCHOS_COMPLEX
     const LOCA::Hopf::ComplexMultiVector* cF;
     LOCA::Hopf::ComplexMultiVector* cX;
     Teuchos::RCP<const NOX::Abstract::MultiVector> F_real;
@@ -631,6 +639,11 @@ LOCA::BorderedSolver::LAPACKDirectSolve::solve(
 	Y(i+m,j) = RHS(n+i,j).imag();
       }
     }
+#else
+    globalData->locaErrorCheck->throwError(
+    "LOCA::BorderedSolver::LAPACKDirectSolve::solve()",
+    "TEUCHOS_COMPLEX must be enabled for complex support!  Reconfigure with -D Teuchos_ENABLE_COMPLEX");
+#endif
   }
 
   if (!res)
