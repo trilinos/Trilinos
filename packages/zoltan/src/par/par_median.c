@@ -38,7 +38,7 @@ struct median {          /* median cut info */
   double    totallo, totalhi;   /* weight in each half of active partition */
   double    valuelo, valuehi;   /* position of dot(s) nearest to cut */
   double    wtlo, wthi;         /* total weight of dot(s) at that position */
-  int       countlo, counthi;   /* # of dots at that position */
+  ZOLTAN_GNO_TYPE countlo, counthi;   /* # of dots at that position */
   int       proclo, prochi;     /* unique proc who owns a nearest dot */
 };
 
@@ -92,6 +92,7 @@ int Zoltan_RB_find_median(
 {
 /* Local declarations. */
   struct median med, medme;          /* median data */
+
 
   double  wtmax, wtsum, wtok, wtupto;/* temporary wts */
   double  tolerance;                 /* largest single weight of a dot */
@@ -287,7 +288,6 @@ int Zoltan_RB_find_median(
                           Zoltan_RB_median_merge);
       }
       else {
-        
          MPI_Allreduce(&medme,&med,1,med_type,med_op,local_comm);
       }
 

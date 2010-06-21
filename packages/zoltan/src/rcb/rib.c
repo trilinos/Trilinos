@@ -194,7 +194,7 @@ static int rib_fn(
   double overalloc,             /* amount to overallocate by when realloc
                                 of dot array must be done.
                                   1.0 = no extra; 1.5 = 50% extra; etc. */
-  int wgtflag,                  /* No. of weights per dot. */
+  int wgtflag,                  /* No. of weights per dot supplied by user. */
   int check_geom,               /* Check input & output for consistency? */
   int stats,                    /* Print timing & count summary? */
   int gen_tree,                 /* (0) do not (1) do generate full treept */
@@ -278,6 +278,7 @@ static int rib_fn(
   int rectilinear_blocks = 0; /* parameter for find_median (not used by rib) */
   int fp=0;                     /* first partition assigned to this proc. */
   int np=0;                     /* number of parts assigned to this proc. */
+  int wgtdim;                   /* max(wgtflag,1) */
 
   /* MPI data types and user functions */
 
@@ -372,6 +373,8 @@ static int rib_fn(
   dotpt = &rib->Dots;
   if (dotpt->nWeights == 0) {
     weightlo[0] = (double) dotnum;
+    dotpt->uniformWeight = 1.0;
+    wgtdim = 1;
   }
   else {
     for (j=0; j<dotpt->nWeights; j++){
@@ -382,9 +385,10 @@ static int rib_fn(
         wgts += dotpt->nWeights;
       }
     }
+    wgtdim = dotpt->nWeights;
   }
 
-  MPI_Allreduce(weightlo, weight, (dotpt->nWeights ? dotpt->nWeights : 1), MPI_DOUBLE, MPI_SUM, zz->Communicator);
+  MPI_Allreduce(weightlo, weight, wgtdim, MPI_DOUBLE, MPI_SUM, zz->Communicator);
 
   if (check_geom) {
     ierr = Zoltan_RB_check_geom_input(zz, dotpt, dotnum);
@@ -503,9 +507,9 @@ static int rib_fn(
     }
   
     if (set)    /* set weight for current partition */
-      for (j=0; j<wgtflag; j++) weight[j] = weighthi[j];
+      for (j=0; j<wgtdim; j++) weight[j] = weighthi[j];
     else
-      for (j=0; j<wgtflag; j++) weight[j] = weightlo[j];
+      for (j=0; j<wgtdim; j++) weight[j] = weightlo[j];
 
     if (stats || (zz->Debug_Level >= ZOLTAN_DEBUG_ATIME)) 
       time3 = Zoltan_Time(zz->Timer);
