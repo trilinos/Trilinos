@@ -39,11 +39,13 @@
 #include "Intrepid_CubatureDirect.hpp"
 #include "Teuchos_TestForException.hpp"
 
-/** \def INTREPID_CUBATURE_LINE_GAUSS_MAX
+/** \def INTREPID_CUBATURE_LINE_GAUSS_MAX_DEF
   \brief The maximum degree of the polynomial that can be integrated exactly by
          a direct line rule of the Gauss(-Legendre) type.
 */
-#define INTREPID_CUBATURE_LINE_GAUSS_MAX 61
+// srkenno@sandia.gov 6/21/10:
+// see below comment for the enum
+#define INTREPID_CUBATURE_LINE_GAUSS_MAX_DEF 61
 
 
 namespace Intrepid {
@@ -53,6 +55,12 @@ namespace Intrepid {
 */
 template<class Scalar, class ArrayPoint = FieldContainer<Scalar>, class ArrayWeight = ArrayPoint>
 class CubatureDirectLineGauss : public Intrepid::CubatureDirect<Scalar,ArrayPoint,ArrayWeight> {
+  public:
+
+  // srkenno@sandia.gov 6/21/10:
+  // This indirection is to workaround a compiler bug on the sun platform, 5.7 toolset, SunOS 10.
+  enum {INTREPID_CUBATURE_LINE_GAUSS_MAX = INTREPID_CUBATURE_LINE_GAUSS_MAX_DEF};
+
   private:
 
   /** \brief Complete set of data defining line Gauss(-Legendre) rules.
@@ -90,6 +98,7 @@ class CubatureDirectLineGauss : public Intrepid::CubatureDirect<Scalar,ArrayPoin
   /** \brief Exposes cubature data, accessible without construction.
   */
   static const CubatureTemplate (& exposeCubatureDataStatic())[INTREPID_CUBATURE_LINE_GAUSS_MAX+1];
+
 
 }; // end class CubatureDirect 
 

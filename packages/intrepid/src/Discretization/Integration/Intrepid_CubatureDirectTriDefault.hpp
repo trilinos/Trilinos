@@ -39,11 +39,13 @@
 #include "Intrepid_CubatureDirect.hpp"
 #include "Teuchos_TestForException.hpp"
 
-/** \def   INTREPID_CUBATURE_TRI_DEFAULT_MAX
+/** \def   INTREPID_CUBATURE_TRI_DEFAULT_MAX_DEF
   \brief The maximum degree of the polynomial that can be integrated exactly by
          a direct triangle rule of the default type.
 */
-#define INTREPID_CUBATURE_TRI_DEFAULT_MAX 20
+// srkenno@sandia.gov 6/21/10:
+// see below comment for the enum
+#define INTREPID_CUBATURE_TRI_DEFAULT_MAX_DEF 20
 
 
 namespace Intrepid {
@@ -53,6 +55,10 @@ namespace Intrepid {
 */
 template<class Scalar, class ArrayPoint = FieldContainer<Scalar>, class ArrayWeight = ArrayPoint >
 class CubatureDirectTriDefault : public Intrepid::CubatureDirect<Scalar,ArrayPoint,ArrayWeight> {
+  public:
+  // srkenno@sandia.gov 6/21/10:
+  // This indirection is to workaround a compiler bug on the sun platform, 5.7 toolset, SunOS 10.
+  enum {INTREPID_CUBATURE_TRI_DEFAULT_MAX = INTREPID_CUBATURE_TRI_DEFAULT_MAX_DEF};
   private:
 
   /** \brief Complete set of data defining default cubature rules on a triangle.
