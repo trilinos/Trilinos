@@ -123,7 +123,7 @@ namespace Intrepid {
     }
     // internal dof
     total_dof_per_entity[3][0] = 0;
-    total_dof_per_entity[3][1] = 0;
+    //total_dof_per_entity[3][1] = 0;
 
     // let's tally the total degrees of freedom on each entity
     for (int k=0;k<zBasis_.getCardinality();k++) {
@@ -138,7 +138,9 @@ namespace Intrepid {
 	  int dofdim;
 	  int dofent;
 	  ProductTopology::lineProduct3d( xdim , xent , ydim , yent , zdim , zent , dofdim , dofent );
+	  std::cout << i << " " << j << " " << k << "\t" << dofdim << " " << dofent << std::endl;
 	  total_dof_per_entity[dofdim][dofent] += 1;
+
 	}
       }
     }
@@ -161,6 +163,7 @@ namespace Intrepid {
 	  tags[4*tagcur+2] = current_dof_per_entity[dofdim][dofent];
 	  current_dof_per_entity[dofdim][dofent]++;
 	  tags[4*tagcur+3] = total_dof_per_entity[dofdim][dofent];
+	  tagcur++;
 	}
       }
     }
