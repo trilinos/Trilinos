@@ -492,11 +492,8 @@ namespace Tpetra {
       LocalMatVec lclMatVec_;
       LocalMatSolve lclMatSolve_;
 
-      bool valuesAreAllocated_,
-           constructedWithFilledGraph_,
-           constructedWithOptimizedGraph_,
-           fillComplete_,
-           storageOptimized_;
+      bool constructedWithOptimizedGraph_,
+           fillComplete_;
 
       // matrix values. before allocation, these are Teuchos::null.
       // after allocation, one is Teuchos::Null.

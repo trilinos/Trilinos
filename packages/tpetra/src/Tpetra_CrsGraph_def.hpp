@@ -58,7 +58,7 @@ namespace Tpetra {
   , storageOptimized_(false)
   , lowerTriangular_(false)
   , upperTriangular_(false)
-  , indicesAreSorted_(true)
+  , indicesAreSorted_(false)
   , noRedundancies_(false) {
     staticAssertions();
     TEST_FOR_EXCEPTION(maxNumEntriesPerRow > Teuchos::OrdinalTraits<size_t>::max() || (maxNumEntriesPerRow < 1 && maxNumEntriesPerRow != 0), std::runtime_error,
@@ -89,7 +89,7 @@ namespace Tpetra {
   , storageOptimized_(false)
   , lowerTriangular_(false)
   , upperTriangular_(false)
-  , indicesAreSorted_(true)
+  , indicesAreSorted_(false)
   , noRedundancies_(false) {
     staticAssertions();
     TEST_FOR_EXCEPTION(maxNumEntriesPerRow > Teuchos::OrdinalTraits<size_t>::max() || (maxNumEntriesPerRow < 1 && maxNumEntriesPerRow != 0), std::runtime_error,
@@ -119,7 +119,7 @@ namespace Tpetra {
   , storageOptimized_(false)
   , lowerTriangular_(false)
   , upperTriangular_(false)
-  , indicesAreSorted_(true)
+  , indicesAreSorted_(false)
   , noRedundancies_(false) {
     staticAssertions();
     TEST_FOR_EXCEPTION((size_t)NumEntriesPerRowToAlloc.size() != getNodeNumRows(), std::runtime_error,
@@ -157,7 +157,7 @@ namespace Tpetra {
   , storageOptimized_(false)
   , lowerTriangular_(false)
   , upperTriangular_(false)
-  , indicesAreSorted_(true)
+  , indicesAreSorted_(false)
   , noRedundancies_(false) {
     staticAssertions();
     TEST_FOR_EXCEPTION((size_t)NumEntriesPerRowToAlloc.size() != getNodeNumRows(), std::runtime_error,
@@ -177,11 +177,12 @@ namespace Tpetra {
         Teuchos::typeName(*this) << "::allocateIndices(): Internal logic error. Please contact Tpetra team.");
     TEST_FOR_EXCEPTION( indicesAreAllocated() == true, std::logic_error, 
         Teuchos::typeName(*this) << "::allocateIndices(): Internal logic error. Please contact Tpetra team.");
-    indicesAreLocal_  = (lorg == AllocateLocal);
-    indicesAreGlobal_ = (lorg == AllocateGlobal);
     Teuchos::RCP<Node> node = lclGraph_.getNode();
     const size_t numRows = getNodeNumRows();
+    indicesAreLocal_  = (lorg == AllocateLocal);
+    indicesAreGlobal_ = (lorg == AllocateGlobal);
     // if we have no row, then we have nothing to do
+    nodeNumAllocated_ = 0;
     if (numRows > 0) {
       if (getProfileType() == StaticProfile) {
         //
@@ -1930,10 +1931,10 @@ namespace Tpetra {
           view_gblInds2D_ = Teuchos::null;
         }
       }
-      // don't set these unless we actually did something
+      // don't set this unless we actually did something
       indicesAreLocal_  = true;
-      indicesAreGlobal_ = false;
     }
+    indicesAreGlobal_ = false;
     checkInternalState();
   }
 
@@ -1956,7 +1957,7 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::sortIndices() {
-    TEST_FOR_EXCEPT(isGloballyIndexed()==true);   // this should be called only after makeIndicesLocal()
+    TEST_FOR_EXCEPT(isGloballyIndexed()==true && indicesAreAllocated_ && nodeNumAllocated_ > 0);   // this should be called only after makeIndicesLocal()
     if (isSorted()) return;
     // are there any indices to sort?
     if (nodeNumAllocated_ > 0) {

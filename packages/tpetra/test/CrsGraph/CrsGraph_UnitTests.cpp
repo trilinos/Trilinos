@@ -432,35 +432,104 @@ namespace {
     const size_t STINV = OrdinalTraits<size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    int numImages = size(*comm);
-    // create a Map
-    const size_t numLocal = 10;
-    RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,numLocal,comm);
+    const int numImages = size(*comm);
+    const int myImageID = comm->getRank();
     // create the empty graph
-    RCP<RowGraph<LO,GO> > zero;
-    {
-      // allocate with no space
-      RCP<CrsGraph<LO,GO,Node> > zero_crs = rcp(new CrsGraph<LO,GO,Node>(map,0));
-      TEST_EQUALITY( zero_crs->getNodeAllocationSize(), STINV ); // zero, because none are allocated yet
-      zero_crs->fillComplete(DoOptimizeStorage);
-      zero = zero_crs;
+    // this one is empty (because of rows distribution) on only one node (demonstrating a previous bug)
+    if (numImages > 1) {
+      // create a Map
+      const size_t numLocal = (myImageID == 1 ? 0 : 1);
+      TEST_FOR_EXCEPTION( myImageID != 1 && numLocal != 1, std::logic_error, "numLocal assumed below to be 1.");
+      RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,(myImageID == 1 ? 0 : numLocal),comm);
+      RCP<RowGraph<LO,GO> > test_row;
+      {
+        // allocate with no space
+        RCP<CrsGraph<LO,GO,Node> > test_crs = rcp(new CrsGraph<LO,GO,Node>(map,0));
+        TEST_EQUALITY_CONST( test_crs->getNodeAllocationSize(), STINV ); // invalid, because none are allocated yet
+        if (myImageID != 1) test_crs->insertGlobalIndices( map->getMinGlobalIndex(), tuple<GO>(map->getMinGlobalIndex()) );
+        test_crs->fillComplete(DoOptimizeStorage);
+        TEST_EQUALITY( test_crs->getNodeAllocationSize(), numLocal );
+        test_row = test_crs;
+      }
+      RCP<const Map<LO,GO,Node> > cmap = test_row->getColMap();
+      TEST_EQUALITY( cmap->getGlobalNumElements(), (size_t)numImages-1 );
+      TEST_EQUALITY( test_row->getGlobalNumRows(), (size_t)numImages-1 );
+      TEST_EQUALITY( test_row->getNodeNumRows(), numLocal );
+      TEST_EQUALITY( test_row->getGlobalNumCols(), (size_t)numImages-1 );
+      TEST_EQUALITY( test_row->getNodeNumCols(), numLocal );
+      TEST_EQUALITY( test_row->getIndexBase(), 0 );
+      TEST_EQUALITY( test_row->isUpperTriangular(), true );
+      TEST_EQUALITY( test_row->isLowerTriangular(), true );
+      TEST_EQUALITY( test_row->getGlobalNumDiags(), (size_t)numImages-1 );
+      TEST_EQUALITY( test_row->getNodeNumDiags(), numLocal );
+      TEST_EQUALITY( test_row->getGlobalNumEntries(), (size_t)numImages-1 );
+      TEST_EQUALITY( test_row->getNodeNumEntries(), numLocal );
+      TEST_EQUALITY( test_row->getGlobalMaxNumRowEntries(), 1 );
+      TEST_EQUALITY( test_row->getNodeMaxNumRowEntries(), numLocal );
+      STD_TESTS((*test_row));
     }
-    RCP<const Map<LO,GO,Node> > cmap = zero->getColMap();
-    TEST_EQUALITY( cmap->getGlobalNumElements(), 0 );
-    TEST_EQUALITY( zero->getGlobalNumRows(), numImages*numLocal );
-    TEST_EQUALITY( zero->getNodeNumRows(), numLocal );
-    TEST_EQUALITY( zero->getGlobalNumCols(), 0 );
-    TEST_EQUALITY( zero->getNodeNumCols(), 0 );
-    TEST_EQUALITY( zero->getIndexBase(), 0 );
-    TEST_EQUALITY( zero->isUpperTriangular(), true );
-    TEST_EQUALITY( zero->isLowerTriangular(), true );
-    TEST_EQUALITY( zero->getGlobalNumDiags(), 0 );
-    TEST_EQUALITY( zero->getNodeNumDiags(), 0 );
-    TEST_EQUALITY( zero->getGlobalNumEntries(), 0 );
-    TEST_EQUALITY( zero->getNodeNumEntries(), 0 );
-    TEST_EQUALITY( zero->getGlobalMaxNumRowEntries(), 0 );
-    TEST_EQUALITY( zero->getNodeMaxNumRowEntries(), 0 );
-    STD_TESTS((*zero));
+    // this one is empty on all nodes because of zero allocation size
+    {
+      // create a Map
+      const size_t numLocal = 10;
+      RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,numLocal,comm);
+      RCP<RowGraph<LO,GO> > zero;
+      {
+        // allocate with no space
+        RCP<CrsGraph<LO,GO,Node> > zero_crs = rcp(new CrsGraph<LO,GO,Node>(map,0));
+        TEST_EQUALITY_CONST( zero_crs->getNodeAllocationSize(), STINV ); // invalid, because none are allocated yet
+        zero_crs->fillComplete(DoOptimizeStorage);
+        TEST_EQUALITY_CONST( zero_crs->getNodeAllocationSize(), 0     ); // zero, because none were allocated.
+        zero = zero_crs;
+      }
+      RCP<const Map<LO,GO,Node> > cmap = zero->getColMap();
+      TEST_EQUALITY( cmap->getGlobalNumElements(), 0 );
+      TEST_EQUALITY( zero->getGlobalNumRows(), numImages*numLocal );
+      TEST_EQUALITY( zero->getNodeNumRows(), numLocal );
+      TEST_EQUALITY( zero->getGlobalNumCols(), 0 );
+      TEST_EQUALITY( zero->getNodeNumCols(), 0 );
+      TEST_EQUALITY( zero->getIndexBase(), 0 );
+      TEST_EQUALITY( zero->isUpperTriangular(), true );
+      TEST_EQUALITY( zero->isLowerTriangular(), true );
+      TEST_EQUALITY( zero->getGlobalNumDiags(), 0 );
+      TEST_EQUALITY( zero->getNodeNumDiags(), 0 );
+      TEST_EQUALITY( zero->getGlobalNumEntries(), 0 );
+      TEST_EQUALITY( zero->getNodeNumEntries(), 0 );
+      TEST_EQUALITY( zero->getGlobalMaxNumRowEntries(), 0 );
+      TEST_EQUALITY( zero->getNodeMaxNumRowEntries(), 0 );
+      STD_TESTS((*zero));
+    }
+    // this one is empty on all nodes because of zero rows
+    {
+      // create a Map
+      const size_t numLocal = 0;
+      RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,numLocal,comm);
+      RCP<RowGraph<LO,GO> > zero;
+      {
+        // allocate with no space
+        RCP<CrsGraph<LO,GO,Node> > zero_crs = rcp(new CrsGraph<LO,GO,Node>(map,0));
+        TEST_EQUALITY_CONST( zero_crs->getNodeAllocationSize(), STINV ); // invalid, because none are allocated yet
+        zero_crs->fillComplete(DoOptimizeStorage);
+        TEST_EQUALITY_CONST( zero_crs->getNodeAllocationSize(), 0     ); // zero, because none were allocated.
+        zero = zero_crs;
+      }
+      RCP<const Map<LO,GO,Node> > cmap = zero->getColMap();
+      TEST_EQUALITY( cmap->getGlobalNumElements(), 0 );
+      TEST_EQUALITY( zero->getGlobalNumRows(), numImages*numLocal );
+      TEST_EQUALITY( zero->getNodeNumRows(), numLocal );
+      TEST_EQUALITY( zero->getGlobalNumCols(), 0 );
+      TEST_EQUALITY( zero->getNodeNumCols(), 0 );
+      TEST_EQUALITY( zero->getIndexBase(), 0 );
+      TEST_EQUALITY( zero->isUpperTriangular(), true );
+      TEST_EQUALITY( zero->isLowerTriangular(), true );
+      TEST_EQUALITY( zero->getGlobalNumDiags(), 0 );
+      TEST_EQUALITY( zero->getNodeNumDiags(), 0 );
+      TEST_EQUALITY( zero->getGlobalNumEntries(), 0 );
+      TEST_EQUALITY( zero->getNodeNumEntries(), 0 );
+      TEST_EQUALITY( zero->getGlobalMaxNumRowEntries(), 0 );
+      TEST_EQUALITY( zero->getNodeMaxNumRowEntries(), 0 );
+      STD_TESTS((*zero));
+    }
 
     // All procs fail if any proc fails
     int globalSuccess_int = -1;

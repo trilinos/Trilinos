@@ -24,6 +24,9 @@ namespace {
   using Teuchos::arrayViewFromVector;
   using Teuchos::OrdinalTraits;
   using Teuchos::tuple;
+  using Tpetra::DoOptimizeStorage;
+  using Tpetra::StaticProfile;
+  using Tpetra::DynamicProfile;
   using Tpetra::Map;
   using Tpetra::Import;
   using Tpetra::Export;
@@ -190,14 +193,15 @@ namespace {
                                tgt_map = createContigMap<Ordinal,Ordinal>(INVALID,tgt_num_local_elements,comm);
 
       // create CrsGraph objects
-      RCP<CrsMatrix<Scalar,Ordinal> > src_mat = rcp(new CrsMatrix<Scalar,Ordinal>(src_map, 1)), // finish: staticprofile
-                                      tgt_mat = rcp(new CrsMatrix<Scalar,Ordinal>(tgt_map, 1)); // finish: staticprofile
+      RCP<CrsMatrix<Scalar,Ordinal> > src_mat = rcp(new CrsMatrix<Scalar,Ordinal>(src_map, 1, StaticProfile)),
+                                      tgt_mat = rcp(new CrsMatrix<Scalar,Ordinal>(tgt_map, 1, StaticProfile));
 
       // Create a simple diagonal src-graph:
       for (Ordinal globalrow = src_map->getMinGlobalIndex(); globalrow <= src_map->getMaxGlobalIndex(); ++globalrow) 
       {
         src_mat->insertGlobalValues( globalrow, tuple<Ordinal>(globalrow), tuple<Scalar>(globalrow) );
       }
+      src_mat->fillComplete(DoOptimizeStorage);
 
       // Create the importer
       Import<Ordinal> importer(src_map, tgt_map);
@@ -231,8 +235,8 @@ namespace {
       RCP<const Map<Ordinal> > src_map = createContigMap<Ordinal,Ordinal>(INVALID,src_num_local,comm),  
                                tgt_map = createContigMap<Ordinal,Ordinal>(INVALID,tgt_num_local,comm);  
 
-      RCP<CrsMatrix<Scalar,Ordinal> > src_mat = rcp(new CrsMatrix<Scalar,Ordinal>(src_map, 24)),
-                                      tgt_mat = rcp(new CrsMatrix<Scalar,Ordinal>(tgt_map, 24));
+      RCP<CrsMatrix<Scalar,Ordinal> > src_mat = rcp(new CrsMatrix<Scalar,Ordinal>(src_map, 24, DynamicProfile)),
+                                      tgt_mat = rcp(new CrsMatrix<Scalar,Ordinal>(tgt_map, 24, DynamicProfile));
 
       // This time make src_mat be a full lower-triangle:
       // Each row of column-indices will have length 'globalrow', and contain
@@ -254,8 +258,6 @@ namespace {
 
       Import<Ordinal> importer(src_map, tgt_map);
       tgt_mat->doImport(*src_mat, importer, Tpetra::INSERT);
-
-      src_mat->fillComplete();
       tgt_mat->fillComplete();
 
       // now we're going to loop through tgt_mat and make sure that
