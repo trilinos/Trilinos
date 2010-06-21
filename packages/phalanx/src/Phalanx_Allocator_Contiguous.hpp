@@ -75,11 +75,12 @@ namespace PHX {
 	TEST_FOR_EXCEPTION(true, std::logic_error, msg);
       }
 
+      std::size_t field_size = size_of_data_type * num_elements;
       std::size_t alignment_size = sizeof(AlignmentT);
-      std::size_t residual = size_of_data_type % alignment_size;
-      std::size_t element_size = size_of_data_type + residual;
+      std::size_t padding = field_size % alignment_size;
+      std::size_t field_size_with_padding = field_size + padding;
 
-      m_total_bytes += num_elements * element_size;
+      m_total_bytes += field_size_with_padding;
     }
     
     //! Called after all byte requirements are registered.  Allocates the contiguous array.
@@ -101,29 +102,29 @@ namespace PHX {
 			 "setup() has not been called.  The memory block has therefore not been allocated yet!  Please call setup before calling allocate().");
 
       std::size_t size_of_data_type = sizeof(DataT);
+      std::size_t field_size = size_of_data_type * num_elements;
       std::size_t alignment_size = sizeof(AlignmentT);
-      std::size_t residual = size_of_data_type % alignment_size;
-      std::size_t element_size = size_of_data_type + residual;
+      std::size_t padding = field_size % alignment_size;
+      std::size_t field_size_with_padding = field_size + padding;
 
-      std::size_t required_bytes = num_elements * element_size;
-
-      TEST_FOR_EXCEPTION(m_offset + required_bytes > m_total_bytes, 
+      TEST_FOR_EXCEPTION(m_offset + field_size_with_padding > m_total_bytes, 
 			 std::logic_error, 
 			 "The requested number of bytes is larger than the size of the allocated contiguous block!");
 
       Teuchos::ArrayRCP<DataT> array;
 
-      if (required_bytes > 0) {
+      if (field_size > 0) {
 	
 	Teuchos::ArrayRCP<char> chunk = 
-	  m_memory.persistingView(m_offset, required_bytes);
+	  m_memory.persistingView(m_offset, field_size);
 	
 	// This call sets up the arcp to call the ctor and dtor for the
 	// DataT when the last rcp goes away.
 	// nonpod = non-plain old data
+	// DO NOT include padding - The ArrayRCP will be too big
 	array = Teuchos::arcp_reinterpret_cast_nonpod<DataT>(chunk);
 	
-	m_offset += required_bytes;
+	m_offset += field_size_with_padding;
       }
 
       return array;
