@@ -48,8 +48,6 @@
 
 #include "Teko_PreconditionerInverseFactory.hpp"
 
-#include "Teuchos_TimeMonitor.hpp"
-
 namespace Teko {
 
 //! Default constructor, for use with the AutoClone class.
@@ -76,6 +74,7 @@ LinearOp DiagonallyScaledPreconditionerFactory::buildPreconditionerOperator(Line
 {
    using Teuchos::RCP;
    using Teuchos::rcp_dynamic_cast;
+   Teko_DEBUG_SCOPE("DiagonallyScaledPreconditionerFactory::buildPreconditionerOperator",10);
 
    TEST_FOR_EXCEPTION(invFactory_==Teuchos::null,std::runtime_error,
                       "ERROR: Teko::DiagonallyScaledPreconditionerFactory::buildPreconditionerOperator requires that an "

@@ -115,6 +115,7 @@ const RCP<Thyra::LinearOpBase<double> > buildSystem(const Epetra_Comm & comm,int
    return Thyra::nonconstEpetraLinearOp(mat);
 }
 
+#if 0
 TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, invfactory_test)
 {
    // build global (or serial communicator)
@@ -150,6 +151,7 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, invfactory_test)
    else
       out << "Apply 0: SUCCESS" << std::endl;
 }
+#endif
 
 TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test)
 {
@@ -169,15 +171,19 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test)
    // build operators and factories
    RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos();
    RCP<Teko::InverseFactory> subsolve = invLib->getInverseFactory("Amesos");
+   RCP<Teko::InverseFactory> subsolve_ml = invLib->getInverseFactory("ML");
 
    RCP<Thyra::LinearOpBase<double> > A =  buildSystem(Comm,50);
 
    RCP<Teko::PreconditionerFactory> dspf = rcp(new Teko::DiagonallyScaledPreconditionerFactory(subsolve));
+   RCP<Teko::PreconditionerFactory> dspf_ml = rcp(new Teko::DiagonallyScaledPreconditionerFactory(subsolve_ml));
    RCP<Teko::InverseFactory> invFact = rcp(new Teko::PreconditionerInverseFactory(dspf,Teuchos::null));
+   RCP<Teko::InverseFactory> invFact_ml = rcp(new Teko::PreconditionerInverseFactory(dspf_ml,Teuchos::null));
 
    // test build inverse capability
    Teko::ModifiableLinearOp invA = Teko::buildInverse(*invFact,A);
-   Teko::LinearOp invExactA = Teko::buildInverse(*subsolve,A);
+   Teko::ModifiableLinearOp invA_ml = Teko::buildInverse(*invFact_ml,A);
+   Teko::ModifiableLinearOp invExactA = Teko::buildInverse(*subsolve,A);
 
    result = tester.compare( *invA, *invExactA, &out);
    if (!result) {
@@ -189,6 +195,7 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test)
 
    // test Diagonally scaled rebuild capability
    Teko::rebuildInverse(*invFact,A,invA);
+   Teko::rebuildInverse(*invFact_ml,A,invA_ml); // here we tested repeatability using ML
 
    result = tester.compare( *invA, *invExactA, &out);
    if (!result) {

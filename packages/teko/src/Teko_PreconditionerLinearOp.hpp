@@ -183,7 +183,7 @@ void PreconditionerLinearOp<ScalarT>::describe(Teuchos::FancyOStream & out_arg,
                  << "}\n";
             {
                OSTab tab(out);
-               *out << "[U Operator] = ";
+               *out << "[Operator] = ";
                *out << Teuchos::describe(*getOperator_cnoc(),verbLevel);
             }
             break;
