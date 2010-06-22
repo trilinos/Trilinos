@@ -57,8 +57,8 @@ class MatrixMatrixMultiply{
 
 		//! Constructor
 		MatrixMatrixMultiply(
-  			const Teuchos::RCP<const RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A,
-  			const Teuchos::RCP<const RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > B,
+  			const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A,
+  			const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > B,
   			Teuchos::RCP< CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > C
   		);
 
@@ -70,14 +70,14 @@ class MatrixMatrixMultiply{
 
 	protected:
 	// underlying Matricies
-		const Teuchos::RCP<const RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > matrixA, matrixB;
+		const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > matrixA, matrixB;
 		Teuchos::RCP< CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > matrixC, matrixTB;
-		void getAndSendBRows(
+/*		void getAndSendBRows(
 			Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &tB, 
 			Teuchos::ArrayRCP<const GlobalOrdinal> &importedBRowIndicies, 
 			Teuchos::ArrayRCP<Teuchos::ArrayRCP<const GlobalOrdinal> > &importedBIndicies, 
 			Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > &importedBValues
-		);
+		);*/
 };
 
 }

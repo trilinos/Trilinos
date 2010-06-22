@@ -74,8 +74,8 @@ namespace Tpetra {
 
 	template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 	MatrixMatrixMultiply<Scalar,LocalOrdinal,GlobalOrdinal,Node>::MatrixMatrixMultiply( 
-		const Teuchos::RCP<const RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A,
-		const Teuchos::RCP<const RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > B, 
+		const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > A,
+		const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > B, 
 		Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > C)
 	:matrixA(A), matrixB(B), matrixC(C){}
 
@@ -107,14 +107,21 @@ namespace Tpetra {
 				"\n\n" << Teuchos::typeName(*this) << "::multiply(): Matrix B must have the same number of rows as Matrix C.");
 		}*/
 
-
-
-
-		//const LocalOrdinal LO0 = Teuchos::OrdinalTraits<LocalOrdinal>::zero();
-		//const GlobalOrdinal GO0 = Teuchos::OrdinalTraits<GlobalOrdinal>::zero();
+		Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+		const LocalOrdinal LO0 = Teuchos::OrdinalTraits<LocalOrdinal>::zero();
+		const GlobalOrdinal GO0 = Teuchos::OrdinalTraits<GlobalOrdinal>::zero();
+		Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > importedB;
+		Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > importedBGraph = rcp(new CrsGraph<LocalOrdinal, GlobalOrdinal, Node>(matrixA->getColMap(), matrixB->getGlobalMaxNumRowEntries()));
+		Import<LocalOrdinal, GlobalOrdinal, Node> bImporter(matrixB->getRowMap(), importedBGraph->getRowMap());
+		importedBGraph->doImport(*(matrixB->getCrsGraph()), bImporter, Tpetra::ADD);
+		importedBGraph->fillComplete();
+		importedB = rcp(new CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(importedBGraph));
+		importedB->describe(*out, Teuchos::VERB_EXTREME);
+		RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(importedB);
 		Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tB;
-		RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(matrixB);
-		transposer.createTranspose(DoOptimizeStorage, tB, matrixA->getRowMap());
+		transposer.createTranspose(DoOptimizeStorage, tB);
+
+
 		Teuchos::ArrayRCP<const LocalOrdinal> aCurRowIndices;
 		Teuchos::ArrayRCP<const Scalar> aCurRowValues;
 		Teuchos::ArrayRCP<const LocalOrdinal> bCurRowIndices;
@@ -122,27 +129,15 @@ namespace Tpetra {
 		std::vector<GlobalOrdinal> cCurRowIndices;
 		std::vector<Scalar> cCurRowValues;
 		typename Teuchos::ArrayRCP<const LocalOrdinal>::iterator findResult;
-
-		Teuchos::ArrayRCP<const GlobalOrdinal> importedBRowIndicies;
-		Teuchos::ArrayRCP<Teuchos::ArrayRCP<const GlobalOrdinal> > importedBIndicies;
-		Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> > importedBValues;
-
-		getAndSendBRows(tB, importedBRowIndicies, importedBIndicies, importedBValues);
-/*
+		//tB->describe(*out, Teuchos::VERB_EXTREME);
+		
 		for(LocalOrdinal i = LO0; (size_t)i<matrixA->getNodeNumRows(); ++i){
 		//	std::cout << "Row: " << i << "\n";
 			cCurRowIndices = std::vector<GlobalOrdinal>(0);
 			cCurRowValues = std::vector<Scalar>(0);
 			matrixA->getLocalRowView(i, aCurRowIndices, aCurRowValues);
 			for(GlobalOrdinal j= GO0; (global_size_t)j<tB->getGlobalNumRows(); ++j){
-				//std::cout << "\tCol: " << j << "\n";
-				if(tB->getRowMap()->isNodeGlobalElement(j)){
-					tB->getLocalRowView(tB->getRowMap()->getLocalElement(j), bCurRowIndices, bCurRowValues);
-				}
-				else{
-
-				}
-					
+				tB->getLocalRowView(tB->getRowMap()->getLocalElement(j), bCurRowIndices, bCurRowValues);
 				for(LocalOrdinal k =LO0; k<aCurRowIndices.size(); ++k){
 					findResult = std::find(bCurRowIndices.begin(), bCurRowIndices.end(), aCurRowIndices[k]);
 					if(findResult != bCurRowIndices.end()){
@@ -160,7 +155,7 @@ namespace Tpetra {
 			std::cout << "With values: " << Teuchos::ArrayView<Scalar>(cCurRowValues) << "\n";
 			std::cout << "Into row: " << i << "\n";
 			matrixC->insertGlobalValues((GlobalOrdinal)i, Teuchos::ArrayView<GlobalOrdinal>(cCurRowIndices), Teuchos::ArrayView<Scalar>(cCurRowValues));
-		}*/
+		}
 		matrixC->fillComplete();
 		return 0;
 	}
@@ -168,7 +163,7 @@ namespace Tpetra {
 	template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 	MatrixMatrixMultiply<Scalar,LocalOrdinal,GlobalOrdinal,Node>::~MatrixMatrixMultiply(){}
 
-	template<class LocalOrdinal, class GlobalOrdinal, class Node>
+/*	template<class LocalOrdinal, class GlobalOrdinal, class Node>
 	Teuchos::ArrayRCP<const GlobalOrdinal> convertLocalIndicesToGlobal(Teuchos::ArrayRCP<const LocalOrdinal> localIndicies, Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > map){
 		Teuchos::ArrayRCP<GlobalOrdinal> toReturn(localIndicies.size());
 		const GlobalOrdinal GO0 = Teuchos::OrdinalTraits<GlobalOrdinal>::zero();
@@ -180,7 +175,12 @@ namespace Tpetra {
 		return toReturn;
 	}
 
-	template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+	template<class LocalOrdinal, class GlobalOrdinal, class Node>
+	Import<LocalOrdinal, GlobalOrdinal, Node> MatrixMatrixMultiply::getMyTBImporter(){
+		return 
+	}*/
+
+	/*template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 	void MatrixMatrixMultiply<Scalar, LocalOrdinal, GlobalOrdinal, Node>::getAndSendBRows(
 		Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &tB,
 		Teuchos::ArrayRCP<const GlobalOrdinal> &importedBRowIndicies,
@@ -189,51 +189,28 @@ namespace Tpetra {
 
 
 		const LocalOrdinal LO0 = Teuchos::OrdinalTraits<LocalOrdinal>::zero();
-		const global_size_t GST0 = Teuchos::OrdinalTraits<global_size_t>::zero();
+		//const global_size_t GST0 = Teuchos::OrdinalTraits<global_size_t>::zero();
 		//Calculate rows that need to be sent and recieved
 
 		//A map of the rows that this node owns and to whom they need to be sent
 		Teuchos::RCP<const RowGraph<LocalOrdinal, GlobalOrdinal, Node> > tBGraph = tB->getGraph();
 		Teuchos::RCP<const RowGraph<LocalOrdinal, GlobalOrdinal, Node> > mAGraph = matrixA->getGraph();
-		//Maps a row id to a list of NodeIDs that the row needs to be sent To
-		typedef Teuchos::map<GlobalOrdinal, Teuchos::ArrayView<int> > DestinationMap;
-		DestinationMap mySendTos;
-		Teuchos::ArrayRCP<const GlobalOrdinal> curRowIndicies;
-		//
-		//!!!!!!!!LEFT OFF HERE
-		//ok so we can't use the graph. we need to use the matrix
-		for(LocalOrdinal i = LO0; (size_t)i< tBGraph->getNodeNumRows(); i++){
-			std::cout << "actual view " << tBGraph->getLocalRowView(i)() << "\n";
-			curRowIndicies = convertLocalIndicesToGlobal(tBGraph->getLocalRowView(i), tBGraph->getRowMap());
-			std::cout << "Node row " << i << " cur row indicies " << curRowIndicies() << "\n";
-			if((global_size_t)curRowIndicies.size() != GST0){
-				//mySendTos.insert(std::pair<GlobalOrdinal, const Teuchos::ArrayView<int> >(i, Teuchos::ArrayView<int>()));
-				const Teuchos::ArrayView<int> nodesToSendTo;
-				mAGraph->getColMap()->getRemoteIndexList(curRowIndicies(), nodesToSendTo);
-				mySendTos[i] = nodesToSendTo;
-			}
+
+
+		Teuchos::Array<GlobalOrdinal> myNeededRows;
+		Teuchos::ArrayView<LocalOrdinal> currentLocalAIndicies;
+		Teuchos::ArrayView<GlobalOrdinal> currentGlobalAIndicies;
+		Teuchos::ArrayView<Scalar> currentAValues;
+		Teuchos::ArrayView<int> currentNodeIDList;
+		size_t currentANumEntries;
+		for(LocalOrdinal i = LO0; (size_t)i < matrixA->getNodeNumRows(); ++i){
+			matrixA->getLocalRowCopy(i, currentLocalAIndicies, currentAValues, currentANumEntries);
+			currentGlobalAIndicies = convertLocalIndicesToGlobal(currentLocalAIndicies, matrixA->getColMap());	
+			tB->getColMap(currentGlobalAIndicies, currentNodeIDList);
 		}
-
-		DestinationMap myRecieves;
-		for(LocalOrdinal i = LO0; (size_t)i< mAGraph->getNodeNumRows(); i++){
-			curRowIndicies = convertLocalIndicesToGlobal(mAGraph->getLocalRowView(i), mAGraph->getRowMap());
-			if((global_size_t)curRowIndicies.size() != GST0){
-				myRecieves.insert(std::pair<GlobalOrdinal, const Teuchos::ArrayView<int> >(i, Teuchos::ArrayView<int>()));
-				const Teuchos::ArrayView<int> nodesToSendTo;
-				tBGraph->getColMap()->getRemoteIndexList(curRowIndicies(), mySendTos[i]);
-			}
-		}
-
-		if(matrixA->getComm()->getRank()==0){
-			std::cout << "Sent to map for 0 \n";
-			for(typename DestinationMap::iterator it = mySendTos.begin(); it!=mySendTos.end(); it++){
-				std::cout << "Row: " << it->first << "ids to send to: " << it->second << "\n";
-
-			}
-
-		}
+		//Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > targetMap = Teuchos::rcp(new Map<LocalOrdinal, GlobalOrdinal, Node>(
 			
-	}
+	}*/
 
 
 //

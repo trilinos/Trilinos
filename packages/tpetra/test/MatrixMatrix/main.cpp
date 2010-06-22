@@ -55,13 +55,11 @@ int main(int argc, char* argv[]){
 
 
 
-	std::cout << "just before fillCompletes \n";
 	matrixA->fillComplete(rowMap, rowMap);
 	matrixB->fillComplete(rowMap, rowMap);
 	Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
-	matrixB->describe(*out, VERB_EXTREME);
+	//matrixB->describe(*out, VERB_EXTREME);
 
-	std::cout << "just after fillCompletes \n";
 	RCP<CrsMatrix<double, int> > matrixC = rcp(new CrsMatrix<double,int>(rowMap, 4));
 
 	MatrixMatrixMultiply<double, int> multiplier(matrixA, matrixB, matrixC);
