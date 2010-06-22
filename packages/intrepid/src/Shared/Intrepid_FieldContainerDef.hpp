@@ -182,7 +182,9 @@ template<class Scalar, int ArrayTypeId>
 FieldContainer<Scalar, ArrayTypeId>::FieldContainer(const Teuchos::Array<int>& dimensions) {  
   
 #ifdef HAVE_INTREPID_DEBUG
-  for(unsigned int dim = 0; dim < dimensions.size(); dim++) {
+// srkenno@sandia.gov 6/12/10: changed unsigned int to int - this was causing a warning on compilers that 
+//   signed & unsigned int's were being comparied.
+  for( int dim = 0; dim < dimensions.size(); dim++) {
     TEST_FOR_EXCEPTION( (0 > dimensions[dim] ), std::invalid_argument,  
                         ">>> ERROR (FieldContainer): One or more negative dimensions");  
   }

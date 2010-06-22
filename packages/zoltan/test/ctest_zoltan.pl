@@ -2,6 +2,7 @@
 
 use File::Copy;
 use File::Compare;
+use Getopt::Long;
 
 ##############################################################################
 ##############################################################################
@@ -24,7 +25,7 @@ sub nowhite($) {
 print "CTEST_FULL_OUTPUT\n";
 
 ### Check command line arguments.
-### Usage:  ctest_zoltan.pl #processors package [debug] [mpiexec_path].
+### Usage:  ctest_zoltan.pl --np #processors --pkg package [--debug 0/1] [--mpiexec mpiexec_path] [--mpiexecarg mpiexec_arguments] [--zdrive zdrive_path]
 foreach $argnum (0 .. $#ARGV) {
    print "$ARGV[$argnum]";
 }
@@ -32,32 +33,16 @@ print "\n";
 
 $numArgs = $#ARGV + 1;
 if ($numArgs < 2) {
-  print "Usage:  ctest_zoltan.pl #processors package [debug] [mpiexec_path]\n";
+  print "Usage:  ctest_zoltan.pl --np #processors --pkg package [--debug 0/1] [--mpiexec mpiexec_path] [--mpiexecarg mpiexec_arguments] [--zdrive zdrive_path]\n";
   exit -1;
 }
 
-### Get debug level for ctest_zoltan.pl.
+### Set default parameter values.
 $debug = 0;
-if ($numArgs > 2) {$debug = $ARGV[2];}
-
-### Get number of processors
-$np = $ARGV[0];
-
-### Get the package number indicating which tests to run.
-$package = $ARGV[1];
-if ($debug) {print "DEBUG:  package $package\n";}
-
-### Get the path to mpiexec if it is specified.
+$np = -1;
+$package = "zzzzz";
 $mpiexec = "mpiexec";
-if ($numArgs > 3) {$mpiexec = $ARGV[3];}
-$mpiexecargs = "--mca mpi_yield_when_idle 1";
-### Test if MPI implementation supports --mca option
-$result = system("$mpiexec $mpiexecargs -n 1 uptime");
-if ($result) {
-  $mpiexecargs = "";
-}
-if ($debug) {print "DEBUG:  mpiexec $mpiexec $mpiexecargs\n";}
-
+$mpiexecarg = "-np";
 
 ### Assign the executable.
 $zdrive = "../zdrive.exe";
@@ -69,7 +54,30 @@ unless (-x $zdrive) {
 # Maybe you're on a Windows platform; look harder still.
   $zdrive = "../../src/driver/$ENV{TEST_CONFIG}/zdrive.exe";
 }
+
+### Get user-supplied parameter values.
+GetOptions('np=i' => \$np,
+           'pkg=s' => \$package,
+           'debug' => \$debug,
+           'mpiexec=s' => \$mpiexec,
+           'mpiexecarg=s' => \$mpiexecarg,
+           'zdrive=s' => \$zdrive);
+
+if ($debug) {print "DEBUG:  package $package\n";}
+
+### Error test the inputs
 die "zdrive executable not found\n" unless (-x $zdrive);
+die "number of processors (--np) must be specified\n" unless ($np > 0);
+die "package (--pkg) must be specified\n" unless ($package ne "zzzzz");
+
+### Test if MPI implementation supports --mca option
+$mpiexecextraargs = "--mca mpi_yield_when_idle 1";
+$result = system("$mpiexec $mpiexecextraargs $mpiexecarg 1 uptime");
+if ($result) {
+  $mpiexecextraargs = "";
+}
+if ($debug) {print "DEBUG:  mpiexec $mpiexec $mpiexecextraargs $mpiexecarg\n";}
+
 
 ### Get current working directory name
 use Cwd;
@@ -189,7 +197,7 @@ TEST:  foreach $file (@inpfiles) {
   ### Execute zdrive.exe.
   $zouterrfile = sprintf("%s.%s.%s.outerr", $dirname, $testname, $loop_np);
   if ($np > 1) {  # Test on $np because we want to know is the binary needs mpiexec
-    $cmd = sprintf("$mpiexec $mpiexecargs -np %d %s %s 2>&1 | tee %s\n", 
+    $cmd = sprintf("$mpiexec $mpiexecextraargs $mpiexecarg %d %s %s 2>&1 | tee %s\n", 
                     $loop_np, $zdrive, $file, $zouterrfile);
   }
   else {

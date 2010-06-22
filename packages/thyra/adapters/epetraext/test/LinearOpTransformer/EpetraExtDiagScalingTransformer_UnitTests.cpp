@@ -8,6 +8,7 @@
 #include "Thyra_LinearOpTester.hpp"
 #include "Thyra_EpetraThyraWrappers.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
+#include "Thyra_get_Epetra_Operator.hpp"
 #include "EpetraExt_readEpetraLinearSystem.h"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_VerboseObject.hpp"
@@ -141,6 +142,77 @@ TEUCHOS_UNIT_TEST( EpetraExtDiagScalingTransformer, isCompatible)
    TEST_ASSERT(not BD_transformer->isCompatible(*M));
 }
 
+TEUCHOS_UNIT_TEST( EpetraExtDiagScalingTransformer, reapply_scaling)
+{
+  //
+  // A) Read in problem matrices
+  //
+  
+  out << "\nReading linear system in Epetra format from the file \'"<<matrixFile<<"\'\n";
+    
+#ifdef HAVE_MPI
+  Epetra_MpiComm comm(MPI_COMM_WORLD);
+#else
+  Epetra_SerialComm comm;
+#endif
+  RCP<Epetra_CrsMatrix> epetra_A;
+  EpetraExt::readEpetraLinearSystem( matrixFile, comm, &epetra_A, NULL, NULL, NULL );
+
+  //
+  // B) Create the Thyra wrapped version
+  //
+ 
+  const RCP<const Thyra::LinearOpBase<double> > A = Thyra::epetraLinearOp(epetra_A);
+
+  RCP<const Thyra::LinearOpBase<double> > M;
+
+  // test scale on right
+  for(int scenario=1;scenario<=2;scenario++) {
+     out << "**********************************************************" << std::endl;
+     out << "**************** Starting Scenario = " << scenario << std::endl;
+     out << "**********************************************************" << std::endl;
+
+     //
+     // D) Check compatibility
+     //
+     const RCP<EpetraExtDiagScalingTransformer> BD_transformer =
+           epetraExtDiagScalingTransformer();
+
+     TEST_ASSERT(BD_transformer != null);
+
+     //
+     // E) Do the transformation (twice)
+     //
+
+     const RCP<LinearOpBase<double> > M_explicit = BD_transformer->createOutputOp();
+     TEST_ASSERT(M_explicit != null);
+
+     // do trans
+     M = buildADOperator(scenario,A,4.5,out);
+     BD_transformer->transform( *M, M_explicit.ptr() );
+     const RCP<const Epetra_Operator> eOp_explicit0 = Thyra::get_Epetra_Operator(*M_explicit);
+
+     M = buildADOperator(scenario,A,7.5,out);
+     BD_transformer->transform( *M, M_explicit.ptr() );
+     const RCP<const Epetra_Operator> eOp_explicit1 = Thyra::get_Epetra_Operator(*M_explicit);
+
+     // Epetra operator should not change!
+     TEST_EQUALITY(eOp_explicit0,eOp_explicit1);
+
+     out << "\nM_explicit = " << *M_explicit;
+
+     //
+     // F) Check the explicit operator
+     //
+
+     LinearOpTester<double> M_explicit_tester;
+     M_explicit_tester.show_all_tests(true);;
+
+     const bool result = M_explicit_tester.compare( *M, *M_explicit, &out );
+     if (!result) success = false;
+  }
+}
+
 TEUCHOS_UNIT_TEST( EpetraExtDiagScalingTransformer, basic_BDG_GDB)
 {
   
@@ -170,6 +242,10 @@ TEUCHOS_UNIT_TEST( EpetraExtDiagScalingTransformer, basic_BDG_GDB)
 
   // build scenario=1 -> B*D*B, scenario=2-> B*D*B', scenario=3 -> B'*D*B
   for(int scenario=1;scenario<=4;scenario++) {
+     out << "**********************************************************" << std::endl;
+     out << "**************** Starting Scenario = " << scenario << std::endl;
+     out << "**********************************************************" << std::endl;
+
      RCP<const Thyra::LinearOpBase<double> > M = buildADOperator(scenario,A,4.5,out);
 
      //

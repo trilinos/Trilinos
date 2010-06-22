@@ -6,8 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef SIERRA_Ioss_ShellLine2D3_h
-#define SIERRA_Ioss_ShellLine2D3_h
+#ifndef IOSS_Ioss_ShellLine2D3_h
+#define IOSS_Ioss_ShellLine2D3_h
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_ElementTopology.h>
@@ -54,4 +54,4 @@ namespace Ioss {
   };
 }
 
-#endif // SIERRA_Ioss_ShellLine2D3_h
+#endif // IOSS_Ioss_ShellLine2D3_h

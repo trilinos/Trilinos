@@ -1,5 +1,4 @@
 INCLUDE(PackageArchSetupStrongCompileWarnings)
-INCLUDE(PackageWriteExportMakefile)
 INCLUDE(PackageWritePackageConfig)
 
 INCLUDE(ParseVariableArguments)
@@ -266,16 +265,9 @@ MACRO(PACKAGE_POSTPROCESS)
   ADD_CUSTOM_TARGET(${PACKAGE_NAME}_libs DEPENDS ${${PACKAGE_NAME}_LIB_TARGETS})
   ADD_CUSTOM_TARGET(${PACKAGE_NAME}_all DEPENDS ${${PACKAGE_NAME}_ALL_TARGETS})
 
-  IF (${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES)
-    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE("\nWriting hidden export makefiles in binary build directory ...")
-    ENDIF()
-    PACKAGE_WRITE_EXPORT_MAKEFILE(${PROJECT_NAME} ${PACKAGE_NAME}
-      "Makefile.export" "Makefile.client")
-  ENDIF()
-  
-  #create the configure file so external projects can find packages with a
-  #call to find_package(<package_name>)
+  # Create the configure file so external projects can find packages with a
+  # call to find_package(<package_name>)
+  # This also creates the Makefile.export.* files.
   PACKAGE_WRITE_PACKAGE_CONFIG_FILE(${PACKAGE_NAME})
 
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)

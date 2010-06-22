@@ -24,9 +24,6 @@
 #include <sys/utsname.h>
 #endif
 
-#ifndef IOSS_STANDALONE
-#include <stk_util/environment/ProgramOptions.hpp>
-#endif
 #include <Ioss_ElementTopology.h>
 #include <Ioss_GroupingEntity.h>
 #include <Ioss_EntityBlock.h>
@@ -132,35 +129,17 @@ void Ioss::Utils::abort()
 }
 
 std::string Ioss::Utils::local_filename(const std::string& relative_filename,
-					const std::string& type)
+					const std::string& type,
+					const std::string& working_directory)
 {
-#ifndef IOSS_STANDALONE
-  if (relative_filename[0] == '/' || type == "generated") {
+  if (relative_filename[0] == '/' || type == "generated" || working_directory.empty()) {
     return relative_filename;
   } else {
-    std::string filename = working_directory();
+    std::string filename = working_directory;
     filename += relative_filename;
     return filename;
   }
-#else
-  return relative_filename;
-#endif
 }
-
-
-std::string Ioss::Utils::working_directory()
-{
-#ifndef IOSS_STANDALONE
-//  return std::string(sierra::Env::working_directory());
-  if (stk::get_variables_map().count("directory"))
-    return stk::get_variables_map()["directory"].as<std::string>();
-  else
-    return std::string("./");    
-#else
-  return std::string("./");
-#endif
-}
-
 
 int Ioss::Utils::field_warning(const Ioss::GroupingEntity *ge,
 			       const Ioss::Field &field, const std::string& inout)
@@ -288,51 +267,38 @@ unsigned int Ioss::Utils::hash (const std::string& name)
   return hashval;
 }
 
-void Ioss::Utils::input_file(std::vector<std::string> *lines, size_t max_line_length)
+void Ioss::Utils::input_file(const std::string &file_name,
+			     std::vector<std::string> *lines,
+			     size_t max_line_length)
 {
-#ifndef IOSS_STANDALONE
   // Create an ifstream for the input file. This does almost the same
   // function as sierra::Env::input() except this is for a single
   // processor and the sierra::Env::input() is for parallel...
 
-  std::string file;
-
-  if (stk::get_variables_map().count("input-deck")) {
-    const std::string file_name = stk::get_variables_map()["input-deck"].as<std::string>();
-    if (file_name.length() != 0) {
-      if (file_name[0] != '/' && stk::get_variables_map().count("directory")) {
-        const std::string directory = stk::get_variables_map()["directory"].as<std::string>();
-        file = directory + file_name;
-      }
-      else {
-        file = file_name;
-      }
-
-      // Should have the filename now; open it and read into the vector...
-      std::string input_line;
-      std::ifstream infile(file.c_str());
-      lines->push_back(file);
-      while (!std::getline(infile, input_line).fail()) {
-        if (max_line_length == 0 || input_line.length() <= max_line_length) {
-          lines->push_back(input_line);
-        } else {
-          // Split the line into pieces of length "max_line_length-1"
-          // and append a "\" to all but the last. Don't worry about
-          // splitting at whitespace...
-          size_t ibeg = 0;
-          do {
-            std::string sub = input_line.substr(ibeg, max_line_length-1);
-            if (ibeg+max_line_length-1 < input_line.length()) {
-              sub += "\\";
-            }
-            lines->push_back(sub);
-            ibeg += max_line_length-1;
-          } while (ibeg < input_line.length());
-        }
+  if (file_name.length() != 0) {
+    // Open the file and read into the vector...
+    std::string input_line;
+    std::ifstream infile(file_name.c_str());
+    lines->push_back(file_name.substr(0,max_line_length));
+    while (!std::getline(infile, input_line).fail()) {
+      if (max_line_length == 0 || input_line.length() <= max_line_length) {
+	lines->push_back(input_line);
+      } else {
+	// Split the line into pieces of length "max_line_length-1"
+	// and append a "\" to all but the last. Don't worry about
+	// splitting at whitespace...
+	size_t ibeg = 0;
+	do {
+	  std::string sub = input_line.substr(ibeg, max_line_length-1);
+	  if (ibeg+max_line_length-1 < input_line.length()) {
+	    sub += "\\";
+	  }
+	  lines->push_back(sub);
+	  ibeg += max_line_length-1;
+	} while (ibeg < input_line.length());
       }
     }
   }
-#endif
 }
 
 int Ioss::Utils::case_strcmp(const std::string &s1, const std::string &s2)

@@ -7,8 +7,8 @@
 /*--------------------------------------------------------------------*/
 
 // -*- Mode: c++ -*-
-#ifndef SIERRA_Ioss_Hex27_h
-#define SIERRA_Ioss_Hex27_h
+#ifndef IOSS_Ioss_Hex27_h
+#define IOSS_Ioss_Hex27_h
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_ElementTopology.h>

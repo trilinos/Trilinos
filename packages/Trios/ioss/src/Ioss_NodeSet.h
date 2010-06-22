@@ -6,8 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef SIERRA_Ioss_NodeSet_h
-#define SIERRA_Ioss_NodeSet_h
+#ifndef IOSS_Ioss_NodeSet_h
+#define IOSS_Ioss_NodeSet_h
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_GroupingEntity.h>

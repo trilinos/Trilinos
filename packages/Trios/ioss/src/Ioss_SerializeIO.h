@@ -1,5 +1,5 @@
-#ifndef SIERRA_Ioss_SerializeIO_h
-#define SIERRA_Ioss_SerializeIO_h
+#ifndef IOSS_Ioss_SerializeIO_h
+#define IOSS_Ioss_SerializeIO_h
 
 #include <Ioss_CodeTypes.h>
 #include <string>
@@ -87,4 +87,4 @@ private:
 
 } // namespace Ioss
 
-#endif // SIERRA_Ioss_SerializeIO_h
+#endif // IOSS_Ioss_SerializeIO_h

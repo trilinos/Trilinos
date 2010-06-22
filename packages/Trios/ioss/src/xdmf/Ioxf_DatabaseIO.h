@@ -7,8 +7,8 @@
 /*--------------------------------------------------------------------*/
 
 // -*- Mode: c++ -*-
-#ifndef SIERRA_Ioxf_DatabaseIO_h
-#define SIERRA_Ioxf_DatabaseIO_h
+#ifndef IOSS_Ioxf_DatabaseIO_h
+#define IOSS_Ioxf_DatabaseIO_h
 
 #include <Ioss_DatabaseIO.h>
 #include <Ioss_Field.h>
@@ -72,7 +72,6 @@ namespace Ioxf {
 		 Ioss::DatabaseUsage db_usage, MPI_Comm communicator);
       ~DatabaseIO();
       static void finalize();
-      static void register_library_versions();
 
       void InitXML(std::ostringstream *XML);
       void WriteMetaXdmfNodesets(std::ostringstream *XML, const std::vector<Ioxf::NodeSet> &nodesets);

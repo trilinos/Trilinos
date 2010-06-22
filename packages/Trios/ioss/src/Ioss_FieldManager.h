@@ -6,8 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef SIERRA_Ioss_FieldManager_h
-#define SIERRA_Ioss_FieldManager_h
+#ifndef IOSS_Ioss_FieldManager_h
+#define IOSS_Ioss_FieldManager_h
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_Utils.h>

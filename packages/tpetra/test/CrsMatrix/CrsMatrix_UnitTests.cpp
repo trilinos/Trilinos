@@ -62,6 +62,7 @@ namespace {
   using Teuchos::RCP;
   using Teuchos::ArrayRCP;
   using Teuchos::rcp;
+  using Teuchos::arcp;
   using Teuchos::outArg;
   using Teuchos::arcpClone;
   using Teuchos::arrayView;
@@ -98,6 +99,7 @@ namespace {
   using Tpetra::RowMatrix;
   using Tpetra::Import;
   using Tpetra::global_size_t;
+  using Tpetra::createUniformContigMapWithNode;
   using Tpetra::createContigMapWithNode;
   using Tpetra::createLocalMapWithNode;
   using Tpetra::createCrsMatrixSolveOp;
@@ -509,6 +511,91 @@ namespace {
       TEST_EQUALITY( matrix1.getCrsGraph(), diaggraph );
       MAT matrix2( matrix1.getCrsGraph() );
       TEST_EQUALITY( matrix2.getCrsGraph(), matrix1.getCrsGraph() );
+    }
+  }
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, WithColMap, LO, GO, Scalar, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+    // generate a tridiagonal matrix
+    typedef ScalarTraits<Scalar> ST;
+    typedef CrsMatrix<Scalar,LO,GO,Node> MAT;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    const Scalar SONE  = ST::one();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    // create a Map with numLocal entries per node using a pre-existing column map.
+    // ensure:
+    // * that the matrix uses this col map
+    // * that it performs filtering during insertions
+    // * that we can perform local or global insertions
+    const size_t numLocal = 10; TEST_FOR_EXCEPTION( numLocal < 2, std::logic_error, "Test assumes that numLocal be greater than 1.");
+    // these maps are equalivalent, but we should keep two distinct maps just to verify the general use case.
+    RCP<const Map<LO,GO,Node> > rmap = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+    RCP<const Map<LO,GO,Node> > cmap = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
+    //////////////////////////////////
+    // add tridiagonal entries, but use a diagonal column map.
+    // result should be block diagonal matrix, with no importer/exporter.
+    //
+    // run this test twice; once where we insert global indices and once where we insert local indices
+    // both are allowed with a specified column map; however, we can only test one at a time.
+    // 
+    // the first time, use const NNZ
+    // the second, use NNZ array
+    {
+      MAT bdmat(rmap,cmap,3,StaticProfile);
+      TEST_EQUALITY(bdmat.getRowMap(), rmap);
+      TEST_EQUALITY_CONST(bdmat.hasColMap(), true);
+      TEST_EQUALITY(bdmat.getColMap(), cmap);
+      for (GO r=rmap->getMinGlobalIndex(); r <= rmap->getMaxGlobalIndex(); ++r) {
+        // use global for the first one to verify that the matrix allows it
+        // r-1 might be invalid, but the column map filtering should address that.
+        bdmat.insertGlobalValues(r,tuple<GO>(r-1,r,r+1),tuple<Scalar>(SONE,SONE,SONE));
+      }
+      TEST_NOTHROW(bdmat.fillComplete());
+      // nothing should have changed with regard to the row and column maps of the matrix
+      TEST_EQUALITY(bdmat.getRowMap(), rmap);
+      TEST_EQUALITY_CONST(bdmat.hasColMap(), true);
+      TEST_EQUALITY(bdmat.getColMap(), cmap);
+      // check that filtering happened
+      for (GO r=rmap->getMinGlobalIndex(); r <= rmap->getMaxGlobalIndex(); ++r) {
+        if (r == rmap->getMinGlobalIndex() || r == rmap->getMaxGlobalIndex()) {
+          TEST_EQUALITY_CONST(bdmat.getNumEntriesInGlobalRow(r), 2);
+        }
+        else {
+          TEST_EQUALITY_CONST(bdmat.getNumEntriesInGlobalRow(r), 3);
+        }
+      }
+    }
+    {
+      ArrayRCP<size_t> nnzperrow = arcp<size_t>(numLocal);
+      std::fill(nnzperrow.begin(), nnzperrow.end(), 3);
+      MAT bdmat(rmap,cmap,nnzperrow,StaticProfile);
+      TEST_EQUALITY(bdmat.getRowMap(), rmap);
+      TEST_EQUALITY_CONST(bdmat.hasColMap(), true);
+      TEST_EQUALITY(bdmat.getColMap(), cmap);
+      for (GO r=rmap->getMinGlobalIndex(); r <= rmap->getMaxGlobalIndex(); ++r) {
+        // use local for the rest. need the column map
+        // column map and row map are the same, so we only have to do one translation
+        LO lid = cmap->getLocalElement(r);
+        // as above, filtering via column map (required to happen for local and global) will save us for the invalid r-1
+        bdmat.insertLocalValues(lid,tuple<LO>(lid-1,lid,lid+1),tuple<Scalar>(SONE,SONE,SONE));
+      }
+      TEST_NOTHROW(bdmat.fillComplete());
+      // nothing should have changed with regard to the row and column maps of the matrix
+      TEST_EQUALITY(bdmat.getRowMap(), rmap);
+      TEST_EQUALITY_CONST(bdmat.hasColMap(), true);
+      TEST_EQUALITY(bdmat.getColMap(), cmap);
+      // check that filtering happened
+      for (GO r=rmap->getMinGlobalIndex(); r <= rmap->getMaxGlobalIndex(); ++r) {
+        if (r == rmap->getMinGlobalIndex() || r == rmap->getMaxGlobalIndex()) {
+          TEST_EQUALITY_CONST(bdmat.getNumEntriesInGlobalRow(r), 2);
+        }
+        else {
+          TEST_EQUALITY_CONST(bdmat.getNumEntriesInGlobalRow(r), 3);
+        }
+      }
     }
   }
 
@@ -1734,6 +1821,7 @@ typedef std::complex<double> ComplexDouble;
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, NonSquare, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, Transpose, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, WithGraph, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, WithColMap, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, EmptyFillComplete, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, AdvancedGraphUsage, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( CrsMatrix, WithGraph_replaceLocal, LO, GO, SCALAR, NODE ) \
@@ -1827,7 +1915,7 @@ typedef std::complex<double> ComplexDouble;
   UNIT_TEST_DOUBLE(int, int)
 #endif
 
-#if !defined(FAST_DEVELOPMENT_BUILD)
+#if !defined(FAST_DEVELOPMENT_UNIT_TEST_BUILD)
 # if defined(HAVE_TPETRA_INST_FLOAT)
     UNIT_TEST_FLOAT(int, int)
 # endif 

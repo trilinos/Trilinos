@@ -512,3 +512,22 @@ MACRO(PACKAGE_ARCH_CONFIGURE_ENABLED_PACKAGES)
   ADD_DEPENDENCIES(libs ${ENABLED_PACKAGE_LIBS_TARGETS})
 
 ENDMACRO()
+
+
+#
+#  Macro that allows packages to easily make a feature SS for development
+#  builds and PS for release builds
+#.
+#  The OUTPUT_VAre is set to ON or OFF based on the configure state. In
+#  development mode it will be set to ON only if SS code is enabled, 
+#  otherwise it is set to OFF. In release mode it is always set to ON.
+#  This allows some sections of Trilinos to be considered SS for 
+#  development mode reducing testing time, while still having important
+#  functionality available to users by default
+MACRO(PACKAGE_ARCH_SET_SS_FOR_DEV_MODE OUTPUT_VAR)
+  IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
+    SET(${OUTPUT_VAR} ${${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE})
+  ELSE()
+    SET(${OUTPUT_VAR} ON)
+  ENDIF()
+ENDMACRO()

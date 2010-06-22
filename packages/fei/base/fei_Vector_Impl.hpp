@@ -201,6 +201,7 @@ namespace fei {
 			int numNodes,
 			const int* nodeNumbers,
 			const int* numIndicesPerNode,
+      const int* dof_ids,
 			const double* values);
 
     T* vector_;
@@ -477,11 +478,12 @@ int fei::Vector_Impl<T>::sumIntoFEVector(int blockID,
 					int numNodes,
 					const int* nodeNumbers,
 					const int* numIndicesPerNode,
+          const int* dof_ids,
 					const double* values)
 {
   return( snl_fei::FEVectorTraits<T>::sumInElemVector(vector_, blockID, connOffset,
 					      numNodes, nodeNumbers,
-					      numIndicesPerNode, values) );
+					      numIndicesPerNode, dof_ids, values) );
 }
 
 #undef fei_file

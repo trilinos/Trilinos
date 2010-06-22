@@ -7,8 +7,8 @@
 /*--------------------------------------------------------------------*/
 
 // -*- Mode: c++ -*-
-#ifndef SIERRA_Ioss_State_h
-#define SIERRA_Ioss_State_h
+#ifndef IOSS_Ioss_State_h
+#define IOSS_Ioss_State_h
 namespace Ioss {
   enum State {
     STATE_INVALID = -1,

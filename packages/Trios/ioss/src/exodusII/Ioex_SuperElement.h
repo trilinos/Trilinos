@@ -1,5 +1,5 @@
-#ifndef SIERRA_Ioex_SuperElement_h
-#define SIERRA_Ioex_SuperElement_h
+#ifndef IOSS_Ioex_SuperElement_h
+#define IOSS_Ioex_SuperElement_h
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_GroupingEntity.h>

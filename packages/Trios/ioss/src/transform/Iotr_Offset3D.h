@@ -6,8 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef SIERRA_Iotr_Offset3D_h
-#define SIERRA_Iotr_Offset3D_h
+#ifndef IOSS_Iotr_Offset3D_h
+#define IOSS_Iotr_Offset3D_h
 
 #include <Ioss_Transform.h>
 #include <string>
@@ -49,4 +49,4 @@ namespace Iotr {
     };
 }
 
-#endif // SIERRA_Iotr_Offset3D_h
+#endif // IOSS_Iotr_Offset3D_h

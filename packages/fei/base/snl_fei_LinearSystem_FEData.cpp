@@ -132,6 +132,8 @@ int snl_fei::LinearSystem_FEData::implementBCs(bool applyBCs)
 
   int len = essEqns.size();
   essEqns.resize(len*3);
+  int* nodeNumbers = &essEqns[0]+len;
+  int* dof_ids = nodeNumbers+len;
 
   if (len > 0) {
     int* essEqnsPtr = &essEqns[0];
@@ -139,13 +141,14 @@ int snl_fei::LinearSystem_FEData::implementBCs(bool applyBCs)
 
     for(int i=0; i<len; ++i) {
       int eqn = essEqnsPtr[i];
-      essEqnsPtr[i+len] = lookup_->getAssociatedNodeNumber(eqn);
-      essEqnsPtr[i+2*len]=lookup_->getOffsetIntoBlkEqn(essEqnsPtr[i+len], eqn);
+      nodeNumbers[i] = lookup_->getAssociatedNodeNumber(eqn);
+      int fieldID = lookup_->getAssociatedFieldID(eqn);
+      int base_eqn = lookup_->getEqnNumber(nodeNumbers[i], fieldID);
+      dof_ids[i]=vecSpace->getFieldDofMap().get_dof_id(fieldID, eqn-base_eqn);
     }
 
     if (applyBCs) {
-      CHK_ERR( feData_->setDirichletBCs(len, essEqnsPtr+len, essEqnsPtr+len*2,
-                                        gammaPtr) );
+      CHK_ERR( feData_->setDirichletBCs(len, nodeNumbers, dof_ids, gammaPtr) );
     }
   }
 

@@ -73,6 +73,11 @@ class NodeDescriptor {
    */
    bool getFieldEqnNumber(int fieldID, int& eqnNumber) const;
 
+   /** Given an equation-number, get the associated fieldID and offset-into-field.
+     throws an exception if the equation-number is not associated with this node.
+   */
+   void getFieldID(int eqnNumber, int& fieldID, int& offset_into_field) const;
+
    bool operator==(const NodeDescriptor& nd) const
      { return( nodeID_ == nd.nodeID_ ); }
 

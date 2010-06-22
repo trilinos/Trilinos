@@ -6,8 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef SIERRA_Ioss_IOUtils_h
-#define SIERRA_Ioss_IOUtils_h
+#ifndef IOSS_Ioss_IOUtils_h
+#define IOSS_Ioss_IOUtils_h
 
 #include <Ioss_CodeTypes.h>
 
@@ -21,14 +21,7 @@
 #include <cstdlib>
 
 #define IOSS_ERROR(errmsg) throw std::runtime_error(errmsg.str())
-
-#ifndef IOSS_STANDALONE
-#  include <stk_util/environment/ReportHandler.hpp>
-#  include <stk_util/environment/RuntimeWarning.hpp>
-#  define IOSS_WARNING stk::RuntimeWarningSymmetric()
-#else
-#  define IOSS_WARNING std::cerr
-#endif
+#define IOSS_WARNING std::cerr
 
 namespace Ioss {
   class GroupingEntity;
@@ -77,11 +70,11 @@ namespace Ioss {
 
     /*!
      * Return a filename relative to the specified working directory (if any)
-     * of the current execution. (This also encapsulates a sierra::Env call)
+     * of the current execution. Working_directory must end with '/' or be empty.
      */
     static std::string local_filename(const std::string &relative_filename,
-				      const std::string &type);
-    static std::string working_directory();
+				      const std::string &type,
+				      const std::string &working_directory);
 
     static int field_warning(const Ioss::GroupingEntity *ge,
 			     const Ioss::Field &field, const std::string& inout);
@@ -96,9 +89,11 @@ namespace Ioss {
 
     /*!
      * Return a vector of strings containing the lines of the input file.
-     * This also encapsulates a sierra::Env call)
+     * Should only be called by a single processor or each processor will
+     * be accessing the file at the same time...
      */
-    static void input_file(std::vector<std::string> *lines, size_t max_line_length = 0);
+    static void input_file(const std::string &file_name,
+			   std::vector<std::string> *lines, size_t max_line_length = 0);
 
     template <class T> static std::string to_string(const T & t)
       {

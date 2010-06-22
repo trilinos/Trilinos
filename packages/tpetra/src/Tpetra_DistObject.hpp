@@ -65,7 +65,7 @@ namespace Tpetra {
   */
 
   template <class Packet, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
-  class DistObject : public Teuchos::Describable {
+  class DistObject : virtual public Teuchos::Describable {
 
   public:
 

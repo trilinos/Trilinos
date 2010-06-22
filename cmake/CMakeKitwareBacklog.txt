@@ -143,6 +143,12 @@ strongly tested with automated unit tests if feasible ... This is something
 Kitware shoudl be doing but we can't force them.  If we move to static
 versions of CTest/CDash then this becomes a non-issue.
 
+- (2010/06/15) Kitware has now implemented a coverage tool for PHP that they
+are now using to test the coverage of CDash testing.  The coverage is
+currently very low but at least now they can add more tests and bring this
+coverage up.  The assumption would be that all new CDash capabilities would be
+unit tested as (or before) they are implemented.
+
 
 A.2) Prioritized Backlog Items that do *not* need changes in CMake/CTest/CDash:
 ---------------------------------------------------------------------------------
@@ -210,13 +216,10 @@ would not be all that hard to write in an external tool actually, but again,
 this is a feature that should go into CTest proper.
 
 
-(*) [CTest] [P2] Write a unit testing harness for the Trilinos CTest Driver.
-
-
 (*) [CTest] [P2] Unit test the TrilinosCTestDriverCore.cmake script.
 
 
-(*) [General] [P2] Help set up an Official Trilinos Development Toolset that
+(*) [General] [P2] Set up an Official Trilinos Development Toolset that
 provides a standard development environment for Trilinos developers.  This may
 look similar to the CSE that was set up for another Kitware customer.  We can
 do this for ourselves and don't need Kitware.
@@ -319,6 +322,7 @@ different amounts of time).  We would also be able to use this info to see if
 there are certain CDash queries that are habitually taking too long.
 
 
+
 (*) [CDash] Add a general query filter for the main
 project/subprojects page: Currently, the main project/subprojects page
 shows all results for all builds for the current day for all nightly
@@ -330,12 +334,20 @@ querying over multiple days or specific machines would also be very
 useful.
 
 
-(*) [CTest, CDash] Show the total run-time for "Dynamic Analysis" and
-"Coverage" tests on the dashboard in some way: Right now we can only
-see the total run-time for the build and the regular tests on the
-CDash dashboard.  These tests take a long time to run and we need to
-see that.  We also need to see every 'Dynamic Analysis' test that
-times out on the dashboard.
+(*) [CTest, CDash] Show the total run-time and timeouts for "Dynamic Analysis"
+and "Coverage" tests on the dashboard in some way: Right now we can only see
+the total run-time for the build and the regular tests on the CDash dashboard.
+These tests take a long time to run and we need to see that.  We also need to
+see every 'Dynamic Analysis' test that times out on the dashboard.  Currently,
+if a MEMCHECK test times out, there is no record in CDash that it was ever
+even run.  If a dynamic analysis tests times out, we need to know it and it
+needs to be recorded as a failing MEMCHECK test (and we need to get an error
+email from CDash).
+
+
+(*) [CTest, CDash] Send out CDash error notification emails for failed
+coverage tests and failed Dynamic Analysis tests: We need to be
+notified when 'Dynamic Analysis' tests don't run or don't finish.
 
 
 (*) [CTest, CDash] Append update results to every subproject build and send
@@ -344,12 +356,10 @@ emails to the subproject email lists (signed up for labels) but will not send
 out emails to the users who checked in (except for the first subproject built)
 ... Now that there is the ability to go from a subproject build to the entire
 set of subprojects this is less important.  However, this would still be
-needed for correct CI email notification.
-
-
-(*) [CTest, CDash] Send out CDash error notification emails for failed
-coverage tests and failed Dynamic Analysis tests: We need to be
-notified when 'Dynamic Analysis' tests don't run or don't finish.
+needed for correct CI email notification.  This would make the CI reporting
+100% robust in that everyone who pushed commits associated with a broken CI
+build would get emails.  Right now, Trilinos framework people have to globally
+monitor the CI builds and send emails notifying people of problems.
 
 
 
@@ -361,7 +371,7 @@ B.2) Unprioritized Backlog Items that do *not* need changes in CMake/CTest/CDash
 externalize and organize all of the basic Trilinos and package options like
 you get with autotools.  Workaround: We could do this externally by
 configuring Trilinos and then reading the CMakeCache.txt file and extracting
-out all of the various options and documentation (which is also in the file).
+out all of the various options and documentation (which are also in the file).
 We would just need to ignore internal cache variables and would be able to
 seprate regular from advanced options.  This would not take very long to
 create and we could generate this documenation as part of a nightly testing
@@ -371,12 +381,12 @@ various forms (along with the existing TrilinosCMakeQuickstart.txt document).
 
 (*) [CTest, CDash] Overall time budgets for running package tests: Currently,
 you can only put time limits on individual tests.  What would be more useful
-would be to put time budget on an who set of package tests.  All of the tests
+would be to put time budget on a whole set of package tests.  All of the tests
 that would be run after the overall time limit was reached would be listed as
 'Not Run'.  This would allow package developers to group their tests into
 different executables any way they would like while only the overall time
 usage would be an issue ... This can be handled by running as a CTest test and
-setting a time limite.
+setting a time limit.
 
 
 (*) [CTest] Support for multi-computer running of tests: CTest has the -jN
@@ -385,7 +395,9 @@ are some testing tools that can run tests in parallel over multiple similar
 machines and therefore achieve much higher levels of parallelism.  Workaround:
 We could just use remote SSH calls run tests on remote machines.  With a
 little CMake code, would could set up to run different tests on different
-machines without much trouble.
+machines without much trouble.  However, getting accurate timings for each
+test would be a problem.  We would need the extension to handle batch-style
+tests to really handle this well.
 
 
 

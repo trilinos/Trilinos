@@ -1,0 +1,18 @@
+include Makefile.export.Epetra
+
+CFLAGS=$(Epetra_CXX_FLAGS)
+CC=$(Epetra_CXX_COMPILER)
+
+INCLUDE_INFO=$(Epetra_INCLUDE_DIRS) $(Epetra_TPL_INCLUDE_DIRS)
+LIBRARY_INFO=$(Epetra_EXTRA_LD_FLAGS) $(Epetra_LIBRARY_DIRS) $(Epetra_LIBRARIES) $(Epetra_TPL_LIBRARIES)
+
+default: main_prog
+
+main_prog: main.o
+	$(CC) $(CFLAGS) $(LIBRARY_INFO) main.o
+
+main.o: main.cpp
+	$(CC) -c $(CFLAGS) $(INCLUDE_INFO) main.cpp
+
+clean:
+	rm -rf *.o a.out

@@ -38,10 +38,11 @@ namespace snl_fei {
 			       int numNodes,
 			       const int* nodeNumbers,
 			       const int* dofPerNode,
+             const int* dof_ids,
 			       const double* coefs)
       {
 	return( vec->setElemVector(elemBlockID, elemID, numNodes,
-				   nodeNumbers, dofPerNode, coefs) );
+				   nodeNumbers, dofPerNode, dof_ids, coefs) );
       }
 
     /** Copy data out of the FiniteElementData object */

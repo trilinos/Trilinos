@@ -6,8 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef SIERRA_Ioss_Pyramid13_h
-#define SIERRA_Ioss_Pyramid13_h
+#ifndef IOSS_Ioss_Pyramid13_h
+#define IOSS_Ioss_Pyramid13_h
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_ElementTopology.h>
@@ -55,4 +55,4 @@ namespace Ioss {
     Pyramid13(const Pyramid13&); // Do not implement
   };
 }
-#endif // SIERRA_Ioss_Pyramid13_h
+#endif // IOSS_Ioss_Pyramid13_h

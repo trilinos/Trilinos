@@ -513,7 +513,7 @@ void destroy_dependent_ghosts( BulkData & mesh , Entity * entity )
 
 void resolve_modified_shared( BulkData & mesh )
 {
-  for ( std::vector<Entity*>::const_iterator 
+  for ( std::vector<Entity*>::const_iterator
         i =  mesh.entity_comm().end() ;
         i != mesh.entity_comm().begin() ; ) {
 
@@ -574,9 +574,7 @@ bool BulkData::internal_modification_end( bool regenerate_aura )
 
   if ( global_change_count[0] || global_change_count[1] ) {
 
-    if ( 1 < m_parallel_size ) {
-      internal_resolve_parallel_create_delete( del_entities );
-    }
+    internal_resolve_parallel_create_delete( del_entities );
   }
 
   // Parallel distribution considerations:

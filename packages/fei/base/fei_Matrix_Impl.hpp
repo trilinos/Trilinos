@@ -646,31 +646,51 @@ int fei::Matrix_Impl<T>::sumIn(int blockID, int connectivityID,
   const fei::Pattern* colpattern = symmetric ? NULL : cblock->getColPattern();
   const fei::Record<int>*const* rowConn = cblock->getRowConnectivity(connectivityID);
 
-  mgraph->getRowSpace()->getGlobalIndices(pattern, rowConn, work_indices2_);
+  fei::SharedPtr<fei::VectorSpace> rspace = mgraph->getRowSpace();
+  rspace->getGlobalIndices(pattern, rowConn, work_indices2_);
 
   int numRowIndices = work_indices2_.size();
   int* rowIndices = &work_indices2_[0];
 
   if (haveFEMatrix() || haveBlockMatrix()) {
+    FieldDofMap<int>& fdofmap = rspace->getFieldDofMap();
     const std::map<int,int>& connIDs = cblock->getConnectivityIDs();
     std::map<int,int>::const_iterator
       iter = connIDs.find(connectivityID);
     if (iter == connIDs.end()) ERReturn(-1);
     int connOffset = iter->second;
     int numIDs = pattern->getNumIDs();
+    const int* indicesPerID = pattern->getNumIndicesPerID();
+    const int* fieldsPerID = pattern->getNumFieldsPerID();
+    const int* fieldIDs = pattern->getFieldIDs();
+
+    int numDofs = 0;
+    for(int ii=0; ii<numIDs; ++ii) {
+      numDofs += indicesPerID[ii];
+    }
 
     const int* numIndicesPerID = pattern->getNumIndicesPerID();
-    work_indices_.resize(numIDs);
+    work_indices_.resize(numIDs+numDofs);
     int i, *nodeNumbers = &work_indices_[0];
+    int* dof_ids = nodeNumbers+numIDs;
 
+    int foffset = 0;
+    int doffset = 0;
     for(i=0; i<numIDs; ++i) {
       nodeNumbers[i] = rowConn[i]->getNumber();
+      for(int ii=0; ii<fieldsPerID[i]; ++ii) {
+        int fieldSize = rspace->getFieldSize(fieldIDs[foffset]);
+        int dof_id = fdofmap.get_dof_id(fieldIDs[foffset++], 0);
+        for(int j=0; j<fieldSize; ++j) {
+          dof_ids[doffset++] = dof_id + j;
+        }
+      }
     }
 
     if (haveFEMatrix()) {
       CHK_ERR( snl_fei::FEMatrixTraits<T>::sumInElemMatrix(matrix_.get(), blockID, connOffset,
                                                   numIDs, nodeNumbers,
-                                                  numIndicesPerID, values) );
+                                                  numIndicesPerID, dof_ids, values) );
       changedSinceMark_ = true;
     }
 

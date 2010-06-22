@@ -6,8 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef SIERRA_Iotr_Tensor_h
-#define SIERRA_Iotr_Tensor_h
+#ifndef IOSS_Iotr_Tensor_h
+#define IOSS_Iotr_Tensor_h
 
 #include <Ioss_Transform.h>
 #include <string>
@@ -46,4 +46,4 @@ namespace Iotr {
     };
 }
 
-#endif // SIERRA_Iotr_Tensor_h
+#endif // IOSS_Iotr_Tensor_h

@@ -8,10 +8,6 @@
 
 #include <Ioss_IOFactory.h>
 
-#ifndef IOSS_STANDALONE
-#include <stk_util/environment/product_registry.h>
-#endif
-
 #include <Ioss_Utils.h>
 #include <string>
 
@@ -62,14 +58,7 @@ int Ioss::IOFactory::describe(NameList *names)
 
 Ioss::IOFactory::IOFactory(const std::string& type)
 {
-  static bool first = true;
   registry()->insert(IOFactoryValuePair(type, this));
-  if (first) {
-    first = false;
-#ifndef IOSS_STANDALONE
-    product_registry_add(get_product_name());
-#endif
-  }
 }
 
 void Ioss::IOFactory::alias(const std::string& base, const std::string& syn)

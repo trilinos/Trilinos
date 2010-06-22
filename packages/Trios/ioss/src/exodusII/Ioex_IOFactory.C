@@ -22,26 +22,16 @@ namespace Ioex {
   IOFactory::IOFactory()
     : Ioss::IOFactory("exodusII")
   {
+    Ioss::IOFactory::alias("exodusII", "exodusii");
     Ioss::IOFactory::alias("exodusII", "exodus");
     Ioss::IOFactory::alias("exodusII", "genesis");
     Ioss::IOFactory::alias("exodusII", "exodusII_input");
     Ioss::IOFactory::alias("exodusII", "exodusII_output");
-
-    // Tell the database to register itself with sierra's product registry.
-    register_library_versions();
   }
 
   Ioss::DatabaseIO* IOFactory::make_IO(const std::string& filename,
 				       Ioss::DatabaseUsage db_usage,
 				       MPI_Comm communicator) const
   { return new DatabaseIO(NULL, filename, db_usage, communicator); }
-
-  /**
-   * Call the sierra product registry and register all dependent third-party libraries
-   */
-  void IOFactory::register_library_versions() const
-  {
-    Internals::register_library_versions();
-  }
 
 }

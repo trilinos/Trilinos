@@ -50,7 +50,7 @@ namespace Tpetra
      The \c Node type defaults to the default node in Kokkos.
    */
   template <class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
-  class RowGraph : public Teuchos::Describable {
+  class RowGraph : virtual public Teuchos::Describable {
     public: 
       //! @name Destructor Method
       //@{ 

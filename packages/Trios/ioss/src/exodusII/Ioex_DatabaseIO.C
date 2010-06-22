@@ -23,11 +23,6 @@
 #include <time.h>
 #include <float.h>
 
-#ifndef IOSS_STANDALONE
-#include <stk_util/environment/RuntimeWarning.hpp>
-#include <stk_util/environment/ProductRegistry.hpp>
-#endif
-
 #include <Ioss_SubSystem.h>
 #include <Ioss_Utils.h>
 #include <Ioss_ParallelUtils.h>
@@ -48,8 +43,8 @@ namespace Ioex {
   typedef std::map<std::string, const std::string, std::less<const std::string> > FaceSetMap;
 
   struct TopologyMapCompare {
-    bool operator() (const std::pair<const std::string, const Ioss::ElementTopology*> &lhs,
-                     const std::pair<const std::string, const Ioss::ElementTopology*> &rhs) const
+    bool operator() (const std::pair<std::string, const Ioss::ElementTopology*> &lhs,
+                     const std::pair<std::string, const Ioss::ElementTopology*> &rhs) const
     {
       assert(lhs.second != NULL);
       assert(rhs.second != NULL);
@@ -57,7 +52,7 @@ namespace Ioex {
     }
   };
 
-  typedef std::map<std::pair<const std::string, const Ioss::ElementTopology*>, int, TopologyMapCompare > TopologyMap;
+  typedef std::map<std::pair<std::string, const Ioss::ElementTopology*>, int, TopologyMapCompare > TopologyMap;
   typedef TopologyMap::value_type TopoMapPair;
 }
 
@@ -422,11 +417,6 @@ namespace Ioex {
     std::string codename = "unknown";
     std::string version  = "unknown";
 
-#ifndef IOSS_STANDALONE
-    codename = stk::ProductRegistry::instance().getProductName();
-    version  = stk::ProductRegistry::version();
-#endif
-
     if (get_region()->property_exists("code_name")) {
       codename = get_region()->get_property("code_name").get_string();
     }
@@ -449,16 +439,20 @@ namespace Ioex {
     // dump info records, include the product_registry
     assert(myProcessor == 0);
 
-#ifndef IOSS_STANDALONE
+    // See if the input file was specified as a property on the database...
+    std::string filename;
+    if (get_region()->property_exists("input_file_name")) {
+      filename = get_region()->get_property("input_file_name").get_string();
+    }
+    
     // Determine size of input file so can embed it in info records...
     std::vector<std::string> input_lines;
-    Ioss::Utils::input_file(&input_lines, max_line_length);
+    Ioss::Utils::input_file(filename, &input_lines, max_line_length);
 
     size_t in_lines = input_lines.size();
-    size_t reg_lines = stk::ProductRegistry::instance().getProductMap().size(); // product_registry_size();
     size_t qa_lines = 2; // Platform info and Version info...
 
-    size_t total_lines = in_lines + reg_lines + qa_lines;
+    size_t total_lines = in_lines + qa_lines;
 
     char** info = get_exodus_names(total_lines, max_line_length); // 'total_lines' pointers to char buffers
 
@@ -467,28 +461,13 @@ namespace Ioex {
 		 max_line_length);
 
     std::strncpy(info[i++], Version(), max_line_length);
-
-    for (stk::ProductRegistry::ProductMap::iterator it = stk::ProductRegistry::instance().getProductMap().begin();
-	 it != stk::ProductRegistry::instance().getProductMap().end(); ++it, ++i) {
-      stk::ProductRegistry::AttributeMap &attribute = (*it).second;
-      std::string temp = std::string(attribute[stk::ProductRegistry::NAME]);
-      std::strncpy(info[i], temp.c_str(), max_line_length);
-      info[i][max_line_length] = '\0'; // Once more for good luck...
-    }
 
     // Copy input file lines into 'info' array...
     for (size_t j=0; j < input_lines.size(); j++, i++) {
       std::strncpy(info[i], input_lines[j].c_str(), max_line_length);
       info[i][max_line_length] = '\0'; // Once more for good luck...
     }
-#else
-    int total_lines = 2;
-    char** info = get_exodus_names(total_lines, max_line_length); // 'total_lines' pointers to char buffers
-    int i = 0;
-    std::strncpy(info[i++], Ioss::Utils::platform_information().c_str(),
-		 max_line_length);
-    std::strncpy(info[i++], Version(), max_line_length);
-#endif
+
     int ierr = ex_put_info(get_file_pointer(), total_lines, info);
     if (ierr < 0)
       exodus_error(get_file_pointer(), __LINE__, myProcessor);
@@ -666,35 +645,6 @@ namespace Ioex {
     int num_proc;          // Number of processors file was decomposed for
     int num_proc_in_file;  // Number of processors this file has info for
     char file_type[2];         // "s" for scalar, "p" for parallel
-    // Sierra is set up to handle 1 processor per file; parallel file
-
-    int error = ne_get_init_info(get_file_pointer(),
-				 &num_proc, &num_proc_in_file, &file_type[0]);
-    if (error < 0) {
-      // Not a nemesis file
-      if (util().parallel_size() > 1) {
-	std::ostringstream errmsg;
-	errmsg << "Exodus file does not contain nemesis information.\n";
-	IOSS_ERROR(errmsg);
-      }
-    } else if (num_proc != util().parallel_size() && util().parallel_size() > 1) {
-      std::ostringstream errmsg;
-      errmsg <<  "Exodus file was decomposed for " << num_proc
-	     << " processors; application is currently being run on "
-	     << util().parallel_size() << " processors";
-      IOSS_ERROR(errmsg);
-
-    } else if (num_proc_in_file != 1) {
-      std::ostringstream errmsg;
-      errmsg <<"Exodus file contains data for " << num_proc_in_file
-	     << " processors; application requires 1 processor per file.";
-      IOSS_ERROR(errmsg);
-
-    } else if (file_type[0] != 'p') {
-      std::ostringstream errmsg;
-      errmsg << "Exodus file contains scalar nemesis data; application requires parallel nemesis data.";
-      IOSS_ERROR(errmsg);
-    }
 
     // Get global data (over all processors)
     int global_nodes       = nodeCount;
@@ -702,7 +652,7 @@ namespace Ioex {
     int global_eblocks     = 0; // unused
     int global_nsets       = 0; // unused
     int global_ssets       = 0; // unused
-
+    
     int num_external_nodes; // unused
     int num_elem_cmaps     = 0;
     int num_node_cmaps     = 0;
@@ -710,8 +660,35 @@ namespace Ioex {
     int num_border_nodes   = 0;
     int num_internal_elems = elementCount;
     int num_border_elems   = 0;
-
+    
     if (isParallel) {
+      int error = ne_get_init_info(get_file_pointer(),
+				   &num_proc, &num_proc_in_file, &file_type[0]);
+      if (error < 0) {
+	// Not a nemesis file
+	if (util().parallel_size() > 1) {
+	  std::ostringstream errmsg;
+	  errmsg << "Exodus file does not contain nemesis information.\n";
+	  IOSS_ERROR(errmsg);
+	}
+      } else if (num_proc != util().parallel_size() && util().parallel_size() > 1) {
+	std::ostringstream errmsg;
+	errmsg <<  "Exodus file was decomposed for " << num_proc
+	       << " processors; application is currently being run on "
+	       << util().parallel_size() << " processors";
+	IOSS_ERROR(errmsg);
+
+      } else if (num_proc_in_file != 1) {
+	std::ostringstream errmsg;
+	errmsg <<"Exodus file contains data for " << num_proc_in_file
+	       << " processors; application requires 1 processor per file.";
+	IOSS_ERROR(errmsg);
+
+      } else if (file_type[0] != 'p') {
+	std::ostringstream errmsg;
+	errmsg << "Exodus file contains scalar nemesis data; application requires parallel nemesis data.";
+	IOSS_ERROR(errmsg);
+      }
 
       error = ne_get_loadbal_param(get_file_pointer(),
 				   &num_internal_nodes,
@@ -1014,7 +991,7 @@ namespace Ioex {
 	int nodes_per_element;
 	int attributes_per_element;
 
-       char * const element_type = &all_element_type[0] + iblk * (max_string_length+1);
+	char * const element_type = &all_element_type[0] + iblk * (max_string_length+1);
 
 	error = ex_get_elem_block(get_file_pointer(), id,
 				  element_type,
@@ -1155,15 +1132,15 @@ namespace Ioex {
 				     local_element_count[iblk],
 				     attributes[iblk]);
 
-// 	if (block->topology()->spatial_dimension() != spatialDimension) {
-// 	  std::ostringstream errmsg;
-// 	  errmsg << "ERROR: Element Block '" << block_name << "' is using a '"
-// 		 << type << "' element. This is a "
-// 		 << block->topology()->spatial_dimension()
-// 		 << "D element being used in a "
-// 		 << spatialDimension << "D mesh.";
-// 	    IOSS_ERROR(errmsg);
-// 	}
+      // 	if (block->topology()->spatial_dimension() != spatialDimension) {
+      // 	  std::ostringstream errmsg;
+      // 	  errmsg << "ERROR: Element Block '" << block_name << "' is using a '"
+      // 		 << type << "' element. This is a "
+      // 		 << block->topology()->spatial_dimension()
+      // 		 << "D element being used in a "
+      // 		 << spatialDimension << "D mesh.";
+      // 	    IOSS_ERROR(errmsg);
+      // 	}
 
       block->property_add(Ioss::Property("id", id));
       
@@ -1279,7 +1256,7 @@ namespace Ioex {
       }
     }
     
-#ifndef NO_MPI    
+#ifdef HAVE_MPI    
     if (isParallel) {
       // Get contributions from other processors...
       // Get the communication map...
@@ -1442,7 +1419,7 @@ namespace Ioex {
       }
     }
 	
-#ifndef NO_MPI
+#ifdef HAVE_MPI
     if (isParallel) {
       // Sync across all processors...
       size_t word_size = sizeof(int) * 8;
@@ -1656,7 +1633,7 @@ namespace Ioex {
 
 	  } else if (split_type == Ioss::SPLIT_BY_DONT_SPLIT) {
 	    const Ioss::ElementTopology *mixed_topo = Ioss::ElementTopology::factory("unknown");
-	    topo_map[std::make_pair("unknown",mixed_topo)] = number_sides;
+	    topo_map[std::make_pair(std::string("unknown"),mixed_topo)] = number_sides;
 
 	  } else if (in_fs_map) {
 	    std::vector<std::string> tokens = tokenize(ef_set_name, recognize("_"));
@@ -6129,7 +6106,7 @@ bool set_id(const Ioss::GroupingEntity *entity, ex_entity_type type, Ioex::Entit
     int id = entity->get_property(id_prop).get_int();
 
     // See whether it already exists...
-    succeed = idset->insert(std::make_pair(type,id)).second;
+    succeed = idset->insert(std::make_pair((int)type,id)).second;
     if (!succeed) {
       // Need to remove the property so it doesn't cause problems
       // later...
@@ -6213,12 +6190,12 @@ int get_id(const Ioss::GroupingEntity *entity, ex_entity_type type, Ioex::Entity
   // At this point, we either have an id equal to '1' or we have an id
   // extracted from the entities name. Increment it until it is
   // unique...
-  while (idset->find(std::make_pair(type, id)) != idset->end()) {
+  while (idset->find(std::make_pair(int(type), id)) != idset->end()) {
     ++id;
   }
 
   // 'id' is a unique id for this entity type...
-  idset->insert(std::make_pair(type,id));
+  idset->insert(std::make_pair((int)type,id));
   Ioss::GroupingEntity *new_entity = const_cast<Ioss::GroupingEntity*>(entity);
   new_entity->property_add(Ioss::Property(id_prop, id));
   return id;
@@ -6619,7 +6596,7 @@ bool check_block_order(const Ioss::ElementBlockContainer &blocks)
 				  int my_processor, const std::string& filename,
 				  const Ioss::ParallelUtils &util)
   {
-#ifndef NO_MPI    
+#ifdef HAVE_MPI    
     std::vector<int> var_counts(5);
     var_counts[0] = gv_count;
     var_counts[1] = nv_count;

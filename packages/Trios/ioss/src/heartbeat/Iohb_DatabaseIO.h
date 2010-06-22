@@ -6,8 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef SIERRA_Iohb_DatabaseIO_h
-#define SIERRA_Iohb_DatabaseIO_h
+#ifndef IOSS_Iohb_DatabaseIO_h
+#define IOSS_Iohb_DatabaseIO_h
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_DatabaseIO.h>
@@ -49,9 +49,6 @@ namespace Iohb {
       Ioss::DatabaseIO* make_IO(const std::string& filename,
 				Ioss::DatabaseUsage db_usage,
 				MPI_Comm communicator) const;
-      
-      void register_library_versions() const {} // Nothing to register
-      //  static const IOFactory registerThis;
     };
 
   class DatabaseIO : public Ioss::DatabaseIO
@@ -141,4 +138,4 @@ namespace Iohb {
       enum Format fileFormat;
     };
 }
-#endif // SIERRA_Iohb_DatabaseIO_h
+#endif // IOSS_Iohb_DatabaseIO_h

@@ -26,8 +26,6 @@
 // ***********************************************************************
 // @HEADER
 
-// FINISH: HERE: Directory should take an RCP<const Map> in constructor
-
 #ifndef TPETRA_DIRECTORY_HPP
 #define TPETRA_DIRECTORY_HPP
 

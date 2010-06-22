@@ -14,7 +14,7 @@
 #include <stk_mesh/base/DataTraitsEnum.hpp>
 #include <stk_mesh/base/DataTraitsClass.hpp>
 
-#include <unit_tests/stk_utest_macros.hpp>
+#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 namespace stk {
 namespace mesh {

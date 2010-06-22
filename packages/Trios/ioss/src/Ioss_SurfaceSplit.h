@@ -7,8 +7,8 @@
 /*--------------------------------------------------------------------*/
 
 // -*- Mode: c++ -*-
-#ifndef SIERRA_Ioss_SurfaceSplit_h
-#define SIERRA_Ioss_SurfaceSplit_h
+#ifndef IOSS_Ioss_SurfaceSplit_h
+#define IOSS_Ioss_SurfaceSplit_h
 namespace Ioss {
   enum SurfaceSplitType {
     SPLIT_INVALID = -1,

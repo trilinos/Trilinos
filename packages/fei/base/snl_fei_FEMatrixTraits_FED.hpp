@@ -35,18 +35,19 @@ namespace snl_fei {
 			       int numNodes,
 			       const int* nodeNumbers,
 			       const int* dofPerNode,
+             const int* dof_ids,
 			       const double *const * coefs)
       { return( mat->setElemMatrix(elemBlockID, elemID, numNodes,
-				   nodeNumbers, dofPerNode, coefs) ); }
+				   nodeNumbers, dofPerNode, dof_ids, coefs) ); }
 
     /** specify dirichlet BCs */
     static int setDirichletBCs(FiniteElementData* mat,
 			       int numBCs,
 			       const int* nodeNumbers,
-			       const int* dofOffsets,
+			       const int* dof_ids,
 			       const double* values)
       { return( mat->setDirichletBCs(numBCs, nodeNumbers,
-				     dofOffsets, values) ); }
+				     dof_ids, values) ); }
 
   };//struct FEMatrixTraits
 }//namespace snl_fei

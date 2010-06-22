@@ -8,8 +8,8 @@
  */
 // Author: gdsjaar@sandia.gov
 
-#ifndef SIERRA_Ioxf_Internals_h
-#define SIERRA_Ioxf_Internals_h
+#ifndef IOSS_Ioxf_Internals_h
+#define IOSS_Ioxf_Internals_h
 
 #include <vector>
 #include <cstring>
@@ -136,4 +136,4 @@ namespace Ioxf {
     CommunicationMetaData(const CommunicationMetaData &);
   };
 }
-#endif /* SIERRA_Ioxf_Internals_h */
+#endif /* IOSS_Ioxf_Internals_h */

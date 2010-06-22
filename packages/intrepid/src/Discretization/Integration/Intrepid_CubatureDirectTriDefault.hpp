@@ -43,6 +43,8 @@
   \brief The maximum degree of the polynomial that can be integrated exactly by
          a direct triangle rule of the default type.
 */
+// srkenno@sandia.gov 6/21/10:
+// see below comment for the enum
 #define INTREPID_CUBATURE_TRI_DEFAULT_MAX 20
 
 
@@ -53,11 +55,15 @@ namespace Intrepid {
 */
 template<class Scalar, class ArrayPoint = FieldContainer<Scalar>, class ArrayWeight = ArrayPoint >
 class CubatureDirectTriDefault : public Intrepid::CubatureDirect<Scalar,ArrayPoint,ArrayWeight> {
+  public:
+  // srkenno@sandia.gov 6/21/10:
+  // This indirection is to workaround a compiler bug on the sun platform, 5.7 toolset, SunOS 10.
+  enum {INTREPID_CUBATURE_TRI_DEFAULT_MAX_ENUM = INTREPID_CUBATURE_TRI_DEFAULT_MAX};
   private:
 
   /** \brief Complete set of data defining default cubature rules on a triangle.
   */
-  static const CubatureTemplate cubature_data_[INTREPID_CUBATURE_TRI_DEFAULT_MAX+1];
+  static const CubatureTemplate cubature_data_[INTREPID_CUBATURE_TRI_DEFAULT_MAX_ENUM+1];
 
   /** \brief Names of templates for frequently used direct cubature rules.
   */
@@ -89,12 +95,12 @@ class CubatureDirectTriDefault : public Intrepid::CubatureDirect<Scalar,ArrayPoi
 
   /** \brief Exposes cubature data, accessible without construction.
   */
-  static const CubatureTemplate (& exposeCubatureDataStatic())[INTREPID_CUBATURE_TRI_DEFAULT_MAX+1];
+  static const CubatureTemplate (& exposeCubatureDataStatic())[INTREPID_CUBATURE_TRI_DEFAULT_MAX_ENUM+1];
 
 }; // end class CubatureDirect 
 
 template<class Scalar, class ArrayPoint, class ArrayWeight>
-inline const CubatureTemplate (& CubatureDirectTriDefault<Scalar,ArrayPoint,ArrayWeight>::exposeCubatureDataStatic())[INTREPID_CUBATURE_TRI_DEFAULT_MAX+1] {
+inline const CubatureTemplate (& CubatureDirectTriDefault<Scalar,ArrayPoint,ArrayWeight>::exposeCubatureDataStatic())[INTREPID_CUBATURE_TRI_DEFAULT_MAX_ENUM+1] {
   return cubature_data_;
 }
 

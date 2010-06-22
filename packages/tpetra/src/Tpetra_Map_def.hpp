@@ -549,8 +549,8 @@ namespace Tpetra {
     // check all other globally coherent properties
     // if they do not share each of these properties, then they cannot be 
     // equivalent maps
-    if ( (getMinGlobalIndex()   != map.getMinGlobalIndex())   ||
-         (getMaxGlobalIndex()   != map.getMaxGlobalIndex())   ||
+    if ( (getMinAllGlobalIndex()   != map.getMinAllGlobalIndex())   ||
+         (getMaxAllGlobalIndex()   != map.getMaxAllGlobalIndex())   ||
          (getGlobalNumElements() != map.getGlobalNumElements()) ||
          (isDistributed()       != map.isDistributed())       || 
          (getIndexBase()        != map.getIndexBase())         )  {

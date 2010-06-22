@@ -22,7 +22,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-# Questions? Contact Michael Gee (mwgee@sandia.gov)
+# Questions? Contact Glen Hansen (Glen.Hansen@inl.gov)
 #
 # ************************************************************************
 #@HEADER
@@ -90,7 +90,7 @@ This class defines a node on one side of a (non-)conforming interface.
 
 The \ref MOERTEL::Node class supports the ostream& operator <<
 
-\author Michael W. Gee (mwgee@sandia.gov)
+\author Glen Hansen (Glen.Hansen@inl.gov)
 
 */
 class  Node 
@@ -333,7 +333,17 @@ public:
   does not have a projection onto an opposing segment.
   */
   RefCountPtr<MOERTEL::ProjectedNode>  GetProjectedNode();
+
+  /*!
+  \brief Store a pointer to a projected node
+  */
+  void SetProjNode(RefCountPtr<MOERTEL::ProjectedNode> pnode);
   
+  /*!
+  \brief Returns a view of the projection of this node
+  */
+  RefCountPtr<MOERTEL::ProjectedNode>  GetProjNode();
+
   /*!
   \brief Add a Lagrange multiplier id to this node's list
   
@@ -442,6 +452,18 @@ public:
   
   //@}
   
+  /*!
+   *
+   */
+  double *GetProjCoord() { return prcoord_; }
+
+  void SetProjCoords(double x, double y, double z = 0.0)
+  {
+    prcoord_[0] = x;
+    prcoord_[1] = y;
+    prcoord_[2] = z;
+  }
+
 protected:  
   // don't want = operator
   Node operator = (const Node& old);
@@ -473,6 +495,9 @@ protected:
   RefCountPtr<vector<map<int,double> > > Mmodrow_; // scalar rows of Mmod
 
   vector< RefCountPtr<MOERTEL::ProjectedNode> > pnode_;    // the projected node on some segment
+
+  RefCountPtr<MOERTEL::ProjectedNode> proj_node_;		/// projection of the node
+  double prcoord_[3];			// physical coordinates of the projected node
 
 };
 

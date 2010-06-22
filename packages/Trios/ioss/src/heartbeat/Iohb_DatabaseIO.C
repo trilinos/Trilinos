@@ -63,20 +63,11 @@ namespace {
     } else if (filename == "clog" || filename == "log") {
       log_stream = &std::clog; // Same as cerr, but not flushed automatically.
     } else {
-      if (filename[0] != '/') {
-	const std::string work_dir = Ioss::Utils::working_directory();
-
-	std::string the_file = filename;
-
-	if (work_dir.length() > 0)
-	  the_file = work_dir + the_file;
-
-	// Open the file (on processor 0 only) Might need to do
-	// something better here if we want to share streams among
-	// different heartbeats or logging mechanisms.  Need perhaps a
-	// 'logger' class which handles sharing and destruction...
-	log_stream = new std::ofstream(the_file.c_str());
-      }
+      // Open the file (on processor 0 only) Might need to do
+      // something better here if we want to share streams among
+      // different heartbeats or logging mechanisms.  Need perhaps a
+      // 'logger' class which handles sharing and destruction...
+      log_stream = new std::ofstream(filename.c_str());
     }
     return log_stream;
   }

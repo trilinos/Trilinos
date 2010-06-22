@@ -185,6 +185,7 @@ void MLPreconditionerFactory::initializePrec(
     epetraFwdOpApplyAs != EPETRA_OP_APPLY_APPLY, std::logic_error
     ,"Error, incorrect apply mode for an Epetra_RowMatrix"
     );
+
   //
   // Get the concrete precondtioner object
   //
@@ -204,9 +205,15 @@ void MLPreconditionerFactory::initializePrec(
   //
   // Get the attached forward operator if it exists and make sure that it matches
   //
-  if(ml_precOp.get()) {
-    // ToDo: Get the forward operator and make sure that it matches what is
+  if(ml_precOp!=Teuchos::null) {
+    // Get the forward operator and make sure that it matches what is
     // already being used!
+    const Epetra_RowMatrix & rm = ml_precOp->RowMatrix();
+   
+    TEST_FOR_EXCEPTION(
+       &rm!=&*epetraFwdRowMat, std::logic_error
+       ,"ML requires Epetra_RowMatrix to be the same for each initialization of the preconditioner"
+       );
   }
   //
   // Permform initialization if needed

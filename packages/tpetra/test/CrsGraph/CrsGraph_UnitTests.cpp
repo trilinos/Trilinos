@@ -25,6 +25,7 @@ namespace {
   using Tpetra::DoOptimizeStorage;
   using Tpetra::DoNotOptimizeStorage;
   using Tpetra::DefaultPlatform;
+  using Tpetra::createUniformContigMap;
   using Tpetra::createContigMap;
   using Tpetra::global_size_t;
   using std::sort;
@@ -83,7 +84,7 @@ namespace {
   {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
     clp.setOption(
-        "filedir",&filedir,"Directory of expected matrix files.");
+        "filedir",&filedir,"Directory of expected input files.");
     clp.addOutputSetupOptions(true);
     clp.setOption(
         "test-mpi", "test-serial", &testMpi,
@@ -238,12 +239,12 @@ namespace {
     const size_t numLocal = 10;
     RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,numLocal,comm);
     {
-      // create static-profile matrix, fill-complete without inserting (and therefore, without allocating)
+      // create static-profile graph, fill-complete without inserting (and therefore, without allocating)
       GRAPH graph(map,1,StaticProfile);
       graph.fillComplete(DoOptimizeStorage);
     }
     {
-      // create dynamic-profile matrix, fill-complete without inserting (and therefore, without allocating)
+      // create dynamic-profile graph, fill-complete without inserting (and therefore, without allocating)
       GRAPH graph(map,1,DynamicProfile);
       graph.fillComplete(DoOptimizeStorage);
     }
@@ -278,6 +279,36 @@ namespace {
         TEST_EQUALITY(as<Array_size_type>(diaggraph.getNumEntriesInLocalRow(row)), lids.size())
       }
     }
+  }
+
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, WithColMap, LO, GO )
+  {
+    typedef CrsGraph<LO,GO,Node> GRAPH;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int numImages = comm->getSize();
+    // test filtering
+    if (numImages > 1) {
+      const size_t numLocal = 1;
+      const RCP<const Map<LO,GO> > rmap = createContigMap<LO,GO>(INVALID,numLocal,comm);
+      const RCP<const Map<LO,GO> > cmap = createContigMap<LO,GO>(INVALID,numLocal,comm);
+      // must allocate enough for all submitted indices, not accounting for filtering.
+      RCP< CrsGraph<LO,GO> > G = rcp(new CrsGraph<LO,GO>(rmap,cmap,2,StaticProfile) );
+      TEST_EQUALITY_CONST( G->hasColMap(), true );
+      const GO myrowind = rmap->getGlobalElement(0);
+      TEST_NOTHROW( G->insertGlobalIndices( myrowind, tuple<GO>(myrowind,myrowind+1) ) );
+      TEST_NOTHROW( G->fillComplete(DoOptimizeStorage) );
+      TEST_EQUALITY( G->getRowMap(), rmap );
+      TEST_EQUALITY( G->getColMap(), cmap );
+      TEST_EQUALITY( G->getNumEntriesInGlobalRow(myrowind), 1 );
+    }
+    // All procs fail if any node fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
 
@@ -401,35 +432,104 @@ namespace {
     const size_t STINV = OrdinalTraits<size_t>::invalid();
     // get a comm
     RCP<const Comm<int> > comm = getDefaultComm();
-    int numImages = size(*comm);
-    // create a Map
-    const size_t numLocal = 10;
-    RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,numLocal,comm);
+    const int numImages = size(*comm);
+    const int myImageID = comm->getRank();
     // create the empty graph
-    RCP<RowGraph<LO,GO> > zero;
-    {
-      // allocate with no space
-      RCP<CrsGraph<LO,GO,Node> > zero_crs = rcp(new CrsGraph<LO,GO,Node>(map,0));
-      TEST_EQUALITY( zero_crs->getNodeAllocationSize(), STINV ); // zero, because none are allocated yet
-      zero_crs->fillComplete(DoOptimizeStorage);
-      zero = zero_crs;
+    // this one is empty (because of rows distribution) on only one node (demonstrating a previous bug)
+    if (numImages > 1) {
+      // create a Map
+      const size_t numLocal = (myImageID == 1 ? 0 : 1);
+      TEST_FOR_EXCEPTION( myImageID != 1 && numLocal != 1, std::logic_error, "numLocal assumed below to be 1.");
+      RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,(myImageID == 1 ? 0 : numLocal),comm);
+      RCP<RowGraph<LO,GO> > test_row;
+      {
+        // allocate with no space
+        RCP<CrsGraph<LO,GO,Node> > test_crs = rcp(new CrsGraph<LO,GO,Node>(map,0));
+        TEST_EQUALITY_CONST( test_crs->getNodeAllocationSize(), STINV ); // invalid, because none are allocated yet
+        if (myImageID != 1) test_crs->insertGlobalIndices( map->getMinGlobalIndex(), tuple<GO>(map->getMinGlobalIndex()) );
+        test_crs->fillComplete(DoOptimizeStorage);
+        TEST_EQUALITY( test_crs->getNodeAllocationSize(), numLocal );
+        test_row = test_crs;
+      }
+      RCP<const Map<LO,GO,Node> > cmap = test_row->getColMap();
+      TEST_EQUALITY( cmap->getGlobalNumElements(), (size_t)numImages-1 );
+      TEST_EQUALITY( test_row->getGlobalNumRows(), (size_t)numImages-1 );
+      TEST_EQUALITY( test_row->getNodeNumRows(), numLocal );
+      TEST_EQUALITY( test_row->getGlobalNumCols(), (size_t)numImages-1 );
+      TEST_EQUALITY( test_row->getNodeNumCols(), numLocal );
+      TEST_EQUALITY( test_row->getIndexBase(), 0 );
+      TEST_EQUALITY( test_row->isUpperTriangular(), true );
+      TEST_EQUALITY( test_row->isLowerTriangular(), true );
+      TEST_EQUALITY( test_row->getGlobalNumDiags(), (size_t)numImages-1 );
+      TEST_EQUALITY( test_row->getNodeNumDiags(), numLocal );
+      TEST_EQUALITY( test_row->getGlobalNumEntries(), (size_t)numImages-1 );
+      TEST_EQUALITY( test_row->getNodeNumEntries(), numLocal );
+      TEST_EQUALITY( test_row->getGlobalMaxNumRowEntries(), 1 );
+      TEST_EQUALITY( test_row->getNodeMaxNumRowEntries(), numLocal );
+      STD_TESTS((*test_row));
     }
-    RCP<const Map<LO,GO,Node> > cmap = zero->getColMap();
-    TEST_EQUALITY( cmap->getGlobalNumElements(), 0 );
-    TEST_EQUALITY( zero->getGlobalNumRows(), numImages*numLocal );
-    TEST_EQUALITY( zero->getNodeNumRows(), numLocal );
-    TEST_EQUALITY( zero->getGlobalNumCols(), 0 );
-    TEST_EQUALITY( zero->getNodeNumCols(), 0 );
-    TEST_EQUALITY( zero->getIndexBase(), 0 );
-    TEST_EQUALITY( zero->isUpperTriangular(), true );
-    TEST_EQUALITY( zero->isLowerTriangular(), true );
-    TEST_EQUALITY( zero->getGlobalNumDiags(), 0 );
-    TEST_EQUALITY( zero->getNodeNumDiags(), 0 );
-    TEST_EQUALITY( zero->getGlobalNumEntries(), 0 );
-    TEST_EQUALITY( zero->getNodeNumEntries(), 0 );
-    TEST_EQUALITY( zero->getGlobalMaxNumRowEntries(), 0 );
-    TEST_EQUALITY( zero->getNodeMaxNumRowEntries(), 0 );
-    STD_TESTS((*zero));
+    // this one is empty on all nodes because of zero allocation size
+    {
+      // create a Map
+      const size_t numLocal = 10;
+      RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,numLocal,comm);
+      RCP<RowGraph<LO,GO> > zero;
+      {
+        // allocate with no space
+        RCP<CrsGraph<LO,GO,Node> > zero_crs = rcp(new CrsGraph<LO,GO,Node>(map,0));
+        TEST_EQUALITY_CONST( zero_crs->getNodeAllocationSize(), STINV ); // invalid, because none are allocated yet
+        zero_crs->fillComplete(DoOptimizeStorage);
+        TEST_EQUALITY_CONST( zero_crs->getNodeAllocationSize(), 0     ); // zero, because none were allocated.
+        zero = zero_crs;
+      }
+      RCP<const Map<LO,GO,Node> > cmap = zero->getColMap();
+      TEST_EQUALITY( cmap->getGlobalNumElements(), 0 );
+      TEST_EQUALITY( zero->getGlobalNumRows(), numImages*numLocal );
+      TEST_EQUALITY( zero->getNodeNumRows(), numLocal );
+      TEST_EQUALITY( zero->getGlobalNumCols(), 0 );
+      TEST_EQUALITY( zero->getNodeNumCols(), 0 );
+      TEST_EQUALITY( zero->getIndexBase(), 0 );
+      TEST_EQUALITY( zero->isUpperTriangular(), true );
+      TEST_EQUALITY( zero->isLowerTriangular(), true );
+      TEST_EQUALITY( zero->getGlobalNumDiags(), 0 );
+      TEST_EQUALITY( zero->getNodeNumDiags(), 0 );
+      TEST_EQUALITY( zero->getGlobalNumEntries(), 0 );
+      TEST_EQUALITY( zero->getNodeNumEntries(), 0 );
+      TEST_EQUALITY( zero->getGlobalMaxNumRowEntries(), 0 );
+      TEST_EQUALITY( zero->getNodeMaxNumRowEntries(), 0 );
+      STD_TESTS((*zero));
+    }
+    // this one is empty on all nodes because of zero rows
+    {
+      // create a Map
+      const size_t numLocal = 0;
+      RCP<const Map<LO,GO> > map = createContigMap<LO,GO>(INVALID,numLocal,comm);
+      RCP<RowGraph<LO,GO> > zero;
+      {
+        // allocate with no space
+        RCP<CrsGraph<LO,GO,Node> > zero_crs = rcp(new CrsGraph<LO,GO,Node>(map,0));
+        TEST_EQUALITY_CONST( zero_crs->getNodeAllocationSize(), STINV ); // invalid, because none are allocated yet
+        zero_crs->fillComplete(DoOptimizeStorage);
+        TEST_EQUALITY_CONST( zero_crs->getNodeAllocationSize(), 0     ); // zero, because none were allocated.
+        zero = zero_crs;
+      }
+      RCP<const Map<LO,GO,Node> > cmap = zero->getColMap();
+      TEST_EQUALITY( cmap->getGlobalNumElements(), 0 );
+      TEST_EQUALITY( zero->getGlobalNumRows(), numImages*numLocal );
+      TEST_EQUALITY( zero->getNodeNumRows(), numLocal );
+      TEST_EQUALITY( zero->getGlobalNumCols(), 0 );
+      TEST_EQUALITY( zero->getNodeNumCols(), 0 );
+      TEST_EQUALITY( zero->getIndexBase(), 0 );
+      TEST_EQUALITY( zero->isUpperTriangular(), true );
+      TEST_EQUALITY( zero->isLowerTriangular(), true );
+      TEST_EQUALITY( zero->getGlobalNumDiags(), 0 );
+      TEST_EQUALITY( zero->getNodeNumDiags(), 0 );
+      TEST_EQUALITY( zero->getGlobalNumEntries(), 0 );
+      TEST_EQUALITY( zero->getNodeNumEntries(), 0 );
+      TEST_EQUALITY( zero->getGlobalMaxNumRowEntries(), 0 );
+      TEST_EQUALITY( zero->getNodeMaxNumRowEntries(), 0 );
+      STD_TESTS((*zero));
+    }
 
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
@@ -724,6 +824,7 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, DottedDiag , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, WithStaticProfile , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, CopiesAndViews, LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, WithColMap,     LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, Describable   , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, EmptyFillComplete, LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, Typedefs      , LO, GO )

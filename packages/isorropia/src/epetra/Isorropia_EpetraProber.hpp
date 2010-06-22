@@ -70,6 +70,20 @@ public:
          const Teuchos::ParameterList& paramlist,
          bool compute_now=true);
 
+
+    /** Constructor
+
+    \param[in] input_graph the graph whose sparsity pattern is to guide the probing.
+    \param[in] paramlist this parameter list may be used to pass parameters to the colorer.
+    \param[in] compute_now  if @c true, the coloring is computed in the constructor, otherwise call Isorropia::Epetra::Prober::color when you want to compute the coloring, defaults to @c false
+
+\ingroup probing_grp
+    */
+
+  Prober(const Epetra_CrsGraph * input_graph,
+         const Teuchos::ParameterList& paramlist,
+         bool compute_now=true);
+
     /** Constructor
 
     \param[in] input_matrix the matrix whose sparsity pattern is to guide the probing.
@@ -80,6 +94,20 @@ public:
   */
 
   Prober(Teuchos::RCP<const Epetra_CrsMatrix> input_matrix,
+         const Teuchos::ParameterList & paramlist,
+         bool compute_now=true);
+
+
+    /** Constructor
+
+    \param[in] input_matrix the matrix whose sparsity pattern is to guide the probing.
+    \param[in] paramlist this parameter list may be used to pass parameters to the colorer.
+    \param[in] compute_now  if @c true, the coloring is computed in the constructor, otherwise call Isorropia::Epetra::Prober::color when you want to compute the coloring, defaults to @c true
+
+\ingroup probing_grp
+  */
+
+  Prober(const Epetra_CrsMatrix * input_matrix,
          const Teuchos::ParameterList & paramlist,
          bool compute_now=true);
 

@@ -63,6 +63,8 @@ namespace Isorropia {
 namespace Epetra {
 
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 Orderer::Orderer(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
 		 const Teuchos::ParameterList& paramlist,
 		 bool compute_now):
@@ -77,13 +79,17 @@ Orderer::Orderer(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
   if (compute_now)
     order(true);
 }
+////////////////////////////////////////////////////////////////////////////////
 
-Orderer::Orderer(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Orderer::Orderer(const Epetra_CrsGraph *input_graph,
 		 const Teuchos::ParameterList& paramlist,
 		 bool compute_now):
-  Operator (input_matrix, paramlist, 0) {
+  Operator (Teuchos::RCP<const Epetra_CrsGraph>(input_graph,false), paramlist, 0) 
+{
 #ifdef HAVE_ISORROPIA_ZOLTAN
-  lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix, Library::graph_input_));
+  lib_ = Teuchos::rcp(new ZoltanLibClass(input_graph_, Library::graph_input_));
 #else /* HAVE_ISORROPIA_ZOLTAN */
   throw Isorropia::Exception("Ordering only available in Zoltan");
   return ;
@@ -92,16 +98,57 @@ Orderer::Orderer(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
   if (compute_now)
     order(true);
 }
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Orderer::Orderer(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
+		 const Teuchos::ParameterList& paramlist,
+		 bool compute_now):
+  Operator (input_matrix, paramlist, 0) {
+#ifdef HAVE_ISORROPIA_ZOLTAN
+  lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix, Library::graph_input_));  
+#else /* HAVE_ISORROPIA_ZOLTAN */
+  throw Isorropia::Exception("Ordering only available in Zoltan");
+  return ;
+#endif /* HAVE_ISORROPIA_ZOLTAN */
+
+  if (compute_now)
+    order(true);
+}
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Orderer::Orderer(const Epetra_RowMatrix *input_matrix,
+		 const Teuchos::ParameterList& paramlist,
+		 bool compute_now):
+  Operator (Teuchos::RCP<const Epetra_RowMatrix>(input_matrix,false), paramlist, 0) 
+{
+#ifdef HAVE_ISORROPIA_ZOLTAN
+  lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix_, Library::graph_input_));
+#else /* HAVE_ISORROPIA_ZOLTAN */
+  throw Isorropia::Exception("Ordering only available in Zoltan");
+  return ;
+#endif /* HAVE_ISORROPIA_ZOLTAN */
+
+  if (compute_now)
+    order(true);
+}
+////////////////////////////////////////////////////////////////////////////////
 
 
-void
-Orderer::order(bool force_ordering)
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+void Orderer::order(bool force_ordering)
 {
   if (alreadyComputed() && !force_ordering)
     return;
   lib_->order(paramlist_, properties_);
   operation_already_computed_ = true;
 }
+////////////////////////////////////////////////////////////////////////////////
 
 
 

@@ -36,6 +36,7 @@ namespace snl_fei {
 			       int numNodes,
 			       const int* nodeNumbers,
 			       const int* dofPerNode,
+             const int* dof_ids,
 			       const double *const * coefs)
       { return(-1); }
 
@@ -43,7 +44,7 @@ namespace snl_fei {
     static int setDirichletBCs(T* mat,
 			       int numBCs,
 			       const int* nodeNumbers,
-			       const int* dofOffsets,
+			       const int* dof_ids,
 			       const double* values)
       { return(-1); }
 

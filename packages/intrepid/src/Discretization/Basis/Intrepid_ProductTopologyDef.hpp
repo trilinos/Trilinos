@@ -157,7 +157,7 @@ namespace Intrepid
 	resultentity = 11;
       }
       else if (entity0 == 1 && entity1 == 0 && entity2 == 0) {
-	resultentity = 2;
+	resultentity = 9;
       }
       else if (entity0 == 1 && entity1 == 1 && entity2 == 0) {
 	resultentity = 10;
@@ -248,7 +248,7 @@ namespace Intrepid
       }
     }
     // CELL ITSELF
-    else if (dim0 == 1 && dim1 == 1 && dim2 == 0) {
+    else if (dim0 == 1 && dim1 == 1 && dim2 == 1) {
       resultdim = 3;
       if (entity0 == 0 && entity1 == 0 && entity2 == 0) {
 	resultentity = 0;

@@ -22,7 +22,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-# Questions? Contact Michael Gee (mwgee@sandia.gov)
+# Questions? Contact Glen Hansen (Glen.Hansen@inl.gov)
 #
 # ************************************************************************
 #@HEADER
@@ -56,7 +56,7 @@ MOERTEL::Projector::~Projector()
 /*----------------------------------------------------------------------*
  |                                                           mwgee 07/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Projector::ProjectNodetoSegment_NodalNormal(const MOERTEL::Node& node, 
+bool MOERTEL::Projector::ProjectNodetoSegment_NodalNormal(MOERTEL::Node& node,
                                                        MOERTEL::Segment& seg, 
 						       double xi[])
 {
@@ -164,7 +164,7 @@ bool MOERTEL::Projector::ProjectNodetoSegment_NodalNormal(const MOERTEL::Node& n
  |      xs  nodal coords of node (slave side)                           |
  |      ns  outward normal of node (slave side)                         |
  *----------------------------------------------------------------------*/
-double MOERTEL::Projector::evaluate_F_2D_NodalNormal(const MOERTEL::Node& node, 
+double MOERTEL::Projector::evaluate_F_2D_NodalNormal(MOERTEL::Node& node,
                                                   MOERTEL::Segment& seg, 
 	      					  double eta)
 {
@@ -201,6 +201,7 @@ double MOERTEL::Projector::evaluate_F_2D_NodalNormal(const MOERTEL::Node& node,
     Nx[0] += val[i]*X[0];
     Nx[1] += val[i]*X[1];
   }
+  node.SetProjCoords(Nx[0], Nx[1]);
   
   // subtract xs
   const double* X = node.X();
@@ -225,7 +226,7 @@ double MOERTEL::Projector::evaluate_F_2D_NodalNormal(const MOERTEL::Node& node,
  |      xim,yim nodal coords of segment's nodes i (master side)         |
  |      nxs,nys outward normal of node (slave side)                     |
  *----------------------------------------------------------------------*/
-double MOERTEL::Projector::evaluate_gradF_2D_NodalNormal(const MOERTEL::Node& node, 
+double MOERTEL::Projector::evaluate_gradF_2D_NodalNormal(MOERTEL::Node& node,
                                                       MOERTEL::Segment& seg, 
 	      				              double eta)
 {
@@ -276,7 +277,7 @@ double MOERTEL::Projector::evaluate_gradF_2D_NodalNormal(const MOERTEL::Node& no
 /*----------------------------------------------------------------------*
  |                                                           mwgee 07/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Projector::ProjectNodetoSegment_SegmentNormal(const MOERTEL::Node& node, 
+bool MOERTEL::Projector::ProjectNodetoSegment_SegmentNormal(MOERTEL::Node& node,
                                                          MOERTEL::Segment& seg, 
 						         double xi[])
 {
@@ -377,7 +378,7 @@ bool MOERTEL::Projector::ProjectNodetoSegment_SegmentNormal(const MOERTEL::Node&
  |      xs  nodal coords of slave nodes on segment                      |
  |      njs nodal outward normal of nodes xs (slave side)               |
  *----------------------------------------------------------------------*/
-double MOERTEL::Projector::evaluate_F_2D_SegmentNormal(const MOERTEL::Node& node, 
+double MOERTEL::Projector::evaluate_F_2D_SegmentNormal(MOERTEL::Node& node,
                                                     MOERTEL::Segment& seg, 
 	      					    double eta)
 {
@@ -446,7 +447,7 @@ double MOERTEL::Projector::evaluate_F_2D_SegmentNormal(const MOERTEL::Node& node
  |      xm,ym   nodal coords of master node                             |
  |      nxjs,nyjs outward normals of node j (slave side)                |
  *----------------------------------------------------------------------*/
-double MOERTEL::Projector::evaluate_gradF_2D_SegmentNormal(const MOERTEL::Node& node, 
+double MOERTEL::Projector::evaluate_gradF_2D_SegmentNormal(MOERTEL::Node& node,
                                                         MOERTEL::Segment& seg, 
 	      				                double eta)
 {
@@ -512,7 +513,7 @@ double MOERTEL::Projector::evaluate_gradF_2D_SegmentNormal(const MOERTEL::Node& 
 /*----------------------------------------------------------------------*
  |                                                           mwgee 08/05|
  *----------------------------------------------------------------------*/
-bool MOERTEL::Projector::ProjectNodetoSegment_SegmentOrthogonal(const MOERTEL::Node& node, 
+bool MOERTEL::Projector::ProjectNodetoSegment_SegmentOrthogonal(MOERTEL::Node& node,
                                                              MOERTEL::Segment& seg, 
 						             double xi[])
 {
@@ -569,7 +570,7 @@ bool MOERTEL::Projector::ProjectNodetoSegment_SegmentOrthogonal(const MOERTEL::N
  |      xs  nodal coords of slave nodes on segment                      |
  |      njs nodal outward normal of nodes xs (slave side)               |
  *----------------------------------------------------------------------*/
-double MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal(const MOERTEL::Node& node, 
+double MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal(MOERTEL::Node& node,
                                                         MOERTEL::Segment& seg, 
 	      					        double eta)
 {
@@ -633,7 +634,7 @@ double MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal(const MOERTEL::Node& 
  |      xis nodal coords of segment's nodes i (slave side)              |
  *----------------------------------------------------------------------*/
 double MOERTEL::Projector::evaluate_gradF_2D_SegmentOrthogonal(
-                                                        const MOERTEL::Node& node, 
+                                                        MOERTEL::Node& node,
                                                         MOERTEL::Segment& seg, 
 	      				                double eta)
 {
@@ -682,7 +683,7 @@ double MOERTEL::Projector::evaluate_gradF_2D_SegmentOrthogonal(
  |                                                           mwgee 08/05|
  *----------------------------------------------------------------------*/
 bool MOERTEL::Projector::ProjectNodetoSegment_Orthogonal_to_Slave(
-                                                             const MOERTEL::Node& snode, 
+                                                             MOERTEL::Node& snode,
                                                              MOERTEL::Segment& seg, 
 						             double xi[],
                                                              MOERTEL::Segment& sseg)
@@ -759,7 +760,7 @@ bool MOERTEL::Projector::ProjectNodetoSegment_Orthogonal_to_Slave(
  |      xs  nodal coords of slave nodes on segment                      |
  |      njs nodal outward normal of nodes xs (slave side)               |
  *----------------------------------------------------------------------*/
-double MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal_to_g(const MOERTEL::Node& node, 
+double MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal_to_g(MOERTEL::Node& node,
                                                              MOERTEL::Segment& seg, 
 	      					             double eta,
                                                              double* g)
@@ -820,7 +821,7 @@ double MOERTEL::Projector::evaluate_F_2D_SegmentOrthogonal_to_g(const MOERTEL::N
  |      xis nodal coords of segment's nodes i (slave side)              |
  *----------------------------------------------------------------------*/
 double MOERTEL::Projector::evaluate_gradF_2D_SegmentOrthogonal_to_g(
-                                                        const MOERTEL::Node& node, 
+                                                        MOERTEL::Node& node,
                                                         MOERTEL::Segment& seg, 
 	      				                double eta,
                                                         double* g)

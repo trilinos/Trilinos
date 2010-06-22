@@ -74,7 +74,8 @@ namespace Tpetra {
                                           const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, 
                                           size_t maxNumEntriesPerRow, 
                                           ProfileType pftype)
-  : lclMatrix_(rowMap->getNodeNumElements(), rowMap->getNode())
+  : DistObject<char, LocalOrdinal,GlobalOrdinal,Node>(rowMap)
+  , lclMatrix_(rowMap->getNodeNumElements(), rowMap->getNode())
   , lclMatVec_(rowMap->getNode())
   , lclMatSolve_(rowMap->getNode())
   , constructedWithOptimizedGraph_(false)
@@ -101,7 +102,8 @@ namespace Tpetra {
                                           const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &rowMap, 
                                           const Teuchos::ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, 
                                           ProfileType pftype)
-  : lclMatrix_(rowMap->getNodeNumElements(), rowMap->getNode())
+  : DistObject<char, LocalOrdinal,GlobalOrdinal,Node>(rowMap)
+  , lclMatrix_(rowMap->getNodeNumElements(), rowMap->getNode())
   , lclMatVec_(rowMap->getNode())
   , lclMatSolve_(rowMap->getNode())
   , constructedWithOptimizedGraph_(false)
@@ -128,7 +130,8 @@ namespace Tpetra {
                                           const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, 
                                           size_t maxNumEntriesPerRow, 
                                           ProfileType pftype)
-  : lclMatrix_(rowMap->getNodeNumElements(), rowMap->getNode())
+  : DistObject<char, LocalOrdinal,GlobalOrdinal,Node>(rowMap)
+  , lclMatrix_(rowMap->getNodeNumElements(), rowMap->getNode())
   , lclMatVec_(rowMap->getNode())
   , lclMatSolve_(rowMap->getNode())
   , constructedWithOptimizedGraph_(false)
@@ -155,13 +158,14 @@ namespace Tpetra {
                                           const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &colMap, 
                                           const Teuchos::ArrayRCP<const size_t> &NumEntriesPerRowToAlloc, 
                                           ProfileType pftype)
-  : lclMatrix_(rowMap->getNodeNumElements(), rowMap->getNode())
+  : DistObject<char, LocalOrdinal,GlobalOrdinal,Node>(rowMap)
+  , lclMatrix_(rowMap->getNodeNumElements(), rowMap->getNode())
   , lclMatVec_(rowMap->getNode())
   , lclMatSolve_(rowMap->getNode())
   , constructedWithOptimizedGraph_(false)
   , fillComplete_(false) {
     try {
-      myGraph_ = Teuchos::rcp( new CrsGraph<LocalOrdinal,GlobalOrdinal,Node>(rowMap,NumEntriesPerRowToAlloc,pftype) );
+      myGraph_ = Teuchos::rcp( new CrsGraph<LocalOrdinal,GlobalOrdinal,Node>(rowMap,colMap,NumEntriesPerRowToAlloc,pftype) );
     }
     catch (std::exception &e) {
       TEST_FOR_EXCEPTION(true, std::runtime_error,
@@ -178,7 +182,8 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::CrsMatrix(const Teuchos::RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > &graph)
-  : staticGraph_(graph)
+  : DistObject<char, LocalOrdinal,GlobalOrdinal,Node>(graph->getRowMap())
+  , staticGraph_(graph)
   , lclMatrix_(graph->getRowMap()->getNodeNumElements(), graph->getRowMap()->getNode())
   , lclMatVec_(graph->getNode())
   , lclMatSolve_(graph->getNode())
@@ -1986,7 +1991,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
   std::string CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::description() const {
     std::ostringstream oss;
-    oss << Teuchos::Describable::description();
+    oss << DistObject<char, LocalOrdinal,GlobalOrdinal,Node>::description();
     if (isFillComplete()) {
       oss << "{status = fill complete"
           << ", global rows = " << getGlobalNumRows()
@@ -2150,6 +2155,250 @@ namespace Tpetra {
           comm->barrier();
         }
       }
+    }
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+  bool CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::checkSizes(const DistObject<char, LocalOrdinal,GlobalOrdinal,Node> & source)
+  {
+    // It's not clear what kind of compatibility checks on sizes can be performed here.
+    // Epetra_CrsGraph doesn't check any sizes for compatibility.
+
+    // right now, we'll only support import/exporting between CrsMatrix<Scalar>
+    // if the source dist object isn't CrsMatrix or some offspring, flag this operation as incompatible.
+    try  {
+      const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> & A = dynamic_cast<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> &>(source);
+      (void)A;
+    }
+    catch (...) {
+      return false;
+    }
+    return true;
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::copyAndPermute(
+                          const DistObject<char, LocalOrdinal,GlobalOrdinal,Node> & source,
+                          size_t numSameIDs,
+                          const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
+                          const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs)
+  {
+    using Teuchos::Array;
+    using Teuchos::ArrayRCP;
+    // this should succeed, because we already tested compatibility in checkSizes()
+    const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> & src_mat = dynamic_cast<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> &>(source);
+    TEST_FOR_EXCEPTION(permuteToLIDs.size() != permuteFromLIDs.size(), std::runtime_error,
+        Teuchos::typeName(*this) << "::copyAndPermute: permuteToLIDs and permuteFromLIDs must have the same size.");
+    const bool src_is_locally_indexed = src_mat.isLocallyIndexed();
+
+    // do numSame: copy the first numSame row from the source to *this
+    // specifically, copy rows corresponding to Local Elements 0,numSame-1
+    Array<GlobalOrdinal> row_indices;
+    Array<Scalar>        row_values;
+    LocalOrdinal mylid = 0;
+    for (size_t i=0; i<numSameIDs; ++i, ++mylid) {
+      // get Global ID for this row
+      GlobalOrdinal gid = src_mat.getMap()->getGlobalElement(mylid);
+      if (src_is_locally_indexed) {
+        const size_t row_length = src_mat.getNumEntriesInGlobalRow(gid);
+        row_indices.resize( row_length );
+        row_values.resize( row_length );
+        size_t check_row_length = 0;
+        src_mat.getGlobalRowCopy(gid, row_indices(), row_values(), check_row_length);
+#ifdef HAVE_TPETRA_DEBUG
+        TEST_FOR_EXCEPTION(row_length != check_row_length, std::logic_error,
+            Teuchos::typeName(*this) << "::copyAndPermute(): Internal logic error. Please contact Tpetra team.");
+#endif
+        insertGlobalValues( gid, row_indices(), row_values() );
+      }
+      else {
+        ArrayRCP<const GlobalOrdinal> row_inds; 
+        ArrayRCP<const Scalar>        row_vals; 
+        src_mat.getGlobalRowView(gid, row_inds, row_vals);
+        insertGlobalValues( gid, row_inds(), row_vals() );
+      }
+    }
+
+    // handle the permuted rows.
+    for (size_t p=0; p<(size_t)permuteToLIDs.size(); ++p) {
+      const GlobalOrdinal  mygid =   this->getMap()->getGlobalElement(permuteToLIDs[p]);
+      const GlobalOrdinal srcgid = src_mat.getMap()->getGlobalElement(permuteFromLIDs[p]);
+      if (src_is_locally_indexed) {
+        const size_t row_length = src_mat.getNumEntriesInGlobalRow(srcgid);
+        row_indices.resize( row_length );
+        row_values.resize( row_length );
+        size_t check_row_length = 0;
+        src_mat.getGlobalRowCopy(srcgid, row_indices(), row_values(), check_row_length);
+#ifdef HAVE_TPETRA_DEBUG
+        TEST_FOR_EXCEPTION(row_length != check_row_length, std::logic_error,
+            Teuchos::typeName(*this) << "::copyAndPermute(): Internal logic error. Please contact Tpetra team.");
+#endif
+        insertGlobalValues( mygid, row_indices(), row_values() );
+      }
+      else {
+        ArrayRCP<const GlobalOrdinal> row_inds;
+        ArrayRCP<const Scalar>        row_vals;
+        src_mat.getGlobalRowView( srcgid, row_inds, row_vals);
+        insertGlobalValues( mygid, row_inds(), row_vals());
+      }
+    }
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::packAndPrepare(
+                          const DistObject<char, LocalOrdinal,GlobalOrdinal,Node> & source,
+                          const Teuchos::ArrayView<const LocalOrdinal> &exportLIDs,
+                          Teuchos::Array<char> &exports,
+                          const Teuchos::ArrayView<size_t> & numPacketsPerLID,
+                          size_t& constantNumPackets,
+                          Distributor &distor)
+  {
+    using Teuchos::Array;
+    using Teuchos::ArrayRCP;
+    using Teuchos::ArrayView;
+
+    TEST_FOR_EXCEPTION(exportLIDs.size() != numPacketsPerLID.size(), std::runtime_error,
+        Teuchos::typeName(*this) << "::packAndPrepare: exportLIDs and numPacketsPerLID must have the same size.");
+    // this should succeed, because we already tested compatibility in checkSizes() and performed this cast in packAndPrepare()
+    const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> & src_mat = dynamic_cast<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> &>(source);
+    const bool src_is_locally_indexed = src_mat.isLocallyIndexed();
+    constantNumPackets = 0;
+
+    // first, set the contents of numPacketsPerLID, and accumulate a total-num-packets:
+    // grab the max row size, while we're at it. may need it below.
+    // Subtle: numPacketsPerLID is for byte-packets, so it needs to be multiplied
+    const size_t SizeOfOrdValPair = sizeof(GlobalOrdinal)+sizeof(Scalar);
+    size_t totalNumEntries = 0;
+    size_t maxExpRowLength = 0;
+    for (size_t i=0; i<(size_t)exportLIDs.size(); ++i) {
+      GlobalOrdinal expGID = src_mat.getMap()->getGlobalElement(exportLIDs[i]);
+      const size_t row_length = src_mat.getNumEntriesInGlobalRow(expGID);
+      numPacketsPerLID[i] = row_length * SizeOfOrdValPair;
+      totalNumEntries += row_length;
+      maxExpRowLength = (row_length > maxExpRowLength ? row_length : maxExpRowLength);
+    }
+
+    // Need to do the following:
+    // [inds_row0 vals_row0 inds_row1 vals_row1 ... inds_rowN vals_rowN]
+    if (totalNumEntries > 0) {
+      // exports is an array of char (bytes). it needs room for all of the indices and values
+      const size_t totalNumBytes = totalNumEntries * SizeOfOrdValPair;
+      exports.resize(totalNumBytes);
+
+      ArrayView<char> avIndsC, avValsC;
+      ArrayView<GlobalOrdinal> avInds;
+      ArrayView<Scalar>        avVals;
+
+      // now loop again and pack rows of indices into exports:
+      // if global indices exist in the source, then we can use view semantics
+      // otherwise, we are forced to use copy semantics (for the indices; for simplicity, we'll use them for values as well)
+      size_t curOffsetInBytes = 0;
+      if (src_is_locally_indexed) {
+        Array<GlobalOrdinal> row_inds(maxExpRowLength);
+        Array<Scalar>        row_vals(maxExpRowLength);
+        for (size_t i=0; i<(size_t)exportLIDs.size(); ++i) {
+          // get copy
+          const GlobalOrdinal GID = src_mat.getMap()->getGlobalElement(exportLIDs[i]);
+          size_t rowSize;
+          src_mat.getGlobalRowCopy(GID, row_inds(), row_vals(), rowSize);
+          // get export views
+          avIndsC = exports(curOffsetInBytes,rowSize*sizeof(GlobalOrdinal));
+          avValsC = exports(curOffsetInBytes+rowSize*sizeof(GlobalOrdinal),rowSize*sizeof(Scalar));
+          avInds = Teuchos::av_reinterpret_cast<GlobalOrdinal>(avIndsC);
+          avVals = Teuchos::av_reinterpret_cast<Scalar       >(avValsC);
+          // copy
+          std::copy( row_inds.begin(), row_inds.begin()+rowSize, avInds.begin());
+          std::copy( row_vals.begin(), row_vals.begin()+rowSize, avVals.begin());
+          curOffsetInBytes += SizeOfOrdValPair * rowSize;
+        }
+      }
+      else {
+        ArrayRCP<const GlobalOrdinal> row_inds;
+        ArrayRCP<const Scalar>        row_vals;
+        for (size_t i=0; i<(size_t)exportLIDs.size(); ++i) {
+          // get view
+          const GlobalOrdinal GID = src_mat.getMap()->getGlobalElement(exportLIDs[i]);
+          src_mat.getGlobalRowView(GID, row_inds, row_vals);
+          const size_t rowSize = (size_t)row_inds.size();
+          // get export views
+          avIndsC = exports(curOffsetInBytes,rowSize*sizeof(GlobalOrdinal));
+          avValsC = exports(curOffsetInBytes+rowSize*sizeof(GlobalOrdinal),rowSize*sizeof(Scalar));
+          avInds = Teuchos::av_reinterpret_cast<GlobalOrdinal>(avIndsC);
+          avVals = Teuchos::av_reinterpret_cast<Scalar       >(avValsC);
+          // copy
+          std::copy( row_inds.begin(), row_inds.end(), avInds.begin());
+          std::copy( row_vals.begin(), row_vals.end(), avVals.begin());
+          curOffsetInBytes += SizeOfOrdValPair * rowSize;
+        }
+      }
+#ifdef HAVE_TPETRA_DEBUG
+      TEST_FOR_EXCEPTION(curOffsetInBytes != totalNumBytes, std::logic_error,
+          Teuchos::typeName(*this) << "::packAndPrepare(): Internal logic error. Please contact Tpetra team.");
+#endif
+    }
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::unpackAndCombine(
+                            const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
+                            const Teuchos::ArrayView<const char> &imports,
+                            const Teuchos::ArrayView<size_t> &numPacketsPerLID,
+                            size_t constantNumPackets,
+                            Distributor & /* distor */,
+                            CombineMode /* CM */)
+  {
+    using Teuchos::ArrayView;
+    // We are not checking the value of the CombineMode input-argument.
+    // Any incoming column-indices are inserted into the target graph. In this context, CombineMode values
+    // of ADD vs INSERT are equivalent. What is the meaning of REPLACE for CrsGraph? If a duplicate column-index
+    // is inserted, it will be compressed out when fillComplete is called.
+    // NOTE: I have added a note to the Tpetra todo list to revisit this discussion. CGB, 6/18/2010
+
+    TEST_FOR_EXCEPTION(importLIDs.size() != numPacketsPerLID.size(), std::runtime_error,
+        Teuchos::typeName(*this) << "::unpackAndCombine: importLIDs and numPacketsPerLID must have the same size.");
+
+    const size_t SizeOfOrdValPair = sizeof(GlobalOrdinal)+sizeof(Scalar);
+    const size_t totalNumBytes = imports.size(); // * sizeof(char), which is one.
+    const size_t totalNumEntries = totalNumBytes / SizeOfOrdValPair;
+
+    if (totalNumEntries > 0) {
+      // data packed as follows:
+      // [inds_row0 vals_row0 inds_row1 vals_row1 ...]
+      ArrayView<const char> avIndsC, avValsC;
+      ArrayView<const GlobalOrdinal> avInds;
+      ArrayView<const Scalar>        avVals;
+
+      size_t curOffsetInBytes = 0;
+      for (size_t i=0; i<(size_t)importLIDs.size(); ++i) {
+        // get row info
+        const LocalOrdinal LID = importLIDs[i];
+        const GlobalOrdinal myGID = this->getMap()->getGlobalElement(LID);
+        const size_t rowSize = numPacketsPerLID[i] / SizeOfOrdValPair;
+        // get import views
+        avIndsC = imports(curOffsetInBytes,rowSize*sizeof(GlobalOrdinal));
+        avValsC = imports(curOffsetInBytes+rowSize*sizeof(GlobalOrdinal),rowSize*sizeof(Scalar));
+        avInds = Teuchos::av_reinterpret_cast<const GlobalOrdinal>(avIndsC);
+        avVals = Teuchos::av_reinterpret_cast<const Scalar       >(avValsC);
+        // do insert
+        insertGlobalValues(myGID, avInds(), avVals());
+        curOffsetInBytes += rowSize * SizeOfOrdValPair;
+      }
+#ifdef HAVE_TPETRA_DEBUG
+      TEST_FOR_EXCEPTION(curOffsetInBytes != totalNumBytes, std::logic_error,
+          Teuchos::typeName(*this) << "::packAndPrepare(): Internal logic error. Please contact Tpetra team.");
+#endif
     }
   }
 

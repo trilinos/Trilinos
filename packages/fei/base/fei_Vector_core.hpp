@@ -44,6 +44,7 @@ class Vector_core : protected fei::Logger {
 			      int numNodes,
 			      const int* nodeNumbers,
 			      const int* numIndicesPerNode,
+            const int* dof_ids,
 			      const double* values) = 0;
 
   /** Another FiniteElementData-specific method. Power users only. */

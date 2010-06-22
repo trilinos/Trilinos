@@ -1,15 +1,40 @@
-* Add support for alpha,beta in CrsMatrix::apply(alpha,X,beta,Y) 
-  - this will need to go all the way down to DefaultSparseMultiply
-  - implemented documented conditional structure in apply(alpha,X,beta,Y)
 
-* Decide whether RowMatrix should derive from Operator
+* [Bugs] Possible bug: CrsGraph import/export checks fillComplete() when perhaps it should check indicesAreLocal/indicesAreGlobal. See if this makes a bug.
 
-* modify solve<DScalar,RScalar>, multiply<DScalar,RScalar> 
-  - ... to operate on pre-imported multivectors, returning un-exported multivectors
-  - add decorator class to import/apply/export
-  - use one of these decorators in apply()
-  - document well
+* Add first-touch
 
-* Add Tpetra::MultiScalarOperator abstract interface.
+* Add new resumeFill()
+  - This should look like the constructors for CrsGraph/CrsMatrix
+    resumeFill(ProfileType, NNZ)
+    resumeFill(ProfileType, NNZPerRow)
+  - Semantically, constructor is just a resume-fill
+  - Need to address efficiency issues here (vis-à-vis memory usage)
+  - Need to figure out what to do with Kokkos::CrsMatrix; probably split into abstract interface with multiple base classes
+    + Kokkos::CrsMatrixPacked
+    + Kokkos::CrsMatrix1D
+    + Kokkos::CrsMatrix2D
+    + No node template. This is a host-only class.
+  - optimizeStorage() or fillComplete(DoOptimizeStorage) means the use can never add new entries to a CrsMatrix. What does this mean in the context of other DistObjects?
 
-* Add Operator wrappers for Tifpack::Preconditioner (forward/backward), CrsMatrix (single/multi-scalar solve, multi-scalar multiply).
+* Add re-use option for allocBuffer()
+
+* Coalesce LocalMatVec and LocalMatSolvein CrsMatrix
+  + Node dependency.
+
+* Address REPLACE mode in CrsMatrix/CrsGraph import/export
+
+* add Kokkos-level parallelCopy() and parallelPermute() (compute kernels, not node-member memory primitives)
+  - may need to address overlapping
+    + detection with fall-back to serial is okay for now; identify potential special cases in Tpetra usage
+  - Use these in CrsMatrix/CrsGraph/MultiVector/Vector (doImport/doExport)
+
+* Rewrite globalAssemble() in CrsMatrix/CrsGraph to use import/export functionality
+
+* Coalesce fillComplete() code from CrsMatrix into CrsGraph (fill with values)
+  - Do this with other duplicated methods where possible (i.e., insertion methods)
+  - Don't worry about multi-matrix/one-graph yet; prolly wait for varaidic templates
+
+* Determine appropriate impelementation of checkSizes() in CrsGraph/CrsMatrix
+
+* [As needed in the future] Add Tpetra::MultiScalarOperator abstract interface.
+

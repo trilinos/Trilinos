@@ -45,6 +45,8 @@
 #include "LOCA_BorderedSolver_AbstractStrategy.H"  // base class
 #include "NOX_LAPACK_LinearSolver.H"                     // class data element
 
+#include "Teuchos_ConfigDefs.hpp"              // for complex<double>
+
 // forward declarations
 namespace LOCA {
   class GlobalData;
@@ -266,8 +268,10 @@ namespace LOCA {
       //! The augmented Jacobian matrix solver
       Teuchos::RCP< NOX::LAPACK::LinearSolver<double> > augJacSolver;
 
+#ifdef HAVE_TEUCHOS_COMPLEX
       //! The augmented complex matrix solver
       Teuchos::RCP< NOX::LAPACK::LinearSolver< std::complex<double> > > augComplexSolver;
+#endif
 
       //! Matrix dimension
       int n;

@@ -39,28 +39,63 @@ namespace Isorropia{
 namespace Epetra{
 
   
-Prober::Prober():input_graph_(0),colorer_(0),has_colored(false){
-}
+Prober::Prober():input_graph_(0),colorer_(0),has_colored(false){}
 
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 Prober::Prober(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
                const Teuchos::ParameterList& paramlist,
-               bool compute_now):input_graph_(input_graph),colorer_(0),has_colored(false){
+               bool compute_now)
+:input_graph_(input_graph),colorer_(0),has_colored(false)
+{
   setList(paramlist);
   if(compute_now) color();
 }
+////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Prober::Prober(const Epetra_CrsGraph * input_graph,
+               const Teuchos::ParameterList& paramlist, bool compute_now)
+	       :input_graph_(Teuchos::rcp<const Epetra_CrsGraph>(input_graph,false)),
+                colorer_(0),has_colored(false)
+{
+  setList(paramlist);
+  if(compute_now) color();
+}
+////////////////////////////////////////////////////////////////////////////////
 
-
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 Prober::Prober(Teuchos::RCP<const Epetra_CrsMatrix> input_matrix,
-               const Teuchos::ParameterList & paramlist,
-               bool compute_now):input_graph_(Teuchos::rcp<const Epetra_CrsGraph>(&input_matrix->Graph(),false)),colorer_(0),List_(paramlist),has_colored(false){
+               const Teuchos::ParameterList & paramlist, bool compute_now)
+:input_graph_(Teuchos::rcp<const Epetra_CrsGraph>(&input_matrix->Graph(),false)),
+ colorer_(0),List_(paramlist),has_colored(false)
+{
   setList(paramlist);
   if(compute_now) color();
 }
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Prober::Prober(const Epetra_CrsMatrix * input_matrix,
+               const Teuchos::ParameterList & paramlist, bool compute_now)
+:input_graph_(Teuchos::rcp<const Epetra_CrsGraph>(&input_matrix->Graph(),false)),
+ colorer_(0),List_(paramlist),has_colored(false)
+{
+  setList(paramlist);
+  if(compute_now) color();
+}
+////////////////////////////////////////////////////////////////////////////////
   
 
 
-void Prober::setList(const Teuchos::ParameterList& paramlist){
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+void Prober::setList(const Teuchos::ParameterList& paramlist)
+{
   List_=paramlist;
 
   /* Ensure Distance 2 */
@@ -76,9 +111,14 @@ void Prober::setList(const Teuchos::ParameterList& paramlist){
 //   }
 
 }
+////////////////////////////////////////////////////////////////////////////////
   
-void Prober::color(){
-  if(!has_colored) {
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+void Prober::color()
+{
+  if(!has_colored) 
+  {
     delete colorer_;
     colorer_=new Isorropia::Epetra::Colorer(input_graph_,List_,false);
   }
@@ -86,9 +126,13 @@ void Prober::color(){
   colorer_->color(true);
   has_colored=true;
 }
+////////////////////////////////////////////////////////////////////////////////
 
 
-int Prober::probe(const Epetra_Operator & op, Epetra_CrsMatrix & out_matrix){
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+int Prober::probe(const Epetra_Operator & op, Epetra_CrsMatrix & out_matrix)
+{
   /* Sanity Checks */
   if(input_graph_.is_null()) return -1;
   if(input_graph_->DataPtr() != out_matrix.Graph().DataPtr()) return -1;
@@ -133,16 +177,19 @@ int Prober::probe(const Epetra_Operator & op, Epetra_CrsMatrix & out_matrix){
       
   return 0;
 }
+////////////////////////////////////////////////////////////////////////////////
 
-
-
-Teuchos::RCP<Epetra_CrsMatrix> Prober::probe(const Epetra_Operator & op){
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Teuchos::RCP<Epetra_CrsMatrix> Prober::probe(const Epetra_Operator & op)
+{
   Teuchos::RCP<Epetra_CrsMatrix> out_matrix = Teuchos::rcp(new Epetra_CrsMatrix(Copy,*input_graph_));
   Teuchos::RCP<Epetra_CrsMatrix> null;
   int rv=probe(op,*out_matrix); 
   if(rv) return out_matrix;
   else return null;
 }
+////////////////////////////////////////////////////////////////////////////////
 
   
 }//epetra

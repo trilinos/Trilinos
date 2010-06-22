@@ -7,8 +7,8 @@
 /*--------------------------------------------------------------------*/
 
 // -*- Mode: c++ -*-
-#ifndef SIERRA_Ioex_DatabaseIO_h
-#define SIERRA_Ioex_DatabaseIO_h
+#ifndef IOSS_Ioex_DatabaseIO_h
+#define IOSS_Ioex_DatabaseIO_h
 
 #include <Ioss_DatabaseIO.h>
 #include <Ioss_Field.h>
@@ -367,7 +367,7 @@ namespace Ioex {
   // Sierra wants entities in a global system. These routines
   // take care of the mapping from local <-> global
 
-  typedef std::vector<Ioss::IdPair>::const_iterator RMapI;
+  typedef std::vector<Ioss::IdPair>::iterator RMapI;
   inline int DatabaseIO::node_global_to_local(int global, bool must_exist) const
     {
       if (nodeMap.empty()) {

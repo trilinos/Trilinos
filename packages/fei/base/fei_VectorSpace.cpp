@@ -141,6 +141,7 @@ fei::VectorSpace::VectorSpace(MPI_Comm comm, const char* name)
     comm_(comm),
     idTypes_(),
     fieldDatabase_(),
+    fieldDofMap_(),
     recordCollections_(),
     sharedIDTables_(),
     ownerPatterns_(),
@@ -270,6 +271,9 @@ void fei::VectorSpace::defineFields(int numFields,
 
   for (int i=0; i<numFields; ++i) {
     fieldDatabase_.insert(std::pair<int,unsigned>(fieldIDs[i], fieldSizes[i]));
+    if (fieldIDs[i] >= 0) {
+      fieldDofMap_.add_field(fieldIDs[i], fieldSizes[i]);
+    }
   }
 }
 
@@ -1952,6 +1956,13 @@ int fei::VectorSpace::exchangeFieldInfo(fei::comm_map* ownerPattern,
   CHK_ERR( fei::exchange(comm_, &recMsgHandler) );
 
   return(0);
+}
+
+//----------------------------------------------------------------------------
+fei::FieldDofMap<int>&
+fei::VectorSpace::getFieldDofMap()
+{
+  return fieldDofMap_;
 }
 
 //----------------------------------------------------------------------------

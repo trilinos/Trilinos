@@ -18,10 +18,6 @@ extern "C" {
 }
 #include <assert.h>
 
-#ifndef IOSS_STANDALONE
-#include <stk_util/environment/product_registry.h>
-#endif
-
 #include <string>
 
 
@@ -41,18 +37,6 @@ namespace {
 
 #define stringify(X) #X
 #define version_string(X) stringify(X)
-
-void Internals::register_library_versions()
-{
-#ifndef IOSS_STANDALONE
-  const char *exo = version_string(EX_API_VERS);
-  const char *nem = version_string(NEMESIS_API_VERSION);
-
-  product_registry_add_tpl("exodusII", exo, "");
-  product_registry_add_tpl("nemesis", nem, "");
-  product_registry_add_tpl("netcdf", nc_inq_libvers(), "");
-#endif
-}
 
 void Internals::update_last_time_attribute(double value)
 {

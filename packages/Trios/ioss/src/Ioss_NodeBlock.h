@@ -7,8 +7,8 @@
 /*--------------------------------------------------------------------*/
 
 // -*- Mode: c++ -*-
-#ifndef SIERRA_Ioss_NodeBlock_h
-#define SIERRA_Ioss_NodeBlock_h
+#ifndef IOSS_Ioss_NodeBlock_h
+#define IOSS_Ioss_NodeBlock_h
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_EntityBlock.h>

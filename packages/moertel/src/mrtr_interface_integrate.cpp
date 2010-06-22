@@ -22,7 +22,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-# Questions? Contact Michael Gee (mwgee@sandia.gov)
+# Questions? Contact Glen Hansen (Glen.Hansen@inl.gov)
 #
 # ************************************************************************
 #@HEADER
@@ -470,24 +470,28 @@ bool MOERTEL::Interface::Integrate_2D_Section(MOERTEL::Segment& sseg,
     mnode0 = true;
     xi[0] = mxi[0];
     is_mpnode0 = rcp(new MOERTEL::ProjectedNode(*mnodes[0],xi,&sseg));
+    (*mnodes[0]).SetProjNode(is_mpnode0);
   }
   if ( -1.05 <= mxi[1] && mxi[1] <= 1.05) 
   {
     mnode1 = true;
     xi[0] = mxi[1];
     is_mpnode1 = rcp(new MOERTEL::ProjectedNode(*mnodes[1],xi,&sseg));
+    (*mnodes[1]).SetProjNode(is_mpnode1);
   }
   if ( -1.05 <= sxi[0] && sxi[0] <= 1.05) 
   {
     snode0 = true;
     xi[0] = sxi[0];
     is_spnode0 = rcp(new MOERTEL::ProjectedNode(*snodes[0],xi,&mseg));
+    (*snodes[0]).SetProjNode(is_spnode0);
   }
   if ( -1.05 <= sxi[1] && sxi[1] <= 1.05) 
   {
     snode1 = true;
     xi[0] = sxi[1];
     is_spnode1 = rcp(new MOERTEL::ProjectedNode(*snodes[1],xi,&mseg));
+    (*snodes[1]).SetProjNode(is_spnode1);
   }
   //cout << mnode0 << "  " << mnode1 << "  " << snode0 << "  " << snode1 << endl;
   

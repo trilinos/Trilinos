@@ -9,13 +9,17 @@
 #ifndef IOSS_code_types_h
 #define IOSS_code_types_h
 
-#if defined(NO_MPI)
+#if defined(SIERRA_PARALLEL_MPI)
+#define HAVE_MPI
+#endif
+
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#else
 #ifndef MPI_COMM_WORLD
 typedef int MPI_Comm;
 #define MPI_COMM_WORLD 0
 #endif
-#else
-#include <mpi.h>
 #endif
 
 #include <complex>

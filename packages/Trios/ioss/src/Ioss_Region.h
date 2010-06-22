@@ -7,8 +7,8 @@
 /*--------------------------------------------------------------------*/
 
 // -*- Mode: c++ -*-
-#ifndef SIERRA_Ioss_Region_h
-#define SIERRA_Ioss_Region_h
+#ifndef IOSS_Ioss_Region_h
+#define IOSS_Ioss_Region_h
 
 #include <Ioss_CodeTypes.h>
 #include <string>

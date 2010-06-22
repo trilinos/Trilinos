@@ -62,11 +62,12 @@ namespace Isorropia {
 namespace Epetra {
 
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 Colorer::Colorer(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
-		 const Teuchos::ParameterList& paramlist,
-		 bool compute_now):
-  Operator(input_graph, paramlist, 1){
-
+		 const Teuchos::ParameterList& paramlist, bool compute_now):
+  Operator(input_graph, paramlist, 1)
+{
 #ifdef HAVE_EPETRAEXT
   colmap_ = Teuchos::rcp(&(input_graph->ColMap()),false);
 #endif /* HAVE_EPETRAEXT */
@@ -80,7 +81,31 @@ Colorer::Colorer(Teuchos::RCP<const Epetra_CrsGraph> input_graph,
   if (compute_now)
     color(true);
 }
+////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Colorer::Colorer(const Epetra_CrsGraph * input_graph,
+		 const Teuchos::ParameterList& paramlist, bool compute_now):
+  Operator(Teuchos::RCP<const Epetra_CrsGraph>(input_graph,false), paramlist, 1)
+{
+#ifdef HAVE_EPETRAEXT
+  colmap_ = Teuchos::rcp(&(input_graph_->ColMap()),false);
+#endif /* HAVE_EPETRAEXT */
+
+#ifdef HAVE_ISORROPIA_ZOLTAN
+  lib_ = Teuchos::rcp(new ZoltanLibClass(input_graph_, Library::graph_input_));
+#else /* HAVE_ISORROPIA_ZOLTAN */
+  throw Isorropia::Exception("Coloring only available in Zoltan");
+  return ;
+#endif /* HAVE_ISORROPIA_ZOLTAN */
+  if (compute_now)
+    color(true);
+}
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 Colorer::Colorer(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
 		 const Teuchos::ParameterList& paramlist,
 		 bool compute_now):
@@ -100,7 +125,32 @@ Colorer::Colorer(Teuchos::RCP<const Epetra_RowMatrix> input_matrix,
   if (compute_now)
     color(true);
 }
+////////////////////////////////////////////////////////////////////////////////
 
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+Colorer::Colorer(const Epetra_RowMatrix *input_matrix,
+		 const Teuchos::ParameterList& paramlist, bool compute_now):
+  Operator (Teuchos::RCP<const Epetra_RowMatrix>(input_matrix,false), paramlist, 1) 
+{
+#ifdef HAVE_EPETRAEXT
+  colmap_ = Teuchos::rcp(&(input_matrix_->RowMatrixColMap()),false);
+#endif /* HAVE_EPETRAEXT */
+
+#ifdef HAVE_ISORROPIA_ZOLTAN
+  lib_ = Teuchos::rcp(new ZoltanLibClass(input_matrix_, Library::graph_input_));
+#else /* HAVE_ISORROPIA_ZOLTAN */
+  throw Isorropia::Exception("Coloring only available in Zoltan");
+  return ;
+#endif /* HAVE_ISORROPIA_ZOLTAN */
+
+  if (compute_now)
+    color(true);
+}
+////////////////////////////////////////////////////////////////////////////////
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
 void
 Colorer::color(bool force_coloring)
 {
@@ -118,6 +168,7 @@ Colorer::color(bool force_coloring)
   operation_already_computed_ = true;
   computeNumberOfProperties();
 }
+////////////////////////////////////////////////////////////////////////////////
 
 #ifdef HAVE_EPETRAEXT
 

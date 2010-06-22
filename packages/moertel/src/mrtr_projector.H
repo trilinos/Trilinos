@@ -22,7 +22,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-# Questions? Contact Michael Gee (mwgee@sandia.gov)
+# Questions? Contact Glen Hansen (Glen.Hansen@inl.gov)
 #
 # ************************************************************************
 #@HEADER
@@ -104,7 +104,7 @@ and a Newton method is applied here involving a dense 3x3 solve in each Newton s
 These projections make up for a pretty good share of the overall computational cost
 of the mortar method though convergence in the Newton iterations is usually excellent.
 
-\author Michael W. Gee (mwgee@sandia.gov)
+\author Glen Hansen (Glen.Hansen@inl.gov)
 
 */
 class  Projector 
@@ -162,7 +162,7 @@ public:
   \param seg (in) : Segment to project on
   \param xi (out) : Local coordinates if projection of Node in Segment 's coordinate System
   */
-  bool ProjectNodetoSegment_NodalNormal(const MOERTEL::Node& node, MOERTEL::Segment& seg, double xi[]);
+  bool ProjectNodetoSegment_NodalNormal(MOERTEL::Node& node, MOERTEL::Segment& seg, double xi[]);
 
   /*!
   \brief Project a Node onto a Segment along the interpolated outward normal field of the Segment
@@ -178,7 +178,7 @@ public:
   \param seg (in) : Segment to project on
   \param xi (out) : Local coordinates if projection of Node in Segment 's coordinate System
   */
-  bool ProjectNodetoSegment_SegmentNormal(const MOERTEL::Node& node, MOERTEL::Segment& seg, double xi[]);
+  bool ProjectNodetoSegment_SegmentNormal(MOERTEL::Node& node, MOERTEL::Segment& seg, double xi[]);
 
   //@}
   // @{ \name Additional 2D projection methods
@@ -197,7 +197,7 @@ public:
   \param seg (in) : Segment to project on
   \param xi (out) : Local coordinates if projection of Node in Segment 's coordinate System
   */
-  bool ProjectNodetoSegment_SegmentOrthogonal(const MOERTEL::Node& node, MOERTEL::Segment& seg, double xi[]);
+  bool ProjectNodetoSegment_SegmentOrthogonal(MOERTEL::Node& node, MOERTEL::Segment& seg, double xi[]);
 
   /*!
   \brief Project a Node onto a Segment orthogonal another Segment (2D problems only)
@@ -214,7 +214,7 @@ public:
   \param xi (out) : Local coordinates if projection of Node in Segment 's coordinate System
   \param sseg (in) : Segment to project orthogonal to
   */
-  bool ProjectNodetoSegment_Orthogonal_to_Slave(const MOERTEL::Node& snode, MOERTEL::Segment& seg, double xi[], MOERTEL::Segment& sseg);
+  bool ProjectNodetoSegment_Orthogonal_to_Slave(MOERTEL::Node& snode, MOERTEL::Segment& seg, double xi[], MOERTEL::Segment& sseg);
 
   //@}
 
@@ -227,20 +227,20 @@ private:
   //====2D projection methods
   
   // evaluate F and gradF functions for ProjectNodetoSegment_NodalNormal in 2D
-  double evaluate_F_2D_NodalNormal(const MOERTEL::Node& node, MOERTEL::Segment& seg, double eta);  
-  double evaluate_gradF_2D_NodalNormal(const MOERTEL::Node& node, MOERTEL::Segment& seg, double eta);
+  double evaluate_F_2D_NodalNormal(MOERTEL::Node& node, MOERTEL::Segment& seg, double eta);
+  double evaluate_gradF_2D_NodalNormal(MOERTEL::Node& node, MOERTEL::Segment& seg, double eta);
 
   // evaluate F and gradF functions for ProjectNodetoSegment_SegmentNormal in 2D
-  double evaluate_F_2D_SegmentNormal(const MOERTEL::Node& node, MOERTEL::Segment& seg, double eta);  
-  double evaluate_gradF_2D_SegmentNormal(const MOERTEL::Node& node, MOERTEL::Segment& seg, double eta);
+  double evaluate_F_2D_SegmentNormal(MOERTEL::Node& node, MOERTEL::Segment& seg, double eta);
+  double evaluate_gradF_2D_SegmentNormal(MOERTEL::Node& node, MOERTEL::Segment& seg, double eta);
 
   // evaluate F and gradF functions for ProjectNodetoSegment_SegmentOrthogonal in 2D
-  double evaluate_F_2D_SegmentOrthogonal(const MOERTEL::Node& node, MOERTEL::Segment& seg, double eta);  
-  double evaluate_gradF_2D_SegmentOrthogonal(const MOERTEL::Node& node, MOERTEL::Segment& seg, double eta);
+  double evaluate_F_2D_SegmentOrthogonal(MOERTEL::Node& node, MOERTEL::Segment& seg, double eta);
+  double evaluate_gradF_2D_SegmentOrthogonal(MOERTEL::Node& node, MOERTEL::Segment& seg, double eta);
   
   // evalauate F and gradF functions for ProjectNodetoSegment_Orthogonal_to_Slave in 2D
-  double evaluate_F_2D_SegmentOrthogonal_to_g(const MOERTEL::Node& node, MOERTEL::Segment& seg, double eta, double* g);  
-  double evaluate_gradF_2D_SegmentOrthogonal_to_g(const MOERTEL::Node& node, MOERTEL::Segment& seg, double eta, double* g);
+  double evaluate_F_2D_SegmentOrthogonal_to_g(MOERTEL::Node& node, MOERTEL::Segment& seg, double eta, double* g);
+  double evaluate_gradF_2D_SegmentOrthogonal_to_g(MOERTEL::Node& node, MOERTEL::Segment& seg, double eta, double* g);
   
   //====3D projection methods
 

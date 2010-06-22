@@ -1,0 +1,184 @@
+#!/bin/csh -f
+##############################################################################
+# Zoltan Library for Parallel Applications                                   #
+# Copyright (c) 2000-2010, Sandia National Laboratories.                     #
+# For more info, see the README file in the top-level Zoltan directory.      #
+##############################################################################
+#
+# This C-shell script runs test problems using ctest_zoltan.pl.
+#
+# Usage: test_zoltan [-mpiexec path_to_mpiexec] \
+#                    [-logfile logfile_name] \
+#                    [-use_parmetis] \
+#                    [-use_scotch] \
+#                    [-use_serial] \
+#                    [-zdrivepath path_to_zdrive | -use_fortran | -use_cpp]
+
+# Set default options
+set logfile = test_zoltan.log
+set run = "mpirun "
+set use_parmetis = 0
+set use_scotch = 0
+set use_fortran = 0
+set use_cpp = 0
+set use_serial = 0
+set zdrivepath = "."
+
+# Parse command-line options.
+# These options will override the environment variables.
+
+while ( $#argv )
+
+  if ( ("$1" == "-h") || ("$1" == "-help") ) then
+     goto usage
+  else if ( "$1" == "-use_parmetis" ) then
+     @ use_parmetis = 1
+  else if ( "$1" == "-use_scotch" ) then
+     @ use_scotch = 1
+  else if ( "$1" == "-use_fortran" ) then
+     @ use_fortran = 1
+  else if ( "$1" == "-use_cpp" ) then
+     @ use_cpp = 1
+  else if ( "$1" == "-use_serial" ) then
+     @ use_serial = 1
+  else if ( "$1" == "-logfile" || "$1" == "-log" ) then
+    if ( $#argv < 2 ) then
+      echo "Error: No argument for $1"
+      goto usage
+    endif
+    shift argv
+    set logfile = "$1"
+  else if ( "$1" == "-zdrivepath" ) then
+    if ( $#argv < 2 ) then
+      echo "Error: No argument for $1"
+      goto usage
+    endif
+    shift argv
+    set zdrivepath = "$1"
+  else if ( "$1" == "-mpiexec" ) then
+    if ( $#argv < 2 ) then
+      echo "Error: No argument for $1"
+      goto usage
+    endif
+    shift argv
+    set run = "$1"
+  endif
+
+  shift argv
+
+end # while ( $#argv )
+
+#############################################################################
+#############################################################################
+# Problem definitions
+
+set name  = (ch_simple ch_nograph ch_vwgt ch_ewgt ch_bug ch_degenerate ch_degenerateAA ch_onedbug ch_grid20x19 ch_hammond)
+set nproc = (4 4 3 4 3 6 6 3 5 8) # no. of procs
+
+if ( $use_serial ) then
+
+  set nproc = (1 1 1 1 1 1 1 1 1 1 1) # no. of procs
+  set name  = ($name ch_serial )
+  set nproc = ($nproc 1 )
+
+else if ( $use_fortran ) then
+
+  # zfdrive can only handle plain MatrixMarket format, so run only these
+  set name  = ($name diag500_4 cage10 )
+  set nproc = ($nproc  4       11     )
+
+else 
+
+  # Hypergraph problems, methods and sizes.  If you add tests here, you
+  # may also want to update the hg_* values in the "use_fortran" case.
+  set name  = ($name hg_simple hg_vwgt hg_ewgt hg_nograph hg_felix hg_diag500_4 hg_ibm03 hg_cage10)
+  set nproc = ($nproc  4  4  4  3  5  4  9  11 )
+
+endif
+
+if ( $use_serial ) then
+  # No mpirun in serial case.
+  unset run
+endif
+
+# Find the right zdrive to run
+@ found = 0
+if ($zdrivepath != ".") then
+  set zdrive = $zdrivepath
+else if ( $use_fortran ) then
+  # Using F90
+  set zdrive = zfdrive.exe
+else if ( $use_cpp ) then
+  # Using C++
+  set zdrive = zCPPdrive.exe
+else
+# Using C
+  set zdrive = zdrive.exe
+endif
+
+if ( -x $zdrive ) then
+  echo "Found zdrive = $zdrive "
+  @ found = 1
+else
+  echo "Error: Could not find zdrive executable $zdrive"
+  exit -3
+endif
+
+# Set up log file
+if ( -e $logfile ) /bin/mv $logfile ${logfile}.old
+echo "Test date  = `date`" > $logfile
+echo "System     = `uname -a`" >> $logfile
+echo "Fortran    = $use_fortran" >> $logfile
+echo "C++        = $use_cpp" >> $logfile
+echo "Run cmd    = $run" >> $logfile
+echo "Run dir    = $cwd" >> $logfile
+echo "Executable = $zdrive" >> $logfile
+echo " " >> $logfile
+
+#############################################################################
+#############################################################################
+
+# Loop over problems
+@ nprob = $#name
+@ nfailed = 0
+@ ndropfailed = 0
+while ( $#name )
+
+  # Go to the next test directory, initialize
+  cd ${name[1]}
+  @ np = $nproc[1]
+  echo "Running test case ${name[1]} on ${nproc[1]} procs" | tee -a ../$logfile
+  ../ctest_new.pl -np $np -mpiexec $run -zdrive $zdrive -debug 1 -pkg Zoltan
+
+  if ( $use_parmetis) then
+    ../ctest_new.pl -np $np -mpiexec $run -zdrive $zdrive -debug 1 -pkg ParMETIS
+  endif
+
+  if ( $use_scotch) then
+    ../ctest_new.pl -np $np -mpiexec $run -zdrive $zdrive -debug 1 -pkg Scotch
+  endif
+
+  cat *.logfile | tee -a ../$logfile
+  shift name
+  shift nproc
+  cd ..
+end
+
+###
+
+# Exit successfully
+echo "Test final = `date`" >> $logfile
+exit 0
+
+# Print usage and exit with error
+usage:
+  echo "Usage: $0 "
+  echo "Other options:"
+  echo "   -logfile filename"
+  echo "   -zdrivepath path_to_directory_with_executable"
+  echo "   -use_parmetis"
+  echo "   -use_scotch"
+  echo "   -use_fortran"
+  echo "   -use_cpp"
+  echo "   -use_serial"
+  exit -1

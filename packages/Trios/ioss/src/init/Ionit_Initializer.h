@@ -6,8 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef SIERRA_Ionit_Initializer_h
-#define SIERRA_Ionit_Initializer_h
+#ifndef IOSS_Ionit_Initializer_h
+#define IOSS_Ionit_Initializer_h
 
 namespace Ioss {
   namespace Init {

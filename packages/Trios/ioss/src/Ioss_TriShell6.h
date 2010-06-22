@@ -1,6 +1,6 @@
 /* Copyright 2001 Sandia Corporation, Albuquerque, NM. */
-#ifndef SIERRA_Ioss_TriShell6_h
-#define SIERRA_Ioss_TriShell6_h
+#ifndef IOSS_Ioss_TriShell6_h
+#define IOSS_Ioss_TriShell6_h
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_ElementTopology.h>
@@ -46,4 +46,4 @@ namespace Ioss {
     TriShell6(const TriShell6&); // Do not implement
   };
 }
-#endif // SIERRA_Ioss_TriShell6_h
+#endif // IOSS_Ioss_TriShell6_h

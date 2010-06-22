@@ -58,7 +58,7 @@ namespace Tpetra {
   , storageOptimized_(false)
   , lowerTriangular_(false)
   , upperTriangular_(false)
-  , indicesAreSorted_(true)
+  , indicesAreSorted_(false)
   , noRedundancies_(false) {
     staticAssertions();
     TEST_FOR_EXCEPTION(maxNumEntriesPerRow > Teuchos::OrdinalTraits<size_t>::max() || (maxNumEntriesPerRow < 1 && maxNumEntriesPerRow != 0), std::runtime_error,
@@ -89,7 +89,7 @@ namespace Tpetra {
   , storageOptimized_(false)
   , lowerTriangular_(false)
   , upperTriangular_(false)
-  , indicesAreSorted_(true)
+  , indicesAreSorted_(false)
   , noRedundancies_(false) {
     staticAssertions();
     TEST_FOR_EXCEPTION(maxNumEntriesPerRow > Teuchos::OrdinalTraits<size_t>::max() || (maxNumEntriesPerRow < 1 && maxNumEntriesPerRow != 0), std::runtime_error,
@@ -119,7 +119,7 @@ namespace Tpetra {
   , storageOptimized_(false)
   , lowerTriangular_(false)
   , upperTriangular_(false)
-  , indicesAreSorted_(true)
+  , indicesAreSorted_(false)
   , noRedundancies_(false) {
     staticAssertions();
     TEST_FOR_EXCEPTION((size_t)NumEntriesPerRowToAlloc.size() != getNodeNumRows(), std::runtime_error,
@@ -157,7 +157,7 @@ namespace Tpetra {
   , storageOptimized_(false)
   , lowerTriangular_(false)
   , upperTriangular_(false)
-  , indicesAreSorted_(true)
+  , indicesAreSorted_(false)
   , noRedundancies_(false) {
     staticAssertions();
     TEST_FOR_EXCEPTION((size_t)NumEntriesPerRowToAlloc.size() != getNodeNumRows(), std::runtime_error,
@@ -177,11 +177,12 @@ namespace Tpetra {
         Teuchos::typeName(*this) << "::allocateIndices(): Internal logic error. Please contact Tpetra team.");
     TEST_FOR_EXCEPTION( indicesAreAllocated() == true, std::logic_error, 
         Teuchos::typeName(*this) << "::allocateIndices(): Internal logic error. Please contact Tpetra team.");
-    indicesAreLocal_  = (lorg == AllocateLocal);
-    indicesAreGlobal_ = (lorg == AllocateGlobal);
     Teuchos::RCP<Node> node = lclGraph_.getNode();
     const size_t numRows = getNodeNumRows();
+    indicesAreLocal_  = (lorg == AllocateLocal);
+    indicesAreGlobal_ = (lorg == AllocateGlobal);
     // if we have no row, then we have nothing to do
+    nodeNumAllocated_ = 0;
     if (numRows > 0) {
       if (getProfileType() == StaticProfile) {
         //
@@ -1930,10 +1931,10 @@ namespace Tpetra {
           view_gblInds2D_ = Teuchos::null;
         }
       }
-      // don't set these unless we actually did something
+      // don't set this unless we actually did something
       indicesAreLocal_  = true;
-      indicesAreGlobal_ = false;
     }
+    indicesAreGlobal_ = false;
     checkInternalState();
   }
 
@@ -1956,7 +1957,7 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::sortIndices() {
-    TEST_FOR_EXCEPT(isGloballyIndexed()==true);   // this should be called only after makeIndicesLocal()
+    TEST_FOR_EXCEPT(isGloballyIndexed()==true && indicesAreAllocated_ && nodeNumAllocated_ > 0);   // this should be called only after makeIndicesLocal()
     if (isSorted()) return;
     // are there any indices to sort?
     if (nodeNumAllocated_ > 0) {
@@ -2458,16 +2459,22 @@ namespace Tpetra {
   }
 
 
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   bool CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::checkSizes(const DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node>& source)
   {
-    //It's not clear what kind of compatibility checks on sizes can be performed here.
-    //Epetra_CrsGraph doesn't check any sizes for compatibility.
+    // It's not clear what kind of compatibility checks on sizes can be performed here.
+    // Epetra_CrsGraph doesn't check any sizes for compatibility.
     return true;
   }
 
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::copyAndPermute(const DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> & source,
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::copyAndPermute(
+                          const DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> & source,
                           size_t numSameIDs,
                           const Teuchos::ArrayView<const LocalOrdinal> &permuteToLIDs,
                           const Teuchos::ArrayView<const LocalOrdinal> &permuteFromLIDs)
@@ -2479,7 +2486,7 @@ namespace Tpetra {
 
     Teuchos::Array<GlobalOrdinal> row_copy;
     LocalOrdinal myid = 0;
-    for(size_t i=0; i<numSameIDs; ++i, ++myid) {
+    for (size_t i=0; i<numSameIDs; ++i, ++myid) {
       GlobalOrdinal gid = src_graph.getMap()->getGlobalElement(myid);
       if (src_filled) {
         size_t row_length = src_graph.getNumEntriesInGlobalRow(gid);
@@ -2494,7 +2501,7 @@ namespace Tpetra {
       }
     }
 
-    for(LocalOrdinal i=0; i<permuteToLIDs.size(); ++i) {
+    for (LocalOrdinal i=0; i<permuteToLIDs.size(); ++i) {
       GlobalOrdinal mygid = this->getMap()->getGlobalElement(permuteToLIDs[i]);
       GlobalOrdinal srcgid= src_graph.getMap()->getGlobalElement(permuteFromLIDs[i]);
       if (src_filled) {
@@ -2511,8 +2518,12 @@ namespace Tpetra {
     }
   }
 
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::packAndPrepare(const DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> & source,
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::packAndPrepare(
+                          const DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> & source,
                           const Teuchos::ArrayView<const LocalOrdinal> &exportLIDs,
                           Teuchos::Array<GlobalOrdinal> &exports,
                           const Teuchos::ArrayView<size_t> & numPacketsPerLID,
@@ -2522,15 +2533,15 @@ namespace Tpetra {
     TEST_FOR_EXCEPTION(exportLIDs.size() != numPacketsPerLID.size(), std::runtime_error,
                     Teuchos::typeName(*this) << "::packAndPrepare: exportLIDs and numPacketsPerLID must have the same size.");
     const CrsGraph<LocalOrdinal,GlobalOrdinal,Node>& src_graph = dynamic_cast<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node>&>(source);
-    //We don't check whether src_graph has had fillComplete called, because it doesn't matter whether the
-    //*source* graph has been fillComplete'd. The target graph can not be fillComplete'd yet.
+    // We don't check whether src_graph has had fillComplete called, because it doesn't matter whether the
+    // *source* graph has been fillComplete'd. The target graph can not be fillComplete'd yet.
     TEST_FOR_EXCEPTION(this->isFillComplete() == true, std::runtime_error,
          Teuchos::typeName(*this) << "::copyAndPermute: import/export operations are not allowed on destination CrsGraph after fillComplete has been called.");
     constantNumPackets = 0;
-    //first set the contents of numPacketsPerLID, and accumulate a total-num-packets:
+    // first set the contents of numPacketsPerLID, and accumulate a total-num-packets:
     size_t totalNumPackets = 0;
     Teuchos::Array<GlobalOrdinal> row;
-    for(LocalOrdinal i=0; i<exportLIDs.size(); ++i) {
+    for (LocalOrdinal i=0; i<exportLIDs.size(); ++i) {
       GlobalOrdinal GID = src_graph.getMap()->getGlobalElement(exportLIDs[i]);
       size_t row_length = src_graph.getNumEntriesInGlobalRow(GID);
       numPacketsPerLID[i] = row_length;
@@ -2539,9 +2550,9 @@ namespace Tpetra {
 
     exports.resize(totalNumPackets);
 
-    //now loop again and pack rows of indices into exports:
+    // now loop again and pack rows of indices into exports:
     size_t exportsOffset = 0;
-    for(LocalOrdinal i=0; i<exportLIDs.size(); ++i) {
+    for (LocalOrdinal i=0; i<exportLIDs.size(); ++i) {
       GlobalOrdinal GID = src_graph.getMap()->getGlobalElement(exportLIDs[i]);
       size_t row_length = src_graph.getNumEntriesInGlobalRow(GID);
       row.resize(row_length);
@@ -2550,26 +2561,32 @@ namespace Tpetra {
       typename Teuchos::Array<GlobalOrdinal>::const_iterator
         row_iter = row.begin(), row_end = row.end();
       size_t j = 0;
-      for(; row_iter != row_end; ++row_iter, ++j) {
+      for (; row_iter != row_end; ++row_iter, ++j) {
         exports[exportsOffset+j] = *row_iter;
       }
       exportsOffset += row.size();
     }
   }
 
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::unpackAndCombine(const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
+  void CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::unpackAndCombine(
+                            const Teuchos::ArrayView<const LocalOrdinal> &importLIDs,
                             const Teuchos::ArrayView<const GlobalOrdinal> &imports,
                             const Teuchos::ArrayView<size_t> &numPacketsPerLID,
                             size_t constantNumPackets,
                             Distributor & /* distor */,
                             CombineMode /* CM */)
   {
-    //We are not checking the value of the CombineMode input-argument.
-    //For CrsGraph, we only support import/export operations if fillComplete has not yet been called.
-    //Any incoming column-indices are inserted into the target graph. In this context, CombineMode values
-    //of ADD vs INSERT are equivalent. What is the meaning of REPLACE for CrsGraph? If a duplicate column-index
-    //is inserted, it will be compressed out when fillComplete is called.
+    // We are not checking the value of the CombineMode input-argument.
+    // For CrsGraph, we only support import/export operations if fillComplete has not yet been called.
+    // Any incoming column-indices are inserted into the target graph. In this context, CombineMode values
+    // of ADD vs INSERT are equivalent. What is the meaning of REPLACE for CrsGraph? If a duplicate column-index
+    // is inserted, it will be compressed out when fillComplete is called.
+    // 
+    // Note: I think REPLACE means that an existing row is replaced by the imported row, i.e., the existing indices are cleared. CGB, 6/17/2010
 
     TEST_FOR_EXCEPTION(importLIDs.size() != numPacketsPerLID.size(), std::runtime_error,
                     Teuchos::typeName(*this) << "::unpackAndCombine: importLIDs and numPacketsPerLID must have the same size.");
@@ -2579,7 +2596,7 @@ namespace Tpetra {
     typename Teuchos::ArrayView<const LocalOrdinal>::iterator
       impLIDiter = importLIDs.begin(), impLIDend = importLIDs.end();
     size_t i = 0;
-    for(; impLIDiter != impLIDend; ++impLIDiter, ++i) {
+    for (; impLIDiter != impLIDend; ++impLIDiter, ++i) {
       LocalOrdinal row_length = numPacketsPerLID[i];
       const Teuchos::ArrayView<const GlobalOrdinal> row(&imports[importsOffset], row_length);
       insertGlobalIndices(this->getMap()->getGlobalElement(*impLIDiter), row);

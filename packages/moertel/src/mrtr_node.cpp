@@ -22,7 +22,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-# Questions? Contact Michael Gee (mwgee@sandia.gov)
+# Questions? Contact Glen Hansen (Glen.Hansen@inl.gov)
 #
 # ************************************************************************
 #@HEADER
@@ -45,7 +45,8 @@ iscorner_(false),
 isonboundary_(isonboundary),
 Drow_(null),
 Mrow_(null),
-Mmodrow_(null)
+Mmodrow_(null),
+proj_node_(null)
 {
   seg_.resize(0);
   segptr_.resize(0);
@@ -54,6 +55,7 @@ Mmodrow_(null)
   {
     x_[i] = x[i];
     n_[i] = 0.0;
+    prcoord_[i] = 0.0;
   }
   
   dof_.resize(ndof);
@@ -76,7 +78,8 @@ iscorner_(false),
 isonboundary_(false),
 Drow_(null),
 Mrow_(null),
-Mmodrow_(null)
+Mmodrow_(null),
+proj_node_(null)
 {
   seg_.resize(0);
   segptr_.resize(0);
@@ -88,6 +91,7 @@ Mmodrow_(null)
   { 
     n_[i] = 0.0;
     x_[i] = 0.0;
+    prcoord_[i] = 0.0;
   }
 
   pnode_.resize(0);
@@ -108,6 +112,7 @@ supportedby_(old.supportedby_)
   {
     x_[i] = old.x_[i];
     n_[i] = old.n_[i];
+    prcoord_[i] = old.prcoord_[i];
   }
   
   if (old.dof_.size())
@@ -453,6 +458,22 @@ RefCountPtr<MOERTEL::ProjectedNode> MOERTEL::Node::GetProjectedNode()
     return pnode_[0];
   else
     return null;
+}
+
+/*----------------------------------------------------------------------*
+ |  set a projected node                                    andrsd 05/10|
+ *----------------------------------------------------------------------*/
+void MOERTEL::Node::SetProjNode(RefCountPtr<MOERTEL::ProjectedNode> pnode)
+{
+  proj_node_ = pnode;
+}
+
+/*----------------------------------------------------------------------*
+ |  get projected nodes                                     andrsd 05/10|
+ *----------------------------------------------------------------------*/
+RefCountPtr<MOERTEL::ProjectedNode> MOERTEL::Node::GetProjNode()
+{
+  return proj_node_;
 }
 
 /*----------------------------------------------------------------------*

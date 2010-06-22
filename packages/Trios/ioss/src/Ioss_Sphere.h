@@ -6,8 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef SIERRA_Ioss_Sphere_h
-#define SIERRA_Ioss_Sphere_h
+#ifndef IOSS_Ioss_Sphere_h
+#define IOSS_Ioss_Sphere_h
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_ElementTopology.h>
@@ -53,4 +53,4 @@ namespace Ioss {
     Sphere(const Sphere&); // Do not implement
   };
 }
-#endif // SIERRA_Ioss_Sphere_h
+#endif // IOSS_Ioss_Sphere_h

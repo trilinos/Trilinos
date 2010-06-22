@@ -54,8 +54,10 @@ LOCA::LAPACK::Group::Group(
   params(),
   shiftedSolver(jacSolver.getMatrix().numRows()),
   freq(0.0),
-  isValidComplex(false),
-  complexSolver(jacSolver.getMatrix().numRows())
+  isValidComplex(false)
+#ifdef HAVE_TEUCHOS_COMPLEX
+  ,complexSolver(jacSolver.getMatrix().numRows())
+#endif
 {
 }
 
@@ -68,8 +70,10 @@ LOCA::LAPACK::Group::Group(const LOCA::LAPACK::Group& source,
   params(source.params),
   shiftedSolver(source.shiftedSolver),
   freq(source.freq),
-  isValidComplex(source.isValidComplex),
-  complexSolver(source.complexSolver)
+  isValidComplex(source.isValidComplex)
+#ifdef HAVE_TEUCHOS_COMPLEX
+  ,complexSolver(source.complexSolver)
+#endif
 {
 }
 
@@ -87,7 +91,9 @@ LOCA::LAPACK::Group::operator=(const LOCA::LAPACK::Group& source) {
   shiftedSolver = source.shiftedSolver;
   freq = source.freq;
   isValidComplex = source.isValidComplex;
+#ifdef HAVE_TEUCHOS_COMPLEX
   complexSolver = source.complexSolver;
+#endif
 
   return *this;
 }
@@ -387,8 +393,9 @@ LOCA::LAPACK::Group::isComplex() const
 NOX::Abstract::Group::ReturnType
 LOCA::LAPACK::Group::computeComplex(double frequency)
 {
-  string callingFunction = 
-    "LOCA::LAPACK::computeComplex()";
+  string callingFunction = "LOCA::LAPACK::computeComplex()";
+
+#ifdef HAVE_TEUCHOS_COMPLEX
   NOX::Abstract::Group::ReturnType finalStatus;
 
   freq = frequency;
@@ -422,6 +429,12 @@ LOCA::LAPACK::Group::computeComplex(double frequency)
     return finalStatus;
   else
     return NOX::Abstract::Group::Failed;
+#else
+  globalData->locaErrorCheck->throwError(
+    callingFunction,
+    "TEUCHOS_COMPLEX must be enabled for complex support!  Reconfigure with -D Teuchos_ENABLE_COMPLEX");
+  return NOX::Abstract::Group::BadDependency;
+#endif
 }
 
 NOX::Abstract::Group::ReturnType
@@ -430,6 +443,7 @@ LOCA::LAPACK::Group::applyComplex(const NOX::Abstract::Vector& input_real,
 				  NOX::Abstract::Vector& result_real,
 				  NOX::Abstract::Vector& result_imag) const
 {
+#ifdef HAVE_TEUCHOS_COMPLEX
    // Check validity of the Jacobian
   if (!isComplex()) 
     return NOX::Abstract::Group::BadDependency;
@@ -461,6 +475,12 @@ LOCA::LAPACK::Group::applyComplex(const NOX::Abstract::Vector& input_real,
   }
 
   return NOX::Abstract::Group::Ok;
+#else
+  globalData->locaErrorCheck->throwError(
+    "LOCA::LAPACK::Group::applyComplex()",
+    "TEUCHOS_COMPLEX must be enabled for complex support!  Reconfigure with -D Teuchos_ENABLE_COMPLEX");
+  return NOX::Abstract::Group::BadDependency;
+#endif
 }
 
 NOX::Abstract::Group::ReturnType
@@ -470,6 +490,7 @@ LOCA::LAPACK::Group::applyComplexMultiVector(
 				NOX::Abstract::MultiVector& result_real,
 				NOX::Abstract::MultiVector& result_imag) const
 {
+#ifdef HAVE_TEUCHOS_COMPLEX
    // Check validity of the Jacobian
   if (!isComplex()) 
     return NOX::Abstract::Group::BadDependency;
@@ -510,6 +531,12 @@ LOCA::LAPACK::Group::applyComplexMultiVector(
   }
 
   return NOX::Abstract::Group::Ok;
+#else
+  globalData->locaErrorCheck->throwError(
+    "LOCA::LAPACK::Group::applyComplexMultiVector()",
+    "TEUCHOS_COMPLEX must be enabled for complex support!  Reconfigure with -D Teuchos_ENABLE_COMPLEX");
+  return NOX::Abstract::Group::BadDependency;
+#endif
 }
 
 NOX::Abstract::Group::ReturnType
@@ -520,6 +547,7 @@ LOCA::LAPACK::Group::applyComplexInverseMultiVector(
 				NOX::Abstract::MultiVector& result_real,
 				NOX::Abstract::MultiVector& result_imag) const
 {
+#ifdef HAVE_TEUCHOS_COMPLEX
    // Check validity of the Jacobian
   if (!isComplex()) 
     return NOX::Abstract::Group::BadDependency;
@@ -562,6 +590,12 @@ LOCA::LAPACK::Group::applyComplexInverseMultiVector(
     return NOX::Abstract::Group::Ok;
   else
     return NOX::Abstract::Group::Failed;
+#else
+  globalData->locaErrorCheck->throwError(
+    "LOCA::LAPACK::Group::applyComplexInverseMultiVector()",
+    "TEUCHOS_COMPLEX must be enabled for complex support!  Reconfigure with -D Teuchos_ENABLE_COMPLEX");
+  return NOX::Abstract::Group::BadDependency;
+#endif
 }
 
 NOX::Abstract::Group::ReturnType
@@ -571,6 +605,7 @@ LOCA::LAPACK::Group::applyComplexTranspose(
 				  NOX::Abstract::Vector& result_real,
 				  NOX::Abstract::Vector& result_imag) const
 {
+#ifdef HAVE_TEUCHOS_COMPLEX
    // Check validity of the Jacobian
   if (!isComplex()) 
     return NOX::Abstract::Group::BadDependency;
@@ -602,6 +637,12 @@ LOCA::LAPACK::Group::applyComplexTranspose(
   }
 
   return NOX::Abstract::Group::Ok;
+#else
+  globalData->locaErrorCheck->throwError(
+    "LOCA::LAPACK::Group::applyComplexTranspose()",
+    "TEUCHOS_COMPLEX must be enabled for complex support!  Reconfigure with -D Teuchos_ENABLE_COMPLEX");
+  return NOX::Abstract::Group::BadDependency;
+#endif
 }
 
 NOX::Abstract::Group::ReturnType
@@ -611,6 +652,7 @@ LOCA::LAPACK::Group::applyComplexTransposeMultiVector(
 				NOX::Abstract::MultiVector& result_real,
 				NOX::Abstract::MultiVector& result_imag) const
 {
+#ifdef HAVE_TEUCHOS_COMPLEX
    // Check validity of the Jacobian
   if (!isComplex()) 
     return NOX::Abstract::Group::BadDependency;
@@ -651,6 +693,12 @@ LOCA::LAPACK::Group::applyComplexTransposeMultiVector(
   }
 
   return NOX::Abstract::Group::Ok;
+#else
+  globalData->locaErrorCheck->throwError(
+    "LOCA::LAPACK::Group::applyComplexTransposeMultiVector()",
+    "TEUCHOS_COMPLEX must be enabled for complex support!  Reconfigure with -D Teuchos_ENABLE_COMPLEX");
+  return NOX::Abstract::Group::BadDependency;
+#endif
 }
 
 NOX::Abstract::Group::ReturnType
@@ -661,6 +709,7 @@ LOCA::LAPACK::Group::applyComplexTransposeInverseMultiVector(
 				NOX::Abstract::MultiVector& result_real,
 				NOX::Abstract::MultiVector& result_imag) const
 {
+#ifdef HAVE_TEUCHOS_COMPLEX
    // Check validity of the Jacobian
   if (!isComplex()) 
     return NOX::Abstract::Group::BadDependency;
@@ -703,6 +752,12 @@ LOCA::LAPACK::Group::applyComplexTransposeInverseMultiVector(
     return NOX::Abstract::Group::Ok;
   else
     return NOX::Abstract::Group::Failed;
+#else
+  globalData->locaErrorCheck->throwError(
+    "LOCA::LAPACK::Group::applyComplexTransposeInverseMultiVector()",
+    "TEUCHOS_COMPLEX must be enabled for complex support!  Reconfigure with -D Teuchos_ENABLE_COMPLEX");
+  return NOX::Abstract::Group::BadDependency;
+#endif
 }
 
 NOX::Abstract::Group::ReturnType 
@@ -727,5 +782,7 @@ LOCA::LAPACK::Group::resetIsValid()
   NOX::LAPACK::Group::resetIsValid();
   shiftedSolver.reset(); // Reset factorization
   isValidComplex = false;
+#ifdef HAVE_TEUCHOS_COMPLEX
   complexSolver.reset(); // Reset factorization
+#endif
 }

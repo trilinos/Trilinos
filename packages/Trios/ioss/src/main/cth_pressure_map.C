@@ -17,13 +17,13 @@
 #include <string>
 #include <cstring>
 
-#ifndef IOSS_STANDALONE
-#include <Slib_Env.h>
-#endif
-
 #include <init/Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
 #include <Ioss_Utils.h>
+
+#ifdef HAVE_MPI
+#include <mpi.h>
+#endif
 
 #ifndef NO_XDMF_SUPPORT
 #include <xdmf/Ioxf_Initializer.h>
@@ -50,6 +50,7 @@ namespace {
     double minimum_time;
     double offset_time;
     double offset_pressure;
+    std::string working_directory;
   };
 
   void show_usage(const std::string &prog, bool add_sset);
@@ -103,57 +104,17 @@ namespace {
 }
 // ========================================================================
 
-#ifdef IOSS_STANDALONE
-// Global variables, yes, global...
-std::string codename;
-std::string version = "$Revision$";
-#else
 namespace {
   std::string codename;
   std::string version = "$Revision$";
 }
-#endif
-
-#ifndef IOSS_STANDALONE
-namespace {
-
-void bootstrap()
-{
-  // Add my command line options to the option descriptions.
-  boost::program_options::options_description desc("Use case options");
-  desc.add_options()
-    ("input-deck,i", boost::program_options::value<std::string>(), "Analysis input file")
-    ("restart-time,r", boost::program_options::value<std::string>(), "Restart time")
-    ("parser-database,p", boost::program_options::value<std::string>(), "Parser database")
-
-    ("Maximum_Time", boost::program_options::value<std::string>(), "Maximum time to transfer to the output file")
-    ("Minimum_Time", boost::program_options::value<std::string>(), "Minimum time to transfer to the output file. This will be time=0.0 on output database and all subsequent times will be adjusted.")
-    ("Surface_Split_Scheme", boost::program_options::value<std::string>(), "Scheme to use for splitting surfaces into homogenous parts. Valid settings are 'TOPOLOGY', 'ELEMENT_BLOCK' or 'NO_SPLIT'")
-    ("Offset_Time", boost::program_options::value<std::string>(), "The output time will be equal to offset_time + input_time. A time=0.0 step will be added with all pressure = 0.0 (or Offset_Pressure if specified)")
-    ("Offset_Pressure", boost::program_options::value<std::string>(), "The output pressure will be equal to offset_pressure + input_pressure.")
-    ("Convert_Gage", "Convert the absolute pressures on the pressure file to gage pressure by subtracting the "
-     "values from the initial timestep from all subsequent timesteps.")
-    ("Final_Pressure", boost::program_options::value<std::string>(), 	      "What values should be used for the final pressure step which will be used as the pressures"
-     " for all times following the last time calculated by CTH. Options are: ZERO, INITIAL, FINAL, OFFSET."
-     " ZERO will set the final pressure values to zero; INITIAL will replicate the initial values as the"
-     " last values; OFFSET will set value to pressure offset, and FINAL will keep the final step as calculated by CTH.")
-    ("Final_Time_Delta", boost::program_options::value<std::string>(), "If the Final_Pressure is specfied as ZERO, OFFSET, or INITIAL, this specifies the delta time between"
-     " the last CTH pressure time and the time that the final_pressures are applied. If not specified,"
-     " a delta time consistent with the CTH results is used.")
-
-    ("Calculate_Normals", "Calculate surface normal fields")
-    ("Reverse_Normals", "Reverse Normals");
-
-  stk::get_options_description().add(desc);
-}
-
-stk::Bootstrap x(&bootstrap);
-
-} // namespace <unnamed>
-#endif
 
 int main(int argc, char *argv[])
 {
+#ifdef HAVE_MPI
+  MPI_Init(&argc, &argv);
+#endif
+  
   std::string in_type = "exodusII";
   std::string out_type = "exodusII";
   std::string ss_type = "exodusII";
@@ -176,25 +137,28 @@ int main(int argc, char *argv[])
   if (ind != std::string::npos)
     codename = codename.substr(ind+1, codename.size());
 
-#ifndef IOSS_STANDALONE
-  sierra::Env::Startup startup__(&argc, &argv, codename.c_str(), __DATE__ " " __TIME__); //, opts);
-#endif
-
   Ioss::Init::Initializer io;
 #ifndef NO_XDMF_SUPPORT
   Ioxf::Initializer ioxf;
 #endif
 
-#ifdef IOSS_STANDALONE
   globals.debug = false;
-#else
-  globals.debug = true;
-#endif
 
+  std::string input_file;
   // Skip past any options...
   int i=1;
   while (i < argc && argv[i][0] == '-') {
-    if (std::strcmp("-reverse", argv[i]) == 0) {
+    if (std::strcmp("-directory", argv[i]) == 0 ||
+	std::strcmp("--directory", argv[i]) == 0 ||	
+	std::strcmp("-d", argv[i]) == 0) {
+      i++;
+      globals.working_directory = argv[i++];
+    }
+    else if (std::strcmp("-i", argv[i]) == 0) {
+      i++;
+      input_file = argv[i++];
+    }
+    else if (std::strcmp("-reverse", argv[i]) == 0) {
       globals.reverse_normals = true;
       i++;
     }
@@ -269,18 +233,24 @@ int main(int argc, char *argv[])
   // the input and output files to be converted.
   // The file types are assumed to be as 'hardwired' above...
 
-  if (argc - i == 3) {
-    in_file   = Ioss::Utils::local_filename(argv[i++], in_type);
-    sset_file = Ioss::Utils::local_filename(argv[i++], ss_type);
-    out_file  = Ioss::Utils::local_filename(argv[i++], out_type);
-  }
-  else if (argc - i == 2) {
-    in_file   = Ioss::Utils::local_filename(argv[i++], in_type);
-    out_file  = Ioss::Utils::local_filename(argv[i++], out_type);
-  }
-  else if (argc - i == 1) {
-    std::string input_file = Ioss::Utils::local_filename(argv[i++], "text");
+  std::string cwd = globals.working_directory;
 
+  if (input_file.empty()) {
+    if (argc - i == 3) {
+      in_file   = Ioss::Utils::local_filename(argv[i++], in_type,  cwd);
+      sset_file = Ioss::Utils::local_filename(argv[i++], ss_type,  cwd);
+      out_file  = Ioss::Utils::local_filename(argv[i++], out_type, cwd);
+    }
+    else if (argc - i == 2) {
+      in_file   = Ioss::Utils::local_filename(argv[i++], in_type,  cwd);
+      out_file  = Ioss::Utils::local_filename(argv[i++], out_type, cwd);
+    }
+    else if (argc - i == 1) {
+      input_file = Ioss::Utils::local_filename(argv[i++], "text", cwd);
+    }
+  }
+
+  if (!input_file.empty()) {
     std::ifstream input(input_file.c_str());
     if (!input) {
       std::cerr << "Error opening file '" << input_file << "'.\n";
@@ -292,91 +262,20 @@ int main(int argc, char *argv[])
     // Last line should be output_file_name output_file_type
     std::string tmp;
     input >> tmp >> in_type;
-    in_file = Ioss::Utils::local_filename(tmp, in_type);
+    in_file = Ioss::Utils::local_filename(tmp, in_type, cwd);
 
     if (globals.add_sset) {
       input >> tmp >> ss_type;
-      sset_file = Ioss::Utils::local_filename(tmp, ss_type);
+      sset_file = Ioss::Utils::local_filename(tmp, ss_type, cwd);
     }
 
     input >> tmp >> out_type;
-    out_file = Ioss::Utils::local_filename(tmp, out_type);
+    out_file = Ioss::Utils::local_filename(tmp, out_type, cwd);
   }
-#ifndef IOSS_STANDALONE
-  else if (argc <= i) {
-    const std::string &add_sset_option        = sierra::Env::get_param("Add_Surface_Fields");
-    const std::string &calc_normals_option    = sierra::Env::get_param("Calculate_Normals");
-    const std::string &reverse_normals_option = sierra::Env::get_param("Reverse_Normals");
-    if (!add_sset_option.empty())
-      globals.add_sset = true;
-    if (!calc_normals_option.empty())
-      globals.do_normals = true;
-    if (!reverse_normals_option.empty())
-      globals.reverse_normals = true;
-
-    const std::string &convert_gage_option = sierra::Env::get_param("Convert_Gage");
-    if (!convert_gage_option.empty())
-      globals.convert_gage = true;
-
-    const std::string &final_pressure_option = sierra::Env::get_param("Final_Pressure");
-    if (final_pressure_option == "ZERO")
-      globals.final_pressure = Globals::ZERO;
-    else if (final_pressure_option == "INITIAL")
-      globals.final_pressure = Globals::INITIAL;
-    else if (final_pressure_option == "FINAL")
-      globals.final_pressure = Globals::FINAL;
-    else if (final_pressure_option == "OFFSET")
-      globals.final_pressure = Globals::OFFSET;
-
-    const std::string &final_time_delta = sierra::Env::get_param("Final_Time_Delta");
-    globals.delta_time = std::strtod(final_time_delta.c_str(), NULL);
-
-    const std::string &maximum_time_option = sierra::Env::get_param("Maximum_Time");
-    globals.maximum_time = std::strtod(maximum_time_option.c_str(), NULL);
-
-    const std::string &minimum_time_option = sierra::Env::get_param("Minimum_Time");
-    globals.minimum_time = std::strtod(minimum_time_option.c_str(), NULL);
-
-    const std::string &offset_time_option = sierra::Env::get_param("Offset_Time");
-    globals.offset_time = std::strtod(offset_time_option.c_str(), NULL);
-
-    const std::string &offset_pressure_option = sierra::Env::get_param("Offset_Pressure");
-    globals.offset_pressure = std::strtod(offset_pressure_option.c_str(), NULL);
-
-    std::string input_file = sierra::Env::get_param("input-deck");
-    if (input_file == "") {
-      std::cerr << "Error: No input file specified\n";
-      show_usage(codename, globals.add_sset);
-      return (EXIT_FAILURE);
-    }
-    input_file = Ioss::Utils::local_filename(input_file, "text");
-    std::ifstream input(input_file.c_str());
-    if (!input) {
-      std::cerr << "Error opening file '" << input_file  << "'.\n";
-      show_usage(codename, globals.add_sset);
-      return (EXIT_FAILURE);
-    }
-    // First line should be input_file_name input_file_type
-    // Second line should be output_file_name output_file_type
-
-    std::string tmp;
-    input >> tmp >> in_type;
-    in_file = Ioss::Utils::local_filename(tmp, in_type);
-
-    if (globals.add_sset) {
-      input >> tmp >> ss_type;
-      sset_file = Ioss::Utils::local_filename(tmp, ss_type);
-    }
-
-    input >> tmp >> out_type;
-    out_file = Ioss::Utils::local_filename(tmp, out_type);
-  }
-#else
-  else {
+  if (in_file.empty() || out_file.empty() || sset_file.empty()) {
     show_usage(codename, globals.add_sset);
     return(EXIT_FAILURE);
   }
-#endif
 
   std::cerr << "Input:    '" << in_file  << "', Type: " << in_type  << '\n';
   if (globals.add_sset) {

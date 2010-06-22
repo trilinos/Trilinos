@@ -383,9 +383,24 @@ namespace EpetraExt
   %epetraext_epetra_read_method(CrsGraph   )
   %epetraext_epetra_read_method(CrsMatrix  )
   %epetraext_epetra_read_method(IntVector  )
+
+  Teuchos::ParameterList ReadParameterList(const std::string & name)
+  {
+    Teuchos::ParameterList tpl;
+    self->Read(name, tpl);
+    return tpl;
+  }
 } // HDF5
 }
+%ignore EpetraExt::HDF5::Write(const string &, const string &, const int, const int, void *);
+%ignore EpetraExt::HDF5::Write(const string &, const string &, int, int, int, const void*);
+%ignore EpetraExt::HDF5::Write(const string &, const DistArray<int> &);
+%ignore EpetraExt::HDF5::Write(const string &, const DistArray<double> &);
+%ignore EpetraExt::HDF5::Write(const string &, const Handle &);
 %ignore EpetraExt::HDF5::Read;
+%ignore EpetraExt::HDF5::ReadIntDistArrayProperties;
+%ignore EpetraExt::HDF5::ReadDoubleDistArrayProperties;
+%ignore EpetraExt::HDF5::ReadHandleProperties;
 %include "EpetraExt_HDF5.h"
 #endif
 

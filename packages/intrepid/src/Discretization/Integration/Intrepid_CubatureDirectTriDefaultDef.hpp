@@ -38,7 +38,7 @@ template <class Scalar, class ArrayPoint, class ArrayWeight>
 CubatureDirectTriDefault<Scalar,ArrayPoint,ArrayWeight>::CubatureDirectTriDefault(const int degree) {
   this->degree_    = degree;
   this->dimension_ = 2;
-  TEST_FOR_EXCEPTION((degree < 0) || (degree > INTREPID_CUBATURE_TRI_DEFAULT_MAX),
+  TEST_FOR_EXCEPTION((degree < 0) || (degree > INTREPID_CUBATURE_TRI_DEFAULT_MAX_ENUM),
                      std::out_of_range,
                      ">>> ERROR (CubatureDirectTriDefault): No direct cubature rule implemented for the desired polynomial degree.");
 } // end constructor
@@ -54,7 +54,7 @@ const CubatureTemplate *  CubatureDirectTriDefault<Scalar,ArrayPoint,ArrayWeight
 
 template <class Scalar, class ArrayPoint, class ArrayWeight>
 int CubatureDirectTriDefault<Scalar,ArrayPoint,ArrayWeight>::getMaxAccuracy() const {
-  return INTREPID_CUBATURE_TRI_DEFAULT_MAX;
+  return INTREPID_CUBATURE_TRI_DEFAULT_MAX_ENUM;
 }
 
 
@@ -85,7 +85,7 @@ const char* CubatureDirectTriDefault<Scalar,ArrayPoint,ArrayWeight>::cubature_na
 */
 
 template <class Scalar, class ArrayPoint, class ArrayWeight>
-const CubatureTemplate CubatureDirectTriDefault<Scalar,ArrayPoint,ArrayWeight>::cubature_data_[INTREPID_CUBATURE_TRI_DEFAULT_MAX+1] =
+const CubatureTemplate CubatureDirectTriDefault<Scalar,ArrayPoint,ArrayWeight>::cubature_data_[INTREPID_CUBATURE_TRI_DEFAULT_MAX_ENUM+1] =
 {
   // Cubature templates for the reference triangle {(0,0), (1,0), (0,1)}
   //

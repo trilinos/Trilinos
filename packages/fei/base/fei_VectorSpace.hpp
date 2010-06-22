@@ -15,6 +15,7 @@
 #include <fei_Logger.hpp>
 #include <fei_utils.hpp>
 #include <fei_CommUtils.hpp>
+#include <fei_FieldDofMap.hpp>
 #include <fei_ctg_set.hpp>
 #include <snl_fei_RaggedTable.hpp>
 
@@ -628,6 +629,8 @@ namespace fei {
     snl_fei::PointBlockMap* getPointBlockMap();
     const snl_fei::PointBlockMap* getPointBlockMap() const;
 
+    fei::FieldDofMap<int>& getFieldDofMap();
+
     void getGlobalIndices(const fei::Pattern* pattern,
                           const fei::Record<int>*const* records,
                           std::vector<int>& indices);
@@ -710,6 +713,7 @@ namespace fei {
 
     std::vector<int> idTypes_;
     std::map<int,unsigned> fieldDatabase_;
+    fei::FieldDofMap<int> fieldDofMap_;
     int maxFieldSize_;
     std::vector<snl_fei::RecordCollection*> recordCollections_;
 

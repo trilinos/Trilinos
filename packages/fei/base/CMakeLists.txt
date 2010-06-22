@@ -43,6 +43,7 @@ fei_CommMap.hpp
 fei_CommUtils.hpp
 fei_ConnectivityBlock.hpp
 fei_ConnectivityTable.hpp
+fei_constants.hpp
 fei_CSRMat.hpp
 fei_CSVec.hpp
 fei_ctg_set.hpp
@@ -60,6 +61,7 @@ fei_ErrMacros.hpp
 fei_Factory.hpp
 fei_FEDataFilter.hpp
 fei_FEI_Impl.hpp
+fei_FieldDofMap.hpp
 fei_FieldMask.hpp
 fei_FillableMat.hpp
 fei_FillableVec.hpp

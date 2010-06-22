@@ -6,8 +6,8 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifndef SIERRA_Ioss_Bar2_h
-#define SIERRA_Ioss_Bar2_h
+#ifndef IOSS_Ioss_Bar2_h
+#define IOSS_Ioss_Bar2_h
 
 #include <Ioss_CodeTypes.h>
 #include <Ioss_ElementTopology.h>
@@ -54,4 +54,4 @@ namespace Ioss {
   };
 }
 
-#endif // SIERRA_Ioss_Bar2_h
+#endif // IOSS_Ioss_Bar2_h

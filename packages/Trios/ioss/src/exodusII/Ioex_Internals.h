@@ -8,8 +8,8 @@
  */
 // Author: gdsjaar@sandia.gov
 
-#ifndef SIERRA_Ioex_Internals_h
-#define SIERRA_Ioex_Internals_h
+#ifndef IOSS_Ioex_Internals_h
+#define IOSS_Ioex_Internals_h
 
 #include <exodusII.h>
 #include <vector>
@@ -223,8 +223,6 @@ namespace Ioex {
     void update_last_time_attribute(double value);
     bool read_last_time_attribute(double *value);
 
-    static void register_library_versions();
-
   private:
     Internals(const Internals& from); // do not implement
     Internals& operator=(const Internals& from); // do not implement
@@ -248,4 +246,4 @@ namespace Ioex {
     int elemCommIndexVar;
   };
 }
-#endif /* SIERRA_Ioex_Internals_h */
+#endif /* IOSS_Ioex_Internals_h */

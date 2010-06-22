@@ -8,7 +8,7 @@
 
 
 #include <stdexcept>
-#include <unit_tests/stk_utest_macros.hpp>
+#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/Bucket.hpp>

@@ -48,6 +48,7 @@
 #include "Intrepid_HGRAD_TET_C1_FEM.hpp"
 #include "Intrepid_HGRAD_WEDGE_C1_FEM.hpp"
 #include "Intrepid_HGRAD_HEX_C1_FEM.hpp"
+
 #include "Intrepid_HGRAD_LINE_C1_FEM.hpp"
 
 #include "Intrepid_HGRAD_TRI_C2_FEM.hpp"
@@ -1243,7 +1244,17 @@ public:
 } // namespace Intrepid
 
 // include templated function definitions
+
+// srkenno@sandia.gov 6/17/10:
+// For the PGI compiler platform, there's a bug in the compiler when switch statements are in template definition code.
+// This shows up in Intrepid_CellToolsDef.hpp and the Discretization/Basis/Intrepid_XXXDef.hpp files.
+// The workaround is to not include that in the parent header file, and only include it once in the 
+// library/client code to only instantiate the template definitions once.
+// Tested for platform pgi-7.1 and redstorm-pgi-7.1.
+
+#ifndef __PGI
 #include "Intrepid_CellToolsDef.hpp"
+#endif
 
 #endif
 

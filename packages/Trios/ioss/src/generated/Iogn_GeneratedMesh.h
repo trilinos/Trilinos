@@ -6,8 +6,8 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#ifndef SIERRA_Iogn_GeneratedMesh_h
-#define SIERRA_Iogn_GeneratedMesh_h
+#ifndef IOSS_Iogn_GeneratedMesh_h
+#define IOSS_Iogn_GeneratedMesh_h
 #include <string>
 #include <vector>
 
@@ -319,6 +319,9 @@ namespace Iogn {
      */
     std::pair<std::string, int>  topology_type(size_t block_number) const;
     
+    size_t communication_node_count_proc() const;
+    void node_communication_map(std::vector<int> &map, std::vector<int> &proc);
+    
     /** 
      * Fill the passed in 'map' argument with the node map
      * "map[local_position] = global_id" for the nodes on this
@@ -326,8 +329,6 @@ namespace Iogn {
      */
     void node_map(std::vector<int> &map);
 
-    void node_communication_map(std::vector<int> &map, std::vector<int> &proc);
-    
     /** 
      * Fill the passed in 'map' argument with the element map
      * "map[local_position] = global_id" for the elements on this
@@ -400,6 +401,9 @@ namespace Iogn {
      * the side ordinal is 0-based.
      */
     void sideset_elem_sides(size_t nset_id, std::vector<int> &elem_sides) const;
+    size_t get_num_x() const {return numX;}
+    size_t get_num_y() const {return numY;}
+    size_t get_num_z() const {return numZ;}
 
   private:
     

@@ -22,7 +22,7 @@
 # License along with this library; if not, write to the Free Software
 # Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
 # USA
-# Questions? Contact Michael Gee (mwgee@sandia.gov)
+# Questions? Contact Glen Hansen (Glen.Hansen@inl.gov)
 #
 # ************************************************************************
 #@HEADER
@@ -49,6 +49,10 @@
 // Galeri headers
 #include "Galeri_Utils.h"
 #include "Galeri_FiniteElements.h"
+
+#ifdef EXODUS_OUTPUT
+#include "ExodusInterface.h"
+#endif
 
 using namespace Galeri;
 using namespace Galeri::FiniteElements;
@@ -175,7 +179,8 @@ int main(int argc, char *argv[])
     // ------------------------------------------------------------- //
     // create 4 empty MOERTEL::Interface instances
     // ------------------------------------------------------------- //
-    int printlevel = 8; // ( moertel takes values 0 - 10 )
+    int printlevel = 3; // ( moertel takes values 0 - 10 )
+    //int printlevel = 8; // ( moertel takes values 0 - 10 ) // GAH gives info about intersection root finding
     vector<RefCountPtr<MOERTEL::Interface> > interfaces(ninter);
     for (int i=0; i<ninter; ++i) 
       interfaces[i] = rcp(new MOERTEL::Interface(i,false,Comm,printlevel));
@@ -361,8 +366,8 @@ int main(int argc, char *argv[])
     // Note that if "SaddleSystem" was chosen as system of equations
     // ML/AztecOO doesn't work
     // ------------------------------------------------------------- //
-    //list.set("Solver","Amesos");
-    list.set("Solver","ML/Aztec");
+    list.set("Solver","Amesos");
+    //list.set("Solver","ML/Aztec"); // GAH Aztec not working FIX
     
     // ------------------------------------------------------------- //
     // create sublists for packages Amesos, ML, AztecOO. they will be
@@ -455,12 +460,21 @@ int main(int argc, char *argv[])
     //LHS.PutScalar(0.0);
     //manager.SetInputMatrix(&A,false);
     //manager.Solve(list,LHS,RHS);
-
+	
+#ifdef EXODUS_OUTPUT
+    // ==================    //
+    // Output using ExodusII //
+    // ==================    //
+    ExodusInterface exodus(Comm);
+    exodus.Write(Grid, "hex_output", LHS);
+#else
     // ================== //
     // Output using MEDIT //
     // ================== //
     MEDITInterface MEDIT(Comm);
     MEDIT.Write(Grid, "hex_output", LHS);
+#endif
+	
 
 #ifdef HAVE_MPI
   MPI_Finalize();

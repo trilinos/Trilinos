@@ -75,18 +75,47 @@ namespace PHX {
 	TEST_FOR_EXCEPTION(true, std::logic_error, msg);
       }
 
+      std::size_t field_size = size_of_data_type * num_elements;
       std::size_t alignment_size = sizeof(AlignmentT);
-      std::size_t residual = size_of_data_type % alignment_size;
-      std::size_t element_size = size_of_data_type + residual;
+      std::size_t remainder = field_size % alignment_size;
+      std::size_t padding = 0;
+      if (remainder != 0)
+	padding = alignment_size - remainder;
+      std::size_t field_size_with_padding = field_size + padding;
 
-      m_total_bytes += num_elements * element_size;
+//       std::cout << "\nSize of alignment type = " 
+// 		<< alignment_size << std::endl;
+//       std::cout << "Size of field no padding = " << field_size << std::endl;
+//       std::cout << "Size of padding = " << padding << std::endl;
+//       std::cout << "Size of field with padding = " 
+// 		<< field_size_with_padding << std::endl;      
+
+      m_total_bytes += field_size_with_padding;
     }
     
     //! Called after all byte requirements are registered.  Allocates the contiguous array.
     void setup()
     {
       if (m_total_bytes > 0) {
-        m_memory = Teuchos::arcp<char>(m_total_bytes);
+
+// 	std::cout << "Size of total_bytes = " << m_total_bytes << std::endl;
+// 	std::cout << "Size of alginment type = " 
+// 		  << sizeof(AlignmentT) << std::endl;
+
+	// Make sure the alignment is correct
+	TEST_FOR_EXCEPTION(m_total_bytes % sizeof(AlignmentT) != 0,
+			   std::logic_error,
+			   "Error - a remainder of " 
+			   << m_total_bytes % sizeof(AlignmentT) 
+			   << " exists for the total array size divided by the alignment type size.  The total memory is not aligned with the data type of the contiguous allocator.  This should never happen.  Please contact the Phalanx development team.");
+	
+	// Allocate using alignment type so that the boundaries are correct
+	Teuchos::ArrayRCP<AlignmentT> aligned_memory = 
+	  Teuchos::arcp<AlignmentT>(m_total_bytes / sizeof(AlignmentT));
+
+	m_memory = Teuchos::arcp_reinterpret_cast<char>(aligned_memory);
+
+        //m_memory = Teuchos::arcp<char>(m_total_bytes);
       }
       else {
         m_memory = Teuchos::null;
@@ -101,29 +130,32 @@ namespace PHX {
 			 "setup() has not been called.  The memory block has therefore not been allocated yet!  Please call setup before calling allocate().");
 
       std::size_t size_of_data_type = sizeof(DataT);
+      std::size_t field_size = size_of_data_type * num_elements;
       std::size_t alignment_size = sizeof(AlignmentT);
-      std::size_t residual = size_of_data_type % alignment_size;
-      std::size_t element_size = size_of_data_type + residual;
+      std::size_t remainder = field_size % alignment_size;
+      std::size_t padding = 0;
+      if (remainder != 0)
+	padding = alignment_size - remainder;
+      std::size_t field_size_with_padding = field_size + padding;
 
-      std::size_t required_bytes = num_elements * element_size;
-
-      TEST_FOR_EXCEPTION(m_offset + required_bytes > m_total_bytes, 
+      TEST_FOR_EXCEPTION(m_offset + field_size_with_padding > m_total_bytes, 
 			 std::logic_error, 
 			 "The requested number of bytes is larger than the size of the allocated contiguous block!");
 
       Teuchos::ArrayRCP<DataT> array;
 
-      if (required_bytes > 0) {
+      if (field_size > 0) {
 	
 	Teuchos::ArrayRCP<char> chunk = 
-	  m_memory.persistingView(m_offset, required_bytes);
+	  m_memory.persistingView(m_offset, field_size);
 	
 	// This call sets up the arcp to call the ctor and dtor for the
 	// DataT when the last rcp goes away.
 	// nonpod = non-plain old data
+	// DO NOT include padding - The ArrayRCP will be too big
 	array = Teuchos::arcp_reinterpret_cast_nonpod<DataT>(chunk);
 	
-	m_offset += required_bytes;
+	m_offset += field_size_with_padding;
       }
 
       return array;

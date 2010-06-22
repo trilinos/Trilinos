@@ -55,6 +55,12 @@ bool arrayCompare(Teuchos::ArrayRCP<T> a, Teuchos::ArrayRCP<T> b, double tol)
   return false;
 }
 
+template<int size>
+class Alignment {
+  char a[size];
+};
+
+
 int main(int argc, char *argv[]) 
 {
   using namespace std;
@@ -224,7 +230,8 @@ int main(int argc, char *argv[])
     }
 
 
-    // Reproduce current errors
+    // Reproduce memory leak due to missing dtors.
+    // Fixed by switching to special ArrayRCP ctors.
     {
       ContiguousAllocator<double> ca;
       std::size_t size = 10;
@@ -237,10 +244,49 @@ int main(int argc, char *argv[])
       MockObject<int> mo(8);
       for (ArrayRCP<MockObject<int> >::iterator i = a.begin();
 	   i != a.end(); ++i)
-	*i = mo;
-
-      
+	*i = mo;      
     }
+
+    // Alignment
+    {
+      cout << "  Testing that Alignment works correctly";
+
+      const std::size_t num_elements_a = 8;
+      const std::size_t num_elements_b = 1;
+      const std::size_t num_elements_c = 4;
+      
+      //  Align on size 3
+      ContiguousAllocator<Alignment<3> > ca;
+
+      Alignment<2> two;
+      Alignment<8> eight;
+      ca.addRequiredChunk(sizeof(two), num_elements_a); 
+      ca.addRequiredChunk(sizeof(two), num_elements_b); 
+      ca.addRequiredChunk(sizeof(eight), num_elements_c);   
+      ca.setup();
+      ArrayRCP<Alignment<2> > a = ca.allocate<Alignment<2> >(num_elements_a);
+      ArrayRCP<Alignment<2> > b = ca.allocate<Alignment<2> >(num_elements_b);
+      ArrayRCP<Alignment<8> > c = ca.allocate<Alignment<8> >(num_elements_c);
+
+      TEST_FOR_EXCEPTION(a.size() != static_cast<int>(num_elements_a), 
+			 std::runtime_error,
+			 "Error - mismatch in object sizes - a.size() = "
+			 << a.size() << " is not equal to " << num_elements_a);
+
+      TEST_FOR_EXCEPTION(b.size() != static_cast<int>(num_elements_b), 
+			 std::runtime_error,
+			 "Error - mismatch in object sizes - b.size() = "
+			 << b.size() << " is not equal to " << num_elements_b);
+
+      TEST_FOR_EXCEPTION(c.size() != static_cast<int>(num_elements_c), 
+			 std::runtime_error,
+			 "Error - mismatch in object sizes - c.size() = "
+			 << c.size() << " is not equal to " << num_elements_c);
+
+      cout << "...passed" << endl;
+    }
+
+
     
     // *********************************************************************
     // *********************************************************************

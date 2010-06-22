@@ -53,6 +53,7 @@ SNL_FEI_Structure::SNL_FEI_Structure(MPI_Comm comm)
    masterProc_(0),
    numProcs_(1),
    fieldDatabase_(new std::map<int,int>),
+   fieldDofMap_(),
    workarray_(),
    blockIDs_(),
    blocks_(),
@@ -377,6 +378,9 @@ int SNL_FEI_Structure::initFields(int numFields,
 
   for (int i=0; i<numFields; i++) {
     fieldDatabase_->insert(std::pair<int,int>(fieldIDs[i], fieldSizes[i]));
+    if (fieldIDs[i] >= 0) {
+      fieldDofMap_.add_field(fieldIDs[i], fieldSizes[i]);
+    }
   }
 
   return(FEI_SUCCESS);
