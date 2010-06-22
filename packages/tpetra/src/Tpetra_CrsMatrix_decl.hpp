@@ -31,6 +31,10 @@
 
 // TODO: row-wise insertion of entries in globalAssemble() may be more efficient
 
+// TODO: add typeglobs: CrsMatrix<Scalar,typeglob>
+// TODO: combine LocalMatVec and LocalMatSolve
+// TODO: add template (template) parameter for nonlocal container (this will be part of typeglob)
+
 #include <Kokkos_DefaultNode.hpp>
 #include <Kokkos_CrsMatrix.hpp>
 #include <Kokkos_DefaultSparseMultiply.hpp>
@@ -92,7 +96,12 @@ namespace Tpetra {
    * The class utilizes CrsGraph object which has the same local and global ordinal types.
    *
    */
-  template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatVec = Kokkos::DefaultSparseMultiply<Scalar,LocalOrdinal,Node>, class LocalMatSolve = Kokkos::DefaultSparseSolve<Scalar,LocalOrdinal,Node> >
+  template <class Scalar, 
+            class LocalOrdinal  = int, 
+            class GlobalOrdinal = LocalOrdinal, 
+            class Node          = Kokkos::DefaultNode::DefaultNodeType, 
+            class LocalMatVec   = Kokkos::DefaultSparseMultiply<Scalar,LocalOrdinal,Node>, 
+            class LocalMatSolve = Kokkos::DefaultSparseSolve<Scalar,LocalOrdinal,Node> > 
   class CrsMatrix : public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
                     public DistObject<char, LocalOrdinal,GlobalOrdinal,Node> {
     public:
@@ -188,6 +197,12 @@ namespace Tpetra {
       //! \brief Re-allocate the data into contiguous storage.
       void optimizeStorage();
 
+      //! \brief Return the matrix to pre-fill-complete status, allowing new entries to be added.
+      /*! 
+           This places the matrix in edit mode.
+       */
+      void resumeFill();
+
       //@}
 
       //! @name Methods implementing RowMatrix
@@ -267,8 +282,11 @@ namespace Tpetra {
       //! \brief If matrix indices are in the global range, this function returns true. Otherwise, this function returns false. */
       bool isGloballyIndexed() const;
 
-      //! Returns \c true if fillComplete() has been called.
+      //! Returns \c true if fillComplete() has been called and the matrix is in compute mode.
       bool isFillComplete() const;
+
+      //! Returns \c true if resumeFill() has been called and the matrix is in edit mode.
+      bool isFillResumed() const;
 
       //! Extract a list of entries in a specified global row of this matrix. Put into pre-allocated storage.
       /*!
@@ -437,6 +455,13 @@ namespace Tpetra {
                             size_t constantNumPackets,
                             Distributor &distor,
                             CombineMode CM);
+
+      void createViews() const;
+
+      void createViewsNonConst(Kokkos::ReadWriteOption rwo);
+
+      void releaseViews() const;
+
       //@}
 
     private:
@@ -449,7 +474,9 @@ namespace Tpetra {
       // useful typedefs
       typedef Teuchos::OrdinalTraits<LocalOrdinal>    LOT;
       typedef Teuchos::OrdinalTraits<GlobalOrdinal>   GOT;
+      typedef Teuchos::ScalarTraits<Scalar>            ST;
       typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+      typedef Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node>       V;
 
       enum GraphAllocationStatus {
         GraphAlreadyAllocated,
@@ -459,9 +486,9 @@ namespace Tpetra {
       void allocateValues( typename CrsGraph<LocalOrdinal,GlobalOrdinal,Node>::AllocateLocalGlobal lg, Scalar alpha, GraphAllocationStatus gas);
       void sortEntries();
       void mergeRedundantEntries();
-      void checkInternalState() const;
       void updateAllocation(size_t lrow, size_t allocSize);
       void fillLocalMatrix();
+      void checkInternalState() const;
 
       //! \brief Get a persisting const view of the elements in a specified local row of the matrix.
       /*! This protected method is used internally for almost all access to the matrix elements.
@@ -485,6 +512,9 @@ namespace Tpetra {
        */
       Teuchos::ArrayRCP<Scalar> getFullViewNonConst(size_t myRow, RowInfo sizeInfo);
 
+      // Two graph pointers to maintain const-correctness:
+      // staticGraph_ is a graph passed to the constructor. We are not allowed to modify it.
+      // myGraph_     is a graph created here. We are allowed to modify it.
       Teuchos::RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > staticGraph_;
       Teuchos::RCP<      CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >     myGraph_;
 
@@ -495,19 +525,21 @@ namespace Tpetra {
       bool constructedWithOptimizedGraph_,
            fillComplete_;
 
-      // matrix values. before allocation, these are Teuchos::null.
+      // matrix values. before allocation, both are Teuchos::null.
       // after allocation, one is Teuchos::Null.
-      // these are parallel compute buffers, not host memory. therefore, in general, they cannot be dereferenced in host cost.
       // 1D == StaticAllocation, 2D == DynamicAllocation
       // The allocation always matches that of graph_
-      Teuchos::ArrayRCP<Scalar>                       pbuf_values1D_, view_values1D_;
-      Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >   pbuf_values2D_, view_values2D_;
+      Teuchos::ArrayRCP<Scalar>                       values1D_;
+      Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >   values2D_;
+      // FINISH
+      // Teuchos::ArrayRCP< typedef Teuchos::ArrayRCP<const Scalar>::iterator > rowPtrs_;
+      // Teuchos::ArrayRCP< typedef Teuchos::ArrayRCP<Scalar>::iterator > rowPtrsNC_;
 
       // a map between a (non-local) row and a list of (col,val)
       std::map<GlobalOrdinal, Teuchos::Array<std::pair<GlobalOrdinal,Scalar> > > nonlocals_;
 
       // a wrapper around multiply, for use in apply; it contains a non-owning RCP to *this, therefore, it is not allowed 
-      // to persist past the destruction of *this. therefore, we may not share it.
+      // to persist past the destruction of *this. therefore, WE MAY NOT SHARE THIS POINTER.
       Teuchos::RCP< const CrsMatrixMultiplyOp<Scalar,Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> > sameScalarMultiplyOp_;
   }; // class CrsMatrix
 

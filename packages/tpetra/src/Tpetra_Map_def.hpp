@@ -734,7 +734,6 @@ namespace Tpetra {
   LookupStatus Map<LocalOrdinal,GlobalOrdinal,Node>::getRemoteIndexList(
                     const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
                     const Teuchos::ArrayView<int> & imageIDList) const {
-    if (GIDList.size() == 0) return AllIDsPresent;
     TEST_FOR_EXCEPTION(getGlobalNumElements() == 0, std::runtime_error,
         Teuchos::typeName(*this) << "::getRemoteIndexList(): getRemoteIndexList() cannot be called, zero entries in Map.");
     return directory_->getDirectoryEntries(GIDList, imageIDList);

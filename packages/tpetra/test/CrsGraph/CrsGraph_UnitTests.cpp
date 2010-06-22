@@ -283,6 +283,48 @@ namespace {
 
 
   ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, Bug20100622K, LO, GO )
+  {
+    typedef CrsGraph<LO,GO,Node> GRAPH;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    const int numImages = comm->getSize();
+    const int myImageID = comm->getRank();
+    // test filtering
+    if (numImages > 1) {
+      // we only need two procs to demonstrate this bug. ignore the others.
+      Array<GO> mygids;
+      if (myImageID == 0) {
+        mygids.push_back(0);
+        mygids.push_back(1);
+        mygids.push_back(2);
+      }
+      else if (myImageID == 1) {
+        mygids.push_back(2);
+        mygids.push_back(3);
+      }
+      const RCP<const Map<LO,GO> > rmap = rcp(new Map<LO,GO>(INVALID,mygids(),0,comm));
+      RCP< CrsGraph<LO,GO> > G = rcp(new CrsGraph<LO,GO>(rmap,2) );
+      if (myImageID == 0) {
+        G->insertGlobalIndices(0, tuple<GO>(0));
+        G->insertGlobalIndices(1, tuple<GO>(0,1));
+        G->insertGlobalIndices(2, tuple<GO>(2,1));
+      }
+      else if (myImageID == 1) {
+        G->insertGlobalIndices(2, tuple<GO>(2, 1));
+        G->insertGlobalIndices(3, tuple<GO>(3));
+      }
+      G->fillComplete();
+    }
+    // All procs fail if any node fails
+    int globalSuccess_int = -1;
+    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+  }
+
+
+  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( CrsGraph, WithColMap, LO, GO )
   {
     typedef CrsGraph<LO,GO,Node> GRAPH;
@@ -827,7 +869,8 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, WithColMap,     LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, Describable   , LO, GO ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, EmptyFillComplete, LO, GO ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, Typedefs      , LO, GO )
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, Typedefs      , LO, GO ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( CrsGraph, Bug20100622K  , LO, GO )
 
      UNIT_TEST_GROUP_LO_GO(int,int)
 // #ifndef FAST_DEVELOPMENT_UNIT_TEST_BUILD
