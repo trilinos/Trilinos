@@ -487,18 +487,12 @@ static int create_vertices(ZOLTAN_GNO_TYPE gnvtxs, int ndim, int vwgt_dim, int n
     else
       if (heavyProc){
         for (j = 0; j < vwgt_dim; j++)  {
-          if (j == i%vwgt_dim)
             vertex_weight[i*vwgt_dim+j] = .2 + ((float) rand())/RAND_MAX;
-          else
-            vertex_weight[i*vwgt_dim+j] = 0.0;
         }
       }
       else{
         for (j = 0; j < vwgt_dim; j++)  {
-          if (j == i%vwgt_dim)
             vertex_weight[i*vwgt_dim+j] = ((float) rand())/RAND_MAX;
-          else
-            vertex_weight[i*vwgt_dim+j] = 0.0;
         }
       }
   }
