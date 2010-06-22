@@ -1,0 +1,238 @@
+%
+% $Id: SANDExampleReportstrict.tex,v 1.27 2009/04/30 23:15:05 rolf Exp $
+%
+% This is an example LaTeX file which uses the SANDreport class file.
+% It shows how a SAND report should be formatted, what sections and
+% elements it should contain, and how to use the SANDreport class.
+% It uses the LaTeX report class and the strict option.
+%
+% Get the latest version of the class file and more at
+%    http://www.cs.sandia.gov/~rolf/SANDreport
+%
+% This file and the SANDreport.cls file are based on information
+% contained in "Guide to Preparing {SAND} Reports", Sand98-0730, edited
+% by Tamara K. Locke, and the newer "Guide to Preparing SAND Reports and
+% Other Communication Products", SAND2002-2068P.
+% Please send corrections and suggestions for improvements to
+% Rolf Riesen, Org. 9223, MS 1110, rolf@cs.sandia.gov
+%
+\documentclass[pdf,ps2pdf,12pt,report,strict,blank]{SANDreport}
+\usepackage{pslatex}
+\usepackage{mathptmx}	% Use the Postscript Times font
+\usepackage[FIGBOTCAP,normal,bf,tight]{subfigure}
+\usepackage[dvips,light,first,bottomafter]{draftcopy}
+\draftcopyName{Sample, contains no OUO}{70}
+
+% If you want to relax some of the SAND98-0730 requirements, use the "relax"
+% option. It adds spaces and boldface in the table of contents, and does not
+% force the page layout sizes.
+% e.g. \documentclass[relax,12pt]{SANDreport}
+%
+% You can also use the "strict" option, which applies even more of the
+% SAND98-0730 guidelines. It gets rid of section numbers which are often
+% useful; e.g. \documentclass[strict]{SANDreport}
+
+
+
+% ---------------------------------------------------------------------------- %
+%
+% Set the title, author, and date
+%
+    \title{Optika: A GUI Framework for Parametrized Applications (Report style, strict)}
+
+    \author{Kurtis L. Nusbaum \\
+	  Scalable Algorithms \\
+	  Sandia National Laboratories\\
+	  P.O. Box 5800\\
+	  Albuquerque, NM 87185-9999 \\
+	  klnusba@sandia.gov \\
+	 }
+
+    % There is a "Printed" date on the title page of a SAND report, so
+    % the generic \date should generally be empty.
+    \date{}
+
+
+% ---------------------------------------------------------------------------- %
+% Set some things we need for SAND reports. These are mandatory
+%
+\SANDnum{SAND2010-xxxx}
+\SANDprintDate{July 2010}
+\SANDrePrintDate{January 2006}
+\SANDrePrintDate{February 2006}
+\SANDrePrintDate{March 2006}
+\SANDauthor{Kurtis L. Nusbaum}
+
+
+% ---------------------------------------------------------------------------- %
+% Include the markings required for your SAND report. The default is "Unlimited
+% Release". You may have to edit the file included here, or create your own
+% (see the examples provided).
+%
+% \include{MarkUR} % Not needed for unlimted release reports
+
+
+% ---------------------------------------------------------------------------- %
+% The following definition does not have a default value and will not
+% print anything, if not defined
+%
+\SANDsupersed{SAND1901-0001}{January 1901}
+
+
+% ---------------------------------------------------------------------------- %
+%
+% Start the document
+%
+\begin{document}
+    \maketitle
+
+    % ------------------------------------------------------------------------ %
+    % An Abstract is required for SAND reports
+    %
+    \begin{abstract}
+	\input{OptikaAbstract}
+    \end{abstract}
+
+
+    % ------------------------------------------------------------------------ %
+    % An Acknowledgement section is optional but important, if someone made
+    % contributions or helped beyond the normal part of a work assignment.
+    % Use \section* since we don't want it in the table of context
+    %
+    \clearpage
+    \chapter*{Acknowledgment}
+	\input{OptikaAck}
+
+
+    % ------------------------------------------------------------------------ %
+    % The table of contents and list of figures and tables
+    % Comment out \listoffigures and \listoftables if there are no
+    % figures or tables. Make sure this starts on an odd numbered page
+    %
+    \cleardoublepage		% TOC needs to start on an odd page
+    \tableofcontents
+    \listoffigures
+    \listoftables
+
+
+    % ---------------------------------------------------------------------- %
+    % An optional preface or Foreword
+    %\clearpage
+    %\chapter*{Preface}
+    %\addcontentsline{toc}{chapter}{Preface}
+	%\input{CommonPreface}
+
+
+    % ---------------------------------------------------------------------- %
+    % An optional executive summary
+    %\clearpage
+    %\chapter*{Summary}
+    %\addcontentsline{toc}{chapter}{Summary}
+	%\input{CommonSummary}
+
+
+    % ---------------------------------------------------------------------- %
+    % An optional glossary. We don't want it to be numbered
+    \clearpage
+    \chapter*{Nomenclature}
+    \addcontentsline{toc}{chapter}{Nomenclature}
+    \begin{description}
+	\item[Dependency]
+	    A relationship ship between to parameters in which the state
+		or value of one parameter depends on the state or value of
+		another.
+	\item[Dependee]
+		The parameter upon which another parameter state or value dependes.
+	\item[Dependent]
+		A parameter whose state or value is determined by another
+		parameter.
+	\item[Parameter]
+	    An input needed for a program.
+	\item[Parameter List]
+	    A list of parameters and other parameter lists.
+	\item[RCP]
+	    Refernce counted pointer. RCPs refered to in this document reference the
+		RCP class located in the Teuchos package of Trilinos.
+	\item[Sublist]
+	    A parameter list contained within another parameter list.
+    \end{description}
+
+
+    % ---------------------------------------------------------------------- %
+    % This is where the body of the report begins; usually with an Introduction
+    %
+    \SANDmain		% Start the main part of the report
+
+    \chapter{Introduction}
+	\label{Intro}
+	\input{OptikaIntro}
+
+
+    \chapter{Development of the Optika package}
+	\input{OptikaDev}
+
+
+    \chapter{A Long Chapter}\label{sec:long}
+	\input{CommonLong}
+
+
+    \chapter{Conclusion}
+	\input{CommonConclusion}
+
+    \nocite{*}
+
+
+    % ---------------------------------------------------------------------- %
+    % References
+    %
+    \clearpage
+    % If hyperref is included, then \phantomsection is already defined.
+    % If not, we need to define it.
+    \providecommand*{\phantomsection}{}
+    \phantomsection
+    \addcontentsline{toc}{chapter}{References}
+    \bibliographystyle{plain}
+    \bibliography{SANDExample}
+
+
+    % ---------------------------------------------------------------------- %
+    %
+    \appendix
+    \chapter{Historical Perspective}
+	\input{CommonHistory}
+
+
+    \chapter{Some Other Appendix}
+	\input{CommonAppendix}
+
+    % \printindex
+
+    \include{SANDdistribution}
+
+    % The second printing
+    \begin{SANDreDistribution}
+	% Some external Addresses
+	\SANDdistExternal{1}{An Address\\ 99 $99^{th}$ street NW\\City, State}
+	\SANDdistExternal{3}{Some Address\\ and street\\City, State}
+	\SANDdistExternal{12}{Another Address\\ On a street\\City, State\\U.S.A.}
+	\bigskip
+
+
+	% Internal Addresses
+	\SANDdistInternal{1}{1319}{Rolf Riesen}{1423}
+
+	% Example of a mail channel use (instead of a mail stop)
+	\SANDdistInternalM{1}{M9999}{Someone}{01234}
+    \end{SANDreDistribution}
+
+    % The third printing
+    \begin{SANDreDistribution}
+	\SANDdistInternal{1}{1319}{Rolf Riesen}{01423}
+    \end{SANDreDistribution}
+
+    % The fourth printing
+    \begin{SANDreDistribution}
+	\SANDdistInternal{1}{1319}{Rolf Riesen}{1423}
+    \end{SANDreDistribution}
+
+\end{document}

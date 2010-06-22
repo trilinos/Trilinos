@@ -1,0 +1,46 @@
+This is BibTeX, Version 0.99c (Web2C 7.5.6)
+The top-level auxiliary file: OptikaSANDReport.aux
+The style file: plain.bst
+A level-1 auxiliary file: SANDdistribution.aux
+Database file #1: SANDExample.bib
+You've used 3 entries,
+            2118 wiz_defined-function locations,
+            520 strings with 4401 characters,
+and the built_in function-call counts, 822 in all, are:
+= -- 86
+> -- 21
+< -- 1
++ -- 9
+- -- 6
+* -- 58
+:= -- 148
+add.period$ -- 9
+call.type$ -- 3
+change.case$ -- 12
+chr.to.int$ -- 0
+cite$ -- 3
+duplicate$ -- 31
+empty$ -- 70
+format.name$ -- 6
+if$ -- 164
+int.to.chr$ -- 0
+int.to.str$ -- 3
+missing$ -- 2
+newline$ -- 18
+num.names$ -- 6
+pop$ -- 6
+preamble$ -- 1
+purify$ -- 9
+quote$ -- 0
+skip$ -- 19
+stack$ -- 0
+substring$ -- 65
+swap$ -- 3
+text.length$ -- 1
+text.prefix$ -- 0
+top$ -- 0
+type$ -- 12
+warning$ -- 0
+while$ -- 10
+width$ -- 4
+write$ -- 36

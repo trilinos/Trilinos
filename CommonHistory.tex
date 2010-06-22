@@ -1,0 +1,27 @@
+    This is an example of an appendix.
+
+    If we follow~\cite{Sand98-0730} strictly, we would have to have
+    a separate bibliography section for each appendix.  The style
+    file doesn't provide that, but it can be done using the {\tt
+    bibunits} and {\tt chapterbib} packages.
+
+    If there are many subsections in an appendix, it should also
+    have its own table of contents. Again, the SAND report class
+    file does not provide that functionality.
+
+    \ifthenelse{\boolean{reportSAND}}   {
+	\section{The Past a Long Time Ago}
+    }{
+	\subsection{The Past a Long Time Ago}
+    }
+	This is where we talk about things so old nobody can verify
+	them. We are safe.
+
+    \ifthenelse{\boolean{reportSAND}}   {
+	\section{The Past More Recently}
+    }{
+	\subsection{The Past More Recently}
+    }
+	Now we have to be a little bit more careful, since records
+	exist from that time, and some people still alive actually
+	lived back then.

@@ -1,0 +1,131 @@
+%%% ====================================================================
+%%% @LaTeX-file{
+%%%    filename  = "SANDmath.tex",
+%%%    version   = "1.2",
+%%%    date      = "2005/01/08",
+%%%    author    = "Philippe P. Pebay",
+%%%    address   = "Sandia National Laboratories, PO Box 969,
+%%%                 MS 9051, Livermore, CA 94550, USA",
+%%%    email     = "pppebay@ca.sandia.gov",
+%%%    supported = "yes",
+%%%    abstract  = "This is a LaTeX documentclass that provides 
+%%%                 mathematical environments and macros for Sandia 
+%%%                 technical reports (SAND reports).",
+%%% }
+%%% ====================================================================
+\typeout{Using SANDmath LaTeX Package: August 1,
+2005, v1.2 Philippe P. Pebay}
+% ----------------------------------------------------------------------
+% -- Packages
+% ----------------------------------------------------------------------
+\usepackage{latexsym}
+\usepackage{amssymb,amsfonts,amsmath,amsthm}
+\usepackage{calrsfs}
+\usepackage{stmaryrd}
+\usepackage[mathscr]{eucal}
+% ----------------------------------------------------------------------
+% -- Mathematical environment
+% ----------------------------------------------------------------------
+% -- equation environment
+\numberwithin{equation}{section}
+% -- theorems & related topics
+\theoremstyle{plain}
+\newtheorem{theo}{Theorem}[section]
+\newtheorem{prop}[theo]{Proposition}
+\newtheorem{lemm}[theo]{Lemma}
+\newtheorem{coro}[theo]{Corollary}
+% -- definitions & axioms
+\theoremstyle{definition}
+\newtheorem{defi}{Definition}[section]
+\newtheorem{axio}{Axiom}[section]
+% -- remarks & examples
+\theoremstyle{remark}
+\newtheorem{rema}{Remark}[section]
+\newtheorem{exam}{Example}[section]
+% -- algorithms
+\newtheoremstyle{algostyle}% name
+  {}%      Space above, empty = `usual value' 
+  {}%      Space below
+  {\sffamily}%         Body font
+  {0pt}%         Indent amount (empty = no indent, \parindent = para indent)
+  {\bfseries}% Thm head font
+  {}%        Punctuation after thm head
+  { }% Space after thm head: \newline = linebreak
+  {\thmname{#1}\thmnumber{ \thesection.#2}{ [#3]}}% Thm head spec
+\theoremstyle{algostyle}
+\newtheorem{algo}{Algorithm}
+% ----------------------------------------------------------------------
+% -- Mathematical macros
+% ----------------------------------------------------------------------
+% -- K, N, Z, R & C
+\newcommand{\K}{{\rm I\kern-.16em K}}
+\newcommand{\N}{{\rm I\kern-.16em N}}
+\newcommand{\Z}{\mathchoice{\sf\textstyle Z\kern-0.4em Z}%
+{\sf\textstyle Z\kern-0.4em Z}%
+{\sf\scriptstyle Z\kern-0.3em Z}%
+{\sf\scriptscriptstyle Z\kern-0.2em Z}}%
+\newcommand{\R}{{\rm I\kern-.16em R}}
+\newcommand{\C}{\mathchoice{\setbox0=\hbox{$\displaystyle\rm C$}%
+\hbox{\hbox to0pt{\kern0.4\wd0\vrule height0.9\ht0\hss}\box0}}%
+{\setbox0=\hbox{$\textstyle\rm C$}\hbox{\hbox%
+to0pt{\kern0.4\wd0\vrule height0.9\ht0\hss}\box0}}%
+{\setbox0=\hbox{$\scriptstyle\rm C$}\hbox{\hbox%
+to0pt{\kern0.4\wd0\vrule height0.9\ht0\hss}\box0}}%
+{\setbox0=\hbox{$\scriptscriptstyle\rm C$}\hbox{\hbox%
+to0pt{\kern0.4\wd0\vrule height0.9\ht0\hss}\box0}}}
+% -- discrete intervals
+\newcommand{\cdi}[2]{\llbracket{#1},{#2}\rrbracket}
+\newcommand{\odi}[2]{\rrbracket{#1},{#2}\llbracket}
+\newcommand{\codi}[2]{\llbracket{#1},{#2}\llbracket}
+\newcommand{\ocdi}[2]{\rrbracket{#1},{#2}\rrbracket}
+% -- functional spaces
+\newcommand{\CC}[1]{{\mathcal{C}^{#1}}}
+\newcommand{\CCs}[2]{{\mathcal{C}^{#1}_{#2}}}
+\newcommand{\Lsp}[1]{{\mathrm{L}^{\scriptstyle#1}}}
+\newcommand{\Lo}{\Lsp{1}}
+\newcommand{\Lt}{\Lsp{2}}
+\newcommand{\Li}{\Lsp{\infty}}
+% -- differential calculus
+\newcommand{\dd}[1]{\mathrm{d}{#1}}
+\newcommand{\der}[2]{\frac{\dd{#1}}{\dd{#2}}}
+\newcommand{\lder}[2]{\frac{\dd{}}{\dd{#2}}{#1}}
+\newcommand{\dern}[3]{\frac{\mathrm{d}^{#1}{#2}}{\dd{#3}^{#1}}}
+\newcommand{\ldern}[3]{\frac{\mathrm{d}^{#1}}{\dd{#3}^{#1}}{#2}}
+\newcommand{\pder}[2]{\frac{\partial{#1}}{\partial{#2}}}
+\newcommand{\lpder}[2]{\frac{\partial}{\partial{#2}}{#1}}
+\newcommand{\pdern}[3]{\frac{\partial^{#1}{#2}}{\partial{#3}^{#1}}}
+\newcommand{\lpdern}[3]{\frac{\partial^{#1}}{\partial{#3}^{#1}}{#2}}
+\newcommand{\pxder}[3]{\frac{\partial^2{#1}}{\partial{#2}\partial{#3}}}
+\newcommand{\lpxder}[3]{\frac{\partial^2}{\partial{#2}\partial{#3}}{#1}}
+\newcommand{\dive}{\operatorname{div}}
+\newcommand{\grad}{\operatorname{grad}}
+\newcommand{\curl}{\operatorname{curl}}
+\newcommand{\Nd}[1]{\nabla\cdot{#1}}
+\newcommand{\Ng}[1]{\nabla\,{#1}}
+\newcommand{\Nc}[1]{\nabla\times{#1}}
+% -- integral calculus
+\newcommand{\sint}[4]{\int_{#1}^{#2}{#3}\,\dd{#4}}
+\newcommand{\dint}[3]{\iint_{#1}{#2}\,\dd{#3}}
+\newcommand{\ddint}[4]{\iint_{#1}{#2}\,\dd{#3}\dd{#4}}
+\newcommand{\tint}[3]{\iiint_{#1}{#2}\,\dd{#3}}
+\newcommand{\ttint}[5]{\iiint_{#1}{#2}\,\dd{#3}\dd{#4}\dd{#5}}
+% -- vector calculus
+\newcommand{\norm}[1]{\left\lVert{#1}\right\rVert}
+\newcommand{\normone}[1]{\norm{#1}_1}
+\newcommand{\normtwo}[1]{\norm{#1}_2}
+\newcommand{\normsup}[1]{\norm{#1}_\infty}
+\newcommand{\normgen}[2]{\norm{#2}_{#1}}
+\newcommand{\normLo}[1]{\norm{#1}_\Lo}
+\newcommand{\normLt}[1]{\norm{#1}_\Lt}
+\newcommand{\normLi}[1]{\norm{#1}_\Li}
+\newcommand{\normL}[2]{\norm{#2}_\Lsp{#1}}
+\newcommand{\seminorm}[2]{\left\lvert{#2}\right\rvert_{#1}}
+\newcommand{\indnorm}[1]{\left\lVert\!\left\lvert{#1}\right\rVert\!\right\lvert}
+\newcommand{\innprod}[2]{\left({#1}|{#2}\right)}
+\newcommand{\dualpair}[2]{\left\langle{#1},{#2}\right\rangle}
+\newcommand{\mixprod}[3]{\left[{#1},{#2},{#3}\right]}
+% -- asymptotic notations
+\newcommand{\smallo}[1]{\operatorname{o}\left({#1}\right)}
+\newcommand{\bigo}[1]{\operatorname{O}\left({#1}\right)}
+\newcommand{\aseq}[2]{\operatornamewithlimits{\sim}_{{#1}\rightarrow{#2}}}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

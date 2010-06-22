@@ -1,0 +1,151 @@
+    In~\cite{Potter} we have shown that dry-erase markers have a
+    use in science. In this report we address the use of dry-erase
+    markers specifically to the science and engineering performed at
+    the DOE national laboratories. Let us begin with a description
+    of a couple of basic dry-erase marker drawings. We use the
+    circle and the square to make our point.
+
+    \ifthenelse{\boolean{reportSAND}}   {
+	\section{The Circle}
+    }{
+	\subsection{The Circle}
+    }
+	Figure~\ref{fig1} shows one of the basic shapes. It appears
+	in many dry-erase drawings and has many important properties.
+
+	\begin{figure}[ht]
+	    \centering
+	    \begin{picture}(50,50)(0,0)
+		\put(25,25){\circle{50}}
+		\put(25,25){\circle{1}}
+	    \end{picture}
+	    \caption[The circle]{A circle is one of the basic
+		shapes.  It has many important properties. Note,
+		for example, that every point along its
+		circumference is at exactly the same distance
+		from the center. A truly important property
+		for a cicrle.}
+	    \label{fig1}
+	\end{figure}
+
+	Whole books have been written about the circle and similar,
+	lesser shapes. So, it would be presumptuous to attempt
+	to even list some of its properties and uses in dry-erase
+	marker drawings. Simply admire the shape in Figure~\ref{fig1}
+	and its power will soon engulf you in ideas and beautiful
+	feelings of completeness.
+
+
+    \ifthenelse{\boolean{reportSAND}}   {
+	\subsection{Small Circles}
+    }{
+	\subsubsection{Small Circles}
+    }
+	We also need an example of a subsubsection to make sure
+	titles and table of content entries work for those.
+
+	And while we are at it, we might as well check
+	paragraph spacing. Although, we will do that again in
+	\ifthenelse{\boolean{reportSAND}}   {
+	    Chapter~\ref{sec:long}\footnote{In strict article mode,
+	    section numbers cannot be referenced because section
+	    numbering is turned of. If you use strict mode, do not
+	    reference your sections by number. For reports you can
+	    reference chapters}.
+	}{
+	    a later section\footnote{In strict article mode,
+	    section numbers cannot be referenced because section
+	    numbering is turned of. If you use strict mode, do not
+	    reference your sections by number. For reports you can
+	    reference chapters}.
+	}
+
+    \ifthenelse{\boolean{reportSAND}}   {
+	\section{The Square}
+    }{
+	\subsection{The Square}
+    }
+	Figure~\ref{fig2} illustrates another famous shape.
+	We will show some of its uses in later chapters, but we
+	wanted to introduce it here because this is a good place
+	for another figure.
+
+	\begin{figure}[ht]
+	    \centering
+	    \begin{picture}(50,50)(0,0)
+		\put(0,0){\framebox(50,50){}}
+		\put(25,25){\circle{1}}
+	    \end{picture}
+	    \caption[The square]{A square is another of the basic
+		shapes. It is not quite as powerful as the circle. It
+		has some similarities (note that the four corners all have
+		the same distance to the center), and has many fine
+		uses in everyday dry-erase marker drawing.}
+	    \label{fig2}
+	\end{figure}
+
+    \ifthenelse{\boolean{reportSAND}}   {
+	\section{The Dot}
+    }{
+	\subsection{The Dot}
+    }
+	We also need a figure with a short caption. In order to
+	do this, we introduce the dot. Figure~\ref{fig3} shows the
+	shape of a dot.
+
+	\begin{figure}[ht]
+	    \centering
+	    \begin{picture}(50,50)(0,0)
+		\put(25,25){\circle{1}}
+	    \end{picture}
+	    \caption[The dot]{A simple dot}
+	    \label{fig3}
+	\end{figure}
+
+    \ifthenelse{\boolean{reportSAND}}   {
+	\section{Tables and Such}
+    }{
+	\subsection{Tables and Such}
+    }
+	In order to test our class file, we also need to have some
+	tables. One should be enough for our purposes, so here it
+	is: Table~\ref{tab1}. On second thought, we need another
+	one to test the list of tables with multiple entries. So,
+	we introduce Table~\ref{tab2}.
+
+	\begin{table}[ht]
+	    \centering
+	    \caption[Shapes]{This superb table lists a few
+		of the more important shapes and some of
+		their properties. Be aware that this condensed list
+		can by no means describe all the properties or
+		shapes drawable by dry-erase markers.}
+	    \bigskip
+
+	    \begin{tabular}{|l|c|l|c|}
+		\hline \hline
+		Name  & Number of & Importance & Shape \\
+		      & corners   &            &       \\
+		\hline
+		circle & 0        & high       & $\bigcirc$ \\
+		square & 4        & medium     & $\diamond$ \\
+		triangle & 3      & low        & $\triangle$ \\
+		\hline
+	    \end{tabular}
+	    \label{tab1}
+	\end{table}
+
+	\begin{table}[ht]
+	    \centering
+	    \caption{A magic square}
+	    \bigskip
+
+	    \begin{tabular}{|c|c|c|c|}
+		\hline
+		    1 & 15 & 14 & 4 \\ \hline
+		    12 & 6 & 7 & 9 \\ \hline
+		    8 & 10 & 11 & 5 \\ \hline
+		    13 & 3 & 2 & 16 \\ \hline
+	    \end{tabular}
+	    \label{tab2}
+	\end{table}
