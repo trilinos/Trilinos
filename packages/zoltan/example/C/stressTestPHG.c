@@ -82,7 +82,6 @@ static void get_vertex_list(void *data, int sizeGID, int sizeLID,
     obj_wgts[i] = vwgts[i];
 #else
     obj_wgts[i] = 1.0;
-#else
 #endif
   }
 }
@@ -249,7 +248,7 @@ int main(int argc, char *argv[])
 
   /* General parameters */
 
-  Zoltan_Set_Param(zz, "DEBUG_LEVEL", "5");
+  Zoltan_Set_Param(zz, "DEBUG_LEVEL", "0");
   Zoltan_Set_Param(zz, "LB_METHOD", "HYPERGRAPH");   /* partitioning method */
   Zoltan_Set_Param(zz, "HYPERGRAPH_PACKAGE", "PHG"); /* version of method */
   Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1");/* global IDs are integers */
@@ -395,7 +394,7 @@ int main(int argc, char *argv[])
  */
 static int create_a_graph()
 {
-  int i, nvtxs, num4, nborCount, mid;
+  int i, nvtxs, num4, mid;
   int nvtx;
 #ifndef UNIT_WEIGHTS
   int random_weights = (vwgt_dim > 0);

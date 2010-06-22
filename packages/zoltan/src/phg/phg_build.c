@@ -1483,9 +1483,9 @@ static int remove_dense_edges(ZZ *zz,
    float esize_threshold,               /* %age of gnVtx considered a dense edge */
    int save_removed,                    /* save the removed edges in ZHG */
    int *nEdge,                          /* number of edges remaining */
-   ZOLTAN_GNO_TYPE *nGlobalEdges,                   /* number of global edges remaining */
+   ZOLTAN_GNO_TYPE *nGlobalEdges,       /* number of global edges remaining */
    int *nPins,                          /* number of local pins remainint */
-   ZOLTAN_GNO_TYPE **edgeGNO,            /* global numbers of remaining edges */
+   ZOLTAN_GNO_TYPE **edgeGNO,           /* global numbers of remaining edges */
    int **edgeSize,                      /* number pins in each remaining edge */
    float **edgeWeight,                  /* weight of remaining edges */
    ZOLTAN_GNO_TYPE **pinGNO,            /* global numbers of pins in remaining edges */
@@ -1495,14 +1495,14 @@ char *yo = "remove_dense_edges";
 int ierr = ZOLTAN_OK;
 int i, w, esize, k, l, kpin, lpin, pin;
 int ew_dim = zhg->edgeWeightDim;
-int global_nremove = 0; 
-int global_nremove_pins = 0; 
-int nremove = 0;
-int nremove_size = 0;
-int nkeep = 0;
-int nkeep_size = 0;
-int numGlobalEdges = 0;
-float gesize_threshold;
+ZOLTAN_GNO_TYPE global_nremove = 0; 
+ZOLTAN_GNO_TYPE global_nremove_pins = 0; 
+ZOLTAN_GNO_TYPE nremove = 0;
+ZOLTAN_GNO_TYPE nremove_size = 0;
+ZOLTAN_GNO_TYPE nkeep = 0;
+ZOLTAN_GNO_TYPE nkeep_size = 0;
+ZOLTAN_GNO_TYPE numGlobalEdges = 0;
+double gesize_threshold;
 int *goEdgeSize = NULL;
 int *goPinProc = NULL;
 float *goEdgeWeight = NULL;
@@ -1512,17 +1512,16 @@ float *keepEdgeWeight = NULL;
 ZOLTAN_GNO_TYPE *keepPinGNO = NULL, *keepEdgeGNO = NULL, *goPinGNO = NULL, *goEdgeGNO = NULL, *gnoPtr;
 int *procPtr;
 float *wgtPtr;
-int localval[2], globalval[2];
+ZOLTAN_GNO_TYPE localval[2], globalval[2];
 
   /* Remove dense edges and zero-sized edges from input list */
 
   if (esize_threshold <= 1)
-    gesize_threshold = esize_threshold * zhg->globalObj; /* relative */
+    gesize_threshold = esize_threshold * (double)zhg->globalObj; /* relative */
   else
-    gesize_threshold = esize_threshold; /* absolute */
+    gesize_threshold = (double)esize_threshold; /* absolute */
 
   for (i = 0; i < zhg->nHedges; i++) {
-
     if ((zhg->Esize[i] > gesize_threshold) || (zhg->Esize[i] == 0)){
       nremove++;
       nremove_size += zhg->Esize[i];
@@ -1536,7 +1535,7 @@ int localval[2], globalval[2];
   localval[0] = nremove;
   localval[1] = nremove_size;
 
-  MPI_Allreduce(localval, globalval, 2, MPI_INT, MPI_SUM, zz->Communicator);
+  MPI_Allreduce(localval, globalval, 2, ZOLTAN_GNO_MPI_TYPE, MPI_SUM, zz->Communicator);
 
   global_nremove = globalval[0];
   global_nremove_pins = globalval[1];
@@ -1545,7 +1544,7 @@ int localval[2], globalval[2];
 
   if ((zhg->globalHedges > zz->Num_Proc) && (numGlobalEdges < zz->Num_Proc)){
     if (zz->Proc == 0) fprintf(stderr,
-     "\nWARNING: PHG_EDGE_SIZE_THRESHOLD is low (%f), resulting in only %d edges\n remaining.",
+     "\nWARNING: PHG_EDGE_SIZE_THRESHOLD is low (%f), resulting in only %zd edges\n remaining.",
         esize_threshold, numGlobalEdges);
   }
 
