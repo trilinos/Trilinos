@@ -52,14 +52,14 @@ namespace Teko {
 
 //! Default constructor, for use with the AutoClone class.
 DiagonallyScaledPreconditionerFactory::DiagonallyScaledPreconditionerFactory()
-   : invFactory_(Teuchos::null)
+   : invFactory_(Teuchos::null), scalingType_(COLUMN_SCALING)
 { }
 
 /** Construct a preconditioner factory that applies a specified
   * preconditioner, a fixed number of times.
   */
-DiagonallyScaledPreconditionerFactory::DiagonallyScaledPreconditionerFactory(const Teuchos::RCP<Teko::InverseFactory> & invFactory)
-   : invFactory_(invFactory)
+DiagonallyScaledPreconditionerFactory::DiagonallyScaledPreconditionerFactory(const Teuchos::RCP<Teko::InverseFactory> & invFactory,ScalingType scalingType)
+   : invFactory_(invFactory), scalingType_(scalingType)
 { 
 }
 
@@ -85,7 +85,10 @@ LinearOp DiagonallyScaledPreconditionerFactory::buildPreconditionerOperator(Line
 
    // M = A * invD
    ModifiableLinearOp & M = state.getModifiableOp("op_M");
-   M = explicitMultiply(lo,invD,M);
+   if(scalingType_==COLUMN_SCALING)
+      M = explicitMultiply(lo,invD,M);
+   else
+      M = explicitMultiply(invD,lo,M);
 
    // build inverse operator
    ModifiableLinearOp & invM = state.getModifiableOp("op_invM");
@@ -95,7 +98,10 @@ LinearOp DiagonallyScaledPreconditionerFactory::buildPreconditionerOperator(Line
       rebuildInverse(*invFactory_,M,invM);
 
    // return invD * invM
-   return multiply(invD,invM.getConst());
+   if(scalingType_==COLUMN_SCALING)
+      return multiply(invD,invM.getConst());
+   else
+      return multiply(invM.getConst(),invD);
 }
 
 /** \brief This function builds the internals of the preconditioner factory
@@ -115,6 +121,18 @@ void DiagonallyScaledPreconditionerFactory::initializeFromParameterList(const Te
    TEST_FOR_EXCEPTION(invFactory_==Teuchos::null,std::runtime_error,
                       "ERROR: \"Inverse Factory\" = " << invName
                    << " could not be found");
+   
+   // get scaling type specified by XML file
+   const std::string defaultScaleType = "Column";
+   const std::string scalingTypeString = "Scaling Type";
+   std::string scaleType = defaultScaleType;
+   if(settings.isParameter(scalingTypeString))
+      scaleType = settings.get<std::string>(scalingTypeString);
+
+   if(defaultScaleType==scaleType)
+      scalingType_ = COLUMN_SCALING;
+   else
+      scalingType_ = ROW_SCALING;
 }
 
 /** \brief Request the additional parameters this preconditioner factory

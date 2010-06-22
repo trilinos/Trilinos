@@ -80,6 +80,8 @@ namespace Teko {
 class DiagonallyScaledPreconditionerFactory 
    : public virtual Teko::PreconditionerFactory {
 public:
+   typedef enum {COLUMN_SCALING, ROW_SCALING} ScalingType;
+
    //! Default constructor, for use with the AutoClone class.
    DiagonallyScaledPreconditionerFactory();
 
@@ -87,7 +89,7 @@ public:
      *
      * \param[in] invFactory Factory to perform the inverse
      */
-   DiagonallyScaledPreconditionerFactory(const Teuchos::RCP<Teko::InverseFactory> & invFactory);
+   DiagonallyScaledPreconditionerFactory(const Teuchos::RCP<Teko::InverseFactory> & invFactory,ScalingType columnScaling=COLUMN_SCALING);
 
    //! default destructor: prints out diagnostic string
    virtual ~DiagonallyScaledPreconditionerFactory();
@@ -153,6 +155,7 @@ public:
 
 private:
    Teuchos::RCP<Teko::InverseFactory> invFactory_;
+   ScalingType scalingType_;
 };
 
 } // end namespace Teko

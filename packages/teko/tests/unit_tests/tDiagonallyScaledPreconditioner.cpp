@@ -115,7 +115,6 @@ const RCP<Thyra::LinearOpBase<double> > buildSystem(const Epetra_Comm & comm,int
    return Thyra::nonconstEpetraLinearOp(mat);
 }
 
-#if 0
 TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, invfactory_test)
 {
    // build global (or serial communicator)
@@ -151,9 +150,63 @@ TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, invfactory_test)
    else
       out << "Apply 0: SUCCESS" << std::endl;
 }
-#endif
 
-TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test)
+TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_row)
+{
+   // build global (or serial communicator)
+   #ifdef HAVE_MPI
+      Epetra_MpiComm Comm(MPI_COMM_WORLD);
+   #else
+      Epetra_SerialComm Comm;
+   #endif
+
+   // build linear op tester
+   bool result;
+   Thyra::LinearOpTester<double> tester;
+   tester.show_all_tests(true);
+   tester.set_all_error_tol(1e-14);
+
+   // build operators and factories
+   RCP<Teko::InverseLibrary> invLib = Teko::InverseLibrary::buildFromStratimikos();
+   RCP<Teko::InverseFactory> subsolve = invLib->getInverseFactory("Amesos");
+   RCP<Teko::InverseFactory> subsolve_ml = invLib->getInverseFactory("ML");
+
+   RCP<Thyra::LinearOpBase<double> > A =  buildSystem(Comm,50);
+
+   typedef Teko::DiagonallyScaledPreconditionerFactory DSPF;
+
+   RCP<Teko::PreconditionerFactory> dspf = rcp(new Teko::DiagonallyScaledPreconditionerFactory(subsolve,DSPF::ROW_SCALING));
+   RCP<Teko::PreconditionerFactory> dspf_ml = rcp(new Teko::DiagonallyScaledPreconditionerFactory(subsolve_ml,DSPF::ROW_SCALING));
+   RCP<Teko::InverseFactory> invFact = rcp(new Teko::PreconditionerInverseFactory(dspf,Teuchos::null));
+   RCP<Teko::InverseFactory> invFact_ml = rcp(new Teko::PreconditionerInverseFactory(dspf_ml,Teuchos::null));
+
+   // test build inverse capability
+   Teko::ModifiableLinearOp invA = Teko::buildInverse(*invFact,A);
+   Teko::ModifiableLinearOp invA_ml = Teko::buildInverse(*invFact_ml,A);
+   Teko::ModifiableLinearOp invExactA = Teko::buildInverse(*subsolve,A);
+
+   result = tester.compare( *invA, *invExactA, &out);
+   if (!result) {
+      out << "Apply 0: FAILURE" << std::endl;
+      success = false;
+   }
+   else
+      out << "Apply 0: SUCCESS" << std::endl;
+
+   // test Diagonally scaled rebuild capability
+   Teko::rebuildInverse(*invFact,A,invA);
+   Teko::rebuildInverse(*invFact_ml,A,invA_ml); // here we tested repeatability using ML
+
+   result = tester.compare( *invA, *invExactA, &out);
+   if (!result) {
+      out << "Apply 0: FAILURE" << std::endl;
+      success = false;
+   }
+   else
+      out << "Apply 0: SUCCESS" << std::endl;
+}
+
+TEUCHOS_UNIT_TEST(tDiagonallyScaledPreconditioner, application_test_column)
 {
    // build global (or serial communicator)
    #ifdef HAVE_MPI
