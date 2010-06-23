@@ -152,6 +152,8 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::Vbr
    lclMatVec_(blkRowMap->getPointMap()->getNode()),
    importer_(),
    exporter_(),
+   importedVec_(),
+   exportedVec_(),
    col_ind_2D_global_(Teuchos::rcp(new Teuchos::Array<std::map<GlobalOrdinal,Teuchos::ArrayRCP<Scalar> > >)),
    pbuf_values2D_(Teuchos::rcp(new Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > >)),
    is_fill_completed_(false),
@@ -221,11 +223,27 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, clas
 void
 VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::updateImport(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X) const
 {
-  if (importedX_ == Teuchos::null || importedX_->getNumVectors() != X.getNumVectors()) {
-    importedX_ = Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(blkColMap_->getPointMap(), X.getNumVectors()));
-  }
+  if (importer_ != Teuchos::null) {
+    if (importedVec_ == Teuchos::null || importedVec_->getNumVectors() != X.getNumVectors()) {
+      importedVec_ = Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(blkColMap_->getPointMap(), X.getNumVectors()));
+    }
 
-  importedX_->doImport(X, *importer_, REPLACE);
+    importedVec_->doImport(X, *importer_, REPLACE);
+  }
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::updateExport(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const
+{
+  if (exporter_ != Teuchos::null) {
+    if (exportedVec_ == Teuchos::null || exportedVec_->getNumVectors() != Y.getNumVectors()) {
+      exportedVec_ = Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(blkColMap_->getPointMap(), Y.getNumVectors()));
+    }
+
+    exportedVec_->doExport(Y, *exporter_, REPLACE);
+  }
 }
 
 //-------------------------------------------------------------------
@@ -240,12 +258,17 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::app
 {
   if (trans == Teuchos::NO_TRANS) {
     updateImport(X);
+    const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xref = importedVec_ == Teuchos::null ? X : *importedVec_;
+    this->template multiply<Scalar,Scalar>(Xref, Y, trans, alpha, beta);
   }
-  else {
-    throw std::runtime_error("Tpetra::VbrMatrix::apply ERROR, transpose apply not yet implemented.");
+  else if (trans == Teuchos::TRANS || trans == Teuchos::CONJ_TRANS) {
+    updateImport(Y);
+    MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Yref = importedVec_ == Teuchos::null ? Y : *importedVec_;
+    this->template multiply<Scalar,Scalar>(X, Yref, trans, alpha, beta);
+    if (importedVec_ != Teuchos::null) {
+      Y.doExport(*importedVec_, *importer_, ADD);
+    }
   }
-
-  this->template multiply<Scalar,Scalar>(*importedX_, Y, trans, alpha, beta);
 }
 
 //-------------------------------------------------------------------
@@ -654,6 +677,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::opt
     roffset += rlen;
 
     Teuchos::ArrayRCP<const LocalOrdinal> blk_row_inds = blkGraph_->getLocalRowView(r);
+    MapGlobalArrayRCP& blk_row = (*col_ind_2D_global_)[r];
 
     for(Tsize_t c=0; c<rlen; ++c) {
       v_bindx[ioffset] = blk_row_inds[c];
@@ -664,8 +688,14 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::opt
       //Later we will convert cptr to offsets.
       v_cptr[blk_row_inds[c]] = blkSize/rsize;
 
+      GlobalOrdinal global_col = blkGraph_->getColMap()->getGlobalElement(blk_row_inds[c]);
+      typename MapGlobalArrayRCP::iterator iter = blk_row.find(global_col);
+      TEST_FOR_EXCEPTION(iter == blk_row.end(), std::runtime_error,
+        "Tpetra::VbrMatrix::optimizeStorage ERROR, global_col not found in row.");
+
+      Teuchos::ArrayRCP<Scalar> vals = iter->second;
       for(Tsize_t n=0; n<blkSize; ++n) {
-        v_values1D[offset++] = pbuf_vals2D[r][c][n];
+        v_values1D[offset++] = vals[n];
       }
     }
   }
@@ -742,8 +772,12 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::fil
   //where blkDomainMap is distributed differently.
   blkColMap_ = makeBlockColumnMap(blkDomainMap_, blkGraph_->getColMap());
 
-  importer_ = Teuchos::rcp(new Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>(blkDomainMap_->getPointMap(), blkColMap_->getPointMap()));
-  exporter_ = Teuchos::rcp(new Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node>(blkRowMap_->getPointMap(), blkRangeMap_->getPointMap()));
+  if (!blkDomainMap_->getPointMap()->isSameAs(*blkColMap_->getPointMap())) {
+    importer_ = Teuchos::rcp(new Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node>(blkDomainMap_->getPointMap(), blkColMap_->getPointMap()));
+  }
+  if (!blkRangeMap_->getPointMap()->isSameAs(*blkRowMap_->getPointMap())) {
+    exporter_ = Teuchos::rcp(new Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node>(blkRowMap_->getPointMap(), blkRangeMap_->getPointMap()));
+  }
 
   is_fill_completed_ = true;
 

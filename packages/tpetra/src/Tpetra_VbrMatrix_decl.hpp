@@ -289,6 +289,7 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   Teuchos::RCP<Node> getNode() const;
 
   void updateImport(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X) const;
+  void updateExport(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
   void optimizeStorage();
   void fillLocalMatrix();
@@ -320,8 +321,9 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
   LocalMatVec lclMatVec_;
   Teuchos::RCP<Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer_;
-  mutable Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > importedX_;
   Teuchos::RCP<Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node> > exporter_;
+  mutable Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > importedVec_;
+  mutable Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > exportedVec_;
 
   typedef typename std::map<GlobalOrdinal,Teuchos::ArrayRCP<Scalar> > MapGlobalArrayRCP;
   typedef typename std::map<LocalOrdinal,Teuchos::ArrayRCP<Scalar> > MapLocalArrayRCP;
