@@ -635,6 +635,32 @@ void local_test_array_vector()
   myfortranfunc( avf6 );
   myfortranfunc( avf7 );
   myfortranfunc( avf8 );
+
+  ArrayVector<double,FortranOrder> av_dynamic ;
+
+  av_dynamic.resize<TagA>( 2 );
+  myfortranfunc( av_dynamic );
+
+  av_dynamic.resize<TagA,TagB>( 2 , 3 );
+  myfortranfunc( av_dynamic );
+
+  av_dynamic.resize<TagA,TagB,TagC>( 2 , 3 , 4 );
+  myfortranfunc( av_dynamic );
+
+  av_dynamic.resize<TagA,TagB,TagC,TagD>( 2 , 3 , 4 , 5 );
+  myfortranfunc( av_dynamic );
+
+  av_dynamic.resize<TagA,TagB,TagC,TagD,TagA>( 2 , 3 , 4 , 5 , 6 );
+  myfortranfunc( av_dynamic );
+
+  av_dynamic.resize<TagA,TagB,TagC,TagD,TagA,TagB>( 2 , 3 , 4 , 5 , 6 , 7 );
+  myfortranfunc( av_dynamic );
+
+  av_dynamic.resize<TagA,TagB,TagC,TagD,TagA,TagB>( 2 , 3 , 4 , 5 , 6 , 7 );
+  myfortranfunc( av_dynamic );
+
+  av_dynamic.resize<TagA,TagB>( 3 , 2 );
+  myfortranfunc( av_dynamic );
 }
 
 //----------------------------------------------------------------------
