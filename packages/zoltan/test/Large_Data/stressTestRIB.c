@@ -14,8 +14,11 @@
 #include <math.h>
 #include <signal.h>
 #include "zoltan.h"
+#include "zz_util_const.h"
+
 
 static int myRank, numProcs;
+static double mbytes=0;
 
 /* Mesh data */
 
@@ -32,7 +35,7 @@ static ZOLTAN_ID_TYPE *vertex_gid=NULL;
 int *vertex_part=NULL;
 static ZOLTAN_ID_TYPE first_gid;
 
-extern void Zoltan_write_linux_meminfo(int, char *);
+extern void Zoltan_write_linux_meminfo(int, char *, int);
 
 static int create_vertices(ZOLTAN_GNO_TYPE gnvtxs, int ndim, int vwgt_dim, int nprocs, int rank);
 static int vertexDim, vertexWeightDim;
@@ -65,7 +68,7 @@ void meminfo_signal_handler(int sig)
   signal(SIGSEGV, SIG_IGN);
   signal(SIGFPE, SIG_IGN);
 
-  Zoltan_write_linux_meminfo(1, msg);
+  Zoltan_write_linux_meminfo(1, msg, 0);
 
   exit(sig);
 }
@@ -77,6 +80,8 @@ int main(int argc, char *argv[])
   ZOLTAN_GNO_TYPE numGlobalVertices;
   float ver;
   char dimstring[16];
+  char *datatype_name;
+  double min, max, avg, local;
 
   struct Zoltan_Struct *zz;
   int changes, numGidEntries, numLidEntries, numImport, numExport;
@@ -124,6 +129,18 @@ int main(int argc, char *argv[])
     MPI_Finalize();
     exit(1);
   }
+
+  if (Zoltan_get_global_id_type(&datatype_name) != sizeof(ZOLTAN_ID_TYPE)){
+    if (myRank == 0){
+      printf("ERROR: The Zoltan library is compiled to use ZOLTAN_ID_TYPE %s, this test is compiled to use %s.\n",
+                 datatype_name, zoltan_id_datatype_name);
+               
+    }
+    MPI_Finalize();
+    exit(0);
+  } 
+
+  Zoltan_Memory_Debug(2);
 
   /******************************************************************
   ** Create vertices
@@ -284,6 +301,19 @@ int main(int argc, char *argv[])
   ** all done ***********
   **********************/
 
+  local= (double)Zoltan_Memory_Usage(ZOLTAN_MEM_STAT_MAXIMUM)/(1024.0*1024);
+  MPI_Reduce(&local, &avg, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  avg /= (double)numProcs;
+  MPI_Reduce(&local, &max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&local, &min, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+
+  if (myRank == 0){
+    printf("Total MBytes in use by test while Zoltan is running: %12.3lf\n",
+             mbytes/(1024.0*1024));
+    printf("Min/Avg/Max MBytes in use by Zoltan:    %12.3lf / %12.3lf / %12.3lf\n",
+             min, avg, max);
+  }
+
   MPI_Finalize();
 
   return 0;
@@ -378,6 +408,8 @@ static void initialize_vertex_global_id_info(int numMyGIDs, int numProc)
   for (i=1; i <= numProc; i++){
     vertex_gid[i] = vertex_gid[i-1] + numMyGIDs;
   }
+
+  mbytes += sizeof(ZOLTAN_ID_TYPE) * (numProc + 1);
 }
 
 
@@ -413,14 +445,19 @@ static int create_vertices(ZOLTAN_GNO_TYPE gnvtxs, int ndim, int vwgt_dim, int n
   initialize_vertex_global_id_info(nvtxs, nprocs);
 
   /* Calculate vertex coordinates */
-
   v_x = (float *) malloc(nvtxs * sizeof(float));
-  if (ndim > 1) v_y = (float *) malloc(nvtxs * sizeof(float));
-  if (ndim > 2) v_z = (float *) malloc(nvtxs * sizeof(float));
-  vertex_weight = (float *) malloc(vwgt_dim*nvtxs * sizeof(float));
-  if (!v_x || (ndim > 1 && !v_y) || (ndim > 2 && !v_z) || !vertex_weight) {
-    return 1;
+  mbytes += nvtxs * sizeof(float);
+  if (ndim > 1){
+     v_y = (float *) malloc(nvtxs * sizeof(float));
+     mbytes += nvtxs * sizeof(float);
+     if (ndim > 2){
+        v_z = (float *) malloc(nvtxs * sizeof(float));
+        mbytes += nvtxs * sizeof(float);
+     }
   }
+
+  vertex_weight = (float *) malloc(vwgt_dim*nvtxs * sizeof(float));
+  mbytes += vwgt_dim * nvtxs * sizeof(float);
 
   if (ndim == 1){
     /* a line */

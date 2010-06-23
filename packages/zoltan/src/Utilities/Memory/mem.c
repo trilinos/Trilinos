@@ -428,7 +428,6 @@ double *Zoltan_Realloc(void *ptr, size_t n, char *filename, int lineno)
       }
 #else
       p = (double *) realloc((char *) ptr, n);
-#endif
 
       if (DEBUG_MEMORY > 1) {
         /* Need to replace item in allocation list */
@@ -456,6 +455,7 @@ double *Zoltan_Realloc(void *ptr, size_t n, char *filename, int lineno)
 		"number of bytes requested = %lu\n",
 		yo, filename, lineno, proc, (unsigned long) n);
       }
+#endif
     }
   }
 

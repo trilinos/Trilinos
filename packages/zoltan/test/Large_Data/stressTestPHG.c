@@ -11,9 +11,12 @@
 #include <ctype.h>
 #include <signal.h>
 #include "zoltan.h"
+#include "zz_util_const.h"
 
 static int myRank, numProcs, numPins, nborCount;
 static int *vertex_part = NULL;
+
+static double mbytes=0;
 
 /* saves memory to use unit weights */
 #define UNIT_WEIGHTS yes
@@ -21,6 +24,14 @@ static int *vertex_part = NULL;
 #define NUM_GLOBAL_VERTICES     2500000000
 #define VERTEX_WEIGHT_DIMENSION 1
 #define EDGE_WEIGHT_DIMENSION 1
+
+/*************************************************************
+ * Defining GID_BASE allows us to test 64 bit global IDs when we
+ * don't have enough memory to run a test that has more than
+ * two billion vertices.
+ */
+#define GID_BASE  0x100000000
+/*************************************************************/
 
 static ZOLTAN_GNO_TYPE numGlobalVertices;
 static int vwgt_dim, ewgt_dim;
@@ -33,7 +44,7 @@ static int edgeCutCost;
 static int numMyVertices;
 
 static int create_a_graph();
-extern void Zoltan_write_linux_meminfo(int, char *);
+extern void Zoltan_write_linux_meminfo(int, char *, int);
 
 #define proc_vertex_gid(proc, lid) (vertexGIDs[proc] + lid)
 
@@ -52,7 +63,7 @@ void meminfo_signal_handler(int sig)
   signal(SIGSEGV, SIG_IGN);
   signal(SIGFPE, SIG_IGN);
 
-  Zoltan_write_linux_meminfo(1, msg);
+  Zoltan_write_linux_meminfo(1, msg, 0);
 
   exit(sig);
 }
@@ -108,30 +119,32 @@ static void get_local_hypergraph(void *data,
     edgeGID[i] = proc_vertex_gid(myRank, i);
     index[i] = i * nborCount;
 
+    /* "left" neighbor is on my process */
     if (i==0){
       left = proc_vertex_gid(myRank, num_edges - 1);
     }
     else{
       left = edgeGID[i] - 1;
     }
+    pinGID[next++] = left;
+
+    /* "right" neighbor is on my process */
     if (i==num_edges-1){
       right = proc_vertex_gid(myRank, 0);
     }
     else{
       right = edgeGID[i] + 1;
     }
-
-    pinGID[next++] = edgeGID[i];
-
-    pinGID[next++] = left;
-
     pinGID[next++] = right;
 
-    if (myRank > 0){
-      pinGID[next++] = edgeGID[i] - num_edges;
+    /* vertex generating the hyperedge is on my process */
+    pinGID[next++] = edgeGID[i];
+
+    if (myRank > 0){ /* pin belongs to process just "before" me */
+      pinGID[next++] = proc_vertex_gid(myRank-1, i);
     }
-    if (myRank < numProcs-1){
-      pinGID[next++] = edgeGID[i] + num_edges;
+    if (myRank < numProcs-1){ /* pin belongs to process just "after" me */
+      pinGID[next++] = proc_vertex_gid(myRank+1, i);
     }
   }
 }
@@ -186,12 +199,16 @@ int main(int argc, char *argv[])
   int changes, numGidEntries, numLidEntries, numImport, numExport;
   ZOLTAN_ID_PTR importGlobalGids, importLocalGids, exportGlobalGids, exportLocalGids;
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
+  char *datatype_name;
+  double local, global, min, max, avg;
 
+#ifdef LINUX_HOST
   signal(SIGSEGV, meminfo_signal_handler);
   signal(SIGINT, meminfo_signal_handler);
   signal(SIGTERM, meminfo_signal_handler);
   signal(SIGABRT, meminfo_signal_handler);
   signal(SIGFPE, meminfo_signal_handler);
+#endif
 
   /******************************************************************
   ** Initialize MPI and Zoltan
@@ -204,10 +221,36 @@ int main(int argc, char *argv[])
   rc = Zoltan_Initialize(argc, argv, &ver);
 
   if (rc != ZOLTAN_OK){
-    printf("sorry...\n");
+    if (myRank == 0) printf("sorry...\n");
     MPI_Finalize();
     exit(0);
   }
+
+  Zoltan_Memory_Debug(2);
+
+  /******************************************************************
+  ** Check that this test makes sense.
+  ******************************************************************/
+
+  if (Zoltan_get_global_id_type(&datatype_name) != sizeof(ZOLTAN_ID_TYPE)){
+    if (myRank == 0){
+      printf("ERROR: The Zoltan library is compiled to use ZOLTAN_ID_TYPE %s, this test is compiled to use %s.\n",
+                 datatype_name, zoltan_id_datatype_name);
+               
+    }
+    MPI_Finalize();
+    exit(0);
+  }
+
+#ifdef GID_BASE
+  if (sizeof(ZOLTAN_ID_TYPE) < 8){
+    if (myRank == 0){
+      printf("ERROR: The Zoltan library and this test must be compiled with 8 byte global IDs if GID_BASE is defined.\n");
+    }
+    MPI_Finalize();
+    exit(0);
+  }
+#endif
 
   /******************************************************************
   ** Problem size
@@ -383,17 +426,30 @@ int main(int argc, char *argv[])
   if (vwgts) free(vwgts);
 #endif
 
+  local= (double)Zoltan_Memory_Usage(ZOLTAN_MEM_STAT_MAXIMUM)/(1024.0*1024);
+  MPI_Reduce(&local, &avg, 1, MPI_DOUBLE, MPI_SUM, 0, MPI_COMM_WORLD);
+  avg /= (double)numProcs;
+  MPI_Reduce(&local, &max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
+  MPI_Reduce(&local, &min, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
+
+  if (myRank == 0){
+    printf("Total MBytes in use by test while Zoltan is running: %12.3lf\n",
+             mbytes/(1024.0*1024));
+    printf("Min/Avg/Max MBytes in use by Zoltan:    %12.3lf / %12.3lf / %12.3lf\n",
+             min, avg, max);
+  }
+
   return 0;
 }
 
 /* Create a simple graph.  The vertices of the graph are the objects for Zoltan to partition.
  * The graph itself can be used to generate a hypergraph in this way: A vertex and all of its
- * neighbors represent a hypergraph.
+ * neighbors represent a hyperedge.
  */
 static int create_a_graph()
 {
-  int i, nvtxs, num4, mid;
-  int nvtx;
+  int i, j, nvtxs, num4, mid;
+  int nvtx, midProc;
 #ifndef UNIT_WEIGHTS
   int random_weights = (vwgt_dim > 0);
   int heavyPart = (myRank % 3 == 0);
@@ -413,6 +469,22 @@ static int create_a_graph()
   numGlobalVertices = (ZOLTAN_GNO_TYPE)nvtxs * numProcs;
   numMyVertices = nvtxs;
 
+  /******************************************************************
+  ** Check again that this test makes sense.
+  ******************************************************************/
+
+#ifdef GID_BASE
+  if ((numGlobalVertices/2) > GID_BASE){
+    /* half of the vertex gids should be below GID_BASE, the other half at or above */
+    if (myRank == 0){
+      printf("ERROR: When GID_BASE is defined in the code, the global number of vertices must be < %" ZOLTAN_ID_SPECIFIER "\n",
+                 (GID_BASE)*2);
+    }
+    MPI_Finalize();
+    exit(0);
+  }
+#endif
+
   if (numProcs == 1){
     nborCount = 3;
   }
@@ -425,12 +497,29 @@ static int create_a_graph()
 
   numPins = numMyVertices * nborCount;
 
-  vertexGIDs = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * (numProcs + 1));
-  vertexGIDs[0] = 0;
+  vertexGIDs = (ZOLTAN_ID_TYPE *)malloc(sizeof(ZOLTAN_ID_TYPE) * numProcs );
 
-  for (i=1; i <= numProcs; i++){
+  mbytes += sizeof(ZOLTAN_ID_TYPE) * numProcs;
+
+#ifdef GID_BASE
+
+  midProc = numProcs / 2;
+  vertexGIDs[0] = 0;
+  vertexGIDs[midProc] = GID_BASE;
+
+  for (i=1,j=midProc+1; (i < midProc) || (j < numProcs); i++,j++){
+    if (i < midProc) vertexGIDs[i] = vertexGIDs[i-1] + nvtxs;
+    if (j < numProcs) vertexGIDs[j] = vertexGIDs[j-1] + nvtxs;
+  }
+
+#else
+
+  vertexGIDs[0] = 0;
+  for (i=1; i < numProcs; i++){
     vertexGIDs[i] = vertexGIDs[i-1] + nvtxs;
   }
+
+#endif
 
   if (myRank == 0){
     printf("Hypergraph will have %zd hyperedges, %d on each process\n", numGlobalVertices, nvtxs);
@@ -442,6 +531,8 @@ static int create_a_graph()
 #ifndef UNIT_WEIGHTS
   vwgts = (float *)calloc( vwgt_dim * nvtxs, sizeof(float));
   if (!vwgts) return 1;
+
+  mbytes += vwgt_dim * nvtxs * sizeof(float);
   
   srand(0);
 

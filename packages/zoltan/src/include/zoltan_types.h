@@ -68,6 +68,7 @@ extern "C" {
 typedef int ZOLTAN_ID_TYPE;
 #define ZOLTAN_ID_MPI_TYPE  MPI_INT
 #define zoltan_mpi_id_datatype_name "MPI_INT"
+#define zoltan_id_datatype_name "int"
 #define ZOLTAN_ID_SPECIFIER  "d"
 #define ZOLTAN_ID_CONSTANT(z)  z
 #endif
@@ -77,6 +78,7 @@ typedef int ZOLTAN_ID_TYPE;
 typedef long ZOLTAN_ID_TYPE;
 #define ZOLTAN_ID_MPI_TYPE  MPI_LONG
 #define zoltan_mpi_id_datatype_name "MPI_LONG"
+#define zoltan_id_datatype_name "long"
 #define ZOLTAN_ID_SPECIFIER  "ld"
 #define ZOLTAN_ID_CONSTANT(z)  z ## L
 #endif
@@ -86,6 +88,7 @@ typedef long ZOLTAN_ID_TYPE;
 typedef long long ZOLTAN_ID_TYPE;
 #define ZOLTAN_ID_MPI_TYPE  MPI_LONG_LONG
 #define zoltan_mpi_id_datatype_name "MPI_LONG_LONG"
+#define zoltan_id_datatype_name "long long"
 #define ZOLTAN_ID_SPECIFIER  "Ld"
 #define ZOLTAN_ID_CONSTANT(z)  z ## LL
 #endif
@@ -95,6 +98,7 @@ typedef long long ZOLTAN_ID_TYPE;
 typedef int ZOLTAN_ID_TYPE;
 #define ZOLTAN_ID_MPI_TYPE  MPI_INT
 #define zoltan_mpi_id_datatype_name "MPI_INT"
+#define zoltan_id_datatype_name "int"
 #define ZOLTAN_ID_SPECIFIER  "d"
 #define ZOLTAN_ID_CONSTANT(z)  z
 

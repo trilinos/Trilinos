@@ -13,6 +13,7 @@
 ##
 ID_TYPE_FLAG=-DZOLTAN_ID_TYPE_LONG_LONG
 ##
+##ID_TYPE_FLAG=-DZOLTAN_ID_TYPE_INT
 
 
 ## Location of zoltan library, also location of Zoltan_config.h if

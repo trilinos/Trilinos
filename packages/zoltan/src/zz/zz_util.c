@@ -376,6 +376,14 @@ char fbuf[64],buf[2048],label[64],value[64],units[64];
   close(f);
 }
 
+int Zoltan_get_global_id_type(char **name)
+{
+  if (name){
+    *name = zoltan_id_datatype_name;
+  }
+  return sizeof(ZOLTAN_ID_TYPE);
+}
+
 
 #ifdef __cplusplus
 } /* closing bracket for extern "C" */
