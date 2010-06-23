@@ -1,5 +1,9 @@
 
-* [Bugs] Possible bug: CrsGraph import/export checks fillComplete() when perhaps it should check indicesAreLocal/indicesAreGlobal. See if this makes a bug.
+TPETRA
+
+* Switch default node type to serialnode.
+
+* Check status of host-bound GEMM (it's not parallel; this needs fixing ASAP)
 
 * Add first-touch
 
@@ -16,17 +20,10 @@
     + No node template. This is a host-only class.
   - optimizeStorage() or fillComplete(DoOptimizeStorage) means the use can never add new entries to a CrsMatrix. What does this mean in the context of other DistObjects?
 
-* Add re-use option for allocBuffer()
-
 * Coalesce LocalMatVec and LocalMatSolvein CrsMatrix
   + Node dependency.
 
 * Address REPLACE mode in CrsMatrix/CrsGraph import/export
-
-* add Kokkos-level parallelCopy() and parallelPermute() (compute kernels, not node-member memory primitives)
-  - may need to address overlapping
-    + detection with fall-back to serial is okay for now; identify potential special cases in Tpetra usage
-  - Use these in CrsMatrix/CrsGraph/MultiVector/Vector (doImport/doExport)
 
 * Rewrite globalAssemble() in CrsMatrix/CrsGraph to use import/export functionality
 
@@ -37,4 +34,17 @@
 * Determine appropriate impelementation of checkSizes() in CrsGraph/CrsMatrix
 
 * [As needed in the future] Add Tpetra::MultiScalarOperator abstract interface.
+
+KOKKOS
+
+* Add re-use option for allocBuffer()
+
+* add Kokkos-level parallelCopy() and parallelPermute() (compute kernels, not node-member memory primitives)
+  - may need to address overlapping
+    + detection with fall-back to serial is okay for now; identify potential special cases in Tpetra usage
+  - Use these in CrsMatrix/CrsGraph/MultiVector/Vector (doImport/doExport)
+
+BUGS
+
+* Possible bug: CrsGraph import/export checks fillComplete() when perhaps it should check indicesAreLocal/indicesAreGlobal. See if this makes a bug.
 
