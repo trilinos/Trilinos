@@ -28,18 +28,29 @@
 // 
 // ***********************************************************************
 // @HEADER
+#include <iostream>
 
 // Cppunit includes
 #include <cppunit/extensions/TestFactoryRegistry.h>
 #include <cppunit/ui/text/TestRunner.h>
 
 int main(int argc, char *argv[]) {
+  bool wasSuccessful = false;
 
-  CppUnit::TextUi::TestRunner runner;
-  CppUnit::TestFactoryRegistry &registry = 
-    CppUnit::TestFactoryRegistry::getRegistry();
+  try {
+    CppUnit::TextUi::TestRunner runner;
+    CppUnit::TestFactoryRegistry &registry = 
+      CppUnit::TestFactoryRegistry::getRegistry();
+    
+    runner.addTest(registry.makeTest());
+    wasSuccessful = runner.run("", false,true,true);
+  }
+  catch (std::exception& e) {
+    std::cout << e.what() << std::endl;
+  }
+  catch (...) {
+    std::cout << "Caught unknown exception!" << std::endl;
+  }
 
-  runner.addTest(registry.makeTest());
-  bool wasSuccessful = runner.run("", false,true,true);
   return wasSuccessful;
 }

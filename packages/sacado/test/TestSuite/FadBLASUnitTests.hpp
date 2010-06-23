@@ -275,7 +275,7 @@ protected:
 template <class FadType, class ScalarType>
 FadBLASUnitTests<FadType,ScalarType>::
 FadBLASUnitTests() :
-  urand(), real_urand(), m(5), n(6), l(4), ndot(7), tol_a(1.0e-12), tol_r(1.0e-12) {}
+  urand(), real_urand(), m(5), n(6), l(4), ndot(7), tol_a(1.0e-11), tol_r(1.0e-11) {}
 
 template <class FadType, class ScalarType>
 FadBLASUnitTests<FadType,ScalarType>::

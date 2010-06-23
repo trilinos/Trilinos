@@ -3402,6 +3402,134 @@ public:
     }
 
   /** \} */
+
+  template< class Tag1 , class Tag2 , class Tag3 , class Tag4 ,
+            class Tag5 , class Tag6 , class Tag7 , class Tag8 >
+  Array & assign( value_type * ptr ,
+                  size_type n1 , size_type n2 , size_type n3 , size_type n4 ,
+                  size_type n5 , size_type n6 , size_type n7 , size_type n8 )
+  {
+    typedef
+      array_traits::Helper<Scalar,array_order,
+                           Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,Tag8>
+        helper ;
+    m_ptr  = ptr ;
+    m_rank = helper::Rank ;
+    helper::assign_tags( m_tag );
+    helper::assign( m_stride, n1, n2, n3, n4, n5, n6, n7, n8 );
+    return *this ;
+  }
+
+  template< class Tag1 , class Tag2 , class Tag3 , class Tag4 ,
+            class Tag5 , class Tag6 , class Tag7 >
+  Array & assign( value_type * ptr ,
+                  size_type n1 , size_type n2 , size_type n3 , size_type n4 ,
+                  size_type n5 , size_type n6 , size_type n7 )
+  {
+    typedef
+      array_traits::Helper<Scalar,array_order,
+                           Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7,void>
+        helper ;
+    m_ptr = ptr ;
+    m_rank = helper::Rank ;
+    helper::assign_tags( m_tag );
+    helper::assign( m_stride, n1, n2, n3, n4, n5, n6, n7 ); return *this ;
+  }
+
+  template< class Tag1 , class Tag2 , class Tag3 , class Tag4 ,
+            class Tag5 , class Tag6 >
+  Array & assign( value_type * ptr ,
+                  size_type n1 , size_type n2 , size_type n3 , size_type n4 ,
+                  size_type n5 , size_type n6 )
+  {
+    typedef
+      array_traits::Helper<Scalar,array_order,
+                           Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,void,void>
+        helper ;
+    m_ptr = ptr ;
+    m_rank = helper::Rank ;
+    helper::assign_tags( m_tag );
+    helper::assign( m_stride, n1, n2, n3, n4, n5, n6 );
+    return *this ;
+  }
+
+  template< class Tag1 , class Tag2 , class Tag3 , class Tag4 ,
+            class Tag5 >
+  Array & assign( value_type * ptr ,
+                  size_type n1 , size_type n2 , size_type n3 , size_type n4 ,
+                  size_type n5 )
+  {
+    typedef
+      array_traits::Helper<Scalar,array_order,
+                           Tag1,Tag2,Tag3,Tag4,Tag5,void,void,void>
+        helper ;
+    m_ptr = ptr ;
+    m_rank = helper::Rank ;
+    helper::assign_tags( m_tag );
+    helper::assign( m_stride, n1, n2, n3, n4, n5 );
+    return *this ;
+  }
+
+  template< class Tag1 , class Tag2 , class Tag3 , class Tag4 >
+  Array & assign( value_type * ptr ,
+                  size_type n1 , size_type n2 , size_type n3 , size_type n4 )
+  {
+    typedef
+      array_traits::Helper<Scalar,array_order,
+                           Tag1,Tag2,Tag3,Tag4,void,void,void,void>
+        helper ;
+    m_ptr = ptr ;
+    m_rank = helper::Rank ;
+    helper::assign_tags( m_tag );
+    helper::assign( m_stride, n1, n2, n3, n4 );
+    return *this ;
+  }
+
+  template< class Tag1 , class Tag2 , class Tag3 >
+  Array & assign( value_type * ptr ,
+                  size_type n1 , size_type n2 , size_type n3 )
+  {
+    typedef
+      array_traits::Helper<Scalar,array_order,
+                           Tag1,Tag2,Tag3,void,void,void,void,void>
+        helper ;
+    m_ptr = ptr ;
+    m_rank = helper::Rank ;
+    helper::assign_tags( m_tag );
+    helper::assign( m_stride, n1, n2, n3 );
+    return *this ;
+  }
+
+  template< class Tag1 , class Tag2 >
+  Array & assign( value_type * ptr ,
+                  size_type n1 , size_type n2 )
+  {
+    typedef
+      array_traits::Helper<Scalar,array_order,
+                           Tag1,Tag2,void,void,void,void,void,void>
+        helper ;
+    m_ptr = ptr ;
+    m_rank = helper::Rank ;
+    helper::assign_tags( m_tag );
+    helper::assign( m_stride, n1, n2 );
+    return *this ;
+  }
+
+  template< class Tag1 >
+  Array & assign( value_type * ptr ,
+                  size_type n1 )
+  {
+    typedef
+      array_traits::Helper<Scalar,array_order,
+                           Tag1,void,void,void,void,void,void,void>
+        helper ;
+    m_ptr = ptr ;
+    m_rank = helper::Rank ;
+    helper::assign_tags( m_tag );
+    helper::assign( m_stride, n1 );
+    return *this ;
+  }
+
 private:
 
   /** Truncation constructor */

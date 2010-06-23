@@ -236,7 +236,7 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   fprintf(stderr, "(%d) remove arcs: %g\n", zz->Proc, MPI_Wtime()-time);
 #endif
 
-#define MATRIX_DEBUG
+#undef MATRIX_DEBUG
 
 #ifdef MATRIX_DEBUG
  {

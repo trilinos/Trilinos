@@ -73,3 +73,27 @@ IF(Stokhos_ENABLE_TriKota)
   ENDIF()
 
 ENDIF()
+
+IF(Stokhos_ENABLE_Sacado)
+
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    sacado_example
+    SOURCES sacado_example.cpp
+    ARGS -v
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+
+ENDIF() 
+
+IF(Stokhos_ENABLE_NOX)
+
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    nox_example
+    SOURCES nox_example.cpp SimpleME.hpp SimpleME.cpp
+    ARGS -v
+    COMM serial mpi
+    NUM_MPI_PROCS 1
+    )
+
+ENDIF()
