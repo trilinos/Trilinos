@@ -17,9 +17,6 @@
 #cmakedefine HAVE_SACADO_TESTS
 
 /* Define if want to build with sacado enabled */
-#cmakedefine HAVE_SACADO_STOKHOS
-
-/* Define if want to build with sacado enabled */
 #cmakedefine HAVE_SACADO_TEUCHOS
 
 /* define if the compiler is confused by std::sin, etc., within namespace

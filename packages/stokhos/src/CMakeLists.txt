@@ -144,6 +144,16 @@ SET(SOURCES ${SOURCES}
   Stokhos_EpetraMultiVectorOperator.cpp
   )
 
+# Sacado
+IF (Stokhos_ENABLE_Sacado)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado)
+  SET(HEADERS ${HEADERS}
+    sacado/Sacado_PCE_OrthogPoly.hpp
+    sacado/Sacado_PCE_OrthogPolyImp.hpp
+    sacado/Sacado_PCE_OrthogPolyTraits.hpp
+    )
+ENDIF()
+
 #
 # C) Define the targets for package's library(s)
 #

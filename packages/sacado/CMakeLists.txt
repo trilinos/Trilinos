@@ -56,25 +56,11 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_RAD_NO_USING_STDCC
   "Enable if the compiler is confused by std::sin, etc., within namespace"
   OFF )
 
-COMBINED_OPTION( Sacado_ENABLE_FEApp
-  DEP_OPTIONS_NAMES Sacado_ENABLE_Epetra Sacado_ENABLE_EpetraExt
-  DOCSTR "Enables compiling FEApp example finite element application"
-    " that demonstrates incorporating Sacado into a applcaitons."
-    "  Defaults to ON if Epetra, and EpetraExt are enabled," 
-    " otherwise defaults to OFF.  Only takes affect when"
-    " Sacado_ENABLE_EXAMPLES=ON."
-  )
-
 #
 # C) Add the libraries, tests, and examples
 #
 
 ADD_SUBDIRECTORY(src)
-
-# We are treating FEApp as a library, not an example
-# This way packages that wish to use FEApp do not need to enable
-# Sacado examples
-ADD_SUBDIRECTORY(example/FEApp)
 
 # Must be after the performance tests so dependency on test/utils is picked
 # up.

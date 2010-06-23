@@ -32,9 +32,9 @@
 #ifndef SACADO_PCE_ORTHOGPOLY_HPP
 #define SACADO_PCE_ORTHOGPOLY_HPP
 
-#include "Sacado_ConfigDefs.h"
+#include "Stokhos_ConfigDefs.h"
 
-#ifdef HAVE_SACADO_STOKHOS
+#ifdef HAVE_STOKHOS_SACADO
 
 #include "Teuchos_RCP.hpp"
 
@@ -510,6 +510,6 @@ namespace Sacado {
 #include "Sacado_PCE_OrthogPolyTraits.hpp"
 #include "Sacado_PCE_OrthogPolyImp.hpp"
 
-#endif // HAVE_SACADO_STOKHOS
+#endif // HAVE_STOKHOS_SACADO
 
-#endif // SACADO_PCE_UNIVARIATEHERMITE_HPP
+#endif // SACADO_PCE_ORTHOGPOLY_HPP

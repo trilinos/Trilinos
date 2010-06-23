@@ -12,6 +12,9 @@
 /* Define to enable extra debugging checks */
 #cmakedefine STOKHOS_DEBUG
 
+/* Define if Sacado is enabled */
+#cmakedefine HAVE_STOKHOS_SACADO
+
 /* Define if Dakota is enabled */
 #cmakedefine HAVE_STOKHOS_DAKOTA
 

@@ -53,6 +53,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   TrilinosFramework     ../cmake                       PS # Only tests, no libraries/capabilities!
   Teuchos               teuchos                        PS
   ThreadPool            ThreadPool                     PS # Depends on ptheads system library
+  Sacado                sacado                         PS
   RTOp                  rtop                           PS
   Kokkos                kokkos                         PS
   Epetra                epetra                         PS
@@ -83,9 +84,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Teko                  teko                           SS
   RBGen                 rbgen                          PS
   TriKota               TriKota                        SS
-  Stokhos               stokhos                        SS
   STK                   stk                            SS # Depends on boost
-  Sacado                sacado                         PS
   Intrepid              intrepid                       PS
   Phalanx               phalanx                        SS
   Phdmesh               phdmesh                        SS # to be replaced by STK
@@ -95,6 +94,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Rythmos               rythmos                        PS
   MOOCHO                moocho                         PS
   Aristos               aristos                        EX
+  Stokhos               stokhos                        SS
   Piro                  piro                           SS
   Sundance              Sundance                       SS # Could be PS based on deps (BUG: 4669)
   CTrilinos             CTrilinos                      PS
@@ -108,6 +108,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Stalix                stalix                         EX
   Lyno                  lyno                           EX
   Trios                 Trios                          EX # Depends on netcdf, optionally hdf5, xdmf
+  FEApp                 ../demos/FEApp                 SS # Capability demonstration package
   )
 
 

@@ -126,17 +126,3 @@ IF(Sacado_ENABLE_Teuchos)
     NUM_MPI_PROCS 1
     )
 ENDIF()
-
-IF(Sacado_ENABLE_Stokhos)
-
-  PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    pce_example
-    SOURCES pce_example.cpp
-    ARGS -v
-    COMM serial mpi
-    NUM_MPI_PROCS 1
-    )
-
-ENDIF()
-
-

@@ -194,16 +194,6 @@ IF (${PACKAGE_NAME}_ENABLE_Teuchos)
   
 ENDIF(${PACKAGE_NAME}_ENABLE_Teuchos)
 
-# Stokhos
-IF (${PACKAGE_NAME}_ENABLE_Stokhos)
-  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/pce)
-  SET(HEADERS ${HEADERS}
-    pce/Sacado_PCE_OrthogPoly.hpp
-    pce/Sacado_PCE_OrthogPolyImp.hpp
-    pce/Sacado_PCE_OrthogPolyTraits.hpp
-    )
-ENDIF()
-
 #mpl
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/mpl)
 SET(HEADERS ${HEADERS}
