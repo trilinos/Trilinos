@@ -724,8 +724,12 @@ namespace Tpetra {
                     const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
                     const Teuchos::ArrayView<int> & imageIDList, 
                     const Teuchos::ArrayView<LocalOrdinal> & LIDList) const {
-    if (GIDList.size() == 0) return AllIDsPresent;
-    TEST_FOR_EXCEPTION(getGlobalNumElements() == 0, std::runtime_error,
+    if (distributed_ == false) {
+      TEST_FOR_EXCEPTION(GIDList.size() > 0, std::runtime_error,
+        Teuchos::typeName(*this) << "::getRemoteIndexList() cannot be called for local maps.");
+      return AllIDsPresent;
+    }
+    TEST_FOR_EXCEPTION(GIDList.size() > 0 && getGlobalNumElements() == 0, std::runtime_error,
         Teuchos::typeName(*this) << "::getRemoteIndexList(): getRemoteIndexList() cannot be called, zero entries in Map.");
     return directory_->getDirectoryEntries(GIDList, imageIDList, LIDList);
   }
@@ -734,7 +738,12 @@ namespace Tpetra {
   LookupStatus Map<LocalOrdinal,GlobalOrdinal,Node>::getRemoteIndexList(
                     const Teuchos::ArrayView<const GlobalOrdinal> & GIDList, 
                     const Teuchos::ArrayView<int> & imageIDList) const {
-    TEST_FOR_EXCEPTION(getGlobalNumElements() == 0, std::runtime_error,
+    if (distributed_ == false) {
+      TEST_FOR_EXCEPTION(GIDList.size() > 0, std::runtime_error,
+        Teuchos::typeName(*this) << "::getRemoteIndexList() cannot be called for local maps.");
+      return AllIDsPresent;
+    }
+    TEST_FOR_EXCEPTION(GIDList.size() > 0 && getGlobalNumElements() == 0, std::runtime_error,
         Teuchos::typeName(*this) << "::getRemoteIndexList(): getRemoteIndexList() cannot be called, zero entries in Map.");
     return directory_->getDirectoryEntries(GIDList, imageIDList);
   }
