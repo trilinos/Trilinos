@@ -8,6 +8,5 @@ File Name		= vwgt
 Parallel Disk Info	= number=0
 Global element ids assigned to processor 0
 GID	Part	Perm	IPerm
-6	1	-1	-1
-21	0	-1	-1
-22	0	-1	-1
+6	0	-1	-1
+11	1	-1	-1
