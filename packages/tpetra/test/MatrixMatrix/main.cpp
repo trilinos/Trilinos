@@ -68,7 +68,7 @@ int main(int argc, char* argv[]){
 
 	MatrixMatrixMultiply<double, int> multiplier(matrixA, matrixB, matrixC);
 	multiplier.multiply();
-//	matrixC->describe(*out, Teuchos::VERB_EXTREME);
+	matrixC->describe(*out, Teuchos::VERB_EXTREME);
 
 	return 0;
 }

@@ -46,7 +46,7 @@ void RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createTrans
 						 Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &transposeMatrix, Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transposeRowMap){
 	optimizeTranspose_ = optimizeTranspose;
    	const size_t LST0 = Teuchos::OrdinalTraits<size_t>::zero();
-    const global_size_t GST0 = Teuchos::OrdinalTraits<global_size_t>::zero();
+    //const global_size_t GST0 = Teuchos::OrdinalTraits<global_size_t>::zero();
    	const LocalOrdinal LO0 = Teuchos::OrdinalTraits<LocalOrdinal>::zero();
    	const Scalar S0 = Teuchos::ScalarTraits<Scalar>::zero();
 	Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > tRowMap;
@@ -102,8 +102,29 @@ void RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createTrans
 			++transNumNz[transRow];
 		}
 	}
+
+	Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transMap = origMatrix_->getColMap();
+	CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> tempTransA1(transMap, transNumNz);
+	Teuchos::ArrayView<const GlobalOrdinal> transMyGlobalEquations = transMap->getNodeElementList();
+
+   	const LocalOrdinal GO0 = Teuchos::OrdinalTraits<LocalOrdinal>::zero();
+	for(GlobalOrdinal i= GO0; (size_t)i<numMyCols; ++i){
+		tempTransA1.insertGlobalValues(transMyGlobalEquations[i], transIndicies[i](), transValues[i]());
+	}
+
+	Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > domainMap = origMatrix_->getDomainMap();
+	Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > rangeMap = origMatrix_->getRangeMap();
+	tempTransA1.fillComplete(rangeMap, domainMap, DoNotOptimizeStorage);
+	transposeMatrix_ = Teuchos::rcp(new CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tRowMap, 0));
+
+	Export<LocalOrdinal, GlobalOrdinal, Node> transExporter(transMap, tRowMap);
+
+	transposeMatrix_->doExport(tempTransA1, transExporter, ADD);
+	transposeMatrix_->fillComplete(rangeMap, domainMap, optimizeTranspose_ );
+	transposeMatrix = transposeMatrix_;
+
 	
-	const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transMap = origMatrix_->getColMap();
+	/*const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transMap = origMatrix_->getColMap();
 	transposeMatrix_ = Teuchos::rcp(new CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(tRowMap, maxNumEntries));
 	Teuchos::ArrayView<const GlobalOrdinal> transMyGlobalEquations = transMap->getNodeElementList();
 	for(global_size_t i = GST0; i<numMyCols; ++i){
@@ -129,9 +150,11 @@ void RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createTrans
 	}
 
 	std::cout << "right before fill complete\n";
+	Export transExporter(origMatrix_->getColMap(), tRowMap());
+	transposeMatrix_->doExport(transposeMatrix_,
 	transposeMatrix_->fillComplete(origMatrix_->getDomainMap(),origMatrix_->getRangeMap(), optimizeTranspose_);
 	std::cout << "right after fill complete\n";
-	transposeMatrix = transposeMatrix_;
+	transposeMatrix = transposeMatrix_;*/
 }
 
 //
