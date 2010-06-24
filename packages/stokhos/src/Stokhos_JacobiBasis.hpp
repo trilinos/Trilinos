@@ -48,7 +48,7 @@ namespace Stokhos {
    * A_n = 2 (n+1)(n+\alpha+\beta+1)(2 n + \alpha+\beta)
    * \f]
    * \f[
-   * B_n = (2n+\alpha+\beta+1)(\alpha^2 - \beta^2)
+   * B_n = -(2n+\alpha+\beta+1)(\alpha^2 - \beta^2)
    * \f]
    * \f[
    * C_n = (2n+\alpha+\beta)_3
@@ -74,6 +74,8 @@ namespace Stokhos {
    * \f]
    * This class implements computeRecurrenceCoefficients() using the
    * above formula.
+   *
+   * \author Kevin Long (kevin.long@ttu.edu)
    */
   template <typename ordinal_type, typename value_type>
   class JacobiBasis : 
