@@ -10,6 +10,14 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
 )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  PowerMethodVbrExample
+  SOURCES Tpetra_Power_Method_VbrMatrix
+  ARGS 1000
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+)
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   PowerMethodFileExample
   SOURCES Tpetra_Power_Method_From_File
   ARGS

@@ -57,7 +57,7 @@ convertBlockMapToPointMap(const Teuchos::RCP<const Tpetra::BlockMap<LocalOrdinal
 
   //Create a point-entry map where each point
   //corresponds to a block in the block-map:
-  return Teuchos::rcp(new Map<LocalOrdinal,GlobalOrdinal,Node>(numGlobalElems, blockMap->getBlockIDs(), indexBase, comm, node));
+  return Teuchos::rcp(new Map<LocalOrdinal,GlobalOrdinal,Node>(numGlobalElems, blockMap->getNodeBlockIDs(), indexBase, comm, node));
 }
 
 //-----------------------------------------------------------------
@@ -67,7 +67,7 @@ makeBlockColumnMap(const Teuchos::RCP<const Tpetra::BlockMap<LocalOrdinal,Global
 {
   global_size_t numGlobalBlocks = Teuchos::OrdinalTraits<global_size_t>::invalid();
   Teuchos::ArrayView<const GlobalOrdinal> blockIDs = ptColMap->getNodeElementList();
-  Teuchos::ArrayView<const LocalOrdinal> blockSizes = blockMap->getBlockSizes();
+  Teuchos::ArrayView<const LocalOrdinal> blockSizes = blockMap->getNodeBlockSizes();
   Teuchos::Array<GlobalOrdinal> points(blockIDs.size());
 
   typedef typename Teuchos::ArrayView<const LocalOrdinal>::size_type Tsize_t;

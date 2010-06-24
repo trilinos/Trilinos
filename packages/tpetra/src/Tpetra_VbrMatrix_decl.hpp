@@ -53,13 +53,13 @@ namespace Tpetra {
 /**
 The VbrMatrix class has two significant 'states', distinguished by whether or not
 storage has been optimized (packed) or not.
-After construction and before fillComplete() has been called, the internal data storage
-is in an un-packed, non-contiguous data-structure that allows for convenient insertion
-of data.
-After fillComplete() has been called, internal storage is in contiguous 'packed' arrays
-and no new entries (indices and/or coefficients) may be inserted. Existing entries may
-still be updated and replaced though. The structure or sparsity pattern of the matrix
-is finalized when fillComplete() is called.
+After construction and before fillComplete() has been called, the internal data
+storage is in an un-packed, non-contiguous data-structure that allows for
+convenient insertion of data.
+After fillComplete() has been called, internal storage is in contiguous 'packed'
+arrays and no new entries (indices and/or coefficients) may be inserted. Existing
+entries may still be updated and replaced though. The structure or sparsity
+pattern of the matrix is finalized when fillComplete() is called.
 */
 template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatVec = Kokkos::DefaultBlockSparseMultiply<Scalar,LocalOrdinal,Node>, class LocalMatSolve = Kokkos::DefaultSparseSolve<Scalar,LocalOrdinal,Node> >
 class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
@@ -155,8 +155,8 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
   //!Copy the contents of the input block-entry into the matrix.
   /*!
-    This method will create the specified block-entry if it doesn't already exist, but
-    only if fillComplete() has not yet been called.
+    This method will create the specified block-entry if it doesn't already exist,
+    but only if fillComplete() has not yet been called.
 
     If the specified block-entry already exists in the matrix, it will be
     over-written (replaced) by the input block-entry.
@@ -179,8 +179,8 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
   //!Copy the contents of the input block-entry into the matrix.
   /*!
-    This method will create the specified block-entry if it doesn't already exist, but
-    only if fillComplete() has not yet been called.
+    This method will create the specified block-entry if it doesn't already exist,
+    but only if fillComplete() has not yet been called.
 
     If the specified block-entry already exists in the matrix, it will be
     over-written (replaced) by the input block-entry.
@@ -216,12 +216,12 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
   //! Returns a const read-only view of a block-entry.
   /*!
-    The arguments numPtRows and numPtCols are set to the dimensions of the block-entry
-    on output.
+    The arguments numPtRows and numPtCols are set to the dimensions of the block-
+    entry on output.
     The stride (LDA in Blas terminology) is equal to numPtRows.
 
-    This method may be called any time (before or after fillComplete()), but will throw
-    an exception if the specified block-entry doesn't already exist.
+    This method may be called any time (before or after fillComplete()), but will
+    throw an exception if the specified block-entry doesn't already exist.
   */
   void getGlobalBlockEntryView(GlobalOrdinal globalBlockRow,
                                GlobalOrdinal globalBlockCol,
@@ -248,14 +248,14 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
   //! Returns a const read-only view of a block-entry.
   /*!
-    The arguments numPtRows and numPtCols are set to the dimensions of the block-entry
-    on output.
+    The arguments numPtRows and numPtCols are set to the dimensions of the block-
+    entry on output.
     The stride (LDA in Blas terminology) is equal to numPtRows.
     Throws an exception if fillComplete() has not yet been called, or if the
     specified block-entry doesn't exist.
 
-    This method may only be called after fillComplete() has been called, and will throw
-    an exception if the specified block-entry doesn't already exist.
+    This method may only be called after fillComplete() has been called, and will
+    throw an exception if the specified block-entry doesn't already exist.
   */
   void getLocalBlockEntryView(LocalOrdinal localBlockRow,
                               LocalOrdinal localBlockCol,
@@ -265,8 +265,8 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
   //! Returns a non-const read-write view of a block-entry.
   /*!
-    The arguments numPtRows and numPtCols are set to the dimensions of the block-entry
-    on output.
+    The arguments numPtRows and numPtCols are set to the dimensions of the block-
+    entry on output.
     The stride (LDA in Blas terminology) is equal to numPtRows.
     Throws an exception if fillComplete() has not yet been called, or if the
     specified block-entry doesn't exist.
@@ -277,8 +277,8 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
        view won't be copied back to the GPU until your ArrayRCP is destroyed
        or set to Teuchos::null.
 
-    This method may only be called after fillComplete() has been called, and will throw
-    an exception if the specified block-entry doesn't already exist.
+    This method may only be called after fillComplete() has been called, and will
+    throw an exception if the specified block-entry doesn't already exist.
   */
   void getLocalBlockEntryViewNonConst(LocalOrdinal localBlockRow,
                                       LocalOrdinal localBlockCol,
@@ -336,9 +336,11 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   //We use 2 arrays (well, array-of-maps, array-of-array-of-arrays...) to
   //represent the variable-block-row matrix in un-packed '2D' form.
   //
-  //Note that these arrays are assumed to be resident in CPU memory. It doesn't
-  //make sense to copy this kind of data back and forth to a separate
-  //compute device (e.g., a GPU).
+  //Note that these arrays are assumed to be resident in CPU (host) memory.
+  //It doesn't make sense to copy this kind of data back and forth to a separate
+  //compute device (e.g., a GPU), since we don't support doing matrix-vector
+  //products until after fillComplete is called, at which time contiguous
+  //arrays are allocated on the device and matrix data is copied into them.
   Teuchos::RCP<Teuchos::Array<MapGlobalArrayRCP> > col_ind_2D_global_;
   Teuchos::RCP<Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > > > values2D_;
 
