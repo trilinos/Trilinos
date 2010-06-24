@@ -323,8 +323,8 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::get
 {
   //Return a non-const, read-write view of a block-entry (as an ArrayRCP),
   //creating/allocating the block-entry if it doesn't already exist, (but only
-  //if fillComplete hasn't been called yet, and if the optional arguments
-  //numPtRows and numPtCols have been specified).
+  //if fillComplete hasn't been called yet, and if the arguments numPtRows
+  //and numPtCols have been set on input).
 
   if (is_storage_optimized_) {
     TEST_FOR_EXCEPTION(!isFillComplete(), std::runtime_error,
