@@ -1,0 +1,35 @@
+suppress umr ...; MPI_Init
+suppress umr ...; ompi_mpi_finalize
+suppress umr ...; MPI_Finalize
+suppress umr mca_coll_base_comm_select; ompi_comm_activate; ompi_comm_split; MPI_Comm_split
+suppress umr syscall; opal_mem_free_ptmalloc2_munmap; munmap; _IO_setb; _IO_file_close_it@@GLIBC_2.2.5; fclose@@GLIBC_2.2.5
+suppress mlk ...; ompi_proc_world
+suppress mlk ...; ompi_proc_world
+suppress mlk ...; MPI_Comm_dup
+suppress mlk ...; MPI_Init
+suppress mlk ...; ompi_mpi_finalize
+suppress par ompi_ddt_copy_content_same_ddt; ompi_coll_tuned_allgather_intra_bruck; ompi_coll_tuned_allgather_intra_dec_fixed; MPI_Allgather
+suppress par ompi_ddt_copy_content_same_ddt; ompi_coll_tuned_allgather_intra_bruck; ompi_coll_tuned_allgather_intra_dec_fixed; ompi_comm_split; MPI_Comm_split
+suppress umr mca_coll_base_comm_select; ompi_comm_activate; ompi_comm_create; MPI_Comm_create
+suppress umr ikeysort
+suppress umr ikeyvalsort
+suppress umr iidxsort
+suppress umr ...; MPI_Comm_dup
+suppress umr ...; swritev; tcp_push_body; lam_ssi_rpi_tcp_req_send_short; lam_ssi_rpi_tcp_adv1; lam_ssi_rpi_tcp_advance; _mpi_req_advance; PMPI_Startall; lam_ssi_coll_lam_basic_bcast_lin; MPI_Bcast
+suppress umr ...; swritev; tcp_push_body; lam_ssi_rpi_tcp_req_send_short; lam_ssi_rpi_tcp_advmultiple; lam_ssi_rpi_tcp_advance; _mpi_req_advance; lam_send; MPI_Rsend
+suppress umr ...; swritev; tcp_push_body; tcp_req_send_body; lam_ssi_rpi_tcp_advmultiple; lam_ssi_rpi_tcp_advance; _mpi_req_advance; lam_send; MPI_Rsend
+suppress umr ...; swritev; tcp_push_body; tcp_req_send_body; lam_ssi_rpi_tcp_adv1; lam_ssi_rpi_tcp_advance; _mpi_req_advance; lam_send; MPI_Rsend
+suppress umr swrite; tcp_push_body; tcp_req_send_body; lam_ssi_rpi_tcp_advmultiple; lam_ssi_rpi_tcp_advance; _mpi_req_advance; lam_send; MPI_Rsend
+suppress umr ...; swritev; tcp_push_body; lam_ssi_rpi_tcp_req_send_short; lam_ssi_rpi_tcp_advmultiple; lam_ssi_rpi_tcp_advance; _mpi_req_advance; PMPI_Startall; lam_ssi_coll_lam_basic_bcast_lin; MPI_Bcast
+suppress umr ...; swritev; lam_ssi_rpi_tcp_low_fastsend; lam_ssi_rpi_tcp_fastsend; lam_send; PMPI_Send; lam_ssi_coll_lam_basic_gatherv; lam_ssi_coll_lam_basic_allgatherv; MPI_Allgatherv
+suppress umr ...; swritev; lam_ssi_rpi_tcp_low_fastsend; lam_ssi_rpi_tcp_fastsend; lam_send; MPI_Send
+suppress umr swrite; tcp_push_body; tcp_req_send_body; lam_ssi_rpi_tcp_adv1; lam_ssi_rpi_tcp_advance; _mpi_req_advance; lam_send; MPI_Rsend
+suppress umr ...; swritev; lam_ssi_rpi_tcp_low_fastsend; lam_ssi_rpi_tcp_fastsend; lam_send; PMPI_Send; lam_ssi_coll_lam_basic_bcast_log; MPI_Bcast
+suppress umr ...; swritev; tcp_push_body; lam_ssi_rpi_tcp_req_send_short; lam_ssi_rpi_tcp_adv1; lam_ssi_rpi_tcp_advance; _mpi_req_advance; lam_send; MPI_Rsend
+suppress umr ...; swritev; tcp_push_body; lam_ssi_rpi_tcp_req_send_short; lam_ssi_rpi_tcp_advmultiple; lam_ssi_rpi_tcp_advance; _mpi_req_advance; lam_isend; MPI_Isend
+suppress umr ...; swritev; tcp_push_body; lam_ssi_rpi_tcp_req_send_short; lam_ssi_rpi_tcp_adv1; lam_ssi_rpi_tcp_advance; _mpi_req_advance; lam_isend; MPI_Isend
+suppress umr ...; swritev; tcp_push_body; lam_ssi_rpi_tcp_req_send_short; lam_ssi_rpi_tcp_advmultiple; lam_ssi_rpi_tcp_advance; _mpi_req_advance; PMPI_Startall; lam_ssi_coll_lam_basic_alltoall; MPI_Alltoall
+suppress umr ...; swritev; tcp_push_body; lam_ssi_rpi_tcp_req_send_short; lam_ssi_rpi_tcp_adv1; lam_ssi_rpi_tcp_advance; _mpi_req_advance; lam_send; MPI_Send
+suppress umr ...; swritev; lam_ssi_rpi_tcp_low_fastsend; lam_ssi_rpi_tcp_fastsend; lam_send; PMPI_Send; lam_ssi_coll_lam_basic_reduce_lin; lam_ssi_coll_lam_basic_allreduce; MPI_Allreduce
+suppress umr ...; swritev; lam_ssi_rpi_tcp_low_fastsend; lam_ssi_rpi_tcp_fastsend; lam_send; PMPI_Send; lam_ssi_coll_lam_basic_reduce_log; lam_ssi_coll_lam_basic_allreduce; MPI_Allreduce
+suppress umr ...; swritev; tcp_push_body; lam_ssi_rpi_tcp_req_send_short; lam_ssi_rpi_tcp_advmultiple; lam_ssi_rpi_tcp_advance; _mpi_req_advance; PMPI_Startall; lam_ssi_coll_lam_basic_alltoallv; MPI_Alltoallv
