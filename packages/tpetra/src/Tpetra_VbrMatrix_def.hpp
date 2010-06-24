@@ -449,21 +449,16 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::get
   Host_View bptr = node->template viewBuffer<LocalOrdinal>(2,pbuf_bptr_+localBlockRow);
   LocalOrdinal bindx_offset = bptr[0];
   LocalOrdinal length = bptr[1] - bindx_offset;
-  Host_View bindx;
-  ITER bindx_beg, bindx_end, it;
-  if (length > 0) {
-    bindx = node->template viewBuffer<LocalOrdinal>(length, pbuf_bindx_+bindx_offset);
-    bindx_beg = bindx.begin();
-    bindx_end = bindx.end();
-    it = std::lower_bound(bindx_beg, bindx_end, localBlockCol);
-  }
-  else {
-    // let's not bother calling lower_bound with trivial arguments
-    it = bindx_end;
-  }
+
+  TEST_FOR_EXCEPTION( length < 1, std::runtime_error,
+    "Tpetra::VbrMatrix::getLocalBlockEntryViewNonConst ERROR, specified localBlockCol not found in localBlockRow.");
+
+  Host_View bindx = node->template viewBuffer<LocalOrdinal>(length, pbuf_bindx_+bindx_offset);
+  ITER bindx_beg = bindx.begin(), bindx_end = bindx.end();
+  ITER it = std::lower_bound(bindx_beg, bindx_end, localBlockCol);
 
   TEST_FOR_EXCEPTION(it == bindx_end || *it != localBlockCol, std::runtime_error,
-    "Tpetra::VbrMatrix::getLocalBlockEntryView ERROR, specified localBlockCol not found.");
+    "Tpetra::VbrMatrix::getLocalBlockEntryViewNonConst ERROR, specified localBlockCol not found.");
 
   Host_View rptr = node->template viewBuffer<LocalOrdinal>(2,pbuf_rptr_+localBlockRow),
             cptr = node->template viewBuffer<LocalOrdinal>(2,pbuf_cptr_+localBlockCol);
@@ -501,18 +496,10 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::get
   Host_View bptr = node->template viewBuffer<LocalOrdinal>(2, pbuf_bptr_+localBlockRow);
   LocalOrdinal bindx_offset = bptr[0];
   LocalOrdinal length = bptr[1] - bindx_offset;
-  Host_View bindx;
-  ITER bindx_beg, bindx_end, it;
-  if (length > 0) {
-    bindx = node->template viewBuffer<LocalOrdinal>(length, pbuf_bindx_+bindx_offset);
-    bindx_beg = bindx.begin();
-    bindx_end = bindx.end();
-    it = std::lower_bound(bindx_beg, bindx_end, localBlockCol);
-  }
-  else {
-    // let's not bother calling lower_bound with trivial arguments
-    it = bindx_end;
-  }
+
+  Host_View bindx = node->template viewBuffer<LocalOrdinal>(length, pbuf_bindx_+bindx_offset);
+  ITER bindx_beg = bindx.begin(), bindx_end = bindx.end();
+  ITER it = std::lower_bound(bindx_beg, bindx_end, localBlockCol);
 
   TEST_FOR_EXCEPTION(it == bindx_end || *it != localBlockCol, std::runtime_error,
     "Tpetra::VbrMatrix::getLocalBlockEntryView ERROR, specified localBlockCol not found.");
