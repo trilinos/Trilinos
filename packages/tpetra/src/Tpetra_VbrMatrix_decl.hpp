@@ -340,7 +340,7 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   //make sense to copy this kind of data back and forth to a separate
   //compute device (e.g., a GPU).
   Teuchos::RCP<Teuchos::Array<MapGlobalArrayRCP> > col_ind_2D_global_;
-  Teuchos::RCP<Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > > > pbuf_values2D_;
+  Teuchos::RCP<Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > > > values2D_;
 
   bool is_fill_completed_;
   bool is_storage_optimized_;

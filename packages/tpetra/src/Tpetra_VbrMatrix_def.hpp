@@ -155,7 +155,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::Vbr
    importedVec_(),
    exportedVec_(),
    col_ind_2D_global_(Teuchos::rcp(new Teuchos::Array<std::map<GlobalOrdinal,Teuchos::ArrayRCP<Scalar> > >)),
-   pbuf_values2D_(Teuchos::rcp(new Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > >)),
+   values2D_(Teuchos::rcp(new Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > >)),
    is_fill_completed_(false),
    is_storage_optimized_(false)
 {
@@ -341,9 +341,9 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::get
   //If we get to here, fillComplete hasn't been called yet, and the matrix data
   //is stored in un-packed '2D' form.
 
-  if (pbuf_values2D_->size() == 0) {
+  if (values2D_->size() == 0) {
     LocalOrdinal numBlockRows = blkGraph_->getNodeNumRows();
-    pbuf_values2D_->resize(numBlockRows);
+    values2D_->resize(numBlockRows);
     col_ind_2D_global_->resize(numBlockRows);
   }
 
@@ -370,7 +370,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::get
     size_t blockSize = numPtRows*numPtCols;
     blockEntry = Teuchos::arcp(new Scalar[blockSize], 0, blockSize);
     std::fill(blockEntry.begin(), blockEntry.end(), 0);
-    (*pbuf_values2D_)[localBlockRow].push_back(blockEntry);
+    (*values2D_)[localBlockRow].push_back(blockEntry);
     blkrow.insert(std::make_pair(globalBlockCol, blockEntry));
     blkGraph_->insertGlobalIndices(globalBlockRow, Teuchos::ArrayView<GlobalOrdinal>(&globalBlockCol, 1));
   }
@@ -399,7 +399,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::get
     return;
   }
 
-  TEST_FOR_EXCEPTION(pbuf_values2D_->size() == 0, std::runtime_error,
+  TEST_FOR_EXCEPTION(values2D_->size() == 0, std::runtime_error,
     "Tpetra::VbrMatrix::getGlobalBlockEntryView ERROR, matrix storage not yet allocated, can't return a const view.");
 
   //this acts as a range-check for globalBlockRow:
@@ -434,6 +434,8 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::get
     LocalOrdinal& numPtCols,
     Teuchos::ArrayRCP<Scalar>& blockEntry)
 {
+  typedef Teuchos::ArrayRCP<const LocalOrdinal> Host_View;
+  typedef typename Host_View::iterator ITER;
   //This method returns a non-constant view of a block-entry (as an ArrayRCP).
 
   TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error,
@@ -442,24 +444,35 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::get
   TEST_FOR_EXCEPTION(is_storage_optimized_ == false, std::runtime_error,
    "Tpetra::VbrMatrix::getLocalBlockEntryViewNonConst ERROR, this method can only be called if storage is optimized.");
 
-  LocalOrdinal bindx_offset = pbuf_bptr_[localBlockRow];
-  LocalOrdinal length = pbuf_bptr_[localBlockRow+1] - bindx_offset;
-  LocalOrdinal* bindx_begin = &pbuf_bindx_[bindx_offset];
-  LocalOrdinal* bindx_end   = bindx_begin + length;
+  Teuchos::RCP<Node> node = getNode();
 
-  LocalOrdinal* it = std::lower_bound(bindx_begin, bindx_end, localBlockCol);
+  Host_View bptr = node->template viewBuffer<LocalOrdinal>(2,pbuf_bptr_+localBlockRow);
+  LocalOrdinal bindx_offset = bptr[0];
+  LocalOrdinal length = bptr[1] - bindx_offset;
+  Host_View bindx;
+  ITER bindx_beg, bindx_end, it;
+  if (length > 0) {
+    bindx = node->template viewBuffer<LocalOrdinal>(length, pbuf_bindx_+bindx_offset);
+    bindx_beg = bindx.begin();
+    bindx_end = bindx.end();
+    it = std::lower_bound(bindx_beg, bindx_end, localBlockCol);
+  }
+  else {
+    // let's not bother calling lower_bound with trivial arguments
+    it = bindx_end;
+  }
 
   TEST_FOR_EXCEPTION(it == bindx_end || *it != localBlockCol, std::runtime_error,
     "Tpetra::VbrMatrix::getLocalBlockEntryView ERROR, specified localBlockCol not found.");
 
-  numPtRows = pbuf_rptr_[localBlockRow+1]-pbuf_rptr_[localBlockRow];
-  numPtCols = pbuf_cptr_[localBlockCol+1]-pbuf_cptr_[localBlockCol];
-  LocalOrdinal blkSize = numPtRows*numPtCols;
+  Host_View rptr = node->template viewBuffer<LocalOrdinal>(2,pbuf_rptr_+localBlockRow),
+            cptr = node->template viewBuffer<LocalOrdinal>(2,pbuf_cptr_+localBlockCol);
+  numPtRows = rptr[1] - rptr[0];
+  numPtCols = cptr[1] - cptr[0];
 
-  LocalOrdinal offset = pbuf_indx_[pbuf_bptr_[localBlockRow]+it-bindx_begin];
-
-  Teuchos::RCP<Node> node = getNode();
-
+  const LocalOrdinal blkSize = numPtRows*numPtCols;
+  Host_View indx = node->template viewBuffer<LocalOrdinal>(1,pbuf_indx_+bptr[0]+(it-bindx_beg));
+  const LocalOrdinal offset = indx[0];
   blockEntry = node->template viewBufferNonConst<Scalar>(Kokkos::ReadWrite, blkSize, pbuf_values1D_ + offset);
 }
 
@@ -473,6 +486,8 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::get
       LocalOrdinal& numPtCols,
       Teuchos::ArrayRCP<const Scalar>& blockEntry) const
 {
+  typedef Teuchos::ArrayRCP<const LocalOrdinal> Host_View;
+  typedef typename Host_View::iterator ITER;
   //This method returns a constant view of a block-entry (as an ArrayRCP).
 
   TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error,
@@ -481,24 +496,35 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::get
   TEST_FOR_EXCEPTION(is_storage_optimized_ == false, std::runtime_error,
    "Tpetra::VbrMatrix::getLocalBlockEntryView ERROR, this method can only be called if storage is optimized.");
 
-  LocalOrdinal bindx_offset = pbuf_bptr_[localBlockRow];
-  LocalOrdinal length = pbuf_bptr_[localBlockRow+1] - bindx_offset;
-  LocalOrdinal* bindx_begin = &pbuf_bindx_[bindx_offset];
-  LocalOrdinal* bindx_end   = bindx_begin + length;
+  Teuchos::RCP<Node> node = getNode();
 
-  LocalOrdinal* it = std::lower_bound(bindx_begin, bindx_end, localBlockCol);
+  Host_View bptr = node->template viewBuffer<LocalOrdinal>(2, pbuf_bptr_+localBlockRow);
+  LocalOrdinal bindx_offset = bptr[0];
+  LocalOrdinal length = bptr[1] - bindx_offset;
+  Host_View bindx;
+  ITER bindx_beg, bindx_end, it;
+  if (length > 0) {
+    bindx = node->template viewBuffer<LocalOrdinal>(length, pbuf_bindx_+bindx_offset);
+    bindx_beg = bindx.begin();
+    bindx_end = bindx.end();
+    it = std::lower_bound(bindx_beg, bindx_end, localBlockCol);
+  }
+  else {
+    // let's not bother calling lower_bound with trivial arguments
+    it = bindx_end;
+  }
 
   TEST_FOR_EXCEPTION(it == bindx_end || *it != localBlockCol, std::runtime_error,
     "Tpetra::VbrMatrix::getLocalBlockEntryView ERROR, specified localBlockCol not found.");
 
-  numPtRows = pbuf_rptr_[localBlockRow+1]-pbuf_rptr_[localBlockRow];
-  numPtCols = pbuf_cptr_[localBlockCol+1]-pbuf_cptr_[localBlockCol];
-  LocalOrdinal blkSize = numPtRows*numPtCols;
+  Host_View rptr = node->template viewBuffer<LocalOrdinal>(2, pbuf_rptr_+localBlockRow),
+            cptr = node->template viewBuffer<LocalOrdinal>(2, pbuf_cptr_+localBlockCol);
+  numPtRows = rptr[1] - rptr[0];
+  numPtCols = cptr[1] - cptr[0];
 
-  LocalOrdinal offset = pbuf_indx_[pbuf_bptr_[localBlockRow]+it-bindx_begin];
-
-  Teuchos::RCP<Node> node = getNode();
-
+  const LocalOrdinal blkSize = numPtRows*numPtCols;
+  Host_View indx = node->template viewBuffer<LocalOrdinal>(1, pbuf_indx_+bptr[0]+(it-bindx_beg));
+  const LocalOrdinal offset = indx[0];
   blockEntry = node->template viewBuffer<Scalar>(blkSize, pbuf_values1D_ + offset);
 }
 
@@ -522,7 +548,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::put
   }
   else {
     typedef typename Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > >::size_type Tsize_t;
-    Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > >& pbuf_vals2D = *pbuf_values2D_;
+    Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > >& pbuf_vals2D = *values2D_;
     LocalOrdinal numBlockRows = blkGraph_->getNodeNumRows();
     for(LocalOrdinal r=0; r<numBlockRows; ++r) {
       for(Tsize_t c=0; c<pbuf_vals2D[r].size(); ++c) {
@@ -637,10 +663,10 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::opt
   //need to count the number of point-entries:
   size_t num_point_entries = 0;
   typedef typename Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > >::size_type Tsize_t;
-  for(Tsize_t r=0; r<pbuf_values2D_->size(); ++r) {
-    Tsize_t rlen = (*pbuf_values2D_)[r].size();
+  for(Tsize_t r=0; r<values2D_->size(); ++r) {
+    Tsize_t rlen = (*values2D_)[r].size();
     for(Tsize_t c=0; c<rlen; ++c) {
-      num_point_entries += (*pbuf_values2D_)[r][c].size();
+      num_point_entries += (*values2D_)[r][c].size();
     }
   }
 
@@ -666,7 +692,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::opt
   size_t pt_r_offset = 0;
   size_t ioffset = 0;
   size_t offset = 0;
-  Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > >& pbuf_vals2D = *pbuf_values2D_;
+  Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > >& pbuf_vals2D = *values2D_;
   for(Tsize_t r=0; r<pbuf_vals2D.size(); ++r) {
     v_rptr[r] = pt_r_offset;
     LocalOrdinal rsize = blkRowMap_->getBlockSize(r);
@@ -715,7 +741,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve>::opt
 
   //Final step: release memory for the "2D" storage:
   col_ind_2D_global_ = Teuchos::null;
-  pbuf_values2D_ = Teuchos::null;
+  values2D_ = Teuchos::null;
 
   is_storage_optimized_ = true;
 }
