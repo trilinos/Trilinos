@@ -10,6 +10,7 @@
 #define _fei_FieldDofMap_hpp_
 
 #include <fei_macros.hpp>
+#include <fei_constants.hpp>
 
 namespace fei {
 
@@ -26,7 +27,7 @@ class FieldDofMap {
 
   ~FieldDofMap(){}
 
-  void add_field(LocalOrdinal fieldID, LocalOrdinal fieldSize);
+  void add_field(LocalOrdinal fieldID, LocalOrdinal fieldSize, LocalOrdinal fieldType=fei::UNKNOWN);
 
   LocalOrdinal get_dof_id(LocalOrdinal fieldID, LocalOrdinal offset);
 
@@ -41,7 +42,7 @@ class FieldDofMap {
 };//class FieldDofMap
 
 template<class LocalOrdinal>
-void FieldDofMap<LocalOrdinal>::add_field(LocalOrdinal fieldID, LocalOrdinal fieldSize)
+void FieldDofMap<LocalOrdinal>::add_field(LocalOrdinal fieldID, LocalOrdinal fieldSize, LocalOrdinal fieldType)
 {
   //initially store 0 for the dof_id, will compute dof_ids later.
   m_dof_id_map.insert(std::make_pair(fieldID,std::make_pair(fieldSize,0)));
