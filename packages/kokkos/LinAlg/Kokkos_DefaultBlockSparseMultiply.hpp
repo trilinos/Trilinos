@@ -175,8 +175,7 @@ namespace Kokkos {
                                 RangeScalar alpha,
                                 const MultiVector<DomainScalar,Node> &X, 
                                 MultiVector<RangeScalar,Node> &Y) const {
-    // the 1 parameter to the template means that beta is ignored and the output multivector enjoys overwrite semantics
-    typedef DefaultBlockSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar, 1>  Op1;
+    typedef DefaultBlockSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1;
     typedef DefaultBlockSparseMultiplyOp1Transpose<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1T;
     TEST_FOR_EXCEPTION(valsInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::multiply(): operation not fully initialized.");
@@ -201,12 +200,12 @@ namespace Kokkos {
         wdp.bindx= rbh.template addConstBuffer<Ordinal>(pbuf_bindx_);
         wdp.indx = rbh.template addConstBuffer<Ordinal>(pbuf_indx_);
         wdp.y    = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
-        wdp.x    = rbh.template addConstBuffer<DomainScalar>(X.getValuesNonConst());
-        wdp.numVecs = X.getNumCols();
+        wdp.x    = rbh.template addConstBuffer<DomainScalar>(X.getValues());
         wdp.xstride = X.getStride();
         wdp.ystride = Y.getStride();
         rbh.end();
-        node_->template parallel_for<Op1>(0,numBlockRows_,wdp);
+        const size_t numRHS = X.getNumCols();
+        node_->template parallel_for<Op1>(0,numBlockRows_*numRHS,wdp);
       }
       else {
         //start by initializing Y = beta*Y
@@ -222,12 +221,12 @@ namespace Kokkos {
         wdp.bindx= rbh.template addConstBuffer<Ordinal>(pbuf_bindx_);
         wdp.indx = rbh.template addConstBuffer<Ordinal>(pbuf_indx_);
         wdp.y    = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
-        wdp.x    = rbh.template addConstBuffer<DomainScalar>(X.getValuesNonConst());
-        wdp.numVecs = X.getNumCols();
+        wdp.x    = rbh.template addConstBuffer<DomainScalar>(X.getValues());
         wdp.xstride = X.getStride();
         wdp.ystride = Y.getStride();
         rbh.end();
-        node_->template parallel_for<Op1T>(0,numBlockRows_,wdp);
+        const size_t numRHS = X.getNumCols();
+        node_->template parallel_for<Op1T>(0,numRHS,wdp);
       }
     }
     else {
@@ -242,8 +241,7 @@ namespace Kokkos {
                                 Teuchos::ETransp trans, 
                                 RangeScalar alpha, const MultiVector<DomainScalar,Node> &X, 
                                 RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const {
-    // the 0 parameter to the template means that beta is considered and the output multivector is accumulated into
-    typedef DefaultBlockSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar, 0>  Op1;
+    typedef DefaultBlockSparseMultiplyOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1;
     typedef DefaultBlockSparseMultiplyOp1Transpose<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1T;
     TEST_FOR_EXCEPTION(valsInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::multiply(): operation not fully initialized.");
@@ -269,11 +267,11 @@ namespace Kokkos {
         wdp.indx = rbh.template addConstBuffer<Ordinal>(pbuf_indx_);
         wdp.y    = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
         wdp.x    = rbh.template addConstBuffer<DomainScalar>(X.getValues());
-        wdp.numVecs = X.getNumCols();
         wdp.xstride = X.getStride();
         wdp.ystride = Y.getStride();
         rbh.end();
-        node_->template parallel_for<Op1>(0,numBlockRows_,wdp);
+        const size_t numRHS = X.getNumCols();
+        node_->template parallel_for<Op1>(0,numBlockRows_*numRHS,wdp);
       }
       else {
         //start by initializing Y = beta*Y
@@ -295,11 +293,11 @@ namespace Kokkos {
         wdp.indx = rbh.template addConstBuffer<Ordinal>(pbuf_indx_);
         wdp.y    = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
         wdp.x    = rbh.template addConstBuffer<DomainScalar>(X.getValues());
-        wdp.numVecs = X.getNumCols();
         wdp.xstride = X.getStride();
         wdp.ystride = Y.getStride();
         rbh.end();
-        node_->template parallel_for<Op1T>(0,numBlockRows_,wdp);
+        const size_t numRHS = X.getNumCols();
+        node_->template parallel_for<Op1T>(0,numRHS,wdp);
       }
     }
     else {

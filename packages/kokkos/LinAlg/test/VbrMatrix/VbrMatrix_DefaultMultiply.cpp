@@ -57,6 +57,7 @@ namespace {
   using Kokkos::DefaultBlockSparseMultiply;
   using Kokkos::SerialNode;
   using Teuchos::ArrayRCP;
+  using Teuchos::arcp;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::null;
@@ -174,19 +175,18 @@ namespace {
       ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz+1,indx);
       ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(Kokkos::WriteOnly,totalNNZ,vals);
 
-      rptr_h[0] = 0; rptr_h[1] = 2; rptr_h[2] = 4;
-      cptr_h[0] = 0; cptr_h[1] = 2; cptr_h[2] = 4;
-      bptr_h[0] = 0; bptr_h[1] = 2; bptr_h[2] = 4;
+      rptr_h[ 0] = 0; rptr_h[ 1] = 2; rptr_h[ 2] = 4;
+      cptr_h[ 0] = 0; cptr_h[ 1] = 2; cptr_h[ 2] = 4;
+      bptr_h[ 0] = 0; bptr_h[ 1] = 2; bptr_h[ 2] = 4;
       bindx_h[0] = 0; bindx_h[1] = 1; bindx_h[2] = 0; bindx_h[3] = 1;
-      indx_h[0] = 0; indx_h[1] = 4; indx_h[2] = 8; indx_h[3] = 12; indx_h[4] = 16;
+      indx_h[ 0] = 0; indx_h[ 1] = 4; indx_h[ 2] = 8; indx_h[ 3] = 12; indx_h[4] = 16;
 
-      vals_h[0] = 1; vals_h[1] = 1; vals_h[2] = 1; vals_h[3] = 1;
-      vals_h[4] = 2; vals_h[5] = 2; vals_h[6] = 2; vals_h[7] = 2;
-      vals_h[8] = 3; vals_h[9] = 3; vals_h[10] = 3; vals_h[11] = 3;
+      vals_h[ 0] = 1; vals_h[ 1] = 1; vals_h[ 2] = 1; vals_h[ 3] = 1;
+      vals_h[ 4] = 2; vals_h[ 5] = 2; vals_h[ 6] = 2; vals_h[ 7] = 2;
+      vals_h[ 8] = 3; vals_h[ 9] = 3; vals_h[10] = 3; vals_h[11] = 3;
       vals_h[12] = 4; vals_h[13] = 4; vals_h[14] = 4; vals_h[15] = 4;
-
     }
-    VBR  A(num_block_rows,node);
+    VBR A(num_block_rows,node);
     A.setPackedValues(vals,rptr,cptr,bptr,bindx,indx);
     DefaultBlockSparseMultiply<Scalar,Ordinal,Node> dbsm(node);
     dbsm.initializeValues(A);
@@ -194,7 +194,7 @@ namespace {
     ArrayRCP<Scalar> xdat, axdat, ax_check;
     xdat  = node->template allocBuffer<Scalar>(num_point_rows);
     axdat = node->template allocBuffer<Scalar>(num_point_rows);
-    ax_check = node->template allocBuffer<Scalar>(num_point_rows);
+    ax_check = arcp<Scalar>(num_point_rows);
     ax_check[0] = 6;
     ax_check[1] = 6;
     ax_check[2] = 14;
@@ -214,7 +214,7 @@ namespace {
     size_t numVecs = 3;
     xdat  = node->template allocBuffer<Scalar>(num_point_rows*numVecs);
     axdat = node->template allocBuffer<Scalar>(num_point_rows*numVecs);
-    ax_check = node->template allocBuffer<Scalar>(num_point_rows*numVecs);
+    ax_check = arcp<Scalar>(num_point_rows*numVecs);
     ax_check[0] = 6;
     ax_check[1] = 6;
     ax_check[2] = 14;
@@ -292,7 +292,7 @@ namespace {
     ArrayRCP<Scalar> xdat, axdat, ax_check;
     xdat  = node->template allocBuffer<Scalar>(num_point_rows);
     axdat = node->template allocBuffer<Scalar>(num_point_rows);
-    ax_check = node->template allocBuffer<Scalar>(num_point_rows);
+    ax_check = arcp<Scalar>(num_point_rows);
     ax_check[0] = 6;
     ax_check[1] = 6;
     ax_check[2] = 14;
@@ -312,7 +312,7 @@ namespace {
     size_t numVecs = 3;
     xdat  = node->template allocBuffer<Scalar>(num_point_rows*numVecs);
     axdat = node->template allocBuffer<Scalar>(num_point_rows*numVecs);
-    ax_check = node->template allocBuffer<Scalar>(num_point_rows*numVecs);
+    ax_check = arcp<Scalar>(num_point_rows*numVecs);
     ax_check[0] = 6;
     ax_check[1] = 6;
     ax_check[2] = 14;
@@ -387,51 +387,51 @@ namespace {
     DefaultBlockSparseMultiply<Scalar,Ordinal,Node> dbsm(node);
     dbsm.initializeValues(A);
 
-    ArrayRCP<Scalar> xdat, axdat, ax_check;
-    xdat  = node->template allocBuffer<Scalar>(num_point_rows);
-    axdat = node->template allocBuffer<Scalar>(num_point_rows);
-    ax_check = node->template allocBuffer<Scalar>(num_point_rows);
-    ax_check[0] = 8;
-    ax_check[1] = 10;
-    ax_check[2] = 12;
-    ax_check[3] = 14;
-    MV X(node), AX(node);
-    X.initializeValues( num_point_rows,1, xdat,num_point_rows);
-    AX.initializeValues(num_point_rows,1,axdat,num_point_rows);
-    DefaultArithmetic<MV>::Init(X,1);
-    dbsm.multiply(Teuchos::TRANS,Teuchos::ScalarTraits<Scalar>::one(),X,Teuchos::ScalarTraits<Scalar>::zero(),AX);
-    ArrayRCP<const Scalar> axview = node->template viewBuffer<Scalar>(num_point_rows,axdat);
-    TEST_COMPARE_FLOATING_ARRAYS(axview, ax_check, Teuchos::ScalarTraits<Scalar>::zero());
-    xdat = null;
-    axdat = null;
-    ax_check = null;
+    {
+      ArrayRCP<Scalar> ax_check = arcp<Scalar>(num_point_rows);
+      ax_check[0] = 8;
+      ax_check[1] = 10;
+      ax_check[2] = 12;
+      ax_check[3] = 14;
+      MV X(node), AX(node);
+      ArrayRCP<Scalar> xdat  = node->template allocBuffer<Scalar>(num_point_rows);
+      X.initializeValues( num_point_rows,1, xdat,num_point_rows);
+      ArrayRCP<Scalar> axdat = node->template allocBuffer<Scalar>(num_point_rows);
+      AX.initializeValues(num_point_rows,1,axdat,num_point_rows);
+      DefaultArithmetic<MV>::Init(X,1);
+      dbsm.multiply(Teuchos::TRANS,Teuchos::ScalarTraits<Scalar>::one(),X,Teuchos::ScalarTraits<Scalar>::zero(),AX);
+      ArrayRCP<const Scalar> axview = node->template viewBuffer<Scalar>(num_point_rows,axdat);
+      TEST_COMPARE_FLOATING_ARRAYS(axview, ax_check, Teuchos::ScalarTraits<Scalar>::zero());
+      xdat = null;
+      axdat = null;
+      ax_check = null;
+    }
 
     //now check the case where x and ax have 3 columns instead of 1.
-    size_t numVecs = 3;
-    xdat  = node->template allocBuffer<Scalar>(num_point_rows*numVecs);
-    axdat = node->template allocBuffer<Scalar>(num_point_rows*numVecs);
-    ax_check = node->template allocBuffer<Scalar>(num_point_rows*numVecs);
-    ax_check[0] = 8;
-    ax_check[1] = 10;
-    ax_check[2] = 12;
-    ax_check[3] = 14;
-    ax_check[4] = 8;
-    ax_check[5] = 10;
-    ax_check[6] = 12;
-    ax_check[7] = 14;
-    ax_check[8] = 8;
-    ax_check[9] = 10;
-    ax_check[10] = 12;
-    ax_check[11] = 14;
-    X.initializeValues( num_point_rows,numVecs, xdat,num_point_rows);
-    AX.initializeValues(num_point_rows,numVecs,axdat,num_point_rows);
-    DefaultArithmetic<MV>::Init(X,1);
-    dbsm.multiply(Teuchos::TRANS,Teuchos::ScalarTraits<Scalar>::one(),X,Teuchos::ScalarTraits<Scalar>::zero(),AX);
-    axview = node->template viewBuffer<Scalar>(num_point_rows*numVecs,axdat);
-    TEST_COMPARE_FLOATING_ARRAYS(axview, ax_check, Teuchos::ScalarTraits<Scalar>::zero());
-    xdat = null;
-    axdat = null;
-    ax_check = null;
+    {
+      const int num_vecs = 3;
+      ArrayRCP<Scalar> ax_check = arcp<Scalar>(num_vecs*num_point_rows);
+      ax_check[0] = 8;
+      ax_check[1] = 10;
+      ax_check[2] = 12;
+      ax_check[3] = 14;
+      std::copy( ax_check.begin(), ax_check.begin()+4, ax_check.begin()+4 );
+      std::copy( ax_check.begin(), ax_check.begin()+4, ax_check.begin()+8 );
+      //
+      MV X(node), AX(node);
+      ArrayRCP<Scalar> xdat  = node->template allocBuffer<Scalar>(num_point_rows*num_point_rows);
+      X.initializeValues( num_point_rows,num_point_rows, xdat,num_point_rows);
+      DefaultArithmetic<MV>::Init(X,1);
+      ArrayRCP<Scalar> axdat = node->template allocBuffer<Scalar>(num_point_rows*num_point_rows);
+      AX.initializeValues(num_point_rows,num_point_rows,axdat,num_point_rows);
+      //
+      dbsm.multiply(Teuchos::TRANS,Teuchos::ScalarTraits<Scalar>::one(),X,Teuchos::ScalarTraits<Scalar>::zero(),AX);
+      ArrayRCP<const Scalar> axview = node->template viewBuffer<Scalar>(num_vecs*num_point_rows,axdat);
+      TEST_COMPARE_FLOATING_ARRAYS(axview, ax_check, Teuchos::ScalarTraits<Scalar>::zero());
+      xdat = null;
+      axdat = null;
+      ax_check = null;
+    }
   }
 
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VbrMatrix, SparseMultiply2Transpose, Ordinal, Scalar, Node )
@@ -488,7 +488,7 @@ namespace {
     ArrayRCP<Scalar> xdat, axdat, ax_check;
     xdat  = node->template allocBuffer<Scalar>(num_point_rows);
     axdat = node->template allocBuffer<Scalar>(num_point_rows);
-    ax_check = node->template allocBuffer<Scalar>(num_point_rows);
+    ax_check = arcp<Scalar>(num_point_rows);
     ax_check[0] = 8;
     ax_check[1] = 10;
     ax_check[2] = 12;
@@ -508,7 +508,7 @@ namespace {
     size_t numVecs = 3;
     xdat  = node->template allocBuffer<Scalar>(num_point_rows*numVecs);
     axdat = node->template allocBuffer<Scalar>(num_point_rows*numVecs);
-    ax_check = node->template allocBuffer<Scalar>(num_point_rows*numVecs);
+    ax_check = arcp<Scalar>(num_point_rows*numVecs);
     ax_check[0] = 8;
     ax_check[1] = 10;
     ax_check[2] = 12;
@@ -587,7 +587,7 @@ namespace {
     ArrayRCP<Scalar> xdat, axdat, ax_check;
     xdat  = node->template allocBuffer<Scalar>(num_point_rows);
     axdat = node->template allocBuffer<Scalar>(num_point_cols);
-    ax_check = node->template allocBuffer<Scalar>(num_point_cols);
+    ax_check = arcp<Scalar>(num_point_cols);
     ax_check[0] = 8;
     ax_check[1] = 10;
     ax_check[2] = 12;
@@ -608,7 +608,7 @@ namespace {
     size_t numVecs = 3;
     xdat  = node->template allocBuffer<Scalar>(num_point_rows*numVecs);
     axdat = node->template allocBuffer<Scalar>(num_point_cols*numVecs);
-    ax_check = node->template allocBuffer<Scalar>(num_point_cols*numVecs);
+    ax_check = arcp<Scalar>(num_point_cols*numVecs);
     ax_check[0] = 8;
     ax_check[1] = 10;
     ax_check[2] = 12;
