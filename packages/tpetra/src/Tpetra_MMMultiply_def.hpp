@@ -110,16 +110,15 @@ namespace Tpetra {
 		Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
 		const LocalOrdinal LO0 = Teuchos::OrdinalTraits<LocalOrdinal>::zero();
 		const GlobalOrdinal GO0 = Teuchos::OrdinalTraits<GlobalOrdinal>::zero();
-		Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > importedB;
-		Teuchos::RCP<CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > importedBGraph = rcp(new CrsGraph<LocalOrdinal, GlobalOrdinal, Node>(matrixA->getColMap(), matrixB->getGlobalMaxNumRowEntries()));
-		Import<LocalOrdinal, GlobalOrdinal, Node> bImporter(matrixB->getRowMap(), importedBGraph->getRowMap());
-		importedBGraph->doImport(*(matrixB->getCrsGraph()), bImporter, Tpetra::ADD);
-		importedBGraph->fillComplete();
-		importedB = rcp(new CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(importedBGraph));
-		importedB->describe(*out, Teuchos::VERB_EXTREME);
+		Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > importedB = rcp(new CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(matrixA->getColMap(), matrixB->getGlobalMaxNumRowEntries()));
+		Import<LocalOrdinal, GlobalOrdinal, Node> bImporter(matrixB->getRowMap(), importedB->getRowMap());
+		importedB->doImport(*(matrixB), bImporter, Tpetra::ADD);
+		importedB->fillComplete(importedB->getRowMap(), importedB->getRowMap());
 		RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node> transposer(importedB);
 		Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > tB;
 		transposer.createTranspose(DoOptimizeStorage, tB);
+		std::cout << "after transpose \n";
+
 
 
 		Teuchos::ArrayRCP<const LocalOrdinal> aCurRowIndices;
@@ -147,13 +146,13 @@ namespace Tpetra {
 					}
 				}
 			}
-			std::cout << "Going to insert: \n";
-			std::cout << "Indicies: \n";
+			//std::cout << "Going to insert: \n";
+			//std::cout << "Indicies: \n";
 			for(unsigned int l=0; l < cCurRowIndices.size(); ++l){
-				std::cout << cCurRowIndices[l] << "\n";
+				//std::cout << cCurRowIndices[l] << "\n";
 			}
-			std::cout << "With values: " << Teuchos::ArrayView<Scalar>(cCurRowValues) << "\n";
-			std::cout << "Into row: " << i << "\n";
+			//std::cout << "With values: " << Teuchos::ArrayView<Scalar>(cCurRowValues) << "\n";
+			//std::cout << "Into row: " << i << "\n";
 			matrixC->insertGlobalValues((GlobalOrdinal)i, Teuchos::ArrayView<GlobalOrdinal>(cCurRowIndices), Teuchos::ArrayView<Scalar>(cCurRowValues));
 		}
 		matrixC->fillComplete();

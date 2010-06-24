@@ -113,7 +113,24 @@ void RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node>::createTrans
 	Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > domain_map = origMatrix_->getDomainMap();
 	Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > range_map = origMatrix_->getRangeMap();
 
-	transposeMatrix_->fillComplete(domain_map,range_map, optimizeTranspose_);
+   	const LocalOrdinal GO0 = Teuchos::OrdinalTraits<LocalOrdinal>::zero();
+	for(GlobalOrdinal i=GO0; i<=transposeMatrix_->getRowMap()->getMaxAllGlobalIndex(); ++i){
+		if(transposeMatrix_->getRowMap()->isNodeGlobalElement(i)){
+			global_size_t currentRowLength = transposeMatrix_->getNumEntriesInGlobalRow(i);
+			Scalar* valueArrayPtr = new Scalar;
+			GlobalOrdinal* indexArrayPtr = new GlobalOrdinal;
+			Teuchos::ArrayView<Scalar> currentRowValues(valueArrayPtr, currentRowLength);
+			Teuchos::ArrayView<GlobalOrdinal> currentRowIndices(indexArrayPtr, currentRowLength);
+			transposeMatrix_->getGlobalRowCopy(i, currentRowIndices, currentRowValues, currentRowLength);
+			std::cout << "Node: " << transposeMatrix_->getComm()->getRank() << " Global Row: " << i << " Indicies: " << currentRowIndices << " Values: " << currentRowValues << "\n";
+			delete valueArrayPtr;
+			delete indexArrayPtr;
+		}
+	}
+
+	std::cout << "right before fill complete\n";
+	transposeMatrix_->fillComplete(origMatrix_->getDomainMap(),origMatrix_->getRangeMap(), optimizeTranspose_);
+	std::cout << "right after fill complete\n";
 	transposeMatrix = transposeMatrix_;
 }
 

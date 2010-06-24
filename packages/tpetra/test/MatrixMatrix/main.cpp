@@ -2,6 +2,7 @@
 #include "Tpetra_DefaultPlatform.hpp"
 #include "Teuchos_VerboseObject.hpp"
 #include "Tpetra_Map.hpp"
+#include "Tpetra_CrsMatrix.hpp"
 
 using namespace Teuchos;
 using namespace Tpetra;
@@ -18,7 +19,10 @@ int main(int argc, char* argv[]){
 
 	RCP<CrsMatrix<double, int> > matrixA = rcp(new CrsMatrix<double, int>(rowMap, 2));
 	RCP<CrsMatrix<double, int> > matrixB = rcp(new CrsMatrix<double, int>(rowMap, 2));
-
+	if(comm->getSize() > 2){
+		std::cout << "Comm size must be less than or equal to 2\n";
+		return 1;
+	}
 
 	if(comm->getSize() > 1){
 		if(comm->getRank()==0){
@@ -34,8 +38,6 @@ int main(int argc, char* argv[]){
 		matrixA->insertGlobalValues(2, tuple<int>(2,3), tuple<double>(3,7));
 		matrixA->insertGlobalValues(3, tuple<int>(3), tuple<double>(4));
 	}
-
-
 	
 	if(comm->getSize() > 1){
 		if(comm->getRank()==0){
@@ -53,18 +55,20 @@ int main(int argc, char* argv[]){
 		matrixB->insertGlobalValues(3, tuple<int>(3), tuple<double>(3));
 	}
 
-
-
 	matrixA->fillComplete(rowMap, rowMap);
 	matrixB->fillComplete(rowMap, rowMap);
+/*	Teuchos::RCP<CrsMatrix<double, int> > importedB = rcp(new CrsMatrix<double, int>(matrixA->getColMap(), matrixB->getGlobalMaxNumRowEntries()));
+	Import<int> bImporter(matrixB->getRowMap(), importedB->getRowMap());
+	importedB->doImport(*(matrixB), bImporter, Tpetra::ADD);
+	importedB->fillComplete(importedB->getRowMap(), importedB->getRowMap());*/
+	
 	Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
-	//matrixB->describe(*out, VERB_EXTREME);
 
 	RCP<CrsMatrix<double, int> > matrixC = rcp(new CrsMatrix<double,int>(rowMap, 4));
 
 	MatrixMatrixMultiply<double, int> multiplier(matrixA, matrixB, matrixC);
 	multiplier.multiply();
-	matrixC->describe(*out, Teuchos::VERB_EXTREME);
+//	matrixC->describe(*out, Teuchos::VERB_EXTREME);
 
 	return 0;
 }
