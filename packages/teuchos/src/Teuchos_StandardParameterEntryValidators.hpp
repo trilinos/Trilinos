@@ -227,6 +227,8 @@ public:
     std::string const& sublistName
     ) const;
 
+  /** \brief . */
+  virtual XMLObject getXMLRepresentation(RCP<XMLObject> parentNode) const;
   //@}
 
 private:
@@ -565,6 +567,8 @@ public:
     ParameterEntry * entry
     ) const;
 
+  /** \brief . */
+  virtual XMLObject getXMLRepresentation(RCP<XMLObject> parentNode) const;
   //@}
 
 private:
@@ -939,6 +943,12 @@ void StringToIntegralParameterEntryValidator<IntegralType>::validate(
   this->getIntegralValue(entry,paramName,sublistName,false);
 }
 
+template<class IntegralType>
+XMLObject StringToIntegralParameterEntryValidator<IntegralType>::getXMLRepresentation(RCP<XMLObject> parentNode) const
+{
+	XMLObject mappings("mappings");
+	for(
+}
 
 // private
 
