@@ -128,6 +128,6 @@ ENDIF()
 
 # Command that copies test perl script to the test directory.
 PACKAGE_COPY_FILES_TO_BINARY_DIR(zoltan_ctest_zoltan_copy
-  SOURCE_FILES ctest_zoltan.pl
+  SOURCE_FILES ctest_zoltan.pl ctest_zoltan_purify.sh
 )
 

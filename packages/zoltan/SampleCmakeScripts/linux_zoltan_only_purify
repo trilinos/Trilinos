@@ -1,0 +1,42 @@
+#!/bin/csh
+# Sample script for building using CMAKE, LAM, and purify on octopi.
+# 64-bit, Zoltan only.
+# Run in Trilinos/Obj_pure.
+
+# Clean up the mess from previous configurations.
+/bin/rm -r cmake* CMake* CPack* CTest* Dart* Trilinos* Testing packages Makefile OUTPUT* include lib install*
+set MPICCEXTRACOMP="`/opt/lam714-gcc346-pure/bin/mpicc --showme:compile`"
+set MPICXXEXTRACOMP="`/opt/lam714-gcc346-pure/bin/mpiCC --showme:compile`"
+set MPIEXTRALINK="`/opt/lam714-gcc346-pure/bin/mpiCC --showme:link`"
+set PURIFY="/usr/local/rational/releases/PurifyPlus.7.0/i386_linux2/bin/purify"
+set GCC="/usr/bin/gcc346"
+set GCXX="/usr/bin/g++346"
+
+/home/kddevin/cmake/bin/cmake \
+-D CMAKE_INSTALL_PREFIX:FILEPATH="/Net/local/homes/kddevin/code/Trilinos/Obj_pure" \
+-D TPL_ENABLE_MPI:BOOL=ON \
+-D MPI_USE_COMPILER_WRAPPERS:BOOL=OFF \
+-D MPI_BIN_DIR:STRING="/opt/lam714-gcc346-pure/bin" \
+-D CMAKE_C_COMPILER:STRING="$PURIFY" \
+-D CMAKE_C_FLAGS:STRING="-best-effort -follow-child-processes=yes -cache-dir=/tmp/purify -chain-length=20 $GCC -m64 -g $MPICCEXTRACOMP" \
+-D CMAKE_CXX_COMPILER:STRING="$PURIFY" \
+-D CMAKE_CXX_FLAGS:STRING="-best-effort -follow-child-processes=yes -cache-dir=/tmp/purify -chain-length=20 $GCXX -m64 -g $MPICXXEXTRACOMP" \
+-D Trilinos_EXTRA_LINK_FLAGS:STRING="$MPIEXTRALINK" \
+-D CMAKE_VERBOSE_MAKEFILE:BOOL=ON \
+-D MPIEXEC_MAX_NUMPROCS:STRING=11 \
+-D Trilinos_ENABLE_Fortran:BOOL=OFF \
+-D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
+-D Trilinos_ENABLE_EXAMPLES:BOOL=ON \
+-D Trilinos_VERBOSE_CONFIGURE:BOOL=ON \
+-D Trilinos_ENABLE_Zoltan:BOOL=ON \
+-D Zoltan_ENABLE_EXAMPLES:BOOL=OFF \
+-D Zoltan_ENABLE_TESTS:BOOL=ON \
+-D Zoltan_ENABLE_ParMETIS:BOOL=ON \
+-D ParMETIS_LIBRARY_DIRS:FILEPATH="/Net/local/proj/zoltan/arch/linux64/lib/lam/ParMETIS3" \
+-D ParMETIS_INCLUDE_DIRS:FILEPATH="/Net/local/proj/zoltan/arch/all/src/ParMETIS3" \
+-D Zoltan_ENABLE_Scotch:BOOL=ON \
+-D Scotch_LIBRARY_DIRS:FILEPATH="/Net/local/proj/zoltan/arch/linux64/lib/lam/Scotch5" \
+-D Scotch_INCLUDE_DIRS:FILEPATH="/Net/local/proj/zoltan/arch/all/src/Scotch5" \
+.. |& tee OUTPUT.CMAKE
+
+make |& tee OUTPUT.MAKE
