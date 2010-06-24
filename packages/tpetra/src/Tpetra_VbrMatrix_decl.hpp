@@ -51,10 +51,15 @@ namespace Tpetra {
 
 //! \brief VbrMatrix: Variable block row matrix.
 /**
-This class is under construction, not yet ready for general use.
-Several significant development tasks remain to be done before this
-class is ready to be used in a general setting.
-Those still-to-be-done tasks are listed in the file Tpetra_VbrMatrix_todo.txt.
+The VbrMatrix class has two significant 'states', distinguished by whether or not
+storage has been optimized (packed) or not.
+After construction and before fillComplete() has been called, the internal data storage
+is in an un-packed, non-contiguous data-structure that allows for convenient insertion
+of data.
+After fillComplete() has been called, internal storage is in contiguous 'packed' arrays
+and no new entries (indices and/or coefficients) may be inserted. Existing entries may
+still be updated and replaced though. The structure or sparsity pattern of the matrix
+is finalized when fillComplete() is called.
 */
 template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatVec = Kokkos::DefaultBlockSparseMultiply<Scalar,LocalOrdinal,Node>, class LocalMatSolve = Kokkos::DefaultSparseSolve<Scalar,LocalOrdinal,Node> >
 class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
@@ -153,8 +158,8 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
     This method will create the specified block-entry if it doesn't already exist, but
     only if fillComplete() has not yet been called.
 
-    If the specified block-entry already exists in the matrix, the contents will be
-    over-written by the input block-entry.
+    If the specified block-entry already exists in the matrix, it will be
+    over-written (replaced) by the input block-entry.
 
     This method may be called any time (before or after fillComplete()).
   */
@@ -177,8 +182,8 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
     This method will create the specified block-entry if it doesn't already exist, but
     only if fillComplete() has not yet been called.
 
-    If the specified block-entry already exists in the matrix, the contents will be
-    over-written by the input block-entry.
+    If the specified block-entry already exists in the matrix, it will be
+    over-written (replaced) by the input block-entry.
 
     This method may be called any time (before or after fillComplete()).
   */
@@ -226,7 +231,7 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
   //! Returns a non-const read-write view of a block-entry.
   /*! Creates the block-entry if it doesn't already exist, and if:
-     - the optional arguments rowsPerBlock and colsPerBlock are specified (and nonzero),
+     - the arguments numPtRows and numPtCols are set on entry (and nonzero),
      - and if fillComplete() has not yet been called.
 
      Important Note: Be very careful managing the lifetime of this view.
@@ -289,6 +294,7 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   Teuchos::RCP<Node> getNode() const;
 
   void updateImport(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X) const;
+  void updateExport(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
   void optimizeStorage();
   void fillLocalMatrix();
@@ -320,8 +326,9 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
   LocalMatVec lclMatVec_;
   Teuchos::RCP<Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer_;
-  mutable Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > importedX_;
   Teuchos::RCP<Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node> > exporter_;
+  mutable Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > importedVec_;
+  mutable Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > exportedVec_;
 
   typedef typename std::map<GlobalOrdinal,Teuchos::ArrayRCP<Scalar> > MapGlobalArrayRCP;
   typedef typename std::map<LocalOrdinal,Teuchos::ArrayRCP<Scalar> > MapLocalArrayRCP;
@@ -333,7 +340,7 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   //make sense to copy this kind of data back and forth to a separate
   //compute device (e.g., a GPU).
   Teuchos::RCP<Teuchos::Array<MapGlobalArrayRCP> > col_ind_2D_global_;
-  Teuchos::RCP<Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > > > pbuf_values2D_;
+  Teuchos::RCP<Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > > > values2D_;
 
   bool is_fill_completed_;
   bool is_storage_optimized_;

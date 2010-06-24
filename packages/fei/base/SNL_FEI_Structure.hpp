@@ -11,6 +11,7 @@
 
 #include <fei_fwd.hpp>
 #include <fei_defs.h>
+#include <fei_constants.hpp>
 #include "fei_TemplateUtils.hpp"
 #include <snl_fei_PointBlockMap.hpp>
 #include <fei_EqnBuffer.hpp>
@@ -71,7 +72,8 @@ class SNL_FEI_Structure : public Lookup {
    */
    int parameters(int numParams, const char*const* paramStrings);
 
-   int initFields(int numFields, const int* fieldSizes, const int* fieldIDs);
+   int initFields(int numFields, const int* fieldSizes, const int* fieldIDs,
+                  const int* fieldTypes = NULL);
 
    int initElemBlock(GlobalID elemBlockID,
 		     int numElements,

@@ -10,6 +10,7 @@
 #define _fei_VectorSpace_hpp_
 
 #include <fei_macros.hpp>
+#include <fei_constants.hpp>
 #include <fei_fwd.hpp>
 #include <fei_SharedPtr.hpp>
 #include <fei_Logger.hpp>
@@ -103,7 +104,8 @@ namespace fei {
     */
     void defineFields(int numFields,
                       const int* fieldIDs,
-                      const int* fieldSizes);
+                      const int* fieldSizes,
+                      const int* fieldTypes = NULL);
 
     /** Define identifier-types in this solution space. <br>
         For example, define node-identifiers to be type 0, edge-identifiers to

@@ -329,13 +329,15 @@ namespace Iogn {
 
       else if (option[0] == "help") {
 	std::cerr << "\nValid Options for GeneratedMesh parameter string:\n"
-		  << "\tIxJxK -- specifies intervals; first option\n"
+		  << "\tIxJxK -- specifies intervals; must be first option. Ex: 4x10x12\n"
 		  << "\toffset:xoff, yoff, zoff\n"
 		  << "\tscale: xscl, yscl, zscl\n"
 		  << "\tzdecomp:n1,n2,n3,...,n#proc\n"
 		  << "\tbbox: xmin, ymin, zmin, xmax, ymax, zmax\n"
 		  << "\trotate: axis,angle,axis,angle,...\n"
-		  << "\tshell:xXyYzZ\n"
+		  << "\tshell:xXyYzZ (specifies which plane to apply shell)\n"
+	          << "\tnodeset:xXyXzZ (specifies which plane to apply nodeset)\n"
+	          << "\tsideset:xXyXzZ (specifies which plane to apply sideset)\n"
 		  << "\tshow -- show mesh parameters\n"
 		  << "\thelp -- show this list\n\n";
       }
@@ -1035,7 +1037,7 @@ namespace Iogn {
       if (myProcessor == processorCount-1) {
 	size_t offset = (numY+1) * (numX+1) * numZ;
 	for (size_t i=0; i < (numY+1) * (numX+1); i++) {
-	  nodes[i] = myStartZ * xp1yp1 + offset + i+1;
+	  nodes[i] = offset + i+1;
 	}
       }
       break;

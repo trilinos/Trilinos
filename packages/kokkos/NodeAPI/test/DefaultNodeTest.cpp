@@ -4,8 +4,8 @@
 #include <Teuchos_TypeNameTraits.hpp>
 #include <Teuchos_Tuple.hpp>
 
-#include "Kokkos_DefaultNode.hpp"
 #include "Kokkos_ConfigDefs.hpp"
+#include "Kokkos_DefaultNode.hpp"
 #include "Kokkos_NodeHelpers.hpp"
 #include "TestOps.hpp"
 

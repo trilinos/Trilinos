@@ -39,13 +39,19 @@
 #include <Teuchos_ScalarTraits.hpp>
 #endif
 
+
+// FINISH TODO : This code is missing the calls to ScalarTraits::conjugate() 
+//               necessary for the transposed kernels to work for complex-valued scalars.
+//               Note, this will require also the addition of conjugate functionality to the 1x1 kernel
+
 namespace Kokkos {
 
 /** Form dense matrix-vector product y = A*x */
 template<class Scalar,class Ordinal,class DomainScalar,class RangeScalar>
-void densematvec(Ordinal Nrows, Ordinal Ncols,
-                 Scalar alpha, const Scalar* A,
-                 const DomainScalar* x, RangeScalar* y)
+inline KERNEL_PREFIX void 
+densematvec(Ordinal Nrows, Ordinal Ncols,
+            Scalar alpha, const Scalar* A,
+            const DomainScalar* x, RangeScalar* y)
 {
   unsigned offset = 0;
   for(Ordinal c=0; c<Ncols; ++c) {
@@ -57,9 +63,10 @@ void densematvec(Ordinal Nrows, Ordinal Ncols,
 
 /** Form dense transpose-matrix-vector product y = A*x */
 template<class Scalar,class Ordinal,class DomainScalar,class RangeScalar>
-void densematvec_trans(Ordinal Nrows, Ordinal Ncols,
-                       Scalar alpha, const Scalar* A,
-                       const DomainScalar* x, RangeScalar* y)
+inline KERNEL_PREFIX void 
+densematvec_trans(Ordinal Nrows, Ordinal Ncols,
+                  Scalar alpha, const Scalar* A,
+                  const DomainScalar* x, RangeScalar* y)
 {
   unsigned offset = 0;
   for(Ordinal c=0; c<Ncols; ++c) {
@@ -71,15 +78,17 @@ void densematvec_trans(Ordinal Nrows, Ordinal Ncols,
 
 /** Form dense matrix-vector product y = A*x */
 template<class Scalar,class DomainScalar,class RangeScalar>
-void dense_matvec_1x1( Scalar alpha, const Scalar* A,
-                 const DomainScalar* x, RangeScalar* y)
+inline KERNEL_PREFIX void 
+dense_matvec_1x1( Scalar alpha, const Scalar* A,
+                  const DomainScalar* x, RangeScalar* y)
 {
   y[0] += alpha*A[0]*x[0];
 }
 
 /** Form dense matrix-vector product y = A*x */
 template<class Scalar,class DomainScalar,class RangeScalar>
-void dense_matvec_2x2(Scalar alpha, const Scalar* A,
+inline KERNEL_PREFIX void 
+dense_matvec_2x2(Scalar alpha, const Scalar* A,
                  const DomainScalar* x, RangeScalar* y)
 {
   y[0] += alpha*(A[0]*x[0] + A[2]*x[1]);
@@ -88,7 +97,8 @@ void dense_matvec_2x2(Scalar alpha, const Scalar* A,
 
 /** Form dense matrix-vector product y = A*x */
 template<class Scalar,class DomainScalar,class RangeScalar>
-void dense_matvec_3x3(Scalar alpha, const Scalar* A,
+inline KERNEL_PREFIX void 
+dense_matvec_3x3(Scalar alpha, const Scalar* A,
                  const DomainScalar* x, RangeScalar* y)
 {
   y[0] += alpha*(A[0]*x[0] + A[3]*x[1] + A[6]*x[2]);
@@ -98,7 +108,8 @@ void dense_matvec_3x3(Scalar alpha, const Scalar* A,
 
 /** Form dense matrix-vector product y = A*x */
 template<class Scalar,class DomainScalar,class RangeScalar>
-void dense_matvec_4x4(Scalar alpha, const Scalar* A,
+inline KERNEL_PREFIX void 
+dense_matvec_4x4(Scalar alpha, const Scalar* A,
                  const DomainScalar* x, RangeScalar* y)
 {
   y[0] += alpha*(A[0]*x[0] + A[4]*x[1] + A[8]*x[2] + A[12]*x[3]);
@@ -109,8 +120,9 @@ void dense_matvec_4x4(Scalar alpha, const Scalar* A,
 
 /** Form dense matrix-vector product y = A*x */
 template<class Scalar,class DomainScalar,class RangeScalar>
-void dense_matvec_trans_2x2(Scalar alpha, const Scalar* A,
-                 const DomainScalar* x, RangeScalar* y)
+inline KERNEL_PREFIX void 
+dense_matvec_trans_2x2(Scalar alpha, const Scalar* A,
+                       const DomainScalar* x, RangeScalar* y)
 {
   y[0] += alpha*(A[0]*x[0] + A[1]*x[1]);
   y[1] += alpha*(A[2]*x[0] + A[3]*x[1]);
@@ -118,8 +130,9 @@ void dense_matvec_trans_2x2(Scalar alpha, const Scalar* A,
 
 /** Form dense matrix-vector product y = A*x */
 template<class Scalar,class DomainScalar,class RangeScalar>
-void dense_matvec_trans_3x3(Scalar alpha, const Scalar* A,
-                 const DomainScalar* x, RangeScalar* y)
+inline KERNEL_PREFIX void 
+dense_matvec_trans_3x3(Scalar alpha, const Scalar* A,
+                       const DomainScalar* x, RangeScalar* y)
 {
   y[0] += alpha*(A[0]*x[0] + A[1]*x[1] + A[2]*x[2]);
   y[1] += alpha*(A[3]*x[0] + A[4]*x[1] + A[5]*x[2]);
@@ -128,8 +141,9 @@ void dense_matvec_trans_3x3(Scalar alpha, const Scalar* A,
 
 /** Form dense matrix-vector product y = A*x */
 template<class Scalar,class DomainScalar,class RangeScalar>
-void dense_matvec_trans_4x4(Scalar alpha, const Scalar* A,
-                 const DomainScalar* x, RangeScalar* y)
+inline KERNEL_PREFIX void 
+dense_matvec_trans_4x4(Scalar alpha, const Scalar* A,
+                       const DomainScalar* x, RangeScalar* y)
 {
   y[0] += alpha*(A[0]*x[0] + A[1]*x[1] + A[2]*x[2] + A[3]*x[3]);
   y[1] += alpha*(A[4]*x[0] + A[5]*x[1] + A[6]*x[2] + A[7]*x[3]);
@@ -137,50 +151,48 @@ void dense_matvec_trans_4x4(Scalar alpha, const Scalar* A,
   y[3] += alpha*(A[12]*x[0] + A[13]*x[1] + A[14]*x[2] + A[15]*x[3]);
 }
 
-template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar, int NO_BETA_AND_OVERWRITE>
+template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar>
 struct DefaultBlockSparseMultiplyOp1 {
   // mat data
   const Ordinal *rptr, *cptr, *bptr;
   const Ordinal *bindx, *indx;
   const Scalar  *vals;
   // matvec params
-  RangeScalar        alpha, beta;
+  Scalar        alpha, beta;
   size_t numBlockRows;
   // mv data
   const DomainScalar  *x;
   RangeScalar         *y;
   size_t xstride, ystride;
-  size_t numVecs;
 
-  inline KERNEL_PREFIX void execute(size_t i) {
-    const size_t row = i;
-    for(size_t v=0; v<numVecs; ++v) {
-      const Ordinal Nrows = rptr[row+1]-rptr[row];
-      const DomainScalar* xvec = x+v*xstride;
-      RangeScalar* yvec = y+v*ystride;
-      RangeScalar* yy = &yvec[rptr[row]];
-  
-      for(Ordinal i=0; i<Nrows; ++i) yy[i] = beta*yy[i];
-  
-      for (Ordinal b=bptr[row]; b<bptr[row+1]; ++b) {
-        const Ordinal col = bindx[b];
-        const Ordinal Ncols = cptr[col+1]-cptr[col];
-  
-        const Scalar* A = &vals[indx[b]];
-        const Scalar* xx = &xvec[cptr[col]];
-  
-        if (Nrows == Ncols) {
-          switch(Nrows) {
+  inline KERNEL_PREFIX void execute(size_t myIter) {
+    const size_t myBlockRow = myIter % numBlockRows;
+    const size_t myRHS = (myIter - myBlockRow) / numBlockRows;
+    const Ordinal numRowsInBlock = rptr[myBlockRow+1]-rptr[myBlockRow];
+    const DomainScalar* xvec = x+myRHS*xstride;
+    RangeScalar*        yvec = y+myRHS*ystride;
+    RangeScalar* yy = &yvec[rptr[myBlockRow]];
+    // init my block of y to zero
+    for(Ordinal i=0; i<numRowsInBlock; ++i) yy[i] = beta*yy[i];
+    // loop over the block in my row and do the multiplication
+    for (Ordinal b=bptr[myBlockRow]; b<bptr[myBlockRow+1]; ++b) {
+      // get pointers into A and x
+      const Ordinal col = bindx[b];
+      const Ordinal numColsInBlock = cptr[col+1]-cptr[col];
+      const Scalar* A = &vals[indx[b]];
+      const DomainScalar* xx = &xvec[cptr[col]];
+      // do the GEMM
+      if (numRowsInBlock == numColsInBlock) {
+        switch(numRowsInBlock) {
           case 1: dense_matvec_1x1(alpha, A, xx, yy); break;
           case 2: dense_matvec_2x2(alpha, A, xx, yy); break;
           case 3: dense_matvec_3x3(alpha, A, xx, yy); break;
           case 4: dense_matvec_4x4(alpha, A, xx, yy); break;
-          default: densematvec(Nrows, Ncols, alpha, A, xx, yy);
-          }
+          default: densematvec(numRowsInBlock, numColsInBlock, alpha, A, xx, yy);
         }
-        else {
-          densematvec(Nrows,Ncols,alpha,A,xx,yy);
-        }
+      }
+      else {
+        densematvec(numRowsInBlock,numColsInBlock,alpha,A,xx,yy);
       }
     }
   }
@@ -193,27 +205,27 @@ struct DefaultBlockSparseMultiplyOp1Transpose {
   const Ordinal *bindx, *indx;
   const Scalar  *vals;
   // matvec params
-  RangeScalar        alpha;
+  Scalar        alpha;
   size_t numBlockRows;
   // mv data
   const DomainScalar  *x;
   RangeScalar         *y;
   size_t xstride, ystride;
-  size_t numVecs;
 
-  inline KERNEL_PREFIX void execute(size_t i) {
-    const size_t row = i;
-    for(size_t v=0; v<numVecs; ++v) {
-      const Ordinal Nrows = rptr[row+1]-rptr[row];
-      const DomainScalar* xvec = x+v*xstride;
-      const Scalar* xx = &xvec[rptr[row]];
+  inline KERNEL_PREFIX void execute(const size_t myRHS) {
+    // get pointers into X and Y for my assigned RHS
+    const DomainScalar* xvec = x+myRHS*xstride;
+    RangeScalar*        yvec = y+myRHS*ystride;
+    for (size_t bR=0; bR<numBlockRows; ++bR) {
+      // accumulate bR-th block bR (transposed) times xvec[bR] block entry into yvec
+      const DomainScalar* xx = &xvec[rptr[bR]];
+      const Ordinal Nrows = rptr[bR+1]-rptr[bR];
   
-      for (Ordinal b=bptr[row]; b<bptr[row+1]; ++b) {
+      for (Ordinal b=bptr[bR]; b<bptr[bR+1]; ++b) {
         const Ordinal col = bindx[b];
         const Ordinal Ncols = cptr[col+1]-cptr[col];
   
         const Scalar* A = &vals[indx[b]];
-        RangeScalar* yvec = y+v*ystride;
         RangeScalar* yy = &yvec[cptr[col]];
   
         if (Nrows == Ncols) {

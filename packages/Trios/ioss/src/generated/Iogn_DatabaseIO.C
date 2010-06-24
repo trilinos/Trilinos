@@ -231,10 +231,18 @@ namespace Iogn {
       Ioss::Field::RoleType role = field.get_role();
       if (role == Ioss::Field::MESH) {
 
-	if (field.get_name() == "face_ids") {
-	}
-
-	else if (field.get_name() == "ids") {
+	if (field.get_name() == "ids") {
+	  // A face/edge set' is basically an exodus sideset.  A
+	  // sideset has a list of elements and a corresponding local
+	  // element side (1-based) The face/edge id is: face_id =
+	  // 10*element_id + local_side_number This assumes that all
+	  // faces/edges in a sideset are boundary faces/edges.
+	  std::vector<int> elem_side;
+	  m_generatedMesh->sideset_elem_sides(id, elem_side);
+	  int *ids = static_cast<int*>(data);
+	  for (size_t i=0; i < num_to_get; i++) {
+	    ids[i] = 10 * elem_side[2*i+0] + elem_side[2*i+1] + 1;
+	  }
 	}
 
 	else if (field.get_name() == "element_side") {

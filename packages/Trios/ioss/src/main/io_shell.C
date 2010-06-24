@@ -95,7 +95,7 @@ namespace {
 
 namespace {
   std::string codename;
-  std::string version = "1.0";
+  std::string version = "4.6";
 }
 
 int main(int argc, char *argv[])
@@ -106,7 +106,6 @@ int main(int argc, char *argv[])
   
   std::string in_type = "exodusII";
   std::string out_type = "exodusII";
-  std::string ss_type = "exodusII";
 
   Globals globals;
 
@@ -146,6 +145,10 @@ int main(int argc, char *argv[])
 	std::strcmp("-d", argv[i]) == 0) {
       i++;
       globals.working_directory = argv[i++];
+    }
+    else if (std::strcmp("--generate", argv[i]) == 0) {
+      i++;
+      in_type = "generated";
     }
     else if (std::strcmp("-i", argv[i]) == 0) {
       i++;
@@ -244,6 +247,14 @@ namespace {
     OUTPUT << "USAGE: " << prog << " in_file out_file\n";
     OUTPUT << "...or: " << prog << " command_file\n";
     OUTPUT << "       version: " << version << "\n";
+    OUTPUT << "Options:\n";
+    OUTPUT << "\t-directory or -d {dir} : specifies current working directory\n";
+    OUTPUT << "\t-i {file} : read input and output filename data from file\n";
+    OUTPUT << "\t--generate : generate a mesh based on filename instead of reading from file\n";
+    OUTPUT << "\t--debug : turn on debugging output\n";
+    OUTPUT << "\t--Maximum_Time {time} : maximum time from input mesh to transfer to output mesh\n";
+    OUTPUT << "\t--Minimum_Time {time} : minimum time from input mesh to transfer to output mesh\n";
+    OUTPUT << "\t--Surface_Split_Scheme {TOPOLOGY|ELEMENT_BLOCK|NO_SPLIT} -- how to split sidesets\n\n";
   }
 
   void file_copy(const std::string& inpfile, const std::string& input_type,
