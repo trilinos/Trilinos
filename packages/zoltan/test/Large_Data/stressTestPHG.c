@@ -419,8 +419,6 @@ int main(int argc, char *argv[])
   ** all done ***********
   **********************/
 
-  MPI_Finalize();
-
   if (vertex_part) free(vertex_part);
 #ifndef UNIT_WEIGHTS
   if (vwgts) free(vwgts);
@@ -432,10 +430,12 @@ int main(int argc, char *argv[])
   MPI_Reduce(&local, &max, 1, MPI_DOUBLE, MPI_MAX, 0, MPI_COMM_WORLD);
   MPI_Reduce(&local, &min, 1, MPI_DOUBLE, MPI_MIN, 0, MPI_COMM_WORLD);
 
+  MPI_Finalize();
+
   if (myRank == 0){
     printf("Total MBytes in use by test while Zoltan is running: %12.3lf\n",
              mbytes/(1024.0*1024));
-    printf("Min/Avg/Max MBytes in use by Zoltan:    %12.3lf / %12.3lf / %12.3lf\n",
+    printf("Min/Avg/Max of maximum MBytes in use by Zoltan:    %12.3lf / %12.3lf / %12.3lf\n",
              min, avg, max);
   }
 

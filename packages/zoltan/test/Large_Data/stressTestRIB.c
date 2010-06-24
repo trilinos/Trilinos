@@ -310,7 +310,7 @@ int main(int argc, char *argv[])
   if (myRank == 0){
     printf("Total MBytes in use by test while Zoltan is running: %12.3lf\n",
              mbytes/(1024.0*1024));
-    printf("Min/Avg/Max MBytes in use by Zoltan:    %12.3lf / %12.3lf / %12.3lf\n",
+    printf("Min/Avg/Max of maximum MBytes in use by Zoltan:    %12.3lf / %12.3lf / %12.3lf\n",
              min, avg, max);
   }
 
