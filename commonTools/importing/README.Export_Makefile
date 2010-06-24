@@ -162,3 +162,41 @@ Trilinos_MPI_EXEC_NUMPROCS_FLAG holds the flag to pass to Trilinos_MPI_EXEC to
 specify the number of processors to run on.
 
 See Export_Makefile.example for a simple example of how to use this capability.
+
+Transitioning from the previous systems:
+
+There are some important differences between the previous 2 systems that Trilinos has
+made available. Mostly these differences are in the names of variables, however, there
+is not always a one to one relation between the old variable names and the new ones
+which can make it confusing as to which variables are needed and how they need to be
+used.
+
+In the Makefile export system that was available in Trilinos 9 there were typically
+only 2 variables of interest One is <PACKAGE_NAME>_LIBS which held all of the libraries
+and paths to libraries including tpls for the given packages. And the other is
+<PACKAGE_NAME>_INCLUDES which held all of the include directories you needed to pull in
+any header files needed. These variables no longer exist, however all the information
+is still available, though the equivalent for <PACKAGE_NAME>_LIBS is spread out among
+several variables now. You will want to replace your usage of these variables with the
+following to get similar behavior to the Trilinos 9 capability.
+
+For example if you were including Makefile.export.epetra before you would need to
+make the following changes:
+
+EPETRA_LIBS == $(Epetra_EXTRA_LD_FLAGS) $(Epetra_LIBRARY_DIRS)
+  $(Epetra_TPL_LIBRARY_DIRS) $(Epetra_LIBRARIES) $(Epetra_TPL_LIBRARIES)
+
+EPETRA_INCLUDES == $(Epetra_INCLUDE_DIRS) $(Epetra_TPL_INCLUDE_DIRS)
+
+Because these variables have changed a great deal to prevent a lot of instances of link
+errors due to them not being set the new Makefile export system does define these
+variables and sets them to a deprecation warning. This will not prevent a link error,
+however it should make the problem obvious on the link line.
+
+For the system that existed in Trilinos 10 the only difference is the names of
+variables. The previous system had fully capitalized the package names for each
+variable, however now we use the package name as it exists in the cmake system. For
+example if you were including Makefile.export.epetra before you would need to replace
+all instances of "EPETRA" with "Epetra".
+
+

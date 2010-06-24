@@ -167,8 +167,9 @@ FUNCTION(PACKAGE_WRITE_PACKAGE_CONFIG_FILE PACKAGE_NAME)
     LIST_TO_STRING("${FULL_PACKAGE_SET}" "" MAKEFILE_FULL_PACKAGE_SET)
     LIST_TO_STRING("${ORDERED_FULL_TPL_SET}" "" MAKEFILE_ORDERED_FULL_TPL_SET)
 
-    #we have to handle the libraries a little differently since they can be specified either as a name with
-    #of a library to find or the absolute path to the library file with any decoration.
+    #create an upper case name of the package so that we can make deprecated versions of them to help people
+    #transistioning from the autotools version diagnose any missed variables.
+    STRING(TOUPPER ${PACKAGE_NAME} PACKAGE_NAME_UPPER)
 
     CONFIGURE_FILE(
       ${PROJECT_SOURCE_DIR}/cmake/PackageConfig.export.in 
@@ -193,7 +194,7 @@ FUNCTION(PACKAGE_WRITE_PACKAGE_CONFIG_FILE PACKAGE_NAME)
 
   INSTALL(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/${PACKAGE_NAME}Config_install.cmake
-    DESTINATION "."
+    DESTINATION "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}"
     RENAME ${PACKAGE_NAME}Config.cmake
   )
 
@@ -214,7 +215,7 @@ FUNCTION(PACKAGE_WRITE_PACKAGE_CONFIG_FILE PACKAGE_NAME)
 
     INSTALL(
       FILES ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/Makefile.export.${PACKAGE_NAME}_install
-      DESTINATION "."
+      DESTINATION "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}"
       RENAME Makefile.export.${PACKAGE_NAME}
     )
   ENDIF()
@@ -333,13 +334,13 @@ FUNCTION(PACKAGE_WRITE_TRILINOS_CONFIG_FILE)
     ${CMAKE_CURRENT_BINARY_DIR}/TrilinosConfig_install.cmake )
 
   # Appending the logic to include each package's config file.
-  SET(GLOB_LINE "FILE(GLOB PACKAGE_CONFIG_FILES \"${CMAKE_INSTALL_PREFIX}/*Config.cmake\")\n")
+  SET(GLOB_LINE "FILE(GLOB PACKAGE_CONFIG_FILES \"${${PROJECT_NAME}_CONFIG_INCLUDE_DIRS}/*Config.cmake\")\n")
   FILE(APPEND ${CMAKE_CURRENT_BINARY_DIR}/TrilinosConfig_install.cmake ${GLOB_LINE})
   FILE(APPEND ${CMAKE_CURRENT_BINARY_DIR}/TrilinosConfig_install.cmake ${FOREACH_BLOCK})
 
   INSTALL(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/TrilinosConfig_install.cmake
-    DESTINATION "."
+    DESTINATION "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}"
     RENAME TrilinosConfig.cmake
   )
   
@@ -358,7 +359,7 @@ FUNCTION(PACKAGE_WRITE_TRILINOS_CONFIG_FILE)
 
     INSTALL(
       FILES ${CMAKE_CURRENT_BINARY_DIR}/Makefile.export.${PROJECT_NAME}_install
-      DESTINATION "."
+      DESTINATION "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}"
       RENAME Makefile.export.${PROJECT_NAME}
     )
   ENDIF()
@@ -372,7 +373,7 @@ FUNCTION(PACKAGE_WRITE_TRILINOS_CONFIG_FILE)
 
   INSTALL(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/TrilinosConfigVersion.cmake
-    DESTINATION "."
+    DESTINATION "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}"
   )
 
 ENDFUNCTION()
