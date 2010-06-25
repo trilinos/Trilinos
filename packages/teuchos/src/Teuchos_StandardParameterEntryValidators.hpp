@@ -55,7 +55,7 @@ namespace Teuchos {
 template<class IntegralType>
 class StringToIntegralParameterEntryValidator : public ParameterEntryValidator {
 public:
-
+  static const std::string tagName;
   /** \name Constructors */
   //@{
 
@@ -229,7 +229,7 @@ public:
     ) const;
 
   /** \brief . */
-  virtual void writeAspectsToXML(RCP<XMLObject> parentNode) const;
+  virtual XMLObject getXML() const;
   //@}
 
 private:
@@ -250,6 +250,9 @@ private:
   StringToIntegralParameterEntryValidator();
 
 };
+template<class IntegralType>
+const std::string StringToIntegralParameterEntryValidator<IntegralType>::tagName = "stringintegralvalidator";
+
 
 
 /** \brief Nonmember constructor (see implementation).
@@ -429,7 +432,7 @@ verbosityLevelParameterEntryValidator(std::string const& defaultParameterName);
  */
 class TEUCHOS_LIB_DLL_EXPORT AnyNumberParameterEntryValidator : public ParameterEntryValidator {
 public:
-
+  static const std::string tagName;
   /** \name Public types */
   //@{
 
@@ -569,7 +572,7 @@ public:
     ) const;
 
   /** \brief . */
-  virtual void writeAspectsToXML(RCP<XMLObject> parentNode) const;
+  virtual XMLObject getXML() const;
   //@}
 
 private:
@@ -724,6 +727,7 @@ TEUCHOS_LIB_DLL_EXPORT std::string getNumericStringParameter(
 template <class S>
 class EnhancedNumberValidatorBase : public ParameterEntryValidator{
 public:
+	static const std::string tagName;
 	/**
 	 * Constructs a EnhancedNumberValidator.
 	 *
@@ -913,7 +917,9 @@ public:
 		out << "#  	Max (inclusive): " << maxVal << "\n";
 	}
 
-	virtual void writeAspectsToXML(RCP<XMLObject> parentNode) const{
+  virtual XMLObject getXML() const{
+		XMLObject valiTag(tagName);
+		valiTag.addAttribute("type",typeid(S).name());
 		std::stringstream out;
 		out << minVal;
 		XMLObject minTag("min");
@@ -930,10 +936,11 @@ public:
 		out << precision_;
 		XMLObject precisionTag("precision");
 		precisionTag.addAttribute("value", out.str());
-		parentNode->addChild(minTag);
-		parentNode->addChild(maxTag);
-		parentNode->addChild(stepTag);
-		parentNode->addChild(precisionTag);
+		valiTag.addChild(minTag);
+		valiTag.addChild(maxTag);
+		valiTag.addChild(stepTag);
+		valiTag.addChild(precisionTag);
+		return valiTag;
 	}
 
 protected:
@@ -1002,6 +1009,7 @@ public:
 template <>
 class EnhancedNumberValidator<int> : public EnhancedNumberValidatorBase<int>{
 public:
+	static const std::string tagName;
 	static const unsigned short intDefaultPrecision =0;
 	static const unsigned short intDefaultStep =1;
 	/**
@@ -1019,6 +1027,31 @@ public:
 	 * the QSpinBox that is used in the Optika GUI. If you're not using the GUI, you may ignore this parameter.
 	 */
 	EnhancedNumberValidator(int min, int max, int step=intDefaultStep):EnhancedNumberValidatorBase<int>(min, max, step){}
+
+  virtual XMLObject getXML() const{
+		XMLObject valiTag(tagName);
+		std::stringstream out;
+		out << minVal;
+		XMLObject minTag("min");
+		minTag.addAttribute("value", out.str());
+		out.flush();
+		out << maxVal;
+		XMLObject maxTag("max");
+		maxTag.addAttribute("value", out.str());
+		out.flush();
+		out << step_;
+		XMLObject stepTag("step");
+		stepTag.addAttribute("value", out.str());
+		out.flush();
+		out << precision_;
+		XMLObject precisionTag("precision");
+		precisionTag.addAttribute("value", out.str());
+		valiTag.addChild(minTag);
+		valiTag.addChild(maxTag);
+		valiTag.addChild(stepTag);
+		valiTag.addChild(precisionTag);
+		return valiTag;
+	}
 };
 
 /**
@@ -1027,6 +1060,7 @@ public:
 template<>
 class EnhancedNumberValidator<short> : public EnhancedNumberValidatorBase<short>{
 public:
+	static const std::string tagName;
 	static const unsigned short shortDefaultPrecision =0;
 	static const unsigned short shortDefaultStep =1;
 	/**
@@ -1044,6 +1078,32 @@ public:
 	 * the QSpinBox that is used in the Optika GUI. If you're not using the GUI, you may ignore this parameter.
 	 */
 	EnhancedNumberValidator(short min, short max, short step=shortDefaultStep):EnhancedNumberValidatorBase<short>(min, max, step){}
+
+  virtual XMLObject getXML() const{
+		XMLObject valiTag(tagName);
+		valiTag.addAttribute("type","short");
+		std::stringstream out;
+		out << minVal;
+		XMLObject minTag("min");
+		minTag.addAttribute("value", out.str());
+		out.flush();
+		out << maxVal;
+		XMLObject maxTag("max");
+		maxTag.addAttribute("value", out.str());
+		out.flush();
+		out << step_;
+		XMLObject stepTag("step");
+		stepTag.addAttribute("value", out.str());
+		out.flush();
+		out << precision_;
+		XMLObject precisionTag("precision");
+		precisionTag.addAttribute("value", out.str());
+		valiTag.addChild(minTag);
+		valiTag.addChild(maxTag);
+		valiTag.addChild(stepTag);
+		valiTag.addChild(precisionTag);
+		return valiTag;
+	}
 };
 
 /**
@@ -1052,6 +1112,7 @@ public:
 template<>
 class EnhancedNumberValidator<double> : public EnhancedNumberValidatorBase<double>{
 public:
+	static const std::string tagName;
 	static const unsigned short doubleDefaultPrecision =0;
 	static const unsigned short doubleDefaultStep =1;
 	/**
@@ -1072,6 +1133,32 @@ public:
 	 */
 	EnhancedNumberValidator(double min, double max, double step=doubleDefaultStep, unsigned short precision=doubleDefaultPrecision)
 	:EnhancedNumberValidatorBase<double>(min, max, step, precision){}
+
+  virtual XMLObject getXML() const{
+		XMLObject valiTag(tagName);
+		valiTag.addAttribute("type","double");
+		std::stringstream out;
+		out << minVal;
+		XMLObject minTag("min");
+		minTag.addAttribute("value", out.str());
+		out.flush();
+		out << maxVal;
+		XMLObject maxTag("max");
+		maxTag.addAttribute("value", out.str());
+		out.flush();
+		out << step_;
+		XMLObject stepTag("step");
+		stepTag.addAttribute("value", out.str());
+		out.flush();
+		out << precision_;
+		XMLObject precisionTag("precision");
+		precisionTag.addAttribute("value", out.str());
+		valiTag.addChild(minTag);
+		valiTag.addChild(maxTag);
+		valiTag.addChild(stepTag);
+		valiTag.addChild(precisionTag);
+		return valiTag;
+	}
 };
 
 /**
@@ -1080,6 +1167,7 @@ public:
 template<>
 class EnhancedNumberValidator<float> : public EnhancedNumberValidatorBase<float>{
 public:
+	static const std::string tagName;
 	static const unsigned short floatDefaultPrecision =0;
 	static const unsigned short floatDefaultStep =1;
 	/**
@@ -1100,6 +1188,32 @@ public:
 	 */
 	EnhancedNumberValidator(float min, float max, float step=floatDefaultStep, unsigned short precision=floatDefaultPrecision)
 	:EnhancedNumberValidatorBase<float>(min, max, step, precision){}
+
+  virtual XMLObject getXML() const{
+		XMLObject valiTag(tagName);
+		valiTag.addAttribute("type","float");
+		std::stringstream out;
+		out << minVal;
+		XMLObject minTag("min");
+		minTag.addAttribute("value", out.str());
+		out.flush();
+		out << maxVal;
+		XMLObject maxTag("max");
+		maxTag.addAttribute("value", out.str());
+		out.flush();
+		out << step_;
+		XMLObject stepTag("step");
+		stepTag.addAttribute("value", out.str());
+		out.flush();
+		out << precision_;
+		XMLObject precisionTag("precision");
+		precisionTag.addAttribute("value", out.str());
+		valiTag.addChild(minTag);
+		valiTag.addChild(maxTag);
+		valiTag.addChild(stepTag);
+		valiTag.addChild(precisionTag);
+		return valiTag;
+	}
 }; 
 
 
@@ -1109,6 +1223,7 @@ public:
  */
 class FileNameValidator : public ParameterEntryValidator{
 public:
+	static const std::string tagName;
 	/**
 	 * Constructs a FileNameValidator.
 	 *
@@ -1138,7 +1253,7 @@ public:
 
 	void printDoc(std::string const &docString, std::ostream &out) const;
 
-	void writeAspectsToXML(RCP<XMLObject> parentNode) const;
+	virtual XMLObject getXML() const;
 private:
 	/**
 	 * Whether or not the file specified in the parameter should already exist.
@@ -1152,6 +1267,7 @@ private:
 class StringValidator : public ParameterEntryValidator{
 public:
 	typedef Array<std::string> ValueList;
+	static const std::string tagName;
 	/**
 	 * Constructs a StringValidator.
 	 */
@@ -1172,7 +1288,7 @@ public:
 
 	void printDoc(std::string const &docString, std::ostream &out) const;
 
-	void writeAspectsToXML(RCP<Teuchos::XMLObject> parentNode) const;
+	virtual XMLObject getXML() const;
 private:
 	/**
 	 * An array containing a list of all the valid string values.
@@ -1185,6 +1301,7 @@ private:
  */
 class ArrayValidator : public ParameterEntryValidator{
 public:
+	static const std::string tagName;
 	/**
 	 * Constructs a ArrayValidator.
 	 *
@@ -1202,11 +1319,12 @@ public:
 
 	virtual void printDoc(std::string const &docString, std::ostream &out) const =0;
 
-	void writeAspectsToXML(RCP<XMLObject> parentNode) const{
-		RCP<XMLObject> prototypeValidatorTag = rcp(new XMLObject("prototypevalidator"));
-		prototypeValidator_->writeAspectsToXML(prototypeValidatorTag);
-		parentNode->addChild(*prototypeValidatorTag);
+  virtual XMLObject getXML() const{
+		XMLObject valiTag(tagName);
+		valiTag.addChild(prototypeValidator_->getXML());
+		return valiTag;
 	}
+
 
 protected:
 	/**
@@ -1671,8 +1789,9 @@ void StringToIntegralParameterEntryValidator<IntegralType>::validate(
 }
 
 template<class IntegralType>
-void StringToIntegralParameterEntryValidator<IntegralType>::writeAspectsToXML(RCP<XMLObject> parentNode) const
+XMLObject StringToIntegralParameterEntryValidator<IntegralType>::getXML() const
 {
+	XMLObject valiTag(tagName);
 	XMLObject stringsTag("strings");
 	XMLObject stringsDocsTag("stringdocs");
 	XMLObject integralValuesTag("integralvalues");
@@ -1695,10 +1814,11 @@ void StringToIntegralParameterEntryValidator<IntegralType>::writeAspectsToXML(RC
 	XMLObject defaultParameterNameTag("defaultparametername");
 	defaultParameterNameTag.addAttribute("value", defaultParameterName_);
 
-	parentNode->addChild(stringsTag);
-	parentNode->addChild(stringsDocsTag);
-	parentNode->addChild(integralValuesTag);
-	parentNode->addChild(defaultParameterNameTag);
+	valiTag.addChild(stringsTag);
+	valiTag.addChild(stringsDocsTag);
+	valiTag.addChild(integralValuesTag);
+	valiTag.addChild(defaultParameterNameTag);
+	return valiTag;
 }
 
 

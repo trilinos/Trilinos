@@ -28,7 +28,6 @@
 
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
-
 std::string Teuchos::getVerbosityLevelParameterValueName(
   const EVerbosityLevel verbLevel
   )
@@ -99,6 +98,7 @@ namespace Teuchos {
 // AnyNumberParameterEntryValidator
 //
 
+const std::string AnyNumberParameterEntryValidator::tagName = "anynumbervalidator";
 
 // Constructors
 
@@ -271,22 +271,24 @@ void AnyNumberParameterEntryValidator::validateAndModify(
   }
 }
 
-void AnyNumberParameterEntryValidator::writeAspectsToXML(RCP<XMLObject> parentNode) const{
+XMLObject AnyNumberParameterEntryValidator::getXML() const{
+	XMLObject valiTag(tagName);
 	XMLObject preferredTypeTag("preferredtype");
 	preferredTypeTag.addInt("value", preferredType_);
-	parentNode->addChild(preferredTypeTag);
+	valiTag.addChild(preferredTypeTag);
 	if(acceptedTypes_.allowInt()){
 		XMLObject allowIntTag("allowint");
-		parentNode->addChild(allowIntTag);
+		valiTag.addChild(allowIntTag);
 	}
 	if(acceptedTypes_.allowDouble()){
 		XMLObject allowDoubleTag("allowdouble");
-		parentNode->addChild(allowDoubleTag);
+		valiTag.addChild(allowDoubleTag);
 	}
 	if(acceptedTypes_.allowString()){
 		XMLObject allowStringTag("allowString");
-		parentNode->addChild(allowStringTag);
+		valiTag.addChild(allowStringTag);
 	}
+	return valiTag;
 }
 
 // private
@@ -331,6 +333,19 @@ void AnyNumberParameterEntryValidator::throwTypeError(
     << "\n\nThe accepted types are: " << acceptedTypesString_ << "!";
     );
 }
+
+template<class S>
+const std::string EnhancedNumberValidatorBase<S>::tagName = "enhancednumbervalidator";
+
+const std::string EnhancedNumberValidator<int>::tagName = "intenhancednumbervalidator";
+
+const std::string EnhancedNumberValidator<short>::tagName = "shortenhancednumbervalidator";
+
+const std::string EnhancedNumberValidator<double>::tagName = "doubleenhancednumbervalidator";
+
+const std::string EnhancedNumberValidator<float>::tagName= "floatenhancednumbervalidator";
+
+const std::string FileNameValidator::tagName = "filenamevalidator";
 
 FileNameValidator::FileNameValidator(bool mustAlreadyExist):ParameterEntryValidator(),mustAlreadyExist_(mustAlreadyExist){}
 
@@ -384,10 +399,12 @@ void FileNameValidator::validate(ParameterEntry const &entry, std::string const 
 	}
 }
 
-void FileNameValidator::writeAspectsToXML(RCP<Teuchos::XMLObject> parentNode) const{
+XMLObject FileNameValidator::getXML() const{
+	XMLObject valiTag(tagName);
 	XMLObject mustAlreadyExistTag("mustalreadyexist");
 	mustAlreadyExistTag.addBool("value", mustAlreadyExist_);
-	parentNode->addChild(mustAlreadyExistTag);
+	valiTag.addChild(mustAlreadyExistTag);
+	return valiTag;
 }
 
 void FileNameValidator::printDoc(std::string const &docString, std::ostream &out) const{
@@ -395,6 +412,8 @@ void FileNameValidator::printDoc(std::string const &docString, std::ostream &out
 	out << "#  Validator Used: \n";
 	out << "#	FileName Validator\n";
 }
+
+const std::string StringValidator::tagName = "stringvalidator";
 
 StringValidator::StringValidator(ValueList validStrings):
 	ParameterEntryValidator(),
@@ -447,14 +466,16 @@ void StringValidator::validate(ParameterEntry const &entry, std::string const &p
 	}
 }
 
-void StringValidator::writeAspectsToXML(RCP<XMLObject> parentNode) const{
+XMLObject StringValidator::getXML() const{
+	XMLObject valiTag(tagName);
 	XMLObject valuesTag("values");
 	for(ValueList::const_iterator it = validStrings_.begin(); it != validStrings_.end(); ++it){
 		XMLObject valueTag("value");
 		valueTag.addAttribute("value", *it);
 		valuesTag.addChild(valueTag);
 	}
-	parentNode->addChild(valuesTag);
+	valiTag.addChild(valuesTag);
+	return valiTag;
 }
 
 
@@ -463,6 +484,8 @@ void StringValidator::printDoc(std::string const &docString, std::ostream &out) 
 	out << "#  Validator Used: \n";
 	out << "#	String Validator\n";
 }
+
+const std::string ArrayValidator::tagName = "arrayvalidator";
 
 
 } // namespace Teuchos

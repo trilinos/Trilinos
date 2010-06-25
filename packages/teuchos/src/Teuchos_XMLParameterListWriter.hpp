@@ -50,6 +50,7 @@ namespace Teuchos
       //! @name Constructors 
 			//@{
       /** Construct a writer */
+	  static const std::string validatorTagName;
       XMLParameterListWriter();
 			//@}
 

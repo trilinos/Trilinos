@@ -26,6 +26,7 @@
 // ***********************************************************************
 // @HEADER
 
+#include "Teuchos_XMLParameterListWriter.hpp"
 #include "Teuchos_XMLParameterListReader.hpp"
 #include "Teuchos_TestForException.hpp"
 #include "Teuchos_StrUtils.hpp"
@@ -176,6 +177,16 @@ ParameterList XMLParameterListReader::toParameterList(const XMLObject& xml) cons
                 std::string tmp = entry.getValue<std::string>(&tmp);
               }
             }
+		  int paramChildren = child.numChildren();
+		  if(paramChildren !=0)
+		    {
+			   for(int j=0; i<paramChildren; ++j){
+			      XMLObject currentChild = child.getChild(i);
+				  if(currentChild.getTag() == XMLParameterListWriter::validatorTagName){
+
+				  }
+			   }
+			}
           rtn.setEntry(name, entry);
         }
                          

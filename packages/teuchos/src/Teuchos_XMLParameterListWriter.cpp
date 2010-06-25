@@ -29,6 +29,7 @@
 #include "Teuchos_XMLParameterListWriter.hpp"
 
 using namespace Teuchos;
+const std::string XMLParameterListWriter::validatorTagName = "validator";
 
 XMLParameterListWriter::XMLParameterListWriter()
 {;}
@@ -136,7 +137,7 @@ XMLObject XMLParameterListWriter::toXML(const ParameterEntry& entry) const
     {
       type = "any";
       std::ostringstream ss;
-      ss << entry;
+      ss << entry.getAny(false);
       value = TEUCHOS_OSTRINGSTREAM_GET_C_STR(ss);
     }
   
@@ -156,9 +157,9 @@ XMLObject XMLParameterListWriter::toXML(const ParameterEntry& entry) const
 
   if (!entry.validator().is_null())
     {
-      RCP<XMLObject> validatorTag = rcp(new XMLObject(typeid(*entry.validator()).name()));
-	  entry.validator()->writeAspectsToXML(validatorTag);
-	  rtn.addChild(*validatorTag);
+	  XMLObject valiTag(validatorTagName);
+	  valiTag.addChild(entry.validator()->getXML());
+	  rtn.addChild(valiTag);
     }
 
   return rtn;
