@@ -154,6 +154,7 @@ APPEND_SET(HEADERS
   Teuchos_UnitTestHelpers.hpp
   Teuchos_UnitTestRepository.hpp
   Teuchos_Utils.hpp
+  Teuchos_ValidatorFactory.hpp
   Teuchos_VerboseObject.hpp
   Teuchos_VerboseObjectParameterListHelpers.hpp
   Teuchos_VerbosityLevel.hpp
@@ -212,6 +213,7 @@ APPEND_SET(SOURCES
   Teuchos_UnitTestBase.cpp
   Teuchos_UnitTestRepository.cpp
   Teuchos_Utils.cpp
+  Teuchos_ValidatorFactory.cpp
   Teuchos_VerboseObject.cpp
   Teuchos_VerboseObjectParameterListHelpers.cpp
   Teuchos_VerbosityLevel.cpp

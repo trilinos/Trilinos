@@ -154,6 +154,13 @@ XMLObject XMLParameterListWriter::toXML(const ParameterEntry& entry) const
       rtn.addAttribute("isUsed","true");
     }
 
+  if (!entry.validator().is_null())
+    {
+      RCP<XMLObject> validatorTag = rcp(new XMLObject(typeid(*entry.validator()).name()));
+	  entry.validator()->writeAspectsToXML(validatorTag);
+	  rtn.addChild(*validatorTag);
+    }
+
   return rtn;
 }
 

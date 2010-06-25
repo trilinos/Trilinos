@@ -37,6 +37,7 @@
 #include "Teuchos_Assert.hpp"
 #include "Teuchos_StrUtils.hpp"
 #include "Teuchos_TypeNameTraits.hpp"
+#include <sys/stat.h>
 
 
 namespace Teuchos {
@@ -716,6 +717,732 @@ TEUCHOS_LIB_DLL_EXPORT std::string getNumericStringParameter(
   ParameterList const& paramList,
   std::string const& paramName
   );
+
+/**
+ * A Template base class for NumberValidators.
+ */
+template <class S>
+class EnhancedNumberValidatorBase : public ParameterEntryValidator{
+public:
+	/**
+	 * Constructs a EnhancedNumberValidator.
+	 *
+	 * @param min The minimum acceptable value for this validator.
+	 * @param max The maximum acceptable value for this validator.
+	 * @param step The increments at which the values being validated should be changed.
+	 * @param precision The number of decimials places to which the values validated shold be compared to the
+	 * min and max. This parameter is pretty much meamingless for non-floating point types.
+	 */
+	EnhancedNumberValidatorBase(S min, S max, S step, unsigned short precision=0):ParameterEntryValidator(),
+	minVal(min), maxVal(max), step_(step), precision_(precision), containsMin(true), containsMax(true){}
+
+	/**
+	 * Constructs a EnhancedNumberValidator without an explicit minimum or maximum.
+	 *
+	 * @param step The increments at which the values being validated should be changed.
+	 * @param precision The number of decimials places to which the values validated shold be compared to the
+	 * min and max. This parameter is pretty much meamingless for non-floating point types.
+	 */
+	EnhancedNumberValidatorBase(S step, unsigned short precision = 0):
+		ParameterEntryValidator(),
+		step_(step),
+		precision_(precision),
+		containsMin(false),
+		containsMax(false)
+	{
+		if(std::numeric_limits<S>::is_integer){
+			this->minVal = std::numeric_limits<S>::min();
+			this->maxVal = std::numeric_limits<S>::max();
+		}
+		else{
+			this->minVal = -std::numeric_limits<S>::max();
+			this->maxVal = std::numeric_limits<S>::max();
+		}
+	}
+		
+	/**
+	 * Sets the minimum acceptable value for the validator.
+	 * 
+	 * @param min The desired minimum acceptable value for the validator.
+	 */
+	void setMin(S min){
+		minVal = min;
+		containsMin = true;
+	}
+
+	/**
+	 * Sets the maximum acceptable value for the validator.
+	 * 
+	 * @param min The desired maximum acceptable value for the validator.
+	 */
+	void setMax(S max){
+		maxVal = max;
+		containsMax = true;
+	}
+
+	/**
+	 * Gets the minimum acceptable value for the validator.
+	 *
+	 *@return The minimum acceptable value for the validator.
+	 */
+	S getMin() const{
+		return minVal;
+	}
+
+	/**
+	 * Gets the maximum acceptable value for the validator.
+	 *
+	 *@return The maximum acceptable value for the validator.
+	 */
+	S getMax() const{
+		return maxVal;
+	}
+
+	/**
+	 * Determines whether or not the validator has a minimum value.
+	 *
+	 * @return True if the validator has a minimum value, false otherwise.
+	 */
+	bool hasMin() const{
+		return containsMin;
+	}
+
+	/**
+	 * Determines whether or not the validator has a maximum value.
+	 *
+	 * @return True if the validator has a maximum value, false otherwise.
+	 */ 
+	bool hasMax() const{
+		return containsMax;
+	}
+
+	/**
+	 * Gets the step being used for the validator.
+	 *
+	 * @return The step being used for the validator.
+	 */
+	S getStep() const{
+		return step_;
+	}
+
+	/**
+	 * Sets the step being used for the validator.
+	 *
+	 * @param The step to be used for the validator.
+	 */
+	void setStep(S step){
+		step_ = step;
+	}
+
+	/**
+	 * Sets the precision specified for the validator.
+	 *
+	 * @param The precision specific for the validator.
+	 */
+	void setPrecision(int precision){
+		precision_ = precision;
+	}
+
+	/**
+	 * Gets the precision specified for the validator.
+	 *
+	 * @return The precision specific for the validator.
+	 */
+	unsigned short getPrecision() const{
+		return precision_;
+	}
+
+
+	RCP< const Array<std::string> > validStringValues() const{
+		return null;
+	}
+
+	void validate(ParameterEntry const &entry, std::string const &paramName, std::string const &sublistName) const{
+		any anyValue = entry.getAny(true);
+		if(anyValue.type() == typeid(S) ){
+			bool isValueInRange = false;
+			if(precision_ != 0){
+				S precisionPadding = pow((S)10,(-((S)precision_)));
+				any_cast<S>(anyValue) >= minVal-((S)precisionPadding) && any_cast<S>(anyValue) <= maxVal+((S)precisionPadding) ?
+				isValueInRange = true : isValueInRange=false;
+			}
+			else{
+				any_cast<S>(anyValue) >= minVal && any_cast<S>(anyValue) <= maxVal ?
+				isValueInRange = true : isValueInRange=false;
+			}
+			if(!(isValueInRange)){
+				std::stringstream oss;
+				std::string msg;
+				oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+				" parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
+				"No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
+				"can help you figure out what went wrong.\n\n"
+				"Error: The value that was entered doesn't fall with in " <<
+				"the range set by the validator.\n" <<
+				"Parameter: " << paramName << "\n" <<
+				"Min: " << minVal << "\n" <<
+				"Max: " << maxVal << "\n" <<
+				"Value entered: " << (any_cast<S>(anyValue)) << "\n";
+				msg = oss.str();
+				throw Exceptions::InvalidParameterValue(msg);
+			}	
+		}
+		else{
+			const std::string &entryName = entry.getAny(false).typeName();
+			std::stringstream oss;
+			std::string msg;
+			oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+			" parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
+			"No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
+			"can help you figure out what went wrong.\n\n"
+			"Error: The value that you entered was the wrong type.\n" <<
+			"Parameter: " << paramName << "\n" <<
+			"Type specified: " << entryName << "\n" <<
+			"Type accepted: " << typeid(S).name() << "\n";
+			msg = oss.str();
+			throw Exceptions::InvalidParameterType(msg);
+		}
+	}
+
+	void printDoc(std::string const &docString, std::ostream &out) const{
+		StrUtils::printLines(out,"# ",docString);
+		out << "#  Validator Used: \n";
+		out << "#  	Number Validator\n";
+		out << "#  	Type: " << typeid(S).name() << "\n";
+		out << "#  	Min (inclusive): " << minVal << "\n";
+		out << "#  	Max (inclusive): " << maxVal << "\n";
+	}
+
+	virtual void writeAspectsToXML(RCP<XMLObject> parentNode) const{
+		std::stringstream out;
+		out << minVal;
+		XMLObject minTag("min");
+		minTag.addAttribute("value", out.str());
+		out.flush();
+		out << maxVal;
+		XMLObject maxTag("max");
+		maxTag.addAttribute("value", out.str());
+		out.flush();
+		out << step_;
+		XMLObject stepTag("step");
+		stepTag.addAttribute("value", out.str());
+		out.flush();
+		out << precision_;
+		XMLObject precisionTag("precision");
+		precisionTag.addAttribute("value", out.str());
+		parentNode->addChild(minTag);
+		parentNode->addChild(maxTag);
+		parentNode->addChild(stepTag);
+		parentNode->addChild(precisionTag);
+	}
+
+protected:
+	/**
+	 * The minimum value accepted by the validator.
+	 */
+	S minVal;
+
+	/**
+	 * The maximum value accepted by the validator.
+	 */
+	S maxVal;
+
+	/**
+	 * The increment to use when increaseing or decreaseing the value the validator is validating.
+	 */
+	S step_;
+
+	/**
+	 * The amount of decimal to which the value to be validated will be compared to the
+	 * maximum and minimum. A precision of 0 means the the value to be validated
+	 * must fall exactly within the mininmum and maximum. Notd this value is pretty much
+	 * meaningingless for non-floating point value types.
+	 */
+	unsigned short precision_;
+
+	/**
+	 * Whether or not a minimum value has been specified for this validator.
+	 */
+	bool containsMin;
+
+	/**
+	 * Whetehr or not a maximum value has been specified for this validator.
+	 */
+	bool containsMax;
+};
+
+/**
+ * Validates inputs using mins and max for specific number types.
+ */
+template<class S>
+class EnhancedNumberValidator : public EnhancedNumberValidatorBase<S>{
+public:
+	/**
+	 * Constructs an EnhancedNumberValidator.
+	 *
+	 * @param min The minimum acceptable value for this validator.
+	 * @param max The maximum acceptable value for this validator.
+	 * @param step The increments at which the value should be changed. This is mostly used for 
+	 * the QSpinBox that is used in the Optika GUI. If you're not using the GUI, you may ignore this parameter.
+	 */
+	EnhancedNumberValidator(S min, S max, S step):EnhancedNumberValidatorBase<S>(min, max, step){}
+
+	/**
+	 * Constructs an EnhancedNumberValidator without explicit minimums or maximums.
+	 *
+	 * @param step The increments at which the value should be changed. This is mostly used for 
+	 * the QSpinBox that is used in the Optika GUI. If you're not using the GUI, you may ignore this parameter.
+	 */
+	EnhancedNumberValidator(S step):Teuchos::EnhancedNumberValidatorBase<S>(step){}
+};
+
+/**
+ * A specific validator used to validate entry's of type int.
+ */
+template <>
+class EnhancedNumberValidator<int> : public EnhancedNumberValidatorBase<int>{
+public:
+	static const unsigned short intDefaultPrecision =0;
+	static const unsigned short intDefaultStep =1;
+	/**
+	 * Construcsts an EnhancedNumberValidator of type int with no
+	 * minimum or maximum.
+	 */
+	EnhancedNumberValidator():EnhancedNumberValidatorBase<int>(intDefaultStep){}
+
+	/**
+	 * Constructs an Enhanced number validator for type int.
+	 *
+	 * @param min The minimum acceptable value for this validator.
+	 * @param max The maximum acceptable value for this validator.
+	 * @param step The increments at which the value should be changed. This is mostly used for 
+	 * the QSpinBox that is used in the Optika GUI. If you're not using the GUI, you may ignore this parameter.
+	 */
+	EnhancedNumberValidator(int min, int max, int step=intDefaultStep):EnhancedNumberValidatorBase<int>(min, max, step){}
+};
+
+/**
+ * A specific validator used to validate values of type short.
+ */
+template<>
+class EnhancedNumberValidator<short> : public EnhancedNumberValidatorBase<short>{
+public:
+	static const unsigned short shortDefaultPrecision =0;
+	static const unsigned short shortDefaultStep =1;
+	/**
+	 * Construcsts an EnhancedNumberValidator of type short with no
+	 * minimum or maximum.
+	 */
+	EnhancedNumberValidator():EnhancedNumberValidatorBase<short>(shortDefaultStep){}
+
+	/**
+	 * Constructs an EnhancedNumberValidator of type short.
+	 *
+	 * @param min The minimum acceptable value for this validator.
+	 * @param max The maximum acceptable value for this validator.
+	 * @param step The increments at which the value should be changed. This is mostly used for 
+	 * the QSpinBox that is used in the Optika GUI. If you're not using the GUI, you may ignore this parameter.
+	 */
+	EnhancedNumberValidator(short min, short max, short step=shortDefaultStep):EnhancedNumberValidatorBase<short>(min, max, step){}
+};
+
+/**
+ * A specific validator used to validate values of type double.
+ */
+template<>
+class EnhancedNumberValidator<double> : public EnhancedNumberValidatorBase<double>{
+public:
+	static const unsigned short doubleDefaultPrecision =0;
+	static const unsigned short doubleDefaultStep =1;
+	/**
+	 * Construcsts an EnhancedNumberValidator of type double with no
+	 * minimum or maximum.
+	 */
+	EnhancedNumberValidator():EnhancedNumberValidatorBase<double>(doubleDefaultStep, doubleDefaultPrecision){}
+
+	/**
+	 * Constructs an EnhancedNumberValidator of type double.
+	 *
+	 * @param min The minimum acceptable value for this validator.
+	 * @param max The maximum acceptable value for this validator.
+	 * @param step The increments at which the value should be changed. This is mostly used for 
+	 * the QSpinBox that is used in the Optika GUI. If you're not using the GUI, you may ignore this parameter.
+	 * @param precision This determines the precision at which the number should be displayed in the GUI. 
+	 * NOTE: THIS DOES NOT ACTUALLY SPECIFY THE PRECISION USED IN STORING THE VARIABLE. IT IS FOR GUI PURPOSES ONLY!
+	 */
+	EnhancedNumberValidator(double min, double max, double step=doubleDefaultStep, unsigned short precision=doubleDefaultPrecision)
+	:EnhancedNumberValidatorBase<double>(min, max, step, precision){}
+};
+
+/**
+ * A specific validator used to validat values of type float.
+ */
+template<>
+class EnhancedNumberValidator<float> : public EnhancedNumberValidatorBase<float>{
+public:
+	static const unsigned short floatDefaultPrecision =0;
+	static const unsigned short floatDefaultStep =1;
+	/**
+	 * Construcsts an EnhancedNumberValidator of type float with no
+	 * minimum or maximum.
+	 */
+	EnhancedNumberValidator():EnhancedNumberValidatorBase<float>(floatDefaultStep, floatDefaultPrecision){}
+
+	/**
+	 * Constructs an EnhancedNumberValidator of type float.
+	 *
+	 * @param min The minimum acceptable value for this validator.
+	 * @param max The maximum acceptable value for this validator.
+	 * @param step The increments at which the value should be changed. This is mostly used for 
+	 * the QSpinBox that is used in the Optika GUI. If you're not using the GUI, you may ignore this parameter.
+	 * @param precision This determines the precision at which the number should be displayed in the GUI. 
+	 * NOTE: THIS DOES NOT ACTUALLY SPECIFY THE PRECISION USED IN STORING THE VARIABLE. IT IS FOR GUI PURPOSES ONLY!
+	 */
+	EnhancedNumberValidator(float min, float max, float step=floatDefaultStep, unsigned short precision=floatDefaultPrecision)
+	:EnhancedNumberValidatorBase<float>(min, max, step, precision){}
+}; 
+
+
+/**
+ * Simply indicates that the parameter entry with this validator should
+ * contain a filename.
+ */
+class FileNameValidator : public ParameterEntryValidator{
+public:
+	/**
+	 * Constructs a FileNameValidator.
+	 *
+	 * @param mustAlreadyExist True if the file the user specifies should already exists, false otherwise.
+	 */
+	FileNameValidator(bool mustAlreadyExist=false);
+
+	/**
+	 * Gets the variable describing whether or not this validator wants the file that is specified to
+	 * already exist.
+	 *
+	 * @return Whether or not the validator requires the file to already exist
+	 */
+	bool fileMustExist() const;
+
+	/**
+	 * Sets whether or not the validator requires the file to already exist.
+	 *
+	 * @param shouldFileExist True if the file should already exist, false otherwise.
+	 * @return The new value of the shouldFileExist variable.
+	 */
+	bool setFileMustExist(bool shouldFileExist);
+
+	RCP<const Array<std::string> > validStringValues() const;
+
+	void validate(ParameterEntry const &entry, std::string const &paramName, std::string const &sublistName) const;
+
+	void printDoc(std::string const &docString, std::ostream &out) const;
+
+	void writeAspectsToXML(RCP<XMLObject> parentNode) const;
+private:
+	/**
+	 * Whether or not the file specified in the parameter should already exist.
+	 */
+	bool mustAlreadyExist_;
+};
+
+/**
+ * A simple validator that only allows certain string values to be choosen.
+ */
+class StringValidator : public ParameterEntryValidator{
+public:
+	typedef Array<std::string> ValueList;
+	/**
+	 * Constructs a StringValidator.
+	 */
+	StringValidator(ValueList validStrings);
+
+	/**
+	 * Sets the Array of valid strings and returns what the current array of valid
+	 * string now is.
+	 *
+	 * @param validStrings What the array for the valid strings should contain.
+	 * @return What the arry for the valid strings now conatians.
+	 */
+	const ValueList setValidStrings(ValueList validStrings);
+
+	RCP<const Array<std::string> > validStringValues() const;
+
+	void validate(ParameterEntry const &entry, std::string const &paramName, std::string const &sublistName) const;
+
+	void printDoc(std::string const &docString, std::ostream &out) const;
+
+	void writeAspectsToXML(RCP<Teuchos::XMLObject> parentNode) const;
+private:
+	/**
+	 * An array containing a list of all the valid string values.
+	 */
+	ValueList validStrings_;
+};
+
+/**
+ * An Abstract base class for all ArrayValidators
+ */
+class ArrayValidator : public ParameterEntryValidator{
+public:
+	/**
+	 * Constructs a ArrayValidator.
+	 *
+	 * @param prototypeValidator The validator to be used on each
+	 * entry in the array.
+	 */
+	ArrayValidator(RCP<ParameterEntryValidator> prototypeValidator):ParameterEntryValidator(),
+		       prototypeValidator_(prototypeValidator){}
+
+	virtual RCP<const Array<std::string> > validStringValues() const{
+		return prototypeValidator_->validStringValues();
+	}
+
+	virtual void validate(ParameterEntry const &entry, std::string const &paramName, std::string const &sublistName) const =0;
+
+	virtual void printDoc(std::string const &docString, std::ostream &out) const =0;
+
+	void writeAspectsToXML(RCP<XMLObject> parentNode) const{
+		RCP<XMLObject> prototypeValidatorTag = rcp(new XMLObject("prototypevalidator"));
+		prototypeValidator_->writeAspectsToXML(prototypeValidatorTag);
+		parentNode->addChild(*prototypeValidatorTag);
+	}
+
+protected:
+	/**
+	 * The prototype validator to be applied to each entry in the Array.
+	 */
+	RCP<ParameterEntryValidator> prototypeValidator_;
+};
+
+/**
+ * A wrapper class for Arrays using a StringToIntegralParameterEntryValidator.
+ */
+class ArrayStringValidator: public ArrayValidator{
+public:
+	/**
+	 * Constructs an ArrayStringValidator
+	 *
+	 * @param prototypeValidator The ParameterEntry validator containing a list of valid string values to be used 
+	 * on each entry in the Array.
+	 */
+	ArrayStringValidator(RCP<ParameterEntryValidator> prototypeValidator)
+	:ArrayValidator(prototypeValidator){}
+	
+	/**
+	 * Retruns the prototype validator being used by the ArrayStringValidator.
+	 *
+	 * @return The prototype validator being used by the ArrayStringValidator.
+	 */
+	RCP<const ParameterEntryValidator> getPrototype() const{
+		return prototypeValidator_;
+	}
+
+	void validate(ParameterEntry const &entry, std::string const &paramName, std::string const &sublistName) const{
+		any anyValue = entry.getAny(true);
+		if(anyValue.type() == typeid(Array<std::string>)){
+			Array<std::string> extracted = getValue<Teuchos::Array<std::string> >(entry);
+			std::string currentString;
+			RCP< const Array<std::string> > validStrings = validStringValues();
+			for(int i = 0; i<extracted.size(); ++i){
+				currentString = extracted[i];
+				Array<std::string>::const_iterator it = std::find(validStrings->begin(), validStrings->end(), currentString);
+				if(it == validStrings->end()){
+					std::stringstream oss;
+					std::string msg;
+					oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+					" parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
+					"No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
+					"can help you figure out what went wrong.\n\n"
+					"Error: The value that was entered at " << i << " in the array does't fall within " <<
+					"the rang set by the validtor.\n" <<
+					"Parameter: " << paramName << "\n" << 
+					"Value entered at " << i << ": "<<
+					extracted[i] << "\n" <<
+					"Exceptable Values:\n";
+					for(int j=0; j<validStrings->size(); ++j){
+						oss << "	" << (*validStrings)[j] << "\n";
+					}
+					msg = oss.str();
+					throw Exceptions::InvalidParameterValue(msg);
+				}	
+			}
+		}
+		else{
+			const std::string &entryName = entry.getAny(false).typeName();
+			std::stringstream oss;
+			std::string msg;
+			oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+			" parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
+			"No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
+			"can help you figure out what went wrong.\n\n"
+			"Error: The value you entered was the wrong type.\n" <<
+			"Parameter: " << paramName << "\n" <<
+			"Type specified: " << entryName << "\n" <<
+			"Type accepted: " << typeid(Array<std::string>).name() << "\n";
+			msg = oss.str();
+			throw Exceptions::InvalidParameterType(msg);
+		}
+
+	}
+
+	void printDoc(std::string const &docString, std::ostream &out) const{
+		StrUtils::printLines(out,"# ",docString);
+		std::string toPrint;
+		toPrint += "Prototype Validator:\n";
+		prototypeValidator_->printDoc(toPrint, out);
+	}
+};
+
+
+/**
+ * A wrapper class allowing EnhancedNumberValidators to be applied to arrays.
+ */
+template <class S>
+class ArrayNumberValidator: public ArrayValidator{
+public:
+	/**
+	 * Constructs and ArrayNumberValidator.
+	 *
+	 * @param prototypeValidator The validator to be applied to each entry
+	 * in the array.
+	 */
+	ArrayNumberValidator(RCP<EnhancedNumberValidator<S> > prototypeValidator)
+	:ArrayValidator(prototypeValidator){}
+
+	/**
+	 * Retruns the prototype validator being used by the ArrayNumberValidator.
+	 *
+	 * @return The prototype validator being used by the ArrayNumberValidator.
+	 */
+	Teuchos::RCP<const EnhancedNumberValidator<S> > getPrototype() const{
+		return rcp_static_cast<EnhancedNumberValidator<S> > (prototypeValidator_);
+	}
+
+	void validate(ParameterEntry const &entry, std::string const &paramName, std::string const &sublistName) const{
+		any anyValue = entry.getAny(true);
+		if(anyValue.type() == typeid(Array<S>)){
+			Array<S> extracted = any_cast<Array<S> >(anyValue);
+			for(int i = 0; i<extracted.size(); ++i){
+				if(!( extracted[i] >= getPrototype()->getMin() &&  extracted[i] <= getPrototype()->getMax())){
+					std::stringstream oss;
+					std::string msg;
+					oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+					" parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
+					"No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
+					"can help you figure out what went wrong.\n\n"
+					"Error: The value that was entered at \"" << i << "\" in the array does't fall within " <<
+					"the rang set by the validtor.\n" <<
+					"Parameter: " << paramName << "\n" <<
+					"Min: " << getPrototype()->getMin() << "\n" <<
+					"Max: " << getPrototype()->getMax() << "\n" <<
+					"Value entered at " << i << ": "<<
+					extracted[i] << "\n";
+					msg = oss.str();
+					throw Exceptions::InvalidParameterValue(msg);
+				}	
+			}
+		}
+		else{
+			const std::string &entryName = entry.getAny(false).typeName();
+			std::stringstream oss;
+			std::string msg;
+			oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+			" parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
+			"No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
+			"can help you figure out what went wrong.\n\n"
+			"Error: The value you entered was the wrong type.\n" <<
+			"Parameter: " << paramName << "\n" <<
+			"Type specified: " << entryName << "\n" <<
+			"Type accepted: " << typeid(Array<S>).name() << "\n";
+			msg = oss.str();
+			throw Exceptions::InvalidParameterType(msg);
+		}
+
+	}
+
+	void printDoc(std::string const &docString, std::ostream &out) const{
+		StrUtils::printLines(out,"# ",docString);
+		std::string toPrint;
+		toPrint += "Prototype Validator:\n";
+		prototypeValidator_->printDoc(toPrint, out);
+	}
+};
+
+
+/**
+ * A wrapper class allowing a FileNameValidator to be applied to an array.
+ */
+class ArrayFileNameValidator : public ArrayValidator{
+public:
+	/**
+	 * Constructs a FileNameArrayValidator.
+	 *
+	 * @param prototypeValidator The validator to be applied to each entry in the array.
+	 */
+	ArrayFileNameValidator(RCP<FileNameValidator> prototypeValidator)
+	:ArrayValidator(prototypeValidator){}
+
+	/**
+	 * Retruns the prototype validator being used by the ArrayFileNameValidator.
+	 *
+	 * @return The prototype validator being used by the ArrayFileNameValidator.
+	 */
+	RCP<const FileNameValidator> getPrototype() const{
+		return rcp_static_cast<FileNameValidator>(prototypeValidator_);
+	}
+
+	void validate(ParameterEntry const &entry, std::string const &paramName, std::string const &sublistName) const{
+		any anyValue = entry.getAny(true);
+		if(!(anyValue.type() == typeid(Array<std::string>))){
+			const std::string &entryName = entry.getAny(false).typeName();
+			std::stringstream oss;
+			std::string msg;
+			oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+			" parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
+			"No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
+			"can help you figure out what went wrong.\n\n"
+			"Error: The value you entered was the wrong type.\n" <<
+			"Parameter: " << paramName << "\n" <<
+			"Type specified: " << entryName << "\n" <<
+			"Type accepted: " << anyValue.typeName() << "\n";
+			msg = oss.str();
+			throw Exceptions::InvalidParameterType(msg);
+		}
+		else if(getPrototype()->fileMustExist()){
+			Array<std::string> extracted = any_cast<Array<std::string> >(anyValue);
+			for(int i = 0; i<extracted.size(); ++i){
+				std::string fileName = extracted[i];
+				struct stat fileInfo;
+				int intStat= stat(fileName.c_str(),&fileInfo);
+				if(intStat !=0){
+					std::stringstream oss;
+					std::string msg;
+					oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+					" parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
+					"No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
+					"can help you figure out what went wrong.\n\n"
+					"Error: The file must already exists. The value you entered does not corresspond to an existing file name.\n" <<
+					"Parameter: " << paramName << "\n" << 
+					"File name specified index " << i <<": " << fileName << "\n";
+					msg = oss.str();
+					throw Exceptions::InvalidParameterValue(msg);
+				}
+			}
+		}
+
+	}
+
+	void printDoc(std::string const &docString, std::ostream &out) const{
+		StrUtils::printLines(out,"# ",docString);
+		std::string toPrint;
+		toPrint += "Prototype Validator:\n";
+		prototypeValidator_->printDoc(toPrint, out);
+	}
+};
+
+
+
 
 
 // ///////////////////////////
