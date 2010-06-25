@@ -271,6 +271,23 @@ void AnyNumberParameterEntryValidator::validateAndModify(
   }
 }
 
+void AnyNumberParameterEntryValidator::writeAspectsToXML(RCP<XMLObject> parentNode) const{
+	XMLObject preferredTypeTag("preferredtype");
+	preferredTypeTag.addInt("value", preferredType_);
+	parentNode->addChild(preferredTypeTag);
+	if(acceptedTypes_.allowInt()){
+		XMLObject allowIntTag("allowint");
+		parentNode->addChild(allowIntTag);
+	}
+	if(acceptedTypes_.allowDouble()){
+		XMLObject allowDoubleTag("allowdouble");
+		parentNode->addChild(allowDoubleTag);
+	}
+	if(acceptedTypes_.allowString()){
+		XMLObject allowStringTag("allowString");
+		parentNode->addChild(allowStringTag);
+	}
+}
 
 // private
 

@@ -121,7 +121,7 @@ public:
       this->validate(*entry,paramName,sublistName);
     }
 
-	virtual XMLObject getXMLRepresentation(RCP<XMLObject> parentNode)=0 const;
+	virtual void writeAspectsToXML(RCP<XMLObject> parentNode) const = 0;
   
 };
 

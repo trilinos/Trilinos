@@ -228,7 +228,7 @@ public:
     ) const;
 
   /** \brief . */
-  virtual XMLObject getXMLRepresentation(RCP<XMLObject> parentNode) const;
+  virtual void writeAspectsToXML(RCP<XMLObject> parentNode) const;
   //@}
 
 private:
@@ -568,7 +568,7 @@ public:
     ) const;
 
   /** \brief . */
-  virtual XMLObject getXMLRepresentation(RCP<XMLObject> parentNode) const;
+  virtual void writeAspectsToXML(RCP<XMLObject> parentNode) const;
   //@}
 
 private:
@@ -944,11 +944,36 @@ void StringToIntegralParameterEntryValidator<IntegralType>::validate(
 }
 
 template<class IntegralType>
-XMLObject StringToIntegralParameterEntryValidator<IntegralType>::getXMLRepresentation(RCP<XMLObject> parentNode) const
+void StringToIntegralParameterEntryValidator<IntegralType>::writeAspectsToXML(RCP<XMLObject> parentNode) const
 {
-	XMLObject mappings("mappings");
-	for(
+	XMLObject stringsTag("strings");
+	XMLObject stringsDocsTag("stringdocs");
+	XMLObject integralValuesTag("integralvalues");
+	for(typename map_t::const_iterator it = map_.begin(); it != map_.end(); ++it){
+		XMLObject stringTag("string");
+		stringsTag.addAttribute("value", it->first);
+		stringsTag.addChild(stringTag);
+		XMLObject integralValueTag("integralvalue");
+		std::stringstream out;
+		out << it->second;
+		integralValueTag.addAttribute("value", out.str());
+		integralValuesTag.addChild(integralValueTag);
+	}
+	if(!validStringValuesDocs_.is_null()){
+		for(Array<std::string>::const_iterator it = validStringValuesDocs_->begin(); it != validStringValuesDocs_->end(); ++it){
+			XMLObject stringDocTag("stringdoc");
+			stringDocTag.addAttribute("value", *it);
+		}
+	}
+	XMLObject defaultParameterNameTag("defaultparametername");
+	defaultParameterNameTag.addAttribute("value", defaultParameterName_);
+
+	parentNode->addChild(stringsTag);
+	parentNode->addChild(stringsDocsTag);
+	parentNode->addChild(integralValuesTag);
+	parentNode->addChild(defaultParameterNameTag);
 }
+
 
 // private
 
