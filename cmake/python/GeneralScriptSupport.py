@@ -94,17 +94,35 @@ def getStrUnderlineStr(width):
 
 
 def arrayToFormattedString(array_in, offsetStr = ""):
-   sout = ""
-   sout += offsetStr + "[\n"
-   for i in range(0, len(array_in)):
-     if i != len(array_in)-1:
-       commaChar = ","
-     else:
-       commaChar = ""
-     sout += (offsetStr + "  \'" + str(array_in[i]) + "\'"+commaChar+"\n")
-   sout += offsetStr + "]\n"
-   return sout
+  sout = ""
+  sout += offsetStr + "[\n"
+  for i in range(0, len(array_in)):
+    if i != len(array_in)-1:
+      commaChar = ","
+    else:
+      commaChar = ""
+    sout += (offsetStr + "  \'" + str(array_in[i]) + "\'"+commaChar+"\n")
+  sout += offsetStr + "]\n"
+  return sout
 
+
+def extractLinesAfterRegex(string_in, regex_in):
+  #print "regex_in =", regex_in
+  reMatch = re.compile(regex_in)
+  linesExtracted = ""
+  foundRegex = False
+  for line in string_in.strip().split("\n"):
+    #print "line = '" + line + "'"
+    if not foundRegex:
+      matchObj = reMatch.match(line)
+      #print "matchObj =", matchObj
+      if matchObj:
+        foundRegex = True
+    if foundRegex:
+      linesExtracted += line + "\n"
+  return linesExtracted
+
+  
 
 ##############################################
 # System command unit testing utiltities

@@ -692,10 +692,11 @@ def analyzeResultsSendEmail(inOptions, buildDirName,
 
   if inOptions.doTest and testOutputExists and numTotalTests:
 
+    fullCTestOutput = readStrFromFile(getTestOutputFileName())
     if inOptions.showAllTests:
-      emailBody += getCmndOutput("cat "+getTestOutputFileName())
+      emailBody += fullCTestOutput
     else:
-      emailBody += getCmndOutput("grep -A 10000 '\% tests passed, ' "+getTestOutputFileName())
+      emailBody += extractLinesAfterRegex(fullCTestOutput, r".*\% tests passed.*")
 
   else:
 

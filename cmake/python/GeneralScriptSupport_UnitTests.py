@@ -32,6 +32,21 @@ class testGeneralScriptSupport(unittest.TestCase):
     self.assertEqual(arrayAsStr, arrayAsStr_expected)
 
 
+  def test_extractLinesAfterRegex(self):
+    #print "\ntest_extractLinesAfterRegex:"
+    linesExtracted_expected = \
+      "95% tests passed, 5 out tests failed out of 100\n" + \
+      "test1\n" +\
+      "test2\n"
+    fullString = \
+      "First line not to keep\n" + \
+      "Second line not to keep\n" + \
+      "\n" + \
+      linesExtracted_expected
+    linesExtracted = extractLinesAfterRegex(fullString, r".*\% tests passed.*")
+    self.assertEqual(linesExtracted, linesExtracted_expected)
+
+
   def test_getRelativePathFrom1to2_not_exclusive(self):
     #print "\ntest_getRelativePathFrom1to2_not_exclusive:"
     absPath1 = "/a/b/f/g"
