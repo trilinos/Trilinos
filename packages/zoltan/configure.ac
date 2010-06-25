@@ -20,7 +20,7 @@
 # This must be the first line in configure.ac.
 # Optional 3rd argument is email address for bugs.
 
-AC_INIT(Zoltan, 3.2, kddevin@sandia.gov)
+AC_INIT(Zoltan_GID_64, 3.3, lriesen@sandia.gov)
 
 echo "----------------------------------------"
 echo "Running Zoltan Configure Script"
@@ -204,6 +204,10 @@ TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 # ------------------------------------------------------------------------
 # Checks for special package flags 
 # ------------------------------------------------------------------------
+
+TAC_ARG_ENABLE_OPTION(int_gid, [ZOLTAN_ID_TYPE is type int], ZOLTAN_ID_TYPE_INT, no)
+TAC_ARG_ENABLE_OPTION(long_gid, [ZOLTAN_ID_TYPE is type long], ZOLTAN_ID_TYPE_LONG, yes)
+TAC_ARG_ENABLE_OPTION(llong_gid, [ZOLTAN_ID_TYPE is type long long], ZOLTAN_ID_TYPE_LONG_LONG, yes)
 
 TAC_ARG_ENABLE_OPTION(octreepartitioning, [enable octreepartitioning], ZOLTAN_OCT, no)
 AM_CONDITIONAL(BUILD_OCTREEPARTITIONING, [test "X$ac_cv_use_octreepartitioning" != "Xno"])
@@ -411,6 +415,7 @@ AC_CONFIG_FILES([
 		example/Makefile
 		example/C/Makefile
 		example/CPP/Makefile
+		test/Large_Data/Makefile
 		siMPI/Makefile
 		siMPI/pyMPI/Makefile
 		siMPI/pyMPI/siMPI/Makefile

@@ -51,7 +51,7 @@ target_triplet = @target@
 # ------------------------------------------------------------------------
 @BUILD_ZOLTAN_F90_INTERFACE_TRUE@am__append_1 = $(FORTRAN_MODULES)
 subdir = src
-DIST_COMMON = README $(am__include_HEADERS_DIST) $(srcdir)/Makefile.am \
+DIST_COMMON = README $(include_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ax_f90_module_case.m4 \
@@ -132,7 +132,7 @@ am__libzoltan_a_SOURCES_DIST = $(srcdir)/all/all_allo.c \
 	$(srcdir)/tpls/build_graph.c $(srcdir)/tpls/postprocessing.c \
 	$(srcdir)/tpls/preprocessing.c $(srcdir)/tpls/scatter_graph.c \
 	$(srcdir)/tpls/third_library.c $(srcdir)/tpls/verify_graph.c \
-	$(srcdir)/ccolamd/ccolamd.c $(srcdir)/ccolamd/ccolamd_global.c \
+	$(srcdir)/ccolamd/ccolamd.c \
 	$(srcdir)/tpls/parmetis_interface.c $(srcdir)/phg/phg_build.c \
 	$(srcdir)/phg/phg_build_calls.c $(srcdir)/phg/phg.c \
 	$(srcdir)/phg/phg_lookup.c $(srcdir)/phg/phg_verbose.c \
@@ -229,7 +229,7 @@ am__objects_13 = assign_param_vals.$(OBJEXT) bind_param.$(OBJEXT) \
 am__objects_14 = build_graph.$(OBJEXT) postprocessing.$(OBJEXT) \
 	preprocessing.$(OBJEXT) scatter_graph.$(OBJEXT) \
 	third_library.$(OBJEXT) verify_graph.$(OBJEXT)
-am__objects_15 = ccolamd.$(OBJEXT) ccolamd_global.$(OBJEXT)
+am__objects_15 = ccolamd.$(OBJEXT)
 am__objects_16 = parmetis_interface.$(OBJEXT)
 @BUILD_PARMETIS_TRUE@am__objects_17 = $(am__objects_16)
 am__objects_18 = phg_build.$(OBJEXT) phg_build_calls.$(OBJEXT) \
@@ -305,20 +305,6 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	install-pdf-recursive install-ps-recursive install-recursive \
 	installcheck-recursive installdirs-recursive pdf-recursive \
 	ps-recursive uninstall-recursive
-am__include_HEADERS_DIST = $(srcdir)/include/lbi_const.h \
-	$(srcdir)/include/zoltan_align.h \
-	$(srcdir)/include/zoltan_cpp.h $(srcdir)/include/zoltan.h \
-	$(srcdir)/include/zoltan_eval.h \
-	$(srcdir)/include/zoltan_types.h \
-	$(srcdir)/include/zoltan_comm.h \
-	$(srcdir)/include/zoltan_comm_cpp.h \
-	$(srcdir)/include/zoltan_timer_cpp.h \
-	$(srcdir)/include/zoltan_timer.h $(srcdir)/include/zoltan_dd.h \
-	$(srcdir)/include/zoltan_dd_cpp.h \
-	$(srcdir)/include/zoltan_mem.h LB_USER_CONST.mod \
-	ZOLTAN_TYPES.mod ZOLTAN.mod ZOLTAN_USER_DATA.mod \
-	lb_user_const.mod zoltan_types.mod zoltan.mod \
-	zoltan_user_data.mod
 includeHEADERS_INSTALL = $(INSTALL_HEADER)
 HEADERS = $(include_HEADERS)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
@@ -642,10 +628,9 @@ CCOLAMD_H = \
 	$(srcdir)/ccolamd/zoltan_ccolamd.h 
 
 CCOLAMD = \
-	$(srcdir)/ccolamd/ccolamd.c \
-	$(srcdir)/ccolamd/ccolamd_global.c 
+	$(srcdir)/ccolamd/ccolamd.c
 
-EXTRA_TPLS_INTERFACE_H = \
+EXTRA_PARMETIS_INTERFACE_H = \
 	$(srcdir)/tpls/parmetis_interface.h
 
 EXTRA_PARMETIS_INTERFACE = \
@@ -1029,18 +1014,6 @@ EXTRA_libzoltan_a_SOURCES = \
 	$(EXTRA_FORTRAN_H) \
 	$(EXTRA_FORTRAN)
 
-@F90_MODULE_LOWERCASE_FALSE@FORTRAN_MODULES = \
-@F90_MODULE_LOWERCASE_FALSE@	LB_USER_CONST.mod \
-@F90_MODULE_LOWERCASE_FALSE@	ZOLTAN_TYPES.mod \
-@F90_MODULE_LOWERCASE_FALSE@	ZOLTAN.mod \
-@F90_MODULE_LOWERCASE_FALSE@	ZOLTAN_USER_DATA.mod
-
-@F90_MODULE_LOWERCASE_TRUE@FORTRAN_MODULES = \
-@F90_MODULE_LOWERCASE_TRUE@	lb_user_const.mod \
-@F90_MODULE_LOWERCASE_TRUE@	zoltan_types.mod \
-@F90_MODULE_LOWERCASE_TRUE@	zoltan.mod \
-@F90_MODULE_LOWERCASE_TRUE@	zoltan_user_data.mod
-
 EXPORT_INCLUDES = $(ZOLTAN_LIBRARY_INCLUDES)
 AM_CPPFLAGS = $(EXPORT_INCLUDES) @MPI_RECV_LIMIT_FLAG@
 @USE_ALTERNATE_AR_FALSE@libzoltan_a_AR = $(AR) cru
@@ -1162,11 +1135,20 @@ EXTRA_DIST = $(ZOLTAN_H) \
     $(srcdir)/Utilities/DDirectory/README \
     $(srcdir)/Utilities/README \
     $(NATIVE_ZOLTAN_BUILD) \
-    $(EXTRA_FORTRAN_INTERFACE) \
-    $(srcdir)/fdriver_old/README \
-    $(srcdir)/fdriver_old/makefile \
     $(ZOLTAN_MATLAB) $(ZOLTAN_POSTPROCESS)
 
+
+#EXTRA_DIST = $(ZOLTAN_H) \
+#    $(srcdir)/Utilities/Communication/README \
+#    $(srcdir)/Utilities/Memory/README \
+#    $(srcdir)/Utilities/Timer/README \
+#    $(srcdir)/Utilities/DDirectory/README \
+#    $(srcdir)/Utilities/README \
+#    $(NATIVE_ZOLTAN_BUILD) \
+#    $(EXTRA_FORTRAN_INTERFACE) \
+#    $(srcdir)/fdriver_old/README \
+#    $(srcdir)/fdriver_old/makefile \
+#    $(ZOLTAN_MATLAB) $(ZOLTAN_POSTPROCESS)
 
 # ------------------------------------------------------------------------
 # Special stuff to install in our special $(execincludedir)
@@ -1193,6 +1175,8 @@ AM_FFLAGS = -I@abs_top_srcdir@/src/fort
 # siMPI's Fortran interface yet (and serial zfdrive is not an important
 # use case).
 @BUILD_ZOLTAN_F90_INTERFACE_TRUE@@HAVE_MPI_TRUE@FDRIVER_SUBDIR = fdriver
+
+#SUBDIRS = . 
 SUBDIRS = . driver $(FDRIVER_SUBDIR)
 
 # ------------------------------------------------------------------------
@@ -1293,7 +1277,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/build_graph.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/build_machine_desc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ccolamd.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ccolamd_global.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/check_param.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/color_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/coloring.Po@am__quote@
@@ -2482,20 +2465,6 @@ ccolamd.obj: $(srcdir)/ccolamd/ccolamd.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ccolamd/ccolamd.c' object='ccolamd.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ccolamd.obj `if test -f '$(srcdir)/ccolamd/ccolamd.c'; then $(CYGPATH_W) '$(srcdir)/ccolamd/ccolamd.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ccolamd/ccolamd.c'; fi`
-
-ccolamd_global.o: $(srcdir)/ccolamd/ccolamd_global.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ccolamd_global.o -MD -MP -MF $(DEPDIR)/ccolamd_global.Tpo -c -o ccolamd_global.o `test -f '$(srcdir)/ccolamd/ccolamd_global.c' || echo '$(srcdir)/'`$(srcdir)/ccolamd/ccolamd_global.c
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/ccolamd_global.Tpo $(DEPDIR)/ccolamd_global.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ccolamd/ccolamd_global.c' object='ccolamd_global.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ccolamd_global.o `test -f '$(srcdir)/ccolamd/ccolamd_global.c' || echo '$(srcdir)/'`$(srcdir)/ccolamd/ccolamd_global.c
-
-ccolamd_global.obj: $(srcdir)/ccolamd/ccolamd_global.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT ccolamd_global.obj -MD -MP -MF $(DEPDIR)/ccolamd_global.Tpo -c -o ccolamd_global.obj `if test -f '$(srcdir)/ccolamd/ccolamd_global.c'; then $(CYGPATH_W) '$(srcdir)/ccolamd/ccolamd_global.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ccolamd/ccolamd_global.c'; fi`
-@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/ccolamd_global.Tpo $(DEPDIR)/ccolamd_global.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(srcdir)/ccolamd/ccolamd_global.c' object='ccolamd_global.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o ccolamd_global.obj `if test -f '$(srcdir)/ccolamd/ccolamd_global.c'; then $(CYGPATH_W) '$(srcdir)/ccolamd/ccolamd_global.c'; else $(CYGPATH_W) '$(srcdir)/$(srcdir)/ccolamd/ccolamd_global.c'; fi`
 
 parmetis_interface.o: $(srcdir)/tpls/parmetis_interface.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT parmetis_interface.o -MD -MP -MF $(DEPDIR)/parmetis_interface.Tpo -c -o parmetis_interface.o `test -f '$(srcdir)/tpls/parmetis_interface.c' || echo '$(srcdir)/'`$(srcdir)/tpls/parmetis_interface.c
@@ -4008,6 +3977,20 @@ all-local:
 	@echo ""
 	@echo "Trilinos package Zoltan subdirectory src built successfully."
 	@echo ""
+
+#if F90_MODULE_LOWERCASE
+#FORTRAN_MODULES = \
+#	lb_user_const.mod \
+#	zoltan_types.mod \
+#	zoltan.mod \
+#	zoltan_user_data.mod
+#else
+#FORTRAN_MODULES = \
+#	LB_USER_CONST.mod \
+#	ZOLTAN_TYPES.mod \
+#	ZOLTAN.mod \
+#	ZOLTAN_USER_DATA.mod
+#endif
 
 include $(top_builddir)/Makefile.export.zoltan
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

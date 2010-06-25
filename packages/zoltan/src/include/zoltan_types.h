@@ -25,7 +25,7 @@
 extern "C" {
 #endif
 
-/* The default ZOLTAN_ID_TYPE is "unsigned long" but this can be over-ridden on the compile command line.  
+/* The default ZOLTAN_ID_TYPE is "long" but this can be over-ridden on the compile command line.  
  *
  * The type of a Zoltan object global ID is ZOLTAN_ID_TYPE.  A pointer to it is ZOLTAN_ID_PTR.
  *
@@ -57,6 +57,30 @@ extern "C" {
 #undef ZOLTAN_ID_SPECIFIER
 #undef ZOLTAN_ID_CONSTANT
 
+/* The configure script can set the ZOLTAN_ID_TYPE if it's not set as a preprocessor flag */
+
+#ifndef ZOLTAN_ID_TYPE_INT
+#ifndef ZOLTAN_ID_TYPE_LONG
+#ifndef ZOLTAN_ID_TYPE_LONG_LONG
+
+  /* it wasn't set as a preprocessor flag */
+
+#if HAVE_ZOLTAN_ID_TYPE_LONG
+#define ZOLTAN_ID_TYPE_LONG
+#endif
+
+#if HAVE_ZOLTAN_ID_TYPE_LONG_LONG
+#define ZOLTAN_ID_TYPE_LONG_LONG
+#endif
+
+#if HAVE_ZOLTAN_ID_TYPE_INT
+#define ZOLTAN_ID_TYPE_INT
+#endif
+
+#endif
+#endif
+#endif
+
 /* 
  * The ZOLTAN_ID_TYPE can be any signed integral type greater in size or equal to an int.
  *  (Zoltan code uses "-1" to indicate "unset".  This should be changed in "new zoltan".
@@ -71,16 +95,7 @@ typedef int ZOLTAN_ID_TYPE;
 #define zoltan_id_datatype_name "int"
 #define ZOLTAN_ID_SPECIFIER  "d"
 #define ZOLTAN_ID_CONSTANT(z)  z
-#endif
 
-#ifdef ZOLTAN_ID_TYPE_LONG
-
-typedef long ZOLTAN_ID_TYPE;
-#define ZOLTAN_ID_MPI_TYPE  MPI_LONG
-#define zoltan_mpi_id_datatype_name "MPI_LONG"
-#define zoltan_id_datatype_name "long"
-#define ZOLTAN_ID_SPECIFIER  "ld"
-#define ZOLTAN_ID_CONSTANT(z)  z ## L
 #endif
 
 #ifdef ZOLTAN_ID_TYPE_LONG_LONG
@@ -91,16 +106,17 @@ typedef long long ZOLTAN_ID_TYPE;
 #define zoltan_id_datatype_name "long long"
 #define ZOLTAN_ID_SPECIFIER  "Ld"
 #define ZOLTAN_ID_CONSTANT(z)  z ## LL
+
 #endif
 
 #ifndef ZOLTAN_ID_MPI_TYPE
 
-typedef int ZOLTAN_ID_TYPE;
-#define ZOLTAN_ID_MPI_TYPE  MPI_INT
-#define zoltan_mpi_id_datatype_name "MPI_INT"
-#define zoltan_id_datatype_name "int"
-#define ZOLTAN_ID_SPECIFIER  "d"
-#define ZOLTAN_ID_CONSTANT(z)  z
+typedef long ZOLTAN_ID_TYPE;
+#define ZOLTAN_ID_MPI_TYPE  MPI_LONG
+#define zoltan_mpi_id_datatype_name "MPI_LONG"
+#define zoltan_id_datatype_name "long"
+#define ZOLTAN_ID_SPECIFIER  "ld"
+#define ZOLTAN_ID_CONSTANT(z)  z ## L
 
 #endif
 

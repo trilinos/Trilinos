@@ -220,7 +220,7 @@ CCOLAMD_H = \
 CCOLAMD = \
 	$(srcdir)/ccolamd/ccolamd.c
 
-EXTRA_TPLS_INTERFACE_H = \
+EXTRA_PARMETIS_INTERFACE_H = \
 	$(srcdir)/tpls/parmetis_interface.h
 
 EXTRA_PARMETIS_INTERFACE = \
@@ -628,19 +628,19 @@ EXTRA_libzoltan_a_SOURCES = \
 	$(EXTRA_FORTRAN_H) \
 	$(EXTRA_FORTRAN)
 
-if F90_MODULE_LOWERCASE
-FORTRAN_MODULES = \
-	lb_user_const.mod \
-	zoltan_types.mod \
-	zoltan.mod \
-	zoltan_user_data.mod
-else
-FORTRAN_MODULES = \
-	LB_USER_CONST.mod \
-	ZOLTAN_TYPES.mod \
-	ZOLTAN.mod \
-	ZOLTAN_USER_DATA.mod
-endif
+#if F90_MODULE_LOWERCASE
+#FORTRAN_MODULES = \
+#	lb_user_const.mod \
+#	zoltan_types.mod \
+#	zoltan.mod \
+#	zoltan_user_data.mod
+#else
+#FORTRAN_MODULES = \
+#	LB_USER_CONST.mod \
+#	ZOLTAN_TYPES.mod \
+#	ZOLTAN.mod \
+#	ZOLTAN_USER_DATA.mod
+#endif
 
 include $(top_builddir)/Makefile.export.zoltan
 
@@ -779,10 +779,19 @@ EXTRA_DIST = $(ZOLTAN_H) \
     $(srcdir)/Utilities/DDirectory/README \
     $(srcdir)/Utilities/README \
     $(NATIVE_ZOLTAN_BUILD) \
-    $(EXTRA_FORTRAN_INTERFACE) \
-    $(srcdir)/fdriver_old/README \
-    $(srcdir)/fdriver_old/makefile \
     $(ZOLTAN_MATLAB) $(ZOLTAN_POSTPROCESS)
+
+#EXTRA_DIST = $(ZOLTAN_H) \
+#    $(srcdir)/Utilities/Communication/README \
+#    $(srcdir)/Utilities/Memory/README \
+#    $(srcdir)/Utilities/Timer/README \
+#    $(srcdir)/Utilities/DDirectory/README \
+#    $(srcdir)/Utilities/README \
+#    $(NATIVE_ZOLTAN_BUILD) \
+#    $(EXTRA_FORTRAN_INTERFACE) \
+#    $(srcdir)/fdriver_old/README \
+#    $(srcdir)/fdriver_old/makefile \
+#    $(ZOLTAN_MATLAB) $(ZOLTAN_POSTPROCESS)
 
 # ------------------------------------------------------------------------
 # Special stuff to install in our special $(execincludedir)
@@ -817,6 +826,7 @@ else
 FDRIVER_SUBDIR =
 endif
 
+#SUBDIRS = . 
 SUBDIRS = . driver $(FDRIVER_SUBDIR)
 
 # ------------------------------------------------------------------------
