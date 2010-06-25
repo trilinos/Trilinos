@@ -7,9 +7,9 @@ Parallel Disk Info	= number=0
 zdrive action = 2
 Global element ids assigned to processor 0
 GID	Part	Perm	IPerm
-1	0	5	5
-2	0	4	4
-3	0	24	24
-4	0	13	13
-5	0	12	12
-6	0	7	7
+1	0	15	15
+2	0	22	22
+3	0	1	1
+4	0	3	3
+5	0	0	0
+6	0	14	14
