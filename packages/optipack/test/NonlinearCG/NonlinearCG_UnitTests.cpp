@@ -354,7 +354,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( NonlinearCG, printValidParams, Scalar )
   const RCP<const ParameterList> validPL = cgSolver->getValidParameters();
   typedef Teuchos::ParameterList::PrintOptions PO;
   out << "\nvalidPL:\n";
-  validPL->print(out, PO().indent(2).showTypes(true).showFlags(2).showDoc(2));
+  validPL->print(out, PO().indent(2).showTypes(true).showFlags(true).showDoc(true));
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT_REAL_SCALAR_TYPES( NonlinearCG, printValidParams )
