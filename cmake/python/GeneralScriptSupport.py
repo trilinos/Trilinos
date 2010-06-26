@@ -121,7 +121,6 @@ def extractLinesAfterRegex(string_in, regex_in):
     if foundRegex:
       linesExtracted += line + "\n"
   return linesExtracted
-
   
 
 ##############################################

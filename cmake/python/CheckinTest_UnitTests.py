@@ -13,6 +13,72 @@ class MockOptions:
 
 
 #
+# Test formatMinutesStr
+#
+
+
+class test_formatMinutesStr(unittest.TestCase):
+
+  def test_00(self):
+    self.assertEqual(formatMinutesStr(0.000000), "0.0 min")
+
+  def test_01(self):
+    self.assertEqual(formatMinutesStr(1245.44678), "1245.4 min")
+
+  def test_02(self):
+    self.assertEqual(formatMinutesStr(1245.45678), "1245.5 min")
+
+  def test_03(self):
+    self.assertEqual(formatMinutesStr(1.45678), "1.5 min")
+
+  def test_04(self):
+    self.assertEqual(formatMinutesStr(0.02), "0.0 min")
+
+  def test_05(self):
+    self.assertEqual(formatMinutesStr(0.04), "0.0 min")
+
+  def test_06(self):
+    self.assertEqual(formatMinutesStr(0.053333), "0.1 min")
+
+  def test_07(self):
+    self.assertEqual(formatMinutesStr(0.943333), "0.9 min")
+
+  def test_08(self):
+    self.assertEqual(formatMinutesStr(0.993333), "1.0 min")
+
+  def test_09(self):
+    self.assertEqual(formatMinutesStr(45.993333), "46.0 min")
+
+  def test_10(self):
+    self.assertEqual(formatMinutesStr(45.493333), "45.5 min")
+
+
+#
+# Test formatMinutesStr
+#
+
+
+class test_getTimeInMinFromTotalTimeLine(unittest.TestCase):
+
+  def test_None(self):
+    self.assertEqual(
+      getTimeInMinFromTotalTimeLine(
+         "MPI_DEBUG", None),
+      -1.0)
+
+  def test_Empty(self):
+    self.assertEqual(
+      getTimeInMinFromTotalTimeLine(
+         "MPI_DEBUG", ""),
+      -1.0)
+
+  def test_00(self):
+    self.assertEqual(
+      getTimeInMinFromTotalTimeLine(
+         "MPI_DEBUG", "Total time for MPI_DEBUG = 1.16723643541 min"),
+      1.16723643541)
+
+#
 # Test extractPackageEnablesFromChangeStatus
 #
 
@@ -211,16 +277,20 @@ g_cmndinterceptsConfigBuildTestPasses = \
   g_cmndinterceptsConfigBuildPasses+ \
   "IT: ctest -j5; 0; '100% tests passed, 0 tests failed out of 100'\n"
 
+g_cmnginterceptsEgLogCmnds = \
+  "IT: eg cat-file -p HEAD; 0; 'This is the last commit message'\n" \
+  "IT: eg log --oneline origin/currentbranch..currentbranch; 0; '12345 Only one commit'\n" \
+  "IT: eg log --pretty=format:'%h' origin/currentbranch..currentbranch; 0; '12345'\n" \
+
 g_cmndinterceptsFinalPushPasses = \
   "IT: eg pull && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
-  "IT: eg log --oneline origin/currentbranch..currentbranch; 0; 'Only one commit'\n" \
-  "IT: eg cat-file -p HEAD; 0; 'This is the last commit message'\n" \
+  +g_cmnginterceptsEgLogCmnds+ \
   "IT: eg commit --amend -F .*; 0; 'Amending the last commit passed'\n" \
   "IT: eg push; 0; 'push passes'\n"
 
 g_cmndinterceptsFinalPushNoAppendTestResultsPasses = \
   "IT: eg pull && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
-  "IT: eg log --oneline origin/currentbranch..currentbranch; 0; 'Only one commit'\n" \
+  +g_cmnginterceptsEgLogCmnds+ \
   "IT: eg push; 0; 'push passes'\n"
 
 g_cmndinterceptsSendBuildTestCaseEmail = \
@@ -258,7 +328,7 @@ g_expectedRegexBuildFailed = \
 g_expectedRegexTestPasses = \
   "No tests failed!\n" \
   "testResultsLine = .100% tests passed, 0 tests failed out of 100.\n" \
-  "passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
+  "passed: passed=100,notpassed=0\n" \
   "Test: Passed\n"
 
 g_expectedRegexTestNotRun = \
@@ -355,7 +425,8 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
       "FT: touch .*\n" \
       "FT: chmod .*\n" \
       "FT: hostname\n" \
-      "FT: grep .* "+getTestOutputFileName()+"\n" \
+      "FT: grep .*"+getTestOutputFileName()+"\n" \
+      "FT: grep .*"+getEmailBodyFileName()+"\n" \
       "FT: grep .*REQUESTED ACTIONS\: PASSED.*\n"
 
     fullCmndInterceptsStr = baseCmndInterceptsStr + cmndInterceptsStr
@@ -436,7 +507,7 @@ def g_test_do_all_without_serial_release_pass(testObject, testName):
     +g_expectedRegexTestPasses \
     +"0) MPI_DEBUG: Will attempt to run!\n" \
     +"1) SERIAL_RELEASE: Will \*not\* attempt to run on request!\n" \
-    +"0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
+    +"0) MPI_DEBUG => passed: passed=100,notpassed=0\n" \
     +"1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run! => Does not affect commit/push readiness!\n" \
     +g_expectedCommonOptionsSummary \
     +"=> A COMMIT IS OKAY TO BE PERFORMED!\n" \
@@ -577,8 +648,8 @@ class test_checkin_test(unittest.TestCase):
       +g_expectedRegexConfigPasses \
       +g_expectedRegexBuildPasses \
       +g_expectedRegexTestPasses \
-      +"0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
-      +"1) SERIAL_RELEASE => passed: Trilinos/SERIAL_RELEASE: passed=100,notpassed=0\n" \
+      +"0) MPI_DEBUG => passed: passed=100,notpassed=0\n" \
+      +"1) SERIAL_RELEASE => passed: passed=100,notpassed=0\n" \
       +g_expectedCommonOptionsSummary \
       +"=> A PUSH IS READY TO BE PERFORMED!\n" \
       +"mailx .* trilinos-checkin-tests.*\n" \
@@ -651,7 +722,7 @@ class test_checkin_test(unittest.TestCase):
       g_expectedRegexConfigPasses \
       +g_expectedRegexBuildPasses \
       +g_expectedRegexTestPasses \
-      +"0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
+      +"0) MPI_DEBUG => passed: passed=100,notpassed=0\n" \
       +"1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run! => Does not affect commit/push readiness!\n" \
       +g_expectedCommonOptionsSummary \
       +"=> A COMMIT IS OKAY TO BE PERFORMED!\n" \
@@ -690,7 +761,7 @@ class test_checkin_test(unittest.TestCase):
       +g_expectedRegexBuildPasses \
       +"FAILED: ctest failed returning 1!\n" \
       +"testResultsLine = .80% tests passed, 20 tests failed out of 100.\n" \
-      +"0) MPI_DEBUG => FAILED: Trilinos/MPI_DEBUG: passed=80,notpassed=20\n" \
+      +"0) MPI_DEBUG => FAILED: passed=80,notpassed=20\n" \
       +"1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run! => Does not affect commit/push readiness!\n" \
       +g_expectedCommonOptionsSummary \
       +"Test: FAILED\n" \
@@ -730,7 +801,7 @@ class test_checkin_test(unittest.TestCase):
       True,
       \
       "Running: rm -rf MPI_DEBUG\n" \
-      +"0) MPI_DEBUG => No configure, build, or test for MPI_DEBUG was requested! => Not ready for final commit/push!\n" \
+      +"0) MPI_DEBUG => No configure, build, or test for MPI_DEBUG was requested! => Not ready to push!\n" \
       +"=> A COMMIT IS \*NOT\* OKAY TO BE PERFORMED!\n" \
       +"=> A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       +"^NOT READY TO PUSH: Trilinos:\n"
@@ -764,8 +835,8 @@ class test_checkin_test(unittest.TestCase):
       +g_expectedRegexConfigPasses \
       +g_expectedRegexBuildPasses \
       +g_expectedRegexTestPasses \
-      +"0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
-      +"1) SERIAL_RELEASE => passed: Trilinos/SERIAL_RELEASE: passed=100,notpassed=0\n" \
+      +"0) MPI_DEBUG => passed: passed=100,notpassed=0\n" \
+      +"1) SERIAL_RELEASE => passed: passed=100,notpassed=0\n" \
       +g_expectedCommonOptionsSummary \
       +"Skipping appending test results on request (--no-append-test-results)!\n" \
       +"=> A PUSH IS READY TO BE PERFORMED!\n" \
@@ -966,7 +1037,7 @@ class test_checkin_test(unittest.TestCase):
       \
       g_expectedRegexUpdatePasses \
       +"Not performing any build cases because no --configure, --build or --test was specified!\n" \
-      +"0) MPI_DEBUG => No configure, build, or test for MPI_DEBUG was requested! => Not ready for final commit/push!\n" \
+      +"0) MPI_DEBUG => No configure, build, or test for MPI_DEBUG was requested! => Not ready to push!\n" \
       +"A COMMIT IS \*NOT\* OKAY TO BE PERFORMED!\n" \
       +"A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       +"^NOT READY TO PUSH: Trilinos:\n"
@@ -1066,7 +1137,7 @@ class test_checkin_test(unittest.TestCase):
       "touch configure.success\n" \
       "Skipping the build on request!\n" \
       "Skipping the tests on request!\n" \
-      "0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: configure-only passed => Not ready for final commit/push!\n" \
+      "0) MPI_DEBUG => passed: configure-only passed => Not ready to push!\n" \
       "A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       "NOT READY TO PUSH: Trilinos:\n"
       )
@@ -1094,7 +1165,7 @@ class test_checkin_test(unittest.TestCase):
       "touch configure.success\n" \
       "Build passed!\n" \
       "Skipping the tests on request!\n" \
-      "0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: build-only passed => Not ready for final commit/push!\n" \
+      "0) MPI_DEBUG => passed: build-only passed => Not ready to push!\n" \
       "A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       "NOT READY TO PUSH: Trilinos:\n"
       )
@@ -1192,7 +1263,7 @@ class test_checkin_test(unittest.TestCase):
       \
       True,
       \
-      "0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
+      "0) MPI_DEBUG => passed: passed=100,notpassed=0\n" \
       "0) MPI_DEBUG Results:\n" \
       +"=> A PUSH IS READY TO BE PERFORMED!\n" \
       +"^DID PUSH: Trilinos:\n" \
@@ -1228,7 +1299,7 @@ class test_checkin_test(unittest.TestCase):
       \
       True,
       \
-      "0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
+      "0) MPI_DEBUG => passed: passed=100,notpassed=0\n" \
       +"=> A PUSH IS READY TO BE PERFORMED!\n" \
       +"^DID PUSH: Trilinos:\n" \
       ,
@@ -1260,7 +1331,7 @@ class test_checkin_test(unittest.TestCase):
       \
       True,
       \
-      "0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
+      "0) MPI_DEBUG => passed: passed=100,notpassed=0\n" \
       "=> A PUSH IS READY TO BE PERFORMED!\n" \
       "^READY TO PUSH: Trilinos:\n"
       )
@@ -1459,7 +1530,7 @@ class test_checkin_test(unittest.TestCase):
       "Commit failed, aborting pull!\n" \
       "Skipping getting list of modified files because pull failed!\n" \
       "The commit failed, skipping running the build/test cases!\n" \
-      "0) MPI_DEBUG => The directory MPI_DEBUG does not exist! => Not ready for final commit/push!\n" \
+      "0) MPI_DEBUG => The directory MPI_DEBUG does not exist! => Not ready to push!\n" \
       "A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       "Not doing the push on request (--no-push) but sending an email about the commit/push readiness status ...\n" \
       "INITIAL COMMIT FAILED: Trilinos:\n"
@@ -1606,7 +1677,7 @@ class test_checkin_test(unittest.TestCase):
       +"ERROR: Illegal enable -DTrilinos_ENABLE_STK:BOOL=ON in ../MPI_DEBUG.config!\n" \
       +"ERROR: Illegal enable -DTrilinos_ENABLE_Phalanx=ON in ../MPI_DEBUG.config!\n" \
       +"Skipping configure because pre-configure failed (see above)!\n" \
-      +"0) MPI_DEBUG => FAILED: Trilinos/MPI_DEBUG: pre-configure failed => Not ready for final commit/push!\n" \
+      +"0) MPI_DEBUG => FAILED: pre-configure failed => Not ready to push!\n" \
       +"Configure: FAILED\n" \
       +"FAILED CONFIGURE/BUILD/TEST: Trilinos:\n" \
       +"REQUESTED ACTIONS: FAILED\n" \
@@ -1639,7 +1710,7 @@ class test_checkin_test(unittest.TestCase):
       +"The configure FAILED!\n" \
       +"The build was never attempted!\n" \
       +"The tests where never even run!\n" \
-      +"FAILED: Trilinos/MPI_DEBUG: configure failed\n" \
+      +"FAILED: configure failed\n" \
       +"A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       +"FAILED CONFIGURE/BUILD/TEST: Trilinos:\n" \
       )
@@ -1668,7 +1739,7 @@ class test_checkin_test(unittest.TestCase):
       +g_expectedRegexConfigPasses \
       +g_expectedRegexTestNotRun \
       +g_expectedRegexBuildFailed \
-      +"0) MPI_DEBUG => FAILED: Trilinos/MPI_DEBUG: build failed => Not ready for final commit/push!\n" \
+      +"0) MPI_DEBUG => FAILED: build failed => Not ready to push!\n" \
       +"1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run! => Does not affect commit/push readiness!\n" \
       +g_expectedCommonOptionsSummary \
       +"A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
@@ -1700,7 +1771,7 @@ class test_checkin_test(unittest.TestCase):
       +g_expectedRegexBuildPasses \
       +"FAILED: ctest failed returning 1!\n" \
       +"testResultsLine = .80% tests passed, 20 tests failed out of 100.\n" \
-      +"0) MPI_DEBUG => FAILED: Trilinos/MPI_DEBUG: passed=80,notpassed=20\n" \
+      +"0) MPI_DEBUG => FAILED: passed=80,notpassed=20\n" \
       +"1) SERIAL_RELEASE => Test case SERIAL_RELEASE was not run! => Does not affect commit/push readiness!\n" \
       +g_expectedCommonOptionsSummary \
       +"Test: FAILED\n" \
@@ -1725,7 +1796,7 @@ class test_checkin_test(unittest.TestCase):
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +"IT: eg pull && eg rebase --against origin/currentbranch; 1; 'final eg pull FAILED'\n" \
-      +"IT: eg log --oneline origin/currentbranch..currentbranch; 0; 'Only one commit'\n" \
+      +g_cmnginterceptsEgLogCmnds \
       +g_cmndinterceptsSendFinalEmail \
       ,      \
       False,
@@ -1759,8 +1830,7 @@ class test_checkin_test(unittest.TestCase):
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +"IT: eg pull && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
-      +"IT: eg log --oneline origin/currentbranch..currentbranch; 0; 'Only one commit'\n" \
-      +"IT: eg cat-file -p HEAD; 0; 'This is the last commit message'\n" \
+      +g_cmnginterceptsEgLogCmnds \
       +"IT: eg commit --amend -F .*; 1; 'Amending the last commit FAILED'\n" \
       +g_cmndinterceptsSendFinalEmail \
       ,
@@ -1797,8 +1867,7 @@ class test_checkin_test(unittest.TestCase):
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +"IT: eg pull && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
-      +"IT: eg log --oneline origin/currentbranch..currentbranch; 0; 'Only one commit'\n" \
-      +"IT: eg cat-file -p HEAD; 0; 'This is the last commit message'\n" \
+      +g_cmnginterceptsEgLogCmnds \
       +"IT: eg commit --amend -F .*; 0; 'Amending the last commit passed'\n" \
       +"IT: eg push; 1; 'push FAILED'\n"
       +g_cmndinterceptsSendFinalEmail \
@@ -1835,8 +1904,9 @@ class test_checkin_test(unittest.TestCase):
       +g_cmndinterceptsConfigBuildTestPasses \
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +"IT: eg pull && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
+      +"IT: eg cat-file -p HEAD; 0; 'This is the last commit message'\n" \
       +"IT: eg log --oneline origin/currentbranch..currentbranch; 0; ''\n" \
-      +"IT: eg cat-file -p HEAD; 0; 'Some commit not the local commit'\n" \
+      +"IT: eg log --pretty=format:'%h' origin/currentbranch..currentbranch; 0; ''\n" \
       +"IT: eg push; 1; 'push FAILED due to no local commits'\n"
       +g_cmndinterceptsSendFinalEmail \
       ,
@@ -1847,8 +1917,8 @@ class test_checkin_test(unittest.TestCase):
       +g_expectedRegexConfigPasses \
       +g_expectedRegexBuildPasses \
       +g_expectedRegexTestPasses \
-      +"0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
-      +"1) SERIAL_RELEASE => passed: Trilinos/SERIAL_RELEASE: passed=100,notpassed=0\n" \
+      +"0) MPI_DEBUG => passed: passed=100,notpassed=0\n" \
+      +"1) SERIAL_RELEASE => passed: passed=100,notpassed=0\n" \
       +"=> A PUSH IS READY TO BE PERFORMED!\n" \
       +"No local commits exit!\n" \
       +"Skipping amending last commit because there are no local commits!\n" \
@@ -1882,7 +1952,7 @@ class test_checkin_test(unittest.TestCase):
       +"No tests failed!\n"\
       +"CTest was invoked but no tests were run!\n"\
       +"At least one of the actions (update, configure, built, test) failed or was not performed correctly!\n" \
-       +"0) MPI_DEBUG => FAILED: Trilinos/MPI_DEBUG: no tests run\n" \
+       +"0) MPI_DEBUG => FAILED: no tests run\n" \
       +"=> A COMMIT IS \*NOT\* OKAY TO BE PERFORMED!\n" \
       +"=> A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       +"^FAILED CONFIGURE/BUILD/TEST: Trilinos:\n" \
@@ -1911,7 +1981,7 @@ class test_checkin_test(unittest.TestCase):
       g_expectedRegexConfigPasses \
       +g_expectedRegexBuildPasses \
       +g_expectedRegexTestPasses \
-      +"0) MPI_DEBUG => passed: Trilinos/MPI_DEBUG: passed=100,notpassed=0\n" \
+      +"0) MPI_DEBUG => passed: passed=100,notpassed=0\n" \
       +"=> A COMMIT IS OKAY TO BE PERFORMED!\n" \
       +"A current successful pull does \*not\* exist => Not ready for final push!\n"\
       +"=> A PUSH IS \*NOT\* READY TO BE PERFORMED!\n"\
