@@ -445,7 +445,7 @@ def createConfigureFile(cmakeOptions, baseCmnd, trilinosSrcDir, configFileName):
 
 
 def formatMinutesStr(timeInMinutes):
-  return ("%.1f" % timeInMinutes) + " min"
+  return ("%.2f" % timeInMinutes) + " min"
   
 
 def getStageStatus(stageName, stageDoBool, stagePassed, stageTiming):
@@ -1946,7 +1946,7 @@ def checkinTest(inOptions):
         print "\nAttempting to do the push ..."
 
         debugSkipPush = os.environ.get("CHECKIN_TEST_SKIP_PUSH","")
-        print "debugSkipPush =", debugSkipPush
+        #print "debugSkipPush =", debugSkipPush
         #debugSkipPush = True
 
         if not debugSkipPush:

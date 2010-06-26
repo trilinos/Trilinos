@@ -20,37 +20,37 @@ class MockOptions:
 class test_formatMinutesStr(unittest.TestCase):
 
   def test_00(self):
-    self.assertEqual(formatMinutesStr(0.000000), "0.0 min")
+    self.assertEqual(formatMinutesStr(0.000000), "0.00 min")
 
   def test_01(self):
-    self.assertEqual(formatMinutesStr(1245.44678), "1245.4 min")
+    self.assertEqual(formatMinutesStr(1245.244678), "1245.24 min")
 
   def test_02(self):
-    self.assertEqual(formatMinutesStr(1245.45678), "1245.5 min")
+    self.assertEqual(formatMinutesStr(1245.245678), "1245.25 min")
 
   def test_03(self):
-    self.assertEqual(formatMinutesStr(1.45678), "1.5 min")
+    self.assertEqual(formatMinutesStr(1.245678), "1.25 min")
 
   def test_04(self):
-    self.assertEqual(formatMinutesStr(0.02), "0.0 min")
+    self.assertEqual(formatMinutesStr(0.202), "0.20 min")
 
   def test_05(self):
-    self.assertEqual(formatMinutesStr(0.04), "0.0 min")
+    self.assertEqual(formatMinutesStr(0.204), "0.20 min")
 
   def test_06(self):
-    self.assertEqual(formatMinutesStr(0.053333), "0.1 min")
+    self.assertEqual(formatMinutesStr(0.2053333), "0.21 min")
 
   def test_07(self):
-    self.assertEqual(formatMinutesStr(0.943333), "0.9 min")
+    self.assertEqual(formatMinutesStr(0.2943333), "0.29 min")
 
   def test_08(self):
-    self.assertEqual(formatMinutesStr(0.993333), "1.0 min")
+    self.assertEqual(formatMinutesStr(0.2993333), "0.30 min")
 
   def test_09(self):
-    self.assertEqual(formatMinutesStr(45.993333), "46.0 min")
+    self.assertEqual(formatMinutesStr(45.2993333), "45.30 min")
 
   def test_10(self):
-    self.assertEqual(formatMinutesStr(45.493333), "45.5 min")
+    self.assertEqual(formatMinutesStr(45.2493333), "45.25 min")
 
 
 #
