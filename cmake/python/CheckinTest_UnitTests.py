@@ -297,6 +297,7 @@ g_cmndinterceptsSendBuildTestCaseEmail = \
   "IT: mailx -s .*; 0; 'Do not really sending build/test case email'\n"
 
 g_cmndinterceptsSendFinalEmail = \
+  "IT: eg log --oneline currentbranch \^origin/currentbranch; 0; '54321 Only one commit'\n" \
   "IT: sleep .*; 0; 'Do not really sleep'\n" \
   "IT: mailx -s .*; 0; 'Do not really send email '\n"
 
@@ -1701,6 +1702,7 @@ class test_checkin_test(unittest.TestCase):
       g_cmndinterceptsCurrentBranch \
       +g_cmndinterceptsPullPasses \
       +"IT: \./do-configure; 1; 'do-configure failed'\n" \
+      +g_cmndinterceptsSendFinalEmail \
       ,
       \
       False,

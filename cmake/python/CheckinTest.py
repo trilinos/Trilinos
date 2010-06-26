@@ -1288,8 +1288,8 @@ def getLocalCommitsSummariesStr(inOptions):
     )
 
   print \
-    "\nLocal commits (before amending the last commit):" \
-    "\n------------------------------------------------" \
+    "\nLocal commits for this build/test group:" \
+    "\n----------------------------------------" \
     "\n" \
     + rawLocalCommitsStr
 
@@ -1303,8 +1303,8 @@ def getLocalCommitsSummariesStr(inOptions):
 
   localCommitsStr = \
     "\n" \
-    "Local commits for this build/test group (before amending the last commit):\n" \
-    "--------------------------------------------------------------------------\n"
+    "Local commits for this build/test group:\n" \
+    "----------------------------------------\n"
   if localCommitsExist:
     localCommitsStr += rawLocalCommitsStr
   else:
@@ -1823,7 +1823,6 @@ def checkinTest(inOptions):
     pushPassed = True
     didPush = False
     pushPassed = True
-    localCommitSummariesStr = ""
 
     if not inOptions.doPush:
   
@@ -1877,7 +1876,7 @@ def checkinTest(inOptions):
 
       lastCommitMessageStr = getLastCommitMessageStr(inOptions)
       #print "\nlastCommitMessageStr:\n-------------\n"+lastCommitMessageStr+"-------------\n"
-      (localCommitSummariesStr, localCommitsExist) = getLocalCommitsSummariesStr(inOptions)
+      localCommitsExist = getLocalCommitsSummariesStr(inOptions)[1]
       #print "\nlocalCommitsExist =", localCommitsExist, "\n"
       localCommitSHA1ListStr = getLocalCommitsSHA1ListStr(inOptions)
 
@@ -2054,25 +2053,28 @@ def checkinTest(inOptions):
           subjectLine = "NOT READY TO PUSH"
 
       #
-      print "\n9.b) Create and send out push (or readinessstatus) notification email ..."
+      print "\n9.b) Create and send out push (or readiness status) notification email ..."
       #
-  
+    
       subjectLine += ": Trilinos: "+getHostname()
   
-      emailBodyStr = subjectLine + "\n\n"
-      emailBodyStr += getCmndOutput("date", True) + "\n\n"
-      emailBodyStr += commitEmailBodyExtra
-      emailBodyStr += localCommitSummariesStr
-      emailBodyStr += getSummaryEmailSectionStr(inOptions, buildTestCaseList)
-  
-      print "\nCommit status email being sent:\n" \
-        "--------------------------------\n\n\n\n"+emailBodyStr+"\n\n\n\n"
-
-      summaryCommitEmailBodyFileName = getCommitStatusEmailBodyFileName()
-  
-      writeStrToFile(summaryCommitEmailBodyFileName, emailBodyStr)
-  
       if inOptions.sendEmailTo:
+
+        # Get the updates SHA1 for the amended commit
+        localCommitSummariesStr = getLocalCommitsSummariesStr(inOptions)[0]
+    
+        emailBodyStr = subjectLine + "\n\n"
+        emailBodyStr += getCmndOutput("date", True) + "\n\n"
+        emailBodyStr += commitEmailBodyExtra
+        emailBodyStr += localCommitSummariesStr
+        emailBodyStr += getSummaryEmailSectionStr(inOptions, buildTestCaseList)
+    
+        print "\nCommit status email being sent:\n" \
+          "--------------------------------\n\n\n\n"+emailBodyStr+"\n\n\n\n"
+  
+        summaryCommitEmailBodyFileName = getCommitStatusEmailBodyFileName()
+    
+        writeStrToFile(summaryCommitEmailBodyFileName, emailBodyStr)
   
         emailAddresses = getEmailAddressesSpaceString(inOptions.sendEmailTo)
         if inOptions.sendEmailToOnPush and didPush:
