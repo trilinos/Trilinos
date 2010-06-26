@@ -1822,8 +1822,8 @@ def checkinTest(inOptions):
     amendFinalCommitPassed = True
     pushPassed = True
     didPush = False
-    pushPassed = True
-
+    localCommitSummariesStr = ""
+    
     if not inOptions.doPush:
   
       print "\nNot doing the push on request (--no-push) but sending an email" \
@@ -1876,7 +1876,7 @@ def checkinTest(inOptions):
 
       lastCommitMessageStr = getLastCommitMessageStr(inOptions)
       #print "\nlastCommitMessageStr:\n-------------\n"+lastCommitMessageStr+"-------------\n"
-      localCommitsExist = getLocalCommitsSummariesStr(inOptions)[1]
+      (localCommitSummariesStr, localCommitsExist) = getLocalCommitsSummariesStr(inOptions)
       #print "\nlocalCommitsExist =", localCommitsExist, "\n"
       localCommitSHA1ListStr = getLocalCommitsSHA1ListStr(inOptions)
 
@@ -1932,6 +1932,11 @@ def checkinTest(inOptions):
           printStackTrace()
 
       if not amendFinalCommitPassed: okayToPush = False
+
+
+      # Get the updates SHA1 for the amended commit but before the push!
+      localCommitSummariesStr = getLocalCommitsSummariesStr(inOptions)[0]
+
 
       #
       print "\n7.c) Pushing the the local commits to the global repo ...\n"
@@ -2059,9 +2064,6 @@ def checkinTest(inOptions):
       subjectLine += ": Trilinos: "+getHostname()
   
       if inOptions.sendEmailTo:
-
-        # Get the updates SHA1 for the amended commit
-        localCommitSummariesStr = getLocalCommitsSummariesStr(inOptions)[0]
     
         emailBodyStr = subjectLine + "\n\n"
         emailBodyStr += getCmndOutput("date", True) + "\n\n"

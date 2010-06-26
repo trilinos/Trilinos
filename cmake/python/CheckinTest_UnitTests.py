@@ -286,18 +286,19 @@ g_cmndinterceptsFinalPushPasses = \
   "IT: eg pull && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
   +g_cmnginterceptsEgLogCmnds+ \
   "IT: eg commit --amend -F .*; 0; 'Amending the last commit passed'\n" \
+  "IT: eg log --oneline currentbranch \^origin/currentbranch; 0; '54321 Only one commit'\n" \
   "IT: eg push; 0; 'push passes'\n"
 
 g_cmndinterceptsFinalPushNoAppendTestResultsPasses = \
   "IT: eg pull && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
   +g_cmnginterceptsEgLogCmnds+ \
+  "IT: eg log --oneline currentbranch \^origin/currentbranch; 0; '54321 Only one commit'\n" \
   "IT: eg push; 0; 'push passes'\n"
 
 g_cmndinterceptsSendBuildTestCaseEmail = \
   "IT: mailx -s .*; 0; 'Do not really sending build/test case email'\n"
 
 g_cmndinterceptsSendFinalEmail = \
-  "IT: eg log --oneline currentbranch \^origin/currentbranch; 0; '54321 Only one commit'\n" \
   "IT: sleep .*; 0; 'Do not really sleep'\n" \
   "IT: mailx -s .*; 0; 'Do not really send email '\n"
 
@@ -1799,6 +1800,7 @@ class test_checkin_test(unittest.TestCase):
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +"IT: eg pull && eg rebase --against origin/currentbranch; 1; 'final eg pull FAILED'\n" \
       +g_cmnginterceptsEgLogCmnds \
+      +"IT: eg log --oneline currentbranch \^origin/currentbranch; 0; '54321 Only one commit'\n" \
       +g_cmndinterceptsSendFinalEmail \
       ,      \
       False,
@@ -1834,6 +1836,7 @@ class test_checkin_test(unittest.TestCase):
       +"IT: eg pull && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
       +g_cmnginterceptsEgLogCmnds \
       +"IT: eg commit --amend -F .*; 1; 'Amending the last commit FAILED'\n" \
+      +"IT: eg log --oneline currentbranch \^origin/currentbranch; 0; '54321 Only one commit'\n" \
       +g_cmndinterceptsSendFinalEmail \
       ,
       \
@@ -1871,6 +1874,7 @@ class test_checkin_test(unittest.TestCase):
       +"IT: eg pull && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
       +g_cmnginterceptsEgLogCmnds \
       +"IT: eg commit --amend -F .*; 0; 'Amending the last commit passed'\n" \
+      +"IT: eg log --oneline currentbranch \^origin/currentbranch; 0; '54321 Only one commit'\n" \
       +"IT: eg push; 1; 'push FAILED'\n"
       +g_cmndinterceptsSendFinalEmail \
       ,
@@ -1909,6 +1913,7 @@ class test_checkin_test(unittest.TestCase):
       +"IT: eg cat-file -p HEAD; 0; 'This is the last commit message'\n" \
       +"IT: eg log --oneline currentbranch \^origin/currentbranch; 0; ''\n" \
       +"IT: eg log --pretty=format:'%h' currentbranch\^ \^origin/currentbranch; 0; ''\n" \
+      +"IT: eg log --oneline currentbranch \^origin/currentbranch; 0; '54321 Only one commit'\n" \
       +"IT: eg push; 1; 'push FAILED due to no local commits'\n"
       +g_cmndinterceptsSendFinalEmail \
       ,
