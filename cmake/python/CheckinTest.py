@@ -1274,7 +1274,6 @@ def getLastCommitMessageStr(inOptions):
     "eg cat-file -p HEAD",
     workingDir=inOptions.trilinosSrcDir
     )
-  #print "\nrawLogOutput:\n-------------\n"+rawLogOutput+"\n-------------\n"
 
   return getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput)[0]
 
@@ -1289,12 +1288,11 @@ def getLocalCommitsSummariesStr(inOptions):
     )
 
   print \
-    "\nLocal commits:" \
-    "\n--------------" \
+    "\nLocal commits (before amending the last commit):" \
+    "\n------------------------------------------------" \
     "\n" \
     + rawLocalCommitsStr
 
-  #print "\nrawLocalCommitsStr:\n=====\n"+rawLocalCommitsStr+"\n=====\n"
   if rawLocalCommitsStr == "\n" or rawLocalCommitsStr == "":
     localCommitsExist = False
   else:
@@ -1305,8 +1303,8 @@ def getLocalCommitsSummariesStr(inOptions):
 
   localCommitsStr = \
     "\n" \
-    "Local commits for this build/test group:\n" \
-    "----------------------------------------\n"
+    "Local commits for this build/test group (before amending the last commit):\n" \
+    "--------------------------------------------------------------------------\n"
   if localCommitsExist:
     localCommitsStr += rawLocalCommitsStr
   else:
@@ -1323,8 +1321,11 @@ def getLocalCommitsSHA1ListStr(inOptions):
     "eg log --pretty=format:'%h' "+inOptions.currentBranch+"^ ^origin/"+inOptions.currentBranch,
     True, workingDir=inOptions.trilinosSrcDir)
 
-  return ("Other local commits for this build/test group: "
-    + (", ".join(rawLocalCommitsStr.split("\n")))) + "\n"
+  if rawLocalCommitsStr:
+    return ("Other local commits for this build/test group: "
+      + (", ".join(rawLocalCommitsStr.split("\n")))) + "\n"
+
+  return ""
 
 
 def checkinTest(inOptions):
