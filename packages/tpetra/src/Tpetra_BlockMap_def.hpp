@@ -232,7 +232,7 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::getNodeNumBlocks() const
 
 template<class LocalOrdinal,class GlobalOrdinal,class Node>
 Teuchos::ArrayView<const GlobalOrdinal>
-BlockMap<LocalOrdinal,GlobalOrdinal,Node>::getBlockIDs() const
+BlockMap<LocalOrdinal,GlobalOrdinal,Node>::getNodeBlockIDs() const
 {
   return myGlobalBlockIDs_();
 }
@@ -244,14 +244,14 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::isBlockSizeConstant() const
 
 template<class LocalOrdinal,class GlobalOrdinal,class Node>
 Teuchos::ArrayView<const LocalOrdinal>
-BlockMap<LocalOrdinal,GlobalOrdinal,Node>::getBlockSizes() const
+BlockMap<LocalOrdinal,GlobalOrdinal,Node>::getNodeBlockSizes() const
 {
   return blockSizes_();
 }
 
 template<class LocalOrdinal,class GlobalOrdinal,class Node>
 Teuchos::ArrayView<const LocalOrdinal>
-BlockMap<LocalOrdinal,GlobalOrdinal,Node>::getFirstPointInBlocks() const
+BlockMap<LocalOrdinal,GlobalOrdinal,Node>::getNodeFirstPointInBlocks() const
 {
   return firstPointInBlock_();
 }

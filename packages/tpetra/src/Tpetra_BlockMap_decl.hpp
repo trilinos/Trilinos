@@ -93,13 +93,13 @@ class BlockMap : public Teuchos::Describable {
 
   size_t getNodeNumBlocks() const;
 
-  Teuchos::ArrayView<const GlobalOrdinal> getBlockIDs() const;
+  Teuchos::ArrayView<const GlobalOrdinal> getNodeBlockIDs() const;
 
   bool isBlockSizeConstant() const;
 
-  Teuchos::ArrayView<const LocalOrdinal> getBlockSizes() const;
+  Teuchos::ArrayView<const LocalOrdinal> getNodeBlockSizes() const;
 
-  Teuchos::ArrayView<const LocalOrdinal> getFirstPointInBlocks() const;
+  Teuchos::ArrayView<const LocalOrdinal> getNodeFirstPointInBlocks() const;
 
   //! Return the globalBlockID corresponding to the given localBlockID
   /*! If localBlockID is not present on this processor, returns Teuchos::OrdinalTraits<LocalOrdinal>::invalid().

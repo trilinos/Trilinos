@@ -280,7 +280,7 @@ namespace {
     // create the matrix
     {
       RCP<MAT> vbr = rcp( new MAT(rowmap,maxEntriesPerRow,DynamicProfile) );
-      Teuchos::ArrayView<const GO> blk_rows = rowmap->getBlockIDs();
+      Teuchos::ArrayView<const GO> blk_rows = rowmap->getNodeBlockIDs();
       for(int i=0; i<blk_rows.size(); ++i) {
         GO row = blk_rows[i];
         for(int j=0; j<blk_rows.size(); ++j) {
@@ -329,7 +329,7 @@ namespace {
     // create the matrix
     {
       RCP<MAT> vbr = rcp( new MAT(rowmap,maxEntriesPerRow,DynamicProfile) );
-      Teuchos::ArrayView<const GO> blk_rows = rowmap->getBlockIDs();
+      Teuchos::ArrayView<const GO> blk_rows = rowmap->getNodeBlockIDs();
       for(int i=0; i<blk_rows.size(); ++i) {
         GO row = blk_rows[i];
         for(int j=0; j<blk_rows.size(); ++j) {
@@ -377,7 +377,7 @@ namespace {
     // create the matrix
     {
       RCP<MAT> vbr = rcp( new MAT(rowmap,maxEntriesPerRow,DynamicProfile) );
-      Teuchos::ArrayView<const GO> blk_rows = rowmap->getBlockIDs();
+      Teuchos::ArrayView<const GO> blk_rows = rowmap->getNodeBlockIDs();
       for(int i=0; i<blk_rows.size(); ++i) {
         GO row = blk_rows[i];
         for(int j=0; j<blk_rows.size(); ++j) {
@@ -432,7 +432,7 @@ namespace {
     // create the matrix
     {
       RCP<MAT> vbr = rcp( new MAT(rowmap,maxEntriesPerRow,DynamicProfile) );
-      Teuchos::ArrayView<const GO> blk_rows = rowmap->getBlockIDs();
+      Teuchos::ArrayView<const GO> blk_rows = rowmap->getNodeBlockIDs();
       for(int i=0; i<blk_rows.size(); ++i) {
         GO row = blk_rows[i];
         for(int j=0; j<blk_rows.size(); ++j) {
@@ -505,7 +505,7 @@ namespace {
       bmv1->putScalar(1.0);
       ArrayRCP<Scalar> v3 = bmv3->get1dViewNonConst();
       RCP<MAT> vbr = rcp( new MAT(rowmap,maxEntriesPerRow,DynamicProfile) );
-      Teuchos::ArrayView<const GO> blk_rows = rowmap->getBlockIDs();
+      Teuchos::ArrayView<const GO> blk_rows = rowmap->getNodeBlockIDs();
       LO row_offset = 0;
       for(int i=0; i<blk_rows.size(); ++i) {
         Scalar val = 0;
@@ -557,7 +557,7 @@ namespace {
     if (comm->getRank() != comm->getSize()-1) ++numLocalColBlocks;
     Array<GO> blockColIDs(numLocalColBlocks);
     typedef typename Array<GO>::size_type Tsize_t;
-    Teuchos::ArrayView<const GO> blk_rows = rowmap->getBlockIDs();
+    Teuchos::ArrayView<const GO> blk_rows = rowmap->getNodeBlockIDs();
     GO first_row = blk_rows[0];
     Tsize_t offset = 0;
     if (comm->getRank() != 0) {
@@ -593,7 +593,7 @@ namespace {
 
     vbr->fillComplete();
     RCP<const BlockMap<LO,GO,Node> > colmap = vbr->getBlockColMap();
-    ArrayView<const GO> blk_cols = colmap->getBlockIDs();
+    ArrayView<const GO> blk_cols = colmap->getNodeBlockIDs();
     TEST_EQUALITY(blk_cols.size(), blockColIDs.size());
     TEST_COMPARE_ARRAYS(blk_cols, blockColIDs() );
   }
@@ -631,7 +631,7 @@ namespace {
     if (comm->getRank() != comm->getSize()-1) ++numLocalColBlocks;
     Array<GO> blockColIDs(numLocalColBlocks);
     typedef typename Array<GO>::size_type Tsize_t;
-    Teuchos::ArrayView<const GO> blk_rows = rowmap->getBlockIDs();
+    Teuchos::ArrayView<const GO> blk_rows = rowmap->getNodeBlockIDs();
     GO first_row = blk_rows[0];
     Tsize_t offset = 0;
     if (comm->getRank() != 0) {
@@ -718,7 +718,7 @@ namespace {
     if (comm->getRank() != comm->getSize()-1) ++numLocalColBlocks;
     Array<GO> blockColIDs(numLocalColBlocks);
     typedef typename Array<GO>::size_type Tsize_t;
-    Teuchos::ArrayView<const GO> blk_rows = rowmap->getBlockIDs();
+    Teuchos::ArrayView<const GO> blk_rows = rowmap->getNodeBlockIDs();
     GO first_row = blk_rows[0];
     Tsize_t offset = 0;
     if (comm->getRank() != 0) {
@@ -806,7 +806,7 @@ namespace {
     if (comm->getRank() != comm->getSize()-1) ++numLocalColBlocks;
     Array<GO> blockColIDs(numLocalColBlocks);
     typedef typename Array<GO>::size_type Tsize_t;
-    Teuchos::ArrayView<const GO> blk_rows = rowmap->getBlockIDs();
+    Teuchos::ArrayView<const GO> blk_rows = rowmap->getNodeBlockIDs();
     GO first_row = blk_rows[0];
     Tsize_t offset = 0;
     if (comm->getRank() != 0) {

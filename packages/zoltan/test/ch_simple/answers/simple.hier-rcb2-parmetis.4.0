@@ -7,9 +7,10 @@ Test null export lists  = 1
 zoltanParams file       = hier-rcb2-parmetis.inp
 Global element ids assigned to processor 0
 GID	Part	Perm	IPerm
-11	0	-1	-1
-16	0	-1	-1
-17	0	-1	-1
-21	0	-1	-1
-22	0	-1	-1
-23	0	-1	-1
+1	0	-1	-1
+2	0	-1	-1
+6	0	-1	-1
+7	0	-1	-1
+12	0	-1	-1
+13	0	-1	-1
+18	0	-1	-1

@@ -1,0 +1,37 @@
+#!/bin/bash
+
+if [ $TRILINOS_HOME ]; then
+  echo "TRILINOS_HOME has already been set!"
+else
+  echo "TRILINOS_HOME has not been set.  Setting it!"
+  export TRILINOS_HOME=`pwd`/../../..
+fi
+
+echo
+echo "Generating LinearAlgebraFunctionConvention.pdf file ..."
+echo
+
+pushd ../../../doc/Thyra/linear_algebra_function_convention; make pdf ; popd
+cp ../../../doc/Thyra/linear_algebra_function_convention/LinearAlgebraFunctionConvention.pdf html/
+
+echo
+echo "Generating ThyraCodingGuideLines.pdf file ..."
+echo
+
+pushd ../../../doc/Thyra/coding_guildlines; make pdf ; popd
+cp ../../../doc/Thyra/coding_guildlines/ThyraCodingGuideLines.pdf html/
+
+echo
+echo "Generating ThyraOverview.pdf file ..."
+echo
+
+pushd ../../../doc/Thyra/overview; make pdf ; popd
+cp ../../../doc/Thyra/overview/ThyraOverview.pdf html/
+
+echo
+echo "Generating RefCountPtrBeginnersGuilde.pdf file ..."
+echo
+
+pushd ../../../doc/RefCountPtr/beginners; make pdf ; popd
+cp ../../../doc/RefCountPtr/beginners/RefCountPtrBeginnersGuideSAND.pdf html/
+

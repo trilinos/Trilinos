@@ -442,6 +442,10 @@ def createConfigureFile(cmakeOptions, baseCmnd, trilinosSrcDir, configFileName):
   
     writeStrToFile(configFileName, doConfigStr)
     echoRunSysCmnd('chmod a+x '+configFileName)
+
+
+def formatMinutesStr(timeInMinutes):
+  return ("%.2f" % timeInMinutes) + " min"
   
 
 def getStageStatus(stageName, stageDoBool, stagePassed, stageTiming):
@@ -451,17 +455,35 @@ def getStageStatus(stageName, stageDoBool, stagePassed, stageTiming):
       stageStatusStr += "Passed"
     else:
       stageStatusStr += "FAILED"
-    stageStatusStr += " ("+str(stageTiming)+" min)"
+    stageStatusStr += " ("+formatMinutesStr(stageTiming)+")"
   else:
     stageStatusStr += "Not Performed"
   stageStatusStr += "\n"
   return stageStatusStr
 
 
+def getTotalTimeBeginStr(buildTestName):
+  return "Total time for "+buildTestName
+
+
+def getTotalTimeLineStr(buildTestName, timeInMin):
+  return getTotalTimeBeginStr(buildTestName)+" = "+str(timeInMin) + " min"
+
+
+def getTimeInMinFromTotalTimeLine(buildTestName, totalTimeLine):
+  if not totalTimeLine:
+    return -1.0
+  m = re.match(getTotalTimeBeginStr(buildTestName)+r" = (.+) min", totalTimeLine)
+  if m and m.groups():
+    return float(m.groups()[0])
+  else:
+    return -1.0
+
+
 reCtestFailTotal = re.compile(r".+, ([0-9]+) tests failed out of ([0-9]+)")
 
 
-def analyzeResultsSendEmail(inOptions, buildDirName,
+def analyzeResultsSendEmail(inOptions, buildTestName,
   enabledPackagesList, cmakeOptions, startingTime, timings ) \
   :
 
@@ -601,62 +623,63 @@ def analyzeResultsSendEmail(inOptions, buildDirName,
   # 2.a) Construct the subject line
 
   overallPassed = None
-  subjectLine = "Trilinos/"+buildDirName
+  buildCaseStatus = ""
   selectedFinalStatus = False
 
   if inOptions.doTest and not selectedFinalStatus:
     if testOutputExists:
       if numTotalTests:
-        subjectLine += ": passed="+str(numPassedTests)+",notpassed="+str(numFailedTests)
+        buildCaseStatus += "passed="+str(numPassedTests)+",notpassed="+str(numFailedTests)
       else:
-        subjectLine += ": no tests run"
+        buildCaseStatus += "no tests run"
       if testsPassed and numTotalTests > 0:
         overallPassed = True
       else:
         overallPassed = False
       selectedFinalStatus = True
     elif not inOptions.doBuild and not buildOutputExists:
-      subjectLine += ": no active build exists"
+      buildCaseStatus += "no active build exists"
       overallPassed = False
       selectedFinalStatus = True
 
   if inOptions.doBuild and not selectedFinalStatus:
     if buildPassed:
-      subjectLine += ": build-only passed"
+      buildCaseStatus += "build-only passed"
       overallPassed = True
       selectedFinalStatus = True
     elif buildOutputExists:
-      subjectLine += ": build failed"
+      buildCaseStatus += "build failed"
       overallPassed = False
       selectedFinalStatus = True
 
   if inOptions.doConfigure and not selectedFinalStatus:
     if configurePassed:
-      subjectLine += ": configure-only passed"
+      buildCaseStatus += "configure-only passed"
       overallPassed = True
       selectedFinalStatus = True
     elif configureOutputExists:
-      subjectLine += ": configure failed"
+      buildCaseStatus += "configure failed"
       overallPassed = False
       selectedFinalStatus = True
     else:
-      subjectLine += ": pre-configure failed"
+      buildCaseStatus += "pre-configure failed"
       overallPassed = False
       selectedFinalStatus = True
 
   if inOptions.doPull and not selectedFinalStatus:
     if updatePassed:
-      subjectLine += ": update-only passed"
+      buildCaseStatus += "update-only passed"
       overallPassed = True
       selectedFinalStatus = True
     elif updateOutputExists:
-      subjectLine += ": update FAILED"
+      buildCaseStatus += "update FAILED"
       overallPassed = False
       selectedFinalStatus = True
 
   if not selectedFinalStatus:
     raise Exception("Error, final pass/fail status not found!")
 
+  subjectLine = "Trilinos/"+buildTestName+": "+buildCaseStatus
   if overallPassed:
     subjectLine = "passed: " + subjectLine
   else:
@@ -692,10 +715,11 @@ def analyzeResultsSendEmail(inOptions, buildDirName,
 
   if inOptions.doTest and testOutputExists and numTotalTests:
 
+    fullCTestOutput = readStrFromFile(getTestOutputFileName())
     if inOptions.showAllTests:
-      emailBody += getCmndOutput("cat "+getTestOutputFileName())
+      emailBody += fullCTestOutput
     else:
-      emailBody += getCmndOutput("grep -A 10000 '\% tests passed, ' "+getTestOutputFileName())
+      emailBody += extractLinesAfterRegex(fullCTestOutput, r".*\% tests passed.*")
 
   else:
 
@@ -704,7 +728,7 @@ def analyzeResultsSendEmail(inOptions, buildDirName,
   endingTime = time.time()
   totalTime = (endingTime - startingTime) / 60.0
 
-  emailBody += "\nTotal time for "+buildDirName+" = "+str(totalTime) + " minutes"
+  emailBody += "\n"+getTotalTimeLineStr(buildTestName, totalTime)+"\n"
 
   #print "emailBody:\n\n\n\n", emailBody, "\n\n\n\n"
 
@@ -731,7 +755,7 @@ def analyzeResultsSendEmail(inOptions, buildDirName,
   return success
 
 
-def getTestCaseSummaryLine(testCaseName):
+def getBuildTestCaseSummary(testCaseName, trimDown = True):
   # Get the email file
   absEmailBodyFileName = testCaseName+"/"+getEmailBodyFileName()
   if os.path.exists(absEmailBodyFileName):
@@ -739,13 +763,19 @@ def getTestCaseSummaryLine(testCaseName):
   else:
     testCaseEmailStrArray = None
   # Get the first line (which is the summary)
+  testSummaryLine = None
   if testCaseEmailStrArray:
     summaryLine = testCaseEmailStrArray[0].strip()
+    if trimDown:
+      summaryLineArray = summaryLine.split(":")
+      testSummaryLine = summaryLineArray[0].strip() + ": " + summaryLineArray[2].strip()
+    else:
+      testSummaryLine = summaryLine
   else:
-    summaryLine = \
+    testSummaryLine = \
       "Error, The build/test was never completed!" \
       " (the file '"+absEmailBodyFileName+"' does not exist.)"
-  return summaryLine
+  return testSummaryLine
 
 
 def getTestCaseEmailSummary(testCaseName, testCaseNum):
@@ -1108,19 +1138,20 @@ def runBuildTestCaseDriver(inOptions, baseTestDir, buildTestCase, timings):
 def checkBuildTestCaseStatus(runBuildTestCaseBool, buildTestName, inOptions):
 
   statusMsg = None
+  timeInMin = -1.0
 
   if not runBuildTestCaseBool:
     buildTestCaseActionsPass = True
     buildTestCaseOkayToCommit = True
     statusMsg = \
       "Test case "+buildTestName+" was not run! => Does not affect commit/push readiness!"
-    return (buildTestCaseActionsPass, buildTestCaseOkayToCommit, statusMsg)
+    return (buildTestCaseActionsPass, buildTestCaseOkayToCommit, statusMsg, timeInMin)
 
   if not os.path.exists(buildTestName) and not performAnyBuildTestActions(inOptions):
     buildTestCaseActionsPass = True
     buildTestCaseOkayToCommit = False
     statusMsg = "No configure, build, or test for "+buildTestName+" was requested!"
-    return (buildTestCaseActionsPass, buildTestCaseOkayToCommit, statusMsg)
+    return (buildTestCaseActionsPass, buildTestCaseOkayToCommit, statusMsg, timeInMin)
 
   if not os.path.exists(buildTestName):
     buildTestCaseActionsPass = False
@@ -1140,9 +1171,15 @@ def checkBuildTestCaseStatus(runBuildTestCaseBool, buildTestName, inOptions):
     buildTestCaseOkayToCommit = False
 
   if not statusMsg:
-    statusMsg = getTestCaseSummaryLine(buildTestName)
+    statusMsg = getBuildTestCaseSummary(buildTestName)
 
-  return (buildTestCaseActionsPass, buildTestCaseOkayToCommit, statusMsg)
+  emailBodyFileName = buildTestName+"/"+getEmailBodyFileName()
+  if os.path.exists(emailBodyFileName):
+    timeInMinLine = getCmndOutput("grep '"+getTotalTimeBeginStr(buildTestName)+"' " + \
+      emailBodyFileName, True, False)
+    timeInMin = getTimeInMinFromTotalTimeLine(buildTestName, timeInMinLine)
+
+  return (buildTestCaseActionsPass, buildTestCaseOkayToCommit, statusMsg, timeInMin)
 
 
 def getUserCommitMessageStr(inOptions):
@@ -1167,12 +1204,8 @@ def getAutomatedStatusSummaryHeaderKeyStr():
 
 def getAutomatedStatusSummaryHeaderStr(inOptions):
   
-  commitEmailBodyStr = "\n\n\n\n" \
-      "=============================\n" \
-      +getAutomatedStatusSummaryHeaderKeyStr()+"\n" \
-      "=============================\n" \
-      "\n\n" \
-      + getCmndOutput("date", True) + "\n\n" \
+  commitEmailBodyStr = "\n" \
+    +getAutomatedStatusSummaryHeaderKeyStr()+"\n"
   
   return commitEmailBodyStr
 
@@ -1201,7 +1234,7 @@ def getEnableStatusList(inOptions, enabledPackagesList):
 # there is not, this function will throw!
 #
 def getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput):
-  
+
   origLogStrList = []
   pastHeader = False
   numBlankLines = 0
@@ -1247,20 +1280,19 @@ def getLastCommitMessageStr(inOptions):
 
 def getLocalCommitsSummariesStr(inOptions):
 
-  # Get the raw output from the last current commit log
+  # Get the list of local commits other than this one
   rawLocalCommitsStr = getCmndOutput(
-    "eg log --oneline origin/"+inOptions.currentBranch+".."+inOptions.currentBranch,
+    "eg log --oneline "+inOptions.currentBranch+" ^origin/"+inOptions.currentBranch,
     True,
     workingDir=inOptions.trilinosSrcDir
     )
 
   print \
-    "\nLocal commits:" \
-    "\n--------------" \
+    "\nLocal commits (before amending the last commit):" \
+    "\n------------------------------------------------" \
     "\n" \
     + rawLocalCommitsStr
 
-  #print "\nrawLocalCommitsStr:\n=====\n"+rawLocalCommitsStr+"\n=====\n"
   if rawLocalCommitsStr == "\n" or rawLocalCommitsStr == "":
     localCommitsExist = False
   else:
@@ -1271,8 +1303,8 @@ def getLocalCommitsSummariesStr(inOptions):
 
   localCommitsStr = \
     "\n" \
-    "Local commits for this build/test group:\n" \
-    "----------------------------------------\n"
+    "Local commits for this build/test group (before amending the last commit):\n" \
+    "--------------------------------------------------------------------------\n"
   if localCommitsExist:
     localCommitsStr += rawLocalCommitsStr
   else:
@@ -1280,6 +1312,20 @@ def getLocalCommitsSummariesStr(inOptions):
   localCommitsStr += "\n"
 
   return (localCommitsStr, localCommitsExist)
+
+
+def getLocalCommitsSHA1ListStr(inOptions):
+
+  # Get the raw output from the last current commit log
+  rawLocalCommitsStr = getCmndOutput(
+    "eg log --pretty=format:'%h' "+inOptions.currentBranch+"^ ^origin/"+inOptions.currentBranch,
+    True, workingDir=inOptions.trilinosSrcDir)
+
+  if rawLocalCommitsStr:
+    return ("Other local commits for this build/test group: "
+      + (", ".join(rawLocalCommitsStr.split("\n")))) + "\n"
+
+  return ""
 
 
 def checkinTest(inOptions):
@@ -1653,6 +1699,7 @@ def checkinTest(inOptions):
           buildTestCasesPassed = False
           success = False
 
+
     print "\n***"
     print "*** 6) Determine overall success and commit/push readiness (and backout commit if failed) ..."
     print "***"
@@ -1668,26 +1715,32 @@ def checkinTest(inOptions):
   
       okayToCommit = success
       subjectLine = None
+
       commitEmailBodyExtra = ""
+      shortCommitEmailBodyExtra = ""
 
       (cmakePkgOptions, enabledPackagesList) = getEnablesLists(inOptions, baseTestDir, False)
 
-      commitEmailBodyExtra += \
-        getEnableStatusList(inOptions, enabledPackagesList)
+      enableStatsListStr = getEnableStatusList(inOptions, enabledPackagesList)
+      commitEmailBodyExtra += enableStatsListStr
+      shortCommitEmailBodyExtra += enableStatsListStr
 
       commitEmailBodyExtra += \
         "\nBuild test results:" \
         "\n-------------------\n"
+
       for i in range(len(buildTestCaseList)):
         buildTestCase = buildTestCaseList[i]
         buildTestName = buildTestCase.name
-        (buildTestCaseActionsPass, buildTestCaseOkayToCommit, statusMsg) = \
+        (buildTestCaseActionsPass, buildTestCaseOkayToCommit, statusMsg, timeInMin) = \
           checkBuildTestCaseStatus(buildTestCase.runBuildTestCase, buildTestName, inOptions)
-        print "\n"+statusMsg
-        commitEmailBodyExtra += str(i)+") "+buildTestName+" => "+statusMsg
+        buildTestCaseStatusStr = str(i)+") "+buildTestName+" => "+statusMsg
         if not buildTestCaseOkayToCommit:
-          commitEmailBodyExtra += " => Not ready for final commit/push!"
-        commitEmailBodyExtra += " ("+str(buildTestCase.timings.totalTime())+" min)\n"
+          buildTestCaseStatusStr += " => Not ready to push!"
+        buildTestCaseStatusStr += " ("+formatMinutesStr(timeInMin)+")\n"
+        print buildTestCaseStatusStr
+        commitEmailBodyExtra += buildTestCaseStatusStr
+        shortCommitEmailBodyExtra += buildTestCaseStatusStr
         #print "buildTestCaseActionsPass =", buildTestCaseActionsPass
         if not buildTestCaseActionsPass:
           success = False
@@ -1822,8 +1875,11 @@ def checkinTest(inOptions):
       print "\n7.b) Amending the final commit message by appending test results ...\n"
       #
 
+      lastCommitMessageStr = getLastCommitMessageStr(inOptions)
+      #print "\nlastCommitMessageStr:\n-------------\n"+lastCommitMessageStr+"-------------\n"
       (localCommitSummariesStr, localCommitsExist) = getLocalCommitsSummariesStr(inOptions)
       #print "\nlocalCommitsExist =", localCommitsExist, "\n"
+      localCommitSHA1ListStr = getLocalCommitsSHA1ListStr(inOptions)
 
       if not inOptions.appendTestResults:
 
@@ -1841,12 +1897,12 @@ def checkinTest(inOptions):
         try:
 
           # Get then final commit message
-          finalCommitEmailBodyStr = getLastCommitMessageStr(inOptions)
+          finalCommitEmailBodyStr = lastCommitMessageStr
           finalCommitEmailBodyStr += getAutomatedStatusSummaryHeaderStr(inOptions)
-          finalCommitEmailBodyStr += commitEmailBodyExtra
-          finalCommitEmailBodyStr += localCommitSummariesStr
+          finalCommitEmailBodyStr += shortCommitEmailBodyExtra
+          finalCommitEmailBodyStr += localCommitSHA1ListStr
           if forcedCommitPush:
-            finalCommitEmailBodyStr += (forcedCommitPushMsg + "\n\n")
+            finalCommitEmailBodyStr += "WARNING: Forced the push!\n"
           writeStrToFile(getFinalCommitEmailBodyFileName(), finalCommitEmailBodyStr)
 
           # Amend the final commit message
@@ -1891,12 +1947,20 @@ def checkinTest(inOptions):
   
         print "\nAttempting to do the push ..."
 
-        pushRtn = echoRunSysCmnd(
-          "eg push origin "+inOptions.currentBranch,
-          workingDir=inOptions.trilinosSrcDir,
-          outFile=os.path.join(baseTestDir, getPushOutputFileName()),
-          throwExcept=False, timeCmnd=True )
+        debugSkipPush = os.environ.get("CHECKIN_TEST_SKIP_PUSH","")
+        #print "debugSkipPush =", debugSkipPush
+        #debugSkipPush = True
 
+        if not debugSkipPush:
+          pushRtn = echoRunSysCmnd(
+            "eg push origin "+inOptions.currentBranch,
+            workingDir=inOptions.trilinosSrcDir,
+            outFile=os.path.join(baseTestDir, getPushOutputFileName()),
+            throwExcept=False, timeCmnd=True )
+          None
+        else:
+          pushRtn = 0
+  
         if pushRtn == 0:
           print "\nPush passed!\n"
           pushPassed = True

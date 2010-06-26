@@ -38,9 +38,9 @@ platformStr = rePlatformName.findall(sys.platform)[0]
 #print "\nplatformStr =", platformStr
 
 
-#
-# Functions
-#
+######################################
+# Script location functions
+######################################
 
 
 def getScriptBaseDir():
@@ -51,6 +51,11 @@ def getScriptName():
   return os.path.basename(os.path.dirname(sys.argv[0]))
 
 
+######################################
+# List helper functions
+######################################
+
+
 def findInSequence(seq, item):
   for i in range(0, len(seq)):
     if seq[i] == item:
@@ -58,105 +63,69 @@ def findInSequence(seq, item):
   return -1
 
 
+def removeItemsFromList(list, items):
+  itemsRemoved = 0
+  for item in items:
+    if item in list:
+      idx = list.index(item)
+      del list[idx]
+      itemsRemoved = itemsRemoved + 1
+  return itemsRemoved
+
+
+######################################
+# String helper functions
+######################################
+
+
+def stripWhitespaceFromStringList(stringList):
+  return [x.strip() for x in stringList]
+
+
 def isSubstrInMultiLineString(inputStr, findStr):
   return inputStr.find(findStr) >= 0
-     
-
-def joinDirs(dirArray):
-  """
-  Join directories.
-
-  2009/06/09: rabartl: We should be able to just use os.path.join(...) but I
-  found when used in at least on context that it resulted in not joining the
-  elements but instead just returning the array.
-  """
-  dirPath = ""
-  for dir in dirArray:
-    if not dirPath:
-      dirPath = dir
-    else:
-      dirPath = dirPath + "/" + dir
-  return dirPath
 
 
-def downDirsArray(numDownDirs):
-  downDirsPathArray = []
-  for i in range(0, numDownDirs):
-    downDirsPathArray.append("..")
-  #print "\ndownDirsPathArray =", downDirsPathArray
-  return downDirsPathArray
-
-
-def normalizePath(path):
-  return os.path.normpath(path)
+def getStrUnderlineStr(width):
+  underlineStr = ""
+  for i in range(width):
+    underlineStr += "-"
+  return underlineStr
 
 
 def arrayToFormattedString(array_in, offsetStr = ""):
-   sout = ""
-   sout += offsetStr + "[\n"
-   for i in range(0, len(array_in)):
-     if i != len(array_in)-1:
-       commaChar = ","
-     else:
-       commaChar = ""
-     sout += (offsetStr + "  \'" + str(array_in[i]) + "\'"+commaChar+"\n")
-   sout += offsetStr + "]\n"
-   return sout
+  sout = ""
+  sout += offsetStr + "[\n"
+  for i in range(0, len(array_in)):
+    if i != len(array_in)-1:
+      commaChar = ","
+    else:
+      commaChar = ""
+    sout += (offsetStr + "  \'" + str(array_in[i]) + "\'"+commaChar+"\n")
+  sout += offsetStr + "]\n"
+  return sout
 
 
-def echoChDir(dirName, verbose=True):
-  if verbose:
-    print "\nChanging current directory to \'"+dirName+"\'"
-  if not os.path.isdir(dirName):
-    raise OSError("Error, the directory \'"+dirName+"\' does not exist in the" \
-      + " base directory \'"+os.getcwd()+"\"!" )
-  os.chdir(dirName)
-  if verbose:
-    print "\nCurrent directory is \'"+os.getcwd()+"\'\n"
+def extractLinesAfterRegex(string_in, regex_in):
+  #print "regex_in =", regex_in
+  reMatch = re.compile(regex_in)
+  linesExtracted = ""
+  foundRegex = False
+  for line in string_in.strip().split("\n"):
+    #print "line = '" + line + "'"
+    if not foundRegex:
+      matchObj = reMatch.match(line)
+      #print "matchObj =", matchObj
+      if matchObj:
+        foundRegex = True
+    if foundRegex:
+      linesExtracted += line + "\n"
+  return linesExtracted
+  
 
-
-def createDir(dirName, cdIntoDir=False, verbose=False):
-  """Create a directory if it does not exist"""
-  if os.path.exists(dirName):
-    if not os.path.isdir(dirName):
-      errMsg = "\nError the path '"+dirName+"'already exists but it is not a directory!"
-      if verbose: print errMsg
-      raise RuntimeError(errMsg)
-    if verbose: print "\nThe directory", dirName, "already exists!"
-  else:
-    if verbose: print "\nCreating directory "+dirName+" ..."
-    os.mkdir(dirName)
-  if cdIntoDir:
-    echoChDir(dirName, verbose=verbose)
-
-
-def createDirsFromPath(path):
-  #print "\npath =", path
-  pathList = path.split("/")
-  #print "\npathList =", pathList
-  if not pathList[0]:
-    currDir = "/"
-  for dir in pathList:
-    currDir = os.path.join(currDir, dir)
-    if currDir and not os.path.exists(currDir):
-      #print "\ncurrDir =", currDir
-      createDir(currDir)
-
-
-def expandDirsDict(trilinosDirsDict_inout):
-
-  for dir in trilinosDirsDict_inout.keys():
-    subdirsList = dir.split("/")
-    #print "\nsubdirsList =", subdirsList
-    for i in range(0, len(subdirsList)):
-      trilinosDirsDict_inout.update(
-        { joinDirs(subdirsList[:i+1]) : 0 }
-        )
-
-
-#########################################
+##############################################
 # System command unit testing utiltities
-#########################################
+##############################################
 
 
 class InterceptedCmndStruct:
@@ -312,27 +281,9 @@ def runSysCmndInterface(cmnd, outFile=None, rtnOutput=False):
     return rtnCode
 
 
-###############
-# File helpers
-###############
-
-
-def removeIfExists(fileName):
-  if os.path.exists(fileName):
-    echoRunSysCmnd("rm "+fileName)
-
-
-def writeStrToFile(fileName, fileBodyStr):
-  open(fileName, 'w').write(fileBodyStr)
-
-
-def readStrFromFile(fileName):
-  return open(fileName, 'r').read()
-
-
-#
+######################################
 # System interaction utilties
-#
+######################################
 
 
 def runSysCmnd(cmnd, throwExcept=True, outFile=None, workingDir=""):
@@ -404,14 +355,109 @@ def getCmndOutput(cmnd, stripTrailingSpaces=False, throwOnError=True, workingDir
     if pwd: os.chdir(pwd)
 
 
-#####################
-# Other Stuff
-#####################
+def pidStillRunning(pid):
+  #print "\npid = '"+pid+"'"
+  cmnd = "kill -s 0 "+pid
+  cmndReturn = runSysCmnd(cmnd, False)
+  #print "\ncmndReturn =", cmndReturn
+  return cmndReturn == 0
 
 
-def printStackTrace():
-  sys.stdout.flush()
-  traceback.print_exc()
+######################################
+# File/path utilities 
+######################################
+     
+
+def joinDirs(dirArray):
+  """
+  Join directories.
+
+  2009/06/09: rabartl: We should be able to just use os.path.join(...) but I
+  found when used in at least on context that it resulted in not joining the
+  elements but instead just returning the array.
+  """
+  dirPath = ""
+  for dir in dirArray:
+    if not dirPath:
+      dirPath = dir
+    else:
+      dirPath = dirPath + "/" + dir
+  return dirPath
+
+
+def downDirsArray(numDownDirs):
+  downDirsPathArray = []
+  for i in range(0, numDownDirs):
+    downDirsPathArray.append("..")
+  #print "\ndownDirsPathArray =", downDirsPathArray
+  return downDirsPathArray
+
+
+def normalizePath(path):
+  return os.path.normpath(path)
+
+
+def echoChDir(dirName, verbose=True):
+  if verbose:
+    print "\nChanging current directory to \'"+dirName+"\'"
+  if not os.path.isdir(dirName):
+    raise OSError("Error, the directory \'"+dirName+"\' does not exist in the" \
+      + " base directory \'"+os.getcwd()+"\"!" )
+  os.chdir(dirName)
+  if verbose:
+    print "\nCurrent directory is \'"+os.getcwd()+"\'\n"
+
+
+def createDir(dirName, cdIntoDir=False, verbose=False):
+  """Create a directory if it does not exist"""
+  if os.path.exists(dirName):
+    if not os.path.isdir(dirName):
+      errMsg = "\nError the path '"+dirName+"'already exists but it is not a directory!"
+      if verbose: print errMsg
+      raise RuntimeError(errMsg)
+    if verbose: print "\nThe directory", dirName, "already exists!"
+  else:
+    if verbose: print "\nCreating directory "+dirName+" ..."
+    os.mkdir(dirName)
+  if cdIntoDir:
+    echoChDir(dirName, verbose=verbose)
+
+
+def createDirsFromPath(path):
+  #print "\npath =", path
+  pathList = path.split("/")
+  #print "\npathList =", pathList
+  if not pathList[0]:
+    currDir = "/"
+  for dir in pathList:
+    currDir = os.path.join(currDir, dir)
+    if currDir and not os.path.exists(currDir):
+      #print "\ncurrDir =", currDir
+      createDir(currDir)
+
+
+def expandDirsDict(trilinosDirsDict_inout):
+
+  for dir in trilinosDirsDict_inout.keys():
+    subdirsList = dir.split("/")
+    #print "\nsubdirsList =", subdirsList
+    for i in range(0, len(subdirsList)):
+      trilinosDirsDict_inout.update(
+        { joinDirs(subdirsList[:i+1]) : 0 }
+        )
+
+
+def removeIfExists(fileName):
+  if os.path.exists(fileName):
+    echoRunSysCmnd("rm "+fileName)
+
+
+def writeStrToFile(fileName, fileBodyStr):
+  open(fileName, 'w').write(fileBodyStr)
+
+
+def readStrFromFile(fileName):
+  return open(fileName, 'r').read()
 
 
 def getFileNamesWithFileTag( baseDir, fileTag ):
@@ -420,14 +466,6 @@ def getFileNamesWithFileTag( baseDir, fileTag ):
     'cd %s && ls *%s*' % (baseDir, fileTag),
     throwOnError=False
     ).split()
-
-
-def pidStillRunning(pid):
-  #print "\npid = '"+pid+"'"
-  cmnd = "kill -s 0 "+pid
-  cmndReturn = runSysCmnd(cmnd, False)
-  #print "\ncmndReturn =", cmndReturn
-  return cmndReturn == 0
 
 
 def getFileNameFromGlob( baseDir, fileNameGlob ):
@@ -510,7 +548,7 @@ def getExecBaseDir(execName):
   execNameGroups = re.findall(execNameMatchRe, execFullPath)
   #print "\nexecNameGroups =", execNameGroups
   if not execNameGroups:
-     return None
+    return None
   execBaseDir = execNameGroups[0]
   #print "\nexecBaseDir = \""+execBaseDir+"\""
   #execBaseDir = cleanBadPath(execBaseDir)
@@ -521,53 +559,29 @@ def getExecBaseDir(execName):
 def extractAppendUniqueDirsDictFromFileNames(filenamesArray, dirsDict):
   for filename in filenamesArray:
     dirsDict.update( { normalizePath(os.path.dirname(filename)) : 0 } )
-    
-
-class ErrorCaptureOptionParser(optparse.OptionParser):
-  __sawError = None
-  def __init__(self, usage="%prog [options]", version=None):
-    optparse.OptionParser.__init__(self, usage, version)
-    __sawError = False
-  def error(self, msg):
-    raise "Received error message: "+msg
 
 
-def stripWhitespaceFromStringList(stringList):
-  return [x.strip() for x in stringList]
+def copyFileAndReplaceTokens( scriptsDir, inputFile, tokenReplacementList,
+  outputFile ):
+
+  """Copies an input stub file and then does a set of token replacements"""
+
+  echoRunSysCmnd("cp "+inputFile+" "+outputFile, verbose=verboseDebug)
+
+  for tokenReplacementPair in tokenReplacementList:
+    oldToken = tokenReplacementPair[0]
+    newToken = tokenReplacementPair[1]
+    echoRunSysCmnd( scriptsDir+"/token-replace.pl "+oldToken+" "+newToken\
+      +" "+outputFile+" "+outputFile, verbose=verboseDebug );
+    # ToDo: Replace above with native re commands
 
 
-def removeItemsFromList(list, items):
-  itemsRemoved = 0
-  for item in items:
-    if item in list:
-      idx = list.index(item)
-      del list[idx]
-      itemsRemoved = itemsRemoved + 1
-  return itemsRemoved
-
-
-def getStrUnderlineStr(width):
-  underlineStr = ""
-  for i in range(width):
-    underlineStr += "-"
-  return underlineStr
+######################################
+# Shell argument helpers
+######################################
 
 
 reCmndLineArg = re.compile(r"(--.+=)(.+)")
-
-
-def requoteCmndLineArgs(inArgs):
-  argsStr = ""
-  for arg in inArgs:
-    splitArg = arg.split("=")
-    newArg = None
-    if len(splitArg) == 1:
-      newArg = arg
-    else:
-      newArg = splitArg[0]+"=\""+'='.join(splitArg[1:])+"\""
-    #print "\nnewArg =", newArg
-    argsStr = argsStr+" "+newArg
-  return argsStr
 
 
 def addOptionParserChoiceOption(
@@ -591,23 +605,42 @@ def addOptionParserChoiceOption(
     )
 
 
-def getNewDateStr():
-  return getCmndOutput(r"date '+%F-%H-%M'",True)
+def requoteCmndLineArgs(inArgs):
+  argsStr = ""
+  for arg in inArgs:
+    splitArg = arg.split("=")
+    newArg = None
+    if len(splitArg) == 1:
+      newArg = arg
+    else:
+      newArg = splitArg[0]+"=\""+'='.join(splitArg[1:])+"\""
+    #print "\nnewArg =", newArg
+    argsStr = argsStr+" "+newArg
+  return argsStr
 
 
-def copyFileAndReplaceTokens( scriptsDir, inputFile, tokenReplacementList,
-  outputFile ):
+######################################
+# Debugging support
+######################################
 
-  """Copies an input stub file and then does a set of token replacements"""
 
-  echoRunSysCmnd("cp "+inputFile+" "+outputFile, verbose=verboseDebug)
+def printStackTrace():
+  sys.stdout.flush()
+  traceback.print_exc()
+    
 
-  for tokenReplacementPair in tokenReplacementList:
-    oldToken = tokenReplacementPair[0]
-    newToken = tokenReplacementPair[1]
-    echoRunSysCmnd( scriptsDir+"/token-replace.pl "+oldToken+" "+newToken\
-      +" "+outputFile+" "+outputFile, verbose=verboseDebug );
-    # ToDo: Replace above with native re commands
+class ErrorCaptureOptionParser(optparse.OptionParser):
+  __sawError = None
+  def __init__(self, usage="%prog [options]", version=None):
+    optparse.OptionParser.__init__(self, usage, version)
+    __sawError = False
+  def error(self, msg):
+    raise "Received error message: "+msg
+
+
+######################################
+# HTML directory browsing
+######################################
 
 
 def createIndexHtmlBrowserList(baseDir, fileDirList = None):
@@ -690,163 +723,3 @@ def createHtmlBrowserFiles(absBaseDir, depth, verbose=False):
         createHtmlBrowserFiles(absBaseDir+"/"+fd,depth-1)
 
   #print "\nLeaving createHtmlBrowserFiles("+absBaseDir+",%d"%(depth)+")"
-
-
-reDateDirName = re.compile(r"[0-9]{4,4}-[0-9]{2,2}-[0-9]{2,2}-[0-9]{2,2}-[0-9]{2,2}")
-
-
-def isNameDateDir(name):
-  if (reDateDirName.match(name)):
-    return True
-  return False
-
-
-def getDateDirs(absBaseDir):
-
-  fileDirList = os.listdir(absBaseDir)
-  fileDirList.sort()
-  #print "\nfileDirList =", fileDirList
-  #sys.stdout.flush()
-
-  dateDirs = []
-
-  for fd in fileDirList:
-    absFd = absBaseDir+"/"+fd
-    if os.path.isdir(absFd) and isNameDateDir(fd):
-      dateDirs.append(fd)
-
-  dateDirs.sort(reverse=True)
-  return dateDirs
-
-
-def getBuildDirs(absBaseDir):
-
-  fileDirList = os.listdir(absBaseDir)
-  #print "\nfileDirList =", fileDirList
-  #sys.stdout.flush()
-
-  buildDirs = []
-
-  for fd in fileDirList:
-    absFd = absBaseDir+"/"+fd
-    if os.path.isdir(absFd):
-      buildDirs.append(fd)
-
-  return buildDirs
-
-
-def getDateTimeFromDateStr(dateStr):
-  dta = dateStr.split("-")
-  return datetime.datetime(
-    year=int(dta[0]), month=int(dta[1]), day=int(dta[2]),
-    hour=int(dta[3]), minute=int(dta[4]) )
-
-
-relativeTimeDeltaFormatHelp = \
-  "The format for relative time delta is wW+dD+hH+mM for w weeks,"\
-  +" d days, h hours, and m minutes (all integer values)."
-
-
-def convertTimeDeltaStrToTimeDelta(timeDeltaStr):
-  """Converts time delta strings of the form wW+dD+hH+mM to timedelta object"""
-  #print "\ntimeDeltaStr =", timeDeltaStr
-  if timeDeltaStr:
-    tdsa = timeDeltaStr.split("+")
-  else:
-    tdsa = [" "]
-  #print "\ntdsa =", tdsa
-  weeks = 0
-  days = 0
-  hours = 0
-  minutes = 0
-  for dt in tdsa:
-    valStr = dt[:-1]
-    if dt[-1] == 'W':
-      weeks = int(valStr)
-    elif dt[-1] == 'D':
-      days = int(valStr)
-    elif dt[-1] == 'H':
-      hours = int(valStr)
-    elif dt[-1] == 'M':
-      minutes = int(valStr)
-    else:
-      raise "Error, the time-delta string \""+timeDeltaStr+"\" is not a valid"\
-        +" format.  "+relativeTimeDeltaFormatHelp
-  return datetime.timedelta(
-    weeks=weeks, days=days, hours=hours, minutes=minutes )
-
-
-def thinOutFilesAndDirsInBaseDir(maxFileKb, absBaseDir, localBaseDir,
-  protectedFilesAndDirs, noOp, verbose
-  ):
-
-  #localVerboseDebug = True
-  localVerboseDebug = False
-
-  if localVerboseDebug:
-    print "\nEntering thinOutFilesAndDirsInBaseDir(",maxFileKb, ",", absBaseDir,\
-     ",", localBaseDir, "... )"
-
-  absLocalBaseDir = os.path.join(absBaseDir, localBaseDir)
-
-  fileDirList = os.listdir(absLocalBaseDir)
-  fileDirList.sort()
-  #print "\nfileDirList =", fileDirList
-  #sys.stdout.flush()
-
-  for fd in fileDirList:
-
-    # Get the relative file/directory path to the base directory
-    localFd = os.path.join(localBaseDir, fd)
-    if localVerboseDebug: print "\nlocalFd =", localFd
-
-    # Get the absolute file or directory path
-    absFd = os.path.join(absBaseDir, localFd)
-    if localVerboseDebug: print "\nabsFd =", absFd
-
-    # Determine if this is a protected file/directory
-    isProtectedFd = (localFd in protectedFilesAndDirs)
-
-    # Thin out or remove file/directory if it is not protected
-    if not isProtectedFd:
-      
-      # If this is a directory, thin it out and remove it if needed/requested
-      if os.path.isdir(absFd):
-        thinOutFilesAndDirsInBaseDir(maxFileKb, absBaseDir,
-          os.path.join(localBaseDir, fd), protectedFilesAndDirs, noOp, verbose )
-        if isEmptyDir(absFd) and maxFileKb < 0 and not noOp:
-          runSysCmnd("rm -rf "+absFd)
-
-      # If this is a regular file, then copy over it or delete if needed/requested
-      elif os.path.isfile(absFd) and not noOp:
-        if maxFileKb > 0 and int(float(os.path.getsize(absFd))/1000.0) > maxFileKb:
-          open(absFd, 'w').write(
-           'Removed file because it was bigger than %d KB\n' % maxFileKb )
-        elif maxFileKb <= 0:
-          if localVerboseDebug:
-            echoRunSysCmnd("rm -f "+absFd, False)
-          else:
-            runSysCmnd("rm -f "+absFd, False)
-
-    else:
-
-      if verbose:
-        print "\nLeaving untouched \""+localFd+"\" since it is protected!"
-
-  if localVerboseDebug:
-    print "\nLeaving thinOutFilesAndDirsInBaseDir(",maxFileKb, ",", absBaseDir,\
-     ",", localBaseDir, ", ... )"
-
-
-def removeLargerFilesInBaseDir(maxFileKb, absBaseDir, protectedFilesAndDirs,
-  noOp, verbose
-  ):
-  thinOutFilesAndDirsInBaseDir(maxFileKb, absBaseDir, "", protectedFilesAndDirs,
-    noOp, verbose)
-
-
-def deleteAllButProtectedInBaseDir(absBaseDir, protectedFilesAndDirs,
-  noOp, verbose
-  ):
-  thinOutFilesAndDirsInBaseDir(-1, absBaseDir, "", protectedFilesAndDirs,
-    noOp, verbose)
