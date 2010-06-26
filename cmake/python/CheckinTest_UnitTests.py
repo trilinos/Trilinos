@@ -279,8 +279,8 @@ g_cmndinterceptsConfigBuildTestPasses = \
 
 g_cmnginterceptsEgLogCmnds = \
   "IT: eg cat-file -p HEAD; 0; 'This is the last commit message'\n" \
-  "IT: eg log --oneline origin/currentbranch..currentbranch; 0; '12345 Only one commit'\n" \
-  "IT: eg log --pretty=format:'%h' origin/currentbranch..currentbranch; 0; '12345'\n" \
+  "IT: eg log --oneline currentbranch \^origin/currentbranch; 0; '12345 Only one commit'\n" \
+  "IT: eg log --pretty=format:'%h' currentbranch\^ \^origin/currentbranch; 0; '12345'\n" \
 
 g_cmndinterceptsFinalPushPasses = \
   "IT: eg pull && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
@@ -1905,8 +1905,8 @@ class test_checkin_test(unittest.TestCase):
       +g_cmndinterceptsSendBuildTestCaseEmail \
       +"IT: eg pull && eg rebase --against origin/currentbranch; 0; 'final eg pull and rebase passed'\n" \
       +"IT: eg cat-file -p HEAD; 0; 'This is the last commit message'\n" \
-      +"IT: eg log --oneline origin/currentbranch..currentbranch; 0; ''\n" \
-      +"IT: eg log --pretty=format:'%h' origin/currentbranch..currentbranch; 0; ''\n" \
+      +"IT: eg log --oneline currentbranch \^origin/currentbranch; 0; ''\n" \
+      +"IT: eg log --pretty=format:'%h' currentbranch\^ \^origin/currentbranch; 0; ''\n" \
       +"IT: eg push; 1; 'push FAILED due to no local commits'\n"
       +g_cmndinterceptsSendFinalEmail \
       ,

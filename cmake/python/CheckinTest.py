@@ -1281,9 +1281,9 @@ def getLastCommitMessageStr(inOptions):
 
 def getLocalCommitsSummariesStr(inOptions):
 
-  # Get the raw output from the last current commit log
+  # Get the list of local commits other than this one
   rawLocalCommitsStr = getCmndOutput(
-    "eg log --oneline origin/"+inOptions.currentBranch+".."+inOptions.currentBranch,
+    "eg log --oneline "+inOptions.currentBranch+" ^origin/"+inOptions.currentBranch,
     True,
     workingDir=inOptions.trilinosSrcDir
     )
@@ -1320,10 +1320,11 @@ def getLocalCommitsSHA1ListStr(inOptions):
 
   # Get the raw output from the last current commit log
   rawLocalCommitsStr = getCmndOutput(
-    "eg log --pretty=format:'%h' origin/"+inOptions.currentBranch+".."+inOptions.currentBranch,
+    "eg log --pretty=format:'%h' "+inOptions.currentBranch+"^ ^origin/"+inOptions.currentBranch,
     True, workingDir=inOptions.trilinosSrcDir)
 
-  return ("Local commits for this build/test group: " + (", ".join(rawLocalCommitsStr.split("\n"))))
+  return ("Other local commits for this build/test group: "
+    + (", ".join(rawLocalCommitsStr.split("\n")))) + "\n"
 
 
 def checkinTest(inOptions):
@@ -1898,7 +1899,7 @@ def checkinTest(inOptions):
           finalCommitEmailBodyStr = lastCommitMessageStr
           finalCommitEmailBodyStr += getAutomatedStatusSummaryHeaderStr(inOptions)
           finalCommitEmailBodyStr += shortCommitEmailBodyExtra
-          finalCommitEmailBodyStr += localCommitSHA1ListStr+"\n"
+          finalCommitEmailBodyStr += localCommitSHA1ListStr
           if forcedCommitPush:
             finalCommitEmailBodyStr += "WARNING: Forced the push!\n"
           writeStrToFile(getFinalCommitEmailBodyFileName(), finalCommitEmailBodyStr)
