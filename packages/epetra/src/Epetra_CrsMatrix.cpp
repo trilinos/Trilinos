@@ -1108,19 +1108,23 @@ int Epetra_CrsMatrix::OptimizeStorage() {
 
     if (!(Graph().StaticProfile())) {
       const int *const  IndexOffset = Graph().IndexOffset();
+      const int NumMyRows = NumMyRows_;
+      double ** Values_s = Values_;
+      double * All_Values_s = All_Values_;
 #ifdef Epetra_HAVE_OMP
-#pragma omp parallel for
+#pragma omp parallel for default(none) shared(NumMyRows,IndexOffset,Values_s,All_Values_s) \
+                         private(i,j)
 #endif
-      for (i=0; i<NumMyRows_; i++) {
+      for (i=0; i<NumMyRows; i++) {
         int NumEntries = Graph().NumMyIndices(i);
         int curOffset = IndexOffset[i];
-        double * Values = Values_[i];
-        double * newValues = All_Values_+curOffset;
-        for (j=0; j<NumEntries; j++) newValues[j] = Values[j];
+        double * Values = Values_s[i];
+        double * newValues = All_Values_s+curOffset;
+	for (j=0; j<NumEntries; j++) newValues[j] = Values[j];
       }
 
       for (i=0;i<NumMyRows_; ++i) {
-        delete [] Values_[i]; 
+         if (Values_[i]!=0) delete [] Values_[i]; 
       }
 
       delete [] Values_alloc_lengths_; Values_alloc_lengths_ = 0;
@@ -2786,10 +2790,11 @@ if (StorageOptimized() && Graph().StorageOptimized()) {
   double * Values = All_Values();
   int * Indices = Graph().All_Indices();
   int * IndexOffset = Graph().IndexOffset();
+  const int NumMyRows = NumMyRows_;
 
 #ifdef Epetra_HAVE_OMP
-#pragma omp parallel for
-     for (unsigned int row=0; row<NumMyRows_; ++row)
+#pragma omp parallel for default(none) shared(NumMyRows,IndexOffset,Values,Indices,y,x)
+     for (int row=0; row<NumMyRows; ++row)
         {
  	  const int curOffset = IndexOffset[row];
           const double *val_ptr    = Values+curOffset;
@@ -2827,12 +2832,13 @@ if (StorageOptimized() && Graph().StorageOptimized()) {
     int* NumEntriesPerRow = Graph().NumIndicesPerRow();
     int** Indices = Graph().Indices();
     double** srcValues = Values();
+    const int NumMyRows = NumMyRows_;
     
     // Do actual computation
 #ifdef Epetra_HAVE_OMP
-#pragma omp parallel for
+#pragma omp parallel for default(none) shared(NumMyRows,NumEntriesPerRow,Indices,srcValues,y,x)
 #endif
-    for(int i = 0; i < NumMyRows_; i++) {
+    for(int i = 0; i < NumMyRows; i++) {
       int     NumEntries = NumEntriesPerRow[i];
       int*    RowIndices = Indices[i];
       double* RowValues  = srcValues[i];
@@ -2846,12 +2852,13 @@ if (StorageOptimized() && Graph().StorageOptimized()) {
   } 
   else { // Case where StorageOptimized is incompatible:  Use general accessors.
 
+    const int NumMyRows = NumMyRows_;
     
     // Do actual computation
 #ifdef Epetra_HAVE_OMP
-#pragma omp parallel for
+#pragma omp parallel for default(none) shared(NumMyRows,x,y)
 #endif
-    for(int i = 0; i < NumMyRows_; i++) {
+    for(int i = 0; i < NumMyRows; i++) {
       int     NumEntries = NumMyEntries(i);
       int*    RowIndices = Graph().Indices(i);
       double* RowValues  = Values(i);
@@ -2950,10 +2957,11 @@ void Epetra_CrsMatrix::GeneralMM(double ** X, int LDX, double ** Y, int LDY, int
 
     double ** const xp = X;
     double ** const yp = Y;
+    const int NumMyRows = NumMyRows_;
 #ifdef Epetra_HAVE_OMP
-#pragma omp parallel for
+#pragma omp parallel for default(none) shared(NumMyRows,IndexOffset,Indices,Values,NumVectors,xp,yp)
 #endif
-    for (int i=0; i < NumMyRows_; i++) {
+    for (int i=0; i < NumMyRows; i++) {
       int prevOffset = IndexOffset[i];
       int NumEntries = IndexOffset[i+1] - prevOffset;
       int *    RowIndices = Indices+prevOffset;
@@ -2977,11 +2985,12 @@ void Epetra_CrsMatrix::GeneralMM(double ** X, int LDX, double ** Y, int LDY, int
     double** srcValues = Values();
     double ** const xp = X;
     double ** const yp = Y;
+    const int NumMyRows = NumMyRows_;
 
 #ifdef Epetra_HAVE_OMP
-#pragma omp parallel for
+#pragma omp parallel for default(none) shared(NumMyRows,NumEntriesPerRow,Indices,srcValues,NumVectors,xp,yp)
 #endif
-    for (int i=0; i < NumMyRows_; i++) {
+    for (int i=0; i < NumMyRows; i++) {
       int      NumEntries = NumEntriesPerRow[i];
       int *    RowIndices = Indices[i];
       double * RowValues  = srcValues[i];
@@ -2996,18 +3005,21 @@ void Epetra_CrsMatrix::GeneralMM(double ** X, int LDX, double ** Y, int LDY, int
   }
   else {
 
+    double ** const xp = X;
+    double ** const yp = Y;
+    const int NumMyRows = NumMyRows_;
 #ifdef Epetra_HAVE_OMP
-#pragma omp parallel for
+#pragma omp parallel for default(none) shared(NumMyRows,NumVectors,xp,yp)
 #endif
-    for (int i=0; i < NumMyRows_; i++) {
+    for (int i=0; i < NumMyRows; i++) {
       int     NumEntries = NumMyEntries(i);
       int*    RowIndices = Graph().Indices(i);
       double* RowValues  = Values(i);
       for (int k=0; k<NumVectors; k++) {
 	double sum = 0.0;
-	double * x = X[k];
+	double * x = xp[k];
 	for (int j=0; j < NumEntries; j++) sum += RowValues[j] * x[RowIndices[j]];
-	Y[k][i] = sum;
+	yp[k][i] = sum;
       }
     }
   }

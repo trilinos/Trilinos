@@ -1363,14 +1363,36 @@ int Epetra_CrsGraph::OptimizeStorage() {
     
     // Pack indices into All_Indices_
     
-    int* tmp = CrsGraphData_->All_Indices_.Values();
+    int* All_Indices = CrsGraphData_->All_Indices_.Values();
     int * IndexOffset = CrsGraphData_->IndexOffset_.Values();
-    for(i = 0; i < numMyBlockRows; i++) {
-      NumIndices = IndexOffset[i+1] - IndexOffset[i];
-      int*& ColIndices = CrsGraphData_->Indices_[i];
-      if (tmp!=ColIndices) { // No need to copy if pointing to same space
-	for(j = 0; j < NumIndices; j++) 
-	  tmp[j] = ColIndices[j];
+    int ** Indices = CrsGraphData_->Indices_;
+    if (!StaticProfile()) {
+#ifdef Epetra_HAVE_OMP
+#pragma omp parallel for default(none) shared(numMyBlockRows,IndexOffset,All_Indices,Indices) \
+                         private(i,j)
+#endif
+      for(i = 0; i < numMyBlockRows; i++) {
+        int curNumIndices = IndexOffset[i+1] - IndexOffset[i];
+        int* ColIndices = Indices[i];
+        int* newColIndices = All_Indices+IndexOffset[i];
+	for(j = 0; j < curNumIndices; j++) 
+	  newColIndices[j] = ColIndices[j];
+      }
+      for(i = 0; i < numMyBlockRows; i++) {
+        if (Indices[i]!=0) delete [] Indices[i];
+      }
+    }
+  else { // Static profile, so we can't thread the copy to improve locality
+      int * tmp = All_Indices;
+      for(i = 0; i < numMyBlockRows; i++) {
+        int curNumIndices = IndexOffset[i+1] - IndexOffset[i];
+        int* ColIndices = Indices[i];
+        if (tmp!=ColIndices) { // No need to copy if pointing to same space
+	  for(j = 0; j < curNumIndices; j++) 
+	    tmp[j] = ColIndices[j];
+        }
+        CrsGraphData_->Indices_[i] = 0;
+        tmp += curNumIndices; 	// tmp points to the offset in All_Indices_ where Indices_[i] starts.
       }
       if (!(CrsGraphData_->StaticProfile_) && ColIndices!=0)
         CrsGraphData_->SortedEntries_[i].entries_.clear();
