@@ -308,7 +308,8 @@ RCP<Epetra_CrsMatrix> buildGraphLaplacian(double * x,double * y,double * z,int s
   */
 void applyOp(const LinearOp & A,const MultiVector & x,MultiVector & y,double alpha,double beta)
 {
-   Thyra::apply(*A,Thyra::NONCONJ_ELE,*x,&*y,alpha,beta);
+   // Thyra::apply(*A,Thyra::NONCONJ_ELE,*x,&*y,alpha,beta);
+   Thyra::apply(*A,Thyra::NOTRANS,*x,y.ptr(),alpha,beta);
 }
 
 /** \brief Update the <code>y</code> vector so that \f$y = \alpha x+\beta y\f$
@@ -588,7 +589,8 @@ ModifiableLinearOp getLumpedMatrix(const LinearOp & op)
    Thyra::assign(ones.ptr(),1.0);
 
    // compute lumped diagonal
-   Thyra::apply(*op,Thyra::NONCONJ_ELE,*ones,&*diag);
+   // Thyra::apply(*op,Thyra::NONCONJ_ELE,*ones,&*diag);
+   Thyra::apply(*op,Thyra::NOTRANS,*ones,diag.ptr());
 
    return rcp(new Thyra::DefaultDiagonalLinearOp<double>(diag));
 }
@@ -610,7 +612,8 @@ ModifiableLinearOp getInvLumpedMatrix(const LinearOp & op)
    Thyra::assign(ones.ptr(),1.0);
 
    // compute lumped diagonal
-   Thyra::apply(*op,Thyra::NONCONJ_ELE,*ones,&*diag);
+   // Thyra::apply(*op,Thyra::NONCONJ_ELE,*ones,&*diag);
+   Thyra::apply(*op,Thyra::NOTRANS,*ones,diag.ptr());
    Thyra::reciprocal(diag.ptr(),*diag);
 
    return rcp(new Thyra::DefaultDiagonalLinearOp<double>(diag));
@@ -995,6 +998,35 @@ BlockedMultiVector buildBlockedMultiVector(const std::vector<MultiVector> & mvv)
          = Thyra::productVectorSpace<double>(vsA);
 
    return Thyra::defaultProductMultiVector<double>(vs,mvA);
+}
+
+/** Construct an indicator vector specified by a vector of indices to 
+  * be set to ``on''.
+  *
+  * \param[in] indices Vector of indicies to turn on
+  * \param[in] vs Vector space to construct the vector from
+  * \param[in] onValue Value to set in the vector to on
+  * \param[in] offValue Value to set in the vector to off
+  *
+  * \return Vector of on and off values.
+  */
+Teuchos::RCP<Thyra::VectorBase<double> > indicatorVector(
+                                 const std::vector<int> & indices,
+                                 const VectorSpace & vs,
+                                 double onValue, double offValue)
+
+{
+   using Teuchos::RCP;
+ 
+   // create a new vector
+   RCP<Thyra::VectorBase<double> > v = Thyra::createMember<double>(vs);
+   Thyra::put_scalar<double>(offValue,v.ptr()); // fill it with "off" values
+
+   // set on values
+   for(std::size_t i=0;i<indices.size();i++) 
+      Thyra::set_ele<double>(indices[i],onValue,v.ptr());
+
+   return v;
 }
 
 /** \brief Compute the spectral radius of a matrix

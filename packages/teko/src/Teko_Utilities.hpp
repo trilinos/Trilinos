@@ -277,6 +277,21 @@ inline BlockedMultiVector datacopy(const BlockedMultiVector & src,BlockedMultiVe
 //! build a BlockedMultiVector from a vector of MultiVectors
 BlockedMultiVector buildBlockedMultiVector(const std::vector<MultiVector> & mvs);
 
+/** Construct an indicator vector specified by a vector of indices to 
+  * be set to ``on''.
+  *
+  * \param[in] indices Vector of indicies to turn on
+  * \param[in] vs Vector space to construct the vector from
+  * \param[in] onValue Value to set in the vector to on
+  * \param[in] offValue Value to set in the vector to off
+  *
+  * \return Vector of on and off values.
+  */
+Teuchos::RCP<Thyra::VectorBase<double> > indicatorVector(
+                                 const std::vector<int> & indices,
+                                 const VectorSpace & vs,
+                                 double onValue=1.0, double offValue=0.0);
+
 //@}
 
 // ----------------------------------------------------------------------------
