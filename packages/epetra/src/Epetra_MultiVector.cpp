@@ -1006,7 +1006,6 @@ int Epetra_MultiVector::Dot(const Epetra_MultiVector& A, double *Result) const {
 
   // Dot product of two MultiVectors 
 
-  int i;
   if (NumVectors_ != A.NumVectors()) EPETRA_CHK_ERR(-1);
   const int MyLength = MyLength_;
   if (MyLength != A.MyLength()) EPETRA_CHK_ERR(-2);
@@ -1043,7 +1042,6 @@ int Epetra_MultiVector::Abs(const Epetra_MultiVector& A) {
 
   // this[i][j] = std::abs(A[i][j])
 
-  int i;
   const int MyLength = MyLength_;
   if (NumVectors_ != A.NumVectors()) EPETRA_CHK_ERR(-1);
   if (MyLength != A.MyLength()) EPETRA_CHK_ERR(-2);
@@ -1067,6 +1065,7 @@ int Epetra_MultiVector::Reciprocal(const Epetra_MultiVector& A) {
   // this[i][j] = 1.0/(A[i][j])
 
   int ierr = 0;
+  int localierr = 0;
   const int MyLength = MyLength_;
   if (NumVectors_ != A.NumVectors()) EPETRA_CHK_ERR(-1);
   if (MyLength != A.MyLength()) EPETRA_CHK_ERR(-2);
@@ -1391,9 +1390,6 @@ int  Epetra_MultiVector::Norm1 (double* Result) const {
   
   // 1-norm of each vector in MultiVector 
     
-  int i;
-
-
   if (!Map().UniqueGIDs()) {EPETRA_CHK_ERR(-1);}
 
   const int MyLength = MyLength_;
@@ -1491,8 +1487,8 @@ int  Epetra_MultiVector::NormInf (double* Result) const {
 }
       DoubleTemp_[i] = normval;
 #else
-      j = IAMAX(MyLength, Pointers_[i]);
-      if (j>-1) DoubleTemp_[i] = std::abs(Pointers_[i][j]);
+      int jj = IAMAX(MyLength, Pointers_[i]);
+      if (jj>-1) DoubleTemp_[i] = std::abs(Pointers_[i][jj]);
 #endif
     }
   if (DistributedGlobal())
@@ -1520,7 +1516,6 @@ int  Epetra_MultiVector::NormWeighted (const Epetra_MultiVector& Weights, double
 
 
   UpdateDoubleTemp();
-  double * DoubleTemp = DoubleTemp_;
 
   double *W = Weights.Values();
   double **W_Pointers = Weights.Pointers();
@@ -1531,7 +1526,7 @@ int  Epetra_MultiVector::NormWeighted (const Epetra_MultiVector& Weights, double
       double sum = 0.0;
       const double * const from = Pointers_[i];
 #ifdef Epetra_HAVE_OMP
-#pragma omp parallel for reduction (+:sum) default(none) shared(MyLength,from,W,DoubleTemp)
+#pragma omp parallel for reduction (+:sum) default(none) shared(MyLength,from,W)
 #endif
       for (int j=0; j < MyLength; j++) {
         double tmp = from[j]/W[j];
