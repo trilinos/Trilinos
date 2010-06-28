@@ -409,17 +409,33 @@ int Epetra_FEVbrMatrix::InputNonlocalBlockEntry(double *Values, int LDA,
   else {
     int nrows = subblock->M();
     int ncols = subblock->N();
-    int lda   = subblock->LDA();
-    if (nrows != NumRows || ncols != NumCols || lda != LDA) {
+    if (nrows != NumRows || ncols != NumCols) {
       return(-1);
     }
 
-    double* subblockvals = subblock->A();
+    int Target_LDA = subblock->LDA();
+    int Source_LDA = LDA;
+    double* tptr = subblock->A();
+    double* sptr = Values;
     if (curMode_ == Add) {
-      for(int i=0; i<lda*ncols; ++i) subblockvals[i] += Values[i];
+      for(int j=0; j<NumCols; ++j) {
+        for(int i=0; i<NumRows; ++i) {
+          tptr[i] += sptr[i];
+        }
+
+        tptr += Target_LDA;
+        sptr += Source_LDA;
+      }
     }
     else {
-      for(int i=0; i<lda*ncols; ++i) subblockvals[i] = Values[i];
+      for(int j=0; j<NumCols; ++j) {
+        for(int i=0; i<NumRows; ++i) {
+          tptr[i] = sptr[i];
+        }
+
+        tptr += Target_LDA;
+        sptr += Source_LDA;
+      }
     }
   }
 
