@@ -1200,7 +1200,7 @@ namespace {
         TEST_EQUALITY_CONST( A_aft2[i] , M0 );                    // ... to zero
         TEST_EQUALITY_CONST( A1_aft1[i] , M0 );                   // was set to zero
         TEST_EQUALITY_CONST( A1_aft2[i] , M0 );                   // should not have been changed
-        TEST_EQUALITY_CONST( abs(A2_befr[i] - A2_aft1[i]) < tol, true );  // should not have been changed
+        TEST_FLOATING_EQUALITY( A2_befr[i], A2_aft1[i], tol);     // should not have been changed
         TEST_EQUALITY_CONST( A2_aft2[i] , M0 );                   // was set to zero
       }
     }
