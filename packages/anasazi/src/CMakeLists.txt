@@ -137,6 +137,50 @@ IF (TPL_ENABLE_MPI)
 
 ENDIF()
 
+######################################################################
+## mfh 28 Jun 2010
+## BEGIN TSQR setup
+######################################################################
+
+# Enable Fortran (used by TSQR, for one file)
+enable_language (Fortran)
+# Generate macros for Fortran name mangling, for use by TSQR
+include(FortranCInterface)
+FortranCInterface_HEADER("Tsqr_FortranCInterface.hpp")
+# Include tests for LAPACK functionality required by TSQR.
+include ("TsqrTestLapack.cmake")
+
+# Include headers and source files for Trilinos -> TSQR adaptors.
+# Some of these depend on Epetra or Tpetra, so check accordingly if
+# Anasazi_ENABLE_{Epetra,Tpetra} is defined.
+APPEND_SET(HEADERS 
+  TsqrAdaptor.hpp
+  TsqrFactory.hpp
+  TsqrFactory_SequentialTsqr.hpp
+  TsqrFactory_TbbTsqr.hpp
+  TsqrTrilinosMessenger.hpp
+  TsqrTypeAdaptor.hpp
+  )
+IF (Anasazi_ENABLE_Epetra)
+  APPEND_SET(HEADERS
+    TsqrAdaptor_Epetra_MultiVector.hpp
+    TsqrTypeAdaptor_Epetra_MultiVector.hpp
+    )
+ENDIF()
+IF (Anasazi_ENABLE_Tpetra)
+  APPEND_SET(HEADERS
+    TsqrAdaptor_Tpetra_MultiVector_SerialNode.hpp
+    TsqrAdaptor_Tpetra_MultiVector_TBBNode.hpp
+    TsqrTypeAdaptor_Tpetra_MultiVector_SerialNode.hpp
+    TsqrTypeAdaptor_Tpetra_MultiVector_TBBNode.hpp
+    )
+ENDIF()
+
+######################################################################
+## mfh 28 Jun 2010
+## END TSQR setup
+######################################################################
+
 #
 # C) Define the targets for package's library(s)
 #
