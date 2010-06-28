@@ -1031,6 +1031,71 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::offsetView(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap, size_t offset) const 
+  {
+    typedef const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> CMV;
+    TEST_FOR_EXCEPTION( subMap->getNodeNumElements() + offset > this->getLocalLength(), std::runtime_error,
+        "Tpetra::MultiVector::offsetView(subMap,offset): sizes are not sane.\noffset == " << offset << "\nsubMap: " << subMap->description() << "\nthis->rowMap: " << this->getMap()->description());
+    const size_t numVecs = this->getNumVectors(),
+                myStride = MVT::getStride(lclMV_),
+                  newLen = subMap->getNodeNumElements();
+    using Teuchos::ArrayRCP;
+    // this is const, so the lclMV_ is const, so that we can only get const buffers
+    // we will cast away the const; this is okay, because 
+    //   a) the constructor doesn't modify the data, and 
+    //   b) we are encapsulating in a const MV before returning
+    ArrayRCP<const Scalar> cbuf = MVT::getValues(lclMV_);
+    ArrayRCP<Scalar>      ncbuf = Teuchos::arcp_const_cast<Scalar>(cbuf);
+    Teuchos::RCP<CMV> constViewMV;
+    if (isConstantStride()) {
+      // view goes from first entry of first vector to last entry of last vector
+      ArrayRCP<Scalar> subdata = ncbuf.persistingView( offset, myStride * (numVecs-1) + newLen );
+      constViewMV = Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(subMap,subdata,myStride,numVecs) );
+    }
+    else {
+      // use same which index, but with an offset start pointer
+      size_t maxSubVecIndex = *std::max_element(whichVectors_.begin(), whichVectors_.end());
+      ArrayRCP<Scalar> subdata = ncbuf.persistingView( offset, myStride * maxSubVecIndex + newLen );
+      constViewMV = Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(subMap,subdata,myStride,whichVectors_) );
+    }
+    return constViewMV;      
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::offsetViewNonConst(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap, size_t offset)
+  {
+    typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+    TEST_FOR_EXCEPTION( subMap->getNodeNumElements() + offset > this->getLocalLength(), std::runtime_error,
+        "Tpetra::MultiVector::offsetView(subMap,offset): sizes are not sane.\noffset == " << offset << "\nsubMap: " << subMap->description() << "\nthis->rowMap: " << this->getMap()->description());
+    const size_t numVecs = this->getNumVectors(),
+                myStride = MVT::getStride(lclMV_),
+                  newLen = subMap->getNodeNumElements();
+    using Teuchos::ArrayRCP;
+    // this is const, so the lclMV_ is const, so that we can only get const buffers
+    // we will cast away the const; this is okay, because 
+    //   a) the constructor doesn't modify the data, and 
+    //   b) we are encapsulating in a const MV before returning
+    ArrayRCP<Scalar> buf = MVT::getValuesNonConst(lclMV_);
+    Teuchos::RCP<MV> subViewMV;
+    if (isConstantStride()) {
+      // view goes from first entry of first vector to last entry of last vector
+      ArrayRCP<Scalar> subdata = buf.persistingView( offset, myStride * (numVecs-1) + newLen );
+      subViewMV = Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(subMap,subdata,myStride,numVecs) );
+    }
+    else {
+      // use same which index, but with an offset start pointer
+      size_t maxSubVecIndex = *std::max_element(whichVectors_.begin(), whichVectors_.end());
+      ArrayRCP<Scalar> subdata = buf.persistingView( offset, myStride * maxSubVecIndex + newLen );
+      subViewMV = Teuchos::rcp(new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>(subMap,subdata,myStride,whichVectors_) );
+    }
+    return subViewMV;      
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > 
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::subView(Teuchos::ArrayView<const size_t> cols) const {
     using Teuchos::ArrayRCP;
     typedef const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> CMV;
