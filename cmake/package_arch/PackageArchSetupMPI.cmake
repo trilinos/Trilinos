@@ -68,18 +68,21 @@ FUNCTION(PACKAGE_ARCH_SETUP_MPI)
   PRINT_VAR(MPI_USE_COMPILER_WRAPPERS)
 
   FILE(TO_CMAKE_PATH "$ENV{ProgramFiles}" PROGRAM_FILES)
-  SET(MPI_BIN_DIR_PATHS
-    ${MPI_BIN_DIR}
-    /usr/local/mpi/bin
-    /usr/local/bin
-    /usr/bin
-    "${PROGRAM_FILES}/Microsoft HPC Pack 2008 SDK/Bin"
-    "C:/Program Files/Microsoft HPC Pack 2008 SDK/Bin"
-    "${PROGRAM_FILES}/MPICH/SDK/Bin"
-    "${PROGRAM_FILES}/MPICH2/Bin"
-    "C:/Program Files/MPICH/SDK/Bin"
-    "C:/Program Files/MPICH2/Bin"
-    )
+  IF(MPI_BIN_DIR)
+    SET(MPI_BIN_DIR_PATHS ${MPI_BIN_DIR})
+  ELSE()
+    SET(MPI_BIN_DIR_PATHS
+      /usr/local/mpi/bin
+      /usr/local/bin
+      /usr/bin
+      "${PROGRAM_FILES}/Microsoft HPC Pack 2008 SDK/Bin"
+      "C:/Program Files/Microsoft HPC Pack 2008 SDK/Bin"
+      "${PROGRAM_FILES}/MPICH/SDK/Bin"
+      "${PROGRAM_FILES}/MPICH2/Bin"
+      "C:/Program Files/MPICH/SDK/Bin"
+      "C:/Program Files/MPICH2/Bin"
+      )
+  ENDIF()
 
   #
   # B) Get the MPI compilers and/or just the raw include paths and libraries
