@@ -1194,7 +1194,7 @@ namespace {
       // change to A2 should not affect A1
       // change to A1 or A2 should change A
       // A should be zero after setting A1 to zero and A2 to zero
-      for (int i=0; i<numVectors; ++i) {
+      for (size_t i=0; i<numVectors; ++i) {
         TEST_EQUALITY_CONST( A_aft1[i] < A_befr[i] + tol, true ); // shrunk as A1 = 0 
         TEST_EQUALITY_CONST( A_aft2[i] < A_aft1[i] + tol, true ); // shurnk as A2 = 0
         TEST_EQUALITY_CONST( A_aft2[i] , M0 );                    // ... to zero
@@ -1245,7 +1245,7 @@ namespace {
         TEST_COMPARE_FLOATING_ARRAYS(b2,a2,tol);
         TEST_COMPARE_FLOATING_ARRAYS(b3,a3,tol);
         TEST_COMPARE_ARRAYS(changed(), zeros());
-        for (int i=0; i<numVectors; ++i) {
+        for (size_t i=0; i<numVectors; ++i) {
           TEST_EQUALITY_CONST( aw[i] < bw[i] + tol, true ); // shrunk
         }
       }
@@ -1272,7 +1272,7 @@ namespace {
       A->norm2(A_aft());
       A1->norm2(A1_aft());
       A2->norm2(A2_aft());
-      for (int i=0; i<numVectors; ++i) {
+      for (size_t i=0; i<numVectors; ++i) {
         TEST_EQUALITY_CONST( A_bef[i] < A1_bef[i] + A2_bef[i] + tol, true );
         TEST_EQUALITY_CONST( A_aft[i], S0 );
         TEST_EQUALITY_CONST( A1_aft[i], S0 );
