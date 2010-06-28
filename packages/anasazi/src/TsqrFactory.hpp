@@ -103,10 +103,13 @@ namespace TSQR {
       static node_tsqr_ptr
       makeNodeTsqr (const Teuchos::ParameterList& plist);
     };
-
   } // namespace Trilinos
 } // namespace TSQR
 
-
+#include "TsqrFactory_SequentialTsqr.hpp"
+// mfh 28 Jun 2010: this only does anything if HAVE_KOKKOS_TBB is
+// defined.  The file included below includes Tpetra_MultiVector.hpp
+// in order to get that.
+#include "TsqrFactory_TbbTsqr.hpp"
 
 #endif // __TSQR_Trilinos_TsqrFactory_hpp

@@ -1,6 +1,7 @@
 #ifndef __TSQR_Trilinos_TsqrTypeAdaptor_hpp
 #define __TSQR_Trilinos_TsqrTypeAdaptor_hpp
 
+#include "AnasaziConfigDefs.hpp"
 #include "TsqrFactory.hpp"
 #include <TSQR/Tsqr.hpp>
 
@@ -60,5 +61,13 @@ namespace TSQR {
   } // namespace Trilinos
 } // namespace TSQR
 
+#ifdef HAVE_ANASAZI_EPETRA
+#  include "TsqrTypeAdaptor_Epetra_MultiVector.hpp"
+#endif // HAVE_ANASAZI_EPETRA
+
+#ifdef HAVE_ANASAZI_TPETRA
+#  include "TsqrTypeAdaptor_Tpetra_MultiVector_SerialNode.hpp"
+#  include "TsqrTypeAdaptor_Tpetra_MultiVector_TBBNode.hpp"
+#endif // HAVE_ANASAZI_TPETRA
 
 #endif // __TSQR_Trilinos_TsqrTypeAdaptor_hpp
