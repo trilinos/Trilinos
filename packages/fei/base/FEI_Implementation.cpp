@@ -366,9 +366,10 @@ int FEI_Implementation::setIDLists(int numMatrices, const int* matrixIDs,
 //------------------------------------------------------------------------------
 int FEI_Implementation::initFields(int numFields,
                                    const int *fieldSizes,
-                                   const int *fieldIDs)
+                                   const int *fieldIDs,
+                                   const int *fieldTypes)
 {
-    CHK_ERR( problemStructure_->initFields(numFields, fieldSizes, fieldIDs) );
+    CHK_ERR( problemStructure_->initFields(numFields, fieldSizes, fieldIDs, fieldTypes) );
 
     return(0);
 }

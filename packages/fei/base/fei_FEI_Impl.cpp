@@ -284,9 +284,10 @@ int fei::FEI_Impl::setSolveType(int solveType)
 
 int fei::FEI_Impl::initFields(int numFields, 
 			       const int *fieldSizes, 
-			       const int *fieldIDs)
+			       const int *fieldIDs,
+             const int *fieldTypes)
 {
-  rowSpace_->defineFields(numFields, fieldIDs, fieldSizes);
+  rowSpace_->defineFields(numFields, fieldIDs, fieldSizes, fieldTypes);
 
   return(0);
 }

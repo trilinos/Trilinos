@@ -11,6 +11,7 @@
 
 #include <fei_macros.hpp>
 #include <fei_constants.hpp>
+#include <sstream>
 
 namespace fei {
 
@@ -45,7 +46,7 @@ template<class LocalOrdinal>
 void FieldDofMap<LocalOrdinal>::add_field(LocalOrdinal fieldID, LocalOrdinal fieldSize, LocalOrdinal fieldType)
 {
   //initially store 0 for the dof_id, will compute dof_ids later.
-  m_dof_id_map.insert(std::make_pair(fieldID,std::make_pair(fieldSize,0)));
+  m_dof_id_map.insert(std::make_pair(fieldID,std::make_pair(fieldSize,fieldType)));
   m_need_to_compute_dof_ids = true;
 }
 
@@ -76,14 +77,43 @@ void FieldDofMap<LocalOrdinal>::compute_dof_ids()
 {
   if (!m_need_to_compute_dof_ids) return;
 
-  LocalOrdinal dof_id = 0;
+  //first make sure dof_ids are unique. so make a second map which
+  //maps dof_ids to iterators into the first map, and watch for
+  //duplicates as we fill the second map. When we find duplicates,
+  //we'll shift dof_ids up as necessary. (throw an exception if the
+  //duplicate is not fei::UNKNOWN or bigger.)
+
+  typedef std::map<LocalOrdinal, typename dof_id_map::iterator> dof_iter_map;
+  dof_iter_map dof_2_iter;
+
   typename dof_id_map::iterator
     iter = m_dof_id_map.begin(), iter_end = m_dof_id_map.end();
 
   for(; iter!=iter_end; ++iter) {
-    LocalOrdinal fieldSize = iter->second.first;
-    iter->second.second = dof_id;
-    dof_id += fieldSize;
+    LocalOrdinal this_dof_id = iter->second.second;
+
+    typename dof_iter_map::iterator di_iter = dof_2_iter.find(this_dof_id);
+
+    if (di_iter != dof_2_iter.end()) {
+      if (this_dof_id < fei::UNKNOWN) {
+        std::ostringstream osstr;
+        osstr << "fei::FieldDofMap::compute_dof_ids ERROR, duplicate field types found (";
+        osstr << this_dof_id << " used more than once.)";
+        std::string str = osstr.str();
+        throw std::runtime_error(str);
+      }
+
+      //now we need to get fieldSize, and this is a little ugly:
+      //di_iter->second is the iterator to the other map.
+      //so di_iter->second->second is the value in the other map, which is a pair.
+      //so di_iter->second->second.first is the fieldSize that we want.
+      std::pair<LocalOrdinal,LocalOrdinal>& fsize_and_dof = di_iter->second->second;
+      LocalOrdinal fieldSize = fsize_and_dof.first;
+      LocalOrdinal last_dof_id = fsize_and_dof.second;
+      di_iter->second = iter;
+      iter->second.second = last_dof_id + fieldSize;
+    }
+    else dof_2_iter.insert(std::make_pair(this_dof_id, iter));
   }
 
   m_need_to_compute_dof_ids = false;

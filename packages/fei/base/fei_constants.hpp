@@ -4,6 +4,11 @@
 /*
    In this file we define some constants to use as parameters to
    some fei functions.
+   These constants are primarily used as 'fieldType' arguments to
+   fei::VectorSpace::defineFields and FEI::initFields.
+   If defining a vector-field for displacement, use DISPLACEMENT. If
+   defining separate scalar fields for the components of displacement,
+   then use DISPLACEMENT_X, etc.
 */
 
 namespace fei {

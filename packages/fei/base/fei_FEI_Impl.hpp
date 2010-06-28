@@ -66,7 +66,8 @@ namespace fei {
 
    int initFields(int numFields, 
                   const int *fieldSizes, 
-                  const int *fieldIDs);
+                  const int *fieldIDs,
+                  const int *fieldTypes=NULL);
 
    int initElemBlock(GlobalID elemBlockID,
                      int numElements,
