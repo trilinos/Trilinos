@@ -1,0 +1,24 @@
+#ifndef __TSQR_Tsqr_Config_hpp
+#define __TSQR_Tsqr_Config_hpp
+
+#cmakedefine HAVE_LAPACK_DLARFP 1
+#cmakedefine HAVE_LAPACK_SLARFP 1
+#cmakedefine HAVE_LAPACK_ZLARFP 1
+#cmakedefine HAVE_LAPACK_CLARFP 1
+
+#cmakedefine HAVE_LAPACK_DLARFGP 1
+#cmakedefine HAVE_LAPACK_SLARFGP 1
+#cmakedefine HAVE_LAPACK_ZLARFGP 1
+#cmakedefine HAVE_LAPACK_CLARFGP 1
+
+#cmakedefine HAVE_LAPACK_DGEQRFP 1
+#cmakedefine HAVE_LAPACK_SGEQRFP 1
+#cmakedefine HAVE_LAPACK_ZGEQRFP 1
+#cmakedefine HAVE_LAPACK_CGEQRFP 1
+
+#cmakedefine HAVE_LAPACK_DGEQR2P 1
+#cmakedefine HAVE_LAPACK_SGEQR2P 1
+#cmakedefine HAVE_LAPACK_ZGEQR2P 1
+#cmakedefine HAVE_LAPACK_CGEQR2P 1
+
+#endif // __TSQR_Tsqr_Config_hpp
