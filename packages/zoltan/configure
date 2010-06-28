@@ -787,9 +787,7 @@ with_ar
 enable_export_makefiles
 with_perl
 with_gnumake
-enable_int_gid
-enable_long_gid
-enable_llong_gid
+with_id_type
 enable_octreepartitioning
 enable_gzip
 with_parmetis_libdir
@@ -1475,9 +1473,6 @@ Optional Features:
                           always created and used in the build directory, but
                           will not be installable without this option to
                           change the paths. (default is yes)
-  --enable-int_gid        ZOLTAN_ID_TYPE is type int (default is no)
-  --enable-long_gid       ZOLTAN_ID_TYPE is type long (default is yes)
-  --enable-llong_gid      ZOLTAN_ID_TYPE is type long long (default is yes)
   --enable-octreepartitioning
                           enable octreepartitioning (default is no)
   --enable-gzip           enable zlib support for driver (default is no)
@@ -1533,6 +1528,7 @@ Optional Packages:
                           --with-perl=<perl executable>. Configure will check
                           for the existence of the perl executable and quit
                           with an error if it is not found. (default is no)
+  --with-id-type          Zoltan global ID type: long (default), int, or llong
   --with-parmetis-libdir  Specify where the Parmetis library is located. Ex.
                           /path/to/library
   --with-parmetis-incdir  Specify where the Parmetis header files are located.
@@ -6464,79 +6460,57 @@ fi
 # ------------------------------------------------------------------------
 
 
-# Check whether --enable-int_gid was given.
-if test "${enable_int_gid+set}" = set; then
-  enableval=$enable_int_gid; ac_cv_use_int_gid=$enableval
-else
-  ac_cv_use_int_gid=no
-fi
+{ $as_echo "$as_me:$LINENO: checking data type for ZOLTAN_ID_TYPE" >&5
+$as_echo_n "checking data type for ZOLTAN_ID_TYPE... " >&6; }
+zoltan_id_type="long"
 
-
-{ $as_echo "$as_me:$LINENO: checking whether to use int_gid" >&5
-$as_echo_n "checking whether to use int_gid... " >&6; }
-
-if test "X$ac_cv_use_int_gid" != "Xno"; then
-  { $as_echo "$as_me:$LINENO: result: yes" >&5
-$as_echo "yes" >&6; }
+# Check whether --with-id-type was given.
+if test "${with_id_type+set}" = set; then
+  withval=$with_id_type;
+if test "X$withval" == "Xint" ; then
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_ZOLTAN_ID_TYPE_INT 1
 _ACEOF
 
+  zoltan_id_type="int"
 else
-  { $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-# Check whether --enable-long_gid was given.
-if test "${enable_long_gid+set}" = set; then
-  enableval=$enable_long_gid; ac_cv_use_long_gid=$enableval
-else
-  ac_cv_use_long_gid=yes
-fi
-
-
-{ $as_echo "$as_me:$LINENO: checking whether to use long_gid" >&5
-$as_echo_n "checking whether to use long_gid... " >&6; }
-
-if test "X$ac_cv_use_long_gid" != "Xno"; then
-  { $as_echo "$as_me:$LINENO: result: yes" >&5
-$as_echo "yes" >&6; }
-
-cat >>confdefs.h <<\_ACEOF
-#define HAVE_ZOLTAN_ID_TYPE_LONG 1
-_ACEOF
-
-else
-  { $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
-fi
-
-
-# Check whether --enable-llong_gid was given.
-if test "${enable_llong_gid+set}" = set; then
-  enableval=$enable_llong_gid; ac_cv_use_llong_gid=$enableval
-else
-  ac_cv_use_llong_gid=yes
-fi
-
-
-{ $as_echo "$as_me:$LINENO: checking whether to use llong_gid" >&5
-$as_echo_n "checking whether to use llong_gid... " >&6; }
-
-if test "X$ac_cv_use_llong_gid" != "Xno"; then
-  { $as_echo "$as_me:$LINENO: result: yes" >&5
-$as_echo "yes" >&6; }
+  if test "X$withval" == "Xllong" ; then
 
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_ZOLTAN_ID_TYPE_LONG_LONG 1
 _ACEOF
 
-else
-  { $as_echo "$as_me:$LINENO: result: no" >&5
-$as_echo "no" >&6; }
+    zoltan_id_type="long long"
+  else
+    if test "X$withval" == "Xlong" ; then
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_ZOLTAN_ID_TYPE_LONG 1
+_ACEOF
+
+    else
+      { { $as_echo "$as_me:$LINENO: error: Valid global ID types for Zoltan are int, long, and llong" >&5
+$as_echo "$as_me: error: Valid global ID types for Zoltan are int, long, and llong" >&2;}
+   { (exit 1); exit 1; }; }
+    fi
+  fi
 fi
+
+else
+
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_ZOLTAN_ID_TYPE_LONG 1
+_ACEOF
+
+
+
+fi
+
+{ $as_echo "$as_me:$LINENO: result: typedef $zoltan_id_type ZOLTAN_ID_TYPE" >&5
+$as_echo "typedef $zoltan_id_type ZOLTAN_ID_TYPE" >&6; }
+
 
 
 

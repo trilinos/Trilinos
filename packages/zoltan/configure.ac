@@ -205,9 +205,7 @@ TAC_ARG_ENABLE_EXPORT_MAKEFILES(yes)
 # Checks for special package flags 
 # ------------------------------------------------------------------------
 
-TAC_ARG_ENABLE_OPTION(int_gid, [ZOLTAN_ID_TYPE is type int], ZOLTAN_ID_TYPE_INT, no)
-TAC_ARG_ENABLE_OPTION(long_gid, [ZOLTAN_ID_TYPE is type long], ZOLTAN_ID_TYPE_LONG, yes)
-TAC_ARG_ENABLE_OPTION(llong_gid, [ZOLTAN_ID_TYPE is type long long], ZOLTAN_ID_TYPE_LONG_LONG, yes)
+ZAC_ARG_WITH_ID()
 
 TAC_ARG_ENABLE_OPTION(octreepartitioning, [enable octreepartitioning], ZOLTAN_OCT, no)
 AM_CONDITIONAL(BUILD_OCTREEPARTITIONING, [test "X$ac_cv_use_octreepartitioning" != "Xno"])
