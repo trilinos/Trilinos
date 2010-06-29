@@ -192,7 +192,7 @@ APPEND_SET(SOURCES
   Tsqr_CLapack.cpp
   Tsqr_Combine.cpp
   Tsqr_LapackQrRoutines.f90
-  Tsqr_Combine.f90)
+  Tsqr_Combine.f90
   )
 IF (Anasazi_ENABLE_Epetra)
   APPEND_SET(HEADERS

@@ -15,7 +15,7 @@
 #include "Tpetra_MultiVector.hpp"
 #ifdef HAVE_KOKKOS_TBB
 #  include "Kokkos_TBBNode.hpp"
-#  include <TSQR/TBB/TbbTsqr.hpp>
+#  include "Tsqr_TbbTsqr.hpp"
 #endif // HAVE_KOKKOS_TBB
 
 ////////////////////////////////////////////////////////////////////////////////

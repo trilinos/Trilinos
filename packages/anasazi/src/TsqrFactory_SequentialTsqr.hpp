@@ -1,8 +1,8 @@
 #ifndef __TSQR_Trilinos_TsqrFactory_SequentialTsqr_hpp
 #define __TSQR_Trilinos_TsqrFactory_SequentialTsqr_hpp
 
-#include <TSQR/Tsqr_SequentialTsqr.hpp>
-#include <TSQR/Tsqr.hpp>
+#include "Tsqr_SequentialTsqr.hpp"
+#include "Tsqr.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////

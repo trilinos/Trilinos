@@ -2,12 +2,12 @@
 #define __TSQR_Trilinos_TsqrAdaptor_hpp
 
 #include "AnasaziConfigDefs.hpp"
-
 #include "Teuchos_SerialDenseMatrix.hpp"
+
 #include "TsqrTrilinosMessenger.hpp"
 #include "TsqrTypeAdaptor.hpp"
+#include "Tsqr.hpp"
 
-#include <TSQR/Tsqr.hpp>
 #include <string>
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -9,10 +9,10 @@
 ///   some reason you need to include this file directly, be sure to
 ///   include "TsqrTypeAdaptor.hpp" first.
 
-#include <TSQR/Tsqr_SequentialTsqr.hpp>
-#include <TSQR/Tsqr.hpp>
 #include "Tpetra_MultiVector.hpp"
 #include "Kokkos_SerialNode.hpp"
+#include "Tsqr_SequentialTsqr.hpp"
+#include "Tsqr.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
