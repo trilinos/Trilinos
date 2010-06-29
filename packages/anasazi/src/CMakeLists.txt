@@ -168,7 +168,7 @@ APPEND_SET(HEADERS
   Tsqr_CacheBlockingStrategy.hpp
   Tsqr_Combine.hpp
   Tsqr_DistTsqrHelper.hpp
-  Tsqr_DistTSqr.hpp
+  Tsqr_DistTsqr.hpp
   Tsqr_GlobalVerify.hpp
   Tsqr.hpp
   Tsqr_Lapack.hpp

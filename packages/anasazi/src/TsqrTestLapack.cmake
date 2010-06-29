@@ -14,7 +14,7 @@ include (CheckFortranFunctionExists)
 set (CMAKE_REQUIRED_LIBRARIES_SAVE ${CMAKE_REQUIRED_LIBRARIES})
 set (CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${TPL_LAPACK_LIBRARIES} ${TPL_BLAS_LIBRARIES})
 
-message(STATUS "\nCMAKE_REQUIRED_LIBRARIES == ${CMAKE_REQUIRED_LIBRARIES}\n")
+#message(STATUS "\nCMAKE_REQUIRED_LIBRARIES == ${CMAKE_REQUIRED_LIBRARIES}\n")
 
 # The check for DLARFG is just a sanity check to make sure that CMake is 
 # finding the LAPACK library.  All modern versions of LAPACK should have 

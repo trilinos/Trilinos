@@ -50,6 +50,7 @@ namespace TSQR {
 
     ApplyType& operator= (const ApplyType& rhs) {
       type_ = rhs.type_;
+      return *this;
     }
 
     bool operator== (const ApplyType& rhs) const {
