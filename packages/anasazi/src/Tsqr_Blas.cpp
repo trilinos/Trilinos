@@ -1,5 +1,5 @@
-#include <TSQR/Tsqr_Blas.hpp>
-#include <TSQR/Tsqr_FortranCInterface.hpp>
+#include <Tsqr_Blas.hpp>
+#include <Tsqr_FortranCInterface.hpp>
 #include <complex>
 
 ////////////////////////////////////////////////////////////////////////////////

@@ -161,6 +161,28 @@ APPEND_SET(HEADERS
   TsqrTrilinosMessenger.hpp
   TsqrTypeAdaptor.hpp
   )
+APPEND_SET(HEADERS
+  Tsqr_ApplyType.hpp
+  Tsqr_Blas.hpp
+  Tsqr_CacheBlocker.hpp
+  Tsqr_CacheBlockingStrategy.hpp
+  Tsqr_Combine.hpp
+  Tsqr_DistTsqrHelper.hpp
+  Tsqr_DistTSqr.hpp
+  Tsqr_GlobalVerify.hpp
+  Tsqr.hpp
+  Tsqr_Lapack.hpp
+  Tsqr_LocalVerify.hpp
+  Tsqr_Matrix.hpp
+  Tsqr_MatView.hpp
+  Tsqr_Mgs.hpp
+  Tsqr_NodeTsqr.hpp
+  Tsqr_Random_MatrixGenerator.hpp
+  Tsqr_ScalarTraits.hpp
+  Tsqr_SequentialCholeskyQR.hpp
+  Tsqr_SequentialTsqr.hpp
+  Tsqr_Util.hpp
+  )
 APPEND_SET(SOURCES
   Tsqr_ApplyType.cpp 
   Tsqr_Blas.cpp 

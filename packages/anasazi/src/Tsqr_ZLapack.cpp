@@ -1,6 +1,6 @@
-#include <TSQR/Tsqr_Lapack.hpp>
-#include <TSQR/Tsqr_FortranCInterface.hpp>
-#include <TSQR/Tsqr_Config.hpp>
+#include <Tsqr_Lapack.hpp>
+#include <Tsqr_FortranCInterface.hpp>
+#include <Tsqr_Config.hpp>
 #include <complex>
 
 ////////////////////////////////////////////////////////////////////////////////

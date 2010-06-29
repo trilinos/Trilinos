@@ -1,0 +1,244 @@
+#ifndef __TSQR_Random_MatrixGenerator_hpp
+#define __TSQR_Random_MatrixGenerator_hpp
+
+#include <Tsqr_Blas.hpp>
+#include <Tsqr_Lapack.hpp>
+#include <Tsqr_Matrix.hpp>
+
+#include <algorithm>
+#include <limits>
+#include <stdexcept>
+#include <vector>
+
+////////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////////
+
+namespace TSQR {
+  namespace Random {
+
+    template< class Ordinal, class Scalar, class Generator >
+    class MatrixGenerator {
+    public:
+      typedef Ordinal ordinal_type;
+      typedef Scalar scalar_type;
+      typedef Generator generator_type;
+
+      MatrixGenerator (const Generator& generator) : gen_ (generator) {}
+
+      void
+      fill_random (const Ordinal nrows, 
+		   const Ordinal ncols, 
+		   Scalar A[], 
+		   const Ordinal lda)
+      {
+	for (Ordinal j = 0; j < ncols; ++j)
+	  {
+	    Scalar* const A_j = &A[j*lda];
+	    for (Ordinal i = 0; i < nrows; ++i)
+	      A_j[i] = gen_();
+	  }
+      }
+
+      /// Fill the nrows by ncols matrix Q (in column-major order, with
+      /// leading dimension ldq >= nrows) with a random orthogonal
+      /// matrix.
+      ///
+      /// \note If you want the resulting Q factor to be from a Haar
+      /// distribution (the usual one for random orthogonal matrices),
+      /// Generator must have a normal distribution.
+      void
+      explicit_Q (const Ordinal nrows, 
+		  const Ordinal ncols, 
+		  Scalar Q[], 
+		  const Ordinal ldq)
+      {
+	// Fill Q with random numbers
+	this->fill_random (nrows, ncols, Q, ldq);
+
+	// Get ready for QR factorization
+	LAPACK< Ordinal, Scalar > lapack;
+	std::vector< Scalar > tau (std::min(nrows, ncols));
+
+	// Workspace query
+	Scalar _lwork1, _lwork2;
+	int info = 0;
+	lapack.GEQRF (nrows, ncols, Q, ldq, &tau[0], &_lwork1, -1, &info);
+	if (info != 0)
+	  throw std::logic_error("LAPACK GEQRF LWORK query failed");
+	lapack.ORGQR (nrows, ncols, Q, ldq, &tau[0], &_lwork2, -1, &info);
+	if (info != 0)
+	  throw std::logic_error("LAPACK ORGQR LWORK query failed");
+
+	// Allocate workspace
+	const Ordinal lwork = checkedCast (std::max (_lwork1, _lwork2));
+	std::vector< Scalar > work (lwork);
+
+	// Factor the input matrix
+	lapack.GEQRF (nrows, ncols, Q, ldq, &tau[0], &work[0], lwork, &info);
+	if (info != 0)
+	  throw std::runtime_error("LAPACK GEQRF failed");
+
+	// Compute explicit Q factor in place
+	lapack.ORGQR (nrows, ncols, Q, ldq, &tau[0], &work[0], lwork, &info);
+	if (info != 0)
+	  throw std::runtime_error("LAPACK ORGQR failed");
+      }
+
+
+      /// Fill the nrows by ncols matrix Q (in column-major order, with
+      /// leading dimension ldq >= nrows) with a random orthogonal
+      /// matrix, stored implicitly.  tau (of length min(nrows,ncols))
+      /// is part of this storage.
+      ///
+      /// \note If you want the resulting Q factor to be from a Haar
+      /// distribution (the usual one for random orthogonal matrices),
+      /// Generator must have a normal distribution.
+      void
+      implicit_Q (const Ordinal nrows, 
+		  const Ordinal ncols, 
+		  Scalar Q[], 
+		  const Ordinal ldq,
+		  Scalar tau[])
+      {
+	// Fill Q with random numbers
+	this->fill_random (nrows, ncols, Q, ldq);
+
+	// Get ready for QR factorization
+	LAPACK< Ordinal, Scalar > lapack;
+	std::vector< Scalar > tau (std::min(nrows, ncols));
+
+	// Workspace query
+	Scalar _lwork1;
+	int info = 0;
+	lapack.GEQRF (nrows, ncols, Q, ldq, tau, &_lwork1, -1, &info);
+	if (info != 0)
+	  throw std::logic_error("LAPACK GEQRF LWORK query failed");
+
+	// Allocate workspace
+	const Ordinal lwork = checkedCast (_lwork1);
+	std::vector< Scalar > work (lwork);
+
+	// Factor the input matrix
+	lapack.GEQRF (nrows, ncols, Q, ldq, tau, &work[0], lwork, &info);
+	if (info != 0)
+	  throw std::runtime_error("LAPACK GEQRF failed");
+      }
+
+
+      void
+      fill_random_svd (const Ordinal nrows, 
+		       const Ordinal ncols, 
+		       Scalar A[], 
+		       const Ordinal lda,
+		       const Scalar singular_values[])
+      {
+	typedef Matrix< Ordinal, Scalar > matrix_type;
+	typedef MatView< Ordinal, Scalar > matrix_view_type;
+
+	matrix_type U (nrows, ncols, Scalar(0));
+	matrix_type V (ncols, ncols, Scalar(0));
+	std::vector<Scalar> tau_U (std::min (nrows, ncols));
+	std::vector<Scalar> tau_V (ncols);
+
+	// Fill A with zeros, and then make its diagonal the given set
+	// of singular values.
+	matrix_view_type A_view (nrows, ncols, A, lda);
+	for (Ordinal j = 0; j < ncols; ++j)
+	  A_view(j,j) = singular_values[j];
+
+	// Generate random orthogonal U (nrows by ncols) and V (ncols by
+	// ncols).  Keep them stored implicitly.
+	implicit_Q (nrows, ncols, U.get(), U.lda(), &tau_U[0]);
+	implicit_Q (ncols, ncols, V.get(), U.lda(), &tau_V[0]);
+
+	// Workspace query for ORMQR.
+	Scalar _lwork1, _lwork2;
+	int info = 0;
+	LAPACK< Ordinal, Scalar > lapack;
+	lapack.ORMQR ("L", "N", nrows, ncols, ncols, U.get(), U.lda(), &tau_U[0], 
+		      A, lda, &_lwork1, -1, &info);
+	if (info != 0)
+	  throw std::logic_error("LAPACK ORMQR LWORK query failed");
+	lapack.ORMQR ("R", "H", nrows, ncols, ncols, V.get(), U.lda(), &tau_V[0], 
+		      A, lda, &_lwork2, -1, &info);
+	if (info != 0)
+	  throw std::logic_error("LAPACK ORMQR LWORK query failed");
+
+	// Allocate workspace.
+	Ordinal lwork = checkedCast (std::max (_lwork1, _lwork2));
+	std::vector< Scalar > work (lwork);
+
+	// Apply U to the left side of A, and V^H to the right side of A.
+	lapack.ORMQR ("L", "N", nrows, ncols, ncols, U.get(), U.lda(), &tau_U[0], 
+		      A, lda, &work[0], lwork, &info);
+	if (info != 0)
+	  throw std::runtime_error("LAPACK ORMQR failed (first time)");
+	lapack.ORMQR ("R", "H", nrows, ncols, ncols, V.get(), U.lda(), &tau_V[0], 
+		      A, lda, &work[0], lwork, &info);
+	if (info != 0)
+	  throw std::runtime_error("LAPACK ORMQR failed (second time)");
+      }
+
+
+      // Generate a random n x n upper triangular matrix R, not packed, with
+      // leading dimension stride, with specified singular values.
+      //
+      // generator: generates random values from a normal (0,1) distribution.
+      // (Defines "double operator()".)
+      void
+      fill_random_R (Generator& gen,
+		     const Ordinal n,
+		     Scalar R[],
+		     const Ordinal ldr,
+		     const Scalar singular_values[])
+      {
+	// Fill R with an n x n (not upper triangular) random matrix
+	// having the given singular values.
+	fill_random_svd (gen, n, n, R, ldr, singular_values);
+
+	// Compute the QR factorization in place of R (which isn't upper triangular yet).
+	std::vector< Scalar > tau (n);
+
+	// Workspace size query for QR factorization.
+	Scalar _lwork1;
+	int info = 0;
+	LAPACK< Ordinal, Scalar > lapack;
+	lapack.GEQRF (n, n, R, ldr, &tau[0], &_lwork1, -1, &info);
+	if (info != 0)
+	  throw std::logic_error("LAPACK GEQRF LWORK query failed");
+
+	// Allocate workspace
+	Ordinal lwork = checkedCast (_lwork1);
+	std::vector< Scalar > work (lwork);
+
+	// Compute QR factorization (implicit representation in place).
+	lapack.GEQRF (n, n, R, ldr, &tau[0], &work[0], &lwork, &info);
+	if (info != 0)
+	  throw std::runtime_error("LAPACK GEQRF failed");
+
+	// Zero out the stuff below the diagonal of R, leaving just the R factor.
+	for (Ordinal j = 0; j < n; ++j)
+	  for (Ordinal i = j+1; i < n; ++i)
+	    R[i + j*ldr] = Scalar(0);
+      }
+
+    private:
+      static Ordinal 
+      checkedCast (const Scalar& x)
+      {
+	if (x < std::numeric_limits< Ordinal >::min() || x > std::numeric_limits< Ordinal >::max())
+	  throw std::range_error("Scalar input cannot be safely cast to an Ordinal");
+	else if (std::numeric_limits< Scalar >::is_signed && 
+		 x < Scalar(0) &&
+		 ! std::numeric_limits< Ordinal >::is_signed)
+	  throw std::range_error("Scalar input is negative, but Ordinal is unsigned");
+	else
+	  return static_cast< Ordinal > (x);
+      }
+
+      Generator& gen_;
+    };
+  } // namespace Random
+} // namespace TSQR
+
+#endif // __TSQR_Random_MatrixGenerator_hpp
