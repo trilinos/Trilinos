@@ -2,9 +2,8 @@
 #define __TSQR_TBB_FactorTask_hpp
 
 #include <tbb/task.h>
-#include <TSQR/TBB/TbbTsqr_Partitioner.hpp>
-#include <TSQR/Tsqr_SequentialTsqr.hpp>
-#include <TSQR/Test/Timer.hpp>
+#include <TbbTsqr_Partitioner.hpp>
+#include <Tsqr_SequentialTsqr.hpp>
 #include <algorithm>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -38,9 +37,6 @@ namespace TSQR {
 		  std::vector< SeqOutput >& seq_outputs,
 		  ParOutput& par_output,
 		  const SequentialTsqr< LocalOrdinal, Scalar > seq,
-		  double& my_seq_timing,
-		  double& min_seq_timing,
-		  double& max_seq_timing,
 		  const bool contiguous_cache_blocks) :
 	P_first_ (P_first__),
 	P_last_ (P_last__),
@@ -49,9 +45,6 @@ namespace TSQR {
 	seq_outputs_ (seq_outputs),
 	par_output_ (par_output),
 	seq_ (seq),
-	my_seq_timing_ (my_seq_timing),
-	min_seq_timing_ (min_seq_timing),
-	max_seq_timing_ (max_seq_timing),
 	contiguous_cache_blocks_ (contiguous_cache_blocks)
       {}
 
@@ -70,18 +63,9 @@ namespace TSQR {
 	    split_t A_split = 
 	      partitioner_.split (A_, P_first_, P_mid, P_last_,
 				  contiguous_cache_blocks_);
-
-	    double top_timing;
-	    double top_min_timing = 0.0;
-	    double top_max_timing = 0.0;
-	    double bot_timing;
-	    double bot_min_timing = 0.0;
-	    double bot_max_timing = 0.0;
-
 	    FactorTask& topTask = *new( allocate_child() )
 	      FactorTask (P_first_, P_mid, A_split.first, A_top_ptr_, 
 			  seq_outputs_, par_output_, seq_,
-			  top_timing, top_min_timing, top_max_timing,
 			  contiguous_cache_blocks_);
 	    // After the task finishes, A_bot will be set to the topmost
 	    // partition of A_split.second.  This will let us combine
@@ -91,7 +75,6 @@ namespace TSQR {
 	    FactorTask& botTask = *new( allocate_child() )
 	      FactorTask (P_mid+1, P_last_, A_split.second, &A_bot, 
 			  seq_outputs_, par_output_, seq_,
-			  bot_timing, bot_min_timing, bot_max_timing,
 			  contiguous_cache_blocks_);
 	    set_ref_count (3); // 3 children (2 + 1 for the wait)
 	    spawn (topTask);
@@ -99,16 +82,6 @@ namespace TSQR {
 	    
 	    // Combine the two results
 	    factor_pair (P_first_, P_mid+1, *A_top_ptr_, A_bot);
-
-	    top_min_timing = (top_min_timing == 0.0) ? top_timing : top_min_timing;
-	    top_max_timing = (top_max_timing == 0.0) ? top_timing : top_max_timing;
-
-	    bot_min_timing = (bot_min_timing == 0.0) ? bot_timing : bot_min_timing;
-	    bot_max_timing = (bot_max_timing == 0.0) ? bot_timing : bot_max_timing;
-
-	    min_seq_timing_ = std::min (top_min_timing, bot_min_timing);
-	    max_seq_timing_ = std::min (top_max_timing, bot_max_timing);
-
 	    return NULL;
 	  }
       }
@@ -123,9 +96,6 @@ namespace TSQR {
       TSQR::Combine< LocalOrdinal, Scalar > combine_;
       Partitioner< LocalOrdinal, Scalar > partitioner_;
       const bool contiguous_cache_blocks_;
-      double& my_seq_timing_;
-      double& min_seq_timing_;
-      double& max_seq_timing_;
 
       void 
       factor_pair (const size_t P_top,
@@ -151,8 +121,6 @@ namespace TSQR {
       void
       execute_base_case () 
       {
-	TSQR::Test::Timer timer;
-	timer.start();
 	seq_outputs_[P_first_] = 
 	  seq_.factor (A_.nrows(), A_.ncols(), A_.get(), 
 		       A_.lda(), contiguous_cache_blocks_);
@@ -162,7 +130,6 @@ namespace TSQR {
 	// but for a different reason: so that we can extract the R
 	// factor, once we're done with the factorization.
 	*A_top_ptr_ = seq_.top_block (A_, contiguous_cache_blocks_);
-	my_seq_timing_ = timer.finish();
       }
     };
   } // namespace TBB

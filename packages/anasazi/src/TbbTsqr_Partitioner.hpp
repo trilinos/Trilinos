@@ -1,8 +1,9 @@
 #ifndef __TSQR_TBB_Partitioner_hpp
 #define __TSQR_TBB_Partitioner_hpp
 
+#include <Tsqr_MatView.hpp>
+
 #include <cstring> // size_t
-#include <TSQR/Tsqr_MatView.hpp>
 #include <sstream>
 #include <stdexcept>
 #include <utility>

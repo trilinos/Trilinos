@@ -207,6 +207,20 @@ IF (Anasazi_ENABLE_Tpetra)
     TsqrTypeAdaptor_Tpetra_MultiVector_SerialNode.hpp
     TsqrTypeAdaptor_Tpetra_MultiVector_TBBNode.hpp
     )
+  # FIXME (mfh 29 Jun 2010) Should test for whether we are linking
+  # with TBB, and only append these headers if we are.
+  APPEND_SET(HEADERS
+    TbbTsqr_ApplyTask.hpp
+    TbbTsqr_CacheBlockTask.hpp
+    TbbTsqr_ExplicitQTask.hpp
+    TbbTsqr_FactorTask.hpp
+    TbbTsqr_FillWithZerosTask.hpp
+    TbbTsqr.hpp
+    TbbTsqr_Partitioner.hpp
+    TbbTsqr_TbbMgs.hpp
+    TbbTsqr_TbbParallelTsqr.hpp
+    TbbTsqr_UnCacheBlockTask.hpp
+    )
 ENDIF()
 
 ######################################################################

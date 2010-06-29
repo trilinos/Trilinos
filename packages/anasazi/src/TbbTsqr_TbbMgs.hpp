@@ -7,9 +7,9 @@
 #include <numeric>
 #include <utility> // std::pair
 
-#include <TSQR/Tsqr_MessengerBase.hpp>
-#include <TSQR/Tsqr_ScalarTraits.hpp>
-#include <TSQR/Tsqr_Util.hpp>
+#include <Tsqr_MessengerBase.hpp>
+#include <Tsqr_ScalarTraits.hpp>
+#include <Tsqr_Util.hpp>
 
 #include <tbb/blocked_range.h>
 #include <tbb/parallel_for.h>

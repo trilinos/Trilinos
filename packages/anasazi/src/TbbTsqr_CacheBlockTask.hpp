@@ -2,8 +2,8 @@
 #define __TSQR_TBB_CacheBlockTask_hpp
 
 #include <tbb/task.h>
-#include <TSQR/TBB/TbbTsqr_Partitioner.hpp>
-#include <TSQR/Tsqr_SequentialTsqr.hpp>
+#include <TbbTsqr_Partitioner.hpp>
+#include <Tsqr_SequentialTsqr.hpp>
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////

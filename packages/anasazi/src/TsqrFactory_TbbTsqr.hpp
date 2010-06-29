@@ -6,7 +6,7 @@
 #include "Tpetra_MultiVector.hpp"
 
 #ifdef HAVE_KOKKOS_TBB
-#  include "Tsqr_TbbTsqr.hpp"
+#  include "TbbTsqr.hpp"
 #endif // HAVE_KOKKOS_TBB
 
 ////////////////////////////////////////////////////////////////////////////////

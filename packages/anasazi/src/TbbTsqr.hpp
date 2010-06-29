@@ -1,7 +1,7 @@
 #ifndef __TSQR_TbbTsqr_hpp
 #define __TSQR_TbbTsqr_hpp
 
-#include <TSQR/TBB/TbbTsqr_TbbParallelTsqr.hpp>
+#include <TbbTsqr_TbbParallelTsqr.hpp>
 // #include <TSQR/TBB/TbbRecursiveTsqr.hpp>
 
 #include <stdexcept>
@@ -234,15 +234,6 @@ namespace TSQR {
 	impl_.explicit_Q (nrows, ncols_Q_in, Q_in, ldq_in, factor_output,
 			  ncols_Q_out, Q_out, ldq_out, contiguous_cache_blocks);
       }
-
-      double
-      min_seq_factor_timing () const { return impl_.min_seq_factor_timing(); }
-      double
-      max_seq_factor_timing () const { return impl_.max_seq_factor_timing(); }
-      double
-      min_seq_apply_timing () const { return impl_.min_seq_apply_timing(); }
-      double
-      max_seq_apply_timing () const { return impl_.max_seq_apply_timing(); }
 
     }; // class TbbTsqr
 
