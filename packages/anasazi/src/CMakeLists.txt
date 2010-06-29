@@ -161,6 +161,17 @@ APPEND_SET(HEADERS
   TsqrTrilinosMessenger.hpp
   TsqrTypeAdaptor.hpp
   )
+APPEND_SET(SOURCES
+  Tsqr_ApplyType.cpp 
+  Tsqr_Blas.cpp 
+  Tsqr_DLapack.cpp
+  Tsqr_SLapack.cpp
+  Tsqr_ZLapack.cpp
+  Tsqr_CLapack.cpp
+  Tsqr_Combine.cpp
+  Tsqr_LapackQrRoutines.f90
+  Tsqr_Combine.f90)
+  )
 IF (Anasazi_ENABLE_Epetra)
   APPEND_SET(HEADERS
     TsqrAdaptor_Epetra_MultiVector.hpp
