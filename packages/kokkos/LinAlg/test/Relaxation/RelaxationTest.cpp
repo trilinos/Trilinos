@@ -35,8 +35,6 @@
 #include "Kokkos_MultiVector.hpp"
 #include "Kokkos_DefaultArithmetic.hpp"
 #include "Kokkos_CrsMatrix.hpp"
-#include "Kokkos_DefaultSparseMultiply.hpp"
-
 #include "Kokkos_DefaultRelaxation.hpp"
 
 #include "Kokkos_Version.hpp"
@@ -60,7 +58,6 @@ namespace {
   using Kokkos::CrsMatrix;
   using Kokkos::CrsGraph;
   using Kokkos::DefaultArithmetic;
-  using Kokkos::DefaultSparseMultiply;
   using Kokkos::DefaultRelaxation;
   using Kokkos::SerialNode;
   using Teuchos::ArrayRCP;

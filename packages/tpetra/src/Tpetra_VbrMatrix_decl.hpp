@@ -30,9 +30,8 @@
 #define TPETRA_VBRMATRIX_DECL_HPP
 
 #include <Kokkos_DefaultNode.hpp>
+#include <Kokkos_DefaultKernels.hpp>
 #include <Kokkos_VbrMatrix.hpp>
-#include <Kokkos_DefaultBlockSparseMultiply.hpp>
-#include <Kokkos_DefaultSparseSolve.hpp>
 
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
@@ -61,15 +60,18 @@ arrays and no new entries (indices and/or coefficients) may be inserted. Existin
 entries may still be updated and replaced though. The structure or sparsity
 pattern of the matrix is finalized when fillComplete() is called.
 */
-template<class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType, class LocalMatVec = Kokkos::DefaultBlockSparseMultiply<Scalar,LocalOrdinal,Node>, class LocalMatSolve = Kokkos::DefaultSparseSolve<Scalar,LocalOrdinal,Node> >
+template <class Scalar, 
+          class LocalOrdinal  = int, 
+          class GlobalOrdinal = LocalOrdinal, 
+          class Node          = Kokkos::DefaultNode::DefaultNodeType, 
+          class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::BlockSparseOps >
 class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> {
  public:
   typedef Scalar        scalar_type;
   typedef LocalOrdinal  local_ordinal_type;
   typedef GlobalOrdinal global_ordinal_type;
   typedef Node          node_type;
-  typedef LocalMatVec   mat_vec_type;
-  typedef LocalMatSolve mat_solve_type;
+  typedef LocalMatOps   mat_vec_type;
 
   //! @name Constructor/Destructor Methods
   //@{
@@ -324,7 +326,7 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   Teuchos::ArrayRCP<LocalOrdinal> pbuf_bindx_;
   Teuchos::ArrayRCP<LocalOrdinal> pbuf_indx_;
 
-  LocalMatVec lclMatVec_;
+  LocalMatOps lclMatVec_;
   Teuchos::RCP<Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer_;
   Teuchos::RCP<Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node> > exporter_;
   mutable Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > importedVec_;

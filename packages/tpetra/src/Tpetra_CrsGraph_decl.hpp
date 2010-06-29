@@ -51,7 +51,7 @@ namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration
-  template <class S, class LO, class GO, class N, class SpMatVec, class SpMatSlv>
+  template <class S, class LO, class GO, class N, class SpMatOps>
   class CrsMatrix;
 #endif
 
@@ -68,7 +68,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class CrsGraph : public RowGraph<LocalOrdinal,GlobalOrdinal,Node>,
                    public DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> {
-    template <class S, class LO, class GO, class N, class SpMatVec, class SpMatSlv>
+    template <class S, class LO, class GO, class N, class SpMatOps>
     friend class CrsMatrix;
 
     public: 

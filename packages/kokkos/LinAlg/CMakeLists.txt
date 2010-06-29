@@ -43,9 +43,11 @@ APPEND_SET(HEADERS
     Kokkos_DefaultSparseMultiplyKernelOps.hpp
     Kokkos_DefaultSparseSolveKernelOps.hpp
     Kokkos_MultiVectorKernelOps.hpp
+    Kokkos_DefaultKernels.hpp
     Kokkos_DefaultArithmetic.hpp
-    Kokkos_DefaultSparseMultiply.hpp
-    Kokkos_DefaultSparseSolve.hpp
+    Kokkos_DefaultSparseOps.hpp
+    # Kokkos_DefaultSparseMultiply.hpp
+    # Kokkos_DefaultSparseSolve.hpp
     Kokkos_DefaultRelaxation.hpp
     Kokkos_DefaultRelaxationKernelOps.hpp
   )
@@ -59,7 +61,7 @@ ASSERT_DEFINED(Kokkos_ENABLE_Thrust)
 IF (Kokkos_ENABLE_Thrust)
   # this pulls in Thrust, CUSP, and Kokkos/NodeAPI
   include_directories(${Kokkos_INCLUDE_DIRS})
-  CUDA_ADD_LIBRARY(kokkoslinalg_cuda Kokkos_DefaultArithmetic.cu Kokkos_DefaultBlockSparseMultiply.cu Kokkos_DefaultSparseMultiply.cu Kokkos_DefaultSparseSolve.cu Kokkos_DefaultRelaxation.cu)
+  CUDA_ADD_LIBRARY(kokkoslinalg_cuda Kokkos_DefaultArithmetic.cu Kokkos_DefaultBlockSparseMultiply.cu Kokkos_DefaultSparseOps.cu Kokkos_DefaultRelaxation.cu)
   APPEND_SET(KOKKOS_LINALG_CUDALIBS "kokkoslinalg_cuda")
 ENDIF()
 

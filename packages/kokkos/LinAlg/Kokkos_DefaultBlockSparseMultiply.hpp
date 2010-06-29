@@ -37,8 +37,7 @@
 #include <stdexcept>
 
 #include "Kokkos_ConfigDefs.hpp"
-#include "Kokkos_CrsMatrix.hpp" 
-#include "Kokkos_CrsGraph.hpp" 
+#include "Kokkos_VbrMatrix.hpp" 
 #include "Kokkos_MultiVector.hpp"
 #include "Kokkos_NodeHelpers.hpp"
 #include "Kokkos_DefaultArithmetic.hpp"
