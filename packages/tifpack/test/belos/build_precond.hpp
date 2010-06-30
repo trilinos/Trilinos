@@ -5,10 +5,10 @@
 
 #include "Tifpack_Factory.hpp"
 
-template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatVec,class LocalMatSolve>
+template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node,class LocalMatOps>
 Teuchos::RCP<Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
 build_precond(Teuchos::ParameterList& test_params,
-              const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> >& A)
+              const Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >& A)
 {
   Teuchos::Time timer("precond");
 
