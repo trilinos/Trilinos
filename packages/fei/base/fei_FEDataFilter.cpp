@@ -682,8 +682,14 @@ int FEDataFilter::loadNodeBCs(int numNodes,
    std::vector<double> gamma(numNodes);
 
    for(int i=0; i<numNodes; ++i) {
-     NodeDescriptor* node = 0;
+     NodeDescriptor* node = NULL;
      nodeDB.getNodeWithID(nodeIDs[i], node);
+     if (node == NULL) {
+       FEI_CERR << "fei_FEDataFilter::loadNodeBCs ERROR, node " << nodeIDs[i]
+           << " not found." << FEI_ENDL;
+       ERReturn(-1);
+     }
+
      int eqn = -1;
      if (!node->getFieldEqnNumber(fieldID, eqn)) {
        ERReturn(-1);
