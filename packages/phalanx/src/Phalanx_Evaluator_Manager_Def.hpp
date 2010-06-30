@@ -73,7 +73,7 @@ requireField(const PHX::FieldTag& t)
 {
   FTPredRef pred(t);
   std::vector< Teuchos::RCP<PHX::FieldTag> >::iterator i = 
-    find_if(fields_.begin(), fields_.end(), pred);
+    std::find_if(fields_.begin(), fields_.end(), pred);
   
   if (i == fields_.end())
     fields_.push_back(t.clone());
