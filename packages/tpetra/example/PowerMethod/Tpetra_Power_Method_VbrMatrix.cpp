@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
   global_size_t numGlobalElements = std::atoi(argv[1]);
 
   //make sure numGlobalElements is an integer multiple of blockSize.
-  numGlobalElements += numGlobalElements%blockSize;
+  numGlobalElements += blockSize - numGlobalElements%blockSize;
   global_size_t numGlobalBlocks = numGlobalElements/blockSize;
 
   if (numGlobalBlocks < numProc) {

@@ -55,10 +55,11 @@ storage has been optimized (packed) or not.
 After construction and before fillComplete() has been called, the internal data
 storage is in an un-packed, non-contiguous data-structure that allows for
 convenient insertion of data.
+The structure or sparsity pattern of the matrix is finalized when fillComplete()
+is called.
 After fillComplete() has been called, internal storage is in contiguous 'packed'
 arrays and no new entries (indices and/or coefficients) may be inserted. Existing
-entries may still be updated and replaced though. The structure or sparsity
-pattern of the matrix is finalized when fillComplete() is called.
+entries may still be updated and replaced though.
 */
 template <class Scalar, 
           class LocalOrdinal  = int, 

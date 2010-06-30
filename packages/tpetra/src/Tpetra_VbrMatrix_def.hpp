@@ -719,7 +719,8 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::optimizeStorage()
   //now convert cptr from sizes to offsets;
   LocalOrdinal coffset = 0;
   //we know that v_cptr.size() is always strictly greater than 0:
-  for(Tsize_t c=0; c<v_cptr.size()-1; ++c) {
+  Tsize_t cptr_len = v_cptr.size()-1;
+  for(Tsize_t c=0; c<cptr_len; ++c) {
     LocalOrdinal csz = v_cptr[c];
     v_cptr[c] = coffset;
     coffset += csz; 

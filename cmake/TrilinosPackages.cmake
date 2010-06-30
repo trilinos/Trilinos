@@ -76,7 +76,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Komplex               komplex                        PS
   ML                    ml                             PS
   Belos                 belos                          PS
-  Tifpack               tifpack                        SS
+  Tifpack               tifpack                        PS
   Stratimikos           stratimikos                    PS
   Meros                 meros                          SS
   FEI                   fei                            PS
