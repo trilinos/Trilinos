@@ -30,6 +30,7 @@
 #define TPETRA_VBRMATRIX_DEF_HPP
 
 #include <algorithm>
+#include <sstream>
 
 #include <Kokkos_NodeHelpers.hpp>
 #include <Teuchos_Array.hpp>
@@ -809,6 +810,38 @@ void VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillComplete
   //range-map.
 
   fillComplete(getBlockRowMap(), getBlockRowMap());
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+std::string
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::description() const
+{
+  std::ostringstream oss;
+  oss << Teuchos::Describable::description();
+  if (isFillComplete()) {
+    oss << "{status = fill complete, global num block rows = " << blkRowMap_->getGlobalNumBlocks() << "}";
+  }
+  else {
+    oss << "{status = fill not complete, global num block rows = " << blkRowMap_->getGlobalNumBlocks() << "}";
+  }
+  return oss.str();
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const
+{
+  Teuchos::EVerbosityLevel vl = verbLevel;
+  if (vl == Teuchos::VERB_DEFAULT) vl = Teuchos::VERB_LOW;
+
+  if (vl == Teuchos::VERB_NONE) return;
+
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = blkRowMap_->getPointMap()->getComm();
+  const int myProc = comm->getRank();
+
+  if (myProc == 0) out << "VbrMatrix::describe is under construction..." << std::endl;
 }
 
 }//namespace Tpetra

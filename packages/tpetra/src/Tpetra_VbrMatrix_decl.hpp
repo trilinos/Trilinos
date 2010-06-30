@@ -291,6 +291,15 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
   //@}
 
+  //! @name Overridden from Teuchos::Describable
+  //@{
+  std::string description() const;
+
+  /** \brief Print the object with some verbosity level to a FancyOStream object.
+  */
+  void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+  //@}
+
  private:
   //private methods:
 

@@ -190,10 +190,10 @@ Scalar power_method(const Teuchos::RCP<const Tpetra::Operator<Scalar,Ordinal> > 
   Magnitude normz, residual = static_cast<Magnitude>(0.0);
   // power iteration
   for (size_t iter = 0; iter < niters; ++iter) {
-    normz = z.norm2();                            // Compute 2-norm of z
-    q.scale(ONE/normz, z);                        // Set q = z / normz
-    A->apply(q, z);                               // Compute z = A*q
-    lambda = q.dot(z);                            // Approximate maximum eigenvalue: lamba = dot(q,z)
+    normz = z.norm2();          // Compute 2-norm of z
+    q.scale(ONE/normz, z);      // Set q = z / normz
+    A->apply(q, z);             // Compute z = A*q
+    lambda = q.dot(z);          // Approximate maximum eigenvalue: lamba = dot(q,z)
     if ( iter % 100 == 0 || iter + 1 == niters ) {
       r.update(ONE, z, -lambda, q, ZERO);     // Compute A*q - lambda*q
       residual = Teuchos::ScalarTraits<Scalar>::magnitude(r.norm2() / lambda);

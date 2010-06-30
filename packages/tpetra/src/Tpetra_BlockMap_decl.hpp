@@ -35,7 +35,6 @@
 
   Declarations for the class Tpetra::BlockMap.
 */
-
 namespace Tpetra {
 
 /** \brief Block-entry counterpart to Tpetra::Map.
@@ -46,6 +45,10 @@ namespace Tpetra {
 template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
 class BlockMap : public Teuchos::Describable {
  public:
+  typedef LocalOrdinal  local_ordinal_type;
+  typedef GlobalOrdinal global_ordinal_type;
+  typedef Node          node_type;
+
   //! @name Constructor/Destructor Methods
   //@{
 
@@ -91,6 +94,8 @@ class BlockMap : public Teuchos::Describable {
   const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& getPointMap() const
     { return pointMap_; }
 
+  global_size_t getGlobalNumBlocks() const;
+
   size_t getNodeNumBlocks() const;
 
   Teuchos::ArrayView<const GlobalOrdinal> getNodeBlockIDs() const;
@@ -133,6 +138,7 @@ class BlockMap : public Teuchos::Describable {
 
  private:
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > pointMap_;
+  global_size_t globalNumBlocks_;
   Teuchos::Array<GlobalOrdinal> myGlobalBlockIDs_;
   Teuchos::Array<LocalOrdinal> blockSizes_;
   Teuchos::Array<LocalOrdinal> firstPointInBlock_;

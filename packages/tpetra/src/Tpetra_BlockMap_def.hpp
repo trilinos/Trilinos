@@ -31,6 +31,7 @@
 
 #include "Tpetra_ConfigDefs.hpp"
 #include "Teuchos_Array.hpp"
+#include "Teuchos_CommHelpers.hpp"
 
 #ifdef DOXYGEN_USE_ONLY
 #include "Tpetra_BlockMap_decl.hpp"
@@ -43,6 +44,7 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(global_size_t numGlobalBlock
       GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
       const Teuchos::RCP<Node> &node)
  : pointMap_(),
+   globalNumBlocks_(numGlobalBlocks),
    myGlobalBlockIDs_(),
    blockSizes_(),
    firstPointInBlock_(),
@@ -90,6 +92,7 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(global_size_t numGlobalBlock
       GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
       const Teuchos::RCP<Node> &node)
  : pointMap_(),
+   globalNumBlocks_(numGlobalBlocks),
    myGlobalBlockIDs_(),
    blockSizes_(numLocalBlocks, blockSize),
    firstPointInBlock_(),
@@ -127,6 +130,7 @@ template<class LocalOrdinal,class GlobalOrdinal,class Node>
 BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(global_size_t numGlobalBlocks, const Teuchos::ArrayView<const GlobalOrdinal>& myGlobalBlockIDs, const Teuchos::ArrayView<const GlobalOrdinal>& myFirstGlobalPointInBlocks, const Teuchos::ArrayView<const LocalOrdinal>& blockSizes, GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
       const Teuchos::RCP<Node> &node)
  : pointMap_(),
+   globalNumBlocks_(numGlobalBlocks),
    myGlobalBlockIDs_(myGlobalBlockIDs),
    blockSizes_(blockSizes),
    firstPointInBlock_(),
@@ -183,6 +187,7 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(global_size_t numGlobalBlock
 template<class LocalOrdinal,class GlobalOrdinal,class Node>
 BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& pointMap, const Teuchos::ArrayView<const GlobalOrdinal>& myGlobalBlockIDs, const Teuchos::ArrayView<const LocalOrdinal>& blockSizes)
  : pointMap_(pointMap),
+   globalNumBlocks_(Teuchos::OrdinalTraits<LocalOrdinal>::invalid()),
    myGlobalBlockIDs_(myGlobalBlockIDs),
    blockSizes_(blockSizes),
    firstPointInBlock_(),
@@ -191,6 +196,9 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(const Teuchos::RCP<const Map
 {
   TEST_FOR_EXCEPTION(myGlobalBlockIDs_.size()!=blockSizes_.size(), std::runtime_error,
              "Tpetra::BlockMap::BlockMap ERROR: input myGlobalBlockIDs and blockSizes arrays must have the same length.");
+
+  global_size_t numLocalBlocks = myGlobalBlockIDs.size();
+  Teuchos::reduceAll<int,global_size_t>(*pointMap->getComm(), Teuchos::REDUCE_SUM, 1, &numLocalBlocks, &globalNumBlocks_);
 
   LocalOrdinal firstPoint = pointMap->getMinLocalIndex();
   size_t sum_blockSizes = 0;
@@ -221,6 +229,13 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(const Teuchos::RCP<const Map
     ++id;
   }
   if (b_iter == b_end) blockIDsAreContiguous_ = true;
+}
+
+template<class LocalOrdinal,class GlobalOrdinal,class Node>
+global_size_t
+BlockMap<LocalOrdinal,GlobalOrdinal,Node>::getGlobalNumBlocks() const
+{
+  return globalNumBlocks_;
 }
 
 template<class LocalOrdinal,class GlobalOrdinal,class Node>
