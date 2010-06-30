@@ -344,6 +344,8 @@ private:
   double LambdaMax_;
   //! Contains the shift parameter, alpha.
   double Alpha_;
+  //! Number of IHSS iterations
+  int NumSweeps_;
   
 
 

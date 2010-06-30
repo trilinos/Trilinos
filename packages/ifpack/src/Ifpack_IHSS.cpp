@@ -1,19 +1,18 @@
 #include "Ifpack_IHSS.h"
 #include "Ifpack.h"
 #include "Ifpack_Utils.h"
-#include "EpetraExt_MatrixMatrix.h"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RefCountPtr.hpp"
 
 
-
-#include "EpetraExt_RowMatrixOut.h"
 
 using Teuchos::RefCountPtr;
 using Teuchos::rcp;
 
 
 #ifdef HAVE_IFPACK_EPETRAEXT
+#include "EpetraExt_MatrixMatrix.h"
+
 
 Ifpack_IHSS::Ifpack_IHSS(Epetra_RowMatrix* A):
   IsInitialized_(false),
@@ -22,6 +21,9 @@ Ifpack_IHSS::Ifpack_IHSS(Epetra_RowMatrix* A):
   EigMaxIters_(10),
   EigRatio_(30.0),
   LambdaMax_(-1.0),
+  Alpha_(-1.0),
+  NumSweeps_(1),
+
   Time_(A->Comm())
 {
   Epetra_CrsMatrix *Acrs=dynamic_cast<Epetra_CrsMatrix*>(A);
@@ -37,6 +39,7 @@ void Ifpack_IHSS::Destroy(){
 int Ifpack_IHSS::Initialize(){
   EigMaxIters_          = List_.get("ihss: eigenvalue max iterations",EigMaxIters_);
   EigRatio_             = List_.get("ihss: ratio eigenvalue", EigRatio_);
+  NumSweeps_            = List_.get("ihss: sweeps",NumSweeps_);
 
   // Counters
   IsInitialized_=true;
@@ -64,15 +67,19 @@ int Ifpack_IHSS::Compute(){
   Aherm->FillComplete();
   if(rv) IFPACK_CHK_ERR(-1); 
 
-  // Compute alpha 
-  // NTS: Uses the Bai, Golub & Ng 2003 formula, not the more multigrid-appropriate Hamilton, Benzi and Haber 2007.
-  PowerMethod(Aherm, EigMaxIters_,LambdaMax_);
-  Alpha_=LambdaMax_ / sqrt(EigRatio_);
-
-
-  // Add alpha to the diagonal of Aherm
+  // Grab Aherm's diagonal
   Epetra_Vector avec(Aherm->RowMap());
   IFPACK_CHK_ERR(Aherm->ExtractDiagonalCopy(avec));
+
+
+  // Compute alpha using the Bai, Golub & Ng 2003 formula, not the more multigrid-appropriate Hamilton, Benzi and Haber 2007.
+  //  PowerMethod(Aherm, EigMaxIters_,LambdaMax_);
+  //  Alpha_=LambdaMax_ / sqrt(EigRatio_);
+
+  // Try something more Hamilton inspired, using the maximum diagonal value of Aherm.
+  avec.MaxValue(&Alpha_);
+
+  // Add alpha to the diagonal of Aherm
   for(int i=0;i<Aherm->NumMyRows();i++) avec[i]+=Alpha_;   
   IFPACK_CHK_ERR(Aherm->ReplaceDiagonalValues(avec));
   Aherm_=rcp(Aherm);
@@ -106,7 +113,6 @@ int Ifpack_IHSS::Compute(){
   
   // Label
   sprintf(Label_, "IFPACK IHSS (H,S)=(%s/%s)",htype.c_str(),stype.c_str()); 
-
 
   // Counters
   IsComputed_=true;
@@ -146,18 +152,20 @@ int Ifpack_IHSS::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y
   // temp = (aI+H)^{-1} [ 2a y - Shat y + x ]
   // y = (aI+S)^{-1} [ 2 a temp - Hhat temp + x ]
 
-  // temp = (aI+H)^{-1} [ 2a y - Shat y + x ]
-  if(!initial_guess_is_zero){
-    Askew_->Apply(Y,T1);
-    T2.Update(2*Alpha_,Y,-1,T1,1);
+  for(int i=0;i<NumSweeps_;i++){
+    // temp = (aI+H)^{-1} [ 2a y - Shat y + x ]
+    if(!initial_guess_is_zero || i >0 ){
+      Askew_->Apply(Y,T1);
+      T2.Update(2*Alpha_,Y,-1,T1,1);
+    }
+    Pherm_->ApplyInverse(T2,Y);
+    
+    // y = (aI+S)^{-1} [ 2 a temp - Hhat temp + x ]
+    Aherm_->Apply(Y,T1);
+    T2.Scale(1.0,*Xcopy);
+    T2.Update(2*Alpha_,Y,-1,T1,1.0);
+    Pskew_->ApplyInverse(T2,Y);  
   }
-  Pherm_->ApplyInverse(T2,Y);
-
-  // y = (aI+S)^{-1} [ 2 a temp - Hhat temp + x ]
-  Aherm_->Apply(Y,T1);
-  T2.Scale(1.0,*Xcopy);
-  T2.Update(2*Alpha_,Y,-1,T1,1.0);
-  Pskew_->ApplyInverse(T2,Y);  
 
   // Counter update
   NumApplyInverse_++;
