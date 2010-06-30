@@ -46,7 +46,7 @@
 #ifndef __Teko_InvLSCStrategy_hpp__
 #define __Teko_InvLSCStrategy_hpp__
 
-#include "NS/Teko_LSCStrategy.hpp"
+#include "Teko_LSCStrategy.hpp"
 
 namespace Teko {
 namespace NS {
