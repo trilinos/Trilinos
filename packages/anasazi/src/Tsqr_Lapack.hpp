@@ -94,6 +94,12 @@ namespace TSQR {
 	   const Ordinal lda, 
 	   int* const INFO);
 
+    void
+    LARNV (const int idist, 
+	   int iseed[],
+	   const Ordinal n,
+	   Scalar x[]);
+
   private:
     LAPACK (const LAPACK&);
     LAPACK& operator= (const LAPACK&);
