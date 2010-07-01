@@ -1,0 +1,212 @@
+<html>
+
+<body>
+<address>
+Contact <a href="lriesen@sandia.gov">lriesen@sandia.gov</a><br>
+</address>
+July 1, 2010<br>
+
+<ul>
+<li><a href="#what">What this is</a>
+<li><a href="#howdiff">How it is different from the latest Zoltan release</a>
+<li><a href="#howuse">How to use it</a>
+<li><a href="#limitations">Limitations</a>
+<li><a href="#dev">Information for developers</a>
+<ul>
+<li><a href="#data">Data types</a>
+<li><a href="#map">Zoltan_Map_Create()</a>
+<li><a href="#memory">Memory</a>
+<li><a href="#code" >Code changes</a>
+</ul>
+<li><a href="#chart">Interesting chart</a>
+</ul>
+
+<a name="what">
+<h3>WHAT THIS IS</h3>
+
+This is the Zoltan branch <em>zoltan_gid_64</em>.
+
+It is Zoltan 3.3, with modifications to permit 64 bit global IDs, and counts of 
+global objects that require 64 bit integers.
+
+Bug fixes subsequent to Zoltan 3.3 have been applied to this branch.
+
+To checkout this branch from the Trilinos git repository:
+
+<pre><code>
+git clone software.sandia.gov:/space/git/Trilinos
+cd Trilinos
+git branch --track zoltan_gid_64 origin/zoltan_gid_64
+git checkout zoltan_gid_64
+cd packages/zoltan
+</code></pre>
+
+<a name="howdiff">
+<h3>HOW IT IS DIFFERENT FROM THE LATEST ZOLTAN RELEASE</h3>
+
+The Zoltan library is compiled from C-language code that uses the data type
+<em>int</em> for the global number of objects being partitioned.  This limits the
+number of objects to about 2 billion on most architectures.  In this version
+of Zoltan, global counts are data type <em>ssize_t</em> (signed <em>size_t</em>) which
+will be a 64 bit integer on a 64-bit system and a 32-bit integer on a
+32-bit system.
+
+In addition, a global ID is a user-defined multiple of a ZOLTAN_ID_TYPE
+which is an <em>unsigned int</em>.  While the application could use global IDs composed 
+of two ZOLTAN_ID_TYPEs to represent a space of over 2 billion objects, this
+would be inconvenient.  So the data type for ZOLTAN_ID_TYPE is set at
+compile time.  It defaults to <em>long</em>, but can be set to <em>int</em> or <em>long long</em>
+with a configure script option.
+
+There is a new library function:
+
+<pre><code>
+  int Zoltan_get_global_id_type(char **name)
+</code></pre>
+
+which returns the number of bytes in a ZOLTAN_ID_TYPE.  If <em>name</em> is non-NULL,
+it also returns the name of the data type in <em>name</em>.  This would be one of
+<em>int</em>, <em>long long</em>, or <em>long</em>.  This function is called by the tests in the
+directory tests/Large_Data to ensure that the tests are compiled with the same
+ZOLTAN_ID_TYPE that the Zoltan library was compiled with.
+
+<a name="howuse">
+<h3>HOW TO USE IT</h3>
+
+Zoltan is part of the Trilinos framework of linear algebra solvers and tools.  
+Trilinos uses CMake to configure and build its packages.  Zoltan uses both
+CMake and autoconf to configure and build.  Only the autoconf build should
+be used with <em>zoltan_gid_64</em>.
+
+So to configure, in your build directory:
+
+<pre><code>
+  {srcdir}/configure --enable-mpi --with-id-type={int|long|llong}
+</code></pre>
+
+The default ID type is <em>long</em>.  See <em>{srcdir}/configure --help</em> for more options
+that may be useful.
+
+Then, in your build directory:
+
+<pre><code>
+  make
+</code></pre>
+
+You will find libzoltan.a in your build directory's <em>src</em> directory.
+
+You can test your build with:
+
+<pre><code>
+  make check
+</code></pre>
+
+which runs some tests.
+
+The API is unchanged, with the exception of the addition of <em>Zoltan_get_global_id_type</em>
+function, so you should be able to compile your existing code after changing, if 
+necessary, the data type you are using for global IDs.
+
+<a name="limitations">
+<h3>LIMITATIONS</h3>
+
+The library uses data type <em>int</em> or <em>unsigned int</em> for local IDs and for counts
+of local objects, objects being sent, and objects being received.  This means
+that at no time can a single process own more than 2^31 objects (about 2.1 billion).
+
+Coloring has not been modified to work with 64 bit global IDs.  You may see 
+compiler warnings because of this.
+
+The work required to make this version of Zoltan work with 64 bit third party libraries
+is incomplete.  Let us know if you want to use ParMetis or Scotch with 64 bit indexes.
+
+<a name="dev">
+<h3>INFORMATION FOR DEVELOPERS</h3>
+
+<a name="data">
+<h4>Data types</h4>
+
+The following definitions are created at preprocessor-time in include/zoltan_types.h and
+at run-time in zz/zz_util.c:Zoltan_set_mpi_types() which is called from Zoltan_Initialize().
+
+<DL>
+<DT>ZOLTAN_GNO_TYPE
+<DD>the data type for global counts (ssize_t)
+<DT>ZOLTAN_GNO_SPECIFIER
+<DD>the scanf characters for a ZOLTAN_GNO_TYPE, you can also just use <em>zd</em>
+<DT>ZOLTAN_GNO_MPI_TYPE
+<DD>the MPI_Datatype to use when sending/receiving ZOLTAN_GNO_TYPEs
+
+<DT>ZOLTAN_ID_TYPE
+<DD>self explanatory
+<DT>ZOLTAN_ID_SPECIFIER
+<DD>the scanf characters for a ZOLTAN_ID_TYPE
+<DT>ZOLTAN_ID_MPI_TYPE
+<DD>the MPI_Datatype to use when sending/receiving ZOLTAN_ID_TYPEs
+</DL>
+
+If you are not using <em>configure</em> to build Zoltan, you can instead use the compile-time
+flags -DZOLTAN_ID_TYPE_INT, -DZOLTAN_ID_TYPE_LONG, or -DZOLTAN_ID_TYPE_LONG_LONG.
+
+<DL>
+<DT>intptr_t
+<DD>use this type for an integer that may hold a pointer
+</DL>
+
+<a name="map">
+<h4>Zoltan_Map_Create()</h4>
+
+In the Zoltan trunk, Zoltan_Map_Create() assumes it is handling keys that are
+multiples of ZOLTAN_ID_TYPEs.  In this branch the function is provided with
+the number of bytes in the key, not the number of ZOLTAN_ID_TYPEs.
+
+<a name="memory">
+<h4>Memory</h4>
+
+Because testing of this branch involves running large memory problems, I added the
+function Zoltan_write_linux_meminfo() which will write out the contents of /proc/meminfo
+on a Linux machine.  The new function Zoltan_Memory_Get_Debug() returns the debug level
+set in mem.c by Zoltan_Memory_Debug().  zdrive has a new input option
+
+<pre><code>
+  zoltan memory debug level = n
+</code></pre>
+
+which will set the debug level.  Then after partitioning, zdrive checks the debug level
+and if there was an error and it is running on a linux machine it will dump out /proc/meminfo.
+
+I modified the configure script to define HOST_LINUX on a linux machine.
+
+I wrote three tests in tests/Large_Data that test PHG, RCB and RIB with arbitrarily large
+numbers of objects.  They have signal handlers that call Zoltan_write_linux_meminfo() on
+a Linux machine.
+
+<a name="code">
+<h4>Code changes</h4>
+
+The hypergraph coarsening and refinement code was extensively rewritten in places where
+results were shared across rows and columns, because the code assumed that pointers, floats,
+and integral data were all the same size.  Merging new work from the trunk into the code
+will require careful inspection first.
+
+<a name="chart">
+<h3>INTERESTING CHART</h3>
+
+32 and 64 bit data models (ILP - integer/long/pointer):
+
+<pre>
+type            LP32    ILP32   ILP64   LLP64   LP64
+
+char            8       8       8       8       8
+short           16      16      16      16      16
+_int32                          32
+int             16      32      64      32      32
+long            32      32      64      32      64
+long long                               64
+pointer         32      32      64      64      64
+</pre>
+
+ILP32 is most widely used.  LP64 is most widely used.
+LLP64 is ILP32 with new 64 bit int added to it.  It is used primarily for Win64.
+<body>
+</html>
