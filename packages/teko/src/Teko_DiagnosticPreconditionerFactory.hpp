@@ -78,7 +78,7 @@ public:
      * \param[in] label      Label to give to factory and operator
      */
    DiagnosticPreconditionerFactory(const Teuchos::RCP<Teko::InverseFactory> & invFactory,const std::string & label,
-                                   const Teuchos::RCP<std::ostream> & os=Teuchos::null);
+                                   const Teuchos::RCP<std::ostream> & os=Teuchos::null,bool printResidual=false);
 
    //! default destructor: prints out diagnostic string
    virtual ~DiagnosticPreconditionerFactory();
@@ -154,6 +154,7 @@ private:
    Teuchos::RCP<std::ostream> outputStream_;
    Teuchos::RCP<Teko::InverseFactory> invFactory_;
    std::string diagString_;
+   bool printResidual_;
 
    mutable Teuchos::RCP<Teuchos::Time> buildTimer_;   // only first pass construction time (no rebuild)
    mutable Teuchos::RCP<Teuchos::Time> rebuildTimer_; // rebuild-construction timer (no build)

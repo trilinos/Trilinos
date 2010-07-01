@@ -47,6 +47,8 @@
 
 #include "Teuchos_TimeMonitor.hpp"
 
+#include "Thyra_MultiVectorStdOps.hpp"
+
 namespace Teko {
 
 /** \brief This constructor explicitly takes the linear operator
@@ -55,6 +57,16 @@ namespace Teko {
   */
 DiagnosticLinearOp::DiagnosticLinearOp(const Teuchos::RCP<std::ostream> & ostrm, const ModifiableLinearOp & A,const std::string & diagnosticString)
    : outputStream_(ostrm), wrapOpA_(A), diagString_(diagnosticString), timer_(diagnosticString)
+{
+}
+
+/** \brief This constructor explicitly takes the linear operator
+  *        that needs to be wrapped and a string for output that describes
+  *        the diagnostics.
+  */
+DiagnosticLinearOp::DiagnosticLinearOp(const Teuchos::RCP<std::ostream> & ostrm,const LinearOp & fwdOp,
+                                       const ModifiableLinearOp & A,const std::string & diagnosticString)
+   : outputStream_(ostrm), wrapOpA_(A), fwdOp_(fwdOp), diagString_(diagnosticString), timer_(diagnosticString)
 {
 }
 
@@ -87,10 +99,32 @@ DiagnosticLinearOp::~DiagnosticLinearOp()
 void DiagnosticLinearOp::implicitApply(const MultiVector & x, MultiVector & y,
                                        const double alpha, const double beta) const
 {
+   Teko_DEBUG_SCOPE("DiagnosticLinearOp::implicityApply",10);
+
    // start timer on construction, end on destruction
    Teuchos::TimeMonitor monitor(timer_,false);  
 
    wrapOpA_->apply(Thyra::NOTRANS,*x,y.ptr(),alpha,beta);
+
+   // print residual if there is a fwd Op
+   bool printResidual = (fwdOp_!=Teuchos::null); 
+   if(printResidual) {
+      // compute residual
+      MultiVector residual = Teko::deepcopy(x);
+      fwdOp_->apply(Thyra::NOTRANS,*y,residual.ptr(),-1.0,1.0);
+
+      // calculate norms
+      std::vector<double> norms(y->domain()->dim());    // size of column count
+      std::vector<double> rhsNorms(x->domain()->dim()); // size of column count
+      Thyra::norms_2<double>(*residual,Teuchos::arrayViewFromVector(norms));
+      Thyra::norms_2<double>(*x,Teuchos::arrayViewFromVector(rhsNorms));
+
+      // print out residual norms
+      (*outputStream_) << "DiagnosticLinearOp \"" << diagString_ << "\": residual = [";
+      for(std::size_t i=0;i<norms.size();++i) 
+         (*outputStream_) << " " << norms[i]/rhsNorms[i]; 
+      (*outputStream_) << " ]" << std::endl;
+   }
 }
 
 } // end namespace Teko

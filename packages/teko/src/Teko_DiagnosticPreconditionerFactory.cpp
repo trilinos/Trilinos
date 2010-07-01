@@ -55,15 +55,15 @@ namespace Teko {
 
 //! Default constructor, for use with the AutoClone class.
 DiagnosticPreconditionerFactory::DiagnosticPreconditionerFactory()
-   : outputStream_(Teko::getOutputStream()), invFactory_(Teuchos::null), diagString_("<label me!>") 
+   : outputStream_(Teko::getOutputStream()), invFactory_(Teuchos::null), diagString_("<label me!>"), printResidual_(false)
 { }
 
 /** Construct a preconditioner factory that applies a specified
   * preconditioner, a fixed number of times.
   */
 DiagnosticPreconditionerFactory::DiagnosticPreconditionerFactory(const Teuchos::RCP<Teko::InverseFactory> & invFactory, const std::string & label,
-                                                                 const Teuchos::RCP<std::ostream> & os)
-   : outputStream_(Teko::getOutputStream()), invFactory_(invFactory), diagString_(label)
+                                                                 const Teuchos::RCP<std::ostream> & os,bool printResidual)
+   : outputStream_(Teko::getOutputStream()), invFactory_(invFactory), diagString_(label), printResidual_(printResidual)
 { 
    initTimers(diagString_);
 
@@ -130,7 +130,6 @@ LinearOp DiagnosticPreconditionerFactory::buildPreconditionerOperator(LinearOp &
                       "ERROR: Teko::DiagnosticPreconditionerFactory::buildPreconditionerOperator requires that "
                    << "the timers be initialized. Currently they are null! (label = \"" << diagString_ << "\")");
 
-
    // build user specified preconditioner
    ModifiableLinearOp & diagOp_ptr = state.getModifiableOp("diagnosticOp");
 
@@ -143,11 +142,18 @@ LinearOp DiagnosticPreconditionerFactory::buildPreconditionerOperator(LinearOp &
          invOp = Teko::buildInverse(*invFactory_,lo,state);
       }
 
-       // build diagnostic operator
-      diagOp_ptr = createDiagnosticLinearOp(outputStream_,invOp,diagString_);
+      // only printing residual requires use of forward operator
+      if(printResidual_)
+         diagOp_ptr = createDiagnosticLinearOp(outputStream_,lo,invOp,diagString_);
+      else
+         diagOp_ptr = createDiagnosticLinearOp(outputStream_,invOp,diagString_);
    }
    else {
       RCP<DiagnosticLinearOp> diagOp = rcp_dynamic_cast<DiagnosticLinearOp>(diagOp_ptr);
+
+      // only printing residual requires use of forward operator
+      if(printResidual_) 
+         diagOp->setForwardOp(lo);
 
       ModifiableLinearOp invOp = diagOp->getModifiableOp();
       {
@@ -181,6 +187,9 @@ void DiagnosticPreconditionerFactory::initializeFromParameterList(const Teuchos:
    TEST_FOR_EXCEPTION(invFactory_==Teuchos::null,std::runtime_error,
                       "ERROR: \"Inverse Factory\" = " << invName
                    << " could not be found");
+
+   if(settings.isParameter("Print Residual"))
+      printResidual_ = settings.get<bool>("Print Residual");
 
    // build timers to use
    initTimers(diagString_);

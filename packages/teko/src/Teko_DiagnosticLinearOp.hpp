@@ -73,6 +73,12 @@ public:
      */
    DiagnosticLinearOp(const Teuchos::RCP<std::ostream> & ostrm,const ModifiableLinearOp & A,const std::string & diagnosticString);
 
+   /** \brief This constructor explicitly takes the linear operator
+     *        that needs to be wrapped and a string for output that describes
+     *        the diagnostics.
+     */
+   DiagnosticLinearOp(const Teuchos::RCP<std::ostream> & ostrm,const LinearOp & fwdOp,const ModifiableLinearOp & A,const std::string & diagnosticString);
+
    /** \brief Destructor prints out timing information about this operator.
      */
    virtual ~DiagnosticLinearOp();
@@ -114,11 +120,15 @@ public:
 
    LinearOp getLinearOp() const
    { return wrapOpA_; } 
+ 
+   void setForwardOp(const Teko::LinearOp & lo)
+   { fwdOp_ = lo; }
 
 protected:
    // fundamental operators to use
    Teuchos::RCP<std::ostream> outputStream_;
    ModifiableLinearOp wrapOpA_;      ///< inverse of \f$ S \f$
+   Teko::LinearOp fwdOp_;      ///< inverse of \f$ S \f$
    std::string diagString_;
  
    mutable Teuchos::Time timer_;
@@ -133,6 +143,7 @@ private:
   *
   * Constructor method for building <code>DiagnosticLinearOp</code>.
   *
+  * \param[in] os     Output stream to print diagnostics to
   * \param[in] A      Operator to be wrapped
   * \param[in] label  String for outputing with diagnostics
   *
@@ -144,6 +155,25 @@ private:
 inline ModifiableLinearOp createDiagnosticLinearOp(const Teuchos::RCP<std::ostream> & os,const ModifiableLinearOp & A,const std::string & label)
 {
    return Teuchos::rcp(new DiagnosticLinearOp(os,A,label));
+}
+
+/** \brief Constructor method for building <code>DiagnosticLinearOp</code>.
+  *
+  * Constructor method for building <code>DiagnosticLinearOp</code>.
+  *
+  * \param[in] os     Output stream to print diagnostics to
+  * \param[in] fwdOp  Forward operator to compute residual with
+  * \param[in] A      Operator to be wrapped
+  * \param[in] label  String for outputing with diagnostics
+  *
+  * \returns A linear operator that wrapping A that will print diagnostics
+  *          on descruction.
+  * 
+  * \relates LU2x2InverseOp
+  */
+inline ModifiableLinearOp createDiagnosticLinearOp(const Teuchos::RCP<std::ostream> & os,const Teko::LinearOp & fwdOp,const ModifiableLinearOp & A,const std::string & label)
+{
+   return Teuchos::rcp(new DiagnosticLinearOp(os,fwdOp,A,label));
 }
 
 } // end namespace Teko
