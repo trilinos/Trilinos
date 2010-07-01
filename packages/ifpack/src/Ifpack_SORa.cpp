@@ -185,8 +185,6 @@ int Ifpack_SORa::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y
   Wdiag_->ExtractView(&d_ptr);
   IFPACK_CHK_ERR(W_->ExtractCrsDataPointers(rowptr,colind,values));
 
-  double norm;
-
   for(int i=0; i<NumSweeps_; i++){
     // Import Y2 if parallel
     if(IsParallel_)
