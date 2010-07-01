@@ -52,6 +52,7 @@
 
 #include "Ifpack_Chebyshev.h"
 #include "Ifpack_IHSS.h"
+#include "Ifpack_SORa.h"
 
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StringToIntMap.hpp"
@@ -103,6 +104,7 @@ const Ifpack::EPrecType Ifpack::precTypeValues[Ifpack::numPrecTypes] =
 #endif
   ,CHEBYSHEV
   ,IHSS
+  ,SORA
 };
 
 //==============================================================================
@@ -141,6 +143,7 @@ const char* Ifpack::precTypeNames[Ifpack::numPrecTypes] =
 #endif
   ,"Chebyshev"
   ,"IHSS"
+  ,"SORa"
 };
 
 //==============================================================================
@@ -179,6 +182,7 @@ const bool Ifpack::supportsUnsymmetric[Ifpack::numPrecTypes] =
 #endif
   ,false // CHEBYSHEV
   ,true  // IHSS
+  ,true  // SORa
 };
 
 //==============================================================================
@@ -246,6 +250,8 @@ Ifpack_Preconditioner* Ifpack::Create(EPrecType PrecType,
 #ifdef HAVE_IFPACK_EPETRAEXT
     case IHSS:
       return(new Ifpack_IHSS(Matrix));  
+    case SORA:
+      return(new Ifpack_SORa(Matrix));  
 #endif
     default:
       TEST_FOR_EXCEPT(true);
