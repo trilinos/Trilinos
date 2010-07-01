@@ -511,13 +511,17 @@ subclasses, may need to be templated on a local index (ordinal) type.
 <li><b>Dynamic memory management</b>
 
 All of the code in the %Thyra and related packages almost exclusively use the
-<tt>%Teuchos</tt> smart reference counted pointer class
-<tt>Teuchos::RCP</tt> to handle dynamically allocated memory with
-object-oriented programming.  %Thyra also rigorously uses the idioms described
-in <a
-href="../../../teuchos/doc/html/RefCountPtrBeginnersGuideSAND.pdf">this
-report</a> for passing object to and from functions that involve
-<tt>Teuchos::RCP</tt>.
+<tt>%Teuchos</tt> smart reference counted pointer class <tt>Teuchos::RCP</tt>
+to handle dynamically allocated memory with object-oriented programming.
+Other types used include <tt>Teuchos::Ptr</tt>, <tt>Teuchos::Array</tt>,
+<tt>Teuchos::ArrayRCP</tt>, <tt>Teuchos::ArrayView</tt>, and
+<tt>Teuchos::Tuple</tt>.  %Thyra rigorously uses idioms for these classes
+partially introduced in <a href="RefCountPtrBeginnersGuideSAND.pdf">RCP
+Beginner's Guide</a>, described in great detail in <a
+href="http://www.cs.sandia.gov/~rabartl/TeuchosMemoryManagementSAND.pdf">Teuchos
+C++ Memory Management Classes</a>, and summarized in <a
+href="ThyraCodingGuideLines.pdf">%Thyra Coding and Documentation
+Guidelines</a>.
 
 <li><b>Error (exception) handling</b>
 
@@ -538,7 +542,10 @@ always be enabled since a lot of errors will be caught that would be hard to
 diagnose otherwise.  Significant effort has gone into developing this error
 checking code and in the information that is embedded in the exception objects
 (all derived from <tt>std::exception</tt>) that are thrown when errors are
-detected.
+detected.  More detail about how to do debugging with Thyra related to memory
+management is described in <a
+href="http://www.cs.sandia.gov/~rabartl/TeuchosMemoryManagementSAND.pdf">Teuchos
+C++ Memory Management Classes</a>.
 
 </ul>
 
