@@ -28,9 +28,10 @@ static double mbytes=0;
 /*************************************************************
  * Defining GID_BASE allows us to test 64 bit global IDs when we
  * don't have enough memory to run a test that has more than
- * two billion vertices.
+ * two billion vertices.  Defining this when we do have more
+ * than two billion vertices breaks the test.
  */
-#define GID_BASE  0x100000000
+/*#define GID_BASE  0x100000000*/
 /*************************************************************/
 
 static ZOLTAN_GNO_TYPE numGlobalVertices;
