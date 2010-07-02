@@ -71,15 +71,15 @@ After some deliberation, the following initial solutions were decided upon:
 			\centering
 			\subfigure[A Spin Box]{
 				\label{spinboxfig}
-				\includegraphics{graphics/spinbox}
+				\includegraphics[scale=0.5]{graphics/spinbox}
 			}
 			\subfigure[A Combo Box]{
 				\label{comboboxfig}
-				\includegraphics{graphics/combobox}
+				\includegraphics[scale=0.5]{graphics/combobox}
 			}
 			\subfigure[A Line Edit]{
 				\label{lineeditfig}
-				\includegraphics{graphics/lineedit}
+				\includegraphics[scale=0.5]{graphics/lineedit}
 			}
 			\caption{Some of the various widgets used for editing data}
 			\label{editingWidgets}
@@ -143,11 +143,12 @@ the apporiate editing widget based on it's datatype.
 
 With the model and delegate classes inplace, an appropriate view could be applied. At first a simple
 QTreeView~\cite{QTreeView} was applied to the model. The results was something like that in \ref{treeviewFig}.
-	\begin{figure}
+	\begin{figure}[h]
 		\centering
-		\label{treeviewFig}
-		\caption[A simple Tree View]
-		\includegraphics{graphics/treeview}
+			\subfigure[A Tree View]{
+				\label{treeviewFig}
+				\includegraphics[scale=0.5]{graphics/treeview}
+			}
 	\end{figure}
 
 
