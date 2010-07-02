@@ -74,6 +74,7 @@ specific items to form TrilinosPlatform_config.h
 #define HAVE_FSTREAM 1
 #define HAVE_GCC_ABI_DEMANGLE 
 #define HAVE_GNUMAKE 
+#define HAVE_NEW 1
 
 #if ! defined(__sun) && ! defined(__sgi)
 #  define HAVE_INF_SUPPORT 
@@ -119,6 +120,7 @@ specific items to form TrilinosPlatform_config.h
 #define HAVE_TYPEINFO 1
 #define HAVE_UNISTD_H 1
 #define HAVE_VALGRIND_VALGRIND_H 1
+#define HAVE_VALARRAY 1
 #define HAVE_VECTOR 1
 #define INVALID_TEMPLATE_QUALIFIER 
 #define STDC_HEADERS 1
