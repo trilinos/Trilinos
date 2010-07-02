@@ -118,6 +118,8 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
     /Trilinos/packages/lyno
     /Trilinos/packages/stalix
     /Trilinos/packages/teko
+    /Trilinos/packages/Trios
+    /Trilinos/demos/FEApp
     ${CONFIGURE_AC_LIST}
     ${CONFIGURE_LIST}
     ${MAKEFILE_AM_LIST}
