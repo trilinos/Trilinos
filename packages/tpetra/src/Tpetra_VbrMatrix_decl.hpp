@@ -52,14 +52,30 @@ namespace Tpetra {
 /**
 The VbrMatrix class has two significant 'states', distinguished by whether or not
 storage has been optimized (packed) or not.
-After construction and before fillComplete() has been called, the internal data
+
+When the matrix is in the non-optimized-storage state, internal data
 storage is in an un-packed, non-contiguous data-structure that allows for
 convenient insertion of data.
-The structure or sparsity pattern of the matrix is finalized when fillComplete()
-is called.
-After fillComplete() has been called, internal storage is in contiguous 'packed'
-arrays and no new entries (indices and/or coefficients) may be inserted. Existing
-entries may still be updated and replaced though.
+
+When the matrix is in the optimized-storage state, internal data is stored in
+contiguous (packed) arrays. When in this state, existing entries may be updated
+and replaced, but no new entries (indices and/or coefficients) may be inserted.
+In other words, the sparsity pattern or structure of the matrix may not be
+changed.
+
+Use of the matrix as an Operator (performing matrix-vector multiplication) is
+only allowed when it is in the optimized-storage state.
+
+VbrMatrix has two constructors, one which leaves the matrix in the optimized-
+storage stage, and another which leaves the matrix in the non-optimized-storage
+stage.
+
+When the VbrMatrix is constructed in the non-optimized-storage state, and then
+filled using methods such as setGlobalBlockEntry etc., it can then be transformed
+to the optimized-storage state by calling the method fillComplete().
+
+Once in the optimized-storage state, the VbrMatrix can not be returned to the
+non-optimized-storage state.
 */
 template <class Scalar, 
           class LocalOrdinal  = int, 
@@ -78,7 +94,32 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   //@{
 
   //! Constructor specifying the row-map and the max number of (block) non-zeros for all rows.
+  /*! After this constructor completes, the VbrMatrix is in the non-packed,
+    non-optimized-storage, isFillComplete()==false state.
+    Block-entries (rectangular, dense submatrices) may be inserted using class
+    methods such as setGlobalBlockEntry(...), declared below.
+  */
   VbrMatrix(const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > &blkRowMap, size_t maxNumEntriesPerRow, ProfileType pftype = DynamicProfile);
+
+  //! Constructor specifying a pre-filled graph and block-maps for range and domain.
+  /*! Constructing a VbrMatrix with a pre-filled graph means that the matrix will
+      start out in the optimized-storage, isFillComplete()==true state.
+      The graph provided to this constructor must be already filled
+      (If blkGraph->isFillComplete() != true, an exception is thrown.)
+
+      Entries in the input CrsGraph will correspond to block-entries in the
+      VbrMatrix. In other words, the VbrMatrix will have a block-row corresponding
+      to each row in the graph, and a block-entry corresponding to each column-
+      index in the graph.
+
+      The block-maps provided for range and domain must be sized such that:
+      blkDomainMap->getGlobalNumBlocks() == blkGraph->getDomainMap()->getGlobalNumElements(),
+      blkRangeMap->getGlobalNumBlocks() == blkGraph->getRangeMap()->getGlobalNumElements(),
+      blkDomainMap->getNodeNumBlocks() == blkGraph->getDomainMap()->getNodeNumElements(),
+      blkRangeMap->getNodeNumBlocks() == blkGraph->getRangeMap()->getNodeNumElements().
+      If any of these conditions is not met, an exception is thrown.
+  */
+  VbrMatrix(const Teuchos::RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& blkGraph, const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blkDomainMap, const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blkRangeMap);
 
   //! Destructor
   virtual ~VbrMatrix();
@@ -325,13 +366,13 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   //It takes 6 arrays to adequately represent a variable-block-row
   //matrix in packed (contiguous storage) form. For a description of these
   //arrays, see the text at the bottom of this file.
+  //(Note that 2 of those arrays, rptr and cptr, are represented by arrays in the
+  //blkRowMap_ and blkColMap_ objects.)
   //
   //These arrays are handled as if they may point to memory that resides on
   //a separate device (e.g., a GPU). In other words, when the contents of these
   //arrays are manipulated, we use views or buffers obtained from the Node object.
   Teuchos::ArrayRCP<Scalar> pbuf_values1D_;
-  Teuchos::ArrayRCP<LocalOrdinal> pbuf_rptr_;
-  Teuchos::ArrayRCP<LocalOrdinal> pbuf_cptr_;
   Teuchos::ArrayRCP<LocalOrdinal> pbuf_bptr_;
   Teuchos::ArrayRCP<LocalOrdinal> pbuf_bindx_;
   Teuchos::ArrayRCP<LocalOrdinal> pbuf_indx_;

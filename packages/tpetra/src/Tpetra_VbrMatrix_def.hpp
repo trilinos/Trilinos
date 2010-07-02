@@ -68,12 +68,14 @@ makeBlockColumnMap(const Teuchos::RCP<const Tpetra::BlockMap<LocalOrdinal,Global
 {
   global_size_t numGlobalBlocks = Teuchos::OrdinalTraits<global_size_t>::invalid();
   Teuchos::ArrayView<const GlobalOrdinal> blockIDs = ptColMap->getNodeElementList();
-  Teuchos::ArrayView<const LocalOrdinal> blockSizes = blockMap->getNodeBlockSizes();
-  Teuchos::Array<GlobalOrdinal> points(blockIDs.size());
+  Teuchos::ArrayRCP<const LocalOrdinal> firstPoints = blockMap->getNodeFirstPointInBlocks();
+  Teuchos::Array<GlobalOrdinal> points(firstPoints.size()-1);
+  Teuchos::Array<LocalOrdinal> blockSizes(firstPoints.size()-1);
 
   typedef typename Teuchos::ArrayView<const LocalOrdinal>::size_type Tsize_t;
   for(Tsize_t i=0; i<blockSizes.size(); ++i) {
-    points[i] = blockMap->getFirstGlobalPointInBlock(i);
+    points[i] = blockMap->getFirstGlobalPointInLocalBlock(i);
+    blockSizes[i] = firstPoints[i+1]-firstPoints[i];
   }
 
   //We will create a block-map where each block corresponds to a point in
@@ -85,7 +87,7 @@ makeBlockColumnMap(const Teuchos::RCP<const Tpetra::BlockMap<LocalOrdinal,Global
   int numProcessors = ptColMap->getComm()->getSize();
   if (numProcessors == 1) {
     return Teuchos::rcp(new Tpetra::BlockMap<LocalOrdinal,GlobalOrdinal,Node>(
-        numGlobalBlocks, blockIDs, points(), blockSizes,
+        numGlobalBlocks, blockIDs, points(), blockSizes(),
         ptColMap->getIndexBase(), ptColMap->getComm(), ptColMap->getNode()
     ));
   }
@@ -105,7 +107,7 @@ makeBlockColumnMap(const Teuchos::RCP<const Tpetra::BlockMap<LocalOrdinal,Global
   Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > blkPtMap =
       convertBlockMapToPointMap(blockMap);
 
-  LOVec source_sizes(blkPtMap, blockSizes);
+  LOVec source_sizes(blkPtMap, blockSizes());
   GOVec source_points(blkPtMap, points());
   LOVec target_sizes(ptColMap);
   GOVec target_points(ptColMap);
@@ -114,11 +116,9 @@ makeBlockColumnMap(const Teuchos::RCP<const Tpetra::BlockMap<LocalOrdinal,Global
   target_sizes.doImport(source_sizes, importer, REPLACE);
   target_points.doImport(source_points, importer, REPLACE);
 
-  blockSizes = target_sizes.get1dView()();
-
   //now we can create our block-column-map:
   return Teuchos::rcp(new Tpetra::BlockMap<LocalOrdinal,GlobalOrdinal,Node>(
-    numGlobalBlocks, blockIDs, target_points.get1dView()(), blockSizes,
+    numGlobalBlocks, blockIDs, target_points.get1dView()(), target_sizes.get1dView()(),
     ptColMap->getIndexBase(), ptColMap->getComm(), ptColMap->getNode()
   ));
 }
@@ -145,8 +145,6 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::VbrMatrix(const T
    blkGraph_(),
    lclMatrix_(blkRowMap->getNodeNumBlocks(), blkRowMap->getPointMap()->getNode()),
    pbuf_values1D_(),
-   pbuf_rptr_(),
-   pbuf_cptr_(),
    pbuf_bptr_(),
    pbuf_bindx_(),
    pbuf_indx_(),
@@ -416,7 +414,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getGlobalBlockEnt
     throw std::runtime_error("Tpetra::VbrMatrix::getGlobalBlockEntryView ERROR, specified block-entry doesn't exist.");
   }
 
-  numPtRows = blkRowMap_->getBlockSize(localBlockRow);
+  numPtRows = blkRowMap_->getLocalBlockSize(localBlockRow);
 
   TEST_FOR_EXCEPTION(numPtRows == 0, std::runtime_error,
     "Tpetra::VbrMatrix::getGlobalBlockEntryView ERROR, numPtRows == 0.");
@@ -461,10 +459,8 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalBlockEntr
   TEST_FOR_EXCEPTION(it == bindx_end || *it != localBlockCol, std::runtime_error,
     "Tpetra::VbrMatrix::getLocalBlockEntryViewNonConst ERROR, specified localBlockCol not found.");
 
-  Host_View rptr = node->template viewBuffer<LocalOrdinal>(2,pbuf_rptr_+localBlockRow),
-            cptr = node->template viewBuffer<LocalOrdinal>(2,pbuf_cptr_+localBlockCol);
-  numPtRows = rptr[1] - rptr[0];
-  numPtCols = cptr[1] - cptr[0];
+  numPtRows = blkRowMap_->getLocalBlockSize(localBlockRow);
+  numPtCols = blkColMap_->getLocalBlockSize(localBlockCol);
 
   const LocalOrdinal blkSize = numPtRows*numPtCols;
   Host_View indx = node->template viewBuffer<LocalOrdinal>(1,pbuf_indx_+bptr[0]+(it-bindx_beg));
@@ -505,10 +501,8 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalBlockEntr
   TEST_FOR_EXCEPTION(it == bindx_end || *it != localBlockCol, std::runtime_error,
     "Tpetra::VbrMatrix::getLocalBlockEntryView ERROR, specified localBlockCol not found.");
 
-  Host_View rptr = node->template viewBuffer<LocalOrdinal>(2, pbuf_rptr_+localBlockRow),
-            cptr = node->template viewBuffer<LocalOrdinal>(2, pbuf_cptr_+localBlockCol);
-  numPtRows = rptr[1] - rptr[0];
-  numPtCols = cptr[1] - cptr[0];
+  numPtRows = blkRowMap_->getLocalBlockSize(localBlockRow);
+  numPtCols = blkRowMap_->getLocalBlockSize(localBlockCol);
 
   const LocalOrdinal blkSize = numPtRows*numPtCols;
   Host_View indx = node->template viewBuffer<LocalOrdinal>(1, pbuf_indx_+bptr[0]+(it-bindx_beg));
@@ -645,7 +639,6 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::optimizeStorage()
   if (is_storage_optimized_ == true) return;
 
   size_t num_block_rows = blkGraph_->getNodeNumRows();
-  size_t num_block_cols = blkGraph_->getNodeNumCols();
   size_t num_block_nonzeros = blkGraph_->getNodeNumEntries();
 
   //need to count the number of point-entries:
@@ -662,29 +655,22 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::optimizeStorage()
 
   //Don't change these allocation sizes unless you know what you're doing!
   //The '+1's are in the right place. (Trust me, I'm a trained professional.)
-  pbuf_rptr_ = node->template allocBuffer<LocalOrdinal>(num_block_rows+1);
-  pbuf_cptr_ = node->template allocBuffer<LocalOrdinal>(num_block_cols+1);
   pbuf_bptr_ = node->template allocBuffer<LocalOrdinal>(num_block_rows+1);
   pbuf_bindx_= node->template allocBuffer<LocalOrdinal>(num_block_nonzeros);
   pbuf_indx_ = node->template allocBuffer<LocalOrdinal>(num_block_nonzeros+1);
   pbuf_values1D_ = node->template allocBuffer<Scalar>(num_point_entries);
 
-  Teuchos::ArrayRCP<LocalOrdinal> v_rptr = node->template viewBufferNonConst<LocalOrdinal>(Kokkos::WriteOnly, num_block_rows+1, pbuf_rptr_);
-  Teuchos::ArrayRCP<LocalOrdinal> v_cptr = node->template viewBufferNonConst<LocalOrdinal>(Kokkos::WriteOnly, num_block_cols+1, pbuf_cptr_);
   Teuchos::ArrayRCP<LocalOrdinal> v_bptr = node->template viewBufferNonConst<LocalOrdinal>(Kokkos::WriteOnly, num_block_rows+1, pbuf_bptr_);
   Teuchos::ArrayRCP<LocalOrdinal> v_bindx = node->template viewBufferNonConst<LocalOrdinal>(Kokkos::WriteOnly, num_block_nonzeros, pbuf_bindx_);
   Teuchos::ArrayRCP<LocalOrdinal> v_indx = node->template viewBufferNonConst<LocalOrdinal>(Kokkos::WriteOnly, num_block_nonzeros+1, pbuf_indx_);
   Teuchos::ArrayRCP<Scalar> v_values1D = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly, num_point_entries, pbuf_values1D_);
 
   size_t roffset = 0;
-  size_t pt_r_offset = 0;
   size_t ioffset = 0;
   size_t offset = 0;
   Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > >& pbuf_vals2D = *values2D_;
   for(Tsize_t r=0; r<pbuf_vals2D.size(); ++r) {
-    v_rptr[r] = pt_r_offset;
-    LocalOrdinal rsize = blkRowMap_->getBlockSize(r);
-    pt_r_offset += rsize;
+    LocalOrdinal rsize = blkRowMap_->getLocalBlockSize(r);
 
     v_bptr[r] = roffset;
     Tsize_t rlen = pbuf_vals2D[r].size();
@@ -697,10 +683,8 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::optimizeStorage()
       v_bindx[ioffset] = blk_row_inds[c];
       v_indx[ioffset++] = offset;
 
-      Tsize_t blkSize = pbuf_vals2D[r][c].size(); 
-      //Here we're putting blk-col-size in cptr.
-      //Later we will convert cptr to offsets.
-      v_cptr[blk_row_inds[c]] = blkSize/rsize;
+      LocalOrdinal csize = blkColMap_->getLocalBlockSize(blk_row_inds[c]);
+      Tsize_t blkSize = rsize*csize;
 
       GlobalOrdinal global_col = blkGraph_->getColMap()->getGlobalElement(blk_row_inds[c]);
       typename MapGlobalArrayRCP::iterator iter = blk_row.find(global_col);
@@ -709,24 +693,13 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::optimizeStorage()
 
       Teuchos::ArrayRCP<Scalar> vals = iter->second;
       for(Tsize_t n=0; n<blkSize; ++n) {
-        v_values1D[offset++] = vals[n];
+        v_values1D[offset+n] = vals[n];
       }
+      offset += blkSize;
     }
   }
-  v_rptr[num_block_rows] = pt_r_offset;
   v_bptr[num_block_rows] = roffset;
   v_indx[ioffset] = offset;
-
-  //now convert cptr from sizes to offsets;
-  LocalOrdinal coffset = 0;
-  //we know that v_cptr.size() is always strictly greater than 0:
-  Tsize_t cptr_len = v_cptr.size()-1;
-  for(Tsize_t c=0; c<cptr_len; ++c) {
-    LocalOrdinal csz = v_cptr[c];
-    v_cptr[c] = coffset;
-    coffset += csz; 
-  }
-  v_cptr[num_block_cols] = coffset;
 
   //Final step: release memory for the "2D" storage:
   col_ind_2D_global_ = Teuchos::null;
@@ -740,14 +713,14 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, clas
 void VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillLocalMatrix()
 {
   //We insist that optimzeStorage has already been called.
-  //We don't care whether this function (fillLocalMatris()) is being
+  //We don't care whether this function (fillLocalMatrix()) is being
   //called for the first time or not.
   TEST_FOR_EXCEPTION(is_storage_optimized_ != true, std::runtime_error,
     "Tpetra::VbrMatrix::fillLocalMatrix ERROR, optimizeStorage is required to have already been called.");
 
   lclMatrix_.setPackedValues(pbuf_values1D_,
-                             pbuf_rptr_,
-                             pbuf_cptr_,
+                             blkRowMap_->getNodeFirstPointInBlocks_Device(),
+                             blkColMap_->getNodeFirstPointInBlocks_Device(),
                              pbuf_bptr_,
                              pbuf_bindx_,
                              pbuf_indx_);

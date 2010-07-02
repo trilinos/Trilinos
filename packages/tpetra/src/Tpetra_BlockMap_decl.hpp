@@ -54,16 +54,20 @@ class BlockMap : public Teuchos::Describable {
 
   /*! \brief BlockMap constructor specifying numGlobalBlocks and constant blockSize.
    */
-  BlockMap(global_size_t numGlobalBlocks, LocalOrdinal blockSize,
-      GlobalOrdinal indexBase, const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-      const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
+  BlockMap(global_size_t numGlobalBlocks,
+           LocalOrdinal blockSize,
+           GlobalOrdinal indexBase,
+           const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+           const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
 
   /*! \brief BlockMap constructor specifying num global and local blocks, and constant blockSize.
    */
-  BlockMap(global_size_t numGlobalBlocks, size_t numLocalBlocks,
-      LocalOrdinal blockSize, GlobalOrdinal indexBase,
-      const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
-      const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
+  BlockMap(global_size_t numGlobalBlocks,
+           size_t numLocalBlocks,
+           LocalOrdinal blockSize,
+           GlobalOrdinal indexBase,
+           const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+           const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
 
   /*! \brief BlockMap constructor specifying numGlobalBlocks and lists of local blocks first-global-point-in-blocks, and blockSizes.
    */
@@ -81,7 +85,10 @@ class BlockMap : public Teuchos::Describable {
    * If these arrays are different lengths or sum(myBlockSizes) is incorrect,
    * then std::runtime_error is thrown.
    */
-  BlockMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& pointMap, const Teuchos::ArrayView<const GlobalOrdinal>& myGlobalBlockIDs, const Teuchos::ArrayView<const LocalOrdinal>& myBlockSizes);
+  BlockMap(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& pointMap,
+           const Teuchos::ArrayView<const GlobalOrdinal>& myGlobalBlockIDs,
+           const Teuchos::ArrayView<const LocalOrdinal>& myBlockSizes,
+           const Teuchos::RCP<Node> &node = Kokkos::DefaultNode::getDefaultNode());
 
   //! BlockMap destructor.
   ~BlockMap(){}
@@ -96,15 +103,21 @@ class BlockMap : public Teuchos::Describable {
 
   global_size_t getGlobalNumBlocks() const;
 
+  //! Return number of blocks on the local processor.
   size_t getNodeNumBlocks() const;
 
   Teuchos::ArrayView<const GlobalOrdinal> getNodeBlockIDs() const;
 
   bool isBlockSizeConstant() const;
 
-  Teuchos::ArrayView<const LocalOrdinal> getNodeBlockSizes() const;
+  //! Return ArrayRCP of first-local-point in local blocks.
+  Teuchos::ArrayRCP<const LocalOrdinal> getNodeFirstPointInBlocks() const;
 
-  Teuchos::ArrayView<const LocalOrdinal> getNodeFirstPointInBlocks() const;
+  //! Return device-resident ArrayRCP of first-local-point in local blocks.
+  /*! This version of this method is primarily used internally by VbrMatrix
+      for passing data to the matrix-vector-product kernel.
+  */
+  Teuchos::ArrayRCP<const LocalOrdinal> getNodeFirstPointInBlocks_Device() const;
 
   //! Return the globalBlockID corresponding to the given localBlockID
   /*! If localBlockID is not present on this processor, returns Teuchos::OrdinalTraits<LocalOrdinal>::invalid().
@@ -120,19 +133,19 @@ class BlockMap : public Teuchos::Describable {
   /*! If localBlockID is out of range (less than 0 or greater/equal num-local-blocks),
    * then std::runtime_error is thrown.
    */
-  LocalOrdinal getBlockSize(LocalOrdinal localBlockID) const;
+  LocalOrdinal getLocalBlockSize(LocalOrdinal localBlockID) const;
 
   //! Return the first local point-index corresponding to localBlockID
   /*! If localBlockID is out of range (less than 0 or greater/equal num-local-blocks),
    * then std::runtime_error is thrown.
    */
-  LocalOrdinal getFirstLocalPointInBlock(LocalOrdinal localBlockID) const;
+  LocalOrdinal getFirstLocalPointInLocalBlock(LocalOrdinal localBlockID) const;
 
-  //! Return the first local point-index corresponding to localBlockID
+  //! Return the first global point-index corresponding to localBlockID
   /*! If localBlockID is out of range (less than 0 or greater/equal num-local-blocks),
    * then std::runtime_error is thrown.
    */
-  GlobalOrdinal getFirstGlobalPointInBlock(LocalOrdinal localBlockID) const;
+  GlobalOrdinal getFirstGlobalPointInLocalBlock(LocalOrdinal localBlockID) const;
 
   //@}
 
@@ -140,8 +153,8 @@ class BlockMap : public Teuchos::Describable {
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > pointMap_;
   global_size_t globalNumBlocks_;
   Teuchos::Array<GlobalOrdinal> myGlobalBlockIDs_;
-  Teuchos::Array<LocalOrdinal> blockSizes_;
-  Teuchos::Array<LocalOrdinal> firstPointInBlock_;
+  Teuchos::ArrayRCP<LocalOrdinal> pbuf_firstPointInBlock_;
+  Teuchos::ArrayRCP<const LocalOrdinal> view_firstPointInBlock_;
   bool blockIDsAreContiguous_;
   LocalOrdinal constantBlockSize_;
 };//class BlockMap

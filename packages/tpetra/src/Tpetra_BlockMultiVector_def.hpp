@@ -47,12 +47,12 @@ LocalOrdinal BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::getLocalP
 
   TEST_FOR_EXCEPTION( LBID == Teuchos::OrdinalTraits<LocalOrdinal>::invalid(), std::runtime_error, "Tpetra::BlockMultiVector::getLocalPointIndex ERROR: specified globalBlockRow not found in local block-map.");
 
-  LocalOrdinal blkSize = blockMap_->getBlockSize(LBID);
+  LocalOrdinal blkSize = blockMap_->getLocalBlockSize(LBID);
 
   TEST_FOR_EXCEPTION( blockOffset >= blkSize, std::runtime_error,
      "Tpetra::BlockMultiVector::getLocalPointIndex ERROR: specified blockOffset >= blockSize.");
 
-  LocalOrdinal pointIndex = blockMap_->getFirstLocalPointInBlock(LBID);
+  LocalOrdinal pointIndex = blockMap_->getFirstLocalPointInLocalBlock(LBID);
 
   return pointIndex + blockOffset;
 }
@@ -70,7 +70,7 @@ template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
 void
 BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::replaceLocalValue(LocalOrdinal localBlockRow, LocalOrdinal blockOffset, size_t vectorIndex, const Scalar &value)
 {
-  LocalOrdinal pointIndex = blockMap_->getFirstLocalPointInBlock(localBlockRow);
+  LocalOrdinal pointIndex = blockMap_->getFirstLocalPointInLocalBlock(localBlockRow);
 
   replaceLocalValue(pointIndex+blockOffset, vectorIndex, value);
 }
@@ -88,7 +88,7 @@ template<class Scalar,class LocalOrdinal,class GlobalOrdinal,class Node>
 void
 BlockMultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::sumIntoLocalValue(LocalOrdinal localBlockRow, LocalOrdinal blockOffset, size_t vectorIndex, const Scalar &value)
 {
-  LocalOrdinal pointIndex = blockMap_->getFirstLocalPointInBlock(localBlockRow);
+  LocalOrdinal pointIndex = blockMap_->getFirstLocalPointInLocalBlock(localBlockRow);
 
   sumIntoLocalValue(pointIndex+blockOffset, vectorIndex, value);
 }
