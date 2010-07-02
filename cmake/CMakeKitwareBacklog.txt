@@ -68,20 +68,6 @@ command that must all exist when the test is run or the test will be marked as
 'Not Run' ... This should already be done (see the test property ???).
 
 
-(*) [CMake] [P4] Reduce the options shown in the default view of the CMake
-GUI, moving most options to the advanced area.  There are a lot of Trilinos
-options, and users could easily have trouble finding what they are looking
-for.  Really, CMake should support a grouping capability to group options
-hierarchically with the GUI allowing expansion and contraction of the
-categories of options shown.  One thing that would help a lot is if the CMake
-GUI would allow you to select "Grouped" view but turn "Advanced" options on
-and off.  Currently, the "Grouped" view shows all options including advanced
-options.  Then, in the Trilinos CMake system, we could avoid setting package
-specific options like PACKAGE_ENABLE_TESTS unless those packages were actually
-explicitly enabled.  Again though, to really organize all of these options we
-need the ability to hierarchically group options any way that we would like.
-
-
 (*) [CDash] [P4] Implement a tool that will go back in time and delete
 older test results from the SQL database and/or reduce the size of
 files referenced in the SQL database: However, we would want to save
@@ -550,6 +536,25 @@ bottom for package coverage numbers.
 
 D) Done:
 ---------
+
+
+(*) [CMake] [P4] Reduce the options shown in the default view of the CMake
+GUI, moving most options to the advanced area.  There are a lot of Trilinos
+options, and users could easily have trouble finding what they are looking
+for.  Really, CMake should support a grouping capability to group options
+hierarchically with the GUI allowing expansion and contraction of the
+categories of options shown.  One thing that would help a lot is if the CMake
+GUI would allow you to select "Grouped" view but turn "Advanced" options on
+and off.  Currently, the "Grouped" view shows all options including advanced
+options.  Then, in the Trilinos CMake system, we could avoid setting package
+specific options like PACKAGE_ENABLE_TESTS unless those packages were actually
+explicitly enabled.  Again though, to really organize all of these options we
+need the ability to hierarchically group options any way that we would
+like. ... With the changes Ross B. made to only add cache variables for
+packages that are actually enabled and since Kitware changed the CMake
+QT-based GUI in the 2.8.2 release to have seprate check boxes for "Grouped"
+and "Advanced", the options for Trilinos are now very manageable.  This
+problem is solved as far as I cam concerned.
 
 
 (*) [CTest, CDash] Support for the Git VC tool: We really only need built-in
