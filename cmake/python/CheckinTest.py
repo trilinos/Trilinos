@@ -2081,7 +2081,6 @@ def checkinTest(inOptions):
         emailAddresses = getEmailAddressesSpaceString(inOptions.sendEmailTo)
         if inOptions.sendEmailToOnPush and didPush:
           emailAddresses += " " + getEmailAddressesSpaceString(inOptions.sendEmailToOnPush)
-        echoRunSysCmnd("sleep 2s")
         echoRunSysCmnd("mailx -s \""+subjectLine+"\" " \
           +emailAddresses+" < "+summaryCommitEmailBodyFileName)
   
