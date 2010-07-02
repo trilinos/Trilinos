@@ -17,6 +17,7 @@
 % Rolf Riesen, Org. 9223, MS 1110, rolf@cs.sandia.gov
 %
 \documentclass[pdf,ps2pdf,12pt,report,strict,blank]{SANDreport}
+\usepackage{hyperref}
 \usepackage{pslatex}
 \usepackage{mathptmx}	% Use the Postscript Times font
 \usepackage[FIGBOTCAP,normal,bf,tight]{subfigure}
@@ -155,6 +156,8 @@
 		RCP class located in the Teuchos package of Trilinos.
 	\item[Sublist]
 	    A parameter list contained within another parameter list.
+	\item[Widget]
+		A GUI element, usually used to obtain user input.
     \end{description}
 
 
@@ -172,12 +175,12 @@
 	\input{OptikaDev}
 
 
-    \chapter{A Long Chapter}\label{sec:long}
-	\input{CommonLong}
+%    \chapter{A Long Chapter}\label{sec:long}
+%$	\input{CommonLong}
 
 
-    \chapter{Conclusion}
-	\input{CommonConclusion}
+%    \chapter{Conclusion}
+%	\input{CommonConclusion}
 
     \nocite{*}
 
@@ -192,18 +195,18 @@
     \phantomsection
     \addcontentsline{toc}{chapter}{References}
     \bibliographystyle{plain}
-    \bibliography{SANDExample}
+    \bibliography{OptikaSANDReport}
 
 
     % ---------------------------------------------------------------------- %
     %
-    \appendix
-    \chapter{Historical Perspective}
-	\input{CommonHistory}
+    %\appendix
+    %\chapter{Historical Perspective}
+	%\input{CommonHistory}
 
 
-    \chapter{Some Other Appendix}
-	\input{CommonAppendix}
+    %\chapter{Some Other Appendix}
+	%\input{CommonAppendix}
 
     % \printindex
 

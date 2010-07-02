@@ -1,4 +1,4 @@
-This is pdfTeXk, Version 3.141592-1.40.3 (Web2C 7.5.6) (format=pdflatex 2007.5.18)  22 JUN 2010 15:35
+This is pdfTeXk, Version 3.141592-1.40.3 (Web2C 7.5.6) (format=pdflatex 2007.5.18)  2 JUL 2010 10:32
 entering extended mode
  %&-line parsing enabled.
 **OptikaSANDReport.tex
@@ -135,6 +135,61 @@ Package: indentfirst 1995/11/23 v1.03 Indent first paragraph (DPC)
 \SANDcaptionwidth=\skip57
 \SANDtempbox=\box32
 )
+(/usr/local/texlive/2007/texmf-dist/tex/latex/hyperref/hyperref.sty
+Package: hyperref 2007/02/07 v6.75r Hypertext links for LaTeX
+\@linkdim=\dimen112
+\Hy@linkcounter=\count97
+\Hy@pagecounter=\count98
+
+(/usr/local/texlive/2007/texmf-dist/tex/latex/hyperref/pd1enc.def
+File: pd1enc.def 2007/02/07 v6.75r Hyperref: PDFDocEncoding definition (HO)
+)
+(/usr/local/texlive/2007/texmf/tex/latex/config/hyperref.cfg
+File: hyperref.cfg 2002/06/06 v1.2 hyperref configuration of TeXLive
+)
+(/usr/local/texlive/2007/texmf-dist/tex/latex/oberdiek/kvoptions.sty
+Package: kvoptions 2006/08/22 v2.4 Connects package keyval with LaTeX options (
+HO)
+)
+Package hyperref Info: Hyper figures OFF on input line 2288.
+Package hyperref Info: Link nesting OFF on input line 2293.
+Package hyperref Info: Hyper index ON on input line 2296.
+Package hyperref Info: Plain pages OFF on input line 2303.
+Package hyperref Info: Backreferencing OFF on input line 2308.
+
+Implicit mode ON; LaTeX internals redefined
+Package hyperref Info: Bookmarks ON on input line 2444.
+(/usr/local/texlive/2007/texmf-dist/tex/latex/ltxmisc/url.sty
+\Urlmuskip=\muskip10
+Package: url 2005/06/27  ver 3.2  Verb mode for urls, etc.
+)
+LaTeX Info: Redefining \url on input line 2599.
+\Fld@menulength=\count99
+\Field@Width=\dimen113
+\Fld@charsize=\dimen114
+\Choice@toks=\toks16
+\Field@toks=\toks17
+Package hyperref Info: Hyper figures OFF on input line 3102.
+Package hyperref Info: Link nesting OFF on input line 3107.
+Package hyperref Info: Hyper index ON on input line 3110.
+Package hyperref Info: backreferencing OFF on input line 3117.
+Package hyperref Info: Link coloring OFF on input line 3122.
+\Hy@abspage=\count100
+\c@Item=\count101
+\c@Hfootnote=\count102
+)
+*hyperref using driver hdvips*
+(/usr/local/texlive/2007/texmf-dist/tex/latex/hyperref/hdvips.def
+File: hdvips.def 2007/02/07 v6.75r Hyperref driver for dvips
+
+(/usr/local/texlive/2007/texmf-dist/tex/latex/hyperref/pdfmark.def
+File: pdfmark.def 2007/02/07 v6.75r Hyperref definitions for pdfmark specials
+\pdf@docset=\toks18
+\pdf@box=\box33
+\pdf@toks=\toks19
+\pdf@defaulttoks=\toks20
+\Fld@listcount=\count103
+))
 (/usr/local/texlive/2007/texmf-dist/tex/latex/pslatex/pslatex.sty
 Package: pslatex 1996/07/24 v1.2 pslatex emulation (DPC)
 LaTeX Font Info:    Redeclaring symbol font `operators' on input line 65.
@@ -219,14 +274,14 @@ LaTeX Info: Redefining \hbar on input line 50.
 Package: subfigure 2002/03/15 v2.1.5 subfigure package
 \subfigtopskip=\skip58
 \subfigcapskip=\skip59
-\subfigcaptopadj=\dimen112
+\subfigcaptopadj=\dimen115
 \subfigbottomskip=\skip60
-\subfigcapmargin=\dimen113
+\subfigcapmargin=\dimen116
 \subfiglabelskip=\skip61
-\c@subfigure=\count97
-\c@lofdepth=\count98
-\c@subtable=\count99
-\c@lotdepth=\count100
+\c@subfigure=\count104
+\c@lofdepth=\count105
+\c@subtable=\count106
+\c@lotdepth=\count107
 
 ****************************************
 * Local config file subfigure.cfg used *
@@ -237,80 +292,81 @@ Package: subfigure 2002/03/15 v2.1.5 subfigure package
 )
 (/usr/local/texlive/2007/texmf-dist/tex/latex/draftcopy/draftcopy.sty
 Package: draftcopy 2002/02/25 v2.16
-\draftcopy@hour=\count101
-\draftcopy@minute=\count102
+\draftcopy@hour=\count108
+\draftcopy@minute=\count109
 
 (/usr/local/texlive/2007/texmf-dist/tex/latex/draftcopy/draftcopy.cfg)
 Prints DRAFT on pages; does not show in your DVI viewer
 )
-\SANDsupersedtempbox=\box33
-LaTeX Font Info:    Try loading font information for OT1+ztmcm on input line 79
+\SANDsupersedtempbox=\box34
+LaTeX Font Info:    Try loading font information for OT1+ztmcm on input line 80
 .
  (/usr/local/texlive/2007/texmf-dist/tex/latex/psnfss/ot1ztmcm.fd
 File: ot1ztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OT1/ztmcm.
 )
-LaTeX Font Info:    Try loading font information for OML+ztmcm on input line 79
+LaTeX Font Info:    Try loading font information for OML+ztmcm on input line 80
 .
 
 (/usr/local/texlive/2007/texmf-dist/tex/latex/psnfss/omlztmcm.fd
 File: omlztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OML/ztmcm.
 )
-LaTeX Font Info:    Try loading font information for OMS+ztmcm on input line 79
+LaTeX Font Info:    Try loading font information for OMS+ztmcm on input line 80
 .
 
 (/usr/local/texlive/2007/texmf-dist/tex/latex/psnfss/omsztmcm.fd
 File: omsztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OMS/ztmcm.
 )
-LaTeX Font Info:    Try loading font information for OMX+ztmcm on input line 79
+LaTeX Font Info:    Try loading font information for OMX+ztmcm on input line 80
 .
 
 (/usr/local/texlive/2007/texmf-dist/tex/latex/psnfss/omxztmcm.fd
 File: omxztmcm.fd 2000/01/03 Fontinst v1.801 font definitions for OMX/ztmcm.
 )
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <12> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 79.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 80.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <9> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 79.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 80.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <7> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 79.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 80.
 
 
 LaTeX Warning: Unused global option(s):
-    [pdf,ps2pdf].
+    [pdf].
 
-(./OptikaSANDReport.aux (./SANDdistribution.aux))
+No file OptikaSANDReport.aux.
 \openout1 = `OptikaSANDReport.aux'.
 
-LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 86.
-LaTeX Font Info:    ... okay on input line 86.
-LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 86.
-LaTeX Font Info:    ... okay on input line 86.
-LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 86.
-LaTeX Font Info:    ... okay on input line 86.
-LaTeX Font Info:    Checking defaults for OMS/pzccm/m/n on input line 86.
-LaTeX Font Info:    Try loading font information for OMS+pzccm on input line 86
+LaTeX Font Info:    Checking defaults for OML/cmm/m/it on input line 87.
+LaTeX Font Info:    ... okay on input line 87.
+LaTeX Font Info:    Checking defaults for T1/cmr/m/n on input line 87.
+LaTeX Font Info:    ... okay on input line 87.
+LaTeX Font Info:    Checking defaults for OT1/cmr/m/n on input line 87.
+LaTeX Font Info:    ... okay on input line 87.
+LaTeX Font Info:    Checking defaults for OMS/pzccm/m/n on input line 87.
+LaTeX Font Info:    Try loading font information for OMS+pzccm on input line 87
 .
-
 (/usr/local/texlive/2007/texmf-dist/tex/latex/psnfss/omspzccm.fd
 File: omspzccm.fd 2000/01/03 Fontinst v1.801 font definitions for OMS/pzccm.
 )
-LaTeX Font Info:    ... okay on input line 86.
-LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 86.
-LaTeX Font Info:    ... okay on input line 86.
-LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 86.
-LaTeX Font Info:    ... okay on input line 86.
+LaTeX Font Info:    ... okay on input line 87.
+LaTeX Font Info:    Checking defaults for OMX/cmex/m/n on input line 87.
+LaTeX Font Info:    ... okay on input line 87.
+LaTeX Font Info:    Checking defaults for U/cmr/m/n on input line 87.
+LaTeX Font Info:    ... okay on input line 87.
+LaTeX Font Info:    Checking defaults for PD1/pdf/m/n on input line 87.
+LaTeX Font Info:    ... okay on input line 87.
 
 (/usr/local/texlive/2007/texmf-dist/tex/context/base/supp-pdf.tex
 [Loading MPS to PDF converter (version 2006.09.02).]
-\scratchcounter=\count103
-\scratchdimen=\dimen114
-\scratchbox=\box34
-\nofMPsegments=\count104
-\nofMParguments=\count105
-\MPscratchCnt=\count106
-\MPscratchDim=\dimen115
-\MPnumerator=\count107
-\everyMPtoPDFconversion=\toks16
+\scratchcounter=\count110
+\scratchdimen=\dimen117
+\scratchbox=\box35
+\nofMPsegments=\count111
+\nofMParguments=\count112
+\MPscratchCnt=\count113
+\MPscratchDim=\dimen118
+\MPnumerator=\count114
+\everyMPtoPDFconversion=\toks21
 )
 -------------------- Geometry parameters
 paper: class default
@@ -351,194 +407,479 @@ driver: pdftex
 \@twosidetrue \@mparswitchtrue 
 (1in=72.27pt, 1cm=28.45pt)
 -----------------------
-\SANDtitletempbox=\box35
+\SANDtitletempbox=\box36
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <20.74> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 86.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 87.
 \textwidththird=\skip64
 \topheight=\skip65
 \topleftwidth=\skip66
 \topmiddlewidth=\skip67
 \toprightwidth=\skip68
-\big@size=\dimen116
+Package hyperref Info: Link coloring OFF on input line 87.
+ (/usr/local/texlive/2007/texmf-dist/tex/latex/hyperref/nameref.sty
+Package: nameref 2006/12/27 v2.28 Cross-referencing by name of section
+
+(/usr/local/texlive/2007/texmf-dist/tex/latex/oberdiek/refcount.sty
+Package: refcount 2006/02/20 v3.0 Data extraction from references (HO)
+)
+\c@section@level=\count115
+)
+LaTeX Info: Redefining \ref on input line 87.
+LaTeX Info: Redefining \pageref on input line 87.
+\@outlinefile=\write3
+\openout3 = `OptikaSANDReport.out'.
+
+
+
+Package hyperref Warning: Rerun to get /PageLabels entry.
+
+\big@size=\dimen119
 \coverindent=\skip69
 \parindentsave=\skip70
 LaTeX Font Info:    Font shape `OT1/phv/b/n' will be
-(Font)              scaled to size 16.19989pt on input line 87.
+(Font)              scaled to size 16.19989pt on input line 89.
 LaTeX Font Info:    Font shape `OT1/phv/m/n' will be
-(Font)              scaled to size 10.79993pt on input line 87.
+(Font)              scaled to size 10.79993pt on input line 89.
 LaTeX Font Info:    Font shape `OT1/phv/b/n' will be
-(Font)              scaled to size 21.59985pt on input line 87.
+(Font)              scaled to size 21.59985pt on input line 89.
 LaTeX Font Info:    Font shape `OT1/phv/m/n' will be
-(Font)              scaled to size 7.19995pt on input line 87.
+(Font)              scaled to size 7.19995pt on input line 89.
 
-Underfull \hbox (badness 10000) in paragraph at lines 87--87
+Underfull \hbox (badness 10000) in paragraph at lines 89--89
 
  []
 
 
-Underfull \hbox (badness 10000) in paragraph at lines 87--87
+Underfull \hbox (badness 10000) in paragraph at lines 89--89
 
  []
 
 <snllineblk.pdf, id=1, 241.90375pt x 38.1425pt>
 File: snllineblk.pdf Graphic file (type pdf)
  <use snllineblk.pdf> [1
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
 
 
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
 Non-PDF special ignored!{/usr/local/texlive/2007/texmf-var/fonts/map/pdftex/upd
 map/pdftex.map} <./snllineblk.pdf>]
-LaTeX Font Info:    Try loading font information for OT1+pnc on input line 87.
+LaTeX Font Info:    Try loading font information for OT1+pnc on input line 89.
 
 (/usr/local/texlive/2007/texmf-dist/tex/latex/psnfss/ot1pnc.fd
 File: ot1pnc.fd 2001/06/04 font definitions for OT1/pnc.
 )
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <5> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 87.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 89.
 
 <DOEbwlogo.pdf, id=13, 286.06876pt x 286.06876pt>
 File: DOEbwlogo.pdf Graphic file (type pdf)
- <use DOEbwlogo.pdf> [2 <./DOEbwlogo.pdf>]
+ <use DOEbwlogo.pdf> [2
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored! <./DOEbwlogo.pdf>]
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <14.4> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 87.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 89.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <10.95> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 87.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 89.
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <8> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 87.
- (./OptikaAbstract.tex) [3]
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 89.
+ (./OptikaAbstract.tex) [3
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!]
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <24.88> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 103.
- (./OptikaAck.tex) [4
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 104.
+ (./OptikaAck.tex
+
+LaTeX Warning: Citation `Sand98-0730' on page 4 undefined on input line 7.
+
+) [4
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
 
 
-]
-(./OptikaSANDReport.toc)
-\tf@toc=\write3
-\openout3 = `OptikaSANDReport.toc'.
+
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!]
+\tf@toc=\write4
+\openout4 = `OptikaSANDReport.toc'.
 
  [5
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
 
 
-] (./OptikaSANDReport.lof)
-\tf@lof=\write4
-\openout4 = `OptikaSANDReport.lof'.
+
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!]
+\tf@lof=\write5
+\openout5 = `OptikaSANDReport.lof'.
 
  [6
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
 
-]
-(./OptikaSANDReport.lot)
-\tf@lot=\write5
-\openout5 = `OptikaSANDReport.lot'.
+
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!]
+\tf@lot=\write6
+\openout6 = `OptikaSANDReport.lot'.
 
  [7
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
 
-] [8
+
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!] [8
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
 
 
-]
+
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!]
 Chapter 1.
-(./OptikaIntro.tex
-LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <17.28> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 12.
+(./OptikaIntro.tex) [9
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
 
 
-LaTeX Warning: \oval, \circle, or \line size unavailable on input line 19.
 
-LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <10> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 61.
-LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <7.4> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 61.
-LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <6> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 61.
-[9
-
-
-]) [10] [11]
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!]
 LaTeX Font Info:    Font shape `OT1/phv/m/n' will be
-(Font)              scaled to size 5.39996pt on input line 171.
- [12
+(Font)              scaled to size 5.39996pt on input line 174.
+ [10
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
 
 ]
 Chapter 2.
-(./CommonSubFig.tex <hippogriff.jpg, id=63, 57.816pt x 76.3653pt>
-File: hippogriff.jpg Graphic file (type jpg)
-
-<use hippogriff.jpg> <dragon.jpg, id=64, 154.5775pt x 216.81pt>
-File: dragon.jpg Graphic file (type jpg)
-
-<use dragon.jpg>) [13 <./hippogriff.jpg> <./dragon.jpg>] [14
-
-]
-Chapter 3.
-(./CommonLong.tex (./LoremIpsum.tex
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [15]
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [16]
-Underfull \vbox (badness 10000) has occurred while \output is active []
-
- [17]))
-[18]
-Chapter 4.
-(./CommonConclusion.tex) [19
-
-] (./OptikaSANDReport.bbl [20
+(./OptikaDev.tex
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <17.28> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 3.
+LaTeX Font Info:    Font shape `OMS/ptm/m/n' in size <12> not available
+(Font)              Font shape `OMS/pzccm/m/n' tried instead on input line 12.
 
 
-]) [21] [22
+LaTeX Warning: Reference `paramlistFigure' on page 11 undefined on input line 2
+8.
 
-]
-Appendix A.
-(./CommonHistory.tex) [23] [24
+[11
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!] <graphics/spinbox.png, id=59, 216.81pt x 41.15375pt>
+File: graphics/spinbox.png Graphic file (type png)
 
-]
-Appendix B.
-(./CommonAppendix.tex
+<use graphics/spinbox.png>
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <10> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 75.
 
-LaTeX Warning: \oval, \circle, or \line size unavailable on input line 32.
+<graphics/combobox.png, id=60, 216.81pt x 39.14626pt>
+File: graphics/combobox.png Graphic file (type png)
+
+<use graphics/combobox.png>
+<graphics/lineedit.png, id=61, 216.81pt x 41.15375pt>
+File: graphics/lineedit.png Graphic file (type png)
+
+<use graphics/lineedit.png> [12
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored! <./graphics/spinbox.png> <./graphics/combobox.png> <./
+graphics/lineedit.png>]
+
+LaTeX Warning: Citation `ParameterList' on page 13 undefined on input line 110.
 
 
-LaTeX Warning: \oval, \circle, or \line size unavailable on input line 33.
 
-) [25]
+LaTeX Warning: Citation `QtModelView' on page 13 undefined on input line 126.
+
+
+LaTeX Warning: Citation `TreeModel' on page 13 undefined on input line 127.
+
+
+LaTeX Warning: Citation `QAbstractItemModel' on page 13 undefined on input line
+ 128.
+
+
+LaTeX Warning: Citation `ParameterEntry' on page 13 undefined on input line 131
+.
+
+
+LaTeX Warning: Citation `TreeItem' on page 13 undefined on input line 134.
+
+[13
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!]
+
+LaTeX Warning: Citation `Delegate' on page 14 undefined on input line 140.
+
+
+LaTeX Warning: Citation `QItemDelegate' on page 14 undefined on input line 141.
+
+
+
+LaTeX Warning: Citation `QTreeView' on page 14 undefined on input line 145.
+
+
+LaTeX Warning: Reference `treeviewFig' on page 14 undefined on input line 145.
+
+
+! LaTeX Error: File `' not found.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.150 		\includegraphics
+                        {graphics/treeview}
+? q
+OK, entering \batchmode...
+! Extra \else.
+\Ginclude@graphics ...in@extensions 
+\@ehc }\else 
+                                                  \@ifundefined {Gin@rule@\G...
+l.150 		\includegraphics
+                        {graphics/treeview}
+I'm ignoring this; it doesn't match any \if.
+
+! Missing \endcsname inserted.
+<to be read again> 
+                   \Gin@ext 
+l.150 		\includegraphics
+                        {graphics/treeview}
+The control sequence marked <to be read again> should
+not appear between \csname and \endcsname.
+
+! Extra \endcsname.
+\@ifundefined ...dafter \ifx \csname #1\endcsname 
+                                                  \relax \expandafter \@firs...
+l.150 		\includegraphics
+                        {graphics/treeview}
+I'm ignoring this, since I wasn't doing a \csname.
+
+
+! LaTeX Error: Unknown graphics extension: \Gin@ext .
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.150 		\includegraphics
+                        {graphics/treeview}
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+! Extra \fi.
+\Gin@ii ...Gin@esetsize \the \toks@ \endgroup \fi 
+                                                  
+l.150 		\includegraphics
+                        {graphics/treeview}
+I'm ignoring this; it doesn't match any \if.
+
+
+! LaTeX Error: File `' not found.
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.150 		\includegraphics
+                        {graphics/treeview}
+I could not locate the file with any of these extensions:
+.png,.pdf,.jpg,.mps,.jpeg,.jbig2,.jb2.PNG,.PDF,.JPG,.JPEG,.JBIG2,.JB2
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+! Extra \else.
+\Ginclude@graphics ...in@extensions 
+\@ehc }\else 
+                                                  \@ifundefined {Gin@rule@\G...
+l.150 		\includegraphics
+                        {graphics/treeview}
+I'm ignoring this; it doesn't match any \if.
+
+! Missing \endcsname inserted.
+<to be read again> 
+                   \Gin@ext 
+l.150 		\includegraphics
+                        {graphics/treeview}
+The control sequence marked <to be read again> should
+not appear between \csname and \endcsname.
+
+! Extra \endcsname.
+\@ifundefined ...dafter \ifx \csname #1\endcsname 
+                                                  \relax \expandafter \@firs...
+l.150 		\includegraphics
+                        {graphics/treeview}
+I'm ignoring this, since I wasn't doing a \csname.
+
+
+! LaTeX Error: Unknown graphics extension: \Gin@ext .
+
+See the LaTeX manual or LaTeX Companion for explanation.
+Type  H <return>  for immediate help.
+ ...                                              
+                                                  
+l.150 		\includegraphics
+                        {graphics/treeview}
+Try typing  <return>  to proceed.
+If that doesn't work, type  X <return>  to quit.
+
+! Extra \fi.
+\Ginclude@graphics ...e {\Gin@base \Gin@ext }}\fi 
+                                                  \endgroup 
+l.150 		\includegraphics
+                        {graphics/treeview}
+I'm ignoring this; it doesn't match any \if.
+
+! Extra \fi.
+\Gin@ii ...Gin@esetsize \the \toks@ \endgroup \fi 
+                                                  
+l.150 		\includegraphics
+                        {graphics/treeview}
+I'm ignoring this; it doesn't match any \if.
+
+! Extra \fi.
+<argument> ... }\@listsubcaptions {\@captype }\fi 
+                                                  
+l.150 		\includegraphics
+                        {graphics/treeview}
+I'm ignoring this; it doesn't match any \if.
+
+) [14
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!]
+No file OptikaSANDReport.bbl.
 \openout2 = `SANDdistribution.aux'.
 
  (./SANDdistribution.tex
 Option "NM": Using the SNL NM default distribution list.
-) [26
+) [15
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
 
 
-] [27
+] [16
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
 
-] [28
+] [17
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
 
-] [29]
+]
 File: snllineblk.pdf Graphic file (type pdf)
- <use snllineblk.pdf> [30] (./OptikaSANDReport.aux
-(./SANDdistribution.aux)) ) 
+ <use snllineblk.pdf> [18
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!] (./OptikaSANDReport.aux (./SANDdistribution.aux))
+
+LaTeX Warning: There were undefined references.
+
+
+LaTeX Warning: Label(s) may have changed. Rerun to get cross-references right.
+
+ ) 
 Here is how much of TeX's memory you used:
- 2463 strings out of 94073
- 34249 string characters out of 1162984
- 94166 words of memory out of 1500000
- 5647 multiletter control sequences out of 10000+50000
- 67035 words of font info for 124 fonts, out of 1200000 for 2000
+ 4343 strings out of 94073
+ 61875 string characters out of 1162984
+ 132057 words of memory out of 1500000
+ 7514 multiletter control sequences out of 10000+50000
+ 56417 words of font info for 103 fonts, out of 1200000 for 2000
  645 hyphenation exceptions out of 8191
- 32i,9n,45p,1053b,299s stack positions out of 5000i,500n,6000p,200000b,5000s
-{/usr/local/texlive/2007/texmf-dist/fonts/enc/dvips/
-base/8r.enc}</usr/local/texlive/2007/texmf-dist/fonts/type1/bluesky/cm/cmsy10.p
-fb></usr/local/texlive/2007/texmf-dist/fonts/type1/bluesky/latex-fonts/lcircle1
-.pfb></usr/local/texlive/2007/texmf-dist/fonts/type1/urw/courier/ucrr8a.pfb></u
-sr/local/texlive/2007/texmf-dist/fonts/type1/urw/helvetic/uhvb8a.pfb></usr/loca
-l/texlive/2007/texmf-dist/fonts/type1/urw/helvetic/uhvr8a.pfb></usr/local/texli
-ve/2007/texmf-dist/fonts/type1/urw/ncntrsbk/uncb8a.pfb></usr/local/texlive/2007
-/texmf-dist/fonts/type1/urw/ncntrsbk/uncr8a.pfb></usr/local/texlive/2007/texmf-
-dist/fonts/type1/urw/times/utmb8a.pfb></usr/local/texlive/2007/texmf-dist/fonts
-/type1/urw/times/utmr8a.pfb></usr/local/texlive/2007/texmf-dist/fonts/type1/urw
-/times/utmri8a.pfb>
-Output written on OptikaSANDReport.pdf (30 pages, 193624 bytes).
+ 32i,9n,45p,225b,435s stack positions out of 5000i,500n,6000p,200000b,5000s
+{/usr/local/texlive/2007/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/local/t
+exlive/2007/texmf-dist/fonts/type1/bluesky/cm/cmsy10.pfb></usr/local/texlive/20
+07/texmf-dist/fonts/type1/urw/helvetic/uhvb8a.pfb></usr/local/texlive/2007/texm
+f-dist/fonts/type1/urw/helvetic/uhvr8a.pfb></usr/local/texlive/2007/texmf-dist/
+fonts/type1/urw/ncntrsbk/uncb8a.pfb></usr/local/texlive/2007/texmf-dist/fonts/t
+ype1/urw/ncntrsbk/uncr8a.pfb></usr/local/texlive/2007/texmf-dist/fonts/type1/ur
+w/times/utmb8a.pfb></usr/local/texlive/2007/texmf-dist/fonts/type1/urw/times/ut
+mr8a.pfb></usr/local/texlive/2007/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
+Output written on OptikaSANDReport.pdf (18 pages, 132914 bytes).
 PDF statistics:
- 157 PDF objects out of 1000 (max. 8388607)
+ 115 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 131072)
- 21 words of extra memory for PDF output out of 10000 (max. 10000000)
+ 26 words of extra memory for PDF output out of 10000 (max. 10000000)
 

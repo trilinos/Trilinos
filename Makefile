@@ -4,14 +4,14 @@
 #
 FILES	= OptikaSANDReport
 
-all:	pdf
+all: realclean	pdf
 
 pdf:	$(addsuffix .pdf, $(FILES))
 
 ps:	$(addsuffix .ps, $(FILES))
 
 # Build one example using pdflatex
-OptikaSANDReport.pdf: OptikaSANDReport.tex Optika.bib SANDreport.cls
+OptikaSANDReport.pdf: OptikaSANDReport.tex OptikaSANDReport.bib SANDreport.cls
 	pdflatex $<
 	bibtex $(basename $<)
 	pdflatex $<
