@@ -71,14 +71,15 @@ int main(int argc, char** argv)
 #ifdef HAVE_EPETRAEXT
   int localProc = 0;
 
-#ifdef HAVE_MPI
   int numProcs;
+#ifdef HAVE_MPI
   MPI_Init(&argc, &argv);
   MPI_Comm_rank(MPI_COMM_WORLD, &localProc);
   MPI_Comm_size(MPI_COMM_WORLD, &numProcs);
   const Epetra_MpiComm Comm(MPI_COMM_WORLD);
 #else
   const Epetra_SerialComm Comm;
+  numProcs = 1;
 #endif
 
   Teuchos::CommandLineProcessor clp(false,true);
