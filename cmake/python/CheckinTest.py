@@ -1258,7 +1258,7 @@ def getLastCommitMessageStrFromRawCommitLogStr(rawLogOutput):
   if foundStatusHeader:
     #print "\nlastNumBlankLines =", lastNumBlankLines
     if origLogStrList[-3] != "":
-      raise Exception("Error, there must be at least one black line before the" \
+      raise Exception("Error, there must be at least one blank line before the" \
         " build/test summary block!  This should never happen!")
     origLogStrList = origLogStrList[0:-lastNumBlankLines-1]
   else:
