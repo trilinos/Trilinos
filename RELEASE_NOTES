@@ -1,5 +1,47 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 10.4 Release Notes                                         #
+#                                                                             #
+###############################################################################
+ 
+Overview:
+ 
+The Trilinos Project is an effort to develop algorithms and enabling
+technologies within an object-oriented software framework for the solution of
+large-scale, complex multi-physics engineering and scientific problems.
+
+Packages:
+
+???
+
+Framework Release Notes:
+
+- Reduction of user CMake cache variables with CMake GUI 2.8.2 and newer
+
+Release 2.8.2 of the CMake QT-based GUI now has seprate check boxes for
+"Grouped" and "Advanced" CMake cache variables.  This, together with changes
+in the Trilinos CMake files to only set defaults for cache variables for
+Trilinos packages that are actually enabled, has made the manipulation of
+CMake varibles much more manageable for Trilinos users.
+
+- ???
+ 
+More information:
+ 
+Trilinos website: http://trilinos.sandia.gov
+ 
+===============================================================================
+ 
+Package Release Notes:
+ 
+-------------------------------------------------------------------------------
+
+???
+
+
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 10.2 Release Notes                                         #
 #                                                                             #
 ###############################################################################
