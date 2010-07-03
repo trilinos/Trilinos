@@ -98,7 +98,6 @@ namespace Teuchos {
 // AnyNumberParameterEntryValidator
 //
 
-const std::string AnyNumberParameterEntryValidator::tagName = "anynumbervalidator";
 
 // Constructors
 
@@ -271,8 +270,8 @@ void AnyNumberParameterEntryValidator::validateAndModify(
   }
 }
 
-XMLObject AnyNumberParameterEntryValidator::getXML() const{
-	XMLObject valiTag(tagName);
+/*XMLObject AnyNumberParameterEntryValidator::getXML() const{
+	XMLObject valiTag(getTagName());
 	XMLObject preferredTypeTag("preferredtype");
 	preferredTypeTag.addInt("value", preferredType_);
 	valiTag.addChild(preferredTypeTag);
@@ -289,7 +288,7 @@ XMLObject AnyNumberParameterEntryValidator::getXML() const{
 		valiTag.addChild(allowStringTag);
 	}
 	return valiTag;
-}
+}*/
 
 // private
 
@@ -333,19 +332,6 @@ void AnyNumberParameterEntryValidator::throwTypeError(
     << "\n\nThe accepted types are: " << acceptedTypesString_ << "!";
     );
 }
-
-template<class S>
-const std::string EnhancedNumberValidatorBase<S>::tagName = "enhancednumbervalidator";
-
-const std::string EnhancedNumberValidator<int>::tagName = "intenhancednumbervalidator";
-
-const std::string EnhancedNumberValidator<short>::tagName = "shortenhancednumbervalidator";
-
-const std::string EnhancedNumberValidator<double>::tagName = "doubleenhancednumbervalidator";
-
-const std::string EnhancedNumberValidator<float>::tagName= "floatenhancednumbervalidator";
-
-const std::string FileNameValidator::tagName = "filenamevalidator";
 
 FileNameValidator::FileNameValidator(bool mustAlreadyExist):ParameterEntryValidator(),mustAlreadyExist_(mustAlreadyExist){}
 
@@ -399,13 +385,13 @@ void FileNameValidator::validate(ParameterEntry const &entry, std::string const 
 	}
 }
 
-XMLObject FileNameValidator::getXML() const{
-	XMLObject valiTag(tagName);
+/*XMLObject FileNameValidator::getXML() const{
+	XMLObject valiTag(getTagName());
 	XMLObject mustAlreadyExistTag("mustalreadyexist");
 	mustAlreadyExistTag.addBool("value", mustAlreadyExist_);
 	valiTag.addChild(mustAlreadyExistTag);
 	return valiTag;
-}
+}*/
 
 void FileNameValidator::printDoc(std::string const &docString, std::ostream &out) const{
 	StrUtils::printLines(out,"# ",docString);
@@ -413,7 +399,6 @@ void FileNameValidator::printDoc(std::string const &docString, std::ostream &out
 	out << "#	FileName Validator\n";
 }
 
-const std::string StringValidator::tagName = "stringvalidator";
 
 StringValidator::StringValidator(ValueList validStrings):
 	ParameterEntryValidator(),
@@ -466,8 +451,8 @@ void StringValidator::validate(ParameterEntry const &entry, std::string const &p
 	}
 }
 
-XMLObject StringValidator::getXML() const{
-	XMLObject valiTag(tagName);
+/*XMLObject StringValidator::getXML() const{
+	XMLObject valiTag(getTagName());
 	XMLObject valuesTag("values");
 	for(ValueList::const_iterator it = validStrings_.begin(); it != validStrings_.end(); ++it){
 		XMLObject valueTag("value");
@@ -476,7 +461,7 @@ XMLObject StringValidator::getXML() const{
 	}
 	valiTag.addChild(valuesTag);
 	return valiTag;
-}
+}*/
 
 
 void StringValidator::printDoc(std::string const &docString, std::ostream &out) const{
@@ -485,7 +470,6 @@ void StringValidator::printDoc(std::string const &docString, std::ostream &out) 
 	out << "#	String Validator\n";
 }
 
-const std::string ArrayValidator::tagName = "arrayvalidator";
 
 
 } // namespace Teuchos

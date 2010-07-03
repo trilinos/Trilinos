@@ -190,6 +190,14 @@ public:
   std::ostream& leftshift(std::ostream& os, bool printFlags = true) const;
 
   //@}
+  
+  static const std::string& getTagName(){
+	static std::string tagName;
+	if(tagName==""){
+		tagName = "Parameter";
+	}
+	return tagName;
+  }
 
 private:
 

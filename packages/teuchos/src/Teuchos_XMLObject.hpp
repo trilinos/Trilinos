@@ -94,11 +94,25 @@ public:
   //! Get a required attribute, returning it as a double
   double getRequiredDouble(const std::string& name) const 
     {return std::atof(getRequired(name).c_str());}
+  
+  //! Get a required attribute, returning it as a float
+	float getRequiredFloat(const std::string& name) const{
+		float toReturn;
+		std::istringstream iss(getRequired(name));
+		iss >> toReturn;
+		return toReturn;
+	}
 
   //! Get a required attribute, returning it as an int
   int getRequiredInt(const std::string& name) const 
     {return std::atoi(getRequired(name).c_str());}
 
+	short getRequiredShort(const std::string& name) const{
+		short toReturn;
+		std::istringstream iss(getRequired(name));
+		iss >> toReturn;
+		return toReturn;
+	}
   //! Get a required attribute, returning it as a bool
   bool getRequiredBool(const std::string& name) const ;
 

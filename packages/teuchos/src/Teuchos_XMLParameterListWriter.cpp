@@ -155,12 +155,12 @@ XMLObject XMLParameterListWriter::toXML(const ParameterEntry& entry) const
       rtn.addAttribute("isUsed","true");
     }
 
-  if (!entry.validator().is_null())
+  /*if (!entry.validator().is_null())
     {
 	  XMLObject valiTag(validatorTagName);
 	  valiTag.addChild(entry.validator()->getXML());
 	  rtn.addChild(valiTag);
-    }
+    }*/
 
   return rtn;
 }

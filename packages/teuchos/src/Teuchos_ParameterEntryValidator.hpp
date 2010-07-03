@@ -121,7 +121,7 @@ public:
       this->validate(*entry,paramName,sublistName);
     }
 
-	virtual XMLObject getXML() const = 0;
+	//virtual XMLObject getXML() const = 0;
   
 };
 
