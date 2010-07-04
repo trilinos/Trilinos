@@ -276,6 +276,7 @@ TEST:  foreach $file (@inpfiles) {
     chomp;
     @foo = grep(/ABR:|ABW:|BRK:|BSR:|BSW:|COR:|FMM:|FMR:|FMW:|FNH:|FUM:|IPR:|IPW:|MAF:|MIU:|MLK:|MRE:|MSE:|NPR:|NPW:|PLK:|SBR:|SBW:|SIG:|SOF:|UMC:|UMR:|WPF:|WPM:|WPN:|WPR:|WPW:|WPX:|ZPR:|ZPW:/, $_);
     print LOG "     Purify error in $zouterrfile:  $_\n" foreach @foo;
+    print "     Purify error in $zouterrfile:  $_\n" foreach @foo;
     $errcnt = @foo;
     $purifyerrcnt += $errcnt;
   }
