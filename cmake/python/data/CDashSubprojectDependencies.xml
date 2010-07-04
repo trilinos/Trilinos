@@ -752,7 +752,7 @@
     <Dependency name="RTOp" type="ITO"/>
     <Dependency name="Kokkos" type="ITO"/>
     <Dependency name="Epetra" type="TO"/>
-    <Dependency name="Zoltan" type="ITO"/>
+    <Dependency name="Zoltan" type="TO"/>
     <Dependency name="Triutils" type="TO"/>
     <Dependency name="Tpetra" type="TO"/>
     <Dependency name="EpetraExt" type="TO"/>
