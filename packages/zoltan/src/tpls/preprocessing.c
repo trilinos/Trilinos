@@ -169,6 +169,7 @@ int Zoltan_Preprocess_Graph(
     ZOLTAN_FREE(&float_vwgt);
     ZOLTAN_FREE(&input_part);
     ZOLTAN_FREE(global_ids);
+    ZOLTAN_FREE(local_ids);
     local = IS_LOCAL_GRAPH(gr->graph_type);
 
     ierr = Zoltan_ZG_Build (zz, graph, local); /* Normal graph */
@@ -197,6 +198,9 @@ int Zoltan_Preprocess_Graph(
     ierr = Zoltan_Get_Obj_List(zz, &gr->num_obj, global_ids, local_ids,
 			       gr->obj_wgt_dim, &float_vwgt, &input_part);
     CHECK_IERR;
+    gr->graph.mtx.mtx.yGID = *global_ids; /* KDD NEEDED TO PREVENT MEMORY LEAK 
+                                                 FOR PARTGEOM METHOD */
+
     if (prt) {
       prt->input_part = input_part;
     }

@@ -363,7 +363,7 @@ int Zoltan_ParMetis(
   Zoltan_Third_Exit(&gr, geo, &prt, &vsp, NULL, NULL);
   if (imb_tols != NULL) ZOLTAN_FREE(&imb_tols);
   if (geo != NULL) ZOLTAN_FREE(&geo);
-  ZOLTAN_FREE(&global_ids);
+  /* KDD ALREADY FREED BY Zoltan_Third_Exit ZOLTAN_FREE(&global_ids); */
   ZOLTAN_FREE(&local_ids);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
@@ -780,7 +780,7 @@ int Zoltan_ParMetis_Order(
 
   ierr = Zoltan_Postprocess_Graph (zz, l_gids, l_lids, &gr, NULL, NULL, NULL, &ord, NULL);
 
-  ZOLTAN_FREE(&l_gids);
+  /* KDD WILL BE FREED IN Zoltan_Third_Exit  ZOLTAN_FREE(&l_gids); */
   ZOLTAN_FREE(&l_lids);
 
 

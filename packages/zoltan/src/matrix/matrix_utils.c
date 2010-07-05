@@ -32,7 +32,7 @@ Zoltan_Matrix_Free(Zoltan_matrix *m)
   ZOLTAN_FREE(&m->yGNO);
   ZOLTAN_FREE(&m->pinGNO);
   ZOLTAN_FREE(&m->pinwgt);
-/*   ZOLTAN_FREE(&m->yGID); */
+  ZOLTAN_FREE(&m->yGID);  
   ZOLTAN_FREE(&m->ybipart);
   ZOLTAN_FREE(&m->ypid);
 
