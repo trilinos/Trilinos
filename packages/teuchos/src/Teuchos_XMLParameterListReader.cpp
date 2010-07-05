@@ -26,10 +26,12 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_XMLParameterListWriter.hpp"
+//#include "Teuchos_XMLParameterListWriter.hpp"
 #include "Teuchos_XMLParameterListReader.hpp"
 #include "Teuchos_TestForException.hpp"
-#include "Teuchos_StrUtils.hpp"
+//#include "Teuchos_StrUtils.hpp"
+#include "Teuchos_ParameterEntryXMLConverterDB.hpp"
+
 
 using namespace Teuchos;
 
@@ -72,6 +74,9 @@ ParameterList XMLParameterListReader::toParameterList(const XMLObject& xml) cons
       else
         {
           const std::string& name = child.getRequired("name");
+			RCP<ParameterEntryXMLConverter> converter = ParameterEntryXMLConverterDB::getConverter(child);
+			rtn.setEntry(name, converter->fromXMLtoParameterEntry(child));
+          /*const std::string& name = child.getRequired("name");
           const std::string& type = child.getRequired("type");
           
           bool isDefault = false;
@@ -187,7 +192,7 @@ ParameterList XMLParameterListReader::toParameterList(const XMLObject& xml) cons
 				  }
 			   }
 			}
-          rtn.setEntry(name, entry);
+          rtn.setEntry(name, entry);*/
         }
                          
     }

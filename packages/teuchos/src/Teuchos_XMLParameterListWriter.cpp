@@ -27,9 +27,10 @@
 // @HEADER
 
 #include "Teuchos_XMLParameterListWriter.hpp"
+#include "Teuchos_ParameterEntryXMLConverterDB.hpp"
 
 using namespace Teuchos;
-const std::string XMLParameterListWriter::validatorTagName = "validator";
+//const std::string XMLParameterListWriter::validatorTagName = "validator";
 
 XMLParameterListWriter::XMLParameterListWriter()
 {;}
@@ -41,16 +42,29 @@ XMLObject XMLParameterListWriter::toXML(const ParameterList& p) const
   
   for (ParameterList::ConstIterator i=p.begin(); i!=p.end(); ++i)
     {
-      const ParameterEntry& val = p.entry(i);
-      const std::string& name = p.name(i);
-      XMLObject child = toXML(val);
-      child.addAttribute("name", name);
-      rtn.addChild(child);
+     const ParameterEntry& entry = p.entry(i);
+     if (entry.isList())
+       {
+          rtn.addChild(toXML(getValue<ParameterList>(entry)));
+       }
+     else
+	   {
+          const std::string& name = p.name(i);
+		  RCP<ParameterEntryXMLConverter> converter = ParameterEntryXMLConverterDB::getConverter(entry);
+          rtn.addChild(converter->fromParameterEntrytoXML(entry, name));
+		 /* const ParameterEntry& val = p.entry(i);
+		  const std::string& name = p.name(i);
+		  XMLObject child = toXML(val);
+		  child.addAttribute("name", name);
+		  rtn.addChild(child);
+		  */
+	   }
     }
 
   return rtn;
 }
 
+/*
 XMLObject XMLParameterListWriter::toXML(const ParameterEntry& entry) const
 {
   if (entry.isList())
@@ -155,13 +169,13 @@ XMLObject XMLParameterListWriter::toXML(const ParameterEntry& entry) const
       rtn.addAttribute("isUsed","true");
     }
 
-  /*if (!entry.validator().is_null())
+  if (!entry.validator().is_null())
     {
 	  XMLObject valiTag(validatorTagName);
 	  valiTag.addChild(entry.validator()->getXML());
 	  rtn.addChild(valiTag);
-    }*/
+    }
 
   return rtn;
-}
+}*/
 

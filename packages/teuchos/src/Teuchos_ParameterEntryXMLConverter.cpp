@@ -30,12 +30,12 @@
 
 namespace Teuchos{
 
-ParameterEntry& ParameterEntryXMLConverter::fromXMLtoParameterEntry(XMLObject &xmlObj) const{
+ParameterEntry ParameterEntryXMLConverter::fromXMLtoParameterEntry(const XMLObject &xmlObj) const{
 	ParameterEntry toReturn;
 	bool isDefault = false;
 	bool isUsed = false;
 
-	if(xmlObj.hasAttritbute("isDefault")){
+	if(xmlObj.hasAttribute("isDefault")){
 		isDefault = xmlObj.getRequiredBool("isDefault");
 	}
 
@@ -43,22 +43,22 @@ ParameterEntry& ParameterEntryXMLConverter::fromXMLtoParameterEntry(XMLObject &x
 		isUsed = xmlObj.getRequiredBool("isUsed");
 	}
 
-	ParameterEntry entry;
-	setEntryValue(entry, xmlObj, isDefault);
+	setEntryValue(toReturn, xmlObj, isDefault);
 	
 	if(isUsed){
-		entry.getAny();
+		toReturn.getAny();
 	}
 	
 	return toReturn;
 }
 
-XMLObject& ParameterEntryXMLConverter::fromParameterEntrytoXML(ParameterEntry &entry) const{
+XMLObject ParameterEntryXMLConverter::fromParameterEntrytoXML(const ParameterEntry &entry, const std::string &name) const{
 	XMLObject toReturn(ParameterEntry::getTagName());
-	toReturn.addAttribute("type", getTypeAttributeValue(entry));
+	toReturn.addAttribute("name", name);
+	toReturn.addAttribute("type", getTypeAttributeValue());
 	toReturn.addAttribute("value", getValueAttributeValue(entry));
-	toReturn.addAttribute("isDefault",entry.isDefault());
-	toReturn.addAttribute("isUsed", entry.isUsed());
+	toReturn.addBool("isDefault",entry.isDefault());
+	toReturn.addBool("isUsed", entry.isUsed());
 	return toReturn;
 }
 

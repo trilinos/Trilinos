@@ -39,11 +39,12 @@ namespace Teuchos {
 
 class ParameterEntryXMLConverter{
 public:
-	virtual ParameterEntry& fromXMLtoParameterEntry(XMLObject &xmlObj) const;
-	virtual XMLObject& fromParameterEntrytoXML(ParameterEntry &entry) const;
-	virtual std::string& getTypeAttributeValue(ParameterEntry &entry) const=0;
-	virtual std::string& getValueAttributeValue(ParameterEntry &entry) const=0;
-	virtual void setEntryValue(ParameterEntry &entry, XMLObject &xmlObj, bool isDefault) const=0;
+	virtual ParameterEntry fromXMLtoParameterEntry(const XMLObject &xmlObj) const;
+	virtual XMLObject fromParameterEntrytoXML(const ParameterEntry &entry, const std::string &name) const;
+	virtual std::string getTypeAttributeValue() const=0;
+	virtual std::string getValueAttributeValue(const ParameterEntry &entry) const=0;
+	virtual void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const=0;
+	virtual bool isAppropriateConverter(const ParameterEntry& entry) const=0;
 };
 
 }
