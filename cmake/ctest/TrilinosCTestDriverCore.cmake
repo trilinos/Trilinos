@@ -346,6 +346,10 @@ ENDMACRO()
 # queued errors.
 #
 MACRO(CTEST_SUBMIT)
+  IF(NOT "$ENV{CTEST_DROP_SITE}" STREQUAL "")
+    SET(CTEST_DROP_SITE "$ENV{CTEST_DROP_SITE}")
+  ENDIF()
+
   #
   # Call the original CTEST_SUBMIT and pay attention to its RETURN_VALUE:
   #
