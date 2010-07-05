@@ -246,7 +246,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
 
   if ((outmat->mtx.nPins + outmat->mtx.nY >0) && (proclist == NULL || sendbuf == NULL)) MEMORY_ERROR;
 
-  wgtarray = (float*) ZOLTAN_MALLOC(outmat->mtx.nPins*outmat->mtx.pinwgtdim*sizeof(float));
+  wgtarray = (float*) ZOLTAN_MALLOC((outmat->mtx.nPins+outmat->mtx.nY)*outmat->mtx.pinwgtdim*sizeof(float));
 
   yGNO = outmat->mtx.yGNO;
   pinGNO = outmat->mtx.pinGNO;
@@ -279,9 +279,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
         continue;
       sendbuf[cnt].GNO[0] = edge_gno;
       sendbuf[cnt].GNO[1] = -1;
-#ifdef HAVE_PURIFY
       memset(wgtarray+cnt*outmat->mtx.pinwgtdim, 0,outmat->mtx.pinwgtdim*sizeof(float));
-#endif
       cnt++;
     }
   }
