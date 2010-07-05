@@ -19,19 +19,11 @@
 # cmake_version_dev:
 #   Latest available build for vdir "vCVS" -- detected automatically
 #
-# The value of cmake_version_min below is set to the first available build of
-# CMake v2.7 with three pre-built binaries: for Linux, Mac and Windows.
-# 20090924 was the very first day that Kitware produced all three binaries
-# in the vCVS directory... prior to that, only Windows binaries were available
-# nightly. This is the only available date for pre-built binaries on all three
-# platforms for v2.7. On 9/25, the CMake-2-8 branch was created, and Kitware
-# started producing v2.9 binaries in vCVS.
-#
 
-cmake_version_min = "2.7.20090924" # manual_update
+cmake_version_min = "2.8.0" # manual_update
 
 cmake_version_release = "2.8.1" # manual_update
 
-cmake_version_rc = "2.8.1" # auto_update v2.8
+cmake_version_rc = "2.8.2" # auto_update v2.8
 
-cmake_version_dev = "2.9.20100317" # auto_update vCVS
+cmake_version_dev = "2.8.2.20100704-g538994" # auto_update vCVS

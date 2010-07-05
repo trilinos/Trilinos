@@ -189,7 +189,7 @@ def DetectLatestCMakeBuilds(basedir, baseurl, vdir):
 
   lines = []
   regex = re.compile(
-    "href.*cmake-[0-9.]+(-rc[0-9]+)*-(Darwin-universal.tar.gz|Linux-i386.tar.gz|win32-x86.zip)"
+    "href.*cmake-[0-9.]+(-rc[0-9]+)*(-g[0-9a-fA-F]+)*-(Darwin-universal.tar.gz|Linux-i386.tar.gz|win32-x86.zip)"
   )
 
   f = open(filename)
@@ -202,8 +202,8 @@ def DetectLatestCMakeBuilds(basedir, baseurl, vdir):
   found = 0
   version_iterator = ""
 
-  versionRegEx = re.compile(r'.*-([0-9.]+-rc[0-9]+|[0-9.]+)-.*')
-  dateRegEx = re.compile(r'^[0-9].[0-9].([0-9.]+-rc[0-9]+|[0-9.]+)$')
+  versionRegEx = re.compile(r'.*-([0-9.]+-rc[0-9]+|[0-9.]+-g[0-9a-fA-F]+|[0-9.]+)-.*')
+  dateRegEx = re.compile(r'^[0-9].[0-9].([0-9.]+-rc[0-9]+|[0-9.]+-g[0-9a-fA-F]+|[0-9.]+)$')
   hrefRegEx = re.compile(r'^.*href="([^"]+)".*$')
 
   for line in lines:
@@ -447,7 +447,7 @@ def ReadWriteCMakeVersionsFile(download_dir, detected):
 
 print ""
 print "**************************************************************************"
-print "Script: downoad-cmake.py \\"
+print "Script: download-cmake.py \\"
 
 if options.allPlatforms:
   print "  --all-platforms \\"
