@@ -229,7 +229,7 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(const Teuchos::RCP<const Map
 
   LocalOrdinal firstPoint = pointMap->getMinLocalIndex();
   size_t sum_blockSizes = 0;
-  typename Teuchos::ArrayView<LocalOrdinal>::const_iterator
+  typename Teuchos::ArrayView<const LocalOrdinal>::const_iterator
     iter = blockSizes.begin(), iend = blockSizes.end();
   LocalOrdinal firstBlockSize = *iter;
 
