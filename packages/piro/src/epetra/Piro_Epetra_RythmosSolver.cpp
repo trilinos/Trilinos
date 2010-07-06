@@ -463,7 +463,7 @@ Teuchos::RCP<const Teuchos::ParameterList>
 Piro::Epetra::RythmosSolver::getValidRythmosParameters() const
 {
   Teuchos::RCP<Teuchos::ParameterList> validPL =
-     rcp(new Teuchos::ParameterList("ValidRythmosParams"));;
+     Teuchos::rcp(new Teuchos::ParameterList("ValidRythmosParams"));;
   validPL->sublist("NonLinear Solver", false, "");
   validPL->set<int>("Num Time Steps", 0, "");
   validPL->set<double>("Final Time", 1.0, "");
