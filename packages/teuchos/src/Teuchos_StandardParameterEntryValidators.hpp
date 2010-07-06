@@ -191,6 +191,18 @@ public:
     const std::string &defaultValue
     ) const;
 
+  /** \brief Get a pointer to the array containing all the documentation strings.
+   *
+   * \return A point to the array containing all the documentation strings.
+   */
+  const RCP<const Array<std::string> > getStringDocs() const;
+
+  /** \brief Get the name of the default parameter for the validator.
+   *
+   * \return The name of the default parameter for the validator.
+   */
+  const std::string& getDefaultParameterName() const
+
   /** \brief Validate the std::string and pass it on..
    *
    * \param  str  [in] String that is being used to lookup the corresponding
@@ -227,18 +239,9 @@ public:
     std::string const& sublistName
     ) const;
 
-  /** \brief . */
-  //virtual XMLObject getXML() const;
   //@}
 
-  /** \brief . */
-  static RCP<StringToIntegralParameterEntryValidator<IntegralType> > fromXML(XMLObject xmlObj);
 
-  /*static const std::string& getTagName(){
-	static const std::string tagName = "stringintegralvalidator";
-	return tagName;
-  }*/
-  //@}
 
 private:
 
@@ -1582,6 +1585,11 @@ StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameter
 #ifdef TEUCHOS_DEBUG
   TEUCHOS_ASSERT_EQUALITY( strings.size(), integralValues.size() );
 #endif
+  TEST_FOR_EXCEPTION(
+    strings.size() != integralValues.size(),
+	std::logic_error,
+	"Error, strings and integraValues must be of the same length."
+  );
   typedef typename map_t::value_type val_t;
   for( int i = 0; i < static_cast<int>(strings.size()); ++i ) {
     const bool unique = map_.insert( val_t( strings[i], integralValues[i] ) ).second;
@@ -1608,6 +1616,16 @@ StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameter
   TEUCHOS_ASSERT_EQUALITY( strings.size(), stringsDocs.size() );
   TEUCHOS_ASSERT_EQUALITY( strings.size(), integralValues.size() );
 #endif
+  TEST_FOR_EXCEPTION(
+    strings.size() != integralValues.size(),
+	std::logic_error,
+	"Error, strings and integraValues must be of the same length."
+  );
+  TEST_FOR_EXCEPTION(
+    strings.size() != stringsDocs.size(),
+	std::logic_error,
+	"Error, strings and stringsDocs must be of the same length."
+  );
   typedef typename map_t::value_type val_t;
   for( int i = 0; i < static_cast<int>(strings.size()); ++i ) {
     const bool unique = map_.insert( val_t( strings[i], integralValues[i] ) ).second;
@@ -1708,6 +1726,19 @@ StringToIntegralParameterEntryValidator<IntegralType>::getStringValue(
   return strValue;
 }
 
+template<class IntegralType>
+const RCP<const Array<std::string> > 
+StringToIntegralParameterEntryValidator::getStringDocs() const
+{
+  return validStringValuesDocs_; 
+}
+
+template<class IntegralType>
+const std::string&
+StringToIntegralParameterEntryValidator::getDefaultParameterName() const
+{
+  return defaultParameterName_; 
+}
 
 template<class IntegralType>
 std::string
