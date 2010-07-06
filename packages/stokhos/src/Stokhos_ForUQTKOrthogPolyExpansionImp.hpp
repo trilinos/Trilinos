@@ -55,10 +55,12 @@ extern "C" {
 template <typename ordinal_type, typename value_type> 
 Stokhos::ForUQTKOrthogPolyExpansion<ordinal_type, value_type>::
 ForUQTKOrthogPolyExpansion(
-			   const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis_,
-			   EXPANSION_METHOD method_,
-			   value_type rtol_) :
+  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<ordinal_type, value_type> >& basis_,
+  const Teuchos::RCP<const Stokhos::Sparse3Tensor<ordinal_type, value_type> >& Cijk_,
+  EXPANSION_METHOD method_,
+  value_type rtol_) :
   basis(basis_),
+  Cijk(Cijk_),
   rtol(rtol_),
   method(method_)
 {
