@@ -45,11 +45,6 @@ ParameterList XMLParameterListReader::toParameterList(const XMLObject& xml) cons
                      << xml.getTag());
 
   ParameterList rtn;
-  
-  if (xml.hasAttribute("name"))
-    {
-      rtn.setName(xml.getAttribute("name"));
-    }
 
   for (int i=0; i<xml.numChildren(); i++)
     {
@@ -64,7 +59,13 @@ ParameterList XMLParameterListReader::toParameterList(const XMLObject& xml) cons
 
       if (child.getTag()=="ParameterList")
         {
-          const std::string& name = child.getRequired("name");
+          TEST_FOR_EXCEPTION( !child.hasAttribute("name"), 
+                         std::runtime_error,
+                         "ParameterList tags must "
+						 "have a name attribute"
+                         << child.getTag());
+
+		  const std::string& name = child.getRequired("name");
 
           ParameterList sublist = toParameterList(child);
           sublist.setName(name);
@@ -76,127 +77,8 @@ ParameterList XMLParameterListReader::toParameterList(const XMLObject& xml) cons
           const std::string& name = child.getRequired("name");
 			RCP<ParameterEntryXMLConverter> converter = ParameterEntryXMLConverterDB::getConverter(child);
 			rtn.setEntry(name, converter->fromXMLtoParameterEntry(child));
-          /*const std::string& name = child.getRequired("name");
-          const std::string& type = child.getRequired("type");
-          
-          bool isDefault = false;
-          bool isUsed = false;
-          if (child.hasAttribute("isDefault")) 
-          {
-            isDefault = child.getRequiredBool("isDefault");
-          }
-          if (child.hasAttribute("isUsed")) 
-          {
-            isUsed = child.getRequiredBool("isUsed");
-          }
-
-          // setValue assigns isUsed to false
-          // getValue assigns isUsed to true
-
-          ParameterEntry entry;
-          if (type=="double" || type=="float")
-            {
-              entry.setValue<double>(child.getRequiredDouble("value"), 
-                                     isDefault);
-              if (isUsed) {
-                double tmp = entry.getValue<double>(&tmp);
-              }
-            }
-          else if (type=="short")
-            {
-              entry.setValue<short>(child.getRequiredInt("value"), 
-                                  isDefault);
-              if (isUsed) {
-                short tmp = entry.getValue<short>(&tmp);
-              }
-            }
-          else if (type=="int")
-            {
-              entry.setValue<int>(child.getRequiredInt("value"), 
-                                  isDefault);
-              if (isUsed) {
-                int tmp = entry.getValue<int>(&tmp);
-              }
-            }
-          else if (type=="bool")
-            {
-              entry.setValue<bool>(child.getRequiredBool("value"), 
-                                   isDefault);
-              if (isUsed) {
-                bool tmp = entry.getValue<bool>(&tmp);
-              }
-            }
-          else if (type=="string")
-            {
-              entry.setValue<std::string>(child.getRequired("value"), 
-                                     isDefault);
-              if (isUsed) {
-                std::string tmp = entry.getValue<std::string>(&tmp);
-              }
-            }
-					else if (type=="Array int")
-						{
-							entry.setValue<Array<int> >(Teuchos::fromStringToArray<int>(child.getRequired("value")),
-																			isDefault);
-							if (isUsed) {
-								Array<int> tmp = entry.getValue<Array<int> >(&tmp);
-							}
-						}
-					else if (type=="Array short")
-						{
-							entry.setValue<Array<short> >(Teuchos::fromStringToArray<short>(child.getRequired("value")),
-																			isDefault);
-							if (isUsed) {
-								Array<short> tmp = entry.getValue<Array<short> >(&tmp);
-							}
-						}
-					else if (type=="Array float")
-						{
-							entry.setValue<Array<float> >(Teuchos::fromStringToArray<float>(child.getRequired("value")),
-																			isDefault);
-							if (isUsed) {
-								Array<float> tmp = entry.getValue<Array<float> >(&tmp);
-							}
-						}
-					else if (type=="Array double")
-						{
-							entry.setValue<Array<double> >(Teuchos::fromStringToArray<double>(child.getRequired("value")),
-																			isDefault);
-							if (isUsed) {
-								Array<double> tmp = entry.getValue<Array<double> >(&tmp);
-							}
-						}
-					else if (type=="Array string")
-						{
-							entry.setValue<Array<std::string> >(Teuchos::fromStringToArray<std::string>(child.getRequired("value")),
-																			isDefault);
-							if (isUsed) {
-								Array<std::string> tmp = entry.getValue<Array<std::string> >(&tmp);
-							}
-						}
-          else 
-            {
-              entry.setValue<std::string>(child.getRequired("value"), 
-                                   isDefault);
-              if (isUsed) {
-                std::string tmp = entry.getValue<std::string>(&tmp);
-              }
-            }
-		  int paramChildren = child.numChildren();
-		  if(paramChildren !=0)
-		    {
-			   for(int j=0; i<paramChildren; ++j){
-			      XMLObject currentChild = child.getChild(i);
-				  if(currentChild.getTag() == XMLParameterListWriter::validatorTagName){
-
-				  }
-			   }
-			}
-          rtn.setEntry(name, entry);*/
         }
-                         
     }
-
   return rtn;
-                     
 }
+
