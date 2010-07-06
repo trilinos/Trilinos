@@ -367,6 +367,7 @@ ZOLTAN_CMAKE = \
        cmake/Zoltan_config.h.in
 
 EXTRA_DIST = config/generate-makeoptions.pl \
+       README.html README.txt \
        config/strip_dup_incl_paths.pl config/strip_dup_libs.pl \
        config/replace-install-prefix.pl config/string-replace.pl \
        config/token-replace.pl \
