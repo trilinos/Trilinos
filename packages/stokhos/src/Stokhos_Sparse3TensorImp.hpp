@@ -31,7 +31,7 @@
 template <typename ordinal_type, typename value_type>
 Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 Sparse3Tensor(ordinal_type sz) :
-  i_indices(sz),
+  k_indices(sz),
   j_indices(sz),
   Cijk_values(sz),
   j_values(sz),
@@ -50,15 +50,15 @@ ordinal_type
 Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 size() const
 {
-  return Cijk_values.size();
+  return j_values.size();
 }
 
 template <typename ordinal_type, typename value_type>
 ordinal_type
 Stokhos::Sparse3Tensor<ordinal_type, value_type>::
-num_values(ordinal_type k) const
+num_values(ordinal_type i) const
 {
-  return Cijk_values[k].size();
+  return Cijk_values[i].size();
 }
 
 template <typename ordinal_type, typename value_type>
@@ -72,12 +72,12 @@ num_j(ordinal_type k) const
 template <typename ordinal_type, typename value_type>
 void
 Stokhos::Sparse3Tensor<ordinal_type, value_type>::
-value(ordinal_type k, ordinal_type l, ordinal_type& i, ordinal_type& j, 
+value(ordinal_type i, ordinal_type l, ordinal_type& k, ordinal_type& j, 
       value_type& c) const
 {
-  i = i_indices[k][l];
-  j = j_indices[k][l];
-  c = Cijk_values[k][l];
+  k = k_indices[i][l];
+  j = j_indices[i][l];
+  c = Cijk_values[i][l];
 }
 
 template <typename ordinal_type, typename value_type>
@@ -117,9 +117,9 @@ void
 Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 add_term(ordinal_type i, ordinal_type j, ordinal_type k, const value_type& c)
 {
-  i_indices[k].push_back(i);
-  j_indices[k].push_back(j);
-  Cijk_values[k].push_back(c);
+  k_indices[i].push_back(k);
+  j_indices[i].push_back(j);
+  Cijk_values[i].push_back(c);
 
   ordinal_type l = j_values[k].size()-1;
   if (j_values[k].size() == 0 || j_values[k][l].j != j) {
@@ -190,11 +190,11 @@ void
 Stokhos::Sparse3Tensor<ordinal_type, value_type>::
 print(std::ostream& os) const
 {
-  for (ordinal_type k=0; k<static_cast<ordinal_type>(Cijk_values.size()); k++)
-    for (ordinal_type l=0; l<static_cast<ordinal_type>(Cijk_values[k].size()); 
+  for (ordinal_type i=0; i<static_cast<ordinal_type>(Cijk_values.size()); i++)
+    for (ordinal_type l=0; l<static_cast<ordinal_type>(Cijk_values[i].size()); 
 	 l++)
-      os << "k = " << k << ", l = " << l 
-	 << ", i = " << i_indices[k][l] << ", j = " << j_indices[k][l]
-	 << ", Cijk = " << Cijk_values[k][l] << std::endl;
+      os << "i = " << i << ", l = " << l 
+	 << ", k = " << k_indices[i][l] << ", j = " << j_indices[i][l]
+	 << ", Cijk = " << Cijk_values[i][l] << std::endl;
 }
 

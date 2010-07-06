@@ -73,7 +73,7 @@ int
 Stokhos::KLMatrixFreeEpetraOp::SetUseTranspose(bool UseTranspose) 
 {
   useTranspose = UseTranspose;
-  for (unsigned int i=0; i<num_blocks; i++)
+  for (unsigned int i=0; i<block_ops.size(); i++)
     (block_ops)[i]->SetUseTranspose(useTranspose);
 
   return 0;

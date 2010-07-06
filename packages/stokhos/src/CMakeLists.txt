@@ -101,6 +101,7 @@ SET(HEADERS ${HEADERS}
   Stokhos_MatrixFreeEpetraOp.hpp
   Stokhos_KLMatrixFreeEpetraOp.hpp
   Stokhos_MeanEpetraOp.hpp
+  Stokhos_GaussSeidelEpetraOp.hpp
   Stokhos_PreconditionerFactory.hpp
   Stokhos_IfpackPreconditionerFactory.hpp
   Stokhos_MLPreconditionerFactory.hpp
@@ -132,6 +133,7 @@ SET(SOURCES ${SOURCES}
   Stokhos_MatrixFreeEpetraOp.cpp
   Stokhos_KLMatrixFreeEpetraOp.cpp
   Stokhos_MeanEpetraOp.cpp
+  Stokhos_GaussSeidelEpetraOp.cpp
   Stokhos_IfpackPreconditionerFactory.cpp
   Stokhos_MLPreconditionerFactory.cpp
   Stokhos_MLPrecOp.cpp
@@ -153,6 +155,20 @@ IF (Stokhos_ENABLE_Sacado)
     sacado/Sacado_PCE_OrthogPoly.hpp
     sacado/Sacado_PCE_OrthogPolyImp.hpp
     sacado/Sacado_PCE_OrthogPolyTraits.hpp
+    )
+ENDIF()
+
+# NOX
+IF (Stokhos_ENABLE_NOX AND NOX_ENABLE_ABSTRACT_IMPLEMENTATION_EPETRA AND
+    NOX_ENABLE_EpetraExt)
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/nox)
+  SET(HEADERS ${HEADERS}
+    nox/NOX_Epetra_LinearSystem_SGJacobi.hpp
+    nox/NOX_Epetra_LinearSystem_SGGS.hpp
+    )
+  SET(SOURCES ${SOURCES}
+    nox/NOX_Epetra_LinearSystem_SGJacobi.cpp
+    nox/NOX_Epetra_LinearSystem_SGGS.cpp
     )
 ENDIF()
 

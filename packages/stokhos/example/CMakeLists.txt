@@ -70,6 +70,27 @@ IF(Stokhos_ENABLE_TriKota)
        COMM serial mpi
      )
 
+     PACKAGE_ADD_EXECUTABLE(
+       Linear2D_Diffusion_PCE_Example
+       SOURCES linear2d_diffusion_pce.cpp
+               twoD_diffusion_ME.hpp twoD_diffusion_ME.cpp
+       COMM serial mpi
+      )
+
+     PACKAGE_ADD_EXECUTABLE(
+       Linear2D_Diffusion_PCE_NOX_Example
+       SOURCES linear2d_diffusion_pce_nox.cpp
+               twoD_diffusion_ME.hpp twoD_diffusion_ME.cpp
+       COMM serial mpi
+      )
+
+     PACKAGE_ADD_EXECUTABLE(
+       Linear2D_Diffusion_PCE_NOX_SG_Solvers
+       SOURCES linear2d_diffusion_pce_nox_sg_solvers.cpp
+               twoD_diffusion_ME.hpp twoD_diffusion_ME.cpp
+       COMM serial mpi
+      )
+ 
   ENDIF()
 
 ENDIF()

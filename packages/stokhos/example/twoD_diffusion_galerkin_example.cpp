@@ -144,6 +144,7 @@ double meshSize = x[1]-x[0];
 Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<int,double> > > bases(d);
 for (int i = 0; i< d; i++){
   bases[i] = Teuchos::rcp(new Stokhos::DiscretizedStieltjesBasis<int,double>("beta",p,&weight,-weightCut,weightCut,true));
+  //bases[i] = Teuchos::rcp(new Stokhos::LegendreBasis<int,double>(p));
 }
 
 Teuchos::RCP<const Stokhos::CompletePolynomialBasis<int,double> > basis =
@@ -181,6 +182,10 @@ int *Indices = new int[4];
 double two;
 int NumEntries;
 int * bcIndices = new int[NumMyElements]; 
+
+  std::string filename;
+  std::string filename1("B");
+  std::string filename2(".mm");
 
 for(int k = 0; k<=d; k++){
   for(int i = 0; i<NumMyElements; i++){
@@ -225,6 +230,11 @@ for(int k = 0; k<=d; k++){
     if (bcIndices[i]==0 || k == 0) A_k[k]->InsertGlobalValues(MyGlobalElements[i], 1, &two, MyGlobalElements+i);
  }
  A_k[k]->FillComplete();
+ std::stringstream ss;
+ ss << k ;
+ std::string sstr = ss.str();
+ filename = filename1 + sstr + filename2;
+ EpetraExt::RowMatrixToMatrixMarketFile(filename.c_str(), *(A_k[k]));
 }
 
 //Construct the implicit operator.
@@ -273,7 +283,8 @@ Teuchos::Time SolutionTimer("Total Timer",false);
 SolutionTimer.start();
 aztec_solver.Iterate(1000, 1e-12);
 SolutionTimer.stop();
-
+std::cout << "x2" <<x2 << std::endl;
+//std::cout << b << std::endl;
 //////////////////////////////////////////////////////////////////////
 //Post process and output the results.
 ////////////////////////////////////////////////////////////////////

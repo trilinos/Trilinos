@@ -39,7 +39,8 @@ Stokhos::MatrixFreeEpetraOp::MatrixFreeEpetraOp(
  const Teuchos::RCP<const Epetra_Map>& range_sg_map_,
  const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis_,
  const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk_,
- const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops_) 
+ const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops_, 
+ bool scaleOP_) 
   : label("Stokhos Matrix Free Operator"),
     domain_base_map(domain_base_map_),
     range_base_map(range_base_map_),
@@ -48,6 +49,7 @@ Stokhos::MatrixFreeEpetraOp::MatrixFreeEpetraOp(
     sg_basis(sg_basis_),
     Cijk(Cijk_),
     block_ops(ops_),
+    scaleOP(scaleOP_),
     useTranspose(false),
     expansion_size(sg_basis->size()),
     num_blocks(block_ops->size()),
@@ -166,8 +168,14 @@ Stokhos::MatrixFreeEpetraOp::Apply(const Epetra_MultiVector& Input,
       for (int i=0; i<i_indices.size(); i++) {
   	int ii = i_indices[i];
 	for (int mm=0; mm<m; mm++)
+          if (scaleOP) { // \sum_j \sum_k \frac{<\psi_i \psi_j \psi_k>}{<\psi_i^2>}K_k u_j
 	  (*result_block[ii])(mm)->Update(c_values[i]/norms[ii], 
 					  *result_tmp(l*m+mm), 1.0);
+          } 
+          else { // \sum_j \sum_k \frac{<\psi_i \psi_j \psi_k>} K_k u_j
+	  (*result_block[ii])(mm)->Update(c_values[i], 
+					  *result_tmp(l*m+mm), 1.0);
+          }
       }
     }
   }

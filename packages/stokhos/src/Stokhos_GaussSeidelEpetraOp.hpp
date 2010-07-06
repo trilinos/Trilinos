@@ -28,58 +28,43 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_MATRIX_FREE_EPETRA_OP_HPP
-#define STOKHOS_MATRIX_FREE_EPETRA_OP_HPP
+#ifndef STOKHOS_GAUSS_SEIDEL_EPETRA_OP_HPP
+#define STOKHOS_GAUSS_SEIDEL_EPETRA_OP_HPP
 
 #include "Teuchos_RCP.hpp"
-#include "Teuchos_Array.hpp"
-#include "Teuchos_Time.hpp"
+
+#include "NOX_Epetra_LinearSystem.H"    // base class
+#include "Stokhos.hpp"
 
 #include "Epetra_Operator.h"
 #include "Epetra_Map.h"
-#include "Epetra_Comm.h"
-#include "Epetra_MultiVector.h"
-#include "Stokhos_OrthogPolyBasis.hpp"
-#include "Stokhos_Sparse3Tensor.hpp"
-#include "Stokhos_VectorOrthogPoly.hpp"
-#include "Stokhos_VectorOrthogPolyTraitsEpetra.hpp"
 
 namespace Stokhos {
     
   /*! 
-   * \brief An Epetra operator representing the block stochastic Galerkin
-   * operator.
+   * \brief An Epetra operator representing applying the mean in a block
+   * stochastic Galerkin expansion.
    */
-  class MatrixFreeEpetraOp : public Epetra_Operator {
+  class GaussSeidelEpetraOp : public Epetra_Operator {
       
   public:
 
     //! Constructor 
-    MatrixFreeEpetraOp(
-      const Teuchos::RCP<const Epetra_Map>& domain_base_map_,
-      const Teuchos::RCP<const Epetra_Map>& range_base_map_,
-      const Teuchos::RCP<const Epetra_Map>& domain_sg_map_,
-      const Teuchos::RCP<const Epetra_Map>& range_sg_map_,
-      const Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> >& sg_basis,
-      const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk,
-      const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops,
-      bool scaleOP = true);
+  GaussSeidelEpetraOp(
+  const Teuchos::RCP<const Epetra_Map>& base_map_,
+  const Teuchos::RCP<const Epetra_Map>& sg_map_,
+  unsigned int num_blocks_,
+  Teuchos::ParameterList& linearSolverParams,
+  const Teuchos::RCP<NOX::Epetra::LinearSystem>& detsolve_,
+  const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk_,
+  const Teuchos::RCP<Epetra_Operator>& J);
     
     //! Destructor
-    virtual ~MatrixFreeEpetraOp();
+    virtual ~GaussSeidelEpetraOp();
 
-    //! Reset operator blocks
-    virtual void 
-    reset(const Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> >& ops);
+    void setOperatorAndConstructPreconditioner(
+      const Teuchos::RCP<Epetra_Operator>& J, const Epetra_Vector& x);
 
-    //! Get operator blocks
-    virtual Teuchos::RCP<const Stokhos::VectorOrthogPoly<Epetra_Operator> >
-    getOperatorBlocks() const;
-
-    //! Get operator blocks
-    virtual Teuchos::RCP< Stokhos::VectorOrthogPoly<Epetra_Operator> >
-    getOperatorBlocks();
-    
     //! Set to true if the transpose of the operator is requested
     virtual int SetUseTranspose(bool UseTranspose);
     
@@ -130,75 +115,54 @@ namespace Stokhos {
      */
     virtual const Epetra_Map& OperatorRangeMap () const;
 
-    /*!
-     * \brief Returns the time spent applying this operator
-     */
-    virtual const double ApplyTime() const{
-      return this->ApplyTimer->totalElapsedTime(false);};
-
   private:
     
     //! Private to prohibit copying
-    MatrixFreeEpetraOp(const MatrixFreeEpetraOp&);
+    GaussSeidelEpetraOp(const GaussSeidelEpetraOp&);
     
     //! Private to prohibit copying
-    MatrixFreeEpetraOp& operator=(const MatrixFreeEpetraOp&);
+    GaussSeidelEpetraOp& operator=(const GaussSeidelEpetraOp&);
     
   protected:
     
     //! Label for operator
     std::string label;
     
-    //! Stores domain base map
-    Teuchos::RCP<const Epetra_Map> domain_base_map;
+    //! Stores base map
+    Teuchos::RCP<const Epetra_Map> base_map;
 
-    //! Stores range base map
-    Teuchos::RCP<const Epetra_Map> range_base_map;
-
-    //! Stores domain SG map
-    Teuchos::RCP<const Epetra_Map> domain_sg_map;
-
-    //! Stores range SG map
-    Teuchos::RCP<const Epetra_Map> range_sg_map;
-
-    //! Stochastic Galerking basis
-    Teuchos::RCP<const Stokhos::OrthogPolyBasis<int,double> > sg_basis;
-
-    //! Stores triple product tensor
-    Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
-
-    //! Stores operators
-    Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> > block_ops;
-
-    //! Flag indicating whether operator be scaled with <\psi_i^2>
-    bool scaleOP;
+    //! Stores SG map
+    Teuchos::RCP<const Epetra_Map> sg_map;
 
     //! Flag indicating whether transpose was selected
     bool useTranspose;
 
-    //! Number of terms in expansion
-    int expansion_size;
+    //! Number of blocks
+    unsigned int num_blocks;
+  
+     //! Pointer to deterministic solver
+    Teuchos::RCP<NOX::Epetra::LinearSystem> detsolve;
 
-    //! Number of Jacobian blocks (not necessarily equal to expansion_size)
-    int num_blocks;
+    //! Pointer to Cijk
+    Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
 
-    //! MultiVectors for each block for Apply() input
-    mutable Teuchos::Array< Teuchos::RCP<const Epetra_MultiVector> > input_block;
+    //! Pointer to the Jacobian operator.
+    mutable Teuchos::RCP<Epetra_Operator> jacPtr;
 
-    //! MultiVectors for each block for Apply() result
-    mutable Teuchos::Array< Teuchos::RCP<Epetra_MultiVector> > result_block;
+    //! Pointer to the Stokhos matrixfree epetra operator.
+    mutable Teuchos::RCP<Stokhos::MatrixFreeEpetraOp> stokhos_op;
 
-    //! Temporary multivector used in Apply()
-    mutable Teuchos::RCP<Epetra_MultiVector> tmp;
+    //! Pointer to the PCE expansion of Jacobian.
+    mutable Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> > sg_J_poly;
 
-    //! Temporary multivector used in Apply() for transpose
-    mutable Teuchos::RCP<Epetra_MultiVector> tmp_trans;
+    //! Pointer to the deterministic vector 
+    Teuchos::RCP<Epetra_Vector> detvec;
 
-    //! Operation Timer
-    Teuchos::RCP<Teuchos::Time> ApplyTimer;
+   //! Parameter list
+   Teuchos::ParameterList& params;
 
-  }; // class MatrixFreeEpetraOp
+  }; // class GaussSeidelEpetraOp
   
 } // namespace Stokhos
 
-#endif // STOKHOS_MATRIX_FREE_EPETRA_OP_HPP
+#endif // STOKHOS_GAUSS_SEIDEL_EPETRA_OP_HPP

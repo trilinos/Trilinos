@@ -59,12 +59,12 @@ namespace Stokhos {
     //! Return size
     ordinal_type size() const;
 
-    //! Return number of n of non-zero's in C(:,:,k) for a given k
-    ordinal_type num_values(ordinal_type k) const;
+    //! Return number of n of non-zero's in C(i,:,:) for a given i
+    ordinal_type num_values(ordinal_type i) const;
       
     //! Get value C(i,j,k) for 0 <= l < n for a given k
-    void value(ordinal_type k, ordinal_type l, 
-	       ordinal_type& i, ordinal_type& j, value_type& c) const;
+    void value(ordinal_type i, ordinal_type l, 
+	       ordinal_type& k, ordinal_type& j, value_type& c) const;
 
     //! Add new term for given (i,j,k)
     /*!
@@ -112,13 +112,13 @@ namespace Stokhos {
 
   protected:
 
-    //! i-indices in Cijk for each k
-    Teuchos::Array< Teuchos::Array<ordinal_type> > i_indices;
+    //! k-indices in Cijk for each i
+    Teuchos::Array< Teuchos::Array<ordinal_type> > k_indices;
 
     //! j-indices in Cijk for each k
     Teuchos::Array< Teuchos::Array<ordinal_type> > j_indices;
 
-    //! values in Cijk for each k
+    //! values in Cijk for each i
     Teuchos::Array< Teuchos::Array<value_type> > Cijk_values;
 
     struct JValues {

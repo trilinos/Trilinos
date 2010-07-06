@@ -83,7 +83,8 @@ namespace Stokhos {
       const Teuchos::RCP<Teuchos::ParameterList>& params,
       const Teuchos::RCP<const Epetra_Comm>& comm,
       const Teuchos::RCP<const Stokhos::EpetraVectorOrthogPoly>& initial_x_sg = Teuchos::null,
-      const Teuchos::Array< Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> >& initial_p_sg = Teuchos::Array< Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> >());
+      const Teuchos::Array< Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> >& initial_p_sg = Teuchos::Array< Teuchos::RCP<Stokhos::EpetraVectorOrthogPoly> >(),
+      bool scaleOP = true);
 
     /** \name Overridden from EpetraExt::ModelEvaluator . */
     //@{
@@ -283,6 +284,17 @@ namespace Stokhos {
     //! Method for creating block Jacobian
     EJacobianMethod jacobianMethod;
 
+    //! Method for preconditioning block Jacobian
+    enum EPrecMethod {
+      MEAN_BASED,
+      GAUSS_SEIDEL,
+      JACOBI,
+      KRONECKER
+    };
+
+    //! Method for preconditioning block Jacobian
+    EPrecMethod precMethod;
+
     std::vector< std::vector<int> > rowStencil;
     std::vector<int> rowIndex;
 
@@ -300,6 +312,12 @@ namespace Stokhos {
 
     //! W pointer for evaluating W with f
     mutable Teuchos::RCP<Epetra_Operator> my_W;
+
+    //! x pointer for evaluating preconditioner
+    mutable Teuchos::RCP<Epetra_Vector> my_x;
+
+    //! Flag indicating whether operator be scaled with <\psi_i^2>
+    bool scaleOP;
 
   };
 
