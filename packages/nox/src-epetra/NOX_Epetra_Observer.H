@@ -28,20 +28,20 @@
 // ************************************************************************
 // @HEADER
 
-#ifndef PIRO_EPETRA_NOXOBSERVER
-#define PIRO_EPETRA_NOXOBSERVER
+#ifndef NOX_EPETRA_OBSERVER
+#define NOX_EPETRA_OBSERVER
 
 #include "Epetra_Vector.h"
 
 
-namespace Piro {
+namespace NOX {
 namespace Epetra {
 
-class NOXObserver 
+class Observer 
 {
 public:
-  NOXObserver () {};
-  virtual ~NOXObserver () {};
+  Observer () {};
+  virtual ~Observer () {};
 
   virtual void observeSolution(const Epetra_Vector& soln) = 0;
 

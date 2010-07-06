@@ -36,13 +36,15 @@
 
 Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> piroParams_,
                           Teuchos::RCP<EpetraExt::ModelEvaluator> model_,
-                          Teuchos::RCP<Piro::Epetra::NOXObserver> observer_,
-                          Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> saveEigData_
+                          Teuchos::RCP<NOX::Epetra::Observer> observer_,
+                          Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> saveEigData_,
+                          Teuchos::RCP<LOCA::StatusTest::Abstract> locaStatusTest_
 ) :
   piroParams(piroParams_),
   model(model_),
   observer(observer_),
   saveEigData(saveEigData_),
+  locaStatusTest(locaStatusTest_),
   utils(piroParams->sublist("NOX").sublist("Printing"))
 {
   //piroParams->validateParameters(*Piro::getValidPiroParameters(),0);
@@ -90,6 +92,9 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> piroPa
   // Create LOCA interface
   interface = Teuchos::rcp(
 	       new LOCA::Epetra::ModelEvaluatorInterface(globalData, model));
+
+  // explicitly set the observer for LOCA
+  interface->setObserver( observer );
 
   // Get LOCA parameter vector
   //pVector = interface->getLOCAParameterVector();
@@ -162,7 +167,7 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> piroPa
   
   // Create the Solver convergence test
   Teuchos::ParameterList& statusParams = noxParams.sublist("Status Tests");
-  Teuchos::RCP<NOX::StatusTest::Generic> statusTests =
+  Teuchos::RCP<NOX::StatusTest::Generic> noxStatusTests =
     NOX::StatusTest::buildStatusTests(statusParams,
                                       *(globalData->locaUtils));
 
@@ -178,7 +183,7 @@ Piro::Epetra::LOCASolver::LOCASolver(Teuchos::RCP<Teuchos::ParameterList> piroPa
   }
    
   // Create the solver
-  stepper = Teuchos::rcp(new LOCA::Stepper(globalData, grp, statusTests, piroParams));
+  stepper = Teuchos::rcp(new LOCA::Stepper(globalData, grp, locaStatusTest, noxStatusTests, piroParams));
 }
 
 Piro::Epetra::LOCASolver::~LOCASolver()
@@ -292,6 +297,7 @@ void Piro::Epetra::LOCASolver::evalModel( const InArgs& inArgs,
     utils.out() << "Continuation Stepper did not reach final value." << endl;
   else {
     utils.out() << "Nonlinear solver failed to converge!" << endl;
+    outArgs.setFailed();
   }
 
   // Get the NOX and Epetra_Vector with the final solution from the solver
@@ -314,8 +320,9 @@ void Piro::Epetra::LOCASolver::evalModel( const InArgs& inArgs,
     utils.out() << endl;
   }
 
-  if (observer != Teuchos::null)
-    observer->observeSolution(*finalSolution);
+  // Don't explicitly observe finalSolution:
+  // This is already taken care of by the stepper which observes the solution after each
+  // continuation step by default.
 
   // Print stats
   {
@@ -492,3 +499,30 @@ void Piro::Epetra::LOCASolver::evalModel( const InArgs& inArgs,
   if (gx_out != Teuchos::null)  *gx_out = *finalSolution; 
 }
 
+Teuchos::RCP<const LOCA::Stepper>
+Piro::Epetra::LOCASolver::
+getLOCAStepper() const
+{
+  return stepper;
+}
+ 
+Teuchos::RCP<LOCA::Stepper>
+Piro::Epetra::LOCASolver::
+getLOCAStepperNonConst()
+{
+  return stepper;
+}
+
+Teuchos::RCP<const LOCA::GlobalData>
+Piro::Epetra::LOCASolver::
+getGlobalData() const
+{
+  return globalData; 
+}
+
+Teuchos::RCP<LOCA::GlobalData>
+Piro::Epetra::LOCASolver::
+getGlobalDataNonConst()
+{
+  return globalData; 
+}

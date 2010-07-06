@@ -43,6 +43,7 @@
 #define LOCA_EPETRA_MODEL_EVALUATOR_INTERFACE_H
 
 #include "NOX_Epetra_ModelEvaluatorInterface.H"
+#include "NOX_Epetra_Observer.H"
 #include "LOCA_Epetra_Interface_TimeDependent.H"
 #include "LOCA_DerivUtils.H"
 #include "LOCA_Parameter_Vector.H"
@@ -96,6 +97,12 @@ namespace LOCA {
 
       virtual void setXdot(const Epetra_Vector& xdot, const double time);
 
+      virtual void
+      printSolution  (const Epetra_Vector  &x_, double conParam);
+
+      void
+      setObserver( const Teuchos::RCP<NOX::Epetra::Observer> & observer_ );
+
       // LOCA::DerivUtils interface
 
       //! Copy constructor
@@ -114,7 +121,6 @@ namespace LOCA {
 		  const vector<int>& param_ids,
 		  NOX::Abstract::MultiVector& result,
 		  bool isValidF) const;
-      
     
     protected:
 
@@ -129,6 +135,9 @@ namespace LOCA {
 
       //! Stored values of alpha and beta parameters from previous call
       double alpha_prev, beta_prev;
+
+      //! Observer for \c printSolution().
+      Teuchos::RCP<NOX::Epetra::Observer> observer;
     
     };
 

@@ -167,6 +167,12 @@ namespace LOCA {
     virtual Teuchos::RCP<const NOX::Solver::Generic> 
     getSolver() const;
 
+    /*! @brief Return the current continuation parameter from the underlying LOCA::MultiContinuation::AbstractStrategy.
+     *
+     */
+    virtual double
+    getContinuationParameter() const;
+
   protected:
 
     //! Initialize iterator
