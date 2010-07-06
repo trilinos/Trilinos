@@ -31,7 +31,7 @@
 #include "Piro_Epetra_StokhosNOXObserver.hpp"
 
 Piro::Epetra::StokhosNOXObserver::StokhosNOXObserver (
-     Teuchos::RCP<Piro::Epetra::NOXObserver> noxObserver_,
+     Teuchos::RCP<NOX::Epetra::Observer> noxObserver_,
      const Epetra_Map& map_,
      const int sz_) :
   noxObserver(noxObserver_),
