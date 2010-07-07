@@ -35,7 +35,7 @@
 */
 namespace Teuchos {
 
-class DefaultParameterEntryConverter : public ParameterEntryXMLConverter{
+class AnyParameterEntryConverter : public ParameterEntryXMLConverter{
 public:
 	std::string getTypeAttributeValue() const;
 	std::string getValueAttributeValue(const ParameterEntry &entry) const;

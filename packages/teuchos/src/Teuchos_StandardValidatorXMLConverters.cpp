@@ -29,7 +29,18 @@
 #include "Teuchos_Array.hpp"
 
 namespace Teuchos{
-	RCP<ParameterEntryValidator> StringToIntegralValidatorXMLConverter::StfromXMLtoValidator(const XMLObject& xmlObj) const{
+
+	RCP<ParameterEntryValidator> StringToIntegralValidatorXMLConverter::fromXMLtoValidator(const XMLObject& xmlObj) const{
+		TEST_FOR_EXCEPTION(xmlObj.getTag() != getTagName(), 
+			std::runtime_error, 
+			"Cannot convert xmlObject to StringToIntegralValidator. Expected a " << getTagName() 
+			<< " tag but got a " << xmlObj.getTag() << "tag");
+		TEST_FOR_EXCEPTION(xmlObj.child(0).getTag() != stringsTagName(), 
+			std::runtime_error, 
+			"Cannot convert xmlObject to StringToIntegralValidator. The " << getTagName() 
+			<< " tag's first child should be a " << stringsTagName() << "tag");
+		std::vector<std::string> strings;
+		std::vector<std::string> stringDocs;
 
 	}
 
@@ -37,32 +48,55 @@ namespace Teuchos{
 		RCP<StringToIntegralParameterEntryValidator<IntegralType> > convertedValidator =
 			rcp_static_cast<StringToIntegralValidatorXMLConverter<IntegralType> >(validator);
 		XMLObject toReturn(getTagName());
-		XMLObject stringsTag(getStringsTagName());
+		XMLObject stringsTag(stringsTagName());
 		Array<std::string>::const_iterator it = convertedValidator->validStringValues()->begin();
 		for(;
 			it != convertedValidator->validStringValues()->end(); ++it){
-			XMLObject stringTag(getStringTagName());
+			XMLObject stringTag(stringTagName());
 			stringTag.addContent(*it);
-			stringTag.addAttribute(getIntegralValueAttributeName(), convertedValidator->getIntegralValue(*it));
+			stringTag.addAttribute(integralValueAttributeName(), convertedValidator->getIntegralValue(*it));
 			stringsTag.addChild(stringTag);
 		}
 		if(convertedValidator->getStringDocs()->size()!=0){
 			Array<std::string>::const_iterator it2 = convertedValidator->getStringDocs()->begin();
 			for(int i=0; i<stringsTag.numChildren() && it2 != convertedValidator->getStringDocs()->end(); ++i; ++it2){
-				stringsTag.getChild(i).addAttribute(getStringDocAttributeName(), *it2);		
+				stringsTag.getChild(i).addAttribute(stringDocAttributeName(), *it2);		
 			}
 		}
-		toReturn.addAttribute(getDefaultParameterAttributeName, convertedValidator->getDefaultParameterName());
+		toReturn.addAttribute(defaultParameterAttributeName(), convertedValidator->getDefaultParameterName());
 		toReturn.addChild(stringsTag);
 		return toReturn;
 	}
 
 	bool StringToIntegralValidatorXMLConverter::isAppropriateConverter(const RCP<ParameterEntryValidator> validator) const{
+		return !(rcp_dynamic_cast<StringToIntegralValidator<IntegralType> >(validator).is_null()) 
+	}
+
+	std::string StringToIntegralValidatorXMLConverter::getTagName() const{
+		return tagName();
+	}
+
+	RCP<ParameterEntryValidator> AnyNumberValidatorXMLConverter::fromXMLtoValidator(const XMLObject& xmlObj) const{
+		TEST_FOR_EXCEPTION(xmlObj.getTag() != getTagName(), 
+			std::runtime_error, 
+			"Cannot convert xmlObject to StringToIntegralValidator. Expected a " << getTagName() 
+			<< " tag but got a " << xmlObj.getTag() << "tag");
 
 	}
 
-	std::string getTagName() const{
-		return staticGetTagName();
+	XMLObject AnyNumberValidatorXMLConverter::fromValidatortoXML(const RCP<ParameterEntryValidator> validator) const{
+		TEST_FOR_EXCEPTION(!isAppropriateConverter, std::runtime_error, "An AnyNumberValidatorXMLConverter is not apporpriate for this type of validator.");
+		RCP<AnyNumberValidator> convertedValidator = rcp_static_cast<AnyNumberValidator>(validator);
+		XMLObject toReturn(getTagName());
+		return toReturn;
+	}
+
+	bool AnyNumberValidatorXMLConverter::isAppropriateConverter(const RCP<ParameterEntryValidator> validator) const{
+		return !(rcp_dynamic_cast<AnyNumberValidator>(validator).is_null()) 
+	}
+
+	std::string AnyNumberValidatorXMLConverter::getTagName() const{
+		return tagName();
 	}
 }
 

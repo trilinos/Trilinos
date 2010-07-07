@@ -42,25 +42,23 @@ public:
 		getConverterMap().insert(ConverterPair(converterToAdd->getTypeAttributeValue(), converterToAdd));
 	}
 
-	static RCP<ParameterEntryXMLConverter> getConverter(const ParameterEntry& entry){
-		ConverterMap masterMap = getConverterMap();
-		for(ConverterMap::const_iterator it=masterMap.begin(); it != masterMap.end(); ++it){
-			if(it->second->isAppropriateConverter(entry)){
-				return it->second;
-			}
+	static RCP<const ParameterEntryXMLConverter> getConverter(const ParameterEntry& entry){
+		ConverterMap::const_iterator it = getConverterMap().find(entry.getAny().typeName());
+		if(it != getConverterMap().end()){
+			return it->second;
 		}
 		return getDefaultConverter();
 	}
 
-	static RCP<ParameterEntryXMLConverter> getConverter(const XMLObject& xmlObject){ 
-		std::string parameterType = xmlObject.getRequired("type");
+	static RCP<const ParameterEntryXMLConverter> getConverter(const XMLObject& xmlObject){ 
+		std::string parameterType = xmlObject.getRequired(ParameterEntryXMLConverter::getTypeAttributeName());
 		ConverterMap::const_iterator it = getConverterMap().find(parameterType);
 		if(it != getConverterMap().end()){
 			return it->second;
 		}
 		return getDefaultConverter();
-		
 	}
+
 private:
 	typedef std::map<std::string, RCP<ParameterEntryXMLConverter> > ConverterMap;
 	typedef std::pair<std::string, RCP<ParameterEntryXMLConverter> > ConverterPair;
@@ -68,7 +66,7 @@ private:
 	static RCP<ParameterEntryXMLConverter> getDefaultConverter(){
 		static RCP<ParameterEntryXMLConverter> defaultConverter;
 		if(defaultConverter.is_null()){
-			defaultConverter = rcp(new DefaultParameterEntryConverter());
+			defaultConverter = rcp(new AnyParameterEntryConverter());
 		}
 		return defaultConverter;
 	}

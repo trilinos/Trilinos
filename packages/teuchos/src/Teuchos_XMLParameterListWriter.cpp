@@ -50,7 +50,7 @@ XMLObject XMLParameterListWriter::toXML(const ParameterList& p) const
      else
 	   {
           const std::string& name = p.name(i);
-		  RCP<ParameterEntryXMLConverter> converter = ParameterEntryXMLConverterDB::getConverter(entry);
+		  RCP<const ParameterEntryXMLConverter> converter = ParameterEntryXMLConverterDB::getConverter(entry);
           rtn.addChild(converter->fromParameterEntrytoXML(entry, name));
 	   }
     }

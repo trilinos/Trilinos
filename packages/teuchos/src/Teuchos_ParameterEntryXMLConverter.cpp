@@ -31,16 +31,21 @@
 namespace Teuchos{
 
 ParameterEntry ParameterEntryXMLConverter::fromXMLtoParameterEntry(const XMLObject &xmlObj) const{
+	TEST_FOR_EXCEPTION(xmlObj.getRequired(typeAttributeName()) != getTypeAttributeValue(), 
+		std::runtime_error, 
+		"This converter is not approriate for converting a ParameterEntry tag with a type of " 
+		<< xmlObj.getRequired(typeAttributeName()) << " to a ParameterEntry with type " 
+		<< getTypeAttributeValue());
 	ParameterEntry toReturn;
 	bool isDefault = false;
 	bool isUsed = false;
 
-	if(xmlObj.hasAttribute("isDefault")){
-		isDefault = xmlObj.getRequiredBool("isDefault");
+	if(xmlObj.hasAttribute(defaultAttributeName())){
+		isDefault = xmlObj.getRequiredBool(defaultAttributeName());
 	}
 
-	if(xmlObj.hasAttribute("isUsed")){
-		isUsed = xmlObj.getRequiredBool("isUsed");
+	if(xmlObj.hasAttribute(usedAttributeName())){
+		isUsed = xmlObj.getRequiredBool(usedAttributeName());
 	}
 
 	setEntryValue(toReturn, xmlObj, isDefault);
@@ -53,12 +58,13 @@ ParameterEntry ParameterEntryXMLConverter::fromXMLtoParameterEntry(const XMLObje
 }
 
 XMLObject ParameterEntryXMLConverter::fromParameterEntrytoXML(const ParameterEntry &entry, const std::string &name) const{
+	TEST_FOR_EXCEPTION(!isAppropriateConverter(entry), std::runtime_error, "This converter is not approriate for converting the ParameterEntry " << name << " to the xml tag with a type attribute of " << getTypeAttributeValue());
 	XMLObject toReturn(ParameterEntry::getTagName());
-	toReturn.addAttribute("name", name);
-	toReturn.addAttribute("type", getTypeAttributeValue());
-	toReturn.addAttribute("value", getValueAttributeValue(entry));
-	toReturn.addBool("isDefault",entry.isDefault());
-	toReturn.addBool("isUsed", entry.isUsed());
+	toReturn.addAttribute(nameAttributeName(), name);
+	toReturn.addAttribute(typeAttributeName(), getTypeAttributeValue());
+	toReturn.addAttribute(valueAttributeName(), getValueAttributeValue(entry));
+	toReturn.addBool(defaultAttributeName(), entry.isDefault());
+	toReturn.addBool(usedAttributeName(), entry.isUsed());
 	return toReturn;
 }
 

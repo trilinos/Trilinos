@@ -29,25 +29,25 @@
 #include "Teuchos_Array.hpp"
 
 namespace Teuchos{
-	std::string DefaultParameterEntryConverter::getTypeAttributeValue() const{
+	std::string AnyParameterEntryConverter::getTypeAttributeValue() const{
 		return "any";
 	}
 
-	std::string DefaultParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
+	std::string AnyParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
 		return toString(entry.getAny(false));
 	}
 
-	void DefaultParameterEntryConverter::setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const{
+	void AnyParameterEntryConverter::setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const{
 		entry.setValue<std::string>(xmlObj.getRequired("value"), isDefault);
 	}
 
-	bool DefaultParameterEntryConverter::isAppropriateConverter(const ParameterEntry& entry) const{
-		return false;
+	bool AnyParameterEntryConverter::isAppropriateConverter(const ParameterEntry& entry) const{
+		return true;
 	}
 
 
 	std::string IntParameterEntryConverter::getTypeAttributeValue() const{
-		return "int";
+		return TypeNameTraits<int>::name();
 	}
 
 	std::string IntParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
@@ -63,7 +63,7 @@ namespace Teuchos{
 	}
 
 	std::string ShortParameterEntryConverter::getTypeAttributeValue() const{
-		return "short";
+		return TypeNameTraits<short>::name();
 	}
 
 	std::string ShortParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
@@ -79,7 +79,7 @@ namespace Teuchos{
 	}
 
 	std::string DoubleParameterEntryConverter::getTypeAttributeValue() const{
-		return "double";
+		return TypeNameTraits<double>::name();
 	}
 
 	std::string DoubleParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
@@ -95,7 +95,7 @@ namespace Teuchos{
 	}
 
 	std::string FloatParameterEntryConverter::getTypeAttributeValue() const{
-		return "float";
+		return TypeNameTraits<float>::name();
 	}
 
 	std::string FloatParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
@@ -111,7 +111,7 @@ namespace Teuchos{
 	}
 
 	std::string StringParameterEntryConverter::getTypeAttributeValue() const{
-		return "string";
+		return TypeNameTraits<std::string>::name();
 	}
 
 	std::string StringParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
@@ -127,7 +127,7 @@ namespace Teuchos{
 	}
 
 	std::string CharParameterEntryConverter::getTypeAttributeValue() const{
-		return "char";
+		return TypeNameTraits<char>::name();
 	}
 
 	std::string CharParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
@@ -144,7 +144,7 @@ namespace Teuchos{
 	}
 
 	std::string BoolParameterEntryConverter::getTypeAttributeValue() const{
-		return "bool";
+		return TypeNameTraits<bool>::name();
 	}
 
 	std::string BoolParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
@@ -160,7 +160,7 @@ namespace Teuchos{
 	}
 
 	std::string ArrayIntParameterEntryConverter::getTypeAttributeValue() const{
-		return "Array int";
+		return TypeNameTraits<Array<int> >::name();
 	}
 
 	std::string ArrayIntParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
@@ -176,7 +176,7 @@ namespace Teuchos{
 	}
 
 	std::string ArrayShortParameterEntryConverter::getTypeAttributeValue() const{
-		return "Array short";
+		return TypeNameTraits<Array<short> >::name();
 	}
 
 	std::string ArrayShortParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
@@ -192,7 +192,7 @@ namespace Teuchos{
 	}
 
 	std::string ArrayDoubleParameterEntryConverter::getTypeAttributeValue() const{
-		return "Array double";
+		return TypeNameTraits<Array<double> >::name();
 	}
 
 	std::string ArrayDoubleParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
@@ -208,7 +208,7 @@ namespace Teuchos{
 	}
 
 	std::string ArrayFloatParameterEntryConverter::getTypeAttributeValue() const{
-		return "Array float";
+		return TypeNameTraits<Array<float> >::name();
 	}
 
 	std::string ArrayFloatParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
@@ -224,7 +224,7 @@ namespace Teuchos{
 	}
 
 	std::string ArrayStringParameterEntryConverter::getTypeAttributeValue() const{
-		return "Array string";
+		return TypeNameTraits<Array<std::string> >::name();
 	}
 
 	std::string ArrayStringParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{

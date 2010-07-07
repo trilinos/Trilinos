@@ -45,6 +45,49 @@ public:
 	virtual std::string getValueAttributeValue(const ParameterEntry &entry) const=0;
 	virtual void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const=0;
 	virtual bool isAppropriateConverter(const ParameterEntry& entry) const=0;
+	static const std::string& getTypeAttributeName(){
+		return typeAttributeName();
+	}
+private:
+	static std::string& defaultAttributeName(){
+		static std::string attributeName;
+		if(attributeName == ""){
+			attributeName = "isDefault";
+		}
+		return attributeName;
+	}
+
+	static std::string& usedAttributeName(){
+		static std::string attributeName;
+		if(attributeName == ""){
+			attributeName = "isUsed";
+		}
+		return attributeName;
+	}
+
+	static std::string& nameAttributeName(){
+		static std::string attributeName;
+		if(attributeName == ""){
+			attributeName = "name";
+		}
+		return attributeName;
+	}
+
+	static std::string& typeAttributeName(){
+		static std::string attributeName;
+		if(attributeName == ""){
+			attributeName = "type";
+		}
+		return attributeName;
+	}
+
+	static std::string& valueAttributeName(){
+		static std::string attributeName;
+		if(attributeName == ""){
+			attributeName = "value";
+		}
+		return attributeName;
+	}
 };
 
 }

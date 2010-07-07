@@ -75,7 +75,7 @@ ParameterList XMLParameterListReader::toParameterList(const XMLObject& xml) cons
       else
         {
           const std::string& name = child.getRequired("name");
-			RCP<ParameterEntryXMLConverter> converter = ParameterEntryXMLConverterDB::getConverter(child);
+			RCP<const ParameterEntryXMLConverter> converter = ParameterEntryXMLConverterDB::getConverter(child);
 			rtn.setEntry(name, converter->fromXMLtoParameterEntry(child));
         }
     }

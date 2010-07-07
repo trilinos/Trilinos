@@ -43,7 +43,7 @@ public:
 	bool isAppropriateConverter(const RCP<ParameterEntryValidator> validator) const;
 	std::string getTagName() const;
 private:
-	static std::string& staticGetTagName(){
+	static std::string& tagName(){
 		static std::string tagName;
 		if(tagName == ""){
 			tagName = "stringtointegralvalidator";
@@ -51,7 +51,7 @@ private:
 		return tagName;
 	}
 
-	static std::string& getStringsTagName(){
+	static std::string& stringsTagName(){
 		static std::string tagName;
 		if(tagName == ""){
 			tagName = "strings";
@@ -59,7 +59,7 @@ private:
 		return tagName;
 	}
 
-	static std::string& getStringTagName(){
+	static std::string& stringTagName(){
 		static std::string tagName;
 		if(tagName == ""){
 			tagName = "string";
@@ -67,7 +67,7 @@ private:
 		return tagName;
 	}
 
-	static std::string& getStringDocAttributeName(){
+	static std::string& stringDocAttributeName(){
 		static std::string tagName;
 		if(tagName == ""){
 			tagName = "stringdoc";
@@ -75,7 +75,7 @@ private:
 		return tagName;
 	}
 
-	static std::string& getIntegralValueAttributeName(){
+	static std::string& integralValueAttributeName(){
 		static std::string tagName;
 		if(tagName == ""){
 			tagName = "integralvalue";
@@ -83,7 +83,7 @@ private:
 		return tagName;
 	}
 
-	static std::string& getDefaultParameterAttributeName(){
+	static std::string& defaultParameterAttributeName(){
 		static std::string attributeName;
 		if(attributeName == ""){
 			attributeName = "defaultparametername";
@@ -98,6 +98,13 @@ public:
 	XMLObject fromValidatortoXML(const RCP<ParameterEntryValidator> validator) const;
 	bool isAppropriateConverter(const RCP<ParameterEntryValidator> validator) const;
 	std::string getTagName() const;
+private:
+	static std::string& tagName(){
+		static std::string tagName;
+		if(tagName == ""){
+			tagName = "anynumbervalidator"
+		}
+		return tagName;
 };
 
 template<class S>

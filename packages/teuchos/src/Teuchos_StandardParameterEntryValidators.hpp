@@ -201,7 +201,7 @@ public:
    *
    * \return The name of the default parameter for the validator.
    */
-  const std::string& getDefaultParameterName() const
+  const std::string& getDefaultParameterName() const;
 
   /** \brief Validate the std::string and pass it on..
    *
@@ -1728,14 +1728,14 @@ StringToIntegralParameterEntryValidator<IntegralType>::getStringValue(
 
 template<class IntegralType>
 const RCP<const Array<std::string> > 
-StringToIntegralParameterEntryValidator::getStringDocs() const
+StringToIntegralParameterEntryValidator<IntegralType>::getStringDocs() const
 {
   return validStringValuesDocs_; 
 }
 
 template<class IntegralType>
 const std::string&
-StringToIntegralParameterEntryValidator::getDefaultParameterName() const
+StringToIntegralParameterEntryValidator<IntegralType>::getDefaultParameterName() const
 {
   return defaultParameterName_; 
 }
