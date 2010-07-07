@@ -26,6 +26,8 @@
 // ***********************************************************************
 // @HEADER
 
+#include "EpetraExt_config.h"
+
 #include <EpetraExt_Zoltan_CrsGraph.h>
 
 #include <EpetraExt_Transpose_CrsGraph.h>
@@ -68,8 +70,12 @@ operator()( OriginalTypeRef orig )
   char * dummy = 0;
   Zoltan::LoadBalance LB( 0, &dummy, &version );
   err = LB.Create( dynamic_cast<const Epetra_MpiComm&>(orig.Comm()).Comm() );
-  if( err == ZOLTAN_OK ) err = LB.Set_Param( "LB_METHOD", "PARMETIS" );
+  if( err == ZOLTAN_OK ) err = LB.Set_Param( "LB_METHOD", "GRAPH" );
+#ifdef HAVE_LIBPARMETIS
+  std::cout << ("Using PARMETIS \n") << std::endl;
+  if( err == ZOLTAN_OK ) err = LB.Set_Param( "GRAPH_PACKAGE", "PARMETIS" );
   if( err == ZOLTAN_OK ) err = LB.Set_Param( "PARMETIS_METHOD", partitionMethod_ );
+#endif
 
   //Setup Query Object
   CrsGraph_Transpose transposeTransform;
@@ -142,8 +148,11 @@ operator()( OriginalTypeRef orig )
 
   Zoltan::LoadBalance LB2( 0, &dummy, &version );
   err = LB2.Create( dynamic_cast<const Epetra_MpiComm&>(orig.Comm()).Comm() );
-  if( err == ZOLTAN_OK ) err = LB2.Set_Param( "LB_METHOD", "PARMETIS" );
+  if( err == ZOLTAN_OK ) err = LB2.Set_Param( "LB_METHOD", "GRAPH" );
+#ifdef HAVE_LIBPARMETIS
+  if( err == ZOLTAN_OK ) err = LB2.Set_Param( "GRAPH_PACKAGE", "PARMETIS" );
   if( err == ZOLTAN_OK ) err = LB2.Set_Param( "PARMETIS_METHOD", partitionMethod_ );
+#endif
   CrsGraph_Transpose transTrans;
   Epetra_CrsGraph & trans2 = transTrans( *NewGraph );
   ZoltanQuery query( *NewGraph, &trans2 );
