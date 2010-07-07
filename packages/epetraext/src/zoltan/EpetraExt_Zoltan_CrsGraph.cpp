@@ -72,7 +72,6 @@ operator()( OriginalTypeRef orig )
   err = LB.Create( dynamic_cast<const Epetra_MpiComm&>(orig.Comm()).Comm() );
   if( err == ZOLTAN_OK ) err = LB.Set_Param( "LB_METHOD", "GRAPH" );
 #ifdef HAVE_LIBPARMETIS
-  std::cout << ("Using PARMETIS \n") << std::endl;
   if( err == ZOLTAN_OK ) err = LB.Set_Param( "GRAPH_PACKAGE", "PARMETIS" );
   if( err == ZOLTAN_OK ) err = LB.Set_Param( "PARMETIS_METHOD", partitionMethod_ );
 #endif
