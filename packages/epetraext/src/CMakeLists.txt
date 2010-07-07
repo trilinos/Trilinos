@@ -215,8 +215,6 @@ IF (${PACKAGE_NAME}_BUILD_Zoltan)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/zoltan)
 
   SET(HEADERS ${HEADERS}
-    zoltan/EpetraExt_Zoltan_CrsGraph.h
-    zoltan/EpetraExt_ZoltanOrder_CrsGraph.h
     zoltan/EpetraExt_ZoltanQuery.h
     zoltan/Zoltan_LoadBalance.h
     zoltan/Zoltan_MigrationContainer.h
@@ -228,8 +226,6 @@ IF (${PACKAGE_NAME}_BUILD_Zoltan)
     )
   
   SET(SOURCES ${SOURCES}
-    zoltan/EpetraExt_Zoltan_CrsGraph.cpp
-    zoltan/EpetraExt_ZoltanOrder_CrsGraph.cpp
     zoltan/EpetraExt_ZoltanQuery.cpp
     zoltan/Zoltan_LoadBalance.cpp
     zoltan/Zoltan_MigrationContainer.cpp
@@ -240,6 +236,16 @@ IF (${PACKAGE_NAME}_BUILD_Zoltan)
     zoltan/Zoltan_QueryObject.cpp
     )
 
+  IF(TPL_ENABLE_MPI)
+    SET(HEADERS ${HEADERS}
+      zoltan/EpetraExt_Zoltan_CrsGraph.h
+      zoltan/EpetraExt_ZoltanOrder_CrsGraph.h
+      )
+    SET(SOURCES ${SOURCES}
+      zoltan/EpetraExt_Zoltan_CrsGraph.cpp
+      zoltan/EpetraExt_ZoltanOrder_CrsGraph.cpp
+      )
+  ENDIF()
 ENDIF()
 
 #
