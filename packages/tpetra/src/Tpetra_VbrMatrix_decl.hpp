@@ -101,7 +101,7 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   */
   VbrMatrix(const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > &blkRowMap, size_t maxNumEntriesPerRow, ProfileType pftype = DynamicProfile);
 
-  //! Constructor specifying a pre-filled graph and block-maps for range and domain.
+  //! Not Yet Implemented! Constructor specifying a pre-filled graph and block-maps for range and domain.
   /*! Constructing a VbrMatrix with a pre-filled graph means that the matrix will
       start out in the optimized-storage, isFillComplete()==true state.
       The graph provided to this constructor must be already filled
@@ -119,7 +119,7 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
       blkRangeMap->getNodeNumBlocks() == blkGraph->getRangeMap()->getNodeNumElements().
       If any of these conditions is not met, an exception is thrown.
   */
-  VbrMatrix(const Teuchos::RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& blkGraph, const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blkDomainMap, const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blkRangeMap);
+//  VbrMatrix(const Teuchos::RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& blkGraph, const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blkDomainMap, const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blkRangeMap);
 
   //! Destructor
   virtual ~VbrMatrix();
