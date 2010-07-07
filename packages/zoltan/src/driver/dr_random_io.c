@@ -11,6 +11,10 @@
  *    $Revision$
  ****************************************************************************/
 
+/* Define xopen_source to get M_PI from math.h */
+
+#define _XOPEN_SOURCE 600
+
 #include <mpi.h>
 #include <stdlib.h>
 #include <stdio.h>
@@ -36,6 +40,10 @@ extern "C" {
 
 #ifndef MAX_STR_LENGTH
 #define MAX_STR_LENGTH 80
+#endif
+
+#ifdef M_PIl
+#error "HAVE M_PI1"
 #endif
 
 /****************************************************************************/
