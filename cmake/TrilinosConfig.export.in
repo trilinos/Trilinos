@@ -27,6 +27,9 @@ ${PROJECT_NAME}_C_COMPILER_FLAGS=${CMAKE_C_FLAGS} ${CMAKE_C_FLAGS_${CMAKE_BUILD_
 
 ${PROJECT_NAME}_Fortran_COMPILER_FLAGS=${CMAKE_Fortran_FLAGS} ${CMAKE_Fortran_FLAGS_${CMAKE_BUILD_TYPE}}
 
+## Extra link flags (e.g., specification of fortran libraries)
+${PROJECT_NAME}_EXTRA_LD_FLAGS=${${PROJECT_NAME}_EXTRA_LINK_FLAGS}
+
 ## This is the command-line entry used for setting rpaths. In a build
 ## with static libraries it will be empty. 
 ${PROJECT_NAME}_SHARED_LIB_RPATH_COMMAND=${SHARED_LIB_RPATH_COMMAND}
@@ -39,9 +42,6 @@ ${PROJECT_NAME}_AR=${CMAKE_AR}
 ## ---------------------------------------------------------------------------
 ## Set library specifications and paths 
 ## ---------------------------------------------------------------------------
-
-## Extra link flags (e.g., specification of fortran libraries)
-${PROJECT_NAME}_EXTRA_LD_FLAGS=${${PROJECT_NAME}_EXTRA_LINK_FLAGS}
 
 ## The project version number
 ${PROJECT_NAME}_VERSION=${${PROJECT_NAME}_VERSION}
