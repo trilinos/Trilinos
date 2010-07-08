@@ -28,12 +28,11 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef STOKHOS_GAUSS_SEIDEL_EPETRA_OP_HPP
-#define STOKHOS_GAUSS_SEIDEL_EPETRA_OP_HPP
+#ifndef STOKHOS_APPROX_GAUSS_SEIDEL_EPETRA_OP_HPP
+#define STOKHOS_APPROX_GAUSS_SEIDEL_EPETRA_OP_HPP
 
 #include "Teuchos_RCP.hpp"
 
-#include "NOX_Epetra_LinearSystem.H"    // base class
 #include "Stokhos.hpp"
 
 #include "Epetra_Operator.h"
@@ -45,25 +44,25 @@ namespace Stokhos {
    * \brief An Epetra operator representing applying the mean in a block
    * stochastic Galerkin expansion.
    */
-  class GaussSeidelEpetraOp : public Epetra_Operator {
+  class ApproxGaussSeidelEpetraOp : public Epetra_Operator {
       
   public:
 
     //! Constructor 
-  GaussSeidelEpetraOp(
-  const Teuchos::RCP<const Epetra_Map>& base_map_,
-  const Teuchos::RCP<const Epetra_Map>& sg_map_,
-  unsigned int num_blocks_,
-  Teuchos::ParameterList& linearSolverParams,
-  const Teuchos::RCP<NOX::Epetra::LinearSystem>& detsolve_,
-  const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk_,
-  const Teuchos::RCP<Epetra_Operator>& J);
+  ApproxGaussSeidelEpetraOp(
+    const Teuchos::RCP<const Epetra_Map>& base_map_,
+    const Teuchos::RCP<const Epetra_Map>& sg_map_,
+    unsigned int num_blocks_,
+    const Teuchos::RCP<Epetra_Operator>& mean_prec_op_,
+    const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk_,
+    const Teuchos::RCP<Epetra_Operator>& J,
+    bool symmetric_);
     
     //! Destructor
-    virtual ~GaussSeidelEpetraOp();
+    virtual ~ApproxGaussSeidelEpetraOp();
 
-    void setOperatorAndConstructPreconditioner(
-      const Teuchos::RCP<Epetra_Operator>& J, const Epetra_Vector& x);
+    void setOperator(const Teuchos::RCP<Epetra_Operator>& J);
+    void setPrecOperator(const Teuchos::RCP<Epetra_Operator>& M);
 
     //! Set to true if the transpose of the operator is requested
     virtual int SetUseTranspose(bool UseTranspose);
@@ -118,10 +117,10 @@ namespace Stokhos {
   private:
     
     //! Private to prohibit copying
-    GaussSeidelEpetraOp(const GaussSeidelEpetraOp&);
+    ApproxGaussSeidelEpetraOp(const ApproxGaussSeidelEpetraOp&);
     
     //! Private to prohibit copying
-    GaussSeidelEpetraOp& operator=(const GaussSeidelEpetraOp&);
+    ApproxGaussSeidelEpetraOp& operator=(const ApproxGaussSeidelEpetraOp&);
     
   protected:
     
@@ -139,30 +138,27 @@ namespace Stokhos {
 
     //! Number of blocks
     unsigned int num_blocks;
-  
-    //! Pointer to deterministic solver
-    Teuchos::RCP<NOX::Epetra::LinearSystem> detsolve;
+
+    //! Stores mean preconditioner operator
+    Teuchos::RCP<Epetra_Operator> mean_prec_op;
 
     //! Pointer to Cijk
     Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> > Cijk;
 
-    //! Pointer to the Jacobian operator.
-    mutable Teuchos::RCP<Epetra_Operator> jacPtr;
+    //! Use symmetric Gauss-Seidel
+    bool symmetric;
 
     //! Pointer to the Stokhos matrixfree epetra operator.
-    mutable Teuchos::RCP<Stokhos::MatrixFreeEpetraOp> stokhos_op;
+    Teuchos::RCP<Stokhos::MatrixFreeEpetraOp> stokhos_op;
 
     //! Pointer to the PCE expansion of Jacobian.
-    mutable Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> > sg_J_poly;
+    Teuchos::RCP<Stokhos::VectorOrthogPoly<Epetra_Operator> > sg_J_poly;
 
-    //! Pointer to the deterministic vector 
-    Teuchos::RCP<Epetra_Vector> detvec;
+    //! Temporary vector for storing matrix-vector products
+    mutable Teuchos::RCP<Epetra_MultiVector> mat_vec_tmp;
 
-   //! Parameter list
-   Teuchos::ParameterList& params;
-
-  }; // class GaussSeidelEpetraOp
+  }; // class ApproxGaussSeidelEpetraOp
   
 } // namespace Stokhos
 
-#endif // STOKHOS_GAUSS_SEIDEL_EPETRA_OP_HPP
+#endif // STOKHOS_APPROX_GAUSS_SEIDEL_EPETRA_OP_HPP

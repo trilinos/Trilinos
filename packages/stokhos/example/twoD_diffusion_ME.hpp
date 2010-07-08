@@ -57,7 +57,8 @@ class twoD_diffusion_ME : public EpetraExt::ModelEvaluator {
 public:
 
   //! Constructor
-  twoD_diffusion_ME(const Teuchos::RCP<Epetra_Comm>& comm, int n, int d);
+  twoD_diffusion_ME(const Teuchos::RCP<Epetra_Comm>& comm, int n, int d,
+		    double s = 0.1, double mu = 0.2);
 
   /** \name Overridden from EpetraExt::ModelEvaluator . */
   //@{

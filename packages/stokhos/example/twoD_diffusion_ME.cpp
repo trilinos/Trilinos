@@ -54,7 +54,7 @@
 
 //#include "Stokhos.hpp"
 
-twoD_diffusion_ME::twoD_diffusion_ME(const Teuchos::RCP<Epetra_Comm>& comm, int n, int d): A_k(d+1) 
+twoD_diffusion_ME::twoD_diffusion_ME(const Teuchos::RCP<Epetra_Comm>& comm, int n, int d, double s, double mu): A_k(d+1) 
 {
 
 /////////////////////////////////////////////////////////////////////////////////
@@ -79,8 +79,8 @@ double meshSize = x[1]-x[0];
 ////////////////////////////////////////////////////////////////////////
 //Discretize the random field.
 ///////////////////////////////////////////////////////////////////////
-sigma = 0.1;
-mean = 0.2;
+sigma = s;
+mean = mu;
 lambda = Teuchos::Array<double>(d);
 alpha = Teuchos::Array<double>(d);
 omega = Teuchos::Array<double>(d);

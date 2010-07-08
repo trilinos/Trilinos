@@ -45,6 +45,7 @@
 #include "Stokhos_KLReducedMatrixFreeEpetraOp.hpp"
 #include "Stokhos_MeanEpetraOp.hpp"
 #include "Stokhos_GaussSeidelEpetraOp.hpp"
+#include "Stokhos_ApproxGaussSeidelEpetraOp.hpp"
 #include "Stokhos_IfpackPreconditionerFactory.hpp"
 #include "Stokhos_MLPreconditionerFactory.hpp"
 #include "Stokhos_EpetraMultiVectorOperator.hpp"
@@ -193,6 +194,8 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
       precMethod = MEAN_BASED;
     else if (prec_method == "Gauss-Seidel")
       precMethod = GAUSS_SEIDEL;
+    else if (prec_method == "Approximate Gauss-Seidel")
+      precMethod = APPROX_GAUSS_SEIDEL;
     else if (prec_method == "Jacobi")
       precMethod = JACOBI;
     else if (prec_method == "Kronecker Product")
@@ -339,9 +342,10 @@ Stokhos::SGModelEvaluator::SGModelEvaluator(
     }
     
     // Get preconditioner factory for matrix-free
-    if (precMethod == MEAN_BASED && (jacobianMethod == MATRIX_FREE || 
-	jacobianMethod == KL_MATRIX_FREE || 
-	jacobianMethod == KL_REDUCED_MATRIX_FREE)) {
+    if ((precMethod == MEAN_BASED || precMethod == APPROX_GAUSS_SEIDEL) && 
+	(jacobianMethod == MATRIX_FREE || 
+	 jacobianMethod == KL_MATRIX_FREE || 
+	 jacobianMethod == KL_REDUCED_MATRIX_FREE)) {
       std::string prec_name = 
 	params->get("Mean Preconditioner Type", "Ifpack");
       Teuchos::RCP<Teuchos::ParameterList> precParams = 
@@ -485,6 +489,16 @@ Stokhos::SGModelEvaluator::create_WPrec() const
             gs_params.get< Teuchos::RCP<NOX::Epetra::LinearSystem> >("Deterministic Solver");
           precOp = Teuchos::rcp(new Stokhos::GaussSeidelEpetraOp(x_map, sg_x_map,
             num_sg_blocks, gs_params, detsolver, Cijk, my_W));
+        }
+	else if (precMethod == APPROX_GAUSS_SEIDEL) {
+	  bool symmetric = params->get("Symmetric Gauss-Seidel", false);
+          precOp = 
+	    Teuchos::rcp(new Stokhos::ApproxGaussSeidelEpetraOp(x_map, 
+								sg_x_map,
+								num_sg_blocks, 
+								Teuchos::null, 
+								Cijk, my_W,
+								symmetric));
         }
         return Teuchos::rcp(new EpetraExt::ModelEvaluator::Preconditioner(precOp,true));
     }
@@ -698,6 +712,14 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
       Teuchos::RCP<Stokhos::GaussSeidelEpetraOp> W_gs =
         Teuchos::rcp_dynamic_cast<Stokhos::GaussSeidelEpetraOp>(WPrec_out, true);
       W_gs->setOperatorAndConstructPreconditioner(my_W, *my_x);
+    }
+    else if (precMethod == APPROX_GAUSS_SEIDEL) {
+      Teuchos::RCP<Stokhos::ApproxGaussSeidelEpetraOp> W_ags =
+        Teuchos::rcp_dynamic_cast<Stokhos::ApproxGaussSeidelEpetraOp>(WPrec_out, true);
+      Teuchos::RCP<Epetra_Operator> prec = 
+        precFactory->compute(W_sg_blocks->getCoeffPtr(0));
+      W_ags->setOperator(my_W);
+      W_ags->setPrecOperator(prec);
     }
 
     // We can now quit unless a fill of f, g, or dg/dp was also requested
@@ -963,6 +985,14 @@ Stokhos::SGModelEvaluator::evalModel(const InArgs& inArgs,
             Teuchos::rcp_dynamic_cast<Stokhos::GaussSeidelEpetraOp>(WPrec_out, true);
           W_gs->setOperatorAndConstructPreconditioner(W, *x);
         }
+	else if (precMethod == APPROX_GAUSS_SEIDEL) {
+	  Teuchos::RCP<Stokhos::ApproxGaussSeidelEpetraOp> W_ags =
+	    Teuchos::rcp_dynamic_cast<Stokhos::ApproxGaussSeidelEpetraOp>(WPrec_out, true);
+	  Teuchos::RCP<Epetra_Operator> prec = 
+	    precFactory->compute(W_sg_blocks->getCoeffPtr(0));
+	  W_ags->setOperator(W);
+	  W_ags->setPrecOperator(prec);
+	}
       }
     }
     else if (jacobianMethod == FULLY_ASSEMBLED) {

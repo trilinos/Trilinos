@@ -41,7 +41,7 @@ Stokhos::GaussSeidelEpetraOp::GaussSeidelEpetraOp(
   const Teuchos::RCP<NOX::Epetra::LinearSystem>& detsolve_,
   const Teuchos::RCP<const Stokhos::Sparse3Tensor<int,double> >& Cijk_,
   const Teuchos::RCP<Epetra_Operator>& J):
-  label("Stokhos GaussSeidel Preconditioner"),
+  label("Stokhos Gauss-Seidel Preconditioner"),
   base_map(base_map_),
   sg_map(sg_map_),
   useTranspose(false),
@@ -68,9 +68,10 @@ Stokhos::GaussSeidelEpetraOp::setOperatorAndConstructPreconditioner(
   stokhos_op = Teuchos::rcp_dynamic_cast<Stokhos::MatrixFreeEpetraOp>(jacPtr, true);
   sg_J_poly = stokhos_op->getOperatorBlocks();
   EpetraExt::BlockVector sg_x_block(View, detvec->Map(), x);
-  bool success = detsolve->createPreconditioner(*(sg_x_block.GetBlock(0)),
-                                                params.sublist("Deterministic Krylov Solver"),
-                                                false);
+  detsolve->setJacobianOperatorForSolve(sg_J_poly->getCoeffPtr(0));
+  detsolve->createPreconditioner(*(sg_x_block.GetBlock(0)),
+				 params.sublist("Deterministic Krylov Solver"),
+				 false);
 }
 
 int 
@@ -100,14 +101,10 @@ Stokhos::GaussSeidelEpetraOp::ApplyInverse(const Epetra_MultiVector& Input,
     // If this is the case, the only possible solution is to make a copy
     const Epetra_MultiVector *input = &Input;
     bool made_copy = false;
-    //if (&Input == &Result) {
+    if (Input.Values() == Result.Values()) {
       input = new Epetra_MultiVector(Input);
       made_copy = true;
-    //} 
-
-//  *rightHandSide = input.getEpetraVector();
-
-   //const Stokhos::VectorOrthogPoly<Epetra_Operator>& sg_J_poly_ref = *sg_J_poly;
+    } 
  
     Teuchos::RCP<Epetra_Vector> sg_y =
      Teuchos::rcp(new Epetra_Vector(*sg_map));
@@ -164,7 +161,7 @@ Stokhos::GaussSeidelEpetraOp::ApplyInverse(const Epetra_MultiVector& Input,
     std::cout << "\nInitial residual norm = " << norm_f << std::endl;
 
     // Set deterministic solver K0
-    detsolve->setJacobianOperatorForSolve(sg_J_poly->getCoeffPtr(0));
+    //detsolve->setJacobianOperatorForSolve(sg_J_poly->getCoeffPtr(0));
 
 // 2D array to store mat-vec results
 //int expn;
@@ -226,8 +223,8 @@ while (((norm_df/norm_f)>sg_tol) && (iter<max_iter)) {
      {
       TEUCHOS_FUNC_TIME_MONITOR("Total deterministic solve Time");
       detsolve->applyJacobianInverse(params.sublist("Deterministic Krylov Solver"), nox_df, nox_dx);
-  //   Teuchos::RCP<const Epetra_Operator> M = detsolve->getGeneratedPrecOperator();
-//     M->ApplyInverse(*(sg_df_vec_all[k]), *(sg_dx_vec_all[k]));
+      // Teuchos::RCP<const Epetra_Operator> M = detsolve->getGeneratedPrecOperator();
+      // M->ApplyInverse(*(sg_df_vec_all[k]), *(sg_dx_vec_all[k]));
      }
       (sg_dxold_vec_all[k])->Update(1.0, *sg_dx_vec_all[k], -1.0);
       (sg_dx_vec_all[k])->Norm2(&norm_f_k[k]);

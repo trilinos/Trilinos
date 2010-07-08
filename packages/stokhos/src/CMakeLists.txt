@@ -102,6 +102,7 @@ SET(HEADERS ${HEADERS}
   Stokhos_KLMatrixFreeEpetraOp.hpp
   Stokhos_MeanEpetraOp.hpp
   Stokhos_GaussSeidelEpetraOp.hpp
+  Stokhos_ApproxGaussSeidelEpetraOp.hpp
   Stokhos_PreconditionerFactory.hpp
   Stokhos_IfpackPreconditionerFactory.hpp
   Stokhos_MLPreconditionerFactory.hpp
@@ -134,6 +135,7 @@ SET(SOURCES ${SOURCES}
   Stokhos_KLMatrixFreeEpetraOp.cpp
   Stokhos_MeanEpetraOp.cpp
   Stokhos_GaussSeidelEpetraOp.cpp
+  Stokhos_ApproxGaussSeidelEpetraOp.cpp
   Stokhos_IfpackPreconditionerFactory.cpp
   Stokhos_MLPreconditionerFactory.cpp
   Stokhos_MLPrecOp.cpp

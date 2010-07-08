@@ -288,6 +288,7 @@ namespace Stokhos {
     enum EPrecMethod {
       MEAN_BASED,
       GAUSS_SEIDEL,
+      APPROX_GAUSS_SEIDEL,
       JACOBI,
       KRONECKER
     };

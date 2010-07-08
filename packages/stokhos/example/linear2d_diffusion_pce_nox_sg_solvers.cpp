@@ -134,8 +134,8 @@ TotalTimer.start();
 //TotalTimer.stop();
   int n, num_KL, p;
   double sigma, mean, weightCut;
-  std::string solve_method;
-  if(argc < 8){
+  std::string solve_method, precMethod;
+  if(argc < 9){
     n = 32; //Number of mesh points
     p = 5; //Polynomial degree
     num_KL = 2;  //Terms in KL expansion
@@ -143,6 +143,9 @@ TotalTimer.start();
     mean = .2;
     weightCut = 1;   // Support for distribution is +-weightCut
     solve_method = "SG_GMRES";
+    precMethod = "Mean-based";
+    //precMethod = "Gauss-Seidel";
+    //precMethod = "Approx-Gauss-Seidel";
   }else{
     n = atoi(argv[1]);
     p = atoi(argv[2]);
@@ -151,6 +154,7 @@ TotalTimer.start();
     mean = atof(argv[5]);
     weightCut = atof(argv[6]);
     solve_method = argv[7];
+    precMethod = argv[8];
   }
 std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
  
@@ -162,7 +166,6 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
   bool matrix_free = true;
   bool scaleOP = true; 
   //std::string precMethod = "Mean-based";
-  std::string precMethod = "Gauss-Seidel";
 //  bool write_linear_system = false;
 
 // Initialize MPI
@@ -189,7 +192,7 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
     
     // Create application
     Teuchos::RCP<twoD_diffusion_ME> model =
-      Teuchos::rcp(new twoD_diffusion_ME(Comm, n, num_KL));
+      Teuchos::rcp(new twoD_diffusion_ME(Comm, n, num_KL, sigma, mean));
 
     // Set up NOX parameters
 //    Teuchos::RCP<Teuchos::ParameterList> noxParams =
@@ -209,9 +212,9 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
                     NOX::Utils::OuterIteration + 
                     NOX::Utils::OuterIterationStatusTest + 
                     NOX::Utils::InnerIteration +
-                 //   NOX::Utils::Parameters + 
-                 //   NOX::Utils::Details + 
-    //                NOX::Utils::LinearSolverDetails +
+		    NOX::Utils::Parameters + 
+		    NOX::Utils::Details + 
+		    NOX::Utils::LinearSolverDetails +
                     NOX::Utils::Warning + 
                     NOX::Utils::Error);
 
@@ -256,7 +259,21 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
     det_lsParams.set("Zero Initial Guess", true);    
     Teuchos::ParameterList& det_ML = 
       det_lsParams.sublist("ML");
-   ML_Epetra::SetDefaults("SA", det_ML);
+    ML_Epetra::SetDefaults("SA", det_ML);
+    det_ML.set("ML output", 0);
+    det_ML.set("max levels",5);
+    det_ML.set("increasing or decreasing","increasing");
+    det_ML.set("aggregation: type", "Uncoupled");
+    det_ML.set("smoother: type","ML symmetric Gauss-Seidel");
+    det_ML.set("smoother: sweeps",1);
+    det_ML.set("smoother: pre or post", "both");
+    det_ML.set("coarse: max size", 200);
+#ifdef HAVE_ML_AMESOS
+    det_ML.set("coarse: type","Amesos-KLU");
+#else
+    det_ML.set("coarse: type","Jacobi");
+#endif
+   
 //   det_ML.set("ML output", 10);
 //    det_lsParams.set("Write Linear System", write_linear_system);
 
@@ -269,9 +286,17 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
     Teuchos::RCP<Epetra_Operator> det_A = model->create_W();
     Teuchos::RCP<NOX::Epetra::Interface::Required> det_iReq = det_nox_interface;
     Teuchos::RCP<NOX::Epetra::Interface::Jacobian> det_iJac = det_nox_interface;
+    Teuchos::ParameterList det_printParams;
+    det_printParams.set("MyPID", MyPID); 
+    det_printParams.set("Output Precision", 3);
+    det_printParams.set("Output Processor", 0);
+    det_printParams.set("Output Information", NOX::Utils::Error);
     Teuchos::RCP<NOX::Epetra::LinearSystem> det_linsys =
-      Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, det_lsParams,
-                                                        det_iReq, det_iJac, det_A,
+      Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(det_printParams, 
+							det_lsParams,
+                                                        det_iReq, 
+							det_iJac, 
+							det_A,
                                                         *det_u));
 
     // Create Stochastic Galerkin basis and expansion
@@ -320,36 +345,29 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
     if (precMethod == "Mean-based")  {
       sgParams->set("Preconditioner Method", "Mean-based");
       sgParams->set("Mean Preconditioner Type", "ML");
+      Teuchos::ParameterList& precParams =
+	sgParams->sublist("Preconditioner Parameters");
+      precParams = det_ML;
     }
     else if(precMethod == "Gauss-Seidel") {
       sgParams->set("Preconditioner Method", "Gauss-Seidel");
-    Teuchos::ParameterList& GS_params = sgParams->sublist("Gauss-Seidel");
-    GS_params.sublist("Deterministic Krylov Solver") = det_lsParams;
-    GS_params.set("Deterministic Solver", det_linsys);
-    GS_params.set("Max Iterations", 1);
-    GS_params.set("Tolerance", 1e-1);
-    GS_params.set("Save MatVec Table", false);
+      Teuchos::ParameterList& GS_params = sgParams->sublist("Gauss-Seidel");
+      GS_params.sublist("Deterministic Krylov Solver") = det_lsParams;
+      GS_params.set("Deterministic Solver", det_linsys);
+      GS_params.set("Max Iterations", 1);
+      GS_params.set("Tolerance", 1e-10);
+      GS_params.set("Save MatVec Table", false);
+    }
+    else if (precMethod == "Approx-Gauss-Seidel")  {
+      sgParams->set("Preconditioner Method", "Approximate Gauss-Seidel");
+      sgParams->set("Symmetric Gauss-Seidel", false);
+      sgParams->set("Mean Preconditioner Type", "ML");
+      Teuchos::ParameterList& precParams =
+	sgParams->sublist("Preconditioner Parameters");
+      precParams = det_ML;
     }
     else
       sgParams->set("Preconditioner Method", "Jacobi");
-
-
-    Teuchos::ParameterList& precParams =
-      sgParams->sublist("Preconditioner Parameters");
-    precParams.set("default values", "SA");
-    precParams.set("ML output", 10);
-    precParams.set("max levels",5);
-    precParams.set("increasing or decreasing","increasing");
-    precParams.set("aggregation: type", "Uncoupled");
-    precParams.set("smoother: type","ML symmetric Gauss-Seidel");
-    precParams.set("smoother: sweeps",1);
-    precParams.set("smoother: pre or post", "both");
-    precParams.set("coarse: max size", 200);
-#ifdef HAVE_ML_AMESOS
-    precParams.set("coarse: type","Amesos-KLU");
-#else
-    precParams.set("coarse: type","Jacobi");
-#endif
 
    // Create stochastic Galerkin model evaluator
     Teuchos::RCP<Stokhos::SGModelEvaluator> sg_model =
@@ -383,7 +401,6 @@ std::cout<< "sigma = " << sigma << " mean = " << mean << "\n";
       lsParams.set("Preconditioner", "ML");
       lsParams.set("Zero Initial Guess", true);    
       Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linsys;
-      printParams.set("Output Information", NOX::Utils::LinearSolverDetails);
     if (matrix_free) {
       Teuchos::RCP<Epetra_Operator> M = sg_model->create_WPrec()->PrecOp;
       Teuchos::RCP<NOX::Epetra::Interface::Preconditioner> iPrec = nox_interface;
@@ -514,6 +531,7 @@ iters_file.close();
     std::cout << "\nResponse Mean =      " << std::endl << mean << std::endl;
     std::cout << "Response Std. Dev. = " << std::endl << std_dev << std::endl;
   */    
+
     if (status == NOX::StatusTest::Converged) 
       utils.out() << "Test Passed!" << std::endl;
 
