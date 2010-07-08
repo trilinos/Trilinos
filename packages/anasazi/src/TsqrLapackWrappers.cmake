@@ -1,3 +1,5 @@
+message (STATUS "Generating LAPACK wrappers for TSQR")
+
 # Generate a Fortran wrapper module for the LAPACK routines that
 # compute Householder vectors with nonnegative real BETA output.  We
 # wrap the routines, because the LAPACK routines' name depends on the
