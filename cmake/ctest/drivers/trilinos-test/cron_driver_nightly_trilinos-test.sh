@@ -2,10 +2,10 @@
 
 CTEST_EXE=/home/trilinos/cmake/bin/ctest
 EG_EXE=/home/trilinos/git/bin/eg
-BASEDIR=/home/bmpersc/nightly/Trilinos.base/release_10
+BASEDIR=/home/bmpersc/nightly/Trilinos.base/release_10.4
 BASEDATADIR=/home/bmpersc/nightly
 DRIVER_SCRIPT_DIR=$BASEDIR/Trilinos/cmake/ctest/drivers/trilinos-test
-BRANCH="trilinos-release-10-0-branch"
+BRANCH="trilinos-release-10-4-branch"
 TRILINOS_REPOSITORY_LOCATION="software.sandia.gov:/space/git/Trilinos"
 
 export CMAKE_LIBRARY_PATH="/home/trilinos/tpl/gcc4.1.2/exodusII_4.84/lib:/home/trilinos/tpl/gcc4.1.2/netcdf_4.0/lib"
@@ -16,7 +16,7 @@ export TRILINOSDATADIRECTORY=$BASEDATADIR/TrilinosData
 DATE=`date "+%m-%d-%Y"`
 
 echo
-echo "Starting nightly Trilinos Release 10.0 testing on trilinos-test: `date`"
+echo "Starting nightly Trilinos Release 10.4 testing on trilinos-test: `date`"
 echo
 
 echo
@@ -45,22 +45,22 @@ else
 fi
 
 echo
-echo "Doing mpi optimized release 10.0 build: `date`"
+echo "Doing mpi optimized release 10.4 build: `date`"
 echo
 
-time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_mpi_release_trilinos-test.cmake -VV &> "MPI_RELEASE_10.0_$DATE.log"
+time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_mpi_release_trilinos-test.cmake -VV &> "MPI_RELEASE_10.4_$DATE.log"
 
 echo
-echo "Doing mpi optimized release 10.0  shared library build: `date`"
+echo "Doing mpi optimized release 10.4  shared library build: `date`"
 echo 
 
-time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_mpi_release_shared_trilinos-test.cmake -VV &> "MPI_RELEASE_10.0_SHARED_$DATE.log"
+time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_mpi_release_shared_trilinos-test.cmake -VV &> "MPI_RELEASE_10.4_SHARED_$DATE.log"
 
 echo
-echo "Doing serial release 10.0 build: `date`"
+echo "Doing serial release 10.4 build: `date`"
 echo
 
-time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_serial_release_trilinos-test.cmake -VV &> "SERIAL_RELEASE_10.0_$DATE.log"
+time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_linux_nightly_serial_release_trilinos-test.cmake -VV &> "SERIAL_RELEASE_10.4_$DATE.log"
 
 echo
 echo "Ending nightly Trilinos testing on trilinos-test: `date`"
