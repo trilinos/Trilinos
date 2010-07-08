@@ -17,7 +17,7 @@ namespace TSQR {
     /// LAPACK::LARFP() always produces a nonnegative BETA output, and
     /// therefore whether the QR factorizations in the TSQR::Combine
     /// class produce R factors with all negative diagonal entries.
-    static const bool QR_produces_R_factor_with_nonnegative_diagonal;
+    static bool QR_produces_R_factor_with_nonnegative_diagonal();
 
     void 
     LARFP (const Ordinal n, 
@@ -58,6 +58,21 @@ namespace TSQR {
 	   const Ordinal ldc,
 	   Scalar work[],
 	   int* const info);
+
+    void
+    ORMQR (const char* const side,
+	   const char* const trans,
+	   const Ordinal m,
+	   const Ordinal n,
+	   const Ordinal k,
+	   const Scalar A[],
+	   const Ordinal lda,
+	   const Scalar tau[],
+	   Scalar C[],
+	   const Ordinal ldc,
+	   Scalar work[],
+	   const int lwork,
+	   int* const INFO);
 
     void
     ORGQR (const Ordinal m,

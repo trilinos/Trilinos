@@ -25,21 +25,21 @@ namespace TSQR {
     if (A.nrows() != B.nrows() || A.ncols() != B.ncols())
       return false;
     
-    typedef typename FirstMatrixViewType::index_type first_index_type;
-    typedef typename SecondMatrixViewType::index_type second_index_type;
+    typedef typename FirstMatrixViewType::ordinal_type first_ordinal_type;
+    typedef typename SecondMatrixViewType::ordinal_type second_ordinal_type;
     typedef typename FirstMatrixViewType::pointer_type first_pointer_type;
     typedef typename SecondMatrixViewType::pointer_type second_pointer_type;
 
-    const first_index_type nrows = A.nrows();
-    const first_index_type A_lda = A.lda();
-    const first_index_type ncols = A.ncols();
-    const second_index_type B_lda = B.lda();
+    const first_ordinal_type nrows = A.nrows();
+    const first_ordinal_type A_lda = A.lda();
+    const first_ordinal_type ncols = A.ncols();
+    const second_ordinal_type B_lda = B.lda();
 
     first_pointer_type A_j = A.get();
     second_pointer_type B_j = B.get();
 
-    for (first_index_type j = 0; j < ncols; ++j, A_j += A_lda, B_j += B_lda)
-      for (first_index_type i = 0; i < nrows; ++i)
+    for (first_ordinal_type j = 0; j < ncols; ++j, A_j += A_lda, B_j += B_lda)
+      for (first_ordinal_type i = 0; i < nrows; ++i)
 	if (A_j[i] != B_j[i])
 	  return false;
 
@@ -101,8 +101,10 @@ namespace TSQR {
   template< class Ordinal, class Scalar >
   class MatView {
   public:
-    typedef Scalar value_type;
-    typedef Ordinal index_type;
+    typedef Scalar scalar_type;
+    typedef Scalar value_type; // deprecated
+    typedef Ordinal ordinal_type;
+    typedef Ordinal index_type; // deprecated
     typedef Scalar* pointer_type;
 
     MatView () : nrows_(0), ncols_(0), A_(NULL), lda_(0) {}
@@ -310,18 +312,18 @@ namespace TSQR {
     template< class MatrixViewType >
     void
     copy (MatrixViewType& B) {
-      const index_type num_rows = nrows();
-      const index_type num_cols = ncols();
-      const index_type A_lda = lda();
-      const typename MatrixViewType::index_type B_lda = B.lda();
+      const ordinal_type num_rows = nrows();
+      const ordinal_type num_cols = ncols();
+      const ordinal_type A_lda = lda();
+      const typename MatrixViewType::ordinal_type B_lda = B.lda();
 
       if (B.nrows() != num_rows || B.ncols() != num_cols)
 	throw std::invalid_argument("Dimensions of input matrix B "
 				    "are not compatible with *this");
-      value_type* A_j = get();
+      scalar_type* A_j = get();
       typename MatrixViewType::pointer_type B_j = B.get();
-      for (index_type j = 0; j < num_cols; ++j, A_j += A_lda, B_j += B_lda)
-	for (index_type i = 0; i < num_rows; ++i)
+      for (ordinal_type j = 0; j < num_cols; ++j, A_j += A_lda, B_j += B_lda)
+	for (ordinal_type i = 0; i < num_rows; ++i)
 	  A_j[i] = B_j[i];
     }
 
@@ -336,8 +338,8 @@ namespace TSQR {
     }
 
   private:
-    index_type nrows_, ncols_, lda_;
-    value_type* A_;
+    ordinal_type nrows_, ncols_, lda_;
+    scalar_type* A_;
   };
 
 
@@ -351,8 +353,10 @@ namespace TSQR {
   template< class Ordinal, class Scalar >
   class ConstMatView {
   public:
-    typedef Scalar value_type;
-    typedef Ordinal index_type;
+    typedef Scalar scalar_type;
+    typedef Scalar value_type; // deprecated
+    typedef Ordinal ordinal_type;
+    typedef Ordinal index_type; // deprecated
     typedef const Scalar* pointer_type;
 
     ConstMatView () : nrows_(0), ncols_(0), A_(NULL), lda_(0) {}
@@ -496,8 +500,8 @@ namespace TSQR {
 
       pointer_type const A_rest_ptr = get();
       pointer_type A_bottom_ptr;
-      const index_type nrows_rest = nrows() - nrows_bottom;
-      index_type lda_bottom, lda_rest;
+      const ordinal_type nrows_rest = nrows() - nrows_bottom;
+      ordinal_type lda_bottom, lda_rest;
       if (b_contiguous_blocks)
 	{
 	  lda_bottom = nrows_bottom;
@@ -530,7 +534,7 @@ namespace TSQR {
 
 
   private:
-    index_type nrows_, ncols_, lda_;
+    ordinal_type nrows_, ncols_, lda_;
     pointer_type A_;
   };
 

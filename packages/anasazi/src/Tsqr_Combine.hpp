@@ -50,8 +50,10 @@ namespace TSQR {
     /// Whether or not the QR factorizations computed by methods of
     /// this class produce an R factor with all nonnegative diagonal
     /// entries.  
-    static const bool QR_produces_R_factor_with_nonnegative_diagonal =
-      LAPACK< Ordinal, Scalar >::QR_produces_R_factor_with_nonnegative_diagonal;
+    static bool QR_produces_R_factor_with_nonnegative_diagonal()
+    { 
+      return LAPACK< Ordinal, Scalar >::QR_produces_R_factor_with_nonnegative_diagonal; 
+    }
 
     /// Apply the Q factor stored in [R; A] to [C_top; C_bot].  The C
     /// blocks are allowed, but not required, to have different leading
@@ -195,8 +197,9 @@ namespace TSQR {
 
     Combine () {}
 
-    static const bool QR_produces_R_factor_with_nonnegative_diagonal =
-      LAPACK< Ordinal, Scalar >::QR_produces_R_factor_with_nonnegative_diagonal;
+    static bool QR_produces_R_factor_with_nonnegative_diagonal() {
+      return LAPACK< Ordinal, Scalar >::QR_produces_R_factor_with_nonnegative_diagonal();
+    }
 
     void
     apply_inner (const char* const trans,

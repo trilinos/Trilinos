@@ -6,6 +6,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+extern "C" void FortranCInterface_GLOBAL(zlarnv, ZLARNV)
+  (const int* const IDIST,
+   int ISEED[],
+   const int* const N,
+   std::complex<double> X[]);
+
 extern "C" void FortranCInterface_GLOBAL(zpotri, ZPOTRI)
   (const char* const UPLO,
    const int* const N,
@@ -278,6 +284,16 @@ namespace TSQR {
 					     int* const INFO)
   {
     FortranCInterface_GLOBAL(zpotri, ZPOTRI) (uplo, &n, A, &lda, INFO);
+  }
+
+  template <>
+  void
+  LAPACK<int, std::complex<double> >::LARNV (const int idist, 
+					     int iseed[],
+					     const int n,
+					     std::complex<double> x[])
+  {
+    FortranCInterface_GLOBAL(zlarnv, ZLARNV) (&idist, iseed, &n, x);
   }
 
 } // namespace TSQR

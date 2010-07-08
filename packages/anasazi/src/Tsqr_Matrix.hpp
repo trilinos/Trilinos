@@ -79,8 +79,10 @@ namespace TSQR {
     }
     
   public:
-    typedef Scalar value_type;
-    typedef Ordinal index_type;
+    typedef Scalar scalar_type;
+    typedef Scalar value_type; // deprecated
+    typedef Ordinal ordinal_type;
+    typedef Ordinal index_type; // deprecated
     typedef Scalar* pointer_type;
 
     Matrix (const Ordinal num_rows, 
@@ -160,8 +162,8 @@ namespace TSQR {
     void 
     copy (MatrixViewType& B)
     {
-      const typename MatrixViewType::index_type num_rows = B.nrows();
-      const typename MatrixViewType::index_type num_cols = B.ncols();
+      const typename MatrixViewType::ordinal_type num_rows = B.nrows();
+      const typename MatrixViewType::ordinal_type num_cols = B.ncols();
       if (num_rows != nrows() || num_cols != ncols())
 	{
 	  std::ostringstream os;
@@ -197,19 +199,19 @@ namespace TSQR {
       if (nrows() != B.nrows() || ncols() != B.ncols())
 	return false;
     
-      typedef typename MatrixViewType::index_type second_index_type;
-      typedef typename MatrixViewType::value_type second_value_type;
+      typedef typename MatrixViewType::ordinal_type second_ordinal_type;
+      typedef typename MatrixViewType::scalar_type second_scalar_type;
       typedef typename MatrixViewType::pointer_type second_pointer_type;
 
-      const index_type A_nrows = nrows();
-      const index_type A_lda = lda();
-      const index_type A_ncols = ncols();
-      const second_index_type B_lda = B.lda();
-      const value_type* A_j = get();
-      const second_value_type* B_j = B.get();
+      const ordinal_type A_nrows = nrows();
+      const ordinal_type A_lda = lda();
+      const ordinal_type A_ncols = ncols();
+      const second_ordinal_type B_lda = B.lda();
+      const scalar_type* A_j = get();
+      const second_scalar_type* B_j = B.get();
 
-      for (index_type j = 0; j < A_ncols; ++j, A_j += A_lda, B_j += B_lda)
-	for (index_type i = 0; i < A_nrows; ++i)
+      for (ordinal_type j = 0; j < A_ncols; ++j, A_j += A_lda, B_j += B_lda)
+	for (ordinal_type i = 0; i < A_nrows; ++i)
 	  if (A_j[i] != B_j[i])
 	    return false;
       return true;

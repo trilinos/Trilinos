@@ -42,6 +42,25 @@ namespace TSQR {
 		     Datum outData[], 
 		     const int count) = 0;
 
+    ///
+    /// Assumes that Datum objects are less-than comparable by the
+    /// underlying communication protocol.
+    ///
+    virtual Datum 
+    globalMin (const Datum& inDatum) = 0;
+
+    ///
+    /// Assumes that Datum objects are less-than comparable by the
+    /// underlying communication protocol.
+    ///
+    virtual Datum 
+    globalMax (const Datum& inDatum) = 0;
+
+    virtual void
+    broadcast (Datum data[], 
+	       const int count,
+	       const int root) = 0;
+
     virtual int rank () const = 0;
     virtual int size () const = 0;
     virtual void barrier () const = 0;

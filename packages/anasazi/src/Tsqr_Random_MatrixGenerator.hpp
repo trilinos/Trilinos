@@ -4,9 +4,11 @@
 #include <Tsqr_Blas.hpp>
 #include <Tsqr_Lapack.hpp>
 #include <Tsqr_Matrix.hpp>
+#include <Tsqr_ScalarTraits.hpp>
 
 #include <algorithm>
 #include <limits>
+#include <sstream>
 #include <stdexcept>
 #include <vector>
 
@@ -21,9 +23,10 @@ namespace TSQR {
     public:
       typedef Ordinal ordinal_type;
       typedef Scalar scalar_type;
+      typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
       typedef Generator generator_type;
 
-      MatrixGenerator (const Generator& generator) : gen_ (generator) {}
+      MatrixGenerator (Generator& generator) : gen_ (generator) {}
 
       void
       fill_random (const Ordinal nrows, 
@@ -65,7 +68,8 @@ namespace TSQR {
 	lapack.GEQRF (nrows, ncols, Q, ldq, &tau[0], &_lwork1, -1, &info);
 	if (info != 0)
 	  throw std::logic_error("LAPACK GEQRF LWORK query failed");
-	lapack.ORGQR (nrows, ncols, Q, ldq, &tau[0], &_lwork2, -1, &info);
+
+	lapack.ORGQR (nrows, ncols, ncols, Q, ldq, &tau[0], &_lwork2, -1, &info);
 	if (info != 0)
 	  throw std::logic_error("LAPACK ORGQR LWORK query failed");
 
@@ -79,7 +83,7 @@ namespace TSQR {
 	  throw std::runtime_error("LAPACK GEQRF failed");
 
 	// Compute explicit Q factor in place
-	lapack.ORGQR (nrows, ncols, Q, ldq, &tau[0], &work[0], lwork, &info);
+	lapack.ORGQR (nrows, ncols, ncols, Q, ldq, &tau[0], &work[0], lwork, &info);
 	if (info != 0)
 	  throw std::runtime_error("LAPACK ORGQR failed");
       }
@@ -105,7 +109,6 @@ namespace TSQR {
 
 	// Get ready for QR factorization
 	LAPACK< Ordinal, Scalar > lapack;
-	std::vector< Scalar > tau (std::min(nrows, ncols));
 
 	// Workspace query
 	Scalar _lwork1;
@@ -130,7 +133,7 @@ namespace TSQR {
 		       const Ordinal ncols, 
 		       Scalar A[], 
 		       const Ordinal lda,
-		       const Scalar singular_values[])
+		       const magnitude_type singular_values[])
       {
 	typedef Matrix< Ordinal, Scalar > matrix_type;
 	typedef MatView< Ordinal, Scalar > matrix_view_type;
@@ -144,7 +147,8 @@ namespace TSQR {
 	// of singular values.
 	matrix_view_type A_view (nrows, ncols, A, lda);
 	for (Ordinal j = 0; j < ncols; ++j)
-	  A_view(j,j) = singular_values[j];
+	  // Promote magnitude_type to Scalar here.
+	  A_view(j,j) = Scalar (singular_values[j]);
 
 	// Generate random orthogonal U (nrows by ncols) and V (ncols by
 	// ncols).  Keep them stored implicitly.
@@ -158,9 +162,20 @@ namespace TSQR {
 	lapack.ORMQR ("L", "N", nrows, ncols, ncols, U.get(), U.lda(), &tau_U[0], 
 		      A, lda, &_lwork1, -1, &info);
 	if (info != 0)
-	  throw std::logic_error("LAPACK ORMQR LWORK query failed");
-	lapack.ORMQR ("R", "H", nrows, ncols, ncols, V.get(), U.lda(), &tau_V[0], 
-		      A, lda, &_lwork2, -1, &info);
+	  {
+	    std::ostringstream os;
+	    os << "LAPACK ORMQR LWORK query failed with INFO = " << info 
+	       << ": called ORMQR(\"L\", \"N\", " << nrows << ", " << ncols 
+	       << ", " << ncols << ", NULL, " << U.lda() << ", NULL, NULL, " 
+	       << lda << ", WORK, -1, &INFO)";
+	    throw std::logic_error(os.str());
+	  }
+	if (ScalarTraits< Scalar >::is_complex)
+	  lapack.ORMQR ("R", "H", nrows, ncols, ncols, V.get(), U.lda(), &tau_V[0], 
+			A, lda, &_lwork2, -1, &info);
+	else
+	  lapack.ORMQR ("R", "T", nrows, ncols, ncols, V.get(), U.lda(), &tau_V[0], 
+			A, lda, &_lwork2, -1, &info);
 	if (info != 0)
 	  throw std::logic_error("LAPACK ORMQR LWORK query failed");
 
@@ -173,8 +188,12 @@ namespace TSQR {
 		      A, lda, &work[0], lwork, &info);
 	if (info != 0)
 	  throw std::runtime_error("LAPACK ORMQR failed (first time)");
-	lapack.ORMQR ("R", "H", nrows, ncols, ncols, V.get(), U.lda(), &tau_V[0], 
-		      A, lda, &work[0], lwork, &info);
+	if (ScalarTraits< Scalar >::is_complex)
+	  lapack.ORMQR ("R", "T", nrows, ncols, ncols, V.get(), U.lda(), &tau_V[0], 
+			A, lda, &work[0], lwork, &info);
+	else
+	  lapack.ORMQR ("R", "T", nrows, ncols, ncols, V.get(), U.lda(), &tau_V[0], 
+			A, lda, &work[0], lwork, &info);
 	if (info != 0)
 	  throw std::runtime_error("LAPACK ORMQR failed (second time)");
       }
@@ -186,15 +205,14 @@ namespace TSQR {
       // generator: generates random values from a normal (0,1) distribution.
       // (Defines "double operator()".)
       void
-      fill_random_R (Generator& gen,
-		     const Ordinal n,
+      fill_random_R (const Ordinal n,
 		     Scalar R[],
 		     const Ordinal ldr,
 		     const Scalar singular_values[])
       {
 	// Fill R with an n x n (not upper triangular) random matrix
 	// having the given singular values.
-	fill_random_svd (gen, n, n, R, ldr, singular_values);
+	fill_random_svd (n, n, R, ldr, singular_values);
 
 	// Compute the QR factorization in place of R (which isn't upper triangular yet).
 	std::vector< Scalar > tau (n);
@@ -212,7 +230,7 @@ namespace TSQR {
 	std::vector< Scalar > work (lwork);
 
 	// Compute QR factorization (implicit representation in place).
-	lapack.GEQRF (n, n, R, ldr, &tau[0], &work[0], &lwork, &info);
+	lapack.GEQRF (n, n, R, ldr, &tau[0], &work[0], lwork, &info);
 	if (info != 0)
 	  throw std::runtime_error("LAPACK GEQRF failed");
 

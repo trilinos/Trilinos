@@ -5,6 +5,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+extern "C" void FortranCInterface_GLOBAL(slarnv, SLARNV)
+  (const int* const IDIST,
+   int ISEED[],
+   const int* const N,
+   float X[]);
+
 extern "C" void FortranCInterface_GLOBAL(spotri, SPOTRI)
   (const char* const UPLO,
    const int* const N,
@@ -271,6 +277,16 @@ namespace TSQR {
 			      int* const INFO)
   {
     FortranCInterface_GLOBAL(spotri, SPOTRI) (uplo, &n, A, &lda, INFO);
+  }
+
+  template <>
+  void
+  LAPACK<int, float >::LARNV (const int idist, 
+			      int iseed[],
+			      const int n,
+			      float x[])
+  {
+    FortranCInterface_GLOBAL(slarnv, SLARNV) (&idist, iseed, &n, x);
   }
 
 } // namespace TSQR

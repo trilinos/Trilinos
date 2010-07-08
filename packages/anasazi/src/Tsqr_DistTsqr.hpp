@@ -43,7 +43,7 @@ namespace TSQR {
     /// Whether or not all diagonal entries of the R factor computed
     /// by the QR factorization are guaranteed to be nonnegative.
     bool QR_produces_R_factor_with_nonnegative_diagonal () const {
-      return Combine< LocalOrdinal, Scalar >::QR_produces_R_factor_with_nonnegative_diagonal;
+      return Combine< LocalOrdinal, Scalar >::QR_produces_R_factor_with_nonnegative_diagonal();
     }
 
     /// \brief Compute QR factorization of R factors, one per MPI process

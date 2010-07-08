@@ -20,6 +20,9 @@ set (CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${TPL_LAPACK_LIBRARIES
 # finding the LAPACK library.  All modern versions of LAPACK should have 
 # DLARFG.
 check_fortran_function_exists ("DLARFG" HAVE_LAPACK_DLARFG)
+check_fortran_function_exists ("SLARFG" HAVE_LAPACK_SLARFG)
+check_fortran_function_exists ("ZLARFG" HAVE_LAPACK_ZLARFG)
+check_fortran_function_exists ("CLARFG" HAVE_LAPACK_CLARFG)
 
 # LAPACK versions 3.2 and 3.2.1 have _LARFP, which is a variant of
 # DLARFG that always produces a nonnegative BETA output.  In mid-June
