@@ -339,6 +339,8 @@ private:
   int NumSweeps_;  
   //! Is the problem parallel?
   bool IsParallel_;
+  //! Do we have OAZ boundary conditions?
+  bool HaveOAZBoundaries_;
 
   //! Contains the number of successful call to ApplyInverse().
   mutable int NumApplyInverse_;
