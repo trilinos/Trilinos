@@ -102,6 +102,21 @@ extern "C" void FortranCInterface_GLOBAL(dgeqr2p, DGEQR2P)
    int* const INFO);
 #endif // HAVE_LAPACK_DGEQR2P
 
+extern "C" void FortranCInterface_GLOBAL(dormqr, DORMQR)
+  (const char* const SIDE,
+   const char* const TRANS,
+   const int* const M,
+   const int* const N,
+   const int* const K,
+   const double A[],
+   const int* const LDA,
+   const double TAU[],
+   double C[],
+   const int* const LDC,
+   double WORK[],
+   const int* const LWORK,
+   int* const INFO);
+
 extern "C" void FortranCInterface_GLOBAL(dorm2r, DORM2R)
   (const char* const SIDE,
    const char* const TRANS,
@@ -136,14 +151,14 @@ namespace TSQR {
   // available, LAPACK::GEQRF() calls _GEQRF, which uses _LARFP.
 #ifdef HAVE_LAPACK_DGEQRFP
   template <>
-  const bool LAPACK<int, double >::QR_produces_R_factor_with_nonnegative_diagonal = true;
+  bool LAPACK<int, double >::QR_produces_R_factor_with_nonnegative_diagonal() { return true; }
 #else
 #  ifdef HAVE_LAPACK_DLARFP
   template <>
-  const bool LAPACK<int, double >::QR_produces_R_factor_with_nonnegative_diagonal = true;
+  bool LAPACK<int, double >::QR_produces_R_factor_with_nonnegative_diagonal() { return true; }
 #  else
   template <>
-  const bool LAPACK<int, double >::QR_produces_R_factor_with_nonnegative_diagonal = false;
+  bool LAPACK<int, double >::QR_produces_R_factor_with_nonnegative_diagonal() { return false; }
 #  endif
 #endif
 
@@ -208,6 +223,25 @@ namespace TSQR {
 #else
     FortranCInterface_GLOBAL(dgeqr2, DGEQR2) (&m, &n, A, &lda, tau, work, INFO);
 #endif // HAVE_LAPACK_DGEQR2P
+  }
+
+  template <>
+  void
+  LAPACK<int, double >::ORMQR (const char* const side,
+			       const char* const trans,
+			       const int m,
+			       const int n,
+			       const int k,
+			       const double A[],
+			       const int lda,
+			       const double tau[],
+			       double C[],
+			       const int ldc,
+			       double work[],
+			       const int lwork,
+			       int* const INFO)
+  {
+    FortranCInterface_GLOBAL(dormqr, DORMQR) (side, trans, &m, &n, &k, A, &lda, tau, C, &ldc, work, &lwork, INFO);
   }
 
   template <>

@@ -1,6 +1,197 @@
 module TsqrCombine
-  use LapackQrRoutines
+  use TsqrHouseholderReflector, only : DLARFP_wrapper, SLARFP_wrapper
+
   implicit none
+
+  interface 
+     subroutine DGEMV(TRANS,M,N,ALPHA,A,LDA,X,INCX,BETA,Y,INCY)
+       real (8), intent(in)    :: ALPHA,BETA
+       integer, intent(in)     :: INCX,INCY,LDA,M,N
+       character, intent(in)   :: TRANS
+       real (8), intent(in)    :: A(LDA,*), X(*)
+       real (8), intent(inout) :: Y(*)
+     end subroutine DGEMV
+
+     subroutine SGEMV(TRANS,M,N,ALPHA,A,LDA,X,INCX,BETA,Y,INCY)
+       real (4), intent(in)    :: ALPHA,BETA
+       integer, intent(in)     :: INCX,INCY,LDA,M,N
+       character, intent(in)   :: TRANS
+       real (4), intent(in)    :: A(LDA,*), X(*)
+       real (4), intent(inout) :: Y(*)
+     end subroutine SGEMV
+     
+     subroutine DGER(M,N,ALPHA,X,INCX,Y,INCY,A,LDA)
+       real (8), intent(in)    :: ALPHA
+       integer, intent(in)     :: INCX,INCY,LDA,M,N
+       real (8), intent(inout) :: A(LDA,*)
+       real (8), intent(in)    :: X(*),Y(*)
+     end subroutine DGER
+
+     subroutine SGER(M,N,ALPHA,X,INCX,Y,INCY,A,LDA)
+       real (4), intent(in)    :: ALPHA
+       integer, intent(in)     :: INCX,INCY,LDA,M,N
+       real (4), intent(inout) :: A(LDA,*)
+       real (4), intent(in)    :: X(*),Y(*)
+     end subroutine SGER
+
+     subroutine DGEQR2( M, N, A, LDA, TAU, WORK, INFO )
+       integer, intent(in)     :: M, N, LDA
+       real (8), intent(inout) :: A(LDA,*)
+       real (8), intent(out)   :: TAU(*), WORK(*)
+       integer, intent(out)    :: INFO
+     end subroutine DGEQR2
+
+     subroutine SGEQR2( M, N, A, LDA, TAU, WORK, INFO )
+       integer, intent(in)     :: M, N, LDA
+       real (4), intent(inout) :: A(LDA,*)
+       real (4), intent(out)   :: TAU(*), WORK(*)
+       integer, intent(out)    :: INFO
+     end subroutine SGEQR2
+
+     subroutine DGEQRF( M, N, A, LDA, TAU, WORK, LWORK, INFO )
+       integer, intent(in)     :: M, N, LDA, LWORK
+       real (8), intent(inout) :: A(LDA,*)
+       real (8), intent(out)   :: TAU(*), WORK(*)
+       integer, intent(out)    :: INFO
+     end subroutine DGEQRF
+
+     subroutine SGEQRF( M, N, A, LDA, TAU, WORK, LWORK, INFO )
+       integer, intent(in)     :: M, N, LDA, LWORK
+       real (4), intent(inout) :: A(LDA,*)
+       real (4), intent(out)   :: TAU(*), WORK(*)
+       integer, intent(out)    :: INFO
+     end subroutine SGEQRF
+
+     subroutine DORMQR( SIDE, TRANS, M, N, K, A, LDA, TAU, C, LDC, WORK, LWORK, INFO )
+       character, intent(in) :: SIDE, TRANS
+       integer, intent(in)     :: M, N, K, LDA, LDC, LWORK
+       real (8), intent(in)    :: A(LDA,*), TAU(*)
+       real (8), intent(inout) :: C(LDC,*)
+       real (8), intent(out)   :: WORK(*)
+       integer, intent(out)    :: INFO
+     end subroutine DORMQR
+
+     subroutine SORMQR( SIDE, TRANS, M, N, K, A, LDA, TAU, C, LDC, WORK, LWORK, INFO )
+       character, intent(in) :: SIDE, TRANS
+       integer, intent(in)     :: M, N, K, LDA, LDC, LWORK
+       real (4), intent(in)    :: A(LDA,*), TAU(*)
+       real (4), intent(inout) :: C(LDC,*)
+       real (4), intent(out)   :: WORK(*)
+       integer, intent(out)    :: INFO
+     end subroutine SORMQR
+
+     subroutine DORM2R( SIDE, TRANS, M, N, K, A, LDA, TAU, C, LDC, WORK, INFO )
+       character, intent(in) :: SIDE, TRANS
+       integer, intent(in)     :: M, N, K, LDA, LDC
+       real (8), intent(in)    :: A(LDA,*), TAU(*)
+       real (8), intent(inout) :: C(LDC,*)
+       real (8), intent(out)   :: WORK(*)
+       integer, intent(out)    :: INFO
+     end subroutine DORM2R
+
+     subroutine SORM2R( SIDE, TRANS, M, N, K, A, LDA, TAU, C, LDC, WORK, INFO )
+       character, intent(in) :: SIDE, TRANS
+       integer, intent(in)     :: M, N, K, LDA, LDC
+       real (4), intent(in)    :: A(LDA,*), TAU(*)
+       real (4), intent(inout) :: C(LDC,*)
+       real (4), intent(out)   :: WORK(*)
+       integer, intent(out)    :: INFO
+     end subroutine SORM2R
+
+     subroutine DORGQR( M, N, K, A, LDA, TAU, WORK, LWORK, INFO )
+       integer, intent(in)     :: M, N, K, LDA, LWORK
+       real (8), intent(inout) :: A(LDA,*)
+       real (8), intent(in)    :: TAU(*)
+       real (8), intent(out)   :: WORK(*)
+       integer, intent(out)    :: INFO
+     end subroutine DORGQR
+
+     subroutine SORGQR( M, N, K, A, LDA, TAU, WORK, LWORK, INFO )
+       integer, intent(in)     :: M, N, K, LDA, LWORK
+       real (4), intent(inout) :: A(LDA,*)
+       real (4), intent(in)    :: TAU(*)
+       real (4), intent(out)   :: WORK(*)
+       integer, intent(out)    :: INFO
+     end subroutine SORGQR
+
+     subroutine DGEMM(TRANSA,TRANSB,M,N,K,ALPHA,A,LDA,B,LDB,BETA,C,LDC)
+       real (8), intent(in)    :: ALPHA,BETA
+       integer, intent(in)     :: K,LDA,LDB,LDC,M,N
+       character, intent(in)   :: TRANSA,TRANSB
+       real (8), intent(in)    :: A(LDA,*), B(LDB,*)
+       real (8), intent(inout) :: C(LDC,*)
+     end subroutine DGEMM
+
+     subroutine SGEMM(TRANSA,TRANSB,M,N,K,ALPHA,A,LDA,B,LDB,BETA,C,LDC)
+       real (4), intent(in)    :: ALPHA,BETA
+       integer, intent(in)     :: K,LDA,LDB,LDC,M,N
+       character, intent(in)   :: TRANSA,TRANSB
+       real (4), intent(in)    :: A(LDA,*), B(LDB,*)
+       real (4), intent(inout) :: C(LDC,*)
+     end subroutine SGEMM
+
+     subroutine DSYEV( JOBZ, UPLO, N, A, LDA, W, WORK, LWORK, INFO )
+       character, intent(in)   :: JOBZ, UPLO
+       integer, intent(in)     :: LDA, LWORK, N
+       real (8), intent(inout) :: A(LDA,*)
+       real (8), intent(out)   :: W(*), WORK(*)
+       integer, intent(out)    :: INFO
+     end subroutine DSYEV
+
+     subroutine SSYEV( JOBZ, UPLO, N, A, LDA, W, WORK, LWORK, INFO )
+       character, intent(in)   :: JOBZ, UPLO
+       integer, intent(in)     :: LDA, LWORK, N
+       real (4), intent(inout) :: A(LDA,*)
+       real (4), intent(out)   :: W(*), WORK(*)
+       integer, intent(out)    :: INFO
+     end subroutine SSYEV
+
+     real(8) function DNRM2( N, X, INCX )
+       integer, intent(in)  :: N, INCX
+       real (8), intent(in) :: X(*)
+     end function DNRM2
+
+     real(4) function SNRM2( N, X, INCX )
+       integer, intent(in)  :: N, INCX
+       real (4), intent(in) :: X(*)
+     end function SNRM2
+
+     real(8) function DDOT( N, DX, INCX, DY, INCY )
+       integer, intent(in)  :: N, INCX, INCY
+       real (8), intent(in) :: DX(*), DY(*)
+     end function DDOT
+
+     real(4) function SDOT( N, DX, INCX, DY, INCY )
+       integer, intent(in)  :: N, INCX, INCY
+       real (4), intent(in) :: DX(*), DY(*)
+     end function SDOT
+
+     integer function IDAMAX( N, X, INCX )
+       integer, intent(in)  :: N, INCX
+       real (8), intent(in) :: X(*)
+     end function IDAMAX
+
+     integer function ISAMAX( N, X, INCX )
+       integer, intent(in)  :: N, INCX
+       real (4), intent(in) :: X(*)
+     end function ISAMAX
+
+     subroutine DGESVD( JOBU, JOBVT, M, N, A, LDA, S, U, LDU, VT, LDVT, WORK, LWORK, INFO )
+       character, intent(in) :: JOBU, JOBVT
+       integer, intent(in)   :: LDA, LDU, LDVT, LWORK, M, N
+       integer, intent(out)  :: INFO
+       real (8), intent(inout) :: A(LDA,*)
+       real (8), intent(out) :: S(*), U(LDU,*), VT(LDVT,*), WORK(*)
+     end subroutine DGESVD
+
+     subroutine SGESVD( JOBU, JOBVT, M, N, A, LDA, S, U, LDU, VT, LDVT, WORK, LWORK, INFO )
+       character, intent(in) :: JOBU, JOBVT
+       integer, intent(in)   :: LDA, LDU, LDVT, LWORK, M, N
+       integer, intent(out)  :: INFO
+       real (4), intent(inout) :: A(LDA,*)
+       real (4), intent(out) :: S(*), U(LDU,*), VT(LDVT,*), WORK(*)
+     end subroutine SGESVD
+  end interface
 
 contains
 
@@ -234,11 +425,10 @@ contains
     y => work(1:n)
     y = 0
     do k = 1, n-1
-       ! Form the "sparse" Householder reflector, using DLARFP instead
-       ! of DLARFG (need LAPACK 3.2, thanks Jason Riedy!) so that the
-       ! diagonal elements of the R factor are nonnegative.
-       !call DLARFP( m + 1, R(k,k), A(1:m,k), 1, tau(k) )
-       call DLARFP( m + 1, R(k,k), A(1,k), 1, tau(k) )
+       ! Form the "sparse" Householder reflector, so that the diagonal
+       ! elements of the R factor are nonnegative.
+       ! call DLARFP( m + 1, R(k,k), A(1:m,k), 1, tau(k) )
+       call DLARFP_wrapper( m + 1, R(k,k), A(1,k), 1, tau(k) )
 
        ! $y^T := A(1:m,k)^T A(1:m, k+1:n)$, so $y := A(1:m, k+1:n)^T A(1:m, k)$.
        ! BEGIN mfh 07 June 2009
@@ -270,7 +460,7 @@ contains
     ! last iteration doesn't require an update of the trailing matrix,
     ! because there is no trailing matrix left!
     !call DLARFP( m + 1, R(n,n), A(1:m,n), 1, tau(n) )
-    call DLARFP( m + 1, R(n,n), A(1,n), 1, tau(n) )
+    call DLARFP_wrapper( m + 1, R(n,n), A(1,n), 1, tau(n) )
   end subroutine d_factor_inner
 
 
@@ -291,10 +481,9 @@ contains
     y => work(1:n)
     y = 0
     do k = 1, n-1
-       ! Form the "sparse" Householder reflector, using SLARFP instead
-       ! of SLARFG (need LAPACK >= 3.2, thanks Jason Riedy!) so that
-       ! the diagonal elements of the R factor are nonnegative.
-       call SLARFP( m + 1, R(k,k), A(1,k), 1, tau(k) )
+       ! Form the "sparse" Householder reflector, so that the diagonal
+       ! elements of the R factor are nonnegative.
+       call SLARFP_WRAPPER( m + 1, R(k,k), A(1,k), 1, tau(k) )
 
        ! $y^T := A(1:m,k)^T A(1:m, k+1:n)$, so $y := A(1:m, k+1:n)^T A(1:m, k)$.
        call SGEMV( 'T', m, n-k, 1.0, A(1, k+1), lda, A(1, k), 1, 0.0, y, 1 )
@@ -316,7 +505,7 @@ contains
     ! Compute the Householder reflector for the last column.  This
     ! last iteration doesn't require an update of the trailing matrix,
     ! because there is no trailing matrix left!
-    call SLARFP( m + 1, R(n,n), A(1,n), 1, tau(n) )
+    call SLARFP_WRAPPER( m + 1, R(n,n), A(1,n), 1, tau(n) )
   end subroutine s_factor_inner
 
 
@@ -347,13 +536,12 @@ contains
     y => work(1:n)
     y = 0
     do k = 1, n-1
-       ! Form the "sparse" Householder reflector, using DLARFP instead
-       ! of DLARFG (need LAPACK 3.2, thanks Jason Riedy!) so that the
-       ! diagonal elements of the R factor are nonnegative.  Length of
-       ! this reflector is k+1, including the one top element (on the
+       ! Form the "sparse" Householder reflector, so that the diagonal
+       ! elements of the R factor are nonnegative.  Length of this
+       ! reflector is k+1, including the one top element (on the
        ! diagonal of R_top) and k bottom elements (above and including
        ! the diagonal of R_bot).
-       call DLARFP( k + 1, R_top(k,k), R_bot(1,k), 1, tau(k) )
+       call DLARFP_wrapper( k + 1, R_top(k,k), R_bot(1,k), 1, tau(k) )
 
        ! $y^T := R_bot(1:k,k)^T R_bot(1:k, k+1:n)$, so $y := R_bot(1:k, k+1:n)^T R_bot(1:k, k)$.
        call DGEMV( 'T', k, n-k, 1.0d0, R_bot(1, k+1), ldr_bot, R_bot(1, k), 1, 0.0d0, y, 1 )
@@ -375,7 +563,7 @@ contains
     ! Compute the Householder reflector for the last column.  This
     ! last iteration doesn't require an update of the trailing matrix,
     ! because there is no trailing matrix left!
-    call DLARFP( n + 1, R_top(n,n), R_bot(1,n), 1, tau(n) )
+    call DLARFP_wrapper( n + 1, R_top(n,n), R_bot(1,n), 1, tau(n) )
   end subroutine d_factor_pair
 
 
@@ -395,13 +583,12 @@ contains
     y => work(1:n)
     y = 0
     do k = 1, n-1
-       ! Form the "sparse" Householder reflector, using SLARFP instead
-       ! of SLARFG (need LAPACK >= 3.2, thanks Jason Riedy!) so that
-       ! the diagonal elements of the R factor are nonnegative.
-       ! Length of this reflector is k+1, including the one top
-       ! element (on the diagonal of R_top) and k bottom elements
-       ! (above and including the diagonal of R_bot).
-       call SLARFP( k + 1, R_top(k,k), R_bot(1,k), 1, tau(k) )
+       ! Form the "sparse" Householder reflector, so that the diagonal
+       ! elements of the R factor are nonnegative.  Length of this
+       ! reflector is k+1, including the one top element (on the
+       ! diagonal of R_top) and k bottom elements (above and including
+       ! the diagonal of R_bot).
+       call SLARFP_WRAPPER( k + 1, R_top(k,k), R_bot(1,k), 1, tau(k) )
 
        ! $y^T := R_bot(1:k,k)^T R_bot(1:k, k+1:n)$, so $y := R_bot(1:k, k+1:n)^T R_bot(1:k, k)$.
        call SGEMV( 'T', k, n-k, 1.0, R_bot(1, k+1), ldr_bot, R_bot(1, k), 1, 0.0, y, 1 )
@@ -423,7 +610,7 @@ contains
     ! Compute the Householder reflector for the last column.  This
     ! last iteration doesn't require an update of the trailing matrix,
     ! because there is no trailing matrix left!
-    call SLARFP( n + 1, R_top(n,n), R_bot(1,n), 1, tau(n) )
+    call SLARFP_WRAPPER( n + 1, R_top(n,n), R_bot(1,n), 1, tau(n) )
   end subroutine s_factor_pair
 
 

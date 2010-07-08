@@ -120,6 +120,21 @@ extern "C" void FortranCInterface_GLOBAL(zungqr, ZUNGQR)
    const int* const LWORK,
    int* const INFO);
 
+extern "C" void FortranCInterface_GLOBAL(zunmqr, ZUNMQR)
+  (const char* const SIDE,
+   const char* const TRANS,
+   const int* const M,
+   const int* const N,
+   const int* const K,
+   const std::complex<double> A[],
+   const int* const LDA,
+   const std::complex<double> TAU[],
+   std::complex<double> C[],
+   const int* const LDC,
+   std::complex<double> WORK[],
+   const int* const LWORK,
+   int* const INFO);
+
 extern "C" void FortranCInterface_GLOBAL(zunm2r, ZUNM2R)
   (const char* const SIDE,
    const char* const TRANS,
@@ -143,14 +158,14 @@ namespace TSQR {
   // available, LAPACK::GEQRF() calls _GEQRF, which uses _LARFP.
 #ifdef HAVE_LAPACK_ZGEQRFP
   template <>
-  const bool LAPACK<int, std::complex<double> >::QR_produces_R_factor_with_nonnegative_diagonal = true;
+  bool LAPACK<int, std::complex<double> >::QR_produces_R_factor_with_nonnegative_diagonal() { return true; }
 #else
 #  ifdef HAVE_LAPACK_ZLARFP
   template <>
-  const bool LAPACK<int, std::complex<double> >::QR_produces_R_factor_with_nonnegative_diagonal = true;
+  bool LAPACK<int, std::complex<double> >::QR_produces_R_factor_with_nonnegative_diagonal() { return true; }
 #  else
   template <>
-  const bool LAPACK<int, std::complex<double> >::QR_produces_R_factor_with_nonnegative_diagonal = false;
+  bool LAPACK<int, std::complex<double> >::QR_produces_R_factor_with_nonnegative_diagonal() { return false; }
 #  endif
 #endif
 
@@ -215,6 +230,25 @@ namespace TSQR {
 #else
     FortranCInterface_GLOBAL(zgeqr2, ZGEQR2) (&m, &n, A, &lda, tau, work, INFO);
 #endif // HAVE_LAPACK_ZGEQR2P
+  }
+
+  template <>
+  void
+  LAPACK<int, std::complex<double> >::ORMQR (const char* const side,
+					     const char* const trans,
+					     const int m,
+					     const int n,
+					     const int k,
+					     const std::complex<double> A[],
+					     const int lda,
+					     const std::complex<double> tau[],
+					     std::complex<double> C[],
+					     const int ldc,
+					     std::complex<double> work[],
+					     const int lwork,
+					     int* const INFO)
+  {
+    FortranCInterface_GLOBAL(zunmqr, ZUNMQR) (side, trans, &m, &n, &k, A, &lda, tau, C, &ldc, work, &lwork, INFO);
   }
 
   template <>
