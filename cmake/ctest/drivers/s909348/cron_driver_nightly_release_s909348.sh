@@ -10,13 +10,13 @@ DATE=`date "+%m-%d-%Y"`
 
 CTEST_EXE=/Users/bmpersc/bin/ctest
 EG_EXE=/Users/bmpersc/bin/eg
-BASEDIR=/Users/bmpersc/nightly/Trilinos.base/release_10
+BASEDIR=/Users/bmpersc/nightly/Trilinos.base/release_10.4
 DRIVER_SCRIPT_DIR=$BASEDIR/Trilinos/cmake/ctest/drivers/s909348
-BRANCH="trilinos-release-10-0-branch"
+BRANCH="trilinos-release-10-4-branch"
 TRILINOS_REPOSITORY_LOCATION="software.sandia.gov:/space/git/Trilinos"
 
 echo
-echo "Starting nightly Trilinos release 10.0 testing on s909348: `date`"
+echo "Starting nightly Trilinos release 10.4 testing on s909348: `date`"
 echo
 
 echo
@@ -40,18 +40,18 @@ else
 fi
 
 echo
-echo "Doing mpi optimized release 10.0 build: `date`"
+echo "Doing mpi optimized release 10.4 build: `date`"
 echo
 
-time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_mac_nightly_mpi_release_s909348.cmake -VV &> "MPI_RELEASE_10.0_$DATE.log"
+time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_mac_nightly_mpi_release_s909348.cmake -VV &> "MPI_RELEASE_10.4_$DATE.log"
 
 echo
-echo "Doing serial release 10.0 build: `date`"
+echo "Doing serial release 10.4 build: `date`"
 echo
 
-time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_mac_nightly_serial_release_s909348.cmake -VV &> "SERIAL_RELEASE_10.0_$DATE.log"
+time ${CTEST_EXE} -S $DRIVER_SCRIPT_DIR/ctest_mac_nightly_serial_release_s909348.cmake -VV &> "SERIAL_RELEASE_10.4_$DATE.log"
 
 echo
-echo "Ending nightly Trilinos release 10.0 testing on s909348: `date`"
+echo "Ending nightly Trilinos release 10.4 testing on s909348: `date`"
 echo
 
