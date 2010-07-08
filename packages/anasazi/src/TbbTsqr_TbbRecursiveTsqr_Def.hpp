@@ -1,9 +1,9 @@
 #ifndef __TSQR_TBB_TbbRecursiveTsqr_Def_hpp
 #define __TSQR_TBB_TbbRecursiveTsqr_Def_hpp
 
-#include <TSQR/TBB/TbbTsqr_TbbRecursiveTsqr.hpp>
-#include <TSQR/Tsqr_ScalarTraits.hpp>
-#include <TSQR/Tsqr_Util.hpp>
+#include <TbbTsqr_TbbRecursiveTsqr.hpp>
+#include <Tsqr_ScalarTraits.hpp>
+#include <Tsqr_Util.hpp>
 
 // #define TBB_DEBUG 1
 #ifdef TBB_DEBUG

@@ -404,8 +404,10 @@ namespace TSQR {
       // Copy A into A_copy, since TSQR overwrites the input
       A_copy.copy (A);
 
-      // Benchmark sequential TSQR for ntrials trials
-      TimerType timer;
+      // Benchmark sequential TSQR for ntrials trials.
+      //
+      // Name of timer doesn't matter here; we only need the timing.
+      TimerType timer("SeqTSQR");
       timer.start();
       for (int trial_num = 0; trial_num < ntrials; ++trial_num)
 	{
@@ -421,7 +423,7 @@ namespace TSQR {
 	  actor.explicit_Q (nrows, ncols, A_copy.get(), lda, factor_output, 
 			    ncols, Q.get(), ldq, contiguous_cache_blocks);
 	}
-      const double seq_tsqr_timing = timer.finish();
+      const double seq_tsqr_timing = timer.stop();
 
       // Print the results  
       if (human_readable)
@@ -490,7 +492,7 @@ namespace TSQR {
       std::vector< Scalar > tau (ncols);
 
       // Benchmark LAPACK's QR factorization for ntrials trials
-      TimerType timer;
+      TimerType timer("LapackQR");
       timer.start();
       for (int trial_num = 0; trial_num < ntrials; ++trial_num)
 	{
@@ -519,7 +521,7 @@ namespace TSQR {
 	      throw std::runtime_error (os.str());
 	    }
 	}
-      const double lapack_timing = timer.finish();
+      const double lapack_timing = timer.stop();
 
       // Print the results  
       if (human_readable)

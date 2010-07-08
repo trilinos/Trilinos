@@ -1,10 +1,10 @@
 #ifndef __TSQR_TbbRecursiveTsqr_hpp
 #define __TSQR_TbbRecursiveTsqr_hpp
 
-#include <TSQR/Tsqr_ApplyType.hpp>
-#include <TSQR/Tsqr_CacheBlocker.hpp>
-#include <TSQR/Tsqr_SequentialTsqr.hpp>
-#include <TSQR/TBB/TbbTsqr_Partitioner.hpp>
+#include <Tsqr_ApplyType.hpp>
+#include <Tsqr_CacheBlocker.hpp>
+#include <Tsqr_SequentialTsqr.hpp>
+#include <TbbTsqr_Partitioner.hpp>
 
 #include <stdexcept>
 #include <string>

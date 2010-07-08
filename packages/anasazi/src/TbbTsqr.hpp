@@ -2,7 +2,7 @@
 #define __TSQR_TbbTsqr_hpp
 
 #include <TbbTsqr_TbbParallelTsqr.hpp>
-// #include <TSQR/TBB/TbbRecursiveTsqr.hpp>
+// #include <TbbRecursiveTsqr.hpp>
 
 #include <stdexcept>
 #include <string>
@@ -15,12 +15,29 @@
 namespace TSQR {
   namespace TBB {
 
-    /// \class TSQR factorization, in parallel for a tall skinny matrix
-    /// distributed in block rows across one or more MPI processes.
+    /// \class TrivialTimer
+    /// \brief Satisfies TimerType concept trivially
+    class TrivialTimer {
+    public:
+      TrivialTimer (const std::string& name = std::string("NoName")) {}
+      void start() {}
+      double stop() { return double(0); }
+    };
+
+    /// \class TbbTsqr
+    /// \brief Intranode TSQR, parallelized with Intel TBB
     ///
-    /// \note TSQR only needs to know about the local ordinal type, not
-    /// about the global ordinal type.
-    template< class LocalOrdinal, class Scalar >
+    /// TSQR factorization for a dense, tall and skinny matrix stored
+    /// on a single node.  Parallelized using Intel's Threading
+    /// Building Blocks.
+    ///
+    /// \note TSQR only needs to know about the local ordinal type
+    ///   (LocalOrdinal), not about the global ordinal type.
+    ///   TimerType may be any class with the same interface as
+    ///   TrivialTimer; it times the divide-and-conquer base cases
+    ///   (the operations on each CPU core within the thread-parallel
+    ///   implementation).
+    template< class LocalOrdinal, class Scalar, class TimerType = TrivialTimer >
     class TbbTsqr {
     private:
       // Note: this is NOT a use of the pImpl idiom.  TbbRecursiveTsqr
@@ -30,13 +47,13 @@ namespace TSQR {
       // library.
       //
       //TbbRecursiveTsqr< LocalOrdinal, Scalar > impl_;
-      TbbParallelTsqr< LocalOrdinal, Scalar > impl_;
+      TbbParallelTsqr< LocalOrdinal, Scalar, TimerType > impl_;
 
     public:
       typedef Scalar scalar_type;
       typedef LocalOrdinal ordinal_type;
       // typedef typename TbbRecursiveTsqr< LocalOrdinal, Scalar >::FactorOutput FactorOutput;
-      typedef typename TbbParallelTsqr< LocalOrdinal, Scalar >::FactorOutput FactorOutput;
+      typedef typename TbbParallelTsqr< LocalOrdinal, Scalar, TimerType >::FactorOutput FactorOutput;
 
       /// (Max) number of cores used for the factorization.
       size_t ncores() const { return impl_.ncores(); }
@@ -234,6 +251,15 @@ namespace TSQR {
 	impl_.explicit_Q (nrows, ncols_Q_in, Q_in, ldq_in, factor_output,
 			  ncols_Q_out, Q_out, ldq_out, contiguous_cache_blocks);
       }
+
+      double
+      min_seq_factor_timing () const { return impl_.min_seq_factor_timing(); }
+      double
+      max_seq_factor_timing () const { return impl_.max_seq_factor_timing(); }
+      double
+      min_seq_apply_timing () const { return impl_.min_seq_apply_timing(); }
+      double
+      max_seq_apply_timing () const { return impl_.max_seq_apply_timing(); }
 
     }; // class TbbTsqr
 

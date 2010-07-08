@@ -17,7 +17,7 @@
 namespace TSQR {
   namespace TBB {
     
-    template< class LocalOrdinal, class Scalar >
+    template< class LocalOrdinal, class Scalar, class TimerType >
     class TbbParallelTsqr {
     private:
       typedef MatView< LocalOrdinal, Scalar > mat_view;
@@ -57,6 +57,10 @@ namespace TSQR {
       TbbParallelTsqr (const size_t num_cores = 1,
 		       const size_t cache_block_size = 0) :
 	seq_ (cache_block_size),
+	min_seq_factor_timing_ (std::numeric_limits<double>::max()),
+	max_seq_factor_timing_ (std::numeric_limits<double>::min()),
+	min_seq_apply_timing_ (std::numeric_limits<double>::max()),
+	max_seq_apply_timing_ (std::numeric_limits<double>::min())
       {
 	if (num_cores < 1)
 	  ncores_ = 1; // default is no parallelism
@@ -81,6 +85,15 @@ namespace TSQR {
       /// data on each core, and the results of combining the data on
       /// the cores.
       typedef typename std::pair< std::vector< SeqOutput >, ParOutput > FactorOutput;
+
+      double
+      min_seq_factor_timing () const { return min_seq_factor_timing_; }
+      double
+      max_seq_factor_timing () const { return max_seq_factor_timing_; }
+      double
+      min_seq_apply_timing () const { return min_seq_apply_timing_; }
+      double
+      max_seq_apply_timing () const { return max_seq_apply_timing_; }
 
       FactorOutput
       factor (const LocalOrdinal nrows,
@@ -109,15 +122,19 @@ namespace TSQR {
 	      return std::make_pair (seq_output, par_output);
 	  }
 	
+	double my_seq_timing = double(0);
+	double min_seq_timing = double(0);
+	double max_seq_timing = double(0);
 	try {
-	  typedef FactorTask< LocalOrdinal, Scalar > factor_task_t;
+	  typedef FactorTask< LocalOrdinal, Scalar, TimerType > factor_task_t;
 
 	  // When the root task completes, A_top will be set to the
 	  // topmost partition of A.  We can then extract the R factor
 	  // from A_top.
 	  factor_task_t& root_task = *new( task::allocate_root() ) 
-	    factor_task_t (0, ncores()-1, A_view, &A_top, seq_output, 
-			   par_output, seq_, contiguous_cache_blocks);
+	    factor_task_t(0, ncores()-1, A_view, &A_top, seq_output, 
+			  par_output, seq_, my_seq_timing, min_seq_timing,
+			  max_seq_timing, contiguous_cache_blocks);
 	  task::spawn_root_and_wait (root_task);
 	} catch (tbb::captured_exception& ex) {
 	  // TBB can't guarantee on all systems that an exception
@@ -138,6 +155,12 @@ namespace TSQR {
 	// Copy the R factor out of A_top into R.
 	seq_.extract_R (A_top.nrows(), A_top.ncols(), A_top.get(), 
 			A_top.lda(), R, ldr, contiguous_cache_blocks);
+
+	// Save the timings for future reference
+	if (min_seq_timing < min_seq_factor_timing_)
+	  min_seq_factor_timing_ = min_seq_timing;
+	if (max_seq_timing > max_seq_factor_timing_)
+	  max_seq_factor_timing_ = max_seq_timing;
 
 	return std::make_pair (seq_output, par_output);
       }
@@ -169,12 +192,17 @@ namespace TSQR {
 	    array_top_blocks_t top_blocks (ncores());
 	    build_partition_array (0, ncores()-1, top_blocks, Q_view, 
 				   C_view, contiguous_cache_blocks);
+	    double my_seq_timing = 0.0;
+	    double min_seq_timing = 0.0;
+	    double max_seq_timing = 0.0;
 	    try {
-	      typedef ApplyTask< LocalOrdinal, Scalar > apply_task_t;
+	      typedef ApplyTask< LocalOrdinal, Scalar, TimerType > apply_task_t;
 	      apply_task_t& root_task = 
 		*new( task::allocate_root() )
 		apply_task_t (0, ncores()-1, Q_view, C_view, top_blocks,
-			      factor_output, seq_, contiguous_cache_blocks);
+			      factor_output, seq_, my_seq_timing, 
+			      min_seq_timing, max_seq_timing,
+			      contiguous_cache_blocks);
 	      task::spawn_root_and_wait (root_task);
 	    } catch (tbb::captured_exception& ex) {
 	      std::ostringstream os;
@@ -185,6 +213,12 @@ namespace TSQR {
 		"e following string: " << ex.what();
 	      throw std::runtime_error (os.str());
 	    }
+
+	    // Save the timings for future reference
+	    if (min_seq_timing < min_seq_apply_timing_)
+	      min_seq_apply_timing_ = min_seq_timing;
+	    if (max_seq_timing > max_seq_apply_timing_)
+	      max_seq_apply_timing_ = max_seq_timing;
 	  }
 	else
 	  throw std::logic_error ("Applying Q^T and Q^H not implemented");
@@ -322,6 +356,11 @@ namespace TSQR {
       TSQR::Combine< LocalOrdinal, Scalar > combine_;
       Partitioner< LocalOrdinal, Scalar > partitioner_;
 
+      double min_seq_factor_timing_;
+      double max_seq_factor_timing_;
+      double min_seq_apply_timing_;
+      double max_seq_apply_timing_;
+
       void
       build_partition_array (const size_t P_first,
 			     const size_t P_last,
@@ -356,7 +395,10 @@ namespace TSQR {
 				   C_split.second, contiguous_cache_blocks);
 	  }
       }
+
+
     };
+
   } // namespace TBB
 } // namespace TSQR
 

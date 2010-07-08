@@ -227,7 +227,9 @@ namespace TSQR {
       // but this is a benchmark and not a verification routine.  Call
       // mgs_verify() if you want to determine whether MGS computes
       // the right answer.
-      TimerType timer;
+      //
+      // Name of timer doesn't matter here; we only need the timing.
+      TimerType timer("MGS"); 
       timer.start();
       for (int trial_num = 0; trial_num < num_trials; ++trial_num)
 	{
@@ -245,7 +247,7 @@ namespace TSQR {
       // Compute the resulting total time (in seconds) to execute
       // num_trials runs of :mgs().  The time may differ on different
       // MPI processes.
-      const double mgs_timing = timer.finish();
+      const double mgs_timing = timer.stop();
       return mgs_timing;
     }
 

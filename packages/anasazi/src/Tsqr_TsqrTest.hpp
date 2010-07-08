@@ -320,7 +320,8 @@ namespace TSQR {
 
     template< class TsqrBase, class TimerType >
     double
-    do_tsqr_benchmark (TsqrBase& tsqr, 
+    do_tsqr_benchmark (const std::string& which,
+		       TsqrBase& tsqr, 
 		       MessengerBase< typename TsqrBase::scalar_type >* const messenger,
 		       const Matrix< typename TsqrBase::ordinal_type, typename TsqrBase::scalar_type >& A_local,
 		       Matrix< typename TsqrBase::ordinal_type, typename TsqrBase::scalar_type >& A_copy,
@@ -366,8 +367,10 @@ namespace TSQR {
       // but this is a benchmark and not a verification routine.  Call
       // tsqr_verify() if you want to determine whether TSQR computes
       // the right answer.
+      //
+      // Name of timer doesn't matter here; we only need the timing.
       TSQR::Test::verifyTimerConcept< TimerType >();
-      TimerType timer;
+      TimerType timer (which);
       timer.start();
       for (int trial_num = 0; trial_num < ntrials; ++trial_num)
 	{
@@ -393,7 +396,7 @@ namespace TSQR {
       // Compute the resulting total time (in seconds) to execute
       // ntrials runs of Tsqr::factor() and Tsqr::explicit_Q().  The
       // time may differ on different MPI processes.
-      double tsqr_timing = timer.finish();
+      double tsqr_timing = timer.stop();
 
       if (b_debug)
 	{
@@ -535,7 +538,7 @@ namespace TSQR {
 
       if (which == "MpiTbbTSQR")
 	{
-	  typedef TSQR::TBB::TbbTsqr< Ordinal, Scalar > node_tsqr_type;
+	  typedef TSQR::TBB::TbbTsqr< Ordinal, Scalar, TimerType > node_tsqr_type;
 	  typedef Tsqr< Ordinal, Scalar, node_tsqr_type > tsqr_type;
 
 	  node_tsqr_type node_tsqr (num_cores, cache_block_size);
@@ -543,7 +546,7 @@ namespace TSQR {
 
 	  // Run the benchmark.
 	  tsqr_timing = 
-	    do_tsqr_benchmark< tsqr_type, TimerType > (tsqr, scalarComm, A_local,
+	    do_tsqr_benchmark< tsqr_type, TimerType > (which, tsqr, scalarComm, A_local,
 						       A_copy, Q_local, R, ntrials, 
 						       contiguous_cache_blocks, 
 						       human_readable, b_debug);
@@ -562,7 +565,7 @@ namespace TSQR {
 	  
 	  // Run the benchmark.
 	  tsqr_timing = 
-	    do_tsqr_benchmark< tsqr_type, TimerType > (tsqr, scalarComm, A_local,
+	    do_tsqr_benchmark< tsqr_type, TimerType > (which, tsqr, scalarComm, A_local,
 						       A_copy, Q_local, R, ntrials, 
 						       contiguous_cache_blocks, 
 						       human_readable, b_debug);

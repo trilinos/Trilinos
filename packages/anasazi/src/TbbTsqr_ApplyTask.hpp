@@ -11,7 +11,7 @@
 namespace TSQR {
   namespace TBB {
     
-    template< class LocalOrdinal, class Scalar >
+    template< class LocalOrdinal, class Scalar, class TimerType >
     class ApplyTask : public tbb::task {
     public:
       typedef MatView< LocalOrdinal, Scalar > mat_view;
@@ -38,6 +38,9 @@ namespace TSQR {
 		 array_top_blocks_t& top_blocks, 
 		 const FactorOutput& factor_output,
 		 const SequentialTsqr< LocalOrdinal, Scalar >& seq,
+		 double& my_seq_timing,
+		 double& min_seq_timing,
+		 double& max_seq_timing,
 		 const bool contiguous_cache_blocks) :
 	P_first_ (P_first__), 
 	P_last_ (P_last__), 
@@ -46,6 +49,9 @@ namespace TSQR {
 	top_blocks_ (top_blocks), 
 	factor_output_ (factor_output), 
 	seq_ (seq), 
+	my_seq_timing_ (my_seq_timing),
+	min_seq_timing_ (min_seq_timing),
+	max_seq_timing_ (max_seq_timing),
 	contiguous_cache_blocks_ (contiguous_cache_blocks)
       {}
 
@@ -54,10 +60,13 @@ namespace TSQR {
 	  return NULL;
 	else if (P_first_ == P_last_)
 	  {
+	    TimerType timer;
+	    timer.start();
 	    const std::vector< SeqOutput >& seq_outputs = factor_output_.first;
 	    seq_.apply ("N", Q_.nrows(), Q_.ncols(), Q_.get(), Q_.lda(), 
 			factor_output_.first[P_first_], C_.ncols(), C_.get(), 
 			C_.lda(), contiguous_cache_blocks_);
+	    my_seq_timing_ = timer.stop();
 	    return NULL;
 	  }
 	else
@@ -70,19 +79,38 @@ namespace TSQR {
 	    split_t C_split = 
 	      partitioner_.split (C_, P_first_, P_mid, P_last_,
 				  contiguous_cache_blocks_);
+
+	    double top_timing;
+	    double top_min_timing = 0.0;
+	    double top_max_timing = 0.0;
+	    double bot_timing;
+	    double bot_min_timing = 0.0;
+	    double bot_max_timing = 0.0;
+
 	    apply_pair (P_first_, P_mid+1);
 	    ApplyTask& topTask = *new( allocate_child() )
 	      ApplyTask (P_first_, P_mid, Q_split.first, C_split.first,
 			 top_blocks_, factor_output_, seq_, 
+			 top_timing, top_min_timing, top_max_timing,
 			 contiguous_cache_blocks_);
 	    ApplyTask& botTask = *new( allocate_child() )
 	      ApplyTask (P_mid+1, P_last_, Q_split.second, C_split.second,
 			 top_blocks_, factor_output_, seq_,
+			 bot_timing, bot_min_timing, bot_max_timing,
 			 contiguous_cache_blocks_);
 
 	    set_ref_count (3); // 3 children (2 + 1 for the wait)
 	    spawn (topTask);
 	    spawn_and_wait_for_all (botTask);
+
+	    top_min_timing = (top_min_timing == 0.0) ? top_timing : top_min_timing;
+	    top_max_timing = (top_max_timing == 0.0) ? top_timing : top_max_timing;
+
+	    bot_min_timing = (bot_min_timing == 0.0) ? bot_timing : bot_min_timing;
+	    bot_max_timing = (bot_max_timing == 0.0) ? bot_timing : bot_max_timing;
+
+	    min_seq_timing_ = std::min (top_min_timing, bot_min_timing);
+	    max_seq_timing_ = std::min (top_max_timing, bot_max_timing);
 
 	    return NULL;
 	  }
@@ -97,6 +125,9 @@ namespace TSQR {
       SequentialTsqr< LocalOrdinal, Scalar > seq_;
       TSQR::Combine< LocalOrdinal, Scalar > combine_;
       Partitioner< LocalOrdinal, Scalar > partitioner_;
+      double& my_seq_timing_;
+      double& min_seq_timing_;
+      double& max_seq_timing_;
       bool contiguous_cache_blocks_;
 
       void 

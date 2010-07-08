@@ -125,7 +125,7 @@ namespace TSQR {
       R.fill (Scalar(0));
 
       // Factor the matrix and compute the explicit Q factor
-      typedef TSQR::TBB::TbbTsqr<int, double>::FactorOutput factor_output_type;
+      typedef TSQR::TBB::TbbTsqr< Ordinal, Scalar >::FactorOutput factor_output_type;
 
       factor_output_type factor_output = 
 	actor.factor (nrows, ncols, A_copy.get(), A_copy.lda(), R.get(), 
@@ -210,7 +210,7 @@ namespace TSQR {
 
       TSQR::Test::verifyTimerConcept< TimerType >();
 
-      TbbTsqr< Ordinal, Scalar > actor (num_cores, cache_block_size);
+      TbbTsqr< Ordinal, Scalar, TimerType > actor (num_cores, cache_block_size);
 
       Matrix< Ordinal, Scalar > A (nrows, ncols);
       Matrix< Ordinal, Scalar > A_copy (nrows, ncols);
@@ -235,14 +235,16 @@ namespace TSQR {
       else
 	A_copy.copy (A);
 
-      // Benchmark TBB-based TSQR for ntrials trials
-      TimerType timer;
+      // Benchmark TBB-based TSQR for ntrials trials.
+      //
+      // Name of timer doesn't matter here; we only need the timing.
+      TimerType timer("TbbTSQR");
       timer.start();
       for (int trial_num = 0; trial_num < ntrials; ++trial_num)
 	{
 	  // Factor the matrix in-place in A_copy, and extract the
 	  // resulting R factor into R.
-	  typedef typename TbbTsqr< Ordinal, Scalar >::FactorOutput factor_output_type;
+	  typedef typename TbbTsqr< Ordinal, Scalar, TimerType >::FactorOutput factor_output_type;
 	  factor_output_type factor_output = 
 	    actor.factor (nrows, ncols, A_copy.get(), A_copy.lda(), 
 			  R.get(), R.lda(), contiguous_cache_blocks);
@@ -254,7 +256,7 @@ namespace TSQR {
 			    factor_output, ncols, Q.get(), Q.lda(), 
 			    contiguous_cache_blocks);
 	}
-      const double tbb_tsqr_timing = timer.finish();
+      const double tbb_tsqr_timing = timer.stop();
 
       // Print the results
       if (human_readable)
