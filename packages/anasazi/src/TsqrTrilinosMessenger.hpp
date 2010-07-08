@@ -96,6 +96,32 @@ namespace TSQR {
 	return outDatum;
       }
 
+      ///
+      /// Assumes that Datum objects are less-than comparable by the
+      /// underlying communication protocol.
+      ///
+      virtual Datum 
+      globalMin (const Datum& inDatum)
+      {
+	Datum outDatum;
+	Teuchos::reduceAll (*pComm_, Teuchos::REDUCE_MIN, inDatum, 
+			    Teuchos::outArg(outDatum));
+	return outDatum;
+      }
+
+      ///
+      /// Assumes that Datum objects are less-than comparable by the
+      /// underlying communication protocol.
+      ///
+      virtual Datum 
+      globalMax (const Datum& inDatum)
+      {
+	Datum outDatum;
+	Teuchos::reduceAll (*pComm_, Teuchos::REDUCE_MAX, inDatum, 
+			    Teuchos::outArg(outDatum));
+	return outDatum;
+      }
+
       /// Allreduce sum all processors' inData[0:count-1], storing the
       /// results (on all processors) in outData.
       virtual void
@@ -105,6 +131,15 @@ namespace TSQR {
       {
 	Teuchos::reduceAll (*pComm_, Teuchos::REDUCE_SUM, count, 
 			    inData, outData);
+      }
+
+      virtual void
+      broadcast (Datum data[], 
+		 const int count,
+		 const int root)
+      {
+	// Assumes that Datum has value semantics.
+	Teuchos::broadcast (*pComm_, root, count, data);
       }
 
       /// 
