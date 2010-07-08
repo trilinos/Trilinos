@@ -12,7 +12,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 static Teuchos::ParameterList
-parseOptions (const bool allowedToPrint, bool& printedHelp)
+parseOptions (int argc, char* argv[], const bool allowedToPrint, bool& printedHelp)
 {
   using std::cerr;
   using std::endl;
@@ -63,12 +63,12 @@ parseOptions (const bool allowedToPrint, bool& printedHelp)
     // there are only three command-line argument types of interest
     // (bool, int, std::string), so a Smalltalk-style loop would be
     // acceptable.
-    cmdLineProc.setOption ("verbose", "quiet", &verbose, plist.getEntry("verbose").docString());
-    cmdLineProc.setOption ("debug", "nodebug", &debug, plist.getEntry("debug").docString());
-    cmdLineProc.setOption ("nrows", &nrows, plist.getEntry("nrows").docString());
-    cmdLineProc.setOption ("ncols", &ncols, plist.getEntry("ncols").docString());
-    cmdLineProc.setOption ("ncores", &ncores, plist.getEntry("ncores").docString());
-    cmdLineProc.setOption ("cache-block-size", &cache_block_size, plist.getEntry("cache-block-size").docString());
+    cmdLineProc.setOption ("verbose", "quiet", &verbose, plist.getEntry("verbose").docString().c_str());
+    cmdLineProc.setOption ("debug", "nodebug", &debug, plist.getEntry("debug").docString().c_str());
+    cmdLineProc.setOption ("nrows", &nrows, plist.getEntry("nrows").docString().c_str());
+    cmdLineProc.setOption ("ncols", &ncols, plist.getEntry("ncols").docString().c_str());
+    cmdLineProc.setOption ("ncores", &ncores, plist.getEntry("ncores").docString().c_str());
+    cmdLineProc.setOption ("cache-block-size", &cache_block_size, plist.getEntry("cache-block-size").docString().c_str());
     cmdLineProc.parse (argc, argv);
   } 
   catch (Teuchos::CommandLineProcessor::UnrecognizedOption& e) { 
@@ -96,10 +96,10 @@ parseOptions (const bool allowedToPrint, bool& printedHelp)
   if (! printedHelp)
     {
       // Fetch the (possibly altered) values of the command-line options.
-      plist.set ("verbose", verbose, plist.getEntry("verbose").docString());
-      plist.set ("debug", debug, plist.getEntry("debug").docString());
-      plist.set ("nrows", nrows, plist.getEntry("nrows").docString());
-      plist.set ("ncols", ncols, plist.getEntry("ncols").docString());
+      plist.set ("verbose", verbose, plist.getEntry("verbose").docString().c_str());
+      plist.set ("debug", debug, plist.getEntry("debug").docString().c_str());
+      plist.set ("nrows", nrows, plist.getEntry("nrows").docString().c_str());
+      plist.set ("ncols", ncols, plist.getEntry("ncols").docString().c_str());
     }
   return plist;
 }
@@ -113,11 +113,11 @@ main (int argc, char *argv[])
   Teuchos::RCP< const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
 
   size_t myRank = comm->getRank();
-  size_t numProc = comm->getSize();
+  //size_t numProc = comm->getSize();
   bool allowedToPrint = (myRank==0);
   bool printedHelp = false;
   
-  Teuchos::ParameterList plist = parseOptions (allowedToPrint, printedHelp);
+  Teuchos::ParameterList plist = parseOptions (argc, argv, allowedToPrint, printedHelp);
   if (printedHelp)
     return 0;
 
