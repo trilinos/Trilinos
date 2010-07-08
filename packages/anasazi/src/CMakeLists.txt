@@ -149,6 +149,8 @@ include(FortranCInterface)
 FortranCInterface_HEADER("Tsqr_FortranCInterface.hpp")
 # Include tests for LAPACK functionality required by TSQR.
 include ("TsqrTestLapack.cmake")
+# Generate TSQR's LAPACK wrappers.
+include ("TsqrLapackWrappers.cmake")
 
 # Include headers and source files for Trilinos -> TSQR adaptors.
 # Some of these depend on Epetra or Tpetra, so check accordingly if
@@ -167,21 +169,37 @@ APPEND_SET(HEADERS
   Tsqr_CacheBlocker.hpp
   Tsqr_CacheBlockingStrategy.hpp
   Tsqr_Combine.hpp
+  Tsqr_Config.hpp
   Tsqr_DistTsqrHelper.hpp
   Tsqr_DistTsqr.hpp
+  Tsqr_FortranCInterface.hpp
+  Tsqr_generateStack.hpp
   Tsqr_GlobalVerify.hpp
   Tsqr.hpp
   Tsqr_Lapack.hpp
   Tsqr_LocalVerify.hpp
   Tsqr_Matrix.hpp
   Tsqr_MatView.hpp
+  Tsqr_MessengerBase.hpp
   Tsqr_Mgs.hpp
+  Tsqr_MgsTest.hpp
+  Tsqr_nodeTestProblem.hpp
   Tsqr_NodeTsqr.hpp
+  Tsqr_ParTest.hpp
+  Tsqr_printGlobalMatrix.hpp
+  Tsqr_Random_GlobalMatrix.hpp
   Tsqr_Random_MatrixGenerator.hpp
+  Tsqr_Random_NormalGenerator.hpp
+  Tsqr_RMessenger.hpp
   Tsqr_ScalarTraits.hpp
+  Tsqr_SeqTest.hpp
   Tsqr_SequentialCholeskyQR.hpp
   Tsqr_SequentialTsqr.hpp
+  Tsqr_TbbTest.hpp
+  Tsqr_TestSetup.hpp
+  Tsqr_TsqrTest.hpp
   Tsqr_Util.hpp
+  Tsqr_verifyTimerConcept.hpp
   )
 APPEND_SET(SOURCES
   Tsqr_ApplyType.cpp 
@@ -200,6 +218,11 @@ IF (Anasazi_ENABLE_Epetra)
     TsqrTypeAdaptor_Epetra_MultiVector.hpp
     )
 ENDIF()
+APPEND_SET(HEADERS
+  TsqrFactory.hpp
+  TsqrFactory_SequentialTsqr.hpp
+  TsqrTrilinosMessenger.hpp
+  )
 IF (Anasazi_ENABLE_Tpetra)
   APPEND_SET(HEADERS
     TsqrAdaptor_Tpetra_MultiVector_SerialNode.hpp
@@ -220,6 +243,7 @@ IF (Anasazi_ENABLE_Tpetra)
     TbbTsqr_TbbMgs.hpp
     TbbTsqr_TbbParallelTsqr.hpp
     TbbTsqr_UnCacheBlockTask.hpp
+    TsqrFactory_TbbTsqr.hpp
     )
 ENDIF()
 
