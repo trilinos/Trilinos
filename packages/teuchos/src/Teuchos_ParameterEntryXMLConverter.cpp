@@ -31,21 +31,21 @@
 namespace Teuchos{
 
 ParameterEntry ParameterEntryXMLConverter::fromXMLtoParameterEntry(const XMLObject &xmlObj) const{
-	TEST_FOR_EXCEPTION(xmlObj.getRequired(typeAttributeName()) != getTypeAttributeValue(), 
+	TEST_FOR_EXCEPTION(xmlObj.getRequired(getTypeAttributeName()) != getTypeAttributeValue(), 
 		std::runtime_error, 
 		"This converter is not approriate for converting a ParameterEntry tag with a type of " 
-		<< xmlObj.getRequired(typeAttributeName()) << " to a ParameterEntry with type " 
+		<< xmlObj.getRequired(getTypeAttributeName()) << " to a ParameterEntry with type " 
 		<< getTypeAttributeValue());
 	ParameterEntry toReturn;
 	bool isDefault = false;
 	bool isUsed = false;
 
-	if(xmlObj.hasAttribute(defaultAttributeName())){
-		isDefault = xmlObj.getRequiredBool(defaultAttributeName());
+	if(xmlObj.hasAttribute(getDefaultAttributeName())){
+		isDefault = xmlObj.getRequiredBool(getDefaultAttributeName());
 	}
 
-	if(xmlObj.hasAttribute(usedAttributeName())){
-		isUsed = xmlObj.getRequiredBool(usedAttributeName());
+	if(xmlObj.hasAttribute(getUsedAttributeName())){
+		isUsed = xmlObj.getRequiredBool(getUsedAttributeName());
 	}
 
 	setEntryValue(toReturn, xmlObj, isDefault);
@@ -60,11 +60,11 @@ ParameterEntry ParameterEntryXMLConverter::fromXMLtoParameterEntry(const XMLObje
 XMLObject ParameterEntryXMLConverter::fromParameterEntrytoXML(const ParameterEntry &entry, const std::string &name) const{
 	TEST_FOR_EXCEPTION(!isAppropriateConverter(entry), std::runtime_error, "This converter is not approriate for converting the ParameterEntry " << name << " to the xml tag with a type attribute of " << getTypeAttributeValue());
 	XMLObject toReturn(ParameterEntry::getTagName());
-	toReturn.addAttribute(nameAttributeName(), name);
-	toReturn.addAttribute(typeAttributeName(), getTypeAttributeValue());
-	toReturn.addAttribute(valueAttributeName(), getValueAttributeValue(entry));
-	toReturn.addBool(defaultAttributeName(), entry.isDefault());
-	toReturn.addBool(usedAttributeName(), entry.isUsed());
+	toReturn.addAttribute(getNameAttributeName(), name);
+	toReturn.addAttribute(getTypeAttributeName(), getTypeAttributeValue());
+	toReturn.addAttribute(getValueAttributeName(), getValueAttributeValue(entry));
+	toReturn.addBool(getDefaultAttributeName(), entry.isDefault());
+	toReturn.addBool(getUsedAttributeName(), entry.isUsed());
 	return toReturn;
 }
 

@@ -29,11 +29,11 @@
 #include "Teuchos_Array.hpp"
 
 namespace Teuchos{
-	std::string AnyParameterEntryConverter::getTypeAttributeValue() const{
+	const std::string AnyParameterEntryConverter::getTypeAttributeValue() const{
 		return "any";
 	}
 
-	std::string AnyParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
+	const std::string AnyParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
 		return toString(entry.getAny(false));
 	}
 
@@ -45,12 +45,11 @@ namespace Teuchos{
 		return true;
 	}
 
-
-	std::string IntParameterEntryConverter::getTypeAttributeValue() const{
+	const std::string IntParameterEntryConverter::getTypeAttributeValue() const{
 		return TypeNameTraits<int>::name();
 	}
 
-	std::string IntParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
+	const std::string IntParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
       return toString(any_cast<int>(entry.getAny(false)));
 	}
 
@@ -62,27 +61,43 @@ namespace Teuchos{
 		return entry.isType<int>();
 	}
 
-	std::string ShortParameterEntryConverter::getTypeAttributeValue() const{
+	const std::string ShortParameterEntryConverter::getTypeAttributeValue() const{
 		return TypeNameTraits<short>::name();
 	}
 
-	std::string ShortParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
+	const std::string ShortParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
       return toString(any_cast<short>(entry.getAny(false)));
 	}
 
 	void ShortParameterEntryConverter::setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const{
-		entry.setValue<short>(xmlObj.getRequiredShort("value"), isDefault);
+		entry.setValue<short>(xmlObj.getRequired<short>("value"), isDefault);
 	}
 
 	bool ShortParameterEntryConverter::isAppropriateConverter(const ParameterEntry& entry) const{
 		return entry.isType<short>();
 	}
 
-	std::string DoubleParameterEntryConverter::getTypeAttributeValue() const{
+	const std::string LongParameterEntryConverter::getTypeAttributeValue() const{
+		return TypeNameTraits<long>::name();
+	}
+
+	const std::string LongParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
+      return toString(any_cast<long>(entry.getAny(false)));
+	}
+
+	void LongParameterEntryConverter::setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const{
+		entry.setValue<long>(xmlObj.getRequired<long>("value"), isDefault);
+	}
+
+	bool LongParameterEntryConverter::isAppropriateConverter(const ParameterEntry& entry) const{
+		return entry.isType<long>();
+	}
+
+	const std::string DoubleParameterEntryConverter::getTypeAttributeValue() const{
 		return TypeNameTraits<double>::name();
 	}
 
-	std::string DoubleParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
+	const std::string DoubleParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
       return toString(any_cast<double>(entry.getAny(false)));
 	}
 
@@ -94,27 +109,27 @@ namespace Teuchos{
 		return entry.isType<double>();
 	}
 
-	std::string FloatParameterEntryConverter::getTypeAttributeValue() const{
+	const std::string FloatParameterEntryConverter::getTypeAttributeValue() const{
 		return TypeNameTraits<float>::name();
 	}
 
-	std::string FloatParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
+	const std::string FloatParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
       return toString(any_cast<float>(entry.getAny(false)));
 	}
 
 	void FloatParameterEntryConverter::setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const{
-		entry.setValue<float>(xmlObj.getRequiredFloat("value"), isDefault);
+		entry.setValue<float>(xmlObj.getRequired<float>("value"), isDefault);
 	}
 
 	bool FloatParameterEntryConverter::isAppropriateConverter(const ParameterEntry& entry) const{
 		return entry.isType<float>();
 	}
 
-	std::string StringParameterEntryConverter::getTypeAttributeValue() const{
+	const std::string StringParameterEntryConverter::getTypeAttributeValue() const{
 		return TypeNameTraits<std::string>::name();
 	}
 
-	std::string StringParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
+	const std::string StringParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
       return toString(any_cast<std::string>(entry.getAny(false)));
 	}
 
@@ -126,28 +141,27 @@ namespace Teuchos{
 		return entry.isType<std::string>();
 	}
 
-	std::string CharParameterEntryConverter::getTypeAttributeValue() const{
+	const std::string CharParameterEntryConverter::getTypeAttributeValue() const{
 		return TypeNameTraits<char>::name();
 	}
 
-	std::string CharParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
+	const std::string CharParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
       return toString(any_cast<char>(entry.getAny(false)));
 	}
 
 	void CharParameterEntryConverter::setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const{
-		char *value = (char*)(xmlObj.getRequired("value").c_str());
-		entry.setValue<char>(value[0], isDefault);
+		entry.setValue<char>(xmlObj.getRequired<char>("value"), isDefault);
 	}
 
 	bool CharParameterEntryConverter::isAppropriateConverter(const ParameterEntry& entry) const{
 		return entry.isType<char>();
 	}
 
-	std::string BoolParameterEntryConverter::getTypeAttributeValue() const{
+	const std::string BoolParameterEntryConverter::getTypeAttributeValue() const{
 		return TypeNameTraits<bool>::name();
 	}
 
-	std::string BoolParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
+	const std::string BoolParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
       return toString(any_cast<bool>(entry.getAny(false)));
 	}
 
@@ -159,11 +173,11 @@ namespace Teuchos{
 		return entry.isType<bool>();
 	}
 
-	std::string ArrayIntParameterEntryConverter::getTypeAttributeValue() const{
+	const std::string ArrayIntParameterEntryConverter::getTypeAttributeValue() const{
 		return TypeNameTraits<Array<int> >::name();
 	}
 
-	std::string ArrayIntParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
+	const std::string ArrayIntParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
       return any_cast<Array<int> >(entry.getAny(false)).toString();
 	}
 
@@ -175,11 +189,11 @@ namespace Teuchos{
 		return entry.isType<Array<int> >();
 	}
 
-	std::string ArrayShortParameterEntryConverter::getTypeAttributeValue() const{
+	const std::string ArrayShortParameterEntryConverter::getTypeAttributeValue() const{
 		return TypeNameTraits<Array<short> >::name();
 	}
 
-	std::string ArrayShortParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
+	const std::string ArrayShortParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
       return any_cast<Array<short> >(entry.getAny(false)).toString();
 	}
 
@@ -191,11 +205,27 @@ namespace Teuchos{
 		return entry.isType<Array<short> >();
 	}
 
-	std::string ArrayDoubleParameterEntryConverter::getTypeAttributeValue() const{
+	const std::string ArrayLongParameterEntryConverter::getTypeAttributeValue() const{
+		return TypeNameTraits<Array<long> >::name();
+	}
+
+	const std::string ArrayLongParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
+      return any_cast<Array<long> >(entry.getAny(false)).toString();
+	}
+
+	void ArrayLongParameterEntryConverter::setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const{
+		entry.setValue<Array<long> >(fromStringToArray<long>(xmlObj.getRequired("value")), isDefault);
+	}
+
+	bool ArrayLongParameterEntryConverter::isAppropriateConverter(const ParameterEntry& entry) const{
+		return entry.isType<Array<long> >();
+	}
+
+	const std::string ArrayDoubleParameterEntryConverter::getTypeAttributeValue() const{
 		return TypeNameTraits<Array<double> >::name();
 	}
 
-	std::string ArrayDoubleParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
+	const std::string ArrayDoubleParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
       return any_cast<Array<double> >(entry.getAny(false)).toString();
 	}
 
@@ -207,11 +237,11 @@ namespace Teuchos{
 		return entry.isType<Array<double> >();
 	}
 
-	std::string ArrayFloatParameterEntryConverter::getTypeAttributeValue() const{
+	const std::string ArrayFloatParameterEntryConverter::getTypeAttributeValue() const{
 		return TypeNameTraits<Array<float> >::name();
 	}
 
-	std::string ArrayFloatParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
+	const std::string ArrayFloatParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
       return any_cast<Array<float> >(entry.getAny(false)).toString();
 	}
 
@@ -223,11 +253,11 @@ namespace Teuchos{
 		return entry.isType<Array<float> >();
 	}
 
-	std::string ArrayStringParameterEntryConverter::getTypeAttributeValue() const{
+	const std::string ArrayStringParameterEntryConverter::getTypeAttributeValue() const{
 		return TypeNameTraits<Array<std::string> >::name();
 	}
 
-	std::string ArrayStringParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
+	const std::string ArrayStringParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
       return any_cast<Array<std::string> >(entry.getAny(false)).toString();
 	}
 
@@ -237,6 +267,22 @@ namespace Teuchos{
 
 	bool ArrayStringParameterEntryConverter::isAppropriateConverter(const ParameterEntry& entry) const{
 		return entry.isType<Array<std::string> >();
+	}
+
+	const std::string ArrayCharParameterEntryConverter::getTypeAttributeValue() const{
+		return TypeNameTraits<Array<char> >::name();
+	}
+
+	const std::string ArrayCharParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
+      return any_cast<Array<char> >(entry.getAny(false)).toString();
+	}
+
+	void ArrayCharParameterEntryConverter::setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const{
+		entry.setValue<Array<char> >(fromStringToArray<char>(xmlObj.getRequired("value")), isDefault);
+	}
+
+	bool ArrayCharParameterEntryConverter::isAppropriateConverter(const ParameterEntry& entry) const{
+		return entry.isType<Array<char> >();
 	}
 
 }

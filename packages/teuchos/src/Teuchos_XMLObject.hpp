@@ -95,27 +95,20 @@ public:
   double getRequiredDouble(const std::string& name) const 
     {return std::atof(getRequired(name).c_str());}
   
-  //! Get a required attribute, returning it as a float
-	float getRequiredFloat(const std::string& name) const{
-		float toReturn;
-		std::istringstream iss(getRequired(name));
-		iss >> toReturn;
-		return toReturn;
-	}
-
   //! Get a required attribute, returning it as an int
   int getRequiredInt(const std::string& name) const 
     {return std::atoi(getRequired(name).c_str());}
 
-	short getRequiredShort(const std::string& name) const{
-		short toReturn;
-		std::istringstream iss(getRequired(name));
-		iss >> toReturn;
-		return toReturn;
-	}
+  template<class T>
+  T getRequired(const std::string& name) const{
+    T toReturn;
+    std::istringstream iss(getRequired(name));
+    iss >> toReturn;
+    return toReturn;
+  }
+
   //! Get a required attribute, returning it as a bool
   bool getRequiredBool(const std::string& name) const ;
-
 
   /** \brief Get an attribute, assigning a default value if the requested
    * attribute does not exist */
@@ -160,7 +153,7 @@ public:
   //@{
 
   //! Add an attribute to the current node's atribute list
-  void addAttribute(const std::string& name, const std::string& value);
+  //void addAttribute(const std::string& name, const std::string& value);
 			
   //! Add a double as an attribute
   void addDouble(const std::string& name, double val)
@@ -173,6 +166,16 @@ public:
   //! Add a bool as an attribute
   void addBool(const std::string& name, bool val)
     {addAttribute(name, Teuchos::toString(val));}
+
+  template<class T>
+  void addAttribute(const std::string& name, T value) const
+   // {addAttribute(name, Teuchos::toString(value));}
+{
+  TEST_FOR_EXCEPTION(is_null(ptr_), Teuchos::EmptyXMLError,
+		     "XMLObject::addAttribute: XMLObject is empty");
+  ptr_->addAttribute(name, Teuchos::toString(value));
+}
+
 			
   //! Add a child node to the node
   void addChild(const XMLObject& child);

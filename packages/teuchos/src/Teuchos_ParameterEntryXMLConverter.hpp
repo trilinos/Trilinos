@@ -39,54 +39,36 @@ namespace Teuchos {
 
 class ParameterEntryXMLConverter{
 public:
-	virtual ParameterEntry fromXMLtoParameterEntry(const XMLObject &xmlObj) const;
-	virtual XMLObject fromParameterEntrytoXML(const ParameterEntry &entry, const std::string &name) const;
-	virtual std::string getTypeAttributeValue() const=0;
-	virtual std::string getValueAttributeValue(const ParameterEntry &entry) const=0;
+	ParameterEntry fromXMLtoParameterEntry(const XMLObject &xmlObj) const;
+	XMLObject fromParameterEntrytoXML(const ParameterEntry &entry, const std::string &name) const;
+	virtual const std::string getTypeAttributeValue() const=0;
+	virtual const std::string getValueAttributeValue(const ParameterEntry &entry) const=0;
 	virtual void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const=0;
 	virtual bool isAppropriateConverter(const ParameterEntry& entry) const=0;
 	static const std::string& getTypeAttributeName(){
-		return typeAttributeName();
+		static const std::string typeAttributeName_ = "type";
+		return typeAttributeName_;
 	}
+
 private:
-	static std::string& defaultAttributeName(){
-		static std::string attributeName;
-		if(attributeName == ""){
-			attributeName = "isDefault";
-		}
-		return attributeName;
+	static const std::string& getDefaultAttributeName(){
+		static const std::string defaultAttributeName_ = "isDefault";
+		return defaultAttributeName_;
 	}
 
-	static std::string& usedAttributeName(){
-		static std::string attributeName;
-		if(attributeName == ""){
-			attributeName = "isUsed";
-		}
-		return attributeName;
+	static const std::string& getUsedAttributeName(){
+		static const std::string usedAttributeName_ = "isUsed";
+		return usedAttributeName_;
 	}
 
-	static std::string& nameAttributeName(){
-		static std::string attributeName;
-		if(attributeName == ""){
-			attributeName = "name";
-		}
-		return attributeName;
+	static const std::string& getNameAttributeName(){
+		static const std::string nameAttributeName_ = "name";
+		return nameAttributeName_;
 	}
 
-	static std::string& typeAttributeName(){
-		static std::string attributeName;
-		if(attributeName == ""){
-			attributeName = "type";
-		}
-		return attributeName;
-	}
-
-	static std::string& valueAttributeName(){
-		static std::string attributeName;
-		if(attributeName == ""){
-			attributeName = "value";
-		}
-		return attributeName;
+	static const std::string& getValueAttributeName(){
+		static const std::string valueAttributeName_ = "value";
+		return valueAttributeName_;
 	}
 };
 

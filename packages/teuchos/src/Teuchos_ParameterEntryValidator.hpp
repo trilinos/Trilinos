@@ -54,6 +54,14 @@ public:
   /** \brief . */
   virtual ~ParameterEntryValidator() {}
 
+  /** \brief Get a string that should be used as a tag for this validator
+   * when serializing it to XML.
+   *
+   * \return a string that should be used as a tag for this validator
+   * when serializing it to XML.
+   */
+  virtual const std::string getXMLTagName() const=0;
+
   /** \brief Print documentation for this parameter.
    *
    * \param  docString 

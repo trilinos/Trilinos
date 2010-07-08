@@ -223,6 +223,9 @@ public:
   //@{
 
   /** \brief . */
+  const std::string getXMLTagName() const;
+
+  /** \brief . */
   void printDoc(
     std::string const& docString,
     std::ostream & out
@@ -244,7 +247,10 @@ public:
 
 
 private:
-
+  static const std::string& tagName(){
+  	static const std::string tagName_ = TypeNameTraits<IntegralType>::name() + "stringtointegralvalidator";
+	return tagName_;
+  }
   typedef std::map<std::string,IntegralType> map_t;
   std::string defaultParameterName_;
   std::string validValues_;
@@ -547,11 +553,58 @@ public:
     ParameterList &paramList, const std::string &paramName,
     const std::string &defaultValue
     ) const;
+
+  bool allowDouble() const;
+
+  bool allowInt() const;
+  
+  bool allowString() const;
+
+  EPreferredType prefferedType() const;
+
+  static const std::string& getPrefferedTypeString(EPreferredType enumValue){
+	switch(enumValue){
+		case PREFER_INT:
+			return getIntEnumString();
+			break;
+		case PREFER_DOUBLE:
+			return getDoubleEnumString();
+			break;
+		case PREFER_STRING:
+			return getStringEnumString();
+			break;
+		default:
+			throw std::runtime_error("Cannot convert enumValue: " + toString(enumValue) + " to a string");
+	}
+	//Should never get here. This code is here so that a warning is not generated.
+	static const std::string& emptyString("");
+	return emptyString;
+  }
+
+  static EPreferredType getPrefferedTypeStringEnum(const std::string& enumString){
+	if(enumString == getIntEnumString()){
+		return PREFER_INT;
+	}
+	else if(enumString == getDoubleEnumString()){
+		return PREFER_DOUBLE;
+	}
+	else if(enumString == getStringEnumString()){
+		return PREFER_STRING;
+	}
+	else{
+		throw std::runtime_error("Cannot convert enumString: " + enumString + " to an enum");
+	}
+	//Should never get here. This code is here so that a warning is not generated.
+	return (EPreferredType)-1;	
+  }
   
   //@}
 
   /** \name Overridden from ParameterEntryValidator */
   //@{
+
+  /** \brief . */
+  const std::string getXMLTagName() const;
 
   /** \brief . */
   void printDoc(
@@ -581,8 +634,6 @@ public:
   //virtual XMLObject getXML() const;
   //@}
 
-  /** \brief . */
-	static RCP<AnyNumberParameterEntryValidator> fromXML(XMLObject xmlObj);
   //@}
 
   /*static const std::string& getTagName(){
@@ -597,6 +648,21 @@ private:
 
   EPreferredType preferredType_;
   std::string acceptedTypesString_;
+
+  static const std::string& getIntEnumString(){
+  	static const std::string intEnumString_ = TypeNameTraits<int>::name();
+	return intEnumString_;
+  }
+
+  static const std::string& getDoubleEnumString(){
+  	static const std::string doubleEnumString_ = TypeNameTraits<double>::name();
+	return doubleEnumString_;
+  }
+
+  static const std::string& getStringEnumString(){
+  	static const std::string stringEnumString_ = TypeNameTraits<std::string>::name();
+	return stringEnumString_;
+  }
 
 //use pragmas to disable some false-positive warnings for windows sharedlibs export
 #ifdef _MSC_VER
@@ -922,6 +988,11 @@ public:
 		}
 	}
 
+	/** \brief . */
+	const std::string getXMLTagName() const{
+		return TypeNameTraits<S>::name() + "enhancednumbervalidator";
+	}
+
 	void printDoc(std::string const &docString, std::ostream &out) const{
 		StrUtils::printLines(out,"# ",docString);
 		out << "#  Validator Used: \n";
@@ -931,12 +1002,6 @@ public:
 		out << "#  	Max (inclusive): " << maxVal << "\n";
 	}
 
-  virtual const std::string& getType() const=0;
-
-  /*static const std::string& getTagName(){
-	static const std::string tagName = "enhancednumbervalidator";
-	return tagName;
-  }*/
 /*
   virtual XMLObject getXML() const{
 		XMLObject valiTag(getTagName());
@@ -1011,20 +1076,6 @@ public:
 	 * the QSpinBox that is used in the Optika GUI. If you're not using the GUI, you may ignore this parameter.
 	 */
 	EnhancedNumberValidator(S step):Teuchos::EnhancedNumberValidatorBase<S>(step){}
-
-	const std::string& getType() const{
-		return staticGetType();
-	}
-
-	private:
-	static std::string& staticGetType(){
-		static std::string myType;
-		if(myType == ""){
-			myType = typeid(S).name();
-		}
-		return myType;
-	}
-
 };
 
 /**
@@ -1050,20 +1101,6 @@ public:
 	 * the QSpinBox that is used in the Optika GUI. If you're not using the GUI, you may ignore this parameter.
 	 */
 	EnhancedNumberValidator(int min, int max, int step=intDefaultStep):EnhancedNumberValidatorBase<int>(min, max, step){}
-
-	const std::string& getType() const{
-		return staticGetType();
-	}
-
-	private:
-	static std::string& staticGetType(){
-		static std::string myType;
-		if(myType == ""){
-			myType = "int";
-		}
-		return myType;
-	}
-
 };
 
 /**
@@ -1089,19 +1126,6 @@ public:
 	 * the QSpinBox that is used in the Optika GUI. If you're not using the GUI, you may ignore this parameter.
 	 */
 	EnhancedNumberValidator(short min, short max, short step=shortDefaultStep):EnhancedNumberValidatorBase<short>(min, max, step){}
-
-	const std::string& getType() const{
-		return staticGetType();
-	}
-
-	private:
-	static std::string& staticGetType(){
-		static std::string myType;
-		if(myType == ""){
-			myType = "short";
-		}
-		return myType;
-	}
 };
 
 /**
@@ -1130,19 +1154,6 @@ public:
 	 */
 	EnhancedNumberValidator(double min, double max, double step=doubleDefaultStep, unsigned short precision=doubleDefaultPrecision)
 	:EnhancedNumberValidatorBase<double>(min, max, step, precision){}
-
-	const std::string& getType() const{
-		return staticGetType();
-	}
-
-	private:
-	static std::string& staticGetType(){
-		static std::string myType;
-		if(myType == ""){
-			myType = "double";
-		}
-		return myType;
-	}
 };
 
 /**
@@ -1171,19 +1182,6 @@ public:
 	 */
 	EnhancedNumberValidator(float min, float max, float step=floatDefaultStep, unsigned short precision=floatDefaultPrecision)
 	:EnhancedNumberValidatorBase<float>(min, max, step, precision){}
-
-	const std::string& getType() const{
-		return staticGetType();
-	}
-
-	private:
-	static std::string& staticGetType(){
-		static std::string myType;
-		if(myType == ""){
-			myType = "float";
-		}
-		return myType;
-	}
 }; 
 
 
@@ -1219,6 +1217,9 @@ public:
 	RCP<const Array<std::string> > validStringValues() const;
 
 	void validate(ParameterEntry const &entry, std::string const &paramName, std::string const &sublistName) const;
+
+	/** \brief . */
+	const std::string getXMLTagName() const;
 
 	void printDoc(std::string const &docString, std::ostream &out) const;
 
@@ -1259,6 +1260,9 @@ public:
 
 	void validate(ParameterEntry const &entry, std::string const &paramName, std::string const &sublistName) const;
 
+	/** \brief . */
+	const std::string getXMLTagName() const;
+
 	void printDoc(std::string const &docString, std::ostream &out) const;
 
 	//virtual XMLObject getXML() const;
@@ -1293,6 +1297,11 @@ public:
 	}
 
 	virtual void validate(ParameterEntry const &entry, std::string const &paramName, std::string const &sublistName) const =0;
+
+	/** \brief . */
+	const std::string getXMLTagName() const{
+		return "array" + prototypeValidator_->getXMLTagName();
+	}
 
 	virtual void printDoc(std::string const &docString, std::ostream &out) const =0;
 
@@ -1754,6 +1763,10 @@ StringToIntegralParameterEntryValidator<IntegralType>::validateString(
 
 // Overridden from ParameterEntryValidator
 
+template<class IntegralType>
+const std::string StringToIntegralParameterEntryValidator<IntegralType>::getXMLTagName() const{
+	return TypeNameTraits<IntegralType>::name() + "stringintegralvalidator";
+}
 
 template<class IntegralType>
 void StringToIntegralParameterEntryValidator<IntegralType>::printDoc(

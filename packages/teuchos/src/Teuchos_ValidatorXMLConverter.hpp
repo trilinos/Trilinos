@@ -42,7 +42,6 @@ public:
 	virtual RCP<ParameterEntryValidator> fromXMLtoValidator(const XMLObject& xmlObj) const=0;
 	virtual XMLObject fromValidatortoXML(const RCP<ParameterEntryValidator> validator) const=0;
 	virtual bool isAppropriateConverter(const RCP<ParameterEntryValidator> validator) const=0;
-	virtual std::string getTagName() const=0;
 };
 
 }

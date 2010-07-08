@@ -179,13 +179,13 @@ void XMLObject::checkTag(const std::string& expected) const
                      << expected << ">, found <" 
                      << getTag() << ">");
 }
-
+/*
 void XMLObject::addAttribute(const std::string& name, const std::string& value)
 {
   TEST_FOR_EXCEPTION(is_null(ptr_), Teuchos::EmptyXMLError,
 		     "XMLObject::addAttribute: XMLObject is empty");
   ptr_->addAttribute(name, value);
-}
+}*/
 
 void XMLObject::addChild(const XMLObject& child)
 {

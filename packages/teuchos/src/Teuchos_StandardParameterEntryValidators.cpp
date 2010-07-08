@@ -207,9 +207,27 @@ std::string AnyNumberParameterEntryValidator::getString(
   return paramList.get(paramName,defaultValue);
 }
 
+bool AnyNumberParameterEntryValidator::allowDouble() const{
+	return acceptedTypes_.allowDouble();
+}
+
+bool AnyNumberParameterEntryValidator::allowInt() const{
+	return acceptedTypes_.allowInt();
+}
   
+bool AnyNumberParameterEntryValidator::allowString() const{
+	return acceptedTypes_.allowString();
+}
+
+AnyNumberParameterEntryValidator::EPreferredType AnyNumberParameterEntryValidator::prefferedType() const{
+	return preferredType_;
+}
+
 // Overridden from ParameterEntryValidator
 
+const std::string AnyNumberParameterEntryValidator::getXMLTagName() const{
+	return "anynumbervalidator";
+}
 
 void AnyNumberParameterEntryValidator::printDoc(
   std::string         const& docString
@@ -393,6 +411,10 @@ void FileNameValidator::validate(ParameterEntry const &entry, std::string const 
 	return valiTag;
 }*/
 
+const std::string FileNameValidator::getXMLTagName() const{
+	return "filenamevalidator";
+}
+
 void FileNameValidator::printDoc(std::string const &docString, std::ostream &out) const{
 	StrUtils::printLines(out,"# ",docString);
 	out << "#  Validator Used: \n";
@@ -463,6 +485,10 @@ void StringValidator::validate(ParameterEntry const &entry, std::string const &p
 	return valiTag;
 }*/
 
+
+const std::string StringValidator::getXMLTagName() const{
+	return "stringvalidator";
+}
 
 void StringValidator::printDoc(std::string const &docString, std::ostream &out) const{
 	Teuchos::StrUtils::printLines(out,"# ",docString);

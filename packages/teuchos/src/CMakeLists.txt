@@ -139,6 +139,7 @@ APPEND_SET(HEADERS
   Teuchos_StandardMemberCompositionMacros.hpp
   Teuchos_StandardParameterEntryValidators.hpp
   Teuchos_StandardParameterEntryXMLConverters.hpp
+  Teuchos_StandardValidatorXMLConverters.hpp
   Teuchos_StringToIntMap.hpp
   Teuchos_toString.hpp
   Teuchos_TableColumn.hpp
@@ -158,6 +159,7 @@ APPEND_SET(HEADERS
   Teuchos_UnitTestRepository.hpp
   Teuchos_Utils.hpp
   Teuchos_ValidatorFactory.hpp
+  Teuchos_ValidatorXMLConverter.hpp
   Teuchos_VerboseObject.hpp
   Teuchos_VerboseObjectParameterListHelpers.hpp
   Teuchos_VerbosityLevel.hpp
@@ -205,6 +207,7 @@ APPEND_SET(SOURCES
   Teuchos_ScalarTraits.cpp
   Teuchos_StandardParameterEntryValidators.cpp
   Teuchos_StandardParameterEntryXMLConverters.cpp
+  Teuchos_StandardValidatorXMLConverters.cpp
   Teuchos_StringToIntMap.cpp
   Teuchos_TableColumn.cpp
   Teuchos_TableEntry.cpp

@@ -37,8 +37,8 @@ namespace Teuchos {
 
 class AnyParameterEntryConverter : public ParameterEntryXMLConverter{
 public:
-	std::string getTypeAttributeValue() const;
-	std::string getValueAttributeValue(const ParameterEntry &entry) const;
+	const std::string getTypeAttributeValue() const;
+	const std::string getValueAttributeValue(const ParameterEntry &entry) const;
 	void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const;
 	bool isAppropriateConverter(const ParameterEntry& entry) const;
 };
@@ -46,96 +46,120 @@ public:
 
 class IntParameterEntryConverter : public ParameterEntryXMLConverter{
 public:
-	std::string getTypeAttributeValue() const;
-	std::string getValueAttributeValue(const ParameterEntry &entry) const;
+	const std::string getTypeAttributeValue() const;
+	const std::string getValueAttributeValue(const ParameterEntry &entry) const;
 	void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const;
 	bool isAppropriateConverter(const ParameterEntry& entry) const;
 };
 
 class ShortParameterEntryConverter : public ParameterEntryXMLConverter{
 public:
-	std::string getTypeAttributeValue() const;
-	std::string getValueAttributeValue(const ParameterEntry &entry) const;
+	const std::string getTypeAttributeValue() const;
+	const std::string getValueAttributeValue(const ParameterEntry &entry) const;
+	void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const;
+	bool isAppropriateConverter(const ParameterEntry& entry) const;
+};
+
+class LongParameterEntryConverter : public ParameterEntryXMLConverter{
+public:
+	const std::string getTypeAttributeValue() const;
+	const std::string getValueAttributeValue(const ParameterEntry &entry) const;
 	void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const;
 	bool isAppropriateConverter(const ParameterEntry& entry) const;
 };
 
 class FloatParameterEntryConverter : public ParameterEntryXMLConverter{
 public:
-	std::string getTypeAttributeValue() const;
-	std::string getValueAttributeValue(const ParameterEntry &entry) const;
+	const std::string getTypeAttributeValue() const;
+	const std::string getValueAttributeValue(const ParameterEntry &entry) const;
 	void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const;
 	bool isAppropriateConverter(const ParameterEntry& entry) const;
 };
 
 class DoubleParameterEntryConverter : public ParameterEntryXMLConverter{
 public:
-	std::string getTypeAttributeValue() const;
-	std::string getValueAttributeValue(const ParameterEntry &entry) const;
+	const std::string getTypeAttributeValue() const;
+	const std::string getValueAttributeValue(const ParameterEntry &entry) const;
 	void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const;
 	bool isAppropriateConverter(const ParameterEntry& entry) const;
 };
 
 class StringParameterEntryConverter : public ParameterEntryXMLConverter{
 public:
-	std::string getTypeAttributeValue() const;
-	std::string getValueAttributeValue(const ParameterEntry &entry) const;
+	const std::string getTypeAttributeValue() const;
+	const std::string getValueAttributeValue(const ParameterEntry &entry) const;
 	void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const;
 	bool isAppropriateConverter(const ParameterEntry& entry) const;
 };
 
 class CharParameterEntryConverter : public ParameterEntryXMLConverter{
 public:
-	std::string getTypeAttributeValue() const;
-	std::string getValueAttributeValue(const ParameterEntry &entry) const;
+	const std::string getTypeAttributeValue() const;
+	const std::string getValueAttributeValue(const ParameterEntry &entry) const;
 	void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const;
 	bool isAppropriateConverter(const ParameterEntry& entry) const;
 };
 
 class BoolParameterEntryConverter : public ParameterEntryXMLConverter{
 public:
-	std::string getTypeAttributeValue() const;
-	std::string getValueAttributeValue(const ParameterEntry &entry) const;
+	const std::string getTypeAttributeValue() const;
+	const std::string getValueAttributeValue(const ParameterEntry &entry) const;
 	void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const;
 	bool isAppropriateConverter(const ParameterEntry& entry) const;
 };
 
 class ArrayIntParameterEntryConverter : public ParameterEntryXMLConverter{
 public:
-	std::string getTypeAttributeValue() const;
-	std::string getValueAttributeValue(const ParameterEntry &entry) const;
+	const std::string getTypeAttributeValue() const;
+	const std::string getValueAttributeValue(const ParameterEntry &entry) const;
 	void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const;
 	bool isAppropriateConverter(const ParameterEntry& entry) const;
 };
 
 class ArrayShortParameterEntryConverter : public ParameterEntryXMLConverter{
 public:
-	std::string getTypeAttributeValue() const;
-	std::string getValueAttributeValue(const ParameterEntry &entry) const;
+	const std::string getTypeAttributeValue() const;
+	const std::string getValueAttributeValue(const ParameterEntry &entry) const;
+	void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const;
+	bool isAppropriateConverter(const ParameterEntry& entry) const;
+};
+
+class ArrayLongParameterEntryConverter : public ParameterEntryXMLConverter{
+public:
+	const std::string getTypeAttributeValue() const;
+	const std::string getValueAttributeValue(const ParameterEntry &entry) const;
 	void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const;
 	bool isAppropriateConverter(const ParameterEntry& entry) const;
 };
 
 class ArrayFloatParameterEntryConverter : public ParameterEntryXMLConverter{
 public:
-	std::string getTypeAttributeValue() const;
-	std::string getValueAttributeValue(const ParameterEntry &entry) const;
+	const std::string getTypeAttributeValue() const;
+	const std::string getValueAttributeValue(const ParameterEntry &entry) const;
 	void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const;
 	bool isAppropriateConverter(const ParameterEntry& entry) const;
 };
 
 class ArrayDoubleParameterEntryConverter : public ParameterEntryXMLConverter{
 public:
-	std::string getTypeAttributeValue() const;
-	std::string getValueAttributeValue(const ParameterEntry &entry) const;
+	const std::string getTypeAttributeValue() const;
+	const std::string getValueAttributeValue(const ParameterEntry &entry) const;
 	void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const;
 	bool isAppropriateConverter(const ParameterEntry& entry) const;
 };
 
 class ArrayStringParameterEntryConverter : public ParameterEntryXMLConverter{
 public:
-	std::string getTypeAttributeValue() const;
-	std::string getValueAttributeValue(const ParameterEntry &entry) const;
+	const std::string getTypeAttributeValue() const;
+	const std::string getValueAttributeValue(const ParameterEntry &entry) const;
+	void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const;
+	bool isAppropriateConverter(const ParameterEntry& entry) const;
+};
+
+class ArrayCharParameterEntryConverter : public ParameterEntryXMLConverter{
+public:
+	const std::string getTypeAttributeValue() const;
+	const std::string getValueAttributeValue(const ParameterEntry &entry) const;
 	void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const;
 	bool isAppropriateConverter(const ParameterEntry& entry) const;
 };
