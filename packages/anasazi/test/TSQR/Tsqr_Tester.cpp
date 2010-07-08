@@ -11,29 +11,86 @@
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
+
+// static void
+// setCmdLineArgFromParamList (Teuchos::CommandLineProcessor& cmdLineProc,
+// 			    const std::string& key,
+// 			    Teuchos::ParameterEntry& entry)
+// {
+//   using Teuchos::any_cast;
+
+//   Teuchos::any& value = entry.getAny();
+//   if (value.type() == typeof(int))
+//     cmdLineProc.setOption (key, &(any_cast(value)), entry.docString().c_str());
+// }
+
+
+enum TsqrTestAction {
+  Verify = 0,
+  Benchmark,
+  TsqrTestActionNumValues
+};
+TsqrTestAction TsqrTestActionValues[] = {Verify, Benchmark};
+const char* TsqrTestActionNames[] = {"verify", "benchmark"};
+
+enum TsqrTestRoutine {
+  FullTsqr = 0,
+  FullMgs,
+  IntraNodeOnly,
+  InterNodeOnly,
+  LapackOnly,
+  TsqrTestRoutineNumValues
+};
+TsqrTestRoutine TsqrTestRoutineValues[] = 
+  {FullTsqr, FullMgs, IntraNodeOnly, InterNodeOnly, LapackOnly};
+const char* TsqrTestRoutineNames[] = {"full-tsqr", "full-mgs", "intranode-only", 
+				      "internode-only", "lapack-only"};
+
 static Teuchos::ParameterList
 parseOptions (int argc, char* argv[], const bool allowedToPrint, bool& printedHelp)
 {
   using std::cerr;
   using std::endl;
+  using std::string;
 
   printedHelp = false;
 
-  bool verbose = false;
+  // Command-line parameters, set to their default values.
+  TsqrTestAction action = Verify;
+  TsqrTestRoutine routine = FullTsqr; 
+  bool verbose = true;
   bool debug = false;
   int nrows = 100000; 
   int ncols = 10;
   int ncores = 1;
+  int ntrials = 10;
   int cache_block_size = 0;
+  bool contiguous_cache_blocks = false;
+  bool human_readable = false;
 
   Teuchos::ParameterList plist;
-  plist.set ("verbose", verbose, "Print messages and results");
-  plist.set ("debug", debug, "Print debugging information");
-  plist.set ("nrows", nrows, "Number of rows (globally) in the test matrix to factor");
-  plist.set ("ncols", ncols, "Number of columns in the test matrix to factor");
-  plist.set ("ncores", ncores, "Number of cores to use (per MPI process)");
-  plist.set ("cache-block-size", cache_block_size, "Cache block size (0 means we set a reasonable default)");
-
+  plist.set ("action", action, 
+	     "Which action to undertake");
+  plist.set ("routine", routine,
+	     "Which TSQR routine to test");
+  plist.set ("verbose", verbose, 
+	     "Print messages and results");
+  plist.set ("debug", debug, 
+	     "Print debugging information");
+  plist.set ("nrows", nrows, 
+	     "Number of rows (globally) in the test matrix to factor");
+  plist.set ("ncols", ncols, 
+	     "Number of columns in the test matrix to factor");
+  plist.set ("ncores", ncores, 
+	     "Number of cores to use (per MPI process)");
+  plist.set ("ntrials", ntrials, 
+	     "Number of trials for the benchmark");
+  plist.set ("cache-block-size", cache_block_size, 
+	     "Cache block size (0 means we set a reasonable default)");
+  plist.set ("contiguous-cache-blocks", contiguous_cache_blocks, 
+	     "Whether TSQR will reorganize cache blocks into contiguous storage");
+  plist.set ("human-readable", human_readable, 
+	     "Make benchmark results human-readable (but hard to parse)");
   try {
     Teuchos::CommandLineProcessor cmdLineProc (/* throwExceptions= */ true, /* recognizeAllOptions=*/ true);
 
@@ -63,12 +120,33 @@ parseOptions (int argc, char* argv[], const bool allowedToPrint, bool& printedHe
     // there are only three command-line argument types of interest
     // (bool, int, std::string), so a Smalltalk-style loop would be
     // acceptable.
-    cmdLineProc.setOption ("verbose", "quiet", &verbose, plist.getEntry("verbose").docString().c_str());
-    cmdLineProc.setOption ("debug", "nodebug", &debug, plist.getEntry("debug").docString().c_str());
-    cmdLineProc.setOption ("nrows", &nrows, plist.getEntry("nrows").docString().c_str());
-    cmdLineProc.setOption ("ncols", &ncols, plist.getEntry("ncols").docString().c_str());
-    cmdLineProc.setOption ("ncores", &ncores, plist.getEntry("ncores").docString().c_str());
-    cmdLineProc.setOption ("cache-block-size", &cache_block_size, plist.getEntry("cache-block-size").docString().c_str());
+    cmdLineProc.setOption ("action", &action, 
+			   (int) TsqrTestActionNumValues, 
+			   TsqrTestActionValues,
+			   TsqrTestActionNames,
+			   plist.getEntry("action").docString().c_str());
+    cmdLineProc.setOption ("routine", &routine, (int) TsqrTestRoutineNumValues, 
+			   TsqrTestRoutineValues, TsqrTestRoutineNames,
+			   plist.getEntry("routine").docString().c_str());
+    cmdLineProc.setOption ("verbose", "quiet", &verbose, 
+			   plist.getEntry("verbose").docString().c_str());
+    cmdLineProc.setOption ("debug", "nodebug", &debug, 
+			   plist.getEntry("debug").docString().c_str());
+    cmdLineProc.setOption ("nrows", &nrows, 
+			   plist.getEntry("nrows").docString().c_str());
+    cmdLineProc.setOption ("ncols", &ncols, 
+			   plist.getEntry("ncols").docString().c_str());
+    cmdLineProc.setOption ("ncores", &ncores, 
+			   plist.getEntry("ncores").docString().c_str());
+    cmdLineProc.setOption ("ntrials", &ntrials, 
+			   plist.getEntry("ntrials").docString().c_str());
+    cmdLineProc.setOption ("cache-block-size", &cache_block_size, 
+			   plist.getEntry("cache-block-size").docString().c_str());
+    cmdLineProc.setOption ("contiguous-cache-blocks", "noncontiguous-cache-blocks", 
+			   &contiguous_cache_blocks, 
+			   plist.getEntry("contiguous-cache-blocks").docString().c_str());
+    cmdLineProc.setOption ("human-readable", "machine-parseable", &human_readable, 
+			   plist.getEntry("human-readable").docString().c_str());
     cmdLineProc.parse (argc, argv);
   } 
   catch (Teuchos::CommandLineProcessor::UnrecognizedOption& e) { 
@@ -96,10 +174,28 @@ parseOptions (int argc, char* argv[], const bool allowedToPrint, bool& printedHe
   if (! printedHelp)
     {
       // Fetch the (possibly altered) values of the command-line options.
-      plist.set ("verbose", verbose, plist.getEntry("verbose").docString().c_str());
-      plist.set ("debug", debug, plist.getEntry("debug").docString().c_str());
-      plist.set ("nrows", nrows, plist.getEntry("nrows").docString().c_str());
-      plist.set ("ncols", ncols, plist.getEntry("ncols").docString().c_str());
+      plist.set ("action", action, 
+		 "Which action to undertake");
+      plist.set ("routine", routine,
+		 "Which TSQR routine to test");
+      plist.set ("verbose", verbose, 
+		 "Print messages and results");
+      plist.set ("debug", debug, 
+		 "Print debugging information");
+      plist.set ("nrows", nrows, 
+		 "Number of rows (globally) in the test matrix to factor");
+      plist.set ("ncols", ncols, 
+		 "Number of columns in the test matrix to factor");
+      plist.set ("ncores", ncores, 
+		 "Number of cores to use (per MPI process)");
+      plist.set ("ntrials", ntrials, 
+		 "Number of trials for the benchmark");
+      plist.set ("cache-block-size", cache_block_size, 
+		 "Cache block size (0 means we set a reasonable default)");
+      plist.set ("contiguous-cache-blocks", contiguous_cache_blocks, 
+		 "Whether TSQR will reorganize cache blocks into contiguous storage");
+      plist.set ("human-readable", human_readable, 
+		 "Make benchmark results human-readable (but hard to parse)");
     }
   return plist;
 }
