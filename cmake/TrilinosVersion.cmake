@@ -1,11 +1,11 @@
-SET(Trilinos_VERSION "10.3d")
+SET(Trilinos_VERSION "10.4")
 SET(Trilinos_MAJOR_VERSION "10")
-SET(Trilinos_MAJOR_MINOR_VERSION "100300")
-SET(Trilinos_VERSION_STRING "10.3 (Dev)")
+SET(Trilinos_MAJOR_MINOR_VERSION "100400")
+SET(Trilinos_VERSION_STRING "10.4")
 
 #this is for our testing scripts and should not be used elsewhere
-SET(Trilinos_REPOSITORY_BRANCH "master" CACHE INTERNAL "")
-SET(Trilinos_TESTING_TRACK "" CACHE INTERNAL "")
+SET(Trilinos_REPOSITORY_BRANCH "trilinos-release-10-4-branch" CACHE INTERNAL "")
+SET(Trilinos_TESTING_TRACK "Nightly Release 10.4" CACHE INTERNAL "")
 
 
 SET(TRILINOS_MAJOR_VERSION TRUE)
