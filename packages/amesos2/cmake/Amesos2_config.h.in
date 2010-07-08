@@ -1,0 +1,20 @@
+/* src/Amesos2_config.h.in.  Generated from configure.ac by autoheader.  */
+
+/* define if new form of std::count is supported */
+#cmakedefine HAVE_STD_NEW_COUNT_SYNTAX
+
+/* Define if want to build with triutils enabled */
+#cmakedefine HAVE_AMESOS2_TRIUTILS
+
+/* Define if want to build tbb */
+// #cmakedefine HAVE_AMESOS2_TBB
+
+/* Define if want to build teuchos-debug */
+#cmakedefine HAVE_AMESOS2_DEBUG
+
+/* Define if we have MPI */
+#cmakedefine HAVE_AMESOS2_MPI
+
+/* Define if want to build amesos-superlu */
+#cmakedefine HAVE_AMESOS2_SUPERLU
+

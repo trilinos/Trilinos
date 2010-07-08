@@ -1,0 +1,12 @@
+PACKAGE_NAME=Amesos2
+
+#
+# FRAMEWORK group
+#
+
+(FRAMEWORK, INSTALL, Amesos2Tests) {
+    DIRS = adapters, solvers, tklu_simple;
+    EXIT-STATUS = STRING-COMPARISON;
+    #ARGS = ;
+    COMM = SERIAL, MPI;
+}

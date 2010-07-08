@@ -1,0 +1,6 @@
+\form#0:$alpha*this + beta*B$
+\form#1:$ A X = B$
+\form#2:$ A^T X = B$
+\form#3:$this = alpha*this + beta*B$
+\form#4:$ this = alpha * this$
+\form#5:$ B - A*X $

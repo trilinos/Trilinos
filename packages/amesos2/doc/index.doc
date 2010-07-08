@@ -1,0 +1,46 @@
+/*! \mainpage Amesos2 - Direct Sparse Solver Interfaces
+
+\section Amesos2_outline Outline
+
+<ul>
+<li>\ref Amesos2_intro
+<li>\ref Amesos2_contributors
+<li>\ref Amesos2_startup
+  <ul>
+  <li>\ref Amesos2_sclasses
+  <li>\ref Amesos2_aclasses
+  </ul>
+</ul>
+
+\section Amesos2_intro Introduction
+
+Amesos2 provides a set of wrapper interfaces to common third-party
+direct sparse solver libraries, such as SuperLU and KLU.
+
+\section Amesos2_contributors Amesos2 Contributors
+
+The following people have contributed to the development of Amesos2:
+
+<ul>
+	<li> Eric Bavier, St John's University and the University of Iowa, ebavier@uiowa.edu
+</ul>
+
+\section Amesos2_startup Overview of Amesos2
+
+<!-- Motives for Amesos2.  Discuss improvements over Amesos. Give some small examples of usage -->
+
+\subsection Amesos2_sclasses Amesos2 Solver-interface Classes
+
+<!-- List of supported solvers -->
+<ul>
+	<li> 
+</ul>
+
+\subsection Amesos2_aclasses Amesos2 Adapter Classes
+
+<!-- List of Amesos2 adapters and supported methods
+<ul>
+	<li>	
+</ul>
+
+*/
