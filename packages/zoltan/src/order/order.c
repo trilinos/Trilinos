@@ -73,7 +73,7 @@ int Zoltan_Order (
   struct Zoltan_Order_Options opt;
   ZOLTAN_ID_PTR local_gids=NULL, lids=NULL;
   int local_num_obj;
-  ZOLTAN_ID_TYPE *local_rank = NULL;
+  ZOLTAN_ID_TYPE *local_rank = NULL;  /* global IDs */
   struct Zoltan_DD_Struct *dd = NULL;
 
   ZOLTAN_TRACE_ENTER(zz, yo);

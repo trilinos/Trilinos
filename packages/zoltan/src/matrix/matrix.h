@@ -45,7 +45,7 @@ typedef enum {MATRIX_FULL_DD=0, MATRIX_FAST, MATRIX_NO_REDIST} SpeedOpt;
 
 /* Hash function used to describe how to distribute data */
 /* (Y, X, data, &part_y) */
-typedef int distFnct(int, int, void *, int*);
+typedef int distFnct(ZOLTAN_GNO_TYPE, ZOLTAN_GNO_TYPE, void *, int*);
 int Zoltan_Distribute_Origin(ZOLTAN_GNO_TYPE edge_gno, ZOLTAN_GNO_TYPE vtx_gno, void* data, int *part_y);
 int Zoltan_Distribute_Linear(ZOLTAN_GNO_TYPE edge_gno, ZOLTAN_GNO_TYPE vtx_gno, void* data, int *part_y);
 int Zoltan_Distribute_Cyclic(ZOLTAN_GNO_TYPE edge_gno, ZOLTAN_GNO_TYPE vtx_gno, void* data, int *part_y);

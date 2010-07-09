@@ -82,13 +82,13 @@ int Zoltan_Scotch_Order(
   /* The application must allocate enough space */
   ZOLTAN_ID_PTR lids,   /* List of local ids (local to this proc) */
 /* The application must allocate enough space */
-  ZOLTAN_ID_PTR rank,		/* rank[i] is the rank of gids[i] */
+  ZOLTAN_ID_PTR rank,		/* rank[i] is the global rank of gids[i] */
   int *iperm,
   ZOOS *order_opt 	/* Ordering options, parsed by Zoltan_Order */
 )
 {
   static char *yo = "Zoltan_Scotch_Order";
-  int n, ierr;
+  int i, n, ierr;
   ZOLTAN_Output_Order ord;
   ZOLTAN_Third_Graph gr;
   SCOTCH_Strat        stradat;
@@ -178,7 +178,6 @@ int Zoltan_Scotch_Order(
   }
   gr.get_data = 1;
 
-
   timer_p = Zoltan_Preprocess_Timer(zz, &use_timers);
 
     /* Start timer */
@@ -189,7 +188,6 @@ int Zoltan_Scotch_Order(
   }
 
   ierr = Zoltan_Preprocess_Graph(zz, &l_gids, &l_lids,  &gr, NULL, NULL, NULL);
-
 
   if (Zoltan_Scotch_Build_Graph(&gr, comm,
 #ifdef ZOLTAN_PTSCOTCH
@@ -396,8 +394,8 @@ int Zoltan_Scotch_Order(
 
   ierr = Zoltan_Postprocess_Graph (zz, l_gids, l_lids, &gr, NULL, NULL, NULL, &ord, NULL);
 
-  ZOLTAN_FREE(&l_gids);
-  ZOLTAN_FREE(&l_gids);
+  /* KDD WILL BE FREED IN Zoltan_Third_Exit ZOLTAN_FREE(&l_gids); */
+  ZOLTAN_FREE(&l_lids);
 
   /* Get a time here */
   if (get_times) times[3] = Zoltan_Time(zz->Timer);
@@ -730,7 +728,8 @@ int Zoltan_Scotch(
   }
 
   Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL);
-  ZOLTAN_FREE(&global_ids);
+
+  /* KDD ALREADY FREED BY Zoltan_Third_Exit ZOLTAN_FREE(&global_ids); */
   ZOLTAN_FREE(&local_ids);
 
   ZOLTAN_TRACE_EXIT(zz, yo);
@@ -849,9 +848,22 @@ Zoltan_Scotch_Build_Graph(ZOLTAN_Third_Graph * gr,
 			  SCOTCH_Graph *       cgrafptr,
 			  SCOTCH_Strat *       stratptr)
 {
-  int edgelocnbr;
-
+  int edgelocnbr, i;
+  int *nbors=NULL;
   edgelocnbr =  gr->xadj[gr->num_obj];
+
+  /* gr->vtxdist and gr->adjncy are ZOLTAN_GNO_TYPEs, which may be larger than ints */
+
+  if (sizeof(ZOLTAN_GNO_TYPE) > sizeof(int)){
+    nbors = (int *)ZOLTAN_MALLOC(edgelocnbr * sizeof(int));
+    if (edgelocnbr && !nbors){
+      return ZOLTAN_MEMERR;
+    }
+    for (i=0; i < edgelocnbr; i++){   /* TODO64 check for overflow */
+      nbors[i] = (int)gr->adjncy[i];
+    }
+  }
+
 #ifdef ZOLTAN_PTSCOTCH
   if (IS_GLOBAL_GRAPH(gr->graph_type)){
     if (SCOTCH_dgraphInit (dgrafptr, comm) != 0) {
@@ -859,7 +871,7 @@ Zoltan_Scotch_Build_Graph(ZOLTAN_Third_Graph * gr,
     }
 
     if (SCOTCH_dgraphBuild (dgrafptr, 0, gr->num_obj, gr->num_obj, gr->xadj, gr->xadj + 1,
-		  	    gr->vwgt, NULL,edgelocnbr, edgelocnbr, gr->adjncy, NULL, gr->ewgts) != 0) {
+		  	    gr->vwgt, NULL,edgelocnbr, edgelocnbr, nbors, NULL, gr->ewgts) != 0) {
       SCOTCH_dgraphExit(dgrafptr);
       return (ZOLTAN_FATAL);
     }
@@ -872,10 +884,14 @@ Zoltan_Scotch_Build_Graph(ZOLTAN_Third_Graph * gr,
     }
 
     if (SCOTCH_graphBuild (cgrafptr, 0, gr->num_obj, gr->xadj, gr->xadj + 1,
-			   gr->vwgt, NULL,edgelocnbr, gr->adjncy, gr->ewgts) != 0) {
+			   gr->vwgt, NULL,edgelocnbr, nbors, gr->ewgts) != 0) {
       SCOTCH_graphExit(cgrafptr);
       return (ZOLTAN_FATAL);
     }
+  }
+
+  if (nbors && (nbors != (int *)gr->adjncy)){
+    ZOLTAN_FREE(&nbors);
   }
 
   SCOTCH_stratInit (stratptr);

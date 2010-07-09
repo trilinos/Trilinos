@@ -11,15 +11,18 @@
  *    $Revision$
  ****************************************************************************/
 
-/* Define xopen_source to get M_PI from math.h */
-
-#define _XOPEN_SOURCE 600
-
 #include <mpi.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+
+#ifndef M_PI
+# define M_PI           3.14159265358979323846  /* pi */
+#endif
+#ifndef M_PI_2
+# define M_PI_2         1.57079632679489661923  /* pi/2 */
+#endif
 
 #include "dr_const.h"
 #include "dr_input_const.h"

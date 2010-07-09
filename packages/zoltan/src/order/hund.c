@@ -49,7 +49,7 @@ int Zoltan_HUND(
   int num_obj,		/* Number of objects to order */
   ZOLTAN_ID_PTR gids,   /* List of global ids (local to this proc) */
                         /* The application must allocate enough space */
-  int *rank,            /* rank[i] is the rank of gids[i] */
+  ZOLTAN_ID_TYPE *rank,  /* rank[i] is the rank of gids[i] */
   int *iperm            /* iperm[rank[i]]=i, only for sequential ordering */
 )
 {
@@ -157,7 +157,7 @@ int Zoltan_HUND(
   ZOLTAN_FREE(&dperm);
   ZOLTAN_FREE(&part);
   ZOLTAN_FREE(&local_gid);
-  Zoltan_DD_Find (data->ddHedge, gids, (ZOLTAN_ID_PTR)rank, NULL, NULL, num_obj, NULL);
+  Zoltan_DD_Find (data->ddHedge, gids, rank, NULL, NULL, num_obj, NULL);
 
   Zoltan_DD_Destroy(&data->ddHedge);
 

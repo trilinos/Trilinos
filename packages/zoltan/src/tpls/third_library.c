@@ -310,9 +310,7 @@ int nproc_y = m2d->comm->nProc_y;
     if (proc == me){
       if (proc == 0) fprintf(stderr,"\n%s\n",s);
       fprintf(stderr,"Process: %d) flags: bipartite %d fixObj %d, fixed vertices buffer %p:\n",
-               zz->Proc, gr->bipartite, gr->fixObj, gr->fixed_vertices);
-      fprintf(stderr,"hash function: %p (Distribute_Origin %p, Distribute_Linear %p)\n",
-             m2d->hashDistFct, &Zoltan_Distribute_Origin, &Zoltan_Distribute_Linear);
+               zz->Proc, gr->bipartite, gr->fixObj, (void *)gr->fixed_vertices);
       fprintf(stderr,"GNO distribution in x direction: ");
       if (m2d->dist_x){
         for (i=0; i <= nproc_x; i++){
