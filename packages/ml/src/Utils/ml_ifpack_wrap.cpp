@@ -33,14 +33,14 @@ static map<void*, bool> MemoryManager;
 int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level, 
                   Teuchos::ParameterList& List, 
                   const Epetra_Comm& Comm, 
-                  Ifpack_Handle_Type ** Ifpack_Handle);
+                  Ifpack_Handle_Type ** Ifpack_Handle, int force_crs);
 
 // ====================================================================== 
 // MS // This does not work yet with ML_ALL_LEVELS
 int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
                            int nl, int pre_or_post,
                            void *iList,
-                           void *iComm)
+                           void *iComm, int force_crs)
 {
 
    int (*fun)(ML_Smoother *, int, double *, int, double *);
@@ -59,7 +59,7 @@ int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
 
    /* Creates IFPACK objects */
    Ifpack_Handle = (Ifpack_Handle_Type *) ML_allocate(sizeof(Ifpack_Handle_Type));
-   status = ML_Ifpack_Gen(ml, Type, Overlap, nl, List, *Comm, &Ifpack_Handle) ; 
+   status = ML_Ifpack_Gen(ml, Type, Overlap, nl, List, *Comm, &Ifpack_Handle,force_crs); 
    assert (status == 0); 
 
    /* This is only used to control the factorization sweeps. I believe */
@@ -115,7 +115,7 @@ int ML_Gen_Smoother_Ifpack(ML *ml, const char* Type, int Overlap,
 int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level, 
                   Teuchos::ParameterList& List, 
                   const Epetra_Comm& Comm, 
-                  Ifpack_Handle_Type ** Ifpack_Handle)
+                  Ifpack_Handle_Type ** Ifpack_Handle, int force_crs)
 {
 # ifdef ML_MPI
   MPI_Comm  ifpackComm;
@@ -127,10 +127,14 @@ int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
 
 
   Epetra_RowMatrix* Ifpack_Matrix;
-# ifdef IFPACK_NODE_AWARE_CODE
   Epetra_CrsMatrix* Ifpack_CrsMatrix;
   Epetra_Map*       Ifpack_RowMap;
-# endif
+
+#ifdef IFPACK_NODE_AWARE_CODE
+  // NODE_AWARE always uses force_crs
+  force_crs=1;
+#endif
+
 
   (*Ifpack_Handle)->freeMpiComm = 0;
 
@@ -163,18 +167,20 @@ int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
     if (hasRows == 1) (*Ifpack_Handle)->freeMpiComm = 1;
 #   endif //ifdef ML_MPI
     if (hasRows == 1) {
-#     ifndef IFPACK_NODE_AWARE_CODE
-      Ifpack_Matrix = new RowMatrix(Ke, 0, false, ifpackComm );
-      assert (Ifpack_Matrix != 0);
-#     else
-      //enables efficient use of Ifpack on coarser levels
-      Epetra_MpiComm ifpackEpetraComm(ifpackComm);
-      Ifpack_RowMap = new Epetra_Map(-1,Ke->outvec_leng,0,ifpackEpetraComm);
-      Epetra_CrsMatrix_Wrap_ML_Operator(Ke, Ifpack_RowMap->Comm(), *Ifpack_RowMap, &Ifpack_CrsMatrix,View,0);
-      assert (Ifpack_CrsMatrix != 0);
-      Ifpack_Matrix = Ifpack_CrsMatrix;
-      delete Ifpack_RowMap;
-#     endif
+      if(!force_crs){
+	// RowMatrix wrapper
+	Ifpack_Matrix = new RowMatrix(Ke, 0, false, ifpackComm );
+	assert (Ifpack_Matrix != 0);
+      }
+      else{
+	// Uses a CrsMatrix wrapper to enable efficient use of Ifpack on coarser levels
+	Epetra_MpiComm ifpackEpetraComm(ifpackComm);
+	Ifpack_RowMap = new Epetra_Map(-1,Ke->outvec_leng,0,ifpackEpetraComm);
+	Epetra_CrsMatrix_Wrap_ML_Operator(Ke, Ifpack_RowMap->Comm(), *Ifpack_RowMap, &Ifpack_CrsMatrix,View,0);
+	assert (Ifpack_CrsMatrix != 0);
+	Ifpack_Matrix = Ifpack_CrsMatrix;
+	delete Ifpack_RowMap;
+      }
       // this guy has to be deleted
       MemoryManager[(void*)Ifpack_Matrix] = true;
     } //if (hasRows == 1)
@@ -182,24 +188,23 @@ int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
 
   // we enter the IFPACK world through the factory only
   if (hasRows == 1) {
-  Ifpack Factory;
-  Ifpack_Preconditioner* Prec;
+    Ifpack Factory;
+    Ifpack_Preconditioner* Prec;
 
-  // create the preconditioner
-  Prec = Factory.Create(Type, Ifpack_Matrix, Overlap);
-  Prec->SetParameters(List);
-  ML_CHK_ERR(Prec->Compute());
-  
-  (*Ifpack_Handle)->A_Base = (void *)Prec;
-
-  // Grab the lambda's if needed
-  if(!strcmp(Type,"Chebyshev")){
-    Ifpack_Chebyshev* C=dynamic_cast<Ifpack_Chebyshev*>(Prec);
-    assert(C);
-    ml->Amat[curr_level].lambda_min=C->GetLambdaMin();
-    ml->Amat[curr_level].lambda_max=C->GetLambdaMax();
-  }
-
+    // create the preconditioner
+    Prec = Factory.Create(Type, Ifpack_Matrix, Overlap);
+    Prec->SetParameters(List);
+    ML_CHK_ERR(Prec->Compute());
+    
+    (*Ifpack_Handle)->A_Base = (void *)Prec;
+    
+    // Grab the lambda's if needed
+    if(!strcmp(Type,"Chebyshev")){
+      Ifpack_Chebyshev* C=dynamic_cast<Ifpack_Chebyshev*>(Prec);
+      assert(C);
+      ml->Amat[curr_level].lambda_min=C->GetLambdaMin();
+      ml->Amat[curr_level].lambda_max=C->GetLambdaMax();
+    }    
   } //if (hasRows==1)
   else
     (*Ifpack_Handle)->A_Base = 0;

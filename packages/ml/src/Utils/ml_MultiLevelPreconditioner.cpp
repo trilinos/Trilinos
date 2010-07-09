@@ -2183,6 +2183,8 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
   double AddToDiag = List_.get("coarse: add to diag", 1e-12);
   std::string PreOrPostSmoother = List_.get("coarse: pre or post","post");
   int pre_or_post;
+
+  int force_crs=List_.get("coarse: use ifpack crs wrapper",0);
   if( PreOrPostSmoother == "pre" ) pre_or_post = ML_PRESMOOTHER;
   else if( PreOrPostSmoother == "both" ) pre_or_post = ML_BOTH;
   else pre_or_post = ML_POSTSMOOTHER;
@@ -2231,7 +2233,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
       IfpackList.set("relaxation: damping factor", Omega);
       ML_Gen_Smoother_Ifpack(ml_, IfpackType.c_str(),
                              0, LevelID_[NumLevels_-1], pre_or_post,
-                             (void*)(&IfpackList),(void *) Comm_);
+                             (void*)(&IfpackList),(void *) Comm_,force_crs);
     }
     else
 #endif
@@ -2262,7 +2264,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetCoarse()
       ML_Gen_Smoother_Ifpack(ml_, IfpackType.c_str(),
                              0, LevelID_[NumLevels_-1], pre_or_post,
                              //IfpackList,*Comm_);
-                             (void*)&IfpackList,(void*)Comm_);
+                             (void*)&IfpackList,(void*)Comm_,force_crs);
     }
     else
 #endif
