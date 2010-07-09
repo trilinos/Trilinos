@@ -83,8 +83,8 @@ Operator GetIdentity(const Space& DomainSpace, const Space& RangeSpace)
   ML_Operator_Set_ApplyFuncData(ML_eye, size, size,
             NULL, size, eye_matvec, 0);
   ML_Operator_Set_Getrow(ML_eye, size, eye_getrows);
-  Operator* eye = new Operator(DomainSpace,DomainSpace,ML_eye,true);
-  return(*eye);
+  Operator eye(DomainSpace,DomainSpace,ML_eye,true);
+  return(eye);
 }
 
 // ====================================================================== 
