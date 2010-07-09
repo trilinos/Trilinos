@@ -26,10 +26,15 @@
 // ************************************************************************
 //@HEADER
 
+
 #ifndef TPETRA_MMHELPERS_DECL_HPP
 #define TPETRA_MMHELPERS_DECL_HPP
 
 #include "Tpetra_ConfigDefs.hpp"
+#include "Teuchos_ArrayRCP.hpp"
+#include <Kokkos_DefaultNode.hpp>
+#include <Kokkos_DefaultSparseMultiply.hpp>
+#include <Kokkos_DefaultSparseSolve.hpp>
 #include <set>
 #include <map>
 
@@ -40,18 +45,23 @@
  */
 
 namespace Tpetra {
-namespace Tpetra {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS  
 	// forward declaration
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatVec, class SpMatSlv>
 class CrsMatrix;
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+
+template <class LocalOrdinal, class GlobalOrdinal, class Node>
 class Map;
 #endif
 //struct that holds views of the contents of a CrsMatrix. These
 //contents may be a mixture of local and remote rows of the
 //actual matrix.
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+template <class Scalar, 
+	class LocalOrdinal=int, 
+	class GlobalOrdinal=LocalOrdinal, 
+	class Node=Kokkos::DefaultNode::DefaultNodeType, 
+	class SpMatVec=Kokkos::DefaultSparseMultiply<Scalar, LocalOrdinal, Node>, 
+	class SpMatSlv=Kokkos::DefaultSparseSolve<Scalar, LocalOrdinal, Node> >
 class CrsMatrixStruct {
 public:
   CrsMatrixStruct();
@@ -61,21 +71,22 @@ public:
   void deleteContents();
 
   size_t numRows;
-  size_t* numEntriesPerRow;
-  LocalOrdinal** indices;
-  Scalar** values;
-  bool* remote;
-  size_t numRemote;
-  const Map<LocalOrdinal, GlobalOrdinal, Node>* origRowMap;
-  const Map<LocalOrdinal, GlobalOrdinal, Node>* rowMap;
-  const Map<LocalOrdinal, GlobalOrdinal, Node>* colMap;
-  const Map<LocalOrdinal, GlobalOrdinal, Node>* domainMap;
-  const Map<LocalOrdinal, GlobalOrdinal, Node>* importColMap;
-  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>* importMatrix;
+  Teuchos::ArrayRCP<size_t> numEntriesPerRow;
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<LocalOrdinal> > indices;
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> > values;
+  Teuchos::ArrayRCP<bool> remote;
+  global_size_t numRemote;
+  const Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > origRowMap;
+  const Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > rowMap;
+  const Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > colMap;
+  const Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > domainMap;
+  const Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > importColMap;
+  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv > >  importMatrix;
 };
 
-int dumpCrsMatrixStruct(const CrsMatrixStruct& M);
-/*
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatVec, class SpMatSlv>
+int dumpCrsMatrixStruct(const CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>& M);
+
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
 class CrsWrapper {
  public:
@@ -83,54 +94,65 @@ class CrsWrapper {
 
   virtual const Map<LocalOrdinal, GlobalOrdinal, Node>& RowMap() const = 0;
 
-  virtual bool Filled() = 0;
+  virtual bool isFillComplete() = 0;
 
-  virtual int InsertGlobalValues(GlobalOrdinal GlobalRow, size_t NumEntries, Scalar* Values, GlobalOrdinal* Indices) = 0;
+  virtual int insertGlobalValues(GlobalOrdinal globalRow, const Teuchos::ArrayView<const GlobalOrdinal> &indices, const Teuchos::ArrayView<const Scalar> &values) = 0;
 
-  virtual int SumIntoGlobalValues(int GlobalRow, int NumEntries, double* Values, int* Indices) = 0;
+  virtual int sumIntoGlobalValues(GlobalOrdinal globalRow, const Teuchos::ArrayView<const GlobalOrdinal> &indices, const Teuchos::ArrayView<const Scalar> &values) = 0;
 };
 
-class CrsWrapper_Epetra_CrsMatrix : public CrsWrapper {
+template <class Scalar, 
+	class LocalOrdinal=int, 
+	class GlobalOrdinal=LocalOrdinal, 
+	class Node=Kokkos::DefaultNode::DefaultNodeType, 
+	class SpMatVec=Kokkos::DefaultSparseMultiply<Scalar, LocalOrdinal, Node>, 
+	class SpMatSlv=Kokkos::DefaultSparseSolve<Scalar, LocalOrdinal, Node> >
+class CrsWrapper_CrsMatrix : public CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>{
  public:
-  CrsWrapper_Epetra_CrsMatrix(Epetra_CrsMatrix& epetracrsmatrix);
-  virtual ~CrsWrapper_Epetra_CrsMatrix();
+  CrsWrapper_CrsMatrix(CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>& crsmatrix);
+  virtual ~CrsWrapper_CrsMatrix();
 
-  const Epetra_Map& RowMap() const;
+  const Map<LocalOrdinal, GlobalOrdinal, Node>& getRowMap() const;
 
-  bool Filled();
+  bool isFillComplete();
 
-  int InsertGlobalValues(int GlobalRow, int NumEntries, double* Values, int* Indices);
-  int SumIntoGlobalValues(int GlobalRow, int NumEntries, double* Values, int* Indices);
+  int insertGlobalValues(GlobalOrdinal globalRow, const Teuchos::ArrayView<const GlobalOrdinal> &indices, const Teuchos::ArrayView<const Scalar> &values);
+  int sumIntoGlobalValues(GlobalOrdinal globalRow, const Teuchos::ArrayView<const GlobalOrdinal> &indices, const Teuchos::ArrayView<const Scalar> &values);
 
  private:
-  Epetra_CrsMatrix& ecrsmat_;
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>& crsmat_;
 };
 
-class CrsWrapper_GraphBuilder : public CrsWrapper {
+template<class Scalar,
+	class LocalOrdinal=int,
+	class GlobalOrdinal=LocalOrdinal,
+	class Node=Kokkos::DefaultNode::DefaultNodeType>
+class CrsWrapper_GraphBuilder : public CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>{
  public:
-  CrsWrapper_GraphBuilder(const Epetra_Map& emap);
+  CrsWrapper_GraphBuilder(const Map<LocalOrdinal, GlobalOrdinal, Node>& map);
   virtual ~CrsWrapper_GraphBuilder();
 
-  const Epetra_Map& RowMap() const {return rowmap_; }
+  const Map<LocalOrdinal, GlobalOrdinal, Node>& RowMap() const {return rowmap_; }
 
-  bool Filled();
+  bool isFillComplete();
 
-  int InsertGlobalValues(int GlobalRow, int NumEntries, double* Values, int* Indices);
-  int SumIntoGlobalValues(int GlobalRow, int NumEntries, double* Values, int* Indices);
+  int insertGlobalValues(GlobalOrdinal globalRow, const Teuchos::ArrayView<const GlobalOrdinal> &indices, const Teuchos::ArrayView<const Scalar> &values);
+  int sumIntoGlobalValues(GlobalOrdinal globalRow, const Teuchos::ArrayView<const GlobalOrdinal> &indices, const Teuchos::ArrayView<const Scalar> &values);
 
-  std::map<int,std::set<int>*>& get_graph();
+  std::map<GlobalOrdinal,std::set<GlobalOrdinal>*>& get_graph();
 
-  int get_max_row_length() { return max_row_length_; }
+  size_t get_max_row_length() { return max_row_length_; }
 
  private:
-  std::map<int,std::set<int>*> graph_;
-  const Epetra_Map& rowmap_;
-  int max_row_length_;
+  std::map<GlobalOrdinal,std::set<GlobalOrdinal>*> graph_;
+  const Map<LocalOrdinal, GlobalOrdinal, Node> & rowmap_;
+  global_size_t max_row_length_;
 };
 
-void insert_matrix_locations(CrsWrapper_GraphBuilder& graphbuilder,
-                              Epetra_CrsMatrix& C);
-*/
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatVec, class SpMatSlv>
+void insert_matrix_locations(CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, GlobalOrdinal, Node>& graphbuilder,
+                              CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>& C);
+
 
 
 }

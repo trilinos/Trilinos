@@ -32,6 +32,8 @@ Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 #ifndef TPETRA_ROWMATRIXTRANSPOSER_HPP
 #define TPETRA_ROWMATRIXTRANSPOSER_HPP
 #include <Teuchos_RCP.hpp>
+#include <Kokkos_DefaultSparseMultiply.hpp>
+#include <Kokkos_DefaultSparseSolve.hpp>
 #include <Kokkos_DefaultNode.hpp>
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_ConfigDefs.hpp"
@@ -46,7 +48,12 @@ namespace Tpetra {
 	  object and (optionally) redistribute it across a parallel distributed memory machine.
 */
 
-template <class Scalar, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+template <class Scalar, 
+	class LocalOrdinal=int, 
+	class GlobalOrdinal=LocalOrdinal, 
+	class Node=Kokkos::DefaultNode::DefaultNodeType, 
+	class SpMatVec=Kokkos::DefaultSparseMultiply<Scalar, LocalOrdinal, Node>, 
+	class SpMatSlv=Kokkos::DefaultSparseSolve<Scalar, LocalOrdinal, Node> >
 class RowMatrixTransposer {
     
   public:
@@ -80,14 +87,14 @@ class RowMatrixTransposer {
 		       using this map as the row map for the transpose.	If null, the function will evenly distribute
 			   the rows of the tranpose matrix.
   */
-  void createTranspose(const OptimizeOption optimizeTranspose, Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > &transposeMatrix, Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transposeRowMap = Teuchos::null);
+  void createTranspose(const OptimizeOption optimizeTranspose, Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > &transposeMatrix/*, Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > transposeRowMap = Teuchos::null*/);
 
 	
  private: 
 	//The original matrix to be transposed.
 	const Teuchos::RCP<const RowMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > origMatrix_;
 	//The matrix in which the result of the tranpose is placed.
-	Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > transposeMatrix_;
+	Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > transposeMatrix_;
 	//Whether or not to optimize the storage of the transpose matrix.
 	OptimizeOption optimizeTranspose_;	
 	const Teuchos::RCP<const Teuchos::Comm<int> > comm_;

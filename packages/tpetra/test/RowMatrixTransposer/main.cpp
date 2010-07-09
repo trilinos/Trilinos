@@ -123,7 +123,7 @@ int main(int argc, char* argv[]){
 //		AT->describe(*out, Teuchos::VERB_EXTREME); 
 	Tpetra::RowMatrixTransposer<Scalar, Ordinal> transposer = Tpetra::RowMatrixTransposer<Scalar, Ordinal>(A);
 	Teuchos::RCP<Tpetra::Map<Ordinal> > tMap = Teuchos::rcp(new Tpetra::Map<Ordinal>(4, 0, comm));
-	transposer.createTranspose(Tpetra::DoOptimizeStorage, TestMatrix, tMap);
+	transposer.createTranspose(Tpetra::DoOptimizeStorage, TestMatrix/*, tMap*/);
 
 //	if (verbose) {
 	TestMatrix->describe(*out, Teuchos::VERB_EXTREME); 

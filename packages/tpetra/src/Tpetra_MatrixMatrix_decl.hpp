@@ -32,6 +32,8 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_ArrayRCP.hpp>
 #include <Kokkos_DefaultNode.hpp>
+#include <Kokkos_DefaultSparseMultiply.hpp>
+#include <Kokkos_DefaultSparseSolve.hpp>
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 
@@ -43,7 +45,7 @@
 namespace Tpetra {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS  
 	// forward declaration
-template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatVec, class SpMatSlv>
 class CrsMatrix;
 #endif
   /** Collection of matrix-matrix operations. This class basically
@@ -51,9 +53,18 @@ class CrsMatrix;
       See the program epetraext/test/MatrixMatrix/cxx_main.cpp for
       a usage example.
    */
-template<class Scalar, class LocalOrdinal=int, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
+template <class Scalar, 
+	class LocalOrdinal=int, 
+	class GlobalOrdinal=LocalOrdinal, 
+	class Node=Kokkos::DefaultNode::DefaultNodeType, 
+	class SpMatVec=Kokkos::DefaultSparseMultiply<Scalar, LocalOrdinal, Node>, 
+	class SpMatSlv=Kokkos::DefaultSparseSolve<Scalar, LocalOrdinal, Node> >
 class MatrixMatrix {
-
+  typedef CrsMatrix<LocalOrdinal,
+  					GlobalOrdinal,
+					Node,
+					SpMatVec,
+					SpMatSlv> CrsMatixType;
   public:
     /** destructor */
     virtual ~MatrixMatrix(){}
@@ -83,11 +94,11 @@ class MatrixMatrix {
              B are not already Filled, or if errors occur in putting values
              into C, etc.
      */
-    static int Multiply(const CrsMatrix& A,
+    static int Multiply(const CrsMatrixType& A,
 			bool transposeA,
-			const CrsMatrix& B,
+			const CrsMatrixType& B,
 			bool transposeB,
-			CrsMatrix& C,
+			CrsMatrixType& C,
                         bool call_FillComplete_on_result=true);
 
     /** Given CrsMatrix objects A and B, form the sum B = a*A + b*B
@@ -105,10 +116,10 @@ class MatrixMatrix {
              not already Filled, or if errors occur in putting values
              into B, etc.
      */
-    static int Add(const CrsMatrix& A,
+    static int Add(const CrsMatrixType& A,
                    bool transposeA,
                    double scalarA,
-                   CrsMatrix& B,
+                   CrsMatrixType& B,
                    double scalarB);
 
     /** Given CrsMatrix objects A and B, form the sum C = a*A + b*B
@@ -132,13 +143,13 @@ class MatrixMatrix {
              not already Filled, or if errors occur in putting values
              into C, etc.
      */
-    static int Add(const CrsMatrix& A,
+    static int Add(const CrsMatrixType& A,
                    bool transposeA,
                    double scalarA,
-                   const CrsMatrix & B,
+                   const CrsMatrixType& B,
                    bool transposeB,
                    double scalarB,
-                   CrsMatrix * & C);
+                   CrsMatrixType * & C);
 
 };//class MatrixMatrix
 
