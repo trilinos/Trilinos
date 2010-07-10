@@ -353,13 +353,21 @@ MACRO(CTEST_SUBMIT)
     SET(CTEST_DROP_LOCATION "$ENV{CTEST_DROP_LOCATION}")
   ENDIF()
 
+  # If using a recent enough ctest with RETRY_COUNT, use it to overcome
+  # failed submits:
   #
+  SET(retry_args "")
+  IF("${CMAKE_VERSION}" VERSION_GREATER "2.8.2")
+    SET(retry_args RETRY_COUNT 5 RETRY_DELAY 30)
+    MESSAGE("info: using retry_args='${retry_args}' for _ctest_submit call")
+  ENDIF()
+
   # Call the original CTEST_SUBMIT and pay attention to its RETURN_VALUE:
   #
-  _CTEST_SUBMIT(${ARGN} RETURN_VALUE rv)
+  _CTEST_SUBMIT(${ARGN} ${retry_args} RETURN_VALUE rv)
 
   IF(NOT "${rv}" STREQUAL "0")
-    QUEUE_ERROR("error: ctest_submit failed: rv='${rv}' ARGN='${ARGN}'")
+    QUEUE_ERROR("error: ctest_submit failed: rv='${rv}' ARGN='${ARGN}' retry_args='${retry_args}'")
   ENDIF()
 ENDMACRO()
 
