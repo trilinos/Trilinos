@@ -127,6 +127,13 @@ namespace TSQR {
 	  throw std::runtime_error("LAPACK GEQRF failed");
       }
 
+      template< class MatrixViewType >
+      void
+      implicit_Q (MatrixViewType& Q, 
+		  typename MatrixViewType::scalar_type tau[])
+      {
+	implicit_Q (Q.nrows(), Q.ncols(), Q.get(), Q.lda(), tau);
+      }
 
       void
       fill_random_svd (const Ordinal nrows, 
@@ -153,8 +160,8 @@ namespace TSQR {
 
 	// Generate random orthogonal U (nrows by ncols) and V (ncols by
 	// ncols).  Keep them stored implicitly.
-	implicit_Q (nrows, ncols, U.get(), U.lda(), &tau_U[0]);
-	implicit_Q (ncols, ncols, V.get(), V.lda(), &tau_V[0]);
+	implicit_Q (U, &tau_U[0]);
+	implicit_Q (V, &tau_V[0]);
 
 	// Workspace query for ORMQR.
 	Scalar _lwork1, _lwork2;
@@ -172,10 +179,10 @@ namespace TSQR {
 	    throw std::logic_error(os.str());
 	  }
 	if (ScalarTraits< Scalar >::is_complex)
-	  lapack.ORMQR ("R", "H", nrows, ncols, ncols, V.get(), U.lda(), &tau_V[0], 
+	  lapack.ORMQR ("R", "H", nrows, ncols, ncols, V.get(), V.lda(), &tau_V[0], 
 			A, lda, &_lwork2, -1, &info);
 	else
-	  lapack.ORMQR ("R", "T", nrows, ncols, ncols, V.get(), U.lda(), &tau_V[0], 
+	  lapack.ORMQR ("R", "T", nrows, ncols, ncols, V.get(), V.lda(), &tau_V[0], 
 			A, lda, &_lwork2, -1, &info);
 	if (info != 0)
 	  throw std::logic_error("LAPACK ORMQR LWORK query failed");

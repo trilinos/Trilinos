@@ -34,6 +34,7 @@
 #include "Tpetra_DefaultPlatform.hpp"
 
 #include "Tsqr_SeqTest.hpp"
+#include "Tsqr_TbbTest.hpp"
 #include "Tsqr_TsqrTest.hpp"
 #include "Teuchos_Time.hpp"
 #include "Tsqr_Random_NormalGenerator.hpp"
@@ -100,8 +101,8 @@ struct TsqrTestParameters {
 
 template< class Scalar >
 static void
-verifyTsqr (Teuchos::RCP< const Teuchos::Comm<int> > comm,
-	    const TsqrTestParameters& params)
+verify_tsqr (Teuchos::RCP< const Teuchos::Comm<int> > comm,
+	     const TsqrTestParameters& params)
 {
   typedef int ordinal_type;
   typedef Scalar scalar_type;
@@ -121,16 +122,28 @@ verifyTsqr (Teuchos::RCP< const Teuchos::Comm<int> > comm,
 
   if (params.which == "MpiSeqTSQR" || params.which == "MpiTbbTSQR")
     {
-      TSQR::Test::verifyTsqr (params.which, generator, nrowsGlobal, ncols, 
-			      &ordinalComm, &scalarComm, numCores, 
-			      cacheBlockSize, contiguousCacheBlocks, 
-			      humanReadable, bDebug);
+      using TSQR::Test::verifyTsqr;
+      verifyTsqr< ordinal_type, scalar_type, generator_type > (params.which, generator, nrowsGlobal, ncols, 
+							       &ordinalComm, &scalarComm, numCores, 
+							       cacheBlockSize, contiguousCacheBlocks, 
+							       humanReadable, bDebug);
+    }
+  else if (params.which == "TbbTSQR")
+    {
+      using TSQR::Test::verifyTbbTsqr;
+      if (ordinalComm.rank() == 0)
+	verifyTbbTsqr< ordinal_type, scalar_type, generator_type > (generator, nrowsGlobal, ncols, numCores,
+								    cacheBlockSize, contiguousCacheBlocks, 
+								    humanReadable, bDebug);
+      ordinalComm.barrier ();
     }
   else if (params.which == "SeqTSQR")
     {
       using TSQR::Test::verifySeqTsqr;
-      verifySeqTsqr< ordinal_type, scalar_type, generator_type > (generator, nrowsGlobal, ncols, cacheBlockSize, 
-								  contiguousCacheBlocks, humanReadable, bDebug);
+      if (ordinalComm.rank() == 0)
+	verifySeqTsqr< ordinal_type, scalar_type, generator_type > (generator, nrowsGlobal, ncols, cacheBlockSize, 
+								    contiguousCacheBlocks, humanReadable, bDebug);
+      ordinalComm.barrier ();
     }
 }
 
@@ -261,10 +274,9 @@ main (int argc, char *argv[])
   TsqrTestParameters params = parseOptions (argc, argv, allowedToPrint, printedHelp);
   if (printedHelp)
     return 0;
-  std::cerr << "FOO BAR" << std::endl;
 
-  verifyTsqr< double > (comm, params);
-  //  verifyTsqr< float > (comm, params);
+  verify_tsqr< double > (comm, params);
+  verify_tsqr< float > (comm, params);
 
   if (allowedToPrint) {
     std::cout << "\nEnd Result: TEST PASSED" << std::endl;
