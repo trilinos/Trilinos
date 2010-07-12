@@ -433,20 +433,6 @@
       <Regression address="anasazi-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
-  <Package name="Teko" dir="teko">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,Thyra,EpetraExt,Stratimikos,AztecOO,Anasazi,ML,Ifpack,Amesos"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="Isorropia"/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Checkin address="teko-checkins@software.sandia.gov"/>
-      <Regression address="teko-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </Package>
   <Package name="RBGen" dir="rbgen">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt,Anasazi"/>
@@ -767,34 +753,6 @@
     <EmailAddresses>
       <Checkin address="mesquite-checkins@software.sandia.gov"/>
       <Regression address="mesquite-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </Package>
-  <Package name="Stalix" dir="stalix">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Sacado,Tpetra,Thyra"/>
-    <LIB_OPTIONAL_DEP_PACKAGES/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS value="Boost"/>
-    <LIB_OPTIONAL_DEP_TPLS/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Checkin address="stalix-checkins@software.sandia.gov"/>
-      <Regression address="stalix-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </Package>
-  <Package name="Lyno" dir="lyno">
-    <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,EpetraExt,Anasazi,Amesos,Belos"/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="AztecOO,ML,Ifpack,Optika"/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Checkin address="lyno-checkins@software.sandia.gov"/>
-      <Regression address="lyno-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
   <Package name="Trios" dir="Trios">
