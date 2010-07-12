@@ -112,8 +112,18 @@ public:
 
   /** \brief Get an attribute, assigning a default value if the requested
    * attribute does not exist */
-  std::string getWithDefault(const std::string& name, 
-                        const std::string& defaultValue) const ;
+//  std::string getWithDefault(const std::string& name, 
+ //                       const std::string& defaultValue) const ;
+  template<class T>
+  T getWithDefault(const std::string& name, const T& defaultValue) const{
+    if (hasAttribute(name)){
+      return getRequired<T>(name);
+	}
+	else{
+	  return defaultValue;
+	}
+  }
+
 
   //! Return the number of child nodes owned by this node
   int numChildren() const;

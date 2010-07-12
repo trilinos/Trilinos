@@ -49,7 +49,7 @@ int testNumberValis(Teuchos::FancyOStream &out){
 	TEST_ASSERT(!intVali2->hasMax());
 	TEST_ASSERT(intVali2->getMin() == std::numeric_limits<int>::min());
 	TEST_ASSERT(intVali2->getMax() == std::numeric_limits<int>::max());
-	TEST_ASSERT(intVali2->getStep() == Teuchos::EnhancedNumberValidator<int>::intDefaultStep);
+	TEST_ASSERT(intVali2->getStep() == Teuchos::EnhancedNumberTraits<int>::defaultStep());
 	intList->set("Int Parameter", 5, "int parameter", intVali);
 	TEST_NOTHROW(intList->validateParameters(*intList));
 	TEST_THROW(intList->set("Int Parameter", 11), Teuchos::Exceptions::InvalidParameterValue);
@@ -70,7 +70,7 @@ int testNumberValis(Teuchos::FancyOStream &out){
 	TEST_ASSERT(!shortVali2->hasMax());
 	TEST_ASSERT(shortVali2->getMin() == std::numeric_limits<short>::min());
 	TEST_ASSERT(shortVali2->getMax() == std::numeric_limits<short>::max());
-	TEST_ASSERT(shortVali2->getStep() == Teuchos::EnhancedNumberValidator<short>::shortDefaultStep);
+	TEST_ASSERT(shortVali2->getStep() == Teuchos::EnhancedNumberTraits<short>::defaultStep());
 	shortList->set("Short Parameter", (short)5, "short parameter", shortVali);
 	TEST_NOTHROW(shortList->validateParameters(*shortList));
 	TEST_THROW(shortList->set("Short Parameter", (short)11), Teuchos::Exceptions::InvalidParameterValue);
@@ -90,10 +90,10 @@ int testNumberValis(Teuchos::FancyOStream &out){
 	Teuchos::RCP<Teuchos::EnhancedNumberValidator<float> > floatVali2 = Teuchos::rcp(new Teuchos::EnhancedNumberValidator<float>());
 	TEST_ASSERT(!floatVali2->hasMin());
 	TEST_ASSERT(!floatVali2->hasMax());
-	TEST_ASSERT(floatVali2->getMin() == -std::numeric_limits<float>::max());
-	TEST_ASSERT(floatVali2->getMax() == std::numeric_limits<float>::max());
-	TEST_ASSERT(floatVali2->getStep() == Teuchos::EnhancedNumberValidator<float>::floatDefaultStep);
-	TEST_ASSERT(floatVali2->getPrecision() == Teuchos::EnhancedNumberValidator<float>::floatDefaultPrecision);
+	TEST_ASSERT(floatVali2->getMin() == Teuchos::EnhancedNumberTraits<float>::min());
+	TEST_ASSERT(floatVali2->getMax() == Teuchos::EnhancedNumberTraits<float>::max());
+	TEST_ASSERT(floatVali2->getStep() == Teuchos::EnhancedNumberTraits<float>::defaultStep());
+	TEST_ASSERT(floatVali2->getPrecision() == Teuchos::EnhancedNumberTraits<float>::defaultPrecision());
 	floatList->set("Float Parameter", (float)5.0, "float parameter", floatVali);
 	TEST_NOTHROW(floatList->validateParameters(*floatList));
 	TEST_THROW(floatList->set("Float Parameter", (float)11.0), Teuchos::Exceptions::InvalidParameterValue);
@@ -113,10 +113,10 @@ int testNumberValis(Teuchos::FancyOStream &out){
 	Teuchos::RCP<Teuchos::EnhancedNumberValidator<double> > doubleVali2 = Teuchos::rcp(new Teuchos::EnhancedNumberValidator<double>());
 	TEST_ASSERT(!doubleVali2->hasMin());
 	TEST_ASSERT(!doubleVali2->hasMax());
-	TEST_ASSERT(doubleVali2->getMin() == -std::numeric_limits<double>::max());
-	TEST_ASSERT(doubleVali2->getMax() == std::numeric_limits<double>::max());
-	TEST_ASSERT(doubleVali2->getStep() == Teuchos::EnhancedNumberValidator<double>::doubleDefaultStep);
-	TEST_ASSERT(doubleVali2->getPrecision() == Teuchos::EnhancedNumberValidator<double>::doubleDefaultPrecision);
+	TEST_ASSERT(doubleVali2->getMin() == Teuchos::EnhancedNumberTraits<double>::min());
+	TEST_ASSERT(doubleVali2->getMax() == Teuchos::EnhancedNumberTraits<double>::max());
+	TEST_ASSERT(doubleVali2->getStep() == Teuchos::EnhancedNumberTraits<double>::defaultStep());
+	TEST_ASSERT(doubleVali2->getPrecision() == Teuchos::EnhancedNumberTraits<double>::defaultPrecision());
 	doubleList->set("Double Parameter", (double)5.0, "double parameter", doubleVali);
 	TEST_NOTHROW(doubleList->validateParameters(*doubleList));
 	TEST_THROW(doubleList->set("Double Parameter", (double)11.0), Teuchos::Exceptions::InvalidParameterValue);

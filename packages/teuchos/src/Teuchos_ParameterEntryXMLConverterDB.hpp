@@ -26,10 +26,10 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_StandardParameterEntryXMLConverters.hpp"
 
 #ifndef TEUCHOS_PARAMETERENTRYXMLCONVERTERDB_HPP
 #define TEUCHOS_PARAMETERENTRYXMLCONVERTERDB_HPP
+#include "Teuchos_StandardParameterEntryXMLConverters.hpp"
 
 /*! \file Teuchos_ParameterEntryXMLCoverter.hpp
 */

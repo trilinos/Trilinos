@@ -239,7 +239,7 @@ void AnyNumberParameterEntryValidator::printDoc(
 }
 
 
-RCP<const Array<std::string> >
+ParameterEntryValidator::ValidStringsList
 AnyNumberParameterEntryValidator::validStringValues() const
 {
   return null;
@@ -362,7 +362,8 @@ bool FileNameValidator::setFileMustExist(bool shouldFileExist){
 	return mustAlreadyExist_;
 }
 
-RCP<const Array<std::string> > FileNameValidator::validStringValues() const{
+ParameterEntryValidator::ValidStringsList
+FileNameValidator::validStringValues() const{
 	return null;
 }
 
@@ -422,18 +423,21 @@ void FileNameValidator::printDoc(std::string const &docString, std::ostream &out
 }
 
 
-StringValidator::StringValidator(ValueList validStrings):
+StringValidator::StringValidator(const Array<std::string>& validStrings):
 	ParameterEntryValidator(),
-	validStrings_(validStrings){}
+	validStrings_(rcp(new Array<std::string>(validStrings))){}
 
-const Array<std::string> StringValidator::setValidStrings(ValueList validStrings){
-	validStrings_ = validStrings;
+StringValidator::StringValidator():
+	ParameterEntryValidator(),
+	validStrings_(NULL){}
+
+ParameterEntryValidator::ValidStringsList StringValidator::setValidStrings(const Array<std::string>& validStrings){
+	validStrings_ = rcp(new Array<std::string>(validStrings));
 	return validStrings_;
 }
 
-RCP<const Array<std::string> > StringValidator::validStringValues() const{
-	RCP<const Array<std::string> > toReturn = RCP<const Array<std::string> >(new Array<std::string>(validStrings_));
-	return toReturn;
+ParameterEntryValidator::ValidStringsList StringValidator::validStringValues() const{
+	return validStrings_;
 }
 
 void StringValidator::validate(ParameterEntry const &entry, std::string const &paramName, std::string const &sublistName) const{
@@ -449,13 +453,13 @@ void StringValidator::validate(ParameterEntry const &entry, std::string const &p
 		"Error: The value that you entered was the wrong type." <<
 		"Parameter: " << paramName << "\n" << 
 		"Type specified: " << entryName << "\n" <<
-		"Type accepted: " << typeid(std::string).name() << "\n";
+		"Type accepted: " << Teuchos::TypeNameTraits<std::string>::name() << "\n";
 		msg = oss.str();
 		throw Exceptions::InvalidParameterType(msg);
 	}
-	else{
-		Array<std::string>::const_iterator it = std::find(validStrings_.begin(), validStrings_.end(), getValue<std::string>(entry));
-		if(it == validStrings_.end()){
+	else if(!validStrings_.is_null()){
+		Array<std::string>::const_iterator it = std::find(validStrings_->begin(), validStrings_->end(), getValue<std::string>(entry));
+		if(it == validStrings_->end()){
 			std::stringstream oss;
 			std::string msg;
 			oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
@@ -472,19 +476,6 @@ void StringValidator::validate(ParameterEntry const &entry, std::string const &p
 		}
 	}
 }
-
-/*XMLObject StringValidator::getXML() const{
-	XMLObject valiTag(getTagName());
-	XMLObject valuesTag("values");
-	for(ValueList::const_iterator it = validStrings_.begin(); it != validStrings_.end(); ++it){
-		XMLObject valueTag("value");
-		valueTag.addAttribute("value", *it);
-		valuesTag.addChild(valueTag);
-	}
-	valiTag.addChild(valuesTag);
-	return valiTag;
-}*/
-
 
 const std::string StringValidator::getXMLTagName() const{
 	return "stringvalidator";

@@ -50,7 +50,7 @@ class ParameterEntry;
  */
 class TEUCHOS_LIB_DLL_EXPORT ParameterEntryValidator {
 public:
-
+  typedef RCP<const Array<std::string> > ValidStringsList;
   /** \brief . */
   virtual ~ParameterEntryValidator() {}
 
@@ -86,7 +86,7 @@ public:
    * The returned strings must not contain any newlines (i.e. no <tt>'\n'</tt>
    * characters) and must be short enough to fit on one line and be readable.
    */
-  virtual Teuchos::RCP<const Array<std::string> >
+  virtual ValidStringsList
   validStringValues() const = 0;
 
   /** \brief Validate a parameter entry value and throw std::exception (with a

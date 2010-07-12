@@ -79,12 +79,12 @@ const std::string& XMLObject::getRequired(const std::string& name) const
   return getAttribute(name);
 }
 
-std::string XMLObject::getWithDefault(const std::string& name, 
+/*std::string XMLObject::getWithDefault(const std::string& name, 
 				      const std::string& defaultValue) const
 {
   if (hasAttribute(name)) return getRequired(name);
   else return defaultValue;
-}
+}*/
 
 bool XMLObject::getRequiredBool(const std::string& name) const
 {

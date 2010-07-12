@@ -26,24 +26,25 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef TEUCHOS_PARAMETERENTRYXMLCONVERTER_HPP
-#define TEUCHOS_PARAMETERENTRYXMLCONVERTER_HPP
+#ifndef TEUCHOS_VALIDATORXMLCONVERTER_HPP
+#define TEUCHOS_VALIDATORXMLCONVERTER_HPP
 
-/*! \file Teuchos_ParameterEntryXMLCoverter.hpp
+/*! \file Teuchos_ValidatorXMLConverter.hpp
 */
 
-#include "Teuchos_ParameterEntryValidator.hpp"
 #include "Teuchos_XMLObject.hpp"
 
 namespace Teuchos {
 
+class ParameterEntryValidator;
+
 class ValidatorXMLConverter{
 public:
 	virtual RCP<ParameterEntryValidator> fromXMLtoValidator(const XMLObject& xmlObj) const=0;
-	virtual XMLObject fromValidatortoXML(const RCP<ParameterEntryValidator> validator) const=0;
-	virtual bool isAppropriateConverter(const RCP<ParameterEntryValidator> validator) const=0;
+	virtual XMLObject fromValidatortoXML(const RCP<const ParameterEntryValidator> validator) const=0;
+	virtual bool isAppropriateConverter(const RCP<const ParameterEntryValidator> validator) const=0;
 };
 
 }
 
-#endif // TEUCHOS_PARAMETERENTRYXMLCONVERTER_HPP
+#endif // TEUCHOS_VALIDATORXMLCONVERTER_HPP

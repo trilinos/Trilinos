@@ -138,8 +138,6 @@ APPEND_SET(HEADERS
   Teuchos_StandardCompositionMacros.hpp
   Teuchos_StandardMemberCompositionMacros.hpp
   Teuchos_StandardParameterEntryValidators.hpp
-  Teuchos_StandardParameterEntryXMLConverters.hpp
-  Teuchos_StandardValidatorXMLConverters.hpp
   Teuchos_StringToIntMap.hpp
   Teuchos_toString.hpp
   Teuchos_TableColumn.hpp
@@ -159,7 +157,6 @@ APPEND_SET(HEADERS
   Teuchos_UnitTestRepository.hpp
   Teuchos_Utils.hpp
   Teuchos_ValidatorFactory.hpp
-  Teuchos_ValidatorXMLConverter.hpp
   Teuchos_VerboseObject.hpp
   Teuchos_VerboseObjectParameterListHelpers.hpp
   Teuchos_VerbosityLevel.hpp
@@ -206,8 +203,6 @@ APPEND_SET(SOURCES
   Teuchos_Range1D.cpp
   Teuchos_ScalarTraits.cpp
   Teuchos_StandardParameterEntryValidators.cpp
-  Teuchos_StandardParameterEntryXMLConverters.cpp
-  Teuchos_StandardValidatorXMLConverters.cpp
   Teuchos_StringToIntMap.cpp
   Teuchos_TableColumn.cpp
   Teuchos_TableEntry.cpp
@@ -244,10 +239,15 @@ IF(${PACKAGE_NAME}_ENABLE_EXTENDED)
     Teuchos_HashUtils.hpp
     Teuchos_Libxml2HandlerAdapter.hpp
     Teuchos_ParameterXMLFileReader.hpp
+    Teuchos_StandardParameterEntryXMLConverters.hpp
+    Teuchos_StandardValidatorXMLConverters.hpp
+    Teuchos_StandardValidatorXMLConverters.hpp
     Teuchos_StringInputSource.hpp
     Teuchos_StringInputStream.hpp
     Teuchos_StrUtils.hpp
     Teuchos_TreeBuildingXMLHandler.hpp
+    Teuchos_ValidatorXMLConverter.hpp
+    Teuchos_ValidatorXMLConverterDB.hpp
     Teuchos_XMLInputSource.hpp
     Teuchos_XMLInputStream.hpp
     Teuchos_XMLObject.hpp
@@ -265,10 +265,13 @@ IF(${PACKAGE_NAME}_ENABLE_EXTENDED)
     Teuchos_HashUtils.cpp
     Teuchos_Libxml2HandlerAdapter.cpp
     Teuchos_ParameterXMLFileReader.cpp
+    Teuchos_StandardParameterEntryXMLConverters.cpp
+	Teuchos_StandardValidatorXMLConverters.cpp
     Teuchos_StrUtils.cpp
     Teuchos_StringInputSource.cpp
     Teuchos_StringInputStream.cpp
     Teuchos_TreeBuildingXMLHandler.cpp
+	Teuchos_ValidatorXMLConverterDB.cpp
     Teuchos_XMLInputSource.cpp
     Teuchos_XMLInputStream.cpp
     Teuchos_XMLObject.cpp

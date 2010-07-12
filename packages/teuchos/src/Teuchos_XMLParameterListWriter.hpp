@@ -47,6 +47,8 @@ namespace Teuchos
 	class TEUCHOS_LIB_DLL_EXPORT XMLParameterListWriter
 		{
 		public:
+	  typedef std::map<const ParameterEntryValidator*, int> WriterValidatorIDMap;
+	  typedef std::pair<const ParameterEntryValidator*, int> WriterValidatorIDPair;
       //! @name Constructors 
 			//@{
       /** Construct a writer */
@@ -56,11 +58,44 @@ namespace Teuchos
 
       /** Write the given list to an XML object */
       XMLObject toXML(const ParameterList& p) const ;
+
+	  static const std::string& getParameterListAspectsTagName(){
+	    static const std::string parameterListAspectsTagName = "ParameterListAspects";
+	    return parameterListAspectsTagName;
+	  }
+
+	  static const std::string& getParameterListsTagName(){
+	    static const std::string parameterListsTagName = "ParameterLists";
+	    return parameterListsTagName;
+	  }
+
+	  static const std::string& getParameterListTagName(){
+	    static const std::string parameterListTagName = "ParameterList";
+	    return parameterListTagName;
+	  }
+
+	  static const std::string& getNameAttributeName(){
+	    static const std::string nameAttributeName = "name";
+		return nameAttributeName;
+	  }
+
+	  static const std::string& getValidatorsTagName(){
+	    static const std::string validatorsTagName = "Validators";
+	    return validatorsTagName;
+	  }
+
+	  static const std::string& getValidatorIdAttributeName(){
+	    static const std::string validatorIdAttributeName = "validatorid";
+       return validatorIdAttributeName;
+	  }
+
 	
 		private:
 
-      /** Write the given parameter entry to an XML object */
-      XMLObject toXML(const ParameterEntry& p) const ;
+      XMLObject convertParameterList(
+	    const ParameterList& p,
+		WriterValidatorIDMap validatorIDMap,
+		int& validatorIDCounter) const;
 		};
 }
 #endif

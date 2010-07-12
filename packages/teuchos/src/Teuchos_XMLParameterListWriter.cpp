@@ -28,30 +28,64 @@
 
 #include "Teuchos_XMLParameterListWriter.hpp"
 #include "Teuchos_ParameterEntryXMLConverterDB.hpp"
+#include "Teuchos_ValidatorXMLConverterDB.hpp"
 
 using namespace Teuchos;
 
 XMLParameterListWriter::XMLParameterListWriter()
 {;}
 
-
 XMLObject XMLParameterListWriter::toXML(const ParameterList& p) const
 {
-  XMLObject rtn("ParameterList");
-  rtn.addAttribute("name", p.name());
+	XMLObject toReturn(getParameterListAspectsTagName());
+	WriterValidatorIDMap validatorIDMap;
+	int validatorIDCounter = 0;
+	XMLObject parameterLists(getParameterListsTagName());
+	parameterLists.addChild(convertParameterList(p, validatorIDMap, validatorIDCounter));
+	WriterValidatorIDMap::const_iterator it = validatorIDMap.begin();
+	XMLObject validators(getValidatorsTagName());
+	for(;it != validatorIDMap.begin(); ++it){
+		XMLObject currentValidator = ValidatorXMLConverterDB::getConverter(*(it->first))->fromValidatortoXML(rcp(it->first));
+		currentValidator.addInt(getValidatorIdAttributeName(), it->second);
+		validators.addChild(currentValidator);
+	}
+	toReturn.addChild(validators);
+	toReturn.addChild(parameterLists);
+	return toReturn;
+}
+
+XMLObject XMLParameterListWriter::convertParameterList(
+	const ParameterList& p,
+	WriterValidatorIDMap validatorIDMap,
+	int& validatorIDCounter) const
+{
+  XMLObject rtn(getParameterListTagName());
+  rtn.addAttribute(getNameAttributeName(), p.name());
   
   for (ParameterList::ConstIterator i=p.begin(); i!=p.end(); ++i)
     {
      const ParameterEntry& entry = p.entry(i);
      if (entry.isList())
        {
-          rtn.addChild(toXML(getValue<ParameterList>(entry)));
+          rtn.addChild(convertParameterList(getValue<ParameterList>(entry), validatorIDMap, validatorIDCounter));
        }
      else
 	   {
           const std::string& name = p.name(i);
 		  RCP<const ParameterEntryXMLConverter> converter = ParameterEntryXMLConverterDB::getConverter(entry);
-          rtn.addChild(converter->fromParameterEntrytoXML(entry, name));
+		  XMLObject parameterEntryXML = converter->fromParameterEntrytoXML(entry, name);
+		  if(!entry.validator().is_null()){
+			WriterValidatorIDMap::iterator result = validatorIDMap.find(entry.validator().get());
+			if(result == validatorIDMap.end()){
+			  validatorIDMap.insert(WriterValidatorIDPair(entry.validator().get(), validatorIDCounter));
+			  parameterEntryXML.addInt(getValidatorIdAttributeName(), validatorIDCounter);
+			  ++validatorIDCounter;
+			}
+			else{
+			  parameterEntryXML.addInt(getValidatorIdAttributeName(), result->second);	
+			}
+		  }
+		  rtn.addChild(parameterEntryXML);
 	   }
     }
   return rtn;

@@ -26,45 +26,34 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef Teuchos_XMLPARAMETERLISTREADER_H
-#define Teuchos_XMLPARAMETERLISTREADER_H
 
-/*! \file Teuchos_XMLParameterListReader.hpp
-    \brief Writes an XML object to a parameter list
+#ifndef TEUCHOS_VALIDATORXMLCONVERTERDB_HPP
+#define TEUCHOS_VALIDATORXMLCONVERTERDB_HPP
+/*! \file Teuchos_ParameterEntryXMLCoverter.hpp
 */
+#include "Teuchos_ValidatorXMLConverter.hpp"
 
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_XMLObject.hpp"
-#include "Teuchos_Utils.hpp"
 
-namespace Teuchos
-{
+namespace Teuchos {
+class ParameterEntryValidator;
 
-	/** \ingroup XML 
-	 * \brief Writes an XML object to a parameter list
-	 */
+class ValidatorXMLConverterDB{
+public:
+	static void addConverter(ParameterEntryValidator& validator, RCP<ValidatorXMLConverter> converterToAdd);
 
-	class TEUCHOS_LIB_DLL_EXPORT XMLParameterListReader
-		{
-		public:
-	  typedef std::map<int, RCP<ParameterEntryValidator> > ReaderValidatorIDMap; 
-	  typedef std::pair<int, RCP<ParameterEntryValidator> > ReaderValidatorIDPair;
-      //! @name Constructors 
-			//@{
-      /** Construct a reader */
-      XMLParameterListReader();
-			//@}
+	static RCP<const ValidatorXMLConverter> getConverter(const ParameterEntryValidator& validator);
 
-      /** Write the given XML object to a parameter list */
-      ParameterList toParameterList(const XMLObject& xml) const ;
+	static RCP<const ValidatorXMLConverter> getConverter(const XMLObject& xmlObject);
 
-	  private:
+private:
+	typedef std::map<std::string, RCP<ValidatorXMLConverter> > ConverterMap;
+	typedef std::pair<std::string, RCP<ValidatorXMLConverter> > ConverterPair;
 
-	  ParameterList convertParameterList(const XMLObject& xml, const ReaderValidatorIDMap& validators) const;
+	static RCP<ValidatorXMLConverter> getDefaultConverter();
 
-	  void convertValidators(const XMLObject& xml, ReaderValidatorIDMap& validators) const;
+	static ConverterMap& getConverterMap();
+};
 
-		};
-}
-#endif
+} // end namespace Teuchos
 
+#endif // TEUCHOS_VALIDATORXMLCONVERTERDB_HPP

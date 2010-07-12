@@ -28,6 +28,8 @@
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
+#include "Teuchos_ValidatorXMLConverterDB.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
 
 namespace Teuchos {
 
@@ -110,6 +112,14 @@ TEUCHOS_UNIT_TEST( Teuchos_ParameterList, haveSameValuesDifferentSublistNames ) 
   TEST_ASSERT( !haveSameValues(A,B) ); // sublist names matter
 }
 
+TEUCHOS_UNIT_TEST( Teuchos_ParameterList, validatorXMLConverterDB){
+	Teuchos::Array<std::string> dummyArray;
+	std::string dummyName;
+	Teuchos::StringToIntegralParameterEntryValidator<int> stiIntValidator(dummyArray, dummyName);
+	Teuchos::RCP<const Teuchos::ValidatorXMLConverter> sticonverter = Teuchos::ValidatorXMLConverterDB::getConverter(stiIntValidator);
+	Teuchos::FileNameValidator fileNameValidator;
+	Teuchos::RCP<const Teuchos::ValidatorXMLConverter> fileconverter = Teuchos::ValidatorXMLConverterDB::getConverter(fileNameValidator);
+}
 
 
 } // namespace Teuchos
