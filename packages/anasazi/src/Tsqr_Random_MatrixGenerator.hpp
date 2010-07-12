@@ -146,6 +146,7 @@ namespace TSQR {
 	// Fill A with zeros, and then make its diagonal the given set
 	// of singular values.
 	matrix_view_type A_view (nrows, ncols, A, lda);
+	A_view.fill (Scalar (0));
 	for (Ordinal j = 0; j < ncols; ++j)
 	  // Promote magnitude_type to Scalar here.
 	  A_view(j,j) = Scalar (singular_values[j]);
@@ -153,7 +154,7 @@ namespace TSQR {
 	// Generate random orthogonal U (nrows by ncols) and V (ncols by
 	// ncols).  Keep them stored implicitly.
 	implicit_Q (nrows, ncols, U.get(), U.lda(), &tau_U[0]);
-	implicit_Q (ncols, ncols, V.get(), U.lda(), &tau_V[0]);
+	implicit_Q (ncols, ncols, V.get(), V.lda(), &tau_V[0]);
 
 	// Workspace query for ORMQR.
 	Scalar _lwork1, _lwork2;
@@ -189,10 +190,10 @@ namespace TSQR {
 	if (info != 0)
 	  throw std::runtime_error("LAPACK ORMQR failed (first time)");
 	if (ScalarTraits< Scalar >::is_complex)
-	  lapack.ORMQR ("R", "T", nrows, ncols, ncols, V.get(), U.lda(), &tau_V[0], 
+	  lapack.ORMQR ("R", "T", nrows, ncols, ncols, V.get(), V.lda(), &tau_V[0], 
 			A, lda, &work[0], lwork, &info);
 	else
-	  lapack.ORMQR ("R", "T", nrows, ncols, ncols, V.get(), U.lda(), &tau_V[0], 
+	  lapack.ORMQR ("R", "T", nrows, ncols, ncols, V.get(), V.lda(), &tau_V[0], 
 			A, lda, &work[0], lwork, &info);
 	if (info != 0)
 	  throw std::runtime_error("LAPACK ORMQR failed (second time)");
