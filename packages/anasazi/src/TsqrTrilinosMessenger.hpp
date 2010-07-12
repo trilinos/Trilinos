@@ -102,15 +102,16 @@ namespace TSQR {
 		ArrayRCP< const Datum > sendBuf (sendData, 0, sendRecvCount, false);
 		ArrayRCP< Datum > recvBuf (recvData, 0, sendRecvCount, false);
 
+		RCP< CommRequest > sendReq, recvReq;
 		if (srcProc < destProc)
 		  {
-		    RCP< CommRequest > sendReq = Teuchos::isend (*pComm_, sendBuf, destProc);
-		    RCP< CommRequest > recvReq = Teuchos::ireceive (*pComm_, recvBuf, destProc);
+		    sendReq = Teuchos::isend (*pComm_, sendBuf, destProc);
+		    recvReq = Teuchos::ireceive (*pComm_, recvBuf, destProc);
 		  }
 		else
 		  {
-		    RCP< CommRequest > recvReq = Teuchos::ireceive (*pComm_, recvBuf, destProc);
-		    RCP< CommRequest > sendReq = Teuchos::isend (*pComm_, sendBuf, destProc);
+		    recvReq = Teuchos::ireceive (*pComm_, recvBuf, destProc);
+		    sendReq = Teuchos::isend (*pComm_, sendBuf, destProc);
 		  }
 		// Wait on both the send and the receive to complete.  The
 		// two can happen independently, because sendBuf and recvBuf

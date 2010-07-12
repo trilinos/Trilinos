@@ -19,10 +19,12 @@ namespace TSQR {
   template< class LocalOrdinal, class Scalar >
   class CacheBlockingStrategy {
   public:
-    /// \param cache_block_size [in] Cache block size in bytes.  If
+    /// Constructor
+    ///
+    /// \param cacheBlockSize [in] Cache block size in bytes.  If
     ///   zero, the cache block size is set to a reasonable default.
-    CacheBlockingStrategy (const size_t cache_block_size = 0) :
-      cache_block_size_ (default_cache_block_size (cache_block_size))
+    CacheBlockingStrategy (const size_t cacheBlockSize = 0) :
+      cache_block_size_ (default_cache_block_size (cacheBlockSize))
     {}
 
     ///

@@ -55,8 +55,8 @@ namespace TSQR {
 
     public:
       TbbParallelTsqr (const size_t num_cores = 1,
-		       const size_t cache_block_size = 0) :
-	seq_ (cache_block_size),
+		       const size_t cacheBlockSize = 0) :
+	seq_ (cacheBlockSize),
 	min_seq_factor_timing_ (std::numeric_limits<double>::max()),
 	max_seq_factor_timing_ (std::numeric_limits<double>::min()),
 	min_seq_apply_timing_ (std::numeric_limits<double>::max()),

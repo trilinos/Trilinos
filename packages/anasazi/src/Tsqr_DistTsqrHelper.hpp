@@ -142,8 +142,8 @@ namespace TSQR {
 	      // from P_mid.
 	      if (! b_even && my_rank == P_mid - 1)
 		{
-		  const int tag = 142; // magic constant
-		  messenger->recv (&R_mine[0], ncols*ncols, P_mid, tag);
+		  const int theTag = 142; // magic constant
+		  messenger->recv (&R_mine[0], ncols*ncols, P_mid, theTag);
 		}
 	    }
 	  else // Interval [P_mid, P_last]
@@ -163,8 +163,8 @@ namespace TSQR {
 	      // send it the "current" R factor.
 	      if (! b_even)
 		{
-		  const int tag = 142; // magic constant
-		  messenger->send (&R_mine[0], ncols*ncols, P_mid-1, tag);
+		  const int theTag = 142; // magic constant
+		  messenger->send (&R_mine[0], ncols*ncols, P_mid-1, theTag);
 		}
 	    }
 	}

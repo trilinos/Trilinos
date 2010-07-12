@@ -66,8 +66,8 @@ verifyTsqr (const std::string& which,
 	    const int numCores,
 	    const size_t cacheBlockSize,
 	    const bool contiguousCacheBlocks,
-	    const humanReadable,
-	    const bDebug)
+	    const bool humanReadable,
+	    const bool bDebug)
 {
   typedef int ordinal_type;
   typedef double scalar_type;

@@ -141,8 +141,8 @@ namespace TSQR {
 	const ordinal_type ncols = R_stack.ncols();
 
 	// Copy data from top ncols x ncols block of R_stack into R_local.
-	const_view_type R_stack_view (ncols, ncols, R_stack.get(), R_stack.lda());
-	R_local.copy (R_stack_view);
+	const_view_type R_stack_view_first (ncols, ncols, R_stack.get(), R_stack.lda());
+	R_local.copy (R_stack_view_first);
 
 	// Loop through all other processors, sending each the next
 	// ncols x ncols block of R_stack.
@@ -150,8 +150,8 @@ namespace TSQR {
 	for (int destProc = 1; destProc < nprocs; ++destProc)
 	  {
 	    const scalar_type* const R_ptr = R_stack.get() + destProc*ncols;
-	    const_view_type R_stack_view (ncols, ncols, R_ptr, R_stack.lda());
-	    sender.send (R_stack_view, destProc);
+	    const_view_type R_stack_view_cur (ncols, ncols, R_ptr, R_stack.lda());
+	    sender.send (R_stack_view_cur, destProc);
 	  }
       }
     else
@@ -184,19 +184,19 @@ namespace TSQR {
 	const ordinal_type ncols = R_stack.ncols();
 
 	// Copy data from R_local into top ncols x ncols block of R_stack.
-	matrix_view_type R_stack_view (ncols, ncols, R_stack.get(), R_stack.lda());
-	R_stack_view.copy (R_local);
+	matrix_view_type R_stack_view_first (ncols, ncols, R_stack.get(), R_stack.lda());
+	R_stack_view_first.copy (R_local);
 
 	// Loop through all other processors, fetching their matrix data.
 	RMessenger< ordinal_type, scalar_type > receiver (messenger);
 	for (int srcProc = 1; srcProc < nprocs; ++srcProc)
 	  {
 	    const scalar_type* const R_ptr = R_stack.get() + srcProc*ncols;
-	    matrix_view_type R_stack_view (ncols, ncols, R_ptr, R_stack.lda());
+	    matrix_view_type R_stack_view_cur (ncols, ncols, R_ptr, R_stack.lda());
 	    // Fill (the lower triangle) with zeros, since
 	    // RMessenger::recv() only writes to the upper triangle.
-	    R_stack_view.fill (scalar_type (0));
-	    receiver.recv (R_stack_view, srcProc);
+	    R_stack_view_cur.fill (scalar_type (0));
+	    receiver.recv (R_stack_view_cur, srcProc);
 	  }
       }
     else

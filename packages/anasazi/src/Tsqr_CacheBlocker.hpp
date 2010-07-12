@@ -188,16 +188,16 @@ namespace TSQR {
     /// A_out.  The number of rows in each cache block depends on the
     /// cache-blocking strategy that this CacheBlocker uses.
     ///
-    /// \param nrows [in] Total number of rows in the matrices A_in and A_out
-    /// \param ncols [in] Number of columns in the matrices A_in and A_out
+    /// \param num_rows [in] Total number of rows in the matrices A_in and A_out
+    /// \param num_cols [in] Number of columns in the matrices A_in and A_out
     /// \param A_out [out] nrows*ncols contiguous storage into which to write
     ///   the cache-blocked output matrix.
     /// \param A_in [in] nrows by ncols matrix, stored in column-major
     ///   order with leading dimension lda_in >= nrows
     /// \param lda_in [in] Leading dimension of the matrix A_in
     void
-    cache_block (const Ordinal nrows,
-		 const Ordinal ncols,
+    cache_block (const Ordinal num_rows,
+		 const Ordinal num_cols,
 		 Scalar A_out[],
 		 const Scalar A_in[],
 		 const Ordinal lda_in) const
@@ -206,9 +206,9 @@ namespace TSQR {
       // the matrix left to cache block; at the beginning, the
       // "remaining" part is the whole matrix, but that will change as
       // the algorithm progresses.
-      ConstMatView< Ordinal, Scalar > A_in_rest (nrows, ncols, A_in, lda_in);
+      const_mat_view A_in_rest (num_rows, num_cols, A_in, lda_in);
       // Leading dimension doesn't matter since A_out will be cache blocked.
-      MatView< Ordinal, Scalar > A_out_rest (nrows, ncols, A_out, lda_in);
+      mat_view A_out_rest (num_rows, num_cols, A_out, lda_in);
 
       while (! A_in_rest.empty())
 	{
@@ -216,14 +216,12 @@ namespace TSQR {
 	    throw std::logic_error("A_out_rest is empty, but A_in_rest is not");
 
 	  // This call modifies A_in_rest.
-	  ConstMatView< Ordinal, Scalar > A_in_cur = 
-	    split_top_block (A_in_rest, false);
+	  const_mat_view A_in_cur = split_top_block (A_in_rest, false);
 
 	  // This call modifies A_out_rest.
-	  MatView< Ordinal, Scalar > A_out_cur = 
-	    split_top_block (A_out_rest, true);
+	  mat_view A_out_cur = split_top_block (A_out_rest, true);
 
-	  copy_matrix (A_in_cur.nrows(), ncols, A_out_cur.get(), 
+	  copy_matrix (A_in_cur.nrows(), num_cols, A_out_cur.get(), 
 		       A_out_cur.lda(), A_in_cur.get(), A_in_cur.lda());
 	}
     }
@@ -231,8 +229,8 @@ namespace TSQR {
     /// "Un"-cache-block the given A_in matrix, writing the results to
     /// A_out.
     void
-    un_cache_block (const Ordinal nrows,
-		    const Ordinal ncols,
+    un_cache_block (const Ordinal num_rows,
+		    const Ordinal num_cols,
 		    Scalar A_out[],
 		    const Ordinal lda_out,		    
 		    const Scalar A_in[]) const
@@ -243,8 +241,8 @@ namespace TSQR {
       // the algorithm progresses.
       //
       // Leading dimension doesn't matter since A_in is cache blocked.
-      ConstMatView< Ordinal, Scalar > A_in_rest (nrows, ncols, A_in, lda_out);
-      MatView< Ordinal, Scalar > A_out_rest (nrows, ncols, A_out, lda_out);
+      const_mat_view A_in_rest (num_rows, num_cols, A_in, lda_out);
+      mat_view A_out_rest (num_rows, num_cols, A_out, lda_out);
 
       while (! A_in_rest.empty())
 	{
@@ -252,22 +250,20 @@ namespace TSQR {
 	    throw std::logic_error("A_out_rest is empty, but A_in_rest is not");
 
 	  // This call modifies A_in_rest.
-	  ConstMatView< Ordinal, Scalar > A_in_cur = 
-	    split_top_block (A_in_rest, true);
+	  const_mat_view A_in_cur = split_top_block (A_in_rest, true);
 
 	  // This call modifies A_out_rest.
-	  MatView< Ordinal, Scalar > A_out_cur = 
-	    split_top_block (A_out_rest, false);
+	  mat_view A_out_cur = split_top_block (A_out_rest, false);
 
-	  copy_matrix (A_in_cur.nrows(), ncols, A_out_cur.get(), 
+	  copy_matrix (A_in_cur.nrows(), num_cols, A_out_cur.get(), 
 		       A_out_cur.lda(), A_in_cur.get(), A_in_cur.lda());
 	}
     }
 
 
     void
-    fill_with_zeros (const Ordinal nrows,
-		     const Ordinal ncols,
+    fill_with_zeros (const Ordinal num_rows,
+		     const Ordinal num_cols,
 		     Scalar A[],
 		     const Ordinal lda, 
 		     const bool contiguous_cache_blocks)
@@ -281,13 +277,12 @@ namespace TSQR {
       // be the correct leading dimension of A, but it won't matter:
       // we only ever operate on A_cur here, and A_cur's leading
       // dimension is set correctly by A_rest.split_top().
-      MatView< Ordinal, Scalar > A_rest (nrows, ncols, A, lda);
+      mat_view A_rest (num_rows, num_cols, A, lda);
 
       while (! A_rest.empty())
 	{
 	  // This call modifies A_rest.
-	  MatView< Ordinal, Scalar > A_cur = 
-	    split_top_block (A_rest, contiguous_cache_blocks);
+	  mat_view A_cur = split_top_block (A_rest, contiguous_cache_blocks);
 	  A_cur.fill (Scalar(0));
 	}
     }

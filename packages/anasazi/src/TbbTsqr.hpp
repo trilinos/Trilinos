@@ -63,19 +63,19 @@ namespace TSQR {
 
       /// Constructor; sets up tuning parameters
       ///
-      /// \param ncores [in] Maximum number of processing cores to use
+      /// \param numCores [in] Maximum number of processing cores to use
       ///   when factoring the matrix.  Fewer cores may be used if the
       ///   matrix is not big enough to justify their use.
-      /// \param cache_block_size [in] Size (in bytes) of cache block to
+      /// \param cacheBlockSize [in] Size (in bytes) of cache block to
       ///   use in the sequential part of TSQR.  If zero or not
       ///   specified, a reasonable default is used.  If each core has a
       ///   private cache, that cache's size (minus a little wiggle
       ///   room) would be the appropriate value for this parameter.
       ///   Set to zero for the implementation to choose a default,
       ///   which may or may not give good performance on your platform.
-      TbbTsqr (const size_t num_cores,
-	       const size_t cache_block_size = 0) :
-	impl_ (num_cores, cache_block_size)
+      TbbTsqr (const size_t numCores,
+	       const size_t cacheBlockSize = 0) :
+	impl_ (numCores, cacheBlockSize)
       {}
 
       void

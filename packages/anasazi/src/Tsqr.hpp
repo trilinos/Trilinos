@@ -47,21 +47,15 @@ namespace TSQR {
     typedef typename DistTsqr< LocalOrdinal, Scalar >::FactorOutput DistOutput;
     typedef std::pair< NodeOutput, DistOutput > FactorOutput;
 
-    /// Identifying string for this particular type of TSQR
-    /// implementation.  Different for each NodeTsqr parameter.
-    // std::string identify() const;
-
     /// TSQR constructor; sets up tuning parameters
     ///
-    /// \param cache_block_size [in] Size (in bytes) of cache block to
-    ///   use in the node part of TSQR.  If zero or not specified, a
-    ///   reasonable default is used.
+    /// \param node_tsqr [in/out] Previously initialized NodeTsqr
+    ///   object.
     ///
     /// \param messenger [in] object handling internode communication
     ///   for all nodes participating in the factorization.
     Tsqr (NodeTsqr& node_tsqr,
-	  MessengerBase< Scalar >* const messenger,
-	  const size_t cache_block_size = 0) :
+	  MessengerBase< Scalar >* const messenger) :
       node_tsqr_ (node_tsqr),
       dist_ (messenger),
       messenger_ (messenger) {}
@@ -72,6 +66,10 @@ namespace TSQR {
 
     /// Whether or not all diagonal entries of the R factor computed
     /// by the QR factorization are guaranteed to be nonnegative.
+    ///
+    /// \note This property holds if all QR factorization steps (both
+    ///   intranode and internode) produce an R factor with a
+    ///   nonnegative diagonal.
     bool QR_produces_R_factor_with_nonnegative_diagonal () const {
       return node_tsqr_.QR_produces_R_factor_with_nonnegative_diagonal() &&
 	dist_.QR_produces_R_factor_with_nonnegative_diagonal();

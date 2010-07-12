@@ -155,11 +155,11 @@ namespace TSQR {
 
     /// Constructor
     ///
-    /// \param cache_block_size [in] Size in bytes of the cache block
+    /// \param cacheBlockSize [in] Size in bytes of the cache block
     ///   to use in the sequential TSQR factorization.  If 0, the
     ///   implementation will pick a reasonable size.
-    SequentialTsqr (const size_t cache_block_size = 0) :
-      strategy_ (cache_block_size) 
+    SequentialTsqr (const size_t cacheBlockSize = 0) :
+      strategy_ (cacheBlockSize) 
     {}
 
     /// Whether or not the R factor from the QR factorization has a
@@ -208,9 +208,9 @@ namespace TSQR {
       mat_view A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
 
       // Factor the topmost block of A.
-      std::vector< Scalar > tau (ncols);
-      mat_view R_view = factor_first_block (lapack, A_cur, &tau[0], &work[0]);
-      tau_arrays.push_back (tau);
+      std::vector< Scalar > tau_first (ncols);
+      mat_view R_view = factor_first_block (lapack, A_cur, &tau_first[0], &work[0]);
+      tau_arrays.push_back (tau_first);
 
       while (! A_rest.empty())
 	{
@@ -282,9 +282,9 @@ namespace TSQR {
       mat_view A_cur = blocker.split_top_block (A_rest, contiguous_cache_blocks);
 
       // Factor the topmost block of A.
-      std::vector< Scalar > tau (ncols);
-      mat_view R_view = factor_first_block (lapack, A_cur, &tau[0], &work[0]);
-      tau_arrays.push_back (tau);
+      std::vector< Scalar > tau_first (ncols);
+      mat_view R_view = factor_first_block (lapack, A_cur, &tau_first[0], &work[0]);
+      tau_arrays.push_back (tau_first);
 
       while (! A_rest.empty())
 	{
