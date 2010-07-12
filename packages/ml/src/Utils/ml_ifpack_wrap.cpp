@@ -174,7 +174,11 @@ int ML_Ifpack_Gen(ML *ml, const char* Type, int Overlap, int curr_level,
       }
       else{
 	// Uses a CrsMatrix wrapper to enable efficient use of Ifpack on coarser levels
+#ifdef ML_MPI
 	Epetra_MpiComm ifpackEpetraComm(ifpackComm);
+#else
+	Epetra_SerialComm ifpackEpetraComm;
+#endif
 	Ifpack_RowMap = new Epetra_Map(-1,Ke->outvec_leng,0,ifpackEpetraComm);
 	Epetra_CrsMatrix_Wrap_ML_Operator(Ke, Ifpack_RowMap->Comm(), *Ifpack_RowMap, &Ifpack_CrsMatrix,View,0);
 	assert (Ifpack_CrsMatrix != 0);
