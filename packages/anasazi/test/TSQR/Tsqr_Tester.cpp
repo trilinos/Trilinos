@@ -33,6 +33,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
 
+#include "Tsqr_SeqTest.hpp"
 #include "Tsqr_TsqrTest.hpp"
 #include "Teuchos_Time.hpp"
 #include "Tsqr_Random_NormalGenerator.hpp"
@@ -58,28 +59,6 @@
 // }
 
 
-static void
-verifyTsqr (const std::string& which,
-	    const int nrowsGlobal,
-	    const int ncols,
-	    Teuchos::RCP< const Teuchos::Comm<int> > comm,
-	    const int numCores,
-	    const size_t cacheBlockSize,
-	    const bool contiguousCacheBlocks,
-	    const bool humanReadable,
-	    const bool bDebug)
-{
-  typedef int ordinal_type;
-  typedef double scalar_type;
-
-  TSQR::Random::NormalGenerator< ordinal_type, scalar_type > generator;
-  TSQR::Trilinos::TrilinosMessenger< int > ordinalComm (comm);
-  TSQR::Trilinos::TrilinosMessenger< double > scalarComm (comm);
-  TSQR::Test::verifyTsqr (which, generator, nrowsGlobal, ncols, &ordinalComm,
-			  &scalarComm, numCores, cacheBlockSize, 
-			  contiguousCacheBlocks, humanReadable, bDebug);
-}
-
 enum TsqrTestAction {
   Verify = 0,
   Benchmark,
@@ -88,20 +67,77 @@ enum TsqrTestAction {
 TsqrTestAction TsqrTestActionValues[] = {Verify, Benchmark};
 const char* TsqrTestActionNames[] = {"verify", "benchmark"};
 
-enum TsqrTestRoutine {
-  FullTsqr = 0,
-  FullMgs,
-  IntraNodeOnly,
-  InterNodeOnly,
-  LapackOnly,
-  TsqrTestRoutineNumValues
-};
-TsqrTestRoutine TsqrTestRoutineValues[] = 
-  {FullTsqr, FullMgs, IntraNodeOnly, InterNodeOnly, LapackOnly};
-const char* TsqrTestRoutineNames[] = {"full-tsqr", "full-mgs", "intranode-only", 
-				      "internode-only", "lapack-only"};
+// enum TsqrTestRoutine {
+//   FullTsqr = 0,
+//   FullMgs,
+//   IntraNodeOnly,
+//   InterNodeOnly,
+//   LapackOnly,
+//   TsqrTestRoutineNumValues
+// };
+// TsqrTestRoutine TsqrTestRoutineValues[] = 
+//   {FullTsqr, FullMgs, IntraNodeOnly, InterNodeOnly, LapackOnly};
+// const char* TsqrTestRoutineNames[] = {"full-tsqr", "full-mgs", "intranode-only", 
+// 				      "internode-only", "lapack-only"};
 
-static Teuchos::ParameterList
+const int numTsqrTestRoutines = 4;
+const char* TsqrTestRoutineNames[] = {"MpiSeqTSQR", "MpiTbbTSQR", "SeqTSQR", "TbbTSQR"};
+
+struct TsqrTestParameters {
+  TsqrTestParameters () :
+    which ("MpiSeqTSQR"),
+    action (Verify), 
+    nrows (10000), ncols (10), ncores (1), ntrials (1), cache_block_size (0),
+    verbose (true), debug (false), contiguous_cache_blocks (false), human_readable (false) 
+  {}
+
+  std::string which;
+  TsqrTestAction action;
+  int nrows, ncols, ncores, ntrials, cache_block_size;
+  bool verbose, debug, contiguous_cache_blocks, human_readable;
+};
+
+
+template< class Scalar >
+static void
+verifyTsqr (Teuchos::RCP< const Teuchos::Comm<int> > comm,
+	    const TsqrTestParameters& params)
+{
+  typedef int ordinal_type;
+  typedef Scalar scalar_type;
+  typedef TSQR::Random::NormalGenerator< ordinal_type, scalar_type > generator_type;
+
+  ordinal_type nrowsGlobal = params.nrows;
+  ordinal_type ncols = params.ncols;
+  int numCores = params.ncores;
+  size_t cacheBlockSize = static_cast<size_t> (params.cache_block_size);
+  bool contiguousCacheBlocks = params.contiguous_cache_blocks;
+  bool humanReadable = params.human_readable;
+  bool bDebug = params.debug;
+
+  generator_type generator;
+  TSQR::Trilinos::TrilinosMessenger< ordinal_type > ordinalComm (comm);
+  TSQR::Trilinos::TrilinosMessenger< scalar_type > scalarComm (comm);
+
+  if (params.which == "MpiSeqTSQR" || params.which == "MpiTbbTSQR")
+    {
+      TSQR::Test::verifyTsqr (params.which, generator, nrowsGlobal, ncols, 
+			      &ordinalComm, &scalarComm, numCores, 
+			      cacheBlockSize, contiguousCacheBlocks, 
+			      humanReadable, bDebug);
+    }
+  else if (params.which == "SeqTSQR")
+    {
+      using TSQR::Test::verifySeqTsqr;
+      verifySeqTsqr< ordinal_type, scalar_type, generator_type > (generator, nrowsGlobal, ncols, cacheBlockSize, 
+								  contiguousCacheBlocks, humanReadable, bDebug);
+    }
+}
+
+
+
+
+static TsqrTestParameters
 parseOptions (int argc, char* argv[], const bool allowedToPrint, bool& printedHelp)
 {
   using std::cerr;
@@ -111,41 +147,7 @@ parseOptions (int argc, char* argv[], const bool allowedToPrint, bool& printedHe
   printedHelp = false;
 
   // Command-line parameters, set to their default values.
-  TsqrTestAction action = Verify;
-  TsqrTestRoutine routine = FullTsqr; 
-  bool verbose = true;
-  bool debug = false;
-  int nrows = 100000; 
-  int ncols = 10;
-  int ncores = 1;
-  int ntrials = 10;
-  int cache_block_size = 0;
-  bool contiguous_cache_blocks = false;
-  bool human_readable = false;
-
-  Teuchos::ParameterList plist;
-  plist.set ("action", action, 
-	     "Which action to undertake");
-  plist.set ("routine", routine,
-	     "Which TSQR routine to test");
-  plist.set ("verbose", verbose, 
-	     "Print messages and results");
-  plist.set ("debug", debug, 
-	     "Print debugging information");
-  plist.set ("nrows", nrows, 
-	     "Number of rows (globally) in the test matrix to factor");
-  plist.set ("ncols", ncols, 
-	     "Number of columns in the test matrix to factor");
-  plist.set ("ncores", ncores, 
-	     "Number of cores to use (per MPI process)");
-  plist.set ("ntrials", ntrials, 
-	     "Number of trials for the benchmark");
-  plist.set ("cache-block-size", cache_block_size, 
-	     "Cache block size (0 means we set a reasonable default)");
-  plist.set ("contiguous-cache-blocks", contiguous_cache_blocks, 
-	     "Whether TSQR will reorganize cache blocks into contiguous storage");
-  plist.set ("human-readable", human_readable, 
-	     "Make benchmark results human-readable (but hard to parse)");
+  TsqrTestParameters params;
   try {
     Teuchos::CommandLineProcessor cmdLineProc (/* throwExceptions= */ true, /* recognizeAllOptions=*/ true);
 
@@ -153,8 +155,9 @@ parseOptions (int argc, char* argv[], const bool allowedToPrint, bool& printedHe
     //
     // C++ lacks sufficient introspection mechanisms for cleanly
     // expressing this iteration over options of various types as a
-    // loop.  Teuchos::ParameterList has a ConstIterator for iterating
-    // over all the parameters, but it stores each parameter as a
+    // loop over previously set ParameterList entries.
+    // Teuchos::ParameterList has a ConstIterator for iterating over
+    // all the parameters, but it stores each parameter as a
     // Teuchos::any (wrapped in a ParameterEntry).  Teuchos::any only
     // gives the type back as an std::type_info, and C++ can't treat
     // that as a template parameter.  Thus, there are only two ways to
@@ -175,33 +178,46 @@ parseOptions (int argc, char* argv[], const bool allowedToPrint, bool& printedHe
     // there are only three command-line argument types of interest
     // (bool, int, std::string), so a Smalltalk-style loop would be
     // acceptable.
-    cmdLineProc.setOption ("action", &action, 
+    cmdLineProc.setOption ("action", 
+			   &params.action, 
 			   (int) TsqrTestActionNumValues, 
 			   TsqrTestActionValues,
 			   TsqrTestActionNames,
-			   plist.getEntry("action").docString().c_str());
-    cmdLineProc.setOption ("routine", &routine, (int) TsqrTestRoutineNumValues, 
-			   TsqrTestRoutineValues, TsqrTestRoutineNames,
-			   plist.getEntry("routine").docString().c_str());
-    cmdLineProc.setOption ("verbose", "quiet", &verbose, 
-			   plist.getEntry("verbose").docString().c_str());
-    cmdLineProc.setOption ("debug", "nodebug", &debug, 
-			   plist.getEntry("debug").docString().c_str());
-    cmdLineProc.setOption ("nrows", &nrows, 
-			   plist.getEntry("nrows").docString().c_str());
-    cmdLineProc.setOption ("ncols", &ncols, 
-			   plist.getEntry("ncols").docString().c_str());
-    cmdLineProc.setOption ("ncores", &ncores, 
-			   plist.getEntry("ncores").docString().c_str());
-    cmdLineProc.setOption ("ntrials", &ntrials, 
-			   plist.getEntry("ntrials").docString().c_str());
-    cmdLineProc.setOption ("cache-block-size", &cache_block_size, 
-			   plist.getEntry("cache-block-size").docString().c_str());
-    cmdLineProc.setOption ("contiguous-cache-blocks", "noncontiguous-cache-blocks", 
-			   &contiguous_cache_blocks, 
-			   plist.getEntry("contiguous-cache-blocks").docString().c_str());
-    cmdLineProc.setOption ("human-readable", "machine-parseable", &human_readable, 
-			   plist.getEntry("human-readable").docString().c_str());
+			   "Which action to undertake");
+    cmdLineProc.setOption ("which", 
+			   &params.which, 
+			   "Which TSQR routine to test");
+    cmdLineProc.setOption ("verbose", 
+			   "quiet", 
+			   &params.verbose, 
+			   "Print messages and results");
+    cmdLineProc.setOption ("debug", 
+			   "nodebug", 
+			   &params.debug, 
+			   "Print debugging information");
+    cmdLineProc.setOption ("nrows", 
+			   &params.nrows, 
+			   "Number of rows (globally) in the test matrix to factor");
+    cmdLineProc.setOption ("ncols", 
+			   &params.ncols, 
+			   "Number of columns in the test matrix to factor");
+    cmdLineProc.setOption ("ncores", 
+			   &params.ncores, 
+			   "Number of cores to use (per MPI process)");
+    cmdLineProc.setOption ("ntrials", 
+			   &params.ntrials, 
+			   "Number of trials for the benchmark");
+    cmdLineProc.setOption ("cache-block-size", 
+			   &params.cache_block_size, 
+			   "Cache block size (0 means set a reasonable default)");
+    cmdLineProc.setOption ("contiguous-cache-blocks", 
+			   "noncontiguous-cache-blocks", 
+			   &params.contiguous_cache_blocks, 
+			   "Whether to reorganize cache blocks into contiguous storage");
+    cmdLineProc.setOption ("human-readable", 
+			   "machine-parseable", 
+			   &params.human_readable, 
+			   "Make benchmark results human-readable (but hard to parse)");
     cmdLineProc.parse (argc, argv);
   } 
   catch (Teuchos::CommandLineProcessor::UnrecognizedOption& e) { 
@@ -215,44 +231,18 @@ parseOptions (int argc, char* argv[], const bool allowedToPrint, bool& printedHe
 
   // Validate.  TODO (mfh 08 Jul 2010) Figure out how to do this with
   // ParameterList validators.
-  if (nrows <= 0)
+  if (params.nrows <= 0)
     throw std::domain_error ("Number of rows must be positive");
-  else if (ncols <= 0)
+  else if (params.ncols <= 0)
     throw std::domain_error ("Number of columns must be positive");
-  else if (nrows < ncols)
+  else if (params.nrows < params.ncols)
     throw std::domain_error ("Number of rows must be >= number of columns");
-  else if (ncores < 1)
+  else if (params.ncores < 1)
     throw std::domain_error ("Number of cores must be positive");
-  else if (cache_block_size < 0)
+  else if (params.cache_block_size < 0)
     throw std::domain_error ("Cache block size must be nonnegative");
 
-  if (! printedHelp)
-    {
-      // Fetch the (possibly altered) values of the command-line options.
-      plist.set ("action", action, 
-		 "Which action to undertake");
-      plist.set ("routine", routine,
-		 "Which TSQR routine to test");
-      plist.set ("verbose", verbose, 
-		 "Print messages and results");
-      plist.set ("debug", debug, 
-		 "Print debugging information");
-      plist.set ("nrows", nrows, 
-		 "Number of rows (globally) in the test matrix to factor");
-      plist.set ("ncols", ncols, 
-		 "Number of columns in the test matrix to factor");
-      plist.set ("ncores", ncores, 
-		 "Number of cores to use (per MPI process)");
-      plist.set ("ntrials", ntrials, 
-		 "Number of trials for the benchmark");
-      plist.set ("cache-block-size", cache_block_size, 
-		 "Cache block size (0 means we set a reasonable default)");
-      plist.set ("contiguous-cache-blocks", contiguous_cache_blocks, 
-		 "Whether TSQR will reorganize cache blocks into contiguous storage");
-      plist.set ("human-readable", human_readable, 
-		 "Make benchmark results human-readable (but hard to parse)");
-    }
-  return plist;
+  return params;
 }
 
 
@@ -268,11 +258,13 @@ main (int argc, char *argv[])
   bool allowedToPrint = (myRank==0);
   bool printedHelp = false;
   
-  Teuchos::ParameterList plist = parseOptions (argc, argv, allowedToPrint, printedHelp);
+  TsqrTestParameters params = parseOptions (argc, argv, allowedToPrint, printedHelp);
   if (printedHelp)
     return 0;
+  std::cerr << "FOO BAR" << std::endl;
 
-  verifyTsqr ("MpiSeqTSQR", 10000, 10, comm, 1, size_t(0), false, false, false);
+  verifyTsqr< double > (comm, params);
+  //  verifyTsqr< float > (comm, params);
 
   if (allowedToPrint) {
     std::cout << "\nEnd Result: TEST PASSED" << std::endl;

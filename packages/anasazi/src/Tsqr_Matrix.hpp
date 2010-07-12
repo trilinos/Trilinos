@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <sstream>
 #include <limits>
+#include <vector>
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -116,72 +117,45 @@ namespace TSQR {
     typedef Scalar* pointer_type;
 
     Matrix (const Ordinal num_rows, 
-	    const Ordinal num_cols)
-    {
-      const size_t alloc_size = verified_alloc_size (num_rows, num_cols);
-      nrows_ = num_rows;
-      ncols_ = num_cols;
-      if (alloc_size == 0)
-	A_ = NULL;
-      else
-	A_ = new double[alloc_size];
-    }
+	    const Ordinal num_cols) :
+      nrows_ (num_rows),
+      ncols_ (num_cols),
+      A_ (verified_alloc_size (num_rows, num_cols))
+    {}
 
     Matrix (const Ordinal num_rows,
 	    const Ordinal num_cols,
-	    const Scalar value) 
-    {
-      const size_t alloc_size = verified_alloc_size (num_rows, num_cols);
-      nrows_ = num_rows;
-      ncols_ = num_cols;
-      if (alloc_size == 0)
-	A_ = NULL;
-      else
-	{
-	  A_ = new double[alloc_size];
-	  fill_matrix (num_rows, num_cols, get(), lda(), value);
-	}
-    }
+	    const Scalar& value) :
+      nrows_ (num_rows),
+      ncols_ (num_cols),
+      A_ (verified_alloc_size (num_rows, num_cols), value)
+    {}
 
     // We need an explicit copy constructor, because for some reason
     // the default copy constructor (with shallow copies of pointers,
     // eeek! double free()s!!!) overrides the generic "copy
     // constructors" below.
-    Matrix (const Matrix& in)
+    Matrix (const Matrix& in) :
+      nrows_ (in.nrows()),
+      ncols_ (in.ncols()),
+      A_ (verified_alloc_size (in.nrows(), in.ncols()))
     {
-      const size_t alloc_size = verified_alloc_size (in.nrows(), in.ncols());
-      nrows_ = in.nrows();
-      ncols_ = in.ncols();
-      if (alloc_size == 0)
-	A_ = NULL;
-      else 
-	{
-	  A_ = new double[alloc_size];
-	  copy_matrix (nrows(), ncols(), get(), lda(), in.get(), in.lda());
-	}
+      if (A_.size() > 0)
+	copy_matrix (nrows(), ncols(), get(), lda(), in.get(), in.lda());
     }
 
-    Matrix () : nrows_(0), ncols_(0), A_(NULL) {}
+    Matrix () : nrows_(0), ncols_(0), A_(0) {}
 
-    ~Matrix () { 
-      if (A_ != NULL) 
-	delete [] A_; 
-      A_ = NULL;
-    }
+    ~Matrix () {} 
 
     template< class MatrixViewType >
-    Matrix (const MatrixViewType& in)
+    Matrix (const MatrixViewType& in) :
+      nrows_ (in.nrows()),
+      ncols_ (in.ncols()),
+      A_ (verified_alloc_size (in.nrows(), in.ncols()))
     {
-      const size_t alloc_size = verified_alloc_size (in.nrows(), in.ncols());
-      nrows_ = in.nrows();
-      ncols_ = in.ncols();
-      if (alloc_size == 0)
-	A_ = NULL;
-      else 
-	{
-	  A_ = new double[alloc_size];
-	  copy_matrix (nrows(), ncols(), get(), lda(), in.get(), in.lda());
-	}
+      if (A_.size() != 0)
+	copy_matrix (nrows(), ncols(), get(), lda(), in.get(), in.lda());
     }
 
     /// *this gets a deep copy of B.
@@ -251,8 +225,23 @@ namespace TSQR {
     Ordinal ncols() const { return ncols_; }
     Ordinal lda() const { return nrows_; }
     bool empty() const { return nrows() == 0 || ncols() == 0; }
-    Scalar* get() { return A_; }
-    const Scalar* get() const { return A_; }
+
+    Scalar* 
+    get() 
+    { 
+      if (A_.size() > 0)
+	return &A_[0]; 
+      else
+	return static_cast< Scalar* > (NULL);
+    }
+    const Scalar* 
+    get() const
+    { 
+      if (A_.size() > 0)
+	return &A_[0]; 
+      else
+	return static_cast< const Scalar* > (NULL);
+    }
 
     MatView< Ordinal, Scalar > view () {
       return MatView< Ordinal, Scalar >(nrows(), ncols(), get(), lda());
@@ -266,21 +255,15 @@ namespace TSQR {
     void
     reshape (const Ordinal num_rows, const Ordinal num_cols)
     {
-      if (A_ != NULL)
-	delete A_;
-
       const size_t alloc_size = verified_alloc_size (num_rows, num_cols);
       nrows_ = num_rows;
       ncols_ = num_cols;
-      if (alloc_size == 0)
-	A_ = NULL;
-      else
-	A_ = new double[alloc_size];
+      A_.resize (alloc_size);
     }
 
   private:
     Ordinal nrows_, ncols_;
-    Scalar* A_;
+    std::vector< Scalar > A_;
   };
 
 } // namespace TSQR
