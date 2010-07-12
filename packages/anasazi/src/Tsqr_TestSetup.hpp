@@ -44,7 +44,6 @@ namespace TSQR {
       typedef typename MatrixViewType::ordinal_type ordinal_type;
       typedef typename MatrixViewType::scalar_type scalar_type;
       typedef typename ScalarTraits< scalar_type >::magnitude_type magnitude_type;
-      typedef typename std::vector< magnitude_type >::size_type size_type;
 
       const int myRank = scalarComm->rank();
       const ordinal_type ncols = A_local.ncols();
@@ -54,7 +53,7 @@ namespace TSQR {
 	  // Generate some singular values for the test problem.
 	  std::vector< magnitude_type > singular_values (ncols);
 	  singular_values[0] = 1.0;
-	  for (size_type k = 1; k < ncols; ++k)
+	  for (ordinal_type k = 1; k < ncols; ++k)
 	    singular_values[k] = singular_values[k-1] / double(2);
 
 	  // Generate the test problem.  All MPI processes

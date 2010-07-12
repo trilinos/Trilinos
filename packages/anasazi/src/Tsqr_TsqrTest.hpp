@@ -177,9 +177,6 @@ namespace TSQR {
 	  Q_local.fill (std::numeric_limits< Scalar >::quiet_NaN());
 	}
       Matrix< Ordinal, Scalar > R (ncols, ncols, Scalar(0));
-      const Ordinal lda_local = nrows_local;
-      const Ordinal ldq_local = nrows_local;
-      const Ordinal ldr = ncols;
 
       // Generate the test problem.
       distributedTestProblem (generator, A_local, ordinalComm, scalarComm);
@@ -496,9 +493,6 @@ namespace TSQR {
 	  Q_local.fill (std::numeric_limits< Scalar >::quiet_NaN());
 	}
       Matrix< Ordinal, Scalar > R (ncols, ncols, Scalar(0));
-      const Ordinal lda_local = nrows_local;
-      const Ordinal ldq_local = nrows_local;
-      const Ordinal ldr = ncols;
 
       // Generate the test problem.
       distributedTestProblem (generator, A_local, ordinalComm, scalarComm);

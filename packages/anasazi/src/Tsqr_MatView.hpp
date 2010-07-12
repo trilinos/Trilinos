@@ -107,7 +107,9 @@ namespace TSQR {
     typedef Ordinal index_type; // deprecated
     typedef Scalar* pointer_type;
 
-    MatView () : nrows_(0), ncols_(0), A_(NULL), lda_(0) {}
+    /// \note g++ with -Wall wants A_ to be initialized after lda_,
+    /// otherwise it emits a compiler warning.
+    MatView () : nrows_(0), ncols_(0), lda_(0), A_(NULL) {}
 
     MatView (const Ordinal num_rows, 
 	     const Ordinal num_cols, 
@@ -115,8 +117,8 @@ namespace TSQR {
 	     const Ordinal leading_dim) :
       nrows_(num_rows),
       ncols_(num_cols),
-      A_(A),
-      lda_(leading_dim) 
+      lda_(leading_dim),
+      A_(A)
     {
 #ifdef TSQR_MATVIEW_DEBUG
       MatViewVerify< Ordinal, Scalar >::verify (num_rows, num_cols, A, leading_dim);
@@ -126,8 +128,8 @@ namespace TSQR {
     MatView (const MatView& view) :
       nrows_(view.nrows()),
       ncols_(view.ncols()),
-      A_(view.get()),
-      lda_(view.lda())
+      lda_(view.lda()),
+      A_(view.get())
     {}
 
     MatView& operator= (const MatView& view) {
@@ -359,16 +361,18 @@ namespace TSQR {
     typedef Ordinal index_type; // deprecated
     typedef const Scalar* pointer_type;
 
-    ConstMatView () : nrows_(0), ncols_(0), A_(NULL), lda_(0) {}
+    ConstMatView () : nrows_(0), ncols_(0), lda_(0), A_(NULL) {}
 
+    /// \note g++ with -Wall wants A_ to be initialized after lda_,
+    /// otherwise it emits a compiler warning.
     ConstMatView (const Ordinal num_rows, 
 		  const Ordinal num_cols, 
 		  const Scalar* const A, 
 		  const Ordinal leading_dim) :
       nrows_(num_rows),
       ncols_(num_cols),
-      A_(A),
-      lda_(leading_dim) 
+      lda_(leading_dim),
+      A_(A)
     {
 #ifdef TSQR_MATVIEW_DEBUG
       MatViewVerify< Ordinal, Scalar >::verify (num_rows, num_cols, A, leading_dim);
@@ -378,20 +382,19 @@ namespace TSQR {
     ConstMatView (const ConstMatView& view) :
       nrows_(view.nrows()),
       ncols_(view.ncols()),
-      A_(view.get()),
-      lda_(view.lda())
+      lda_(view.lda()),
+      A_(view.get())
     {}
 
     ConstMatView& operator= (const ConstMatView& view) {
-      if (this == &view)
-	return *this;
-      else
+      if (this != &view)
 	{
 	  nrows_ = view.nrows();
 	  ncols_ = view.ncols();
-	  A_ = view.get();
 	  lda_ = view.lda();
+	  A_ = view.get();
 	}
+      return *this;
     }
 
     const Scalar& operator() (const Ordinal i, const Ordinal j) const 

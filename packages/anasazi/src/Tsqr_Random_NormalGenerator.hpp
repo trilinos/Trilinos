@@ -88,9 +88,15 @@ namespace TSQR {
       void
       fill_buffer () 
       {
-	enum { uniform_0_1 = 1, 
-	       uniform_m1_1 = 2, 
-	       normal_0_1 = 3 } distribution_types;
+	// LAPACK's _LARNV routine defines this "enum" (just an
+	// integer, because it's Fortran) that lets users choose from
+	// one of three different pseudorandom distributions:
+	// uniform(0,1), uniform(-1,1), and normal(0,1).
+	enum distribution_type { 
+	  uniform_0_1 = 1, 
+	  uniform_m1_1 = 2, 
+	  normal_0_1 = 3 
+	};
 	lapack_.LARNV (normal_0_1, &iseed_[0], buffer_length_, &buffer_[0]);
       }
 

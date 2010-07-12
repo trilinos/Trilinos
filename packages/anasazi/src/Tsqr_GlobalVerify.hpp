@@ -55,13 +55,11 @@ namespace TSQR {
 		 const LocalOrdinal ldr,
 		 MessengerBase< Scalar >* messenger)
   {
+    typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
     using std::make_pair;
     using std::pair;
     using std::vector;
   
-    typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
-
-    const int my_rank = messenger->rank();
     BLAS< LocalOrdinal, Scalar > blas;
 
     //

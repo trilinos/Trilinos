@@ -48,12 +48,19 @@ namespace TSQR {
 		   const bool human_readable,
 		   const bool b_debug = false)
     {
+      // Need c++0x to have a default template parameter argument for
+      // a template function, otherwise we would have templated this
+      // function on TimerType and made TrivialTimer the default.
+      // TimerType is only used instead of TbbTsqr.
+      typedef TSQR::TBB::TrivialTimer TimerType; 
+      typedef TSQR::TBB::TbbTsqr< Ordinal, Scalar, TimerType > node_tsqr_type;
+      typedef typename node_tsqr_type::FactorOutput factor_output_type;
       typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
       using std::cerr;
       using std::cout;
       using std::endl;
 
-      TSQR::TBB::TbbTsqr< Ordinal, Scalar > actor (num_cores, cache_block_size);
+      node_tsqr_type actor (num_cores, cache_block_size);
 
       if (b_debug)
 	{
@@ -125,8 +132,6 @@ namespace TSQR {
       R.fill (Scalar(0));
 
       // Factor the matrix and compute the explicit Q factor
-      typedef TSQR::TBB::TbbTsqr< Ordinal, Scalar >::FactorOutput factor_output_type;
-
       factor_output_type factor_output = 
 	actor.factor (nrows, ncols, A_copy.get(), A_copy.lda(), R.get(), 
 		      R.lda(), contiguous_cache_blocks);
@@ -216,9 +221,6 @@ namespace TSQR {
       Matrix< Ordinal, Scalar > A_copy (nrows, ncols);
       Matrix< Ordinal, Scalar > Q (nrows, ncols);
       Matrix< Ordinal, Scalar > R (ncols, ncols, Scalar(0));
-      const Ordinal lda = nrows;
-      const Ordinal ldq = nrows;
-      const Ordinal ldr = ncols;
 
       // Fill R with zeros, since the factorization may not overwrite
       // the strict lower triangle of R.

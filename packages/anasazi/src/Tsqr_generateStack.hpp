@@ -80,11 +80,10 @@ namespace TSQR {
       if (my_rank == 0)
 	{
 	  typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
-	  typedef typename std::vector< magnitude_type >::size_type index_type;
 
 	  std::vector< magnitude_type > singular_values (ncols);
 	  singular_values[0] = magnitude_type(1);
-	  for (index_type k = 1; k < ncols; ++k)
+	  for (Ordinal k = 1; k < ncols; ++k)
 	    singular_values[k] = singular_values[k-1] / magnitude_type(2);
 
 	  generateStack (generator, A_global, &singular_values[0], nprocs, ncols);

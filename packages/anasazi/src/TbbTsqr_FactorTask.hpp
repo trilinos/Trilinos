@@ -48,10 +48,10 @@ namespace TSQR {
 	seq_outputs_ (seq_outputs),
 	par_output_ (par_output),
 	seq_ (seq),
+	contiguous_cache_blocks_ (contiguous_cache_blocks),
 	my_seq_timing_ (my_seq_timing),
 	min_seq_timing_ (min_seq_timing),
-	max_seq_timing_ (max_seq_timing),
-	contiguous_cache_blocks_ (contiguous_cache_blocks)
+	max_seq_timing_ (max_seq_timing)
       {}
 
       tbb::task* execute () {

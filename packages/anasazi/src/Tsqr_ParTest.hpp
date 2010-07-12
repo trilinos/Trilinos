@@ -37,7 +37,6 @@ namespace TSQR {
       using std::endl;
 
       const bool b_extra_debug = false;
-      const int nprocs = scalarComm->size();
       const int my_rank = scalarComm->rank();
       if (b_debug)
 	{
@@ -46,7 +45,6 @@ namespace TSQR {
 	    cerr << "par_tsqr_verify:" << endl;
 	  scalarComm->barrier();
 	}
-      const Ordinal nrows_global = nprocs * ncols;
       const Ordinal nrows_local = ncols;
 
       // A_local: Space for the matrix A to factor -- local to each

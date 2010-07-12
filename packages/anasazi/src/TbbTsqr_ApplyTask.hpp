@@ -64,7 +64,7 @@ namespace TSQR {
 	    timer.start();
 	    const std::vector< SeqOutput >& seq_outputs = factor_output_.first;
 	    seq_.apply ("N", Q_.nrows(), Q_.ncols(), Q_.get(), Q_.lda(), 
-			factor_output_.first[P_first_], C_.ncols(), C_.get(), 
+			seq_outputs[P_first_], C_.ncols(), C_.get(), 
 			C_.lda(), contiguous_cache_blocks_);
 	    my_seq_timing_ = timer.stop();
 	    return NULL;

@@ -60,7 +60,7 @@ namespace TSQR {
       MgsOps (MessengerBase< Scalar >* const messenger) : 
 	messenger_ (messenger) {}
 
-      Scalar
+      void
       axpy (const LocalOrdinal nrows_local,
 	    const Scalar alpha,
 	    const Scalar x_local[],
@@ -70,7 +70,7 @@ namespace TSQR {
 	  y_local[i] = y_local[i] + alpha * x_local[i];
       }
 
-      Scalar
+      void
       scale (const LocalOrdinal nrows_local, 
 	     Scalar x_local[], 
 	     const Scalar denom) const
@@ -165,7 +165,6 @@ namespace TSQR {
 				    Scalar R[],
 				    const LocalOrdinal ldr)
   {
-    const int my_rank = messenger_->rank ();
     details::MgsOps< LocalOrdinal, Scalar > ops (messenger_);
     
     for (LocalOrdinal j = 0; j < ncols; ++j)

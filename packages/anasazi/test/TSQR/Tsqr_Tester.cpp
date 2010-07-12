@@ -1,9 +1,42 @@
+// @HEADER
+// ***********************************************************************
+//
+//                 Anasazi: Block Eigensolvers Package
+//                 Copyright (2010) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ***********************************************************************
+// @HEADER
+
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_GlobalMPISession.hpp"
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
+
+#include "Tsqr_TsqrTest.hpp"
+#include "Teuchos_Time.hpp"
+#include "Tsqr_Random_NormalGenerator.hpp"
+#include "TsqrTrilinosMessenger.hpp"
 
 #include <sstream>
 #include <stdexcept>
@@ -24,6 +57,28 @@
 //     cmdLineProc.setOption (key, &(any_cast(value)), entry.docString().c_str());
 // }
 
+
+static void
+verifyTsqr (const std::string& which,
+	    const int nrowsGlobal,
+	    const int ncols,
+	    Teuchos::RCP< const Teuchos::Comm<int> > comm,
+	    const int numCores,
+	    const size_t cacheBlockSize,
+	    const bool contiguousCacheBlocks,
+	    const humanReadable,
+	    const bDebug)
+{
+  typedef int ordinal_type;
+  typedef double scalar_type;
+
+  TSQR::Random::NormalGenerator< ordinal_type, scalar_type > generator;
+  TSQR::Trilinos::TrilinosMessenger< int > ordinalComm (comm);
+  TSQR::Trilinos::TrilinosMessenger< double > scalarComm (comm);
+  TSQR::Test::verifyTsqr (which, generator, nrowsGlobal, ncols, &ordinalComm,
+			  &scalarComm, numCores, cacheBlockSize, 
+			  contiguousCacheBlocks, humanReadable, bDebug);
+}
 
 enum TsqrTestAction {
   Verify = 0,
@@ -216,6 +271,8 @@ main (int argc, char *argv[])
   Teuchos::ParameterList plist = parseOptions (argc, argv, allowedToPrint, printedHelp);
   if (printedHelp)
     return 0;
+
+  verifyTsqr ("MpiSeqTSQR", 10000, 10, comm, 1, size_t(0), false, false, false);
 
   if (allowedToPrint) {
     std::cout << "\nEnd Result: TEST PASSED" << std::endl;

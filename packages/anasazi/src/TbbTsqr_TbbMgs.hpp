@@ -158,18 +158,21 @@ namespace TSQR {
       template< class LocalOrdinal, class Scalar >
       class TbbNormSquared {
       public:
+	typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+
 	void operator() (const tbb::blocked_range< LocalOrdinal >& r) {
 	  // Doing the right thing in the complex case requires taking
 	  // an absolute value.  We want to avoid this additional cost
 	  // in the real case, which is why we check is_complex.
 	  if (ScalarTraits< Scalar >::is_complex) 
 	    {
-	      // The TBB book likes this copying of pointers into the local routine.
-	      // It probably helps the compiler do optimizations.
+	      // The TBB book favors copying array pointers into the
+	      // local routine.  It probably helps the compiler do
+	      // optimizations.
 	      const Scalar* const x = x_;
 	      for (LocalOrdinal i = r.begin(); i != r.end(); ++i)
 		{
-		  const Scalar xi = ScalarTraits< Scalar >::abs (x[i]);
+		  const magnitude_type xi = ScalarTraits< Scalar >::abs (x[i]);
 		  result_ += xi * xi;
 		}
 	    }
@@ -183,19 +186,19 @@ namespace TSQR {
 		}
 	    }
 	}
-	Scalar result() const { return result_; }
+	magnitude_type result() const { return result_; }
 
 	TbbNormSquared (const Scalar* const x) :
-	  result_ (Scalar(0)), x_ (x) {}
+	  result_ (magnitude_type(0)), x_ (x) {}
 	TbbNormSquared (TbbNormSquared& d, tbb::split) : 
-	  result_ (Scalar(0)), x_ (d.x_) {}
+	  result_ (magnitude_type(0)), x_ (d.x_) {}
 	void join (const TbbNormSquared& d) { result_ += d.result(); }
 
       private:
 	// Default constructor doesn't make sense
 	TbbNormSquared ();
 
-	Scalar result_;
+	magnitude_type result_;
 	const Scalar* const x_;
       };
 
@@ -212,7 +215,7 @@ namespace TSQR {
 	TbbMgsOps (MessengerBase< Scalar >* const messenger) : 
 	  messenger_ (messenger) {}
 
-	Scalar
+	void
 	axpy (const LocalOrdinal nrows_local,
 	      const Scalar alpha,
 	      const Scalar x_local[],
@@ -225,7 +228,7 @@ namespace TSQR {
 	  parallel_for (range_type(0, nrows_local), axpyer, auto_partitioner());
 	}
 
-	Scalar
+	void
 	scale (const LocalOrdinal nrows_local, 
 	       Scalar x_local[], 
 	       const Scalar denom) const
@@ -283,15 +286,16 @@ namespace TSQR {
 	{
 	  using tbb::auto_partitioner;
 	  using tbb::parallel_reduce;
-	  typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+	  typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
 
 	  TbbNormSquared< LocalOrdinal, Scalar > normer (x_local);
 	  parallel_reduce (range_type(0, nrows_local), normer, auto_partitioner());
-	  const Scalar local_result = normer.result();
-	  const Scalar global_result = messenger_->globalSum (local_result);
-	  // sqrt doesn't make sense if the type of Scalar is complex,
-	  // even if the imaginary part of global_result is zero.
-	  return sqrt (ScalarTraits< Scalar >::abs (global_result));
+	  const magnitude_type local_result = normer.result();
+	  const magnitude_type global_result = messenger_->globalSum (local_result);
+	  // Make sure that sqrt's argument is a magnitude_type.  Of
+	  // course global_result should be nonnegative real, but we
+	  // want the compiler to pick up the correct sqrt function.
+	  return sqrt (magnitude_type (global_result));
 	}
 
 	Scalar
@@ -318,7 +322,6 @@ namespace TSQR {
 					 Scalar R[],
 					 const LocalOrdinal ldr)
     {
-      const int my_rank = messenger_->rank ();
       details::TbbMgsOps< LocalOrdinal, Scalar > ops (messenger_);
       
       for (LocalOrdinal j = 0; j < ncols; ++j)

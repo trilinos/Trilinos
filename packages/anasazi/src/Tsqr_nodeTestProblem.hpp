@@ -30,11 +30,10 @@ namespace TSQR {
       if (numerically_interesting)
 	{
 	  typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
-	  typedef typename std::vector< magnitude_type >::size_type size_type;
 
 	  std::vector< magnitude_type > singular_values (std::min(nrows, ncols));
 	  singular_values[0] = magnitude_type (1);
-	  for (size_type k = 1; k < std::min(nrows, ncols); ++k)
+	  for (Ordinal k = 1; k < std::min(nrows, ncols); ++k)
 	    singular_values[k] = singular_values[k-1] / magnitude_type(2);
 
 	  matGen.fill_random_svd (nrows, ncols, A, lda, &singular_values[0]);

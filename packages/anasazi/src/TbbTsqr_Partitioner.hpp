@@ -40,7 +40,8 @@ namespace TSQR {
 	       << ") < ncols (= " << ncols << ")";
 	    throw invalid_argument (os.str());
 	  }
-	return (nrows / num_partitions >= ncols);
+	// FIXME (mfh 11 Jul 2010) Need more overflow checks here.
+	return static_cast<size_t>(nrows) / num_partitions >= static_cast<size_t>(ncols);
       }	
 
     public:
@@ -59,7 +60,7 @@ namespace TSQR {
 	typedef typename MatrixViewType::pointer_type pointer_type;
 
 	const size_t num_partitions_top = P_mid - P_first + 1;
-	const size_t num_partitions_bottom = P_last - P_mid;
+	//const size_t num_partitions_bottom = P_last - P_mid;
 	const size_t num_partitions = P_last - P_first + 1;
 	const index_type nrows = A.nrows();
 	const index_type ncols = A.ncols();

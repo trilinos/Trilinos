@@ -52,7 +52,8 @@ namespace TSQR {
       }
 
       /// Exchange sencRecvCount elements of sendData with processor
-      /// destProc, receiving the result into recvData.
+      /// destProc, receiving the result into recvData.  Assume that
+      /// sendData and recvData do not alias one another.
       virtual void 
       swapData (const Datum sendData[], 
 		Datum recvData[], 
@@ -68,20 +69,55 @@ namespace TSQR {
 	    using Teuchos::ArrayRCP;
 	    using Teuchos::CommRequest;
 
-	    // FIXME (mfh 14 June 2010) Would be nice if Teuchos had a
-	    // sendRecv() routine... as it is, we have to do a send and
-	    // then a receive.  We do an isend and an ireceive for
-	    // potential overlap.
-	    ArrayRCP< const Datum > sendBuf (sendData, 0, sendRecvCount, false);
-	    ArrayRCP< Datum > recvBuf (recvData, 0, sendRecvCount, false);
+	    const int srcProc = Teuchos::rank (*pComm_);
 
-	    RCP< CommRequest > sendReq = Teuchos::isend (*pComm_, sendBuf, destProc);
-	    RCP< CommRequest > recvReq = Teuchos::irecv (*pComm_, recvBuf, destProc);
-	    // Wait on both the send and the receive to complete.  The
-	    // two can happen independently, because sendBuf and recvBuf
-	    // are different.  (We assert no aliasing of buffers here,
-	    // and we've also checked above that destProc != rank().)
-	    Teuchos::waitAll (*pComm_, Teuchos::tuple (sendReq, recvReq));
+	    // FIXME (mfh 14 June 2010, 09 Jul 2010) It would be nice
+	    // if Teuchos had a sendRecv() routine... as it is, we
+	    // have to do a send and then a receive.  We could do an
+	    // isend and an ireceive in order to exploit potential
+	    // overlap of the two messages.  That works if sendData
+	    // and recvData don't alias one another.  We only do a
+	    // partial check for aliasing here (sendData == recvData).
+	    if (sendData == recvData)
+	      {
+		// The smaller-rank process sends first, and the
+		// larger-rank process receives first.
+		//
+		// Teuchos::send() and Teuchos::recv() are blocking,
+		// so we may safely write to recvBuf even if it
+		// aliases sendBuf.
+		if (srcProc < destProc)
+		  {
+		    Teuchos::send (*pComm_, sendRecvCount, sendData, destProc);
+		    Teuchos::receive (*pComm_, destProc, sendRecvCount, recvData);
+		  }
+		else 
+		  {
+		    Teuchos::receive (*pComm_, destProc, sendRecvCount, recvData);
+		    Teuchos::send (*pComm_, sendRecvCount, sendData, destProc);
+		  }
+	      }
+	    else
+	      {
+		ArrayRCP< const Datum > sendBuf (sendData, 0, sendRecvCount, false);
+		ArrayRCP< Datum > recvBuf (recvData, 0, sendRecvCount, false);
+
+		if (srcProc < destProc)
+		  {
+		    RCP< CommRequest > sendReq = Teuchos::isend (*pComm_, sendBuf, destProc);
+		    RCP< CommRequest > recvReq = Teuchos::ireceive (*pComm_, recvBuf, destProc);
+		  }
+		else
+		  {
+		    RCP< CommRequest > recvReq = Teuchos::ireceive (*pComm_, recvBuf, destProc);
+		    RCP< CommRequest > sendReq = Teuchos::isend (*pComm_, sendBuf, destProc);
+		  }
+		// Wait on both the send and the receive to complete.  The
+		// two can happen independently, because sendBuf and recvBuf
+		// are different.  (We assert no aliasing of buffers here,
+		// and we've also checked above that destProc != rank().)
+		Teuchos::waitAll (*pComm_, Teuchos::tuple (sendReq, recvReq));
+	      }
 	  }
       }
 

@@ -414,7 +414,6 @@ namespace TSQR {
 	  const_mat_view Q_cur = blocker.split_bottom_block (Q_rest, contiguous_cache_blocks);
 	  mat_view C_cur = blocker.split_bottom_block (C_rest, contiguous_cache_blocks);
 
-	  const int count = 0;
 	  while (! Q_rest.empty())
 	    {
 #ifdef TSQR_SEQ_TSQR_EXTRA_DEBUG

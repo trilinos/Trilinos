@@ -36,12 +36,13 @@
 namespace TSQR {
   namespace Test {
     template< class TimerType >
-    void 
+    double
     verifyTimerConcept ()
     {
       TimerType timer (std::string("NameOfTimer"));
       timer.start ();
       double result = timer.stop();
+      return result;
     }
   } // namespace Test
 } // namespace TSQR

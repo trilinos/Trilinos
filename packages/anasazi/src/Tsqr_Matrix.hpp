@@ -14,15 +14,36 @@
 namespace TSQR {
 
   /// \class Matrix
-  /// \brief A column-oriented matrix.
+  /// \brief A column-oriented dense matrix
   ///
-  /// \note This class is a bit like Teuchos::SerialDenseMatrix.  It
+  /// A column-oriented dense matrix, with indices of type Ordinal and
+  /// elements of type Scalar.
+  ///
+  /// \note This class resembles Teuchos::SerialDenseMatrix.  It
   ///   exists because I didn't want TSQR to depend on Teuchos.  This
   ///   is not because I don't like Teuchos, but because I had/have
   ///   potential TSQR users who might not want to depend on Teuchos.
   template< class Ordinal, class Scalar >
   class Matrix {
   private:
+    static bool 
+    fits_in_size_t (const Ordinal& ord) 
+    {
+      const Ordinal result = static_cast< Ordinal > (static_cast< size_t > (ord));
+      return (ord == result);
+    }
+
+    /// Check whether num_rows*num_cols makes sense as an amount of
+    /// storage (for the num_rows by num_cols dense matrix).  Not
+    /// making sense includes negative values for either parameter (if
+    /// they are signed types), or overflow when computing their
+    /// product.  Throw an exception of the appropriate type for any
+    /// of these cases.  Otherwise, return num_rows*num_cols as a
+    /// size_t.
+    ///
+    /// \param num_rows [in] Number of rows in the matrix
+    /// \param num_cols [in] Number of columns in the matrix
+    /// \return num_rows*num_cols
     size_t
     verified_alloc_size (const Ordinal num_rows,
 			 const Ordinal num_cols) const 
@@ -30,6 +51,8 @@ namespace TSQR {
       if (! std::numeric_limits< Ordinal >::is_integer)
 	throw std::logic_error("Ordinal must be an integer type");
 
+      // If Ordinal is signed, make sure that num_rows and num_cols
+      // are nonnegative.
       if (std::numeric_limits< Ordinal >::is_signed)
 	{
 	  if (num_rows < 0)
@@ -46,28 +69,35 @@ namespace TSQR {
 	    }
 	}
 
-      // If Ordinal is bigger than a size_t, do special range checking.
-      if (std::numeric_limits<size_t>::max() < std::numeric_limits< Ordinal >::max())
+      // If Ordinal is bigger than a size_t, do special range
+      // checking.  The compiler warns (comparison of signed and
+      // unsigned) if Ordinal is a signed type and we try to do
+      // "numeric_limits<size_t>::max() <
+      // std::numeric_limits<Ordinal>::max()", so instead we cast each
+      // of num_rows and num_cols to size_t and back to Ordinal again,
+      // and see if we get the same result.  If not, then we
+      // definitely can't return a size_t product of num_rows and
+      // num_cols.
+      if (! fits_in_size_t (num_rows))
 	{
-	  if (num_rows > std::numeric_limits<size_t>::max())
-	    {
-	      std::ostringstream os;
-	      os << "# rows (= " << num_rows << ") > max size_t value (= " 
-		 << std::numeric_limits<size_t>::max() << ")";
-	      throw std::range_error (os.str());
-	    }
-	  else if (num_cols > std::numeric_limits<size_t>::max())
-	    {
-	      std::ostringstream os;
-	      os << "# columns (= " << num_cols << ") > max size_t value (= "
-		 << std::numeric_limits<size_t>::max() << ")";
-	      throw std::range_error (os.str());
-	    }
+	  std::ostringstream os;
+	  os << "# rows (= " << num_rows << ") > max size_t value (= " 
+	     << std::numeric_limits<size_t>::max() << ")";
+	  throw std::range_error (os.str());
+	}
+      else if (! fits_in_size_t (num_cols))
+	{
+	  std::ostringstream os;
+	  os << "# columns (= " << num_cols << ") > max size_t value (= "
+	     << std::numeric_limits<size_t>::max() << ")";
+	  throw std::range_error (os.str());
 	}
 
-      // Both num_rows and num_cols <= max size_t value.
-      // Now make sure that their product is also <= max size_t value.
-      if (num_rows > std::numeric_limits<size_t>::max() / num_cols)
+      // Both num_rows and num_cols fit in a size_t, and are
+      // nonnegative.  Now check whether their product also fits in a
+      // size_t.  
+      if (static_cast<size_t>(num_rows) > 
+	  std::numeric_limits<size_t>::max() / static_cast<size_t>(num_cols))
 	{
 	  std::ostringstream os;
 	  os << "num_rows (= " << num_rows << ") * num_cols (= "

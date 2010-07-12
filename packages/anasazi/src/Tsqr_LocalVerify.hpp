@@ -92,7 +92,6 @@ namespace TSQR {
 
     const bool relative = false; // whether to scale $\|I-Q^T*Q\|_F$ by $\|A\|_F$
     BLAS<Ordinal, Scalar> blas;
-    int info = 0; // must be int
   
     std::vector<Scalar> AbsOrthog (ncols * ncols, std::numeric_limits<Scalar>::quiet_NaN());
     const Ordinal AbsOrthog_stride = ncols;

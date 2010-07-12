@@ -388,7 +388,6 @@ namespace TSQR {
       TSQR::Test::verifyTimerConcept< TimerType >();
 
       SequentialTsqr< Ordinal, Scalar > actor (cache_block_size);
-      const bool transposed = false;
 
       Matrix< Ordinal, Scalar > A (nrows, ncols);
       Matrix< Ordinal, Scalar > A_copy (nrows, ncols);
@@ -396,7 +395,6 @@ namespace TSQR {
       Matrix< Ordinal, Scalar > R (ncols, ncols);
       const Ordinal lda = nrows;
       const Ordinal ldq = nrows;
-      const Ordinal ldr = ncols;
 
       // Create a test problem
       nodeTestProblem (generator, nrows, ncols, A.get(), lda, false);

@@ -308,7 +308,7 @@ namespace TSQR {
 	  const size_t nrows_cache_block = term1 - term2;
 
 	  // Make sure that nrows_cache_block fits in a LocalOrdinal type.
-	  if (nrows_cache_block > std::numeric_limits<LocalOrdinal>::max())
+	  if (static_cast<size_t>(static_cast< LocalOrdinal >(nrows_cache_block)) != nrows_cache_block)
 	    {
 	      std::ostringstream os;
 	      os << "Error:  While deciding on the number of rows in a cache "
@@ -319,7 +319,7 @@ namespace TSQR {
 	      throw std::range_error (os.str());
 	    }
 	  else
-	    return static_cast<LocalOrdinal> (nrows_cache_block);
+	    return static_cast< LocalOrdinal > (nrows_cache_block);
 	}
     }
 
