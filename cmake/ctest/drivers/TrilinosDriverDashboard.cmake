@@ -99,6 +99,7 @@ if("${git_exe}" STREQUAL "")
   find_program(git_exe NAMES git.cmd eg git)
 endif()
 if(git_exe)
+  set(UPDATE_TYPE "git")
   set(CTEST_UPDATE_COMMAND "${git_exe}")
 endif()
 
