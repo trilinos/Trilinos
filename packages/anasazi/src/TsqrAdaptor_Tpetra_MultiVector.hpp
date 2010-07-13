@@ -24,18 +24,21 @@ namespace TSQR {
   namespace Trilinos {
 
     template< class S, class LO, class GO, class NodeType >
-    class TsqrAdaptor< S, LO, GO, Tpetra::MultiVector< S, LO, GO, NodeType > >
+    class TsqrAdaptor< S, LO, GO, 
+		       Tpetra::MultiVector< S, LO, GO, NodeType >,
+		       TsqrTypeAdaptor< S, LO, GO, Tpetra::MultiVector< S, LO, GO, NodeType > > >
     {
     public:
       typedef Tpetra::MultiVector< S, LO, GO, NodeType > MV;
+      typedef TsqrTypeAdaptor< S, LO, GO, MV > TsqrTypeAdaptorType;
 
       typedef S   scalar_type;
       typedef LO  local_ordinal_type;
       typedef GO  global_ordinal_type;
       typedef MV  multivector_type;
 
-      typedef typename TsqrTypeAdaptor< S, LO, GO, MV >::node_tsqr_type node_tsqr_type;
-      typedef typename TsqrTypeAdaptor< S, LO, GO, MV >::tsqr_type      tsqr_type;
+      typedef typename TsqrTypeAdaptorType::node_tsqr_type node_tsqr_type;
+      typedef typename TsqrTypeAdaptorType::tsqr_type      tsqr_type;
 
       typedef Teuchos::RCP< node_tsqr_type >           node_tsqr_ptr;
       typedef Teuchos::RCP< tsqr_type >                tsqr_ptr;

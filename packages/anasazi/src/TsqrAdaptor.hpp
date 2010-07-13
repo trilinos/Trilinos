@@ -35,6 +35,12 @@ namespace TSQR {
     /// LO: local ordinal type
     /// GO: global ordinal type: TSQR doesn't use it, but MV does.
     /// MV: multivector type
+    /// TsqrTypeAdaptorType: lets us map the desired TSQR
+    ///   implementation to the MV class.  For Tpetra::MultiVector,
+    ///   the default TsqrTypeAdaptor is the best.  For
+    ///   Epetra_MultiVector, the default is serial on each MPI
+    ///   process; you might like to change this by providing your own
+    ///   TsqrTypeAdaptorType
     ///
     /// \note This is the interface to TSQR that Trilinos sees.
     ///   Implementers who want to add a new MultiVector (MV) type
@@ -48,7 +54,8 @@ namespace TSQR {
     ///   the corresponding (partial) instantiation of TsqrTypeAdaptor
     ///   (which maps the MultiVector type to the TSQR implementation
     ///   type).
-    template< class S, class LO, class GO, class MV >
+    template< class S, class LO, class GO, class MV, 
+	      class TsqrTypeAdaptorType = TsqrTypeAdaptor< S, LO, GO, MV > >
     class TsqrAdaptor {
     public:
       typedef S   scalar_type;
@@ -56,8 +63,8 @@ namespace TSQR {
       typedef GO  global_ordinal_type;
       typedef MV  multivector_type;
 
-      typedef typename TsqrTypeAdaptor< S, LO, GO, MV >::node_tsqr_type node_tsqr_type;
-      typedef typename TsqrTypeAdaptor< S, LO, GO, MV >::tsqr_type      tsqr_type;
+      typedef typename TsqrTypeAdaptorType::node_tsqr_type node_tsqr_type;
+      typedef typename TsqrTypeAdaptorType::tsqr_type      tsqr_type;
 
       typedef Teuchos::RCP< node_tsqr_type >           node_tsqr_ptr;
       typedef Teuchos::RCP< tsqr_type >                tsqr_ptr;

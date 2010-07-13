@@ -151,6 +151,18 @@ verify_tsqr (Teuchos::RCP< const Teuchos::Comm<int> > comm,
 
 
 
+#if 0
+template< class S, class LO, class GO, class MV >
+static void
+verify_multivector_tsqr (Teuchos::RCP< const Teuchos::Comm<int> > comm,
+			 const Teuchos::ParameterList& plist)
+{
+  using TSQR::Trilinos::TsqrAdaptor;
+  TsqrAdaptor< S, LO, GO, MV > adaptor (comm, plist);
+}
+#endif // 0
+
+
 
 static TsqrTestParameters
 parseOptions (int argc, char* argv[], const bool allowedToPrint, bool& printedHelp)

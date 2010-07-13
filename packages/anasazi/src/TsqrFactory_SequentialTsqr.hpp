@@ -57,11 +57,13 @@ namespace TSQR {
     {
       using Teuchos::Exceptions::InvalidParameter;
       size_t cache_block_size = 0;
+      const std::string cacheBlockSizeParamName ("cacheBlockSize");
+
       // All this try/catch stuff is because the C++ compiler can't
       // deduce the right two-argument get() function (second argument
       // would be the default).
       try {
-	cache_block_size = plist.get< size_t > (std::string("cache-block-size"));
+	cache_block_size = plist.get< size_t > (cacheBlockSizeParamName);
       } catch (InvalidParameter&) {
 	cache_block_size = 0;
       }
