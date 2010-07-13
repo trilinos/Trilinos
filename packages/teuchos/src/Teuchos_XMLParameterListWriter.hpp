@@ -92,6 +92,9 @@ namespace Teuchos
 	
 		private:
 
+      /**
+	   * \brief Write the given list to an XML object and record all the validators in it on a map.
+	   */
       XMLObject convertParameterList(
 	    const ParameterList& p,
 		WriterValidatorIDMap validatorIDMap,

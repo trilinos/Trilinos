@@ -247,6 +247,7 @@ public:
 
 
 private:
+  /** \brief. static decleration and assignment of the tagName */
   static const std::string& tagName(){
   	static const std::string tagName_ = TypeNameTraits<IntegralType>::name() + "stringtointegralvalidator";
 	return tagName_;
@@ -562,6 +563,7 @@ public:
 
   EPreferredType prefferedType() const;
 
+  /** \brief Gets the string representation of a given preffered type enum. */
   static const std::string& getPrefferedTypeString(EPreferredType enumValue){
 	switch(enumValue){
 		case PREFER_INT:
@@ -581,6 +583,7 @@ public:
 	return emptyString;
   }
 
+  /** \brief Gets the preffered type enum associated with a give string. */
   static EPreferredType getPrefferedTypeStringEnum(const std::string& enumString){
 	if(enumString == getIntEnumString()){
 		return PREFER_INT;
@@ -641,21 +644,6 @@ private:
   EPreferredType preferredType_;
   std::string acceptedTypesString_;
 
-  static const std::string& getIntEnumString(){
-  	static const std::string intEnumString_ = TypeNameTraits<int>::name();
-	return intEnumString_;
-  }
-
-  static const std::string& getDoubleEnumString(){
-  	static const std::string doubleEnumString_ = TypeNameTraits<double>::name();
-	return doubleEnumString_;
-  }
-
-  static const std::string& getStringEnumString(){
-  	static const std::string stringEnumString_ = TypeNameTraits<std::string>::name();
-	return stringEnumString_;
-  }
-
 //use pragmas to disable some false-positive warnings for windows sharedlibs export
 #ifdef _MSC_VER
 #pragma warning(push)
@@ -668,6 +656,25 @@ private:
 
   // ////////////////////////////
   // Private member functions
+
+  /* \brief Gets the string representing the "int" preffered type enum */
+  static const std::string& getIntEnumString(){
+  	static const std::string intEnumString_ = TypeNameTraits<int>::name();
+	return intEnumString_;
+  }
+
+  /* \brief Gets the string representing the "double" preffered type enum */
+  static const std::string& getDoubleEnumString(){
+  	static const std::string doubleEnumString_ = TypeNameTraits<double>::name();
+	return doubleEnumString_;
+  }
+
+  /* \brief Gets the string representing the "string" preffered type enum */
+  static const std::string& getStringEnumString(){
+  	static const std::string stringEnumString_ = TypeNameTraits<std::string>::name();
+	return stringEnumString_;
+  }
+
 
   void finishInitialization();
 
@@ -794,17 +801,40 @@ TEUCHOS_LIB_DLL_EXPORT std::string getNumericStringParameter(
   std::string const& paramName
   );
 
+/* This is the default structure used by EnhancedNumberTraits<T> to produce a compile time
+ * error when the specialization does not exist for tyep <tt>T</tt>.
+ */
 template <class T>
 struct UndefinedEnhancedNumberTraits{
+  //! This function should not compile if there is an attempt to instantiate!
 	static inline T notDefined() { return T::this_type_is_missing_a_specialization(); }
 };
 
+/*! \class Teuchos::EnhancedNumberTraits
+ * \brief Class defining the traits of the number type being used in an EnhancedNumberValidator
+ *
+ * This class defines some of the traits of a number type being used by an EnhancedNumberValidator.
+ * The number has the following traits:
+ *   \li \c min Defines the minimum possible value the number type can take on.
+ *   \li \c max Defines the maximum possible value the number type can take on.
+ *   \li \c defaultStep Defines the default amount a value of the number type should be incremented by when being incremented in a UI.
+ *   \li \c defaultPrecision Defines the default number of decimals with which the number type should be displayed in a UI. This trait is useless for non-floating point number types.
+ *
+ * Note that simply using this class will result in compile time errors. Only specializations of this class will produce valid code.
+ */
 template <class T>
 class EnhancedNumberTraits{
 public:
+	/* \brief Gets the minimum possible value the number type can take on. */
 	static inline T min() { return UndefinedEnhancedNumberTraits<T>::notDefined(); }
+
+	/* \brief Gets the maximum possible value the number type can take on. */
 	static inline T max() { return UndefinedEnhancedNumberTraits<T>::notDefined(); }
+
+	/* \brief gets default amount a value of the number type should be incremented by when being utilizied in a UI. */
 	static inline T defaultStep() { return UndefinedEnhancedNumberTraits<T>::notDefined(); }
+
+	/* \brief Gets the default precision with which the number type should be displayed. */
 	static inline unsigned short defaultPrecision() { return UndefinedEnhancedNumberTraits<T>::notDefined(); }
 };
 
@@ -901,7 +931,7 @@ public:
 };
  
 /**
- * A Template base class for NumberValidators.
+ * \class Teuchos::EnhancedNumberValidator<T> A Class uesd to validate a particular type of number.
  */
 template <class T>
 class EnhancedNumberValidator : public ParameterEntryValidator{
@@ -911,9 +941,9 @@ public:
 	 *
 	 * @param min The minimum acceptable value for this validator.
 	 * @param max The maximum acceptable value for this validator.
-	 * @param step The increments at which the values being validated should be changed.
+	 * @param step The increments at which the values being validated should be changed when incremented in a UI.
 	 * @param precision The number of decimials places to which the values validated shold be compared to the
-	 * min and max. This parameter is pretty much meamingless for non-floating point types.
+	 * min and max and the number of decimals which are displayed in a UI. This parameter is pretty much meamingless for non-floating point types.
 	 */
 	EnhancedNumberValidator(T min, T max, T step=EnhancedNumberTraits<T>::defaultStep(), unsigned short precision=EnhancedNumberTraits<T>::defaultPrecision()):ParameterEntryValidator(),
 	minVal(min), maxVal(max), step_(step), precision_(precision), containsMin(true), containsMax(true){}
@@ -921,9 +951,9 @@ public:
 	/**
 	 * Constructs a EnhancedNumberValidator without an explicit minimum or maximum.
 	 *
-	 * @param step The increments at which the values being validated should be changed.
+	 * @param step The increments at which the values being validated should be changed when incremented in a UI.
 	 * @param precision The number of decimials places to which the values validated shold be compared to the
-	 * min and max. This parameter is pretty much meamingless for non-floating point types.
+	 * min and max and the number of decimals which are displayed in a UI. This parameter is pretty much meamingless for non-floating point types.
 	 */
 	EnhancedNumberValidator():
 		ParameterEntryValidator(),
@@ -1033,16 +1063,8 @@ public:
 	void validate(ParameterEntry const &entry, std::string const &paramName, std::string const &sublistName) const{
 		any anyValue = entry.getAny(true);
 		if(anyValue.type() == typeid(T) ){
-			bool isValueInRange = false;
-			if(precision_ != 0){
-				T precisionPadding = pow((T)10,(-((T)precision_)));
-				any_cast<T>(anyValue) >= minVal-((T)precisionPadding) && any_cast<T>(anyValue) <= maxVal+((T)precisionPadding) ?
-				isValueInRange = true : isValueInRange=false;
-			}
-			else{
-				any_cast<T>(anyValue) >= minVal && any_cast<T>(anyValue) <= maxVal ?
-				isValueInRange = true : isValueInRange=false;
-			}
+			bool isValueInRange; 
+			any_cast<T>(anyValue) >= minVal && any_cast<T>(anyValue) <= maxVal ? isValueInRange = true : isValueInRange=false;
 			if(!(isValueInRange)){
 				std::stringstream oss;
 				std::string msg;
@@ -1077,7 +1099,6 @@ public:
 		}
 	}
 
-	/** \brief . */
 	const std::string getXMLTagName() const{
 		return TypeNameTraits<T>::name() + "enhancednumbervalidator";
 	}
@@ -1108,10 +1129,8 @@ private:
 	T step_;
 
 	/**
-	 * The amount of decimal to which the value to be validated will be compared to the
-	 * maximum and minimum. A precision of 0 means the the value to be validated
-	 * must fall exactly within the mininmum and maximum. Notd this value is pretty much
-	 * meaningingless for non-floating point value types.
+	 * The number of decimal places with which the nubmer will be displayed in a UI. This value
+	 * is meaningless for non-floating point number types.
 	 */
 	unsigned short precision_;
 
@@ -1133,7 +1152,9 @@ private:
  */
 class FileNameValidator : public ParameterEntryValidator{
 public:
+	/* \brief The default value of the mustAlreadyExist parameter in the constructor. */
 	static const bool mustAlreadyExistDefault=false;
+
 	/**
 	 * Constructs a FileNameValidator.
 	 *
@@ -1209,12 +1230,6 @@ public:
 
 	void printDoc(std::string const &docString, std::ostream &out) const;
 
-	//virtual XMLObject getXML() const;
-
-  /*static const std::string& getTagName(){
-	static const std::string tagName = "stringvalidator";
-	return tagName;
-  }*/
 private:
 	/**
 	 * An array containing a list of all the valid string values.
@@ -1223,7 +1238,11 @@ private:
 };
 
 /**
- * An Abstract base class for all ArrayValidators
+ * \class Teuchos::ArrayValidator 
+ * \brief Takes a validator, wraps it, and applies it to an array.
+ *
+ * This class is a wrapper, allowing you to apply a normal validator to an array of values.
+ * It is templated on both the validator type and the type of the entries contained within the array.
  */
 template<class ValidatorType, class EntryType>
 class ArrayValidator : public ParameterEntryValidator{
@@ -1300,18 +1319,38 @@ private:
 	RCP<ValidatorType> prototypeValidator_;
 };
 
+/* \class Teuchos::ArrayStringValidator 
+ * \brief Convience class for StringValidators that are to be applied to arays.
+ *
+ * Also needed for maintaining backwards compatiblitiy with the earliest versions of the Optika package.
+ * This class would be a simple typedef, however I wanted to maintain consistency with the ArrayNumberValidator
+ * class which cannot be typedef'd.
+ */
 class ArrayStringValidator : public ArrayValidator<StringValidator, std::string>{
 public:
 	ArrayStringValidator(RCP<StringValidator> prototypeValidator):
 		ArrayValidator<StringValidator, std::string>(prototypeValidator){}
 };
 
+/* \class Teuchos::ArrayFileNameValidator
+ * \brief Convience class for FileNameValidators that are to be applied to arays.
+ *
+ * Also needed for maintaining backwards compatiblitiy with the earliest versions of the Optika package.
+ * This class would be a simple typedef, however I wanted to maintain consistency with the ArrayNumberValidator
+ * class which cannot be typedef'd.
+ */
 class ArrayFileNameValidator : public ArrayValidator<FileNameValidator, std::string>{
 public:
 	ArrayFileNameValidator(RCP<FileNameValidator> prototypeValidator):
 		ArrayValidator<FileNameValidator, std::string>(prototypeValidator){}
 };
 
+/* \class Teuchos::ArrayNumberValidator 
+ * \brief Convience class for EnhancedNumberValidators that are to be applied to arays.
+ *
+ * Also needed for maintaining backwards compatiblitiy with the earliest versions of the Optika package.
+ * This class would be a simple typedef, however the current c++ compilers do not support templated typedefs
+ */
 template<class T>
 class ArrayNumberValidator : public ArrayValidator<EnhancedNumberValidator<T>, T>{
 public:
@@ -1574,37 +1613,6 @@ void StringToIntegralParameterEntryValidator<IntegralType>::validate(
 {
   this->getIntegralValue(entry,paramName,sublistName,false);
 }
-
-/*template<class IntegralType>
-XMLObject StringToIntegralParameterEntryValidator<IntegralType>::getXML() const
-{
-	XMLObject valiTag(getTagName());
-	XMLObject stringsTag("strings");
-	XMLObject stringsDocsTag("stringdocs");
-	XMLObject integralValuesTag("integralvalues");
-	for(typename map_t::const_iterator it = map_.begin(); it != map_.end(); ++it){
-		XMLObject stringTag("string");
-		stringsTag.addAttribute("value", it->first);
-		stringsTag.addChild(stringTag);
-		XMLObject integralValueTag("integralvalue");
-		integralValueTag.addAttribute("value",toString(it->second));
-		integralValuesTag.addChild(integralValueTag);
-	}
-	if(!validStringValuesDocs_.is_null()){
-		for(Array<std::string>::const_iterator it = validStringValuesDocs_->begin(); it != validStringValuesDocs_->end(); ++it){
-			XMLObject stringDocTag("stringdoc");
-			stringDocTag.addAttribute("value", *it);
-		}
-	}
-	XMLObject defaultParameterNameTag("defaultparametername");
-	defaultParameterNameTag.addAttribute("value", defaultParameterName_);
-
-	valiTag.addChild(stringsTag);
-	valiTag.addChild(stringsDocsTag);
-	valiTag.addChild(integralValuesTag);
-	valiTag.addChild(defaultParameterNameTag);
-	return valiTag;
-}*/
 
 
 // private

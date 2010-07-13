@@ -60,8 +60,10 @@ namespace Teuchos
 
 	  private:
 
+      /** Write the given XML object to a parameter list along with the validators located in the given map*/
 	  ParameterList convertParameterList(const XMLObject& xml, const ReaderValidatorIDMap& validators) const;
 
+	  /** Write the given XML object to appropriate validators. */
 	  void convertValidators(const XMLObject& xml, ReaderValidatorIDMap& validators) const;
 
 		};

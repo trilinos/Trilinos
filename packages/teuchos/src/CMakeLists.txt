@@ -94,8 +94,6 @@ APPEND_SET(HEADERS
   Teuchos_OrdinalTraits.hpp
   Teuchos_ParameterEntry.hpp
   Teuchos_ParameterEntryValidator.hpp
-  Teuchos_ParameterEntryXMLConverter.hpp
-  Teuchos_ParameterEntryXMLConverterDB.hpp
   Teuchos_ParameterList.hpp
   Teuchos_ParameterListAcceptor.hpp
   Teuchos_ParameterListAcceptorDefaultBase.hpp
@@ -191,7 +189,6 @@ APPEND_SET(SOURCES
   Teuchos_MPISession.cpp
   Teuchos_Object.cpp
   Teuchos_ParameterEntry.cpp
-  Teuchos_ParameterEntryXMLConverter.cpp
   Teuchos_ParameterList.cpp
   Teuchos_ParameterListAcceptorHelpers.cpp
   Teuchos_ParameterListAcceptor.cpp
@@ -239,8 +236,9 @@ IF(${PACKAGE_NAME}_ENABLE_EXTENDED)
     Teuchos_HashUtils.hpp
     Teuchos_Libxml2HandlerAdapter.hpp
     Teuchos_ParameterXMLFileReader.hpp
+    Teuchos_ParameterEntryXMLConverter.hpp
+    Teuchos_ParameterEntryXMLConverterDB.hpp
     Teuchos_StandardParameterEntryXMLConverters.hpp
-    Teuchos_StandardValidatorXMLConverters.hpp
     Teuchos_StandardValidatorXMLConverters.hpp
     Teuchos_StringInputSource.hpp
     Teuchos_StringInputStream.hpp
@@ -265,6 +263,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXTENDED)
     Teuchos_HashUtils.cpp
     Teuchos_Libxml2HandlerAdapter.cpp
     Teuchos_ParameterXMLFileReader.cpp
+	Teuchos_ParameterEntryXMLConverter.cpp
     Teuchos_StandardParameterEntryXMLConverters.cpp
 	Teuchos_StandardValidatorXMLConverters.cpp
     Teuchos_StrUtils.cpp

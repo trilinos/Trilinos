@@ -36,8 +36,9 @@
 
 namespace Teuchos {
 
-//class ParameterEntryValidator;
-
+/* \Class Teuchos::StringToIntegralValidatorXMLConverter
+ * \brief Converts StringToIntegralParameterEntryValidators to and from XML.
+ */
 template<class IntegralType>
 class StringToIntegralValidatorXMLConverter : public ValidatorXMLConverter{
 public:
@@ -111,6 +112,9 @@ private:
 	}
 };
 
+/* \class Teuchos::AnyNumberValidatorXMLConverter
+ * \brief Converts AnyNumberParameterEntryValidators to and from XML.
+ */
 class AnyNumberValidatorXMLConverter : public ValidatorXMLConverter{
 public:
 	RCP<ParameterEntryValidator> fromXMLtoValidator(const XMLObject& xmlObj) const;
@@ -138,6 +142,9 @@ private:
 	}
 };
 
+/* \class Teuchos::EnhancedNumberValidatorXMLConverter
+ * \brief Converts EnhancedNumberValidators to and from XML.
+ */
 template<class T>
 class EnhancedNumberValidatorXMLConverter : public ValidatorXMLConverter{
 public:
@@ -195,6 +202,9 @@ private:
 	}
 };
 
+/* \class Teuchos::FileNameValidatorXMLConverter
+ * \brief Converts FileNameValidators to and from XML.
+ */
 class FileNameValidatorXMLConverter : public ValidatorXMLConverter{
 public:
 	RCP<ParameterEntryValidator> fromXMLtoValidator(const XMLObject& xmlObj) const;
@@ -207,6 +217,9 @@ private:
 	}
 };
 
+/* \class Teuchos::StringValidatorXMLConverter
+ * \brief Converts StringValidators to and from XML.
+ */
 class StringValidatorXMLConverter : public ValidatorXMLConverter{
 public:
 	RCP<ParameterEntryValidator> fromXMLtoValidator(const XMLObject& xmlObj) const;
@@ -223,6 +236,9 @@ private:
 	}
 };
 
+/* \class Teuchos::ArrayValidatorXMLConverter
+ * \brief Converts ArrayValidators to and from XML.
+ */
 template<class ValidatorType, class EntryType>
 class ArrayValidatorXMLConverter : public ValidatorXMLConverter{
 public:
@@ -244,6 +260,9 @@ public:
 	}
 };
 
+/* \class Teuchos::UnknownValidatorXMLConverter
+ * \brief A ValidatorXMLConverter used when no other suitable converter can be found.
+ */
 class UnknownValidatorXMLConverter : public ValidatorXMLConverter{
 public:
 	RCP<ParameterEntryValidator> fromXMLtoValidator(const XMLObject& xmlObj) const;

@@ -37,17 +37,55 @@
 
 namespace Teuchos {
 
+/* \class Teuchos::ParameterEntryXMLConverter
+ * \brief A class used to convert parameter entries to xml and vice versa.
+ *
+ */
 class ParameterEntryXMLConverter{
 public:
+	/* \brief Converts the given xml into a parameter entry. 
+	 *
+	 * @param xmlObj The xml to be converted to a parameter entry.
+	 * @return A ParameterEntry with the aspects specified by the xml.
+	 */
 	ParameterEntry fromXMLtoParameterEntry(const XMLObject &xmlObj) const;
+
+	/* \brief Converts the given parameter entry to xml.
+	 *
+	 * @param entry The parameter entry to convert to xml.
+	 * @param name The name associated with the parameter entry.
+	 * @return An XMLObject representing the parameter entry.
+	 */
 	XMLObject fromParameterEntrytoXML(const ParameterEntry &entry, const std::string &name) const;
+
+	/* \brief Gets a string representing the value that should be assigned to the "type" attribute when converting
+	 * a parameter entry to xml.
+	 *
+	 * @return The value to be assigned to the "type" attribute when converting a parameter entry to xml.
+	 */
 	virtual const std::string getTypeAttributeValue() const=0;
+
+	/* \brief Gets the value to be assigned to the "value" attribute when converting the paramter entry to xml.
+	 *
+	 * @param entry The entry being converted.
+	 * @areturn The value to be assigned to the "value" attribute when converting the parameter entry to xml.
+	 */
 	virtual const std::string getValueAttributeValue(const ParameterEntry &entry) const=0;
+
+	/* \brief sets the value  */
 	virtual void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const=0;
+
+	/* \brief determines wether or not this converter is appropriate for the given parameter entry.*/
 	virtual bool isAppropriateConverter(const ParameterEntry& entry) const=0;
+
 	static const std::string& getTypeAttributeName(){
 		static const std::string typeAttributeName_ = "type";
 		return typeAttributeName_;
+	}
+
+	static const std::string& getValueAttributeName(){
+		static const std::string valueAttributeName_ = "value";
+		return valueAttributeName_;
 	}
 
 private:
@@ -64,11 +102,6 @@ private:
 	static const std::string& getNameAttributeName(){
 		static const std::string nameAttributeName_ = "name";
 		return nameAttributeName_;
-	}
-
-	static const std::string& getValueAttributeName(){
-		static const std::string valueAttributeName_ = "value";
-		return valueAttributeName_;
 	}
 };
 

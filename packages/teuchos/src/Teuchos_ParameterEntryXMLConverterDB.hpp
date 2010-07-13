@@ -31,17 +31,44 @@
 #define TEUCHOS_PARAMETERENTRYXMLCONVERTERDB_HPP
 #include "Teuchos_StandardParameterEntryXMLConverters.hpp"
 
-/*! \file Teuchos_ParameterEntryXMLCoverter.hpp
+/*! \file Teuchos_ParameterEntryXMLCoverterDB.hpp
 */
 
 namespace Teuchos {
 
+#define ADD_TYPE_CONVERTER(T,PREFIXNAME) \
+	\
+	RCP<StandardTemplatedParameterConverter< T > > PREFIXNAME##Converter = rcp(new StandardTemplatedParameterConverter< T >); \
+	masterMap.insert(ConverterPair(PREFIXNAME##Converter->getTypeAttributeValue(), PREFIXNAME##Converter)); 
+
+#define ADD_ARRAYTYPE_CONVERTER(T,PREFIXNAME) \
+	RCP<ArrayTemplatedParameterConverter< T > > PREFIXNAME##ArrayConverter = rcp(new ArrayTemplatedParameterConverter< T >); \
+	masterMap.insert(ConverterPair(PREFIXNAME##ArrayConverter->getTypeAttributeValue(), PREFIXNAME##ArrayConverter)); 
+
+#define ADD_TYPE_AND_ARRAYTYPE_CONVERTER(T , PREFIXNAME) \
+	\
+	ADD_TYPE_CONVERTER(T, PREFIXNAME); \
+	ADD_ARRAYTYPE_CONVERTER(T,PREFIXNAME);
+
+/* \class Teuchos::ParameterEntryXMLConverterDB
+ *
+ * \brief Provides ability to lookup ParameterEntryXMLConverters
+ */
 class ParameterEntryXMLConverterDB{
 public:
+
+	/* \brief Add a converter to the database.
+	 *
+	 * @param convertToAdd The converter to add to the database.
+	 */
 	static void addConverter(RCP<ParameterEntryXMLConverter> converterToAdd){
 		getConverterMap().insert(ConverterPair(converterToAdd->getTypeAttributeValue(), converterToAdd));
 	}
 
+	/* \brief Get an appropriate ParameterEntryXMLConverter given a ParameterEntry.
+	 *
+	 * @param entry The ParameterEntry for which a converter is desired.
+	 */
 	static RCP<const ParameterEntryXMLConverter> getConverter(const ParameterEntry& entry){
 		ConverterMap::const_iterator it = getConverterMap().find(entry.getAny().typeName());
 		if(it != getConverterMap().end()){
@@ -50,6 +77,10 @@ public:
 		return getDefaultConverter();
 	}
 
+	/* \brief Get an appropriate ParameterEntryXMLConverter given a XMLObject.
+	 *
+	 * @param xmlObject The XMLObject for which a converter is desired.
+	 */
 	static RCP<const ParameterEntryXMLConverter> getConverter(const XMLObject& xmlObject){ 
 		std::string parameterType = xmlObject.getRequired(ParameterEntryXMLConverter::getTypeAttributeName());
 		ConverterMap::const_iterator it = getConverterMap().find(parameterType);
@@ -60,9 +91,12 @@ public:
 	}
 
 private:
+	/* \brief convience typedef */
 	typedef std::map<std::string, RCP<ParameterEntryXMLConverter> > ConverterMap;
+	/* \brief convience typedef */
 	typedef std::pair<std::string, RCP<ParameterEntryXMLConverter> > ConverterPair;
 
+	/* \brief Gets the default converter to be used to convert ParameterEntries. */
 	static RCP<ParameterEntryXMLConverter> getDefaultConverter(){
 		static RCP<ParameterEntryXMLConverter> defaultConverter;
 		if(defaultConverter.is_null()){
@@ -71,33 +105,29 @@ private:
 		return defaultConverter;
 	}
 
+	/* \brief Gets the map containing all the converters. */
 	static ConverterMap& getConverterMap(){
 		static ConverterMap masterMap;
 		if(masterMap.size() == 0){
-			RCP<IntParameterEntryConverter> intConverter = rcp(new IntParameterEntryConverter());
-			masterMap.insert(ConverterPair(intConverter->getTypeAttributeValue(), intConverter));
-			RCP<ShortParameterEntryConverter> shortConverter = rcp(new ShortParameterEntryConverter());
-			masterMap.insert(ConverterPair(shortConverter->getTypeAttributeValue(), shortConverter));
-			RCP<DoubleParameterEntryConverter> doubleConverter = rcp(new DoubleParameterEntryConverter());
-			masterMap.insert(ConverterPair(doubleConverter->getTypeAttributeValue(), doubleConverter));
-			RCP<FloatParameterEntryConverter> floatConverter = rcp(new FloatParameterEntryConverter());
-			masterMap.insert(ConverterPair(floatConverter->getTypeAttributeValue(), floatConverter));
-			RCP<StringParameterEntryConverter> stringConverter = rcp(new StringParameterEntryConverter());
-			masterMap.insert(ConverterPair(stringConverter->getTypeAttributeValue(), stringConverter));
-			RCP<CharParameterEntryConverter> charConverter = rcp(new CharParameterEntryConverter());
-			masterMap.insert(ConverterPair(charConverter->getTypeAttributeValue(), charConverter));
-			RCP<BoolParameterEntryConverter> boolConverter = rcp(new BoolParameterEntryConverter());
-			masterMap.insert(ConverterPair(boolConverter->getTypeAttributeValue(), boolConverter));
-			RCP<ArrayIntParameterEntryConverter> arrayintConverter = rcp(new ArrayIntParameterEntryConverter());
-			masterMap.insert(ConverterPair(arrayintConverter->getTypeAttributeValue(), arrayintConverter));
-			RCP<ArrayShortParameterEntryConverter> arrayshortConverter = rcp(new ArrayShortParameterEntryConverter());
-			masterMap.insert(ConverterPair(arrayshortConverter->getTypeAttributeValue(), arrayshortConverter));
-			RCP<ArrayDoubleParameterEntryConverter> arraydoubleConverter = rcp(new ArrayDoubleParameterEntryConverter());
-			masterMap.insert(ConverterPair(arraydoubleConverter->getTypeAttributeValue(), arraydoubleConverter));
-			RCP<ArrayFloatParameterEntryConverter> arrayfloatConverter = rcp(new ArrayFloatParameterEntryConverter());
-			masterMap.insert(ConverterPair(arrayfloatConverter->getTypeAttributeValue(), arrayfloatConverter));
-			RCP<ArrayStringParameterEntryConverter> arraystringConverter = rcp(new ArrayStringParameterEntryConverter());
-			masterMap.insert(ConverterPair(arraystringConverter->getTypeAttributeValue(), arraystringConverter));
+
+			ADD_TYPE_AND_ARRAYTYPE_CONVERTER(int, int);
+			ADD_TYPE_AND_ARRAYTYPE_CONVERTER(unsigned int, unsignedInt);
+			ADD_TYPE_AND_ARRAYTYPE_CONVERTER(short int, short);
+			ADD_TYPE_AND_ARRAYTYPE_CONVERTER(unsigned short int, unsignedShortInt);
+			ADD_TYPE_AND_ARRAYTYPE_CONVERTER(long int, long);
+			ADD_TYPE_AND_ARRAYTYPE_CONVERTER(unsigned long int, unsignedLongInt);
+			#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+			ADD_TYPE_AND_ARRAYTYPE_CONVERTER(long long int, longlong);
+			ADD_TYPE_AND_ARRAYTYPE_CONVERTER(unsigned long long int, unsignedShortInt);
+			#endif //HAVE_TEUCHOS_LONG_LONG_INT
+			ADD_TYPE_AND_ARRAYTYPE_CONVERTER(double, double);
+			ADD_TYPE_AND_ARRAYTYPE_CONVERTER(float, float);
+
+			ADD_TYPE_AND_ARRAYTYPE_CONVERTER(string, string);
+
+			ADD_TYPE_CONVERTER(char, char);
+			ADD_TYPE_CONVERTER(bool, bool);
+
 		}
 		return masterMap;
 	}

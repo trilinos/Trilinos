@@ -31,14 +31,15 @@
 namespace Teuchos{
 
 ParameterEntry ParameterEntryXMLConverter::fromXMLtoParameterEntry(const XMLObject &xmlObj) const{
-	TEST_FOR_EXCEPTION(xmlObj.getRequired(getTypeAttributeName()) != getTypeAttributeValue(), 
+/*	TEST_FOR_EXCEPTION(xmlObj.getRequired(getTypeAttributeName()) != getTypeAttributeValue(), 
 		std::runtime_error, 
 		"This converter is not approriate for converting a ParameterEntry tag with a type of " 
 		<< xmlObj.getRequired(getTypeAttributeName()) << " to a ParameterEntry with type " 
-		<< getTypeAttributeValue());
+		<< getTypeAttributeValue());*/
 	ParameterEntry toReturn;
 	bool isDefault = false;
 	bool isUsed = false;
+
 
 	if(xmlObj.hasAttribute(getDefaultAttributeName())){
 		isDefault = xmlObj.getRequiredBool(getDefaultAttributeName());
@@ -58,7 +59,7 @@ ParameterEntry ParameterEntryXMLConverter::fromXMLtoParameterEntry(const XMLObje
 }
 
 XMLObject ParameterEntryXMLConverter::fromParameterEntrytoXML(const ParameterEntry &entry, const std::string &name) const{
-	TEST_FOR_EXCEPTION(!isAppropriateConverter(entry), std::runtime_error, "This converter is not approriate for converting the ParameterEntry " << name << " to the xml tag with a type attribute of " << getTypeAttributeValue());
+	//TEST_FOR_EXCEPTION(!isAppropriateConverter(entry), std::runtime_error, "This converter is not approriate for converting the ParameterEntry " << name << " to the xml tag with a type attribute of " << getTypeAttributeValue());
 	XMLObject toReturn(ParameterEntry::getTagName());
 	toReturn.addAttribute(getNameAttributeName(), name);
 	toReturn.addAttribute(getTypeAttributeName(), getTypeAttributeValue());
@@ -67,6 +68,8 @@ XMLObject ParameterEntryXMLConverter::fromParameterEntrytoXML(const ParameterEnt
 	toReturn.addBool(getUsedAttributeName(), entry.isUsed());
 	return toReturn;
 }
+
+
 
 }
 
