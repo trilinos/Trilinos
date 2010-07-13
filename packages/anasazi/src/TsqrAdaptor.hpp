@@ -39,13 +39,15 @@ namespace TSQR {
     /// \note This is the interface to TSQR that Trilinos sees.
     ///   Implementers who want to add a new MultiVector (MV) type
     ///   must create three different (partial) instantiations (in
-    ///   this order): a TsqrTypeAdaptor, a TsqrFactory, and a
-    ///   TsqrAdaptor.  Implementers who wish to change which TSQR
-    ///   implementation is used for a particular MultiVector type
-    ///   (for which a (partial) TsqrAdaptor instantiation exists)
-    ///   should change the corresponding (partial) instantiation of
-    ///   TsqrTypeAdaptor (which maps the MultiVector type to the TSQR
-    ///   implementation type).
+    ///   this order): a TsqrTypeAdaptor (with appropriate typedefs),
+    ///   a TsqrFactory (which knows how to construct TSQR-related
+    ///   objects), and a TsqrAdaptor (which wraps TSQR operations).
+    ///   Implementers who wish to change which TSQR implementation is
+    ///   used for a particular MultiVector type (for which a
+    ///   (partial) TsqrAdaptor instantiation exists) should change
+    ///   the corresponding (partial) instantiation of TsqrTypeAdaptor
+    ///   (which maps the MultiVector type to the TSQR implementation
+    ///   type).
     template< class S, class LO, class GO, class MV >
     class TsqrAdaptor {
     public:
@@ -54,47 +56,35 @@ namespace TSQR {
       typedef GO  global_ordinal_type;
       typedef MV  multivector_type;
 
-      typedef TsqrTypeAdaptor< S, LO, GO, MV >::node_tsqr_type node_tsqr_type;
-      typedef TsqrTypeAdaptor< S, LO, GO, MV >::tsqr_type      type_type;
+      typedef typename TsqrTypeAdaptor< S, LO, GO, MV >::node_tsqr_type node_tsqr_type;
+      typedef typename TsqrTypeAdaptor< S, LO, GO, MV >::tsqr_type      tsqr_type;
 
-      typedef Teuchos::RCP< node_tsqr_type >             node_tsqr_ptr;
-      typedef Teuchos::RCP< tsqr_type >                  tsqr_ptr;
-      typedef Teuchos::RCP< TrilinosMessenger< S > >     messenger_ptr;
-      typedef typename tsqr_type::FactorOutput           factor_output_type;
-      typedef Teuchos::SerialDenseMatrix< LO, S >        dense_matrix_type;
+      typedef Teuchos::RCP< node_tsqr_type >           node_tsqr_ptr;
+      typedef Teuchos::RCP< tsqr_type >                tsqr_ptr;
+      typedef Teuchos::RCP< const Teuchos::Comm<int> > comm_ptr;
+      typedef Teuchos::RCP< MessengerBase< S > >       messenger_ptr;
+      typedef typename tsqr_type::FactorOutput         factor_output_type;
+      typedef Teuchos::SerialDenseMatrix< LO, S >      dense_matrix_type;
 
       /// \brief Constructor
       ///
       /// TsqrAdaptor constructor.  The reference-counted pointer
       /// inputs should be to already constructed objects.
-      /// pComm.get() and *pNodeTsqr should have been used to
-      /// initialize *pTsqr.  (We do this because different TSQR
-      /// intranode and internode types have different constructors.)
       ///
-      /// \note The caller is responsible for ensuring that the types
-      /// of node_tsqr_type and tsqr_type are correct for the given
-      /// multivector_type.  TsqrTypeAdaptor may be useful for that
-      /// purpose.
+      /// \param comm [in] Teuchos communicator object, representing
+      ///   the underlying internode communication protocol
       ///
-      /// \param pComm [in] Shared pointer to a wrapper around
-      ///   Teuchos::Comm.  We need to keep it in this class because
-      ///   the already constructed Tsqr object pTsqr keeps a raw
-      ///   pointer to it internally; we don't want the smart pointer
-      ///   to fall out of scope.
-      ///
-      /// \param pNodeTsqr [in] Shared pointer to the already
-      ///   constructed node TSQR object.  It was used to construct
-      ///   *pTsqr, but we keep it here because pTsqr used a raw
-      ///   pointer to node_tsqr_type; it doesn't have a
-      ///   reference-counted pointer.
-      ///
-      /// \param pTsqr [in] Shared pointer to the already constructed
-      ///   object that performs the QR factorization.  pComm.get()
-      ///   and *pNodeTsqr should have been used to construct it.
-      TsqrAdaptor (const Teuchos::ParameterList& plist)
+      /// \param plist [in] List of parameters, which may affect
+      ///   performance of TSQR.  The specific parameter keys that are
+      ///   read depend on the TSQR implementation.
+      TsqrAdaptor (const comm_ptr& comm,
+		   const Teuchos::ParameterList& plist)
       {
+	// This typedef is an implementation detail.
 	typedef TsqrFactory< LO, S, node_tsqr_type, tsqr_type > factory_type;
-	factory_type::makeTsqr (plist, pComm_, pNodeTsqr_, pTsqr_);
+	// plist and comm are inputs.
+	// Construct *pMessenger_, *pNodeTsqr_, and *pTsqr_.
+	factory_type::makeTsqr (plist, comm, pMessenger_, pNodeTsqr_, pTsqr_);
       }
 
       /// \brief Compute QR factorization of the multivector A
@@ -215,21 +205,22 @@ namespace TSQR {
 		     local_ordinal_type& ncols, 
 		     local_ordinal_type& LDA);
 
-      /// Shared pointer to a wrapper around Teuchos::Comm.  We need
-      /// to keep it in this class because *pTsqr keeps a raw pointer
-      /// to it internally; we don't want *pComm_ to fall out of
-      /// scope.
-      messenger_ptr pComm_;
+      /// Shared pointer to a wrapper around Teuchos::Comm<int>.  We
+      /// need to keep it in this class because *pTsqr keeps a raw
+      /// pointer to it internally; we don't want the object to fall
+      /// out of scope.
+      messenger_ptr pMessenger_;
 
-      /// Shared pointer to the "Node TSQR" (node_tsqr_type) object.
-      /// It was used to construct *pTsqr, but we keep it here because
-      /// pTsqr used a raw pointer to node_tsqr_type.  This ensures
-      /// that *pNodeTsqr_ stays in scope until we are done with pTsqr_.
+      /// Shared pointer to the "(intra)node TSQR" (node_tsqr_type)
+      /// object.  It was used to construct *pTsqr_, but we keep it
+      /// here because *pTsqr_ used a raw pointer to node_tsqr_type.
+      /// This ensures that *pNodeTsqr_ stays in scope until we are
+      /// done with *pTsqr_.
       node_tsqr_ptr pNodeTsqr_;
 
       /// Shared pointer to the Tsqr object that performs the QR
-      /// factorization.  pComm_.get() and *pNodeTsqr_ should have been
-      /// used to construct it.
+      /// factorization.  pMessenger_.get() and *pNodeTsqr_ should
+      /// have been used to construct it.
       tsqr_ptr pTsqr_;
     };
 
@@ -241,8 +232,7 @@ namespace TSQR {
 #endif // HAVE_ANASAZI_EPETRA
 
 #ifdef HAVE_ANASAZI_TPETRA
-#  include "TsqrAdaptor_Tpetra_MultiVector_SerialNode.hpp"
-#  include "TsqrAdaptor_Tpetra_MultiVector_TBBNode.hpp"
+#  include "TsqrAdaptor_Tpetra_MultiVector.hpp"
 #endif // HAVE_ANASAZI_TPETRA
 
 #endif // __TSQR_Trilinos_TsqrAdaptor_hpp

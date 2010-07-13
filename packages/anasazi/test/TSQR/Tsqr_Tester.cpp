@@ -40,6 +40,8 @@
 #include "Tsqr_Random_NormalGenerator.hpp"
 #include "TsqrTrilinosMessenger.hpp"
 
+#include "TsqrAdaptor.hpp"
+
 #include <sstream>
 #include <stdexcept>
 

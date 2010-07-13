@@ -1,7 +1,7 @@
 #ifndef __TSQR_Trilinos_TsqrAdaptor_Tpetra_MultiVector_SerialNode_hpp
 #define __TSQR_Trilinos_TsqrAdaptor_Tpetra_MultiVector_SerialNode_hpp
 
-/// \file TsqrAdaptor_Tpetra_MultiVector_SerialNode.hpp
+/// \file TsqrAdaptor_Tpetra_MultiVector.hpp
 ///
 /// \warning Users should _not_ include this file directly.  Include
 ///   "TsqrAdaptor.hpp" instead.  If HAVE_ANASAZI_TPETRA is defined,
@@ -10,6 +10,10 @@
 ///   include "TsqrAdaptor.hpp" first.
 
 #include "TsqrTypeAdaptor_Tpetra_MultiVector_SerialNode.hpp"
+#ifdef HAVE_KOKKOS_TBB
+#  include "TsqrTypeAdaptor_Tpetra_MultiVector_TBBNode.hpp"
+#endif // HAVE_KOKKOS_TBB
+
 #include <stdexcept>
 #include <sstream>
 
@@ -19,11 +23,11 @@
 namespace TSQR {
   namespace Trilinos {
 
-    template< class S, class LO, class GO >
-    class TsqrAdaptor< S, LO, GO, Tpetra::MultiVector< S, LO, GO, Kokkos::SerialNode > >
+    template< class S, class LO, class GO, class NodeType >
+    class TsqrAdaptor< S, LO, GO, Tpetra::MultiVector< S, LO, GO, NodeType > >
     {
     public:
-      typedef Tpetra::MultiVector< S, LO, GO, Kokkos::SerialNode > MV;
+      typedef Tpetra::MultiVector< S, LO, GO, NodeType > MV;
 
       typedef S   scalar_type;
       typedef LO  local_ordinal_type;

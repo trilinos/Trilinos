@@ -9,7 +9,7 @@
 ///   some reason you need to include this file directly, be sure to
 ///   include "TsqrTypeAdaptor.hpp" first.
 
-#include "Epetra_MultiVector.hpp"
+#include "Epetra_MultiVector.h" // sic (not .hpp)
 #include "Tsqr_SequentialTsqr.hpp"
 #include "Tsqr.hpp"
 

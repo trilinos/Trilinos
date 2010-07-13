@@ -33,7 +33,7 @@ namespace TSQR {
       typedef GO global_ordinal_type;
       typedef Tpetra::MultiVector< S, LO, GO, Kokkos::TBBNode > multivector_type;
 
-      typedef TSQR::TbbTsqr< LO, S > node_tsqr_type;
+      typedef TSQR::TBB::TbbTsqr< LO, S > node_tsqr_type;
       typedef TSQR::Tsqr< LO, S, node_tsqr_type > tsqr_type;
       typedef TsqrFactory< LO, S, node_tsqr_type, tsqr_type > factory_type;
     };

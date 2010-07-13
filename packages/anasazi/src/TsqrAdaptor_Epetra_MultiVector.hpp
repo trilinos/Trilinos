@@ -9,7 +9,7 @@
 ///   reason you need to include this file directly, be sure to
 ///   include "TsqrAdaptor.hpp" first.
 
-#include "Epetra_MultiVector.hpp"
+#include "Epetra_MultiVector.h" // sic (not .hpp)
 #include <stdexcept>
 #include <sstream>
 
@@ -23,6 +23,33 @@ namespace TSQR {
     class TsqrAdaptor< double, int, int, Epetra_MultiVector >
     {
     public:
+      typedef double             scalar_type;
+      typedef int                local_ordinal_type;
+      typedef int                global_ordinal_type;
+      typedef Epetra_MultiVector multivector_type;
+
+      typedef TsqrTypeAdaptor< double, int, int, Epetra_MultiVector >::
+      node_tsqr_type node_tsqr_type;
+      typedef TsqrTypeAdaptor< double, int, int, Epetra_MultiVector >::
+      tsqr_type      tsqr_type;
+
+      typedef Teuchos::RCP< node_tsqr_type >            node_tsqr_ptr;
+      typedef Teuchos::RCP< tsqr_type >                 tsqr_ptr;
+      typedef Teuchos::RCP< const Teuchos::Comm<int> >  comm_ptr;
+      typedef Teuchos::RCP< MessengerBase<double> >     messenger_ptr;
+      typedef tsqr_type::FactorOutput                   factor_output_type;
+      typedef Teuchos::SerialDenseMatrix<int, double>   dense_matrix_type;
+
+      TsqrAdaptor (const comm_ptr& comm,
+		   const Teuchos::ParameterList& plist)
+      {
+	// This typedef is an implementation detail.
+	typedef TsqrFactory< int, double, node_tsqr_type, tsqr_type > factory_type;
+	// plist and comm are inputs.
+	// Construct *pMessenger_, *pNodeTsqr_, and *pTsqr_.
+	factory_type::makeTsqr (plist, comm, pMessenger_, pNodeTsqr_, pTsqr_);
+      }
+
       factor_output_type
       factor (multivector_type& A,
 	      dense_matrix_type& R, 
@@ -40,7 +67,7 @@ namespace TSQR {
 	      throw std::runtime_error ("Failed to reshape matrix R");
 	  }
 	return pTsqr_->factor (nrowsLocal, ncols, A_local, LDA, R.values(),
-			       R.stride(), pComm_.get(), contiguousCacheBlocks);
+			       R.stride(), contiguousCacheBlocks);
       }
 
       void 
@@ -62,11 +89,11 @@ namespace TSQR {
 	      "tor\'s node-local part (" << nrowsLocal_out << ").";
 	    throw std::runtime_error (os.str());
 	  }
-	const scalar_type* const pQ_in = Q_in.Values();
-	scalar_type* const pQ_out = Q_out.Values();
-	pTsqr_->explicit_Q (nrowsLocal, ncols_in, pQ_in, LDQ_in, 
-			    ncols_out, pQ_out, LDQ_out, factorOutput, 
-			    pComm_.get(), contiguousCacheBlocks);
+	pTsqr_->explicit_Q (nrowsLocal, 
+			    ncols_in, Q_in.Values(), LDQ_in, 
+			    factorOutput,
+			    ncols_out, Q_out.Values(), LDQ_out, 
+			    contiguousCacheBlocks);
       }
 
       void 
@@ -94,10 +121,8 @@ namespace TSQR {
 	      "matrix\'s node-local part (" << ncols_out << ").";
 	    throw std::runtime_error (os.str());
 	  }
-	const scalar_type* const pA_in = A_in.Values();
-	scalar_type* const pA_out = A_out.Values();
-	pTsqr_->cache_block (nrowsLocal, ncols, pA_out.get(), 
-			     pA_in.get(), LDA_in);
+	pTsqr_->cache_block (nrowsLocal, ncols, A_out.Values(),
+			     A_in.Values(), LDA_in);
       }
 
 
@@ -126,10 +151,8 @@ namespace TSQR {
 	      "matrix\'s node-local part (" << ncols_out << ").";
 	    throw std::runtime_error (os.str());
 	  }
-	const scalar_type* const pA_in = A_in.Values();
-	scalar_type* const pA_out = A_out.Values();
-	pTsqr_->un_cache_block (nrowsLocal, ncols, pA_out.get(), 
-				LDA_out, pA_in.get());
+	pTsqr_->un_cache_block (nrowsLocal, ncols, A_out.Values(), LDA_out,
+				A_in.Values());
       }
 
     private:
@@ -151,11 +174,6 @@ namespace TSQR {
 	  }
 	if (! A.ConstantStride())
 	  {
-	    // FIXME (mfh 14 June 2010) Storage of A uses nonconstant
-	    // stride internally, but that doesn't necessarily mean we
-	    // can't run TSQR.  It depends on what get1dViewNonConst()
-	    // returns.  If it's copied and packed into a matrix with
-	    // constant stride, then we are free to run TSQR.
 	    std::ostringstream os;
 	    os << "TSQR does not support Epetra_MultiVector inputs that do not"
 	      " have constant stride.";
@@ -163,6 +181,10 @@ namespace TSQR {
 	  }
 	LDA = A.Stride();
       }
+
+      messenger_ptr pMessenger_;
+      node_tsqr_ptr pNodeTsqr_;
+      tsqr_ptr pTsqr_;
     };
 
   } // namespace Trilinos

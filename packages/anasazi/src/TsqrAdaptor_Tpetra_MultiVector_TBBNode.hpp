@@ -35,18 +35,20 @@ namespace TSQR {
       typedef MV  multivector_type;
 
       typedef TsqrTypeAdaptor< S, LO, GO, MV >::node_tsqr_type node_tsqr_type;
-      typedef TsqrTypeAdaptor< S, LO, GO, MV >::tsqr_type      type_type;
+      typedef TsqrTypeAdaptor< S, LO, GO, MV >::tsqr_type      tsqr_type;
 
-      typedef Teuchos::RCP< node_tsqr_type >             node_tsqr_ptr;
-      typedef Teuchos::RCP< tsqr_type >                  tsqr_ptr;
-      typedef Teuchos::RCP< TrilinosMessenger< S > >     messenger_ptr;
-      typedef typename tsqr_type::FactorOutput           factor_output_type;
-      typedef Teuchos::SerialDenseMatrix< LO, S >        dense_matrix_type;
+      typedef Teuchos::RCP< node_tsqr_type >           node_tsqr_ptr;
+      typedef Teuchos::RCP< tsqr_type >                tsqr_ptr;
+      typedef Teuchos::RCP< const Teuchos::Comm<int> > comm_ptr;
+      typedef Teuchos::RCP< MessengerBase< S > >       messenger_ptr;
+      typedef typename tsqr_type::FactorOutput         factor_output_type;
+      typedef Teuchos::SerialDenseMatrix< LO, S >      dense_matrix_type;
 
-      TsqrAdaptor (const Teuchos::ParameterList& plist)
+      TsqrAdaptor (const comm_ptr& comm,
+		   const Teuchos::ParameterList& plist)
       {
 	typedef TsqrFactory< LO, S, node_tsqr_type, tsqr_type > factory_type;
-	factory_type::makeTsqr (plist, pComm_, pNodeTsqr_, pTsqr_);
+	factory_type::makeTsqr (plist, comm, pMessenger_, pNodeTsqr_, pTsqr_);
       }
 
       factor_output_type
@@ -59,7 +61,8 @@ namespace TSQR {
 
 	// This is guaranteed to be _correct_ for any Node type, but
 	// won't necessary be efficient.  The desired model is that
-	// A_local requires no copying.
+	// creating the view requires no copying (i.e., that it lives
+	// in this process's memory space).
 	Teuchos::ArrayRCP< scalar_type > A_local = A.get1dViewNonConst();
 
 	// Reshape R if necessary.  This operation zeros out all the
@@ -69,8 +72,8 @@ namespace TSQR {
 	    if (0 != R.shape (ncols, ncols))
 	      throw std::runtime_error ("Failed to reshape matrix R");
 	  }
-	return pTsqr_->factor (nrowsLocal, ncols, A_local.get(), LDA, R.values(),
-			       R.stride(), pComm_.get(), contiguousCacheBlocks);
+	return pTsqr_->factor (nrowsLocal, ncols, A_local.get(), LDA, 
+			       R.values(), R.stride(), contiguousCacheBlocks);
       }
 
       void 
@@ -97,8 +100,9 @@ namespace TSQR {
 	ArrayRCP< const scalar_type > pQin = Q_in.get1dView();
 	ArrayRCP< scalar_type > pQout = Q_out.get1dViewNonConst();
 	pTsqr_->explicit_Q (nrowsLocal, ncols_in, pQin.get(), LDQ_in, 
-			    ncols_out, pQout.get(), LDQ_out, factorOutput, 
-			    pComm_.get(), contiguousCacheBlocks);
+			    factorOutput,
+			    ncols_out, pQout.get(), LDQ_out, 
+			    contiguousCacheBlocks);
       }
 
       void 
@@ -199,6 +203,10 @@ namespace TSQR {
 	  }
 	LDA = A.getStride();
       }
+
+      messenger_ptr pMessenger_;
+      node_tsqr_ptr pNodeTsqr_;
+      tsqr_ptr pTsqr_;
     };
 #endif // HAVE_KOKKOS_TBB
 

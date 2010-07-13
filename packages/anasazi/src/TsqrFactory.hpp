@@ -4,8 +4,7 @@
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
-
-#include "Tsqr_MessengerBase.hpp"
+#include "TsqrTrilinosMessenger.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -29,7 +28,7 @@ namespace TSQR {
     class TsqrFactory {
     public:
       typedef Teuchos::RCP< const Teuchos::Comm<int> > comm_ptr;
-      typedef Teuchos::RCP< const MessengerBase< S > > messenger_ptr;
+      typedef Teuchos::RCP< MessengerBase< S > >       messenger_ptr;
       typedef NodeTsqrType                             node_tsqr_type;
       typedef TsqrType                                 tsqr_type;
       typedef Teuchos::RCP< node_tsqr_type >           node_tsqr_ptr;
@@ -54,6 +53,8 @@ namespace TSQR {
       ///       cores that are to participate in the intranode
       ///       parallel part of TSQR.  If node_tsqr_type does not
       ///       require this, then the parameter is ignored.
+      /// \param comm_ptr [in] Pointer to the underlying internode
+      ///   communication handler.
       /// \param messenger [out] On output, points to the
       ///   MessengerBase< S > object that TSQR will use for internode
       ///   communication.
@@ -65,9 +66,15 @@ namespace TSQR {
       ///   computations.
       static void
       makeTsqr (const Teuchos::ParameterList& plist,
+		const comm_ptr& comm,
 		messenger_ptr& messenger,
 		node_tsqr_ptr& node_tsqr,
-		tsqr_ptr& tsqr);
+		tsqr_ptr& tsqr)
+      {
+	messenger = makeMessenger (comm);
+	node_tsqr = makeNodeTsqr (plist);
+	tsqr = tsqr_ptr (new tsqr_type (node_tsqr.get(), messenger.get()));
+      }
 
     private:
       /// Constructor not implemented, so you can't construct a
@@ -103,6 +110,13 @@ namespace TSQR {
       ///   interface.
       static node_tsqr_ptr
       makeNodeTsqr (const Teuchos::ParameterList& plist);
+
+      static messenger_ptr 
+      makeMessenger (const comm_ptr& comm)
+      {
+	using TSQR::Trilinos::TrilinosMessenger;
+	return messenger_ptr (new TrilinosMessenger< S > (comm));
+      }
     };
   } // namespace Trilinos
 } // namespace TSQR
