@@ -37,6 +37,8 @@ namespace TSQR {
       typedef GO  global_ordinal_type;
       typedef MV  multivector_type;
 
+      typedef typename TSQR::ScalarTraits< scalar_type >::magnitude_type magnitude_type;
+
       typedef typename TsqrTypeAdaptorType::node_tsqr_type node_tsqr_type;
       typedef typename TsqrTypeAdaptorType::tsqr_type      tsqr_type;
 
@@ -60,7 +62,7 @@ namespace TSQR {
 	      const bool contiguousCacheBlocks = false)
       {
 	local_ordinal_type nrowsLocal, ncols, LDA;
-	fetch_MV_dims (A, nrowsLocal, ncols, LDA);
+	fetchDims (A, nrowsLocal, ncols, LDA);
 
 	// This is guaranteed to be _correct_ for any Node type, but
 	// won't necessary be efficient.  The desired model is that
@@ -87,9 +89,9 @@ namespace TSQR {
 	using Teuchos::ArrayRCP;
 
 	local_ordinal_type nrowsLocal, ncols_in, LDQ_in;
-	fetch_MV_dims (Q_in, nrowsLocal, ncols_in, LDQ_in);
+	fetchDims (Q_in, nrowsLocal, ncols_in, LDQ_in);
 	local_ordinal_type nrowsLocal_out, ncols_out, LDQ_out;
-	fetch_MV_dims (Q_out, nrowsLocal_out, ncols_out, LDQ_out);
+	fetchDims (Q_out, nrowsLocal_out, ncols_out, LDQ_out);
 
 	if (nrowsLocal_out != nrowsLocal)
 	  {
@@ -115,9 +117,9 @@ namespace TSQR {
 	using Teuchos::ArrayRCP;
 
 	local_ordinal_type nrowsLocal, ncols, LDA_in;
-	fetch_MV_dims (A_in, nrowsLocal, ncols, LDA_in);
+	fetchDims (A_in, nrowsLocal, ncols, LDA_in);
 	local_ordinal_type nrowsLocal_out, ncols_out, LDA_out;
-	fetch_MV_dims (A_out, nrowsLocal_out, ncols_out, LDA_out);
+	fetchDims (A_out, nrowsLocal_out, ncols_out, LDA_out);
 
 	if (nrowsLocal_out != nrowsLocal)
 	  {
@@ -149,9 +151,9 @@ namespace TSQR {
 	using Teuchos::ArrayRCP;
 
 	local_ordinal_type nrowsLocal, ncols, LDA_in;
-	fetch_MV_dims (A_in, nrowsLocal, ncols, LDA_in);
+	fetchDims (A_in, nrowsLocal, ncols, LDA_in);
 	local_ordinal_type nrowsLocal_out, ncols_out, LDA_out;
-	fetch_MV_dims (A_out, nrowsLocal_out, ncols_out, LDA_out);
+	fetchDims (A_out, nrowsLocal_out, ncols_out, LDA_out);
 
 	if (nrowsLocal_out != nrowsLocal)
 	  {
@@ -175,12 +177,39 @@ namespace TSQR {
 				LDA_out, pA_in.get());
       }
 
+      std::pair< magnitude_type, magnitude_type >
+      verify (const multivector_type& A,
+	      const multivector_type& Q,
+	      const Teuchos::SerialDenseMatrix< local_ordinal_type, scalar_type >& R)
+      {
+	local_ordinal_type nrowsLocal_A, ncols_A, LDA;
+	local_ordinal_type nrowsLocal_Q, ncols_Q, LDQ;
+	fetchDims (A, nrowsLocal_A, ncols_A, LDA);
+	fetchDims (Q, nrowsLocal_Q, ncols_Q, LDQ);
+	if (nrowsLocal_A != nrowsLocal_Q)
+	  throw std::runtime_error ("A and Q must have same number of rows");
+	else if (ncols_A != ncols_Q)
+	  throw std::runtime_error ("A and Q must have same number of columns");
+	else if (ncols_A != R.numCols())
+	  throw std::runtime_error ("A and R must have same number of columns");
+	else if (R.numRows() < R.numCols())
+	  throw std::runtime_error ("R must have no fewer rows than columns");
+
+	// Const views suffice for verification
+	Teuchos::ArrayRCP< const scalar_type > A_ptr = A.get1dView();
+	Teuchos::ArrayRCP< const scalar_type > Q_ptr = Q.get1dView();
+
+	return global_verify (nrowsLocal_A, ncols_A, A_ptr.get(), LDA,
+			      Q_ptr.get(), LDQ, R.values(), R.stride(), 
+			      pMessenger_.get());
+      }
+
     private:
       void
-      fetch_MV_dims (const multivector_type& A,
-		     local_ordinal_type& nrowsLocal, 
-		     local_ordinal_type& ncols, 
-		     local_ordinal_type& LDA)
+      fetchDims (const multivector_type& A,
+		 local_ordinal_type& nrowsLocal, 
+		 local_ordinal_type& ncols, 
+		 local_ordinal_type& LDA)
       {
 	nrowsLocal = A.getLocalLength();
 	ncols = A.getNumVectors();

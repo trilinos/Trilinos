@@ -41,6 +41,7 @@
 #include "TsqrTrilinosMessenger.hpp"
 
 #include "TsqrAdaptor.hpp"
+#include "TsqrRandomizer.hpp"
 
 #include <sstream>
 #include <stdexcept>

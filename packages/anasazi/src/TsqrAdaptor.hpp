@@ -6,6 +6,8 @@
 
 #include "TsqrTrilinosMessenger.hpp"
 #include "TsqrTypeAdaptor.hpp"
+#include "Tsqr_GlobalVerify.hpp"
+#include "Tsqr_ScalarTraits.hpp"
 #include "Tsqr.hpp"
 
 #include <string>
@@ -62,6 +64,8 @@ namespace TSQR {
       typedef LO  local_ordinal_type;
       typedef GO  global_ordinal_type;
       typedef MV  multivector_type;
+
+      typedef typename TSQR::ScalarTraits< scalar_type >::magnitude_type magnitude_type;
 
       typedef typename TsqrTypeAdaptorType::node_tsqr_type node_tsqr_type;
       typedef typename TsqrTypeAdaptorType::tsqr_type      tsqr_type;
@@ -173,6 +177,13 @@ namespace TSQR {
       unCacheBlock (const multivector_type& A_in, 
 		    multivector_type& A_out) const;
 
+      /// \return Two magnitudes:  first $\| A - QR \|_F / \|A\|_F$, 
+      ///   second $\|I - Q^* Q\|_F / \|A\|_F$.
+      std::pair< magnitude_type, magnitude_type >
+      verify (const multivector_type& A,
+	      const multivector_type& Q,
+	      const Teuchos::SerialDenseMatrix< local_ordinal_type, scalar_type >& R);
+
     private:
       /// \brief Return dimensions of a multivector object
       ///
@@ -207,10 +218,10 @@ namespace TSQR {
       /// I don't want TSQR to depend on Teuchos::RCP because I want
       /// to make TSQR fully portable.  So I'm stuck writing adaptors.
       void 
-      fetch_MV_dims (const multivector_type& A, 
-		     local_ordinal_type& nrowsLocal, 
-		     local_ordinal_type& ncols, 
-		     local_ordinal_type& LDA);
+      fetchDims (const multivector_type& A, 
+		 local_ordinal_type& nrowsLocal, 
+		 local_ordinal_type& ncols, 
+		 local_ordinal_type& LDA);
 
       /// Shared pointer to a wrapper around Teuchos::Comm<int>.  We
       /// need to keep it in this class because *pTsqr keeps a raw

@@ -56,7 +56,8 @@ namespace TSQR {
       /// achieves this at the cost of scalability; only Proc 0
       /// invokes the pseudorandom number generator.
       void
-      randomMultiVector (MV& A, const magnitude_type singularValues[])
+      randomMultiVector (multivector_type& A, 
+			 const magnitude_type singularValues[])
       {
 	using TSQR::Random::randomGlobalMatrix;
 	using Teuchos::ArrayRCP;
@@ -118,7 +119,7 @@ namespace TSQR {
       {
 	using Teuchos::arcpFromArrayView;
 	using Teuchos::arrayView;
-	typedef ArrayView< scalar_type >::size_type size_type;
+	typedef Teuchos::ArrayView< scalar_type >::size_type size_type;
 
 	//
 	// Compute length (nelts) of the A.Values() array.  This only
