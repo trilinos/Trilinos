@@ -86,6 +86,21 @@ const std::string& XMLObject::getRequired(const std::string& name) const
   else return defaultValue;
 }*/
 
+template<>
+bool XMLObject::getRequired<bool>(const std::string& name) const{
+	return getRequiredBool(name);
+}
+
+template<>
+int XMLObject::getRequired<int>(const std::string& name) const{
+	return getRequiredInt(name);
+}
+
+template<>
+double XMLObject::getRequired<double>(const std::string& name) const{
+	return getRequiredDouble(name);
+}
+
 bool XMLObject::getRequiredBool(const std::string& name) const
 {
   if (hasAttribute(name))

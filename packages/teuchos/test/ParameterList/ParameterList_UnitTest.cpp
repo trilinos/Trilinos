@@ -28,10 +28,19 @@
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_UnitTestHarness.hpp"
-#include "Teuchos_ValidatorXMLConverterDB.hpp"
+#include "Teuchos_StandardParameterEntryValidators.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
+#include "Teuchos_XMLParameterListWriter.hpp"
+#include "Teuchos_XMLParameterListReader.hpp"
 #include "Teuchos_StandardParameterEntryValidators.hpp"
 
 namespace Teuchos {
+
+#define ADD_TYPE_PARAMETER(T,VALUE) myList.set( #T , ( T ) VALUE);
+#define ADD_ARRAY_TYPE_PARAMETER(T,VALUE)  myList.set( #T " Array", Array< T >(5, ( T ) VALUE ));
+#define ADD_TYPE_AND_ARRAY_TYPE_PARAMETER(T,VALUE) \
+	ADD_TYPE_PARAMETER(T,VALUE); \
+	ADD_ARRAY_TYPE_PARAMETER(T,VALUE);
 
 /*
 TEUCHOS_UNIT_TEST( Teuchos_ParameterList, operatorEqualityDifferentNames ) {
@@ -112,15 +121,72 @@ TEUCHOS_UNIT_TEST( Teuchos_ParameterList, haveSameValuesDifferentSublistNames ) 
   TEST_ASSERT( !haveSameValues(A,B) ); // sublist names matter
 }
 
-TEUCHOS_UNIT_TEST( Teuchos_ParameterList, validatorXMLConverterDB){
-	Teuchos::Array<std::string> dummyArray;
-	std::string dummyName;
-	Teuchos::StringToIntegralParameterEntryValidator<int> stiIntValidator(dummyArray, dummyName);
-	Teuchos::RCP<const Teuchos::ValidatorXMLConverter> sticonverter = Teuchos::ValidatorXMLConverterDB::getConverter(stiIntValidator);
-	Teuchos::FileNameValidator fileNameValidator;
-	Teuchos::RCP<const Teuchos::ValidatorXMLConverter> fileconverter = Teuchos::ValidatorXMLConverterDB::getConverter(fileNameValidator);
+TEUCHOS_UNIT_TEST(Teuchos_ParameterList, parameterEntryXMLConverters){
+	std::string xmlFileName = "PEConvertersList.xml";
+	Teuchos::ParameterList myList;
+	ADD_TYPE_AND_ARRAY_TYPE_PARAMETER(int, 2);
+	ADD_TYPE_AND_ARRAY_TYPE_PARAMETER(unsigned int, 3);
+	ADD_TYPE_AND_ARRAY_TYPE_PARAMETER(short int, 4);
+	ADD_TYPE_AND_ARRAY_TYPE_PARAMETER(unsigned short int, 5);
+	ADD_TYPE_AND_ARRAY_TYPE_PARAMETER(long int, 6);
+	ADD_TYPE_AND_ARRAY_TYPE_PARAMETER(unsigned long int, 7);
+	#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+	ADD_TYPE_AND_ARRAY_TYPE_PARAMETER(long long int, 8);
+	ADD_TYPE_AND_ARRAY_TYPE_PARAMETER(unsigned long long int, 9);
+	#endif //HAVE_TEUCHOS_LONG_LONG_INT
+	ADD_TYPE_AND_ARRAY_TYPE_PARAMETER(double, 10.0);
+	ADD_TYPE_AND_ARRAY_TYPE_PARAMETER(float, 11.0);
+
+	ADD_TYPE_AND_ARRAY_TYPE_PARAMETER(std::string, "hello");
+
+	ADD_TYPE_PARAMETER(char, 'a');
+	ADD_TYPE_PARAMETER(bool, true);
+
+	std::cout << "\n";
+	std::cout << "XML Representation of Parameter List: \n";
+	Teuchos::XMLParameterListWriter plWriter;
+	XMLObject xmlPL = plWriter.toXML(myList);
+	std::cout << xmlPL;
+
+	std::cout << "writing xml to file...\n";
+	writeParameterListToXmlFile(myList, xmlFileName);
+	std::cout << "reading xml from file...\n";
+	Teuchos::RCP<Teuchos::ParameterList> readInPL = getParametersFromXmlFile(xmlFileName);
+	std::cout << "Are the written and read parameter lists the same? :";
+	TEST_ASSERT(haveSameValues(myList, *readInPL));
 }
 
+TEUCHOS_UNIT_TEST(Teuchos_ParameterList, validatorXMLConverters){
+	std::string xmlFileName = "ValidatorsConverterList.xml";
+	std::string defaultParameterName = "default int";
+	std::string minmaxParameterName = "min max int";
+	Teuchos::ParameterList myList;
+	Teuchos::RCP<EnhancedNumberValidator<int> > defaultIntValidator = rcp( new EnhancedNumberValidator<int>());
+	Teuchos::RCP<EnhancedNumberValidator<int> > minMaxIntValidator = rcp( new EnhancedNumberValidator<int>(0,10));
+	myList.set(defaultParameterName, 6, "int parameter with default validator", defaultIntValidator);
+	myList.set(minmaxParameterName, 10, "int parameter with min and max validator", minMaxIntValidator);
+
+	std::cout << "\n";
+	std::cout << "XML Representation of Parameter List: \n";
+	Teuchos::XMLParameterListWriter plWriter;
+	XMLObject xmlPL = plWriter.toXML(myList);
+	std::cout << xmlPL;
+
+	std::cout << "writing xml to file...\n";
+	writeParameterListToXmlFile(myList, xmlFileName);
+	std::cout << "reading xml from file..\n";
+	Teuchos::RCP<Teuchos::ParameterList> readInPL = getParametersFromXmlFile(xmlFileName);
+	std::cout << "Are the written and read parameter lists the same? : ";
+	TEST_ASSERT(haveSameValues(myList, *readInPL));
+	std::cout << "Are the validators where they're suppoed to be? : \n";
+	TEST_EQUALITY(
+		Teuchos::rcp_static_cast<const Teuchos::EnhancedNumberValidator<int> >(readInPL->getEntry(defaultParameterName).validator())->getMin(),
+		Teuchos::rcp_static_cast<const Teuchos::EnhancedNumberValidator<int> >(myList.getEntry(defaultParameterName).validator())->getMin()
+	);
+
+
+
+}
 
 } // namespace Teuchos
 

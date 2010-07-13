@@ -44,8 +44,8 @@ XMLObject XMLParameterListWriter::toXML(const ParameterList& p) const
 	parameterLists.addChild(convertParameterList(p, validatorIDMap, validatorIDCounter));
 	WriterValidatorIDMap::const_iterator it = validatorIDMap.begin();
 	XMLObject validators(getValidatorsTagName());
-	for(;it != validatorIDMap.begin(); ++it){
-		XMLObject currentValidator = ValidatorXMLConverterDB::getConverter(*(it->first))->fromValidatortoXML(rcp(it->first));
+	for(;it != validatorIDMap.end(); ++it){
+		XMLObject currentValidator = ValidatorXMLConverterDB::getConverter(*(it->first))->fromValidatortoXML(it->first)
 		currentValidator.addInt(getValidatorIdAttributeName(), it->second);
 		validators.addChild(currentValidator);
 	}
@@ -56,7 +56,7 @@ XMLObject XMLParameterListWriter::toXML(const ParameterList& p) const
 
 XMLObject XMLParameterListWriter::convertParameterList(
 	const ParameterList& p,
-	WriterValidatorIDMap validatorIDMap,
+	WriterValidatorIDMap& validatorIDMap,
 	int& validatorIDCounter) const
 {
   XMLObject rtn(getParameterListTagName());

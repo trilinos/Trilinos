@@ -107,6 +107,7 @@ public:
     return toReturn;
   }
 
+
   //! Get a required attribute, returning it as a bool
   bool getRequiredBool(const std::string& name) const ;
 
@@ -205,6 +206,15 @@ private:
 #pragma warning(pop)
 #endif
 };
+
+template<>
+bool XMLObject::getRequired<bool>(const std::string& name) const;
+
+template<>
+int XMLObject::getRequired<int>(const std::string& name) const;
+
+template<>
+double XMLObject::getRequired<double>(const std::string& name) const;
 
 /** \relates XMLObject 
     \brief Write XMLObject to \c os stream 
