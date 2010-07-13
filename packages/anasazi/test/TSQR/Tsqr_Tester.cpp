@@ -32,6 +32,8 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Tpetra_DefaultPlatform.hpp"
+#include "Tpetra_Map.hpp"
+#include "Tpetra_MultiVector.hpp"
 
 #include "Tsqr_SeqTest.hpp"
 #include "Tsqr_TbbTest.hpp"
@@ -151,6 +153,36 @@ verify_tsqr (Teuchos::RCP< const Teuchos::Comm<int> > comm,
 }
 
 
+/// \brief Make a map for creating Tpetra test multivectors.
+///
+template< class LO, class GO, class Node >
+Teuchos::RCP< Tpetra::Map< LO, GO, Node > >
+makeTpetraMap (const Tpetra::global_size_t nrowsGlobal,
+	       const Teuchos::RCP< const Teuchos::Comm<int> >& comm,
+	       const Teuchos::RCP< Node >& node)
+{
+  typedef Tpetra::Map< LO, GO, Node > map_type;
+
+  Teuchos::RCP< const map_type > map = 
+    Tpetra::createUniformContigMapWithNode (nrowsGlobal, comm, node);
+  return map;
+}
+
+/// \brief Make a Tpetra test multivector for filling in.
+///
+template< class S, class LO, class GO, class Node >
+Teuchos::RCP< Tpetra::MultiVector< S, LO, GO, Node > >
+makeTpetraMultiVector (const Teuchos::RCP< Tpetra::Map< LO, GO, Node > >& map,
+		       const size_t ncols)
+{
+  using Teuchos::RCP;
+  typedef Tpetra::MultiVector< S, LO, GO, Node > MV;
+  typedef Tpetra::Map< LO, GO, Node > map_type;
+
+  // Don't fill with zeros; we'll fill ourselves
+  return Teuchos::rcp (new MV (map, ncols, false));
+}
+
 
 #if 0
 template< class S, class LO, class GO, class MV >
@@ -159,7 +191,30 @@ verify_multivector_tsqr (Teuchos::RCP< const Teuchos::Comm<int> > comm,
 			 const Teuchos::ParameterList& plist)
 {
   using TSQR::Trilinos::TsqrAdaptor;
+  typedef typename TsqrAdaptor< S, LO, GO, MV >::factor_output_type factor_output_type;
+  typedef typename TsqrAdaptor< S, LO, GO, MV >::magnitude_type magnitude_type;
+  typedef std::pair< magnitude_type, magnitude_type > results_type;
+
+  // FIXME
+  MV A, A_copy, Q;
+  // FIXME
+  Teuchos::SerialDenseMatrix R;
+
   TsqrAdaptor< S, LO, GO, MV > adaptor (comm, plist);
+  if (contiguousCacheBlocks)
+    {
+      adaptor.cacheBlock (A, A_copy);
+    }
+  factor_output_type factorOutput = 
+    adaptor.factor (A_copy, R, contiguousCacheBlocks);
+  adaptor.explicitQ (A_copy, factorOutput, Q, contiguousCacheBlocks);
+  if (contiguousCacheBlocks)
+    {
+      // Use A_copy as temporary storage for un-cache-blocking Q.
+      A_copy = Q;
+      adaptor.unCacheBlock (A_copy, Q);
+    }
+  results_type results = adaptor.verify (A, Q, R);
 }
 #endif // 0
 
