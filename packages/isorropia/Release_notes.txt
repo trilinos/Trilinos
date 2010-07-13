@@ -1,4 +1,11 @@
-Release notes for Isorropia in Trilinos 10.2 (Mar. 2009):
+Release notes for Isorropia in Trilinos 10.4 (July 2010):
+------------------------------------------------------------
+ - Improved documentation.
+ - New RCP-free interface so users can choose whether to use
+   raw pointers or Teuchos::RCP pointers. RCP is still recommended.
+ - Experimental interface to Tpetra; disabled by default.
+
+Release notes for Isorropia in Trilinos 10.2 (Mar. 2010):
 ------------------------------------------------------------
  - Isorropia::Epetra::Partitioner now supports three more
    partitioning methods from Zoltan: block, cyclic, and random.
