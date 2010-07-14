@@ -19,19 +19,10 @@
 namespace TSQR {
   namespace Trilinos {
 
-    // TsqrTypeAdaptorType should default to
-    //
-    // TsqrTypeAdaptor< double, int, int, Epetra_MultiVector >
-    //
-    // but the C++ compiler doesn't let us provide a default template
-    // argument here.  (Did i not sacrifice enough chickens or what?!?
-    // Who knows...)
     template <>
-    class TsqrAdaptor< double, int, int, Epetra_MultiVector, TsqrTypeAdaptor< double, int, int, Epetra_MultiVector > >
+    class TsqrAdaptor< double, int, int, Epetra_MultiVector >
     {
     public:
-      typedef TsqrTypeAdaptor< double, int, int, Epetra_MultiVector > TsqrTypeAdaptorType;
-
       typedef double             scalar_type;
       typedef int                local_ordinal_type;
       typedef int                global_ordinal_type;
@@ -39,8 +30,9 @@ namespace TSQR {
 
       typedef TSQR::ScalarTraits<double>::magnitude_type magnitude_type;
 
-      typedef TsqrTypeAdaptorType::node_tsqr_type node_tsqr_type;
-      typedef TsqrTypeAdaptorType::tsqr_type      tsqr_type;
+      typedef TsqrTypeAdaptor< double, int, int, Epetra_MultiVector > type_adaptor;
+      typedef type_adaptor::node_tsqr_type              node_tsqr_type;
+      typedef type_adaptor::tsqr_type                   tsqr_type;
 
       typedef Teuchos::RCP< node_tsqr_type >            node_tsqr_ptr;
       typedef Teuchos::RCP< tsqr_type >                 tsqr_ptr;

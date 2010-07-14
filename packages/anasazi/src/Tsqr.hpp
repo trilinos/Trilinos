@@ -279,7 +279,7 @@ namespace TSQR {
     void
     explicit_Q (const LocalOrdinal nrows_local,
 		const LocalOrdinal ncols_Q_in,
-		Scalar Q_local_in[],
+		const Scalar Q_local_in[],
 		const LocalOrdinal ldq_local_in,
 		const FactorOutput& factor_output,
 		const LocalOrdinal ncols_Q_out,

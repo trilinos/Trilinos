@@ -36,7 +36,7 @@ namespace TSQR {
       {
 	messenger = makeMessenger (comm);
 	node_tsqr = makeNodeTsqr (plist);
-	tsqr = tsqr_ptr (new tsqr_type (node_tsqr.get(), messenger.get()));
+	tsqr = tsqr_ptr (new tsqr_type (*node_tsqr, messenger.get()));
       }
 
     private:
