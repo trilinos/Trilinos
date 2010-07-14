@@ -158,6 +158,22 @@ class BlockMap : public Teuchos::Describable {
   bool blockIDsAreContiguous_;
   LocalOrdinal constantBlockSize_;
 };//class BlockMap
+
+//-----------------------------------------------------------------
+template<class LocalOrdinal,class GlobalOrdinal,class Node>
+Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
+convertBlockMapToPointMap(const Teuchos::RCP<const Tpetra::BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockMap)
+{
+  global_size_t numGlobalElems = Teuchos::OrdinalTraits<global_size_t>::invalid();
+  GlobalOrdinal indexBase = blockMap->getPointMap()->getIndexBase();
+  const Teuchos::RCP<const Teuchos::Comm<int> >& comm = blockMap->getPointMap()->getComm();
+  const Teuchos::RCP<Node>& node = blockMap->getPointMap()->getNode();
+
+  //Create a point-entry map where each point
+  //corresponds to a block in the block-map:
+  return Teuchos::rcp(new Map<LocalOrdinal,GlobalOrdinal,Node>(numGlobalElems, blockMap->getNodeBlockIDs(), indexBase, comm, node));
+}
+
 }//namespace Tpetra
 
 #endif

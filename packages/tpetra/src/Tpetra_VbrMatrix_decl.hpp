@@ -40,7 +40,7 @@
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Operator.hpp"
 #include "Tpetra_BlockMap.hpp"
-#include "Tpetra_CrsGraph.hpp"
+#include "Tpetra_BlockCrsGraph.hpp"
 
 /** \file Tpetra_VbrMatrix_decl.hpp
 
@@ -119,7 +119,7 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
       blkRangeMap->getNodeNumBlocks() == blkGraph->getRangeMap()->getNodeNumElements().
       If any of these conditions is not met, an exception is thrown.
   */
-//  VbrMatrix(const Teuchos::RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& blkGraph, const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blkDomainMap, const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blkRangeMap);
+  VbrMatrix(const Teuchos::RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& blkGraph, const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blkDomainMap, const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blkRangeMap);
 
   //! Destructor
   virtual ~VbrMatrix();
@@ -142,7 +142,7 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   //! @name Operator Methods
   //@{
 
-    //! Returns the Map associated with the domain of this operator, which must be compatible with X.getMap().
+    //! Returns the Map associated with the domain of this operator.
     /*! Note that this is a point-entry map, not a block-map.
     */
     const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
@@ -177,6 +177,12 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
   //! Returns the block-column map.
   const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockColMap() const;
+
+  //! Returns the block-domain map.
+  const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockDomainMap() const;
+
+  //! Returns the block-range map.
+  const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > & getBlockRangeMap() const;
 
   //! Returns the point-row map.
   const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getPointRowMap() const;
@@ -355,19 +361,14 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
   //private data members:
 
-  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > blkRowMap_;
-  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > blkColMap_;
-  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > blkDomainMap_;
-  Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > blkRangeMap_;
-
-  Teuchos::RCP<CrsGraph<LocalOrdinal,GlobalOrdinal,Node> > blkGraph_;
+  Teuchos::RCP<BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node> > blkGraph_;
   Kokkos::VbrMatrix<Scalar,LocalOrdinal,Node> lclMatrix_;
 
   //It takes 6 arrays to adequately represent a variable-block-row
   //matrix in packed (contiguous storage) form. For a description of these
   //arrays, see the text at the bottom of this file.
   //(Note that 2 of those arrays, rptr and cptr, are represented by arrays in the
-  //blkRowMap_ and blkColMap_ objects.)
+  //getBlockRowMap() and getBlockColMap() objects.)
   //
   //These arrays are handled as if they may point to memory that resides on
   //a separate device (e.g., a GPU). In other words, when the contents of these
