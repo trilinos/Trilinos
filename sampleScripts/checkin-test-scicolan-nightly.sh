@@ -19,6 +19,18 @@ echo "
 -DTrilinos_ENABLE_Fortran:BOOL=OFF
 -D TPL_ENABLE_Boost:BOOL=ON
 -D Boost_INCLUDE_DIRS:PATH=/usr/netpub/boost_1_40_0
+-D TPL_ENABLE_Netcdf:BOOL=ON
+-D Netcdf_INCLUDE_DIRS:PATH=/projects/seacas/current/include
+-D Netcdf_LIBRARY_DIRS:PATH=/projects/seacas/current/lib
+-D Trios_ENABLE_XDMF:BOOL=ON
+-D TPL_ENABLE_XMDF:BOOL=ON
+-D XDMF_INCLUDE_DIRS:PATH=/projects/seacas/current/include
+-D XDMF_LIBRARY_DIRS:PATH=/projects/seacas/current/lib
+-D TPL_ENABLE_HDF5:BOOL=ON
+-D HDF5_INCLUDE_DIRS:PATH=/projects/seacas/current/include
+-D HDF5_LIBRARY_DIRS:PATH=/projects/seacas/current/lib
+-D EpetraExt_USING_HDF5:BOOL=OFF
+-D CMAKE_BUILD_DEBUG:BOOL=ON
 " > COMMON.config
 
 echo "
@@ -35,7 +47,7 @@ echo "
 # Run the standard checkin testing script with my specializations
 #
 
-../Trilinos/checkin-test.py \
+../../Trilinos/checkin-test.py \
 --no-eg-git-version-check \
 --make-options=-j8 \
 --ctest-options=-j4 \
