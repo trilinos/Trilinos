@@ -16,7 +16,8 @@ cmake
   |
   |-- package_arch: Contains macros for a package archetecture
   |       system that Trilinos is based on but is independent
-  |       of Trilinos.
+  |       of Trilinos.  I.e. 'grep -i trilinos *.cmake' in this
+  |       directory should come up empty!
   |
   |-- TPLs: Contains a collection of FindTPL${TPLNAME}.cmake
   |      files for specific TPLs.  These are indirectly called

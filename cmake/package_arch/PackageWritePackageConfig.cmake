@@ -231,7 +231,7 @@ FUNCTION(PACKAGE_WRITE_PACKAGE_CONFIG_FILE PACKAGE_NAME)
   ######
   # Create a configure file for the install tree and set the install target for it. This
   # file isn't generally useful inside the build tree so it is being "hidden" in the 
-  # CMakeFiles directory. It will be placed in the base install directory for Trilinos
+  # CMakeFiles directory. It will be placed in the base install directory for ${PROJECT_NAME}
   # when installed.
   ######
 
@@ -277,7 +277,7 @@ FUNCTION(PACKAGE_WRITE_PACKAGE_CONFIG_FILE PACKAGE_NAME)
   ENDIF()
 ENDFUNCTION()
 
-FUNCTION(PACKAGE_WRITE_TRILINOS_CONFIG_FILE)
+FUNCTION(PACKAGE_ARCH_WRITE_CONFIG_FILE)
 
   # Reversing the package list so that libraries will be produced in order of
   # most dependent to least dependent.
@@ -335,7 +335,7 @@ FUNCTION(PACKAGE_WRITE_TRILINOS_CONFIG_FILE)
   SET(${PROJECT_NAME}_CONFIG_TPL_LIBRARIES ${FULL_TPL_LIBRARY_SET})
   
   #
-  # Configure two files for finding Trilinos. One for the build tree and one for installing
+  # Configure two files for finding ${PROJECT_NAME}. One for the build tree and one for installing
   #
 
   # Generate a note discouraging editing of the <package>Config.cmake file
@@ -351,16 +351,16 @@ FUNCTION(PACKAGE_WRITE_TRILINOS_CONFIG_FILE)
     SET(SHARED_LIB_RPATH_COMMAND ${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}${SHARED_LIB_RPATH_COMMAND})
   ENDIF()
 
-  CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/cmake/TrilinosConfig.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/TrilinosConfig.cmake )
+  CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake )
 
   # To be able to properly pull in the configure files for each package we have to append some cmake code
   # to the end of the configured file. This is that code. The "FOREACH_BLOCK" is same for both the install
   # and build tree configure files, however, the files that are globbed are different. 
   SET(GLOB_LINE "FILE(GLOB PACKAGE_CONFIG_FILES \"${CMAKE_CURRENT_BINARY_DIR}/packages/*/*Config.cmake\")\n")
   SET(FOREACH_BLOCK "FOREACH(FILE \${PACKAGE_CONFIG_FILES})\n  IF(NOT \${FILE} MATCHES \"${PROJECT_NAME}Config.cmake\")\n    INCLUDE(\${FILE})\n  ENDIF()\nENDFOREACH()\n")
-  FILE(APPEND ${CMAKE_CURRENT_BINARY_DIR}/TrilinosConfig.cmake ${GLOB_LINE})
-  FILE(APPEND ${CMAKE_CURRENT_BINARY_DIR}/TrilinosConfig.cmake ${FOREACH_BLOCK})
+  FILE(APPEND ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake ${GLOB_LINE})
+  FILE(APPEND ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake ${FOREACH_BLOCK})
 
   IF(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES)
     ######
@@ -384,14 +384,14 @@ FUNCTION(PACKAGE_WRITE_TRILINOS_CONFIG_FILE)
     LIST_TO_STRING("${FULL_PACKAGE_SET}" "" MAKEFILE_FULL_PACKAGE_SET)
     LIST_TO_STRING("${FULL_TPL_SET}" "" MAKEFILE_FULL_TPL_SET)
 
-    CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/cmake/TrilinosConfig.export.in
+    CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.export.in
       ${CMAKE_CURRENT_BINARY_DIR}/Makefile.export.${PROJECT_NAME})
   ENDIF()  
 
   ######
   # Create a configure file for the install tree and set the install target for it. This
   # file isn't generally useful inside the build tree. It will be placed in the base
-  # install directory for Trilinos when installed.
+  # install directory for ${PROJECT_NAME} when installed.
   ######
 
   SET(${PROJECT_NAME}_CONFIG_INCLUDE_DIRS ${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_INCLUDE_DIR})
@@ -402,18 +402,18 @@ FUNCTION(PACKAGE_WRITE_TRILINOS_CONFIG_FILE)
     SET(SHARED_LIB_RPATH_COMMAND ${CMAKE_SHARED_LIBRARY_RUNTIME_CXX_FLAG}${CMAKE_INSTALL_PREFIX}/${${PROJECT_NAME}_INSTALL_LIB_DIR})
   ENDIF()
 
-  CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/cmake/TrilinosConfig.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/TrilinosConfig_install.cmake )
+  CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config_install.cmake )
 
   # Appending the logic to include each package's config file.
   SET(GLOB_LINE "FILE(GLOB PACKAGE_CONFIG_FILES \"${${PROJECT_NAME}_CONFIG_INCLUDE_DIRS}/*Config.cmake\")\n")
-  FILE(APPEND ${CMAKE_CURRENT_BINARY_DIR}/TrilinosConfig_install.cmake ${GLOB_LINE})
-  FILE(APPEND ${CMAKE_CURRENT_BINARY_DIR}/TrilinosConfig_install.cmake ${FOREACH_BLOCK})
+  FILE(APPEND ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config_install.cmake ${GLOB_LINE})
+  FILE(APPEND ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config_install.cmake ${FOREACH_BLOCK})
 
   INSTALL(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/TrilinosConfig_install.cmake
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config_install.cmake
     DESTINATION "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}"
-    RENAME TrilinosConfig.cmake
+    RENAME ${PROJECT_NAME}Config.cmake
   )
   
   IF(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES)
@@ -426,7 +426,7 @@ FUNCTION(PACKAGE_WRITE_TRILINOS_CONFIG_FILE)
     LIST_TO_STRING("${${PROJECT_NAME}_CONFIG_LIBRARY_DIRS}" ${CMAKE_LIBRARY_PATH_FLAG} MAKEFILE_${PROJECT_NAME}_CONFIG_LIBRARY_DIRS)
     LIST_TO_STRING("${${PROJECT_NAME}_CONFIG_INCLUDE_DIRS}" "-I" MAKEFILE_${PROJECT_NAME}_CONFIG_INCLUDE_DIRS)
 
-    CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/cmake/TrilinosConfig.export.in
+    CONFIGURE_FILE( ${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.export.in
       ${CMAKE_CURRENT_BINARY_DIR}/Makefile.export.${PROJECT_NAME}_install )
 
     INSTALL(
@@ -437,14 +437,14 @@ FUNCTION(PACKAGE_WRITE_TRILINOS_CONFIG_FILE)
   ENDIF()
   
   #
-  # Configure the version file for Trilinos
+  # Configure the version file for ${PROJECT_NAME}
   #
   
-  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/TrilinosConfigVersion.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/TrilinosConfigVersion.cmake @ONLY)
+  CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}ConfigVersion.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake @ONLY)
 
   INSTALL(
-    FILES ${CMAKE_CURRENT_BINARY_DIR}/TrilinosConfigVersion.cmake
+    FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
     DESTINATION "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}"
   )
 

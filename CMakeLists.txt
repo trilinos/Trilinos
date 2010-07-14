@@ -101,45 +101,6 @@ ADVANCED_OPTION(Trilinos_SKIP_FORTRANCINTERFACE_VERIFY_TEST
   "Skip the Fortran/C++ compatibility test"
   OFF )
 
-IF (WIN32 AND NOT CYGWIN)
-  SET(Trilinos_DEPS_XML_OUTPUT_FILE_DEFAULT "")
-ELSE()
-  SET(Trilinos_DEPS_XML_OUTPUT_FILE_DEFAULT
-    "${TRILINOS_HOME_DIR}/cmake/python/data/TrilinosPackageDependencies.xml" )
-ENDIF()
-ADVANCED_SET(Trilinos_DEPS_XML_OUTPUT_FILE
-  "${Trilinos_DEPS_XML_OUTPUT_FILE_DEFAULT}"
-  CACHE STRING
-  "Output XML file containing Trilinos dependenices used by tools (if not empty)." )
-# 2009/01/19: rabartl: Above: This file outputs just fine on MS# Windows using MS Visual Studio but it causes the entire file to
-# diff.  There must be something wrong with a newlines or something
-# that is causing this.  If people are going to be doing real
-# development work on MS Windows with MS Visual Studio, then we need
-# to fix this so that the dependency files will get created and
-# checked in correctly.  I will look into this later.
-
-IF(Trilinos_DEPS_XML_OUTPUT_FILE AND PYTHON_EXECUTABLE)
-  SET(Trilinos_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT
-    "${TRILINOS_HOME_DIR}/cmake/python/data/CDashSubprojectDependencies.xml" )
-ELSE()
-  SET(Trilinos_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT "")
-ENDIF()
-ADVANCED_SET(Trilinos_CDASH_DEPS_XML_OUTPUT_FILE
-  "${Trilinos_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT}"
-  CACHE STRING
-  "Output XML file used by CDash in Trilinos-independent format (if not empty)." )
-
-IF(Trilinos_DEPS_XML_OUTPUT_FILE AND PYTHON_EXECUTABLE)
-  SET(Trilinos_DEPS_HTML_OUTPUT_FILE_DEFAULT
-    "${TRILINOS_HOME_DIR}/cmake/python/data/TrilinosPackageDependenciesTable.html" )
-ELSE()
-  SET(Trilinos_DEPS_HTML_OUTPUT_FILE_DEFAULT "")
-ENDIF()
-ADVANCED_SET(Trilinos_DEPS_HTML_OUTPUT_FILE
-  "${Trilinos_DEPS_HTML_OUTPUT_FILE_DEFAULT}"
-  CACHE STRING
-  "HTML Trilinos dependenices file that will be written to (if not empty)." )
-
 SET(TRILINOS_BUILD_SHARED_LIBS "@BUILD_SHARED_LIBS@")
 
 #
@@ -217,44 +178,17 @@ PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
 PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
   "\nFinal set of non-enabled TPLs" OFF TRUE)
 
-IF (Trilinos_DEPS_XML_OUTPUT_FILE)
-  IF (NOT IS_ABSOLUTE ${Trilinos_DEPS_XML_OUTPUT_FILE})
-    SET(Trilinos_DEPS_XML_OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/${Trilinos_DEPS_XML_OUTPUT_FILE})
-  ENDIF()
-  MESSAGE("" )
-  MESSAGE("Dumping the XML dependencies file ${Trilinos_DEPS_XML_OUTPUT_FILE} ..." )
-  MESSAGE("")
-  PACKAGE_ARCH_DUMP_DEPS_XML_FILE()
-ENDIF()
 
-IF (Trilinos_DEPS_HTML_OUTPUT_FILE AND Trilinos_DEPS_XML_OUTPUT_FILE)
-  IF (NOT IS_ABSOLUTE ${Trilinos_DEPS_HTML_OUTPUT_FILE})
-    SET(Trilinos_DEPS_HTML_OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/${Trilinos_DEPS_HTML_OUTPUT_FILE})
-  ENDIF()
-  MESSAGE("" )
-  MESSAGE("Dumping the HTML dependencies webpage file ${Trilinos_DEPS_HTML_OUTPUT_FILE} ..." )
-  MESSAGE("" )
-  EXECUTE_PROCESS(
-    COMMAND ${PYTHON_EXECUTABLE}
-      ${TRILINOS_HOME_DIR}/cmake/python/dump-package-dep-table.py
-      --input-xml-deps-file=${Trilinos_DEPS_XML_OUTPUT_FILE}
-      --output-html-deps-file=${Trilinos_DEPS_HTML_OUTPUT_FILE} )
-ENDIF()
+#
+# F) Write the XML dependency files
+#
 
-IF (Trilinos_CDASH_DEPS_XML_OUTPUT_FILE AND Trilinos_DEPS_XML_OUTPUT_FILE)
-  IF (NOT IS_ABSOLUTE ${Trilinos_CDASH_DEPS_XML_OUTPUT_FILE})
-    SET(Trilinos_CDASH_DEPS_XML_OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/${Trilinos_CDASH_DEPS_XML_OUTPUT_FILE})
-  ENDIF()
-  MESSAGE("" )
-  MESSAGE("" )
-  MESSAGE("Dumping the CDash XML dependencies file ${Trilinos_CDASH_DEPS_XML_OUTPUT_FILE} ..." )
-  MESSAGE("" )
-  EXECUTE_PROCESS(
-    COMMAND ${PYTHON_EXECUTABLE}
-      ${TRILINOS_HOME_DIR}/cmake/python/dump-cdash-deps-xml-file.py
-      --input-xml-deps-file=${Trilinos_DEPS_XML_OUTPUT_FILE}
-      --output-cdash-deps-xml-file=${Trilinos_CDASH_DEPS_XML_OUTPUT_FILE} )
-ENDIF()
+PACKAGE_ARCH_WRITE_XML_DEPENDENCY_FILES()
+
+
+#
+# G) Stop if asked
+#
 
 IF (Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING)
   MESSAGE("")
@@ -263,12 +197,12 @@ IF (Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING)
 ENDIF()
 
 #
-# F) Add the 'dashboard' target
+# H) Add the 'dashboard' target
 #
 
 IF (NOT (WIN32 AND NOT CYGWIN))
 
-  # F.1) Enable all packages that are enabled and have tests enabled
+  # H.1) Enable all packages that are enabled and have tests enabled
 
   SET(Trilinos_ENABLED_PACKAGES_LIST)
   SET(Trilinos_ENABLED_PACKAGES_CMAKE_ARG_LIST)
@@ -291,7 +225,7 @@ IF (NOT (WIN32 AND NOT CYGWIN))
     APPEND_SET(EXPR_CMND_ARGS "CTEST_DO_COVERAGE_TESTING=TRUE")
   ENDIF()
 
-  # F.2) Add the custom target to enable all the packages with tests enabled
+  # H.2) Add the custom target to enable all the packages with tests enabled
   
   ADD_CUSTOM_TARGET(dashboard
 
@@ -362,7 +296,7 @@ ENDIF()
 
 
 #
-# G) Set up the environment on this computer
+# I) Set up the environment on this computer
 #
 
 MESSAGE("")
@@ -377,7 +311,7 @@ PACKAGE_ARCH_POST_SETUP_ENV()
 
 
 #
-# H) Go get the information for all enabled TPLS
+# J) Go get the information for all enabled TPLS
 #
 
 MESSAGE("")
@@ -392,7 +326,7 @@ PACKAGE_ARCH_PROCESS_ENABLED_TPLS()
 OPTION(Trilinos_ENABLE_OpenMP
       "Build with OpenMP support." OFF)
 #
-# I) Set up for testing with CTest and Trilinos test harness
+# K) Set up for testing with CTest and Trilinos test harness
 #
 
 MESSAGE("")
@@ -405,14 +339,14 @@ TRILINOS_SETUP_TESTING_SUPPORT()
 
 
 #
-# J) Setup for packaging and distribution
+# L) Setup for packaging and distribution
 #
 
 TRILINOS_DEFINE_PACKAGING()
 
 
 #
-# K) Configure individual packages
+# M) Configure individual packages
 # 
 
 MESSAGE("")
@@ -423,13 +357,13 @@ PACKAGE_ARCH_CONFIGURE_ENABLED_PACKAGES()
 
 
 #
-# L) Install-related commands
+# N) Install-related commands
 #
 
-PACKAGE_WRITE_TRILINOS_CONFIG_FILE()
+PACKAGE_ARCH_WRITE_CONFIG_FILE()
 
 #
-# M) Export the library dependencies. This will let client projects
+# O) Export the library dependencies. This will let client projects
 # refer to all TPLs used by Trilinos. (KRL, 26 Nov 2009)
 #
 

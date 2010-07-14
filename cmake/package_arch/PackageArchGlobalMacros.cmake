@@ -83,7 +83,7 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
 
   ADVANCED_SET(${PROJECT_NAME}_VERBOSE_CONFIGURE OFF
     CACHE BOOL
-    "Make the Trilinos configure process verbose."
+    "Make the ${PROJECT_NAME} configure process verbose."
     )
   
   ADVANCED_SET(${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION OFF
@@ -152,6 +152,45 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
 
   ADVANCED_SET(${PROJECT_NAME}_ENABLE_CIRCULAR_REF_DETECTION_FAILURE OFF CACHE BOOL
     "If test output complaining about circular references is found, then the test will fail." )
+
+  IF (WIN32 AND NOT CYGWIN)
+    SET(${PACKAGE_NAME}_DEPS_XML_OUTPUT_FILE_DEFAULT "")
+  ELSE()
+    SET(${PACKAGE_NAME}_DEPS_XML_OUTPUT_FILE_DEFAULT
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/python/data/${PACKAGE_NAME}PackageDependencies.xml" )
+  ENDIF()
+  ADVANCED_SET(${PACKAGE_NAME}_DEPS_XML_OUTPUT_FILE
+    "${${PACKAGE_NAME}_DEPS_XML_OUTPUT_FILE_DEFAULT}"
+    CACHE STRING
+    "Output XML file containing ${PACKAGE_NAME} dependenices used by tools (if not empty)." )
+  # 2009/01/19: rabartl: Above: This file outputs just fine on MS# Windows using MS Visual Studio but it causes the entire file to
+  # diff.  There must be something wrong with a newlines or something
+  # that is causing this.  If people are going to be doing real
+  # development work on MS Windows with MS Visual Studio, then we need
+  # to fix this so that the dependency files will get created and
+  # checked in correctly.  I will look into this later.
+  
+  IF(${PACKAGE_NAME}_DEPS_XML_OUTPUT_FILE AND PYTHON_EXECUTABLE)
+    SET(${PACKAGE_NAME}_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/python/data/CDashSubprojectDependencies.xml" )
+  ELSE()
+    SET(${PACKAGE_NAME}_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT "")
+  ENDIF()
+  ADVANCED_SET(${PACKAGE_NAME}_CDASH_DEPS_XML_OUTPUT_FILE
+    "${${PACKAGE_NAME}_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT}"
+    CACHE STRING
+    "Output XML file used by CDash in ${PACKAGE_NAME}-independent format (if not empty)." )
+  
+  IF(${PACKAGE_NAME}_DEPS_XML_OUTPUT_FILE AND PYTHON_EXECUTABLE)
+    SET(${PACKAGE_NAME}_DEPS_HTML_OUTPUT_FILE_DEFAULT
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/python/data/${PACKAGE_NAME}PackageDependenciesTable.html" )
+  ELSE()
+    SET(${PACKAGE_NAME}_DEPS_HTML_OUTPUT_FILE_DEFAULT "")
+  ENDIF()
+  ADVANCED_SET(${PACKAGE_NAME}_DEPS_HTML_OUTPUT_FILE
+    "${${PACKAGE_NAME}_DEPS_HTML_OUTPUT_FILE_DEFAULT}"
+    CACHE STRING
+    "HTML ${PACKAGE_NAME} dependenices file that will be written to (if not empty)." )
   
   MARK_AS_ADVANCED(BUILD_TESTING)
   MARK_AS_ADVANCED(CMAKE_BACKWARDS_COMPATIBILITY)
@@ -442,6 +481,55 @@ ENDMACRO()
 
 
 #
+# Macro that ouptuts XML dependency files
+#
+
+
+MACRO(PACKAGE_ARCH_WRITE_XML_DEPENDENCY_FILES)
+  
+  IF (${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE)
+    IF (NOT IS_ABSOLUTE ${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE})
+      SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE})
+    ENDIF()
+    MESSAGE("" )
+    MESSAGE("Dumping the XML dependencies file ${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE} ..." )
+    MESSAGE("")
+    PACKAGE_ARCH_DUMP_DEPS_XML_FILE()
+  ENDIF()
+  
+  IF (${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE AND ${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE)
+    IF (NOT IS_ABSOLUTE ${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE})
+      SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE})
+    ENDIF()
+    MESSAGE("" )
+    MESSAGE("Dumping the HTML dependencies webpage file ${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE} ..." )
+    MESSAGE("" )
+    EXECUTE_PROCESS(
+      COMMAND ${PYTHON_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/python/dump-package-dep-table.py
+        --input-xml-deps-file=${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE}
+        --output-html-deps-file=${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE} )
+  ENDIF()
+  
+  IF (${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE AND ${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE)
+    IF (NOT IS_ABSOLUTE ${${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE})
+      SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/${${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE})
+    ENDIF()
+    MESSAGE("" )
+    MESSAGE("" )
+    MESSAGE("Dumping the CDash XML dependencies file ${${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE} ..." )
+    MESSAGE("" )
+    EXECUTE_PROCESS(
+      COMMAND ${PYTHON_EXECUTABLE}
+        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/python/dump-cdash-deps-xml-file.py
+        --input-xml-deps-file=${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE}
+        --output-cdash-deps-xml-file=${${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE} )
+  ENDIF()
+
+ENDMACRO()
+
+
+#
 # Macro that does the final set of package configurations
 #
 
@@ -521,7 +609,7 @@ ENDMACRO()
 #  The OUTPUT_VAre is set to ON or OFF based on the configure state. In
 #  development mode it will be set to ON only if SS code is enabled, 
 #  otherwise it is set to OFF. In release mode it is always set to ON.
-#  This allows some sections of Trilinos to be considered SS for 
+#  This allows some sections of PROJECT_NAME to be considered SS for 
 #  development mode reducing testing time, while still having important
 #  functionality available to users by default
 MACRO(PACKAGE_ARCH_SET_SS_FOR_DEV_MODE OUTPUT_VAR)
