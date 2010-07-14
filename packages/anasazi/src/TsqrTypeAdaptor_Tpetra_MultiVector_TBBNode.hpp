@@ -35,7 +35,7 @@ namespace TSQR {
 
       typedef TSQR::TBB::TbbTsqr< LO, S > node_tsqr_type;
       typedef TSQR::Tsqr< LO, S, node_tsqr_type > tsqr_type;
-      typedef TsqrFactory< LO, S, node_tsqr_type, tsqr_type > factory_type;
+      typedef TbbTsqrFactory< local_ordinal_type, scalar_type > factory_type;
     };
 #endif // HAVE_KOKKOS_TBB
 

@@ -13,17 +13,27 @@ namespace TSQR {
   namespace Trilinos {
 
     /// \class TsqrFactory
+    /// \brief Base class for TSQR implementation instantiation
     ///
-    /// Using TSQR requires holding on to three different RCPs:
-    /// \li MessengerBase<S>
-    /// \li node_tsqr_type
-    /// \li tsqr_type
-    /// They are returned by makeTsqr().  Pass it a ParameterList
-    /// appropriate to the type.  All take a "cache_block_size"
-    /// parameter (size of the cache in bytes), and the TBB
-    /// node-parallel TSQR variant takes a "num_cores" parameter
-    /// (number of cores per MPI process to use in TBB node-parallel
-    /// TSQR).
+    /// Each child class of TsqrFactory know how to instantiate a
+    /// particular TSQR implementation.  TsqrFactory contains all
+    /// common functionality for this task.
+    ///
+    /// \note Unless you need to change the interface between Trilinos
+    /// and TSQR, you don't need to do anything with TsqrFactory or
+    /// its subclasses.  Just choose the appropriate subclass of
+    /// TsqrAdaptor.  TsqrFactory and its subclasses don't have
+    /// anything to do with any of the Trilinos multivector classes.
+    ///
+    /// \note If you have implemented a new intranode TSQR
+    /// factorization type, you'll need to create a subclass of
+    /// TsqrFactory that knows how to instantiate that intranode TSQR
+    /// class.
+    ///
+    /// \note If you want to change which TSQR implementation is
+    /// invoked for a particular multivector (MV) class, change the
+    /// factory_type typedef in the specialization of TsqrTypeAdaptor
+    /// for MV.
     template< class LO, class S, class NodeTsqrType, class TsqrType >
     class TsqrFactory {
     public:
@@ -39,20 +49,9 @@ namespace TSQR {
       /// Instantiate and return (through the output arguments) the
       /// three objects required by TSQR.
       ///
-      /// \param plist [in] Parameter list with two keys:  
-      ///   \li "cache_block_size": Cache size in bytes.  Default is
-      ///       zero, which means that TSQR will guess a reasonable
-      ///       cache size.  The size should correspond to that of the
-      ///       largest cache that is private to each CPU core, if
-      ///       such a private cache exists; alternately, it should
-      ///       correspond to the amount of shared cache, divided by
-      ///       the number of cores sharing that cache.
-      ///   \li "num_cores": If node_tsqr_type requires this (TbbTsqr
-      ///       does, for Intel Threading Building Blocks intranode
-      ///       parallelism), it should be set to the number of CPU
-      ///       cores that are to participate in the intranode
-      ///       parallel part of TSQR.  If node_tsqr_type does not
-      ///       require this, then the parameter is ignored.
+      /// \param plist [in] Parameter list (keys depend on the
+      ///   subclass; keys are accessed in the subclass' makeNodeTsqr() 
+      ///   method)
       /// \param comm_ptr [in] Pointer to the underlying internode
       ///   communication handler.
       /// \param messenger [out] On output, points to the
@@ -64,32 +63,22 @@ namespace TSQR {
       /// \param tsqr [out] On output, points to the node_tsqr_type
       ///   object that TSQR will use for the internode part of its
       ///   computations.
-      static void
+      virtual void
       makeTsqr (const Teuchos::ParameterList& plist,
 		const comm_ptr& comm,
 		messenger_ptr& messenger,
 		node_tsqr_ptr& node_tsqr,
-		tsqr_ptr& tsqr)
+		tsqr_ptr& tsqr) const
       {
 	messenger = makeMessenger (comm);
 	node_tsqr = makeNodeTsqr (plist);
-	tsqr = tsqr_ptr (new tsqr_type (node_tsqr.get(), messenger.get()));
+	tsqr = tsqr_ptr (new tsqr_type (*node_tsqr, messenger.get()));
       }
 
-    private:
-      /// Constructor not implemented, so you can't construct a
-      /// TsqrFactory instance; you have to use the static interface.
-      TsqrFactory ();
-      /// Destructor not implemented, so you can't construct a
-      /// TsqrFactory instance; you have to use the static interface.
-      ~TsqrFactory ();
-      /// Copy constructor not implemented, so you can't construct a
-      /// (copy of a) TsqrFactory instance.
-      TsqrFactory (const TsqrFactory&);
-      /// Assignment operator not implemented, so you can't construct
-      /// a (copy of a) TsqrFactory instance.
-      TsqrFactory& operator= (const TsqrFactory&);
+      TsqrFactory () {}
+      virtual ~TsqrFactory () {};
 
+    private:
       /// \brief Instantiate and return TSQR's intranode object
       ///
       /// \param plist [in] Same as the epinonymous input of makeTsqr()
@@ -108,11 +97,11 @@ namespace TSQR {
       ///   "nonvirtual" methods (here, the methods that are the same
       ///   for different template parameters) are part of the public
       ///   interface.
-      static node_tsqr_ptr
-      makeNodeTsqr (const Teuchos::ParameterList& plist);
+      virtual node_tsqr_ptr
+      makeNodeTsqr (const Teuchos::ParameterList& plist) const = 0;
 
-      static messenger_ptr 
-      makeMessenger (const comm_ptr& comm)
+      virtual messenger_ptr 
+      makeMessenger (const comm_ptr& comm) const
       {
 	using TSQR::Trilinos::TrilinosMessenger;
 	return messenger_ptr (new TrilinosMessenger< S > (comm));

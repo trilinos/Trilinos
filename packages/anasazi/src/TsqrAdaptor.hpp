@@ -22,15 +22,16 @@ namespace TSQR {
     /// \class TsqrAdaptor
     /// \brief Interface between a Trilinos multivector class and TSQR
     ///
-    /// TsqrAdaptor tells TSQR how to compute a factorization of a
-    /// Trilinos multivector class MV.  Currently, Epetra_MultiVector
-    /// and Tpetra::MultiVector< S, LO, GO, NodeType > for any
-    /// NodeType are supported.  At the moment, the latter will only
-    /// be efficient if NodeType is not a GPU node.  TsqrAdaptor
-    /// uses TsqrTypeAdaptor to figure out which variant of TSQR to
-    /// use on the given multivector type.  For example, with
-    /// Tpetra::MultiVector< S, LO, GO, NodeType >, if NodeType is
-    /// Kokkos::TBBNode, the TBB-parallel intranode variant of TSQR
+    /// Child classes of TsqrAdaptor tell TSQR how to compute a
+    /// factorization of a specific Trilinos multivector class MV.
+    /// Currently, Epetra_MultiVector and Tpetra::MultiVector< S, LO,
+    /// GO, NodeType > for any NodeType are supported, via
+    /// TsqrEpetraAdaptor resp. TsqrTpetraAdaptor.  At the moment, the
+    /// latter will only be efficient if NodeType is not a GPU node.
+    /// TsqrAdaptor uses TsqrTypeAdaptor to figure out which variant
+    /// of TSQR to use on the given multivector type.  For example,
+    /// with Tpetra::MultiVector< S, LO, GO, NodeType >, if NodeType
+    /// is Kokkos::TBBNode, the TBB-parallel intranode variant of TSQR
     /// will be used.  The caller is responsible for constructing the
     /// intranode and internode TSQR objects.
     ///
@@ -39,18 +40,21 @@ namespace TSQR {
     /// GO: global ordinal type: TSQR doesn't use it, but MV does.
     /// MV: multivector type
     ///
-    /// \note This is the interface to TSQR that Trilinos sees.
-    ///   Implementers who want to add a new MultiVector (MV) type
-    ///   must create three different (partial) instantiations (in
-    ///   this order): a TsqrTypeAdaptor (with appropriate typedefs),
-    ///   a TsqrFactory (which knows how to construct TSQR-related
-    ///   objects), and a TsqrAdaptor (which wraps TSQR operations).
-    ///   Implementers who wish to change which TSQR implementation is
-    ///   used for a particular MultiVector type (for which a
-    ///   (partial) TsqrAdaptor instantiation exists) should change
-    ///   the corresponding (partial) instantiation of TsqrTypeAdaptor
-    ///   (which maps the MultiVector type to the TSQR implementation
-    ///   type).
+    /// \note Implementers who want to support TSQR with a new
+    ///   MultiVector (MV) type must create a subclass of that type,
+    ///   using e.g., TsqrTpetraAdaptor as a model.  They must also
+    ///   create a new TsqrTypeAdaptor (with the appropriate
+    ///   typedefs).  
+    ///
+    /// \note Implementers who wish to change which TSQR
+    ///   implementation is used for a particular MultiVector type
+    ///   (for which a TsqrAdaptor child class exists) should change
+    ///   the corresponding (possibly partial) specialization of
+    ///   TsqrTypeAdaptor: in particular, type_adaptor::node_tsqr_type
+    ///   and type_adaptor::tsqr_type must be changed.
+    ///
+    /// \note Implementers who wish to add a new TSQR factorization
+    ///   must create a new TsqrFactory specialization.
     template< class S, class LO, class GO, class MV >
     class TsqrAdaptor {
     public:
@@ -61,15 +65,10 @@ namespace TSQR {
 
       typedef typename TSQR::ScalarTraits< scalar_type >::magnitude_type magnitude_type;
 
-      /// TsqrTypeAdaptorType: lets us map the desired TSQR
-      ///   implementation to the MV class.  For Tpetra::MultiVector,
-      ///   the default TsqrTypeAdaptor is the best.  For
-      ///   Epetra_MultiVector, the default is serial on each MPI
-      ///   process; you might like to change this by providing your own
-      ///   TsqrTypeAdaptorType.
       typedef TsqrTypeAdaptor< S, LO, GO, MV >         type_adaptor;
       typedef typename type_adaptor::node_tsqr_type    node_tsqr_type;
       typedef typename type_adaptor::tsqr_type         tsqr_type;
+      typedef typename type_adaptor::factory_type      factory_type;
 
       typedef Teuchos::RCP< node_tsqr_type >           node_tsqr_ptr;
       typedef Teuchos::RCP< tsqr_type >                tsqr_ptr;
@@ -95,11 +94,10 @@ namespace TSQR {
       TsqrAdaptor (const comm_ptr& comm,
 		   const Teuchos::ParameterList& plist)
       {
-	// This typedef is an implementation detail.
-	typedef TsqrFactory< LO, S, node_tsqr_type, tsqr_type > factory_type;
 	// plist and comm are inputs.
 	// Construct *pMessenger_, *pNodeTsqr_, and *pTsqr_.
-	factory_type::makeTsqr (plist, comm, pMessenger_, pNodeTsqr_, pTsqr_);
+	factory_type factory;
+	factory.makeTsqr (plist, comm, pMessenger_, pNodeTsqr_, pTsqr_);
       }
 
       virtual ~TsqrAdaptor() {}
@@ -346,32 +344,29 @@ namespace TSQR {
       /// \param ncols [out] Number of columns of A
       /// \param LDA [out] Leading dimension of this process' row 
       ///   block of A
-      ///
-      /// \note (mfh 15 June 2010) The reason why we can't just use
-      /// fetch_MV_dims() as the adaptor class for TSQR, is because of
-      /// Tpetra::MultiVector's use of smart pointers.
-      /// fetch_MV_dims() can't just return raw pointers to the
-      /// internal storage of Tpetra::MultiVector, since that would
-      /// require letting the raw pointers escape the scope of their
-      /// parent smart pointer objects.  If we return the smart
-      /// pointer, then the adaptor class depends on the type of smart
-      /// pointer (or raw pointer, in the case of Epetra_MultiVector,
-      /// whose Values() method returns just that).  If I could use
-      /// boost::shared_ptr in TSQR then I would just use it
-      /// throughout, which would remove the need for the TsqrAdaptor
-      /// class; however, Boost is only an optional dependency in
-      /// Trilinos (thanks to one particular compiler vendor *ahem*).
-      /// I don't want TSQR to depend on Teuchos::RCP because I want
-      /// to make TSQR fully portable.  So I'm stuck writing adaptors.
       virtual void 
       fetchDims (const multivector_type& A, 
 		 local_ordinal_type& nrowsLocal, 
 		 local_ordinal_type& ncols, 
 		 local_ordinal_type& LDA) const = 0;
 
+      /// \return Non-const smart pointer to the node-local data in A
+      ///
+      /// \note Child classes should implement this in such a way as
+      /// to make the above public methods always correct (though not
+      /// necessarily efficient) for all multivector types.  (It may
+      /// not be efficient if the ArrayRCP copies between different
+      /// memory spaces.)
       virtual Teuchos::ArrayRCP< scalar_type > 
       fetchNonConstView (multivector_type& A) const = 0;
 
+      /// \return Const smart pointer to the node-local data in A
+      ///
+      /// \note Child classes should implement this in such a way as
+      /// to make the above public methods always correct (though not
+      /// necessarily efficient) for all multivector types.  (It may
+      /// not be efficient if the ArrayRCP copies between different
+      /// memory spaces.)
       virtual Teuchos::ArrayRCP< const scalar_type > 
       fetchConstView (const multivector_type& A) const = 0;
 

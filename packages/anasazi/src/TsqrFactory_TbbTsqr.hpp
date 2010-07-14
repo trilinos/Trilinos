@@ -18,72 +18,66 @@ namespace TSQR {
 
 #ifdef HAVE_KOKKOS_TBB
     template< class LO, class S >
-    class TsqrFactory< LO, S, TSQR::TBB::TbbTsqr< LO, S >, Tsqr< LO, S, TSQR::TBB::TbbTsqr< LO, S > > > {
+    class TbbTsqrFactory :
+      public TsqrFactory< LO, S, TSQR::TBB::TbbTsqr< LO, S >, 
+			  Tsqr< LO, S, TSQR::TBB::TbbTsqr< LO, S > > > 
+    {
     public:
-      typedef Teuchos::RCP< const Teuchos::Comm<int> > comm_ptr;
-      typedef Teuchos::RCP< MessengerBase< S > >       messenger_ptr;
-      typedef TSQR::TBB::TbbTsqr< LO, S >              node_tsqr_type;
-      typedef Tsqr< LO, S, node_tsqr_type >            tsqr_type;
-      typedef Teuchos::RCP< node_tsqr_type >           node_tsqr_ptr;
-      typedef Teuchos::RCP< tsqr_type >                tsqr_ptr;
+      // Help C++ pull in the typedefs from the base class.  C++ needs
+      // help when both the base and the derived classes are
+      // templated.
+      typedef TsqrFactory< LO, S, TSQR::TBB::TbbTsqr< LO, S >, Tsqr< LO, S, TSQR::TBB::TbbTsqr< LO, S > > > base_type;
 
-      static void
-      makeTsqr (const Teuchos::ParameterList& plist,
-		const comm_ptr& comm,
-		messenger_ptr& messenger,
-		node_tsqr_ptr& node_tsqr,
-		tsqr_ptr& tsqr)
-      {
-	messenger = makeMessenger (comm);
-	node_tsqr = makeNodeTsqr (plist);
-	tsqr = tsqr_ptr (new tsqr_type (*node_tsqr, messenger.get()));
-      }
+      typedef typename base_type::node_tsqr_type node_tsqr_type;
+      typedef typename base_type::tsqr_type      tsqr_type;
+      typedef typename base_type::node_tsqr_ptr  node_tsqr_ptr;
+      typedef typename base_type::tsqr_ptr       tsqr_ptr;
+
+      TbbTsqrFactory () {}
+      virtual ~TbbTsqrFactory () {}
 
     private:
-      TsqrFactory ();
-      ~TsqrFactory ();
-      TsqrFactory (const TsqrFactory&);
-      TsqrFactory& operator= (const TsqrFactory&);
-
-      static node_tsqr_ptr
-      makeNodeTsqr (const Teuchos::ParameterList& plist);
-
-      static messenger_ptr 
-      makeMessenger (const comm_ptr& comm)
+      /// \param [in] plist Parameter list with the following keys:
+      ///   \li "cacheBlockSize": Cache size in bytes.  Default is
+      ///       zero, which means that TSQR will guess a reasonable
+      ///       cache size.  The size should correspond to that of the
+      ///       largest cache that is private to each CPU core, if
+      ///       such a private cache exists; alternately, it should
+      ///       correspond to the amount of shared cache, divided by
+      ///       the number of cores sharing that cache.
+      ///   \li "numCores": If node_tsqr_type requires this (TbbTsqr
+      ///       does, for Intel Threading Building Blocks intranode
+      ///       parallelism), it should be set to the number of CPU
+      ///       cores that are to participate in the intranode
+      ///       parallel part of TSQR.  If node_tsqr_type does not
+      ///       require this, then the parameter is ignored.
+      virtual node_tsqr_ptr
+      makeNodeTsqr (const Teuchos::ParameterList& plist) const
       {
-	using TSQR::Trilinos::TrilinosMessenger;
-	return messenger_ptr (new TrilinosMessenger< S > (comm));
+	using Teuchos::Exceptions::InvalidParameter;
+	int numCores = 1;
+	size_t cacheBlockSize = 0;
+
+	try {
+	  const std::string numCoresParamName ("numCores");
+	  numCores = plist.get<int>(numCoresParamName);
+	} catch (InvalidParameter&) {
+	  numCores = 1;
+	}
+
+	try {
+	  const std::string cacheBlockSizeParamName ("cacheBlockSize");
+	  cacheBlockSize = plist.get<size_t>(cacheBlockSizeParamName);
+	} catch (InvalidParameter&) {
+	  // Intranode TSQR interprets cacheBlockSize==0 as "set cache
+	  // block size to a reasonable positive default value."
+	  cacheBlockSize = 0;
+	}
+
+	node_tsqr_ptr node_tsqr (new node_tsqr_type (numCores, cacheBlockSize));
+	return node_tsqr;
       }
     };
-
-    template< class LO, class S >
-    typename TsqrFactory< LO, S, TSQR::TBB::TbbTsqr< LO, S >, Tsqr< LO, S, TSQR::TBB::TbbTsqr< LO, S > > >::node_tsqr_ptr
-    TsqrFactory< LO, S, TSQR::TBB::TbbTsqr< LO, S >, Tsqr< LO, S, TSQR::TBB::TbbTsqr< LO, S > > >::
-    makeNodeTsqr (const Teuchos::ParameterList& plist)
-    {
-      using Teuchos::Exceptions::InvalidParameter;
-      int num_cores = 1;
-      size_t cache_block_size = 0;
-      const std::string cacheBlockSizeParamName ("cacheBlockSize");
-      const std::string numCoresParamName ("numCores");
-
-      try {
-	num_cores = plist.get<int>(numCoresParamName);
-      } catch (InvalidParameter&) {
-	num_cores = 1;
-      }
-
-      try {
-	cache_block_size = plist.get<size_t>(cacheBlockSizeParamName);
-      } catch (InvalidParameter&) {
-	// Intranode TSQR interprets cache_block_size==0 as "set cache
-	// block size to a reasonable positive default value."
-	cache_block_size = 0;
-      }
-
-      node_tsqr_ptr node_tsqr (new node_tsqr_type (num_cores, cache_block_size));
-      return node_tsqr;
-    }
 #endif // HAVE_KOKKOS_TBB
 
   } // namespace Trilinos

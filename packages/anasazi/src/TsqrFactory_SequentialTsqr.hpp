@@ -11,68 +11,60 @@
 namespace TSQR {
   namespace Trilinos {
 
+    /// \class SequentialTsqrFactory
+    ///
+    /// Subclass of TsqrFactory that knows how to instantiate
+    /// SequentialTsqr for intranode TSQR.
     template< class LO, class S >
-    class TsqrFactory< LO, S, SequentialTsqr< LO, S >, Tsqr< LO, S, SequentialTsqr< LO, S > > > {
+    class SequentialTsqrFactory :
+      public TsqrFactory< LO, S, SequentialTsqr< LO, S >, 
+			  Tsqr< LO, S, SequentialTsqr< LO, S > > >
+    {
     public:
-      typedef Teuchos::RCP< const Teuchos::Comm<int> > comm_ptr;
-      typedef Teuchos::RCP< MessengerBase< S > >       messenger_ptr;
-      typedef SequentialTsqr< LO, S >                  node_tsqr_type;
-      typedef Tsqr< LO, S, SequentialTsqr< LO, S > >   tsqr_type;
-      typedef Teuchos::RCP< node_tsqr_type >           node_tsqr_ptr;
-      typedef Teuchos::RCP< tsqr_type >                tsqr_ptr;
+      // Help C++ pull in the typedefs from the base class.  C++ needs
+      // help when both the base and the derived classes are
+      // templated.
+      typedef TsqrFactory< LO, S, SequentialTsqr< LO, S >, Tsqr< LO, S, SequentialTsqr< LO, S > > > base_type;
 
-      static void
-      makeTsqr (const Teuchos::ParameterList& plist,
-		const comm_ptr& comm,
-		messenger_ptr& messenger,
-		node_tsqr_ptr& node_tsqr,
-		tsqr_ptr& tsqr)
-      {
-	messenger = makeMessenger (comm);
-	node_tsqr = makeNodeTsqr (plist);
-	tsqr = tsqr_ptr (new tsqr_type (*node_tsqr, messenger.get()));
-      }
+      typedef typename base_type::node_tsqr_type node_tsqr_type;
+      typedef typename base_type::tsqr_type      tsqr_type;
+      typedef typename base_type::node_tsqr_ptr  node_tsqr_ptr;
+      typedef typename base_type::tsqr_ptr       tsqr_ptr;
+
+      SequentialTsqrFactory () {}
+      virtual ~SequentialTsqrFactory () {}
 
     private:
-      TsqrFactory ();
-      ~TsqrFactory ();
-      TsqrFactory (const TsqrFactory&);
-      TsqrFactory& operator= (const TsqrFactory&);
-
-      static node_tsqr_ptr
-      makeNodeTsqr (const Teuchos::ParameterList& plist);
-
-      static messenger_ptr 
-      makeMessenger (const comm_ptr& comm)
+      /// \param [in] plist Parameter list with the following key:
+      ///   \li "cacheBlockSize": Cache size in bytes.  Default is
+      ///       zero, which means that TSQR will guess a reasonable
+      ///       cache size.  The size should correspond to that of the
+      ///       largest cache that is private to each CPU core, if
+      ///       such a private cache exists; alternately, it should
+      ///       correspond to the amount of shared cache, divided by
+      ///       the number of cores sharing that cache.
+      virtual node_tsqr_ptr
+      makeNodeTsqr (const Teuchos::ParameterList& plist) const
       {
-	using TSQR::Trilinos::TrilinosMessenger;
-	return messenger_ptr (new TrilinosMessenger< S > (comm));
+	using Teuchos::Exceptions::InvalidParameter;
+	size_t cacheBlockSize = 0;
+
+	// All this try/catch stuff is because the C++ compiler can't
+	// deduce the right two-argument get() function (second argument
+	// would be the default).
+	try {
+	  const std::string cacheBlockSizeParamName ("cacheBlockSize");
+	  cacheBlockSize = plist.get< size_t > (cacheBlockSizeParamName);
+	} catch (InvalidParameter&) {
+	  cacheBlockSize = 0;
+	}
+	
+	node_tsqr_ptr node_tsqr (new node_tsqr_type (cacheBlockSize));
+	return node_tsqr;
       }
     };
 
-    template< class LO, class S >
-    typename TsqrFactory< LO, S, SequentialTsqr< LO, S >, Tsqr< LO, S, SequentialTsqr< LO, S > > >::node_tsqr_ptr
-    TsqrFactory< LO, S, SequentialTsqr< LO, S >, Tsqr< LO, S, SequentialTsqr< LO, S > > >::
-    makeNodeTsqr (const Teuchos::ParameterList& plist)
-    {
-      using Teuchos::Exceptions::InvalidParameter;
-      size_t cache_block_size = 0;
-      const std::string cacheBlockSizeParamName ("cacheBlockSize");
-
-      // All this try/catch stuff is because the C++ compiler can't
-      // deduce the right two-argument get() function (second argument
-      // would be the default).
-      try {
-	cache_block_size = plist.get< size_t > (cacheBlockSizeParamName);
-      } catch (InvalidParameter&) {
-	cache_block_size = 0;
-      }
-	
-      node_tsqr_ptr node_tsqr (new node_tsqr_type (cache_block_size));
-      return node_tsqr;
-    }
-
-  }
-}
+  } // namespace Trilinos
+} // namespace TSQR
 
 #endif // __TSQR_Trilinos_TsqrFactory_SequentialTsqr_hpp
