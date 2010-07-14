@@ -246,6 +246,58 @@ makeTpetraTestProblem (const Tpetra::global_size_t nrowsGlobal,
 }
 
 
+template< class S, class LO, class GO, class Node >
+std::pair< typename TSQR::ScalarTraits< S >::magnitude_type,
+	   typename TSQR::ScalarTraits< S >::magnitude_type >
+verifyTpetraTsqr (const Tpetra::global_size_t nrowsGlobal,
+		  const size_t ncols,
+		  const Teuchos::RCP< const Teuchos::Comm<int> >& comm,
+		  const Teuchos::RCP< Node >& node,
+		  const Teuchos::ParameterList& params)
+{
+  using Teuchos::RCP;
+  using Teuchos::Tuple;
+  using TSQR::Trilinos::TsqrAdaptor;
+  using Teuchos::Exceptions::InvalidParameter;
+
+  typedef Tpetra::MultiVector< S, LO, GO, Node > MV;
+  typedef Teuchos::Tuple< RCP< MV >, 3 > triple_type;
+  typedef typename TsqrAdaptor< S, LO, GO, MV >::factor_output_type factor_output_type;
+  typedef Teuchos::SerialDenseMatrix< LO, S > matrix_type;
+  typedef std::pair< typename TSQR::ScalarTraits< S >::magnitude_type, typename TSQR::ScalarTraits< S >::magnitude_type > results_type;
+
+  bool contiguousCacheBlocks = false;
+  try {
+    contiguousCacheBlocks = params.get<bool>("contiguousCacheBlocks");
+  } catch (InvalidParameter&) {
+    contiguousCacheBlocks = false;
+  }
+
+  triple_type testProblem = makeTpetraTestProblem (nrowsGlobal, ncols, comm, node);
+  RCP< MV > A = testProblem[0]; // A is already filled in with the test problem
+  RCP< MV > A_copy = testProblem[1];
+  RCP< MV > Q = testProblem[2];
+  matrix_type R (ncols, ncols);
+
+  TsqrAdaptor< S, LO, GO, MV > adaptor (comm, params);
+  if (contiguousCacheBlocks)
+    adaptor.cacheBlock (A, A_copy);
+
+  factor_output_type factorOutput = 
+    adaptor.factor (A_copy, R, contiguousCacheBlocks);
+  adaptor.explicitQ (A_copy, factorOutput, Q, contiguousCacheBlocks);
+  if (contiguousCacheBlocks)
+    {
+      // Use A_copy as temporary storage for un-cache-blocking Q.
+      // Tpetra::MultiVector objects copy deeply.
+      *A_copy = *Q;
+      adaptor.unCacheBlock (A_copy, Q);
+    }
+  return adaptor.verify (A, Q, R);
+}
+
+
+
 
 #if 0
 template< class S, class LO, class GO, class MV >
