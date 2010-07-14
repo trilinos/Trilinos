@@ -637,6 +637,17 @@ Teuchos::rcpWithInvertedObjOwnership(const RCP<T> &child,
 
 
 template<class T>
+Teuchos::RCP<T>
+Teuchos::rcpCloneNode(const RCP<T> &p)
+{
+  if (is_null(p)) {
+    return p;
+  }
+  return rcpWithEmbeddedObj(&*p, p, false);
+}
+
+
+template<class T>
 inline
 bool Teuchos::is_null( const RCP<T> &p )
 {
