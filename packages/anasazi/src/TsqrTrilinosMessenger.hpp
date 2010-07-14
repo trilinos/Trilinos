@@ -2,6 +2,7 @@
 #define __TSQR_Trilinos_TsqrTrilinosMessenger_hpp
 
 #include "Teuchos_CommHelpers.hpp"
+#include "Tsqr_MessengerBase.hpp"
 #include <algorithm>
 
 ////////////////////////////////////////////////////////////////////////////////

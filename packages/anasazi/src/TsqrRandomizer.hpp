@@ -31,12 +31,12 @@ namespace TSQR {
       typedef GO  global_ordinal_type;
       typedef MV  multivector_type;
       typedef Gen normalgen_type;
-
-      typedef typename TSQR::ScalarTraits< S >::magnitude_type magnitude_type;
       typedef Teuchos::RCP< Gen > normalgen_ptr;
       typedef TSQR::Random::MatrixGenerator< S, LO, Gen > matgen_type;
+
+      typedef typename TSQR::ScalarTraits< S >::magnitude_type magnitude_type;
       typedef Teuchos::RCP< MessengerBase< LO > > ordinal_messenger_ptr;
-      typedef Teuchos::RCP< MessengerBase< S > > scalar_messenger_ptr;
+      typedef Teuchos::RCP< MessengerBase< S > >  scalar_messenger_ptr;
 
       /// \brief Constructor
       ///
@@ -59,6 +59,8 @@ namespace TSQR {
 	pScalarMess_ (pScalarMess)
       {}
 
+      virtual ~Randomizer() {}
+
       /// \brief Fill A with a (pseudo)random (distributed) matrix
       ///
       /// Fill the MultiVector A with a (pseudo)random (distributed)
@@ -68,7 +70,7 @@ namespace TSQR {
       /// produce the same matrix, no matter the number of processors.
       /// It achieves this at the cost of scalability; only Proc 0
       /// invokes the pseudorandom number generator.
-      void
+      virtual void
       randomMultiVector (multivector_type& A, 
 			 const magnitude_type singularValues[])
       {
@@ -78,7 +80,7 @@ namespace TSQR {
 
 	local_ordinal_type nrowsLocal, ncols, LDA;
 	fetchDims (A, nrowsLocal, ncols, LDA);
-	ArrayRCP< scalar_type > A_ptr = pEntries (A);
+	ArrayRCP< scalar_type > A_ptr = fetchNonConstView (A);
 	mat_view_type A_view (nrowsLocal, ncols, A_ptr.get(), LDA);
 
 	randomGlobalMatrix (pGen_.get(), A_view, singularValues,
@@ -101,14 +103,21 @@ namespace TSQR {
       /// \param ncols [out] Number of columns of A
       /// \param LDA [out] Leading dimension of this process' row 
       ///   block of A
-      void 
+      virtual void 
       fetchDims (const multivector_type& A, 
 		 local_ordinal_type& nrowsLocal, 
 		 local_ordinal_type& ncols, 
-		 local_ordinal_type& LDA);
+		 local_ordinal_type& LDA) const = 0;
 
-      Teuchos::ArrayRCP< scalar_type > 
-      pEntries (multivector_type& A);
+      /// \return Non-const smart pointer to the node-local data in A
+      ///
+      /// \note Child classes should implement this in such a way as
+      /// to make the above public methods always correct (though not
+      /// necessarily efficient) for all multivector types.  (It may
+      /// not be efficient if the ArrayRCP copies between different
+      /// memory spaces.)
+      virtual Teuchos::ArrayRCP< scalar_type > 
+      fetchNonConstView (multivector_type& A) const = 0;
 
       normalgen_ptr pGen_;
       ordinal_messenger_ptr pOrdinalMess_;

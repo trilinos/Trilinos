@@ -24,55 +24,43 @@ namespace TSQR {
   namespace Trilinos {
 
     template< class S, class LO, class GO, class NodeType, class Gen >
-    class Randomizer< S, LO, GO, 
-		      Tpetra::MultiVector< S, LO, GO, NodeType >,
-		      Gen >
+    class TpetraRandomizer :
+      public Randomizer< S, LO, GO, 
+			 Tpetra::MultiVector< S, LO, GO, NodeType >,
+			 Gen >
     {
     public:
-      typedef Tpetra::MultiVector< S, LO, GO, NodeType > MV;
+      // mfh 14 Jul 2010: I'm uncomfortable naming this "MV" because
+      // the base class already has MV defined in it.  I don't want to
+      // go all circular (MV -> multivector_type -> MV).  TMV here is
+      // just a way to make the base_type typedef fit on one line.
+      typedef Tpetra::MultiVector< S, LO, GO, NodeType > TMV;
 
-      typedef S   scalar_type;
-      typedef LO  local_ordinal_type;
-      typedef GO  global_ordinal_type;
-      typedef MV  multivector_type;
-      typedef Gen normalgen_type;
+      // The C++ compiler needs help inheriting typedefs, when both
+      // the base class and the derived class are templated.
+      typedef Randomizer< double, int, int, TMV, Gen > base_type;
+      typedef typename base_type::multivector_type multivector_type;
+      typedef typename base_type::local_ordinal_type local_ordinal_type;
+      typedef typename base_type::scalar_type scalar_type;
 
-      typedef typename TSQR::ScalarTraits< S >::magnitude_type magnitude_type;
-      typedef Teuchos::RCP< Gen > normalgen_ptr;
-      typedef TSQR::Random::MatrixGenerator< S, LO, Gen > matgen_type;
-      typedef Teuchos::RCP< MessengerBase< LO > > ordinal_messenger_ptr;
-      typedef Teuchos::RCP< MessengerBase< S > > scalar_messenger_ptr;
+      typedef typename base_type::normalgen_ptr normalgen_ptr;
+      typedef typename base_type::ordinal_messenger_ptr ordinal_messenger_ptr;
+      typedef typename base_type::scalar_messenger_ptr scalar_messenger_ptr;
 
-      Randomizer (const normalgen_ptr& pGen,
-		  const ordinal_messenger_ptr& pOrdinalMess,
-		  const scalar_messenger_ptr& pScalarMess) : 
-	pGen_ (pGen),
-	pOrdinalMess_ (pOrdinalMess),
-	pScalarMess_ (pScalarMess)
+      /// \brief Constructor
+      ///
+      TpetraRandomizer (const normalgen_ptr& pGen,
+			const ordinal_messenger_ptr& pOrdinalMess,
+			const scalar_messenger_ptr& pScalarMess) : 
+	base_type (pGen, pOrdinalMess, pScalarMess) 
       {}
 
-      void
-      randomMultiVector (MV& A, const magnitude_type singularValues[])
-      {
-	using TSQR::Random::randomGlobalMatrix;
-	using Teuchos::ArrayRCP;
-	typedef MatView< local_ordinal_type, scalar_type > mat_view_type;
-
-	local_ordinal_type nrowsLocal, ncols, LDA;
-	fetchDims (A, nrowsLocal, ncols, LDA);
-	ArrayRCP< scalar_type > A_ptr = pEntries (A);
-	mat_view_type A_view (nrowsLocal, ncols, A_ptr.get(), LDA);
-
-	randomGlobalMatrix (pGen_.get(), A_view, singularValues,
-			    pOrdinalMess_.get(), pScalarMess_.get());
-      }
-
     private:
-      void
+      virtual void
       fetchDims (const multivector_type& A,
 		 local_ordinal_type& nrowsLocal, 
 		 local_ordinal_type& ncols, 
-		 local_ordinal_type& LDA)
+		 local_ordinal_type& LDA) const
       {
 	nrowsLocal = A.getLocalLength();
 	ncols = A.getNumVectors();
@@ -81,7 +69,7 @@ namespace TSQR {
 	    std::ostringstream os;
 	    os << "The local component of the input matrix has fewer row"
 	      "s (" << nrowsLocal << ") than columns (" << ncols << ").  "
-	      "TSQR::Trilinos::Randomizer does not support this case.";
+	      "TSQR::Trilinos::TpetraRandomizer does not support this case.";
 	    throw std::runtime_error (os.str());
 	  }
 	if (! A.isConstantStride())
@@ -92,25 +80,21 @@ namespace TSQR {
 	    // returns.  If it's copied and packed into a matrix with
 	    // constant stride, then we are free to run TSQR.
 	    std::ostringstream os;
-	    os << "TSQR::Trilinos::Randomizer does not support Tpetra::"
-	      "MultiVector inputs that do not have constant stride.";
+	    os << "TSQR::Trilinos::TpetraRandomizer does not support "
+	      "Tpetra::MultiVector inputs that do not have constant stride.";
 	    throw std::runtime_error (os.str());
 	  }
 	LDA = A.getStride();
       }
 
-      Teuchos::ArrayRCP< scalar_type > 
-      pEntries (multivector_type& A)
+      virtual Teuchos::ArrayRCP< scalar_type > 
+      fetchNonConstView (multivector_type& A) const
       {
 	// This won't be efficient if the entries of A live in a
 	// different memory space (e.g., GPU node), but it will be
 	// correct for any Tpetra::MultiVector type.
 	return A.get1dViewNonConst();
       }
-
-      normalgen_ptr pGen_;
-      ordinal_messenger_ptr pOrdinalMess_;
-      scalar_messenger_ptr pScalarMess_;
     };
   } // namespace Trilinos
 } // namespace TSQR
