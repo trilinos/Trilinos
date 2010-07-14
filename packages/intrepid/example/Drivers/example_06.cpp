@@ -431,11 +431,13 @@ int main(int argc, char *argv[]) {
 
   const double applyTime = gatherTime + blasTime + scatTime;
   std::cout << "Time to do matrix-free product: " << applyTime << std::endl;
- 
-   
-   // reset format state of std::cout
-   std::cout.copyfmt(oldFormatState);
-   
-   return 0;
+  
+  
+  std::cout << "End Result: TEST PASSED\n";
+  
+  // reset format state of std::cout
+  std::cout.copyfmt(oldFormatState);
+  
+  return 0;
 }
 

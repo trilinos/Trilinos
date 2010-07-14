@@ -341,7 +341,7 @@ int main(int argc, char *argv[]) {
   double *uVals = u[0];
   double *KuVals = Ku[0];
   Epetra_Time scatterTime(Comm);
-  std::cout << "Scattering\n";
+  *outStream << "Scattering\n";
   // Scatter
   for (int k=0; k<numElems; k++) 
     {
@@ -351,7 +351,7 @@ int main(int argc, char *argv[]) {
         }
     }
   const double scatTime = scatterTime.ElapsedTime();
-  std::cout << "Scattered in time " << scatTime << "\n";
+  *outStream << "Scattered in time " << scatTime << "\n";
  
   Epetra_Time applyTimer(Comm);
   
@@ -426,7 +426,7 @@ int main(int argc, char *argv[]) {
   
   const double applyTime = applyTimer.ElapsedTime();
 
-  std::cout << "Local application: " << applyTime << "\n";
+  *outStream << "Local application: " << applyTime << "\n";
       
   // gather
   Epetra_Time gatherTimer(Comm);
@@ -440,7 +440,7 @@ int main(int argc, char *argv[]) {
     }
 
   const double gatherTime = gatherTimer.ElapsedTime();
-  std::cout << "Gathered in " << gatherTime << "\n";
+  *outStream << "Gathered in " << gatherTime << "\n";
 
 
 
@@ -451,6 +451,8 @@ int main(int argc, char *argv[]) {
 #endif
 
    
+  std::cout << "End Result: TEST PASSED\n";
+
    // reset format state of std::cout
    std::cout.copyfmt(oldFormatState);
    
