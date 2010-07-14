@@ -217,6 +217,8 @@ int main(int argc, char *argv[]) {
     // Loop over all tags, lookup the associated dof enumeration and then lookup the tag again
     for (unsigned i = 0; i < allTags.size(); i++) {
       int bfOrd  = hexBasis.getDofOrdinal(allTags[i][0], allTags[i][1], allTags[i][2]);
+
+      for (unsigned j=0;j<4;j++) std::cout << allTags[i][j] << " "; std::cout << std::endl;
       
       std::vector<int> myTag = hexBasis.getDofTag(bfOrd);
        if( !( (myTag[0] == allTags[i][0]) &&

@@ -28,13 +28,11 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   example_05.cpp
+/** \file   example_08.cpp
     \brief  Example building stiffness matrix and right hand side for a Poisson equation 
             using nodal (Hgrad) elements on squares.
-	    This uses higher order elements and builds a single reference stiffness matrix
-	    that is used for each element.
-	    The global matrix is constructed by specifying an upper bound on the number
-	    of nonzeros per row, but not preallocating the graph.
+	    This code transforms the basis function gradients to each cell and performs
+	    quadrature. 
 
     \verbatim
              div grad u = f in Omega
@@ -310,114 +308,110 @@ int main(int argc, char *argv[]) {
   ltgout.close();
 #endif
   
-  // ******** CREATE A SINGLE STIFFNESS MATRIX, WHICH IS REPLICATED ON ALL ELEMENTS *********
+  // ******** CREATE ALL LOCAL STIFFNESS MATRICES *********
   *outStream << "Building stiffness matrix and right hand side ... \n\n";
 
   // Settings and data structures for mass and stiffness matrices
   typedef CellTools<double>  CellTools;
   typedef FunctionSpaceTools fst;
-  int numCells = 1; 
+  int numCells = numElems; 
 
   // Container for nodes
-  FieldContainer<double> refQuadNodes(numCells, numNodesPerElem, spaceDim);
+  FieldContainer<double> cellVertices(numCells,numNodesPerElem,spaceDim);
+
   // Containers for Jacobian
-  FieldContainer<double> refQuadJacobian(numCells, numCubPoints, spaceDim, spaceDim);
-  FieldContainer<double> refQuadJacobInv(numCells, numCubPoints, spaceDim, spaceDim);
-  FieldContainer<double> refQuadJacobDet(numCells, numCubPoints);
-  // Containers for element HGRAD stiffness matrix
-  FieldContainer<double> localStiffMatrix(numCells, numFieldsG, numFieldsG);
+  FieldContainer<double> cellJacobian(numCells, numCubPoints, spaceDim, spaceDim);
+  FieldContainer<double> cellJacobInv(numCells, numCubPoints, spaceDim, spaceDim);
+  FieldContainer<double> cellJacobDet(numCells, numCubPoints);
+
+  // Containers for element HGRAD stiffness matrices
+  FieldContainer<double> localStiffMatrices(numCells, numFieldsG, numFieldsG);
+  FieldContainer<double> transformedBasisGradients(numCells,numFieldsG,numCubPoints,spaceDim);
+  FieldContainer<double> weightedTransformedBasisGradients(numCells,numFieldsG,numCubPoints,spaceDim);
   FieldContainer<double> weightedMeasure(numCells, numCubPoints);
-  FieldContainer<double> quadGradsTransformed(numCells, numFieldsG, numCubPoints, spaceDim);
-  FieldContainer<double> quadGradsTransformedWeighted(numCells, numFieldsG, numCubPoints, spaceDim);
-  // Containers for right hand side vectors
-  FieldContainer<double> rhsData(numCells, numCubPoints);
-  FieldContainer<double> localRHS(numCells, numFieldsG);
-  FieldContainer<double> quadGValsTransformed(numCells, numFieldsG, numCubPoints);
-  FieldContainer<double> quadGValsTransformedWeighted(numCells, numFieldsG, numCubPoints);
-  // Container for cubature points in physical space
-  FieldContainer<double> physCubPoints(numCells, numCubPoints, cubDim);
+
   
   // Global arrays in Epetra format 
   Epetra_SerialComm Comm;
   Epetra_Map globalMapG(numDOF, 0, Comm);
-  Epetra_Time instantiateTimer(Comm);
-  Epetra_FECrsMatrix StiffMatrix(Copy, globalMapG, 4*numFieldsG);
-  const double instantiateTime = instantiateTimer.ElapsedTime();
-  std::cout << "Time to instantiate sparse matrix " << instantiateTime << "\n";
+
+  Epetra_Time graphTimer(Comm);
+  Epetra_CrsGraph grph( Copy , globalMapG , 4 * numFieldsG );
+  for (int k=0;k<numElems;k++) 
+    {
+      for (int i=0;i<numFieldsG;i++)
+        {
+          grph.InsertGlobalIndices(ltgMapping(k,i),numFieldsG,&ltgMapping(k,0));
+        }
+    }
+  grph.FillComplete();
+
+  const double graphTime = graphTimer.ElapsedTime();
+  std::cout << "Graph computed in " << graphTime << "\n";
+
+  Epetra_Time instantiateTimer( Comm );
+  Epetra_FECrsMatrix StiffMatrix( Copy , grph );
+  const double instantiateTime = instantiateTimer.ElapsedTime(  );
+  std::cout << "Matrix instantiated in " << instantiateTime << "\n";
+
   Epetra_FEVector u(globalMapG);
   Epetra_FEVector Ku(globalMapG);
 
   u.Random();
     
   // ************************** Compute element HGrad stiffness matrices *******************************  
-  refQuadNodes(0,0,0) = 0.0;
-  refQuadNodes(0,0,1) = 0.0;
-  refQuadNodes(0,1,0) = hx;
-  refQuadNodes(0,1,1) = 0.0;
-  refQuadNodes(0,2,0) = hx;
-  refQuadNodes(0,2,1) = hy;
-  refQuadNodes(0,3,0) = 0.0;
-  refQuadNodes(0,3,1) = hy;
+  // Get vertices of all the cells
 
-  // Compute cell Jacobians, their inverses and their determinants
-  CellTools::setJacobian(refQuadJacobian, cubPoints, refQuadNodes, quad_4);
-  CellTools::setJacobianInv(refQuadJacobInv, refQuadJacobian );
-  CellTools::setJacobianDet(refQuadJacobDet, refQuadJacobian );
+  for (int i=0;i<numElems;i++)
+    {
+      for (int j=0;j<4;j++)
+	{
+	  const int nodeCur = elemToNode(i,j);
+	  for (int k=0;k<spaceDim;k++) 
+	    {
+	      cellVertices(i,j,k) = nodeCoord(nodeCur,k);
+	    }
+	}
+    }
+
+  Epetra_Time localConstructTimer(Comm);
+
+  // Compute all cell Jacobians, their inverses and their determinants
+  CellTools::setJacobian(cellJacobian, cubPoints, cellVertices, quad_4);
+  CellTools::setJacobianInv(cellJacobInv, cellJacobian );
+  CellTools::setJacobianDet(cellJacobDet, cellJacobian );
   
-  // transform from [-1,1]^2 to [0,hx]x[0,hy]
-  fst::HGRADtransformGRAD<double>(quadGradsTransformed, refQuadJacobInv, quadGrads);
+  // transform reference element gradients to each cell
+  fst::HGRADtransformGRAD<double>(transformedBasisGradients, cellJacobInv, quadGrads);
       
   // compute weighted measure
-  fst::computeCellMeasure<double>(weightedMeasure, refQuadJacobDet, cubWeights);
+  fst::computeCellMeasure<double>(weightedMeasure, cellJacobDet, cubWeights);
 
   // multiply values with weighted measure
-  fst::multiplyMeasure<double>(quadGradsTransformedWeighted,
-			       weightedMeasure, quadGradsTransformed);
+  fst::multiplyMeasure<double>(weightedTransformedBasisGradients,
+			       weightedMeasure, transformedBasisGradients);
 
   // integrate to compute element stiffness matrix
-  fst::integrate<double>(localStiffMatrix,
-			 quadGradsTransformed, quadGradsTransformedWeighted, COMP_BLAS);
+  fst::integrate<double>(localStiffMatrices,
+			 transformedBasisGradients, weightedTransformedBasisGradients , COMP_BLAS);
 
+  const double localConstructTime = localConstructTimer.ElapsedTime();
+  std::cout << "Time to build local matrices (including Jacobian computation): "<< localConstructTime << "\n";
 
-  Epetra_Time assemblyTimer(Comm);
+  Epetra_Time insertionTimer(Comm);
 
   // *** Element loop ***
    for (int k=0; k<numElems; k++) 
      {
        // assemble into global matrix
-       StiffMatrix.InsertGlobalValues(numFieldsG,&ltgMapping(k,0),numFieldsG,&ltgMapping(k,0),&localStiffMatrix(0,0,0));
+       StiffMatrix.InsertGlobalValues(numFieldsG,&ltgMapping(k,0),numFieldsG,&ltgMapping(k,0),&localStiffMatrices(k,0,0));
 
      }
-
-
-  // Assemble global matrices
    StiffMatrix.GlobalAssemble(); StiffMatrix.FillComplete();
+   const double insertionTime = insertionTimer.ElapsedTime( );
+   
+   std::cout << "Time to assemble global matrix from local matrices: " << insertionTime << "\n";
 
-   double assembleTime = assemblyTimer.ElapsedTime();
-   std::cout << "Time to insert reference element matrix into global matrix: " << assembleTime << std::endl;
-   std::cout << "There are " << StiffMatrix.NumGlobalNonzeros() << " nonzeros in the matrix.\n";
-   std::cout << "There are " << numDOF << " global degrees of freedom.\n";
- 
-   Epetra_Time multTimer(Comm);
-   StiffMatrix.Apply(u,Ku);
-   double multTime = multTimer.ElapsedTime();
-   std::cout << "Time to apply: " << multTime << std::endl;
-
-//    // Adjust stiffness matrix and rhs based on boundary conditions
-//    for (int row = 0; row<numNodes; row++){
-//        if (nodeOnBoundary(row)) {
-//           int rowindex = row;
-//           for (int col=0; col<numNodes; col++){
-//               double val = 0.0;
-//               int colindex = col;
-//               StiffMatrix.ReplaceGlobalValues(1, &rowindex, 1, &colindex, &val);
-//           }
-//           double val = 1.0;
-//           StiffMatrix.ReplaceGlobalValues(1, &rowindex, 1, &rowindex, &val);
-//           val = 0.0;
-//           rhs.ReplaceGlobalValues(1, &rowindex, &val);
-//        }
-//     }
 
 #ifdef DUMP_DATA
    // Dump matrices to disk
@@ -431,58 +425,4 @@ int main(int argc, char *argv[]) {
    
    return 0;
 }
-
-
-// Calculates value of exact solution u
- double evalu(double & x, double & y, double & z)
- {
- /*
-   // function1
-    double exactu = sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
- */
-
-   // function2
-   double exactu = sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z);
-
-   return exactu;
- }
-
-// Calculates gradient of exact solution u
- int evalGradu(double & x, double & y, double & z, double & gradu1, double & gradu2, double & gradu3)
- {
- /*
-   // function 1
-       gradu1 = M_PI*cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
-       gradu2 = M_PI*sin(M_PI*x)*cos(M_PI*y)*sin(M_PI*z);
-       gradu3 = M_PI*sin(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
- */
-
-   // function2
-       gradu1 = (M_PI*cos(M_PI*x)+sin(M_PI*x))
-                  *sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z);
-       gradu2 = (M_PI*cos(M_PI*y)+sin(M_PI*y))
-                  *sin(M_PI*x)*sin(M_PI*z)*exp(x+y+z);
-       gradu3 = (M_PI*cos(M_PI*z)+sin(M_PI*z))
-                  *sin(M_PI*x)*sin(M_PI*y)*exp(x+y+z);
-  
-   return 0;
- }
-
-// Calculates Laplacian of exact solution u
- double evalDivGradu(double & x, double & y, double & z)
- {
- /*
-   // function 1
-    double divGradu = -3.0*M_PI*M_PI*sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
- */
-
-   // function 2
-   double divGradu = -3.0*M_PI*M_PI*sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z)
-                    + 2.0*M_PI*cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z)
-                    + 2.0*M_PI*cos(M_PI*y)*sin(M_PI*x)*sin(M_PI*z)*exp(x+y+z)
-                    + 2.0*M_PI*cos(M_PI*z)*sin(M_PI*x)*sin(M_PI*y)*exp(x+y+z)
-                    + 3.0*sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z);
-   
-   return divGradu;
- }
 

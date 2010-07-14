@@ -28,13 +28,12 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   example_05.cpp
-    \brief  Example building stiffness matrix and right hand side for a Poisson equation 
-            using nodal (Hgrad) elements on squares.
-	    This uses higher order elements and builds a single reference stiffness matrix
-	    that is used for each element.
-	    The global matrix is constructed by specifying an upper bound on the number
-	    of nonzeros per row, but not preallocating the graph.
+/** \file   example_06.cpp
+    \brief  Matrix-free application of the Laplace stiffness matrix
+            for polynomials of degree d on an NX x NY mesh.
+	    We are using a reference element stiffness matrix
+	    and level 3 BLAS for the application, but not using any
+	    tensor-product decomposition.
 
     \verbatim
              div grad u = f in Omega
@@ -55,8 +54,8 @@
      \remark Usage
      \verbatim
 
-     ./Intrepid_example_Drivers_Example_05.exe N verbose
-        int deg             - polynomial degree
+     ./Intrepid_example_Drivers_Example_06.exe N verbose
+        int degree          - polynomial degree
         int NX              - num intervals in x direction (assumed box domain, 0,1)
         int NY              - num intervals in x direction (assumed box domain, 0,1)
         verbose (optional)  - any character, indicates verbose output
@@ -64,7 +63,7 @@
      \endverbatim
 
     \remark Sample command line
-    \code   ./Intrepid_example_Drivers_Example_05.exe 2 10 10 \endcode
+    \code   ./Intrepid_example_Drivers_Example_06.exe 2 10 10 \endcode
 */
 
 // Intrepid includes
@@ -80,7 +79,6 @@
 // Epetra includes
 #include "Epetra_Time.h"
 #include "Epetra_Map.h"
-#include "Epetra_FECrsMatrix.h"
 #include "Epetra_FEVector.h"
 #include "Epetra_SerialComm.h"
 
@@ -88,21 +86,16 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_BLAS.hpp"
+#include "Teuchos_BLAS_types.hpp"
 
 // Shards includes
 #include "Shards_CellTopology.hpp"
 
 // EpetraExt includes
-#include "EpetraExt_RowMatrixOut.h"
 #include "EpetraExt_MultiVectorOut.h"
 
 using namespace std;
 using namespace Intrepid;
-
-// Functions to evaluate exact solution and derivatives
-double evalu(double & x, double & y, double & z);
-int evalGradu(double & x, double & y, double & z, double & gradu1, double & gradu2, double & gradu3);
-double evalDivGradu(double & x, double & y, double & z);
 
 int main(int argc, char *argv[]) {
 
@@ -110,7 +103,7 @@ int main(int argc, char *argv[]) {
    if (argc < 4) {
       std::cout <<"\n>>> ERROR: Invalid number of arguments.\n\n";
       std::cout <<"Usage:\n\n";
-      std::cout <<"  ./Intrepid_example_Drivers_Example_05.exe deg NX NY verbose\n\n";
+      std::cout <<"  ./Intrepid_example_Drivers_Example_06.exe deg NX NY verbose\n\n";
       std::cout <<" where \n";
       std::cout <<"   int deg             - polynomial degree to be used (assumed > 1) \n";
       std::cout <<"   int NX              - num intervals in x direction (assumed box domain, 0,1) \n";
@@ -136,7 +129,7 @@ int main(int argc, char *argv[]) {
   *outStream \
     << "===============================================================================\n" \
     << "|                                                                             |\n" \
-    << "|  Example: Generate Stiffness Matrix and Right Hand Side Vector for          |\n" \
+    << "|  Example: Apply Stiffness Matrix for                                        |\n" \
     << "|                   Poisson Equation on Quadrilateral Mesh                    |\n" \
     << "|                                                                             |\n" \
     << "|  Questions? Contact  Pavel Bochev  (pbboche@sandia.gov),                    |\n" \
@@ -245,7 +238,6 @@ int main(int argc, char *argv[]) {
   fe2nout.close();
 #endif
   
-
   // ************************************ CUBATURE ************************************** 
   *outStream << "Getting cubature ... \n\n";
   
@@ -297,21 +289,21 @@ int main(int argc, char *argv[]) {
   }
 #ifdef DUMP_DATA
   // Output ltg mapping
-  ofstream ltgout("ltg.dat");
-  for (int j=0; j<NY; j++) {
-    for (int i=0; i<NX; i++) {
-      int ielem = i + j * NX;
-      for (int m=0; m<numFieldsG; m++){
-	ltgout << ltgMapping(ielem,m) <<"  ";
-      }
-      ltgout <<"\n";
-    }
-  }
-  ltgout.close();
+//   ofstream ltgout("ltg.dat");
+//   for (int j=0; j<NY; j++) {
+//     for (int i=0; i<NX; i++) {
+//       int ielem = i + j * NX;
+//       for (int m=0; m<numFieldsG; m++){
+// 	ltgout << ltgMapping(ielem,m) <<"  ";
+//       }
+//       ltgout <<"\n";
+//     }
+//   }
+//   ltgout.close();
 #endif
   
   // ******** CREATE A SINGLE STIFFNESS MATRIX, WHICH IS REPLICATED ON ALL ELEMENTS *********
-  *outStream << "Building stiffness matrix and right hand side ... \n\n";
+  *outStream << "Applying stiffness matrix and right hand side ... \n\n";
 
   // Settings and data structures for mass and stiffness matrices
   typedef CellTools<double>  CellTools;
@@ -340,15 +332,12 @@ int main(int argc, char *argv[]) {
   // Global arrays in Epetra format 
   Epetra_SerialComm Comm;
   Epetra_Map globalMapG(numDOF, 0, Comm);
-  Epetra_Time instantiateTimer(Comm);
-  Epetra_FECrsMatrix StiffMatrix(Copy, globalMapG, 4*numFieldsG);
-  const double instantiateTime = instantiateTimer.ElapsedTime();
-  std::cout << "Time to instantiate sparse matrix " << instantiateTime << "\n";
   Epetra_FEVector u(globalMapG);
   Epetra_FEVector Ku(globalMapG);
-
   u.Random();
-    
+
+  std::cout << "About to start ref element matrix\n";
+
   // ************************** Compute element HGrad stiffness matrices *******************************  
   refQuadNodes(0,0,0) = 0.0;
   refQuadNodes(0,0,1) = 0.0;
@@ -378,111 +367,75 @@ int main(int argc, char *argv[]) {
   fst::integrate<double>(localStiffMatrix,
 			 quadGradsTransformed, quadGradsTransformedWeighted, COMP_BLAS);
 
+  std::cout << "Finished with reference element matrix\n";
 
-  Epetra_Time assemblyTimer(Comm);
+  
+  // now we will scatter global degrees of freedom, apply the local stiffness matrix 
+  // with BLAS, and then gather the results
+  FieldContainer<double> uScattered(numElems,numFieldsG);
+  FieldContainer<double> KuScattered(numElems,numFieldsG);
 
-  // *** Element loop ***
-   for (int k=0; k<numElems; k++) 
-     {
-       // assemble into global matrix
-       StiffMatrix.InsertGlobalValues(numFieldsG,&ltgMapping(k,0),numFieldsG,&ltgMapping(k,0),&localStiffMatrix(0,0,0));
+  // to extract info from u
 
-     }
+  u.GlobalAssemble();
 
+  Epetra_Time multTimer(Comm);
 
-  // Assemble global matrices
-   StiffMatrix.GlobalAssemble(); StiffMatrix.FillComplete();
+  Ku.PutScalar(0.0);
+  Ku.GlobalAssemble();
 
-   double assembleTime = assemblyTimer.ElapsedTime();
-   std::cout << "Time to insert reference element matrix into global matrix: " << assembleTime << std::endl;
-   std::cout << "There are " << StiffMatrix.NumGlobalNonzeros() << " nonzeros in the matrix.\n";
-   std::cout << "There are " << numDOF << " global degrees of freedom.\n";
+  double *uVals = u[0];
+  double *KuVals = Ku[0];
+
+  Teuchos::BLAS<int,double> blas;
+  Epetra_Time scatterTime(Comm);
+  std::cout << "Scattering\n";
+  // Scatter
+  for (int k=0; k<numElems; k++) 
+    {
+      for (int i=0;i<numFieldsG;i++) 
+	{
+	  uScattered(k,i) = uVals[ltgMapping(k,i)];
+	}
+    }
+  const double scatTime = scatterTime.ElapsedTime();
+  std::cout << "Scattered in time " << scatTime << "\n";
+
+  Epetra_Time blasTimer(Comm);
+  blas.GEMM(Teuchos::NO_TRANS , Teuchos::NO_TRANS , 
+	    numFieldsG , numElems, numFieldsG  , 
+	    1.0 , 
+	    &localStiffMatrix(0,0,0) , 
+	    numFieldsG ,
+	    &uScattered(0,0) , 
+	    numFieldsG , 
+	    0.0 , 
+	     &KuScattered(0,0) , 
+	    numFieldsG );
+  const double blasTime = blasTimer.ElapsedTime();
+  std::cout << "Element matrices applied in " << blasTime << "\n";
+
+  Epetra_Time gatherTimer(Comm);
+  // Gather
+  for (int k=0;k<numElems;k++)
+    {
+      for (int i=0;i<numFieldsG;i++)
+	{
+	  KuVals[ltgMapping(k,i)] += KuScattered(k,i);
+	}
+    }
+
+  const double gatherTime = gatherTimer.ElapsedTime();
+  std::cout << "Gathered in " << gatherTime << "\n";
+  
+
+  const double applyTime = gatherTime + blasTime + scatTime;
+  std::cout << "Time to do matrix-free product: " << applyTime << std::endl;
  
-   Epetra_Time multTimer(Comm);
-   StiffMatrix.Apply(u,Ku);
-   double multTime = multTimer.ElapsedTime();
-   std::cout << "Time to apply: " << multTime << std::endl;
-
-//    // Adjust stiffness matrix and rhs based on boundary conditions
-//    for (int row = 0; row<numNodes; row++){
-//        if (nodeOnBoundary(row)) {
-//           int rowindex = row;
-//           for (int col=0; col<numNodes; col++){
-//               double val = 0.0;
-//               int colindex = col;
-//               StiffMatrix.ReplaceGlobalValues(1, &rowindex, 1, &colindex, &val);
-//           }
-//           double val = 1.0;
-//           StiffMatrix.ReplaceGlobalValues(1, &rowindex, 1, &rowindex, &val);
-//           val = 0.0;
-//           rhs.ReplaceGlobalValues(1, &rowindex, &val);
-//        }
-//     }
-
-#ifdef DUMP_DATA
-   // Dump matrices to disk
-//    EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
-//    EpetraExt::MultiVectorToMatrixMarketFile("rhs_vector.dat",rhs,0,0,false);
-#endif
-
    
    // reset format state of std::cout
    std::cout.copyfmt(oldFormatState);
    
    return 0;
 }
-
-
-// Calculates value of exact solution u
- double evalu(double & x, double & y, double & z)
- {
- /*
-   // function1
-    double exactu = sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
- */
-
-   // function2
-   double exactu = sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z);
-
-   return exactu;
- }
-
-// Calculates gradient of exact solution u
- int evalGradu(double & x, double & y, double & z, double & gradu1, double & gradu2, double & gradu3)
- {
- /*
-   // function 1
-       gradu1 = M_PI*cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
-       gradu2 = M_PI*sin(M_PI*x)*cos(M_PI*y)*sin(M_PI*z);
-       gradu3 = M_PI*sin(M_PI*x)*sin(M_PI*y)*cos(M_PI*z);
- */
-
-   // function2
-       gradu1 = (M_PI*cos(M_PI*x)+sin(M_PI*x))
-                  *sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z);
-       gradu2 = (M_PI*cos(M_PI*y)+sin(M_PI*y))
-                  *sin(M_PI*x)*sin(M_PI*z)*exp(x+y+z);
-       gradu3 = (M_PI*cos(M_PI*z)+sin(M_PI*z))
-                  *sin(M_PI*x)*sin(M_PI*y)*exp(x+y+z);
-  
-   return 0;
- }
-
-// Calculates Laplacian of exact solution u
- double evalDivGradu(double & x, double & y, double & z)
- {
- /*
-   // function 1
-    double divGradu = -3.0*M_PI*M_PI*sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z);
- */
-
-   // function 2
-   double divGradu = -3.0*M_PI*M_PI*sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z)
-                    + 2.0*M_PI*cos(M_PI*x)*sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z)
-                    + 2.0*M_PI*cos(M_PI*y)*sin(M_PI*x)*sin(M_PI*z)*exp(x+y+z)
-                    + 2.0*M_PI*cos(M_PI*z)*sin(M_PI*x)*sin(M_PI*y)*exp(x+y+z)
-                    + 3.0*sin(M_PI*x)*sin(M_PI*y)*sin(M_PI*z)*exp(x+y+z);
-   
-   return divGradu;
- }
 

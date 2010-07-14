@@ -46,4 +46,40 @@ IF(Trilinos_ENABLE_Epetra AND Trilinos_ENABLE_EpetraExt)
 #    PASS_REGULAR_EXPRESSION "TEST PASSED"
     ADD_DIR_TO_NAME
     )
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    Example_06
+   SOURCES example_06.cpp
+    DEPLIBS epetra epetraext 
+    ARGS "1 10 10"
+    NUM_MPI_PROCS 1
+#    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+    )
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    Example_07
+   SOURCES example_07.cpp
+    DEPLIBS epetra epetraext 
+    ARGS "1 10 10"
+    NUM_MPI_PROCS 1
+#    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+    )
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    Example_08
+   SOURCES example_08.cpp
+    DEPLIBS epetra epetraext 
+    ARGS "1 10 10"
+    NUM_MPI_PROCS 1
+#    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+    )
+  PACKAGE_ADD_EXECUTABLE_AND_TEST(
+    Example_09
+   SOURCES example_09.cpp
+    DEPLIBS epetra epetraext 
+    ARGS "1 10 10"
+    NUM_MPI_PROCS 1
+    PASS_REGULAR_EXPRESSION "TEST PASSED"
+    ADD_DIR_TO_NAME
+    )
 ENDIF()

@@ -28,13 +28,12 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   example_05.cpp
-    \brief  Example building stiffness matrix and right hand side for a Poisson equation 
-            using nodal (Hgrad) elements on squares.
-	    This uses higher order elements and builds a single reference stiffness matrix
-	    that is used for each element.
-	    The global matrix is constructed by specifying an upper bound on the number
-	    of nonzeros per row, but not preallocating the graph.
+/** \file   example_07.cpp
+    \brief  Example building stiffness matrix for a Poisson equation 
+            using nodal (Hgrad) elements on squares.  This shows how
+	    to use the local-global mapping to preallocate the
+	    matrix graph.  This leads to an improvement in the time it
+	    takes to construct the global matrix.
 
     \verbatim
              div grad u = f in Omega
@@ -56,7 +55,7 @@
      \verbatim
 
      ./Intrepid_example_Drivers_Example_05.exe N verbose
-        int deg             - polynomial degree
+
         int NX              - num intervals in x direction (assumed box domain, 0,1)
         int NY              - num intervals in x direction (assumed box domain, 0,1)
         verbose (optional)  - any character, indicates verbose output
@@ -64,7 +63,7 @@
      \endverbatim
 
     \remark Sample command line
-    \code   ./Intrepid_example_Drivers_Example_05.exe 2 10 10 \endcode
+    \code   ./Intrepid_example_Drivers_Example_05.exe 10 10 \endcode
 */
 
 // Intrepid includes
@@ -338,15 +337,11 @@ int main(int argc, char *argv[]) {
   FieldContainer<double> physCubPoints(numCells, numCubPoints, cubDim);
   
   // Global arrays in Epetra format 
+  // we will explicitly build the sparsity pattern before instantiating the matrix later.
   Epetra_SerialComm Comm;
   Epetra_Map globalMapG(numDOF, 0, Comm);
-  Epetra_Time instantiateTimer(Comm);
-  Epetra_FECrsMatrix StiffMatrix(Copy, globalMapG, 4*numFieldsG);
-  const double instantiateTime = instantiateTimer.ElapsedTime();
-  std::cout << "Time to instantiate sparse matrix " << instantiateTime << "\n";
   Epetra_FEVector u(globalMapG);
   Epetra_FEVector Ku(globalMapG);
-
   u.Random();
     
   // ************************** Compute element HGrad stiffness matrices *******************************  
@@ -378,6 +373,23 @@ int main(int argc, char *argv[]) {
   fst::integrate<double>(localStiffMatrix,
 			 quadGradsTransformed, quadGradsTransformedWeighted, COMP_BLAS);
 
+  Epetra_Time graphTimer(Comm);
+  Epetra_CrsGraph grph( Copy , globalMapG , 4 * numFieldsG );
+  for (int k=0;k<numElems;k++) 
+    {
+      for (int i=0;i<numFieldsG;i++)
+	{
+	  grph.InsertGlobalIndices(ltgMapping(k,i),numFieldsG,&ltgMapping(k,0));
+	}
+    }
+  grph.FillComplete();
+  const double graphTime = graphTimer.ElapsedTime();
+  std::cout << "Graph computed in " << graphTime << "\n";
+
+  Epetra_Time instantiateTimer( Comm );
+  Epetra_FECrsMatrix StiffMatrix( Copy , grph );
+  const double instantiateTime = instantiateTimer.ElapsedTime(  );
+  std::cout << "Matrix instantiated in " << instantiateTime << "\n";
 
   Epetra_Time assemblyTimer(Comm);
 
@@ -395,6 +407,7 @@ int main(int argc, char *argv[]) {
 
    double assembleTime = assemblyTimer.ElapsedTime();
    std::cout << "Time to insert reference element matrix into global matrix: " << assembleTime << std::endl;
+   std::cout << "Total matrix construction time: " << assembleTime + instantiateTime + graphTime << "\n";
    std::cout << "There are " << StiffMatrix.NumGlobalNonzeros() << " nonzeros in the matrix.\n";
    std::cout << "There are " << numDOF << " global degrees of freedom.\n";
  
@@ -403,21 +416,6 @@ int main(int argc, char *argv[]) {
    double multTime = multTimer.ElapsedTime();
    std::cout << "Time to apply: " << multTime << std::endl;
 
-//    // Adjust stiffness matrix and rhs based on boundary conditions
-//    for (int row = 0; row<numNodes; row++){
-//        if (nodeOnBoundary(row)) {
-//           int rowindex = row;
-//           for (int col=0; col<numNodes; col++){
-//               double val = 0.0;
-//               int colindex = col;
-//               StiffMatrix.ReplaceGlobalValues(1, &rowindex, 1, &colindex, &val);
-//           }
-//           double val = 1.0;
-//           StiffMatrix.ReplaceGlobalValues(1, &rowindex, 1, &rowindex, &val);
-//           val = 0.0;
-//           rhs.ReplaceGlobalValues(1, &rowindex, &val);
-//        }
-//     }
 
 #ifdef DUMP_DATA
    // Dump matrices to disk
