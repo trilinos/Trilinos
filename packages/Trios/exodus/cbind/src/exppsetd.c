@@ -77,7 +77,7 @@ int ex_put_partial_set_dist_fact (int   exoid,
   int dist_id;
   size_t start[1], count[1];
   char errmsg[MAX_ERR_LENGTH];
-  char* factptr;
+  char* factptr = NULL;
 
   exerrval = 0; /* clear error code */
 

@@ -35,7 +35,7 @@
 XCOMM Use include files locates in exodusii/cbind/include
 INCLUDES = IncRef-I../include
 
-DEFINES = -DEX_ERR_STR -DVERBOSE $(PICFLAGS)
+DEFINES = -DEX_ERR_STR $(PICFLAGS)
 
 SRCS =  exclos.c   exggvt.c   exgpa.c    exgvp.c    expfrm.c   expqa.c	 \
 	excn2s.c   exgids.c   exgp.c     exgvv.c    expinf.c   expset.c	 \
@@ -79,7 +79,7 @@ SRCS =  exclos.c   exggvt.c   exgpa.c    exgvp.c    expfrm.c   expqa.c	 \
 
 OBJS = ${SRCS:.c=.o}
 
-LibraryTargetSubdirsCopy(libexoIIv2c.a,$(OBJS),../../)
+LibraryTargetSubdirsCopy(libexodus.a,$(OBJS),../../)
 
 $(OBJS): ../include/exodusII.h ../include/exodusII_int.h ../include/exodusII_ext.h
 
