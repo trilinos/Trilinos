@@ -102,12 +102,10 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
     classicMakefile
     /Trilinos/cmake/CMakeKitwareBacklog.txt
     /Trilinos/cmake/TODO
-    /Trilinos/packages/CTrilinos
     /Trilinos/packages/ForTrilinos
     /Trilinos/packages/ITAPS
-    /Trilinos/packages/globipack
-    /Trilinos/packages/optipack
     /Trilinos/packages/aristos
+    /Trilinos/packages/phdmesh
     /Trilinos/packages/claps
     /Trilinos/packages/external
     /Trilinos/packages/jpetra
