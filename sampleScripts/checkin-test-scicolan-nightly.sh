@@ -47,7 +47,7 @@ echo "
 # Run the standard checkin testing script with my specializations
 #
 
-../../Trilinos/checkin-test.py \
+../Trilinos/checkin-test.py \
 --no-eg-git-version-check \
 --make-options=-j8 \
 --ctest-options=-j4 \
