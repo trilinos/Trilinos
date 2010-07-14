@@ -47,6 +47,7 @@
 
 #include <sstream>
 #include <stdexcept>
+#include <vector>
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -155,6 +156,12 @@ verify_tsqr (Teuchos::RCP< const Teuchos::Comm<int> > comm,
 
 /// \brief Make a map for creating Tpetra test multivectors.
 ///
+/// \param nrowsGlobal [in] Number of rows in the entire MultiVector
+/// \param comm [in] Communications handler object
+/// \param node [in] Kokkos node object
+///
+/// \return The desired map object
+///
 template< class LO, class GO, class Node >
 Teuchos::RCP< Tpetra::Map< LO, GO, Node > >
 makeTpetraMap (const Tpetra::global_size_t nrowsGlobal,
@@ -182,6 +189,31 @@ makeTpetraMultiVector (const Teuchos::RCP< Tpetra::Map< LO, GO, Node > >& map,
   // Don't fill with zeros; we'll fill ourselves
   return Teuchos::rcp (new MV (map, ncols, false));
 }
+
+/// \brief Fill in a given Tpetra test multivector with random values.
+template< class S, class LO, class GO, class Node >
+void
+fillTpetraMultiVector (const Teuchos::RCP< Tpetra::MultiVector< S, LO, GO, Node > >& mv,
+		       const Teuchos::RCP< TSQR::Random::NormalGenerator< LO, S > >& pGen,
+		       Teuchos::RCP< TSQR::MessengerBase< LO > > pOrdinalMess,
+		       Teuchos::RCP< TSQR::MessengerBase< S > > pScalarMess)
+{
+  typedef Tpetra::MultiVector< S, LO, GO, Node > MV;
+  typedef TSQR::Random::NormalGenerator< LO, S > Gen;
+  typedef TSQR::Trilinos::Randomizer< S, LO, GO, MV, Gen > randomizer_type;
+
+  const LO ncols = mv.getNumVectors();
+  std::vector< S > singular_values (ncols);
+  if (ncols > 0)
+    {
+      singular_values[0] = S(1);
+      for (LO k = 1; k < ncols; ++k)
+	singular_values[k] = singular_values[k-1] / S(2);
+    }
+  randomizer_type randomizer (pGen, pOrdinalMess, pScalarMess);
+  randomizer.randomMultiVector (*mv, &singular_values[0]);
+}
+
 
 
 #if 0
