@@ -19,172 +19,30 @@
 namespace TSQR {
   namespace Trilinos {
 
-    template <>
-    class TsqrAdaptor< double, int, int, Epetra_MultiVector >
+    class TsqrEpetraAdaptor : 
+      public TsqrAdaptor< double, int, int, Epetra_MultiVector >
     {
     public:
-      typedef double             scalar_type;
-      typedef int                local_ordinal_type;
-      typedef int                global_ordinal_type;
-      typedef Epetra_MultiVector multivector_type;
+      // mfh 14 Jul 2010: This is because C++ is too stupid to know
+      // how to inherit typedefs from a templated base class, when the
+      // derived class itself is templated.  Go figure.
+      typedef TsqrAdaptor< double, int, int, Epetra_MultiVector > base_type;
+      typedef base_type::comm_ptr comm_ptr;
+      typedef base_type::multivector_type multivector_type;
+      typedef base_type::scalar_type scalar_type;
+      typedef base_type::local_ordinal_type local_ordinal_type;
 
-      typedef TSQR::ScalarTraits<double>::magnitude_type magnitude_type;
-
-      typedef TsqrTypeAdaptor< double, int, int, Epetra_MultiVector > type_adaptor;
-      typedef type_adaptor::node_tsqr_type              node_tsqr_type;
-      typedef type_adaptor::tsqr_type                   tsqr_type;
-
-      typedef Teuchos::RCP< node_tsqr_type >            node_tsqr_ptr;
-      typedef Teuchos::RCP< tsqr_type >                 tsqr_ptr;
-      typedef Teuchos::RCP< const Teuchos::Comm<int> >  comm_ptr;
-      typedef Teuchos::RCP< MessengerBase<double> >     messenger_ptr;
-      typedef tsqr_type::FactorOutput                   factor_output_type;
-      typedef Teuchos::SerialDenseMatrix<int, double>   dense_matrix_type;
-
-      TsqrAdaptor (const comm_ptr& comm,
-		   const Teuchos::ParameterList& plist)
-      {
-	// This typedef is an implementation detail.
-	typedef TsqrFactory< int, double, node_tsqr_type, tsqr_type > factory_type;
-	// plist and comm are inputs.
-	// Construct *pMessenger_, *pNodeTsqr_, and *pTsqr_.
-	factory_type::makeTsqr (plist, comm, pMessenger_, pNodeTsqr_, pTsqr_);
-      }
-
-      factor_output_type
-      factor (multivector_type& A,
-	      dense_matrix_type& R, 
-	      const bool contiguousCacheBlocks = false)
-      {
-	local_ordinal_type nrowsLocal, ncols, LDA;
-	fetchDims (A, nrowsLocal, ncols, LDA);
-	scalar_type* const A_local = A.Values();
-
-	// Reshape R if necessary.  This operation zeros out all the
-	// entries of R, which is what we want anyway.
-	if (R.numRows() != ncols || R.numCols() != ncols)
-	  {
-	    if (0 != R.shape (ncols, ncols))
-	      throw std::runtime_error ("Failed to reshape matrix R");
-	  }
-	return pTsqr_->factor (nrowsLocal, ncols, A_local, LDA, R.values(),
-			       R.stride(), contiguousCacheBlocks);
-      }
-
-      void 
-      explicitQ (const multivector_type& Q_in, 
-		 const factor_output_type& factorOutput,
-		 multivector_type& Q_out, 
-		 const bool contiguousCacheBlocks = false)
-      {
-	local_ordinal_type nrowsLocal, ncols_in, LDQ_in;
-	fetchDims (Q_in, nrowsLocal, ncols_in, LDQ_in);
-        local_ordinal_type nrowsLocal_out, ncols_out, LDQ_out;
-	fetchDims (Q_out, nrowsLocal_out, ncols_out, LDQ_out);
-
-	if (nrowsLocal_out != nrowsLocal)
-	  {
-	    std::ostringstream os;
-	    os << "TSQR explicit Q: input Q factor\'s node-local part has a di"
-	      "fferent number of rows (" << nrowsLocal << ") than output Q fac"
-	      "tor\'s node-local part (" << nrowsLocal_out << ").";
-	    throw std::runtime_error (os.str());
-	  }
-	pTsqr_->explicit_Q (nrowsLocal, 
-			    ncols_in, Q_in.Values(), LDQ_in, 
-			    factorOutput,
-			    ncols_out, Q_out.Values(), LDQ_out, 
-			    contiguousCacheBlocks);
-      }
-
-      void 
-      cacheBlock (const multivector_type& A_in,
-		  multivector_type& A_out)
-      {
-	local_ordinal_type nrowsLocal, ncols, LDA_in;
-	fetchDims (A_in, nrowsLocal, ncols, LDA_in);
-	local_ordinal_type nrowsLocal_out, ncols_out, LDA_out;
-	fetchDims (A_out, nrowsLocal_out, ncols_out, LDA_out);
-
-	if (nrowsLocal_out != nrowsLocal)
-	  {
-	    std::ostringstream os;
-	    os << "TSQR cache block: the input matrix\'s node-local part has a"
-	      " different number of rows (" << nrowsLocal << ") than the outpu"
-	      "t matrix\'s node-local part (" << nrowsLocal_out << ").";
-	    throw std::runtime_error (os.str());
-	  }
-	else if (ncols_out != ncols)
-	  {
-	    std::ostringstream os;
-	    os << "TSQR cache block: the input matrix\'s node-local part has a"
-	      " different number of columns (" << ncols << ") than the output "
-	      "matrix\'s node-local part (" << ncols_out << ").";
-	    throw std::runtime_error (os.str());
-	  }
-	pTsqr_->cache_block (nrowsLocal, ncols, A_out.Values(),
-			     A_in.Values(), LDA_in);
-      }
-
-
-      void 
-      unCacheBlock (const multivector_type& A_in,
-		    multivector_type& A_out)
-      {
-	local_ordinal_type nrowsLocal, ncols, LDA_in;
-	fetchDims (A_in, nrowsLocal, ncols, LDA_in);
-	local_ordinal_type nrowsLocal_out, ncols_out, LDA_out;
-	fetchDims (A_out, nrowsLocal_out, ncols_out, LDA_out);
-
-	if (nrowsLocal_out != nrowsLocal)
-	  {
-	    std::ostringstream os;
-	    os << "TSQR un-cache-block: the input matrix\'s node-local part ha"
-	      "s a different number of rows (" << nrowsLocal << ") than the ou"
-	      "tput matrix\'s node-local part (" << nrowsLocal_out << ").";
-	    throw std::runtime_error (os.str());
-	  }
-	else if (ncols_out != ncols)
-	  {
-	    std::ostringstream os;
-	    os << "TSQR cache block: the input matrix\'s node-local part has a"
-	      " different number of columns (" << ncols << ") than the output "
-	      "matrix\'s node-local part (" << ncols_out << ").";
-	    throw std::runtime_error (os.str());
-	  }
-	pTsqr_->un_cache_block (nrowsLocal, ncols, A_out.Values(), LDA_out,
-				A_in.Values());
-      }
-
-      std::pair< magnitude_type, magnitude_type >
-      verify (const multivector_type& A,
-	      const multivector_type& Q,
-	      const Teuchos::SerialDenseMatrix< local_ordinal_type, scalar_type >& R)
-      {
-	local_ordinal_type nrowsLocal_A, ncols_A, LDA;
-	local_ordinal_type nrowsLocal_Q, ncols_Q, LDQ;
-	fetchDims (A, nrowsLocal_A, ncols_A, LDA);
-	fetchDims (Q, nrowsLocal_Q, ncols_Q, LDQ);
-	if (nrowsLocal_A != nrowsLocal_Q)
-	  throw std::runtime_error ("A and Q must have same number of rows");
-	else if (ncols_A != ncols_Q)
-	  throw std::runtime_error ("A and Q must have same number of columns");
-	else if (ncols_A != R.numCols())
-	  throw std::runtime_error ("A and R must have same number of columns");
-	else if (R.numRows() < R.numCols())
-	  throw std::runtime_error ("R must have no fewer rows than columns");
-
-	return global_verify (nrowsLocal_A, ncols_A, A.Values(), LDA,
-			      Q.Values(), LDQ, R.values(), R.stride(), 
-			      pMessenger_.get());
-      }
+      TsqrEpetraAdaptor (const comm_ptr& comm,
+			 const Teuchos::ParameterList& plist) :
+	base_type (comm, plist)
+      {}
 
     private:
-      void
+      virtual void
       fetchDims (const multivector_type& A,
 		 local_ordinal_type& nrowsLocal,
 		 local_ordinal_type& ncols,
-		 local_ordinal_type& LDA)
+		 local_ordinal_type& LDA) const
       {
 	nrowsLocal = A.MyLength();
 	ncols = A.NumVectors();
@@ -206,9 +64,79 @@ namespace TSQR {
 	LDA = A.Stride();
       }
 
-      messenger_ptr pMessenger_;
-      node_tsqr_ptr pNodeTsqr_;
-      tsqr_ptr pTsqr_;
+      Teuchos::ArrayView< scalar_type >::size_type 
+      fetchArrayLength (const multivector_type& A) const
+      {
+	typedef Teuchos::ArrayView< scalar_type >::size_type size_type;
+
+	// Compute length (nelts) of the A.Values() array.  This only
+	// makes sense if A has constant stride.  We convert from int
+	// (the local_ordinal_type) to size_type, hoping that the
+	// latter is no smaller than local_ordinal_type.  This gives
+	// us a better chance that LDA*ncols fits in a size_type.  We
+	// check for overflow both when converting each of LDA and
+	// ncols from local_ordinal_type to size_type, and when
+	// computing LDA*ncols (in size_type arithmetic).
+
+	// Fetch dimensions of local part of A, as local_ordinal_type.
+	local_ordinal_type nrowsLocal_LO, ncols_LO, LDA_LO;
+	fetchDims (A, nrowsLocal_LO, ncols_LO, LDA_LO);
+
+	// Convert dimensions from local_ordinal_type to size_type,
+	// ensuring that the conversions don't overflow.
+	const size_type LDA = static_cast< size_type > (LDA_LO);
+	if (static_cast< local_ordinal_type > (LDA) != LDA_LO)
+	  throw std::runtime_error ("TSQR::Trilinos::TsqrEpetraAdaptor: "
+				    "Leading dimension of local part of "
+				    "Epetra_MultiVector overflowed on co"
+				    "nversion from local_ordinal_type to"
+				    " ArrayView::size_type");
+	const size_type ncols = static_cast< size_type > (ncols_LO);
+	if (static_cast< local_ordinal_type > (ncols) != ncols_LO)
+	  throw std::runtime_error ("TSQR::Trilinos::TsqrEpetraAdaptor: "
+				    "Number of columns of the given "
+				    "Epetra_MultiVector overflowed on co"
+				    "nversion from local_ordinal_type to"
+				    " ArrayView::size_type");
+	// Make sure that the length of A.Values(), which is the
+	// product of the leading dimension and the number of columns
+	// of A, fits in a size_type.
+	const size_type nelts = LDA * ncols;
+	if (nelts / LDA != ncols)
+	  throw std::runtime_error ("TSQR::Trilinos::TsqrEpetraAdaptor: "
+				    " Length of A.Values() does not fit "
+				    "in an ArrayView::size_type");
+	return nelts;
+      }
+
+      virtual Teuchos::ArrayRCP< scalar_type > 
+      fetchNonConstView (multivector_type& A) const
+      {
+	using Teuchos::arcpFromArrayView;
+	using Teuchos::arrayView;
+	typedef Teuchos::ArrayView< scalar_type >::size_type size_type;
+
+	const size_type nelts = fetchArrayLength (A);
+	// The returned ArrayRCP does NOT own A.Values().
+	return arcpFromArrayView (arrayView (A.Values(), nelts));
+      }
+
+      virtual Teuchos::ArrayRCP< const scalar_type > 
+      fetchConstView (const multivector_type& A) const
+      {
+	using Teuchos::arcpFromArrayView;
+	using Teuchos::arrayView;
+	using Teuchos::ArrayView;
+	typedef ArrayView< scalar_type >::size_type size_type;
+
+	const size_type nelts = fetchArrayLength (A);
+	const scalar_type* A_ptr = A.Values();
+	ArrayView< const scalar_type > A_view = arrayView (A_ptr, nelts);
+
+	// The returned ArrayRCP does NOT own A.Values().
+	return arcpFromArrayView (A_view);
+      }
+
     };
 
   } // namespace Trilinos

@@ -102,6 +102,7 @@ namespace TSQR {
 	typedef Node node_type;
 
 	typedef typename TSQR::ScalarTraits< S >::magnitude_type magnitude_type;
+	typedef TSQR::Trilinos::TsqrTpetraAdaptor< S, LO, GO, Node > adaptor_type;
 
 	TpetraTsqrTest (const Tpetra::global_size_t nrowsGlobal,
 			const size_t ncols,
@@ -111,10 +112,8 @@ namespace TSQR {
 	  results_ (magnitude_type(0), magnitude_type(0))
 	{
 	  using Teuchos::Tuple;
-	  using TSQR::Trilinos::TsqrAdaptor;
 	  using Teuchos::Exceptions::InvalidParameter;
-	  typedef typename TsqrAdaptor< S, LO, GO, MV >::factor_output_type 
-	    factor_output_type;
+	  typedef typename adaptor_type::factor_output_type factor_output_type;
 	  typedef Teuchos::SerialDenseMatrix< LO, S > matrix_type;
 
 	  bool contiguousCacheBlocks = false;
@@ -136,7 +135,7 @@ namespace TSQR {
 	  RCP< MV > Q = testProblem[2];
 	  matrix_type R (ncols, ncols);
 
-	  TsqrAdaptor< S, LO, GO, MV > adaptor (comm, params);
+	  adaptor_type adaptor (comm, params);
 	  if (contiguousCacheBlocks)
 	    adaptor.cacheBlock (*A, *A_copy);
 
@@ -188,7 +187,9 @@ namespace TSQR {
 		 const comm_ptr& comm,
 		 const RCP< Node >& node)
 	{
-	  return Tpetra::createUniformContigMapWithNode< LO, GO, Node > (nrowsGlobal, comm, node);
+	  using Tpetra::createUniformContigMapWithNode;
+	  return createUniformContigMapWithNode< LO, GO, Node > (nrowsGlobal, 
+								 comm, node);
 	}
 
 	/// \brief Make a Tpetra test multivector for filling in.
