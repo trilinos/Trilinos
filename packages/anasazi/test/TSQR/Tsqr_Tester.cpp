@@ -215,6 +215,37 @@ fillTpetraMultiVector (const Teuchos::RCP< Tpetra::MultiVector< S, LO, GO, Node 
 }
 
 
+template< class S, class LO, class GO, class Node >
+Teuchos::Tuple< Teuchos::RCP< Tpetra::MultiVector< S, LO, GO, Node > >, 3 >
+makeTpetraTestProblem (const Tpetra::global_size_t nrowsGlobal,
+		       const size_t ncols,
+		       const Teuchos::RCP< const Teuchos::Comm<int> >& comm,
+		       const Teuchos::RCP< Node >& node)
+{
+  using Teuchos::RCP;
+  using Teuchos::Tuple;
+  using TSQR::Trilinos::TrilinosMessenger;
+
+  typedef Tpetra::Map< LO, GO, Node > map_type;
+  typedef Tpetra::MultiVector< S, LO, GO, Node > MV;
+  typedef Teuchos::Tuple< RCP< MV >, 3 > triple_type;
+  typedef TSQR::Random::NormalGenerator< LO, S > normalgen_type;
+
+  RCP< map_type > map = makeTpetraMap (nrowsGlobal, comm, node);
+  RCP< MV > A = makeTpetraMultiVector (map, ncols);
+  RCP< MV > A_copy = makeTpetraMultiVector (map, ncols);
+  RCP< MV > Q = makeTpetraMultiVector (map, ncols);
+
+  // Fill A with the random test problem
+  RCP< normalgen_type > pGen (new normalgen_type);
+  RCP< TSQR::MessengerBase< S > > pScalarMess (new TrilinosMessenger< S > (comm));
+  RCP< TSQR::MessengerBase< LO > > pOrdinalMess (new TrilinosMessenger< LO > (comm));
+  fillTpetraMultiVector (A, pGen, pOrdinalMess, pScalarMess);
+
+  return Teuchos::tuple (A, A_copy, Q);
+}
+
+
 
 #if 0
 template< class S, class LO, class GO, class MV >
