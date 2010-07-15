@@ -358,7 +358,7 @@ MACRO(CTEST_SUBMIT)
   #
   SET(retry_args "")
   IF("${CMAKE_VERSION}" VERSION_GREATER "2.8.2")
-    SET(retry_args RETRY_COUNT 5 RETRY_DELAY 30)
+    SET(retry_args RETRY_COUNT 15 RETRY_DELAY 60)
     MESSAGE("info: using retry_args='${retry_args}' for _ctest_submit call")
   ENDIF()
 
