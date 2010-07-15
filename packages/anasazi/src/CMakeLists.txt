@@ -157,10 +157,11 @@ include ("TsqrLapackWrappers.cmake")
 # Anasazi_ENABLE_{Epetra,Tpetra} is defined.
 APPEND_SET(HEADERS 
   TsqrAdaptor.hpp
+  TsqrCommFactory.hpp
   TsqrFactory.hpp
   TsqrFactory_SequentialTsqr.hpp
   TsqrFactory_TbbTsqr.hpp
-  TsqrTrilinosMessenger.hpp
+  TsqrRandomizer.hpp
   TsqrTypeAdaptor.hpp
   )
 APPEND_SET(HEADERS
@@ -213,23 +214,30 @@ APPEND_SET(SOURCES
   Tsqr_LapackQrRoutines.f90
   Tsqr_Combine.f90
   )
-IF (Anasazi_ENABLE_Epetra)
-  APPEND_SET(HEADERS
-    TsqrAdaptor_Epetra_MultiVector.hpp
-    TsqrTypeAdaptor_Epetra_MultiVector.hpp
-    )
-ENDIF()
 APPEND_SET(HEADERS
   TsqrFactory.hpp
   TsqrFactory_SequentialTsqr.hpp
-  TsqrTrilinosMessenger.hpp
   )
+#IF (Anasazi_ENABLE_Epetra)
+#  APPEND_SET(HEADERS
+#    TsqrAdaptor_Epetra_MultiVector.hpp
+#    TsqrCommFactory_Epetra.hpp
+#    TsqrRandomizer_Epetra_MultiVector.hpp
+#    Tsqr_EpetraMessenger.hpp # FIXME (mfh 15 Jul 2010) This file doesn't exist yet.
+#    TsqrTypeAdaptor_Epetra_MultiVector.hpp
+#    )
+#ENDIF()
+
+ASSERT_DEFINED(Anasazi_ENABLE_Tpetra)
 IF (Anasazi_ENABLE_Tpetra)
+#  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../tpetra/src)
   APPEND_SET(HEADERS
-    TsqrAdaptor_Tpetra_MultiVector_SerialNode.hpp
-    TsqrAdaptor_Tpetra_MultiVector_TBBNode.hpp
-    TsqrTypeAdaptor_Tpetra_MultiVector_SerialNode.hpp
-    TsqrTypeAdaptor_Tpetra_MultiVector_TBBNode.hpp
+    ../tpetra/src/TsqrAdaptor_Tpetra_MultiVector.hpp
+    ../tpetra/src/TsqrCommFactory_Tpetra.hpp
+    ../tpetra/src/TsqrRandomizer_Tpetra_MultiVector.hpp
+    ../tpetra/src/Tsqr_TpetraMessenger.hpp
+    ../tpetra/src/TsqrTypeAdaptor_Tpetra_MultiVector_SerialNode.hpp
+    ../tpetra/src/TsqrTypeAdaptor_Tpetra_MultiVector_TBBNode.hpp
     )
   # FIXME (mfh 29 Jun 2010) Should test for whether we are linking
   # with TBB, and only append these headers if we are.

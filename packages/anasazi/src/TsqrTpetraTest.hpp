@@ -188,7 +188,7 @@ namespace TSQR {
 	      for (LO k = 1; k < ncols; ++k)
 		singular_values[k] = singular_values[k-1] / S(2);
 	    }
-	  randomizer_type randomizer (pGen, pOrdinalMess, pScalarMess);
+	  randomizer_type randomizer (*mv, pGen);
 	  randomizer.randomMultiVector (*mv, &singular_values[0]);
 	}
 
