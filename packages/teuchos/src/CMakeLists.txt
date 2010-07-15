@@ -244,6 +244,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXTENDED)
     Teuchos_StringInputStream.hpp
     Teuchos_StrUtils.hpp
     Teuchos_TreeBuildingXMLHandler.hpp
+	Teuchos_ValidatorMaps.hpp
     Teuchos_ValidatorXMLConverter.hpp
     Teuchos_ValidatorXMLConverterDB.hpp
     Teuchos_XMLInputSource.hpp
@@ -270,6 +271,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXTENDED)
     Teuchos_StringInputSource.cpp
     Teuchos_StringInputStream.cpp
     Teuchos_TreeBuildingXMLHandler.cpp
+	Teuchos_ValidatorMaps.cpp
 	Teuchos_ValidatorXMLConverterDB.cpp
     Teuchos_XMLInputSource.cpp
     Teuchos_XMLInputStream.cpp

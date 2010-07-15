@@ -33,6 +33,7 @@
 */
 
 #include "Teuchos_XMLObject.hpp"
+#include "Teuchos_ValidatorMaps.hpp"
 
 namespace Teuchos {
 
@@ -48,14 +49,32 @@ public:
 	 * @param xmlObj The XMLObject to convert to a ParameterEntryValidator.
 	 * @return The converted ParameterEntryValidator.
 	 */
-	virtual RCP<ParameterEntryValidator> fromXMLtoValidator(const XMLObject& xmlObj) const=0;
+	RCP<ParameterEntryValidator> fromXMLtoValidator(const XMLObject& xmlObj, IDtoValidatorMap& validatorMap) const{
+		RCP<ParameterEntryValidator> toReturn = convertXML(xmlObj, validatorMap);
+		validatorMap.insertValidator(IDtoValidatorMap::IDValidatorPair(xmlObj.getRequiredInt(getIdAttributeName()), toReturn));
+		return toReturn;
+	}
+
+	virtual RCP<ParameterEntryValidator> convertXML(const XMLObject& xmlObj, IDtoValidatorMap& validatorMap) const=0;
 
 	/* \brief Converters a given ParameterEntryValidator to XML.
 	 *
 	 * @param validator The ParameterEntryValidator to be converted to XML.
 	 * @return An XML representation of the given ParameterEntryValidator.
 	 */
-	virtual XMLObject fromValidatortoXML(const RCP<const ParameterEntryValidator> validator) const=0;
+	XMLObject fromValidatortoXML(const RCP<const ParameterEntryValidator> validator, ValidatortoIDMap& validatorMap) const{
+		XMLObject toReturn = convertValidator(validator, validatorMap);
+		ValidatortoIDMap::const_iterator result = validatorMap.getID(validator);
+		if(result != validatorMap.end()){
+			toReturn.addAttribute(getIdAttributeName(), result->second);
+		}
+		else{
+			toReturn.addAttribute<int>(getIdAttributeName(), -1);
+		}
+		return toReturn;
+	}
+
+	virtual XMLObject convertValidator(const RCP<const ParameterEntryValidator>, ValidatortoIDMap& validatorMap) const = 0;
 
 	/* \brief Determines whether or not this is the appropriate converter given a ParameterEntryValidator.
 	 *
@@ -63,6 +82,16 @@ public:
 	 * @return True if the converter is appropriate for the ParameterEntryValidator, false otherwise.
 	 */
 	virtual bool isAppropriateConverter(const RCP<const ParameterEntryValidator> validator) const=0;
+
+	static const std::string& getIdAttributeName(){
+		static const std::string idAttributeName = "validatorid";
+		return idAttributeName;
+	}
+
+	static const std::string& getPrototypeIdAttributeName(){
+		static const std::string prototypeIdAttributeName = "prototypeid";
+		return prototypeIdAttributeName;
+	}
 };
 
 }

@@ -101,6 +101,11 @@ double XMLObject::getRequired<double>(const std::string& name) const{
 	return getRequiredDouble(name);
 }
 
+template<>
+std::string XMLObject::getRequired<std::string>(const std::string& name) const{
+	return getRequired(name);
+}
+
 bool XMLObject::getRequiredBool(const std::string& name) const
 {
   if (hasAttribute(name))
@@ -122,6 +127,13 @@ bool XMLObject::getRequiredBool(const std::string& name) const
     }
   }
   return false; // -Wall
+}
+
+template<>
+void XMLObject::addAttribute<const std::string&>(const std::string& name, const std::string& value) const{
+  TEST_FOR_EXCEPTION(is_null(ptr_), Teuchos::EmptyXMLError,
+		     "XMLObject::addAttribute: XMLObject is empty");
+  ptr_->addAttribute(name, value);
 }
 
 int XMLObject::numChildren() const

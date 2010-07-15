@@ -216,6 +216,12 @@ int XMLObject::getRequired<int>(const std::string& name) const;
 template<>
 double XMLObject::getRequired<double>(const std::string& name) const;
 
+template<>
+std::string XMLObject::getRequired<std::string>(const std::string& name) const;
+
+template<>
+void XMLObject::addAttribute(const std::string& name, const std::string& value) const;
+
 /** \relates XMLObject 
     \brief Write XMLObject to \c os stream 
 */

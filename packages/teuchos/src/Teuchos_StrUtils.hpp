@@ -138,6 +138,8 @@ namespace Teuchos
         ,const std::string       &linePrefix
         ,const std::string       &lines
         );
+	  
+	  static std::string removeAllSpaces(std::string stringToClean);
 
     };
 

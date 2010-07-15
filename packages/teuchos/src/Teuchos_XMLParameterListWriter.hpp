@@ -36,6 +36,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLObject.hpp"
 #include "Teuchos_Utils.hpp"
+#include "Teuchos_ValidatorMaps.hpp"
 
 namespace Teuchos
 {
@@ -47,8 +48,7 @@ namespace Teuchos
 	class TEUCHOS_LIB_DLL_EXPORT XMLParameterListWriter
 		{
 		public:
-	  typedef std::map<const RCP<ParameterEntryValidator>, int> WriterValidatorIDMap;
-	  typedef std::pair<const RCP<ParameterEntryValidator>, int> WriterValidatorIDPair;
+
       //! @name Constructors 
 			//@{
       /** Construct a writer */
@@ -97,9 +97,10 @@ namespace Teuchos
 	   */
       XMLObject convertParameterList(
 	    const ParameterList& p,
-		WriterValidatorIDMap& validatorIDMap,
-		int& validatorIDCounter) const;
+		ValidatortoIDMap& validatorIDMap) const;
+	  XMLObject convertValidators(const ParameterList& p, ValidatortoIDMap& validatorIDMap) const;
 		};
+	  
 }
 #endif
 

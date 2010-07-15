@@ -29,6 +29,7 @@
 #include "Teuchos_XMLParameterListWriter.hpp"
 #include "Teuchos_ParameterEntryXMLConverterDB.hpp"
 #include "Teuchos_ValidatorXMLConverterDB.hpp"
+#include "Teuchos_ValidatorMaps.hpp"
 
 using namespace Teuchos;
 
@@ -38,26 +39,39 @@ XMLParameterListWriter::XMLParameterListWriter()
 XMLObject XMLParameterListWriter::toXML(const ParameterList& p) const
 {
 	XMLObject toReturn(getParameterListAspectsTagName());
-	WriterValidatorIDMap validatorIDMap;
-	int validatorIDCounter = 0;
+	ValidatortoIDMap validatorIDMap;
+	XMLObject validators = convertValidators(p, validatorIDMap);
 	XMLObject parameterLists(getParameterListsTagName());
-	parameterLists.addChild(convertParameterList(p, validatorIDMap, validatorIDCounter));
-	WriterValidatorIDMap::const_iterator it = validatorIDMap.begin();
-	XMLObject validators(getValidatorsTagName());
-	for(;it != validatorIDMap.end(); ++it){
-		XMLObject currentValidator = ValidatorXMLConverterDB::getConverter(*(it->first))->fromValidatortoXML(it->first)
-		currentValidator.addInt(getValidatorIdAttributeName(), it->second);
-		validators.addChild(currentValidator);
-	}
+	parameterLists.addChild(convertParameterList(p, validatorIDMap));
+
 	toReturn.addChild(validators);
 	toReturn.addChild(parameterLists);
 	return toReturn;
 }
 
+XMLObject XMLParameterListWriter::convertValidators(const ParameterList& p, ValidatortoIDMap& validatorIDMap) const {
+	XMLObject validators(getValidatorsTagName());
+	for (ParameterList::ConstIterator i=p.begin(); i!=p.end(); ++i){
+		const ParameterEntry& entry = p.entry(i);
+		if(entry.isList()){
+			convertValidators(getValue<ParameterList>(entry), validatorIDMap);
+		}
+		else if(!entry.validator().is_null()){
+			validatorIDMap.insertValidator(entry.validator());
+		}
+	}
+	ValidatortoIDMap::const_iterator it = validatorIDMap.begin();
+	for(;it != validatorIDMap.end(); ++it){
+		XMLObject currentValidator = ValidatorXMLConverterDB::getConverter(*(it->first))->fromValidatortoXML(it->first, validatorIDMap);
+		validators.addChild(currentValidator);
+	}
+	return validators;
+}
+
+
 XMLObject XMLParameterListWriter::convertParameterList(
 	const ParameterList& p,
-	WriterValidatorIDMap& validatorIDMap,
-	int& validatorIDCounter) const
+	ValidatortoIDMap& validatorIDMap) const
 {
   XMLObject rtn(getParameterListTagName());
   rtn.addAttribute(getNameAttributeName(), p.name());
@@ -67,7 +81,7 @@ XMLObject XMLParameterListWriter::convertParameterList(
      const ParameterEntry& entry = p.entry(i);
      if (entry.isList())
        {
-          rtn.addChild(convertParameterList(getValue<ParameterList>(entry), validatorIDMap, validatorIDCounter));
+          rtn.addChild(convertParameterList(getValue<ParameterList>(entry), validatorIDMap));
        }
      else
 	   {
@@ -75,15 +89,8 @@ XMLObject XMLParameterListWriter::convertParameterList(
 		  RCP<const ParameterEntryXMLConverter> converter = ParameterEntryXMLConverterDB::getConverter(entry);
 		  XMLObject parameterEntryXML = converter->fromParameterEntrytoXML(entry, name);
 		  if(!entry.validator().is_null()){
-			WriterValidatorIDMap::iterator result = validatorIDMap.find(entry.validator().get());
-			if(result == validatorIDMap.end()){
-			  validatorIDMap.insert(WriterValidatorIDPair(entry.validator().get(), validatorIDCounter));
-			  parameterEntryXML.addInt(getValidatorIdAttributeName(), validatorIDCounter);
-			  ++validatorIDCounter;
-			}
-			else{
-			  parameterEntryXML.addInt(getValidatorIdAttributeName(), result->second);	
-			}
+			ValidatortoIDMap::const_iterator result = validatorIDMap.getID(entry.validator());
+		    parameterEntryXML.addInt(getValidatorIdAttributeName(), result->second);	
 		  }
 		  rtn.addChild(parameterEntryXML);
 	   }

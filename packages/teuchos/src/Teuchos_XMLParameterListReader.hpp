@@ -36,6 +36,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLObject.hpp"
 #include "Teuchos_Utils.hpp"
+#include "Teuchos_ValidatorMaps.hpp"
 
 namespace Teuchos
 {
@@ -45,10 +46,8 @@ namespace Teuchos
 	 */
 
 	class TEUCHOS_LIB_DLL_EXPORT XMLParameterListReader
-		{
-		public:
-	  typedef std::map<int, RCP<ParameterEntryValidator> > ReaderValidatorIDMap; 
-	  typedef std::pair<int, RCP<ParameterEntryValidator> > ReaderValidatorIDPair;
+	{
+	public:
       //! @name Constructors 
 			//@{
       /** Construct a reader */
@@ -58,15 +57,15 @@ namespace Teuchos
       /** Write the given XML object to a parameter list */
       ParameterList toParameterList(const XMLObject& xml) const ;
 
-	  private:
+	private:
 
       /** Write the given XML object to a parameter list along with the validators located in the given map*/
-	  ParameterList convertParameterList(const XMLObject& xml, const ReaderValidatorIDMap& validators) const;
+	  ParameterList convertParameterList(const XMLObject& xml, const IDtoValidatorMap& validatorMap) const;
 
 	  /** Write the given XML object to appropriate validators. */
-	  void convertValidators(const XMLObject& xml, ReaderValidatorIDMap& validators) const;
+	  void convertValidators(const XMLObject& xml, IDtoValidatorMap& validatorMap) const;
 
-		};
+	};
 }
 #endif
 

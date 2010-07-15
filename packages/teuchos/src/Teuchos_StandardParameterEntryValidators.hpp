@@ -1100,7 +1100,7 @@ public:
 	}
 
 	const std::string getXMLTagName() const{
-		return TypeNameTraits<T>::name() + "enhancednumbervalidator";
+		return StrUtils::removeAllSpaces(TypeNameTraits<T>::name()) + "enhancednumbervalidator";
 	}
 
 	void printDoc(std::string const &docString, std::ostream &out) const{
@@ -1569,7 +1569,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::validateString(
 
 template<class IntegralType>
 const std::string StringToIntegralParameterEntryValidator<IntegralType>::getXMLTagName() const{
-	return TypeNameTraits<IntegralType>::name() + "stringintegralvalidator";
+	return StrUtils::removeAllSpaces(TypeNameTraits<IntegralType>::name()) + "stringintegralvalidator";
 }
 
 template<class IntegralType>

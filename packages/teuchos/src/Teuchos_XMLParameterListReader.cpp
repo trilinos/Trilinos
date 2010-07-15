@@ -42,31 +42,39 @@ ParameterList XMLParameterListReader::toParameterList(const XMLObject& xml) cons
 	TEST_FOR_EXCEPTION(xml.getTag() != XMLParameterListWriter::getParameterListAspectsTagName(), std::runtime_error,
 		"XMLParameterListReader expected tag " << XMLParameterListWriter::getParameterListAspectsTagName() <<", found "
 		<< xml.getTag());
-	ReaderValidatorIDMap validators;
+	IDtoValidatorMap validatorMap;
 	ParameterList rtn;
 	for(int i =0; i<xml.numChildren(); ++i){
 		if(xml.getChild(i).getTag() == XMLParameterListWriter::getValidatorsTagName()){
-			convertValidators(xml.getChild(i), validators);
+			convertValidators(xml.getChild(i), validatorMap);
 		}
 	}
+
 	for(int i =0; i<xml.numChildren(); ++i){
 		if(xml.getChild(i).getTag() == XMLParameterListWriter::getParameterListsTagName()){
-			rtn = convertParameterList(xml.getChild(i).getChild(0), validators);
+			rtn = convertParameterList(xml.getChild(i).getChild(0), validatorMap);
 		}
 	}
 	return rtn;
 }
 
-void XMLParameterListReader::convertValidators(const XMLObject& xml, ReaderValidatorIDMap& validators) const
+void XMLParameterListReader::convertValidators(const XMLObject& xml, IDtoValidatorMap& validatorMap) const
 {
+	std::set<const XMLObject*> validatorsWithPrototypes;
 	for(int i=0; i<xml.numChildren(); ++i){
-		int currentID = xml.getChild(i).getRequiredInt(XMLParameterListWriter::getValidatorIdAttributeName());
-		RCP<ParameterEntryValidator> currentValidator = ValidatorXMLConverterDB::getConverter(xml.getChild(i))->fromXMLtoValidator(xml.getChild(i));
-		validators.insert(ReaderValidatorIDPair(currentID, currentValidator));
+		if(xml.getChild(i).hasAttribute(ValidatorXMLConverter::getPrototypeIdAttributeName())){
+			validatorsWithPrototypes.insert(&xml.getChild(i));
+		}
+		else{
+			ValidatorXMLConverterDB::getConverter(xml.getChild(i))->fromXMLtoValidator(xml.getChild(i), validatorMap);
+		}
+	}
+	for(std::set<const XMLObject*>::const_iterator it = validatorsWithPrototypes.begin(); it!=validatorsWithPrototypes.end(); ++it){
+			ValidatorXMLConverterDB::getConverter(*(*it))->fromXMLtoValidator(*(*it), validatorMap);
 	}
 }
 			
-ParameterList XMLParameterListReader::convertParameterList(const XMLObject& xml, const ReaderValidatorIDMap& validators) const
+ParameterList XMLParameterListReader::convertParameterList(const XMLObject& xml, const IDtoValidatorMap& validatorMap) const
 {
   TEST_FOR_EXCEPTION(xml.getTag() != XMLParameterListWriter::getParameterListTagName(), std::runtime_error,
                      "XMLParameterListReader expected tag " << XMLParameterListWriter::getParameterListTagName() <<", found "
@@ -96,7 +104,7 @@ ParameterList XMLParameterListReader::convertParameterList(const XMLObject& xml,
 
 		  const std::string& name = child.getRequired(XMLParameterListWriter::getNameAttributeName());
 
-          ParameterList sublist = convertParameterList(child, validators);
+          ParameterList sublist = convertParameterList(child, validatorMap);
           sublist.setName(name);
 
           rtn.set(name, sublist);
@@ -107,15 +115,15 @@ ParameterList XMLParameterListReader::convertParameterList(const XMLObject& xml,
 			RCP<const ParameterEntryXMLConverter> converter = ParameterEntryXMLConverterDB::getConverter(child);
 			ParameterEntry parameter = converter->fromXMLtoParameterEntry(child);
 			if(child.hasAttribute(XMLParameterListWriter::getValidatorIdAttributeName())){
-				ReaderValidatorIDMap::const_iterator result = validators.find(child.getRequiredInt(XMLParameterListWriter::getValidatorIdAttributeName()));
-				if(result != validators.end()){
+				IDtoValidatorMap::const_iterator result = validatorMap.getValidator(child.getRequiredInt(XMLParameterListWriter::getValidatorIdAttributeName()));
+				if(result != validatorMap.end()){
 					parameter.setValidator(result->second);
 				}
 				else{
 					throw std::runtime_error("Could not find validator with id: " + toString(child.getRequiredInt(XMLParameterListWriter::getValidatorIdAttributeName())));
 				}
 			}	
-			rtn.setEntry(name, converter->fromXMLtoParameterEntry(child));
+			rtn.setEntry(name, parameter);
         } 
     }
   return rtn;
