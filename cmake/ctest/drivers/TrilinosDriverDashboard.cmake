@@ -74,6 +74,9 @@ endif()
 # Submit the results to the dashboard or not
 SET_DEFAULT_AND_FROM_ENV( TDD_DO_SUBMIT TRUE )
 
+# Dashboard model : Nightly, Experimental, Continuous
+SET_DEFAULT_AND_FROM_ENV( TDD_CTEST_TEST_TYPE Experimental )
+
 get_filename_component(CTEST_SOURCE_DIRECTORY
   "${CTEST_SCRIPT_DIRECTORY}" ABSOLUTE)
 
@@ -96,10 +99,11 @@ endif()
 
 set(git_exe "$ENV{TDD_GIT_EXE}")
 if("${git_exe}" STREQUAL "")
+  set(git_exe "git_exe-NOTFOUND")
   find_program(git_exe NAMES git.cmd eg git)
 endif()
 if(git_exe)
-  set(UPDATE_TYPE "git")
+  set(CTEST_UPDATE_TYPE "git")
   set(CTEST_UPDATE_COMMAND "${git_exe}")
 endif()
 
@@ -110,13 +114,12 @@ endif()
 message("\nA) Empty out ${CTEST_BINARY_DIRECTORY} ...")
 ctest_empty_binary_directory("${CTEST_BINARY_DIRECTORY}")
 
-# rabartl: ToDo: This category should be variable!
-ctest_start("Experimental")
+ctest_start("${TDD_CTEST_TEST_TYPE}")
 
 message("\nB) Update ${CTEST_SOURCE_DIRECTORY} ...")
+message("      CTEST_UPDATE_COMMAND='${CTEST_UPDATE_COMMAND}'")
+message("      CTEST_UPDATE_TYPE='${CTEST_UPDATE_TYPE}'")
 ctest_update(SOURCE "${CTEST_SOURCE_DIRECTORY}")
-message("NOTE: Ignore the above warning 'Cannot find UpdateCommand configuration key',"
-  " this is a git repository and this warning is harmess!")
 
 message("\nC) Configure ${CTEST_BINARY_DIRECTORY} ...")
 ctest_configure(BUILD "${CTEST_BINARY_DIRECTORY}")
