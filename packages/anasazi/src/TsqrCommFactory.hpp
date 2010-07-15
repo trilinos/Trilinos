@@ -2,7 +2,6 @@
 #define __TSQR_Trilinos_TsqrCommFactory_hpp
 
 #include "Teuchos_RCP.hpp"
-#include "TsqrTypeAdaptor.hpp"
 #include "Tsqr_MessengerBase.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -10,7 +9,11 @@
 
 namespace TSQR {
   namespace Trilinos {
-    
+
+    // Forward declaration. TsqrFactory.hpp includes
+    // TsqrCommFactory.hpp, and TsqrTypeAdaptor.hpp includes
+    // TsqrFactory.hpp.  We resolve the dependency with a forward
+    // declaration of TsqrTypeAdaptor here.
     template< class S, class LO, class GO, class MV >
     class TsqrTypeAdaptor;
 
