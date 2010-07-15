@@ -173,9 +173,7 @@ namespace TSQR {
 	///
 	static void
 	fillMultiVector (const RCP< MV >& mv,
-			 const RCP< normalgen_type >& pGen,
-			 const RCP< TSQR::MessengerBase< LO > >& pOrdinalMess,
-			 const RCP< TSQR::MessengerBase< S > >& pScalarMess)
+			 const RCP< normalgen_type >& pGen)
 	{
 	  using TSQR::Trilinos::TpetraRandomizer;
 	  typedef TpetraRandomizer< S, LO, GO, Node, normalgen_type > randomizer_type;
@@ -209,9 +207,7 @@ namespace TSQR {
 
 	  // Fill A with the random test problem
 	  RCP< normalgen_type > pGen (new normalgen_type);
-	  RCP< MessengerBase< S > > pScalarMess (new TpetraMessenger< S > (comm));
-	  RCP< MessengerBase< LO > > pOrdinalMess (new TpetraMessenger< LO > (comm));
-	  fillMultiVector (A, pGen, pOrdinalMess, pScalarMess);
+	  fillMultiVector (A, pGen);
 
 	  return Teuchos::tuple (A, A_copy, Q);
 	}
