@@ -38,14 +38,6 @@ IDtoValidatorMap::const_iterator IDtoValidatorMap::getValidator(int id) const{
 	return validatorMap.find(id);
 }
 
-IDtoValidatorMap::iterator IDtoValidatorMap::begin(){
-	return validatorMap.begin();
-}
-
-IDtoValidatorMap::iterator IDtoValidatorMap::end(){
-	return validatorMap.end();
-}
-
 IDtoValidatorMap::const_iterator IDtoValidatorMap::begin() const{
 	return validatorMap.begin();
 }
@@ -66,14 +58,6 @@ void ValidatortoIDMap::insertValidator(RCP<const ParameterEntryValidator> toInse
 
 ValidatortoIDMap::const_iterator ValidatortoIDMap::getID(const RCP<const ParameterEntryValidator> validator) const{
 	return validatorMap.find(validator);
-}
-
-ValidatortoIDMap::iterator ValidatortoIDMap::begin(){
-	return validatorMap.begin();
-}
-
-ValidatortoIDMap::iterator ValidatortoIDMap::end(){
-	return validatorMap.end();
 }
 
 ValidatortoIDMap::const_iterator ValidatortoIDMap::begin() const{

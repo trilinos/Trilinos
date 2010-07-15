@@ -65,6 +65,7 @@ public:
 private:
 	/* \brief convience typedef */
 	typedef std::map<std::string, RCP<ValidatorXMLConverter> > ConverterMap;
+
 	/* \brief convience typedef */
 	typedef std::pair<std::string, RCP<ValidatorXMLConverter> > ConverterPair;
 

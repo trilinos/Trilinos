@@ -93,6 +93,7 @@ public:
 private:
 	/* \brief convience typedef */
 	typedef std::map<std::string, RCP<ParameterEntryXMLConverter> > ConverterMap;
+
 	/* \brief convience typedef */
 	typedef std::pair<std::string, RCP<ParameterEntryXMLConverter> > ConverterPair;
 

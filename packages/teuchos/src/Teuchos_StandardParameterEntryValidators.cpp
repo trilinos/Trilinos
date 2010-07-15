@@ -207,19 +207,19 @@ std::string AnyNumberParameterEntryValidator::getString(
   return paramList.get(paramName,defaultValue);
 }
 
-bool AnyNumberParameterEntryValidator::allowDouble() const{
+bool AnyNumberParameterEntryValidator::isDoubleAllowed() const{
 	return acceptedTypes_.allowDouble();
 }
 
-bool AnyNumberParameterEntryValidator::allowInt() const{
+bool AnyNumberParameterEntryValidator::isIntAllowed() const{
 	return acceptedTypes_.allowInt();
 }
   
-bool AnyNumberParameterEntryValidator::allowString() const{
+bool AnyNumberParameterEntryValidator::isStringAllowed() const{
 	return acceptedTypes_.allowString();
 }
 
-AnyNumberParameterEntryValidator::EPreferredType AnyNumberParameterEntryValidator::prefferedType() const{
+AnyNumberParameterEntryValidator::EPreferredType AnyNumberParameterEntryValidator::getPreferredType() const{
 	return preferredType_;
 }
 
@@ -287,26 +287,6 @@ void AnyNumberParameterEntryValidator::validateAndModify(
       TEST_FOR_EXCEPT("Error, Invalid EPreferredType value!");
   }
 }
-
-/*XMLObject AnyNumberParameterEntryValidator::getXML() const{
-	XMLObject valiTag(getTagName());
-	XMLObject preferredTypeTag("preferredtype");
-	preferredTypeTag.addInt("value", preferredType_);
-	valiTag.addChild(preferredTypeTag);
-	if(acceptedTypes_.allowInt()){
-		XMLObject allowIntTag("allowint");
-		valiTag.addChild(allowIntTag);
-	}
-	if(acceptedTypes_.allowDouble()){
-		XMLObject allowDoubleTag("allowdouble");
-		valiTag.addChild(allowDoubleTag);
-	}
-	if(acceptedTypes_.allowString()){
-		XMLObject allowStringTag("allowString");
-		valiTag.addChild(allowStringTag);
-	}
-	return valiTag;
-}*/
 
 // private
 
@@ -403,14 +383,6 @@ void FileNameValidator::validate(ParameterEntry const &entry, std::string const 
 		}
 	}
 }
-
-/*XMLObject FileNameValidator::getXML() const{
-	XMLObject valiTag(getTagName());
-	XMLObject mustAlreadyExistTag("mustalreadyexist");
-	mustAlreadyExistTag.addBool("value", mustAlreadyExist_);
-	valiTag.addChild(mustAlreadyExistTag);
-	return valiTag;
-}*/
 
 const std::string FileNameValidator::getXMLTagName() const{
 	return "filenamevalidator";

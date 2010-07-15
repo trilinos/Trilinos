@@ -113,8 +113,6 @@ public:
 
   /** \brief Get an attribute, assigning a default value if the requested
    * attribute does not exist */
-//  std::string getWithDefault(const std::string& name, 
- //                       const std::string& defaultValue) const ;
   template<class T>
   T getWithDefault(const std::string& name, const T& defaultValue) const{
     if (hasAttribute(name)){
@@ -163,8 +161,6 @@ public:
   //! @name Tree-Assembly methods 
   //@{
 
-  //! Add an attribute to the current node's atribute list
-  //void addAttribute(const std::string& name, const std::string& value);
 			
   //! Add a double as an attribute
   void addDouble(const std::string& name, double val)
@@ -178,9 +174,10 @@ public:
   void addBool(const std::string& name, bool val)
     {addAttribute(name, Teuchos::toString(val));}
 
+  /** \brief Lookup whether or not Doubles are allowed.
+   */
   template<class T>
   void addAttribute(const std::string& name, T value) const
-   // {addAttribute(name, Teuchos::toString(value));}
 {
   TEST_FOR_EXCEPTION(is_null(ptr_), Teuchos::EmptyXMLError,
 		     "XMLObject::addAttribute: XMLObject is empty");

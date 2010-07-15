@@ -555,15 +555,23 @@ public:
     const std::string &defaultValue
     ) const;
 
-  bool allowDouble() const;
+  /** \brief Lookup whether or not Doubles are allowed.
+   */
+  bool isDoubleAllowed() const;
 
-  bool allowInt() const;
+  /** \brief Lookup whether or not ints are allowed.
+   */
+  bool isIntAllowed() const;
   
-  bool allowString() const;
+  /** \brief Lookup whether or not strings are allowed.
+   */
+  bool isStringAllowed() const;
 
-  EPreferredType prefferedType() const;
+  /** \brief Lookup the preferred type
+   * */
+  EPreferredType getPreferredType() const;
 
-  /** \brief Gets the string representation of a given preffered type enum. */
+  /** \brief Gets the string representation of a given preferred type enum. */
   static const std::string& getPrefferedTypeString(EPreferredType enumValue){
 	switch(enumValue){
 		case PREFER_INT:
@@ -583,7 +591,7 @@ public:
 	return emptyString;
   }
 
-  /** \brief Gets the preffered type enum associated with a give string. */
+  /** \brief Gets the preferred type enum associated with a give string. */
   static EPreferredType getPrefferedTypeStringEnum(const std::string& enumString){
 	if(enumString == getIntEnumString()){
 		return PREFER_INT;
@@ -657,19 +665,19 @@ private:
   // ////////////////////////////
   // Private member functions
 
-  /* \brief Gets the string representing the "int" preffered type enum */
+  /* \brief Gets the string representing the "int" preferred type enum */
   static const std::string& getIntEnumString(){
   	static const std::string intEnumString_ = TypeNameTraits<int>::name();
 	return intEnumString_;
   }
 
-  /* \brief Gets the string representing the "double" preffered type enum */
+  /* \brief Gets the string representing the "double" preferred type enum */
   static const std::string& getDoubleEnumString(){
   	static const std::string doubleEnumString_ = TypeNameTraits<double>::name();
 	return doubleEnumString_;
   }
 
-  /* \brief Gets the string representing the "string" preffered type enum */
+  /* \brief Gets the string representing the "string" preferred type enum */
   static const std::string& getStringEnumString(){
   	static const std::string stringEnumString_ = TypeNameTraits<std::string>::name();
 	return stringEnumString_;

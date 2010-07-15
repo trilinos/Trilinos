@@ -51,7 +51,9 @@ public:
 	 */
 	RCP<ParameterEntryValidator> fromXMLtoValidator(const XMLObject& xmlObj, IDtoValidatorMap& validatorMap) const{
 		RCP<ParameterEntryValidator> toReturn = convertXML(xmlObj, validatorMap);
-		validatorMap.insertValidator(IDtoValidatorMap::IDValidatorPair(xmlObj.getRequiredInt(getIdAttributeName()), toReturn));
+		if(xmlObj.hasAttribute(getIdAttributeName())){
+			validatorMap.insertValidator(IDtoValidatorMap::IDValidatorPair(xmlObj.getRequiredInt(getIdAttributeName()), toReturn));
+		}
 		return toReturn;
 	}
 
@@ -68,9 +70,9 @@ public:
 		if(result != validatorMap.end()){
 			toReturn.addAttribute(getIdAttributeName(), result->second);
 		}
-		else{
+/*		else{
 			toReturn.addAttribute<int>(getIdAttributeName(), -1);
-		}
+		}*/
 		return toReturn;
 	}
 

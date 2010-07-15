@@ -35,23 +35,41 @@
 
 namespace Teuchos{
 
+/**
+ * \class Teuchos::IDtoValidatorMap
+ * \breif Maps Validators to integers.
+ */
 class IDtoValidatorMap{
 public:
 	typedef std::map<int, RCP<ParameterEntryValidator> > ValidatorMap;
 	typedef std::pair<int, RCP<ParameterEntryValidator> > IDValidatorPair;
 	typedef ValidatorMap::iterator iterator;
 	typedef ValidatorMap::const_iterator const_iterator;
+
+	/** \breif inserts an IDValidatorPair into the map. */
 	void insertValidator(IDValidatorPair toInsert);
+
+	/** \brief Retrieves and iterator to a validator and id based on the id given. If no
+	 * validator is found that has been mappend to the given id, a reference to the end of the
+	 * map is returned */
 	const_iterator getValidator(int id) const;
-	iterator begin();
-	iterator end();
+
+	/** \brief Returns a const_reference to the beginning of the map.
+	 */
 	const_iterator begin() const;
+
+	/** \brief Returns a const_reference to the end of the map.
+	 */
 	const_iterator end() const;
 
 private:
 	ValidatorMap validatorMap;
 };
 
+/**
+ * \class Teuchos::ValidatortoIDMap
+ * \brief A class for mapping validators to integers.
+ */
 class ValidatortoIDMap{
 public:
 	struct rcpcomp{
@@ -65,12 +83,23 @@ public:
 	typedef std::pair<RCP<const ParameterEntryValidator>, int> ValidatorIDPair;
 	typedef ValidatorMap::iterator iterator;
 	typedef ValidatorMap::const_iterator const_iterator;
+
 	ValidatortoIDMap();
+
+	/** \breif inserts an IDValidatorPair into the map. */
 	void insertValidator(RCP<const ParameterEntryValidator> toInsert);
+	
+	/** Returns an iterator to the validator and id specified by the validator. If no id
+	 * is found with the associated validator, a reference to the end of the map is returned.
+	 */
 	const_iterator getID(const RCP<const ParameterEntryValidator> validator) const;
-	iterator begin();
-	iterator end();
+	
+	/** \brief Returns a const_reference to the beginning of the map.
+	 */
 	const_iterator begin() const;
+
+	/** \brief Returns a const_reference to the end of the map.
+	 */
 	const_iterator end() const;
 
 private:

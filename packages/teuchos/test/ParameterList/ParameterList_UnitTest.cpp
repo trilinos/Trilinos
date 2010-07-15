@@ -121,6 +121,7 @@ TEUCHOS_UNIT_TEST( Teuchos_ParameterList, haveSameValuesDifferentSublistNames ) 
   TEST_ASSERT( !haveSameValues(A,B) ); // sublist names matter
 }
 
+
 TEUCHOS_UNIT_TEST(Teuchos_ParameterList, parameterEntryXMLConverters){
 	std::string xmlFileName = "PEConvertersList.xml";
 	Teuchos::ParameterList myList;
@@ -153,6 +154,81 @@ TEUCHOS_UNIT_TEST(Teuchos_ParameterList, parameterEntryXMLConverters){
 	std::cout << "reading xml from file...\n";
 	Teuchos::RCP<Teuchos::ParameterList> readInPL = getParametersFromXmlFile(xmlFileName);
 	TEST_ASSERT(haveSameValues(myList, *readInPL));
+}
+
+TEUCHOS_UNIT_TEST(Teuchos_ParameterList, converterExceptions){
+	TEST_THROW(Teuchos::RCP<ParameterList> missingValidatorList = getParametersFromXmlFile("MissingValidator.xml"), std::runtime_error);
+	TEST_THROW(Teuchos::RCP<ParameterList> missingValidatorList = getParametersFromXmlFile("BadRootElement.xml"), std::runtime_error);
+	TEST_THROW(Teuchos::RCP<ParameterList> missingValidatorList = getParametersFromXmlFile("BadParameterListElement.xml"), std::runtime_error);
+	TEST_THROW(Teuchos::RCP<ParameterList> missingValidatorList = getParametersFromXmlFile("NoNameAttribute.xml"), std::runtime_error);
+	TEST_THROW(Teuchos::RCP<ParameterList> missingValidatorList = getParametersFromXmlFile("NoTypeAttribute.xml"), std::runtime_error);
+	TEST_THROW(Teuchos::RCP<ParameterList> missingValidatorList = getParametersFromXmlFile("NoValueAttribute.xml"), std::runtime_error);
+}
+
+TEUCHOS_UNIT_TEST(Teuchos_ParameterList, fileNameValidatorConverter){
+	std::string xmlFileName = "FileNameValidatorList.xml";
+	std::string defaultParameterName = "default";
+	std::string nonDefaultParameterName = "non default";
+
+	Teuchos::RCP<FileNameValidator> defaultValidator = Teuchos::rcp(new FileNameValidator);
+	Teuchos::RCP<FileNameValidator> nonDefaultValidator = Teuchos::rcp(new FileNameValidator(true));
+	Teuchos::ParameterList myList("FileName Validator List");
+	myList.set("default", "blah.txt", "parameter for default validator", defaultValidator);
+	myList.set("non default", "blah.txt", "parameter for non default validator", nonDefaultValidator);
+
+	writeParameterListToXmlFile(myList, xmlFileName);
+	Teuchos::RCP<Teuchos::ParameterList> readInPL = getParametersFromXmlFile(xmlFileName);
+
+	Teuchos::RCP<const FileNameValidator> readinDefault = rcp_static_cast<const FileNameValidator>(readInPL->getEntry(defaultParameterName).validator());
+	TEST_EQUALITY(readinDefault->fileMustExist(), defaultValidator->fileMustExist());
+
+	Teuchos::RCP<const FileNameValidator> readinNonDefault = rcp_static_cast<const FileNameValidator>(readInPL->getEntry(nonDefaultParameterName).validator());
+	TEST_EQUALITY(readinNonDefault->fileMustExist(), nonDefaultValidator->fileMustExist());
+}
+
+TEUCHOS_UNIT_TEST(Teuchos_ParameterList, stringValidatorConverter){
+	std::string xmlFileName = "StringValidatorList.xml";
+	std::string defaultParameterName = "default";
+	std::string nonDefaultParameterName = "non default";
+
+	Teuchos::RCP<StringValidator> nonDefaultValidator = Teuchos::rcp(new StringValidator(tuple<std::string>("value1", "cheese", "kurtis", "is", "awesome")));
+	Teuchos::ParameterList myList("String Validator List");
+	myList.set("non default", "kurtis", "parameter for non default validator", nonDefaultValidator);
+
+	writeParameterListToXmlFile(myList, xmlFileName);
+	Teuchos::RCP<Teuchos::ParameterList> readInPL = getParametersFromXmlFile(xmlFileName);
+
+	Teuchos::RCP<const StringValidator> readinNonDefault = rcp_static_cast<const StringValidator>(readInPL->getEntry(nonDefaultParameterName).validator());
+	TEST_COMPARE_ARRAYS(*(readinNonDefault->validStringValues()), *(nonDefaultValidator->validStringValues()));
+}
+
+
+TEUCHOS_UNIT_TEST(Teuchos_ParameterList, anynumberValidatorConverter){
+	std::string xmlFileName = "AnyNumberValidatorList.xml";
+	std::string defaultParameterName = "default";
+	std::string nonDefaultParameterName = "preferred and accepted";
+	Teuchos::RCP<AnyNumberParameterEntryValidator> defaultValidator = Teuchos::rcp(new AnyNumberParameterEntryValidator());
+	Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes acceptedTypes;
+	acceptedTypes.allowDouble(false);
+	Teuchos::RCP<AnyNumberParameterEntryValidator> nonDefaultValidator = Teuchos::rcp(new AnyNumberParameterEntryValidator(AnyNumberParameterEntryValidator::PREFER_INT, acceptedTypes));
+
+	Teuchos::ParameterList myList("AnyNumberValidatorList");
+	myList.set(defaultParameterName, 10.0, "A parameter with the default AnyNumberValidator on it", defaultValidator);
+	myList.set(nonDefaultParameterName, 1, "A prameter with an AnyNumberValidator on it that has the preferred and accepted types differnet from the default", nonDefaultValidator);
+	writeParameterListToXmlFile(myList, xmlFileName);
+	Teuchos::RCP<Teuchos::ParameterList> readInPL = getParametersFromXmlFile(xmlFileName);
+	
+	Teuchos::RCP<const AnyNumberParameterEntryValidator> readinDefaultValidator = rcp_static_cast<const AnyNumberParameterEntryValidator>(readInPL->getEntry(defaultParameterName).validator());
+	TEST_EQUALITY(readinDefaultValidator->isDoubleAllowed(), defaultValidator->isDoubleAllowed());
+	TEST_EQUALITY(readinDefaultValidator->isIntAllowed(), defaultValidator->isIntAllowed());
+	TEST_EQUALITY(readinDefaultValidator->isStringAllowed(), defaultValidator->isStringAllowed());
+	TEST_EQUALITY(readinDefaultValidator->getPreferredType(), defaultValidator->getPreferredType());
+
+	Teuchos::RCP<const AnyNumberParameterEntryValidator> readinNonDefaultValidator = rcp_static_cast<const AnyNumberParameterEntryValidator>(readInPL->getEntry(nonDefaultParameterName).validator());
+	TEST_EQUALITY(readinNonDefaultValidator->isDoubleAllowed(), nonDefaultValidator->isDoubleAllowed());
+	TEST_EQUALITY(readinNonDefaultValidator->isIntAllowed(), nonDefaultValidator->isIntAllowed());
+	TEST_EQUALITY(readinNonDefaultValidator->isStringAllowed(), nonDefaultValidator->isStringAllowed());
+	TEST_EQUALITY(readinNonDefaultValidator->getPreferredType(), nonDefaultValidator->getPreferredType());
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(Teuchos_ParameterList, EnhancedNumberValidatorConverter, T){
@@ -306,11 +382,24 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(Teuchos_ParameterList, EnhancedNumberValida
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(Teuchos_ParameterList, NumberArrayValidatorConverterTest, T ) \
 TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(Teuchos_ParameterList, StringToIntegralConverterTest, T ) 
 
+typedef unsigned int uint;
+typedef unsigned short ushort;
+typedef unsigned long ulong;
+
 FULL_NUMBER_TYEP_TEST(int)
+FULL_NUMBER_TYEP_TEST(uint)
 FULL_NUMBER_TYEP_TEST(short)
+FULL_NUMBER_TYEP_TEST(ushort)
 FULL_NUMBER_TYEP_TEST(long)
+FULL_NUMBER_TYEP_TEST(ulong)
 FULL_NUMBER_TYEP_TEST(float)
 FULL_NUMBER_TYEP_TEST(double)
+#ifdef HAVE_TEUCHOS_LONG_LONG_INT
+typedef long long int llint;
+typedef unsigned long long int ullint;
+FULL_NUMBER_TYEP_TEST(llint)
+FULL_NUMBER_TYEP_TEST(ullint)
+#endif
 
 } // namespace Teuchos
 

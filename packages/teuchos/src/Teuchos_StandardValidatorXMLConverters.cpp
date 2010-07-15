@@ -48,10 +48,10 @@ namespace Teuchos {
 		TEST_FOR_EXCEPTION(!isAppropriateConverter(validator), std::runtime_error, "An AnyNumberValidatorXMLConverter is not apporpriate for this type of validator.");
 		RCP<const AnyNumberParameterEntryValidator> convertedValidator = rcp_static_cast<const AnyNumberParameterEntryValidator>(validator);
 		XMLObject toReturn(validator->getXMLTagName());
-		toReturn.addBool(getAllowIntAttributeName(), convertedValidator->allowInt());
-		toReturn.addBool(getAllowDoubleAttributeName(), convertedValidator->allowDouble());
-		toReturn.addBool(getAllowStringAttributeName(), convertedValidator->allowString());
-		toReturn.addAttribute(getPrefferedTypeAttributeName(), convertedValidator->getPrefferedTypeString(convertedValidator->prefferedType()));
+		toReturn.addBool(getAllowIntAttributeName(), convertedValidator->isIntAllowed());
+		toReturn.addBool(getAllowDoubleAttributeName(), convertedValidator->isDoubleAllowed());
+		toReturn.addBool(getAllowStringAttributeName(), convertedValidator->isStringAllowed());
+		toReturn.addAttribute(getPrefferedTypeAttributeName(), convertedValidator->getPrefferedTypeString(convertedValidator->getPreferredType()));
 		return toReturn;
 	}
 
