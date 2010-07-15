@@ -73,27 +73,6 @@ namespace TSQR {
       typedef Teuchos::RCP< MessengerBase< LO > > ordinal_messenger_ptr;
       typedef Teuchos::RCP< MessengerBase< S > >  scalar_messenger_ptr;
 
-      /// \brief Constructor
-      ///
-      /// Constructor takes RCP smart pointers of the three objects
-      /// needed to generate random test problems for TSQR.  RCPs of
-      /// these objects are held by Randomizer for the lifetime of the
-      /// latter.
-      ///
-      /// \param pGen [in/out] Pointer to generator of pseudorandom
-      ///   normal(0,1) sequence.
-      /// \param pOrdinalMess [in] Handles communication of 
-      ///   local_ordinal_type numbers
-      /// \param pScalarMess [in] Handles communication of 
-      ///   scalar_type numbers
-      Randomizer (const normalgen_ptr& pGen,
-		  const ordinal_messenger_ptr& pOrdinalMess,
-		  const scalar_messenger_ptr& pScalarMess) : 
-	pGen_ (pGen),
-	pOrdinalMess_ (pOrdinalMess),
-	pScalarMess_ (pScalarMess)
-      {}
-
       virtual ~Randomizer() {}
 
       /// \brief Fill A with a (pseudo)random (distributed) matrix
@@ -119,7 +98,7 @@ namespace TSQR {
 	mat_view_type A_view (nrowsLocal, ncols, A_ptr.get(), LDA);
 
 	randomGlobalMatrix (pGen_.get(), A_view, singularValues,
-			    pOrdinalMess_.get(), pScalarMess_.get());
+			    pOrdinalMessenger_.get(), pScalarMessenger_.get());
       }
 
     protected:
@@ -132,7 +111,7 @@ namespace TSQR {
       /// \param pGen [in/out] Pointer to generator of pseudorandom
       ///   normal(0,1) sequence.
       void 
-      init (const multivector_type& mv)
+      init (const multivector_type& mv,
 	    const normalgen_ptr& pGen)
       {
 	pGen_ = pGen;
@@ -180,8 +159,8 @@ namespace TSQR {
 		       ordinal_messenger_ptr& pOrdinalMessenger) const = 0;
 
       normalgen_ptr pGen_;
-      ordinal_messenger_ptr pOrdinalMess_;
-      scalar_messenger_ptr pScalarMess_;
+      ordinal_messenger_ptr pOrdinalMessenger_;
+      scalar_messenger_ptr pScalarMessenger_;
     };
 
   } // namespace Trilinos

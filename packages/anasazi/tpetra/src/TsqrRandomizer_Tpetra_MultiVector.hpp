@@ -134,7 +134,7 @@ namespace TSQR {
 		       scalar_messenger_ptr& pScalarMessenger,
 		       ordinal_messenger_ptr& pOrdinalMessenger) const
       {
-	typedef TpetraCommFactory< S, LO, GO, Node > comm_factory_type;
+	typedef TpetraCommFactory< S, LO, GO, NodeType > comm_factory_type;
 	comm_ptr pComm = mv.getMap()->getComm();
 	comm_factory_type factory;
 	factory.makeMessengers (pComm, pScalarMessenger, pOrdinalMessenger);

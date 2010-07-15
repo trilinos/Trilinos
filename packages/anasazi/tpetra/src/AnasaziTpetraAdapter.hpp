@@ -241,10 +241,10 @@ namespace Anasazi {
   ////////////////////////////////////////////////////////////////////
 
   template< class Scalar, class LO, class GO, class Node >
-  class TsqrAdaptor< Scalar, Tpetra::MultiVector< S, LO, GO, Node > >
+  class TsqrAdaptor< Scalar, Tpetra::MultiVector< Scalar, LO, GO, Node > >
   {
   public:
-    typedef TSQR::Trilinos::TsqrTpetraAdaptor< S, LO, GO, Node > adaptor_type;
+    typedef TSQR::Trilinos::TsqrTpetraAdaptor< Scalar, LO, GO, Node > adaptor_type;
   };
 
   ////////////////////////////////////////////////////////////////////

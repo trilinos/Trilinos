@@ -30,6 +30,7 @@
 #define __Anasazi_TsqrAdaptor_hpp
 
 #include "TsqrAdaptor.hpp"
+#include "TsqrRandomizer.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -38,13 +39,13 @@ namespace Anasazi {
   /// \class TsqrAdaptor
   /// \brief Map from multivector class to TSQR adaptor class
   template< class ScalarType, class MultiVectorType >
-  class TsqrAdaptor< class ScalarType, class MultiVectorType > 
+  class TsqrAdaptor
   {
   public:
-    typedef TsqrAdaptor< typename MultiVectorType::scalar_type,
-			 typename MultiVectorType::local_ordinal_type,
-			 typename MultiVectorType::global_ordinal_type,
-			 typename MultiVectorType::node_type > adaptor_type;
+    typedef TSQR::Trilinos::TsqrAdaptor< typename MultiVectorType::scalar_type,
+					 typename MultiVectorType::local_ordinal_type,
+					 typename MultiVectorType::global_ordinal_type,
+					 typename MultiVectorType::node_type > adaptor_type;
   };
 
   // FIXME mfh 14 Jul 2010: this belongs in ../epetra/src
