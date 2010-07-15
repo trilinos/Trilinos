@@ -45,8 +45,6 @@
 //Trilinos includes
 #include "Teuchos_RCP.hpp"
 
-using namespace Dakota;
-
 namespace TriKota {
 
   //! Class which wraps library-mode Dakota calls into a few simple steps
@@ -74,7 +72,7 @@ public:
     (re)set the initial parameters in Dakota using those selected
     in the model evaluator.
   */
-  ProblemDescDB& getProblemDescDB();
+  Dakota::ProblemDescDB& getProblemDescDB();
 
   /*! \brief Main call to execute the dakota analysis. 
      The argument may be of type TriKota::DirectApplicInterface, 
@@ -87,9 +85,9 @@ public:
 
 private:
 
-  ParallelLibrary parallel_lib;
-  ProblemDescDB problem_db;
-  Strategy selected_strategy;
+  Dakota::ParallelLibrary parallel_lib;
+  Dakota::ProblemDescDB problem_db;
+  Dakota::Strategy selected_strategy;
 
 }; // end of class Driver
 
