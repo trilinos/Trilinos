@@ -10,7 +10,7 @@ namespace TSQR {
   namespace Trilinos {
 
     template< class S, class LO, class GO, class Node >
-    class TpetraCommFactory< S, LO, GO, Tpetra::MultiVector< S, LO, GO, Node > > : 
+    class TpetraCommFactory :
       public CommFactory< S, LO, GO, Tpetra::MultiVector< S, LO, GO, Node > >
     {
     public:

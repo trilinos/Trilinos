@@ -176,7 +176,7 @@ namespace TSQR {
 			 const node_ptr& node,
 			 const Teuchos::ParameterList& params)
 	{
-	  using TSQR::Trilinos::TrilinosMessenger;
+	  using TSQR::Trilinos::TpetraMessenger;
 	  using TSQR::MessengerBase;
 
 	  map_ptr map = makeMap (nrowsGlobal, comm, node);
@@ -186,8 +186,8 @@ namespace TSQR {
 
 	  // Fill A with the random test problem
 	  RCP< normalgen_type > pGen (new normalgen_type);
-	  RCP< MessengerBase< S > > pScalarMess (new TrilinosMessenger< S > (comm));
-	  RCP< MessengerBase< LO > > pOrdinalMess (new TrilinosMessenger< LO > (comm));
+	  RCP< MessengerBase< S > > pScalarMess (new TpetraMessenger< S > (comm));
+	  RCP< MessengerBase< LO > > pOrdinalMess (new TpetraMessenger< LO > (comm));
 	  fillMultiVector (A, pGen, pOrdinalMess, pScalarMess);
 
 	  return Teuchos::tuple (A, A_copy, Q);

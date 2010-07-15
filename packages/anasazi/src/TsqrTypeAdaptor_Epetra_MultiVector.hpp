@@ -31,6 +31,7 @@ namespace TSQR {
       typedef TSQR::Tsqr< int, double, node_tsqr_type > tsqr_type;
       typedef SequentialTsqrFactory< local_ordinal_type, scalar_type > factory_type;
       typedef Epetra_Comm comm_type;
+      typedef Teuchos::RCP< const comm_type > comm_ptr;
     };
 
   } // namespace Trilinos

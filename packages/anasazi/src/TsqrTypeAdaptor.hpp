@@ -1,6 +1,7 @@
 #ifndef __TSQR_Trilinos_TsqrTypeAdaptor_hpp
 #define __TSQR_Trilinos_TsqrTypeAdaptor_hpp
 
+#include "Teuchos_RCP.hpp"
 #include "AnasaziConfigDefs.hpp"
 #include "TsqrFactory.hpp"
 #include "Tsqr.hpp"
@@ -65,14 +66,16 @@ namespace TSQR {
       /// via Teuchos::RCP.
       ///
       typedef UndefinedComm comm_type;
+      typedef Teuchos::RCP< const comm_type > comm_ptr;
     };
 
   } // namespace Trilinos
 } // namespace TSQR
 
-#ifdef HAVE_ANASAZI_EPETRA
-#  include "TsqrTypeAdaptor_Epetra_MultiVector.hpp"
-#endif // HAVE_ANASAZI_EPETRA
+// FIXME (mfh 15 Jul 2010) Need to finish Epetra wrappers
+// #ifdef HAVE_ANASAZI_EPETRA
+// #  include "TsqrTypeAdaptor_Epetra_MultiVector.hpp"
+// #endif // HAVE_ANASAZI_EPETRA
 
 #ifdef HAVE_ANASAZI_TPETRA
 #  include "TsqrTypeAdaptor_Tpetra_MultiVector_SerialNode.hpp"

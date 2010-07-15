@@ -66,44 +66,18 @@ namespace TSQR {
       typedef typename TSQR::ScalarTraits< scalar_type >::magnitude_type magnitude_type;
 
       typedef TsqrTypeAdaptor< S, LO, GO, MV >      type_adaptor;
+      typedef typename type_adaptor::factory_type   factory_type;
       typedef typename type_adaptor::node_tsqr_type node_tsqr_type;
       typedef Teuchos::RCP< node_tsqr_type >        node_tsqr_ptr;
       typedef typename type_adaptor::tsqr_type      tsqr_type;
       typedef Teuchos::RCP< tsqr_type >             tsqr_ptr;
+      typedef typename type_adaptor::comm_type      comm_type;
+      typedef typename type_adaptor::comm_ptr       comm_ptr;
+
       typedef typename tsqr_type::FactorOutput      factor_output_type;
       typedef Teuchos::SerialDenseMatrix< LO, S >   dense_matrix_type;
-      typedef typename type_adaptor::comm_ptr       comm_ptr;
       typedef Teuchos::RCP< MessengerBase< S > >    scalar_messenger_ptr;
       typedef Teuchos::RCP< MessengerBase< LO > >   ordinal_messenger_ptr;
-      typedef typename type_adaptor::factory_type   factory_type;
-
-      // There's no public constructor, since (a) one only constructs
-      // by derived types, and (b) one constructs by passing in
-      // comm_ptr, which could be different for each derived type.
-
-
-      /// \brief Constructor
-      ///
-      /// \param mv [in] Multivector object, used only to access the
-      ///   underlying map and its underlying communicator object (in
-      ///   this case, Tpetra::Map resp. Teuchos::Comm<int>).  All
-      ///   multivector objects with which this Adaptor works must use
-      ///   the same map and communicator.
-      /// \param plist [in] List of parameters for configuring TSQR.
-      ///   The specific parameter keys that are read depend on the
-      ///   TSQR implementation.  "cacheBlockSize" (cache block size
-      ///   per core, in bytes) tends to be defined for all of the
-      ///   non-GPU implementations.  For details, check the specific
-      ///   TsqrFactory implementation.
-      TsqrAdaptor (const multivector_type& mv,
-		   const Teuchos::ParameterList& plist)
-      {
-	fetchMessengers (mv, pScalarMessenger_, pOrdinalMessenger_);
-	// plist and pScalarMessenger_ are inputs.
-	// Construct *pNodeTsqr_, and *pTsqr_.
-	factory_type factory;
-	factory.makeTsqr (plist, pScalarMessenger_, pNodeTsqr_, pTsqr_);
-      }
 
       virtual ~TsqrAdaptor() {}
 
@@ -331,6 +305,21 @@ namespace TSQR {
 	return global_verify (nrowsLocal_A, ncols_A, A_ptr.get(), LDA,
 			      Q_ptr.get(), LDQ, R.values(), R.stride(), 
 			      pScalarMessenger_.get());
+      }
+
+    protected:
+      /// Like the constructor, except you're not supposed to call the
+      /// constructor of a pure virtual class.
+      void 
+      init (const multivector_type& mv,
+	    const Teuchos::ParameterList& plist)
+      {
+	// This is done in a multivector type - dependent way.
+	fetchMessengers (mv, pScalarMessenger_, pOrdinalMessenger_);
+	// plist and pScalarMessenger_ are inputs.
+	// Construct *pNodeTsqr_, and *pTsqr_.
+	factory_type factory;
+	factory.makeTsqr (plist, pScalarMessenger_, pNodeTsqr_, pTsqr_);
       }
 
     private:

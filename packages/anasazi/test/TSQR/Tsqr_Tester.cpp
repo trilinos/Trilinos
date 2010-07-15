@@ -97,8 +97,8 @@ namespace TSQR {
 	bool bDebug = params.debug;
 	
 	generator_type generator;
-	TSQR::Trilinos::TrilinosMessenger< ordinal_type > ordinalComm (comm);
-	TSQR::Trilinos::TrilinosMessenger< scalar_type > scalarComm (comm);
+	TSQR::Trilinos::TpetraMessenger< ordinal_type > ordinalComm (comm);
+	TSQR::Trilinos::TpetraMessenger< scalar_type > scalarComm (comm);
 	
 	if (params.which == "MpiSeqTSQR" || params.which == "MpiTbbTSQR")
 	  {

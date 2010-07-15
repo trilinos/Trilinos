@@ -21,7 +21,8 @@ namespace TSQR {
   namespace Trilinos {
 
     template< class S, class LO, class GO >
-    class TsqrTypeAdaptor< S, LO, GO, Tpetra::MultiVector< S, LO, GO, Kokkos::SerialNode > > {
+    class TsqrTypeAdaptor< S, LO, GO, Tpetra::MultiVector< S, LO, GO, Kokkos::SerialNode > >
+    {
     public:
       typedef S scalar_type;
       typedef LO local_ordinal_type;
@@ -32,6 +33,7 @@ namespace TSQR {
       typedef TSQR::Tsqr< LO, S, node_tsqr_type > tsqr_type;
       typedef SequentialTsqrFactory< local_ordinal_type, scalar_type > factory_type;
       typedef Teuchos::Comm<int> comm_type;
+      typedef Teuchos::RCP< const comm_type > comm_ptr;
     };
 
   } // namespace Trilinos

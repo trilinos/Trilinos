@@ -36,10 +36,24 @@ namespace TSQR {
       typedef typename base_type::scalar_messenger_ptr scalar_messenger_ptr;
       typedef typename base_type::ordinal_messenger_ptr ordinal_messenger_ptr;
 
+      /// \brief Constructor
+      ///
+      /// \param mv [in] Multivector object, used only to access the
+      ///   underlying map and its underlying communicator object (in
+      ///   this case, Epetra_(Block)Map resp. Epetra_Comm).  All
+      ///   multivector objects with which this Adaptor works must use
+      ///   the same map and communicator.
+      /// \param plist [in] List of parameters for configuring TSQR.
+      ///   The specific parameter keys that are read depend on the
+      ///   TSQR implementation.  "cacheBlockSize" (cache block size
+      ///   per core, in bytes) tends to be defined for all of the
+      ///   non-GPU implementations.  For details, check the specific
+      ///   TsqrFactory implementation.
       TsqrEpetraAdaptor (const multivector_type& mv,
-			 const Teuchos::ParameterList& plist) :
-	base_type (mv, plist)
-      {}
+			 const Teuchos::ParameterList& plist)
+      {
+	init (mv, plist);
+      }
 
     private:
       virtual void

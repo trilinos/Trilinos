@@ -10,6 +10,9 @@
 
 namespace TSQR {
   namespace Trilinos {
+    
+    template< class S, class LO, class GO, class MV >
+    class TsqrTypeAdaptor;
 
     template< class S, class LO, class GO, class MV >
     class CommFactory {
@@ -21,22 +24,20 @@ namespace TSQR {
 
       typedef TsqrTypeAdaptor< S, LO, GO, MV >    type_adaptor;
       typedef typename type_adaptor::comm_type    comm_type;
-      typedef Teuchos::RCP< comm_type >           comm_ptr;
+      typedef typename type_adaptor::comm_ptr     comm_ptr;
       typedef Teuchos::RCP< MessengerBase< S > >  scalar_messenger_ptr;
       typedef Teuchos::RCP< MessengerBase< LO > > ordinal_messenger_ptr;
-
-      CommFactory ();
-      virtual ~CommFactory () {}
 
       virtual void
       makeMessengers (const comm_ptr& comm,
 		      scalar_messenger_ptr& scalarMessenger,
 		      ordinal_messenger_ptr& ordinalMessenger) = 0;
+
+      virtual ~CommFactory () {}
     };
   } // namespace Trilinos
 } // namespace TSQR
 
-// FIXME (mfh 15 Jul 2010) should 
 #include "TsqrCommFactory_Tpetra.hpp"
 
 // FIXME (mfh 15 Jul 2010) Not implemented yet

@@ -4,7 +4,7 @@
 #include "AnasaziConfigDefs.hpp"
 #include "Tsqr_ScalarTraits.hpp"
 #include "Tsqr_Random_GlobalMatrix.hpp"
-#include "TsqrTrilinosMessenger.hpp"
+#include "Tsqr_TpetraMessenger.hpp"
 #include <string>
 
 ////////////////////////////////////////////////////////////////////////////////

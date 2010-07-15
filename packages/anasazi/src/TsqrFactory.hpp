@@ -38,7 +38,7 @@ namespace TSQR {
     template< class LO, class S, class NodeTsqrType, class TsqrType >
     class TsqrFactory {
     public:
-      typedef Teuchos::RCP< MessengerBase< S > >       messenger_ptr;
+      typedef Teuchos::RCP< MessengerBase< S > >       scalar_messenger_ptr;
       typedef NodeTsqrType                             node_tsqr_type;
       typedef TsqrType                                 tsqr_type;
       typedef Teuchos::RCP< node_tsqr_type >           node_tsqr_ptr;
