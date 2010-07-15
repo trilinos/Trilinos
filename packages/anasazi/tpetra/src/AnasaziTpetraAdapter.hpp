@@ -46,6 +46,7 @@
 #include "AnasaziMultiVecTraits.hpp"
 #include "AnasaziTsqrAdaptor.hpp" // mfh 15 Jul 2010
 #include "TsqrAdaptor_Tpetra_MultiVector.hpp" // mfh 15 Jul 2010
+#include "TsqrRandomizer_Tpetra_MultiVector.hpp" // mfh 15 Jul 2010
 #include "AnasaziOperatorTraits.hpp"
 
 namespace Anasazi {

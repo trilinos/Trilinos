@@ -31,13 +31,10 @@
 
 /// \file TsqrRandomizer_Epetra_MultiVector.hpp
 ///
-/// \warning Users should _not_ include this file directly.  Include
-///   "TsqrRandomizer.hpp" instead.  If HAVE_ANASAZI_EPETRA is
-///   defined, then this file will be included automatically.  If for
-///   some reason you need to include this file directly, be sure to
-///   include "TsqrRandomizer.hpp" first.
+/// \warning Anasazi users should _not_ include this file directly.
 
-#include "Epetra_MultiVector.h" // sic (not .hpp)
+#include "TsqrTypeAdaptor_Epetra_Multivector.hpp"
+#include "TsqrCommFactory_Epetra.hpp"
 #include "Teuchos_ArrayView.hpp"
 #include <limits>
 #include <stdexcept>
@@ -67,11 +64,18 @@ namespace TSQR {
 
       /// \brief Constructor
       ///
-      EpetraRandomizer (const normalgen_ptr& pGen,
-			const ordinal_messenger_ptr& pOrdinalMess,
-			const scalar_messenger_ptr& pScalarMess) : 
-	base_type (pGen, pOrdinalMess, pScalarMess) 
-      {}
+      /// \param mv [in] Multivector object, used only to access the
+      ///   underlying map and its underlying communicator object (in
+      ///   this case, Epetra_(Block)Map resp. Epetra_Comm).  All
+      ///   multivector objects with which EpetraRandomizer works must
+      ///   use the same map and communicator.
+      /// \param pGen [in/out] Pointer to generator of pseudorandom
+      ///   normal(0,1) sequence.
+      EpetraRandomizer (const multivector_type& mv,
+			const normalgen_ptr& pGen)
+      {
+	init (mv, pGen);
+      }
 
     private:
       // mfh 14 Jul 2010: For who knows what reason, this refuses to
@@ -159,6 +163,22 @@ namespace TSQR {
 	const size_type nelts = fetchArrayLength (A);
 	// The returned ArrayRCP does NOT own A.Values().
 	return arcpFromArrayView (arrayView (A.Values(), nelts));
+      }
+
+      virtual void
+      fetchMessengers (const multivector_type& mv,
+		       scalar_messenger_ptr& pScalarMessenger,
+		       ordinal_messenger_ptr& pOrdinalMessenger) const
+      {
+	typedef EpetraCommFactory comm_factory_type;
+	// mv.Comm() returns a "const Epetra_Comm&".  rcpFromRef()
+	// makes a non-owning (weak) RCP out of it.  This requires
+	// that the mv's Epetra_Comm object not fall out of scope,
+	// which it shouldn't as long as we are computing with
+	// multivectors distributed according to that communicator.
+	comm_ptr pComm = Teuchos::rcpFromRef (mv.Comm());
+	comm_factory_type factory;
+	factory.makeMessengers (pComm, pScalarMessenger, pOrdinalMessenger);
       }
     };
 

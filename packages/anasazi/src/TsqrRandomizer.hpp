@@ -30,9 +30,12 @@
 #define __TSQR_Trilinos_Randomizer_hpp
 
 #include "AnasaziConfigDefs.hpp"
+#include "TsqrTypeAdaptor.hpp"
+#include "TsqrCommFactory.hpp"
+
 #include "Tsqr_ScalarTraits.hpp"
 #include "Tsqr_Random_GlobalMatrix.hpp"
-#include "Tsqr_TpetraMessenger.hpp"
+
 #include <string>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -63,6 +66,10 @@ namespace TSQR {
       typedef TSQR::Random::MatrixGenerator< S, LO, Gen > matgen_type;
 
       typedef typename TSQR::ScalarTraits< S >::magnitude_type magnitude_type;
+
+      typedef TsqrTypeAdaptor< S, LO, GO, MV >      type_adaptor;
+      typedef typename type_adaptor::comm_type      comm_type;
+      typedef typename type_adaptor::comm_ptr       comm_ptr;
       typedef Teuchos::RCP< MessengerBase< LO > > ordinal_messenger_ptr;
       typedef Teuchos::RCP< MessengerBase< S > >  scalar_messenger_ptr;
 
@@ -115,6 +122,24 @@ namespace TSQR {
 			    pOrdinalMess_.get(), pScalarMess_.get());
       }
 
+    protected:
+      /// Like the constructor, except you're not supposed to call the
+      /// constructor of a pure virtual class.
+      ///
+      /// \param mv [in] Only used to extract the underlying
+      ///   communication object (e.g., Epetra_Comm or
+      ///   Teuchos::Comm<int>).
+      /// \param pGen [in/out] Pointer to generator of pseudorandom
+      ///   normal(0,1) sequence.
+      void 
+      init (const multivector_type& mv)
+	    const normalgen_ptr& pGen)
+      {
+	pGen_ = pGen;
+	// This is done in a multivector type - dependent way.
+	fetchMessengers (mv, pScalarMessenger_, pOrdinalMessenger_);
+      }
+
     private:
       /// \brief Return dimensions of a multivector object
       ///
@@ -147,6 +172,13 @@ namespace TSQR {
       virtual Teuchos::ArrayRCP< scalar_type > 
       fetchNonConstView (multivector_type& A) const = 0;
 
+      /// Maps from multivector_type object to (scalar_messenger_ptr,
+      /// ordinal_messenger_ptr).
+      virtual void
+      fetchMessengers (const multivector_type& mv,
+		       scalar_messenger_ptr& pScalarMessenger,
+		       ordinal_messenger_ptr& pOrdinalMessenger) const = 0;
+
       normalgen_ptr pGen_;
       ordinal_messenger_ptr pOrdinalMess_;
       scalar_messenger_ptr pScalarMess_;
@@ -154,13 +186,5 @@ namespace TSQR {
 
   } // namespace Trilinos
 } // namespace TSQR
-
-#ifdef HAVE_ANASAZI_EPETRA
-#  include "TsqrRandomizer_Epetra_MultiVector.hpp"
-#endif // HAVE_ANASAZI_EPETRA
-
-#ifdef HAVE_ANASAZI_TPETRA
-#  include "TsqrRandomizer_Tpetra_MultiVector.hpp"
-#endif // HAVE_ANASAZI_TPETRA
 
 #endif // __TSQR_Trilinos_Randomizer_hpp

@@ -29,12 +29,8 @@
 #ifndef __TSQR_Trilinos_TsqrTpetraTest_hpp
 #define __TSQR_Trilinos_TsqrTpetraTest_hpp
 
-#include "Teuchos_ArrayRCP.hpp"
-#include "Teuchos_RCP.hpp"
 #include "Teuchos_Tuple.hpp"
 #include "Teuchos_ParameterList.hpp"
-#include "Tpetra_Map.hpp"
-#include "Tpetra_MultiVector.hpp"
 
 #include "Kokkos_ConfigDefs.hpp"
 #include "Kokkos_NodeHelpers.hpp"
@@ -44,8 +40,7 @@
 #endif // HAVE_KOKKOS_TBB
 
 #include "Teuchos_Time.hpp"
-#include "TsqrAdaptor.hpp"
-#include "TsqrRandomizer.hpp"
+#include "AnasaziTpetraAdapter.hpp" // sic (not "-or")
 #include "Tsqr_Random_NormalGenerator.hpp"
 
 #include <sstream>

@@ -31,16 +31,13 @@
 
 /// \file TsqrRandomizer_Tpetra_MultiVector.hpp
 ///
-/// \warning Users should _not_ include this file directly.  Include
-///   "TsqrRandomizer.hpp" instead.  If HAVE_ANASAZI_TPETRA is defined,
-///   then this file will be included automatically.  If for some
-///   reason you need to include this file directly, be sure to
-///   include "TsqrRandomizer.hpp" first.
+/// \warning Anasazi users should _not_ include this file directly.
 
-#include "Tpetra_MultiVector.hpp"
+#include "TsqrTypeAdaptor_Tpetra_MultiVector_SerialNode.hpp"
 #ifdef HAVE_KOKKOS_TBB
-#  include "Kokkos_TBBNode.hpp"
+#  include "TsqrTypeAdaptor_Tpetra_MultiVector_TBBNode.hpp"
 #endif // HAVE_KOKKOS_TBB
+#include "TsqrCommFactory_Tpetra.hpp"
 
 #include <stdexcept>
 #include <sstream>
@@ -72,16 +69,24 @@ namespace TSQR {
       typedef typename base_type::scalar_type scalar_type;
 
       typedef typename base_type::normalgen_ptr normalgen_ptr;
+      typedef typename base_type::comm_ptr comm_ptr;
       typedef typename base_type::ordinal_messenger_ptr ordinal_messenger_ptr;
       typedef typename base_type::scalar_messenger_ptr scalar_messenger_ptr;
 
       /// \brief Constructor
       ///
-      TpetraRandomizer (const normalgen_ptr& pGen,
-			const ordinal_messenger_ptr& pOrdinalMess,
-			const scalar_messenger_ptr& pScalarMess) : 
-	base_type (pGen, pOrdinalMess, pScalarMess) 
-      {}
+      /// \param mv [in] Multivector object, used only to access the
+      ///   underlying map and its underlying communicator object (in
+      ///   this case, Tpetra::Map resp. Teuchos::Comm<int>).  All
+      ///   multivector objects with which EpetraRandomizer works must
+      ///   use the same map and communicator.  
+      /// \param pGen [in/out] Pointer to generator of pseudorandom
+      ///   normal(0,1) sequence.
+      TpetraRandomizer (const multivector_type& mv,
+			const normalgen_ptr& pGen)
+      {
+	init (mv, pGen);
+      }
 
     private:
       virtual void
@@ -122,6 +127,17 @@ namespace TSQR {
 	// different memory space (e.g., GPU node), but it will be
 	// correct for any Tpetra::MultiVector type.
 	return A.get1dViewNonConst();
+      }
+
+      virtual void
+      fetchMessengers (const multivector_type& mv,
+		       scalar_messenger_ptr& pScalarMessenger,
+		       ordinal_messenger_ptr& pOrdinalMessenger) const
+      {
+	typedef TpetraCommFactory< S, LO, GO, Node > comm_factory_type;
+	comm_ptr pComm = mv.getMap()->getComm();
+	comm_factory_type factory;
+	factory.makeMessengers (pComm, pScalarMessenger, pOrdinalMessenger);
       }
     };
   } // namespace Trilinos
