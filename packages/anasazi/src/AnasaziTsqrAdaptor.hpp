@@ -7,6 +7,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 namespace Anasazi {
+  /// \class TsqrAdaptor
+  /// \brief Map from multivector class to TSQR adaptor class
   template< class ScalarType, class MultiVectorType >
   class TsqrAdaptor< class ScalarType, class MultiVectorType > 
   {
