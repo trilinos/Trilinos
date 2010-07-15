@@ -1,14 +1,46 @@
+// @HEADER
+// ***********************************************************************
+//
+//                 Anasazi: Block Eigensolvers Package
+//                 Copyright (2010) Sandia Corporation
+//
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
+//
+// This library is free software; you can redistribute it and/or modify
+// it under the terms of the GNU Lesser General Public License as
+// published by the Free Software Foundation; either version 2.1 of the
+// License, or (at your option) any later version.
+//
+// This library is distributed in the hope that it will be useful, but
+// WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
+// Lesser General Public License for more details.
+//
+// You should have received a copy of the GNU Lesser General Public
+// License along with this library; if not, write to the Free Software
+// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// USA
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
+// ***********************************************************************
+// @HEADER
+
 #ifndef __TSQR_Trilinos_TsqrAdaptor_hpp
 #define __TSQR_Trilinos_TsqrAdaptor_hpp
+
+/// \file TsqrAdaptor.hpp
+///
+/// \warning Anasazi users should _not_ include this file directly.
 
 #include "AnasaziConfigDefs.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 
-#include "Tsqr_MessengerBase.hpp"
 #include "TsqrTypeAdaptor.hpp"
+#include "TsqrCommFactory.hpp"
+
 #include "Tsqr_GlobalVerify.hpp"
 #include "Tsqr_ScalarTraits.hpp"
-#include "Tsqr.hpp"
 
 #include <stdexcept>
 #include <sstream>
@@ -20,41 +52,54 @@ namespace TSQR {
   namespace Trilinos {
 
     /// \class TsqrAdaptor
-    /// \brief Interface between a Trilinos multivector class and TSQR
+    /// \brief Abstract interface between multivector and TSQR
     ///
     /// Child classes of TsqrAdaptor tell TSQR how to compute a
     /// factorization of a specific Trilinos multivector class MV.
     /// Currently, Epetra_MultiVector and Tpetra::MultiVector< S, LO,
     /// GO, NodeType > for any NodeType are supported, via
-    /// TsqrEpetraAdaptor resp. TsqrTpetraAdaptor.  At the moment, the
-    /// latter will only be efficient if NodeType is not a GPU node.
-    /// TsqrAdaptor uses TsqrTypeAdaptor to figure out which variant
-    /// of TSQR to use on the given multivector type.  For example,
-    /// with Tpetra::MultiVector< S, LO, GO, NodeType >, if NodeType
-    /// is Kokkos::TBBNode, the TBB-parallel intranode variant of TSQR
+    /// TsqrEpetraAdaptor (see AnasaziEpetraAdaptor.hpp)
+    /// resp. TsqrTpetraAdaptor (include AnasaziTpetraAdaptor.hpp).
+    /// At the moment, the latter will only be efficient if NodeType
+    /// is not a GPU node.  
+    ///
+    /// TsqrAdaptor uses the appropriate specialization of
+    /// TsqrTypeAdaptor to figure out which variant of TSQR to use on
+    /// the given multivector type.  For example, with
+    /// Tpetra::MultiVector< S, LO, GO, NodeType >, if NodeType is
+    /// Kokkos::TBBNode, the TBB-parallel intranode variant of TSQR
     /// will be used.  The caller is responsible for constructing the
     /// intranode and internode TSQR objects.
     ///
-    /// S: scalar type
-    /// LO: local ordinal type
-    /// GO: global ordinal type: TSQR doesn't use it, but MV does.
-    /// MV: multivector type
+    /// \li S: scalar type
+    /// \li LO: local ordinal type
+    /// \li GO: global ordinal type: TSQR doesn't use it, but MV does.
+    /// \li MV: multivector type
     ///
-    /// \note Implementers who want to support TSQR with a new
-    ///   MultiVector (MV) type must create a subclass of that type,
-    ///   using e.g., TsqrTpetraAdaptor as a model.  They must also
-    ///   create a new TsqrTypeAdaptor (with the appropriate
-    ///   typedefs).  
+    /// Implementers who want to support TSQR with a new MultiVector
+    /// (MV) type must create a subclass of that type, using e.g.,
+    /// TsqrTpetraAdaptor as a model.  They must then create a new
+    /// TsqrTypeAdaptor specialization (with the appropriate
+    /// typedefs), and a new TsqrCommFactory subclass (which gets the
+    /// underlying communicator object (e.g., Teuchos::Comm<int>) from
+    /// a "prototype" multivector and turns it into
+    /// TSQR::MessengerBase< S > and TSQR::MessengerBase< LO > objects
+    /// for TSQR.
     ///
-    /// \note Implementers who wish to change which TSQR
-    ///   implementation is used for a particular MultiVector type
-    ///   (for which a TsqrAdaptor child class exists) should change
-    ///   the corresponding (possibly partial) specialization of
-    ///   TsqrTypeAdaptor: in particular, type_adaptor::node_tsqr_type
-    ///   and type_adaptor::tsqr_type must be changed.
+    /// Implementers who wish to change which TSQR implementation is
+    /// used for a particular MultiVector type (for which a
+    /// TsqrAdaptor child class exists) should change the
+    /// corresponding (possibly partial) specialization of
+    /// TsqrTypeAdaptor.  Certainly the node_tsqr_type (and perhaps
+    /// also the tsqr_type) typedef(s) in the TsqrTypeAdaptor
+    /// specialization must be changed.  If no corresponding
+    /// TsqrFactory subclass exists for that combination of
+    /// node_tsqr_type and tsqr_type, a new TsqrFactory subclass may
+    /// also have to be created, to tell Anasazi how to instantiate
+    /// those node_tsqr_type and tsqr_type objects.
     ///
-    /// \note Implementers who wish to add a new TSQR factorization
-    ///   must create a new TsqrFactory specialization.
+    /// Implementers who wish to add a new TSQR factorization must
+    /// create a new TsqrFactory subclass.
     template< class S, class LO, class GO, class MV >
     class TsqrAdaptor {
     public:
@@ -394,14 +439,5 @@ namespace TSQR {
 
   } // namespace Trilinos
 } // namespace TSQR
-
-// FIXME (mfh 15 Jul 2010) Not implemented yet.
-// #ifdef HAVE_ANASAZI_EPETRA
-// #  include "TsqrAdaptor_Epetra_MultiVector.hpp"
-// #endif // HAVE_ANASAZI_EPETRA
-
-#ifdef HAVE_ANASAZI_TPETRA
-#  include "TsqrAdaptor_Tpetra_MultiVector.hpp"
-#endif // HAVE_ANASAZI_TPETRA
 
 #endif // __TSQR_Trilinos_TsqrAdaptor_hpp

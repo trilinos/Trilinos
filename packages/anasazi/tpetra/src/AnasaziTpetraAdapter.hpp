@@ -44,6 +44,8 @@
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziTypes.hpp"
 #include "AnasaziMultiVecTraits.hpp"
+#include "AnasaziTsqrAdaptor.hpp" // mfh 15 Jul 2010
+#include "TsqrAdaptor_Tpetra_MultiVector.hpp" // mfh 15 Jul 2010
 #include "AnasaziOperatorTraits.hpp"
 
 namespace Anasazi {
@@ -230,6 +232,19 @@ namespace Anasazi {
     { mv.print(os); }
 
   };        
+
+  ////////////////////////////////////////////////////////////////////
+  //
+  // Implementation of Anasazi::TsqrAdaptor for Tpetra::MultiVector.
+  //
+  ////////////////////////////////////////////////////////////////////
+
+  template< class Scalar, class LO, class GO, class Node >
+  class TsqrAdaptor< Scalar, Tpetra::MultiVector< S, LO, GO, Node > >
+  {
+  public:
+    typedef TSQR::Trilinos::TsqrTpetraAdaptor< S, LO, GO, Node > adaptor_type;
+  };
 
   ////////////////////////////////////////////////////////////////////
   //
