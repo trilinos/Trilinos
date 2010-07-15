@@ -147,6 +147,17 @@ MPIComm& MPIComm::world()
 }
 
 
+MPIComm& MPIComm::self()
+{
+#ifdef HAVE_MPI
+	static MPIComm w = MPIComm(MPI_COMM_SELF);
+#else
+	static MPIComm w = MPIComm();
+#endif
+	return w;
+}
+
+
 void MPIComm::synchronize() const 
 {
 #ifdef HAVE_MPI
