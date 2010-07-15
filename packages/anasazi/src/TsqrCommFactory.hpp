@@ -12,7 +12,7 @@ namespace TSQR {
   namespace Trilinos {
 
     template< class S, class LO, class GO, class MV >
-    class TsqrCommFactory {
+    class CommFactory {
     public:
       typedef S scalar_type;
       typedef LO local_ordinal_type;
@@ -25,6 +25,9 @@ namespace TSQR {
       typedef Teuchos::RCP< MessengerBase< S > >  scalar_messenger_ptr;
       typedef Teuchos::RCP< MessengerBase< LO > > ordinal_messenger_ptr;
 
+      CommFactory ();
+      virtual ~CommFactory () {}
+
       virtual void
       makeMessengers (const comm_ptr& comm,
 		      scalar_messenger_ptr& scalarMessenger,
@@ -33,7 +36,10 @@ namespace TSQR {
   } // namespace Trilinos
 } // namespace TSQR
 
+// FIXME (mfh 15 Jul 2010) should 
 #include "TsqrCommFactory_Tpetra.hpp"
-#include "TsqrCommFactory_Epetra.hpp"
+
+// FIXME (mfh 15 Jul 2010) Not implemented yet
+//#include "TsqrCommFactory_Epetra.hpp"
 
 #endif // __TSQR_Trilinos_TsqrCommFactory_hpp

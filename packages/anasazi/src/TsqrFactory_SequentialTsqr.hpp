@@ -21,15 +21,13 @@ namespace TSQR {
 			  Tsqr< LO, S, SequentialTsqr< LO, S > > >
     {
     public:
-      // Help C++ pull in the typedefs from the base class.  C++ needs
-      // help when both the base and the derived classes are
-      // templated.
       typedef TsqrFactory< LO, S, SequentialTsqr< LO, S >, Tsqr< LO, S, SequentialTsqr< LO, S > > > base_type;
 
+      // Pull in the typedefs from the base class.  C++ doesn't do
+      // this when both the base and the derived classes are
+      // templated.
       typedef typename base_type::node_tsqr_type node_tsqr_type;
-      typedef typename base_type::tsqr_type      tsqr_type;
       typedef typename base_type::node_tsqr_ptr  node_tsqr_ptr;
-      typedef typename base_type::tsqr_ptr       tsqr_ptr;
 
       SequentialTsqrFactory () {}
       virtual ~SequentialTsqrFactory () {}

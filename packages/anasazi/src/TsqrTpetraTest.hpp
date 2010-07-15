@@ -75,7 +75,9 @@ namespace TSQR {
 	  RCP< MV > Q = testProblem[2];
 	  matrix_type R (ncols, ncols);
 
-	  adaptor_type adaptor (comm, params);
+	  // Adaptor uses one of the multivectors only to reference
+	  // the underlying communicator object.
+	  adaptor_type adaptor (*A, params);
 	  if (contiguousCacheBlocks)
 	    adaptor.cacheBlock (*A, *A_copy);
 

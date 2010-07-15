@@ -13,6 +13,7 @@
 #ifdef HAVE_KOKKOS_TBB
 #  include "TsqrTypeAdaptor_Tpetra_MultiVector_TBBNode.hpp"
 #endif // HAVE_KOKKOS_TBB
+#include "TsqrCommFactory.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -26,18 +27,25 @@ namespace TSQR {
     {
     public:
       typedef Node node_type;
-      // mfh 14 Jul 2010: This is because C++ is too stupid to know
-      // how to inherit typedefs from a templated base class, when the
-      // derived class itself is templated.  Go figure.
-      typedef TsqrAdaptor< S, LO, GO, Tpetra::MultiVector< S, LO, GO, Node > > base_type;
+      // The MV typedef is just shorthand to make the base_type
+      // typedef fit on one line.  It's not a circular definition,
+      // because C++ doesn't inherit typedefs from base to derived
+      // class, when both the base and the derived classes are
+      // templated.
+      typedef Tpetra::MultiVector< S, LO, GO, Node > MV;
+      typedef TsqrAdaptor< S, LO, GO, MV > base_type;
       typedef typename base_type::comm_ptr comm_ptr;
       typedef typename base_type::multivector_type multivector_type;
       typedef typename base_type::scalar_type scalar_type;
       typedef typename base_type::local_ordinal_type local_ordinal_type;
+      typedef typename base_type::scalar_messenger_ptr scalar_messenger_ptr;
+      typedef typename base_type::ordinal_messenger_ptr ordinal_messenger_ptr;
 
-      TsqrTpetraAdaptor (const comm_ptr& comm,
-			 const Teuchos::ParameterList& plist) : 
-	base_type (comm, plist)
+      /// \brief Constructor
+      ///
+      TsqrTpetraAdaptor (const multivector_type& mv,
+			 const Teuchos::ParameterList& plist) :
+	base_type (mv, plist) 
       {}
 
     private:
@@ -82,6 +90,17 @@ namespace TSQR {
       fetchConstView (const multivector_type& A) const
       {
 	return A.get1dView();
+      }
+
+      virtual void
+      fetchMessengers (const multivector_type& mv,
+		       scalar_messenger_ptr& pScalarMessenger,
+		       ordinal_messenger_ptr& pOrdinalMessenger) const
+      {
+	typedef TpetraCommFactory< S, LO, GO, Node > comm_factory_type;
+	comm_ptr pComm = mv.getMap()->getComm();
+	comm_factory_type factory;
+	factory.makeMessengers (pComm, pScalarMessenger, pOrdinalMessenger);
       }
     };
 

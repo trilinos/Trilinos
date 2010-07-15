@@ -5,7 +5,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
 #include "Tsqr_MessengerBase.hpp"
-#include "TsqrTrilinosMessenger.hpp"
+#include "TsqrCommFactory.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
@@ -38,26 +38,23 @@ namespace TSQR {
     template< class LO, class S, class NodeTsqrType, class TsqrType >
     class TsqrFactory {
     public:
-      typedef Teuchos::RCP< const Teuchos::Comm<int> > comm_ptr;
       typedef Teuchos::RCP< MessengerBase< S > >       messenger_ptr;
       typedef NodeTsqrType                             node_tsqr_type;
       typedef TsqrType                                 tsqr_type;
       typedef Teuchos::RCP< node_tsqr_type >           node_tsqr_ptr;
       typedef Teuchos::RCP< tsqr_type >                tsqr_ptr;
 
-      /// \brief Instantiate and return the objects required by TSQR
+      /// \brief Instantiate and return TSQR implementation
       ///
       /// Instantiate and return (through the output arguments) the
-      /// three objects required by TSQR.
+      /// two TSQR implementation objects.
       ///
       /// \param plist [in] Parameter list (keys depend on the
       ///   subclass; keys are accessed in the subclass' makeNodeTsqr() 
       ///   method)
-      /// \param comm_ptr [in] Pointer to the underlying internode
-      ///   communication handler.
-      /// \param messenger [out] On output, points to the
-      ///   MessengerBase< S > object that TSQR will use for internode
-      ///   communication.
+      /// \param scalar_messenger_ptr [in] Pointer to the underlying
+      ///   internode communication handler, as initialized by
+      ///   TSQR::Trilinos::CommFactory.
       /// \param node_tsqr [out] On output, points to the
       ///   node_tsqr_type object that TSQR will use for the intranode
       ///   part of its computations.
@@ -66,12 +63,10 @@ namespace TSQR {
       ///   computations.
       virtual void
       makeTsqr (const Teuchos::ParameterList& plist,
-		const comm_ptr& comm,
-		messenger_ptr& messenger,
+		const scalar_messenger_ptr& messenger,
 		node_tsqr_ptr& node_tsqr,
 		tsqr_ptr& tsqr) const
       {
-	messenger = makeMessenger (comm);
 	node_tsqr = makeNodeTsqr (plist);
 	tsqr = tsqr_ptr (new tsqr_type (*node_tsqr, messenger.get()));
       }
@@ -100,13 +95,6 @@ namespace TSQR {
       ///   interface.
       virtual node_tsqr_ptr
       makeNodeTsqr (const Teuchos::ParameterList& plist) const = 0;
-
-      virtual messenger_ptr 
-      makeMessenger (const comm_ptr& comm) const
-      {
-	using TSQR::Trilinos::TrilinosMessenger;
-	return messenger_ptr (new TrilinosMessenger< S > (comm));
-      }
     };
   } // namespace Trilinos
 } // namespace TSQR

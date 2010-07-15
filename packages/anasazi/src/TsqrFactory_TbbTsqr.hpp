@@ -29,9 +29,7 @@ namespace TSQR {
       typedef TsqrFactory< LO, S, TSQR::TBB::TbbTsqr< LO, S >, Tsqr< LO, S, TSQR::TBB::TbbTsqr< LO, S > > > base_type;
 
       typedef typename base_type::node_tsqr_type node_tsqr_type;
-      typedef typename base_type::tsqr_type      tsqr_type;
       typedef typename base_type::node_tsqr_ptr  node_tsqr_ptr;
-      typedef typename base_type::tsqr_ptr       tsqr_ptr;
 
       TbbTsqrFactory () {}
       virtual ~TbbTsqrFactory () {}

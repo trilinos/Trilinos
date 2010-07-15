@@ -9,7 +9,9 @@
 ///   reason you need to include this file directly, be sure to
 ///   include "TsqrAdaptor.hpp" first.
 
+#include "TsqrTypeAdaptor_Epetra_Multivector.hpp"
 #include "Epetra_MultiVector.h" // sic (not .hpp)
+#include "TsqrCommFactory.hpp"
 #include <stdexcept>
 #include <sstream>
 
@@ -23,18 +25,20 @@ namespace TSQR {
       public TsqrAdaptor< double, int, int, Epetra_MultiVector >
     {
     public:
-      // mfh 14 Jul 2010: This is because C++ is too stupid to know
-      // how to inherit typedefs from a templated base class, when the
-      // derived class itself is templated.  Go figure.
+      // C++ doesn't inherit typedefs from base to derived class, when
+      // both the base and the derived classes are templated.  To
+      // avoid code duplication, we pull in typedefs from base_type.
       typedef TsqrAdaptor< double, int, int, Epetra_MultiVector > base_type;
       typedef base_type::comm_ptr comm_ptr;
       typedef base_type::multivector_type multivector_type;
       typedef base_type::scalar_type scalar_type;
       typedef base_type::local_ordinal_type local_ordinal_type;
+      typedef typename base_type::scalar_messenger_ptr scalar_messenger_ptr;
+      typedef typename base_type::ordinal_messenger_ptr ordinal_messenger_ptr;
 
-      TsqrEpetraAdaptor (const comm_ptr& comm,
+      TsqrEpetraAdaptor (const multivector_type& mv,
 			 const Teuchos::ParameterList& plist) :
-	base_type (comm, plist)
+	base_type (mv, plist)
       {}
 
     private:
@@ -137,6 +141,21 @@ namespace TSQR {
 	return arcpFromArrayView (A_view);
       }
 
+      virtual void
+      fetchMessengers (const multivector_type& mv,
+		       scalar_messenger_ptr& pScalarMessenger,
+		       ordinal_messenger_ptr& pOrdinalMessenger) const
+      {
+	typedef EpetraCommFactory comm_factory_type;
+	// mv.Comm() returns a "const Epetra_Comm&".  rcpFromRef()
+	// makes a non-owning (weak) RCP out of it.  This requires
+	// that the mv's Epetra_Comm object not fall out of scope,
+	// which it shouldn't as long as we are computing with
+	// multivectors distributed according to that communicator.
+	comm_ptr pComm = Teuchos::rcpFromRef (mv.Comm());
+	comm_factory_type factory;
+	factory.makeMessengers (pComm, pScalarMessenger, pOrdinalMessenger);
+      }
     };
 
   } // namespace Trilinos

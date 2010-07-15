@@ -65,39 +65,44 @@ namespace TSQR {
 
       typedef typename TSQR::ScalarTraits< scalar_type >::magnitude_type magnitude_type;
 
-      typedef TsqrTypeAdaptor< S, LO, GO, MV >         type_adaptor;
-      typedef typename type_adaptor::node_tsqr_type    node_tsqr_type;
-      typedef typename type_adaptor::tsqr_type         tsqr_type;
-      typedef typename type_adaptor::factory_type      factory_type;
+      typedef TsqrTypeAdaptor< S, LO, GO, MV >      type_adaptor;
+      typedef typename type_adaptor::node_tsqr_type node_tsqr_type;
+      typedef Teuchos::RCP< node_tsqr_type >        node_tsqr_ptr;
+      typedef typename type_adaptor::tsqr_type      tsqr_type;
+      typedef Teuchos::RCP< tsqr_type >             tsqr_ptr;
+      typedef typename tsqr_type::FactorOutput      factor_output_type;
+      typedef Teuchos::SerialDenseMatrix< LO, S >   dense_matrix_type;
+      typedef typename type_adaptor::comm_ptr       comm_ptr;
+      typedef Teuchos::RCP< MessengerBase< S > >    scalar_messenger_ptr;
+      typedef Teuchos::RCP< MessengerBase< LO > >   ordinal_messenger_ptr;
+      typedef typename type_adaptor::factory_type   factory_type;
 
-      typedef Teuchos::RCP< node_tsqr_type >           node_tsqr_ptr;
-      typedef Teuchos::RCP< tsqr_type >                tsqr_ptr;
-      typedef Teuchos::RCP< const Teuchos::Comm<int> > comm_ptr;
-      typedef Teuchos::RCP< MessengerBase< S > >       messenger_ptr;
-      typedef typename tsqr_type::FactorOutput         factor_output_type;
-      typedef Teuchos::SerialDenseMatrix< LO, S >      dense_matrix_type;
+      // There's no public constructor, since (a) one only constructs
+      // by derived types, and (b) one constructs by passing in
+      // comm_ptr, which could be different for each derived type.
+
 
       /// \brief Constructor
       ///
-      /// TsqrAdaptor constructor.  The reference-counted pointer
-      /// inputs should be to already constructed objects.
-      ///
-      /// \param comm [in] Teuchos communicator object, representing
-      ///   the underlying internode communication protocol
-      ///
-      /// \param plist [in] List of parameters, which may affect
-      ///   performance of TSQR.  The specific parameter keys that are
-      ///   read depend on the TSQR implementation.  "cacheBlockSize"
-      ///   (cache block size per core, in bytes) tends to be defined
-      ///   for all of the non-GPU implementations.  For details,
-      ///   check the specific TsqrFactory implementation.
-      TsqrAdaptor (const comm_ptr& comm,
+      /// \param mv [in] Multivector object, used only to access the
+      ///   underlying map and its underlying communicator object (in
+      ///   this case, Tpetra::Map resp. Teuchos::Comm<int>).  All
+      ///   multivector objects with which this Adaptor works must use
+      ///   the same map and communicator.
+      /// \param plist [in] List of parameters for configuring TSQR.
+      ///   The specific parameter keys that are read depend on the
+      ///   TSQR implementation.  "cacheBlockSize" (cache block size
+      ///   per core, in bytes) tends to be defined for all of the
+      ///   non-GPU implementations.  For details, check the specific
+      ///   TsqrFactory implementation.
+      TsqrAdaptor (const multivector_type& mv,
 		   const Teuchos::ParameterList& plist)
       {
-	// plist and comm are inputs.
-	// Construct *pMessenger_, *pNodeTsqr_, and *pTsqr_.
+	fetchMessengers (mv, pScalarMessenger_, pOrdinalMessenger_);
+	// plist and pScalarMessenger_ are inputs.
+	// Construct *pNodeTsqr_, and *pTsqr_.
 	factory_type factory;
-	factory.makeTsqr (plist, comm, pMessenger_, pNodeTsqr_, pTsqr_);
+	factory.makeTsqr (plist, pScalarMessenger_, pNodeTsqr_, pTsqr_);
       }
 
       virtual ~TsqrAdaptor() {}
@@ -325,7 +330,7 @@ namespace TSQR {
 	ArrayRCP< const scalar_type > Q_ptr = fetchConstView (Q);
 	return global_verify (nrowsLocal_A, ncols_A, A_ptr.get(), LDA,
 			      Q_ptr.get(), LDQ, R.values(), R.stride(), 
-			      pMessenger_.get());
+			      pScalarMessenger_.get());
       }
 
     private:
@@ -370,11 +375,20 @@ namespace TSQR {
       virtual Teuchos::ArrayRCP< const scalar_type > 
       fetchConstView (const multivector_type& A) const = 0;
 
-      /// Shared pointer to a wrapper around Teuchos::Comm<int>.  We
-      /// need to keep it in this class because *pTsqr keeps a raw
-      /// pointer to it internally; we don't want the object to fall
-      /// out of scope.
-      messenger_ptr pMessenger_;
+      /// Maps from multivector_type object to (scalar_messenger_ptr,
+      /// ordinal_messenger_ptr).
+      virtual void
+      fetchMessengers (const multivector_type& mv,
+		       scalar_messenger_ptr& pScalarMessenger,
+		       ordinal_messenger_ptr& pOrdinalMessenger) const = 0;
+
+      /// Shared pointer to a wrapper around Teuchos::Comm<int>, that
+      /// knows how to send scalar_type objects.  We need to keep it
+      /// in this class because *pTsqr keeps a raw pointer to it
+      /// internally; we don't want the object to fall out of scope.
+      scalar_messenger_ptr pScalarMessenger_;
+
+      ordinal_messenger_ptr pOrdinalMessenger_;
 
       /// Shared pointer to the "(intra)node TSQR" (node_tsqr_type)
       /// object.  It was used to construct *pTsqr_, but we keep it
@@ -384,17 +398,18 @@ namespace TSQR {
       node_tsqr_ptr pNodeTsqr_;
 
       /// Shared pointer to the Tsqr object that performs the QR
-      /// factorization.  pMessenger_.get() and *pNodeTsqr_ should
-      /// have been used to construct it.
+      /// factorization.  pScalarMessenger_.get() and *pNodeTsqr_
+      /// should have been used to construct it.
       tsqr_ptr pTsqr_;
     };
 
   } // namespace Trilinos
 } // namespace TSQR
 
-#ifdef HAVE_ANASAZI_EPETRA
-#  include "TsqrAdaptor_Epetra_MultiVector.hpp"
-#endif // HAVE_ANASAZI_EPETRA
+// FIXME (mfh 15 Jul 2010) Not implemented yet.
+// #ifdef HAVE_ANASAZI_EPETRA
+// #  include "TsqrAdaptor_Epetra_MultiVector.hpp"
+// #endif // HAVE_ANASAZI_EPETRA
 
 #ifdef HAVE_ANASAZI_TPETRA
 #  include "TsqrAdaptor_Tpetra_MultiVector.hpp"

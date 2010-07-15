@@ -1,5 +1,5 @@
-#ifndef __TSQR_Trilinos_TsqrTrilinosMessenger_hpp
-#define __TSQR_Trilinos_TsqrTrilinosMessenger_hpp
+#ifndef __TSQR_Trilinos_TpetraMessenger_hpp
+#define __TSQR_Trilinos_TpetraMessenger_hpp
 
 #include "Teuchos_CommHelpers.hpp"
 #include "Tsqr_MessengerBase.hpp"
@@ -10,21 +10,22 @@
 
 namespace TSQR { 
   namespace Trilinos {
-    /// \class TrilinosMessenger
+    /// \class TpetraMessenger
+    /// \brief Communication object for TSQR
     ///
-    /// \param A thin wrapper around Teuchos::Comm, for use by TSQR
+    /// A thin wrapper around Teuchos::Comm, for use by TSQR when
+    /// invoked on Tpetra::MultiVector.  The internode parallel part
+    /// of TSQR communicates via a MessengerBase< Datum > interface.
+    /// TpetraMessenger< Datum > implements that interface by wrapping
+    /// Teuchos::Comm.
     ///
-    /// The internode parallel part of TSQR communicates via a
-    /// MessengerBase< Datum > interface.  TrilinosMessenger< Datum >
-    /// implements that interface by wrapping Teuchos::Comm.
-    ///
-    /// \warning Datum should be a class with value-type semantics
+    /// \warning Datum should be a class with value-type semantics.
     template< class Datum >
-    class TrilinosMessenger : public MessengerBase< Datum > {
+    class TpetraMessenger : public MessengerBase< Datum > {
     public:
-      typedef Teuchos::RCP< const Teuchos::Comm<int> > CommPtr;
+      typedef Teuchos::RCP< const Teuchos::Comm<int> > comm_ptr;
 
-      TrilinosMessenger (const CommPtr& pComm) : pComm_ (pComm) {}
+      TpetraMessenger (const comm_ptr& pComm) : pComm_ (pComm) {}
 
       /// Send sendData[0:sendCount-1] to processor destProc.
       virtual void 
@@ -199,10 +200,10 @@ namespace TSQR {
       /// 
       /// Shared pointer to the the underlying Teuchos::Comm object.
       ///
-      CommPtr pComm_;
+      comm_ptr pComm_;
     };
   } // namespace Trilinos
 } // namespace TSQR
 
-#endif // __TSQR_Trilinos_TsqrTrilinosMessenger_hpp
+#endif // __TSQR_Trilinos_TpetraMessenger_hpp
 
