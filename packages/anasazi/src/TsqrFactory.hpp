@@ -4,6 +4,7 @@
 #include "Teuchos_Comm.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_RCP.hpp"
+#include "Tsqr_MessengerBase.hpp"
 #include "TsqrTrilinosMessenger.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////

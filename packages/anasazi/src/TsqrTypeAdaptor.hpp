@@ -11,6 +11,8 @@
 namespace TSQR {
   namespace Trilinos {
 
+    class UndefinedComm {};
+
     /// \class TsqrTypeAdaptor
     ///
     /// \brief Mapping between multivector class MV and appropriate
@@ -56,6 +58,13 @@ namespace TSQR {
       /// node_tsqr_type and tsqr_type objects.
       ///
       typedef TsqrFactory< LO, S, node_tsqr_type, tsqr_type > factory_type;
+
+      ///
+      /// Type of the (raw) communicator object used by the given
+      /// multivector type.  Communicator objects are always handled
+      /// via Teuchos::RCP.
+      ///
+      typedef UndefinedComm comm_type;
     };
 
   } // namespace Trilinos

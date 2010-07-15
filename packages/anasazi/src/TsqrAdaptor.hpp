@@ -4,7 +4,7 @@
 #include "AnasaziConfigDefs.hpp"
 #include "Teuchos_SerialDenseMatrix.hpp"
 
-#include "TsqrTrilinosMessenger.hpp"
+#include "Tsqr_MessengerBase.hpp"
 #include "TsqrTypeAdaptor.hpp"
 #include "Tsqr_GlobalVerify.hpp"
 #include "Tsqr_ScalarTraits.hpp"

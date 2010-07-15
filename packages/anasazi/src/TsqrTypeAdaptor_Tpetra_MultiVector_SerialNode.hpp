@@ -31,6 +31,7 @@ namespace TSQR {
       typedef TSQR::SequentialTsqr< LO, S > node_tsqr_type;
       typedef TSQR::Tsqr< LO, S, node_tsqr_type > tsqr_type;
       typedef SequentialTsqrFactory< local_ordinal_type, scalar_type > factory_type;
+      typedef Teuchos::Comm<int> comm_type;
     };
 
   } // namespace Trilinos
