@@ -79,8 +79,8 @@ private:
     Teuchos::RCP<Epetra_Vector> model_p;
     Teuchos::RCP<Epetra_Vector> model_g;
     Teuchos::RCP<Epetra_MultiVector> model_dgdp;
-    int numParameters;
-    int numResponses;
+    unsigned int numParameters;
+    unsigned int numResponses;
     bool supportsSensitivities;
     EpetraExt::ModelEvaluator::EDerivativeMultiVectorOrientation orientation;
 
