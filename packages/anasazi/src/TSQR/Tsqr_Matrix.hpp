@@ -283,6 +283,9 @@ namespace TSQR {
     void
     reshape (const Ordinal num_rows, const Ordinal num_cols)
     {
+      if (num_rows == nrows() && num_cols == ncols())
+	return; // no need to reallocate or do anything else
+
       const size_t alloc_size = verified_alloc_size (num_rows, num_cols);
       nrows_ = num_rows;
       ncols_ = num_cols;

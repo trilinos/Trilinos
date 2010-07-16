@@ -29,8 +29,8 @@
 #ifndef __TSQR_Tsqr_SequentialTsqr_hpp
 #define __TSQR_Tsqr_SequentialTsqr_hpp
 
-#include <Tsqr_MatView.hpp>
 #include <Tsqr_Lapack.hpp>
+#include <Tsqr_Matrix.hpp>
 #include <Tsqr_CacheBlockingStrategy.hpp>
 #include <Tsqr_CacheBlocker.hpp>
 #include <Tsqr_LocalVerify.hpp>
@@ -38,6 +38,9 @@
 #include <Tsqr_Combine.hpp>
 #include <Tsqr_Util.hpp>
 
+#include <algorithm>
+#include <limits>
+#include <sstream>
 #include <string>
 #include <utility> // std::pair
 #include <vector>
@@ -178,6 +181,7 @@ namespace TSQR {
 
   public:
     typedef Scalar scalar_type;
+    typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
     typedef LocalOrdinal ordinal_type;
     typedef std::vector< std::vector< Scalar > > FactorOutput;
 
@@ -486,7 +490,7 @@ namespace TSQR {
 		const LocalOrdinal ncols_C,
 		Scalar C[],
 		const LocalOrdinal ldc,
-		const bool contiguous_cache_blocks = false)
+		const bool contiguous_cache_blocks = false) 
     {
       // Identify top ncols_C by ncols_C block of C.  C_view is not
       // modified.  top_block() will set C_top to have the correct
@@ -509,6 +513,228 @@ namespace TSQR {
 	     ncols_C, C, ldc, contiguous_cache_blocks);
     }
 
+
+    /// \brief Compute Q*B
+    ///
+    /// Compute matrix-matrix product Q*B, where Q is nrows by ncols
+    /// and B is ncols by ncols.  Respect cache blocks of Q.
+    void
+    Q_times_B (const LocalOrdinal nrows,
+	       const LocalOrdinal ncols,
+	       Scalar Q[],
+	       const LocalOrdinal ldq,
+	       const Scalar B[],
+	       const LocalOrdinal ldb,
+	       const bool contiguous_cache_blocks = false) const
+    {
+      // We don't do any other error checking here (e.g., matrix
+      // dimensions), though it would be a good idea to do so.
+
+      // Take the easy exit if available.
+      if (ncols == 0 || nrows == 0)
+	return 0;
+
+      // Compute Q := Q*B by iterating through cache blocks of Q.
+      // This iteration works much like iteration through cache blocks
+      // of A in factor() (which see).  Here, though, each cache block
+      // computation is completely independent of the others; a slight
+      // restructuring of this code would parallelize nicely using
+      // OpenMP.
+      CacheBlocker< LocalOrdinal, Scalar > blocker (nrows, ncols, strategy_);
+      BLAS< LocalOrdinal, Scalar > blas;
+      mat_view Q_rest (nrows, ncols, Q, ldq);
+      Matrix< LocalOrdinal, Scalar > 
+	Q_cur_copy (LocalOrdinal(0), LocalOrdinal(0)); // will be resized
+      while (! Q_rest.empty())
+	{
+	  mat_view Q_cur = 
+	    blocker.split_top_block (Q_rest, contiguous_cache_blocks);
+
+	  // GEMM doesn't like aliased arguments, so we use a copy.
+	  // We only copy the current cache block, rather than all of
+	  // Q; this saves memory.
+	  Q_cur_copy.reshape (Q_cur.nrows(), ncols);
+	  Q_cur_copy.copy (Q_cur);
+	  // Q_cur := Q_cur_copy * B.
+	  blas.GEMM ("N", "N", Q_cur.nrows(), ncols, ncols, Scalar(1),
+		     Q_cur_copy.get(), Q_cur_copy.lda(), B, ldb,
+		     Scalar(0), Q_cur.get(), Q_cur.lda());
+	}
+    }
+
+    /// Compute SVD \f$R = U \Sigma V^*\f$, not in place.  Use the
+    /// resulting singular values to compute the numerical rank of R,
+    /// with respect to the relative tolerance tol.  If R is full
+    /// rank, return without modifying R.  If R is not full rank,
+    /// overwrite R with \f$\Sigma \cdot V^*\f$.
+    ///
+    /// \return Numerical rank of R: 0 <= rank <= ncols.
+    LocalOrdinal
+    reveal_R_rank (const LocalOrdinal ncols,
+		   Scalar R[],
+		   const LocalOrdinal ldr,
+		   Scalar U[],
+		   const LocalOrdinal ldu,
+		   const magnitude_type tol) const 
+    {
+      if (tol < 0)
+	{
+	  std::ostringstream os;
+	  os << "reveal_R_rank: negative tolerance tol = "
+	     << tol << " is not allowed.";
+	  throw std::logic_error (os.str());
+	}
+      // We don't do any other error checking here (e.g., matrix
+      // dimensions), though it would be a good idea to do so.
+
+      // Take the easy exit if available.
+      if (ncols == 0)
+	return 0;
+
+      LAPACK< LocalOrdinal, Scalar > lapack;
+      MatView< LocalOrdinal, Scalar > R_view (ncols, ncols, R, ldr);
+      Matrix< LocalOrdinal, Scalar > B (R_view); // B := R
+      MatView< LocalOrdinal, Scalar > U_view (ncols, ncols, U, ldu);
+      Matrix< LocalOrdinal, Scalar > VT (ncols, ncols, Scalar(0));
+
+      std::vector< magnitude_type > svd_rwork (5*ncols);
+      std::vector< magnitude_type > singular_values (ncols);
+      LocalOrdinal svd_lwork = -1; // -1 for LWORK query; will be changed
+      int svd_info = 0;
+
+      // LAPACK LWORK query for singular value decomposition.  WORK
+      // array is always of ScalarType, even in the complex case.
+      {
+	Scalar svd_lwork_scalar = Scalar(0);
+	lapack.GESVD ("A", "A", ncols, ncols, 
+		       B.get(), B.lda(), &singular_values[0], 
+		       U_view.get(), U_view.lda(), VT.get(), VT.lda(),
+		       &svd_lwork_scalar, svd_lwork, &svd_rwork[0], &svd_info);
+	if (svd_info != 0)
+	  {
+	    std::ostringstream os;
+	    os << "reveal_R_rank: GESVD LWORK query returned nonzero INFO = "
+	       << svd_info;
+	    throw std::logic_error (os.str());
+	  }
+	svd_lwork = static_cast< LocalOrdinal > (svd_lwork_scalar);
+	// Check the LWORK cast.  LAPACK shouldn't ever return LWORK
+	// that won't fit in an OrdinalType, but it's not bad to make
+	// sure.
+	if (static_cast< Scalar > (svd_lwork) != svd_lwork_scalar)
+	  {
+	    std::ostringstream os;
+	    os << "In SequentialTsqr::reveal_rank: GESVD LWORK query "
+	      "returned LWORK that doesn\'t fit in LocalOrdinal: returned "
+	      "LWORK (as Scalar) is " << svd_lwork_scalar << ", but cast to "
+	      "LocalOrdinal it becomes " << svd_lwork << ".";
+	    throw std::logic_error (os.str());
+	  }
+	// Make sure svd_lwork >= 0.
+	if (std::numeric_limits< LocalOrdinal >::is_signed && svd_lwork < 0)
+	  {
+	    std::ostringstream os;
+	    os << "In SequentialTsqr::reveal_rank: GESVD LWORK query "
+	      "returned negative LWORK = " << svd_lwork;
+	    throw std::logic_error (os.str());
+	  }
+      }
+      // Allocate workspace for SVD.
+      std::vector< Scalar > svd_work (svd_lwork);
+
+      // Compute SVD $B := U \Sigma V^*$.  B is overwritten, which is
+      // why we copied R into B (so that we don't overwrite R if R is
+      // full rank).
+      lapack.GESVD ("A", "A", ncols, ncols, 
+		    B.get(), B.lda(), &singular_values[0], 
+		    U_view.get(), U_view.lda(), VT.get(), VT.lda(),
+		    &svd_work[0], svd_lwork, &svd_rwork[0], &svd_info);
+
+      // GESVD computes singular values in decreasing order and they
+      // are all nonnegative.  We know by now that ncols > 0.  "tol"
+      // is a relative tolerance: relative to the largest singular
+      // value, which is the 2-norm of the matrix.
+      const magnitude_type absolute_tolerance = tol * singular_values[0];
+
+      // Determine rank of B, using singular values.  
+      LocalOrdinal rank = ncols;
+      for (LocalOrdinal k = 1; k < ncols; ++k)
+	// "<=" in case singular_values[0] == 0.
+	if (singular_values[k] <= absolute_tolerance)
+	  {
+	    rank = k;
+	    break;
+	  }
+
+      if (rank == ncols)
+	return rank; // Don't modify Q or R, if R is full rank.
+
+      //
+      // R is not full rank.  
+      //
+      // 1. Compute \f$R := \Sigma V^*\f$.
+      // 2. Return rank (0 <= rank < ncols).
+      //
+
+      // Compute R := \Sigma VT.  \Sigma is diagonal so we apply it
+      // column by column (normally one would think of this as row by
+      // row, but this "Hadamard product" formulation iterates more
+      // efficiently over VT).  
+      //
+      // After this computation, R may no longer be upper triangular.
+      // R may be zero if all the singular values are zero, but we
+      // don't need to check for this case; it's rare in practice, and
+      // the computations below will be correct regardless.
+      for (LocalOrdinal j = 0; j < ncols; ++j)
+	{
+	  const Scalar* const VT_j = &VT(0,j);
+	  Scalar* const R_j = &R_view(0,j);
+
+	  for (LocalOrdinal i = 0; i < ncols; ++i)
+	    R_j[i] = singular_values[i] * VT_j[i];
+	}
+      return rank;
+    }
+
+    /// \brief Rank-revealing decomposition
+    ///
+    /// Using the R factor from factor() and the explicit Q factor
+    /// from explicit_Q(), compute the SVD of R (\f$R = U \Sigma
+    /// V^*\f$).  R.  If R is full rank (with respect to the given
+    /// relative tolerance tol), don't change Q or R.  Otherwise,
+    /// compute \f$Q := Q \cdot U\f$ and \f$R := \Sigma V^*\f$ in
+    /// place (the latter may be no longer upper triangular).
+    ///
+    /// \return Rank \f$r\f$ of R: \f$ 0 \leq r \leq ncols\f$.
+    ///
+    LocalOrdinal
+    reveal_rank (const LocalOrdinal nrows,
+		 const LocalOrdinal ncols,
+		 Scalar Q[],
+		 const LocalOrdinal ldq,
+		 Scalar R[],
+		 const LocalOrdinal ldr,
+		 const magnitude_type tol,
+		 const bool contiguous_cache_blocks = false) const
+    {
+      // Take the easy exit if available.
+      if (ncols == 0)
+	return 0;
+      Matrix< LocalOrdinal, Scalar > U (ncols, ncols, Scalar(0));
+      const LocalOrdinal rank = 
+	reveal_R_rank (ncols, R, ldr, U.get(), U.ldu(), tol);
+      
+      if (rank < ncols)
+	{
+	  // If R is not full rank: reveal_R_rank() already computed
+	  // the SVD \f$R = U \Sigma V^*\f$ of (the input) R, and
+	  // overwrote R with \f$\Sigma V^*\f$.  Now, we compute \f$Q
+	  // := Q \cdot U\f$, respecting cache blocks of Q.
+	  Q_times_B (nrows, ncols, Q, ldq, U.get(), U.lda(), 
+		     contiguous_cache_blocks);
+	}
+      return rank;
+    }
 
     /// Cache-block the given A_in matrix, writing the results to A_out.
     void
@@ -534,25 +760,45 @@ namespace TSQR {
       blocker.un_cache_block (nrows, ncols, A_out, lda_out, A_in);
     }
 
-    /// Fill the nrows by ncols matrix A with zeros.
+    /// \brief Fill the nrows by ncols matrix A with zeros.
+    /// 
+    /// Fill the matrix A with zeros, in a way that respects the cache
+    /// blocking scheme.
+    ///
+    /// \param nrows [in] Number of rows in A
+    /// \param ncols [in] Number of columns in A 
+    /// \param A [out] nrows by ncols column-major-order dense matrix 
+    ///   with leading dimension lda
+    /// \param lda [in] Leading dimension of A: lda >= nrows
+    /// \param contiguous_cache_blocks [in] Whether the cache blocks
+    ///   in A are stored contiguously.
     void
     fill_with_zeros (const LocalOrdinal nrows,
 		     const LocalOrdinal ncols,
 		     Scalar A[],
 		     const LocalOrdinal lda, 
-		     const bool contiguous_cache_blocks = false)
+		     const bool contiguous_cache_blocks = false) const
     {
       CacheBlocker< LocalOrdinal, Scalar > blocker (nrows, ncols, strategy_);
       blocker.fill_with_zeros (nrows, ncols, A, lda, contiguous_cache_blocks);
     }
 
+    /// \brief Return topmost cache block of C
+    ///
+    /// \param C [in] Matrix (view), supporting the usual nrows(),
+    ///   ncols(), get(), lda() interface.
+    /// \param contiguous_cache_blocks [in] Whether the cache blocks
+    ///   in C are stored contiguously.
+    ///
     /// Return a view of the topmost cache block (on this node) of the
-    /// given matrix C.  NOTE that this is not necessarily square,
-    /// though it must have at least as many rows as columns.  For a
-    /// square ncols by ncols block, as needed in TSQR::Tsqr::apply(),
-    /// if the output is ret, do MatView< LocalOrdinal, Scalar >
-    /// (ncols, ncols, ret.get(), ret.lda()) to get an ncols by ncols
-    /// block.
+    /// given matrix C.  This is not necessarily square, though it
+    /// must have at least as many rows as columns.  For a square
+    /// ncols by ncols block, as needed by Tsqr::apply(), do as 
+    /// follows:
+    /// \code 
+    /// MatrixViewType top = this->top_block (C, contig);
+    /// MatView< LocalOrdinal, Scalar > square (ncols, ncols, top.get(), top.lda());
+    /// \endcode
     template< class MatrixViewType >
     MatrixViewType
     top_block (const MatrixViewType& C, 

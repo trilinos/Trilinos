@@ -33,10 +33,15 @@
 #include <TbbTsqr_FactorTask.hpp>
 #include <TbbTsqr_ApplyTask.hpp>
 #include <TbbTsqr_ExplicitQTask.hpp>
+#include <TbbTsqr_RevealRankTask.hpp>
 #include <TbbTsqr_CacheBlockTask.hpp>
 #include <TbbTsqr_UnCacheBlockTask.hpp>
 #include <TbbTsqr_FillWithZerosTask.hpp>
+
 #include <Tsqr_ApplyType.hpp>
+#include <Tsqr_ScalarTraits.hpp>
+
+#include <algorithm>
 #include <limits>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -82,29 +87,12 @@ namespace TSQR {
       }
 
     public:
-      TbbParallelTsqr (const size_t num_cores = 1,
-		       const size_t cacheBlockSize = 0) :
-	seq_ (cacheBlockSize),
-	min_seq_factor_timing_ (std::numeric_limits<double>::max()),
-	max_seq_factor_timing_ (std::numeric_limits<double>::min()),
-	min_seq_apply_timing_ (std::numeric_limits<double>::max()),
-	max_seq_apply_timing_ (std::numeric_limits<double>::min())
-      {
-	if (num_cores < 1)
-	  ncores_ = 1; // default is no parallelism
-	else
-	  ncores_ = num_cores;
-      }
-      
-      /// Number of cores to use to solve the problem (i.e., number of
-      /// subproblems into which to divide the main problem, to solve
-      /// it in parallel).
-      size_t ncores() const { return ncores_; }
-
-      /// Cache block size (in bytes) used for the factorization
-      size_t cache_block_size() const { return seq_.cache_block_size(); }
+      typedef Scalar scalar_type;
+      typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+      typedef LocalOrdinal ordinal_type;
 
       /// Results of SequentialTsqr for each core.
+      ///
       typedef typename SequentialTsqr< LocalOrdinal, Scalar >::FactorOutput SeqOutput;
       /// Array of ncores "local tau arrays" from parallel TSQR.
       /// (Local Q factors are stored in place.)
@@ -113,6 +101,39 @@ namespace TSQR {
       /// data on each core, and the results of combining the data on
       /// the cores.
       typedef typename std::pair< std::vector< SeqOutput >, ParOutput > FactorOutput;
+
+      /// Constructor
+      /// 
+      /// \param numCores [in] Number of parallel cores to use in the
+      ///   factorization.  This should be <= the number of cores with 
+      ///   which Intel TBB was initialized.
+      /// \param cacheBlockSize [in] Cache block size in bytes.  Zero 
+      ///   means that TSQR will pick a reasonable nonzero default.
+      TbbParallelTsqr (const size_t numCores = 1,
+		       const size_t cacheBlockSize = 0) :
+	seq_ (cacheBlockSize),
+	min_seq_factor_timing_ (std::numeric_limits<double>::max()),
+	max_seq_factor_timing_ (std::numeric_limits<double>::min()),
+	min_seq_apply_timing_ (std::numeric_limits<double>::max()),
+	max_seq_apply_timing_ (std::numeric_limits<double>::min())
+      {
+	if (numCores < 1)
+	  ncores_ = 1; // default is no parallelism
+	else
+	  ncores_ = numCores;
+      }
+      
+      /// Number of cores that TSQR will use to solve the problem
+      /// (i.e., number of subproblems into which to divide the main
+      /// problem, to solve it in parallel).
+      size_t ncores() const { return ncores_; }
+
+      /// Cache block size (in bytes) used for the factorization.
+      /// This may be different from the cacheBlockSize constructor
+      /// argument, because TSQR may revise unreasonable suggestions
+      /// into reasonable values.
+      size_t cache_block_size() const { return seq_.cache_block_size(); }
+
 
       double
       min_seq_factor_timing () const { return min_seq_factor_timing_; }
@@ -285,6 +306,103 @@ namespace TSQR {
 	}
 	apply ("N", nrows, ncols_Q_in, Q_in, ldq_in, factor_output,
 	       ncols_Q_out, Q_out, ldq_out, contiguous_cache_blocks);
+      }
+
+      /// \brief Compute Q*B
+      ///
+      /// Compute matrix-matrix product Q*B, where Q is nrows by ncols
+      /// and B is ncols by ncols.  Respect cache blocks of Q.
+      void
+      Q_times_B (const LocalOrdinal nrows,
+		 const LocalOrdinal ncols,
+		 Scalar Q[],
+		 const LocalOrdinal ldq,
+		 const Scalar B[],
+		 const LocalOrdinal ldb,
+		 const bool contiguous_cache_blocks = false) const
+      {
+	// Compute Q := Q*B in parallel.  This works much like
+	// cache_block() (which see), in that each thread's instance
+	// does not need to communicate with the others.
+	try {
+	  using tbb::task;
+	  typedef RevealRankTask< LocalOrdinal, Scalar > rrtask_type;
+
+	  mat_view Q_view (nrows, ncols, Q, ldq);
+	  const_mat_view B_view (ncols, ncols, B, ldb);
+
+	  rrtask_type& root_task = *new( task::allocate_root() )
+	    rrtask_type (0, ncores()-1, Q_view, B_view, seq_, 
+			 contiguous_cache_blocks);
+	  task::spawn_root_and_wait (root_task);
+	} catch (tbb::captured_exception& ex) {
+	  std::ostringstream os;
+	  os << "Intel TBB caught an exception, while computing Q := Q*U.  "
+	    "Unfortunately, its type information was lost, because the "
+	    "exception was thrown in another thread.  Its \"what()\" function "
+	    "returns the following string: " << ex.what();
+	  throw std::runtime_error (os.str());
+	}
+      }
+
+
+      /// Compute SVD \f$R = U \Sigma V^*\f$, not in place.  Use the
+      /// resulting singular values to compute the numerical rank of R,
+      /// with respect to the relative tolerance tol.  If R is full
+      /// rank, return without modifying R.  If R is not full rank,
+      /// overwrite R with \f$\Sigma \cdot V^*\f$.
+      ///
+      /// \return Numerical rank of R: 0 <= rank <= ncols.
+      LocalOrdinal
+      reveal_R_rank (const LocalOrdinal ncols,
+		     Scalar R[],
+		     const LocalOrdinal ldr,
+		     Scalar U[],
+		     const LocalOrdinal ldu,
+		     const magnitude_type tol) const 
+      {
+	return seq_.reveal_R_rank (ncols, R, ldr, U, ldu, tol);
+      }
+
+      /// \brief Rank-revealing decomposition
+      ///
+      /// Using the R factor from factor() and the explicit Q factor
+      /// from explicit_Q(), compute the SVD of R (\f$R = U \Sigma
+      /// V^*\f$).  R.  If R is full rank (with respect to the given
+      /// relative tolerance tol), don't change Q or R.  Otherwise,
+      /// compute \f$Q := Q \cdot U\f$ and \f$R := \Sigma V^*\f$ in
+      /// place (the latter may be no longer upper triangular).
+      ///
+      /// \return Rank \f$r\f$ of R: \f$ 0 \leq r \leq ncols\f$.
+      ///
+      LocalOrdinal
+      reveal_rank (const LocalOrdinal nrows,
+		   const LocalOrdinal ncols,
+		   Scalar Q[],
+		   const LocalOrdinal ldq,
+		   Scalar R[],
+		   const LocalOrdinal ldr,
+		   const magnitude_type tol,
+		   const bool contiguous_cache_blocks = false) const
+      {
+	// Take the easy exit if available.
+	if (ncols == 0)
+	  return 0;
+
+	Matrix< LocalOrdinal, Scalar > U (ncols, ncols, Scalar(0));
+	const LocalOrdinal rank = 
+	  reveal_R_rank (ncols, R, ldr, U.get(), U.ldu(), tol);
+      
+	if (rank < ncols)
+	  {
+	    // If R is not full rank: reveal_R_rank() already computed
+	    // the SVD \f$R = U \Sigma V^*\f$ of (the input) R, and
+	    // overwrote R with \f$\Sigma V^*\f$.  Now, we compute \f$Q
+	    // := Q \cdot U\f$, respecting cache blocks of Q.
+	    Q_times_B (nrows, ncols, Q, ldq, U.get(), U.lda(), 
+		       contiguous_cache_blocks);
+	  }
+	return rank;
       }
 
       void
