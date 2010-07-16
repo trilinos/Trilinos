@@ -114,7 +114,7 @@ check_fortran_function_exists ("ZGEQR2P" HAVE_LAPACK_ZGEQR2P)
 check_fortran_function_exists ("CGEQR2P" HAVE_LAPACK_CGEQR2P)
 
 # Write out a header file with the appropriate #defines.
-configure_file ("Tsqr_Config.hpp.in" "Tsqr_Config.hpp")
+configure_file ("TSQR/Tsqr_Config.hpp.in" "TSQR/Tsqr_Config.hpp")
 
 # Restore the original value of CMAKE_REQUIRED_LIBRARIES.
 set (CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES_SAVE})
