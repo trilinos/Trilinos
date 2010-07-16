@@ -46,12 +46,16 @@ function(TRILINOS_DRIVER_ADD_TEST_THAT_INSTALLS_CMAKE cmake_type)
 
   find_program(PYTHON_EXE python)
 
-  SET_DEFAULT_AND_FROM_ENV( TDD_HTTP_PROXY "" )  
-  IF (TDD_HTTP_PROXY) 
+  SET_DEFAULT_AND_FROM_ENV( TDD_HTTP_PROXY "" )
+  IF (TDD_HTTP_PROXY)
     SET(TDD_HTTP_PROXY_ARG "--http-proxy=${TDD_HTTP_PROXY}")
   ELSE()
     SET(TDD_HTTP_PROXY_ARG "")
   ENDIF()
+
+  add_test(uninstall-cmake-${cmake_type} ${CMAKE_COMMAND}
+    -E remove_directory "${TD_BASE_DIR}/tools/cmake-${cmake_type}"
+    )
 
   add_test(install-cmake-${cmake_type} ${PYTHON_EXE}
     "${TRILINOS_HOME_DIR}/cmake/python/download-cmake.py"
@@ -61,6 +65,8 @@ function(TRILINOS_DRIVER_ADD_TEST_THAT_INSTALLS_CMAKE cmake_type)
     "${TDD_HTTP_PROXY_ARG}"
     )
 
+  set_property(TEST install-cmake-${cmake_type}
+    PROPERTY DEPENDS "uninstall-cmake-${cmake_type}")
 endfunction()
 
 
