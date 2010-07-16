@@ -3597,7 +3597,6 @@ namespace Ioex {
 		 << "' with index = " << var_index << " to file "
 		 << util().decode_filename(get_filename(), isParallel) << "\n";
 	  IOSS_ERROR(errmsg);
-	  exodus_error(get_file_pointer(), __LINE__, myProcessor);
 	}
       }
     }

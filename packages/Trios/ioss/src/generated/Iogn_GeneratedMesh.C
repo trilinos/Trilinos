@@ -77,36 +77,6 @@ namespace Iogn {
       }
       rotmat[i][i] = 1.0;
     }
-
-    faceNodes[0][0] = 1;
-    faceNodes[0][1] = 2;
-    faceNodes[0][2] = 6;
-    faceNodes[0][3] = 5;
-
-    faceNodes[1][0] = 2;
-    faceNodes[1][1] = 3;
-    faceNodes[1][2] = 7;
-    faceNodes[1][3] = 6;
-
-    faceNodes[2][0] = 3;
-    faceNodes[2][1] = 4;
-    faceNodes[2][2] = 8;
-    faceNodes[2][3] = 7;
-
-    faceNodes[3][0] = 4;
-    faceNodes[3][1] = 1;
-    faceNodes[3][2] = 5;
-    faceNodes[3][3] = 8;
-
-    faceNodes[4][0] = 4;
-    faceNodes[4][1] = 3;
-    faceNodes[4][2] = 2;
-    faceNodes[4][3] = 1;
-
-    faceNodes[5][0] = 5;
-    faceNodes[5][1] = 6;
-    faceNodes[5][2] = 7;
-    faceNodes[5][3] = 8;
   }
 
   size_t GeneratedMesh::add_shell_block(ShellLocation loc)

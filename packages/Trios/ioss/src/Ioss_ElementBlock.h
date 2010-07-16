@@ -38,7 +38,7 @@ namespace Ioss {
       { return idOffset < local_id && local_id <= idOffset + elementCount; }
 
     void  set_offset(int offset) {idOffset = offset;}
-    int get_offset() const {assert(idOffset >= 0); return idOffset;}
+    int get_offset() const {return idOffset;}
 
     void get_block_adjacencies(std::vector<std::string> &block_adjacency_list) const;
 
