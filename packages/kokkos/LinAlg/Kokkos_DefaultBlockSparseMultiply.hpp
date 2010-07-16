@@ -111,7 +111,7 @@ namespace Kokkos {
 
     Teuchos::ArrayRCP<const Ordinal> pbuf_rptr_;
     Teuchos::ArrayRCP<const Ordinal> pbuf_cptr_;
-    Teuchos::ArrayRCP<const Ordinal> pbuf_bptr_;
+    Teuchos::ArrayRCP<const size_t> pbuf_bptr_;
     Teuchos::ArrayRCP<const Ordinal> pbuf_bindx_;
     Teuchos::ArrayRCP<const Ordinal> pbuf_indx_;
     Teuchos::ArrayRCP<const Scalar>  pbuf_vals1D_;
@@ -195,7 +195,7 @@ namespace Kokkos {
         wdp.vals = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
         wdp.rptr = rbh.template addConstBuffer<Ordinal>(pbuf_rptr_);
         wdp.cptr = rbh.template addConstBuffer<Ordinal>(pbuf_cptr_);
-        wdp.bptr = rbh.template addConstBuffer<Ordinal>(pbuf_bptr_);
+        wdp.bptr = rbh.template addConstBuffer<size_t>(pbuf_bptr_);
         wdp.bindx= rbh.template addConstBuffer<Ordinal>(pbuf_bindx_);
         wdp.indx = rbh.template addConstBuffer<Ordinal>(pbuf_indx_);
         wdp.y    = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
@@ -216,7 +216,7 @@ namespace Kokkos {
         wdp.vals = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
         wdp.rptr = rbh.template addConstBuffer<Ordinal>(pbuf_rptr_);
         wdp.cptr = rbh.template addConstBuffer<Ordinal>(pbuf_cptr_);
-        wdp.bptr = rbh.template addConstBuffer<Ordinal>(pbuf_bptr_);
+        wdp.bptr = rbh.template addConstBuffer<size_t>(pbuf_bptr_);
         wdp.bindx= rbh.template addConstBuffer<Ordinal>(pbuf_bindx_);
         wdp.indx = rbh.template addConstBuffer<Ordinal>(pbuf_indx_);
         wdp.y    = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
@@ -261,7 +261,7 @@ namespace Kokkos {
         wdp.vals = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
         wdp.rptr = rbh.template addConstBuffer<Ordinal>(pbuf_rptr_);
         wdp.cptr = rbh.template addConstBuffer<Ordinal>(pbuf_cptr_);
-        wdp.bptr = rbh.template addConstBuffer<Ordinal>(pbuf_bptr_);
+        wdp.bptr = rbh.template addConstBuffer<size_t>(pbuf_bptr_);
         wdp.bindx= rbh.template addConstBuffer<Ordinal>(pbuf_bindx_);
         wdp.indx = rbh.template addConstBuffer<Ordinal>(pbuf_indx_);
         wdp.y    = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());
@@ -287,7 +287,7 @@ namespace Kokkos {
         wdp.vals = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
         wdp.rptr = rbh.template addConstBuffer<Ordinal>(pbuf_rptr_);
         wdp.cptr = rbh.template addConstBuffer<Ordinal>(pbuf_cptr_);
-        wdp.bptr = rbh.template addConstBuffer<Ordinal>(pbuf_bptr_);
+        wdp.bptr = rbh.template addConstBuffer<size_t>(pbuf_bptr_);
         wdp.bindx= rbh.template addConstBuffer<Ordinal>(pbuf_bindx_);
         wdp.indx = rbh.template addConstBuffer<Ordinal>(pbuf_indx_);
         wdp.y    = rbh.template addNonConstBuffer<RangeScalar>(Y.getValuesNonConst());

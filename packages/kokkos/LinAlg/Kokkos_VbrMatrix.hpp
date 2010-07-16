@@ -76,7 +76,7 @@ namespace Kokkos {
     void setPackedValues(const Teuchos::ArrayRCP<const Scalar>& allvals,
                          const Teuchos::ArrayRCP<const Ordinal>& rptr,
                          const Teuchos::ArrayRCP<const Ordinal>& cptr,
-                         const Teuchos::ArrayRCP<const Ordinal>& bptr,
+                         const Teuchos::ArrayRCP<const size_t>& bptr,
                          const Teuchos::ArrayRCP<const Ordinal>& bindx,
                          const Teuchos::ArrayRCP<const Ordinal>& indx);
 
@@ -98,7 +98,7 @@ namespace Kokkos {
     const Teuchos::ArrayRCP<const Scalar>& get_values() const { return pbuf_values1D_; }
     const Teuchos::ArrayRCP<const Ordinal>& get_rptr() const { return pbuf_rptr_; }
     const Teuchos::ArrayRCP<const Ordinal>& get_cptr() const { return pbuf_cptr_; }
-    const Teuchos::ArrayRCP<const Ordinal>& get_bptr() const { return pbuf_bptr_; }
+    const Teuchos::ArrayRCP<const size_t>& get_bptr() const { return pbuf_bptr_; }
     const Teuchos::ArrayRCP<const Ordinal>& get_bindx() const { return pbuf_bindx_; }
     const Teuchos::ArrayRCP<const Ordinal>& get_indx() const { return pbuf_indx_; }
 
@@ -115,7 +115,7 @@ namespace Kokkos {
     Teuchos::ArrayRCP<const Scalar> pbuf_values1D_;
     Teuchos::ArrayRCP<const Ordinal> pbuf_rptr_;
     Teuchos::ArrayRCP<const Ordinal> pbuf_cptr_;
-    Teuchos::ArrayRCP<const Ordinal> pbuf_bptr_;
+    Teuchos::ArrayRCP<const size_t> pbuf_bptr_;
     Teuchos::ArrayRCP<const Ordinal> pbuf_bindx_;
     Teuchos::ArrayRCP<const Ordinal> pbuf_indx_;
     
@@ -168,7 +168,7 @@ namespace Kokkos {
                         const Teuchos::ArrayRCP<const Scalar> &allvals,
                          const Teuchos::ArrayRCP<const Ordinal>& rptr,
                          const Teuchos::ArrayRCP<const Ordinal>& cptr,
-                         const Teuchos::ArrayRCP<const Ordinal>& bptr,
+                         const Teuchos::ArrayRCP<const size_t>& bptr,
                          const Teuchos::ArrayRCP<const Ordinal>& bindx,
                          const Teuchos::ArrayRCP<const Ordinal>& indx)
 {

@@ -154,7 +154,8 @@ dense_matvec_trans_4x4(Scalar alpha, const Scalar* A,
 template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar>
 struct DefaultBlockSparseMultiplyOp1 {
   // mat data
-  const Ordinal *rptr, *cptr, *bptr;
+  const Ordinal *rptr, *cptr;
+  const size_t *bptr;
   const Ordinal *bindx, *indx;
   const Scalar  *vals;
   // matvec params
@@ -175,7 +176,7 @@ struct DefaultBlockSparseMultiplyOp1 {
     // init my block of y to zero
     for(Ordinal i=0; i<numRowsInBlock; ++i) yy[i] = beta*yy[i];
     // loop over the block in my row and do the multiplication
-    for (Ordinal b=bptr[myBlockRow]; b<bptr[myBlockRow+1]; ++b) {
+    for (size_t b=bptr[myBlockRow]; b<bptr[myBlockRow+1]; ++b) {
       // get pointers into A and x
       const Ordinal col = bindx[b];
       const Ordinal numColsInBlock = cptr[col+1]-cptr[col];
@@ -201,7 +202,8 @@ struct DefaultBlockSparseMultiplyOp1 {
 template <class Scalar, class Ordinal, class DomainScalar, class RangeScalar>
 struct DefaultBlockSparseMultiplyOp1Transpose {
   // mat data
-  const Ordinal *rptr, *cptr, *bptr;
+  const Ordinal *rptr, *cptr;
+  const size_t *bptr;
   const Ordinal *bindx, *indx;
   const Scalar  *vals;
   // matvec params
@@ -221,7 +223,7 @@ struct DefaultBlockSparseMultiplyOp1Transpose {
       const DomainScalar* xx = &xvec[rptr[bR]];
       const Ordinal Nrows = rptr[bR+1]-rptr[bR];
   
-      for (Ordinal b=bptr[bR]; b<bptr[bR+1]; ++b) {
+      for (size_t b=bptr[bR]; b<bptr[bR+1]; ++b) {
         const Ordinal col = bindx[b];
         const Ordinal Ncols = cptr[col+1]-cptr[col];
   

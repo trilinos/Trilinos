@@ -72,7 +72,7 @@ namespace {
       ArrayRCP<Scalar>  vals   = node->template allocBuffer<Scalar>(2*N);
       ArrayRCP<Ordinal> rptr   = node->template allocBuffer<Ordinal>(2*N);
       ArrayRCP<Ordinal> cptr   = node->template allocBuffer<Ordinal>(2*N);
-      ArrayRCP<Ordinal> bptr   = node->template allocBuffer<Ordinal>(2*N);
+      ArrayRCP<size_t> bptr   = node->template allocBuffer<size_t>(2*N);
       ArrayRCP<Ordinal> bindx   = node->template allocBuffer<Ordinal>(2*N);
       ArrayRCP<Ordinal> indx   = node->template allocBuffer<Ordinal>(2*N);
       A.setPackedValues(vals,rptr,cptr,bptr,bindx,indx);
@@ -94,7 +94,7 @@ namespace {
       ArrayRCP<Scalar>  vals;
       ArrayRCP<Ordinal> rptr;
       ArrayRCP<Ordinal> cptr;
-      ArrayRCP<Ordinal> bptr;
+      ArrayRCP<size_t> bptr;
       ArrayRCP<Ordinal> bindx;
       ArrayRCP<Ordinal> indx;
       A.setPackedValues(vals,rptr,cptr,bptr,bindx,indx);
