@@ -54,7 +54,7 @@ The VbrMatrix class has two significant 'states', distinguished by whether or no
 storage has been optimized (packed) or not.
 
 When the matrix is in the non-optimized-storage state, internal data
-storage is in an un-packed, non-contiguous data-structure that allows for
+storage is in a non-contiguous data-structure that allows for
 convenient insertion of data.
 
 When the matrix is in the optimized-storage state, internal data is stored in
@@ -67,11 +67,11 @@ Use of the matrix as an Operator (performing matrix-vector multiplication) is
 only allowed when it is in the optimized-storage state.
 
 VbrMatrix has two constructors, one which leaves the matrix in the optimized-
-storage stage, and another which leaves the matrix in the non-optimized-storage
-stage.
+storage state, and another which leaves the matrix in the non-optimized-storage
+state.
 
-When the VbrMatrix is constructed in the non-optimized-storage state, and then
-filled using methods such as setGlobalBlockEntry etc., it can then be transformed
+When the VbrMatrix is constructed in the non-optimized-storage state, (and then
+filled using methods such as setGlobalBlockEntry etc.), it can then be transformed
 to the optimized-storage state by calling the method fillComplete().
 
 Once in the optimized-storage state, the VbrMatrix can not be returned to the
@@ -101,25 +101,18 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   */
   VbrMatrix(const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> > &blkRowMap, size_t maxNumEntriesPerRow, ProfileType pftype = DynamicProfile);
 
-  //! Not Yet Implemented! Constructor specifying a pre-filled graph and block-maps for range and domain.
+  //! Constructor specifying a pre-filled block-graph.
   /*! Constructing a VbrMatrix with a pre-filled graph means that the matrix will
-      start out in the optimized-storage, isFillComplete()==true state.
-      The graph provided to this constructor must be already filled
+      start out in the optimized-storage state, i.e., isFillComplete()==true.
+      The graph provided to this constructor must be already filled.
       (If blkGraph->isFillComplete() != true, an exception is thrown.)
 
-      Entries in the input CrsGraph will correspond to block-entries in the
+      Entries in the input BlockCrsGraph correspond to block-entries in the
       VbrMatrix. In other words, the VbrMatrix will have a block-row corresponding
       to each row in the graph, and a block-entry corresponding to each column-
       index in the graph.
-
-      The block-maps provided for range and domain must be sized such that:
-      blkDomainMap->getGlobalNumBlocks() == blkGraph->getDomainMap()->getGlobalNumElements(),
-      blkRangeMap->getGlobalNumBlocks() == blkGraph->getRangeMap()->getGlobalNumElements(),
-      blkDomainMap->getNodeNumBlocks() == blkGraph->getDomainMap()->getNodeNumElements(),
-      blkRangeMap->getNodeNumBlocks() == blkGraph->getRangeMap()->getNodeNumElements().
-      If any of these conditions is not met, an exception is thrown.
   */
-  VbrMatrix(const Teuchos::RCP<const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& blkGraph, const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blkDomainMap, const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blkRangeMap);
+  VbrMatrix(const Teuchos::RCP<const BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& blkGraph);
 
   //! Destructor
   virtual ~VbrMatrix();
@@ -355,17 +348,31 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   void updateImport(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& X) const;
   void updateExport(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Y) const;
 
+  void createImporterExporter();
   void optimizeStorage();
   void fillLocalMatrix();
   void fillLocalMatVec();
 
   //private data members:
 
+  //We hold two graph pointers, one const and the other non-const.
+  //If a BlockCrsGraph is provided at construction, it is const and VbrMatrix
+  //never changes it.
+  //If a BlockCrsGraph is not provided at construction, VbrMatrix creates one
+  //internally and fills it as the matrix is filled, up until fillComplete()
+  //is called.
+  //
+  //blkGraph_ is either the internally created graph, or is null.
+  //constBlkGraph_ is either a pointer to blkGraph_, or a pointer to the
+  //graph provided at construction time.
+  //
   Teuchos::RCP<BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node> > blkGraph_;
+  Teuchos::RCP<const BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node> > constBlkGraph_;
+
   Kokkos::VbrMatrix<Scalar,LocalOrdinal,Node> lclMatrix_;
 
-  //It takes 6 arrays to adequately represent a variable-block-row
-  //matrix in packed (contiguous storage) form. For a description of these
+  //It takes 6 arrays to represent a variable-block-row matrix
+  //in packed (contiguous storage) form. For a description of these
   //arrays, see the text at the bottom of this file.
   //(2 of those arrays, rptr and cptr, are represented by arrays in the
   //getBlockRowMap() and getBlockColMap() objects, and
@@ -414,6 +421,10 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
 // The old Aztec manual was a great resource for this but I can't
 // find a copy of that these days...
 //
+//
+// Here is a brief description of the 6 arrays that are required to
+// represent a VBR matrix in packed (contiguous-memory-storage) format:
+//
 // rptr: length num_block_rows + 1
 //       rptr[i]: the pt-row corresponding to the i-th block-row
 //       Note: rptr is getBlockRowMap()->getNodeFirstPointInBlocks().
@@ -432,7 +443,7 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
 //        Note: bindx is blkGraph_->getNodePackedIndices();
 //
 // indx: length num-nonzero-block-entries + 1
-//       indx[j] location in vals of the beginning of the j-th
+//       indx[j]: location in vals of the beginning of the j-th
 //       block-entry
 //
 // vals: length num-nonzero-scalar-entries

@@ -29,6 +29,8 @@
 #ifndef TPETRA_BLOCKMAP_DECL_HPP
 #define TPETRA_BLOCKMAP_DECL_HPP
 
+#include <map>
+
 #include "Tpetra_Map.hpp"
 
 /** \file Tpetra_BlockMap_decl.hpp
@@ -150,6 +152,8 @@ class BlockMap : public Teuchos::Describable {
   //@}
 
  private:
+  void setup_noncontig_mapping();
+
   Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > pointMap_;
   global_size_t globalNumBlocks_;
   Teuchos::Array<GlobalOrdinal> myGlobalBlockIDs_;
@@ -157,6 +161,7 @@ class BlockMap : public Teuchos::Describable {
   Teuchos::ArrayRCP<const LocalOrdinal> view_firstPointInBlock_;
   bool blockIDsAreContiguous_;
   LocalOrdinal constantBlockSize_;
+  std::map<GlobalOrdinal,LocalOrdinal> map_global_to_local_; //need to use a hash (unordered_map) here instead of a map...
 };//class BlockMap
 
 //-----------------------------------------------------------------

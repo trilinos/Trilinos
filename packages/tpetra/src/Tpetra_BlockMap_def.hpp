@@ -203,11 +203,18 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(
     b_iter = myGlobalBlockIDs_.begin(), b_end = myGlobalBlockIDs_.end();
   GlobalOrdinal id = *b_iter;
   ++b_iter;
+  blockIDsAreContiguous_ = true;
   for(; b_iter != b_end; ++b_iter) {
-    if (*b_iter != id+1) break;
+    if (*b_iter != id+1) {
+      blockIDsAreContiguous_ = false;
+      break;
+    }
     ++id;
   }
-  if (b_iter == b_end) blockIDsAreContiguous_ = true;
+  if (blockIDsAreContiguous_ == false) {
+    setup_noncontig_mapping();
+  }
+
   view_firstPointInBlock_ = node->template viewBuffer<LocalOrdinal>(numLocalBlocks+1, pbuf_firstPointInBlock_);
 }
 
@@ -258,13 +265,31 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::BlockMap(const Teuchos::RCP<const Map
     b_iter = myGlobalBlockIDs_.begin(), b_end = myGlobalBlockIDs_.end();
   GlobalOrdinal id = *b_iter;
   ++b_iter;
+  blockIDsAreContiguous_ = true;
   for(; b_iter != b_end; ++b_iter) {
-    if (*b_iter != id+1) break;
+    if (*b_iter != id+1) {
+      blockIDsAreContiguous_ = false;
+      break;
+    }
     ++id;
   }
-  if (b_iter == b_end) blockIDsAreContiguous_ = true;
+  if (blockIDsAreContiguous_ == false) {
+    setup_noncontig_mapping();
+  }
 
   view_firstPointInBlock_ = node->template viewBuffer<LocalOrdinal>(numLocalBlocks+1, pbuf_firstPointInBlock_);
+}
+
+template<class LocalOrdinal,class GlobalOrdinal,class Node>
+void
+BlockMap<LocalOrdinal,GlobalOrdinal,Node>::setup_noncontig_mapping()
+{
+  //ouch, need to use a hash (unordered_map) here...
+  typedef typename Teuchos::Array<GlobalOrdinal>::size_type Tsize_t;
+  for(Tsize_t i=0; i<myGlobalBlockIDs_.size(); ++i) {
+    LocalOrdinal li = i;
+    map_global_to_local_.insert(std::make_pair(myGlobalBlockIDs_[i],li));
+  }
 }
 
 template<class LocalOrdinal,class GlobalOrdinal,class Node>
@@ -328,7 +353,12 @@ BlockMap<LocalOrdinal,GlobalOrdinal,Node>::getLocalBlockID(GlobalOrdinal globalB
     return invalid;
   }
 
-  if (blockIDsAreContiguous_ != true) {
+  if (blockIDsAreContiguous_ == false) {
+    //need to use a hash (unordered_map) here instead of a map...
+    typename std::map<GlobalOrdinal,LocalOrdinal>::const_iterator iter =
+      map_global_to_local_.find(globalBlockID);
+    if (iter == map_global_to_local_.end()) return invalid;
+    return iter->second;
   }
 
   LocalOrdinal localBlockID = globalBlockID - myGlobalBlockIDs_[0];
