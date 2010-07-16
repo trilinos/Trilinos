@@ -159,8 +159,11 @@ class MatrixMatrix {
  *sparsely-populated 'vectors'.
  *Important assumption: assumes the indices in u_ind and v_ind are sorted.
  */
- double sparsedot(double* u, int* u_ind, int u_len,
-		  double* v, int* v_ind, int v_len);
+ //double sparsedot(double* u, int* u_ind, int u_len,
+//		  double* v, int* v_ind, int v_len);
+ template<Scalar, LocalOrdinal>
+ Scalar sparsedot(Teuchos::ArrayRCP<Scalar> u, Teuchos::ArrayRCP<LocalOrdinal> u_ind, 
+		  Teuchos::ArrayRCP<Scalar> v, Teuchos::ArrayRCP<LocalOrdinal> v_ind);
 
 
 }

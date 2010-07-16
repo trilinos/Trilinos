@@ -46,22 +46,17 @@
  */
 namespace Tpetra {
 
-//
-//Method for internal use... sparsedot forms a dot-product between two
-//sparsely-populated 'vectors'.
-//Important assumption: assumes the indices in u_ind and v_ind are sorted.
-//
-double sparsedot(double* u, int* u_ind, int u_len,
-		 double* v, int* v_ind, int v_len)
+double sparsedot(Teuchos::ArrayRCP<Scalar> u, Teuchos:ArrayRCP<LocalOrdinal> u_ind, 
+		 Teuchos::ArrayRCP<Scalar> v, Teuchos::ArrayRCP<LocalOrdinal> v_ind)
 {
-  double result = 0.0;
+  Scalar result = Teuchos::ScalarTraits<Scalar>::zero();
 
-  int v_idx = 0;
-  int u_idx = 0;
+  LocalOrdinal v_idx = Teuchos::OrdinalTraits<LocalOrdinal>::zero();
+  LocalOrdinal u_idx = Teuchos::OrdinalTraits<LocalOrdinal>::zero();
 
-  while(v_idx < v_len && u_idx < u_len) {
-    int ui = u_ind[u_idx];
-    int vi = v_ind[v_idx];
+  while(v_idx < v.size() && u_idx < u.size()) {
+    LocalOrdinal ui = u_ind[u_idx];
+    LocalOrdinal vi = v_ind[v_idx];
 
     if (ui < vi) {
       ++u_idx;
@@ -82,18 +77,15 @@ int mult_A_B(CrsMatrixStruct& Aview,
 	     CrsMatrixStruct& Bview,
 	     CrsWrapper& C)
 {
-  size_t ST0 = Teuchos::OrdinalTraits<size_t>::zero();
-  size_t ST1 = Teuchos::OrdinalTraits<size_t>::one();
-  LocalOrdinal LO0 = Teuchos::OrdinalTraits<LocalOrdinal>::zero();
-  LocalOrdinal LO1 = Teuchos::OrdinalTraits<LocalOrdinal>::one();
-  LocalOrdinal LOI = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
   LocalOrdinal C_firstCol = Bview.colMap->getMinLocalIndex();
   LocalOrdinal C_lastCol = Bview.colMap->getMaxLocalIndex();
 
-  LocalOrdinal C_firstCol_import = LO0;
-  LocalOrdinal C_lastCol_import = LOI;
+  LocalOrdinal C_firstCol_import = Teuchos::OrdinalTraits<LocalOrdinal>::zero();
+  LocalOrdinal C_lastCol_import = Teuchos::OrdinalTraits<LocalOrdinal>::invalid();
 
-  Teuchos::ArrayView<const GlobalOrdinal> bcols = Bview.colMap->getNodeElementList();
+  //int* bcols = Bview.colMap->MyGlobalElements();
+  Teuchos::ArrayView<const GlobalOrdinal> bcols =Bview.colMap->getNodeElementList();
+  //int* bcols_import = NULL;
   Teuchos::ArrayView<const GlobalOrdinal> bcols_import = NULL;
   if (Bview.importColMap != NULL) {
     C_firstCol_import = Bview.importColMap->getMinLocalIndex();
@@ -102,19 +94,20 @@ int mult_A_B(CrsMatrixStruct& Aview,
     bcols_import = Bview.importColMap->getNodeElementList();
   }
 
-  size_t C_numCols = C_lastCol - C_firstCol + ST0;
-  size_t C_numCols_import = C_lastCol_import - C_firstCol_import + ST1;
+  LocalOrdinal C_numCols = C_lastCol - C_firstCol + Teuchos::OrdinalTraits<LocalOrdinal>::one();
+  LocalOrdinal C_numCols_import = C_lastCol_import - C_firstCol_import + Teuchos::OrdinalTraits<LocalOrdinal>::one();
 
   if (C_numCols_import > C_numCols) C_numCols = C_numCols_import;
-  //double* dwork = new double[C_numCols];
-  ArrayView<Scalar> swork = ArrayView(new Scalar, C_numCols); 
+  Teuchos::ArrayRCP<Scalar> dwork = Teuchos::ArrayRCP<Scalar>(C_numCols);
   //int* iwork = new int[C_numCols];
-  ArrayView<LocalOrdinal> lowork = ArrayView(new LocalOrdinal, C_numCols);
+  Teuchos::ArrayRCP<GlobalOrdinal> iwork = Teuchos::ArrayRCP<GlobalOrdinal>(C_numCols);
 
-  ArrayView<Scalar> C_row_i = swork;
-  ArrayView<LocalOrdinal> C_cols = lowork;
+  Teuchos::ArrayRCP<Scalar> C_row_i = dwork;
+  //int* C_cols = iwork;
+  ArrayRCP<GlobalOrdinal> C_cols = iwork;
 
-  int C_row_i_length, i, j, k;
+  //int C_row_i_length, i, j, k;
+  size_t C_row_i_length, i, j, k;
 
   //To form C = A*B we're going to execute this expression:
   //
@@ -123,7 +116,7 @@ int mult_A_B(CrsMatrixStruct& Aview,
   //Our goal, of course, is to navigate the data in A and B once, without
   //performing searches for column-indices, etc.
 
-  bool C_filled = C.Filled();
+  bool C_filled = C.isFillComplete();
 
   //loop over the rows of A.
   for(i=0; i<Aview.numRows; ++i) {
@@ -135,10 +128,10 @@ int mult_A_B(CrsMatrixStruct& Aview,
       continue;
     }
 
-    int* Aindices_i = Aview.indices[i];
-    double* Aval_i  = Aview.values[i];
+    Teuchos::ArrayRCP<LocalOrdinal> Aindices_i = Aview.indices[i];
+    Teuchos::ArraryRCP<Scalar> Aval_i  = Aview.values[i];
 
-    int global_row = Aview.rowMap->GID(i);
+    GlobalOrdinal global_row = Aview.rowMap->getGlobalElement(i);
 
     //loop across the i-th row of A and for each corresponding row
     //in B, loop across colums and accumulate product
@@ -146,23 +139,23 @@ int mult_A_B(CrsMatrixStruct& Aview,
     //as we stride across B(k,:) we're calculating updates for row i of the
     //result matrix C.
 
-    for(k=0; k<Aview.numEntriesPerRow[i]; ++k) {
-      int Ak = Bview.rowMap->LID(Aview.colMap->GID(Aindices_i[k]));
-      double Aval = Aval_i[k];
+    for(k=Teuchos::OrdinalTraits<size_t>::zero(); k<Aview.numEntriesPerRow[i]; ++k) {
+      LocalOrdinal Ak = Bview.rowMap->getLocalElement(Aview.colMap->getGlobalElement(Aindices_i[k]));
+      Scalar Aval = Aval_i[k];
 
-      int* Bcol_inds = Bview.indices[Ak];
-      double* Bvals_k = Bview.values[Ak];
+      ArrayRCP<LocalOrdinal> Bcol_inds = Bview.indices[Ak];
+      ArrayRCP<Scalar> Bvals_k = Bview.values[Ak];
 
-      C_row_i_length = 0;
+      C_row_i_length = Teucho::OrdinalTraits<size_t>::zero();
 
       if (Bview.remote[Ak]) {
-	for(j=0; j<Bview.numEntriesPerRow[Ak]; ++j) {
+	for(j=Teuchos::OrdinalTraits<size_t>::zero(); j<Bview.numEntriesPerRow[Ak]; ++j) {
 	  C_row_i[C_row_i_length] = Aval*Bvals_k[j];
           C_cols[C_row_i_length++] = bcols_import[Bcol_inds[j]];
 	}
       }
       else {
-	for(j=0; j<Bview.numEntriesPerRow[Ak]; ++j) {
+	for(j=Teuchos::OrdinalTraits<size_t>::zero(); j<Bview.numEntriesPerRow[Ak]; ++j) {
 	  C_row_i[C_row_i_length] = Aval*Bvals_k[j];
           C_cols[C_row_i_length++] = bcols[Bcol_inds[j]];
 	}
@@ -173,9 +166,9 @@ int mult_A_B(CrsMatrixStruct& Aview,
       //
 
       int err = C_filled ?
-          C.SumIntoGlobalValues(global_row, C_row_i_length, C_row_i, C_cols)
+          C.sumIntoGlobalValues(global_row, C_cols, C_row_i)
           :
-          C.InsertGlobalValues(global_row, C_row_i_length, C_row_i, C_cols);
+          C.insertIntoGlobalValues(global_row, C_cols, C_row_i)
  
       if (err < 0) {
         return(err);
@@ -190,8 +183,8 @@ int mult_A_B(CrsMatrixStruct& Aview,
     }
   }
 
-  delete [] dwork;
-  delete [] iwork;
+  //delete [] dwork;
+  //delete [] iwork;
 
   return(0);
 }
@@ -201,18 +194,14 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
 		  CrsMatrixStruct& Bview,
 		  CrsWrapper& C)
 {
-  size_t ST0 = Teuchos::OrdinalTraits<size_t>::zero();
-  size_t ST1 = Teuchos::OrdinalTraits<size_t>::one();
-  //int i, j, k;
-  size_t i, j, k;
+  int i, j, k;
   int returnValue = 0;
 
-  //int maxlen = 0;
-  size_t maxlen = Teuchos::OrdinalTraits<size_t>::zero();
-  for(i=ST0; i<Aview.numRows; ++i) {
+  int maxlen = 0;
+  for(i=0; i<Aview.numRows; ++i) {
     if (Aview.numEntriesPerRow[i] > maxlen) maxlen = Aview.numEntriesPerRow[i];
   }
-  for(i=ST0; i<Bview.numRows; ++i) {
+  for(i=0; i<Bview.numRows; ++i) {
     if (Bview.numEntriesPerRow[i] > maxlen) maxlen = Bview.numEntriesPerRow[i];
   }
 
@@ -222,29 +211,24 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
   //cout << "Bview: " << endl;
   //dumpCrsMatrixStruct(Bview);
 
-  //int numBcols = Bview.colMap->NumMyElements();
-  size_t numBcols = Bview.colMap->getNodeNumElements();
-  //int numBrows = Bview.numRows;
-  size_t numBrows = Bview.numRows;
+  int numBcols = Bview.colMap->NumMyElements();
+  int numBrows = Bview.numRows;
 
-  //int iworklen = maxlen*2 + numBcols;
-  size_t iworklen = maxlen*2 + numBcols;
-  //int* iwork = new int[iworklen];
-  ArrayRCP<* iwork = new LocalOrdinal[iworklen];
+  int iworklen = maxlen*2 + numBcols;
+  int* iwork = new int[iworklen];
 
-  //int* bcols = iwork+maxlen*2;
-  LocalOrdinal* bcols = iwork+maxlen*2;
-  Teuchos::ArrayView<const GlobalOrdinal> gids = Bview.colMap->getNodeElementList();
-  Scalar* bvals = new Scalar[maxlen*2];
-  Scalar* avals = bvals+maxlen;
+  int* bcols = iwork+maxlen*2;
+  int* bgids = Bview.colMap->MyGlobalElements();
+  double* bvals = new double[maxlen*2];
+  double* avals = bvals+maxlen;
 
-  GlobalOrdinal max_all_b = Bview.colMap->getMaxAllGlobalIndex();
-  GlobalOrdinal min_all_b = Bview.colMap->getMinAllGlobalIndex();
+  int max_all_b = Bview.colMap->MaxAllGID();
+  int min_all_b = Bview.colMap->MinAllGID();
 
   //bcols will hold the GIDs from B's column-map for fast access
   //during the computations below
   for(i=0; i<numBcols; ++i) {
-    LocalOrdinal blid = Bview.colMap->getLocalElement(bgids[i]);
+    int blid = Bview.colMap->LID(bgids[i]);
     bcols[blid] = bgids[i];
   }
 
@@ -252,27 +236,26 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
   //each row of B, so that we can know when to skip certain rows below.
   //This will provide a large performance gain for banded matrices, and
   //a somewhat smaller gain for *most* other matrices.
-  //int* b_firstcol = new int[2*numBrows];
-  GlobalOrdinal* b_firstcol = new int[2*numBrows];
-  GlobalOrdinal* b_lastcol = b_firstcol+numBrows;
-  GlobalOrdinal temp;
-  for(i=ST0; i<numBrows; ++i) {
+  int* b_firstcol = new int[2*numBrows];
+  int* b_lastcol = b_firstcol+numBrows;
+  int temp;
+  for(i=0; i<numBrows; ++i) {
     b_firstcol[i] = max_all_b;
     b_lastcol[i] = min_all_b;
 
-    size_t Blen_i = Bview.numEntriesPerRow[i];
-    if (Blen_i < ST1) continue;
-    ArrayRCP<LocalOrdinal> Bindices_i = Bview.indices[i];
+    int Blen_i = Bview.numEntriesPerRow[i];
+    if (Blen_i < 1) continue;
+    int* Bindices_i = Bview.indices[i];
 
     if (Bview.remote[i]) {
-      for(k=ST0; k<Blen_i; ++k) {
-        temp = Bview.importColMap->getGlobalElement(Bindices_i[k]);
+      for(k=0; k<Blen_i; ++k) {
+        temp = Bview.importColMap->GID(Bindices_i[k]);
         if (temp < b_firstcol[i]) b_firstcol[i] = temp;
         if (temp > b_lastcol[i]) b_lastcol[i] = temp;
       }
     }
     else {
-      for(k=ST0; k<Blen_i; ++k) {
+      for(k=0; k<Blen_i; ++k) {
         temp = bcols[Bindices_i[k]];
         if (temp < b_firstcol[i]) b_firstcol[i] = temp;
         if (temp > b_lastcol[i]) b_lastcol[i] = temp;
@@ -280,14 +263,12 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
     }
   }
 
-  Tpetra_Util util;
+  Epetra_Util util;
 
-  //int* Aind = iwork;
-  LocalOrdinal* Aind = iwork;
-  //int* Bind = iwork+maxlen;
-  LocalOrdinal* Bind = iwork+maxlen;
+  int* Aind = iwork;
+  int* Bind = iwork+maxlen;
 
-  bool C_filled = C.isFillComplete();
+  bool C_filled = C.Filled();
 
   //To form C = A*B^T, we're going to execute this expression:
   //
@@ -298,25 +279,24 @@ int mult_A_Btrans(CrsMatrixStruct& Aview,
   //dot-products with row A_i and row B_j for all i and j).
 
   //loop over the rows of A.
-  for(i=ST0; i<Aview.numRows; ++i) {
+  for(i=0; i<Aview.numRows; ++i) {
     if (Aview.remote[i]) {
       continue;
     }
 
-    ArrayRCP<LocalOrdinal> Aindices_i = Aview.indices[i];
-    ArrayRCP<Scalar> Aval_i  = Aview.values[i];
-    size_t A_len_i = Aview.numEntriesPerRow[i];
-    if (A_len_i < ST1) {
+    int* Aindices_i = Aview.indices[i];
+    double* Aval_i  = Aview.values[i];
+    int A_len_i = Aview.numEntriesPerRow[i];
+    if (A_len_i < 1) {
       continue;
     }
 
-    for(k=ST0; k<A_len_i; ++k) {
-      Aind[k] = Aview.colMap->getGlobalElement(Aindices_i[k]);
+    for(k=0; k<A_len_i; ++k) {
+      Aind[k] = Aview.colMap->GID(Aindices_i[k]);
       avals[k] = Aval_i[k];
     }
 
-    //util.Sort(true, A_len_i, Aind, 1, &avals, 0, NULL);
-    util.sort2(A_len_i, Aind, 1, &avals, 0, NULL);
+    util.Sort(true, A_len_i, Aind, 1, &avals, 0, NULL);
 
     int mina = Aind[0];
     int maxa = Aind[A_len_i-1];
@@ -1442,7 +1422,6 @@ int MatrixMatrix::Add(const Epetra_CrsMatrix& A,
 
   return(ierr);
 }
-
 
 
 
