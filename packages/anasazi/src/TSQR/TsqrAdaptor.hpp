@@ -241,6 +241,49 @@ namespace TSQR {
 			    contiguousCacheBlocks);
       }
 
+      /// \brief Rank-revealing decomposition
+      ///
+      /// Using the R factor from factor() and the explicit Q factor
+      /// from explicitQ(), compute the SVD of R (\f$R = U \Sigma
+      /// V^*\f$).  R.  If R is full rank (with respect to the given
+      /// relative tolerance), don't change Q or R.  Otherwise,
+      /// compute \f$Q := Q \cdot U\f$ and \f$R := \Sigma V^*\f$ in
+      /// place (the latter may be no longer upper triangular).
+      ///
+      /// \param Q [in/out] On input: the explicit Q factor computed
+      ///   by explicitQ().  On output: unchanged if R has full
+      ///   (numerical) rank, else \f$Q := Q \cdot U\f$, where \f$U\f$
+      ///   is the ncols by ncols matrix of R's left singular vectors.
+      ///
+      /// \param R [in/out] On input: ncols by ncols upper triangular
+      ///   matrix stored in column-major order.  On output: if input
+      ///   has full (numerical) rank, R is unchanged on output.
+      ///   Otherwise, if \f$R = U \Sigma V^*\f$ is the SVD of R, on
+      ///   output R is overwritten with \f$\Sigma \cdot V^*\f$.  This
+      ///   is also an ncols by ncols matrix, but may not necessarily
+      ///   be upper triangular.
+      ///
+      /// \return Rank \f$r\f$ of R: \f$ 0 \leq r \leq ncols\f$.
+      ///
+      local_ordinal_type
+      revealRank (multivector_type& Q,
+		  dense_matrix_type& R,
+		  const magnitude_type relativeTolerance,
+		  const bool contiguousCacheBlocks = false) const
+      {
+	using Teuchos::ArrayRCP;
+
+	local_ordinal_type nrowsLocal, ncols, ldqLocal;
+	fetchDims (Q, nrowsLocal, ncols, ldqLocal);
+
+	ArrayRCP< scalar_type > Q_ptr = fetchNonConstView (Q);
+	return pTsqr_->reveal_rank (nrowsLocal, ncols, 
+				    Q_ptr.get(), ldqLocal,
+				    R.values(), R.stride(), 
+				    relativeTolerance, 
+				    contiguousCacheBlocks);
+      }
+
       /// \brief Cache-block A_in into A_out
       ///
       /// Copy A_in into A_out, in a reorganized way that improves
