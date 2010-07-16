@@ -78,6 +78,15 @@ class BlockCrsGraph : public Teuchos::Describable {
    */
   Teuchos::ArrayRCP<const LocalOrdinal> getLocalRowView(LocalOrdinal LocalRow) const;
 
+  //! Get row-offsets. (This is the bptr array in VBR terminology.)
+  /*! Returns null if optimizeStorage has not been called.
+   */
+  Teuchos::ArrayRCP<const size_t> getNodeRowOffsets() const;
+
+  //! Get packed-col-indices. (This is the bindx array in VBR terminology.)
+  /*! Returns null if optimizeStorage has not been called.
+   */
+  Teuchos::ArrayRCP<const LocalOrdinal> getNodePackedIndices() const;
   //@}
 
   //! @name Transformational Methods

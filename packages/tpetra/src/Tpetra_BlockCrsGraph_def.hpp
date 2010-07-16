@@ -135,6 +135,22 @@ BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getLocalRowView(LocalOrdinal Loc
 
 //-------------------------------------------------------------------
 template<class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::ArrayRCP<const size_t>
+BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNodeRowOffsets() const
+{
+  return ptGraph_->getNodeRowOffsets();
+}
+
+//-------------------------------------------------------------------
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
+Teuchos::ArrayRCP<const LocalOrdinal>
+BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::getNodePackedIndices() const
+{
+  return ptGraph_->getNodePackedIndices();
+}
+
+//-------------------------------------------------------------------
+template<class LocalOrdinal, class GlobalOrdinal, class Node>
 void
 BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>::globalAssemble()
 {

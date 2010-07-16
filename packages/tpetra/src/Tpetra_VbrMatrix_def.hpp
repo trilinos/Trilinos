@@ -64,8 +64,6 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::VbrMatrix(const T
  : blkGraph_(Teuchos::rcp(new BlockCrsGraph<LocalOrdinal,GlobalOrdinal,Node>(blkRowMap, maxNumEntriesPerRow, pftype))),
    lclMatrix_(blkRowMap->getNodeNumBlocks(), blkRowMap->getPointMap()->getNode()),
    pbuf_values1D_(),
-   pbuf_bptr_(),
-   pbuf_bindx_(),
    pbuf_indx_(),
    lclMatVec_(blkRowMap->getPointMap()->getNode()),
    importer_(),
@@ -360,8 +358,11 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalBlockEntr
     LocalOrdinal& numPtCols,
     Teuchos::ArrayRCP<Scalar>& blockEntry)
 {
-  typedef Teuchos::ArrayRCP<const LocalOrdinal> Host_View;
-  typedef typename Host_View::iterator ITER;
+  typedef Teuchos::ArrayRCP<const LocalOrdinal> Device_RCP_LO;
+  typedef Teuchos::ArrayRCP<const size_t> Device_RCP;
+  typedef Teuchos::ArrayRCP<const LocalOrdinal> Host_View_LO;
+  typedef Teuchos::ArrayRCP<const size_t> Host_View;
+  typedef typename Host_View_LO::iterator ITER;
   //This method returns a non-constant view of a block-entry (as an ArrayRCP).
 
   TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error,
@@ -372,14 +373,16 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalBlockEntr
 
   Teuchos::RCP<Node> node = getNode();
 
-  Host_View bptr = node->template viewBuffer<LocalOrdinal>(2,pbuf_bptr_+localBlockRow);
+  Device_RCP d_bptr = blkGraph_->getNodeRowOffsets();
+  Host_View bptr = node->template viewBuffer<size_t>(2,d_bptr+localBlockRow);
   LocalOrdinal bindx_offset = bptr[0];
   LocalOrdinal length = bptr[1] - bindx_offset;
 
   TEST_FOR_EXCEPTION( length < 1, std::runtime_error,
     "Tpetra::VbrMatrix::getLocalBlockEntryViewNonConst ERROR, specified localBlockCol not found in localBlockRow.");
 
-  Host_View bindx = node->template viewBuffer<LocalOrdinal>(length, pbuf_bindx_+bindx_offset);
+  Device_RCP_LO d_bindx = blkGraph_->getNodePackedIndices();
+  Host_View_LO bindx = node->template viewBuffer<LocalOrdinal>(length, d_bindx+bindx_offset);
   ITER bindx_beg = bindx.begin(), bindx_end = bindx.end();
   ITER it = std::lower_bound(bindx_beg, bindx_end, localBlockCol);
 
@@ -390,7 +393,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalBlockEntr
   numPtCols = getBlockColMap()->getLocalBlockSize(localBlockCol);
 
   const LocalOrdinal blkSize = numPtRows*numPtCols;
-  Host_View indx = node->template viewBuffer<LocalOrdinal>(1,pbuf_indx_+bptr[0]+(it-bindx_beg));
+  Host_View_LO indx = node->template viewBuffer<LocalOrdinal>(1,pbuf_indx_+bptr[0]+(it-bindx_beg));
   const LocalOrdinal offset = indx[0];
   blockEntry = node->template viewBufferNonConst<Scalar>(Kokkos::ReadWrite, blkSize, pbuf_values1D_ + offset);
 }
@@ -405,8 +408,11 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalBlockEntr
       LocalOrdinal& numPtCols,
       Teuchos::ArrayRCP<const Scalar>& blockEntry) const
 {
-  typedef Teuchos::ArrayRCP<const LocalOrdinal> Host_View;
-  typedef typename Host_View::iterator ITER;
+  typedef Teuchos::ArrayRCP<const size_t> Device_RCP;
+  typedef Teuchos::ArrayRCP<const LocalOrdinal> Device_RCP_LO;
+  typedef Teuchos::ArrayRCP<const size_t> Host_View;
+  typedef Teuchos::ArrayRCP<const LocalOrdinal> Host_View_LO;
+  typedef typename Host_View_LO::iterator ITER;
   //This method returns a constant view of a block-entry (as an ArrayRCP).
 
   TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error,
@@ -417,11 +423,13 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalBlockEntr
 
   Teuchos::RCP<Node> node = getNode();
 
-  Host_View bptr = node->template viewBuffer<LocalOrdinal>(2, pbuf_bptr_+localBlockRow);
-  LocalOrdinal bindx_offset = bptr[0];
-  LocalOrdinal length = bptr[1] - bindx_offset;
+  Device_RCP d_bptr = blkGraph_->getNodeRowOffsets();
+  Host_View bptr = node->template viewBuffer<size_t>(2, d_bptr+localBlockRow);
+  size_t bindx_offset = bptr[0];
+  size_t length = bptr[1] - bindx_offset;
 
-  Host_View bindx = node->template viewBuffer<LocalOrdinal>(length, pbuf_bindx_+bindx_offset);
+  Device_RCP_LO d_bindx = blkGraph_->getNodePackedIndices();
+  Host_View_LO bindx = node->template viewBuffer<LocalOrdinal>(length, d_bindx+bindx_offset);
   ITER bindx_beg = bindx.begin(), bindx_end = bindx.end();
   ITER it = std::lower_bound(bindx_beg, bindx_end, localBlockCol);
 
@@ -432,7 +440,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalBlockEntr
   numPtCols = getBlockColMap()->getLocalBlockSize(localBlockCol);
 
   const LocalOrdinal blkSize = numPtRows*numPtCols;
-  Host_View indx = node->template viewBuffer<LocalOrdinal>(1, pbuf_indx_+bptr[0]+(it-bindx_beg));
+  Host_View_LO indx = node->template viewBuffer<LocalOrdinal>(1, pbuf_indx_+bptr[0]+(it-bindx_beg));
   const LocalOrdinal offset = indx[0];
   blockEntry = node->template viewBuffer<Scalar>(blkSize, pbuf_values1D_ + offset);
 }
@@ -563,9 +571,13 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, clas
 void
 VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::optimizeStorage()
 {
+  typedef Teuchos::ArrayRCP<const size_t> Device_RCP;
+  typedef Teuchos::ArrayRCP<const LocalOrdinal> Device_RCP_LO;
+  typedef Teuchos::ArrayRCP<const size_t> Host_View;
+  typedef Teuchos::ArrayRCP<const LocalOrdinal> Host_View_LO;
+
   if (is_storage_optimized_ == true) return;
 
-  size_t num_block_rows = blkGraph_->getNodeNumRows();
   size_t num_block_nonzeros = blkGraph_->getNodeNumEntries();
 
   //need to count the number of point-entries:
@@ -580,34 +592,24 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::optimizeStorage()
 
   const Teuchos::RCP<Node>& node = getBlockRowMap()->getPointMap()->getNode();
 
-  //Don't change these allocation sizes unless you know what you're doing!
-  //The '+1's are in the right place. (Trust me, I'm a trained professional.)
-  pbuf_bptr_ = node->template allocBuffer<LocalOrdinal>(num_block_rows+1);
-  pbuf_bindx_= node->template allocBuffer<LocalOrdinal>(num_block_nonzeros);
   pbuf_indx_ = node->template allocBuffer<LocalOrdinal>(num_block_nonzeros+1);
   pbuf_values1D_ = node->template allocBuffer<Scalar>(num_point_entries);
 
-  Teuchos::ArrayRCP<LocalOrdinal> v_bptr = node->template viewBufferNonConst<LocalOrdinal>(Kokkos::WriteOnly, num_block_rows+1, pbuf_bptr_);
-  Teuchos::ArrayRCP<LocalOrdinal> v_bindx = node->template viewBufferNonConst<LocalOrdinal>(Kokkos::WriteOnly, num_block_nonzeros, pbuf_bindx_);
   Teuchos::ArrayRCP<LocalOrdinal> v_indx = node->template viewBufferNonConst<LocalOrdinal>(Kokkos::WriteOnly, num_block_nonzeros+1, pbuf_indx_);
   Teuchos::ArrayRCP<Scalar> v_values1D = node->template viewBufferNonConst<Scalar>(Kokkos::WriteOnly, num_point_entries, pbuf_values1D_);
 
-  size_t roffset = 0;
   size_t ioffset = 0;
   size_t offset = 0;
   Teuchos::Array<Teuchos::Array<Teuchos::ArrayRCP<Scalar> > >& pbuf_vals2D = *values2D_;
   for(Tsize_t r=0; r<pbuf_vals2D.size(); ++r) {
     LocalOrdinal rsize = getBlockRowMap()->getLocalBlockSize(r);
 
-    v_bptr[r] = roffset;
     Tsize_t rlen = pbuf_vals2D[r].size();
-    roffset += rlen;
 
     Teuchos::ArrayRCP<const LocalOrdinal> blk_row_inds = blkGraph_->getLocalRowView(r);
     MapGlobalArrayRCP& blk_row = (*col_ind_2D_global_)[r];
 
     for(Tsize_t c=0; c<rlen; ++c) {
-      v_bindx[ioffset] = blk_row_inds[c];
       v_indx[ioffset++] = offset;
 
       LocalOrdinal csize = getBlockColMap()->getLocalBlockSize(blk_row_inds[c]);
@@ -625,7 +627,6 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::optimizeStorage()
       offset += blkSize;
     }
   }
-  v_bptr[num_block_rows] = roffset;
   v_indx[ioffset] = offset;
 
   //Final step: release memory for the "2D" storage:
@@ -648,8 +649,8 @@ void VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillLocalMat
   lclMatrix_.setPackedValues(pbuf_values1D_,
                              getBlockRowMap()->getNodeFirstPointInBlocks_Device(),
                              getBlockColMap()->getNodeFirstPointInBlocks_Device(),
-                             pbuf_bptr_,
-                             pbuf_bindx_,
+                             blkGraph_->getNodeRowOffsets(),
+                             blkGraph_->getNodePackedIndices(),
                              pbuf_indx_);
 }
 

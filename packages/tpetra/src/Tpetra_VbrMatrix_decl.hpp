@@ -367,15 +367,16 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   //It takes 6 arrays to adequately represent a variable-block-row
   //matrix in packed (contiguous storage) form. For a description of these
   //arrays, see the text at the bottom of this file.
-  //(Note that 2 of those arrays, rptr and cptr, are represented by arrays in the
-  //getBlockRowMap() and getBlockColMap() objects.)
+  //(2 of those arrays, rptr and cptr, are represented by arrays in the
+  //getBlockRowMap() and getBlockColMap() objects, and
+  //another two of those arrays, bptr and bindx, are represented by arrays in the
+  //BlockCrsGraph object.)
+  //This is noted in the comments for rptr,cptr,bptr,bindx below.
   //
   //These arrays are handled as if they may point to memory that resides on
   //a separate device (e.g., a GPU). In other words, when the contents of these
   //arrays are manipulated, we use views or buffers obtained from the Node object.
   Teuchos::ArrayRCP<Scalar> pbuf_values1D_;
-  Teuchos::ArrayRCP<LocalOrdinal> pbuf_bptr_;
-  Teuchos::ArrayRCP<LocalOrdinal> pbuf_bindx_;
   Teuchos::ArrayRCP<LocalOrdinal> pbuf_indx_;
 
   LocalMatOps lclMatVec_;
@@ -415,16 +416,20 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
 //
 // rptr: length num_block_rows + 1
 //       rptr[i]: the pt-row corresponding to the i-th block-row
+//       Note: rptr is getBlockRowMap()->getNodeFirstPointInBlocks().
 //
 // cptr: length num_distinct_block_cols + 1
 //       cptr[j]: the pt-col corresponding to the j-th block-col
+//       Note: cptr is getBlockColMap()->getNodeFirstPointInBlocks().
 //
 // bptr: length num_block_rows + 1
 //       bptr[i]: location in bindx of the first nonzero block-entry
 //                of the i-th block-row
+//       Note: bptr is blkGraph_->getNodeRowOffsets();
 //
 // bindx: length num-nonzero-block-entries
 //        bindx[j]: block-col-index of j-th block-entry
+//        Note: bindx is blkGraph_->getNodePackedIndices();
 //
 // indx: length num-nonzero-block-entries + 1
 //       indx[j] location in vals of the beginning of the j-th
