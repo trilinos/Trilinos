@@ -1,7 +1,7 @@
 INCLUDE(AddSubdirectories)
   
 ADD_SUBDIRECTORY(
-  solvers
+#  solvers
   adapters
   )
 
