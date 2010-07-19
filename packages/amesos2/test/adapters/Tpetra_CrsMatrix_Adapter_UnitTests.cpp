@@ -106,10 +106,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrixAdapter, Initialization, Scalar, LO,
   eye->fillComplete();
   // Constructor from RCP
   RCP<ADAPT> adapter  = rcp(new MatrixAdapter<MAT>(eye));
-  // Constructor from raw pointer
-  RCP<ADAPT> adapter2 = rcp(new MatrixAdapter<MAT>(eye.getRawPtr()));
   // Copy constructor
-  RCP<ADAPT> adapter3 = rcp(new MatrixAdapter<MAT>(*adapter));
+  RCP<ADAPT> adapter2 = rcp(new MatrixAdapter<MAT>(*adapter));
 
   // The following should all pass at compile time
   TEST_ASSERT( (is_same<Scalar,typename ADAPT::scalar_type>::value) );
@@ -144,6 +142,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsMatrixAdapter, Dimensions, Scalar, LO, GO 
 
   // Constructor from RCP
   RCP<MatrixAdapter<MAT> > adapter  = rcp(new MatrixAdapter<MAT>(eye));
+
   TEST_EQUALITY(eye->getGlobalNumEntries(), adapter->getGlobalNNZ());
   TEST_EQUALITY(eye->getNodeNumEntries(), adapter->getLocalNNZ());
   TEST_EQUALITY(eye->getGlobalNumRows(), adapter->getGlobalNumRows());
