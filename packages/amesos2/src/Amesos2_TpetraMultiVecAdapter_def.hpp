@@ -2,7 +2,7 @@
   \file   Amesos2_TpetraMultiVecAdapter_def.hpp
   \author Eric T Bavier <etbavier@sandia.gov>
   \date   Wed May 26 19:48:32 CDT 2010
-  
+
   \brief  Amesos2::MultiVecAdapter specialization for the
           Tpetra::MultiVector class.
 */
@@ -10,15 +10,11 @@
 #ifndef AMESOS2_TPETRA_MULTIVEC_ADAPTER_DEF_HPP
 #define AMESOS2_TPETRA_MULTIVEC_ADAPTER_DEF_HPP
 
-#include <Teuchos_RCP.hpp>
-#include <Teuchos_Ptr.hpp>
-#include <Teuchos_Array.hpp>
-
 using Tpetra::MultiVector;
 
 namespace Amesos {
 
-  
+
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node >
 void
 MultiVecAdapter<
@@ -27,7 +23,7 @@ MultiVecAdapter<
               GlobalOrdinal,
               Node> >::get1dCopy(
                 const Teuchos::ArrayView<Scalar>& A,
-                size_t lda) const 
+                size_t lda) const
 {
   if( mv_->isDistributed() ){
     this->localize();
@@ -50,7 +46,7 @@ MultiVecAdapter<
   if( local ){
     /* Use the global element list returned by
      * mv_->getMap()->getNodeElementList() to get a subCopy of mv_ which we
-     * assign to l_mv_, then return get1dView() of l_mv_
+     * assign to l_mv_, then return get1dViewNonConst() of l_mv_
      */
     if(l_l_mv_.is_null() ){
       Teuchos::ArrayView<const GlobalOrdinal> nodeElements_go
@@ -63,9 +59,9 @@ MultiVecAdapter<
       for( it_go = nodeElements_go.begin(); it_go != nodeElements_go.end(); ++it_go ){
         *(it_st++) = Teuchos::as<size_t>(*it_go);
       }
-      
+
       l_l_mv_ = mv_->subCopy(nodeElements_st);
-      
+
       return(l_l_mv_->get1dViewNonConst());
     } else {
       // We need to re-import values to the local, since changes may have been
@@ -81,22 +77,22 @@ MultiVecAdapter<
       for( it_go = nodeElements_go.begin(); it_go != nodeElements_go.end(); ++it_go ){
         *(it_st++) = Teuchos::as<size_t>(*it_go);
       }
-      
+
       return l_l_mv_->get1dViewNonConst();
     }
   } else {
     if( mv_->isDistributed() ){
       this->localize();
-        
+
       return l_mv_->get1dViewNonConst();
     } else {                      // not distributed, no need to import
       return mv_->get1dViewNonConst();
     }
   }
 }
-    
 
-  
+
+// Implementation is almost identical to get1dCopy()
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node >
 void
 MultiVecAdapter<
@@ -104,22 +100,75 @@ MultiVecAdapter<
               LocalOrdinal,
               GlobalOrdinal,
               Node> >::get2dCopy(
-                Teuchos::ArrayView<Teuchos::ArrayView<scalar_type> > A) const
+                Teuchos::ArrayView<const Teuchos::ArrayView<scalar_type> > A) const
 {
-  
+  if( mv_->isDistributed() ){
+    this->localize();
+
+    l_mv_->get2dCopy(A);
+  } else {
+    mv_.get2dCopy(A);
+  }
 }
-  
+
+
+// Implementation is almost identical to get1dViewNonConst()
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node >
 Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >
 MultiVecAdapter<
   MultiVector<Scalar,
               LocalOrdinal,
               GlobalOrdinal,
-              Node> >::get2dView() const
+              Node> >::get2dViewNonConst( bool local ) const
 {
-  
+  if( local ){
+    /* Use the global element list returned by
+     * mv_->getMap()->getNodeElementList() to get a subCopy of mv_ which we
+     * assign to l_mv_, then return get2dViewNonConst() of l_mv_
+     */
+    if(l_l_mv_.is_null() ){
+      Teuchos::ArrayView<const GlobalOrdinal> nodeElements_go
+        = mv_->getMap()->getNodeElementList();
+      Teuchos::Array<size_t> nodeElements_st(nodeElements_go.size());
+
+      // Convert the node element to a list of size_t type objects
+      typename Teuchos::ArrayView<const GlobalOrdinal>::iterator it_go;
+      Teuchos::Array<size_t>::iterator it_st = nodeElements_st.begin();
+      for( it_go = nodeElements_go.begin(); it_go != nodeElements_go.end(); ++it_go ){
+        *(it_st++) = Teuchos::as<size_t>(*it_go);
+      }
+
+      l_l_mv_ = mv_->subCopy(nodeElements_st);
+
+      return(l_l_mv_->get2dViewNonConst());
+    } else {
+      // We need to re-import values to the local, since changes may have been
+      // made to the global structure that are not reflected in the local
+      // view.
+      Teuchos::ArrayView<const GlobalOrdinal> nodeElements_go
+        = mv_->getMap()->getNodeElementList();
+      Teuchos::Array<size_t> nodeElements_st(nodeElements_go.size());
+
+      // Convert the node element to a list of size_t type objects
+      typename Teuchos::ArrayView<const GlobalOrdinal>::iterator it_go;
+      Teuchos::Array<size_t>::iterator it_st = nodeElements_st.begin();
+      for( it_go = nodeElements_go.begin(); it_go != nodeElements_go.end(); ++it_go ){
+        *(it_st++) = Teuchos::as<size_t>(*it_go);
+      }
+
+      return l_l_mv_->get2dViewNonConst();
+    }
+  } else {
+    if( mv_->isDistributed() ){
+      this->localize();
+
+      return l_mv_->get2dViewNonConst();
+    } else {                      // not distributed, no need to import
+      return mv_->get2dViewNonConst();
+    }
+  }
 }
-  
+
 
 template <typename Scalar, typename LocalOrdinal, typename GlobalOrdinal, class Node >
 void
@@ -183,7 +232,7 @@ MultiVecAdapter<
   MultiVector<Scalar,
               LocalOrdinal,
               GlobalOrdinal,
-              Node> >::description() const 
+              Node> >::description() const
 {
   std::ostringstream oss;
   oss << "Amesos2 adapter wrapping: ";
@@ -202,7 +251,7 @@ MultiVecAdapter<
               Node> >::describe(
                 Teuchos::FancyOStream& os,
                 const Teuchos::EVerbosityLevel verbLevel=
-                Teuchos::Describable::verbLevel_default) const 
+                Teuchos::Describable::verbLevel_default) const
 {
 
 }
@@ -231,7 +280,7 @@ MultiVecAdapter<
 
     l_mv_ = Teuchos::rcp(
       new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>(l_map_,numVectors));
-      
+
     importer_ = Teuchos::rcp(
       new Tpetra::Import<LocalOrdinal,GlobalOrdinal>(o_map_, l_map_));
 
@@ -239,7 +288,7 @@ MultiVecAdapter<
   } else {
     // Just update local values
     l_mv_->doImport(*mv_, *importer_, Tpetra::REPLACE);
-  }    
+  }
 }
 
 
