@@ -6,7 +6,7 @@
 namespace Amesos {
 
 std::string version(){
-  return( "Amesos2 version 0.1 - 06/29/2010");
+  return( "Amesos2 version 0.1 - 07/08/2010");
 }
 
 } // end namespace Amesos
