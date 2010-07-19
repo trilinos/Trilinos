@@ -65,7 +65,7 @@ namespace Teuchos {
 			std::runtime_error, 
 			"Cannot convert xmlObject to StringToIntegralValidator. Expected a " << dummyValidator.getXMLTagName() 
 			<< " tag but got a " << xmlObj.getTag() << "tag");
-		return rcp(new FileNameValidator(xmlObj.getWithDefault<bool>(getFileMustExistAttributeName(), FileNameValidator::mustAlreadyExistDefault)));
+		return rcp(new FileNameValidator(xmlObj.getWithDefault<bool>(getFileMustExistAttributeName(), FileNameValidator::mustAlreadyExistDefault())));
 	}
 
 	XMLObject FileNameValidatorXMLConverter::convertValidator(const RCP<const ParameterEntryValidator> validator, ValidatortoIDMap& validatorMap) const{
