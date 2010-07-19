@@ -61,10 +61,10 @@ public:
   /** \brief Construct with a mapping from strings to ordinals <tt>0</tt> to
    * </tt>n-1</tt>.
    *
-   * \param  strings
-   *             [in] Array of unique std::string names.
-   * \param  defaultParameterName
-   *             [in] The default name of the parameter (used in error messages)
+   * \param strings [in] Array of unique std::string names.
+   *
+   * \param defaultParameterName [in] The default name of the parameter (used
+   * in error messages)
    */
   StringToIntegralParameterEntryValidator(
     ArrayView<const std::string> const& strings,
@@ -74,13 +74,13 @@ public:
   /** \brief Construct with a mapping from strings to aribitrary typed
    * integral values.
    *
-   * \param  strings
-   *             [in] Array of unique std::string names.
-   * \param  integralValues
-   *            [in] Array that gives the integral values associated with
-   *            <tt>strings[]</tt>
-   * \param  defaultParameterName
-   *             [in] The default name of the parameter (used in error messages)
+   * \param strings [in] Array of unique std::string names.
+   *
+   * \param integralValues [in] Array that gives the integral values
+   * associated with <tt>strings[]</tt>
+   *
+   * \param defaultParameterName [in] The default name of the parameter (used
+   * in error messages)
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>strings.size() == integralValues.size()</tt>
@@ -95,15 +95,16 @@ public:
   /** \brief Construct with a mapping from strings (with documentation) to
    * aribitrary typed integral values.
    *
-   * \param  strings
-   *             [in] Array of unique std::string names.
-   * \param  stringsDocs
-   *             [in] Array of documentation strings for each std::string value.
-   * \param  integralValues
-   *            [in] Array that gives the integral values associated with
-   *            <tt>strings[]</tt>
-   * \param  defaultParameterName
-   *             [in] The default name of the parameter (used in error messages)
+   * \param strings [in] Array of unique std::string names.
+   *
+   * \param stringsDocs [in] Array of documentation strings for each
+   * std::string value.
+   *
+   * \param integralValues [in] Array that gives the integral values
+   * associated with <tt>strings[]</tt>
+   *
+   * \param defaultParameterName [in] The default name of the parameter (used
+   * in error messages)
    *
    * <b>Preconditions:</b><ul>
    * <li> <tt>strings.size() == stringDocs.size()</tt>
@@ -124,10 +125,11 @@ public:
 
   /** \brief Perform a mapping from a std::string value to its integral value.
    *
-   * \param  str  [in] String that is being used to lookup the corresponding
-   *              integral value.
-   * \param  paramName
-   *              [in] Optional name that will be used to generate error messages.
+   * \param str [in] String that is being used to lookup the corresponding
+   * integral value.
+   *
+   * \param paramName [in] Optional name that will be used to generate error
+   * messages.
    *
    * If the std::string name <tt>str</tt> does not exist, the an std::exception will be
    * thrown with a very descriptive error message.
@@ -140,15 +142,15 @@ public:
   /** \brief Perform a mapping from a std::string value embedded in a
    * <tt>ParameterEntry</tt> object and return its associated integral value.
    *
-   * \param  entry
-   *              [in] The std::string entry.
-   * \param  paramName
-   *              [in] Optional name that will be used to generate error messages.
-   * \param  sublistName
-   *              [in] The name of the sublist.
-   * \param  activeQuery
-   *              [in] If true, then this lookup will be recored as an active query
-   *              which will turn the <tt>isUsed</tt> bool to <tt>true</tt>.
+   * \param entry [in] The std::string entry.
+   *
+   * \param paramName [in] Optional name that will be used to generate error
+   * messages.
+   *
+   * \param sublistName [in] The name of the sublist.
+   *
+   * \param activeQuery [in] If true, then this lookup will be recored as an
+   * active query which will turn the <tt>isUsed</tt> bool to <tt>true</tt>.
    */
   IntegralType getIntegralValue(
     const ParameterEntry &entry, const std::string &paramName = "",
@@ -159,15 +161,15 @@ public:
    * <tt>ParameterEntry</tt> object.
    *
    *
-   * \param  entry
-   *              [in] The std::string entry.
-   * \param  paramName
-   *              [in] Optional name that will be used to generate error messages.
-   * \param  sublistName
-   *              [in] The name of the sublist.
-   * \param  activeQuery
-   *              [in] If true, then this lookup will be recored as an active query
-   *              which will turn the <tt>isUsed</tt> bool to <tt>true</tt>.
+   * \param entry [in] The std::string entry.
+   *
+   * \param paramName [in] Optional name that will be used to generate error
+   * messages.
+   *
+   * \param sublistName [in] The name of the sublist.
+   *
+   * \param activeQuery [in] If true, then this lookup will be recored as an
+   * active query which will turn the <tt>isUsed</tt> bool to <tt>true</tt>.
    */
   std::string getStringValue(
     const ParameterEntry &entry, const std::string &paramName = "",
@@ -191,7 +193,8 @@ public:
     const std::string &defaultValue
     ) const;
 
-  /** \brief Get a pointer to the array containing all the documentation strings.
+  /** \brief Get a pointer to the array containing all the documentation
+   * strings.
    *
    * \return A point to the array containing all the documentation strings.
    */
@@ -203,14 +206,16 @@ public:
    */
   const std::string& getDefaultParameterName() const;
 
-  /** \brief Validate the std::string and pass it on..
+  /** \brief Validate the std::string and pass it on.
    *
-   * \param  str  [in] String that is being used to lookup the corresponding
-   *              integral value.
-   * \param  name [in] Optional name that will be used to generate error messages.
+   * \param str [in] String that is being used to lookup the corresponding
+   * integral value.
    *
-   * If the std::string name <tt>str</tt> does not exist, the an std::exception will be
-   * thrown with a very descriptive error message.
+   * \param name [in] Optional name that will be used to generate error
+   * messages.
+   *
+   * If the std::string name <tt>str</tt> does not exist, the an
+   * std::exception will be thrown with a very descriptive error message.
    */
   std::string validateString(
     const std::string &str, const std::string &paramName = "",
@@ -247,10 +252,12 @@ public:
 private:
 
   /** \brief. static decleration and assignment of the tagName */
-  static const std::string& tagName(){
-    static const std::string tagName_ = TypeNameTraits<IntegralType>::name() + "stringtointegralvalidator";
-  return tagName_;
-  }
+  static const std::string& tagName()
+    {
+      static const std::string tagName_ =
+        TypeNameTraits<IntegralType>::name() + "stringtointegralvalidator";
+      return tagName_;
+    }
   typedef std::map<std::string,IntegralType> map_t;
   std::string defaultParameterName_;
   std::string validValues_;
@@ -308,13 +315,13 @@ stringToIntegralParameterEntryValidator(
   );
 
 
-/** \brief Set up a std::string parameter that will use an embedded validator to
- * allow the extraction of an integral value.
+/** \brief Set up a std::string parameter that will use an embedded validator
+ * to allow the extraction of an integral value.
  *
  * The function <tt>getIntegralValue()</tt> can then be used to extract the
- * integral value of the std::string parameter.  In this case, the integral value
- * return will just be the zero-based index of the std::string value in the list
- * <tt>strings</tt>.
+ * integral value of the std::string parameter.  In this case, the integral
+ * value return will just be the zero-based index of the std::string value in
+ * the list <tt>strings</tt>.
  *
  * \relates ParameterList
  */
@@ -328,13 +335,14 @@ void setStringToIntegralParameter(
   );
 
 
-/** \brief Set up a std::string parameter that will use an embedded validator to
- * allow the extraction of an integral value from a list of integral values.
+/** \brief Set up a std::string parameter that will use an embedded validator
+ * to allow the extraction of an integral value from a list of integral
+ * values.
  *
  * The function <tt>getIntegralValue()</tt> can then be used to extract the
- * integral value of the std::string parameter.  In this case, the integral value
- * return will just be the zero-based index of the std::string value in the list
- * <tt>strings</tt>.
+ * integral value of the std::string parameter.  In this case, the integral
+ * value return will just be the zero-based index of the std::string value in
+ * the list <tt>strings</tt>.
  *
  * \relates ParameterList
  */
@@ -349,14 +357,14 @@ void setStringToIntegralParameter(
   );
 
 
-/** \brief Set up a std::string parameter with documentation strings for each valid
- * value that will use an embedded validator to allow the extraction of an
- * integral value from a list of integral values.
+/** \brief Set up a std::string parameter with documentation strings for each
+ * valid value that will use an embedded validator to allow the extraction of
+ * an integral value from a list of integral values.
  *
  * The function <tt>getIntegralValue()</tt> can then be used to extract the
- * integral value of the std::string parameter.  In this case, the integral value
- * return will just be the zero-based index of the std::string value in the list
- * <tt>strings</tt>.
+ * integral value of the std::string parameter.  In this case, the integral
+ * value return will just be the zero-based index of the std::string value in
+ * the list <tt>strings</tt>.
  *
  * \relates ParameterList
  */
@@ -372,12 +380,13 @@ void setStringToIntegralParameter(
   );
 
 
-/** \brief Get an integral value for a parameter that is assumed to already be set.
+/** \brief Get an integral value for a parameter that is assumed to already be
+ * set.
  *
  * This function does a dynamic cast to get the underlying valiator of type
  * StringToIntegralParameterEntryValidator<IntegralType>.  If this dynamic
- * cast failes then an <tt>Exceptions::InvalidParameterType</tt> std::exception is
- * thrown with an excellent error message.
+ * cast failes then an <tt>Exceptions::InvalidParameterType</tt>
+ * std::exception is thrown with an excellent error message.
  *
  * \relates ParameterList
  */
@@ -387,7 +396,8 @@ IntegralType getIntegralValue(
   );
 
 
-/** \brief Get a std::string value for a parameter that is assumed to already be set.
+/** \brief Get a std::string value for a parameter that is assumed to already
+ * be set.
  *
  * This function does a dynamic cast to get the underlying valiator of type
  * StringToIntegralParameterEntryValidator<IntegralValue>.  The default type
@@ -403,8 +413,8 @@ std::string getStringValue(
   );
 
 
-/** \brief Get a StringToIntegralParameterEntryValidator<IntegralType> object out of
- * a ParameterEntry object.
+/** \brief Get a StringToIntegralParameterEntryValidator<IntegralType> object
+ * out of a ParameterEntry object.
  *
  * This function with thrown of the validator does not exist.
  */
@@ -416,8 +426,8 @@ getStringToIntegralParameterEntryValidator(
   );
 
 
-/** \brief Return the std::string name of the verbosity level as it is accepted by the
- * verbosity level parameter.
+/** \brief Return the std::string name of the verbosity level as it is
+ * accepted by the verbosity level parameter.
  *
  * \relates EVerbosityLevel
  */
@@ -498,11 +508,12 @@ public:
   /** \brief Construct with allowed input and output types and the preferred
    * type.
    *
-   * \param preferredType
-   *          [in] Determines the preferred type.  This enum value is used to 
-   *          set the default value in the override <tt>validateAndModify()</tt>.
-   * \param acceptedType
-   *          [in] Determines the types that are allowed in the parameter list.
+   * \param preferredType [in] Determines the preferred type.  This enum value
+   * is used to set the default value in the override
+   * <tt>validateAndModify()</tt>.
+   *
+   * \param acceptedType [in] Determines the types that are allowed in the
+   * parameter list.
    */
   AnyNumberParameterEntryValidator(
     EPreferredType const preferredType,
@@ -795,11 +806,12 @@ TEUCHOS_LIB_DLL_EXPORT double getDoubleParameter(
 
 /** \brief Get std::string numeric parameter.
  *
- * If the underlying parameter type is already a std::string, then all is good.
- * However, if it is not, then a AnyNumberParameterEntryValidator object is
- * looked for to extract the type correctly.  If no validator is attached to
- * the entry, then a new AnyNumberParameterEntryValidator object will be
- * created that that will allow the conversion from any supported type.
+ * If the underlying parameter type is already a std::string, then all is
+ * good.  However, if it is not, then a AnyNumberParameterEntryValidator
+ * object is looked for to extract the type correctly.  If no validator is
+ * attached to the entry, then a new AnyNumberParameterEntryValidator object
+ * will be created that that will allow the conversion from any supported
+ * type.
  *
  * The parameter must exist or an <tt>Exceptions::InvalidParameterName</tt>
  * object will be thrown.  The parameters type must be acceptable, or an
@@ -812,8 +824,9 @@ TEUCHOS_LIB_DLL_EXPORT std::string getNumericStringParameter(
   std::string const& paramName
   );
 
-/* \brief Default structure used by EnhancedNumberTraits<T> to produce
- * a compile time  error when the specialization does not exist for type
+
+/* \brief Default structure used by EnhancedNumberTraits<T> to produce a
+ * compile time error when the specialization does not exist for type
  * <tt>T</tt>.
  */
 template <class T>
@@ -823,31 +836,48 @@ struct UndefinedEnhancedNumberTraits{
 };
 
 
-/*! \brief Class defining the traits of the number type being used in an EnhancedNumberValidator
+/** \brief Class defining the traits of the number type being used in an
+ * EnhancedNumberValidator
  *
- * This class defines some of the traits of a number type being used by an EnhancedNumberValidator.
- * The number has the following traits:
- *   \li \c min Defines the minimum possible value the number type can take on.
- *   \li \c max Defines the maximum possible value the number type can take on.
- *   \li \c defaultStep Defines the default amount a value of the number type should be incremented by when being incremented in a UI.
- *   \li \c defaultPrecision Defines the default number of decimals with which the number type should be displayed in a UI. This trait is useless for non-floating point number types.
+ * This class defines some of the traits of a number type being used by an
+ * EnhancedNumberValidator.  The number has the following traits:
  *
- * Note that simply using this class will result in compile time errors. Only specializations of this class will produce valid code.
+ * \li \c min Defines the minimum possible value the number type can take on.
+ *
+ * \li \c max Defines the maximum possible value the number type can take on.
+ *
+ * \li \c defaultStep Defines the default amount a value of the number type
+ * should be incremented by when being incremented in a UI.
+ *
+ * \li \c defaultPrecision Defines the default number of decimals with which
+ * the number type should be displayed in a UI. This trait is useless for
+ * non-floating point number types.
+ *
+ * Note that simply using this class will result in compile time errors. Only
+ * specializations of this class will produce valid code.
  */
 template <class T>
 class EnhancedNumberTraits{
 public:
+
   /* \brief Gets the minimum possible value the number type can take on. */
-  static inline T min() { return UndefinedEnhancedNumberTraits<T>::notDefined(); }
+  static inline T min()
+    { return UndefinedEnhancedNumberTraits<T>::notDefined(); }
 
   /* \brief Gets the maximum possible value the number type can take on. */
-  static inline T max() { return UndefinedEnhancedNumberTraits<T>::notDefined(); }
+  static inline T max()
+    { return UndefinedEnhancedNumberTraits<T>::notDefined(); }
 
-  /* \brief gets default amount a value of the number type should be incremented by when being utilizied in a UI. */
-  static inline T defaultStep() { return UndefinedEnhancedNumberTraits<T>::notDefined(); }
+  /* \brief gets default amount a value of the number type should be
+   * incremented by when being utilizied in a UI. */
+  static inline T defaultStep()
+    { return UndefinedEnhancedNumberTraits<T>::notDefined(); }
 
-  /* \brief Gets the default precision with which the number type should be displayed. */
-  static inline unsigned short defaultPrecision() { return UndefinedEnhancedNumberTraits<T>::notDefined(); }
+  /* \brief Gets the default precision with which the number type should be
+   * displayed. */
+  static inline unsigned short defaultPrecision()
+     { return UndefinedEnhancedNumberTraits<T>::notDefined(); }
+
 };
 
 
@@ -966,19 +996,30 @@ public:
   /** \brief Constructs a EnhancedNumberValidator.
    *
    * @param min The minimum acceptable value for this validator.
+   *
    * @param max The maximum acceptable value for this validator.
-   * @param step The increments at which the values being validated should be changed when incremented in a UI.
-   * @param precision The number of decimials places to which the values validated shold be compared to the
-   * min and max and the number of decimals which are displayed in a UI. This parameter is pretty much meamingless for non-floating point types.
+   *
+   * @param step The increments at which the values being validated should be
+   * changed when incremented in a UI.
+   *
+   * @param precision The number of decimials places to which the values
+   * validated shold be compared to the min and max and the number of decimals
+   * which are displayed in a UI. This parameter is pretty much meamingless
+   * for non-floating point types.
    */
   EnhancedNumberValidator(T min, T max, T step=EnhancedNumberTraits<T>::defaultStep(), unsigned short precision=EnhancedNumberTraits<T>::defaultPrecision()):ParameterEntryValidator(),
   minVal(min), maxVal(max), step_(step), precision_(precision), containsMin(true), containsMax(true){}
 
-  /** \brief Constructs a EnhancedNumberValidator without an explicit minimum or maximum.
+  /** \brief Constructs a EnhancedNumberValidator without an explicit minimum
+   * or maximum.
    *
-   * @param step The increments at which the values being validated should be changed when incremented in a UI.
-   * @param precision The number of decimials places to which the values validated shold be compared to the
-   * min and max and the number of decimals which are displayed in a UI. This parameter is pretty much meamingless for non-floating point types.
+   * @param step The increments at which the values being validated should be
+   * changed when incremented in a UI.
+   *
+   * @param precision The number of decimials places to which the values
+   * validated shold be compared to the min and max and the number of decimals
+   * which are displayed in a UI. This parameter is pretty much meamingless
+   * for non-floating point types.
    */
   EnhancedNumberValidator():
     ParameterEntryValidator(),
@@ -1083,7 +1124,8 @@ public:
     any anyValue = entry.getAny(true);
     if(anyValue.type() == typeid(T) ){
       bool isValueInRange; 
-      any_cast<T>(anyValue) >= minVal && any_cast<T>(anyValue) <= maxVal ? isValueInRange = true : isValueInRange=false;
+      any_cast<T>(anyValue) >= minVal && any_cast<T>(anyValue) <= maxVal
+        ? isValueInRange = true : isValueInRange=false;
       if(!(isValueInRange)){
         std::stringstream oss;
         std::string msg;
@@ -1173,25 +1215,30 @@ private:
 class FileNameValidator : public ParameterEntryValidator {
 public:
 
-  /* \brief The default value of the mustAlreadyExist parameter in the constructor. */
+  /* \brief The default value of the mustAlreadyExist parameter in the
+   * constructor. */
   static bool mustAlreadyExistDefault() { return false; }
 
   /** \brief Constructs a FileNameValidator.
    *
-   * @param mustAlreadyExist True if the file the user specifies should already exists, false otherwise.
+   * @param mustAlreadyExist True if the file the user specifies should
+   * already exists, false otherwise.
    */
   FileNameValidator(bool mustAlreadyExist = mustAlreadyExistDefault());
 
-  /** \brief  Gets the variable describing whether or not this validator wants the file that is specified to
-   * already exist.
+  /** \brief Gets the variable describing whether or not this validator wants
+   * the file that is specified to already exist.
    *
    * @return Whether or not the validator requires the file to already exist
    */
   bool fileMustExist() const;
 
-  /** \brief Sets whether or not the validator requires the file to already exist.
+  /** \brief Sets whether or not the validator requires the file to already
+   * exist.
    *
-   * @param shouldFileExist True if the file should already exist, false otherwise.
+   * @param shouldFileExist True if the file should already exist, false
+   * otherwise.
+   *
    * @return The new value of the shouldFileExist variable.
    */
   bool setFileMustExist(bool shouldFileExist);
@@ -1217,10 +1264,11 @@ private:
 };
 
 
-/** \brief A simple validator that only allows certain string values to be choosen or simply
- * enforces that a particular parameter have a std::string for a value.
+/** \brief A simple validator that only allows certain string values to be
+ * choosen or simply enforces that a particular parameter have a std::string
+ * for a value.
  */
-class StringValidator : public ParameterEntryValidator{
+class StringValidator : public ParameterEntryValidator {
 public:
 
   /** \brief Constructs a StringValidator.
@@ -1233,10 +1281,11 @@ public:
    */
   StringValidator();
 
-  /** \brief Sets the Array of valid strings and returns what the current array of valid
-   * string now is.
+  /** \brief Sets the Array of valid strings and returns what the current
+   * array of valid string now is.
    *
    * @param validStrings What the array for the valid strings should contain.
+   *
    * @return What the arry for the valid strings now conatians.
    */
   ValidStringsList setValidStrings(const Teuchos::Array<std::string> &validStrings);
@@ -1245,7 +1294,8 @@ public:
   ValidStringsList validStringValues() const;
 
   /** \brief . */
-  void validate(ParameterEntry const &entry, std::string const &paramName, std::string const &sublistName) const;
+  void validate(ParameterEntry const &entry, std::string const &paramName,
+    std::string const &sublistName) const;
 
   /** \brief . */
   const std::string getXMLTagName() const;
@@ -1264,11 +1314,12 @@ private:
 
 /** \brief Takes a validator, wraps it, and applies it to an array.
  *
- * This class is a wrapper, allowing you to apply a normal validator to an array of values.
- * It is templated on both the validator type and the type of the entries contained within the array.
+ * This class is a wrapper, allowing you to apply a normal validator to an
+ * array of values.  It is templated on both the validator type and the type
+ * of the entries contained within the array.
  */
 template<class ValidatorType, class EntryType>
-class ArrayValidator : public ParameterEntryValidator{
+class ArrayValidator : public ParameterEntryValidator {
 public:
 
   /** \brief Constructs a ArrayValidator.
@@ -1286,39 +1337,41 @@ public:
   }
 
   /** \brief . */
-  virtual void validate(ParameterEntry const &entry, std::string const &paramName, std::string const &sublistName) const{
-    any anyValue = entry.getAny(true);
-    if(anyValue.type() == typeid(Array<EntryType>)){
-      Array<EntryType> extracted = getValue<Teuchos::Array<EntryType> >(entry);
-      for(int i = 0; i<extracted.size(); ++i){
-        ParameterEntry dummyParameter;
-        dummyParameter.setValue(extracted[i]);
-        try{
-          prototypeValidator_->validate(dummyParameter, paramName, sublistName);
-        }
-        catch(Exceptions::InvalidParameterValue& e){
-          std::stringstream oss;
-          oss << "Array Validator Exception: \n" << "Bad Index: " << i << "\n" << e.what();
-          throw Exceptions::InvalidParameterValue(oss.str());
+  virtual void validate(ParameterEntry const &entry, std::string const &paramName,
+    std::string const &sublistName) const
+    {
+      any anyValue = entry.getAny(true);
+      if(anyValue.type() == typeid(Array<EntryType>)){
+        Array<EntryType> extracted = getValue<Teuchos::Array<EntryType> >(entry);
+        for(int i = 0; i<extracted.size(); ++i){
+          ParameterEntry dummyParameter;
+          dummyParameter.setValue(extracted[i]);
+          try{
+            prototypeValidator_->validate(dummyParameter, paramName, sublistName);
+          }
+          catch(Exceptions::InvalidParameterValue& e){
+            std::stringstream oss;
+            oss << "Array Validator Exception: \n" << "Bad Index: " << i << "\n" << e.what();
+            throw Exceptions::InvalidParameterValue(oss.str());
+          }
         }
       }
+      else{
+        const std::string &entryName = entry.getAny(false).typeName();
+        std::stringstream oss;
+        std::string msg;
+        oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+          " parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
+          "No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
+          "can help you figure out what went wrong.\n\n"
+          "Error: The value you entered was the wrong type.\n" <<
+          "Parameter: " << paramName << "\n" <<
+          "Type specified: " << entryName << "\n" <<
+          "Type accepted: " << TypeNameTraits<Array<std::string> >::name() << "\n";
+        msg = oss.str();
+        throw Exceptions::InvalidParameterType(msg);
+      }
     }
-    else{
-      const std::string &entryName = entry.getAny(false).typeName();
-      std::stringstream oss;
-      std::string msg;
-      oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
-      " parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
-      "No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
-      "can help you figure out what went wrong.\n\n"
-      "Error: The value you entered was the wrong type.\n" <<
-      "Parameter: " << paramName << "\n" <<
-      "Type specified: " << entryName << "\n" <<
-      "Type accepted: " << TypeNameTraits<Array<std::string> >::name() << "\n";
-      msg = oss.str();
-      throw Exceptions::InvalidParameterType(msg);
-    }
-  }
 
 // rabartl: ToDo: This above function needs to be moved outside of the class
 // or the compiler will try to inline it (but not).
@@ -1351,10 +1404,12 @@ private:
 };
 
 
-/* \brief Convience class for StringValidators that are to be applied to arays.
+/* \brief Convience class for StringValidators that are to be applied to
+ * arays.
  *
- * Also needed for maintaining backwards compatiblitiy with the earliest versions of the Optika package.
- * This class would be a simple typedef, however I wanted to maintain consistency with the ArrayNumberValidator
+ * Also needed for maintaining backwards compatiblitiy with the earliest
+ * versions of the Optika package.  This class would be a simple typedef,
+ * however I wanted to maintain consistency with the ArrayNumberValidator
  * class which cannot be typedef'd.
  */
 class ArrayStringValidator : public ArrayValidator<StringValidator, std::string>{
@@ -1364,10 +1419,12 @@ public:
 };
 
 
-/* \brief Convience class for FileNameValidators that are to be applied to arays.
+/* \brief Convience class for FileNameValidators that are to be applied to
+ * arays.
  *
- * Also needed for maintaining backwards compatiblitiy with the earliest versions of the Optika package.
- * This class would be a simple typedef, however I wanted to maintain consistency with the ArrayNumberValidator
+ * Also needed for maintaining backwards compatiblitiy with the earliest
+ * versions of the Optika package.  This class would be a simple typedef,
+ * however I wanted to maintain consistency with the ArrayNumberValidator
  * class which cannot be typedef'd.
  */
 class ArrayFileNameValidator : public ArrayValidator<FileNameValidator, std::string>{
@@ -1376,11 +1433,13 @@ public:
     ArrayValidator<FileNameValidator, std::string>(prototypeValidator){}
 };
 
-/* \class Teuchos::ArrayNumberValidator 
- * \brief Convience class for EnhancedNumberValidators that are to be applied to arays.
+
+/* \brief Convience class for EnhancedNumberValidators that are to be applied
+ * to arays.
  *
- * Also needed for maintaining backwards compatiblitiy with the earliest versions of the Optika package.
- * This class would be a simple typedef, however the current c++ compilers do not support templated typedefs
+ * Also needed for maintaining backwards compatiblitiy with the earliest
+ * versions of the Optika package.  This class would be a simple typedef,
+ * however the current c++ compilers do not support templated typedefs
  */
 template<class T>
 class ArrayNumberValidator : public ArrayValidator<EnhancedNumberValidator<T>, T>{
