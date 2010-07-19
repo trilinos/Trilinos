@@ -372,12 +372,12 @@ ENDFUNCTION()
 # Macro that ouptuts XML dependency files
 #
 
-
 MACRO(PACKAGE_ARCH_WRITE_XML_DEPENDENCY_FILES)
   
   IF (${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE)
     IF (NOT IS_ABSOLUTE ${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE})
-      SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE})
+      SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE
+        ${CMAKE_CURRENT_BINARY_DIR}/${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE})
     ENDIF()
     MESSAGE("" )
     MESSAGE("Dumping the XML dependencies file ${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE} ..." )
@@ -387,7 +387,8 @@ MACRO(PACKAGE_ARCH_WRITE_XML_DEPENDENCY_FILES)
   
   IF (${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE AND ${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE)
     IF (NOT IS_ABSOLUTE ${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE})
-      SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE})
+      SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE
+        ${CMAKE_CURRENT_BINARY_DIR}/${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE})
     ENDIF()
     MESSAGE("" )
     MESSAGE("Dumping the HTML dependencies webpage file ${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE} ..." )
@@ -486,6 +487,36 @@ MACRO(PACKAGE_ARCH_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
 
   # ToDo: Uncomment this once you have read in the extra package depencencies
   #PACKAGE_ARCH_WRITE_XML_DEPENDENCY_FILES()
+
+ENDMACRO()
+
+
+#
+# Adjust package enable logic and print out before and after state
+#
+
+MACRO(PACKAGE_ARCH_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES)
+
+  PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
+    "\nExplicitly enabled packages on input (by user)" ON FALSE)
+  PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
+    "\nExplicitly disabled packages on input (by user or by default)" OFF FALSE)
+  PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
+    "\nExplicitly enabled TPLs on input (by user)" ON FALSE)
+  PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
+    "\nExplicitly disabled TPLs on input (by user or by default)" OFF FALSE)
+
+  SET(DO_PROCESS_MPI_ENABLES ON) # Should not be needed but CMake is not working!
+  PACKAGE_ARCH_ADJUST_PACKAGE_ENABLES(TRUE)
+
+  PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
+    "\nFinal set of enabled packages" ON FALSE)
+  PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
+    "\nFinal set of non-enabled packages" OFF TRUE)
+  PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
+    "\nFinal set of enabled TPLs" ON FALSE)
+  PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
+    "\nFinal set of non-enabled TPLs" OFF TRUE)
 
 ENDMACRO()
 

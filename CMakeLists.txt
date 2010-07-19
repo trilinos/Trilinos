@@ -125,26 +125,7 @@ IF (NOT Trilinos_ENABLE_Fortran)
   SET(Trilinos_ENABLE_ForTrilinos OFF)
 ENDIF()
 
-PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
-  "\nExplicitly enabled packages on input (by user)" ON FALSE)
-PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
-  "\nExplicitly disabled packages on input (by user or by default)" OFF FALSE)
-PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
-  "\nExplicitly enabled TPLs on input (by user)" ON FALSE)
-PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
-  "\nExplicitly disabled TPLs on input (by user or by default)" OFF FALSE)
-
-SET(DO_PROCESS_MPI_ENABLES ON) # Should not be needed but CMake is not working!
-PACKAGE_ARCH_ADJUST_PACKAGE_ENABLES(TRUE)
-
-PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
-  "\nFinal set of enabled packages" ON FALSE)
-PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
-  "\nFinal set of non-enabled packages" OFF TRUE)
-PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
-  "\nFinal set of enabled TPLs" ON FALSE)
-PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
-  "\nFinal set of non-enabled TPLs" OFF TRUE)
+PACKAGE_ARCH_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES()
 
 
 #
@@ -156,6 +137,10 @@ IF (Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING)
   MESSAGE(SEND_ERROR "Shortcircuiting after dependency tracking ...")
   RETURN()
 ENDIF()
+
+# ToDo: rabartl: Remove the above once the unit tests have been refactored to
+# just run macros and not the entire system.
+
 
 #
 # F) Add the 'dashboard' target
