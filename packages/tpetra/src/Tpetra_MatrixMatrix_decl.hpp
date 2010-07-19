@@ -118,9 +118,9 @@ class MatrixMatrix {
      */
     static int Add(const CrsMatrixType& A,
                    bool transposeA,
-                   double scalarA,
+                   Scalar scalarA,
                    CrsMatrixType& B,
-                   double scalarB);
+                   Scalar scalarB);
 
     /** Given CrsMatrix objects A and B, form the sum C = a*A + b*B
 
@@ -145,10 +145,10 @@ class MatrixMatrix {
      */
     static int Add(const CrsMatrixType& A,
                    bool transposeA,
-                   double scalarA,
+                   Scalar scalarA,
                    const CrsMatrixType& B,
                    bool transposeB,
-                   double scalarB,
+                   Scalar scalarB,
                    CrsMatrixType * & C);
 
 };//class MatrixMatrix
