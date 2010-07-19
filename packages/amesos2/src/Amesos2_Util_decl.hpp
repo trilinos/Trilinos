@@ -1,8 +1,8 @@
 /**
-  \file   Amesos2_Utils_decl.cpp
+  \file   Amesos2_Util_decl.hpp
   \author Eric T Bavier <etbavier@sandia.gov>
   \date   Thu May 27 13:11:13 CDT 2010
-  
+
   \brief  Utility functions for Amesos2
 */
 
@@ -11,23 +11,24 @@
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_BLAS_types.hpp>
+#include <Teuchos_FancyOStream.hpp>
 
 namespace Amesos {
 
 namespace Util {
 
 
-/** \brief Computes the true residual
- * 
+/**
+ * \brief Computes the true residual
+ *
  * Computes the true residual, \f$ B - A*X \f$ , and prints the results.
  *
- * \param A Matrix 
+ * \param A Matrix
  * \param X Vector
  * \param B Vector
  * \param trans  \c true = use transpose for matrix-vector multiply
  * \param prefix string prefix to prints before rest of output
  *
- * TODO: Switch function parameters to accept Teuchos::RCP<> objects
  */
 template <typename Matrix,
           typename Vector>
@@ -59,7 +60,7 @@ void setMaxProcesses(
 
 
 /// Prints a line of 70 "-"s on std::cout.
-void printLine();
+void printLine( Teuchos::FancyOStream &out );
 
 
 } // end namespace Util

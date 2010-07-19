@@ -1,8 +1,8 @@
 /**
-  \file   Amesos2_Utils_def.cpp
+  \file   Amesos2_Util_def.hpp
   \author Eric T Bavier <etbavier@sandia.gov>
   \date   Wed May 26 19:37:37 CDT 2010
-  
+
   \brief  Utility functions for Amesos2
 */
 
@@ -11,16 +11,7 @@
 
 #include <Teuchos_ScalarTraits.hpp>
 
-/** \brief Computes the true residual
- * 
- * Computes the true residual, B - A*X, and prints the results.
- *
- * \param A Matrix 
- * \param X Vector
- * \param B Vector
- * \param trans  \c true = use transpose for matrix-vector multiply
- * \param prefix string prefix to prints before rest of output
- *
+/*
  * TODO: Use Matrix and MultiVecAdapters instead of strait matrix and vector arguments
  */
 template <typename Matrix,
@@ -107,12 +98,13 @@ void Amesos::Util::setMaxProcesses(
   return;
 }
 
-/// Prints a line of 70 "-"s on std::cout.
-void Amesos::Util::printLine() {
-  std::cout << "-----------------------------------";
-  std::cout << "-----------------------------------"
-            << std::endl;
+/// Prints a line of 80 "-"s on std::cout.
+void Amesos::Util::printLine( Teuchos::FancyOStream &out )
+{
+  out << "----------------------------------------"
+      << "----------------------------------------"
+      << std::endl;
 }
-  
+
 
 #endif	// #ifndef AMESOS2_UTIL_DEF_HPP
