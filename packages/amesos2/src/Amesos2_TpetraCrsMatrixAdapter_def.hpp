@@ -10,13 +10,7 @@
 #ifndef AMESOS2_TPETRA_CRSMATRIX_ADAPTER_DEF_HPP
 #define AMESOS2_TPETRA_CRSMATRIX_ADAPTER_DEF_HPP
 
-#include <Teuchos_RCP.hpp>
 #include <Teuchos_Ptr.hpp>
-#include <Teuchos_Array.hpp>
-#include <Teuchos_MPIContainerComm.hpp>
-#include <Teuchos_CommHelpers.hpp>
-
-#include <Tpetra_CrsMatrix.hpp>
 
 #include "Amesos2_MatrixAdapter.hpp"
 
@@ -63,27 +57,6 @@ MatrixAdapter<
   { }
 
 
-// TODO: We should probably remove this constructor altogether.  It is much
-// safer to use the RCP method to pass a matrix in.
-template< typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          class    Node,
-          class    LocalMatOps >
-MatrixAdapter<
-  CrsMatrix<
-    Scalar,
-    LocalOrdinal,
-    GlobalOrdinal,
-    Node,
-    LocalMatOps
-    >
-  >::MatrixAdapter(
-    CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>* const m)
-    : mat_(Teuchos::rcp(m,false)) // Non-owning RCP
-{ }
-
-
 template< typename Scalar,
           typename LocalOrdinal,
           typename GlobalOrdinal,
@@ -102,375 +75,7 @@ MatrixAdapter<
     : mat_(m)
   { }
 
-/** \brief Scales values of \c this by a factor of \c alpha
- *
- * \param [in] alpha scalar factor
- *
- * \return reference to \c this
- */
-template< typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          class    Node,
-          class    LocalMatOps >
-MatrixAdapter<
-  CrsMatrix<
-    Scalar,
-    LocalOrdinal,
-    GlobalOrdinal,
-    Node,
-LocalMatOps> >&
-MatrixAdapter<
-  CrsMatrix<
-    Scalar,
-    LocalOrdinal,
-    GlobalOrdinal,
-    Node,
-    LocalMatOps
-    >
-  >::scale(const Scalar alpha)
-{
-  mat_->scale(alpha);
 
-  return *this;
-}
-
-/** \brief Updates the values of \c this to \f$this = alpha*this + beta*B\f$
- *
- * \param [in] beta scalar coefficient of \c B
- * \param [in] B additive MultiVector
- * \param [in] alpha scalar coefficient of \c this
- *
- * \return reference to \c this
- */
-/* TODO: May not need this function */
-template< typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          class    Node,
-          class    LocalMatOps >
-MatrixAdapter<
-  CrsMatrix<
-    Scalar,
-    LocalOrdinal,
-    GlobalOrdinal,
-    Node,
-LocalMatOps> >&
-MatrixAdapter<
-  CrsMatrix<
-    Scalar,
-    LocalOrdinal,
-    GlobalOrdinal,
-    Node,
-    LocalMatOps
-    >
-  >::update(
-    const Scalar beta,
-    const MatrixAdapter<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >& B,
-    const Scalar alpha)
-  {
-    // TODO
-    return *this;
-  }
-
-
-template< typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          class    Node,
-          class    LocalMatOps >
-bool
-MatrixAdapter<
-  CrsMatrix<
-    Scalar,
-    LocalOrdinal,
-    GlobalOrdinal,
-    Node,
-    LocalMatOps
-    >
-  >::isLocal()
-{
-  return mat_->isLocallyIndexed();
-}
-
-
-template< typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          class    Node,
-          class    LocalMatOps >
-Teuchos::RCP<const Teuchos::Comm<int> >
-MatrixAdapter<
-  CrsMatrix<
-    Scalar,
-    LocalOrdinal,
-    GlobalOrdinal,
-    Node,
-    LocalMatOps
-    >
-  >::getComm() const
-{
-  return mat_->getComm();
-}
-
-
-template< typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          class    Node,
-          class    LocalMatOps >
-size_t
-MatrixAdapter<
-  CrsMatrix<
-    Scalar,
-    LocalOrdinal,
-    GlobalOrdinal,
-    Node,
-    LocalMatOps
-    >
-  >::getLocalNumRows() const
-{
-  return mat_->getNodeNumRows();
-}
-
-
-template< typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          class    Node,
-          class    LocalMatOps >
-size_t
-MatrixAdapter<
-  CrsMatrix<
-    Scalar,
-    LocalOrdinal,
-    GlobalOrdinal,
-    Node,
-    LocalMatOps
-    >
-  >::getLocalNumCols() const
-{
-  return mat_->getNodeNumCols();
-}
-
-
-template< typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          class    Node,
-          class    LocalMatOps >
-typename MatrixAdapter<
-  CrsMatrix<
-    Scalar,
-    LocalOrdinal,
-    GlobalOrdinal,
-    Node,
-    LocalMatOps
-    >
-  >::global_size_type
-MatrixAdapter<
-  CrsMatrix<
-    Scalar,
-    LocalOrdinal,
-    GlobalOrdinal,
-    Node,
-    LocalMatOps
-    >
-  >::getGlobalNumRows() const
-{
-  return mat_->getGlobalNumRows();
-}
-
-
-template< typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          class    Node,
-          class    LocalMatOps >
-typename MatrixAdapter<
-  CrsMatrix<
-    Scalar,
-    LocalOrdinal,
-    GlobalOrdinal,
-    Node,
-    LocalMatOps
-    >
-  >::global_size_type
-MatrixAdapter<
-  CrsMatrix<
-    Scalar,
-    LocalOrdinal,
-    GlobalOrdinal,
-    Node,
-    LocalMatOps
-    >
-  >:: getGlobalNumCols() const
-{
-  return mat_->getGlobalNumCols();
-}
-
-
-template< typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          class    Node,
-          class    LocalMatOps >
-size_t
-MatrixAdapter<
-  CrsMatrix<
-    Scalar,
-    LocalOrdinal,
-    GlobalOrdinal,
-    Node,
-    LocalMatOps
-    >
-  >::getLocalNNZ() const
-{
-  return mat_->getNodeNumEntries();
-}
-
-
-template< typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          class    Node,
-          class    LocalMatOps >
-typename MatrixAdapter<
-  CrsMatrix<
-    Scalar,
-    LocalOrdinal,
-    GlobalOrdinal,
-    Node,
-    LocalMatOps
-    >
-  >::global_size_type
-MatrixAdapter<
-  CrsMatrix<
-    Scalar,
-    LocalOrdinal,
-    GlobalOrdinal,
-    Node,
-    LocalMatOps
-    >
-  >::getGlobalNNZ() const
-{
-  return mat_->getGlobalNumEntries();
-}
-
-
-template< typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          class    Node,
-          class    LocalMatOps >
-size_t
-MatrixAdapter<
-  CrsMatrix<
-    Scalar,
-    LocalOrdinal,
-    GlobalOrdinal,
-    Node,
-    LocalMatOps
-    >
-  >::getMaxNNZ() const
-{
-  return mat_->getGlobalMaxNumRowEntries();
-}
-
-
-template< typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          class    Node,
-          class    LocalMatOps >
-Teuchos::RCP<
-  const Tpetra::Map<
-    LocalOrdinal,
-    GlobalOrdinal,
-    Node> >
-MatrixAdapter<
-  CrsMatrix<
-    Scalar,
-    LocalOrdinal,
-    GlobalOrdinal,
-    Node,
-    LocalMatOps
-    >
-  >::getRowMap() const
-{
-  return mat_->getRowMap();
-}
-
-
-// TODO: The following two methods for Domain and Range Maps are
-// used at least in the matrixShapeOK_impl() method for
-// Amesos2::Superlu.  If their only function is to eventually get
-// the size of the Domain and Range, we might want to provide
-// functions that return those numbers instead of returning the Maps
-// themselves, because the subsequent accessor methods for size
-// might be (probably are) inconsitent accross the types.
-template< typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          class    Node,
-          class    LocalMatOps >
-Teuchos::RCP<
-  const Tpetra::Map<
-    LocalOrdinal,
-    GlobalOrdinal,
-    Node> >
-MatrixAdapter<
-  CrsMatrix<
-    Scalar,
-    LocalOrdinal,
-    GlobalOrdinal,
-    Node,
-    LocalMatOps
-    >
-  >::getColMap() const
-{
-  return mat_->getColMap();
-}
-
-
-// template< typename Scalar,
-//           typename LocalOrdinal,
-//           typename GlobalOrdinal,
-//           class    Node,
-//           class    LocalMatOps >
-// Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >
-// MatrixAdapter<CrsMatrix<Scalar,
-//                         LocalOrdinal,
-//                         GlobalOrdinal,
-//                         Node,
-//                         LocalMatOps> >::getDomainMap() const;
-
-
-/** \brief Gets a compressed-row storage summary of \c this
- *
- * Extracts a compressed-row storage format of the matrix and stores the
- * information in the user-supplied containers.
- *
- * \param [out] nzval will hold the values of the nonzero entries of \c this
- * \param [out] colind will hold the column indices of \c this for each row.
- * \param [out] rowptr is of size <tt>nrow + 1</tt> and \c rowptr[j] stores
- *              the location in \c nzval and \c colind which starts row \c j
- *              of \c this.  <tt>rowptr[nrow] = nnz</tt>, where \c nrow is
- *              the number of rows in this matrix.
- * \param [out] nnz is the number of nonzero entries in this matrix.
- * \param [in]  local If \c false, the processor with ID \c root will contain
- *              a representation of the global matrix.  If \c true, then each
- *              processor will end up with a CRS representation of the matrix
- *              rows that it owns.
- * \param [in]  root Is the processor ID of the node that will end up with
- *              the CRS representation of the matrix.
- *
- * \exception std::runtime_error Thrown if \c nzval or \c colind is not
- * large enough to hold the global number of nonzero values.
- *
- * \exception std::runtime_error Thrown if \c rowptr is not at least
- * <tt>nrow + 1</tt> in size, the required size.
- */
 template< typename Scalar,
           typename LocalOrdinal,
           typename GlobalOrdinal,
@@ -542,7 +147,7 @@ MatrixAdapter<
     rowptr[numrows] = nnz;
   } else {                      // This matrix is distributed
     using Teuchos::Array;
-    using Teuchos::Ptr;
+    // using Teuchos::Ptr;
     using Teuchos::OrdinalTraits;
 
     /* Each processor has an array the length of globalNumRows, each index
@@ -637,15 +242,6 @@ MatrixAdapter<
 }
 
 
-
-/** \brief Get a CRS representation of this matrix for all nodes.
- * 
- * like \c getCrs() but at the end, each node will have a copy of the CRS
- * representation of the matrix.
- *
- * \note the \c local parameter of \c getCrs() does not make
- * sense in this context, so it is left out.
- */
 /* We left in the root parameter just for advanced use.  It may in some cases
  * affect the runtime speed of the getCrs method depending on the distribution
  * of the matrix across node.
@@ -671,7 +267,6 @@ MatrixAdapter<
     size_t& nnz,
     int root)
 {
-  // TODO
   using Teuchos::ArrayView;
   Teuchos::RCP<const Teuchos::Comm<int> > comm = getComm();
   const int rank = comm->getRank();
@@ -683,6 +278,46 @@ MatrixAdapter<
   Teuchos::broadcast(*comm, root, (ArrayView<Scalar>)nzval);
   Teuchos::broadcast(*comm, root, (ArrayView<Scalar>)colind);
   Teuchos::broadcast(*comm, root, (ArrayView<Scalar>)rowptr);
+  Teuchos::broadcast(*comm, root, Teuchos::ptrFromRef(nnz));
+}
+
+
+/* We left in the root parameter just for advanced use.  It may in some cases
+ * affect the runtime speed of the getCrs method depending on the distribution
+ * of the matrix across node.
+ */
+template< typename Scalar,
+          typename LocalOrdinal,
+          typename GlobalOrdinal,
+          class    Node,
+          class    LocalMatOps >
+void
+MatrixAdapter<
+  CrsMatrix<
+    Scalar,
+    LocalOrdinal,
+    GlobalOrdinal,
+    Node,
+    LocalMatOps
+    >
+  >::getCcsAll(
+    const Teuchos::ArrayView<Scalar> nzval,
+    const Teuchos::ArrayView<GlobalOrdinal> rowind,
+    const Teuchos::ArrayView<Tpetra::global_size_t> colptr,
+    size_t& nnz,
+    int root)
+{
+  using Teuchos::ArrayView;
+  Teuchos::RCP<const Teuchos::Comm<int> > comm = getComm();
+  const int rank = comm->getRank();
+  // Root gather data
+  if ( rank == root ){
+    getCcs(nzval, rowind, colptr, nnz);
+  }
+  // Then we broadcast to all
+  Teuchos::broadcast(*comm, root, (ArrayView<Scalar>)nzval);
+  Teuchos::broadcast(*comm, root, (ArrayView<Scalar>)rowind);
+  Teuchos::broadcast(*comm, root, (ArrayView<Scalar>)colptr);
   Teuchos::broadcast(*comm, root, Teuchos::ptrFromRef(nnz));
 }
 
