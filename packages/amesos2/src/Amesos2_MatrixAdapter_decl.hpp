@@ -2,7 +2,7 @@
   \file   Amesos2_MatrixAdapter.hpp
   \author Eric T Bavier <etbavier@sandia.gov>
   \date   Sat Feb  6 10:00:22 2010
-  
+
   \brief  A templated adapter class for Matrix Objects.
           Specializations may be created for any matrix that needs to
           be adapted for use by Amesos2.
@@ -13,101 +13,153 @@
 
 namespace Amesos {
 
-// TODO: Update required methods list
 
-/** \brief A templated Matrix class adapter for Amesos2.
+/**
+ * \brief A templated Matrix class adapter for Amesos2.
  *
  * Specializations of this templated class provide a unified interface
  * to Matrix types for Amesos2.  Any specializations are excpected to
  * implement the following methods:
- * 
- * <br><b>Implementation Requirements:</b>
+ *
+ * <br>
+ * <b>Implementation Requirements:</b>
  * <ul>
- * <li>Default constructor
- * \code MatrixAdapter<MatrixType>(); \endcode
+ * <li> Default constructor
+ * \code MatrixAdapter<matrix_type>(); \endcode
  * </li>
  *
- * <li>Wrapper constructor
- * \code MatrixAdapter<MatrixType>(MatrixType* const mat); \endcode
+ * <li> Wrapper constructor.
+ *
+ * \code
+ * MatrixAdapter<matrix_type>(const Teuchos::RCP<matrix_type>& mat);
+ * \endcode
  * </li>
  *
- * <li>Copy constructor
- * \code MatrixAdapter<MatrixType>(MatrixAdapter<MatrixType>& const); \endcode
+ * <li> Copy constructor.
+ *
+ * \code
+ * MatrixAdapter<matrix_type>(const MatrixAdapter<matrix_type>& adapter);
+ * \endcode
  * </li>
  *
- * <li>Matrix scaling operation.  Scales each element by \c alpha
- * \code void scale(const scalar_type alpha); \endcode
+ * <li> Method to get locality of matrix, either globally or locally indexed.
+ *
+ * \code
+ * bool isLocal() const;
+ * \endcode
  * </li>
  *
- * <li>Matrix add operation.  Replace each element in \c this with \f$alpha*this + beta*B\f$
- * \code void add(const scalar_type beta, MatrixAdapter<MatrixType> B, const scalar_type alpha); \endcode
+ * <li> Method to get matrix communicator.
+ *
+ * \code
+ * const Teuchos::RCP<const Teuchos::Comm<int> >& getComm() const;
+ * \endcode
  * </li>
  *
- * <li>Method to get locality of matrix, either globally or locally indexed
- * \code bool isLocal() \endcode
+ * <li> Methods to get the local and global number of rows and columns
+ *
+ * \code
+ * size_t getLocalNumRows() const;
+ *
+ * size_t getLocalNumCols() const;
+ *
+ * global_size_type getGlobalNumRows() const;
+ *
+ * global_size_type getGlobalNumCols() const;
+ * \endcode
  * </li>
  *
- * <li>Method to get matrix communicator
- * \code virtual const Teuchos::RCP<const Teuchos::Comm<int> >& getComm() const; \endcode
+ * <li> Method to access number of nonzero entries.
+ *
+ * \code
+ * size_t getLocalNNZ() const;
+ *
+ * global_size_type getGlobalNNZ() const;
+ * \endcode
  * </li>
  *
- * <li>Methods to get the local and global number of rows and columns
- * \code local_ordinal_type  getLocalNumRows();
- * local_ordinal_type  getLocalNumCols();
- * global_ordinal_type getGlobalNumRows();
- * global_ordinal_type getGlobalNumCols(); \endcode
+ * <li> Method to get the maximum number of nonzeros in all rows.
+ * \code
+ * size_t getMaxNNZ() const;
+ * \endcode
  * </li>
  *
- * <li>Method to access number of nonzero entries
- * \code local_ordinal_type  getLocalNNZ();
- * global_ordinal_type getGlobalNNZ(); \endcode
+ * <li> Map methods
+ * \code
+ * Teuchos::RCP<const Tpetra::Map<LO,GO,Node> > getRowMap() const;
+ *
+ * Teuchos::RCP<const Tpetra::Map<LO,GO,Node> > getColMap() const;
+ * \endcode
  * </li>
  *
- * <li>Method to get the maximum number of nonzeros in all rows.
- * \code global_ordinal_type getMaxNNZ(); \endcode
+ * <li> Methods to get compressed-row and compressed-column representations of
+ * the underlying matrix.
+ *
+ * \code
+ * void getCrs(
+ *   const Teuchos::ArrayView<scalar_type> nzval,
+ *   const Teuchos::ArrayView<GO> colind,
+ *   const Teuchos::ArrayView<global_size_type> rowptr,
+ *   size_t& nnz,
+ *   bool local = false,
+ *   int root = 0);
+ *
+ * void getCcs(
+ *   const Teuchos::ArrayView<scalar_type> nzval,
+ *   const Teuchos::ArrayView<GO> rowind,
+ *   const Teuchos::ArrayView<global_size_type> colptr,
+ *   size_t& nnz,
+ *   bool local = false,
+ *   int root = 0);
+ *
+ * void getCrsAll(
+ *   const Teuchos::ArrayView<scalar_type> nzval,
+ *   const Teuchos::ArrayView<GO> colind,
+ *   const Teuchos::ArrayView<global_size_type> rowptr,
+ *   size_t& nnz,
+ *   int root = 0);
+ *
+ * void getCcsAll(
+ *   const Teuchos::ArrayView<scalar_type> nzval,
+ *   const Teuchos::ArrayView<GO> rowind,
+ *   const Teuchos::ArrayView<global_size_type> colptr,
+ *   size_t& nnz,
+ *   int root = 0);
+ * \endcode
  * </li>
  *
- * <li>Map methods
- * \code Teuchos::RCP<Map> getRowMap();
- *  Teuchos::RCP<Map> getRangeMap();
- *	Teuchos::RCP<Map> getDomainMap(); \endcode
+ * <li> Methods to update the underlying matrix given CRS and CCS
+ * representations.
+ *
+ * \code
+ * void updateValuesCrs(
+ *   const Teuchos::ArrayView<scalar_type> nzval,
+ *   const Teuchos::ArrayView<GO> colind,
+ *   const Teuchos::ArrayView<global_size_type> rowptr);
+ *
+ * void updateValuesCcs(
+ *   const Teuchos::ArrayView<scalar_type> nzval,
+ *   const Teuchos::ArrayView<GO> rowind,
+ *   const Teuchos::ArrayView<global_size_type> colptr);
+ * \endcode
+ *
+ * <li> Get a description of this adapter
+ * \code
+ * std::string description() const;
+ * \endcode
  * </li>
  *
- * <li>Row access methods
- * \code void getLocalRowCopy(local_ordinal_type localRow,
- *                            const Teuchos::ArrayView<local_ordinal_type> &indices,
- *                            const Teuchos::ArrayView<scalar_type> &values,
- *                            size_t &numEntries) const;
- * void getGlobalRowCopy(global_ordinal_type globalRow,
- *                       const Teuchos::ArrayView<global_ordinal_type> &indices,
- *                       const Teuchos::ArrayView<scalar_type> &values,
- *                       size_t &numEntries) const; \endcode
- * </li>
- *
- * <li>Method to convert Matrix to serial
- * \code matrix_type serial(); \endcode
- * </li>
- *
- * <li>Get a description of this adapter
- * \code std::string description(); \endcode
- * </li>
- * 
  * <li>Print the matrix to the \c os output stream
- * \code void print(Teuchos::FancyOStream& os) const; \endcode
+ * \code
+ * void describe(
+ *   Teuchos::FancyOStream& os,
+ *   const Teuchos::EVerbosityLevel verbLevel) const;
+ * \endcode
  * </li>
  */
 template <class MatrixType>
-struct MatrixAdapter {};
-
-//   /** \brief Default constuctor throws compiler error
-//    *
-//    * Without specialization, the Amesos2::MatrixAdapter simply throws a
-//    * compiler error upon instantiation.
-//    */
-//   MatrixAdapter()
-//     {}
-// };
-
+struct MatrixAdapter
+{};
 
 } // end namespace Amesos
 

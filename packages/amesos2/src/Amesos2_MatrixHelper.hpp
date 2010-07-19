@@ -6,7 +6,8 @@
 
 namespace Amesos {
 
-/** \brief convert Matrices and MultiVectors into the appropriate format for a
+/**
+ * \brief convert Matrices and MultiVectors into the appropriate format for a
  * third-party solver.
  *
  * The particular functions that must be implemented, and the signatures in

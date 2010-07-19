@@ -11,7 +11,6 @@
 //  * helpers because the Amesos2 classes are templated on matrix and vector
 //  * types, which are themselves templated on one or more scalars and ordinals.
 //  */
-   
 // //TEUCHOS_CLASS_TEMPLATE_INSTANT_SCALAR_TYPES(Amesos::MatrixAdapter)
 // }
 // #endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION

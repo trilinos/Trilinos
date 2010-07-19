@@ -1,9 +1,20 @@
+/**
+   \file   Amesos2_FunctionMap.hpp
+   \author Eric Bavier <etbavier@sandia.gov>
+   \date   Thu Jul 15 22:04:41 2010
+
+   \brief  Declaration of Function mapping class for Amesos2.
+*/
+
+
 #ifndef AMESOS2_FUNCTIONMAP_HPP
 #define AMESOS2_FUNCTIONMAP_HPP
 
 namespace Amesos {
 
-/** 
+/**
+ * \brief Passes functions to TPL functions based on type.
+ *
  * Helper class which passes on function calls to the appropriate Solver
  * function based on the type of its scalar template argument.
  *
