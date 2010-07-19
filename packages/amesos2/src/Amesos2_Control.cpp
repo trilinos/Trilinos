@@ -2,7 +2,7 @@
   \file   Amesos2_Control.cpp
   \author Eric T Bavier <etbavier@sandia.gov>
   \date   Sat Jan 16 09:23:38 2010
-  
+
   \brief  Implementation for Amesos2::Control
 */
 
@@ -15,15 +15,48 @@
 namespace Amesos {
 
 
+/**
+ * \brief Sets various parameters concerning solver control.
+ *
+ * \param parameterList A Teuchos::ParameterList which contains the control
+ * parameters to set.
+ *
+ * <br>
+ * <b>Supported Parameters:</b>
+ * <ul>
+ * <li>"Transpose": { \c true | \c false }.  If \c true , the solver instead
+ *   solves \f$ A^T X = B \f$.</li>
+ * <li>"AddToDiag": \c std::string .  The \c string should be a conforming
+ *   representation of the scalar type of the matrix being used.  The scalar
+ *   will be added to non-zero diagonal entries of te matrix.  The non-zero
+ *   structure will not be affected.</li>
+ * <li>"AddZeroToDiag": { \c true | \c false }.  Zero will be added to the
+ *   diagonal where diagonal elements are not present.  Not supported for
+ *   matrices which are "locked up" by the time Amesos2 sees them.</li>
+ * <li>"MatrixProperty": { 0 | 1 | 2 }, where 0 is a general sparse matrix, 1
+ *   is a sparse diagonal matrix, and 2 denotes a symmetric sparse matrix.
+ *   This parameter is only effective if the underlying solver supports the
+ *   distinction.</li>
+ * <li>"ScaleMethod": { 0 | 1 | 2 ... }, where 0 denotes no scaling, 1 is the
+ *   underlying solver's first method, 2 is the solver's 2nd alternative, and
+ *   so on.</li>
+ * </ul>
+ */
 void Control::setControlParameters(
   const Teuchos::RCP<Teuchos::ParameterList> & parameterList )
 {
+  // Only check for boolean "Transpose" parameters.  If they are of some other
+  // type, we will let the solver interfaces deal with them.
+  if( parameterList->isType<bool>("Transpose") ){
+    useTranspose_ = parameterList->get<bool>("Transpose");
+  }
+
   // Add this value to all diagonal elements which are structurally
   // non-zero. No change is made to non-zero structure of the matrix.
   if( parameterList->isParameter("AddToDiag") ){
-    addToDiag_ = parameterList->get<double>("AddToDiag");
+    addToDiag_ = parameterList->get<std::string>("AddToDiag");
   }
-  
+
   // Add zero to diagonal if diagonal element is not present.
   // - not supported for matrices which are missing elements from the diagonal.  See bug #1928 for discussion
   if( parameterList->isParameter("AddZeroToDiag") ){
@@ -40,29 +73,18 @@ void Control::setControlParameters(
     MatrixProperty = parameterList->get<std::string>("MatrixProperty");
     if( MatrixProperty == "general" )
       matrixProperty_ = 0;
-    else if( MatrixProperty == "SPD" )   
+    else if( MatrixProperty == "SPD" )
       matrixProperty_ = 1;
-    else if( MatrixProperty == "symmetric" ) 
+    else if( MatrixProperty == "symmetric" )
       matrixProperty_ = 2;
     else {
       std::ostringstream oss;
-      oss << "Amesos2 : ERROR" << std::endl 
+      oss << "Amesos2 : ERROR" << std::endl
           << "Amesos2 : matrixProperty value not recognized ("
           << MatrixProperty << ")" << std::endl;
       TEST_FOR_EXCEPTION(true,
-        std::runtime_error,
+        std::invalid_argument,
         oss.str());
-    }
-
-    // Threshold for determining if refactorize worked OK
-    // UNUSED at present - KSS June 2004
-    if( parameterList->isParameter("RcondThreshold") ){
-      rcond_threshold_ = parameterList->get<double>("RcondThreshold");
-    }
-
-    // Determine whether to Refactorize.
-    if( parameterList->isParameter("Refactorize") ){
-      refactorize_ = parameterList->get<bool>("Refactorize");
     }
 
     // Define how many processes to use in the ScaLAPACK factor and
@@ -71,7 +93,7 @@ void Control::setControlParameters(
     if( parameterList->isParameter("MaxProcs") ){
       maxProcesses_ = parameterList->get<int>("MaxProcs");
     }
-    
+
     // Scaling method: 0: none, 1: use method's default, 2: use
     // the method's 1st alternative, 3: etc.
     if( parameterList->isParameter("ScaleMethod") ){
