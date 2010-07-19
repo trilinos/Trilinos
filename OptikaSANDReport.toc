@@ -4,4 +4,12 @@
 \contentsline {section}{Initial Planning}{11}{section*.6}
 \contentsline {section}{Early Development}{13}{section*.7}
 \contentsline {section}{Heavy development}{13}{section*.8}
-\contentsline {chapter}{References}{15}{section*.9}
+\contentsline {section}{Advanced Features}{14}{section*.9}
+\contentsline {subsection}{Validators}{14}{section*.10}
+\contentsline {subsection}{Dependencies}{15}{section*.11}
+\contentsline {subsection}{Custom Functions}{17}{section*.12}
+\contentsline {subsection}{Various Niceties}{17}{section*.13}
+\contentsline {section}{Waiting For Copyright}{17}{section*.14}
+\contentsline {section}{User Feedback}{18}{section*.15}
+\contentsline {section}{Future Development}{19}{section*.16}
+\contentsline {chapter}{References}{20}{section*.17}

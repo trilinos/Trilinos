@@ -1,4 +1,4 @@
-This is pdfTeXk, Version 3.141592-1.40.3 (Web2C 7.5.6) (format=pdflatex 2007.5.18)  2 JUL 2010 11:05
+This is pdfTeXk, Version 3.141592-1.40.3 (Web2C 7.5.6) (format=pdflatex 2007.5.18)  19 JUL 2010 16:08
 entering extended mode
  %&-line parsing enabled.
 **OptikaSANDReport.tex
@@ -477,6 +477,14 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
 Non-PDF special ignored!{/usr/local/texlive/2007/texmf-var/fonts/map/pdftex/upd
 map/pdftex.map} <./snllineblk.pdf>]
 LaTeX Font Info:    Try loading font information for OT1+pnc on input line 89.
@@ -532,6 +540,30 @@ Non-PDF special ignored!
 
 
 
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -611,7 +643,7 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!]
 LaTeX Font Info:    Font shape `OT1/phv/m/n' will be
-(Font)              scaled to size 5.39996pt on input line 174.
+(Font)              scaled to size 5.39996pt on input line 176.
  [10
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -622,9 +654,9 @@ Non-PDF special ignored!
 Chapter 2.
 (./OptikaDev.tex
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <17.28> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 3.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 1.
 LaTeX Font Info:    Font shape `OMS/ptm/m/n' in size <12> not available
-(Font)              Font shape `OMS/pzccm/m/n' tried instead on input line 12.
+(Font)              Font shape `OMS/pzccm/m/n' tried instead on input line 10.
  [11
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -643,7 +675,7 @@ File: graphics/spinbox.png Graphic file (type png)
 
 <use graphics/spinbox.png>
 LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <10> not available
-(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 75.
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 73.
 
 <graphics/combobox.png, id=60, 216.81pt x 39.14626pt>
 File: graphics/combobox.png Graphic file (type png)
@@ -704,7 +736,7 @@ Non-PDF special ignored!]
 <graphics/treeview.png, id=73, 576.1525pt x 320.19624pt>
 File: graphics/treeview.png Graphic file (type png)
 
-<use graphics/treeview.png>) [14
+<use graphics/treeview.png> [14
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -723,7 +755,94 @@ Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-Non-PDF special ignored! <./graphics/treeview.png>] (./OptikaSANDReport.bbl
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored! <./graphics/treeview.png>]
+Overfull \hbox (1.47751pt too wide) in paragraph at lines 188--189
+[]\OT1/ptm/m/n/12 Many times the state of one pa-ram-e-ter de-pends on the stat
+e of an-other. Com-mon inter-parameter
+ []
+
+[15
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!]
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <7.4> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 212.
+LaTeX Font Info:    Font shape `OT1/ptm/bx/n' in size <6> not available
+(Font)              Font shape `OT1/ptm/b/n' tried instead on input line 212.
+ [16
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!] [17
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!] [18
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!]) [19
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!] (./OptikaSANDReport.bbl [20
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+
+
+Non-PDF special ignored!
+Non-PDF special ignored!
+Non-PDF special ignored!
+
+]
 Overfull \hbox (36.50938pt too wide) in paragraph at lines 4--6
 []\OT1/ptm/m/n/12 Model/View Pro-gram-ming.  [][][][]. 
  []
@@ -763,18 +882,11 @@ Overfull \hbox (401.08727pt too wide) in paragraph at lines 48--52
 []\OT1/ptm/m/n/12 Teuchos::ParamterList Class Ref-er-ence.  [][][][]. 
  []
 
-) [15
+) [21
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
-
-
-Non-PDF special ignored!
-Non-PDF special ignored!
-Non-PDF special ignored!
-
-
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
@@ -845,44 +957,44 @@ Non-PDF special ignored!]
 
  (./SANDdistribution.tex
 Option "NM": Using the SNL NM default distribution list.
-) [16
+) [22
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 
 
-] [17
+] [23
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 
-] [18
+] [24
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 
-] [19
+] [25
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!]
 File: snllineblk.pdf Graphic file (type pdf)
- <use snllineblk.pdf> [20
+ <use snllineblk.pdf> [26
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!
 Non-PDF special ignored!] (./OptikaSANDReport.aux (./SANDdistribution.aux)) ) 
 Here is how much of TeX's memory you used:
- 4366 strings out of 94073
- 62426 string characters out of 1162984
+ 4399 strings out of 94073
+ 62898 string characters out of 1162984
  132057 words of memory out of 1500000
- 7529 multiletter control sequences out of 10000+50000
- 56940 words of font info for 105 fonts, out of 1200000 for 2000
+ 7559 multiletter control sequences out of 10000+50000
+ 68828 words of font info for 127 fonts, out of 1200000 for 2000
  645 hyphenation exceptions out of 8191
- 32i,9n,45p,225b,428s stack positions out of 5000i,500n,6000p,200000b,5000s
+ 32i,9n,45p,232b,428s stack positions out of 5000i,500n,6000p,200000b,5000s
 {/
 usr/local/texlive/2007/texmf-dist/fonts/enc/dvips/base/8r.enc}</usr/local/texli
 ve/2007/texmf-dist/fonts/type1/bluesky/cm/cmsy10.pfb></usr/local/texlive/2007/t
@@ -893,9 +1005,9 @@ urw/ncntrsbk/uncb8a.pfb></usr/local/texlive/2007/texmf-dist/fonts/type1/urw/ncn
 trsbk/uncr8a.pfb></usr/local/texlive/2007/texmf-dist/fonts/type1/urw/times/utmb
 8a.pfb></usr/local/texlive/2007/texmf-dist/fonts/type1/urw/times/utmr8a.pfb></u
 sr/local/texlive/2007/texmf-dist/fonts/type1/urw/times/utmri8a.pfb>
-Output written on OptikaSANDReport.pdf (20 pages, 181516 bytes).
+Output written on OptikaSANDReport.pdf (26 pages, 196311 bytes).
 PDF statistics:
- 128 PDF objects out of 1000 (max. 8388607)
+ 147 PDF objects out of 1000 (max. 8388607)
  0 named destinations out of 1000 (max. 131072)
  31 words of extra memory for PDF output out of 10000 (max. 10000000)
 
