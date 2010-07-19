@@ -1,8 +1,8 @@
 /**
-   \file   Amesos2_FunctionMap.hpp
+   \file   Amesos2_Superlu_FunctionMap.hpp
    \author Eric Bavier <etbavier@sandia.gov>
    \date   Mon May 31 23:38:46 2010
-   
+
    \brief  Provides a mechanism to map function calls to the correct Solver
            function based on the scalar type of Matrices and MultiVectors
 */
@@ -42,58 +42,44 @@ namespace Z {
 }
 
 } // end extern "C"
-} // end namespace SLU
 
 
-namespace Amesos {
-
+/**
+ * \brief Gets the permutation matrix \c perm_c for \c A based on \c options .
+ *
+ * \param options A Superlu options structure.  Should specify what type of
+ *                permutation to use.
+ * \param A       A Superlu \c SuperMatrix , with SLU::NRformat Store, that is
+ *                to be permuted.
+ * \param perm_c  A permutation vector
+ * \param etree   An elimination tree for \c A
+ *
+ * \tparam Scalar the scalar data type of entries in \c A and the returned
+ * matrix.
+ *
+ * \return A Teuchos::RCP pointing to a SLU::SuperMatrix which is the permuted
+ * form of \c A .  This new permuted matrix will have a SLU::SLU_NCP
+ * (non-supernodal, column, permuted) format, which is appropriate for use in
+ * SLU::gstrf().
+ */
 template <typename Scalar>
 Teuchos::RCP<SLU::SuperMatrix> getPermMatrix(
   SLU::superlu_options_t* options,
   SLU::SuperMatrix* A,          // A is in NRFormat
   int* perm_c,
-  int* etree)
-{
-  SLU::SuperMatrix AA;      // A in SLU_NC format
+  int* etree);
 
-  // AA in SLU_NCP format after preordering
-  Teuchos::RCP<SLU::SuperMatrix> AC = Teuchos::rcp(new SLU::SuperMatrix());
 
-  if( A->Stype == SLU::SLU_NR ){
-    SLU::NRformat* Astore = (SLU::NRformat*)A->Store;
-    // SLU::S::sCreate_CompCol_Matrix(&AA, A->ncol, A->nrow, Astore->nnz,
-    //   (typename TypeMap<Amesos::Superlu,Scalar>::type*)Astore->nzval,
-    //   Astore->colind, Astore->rowptr, SLU::SLU_NC, A->Dtype, A->Mtype);
-    FunctionMap<Superlu,Scalar>::create_CompCol_Matrix(&AA, A->ncol, A->nrow,
-      Astore->nnz, (typename TypeMap<Amesos::Superlu,Scalar>::type*)Astore->nzval,
-      Astore->colind, Astore->rowptr, SLU::SLU_NC, A->Dtype, A->Mtype);
-  } else {
-    AA = *A;
-  }
+} // end namespace SLU
 
-  /*
-   * Get column permutation vector perm_c[], according to permc_spec:
-   *   permc_spec = NATURAL:  natural ordering 
-   *   permc_spec = MMD_AT_PLUS_A: minimum degree on structure of A'+A
-   *   permc_spec = MMD_ATA:  minimum degree on structure of A'*A
-   *   permc_spec = COLAMD:   approximate minimum degree column ordering
-   *   permc_spec = MY_PERMC: the ordering already supplied in perm_c[]
-   */
-  int permc_spec = options->ColPerm;
-  if ( permc_spec != SLU::MY_PERMC ){
-    SLU::get_perm_c(permc_spec, &AA, perm_c);
-  }
-  SLU::sp_preorder(options, &AA, perm_c, etree, AC.getRawPtr());
 
-  // cleanup
-  SLU::Destroy_SuperMatrix_Store(&AA);
-
-  return(AC);
-}
+namespace Amesos {
 
 
 
-/** 
+/**
+ * \brief Pass function calls to Superlu based on data type.
+ *
  * Helper class which passes on function calls to the appropriate Superlu
  * function based on the type of its scalar template argument.
  *
@@ -107,37 +93,42 @@ Teuchos::RCP<SLU::SuperMatrix> getPermMatrix(
  *
  * The class template is specialized for each data type that Superlu supports,
  * and errors are thrown for other data types.
+ *
+ * Please see the <a
+ * href="http://crd.lbl.gov/~xiaoye/SuperLU/superlu_ug.pdf">Superlu Users'
+ * Guide</a> for more information on the TPL functions.
  */
 template <typename Scalar>
 struct FunctionMap<Superlu,Scalar>
 {
-  /** \brief Binds to the appropriate Superlu solver driver based on data type
-   * 
+  /**
+   * \brief Binds to the appropriate Superlu solver driver based on data type
+   *
    * \throw std::runtime_error If no specialization of this type exists for a
    *        particular scalar type
    */
   static void gssvx(
-    SLU::superlu_options_t*,    ///< options
-    SLU::SuperMatrix*,          ///< A      
-    int*,                       ///< perm_c 
-    int*,                       ///< perm_r 
-    int*,                       ///< etree  
-    char*,                      ///< equed  
-    typename TypeMap<Superlu,Scalar>::magnitude_type*, ///< R      
-    typename TypeMap<Superlu,Scalar>::magnitude_type*, ///< C      
-    SLU::SuperMatrix*,          ///< L      
-    SLU::SuperMatrix*,          ///< U      
-    void*,                      ///< work   
-    int,                        ///< lwork
-    SLU::SuperMatrix*,          ///< B
-    SLU::SuperMatrix*,          ///< X
-    typename TypeMap<Superlu,Scalar>::magnitude_type*, ///< recip_pivot_growth
-    typename TypeMap<Superlu,Scalar>::magnitude_type*, ///< rcond
-    typename TypeMap<Superlu,Scalar>::magnitude_type*, ///< ferr
-    typename TypeMap<Superlu,Scalar>::magnitude_type*, ///< berr
-    SLU::mem_usage_t*,          ///< mem_usage
-    SLU::SuperLUStat_t*,        ///< stat
-    int*                        ///< info
+    SLU::superlu_options_t*                  options,
+    SLU::SuperMatrix*                        A,
+    int*                                     perm_c,
+    int*                                     perm_r,
+    int*                                     etree,
+    char*                                    equed,
+    typename TypeMap<Superlu,Scalar>::magnitude_type* R,
+    typename TypeMap<Superlu,Scalar>::magnitude_type* C,
+    SLU::SuperMatrix*                        L,
+    SLU::SuperMatrix*                        U,
+    void*                                    work,
+    int                                      lwork,
+    SLU::SuperMatrix*                        B,
+    SLU::SuperMatrix*                        X,
+    typename TypeMap<Superlu,Scalar>::magnitude_type* recip_pivot_growth,
+    typename TypeMap<Superlu,Scalar>::magnitude_type* rcond,
+    typename TypeMap<Superlu,Scalar>::magnitude_type* ferr,
+    typename TypeMap<Superlu,Scalar>::magnitude_type* berr,
+    SLU::mem_usage_t*                        mem_usage,
+    SLU::SuperLUStat_t*                      stat,
+    int*                                     info
     )
     {
       TEST_FOR_EXCEPTION( true,
@@ -145,8 +136,9 @@ struct FunctionMap<Superlu,Scalar>
         "Superlu does not support the data type");
     }
 
-  /** \brief Computes an LU factorization of a general m-by-n matrix
-   * 
+  /**
+   * \brief Computes an LU factorization of a general m-by-n matrix
+   *
    * Uses a partial pivoting technique with row interchanges.  The
    * factorization has the form
    *
@@ -162,43 +154,44 @@ struct FunctionMap<Superlu,Scalar>
    * in the SLU_NC format, so conversion must be done when necessary
    */
   static void gstrf(
-    SLU::superlu_options_t*,    ///< options
-    SLU::SuperMatrix*,          ///< A
-    int,                        ///< relax
-    int,                        ///< panel_size
-    int*,                       ///< elimination tree
-    void*,                      ///< work
-    int,                        ///< lwork
-    int*,                       ///< perm_c
-    int*,                       ///< perm_r
-    SLU::SuperMatrix*,          ///< L
-    SLU::SuperMatrix*,          ///< U
-    SLU::SuperLUStat_t*,        ///< stat
-    int*                        ///< info
+    SLU::superlu_options_t*   options,
+    SLU::SuperMatrix*         A,
+    int                       relax,
+    int                       panel_size,
+    int*                      etree,
+    void*                     work,
+    int                       lwork,
+    int*                      perm_c,
+    int*                      perm_r,
+    SLU::SuperMatrix*         L,
+    SLU::SuperMatrix*         U,
+    SLU::SuperLUStat_t*       stat,
+    int*                      info
     )
     {
       TEST_FOR_EXCEPTION( true,
         std::runtime_error,
         "Superlu does not support the data type");
     }
-  
 
-  /** \brief Creates a Superlu CCS matrix using the appropriate function
-   * 
+
+  /**
+   * \brief Creates a Superlu CCS matrix using the appropriate function
+   *
    * \throw std::runtime_error If there is no specialization of this type for
    *        the Scalar type
    */
   static void create_CompCol_Matrix(
-    SLU::SuperMatrix*,          ///< A
-    int,                        ///< m => number of rows
-    int,                        ///< n => number of cols
-    int,                        ///< nnz
-    typename TypeMap<Superlu,Scalar>::type*, ///< nzval
-    int*,                       ///< rowind
-    int*,                       ///< colptr
-    SLU::Stype_t,               ///< SLU Storage type
-    SLU::Dtype_t,               ///< SLU data type
-    SLU::Mtype_t                ///< SLU matrix type
+    SLU::SuperMatrix*                        A,
+    int                                      numrows,
+    int                                      numcols,
+    int                                      nnz,
+    typename TypeMap<Superlu,Scalar>::type*  nzval,
+    int*                                     rowind,
+    int*                                     colptr,
+    SLU::Stype_t                             storage_t,
+    SLU::Dtype_t                             data_t,
+    SLU::Mtype_t                             mat_t
     )
     {
       TEST_FOR_EXCEPTION( true,
@@ -206,22 +199,23 @@ struct FunctionMap<Superlu,Scalar>
         "Superlu does not support the data type");
     }
 
-  /** \brief Creates a Superlu CRS matrix using the appropriate function
-   * 
+  /**
+   * \brief Creates a Superlu CRS matrix using the appropriate function
+   *
    * \throw std::runtime_error If there is no specialization of this type for
    *        the Scalar type
    */
   static void create_CompRow_Matrix(
-    SLU::SuperMatrix*,          ///< A
-    int,                        ///< m => number of rows
-    int,                        ///< n => number of cols
-    int,                        ///< nnz
-    typename TypeMap<Superlu,Scalar>::type*, ///< nzval
-    int*,                       ///< rowind
-    int*,                       ///< colptr
-    SLU::Stype_t,               ///< SLU Storage type
-    SLU::Dtype_t,               ///< SLU data type
-    SLU::Mtype_t                ///< SLU matrix type
+    SLU::SuperMatrix*                        A,
+    int                                      numrows,
+    int                                      numcols,
+    int                                      nnz,
+    typename TypeMap<Superlu,Scalar>::type*  nzval,
+    int*                                     rowind,
+    int*                                     colptr,
+    SLU::Stype_t                             storage_t,
+    SLU::Dtype_t                             data_t,
+    SLU::Mtype_t                             mat_t
     )
     {
       TEST_FOR_EXCEPTION( true,
@@ -230,21 +224,26 @@ struct FunctionMap<Superlu,Scalar>
     }
 
 
-  /** \brief Creates a Superlu Dense Matrix using the appropriate Superlu
+  /**
+   * \brief Creates a Superlu Dense Matrix using the appropriate Superlu
    *         function.
-   * 
+   *
+   * \param X Superlu SuperMatrix that is to be created
+   * \param x vals in column major order
+   * \param ldx leading dimension of x
+   *
    * \throw std::runtime_error If there is no specialization of this type for
    *        the Scalar type
    */
   static void create_Dense_Matrix(
-    SLU::SuperMatrix*,          ///< X
-    int,                        ///< m => number of rows
-    int,                        ///< n => number of cols
-    typename TypeMap<Superlu,Scalar>::type*, ///< x => vals in column major order
-    int,                        ///< ldx => leading dimension of x
-    SLU::Stype_t,               ///< SLU storage type
-    SLU::Dtype_t,               ///< SLU data type
-    SLU::Mtype_t                ///< SLU matrix type
+    SLU::SuperMatrix*                        X,
+    int                                      numrows,
+    int                                      numcols,
+    typename TypeMap<Superlu,Scalar>::type*  x,
+    int                                      ldx,
+    SLU::Stype_t                             storage_t,
+    SLU::Dtype_t                             data_t,
+    SLU::Mtype_t                             mat_t
     )
     {
       TEST_FOR_EXCEPTION( true,
@@ -254,7 +253,10 @@ struct FunctionMap<Superlu,Scalar>
 };
 
 
-/* ==================== Specializations ==================== */
+/* ==================== Specializations ====================
+ *
+ * \cond Superlu_function_specializations 
+ */
 
 template <>
 struct FunctionMap<Superlu,float>
@@ -266,52 +268,6 @@ struct FunctionMap<Superlu,float>
     float* rcond, float* ferr, float* berr, SLU::mem_usage_t* mem_usage,
     SLU::SuperLUStat_t* stat, int* info)
     {
-      // TEST_FOR_EXCEPTION( options == NULL,
-      //   std::runtime_error,
-      //   "options pointer is null!");
-      // TEST_FOR_EXCEPTION( A == NULL,
-      //   std::runtime_error,
-      //   "Supermatrix pointer A is null!");
-      // TEST_FOR_EXCEPTION( perm_c == NULL,
-      //   std::runtime_error,
-      //   "perm_c pointer is null!");
-      // TEST_FOR_EXCEPTION( perm_r == NULL,
-      //   std::runtime_error,
-      //   "perm_r pointer is null!");
-      // TEST_FOR_EXCEPTION( etree == NULL,
-      //   std::runtime_error,
-      //   "etree pointer is null!");
-      // TEST_FOR_EXCEPTION( R == NULL,
-      //   std::runtime_error,
-      //   "R pointer is null!");
-      // TEST_FOR_EXCEPTION( C == NULL,
-      //   std::runtime_error,
-      //   "C pointer is null!");
-      // TEST_FOR_EXCEPTION( L == NULL,
-      //   std::runtime_error,
-      //   "Supermatrix L pointer is null!");
-      // TEST_FOR_EXCEPTION( U == NULL,
-      //   std::runtime_error,
-      //   "Supermatrix U pointer is null!");
-      // TEST_FOR_EXCEPTION( X == NULL,
-      //   std::runtime_error,
-      //   "Supermatrix X pointer is null!");
-      // TEST_FOR_EXCEPTION( B == NULL,
-      //   std::runtime_error,
-      //   "Supermatrix B pointer is null!");
-      // TEST_FOR_EXCEPTION( recip_pivot_growth == NULL,
-      //   std::runtime_error,
-      //   "recip_pivot_growth pointer is null!");
-      // TEST_FOR_EXCEPTION( rcond == NULL,
-      //   std::runtime_error,
-      //   "rcond pointer is null!");
-      // TEST_FOR_EXCEPTION( ferr == NULL,
-      //   std::runtime_error,
-      //   "ferr pointer is null!");
-      // TEST_FOR_EXCEPTION( berr == NULL,
-      //   std::runtime_error,
-      //   "berr pointer is null!");
-      
       SLU::S::sgssvx(options, A, perm_c, perm_r, etree, equed, R, C, L, U, work,
         lwork, B, X, recip_pivot_growth, rcond, ferr, berr, mem_usage, stat, info);
     }
@@ -322,10 +278,10 @@ struct FunctionMap<Superlu,float>
     SLU::SuperLUStat_t* stat, int* info)
     {
 
-      Teuchos::RCP<SLU::SuperMatrix> AC = getPermMatrix<float>(options,A,perm_c,etree);
+      Teuchos::RCP<SLU::SuperMatrix> AC = SLU::getPermMatrix<float>(options,A,perm_c,etree);
 
-      SLU::S::sgstrf(options, AC.getRawPtr(), relax, panel_size, etree, work, lwork, perm_c,
-        perm_r, L, U, stat, info);
+      SLU::S::sgstrf(options, AC.getRawPtr(), relax, panel_size, etree,
+        work, lwork, perm_c, perm_r, L, U, stat, info);
 
       SLU::Destroy_CompCol_Permuted(AC.getRawPtr());
     }
@@ -366,52 +322,6 @@ struct FunctionMap<Superlu,double>
     double* rcond, double* ferr, double* berr, SLU::mem_usage_t* mem_usage,
     SLU::SuperLUStat_t* stat, int* info)
     {
-      TEST_FOR_EXCEPTION( options == NULL,
-        std::runtime_error,
-        "options pointer is null!");
-      TEST_FOR_EXCEPTION( A == NULL,
-        std::runtime_error,
-        "Supermatrix pointer A is null!");
-      TEST_FOR_EXCEPTION( perm_c == NULL,
-        std::runtime_error,
-        "perm_c pointer is null!");
-      TEST_FOR_EXCEPTION( perm_r == NULL,
-        std::runtime_error,
-        "perm_r pointer is null!");
-      TEST_FOR_EXCEPTION( etree == NULL,
-        std::runtime_error,
-        "etree pointer is null!");
-      TEST_FOR_EXCEPTION( R == NULL,
-        std::runtime_error,
-        "R pointer is null!");
-      TEST_FOR_EXCEPTION( C == NULL,
-        std::runtime_error,
-        "C pointer is null!");
-      TEST_FOR_EXCEPTION( L == NULL,
-        std::runtime_error,
-        "Supermatrix L pointer is null!");
-      TEST_FOR_EXCEPTION( U == NULL,
-        std::runtime_error,
-        "Supermatrix U pointer is null!");
-      TEST_FOR_EXCEPTION( X == NULL,
-        std::runtime_error,
-        "Supermatrix X pointer is null!");
-      TEST_FOR_EXCEPTION( B == NULL,
-        std::runtime_error,
-        "Supermatrix B pointer is null!");
-      TEST_FOR_EXCEPTION( recip_pivot_growth == NULL,
-        std::runtime_error,
-        "recip_pivot_growth pointer is null!");
-      TEST_FOR_EXCEPTION( rcond == NULL,
-        std::runtime_error,
-        "rcond pointer is null!");
-      TEST_FOR_EXCEPTION( ferr == NULL,
-        std::runtime_error,
-        "ferr pointer is null!");
-      TEST_FOR_EXCEPTION( berr == NULL,
-        std::runtime_error,
-        "berr pointer is null!");
-      
       SLU::D::dgssvx(options, A, perm_c, perm_r, etree, equed, R, C, L, U, work,
         lwork, B, X, recip_pivot_growth, rcond, ferr, berr, mem_usage, stat, info);
     }
@@ -421,10 +331,10 @@ struct FunctionMap<Superlu,double>
     int* perm_r, SLU::SuperMatrix* L, SLU::SuperMatrix* U,
     SLU::SuperLUStat_t* stat, int* info)
     {
-      Teuchos::RCP<SLU::SuperMatrix> AC = getPermMatrix<float>(options,A,perm_c,etree);
+      Teuchos::RCP<SLU::SuperMatrix> AC = SLU::getPermMatrix<float>(options,A,perm_c,etree);
 
-      SLU::D::dgstrf(options, AC.getRawPtr(), relax, panel_size, etree, work, lwork, perm_c,
-        perm_r, L, U, stat, info);
+      SLU::D::dgstrf(options, AC.getRawPtr(), relax, panel_size, etree,
+        work, lwork, perm_c, perm_r, L, U, stat, info);
 
       SLU::Destroy_CompCol_Permuted(AC.getRawPtr());
     }
@@ -467,52 +377,6 @@ struct FunctionMap<Superlu,std::complex<float> >
     float* rcond, float* ferr, float* berr, SLU::mem_usage_t* mem_usage,
     SLU::SuperLUStat_t* stat, int* info)
     {
-      TEST_FOR_EXCEPTION( options == NULL,
-        std::runtime_error,
-        "options pointer is null!");
-      TEST_FOR_EXCEPTION( A == NULL,
-        std::runtime_error,
-        "Supermatrix pointer A is null!");
-      TEST_FOR_EXCEPTION( perm_c == NULL,
-        std::runtime_error,
-        "perm_c pointer is null!");
-      TEST_FOR_EXCEPTION( perm_r == NULL,
-        std::runtime_error,
-        "perm_r pointer is null!");
-      TEST_FOR_EXCEPTION( etree == NULL,
-        std::runtime_error,
-        "etree pointer is null!");
-      TEST_FOR_EXCEPTION( R == NULL,
-        std::runtime_error,
-        "R pointer is null!");
-      TEST_FOR_EXCEPTION( C == NULL,
-        std::runtime_error,
-        "C pointer is null!");
-      TEST_FOR_EXCEPTION( L == NULL,
-        std::runtime_error,
-        "Supermatrix L pointer is null!");
-      TEST_FOR_EXCEPTION( U == NULL,
-        std::runtime_error,
-        "Supermatrix U pointer is null!");
-      TEST_FOR_EXCEPTION( X == NULL,
-        std::runtime_error,
-        "Supermatrix X pointer is null!");
-      TEST_FOR_EXCEPTION( B == NULL,
-        std::runtime_error,
-        "Supermatrix B pointer is null!");
-      TEST_FOR_EXCEPTION( recip_pivot_growth == NULL,
-        std::runtime_error,
-        "recip_pivot_growth pointer is null!");
-      TEST_FOR_EXCEPTION( rcond == NULL,
-        std::runtime_error,
-        "rcond pointer is null!");
-      TEST_FOR_EXCEPTION( ferr == NULL,
-        std::runtime_error,
-        "ferr pointer is null!");
-      TEST_FOR_EXCEPTION( berr == NULL,
-        std::runtime_error,
-        "berr pointer is null!");
-      
       SLU::C::cgssvx(options, A, perm_c, perm_r, etree, equed, R, C, L, U, work,
         lwork, B, X, recip_pivot_growth, rcond, ferr, berr, mem_usage, stat, info);
     }
@@ -522,10 +386,10 @@ struct FunctionMap<Superlu,std::complex<float> >
     int* perm_r, SLU::SuperMatrix* L, SLU::SuperMatrix* U,
     SLU::SuperLUStat_t* stat, int* info)
     {
-      Teuchos::RCP<SLU::SuperMatrix> AC = getPermMatrix<float>(options,A,perm_c,etree);
-      
-      SLU::C::cgstrf(options, AC.getRawPtr(), relax, panel_size, etree, work, lwork, perm_c,
-        perm_r, L, U, stat, info);
+      Teuchos::RCP<SLU::SuperMatrix> AC = SLU::getPermMatrix<float>(options,A,perm_c,etree);
+
+      SLU::C::cgstrf(options, AC.getRawPtr(), relax, panel_size, etree,
+        work, lwork, perm_c, perm_r, L, U, stat, info);
 
       SLU::Destroy_CompCol_Permuted(AC.getRawPtr());
     }
@@ -565,52 +429,6 @@ struct FunctionMap<Superlu,std::complex<double> >
     double* rcond, double* ferr, double* berr, SLU::mem_usage_t* mem_usage,
     SLU::SuperLUStat_t* stat, int* info)
     {
-      TEST_FOR_EXCEPTION( options == NULL,
-        std::runtime_error,
-        "options pointer is null!");
-      TEST_FOR_EXCEPTION( A == NULL,
-        std::runtime_error,
-        "Supermatrix pointer A is null!");
-      TEST_FOR_EXCEPTION( perm_c == NULL,
-        std::runtime_error,
-        "perm_c pointer is null!");
-      TEST_FOR_EXCEPTION( perm_r == NULL,
-        std::runtime_error,
-        "perm_r pointer is null!");
-      TEST_FOR_EXCEPTION( etree == NULL,
-        std::runtime_error,
-        "etree pointer is null!");
-      TEST_FOR_EXCEPTION( R == NULL,
-        std::runtime_error,
-        "R pointer is null!");
-      TEST_FOR_EXCEPTION( C == NULL,
-        std::runtime_error,
-        "C pointer is null!");
-      TEST_FOR_EXCEPTION( L == NULL,
-        std::runtime_error,
-        "Supermatrix L pointer is null!");
-      TEST_FOR_EXCEPTION( U == NULL,
-        std::runtime_error,
-        "Supermatrix U pointer is null!");
-      TEST_FOR_EXCEPTION( X == NULL,
-        std::runtime_error,
-        "Supermatrix X pointer is null!");
-      TEST_FOR_EXCEPTION( B == NULL,
-        std::runtime_error,
-        "Supermatrix B pointer is null!");
-      TEST_FOR_EXCEPTION( recip_pivot_growth == NULL,
-        std::runtime_error,
-        "recip_pivot_growth pointer is null!");
-      TEST_FOR_EXCEPTION( rcond == NULL,
-        std::runtime_error,
-        "rcond pointer is null!");
-      TEST_FOR_EXCEPTION( ferr == NULL,
-        std::runtime_error,
-        "ferr pointer is null!");
-      TEST_FOR_EXCEPTION( berr == NULL,
-        std::runtime_error,
-        "berr pointer is null!");
-      
       SLU::Z::zgssvx(options, A, perm_c, perm_r, etree, equed, R, C, L, U, work,
         lwork, B, X, recip_pivot_growth, rcond, ferr, berr, mem_usage, stat, info);
     }
@@ -620,10 +438,10 @@ struct FunctionMap<Superlu,std::complex<double> >
     int* perm_r, SLU::SuperMatrix* L, SLU::SuperMatrix* U,
     SLU::SuperLUStat_t* stat, int* info)
     {
-      Teuchos::RCP<SLU::SuperMatrix> AC = getPermMatrix<float>(options,A,perm_c,etree);
-      
-      SLU::Z::zgstrf(options, AC.getRawPtr(), relax, panel_size, etree, work, lwork, perm_c,
-        perm_r, L, U, stat, info);
+      Teuchos::RCP<SLU::SuperMatrix> AC = SLU::getPermMatrix<float>(options,A,perm_c,etree);
+
+      SLU::Z::zgstrf(options, AC.getRawPtr(), relax, panel_size, etree,
+        work, lwork, perm_c, perm_r, L, U, stat, info);
 
       SLU::Destroy_CompCol_Permuted(AC.getRawPtr());
     }
@@ -661,9 +479,60 @@ struct FunctionMap<Superlu,std::complex<double> >
     }
 };
 
-
+/* \endcond Superlu_function_specializations */
 
 
 } // end namespace Amesos
+
+
+namespace SLU {
+
+template <typename Scalar>
+Teuchos::RCP<SLU::SuperMatrix> getPermMatrix(
+  superlu_options_t* options,
+  SuperMatrix* A,          // A is in NRFormat
+  int* perm_c,
+  int* etree)
+{
+  SuperMatrix AA;      // A in SLU_NC format
+
+  // AA in SLU_NCP format after preordering
+  Teuchos::RCP<SuperMatrix> AC = Teuchos::rcp(new SuperMatrix());
+
+  if( A->Stype == SLU_NR ){
+    NRformat* Astore = (NRformat*)A->Store;
+    // SLU::S::sCreate_CompCol_Matrix(&AA, A->ncol, A->nrow, Astore->nnz,
+    //   (typename TypeMap<Amesos::Superlu,Scalar>::type*)Astore->nzval,
+    //   Astore->colind, Astore->rowptr, SLU::SLU_NC, A->Dtype, A->Mtype);
+    Amesos::FunctionMap<Amesos::Superlu,Scalar>::create_CompCol_Matrix(
+      &AA, A->ncol, A->nrow, Astore->nnz,
+      (typename Amesos::TypeMap<Amesos::Superlu,Scalar>::type*)Astore->nzval,
+      Astore->colind, Astore->rowptr, SLU_NC, A->Dtype, A->Mtype);
+  } else {
+    AA = *A;
+  }
+
+  /*
+   * Get column permutation vector perm_c[], according to permc_spec:
+   *   permc_spec = NATURAL:  natural ordering
+   *   permc_spec = MMD_AT_PLUS_A: minimum degree on structure of A'+A
+   *   permc_spec = MMD_ATA:  minimum degree on structure of A'*A
+   *   permc_spec = COLAMD:   approximate minimum degree column ordering
+   *   permc_spec = MY_PERMC: the ordering already supplied in perm_c[]
+   */
+  int permc_spec = options->ColPerm;
+  if ( permc_spec != MY_PERMC ){
+    get_perm_c(permc_spec, &AA, perm_c);
+  }
+  sp_preorder(options, &AA, perm_c, etree, AC.getRawPtr());
+
+  // cleanup
+  Destroy_SuperMatrix_Store(&AA);
+
+  return(AC);
+}
+
+} // end namespace SLU
+
 
 #endif  // AMESOS2_SUPERLU_FUNCTIONMAP_HPP
