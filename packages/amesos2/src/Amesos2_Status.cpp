@@ -2,7 +2,7 @@
   \file   Amesos2_Status.cpp
   \author Eric T Bavier <etbavier@sandia.gov>
   \date   Sat Jan 16 09:44:07 2010
-  
+
   \brief  Implementation for Amesos2::Status
 */
 #ifndef AMESOS2_STATUS_CPP
@@ -25,7 +25,7 @@ void Status::setStatusParameters(
 
   // level of debug output:
   // 0 - no output at all
-  // 1 - some debug output - set by some tests upon a test failure 
+  // 1 - some debug output - set by some tests upon a test failure
   // >1 - more debug output (unused at this point)
   if( parameterList->isParameter("DebugLevel") )
     debug_ = parameterList->get<int>("DebugLevel");
@@ -50,5 +50,5 @@ void Status::setStatusParameters(
 
 
 } // end namespace Amesos
-  
+
 #endif	// AMESOS2_STATUS_CPP
