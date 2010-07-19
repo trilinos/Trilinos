@@ -1,15 +1,15 @@
-/*! \mainpage Amesos2 - Direct Sparse Solver Interfaces
+/** \mainpage Amesos2 - Direct Sparse Solver Interfaces
 
 \section Amesos2_outline Outline
 
 <ul>
-<li>\ref Amesos2_intro
-<li>\ref Amesos2_contributors
-<li>\ref Amesos2_startup
-  <ul>
-  <li>\ref Amesos2_sclasses
-  <li>\ref Amesos2_aclasses
-  </ul>
+  <li>\ref Amesos2_intro
+  <li>\ref Amesos2_contributors
+  <li>\ref Amesos2_startup
+    <ul>
+      <li>\ref Amesos2_sclasses
+      <li>\ref Amesos2_aclasses
+    </ul>
 </ul>
 
 \section Amesos2_intro Introduction
@@ -22,25 +22,35 @@ direct sparse solver libraries, such as SuperLU and KLU.
 The following people have contributed to the development of Amesos2:
 
 <ul>
-	<li> Eric Bavier, St John's University and the University of Iowa, ebavier@uiowa.edu
+  <li> Eric Bavier, St John's University and the University of Iowa, ebavier@uiowa.edu
 </ul>
 
 \section Amesos2_startup Overview of Amesos2
 
-<!-- Motives for Amesos2.  Discuss improvements over Amesos. Give some small examples of usage -->
+<!-- Motives for Amesos2.  Discuss improvements over Amesos. Give some
+small examples of usage -->
 
 \subsection Amesos2_sclasses Amesos2 Solver-interface Classes
 
 <!-- List of supported solvers -->
 <ul>
-	<li> 
+  <li> Amesos::Superlu
 </ul>
 
 \subsection Amesos2_aclasses Amesos2 Adapter Classes
 
-<!-- List of Amesos2 adapters and supported methods
+<!-- List of Amesos2 adapters and supported methods -->
 <ul>
-	<li>	
+  <li> Matrix adapters exist for the following matrix classes
+    <ul>
+      <li> Tpetra::CrsMatrix
+    </ul>
+  </li>
+  <li> MultiVector adapters exist for the following multi-vector classes
+    <ul>
+      <li> Tpetra::MultiVector
+    </ul>
+  </li>
 </ul>
 
 */

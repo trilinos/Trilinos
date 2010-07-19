@@ -48,6 +48,10 @@ EXAMPLE_PATH           = ../example
 
 IMAGE_PATH             = .
 
-#TAGFILES               = ../../common/tag_files/OTHER_PACKAGE.tag=../../../OTHER_PACKAGE/doc/html
+#TAGFILES              = ../../common/tag_files/OTHER_PACKAGE.tag=../../../OTHER_PACKAGE/doc/html
 
 GENERATE_TAGFILE       = ../src/amesos2.tag
+
+#EXTRACT_PRIVATE        = YES
+
+HAVE_DOT               = YES
