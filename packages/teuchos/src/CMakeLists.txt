@@ -154,6 +154,7 @@ APPEND_SET(HEADERS
   Teuchos_UnitTestHelpers.hpp
   Teuchos_UnitTestRepository.hpp
   Teuchos_Utils.hpp
+  Teuchos_ValidatorFactory.hpp
   Teuchos_VerboseObject.hpp
   Teuchos_VerboseObjectParameterListHelpers.hpp
   Teuchos_VerbosityLevel.hpp
@@ -212,6 +213,7 @@ APPEND_SET(SOURCES
   Teuchos_UnitTestBase.cpp
   Teuchos_UnitTestRepository.cpp
   Teuchos_Utils.cpp
+  Teuchos_ValidatorFactory.cpp
   Teuchos_VerboseObject.cpp
   Teuchos_VerboseObjectParameterListHelpers.cpp
   Teuchos_VerbosityLevel.cpp
@@ -234,10 +236,17 @@ IF(${PACKAGE_NAME}_ENABLE_EXTENDED)
     Teuchos_HashUtils.hpp
     Teuchos_Libxml2HandlerAdapter.hpp
     Teuchos_ParameterXMLFileReader.hpp
+    Teuchos_ParameterEntryXMLConverter.hpp
+    Teuchos_ParameterEntryXMLConverterDB.hpp
+    Teuchos_StandardParameterEntryXMLConverters.hpp
+    Teuchos_StandardValidatorXMLConverters.hpp
     Teuchos_StringInputSource.hpp
     Teuchos_StringInputStream.hpp
     Teuchos_StrUtils.hpp
     Teuchos_TreeBuildingXMLHandler.hpp
+	Teuchos_ValidatorMaps.hpp
+    Teuchos_ValidatorXMLConverter.hpp
+    Teuchos_ValidatorXMLConverterDB.hpp
     Teuchos_XMLInputSource.hpp
     Teuchos_XMLInputStream.hpp
     Teuchos_XMLObject.hpp
@@ -255,10 +264,15 @@ IF(${PACKAGE_NAME}_ENABLE_EXTENDED)
     Teuchos_HashUtils.cpp
     Teuchos_Libxml2HandlerAdapter.cpp
     Teuchos_ParameterXMLFileReader.cpp
+	Teuchos_ParameterEntryXMLConverter.cpp
+    Teuchos_StandardParameterEntryXMLConverters.cpp
+	Teuchos_StandardValidatorXMLConverters.cpp
     Teuchos_StrUtils.cpp
     Teuchos_StringInputSource.cpp
     Teuchos_StringInputStream.cpp
     Teuchos_TreeBuildingXMLHandler.cpp
+	Teuchos_ValidatorMaps.cpp
+	Teuchos_ValidatorXMLConverterDB.cpp
     Teuchos_XMLInputSource.cpp
     Teuchos_XMLInputStream.cpp
     Teuchos_XMLObject.cpp

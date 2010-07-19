@@ -94,19 +94,35 @@ public:
   //! Get a required attribute, returning it as a double
   double getRequiredDouble(const std::string& name) const 
     {return std::atof(getRequired(name).c_str());}
-
+  
   //! Get a required attribute, returning it as an int
   int getRequiredInt(const std::string& name) const 
     {return std::atoi(getRequired(name).c_str());}
 
+  template<class T>
+  T getRequired(const std::string& name) const{
+    T toReturn;
+    std::istringstream iss(getRequired(name));
+    iss >> toReturn;
+    return toReturn;
+  }
+
+
   //! Get a required attribute, returning it as a bool
   bool getRequiredBool(const std::string& name) const ;
 
-
   /** \brief Get an attribute, assigning a default value if the requested
    * attribute does not exist */
-  std::string getWithDefault(const std::string& name, 
-                        const std::string& defaultValue) const ;
+  template<class T>
+  T getWithDefault(const std::string& name, const T& defaultValue) const{
+    if (hasAttribute(name)){
+      return getRequired<T>(name);
+	}
+	else{
+	  return defaultValue;
+	}
+  }
+
 
   //! Return the number of child nodes owned by this node
   int numChildren() const;
@@ -145,8 +161,6 @@ public:
   //! @name Tree-Assembly methods 
   //@{
 
-  //! Add an attribute to the current node's atribute list
-  void addAttribute(const std::string& name, const std::string& value);
 			
   //! Add a double as an attribute
   void addDouble(const std::string& name, double val)
@@ -159,6 +173,17 @@ public:
   //! Add a bool as an attribute
   void addBool(const std::string& name, bool val)
     {addAttribute(name, Teuchos::toString(val));}
+
+  /** \brief Lookup whether or not Doubles are allowed.
+   */
+  template<class T>
+  void addAttribute(const std::string& name, T value) const
+{
+  TEST_FOR_EXCEPTION(is_null(ptr_), Teuchos::EmptyXMLError,
+		     "XMLObject::addAttribute: XMLObject is empty");
+  ptr_->addAttribute(name, Teuchos::toString(value));
+}
+
 			
   //! Add a child node to the node
   void addChild(const XMLObject& child);
@@ -178,6 +203,21 @@ private:
 #pragma warning(pop)
 #endif
 };
+
+template<>
+bool XMLObject::getRequired<bool>(const std::string& name) const;
+
+template<>
+int XMLObject::getRequired<int>(const std::string& name) const;
+
+template<>
+double XMLObject::getRequired<double>(const std::string& name) const;
+
+template<>
+std::string XMLObject::getRequired<std::string>(const std::string& name) const;
+
+template<>
+void XMLObject::addAttribute(const std::string& name, const std::string& value) const;
 
 /** \relates XMLObject 
     \brief Write XMLObject to \c os stream 

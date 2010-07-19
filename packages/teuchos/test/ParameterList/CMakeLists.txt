@@ -1,5 +1,6 @@
 
 INCLUDE(PackageAddExecutableAndTest)
+INCLUDE(PackageCopyFilesToBinaryDir)
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
   ParameterList_test 
@@ -17,3 +18,9 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   STANDARD_PASS_OUTPUT
   )
+
+PACKAGE_COPY_FILES_TO_BINARY_DIR(ParameterListFileCopies
+	DEST_FILES blah.txt MissingValidator.xml BadRootElement.xml BadParameterListElement.xml NoNameAttribute.xml NoTypeAttribute.xml NoValueAttribute.xml
+	SOURCE_DIR ${PACKAGE_SOURCE_DIR}/test/ParameterList
+	EXEDEPS ParameterList_UnitTest
+)

@@ -1,0 +1,7 @@
+<ParameterListAspects>
+	<ParameterLists>
+		<ParameterList>
+			<Parameter name="hi" value="0"/>
+		</ParameterList>
+	</ParameterLists>
+</ParameterListAspects>

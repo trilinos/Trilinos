@@ -79,11 +79,24 @@ const std::string& XMLObject::getRequired(const std::string& name) const
   return getAttribute(name);
 }
 
-std::string XMLObject::getWithDefault(const std::string& name, 
-				      const std::string& defaultValue) const
-{
-  if (hasAttribute(name)) return getRequired(name);
-  else return defaultValue;
+template<>
+bool XMLObject::getRequired<bool>(const std::string& name) const{
+	return getRequiredBool(name);
+}
+
+template<>
+int XMLObject::getRequired<int>(const std::string& name) const{
+	return getRequiredInt(name);
+}
+
+template<>
+double XMLObject::getRequired<double>(const std::string& name) const{
+	return getRequiredDouble(name);
+}
+
+template<>
+std::string XMLObject::getRequired<std::string>(const std::string& name) const{
+	return getRequired(name);
 }
 
 bool XMLObject::getRequiredBool(const std::string& name) const
@@ -107,6 +120,13 @@ bool XMLObject::getRequiredBool(const std::string& name) const
     }
   }
   return false; // -Wall
+}
+
+template<>
+void XMLObject::addAttribute<const std::string&>(const std::string& name, const std::string& value) const{
+  TEST_FOR_EXCEPTION(is_null(ptr_), Teuchos::EmptyXMLError,
+		     "XMLObject::addAttribute: XMLObject is empty");
+  ptr_->addAttribute(name, value);
 }
 
 int XMLObject::numChildren() const
@@ -180,13 +200,6 @@ void XMLObject::checkTag(const std::string& expected) const
                      << getTag() << ">");
 }
 
-void XMLObject::addAttribute(const std::string& name, const std::string& value)
-{
-  TEST_FOR_EXCEPTION(is_null(ptr_), Teuchos::EmptyXMLError,
-		     "XMLObject::addAttribute: XMLObject is empty");
-  ptr_->addAttribute(name, value);
-}
-
 void XMLObject::addChild(const XMLObject& child)
 {
   TEST_FOR_EXCEPTION(is_null(ptr_), Teuchos::EmptyXMLError,
@@ -200,3 +213,4 @@ void XMLObject::addContent(const std::string& contentLine)
 		     "XMLObject::addContent: XMLObject is empty");
   ptr_->addContent(contentLine);
 }
+

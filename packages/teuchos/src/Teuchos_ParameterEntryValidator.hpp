@@ -32,6 +32,7 @@
 
 #include "Teuchos_RCP.hpp"
 #include "Teuchos_Array.hpp"
+#include "Teuchos_XMLObject.hpp"
 
 namespace Teuchos {
 
@@ -49,9 +50,17 @@ class ParameterEntry;
  */
 class TEUCHOS_LIB_DLL_EXPORT ParameterEntryValidator {
 public:
-
+  typedef RCP<const Array<std::string> > ValidStringsList;
   /** \brief . */
   virtual ~ParameterEntryValidator() {}
+
+  /** \brief Get a string that should be used as a tag for this validator
+   * when serializing it to XML.
+   *
+   * \return a string that should be used as a tag for this validator
+   * when serializing it to XML.
+   */
+  virtual const std::string getXMLTagName() const=0;
 
   /** \brief Print documentation for this parameter.
    *
@@ -77,7 +86,7 @@ public:
    * The returned strings must not contain any newlines (i.e. no <tt>'\n'</tt>
    * characters) and must be short enough to fit on one line and be readable.
    */
-  virtual Teuchos::RCP<const Array<std::string> >
+  virtual ValidStringsList
   validStringValues() const = 0;
 
   /** \brief Validate a parameter entry value and throw std::exception (with a
@@ -119,6 +128,8 @@ public:
       TEST_FOR_EXCEPT(0==entry);
       this->validate(*entry,paramName,sublistName);
     }
+
+	//virtual XMLObject getXML() const = 0;
   
 };
 

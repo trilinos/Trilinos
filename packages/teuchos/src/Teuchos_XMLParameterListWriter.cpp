@@ -27,132 +27,74 @@
 // @HEADER
 
 #include "Teuchos_XMLParameterListWriter.hpp"
+#include "Teuchos_ParameterEntryXMLConverterDB.hpp"
+#include "Teuchos_ValidatorXMLConverterDB.hpp"
+#include "Teuchos_ValidatorMaps.hpp"
 
 using namespace Teuchos;
 
 XMLParameterListWriter::XMLParameterListWriter()
 {;}
 
-
 XMLObject XMLParameterListWriter::toXML(const ParameterList& p) const
 {
-  XMLObject rtn("ParameterList");
+	XMLObject toReturn(getParameterListAspectsTagName());
+	ValidatortoIDMap validatorIDMap;
+	XMLObject validators = convertValidators(p, validatorIDMap);
+	XMLObject parameterLists(getParameterListsTagName());
+	parameterLists.addChild(convertParameterList(p, validatorIDMap));
+
+	toReturn.addChild(validators);
+	toReturn.addChild(parameterLists);
+	return toReturn;
+}
+
+XMLObject XMLParameterListWriter::convertValidators(const ParameterList& p, ValidatortoIDMap& validatorIDMap) const {
+	XMLObject validators(getValidatorsTagName());
+	for (ParameterList::ConstIterator i=p.begin(); i!=p.end(); ++i){
+		const ParameterEntry& entry = p.entry(i);
+		if(entry.isList()){
+			convertValidators(getValue<ParameterList>(entry), validatorIDMap);
+		}
+		else if(!entry.validator().is_null()){
+			validatorIDMap.insertValidator(entry.validator());
+		}
+	}
+	ValidatortoIDMap::const_iterator it = validatorIDMap.begin();
+	for(;it != validatorIDMap.end(); ++it){
+		XMLObject currentValidator = ValidatorXMLConverterDB::getConverter(*(it->first))->fromValidatortoXML(it->first, validatorIDMap);
+		validators.addChild(currentValidator);
+	}
+	return validators;
+}
+
+
+XMLObject XMLParameterListWriter::convertParameterList(
+	const ParameterList& p,
+	ValidatortoIDMap& validatorIDMap) const
+{
+  XMLObject rtn(getParameterListTagName());
+  rtn.addAttribute(getNameAttributeName(), p.name());
   
   for (ParameterList::ConstIterator i=p.begin(); i!=p.end(); ++i)
     {
-      const ParameterEntry& val = p.entry(i);
-      const std::string& name = p.name(i);
-      XMLObject child = toXML(val);
-      child.addAttribute("name", name);
-      rtn.addChild(child);
+     const ParameterEntry& entry = p.entry(i);
+     if (entry.isList())
+       {
+          rtn.addChild(convertParameterList(getValue<ParameterList>(entry), validatorIDMap));
+       }
+     else
+	   {
+          const std::string& name = p.name(i);
+		  RCP<const ParameterEntryXMLConverter> converter = ParameterEntryXMLConverterDB::getConverter(entry);
+		  XMLObject parameterEntryXML = converter->fromParameterEntrytoXML(entry, name);
+		  if(!entry.validator().is_null()){
+			ValidatortoIDMap::const_iterator result = validatorIDMap.getID(entry.validator());
+		    parameterEntryXML.addInt(getValidatorIdAttributeName(), result->second);	
+		  }
+		  rtn.addChild(parameterEntryXML);
+	   }
     }
-
   return rtn;
 }
 
-XMLObject XMLParameterListWriter::toXML(const ParameterEntry& entry) const
-{
-  if (entry.isList())
-    {
-      return toXML(getValue<ParameterList>(entry));
-    }
-
-  XMLObject rtn("Parameter");
-  std::string type;
-  std::string value;
-
-  if (entry.isType<int>())
-    {
-      type = "int";
-      value = toString(any_cast<int>(entry.getAny(false)));
-    }
-  else if (entry.isType<short>())
-    {
-      type = "short";
-      value = toString(any_cast<short>(entry.getAny(false)));
-    }
-  else if (entry.isType<double>())
-    {
-      type = "double";
-      value = toString(any_cast<double>(entry.getAny(false)));
-    }
-  else if (entry.isType<float>())
-    {
-      type = "float";
-      value = toString(any_cast<float>(entry.getAny(false)));
-    }
-  else if (entry.isType<std::string>())
-    {
-      type = "string";
-      value = toString(any_cast<std::string>(entry.getAny(false)));
-    }
-  else if (entry.isType<char>())
-    {
-      type = "char";
-      value = toString(any_cast<char>(entry.getAny(false)));
-    }
-  else if (entry.isType<bool>())
-    {
-      type = "bool";
-      value = toString(any_cast<bool>(entry.getAny(false)));
-    }
-
-  else if (entry.isType<Array<int> >())
-    {
-      const Array<int>
-        &a = any_cast<Array<int> >(entry.getAny(false));
-      type = "Array int";
-      value = a.toString();
-    }
-  else if (entry.isType<Array<short> >())
-    {
-      const Array<short>
-        &a = any_cast<Array<short> >(entry.getAny(false));
-      type = "Array short";
-      value = a.toString();
-    }
-  else if (entry.isType<Array<float> >())
-    {
-      const Array<float>
-        &a = any_cast<Array<float> >(entry.getAny(false));
-      type = "Array float";
-      value = a.toString();
-    }
-  else if (entry.isType<Array<double> >())
-    {
-      const Array<double>
-        &a = any_cast<Array<double> >(entry.getAny(false));
-      type = "Array double";
-      value = a.toString();
-    }
-  else if (entry.isType<Array<std::string> >())
-    {
-      const Array<std::string>
-        &a = any_cast<Array<std::string> >(entry.getAny(false));
-      type = "Array string";
-      value = a.toString();
-    }
-  else
-    {
-      type = "any";
-      std::ostringstream ss;
-      ss << entry;
-      value = TEUCHOS_OSTRINGSTREAM_GET_C_STR(ss);
-    }
-  
-
-  rtn.addAttribute("type", type);
-  rtn.addAttribute("value", value);
-  
-  if (entry.isDefault())
-    {
-      rtn.addAttribute("isDefault", "true");
-    }
-
-  if (entry.isUsed())
-    {
-      rtn.addAttribute("isUsed","true");
-    }
-
-  return rtn;
-}

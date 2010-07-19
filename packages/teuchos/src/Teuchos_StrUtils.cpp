@@ -388,4 +388,20 @@ std::ostream& StrUtils::printLines(
 }
   
 
+std::string StrUtils::removeAllSpaces(std::string stringToClean){
+	std::string::size_type pos=0;
+	bool spacesLeft = true;
+
+	while(spacesLeft){
+		pos = stringToClean.find(" ");
+		if(pos != string::npos){
+			stringToClean.erase(pos,1);
+		}
+		else{
+			spacesLeft = false;
+		}
+	}
+	return stringToClean;
+}
+
 	

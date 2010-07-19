@@ -26,46 +26,47 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef Teuchos_XMLPARAMETERLISTREADER_H
-#define Teuchos_XMLPARAMETERLISTREADER_H
-
-/*! \file Teuchos_XMLParameterListReader.hpp
-    \brief Writes an XML object to a parameter list
-*/
-
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_XMLObject.hpp"
-#include "Teuchos_Utils.hpp"
 #include "Teuchos_ValidatorMaps.hpp"
 
-namespace Teuchos
-{
+namespace Teuchos{
 
-	/** \ingroup XML 
-	 * \brief Writes an XML object to a parameter list
-	 */
-
-	class TEUCHOS_LIB_DLL_EXPORT XMLParameterListReader
-	{
-	public:
-      //! @name Constructors 
-			//@{
-      /** Construct a reader */
-      XMLParameterListReader();
-			//@}
-
-      /** Write the given XML object to a parameter list */
-      ParameterList toParameterList(const XMLObject& xml) const ;
-
-	private:
-
-      /** Write the given XML object to a parameter list along with the validators located in the given map*/
-	  ParameterList convertParameterList(const XMLObject& xml, const IDtoValidatorMap& validatorMap) const;
-
-	  /** Write the given XML object to appropriate validators. */
-	  void convertValidators(const XMLObject& xml, IDtoValidatorMap& validatorMap) const;
-
-	};
+void IDtoValidatorMap::insertValidator(IDValidatorPair toInsert){
+	validatorMap.insert(toInsert);
 }
-#endif
+
+IDtoValidatorMap::const_iterator IDtoValidatorMap::getValidator(int id) const{
+	return validatorMap.find(id);
+}
+
+IDtoValidatorMap::const_iterator IDtoValidatorMap::begin() const{
+	return validatorMap.begin();
+}
+
+IDtoValidatorMap::const_iterator IDtoValidatorMap::end() const{
+	return validatorMap.end();
+}
+
+ValidatortoIDMap::ValidatortoIDMap():counter(0){}
+
+void ValidatortoIDMap::insertValidator(RCP<const ParameterEntryValidator> toInsert){
+	const_iterator result = validatorMap.find(toInsert);
+	if(result == validatorMap.end()){
+		validatorMap.insert(ValidatorIDPair(toInsert, counter));
+		++counter;
+	}
+}
+
+ValidatortoIDMap::const_iterator ValidatortoIDMap::getID(const RCP<const ParameterEntryValidator> validator) const{
+	return validatorMap.find(validator);
+}
+
+ValidatortoIDMap::const_iterator ValidatortoIDMap::begin() const{
+	return validatorMap.begin();
+}
+
+ValidatortoIDMap::const_iterator ValidatortoIDMap::end() const{
+	return validatorMap.end();
+}
+
+} // end Teuchos namespace
 

@@ -25,47 +25,23 @@
 // 
 // ***********************************************************************
 // @HEADER
+#include "Teuchos_StandardParameterEntryXMLConverters.hpp"
 
-#ifndef Teuchos_XMLPARAMETERLISTREADER_H
-#define Teuchos_XMLPARAMETERLISTREADER_H
+namespace Teuchos{
+	const std::string AnyParameterEntryConverter::getTypeAttributeValue() const{
+		return "any";
+	}
 
-/*! \file Teuchos_XMLParameterListReader.hpp
-    \brief Writes an XML object to a parameter list
-*/
+	const std::string AnyParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
+		return toString(entry.getAny(false));
+	}
 
-#include "Teuchos_ParameterList.hpp"
-#include "Teuchos_XMLObject.hpp"
-#include "Teuchos_Utils.hpp"
-#include "Teuchos_ValidatorMaps.hpp"
+	void AnyParameterEntryConverter::setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const{
+		entry.setValue<std::string>(xmlObj.getRequired(getValueAttributeName()), isDefault);
+	}
 
-namespace Teuchos
-{
-
-	/** \ingroup XML 
-	 * \brief Writes an XML object to a parameter list
-	 */
-
-	class TEUCHOS_LIB_DLL_EXPORT XMLParameterListReader
-	{
-	public:
-      //! @name Constructors 
-			//@{
-      /** Construct a reader */
-      XMLParameterListReader();
-			//@}
-
-      /** Write the given XML object to a parameter list */
-      ParameterList toParameterList(const XMLObject& xml) const ;
-
-	private:
-
-      /** Write the given XML object to a parameter list along with the validators located in the given map*/
-	  ParameterList convertParameterList(const XMLObject& xml, const IDtoValidatorMap& validatorMap) const;
-
-	  /** Write the given XML object to appropriate validators. */
-	  void convertValidators(const XMLObject& xml, IDtoValidatorMap& validatorMap) const;
-
-	};
+	bool AnyParameterEntryConverter::isAppropriateConverter(const ParameterEntry& entry) const{
+		return true;
+	}
 }
-#endif
 

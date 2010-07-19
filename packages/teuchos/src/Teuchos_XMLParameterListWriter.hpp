@@ -36,6 +36,7 @@
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLObject.hpp"
 #include "Teuchos_Utils.hpp"
+#include "Teuchos_ValidatorMaps.hpp"
 
 namespace Teuchos
 {
@@ -47,20 +48,59 @@ namespace Teuchos
 	class TEUCHOS_LIB_DLL_EXPORT XMLParameterListWriter
 		{
 		public:
+
       //! @name Constructors 
 			//@{
       /** Construct a writer */
+	  static const std::string validatorTagName;
       XMLParameterListWriter();
 			//@}
 
       /** Write the given list to an XML object */
       XMLObject toXML(const ParameterList& p) const ;
+
+	  static const std::string& getParameterListAspectsTagName(){
+	    static const std::string parameterListAspectsTagName = "ParameterListAspects";
+	    return parameterListAspectsTagName;
+	  }
+
+	  static const std::string& getParameterListsTagName(){
+	    static const std::string parameterListsTagName = "ParameterLists";
+	    return parameterListsTagName;
+	  }
+
+	  static const std::string& getParameterListTagName(){
+	    static const std::string parameterListTagName = "ParameterList";
+	    return parameterListTagName;
+	  }
+
+	  static const std::string& getNameAttributeName(){
+	    static const std::string nameAttributeName = "name";
+		return nameAttributeName;
+	  }
+
+	  static const std::string& getValidatorsTagName(){
+	    static const std::string validatorsTagName = "Validators";
+	    return validatorsTagName;
+	  }
+
+	  static const std::string& getValidatorIdAttributeName(){
+	    static const std::string validatorIdAttributeName = "validatorid";
+       return validatorIdAttributeName;
+	  }
+
 	
 		private:
 
-      /** Write the given parameter entry to an XML object */
-      XMLObject toXML(const ParameterEntry& p) const ;
+      /**
+	   * \brief Write the given list to an XML object and record all the validators in it on a map.
+	   */
+      XMLObject convertParameterList(
+	    const ParameterList& p,
+		ValidatortoIDMap& validatorIDMap) const;
+	  XMLObject convertValidators(const ParameterList& p, ValidatortoIDMap& validatorIDMap) const;
 		};
+	  
 }
 #endif
 

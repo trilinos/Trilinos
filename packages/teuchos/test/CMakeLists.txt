@@ -18,6 +18,7 @@ ADD_SUBDIRECTORIES(
   TabularOutputter
   Time
   UnitTest
+  Validators
   Workspace
   XML
   XMLParser
