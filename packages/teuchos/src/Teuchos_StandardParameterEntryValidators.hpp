@@ -244,13 +244,12 @@ public:
 
   //@}
 
-
-
 private:
+
   /** \brief. static decleration and assignment of the tagName */
   static const std::string& tagName(){
-  	static const std::string tagName_ = TypeNameTraits<IntegralType>::name() + "stringtointegralvalidator";
-	return tagName_;
+    static const std::string tagName_ = TypeNameTraits<IntegralType>::name() + "stringtointegralvalidator";
+  return tagName_;
   }
   typedef std::map<std::string,IntegralType> map_t;
   std::string defaultParameterName_;
@@ -268,6 +267,7 @@ private:
   StringToIntegralParameterEntryValidator();
 
 };
+
 
 /** \brief Nonmember constructor (see implementation).
  *
@@ -444,8 +444,11 @@ verbosityLevelParameterEntryValidator(std::string const& defaultParameterName);
  * Having a single definition for the types of valids input and outputs for a
  * parameter value makes it easier to write error-free validated code.
  */
-class TEUCHOS_LIB_DLL_EXPORT AnyNumberParameterEntryValidator : public ParameterEntryValidator {
+class TEUCHOS_LIB_DLL_EXPORT AnyNumberParameterEntryValidator
+ : public ParameterEntryValidator
+{
 public:
+
   /** \name Public types */
   //@{
 
@@ -481,8 +484,6 @@ public:
     bool  allowDouble_;
     bool  allowString_;
   };
-
-
 
   //@}
 
@@ -572,41 +573,43 @@ public:
   EPreferredType getPreferredType() const;
 
   /** \brief Gets the string representation of a given preferred type enum. */
-  static const std::string& getPrefferedTypeString(EPreferredType enumValue){
-	switch(enumValue){
-		case PREFER_INT:
-			return getIntEnumString();
-			break;
-		case PREFER_DOUBLE:
-			return getDoubleEnumString();
-			break;
-		case PREFER_STRING:
-			return getStringEnumString();
-			break;
-		default:
-			throw std::runtime_error("Cannot convert enumValue: " + toString(enumValue) + " to a string");
-	}
-	//Should never get here. This code is here so that a warning is not generated.
-	static const std::string& emptyString("");
-	return emptyString;
+  static const std::string& getPrefferedTypeString(EPreferredType enumValue)
+  {
+    switch(enumValue){
+      case PREFER_INT:
+        return getIntEnumString();
+        break;
+      case PREFER_DOUBLE:
+        return getDoubleEnumString();
+        break;
+      case PREFER_STRING:
+        return getStringEnumString();
+        break;
+      default:
+        throw std::runtime_error("Cannot convert enumValue: " + toString(enumValue) + " to a string");
+    }
+    //Should never get here. This code is here so that a warning is not generated.
+    static const std::string& emptyString("");
+    return emptyString;
   }
 
   /** \brief Gets the preferred type enum associated with a give string. */
-  static EPreferredType getPrefferedTypeStringEnum(const std::string& enumString){
-	if(enumString == getIntEnumString()){
-		return PREFER_INT;
-	}
-	else if(enumString == getDoubleEnumString()){
-		return PREFER_DOUBLE;
-	}
-	else if(enumString == getStringEnumString()){
-		return PREFER_STRING;
-	}
-	else{
-		throw std::runtime_error("Cannot convert enumString: " + enumString + " to an enum");
-	}
-	//Should never get here. This code is here so that a warning is not generated.
-	return (EPreferredType)-1;	
+  static EPreferredType getPrefferedTypeStringEnum(const std::string& enumString)
+  {
+    if(enumString == getIntEnumString()){
+      return PREFER_INT;
+    }
+    else if(enumString == getDoubleEnumString()){
+      return PREFER_DOUBLE;
+    }
+    else if(enumString == getStringEnumString()){
+      return PREFER_STRING;
+    }
+    else{
+      throw std::runtime_error("Cannot convert enumString: " + enumString + " to an enum");
+    }
+    //Should never get here. This code is here so that a warning is not generated.
+    return (EPreferredType)-1;  
   }
   
   //@}
@@ -667,20 +670,20 @@ private:
 
   /* \brief Gets the string representing the "int" preferred type enum */
   static const std::string& getIntEnumString(){
-  	static const std::string intEnumString_ = TypeNameTraits<int>::name();
-	return intEnumString_;
+    static const std::string intEnumString_ = TypeNameTraits<int>::name();
+  return intEnumString_;
   }
 
   /* \brief Gets the string representing the "double" preferred type enum */
   static const std::string& getDoubleEnumString(){
-  	static const std::string doubleEnumString_ = TypeNameTraits<double>::name();
-	return doubleEnumString_;
+    static const std::string doubleEnumString_ = TypeNameTraits<double>::name();
+  return doubleEnumString_;
   }
 
   /* \brief Gets the string representing the "string" preferred type enum */
   static const std::string& getStringEnumString(){
-  	static const std::string stringEnumString_ = TypeNameTraits<std::string>::name();
-	return stringEnumString_;
+    static const std::string stringEnumString_ = TypeNameTraits<std::string>::name();
+  return stringEnumString_;
   }
 
 
@@ -809,17 +812,18 @@ TEUCHOS_LIB_DLL_EXPORT std::string getNumericStringParameter(
   std::string const& paramName
   );
 
-/* This is the default structure used by EnhancedNumberTraits<T> to produce a compile time
- * error when the specialization does not exist for tyep <tt>T</tt>.
+/* \brief Default structure used by EnhancedNumberTraits<T> to produce
+ * a compile time  error when the specialization does not exist for type
+ * <tt>T</tt>.
  */
 template <class T>
 struct UndefinedEnhancedNumberTraits{
   //! This function should not compile if there is an attempt to instantiate!
-	static inline T notDefined() { return T::this_type_is_missing_a_specialization(); }
+  static inline T notDefined() { return T::this_type_is_missing_a_specialization(); }
 };
 
-/*! \class Teuchos::EnhancedNumberTraits
- * \brief Class defining the traits of the number type being used in an EnhancedNumberValidator
+
+/*! \brief Class defining the traits of the number type being used in an EnhancedNumberValidator
  *
  * This class defines some of the traits of a number type being used by an EnhancedNumberValidator.
  * The number has the following traits:
@@ -833,421 +837,432 @@ struct UndefinedEnhancedNumberTraits{
 template <class T>
 class EnhancedNumberTraits{
 public:
-	/* \brief Gets the minimum possible value the number type can take on. */
-	static inline T min() { return UndefinedEnhancedNumberTraits<T>::notDefined(); }
+  /* \brief Gets the minimum possible value the number type can take on. */
+  static inline T min() { return UndefinedEnhancedNumberTraits<T>::notDefined(); }
 
-	/* \brief Gets the maximum possible value the number type can take on. */
-	static inline T max() { return UndefinedEnhancedNumberTraits<T>::notDefined(); }
+  /* \brief Gets the maximum possible value the number type can take on. */
+  static inline T max() { return UndefinedEnhancedNumberTraits<T>::notDefined(); }
 
-	/* \brief gets default amount a value of the number type should be incremented by when being utilizied in a UI. */
-	static inline T defaultStep() { return UndefinedEnhancedNumberTraits<T>::notDefined(); }
+  /* \brief gets default amount a value of the number type should be incremented by when being utilizied in a UI. */
+  static inline T defaultStep() { return UndefinedEnhancedNumberTraits<T>::notDefined(); }
 
-	/* \brief Gets the default precision with which the number type should be displayed. */
-	static inline unsigned short defaultPrecision() { return UndefinedEnhancedNumberTraits<T>::notDefined(); }
+  /* \brief Gets the default precision with which the number type should be displayed. */
+  static inline unsigned short defaultPrecision() { return UndefinedEnhancedNumberTraits<T>::notDefined(); }
 };
+
 
 template<>
 class EnhancedNumberTraits<short int>{
 public:
-	static inline short int min() { return std::numeric_limits<short int>::min(); }
-	static inline short int max() { return std::numeric_limits<short int>::max(); }
-	static inline short int defaultStep() { return 1; }
-	static inline unsigned short defaultPrecision() { return 0; }
+  static inline short int min() { return std::numeric_limits<short int>::min(); }
+  static inline short int max() { return std::numeric_limits<short int>::max(); }
+  static inline short int defaultStep() { return 1; }
+  static inline unsigned short defaultPrecision() { return 0; }
 };
+
 
 template<>
 class EnhancedNumberTraits<short unsigned int>{
 public:
-	static inline short unsigned int min() { return std::numeric_limits<short unsigned int>::min(); }
-	static inline short unsigned int max() { return std::numeric_limits<short unsigned int>::max(); }
-	static inline short unsigned int defaultStep() { return 1; }
-	static inline unsigned short defaultPrecision() { return 0; }
+  static inline short unsigned int min() { return std::numeric_limits<short unsigned int>::min(); }
+  static inline short unsigned int max() { return std::numeric_limits<short unsigned int>::max(); }
+  static inline short unsigned int defaultStep() { return 1; }
+  static inline unsigned short defaultPrecision() { return 0; }
 };
+
 
 template<>
 class EnhancedNumberTraits<int>{
 public:
-	static inline int min() { return std::numeric_limits<int>::min(); }
-	static inline int max() { return std::numeric_limits<int>::max(); }
-	static inline int defaultStep() { return 1; }
-	static inline unsigned short defaultPrecision() { return 0; }
+  static inline int min() { return std::numeric_limits<int>::min(); }
+  static inline int max() { return std::numeric_limits<int>::max(); }
+  static inline int defaultStep() { return 1; }
+  static inline unsigned short defaultPrecision() { return 0; }
 };
+
 
 template<>
 class EnhancedNumberTraits<unsigned int>{
 public:
-	static inline unsigned int min() { return std::numeric_limits<unsigned int>::min(); }
-	static inline unsigned int max() { return std::numeric_limits<unsigned int>::max(); }
-	static inline unsigned int defaultStep() { return 1; }
-	static inline unsigned short defaultPrecision() { return 0; }
+  static inline unsigned int min() { return std::numeric_limits<unsigned int>::min(); }
+  static inline unsigned int max() { return std::numeric_limits<unsigned int>::max(); }
+  static inline unsigned int defaultStep() { return 1; }
+  static inline unsigned short defaultPrecision() { return 0; }
 };
+
 
 template<>
 class EnhancedNumberTraits<long int>{
 public:
-	static inline long int min() { return std::numeric_limits<long int>::min(); }
-	static inline long int max() { return std::numeric_limits<long int>::max(); }
-	static inline long int defaultStep() { return 1; }
-	static inline unsigned short defaultPrecision() { return 0; }
+  static inline long int min() { return std::numeric_limits<long int>::min(); }
+  static inline long int max() { return std::numeric_limits<long int>::max(); }
+  static inline long int defaultStep() { return 1; }
+  static inline unsigned short defaultPrecision() { return 0; }
 };
+
 
 template<>
 class EnhancedNumberTraits<long unsigned int>{
 public:
-	static inline long unsigned int min() { return std::numeric_limits<long unsigned int>::min(); }
-	static inline long unsigned int max() { return std::numeric_limits<long unsigned int>::max(); }
-	static inline long unsigned int defaultStep() { return 1; }
-	static inline unsigned short defaultPrecision() { return 0; }
+  static inline long unsigned int min() { return std::numeric_limits<long unsigned int>::min(); }
+  static inline long unsigned int max() { return std::numeric_limits<long unsigned int>::max(); }
+  static inline long unsigned int defaultStep() { return 1; }
+  static inline unsigned short defaultPrecision() { return 0; }
 };
 
+
 #ifdef HAVE_TEUCHOS_LONG_LONG_INT
+
+
 template<>
 class EnhancedNumberTraits<long long int>{
 public:
-	static inline long long int min() { return std::numeric_limits<long long int>::min(); }
-	static inline long long int max() { return std::numeric_limits<long long int>::max(); }
-	static inline long long int defaultStep() { return 1; }
-	static inline unsigned short defaultPrecision() { return 0; }
+  static inline long long int min() { return std::numeric_limits<long long int>::min(); }
+  static inline long long int max() { return std::numeric_limits<long long int>::max(); }
+  static inline long long int defaultStep() { return 1; }
+  static inline unsigned short defaultPrecision() { return 0; }
 };
+
 
 template<>
 class EnhancedNumberTraits<long long unsigned int>{
 public:
-	static inline long long unsigned int min() { return std::numeric_limits<long long unsigned int>::min(); }
-	static inline long long unsigned int max() { return std::numeric_limits<long long unsigned int>::max(); }
-	static inline long long unsigned int defaultStep() { return 1; }
-	static inline unsigned short defaultPrecision() { return 0; }
+  static inline long long unsigned int min() { return std::numeric_limits<long long unsigned int>::min(); }
+  static inline long long unsigned int max() { return std::numeric_limits<long long unsigned int>::max(); }
+  static inline long long unsigned int defaultStep() { return 1; }
+  static inline unsigned short defaultPrecision() { return 0; }
 };
+
+
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
-	
+
+  
 template<>
 class EnhancedNumberTraits<double>{
 public:
-	static inline double min() { return -std::numeric_limits<double>::max(); }
-	static inline double max() { return std::numeric_limits<double>::max(); }
-	static inline double defaultStep() { return 1; }
-	static inline unsigned short defaultPrecision() { return 2; }
+  static inline double min() { return -std::numeric_limits<double>::max(); }
+  static inline double max() { return std::numeric_limits<double>::max(); }
+  static inline double defaultStep() { return 1; }
+  static inline unsigned short defaultPrecision() { return 2; }
 };
+
 
 template<>
 class EnhancedNumberTraits<float>{
 public:
-	static inline float min() { return -std::numeric_limits<float>::max(); }
-	static inline float max() { return std::numeric_limits<float>::max(); }
-	static inline float defaultStep() { return 1; }
-	static inline unsigned short defaultPrecision() { return 2; }
+  static inline float min() { return -std::numeric_limits<float>::max(); }
+  static inline float max() { return std::numeric_limits<float>::max(); }
+  static inline float defaultStep() { return 1; }
+  static inline unsigned short defaultPrecision() { return 2; }
 };
+
  
-/**
- * \class Teuchos::EnhancedNumberValidator<T> A Class uesd to validate a particular type of number.
+/** \brief Class uesd to validate a particular type of number.
  */
 template <class T>
 class EnhancedNumberValidator : public ParameterEntryValidator{
 public:
-	/**
-	 * Constructs a EnhancedNumberValidator.
-	 *
-	 * @param min The minimum acceptable value for this validator.
-	 * @param max The maximum acceptable value for this validator.
-	 * @param step The increments at which the values being validated should be changed when incremented in a UI.
-	 * @param precision The number of decimials places to which the values validated shold be compared to the
-	 * min and max and the number of decimals which are displayed in a UI. This parameter is pretty much meamingless for non-floating point types.
-	 */
-	EnhancedNumberValidator(T min, T max, T step=EnhancedNumberTraits<T>::defaultStep(), unsigned short precision=EnhancedNumberTraits<T>::defaultPrecision()):ParameterEntryValidator(),
-	minVal(min), maxVal(max), step_(step), precision_(precision), containsMin(true), containsMax(true){}
 
-	/**
-	 * Constructs a EnhancedNumberValidator without an explicit minimum or maximum.
-	 *
-	 * @param step The increments at which the values being validated should be changed when incremented in a UI.
-	 * @param precision The number of decimials places to which the values validated shold be compared to the
-	 * min and max and the number of decimals which are displayed in a UI. This parameter is pretty much meamingless for non-floating point types.
-	 */
-	EnhancedNumberValidator():
-		ParameterEntryValidator(),
-		minVal(EnhancedNumberTraits<T>::min()),
-		maxVal(EnhancedNumberTraits<T>::max()),
-		step_(EnhancedNumberTraits<T>::defaultStep()),
-		precision_(EnhancedNumberTraits<T>::defaultPrecision()),
-		containsMin(false),
-		containsMax(false){}
-		
-	/**
-	 * Sets the minimum acceptable value for the validator.
-	 * 
-	 * @param min The desired minimum acceptable value for the validator.
-	 */
-	void setMin(T min){
-		minVal = min;
-		containsMin = true;
-	}
+  /** \brief Constructs a EnhancedNumberValidator.
+   *
+   * @param min The minimum acceptable value for this validator.
+   * @param max The maximum acceptable value for this validator.
+   * @param step The increments at which the values being validated should be changed when incremented in a UI.
+   * @param precision The number of decimials places to which the values validated shold be compared to the
+   * min and max and the number of decimals which are displayed in a UI. This parameter is pretty much meamingless for non-floating point types.
+   */
+  EnhancedNumberValidator(T min, T max, T step=EnhancedNumberTraits<T>::defaultStep(), unsigned short precision=EnhancedNumberTraits<T>::defaultPrecision()):ParameterEntryValidator(),
+  minVal(min), maxVal(max), step_(step), precision_(precision), containsMin(true), containsMax(true){}
 
-	/**
-	 * Sets the maximum acceptable value for the validator.
-	 * 
-	 * @param min The desired maximum acceptable value for the validator.
-	 */
-	void setMax(T max){
-		maxVal = max;
-		containsMax = true;
-	}
+  /** \brief Constructs a EnhancedNumberValidator without an explicit minimum or maximum.
+   *
+   * @param step The increments at which the values being validated should be changed when incremented in a UI.
+   * @param precision The number of decimials places to which the values validated shold be compared to the
+   * min and max and the number of decimals which are displayed in a UI. This parameter is pretty much meamingless for non-floating point types.
+   */
+  EnhancedNumberValidator():
+    ParameterEntryValidator(),
+    minVal(EnhancedNumberTraits<T>::min()),
+    maxVal(EnhancedNumberTraits<T>::max()),
+    step_(EnhancedNumberTraits<T>::defaultStep()),
+    precision_(EnhancedNumberTraits<T>::defaultPrecision()),
+    containsMin(false),
+    containsMax(false){}
+    
+  /** \brief Sets the minimum acceptable value for the validator.
+   * 
+   * @param min The desired minimum acceptable value for the validator.
+   */
+  void setMin(T min){
+    minVal = min;
+    containsMin = true;
+  }
 
-	/**
-	 * Gets the minimum acceptable value for the validator.
-	 *
-	 *@return The minimum acceptable value for the validator.
-	 */
-	T getMin() const{
-		return minVal;
-	}
+  /** \brief Sets the maximum acceptable value for the validator.
+   * 
+   * @param min The desired maximum acceptable value for the validator.
+   */
+  void setMax(T max){
+    maxVal = max;
+    containsMax = true;
+  }
 
-	/**
-	 * Gets the maximum acceptable value for the validator.
-	 *
-	 *@return The maximum acceptable value for the validator.
-	 */
-	T getMax() const{
-		return maxVal;
-	}
+  /** \brief Gets the minimum acceptable value for the validator.
+   *
+   *@return The minimum acceptable value for the validator.
+   */
+  T getMin() const{
+    return minVal;
+  }
 
-	/**
-	 * Determines whether or not the validator has a minimum value.
-	 *
-	 * @return True if the validator has a minimum value, false otherwise.
-	 */
-	bool hasMin() const{
-		return containsMin;
-	}
+  /** \brief Gets the maximum acceptable value for the validator.
+   *
+   *@return The maximum acceptable value for the validator.
+   */
+  T getMax() const{
+    return maxVal;
+  }
 
-	/**
-	 * Determines whether or not the validator has a maximum value.
-	 *
-	 * @return True if the validator has a maximum value, false otherwise.
-	 */ 
-	bool hasMax() const{
-		return containsMax;
-	}
+  /** \brief Determines whether or not the validator has a minimum value.
+   *
+   * @return True if the validator has a minimum value, false otherwise.
+   */
+  bool hasMin() const{
+    return containsMin;
+  }
 
-	/**
-	 * Gets the step being used for the validator.
-	 *
-	 * @return The step being used for the validator.
-	 */
-	T getStep() const{
-		return step_;
-	}
+  /** \brief  Determines whether or not the validator has a maximum value.
+   *
+   * @return True if the validator has a maximum value, false otherwise.
+   */ 
+  bool hasMax() const{
+    return containsMax;
+  }
 
-	/**
-	 * Sets the step being used for the validator.
-	 *
-	 * @param The step to be used for the validator.
-	 */
-	void setStep(T step){
-		step_ = step;
-	}
+  /** \brief Gets the step being used for the validator.
+   *
+   * @return The step being used for the validator.
+   */
+  T getStep() const{
+    return step_;
+  }
 
-	/**
-	 * Sets the precision specified for the validator.
-	 *
-	 * @param The precision specific for the validator.
-	 */
-	void setPrecision(unsigned short precision){
-		precision_ = precision;
-	}
+  /** \brief Sets the step being used for the validator.
+   *
+   * @param The step to be used for the validator.
+   */
+  void setStep(T step){
+    step_ = step;
+  }
 
-	/**
-	 * Gets the precision specified for the validator.
-	 *
-	 * @return The precision specific for the validator.
-	 */
-	unsigned short getPrecision() const{
-		return precision_;
-	}
+  /** \brief Sets the precision specified for the validator.
+   *
+   * @param The precision specific for the validator.
+   */
+  void setPrecision(unsigned short precision){
+    precision_ = precision;
+  }
 
-	ValidStringsList validStringValues() const{
-		return null;
-	}
+  /** \brief  Gets the precision specified for the validator.
+   *
+   * @return The precision specific for the validator.
+   */
+  unsigned short getPrecision() const{
+    return precision_;
+  }
 
-	void validate(ParameterEntry const &entry, std::string const &paramName, std::string const &sublistName) const{
-		any anyValue = entry.getAny(true);
-		if(anyValue.type() == typeid(T) ){
-			bool isValueInRange; 
-			any_cast<T>(anyValue) >= minVal && any_cast<T>(anyValue) <= maxVal ? isValueInRange = true : isValueInRange=false;
-			if(!(isValueInRange)){
-				std::stringstream oss;
-				std::string msg;
-				oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
-				" parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
-				"No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
-				"can help you figure out what went wrong.\n\n"
-				"Error: The value that was entered doesn't fall with in " <<
-				"the range set by the validator.\n" <<
-				"Parameter: " << paramName << "\n" <<
-				"Min: " << minVal << "\n" <<
-				"Max: " << maxVal << "\n" <<
-				"Value entered: " << (any_cast<T>(anyValue)) << "\n";
-				msg = oss.str();
-				throw Exceptions::InvalidParameterValue(msg);
-			}	
-		}
-		else{
-			const std::string &entryName = entry.getAny(false).typeName();
-			std::stringstream oss;
-			std::string msg;
-			oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
-			" parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
-			"No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
-			"can help you figure out what went wrong.\n\n"
-			"Error: The value that you entered was the wrong type.\n" <<
-			"Parameter: " << paramName << "\n" <<
-			"Type specified: " << entryName << "\n" <<
-			"Type accepted: " << Teuchos::TypeNameTraits<T>::name() << "\n";
-			msg = oss.str();
-			throw Exceptions::InvalidParameterType(msg);
-		}
-	}
+  /** \brief . */
+  ValidStringsList validStringValues() const{
+    return null;
+  }
 
-	const std::string getXMLTagName() const{
-		return StrUtils::removeAllSpaces(TypeNameTraits<T>::name()) + "enhancednumbervalidator";
-	}
+  /** \brief . */
+  void validate(ParameterEntry const &entry, std::string const &paramName,
+    std::string const &sublistName) const
+  {
+    any anyValue = entry.getAny(true);
+    if(anyValue.type() == typeid(T) ){
+      bool isValueInRange; 
+      any_cast<T>(anyValue) >= minVal && any_cast<T>(anyValue) <= maxVal ? isValueInRange = true : isValueInRange=false;
+      if(!(isValueInRange)){
+        std::stringstream oss;
+        std::string msg;
+        oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+        " parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
+        "No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
+        "can help you figure out what went wrong.\n\n"
+        "Error: The value that was entered doesn't fall with in " <<
+        "the range set by the validator.\n" <<
+        "Parameter: " << paramName << "\n" <<
+        "Min: " << minVal << "\n" <<
+        "Max: " << maxVal << "\n" <<
+        "Value entered: " << (any_cast<T>(anyValue)) << "\n";
+        msg = oss.str();
+        throw Exceptions::InvalidParameterValue(msg);
+      }  
+    }
+    else{
+      const std::string &entryName = entry.getAny(false).typeName();
+      std::stringstream oss;
+      std::string msg;
+      oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+      " parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
+      "No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
+      "can help you figure out what went wrong.\n\n"
+      "Error: The value that you entered was the wrong type.\n" <<
+      "Parameter: " << paramName << "\n" <<
+      "Type specified: " << entryName << "\n" <<
+      "Type accepted: " << Teuchos::TypeNameTraits<T>::name() << "\n";
+      msg = oss.str();
+      throw Exceptions::InvalidParameterType(msg);
+    }
+  }
 
-	void printDoc(std::string const &docString, std::ostream &out) const{
-		StrUtils::printLines(out,"# ",docString);
-		out << "#  Validator Used: \n";
-		out << "#  	Number Validator\n";
-		out << "#  	Type: " << Teuchos::TypeNameTraits<T>::name() << "\n";
-		out << "#  	Min (inclusive): " << minVal << "\n";
-		out << "#  	Max (inclusive): " << maxVal << "\n";
-	}
+// rabartl: ToDo: This above function needs to be moved outside of the class
+// or the compiler will try to inline it (but not).
+
+  /** \brief . */
+  const std::string getXMLTagName() const{
+    return StrUtils::removeAllSpaces(TypeNameTraits<T>::name()) + "enhancednumbervalidator";
+  }
+
+  /** \brief . */
+  void printDoc(std::string const &docString, std::ostream &out) const{
+    StrUtils::printLines(out,"# ",docString);
+    out << "#  Validator Used: \n";
+    out << "#    Number Validator\n";
+    out << "#    Type: " << Teuchos::TypeNameTraits<T>::name() << "\n";
+    out << "#    Min (inclusive): " << minVal << "\n";
+    out << "#    Max (inclusive): " << maxVal << "\n";
+  }
 
 private:
-	/**
-	 * The minimum value accepted by the validator.
-	 */
-	T minVal;
 
-	/**
-	 * The maximum value accepted by the validator.
-	 */
-	T maxVal;
+  /** \brief The minimum value accepted by the validator.
+   */
+  T minVal;
 
-	/**
-	 * The increment to use when increaseing or decreaseing the value the validator is validating.
-	 */
-	T step_;
+  /** \brief The maximum value accepted by the validator.
+   */
+  T maxVal;
 
-	/**
-	 * The number of decimal places with which the nubmer will be displayed in a UI. This value
-	 * is meaningless for non-floating point number types.
-	 */
-	unsigned short precision_;
+  /** \brief The increment to use when increaseing or decreaseing the value the validator is validating.
+   */
+  T step_;
 
-	/**
-	 * Whether or not a minimum value has been specified for this validator.
-	 */
-	bool containsMin;
+  /** \brief The number of decimal places with which the nubmer will be displayed in a UI. This value
+   * is meaningless for non-floating point number types.
+   */
+  unsigned short precision_;
 
-	/**
-	 * Whetehr or not a maximum value has been specified for this validator.
-	 */
-	bool containsMax;
+  /** \brief Whether or not a minimum value has been specified for this validator.
+   */
+  bool containsMin;
+
+  /** \brief Whetehr or not a maximum value has been specified for this validator.
+   */
+  bool containsMax;
 };
 
 
-/**
+/** \brief Validate a file name entry.
+ *
  * Simply indicates that the parameter entry with this validator should
  * contain a filename.
  */
-class FileNameValidator : public ParameterEntryValidator{
+class FileNameValidator : public ParameterEntryValidator {
 public:
-	/* \brief The default value of the mustAlreadyExist parameter in the constructor. */
-	static const bool mustAlreadyExistDefault=false;
 
-	/**
-	 * Constructs a FileNameValidator.
-	 *
-	 * @param mustAlreadyExist True if the file the user specifies should already exists, false otherwise.
-	 */
-	FileNameValidator(bool mustAlreadyExist=mustAlreadyExistDefault);
+  /* \brief The default value of the mustAlreadyExist parameter in the constructor. */
+  static bool mustAlreadyExistDefault() { return false; }
 
-	/**
-	 * Gets the variable describing whether or not this validator wants the file that is specified to
-	 * already exist.
-	 *
-	 * @return Whether or not the validator requires the file to already exist
-	 */
-	bool fileMustExist() const;
+  /** \brief Constructs a FileNameValidator.
+   *
+   * @param mustAlreadyExist True if the file the user specifies should already exists, false otherwise.
+   */
+  FileNameValidator(bool mustAlreadyExist = mustAlreadyExistDefault());
 
-	/**
-	 * Sets whether or not the validator requires the file to already exist.
-	 *
-	 * @param shouldFileExist True if the file should already exist, false otherwise.
-	 * @return The new value of the shouldFileExist variable.
-	 */
-	bool setFileMustExist(bool shouldFileExist);
+  /** \brief  Gets the variable describing whether or not this validator wants the file that is specified to
+   * already exist.
+   *
+   * @return Whether or not the validator requires the file to already exist
+   */
+  bool fileMustExist() const;
 
-	ValidStringsList validStringValues() const;
+  /** \brief Sets whether or not the validator requires the file to already exist.
+   *
+   * @param shouldFileExist True if the file should already exist, false otherwise.
+   * @return The new value of the shouldFileExist variable.
+   */
+  bool setFileMustExist(bool shouldFileExist);
 
-	void validate(ParameterEntry const &entry, std::string const &paramName, std::string const &sublistName) const;
+  /** \brief . */
+  ValidStringsList validStringValues() const;
 
-	/** \brief . */
-	const std::string getXMLTagName() const;
+  /** \brief . */
+  void validate(ParameterEntry const &entry, std::string const &paramName, std::string const &sublistName) const;
 
-	void printDoc(std::string const &docString, std::ostream &out) const;
+  /** \brief . */
+  const std::string getXMLTagName() const;
+
+  /** \brief . */
+  void printDoc(std::string const &docString, std::ostream &out) const;
 
 private:
-	/**
-	 * Whether or not the file specified in the parameter should already exist.
-	 */
-	bool mustAlreadyExist_;
+
+  /** \brief Whether or not the file specified in the parameter should already exist.
+   */
+  bool mustAlreadyExist_;
+
 };
 
-/**
- * A simple validator that only allows certain string values to be choosen or simply
+
+/** \brief A simple validator that only allows certain string values to be choosen or simply
  * enforces that a particular parameter have a std::string for a value.
  */
 class StringValidator : public ParameterEntryValidator{
 public:
-	/**
-	 * Constructs a StringValidator.
-	 *
-	 * @param validStrings A list of valid string values for this validator.
-	 */
-	StringValidator(const Teuchos::Array<std::string> &validStrings);
 
-	/**
-	 * Constructs a StringValidator.
-	 */
-	StringValidator();
+  /** \brief Constructs a StringValidator.
+   *
+   * @param validStrings A list of valid string values for this validator.
+   */
+  StringValidator(const Teuchos::Array<std::string> &validStrings);
 
-	/**
-	 * Sets the Array of valid strings and returns what the current array of valid
-	 * string now is.
-	 *
-	 * @param validStrings What the array for the valid strings should contain.
-	 * @return What the arry for the valid strings now conatians.
-	 */
-	ValidStringsList setValidStrings(const Teuchos::Array<std::string> &validStrings);
+  /** \brief Constructs a StringValidator.
+   */
+  StringValidator();
 
-	ValidStringsList validStringValues() const;
+  /** \brief Sets the Array of valid strings and returns what the current array of valid
+   * string now is.
+   *
+   * @param validStrings What the array for the valid strings should contain.
+   * @return What the arry for the valid strings now conatians.
+   */
+  ValidStringsList setValidStrings(const Teuchos::Array<std::string> &validStrings);
 
-	void validate(ParameterEntry const &entry, std::string const &paramName, std::string const &sublistName) const;
+  /** \brief . */
+  ValidStringsList validStringValues() const;
 
-	/** \brief . */
-	const std::string getXMLTagName() const;
+  /** \brief . */
+  void validate(ParameterEntry const &entry, std::string const &paramName, std::string const &sublistName) const;
 
-	void printDoc(std::string const &docString, std::ostream &out) const;
+  /** \brief . */
+  const std::string getXMLTagName() const;
+
+  /** \brief . */
+  void printDoc(std::string const &docString, std::ostream &out) const;
 
 private:
-	/**
-	 * An array containing a list of all the valid string values.
-	 */
-	ValidStringsList validStrings_;
+
+  /** \brief An array containing a list of all the valid string values.
+   */
+  ValidStringsList validStrings_;
+
 };
 
-/**
- * \class Teuchos::ArrayValidator 
- * \brief Takes a validator, wraps it, and applies it to an array.
+
+/** \brief Takes a validator, wraps it, and applies it to an array.
  *
  * This class is a wrapper, allowing you to apply a normal validator to an array of values.
  * It is templated on both the validator type and the type of the entries contained within the array.
@@ -1255,80 +1270,88 @@ private:
 template<class ValidatorType, class EntryType>
 class ArrayValidator : public ParameterEntryValidator{
 public:
-	/**
-	 * Constructs a ArrayValidator.
-	 *
-	 * @param prototypeValidator The validator to be used on each
-	 * entry in the array.
-	 */
-	ArrayValidator(RCP<ValidatorType> prototypeValidator):
-		ParameterEntryValidator(),
-	    prototypeValidator_(prototypeValidator){}
 
-	ValidStringsList validStringValues() const{
-		return prototypeValidator_->validStringValues();
-	}
+  /** \brief Constructs a ArrayValidator.
+   *
+   * @param prototypeValidator The validator to be used on each
+   * entry in the array.
+   */
+  ArrayValidator(RCP<ValidatorType> prototypeValidator):
+    ParameterEntryValidator(),
+      prototypeValidator_(prototypeValidator){}
 
-	virtual void validate(ParameterEntry const &entry, std::string const &paramName, std::string const &sublistName) const{
-		any anyValue = entry.getAny(true);
-		if(anyValue.type() == typeid(Array<EntryType>)){
-			Array<EntryType> extracted = getValue<Teuchos::Array<EntryType> >(entry);
-			for(int i = 0; i<extracted.size(); ++i){
-				ParameterEntry dummyParameter;
-				dummyParameter.setValue(extracted[i]);
-				try{
-					prototypeValidator_->validate(dummyParameter, paramName, sublistName);
-				}
-				catch(Exceptions::InvalidParameterValue& e){
-					std::stringstream oss;
-					oss << "Array Validator Exception: \n" << "Bad Index: " << i << "\n" << e.what();
-					throw Exceptions::InvalidParameterValue(oss.str());
-				}
-			}
-		}
-		else{
-			const std::string &entryName = entry.getAny(false).typeName();
-			std::stringstream oss;
-			std::string msg;
-			oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
-			" parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
-			"No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
-			"can help you figure out what went wrong.\n\n"
-			"Error: The value you entered was the wrong type.\n" <<
-			"Parameter: " << paramName << "\n" <<
-			"Type specified: " << entryName << "\n" <<
-			"Type accepted: " << TypeNameTraits<Array<std::string> >::name() << "\n";
-			msg = oss.str();
-			throw Exceptions::InvalidParameterType(msg);
-		}
-	}
+  /** \brief . */
+  ValidStringsList validStringValues() const {
+    return prototypeValidator_->validStringValues();
+  }
 
-	/** \brief . */
-	const std::string getXMLTagName() const{
-		return "arrayvalidator";
-	}
+  /** \brief . */
+  virtual void validate(ParameterEntry const &entry, std::string const &paramName, std::string const &sublistName) const{
+    any anyValue = entry.getAny(true);
+    if(anyValue.type() == typeid(Array<EntryType>)){
+      Array<EntryType> extracted = getValue<Teuchos::Array<EntryType> >(entry);
+      for(int i = 0; i<extracted.size(); ++i){
+        ParameterEntry dummyParameter;
+        dummyParameter.setValue(extracted[i]);
+        try{
+          prototypeValidator_->validate(dummyParameter, paramName, sublistName);
+        }
+        catch(Exceptions::InvalidParameterValue& e){
+          std::stringstream oss;
+          oss << "Array Validator Exception: \n" << "Bad Index: " << i << "\n" << e.what();
+          throw Exceptions::InvalidParameterValue(oss.str());
+        }
+      }
+    }
+    else{
+      const std::string &entryName = entry.getAny(false).typeName();
+      std::stringstream oss;
+      std::string msg;
+      oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+      " parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
+      "No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
+      "can help you figure out what went wrong.\n\n"
+      "Error: The value you entered was the wrong type.\n" <<
+      "Parameter: " << paramName << "\n" <<
+      "Type specified: " << entryName << "\n" <<
+      "Type accepted: " << TypeNameTraits<Array<std::string> >::name() << "\n";
+      msg = oss.str();
+      throw Exceptions::InvalidParameterType(msg);
+    }
+  }
 
-	virtual void printDoc(std::string const &docString, std::ostream &out) const{
-		StrUtils::printLines(out,"# ",docString);
-		std::string toPrint;
-		toPrint += "ArrayValidator:\n";
-		toPrint += "Prototype Validator:\n";
-		prototypeValidator_->printDoc(toPrint, out);
-	}
+// rabartl: ToDo: This above function needs to be moved outside of the class
+// or the compiler will try to inline it (but not).
 
-	RCP<const ValidatorType> getPrototype() const{
-		return prototypeValidator_;
-	}
+  /** \brief . */
+  const std::string getXMLTagName() const{
+    return "arrayvalidator";
+  }
+
+  /** \brief . */
+  virtual void printDoc(std::string const &docString, std::ostream &out) const
+  {
+    StrUtils::printLines(out,"# ",docString);
+    std::string toPrint;
+    toPrint += "ArrayValidator:\n";
+    toPrint += "Prototype Validator:\n";
+    prototypeValidator_->printDoc(toPrint, out);
+  }
+
+  RCP<const ValidatorType> getPrototype() const{
+    return prototypeValidator_;
+  }
 
 private:
-	/**
-	 * The prototype validator to be applied to each entry in the Array.
-	 */
-	RCP<ValidatorType> prototypeValidator_;
+
+  /** \brief The prototype validator to be applied to each entry in the Array.
+   */
+  RCP<ValidatorType> prototypeValidator_;
+
 };
 
-/* \class Teuchos::ArrayStringValidator 
- * \brief Convience class for StringValidators that are to be applied to arays.
+
+/* \brief Convience class for StringValidators that are to be applied to arays.
  *
  * Also needed for maintaining backwards compatiblitiy with the earliest versions of the Optika package.
  * This class would be a simple typedef, however I wanted to maintain consistency with the ArrayNumberValidator
@@ -1336,12 +1359,12 @@ private:
  */
 class ArrayStringValidator : public ArrayValidator<StringValidator, std::string>{
 public:
-	ArrayStringValidator(RCP<StringValidator> prototypeValidator):
-		ArrayValidator<StringValidator, std::string>(prototypeValidator){}
+  ArrayStringValidator(RCP<StringValidator> prototypeValidator):
+    ArrayValidator<StringValidator, std::string>(prototypeValidator){}
 };
 
-/* \class Teuchos::ArrayFileNameValidator
- * \brief Convience class for FileNameValidators that are to be applied to arays.
+
+/* \brief Convience class for FileNameValidators that are to be applied to arays.
  *
  * Also needed for maintaining backwards compatiblitiy with the earliest versions of the Optika package.
  * This class would be a simple typedef, however I wanted to maintain consistency with the ArrayNumberValidator
@@ -1349,8 +1372,8 @@ public:
  */
 class ArrayFileNameValidator : public ArrayValidator<FileNameValidator, std::string>{
 public:
-	ArrayFileNameValidator(RCP<FileNameValidator> prototypeValidator):
-		ArrayValidator<FileNameValidator, std::string>(prototypeValidator){}
+  ArrayFileNameValidator(RCP<FileNameValidator> prototypeValidator):
+    ArrayValidator<FileNameValidator, std::string>(prototypeValidator){}
 };
 
 /* \class Teuchos::ArrayNumberValidator 
@@ -1362,9 +1385,11 @@ public:
 template<class T>
 class ArrayNumberValidator : public ArrayValidator<EnhancedNumberValidator<T>, T>{
 public:
-	ArrayNumberValidator(RCP<EnhancedNumberValidator<T> > prototypeValidator):
-		ArrayValidator<EnhancedNumberValidator<T>, T>(prototypeValidator){}
+  ArrayNumberValidator(RCP<EnhancedNumberValidator<T> > prototypeValidator):
+    ArrayValidator<EnhancedNumberValidator<T>, T>(prototypeValidator){}
 };
+
+
 // ///////////////////////////
 // Implementations
 
@@ -1408,8 +1433,8 @@ StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameter
 #endif
   TEST_FOR_EXCEPTION(
     strings.size() != integralValues.size(),
-	std::logic_error,
-	"Error, strings and integraValues must be of the same length."
+  std::logic_error,
+  "Error, strings and integraValues must be of the same length."
   );
   typedef typename map_t::value_type val_t;
   for( int i = 0; i < static_cast<int>(strings.size()); ++i ) {
@@ -1439,13 +1464,13 @@ StringToIntegralParameterEntryValidator<IntegralType>::StringToIntegralParameter
 #endif
   TEST_FOR_EXCEPTION(
     strings.size() != integralValues.size(),
-	std::logic_error,
-	"Error, strings and integraValues must be of the same length."
+  std::logic_error,
+  "Error, strings and integraValues must be of the same length."
   );
   TEST_FOR_EXCEPTION(
     strings.size() != stringsDocs.size(),
-	std::logic_error,
-	"Error, strings and stringsDocs must be of the same length."
+  std::logic_error,
+  "Error, strings and stringsDocs must be of the same length."
   );
   typedef typename map_t::value_type val_t;
   for( int i = 0; i < static_cast<int>(strings.size()); ++i ) {
@@ -1481,7 +1506,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::getIntegralValue(
     << validValues_
     << "  }"
     );
-  return (*itr).second;	
+  return (*itr).second;  
 }
 
 
@@ -1577,7 +1602,7 @@ StringToIntegralParameterEntryValidator<IntegralType>::validateString(
 
 template<class IntegralType>
 const std::string StringToIntegralParameterEntryValidator<IntegralType>::getXMLTagName() const{
-	return StrUtils::removeAllSpaces(TypeNameTraits<IntegralType>::name()) + "stringintegralvalidator";
+  return StrUtils::removeAllSpaces(TypeNameTraits<IntegralType>::name()) + "stringintegralvalidator";
 }
 
 template<class IntegralType>
