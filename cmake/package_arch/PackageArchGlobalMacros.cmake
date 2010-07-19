@@ -369,118 +369,6 @@ ENDFUNCTION()
 
 
 #
-# Set up the standard environment
-#
-
-
-MACRO(PACKAGE_ARCH_PRE_SETUP_ENV)
-
-  # Set to release build by default
-  
-  IF (NOT CMAKE_BUILD_TYPE)
-    MESSAGE(STATUS "Setting CMAKE_BUILD_TYPE=RELEASE since it was not set ...")
-    SET(CMAKE_BUILD_TYPE RELEASE CACHE STRING
-      "Type of build to perform (i.e. DEBUG, RELEASE, NONE)" )
-  ELSE()
-    STRING(TOUPPER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_UP)
-    LIST(FIND CMAKE_BUILD_TYPES_LIST ${CMAKE_BUILD_TYPE_UP} BUILD_TYPE_IDX)
-    IF (BUILD_TYPE_IDX EQUAL -1)
-      MESSAGE(SEND_ERROR "Error, the given CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
-        " is not in the list of valid values \"${CMAKE_BUILD_TYPES_LIST}\"!")
-    ENDIF()
-  ENDIF()
-  PRINT_VAR(CMAKE_BUILD_TYPE)
-
-  # Set up MPI if MPI is being used
-
-  ASSERT_DEFINED(TPL_ENABLE_MPI)
-  IF (TPL_ENABLE_MPI)
-    PACKAGE_ARCH_SETUP_MPI()
-  ENDIF()
-
-  # Enable compilers
-  
-  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_C)
-  IF (${PROJECT_NAME}_ENABLE_C)
-    ENABLE_LANGUAGE(C)
-    INCLUDE(CMakeDetermineCCompiler)
-    PRINT_VAR(CMAKE_C_COMPILER_ID)
-    # See CMake/Modules/CMakeCXXCompilerId.cpp.in in the CMake source
-    # directory for a listing of known compiler types.
-  ENDIF()
-  
-  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_CXX)
-  IF (${PROJECT_NAME}_ENABLE_CXX)
-    ENABLE_LANGUAGE(CXX)
-    INCLUDE(CMakeDetermineCXXCompiler)
-    PRINT_VAR(CMAKE_CXX_COMPILER_ID)
-    # See CMake/Modules/CMakeCXXCompilerId.cpp.in in the CMake source
-    # directory for a listing of known compiler types.
-  ENDIF()
-  
-  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_Fortran)
-  IF (${PROJECT_NAME}_ENABLE_Fortran)
-    ENABLE_LANGUAGE(Fortran)
-  ENDIF()
-
-  # Set up for strong compiler warnings and warnings as errors
- 
-  INCLUDE(PackageArchSetupBasicCompileLinkFlags)
-  PACKAGE_ARCH_SETUP_BASIC_COMPILE_LINK_FLAGS()
-
-  # Find the host site name used in selecting or deselecting tests by the
-  # PACKAGE_ADD_TEST(...) function.
-  
-  SITE_NAME(${PROJECT_NAME}_HOSTNAME)
-  MARK_AS_ADVANCED(${PROJECT_NAME}_HOSTNAME)
-  PRINT_VAR(${PROJECT_NAME}_HOSTNAME)
-
-  # Find the host site type name used in selecting or deselecting tests by the
-  # PACKAGE_ADD_TEST(...) function.
-
-  PRINT_VAR(CMAKE_HOST_SYSTEM_NAME)
-
-ENDMACRO()
-
-
-MACRO(PACKAGE_ARCH_POST_SETUP_ENV)
-
-  # Set the hack library to get link options on
-
-  IF (${PROJECT_NAME}_EXTRA_LINK_FLAGS)
-    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE(STATUS "Creating dummy last_lib for appending the link flags: "
-        "${${PROJECT_NAME}_EXTRA_LINK_FLAGS}")
-    ENDIF()
-    IF (NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/last_lib_dummy.c)
-      FILE(WRITE ${CMAKE_CURRENT_BINARY_DIR}/last_lib_dummy.c
-        "typedef int last_lib_dummy_t;\n")
-    ENDIF()
-    ADD_LIBRARY(last_lib STATIC ${CMAKE_CURRENT_BINARY_DIR}/last_lib_dummy.c)
-    TARGET_LINK_LIBRARIES(last_lib ${${PROJECT_NAME}_EXTRA_LINK_FLAGS})
-  ENDIF()
-
-ENDMACRO()
-
-
-#
-# Macro that gathers information from enabled TPLs
-#
-
-MACRO(PACKAGE_ARCH_PROCESS_ENABLED_TPLS)
-  FOREACH(TPL ${${PROJECT_NAME}_TPLS})
-    IF (TPL_ENABLE_${TPL})
-      MESSAGE(STATUS "Processing enabled TPL: ${TPL}")
-      INCLUDE(TPLs/FindTPL${TPL})
-      ASSERT_DEFINED(TPL_${TPL}_INCLUDE_DIRS)
-      ASSERT_DEFINED(TPL_${TPL}_LIBRARIES)
-      ASSERT_DEFINED(TPL_${TPL}_LIBRARY_DIRS)
-    ENDIF()
-  ENDFOREACH()
-ENDMACRO()
-
-
-#
 # Macro that ouptuts XML dependency files
 #
 
@@ -526,6 +414,96 @@ MACRO(PACKAGE_ARCH_WRITE_XML_DEPENDENCY_FILES)
         --output-cdash-deps-xml-file=${${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE} )
   ENDIF()
 
+ENDMACRO()
+
+
+#
+# Read in Trilinos packages and TPLs, process dependencies, write XML files
+#
+# The reason that these steps are all jammed into one macro is so that the XML
+# dependencies of just the core Trilinos packages can be processed, have the
+# XML files written, and then read in the extra set of packages and process
+# the dependencies again.
+#
+
+MACRO(PACKAGE_ARCH_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
+
+  #
+  # 1) Define the lists of all Trilinos packages and TPLs
+  #
+  
+  # 1.a) Read the core Trilinos packages
+  
+  IF (NOT Trilinos_PACKAGES_FILE) # Allow testing override
+    SET(Trilinos_PACKAGES_FILE "TrilinosPackages")
+  ENDIF()
+  
+  MESSAGE("")
+  MESSAGE("Reading the list of packages from ${Trilinos_PACKAGES_FILE}.cmake ... ")
+  MESSAGE("")
+  
+  INCLUDE(${Trilinos_PACKAGES_FILE})
+  
+  PACKAGE_ARCH_PROCESS_PACKAGES_AND_DIRS_LISTS()
+  
+  # 1.b) Read the core TPLs dependencies
+  
+  IF (NOT Trilinos_TPLS_FILE) # Allow testing override
+    SET(Trilinos_TPLS_FILE "TrilinosTPLs")
+  ENDIF()
+  
+  MESSAGE("")
+  MESSAGE("Reading the list of TPLs from ${Trilinos_TPLS_FILE}.cmake ... ")
+  MESSAGE("")
+  
+  INCLUDE(${Trilinos_TPLS_FILE})
+  
+  PACKAGE_ARCH_PROCESS_TPLS_LISTS()
+    
+  #
+  # 2) Process the package and TPL dependencies
+  #
+  
+  PACKAGE_ARCH_READ_ALL_PACKAGE_DEPENDENCIES()
+
+  #
+  # 3) Write the XML dependency files for the core Trilinos packages
+  #
+  
+  PACKAGE_ARCH_WRITE_XML_DEPENDENCY_FILES()
+
+  #
+  # 4) Read in the list of externally defined packages in external
+  # repositories
+  #
+
+  # ToDo: Implement this!
+
+  #
+  # 5) Read in the package dependencies again to now pick up all of the
+  # defined packages (not just the core packages)
+  #
+
+  # ToDo: Uncomment this once you have read in the extra package depencencies
+  #PACKAGE_ARCH_WRITE_XML_DEPENDENCY_FILES()
+
+ENDMACRO()
+
+
+#
+# Macro that gathers information from enabled TPLs
+#
+
+MACRO(PACKAGE_ARCH_PROCESS_ENABLED_TPLS)
+  FOREACH(TPL ${${PROJECT_NAME}_TPLS})
+    IF (TPL_ENABLE_${TPL})
+      MESSAGE(STATUS "Processing enabled TPL: ${TPL}")
+      INCLUDE(TPLs/FindTPL${TPL})
+      ASSERT_DEFINED(TPL_${TPL}_INCLUDE_DIRS)
+      ASSERT_DEFINED(TPL_${TPL}_LIBRARIES)
+      ASSERT_DEFINED(TPL_${TPL}_LIBRARY_DIRS)
+    ENDIF()
+  ENDFOREACH()
 ENDMACRO()
 
 
@@ -627,6 +605,109 @@ MACRO(PACKAGE_ARCH_ADD_DASHBOARD_TARGET)
    
       )
   
+  ENDIF()
+
+ENDMACRO()
+
+
+#
+# Macros for setting up the standard environment
+#
+
+
+#
+# Pre-setup of the environment
+#
+
+MACRO(PACKAGE_ARCH_PRE_SETUP_ENV)
+
+  # Set to release build by default
+  
+  IF (NOT CMAKE_BUILD_TYPE)
+    MESSAGE(STATUS "Setting CMAKE_BUILD_TYPE=RELEASE since it was not set ...")
+    SET(CMAKE_BUILD_TYPE RELEASE CACHE STRING
+      "Type of build to perform (i.e. DEBUG, RELEASE, NONE)" )
+  ELSE()
+    STRING(TOUPPER "${CMAKE_BUILD_TYPE}" CMAKE_BUILD_TYPE_UP)
+    LIST(FIND CMAKE_BUILD_TYPES_LIST ${CMAKE_BUILD_TYPE_UP} BUILD_TYPE_IDX)
+    IF (BUILD_TYPE_IDX EQUAL -1)
+      MESSAGE(SEND_ERROR "Error, the given CMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
+        " is not in the list of valid values \"${CMAKE_BUILD_TYPES_LIST}\"!")
+    ENDIF()
+  ENDIF()
+  PRINT_VAR(CMAKE_BUILD_TYPE)
+
+  # Set up MPI if MPI is being used
+
+  ASSERT_DEFINED(TPL_ENABLE_MPI)
+  IF (TPL_ENABLE_MPI)
+    PACKAGE_ARCH_SETUP_MPI()
+  ENDIF()
+
+  # Enable compilers
+  
+  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_C)
+  IF (${PROJECT_NAME}_ENABLE_C)
+    ENABLE_LANGUAGE(C)
+    INCLUDE(CMakeDetermineCCompiler)
+    PRINT_VAR(CMAKE_C_COMPILER_ID)
+    # See CMake/Modules/CMakeCXXCompilerId.cpp.in in the CMake source
+    # directory for a listing of known compiler types.
+  ENDIF()
+  
+  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_CXX)
+  IF (${PROJECT_NAME}_ENABLE_CXX)
+    ENABLE_LANGUAGE(CXX)
+    INCLUDE(CMakeDetermineCXXCompiler)
+    PRINT_VAR(CMAKE_CXX_COMPILER_ID)
+    # See CMake/Modules/CMakeCXXCompilerId.cpp.in in the CMake source
+    # directory for a listing of known compiler types.
+  ENDIF()
+  
+  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_Fortran)
+  IF (${PROJECT_NAME}_ENABLE_Fortran)
+    ENABLE_LANGUAGE(Fortran)
+  ENDIF()
+
+  # Set up for strong compiler warnings and warnings as errors
+ 
+  INCLUDE(PackageArchSetupBasicCompileLinkFlags)
+  PACKAGE_ARCH_SETUP_BASIC_COMPILE_LINK_FLAGS()
+
+  # Find the host site name used in selecting or deselecting tests by the
+  # PACKAGE_ADD_TEST(...) function.
+  
+  SITE_NAME(${PROJECT_NAME}_HOSTNAME)
+  MARK_AS_ADVANCED(${PROJECT_NAME}_HOSTNAME)
+  PRINT_VAR(${PROJECT_NAME}_HOSTNAME)
+
+  # Find the host site type name used in selecting or deselecting tests by the
+  # PACKAGE_ADD_TEST(...) function.
+
+  PRINT_VAR(CMAKE_HOST_SYSTEM_NAME)
+
+ENDMACRO()
+
+
+#
+# Post-setup of the environment
+#
+
+MACRO(PACKAGE_ARCH_POST_SETUP_ENV)
+
+  # Set the hack library to get link options on
+
+  IF (${PROJECT_NAME}_EXTRA_LINK_FLAGS)
+    IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+      MESSAGE(STATUS "Creating dummy last_lib for appending the link flags: "
+        "${${PROJECT_NAME}_EXTRA_LINK_FLAGS}")
+    ENDIF()
+    IF (NOT EXISTS ${CMAKE_CURRENT_BINARY_DIR}/last_lib_dummy.c)
+      FILE(WRITE ${CMAKE_CURRENT_BINARY_DIR}/last_lib_dummy.c
+        "typedef int last_lib_dummy_t;\n")
+    ENDIF()
+    ADD_LIBRARY(last_lib STATIC ${CMAKE_CURRENT_BINARY_DIR}/last_lib_dummy.c)
+    TARGET_LINK_LIBRARIES(last_lib ${${PROJECT_NAME}_EXTRA_LINK_FLAGS})
   ENDIF()
 
 ENDMACRO()

@@ -103,48 +103,16 @@ ADVANCED_OPTION(Trilinos_SKIP_FORTRANCINTERFACE_VERIFY_TEST
 
 SET(TRILINOS_BUILD_SHARED_LIBS "@BUILD_SHARED_LIBS@")
 
+
 #
-# C) Define the list of all Trilinos packages and TPLs
+# C) Read in Trilinos packages and TPLs and process dependencies
 #
 
-# C.1) Packages
-
-IF (NOT Trilinos_PACKAGES_FILE) # Allow testing override
-  SET(Trilinos_PACKAGES_FILE "TrilinosPackages")
-ENDIF()
-
-MESSAGE("")
-MESSAGE("Reading the list of packages from ${Trilinos_PACKAGES_FILE}.cmake ... ")
-MESSAGE("")
-
-INCLUDE(${Trilinos_PACKAGES_FILE})
-
-PACKAGE_ARCH_PROCESS_PACKAGES_AND_DIRS_LISTS()
-
-# C.2) TPLs
-
-IF (NOT Trilinos_TPLS_FILE) # Allow testing override
-  SET(Trilinos_TPLS_FILE "TrilinosTPLs")
-ENDIF()
-
-MESSAGE("")
-MESSAGE("Reading the list of TPLs from ${Trilinos_TPLS_FILE}.cmake ... ")
-MESSAGE("")
-
-INCLUDE(${Trilinos_TPLS_FILE})
-
-PACKAGE_ARCH_PROCESS_TPLS_LISTS()
+PACKAGE_ARCH_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()
 
 
 #
-# D) Process the package and TPL dependencies
-#
-
-PACKAGE_ARCH_READ_ALL_PACKAGE_DEPENDENCIES()
-
-
-#
-# E) Apply logic to enable Trilinos packages and tests
+# D) Apply logic to enable Trilinos packages and tests
 #
 
 IF (NOT Trilinos_ENABLE_Fortran)
@@ -180,14 +148,7 @@ PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
 
 
 #
-# F) Write the XML dependency files
-#
-
-PACKAGE_ARCH_WRITE_XML_DEPENDENCY_FILES()
-
-
-#
-# G) Stop if asked
+# E) Stop if asked
 #
 
 IF (Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING)
@@ -197,14 +158,14 @@ IF (Trilinos_SHORTCIRCUIT_AFTER_DEPENDENCY_HANDLING)
 ENDIF()
 
 #
-# H) Add the 'dashboard' target
+# F) Add the 'dashboard' target
 #
 
 PACKAGE_ARCH_ADD_DASHBOARD_TARGET()
 
 
 #
-# I) Set up the environment on this computer
+# G) Set up the environment on this computer
 #
 
 MESSAGE("")
@@ -219,7 +180,7 @@ PACKAGE_ARCH_POST_SETUP_ENV()
 
 
 #
-# J) Go get the information for all enabled TPLS
+# H) Go get the information for all enabled TPLS
 #
 
 MESSAGE("")
@@ -233,8 +194,10 @@ PACKAGE_ARCH_PROCESS_ENABLED_TPLS()
 
 OPTION(Trilinos_ENABLE_OpenMP
       "Build with OpenMP support." OFF)
+
+
 #
-# K) Set up for testing with CTest and Trilinos test harness
+# I) Set up for testing with CTest and Trilinos test harness
 #
 
 MESSAGE("")
@@ -247,14 +210,14 @@ TRILINOS_SETUP_TESTING_SUPPORT()
 
 
 #
-# L) Setup for packaging and distribution
+# J) Setup for packaging and distribution
 #
 
 TRILINOS_DEFINE_PACKAGING()
 
 
 #
-# M) Configure individual packages
+# K) Configure individual packages
 # 
 
 MESSAGE("")
@@ -265,13 +228,14 @@ PACKAGE_ARCH_CONFIGURE_ENABLED_PACKAGES()
 
 
 #
-# N) Install-related commands
+# L) Install-related commands
 #
 
 PACKAGE_ARCH_WRITE_CONFIG_FILE()
 
+
 #
-# O) Export the library dependencies. This will let client projects
+# M) Export the library dependencies. This will let client projects
 # refer to all TPLs used by Trilinos. (KRL, 26 Nov 2009)
 #
 
