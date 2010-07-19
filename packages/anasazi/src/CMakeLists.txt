@@ -257,6 +257,8 @@ IF (Anasazi_ENABLE_Tpetra)
     )
 ENDIF()
 
+APPEND_SET(HEADERS AnasaziTsqrAdaptor.hpp AnasaziTsqrOrthoManager.hpp)
+
 ######################################################################
 ## mfh 28 Jun 2010
 ## END TSQR setup
