@@ -1,0 +1,95 @@
+=====================
+ NewSolver Templates
+=====================
+
+:author: Eric T Bavier <etbavier@sandia.gov>
+:date:   Mon Jul 12 13:11:37 CDT 2010
+
+The files in this directory should act as a template or example to
+developers who would like to create an Amesos2 interface for a new
+third-party library.
+
+Workflow
+========
+
+1. Copy the files in this folder to the
+$(TRILINOS_HOME)/packages/amesos2/src/ directory, replacing
+"NewSolver" with the name of the TPL (from now on: "TPL").
+
+2. Update Amesos2_TPL_TypeMap.hpp and Ameso2_TPL_FunctionMap.hpp with
+partial template specializations for the data types supported by TPL.
+Add or modify function calls in Ameso2_TPL_FunctionMap.hpp to reflect
+the needs of TPL.
+
+3. Modify Amesos2_TPL_MatrixHelpers.hpp to suite the needs of TPL.
+Make use of the functions defined in Amesos2_TPL_FunctionMap.hpp.
+
+4. Determine what private data members need to be defined in
+Amesos::TPL to effectively interact with the TPL solver.
+
+5. Define Amesos::TPL::setParameters_impl() so that it extracts
+options from the Teuchos::ParameterList that should be supported by
+this Amesos2 interface.
+
+6. Use the functions defined in Amesos2_TPL_FunctionMap.hpp and
+Amesos2_TPL_MatrixHelpers.hpp, while considering the options defined
+in Amesos::TPL::setParameters_impl(), to fill in the the details of
+  - Amesos::TPL::preOrdering_impl(),
+  - Amesos::TPL::symbolicFactorization_impl(),
+  - Amesos::TPL::numericFactorization_impl(), and
+  - Amesos::TPL::solve_impl().
+
+7. Modify Amesos2_Factory_decl.hpp to conditionally include
+Amesos2_TPL.hpp and Amesos::Factory::create() in
+Amesos2_Factory_def.hpp to return the proper solver interface
+instance. 
+  
+8. Define UnitTests for TPL in amesos2/test/solvers/
+
+
+Notes
+=====
+
+Matrix and vector adapters
+--------------------------
+
+The Amesos2 matrix and multi-vector adapters have been designed to
+give functionality that would be fundamental for use with linear
+solvers, not much more.  Please use them!
+
+If there is some functionality that is not present in the adapters,
+and you feel it would be most convenient for writing your Amesos2
+solver interface, consider emailing the lead developer of Amesos2
+about adding the functionality.
+
+Implicit scalar-type conversion
+-------------------------------
+
+As of yet, Amesos2 does not by default support implicit type
+conversion of the scalar type used in Matrix and MultiVector
+arguments.  The only type conversions that will occur must be fully
+defined in Amesos2_TPL_TypeMap.hpp and Amesos2_TPL_FunctionMap.hpp,
+which could be a long-winded process.
+
+For example, if a TPL only supports float scalar type, then in order
+to support the conversion of integer scalar matrix entries to the
+float type, there would need to be defined::
+
+  TypeMap<TPL,int>
+  {
+    typedef float type;
+    typedef float magnitude_type;
+  }
+
+and::
+
+  FunctionMap<TPL,int>
+  {
+    /* converts int arguments to float before forwarding to TPL */
+    static void solve( /* args */ ){ ... }
+    
+    /* etc. */
+  }
+
+Most conversions between the actual scalar type and the mapped type
+would occur in a call to Teuchos::as<float>(int);

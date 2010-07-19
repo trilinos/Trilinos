@@ -1,0 +1,10 @@
+#ifndef AMESOS2_NEWSOLVER_CPP
+#define AMESOS2_NEWSOLVER_CPP
+
+#include "NewSolver_decl.hpp"
+
+#ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+#  include "NewSolver_def.hpp"
+#endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION
+
+#endif  // AMESOS2_NEWSOLVER_CPP
