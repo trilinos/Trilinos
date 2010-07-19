@@ -1,7 +1,7 @@
 // @HEADER
 // ***********************************************************************
 //
-//                Amesos: Direct Sparse Solver Package
+//                Amesos2: Direct Sparse Solver Package
 //                 Copyright (2004) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
@@ -31,21 +31,13 @@
   \class  Amesos::Solver
   \author Eric T Bavier <etbavier@sandia.gov>
   \date   Thu May 27 14:02:35 CDT 2010
-  
+
   \brief  Templated class for Amesos2 solvers.  Definition.
 */
 
 #ifndef AMESOS2_SOLVER_DEF_HPP
 #define AMESOS2_SOLVER_DEF_HPP
 
-#include <Teuchos_TimeMonitor.hpp>
-
-#include "Amesos2_MultiVecAdapter.hpp"
-#include "Amesos2_MatrixAdapter.hpp"
-#include "Amesos2_SolverBase_decl.hpp"
-#include "Amesos2_Util.hpp"
-
-//#include "Amesos2_Superlu_decl.hpp"
 
 namespace Amesos {
 
@@ -62,7 +54,17 @@ Solver<ConcreteSolver,Matrix,Vector>::Solver(
 {
   globalNumRows_     = matrixA_->getGlobalNumRows();
   globalNumCols_     = matrixA_->getGlobalNumCols();
-//  globalNumNonZeros_ = matrixA_->getGlobalNNZ();
+  globalNumNonZeros_ = matrixA_->getGlobalNNZ();
+
+  TEST_FOR_EXCEPTION(
+    !matrixShapeOK(),
+    std::invalid_argument,
+    "Matrix shape inappropriate for the underlying solver");
+
+  TEST_FOR_EXCEPTION(
+    multiVecX_->getGlobalNumVectors() != multiVecB_->getGlobalNumVectors(),
+    std::invalid_argument,
+    "LHS and RHS MultiVectors must be of the same length");
 }
 
 
@@ -74,7 +76,7 @@ Solver<ConcreteSolver,Matrix,Vector>::~Solver( )
   // kind of status and control code available to Amesos2::Solver,
   // either in the form of a shared library or private inheritance
   // of classes that provide that functionality.
-      
+
   // print out some information if required by the user
   // if ((control_.verbose_ && control_.printTiming_) || control_.verbose_ == 2) printTiming();
   // if ((control_.verbose_ && control_.printStatus_) || control_.verbose_ == 2) printStatus();
@@ -86,21 +88,20 @@ template <template <class,class> class ConcreteSolver, class Matrix, class Vecto
 SolverBase&
 Solver<ConcreteSolver,Matrix,Vector>::preOrdering()
 {
-  // Teuchos::TimeMonitor LocalTimer1(timers_.overheadTime_);
-  // static_cast<solver_type*>(this)->preOrdering_impl();
+  Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
+  static_cast<solver_type*>(this)->preOrdering_impl();
 
   return *this;
 }
-    
+
 
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
 SolverBase&
 Solver<ConcreteSolver,Matrix,Vector>::symbolicFactorization()
 {
-  ++status_.numSymbolicFact_;
-  Teuchos::TimeMonitor LocalTimer1(timers_.overheadTime_);
-  Teuchos::TimeMonitor LocalTimer2(timers_.symFactTime_);
+  Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
   static_cast<solver_type*>(this)->symbolicFactorization_impl();
+  ++status_.numSymbolicFact_;
 
   return *this;
 }
@@ -110,10 +111,9 @@ template <template <class,class> class ConcreteSolver, class Matrix, class Vecto
 SolverBase&
 Solver<ConcreteSolver,Matrix,Vector>::numericFactorization()
 {
-  ++status_.numNumericFact_;
-  Teuchos::TimeMonitor LocalTimer1(timers_.overheadTime_);
-  Teuchos::TimeMonitor LocalTimer2(timers_.numFactTime_);
+  Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
   static_cast<solver_type*>(this)->numericFactorization_impl();
+  ++status_.numNumericFact_;
 
   return *this;
 }
@@ -123,18 +123,17 @@ template <template <class,class> class ConcreteSolver, class Matrix, class Vecto
 void
 Solver<ConcreteSolver,Matrix,Vector>::solve()
 {
-  ++status_.numSolve_;
-  Teuchos::TimeMonitor LocalTimer1(timers_.overheadTime_);
-  Teuchos::TimeMonitor LocalTimer2(timers_.solveTime_);
-
+  Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
   static_cast<solver_type*>(this)->solve_impl();
+  ++status_.numSolve_;
 }
 
 
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
-bool 
+bool
 Solver<ConcreteSolver,Matrix,Vector>::matrixShapeOK()
 {
+  Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
   return( static_cast<solver_type*>(this)->matrixShapeOK_impl() );
 }
 
@@ -144,11 +143,8 @@ SolverBase&
 Solver<ConcreteSolver,Matrix,Vector>::setParameters(
   const Teuchos::RCP<Teuchos::ParameterList> & parameterList )
 {
-  // The setParameters method should be consitent over all concrete solvers.
-  // It will accept general status and control parameters, as well as
-  // parameters specific to a solver.  If the solver does not recognize the
-  // parameter, then it will simply be ignored
- 
+  Teuchos::TimeMonitor LocalTimer1(timers_.totalTime_);
+
   // Do everything here that is for generic status and control parameters
   control_.setControlParameters(parameterList);
   status_.setStatusParameters(parameterList);
@@ -161,10 +157,33 @@ Solver<ConcreteSolver,Matrix,Vector>::setParameters(
 
 
 template <template <class,class> class ConcreteSolver, class Matrix, class Vector >
-const Teuchos::RCP<const Teuchos::Comm<int> >&
-Solver<ConcreteSolver,Matrix,Vector>::getComm() const
+Teuchos::RCP<const Teuchos::ParameterList>
+Solver<ConcreteSolver,Matrix,Vector>::getValidParameters() const
 {
-  return matrixA_->getComm();
+  Teuchos::TimeMonitor LocalTimer1( const_cast<Teuchos::Time&>(timers_.totalTime_) );
+
+  using Teuchos::ParameterList;
+
+  ParameterList control_params, status_params, solver_params, all_params;
+
+  control_params.set("Transpose",false);
+  control_params.set("AddToDiag","");
+  control_params.set("AddZeroToDiag",false);
+  control_params.set("MatrixProperty",0);
+  control_params.set("ScalarMethod",0);
+
+  status_params.set("PrintTiming",false);
+  status_params.set("PrintStatus",false);
+  status_params.set("ComputeVectorNorms",false);
+  status_params.set("ComputeTrueResidual",false);
+
+  solver_params = *(static_cast<const solver_type*>(this)->getValidParameters_impl());
+
+  all_params.setParameters(control_params);
+  all_params.setParameters(status_params);
+  all_params.set(name(), solver_params);
+
+  return Teuchos::rcpFromRef( all_params );
 }
 
 
@@ -207,13 +226,13 @@ Solver<ConcreteSolver,Matrix,Vector>::describe(
   //  medium: print O(P) info, num entries per node
   //    high: print O(N) info, num entries per row
   // extreme: print O(NNZ) info: print indices and values
-  // 
+  //
   // for medium and higher, print constituent objects at specified verbLevel
   if( vl != VERB_NONE ) {
     std::string p = name();
-    Util::printLine();
+    Util::printLine(out);
     out << this->description() << std::endl << std::endl;
-    
+
     out << p << "Matrix has " << globalNumRows_ << "rows"
         << " and " << globalNumNonZeros_ << "nonzeros"
         << std::endl;
@@ -222,7 +241,7 @@ Solver<ConcreteSolver,Matrix,Vector>::describe(
           << double(globalNumNonZeros_)/globalNumRows_
           << std::endl;
       out << p << "Percentage of nonzero elements = "
-          << 100.0 * globalNumNonZeros_/(pow(double(globalNumRows_),double(2.0)))
+          << 100.0 * globalNumNonZeros_ / pow(double(globalNumRows_),double(2.0))
           << std::endl;
     }
     if( vl == VERB_HIGH || vl == VERB_EXTREME ){
@@ -232,9 +251,8 @@ Solver<ConcreteSolver,Matrix,Vector>::describe(
     if ( vl == VERB_EXTREME ){
       printTiming(out,vl);
     }
-    Util::printLine();
+    Util::printLine(out);
   }
-  return;
 }
 
 
@@ -246,13 +264,14 @@ Solver<ConcreteSolver,Matrix,Vector>::printTiming(
 {
   if( matrixA_.is_null() || (status_.myPID_ != 0) ){ return; }
 
-  double numTime   = timers_.numFactTime_.totalElapsedTime();
-  double solTime   = timers_.solveTime_.totalElapsedTime();
-  double overhead  = timers_.overheadTime_.totalElapsedTime();
-  double totalTime = numTime + solTime;
-	
+  double symTime  = timers_.symFactTime_.totalElapsedTime();
+  double numTime  = timers_.numFactTime_.totalElapsedTime();
+  double solTime  = timers_.solveTime_.totalElapsedTime();
+  double totTime  = timers_.totalTime_.totalElapsedTime();
+  double overhead = totTime - (symTime + numTime + solTime);
+
   std::string p = name() + " : ";
-  Util::printLine();
+  Util::printLine(out);
 
   out << p << "Time to convert matrix to implementation format = "
       << timers_.mtxConvTime_.totalElapsedTime() << " (s)"
@@ -260,35 +279,50 @@ Solver<ConcreteSolver,Matrix,Vector>::printTiming(
   out << p << "Time to redistribute matrix = "
       << timers_.mtxRedistTime_.totalElapsedTime() << " (s)"
       << std::endl;
+
+  out << p << "Time to convert vectors to implementation format = "
+      << timers_.vecConvTime_.totalElapsedTime() << " (s)"
+      << std::endl;
   out << p << "Time to redistribute vectors = "
       << timers_.vecRedistTime_.totalElapsedTime() << " (s)"
       << std::endl;
+
+  out << p << "Number of symbolic factorizations = "
+      << getNumSymbolicFact()
+      << std::endl;
+  out << p << "Time for sym fact = "
+      << symTime << " (s), avg = "
+      << symTime / getNumSymbolicFact() << " (s)"
+      << std::endl;
+
   out << p << "Number of numeric factorizations = "
-      << status_.numNumericFact_
+      << getNumNumericFact()
       << std::endl;
   out << p << "Time for num fact = "
       << numTime << " (s), avg = "
-      << numTime/status_.numNumericFact_ << " (s)"
+      << numTime / getNumNumericFact() << " (s)"
       << std::endl;
+
   out << p << "Number of solve phases = "
-      << status_.numSolve_
+      << getNumSolve()
       << std::endl;
   out << p << "Time for solve = "
       << solTime << " (s), avg = "
-      << solTime/status_.numSolve_ << " (s)"
+      << solTime / getNumSolve() << " (s)"
       << std::endl;
+
   out << p << "Total time spent in Amesos2 = "
-      << totalTime << " (s)"
+      << totTime << " (s)"
       << std::endl;
   out << p << "Total time spent in the Amesos2 interface = "
       << overhead << " (s)"
       << std::endl;
-  out << p << "(the above time does not include solver time)"
+  out << p << "  (the above time does not include solver time)"
       << std::endl;
   out << p << "Amesos2 interface time / total time = "
-      << overhead/totalTime
+      << overhead / totTime
       << std::endl;
-  Util::printLine();
+  Util::printLine(out);
 }
 
 
