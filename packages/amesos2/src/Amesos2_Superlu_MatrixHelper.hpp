@@ -38,15 +38,20 @@ struct MatrixHelper<Superlu>
    *                        indices of the matrix.
    * \param [in,out] rowptr User-privded persisting store for row pointers
    * \param [out]    A      Pointer to the SuperLU SuperMatrix which is to be constructed
+   * \param [out]    mtxRedistTime Will have additional time added to it for the
+   *                        time to redistribute tha \c mat matrix.
+   *
+   * \callgraph
    */
   template <class Matrix>
   static void createCRSMatrix(
-    const Teuchos::Ptr<Matrix>& mat,  
+    const Teuchos::Ptr<Matrix>& mat,
     const Teuchos::ArrayView<typename TypeMap<Superlu,typename Matrix::scalar_type>::type>& nzval,
-    const Teuchos::ArrayView<int>& colind, 
-    const Teuchos::ArrayView<int>& rowptr, 
-    const Teuchos::Ptr<SLU::SuperMatrix>& A 
-    )                         
+    const Teuchos::ArrayView<int>& colind,
+    const Teuchos::ArrayView<int>& rowptr,
+    const Teuchos::Ptr<SLU::SuperMatrix>& A,
+    Teuchos::Time& mtxRedistTime
+    )
     {
       typedef typename Matrix::scalar_type                     scalar_type;
       typedef typename Matrix::global_ordinal_type                 go_type;
@@ -73,21 +78,25 @@ struct MatrixHelper<Superlu>
       TEST_FOR_EXCEPTION( Teuchos::as<int>(rowptr.size()) < rows + 1,
         std::runtime_error,
         "rowptr array not large enough to hold data");
-      
+
       Array<scalar_type> nzval_tmp(nzval.size());
-      Array<go_type> colind_tmp(colind.size());
-      Array<gs_type> rowptr_tmp(rowptr.size());
+      Array<go_type>   colind_tmp(colind.size());
+      Array<gs_type>   rowptr_tmp(rowptr.size());
       size_t nnz_ret = 0;
 
       // Actually uses the compressed-row-store format, and tells Superlu this
       // while creating a compressed-column store.
-      mat->getCrs((ArrayView<scalar_type>)nzval_tmp,
-        (ArrayView<go_type>)colind_tmp, (ArrayView<gs_type>)rowptr_tmp, nnz_ret);
+      {
+        Teuchos::TimeMonitor mtxRedistTimer( mtxRedistTime );
+
+        mat->getCrs((ArrayView<scalar_type>)nzval_tmp,
+          (ArrayView<go_type>)colind_tmp, (ArrayView<gs_type>)rowptr_tmp, nnz_ret);
+      }
 
       TEST_FOR_EXCEPTION( nnz_ret != Teuchos::as<size_t>(nnz),
         std::runtime_error,
         "Number of nonzeros returned by getCrs() different from getGlobalNNZ()");
-      
+
       /* Convert types
        *
        * Note: We cannot simply convert when necessary.  That is, we cannot
@@ -138,13 +147,15 @@ struct MatrixHelper<Superlu>
    * \param [out]    ldx  Leading dimension of \c vals
    * \param [out]    X    Pointer to the SuperLU Dense SuperMatrix which is to be
    *                      constructed
+   * \param [out]    vecRedistTime Will have time added for redistribution of \c \mv
    */
   template <class MV>
   static void createMVDenseMatrix(
     const Teuchos::Ptr<MV>& mv,
     const Teuchos::ArrayView<typename TypeMap<Superlu,typename MV::scalar_type>::type>& vals,
     int& ldx,
-    const Teuchos::Ptr<SLU::SuperMatrix>& X
+    const Teuchos::Ptr<SLU::SuperMatrix>& X,
+    Teuchos::Time& vecRedistTime
     )
     {
       typedef typename MV::scalar_type scalar_type;
@@ -157,16 +168,20 @@ struct MatrixHelper<Superlu>
       ldx  = Teuchos::as<int>(mv->getStride());
 
       if ( Util::is_same<scalar_type,slu_type>::value ){
+        Teuchos::TimeMonitor redistTimer( vecRedistTime );
         mv->get1dCopy(vals,ldx);
       } else {
         int vals_length = rows * cols;
         const Teuchos::Array<scalar_type> vals_tmp(vals_length);
-        mv->get1dCopy(vals_tmp.view(0, vals_length));
+        {
+          Teuchos::TimeMonitor redistTimer( vecRedistTime );
+          mv->get1dCopy(vals_tmp.view(0, vals_length));
+        }
         for ( int i = 0; i < vals_length; ++i ){
           vals[i] = Teuchos::as<slu_type>(vals_tmp[i]);
         }
       }
-      
+
       FunctionMap<Superlu,scalar_type>::create_Dense_Matrix(
         X.getRawPtr(), rows, cols, vals.getRawPtr(), ldx,
         SLU::SLU_DN, dtype, SLU::SLU_GE);
@@ -181,6 +196,7 @@ struct MatrixHelper<Superlu>
    * \param [in]     mv   The MultiVector which will be converted to SuperLU format
    * \param [out]    X    Pointer to the SuperLU Dense SuperMatrix which is to be
    *                      constructed
+   * \param [out]    vecRedistTime Will have time added for redistribution of \c \mv
    *
    * \return A Teuchos::ArrayRCP pointing to the beginning of a contiguous
    * store of the values in \c X , which is <b>not</b> necessarily the beginning of
@@ -191,7 +207,8 @@ struct MatrixHelper<Superlu>
   Teuchos::ArrayRCP<typename TypeMap<Superlu,typename MV::scalar_type>::type>
   createMVDenseMatrix(
     const Teuchos::Ptr<MV>& mv,
-    const Teuchos::Ptr<SLU::SuperMatrix>& X
+    const Teuchos::Ptr<SLU::SuperMatrix>& X,
+    Teuchos::Time& vecRedistTime
     )
     {
       typedef typename MV::scalar_type scalar_type;
@@ -205,7 +222,10 @@ struct MatrixHelper<Superlu>
 
       Teuchos::ArrayRCP<scalar_type> vals_ptr;
 
-      vals_ptr = mv->get1dViewNonConst();
+      {
+        Teuchos::TimeMonitor redistTimer( vecRedistTime );
+        vals_ptr = mv->get1dViewNonConst();
+      }
       typedef typename Teuchos::ArrayRCP<scalar_type>::size_type size_type;
       size_type vals_length = vals_ptr.size();
 
@@ -228,4 +248,4 @@ struct MatrixHelper<Superlu>
 
 } // end namespace Amesos
 
-#endif
+#endif  // end AMESOS2_SUPERLU_MATRIXHELPER_HPP
