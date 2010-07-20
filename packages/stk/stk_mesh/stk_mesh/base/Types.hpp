@@ -70,6 +70,14 @@ class Ghosting ;
 
 typedef std::vector<Entity *> EntityVector;
 
+/** Change log to reflect change from before 'modification_begin'
+  *  to the current status.
+  */
+enum EntityModificationLog { EntityLogNoChange = 0 ,
+                             EntityLogCreated  = 1 ,
+                             EntityLogModified = 2 ,
+                             EntityLogDeleted  = 3 };
+
 template< class FieldType > struct EntityArray ;
 template< class FieldType > struct BucketArray ;
 template< class FieldType > struct FieldTraits ;

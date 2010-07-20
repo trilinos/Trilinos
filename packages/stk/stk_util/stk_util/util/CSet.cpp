@@ -10,6 +10,7 @@
 #include <stdexcept>
 #include <iostream>
 #include <sstream>
+#include <assert.h>
 
 #include <stk_util/util/CSet.hpp>
 
@@ -87,6 +88,7 @@ CSet::p_insert( const Manager & m , const void * v )
 
   const size_t offset = im - m_manager.begin();
 
+  assert(m_value.size() == m_manager.size());
   std::vector<const void *>::iterator iv = m_value.begin();
   std::advance( iv , offset );
 
@@ -95,25 +97,30 @@ CSet::p_insert( const Manager & m , const void * v )
     iv = m_value  .insert( iv , v );
   }
 
+  assert(iv != m_value.end());
   return *iv ;
 }
 
 bool CSet::p_remove( const std::type_info & t , const void * v )
 {
+  bool result = false;
   const std::vector< Manager >::iterator im = lower_bound( m_manager , t );
 
-  const size_t offset = im - m_manager.begin();
+  if (im != m_manager.end()) {
+    const size_t offset = im - m_manager.begin();
 
-  std::vector<const void *>::iterator iv = m_value.begin();
-  std::advance( iv , offset );
+    if (offset <= m_value.size()) {
+      std::vector<const void *>::iterator iv = m_value.begin();
+      std::advance( iv , offset );
 
-  const bool result = im != m_manager.end() && t == * im->first && v == * iv ;
+      result = t == * im->first && v == * iv ;
 
-  if ( result ) {
-    m_manager.erase( im );
-    m_value  .erase( iv );
+      if ( result ) {
+	m_manager.erase( im );
+	m_value  .erase( iv );
+      }
+    }
   }
-
   return result ;
 }
 

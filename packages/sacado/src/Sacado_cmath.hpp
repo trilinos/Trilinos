@@ -35,6 +35,7 @@
 #include <cmath>        // for most math functions
 #include <algorithm>	// for std::min and std::max
 
+#if !defined(_AIX)
 // Define some math functions that aren't usually in cmath
 namespace std {
   inline float acosh(float x) { 
@@ -51,5 +52,6 @@ namespace std {
   inline double atanh(double x) { 
     return double(0.5)*std::log((double(1.0)+x)/(double(1.0)-x)); }
 }
+#endif
 
 #endif // SACADO_CMATH_HPP

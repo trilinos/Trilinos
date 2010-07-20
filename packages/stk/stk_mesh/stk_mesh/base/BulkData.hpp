@@ -362,11 +362,10 @@ private:
 
   /** \brief  Parallel index for entity keys */
   parallel::DistributedIndex          m_entities_index ;
-  impl::BucketRepository              m_bucket_repository ;
   impl::EntityRepository              m_entity_repo ;
+  impl::BucketRepository              m_bucket_repository ;
   std::vector<Entity*>                m_entity_comm ;
   std::vector<Ghosting*>              m_ghosting ; /**< Aura is [1] */
-  Bucket *                            m_bucket_nil ;
 
   // Other information:
   const MetaData &   m_mesh_meta_data ;

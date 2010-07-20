@@ -238,6 +238,9 @@ int main(int argc, char *argv[])
   file_copy(in_file, in_type, out_file, out_type, globals);
 
   OUTPUT << "\n" << codename << " execution successful.\n";
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
   return EXIT_SUCCESS;
 }
 

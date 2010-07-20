@@ -9,6 +9,7 @@
 #include <algorithm>
 #include <sstream>
 #include <stdexcept>
+#include <cassert>
 
 #include <stk_mesh/base/Ghosting.hpp>
 
@@ -34,7 +35,7 @@ EntityImpl::EntityImpl( const EntityKey & arg_key )
     m_bucket_ord(0),
     m_owner_rank(0),
     m_sync_count(0),
-    m_mod_log( LogNoChange )
+    m_mod_log( EntityLogCreated )
 {
 }
 
@@ -155,8 +156,22 @@ void EntityImpl::comm_clear() {
   log_modified();
 }
 
-bool EntityImpl::marked_for_destruction() const{
-  return 0 == bucket().capacity();
+bool EntityImpl::marked_for_destruction() const {
+  // The original implementation of this method checked bucket capacity. In
+  // order to ensure that the addition of EntityLogDeleted does not change
+  // behavior, we put error check here.
+  if ( (bucket().capacity() == 0) != (m_mod_log == EntityLogDeleted) ) {
+    std::ostringstream msg;
+    msg << "Inconsistent destruction state; "
+        << "destroyed entities should be in the nil bucket and vice versa.\n"
+        << "Problem is with entity: "
+        << print_entity_key( msg, bucket().mesh().mesh_meta_data(), key() )
+        << "\n"
+        << "Was in nil bucket: " << (bucket().capacity() == 0) << ", "
+        << "was in destroyed state: " << (m_mod_log == EntityLogDeleted);
+    throw std::runtime_error( msg.str() );
+  }
+  return m_mod_log == EntityLogDeleted;
 }
 
 namespace {
@@ -294,6 +309,17 @@ void EntityImpl::destroy_relation( Entity & e_from , Entity & e_to )
   e_from.m_entityImpl.log_modified();
 }
 
+void EntityImpl::log_resurrect()
+{
+  if ( EntityLogDeleted != m_mod_log ) {
+    std::ostringstream msg;
+    msg << "Trying to resurrect non-deleted entity: "
+        << print_entity_key( msg, bucket().mesh().mesh_meta_data(), key() );
+    throw std::runtime_error( msg.str() );
+  }
+  m_mod_log = EntityLogModified;
+  m_bucket = NULL;
+}
 
 } // namespace impl
 } // namespace mesh

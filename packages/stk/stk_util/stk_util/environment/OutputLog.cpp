@@ -563,48 +563,48 @@ parse_output_description(
   for (TokenList::iterator it = tokens.begin(); it != tokens.end(); ) {
     std::string name((*it).first, (*it).second);
 
-    ++it;
+    ++it; if (it == tokens.end()) break;
     std::string operation((*it).first, (*it).second);
 
     if (operation == "=") {
-      ++it;
+      ++it;  if (it == tokens.end()) break;
       std::string path((*it).first, (*it).second);
       if (!path.empty())
         command_list.push_back(new OpenLog(name, path));
       else
         command_list.push_back(new CloseLog(name));
-      ++it;
+      ++it;  if (it == tokens.end()) break;
     }
 
     else if (operation == ">") {
       parse_tee_streambuf(name);
 
-      ++it;
+      ++it;  if (it == tokens.end()) break;
       std::string token(std::string((*it).first, (*it).second));
       if (token != "+" && token != "-") {
         std::string ostream_name(std::string((*it).first, (*it).second));
 
         command_list.push_back(new ClearTeeOStream(name));
         command_list.push_back(new AddTeeOStream(name, ostream_name));
-        ++it;
+        ++it;  if (it == tokens.end()) break;
       }
 
       while (it != tokens.end()) {
         token = std::string((*it).first, (*it).second);
         if (token == "+") {
-          ++it;
+          ++it;  if (it == tokens.end()) break;
           std::string ostream_name(std::string((*it).first, (*it).second));
 
           command_list.push_back(new AddTeeOStream(name, ostream_name));
-          ++it;
+          ++it;  if (it == tokens.end()) break;
         }
 
         else if (token == "-") {
-          ++it;
+          ++it;  if (it == tokens.end()) break;
           std::string ostream_name(std::string((*it).first, (*it).second));
 
           command_list.push_back(new RemoveTeeOStream(name, ostream_name));
-          ++it;
+          ++it;  if (it == tokens.end()) break;
         }
         else
           break;

@@ -20,8 +20,10 @@ namespace stk {
 namespace mesh {
 
 namespace impl {
+
 class EntityRepository;
 class BucketRepository;
+
 }
 
 /** \addtogroup stk_mesh_module
@@ -44,6 +46,9 @@ class BucketRepository;
 class Entity {
 public:
 
+  /** \brief  Query the current state of the entity log */
+  EntityModificationLog log_query() const { return m_entityImpl.log_query(); }
+
   /** \brief  The rank of this entity. */
   EntityRank entity_rank() const { return m_entityImpl.entity_rank(); }
 
@@ -58,10 +63,13 @@ public:
   const EntityKey & key() const { return m_entityImpl.key(); }
 
   /** \brief  The bucket which holds this mesh entity's field data */
-  const Bucket & bucket() const { return m_entityImpl.bucket(); }
+  Bucket & bucket() const { return m_entityImpl.bucket(); }
 
   /** \brief  The ordinal for this entity within its bucket. */
   unsigned bucket_ordinal() const { return m_entityImpl.bucket_ordinal(); }
+
+  /** \brief Is this Entity's bucket valid? */
+  bool is_bucket_valid() const { return m_entityImpl.is_bucket_valid(); }
 
   /** \brief  The mesh bulk data synchronized_count when this entity's
    *          part membership was most recently modified.
@@ -115,8 +123,7 @@ private:
 #ifndef DOXYGEN_COMPILE
   friend class impl::EntityRepository ;
   friend class impl::EntityImpl ;
-  friend class impl::BucketRepository ;
-  friend class BulkData ;
+
 #endif /* DOXYGEN_COMPILE */
 };
 
