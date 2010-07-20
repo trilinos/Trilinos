@@ -80,6 +80,9 @@ SET_DEFAULT_AND_FROM_ENV( TDD_CTEST_TEST_TYPE Experimental )
 get_filename_component(CTEST_SOURCE_DIRECTORY
   "${CTEST_SCRIPT_DIRECTORY}" ABSOLUTE)
 
+get_filename_component(CTEST_UPDATE_DIRECTORY
+  "${CTEST_SCRIPT_DIRECTORY}/../../.." ABSOLUTE)
+
 get_filename_component(CTEST_BINARY_DIRECTORY
   "${CTEST_SCRIPT_DIRECTORY}/../../../../TDD_BUILD" ABSOLUTE)
 
@@ -116,10 +119,10 @@ ctest_empty_binary_directory("${CTEST_BINARY_DIRECTORY}")
 
 ctest_start("${TDD_CTEST_TEST_TYPE}")
 
-message("\nB) Update ${CTEST_SOURCE_DIRECTORY} ...")
+message("\nB) Update ${CTEST_UPDATE_DIRECTORY} ...")
 message("      CTEST_UPDATE_COMMAND='${CTEST_UPDATE_COMMAND}'")
 message("      CTEST_UPDATE_TYPE='${CTEST_UPDATE_TYPE}'")
-ctest_update(SOURCE "${CTEST_SOURCE_DIRECTORY}")
+ctest_update(SOURCE "${CTEST_UPDATE_DIRECTORY}")
 
 message("\nC) Configure ${CTEST_BINARY_DIRECTORY} ...")
 ctest_configure(BUILD "${CTEST_BINARY_DIRECTORY}")
