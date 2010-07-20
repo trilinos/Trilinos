@@ -7,7 +7,7 @@ INCLUDE(PackageLibraryMacros)
 # A) Package-specific configuration options
 #
 
-# PACKAGE_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+PACKAGE_CONFIGURE_FILE(STK_config.h)
 
 #
 # B) Define the header and source files (and directories)
