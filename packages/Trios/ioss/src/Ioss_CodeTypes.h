@@ -14,7 +14,7 @@
 #else
 // This file gets created by cmake during a Trilinos build
 // and will not be present in a sierra build using bjam or associated wrappers
-#include <STK_config.h>
+#include <Trios_config.h>
 #ifdef HAVE_MPI
 #define STK_HAS_MPI
 #endif
