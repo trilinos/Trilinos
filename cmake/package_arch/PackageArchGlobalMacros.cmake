@@ -1,4 +1,6 @@
 
+INCLUDE(PackageArchConstants)
+INCLUDE(PackageArchProcessExtraExternalRepositoriesLists)
 INCLUDE(PackageArchProcessPackagesAndDirsLists)
 INCLUDE(PackageArchAdjustPackageEnables)
 INCLUDE(PackageArchSetupMPI)
@@ -13,6 +15,7 @@ INCLUDE(FindListElement)
 INCLUDE(GlobalNullSet)
 INCLUDE(PrintNonemptyVar)
 INCLUDE(PrintVar)
+INCLUDE(Split)
 INCLUDE(RemoveGlobalDuplicates)
 
 
@@ -154,25 +157,31 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
     "If test output complaining about circular references is found, then the test will fail." )
 
   IF (WIN32 AND NOT CYGWIN)
-    SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE_DEFAULT "")
+    SET(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES_DEFAULT FALSE)
   ELSE()
-    SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE_DEFAULT
-      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/python/data/${PROJECT_NAME}PackageDependencies.xml" )
+    SET(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES_DEFAULT TRUE)
   ENDIF()
-  ADVANCED_SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE
-    "${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE_DEFAULT}"
-    CACHE STRING
-    "Output XML file containing ${PROJECT_NAME} dependenices used by tools (if not empty)." )
-  # 2009/01/19: rabartl: Above: This file outputs just fine on MS# Windows using MS Visual Studio but it causes the entire file to
+  ADVANCED_SET(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES
+    "${${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES_DEFAULT}"
+    CACHE BOOL
+    "Output any XML dependency files or not." )
+
+  # 2009/01/19: rabartl: Above: This file outputs just fine on MS Windows
+  # using MS Visual Studio but it causes the entire file to
   # diff.  There must be something wrong with a newlines or something
   # that is causing this.  If people are going to be doing real
   # development work on MS Windows with MS Visual Studio, then we need
   # to fix this so that the dependency files will get created and
   # checked in correctly.  I will look into this later.
+
+  ADVANCED_SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/python/data/${${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME}"
+    CACHE STRING
+    "Output XML file containing ${PROJECT_NAME} dependenices used by tools (if not empty)." )
   
   IF(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE AND PYTHON_EXECUTABLE)
     SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT
-      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/python/data/CDashSubprojectDependencies.xml" )
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/python/data/${${PROJECT_NAME}_CDASH_SUBPROJECT_DEPS_XML_FILE_NAME}" )
   ELSE()
     SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT "")
   ENDIF()
@@ -183,7 +192,7 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
   
   IF(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE AND PYTHON_EXECUTABLE)
     SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE_DEFAULT
-      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/python/data/${PROJECT_NAME}PackageDependenciesTable.html" )
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/python/data/${${PROJECT_NAME}_PACKAGE_DEPS_TABLE_HTML_FILE_NAME}" )
   ELSE()
     SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE_DEFAULT "")
   ENDIF()
@@ -191,6 +200,35 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
     "${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE_DEFAULT}"
     CACHE STRING
     "HTML ${PROJECT_NAME} dependenices file that will be written to (if not empty)." )
+
+  ADVANCED_SET(${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR
+    "" CACHE PATH
+    "Output the full XML dependency files in the given directory." )
+
+  ADVANCED_SET(${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE
+    ""
+    CACHE STRING
+    "Type of testing to pull in extra respositories (Continuous, or Nightly)" )
+
+  SET(${PROJECT_NAME}_EXTRAREPOS_FILE
+    "${${PROJECT_NAME}_DEPS_HOME_DIR}/cmake/${${PROJECT_NAME}_EXTRA_EXTERNAL_REPOS_FILE_NAME}")
+
+  ADVANCED_SET(${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES
+    FALSE CACHE BOOL
+   "Set if to ignore missing extra repositories (or fail hard)" )
+
+  MESSAGE("")
+  MESSAGE("Reading the list of extra repositories from ${${PROJECT_NAME}_EXTRAREPOS_FILE}")
+  MESSAGE("")
+
+  INCLUDE(${${PROJECT_NAME}_EXTRAREPOS_FILE})
+  PACKAGE_ARCH_PROCESS_EXTRAREPOS_LISTS() # Sets ${PROJECT_NAME}_EXTRA_REPOSITORIES_DEFAULT
+
+  ADVANCED_SET(${PROJECT_NAME}_EXTRA_REPOSITORIES
+    "${${PROJECT_NAME}_EXTRA_REPOSITORIES_DEFAULT}"
+    CACHE STRING
+    "List of external repositories that contain extra ${PROJECT_NAME} packages."
+    )
   
   MARK_AS_ADVANCED(BUILD_TESTING)
   MARK_AS_ADVANCED(CMAKE_BACKWARDS_COMPATIBILITY)
@@ -374,6 +412,7 @@ ENDFUNCTION()
 
 MACRO(PACKAGE_ARCH_WRITE_XML_DEPENDENCY_FILES)
   
+  #PRINT_VAR(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE)
   IF (${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE)
     IF (NOT IS_ABSOLUTE ${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE})
       SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE
@@ -381,10 +420,10 @@ MACRO(PACKAGE_ARCH_WRITE_XML_DEPENDENCY_FILES)
     ENDIF()
     MESSAGE("" )
     MESSAGE("Dumping the XML dependencies file ${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE} ..." )
-    MESSAGE("")
     PACKAGE_ARCH_DUMP_DEPS_XML_FILE()
   ENDIF()
   
+  #PRINT_VAR(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE)
   IF (${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE AND ${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE)
     IF (NOT IS_ABSOLUTE ${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE})
       SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE
@@ -392,25 +431,23 @@ MACRO(PACKAGE_ARCH_WRITE_XML_DEPENDENCY_FILES)
     ENDIF()
     MESSAGE("" )
     MESSAGE("Dumping the HTML dependencies webpage file ${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE} ..." )
-    MESSAGE("" )
     EXECUTE_PROCESS(
       COMMAND ${PYTHON_EXECUTABLE}
-        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/python/dump-package-dep-table.py
+        ${TRILINOS_HOME_DIR}/cmake/python/dump-package-dep-table.py
         --input-xml-deps-file=${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE}
         --output-html-deps-file=${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE} )
   ENDIF()
   
+  #PRINT_VAR(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE)
   IF (${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE AND ${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE)
     IF (NOT IS_ABSOLUTE ${${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE})
       SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/${${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE})
     ENDIF()
     MESSAGE("" )
-    MESSAGE("" )
     MESSAGE("Dumping the CDash XML dependencies file ${${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE} ..." )
-    MESSAGE("" )
     EXECUTE_PROCESS(
       COMMAND ${PYTHON_EXECUTABLE}
-        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/python/dump-cdash-deps-xml-file.py
+        ${TRILINOS_HOME_DIR}/cmake/python/dump-cdash-deps-xml-file.py
         --input-xml-deps-file=${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE}
         --output-cdash-deps-xml-file=${${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE} )
   ENDIF()
@@ -419,10 +456,10 @@ ENDMACRO()
 
 
 #
-# Read in Trilinos packages and TPLs, process dependencies, write XML files
+# Read in ${PROJECT_NAME} packages and TPLs, process dependencies, write XML files
 #
 # The reason that these steps are all jammed into one macro is so that the XML
-# dependencies of just the core Trilinos packages can be processed, have the
+# dependencies of just the core ${PROJECT_NAME} packages can be processed, have the
 # XML files written, and then read in the extra set of packages and process
 # the dependencies again.
 #
@@ -430,34 +467,33 @@ ENDMACRO()
 MACRO(PACKAGE_ARCH_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
 
   #
-  # 1) Define the lists of all Trilinos packages and TPLs
+  # 1) Define the lists of all ${PROJECT_NAME} packages and TPLs
   #
   
-  # 1.a) Read the core Trilinos packages
-  
-  IF (NOT Trilinos_PACKAGES_FILE) # Allow testing override
-    SET(Trilinos_PACKAGES_FILE "TrilinosPackages")
-  ENDIF()
-  
+  # 1.a) Read the core ${PROJECT_NAME} packages
+
+  SET(${PROJECT_NAME}_PACKAGES_FILE "${${PROJECT_NAME}_DEPS_HOME_DIR}/cmake/${${PROJECT_NAME}_PACKAGES_FILE_NAME}")
+
   MESSAGE("")
-  MESSAGE("Reading the list of packages from ${Trilinos_PACKAGES_FILE}.cmake ... ")
+  MESSAGE("Reading the list of packages from ${${PROJECT_NAME}_PACKAGES_FILE}")
   MESSAGE("")
   
-  INCLUDE(${Trilinos_PACKAGES_FILE})
+  INCLUDE(${${PROJECT_NAME}_PACKAGES_FILE})
   
+  SET(APPEND_TO_PACKAGES_LIST FALSE)
   PACKAGE_ARCH_PROCESS_PACKAGES_AND_DIRS_LISTS()
   
   # 1.b) Read the core TPLs dependencies
   
-  IF (NOT Trilinos_TPLS_FILE) # Allow testing override
-    SET(Trilinos_TPLS_FILE "TrilinosTPLs")
+  IF (NOT ${PROJECT_NAME}_TPLS_FILE) # Allow testing override
+    SET(${PROJECT_NAME}_TPLS_FILE "${PROJECT_NAME}TPLs")
   ENDIF()
   
   MESSAGE("")
-  MESSAGE("Reading the list of TPLs from ${Trilinos_TPLS_FILE}.cmake ... ")
+  MESSAGE("Reading the list of TPLs from ${${PROJECT_NAME}_TPLS_FILE}.cmake")
   MESSAGE("")
   
-  INCLUDE(${Trilinos_TPLS_FILE})
+  INCLUDE(${${PROJECT_NAME}_TPLS_FILE})
   
   PACKAGE_ARCH_PROCESS_TPLS_LISTS()
     
@@ -468,25 +504,70 @@ MACRO(PACKAGE_ARCH_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
   PACKAGE_ARCH_READ_ALL_PACKAGE_DEPENDENCIES()
 
   #
-  # 3) Write the XML dependency files for the core Trilinos packages
+  # 3) Write the XML dependency files for the core ${PROJECT_NAME} packages
   #
   
-  PACKAGE_ARCH_WRITE_XML_DEPENDENCY_FILES()
+  IF (${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES)
+    PACKAGE_ARCH_WRITE_XML_DEPENDENCY_FILES()
+  ENDIF()
 
   #
   # 4) Read in the list of externally defined packages in external
   # repositories
   #
 
-  # ToDo: Implement this!
+  # Allow list to be seprated by ',' instead of just by ';'.  This is needed
+  # by the unit test driver code
+  SPLIT("${${PROJECT_NAME}_EXTRA_REPOSITORIES}"  "," ${PROJECT_NAME}_EXTRA_REPOSITORIES)
+
+  FOREACH(EXTRA_REPO ${${PROJECT_NAME}_EXTRA_REPOSITORIES})
+    #PRINT_VAR(EXTRA_REPO)
+    SET(EXTRAREPO_FILE
+      "${${PROJECT_NAME}_DEPS_HOME_DIR}/${EXTRA_REPO}/${${PROJECT_NAME}_EXTRA_PACKAGES_FILE_NAME}")
+    MESSAGE("")
+    MESSAGE("Reading a list of extra packages from ${EXTRAREPO_FILE} ... ")
+    MESSAGE("")
+    IF (NOT EXISTS "${EXTRAREPO_FILE}" AND ${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
+      MESSAGE(
+        "\n***"
+        "\n** WARNING!  Ignoring missing extra repo '${EXTRAREPO_FILE}' on request!"
+        "\n***\n")
+    ELSE()
+      INCLUDE("${EXTRAREPO_FILE}")
+      SET(APPEND_TO_PACKAGES_LIST TRUE)
+      PACKAGE_ARCH_PROCESS_PACKAGES_AND_DIRS_LISTS()
+    ENDIF()
+  ENDFOREACH()
 
   #
   # 5) Read in the package dependencies again to now pick up all of the
   # defined packages (not just the core packages)
   #
 
-  # ToDo: Uncomment this once you have read in the extra package depencencies
-  #PACKAGE_ARCH_WRITE_XML_DEPENDENCY_FILES()
+  IF (${PROJECT_NAME}_EXTRA_REPOSITORIES)
+    PACKAGE_ARCH_READ_ALL_PACKAGE_DEPENDENCIES()
+  ENDIF()
+
+  #
+  # 6) Write out the XML dependency files again but this time for the full
+  # list in the build directory!
+  #
+
+  IF (${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR)
+    #MESSAGE("Printing dependencie files in ${${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR} ...")
+    SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE
+      "${${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR}/${${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME}" )
+    IF(PYTHON_EXECUTABLE)
+      SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE
+        "${${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR}/${${PROJECT_NAME}_CDASH_SUBPROJECT_DEPS_XML_FILE_NAME}" )
+      SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE
+        "${${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR}/${${PROJECT_NAME}_PACKAGE_DEPS_TABLE_HTML_FILE_NAME}" )
+    ELSE()
+      SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE "")
+      SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE "")
+    ENDIF()
+    PACKAGE_ARCH_WRITE_XML_DEPENDENCY_FILES()
+  ENDIF()
 
 ENDMACRO()
 
@@ -535,109 +616,6 @@ MACRO(PACKAGE_ARCH_PROCESS_ENABLED_TPLS)
       ASSERT_DEFINED(TPL_${TPL}_LIBRARY_DIRS)
     ENDIF()
   ENDFOREACH()
-ENDMACRO()
-
-
-#
-# Macro that drives a 'dashboard' target
-#
-
-MACRO(PACKAGE_ARCH_ADD_DASHBOARD_TARGET)
-
-  IF (NOT (WIN32 AND NOT CYGWIN))
-  
-    # H.1) Enable all packages that are enabled and have tests enabled
-  
-    SET(Trilinos_ENABLED_PACKAGES_LIST)
-    SET(Trilinos_ENABLED_PACKAGES_CMAKE_ARG_LIST)
-    FOREACH(PACKAGE ${Trilinos_PACKAGES})
-      IF (Trilinos_ENABLE_${PACKAGE} AND ${PACKAGE}_ENABLE_TESTS)
-        IF (Trilinos_ENABLED_PACKAGES_LIST)
-          SET(Trilinos_ENABLED_PACKAGES_LIST
-            "${Trilinos_ENABLED_PACKAGES_LIST}\;${PACKAGE}") 
-        ELSE()
-          SET(Trilinos_ENABLED_PACKAGES_LIST "${PACKAGE}") 
-        ENDIF()
-        SET(Trilinos_ENABLED_PACKAGES_CMAKE_ARG_LIST
-          ${Trilinos_ENABLED_PACKAGES_CMAKE_ARG_LIST} -DTrilinos_ENABLE_${PACKAGE}=ON)
-      ENDIF()
-    ENDFOREACH()
-    #PRINT_VAR(Trilinos_ENABLED_PACKAGES_LIST)
-    
-    SET(EXPR_CMND_ARGS)
-    IF (Trilinos_ENABLE_COVERAGE_TESTING)
-      APPEND_SET(EXPR_CMND_ARGS "CTEST_DO_COVERAGE_TESTING=TRUE")
-    ENDIF()
-  
-    # H.2) Add the custom target to enable all the packages with tests enabled
-    
-    ADD_CUSTOM_TARGET(dashboard
-  
-      VERBATIM
-    
-      # WARNING: The echoed command and the actual commands are duplicated!  You have to reproduce them!
-  
-      COMMAND echo
-      COMMAND echo "***************************************************"
-      COMMAND echo "*** Running incremental experimental dashboard ***" 
-      COMMAND echo "***************************************************"
-      COMMAND echo
-      COMMAND echo Trilinos_ENABLED_PACKAGES_LIST=${Trilinos_ENABLED_PACKAGES_LIST}
-      COMMAND echo
-  
-      COMMAND echo
-      COMMAND echo "***"
-      COMMAND echo "*** A) Clean out the list of packages"
-      COMMAND echo "***"
-      COMMAND echo
-      COMMAND echo Running: ${CMAKE_COMMAND} -DTrilinos_UNENABLE_ENABLED_PACKAGES:BOOL=TRUE
-        -DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=OFF ${TRILINOS_HOME_DIR}
-      COMMAND echo
-      COMMAND ${CMAKE_COMMAND} -DTrilinos_UNENABLE_ENABLED_PACKAGES:BOOL=TRUE
-        -DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=OFF ${TRILINOS_HOME_DIR}
-  
-      # NOTE: Above, if Trilinos_ENABLE_ALL_PACKAGES was set in CMakeCache.txt, then setting
-      # -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=OFF will turn it off in the cache.  Note that it will
-      # never be turned on again which means that the list of packages will be set explicitly below.
-    
-      COMMAND echo
-      COMMAND echo "***"
-      COMMAND echo "*** B) Run the dashboard command setting the list of packages"
-      COMMAND echo "***"
-      COMMAND echo
-      COMMAND echo Running: env ${EXPR_CMND_ARGS}
-        Trilinos_PACKAGES=${Trilinos_ENABLED_PACKAGES_LIST}
-        ${CMAKE_CTEST_COMMAND} -S
-          ${TRILINOS_HOME_DIR}/cmake/ctest/experimental_build_test.cmake
-      COMMAND echo
-      COMMAND env ${EXPR_CMND_ARGS}
-        Trilinos_PACKAGES=${Trilinos_ENABLED_PACKAGES_LIST}
-        ${CMAKE_CTEST_COMMAND} -S
-          ${TRILINOS_HOME_DIR}/cmake/ctest/experimental_build_test.cmake || echo
-  
-      # 2009/07/05: rabartl: Above, I added the ending '|| echo' to always make
-      # the command pass so that 'make will not stop and avoid this last command
-      # to set back the enabled packages.
-    
-      COMMAND echo
-      COMMAND echo "***"
-      COMMAND echo "*** C) Reconfigure with the original package list"
-      COMMAND echo "***"
-      COMMAND echo
-      COMMAND echo Running: ${CMAKE_COMMAND} ${Trilinos_ENABLED_PACKAGES_CMAKE_ARG_LIST}
-        -DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON ${TRILINOS_HOME_DIR}
-      COMMAND echo
-      COMMAND ${CMAKE_COMMAND} ${Trilinos_ENABLED_PACKAGES_CMAKE_ARG_LIST}
-        -DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON ${TRILINOS_HOME_DIR}
-  
-      COMMAND echo
-      COMMAND echo "See the results at http://trilinos.sandia.gov/cdash/index.php?project=Trilinos&display=project\#Experimental"
-      COMMAND echo
-   
-      )
-  
-  ENDIF()
-
 ENDMACRO()
 
 

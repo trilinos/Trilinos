@@ -179,9 +179,30 @@ class TrilinosDependencies:
 
   def getPackageByDir(self, packageDir):
     packageID = self.__packagesDirToID.get(packageDir, -1)
+    #print "\ngetPackageByDir: packageDir="+packageDir+", packageID="+str(packageID)
     if packageID >= 0:
       return self.__packagesList[packageID]
     return None
+
+
+  def getPackageNameFromPath(self, fullPath, prefixPath):
+    #print "\nfullPath="+fullPath
+    fullPathArray = getFilePathArray(fullPath)
+    if fullPathArray[0] == "packages":
+      regexPathPrefix = "packages/"
+      pathPrefix = ""
+    else:
+      regexPathPrefix = ""
+      pathPrefix = "../"
+    for packageDep in self.__packagesList:
+      regexFilePath = regexPathPrefix+packageDep.packageDir
+      ammendedFullPath = pathPrefix+fullPath 
+      #print "regexFilePath="+regexFilePath
+      #print "ammendedFullPath="+ammendedFullPath
+      if re.match(regexFilePath, ammendedFullPath):
+        #print "MATCH!"
+        return packageDep.packageName
+    return u""
 
 
   def __str__(self):

@@ -35,6 +35,12 @@ building Trilinos in MS Windows with MS Visual C++ against CLAPACK.
   Please note that these sample scripts are only a starting point for you
   to develop a script that works for your own platform.
 
+- Information on how to extend Trilinos with your own packages in your own
+external repository see:
+
+      <trilinos_base_directory>/cmake/TrilinosCMakeQuickstart.txt
+      <trilinos_base_directory>/cmake/HOWTO.ADD_EXTRA_REPO
+
 - If you are having problems, visit:
 
       http://trilinos.sandia.gov/contact.html

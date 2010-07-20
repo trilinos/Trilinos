@@ -72,7 +72,6 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   AztecOO               aztecoo                        PS
   Galeri                galeri                         PS
   Amesos                amesos                         PS
-  Amesos2               amesos2                        EX
   Pamgen                pamgen                         PS
   Ifpack                ifpack                         PS
   Komplex               komplex                        PS
@@ -131,6 +130,5 @@ PACKAGE_DISABLE_ON_PLATFORMS(FEI Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(STK Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Trios Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Anasazi Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Teko Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Zoltan Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Isorropia Windows)
