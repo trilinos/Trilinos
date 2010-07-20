@@ -35,8 +35,8 @@
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziMultiVecTraits.hpp"
 #include "AnasaziTsqrAdaptor.hpp"
-#include "AnasaziOperatorTraits.hpp"
-#include "AnasaziMatOrthoManager.hpp"
+//#include "AnasaziOperatorTraits.hpp"
+#include "AnasaziOrthoManager.hpp"
 #include "Teuchos_LAPACK.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -74,7 +74,7 @@ namespace Anasazi {
   {
   public: 
     TsqrOrthoFault (const std::string& what_arg) : 
-      TsqrOrthoError (what_arg) {}
+      OrthoError (what_arg) {}
   };
 
 
@@ -111,19 +111,17 @@ namespace Anasazi {
   ///
   /// \note Only use Teuchos::null for the Op, since TSQR can only
   ///   orthogonalize with respect to the Euclidean norm.
-  template< class ScalarType, class MV, class OP >
-  class TsqrOrthoManager : 
-    public MatOrthoManager< ScalarType, MV, OP > 
+  template< class ScalarType, class MV >
+  class TsqrOrthoManagerImpl // public OrthoManager< ScalarType, MV >
   {
   private:
     typedef typename Teuchos::ScalarTraits< ScalarType >::magnitudeType MagnitudeType;
     typedef Teuchos::ScalarTraits< ScalarType >    SCT;
     typedef Teuchos::ScalarTraits< MagnitudeType > SCTM;
     typedef MultiVecTraits< ScalarType, MV >       MVT;
-    typedef OperatorTraits< ScalarType, MV, OP >   OPT;
 
     typedef typename Anasazi::TsqrAdaptor< ScalarType, MV >::adaptor_type tsqr_adaptor_type;
-    typedef Teuchos::RCP< adaptor_type > tsqr_adaptor_ptr;
+    typedef Teuchos::RCP< tsqr_adaptor_type > tsqr_adaptor_ptr;
 
   public:
 
@@ -138,32 +136,23 @@ namespace Anasazi {
     ///   Teuchos::null, otherwise an exception will be thrown.
     ///   Also, don't call setOp().
     ///
-    TsqrOrthoManager (const Teuchos::ParameterList& tsqrParams,
-		      Teuchos::RCP<const OP> Op = Teuchos::null)
-      : MatOrthoManager< ScalarType, MV, OP >(Op), 
-	tsqrParams_ (tsqrParams),
-	tsqrAdaptor_ (Teuchos::null),
-	Q_ (Teuchos::null),
-	eps_ (Teuchos::LAPACK< int, MagnitudeType >().LAMCH('E')),
-	reorthogThreshold_ (MagnitudeType(0.5)),
-	relativeRankTolerance_ (MagnitudeType(100)*eps_)
-    {
-      if (Op != Teuchos::null) 
-	throw NonNullOperatorError;
-    }
+    TsqrOrthoManagerImpl (const Teuchos::ParameterList& tsqrParams) :
+      tsqrParams_ (tsqrParams),
+      tsqrAdaptor_ (Teuchos::null),
+      Q_ (Teuchos::null),
+      eps_ (SCT::eps()), // ScalarTraits< ScalarType >::eps() returns MagnitudeType
+      blockReorthogThreshold_ (MagnitudeType(1) / MagnitudeType(2)),
+      relativeRankTolerance_ (MagnitudeType(100)*SCT::eps()),
+      throwOnReorthogFault_ (true)
+    {}
 
-    // FIXME (mfh 16 Jul 2010) setOp() in the base class
-    // (MatOrthoManager) is non-virtual, but should be...
-    void 
-    setOp (Teuchos::RCP< const OP > Op)
-    {
-      if (Op != Teuchos::null) 
-	throw NonNullOperatorError;
-      else
-	_Op = Op;
-    }
-
-    ~TsqrOrthoManager() {};
+    // void 
+    // setOp (Teuchos::RCP< const OP > Op)
+    // {
+    //   static_cast< MatOrthoManager< ScalarType, MV, OP >* const >(this)->setOp (Op);
+    //   if (getOp() != Teuchos::null) 
+    // 	throw NonNullOperatorError();
+    // }
 
     typedef Teuchos::RCP< MV >       mv_ptr;
     typedef Teuchos::RCP< const MV > const_mv_ptr;
@@ -172,24 +161,45 @@ namespace Anasazi {
     typedef Teuchos::RCP< serial_matrix_type >                   serial_matrix_ptr;
     typedef Teuchos::Array< Teuchos::RCP< serial_matrix_type > > prev_coeffs_type;
 
+    void 
+    innerProd (const MV& X, 
+	       const MV& Y, 
+	       serial_matrix_type& Z) const
+    {
+      MVT::MvTransMv (SCT::one(), X, Y, Z);
+    }
+
+    void
+    norm (const MV& X, 
+	  std::vector< MagnitudeType >& normvec) const
+    {
+      const int ncols = MVT::GetNumberVecs (X);
+
+      // mfh 20 Jul 2010: MatOrthoManager::normMat() computes norms
+      // one column at a time, which results in too much
+      // communication.  Instead, we compute the whole inner product,
+      // which takes more computation but is the only option
+      // available, given the current MVT interface.
+      serial_matrix_type XTX (ncols, ncols); 
+      innerProd (X, X, XTX);
+
+      // Record the results.  Make sure normvec is long enough.
+      if (normvec.size() < ncols)
+	normvec.resize (ncols);
+      for (int k = 0; k < ncols; ++k)
+	normvec[k] = SCTM::squareroot (XTX(k,k));
+    }
+
     /// \brief Compute \f$C := Q^* X\f$ and \f$X := X - Q C\f$.
     ///
     /// \warning This method does not do reorthogonalization.  This is
     /// because the reorthogonalization test requires normalization as
     /// well.
     void 
-    projectMat (MV& X, 
-		const_prev_mvs_type Q,
-		prev_coeffs_type C = Teuchos::tuple (serial_matrix_ptr (Teuchos::null)),
-		mv_ptr MX = Teuchos::null,
-		const_prev_mvs_type MQ = Teuchos::tuple (const_mv_ptr (Teuchos::null))) const
+    project (MV& X, 
+	     const_prev_mvs_type Q,
+	     prev_coeffs_type C = Teuchos::tuple (serial_matrix_ptr (Teuchos::null))) const
     {
-      if (getOp() != Teuchos::null)
-	throw NonNullOperatorError;
-      else if (MX != Teuchos::null)
-	throw OrthoError("Sorry, TsqrOrthoManager::normalizeMat() "
-			 "doesn\'t work with MX non-null yet");
-
       int nrows_X, ncols_X, num_Q_blocks, ncols_Q_total;
       checkProjectionDims (nrows_X, ncols_X, num_Q_blocks, ncols_Q_total, X, Q);
       // Test for quick exit: any dimension of X is zero, or there are
@@ -209,20 +219,14 @@ namespace Anasazi {
 	  if (C[i] == Teuchos::null)
 	    C[i] = Teuchos::rcp (new serial_matrix_type (ncols_Q_i, ncols_X));
 	}
-      rawProjectMat (X, Q, C, MX, MQ);
+      rawProject (X, Q, C);
     }
 
 
     int 
-    normalizeMat (MV& X,
-		  serial_matrix_ptr B = Teuchos::null,
-		  mv_ptr MX = Teuchos::null) const
+    normalize (MV& X,
+	       serial_matrix_ptr B = Teuchos::null) const
     {
-      if (getOp() != Teuchos::null)
-	throw NonNullOperatorError;
-      else if (MX != Teuchos::null)
-	throw OrthoError("Sorry, TsqrOrthoManager::normalizeMat() "
-			 "doesn\'t work with MX non-null yet");
       // Internal data used by this method require a specific MV
       // object for initialization (e.g., to get a Map / communicator,
       // and to initialize scratch space).  Thus, we delay (hence
@@ -242,18 +246,19 @@ namespace Anasazi {
 	B = Teuchos::rcp (new serial_matrix_type (ncols, ncols));
       else
 	B->reshape (ncols, ncols);
-
+      //
       // Compute rank-revealing decomposition (in this case, TSQR of X
       // followed by SVD of the R factor and appropriate updating of
       // the resulting Q factor) of X.  X is modified in place, and Q
       // contains the results.
-      typedef typename tsqr_adaptor_type::factor_output_type factor_output_type;
-
+      //
       // Compute TSQR and SVD of X.  Resulting orthogonal vectors go
       // into Q_, and coefficients (not necessarily upper triangular)
       // go into B.
       int rank;
       try {
+	typedef typename tsqr_adaptor_type::factor_output_type 
+	  factor_output_type;
 	factor_output_type factorOutput = tsqrAdaptor_->factor (X, *B);
 	tsqrAdaptor_->explicitQ (X, factorOutput, Q_);
 	rank = tsqrAdaptor_->revealRank (Q_, B, relativeRankTolerance());
@@ -302,18 +307,16 @@ namespace Anasazi {
 
 
     int 
-    projectAndNormalizeMat (MV &X,
-			    const_prev_mvs_type Q,
-			    prev_coeffs_type C = Teuchos::tuple (serial_matrix_ptr (Teuchos::null)),
-			    serial_matrix_ptr B = Teuchos::null, 
-			    mv_ptr MX = Teuchos::null,
-			    const_prev_mvs_type MQ = Teuchos::tuple (const_mv_ptr (Teuchos::null))) const 
+    projectAndNormalize (MV &X,
+			 const_prev_mvs_type Q,
+			 prev_coeffs_type C = Teuchos::tuple (serial_matrix_ptr (Teuchos::null)),
+			 serial_matrix_ptr B = Teuchos::null) const
     {
-      if (getOp() != Teuchos::null)
-	throw NonNullOperatorError;
-      else if (MX != Teuchos::null)
-	throw OrthoError("Sorry, TsqrOrthoManager::projectAndNormalizeMat() "
-			 "doesn\'t work with MX non-null yet");
+      // if (_hasOp || _Op != Teuchos::null)
+      // 	throw NonNullOperatorError();
+      // else if (MX != Teuchos::null)
+      // 	throw OrthoError("Sorry, TsqrOrthoManager::projectAndNormalizeMat() "
+      // 			 "doesn\'t work with MX non-null yet");
 
       // Fetch dimensions of X and Q.
       int nrows_X, ncols_X, num_Q_blocks, ncols_Q_total;
@@ -345,7 +348,9 @@ namespace Anasazi {
 
       // Keep track of the column norms of X, both before and after
       // each orthogonalization pass.
-      std::vector< MagnitudeType > normsBeforeFirstPass (ncols_X);
+      std::vector< MagnitudeType > normsBeforeFirstPass (ncols_X, MagnitudeType(0));
+      std::vector< MagnitudeType > normsAfterFirstPass (ncols_X, MagnitudeType(0));
+      std::vector< MagnitudeType > normsAfterSecondPass (ncols_X, MagnitudeType(0));
       MVT::MvNorm (X, normsBeforeFirstPass);
 
       // First BGS pass.  "Modified Gram-Schmidt" version of Block
@@ -353,7 +358,7 @@ namespace Anasazi {
       //
       // \li \f$C^{\text{new}}_i := Q_i^* \cdot X\f$
       // \li \f$X := X - Q_i \cdot C^{\text{new}}_i\f$
-      rawProjectMat (X, Q, newC, MX, MQ);
+      rawProject (X, Q, newC);
 
       // Update the C matrices:
       //
@@ -362,13 +367,12 @@ namespace Anasazi {
 	*C[i] += *newC[i];
 
       // Normalize the matrix X.
-      int rank = normalizeMat (X, B, MX);
+      int rank = normalize (X, B);
       
       // Compute post-first-pass (pre-normalization) norms, using B.
-      // normalizeMat() doesn't guarantee in general that B is upper
+      // normalize() doesn't guarantee in general that B is upper
       // triangular, so we compute norms using the entire column of B.
       Teuchos::BLAS< int, ScalarType > blas;
-      std::vector< MagnitudeType > normsAfterFirstPass (ncols_X, MagnitudeType(0));
       for (int j = 0; j < ncols_X; ++j)
 	{
 	  const ScalarType* const B_j = &(*B)(0,j);
@@ -380,15 +384,19 @@ namespace Anasazi {
       // reorthogonalization threshold.
       bool reorthog = false;
       for (int j = 0; j < ncols_X; ++j)
-	if (normsBeforeFirstPass[j] / normsAfterFirstPass[j] <= reorthogThreshold)
+	if (normsBeforeFirstPass[j] / normsAfterFirstPass[j] <= blockReorthogThreshold())
 	  {
 	    reorthog = true; 
 	    break;
 	  }
 
-      // Perform another BGS pass if necessary.  "Twice is enough" for
-      // a Krylov method.
-      bool orthogFault = false;
+      // Perform another BGS pass if necessary.  "Twice is enough"
+      // (Kahan's theorem) for a Krylov method, unless (using
+      // Stewart's term) there is an "orthogonalization fault"
+      // (indicated by reorthogFault).
+      bool reorthogFault = false;
+      // Indices of X at which there was an orthogonalization fault.
+      std::vector< int > faultIndices (0);
       if (reorthog)
 	{
 	  // Block Gram-Schmidt (again):
@@ -396,54 +404,70 @@ namespace Anasazi {
 	  // \li \f$C^{\text{new}} = Q^* X\f$
 	  // \li \f$X := X - Q C^{\text{new}}\f$
 	  // \li \f$C := C + C^{\text{new}}\f$
-	  rawProjectMat (X, Q, newC, MX, MQ);
+	  rawProject (X, Q, newC);
 	  for (int i = 0; i < num_Q_blocks; ++i)
 	    *C[i] += *newC[i];
 
 	  // Normalize the matrix X.
 	  serial_matrix_ptr B_new (new serial_matrix_type (ncols_X, ncols_X));
-	  rank = normalizeMat (X, B_new, MX);
+	  rank = normalize (X, B_new);
 	  *B += *B_new;
 
-	  // Compute post-second-pass (pre-normalization) norms, using B.
-	  // normalizeMat() doesn't guarantee in general that B is upper
-	  // triangular, so we compute norms using the entire column of B.
-	  Teuchos::BLAS< int, ScalarType > blas;
-	  std::vector< MagnitudeType > normsAfterFirstPass (ncols_X, MagnitudeType(0));
+	  // Compute post-second-pass (pre-normalization) norms, using
+	  // B.  normalize() doesn't guarantee in general that B is
+	  // upper triangular, so we compute norms using the entire
+	  // column of B.
 	  for (int j = 0; j < ncols_X; ++j)
 	    {
 	      // FIXME Should we use B_new or B here?
 	      const ScalarType* const B_j = &(*B)(0,j);
 	      // Teuchos::BLAS returns a MagnitudeType result on
 	      // ScalarType inputs.
-	      normsAfterFirstPass[j] = blas.NRM2 (ncols_X, B_j, 1);
+	      normsAfterSecondPass[j] = blas.NRM2 (ncols_X, B_j, 1);
 	    }
 	  // Test whether any of the norms dropped below the
 	  // reorthogonalization threshold.  If so, it's an
 	  // orthogonalization fault, which requires expensive
 	  // recovery.
-	  orthogFault = false;
-	  std::vector< int > faultIndices;
+	  reorthogFault = false;
 	  for (int j = 0; j < ncols_X; ++j)
-	    if (normsAfterFirstPass[j] / normsBeforeFirstPass[j] <= reorthogThreshold)
+	    if (normsAfterSecondPass[j] / normsAfterFirstPass[j] <= blockReorthogThreshold())
 	      {
-		orthogFault = true; 
+		reorthogFault = true; 
 		faultIndices.push_back (j);
 	      }
 	} // if (reorthog) // reorthogonalization pass
+
       if (reorthogFault)
 	{
-	  using std::endl;
-	  std::ostringstream os;
-	  os << "Orthogonalization fault at the following column(s) of X:" << endl;
-	  os << "Column\tNorm decrease factor" << endl;
-	  for (int k = 0; k < faultIndices.size(); ++k)
+	  if (throwOnReorthogFault_)
 	    {
-	      const int index = faultIndices[k];
-	      const MagnitudeType decreaseFactor = normsAfterFirstPass[j] / normsBeforeFirstPass[j];
-	      os << index << "\t" << decreaseFactor << endl;
+	      using std::endl;
+	      std::ostringstream os;
+	      os << "Orthogonalization fault at the following column(s) of X:" << endl;
+	      os << "Column\tNorm decrease factor" << endl;
+	      for (int k = 0; k < faultIndices.size(); ++k)
+		{
+		  const int index = faultIndices[k];
+		  const MagnitudeType decreaseFactor = 
+		    normsAfterSecondPass[index] / normsAfterFirstPass[index];
+		  os << index << "\t" << decreaseFactor << endl;
+		}
+	      throw TsqrOrthoFault (os.str());
 	    }
-	  throw TsqrOrthogFault (os.str());
+	  else // Slowly reorthogonalize, one vector at a time, the offending vectors of X.
+	    {
+	      throw std::logic_error ("Not implemented yet");
+
+	      // for (int k = 0; k < faultIndices.size(); ++k)
+	      // 	{
+	      // 	  // Get a view of the current column of X.
+	      // 	  std::vector<int> currentIndex (1, faultIndices[k]);
+	      // 	  Teuchos::RCP< MV > X_j = MVT::CloneViewNonConst (X, currentIndex);
+
+	      // 	  // Reorthogonalize X_j against all columns of each Q[i].
+	      // 	}
+	    }
 	}
       return rank;
     }
@@ -453,39 +477,40 @@ namespace Anasazi {
     /// Return the Frobenius norm of I - X^* X, which is an absolute
     /// measure of the orthogonality of the columns of X.
     MagnitudeType 
-    orthonormErrorMat (const MV &X, 
-		       const_mv_ptr MX = Teuchos::null) const
+    orthonormError (const MV &X) const
     {
-      if (getOp() != Teuchos::null)
-	throw NonNullOperatorError;
-
       const ScalarType ONE = SCT::one();
-      const int rank = MVT::GetNumberVecs(X);
-      Teuchos::SerialDenseMatrix< int, ScalarType > xTx(rank, rank);
-      innerProdMat (X, X, xTx, MX, MX);
-      for (int i = 0; i < rank; ++i) {
-	xTx(i,i) -= ONE;
-      }
-      return xTx.normFrobenius();
+      const int ncols = MVT::GetNumberVecs(X);
+      serial_matrix_type XTX (ncols, ncols);
+      innerProd (X, X, XTX);
+      for (int k = 0; k < ncols; ++k)
+	XTX(k,k) -= ONE;
+      return XTX.normFrobenius();
     }
 
     MagnitudeType 
-    orthogErrorMat (const MV &X, 
-		    const MV &Y,
-		    mv_ptr MX = Teuchos::null, 
-		    mv_ptr MY = Teuchos::null) const
+    orthogError (const MV &X1, 
+		 const MV &X2) const
     {
-      if (getOp() != Teuchos::null)
-	throw NonNullOperatorError;
-
-      const int r1 = MVT::GetNumberVecs (X);
-      const int r2 = MVT::GetNumberVecs (Y);
-      serial_matrix_type xTx (r1, r2);
-      innerProdMat (X, Y, xTx, MX, MY);
-      return xTx.normFrobenius();
+      const int ncols_X1 = MVT::GetNumberVecs (X1);
+      const int ncols_X2 = MVT::GetNumberVecs (X2);
+      serial_matrix_type X1_T_X2 (ncols_X1, ncols_X2);
+      innerProd (X1, X2, X1_T_X2);
+      return X1_T_X2.normFrobenius();
     }
 
+    /// Relative tolerance for triggering a block reorthogonalization.
+    /// If any column norm in a block decreases by this amount, then
+    /// we reorthogonalize.
+    MagnitudeType blockReorthogThreshold() const { return blockReorthogThreshold_; }
+    /// Relative tolerance for determining (via the SVD) whether a
+    /// block is of full numerical rank.
+    MagnitudeType relativeRankTolerance() const { return relativeRankTolerance_; }
+
   private:
+    /// 
+    /// Parameters for initializing TSQR
+    Teuchos::ParameterList tsqrParams_;
     ///
     /// Interface between Anasazi and TSQR (the Tall Skinny QR
     /// factorization).
@@ -498,18 +523,22 @@ namespace Anasazi {
     MagnitudeType eps_;
     ///
     /// Reorthogonalization threshold (relative) in Block Gram-Schmidt.
-    MagnitudeType reorthogThreshold_;
+    MagnitudeType blockReorthogThreshold_;
     ///
     /// Relative tolerance for measuring the numerical rank of a matrix.
     MagnitudeType relativeRankTolerance_;
+    
+    /// Whether to throw an exception when an orthogonalization fault
+    /// occurs.  Recovery is possible, but expensive.
+    bool throwOnReorthogFault_;
 
     /// \brief Initialize the TSQR adaptor and scratch space
     ///
     /// Initialize the TSQR adaptor and scratch space for TSQR.  Both
     /// require a specific MV object, so we have to delay their
-    /// initialization until we get an X input (for normalizeMat(),
-    /// since only that method uses the TSQR adaptor and the scratch
-    /// space).  (Hence, "lazy," for delayed initialization.)
+    /// initialization until we get an X input (for normalize(), since
+    /// only that method uses the TSQR adaptor and the scratch space).
+    /// (Hence, "lazy," for delayed initialization.)
     void
     lazyInit (const MV& X)
     {
@@ -549,9 +578,6 @@ namespace Anasazi {
 			 const MV& X, 
 			 const_prev_mvs_type Q) const
     {
-      if (getOp() != Teuchos::null)
-	throw NonNullOperatorError;
-
       // Test for quick exit
       num_Q_blocks = Q.length();
       if (num_Q_blocks == 0)
@@ -571,18 +597,16 @@ namespace Anasazi {
 	  const int nrows_Q = MVT::GetVecLength (*Q[i]);
 	  TEST_FOR_EXCEPTION( (nrows_Q != nrows_X), 
 			      std::invalid_argument,
-			      "Anasazi::TsqrOrthoManager::projectMat(): "
+			      "Anasazi::TsqrOrthoManager::project(): "
 			      "Size of X not consistant with size of Q" );
 	  ncols_Q_total += MVT::GetNumberVecs (*Q[i]);
 	}
     }
 
     void
-    rawProjectMat (MV& X, 
-		   const_prev_mvs_type Q,
-		   prev_coeffs_type C = Teuchos::tuple (serial_matrix_ptr (Teuchos::null)),
-		   mv_ptr MX = Teuchos::null,
-		   const_prev_mvs_type MQ = Teuchos::tuple (const_mv_ptr (Teuchos::null))) const
+    rawProject (MV& X, 
+		const_prev_mvs_type Q,
+		prev_coeffs_type C = Teuchos::tuple (serial_matrix_ptr (Teuchos::null))) const
     {
       int nrows_X, ncols_X, num_Q_blocks, ncols_Q_total;
       checkProjectionDims (nrows_X, ncols_X, num_Q_blocks, ncols_Q_total, X, Q);
@@ -595,11 +619,100 @@ namespace Anasazi {
       // "Modified Gram-Schmidt" version of Block Gram-Schmidt.
       for (int i = 0; i < num_Q_blocks; ++i)
 	{
-	  innerProdMat (*Q[i], X, *C[i], Teuchos::null);
+	  innerProd (*Q[i], X, *C[i]);
 	  MVT::MvTimesMatAddMv (ScalarType(-1), *Q[i], *C[i], ScalarType(1), X);
 	}
     }
   };
+
+
+
+  template< class ScalarType, class MV >
+  class TsqrOrthoManager : public OrthoManager< ScalarType, MV > {
+  public:
+    TsqrOrthoManager (const Teuchos::ParameterList& tsqrParams) :
+      impl_ (tsqrParams) 
+    {}
+
+    virtual ~TsqrOrthoManager() {}
+
+    virtual void 
+    innerProd (const MV &X, 
+	       const MV &Y, 
+	       Teuchos::SerialDenseMatrix<int,ScalarType>& Z) const
+    {
+      return impl_.innerProd (X, Y, Z);
+    }
+
+    virtual void 
+    norm (const MV& X, 
+	  std::vector< typename Teuchos::ScalarTraits<ScalarType>::magnitudeType > &normvec) const
+    {
+      return impl_.norm (X, normvec);
+    }
+
+    virtual void 
+    project (MV &X, 
+	     Teuchos::Array<Teuchos::RCP<const MV> > Q,
+	     Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C 
+	     = Teuchos::tuple(Teuchos::RCP< Teuchos::SerialDenseMatrix<int,ScalarType> >(Teuchos::null))) const
+    {
+      return impl_.project (X, Q, C);
+    }
+
+    virtual int 
+    normalize (MV &X, 
+	       Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B = Teuchos::null) const
+    {
+      return impl_.normalize (X, B);
+    }
+
+    virtual int 
+    projectAndNormalize (MV &X, 
+			 Teuchos::Array<Teuchos::RCP<const MV> > Q,
+			 Teuchos::Array<Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > > C 
+			 = Teuchos::tuple(Teuchos::RCP< Teuchos::SerialDenseMatrix<int,ScalarType> >(Teuchos::null)),
+			 Teuchos::RCP<Teuchos::SerialDenseMatrix<int,ScalarType> > B = Teuchos::null) const
+    {
+      return impl_.projectAndNormalize (X, Q, C, B);
+    }
+
+    virtual typename Teuchos::ScalarTraits< ScalarType >::magnitudeType 
+    orthonormError (const MV &X) const
+    {
+      return impl_.orthonormError (X);
+    }
+
+    virtual typename Teuchos::ScalarTraits<ScalarType>::magnitudeType 
+    orthogError (const MV &X1, 
+		 const MV &X2) const 
+    {
+      return impl_.orthogError (X1, X2);
+    }
+
+  private:
+    TsqrOrthoManagerImpl< ScalarType, MV > impl_;
+  };
+
+  // template< class ScalarType, class MV >
+  // class TsqrMatOrthoManager : public MatOrthoManager< ScalarType, MV > {
+  // public:
+  //   TsqrMatOrthoManager (const Teuchos::ParameterList& tsqrParams,
+  // 			 Teuchos::RCP<const OP> Op = Teuchos::null) :
+  //     MatOrthoManager< ScalarType, MV > (Op),
+  //     impl_ (tsqrParams)
+  //   {
+  //     if (getOp() != Teuchos::null)
+  // 	throw NonNullOperatorError();
+  //   }
+
+
+
+
+  // private:
+  //   TsqrOrthoManagerImpl impl_;
+  // };
+
 
 } // namespace Anasazi
 
