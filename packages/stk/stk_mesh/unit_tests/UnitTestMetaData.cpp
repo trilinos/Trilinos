@@ -16,6 +16,8 @@
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
+#include <stk_mesh/fem/TopologyHelpers.hpp>
+#include <Shards_BasicTopologies.hpp>
 
 namespace stk {
 namespace mesh {
@@ -849,6 +851,7 @@ void UnitTestMetaData::testProperty()
   dummy_names[0].assign("dummy");
 
   stk::mesh::MetaData meta_data( dummy_names );
+  stk::mesh::MetaData meta_data2( dummy_names );
 
   stk::mesh::Property<int> & pi = meta_data.declare_property<int>("my_i");
   stk::mesh::Property<double> & pf = meta_data.declare_property<double>("my_d");
@@ -872,6 +875,65 @@ void UnitTestMetaData::testProperty()
 
   STKUNIT_ASSERT( stk::mesh::property_data( pi , meta_data.locally_owned_part() ) != NULL);
   STKUNIT_ASSERT( ! stk::mesh::property_data( px , meta_data.locally_owned_part() ) );
+  
+
+  stk::mesh::Property<int> * property();
+
+  const stk::mesh::PropertyBase * p = NULL;
+  property_data_throw( *p, meta_data.locally_owned_part());
+
+  ///////stk::mesh::Part & part_1 = meta_data.declare_part( "a_part_1", 0 );
+
+  const std::string& str = "my_i";
+  const std::string& str2 = "my_d";
+
+ 
+  stk::mesh::Property<int> * const pProp = meta_data.get_property<int>( str );
+  STKUNIT_ASSERT( (*pProp).type_is<int>() );
+
+  {
+    int ok = 0 ;
+    try {
+      meta_data.get_property<double>( str );    
+    }
+    catch( const std::exception & x ) {
+      ok = 1 ;
+      std::cout << "UnitTestMetaData CORRECTLY caught error for : "
+                << x.what()
+                << std::endl ;
+    }
+
+    if ( ! ok ) {
+      throw std::runtime_error("UnitTestMetaData FAILED to catch error for get_property");
+    }
+  }
+
+
+  {
+    int ok = 0 ;
+    try {
+    meta_data.get_property<int>( str2 );
+    }
+    catch( const std::exception & x ) {
+      ok = 1 ;
+      std::cout << "UnitTestMetaData CORRECTLY caught error for : "
+                << x.what()
+                << std::endl ;
+    }
+
+    if ( ! ok ) {
+      throw std::runtime_error("UnitTestMetaData FAILED to catch error for get_property");
+    }
+  }
+
+  //Final coverage of MetaData.hpp - declare_property
+  stk::mesh::Property<double> & pb = meta_data.declare_property<double>("my_array",0);
+  STKUNIT_ASSERT( (pb).type_is<double>() );
+
+  //More coverage of Property.hpp
+  STKUNIT_ASSERT( stk::mesh::property_data( pi , meta_data2.locally_owned_part() ));
+ 
+
 }
 
 }

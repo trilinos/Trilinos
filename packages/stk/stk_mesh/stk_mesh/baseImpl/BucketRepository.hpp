@@ -17,11 +17,17 @@ namespace stk {
 namespace mesh {
 namespace impl {
 
+  class EntityRepository;
 
 class BucketRepository {
 public:
   ~BucketRepository();
-  BucketRepository(BulkData & mesh, unsigned bucket_capacity, unsigned entity_rank_count);
+  BucketRepository(
+      BulkData & mesh,
+      unsigned bucket_capacity,
+      unsigned entity_rank_count,
+      EntityRepository & entity_repo
+      );
 
   /** \brief  Query all buckets of a given entity type */
   const std::vector<Bucket*> & buckets( EntityRank type ) const ;
@@ -32,14 +38,14 @@ public:
    *                  => update via field relation
    */
   void remove_entity( Bucket * , unsigned );
-  
+
   //------------------------------------
   /** \brief  Query the upper bound on the number of mesh entities
     *         that may be associated with a single bucket.
     */
   unsigned bucket_capacity() const { return m_bucket_capacity; }
 
-  
+
   //------------------------------------
 
   /** \brief  Rotate the field data of multistate fields.
@@ -58,12 +64,13 @@ public:
   // Destroy the last empty bucket in a family:
   void destroy_bucket( const unsigned & entity_rank , Bucket * last );
   void destroy_bucket( Bucket * bucket );
-  Bucket * declare_nil_bucket();
-  Bucket * declare_bucket( 
+  void declare_nil_bucket();
+  Bucket * get_nil_bucket() const { return m_nil_bucket; }
+  Bucket * declare_bucket(
       const unsigned entity_rank ,
       const unsigned part_count ,
       const unsigned part_ord[] ,
-      const std::vector< FieldBase * > & field_set 
+      const std::vector< FieldBase * > & field_set
       );
   void copy_fields( Bucket & k_dst , unsigned i_dst ,
                            Bucket & k_src , unsigned i_src );
@@ -86,12 +93,14 @@ private:
   BulkData                            & m_mesh ; // Associated Bulk Data Aggregate
   unsigned                              m_bucket_capacity ; // Maximum number of entities per bucket
   std::vector< std::vector<Bucket*> >   m_buckets ; // Vector of bucket pointers by rank
-  Bucket                              * m_bucket_nil ; // nil bucket
+  Bucket                              * m_nil_bucket ; // nil bucket
+
+  EntityRepository                    & m_entity_repo ;
 };
 
 
 
-} // namespace impl 
+} // namespace impl
 } // namespace mesh
 } // namespace stk
 

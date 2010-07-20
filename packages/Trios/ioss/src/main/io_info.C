@@ -162,6 +162,9 @@ int main(int argc, char *argv[])
   file_info(in_file, in_type, globals);
 
   OUTPUT << "\n" << codename << " execution successful.\n";
+#ifdef HAVE_MPI
+  MPI_Finalize();
+#endif
   return EXIT_SUCCESS;
 }
 

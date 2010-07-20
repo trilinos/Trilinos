@@ -33,6 +33,10 @@ namespace stk {
 	   The mesh can optionally include shell elements along each face of the cube mesh.
 	   These are specified via the 'add_shell_block' function.
 	 
+	   The mesh can optionally include nodesets/sidesets along each
+	   face of the cube mesh.  These are specified via the
+	   'add_nodesets' and 'add_sidesets' functions.
+	 
 	   If the 'parameters' string constructor is used, the string
 	   is parsed to determine the intervals in each direction and,
 	   optionally, additional information.  The form of the string
@@ -45,59 +49,80 @@ namespace stk {
 	   Additional valid options are:
            - help -- no argument, shows valid options
            - show -- no argument, prints out a summary of the
-             GeneratedMesh() parameters. The output will look similar
-             to:
-	     \code
-	     "10x12x8|shell:xX|bbox:-10,-10,-10,10,10,10|show"
+	   GeneratedMesh() parameters. The output will look similar
+	   to:
+	   \code
+	   "10x12x8|shell:xX|bbox:-10,-10,-10,10,10,10|nodeset:xyz|sideset:XYZ|show"
 
-	     Mesh Parameters:
-	        Intervals: 10 by 12 by 8
-		X = 2       * (0..10) + -10     Range: -10 <= X <= 10
-		Y = 1.66667 * (0..12) + -10     Range: -10 <= Y <= 10
-		Z = 2.5     * (0..8)  + -10     Range: -10 <= Z <= 10
-		Node Count (total)    = 1287
-		Element Count (total) = 1152
-		Block Count           = 3
-	     \endcode
+	   Mesh Parameters:
+	   Intervals: 10 by 12 by 8
+	   X = 2       * (0..10) + -10     Range: -10 <= X <= 10
+	   Y = 1.66667 * (0..12) + -10     Range: -10 <= Y <= 10
+	   Z = 2.5     * (0..8)  + -10     Range: -10 <= Z <= 10
+	   Node Count (total)    = 1287
+	   Element Count (total) = 1152
+	   Block Count           = 3
+	   Nodeset Count         = 3
+	   Sideset Count         = 3
+	   \endcode
 
 	   - shell -- argument = xXyYzZ which specifies whether there is a shell
-	     block at that location. 'x' is minimum x face, 'X' is maximum x face,
- 	     similarly for y and z.  Note that the argument string is a single
-	     multicharacter string.  You can add multiple shell blocks to a face,
-	     for example, shell:xxx would add three layered shell blocks on the
-	     minimum x face.  An error is output if a non xXyYzZ character is
-	     found, but execution continues.
+	   block at that location. 'x' is minimum x face, 'X' is maximum x face,
+	   similarly for y and z.  Note that the argument string is a single
+	   multicharacter string.  You can add multiple shell blocks to a face,
+	   for example, shell:xxx would add three layered shell blocks on the
+	   minimum x face.  An error is output if a non xXyYzZ character is
+	   found, but execution continues.
+
+	   - nodeset -- argument = xXyYzZ which specifies whether there is
+	   a nodeset at that location. 'x' is minimum x face, 'X' is
+	   maximum x face, similarly for y and z.  Note that the argument
+	   string is a single multicharacter string.  You can add multiple
+	   nodesets to a face, for example, nodeset:xxx would add three
+	   nodesets on the minimum x face.  An error is output if a non
+	   xXyYzZ character is found, but execution continues.
+
+	   - sideset -- argument = xXyYzZ which specifies whether there is
+	   a sideset at that location. 'x' is minimum x face, 'X' is
+	   maximum x face, similarly for y and z.  Note that the argument
+	   string is a single multicharacter string.  You can add multiple
+	   sidesets to a face, for example, sideset:xxx would add three
+	   sidesets on the minimum x face.  An error is output if a non
+	   xXyYzZ character is found, but execution continues.  If there
+	   is a shell block specified on that face, then the sideset will
+	   be on the shell elements; else the sideset will be on the hex
+	   elements.
 
 	   - zdecomp -- argument = n0, n1, n2, ..., n#proc-1 which are the number
-	     of intervals in the z direction for each processor in a pallel run.
-	     If this option is specified, then the total number of intervals in the
-	     z direction is the sum of the n0, n1, ... An interval count must be
-	     specified for each processor.  If this option is not specified, then
-	     the number of intervals on each processor in the z direction is
-	     numZ/numProc with the extras added to the lower numbered processors.
+	   of intervals in the z direction for each processor in a pallel run.
+	   If this option is specified, then the total number of intervals in the
+	   z direction is the sum of the n0, n1, ... An interval count must be
+	   specified for each processor.  If this option is not specified, then
+	   the number of intervals on each processor in the z direction is
+	   numZ/numProc with the extras added to the lower numbered processors.
 
 	   - scale -- argument = xs, ys, zs which are the scale factors in the x,
-	     y, and z directions. All three must be specified if this option is
-	     present.
+	   y, and z directions. All three must be specified if this option is
+	   present.
 
 	   - offset -- argument = xoff, yoff, zoff which are the offsets in the
-	     x, y, and z directions.  All three must be specified if this option
-	     is present.
+	   x, y, and z directions.  All three must be specified if this option
+	   is present.
 
 	   - bbox -- argument = xmin, ymin, zmin, xmax, ymax, zmax
-	     which specify the lower left and upper right corners of
-	     the bounding box for the generated mesh.  This will
-	     calculate the scale and offset which will fit the mesh in
-	     the specified box.  All calculations are based on the currently
-	     active interval settings. If scale or offset or zdecomp
-	     specified later in the option list, you may not get the
-	     desired bounding box.
+	   which specify the lower left and upper right corners of
+	   the bounding box for the generated mesh.  This will
+	   calculate the scale and offset which will fit the mesh in
+	   the specified box.  All calculations are based on the currently
+	   active interval settings. If scale or offset or zdecomp
+	   specified later in the option list, you may not get the
+	   desired bounding box.
 
 	   - rotate -- argument = axis,angle,axis,angle,...
-	     where axis is 'x', 'y', or 'z' and angle is the rotation angle in
-	     degrees. Multiple rotations are cumulative. The composite rotation
-	     matrix is applied at the time the coordinates are retrieved after
-	     scaling and offset are applied.
+	   where axis is 'x', 'y', or 'z' and angle is the rotation angle in
+	   degrees. Multiple rotations are cumulative. The composite rotation
+	   matrix is applied at the time the coordinates are retrieved after
+	   scaling and offset are applied.
 
 	   The unrotated coordinate of a node at grid location i,j,k is:
 	   \code
@@ -150,6 +175,39 @@ namespace stk {
 	size_t add_shell_block(ShellLocation loc);
     
 	/**
+	 * Add a nodeset along the specified face of the hex mesh.
+	 * The nodesets will maintain the order of definition. The
+	 * first nodeset defined will be nodeset 1.
+	 * The loc options are:
+	 * - MX = add nodeset on the face with minimum X 
+	 * - PX = add nodeset on the face with maximum X 
+	 * - MY = add nodeset on the face with minimum Y 
+	 * - PY = add nodeset on the face with maximum Y 
+	 * - MZ = add nodeset on the face with minimum Z 
+	 * - PZ = add nodeset on the face with maximum Z
+	 *
+	 */
+	size_t add_nodeset(ShellLocation loc);
+    
+	/**
+	 * Add a sideset along the specified face of the hex mesh.
+	 * The sidesets will maintain the order of definition. The
+	 * first sideset defined will be sideset 1. If there is a shell
+	 * block specified on that face, then the sideset will be on the
+	 * shell elements; otherwise the sideset will be on the hex
+	 * elements. 
+	 * The loc options are:
+	 * - MX = add sideset on the face with minimum X 
+	 * - PX = add sideset on the face with maximum X 
+	 * - MY = add sideset on the face with minimum Y 
+	 * - PY = add sideset on the face with maximum Y 
+	 * - MZ = add sideset on the face with minimum Z 
+	 * - PZ = add sideset on the face with maximum Z
+	 *
+	 */
+	size_t add_sideset(ShellLocation loc);
+    
+	/**
 	 * Specify the coordinate scaling and offset in all three
 	 * spatial dimensions.
 	 *
@@ -192,6 +250,37 @@ namespace stk {
 	size_t block_count() const;
 
 	/**
+	 * Return number of nodesets in the entire model.
+	 */
+	size_t nodeset_count() const;
+
+	/**
+	 * Return number of nodeset nodes on nodeset 'id'
+	 */
+	size_t nodeset_node_count(size_t id) const;
+
+	/**
+	 * Return number of nodeset nodes on nodeset 'id' on the current processor
+	 */
+	size_t nodeset_node_count_proc(size_t id) const;
+
+	/**
+	 * Return number of sidesets in the entire model.
+	 */
+	size_t sideset_count() const;
+
+	/**
+	 * Return number of sideset 'sides' on sideset 'id'
+	 */
+	size_t sideset_side_count(size_t id) const;
+
+	/**
+	 * Return number of sideset 'sides' on sideset 'id' on the current
+	 * processor.
+	 */
+	size_t sideset_side_count_proc(size_t id) const;
+
+	/**
 	 * Return number of elements in all element blocks in the model.
 	 */
 	size_t element_count() const;
@@ -232,6 +321,9 @@ namespace stk {
 	 */
 	std::pair<std::string, int>  topology_type(size_t block_number) const;
     
+	size_t communication_node_count_proc() const;
+	void node_communication_map(std::vector<int> &map, std::vector<int> &proc);
+    
 	/** 
 	 * Fill the passed in 'map' argument with the node map
 	 * "map[local_position] = global_id" for the nodes on this
@@ -239,29 +331,28 @@ namespace stk {
 	 */
 	void node_map(std::vector<int> &map);
 
-	void node_communication_map(std::vector<int> &map, std::vector<int> &proc);
-    
 	/** 
 	 * Fill the passed in 'map' argument with the element map
 	 * "map[local_position] = global_id" for the elements on this
 	 * processor in block "block_number".
 	 */
-	void element_map(size_t block_number, std::vector<int> &map);
+	void element_map(size_t block_number, std::vector<int> &map) const;
 
 	/** 
 	 * Fill the passed in 'map' argument with the element map
 	 * "map[local_position] = global_id" for all elements on this
 	 * processor 
 	 */
-	void element_map(std::vector<int> &map);
+	void element_map(std::vector<int> &map) const;
     
 	/** 
 	 * Fill the passed in 'map' argument with the element map pair
-	 * "map[local_position] = element global_id" and 
-         * "map[local_position+1] = element local face id" for all 
-         * elements having a face on the surface defined by ShellLocation
+	 * "map[local_position] = element global_id" and
+	 * "map[local_position+1] = element local face id (0-based)" for
+	 * all elements on the current processor having a face on the
+	 * surface defined by ShellLocation.
 	 */
-	void element_surface_map(ShellLocation loc, std::vector<int> &map);
+	void element_surface_map(ShellLocation loc, std::vector<int> &map) const;
     
 	/**
 	 * Return the connectivity for the elements on this processor in
@@ -294,6 +385,24 @@ namespace stk {
 			 std::vector<double> &y,
 			 std::vector<double> &z) const;
     
+	/**
+	 * Return the list of nodes in nodeset 'id' on this processor.
+	 * The 'nodes' vector will be resized to the size required to
+	 * contain the node list. The ids are global ids.
+	 */
+	void nodeset_nodes(size_t nset_id, std::vector<int> &nodes) const;
+
+	/**
+	 * Return the list of the face/ordinal pairs
+	 * "elem_sides[local_position]   = element global_id" and
+	 * "elem_sides[local_position+1] = element local face id (0-based)"
+	 * for the faces in sideset 'id' on this
+	 * processor.  The 'elem_sides' vector will be resized to the size
+	 * required to contain the list. The element ids are global ids,
+	 * the side ordinal is 0-based.
+	 */
+	void sideset_elem_sides(size_t nset_id, std::vector<int> &elem_sides) const;
+
       private:
     
 	GeneratedMesh( const GeneratedMesh & );
@@ -304,7 +413,8 @@ namespace stk {
 	void initialize();
 	
         std::vector<ShellLocation> shellBlocks;
-        size_t faceNodes[6][4];
+	std::vector<ShellLocation> nodesets;
+	std::vector<ShellLocation> sidesets;
         double rotmat[3][3];
 	size_t numX, numY, numZ;
 	size_t myNumZ, myStartZ;

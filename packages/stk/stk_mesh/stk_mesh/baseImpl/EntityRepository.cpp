@@ -14,7 +14,6 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 
-
 namespace stk {
 namespace mesh {
 namespace impl {
@@ -62,7 +61,7 @@ void EntityRepository::internal_expunge_entity( EntityMap::iterator i )
   m_entities.erase( i );
 }
 
-  std::pair<Entity*,bool>
+std::pair<Entity*,bool>
 EntityRepository::internal_create_entity( const EntityKey & key )
 {
   EntityMap::value_type tmp(key,NULL);
@@ -75,7 +74,11 @@ EntityRepository::internal_create_entity( const EntityKey & key )
 
   if ( insert_result.second )  { // A new entity
     insert_result.first->second = result.first = new Entity( key );
-    result.first->m_entityImpl.log_created();
+  }
+  else if ( result.first->marked_for_destruction() ) {
+    // resurrection
+    result.first->m_entityImpl.log_resurrect();
+    result.second = true;
   }
 
   return result ;
@@ -91,7 +94,14 @@ Entity * EntityRepository::get_entity(const EntityKey &key) const
     static const char method[] = "stk::mesh::BulkData::get_entity" ;
     std::ostringstream msg ;
     msg << method << "( " ;
-    print_entity_key( msg , metadata_from_entity(i->second) , key );
+    // QUESTION: If the key is invalid, then will 'i' ever be a valid iterator?
+    if (i != m_entities.end()) {
+      print_entity_key( msg , metadata_from_entity(i->second) , key );
+    } else {
+      const unsigned type = entity_rank(key);
+      const EntityId id   = entity_id(key);
+      msg << "Invalid key: " << type << " " << id;
+    }
     msg << " INVALID KEY" ;
     msg << " ) FAILED" ;
     throw std::runtime_error( msg.str() );
@@ -119,6 +129,23 @@ void EntityRepository::clean_changes() {
   }
 }
 
+bool EntityRepository::erase_ghosting( Entity & e, const Ghosting & ghosts) const {
+  return e.m_entityImpl.erase( ghosts );
+}
+
+
+bool EntityRepository::erase_comm_info( Entity & e, const EntityCommInfo & comm_info) const {
+  return e.m_entityImpl.erase( comm_info );
+}
+
+bool EntityRepository::insert_comm_info( Entity & e, const EntityCommInfo & comm_info) const {
+  return e.m_entityImpl.insert( comm_info );
+}
+
+void EntityRepository::destroy_later( Entity & e, Bucket* nil_bucket ) {
+  change_entity_bucket( *nil_bucket, e, 0);
+  e.m_entityImpl.log_deleted(); //important that this come last
+}
 
 } // namespace impl
 } // namespace mesh

@@ -145,7 +145,7 @@ void BulkData::internal_update_distributed_index(
       // Has been destroyed
       del_entities_keys.push_back( entity.key().raw_key() );
     }
-    else if ( impl::EntityImpl::LogNoChange != entity.m_entityImpl.log_query() &&
+    else if ( EntityLogNoChange != entity.log_query() &&
               in_owned_closure( entity , m_parallel_rank ) ) {
       // Has been changed and is in owned closure, may be shared
       new_entities_keys.push_back( entity.key().raw_key() );
@@ -182,7 +182,7 @@ void BulkData::internal_update_distributed_index(
         }
 
         // Add the other_process to the entity's sharing info.
-        entity->m_entityImpl.insert( EntityCommInfo( 0 , i->second ) );
+        m_entity_repo.insert_comm_info( *entity, EntityCommInfo( 0 , i->second ) );
       }
     }
   }
@@ -229,7 +229,7 @@ void BulkData::internal_resolve_parallel_create_delete(
           // A shared entity is being deleted on the remote process.
           // Remove it from the sharing.
 
-          entity->m_entityImpl.erase( EntityCommInfo( 0 , proc ) );
+          m_entity_repo.erase_comm_info( *entity, EntityCommInfo( 0 , proc ) );
 
           PartVector add_part , remove_part ;
 
@@ -244,8 +244,8 @@ void BulkData::internal_resolve_parallel_create_delete(
 
             const unsigned new_owner = determine_new_owner( *entity );
 
-            entity->m_entityImpl.set_owner_rank( new_owner );
-            entity->m_entityImpl.set_sync_count( m_sync_count );
+            m_entity_repo.set_entity_owner_rank( *entity, new_owner);
+            m_entity_repo.set_entity_sync_count( *entity, m_sync_count);
 
             if ( new_owner == m_parallel_rank ) {
               // Changing remotely owned to locally owned
@@ -262,7 +262,7 @@ void BulkData::internal_resolve_parallel_create_delete(
           // Remotely ghosted entity is being destroyed,
           // remove from ghosting list
           for ( size_t j = ghosting_count ; j-- ; ) {
-            if ( entity->m_entityImpl.erase( EntityCommInfo( j , proc ) ) ) {
+            if ( m_entity_repo.erase_comm_info( *entity, EntityCommInfo( j , proc ) ) ) {
               local_flags[ j ] = 1 ;
             }
           }
@@ -273,7 +273,7 @@ void BulkData::internal_resolve_parallel_create_delete(
           for ( PairIterEntityComm ec = entity->comm() ; ! ec.empty() ; ++ec ) {
             local_flags[ ec->ghost_id ] = 1 ;
           }
-          entity->m_entityImpl.comm_clear();
+          m_entity_repo.comm_clear( *entity);
           destroy_entity( entity );
         }
       }
@@ -289,14 +289,14 @@ void BulkData::internal_resolve_parallel_create_delete(
         if ( shared ) {
           const unsigned new_owner = determine_new_owner( *entity );
 
-          entity->m_entityImpl.set_owner_rank( new_owner );
-          entity->m_entityImpl.set_sync_count( m_sync_count );
+          m_entity_repo.set_entity_owner_rank( *entity, new_owner);
+          m_entity_repo.set_entity_sync_count( *entity, m_sync_count);
         }
 
         for ( PairIterEntityComm ec = entity->comm() ; ! ec.empty() ; ++ec ) {
           local_flags[ ec->ghost_id ] = 1 ;
         }
-        entity->m_entityImpl.comm_clear();
+        m_entity_repo.comm_clear( *entity);
       }
 
       all_reduce_sum( m_parallel_machine ,
@@ -346,7 +346,7 @@ void BulkData::internal_resolve_parallel_create_delete(
             i = shared_modified.begin() ; i != shared_modified.end() ; ++i ) {
         Entity & entity = **i ;
         if ( entity.owner_rank() == m_parallel_rank &&
-             entity.m_entityImpl.log_query()  != impl::EntityImpl::LogCreated ) {
+             entity.log_query()  != EntityLogCreated ) {
 
           for ( PairIterEntityComm
                 jc = entity.sharing() ; ! jc.empty() ; ++jc ) {
@@ -361,7 +361,7 @@ void BulkData::internal_resolve_parallel_create_delete(
             i = shared_modified.begin() ; i != shared_modified.end() ; ++i ) {
         Entity & entity = **i ;
         if ( entity.owner_rank() == m_parallel_rank &&
-             entity.m_entityImpl.log_query()  != impl::EntityImpl::LogCreated ) {
+             entity.log_query()  != EntityLogCreated ) {
 
           for ( PairIterEntityComm
                 jc = entity.sharing() ; ! jc.empty() ; ++jc ) {
@@ -381,7 +381,7 @@ void BulkData::internal_resolve_parallel_create_delete(
           Entity & entity = * get_entity( key );
 
           // Set owner, will correct part membership later
-          entity.m_entityImpl.set_owner_rank( p );
+          m_entity_repo.set_entity_owner_rank( entity, p);
         }
       }
     }
@@ -405,19 +405,19 @@ void BulkData::internal_resolve_parallel_create_delete(
       Entity * entity = *--i ;
 
       if ( entity->owner_rank() == m_parallel_rank &&
-           entity->m_entityImpl.log_query() == impl::EntityImpl::LogCreated ) {
+           entity->log_query() == EntityLogCreated ) {
 
         // Created and not claimed by an existing owner
 
         const unsigned new_owner = determine_new_owner( *entity );
 
-        entity->m_entityImpl.set_owner_rank( new_owner );
+        m_entity_repo.set_entity_owner_rank( *entity, new_owner);
       }
 
       if ( entity->owner_rank() != m_parallel_rank ) {
         // Do not own it and still have it.
         // Remove the locally owned, add the globally_shared
-        entity->m_entityImpl.set_sync_count( m_sync_count );
+        m_entity_repo.set_entity_sync_count( *entity, m_sync_count);
         internal_change_entity_parts( *entity , shared_part , owned_part );
       }
       else if ( ! entity->sharing().empty() ) {
@@ -559,11 +559,10 @@ bool BulkData::internal_modification_end( bool regenerate_aura )
   for ( impl::EntityRepository::iterator
         i = m_entity_repo.begin() ; i != m_entity_repo.end() ; ++i ) {
    Entity * entity = i->second ;
-    if ( impl::EntityImpl::LogCreated == entity->m_entityImpl.log_query() ) {
+    if ( EntityLogCreated == entity->log_query() ) {
       ++ local_change_count[0] ; // Created
     }
-    else if ( impl::EntityImpl::LogModified == entity->m_entityImpl.log_query() &&
-              entity->marked_for_destruction() ) {
+    else if ( entity->marked_for_destruction() ) {
       del_entities.push_back( entity );
       ++ local_change_count[1] ; // Deleted
     }

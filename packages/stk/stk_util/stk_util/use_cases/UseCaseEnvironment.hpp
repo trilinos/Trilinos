@@ -65,7 +65,7 @@ enum TimerSetMask {
   TIMER_SEARCH		= 0x00000004,		///< Enable search timers
   TIMER_TRANSFER	= 0x00000008,		///< Enable transfer timers
   TIMER_ALL		= 0xFFFFFFFF,		///< Force timer to be active
-  
+
   TIMER_FORCE		= 0x00000000		///< Force timer to be active
 };
 
@@ -86,12 +86,20 @@ void my_report_handler(const char *message, int type);
 
 struct UseCaseEnvironment
 {
+  // Will initialize a comm
   UseCaseEnvironment(int *argc, char ***argv);
+
+  // Assumes already-initialized comm
+  UseCaseEnvironment(int *argc, char ***argv, stk::ParallelMachine comm);
+
+  // shared constructor implementation; do not call directly
+  void initialize(int* argc, char ***argv);
 
   ~UseCaseEnvironment();
 
   const stk::ParallelMachine    m_comm;
   std::string                   m_workingDirectory;
+  bool                          m_need_to_finalize;
 };
 
 } // namespace use_case

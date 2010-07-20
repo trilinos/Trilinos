@@ -229,8 +229,10 @@ void FieldBaseImpl::verify_and_clean_restrictions(
   }
 
   // Clean out redundant entries:
-
-  for ( j = i = rMap.begin() ; j != rMap.end() ; ++j ) {
+  // NOTE: test for 'i != rMap.end()' not needed since i is
+  //       incremented no more than j and j is checked. Keeping check in
+  //       silences klocwork and guards against future change...
+  for ( j = i = rMap.begin() ; j != rMap.end() && i != rMap.end(); ++j ) {
     if ( j->key != invalid_key ) {
       if ( i->key == invalid_key ) {
         *i = *j ;
