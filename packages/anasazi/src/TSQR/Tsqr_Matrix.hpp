@@ -275,6 +275,11 @@ namespace TSQR {
       return MatView< Ordinal, Scalar >(nrows(), ncols(), get(), lda());
     }
 
+    ConstMatView< Ordinal, Scalar > const_view () const {
+      return ConstMatView< Ordinal, Scalar >(nrows(), ncols(), 
+					     (const Scalar*) get(), lda());
+    }
+
     /// Change the dimensions of the matrix.  Reallocate if necessary.
     /// Existing data in the matrix is invalidated.
     ///

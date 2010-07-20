@@ -35,8 +35,7 @@
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziMultiVecTraits.hpp"
 #include "AnasaziTsqrAdaptor.hpp"
-//#include "AnasaziOperatorTraits.hpp"
-#include "AnasaziOrthoManager.hpp"
+#include "AnasaziSVQBOrthoManager.hpp"
 #include "Teuchos_LAPACK.hpp"
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -45,7 +44,7 @@
 namespace Anasazi {
 
   /// \class TsqrOrthoError
-  /// \brief TsqrOrthoManager error
+  /// \brief TsqrOrthoManager(Impl) error
   class TsqrOrthoError : public OrthoError
   {
   public: 
@@ -92,12 +91,16 @@ namespace Anasazi {
     {}
   };
 
-  /// \class TsqrOrthoManager
-  /// \brief MatOrthoManager implementation using TSQR
+  /// \class TsqrOrthoManagerImpl
+  /// \brief TSQR-based OrthoManager subclass implementation
   /// 
-  /// TsqrOrthoManager is a subclass of MatOrthoManager that uses a
-  /// combination of Tall Skinny QR (TSQR) and Block Gram-Schmidt
-  /// (BGS) to orthogonalize the columns of groups of multivectors.
+  /// TsqrOrthoManagerImpl implements the interface defined by
+  /// OrthoManager.  It doesn't actually inherit from OrthoManager,
+  /// which gives us a bit more freedom when defining the actual
+  /// subclass of OrthoManager (TsqrOrthoManager).  
+  ///
+  /// This class uses a combination of Tall Skinny QR (TSQR) and Block
+  /// Gram-Schmidt (BGS) to orthogonalize multivectors.
   ///
   /// The Block Gram-Schmidt procedure used here is inspired by that
   /// of G. W. Stewart ("Block Gram-Schmidt Orthogonalization", SISC
@@ -109,10 +112,8 @@ namespace Anasazi {
   /// make a second BGS pass (+ TSQR+SVD) if necessary.  If we then
   /// detect an orthogonalization fault, we throw TsqrOrthoFault.
   ///
-  /// \note Only use Teuchos::null for the Op, since TSQR can only
-  ///   orthogonalize with respect to the Euclidean norm.
   template< class ScalarType, class MV >
-  class TsqrOrthoManagerImpl // public OrthoManager< ScalarType, MV >
+  class TsqrOrthoManagerImpl
   {
   private:
     typedef typename Teuchos::ScalarTraits< ScalarType >::magnitudeType MagnitudeType;
@@ -626,12 +627,16 @@ namespace Anasazi {
   };
 
 
-
+  /// \class TsqrOrthoManager
+  /// \brief TSQR-based OrthoManager subclass
+  ///
+  /// This is the actual subclass of OrthoManager, implemented using
+  /// TsqrOrthoManagerImpl (TSQR + Block Gram-Schmidt).
   template< class ScalarType, class MV >
   class TsqrOrthoManager : public OrthoManager< ScalarType, MV > {
   public:
     TsqrOrthoManager (const Teuchos::ParameterList& tsqrParams) :
-      impl_ (tsqrParams) 
+      impl_ (tsqrParams)
     {}
 
     virtual ~TsqrOrthoManager() {}
@@ -694,25 +699,199 @@ namespace Anasazi {
     TsqrOrthoManagerImpl< ScalarType, MV > impl_;
   };
 
-  // template< class ScalarType, class MV >
-  // class TsqrMatOrthoManager : public MatOrthoManager< ScalarType, MV > {
-  // public:
-  //   TsqrMatOrthoManager (const Teuchos::ParameterList& tsqrParams,
-  // 			 Teuchos::RCP<const OP> Op = Teuchos::null) :
-  //     MatOrthoManager< ScalarType, MV > (Op),
-  //     impl_ (tsqrParams)
-  //   {
-  //     if (getOp() != Teuchos::null)
-  // 	throw NonNullOperatorError();
-  //   }
 
+  /// \class TsqrMatOrthoManager
+  /// \brief MatOrthoManager subclass using TSQR or SVQB
+  ///
+  /// Subclass of MatOrthoManager.  When getOp() == null (Euclidean
+  /// inner product), uses TSQR + Block Gram-Schmidt for
+  /// orthogonalization.  When getOp() != null, uses SVQBOrthoManager
+  /// (Stathopoulos and Wu 2002: CholeskyQR + SVD) for
+  /// orthogonalization.  Avoids communication in either case.
+  /// Initialization of either orthogonalization manager is "lazy," so
+  /// you don't have to pay for scratch space if you don't use it.
+  ///
+  template< class ScalarType, class MV, class OP >
+  class TsqrMatOrthoManager : public MatOrthoManager< ScalarType, MV, OP > {
+  private:
+    // This will be used to help C++ resolve getOp().  We can't call
+    // getOp() directly, because C++ can't figure out that it belongs
+    // to the base class MatOrthoManager.  (Remember that at this
+    // point, we might not have specialized the specific base class
+    // yet; it's just a template at the moment and not a "real
+    // class.")
+    typedef MatOrthoManager< ScalarType, MV, OP > base_type;
 
+    typedef TsqrOrthoManagerImpl< ScalarType, MV > tsqr_type;
+    typedef SVQBOrthoManager< ScalarType, MV, OP > svqb_type;
 
+  public:
+    typedef Teuchos::RCP< MV >       mv_ptr;
+    typedef Teuchos::RCP< const MV > const_mv_ptr;
+    typedef Teuchos::Array< const_mv_ptr >                       const_prev_mvs_type;
+    typedef Teuchos::SerialDenseMatrix< int, ScalarType >        serial_matrix_type;
+    typedef Teuchos::RCP< serial_matrix_type >                   serial_matrix_ptr;
+    typedef Teuchos::Array< Teuchos::RCP< serial_matrix_type > > prev_coeffs_type;
+    typedef typename Teuchos::ScalarTraits< ScalarType >::magnitudeType magnitude_type; 
 
-  // private:
-  //   TsqrOrthoManagerImpl impl_;
-  // };
+    /// \brief Constructor
+    ///
+    /// \param tsqrParams [in] Parameters used to initialize TSQR 
+    ///
+    /// \param Op [in] Inner product with respect to which to
+    ///   orthogonalize vectors.  If Teuchos::null, use the Euclidean
+    ///   inner product.
+    TsqrMatOrthoManager (const Teuchos::ParameterList& tsqrParams, 
+			 Teuchos::RCP< const OP > Op = Teuchos::null) :
+      MatOrthoManager< ScalarType, MV, OP >(Op),
+      tsqrParams_ (tsqrParams),
+      pTsqr_ (Teuchos::null), // Lazy initialization
+      pSvqb_ (Teuchos::null)  // Lazy initialization
+    {}
 
+    /// \brief Destructor
+    ///
+    virtual ~TsqrMatOrthoManager() {}
+
+    /// \brief Return the inner product operator
+    ///
+    /// Return the inner product operator used for orthogonalization.
+    /// If it is Teuchos::null, then the vectors are orthogonalized
+    /// with respect to the Euclidean inner product.
+    ///
+    /// \note We override the base class' setOp() so that the
+    ///   SVQBOrthoManager gets the new op.
+    virtual void 
+    setOp (Teuchos::RCP< const OP > Op) 
+    {
+      // We use this notation to help C++ resolve the name.
+      // Otherwise, it won't know where to find setOp(), since this is
+      // a member function of the base class which does not depend on
+      // the template parameters.
+      base_type::setOp (Op); // base class gets a copy of the Op too
+      pSvqb_->setOp (Op);
+    }
+    /// We override only to help C++ do name lookup in the other member functions.
+    virtual Teuchos::RCP< const OP > getOp () const { return base_type::getOp(); }
+
+    virtual void 
+    projectMat (MV &X, 
+		const_prev_mvs_type Q,
+		prev_coeffs_type C = Teuchos::tuple (serial_matrix_ptr (Teuchos::null)),
+		mv_ptr MX = Teuchos::null,
+		const_prev_mvs_type MQ = Teuchos::tuple (const_mv_ptr (Teuchos::null))) const
+    {
+      if (getOp() == Teuchos::null)
+	{
+	  if (pTsqr_ == Teuchos::null) 
+	    pTsqr_ = Teuchos::rcp (new tsqr_type (tsqrParams_));
+	  pTsqr_->project (X, Q, C);
+	  // FIXME (mfh 20 Jul 2010) What about MX and MQ?
+	}
+      else
+	{
+	  if (pSvqb_ == Teuchos::null)
+	    pSvqb_ = Teuchos::rcp (new svqb_type (getOp()));
+	  pSvqb_->projectMat (X, Q, C, MX, MQ);
+	}
+    }
+
+    virtual int 
+    normalizeMat (MV &X, 
+		  serial_matrix_ptr B = Teuchos::null,
+		  mv_ptr MX = Teuchos::null) const
+    {
+      if (getOp() == Teuchos::null)
+	{
+	  if (pTsqr_ == Teuchos::null) 
+	    pTsqr_ = Teuchos::rcp (new tsqr_type (tsqrParams_));
+	  return pTsqr_->normalize (X, B);
+	  // FIXME (mfh 20 Jul 2010) What about MX?
+	}
+      else
+	{
+	  if (pSvqb_ == Teuchos::null)
+	    pSvqb_ = Teuchos::rcp (new svqb_type (getOp()));
+	  pSvqb_->normalizeMat (X, B, MX);
+	}
+    }
+
+    virtual int 
+    projectAndNormalizeMat (MV &X, 
+			    const_prev_mvs_type Q,
+			    prev_coeffs_type C = Teuchos::tuple (serial_matrix_ptr (Teuchos::null)),
+			    serial_matrix_ptr B = Teuchos::null,
+			    mv_ptr MX = Teuchos::null,
+			    const_prev_mvs_type MQ = Teuchos::tuple (const_mv_ptr (Teuchos::null))) const
+    {
+      if (getOp() == Teuchos::null)
+	{
+	  if (pTsqr_ == Teuchos::null) 
+	    pTsqr_ = Teuchos::rcp (new tsqr_type (tsqrParams_));
+	  return pTsqr_->projectAndNormalize (X, Q, C, B); 
+	  // FIXME (mfh 20 Jul 2010) What about MX and MQ?
+	}
+      else
+	{
+	  if (pSvqb_ == Teuchos::null)
+	    pSvqb_ = Teuchos::rcp (new svqb_type (getOp()));
+	  pSvqb_->projectAndNormalizeMat (X, Q, C, B, MX, MQ);
+	}
+    }
+
+    virtual magnitude_type
+    orthonormErrorMat (const MV &X, 
+		       const_mv_ptr MX = Teuchos::null) const
+    {
+      if (getOp() == Teuchos::null)
+	{
+	  if (pTsqr_ == Teuchos::null) 
+	    pTsqr_ = Teuchos::rcp (new tsqr_type (tsqrParams_));
+	  return pTsqr_->orthonormError (X);
+	  // FIXME (mfh 20 Jul 2010) What about MX?
+	}
+      else
+	{
+	  if (pSvqb_ == Teuchos::null)
+	    pSvqb_ = Teuchos::rcp (new svqb_type (getOp()));
+	  pSvqb_->orthonormErrorMat (X, MX);
+	}
+    }
+
+    virtual magnitude_type
+    orthogErrorMat (const MV &X, 
+		    const MV &Y,
+		    const_mv_ptr MX = Teuchos::null, 
+		    const_mv_ptr MY = Teuchos::null) const
+    {
+      if (getOp() == Teuchos::null)
+	{
+	  if (pTsqr_ == Teuchos::null) 
+	    pTsqr_ = Teuchos::rcp (new tsqr_type (tsqrParams_));
+	  return pTsqr_->orthogError (X, Y);
+	  // FIXME (mfh 20 Jul 2010) What about MX and MY?
+	}
+      else
+	{
+	  if (pSvqb_ == Teuchos::null)
+	    pSvqb_ = Teuchos::rcp (new svqb_type (getOp()));
+	  pSvqb_->orthogErrorMat (X, Y, MX, MY);
+	}
+    }
+
+  private:
+    ///
+    /// Parameter list for initializing TSQR
+    Teuchos::ParameterList tsqrParams_;
+    ///
+    /// TSQR + BGS orthogonalization manager implementation, used when
+    /// getOp() == null (Euclidean inner product).
+    Teuchos::RCP< tsqr_type > pTsqr_;
+    ///
+    /// SVQB orthogonalization manager, used when getOp() != null
+    /// (could be a non-Euclidean inner product, but not necessarily).
+    Teuchos::RCP< svqb_type > pSvqb_;
+  };
 
 } // namespace Anasazi
 
