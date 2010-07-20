@@ -154,15 +154,15 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
     "If test output complaining about circular references is found, then the test will fail." )
 
   IF (WIN32 AND NOT CYGWIN)
-    SET(${PACKAGE_NAME}_DEPS_XML_OUTPUT_FILE_DEFAULT "")
+    SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE_DEFAULT "")
   ELSE()
-    SET(${PACKAGE_NAME}_DEPS_XML_OUTPUT_FILE_DEFAULT
-      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/python/data/${PACKAGE_NAME}PackageDependencies.xml" )
+    SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE_DEFAULT
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/python/data/${PROJECT_NAME}PackageDependencies.xml" )
   ENDIF()
-  ADVANCED_SET(${PACKAGE_NAME}_DEPS_XML_OUTPUT_FILE
-    "${${PACKAGE_NAME}_DEPS_XML_OUTPUT_FILE_DEFAULT}"
+  ADVANCED_SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE
+    "${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE_DEFAULT}"
     CACHE STRING
-    "Output XML file containing ${PACKAGE_NAME} dependenices used by tools (if not empty)." )
+    "Output XML file containing ${PROJECT_NAME} dependenices used by tools (if not empty)." )
   # 2009/01/19: rabartl: Above: This file outputs just fine on MS# Windows using MS Visual Studio but it causes the entire file to
   # diff.  There must be something wrong with a newlines or something
   # that is causing this.  If people are going to be doing real
@@ -170,27 +170,27 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
   # to fix this so that the dependency files will get created and
   # checked in correctly.  I will look into this later.
   
-  IF(${PACKAGE_NAME}_DEPS_XML_OUTPUT_FILE AND PYTHON_EXECUTABLE)
-    SET(${PACKAGE_NAME}_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT
+  IF(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE AND PYTHON_EXECUTABLE)
+    SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT
       "${CMAKE_CURRENT_SOURCE_DIR}/cmake/python/data/CDashSubprojectDependencies.xml" )
   ELSE()
-    SET(${PACKAGE_NAME}_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT "")
+    SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT "")
   ENDIF()
-  ADVANCED_SET(${PACKAGE_NAME}_CDASH_DEPS_XML_OUTPUT_FILE
-    "${${PACKAGE_NAME}_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT}"
+  ADVANCED_SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE
+    "${${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT}"
     CACHE STRING
-    "Output XML file used by CDash in ${PACKAGE_NAME}-independent format (if not empty)." )
+    "Output XML file used by CDash in ${PROJECT_NAME}-independent format (if not empty)." )
   
-  IF(${PACKAGE_NAME}_DEPS_XML_OUTPUT_FILE AND PYTHON_EXECUTABLE)
-    SET(${PACKAGE_NAME}_DEPS_HTML_OUTPUT_FILE_DEFAULT
-      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/python/data/${PACKAGE_NAME}PackageDependenciesTable.html" )
+  IF(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE AND PYTHON_EXECUTABLE)
+    SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE_DEFAULT
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/python/data/${PROJECT_NAME}PackageDependenciesTable.html" )
   ELSE()
-    SET(${PACKAGE_NAME}_DEPS_HTML_OUTPUT_FILE_DEFAULT "")
+    SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE_DEFAULT "")
   ENDIF()
-  ADVANCED_SET(${PACKAGE_NAME}_DEPS_HTML_OUTPUT_FILE
-    "${${PACKAGE_NAME}_DEPS_HTML_OUTPUT_FILE_DEFAULT}"
+  ADVANCED_SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE
+    "${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE_DEFAULT}"
     CACHE STRING
-    "HTML ${PACKAGE_NAME} dependenices file that will be written to (if not empty)." )
+    "HTML ${PROJECT_NAME} dependenices file that will be written to (if not empty)." )
   
   MARK_AS_ADVANCED(BUILD_TESTING)
   MARK_AS_ADVANCED(CMAKE_BACKWARDS_COMPATIBILITY)
