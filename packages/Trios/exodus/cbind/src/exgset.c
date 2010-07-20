@@ -69,8 +69,7 @@ int ex_get_set (int   exoid,
   int dimid, entry_list_id, extra_list_id, status;
   int set_id_ndx;
   char errmsg[MAX_ERR_LENGTH];
-  char* entryptr = NULL ;
-  char* extraptr = NULL;
+  char* entryptr = NULL;
 
   exerrval = 0; /* clear error code */
 

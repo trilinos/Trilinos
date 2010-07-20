@@ -6,6 +6,8 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <stk_util/parallel/Parallel.hpp>
+
 #include <stk_io/util/UseCase_mesh.hpp>
 #include <stk_io/util/Gears.hpp>
 #include <stk_io/util/Skinning.hpp>
@@ -37,7 +39,7 @@
 #include <limits>
 
 namespace {
-  void generate_gears(MPI_Comm comm,
+  void generate_gears(stk::ParallelMachine comm,
 		      const std::string &parameters,
 		      stk::mesh::MetaData &meta,
 		      std::vector<stk::io::util::Gear*> &gears);
@@ -288,7 +290,7 @@ namespace stk {
       void create_input_mesh(const std::string &mesh_type,
 			     const std::string &mesh_filename,
 			     const std::string &working_directory,
-			     MPI_Comm comm,
+			     stk::ParallelMachine comm,
 			     stk::mesh::MetaData &meta_data,
 			     MeshData &mesh_data,
 			     bool hex_only)
@@ -360,7 +362,7 @@ namespace stk {
       Ioss::Region *create_output_mesh(const std::string &mesh_filename,
 				       const std::string &mesh_extension,
 				       const std::string &working_directory,
-				       MPI_Comm comm,
+				       stk::ParallelMachine comm,
 				       stk::mesh::BulkData &bulk_data,
 				       const Ioss::Region *in_region,
 				       stk::mesh::MetaData &meta_data,
@@ -754,15 +756,13 @@ namespace stk {
 } // namespace stk
 
 namespace {
-  void generate_gears(MPI_Comm comm, const std::string &parameters, stk::mesh::MetaData &meta,
+  void generate_gears(stk::ParallelMachine comm, const std::string &parameters, stk::mesh::MetaData &meta,
 		      std::vector<stk::io::util::Gear*> &gears)
   {
     const double TWO_PI = 2.0 * std::acos( static_cast<double>(-1.0) );
 
-    int p_size = 1;
-    MPI_Comm_size(comm, &p_size);
-    int p_rank = 0;
-    MPI_Comm_rank(comm, &p_rank);
+    int p_size = stk::parallel_machine_size( comm );
+    int p_rank = stk::parallel_machine_rank( comm );
 
     // The parameters should be of the form:  "IxJxK|option:param,param,param|option:a,b,c"
     // Each "|" or "+" separated section of the parameters is a "group"

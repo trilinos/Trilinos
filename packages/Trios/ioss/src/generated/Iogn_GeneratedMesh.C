@@ -1124,7 +1124,7 @@ namespace Iogn {
     int num_processors = 8;
     for (int proc = 0; proc < num_processors; proc++) {
 
-      stk::GeneratedMesh mesh(100, 125, 10*num_processors, num_processors, proc);
+      Iogn::GeneratedMesh mesh(100, 125, 10*num_processors, num_processors, proc);
 
       std::cerr << "Node Count (total)    = " << mesh.node_count() << "\n";
       std::cerr << "Node Count (proc)     = " << mesh.node_count_proc() << "\n";

@@ -27,6 +27,20 @@
       <Regression address="teuchos-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
+  <Package name="Trios" dir="Trios">
+    <LIB_REQUIRED_DEP_PACKAGES/>
+    <LIB_OPTIONAL_DEP_PACKAGES/>
+    <TEST_REQUIRED_DEP_PACKAGES/>
+    <TEST_OPTIONAL_DEP_PACKAGES/>
+    <LIB_REQUIRED_DEP_TPLS value="Netcdf"/>
+    <LIB_OPTIONAL_DEP_TPLS/>
+    <TEST_REQUIRED_DEP_TPLS value="Netcdf"/>
+    <TEST_OPTIONAL_DEP_TPLS/>
+    <EmailAddresses>
+      <Checkin address="trios-checkins@software.sandia.gov"/>
+      <Regression address="trios-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </Package>
   <Package name="ThreadPool" dir="ThreadPool">
     <LIB_REQUIRED_DEP_PACKAGES/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
@@ -476,7 +490,7 @@
     </EmailAddresses>
   </Package>
   <Package name="STK" dir="stk">
-    <LIB_REQUIRED_DEP_PACKAGES value="Shards,Teuchos,FEI,AztecOO,ThreadPool"/>
+    <LIB_REQUIRED_DEP_PACKAGES value="Shards,Teuchos,FEI,AztecOO,ThreadPool,Trios"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
@@ -795,20 +809,6 @@
     <EmailAddresses>
       <Checkin address="lyno-checkins@software.sandia.gov"/>
       <Regression address="lyno-regression@software.sandia.gov"/>
-    </EmailAddresses>
-  </Package>
-  <Package name="Trios" dir="Trios">
-    <LIB_REQUIRED_DEP_PACKAGES/>
-    <LIB_OPTIONAL_DEP_PACKAGES value="STK"/>
-    <TEST_REQUIRED_DEP_PACKAGES/>
-    <TEST_OPTIONAL_DEP_PACKAGES/>
-    <LIB_REQUIRED_DEP_TPLS value="Netcdf"/>
-    <LIB_OPTIONAL_DEP_TPLS/>
-    <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS/>
-    <EmailAddresses>
-      <Checkin address="trios-checkins@software.sandia.gov"/>
-      <Regression address="trios-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
   <Package name="FEApp" dir="../demos/FEApp">

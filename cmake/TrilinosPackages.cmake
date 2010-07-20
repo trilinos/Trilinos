@@ -52,6 +52,7 @@ INCLUDE(PackageListHelpers)
 SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   TrilinosFramework     ../cmake                       PS # Only tests, no libraries/capabilities!
   Teuchos               teuchos                        PS
+  Trios                 Trios                          EX # Depends on netcdf, optionally hdf5, xdmf
   ThreadPool            ThreadPool                     PS # Depends on ptheads system library
   Sacado                sacado                         PS
   RTOp                  rtop                           PS
@@ -107,7 +108,6 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Mesquite              mesquite                       PS
   Stalix                stalix                         EX
   Lyno                  lyno                           EX
-  Trios                 Trios                          EX # Depends on netcdf, optionally hdf5, xdmf
   FEApp                 ../demos/FEApp                 SS # Capability demonstration package
   )
 
