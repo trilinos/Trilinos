@@ -4,6 +4,8 @@
 \usepackage{amsfonts,amsmath,graphicx,subfigure}
 % ADD YOUR OWN PACKAGES HERE ---------------------------------------------
 %\usepackage{someotherpackage}
+\usepackage{url}
+\usepackage{multicol}
 
 % DEFINITIONS ------------------------------------------------------------
 % ADD YOUR OWN DEFINITIONS HERE ------------------------------------------
@@ -41,59 +43,15 @@ maherou@sandia.gov}}
 \input{../OptikaAbstract}
 \end{abstract}
 
-\section{Introduction} \label{SSS:sec:intro}
-I like chocolate pudding.  For that matter everyone else does too. This relationship is captured in \eqref{SSS:eq:one},
-\begin{equation}\label{SSS:eq:one}
-f(x) = x^{100-d},
-\end{equation}
-where $f$ is happiness in utils, $x$ is the quantity of chocolate pudding consumed in ounces and $d$ is the age of the
-subject in years.
-
-It has been argued that that chocolate pudding consumption by age is shown in Figure \ref{SSS:fig:Mentor05}.  However,
-we propose an alternative pudding consumption model, shown in Figure \ref{SSS:fig:cos}.
-
-\begin{figure}[hbh]
-\begin{center}
-\scalebox{0.5}{\includegraphics{plots/sinx}} \caption{Chocolate pudding consumption model of
-\cite{SSS:Mentor05}}\label{SSS:fig:Mentor05}
-\end{center}\end{figure}
-
-\begin{figure}[htb]
-\begin{center}
-\scalebox{0.5}{\includegraphics{plots/cosx}} \caption{Proposed chocolate pudding consumption model}\label{SSS:fig:cos}
-\end{center}\end{figure}
-
-We also want to show these figures side by side, to better illustrate our comparison.  We can see this in Figures
-\ref{SSS:fig:comp1} and \ref{SSS:fig:comp2}.
-
-\begin{figure}[htb]
-\begin{center}
-\subfigure[M. Mentor's Model]{\includegraphics[scale=.5]{plots/sinx}\label{SSS:fig:comp1}} \subfigure[Proposed
-Model]{\includegraphics[scale=.5]{plots/cosx}\label{SSS:fig:comp2}} \caption{Comparative chocolate pudding consumption
-models}
-\end{center}\end{figure}
-
-\section{Actual Content}
-
-As we saw in Section \ref{SSS:sec:intro}, we all like chocolate pudding. This is where I wish
-\textsf{$\setminus$jargonfill} worked. It would fill the page with meaningless technobabble so I could illustrate this
-package. Instead, I'll talk about how to use quotations in latex. "Never use these quotations." ``Always use these,
-instead.''
-
-\section{Conclusions}
-Herein, we repeat the abstract in past tense.
-
-Unlike many other baked goods, chocolate pudding is subject to a myriad of interesting (and unique) effects on both the
-meso and nano scales.  Understanding these phenomena is critical, not only to America's restaurant industry, but to
-children everywhere.  We have examined these effects and have proposed new potential models which accurately capture
-the material structure of chocolate pudding.
-
+\section{Introduction} \label{KLN:sec:intro}
+The Optika package is a GUI framework designed to make obtaining user input for parameterized programs simple and easy 
+for both the application developer and the end-user. This report discusses the development of the Optika package. 
+\input{../OptikaDev}
 \bibliographystyle{siam}
 % Edit the line below to be your first and last names.
-\bibliography{FirstnameLastname}
-
+\bibliography{KurtisNusbaum,../OptikaSANDReport}
 % Edit FirstnameLastname below to be your first and last names, but leave the line commented out.
 % This line will help me merge bibliographies for the proceedings.
-%\input{FirstnameLastname/FirstnameLastname.bbl}
+%\input{KurtisNusbaum/KurtisNusbaum.bbl}
 
 \end{document}
