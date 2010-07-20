@@ -70,6 +70,7 @@ int ex_get_set (int   exoid,
   int set_id_ndx;
   char errmsg[MAX_ERR_LENGTH];
   char* entryptr = NULL;
+  char* extraptr;
 
   exerrval = 0; /* clear error code */
 
