@@ -60,7 +60,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   IterativePreconditionerFactory_test
   SOURCES
     unit_tests/tIterativePreconditionerFactory.cpp
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
@@ -69,7 +69,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   LU2x2InverseOp_test
   SOURCES
     unit_tests/tLU2x2InverseOp.cpp
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
@@ -78,7 +78,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   StridedEpetraOperator_test
   SOURCES
     unit_tests/tStridedEpetraOperator.cpp
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1-4
   )
@@ -87,7 +87,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   RequestInterface_test 
   SOURCES
     unit_tests/tRequestInterface.cpp
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
@@ -96,7 +96,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   DiagnosticLinearOp_test 
   SOURCES
     unit_tests/tDiagnosticLinearOp.cpp
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
@@ -105,7 +105,7 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   DiagonallyScaledPreconditioner 
   SOURCES
     unit_tests/tDiagonallyScaledPreconditioner.cpp
-    ${PACKAGE_SOURCE_DIR}/../teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
+    ${TRILINOS_HOME_DIR}/packages/teuchos/test/UnitTest/Teuchos_StandardUnitTestMain.cpp
   COMM serial mpi
   NUM_MPI_PROCS 1
   )
