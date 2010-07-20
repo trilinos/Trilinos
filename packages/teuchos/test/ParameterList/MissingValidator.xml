@@ -1,7 +1,3 @@
-<ParameterListAspects>
-	<ParameterLists>
-		<ParameterList>
-			<Parameter name="blah" type="int" validatorid="0" value="2"/>
-		</ParameterList>
-	</ParameterLists>
-</ParameterListAspects>
+<ParameterList>
+	<Parameter name="blah" type="int" validatorid="0" value="2"/>
+</ParameterList>

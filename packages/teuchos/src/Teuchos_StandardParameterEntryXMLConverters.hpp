@@ -26,83 +26,101 @@
 // ***********************************************************************
 // @HEADER
 
-#include "Teuchos_ParameterEntryXMLConverter.hpp"
-
 #ifndef TEUCHOS_STANDARDPARAMETERENTRYXMLCONVERTERS_HPP
 #define TEUCHOS_STANDARDPARAMETERENTRYXMLCONVERTERS_HPP
 
 /*! \file Teuchos_StandardParameterEntryXMLConverters.hpp
 */
+
+#include "Teuchos_ParameterEntryXMLConverter.hpp"
+
 namespace Teuchos {
 
-/* \class Teuchos::AnyParameterEntryConverter
- *
- * A last resort converter for when no others will do. Writes out
+/**
+ * \brief A last resort converter for when no others will do. Writes out
  * a raw string representation to xml and sets ParameterEntryValues as
  * strings when they are read back in.
  */
 class AnyParameterEntryConverter : public ParameterEntryXMLConverter{
+
 public:
-	const std::string getTypeAttributeValue() const;
-	const std::string getValueAttributeValue(const ParameterEntry &entry) const;
-	void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const;
-	bool isAppropriateConverter(const ParameterEntry& entry) const;
+
+  const std::string getTypeAttributeValue() const;
+
+  const std::string getValueAttributeValue(const ParameterEntry &entry) const;
+
+  void setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const;
+
+  bool isAppropriateConverter(const ParameterEntry& entry) const;
 };
 
-/*
- * \class Teuchos::StandardTemplatedParameterConverter
+/**
  * \brief A standard ParameterEntryXMLConverter for most data types.
  *
  * This converter is appropriate for most data types.
  */
 template<class T>
 class StandardTemplatedParameterConverter : public ParameterEntryXMLConverter{
+
 public:
-	virtual const std::string getTypeAttributeValue() const{
-		return TypeNameTraits<T>::name();
-	}
 
-	virtual const std::string getValueAttributeValue(const ParameterEntry& entry) const{
-		return toString(any_cast<T>(entry.getAny(false)));
-	}
+  /** \brief */
+  virtual const std::string getTypeAttributeValue() const{
+    return TypeNameTraits<T>::name();
+  }
 
-	virtual void setEntryValue(ParameterEntry& entry, const XMLObject& xmlObj, bool isDefault) const{
-		entry.setValue<T>(xmlObj.getRequired<T>(getValueAttributeName()), isDefault);
-	}
+  /** \brief */
+  virtual const std::string getValueAttributeValue(const ParameterEntry& entry) const{
+    return toString(any_cast<T>(entry.getAny(false)));
+  }
 
-	virtual bool isAppropriateConverter(const ParameterEntry& entry) const{
-		return entry.isType<T>();	
-	}
+  /** \brief */
+  virtual void setEntryValue(ParameterEntry& entry, const XMLObject& xmlObj, bool isDefault) const{
+    entry.setValue<T>(xmlObj.getRequired<T>(getValueAttributeName()), isDefault);
+  }
+
+  /** \brief */
+  virtual bool isAppropriateConverter(const ParameterEntry& entry) const{
+    return entry.isType<T>();  
+  }
+
 };
 
-/*
- * \class Teuchos::ArrayTemplatedParameterConverter
+/**
  * \brief A standard ParameterEntryXMLConverter for array data types.
  *
  * This converter is appropriate for most array data types.
  */
 template<class T>
 class ArrayTemplatedParameterConverter : public ParameterEntryXMLConverter{
+
 public:
-	virtual const std::string getTypeAttributeValue() const{
-		return TypeNameTraits<Array<T> >::name();
-	}
 
-	virtual const std::string getValueAttributeValue(const ParameterEntry& entry) const{
-		return toString(any_cast<Array<T> >(entry.getAny(false)));
-	}
+  /** \brief */
+  virtual const std::string getTypeAttributeValue() const{
+    return TypeNameTraits<Array<T> >::name();
+  }
 
-	virtual void setEntryValue(ParameterEntry& entry, const XMLObject& xmlObj, bool isDefault) const{
-		std::string arrayString = xmlObj.getRequired(getValueAttributeName());
-		Array<T> convertedArray;
-		convertedArray = fromStringToArray<T>(arrayString);
-		entry.setValue<Array<T> >(convertedArray, isDefault);
-	}
+  /** \brief */
+  virtual const std::string getValueAttributeValue(const ParameterEntry& entry) const{
+    return toString(any_cast<Array<T> >(entry.getAny(false)));
+  }
 
-	virtual bool isAppropriateConverter(const ParameterEntry& entry) const{
-		return entry.isType<Array<T> >();	
-	}
+  /** \brief */
+  virtual void setEntryValue(ParameterEntry& entry, const XMLObject& xmlObj, bool isDefault) const{
+    std::string arrayString = xmlObj.getRequired(getValueAttributeName());
+    Array<T> convertedArray;
+    convertedArray = fromStringToArray<T>(arrayString);
+    entry.setValue<Array<T> >(convertedArray, isDefault);
+  }
+
+  /** \brief */
+  virtual bool isAppropriateConverter(const ParameterEntry& entry) const{
+    return entry.isType<Array<T> >();  
+  }
+
 };
 
 }
+
 #endif // TEUCHOS_STANDARDPARAMETERENTRYXMLCONVERTERS_HPP

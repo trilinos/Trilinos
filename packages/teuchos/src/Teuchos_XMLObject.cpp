@@ -29,9 +29,7 @@
 #include "Teuchos_XMLObject.hpp"
 #include "Teuchos_StrUtils.hpp"
 
-using namespace Teuchos;
-
-
+namespace Teuchos{
 
 XMLObject::XMLObject(const std::string& tag)
   : ptr_(rcp(new XMLObjectImplem(tag)))
@@ -80,22 +78,26 @@ const std::string& XMLObject::getRequired(const std::string& name) const
 }
 
 template<>
-bool XMLObject::getRequired<bool>(const std::string& name) const{
+bool XMLObject::getRequired<bool>(const std::string& name) const
+{
 	return getRequiredBool(name);
 }
 
 template<>
-int XMLObject::getRequired<int>(const std::string& name) const{
+int XMLObject::getRequired<int>(const std::string& name) const
+{
 	return getRequiredInt(name);
 }
 
 template<>
-double XMLObject::getRequired<double>(const std::string& name) const{
+double XMLObject::getRequired<double>(const std::string& name) const
+{
 	return getRequiredDouble(name);
 }
 
 template<>
-std::string XMLObject::getRequired<std::string>(const std::string& name) const{
+std::string XMLObject::getRequired<std::string>(const std::string& name) const
+{
 	return getRequired(name);
 }
 
@@ -123,7 +125,9 @@ bool XMLObject::getRequiredBool(const std::string& name) const
 }
 
 template<>
-void XMLObject::addAttribute<const std::string&>(const std::string& name, const std::string& value) const{
+void XMLObject::addAttribute<const std::string&>(
+  const std::string& name, const std::string& value) const
+{
   TEST_FOR_EXCEPTION(is_null(ptr_), Teuchos::EmptyXMLError,
 		     "XMLObject::addAttribute: XMLObject is empty");
   ptr_->addAttribute(name, value);
@@ -212,5 +216,7 @@ void XMLObject::addContent(const std::string& contentLine)
   TEST_FOR_EXCEPTION(is_null(ptr_), Teuchos::EmptyXMLError,
 		     "XMLObject::addContent: XMLObject is empty");
   ptr_->addContent(contentLine);
+}
+
 }
 

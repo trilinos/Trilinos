@@ -38,8 +38,7 @@
 
 namespace Teuchos {
 
-/* \class Teuchos::ParameterEntryXMLConverter
- * \brief A class used to convert parameter entries to xml and vice versa.
+ /* \brief A class used to convert parameter entries to xml and vice versa.
  *
  */
 class ParameterEntryXMLConverter : public Describable {

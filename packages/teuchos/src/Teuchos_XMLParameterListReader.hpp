@@ -41,31 +41,32 @@
 namespace Teuchos
 {
 
-	/** \ingroup XML 
-	 * \brief Writes an XML object to a parameter list
-	 */
+/** \ingroup XML 
+ * \brief Writes an XML object to a parameter list
+ */
+class TEUCHOS_LIB_DLL_EXPORT XMLParameterListReader{
 
-	class TEUCHOS_LIB_DLL_EXPORT XMLParameterListReader
-	{
-	public:
-      //! @name Constructors 
-			//@{
-      /** Construct a reader */
-      XMLParameterListReader();
-			//@}
+public:
+  
+  //! @name Constructors 
+  //@{
+  /** Construct a reader */
+  XMLParameterListReader();
+  //@}
 
-      /** Write the given XML object to a parameter list */
-      ParameterList toParameterList(const XMLObject& xml) const ;
+  /** Write the given XML object to a parameter list */
+  ParameterList toParameterList(const XMLObject& xml) const ;
 
-	private:
+private:
 
-      /** Write the given XML object to a parameter list along with the validators located in the given map*/
-	  ParameterList convertParameterList(const XMLObject& xml, const IDtoValidatorMap& validatorMap) const;
+  /** Write the given XML object to a parameter list along with the validators located in the given map*/
+  ParameterList convertParameterList(const XMLObject& xml, const IDtoValidatorMap& validatorMap) const;
 
-	  /** Write the given XML object to appropriate validators. */
-	  void convertValidators(const XMLObject& xml, IDtoValidatorMap& validatorMap) const;
+  /** Write the given XML object to appropriate validators. */
+  void convertValidators(const XMLObject& xml, IDtoValidatorMap& validatorMap) const;
 
-	};
+  };
+
 }
-#endif
 
+#endif

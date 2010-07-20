@@ -143,13 +143,7 @@ TEUCHOS_UNIT_TEST(Teuchos_ParameterList, parameterEntryXMLConverters){
 	ADD_TYPE_PARAMETER(char, 'a');
 	ADD_TYPE_PARAMETER(bool, true);
 
-	std::cout << "\n";
-	std::cout << "XML Representation of Parameter List: \n";
-	Teuchos::XMLParameterListWriter plWriter;
-	XMLObject xmlPL = plWriter.toXML(myList);
-	std::cout << xmlPL;
-
-	std::cout << "writing xml to file...\n";
+	std::cout << "\nwriting xml to file...\n";
 	writeParameterListToXmlFile(myList, xmlFileName);
 	std::cout << "reading xml from file...\n";
 	Teuchos::RCP<Teuchos::ParameterList> readInPL = getParametersFromXmlFile(xmlFileName);

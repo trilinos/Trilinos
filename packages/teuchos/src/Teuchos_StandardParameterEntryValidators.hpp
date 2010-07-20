@@ -682,19 +682,19 @@ private:
   /* \brief Gets the string representing the "int" preferred type enum */
   static const std::string& getIntEnumString(){
     static const std::string intEnumString_ = TypeNameTraits<int>::name();
-  return intEnumString_;
+    return intEnumString_;
   }
 
   /* \brief Gets the string representing the "double" preferred type enum */
   static const std::string& getDoubleEnumString(){
     static const std::string doubleEnumString_ = TypeNameTraits<double>::name();
-  return doubleEnumString_;
+    return doubleEnumString_;
   }
 
   /* \brief Gets the string representing the "string" preferred type enum */
   static const std::string& getStringEnumString(){
     static const std::string stringEnumString_ = TypeNameTraits<std::string>::name();
-  return stringEnumString_;
+    return stringEnumString_;
   }
 
 
@@ -825,7 +825,7 @@ TEUCHOS_LIB_DLL_EXPORT std::string getNumericStringParameter(
   );
 
 
-/* \brief Default structure used by EnhancedNumberTraits<T> to produce a
+/** \brief Default structure used by EnhancedNumberTraits<T> to produce a
  * compile time error when the specialization does not exist for type
  * <tt>T</tt>.
  */
@@ -860,20 +860,20 @@ template <class T>
 class EnhancedNumberTraits{
 public:
 
-  /* \brief Gets the minimum possible value the number type can take on. */
+  /** \brief Gets the minimum possible value the number type can take on. */
   static inline T min()
     { return UndefinedEnhancedNumberTraits<T>::notDefined(); }
 
-  /* \brief Gets the maximum possible value the number type can take on. */
+  /** \brief Gets the maximum possible value the number type can take on. */
   static inline T max()
     { return UndefinedEnhancedNumberTraits<T>::notDefined(); }
 
-  /* \brief gets default amount a value of the number type should be
+  /** \brief gets default amount a value of the number type should be
    * incremented by when being utilizied in a UI. */
   static inline T defaultStep()
     { return UndefinedEnhancedNumberTraits<T>::notDefined(); }
 
-  /* \brief Gets the default precision with which the number type should be
+  /** \brief Gets the default precision with which the number type should be
    * displayed. */
   static inline unsigned short defaultPrecision()
      { return UndefinedEnhancedNumberTraits<T>::notDefined(); }
@@ -1119,49 +1119,7 @@ public:
 
   /** \brief . */
   void validate(ParameterEntry const &entry, std::string const &paramName,
-    std::string const &sublistName) const
-  {
-    any anyValue = entry.getAny(true);
-    if(anyValue.type() == typeid(T) ){
-      bool isValueInRange; 
-      any_cast<T>(anyValue) >= minVal && any_cast<T>(anyValue) <= maxVal
-        ? isValueInRange = true : isValueInRange=false;
-      if(!(isValueInRange)){
-        std::stringstream oss;
-        std::string msg;
-        oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
-        " parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
-        "No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
-        "can help you figure out what went wrong.\n\n"
-        "Error: The value that was entered doesn't fall with in " <<
-        "the range set by the validator.\n" <<
-        "Parameter: " << paramName << "\n" <<
-        "Min: " << minVal << "\n" <<
-        "Max: " << maxVal << "\n" <<
-        "Value entered: " << (any_cast<T>(anyValue)) << "\n";
-        msg = oss.str();
-        throw Exceptions::InvalidParameterValue(msg);
-      }  
-    }
-    else{
-      const std::string &entryName = entry.getAny(false).typeName();
-      std::stringstream oss;
-      std::string msg;
-      oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
-      " parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
-      "No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
-      "can help you figure out what went wrong.\n\n"
-      "Error: The value that you entered was the wrong type.\n" <<
-      "Parameter: " << paramName << "\n" <<
-      "Type specified: " << entryName << "\n" <<
-      "Type accepted: " << Teuchos::TypeNameTraits<T>::name() << "\n";
-      msg = oss.str();
-      throw Exceptions::InvalidParameterType(msg);
-    }
-  }
-
-// rabartl: ToDo: This above function needs to be moved outside of the class
-// or the compiler will try to inline it (but not).
+    std::string const &sublistName) const;
 
   /** \brief . */
   const std::string getXMLTagName() const{
@@ -1206,6 +1164,48 @@ private:
   bool containsMax;
 };
 
+template<class T>
+void EnhancedNumberValidator<T>::validate(ParameterEntry const &entry, std::string const &paramName,
+  std::string const &sublistName) const
+{
+  any anyValue = entry.getAny(true);
+  if(anyValue.type() == typeid(T) ){
+    bool isValueInRange; 
+    any_cast<T>(anyValue) >= minVal && any_cast<T>(anyValue) <= maxVal
+      ? isValueInRange = true : isValueInRange=false;
+    if(!(isValueInRange)){
+      std::stringstream oss;
+      std::string msg;
+      oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+      " parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
+      "No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
+      "can help you figure out what went wrong.\n\n"
+      "Error: The value that was entered doesn't fall with in " <<
+      "the range set by the validator.\n" <<
+      "Parameter: " << paramName << "\n" <<
+      "Min: " << minVal << "\n" <<
+      "Max: " << maxVal << "\n" <<
+      "Value entered: " << (any_cast<T>(anyValue)) << "\n";
+      msg = oss.str();
+      throw Exceptions::InvalidParameterValue(msg);
+    }  
+  }
+  else{
+    const std::string &entryName = entry.getAny(false).typeName();
+    std::stringstream oss;
+    std::string msg;
+    oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+    " parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
+    "No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
+    "can help you figure out what went wrong.\n\n"
+    "Error: The value that you entered was the wrong type.\n" <<
+    "Parameter: " << paramName << "\n" <<
+    "Type specified: " << entryName << "\n" <<
+    "Type accepted: " << Teuchos::TypeNameTraits<T>::name() << "\n";
+    msg = oss.str();
+    throw Exceptions::InvalidParameterType(msg);
+  }
+}
 
 /** \brief Validate a file name entry.
  *
@@ -1215,7 +1215,7 @@ private:
 class FileNameValidator : public ParameterEntryValidator {
 public:
 
-  /* \brief The default value of the mustAlreadyExist parameter in the
+  /** \brief The default value of the mustAlreadyExist parameter in the
    * constructor. */
   static bool mustAlreadyExistDefault() { return false; }
 
@@ -1338,43 +1338,7 @@ public:
 
   /** \brief . */
   virtual void validate(ParameterEntry const &entry, std::string const &paramName,
-    std::string const &sublistName) const
-    {
-      any anyValue = entry.getAny(true);
-      if(anyValue.type() == typeid(Array<EntryType>)){
-        Array<EntryType> extracted = getValue<Teuchos::Array<EntryType> >(entry);
-        for(int i = 0; i<extracted.size(); ++i){
-          ParameterEntry dummyParameter;
-          dummyParameter.setValue(extracted[i]);
-          try{
-            prototypeValidator_->validate(dummyParameter, paramName, sublistName);
-          }
-          catch(Exceptions::InvalidParameterValue& e){
-            std::stringstream oss;
-            oss << "Array Validator Exception: \n" << "Bad Index: " << i << "\n" << e.what();
-            throw Exceptions::InvalidParameterValue(oss.str());
-          }
-        }
-      }
-      else{
-        const std::string &entryName = entry.getAny(false).typeName();
-        std::stringstream oss;
-        std::string msg;
-        oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
-          " parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
-          "No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
-          "can help you figure out what went wrong.\n\n"
-          "Error: The value you entered was the wrong type.\n" <<
-          "Parameter: " << paramName << "\n" <<
-          "Type specified: " << entryName << "\n" <<
-          "Type accepted: " << TypeNameTraits<Array<std::string> >::name() << "\n";
-        msg = oss.str();
-        throw Exceptions::InvalidParameterType(msg);
-      }
-    }
-
-// rabartl: ToDo: This above function needs to be moved outside of the class
-// or the compiler will try to inline it (but not).
+    std::string const &sublistName) const;
 
   /** \brief . */
   const std::string getXMLTagName() const{
@@ -1391,6 +1355,7 @@ public:
     prototypeValidator_->printDoc(toPrint, out);
   }
 
+  /** \brief Returns the protorype validator for this Array Validator */
   RCP<const ValidatorType> getPrototype() const{
     return prototypeValidator_;
   }
@@ -1403,8 +1368,45 @@ private:
 
 };
 
+template<class ValidatorType, class EntryType>
+void ArrayValidator<ValidatorType, EntryType>::validate(ParameterEntry const &entry, std::string const &paramName,
+  std::string const &sublistName) const
+{
+  any anyValue = entry.getAny(true);
+  if(anyValue.type() == typeid(Array<EntryType>)){
+    Array<EntryType> extracted = getValue<Teuchos::Array<EntryType> >(entry);
+    for(int i = 0; i<extracted.size(); ++i){
+      ParameterEntry dummyParameter;
+      dummyParameter.setValue(extracted[i]);
+      try{
+        prototypeValidator_->validate(dummyParameter, paramName, sublistName);
+      }
+      catch(Exceptions::InvalidParameterValue& e){
+        std::stringstream oss;
+        oss << "Array Validator Exception: \n" << "Bad Index: " << i << "\n" << e.what();
+        throw Exceptions::InvalidParameterValue(oss.str());
+      }
+    }
+  }
+  else{
+    const std::string &entryName = entry.getAny(false).typeName();
+    std::stringstream oss;
+    std::string msg;
+    oss << "Aww shoot! Sorry bud, but it looks like the \"" << paramName << "\"" <<
+      " parameter in the \"" << sublistName << "\" sublist didn't quite work out.\n" <<
+      "No need to fret though. I'm sure it's just a small mistake. Maybe the information below "<<
+      "can help you figure out what went wrong.\n\n"
+      "Error: The value you entered was the wrong type.\n" <<
+      "Parameter: " << paramName << "\n" <<
+      "Type specified: " << entryName << "\n" <<
+      "Type accepted: " << TypeNameTraits<Array<std::string> >::name() << "\n";
+    msg = oss.str();
+    throw Exceptions::InvalidParameterType(msg);
+  }
+}
 
-/* \brief Convience class for StringValidators that are to be applied to
+
+/** \brief Convience class for StringValidators that are to be applied to
  * arays.
  *
  * Also needed for maintaining backwards compatiblitiy with the earliest
@@ -1419,7 +1421,7 @@ public:
 };
 
 
-/* \brief Convience class for FileNameValidators that are to be applied to
+/** \brief Convience class for FileNameValidators that are to be applied to
  * arays.
  *
  * Also needed for maintaining backwards compatiblitiy with the earliest
@@ -1434,7 +1436,7 @@ public:
 };
 
 
-/* \brief Convience class for EnhancedNumberValidators that are to be applied
+/** \brief Convience class for EnhancedNumberValidators that are to be applied
  * to arays.
  *
  * Also needed for maintaining backwards compatiblitiy with the earliest

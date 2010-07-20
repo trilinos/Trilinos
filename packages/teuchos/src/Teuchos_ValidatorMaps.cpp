@@ -31,41 +31,41 @@
 namespace Teuchos{
 
 void IDtoValidatorMap::insertValidator(IDValidatorPair toInsert){
-	validatorMap.insert(toInsert);
+  validatorMap.insert(toInsert);
 }
 
 IDtoValidatorMap::const_iterator IDtoValidatorMap::getValidator(int id) const{
-	return validatorMap.find(id);
+  return validatorMap.find(id);
 }
 
 IDtoValidatorMap::const_iterator IDtoValidatorMap::begin() const{
-	return validatorMap.begin();
+  return validatorMap.begin();
 }
 
 IDtoValidatorMap::const_iterator IDtoValidatorMap::end() const{
-	return validatorMap.end();
+  return validatorMap.end();
 }
 
 ValidatortoIDMap::ValidatortoIDMap():counter(0){}
 
 void ValidatortoIDMap::insertValidator(RCP<const ParameterEntryValidator> toInsert){
-	const_iterator result = validatorMap.find(toInsert);
-	if(result == validatorMap.end()){
-		validatorMap.insert(ValidatorIDPair(toInsert, counter));
-		++counter;
-	}
+  const_iterator result = validatorMap.find(toInsert);
+  if(result == validatorMap.end()){
+    validatorMap.insert(ValidatorIDPair(toInsert, counter));
+    ++counter;
+  }
 }
 
-ValidatortoIDMap::const_iterator ValidatortoIDMap::getID(const RCP<const ParameterEntryValidator> validator) const{
-	return validatorMap.find(validator);
+ValidatortoIDMap::const_iterator ValidatortoIDMap::getID(const RCP<const ParameterEntryValidator> validator) const {
+  return validatorMap.find(validator);
 }
 
 ValidatortoIDMap::const_iterator ValidatortoIDMap::begin() const{
-	return validatorMap.begin();
+  return validatorMap.begin();
 }
 
 ValidatortoIDMap::const_iterator ValidatortoIDMap::end() const{
-	return validatorMap.end();
+  return validatorMap.end();
 }
 
 } // end Teuchos namespace

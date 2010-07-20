@@ -36,10 +36,9 @@
 #include "Teuchos_XMLObjectImplem.hpp"
 #include "Teuchos_Utils.hpp"
 
-namespace Teuchos
-{
+namespace Teuchos{
 
-//! Thrown when attempting to parse an empty XML std::string.
+/** \brief Thrown when attempting to parse an empty XML std::string.*/
 class EmptyXMLError : public std::runtime_error
 {public: EmptyXMLError(const std::string& what_arg) : std::runtime_error(what_arg) {}};
 
@@ -47,8 +46,7 @@ class EmptyXMLError : public std::runtime_error
  * \brief Representation of an XML data tree. XMLObject is a ref-counted
  * handle to a XMLObjectImplem object, allowing storage by reference.
  */
-class TEUCHOS_LIB_DLL_EXPORT XMLObject
-{
+class TEUCHOS_LIB_DLL_EXPORT XMLObject{
 public:
 
   //! @name Constructors 
@@ -99,6 +97,7 @@ public:
   int getRequiredInt(const std::string& name) const 
     {return std::atoi(getRequired(name).c_str());}
 
+  //! Get a required attribute, returning it as T
   template<class T>
   T getRequired(const std::string& name) const{
     T toReturn;
@@ -106,7 +105,6 @@ public:
     iss >> toReturn;
     return toReturn;
   }
-
 
   //! Get a required attribute, returning it as a bool
   bool getRequiredBool(const std::string& name) const ;
@@ -122,7 +120,6 @@ public:
 	  return defaultValue;
 	}
   }
-
 
   //! Return the number of child nodes owned by this node
   int numChildren() const;
@@ -161,7 +158,6 @@ public:
   //! @name Tree-Assembly methods 
   //@{
 
-			
   //! Add a double as an attribute
   void addDouble(const std::string& name, double val)
     {addAttribute(name, Teuchos::toString(val));}
@@ -177,12 +173,11 @@ public:
   /** \brief Lookup whether or not Doubles are allowed.
    */
   template<class T>
-  void addAttribute(const std::string& name, T value) const
-{
+  void addAttribute(const std::string& name, T value) const{
   TEST_FOR_EXCEPTION(is_null(ptr_), Teuchos::EmptyXMLError,
 		     "XMLObject::addAttribute: XMLObject is empty");
   ptr_->addAttribute(name, Teuchos::toString(value));
-}
+  }
 
 			
   //! Add a child node to the node
@@ -193,6 +188,7 @@ public:
   //@}
 
 private:
+
 //use pragmas to disable some false-positive warnings for windows sharedlibs export
 #ifdef _MSC_VER
 #pragma warning(push)

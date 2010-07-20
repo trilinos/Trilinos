@@ -36,7 +36,6 @@
 
 namespace Teuchos {
 
-
 #define ADD_TYPE_CONVERTER(T,PREFIXNAME) \
   \
   RCP<StandardTemplatedParameterConverter< T > > PREFIXNAME##Converter = rcp(new StandardTemplatedParameterConverter< T >); \
@@ -51,15 +50,14 @@ namespace Teuchos {
   ADD_TYPE_CONVERTER(T, PREFIXNAME); \
   ADD_ARRAYTYPE_CONVERTER(T,PREFIXNAME);
 
-
-/* \class Teuchos::ParameterEntryXMLConverterDB
- *
+/**
  * \brief Provides ability to lookup ParameterEntryXMLConverters
  */
 class ParameterEntryXMLConverterDB{
+
 public:
 
-  /* \brief Add a converter to the database.
+  /** \brief Add a converter to the database.
    *
    * @param convertToAdd The converter to add to the database.
    */
@@ -67,7 +65,7 @@ public:
     getConverterMap().insert(ConverterPair(converterToAdd->getTypeAttributeValue(), converterToAdd));
   }
 
-  /* \brief Get an appropriate ParameterEntryXMLConverter given a ParameterEntry.
+  /** \brief Get an appropriate ParameterEntryXMLConverter given a ParameterEntry.
    *
    * @param entry The ParameterEntry for which a converter is desired.
    */
@@ -79,7 +77,7 @@ public:
     return getDefaultConverter();
   }
 
-  /* \brief Get an appropriate ParameterEntryXMLConverter given a XMLObject.
+  /** \brief Get an appropriate ParameterEntryXMLConverter given a XMLObject.
    *
    * @param xmlObject The XMLObject for which a converter is desired.
    */
@@ -93,13 +91,14 @@ public:
   }
 
 private:
-  /* \brief convience typedef */
+
+  /** \brief convience typedef */
   typedef std::map<std::string, RCP<ParameterEntryXMLConverter> > ConverterMap;
 
-  /* \brief convience typedef */
+  /** \brief convience typedef */
   typedef std::pair<std::string, RCP<ParameterEntryXMLConverter> > ConverterPair;
 
-  /* \brief Gets the default converter to be used to convert ParameterEntries. */
+  /** \brief Gets the default converter to be used to convert ParameterEntries. */
   static RCP<ParameterEntryXMLConverter> getDefaultConverter(){
     static RCP<ParameterEntryXMLConverter> defaultConverter;
     if(defaultConverter.is_null()){
@@ -108,7 +107,7 @@ private:
     return defaultConverter;
   }
 
-  /* \brief Gets the map containing all the converters. */
+  /** \brief Gets the map containing all the converters. */
   static ConverterMap& getConverterMap(){
     static ConverterMap masterMap;
     if(masterMap.size() == 0){
@@ -134,10 +133,9 @@ private:
     }
     return masterMap;
   }
+
 };
 
-
 } // namespace Teuchos
-
 
 #endif // TEUCHOS_PARAMETERENTRYXMLCONVERTERDB_HPP

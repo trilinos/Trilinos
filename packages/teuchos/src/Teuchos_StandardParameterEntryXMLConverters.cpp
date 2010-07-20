@@ -25,23 +25,26 @@
 // 
 // ***********************************************************************
 // @HEADER
+
 #include "Teuchos_StandardParameterEntryXMLConverters.hpp"
 
 namespace Teuchos{
-	const std::string AnyParameterEntryConverter::getTypeAttributeValue() const{
-		return "any";
-	}
 
-	const std::string AnyParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
-		return toString(entry.getAny(false));
-	}
+const std::string AnyParameterEntryConverter::getTypeAttributeValue() const{
+  return "any";
+}
 
-	void AnyParameterEntryConverter::setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const{
-		entry.setValue<std::string>(xmlObj.getRequired(getValueAttributeName()), isDefault);
-	}
+const std::string AnyParameterEntryConverter::getValueAttributeValue(const ParameterEntry &entry) const{
+  return toString(entry.getAny(false));
+}
 
-	bool AnyParameterEntryConverter::isAppropriateConverter(const ParameterEntry& entry) const{
-		return true;
-	}
+void AnyParameterEntryConverter::setEntryValue(ParameterEntry &entry, const XMLObject &xmlObj, bool isDefault) const{
+  entry.setValue<std::string>(xmlObj.getRequired(getValueAttributeName()), isDefault);
+}
+
+bool AnyParameterEntryConverter::isAppropriateConverter(const ParameterEntry& entry) const{
+  return true;
+}
+
 }
 

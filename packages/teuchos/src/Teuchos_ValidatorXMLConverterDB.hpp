@@ -29,51 +29,55 @@
 
 #ifndef TEUCHOS_VALIDATORXMLCONVERTERDB_HPP
 #define TEUCHOS_VALIDATORXMLCONVERTERDB_HPP
+
 /*! \file Teuchos_ParameterEntryXMLCoverter.hpp
 */
+
 #include "Teuchos_ValidatorXMLConverter.hpp"
 
-
 namespace Teuchos {
+
 class ParameterEntryValidator;
 
-/* \class Teuchos::ValidatorXMLConverterDB
- *
+/**
  * \brief Provides ability to lookup ValidatorXMLConverterDB
  */
 class ValidatorXMLConverterDB{
+
 public:
 
-	/* \brief Add a converter to the database.
-	 *
-	 * @param convertToAdd The converter to add to the database.
-	 */
-	static void addConverter(ParameterEntryValidator& validator, RCP<ValidatorXMLConverter> converterToAdd);
+  /** \brief Add a converter to the database.
+   *
+   * @param convertToAdd The converter to add to the database.
+   */
+  static void addConverter(ParameterEntryValidator& validator, RCP<ValidatorXMLConverter> converterToAdd);
 
-	/* \brief Get an appropriate ValidatorXMLConverter given a ParameterEntry.
-	 *
-	 * @param validator The ParameterEntryValidator for which a converter is desired.
-	 */
-	static RCP<const ValidatorXMLConverter> getConverter(const ParameterEntryValidator& validator);
+  /** \brief Get an appropriate ValidatorXMLConverter given a ParameterEntry.
+   *
+   * @param validator The ParameterEntryValidator for which a converter is desired.
+   */
+  static RCP<const ValidatorXMLConverter> getConverter(const ParameterEntryValidator& validator);
 
-	/* \brief Get an appropriate ValidatorXMLConverter given a XMLObject.
-	 *
-	 * @param xmlObject The XMLObject for which a converter is desired.
-	 */
-	static RCP<const ValidatorXMLConverter> getConverter(const XMLObject& xmlObject);
+  /** \brief Get an appropriate ValidatorXMLConverter given a XMLObject.
+   *
+   * @param xmlObject The XMLObject for which a converter is desired.
+   */
+  static RCP<const ValidatorXMLConverter> getConverter(const XMLObject& xmlObject);
 
 private:
-	/* \brief convience typedef */
-	typedef std::map<std::string, RCP<ValidatorXMLConverter> > ConverterMap;
 
-	/* \brief convience typedef */
-	typedef std::pair<std::string, RCP<ValidatorXMLConverter> > ConverterPair;
+  /** \brief convience typedef */
+  typedef std::map<std::string, RCP<ValidatorXMLConverter> > ConverterMap;
 
-	/* \brief Gets the default converter to be used to convert ParameterEntryValidator. */
-	static RCP<ValidatorXMLConverter> getDefaultConverter();
+  /** \brief convience typedef */
+  typedef std::pair<std::string, RCP<ValidatorXMLConverter> > ConverterPair;
 
-	/* \brief Gets the default converter to be used to convert ParameterEntries. */
-	static ConverterMap& getConverterMap();
+  /** \brief Gets the default converter to be used to convert ParameterEntryValidator. */
+  static RCP<ValidatorXMLConverter> getDefaultConverter();
+
+  /** \brief Gets the default converter to be used to convert ParameterEntries. */
+  static ConverterMap& getConverterMap();
+
 };
 
 } // end namespace Teuchos

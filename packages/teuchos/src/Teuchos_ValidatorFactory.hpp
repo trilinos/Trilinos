@@ -34,12 +34,14 @@
 namespace Teuchos{
 
 class ValidatorFactory{
+
 public:
+
 	enum ValidatorType{Int, Short, Double, Float, FileName,
 	IntArray, ShortArray, DoubleArray, FloatArray, FileNameArray};
 
 	/**
-	 * Creates a validator of the given type.
+	 * \brief Creates a validator of the given type.
 	 * 
 	 * @param valiType The type of validator to be created.
 	 * @return A validator of the specified type.
@@ -47,70 +49,70 @@ public:
 	static RCP<ParameterEntryValidator> createValidator(ValidatorType valiType);
 
 	/**
-	 * Creates and returns a Enhanced Number Validator of type int.
+	 * \brief Creates and returns a Enhanced Number Validator of type int.
 	 *
 	 * @return An Enhanced Number Validator of type int.
 	 */
 	static RCP<EnhancedNumberValidator<int> > getIntValidator();
 
 	/**
-	 * Creates and returns a Enhanced Number Validator of type short.
+	 * \brief Creates and returns a Enhanced Number Validator of type short.
 	 *
 	 * @return An Enhanced Number Validator of type short.
 	 */
 	static RCP<EnhancedNumberValidator<short> > getShortValidator();
 
 	/**
-	 * Creates and returns a Enhanced Number Validator of type double.
+	 * \brief Creates and returns a Enhanced Number Validator of type double.
 	 *
 	 * @return An Enhanced Number Validator of type double.
 	 */
 	static RCP<EnhancedNumberValidator<double> > getDoubleValidator();
 
 	/**
-	 * Creates and returns a Enhanced Number Validator of type float.
+	 * \brief Creates and returns a Enhanced Number Validator of type float.
 	 *
 	 * @return An Enhanced Number Validator of type float.
 	 */
 	static RCP<EnhancedNumberValidator<float> > getFloatValidator();
 
 	/**
-	 * Creates and returns FileNameValidator.
+	 * \brief Creates and returns FileNameValidator.
 	 *
 	 * @return A FileNameValidator.
 	 */
 	static RCP<FileNameValidator> getFileNameValidator();
 
 	/**
-	 * Creates and returns an Array Number Validator of type int.
+	 * \brief Creates and returns an Array Number Validator of type int.
 	 *
 	 * @return An Enhanced Number Validator of type int.
 	 */
 	static RCP<ArrayNumberValidator<int> > getArrayIntValidator();
 
 	/**
-	 * Creates and returns an Array Number Validator of type short.
+	 * \brief Creates and returns an Array Number Validator of type short.
 	 *
 	 * @return An Enhanced Number Validator of type short.
 	 */
 	static RCP<ArrayNumberValidator<short> > getArrayShortValidator();
 
 	/**
-	 * Creates and returns an Array Number Validator of type double.
+	 * \brief Creates and returns an Array Number Validator of type double.
 	 *
 	 * @return An Enhanced Number Validator of type double.
 	 */
 	static RCP<ArrayNumberValidator<double> > getArrayDoubleValidator();
 
 	/**
-	 * Creates and returns an Array Number Validator of type float.
+	 * \brief Creates and returns an Array Number Validator of type float.
 	 *
 	 * @return An Enhanced Number Validator of type float.
 	 */
 	static RCP<ArrayNumberValidator<float> > getArrayFloatValidator();
 
 	/**
-	 * Creates and returns an Array File Name Validator.
+	 * \brief Creates and returns an Array File Name Validator.
 	 *
 	 * @return An Array File Name Validator.
 	 */

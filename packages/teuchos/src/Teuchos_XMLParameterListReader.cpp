@@ -32,101 +32,105 @@
 #include "Teuchos_ParameterEntryXMLConverterDB.hpp"
 #include "Teuchos_ValidatorXMLConverterDB.hpp"
 
-
-using namespace Teuchos;
+namespace Teuchos{
 
 XMLParameterListReader::XMLParameterListReader()
 {;}
 
-ParameterList XMLParameterListReader::toParameterList(const XMLObject& xml) const{
-	TEST_FOR_EXCEPTION(xml.getTag() != XMLParameterListWriter::getParameterListAspectsTagName(), std::runtime_error,
-		"XMLParameterListReader expected tag " << XMLParameterListWriter::getParameterListAspectsTagName() <<", found "
-		<< xml.getTag());
-	IDtoValidatorMap validatorMap;
-	ParameterList rtn;
-	for(int i =0; i<xml.numChildren(); ++i){
-		if(xml.getChild(i).getTag() == XMLParameterListWriter::getValidatorsTagName()){
-			convertValidators(xml.getChild(i), validatorMap);
-		}
-	}
-
-	for(int i =0; i<xml.numChildren(); ++i){
-		if(xml.getChild(i).getTag() == XMLParameterListWriter::getParameterListsTagName()){
-			rtn = convertParameterList(xml.getChild(i).getChild(0), validatorMap);
-		}
-	}
-	return rtn;
-}
-
-void XMLParameterListReader::convertValidators(const XMLObject& xml, IDtoValidatorMap& validatorMap) const
+ParameterList XMLParameterListReader::toParameterList(const XMLObject& xml) const
 {
-	std::set<const XMLObject*> validatorsWithPrototypes;
-	for(int i=0; i<xml.numChildren(); ++i){
-		if(xml.getChild(i).hasAttribute(ValidatorXMLConverter::getPrototypeIdAttributeName())){
-			validatorsWithPrototypes.insert(&xml.getChild(i));
-		}
-		else{
-			ValidatorXMLConverterDB::getConverter(xml.getChild(i))->fromXMLtoValidator(xml.getChild(i), validatorMap);
-		}
-	}
-	for(std::set<const XMLObject*>::const_iterator it = validatorsWithPrototypes.begin(); it!=validatorsWithPrototypes.end(); ++it){
-			ValidatorXMLConverterDB::getConverter(*(*it))->fromXMLtoValidator(*(*it), validatorMap);
-	}
-}
-			
-ParameterList XMLParameterListReader::convertParameterList(const XMLObject& xml, const IDtoValidatorMap& validatorMap) const
-{
-  TEST_FOR_EXCEPTION(xml.getTag() != XMLParameterListWriter::getParameterListTagName(), std::runtime_error,
-                     "XMLParameterListReader expected tag " << XMLParameterListWriter::getParameterListTagName() <<", found "
-                     << xml.getTag());
-
+  TEST_FOR_EXCEPTION(xml.getTag() != XMLParameterListWriter::getParameterListTagName(), 
+    std::runtime_error,
+    "XMLParameterListReader expected tag " << XMLParameterListWriter::getParameterListTagName() <<", found "
+    << xml.getTag());
+  IDtoValidatorMap validatorMap;
   ParameterList rtn;
-
-  for (int i=0; i<xml.numChildren(); i++)
-    {
-      XMLObject child = xml.getChild(i);
-
-      TEST_FOR_EXCEPTION( (child.getTag() != XMLParameterListWriter::getParameterListTagName() 
-                           && child.getTag() != ParameterEntry::getTagName()), 
-                         std::runtime_error,
-                         "XMLParameterListReader expected tag "
-                         << XMLParameterListWriter::getParameterListsTagName() << " or "
-						 << ParameterEntry::getTagName() << ", found "
-                         << child.getTag());
-
-      if (child.getTag()==XMLParameterListWriter::getParameterListTagName())
-        {
-          TEST_FOR_EXCEPTION( !child.hasAttribute(XMLParameterListWriter::getNameAttributeName()), 
-                         std::runtime_error,
-                         XMLParameterListWriter::getParameterListTagName() <<" tags must "
-						 "have a " << XMLParameterListWriter::getNameAttributeName() << " attribute"
-                         << child.getTag());
-
-		  const std::string& name = child.getRequired(XMLParameterListWriter::getNameAttributeName());
-
-          ParameterList sublist = convertParameterList(child, validatorMap);
-          sublist.setName(name);
-
-          rtn.set(name, sublist);
-        }
-      else
-        {
-          const std::string& name = child.getRequired(XMLParameterListWriter::getNameAttributeName());
-			RCP<const ParameterEntryXMLConverter> converter = ParameterEntryXMLConverterDB::getConverter(child);
-			ParameterEntry parameter = converter->fromXMLtoParameterEntry(child);
-			if(child.hasAttribute(XMLParameterListWriter::getValidatorIdAttributeName())){
-				IDtoValidatorMap::const_iterator result = validatorMap.getValidator(child.getRequiredInt(XMLParameterListWriter::getValidatorIdAttributeName()));
-				if(result != validatorMap.end()){
-					parameter.setValidator(result->second);
-				}
-				else{
-					throw std::runtime_error("Could not find validator with id: " + toString(child.getRequiredInt(XMLParameterListWriter::getValidatorIdAttributeName())));
-				}
-			}	
-			rtn.setEntry(name, parameter);
-        } 
+  for(int i =0; i<xml.numChildren(); ++i){
+    if(xml.getChild(i).getTag() == XMLParameterListWriter::getValidatorsTagName()){
+      convertValidators(xml.getChild(i), validatorMap);
     }
+  }
+
+  /*for(int i =0; i<xml.numChildren(); ++i){
+    if(xml.getChild(i).getTag() == XMLParameterListWriter::getParameterListTagName()){
+      rtn = convertParameterList(xml.getChild(i).getChild(0), validatorMap);
+    }
+  }*/
+  rtn = convertParameterList(xml, validatorMap);
   return rtn;
 }
 
+void XMLParameterListReader::convertValidators(
+  const XMLObject& xml, IDtoValidatorMap& validatorMap) const
+{
+  std::set<const XMLObject*> validatorsWithPrototypes;
+  for(int i=0; i<xml.numChildren(); ++i){
+    if(xml.getChild(i).hasAttribute(ValidatorXMLConverter::getPrototypeIdAttributeName())){
+      validatorsWithPrototypes.insert(&xml.getChild(i));
+    }
+    else{
+      ValidatorXMLConverterDB::getConverter(xml.getChild(i))->fromXMLtoValidator(xml.getChild(i), validatorMap);
+    }
+  }
+  for(std::set<const XMLObject*>::const_iterator it = validatorsWithPrototypes.begin(); it!=validatorsWithPrototypes.end(); ++it){
+      ValidatorXMLConverterDB::getConverter(*(*it))->fromXMLtoValidator(*(*it), validatorMap);
+  }
+}
+      
+ParameterList XMLParameterListReader::convertParameterList(
+  const XMLObject& xml, const IDtoValidatorMap& validatorMap) const
+{
+  TEST_FOR_EXCEPTION(xml.getTag() != XMLParameterListWriter::getParameterListTagName(), 
+    std::runtime_error,
+    "XMLParameterListReader expected tag " << XMLParameterListWriter::getParameterListTagName() <<", found the tag "
+    << xml.getTag());
+
+  ParameterList rtn;
+
+  for(int i=0; i<xml.numChildren(); i++){
+      XMLObject child = xml.getChild(i);
+
+      TEST_FOR_EXCEPTION( (child.getTag() != XMLParameterListWriter::getParameterListTagName() 
+        && child.getTag() != ParameterEntry::getTagName())
+		&& child.getTag() != XMLParameterListWriter::getValidatorsTagName(),
+        std::runtime_error,
+        "XMLParameterListReader expected tag "
+        << XMLParameterListWriter::getParameterListTagName() << " or "
+        << ParameterEntry::getTagName() << ", but found "
+        << child.getTag() << " tag.");
+
+      if(child.getTag()==XMLParameterListWriter::getParameterListTagName()){
+        TEST_FOR_EXCEPTION( !child.hasAttribute(XMLParameterListWriter::getNameAttributeName()), 
+          std::runtime_error,
+          XMLParameterListWriter::getParameterListTagName() <<" tags must "
+          "have a " << XMLParameterListWriter::getNameAttributeName() << " attribute"
+          << child.getTag());
+
+        const std::string& name = child.getRequired(XMLParameterListWriter::getNameAttributeName());
+
+        ParameterList sublist = convertParameterList(child, validatorMap);
+        sublist.setName(name);
+
+        rtn.set(name, sublist);
+      }
+      else if(child.getTag() == ParameterEntry::getTagName()){
+        const std::string& name = child.getRequired(XMLParameterListWriter::getNameAttributeName());
+        RCP<const ParameterEntryXMLConverter> converter = ParameterEntryXMLConverterDB::getConverter(child);
+        ParameterEntry parameter = converter->fromXMLtoParameterEntry(child);
+        if(child.hasAttribute(ValidatorXMLConverter::getIdAttributeName())){
+          IDtoValidatorMap::const_iterator result = validatorMap.getValidator(child.getRequiredInt(ValidatorXMLConverter::getIdAttributeName()));
+          if(result != validatorMap.end()){
+            parameter.setValidator(result->second);
+          }
+          else{
+            throw std::runtime_error("Could not find validator with id: " + toString(child.getRequiredInt(ValidatorXMLConverter::getIdAttributeName())));
+          }
+        }  
+        rtn.setEntry(name, parameter);
+     } 
+  }
+  return rtn;
+}
+
+}
 

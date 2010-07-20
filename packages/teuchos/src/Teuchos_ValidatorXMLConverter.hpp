@@ -39,16 +39,16 @@
 
 namespace Teuchos {
 
-
 class ParameterEntryValidator;
 
-
-/* \class Teuchos::ValidatorXMLConverter
+/**
  * \brief An abstract base class for converting ParameterEntryValidators to and from XML.
  */
 class ValidatorXMLConverter : public Describable {
+
 public:
-  /* \brief Converts a given XMLObject to a ParameterEntryValidator.
+
+  /** \brief Converts a given XMLObject to a ParameterEntryValidator.
    *
    * @param xmlObj The XMLObject to convert to a ParameterEntryValidator.
    * @return The converted ParameterEntryValidator.
@@ -61,9 +61,16 @@ public:
     return toReturn;
   }
 
+  /**
+   * \brief Preforms any and all special xml conversion that is specific to a particular
+   * ParameterEntryValidator.
+   *
+   * @param xmlObj The xml to be converted.
+   * @param validatorMap The validator map storing all validators that are being converted.
+   */
   virtual RCP<ParameterEntryValidator> convertXML(const XMLObject& xmlObj, IDtoValidatorMap& validatorMap) const=0;
 
-  /* \brief Converters a given ParameterEntryValidator to XML.
+  /** \brief Converters a given ParameterEntryValidator to XML.
    *
    * @param validator The ParameterEntryValidator to be converted to XML.
    * @return An XML representation of the given ParameterEntryValidator.
@@ -80,9 +87,16 @@ public:
     return toReturn;
   }
 
-  virtual XMLObject convertValidator(const RCP<const ParameterEntryValidator>, ValidatortoIDMap& validatorMap) const = 0;
+  /**
+   * \brief Preforms any and all special validator conversion that is specific to a particlar
+   * ParameterEntryValidator
+   *
+   * @param validator The validator to be converted.
+   * @param validatorMap The validator map storing all validators that are being converted.
+   */
+  virtual XMLObject convertValidator(const RCP<const ParameterEntryValidator> validator, ValidatortoIDMap& validatorMap) const = 0;
 
-  /* \brief Determines whether or not this is the appropriate converter given a ParameterEntryValidator.
+  /** \brief Determines whether or not this is the appropriate converter given a ParameterEntryValidator.
    *
    * @param validator The validator to test.
    * @return True if the converter is appropriate for the ParameterEntryValidator, false otherwise.
@@ -98,8 +112,8 @@ public:
     static const std::string prototypeIdAttributeName = "prototypeid";
     return prototypeIdAttributeName;
   }
-};
 
+};
 
 } // namespace Teuchos
 

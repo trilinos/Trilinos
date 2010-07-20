@@ -30,8 +30,9 @@
 #define Teuchos_XMLPARAMETERLISTWRITER_H
 
 /*! \file Teuchos_XMLParameterListWriter.hpp
-    \brief Writes a ParameterList to an XML object
-*/
+ *
+ *   \brief Writes a ParameterList to an XML object
+ */
 
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_XMLObject.hpp"
@@ -41,66 +42,54 @@
 namespace Teuchos
 {
 
-	/** \ingroup XML 
-	 * \brief Writes a ParameterList to an XML object
-	 */
+/** \ingroup XML 
+ * \brief Writes a ParameterList to an XML object
+ */
+class TEUCHOS_LIB_DLL_EXPORT XMLParameterListWriter {
 
-	class TEUCHOS_LIB_DLL_EXPORT XMLParameterListWriter
-		{
-		public:
+public:
 
-      //! @name Constructors 
-			//@{
-      /** Construct a writer */
-	  static const std::string validatorTagName;
-      XMLParameterListWriter();
-			//@}
+  //! @name Constructors 
+  //@{
+  /** Construct a writer */
+  XMLParameterListWriter();
+  //@}
 
-      /** Write the given list to an XML object */
-      XMLObject toXML(const ParameterList& p) const ;
+  /** Write the given list to an XML object */
+  XMLObject toXML(const ParameterList& p) const ;
 
-	  static const std::string& getParameterListAspectsTagName(){
-	    static const std::string parameterListAspectsTagName = "ParameterListAspects";
-	    return parameterListAspectsTagName;
-	  }
+  /** \brief */
+  static const std::string& getParameterListTagName(){
+    static const std::string parameterListTagName = "ParameterList";
+    return parameterListTagName;
+  }
 
-	  static const std::string& getParameterListsTagName(){
-	    static const std::string parameterListsTagName = "ParameterLists";
-	    return parameterListsTagName;
-	  }
+  /** \brief */
+  static const std::string& getNameAttributeName(){
+    static const std::string nameAttributeName = "name";
+    return nameAttributeName;
+  } 
 
-	  static const std::string& getParameterListTagName(){
-	    static const std::string parameterListTagName = "ParameterList";
-	    return parameterListTagName;
-	  }
+  /** \brief */
+  static const std::string& getValidatorsTagName(){
+    static const std::string validatorsTagName = "Validators";
+    return validatorsTagName;
+  }
 
-	  static const std::string& getNameAttributeName(){
-	    static const std::string nameAttributeName = "name";
-		return nameAttributeName;
-	  }
+private:
 
-	  static const std::string& getValidatorsTagName(){
-	    static const std::string validatorsTagName = "Validators";
-	    return validatorsTagName;
-	  }
+  /**
+   * \brief Write the given list to an XML object and record all the validators in it on a map.
+   */
+  XMLObject convertParameterList( const ParameterList& p, ValidatortoIDMap& validatorIDMap) const;
 
-	  static const std::string& getValidatorIdAttributeName(){
-	    static const std::string validatorIdAttributeName = "validatorid";
-       return validatorIdAttributeName;
-	  }
+  /**
+   * \brief Build a map of validators and convert them.
+   */
+  XMLObject convertValidators(const ParameterList& p, ValidatortoIDMap& validatorIDMap) const;
 
-	
-		private:
+};
 
-      /**
-	   * \brief Write the given list to an XML object and record all the validators in it on a map.
-	   */
-      XMLObject convertParameterList(
-	    const ParameterList& p,
-		ValidatortoIDMap& validatorIDMap) const;
-	  XMLObject convertValidators(const ParameterList& p, ValidatortoIDMap& validatorIDMap) const;
-		};
-	  
-}
+} //end teuchos namespace
+
 #endif
-

@@ -27,87 +27,89 @@
 // @HEADER
 
 #include "Teuchos_ValidatorFactory.hpp"
+
 namespace Teuchos{
 
 RCP<ParameterEntryValidator> ValidatorFactory::createValidator(ValidatorType valiType){
-	switch(valiType){
-		case Int:
-			return RCP<EnhancedNumberValidator<int> >(new EnhancedNumberValidator<int>());
-			break;
-		case Short:
-			return RCP<EnhancedNumberValidator<short> >(new EnhancedNumberValidator<short>());
-			break;
-		case Double:
-			return RCP<EnhancedNumberValidator<double> >(new EnhancedNumberValidator<double>());
-			break;
-		case Float:
-			return RCP<EnhancedNumberValidator<float> >(new EnhancedNumberValidator<float>());
-			break;
-		case IntArray:
-			return RCP<ArrayNumberValidator<int> >( new ArrayNumberValidator<int>( RCP<EnhancedNumberValidator<int> >( new EnhancedNumberValidator<int>())));
-			break;
-		case ShortArray:
-			return RCP<ArrayNumberValidator<short> >( new ArrayNumberValidator<short>( RCP<EnhancedNumberValidator<short> >( new EnhancedNumberValidator<short>())));
-			break;
-		case DoubleArray:
-			return RCP<ArrayNumberValidator<double> >( new ArrayNumberValidator<double>( RCP<EnhancedNumberValidator<double> >( new EnhancedNumberValidator<double>())));
-			break;
-		case FloatArray:
-			return RCP<ArrayNumberValidator<float> >( new ArrayNumberValidator<float>(RCP<EnhancedNumberValidator<float> >( new EnhancedNumberValidator<float>())));
-			break;
-		case FileName:
-			return RCP<FileNameValidator>(new FileNameValidator());
-			break;
-		case FileNameArray:
-			return RCP<ArrayFileNameValidator>(new ArrayFileNameValidator(RCP<FileNameValidator>(new FileNameValidator())));
-			break;
-		default:
-			RCP<ParameterEntryValidator> toReturn;
-			return toReturn;
-			break;
-	}
-	RCP<ParameterEntryValidator> toReturn;
-	return toReturn;
+  switch(valiType){
+    case Int:
+      return rcp(new EnhancedNumberValidator<int>());
+      break;
+    case Short:
+      return rcp(new EnhancedNumberValidator<short>());
+      break;
+    case Double:
+      return rcp(new EnhancedNumberValidator<double>());
+      break;
+    case Float:
+      return rcp(new EnhancedNumberValidator<float>());
+      break;
+    case IntArray:
+      return rcp(new ArrayNumberValidator<int>(rcp(new EnhancedNumberValidator<int>())));
+      break;
+    case ShortArray:
+      return rcp(new ArrayNumberValidator<short>(rcp(new EnhancedNumberValidator<short>())));
+      break;
+    case DoubleArray:
+      return rcp(new ArrayNumberValidator<double>(rcp(new EnhancedNumberValidator<double>())));
+      break;
+    case FloatArray:
+      return rcp( new ArrayNumberValidator<float>(rcp(new EnhancedNumberValidator<float>())));
+      break;
+    case FileName:
+      return rcp(new FileNameValidator());
+      break;
+    case FileNameArray:
+      return rcp(new ArrayFileNameValidator(rcp(new FileNameValidator())));
+      break;
+    default:
+      RCP<ParameterEntryValidator> toReturn;
+      return toReturn;
+      break;
+  }
+  RCP<ParameterEntryValidator> toReturn;
+  return toReturn;
 }
 
 RCP<EnhancedNumberValidator<int> > ValidatorFactory::getIntValidator(){
-	return RCP<EnhancedNumberValidator<int> >(new EnhancedNumberValidator<int>());
+  return rcp(new EnhancedNumberValidator<int>());
 }
 
 RCP<EnhancedNumberValidator<short> > ValidatorFactory::getShortValidator(){
-	return RCP<EnhancedNumberValidator<short> >(new EnhancedNumberValidator<short>());
+  return rcp(new EnhancedNumberValidator<short>());
 }
 
 RCP<EnhancedNumberValidator<double> > ValidatorFactory::getDoubleValidator(){
-	return RCP<EnhancedNumberValidator<double> >(new EnhancedNumberValidator<double>());
+  return rcp(new EnhancedNumberValidator<double>());
 }
 
 RCP<EnhancedNumberValidator<float> > ValidatorFactory::getFloatValidator(){
-	return RCP<EnhancedNumberValidator<float> >(new EnhancedNumberValidator<float>());
+  return rcp(new EnhancedNumberValidator<float>());
 }
 
 RCP<FileNameValidator> ValidatorFactory::getFileNameValidator(){
-	return RCP<FileNameValidator>(new FileNameValidator());
+  return rcp(new FileNameValidator());
 }
 
 RCP<ArrayNumberValidator<int> > ValidatorFactory::getArrayIntValidator(){
-	return RCP<ArrayNumberValidator<int> >( new ArrayNumberValidator<int>( RCP<EnhancedNumberValidator<int> >( new EnhancedNumberValidator<int>())));
+  return rcp(new ArrayNumberValidator<int>(rcp( new EnhancedNumberValidator<int>())));
 }
 
 RCP<ArrayNumberValidator<short> > ValidatorFactory::getArrayShortValidator(){
-	return RCP<ArrayNumberValidator<short> >( new ArrayNumberValidator<short>( RCP<EnhancedNumberValidator<short> >( new EnhancedNumberValidator<short>())));
+  return rcp(new ArrayNumberValidator<short>(rcp(new EnhancedNumberValidator<short>())));
 }
 
 RCP<ArrayNumberValidator<double> > ValidatorFactory::getArrayDoubleValidator(){
-	return RCP<ArrayNumberValidator<double> >( new ArrayNumberValidator<double>( RCP<EnhancedNumberValidator<double> >( new EnhancedNumberValidator<double>())));
+  return rcp(new ArrayNumberValidator<double>(rcp(new EnhancedNumberValidator<double>())));
 }
 
 RCP<ArrayNumberValidator<float> > ValidatorFactory::getArrayFloatValidator(){
-	return RCP<ArrayNumberValidator<float> >( new ArrayNumberValidator<float>( RCP<EnhancedNumberValidator<float> >( new EnhancedNumberValidator<float>())));
+  return rcp(new ArrayNumberValidator<float>(rcp(new EnhancedNumberValidator<float>())));
 }
 
 RCP<ArrayFileNameValidator> ValidatorFactory::getArrayFileNameValidator(){
-	return RCP<ArrayFileNameValidator>(new ArrayFileNameValidator(RCP<FileNameValidator>(new FileNameValidator())));
+  return rcp(new ArrayFileNameValidator(rcp(new FileNameValidator())));
 }
 
 }
+
