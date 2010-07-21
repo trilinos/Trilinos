@@ -38,8 +38,6 @@
 #include "Tsqr_TsqrTest.hpp"
 #include "Teuchos_Time.hpp"
 
-#include "AnasaziTsqrOrthoManager.hpp"
-
 #include <sstream>
 #include <stdexcept>
 #include <vector>

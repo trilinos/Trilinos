@@ -2,7 +2,7 @@
 // ***********************************************************************
 //
 //                 Anasazi: Block Eigensolvers Package
-//                 Copyright (2004) Sandia Corporation
+//                 Copyright (2010) Sandia Corporation
 //
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
@@ -25,17 +25,13 @@
 //
 // ***********************************************************************
 // @HEADER
-//
-//  This test is for the OrthoManager interface to ICGSOrthoManager, 
-//  SVQBOrthoManager and BasicOrthoManager
-//
-// The matrix used is from MatrixMarket:
-// Name: MHD1280B: Alfven Spectra in Magnetohydrodynamics
-// Source: Source: A. Booten, M.N. Kooper, H.A. van der Vorst, S. Poedts and J.P. Goedbloed University of Utrecht, the Netherlands
-// Discipline: Plasma physics
-// URL: http://math.nist.gov/MatrixMarket/data/NEP/mhd/mhd1280b.html
-// Size: 1280 x 1280
-// NNZ: 22778 entries
+
+/// \file cxx_main_tsqr.cpp 
+/// \brief Test TsqrOrthoManager and TsqrMatOrthoManager
+///
+/// Test the OrthoManager interface to TsqrOrthoManager and
+/// TsqrMatOrthoManager, using Tpetra::MultiVector as the multivector
+/// implementation.
 
 #include "AnasaziConfigDefs.hpp"
 #include "AnasaziSolverUtils.hpp"
@@ -43,6 +39,7 @@
 #include "AnasaziSVQBOrthoManager.hpp"
 #include "AnasaziICGSOrthoManager.hpp"
 #include "AnasaziBasicOrthoManager.hpp"
+#include "AnasaziTsqrOrthoManager.hpp"
 #include "AnasaziTpetraAdapter.hpp"
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_StandardCatchMacros.hpp>
@@ -54,25 +51,28 @@
 #include <iohb.h>
 
 #include <complex>
+#include <stdexcept>
 
 using namespace Anasazi;
 using namespace Teuchos;
 
 using Tpetra::Operator;
 using Tpetra::CrsMatrix;
-using Tpetra::MultiVector;
 using Tpetra::Map;
+using Tpetra::MultiVector;
 using std::cout;
 using std::endl;
 using std::vector;
 
-typedef std::complex<double>                ST;
+typedef double                              ST;
 typedef ScalarTraits< ST >                 SCT;
 typedef SCT::magnitudeType                  MT;
 typedef MultiVector< ST, int >              MV;
 typedef Operator< ST, int >                 OP;
 typedef MultiVecTraits< ST, MV >           MVT;
 typedef OperatorTraits< ST, MV, OP >       OPT;
+
+typedef SerialDenseMatrix< int, ST > serial_matrix_type;
 
 // this is the tolerance that all tests are performed against
 const MT TOL = 1.0e-12;
@@ -81,14 +81,97 @@ const MT ATOL = 10;
 // declare an output manager for handling local output
 RCP< Anasazi::BasicOutputManager<ST> > MyOM;
 
-// some forward declarations
-int testProject(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S, RCP<const MV> X1, RCP<const MV> X2);
-int testNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S);
-int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S, RCP<const MV> X1, RCP<const MV> X2);
+////////////////////////////////////////////////////////////////////////////////
+// Some forward declarations
+////////////////////////////////////////////////////////////////////////////////
 
-MT MVDiff(const MV &X, const MV &Y);
+static int 
+testProject (RCP<OrthoManager<ST,MV> > OM, 
+	     RCP<const MV> S, 
+	     RCP<const MV> X1, 
+	     RCP<const MV> X2);
 
-int main(int argc, char *argv[]) 
+static int 
+testNormalize (RCP<OrthoManager<ST,MV> > OM, 
+	       RCP<const MV> S);
+
+static int 
+testProjectAndNormalize (RCP<OrthoManager<ST,MV> > OM, 
+			 RCP<const MV> S, 
+			 RCP<const MV> X1, 
+			 RCP<const MV> X2);
+
+/// Compute and return $\sum_{j=1}^n \| X(:,j) - Y(:,j) \|_2$, where
+/// $n$ is the number of columns in X.
+static MT 
+MVDiff (const MV& X, 
+	const MV& Y);
+
+
+/// Valid command-line parameter values for the OrthoManager subclass
+/// to test.
+static const char* validOrthoManagers[] = {
+  "Tsqr",
+  "SVQB",
+  "Basic",
+  "ICGS"
+};
+/// Number of valid command-line parameter values for the OrthoManager
+/// subclass to test.  Must be at least one.
+static const int numValidOrthoManagers = 4;
+
+/// Return a list (as a string) of valid command-line parameter values
+/// for the OrthoManager subclass to test.
+static std::string
+printValidOrthoManagerList ()
+{
+  TEST_FOR_EXCEPTION( numValidOrthoManagers <= 0,
+		      std::logic_error,
+		      "Invalid number " 
+		      << numValidOrthoManagers 
+		      << " of OrthoManager command-line options" );
+  if (numValidOrthoManagers > 1)
+    {
+      for (int k = 0; k < numValidOrthoManagers - 1; ++k)
+	os << "\"" << validOrthoManagers[k] << "\", ";
+      os << "or ";
+    }
+  os << "\"" << validOrthoManagers[numValidOrthoManagers-1] << "\"";
+}
+static std::string
+defaultOrthoManagerName () { return std::string("Tsqr"); }
+
+
+///
+/// Instantiate and return an RCP to the specified OrthoManager
+/// subclass.
+///
+static RCP< OrthoManager<ST,MV> >
+getOrthoManager (const std::string& ortho)
+{
+    if (ortho == "SVQB") {
+      return rcp (new SVQBOrthoManager<ST,MV,OP>(M));
+    }
+    else if (ortho == "Basic" || ortho == "basic") {
+      return rcp (new BasicOrthoManager<ST,MV,OP>(M));
+    }
+    else if (ortho == "ICGS") {
+      return rcp (new ICGSOrthoManager<ST,MV,OP>(M));
+    }
+    else if (ortho == "Tsqr" || ortho == "TSQR") {
+      return rcp (new TsqrMatOrthoManager< ST, MV, OP > (M));
+    }
+    else {
+      TEST_FOR_EXCEPTION( true, std::invalid_argument, 
+			  "Invalid value for command-line parameter \"ortho\":"
+			  " valid values are " << printValidOrthoManagerList() 
+			  << "." );
+    }
+}
+
+
+int 
+main (int argc, char *argv[]) 
 {
   const ST ONE = SCT::one();
   const MT ZERO = SCT::magnitude(SCT::zero());
@@ -105,9 +188,9 @@ int main(int argc, char *argv[])
   int numFailed = 0;
   bool verbose = false;
   bool debug = false;
-  std::string filename; // ("mhd1280b.cua");
-  std::string ortho = "SVQB";
-  int dim = 100;
+  std::string filename;
+  std::string ortho (defaultOrthoManagerName());
+  int numRows = 100;
   int sizeS  = 5;
   int sizeX1 = 11; // MUST: sizeS + sizeX1 + sizeX2 <= elements[0]-1
   int sizeX2 = 13; // MUST: sizeS + sizeX1 + sizeX2 <= elements[0]-1
@@ -115,26 +198,41 @@ int main(int argc, char *argv[])
   try {
 
     CommandLineProcessor cmdp(false,true);
-    cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
-    cmdp.setOption("debug","nodebug",&debug,"Print debugging information.");
-    cmdp.setOption("filename",&filename,"Filename for Harwell-Boeing test matrix.");
-    cmdp.setOption("ortho",&ortho,"Which ortho manager: SVQB or Basic or ICGS");
-    cmdp.setOption("dim",&dim,"Controls the size of multivectors.");
-    cmdp.setOption("sizeS",&sizeS,"Controls the width of the input multivector.");
-    cmdp.setOption("sizeX1",&sizeX1,"Controls the width of the first basis.");
-    cmdp.setOption("sizeX2",&sizeX2,"Controls the width of the second basis.");
-    if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) {
+    cmdp.setOption ("verbose", "quiet", &verbose,
+		    "Print messages and results.");
+    cmdp.setOption ("debug", "nodebug", &debug,
+		    "Print debugging information.");
+    cmdp.setOption ("filename", &filename,
+		    "Filename for Harwell-Boeing sparse matrix, used as the M "
+		    "operator for the inner product.  If not provided, no "
+		    "matrix is read and the Euclidean inner product is used.");
+    {
+      std::ostringstream os;
+      os << "OrthoManager subclass to test.  There ";
+      if (numValidOrthoManagers > 1)
+	os << "are " << numValidOrthoManagers << "options: ";
+      else {
+	os << "is " << numValidOrthoManagers << "option: ";
+      }
+      os << printValidOrthoManagerList() << ".";
+      cmdp.setOption ("ortho", &ortho, os.str());
+    }
+    cmdp.setOption ("numRows", &numRows, 
+		    "Controls the number of rows of the test "
+		    "multivectors.  If an input matrix is given, this "
+		    "parameter\'s value is ignored.");
+    cmdp.setOption ("sizeS", &sizeS, "Controls the number of columns of the "
+		    "input multivector.");
+    cmdp.setOption ("sizeX1", &sizeX1, "Controls the number of columns of the "
+		    "first basis.");
+    cmdp.setOption ("sizeX2", &sizeX2, "Controls the number of columns of the "
+		    "second basis.  We require for simplicity of testing (the "
+		    "routines do not require it) that sizeX1 >= sizeX2.");
+    if (cmdp.parse (argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) 
       return -1;
-    }
-    if (debug) verbose = true;
-
-    // below we will assume that sizeX1 > sizeX2
-    // this does not effect our testing, since we will test P_{X1,Y1} P_{X2,Y2} as well as P_{X2,Y2} P_{X1,Y1}
-    // however, is does allow us to simplify some logic
-    if (sizeX1 < sizeX2) {
-      std::swap(sizeX1,sizeX2);
-    }
-
+    if (debug) 
+      verbose = true;
+    
     MyOM = rcp( new BasicOutputManager<ST>() );
     if (verbose) {
       // output in this driver will be sent to Anasazi::Warnings
@@ -144,122 +242,189 @@ int main(int argc, char *argv[])
 
     RCP<Map<int> > map;
     RCP<CrsMatrix<ST,int> > M;
-    if (filename != "") {
-      int dim2,nnz;
-      int rnnzmax;
-      double *dvals;
-      int *colptr,*rowind;
-      nnz = -1;
-      if (MyPID == 0) {
-        info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
-        // find maximum NNZ over all rows
-        vector<int> rnnz(dim,0);
-        for (int *ri=rowind; ri<rowind+nnz; ++ri) {
-          ++rnnz[*ri-1];
-        }
-        rnnzmax = *std::max_element(rnnz.begin(),rnnz.end());
-      }
-      else {
-        // address uninitialized data warnings
-        dvals = NULL;
-        colptr = NULL;
-        rowind = NULL;
-      }
-      Teuchos::broadcast(*comm,0,&info);
-      Teuchos::broadcast(*comm,0,&nnz);
-      Teuchos::broadcast(*comm,0,&dim);
-      Teuchos::broadcast(*comm,0,&rnnzmax);
-      if (info == 0 || nnz < 0) {
-        if (MyPID == 0) {
-          cout << "Error reading '" << filename << "'" << endl
-            << "End Result: TEST FAILED" << endl;
-        }
-        return -1;
-      }
-      // create map
-      map = rcp(new Map<int>(dim,0,comm));
-      M = rcp(new CrsMatrix<ST,int>(map,rnnzmax));
-      if (MyPID == 0) {
-        // Convert interleaved doubles to complex values
-        // HB format is compressed column. CrsMatrix is compressed row.
-        const double *dptr = dvals;
-        const int *rptr = rowind;
-        for (int c=0; c<dim; ++c) {
-          for (int colnnz=0; colnnz < colptr[c+1]-colptr[c]; ++colnnz) {
-            M->insertGlobalValues(*rptr++ - 1,tuple(c),tuple(ST(dptr[0],dptr[1])));
-            dptr += 2;
-          }
-        }
-      }
-      if (MyPID == 0) {
-        // Clean up.
-        free( dvals );
-        free( colptr );
-        free( rowind );
-      }
-      M->fillComplete();
-    } // else M == null
+    if (filename != "") 
+      {
+	int numCols = 0;
+	int nnz = -1;
+	int rnnzmax = 0;
+	double *dvals = NULL;
+	int *colptr = NULL;
+	int *rowind = NULL;
+
+	if (MyPID == 0) 
+	  {
+	    // Proc 0 reads the sparse matrix (stored in Harwell-Boeing
+	    // format) from the file into the tuple (numRows, numCols, nnz,
+	    // colptr, rowind, dvals).  The routine allocates memory for
+	    // colptr, rowind, and dvals using malloc().
+	    info = readHB_newmat_double (filename.c_str(), &numRows, &numCols,
+					 &nnz, &colptr, &rowind, &dvals);
+	    // rnnzmax := maximum number of nonzeros per row, over all
+	    // rows of the sparse matrix.
+	    vector<int> rnnz (numRows, 0);
+	    for (int *ri = rowind; ri < rowind + nnz; ++ri) {
+	      ++rnnz[*ri-1];
+	    }
+	    rnnzmax = *std::max_element (rnnz.begin(),rnnz.end());
+	  }
+
+	// Proc 0 now broadcasts the sparse matrix data to the other
+	// process(es).  First things broadcast are info and nnz, which
+	// tell the other process(es) whether reading the sparse matrix
+	// succeeded.  (info should be nonzero if so.  The
+	// Harwell-Boeing routines return "C boolean true" rather than
+	// the POSIX-standard "zero for success.")
+	Teuchos::broadcast (*comm, 0, &info);
+	Teuchos::broadcast (*comm, 0, &nnz);
+	Teuchos::broadcast (*comm, 0, &numRows);
+	Teuchos::broadcast (*comm, 0, &numCols);
+	Teuchos::broadcast (*comm, 0, &rnnzmax);
+	if (info == 0 || nnz < 0) 
+	  {
+	    if (MyPID == 0) {
+	      cout << "Error reading Harwell-Boeing sparse matrix file \"" 
+		   << filename << "\"" 
+		   << endl
+		   << "End Result: TEST FAILED" << endl;
+	    }
+	    return -1;
+	  }
+	else if (numRows != numcols)
+	  {
+	    if (MyPID == 0) {
+	      cout << "Test matrix in Harwell-Boeing sparse matrix file '" 
+		   << filename << "' " << "is not square: it is " << numRows 
+		   << " by " << numCols
+		   << endl
+		   << "End Result: TEST FAILED" << endl;
+	    }
+	    return -1;
+	  }
+	else if (nnz == 0) 
+	  {
+	    if (MyPID == 0) {
+	      cout << "Test matrix in Harwell-Boeing sparse matrix file '" 
+		   << filename << "' " << "has zero nonzero values, which "
+		   << "means it does not define a valid inner product." 
+		   << endl
+		   << "End Result: TEST FAILED" << endl;
+	    }
+	    return -1;
+	  }
+    
+	// Create Tpetra::Map to represent multivectors in the range of
+	// the sparse matrix.
+	map = rcp (new Map<int> (numRows, 0, comm));
+	M = rcp (new CrsMatrix<ST,int> (map, rnnzmax));
+
+	if (MyPID == 0) 
+	  {
+	    // Convert from Harwell-Boeing format (compressed sparse
+	    // column, one-indexed) to CrsMatrix format (compressed
+	    // sparse row, zero-index).  We do this by iterating over
+	    // all the columns of the matrix.
+	    const int curNonzeroIndex = 0;
+	    for (int c = 0; c < numCols; ++c) 
+	      {
+		for (int colnnz = 0; colnnz < colptr[c+1] - colptr[c]; ++colnnz) 
+		  {
+		    // Row index: *rptr - 1 (1-based -> 0-based indexing)
+		    // Column index: c
+		    // Value to insert there: *dptr
+		    const int curGlobalRowIndex = rowind[curNonzeroIndex] - 1;
+		    const ST curValue = dvals[curNonzeroIndex];
+		    M->insertGlobalValues (curGlobalRowIndex, 
+					   tuple (c), 
+					   tuple (curValue));
+		    curNonzeroIndex++;
+		  }
+	      }
+	  }
+	if (MyPID == 0) 
+	  {
+	    // Free memory allocated by the Harwell-Boeing input routine.
+	    free (dvals);
+	    dvals = NULL;
+	    free (colptr);
+	    colptr = NULL;
+	    free (rowind);
+	    rowind = NULL;
+	  }
+	// We're done reading in M.
+	M->fillComplete();
+      } // else M == null
     else {
-      // let M remain null, allocate map with command-line specified dim
-      map = rcp(new Map<int>(dim,0,comm));
+      // Let M remain null, and allocate map using the number of rows
+      // (numRows) specified on the command line.
+      map = rcp (new Map<int> (numRows, 0, comm));
     }
+    
+    // Instantiate the specified OrthoManager subclass for testing.
+    RCP< OrthoManager<ST,MV> > OM = getOrthoManager (ortho);
 
-    // Create ortho managers
-    RCP<OrthoManager<ST,MV> > OM;
-    if (ortho == "SVQB") {
-      OM = rcp( new SVQBOrthoManager<ST,MV,OP>(M) );
-    }
-    else if (ortho == "Basic") {
-      OM = rcp( new BasicOrthoManager<ST,MV,OP>(M) );
-    }
-    else if (ortho == "ICGS") {
-      OM = rcp( new ICGSOrthoManager<ST,MV,OP>(M) );
-    }
-    else {
-      TEST_FOR_EXCEPTION(true,std::invalid_argument,"Command line parameter \"ortho\" must be \"SVQB\" or \"Basic\".");
-    }
+    // "Prototype" multivector, from which to clone other multivectors.
+    RCP< MV > S = rcp (new MultiVector< ST, int > (map, sizeS));
 
-    // multivector to spawn off of
-    RCP<MV> S = rcp( new MultiVector<ST,int>(map, sizeS) );
-
-    // create X1, X2
-    // they must be M-orthonormal and mutually M-orthogonal
+    // Create multivectors X1 and X2, using the same map as
+    // multivector S.  X1 and X2 must be M-orthonormal and mutually
+    // M-orthogonal.
     MyOM->stream(Errors) << " Generating X1,X2 for testing... " << endl;
-    RCP<MV> X1  = MVT::Clone(*S,sizeX1),
-            X2  = MVT::Clone(*S,sizeX2);
+    RCP< MV > X1 = MVT::Clone (*S, sizeX1);
+    RCP< MV > X2 = MVT::Clone (*S, sizeX2);
     {
       int dummy;
       MT err;
-      // X1
+
+      //
+      // Fill X1 with random values, and test the normalization error.
+      //
       MVT::MvRandom(*X1);
-      dummy = OM->normalize(*X1);
-      TEST_FOR_EXCEPTION(dummy != sizeX1, std::runtime_error, 
-          "normalize(X1) returned rank " << dummy << " from " 
-          << sizeX1 << " vectors. Cannot continue.");
+      const int initialX1Rank = OM->normalize(*X1);
+      TEST_FOR_EXCEPTION(initialX1Rank != sizeX1, 
+			 std::runtime_error, 
+			 "normalize(X1) returned rank "
+			 << initialX1Rank << " from " << sizeX1
+			 << " vectors. Cannot continue.");
       err = OM->orthonormError(*X1);
-      TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
-          "normalize(X1) did meet tolerance: orthonormError(X1) == " << err);
+      TEST_FOR_EXCEPTION(err > TOL,
+			 std::runtime_error,
+			 "normalize(X1) did meet tolerance: "
+			 "orthonormError(X1) == " << err);
       MyOM->stream(Warnings) << "   || <X1,X1> - I || : " << err << endl;
-      // X2
+
+      //
+      // Fill X2 with random values, project against X1 and normalize,
+      // and test the orthogonalization error.
+      //
       MVT::MvRandom(*X2);
-      dummy = OM->projectAndNormalize(*X2,tuple<RCP<const MV> >(X1));
-      TEST_FOR_EXCEPTION(dummy != sizeX2, std::runtime_error, 
-          "projectAndNormalize(X2,X1) returned rank " << dummy << " from " 
-          << sizeX2 << " vectors. Cannot continue.");
+      const int initialX2Rank = 
+	OM->projectAndNormalize (*X2, tuple< RCP< const MV > > (X1));
+      TEST_FOR_EXCEPTION(initialX2Rank != sizeX2, 
+			 std::runtime_error, 
+			 "projectAndNormalize(X2,X1) returned rank " 
+			 << initialX2Rank << " from " << sizeX2 
+			 << " vectors. Cannot continue.");
       err = OM->orthonormError(*X2);
-      TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
-          "projectAndNormalize(X2,X1) did not meet tolerance: orthonormError(X2) == " << err);
+      TEST_FOR_EXCEPTION(err > TOL,
+			 std::runtime_error,
+			 "projectAndNormalize(X2,X1) did not meet tolerance: "
+			 "orthonormError(X2) == " << err);
       MyOM->stream(Warnings) << "   || <X2,X2> - I || : " << err << endl;
       err = OM->orthogError(*X2,*X1);
-      TEST_FOR_EXCEPTION(err > TOL,std::runtime_error,
-          "projectAndNormalize(X2,X1) did not meet tolerance: orthogError(X2,X1) == " << err);
+      TEST_FOR_EXCEPTION(err > TOL,
+			 std::runtime_error,
+			 "projectAndNormalize(X2,X1) did not meet tolerance: "
+			 "orthogError(X2,X1) == " << err);
       MyOM->stream(Warnings) << "   || <X2,X1> ||     : " << err << endl;
     }
     MyOM->stream(Warnings) << endl;
 
 
     {
-      // just a random multivector
+      //
+      // Test project() on a random multivector S, by projecting S
+      // against various combinations of X1 and X2.
+      //
       MVT::MvRandom(*S);
 
       MyOM->stream(Errors) << " project(): testing on random multivector " << endl;
@@ -273,7 +438,7 @@ int main(int argc, char *argv[])
       // also, <Y2,Y2> = I, but <X1,X1> != I, so biOrtho must be set to false
       // it should require randomization, as 
       // P_{X1,X1} P_{Y2,Y2} (X1*C1 + Y2*C2) = P_{X1,X1} X1*C1 = 0
-      SerialDenseMatrix<int,ST> C1(sizeX1,sizeS), C2(sizeX2,sizeS);
+      serial_matrix_type C1(sizeX1,sizeS), C2(sizeX2,sizeS);
       C1.random();
       C2.random();
       MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
@@ -287,7 +452,7 @@ int main(int argc, char *argv[])
     if (sizeS > 2) {
       MVT::MvRandom(*S);
       RCP<MV> mid = MVT::Clone(*S,1);
-      SerialDenseMatrix<int,ST> c(sizeS,1);
+      serial_matrix_type c(sizeS,1);
       MVT::MvTimesMatAddMv(ONE,*S,c,ZERO,*mid);
       std::vector<int> ind(1); 
       ind[0] = sizeS-1;
@@ -331,7 +496,7 @@ int main(int argc, char *argv[])
       // P_X1 P_X2 (X1*C1 + X2*C2) = P_X1 X1*C1 = 0
       // and 
       // P_X2 P_X1 (X2*C2 + X1*C1) = P_X2 X2*C2 = 0
-      SerialDenseMatrix<int,ST> C1(sizeX1,sizeS), C2(sizeX2,sizeS);
+      serial_matrix_type C1(sizeX1,sizeS), C2(sizeX2,sizeS);
       C1.random();
       C2.random();
       MVT::MvTimesMatAddMv(ONE,*X1,C1,ZERO,*S);
@@ -345,7 +510,7 @@ int main(int argc, char *argv[])
     if (sizeS > 2) {
       MVT::MvRandom(*S);
       RCP<MV> mid = MVT::Clone(*S,1);
-      SerialDenseMatrix<int,ST> c(sizeS,1);
+      serial_matrix_type c(sizeS,1);
       MVT::MvTimesMatAddMv(ONE,*S,c,ZERO,*mid);
       std::vector<int> ind(1); 
       ind[0] = sizeS-1;
@@ -393,10 +558,13 @@ int main(int argc, char *argv[])
 
 
 
-////////////////////////////////////////////////////////////////////////////
-int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM, 
-    RCP<const MV> S, 
-    RCP<const MV> X1, RCP<const MV> X2) {
+static int 
+testProjectAndNormalize (RCP< OrthoManager< ST, MV > > OM, 
+			 RCP< const MV > S, 
+			 RCP< const MV > X1, 
+			 RCP< const MV > X2) 
+{
+  typedef Array< RCP< MV > >::size_type size_type;
 
   const ST ONE = SCT::one();
   const MT ZERO = SCT::magnitude(SCT::zero());
@@ -451,8 +619,8 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
   for (int t=0; t<numtests; t++) {
 
     Array<RCP<const MV> > theX;
-    RCP<SerialDenseMatrix<int,ST> > B = rcp( new SerialDenseMatrix<int,ST>(sizeS,sizeS) );
-    Array<RCP<SerialDenseMatrix<int,ST> > > C;
+    RCP<serial_matrix_type > B = rcp( new serial_matrix_type(sizeS,sizeS) );
+    Array<RCP<serial_matrix_type > > C;
     if ( (t && 3) == 0 ) {
       // neither <X1,Y1> nor <X2,Y2>
       // C, theX and theY are already empty
@@ -460,18 +628,18 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
     else if ( (t && 3) == 1 ) {
       // X1
       theX = tuple(X1);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)) );
+      C = tuple( rcp(new serial_matrix_type(sizeX1,sizeS)) );
     }
     else if ( (t && 3) == 2 ) {
       // X2
       theX = tuple(X2);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
+      C = tuple( rcp(new serial_matrix_type(sizeX2,sizeS)) );
     }
     else {
       // X1 and X2, and the reverse.
       theX = tuple(X1,X2);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)), 
-          rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
+      C = tuple( rcp(new serial_matrix_type(sizeX1,sizeS)), 
+          rcp(new serial_matrix_type(sizeX2,sizeS)) );
     }
 
     try {
@@ -484,8 +652,8 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
 
       // here is where the outputs go
       Array<RCP<MV> > S_outs;
-      Array<Array<RCP<SerialDenseMatrix<int,ST> > > > C_outs;
-      Array<RCP<SerialDenseMatrix<int,ST> > > B_outs;
+      Array<Array<RCP<serial_matrix_type > > > C_outs;
+      Array<RCP<serial_matrix_type > > B_outs;
       RCP<MV> Scopy;
       Array<int> ret_out;
 
@@ -493,7 +661,7 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
       Scopy = MVT::CloneCopy(*S);
       // randomize this data, it should be overwritten
       B->random();
-      for (unsigned int i=0; i<C.size(); i++) {
+      for (size_type i=0; i<C.size(); i++) {
         C[i]->random();
       }
       // run test
@@ -519,18 +687,18 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
           ind[i] = i;
         }
         S_outs.push_back( MVT::CloneViewNonConst(*Scopy,ind) );
-        B_outs.push_back( rcp( new SerialDenseMatrix<int,ST>(Teuchos::Copy,*B,ret,sizeS) ) );
+        B_outs.push_back( rcp( new serial_matrix_type(Teuchos::Copy,*B,ret,sizeS) ) );
       }
       else {
         S_outs.push_back( Scopy );
-        B_outs.push_back( rcp( new SerialDenseMatrix<int,ST>(*B) ) );
+        B_outs.push_back( rcp( new serial_matrix_type(*B) ) );
       }
-      C_outs.push_back( Array<RCP<SerialDenseMatrix<int,ST> > >(0) );
+      C_outs.push_back( Array<RCP<serial_matrix_type > >(0) );
       if (C.size() > 0) {
-        C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[0]) ) );
+        C_outs.back().push_back( rcp( new serial_matrix_type(*C[0]) ) );
       }
       if (C.size() > 1) {
-        C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[1]) ) );
+        C_outs.back().push_back( rcp( new serial_matrix_type(*C[1]) ) );
       }
 
       // do we run the reversed input?
@@ -539,7 +707,7 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
         Scopy = MVT::CloneCopy(*S);
         // randomize this data, it should be overwritten
         B->random();
-        for (unsigned int i=0; i<C.size(); i++) {
+        for (size_type i=0; i<C.size(); i++) {
           C[i]->random();
         }
         // flip the inputs
@@ -567,23 +735,23 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
             ind[i] = i;
           }
           S_outs.push_back( MVT::CloneViewNonConst(*Scopy,ind) );
-          B_outs.push_back( rcp( new SerialDenseMatrix<int,ST>(Teuchos::Copy,*B,ret,sizeS) ) );
+          B_outs.push_back( rcp( new serial_matrix_type(Teuchos::Copy,*B,ret,sizeS) ) );
         }
         else {
           S_outs.push_back( Scopy );
-          B_outs.push_back( rcp( new SerialDenseMatrix<int,ST>(*B) ) );
+          B_outs.push_back( rcp( new serial_matrix_type(*B) ) );
         }
-        C_outs.push_back( Array<RCP<SerialDenseMatrix<int,ST> > >() );
+        C_outs.push_back( Array<RCP<serial_matrix_type > >() );
         // reverse the Cs to compensate for the reverse projectors
-        C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[1]) ) );
-        C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[0]) ) );
+        C_outs.back().push_back( rcp( new serial_matrix_type(*C[1]) ) );
+        C_outs.back().push_back( rcp( new serial_matrix_type(*C[0]) ) );
         // flip the inputs back
         theX = tuple( theX[1], theX[0] );
       }
 
 
       // test all outputs for correctness
-      for (unsigned int o=0; o<S_outs.size(); o++) {
+      for (size_type o=0; o<S_outs.size(); o++) {
         // S^T M S == I
         {
           MT err = OM->orthonormError(*S_outs[o]);
@@ -648,8 +816,10 @@ int testProjectAndNormalize(RCP<OrthoManager<ST,MV> > OM,
 
 
 
-////////////////////////////////////////////////////////////////////////////
-int testNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S)
+
+static int 
+testNormalize (RCP< OrthoManager< ST, MV > > OM, 
+	       RCP< const MV > S)
 {
 
   const ST ONE = SCT::one();
@@ -680,7 +850,7 @@ int testNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S)
 
   for (int t=0; t<numtests; t++) {
 
-    RCP<SerialDenseMatrix<int,ST> > B = rcp( new SerialDenseMatrix<int,ST>(sizeS,sizeS) );
+    RCP<serial_matrix_type > B = rcp( new serial_matrix_type(sizeS,sizeS) );
 
     try {
       // call routine
@@ -714,7 +884,7 @@ int testNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S)
           ind[i] = i;
         }
         Scopy = MVT::CloneViewNonConst(*Scopy,ind);
-        B = rcp( new SerialDenseMatrix<int,ST>(Teuchos::View,*B,ret,sizeS) );
+        B = rcp( new serial_matrix_type(Teuchos::View,*B,ret,sizeS) );
       }
 
       // test all outputs for correctness
@@ -757,10 +927,13 @@ int testNormalize(RCP<OrthoManager<ST,MV> > OM, RCP<const MV> S)
 
 
 
-////////////////////////////////////////////////////////////////////////////
-int testProject(RCP<OrthoManager<ST,MV> > OM, 
-    RCP<const MV> S, 
-    RCP<const MV> X1, RCP<const MV> X2) {
+static int 
+testProject (RCP< OrthoManager< ST, MV > > OM, 
+	     RCP< const MV > S, 
+	     RCP< const MV > X1, 
+	     RCP< const MV > X2) 
+{
+  typedef Array< RCP< MV > >::size_type size_type;
 
   const ST ONE = SCT::one();
   const int sizeS = MVT::GetNumberVecs(*S);
@@ -811,69 +984,69 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
     sout << "   || <S,X2> || before     : " << err << endl;
   }
 
-  for (int t=0; t<numtests; t++) {
-
-    Array<RCP<const MV> > theX;
-    Array<RCP<SerialDenseMatrix<int,ST> > > C;
-    if ( (t && 3) == 0 ) {
-      // neither X1 nor X2
-      // C and theX are already empty
-    }
-    else if ( (t && 3) == 1 ) {
-      // X1
-      theX = tuple(X1);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)) );
-    }
-    else if ( (t && 3) == 2 ) {
-      // X2
-      theX = tuple(X2);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
-    }
-    else {
-      // X1 and X2, and the reverse.
-      theX = tuple(X1,X2);
-      C = tuple( rcp(new SerialDenseMatrix<int,ST>(sizeX1,sizeS)), 
-          rcp(new SerialDenseMatrix<int,ST>(sizeX2,sizeS)) );
-    }
-
-    try {
-      // call routine
-      // if (t && 3) == 3, {
-      //    call with reversed input: X2 X1
-      // }
-      // test all outputs for correctness
-      // test all outputs for equivalence
-
-      // here is where the outputs go
-      Array<RCP<MV> > S_outs;
-      Array<Array<RCP<SerialDenseMatrix<int,ST> > > > C_outs;
-      RCP<MV> Scopy;
-
-      // copies of S,MS
-      Scopy = MVT::CloneCopy(*S);
-      // randomize this data, it should be overwritten
-      for (unsigned int i=0; i<C.size(); i++) {
-        C[i]->random();
+  for (int t = 0; t < numtests; ++t) 
+    {
+      Array< RCP< const MV > > theX;
+      Array< RCP< serial_matrix_type > > C;
+      if ( (t && 3) == 0 ) {
+	// neither X1 nor X2
+	// C and theX are already empty
       }
-      // run test
-      OM->project(*Scopy,theX,C);
-      // we allocate S and MS for each test, so we can save these as views
-      // however, save copies of the C
-      S_outs.push_back( Scopy );
-      C_outs.push_back( Array<RCP<SerialDenseMatrix<int,ST> > >(0) );
-      if (C.size() > 0) {
-        C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[0]) ) );
+      else if ( (t && 3) == 1 ) {
+	// X1
+	theX = tuple(X1);
+	C = tuple( rcp(new serial_matrix_type(sizeX1,sizeS)) );
       }
-      if (C.size() > 1) {
-        C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[1]) ) );
+      else if ( (t && 3) == 2 ) {
+	// X2
+	theX = tuple(X2);
+	C = tuple( rcp(new serial_matrix_type(sizeX2,sizeS)) );
       }
+      else {
+	// X1 and X2, and the reverse.
+	theX = tuple(X1,X2);
+	C = tuple( rcp(new serial_matrix_type(sizeX1,sizeS)), 
+		   rcp(new serial_matrix_type(sizeX2,sizeS)) );
+      }
+
+      try {
+	// call routine
+	// if (t && 3) == 3, {
+	//    call with reversed input: X2 X1
+	// }
+	// test all outputs for correctness
+	// test all outputs for equivalence
+
+	// here is where the outputs go
+	Array<RCP<MV> > S_outs;
+	Array<Array<RCP<serial_matrix_type > > > C_outs;
+	RCP<MV> Scopy;
+
+	// copies of S,MS
+	Scopy = MVT::CloneCopy(*S);
+	// randomize this data, it should be overwritten
+	for (size_type i = 0; i < C.size(); ++i) {
+	  C[i]->random();
+	}
+	// run test
+	OM->project(*Scopy,theX,C);
+	// we allocate S and MS for each test, so we can save these as views
+	// however, save copies of the C
+	S_outs.push_back( Scopy );
+	C_outs.push_back( Array< RCP< serial_matrix_type > >(0) );
+	if (C.size() > 0) {
+	  C_outs.back().push_back( rcp( new serial_matrix_type(*C[0]) ) );
+	}
+	if (C.size() > 1) {
+	  C_outs.back().push_back( rcp( new serial_matrix_type(*C[1]) ) );
+	}
 
       // do we run the reversed input?
       if ( (t && 3) == 3 ) {
         // copies of S,MS
         Scopy = MVT::CloneCopy(*S);
         // randomize this data, it should be overwritten
-        for (unsigned int i=0; i<C.size(); i++) {
+        for (size_type i = 0; i < C.size(); ++i) {
           C[i]->random();
         }
         // flip the inputs
@@ -885,16 +1058,16 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
         S_outs.push_back( Scopy );
         // we are in a special case: P_X1 and P_X2, so we know we applied 
         // two projectors, and therefore have two C[i]
-        C_outs.push_back( Array<RCP<SerialDenseMatrix<int,ST> > >() );
+        C_outs.push_back( Array<RCP<serial_matrix_type > >() );
         // reverse the Cs to compensate for the reverse projectors
-        C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[1]) ) );
-        C_outs.back().push_back( rcp( new SerialDenseMatrix<int,ST>(*C[0]) ) );
+        C_outs.back().push_back( rcp( new serial_matrix_type(*C[1]) ) );
+        C_outs.back().push_back( rcp( new serial_matrix_type(*C[0]) ) );
         // flip the inputs back
         theX = tuple( theX[1], theX[0] );
       }
 
       // test all outputs for correctness
-      for (unsigned int o=0; o<S_outs.size(); o++) {
+      for (size_type o = 0; o < S_outs.size(); ++o) {
         // S_in = X1*C1 + C2*C2 + S_out
         {
           RCP<MV> tmp = MVT::CloneCopy(*S_outs[o]);
@@ -936,8 +1109,8 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
       //    output 0 == output 1
       //    output 0 == output 2
       //    output 1 == output 2
-      for (unsigned int o1=0; o1<S_outs.size(); o1++) {
-        for (unsigned int o2=o1+1; o2<S_outs.size(); o2++) {
+      for (size_type o1=0; o1<S_outs.size(); o1++) {
+        for (size_type o2=o1+1; o2<S_outs.size(); o2++) {
           // don't need to check MS_outs because we check 
           //   S_outs and MS_outs = M*S_outs
           // don't need to check C_outs either
@@ -970,21 +1143,31 @@ int testProject(RCP<OrthoManager<ST,MV> > OM,
 
 
 
-MT MVDiff(const MV &X, const MV &Y) {
+static MT 
+MVDiff (const MV& X, 
+	const MV& Y) 
+{
   const ST ONE = SCT::one();
-  const int sizeX = MVT::GetNumberVecs(X);
-  SerialDenseMatrix<int,ST> xTmx(sizeX,sizeX);
+  const int ncols_X = MVT::GetNumberVecs(X);
+  TEST_FOR_EXCEPTION( (MVT::GetNumberVecs(Y) != ncols_X),
+		      std::logic_error,
+		      "MVDiff: X and Y should have the same number of columns."
+		      "  X has " << ncols_X << " column(s) and Y has " 
+		      << MVT::GetNumberVecs(Y) << " columns." );
+  serial_matrix_type C (ncols_X, ncols_X);
 
-  // tmp <- X
-  RCP<MV> tmp = MVT::CloneCopy(X);
+  // tmp := X
+  RCP< MV > tmp = MVT::CloneCopy(X);
+  // tmp := tmp - Y
+  MVT::MvAddMv (-ONE, Y, ONE, *tmp, *tmp);
+  // $C := (X - Y)^* \cdot (X - Y)$
+  MVT::MvTransMv (ONE, *tmp, *tmp, C);
 
-  // tmp <- tmp - Y
-  MVT::MvAddMv(-ONE,Y,ONE,*tmp,*tmp);
+  // Compute and return $\sum_{j=1}^n \| X(:,j) - Y(:,j) \|_2$, where
+  // $n$ is the number of columns in X.
+  MT err (0);
+  for (int i = 0; i < ncols_X; ++i)
+    err += SCT::magnitude (C(i,i));
 
-  MVT::MvTransMv(ONE,*tmp,*tmp,xTmx);
-  MT err = 0;
-  for (int i=0; i<sizeX; i++) {
-    err += SCT::magnitude(xTmx(i,i));
-  }
-  return SCT::magnitude(SCT::squareroot(err));
+  return SCT::magnitude (SCT::squareroot (err));
 }
