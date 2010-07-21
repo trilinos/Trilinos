@@ -1,0 +1,11 @@
+# Created by Octave 3.2.3, Wed Jul 21 16:33:49 2010 MDT <klnusba@s903186.sandia.gov>
+# name: A
+# type: matrix
+# rows: 6
+# columns: 2
+ 0 1
+ 0 0
+ 0 3
+ 0 0
+ 0 0
+ 4 0
