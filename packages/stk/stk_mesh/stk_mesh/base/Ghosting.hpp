@@ -12,6 +12,7 @@
 
 #include <vector>
 #include <string>
+#include <iostream>
 #include <stk_mesh/base/Types.hpp>
 
 namespace stk {
@@ -53,6 +54,10 @@ public:
    */
   void receive_list( std::vector< Entity * > & ) const ;
 
+  /** \brief  Print the details of this object for debugging
+   */
+  std::ostream& operator<<(std::ostream& out) const;
+
 private:
   /** \brief  A Ghosting object is owned by a BulkData object,
    *          and as such can only be modified by its owner.
@@ -74,6 +79,8 @@ private:
   Ghosting( const Ghosting & );
   Ghosting & operator = ( const Ghosting & );
 };
+
+std::ostream& operator<<(std::ostream& out, const Ghosting& rhs);
 
 }
 }
