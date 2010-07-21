@@ -53,11 +53,8 @@ public:
   unsigned owner_rank() const { return m_owner_rank ; }
   size_t synchronized_count() const { return m_sync_count ; }
 
-  // Exposed in internal interface:
-
-
-  static void declare_relation( Entity & e_from, Entity & e_to, const unsigned local_id, unsigned sync_count);
-  static void destroy_relation( Entity & e_from, Entity & e_to);
+  void declare_relation( Entity & e_from, Entity & e_to, const unsigned local_id, unsigned sync_count);
+  void destroy_relation( Entity & e_to);
 
   // Communication info access:
   bool insert( const EntityCommInfo & );

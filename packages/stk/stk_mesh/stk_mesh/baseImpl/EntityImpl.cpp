@@ -183,16 +183,20 @@ bool is_degenerate_relation ( const Relation &r1 , const Relation &r2 )
 
 }
 
-void EntityImpl::declare_relation( Entity & e_from, Entity & e_to , const unsigned local_id, unsigned sync_count )
+void EntityImpl::declare_relation( Entity & e_from,
+                                   Entity & e_to,
+                                   const unsigned local_id,
+                                   unsigned sync_count )
 {
-  const MetaData & meta_data = e_from.bucket().mesh().mesh_meta_data();
+  assert( &(e_from.m_entityImpl) == this );
+  const MetaData & meta_data = bucket().mesh().mesh_meta_data();
 
   static const char method[] = "stk::mesh::impl::EntityImpl::declare_relation" ;
 
   const Relation forward( e_to , local_id );
 
-  const std::vector<Relation>::iterator fe = e_from.m_entityImpl.m_relation.end();
-        std::vector<Relation>::iterator fi = e_from.m_entityImpl.m_relation.begin();
+  const std::vector<Relation>::iterator fe = m_relation.end();
+        std::vector<Relation>::iterator fi = m_relation.begin();
 
   fi = std::lower_bound( fi , fe , forward , LessRelation() );
 
@@ -213,17 +217,17 @@ void EntityImpl::declare_relation( Entity & e_from, Entity & e_to , const unsign
   EntityKey  degenerate_key;
   if ( fi != fe )
      {
-     bool  downstream = fi->entity_rank() < e_from.entity_rank();
+     bool  downstream = fi->entity_rank() < entity_rank();
      if ( is_degenerate_relation ( forward , *fi ) && downstream )
         {
         found_degenerate_relation = true;
         degenerate_key = fi->entity()->key();
         }
      }
-  if ( fi != e_from.m_entityImpl.m_relation.begin() )
+  if ( fi != m_relation.begin() )
      {
      --fi;
-     bool  downstream = fi->entity_rank() < e_from.entity_rank();
+     bool  downstream = fi->entity_rank() < entity_rank();
      if ( is_degenerate_relation ( forward , *fi ) && downstream )
         {
         found_degenerate_relation = true;
@@ -235,7 +239,7 @@ void EntityImpl::declare_relation( Entity & e_from, Entity & e_to , const unsign
      {
      std::ostringstream msg ;
      msg << method << "( from " ;
-     print_entity_key( msg , meta_data, e_from.key() );
+     print_entity_key( msg , meta_data, key() );
      msg << " , to " ;
      print_entity_key( msg , meta_data, e_to.key() );
      msg << " , id " << local_id ;
@@ -258,10 +262,10 @@ void EntityImpl::declare_relation( Entity & e_from, Entity & e_to , const unsign
     ci = std::lower_bound( ci , ce , converse , LessRelation() );
 
     if ( ce == ci || converse != *ci ) {
-      fi = e_from.m_entityImpl.m_relation.insert( fi , forward );
+      fi = m_relation.insert( fi , forward );
       ci = e_to.m_entityImpl.m_relation.insert( ci , converse );
 
-      e_from.m_entityImpl.set_sync_count( sync_count );
+      set_sync_count( sync_count );
       e_to.m_entityImpl.set_sync_count( sync_count );
 
     }
@@ -270,7 +274,7 @@ void EntityImpl::declare_relation( Entity & e_from, Entity & e_to , const unsign
         in the relationship graph. */
       std::ostringstream msg ;
       msg << method << "( from "
-          << print_entity_key( msg , meta_data, e_from.key() )
+          << print_entity_key( msg , meta_data, key() )
           << " , to "
           << print_entity_key( msg , meta_data, e_to.key() )
           << " , id " << local_id
@@ -282,31 +286,31 @@ void EntityImpl::declare_relation( Entity & e_from, Entity & e_to , const unsign
 
   // This entity's owned-closure may have changed.
   e_to.m_entityImpl.log_modified();
-  e_from.m_entityImpl.log_modified();
+  log_modified();
 }
 
-void EntityImpl::destroy_relation( Entity & e_from , Entity & e_to )
+void EntityImpl::destroy_relation( Entity & e_to )
 {
 
   for ( std::vector<Relation>::iterator
         i = e_to.m_entityImpl.m_relation.end() ; i != e_to.m_entityImpl.m_relation.begin() ; ) {
     --i ;
-    if ( i->entity() == & e_from ) {
+    if ( &(i->entity()->m_entityImpl) == this ) {
       i = e_to.m_entityImpl.m_relation.erase( i );
     }
   }
 
   for ( std::vector<Relation>::iterator
-        i = e_from.m_entityImpl.m_relation.end() ; i != e_from.m_entityImpl.m_relation.begin() ; ) {
+        i = m_relation.end() ; i != m_relation.begin() ; ) {
     --i ;
     if ( i->entity() == & e_to ) {
 
-      i = e_from.m_entityImpl.m_relation.erase( i );
+      i = m_relation.erase( i );
     }
   }
 
   e_to.m_entityImpl.log_modified();
-  e_from.m_entityImpl.log_modified();
+  log_modified();
 }
 
 void EntityImpl::log_resurrect()

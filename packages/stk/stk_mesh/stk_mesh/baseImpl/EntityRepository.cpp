@@ -157,6 +157,19 @@ void EntityRepository::change_entity_bucket( Bucket & b, Entity & e,
   e.m_entityImpl.set_bucket_and_ordinal( &b, ordinal);
 }
 
+void EntityRepository::destroy_relation( Entity & e_from, Entity & e_to )
+{
+  e_from.m_entityImpl.destroy_relation( e_to );
+}
+
+void EntityRepository::declare_relation( Entity & e_from,
+                                         Entity & e_to,
+                                         const unsigned local_id,
+                                         unsigned sync_count )
+{
+  e_from.m_entityImpl.declare_relation( e_from, e_to, local_id, sync_count );
+}
+
 } // namespace impl
 } // namespace mesh
 } // namespace stk

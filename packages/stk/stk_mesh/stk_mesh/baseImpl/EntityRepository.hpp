@@ -52,6 +52,13 @@ class EntityRepository {
     void change_entity_bucket( Bucket & b, Entity & e, unsigned ordinal);
     void destroy_later( Entity & e, Bucket* nil_bucket );
 
+    void destroy_relation( Entity & e_from, Entity & e_to);
+
+    void declare_relation( Entity & e_from,
+                           Entity & e_to,
+                           const unsigned local_id,
+                           unsigned sync_count );
+
   private:
     void internal_expunge_entity( EntityMap::iterator i);
 
