@@ -67,6 +67,7 @@ SET(Trilinos_TPLS_AND_CLASSIFICATIONS
   MF             SS
   ExodusII       SS
   Nemesis        SS
+  XDMF           TS
   Netcdf         SS
   y12m           SS
   SuperLUDist    SS
