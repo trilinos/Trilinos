@@ -49,7 +49,7 @@ class EntityRepository {
 
     bool insert_comm_info( Entity & e, const EntityCommInfo & comm_info) const;
 
-    inline void change_entity_bucket( Bucket & b, Entity & e, unsigned ordinal);
+    void change_entity_bucket( Bucket & b, Entity & e, unsigned ordinal);
     void destroy_later( Entity & e, Bucket* nil_bucket );
 
   private:
@@ -78,10 +78,6 @@ void EntityRepository::comm_clear( Entity & e) const {
 
 void EntityRepository::comm_clear_ghosting( Entity & e) const {
   e.m_entityImpl.comm_clear_ghosting();
-}
-
-void EntityRepository::change_entity_bucket( Bucket & b, Entity & e, unsigned ordinal) {
-  e.m_entityImpl.set_bucket_and_ordinal( &b, ordinal);
 }
 
 } // namespace impl

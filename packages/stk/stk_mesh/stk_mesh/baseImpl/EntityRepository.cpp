@@ -147,6 +147,16 @@ void EntityRepository::destroy_later( Entity & e, Bucket* nil_bucket ) {
   e.m_entityImpl.log_deleted(); //important that this come last
 }
 
+void EntityRepository::change_entity_bucket( Bucket & b, Entity & e,
+                                             unsigned ordinal) {
+  const bool modified_parts = ! e.m_entityImpl.is_bucket_valid() ||
+                              ! b.equivalent( e.bucket() );
+  if ( modified_parts ) {
+    e.m_entityImpl.log_modified();
+  }
+  e.m_entityImpl.set_bucket_and_ordinal( &b, ordinal);
+}
+
 } // namespace impl
 } // namespace mesh
 } // namespace stk
