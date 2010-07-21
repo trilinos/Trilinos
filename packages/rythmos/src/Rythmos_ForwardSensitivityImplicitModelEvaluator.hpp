@@ -912,8 +912,10 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::evalModelImpl(
   
   {
 #ifdef ENABLE_RYTHMOS_TIMERS
-    TEUCHOS_FUNC_TIME_MONITOR(
-      "Rythmos:ForwardSensitivityImplicitModelEvaluator::evalModel: computeMatrices");
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+      "Rythmos:ForwardSensitivityImplicitModelEvaluator::evalModel: computeMatrices",
+      RythmosFSIMEmain
+      );
 #endif
     computeDerivativeMatrices(inArgs);
   }
