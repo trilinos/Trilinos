@@ -451,6 +451,7 @@ void BulkData::internal_change_entity_parts(
   const PartVector & add_parts ,
   const PartVector & remove_parts )
 {
+  // TODO 10-07-21 figure out how to solve this without using is_bucket_valid
   Bucket * const k_old = e.is_bucket_valid()
                          ? &(e.bucket())
                          : static_cast<Bucket*>(NULL);
@@ -516,14 +517,14 @@ void BulkData::internal_change_entity_parts(
   }
 
   // Set the new bucket
-  m_entity_repo.change_entity_bucket( *k_new, e, k_new->size());
+  m_entity_repo.change_entity_bucket( *k_new, e, k_new->size() );
   m_bucket_repository.add_entity_to_bucket( e, *k_new );
 
   // If changing buckets then remove the entity from the bucket,
   if ( k_old ) { m_bucket_repository.remove_entity( k_old , i_old ); }
 
   // Update the change counter to the current cycle.
-  m_entity_repo.set_entity_sync_count( e, m_sync_count);
+  m_entity_repo.set_entity_sync_count( e, m_sync_count );
 
   // Propagate part changes through the entity's relations.
 
