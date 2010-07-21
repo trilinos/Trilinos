@@ -20,18 +20,14 @@ echo "
 -D TPL_ENABLE_Boost:BOOL=ON
 -D Boost_INCLUDE_DIRS:PATH=/usr/netpub/boost_1_40_0
 -D TPL_ENABLE_Netcdf:BOOL=ON
--D Netcdf_INCLUDE_DIRS:PATH=/projects/seacas/current/include
--D Netcdf_LIBRARY_DIRS:PATH=/projects/seacas/current/lib
--D Trios_ENABLE_XDMF:BOOL=ON
--D TPL_ENABLE_XMDF:BOOL=ON
--D XDMF_INCLUDE_DIRS:PATH=/projects/seacas/current/include
--D XDMF_LIBRARY_DIRS:PATH=/projects/seacas/current/lib
--D TPL_ENABLE_HDF5:BOOL=ON
--D HDF5_INCLUDE_DIRS:PATH=/projects/seacas/current/include
--D HDF5_LIBRARY_DIRS:PATH=/projects/seacas/current/lib
--D EpetraExt_USING_HDF5:BOOL=OFF
--D CMAKE_BUILD_DEBUG:BOOL=ON
+-D TPL_Netcdf_INCLUDE_DIRS:PATH=/scratch/stana/PROJECTS/NightlyTesting/SierraTridev/code/TPLs_src/netcdf/src/libsrc
+-D Netcdf_LIBRARY_DIRS:PATH=/scratch/stana/PROJECTS/NightlyTesting/SierraTridev/build/SierraBuild.trilinos_dev.devsierra/netcdf/4.0-snl3/gcc-4.2.4/release/address-model-64/mpi-mpich/runtime-link-shared
+-D Trios_ENABLE_XDMF:BOOL=OFF
+-D TPL_ENABLE_XMDF:BOOL=OFF
+-D TPL_ENABLE_HDF5:BOOL=OFF
 " > COMMON.config
+#-D CMAKE_BUILD_DEBUG:BOOL=ON
+#-D Netcdf_INCLUDE_DIRS:PATH=/projects/seacas/current/include
 
 echo "
 -D MPI_BASE_DIR:PATH=/usr/netpub/mpi/OpenMPI/1.4/64Bit/gnu
