@@ -94,7 +94,6 @@ bool EntityImpl::insert( const EntityCommInfo & val )
 
   if ( result ) {
     m_comm.insert( i , val );
-    log_modified();
   }
 
   return result ;
@@ -110,7 +109,6 @@ bool EntityImpl::erase( const EntityCommInfo & val )
 
   if ( result ) {
     m_comm.erase( i );
-    log_modified();
   }
 
   return result ;
@@ -134,7 +132,6 @@ bool EntityImpl::erase( const Ghosting & ghost )
 
   if ( result ) {
     m_comm.erase( i , e );
-    log_modified();
   }
 
   return result ;
@@ -146,14 +143,11 @@ void EntityImpl::comm_clear_ghosting()
   std::vector< EntityCommInfo >::iterator j = m_comm.begin();
   while ( j != m_comm.end() && j->ghost_id == 0 ) { ++j ; }
   m_comm.erase( j , m_comm.end() );
-
-  log_modified();
 }
 
 
 void EntityImpl::comm_clear() {
   m_comm.clear();
-  log_modified();
 }
 
 bool EntityImpl::marked_for_destruction() const {
@@ -282,21 +276,23 @@ void EntityImpl::declare_relation( Entity & e_from,
           << " Internal error - converse relation already exists" ;
       throw std::runtime_error( msg.str() );
     }
-  }
 
-  // This entity's owned-closure may have changed.
-  e_to.m_entityImpl.log_modified();
-  log_modified();
+    // This entity's owned-closure has changed.
+    e_to.m_entityImpl.log_modified();
+    log_modified();
+  }
 }
 
 void EntityImpl::destroy_relation( Entity & e_to )
 {
-
+  bool caused_change = false;
   for ( std::vector<Relation>::iterator
-        i = e_to.m_entityImpl.m_relation.end() ; i != e_to.m_entityImpl.m_relation.begin() ; ) {
+        i = e_to.m_entityImpl.m_relation.end() ;
+        i != e_to.m_entityImpl.m_relation.begin() ; ) {
     --i ;
     if ( &(i->entity()->m_entityImpl) == this ) {
       i = e_to.m_entityImpl.m_relation.erase( i );
+      caused_change = true;
     }
   }
 
@@ -304,13 +300,15 @@ void EntityImpl::destroy_relation( Entity & e_to )
         i = m_relation.end() ; i != m_relation.begin() ; ) {
     --i ;
     if ( i->entity() == & e_to ) {
-
       i = m_relation.erase( i );
+      caused_change = true;
     }
   }
 
-  e_to.m_entityImpl.log_modified();
-  log_modified();
+  if ( caused_change ) {
+    e_to.m_entityImpl.log_modified();
+    log_modified();
+  }
 }
 
 void EntityImpl::log_resurrect()

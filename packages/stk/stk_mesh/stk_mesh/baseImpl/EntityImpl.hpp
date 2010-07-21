@@ -66,17 +66,17 @@ public:
   void set_bucket_and_ordinal( Bucket * bucket, unsigned ordinal ) {
     m_bucket = bucket;
     m_bucket_ord = ordinal;
-    log_modified();
   }
 
   void set_owner_rank( unsigned owner_rank ) {
-    m_owner_rank = owner_rank;
-    log_modified();
+    if ( owner_rank != m_owner_rank ) {
+      m_owner_rank = owner_rank;
+      log_modified();
+    }
   }
 
   void set_sync_count( size_t sync_count ) {
     m_sync_count = sync_count;
-    log_modified();
   }
 
   // Change log access:
