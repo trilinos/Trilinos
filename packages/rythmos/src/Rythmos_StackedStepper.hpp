@@ -46,6 +46,7 @@ template<class Scalar>
 class StackedStepperStepStrategyBase
 {
   public:
+    virtual ~StackedStepperStepStrategyBase() {}
     virtual void setupNextStepper(
         int i, 
         Array<RCP<StepperBase<Scalar> > > &stepperArray
@@ -602,7 +603,7 @@ StackedStepper<Scalar>::takeStep(
     stackedStepperStepStrategy_ = defaultStackedStepperStepStrategy<Scalar>();
   }
 
-  Scalar dt_taken;
+  Scalar dt_taken = Scalar(-ST::one());
   for (int i=0 ; i<Teuchos::as<int>(stepperArray_.size()) ; ++i) {
     stackedStepperStepStrategy_->setupNextStepper(i,stepperArray_);
     Scalar local_dt_taken = stepperArray_[i]->takeStep(dt,stepType);

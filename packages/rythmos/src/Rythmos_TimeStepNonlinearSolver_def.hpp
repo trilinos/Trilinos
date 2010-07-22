@@ -307,8 +307,8 @@ TimeStepNonlinearSolver<Scalar>::solve(
   RCP<Thyra::VectorBase<Scalar> > dx_last = createMember(model_->get_x_space());
   RCP<Thyra::VectorBase<Scalar> > x_curr = createMember(model_->get_x_space());
   if (delta != NULL)
-    Thyra::V_S(delta,ST::zero()); // delta stores the cumulative update to x over the whole Newton solve.
-  Thyra::assign(&*x_curr,*x);
+    Thyra::V_S(ptr(delta),ST::zero()); // delta stores the cumulative update to x over the whole Newton solve.
+  Thyra::assign(x_curr.ptr(),*x);
   J_is_current_ = false;
   current_x_ = Teuchos::null;
 
@@ -334,7 +334,7 @@ TimeStepNonlinearSolver<Scalar>::solve(
     Thyra::eval_f_W( *model_, *x_curr, &*f, &*J_ );
     if (showNewtonDetails)
       *out << "\nSolving the system J*dx = -f ...\n";
-    Thyra::V_S(&*dx,ST::zero()); // Initial guess is needed!
+    Thyra::V_S(dx.ptr(),ST::zero()); // Initial guess is needed!
     Thyra::SolveCriteria<Scalar>
       linearSolveCriteria(
         Thyra::SolveMeasureType(
@@ -344,14 +344,14 @@ TimeStepNonlinearSolver<Scalar>::solve(
         );
     VOTSLOWSB J_outputTempState(J_,out,incrVerbLevel(verbLevel,-1));
     Thyra::SolveStatus<Scalar> linearSolveStatus
-      = Thyra::solve( *J_, Thyra::NOTRANS, *f, &*dx, &linearSolveCriteria );
+      = J_->solve(Thyra::NOTRANS, *f, dx.ptr(), Teuchos::ptr(&linearSolveCriteria) );
     if (showNewtonDetails)
       *out << "\nLinear solve status:\n" << linearSolveStatus;
-    Thyra::Vt_S(&*dx,Scalar(-ST::one()));
+    Thyra::Vt_S(dx.ptr(),Scalar(-ST::one()));
     if (dumpAll)
       *out << "\ndx = " << Teuchos::describe(*dx,verbLevel);
     if (delta != NULL) {
-      Thyra::Vp_V(delta,*dx);
+      Thyra::Vp_V(ptr(delta),*dx);
       if (dumpAll)
         *out << "\ndelta = " << Teuchos::describe(*delta,verbLevel);
     }
@@ -369,7 +369,7 @@ TimeStepNonlinearSolver<Scalar>::solve(
         *out << "\nWarning, linear solve did not converge!  Continuing anyway :-)\n";
     }
     // Update the solution: x_curr = x_curr + dx
-    Vp_V( &*x_curr, *dx );
+    Vp_V( x_curr.ptr(), *dx );
     if (dumpAll)
       *out << "\nUpdated solution x = " << Teuchos::describe(*x_curr,verbLevel);
     // Convergence test
@@ -407,7 +407,7 @@ TimeStepNonlinearSolver<Scalar>::solve(
   }
 
   // Set the solution
-  Thyra::assign(x,*x_curr);
+  Thyra::assign(ptr(x),*x_curr);
   
   if (dumpAll)
     *out << "\nFinal solution x = " << Teuchos::describe(*x,verbLevel);

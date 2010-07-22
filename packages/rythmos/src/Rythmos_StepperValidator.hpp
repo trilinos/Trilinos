@@ -401,7 +401,7 @@ RCP<Thyra::LinearOpWithSolveBase<Scalar> > StepperValidatorMockModel<Scalar>::cr
         Thyra::DetachedVectorView<Scalar> vec_view( *vec );
         vec_view[0] = 1.0;
       }
-      V_V(&*(multivec->col(0)),*vec);
+      V_V(multivec->col(0).ptr(),*vec);
     }
   }
   RCP<Thyra::LinearOpWithSolveBase<Scalar> > W = 

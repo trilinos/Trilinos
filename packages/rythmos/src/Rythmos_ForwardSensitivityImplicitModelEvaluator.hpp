@@ -965,8 +965,9 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::evalModelImpl(
   if(nonnull(F_sens)) {
 
 #ifdef ENABLE_RYTHMOS_TIMERS
-    TEUCHOS_FUNC_TIME_MONITOR(
-      "Rythmos:ForwardSensitivityImplicitModelEvaluator::evalModel: computeSens");
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+      "Rythmos:ForwardSensitivityImplicitModelEvaluator::evalModel: computeSens",
+      Rythmos_FSIME);
 #endif
 
     // S_diff =  -(coeff_x_dot/coeff_x)*S + S_dot
@@ -976,13 +977,13 @@ void ForwardSensitivityImplicitModelEvaluator<Scalar>::evalModelImpl(
     // F_sens = (1/coeff_x) * W_tilde * S
     Thyra::apply(
       *W_tilde_, Thyra::NOTRANS,
-      *S, &*F_sens,
+      *S, F_sens.ptr(),
       Scalar(1.0/coeff_x_), ST::zero()
       );
     // F_sens += d(f)/d(x_dot) * S_diff
     Thyra::apply(
       *DfDx_dot_, Thyra::NOTRANS,
-      *S_diff, &*F_sens,
+      *S_diff, F_sens.ptr(),
       ST::one(), ST::one()
       );
     // F_sens += d(f)/d(p)

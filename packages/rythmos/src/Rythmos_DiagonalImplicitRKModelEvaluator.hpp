@@ -226,7 +226,7 @@ void DiagonalImplicitRKModelEvaluator<Scalar>::initializeDIRKModel(
   stage_space_ = productVectorSpace(daeModel_->get_x_space(),numStages);
   RCP<const Thyra::VectorSpaceBase<Scalar> > vs = rcp_dynamic_cast<const Thyra::VectorSpaceBase<Scalar> >(stage_space_,true);
   stage_derivatives_ = rcp_dynamic_cast<Thyra::ProductVectorBase<Scalar> >(createMember(vs),true);
-  Thyra::V_S(&*stage_derivatives_,ST::zero());
+  Thyra::V_S( rcp_dynamic_cast<Thyra::VectorBase<Scalar> >(stage_derivatives_).ptr(),ST::zero());
 
   // Set up prototypical InArgs
   {
@@ -279,7 +279,7 @@ void DiagonalImplicitRKModelEvaluator<Scalar>::setStageSolution(
 {
   TEST_FOR_EXCEPT(stageNumber < 0);
   TEST_FOR_EXCEPT(stageNumber >= dirkButcherTableau_->numStages());
-  Thyra::V_V(&*(stage_derivatives_->getNonconstVectorBlock(stageNumber)),stage_solution);
+  Thyra::V_V(stage_derivatives_->getNonconstVectorBlock(stageNumber).ptr(),stage_solution);
 }
 
 template<class Scalar>
@@ -421,7 +421,7 @@ void DiagonalImplicitRKModelEvaluator<Scalar>::evalModelImpl(
   daeInArgs.setArgs(basePoint_);
   
   // B.1) Setup the DAE's inArgs for stage f(currentStage_) ...
-  V_V(&*(stage_derivatives_->getNonconstVectorBlock(currentStage_)),*x_in);
+  V_V(stage_derivatives_->getNonconstVectorBlock(currentStage_).ptr(),*x_in);
   assembleIRKState( currentStage_, dirkButcherTableau_->A(), delta_t_, *x_old_, *stage_derivatives_, outArg(*x_i) );
   daeInArgs.set_x( x_i );
   daeInArgs.set_x_dot( x_in );

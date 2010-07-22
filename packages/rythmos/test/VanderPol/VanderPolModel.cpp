@@ -246,13 +246,13 @@ VanderPolModel::create_W() const
         vec_view[0] = 0.0;
         vec_view[1] = 1.0;
       }
-      V_V(&*(multivec->col(0)),*vec);
+      V_V(multivec->col(0).ptr(),*vec);
       {
         Thyra::DetachedVectorView<double> vec_view( *vec );
         vec_view[0] = 1.0;
         vec_view[1] = 1.0;
       }
-      V_V(&*(multivec->col(1)),*vec);
+      V_V(multivec->col(1).ptr(),*vec);
     }
   }
   RCP<Thyra::LinearOpWithSolveBase<double> > W = 

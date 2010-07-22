@@ -43,8 +43,8 @@ namespace Rythmos {
 // This function is needed to get a default vector space to work with.
 template<class Scalar>
 Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > createDefaultVectorSpace(int length) {
-  const Teuchos::RCP<const Teuchos::Comm<Thyra::Index> >
-    comm = Teuchos::DefaultComm<Thyra::Index>::getComm();
+  const Teuchos::RCP<const Teuchos::Comm<Thyra::Ordinal> >
+    comm = Teuchos::DefaultComm<Thyra::Ordinal>::getComm();
   Teuchos::RCP<const Thyra::DefaultSpmdVectorSpace<Scalar> > vs = 
     Thyra::defaultSpmdVectorSpace<Scalar>(comm, length, -1);
   return(vs); 
@@ -57,7 +57,7 @@ Teuchos::RCP<Thyra::VectorBase<Scalar> > createDefaultVector(
     Scalar value
     ) {
   Teuchos::RCP<Thyra::VectorBase<Scalar> > vec = Thyra::createMember(vs);
-  Thyra::V_S(&*vec,value);
+  Thyra::V_S(vec.ptr(),value);
   return(vec);
 }
 
@@ -67,7 +67,7 @@ template<class Scalar>
 Teuchos::RCP<Thyra::VectorBase<Scalar> > createDefaultVector(int length, Scalar value) {
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > vs = createDefaultVectorSpace<Scalar>(length);
   Teuchos::RCP<Thyra::VectorBase<Scalar> > vec = Thyra::createMember(vs);
-  Thyra::V_S(&*vec,value);
+  Thyra::V_S(vec.ptr(),value);
   return(vec);
 }
 
@@ -77,7 +77,7 @@ Teuchos::RCP<Thyra::ProductVectorBase<Scalar> > createDefaultProductVector(int b
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > vs = createDefaultVectorSpace<Scalar>(length);
   Teuchos::RCP<const Thyra::VectorSpaceBase<Scalar> > pvs = productVectorSpace(vs,blocks);
   Teuchos::RCP<Thyra::ProductVectorBase<Scalar> > pvec = Teuchos::rcp_dynamic_cast<Thyra::ProductVectorBase<double> >(Thyra::createMember(pvs));
-  Thyra::V_S(&*pvec,value);
+  Thyra::V_S(Teuchos::rcp_dynamic_cast<Thyra::VectorBase<Scalar> >(pvec).ptr(),value);
   return(pvec);
 }
 

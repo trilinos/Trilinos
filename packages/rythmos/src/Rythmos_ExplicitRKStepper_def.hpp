@@ -190,7 +190,7 @@ Scalar ExplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
     return(Scalar(-ST::one()));
   }
   // Store old solution & old time
-  V_V(&*solution_vector_old_, *solution_vector_);
+  V_V(solution_vector_old_.ptr(), *solution_vector_);
   t_old_ = t_;
 
   dt_ = dt;
@@ -201,20 +201,20 @@ Scalar ExplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
   Teuchos::SerialDenseVector<int,Scalar> c = erkButcherTableau_->c();
   // Compute stage solutions
   for (int s=0 ; s < stages ; ++s) {
-    Thyra::assign(&*ktemp_vector_, *solution_vector_); // ktemp = solution_vector
+    Thyra::assign(ktemp_vector_.ptr(), *solution_vector_); // ktemp = solution_vector
     for (int j=0 ; j < s ; ++j) { // assuming Butcher matix is strictly lower triangular
       if (A(s,j) != ST::zero()) {
-        Thyra::Vp_StV(&*ktemp_vector_, A(s,j), *k_vector_[j]); // ktemp = ktemp + a_{s+1,j+1}*k_{j+1}
+        Thyra::Vp_StV(ktemp_vector_.ptr(), A(s,j), *k_vector_[j]); // ktemp = ktemp + a_{s+1,j+1}*k_{j+1}
       }
     }
     TScalarMag ts = t_ + c(s)*dt;
     eval_model_explicit<Scalar>(*model_,basePoint_,*ktemp_vector_,ts,Teuchos::outArg(*k_vector_[s]));
-    Thyra::Vt_S(&*k_vector_[s],dt); // k_s = k_s*dt
+    Thyra::Vt_S(k_vector_[s].ptr(),dt); // k_s = k_s*dt
   } 
   // Sum for solution:
   for (int s=0 ; s < stages ; ++s) {
     if (b(s) != ST::zero()) {
-      Thyra::Vp_StV(&*solution_vector_, b(s), *k_vector_[s]); // solution_vector += b_{s+1}*k_{s+1}
+      Thyra::Vp_StV(solution_vector_.ptr(), b(s), *k_vector_[s]); // solution_vector += b_{s+1}*k_{s+1}
     }
   }
 
