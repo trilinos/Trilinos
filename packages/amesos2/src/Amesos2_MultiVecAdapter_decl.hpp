@@ -17,10 +17,10 @@ namespace Amesos {
 
 
 /**
- * \brief A templated MultiVec class adapter for Amesos2
+ * \brief A templated MultiVector class adapter for Amesos2
  *
  * Specializations of this templated class provide a unified interface
- * to MultiVec types for Amesos2.  Any specializations are expected to
+ * to MultiVector types for Amesos2.  Any specializations are expected to
  * implement the following methods:
  *
  * <br>
@@ -162,7 +162,7 @@ namespace Amesos {
  * \endcode
  * </li>
  *
- * <li> A \c private method to localize the muilti-vector.  Solver interfaces
+ * <li> A \c private method to localize the multi-vector.  Solver interfaces
  * themselves should not have to concern themselves with the details of how
  * this localization process is performed.  The method should create and/or
  * initialize private local variables as necessary.
@@ -177,7 +177,7 @@ template <class MultiVecType>
 struct MultiVecAdapter {
 
   // /**
-  //  * \brief Default constuctor throws compiler error
+  //  * \brief Default constructor throws compiler error
   //  *
   //  * Without specialization, the Amesos2::MultiVecAdapter simply throws a
   //  * compiler error upon instantiation.

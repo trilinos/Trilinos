@@ -93,7 +93,7 @@ MatrixAdapter<
   >::getCrs(
     const Teuchos::ArrayView<Scalar> nzval,
     const Teuchos::ArrayView<GlobalOrdinal> colind,
-    const Teuchos::ArrayView<Tpetra::global_size_t> rowptr,
+    const Teuchos::ArrayView<global_size_type> rowptr,
     size_t& nnz,
     bool local,
     int root)
@@ -113,17 +113,17 @@ MatrixAdapter<
   TEST_FOR_EXCEPTION( ((rank == root)
       && (Teuchos::as<size_t>(nzval.size()) < nnz)) ||
     (local && (Teuchos::as<size_t>(nzval.size()) < nnz)),
-    std::runtime_error,
+    std::length_error,
     "nzval not large enough to hold nonzero values");
   TEST_FOR_EXCEPTION( ((rank == root)
       && (Teuchos::as<size_t>(colind.size()) < nnz)) ||
     (local && (Teuchos::as<size_t>(colind.size()) < nnz)),
-    std::runtime_error,
+    std::length_error,
     "colind not large enough to hold index values");
   TEST_FOR_EXCEPTION( ((rank == root)
       && (Teuchos::as<GlobalOrdinal>(rowptr.size()) < numrows + 1)) ||
     (local && (Teuchos::as<GlobalOrdinal>(rowptr.size()) < numrows + 1)),
-    std::runtime_error,
+    std::length_error,
     "rowptr not large enough to hold row index values");
   // TODO: Is there possibly a better way to test locality?
   if ( !mat_->getRowMap()->isDistributed() || local ){ // This matrix is *not*
@@ -263,7 +263,7 @@ MatrixAdapter<
   >::getCrsAll(
     const Teuchos::ArrayView<Scalar> nzval,
     const Teuchos::ArrayView<GlobalOrdinal> colind,
-    const Teuchos::ArrayView<Tpetra::global_size_t> rowptr,
+    const Teuchos::ArrayView<global_size_type> rowptr,
     size_t& nnz,
     int root)
 {
@@ -276,8 +276,8 @@ MatrixAdapter<
   }
   // Then we broadcast to all
   Teuchos::broadcast(*comm, root, (ArrayView<Scalar>)nzval);
-  Teuchos::broadcast(*comm, root, (ArrayView<Scalar>)colind);
-  Teuchos::broadcast(*comm, root, (ArrayView<Scalar>)rowptr);
+  Teuchos::broadcast(*comm, root, (ArrayView<GlobalOrdinal>)colind);
+  Teuchos::broadcast(*comm, root, (ArrayView<global_size_type>)rowptr);
   Teuchos::broadcast(*comm, root, Teuchos::ptrFromRef(nnz));
 }
 
@@ -303,7 +303,7 @@ MatrixAdapter<
   >::getCcsAll(
     const Teuchos::ArrayView<Scalar> nzval,
     const Teuchos::ArrayView<GlobalOrdinal> rowind,
-    const Teuchos::ArrayView<Tpetra::global_size_t> colptr,
+    const Teuchos::ArrayView<global_size_type> colptr,
     size_t& nnz,
     int root)
 {
@@ -316,8 +316,8 @@ MatrixAdapter<
   }
   // Then we broadcast to all
   Teuchos::broadcast(*comm, root, (ArrayView<Scalar>)nzval);
-  Teuchos::broadcast(*comm, root, (ArrayView<Scalar>)rowind);
-  Teuchos::broadcast(*comm, root, (ArrayView<Scalar>)colptr);
+  Teuchos::broadcast(*comm, root, (ArrayView<GlobalOrdinal>)rowind);
+  Teuchos::broadcast(*comm, root, (ArrayView<global_size_type>)colptr);
   Teuchos::broadcast(*comm, root, Teuchos::ptrFromRef(nnz));
 }
 
@@ -339,7 +339,7 @@ MatrixAdapter<
   >::getCcs(
     const Teuchos::ArrayView<Scalar> nzval,
     const Teuchos::ArrayView<GlobalOrdinal> rowind,
-    const Teuchos::ArrayView<Tpetra::global_size_t> colptr,
+    const Teuchos::ArrayView<global_size_type> colptr,
     size_t& nnz,
     bool local,
     int root)

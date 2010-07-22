@@ -1,19 +1,19 @@
 /**
-  \file   Amesos2_TpetraMultiVecAdapter_decl.hpp
-  \author Eric T Bavier <etbavier@sandia.gov>
+  \file   Amesos2_NewMultiVecAdapter_decl.hpp
+  \author John Doe <jd@sandia.gov>
   \date   Wed May 26 19:49:10 CDT 2010
 
   \brief  Amesos2::MultiVecAdapter specialization for the
-          Tpetra::MultiVector class.
+          New::MultiVector class.
 */
 
-#ifndef AMESOS2_TPETRA_MULTIVEC_ADAPTER_DECL_HPP
-#define AMESOS2_TPETRA_MULTIVEC_ADAPTER_DECL_HPP
+#ifndef AMESOS2_NEWMULTIVEC_ADAPTER_DECL_HPP
+#define AMESOS2_NEWMULTIVEC_ADAPTER_DECL_HPP
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_as.hpp>
-#include <Tpetra_MultiVector.hpp>
+#include <NewMultiVector.hpp>
 
 #include "Amesos2_MultiVecAdapter_decl.hpp"
 
@@ -21,29 +21,20 @@ namespace Amesos {
 
 
 /**
- * \brief Amesos2 adapter for the Tpetra::MultiVector class.
+ * \brief Amesos2 adapter for the NewMultiVector class.
  */
-template< typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          class    Node >
-class MultiVecAdapter<Tpetra::MultiVector<Scalar,
-                                          LocalOrdinal,
-                                          GlobalOrdinal,
-                                          Node> >
+template <>
+class MultiVecAdapter<NewMultiVector>
 {
 public:
 
   // public type definitions
-  typedef Tpetra::MultiVector<Scalar,
-                              LocalOrdinal,
-                              GlobalOrdinal,
-                              Node>       multivec_type;
-  typedef Scalar                          scalar_type;
-  typedef LocalOrdinal                    local_ordinal_type;
-  typedef GlobalOrdinal                   global_ordinal_type;
-  typedef Node                            node_type;
-  typedef typename Tpetra::global_size_t  global_size_type;
+  typedef double                                                scalar_type;
+  typedef int                                            local_ordinal_type;
+  typedef int                                           global_ordinal_type;
+  typedef size_t                                           global_size_type;
+  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  node_type;
+  typedef NewMultiVector                                      multivec_type;
 
   static const char* name;
 
@@ -76,11 +67,7 @@ public:
 
 
   ~MultiVecAdapter()
-    {
-      // TODO: Should the destructor export changes to the serial
-      // version before it destroys itself, or should we leave the
-      // user responsible for calling the updateValues method?
-    }
+    { }
 
 
   /**
@@ -179,7 +166,7 @@ public:
 
 
   /// Const vector access
-  Teuchos::RCP<const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >
+  Teuchos::RCP<const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,Node> >
   getVector( size_t j ) const
     {
       return mv_->getVector(j);
@@ -187,7 +174,7 @@ public:
 
 
   /// Nonconst vector access
-  Teuchos::RCP<Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> >
+  Teuchos::RCP<Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,Node> >
   getVectorNonConst( size_t j )
     {
       return mv_->getVectorNonConst(j);
@@ -197,13 +184,7 @@ public:
   /**
    * \brief Copies the multivector's data into the user-provided vector.
    *
-   *  Each multivector is \c lda apart in memory.
-   *
-   *  \param A user-supplied storage for multi-vector data
-   *  \param lda user-supplied spacing for consecutive vectors in \c A
-   *
-   *  \throw std::runtime_error Thrown if the space available in \c A is not
-   *  large enough given \c lda and number of vectors in \c this .
+   *  Each multivector is \lda apart in memory.
    */
   void get1dCopy( const Teuchos::ArrayView<scalar_type>& A, size_t lda ) const;
 
@@ -234,9 +215,6 @@ public:
    * array-of-arrays.
    *
    * \param A user-supplied storage for the 2-D copy.
-   *
-   * \throw std::length_error Thrown if the size of \c A is not equal to the
-   * number of vectors in the underlying multi-vector.
    */
   void get2dCopy( Teuchos::ArrayView<const Teuchos::ArrayView<scalar_type> > A ) const;
 
@@ -304,60 +282,37 @@ private:
    * data into the local node.  If \c mv_ is not distributed, this method does
    * nothing.
    *
-   * It is intended to set things up properly for calls to \c get1dCopy() and \c get1dView().
+   * It is intended to set things up properly for calls to \c get1dCopy() and
+   * \c get1dView().
    *
    * \sa get1dCopy(), get1dView()
    */
   void localize();
 
+
   /// The multivector this adapter wraps
-  Teuchos::RCP<Tpetra::MultiVector<scalar_type,
-                                   local_ordinal_type,
-                                   global_ordinal_type,
-                                   node_type > > mv_;
+  Teuchos::RCP<multivec_type> mv_;
 
   /**
    * \brief local multivector.
    *
    * Contains a local view of the entire multivector.
    */
-  Teuchos::RCP<Tpetra::MultiVector<scalar_type,
-                                   local_ordinal_type,
-                                   global_ordinal_type,
-                                   node_type > > l_mv_;
+  Teuchos::RCP<multivec_type> l_mv_;
 
   /**
    * \brief local-local multivector.
    *
    * Holds only a representation of the vectors local to the calling processor.
    */
-  Teuchos::RCP<Tpetra::MultiVector<scalar_type,
-                                   local_ordinal_type,
-                                   global_ordinal_type,
-                                   node_type > > l_l_mv_;
+  Teuchos::RCP<multivec_type> l_l_mv_;
 
-  /// Used for transferring between local and global multivectors
-  Teuchos::RCP<Tpetra::Import<local_ordinal_type,
-                              global_ordinal_type,
-                              node_type> > importer_;
+  /* TODO: Add here any other definitions you may need, such as importers,
+   * exporters and maps */
 
-  /**
-   * \brief Local map.
-   *
-   * If \c mv_ is not distributed, then this should be equivalent to \c o_map_
-   */
-  Teuchos::RCP<Tpetra::Map<local_ordinal_type,
-                           global_ordinal_type,
-                           node_type > > l_map_;
-
-  /// original map
-  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,
-                                 global_ordinal_type,
-                                 node_type > > o_map_;
-
-};                              // end class MultiVecAdapter<Tpetra::MultiVector>
+};                              // end class MultiVecAdapter<NewMultiVec>
 
 } // end namespace Amesos
 
 
-#endif // AMESOS2_TPETRA_MULTIVEC_ADAPTER_DECL_HPP
+#endif // AMESOS2_NEWMULTIVEC_ADAPTER_DECL_HPP

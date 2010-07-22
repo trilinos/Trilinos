@@ -1,6 +1,6 @@
 /**
    \file   NewSolver_MatrixHelper.hpp
-   \author Eric Bavier <etbavier@eric-desktop>
+   \author John Doe <jd@sandia.gov>
    \date   Fri Jul  9 13:44:44 2010
    
    \brief  Template file for defining helper methods for matrix creation.  This

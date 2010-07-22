@@ -28,7 +28,7 @@
 
 /**
    \file   NewSolver_decl.hpp
-   \author Eric Bavier <etbavier@sandia.gov>
+   \author John Doe <jd@sandia.gov>
    \date   Thu Jul  8 16:08:10 2010
    
    \brief  A template class that does nothing useful besides show developers

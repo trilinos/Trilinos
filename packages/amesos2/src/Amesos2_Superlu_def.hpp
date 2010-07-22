@@ -183,7 +183,7 @@ Superlu<Matrix,Vector>::numericFactorization_impl(){
       // SamePattern_SameRowPerm assumes that the non-zero structure is the
       // same and that the numeric values themselves are similar.  If a
       // pivoting threshold is exceeded, then gstrf may actually overwrite
-      // perm_c and perm_r in favor of a better permutation.
+      // perm_c and perm_r in favour of a better permutation.
       data_.options.Fact = SLU::SamePattern_SameRowPerm;
     } else {
       // If symbolic structure has been changed, then we must factor from
@@ -216,7 +216,7 @@ Superlu<Matrix,Vector>::numericFactorization_impl(){
   factorizationDone_ = true;
   data_.options.Fact = SLU::FACTORED;
 
-  /* All precesses should return the same error code */
+  /* All processes should return the same error code */
   if( this->status_.numProcs_ != 1 ) Teuchos::broadcast(*(this->matrixA_->getComm()),0,&info);
   return(info);
 }
@@ -252,7 +252,7 @@ Superlu<Matrix,Vector>::solve_impl()
     SLU::Destroy_SuperMatrix_Store( &(data_.B) );
   }
 
-  {                 // Convert: Get a SuperMatrix for the B and X multiVectors
+  {                 // Convert: Get a SuperMatrix for the B and X multi-vectors
     Teuchos::TimeMonitor redistTimer(this->timers_.vecConvTime_);
 
     xValues = MatrixHelper<Amesos::Superlu>::createMVDenseMatrix(
@@ -284,7 +284,7 @@ Superlu<Matrix,Vector>::solve_impl()
     this->multiVecX_->globalize(xValues()); // operator() does conversion from ArrayRCP to ArrayView
   }
 
-  /* All precesses should return the same error code */
+  /* All processes should return the same error code */
   if( this->status_.numProcs_ != 1 ) Teuchos::broadcast(*(this->matrixA_->getComm()),0,&ierr);
   return(ierr);
 }
@@ -309,7 +309,7 @@ Superlu<Matrix,Vector>::setParameters_impl(
   }
   // The Superlu user guide uses "Trans" as the option name, so we will honor
   // that parameter as well.  Since the Control class doesn't recognize this
-  // parameter, we check for it outselves.
+  // parameter, we check for it ourselves.
   else if ( parameterList->isParameter("Trans") ){
     std::string fact = parameterList->template get<std::string>("Trans");
     if( fact == "TRANS" ){

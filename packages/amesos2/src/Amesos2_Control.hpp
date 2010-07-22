@@ -60,7 +60,7 @@ struct Control {
    * \brief  Set the matrix property.
    *
    * Matrix property can be
-   * - 0 : general unsymmetric matrix;
+   * - 0 : general asymmetric matrix;
    * - 1 : SPD;
    * - 2 : general symmetric matrix.
    * UNUSED - See bug #2331 and bug #2332

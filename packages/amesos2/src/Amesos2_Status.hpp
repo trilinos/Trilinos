@@ -96,7 +96,7 @@ public:
   /// The number of processors in this MPI communicator
   int numProcs_;
 
-  /// The maximun number of processes allowed
+  /// The maximum number of processes allowed
   int maxProcs_;
 };                              // end class Amesos::Status
 

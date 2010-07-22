@@ -83,18 +83,12 @@ using Teuchos::rcp;
 
 namespace Amesos {
 
-/**
- * \example SimpleSolve.cpp
- *
- * Shows how to create an Amesos2 solver using the Amesos::Factory interface,
- * then solve a system.
- */
 
 /**
  * \brief Abstract Factory for creating instances of Amesos2 Solver interfaces.
  *
  * \attention
- * Users should favor these static factory methods for creating Amesos2 solver
+ * Users should favour these static factory methods for creating Amesos2 solver
  * instances over explicitly instantiating their own.
  *
  * \note A solver's third-party library must be enabled in the Trilinos build,

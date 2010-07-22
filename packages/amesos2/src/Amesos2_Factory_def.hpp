@@ -113,7 +113,7 @@ Factory<Matrix,Vector>::create(
 {
   // Check for our native solver first.
   // 
-  // Remove compiler guards once itnerface is finalized, since we will always include it.
+  // Remove compiler guards once interface is finalized, since we will always include it.
 #ifdef HAVE_AMESOS2_KLU2
   if((solverName == "Amesos2_Klu2") || (solverName == "Klu2") || (solverName == "KLU2")){
     return( rcp(new Klu2<Matrix,Vector>(A, X, B)) );

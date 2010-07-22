@@ -22,12 +22,12 @@ namespace Amesos {
  * solver can handle a data type.  It is up to the programmer/user to
  * determine whether the data-type they have may be safely coerced to a type
  * supported by the ConcreteSolver, perhaps with the help of Teuchos::as<>.
- * Approppriate type conversions may be provided with through template
+ * Appropriate type conversions may be provided with through template
  * specialization of Teuchos::as<>.
  *
  * The default instance is empty, but specialized instances for each
  * ConcreteSolver should contain at the minimum a \c typedef called \c type
- * and ther typedefs as appropriate for the ConcreteSolver's needs
+ * and other typedefs as appropriate for the ConcreteSolver's needs
  * 
  * \tparam ConcreteSolver A Amesos::Solver type for which these mappings hold
  * \tparam Scalar The Scalar type that is being mapped

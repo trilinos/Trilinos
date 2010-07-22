@@ -30,7 +30,7 @@ MultiVecAdapter<
 
     l_mv_->get1dCopy(A,lda);
   } else {
-    mv_.get1dCopy(A,lda);
+    mv_->get1dCopy(A,lda);
   }
 }
 
@@ -44,9 +44,10 @@ MultiVecAdapter<
               Node> >::get1dViewNonConst(bool local)
 {
   if( local ){
+    localize();
     /* Use the global element list returned by
      * mv_->getMap()->getNodeElementList() to get a subCopy of mv_ which we
-     * assign to l_mv_, then return get1dViewNonConst() of l_mv_
+     * assign to l_l_mv_, then return get1dViewNonConst() of l_l_mv_
      */
     if(l_l_mv_.is_null() ){
       Teuchos::ArrayView<const GlobalOrdinal> nodeElements_go
@@ -60,7 +61,8 @@ MultiVecAdapter<
         *(it_st++) = Teuchos::as<size_t>(*it_go);
       }
 
-      l_l_mv_ = mv_->subCopy(nodeElements_st);
+      // To be consistent with the globalize() function, get a view of the local mv
+      l_l_mv_ = l_mv_->subViewNonConst(nodeElements_st);
 
       return(l_l_mv_->get1dViewNonConst());
     } else {
@@ -102,12 +104,17 @@ MultiVecAdapter<
               Node> >::get2dCopy(
                 Teuchos::ArrayView<const Teuchos::ArrayView<scalar_type> > A) const
 {
+  TEST_FOR_EXCEPTION(
+    Teuchos::as<size_t>(A.size()) != this->getGlobalNumVectors(),
+    std::length_error,
+    "get2dCopy() : Length of A must be equal to the number of vectors");
+  
   if( mv_->isDistributed() ){
     this->localize();
 
     l_mv_->get2dCopy(A);
   } else {
-    mv_.get2dCopy(A);
+    mv_->get2dCopy(A);
   }
 }
 
@@ -122,6 +129,7 @@ MultiVecAdapter<
               Node> >::get2dViewNonConst( bool local ) const
 {
   if( local ){
+    localize();
     /* Use the global element list returned by
      * mv_->getMap()->getNodeElementList() to get a subCopy of mv_ which we
      * assign to l_mv_, then return get2dViewNonConst() of l_mv_
@@ -138,7 +146,8 @@ MultiVecAdapter<
         *(it_st++) = Teuchos::as<size_t>(*it_go);
       }
 
-      l_l_mv_ = mv_->subCopy(nodeElements_st);
+      // To be consistent with the globalize() function, get a view of the local mv
+      l_l_mv_ = l_mv_->subViewNonConst(nodeElements_st);
 
       return(l_l_mv_->get2dViewNonConst());
     } else {

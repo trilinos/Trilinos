@@ -1,6 +1,6 @@
 /**
    \file   NewSolver_FunctionMap.hpp
-   \author Eric Bavier <etbavier@sandia.gov>
+   \author John Doe <jd@sandia.gov>
    \date   Fri Jul  9 14:48:16 CDT 2010
    
    \brief  Template for providing a mechanism to map function calls to the

@@ -2,14 +2,12 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
-#include <Teuchos_Tuple.hpp>
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Map.hpp>
 #include <Tpetra_MultiVector.hpp>
-#include <Tpetra_Vector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 
 // I/O for Harwell-Boeing files
@@ -36,7 +34,6 @@ int main(int argc, char *argv[]) {
   typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
 
   using Tpetra::global_size_t;
-  using Teuchos::tuple;
   using Teuchos::RCP;
   using Teuchos::rcp;
 
@@ -73,14 +70,12 @@ int main(int argc, char *argv[]) {
 
   const size_t numVectors = 1;
 
-//  RCP<MAT> A = rcp( new MAT(map,3) ); // max of three entries in a row
-
   RCP<MAT> A;
   Tpetra::Utils::readHBMatrix(filename,comm,node,A);
-  if (printMatrix) {
+  if( printMatrix ){
     A->describe(*fos, Teuchos::VERB_EXTREME);
   }
-  else if (verbose) {
+  else if( verbose ){
     std::cout << std::endl << A->description() << std::endl << std::endl;
   }
 

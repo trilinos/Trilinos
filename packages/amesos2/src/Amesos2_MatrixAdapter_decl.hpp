@@ -18,7 +18,7 @@ namespace Amesos {
  * \brief A templated Matrix class adapter for Amesos2.
  *
  * Specializations of this templated class provide a unified interface
- * to Matrix types for Amesos2.  Any specializations are excpected to
+ * to Matrix types for Amesos2.  Any specializations are expected to
  * implement the following methods:
  *
  * <br>

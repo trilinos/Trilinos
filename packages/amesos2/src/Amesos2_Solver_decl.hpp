@@ -57,7 +57,7 @@ namespace Amesos {
  * In Amesos2_Superlu.hpp:
  * class Superlu : Solver<Superlu> { ... }
  *
- * Each concrete solver will implement several private subfunction
+ * Each concrete solver will implement several private sub-functions
  * that will be called within the common code for each function.
  *
  * In addition, the Amesos2::Solver static base class provides a convenient
@@ -122,7 +122,7 @@ public:
   /// Do not allow copying of this Solver by assignment
   SolverBase& operator=(const solver_type* rhs);
 
-  //@} End Constructor/Descructor block
+  //@} End Constructor/Destructor block
 
   /// \name Mathematical functions
   //@{
@@ -246,12 +246,6 @@ public:
    */
   SolverBase& setParameters(
     const Teuchos::RCP<Teuchos::ParameterList> & parameterList );
-
-  /**
-   * \example SimpleSolve_WithParameters.cpp
-   *
-   * An example of how to set solver parameters with the Superlu interface.
-   */
 
 
   /**

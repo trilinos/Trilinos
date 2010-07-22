@@ -1,0 +1,168 @@
+===================
+ Amesos2 TODO List
+===================
+-------------------------------
+ Some things worth considering
+-------------------------------
+
+
+Matrix Adapters
+===============
+
+something small first
+---------------------
+
+The Tpetra MatrixAdapters need to move to something more like how the
+Epetra matrix adapters are declared/defined.  It's not so much of an
+issue right now (Tue Jul 20 13:30:05 CDT 2010), since Tpetra has only
+one class implemented that implements the ``Tpetra::RowMatrix``
+interface.  Once more come along though, the change should be made.
+
+The reason that we do need to explicitely define a template
+specialization for each class that implements/inherits from
+``Tpetra::RowMatrix``, is that class templates are blind to
+polymorphism.  A ``MatrixAdapter<Tpetra::CrsMatrix>`` cannot be
+interpreted as a ``MatrixAdapter<Tpetra::RowMatrix>`` even though a
+``Tpetra::CrsMatrix`` object could be interpreted at runtime as a
+``Tpetra::RowMatrix``.  At compile time they are just recognized as
+completely different types.
+
+
+something more involved
+-----------------------
+
+Currently, we have ``getCrs()`` and ``getCcs()`` defined entirely in
+each MatrixAdapter specialization.  This was OK at first with
+``Tpetra::CrsMatrix``, but then, once I added the adapter for
+``Epetra_RowMatrix``, I noticed that essentially the only thing that
+needed changing with the part where the global row values are fetched.
+
+So, it would be beneficial to move the definition of ``getCrs()`` and
+``getCcs()`` to somewhere accessible by all specializations, require a
+``getGlobalRowCopy()`` method to be defined for each specialization,
+and then hook in to that method from within ``getCrs()`` and
+``getCcs()``.
+
+Currently, the MatrixAdapter specializations do not inherit from any
+common class.  We could define a ``MatrixAdapterBase`` class, which
+all MatrixAdapter's would inherit from, and which would define such
+methods.
+
+Along with the above, we also have the (potential) issue that some
+Matrix types are more efficiently accessed by columns, rather than
+rows, so that it would make sense to have the definitions of
+``getCrs()`` and ``getCcs()`` "swapped".  That is, define ``getCrs()``
+in terms of ``getCcs()``.
+
+One way to take care of this would be to define two types::
+
+  struct row_matrix {};
+
+and::
+
+  struct column_matrix {};
+
+Then, we define two overloaded versions of some common worker
+functions: ``do_getCrs()`` and ``do_getCcs()``.  For each, one
+overloaded version accepts as a function parameter an object of type
+``row_matrix``, and the other overloaded version takes as a parameter
+an object of type ``column_matrix``.
+
+The version of ``do_getCrs()`` that accepts a ``row_matrix`` object
+defines the entirety of the method, while the ``do_getCcs()`` for
+``row_matrix`` call do_getCrs() and transposes the results.
+Conversely for the ``column_matrix`` versions.
+
+Here is a sample of what the setup might look like::
+
+  template< typename Matrix >   // Of an Amesos::MatrixAdapter type
+  struct MatrixAdapterBase {
+
+    void do_getCrs(
+      const Teuchos::ArrayView<typename Matrix::scalar_type> nzval,
+      const Teuchos::ArrayView<typename Matrix::global_ordinal_type> colind,
+      const Teuchos::ArrayView<typename Matrix::global_size_type> rowptr,
+      size_t& nnz,
+      row_matrix type,
+      bool local = false,
+      int root = 0);
+
+    void do_getCrs(
+      const Teuchos::ArrayView<typename Matrix::scalar_type> nzval,
+      const Teuchos::ArrayView<typename Matrix::global_ordinal_type> colind,
+      const Teuchos::ArrayView<typename Matrix::global_size_type> rowptr,
+      size_t& nnz,
+      column_matrix type,
+      bool local = false,
+      int root = 0);
+
+    void do_getCcs(
+      const Teuchos::ArrayView<typename Matrix::scalar_type> nzval,
+      const Teuchos::ArrayView<typename Matrix::global_ordinal_type> rowind,
+      const Teuchos::ArrayView<typename Matrix::global_size_type> colptr,
+      size_t& nnz,
+      row_matrix type,
+      bool local = false,
+      int root = 0);
+
+    void do_getCcs(
+      const Teuchos::ArrayView<typename Matrix::scalar_type> nzval,
+      const Teuchos::ArrayView<typename Matrix::global_ordinal_type> rowind,
+      const Teuchos::ArrayView<typename Matrix::global_size_type> colptr,
+      size_t& nnz,
+      column_matrix type,
+      bool local = false,
+      int root = 0);
+
+    void getCrs(
+      const Teuchos::ArrauView<typename Matrix::scalar_type> nzval,
+      const Teuchos::ArrayView<typename Matrix::global_ordinal_type> rowind,
+      const Teuchos::ArrayView<typename Matrix::global_size_type> colptr,
+      size_t& nnz,
+      bool local = false,
+      int root = 0)
+      {
+        typedef typename Matrix::access_type mat_access_type;
+	do_getCrs(nzval,rowind,colptr,nnz,mat_access_type,local,root);
+      }
+      
+    void getCcs(
+      const Teuchos::ArrauView<typename Matrix::scalar_type> nzval,
+      const Teuchos::ArrayView<typename Matrix::global_ordinal_type> rowind,
+      const Teuchos::ArrayView<typename Matrix::global_size_type> colptr,
+      size_t& nnz,
+      bool local = false,
+      int root = 0)
+      {
+        typedef typename Matrix::access_type mat_access_type;
+	do_getCcs(nzval,rowind,colptr,nnz,mat_access_type,local,root);
+      }
+  };
+
+MatrixAdapter classes would publicly inherit from this base class::
+
+  class MatrixAdapter< Epetra_RowMatrix >
+    : public MatrixAdapterBase< MatrixAdapter< Epetra_RowMatrix > >
+  {
+    typedef row_matrix access_type;
+    
+    ...
+  }
+
+Which could also provide virtual definitions for methods which should
+be defined in specializations (in order to double-check
+implementation).
+
+Using this convention, it would be easy to define MatrixAdapter
+interfaces for MultiVector objects.  They would just need to define a
+``getGlobalRowCopy()`` method and ``typedef column_matrix
+access_type;``.
+
+
+Organization
+============
+
+It may eventually be nice to organize the adapters into their own
+directory structure, so that they do not entirely clutter up the main
+src/ directory.  For that matter, it might be nice to put the solvers
+themselves in their own directory.

@@ -1,9 +1,9 @@
 /**
    \file   Amesos2_NewSolver_TypeMap.hpp
-   \author Eric Bavier <etbavier@etbavier@sandia.gov>
-   \date   Mon May 31 23:12:32 2010
+   \author John Doe <jd@sandia.gov>
+   \date   
    
-   \brief Provides definition of SuperLU types as well as conversions and type
+   \brief Provides definition of NewSolver types as well as conversions and type
           traits.
 
 */

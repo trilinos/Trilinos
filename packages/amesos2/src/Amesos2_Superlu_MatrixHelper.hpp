@@ -36,10 +36,10 @@ struct MatrixHelper<Superlu>
    *                        the array to persist throughout its existence.
    * \param [in,out] colind A user-provided persisting store for the column
    *                        indices of the matrix.
-   * \param [in,out] rowptr User-privded persisting store for row pointers
+   * \param [in,out] rowptr User-provided persisting store for row pointers
    * \param [out]    A      Pointer to the SuperLU SuperMatrix which is to be constructed
    * \param [out]    mtxRedistTime Will have additional time added to it for the
-   *                        time to redistribute tha \c mat matrix.
+   *                        time to redistribute the \c mat matrix.
    *
    * \callgraph
    */
@@ -137,12 +137,12 @@ struct MatrixHelper<Superlu>
 
   /** \brief Creates a Superlu Dense Matrix from the given MultiVector
    *
-   * \tparam MV A multivector type conforming to the interface, in particular
+   * \tparam MV A multi-vector type conforming to the interface, in particular
    *         an Amesos::MultiVecAdapter<>.
    *
    * \param [in]     mv   The MultiVector which will be converted to SuperLU format
    * \param [in,out] vals A user-provided persisting store for the values of
-   *                      the multivector.  The SuperLU matrix will expect the array
+   *                      the multi-vector.  The SuperLU matrix will expect the array
    *                      to persist throughout its existence.
    * \param [out]    ldx  Leading dimension of \c vals
    * \param [out]    X    Pointer to the SuperLU Dense SuperMatrix which is to be
@@ -190,7 +190,7 @@ struct MatrixHelper<Superlu>
 
   /** \brief Creates a Superlu Dense Matrix from the given MultiVector
    *
-   * \tparam MV A multivector type conforming to the interface, in particular
+   * \tparam MV A multi-vector type conforming to the interface, in particular
    *         an Amesos::MultiVecAdapter<>.
    *
    * \param [in]     mv   The MultiVector which will be converted to SuperLU format

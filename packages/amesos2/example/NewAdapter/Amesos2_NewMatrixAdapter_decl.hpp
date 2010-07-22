@@ -27,23 +27,23 @@
 // @HEADER
 
 /**
-  \file   Amesos2_TpetraCrsMatrixAdapter_decl.hpp
-  \author Eric T Bavier <etbavier@sandia.gov>
-  \date   Thu May 27 13:13:28 CDT 2010
+  \file   Amesos2_NewMatrixAdapter_decl.hpp
+  \author John Doe <jd@sandia.gov>
+  \date   today
 
   \brief  Amesos2::MatrixAdapter specialization for the
-          Tpetra::CrsMatrix class.
+          NewMatrix class.
 */
 
-#ifndef AMESOS2_TPETRA_CRSMATRIX_ADAPTER_DECL_HPP
-#define AMESOS2_TPETRA_CRSMATRIX_ADAPTER_DECL_HPP
+#ifndef AMESOS2_NEWMATRIX_ADAPTER_DECL_HPP
+#define AMESOS2_NEWMATRIX_ADAPTER_DECL_HPP
 
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_Array.hpp>
 #include <Teuchos_MPIContainerComm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
-#include <Tpetra_CrsMatrix.hpp>
+#include <NewMatrix.hpp>
 
 #include "Amesos2_MatrixAdapter_decl.hpp"
 
@@ -51,37 +51,23 @@ namespace Amesos {
 
 
 /**
- * \brief Amesos2 Matrix adapter for the Tpetra::CrsMatrix class.
+ * \brief Amesos2 Matrix adapter for the NewMatrix class.
  *
- * \tparam Scalar type for scalar values
- * \tparam LocalOrdinal the ordinal type for local index references
- * \tparam GlobalOrdinal the ordinal type for global index references
- * \tparam a Kokkos node type
+ * TODO: template parameters can be added if needed. 
  */
-template< typename Scalar,
-          typename LocalOrdinal,
-          typename GlobalOrdinal,
-          class    Node,
-          class    LocalMatOps >
-class MatrixAdapter<Tpetra::CrsMatrix<Scalar,
-                                      LocalOrdinal,
-                                      GlobalOrdinal,
-                                      Node,
-                                      LocalMatOps > >
+template <>
+class MatrixAdapter< NewMatrix >
 {
 public:
 
+  /* TODO: Redefine the following types as needed */
   // public type definitions
-  typedef Scalar                           scalar_type;
-  typedef LocalOrdinal                     local_ordinal_type;
-  typedef GlobalOrdinal                    global_ordinal_type;
-  typedef Node                             node_type;
-  typedef typename Tpetra::global_size_t   global_size_type;
-  typedef Tpetra::CrsMatrix<Scalar,
-                            LocalOrdinal,
-                            GlobalOrdinal,
-                            Node,
-                            LocalMatOps>   matrix_type;
+  typedef double                                                scalar_type;
+  typedef int                                            local_ordinal_type;
+  typedef int                                           global_ordinal_type;
+  typedef size_t                                           global_size_type;
+  typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType  node_type;
+  typedef NewMatrix                                             matrix_type;
 
   /// The name of this adapter class.
   static const char* name;
@@ -103,84 +89,51 @@ public:
 
 
   /// Checks whether this matrix is local to the calling node.
-  inline bool isLocal() const
-    {
-      return( mat_->isLocallyIndexed() );
-    }
-
+  inline bool isLocal() const;
+  
 
   /// Returns the Teuchos::Comm object associated with this matrix.
-  inline const Teuchos::RCP<const Teuchos::Comm<int> > getComm() const
-    {
-      return( mat_->getComm() );
-    }
+  inline const Teuchos::RCP<const Teuchos::Comm<int> > getComm() const;
 
 
   /// Get the number of matrix rows local to the calling node.
-  inline size_t getLocalNumRows() const
-    {
-      return( mat_->getNodeNumRows() );
-    }
+  inline size_t getLocalNumRows() const;
 
 
-  /// Get the number of matrix columns local to the calling node.
-  inline size_t getLocalNumCols() const
-    {
-      return mat_->getNodeNumCols();
-    }
+  /// Get the number of natrix columns local to the calling node.
+  inline size_t getLocalNumCols() const;
 
 
   /// Get the number of global matrix rows
-  inline global_size_type getGlobalNumRows() const
-    {
-      return mat_->getGlobalNumRows();
-    }
+  inline global_size_type getGlobalNumRows() const;
 
 
   /// Get the number of global matrix columns
-  inline global_size_type getGlobalNumCols() const
-    {
-      return mat_->getGlobalNumCols();
-    }
+  inline global_size_type getGlobalNumCols() const;
 
 
   /// Get the number of non-zero matrix entries for the calling node.
-  inline size_t getLocalNNZ() const
-    {
-      return mat_->getNodeNumEntries();
-    }
+  inline size_t getLocalNNZ() const;
 
 
   /// Get the number of global non-zero matrix entries.
-  inline global_size_type getGlobalNNZ() const
-    {
-      return mat_->getGlobalNumEntries();
-    }
+  inline global_size_type getGlobalNNZ() const;
 
 
   /// Get the maximum number of non-zeros in any global row of this matrix.
-  inline size_t getMaxNNZ() const
-    {
-      return mat_->getGlobalMaxNumRowEntries();
-    }
+  inline size_t getMaxNNZ() const;
 
 
   /// Get the row map for this matrix.
   inline
-  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
-  getRowMap() const
-    {
-      return mat_->getRowMap();
-    }
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >
+  getRowMap() const;
 
 
   /// Get the column map for this matrix.
   inline
-  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >
-  getColMap() const
-    {
-      return mat_->getColMap();
-    }
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,global_ordinal_type,node_type> >
+  getColMap() const;
 
 
   // TODO:  Two methods for getting the Domain and Range Maps are
@@ -189,7 +142,7 @@ public:
   // the size of the Domain and Range, we might want to provide
   // functions that return those numbers instead of returning the Maps
   // themselves, because the subsequent accessor methods for size
-  // might be (probably are) inconsistent across the types.
+  // might be (probably are) inconsitent accross the types.
 
 
   /**
@@ -222,8 +175,8 @@ public:
    * row values from the underlying matrix.
    */
   void getCrs(
-    const Teuchos::ArrayView<Scalar> nzval,
-    const Teuchos::ArrayView<GlobalOrdinal> colind,
+    const Teuchos::ArrayView<scalar_type> nzval,
+    const Teuchos::ArrayView<global_ordinal_type> colind,
     const Teuchos::ArrayView<global_size_type> rowptr,
     size_t& nnz,
     bool local = false,
@@ -260,8 +213,8 @@ public:
    * row values from the underlying matrix.
    */
   void getCcs(
-    const Teuchos::ArrayView<Scalar> nzval,
-    const Teuchos::ArrayView<GlobalOrdinal> rowind,
+    const Teuchos::ArrayView<scalar_type> nzval,
+    const Teuchos::ArrayView<global_ordinal_type> rowind,
     const Teuchos::ArrayView<global_size_type> colptr,
     size_t& nnz,
     bool local = false,
@@ -278,8 +231,8 @@ public:
    * context, so it is left out.
    */
   void getCrsAll(
-    const Teuchos::ArrayView<Scalar> nzval,
-    const Teuchos::ArrayView<GlobalOrdinal> colind,
+    const Teuchos::ArrayView<scalar_type> nzval,
+    const Teuchos::ArrayView<global_ordinal_type> colind,
     const Teuchos::ArrayView<global_size_type> rowptr,
     size_t& nnz,
     int root = 0);
@@ -295,8 +248,8 @@ public:
    * context, so it is left out.
    */
   void getCcsAll(
-    const Teuchos::ArrayView<Scalar> nzval,
-    const Teuchos::ArrayView<GlobalOrdinal> rowind,
+    const Teuchos::ArrayView<scalar_type> nzval,
+    const Teuchos::ArrayView<global_ordinal_type> rowind,
     const Teuchos::ArrayView<global_size_type> colptr,
     size_t& nnz,
     int root = 0);
@@ -312,8 +265,8 @@ public:
    * \param rowptr The new row start indices
    */
   void updateValuesCrs(
-    const Teuchos::ArrayView<Scalar> nzval,
-    const Teuchos::ArrayView<GlobalOrdinal> colind,
+    const Teuchos::ArrayView<scalar_type> nzval,
+    const Teuchos::ArrayView<global_ordinal_type> colind,
     const Teuchos::ArrayView<global_size_type> rowptr);
 
 
@@ -327,8 +280,8 @@ public:
    * \param colptr The new column start indices
    */
   void updateValuesCcs(
-    const Teuchos::ArrayView<Scalar> nzval,
-    const Teuchos::ArrayView<GlobalOrdinal> rowind,
+    const Teuchos::ArrayView<scalar_type> nzval,
+    const Teuchos::ArrayView<global_ordinal_type> rowind,
     const Teuchos::ArrayView<global_size_type> colptr);
 
 
@@ -347,9 +300,9 @@ private:
   /// The matrix this adapter wraps.
   Teuchos::RCP<matrix_type> mat_;
 
-};                              // end class MatrixAdapter<Tpetra::CrsMatrix>
+};                              // end class MatrixAdapter<NewMatrix>
 
 
 } // end namespace Amesos
 
-#endif  // AMESOS2_TPETRA_CRSMATRIX_ADAPTER_DECL_HPP
+#endif  // AMESOS2_NEWMATRIX_ADAPTER_DECL_HPP

@@ -51,7 +51,7 @@ namespace Amesos {
 
 
 /**
- * \brief Base class used by all other concreate solver classes.
+ * \brief Base class used by all other concrete solver classes.
  *
  * Specifies a uniform interface for interaction with Amesos2 solver wrappers
  * to third-party libraries.
