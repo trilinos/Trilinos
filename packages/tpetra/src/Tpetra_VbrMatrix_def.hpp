@@ -66,7 +66,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::VbrMatrix(const T
    lclMatrix_(blkRowMap->getNodeNumBlocks(), blkRowMap->getPointMap()->getNode()),
    pbuf_values1D_(),
    pbuf_indx_(),
-   lclMatVec_(blkRowMap->getPointMap()->getNode()),
+   lclMatOps_(blkRowMap->getPointMap()->getNode()),
    importer_(),
    exporter_(),
    importedVec_(),
@@ -91,7 +91,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::VbrMatrix(const T
               blkGraph->getBlockRowMap()->getPointMap()->getNode()),
    pbuf_values1D_(),
    pbuf_indx_(),
-   lclMatVec_(blkGraph->getBlockRowMap()->getPointMap()->getNode()),
+   lclMatOps_(blkGraph->getBlockRowMap()->getPointMap()->getNode()),
    importer_(),
    exporter_(),
    importedVec_(),
@@ -161,7 +161,23 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::multiply(const Mu
   const Kokkos::MultiVector<Scalar,Node> *lclX = &X.getLocalMV();
   Kokkos::MultiVector<Scalar,Node>        *lclY = &Y.getLocalMVNonConst();
 
-  lclMatVec_.template multiply<Scalar,Scalar>(trans,alpha,*lclX,beta,*lclY);
+  lclMatOps_.template multiply<Scalar,Scalar>(trans,alpha,*lclX,beta,*lclY);
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+template<class DomainScalar, class RangeScalar>
+void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& X, Teuchos::ETransp trans) const
+{
+  throw std::runtime_error("Tpetra::VbrMatrix::solve NOT YET AVAILABLE.");
+  TEST_FOR_EXCEPTION(!isFillComplete(), std::runtime_error,
+    "Tpetra::VbrMatrix::solve ERROR, multiply may only be called after fillComplete has been called.");
+
+  const Kokkos::MultiVector<RangeScalar,Node> *lclY = &Y.getLocalMV();
+  Kokkos::MultiVector<DomainScalar,Node>      *lclX = &X.getLocalMVNonConst();
+
+  lclMatOps_.template solve<DomainScalar,RangeScalar>(trans,*lclY,*lclX);
 }
 
 //-------------------------------------------------------------------
@@ -730,7 +746,7 @@ void VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillLocalMat
   TEST_FOR_EXCEPTION(is_storage_optimized_ != true, std::runtime_error,
     "Tpetra::VbrMatrix::fillLocalMatrix ERROR, optimizeStorage is required to have already been called.");
 
-  lclMatVec_.initializeValues(lclMatrix_);
+  lclMatOps_.initializeValues(lclMatrix_, false, false);
 }
 
 //-------------------------------------------------------------------

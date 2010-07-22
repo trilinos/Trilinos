@@ -119,7 +119,7 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
   //@}
 
-  //! @name Advanced Matrix-vector multiplication method
+  //! @name Advanced Mathematical operations
 
   //! Multiply this matrix by a MultiVector.
   /*! \c X is required to be post-imported, i.e., described by the column map
@@ -129,6 +129,19 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   */
   template <class DomainScalar, class RangeScalar>
       void multiply(const MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> & X, MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> &Y, Teuchos::ETransp trans, RangeScalar alpha, RangeScalar beta) const;
+
+  //@}
+
+  //! Triangular Solve -- Matrix must be triangular.
+  /*! Find X such that A*X = Y.
+      \c X is required to be post-imported, i.e., described by the column map
+      of the matrix. \c Y is required to be pre-exported, i.e., described by
+      the row map of the matrix.
+
+      Both \c X and \c Y are required to have constant stride.
+  */
+  template <class DomainScalar, class RangeScalar>
+      void solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> & Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, Teuchos::ETransp trans) const;
 
   //@}
 
@@ -386,7 +399,7 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   Teuchos::ArrayRCP<Scalar> pbuf_values1D_;
   Teuchos::ArrayRCP<LocalOrdinal> pbuf_indx_;
 
-  LocalMatOps lclMatVec_;
+  LocalMatOps lclMatOps_;
   Teuchos::RCP<Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > importer_;
   Teuchos::RCP<Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node> > exporter_;
   mutable Teuchos::RCP<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > importedVec_;
