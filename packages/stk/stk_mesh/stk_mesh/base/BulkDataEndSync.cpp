@@ -60,9 +60,20 @@ namespace {
 //----------------------------------------------------------------------
 // Send to shared and ghost-receive,
 
-bool send_to_shared_and_ghost_recv( const BulkData                & mesh ,
-                                    const std::vector<Entity*>    & send ,
-                                          std::vector<EntityProc> & recv )
+struct EntityProcState {
+  EntityProc entity_proc;
+  EntityModificationLog state;
+
+  bool operator<(const EntityProcState& rhs) const
+  {
+    EntityLess el;
+    return el(entity_proc, rhs.entity_proc);
+  }
+};
+
+bool send_to_shared_and_ghost_recv( const BulkData                     & mesh ,
+                                    const std::vector<Entity*>         & send ,
+                                          std::vector<EntityProcState> & recv )
 {
   const unsigned p_size = mesh.parallel_size();
   const unsigned p_rank = mesh.parallel_rank();
@@ -71,53 +82,52 @@ bool send_to_shared_and_ghost_recv( const BulkData                & mesh ,
 
   std::vector<unsigned> procs ;
 
+  // We need to go through the packing phase twice, once to get the length of
+  // the data to be communicated, once to actually fill in the data
   bool local = false ;
-  for ( std::vector<Entity*>::const_iterator
-        i = send.begin(); i != send.end() ; ++i ) {
-    Entity & entity = **i ;
-    if ( p_rank == entity.owner_rank() || in_shared( entity ) ) {
-      comm_procs( entity , procs );
-      for ( std::vector<unsigned>::iterator
-            ip = procs.begin() ; ip != procs.end() ; ++ip ) {
-        comm.send_buffer( *ip ).pack<EntityKey>( entity.key() );
-        local = true ;
+  for ( unsigned pack_phase = 0; pack_phase < 2; ++pack_phase ) {
+    for ( std::vector<Entity*>::const_iterator
+            i = send.begin(); i != send.end() ; ++i ) {
+      Entity & entity = **i ;
+      if ( p_rank == entity.owner_rank() || in_shared( entity ) ) {
+        comm_procs( entity , procs );
+        for ( std::vector<unsigned>::iterator
+              ip = procs.begin() ; ip != procs.end() ; ++ip ) {
+          comm.send_buffer( *ip ).pack<EntityKey>( entity.key() )
+            .pack<EntityModificationLog>( entity.log_query() );
+          local = true ;
+        }
       }
+    }
+    if (pack_phase == 0) {
+      const bool global = comm.allocate_buffers( p_size/4, false, local );
+
+      if ( ! global ) { return false ; }
+    }
+    else {
+      comm.communicate();
     }
   }
 
-  const bool global = comm.allocate_buffers( p_size/4, false, local );
-
-  if ( ! global ) { return false ; }
-
-  for ( std::vector<Entity*>::const_iterator
-        i = send.begin(); i != send.end() ; ++i ) {
-    Entity & entity = **i ;
-    if ( p_rank == entity.owner_rank() || in_shared( entity ) ) {
-      comm_procs( entity , procs );
-      for ( std::vector<unsigned>::iterator
-            ip = procs.begin() ; ip != procs.end() ; ++ip ) {
-        comm.send_buffer( *ip ).pack<EntityKey>( entity.key() );
-      }
-    }
-  }
-
-  comm.communicate();
-
+  // Unpack the data
   for ( unsigned p = 0 ; p < p_size ; ++p ) {
     CommBuffer & buf = comm.recv_buffer( p );
 
-    EntityProc ep ; ep.second = p ;
+    EntityProcState eps;
+    eps.entity_proc.second = p;
 
     while ( buf.remaining() ) {
       EntityKey key ; buf.unpack<EntityKey>( key );
+      EntityModificationLog state ; buf.unpack<EntityModificationLog>( state );
 
-      ep.first = mesh.get_entity( key );
+      eps.entity_proc.first = mesh.get_entity( key );
+      eps.state = state;
 
-      recv.push_back( ep );
+      recv.push_back( eps );
     }
   }
 
-  std::sort( recv.begin() , recv.end() , EntityLess() );
+  std::sort( recv.begin() , recv.end() );
 
   return true ;
 }
@@ -200,7 +210,7 @@ void BulkData::internal_resolve_parallel_delete(
 
   std::vector<int> local_flags(  ghosting_count , 0 );
   std::vector<int> global_flags( ghosting_count , 0 );
-  std::vector<EntityProc> del_entities_remote ;
+  std::vector<EntityProcState> del_entities_remote ;
 
   bool global_delete_flag =
     send_to_shared_and_ghost_recv( *this, del_entities, del_entities_remote );
@@ -212,8 +222,8 @@ void BulkData::internal_resolve_parallel_delete(
     // Clear communication lists of remotely deleted entities:
 
     for ( ; ! del_entities_remote.empty() ; del_entities_remote.pop_back() ) {
-      Entity *       entity = del_entities_remote.back().first ;
-      const unsigned proc   = del_entities_remote.back().second ;
+      Entity *       entity = del_entities_remote.back().entity_proc.first ;
+      const unsigned proc   = del_entities_remote.back().entity_proc.second ;
       const bool     destroyed = entity->marked_for_destruction();
       const bool     remote_owner = entity->owner_rank() == proc ;
       const bool     shared = in_shared( *entity , proc );
