@@ -26,8 +26,8 @@
 // ************************************************************************
 //@HEADER
 
-#ifndef KOKKOS_DEFAULTBLOCKSPARSEMULTIPLY_HPP
-#define KOKKOS_DEFAULTBLOCKSPARSEMULTIPLY_HPP
+#ifndef KOKKOS_DEFAULTBLOCKSPARSEOPS_HPP
+#define KOKKOS_DEFAULTBLOCKSPARSEOPS_HPP
 
 #include <Teuchos_ArrayRCP.hpp>
 #include <Teuchos_DataAccess.hpp>
@@ -41,16 +41,16 @@
 #include "Kokkos_MultiVector.hpp"
 #include "Kokkos_NodeHelpers.hpp"
 #include "Kokkos_DefaultArithmetic.hpp"
-#include "Kokkos_DefaultBlockSparseMultiplyKernelOps.hpp"
+#include "Kokkos_DefaultBlockSparseKernelOps.hpp"
 
 namespace Kokkos {
 
   // default implementation
   template <class Scalar, class Ordinal, class Node = DefaultNode::DefaultNodeType>
-  /*! \class DefaultBlockSparseMultiply
-      \brief DefaultBlockSparseMultiply
+  /*! \class DefaultBlockSparseOps
+      \brief DefaultBlockSparseOps
   */
-  class DefaultBlockSparseMultiply {
+  class DefaultBlockSparseOps {
   public:
     typedef Scalar  ScalarType;
     typedef Ordinal OrdinalType;
@@ -60,11 +60,11 @@ namespace Kokkos {
 
     //@{
 
-    //! DefaultBlockSparseMultiply constuctor with variable number of indices per row.
-    DefaultBlockSparseMultiply(const Teuchos::RCP<Node> &node = DefaultNode::getDefaultNode());
+    //! DefaultBlockSparseOps constuctor with variable number of indices per row.
+    DefaultBlockSparseOps(const Teuchos::RCP<Node> &node = DefaultNode::getDefaultNode());
 
-    //! DefaultBlockSparseMultiply Destructor
-    ~DefaultBlockSparseMultiply();
+    //! DefaultBlockSparseOps Destructor
+    ~DefaultBlockSparseOps();
 
     //@}
 
@@ -81,7 +81,8 @@ namespace Kokkos {
     //@{
 
     //! Initialize values of matrix, using Kokkos::VbrMatrix
-    void initializeValues(const VbrMatrix<Scalar,Ordinal,Node> &matrix);
+    void initializeValues(const VbrMatrix<Scalar,Ordinal,Node> &matrix,
+                          bool upper, bool unitDiag);
 
     //! Clear all matrix structure and values.
     void clear();
@@ -101,11 +102,14 @@ namespace Kokkos {
     void multiply(Teuchos::ETransp trans, 
                   RangeScalar alpha, const MultiVector<DomainScalar,Node> &X, RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const;
 
+    //! Triangular solve: find x such that A*x=y, only if A is triangular.
+    template <class DomainScalar, class RangeScalar>
+    void solve(Teuchos::ETransp trans, const MultiVector<DomainScalar,Node>& Y, MultiVector<RangeScalar,Node>& X) const;
     //@}
 
   protected:
     //! Copy constructor (protected and unimplemented)
-    DefaultBlockSparseMultiply(const DefaultBlockSparseMultiply& source);
+    DefaultBlockSparseOps(const DefaultBlockSparseOps& source);
 
     Teuchos::RCP<Node> node_;
 
@@ -118,22 +122,25 @@ namespace Kokkos {
 
     size_t numBlockRows_;
     bool valsInit_, isPacked_, isEmpty_;
+    bool upper_, unitDiag_;
   };
 
   template<class Scalar, class Ordinal, class Node>
-  DefaultBlockSparseMultiply<Scalar,Ordinal,Node>::DefaultBlockSparseMultiply(const Teuchos::RCP<Node> &node)
+  DefaultBlockSparseOps<Scalar,Ordinal,Node>::DefaultBlockSparseOps(const Teuchos::RCP<Node> &node)
   : node_(node)
   , valsInit_(false)
   , isPacked_(false)
-  , isEmpty_(false) {
+  , isEmpty_(false)
+  , upper_(false)
+  , unitDiag_(false) {
   }
 
   template<class Scalar, class Ordinal, class Node>
-  DefaultBlockSparseMultiply<Scalar,Ordinal,Node>::~DefaultBlockSparseMultiply() {
+  DefaultBlockSparseOps<Scalar,Ordinal,Node>::~DefaultBlockSparseOps() {
   }
 
   template <class Scalar, class Ordinal, class Node>
-  void DefaultBlockSparseMultiply<Scalar,Ordinal,Node>::initializeValues(const VbrMatrix<Scalar,Ordinal,Node> &matrix) {
+  void DefaultBlockSparseOps<Scalar,Ordinal,Node>::initializeValues(const VbrMatrix<Scalar,Ordinal,Node> &matrix, bool upper, bool unitDiag) {
     using Teuchos::ArrayRCP;
     isEmpty_ = false;
     pbuf_vals1D_ = matrix.get_values();
@@ -145,17 +152,19 @@ namespace Kokkos {
     numBlockRows_ = matrix.getNumBlockRows();
     valsInit_ = true;
     isPacked_ = true;
+    upper_ = upper;
+    unitDiag_ = unitDiag;
   }
 
 
   template <class Scalar, class Ordinal, class Node>
-  Teuchos::RCP<Node> DefaultBlockSparseMultiply<Scalar,Ordinal,Node>::getNode() const { 
+  Teuchos::RCP<Node> DefaultBlockSparseOps<Scalar,Ordinal,Node>::getNode() const { 
     return node_; 
   }
 
 
   template <class Scalar, class Ordinal, class Node>
-  void DefaultBlockSparseMultiply<Scalar,Ordinal,Node>::clear() {
+  void DefaultBlockSparseOps<Scalar,Ordinal,Node>::clear() {
     pbuf_vals1D_  = Teuchos::null;
     pbuf_rptr_    = Teuchos::null;
     pbuf_cptr_    = Teuchos::null;
@@ -165,11 +174,13 @@ namespace Kokkos {
     valsInit_ = false;
     isPacked_ = false;
     isEmpty_  = false;
+    upper_ = false;
+    unitDiag_ = false;
   }
 
   template <class Scalar, class Ordinal, class Node>
   template <class DomainScalar, class RangeScalar>
-  void DefaultBlockSparseMultiply<Scalar,Ordinal,Node>::multiply(
+  void DefaultBlockSparseOps<Scalar,Ordinal,Node>::multiply(
                                 Teuchos::ETransp trans, 
                                 RangeScalar alpha,
                                 const MultiVector<DomainScalar,Node> &X, 
@@ -229,14 +240,14 @@ namespace Kokkos {
       }
     }
     else {
-      throw std::runtime_error("DefaultBlockSparseMultiply ERROR, not implemented for non-packed '2D' storage.");
+      throw std::runtime_error("DefaultBlockSparseOps ERROR, not implemented for non-packed '2D' storage.");
     }
   }
 
 
   template <class Scalar, class Ordinal, class Node>
   template <class DomainScalar, class RangeScalar>
-  void DefaultBlockSparseMultiply<Scalar,Ordinal,Node>::multiply(
+  void DefaultBlockSparseOps<Scalar,Ordinal,Node>::multiply(
                                 Teuchos::ETransp trans, 
                                 RangeScalar alpha, const MultiVector<DomainScalar,Node> &X, 
                                 RangeScalar beta, MultiVector<RangeScalar,Node> &Y) const {
@@ -300,10 +311,57 @@ namespace Kokkos {
       }
     }
     else {
-      throw std::runtime_error("DefaultBlockSparseMultiply ERROR, not implemented for non-packed '2D' storage.");
+      throw std::runtime_error("DefaultBlockSparseOps::Multiply ERROR, not implemented for non-packed '2D' storage.");
+    }
+  }
+
+  template <class Scalar, class Ordinal, class Node>
+  template <class DomainScalar, class RangeScalar>
+  void DefaultBlockSparseOps<Scalar,Ordinal,Node>::solve(
+                                Teuchos::ETransp trans, 
+                                const MultiVector<DomainScalar,Node> &Y, 
+                                MultiVector<RangeScalar,Node> &X) const {
+    typedef DefaultBlockSparseSolveOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1;
+    TEST_FOR_EXCEPTION(trans==Teuchos::TRANS, std::runtime_error,
+        Teuchos::typeName(*this) << "::solve(): transpose not supported.");
+    TEST_FOR_EXCEPTION(valsInit_ == false, std::runtime_error,
+        Teuchos::typeName(*this) << "::solve(): operation not fully initialized.");
+    TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
+    ReadyBufferHelper<Node> rbh(node_);
+    if (isEmpty_ == true) {
+      // X <= Y
+      DefaultArithmetic<MultiVector<RangeScalar,Node> >::Assign(X,Y);
+    }
+    else if (isPacked_ == true) {
+      if (trans == Teuchos::NO_TRANS) {
+        Op1 wdp;
+        rbh.begin();
+        wdp.upper   = upper_;
+        wdp.unitDiag = unitDiag_;
+        wdp.numBlockRows = numBlockRows_;
+        wdp.vals = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
+        wdp.rptr = rbh.template addConstBuffer<Ordinal>(pbuf_rptr_);
+        wdp.cptr = rbh.template addConstBuffer<Ordinal>(pbuf_cptr_);
+        wdp.bptr = rbh.template addConstBuffer<size_t>(pbuf_bptr_);
+        wdp.bindx= rbh.template addConstBuffer<Ordinal>(pbuf_bindx_);
+        wdp.indx = rbh.template addConstBuffer<Ordinal>(pbuf_indx_);
+        wdp.x    = rbh.template addNonConstBuffer<DomainScalar>(X.getValuesNonConst());
+        wdp.y    = rbh.template addConstBuffer<RangeScalar>(Y.getValues());
+        wdp.xstride = X.getStride();
+        wdp.ystride = Y.getStride();
+        rbh.end();
+        const size_t numRHS = X.getNumCols();
+        node_->template parallel_for<Op1>(0,numRHS,wdp);
+      }
+      else {
+        throw std::runtime_error("DefaultBlockSparseOps::solve ERROR, not implemented for transpose.");
+      }
+    }
+    else {
+      throw std::runtime_error("DefaultBlockSparseOps::solve ERROR, not implemented for non-packed '2D' storage.");
     }
   }
 
 } // namespace Kokkos
 
-#endif /* KOKKOS_DEFAULTSPARSEMULTIPLY_HPP */
+#endif /* KOKKOS_DEFAULTSPARSEOPS_HPP */
