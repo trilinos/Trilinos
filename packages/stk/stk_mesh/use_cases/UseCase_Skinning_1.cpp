@@ -31,8 +31,8 @@ namespace {
 
     const unsigned mesh_rank = stk::mesh::Element;
 
-    stk::mesh::BulkData& mesh = fixture.bulk_data();
-    stk::mesh::Part & skin_part = *fixture.skin_part();
+    stk::mesh::BulkData & mesh = fixture.m_bulk_data;
+    stk::mesh::Part & skin_part = fixture.m_skin_part;
 
     stk::mesh::Selector select_skin = skin_part ;
 
@@ -192,19 +192,17 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
   const unsigned p_size = stk::parallel_machine_size( pm );
   if ( 1 < p_size ) { return true; }
 
-  const unsigned mesh_rank = stk::mesh::Element;
-
   //setup the mesh
   HexFixture fixture(pm);
 
-  stk::mesh::MetaData& meta_data = fixture.meta_data();
-  stk::mesh::BulkData& mesh = fixture.bulk_data();
+  stk::mesh::MetaData& meta_data = fixture.m_meta_data;
+  stk::mesh::BulkData& mesh = fixture.m_bulk_data;
 
-  stk::mesh::Part & skin_part = *fixture.skin_part();
+  stk::mesh::Part & skin_part = fixture.m_skin_part;
 
   stk::mesh::EntityVector entities_to_separate;
 
-  stk::mesh::Entity * temp = mesh.get_entity(mesh_rank, 1);
+  stk::mesh::Entity * temp = fixture.m_elems[0][0][0];
 
   //select the entity only if the current process in the owner
   if (temp != NULL && temp->owner_rank() == mesh.parallel_rank()) {

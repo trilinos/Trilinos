@@ -8,18 +8,15 @@
 
 #include <use_cases/HexFixture.hpp>
 
-#include <Shards_BasicTopologies.hpp>
-
-#include <stk_util/parallel/Parallel.hpp>
-
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/FieldData.hpp>
+#include <stk_mesh/base/Types.hpp>
 #include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
+#include <stk_mesh/base/BulkModification.hpp>
 
+#include <stk_mesh/fem/Stencils.hpp>
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
-
+#include <stk_mesh/fem/BoundaryAnalysis.hpp>
 
 #include <stk_mesh/fem/SkinMesh.hpp>
 
@@ -30,8 +27,41 @@ HexFixture::HexFixture(stk::ParallelMachine pm)
   , m_bulk_data( m_meta_data , pm )
   , m_hex_part( m_meta_data.declare_part("hex_part", stk::mesh::Element) )
   , m_skin_part( m_meta_data.declare_part("skin_part"))
+  , m_coord_field( m_meta_data.declare_field<CoordFieldType>("Coordinates") )
+  , m_coord_gather_field(
+        m_meta_data.declare_field<CoordGatherFieldType>("GatherCoordinates")
+      )
+  , m_quad_field( m_meta_data.declare_field<QuadFieldType>("Quad") )
+  , m_basis_field( m_meta_data.declare_field<BasisFieldType>("Basis") )
 {
+  typedef shards::Hexahedron<8> Hex8 ;
+  enum { SpatialDim = 3 };
+  enum { NodesPerElem = Hex8::node_count };
+
+  // Set topology of the element block part
   stk::mesh::set_cell_topology<shards::Hexahedron<8> >(m_hex_part);
+
+  //put coord-field on all nodes:
+  stk::mesh::put_field(
+      m_coord_field,
+      stk::mesh::Node,
+      m_meta_data.universal_part(),
+      SpatialDim
+      );
+
+  //put coord-gather-field on all elements:
+  stk::mesh::put_field(
+      m_coord_gather_field,
+      stk::mesh::Element,
+      m_meta_data.universal_part(),
+      NodesPerElem
+      );
+
+  // Field relation so coord-gather-field on elements points
+  // to coord-field of the element's nodes
+  m_meta_data.declare_field_relation( m_coord_gather_field, stk::mesh::element_node_stencil<shards::Hexahedron<8> >, m_coord_field);
+  m_meta_data.declare_field_relation( m_coord_gather_field, stk::mesh::element_node_stencil<void>, m_coord_field);
+  m_meta_data.declare_field_relation( m_coord_gather_field, stk::mesh::element_node_lock_stencil<void>, m_coord_field);
 
   m_meta_data.commit();
 
@@ -41,83 +71,98 @@ HexFixture::HexFixture(stk::ParallelMachine pm)
 HexFixture::~HexFixture()
 { }
 
-namespace {
-  //I know that there is a simple pattern here for discovering the first node from an element id,
-  //but after 5 mins of looking at it I did this and moved on.
-  unsigned get_first_node_id_for_element( unsigned element_id) {
-    switch(element_id) {
-      case  1: return 1;
-      case  2: return 2;
-      case  3: return 3;
-      case  4: return 4+1;
-      case  5: return 4+2;
-      case  6: return 4+3;
-      case  7: return 4+4+1;
-      case  8: return 4+4+2;
-      case  9: return 4+4+3;
-      case 10: return 16+1;
-      case 11: return 16+2;
-      case 12: return 16+3;
-      case 13: return 16+4+1;
-      case 14: return 16+4+2;
-      case 15: return 16+4+3;
-      case 16: return 16+4+4+1;
-      case 17: return 16+4+4+2;
-      case 18: return 16+4+4+3;
-      case 19: return 16+16+1;
-      case 20: return 16+16+2;
-      case 21: return 16+16+3;
-      case 22: return 16+16+4+1;
-      case 23: return 16+16+4+2;
-      case 24: return 16+16+4+3;
-      case 25: return 16+16+4+4+1;
-      case 26: return 16+16+4+4+2;
-      case 27: return 16+16+4+4+3;
-      default: return 0;
-    }
-}
-}
 
 void HexFixture::generate_mesh() {
 
-  //const unsigned num_nodes = 64;
-  const unsigned num_elements = 27;
+  const unsigned num_elems = 27;
   const unsigned p_rank = m_bulk_data.parallel_rank();
   const unsigned p_size = m_bulk_data.parallel_size();
 
 
-  // Note:  This block of code would normally be replaced with a call to stk_io
-  // to generate the mesh.
+  //assign node id's and coordinates
+  for ( int iz = 0 ; iz < 4 ; ++iz ) {
+  for ( int iy = 0 ; iy < 4 ; ++iy ) {
+  for ( int ix = 0 ; ix < 4 ; ++ix ) {
+    m_node_id[iz][iy][ix] = 1 + ix + 4 * ( iy + 4 * iz );
+    m_node_coord[iz][iy][ix][0] = ix -1.5 ;
+    m_node_coord[iz][iy][ix][1] = iy -1.5 ;
+    m_node_coord[iz][iy][ix][2] = iz -1.5 ;
+  }
+  }
+  }
 
-  {
-    const stk::mesh::PartVector no_parts;
-    const unsigned first_element = (p_rank * num_elements) / p_size;
-    const unsigned end_element = ((p_rank + 1) * num_elements) / p_size;
+  const unsigned beg_elem = ( num_elems * p_rank ) / p_size ;
+  const unsigned end_elem = ( num_elems * ( p_rank + 1 ) ) / p_size ;
 
-    stk::mesh::PartVector element_parts;
-    element_parts.push_back(&m_hex_part);
+  m_bulk_data.modification_begin();
 
-    const unsigned num_nodes_per_element = 8;
+  unsigned elem = 0 ;
+  stk::mesh::EntityId face_id = 0;
 
-    const unsigned stencil_for_3x3x3_hex_mesh[num_nodes_per_element] =
-    { 0, 1, 5, 4, 16, 17, 21, 20};
+  for ( int iz = 0 ; iz < 3 ; ++iz ) {
+  for ( int iy = 0 ; iy < 3 ; ++iy ) {
+  for ( int ix = 0 ; ix < 3 ; ++ix , ++elem ) {
+    if ( beg_elem <= elem && elem < end_elem ) {
+      stk::mesh::EntityId elem_id = 1 + ix + 3 * ( iy + 3 * iz );
+      stk::mesh::EntityId elem_node[8] ;
+      Scalar * node_coord[8] ;
+      face_id = elem_id;
 
-    // declare elements
-    m_bulk_data.modification_begin();
-    for (unsigned i = first_element; i < end_element; ++i) {
+      elem_node[0] = m_node_id[iz  ][iy  ][ix  ] ;
+      elem_node[1] = m_node_id[iz  ][iy  ][ix+1] ;
+      elem_node[2] = m_node_id[iz+1][iy  ][ix+1] ;
+      elem_node[3] = m_node_id[iz+1][iy  ][ix  ] ;
+      elem_node[4] = m_node_id[iz  ][iy+1][ix  ] ;
+      elem_node[5] = m_node_id[iz  ][iy+1][ix+1] ;
+      elem_node[6] = m_node_id[iz+1][iy+1][ix+1] ;
+      elem_node[7] = m_node_id[iz+1][iy+1][ix  ] ;
 
-      unsigned element_id = i + 1;
-      stk::mesh::Entity & element = m_bulk_data.declare_entity( stk::mesh::Element, element_id, element_parts);
+      node_coord[0] = m_node_coord[iz  ][iy  ][ix  ] ;
+      node_coord[1] = m_node_coord[iz  ][iy  ][ix+1] ;
+      node_coord[2] = m_node_coord[iz+1][iy  ][ix+1] ;
+      node_coord[3] = m_node_coord[iz+1][iy  ][ix  ] ;
+      node_coord[4] = m_node_coord[iz  ][iy+1][ix  ] ;
+      node_coord[5] = m_node_coord[iz  ][iy+1][ix+1] ;
+      node_coord[6] = m_node_coord[iz+1][iy+1][ix+1] ;
+      node_coord[7] = m_node_coord[iz+1][iy+1][ix  ] ;
 
-      unsigned first_node_id = get_first_node_id_for_element( element_id);
+      stk::mesh::Entity& element = stk::mesh::declare_element( m_bulk_data, m_hex_part, elem_id, elem_node);
 
-      for ( unsigned ordinal = 0; ordinal < num_nodes_per_element; ++ordinal) {
-        unsigned node_id = first_node_id + stencil_for_3x3x3_hex_mesh[ordinal];
-        stk::mesh::Entity& node = m_bulk_data.declare_entity(stk::mesh::Node, node_id, no_parts);
-        m_bulk_data.declare_relation( element , node , ordinal);
+      stk::mesh::PairIterRelation rel = element.relations(stk::mesh::Node);
+
+      for(int i=0; i< 8 ; ++i ) {
+        stk::mesh::Entity& node = *rel[i].entity();
+        Scalar* data = stk::mesh::field_data( m_coord_field, node);
+        data[0] = node_coord[i][0];
+        data[1] = node_coord[i][1];
+        data[2] = node_coord[i][2];
       }
+
     }
-    m_bulk_data.modification_end();
+  }
+  }
+  }
+
+  m_bulk_data.modification_end();
+
+  for ( int iz = 0 ; iz < 4 ; ++iz ) {
+  for ( int iy = 0 ; iy < 4 ; ++iy ) {
+  for ( int ix = 0 ; ix < 4 ; ++ix ) {
+    // Find node ids
+    stk::mesh::EntityId node_id = 1 + ix + 4 * ( iy + 4 * iz );
+    m_nodes[iz][iy][ix] = m_bulk_data.get_entity( stk::mesh::Node , node_id );
+  }
+  }
+  }
+
+  for ( int iz = 0 ; iz < 3 ; ++iz ) {
+  for ( int iy = 0 ; iy < 3 ; ++iy ) {
+  for ( int ix = 0 ; ix < 3 ; ++ix , ++elem ) {
+    stk::mesh::EntityId elem_id = 1 + ix + 3 * ( iy + 3 * iz );
+    // Find element ids
+    m_elems[iz][iy][ix] = m_bulk_data.get_entity( stk::mesh::Element , elem_id );
+  }
+  }
   }
 
   skin_mesh(m_bulk_data, stk::mesh::Element, &m_skin_part);
