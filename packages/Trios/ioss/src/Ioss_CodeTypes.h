@@ -9,25 +9,7 @@
 #ifndef IOSS_code_types_h
 #define IOSS_code_types_h
 
-#ifdef STK_BUILT_IN_SIERRA
-#define STK_HAS_MPI
-#else
-// This file gets created by cmake during a Trilinos build
-// and will not be present in a sierra build using bjam or associated wrappers
-#include <Trios_config.h>
-#ifdef HAVE_MPI
-#define STK_HAS_MPI
-#endif
-#endif
-
-#if defined(HAVE_MPI)
-#include <mpi.h>
-#else
-#ifndef MPI_COMM_WORLD
-typedef int MPI_Comm;
-#define MPI_COMM_WORLD 0
-#endif
-#endif
+#include <stk_util/parallel/Parallel.hpp>
 
 #include <complex>
 

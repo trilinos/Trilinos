@@ -92,15 +92,16 @@ STKUNIT_UNIT_TEST(UnitTestGmeshFixture, testUnit)
 
       STKUNIT_ASSERT_EQUAL( cell_topology->node_count, rel.size() );
 
-      for ( unsigned j = 0 ; j < cell_topology->node_count ; ++j ) 
-      {
-        stk::mesh::Entity & rel_node = *rel[j].entity();
-        double * coords = stk::mesh::field_data(*coord_field, rel_node);
-        //std::cerr << "( " << coords[0] << ", " << coords[1] << ", " << coords[2] << ")" << std::endl;
+      // Need to get this active by augmenting unit test macros
+      //for ( unsigned j = 0 ; j < cell_topology->node_count ; ++j ) 
+      //{
+      //  stk::mesh::Entity & rel_node = *rel[j].entity();
+      //  double * coords = stk::mesh::field_data(*coord_field, rel_node);
+      //  //std::cerr << "( " << coords[0] << ", " << coords[1] << ", " << coords[2] << ")" << std::endl;
 
-        //ASSERT_DOUBLE_EQ(expected.second, coords[expected.first]);
-      }
-      //std::cerr << std::endl;
+      //  //ASSERT_DOUBLE_EQ(expected.second, coords[expected.first]);
+      //}
+      ////std::cerr << std::endl;
     }
   }
 }
