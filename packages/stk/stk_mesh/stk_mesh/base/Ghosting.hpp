@@ -12,7 +12,7 @@
 
 #include <vector>
 #include <string>
-#include <iostream>
+#include <iosfwd>
 #include <stk_mesh/base/Types.hpp>
 
 namespace stk {
