@@ -42,6 +42,13 @@ class BucketRepository;
  *  A given entity may reside on more than one processor;
  *  however, it is owned by exactly one of the processors
  *  on which it resides.
+ *
+ *  Note that an Entity's state comprises:
+ *   - existence - Whether this entity has been created and is not destroyed
+ *   - owner - The rank of the owning process
+ *   - part-membership - The set of parts this entity belongs to
+ *   - relations - Relationships between other Entities
+ *  When any of the above changes, the Entity's log state may change
  */
 class Entity {
 public:
