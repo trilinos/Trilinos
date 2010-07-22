@@ -159,7 +159,30 @@ void EntityRepository::change_entity_bucket( Bucket & b, Entity & e,
 
 void EntityRepository::destroy_relation( Entity & e_from, Entity & e_to )
 {
-  e_from.m_entityImpl.destroy_relation( e_to );
+  const MetaData & meta_data =
+    e_from.m_entityImpl.bucket().mesh().mesh_meta_data();
+
+  bool caused_change_fwd = e_from.m_entityImpl.destroy_relation(e_to);
+
+  // Relationships should always be symmetrical
+  if ( caused_change_fwd ) {
+    bool caused_change_inv = e_to.m_entityImpl.destroy_relation(e_from);
+    if ( ! caused_change_inv ) {
+      std::ostringstream msg ;
+      msg << "destroy_relation( from "
+          << print_entity_key( msg , meta_data, e_from.key() )
+          << " , to "
+          << print_entity_key( msg , meta_data, e_to.key() )
+          << " ) FAILED"
+          << " Internal error - could not destroy inverse relation" ;
+      throw std::runtime_error( msg.str() );
+    }
+  }
+
+  if ( caused_change_fwd ) {
+    e_to.m_entityImpl.log_modified();
+    e_from.m_entityImpl.log_modified();
+  }
 }
 
 void EntityRepository::declare_relation( Entity & e_from,
@@ -167,7 +190,38 @@ void EntityRepository::declare_relation( Entity & e_from,
                                          const unsigned local_id,
                                          unsigned sync_count )
 {
-  e_from.m_entityImpl.declare_relation( e_from, e_to, local_id, sync_count );
+  const MetaData & meta_data =
+    e_from.m_entityImpl.bucket().mesh().mesh_meta_data();
+
+  bool caused_change_fwd =
+    e_from.m_entityImpl.declare_relation( e_to, local_id, sync_count);
+
+  // Relationships should always be symmetrical
+  if ( caused_change_fwd ) {
+
+    // the setup for the converse relationship works slightly differently
+    bool is_converse = true;
+    bool caused_change_inv =
+      e_to.m_entityImpl.declare_relation( e_from, local_id, sync_count,
+                                          is_converse );
+
+    if ( ! caused_change_inv ) {
+      std::ostringstream msg ;
+      msg << "declare_relation( from "
+          << print_entity_key( msg , meta_data, e_from.key() )
+          << " , to "
+          << print_entity_key( msg , meta_data, e_to.key() )
+          << " , id " << local_id
+          << " ) FAILED"
+          << " Internal error - could not create inverse relation" ;
+      throw std::runtime_error( msg.str() );
+    }
+  }
+
+  if ( caused_change_fwd ) {
+    e_to.m_entityImpl.log_modified();
+    e_from.m_entityImpl.log_modified();
+  }
 }
 
 } // namespace impl

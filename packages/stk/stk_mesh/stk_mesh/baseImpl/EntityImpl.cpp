@@ -177,22 +177,47 @@ bool is_degenerate_relation ( const Relation &r1 , const Relation &r2 )
 
 }
 
-void EntityImpl::declare_relation( Entity & e_from,
-                                   Entity & e_to,
-                                   const unsigned local_id,
-                                   unsigned sync_count )
+void EntityImpl::log_resurrect()
 {
-  assert( &(e_from.m_entityImpl) == this );
+  if ( EntityLogDeleted != m_mod_log ) {
+    std::ostringstream msg;
+    msg << "Trying to resurrect non-deleted entity: "
+        << print_entity_key( msg, bucket().mesh().mesh_meta_data(), key() );
+    throw std::runtime_error( msg.str() );
+  }
+  m_mod_log = EntityLogModified;
+  m_bucket = NULL;
+}
+
+bool EntityImpl::destroy_relation( Entity& e_to )
+{
+  bool destroyed_relations = false;
+  for ( std::vector<Relation>::iterator i = m_relation.end() ;
+        i != m_relation.begin() ; ) {
+    --i ;
+    if ( i->entity() == & e_to ) {
+      i = m_relation.erase( i );
+      destroyed_relations = true;
+    }
+  }
+  return destroyed_relations;
+}
+
+bool EntityImpl::declare_relation( Entity & e_to,
+                                   const unsigned local_id,
+                                   unsigned sync_count,
+                                   bool is_converse )
+{
   const MetaData & meta_data = bucket().mesh().mesh_meta_data();
 
-  static const char method[] = "stk::mesh::impl::EntityImpl::declare_relation" ;
+  static const char method[] = "stk::mesh::impl::EntityImpl::declare_relation";
 
-  const Relation forward( e_to , local_id );
+  const Relation new_relation( e_to , local_id );
 
   const std::vector<Relation>::iterator fe = m_relation.end();
         std::vector<Relation>::iterator fi = m_relation.begin();
 
-  fi = std::lower_bound( fi , fe , forward , LessRelation() );
+  fi = std::lower_bound( fi , fe , new_relation , LessRelation() );
 
   // The ordering of the Relations allows for two situations that do
   // not arise often in meshes.  The first situation is 2 relations between
@@ -210,117 +235,53 @@ void EntityImpl::declare_relation( Entity & e_from,
   bool found_degenerate_relation = false;
   EntityKey  degenerate_key;
   if ( fi != fe )
-     {
-     bool  downstream = fi->entity_rank() < entity_rank();
-     if ( is_degenerate_relation ( forward , *fi ) && downstream )
-        {
-        found_degenerate_relation = true;
-        degenerate_key = fi->entity()->key();
-        }
-     }
+  {
+    bool  downstream = fi->entity_rank() < entity_rank();
+    if ( is_degenerate_relation ( new_relation , *fi ) && downstream )
+    {
+      found_degenerate_relation = true;
+      degenerate_key = fi->entity()->key();
+    }
+  }
   if ( fi != m_relation.begin() )
-     {
-     --fi;
-     bool  downstream = fi->entity_rank() < entity_rank();
-     if ( is_degenerate_relation ( forward , *fi ) && downstream )
-        {
-        found_degenerate_relation = true;
-        degenerate_key = fi->entity()->key();
-        }
-     ++fi;
-     }
-  if ( found_degenerate_relation )
-     {
-     std::ostringstream msg ;
-     msg << method << "( from " ;
-     print_entity_key( msg , meta_data, key() );
-     msg << " , to " ;
-     print_entity_key( msg , meta_data, e_to.key() );
-     msg << " , id " << local_id ;
-     msg << " ) FAILED ";
-     msg << " Relation already exists to " ;
-     print_entity_key( msg , meta_data, degenerate_key );
-     throw std::runtime_error( msg.str() );
-     }
-
-  // If the relation is not degenerate, we add it and its converse
-
-  if ( fe == fi || forward.attribute() != fi->attribute() ) {
-
-    // A new relation and its converse
-
-    const Relation converse( e_from , local_id );
-    const std::vector<Relation>::iterator ce = e_to.m_entityImpl.m_relation.end();
-          std::vector<Relation>::iterator ci = e_to.m_entityImpl.m_relation.begin();
-
-    ci = std::lower_bound( ci , ce , converse , LessRelation() );
-
-    if ( ce == ci || converse != *ci ) {
-      fi = m_relation.insert( fi , forward );
-      ci = e_to.m_entityImpl.m_relation.insert( ci , converse );
-
-      set_sync_count( sync_count );
-      e_to.m_entityImpl.set_sync_count( sync_count );
-
+  {
+    --fi;
+    bool  downstream = fi->entity_rank() < entity_rank();
+    if ( is_degenerate_relation ( new_relation , *fi ) && downstream )
+    {
+      found_degenerate_relation = true;
+      degenerate_key = fi->entity()->key();
     }
-    else {
-     /* this is unreachable unless a friend of bulk data creates a half-edge
-        in the relationship graph. */
-      std::ostringstream msg ;
-      msg << method << "( from "
-          << print_entity_key( msg , meta_data, key() )
-          << " , to "
-          << print_entity_key( msg , meta_data, e_to.key() )
-          << " , id " << local_id
-          << " ) FAILED"
-          << " Internal error - converse relation already exists" ;
-      throw std::runtime_error( msg.str() );
-    }
-
-    // This entity's owned-closure has changed.
-    e_to.m_entityImpl.log_modified();
-    log_modified();
+    ++fi;
   }
-}
-
-void EntityImpl::destroy_relation( Entity & e_to )
-{
-  bool caused_change = false;
-  for ( std::vector<Relation>::iterator
-        i = e_to.m_entityImpl.m_relation.end() ;
-        i != e_to.m_entityImpl.m_relation.begin() ; ) {
-    --i ;
-    if ( &(i->entity()->m_entityImpl) == this ) {
-      i = e_to.m_entityImpl.m_relation.erase( i );
-      caused_change = true;
-    }
-  }
-
-  for ( std::vector<Relation>::iterator
-        i = m_relation.end() ; i != m_relation.begin() ; ) {
-    --i ;
-    if ( i->entity() == & e_to ) {
-      i = m_relation.erase( i );
-      caused_change = true;
-    }
-  }
-
-  if ( caused_change ) {
-    e_to.m_entityImpl.log_modified();
-    log_modified();
-  }
-}
-
-void EntityImpl::log_resurrect()
-{
-  if ( EntityLogDeleted != m_mod_log ) {
-    std::ostringstream msg;
-    msg << "Trying to resurrect non-deleted entity: "
-        << print_entity_key( msg, bucket().mesh().mesh_meta_data(), key() );
+  if ( found_degenerate_relation && !is_converse )
+  {
+    std::ostringstream msg ;
+    msg << method << "( from " ;
+    print_entity_key( msg , meta_data, key() );
+    msg << " , to " ;
+    print_entity_key( msg , meta_data, e_to.key() );
+    msg << " , id " << local_id ;
+    msg << " ) FAILED ";
+    msg << " Relation already exists to " ;
+    print_entity_key( msg , meta_data, degenerate_key );
     throw std::runtime_error( msg.str() );
   }
-  m_mod_log = EntityLogModified;
-  m_bucket = NULL;
+
+  // If the relation is not degenerate, we add it
+
+  if ( ( !is_converse && (fe == fi || new_relation.attribute() != fi->attribute() ) ) ||
+       (is_converse && (fe == fi || new_relation != *fi ) ) ) {
+
+    fi = m_relation.insert( fi , new_relation );
+
+    set_sync_count( sync_count );
+
+    return true;
+  }
+  else {
+    return false;
+  }
 }
 
 } // namespace impl
