@@ -168,6 +168,17 @@
       <Email address="amesos-regression@software.sandia.gov"/>
     </EmailAddresses>
   </SubProject>
+  <SubProject name="Amesos2">
+    <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="ThreadPool" type="ILO"/>
+    <Dependency name="Kokkos" type="ILR"/>
+    <Dependency name="Epetra" type="ILO"/>
+    <Dependency name="Triutils" type="TO"/>
+    <Dependency name="Tpetra" type="LR"/>
+    <EmailAddresses>
+      <Email address="amesos2-regression@software.sandia.gov"/>
+    </EmailAddresses>
+  </SubProject>
   <SubProject name="Pamgen">
     <EmailAddresses>
       <Email address="pamgen-regression@software.sandia.gov"/>

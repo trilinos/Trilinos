@@ -72,6 +72,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   AztecOO               aztecoo                        PS
   Galeri                galeri                         PS
   Amesos                amesos                         PS
+  Amesos2               amesos2                        EX
   Pamgen                pamgen                         PS
   Ifpack                ifpack                         PS
   Komplex               komplex                        PS
