@@ -45,16 +45,15 @@
 #include <utility> // std::pair
 #include <vector>
 
-
 // #define TSQR_SEQ_TSQR_EXTRA_DEBUG 1
 
 #ifdef TSQR_SEQ_TSQR_EXTRA_DEBUG
 #  include <iostream>
+using std::cerr;
+using std::endl;
 
 template< class MatrixView >
 void view_print (const MatrixView& view) {
-  using std::cerr;
-  using std::endl;
   cerr << view.nrows() << ", " << view.ncols() << ", " << view.lda();
 }
 #endif // TSQR_SEQ_TSQR_EXTRA_DEBUG
@@ -593,7 +592,7 @@ namespace TSQR {
 
       LAPACK< LocalOrdinal, Scalar > lapack;
       MatView< LocalOrdinal, Scalar > R_view (ncols, ncols, R, ldr);
-      Matrix< LocalOrdinal, Scalar > B (R_view); // B := R
+      Matrix< LocalOrdinal, Scalar > B (R_view); // B := R (deep copy)
       MatView< LocalOrdinal, Scalar > U_view (ncols, ncols, U, ldu);
       Matrix< LocalOrdinal, Scalar > VT (ncols, ncols, Scalar(0));
 
@@ -650,6 +649,15 @@ namespace TSQR {
 		    U_view.get(), U_view.lda(), VT.get(), VT.lda(),
 		    &svd_work[0], svd_lwork, &svd_rwork[0], &svd_info);
 
+#ifdef TSQR_SEQ_TSQR_EXTRA_DEBUG
+      {
+      	cerr << "-- GESVD computed singular values:" << endl;
+      	for (int k = 0; k < ncols; ++k)
+      	  cerr << singular_values[k] << " ";
+      	cerr << endl;
+      }
+#endif // TSQR_SEQ_TSQR_EXTRA_DEBUG
+
       // GESVD computes singular values in decreasing order and they
       // are all nonnegative.  We know by now that ncols > 0.  "tol"
       // is a relative tolerance: relative to the largest singular
@@ -668,6 +676,14 @@ namespace TSQR {
 
       if (rank == ncols)
 	return rank; // Don't modify Q or R, if R is full rank.
+
+#ifdef TSQR_SEQ_TSQR_EXTRA_DEBUG
+      {
+	cerr << "Rank of B (i.e., R): " << rank << " < ncols=" << ncols << endl;
+	cerr << "Original R = " << endl;
+	print_local_matrix (cerr, ncols, ncols, R, ldr);
+      }
+#endif // TSQR_SEQ_TSQR_EXTRA_DEBUG
 
       //
       // R is not full rank.  
@@ -693,6 +709,14 @@ namespace TSQR {
 	  for (LocalOrdinal i = 0; i < ncols; ++i)
 	    R_j[i] = singular_values[i] * VT_j[i];
 	}
+
+#ifdef TSQR_SEQ_TSQR_EXTRA_DEBUG
+      {
+	cerr << "Resulting R = " << endl;
+	print_local_matrix (cerr, ncols, ncols, R, ldr);
+      }
+#endif // TSQR_SEQ_TSQR_EXTRA_DEBUG
+
       return rank;
     }
 

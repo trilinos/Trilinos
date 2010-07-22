@@ -917,19 +917,32 @@ testNormalize (RCP< OrthoManager< scalar_type, MV > > OM,
         numerr++;
         break;
       }
+      //
       // normalize() is only required to return a 
       // basis of rank "ret"
       // this is what we will test:
       //   the first "ret" columns in Scopy
       //   the first "ret" rows in B
       // get pointers to the parts that we want
+      //
+      // B_original will be used to ensure that the "original" B
+      // (before we take the first ret rows) doesn't go away.
+      RCP< serial_matrix_type > B_original; // mfh 22 Jul 2010
       if (ret < sizeS) {
         vector<int> ind(ret);
         for (int i=0; i<ret; i++) {
           ind[i] = i;
         }
         Scopy = MVT::CloneViewNonConst(*Scopy,ind);
+
+	std::cerr << "::: Resulting pre-subset B:" << std::endl;
+	TSQR::print_local_matrix (std::cerr, ret, sizeS, B->values(), B->stride());
+
+	B_original = B; // mfh 22 Jul 2010
         B = rcp( new serial_matrix_type(Teuchos::View,*B,ret,sizeS) );
+
+	std::cerr << "::: Resulting subset B:" << std::endl;
+	TSQR::print_local_matrix (std::cerr, ret, sizeS, B->values(), B->stride());
       }
 
       // test all outputs for correctness

@@ -62,7 +62,7 @@ bool sillyPowerMethod(
   typedef Teuchos::RCP<Thyra::VectorBase<Scalar> > VectorPtr;
 
   // Initialize
-  out << "\nStarting power method (target tolerrance = "<<tolerance<<") ...\n\n";
+  out << "\nStarting power method (target tolerance = "<<tolerance<<") ...\n\n";
   VectorPtr q = createMember(A.domain()), z = createMember(A.range()), r = createMember(A.range());
   Thyra::seed_randomize<Scalar>(0);
   Thyra::randomize( Scalar(-one), Scalar(+one), z.ptr() );
@@ -70,7 +70,7 @@ bool sillyPowerMethod(
   // Perform iterations
   for( int iter = 0; iter < maxNumIters; ++iter ) {
     const ScalarMag z_nrm = norm(*z);           // Compute natural norm of z
-    V_StV( q.ptr(), Scalar(one/z_nrm), *z );    // q = (1/||z}*z 
+    V_StV( q.ptr(), Scalar(one/z_nrm), *z );    // q = (1/||z||)*z 
     apply<Scalar>( A, NOTRANS , *q, z.ptr() );  // z = A*q
     *lambda = scalarProd(*q,*z);                // lambda = <q,z>
     if( iter%(maxNumIters/10) == 0 || iter+1 == maxNumIters ) {

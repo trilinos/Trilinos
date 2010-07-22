@@ -241,11 +241,10 @@ namespace Anasazi {
       // TSQR's rank-revealing part doesn't work unless B is provided.
       // If B is not provided, allocate a temporary B for use in TSQR.
       // If it is provided, adjust dimensions as necessary.
-      const bool B_is_null_on_input = (B == Teuchos::null);
-      if (B_is_null_on_input)
+      if (B == Teuchos::null)
 	B = Teuchos::rcp (new serial_matrix_type (ncols, ncols));
       else
-	B->reshape (ncols, ncols);
+	B->shape (ncols, ncols);
       //
       // Compute rank-revealing decomposition (in this case, TSQR of X
       // followed by SVD of the R factor and appropriate updating of
@@ -323,12 +322,15 @@ namespace Anasazi {
       // Fetch dimensions of X and Q.
       int nrows_X, ncols_X, num_Q_blocks, ncols_Q_total;
       checkProjectionDims (nrows_X, ncols_X, num_Q_blocks, ncols_Q_total, X, Q);
-      // Test for quick exit: any dimension of X is zero, or there are
-      // zero Q blocks, or the total number of columns of the Q blocks
-      // is zero.
-      if (nrows_X == 0 || ncols_X == 0 || num_Q_blocks == 0 || ncols_Q_total == 0)
+
+      // Test for quick exit: any dimension of X is zero.
+      if (nrows_X == 0 || ncols_X == 0)
 	return 0;
 
+      // If there are zero Q blocks or zero Q columns, just normalize!
+      if (num_Q_blocks == 0 || ncols_Q_total == 0)
+	return normalize (X, B);
+      
       // If we don't have enough C, expanding it creates null references.
       // If we have too many, resizing just throws away the later ones.
       // If we have exactly as many as we have Q, this call has no effect.
@@ -348,8 +350,8 @@ namespace Anasazi {
 	  newC[i] = Teuchos::rcp (new serial_matrix_type (*C[i]));
 	}
 
-      std::cerr << "Got past initialization of newC[0.." 
-		<< (num_Q_blocks-1) << "]" << std::endl;
+      // std::cerr << "Got past initialization of newC[0.." 
+      // 		<< (num_Q_blocks-1) << "]" << std::endl;
 
       // Keep track of the column norms of X, both before and after
       // each orthogonalization pass.
@@ -365,7 +367,7 @@ namespace Anasazi {
       // \li \f$X := X - Q_i \cdot C^{\text{new}}_i\f$
       rawProject (X, Q, newC);
 
-      std::cerr << "Got past rawProject(X,Q,newC)" << std::endl;
+      // std::cerr << "Got past rawProject(X,Q,newC)" << std::endl;
 
       // Update the C matrices:
       //
@@ -373,14 +375,14 @@ namespace Anasazi {
       for (int i = 0; i < num_Q_blocks; ++i)
 	*C[i] += *newC[i];
 
-      std::cerr << "Got past *C[i] += *newC[i]" << std::endl;
+      // std::cerr << "Got past *C[i] += *newC[i]" << std::endl;
 
       // Normalize the matrix X.
       if (B == Teuchos::null)
 	B = Teuchos::rcp (new serial_matrix_type (ncols_X, ncols_X));
       int rank = normalize (X, B);
 
-      std::cerr << "Got past normalize(X, B)" << std::endl;
+      // std::cerr << "Got past normalize(X, B)" << std::endl;
       
       // Compute post-first-pass (pre-normalization) norms, using B.
       // normalize() doesn't guarantee in general that B is upper
@@ -595,12 +597,8 @@ namespace Anasazi {
     {
       // Test for quick exit
       num_Q_blocks = Q.length();
-      if (num_Q_blocks == 0)
-	return;
       nrows_X = MVT::GetVecLength (X);
       ncols_X = MVT::GetNumberVecs (X);
-      if (nrows_X == 0 || ncols_X == 0)
-	return;
 
       //
       // Make sure that for each i, the dimensions of X and Q[i] are
@@ -618,6 +616,9 @@ namespace Anasazi {
 	}
     }
 
+
+    /// Like project(), but does no allocation of blocks of C, and
+    /// does no updating of newC (see project() for details).
     void
     rawProject (MV& X, 
 		const_prev_mvs_type Q,

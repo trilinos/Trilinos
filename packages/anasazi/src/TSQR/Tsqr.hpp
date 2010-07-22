@@ -426,6 +426,11 @@ namespace TSQR {
       
       if (rank < ncols)
 	{
+	  // cerr << ">>> Rank of R: " << rank << " < ncols=" << ncols << endl;
+	  // cerr << ">>> Resulting U:" << endl;
+	  // print_local_matrix (cerr, ncols, ncols, R, ldr);
+	  // cerr << endl;
+
 	  // If R is not full rank: reveal_R_rank() already computed
 	  // the SVD \f$R = U \Sigma V^*\f$ of (the input) R, and
 	  // overwrote R with \f$\Sigma V^*\f$.  Now, we compute \f$Q
