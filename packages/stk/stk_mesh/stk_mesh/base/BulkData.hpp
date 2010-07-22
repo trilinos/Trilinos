@@ -395,8 +395,8 @@ private:
 
   void internal_update_distributed_index( std::vector<Entity*> & shared_new );
 
-  void internal_resolve_parallel_delete(
-    const std::vector<Entity*> & del_entities );
+  void internal_resolve_parallel_modify_delete(
+    const std::vector<Entity*> & del_or_mod_entities );
 
   void internal_resolve_parallel_create();
 

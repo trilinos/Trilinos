@@ -201,29 +201,29 @@ void BulkData::internal_update_distributed_index(
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
-void BulkData::internal_resolve_parallel_delete(
-  const std::vector<Entity*> & del_entities )
+void BulkData::internal_resolve_parallel_modify_delete(
+  const std::vector<Entity*> & del_or_mod_entities )
 {
-  // 'del_entities' is guaranteed unique and sorted
+  // 'del_or_mod_entities' is guaranteed unique and sorted
 
   const size_t ghosting_count = m_ghosting.size();
 
   std::vector<int> local_flags(  ghosting_count , 0 );
   std::vector<int> global_flags( ghosting_count , 0 );
-  std::vector<EntityProcState> del_entities_remote ;
+  std::vector<EntityProcState> del_or_mod_entities_remote ;
 
-  bool global_delete_flag =
-    send_to_shared_and_ghost_recv( *this, del_entities, del_entities_remote );
+  bool global_del_or_mod_flag =
+    send_to_shared_and_ghost_recv( *this, del_or_mod_entities, del_or_mod_entities_remote );
 
-  if ( global_delete_flag ) {
-    // At least one process has deleted an entity that is
-    // not owned, shared, or ghosted.
+  if ( global_del_or_mod_flag ) {
+    // At least one process has deleted or modified an entity that it owns/shares
 
-    // Clear communication lists of remotely deleted entities:
+    // Clear communication lists of remotely deleted shared entities AND
+    // remotely deleted|modified ghosted entities
 
-    for ( ; ! del_entities_remote.empty() ; del_entities_remote.pop_back() ) {
-      Entity *       entity = del_entities_remote.back().entity_proc.first ;
-      const unsigned proc   = del_entities_remote.back().entity_proc.second ;
+    for ( ; ! del_or_mod_entities_remote.empty() ; del_or_mod_entities_remote.pop_back() ) {
+      Entity *       entity = del_or_mod_entities_remote.back().entity_proc.first ;
+      const unsigned proc   = del_or_mod_entities_remote.back().entity_proc.second ;
       const bool     destroyed = entity->marked_for_destruction();
       const bool     remote_owner = entity->owner_rank() == proc ;
       const bool     shared = in_shared( *entity , proc );
@@ -284,10 +284,10 @@ void BulkData::internal_resolve_parallel_delete(
       }
     }
 
-    // Clear communication list of locally deleted entities:
+    // Clear communication list of locally deleted or modified entities:
 
     for ( std::vector<Entity*>::const_iterator
-          i = del_entities.end() ; i != del_entities.begin() ; ) {
+          i = del_or_mod_entities.end() ; i != del_or_mod_entities.begin() ; ) {
 
       Entity * entity = *--i ;
       const bool shared = in_shared( *entity );
@@ -295,8 +295,8 @@ void BulkData::internal_resolve_parallel_delete(
       if ( shared ) {
         const unsigned new_owner = determine_new_owner( *entity );
 
-        m_entity_repo.set_entity_owner_rank( *entity, new_owner);
-        m_entity_repo.set_entity_sync_count( *entity, m_sync_count);
+        m_entity_repo.set_entity_owner_rank( *entity, new_owner );
+        m_entity_repo.set_entity_sync_count( *entity, m_sync_count );
       }
 
       for ( PairIterEntityComm ec = entity->comm() ; ! ec.empty() ; ++ec ) {
@@ -558,10 +558,13 @@ bool BulkData::internal_modification_end( bool regenerate_aura )
 
   resolve_modified_shared( *this );
 
+  // Compute global counts of the number of created and deleted|modified
+  // entities.
+
   int local_change_count[2] = { 0 , 0 };
   int global_change_count[2] = { 0 , 0 };
 
-  std::vector<Entity*> del_entities ;
+  std::vector<Entity*> del_or_mod_entities ;
 
   for ( impl::EntityRepository::iterator
         i = m_entity_repo.begin() ; i != m_entity_repo.end() ; ++i ) {
@@ -570,7 +573,7 @@ bool BulkData::internal_modification_end( bool regenerate_aura )
       ++ local_change_count[0] ; // Created
     }
     else if ( entity->marked_for_destruction() ) {
-      del_entities.push_back( entity );
+      del_or_mod_entities.push_back( entity );
       ++ local_change_count[1] ; // Deleted
     }
   }
@@ -580,7 +583,7 @@ bool BulkData::internal_modification_end( bool regenerate_aura )
 
   if ( global_change_count[0] || global_change_count[1] ) {
 
-    internal_resolve_parallel_delete( del_entities );
+    internal_resolve_parallel_modify_delete( del_or_mod_entities );
     internal_resolve_parallel_create();
   }
 
