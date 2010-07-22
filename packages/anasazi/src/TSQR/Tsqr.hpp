@@ -422,7 +422,7 @@ namespace TSQR {
       //
       Matrix< LocalOrdinal, Scalar > U (ncols, ncols, Scalar(0));
       const LocalOrdinal rank = 
-	reveal_R_rank (ncols, R, ldr, U.get(), U.ldu(), tol);
+	reveal_R_rank (ncols, R, ldr, U.get(), U.lda(), tol);
       
       if (rank < ncols)
 	{

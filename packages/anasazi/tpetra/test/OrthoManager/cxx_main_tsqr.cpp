@@ -53,57 +53,91 @@
 #include <complex>
 #include <stdexcept>
 
+#include "Kokkos_SerialNode.hpp"
+#ifdef HAVE_KOKKOS_TBB
+#include "Kokkos_TBBNode.hpp"
+#endif
+
 using namespace Anasazi;
 using namespace Teuchos;
 
-using Tpetra::Operator;
-using Tpetra::CrsMatrix;
-using Tpetra::Map;
-using Tpetra::MultiVector;
 using std::cout;
 using std::endl;
 using std::vector;
 
-typedef double                              ST;
-typedef ScalarTraits< ST >                 SCT;
-typedef SCT::magnitudeType                  MT;
-typedef MultiVector< ST, int >              MV;
-typedef Operator< ST, int >                 OP;
-typedef MultiVecTraits< ST, MV >           MVT;
-typedef OperatorTraits< ST, MV, OP >       OPT;
+typedef double                                                  scalar_type;
+typedef ScalarTraits< scalar_type >                             SCT;
+typedef SCT::magnitudeType                                      magnitude_type;
+typedef Kokkos::SerialNode                                      node_type;
+typedef Tpetra::MultiVector< scalar_type, int, int, node_type > MV;
+typedef Tpetra::Operator< scalar_type, int, int, node_type >    OP;
+typedef MultiVecTraits< scalar_type, MV >                       MVT;
+typedef OperatorTraits< scalar_type, MV, OP >                   OPT;
+typedef SerialDenseMatrix< int, scalar_type >                   serial_matrix_type;
+typedef Tpetra::Map< int, int, node_type >                      map_type;
+typedef Tpetra::CrsMatrix< scalar_type, int, int, node_type >   sparse_matrix_type;
 
-typedef SerialDenseMatrix< int, ST > serial_matrix_type;
+////////////////////////////////////////////////////////////////////////////////
+
+template <class NODE>
+RCP< NODE > 
+getNode() {
+  TEST_FOR_EXCEPTION(true, std::logic_error, "Node type not defined.");
+}
+
+RCP<Kokkos::SerialNode> serialnode;
+template <>
+RCP< Kokkos::SerialNode > getNode< Kokkos::SerialNode >() {
+  ParameterList pl;
+  if (serialnode == null) {
+    serialnode = rcp (new Kokkos::SerialNode (pl));
+  }
+  return serialnode;
+}
+
+#ifdef HAVE_KOKKOS_TBB
+int tbb_nT = 0;
+RCP< Kokkos::TBBNode > tbbnode;
+template <>
+RCP< Kokkos::TBBNode > getNode< Kokkos::TBBNode >() {
+  if (tbbnode == null) {
+    ParameterList pl;
+    tbbnode = rcp (new Kokkos::TBBNode(pl));
+  }
+  return tbbnode;
+}
+#endif
 
 // this is the tolerance that all tests are performed against
-const MT TOL = 1.0e-12;
-const MT ATOL = 10;
+const magnitude_type TOL = 1.0e-12;
+const magnitude_type ATOL = 10;
 
 // declare an output manager for handling local output
-RCP< Anasazi::BasicOutputManager<ST> > MyOM;
+RCP< Anasazi::BasicOutputManager<scalar_type> > MyOM;
 
 ////////////////////////////////////////////////////////////////////////////////
 // Some forward declarations
 ////////////////////////////////////////////////////////////////////////////////
 
 static int 
-testProject (RCP<OrthoManager<ST,MV> > OM, 
+testProject (RCP<OrthoManager<scalar_type,MV> > OM, 
 	     RCP<const MV> S, 
 	     RCP<const MV> X1, 
 	     RCP<const MV> X2);
 
 static int 
-testNormalize (RCP<OrthoManager<ST,MV> > OM, 
+testNormalize (RCP<OrthoManager<scalar_type,MV> > OM, 
 	       RCP<const MV> S);
 
 static int 
-testProjectAndNormalize (RCP<OrthoManager<ST,MV> > OM, 
+testProjectAndNormalize (RCP<OrthoManager< scalar_type ,MV > > OM, 
 			 RCP<const MV> S, 
 			 RCP<const MV> X1, 
 			 RCP<const MV> X2);
 
 /// Compute and return $\sum_{j=1}^n \| X(:,j) - Y(:,j) \|_2$, where
 /// $n$ is the number of columns in X.
-static MT 
+static magnitude_type 
 MVDiff (const MV& X, 
 	const MV& Y);
 
@@ -130,6 +164,7 @@ printValidOrthoManagerList ()
 		      "Invalid number " 
 		      << numValidOrthoManagers 
 		      << " of OrthoManager command-line options" );
+  std::ostringstream os;
   if (numValidOrthoManagers > 1)
     {
       for (int k = 0; k < numValidOrthoManagers - 1; ++k)
@@ -137,6 +172,7 @@ printValidOrthoManagerList ()
       os << "or ";
     }
   os << "\"" << validOrthoManagers[numValidOrthoManagers-1] << "\"";
+  return os.str();
 }
 static std::string
 defaultOrthoManagerName () { return std::string("Tsqr"); }
@@ -146,35 +182,38 @@ defaultOrthoManagerName () { return std::string("Tsqr"); }
 /// Instantiate and return an RCP to the specified OrthoManager
 /// subclass.
 ///
-static RCP< OrthoManager<ST,MV> >
-getOrthoManager (const std::string& ortho)
+static RCP< OrthoManager<scalar_type,MV> >
+getOrthoManager (const std::string& ortho, 
+		 const RCP< sparse_matrix_type >& M)
 {
-    if (ortho == "SVQB") {
-      return rcp (new SVQBOrthoManager<ST,MV,OP>(M));
-    }
-    else if (ortho == "Basic" || ortho == "basic") {
-      return rcp (new BasicOrthoManager<ST,MV,OP>(M));
-    }
-    else if (ortho == "ICGS") {
-      return rcp (new ICGSOrthoManager<ST,MV,OP>(M));
-    }
-    else if (ortho == "Tsqr" || ortho == "TSQR") {
-      return rcp (new TsqrMatOrthoManager< ST, MV, OP > (M));
-    }
-    else {
-      TEST_FOR_EXCEPTION( true, std::invalid_argument, 
-			  "Invalid value for command-line parameter \"ortho\":"
-			  " valid values are " << printValidOrthoManagerList() 
-			  << "." );
-    }
+  ParameterList tsqrParams;
+
+  if (ortho == "SVQB") {
+    return rcp (new SVQBOrthoManager<scalar_type,MV,OP>(M));
+  }
+  else if (ortho == "Basic" || ortho == "basic") {
+    return rcp (new BasicOrthoManager<scalar_type,MV,OP>(M));
+  }
+  else if (ortho == "ICGS") {
+    return rcp (new ICGSOrthoManager<scalar_type,MV,OP>(M));
+  }
+  else if (ortho == "Tsqr" || ortho == "TSQR") {
+    return rcp (new TsqrMatOrthoManager< scalar_type, MV, OP > (tsqrParams, M));
+  }
+  else {
+    TEST_FOR_EXCEPTION( true, std::invalid_argument, 
+			"Invalid value for command-line parameter \"ortho\":"
+			" valid values are " << printValidOrthoManagerList() 
+			<< "." );
+  }
 }
 
 
 int 
 main (int argc, char *argv[]) 
 {
-  const ST ONE = SCT::one();
-  const MT ZERO = SCT::magnitude(SCT::zero());
+  const scalar_type ONE = SCT::one();
+  const magnitude_type ZERO = SCT::magnitude(SCT::zero());
   GlobalMPISession mpisess(&argc,&argv,&std::cout);
 
   int info = 0;
@@ -211,11 +250,11 @@ main (int argc, char *argv[])
       os << "OrthoManager subclass to test.  There ";
       if (numValidOrthoManagers > 1)
 	os << "are " << numValidOrthoManagers << "options: ";
-      else {
+      else
 	os << "is " << numValidOrthoManagers << "option: ";
-      }
+
       os << printValidOrthoManagerList() << ".";
-      cmdp.setOption ("ortho", &ortho, os.str());
+      cmdp.setOption ("ortho", &ortho, os.str().c_str());
     }
     cmdp.setOption ("numRows", &numRows, 
 		    "Controls the number of rows of the test "
@@ -233,15 +272,15 @@ main (int argc, char *argv[])
     if (debug) 
       verbose = true;
     
-    MyOM = rcp( new BasicOutputManager<ST>() );
+    MyOM = rcp( new BasicOutputManager<scalar_type>() );
     if (verbose) {
       // output in this driver will be sent to Anasazi::Warnings
       MyOM->setVerbosity(Anasazi::Warnings);
     }
     MyOM->stream(Anasazi::Warnings) << Anasazi_Version() << endl << endl;
 
-    RCP<Map<int> > map;
-    RCP<CrsMatrix<ST,int> > M;
+    RCP< map_type > map;
+    RCP< sparse_matrix_type > M;
     if (filename != "") 
       {
 	int numCols = 0;
@@ -289,7 +328,7 @@ main (int argc, char *argv[])
 	    }
 	    return -1;
 	  }
-	else if (numRows != numcols)
+	else if (numRows != numCols)
 	  {
 	    if (MyPID == 0) {
 	      cout << "Test matrix in Harwell-Boeing sparse matrix file '" 
@@ -314,8 +353,8 @@ main (int argc, char *argv[])
     
 	// Create Tpetra::Map to represent multivectors in the range of
 	// the sparse matrix.
-	map = rcp (new Map<int> (numRows, 0, comm));
-	M = rcp (new CrsMatrix<ST,int> (map, rnnzmax));
+	map = rcp (new map_type (numRows, 0, comm, Tpetra::GloballyDistributed, getNode< Kokkos::SerialNode >()));
+	M = rcp (new sparse_matrix_type (map, rnnzmax));
 
 	if (MyPID == 0) 
 	  {
@@ -323,7 +362,7 @@ main (int argc, char *argv[])
 	    // column, one-indexed) to CrsMatrix format (compressed
 	    // sparse row, zero-index).  We do this by iterating over
 	    // all the columns of the matrix.
-	    const int curNonzeroIndex = 0;
+	    int curNonzeroIndex = 0;
 	    for (int c = 0; c < numCols; ++c) 
 	      {
 		for (int colnnz = 0; colnnz < colptr[c+1] - colptr[c]; ++colnnz) 
@@ -332,7 +371,7 @@ main (int argc, char *argv[])
 		    // Column index: c
 		    // Value to insert there: *dptr
 		    const int curGlobalRowIndex = rowind[curNonzeroIndex] - 1;
-		    const ST curValue = dvals[curNonzeroIndex];
+		    const scalar_type curValue = dvals[curNonzeroIndex];
 		    M->insertGlobalValues (curGlobalRowIndex, 
 					   tuple (c), 
 					   tuple (curValue));
@@ -356,14 +395,14 @@ main (int argc, char *argv[])
     else {
       // Let M remain null, and allocate map using the number of rows
       // (numRows) specified on the command line.
-      map = rcp (new Map<int> (numRows, 0, comm));
+      map = rcp (new map_type (numRows, 0, comm, Tpetra::GloballyDistributed, getNode< Kokkos::SerialNode >()));
     }
     
     // Instantiate the specified OrthoManager subclass for testing.
-    RCP< OrthoManager<ST,MV> > OM = getOrthoManager (ortho);
+    RCP< OrthoManager< scalar_type, MV > > OM = getOrthoManager (ortho, M);
 
     // "Prototype" multivector, from which to clone other multivectors.
-    RCP< MV > S = rcp (new MultiVector< ST, int > (map, sizeS));
+    RCP< MV > S = rcp (new MV (map, sizeS));
 
     // Create multivectors X1 and X2, using the same map as
     // multivector S.  X1 and X2 must be M-orthonormal and mutually
@@ -372,8 +411,7 @@ main (int argc, char *argv[])
     RCP< MV > X1 = MVT::Clone (*S, sizeX1);
     RCP< MV > X2 = MVT::Clone (*S, sizeX2);
     {
-      int dummy;
-      MT err;
+      magnitude_type err;
 
       //
       // Fill X1 with random values, and test the normalization error.
@@ -559,15 +597,15 @@ main (int argc, char *argv[])
 
 
 static int 
-testProjectAndNormalize (RCP< OrthoManager< ST, MV > > OM, 
+testProjectAndNormalize (RCP< OrthoManager< scalar_type, MV > > OM, 
 			 RCP< const MV > S, 
 			 RCP< const MV > X1, 
 			 RCP< const MV > X2) 
 {
   typedef Array< RCP< MV > >::size_type size_type;
 
-  const ST ONE = SCT::one();
-  const MT ZERO = SCT::magnitude(SCT::zero());
+  const scalar_type ONE = SCT::one();
+  const magnitude_type ZERO = SCT::magnitude(SCT::zero());
   const int sizeS = MVT::GetNumberVecs(*S);
   const int sizeX1 = MVT::GetNumberVecs(*X1);
   const int sizeX2 = MVT::GetNumberVecs(*X2);
@@ -608,11 +646,11 @@ testProjectAndNormalize (RCP< OrthoManager< ST, MV > > OM,
 
   // test ortho error before orthonormalizing
   if (X1 != null) {
-    MT err = OM->orthogError(*S,*X1);
+    magnitude_type err = OM->orthogError(*S,*X1);
     sout << "   || <S,X1> || before     : " << err << endl;
   }
   if (X2 != null) {
-    MT err = OM->orthogError(*S,*X2);
+    magnitude_type err = OM->orthogError(*S,*X2);
     sout << "   || <S,X2> || before     : " << err << endl;
   }
 
@@ -754,7 +792,7 @@ testProjectAndNormalize (RCP< OrthoManager< ST, MV > > OM,
       for (size_type o=0; o<S_outs.size(); o++) {
         // S^T M S == I
         {
-          MT err = OM->orthonormError(*S_outs[o]);
+          magnitude_type err = OM->orthonormError(*S_outs[o]);
           if (err > TOL) {
             sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
             numerr++;
@@ -771,7 +809,7 @@ testProjectAndNormalize (RCP< OrthoManager< ST, MV > > OM,
               MVT::MvTimesMatAddMv(ONE,*X2,*C_outs[o][1],ONE,*tmp);
             }
           }
-          MT err = MVDiff(*tmp,*S);
+          magnitude_type err = MVDiff(*tmp,*S);
           if (err > ATOL*TOL) {
             sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
             numerr++;
@@ -780,7 +818,7 @@ testProjectAndNormalize (RCP< OrthoManager< ST, MV > > OM,
         }
         // <X1,S> == 0
         if (theX.size() > 0 && theX[0] != null) {
-          MT err = OM->orthogError(*theX[0],*S_outs[o]);
+          magnitude_type err = OM->orthogError(*theX[0],*S_outs[o]);
           if (err > TOL) {
             sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
             numerr++;
@@ -789,7 +827,7 @@ testProjectAndNormalize (RCP< OrthoManager< ST, MV > > OM,
         }
         // <X2,S> == 0
         if (theX.size() > 1 && theX[1] != null) {
-          MT err = OM->orthogError(*theX[1],*S_outs[o]);
+          magnitude_type err = OM->orthogError(*theX[1],*S_outs[o]);
           if (err > TOL) {
             sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
             numerr++;
@@ -818,12 +856,12 @@ testProjectAndNormalize (RCP< OrthoManager< ST, MV > > OM,
 
 
 static int 
-testNormalize (RCP< OrthoManager< ST, MV > > OM, 
+testNormalize (RCP< OrthoManager< scalar_type, MV > > OM, 
 	       RCP< const MV > S)
 {
 
-  const ST ONE = SCT::one();
-  const MT ZERO = SCT::magnitude(SCT::zero());
+  const scalar_type ONE = SCT::one();
+  const magnitude_type ZERO = SCT::magnitude(SCT::zero());
   const int sizeS = MVT::GetNumberVecs(*S);
   int numerr = 0;
   std::ostringstream sout;
@@ -890,7 +928,7 @@ testNormalize (RCP< OrthoManager< ST, MV > > OM,
       // test all outputs for correctness
       // S^T M S == I
       {
-        MT err = OM->orthonormError(*Scopy);
+        magnitude_type err = OM->orthonormError(*Scopy);
         if (err > TOL) {
           sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
           numerr++;
@@ -901,7 +939,7 @@ testNormalize (RCP< OrthoManager< ST, MV > > OM,
       {
         RCP<MV> tmp = MVT::Clone(*S,sizeS);
         MVT::MvTimesMatAddMv(ONE,*Scopy,*B,ZERO,*tmp);
-        MT err = MVDiff(*tmp,*S);
+        magnitude_type err = MVDiff(*tmp,*S);
         if (err > ATOL*TOL) {
           sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
           numerr++;
@@ -928,14 +966,14 @@ testNormalize (RCP< OrthoManager< ST, MV > > OM,
 
 
 static int 
-testProject (RCP< OrthoManager< ST, MV > > OM, 
+testProject (RCP< OrthoManager< scalar_type, MV > > OM, 
 	     RCP< const MV > S, 
 	     RCP< const MV > X1, 
 	     RCP< const MV > X2) 
 {
   typedef Array< RCP< MV > >::size_type size_type;
 
-  const ST ONE = SCT::one();
+  const scalar_type ONE = SCT::one();
   const int sizeS = MVT::GetNumberVecs(*S);
   const int sizeX1 = MVT::GetNumberVecs(*X1);
   const int sizeX2 = MVT::GetNumberVecs(*X2);
@@ -976,11 +1014,11 @@ testProject (RCP< OrthoManager< ST, MV > > OM,
 
   // test ortho error before orthonormalizing
   if (X1 != null) {
-    MT err = OM->orthogError(*S,*X1);
+    magnitude_type err = OM->orthogError(*S,*X1);
     sout << "   || <S,X1> || before     : " << err << endl;
   }
   if (X2 != null) {
-    MT err = OM->orthogError(*S,*X2);
+    magnitude_type err = OM->orthogError(*S,*X2);
     sout << "   || <S,X2> || before     : " << err << endl;
   }
 
@@ -1077,7 +1115,7 @@ testProject (RCP< OrthoManager< ST, MV > > OM,
               MVT::MvTimesMatAddMv(ONE,*X2,*C_outs[o][1],ONE,*tmp);
             }
           }
-          MT err = MVDiff(*tmp,*S);
+          magnitude_type err = MVDiff(*tmp,*S);
           if (err > ATOL*TOL) {
             sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
             numerr++;
@@ -1086,7 +1124,7 @@ testProject (RCP< OrthoManager< ST, MV > > OM,
         }
         // <X1,S> == 0
         if (theX.size() > 0 && theX[0] != null) {
-          MT err = OM->orthogError(*theX[0],*S_outs[o]);
+          magnitude_type err = OM->orthogError(*theX[0],*S_outs[o]);
           if (err > TOL) {
             sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
             numerr++;
@@ -1095,7 +1133,7 @@ testProject (RCP< OrthoManager< ST, MV > > OM,
         }
         // <X2,S> == 0
         if (theX.size() > 1 && theX[1] != null) {
-          MT err = OM->orthogError(*theX[1],*S_outs[o]);
+          magnitude_type err = OM->orthogError(*theX[1],*S_outs[o]);
           if (err > TOL) {
             sout << "         vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
             numerr++;
@@ -1116,7 +1154,7 @@ testProject (RCP< OrthoManager< ST, MV > > OM,
           // don't need to check C_outs either
           //   
           // check that S_outs[o1] == S_outs[o2]
-          MT err = MVDiff(*S_outs[o1],*S_outs[o2]);
+          magnitude_type err = MVDiff(*S_outs[o1],*S_outs[o2]);
           if (err > TOL) {
             sout << "    vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv         tolerance exceeded! test failed!" << endl;
             numerr++;
@@ -1143,11 +1181,11 @@ testProject (RCP< OrthoManager< ST, MV > > OM,
 
 
 
-static MT 
+static magnitude_type 
 MVDiff (const MV& X, 
 	const MV& Y) 
 {
-  const ST ONE = SCT::one();
+  const scalar_type ONE = SCT::one();
   const int ncols_X = MVT::GetNumberVecs(X);
   TEST_FOR_EXCEPTION( (MVT::GetNumberVecs(Y) != ncols_X),
 		      std::logic_error,
@@ -1165,7 +1203,7 @@ MVDiff (const MV& X,
 
   // Compute and return $\sum_{j=1}^n \| X(:,j) - Y(:,j) \|_2$, where
   // $n$ is the number of columns in X.
-  MT err (0);
+  magnitude_type err (0);
   for (int i = 0; i < ncols_X; ++i)
     err += SCT::magnitude (C(i,i));
 

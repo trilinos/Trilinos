@@ -15,14 +15,11 @@ IF (${PACKAGE_NAME}_ENABLE_Triutils)
     SOURCE_FILES mhd1280b.cua
     EXEDEPS Tpetra_OrthoManager_Complex_test
     )
-ENDIF()
 
-IF (${PACKAGE_NAME}_ENABLE_Triutils)
   PACKAGE_ADD_EXECUTABLE_AND_TEST(
-    Tpetra_OrthoManager_Tsqr_test
+    Tpetra_OrthoManager_Real_Tsqr_test
     SOURCES cxx_main_tsqr.cpp 
     ARGS 
     COMM serial mpi
     )
-
 ENDIF()

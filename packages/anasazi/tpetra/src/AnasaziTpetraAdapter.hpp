@@ -150,7 +150,7 @@ namespace Anasazi {
                                  Scalar beta, Tpetra::MultiVector<Scalar,LO,GO,Node>& mv )
     {
       // create local map
-      Tpetra::Map<LO,GO,Node> LocalMap(B.numRows(), 0, A.getMap()->getComm(), Tpetra::LocallyReplicated);
+      Tpetra::Map<LO,GO,Node> LocalMap(B.numRows(), 0, A.getMap()->getComm(), Tpetra::LocallyReplicated, A.getMap()->getNode());
       // encapsulate Teuchos::SerialDenseMatrix data in ArrayView
       Teuchos::ArrayView<const Scalar> Bvalues(B.values(),B.stride()*B.numCols());
       // create locally replicated MultiVector with a copy of this data
@@ -173,7 +173,7 @@ namespace Anasazi {
     static void MvTransMv( Scalar alpha, const Tpetra::MultiVector<Scalar,LO,GO,Node>& A, const Tpetra::MultiVector<Scalar,LO,GO,Node>& mv, Teuchos::SerialDenseMatrix<int,Scalar>& B)
     { 
       // create local map
-      Tpetra::Map<LO,GO,Node> LocalMap(B.numRows(), 0, A.getMap()->getComm(), Tpetra::LocallyReplicated);
+      Tpetra::Map<LO,GO,Node> LocalMap(B.numRows(), 0, A.getMap()->getComm(), Tpetra::LocallyReplicated, mv.getMap()->getNode());
       // create local multivector to hold the result
       Tpetra::MultiVector<Scalar,LO,GO,Node> B_mv(Teuchos::rcpFromRef(LocalMap),B.numCols(),true);
       // multiply result into local multivector

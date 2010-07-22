@@ -29,6 +29,8 @@
 #ifndef __TSQR_Tsqr_Lapack_hpp
 #define __TSQR_Tsqr_Lapack_hpp
 
+#include "Tsqr_ScalarTraits.hpp"
+
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -37,6 +39,12 @@ namespace TSQR {
   template< class Ordinal, class Scalar >
   class LAPACK {
   public:
+    typedef Ordinal ordinal_type;
+    typedef Scalar scalar_type;
+    /// The type of the absolute value (or magnitude, if Scalar is
+    /// complex) of a Scalar.
+    typedef typename ScalarTraits< Scalar >::magnitude_type magnitude_type;
+
     LAPACK () {}
 
     /// Whether or not the QR factorizations computed by LAPACK::GEQRF()
@@ -142,6 +150,23 @@ namespace TSQR {
 	   int iseed[],
 	   const Ordinal n,
 	   Scalar x[]);
+
+    void 
+    GESVD (const char* const jobu,
+	   const char* const jobvt,
+	   const Ordinal m,
+	   const Ordinal n,
+	   Scalar A[],
+	   const Ordinal lda,
+	   magnitude_type s[],
+	   Scalar U[],
+	   const Ordinal ldu,
+	   Scalar VT[],
+	   const Ordinal ldvt,
+	   Scalar work[],
+	   const Ordinal lwork,
+	   magnitude_type rwork[],
+	   int* const INFO);
 
   private:
     LAPACK (const LAPACK&);

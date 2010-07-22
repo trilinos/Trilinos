@@ -532,7 +532,7 @@ namespace TSQR {
 
       // Take the easy exit if available.
       if (ncols == 0 || nrows == 0)
-	return 0;
+	return;
 
       // Compute Q := Q*B by iterating through cache blocks of Q.
       // This iteration works much like iteration through cache blocks

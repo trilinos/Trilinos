@@ -226,7 +226,7 @@ namespace Anasazi {
 
     int 
     normalize (MV& X,
-	       serial_matrix_ptr B = Teuchos::null) const
+	       serial_matrix_ptr B = Teuchos::null)
     {
       // Internal data used by this method require a specific MV
       // object for initialization (e.g., to get a Map / communicator,
@@ -234,9 +234,8 @@ namespace Anasazi {
       // "lazy") initialization until we get an X.
       lazyInit (X);
       
-      // MVT returns int for these two quantities, even though
-      // local_ordinal_type of the MV may be some other type.
-      const int nrows = MVT::GetVecLength (X);
+      // MVT returns int for this, even though the local_ordinal_type
+      // of the MV may be some other type.
       const int ncols = MVT::GetNumberVecs (X);
 
       // TSQR's rank-revealing part doesn't work unless B is provided.
@@ -261,8 +260,8 @@ namespace Anasazi {
 	typedef typename tsqr_adaptor_type::factor_output_type 
 	  factor_output_type;
 	factor_output_type factorOutput = tsqrAdaptor_->factor (X, *B);
-	tsqrAdaptor_->explicitQ (X, factorOutput, Q_);
-	rank = tsqrAdaptor_->revealRank (Q_, B, relativeRankTolerance());
+	tsqrAdaptor_->explicitQ (X, factorOutput, *Q_);
+	rank = tsqrAdaptor_->revealRank (*Q_, *B, relativeRankTolerance());
       } catch (std::exception& e) {
 	throw OrthoError (e.what());
       }
@@ -281,8 +280,9 @@ namespace Anasazi {
 	      for (int j = 0; j < ncolsToFill; ++j)
 		fillIndices[j] = j + rank;
 
-	      mv_ptr Q_null = MVT::CloneViewNonConst (Q_, fillIndices);
+	      mv_ptr Q_null = MVT::CloneViewNonConst (*Q_, fillIndices);
 	      MVT::MvRandom (*Q_null);
+	      // Done with Q_null; tell Teuchos to deallocate it.
 	      Q_null = Teuchos::null;
 	    }
 	}
@@ -298,7 +298,7 @@ namespace Anasazi {
       // MVT doesn't state the aliasing rules for MvAddMv(), but I'm
       // guessing it's OK for B and mv to alias one another (that is
       // the way AXPY works in the BLAS).
-      MVT::MvAddMv (ScalarType(1), Q_, ScalarType(0), X, X);
+      MVT::MvAddMv (ScalarType(1), *Q_, ScalarType(0), X, X);
 
       // Don't deallocate B, even if the user provided Teuchos::null
       // as the B input (or the default B input took over).  The RCP's
@@ -310,8 +310,9 @@ namespace Anasazi {
     int 
     projectAndNormalize (MV &X,
 			 const_prev_mvs_type Q,
-			 prev_coeffs_type C = Teuchos::tuple (serial_matrix_ptr (Teuchos::null)),
-			 serial_matrix_ptr B = Teuchos::null) const
+			 prev_coeffs_type C
+			 = Teuchos::tuple (serial_matrix_ptr (Teuchos::null)),
+			 serial_matrix_ptr B = Teuchos::null)
     {
       // if (_hasOp || _Op != Teuchos::null)
       // 	throw NonNullOperatorError();
@@ -326,7 +327,7 @@ namespace Anasazi {
       // zero Q blocks, or the total number of columns of the Q blocks
       // is zero.
       if (nrows_X == 0 || ncols_X == 0 || num_Q_blocks == 0 || ncols_Q_total == 0)
-	return;
+	return 0;
 
       // If we don't have enough C, expanding it creates null references.
       // If we have too many, resizing just throws away the later ones.
@@ -444,10 +445,12 @@ namespace Anasazi {
 	  if (throwOnReorthogFault_)
 	    {
 	      using std::endl;
+	      typedef std::vector<int>::size_type size_type;
 	      std::ostringstream os;
+
 	      os << "Orthogonalization fault at the following column(s) of X:" << endl;
 	      os << "Column\tNorm decrease factor" << endl;
-	      for (int k = 0; k < faultIndices.size(); ++k)
+	      for (size_type k = 0; k < faultIndices.size(); ++k)
 		{
 		  const int index = faultIndices[k];
 		  const MagnitudeType decreaseFactor = 
@@ -553,7 +556,7 @@ namespace Anasazi {
       // communicator as the multivector previously used to initialize
       // tsqrAdaptor_.
       if (tsqrAdaptor_ == Teuchos::null)
-	tsqrAdaptor_ = Teuchos::rcp (X, tsqrParams_);
+	tsqrAdaptor_ = Teuchos::rcp (new tsqr_adaptor_type (X, tsqrParams_));
 
       const int nrows = MVT::GetVecLength (X);
       const int ncols = MVT::GetNumberVecs (X);
@@ -696,7 +699,10 @@ namespace Anasazi {
     }
 
   private:
-    TsqrOrthoManagerImpl< ScalarType, MV > impl_;
+    /// "Mutable" because it has internal scratch space state.  I know
+    /// it's bad, but it's the only way this class can be part of the
+    /// OrthoManager hierarchy.
+    mutable TsqrOrthoManagerImpl< ScalarType, MV > impl_;
   };
 
 
@@ -783,15 +789,13 @@ namespace Anasazi {
     {
       if (getOp() == Teuchos::null)
 	{
-	  if (pTsqr_ == Teuchos::null) 
-	    pTsqr_ = Teuchos::rcp (new tsqr_type (tsqrParams_));
+	  ensureTsqrInit ();
 	  pTsqr_->project (X, Q, C);
 	  // FIXME (mfh 20 Jul 2010) What about MX and MQ?
 	}
       else
 	{
-	  if (pSvqb_ == Teuchos::null)
-	    pSvqb_ = Teuchos::rcp (new svqb_type (getOp()));
+	  ensureSvqbInit ();
 	  pSvqb_->projectMat (X, Q, C, MX, MQ);
 	}
     }
@@ -803,16 +807,14 @@ namespace Anasazi {
     {
       if (getOp() == Teuchos::null)
 	{
-	  if (pTsqr_ == Teuchos::null) 
-	    pTsqr_ = Teuchos::rcp (new tsqr_type (tsqrParams_));
+	  ensureTsqrInit ();
 	  return pTsqr_->normalize (X, B);
 	  // FIXME (mfh 20 Jul 2010) What about MX?
 	}
       else
 	{
-	  if (pSvqb_ == Teuchos::null)
-	    pSvqb_ = Teuchos::rcp (new svqb_type (getOp()));
-	  pSvqb_->normalizeMat (X, B, MX);
+	  ensureSvqbInit ();
+	  return pSvqb_->normalizeMat (X, B, MX);
 	}
     }
 
@@ -826,16 +828,14 @@ namespace Anasazi {
     {
       if (getOp() == Teuchos::null)
 	{
-	  if (pTsqr_ == Teuchos::null) 
-	    pTsqr_ = Teuchos::rcp (new tsqr_type (tsqrParams_));
+	  ensureTsqrInit ();
 	  return pTsqr_->projectAndNormalize (X, Q, C, B); 
 	  // FIXME (mfh 20 Jul 2010) What about MX and MQ?
 	}
       else
 	{
-	  if (pSvqb_ == Teuchos::null)
-	    pSvqb_ = Teuchos::rcp (new svqb_type (getOp()));
-	  pSvqb_->projectAndNormalizeMat (X, Q, C, B, MX, MQ);
+	  ensureSvqbInit ();
+	  return pSvqb_->projectAndNormalizeMat (X, Q, C, B, MX, MQ);
 	}
     }
 
@@ -845,16 +845,14 @@ namespace Anasazi {
     {
       if (getOp() == Teuchos::null)
 	{
-	  if (pTsqr_ == Teuchos::null) 
-	    pTsqr_ = Teuchos::rcp (new tsqr_type (tsqrParams_));
+	  ensureTsqrInit ();
 	  return pTsqr_->orthonormError (X);
 	  // FIXME (mfh 20 Jul 2010) What about MX?
 	}
       else
 	{
-	  if (pSvqb_ == Teuchos::null)
-	    pSvqb_ = Teuchos::rcp (new svqb_type (getOp()));
-	  pSvqb_->orthonormErrorMat (X, MX);
+	  ensureSvqbInit ();
+	  return pSvqb_->orthonormErrorMat (X, MX);
 	}
     }
 
@@ -866,31 +864,42 @@ namespace Anasazi {
     {
       if (getOp() == Teuchos::null)
 	{
-	  if (pTsqr_ == Teuchos::null) 
-	    pTsqr_ = Teuchos::rcp (new tsqr_type (tsqrParams_));
+	  ensureTsqrInit ();
 	  return pTsqr_->orthogError (X, Y);
 	  // FIXME (mfh 20 Jul 2010) What about MX and MY?
 	}
       else
 	{
-	  if (pSvqb_ == Teuchos::null)
-	    pSvqb_ = Teuchos::rcp (new svqb_type (getOp()));
-	  pSvqb_->orthogErrorMat (X, Y, MX, MY);
+	  ensureSvqbInit ();
+	  return pSvqb_->orthogErrorMat (X, Y, MX, MY);
 	}
     }
 
   private:
+    void
+    ensureTsqrInit () const
+    {
+      if (pTsqr_ == Teuchos::null)
+	pTsqr_ = Teuchos::rcp (new tsqr_type (tsqrParams_));
+    }
+    void 
+    ensureSvqbInit () const
+    {
+      if (pSvqb_ == Teuchos::null)
+	pSvqb_ = Teuchos::rcp (new svqb_type (getOp()));
+    }
+
     ///
     /// Parameter list for initializing TSQR
     Teuchos::ParameterList tsqrParams_;
     ///
     /// TSQR + BGS orthogonalization manager implementation, used when
     /// getOp() == null (Euclidean inner product).
-    Teuchos::RCP< tsqr_type > pTsqr_;
+    mutable Teuchos::RCP< tsqr_type > pTsqr_;
     ///
     /// SVQB orthogonalization manager, used when getOp() != null
     /// (could be a non-Euclidean inner product, but not necessarily).
-    Teuchos::RCP< svqb_type > pSvqb_;
+    mutable Teuchos::RCP< svqb_type > pSvqb_;
   };
 
 } // namespace Anasazi

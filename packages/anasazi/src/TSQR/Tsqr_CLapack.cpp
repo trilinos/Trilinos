@@ -177,6 +177,23 @@ extern "C" void FortranCInterface_GLOBAL(cunm2r, CUNM2R)
    std::complex<float> WORK[],
    int* const INFO);
 
+extern "C" void FortranCInterface_GLOBAL(cgesvd, CGESVD) 
+  (const char* const JOBU, 
+   const char* const JOBVT, 
+   const int* const M, 
+   const int* const N, 
+   std::complex<float> A[], 
+   const int* const LDA,
+   float S[], 
+   std::complex<float> U[], 
+   const int* const LDU, 
+   std::complex<float> VT[], 
+   const int* const LDVT, 
+   std::complex<float> work[],
+   const int* const LWORK,
+   float RWORK[],
+   int* const INFO);
+
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -357,5 +374,31 @@ namespace TSQR {
   {
     FortranCInterface_GLOBAL(clarnv, CLARNV) (&idist, iseed, &n, x);
   }
+
+
+  template <>
+  void
+  LAPACK<int, std::complex<float> >::GESVD (const char* const jobu,
+					    const char* const jobvt,
+					    const int m,
+					    const int n,
+					    std::complex<float> A[],
+					    const int lda,
+					    float s[],
+					    std::complex<float> U[],
+					    const int ldu,
+					    std::complex<float> VT[],
+					    const int ldvt,
+					    std::complex<float> work[],
+					    const int lwork,
+					    float rwork[],
+					    int* const INFO)
+  {
+    FortranCInterface_GLOBAL(cgesvd, CGESVD) (jobu, jobvt, &m, &n, 
+					      A, &lda, s, 
+					      U, &ldu, VT, &ldvt, 
+					      work, &lwork, rwork, INFO);
+  }
+
 
 } // namespace TSQR

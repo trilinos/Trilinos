@@ -170,6 +170,23 @@ extern "C" void FortranCInterface_GLOBAL(dorgqr, DORGQR)
    const int* const LWORK,
    int* const INFO);
 
+extern "C" void FortranCInterface_GLOBAL(dgesvd, DGESVD) 
+  (const char* const JOBU, 
+   const char* const JOBVT, 
+   const int* const M, 
+   const int* const N, 
+   double A[], 
+   const int* const LDA,
+   double S[], 
+   double U[], 
+   const int* const LDU, 
+   double VT[], 
+   const int* const LDVT, 
+   double work[],
+   const int* const LWORK,
+   double RWORK[],
+   int* const INFO);
+
 ////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////
 
@@ -349,6 +366,30 @@ namespace TSQR {
 			       double x[])
   {
     FortranCInterface_GLOBAL(dlarnv, DLARNV) (&idist, iseed, &n, x);
+  }
+
+  template <>
+  void
+  LAPACK<int, double >::GESVD (const char* const jobu,
+			       const char* const jobvt,
+			       const int m,
+			       const int n,
+			       double A[],
+			       const int lda,
+			       double s[],
+			       double U[],
+			       const int ldu,
+			       double VT[],
+			       const int ldvt,
+			       double work[],
+			       const int lwork,
+			       double rwork[],
+			       int* const INFO)
+  {
+    FortranCInterface_GLOBAL(dgesvd, DGESVD) (jobu, jobvt, &m, &n, 
+					      A, &lda, s, 
+					      U, &ldu, VT, &ldvt, 
+					      work, &lwork, rwork, INFO);
   }
 
 } // namespace TSQR
