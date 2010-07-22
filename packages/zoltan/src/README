@@ -155,8 +155,6 @@ examples        -- A directory containing very simple C and C++ applications
 fdriver         -- Fortran version of driver, primarily used for testing
                    the Fortran interface.
 
-ZoltanComponent -- A CCA wrapper around the zoltan library. making it a 
-		   CCA component of the classic kind.
 
 OTHER DIRECTORIES
 -----------------
