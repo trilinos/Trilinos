@@ -19,9 +19,6 @@ namespace {
 
 STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
 {
-  const unsigned p_size = stk::parallel_machine_size( MPI_COMM_WORLD );
-  if ( 1 < p_size ) { return ; }
-
   BoxMeshFixture fixture( MPI_COMM_WORLD );
 
   stk::mesh::BulkData & mesh = fixture.m_bulk_data;
@@ -43,7 +40,6 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
     }
   }
 
-
   unsigned new_node_id = 28;
 
   mesh.modification_begin();
@@ -51,12 +47,11 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
   //only crack the mesh if I own the element
   if (mesh.parallel_rank() == right_element.owner_rank()) {
     const stk::mesh::PartVector no_parts;
-    stk::mesh::Entity & new_node = mesh.declare_entity(stk::mesh::Node, new_node_id, no_parts);
+    stk::mesh::Entity & new_node =
+      mesh.declare_entity(stk::mesh::Node, new_node_id, no_parts);
 
     mesh.destroy_relation(right_element, old_node);
     mesh.declare_relation(right_element, new_node, right_ordinal);
-
-
   }
 
   //copy parts
@@ -70,9 +65,7 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
     stk::mesh::Entity & new_node = * (rel.first[right_ordinal].entity());
 
     STKUNIT_EXPECT_TRUE ( new_node.identifier() == new_node_id );
-
   }
-
 }
 
 

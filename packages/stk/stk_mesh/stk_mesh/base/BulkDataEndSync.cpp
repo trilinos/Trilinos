@@ -224,13 +224,14 @@ void BulkData::internal_resolve_parallel_modify_delete(
     for ( ; ! del_or_mod_entities_remote.empty() ; del_or_mod_entities_remote.pop_back() ) {
       Entity *       entity = del_or_mod_entities_remote.back().entity_proc.first ;
       const unsigned proc   = del_or_mod_entities_remote.back().entity_proc.second ;
-      const bool     destroyed = entity->marked_for_destruction();
+      const bool     locally_destroyed = entity->marked_for_destruction();
+      const bool     remotely_destroyed = del_or_mod_entities_remote.back().state == EntityLogDeleted;
       const bool     remote_owner = entity->owner_rank() == proc ;
       const bool     shared = in_shared( *entity , proc );
       const bool     g_recv = in_receive_ghost( *entity );
       const bool     g_send = in_send_ghost( *entity , proc );
 
-      if ( shared ) {
+      if ( shared && remotely_destroyed ) {
 
         // A shared entity is being deleted on the remote process.
         // Remove it from the sharing.
@@ -259,12 +260,12 @@ void BulkData::internal_resolve_parallel_modify_delete(
           }
         }
 
-        if ( ! destroyed && ( ! add_part.empty() || ! remove_part.empty() ) ) {
+        if ( ! locally_destroyed && ( ! add_part.empty() || ! remove_part.empty() ) ) {
           internal_change_entity_parts( *entity , add_part , remove_part );
         }
       }
 
-      if ( g_send ) {
+      if ( g_send && remotely_destroyed ) {
         // Remotely ghosted entity is being destroyed,
         // remove from ghosting list
         for ( size_t j = ghosting_count ; j-- ; ) {
@@ -273,12 +274,17 @@ void BulkData::internal_resolve_parallel_modify_delete(
           }
         }
       }
-      else if ( remote_owner && g_recv ) {
-        // Remotely owned entity is being destroyed.
+      else if ( g_recv ) {
+        // Remotely owned entity is being destroyed or modified.
         // This receive ghost must be destroyed.
         for ( PairIterEntityComm ec = entity->comm() ; ! ec.empty() ; ++ec ) {
           local_flags[ ec->ghost_id ] = 1 ;
         }
+
+        if ( !remote_owner ) {
+          throw std::logic_error("ghosted entities should be remotely owned");
+        }
+
         m_entity_repo.comm_clear( *entity);
         destroy_entity( entity );
       }
@@ -290,19 +296,46 @@ void BulkData::internal_resolve_parallel_modify_delete(
           i = del_or_mod_entities.end() ; i != del_or_mod_entities.begin() ; ) {
 
       Entity * entity = *--i ;
-      const bool shared = in_shared( *entity );
 
-      if ( shared ) {
-        const unsigned new_owner = determine_new_owner( *entity );
+      const bool locally_deleted = entity->log_query() == EntityLogDeleted;
+      const bool locally_ghosted = in_receive_ghost( *entity );
 
-        m_entity_repo.set_entity_owner_rank( *entity, new_owner );
-        m_entity_repo.set_entity_sync_count( *entity, m_sync_count );
+      if ( locally_ghosted ) {
+        if ( locally_deleted ) {
+          // delete ghosts that local proc deleted
+          for ( PairIterEntityComm ec = entity->comm() ; ! ec.empty() ; ++ec ) {
+            local_flags[ ec->ghost_id ] = 1 ;
+          }
+          m_entity_repo.comm_clear( *entity );
+          destroy_entity( entity );
+        }
+        // leave modified ghosts alone; modifications to ghosts are ignored
       }
+      else if ( locally_deleted ) {
+        const bool shared = in_shared( *entity );
 
-      for ( PairIterEntityComm ec = entity->comm() ; ! ec.empty() ; ++ec ) {
-        local_flags[ ec->ghost_id ] = 1 ;
+        if ( shared ) {
+          const unsigned new_owner = determine_new_owner( *entity );
+
+          m_entity_repo.set_entity_owner_rank( *entity, new_owner );
+          m_entity_repo.set_entity_sync_count( *entity, m_sync_count );
+        }
+
+        for ( PairIterEntityComm ec = entity->comm() ; ! ec.empty() ; ++ec ) {
+          local_flags[ ec->ghost_id ] = 1 ;
+        }
+        m_entity_repo.comm_clear( *entity);
       }
-      m_entity_repo.comm_clear( *entity);
+      else {
+        // we've modified a shared|owned entity. we need to knock remote ghosts
+        // off comm lists.
+        // Note: m_ghosting[0] is shared
+        for ( size_t j = ghosting_count - 1 ; j > 0 ; --j ) {
+          if ( m_entity_repo.erase_ghosting( *entity, *m_ghosting[j] ) ) {
+            local_flags[ j ] = 1 ;
+          }
+        }
+      }
     }
 
     all_reduce_sum( m_parallel_machine ,
@@ -572,7 +605,8 @@ bool BulkData::internal_modification_end( bool regenerate_aura )
     if ( EntityLogCreated == entity->log_query() ) {
       ++ local_change_count[0] ; // Created
     }
-    else if ( entity->marked_for_destruction() ) {
+    else if ( entity->marked_for_destruction() ||
+              EntityLogModified == entity->log_query() ) {
       del_or_mod_entities.push_back( entity );
       ++ local_change_count[1] ; // Deleted
     }
