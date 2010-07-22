@@ -80,6 +80,11 @@ namespace TSQR {
       if (! std::numeric_limits< Ordinal >::is_integer)
 	throw std::logic_error("Ordinal must be an integer type");
 
+      // Quick exit also checks for zero num_cols (which prevents
+      // division by zero in the tests below).
+      if (num_rows == 0 || num_cols == 0)
+	return size_t(0);
+
       // If Ordinal is signed, make sure that num_rows and num_cols
       // are nonnegative.
       if (std::numeric_limits< Ordinal >::is_signed)
@@ -125,6 +130,9 @@ namespace TSQR {
       // Both num_rows and num_cols fit in a size_t, and are
       // nonnegative.  Now check whether their product also fits in a
       // size_t.  
+      //
+      // Note: This may throw a SIGFPE (floating-point exception) if
+      // num_cols is zero.  Be sure to check first (above).
       if (static_cast<size_t>(num_rows) > 
 	  std::numeric_limits<size_t>::max() / static_cast<size_t>(num_cols))
 	{

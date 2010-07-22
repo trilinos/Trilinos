@@ -416,13 +416,16 @@ main (int argc, char *argv[])
       //
       // Fill X1 with random values, and test the normalization error.
       //
+      MyOM->stream(Errors) << " -- Filling X1 with random values... " << endl;
       MVT::MvRandom(*X1);
+      MyOM->stream(Errors) << " -- OM->normalize(*X1);" << endl;
       const int initialX1Rank = OM->normalize(*X1);
       TEST_FOR_EXCEPTION(initialX1Rank != sizeX1, 
 			 std::runtime_error, 
 			 "normalize(X1) returned rank "
 			 << initialX1Rank << " from " << sizeX1
 			 << " vectors. Cannot continue.");
+      MyOM->stream(Errors) << " -- OM->orthonormError(*X1);" << endl;
       err = OM->orthonormError(*X1);
       TEST_FOR_EXCEPTION(err > TOL,
 			 std::runtime_error,
@@ -434,7 +437,9 @@ main (int argc, char *argv[])
       // Fill X2 with random values, project against X1 and normalize,
       // and test the orthogonalization error.
       //
+      MyOM->stream(Errors) << " -- Filling X1 with random values... " << endl;
       MVT::MvRandom(*X2);
+      MyOM->stream(Errors) << " -- OM->projectAndNormalize (*X2, tuple(X1));... " << endl;
       const int initialX2Rank = 
 	OM->projectAndNormalize (*X2, tuple< RCP< const MV > > (X1));
       TEST_FOR_EXCEPTION(initialX2Rank != sizeX2, 
@@ -442,13 +447,15 @@ main (int argc, char *argv[])
 			 "projectAndNormalize(X2,X1) returned rank " 
 			 << initialX2Rank << " from " << sizeX2 
 			 << " vectors. Cannot continue.");
-      err = OM->orthonormError(*X2);
+      MyOM->stream(Errors) << " -- OM->orthonormError (*X2);" << endl;
+      err = OM->orthonormError (*X2);
       TEST_FOR_EXCEPTION(err > TOL,
 			 std::runtime_error,
 			 "projectAndNormalize(X2,X1) did not meet tolerance: "
 			 "orthonormError(X2) == " << err);
       MyOM->stream(Warnings) << "   || <X2,X2> - I || : " << err << endl;
-      err = OM->orthogError(*X2,*X1);
+      MyOM->stream(Errors) << " -- OM->orthogError (*X2, *X1);" << endl;
+      err = OM->orthogError (*X2, *X1);
       TEST_FOR_EXCEPTION(err > TOL,
 			 std::runtime_error,
 			 "projectAndNormalize(X2,X1) did not meet tolerance: "

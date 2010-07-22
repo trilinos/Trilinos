@@ -348,6 +348,9 @@ namespace Anasazi {
 	  newC[i] = Teuchos::rcp (new serial_matrix_type (*C[i]));
 	}
 
+      std::cerr << "Got past initialization of newC[0.." 
+		<< (num_Q_blocks-1) << "]" << std::endl;
+
       // Keep track of the column norms of X, both before and after
       // each orthogonalization pass.
       std::vector< MagnitudeType > normsBeforeFirstPass (ncols_X, MagnitudeType(0));
@@ -362,14 +365,22 @@ namespace Anasazi {
       // \li \f$X := X - Q_i \cdot C^{\text{new}}_i\f$
       rawProject (X, Q, newC);
 
+      std::cerr << "Got past rawProject(X,Q,newC)" << std::endl;
+
       // Update the C matrices:
       //
       // \li \f$C_i := C_i + C^{\text{new}}_i\f$
       for (int i = 0; i < num_Q_blocks; ++i)
 	*C[i] += *newC[i];
 
+      std::cerr << "Got past *C[i] += *newC[i]" << std::endl;
+
       // Normalize the matrix X.
+      if (B == Teuchos::null)
+	B = Teuchos::rcp (new serial_matrix_type (ncols_X, ncols_X));
       int rank = normalize (X, B);
+
+      std::cerr << "Got past normalize(X, B)" << std::endl;
       
       // Compute post-first-pass (pre-normalization) norms, using B.
       // normalize() doesn't guarantee in general that B is upper
@@ -623,6 +634,12 @@ namespace Anasazi {
       // "Modified Gram-Schmidt" version of Block Gram-Schmidt.
       for (int i = 0; i < num_Q_blocks; ++i)
 	{
+	  if (C[i] == Teuchos::null)
+	    {
+	      std::ostringstream os;
+	      os << "C[" << i << "] is null" << std::endl;
+	      throw std::logic_error (os.str());
+	    }
 	  innerProd (*Q[i], X, *C[i]);
 	  MVT::MvTimesMatAddMv (ScalarType(-1), *Q[i], *C[i], ScalarType(1), X);
 	}
