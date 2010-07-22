@@ -9,8 +9,10 @@
 #ifndef IOSS_code_types_h
 #define IOSS_code_types_h
 
-#if defined(SIERRA_PARALLEL_MPI)
+#if defined(STK_BUILT_IN_SIERRA)
 #define HAVE_MPI
+#else
+#include <Trios_config.h>
 #endif
 
 #if defined(HAVE_MPI)
