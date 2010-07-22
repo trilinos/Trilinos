@@ -61,9 +61,11 @@ namespace Teko {
   * using a parameter list. Most often used in conjuncition with
   * an InverseLibrary object. In particular the relevant parameters are
   *
-  *    <Parameter name="Type" type="string" value="Diagnostic Inverse"/>
-  *    <Parameter name="Inverse Factory" type="string" value="<Some Inverse Factory>"/>
-  *    <Parameter name="Descriptive Label" type="string" value="<Some Label>"/>
+  \code
+       <Parameter name="Type" type="string" value="Diagnostic Inverse"/>
+       <Parameter name="Inverse Factory" type="string" value="<Some Inverse Factory>"/>
+       <Parameter name="Descriptive Label" type="string" value="<Some Label>"/>
+  \endcode
   */
 class DiagnosticPreconditionerFactory 
    : public virtual Teko::PreconditionerFactory {
