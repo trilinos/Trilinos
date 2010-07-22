@@ -75,11 +75,6 @@ public:
   /** \brief  The ordinal for this entity within its bucket. */
   unsigned bucket_ordinal() const { return m_entityImpl.bucket_ordinal(); }
 
-  /** \brief Is this Entity's bucket valid? */
-  // TODO 10-07-21 remove this function because on the public interface, the entity
-  // should never have an invalid bucket
-  bool is_bucket_valid() const { return m_entityImpl.is_bucket_valid(); }
-
   /** \brief  The mesh bulk data synchronized_count when this entity's
    *          part membership was most recently modified.
    *

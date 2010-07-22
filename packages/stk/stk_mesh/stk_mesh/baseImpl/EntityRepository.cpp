@@ -157,6 +157,12 @@ void EntityRepository::change_entity_bucket( Bucket & b, Entity & e,
   e.m_entityImpl.set_bucket_and_ordinal( &b, ordinal);
 }
 
+Bucket * EntityRepository::get_entity_bucket( Entity & e ) const
+{
+  // Note, this allows for returning NULL bucket
+  return e.m_entityImpl.bucket_ptr();
+}
+
 void EntityRepository::destroy_relation( Entity & e_from, Entity & e_to )
 {
   const MetaData & meta_data =

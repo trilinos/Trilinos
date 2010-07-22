@@ -451,10 +451,7 @@ void BulkData::internal_change_entity_parts(
   const PartVector & add_parts ,
   const PartVector & remove_parts )
 {
-  // TODO 10-07-21 figure out how to solve this without using is_bucket_valid
-  Bucket * const k_old = e.is_bucket_valid()
-                         ? &(e.bucket())
-                         : static_cast<Bucket*>(NULL);
+  Bucket * const k_old = m_entity_repo.get_entity_bucket( e );
 
   const unsigned i_old = e.bucket_ordinal() ;
 

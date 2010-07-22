@@ -50,6 +50,7 @@ class EntityRepository {
     bool insert_comm_info( Entity & e, const EntityCommInfo & comm_info) const;
 
     void change_entity_bucket( Bucket & b, Entity & e, unsigned ordinal);
+    Bucket * get_entity_bucket ( Entity & e ) const;
     void destroy_later( Entity & e, Bucket* nil_bucket );
 
     void destroy_relation( Entity & e_from, Entity & e_to);

@@ -48,6 +48,9 @@ public:
     assert(m_bucket); //don't want to return a reference to a null bucket
     return *m_bucket ;
   }
+  Bucket* bucket_ptr() const {
+    return m_bucket; // allow for NULL return value
+  }
   bool is_bucket_valid() const { return m_bucket != NULL; }
   unsigned bucket_ordinal() const { return m_bucket_ord ; }
   unsigned owner_rank() const { return m_owner_rank ; }
