@@ -99,7 +99,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Stokhos               stokhos                        SS
   Piro                  piro                           SS
   Sundance              Sundance                       SS # Could be PS based on deps (BUG: 4669)
-  CTrilinos             CTrilinos                      PS
+  CTrilinos             CTrilinos                      SS # Switched to SS to speed up checkin testing
   ForTrilinos           ForTrilinos                    EX
   PyTrilinos            PyTrilinos                     SS
   WebTrilinos           WebTrilinos                    EX # Should be SS
