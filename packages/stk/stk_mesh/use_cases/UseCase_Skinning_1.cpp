@@ -16,10 +16,13 @@
 #include <stk_mesh/base/GetEntities.hpp>
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
+#include <stk_mesh/base/EntityComm.hpp>
 
 #include <stk_mesh/fem/EntityRanks.hpp>
 #include <stk_mesh/fem/TopologyHelpers.hpp>
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
+
+
 
 #include <stk_util/parallel/ParallelReduce.hpp>
 
@@ -32,9 +35,10 @@ namespace {
     const unsigned mesh_rank = stk::mesh::Element;
 
     stk::mesh::BulkData & mesh = fixture.m_bulk_data;
+    stk::mesh::MetaData & meta = fixture.m_meta_data;
     stk::mesh::Part & skin_part = fixture.m_skin_part;
 
-    stk::mesh::Selector select_skin = skin_part ;
+    stk::mesh::Selector select_skin = skin_part & meta.locally_owned_part()  ;
 
     const std::vector<stk::mesh::Bucket*>& buckets = mesh.buckets( mesh_rank -1);
 
@@ -86,18 +90,27 @@ namespace {
 
 
     for (size_t i = 0; i < nodes.size(); ++i) {
-      stk::mesh::Entity & entity = *nodes[i];
-      stk::mesh::PairIterRelation relations_pair = entity.relations();
+      stk::mesh::Entity * entity = nodes[i];
+      stk::mesh::Entity * new_entity = new_nodes[i];
+
+      stk::mesh::PairIterRelation relations_pair = entity->relations();
 
       std::vector<stk::mesh::EntitySideComponent> sides;
 
       //loop over the relations and check to see if they are in the closure
-      for (; relations_pair.first != relations_pair.second; ++relations_pair.first) {
-        stk::mesh::Entity * current_entity = (relations_pair.first->entity());
-        unsigned side_ordinal = relations_pair.first->identifier();
+      for (; relations_pair.first != relations_pair.second;) {
+        --relations_pair.second;
+        stk::mesh::Entity * current_entity = (relations_pair.second->entity());
+        unsigned side_ordinal = relations_pair.second->identifier();
 
+        if (stk::mesh::in_receive_ghost(*current_entity)) {
+          // TODO deleteing the ghost triggers a logic error at the
+          // end of the NEXT modification cycle.  We need to fix this!
+          //mesh.destroy_entity(current_entity);
+          continue;
+        }
+        else if ( std::binary_search(closure.begin(),
         //has relation in closure
-        if ( std::binary_search(closure.begin(),
               closure.end(),
               current_entity,
               stk::mesh::EntityLess()) )
@@ -111,13 +124,24 @@ namespace {
       for ( std::vector<stk::mesh::EntitySideComponent>::iterator itr = sides.begin();
            itr != sides.end(); ++itr)
       {
-        mesh.destroy_relation(*(itr->entity), *nodes[i]);
-        mesh.declare_relation(*(itr->entity), *new_nodes[i], itr->side_ordinal);
+        mesh.destroy_relation(*(itr->entity), *entity);
+        mesh.declare_relation(*(itr->entity), *new_entity, itr->side_ordinal);
       }
 
       //copy non-induced part membership from nodes[i] to new_nodes[i]
+        //there are NO non-induced parts for this example
 
       //copy field data from nodes[i] to new_nodes[i]
+      mesh.copy_entity_fields( *entity, *new_entity);
+
+      if (entity->relations().empty()) {
+        mesh.destroy_entity(entity);
+      }
+
+      if (new_entity->relations().empty()) {
+        mesh.destroy_entity(new_entity);
+      }
+
 
     }
 
@@ -189,8 +213,11 @@ namespace {
 
 bool skinning_use_case_1(stk::ParallelMachine pm)
 {
+  // TODO This test should be able to run with up to 27
+  // processes, but it fails with corrupt communication
+  // with 10 or more processes
   const unsigned p_size = stk::parallel_machine_size( pm );
-  if ( 1 < p_size ) { return true; }
+  if ( 9 < p_size ) { return true; }
 
   //setup the mesh
   HexFixture fixture(pm);
@@ -202,11 +229,11 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
 
   stk::mesh::EntityVector entities_to_separate;
 
-  stk::mesh::Entity * temp = fixture.m_elems[0][0][0];
+  stk::mesh::Entity * middle_element = fixture.m_elems[1][1][1];
 
   //select the entity only if the current process in the owner
-  if (temp != NULL && temp->owner_rank() == mesh.parallel_rank()) {
-    entities_to_separate.push_back(temp);
+  if (middle_element != NULL && middle_element->owner_rank() == mesh.parallel_rank()) {
+    entities_to_separate.push_back(middle_element);
   }
 
   stk::mesh::EntityVector entities_closure;
@@ -242,7 +269,28 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
 
   stk::all_reduce(pm, stk::ReduceSum<1>(&num_skin_entities));
 
-  bool correct_skin = num_skin_entities == 60;
+  //there should be 66 faces in the skin part
+  //54 on the outside
+  //6 on the inside attached to the entire mesh
+  //6 on the inside attected to the element that was detached
+  bool correct_skin = num_skin_entities == 66;
+  bool correct_relations = true;
+  bool correct_comm = true;
 
-  return correct_skin;
+  //all nodes connected to the single element that has been broken off
+  //should have relations.size() == 4 and comm.size() == 0
+  if (middle_element != NULL && middle_element->owner_rank() == mesh.parallel_rank()) {
+
+      stk::mesh::PairIterRelation relations = middle_element->relations(stk::mesh::Node);
+
+      for (; relations.first != relations.second; ++relations.first) {
+        stk::mesh::Entity * current_node = (relations.first->entity());
+        //each node should be attached to only 1 element and 3 faces
+        correct_relations &= current_node->relations().size() == 4;
+        //the entire closure of the element should exist on a single process
+        correct_comm      &= current_node->comm().size() == 0;
+      }
+  }
+
+  return correct_skin && correct_relations && correct_comm;
 }

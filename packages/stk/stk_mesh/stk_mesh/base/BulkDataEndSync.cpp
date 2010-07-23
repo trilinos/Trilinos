@@ -121,6 +121,13 @@ bool send_to_shared_and_ghost_recv( const BulkData                     & mesh ,
       EntityModificationLog state ; buf.unpack<EntityModificationLog>( state );
 
       eps.entity_proc.first = mesh.get_entity( key );
+      if (eps.entity_proc.first == NULL) {
+        std::ostringstream msg;
+        msg << "Sent key not found. ";
+        print_entity_key( msg, mesh.mesh_meta_data(), key);
+
+        throw std::logic_error(msg.str());
+      }
       eps.state = state;
 
       recv.push_back( eps );

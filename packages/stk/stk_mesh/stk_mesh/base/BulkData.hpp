@@ -155,6 +155,24 @@ public:
    */
   void update_field_data_states() const { m_bucket_repository.update_field_data_states(); }
 
+
+  /** \brief  Copy field data from src entity to Dest entity
+   *           - Fields that exist on the src that don't exist on the dest will
+   *             be ignored
+   *           - Fields that exist on the dest that don't exist on the src will
+   *             be zeroed
+   */
+  void copy_entity_fields( const Entity & src, Entity & dest) {
+    //TODO fix const correctness for src
+    Entity & non_const_src = const_cast<Entity &>(src);
+    m_bucket_repository.copy_fields(
+        dest.bucket(),
+        dest.bucket_ordinal(),
+        non_const_src.bucket(),
+        non_const_src.bucket_ordinal()
+    );
+  }
+
   //------------------------------------
   /** \brief  Query all buckets of a given entity type */
   const std::vector<Bucket*> & buckets( EntityRank type ) const
