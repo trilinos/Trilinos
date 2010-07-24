@@ -49,7 +49,14 @@ small examples of usage -->
   <li> Matrix adapters exist for the following matrix classes
     <ul>
       <li> Tpetra::CrsMatrix</li>
-      <li> Epetra_CrsMatrix</li>
+      <li> Epetra_RowMatrix implementing classes:
+	<ul>
+	  <li> Epetra_CrsMatrix</li>
+	  <li> Epetra_JadMatrix</li>
+	  <li> Epetra_MsrMatrix</li>
+	  <li> Epetra_VbrMatrix</li>
+	</ul>
+      </li>
     </ul>
   </li>
   <li> MultiVector adapters exist for the following multi-vector classes

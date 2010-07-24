@@ -88,8 +88,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVecAdapter, Initialization, SCALAR, LO, 
 
   const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
   RCP<const Comm<int> > comm = getDefaultComm();
-  const size_t numprocs = comm->getSize();
-  const size_t rank     = comm->getRank();
+  // const size_t numprocs = comm->getSize();
+  // const size_t rank     = comm->getRank();
   // create a Map
   const size_t numLocal = 10;
   RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
@@ -127,8 +127,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVecAdapter, Dimensions, SCALAR, LO, GO )
 
   const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
   RCP<const Comm<int> > comm = getDefaultComm();
-  const size_t numprocs = comm->getSize();
-  const size_t rank     = comm->getRank();
+  // const size_t numprocs = comm->getSize();
+  // const size_t rank     = comm->getRank();
   // create a Map
   const size_t numLocal = 10;
   RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(INVALID,numLocal,0,comm) );
@@ -171,8 +171,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( MultiVecAdapter, View, SCALAR, LO, GO )
   const MAG M0 = ScalarTraits<MAG>::zero();
   const SCALAR S0 = ST::zero();
   RCP<const Comm<int> > comm = getDefaultComm();
-  const size_t numprocs = comm->getSize();
-  const size_t rank     = comm->getRank();
+  // const size_t numprocs = comm->getSize();
+  // const size_t rank     = comm->getRank();
   // create a Map
   const size_t numVectors = 7;
   const size_t numLocal = 13;

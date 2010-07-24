@@ -142,6 +142,16 @@ public:
     }
 };
 
+template <typename Ordinal>
+class SerializationTraits<Ordinal,SLU::C::complex>
+  : public DirectSerializationTraits<Ordinal,SLU::C::complex>
+{};
+
+template <typename Ordinal>
+class SerializationTraits<Ordinal,SLU::Z::doublecomplex>
+  : public DirectSerializationTraits<Ordinal,SLU::Z::doublecomplex>
+{};
+
 //@}  End Conversion group
 
 } // end namespace Teuchos
