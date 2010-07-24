@@ -218,7 +218,8 @@ struct MatrixHelper<Superlu>
       int rows, cols, ldx;
       rows = Teuchos::as<int>(mv->getGlobalLength());
       cols = Teuchos::as<int>(mv->getGlobalNumVectors());
-      ldx  = Teuchos::as<int>(mv->getStride());
+      // ldx  = Teuchos::as<int>(mv->getStride());
+      ldx  = rows;
 
       Teuchos::ArrayRCP<scalar_type> vals_ptr;
 

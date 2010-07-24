@@ -188,7 +188,7 @@ MultiVecAdapter<
               Node> >::globalize()
 {
   if( mv_->isDistributed() ){
-    l_mv_->doExport(*mv_, *importer_, Tpetra::REPLACE);
+    mv_->doImport(*l_mv_, *exporter_, Tpetra::REPLACE);
   }
 }
 
@@ -217,8 +217,7 @@ MultiVecAdapter<
     for( ; it != end; ++it ){
       *it = Teuchos::as<Scalar>(*val_it++);
     }
-
-    l_mv_->doExport(*mv_, *importer_, Tpetra::REPLACE);
+    mv_->doImport(*l_mv_, *exporter_, Tpetra::REPLACE);
   } else {
     Teuchos::ArrayRCP<Scalar> ptr = mv_->get1dViewNonConst();
 
@@ -278,20 +277,26 @@ MultiVecAdapter<
     o_map_ = mv_->getMap();
     Teuchos::RCP<const Teuchos::Comm<int> > comm = o_map_->getComm();
 
-    size_t numVectors = getGlobalNumVectors();
-    //l_map_ = Tpetra::createLocalMap<LocalOrdinal,GlobalOrdinal>(numVectors, comm);
+    size_t num_vecs  = getGlobalNumVectors();
+    size_t num_elems = getGlobalLength();
+    // l_map_ = Tpetra::createLocalMapWithNode<LocalOrdinal,GlobalOrdinal>(
+    //   numVectors,
+    //   comm,
+    //   o_map_->getNode());
     l_map_ = Teuchos::rcp(new Tpetra::Map<LocalOrdinal,GlobalOrdinal>(
-        (Tpetra::global_size_t)numVectors,
+        (Tpetra::global_size_t)num_elems,
         Teuchos::OrdinalTraits<GlobalOrdinal>::zero(),
         comm,
         Tpetra::LocallyReplicated,
         o_map_->getNode()));
 
     l_mv_ = Teuchos::rcp(
-      new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>(l_map_,numVectors));
+      new Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal>(l_map_,num_vecs));
 
     importer_ = Teuchos::rcp(
       new Tpetra::Import<LocalOrdinal,GlobalOrdinal>(o_map_, l_map_));
+    exporter_ = Teuchos::rcp(
+      new Tpetra::Export<LocalOrdinal,GlobalOrdinal>(o_map_, l_map_));
 
     l_mv_->doImport(*mv_, *importer_, Tpetra::REPLACE);
   } else {

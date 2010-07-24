@@ -397,11 +397,22 @@ protected:
   /// Number of global non-zero values in \c matrixA_
   global_size_type globalNumNonZeros_;
 
+
   /* Status and Control data are handled in the Amesos::Status and
    * Amesos::Control base classes
    */
 
+  /// Holds status information about a solver
+  Status status_;
+
+  /// Parameters for solving
+  Control control_;
+
+
   /* Timers are handled in Amesos::Timers */
+
+  /// Various timing statistics
+  Timers timers_;
 
 };				// End class Amesos::Solver
 

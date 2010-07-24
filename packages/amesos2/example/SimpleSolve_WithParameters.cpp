@@ -10,7 +10,6 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_oblackholestream.hpp>
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_ParameterList.hpp>
@@ -42,13 +41,12 @@ int main(int argc, char *argv[]) {
   using Teuchos::rcp;
 
   Teuchos::RCP<const Teuchos::Comm<int> > comm = Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
+  RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+
 
   size_t myRank = comm->getRank();
 
-  Teuchos::oblackholestream blackhole;
-  std::ostream &out = ( myRank == 0 ? std::cout : blackhole );
-
-  out << Amesos::version() << std::endl << std::endl;
+  if( myRank == 0 ) *fos << Amesos::version() << std::endl << std::endl;
 
   const size_t numVectors = 1;
 
@@ -61,28 +59,29 @@ int main(int argc, char *argv[]) {
    * We will solve a system with a known solution, for which we will be using
    * the following matrix:
    *
-   * [ [ 7,  0,  -3, 0,  -1, 0 ]
-   *   [ 2,  8,  0,  0,  0,  0 ]
-   *   [ 0,  0,  1,  0,  0,  0 ]
-   *   [ -3, 0,  0,  5,  0,  0 ]
-   *   [ 0,  -1, 0,  0,  4,  0 ]
-   *   [ 0,  0,  0,  -2, 0,  6 ] ]
+   * [ [ 7,  2,  0, -3,  0,  0 ]
+   *   [ 0,  8,  0,  0, -1,  0 ]
+   *   [ -3, 0,  1,  0,  0,  0 ]
+   *   [ 0,  0,  0,  5,  0, -2 ]
+   *   [ -1, 0,  0,  0,  4,  0 ]
+   *   [ 0,  0,  0,  0,  0,  6 ] ]
    *
+   * And we will solve with A^T   
    */
   // Construct matrix
-  A->insertGlobalValues(0,tuple<GO>(0,2,4),tuple<Scalar>(7,-3,-1));
-  A->insertGlobalValues(1,tuple<GO>(0,1),tuple<Scalar>(2,8));
-  A->insertGlobalValues(2,tuple<GO>(2),tuple<Scalar>(1));
-  A->insertGlobalValues(3,tuple<GO>(0,3),tuple<Scalar>(-3,5));
-  A->insertGlobalValues(4,tuple<GO>(1,4),tuple<Scalar>(-1,4));
-  A->insertGlobalValues(5,tuple<GO>(3,5),tuple<Scalar>(-2,6));
+  if( myRank == 0 ){
+    A->insertGlobalValues(0,tuple<GO>(0,1,3),tuple<Scalar>(7,2,-3));
+    A->insertGlobalValues(1,tuple<GO>(1,4),tuple<Scalar>(8,-1));
+    A->insertGlobalValues(2,tuple<GO>(0,2),tuple<Scalar>(-3,1));
+    A->insertGlobalValues(3,tuple<GO>(3,5),tuple<Scalar>(5,-2));
+    A->insertGlobalValues(4,tuple<GO>(0,4),tuple<Scalar>(-1,4));
+    A->insertGlobalValues(5,tuple<GO>(5),tuple<Scalar>(6));
+  }
   A->fillComplete();
 
   // Create random X
   RCP<MV> X = rcp(new MV(map,numVectors));
   X->randomize();
-
-  RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(out));
 
   /* Create B
    *
@@ -95,13 +94,20 @@ int main(int argc, char *argv[]) {
    *   [18]
    *   [28]]
    */
-  RCP<MV> B = rcp(new MV(map,tuple<Scalar>(-7,18,3,17,18,28),nrows,numVectors));
+  RCP<MV> B = rcp(new MV(map,numVectors));
+  int data[6] = {-7,18,3,17,18,28};
+  for( int i = 0; i < 6; ++i ){
+    if( B->getMap()->isNodeGlobalElement(i) ){
+      B->replaceGlobalValue(i,0,data[i]);
+    }
+  }
 
   // Constructor from Factory
   RCP<Amesos::SolverBase> solver = Amesos::Factory<MAT,MV>::create("Superlu",A,X,B);
 
   // Create a Teuchos::ParameterList to hold solver parameters
   Teuchos::ParameterList params;
+  params.set("Trans","TRANS","Whether to solve with A^T");
   params.set("Equil",false,"Whether to equilibrate the system before solve");
   params.set("ColPerm","NATURAL","Use 'natural' ordering of columns");
 

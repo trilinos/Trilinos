@@ -133,14 +133,16 @@ public:
   /// Get the number of global matrix rows
   inline global_size_type getGlobalNumRows() const
     {
-      return mat_->getGlobalNumRows();
+      // return mat_->getGlobalNumRows();
+      return mat_->getRowMap()->getMaxAllGlobalIndex() + 1;
     }
 
 
   /// Get the number of global matrix columns
   inline global_size_type getGlobalNumCols() const
     {
-      return mat_->getGlobalNumCols();
+      // return mat_->getGlobalNumCols();
+      return mat_->getColMap()->getMaxAllGlobalIndex() + 1;
     }
 
 
@@ -209,8 +211,6 @@ public:
    *              a representation of the global matrix.  If \c true, then each
    *              processor will end up with a CRS representation of the matrix
    *              rows that it owns.
-   * \param [in]  root Is the processor ID of the node that will end up with
-   *              the CRS representation of the matrix.
    *
    * \exception std::length_error Thrown if \c nzval or \c colind is not
    * large enough to hold the global number of nonzero values.
@@ -226,8 +226,7 @@ public:
     const Teuchos::ArrayView<GlobalOrdinal> colind,
     const Teuchos::ArrayView<global_size_type> rowptr,
     size_t& nnz,
-    bool local = false,
-    int root = 0);
+    bool local = false);
 
 
   /**
@@ -247,8 +246,6 @@ public:
    *              a representation of the global matrix.  If \c true, then each
    *              processor will end up with a CRS representation of the matrix
    *              rows that it owns.
-   * \param [in]  root Is the processor ID of the node that will end up with
-   *              the CRS representation of the matrix.
    *
    * \exception std::length_error Thrown if \c nzval or \c rowind is not
    * large enough to hold the global number of nonzero values.
@@ -264,8 +261,7 @@ public:
     const Teuchos::ArrayView<GlobalOrdinal> rowind,
     const Teuchos::ArrayView<global_size_type> colptr,
     size_t& nnz,
-    bool local = false,
-    int root = 0);
+    bool local = false);
 
 
   /**
@@ -281,8 +277,7 @@ public:
     const Teuchos::ArrayView<Scalar> nzval,
     const Teuchos::ArrayView<GlobalOrdinal> colind,
     const Teuchos::ArrayView<global_size_type> rowptr,
-    size_t& nnz,
-    int root = 0);
+    size_t& nnz);
 
 
   /**
@@ -298,8 +293,7 @@ public:
     const Teuchos::ArrayView<Scalar> nzval,
     const Teuchos::ArrayView<GlobalOrdinal> rowind,
     const Teuchos::ArrayView<global_size_type> colptr,
-    size_t& nnz,
-    int root = 0);
+    size_t& nnz);
 
 
   /**

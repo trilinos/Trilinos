@@ -95,11 +95,11 @@ MatrixAdapter<
     const Teuchos::ArrayView<GlobalOrdinal> colind,
     const Teuchos::ArrayView<global_size_type> rowptr,
     size_t& nnz,
-    bool local,
-    int root)
+    bool local)
 {
   Teuchos::RCP<const Teuchos::Comm<int> > comm = getComm();
   const int rank = comm->getRank();
+  const int root = 0;
 
   // Could we have numrows be LocalOrdinal or GlobalOrdinal depending on $local
   GlobalOrdinal numrows = 0;
@@ -264,12 +264,13 @@ MatrixAdapter<
     const Teuchos::ArrayView<Scalar> nzval,
     const Teuchos::ArrayView<GlobalOrdinal> colind,
     const Teuchos::ArrayView<global_size_type> rowptr,
-    size_t& nnz,
-    int root)
+    size_t& nnz)
 {
   using Teuchos::ArrayView;
   Teuchos::RCP<const Teuchos::Comm<int> > comm = getComm();
   const int rank = comm->getRank();
+  const int root = 0;
+  
   // Root gather data
   if ( rank == root ){
     getCrs(nzval, colind, rowptr, nnz);
@@ -304,12 +305,13 @@ MatrixAdapter<
     const Teuchos::ArrayView<Scalar> nzval,
     const Teuchos::ArrayView<GlobalOrdinal> rowind,
     const Teuchos::ArrayView<global_size_type> colptr,
-    size_t& nnz,
-    int root)
+    size_t& nnz)
 {
   using Teuchos::ArrayView;
   Teuchos::RCP<const Teuchos::Comm<int> > comm = getComm();
   const int rank = comm->getRank();
+  const int root = 0;
+  
   // Root gather data
   if ( rank == root ){
     getCcs(nzval, rowind, colptr, nnz);
@@ -341,14 +343,14 @@ MatrixAdapter<
     const Teuchos::ArrayView<GlobalOrdinal> rowind,
     const Teuchos::ArrayView<global_size_type> colptr,
     size_t& nnz,
-    bool local,
-    int root)
+    bool local)
 {
   using Teuchos::Array;
   using Teuchos::ArrayView;
 
   Teuchos::RCP<const Teuchos::Comm<int> > comm = getComm();
   const int rank = comm->getRank();
+  const int root = 0;
 
   global_size_type numCols = 0;
   global_size_type numRows = 0;
@@ -365,7 +367,7 @@ MatrixAdapter<
   Array<GlobalOrdinal> colind(nzval.size());
   Array<global_size_type> rowptr(numRows + 1);
 
-  this->getCrs(nzval_tmp, colind, rowptr, nnz, local, root);
+  this->getCrs(nzval_tmp, colind, rowptr, nnz, local);
   /* We now have a compressed-row storage format of this matrix.  We transform
    * this into a compressed-column format using a distribution-counting sort
    * algorithm, which is described by D.E. Knuth in TAOCP Vol 3, 2nd ed pg 78.

@@ -101,30 +101,26 @@ namespace Amesos {
  *   const Teuchos::ArrayView<GO> colind,
  *   const Teuchos::ArrayView<global_size_type> rowptr,
  *   size_t& nnz,
- *   bool local = false,
- *   int root = 0);
+ *   bool local = false);
  *
  * void getCcs(
  *   const Teuchos::ArrayView<scalar_type> nzval,
  *   const Teuchos::ArrayView<GO> rowind,
  *   const Teuchos::ArrayView<global_size_type> colptr,
  *   size_t& nnz,
- *   bool local = false,
- *   int root = 0);
+ *   bool local = false);
  *
  * void getCrsAll(
  *   const Teuchos::ArrayView<scalar_type> nzval,
  *   const Teuchos::ArrayView<GO> colind,
  *   const Teuchos::ArrayView<global_size_type> rowptr,
- *   size_t& nnz,
- *   int root = 0);
+ *   size_t& nnz);
  *
  * void getCcsAll(
  *   const Teuchos::ArrayView<scalar_type> nzval,
  *   const Teuchos::ArrayView<GO> rowind,
  *   const Teuchos::ArrayView<global_size_type> colptr,
- *   size_t& nnz,
- *   int root = 0);
+ *   size_t& nnz)
  * \endcode
  * </li>
  *

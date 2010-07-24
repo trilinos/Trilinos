@@ -340,15 +340,18 @@ private:
   Teuchos::RCP<Tpetra::Import<local_ordinal_type,
                               global_ordinal_type,
                               node_type> > importer_;
+  Teuchos::RCP<Tpetra::Export<local_ordinal_type,
+                              global_ordinal_type,
+                              node_type> > exporter_;
 
   /**
    * \brief Local map.
    *
    * If \c mv_ is not distributed, then this should be equivalent to \c o_map_
    */
-  Teuchos::RCP<Tpetra::Map<local_ordinal_type,
-                           global_ordinal_type,
-                           node_type > > l_map_;
+  Teuchos::RCP<const Tpetra::Map<local_ordinal_type,
+                                 global_ordinal_type,
+                                 node_type > > l_map_;
 
   /// original map
   Teuchos::RCP<const Tpetra::Map<local_ordinal_type,

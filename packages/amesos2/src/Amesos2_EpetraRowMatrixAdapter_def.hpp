@@ -88,18 +88,36 @@ size_t MatrixAdapter<Epetra_RowMatrix>::getMaxNNZ() const
 const RCP<const Teuchos::Comm<int> >
 MatrixAdapter<Epetra_RowMatrix>::getComm() const
 {
-  Epetra_Comm* comm = mat_->Comm().Clone();
-  // Check if it is a Epetra_SerialComm subtype
-  Epetra_SerialComm* serial_comm = dynamic_cast<Epetra_SerialComm *>(comm);
-  if( serial_comm != 0 ){
-    return ( rcp(new Teuchos::SerialComm<int>()));
+  using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::set_extra_data;
+
+  RCP<const Epetra_SerialComm>
+    serialEpetraComm = rcp_dynamic_cast<const Epetra_SerialComm>(rcp(mat_->Comm().Clone()));
+  if( serialEpetraComm.get() ) {
+    RCP<const Teuchos::SerialComm<int> >
+      serialComm = rcp(new Teuchos::SerialComm<int>());
+    set_extra_data( serialEpetraComm, "serialEpetraComm", Teuchos::inOutArg(serialComm) );
+    return serialComm;
   }
-  // Else we return a Teuchos::MpiComm<int> type
-#ifdef EPETRA_MPI
-  return rcp(new Teuchos::MpiComm<int>(Teuchos::opaqueWrapper(comm->GetMpiComm())));
-#else
-  return ( rcp(new Teuchos::SerialComm<int>()));
-#endif
+
+#ifdef HAVE_MPI
+  
+  RCP<const Epetra_MpiComm>
+    mpiEpetraComm = rcp_dynamic_cast<const Epetra_MpiComm>(rcp(mat_->Comm().Clone()));
+  if( mpiEpetraComm.get() ) {
+    RCP<const Teuchos::OpaqueWrapper<MPI_Comm> >
+      rawMpiComm = Teuchos::opaqueWrapper(mpiEpetraComm->Comm());
+  set_extra_data( mpiEpetraComm, "mpiEpetraComm", Teuchos::inOutArg(rawMpiComm) );
+  RCP<const Teuchos::MpiComm<int> >
+    mpiComm = rcp(new Teuchos::MpiComm<int>(rawMpiComm));
+  return mpiComm; 
+}
+
+#endif // HAVE_MPI
+  
+  // If you get here then the conversion failed!
+  return Teuchos::null;
 }
 
 
@@ -151,11 +169,11 @@ MatrixAdapter<Epetra_RowMatrix>::getCrs(
   const Teuchos::ArrayView<global_ordinal_type> colind,
   const Teuchos::ArrayView<global_size_type> rowptr,
   size_t& nnz,
-  bool local,
-  int root)
+  bool local)
 {
   RCP<const Teuchos::Comm<int> > comm = getComm();
   const int rank = comm->getRank();
+  const int root = 0;
 
   // Could we have numrows be local_ordinal_type or global_ordinal_type
   // depending on $local
@@ -314,14 +332,14 @@ MatrixAdapter<Epetra_RowMatrix>::getCcs(
   const Teuchos::ArrayView<global_ordinal_type> rowind,
   const Teuchos::ArrayView<global_size_type> colptr,
   size_t& nnz,
-  bool local,
-  int root)
+  bool local)
 {
   using Teuchos::Array;
   using Teuchos::ArrayView;
 
   RCP<const Teuchos::Comm<int> > comm = getComm();
   const int rank = comm->getRank();
+  const int root = 0;
 
   global_size_type numCols = 0;
   global_size_type numRows = 0;
@@ -338,7 +356,7 @@ MatrixAdapter<Epetra_RowMatrix>::getCcs(
   Array<global_ordinal_type> colind(nzval.size());
   Array<global_size_type> rowptr(numRows + 1);
 
-  getCrs(nzval_tmp, colind, rowptr, nnz, local, root);
+  getCrs(nzval_tmp, colind, rowptr, nnz, local);
   /* We now have a compressed-row storage format of this matrix.  We transform
    * this into a compressed-column format using a distribution-counting sort
    * algorithm, which is described by D.E. Knuth in TAOCP Vol 3, 2nd ed pg 78.
@@ -397,12 +415,13 @@ MatrixAdapter<Epetra_RowMatrix>::getCrsAll(
   const Teuchos::ArrayView<scalar_type> nzval,
   const Teuchos::ArrayView<global_ordinal_type> colind,
   const Teuchos::ArrayView<global_size_type> rowptr,
-  size_t& nnz,
-  int root)
+  size_t& nnz)
 {
   using Teuchos::ArrayView;
   RCP<const Teuchos::Comm<int> > comm = getComm();
   const int rank = comm->getRank();
+  const int root = 0;
+
   // Root gather data
   if ( rank == root ){
     getCrs(nzval, colind, rowptr, nnz);
@@ -424,12 +443,13 @@ MatrixAdapter<Epetra_RowMatrix>::getCcsAll(
   const Teuchos::ArrayView<scalar_type> nzval,
   const Teuchos::ArrayView<global_ordinal_type> rowind,
   const Teuchos::ArrayView<global_size_type> colptr,
-  size_t& nnz,
-  int root)
+  size_t& nnz)
 {
   using Teuchos::ArrayView;
   RCP<const Teuchos::Comm<int> > comm = getComm();
   const int rank = comm->getRank();
+  const int root = 0;
+
   // Root gather data
   if ( rank == root ){
     getCcs(nzval, rowind, colptr, nnz);

@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
   size_t myRank = comm->getRank();
 
   Teuchos::oblackholestream blackhole;
-  std::ostream &out = ( myRank == 0 ? std::cout : blackhole );
+  std::ostream &out = std::cout;
 
   out << Amesos::version() << std::endl << std::endl;
 
@@ -56,6 +56,7 @@ int main(int argc, char *argv[]) {
   global_size_t nrows = 6;
   RCP<Tpetra::Map<LO,GO> > map
     = rcp( new Tpetra::Map<LO,GO>(nrows,0,comm) );
+
   RCP<MAT> A = rcp( new MAT(map,3) ); // max of three entries in a row
 
   /*
@@ -71,19 +72,19 @@ int main(int argc, char *argv[]) {
    *
    */
   // Construct matrix
-  A->insertGlobalValues(0,tuple<GO>(0,2,4),tuple<Scalar>(7,-3,-1));
-  A->insertGlobalValues(1,tuple<GO>(0,1),tuple<Scalar>(2,8));
-  A->insertGlobalValues(2,tuple<GO>(2),tuple<Scalar>(1));
-  A->insertGlobalValues(3,tuple<GO>(0,3),tuple<Scalar>(-3,5));
-  A->insertGlobalValues(4,tuple<GO>(1,4),tuple<Scalar>(-1,4));
-  A->insertGlobalValues(5,tuple<GO>(3,5),tuple<Scalar>(-2,6));
+  if( myRank == 0 ){
+    A->insertGlobalValues(0,tuple<GO>(0,2,4),tuple<Scalar>(7,-3,-1));
+    A->insertGlobalValues(1,tuple<GO>(0,1),tuple<Scalar>(2,8));
+    A->insertGlobalValues(2,tuple<GO>(2),tuple<Scalar>(1));
+    A->insertGlobalValues(3,tuple<GO>(0,3),tuple<Scalar>(-3,5));
+    A->insertGlobalValues(4,tuple<GO>(1,4),tuple<Scalar>(-1,4));
+    A->insertGlobalValues(5,tuple<GO>(3,5),tuple<Scalar>(-2,6));
+  }
   A->fillComplete();
 
   // Create random X
   RCP<MV> X = rcp(new MV(map,numVectors));
   X->randomize();
-
-  RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(out));
 
   /* Create B
    *
@@ -97,7 +98,6 @@ int main(int argc, char *argv[]) {
    *   [28]]
    */
   RCP<MV> B = rcp(new MV(map,tuple<Scalar>(-7,18,3,17,18,28),nrows,numVectors));
-
 
   // Create solver interface to Superlu through Amesos::Factory
   RCP<Amesos::SolverBase> solver = Amesos::Factory<MAT,MV>::create("Superlu",A,X,B);
@@ -116,7 +116,11 @@ int main(int argc, char *argv[]) {
    *   [5]
    *   [6]]
    */
+  RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(out));
+
+  *fos << "Solution :" << std::endl;
   X->describe(*fos,Teuchos::VERB_EXTREME);
+  *fos << std::endl;
 
   // We are done.
   return 0;

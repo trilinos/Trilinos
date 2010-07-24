@@ -11,6 +11,7 @@
 
 #include <Teuchos_ParameterList.hpp>
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_Comm.hpp>
 
 namespace Amesos {
 
@@ -35,9 +36,34 @@ public:
     , threshold_(0.0)
 
     , myPID_(0)
+    , root_(true)
     , numProcs_(1)
     , maxProcs_(1)
     { }
+
+
+  Status(const Teuchos::RCP<const Teuchos::Comm<int> > comm)
+    : isSymbolicFactorizationOK_(false)
+    , isNumericFactorizationOK_(false)
+    , printTiming_(false)
+    , printStatus_(false)
+    , computeVectorNorms_(false)
+    , computeTrueResidual_(false)
+      // Will use the Teuchos::VerboseObject for verbosity settings
+    , verbose_(0)
+    , debug_(0)
+
+    , numSymbolicFact_(0)
+    , numNumericFact_(0)
+    , numSolve_(0)
+    , threshold_(0.0)
+
+    , myPID_(comm->getRank())
+    , root_( myPID_ == 0 )
+    , numProcs_(comm->getSize())
+    , maxProcs_(1)
+    { }
+
 
   /// Default destructor.
   ~Status() { };
@@ -92,6 +118,9 @@ public:
 
   /// My process ID in this MPI communicator
   int myPID_;
+
+  /// Indicates whether this process is the root process
+  bool root_;
 
   /// The number of processors in this MPI communicator
   int numProcs_;

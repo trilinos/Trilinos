@@ -165,18 +165,6 @@ public:
   virtual std::string name() const = 0;
 
 
-  // Class members
-protected:
-
-  /// Holds status information about a solver
-  Status status_;
-
-  /// Parameters for solving
-  Control control_;
-
-  /// Various timing statistics
-  Timers timers_;
-
 };                              // End class SolverBase
 
 

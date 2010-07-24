@@ -12,6 +12,7 @@
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_MultiVector.hpp>
+#include <Tpetra_Map.hpp>
 
 #include "Amesos2_Factory.hpp"
 #include "Amesos2_Util_is_same.hpp"
@@ -26,6 +27,7 @@ using Teuchos::as;
 using Teuchos::RCP;
 using Teuchos::ArrayRCP;
 using Teuchos::rcp;
+using Teuchos::rcpFromRef;
 using Teuchos::Comm;
 using Teuchos::Array;
 using Teuchos::ArrayView;
@@ -34,11 +36,20 @@ using Teuchos::ScalarTraits;
 using Teuchos::OrdinalTraits;
 using Teuchos::FancyOStream;
 using Teuchos::VerboseObjectBase;
+using Teuchos::ETransp;
+using Teuchos::EUplo;
+using Teuchos::LOWER_TRI;
+using Teuchos::UPPER_TRI;
+using Teuchos::CONJ_TRANS;
+using Teuchos::TRANS;
+using Teuchos::NO_TRANS;
+
 
 using Tpetra::global_size_t;
 using Tpetra::CrsMatrix;
 using Tpetra::MultiVector;
 using Tpetra::Map;
+using Tpetra::createContigMap;
 
 using Amesos::MatrixAdapter;
 using Amesos::MultiVecAdapter;
@@ -213,100 +224,104 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Superlu, NumericFactorization, SCALAR, LO, GO
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Superlu, Solve, SCALAR, LO, GO )
 {
-  typedef ScalarTraits<SCALAR> ST;
   typedef CrsMatrix<SCALAR,LO,GO,Node> MAT;
+  typedef ScalarTraits<SCALAR> ST;
   typedef MultiVector<SCALAR,LO,GO,Node> MV;
-  typedef Superlu<MAT,MV> SOLVER;
-  typedef typename ScalarTraits<SCALAR>::magnitudeType MAG;
-  const MAG M0 = ScalarTraits<MAG>::zero();
-    
+  typedef typename ST::magnitudeType Mag;
+  typedef ScalarTraits<Mag> MT;
+  const size_t numLocal = 13, numVecs = 7;
+  const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+  // get a comm
   RCP<const Comm<int> > comm = getDefaultComm();
-  //const size_t numprocs = comm->getSize();
-
-  const size_t numVectors = 1;
-
   // create a Map
-  global_size_t nrows = 6;
-  RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(nrows,0,comm) );
-  RCP<MAT> A = rcp( new MAT(map,3) ); // max of three entries in a row
+  RCP<const Map<LO,GO,Node> > map = createContigMap<LO,GO>(INVALID,numLocal,comm);
+  SCALAR SONE = ST::one();
 
-  /* We will do two tests.
-   *
-   * 1) solving a system with known solution, for which we will be using the
-   * following matrix:
-   * 
-   * [ [ 7,  0,  -3, 0,  -1, 0 ]
-   *   [ 2,  8,  0,  0,  0,  0 ]
-   *   [ 0,  0,  1,  0,  0,  0 ]
-   *   [ -3, 0,  0,  5,  0,  0 ]
-   *   [ 0,  -1, 0,  0,  4,  0 ]
-   *   [ 0,  0,  0,  -2, 0,  6 ] ]
-   *
-   * and 2) solving a randomized system
-   */
-  // Construct matrix
-  A->insertGlobalValues(0,tuple<GO>(0,2,4),tuple<SCALAR>(7,-3,-1));
-  A->insertGlobalValues(1,tuple<GO>(0,1),tuple<SCALAR>(2,8));
-  A->insertGlobalValues(2,tuple<GO>(2),tuple<SCALAR>(1));
-  A->insertGlobalValues(3,tuple<GO>(0,3),tuple<SCALAR>(-3,5));
-  A->insertGlobalValues(4,tuple<GO>(1,4),tuple<SCALAR>(-1,4));
-  A->insertGlobalValues(5,tuple<GO>(3,5),tuple<SCALAR>(-2,6));
-  A->fillComplete();
+  /* Create one of the following locally triangular matries:
 
-  // Create random X
-  RCP<MV> X = rcp(new MV(map,numVectors));
-  X->randomize();
+     0  [1 2       ]
+     1  [  1 3     ]
+     .  [    .  .  ] = U
+     n-2 [       1 n]
+     n-1 [         1]
 
-  // RCP<FancyOStream> os = getDefaultOStream();
-  // X->describe(*os,Teuchos::VERB_EXTREME);
+     0  [1           ]
+     1  [2 1         ]
+     .  [   .  .     ] = L
+     n-2 [     n-1 1  ]
+     n-1 [         n 1]
 
-  // Create B
-  RCP<MV> B = rcp(new MV(map,tuple<SCALAR>(-7,18,3,17,18,28),nrows,numVectors));
+     Global matrices are diag(U,U,...,U) and diag(L,L,...,L)
 
-  // Constructor from Factory
-  RCP<Amesos::SolverBase> solver = Amesos::Factory<MAT,MV>::create("Superlu",A,X,B);
+     For each of these, we test with transpose and non-transpose solves.
+  */
 
-  solver->symbolicFactorization().numericFactorization().solve();
+  MV X(map,numVecs), B(map,numVecs), Xhat(map,numVecs);
+  X.setObjectLabel("X");
+  B.setObjectLabel("B");
+  Xhat.setObjectLabel("Xhat");
+  X.randomize();
+  for (size_t tnum=0; tnum < 4; ++tnum) {
+    EUplo   uplo  = ((tnum & 1) == 1 ? UPPER_TRI  : LOWER_TRI);
+    ETransp trans = ((tnum & 2) == 2 ? CONJ_TRANS : NO_TRANS);
+    RCP<MAT> AMat;
+    {
+      // can let the matrix compute a column map
+      AMat = rcp(new MAT(map,2));
+      // fill the matrix
+      if (uplo == UPPER_TRI) {
+        for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
+          if (gid == map->getMaxGlobalIndex()) {
+            AMat->insertGlobalValues( gid, tuple<GO>(gid), tuple<SCALAR>(SONE) );
+          }
+          else {
+            AMat->insertGlobalValues( gid, tuple<GO>(gid,gid+1), tuple<SCALAR>(SONE,as<GO>(gid+2)) );
+          }
+        }
+      }
+      else { // uplo == LOWER_TRI
+        for (GO gid=map->getMinGlobalIndex(); gid <= map->getMaxGlobalIndex(); ++gid) {
+          if (gid == map->getMinGlobalIndex()) {
+            AMat->insertGlobalValues( gid, tuple<GO>(gid), tuple<SCALAR>(SONE) );
+          }
+          else {
+            AMat->insertGlobalValues( gid, tuple<GO>(gid-1,gid), tuple<SCALAR>(as<GO>(gid+1),SONE) );
+          }
+        }
+      }
+      AMat->fillComplete();	// optimize storage
+    }
+    B.randomize();
+    AMat->apply(X,B,trans,1.0,0.0);
 
-  /* Check X for correct solution
-   *
-   * Should be X = [1; 2; 3; 4; 5; 6]
-   */
-  Array<MAG> norms(numVectors), zeros(numVectors);
-  std::fill(zeros.begin(),zeros.end(),M0);
+    Xhat.randomize();
 
-  RCP<MV> xCheck = rcp(new MV(map,tuple<SCALAR>(1,2,3,4,5,6),nrows,numVectors));
+    // Solve A*Xhat = B for Xhat using the Superlu solver
+    RCP<Amesos::SolverBase> solver
+      = Amesos::Factory<MAT,MV>::create(
+        "Superlu",
+        AMat,
+        rcpFromRef(Xhat),
+        rcpFromRef(B) );
 
-  X->update(as<SCALAR>(-1),*xCheck,as<SCALAR>(1));
-  X->norm2(norms);
-  TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
+    Teuchos::ParameterList params;
+    if( trans == CONJ_TRANS ){
+      params.set("Trans","CONJ","Whether to solve with transpose");
+    } else {			// trans == NO_TRANS
+      params.set("Trans","NOTRANS","Whether to solve with transpose");
+    }
 
-  // ETB: Should not use randomness in tests.  It would be better to find a
-  // few good sample matrices to test with
-  /*
-   *  const size_t numVectors_r = 5;
-   *
-   *  // Create random X
-   *  RCP<MV> X_r = rcp(new MV(A->getColMap(), numVectors));
-   *  X_r->randomize();
-   *
-   *  // Create B from A and X
-   *  RCP<MV> B_r = rcp(new MV(A->getRowMap(),numVectors));
-   *  A->multiply(*X_r, *B_r, Teuchos::NO_TRANS, as<SCALAR>(1), as<SCALAR>(0)); // B_r = A * X_r
-   *
-   *  RCP<MV> xCheck_r = rcp(new MV(A->getColMap(), numVectors));
-   *
-   *  // Construct Solver from Factory
-   *  RCP<Amesos::SolverBase> solver_r
-   *    = Amesos::Factory<MAT,MV>::create("Superlu", A, xCheck_r, B_r);
-   *
-   *  solver_r->symbolicFactorization().numericFactorization().solve();
-   *
-   *  // Test equaility of original X and solution
-   *  X_r->update(as<SCALAR>(-1),*xCheck_r,as<SCALAR>(1));
-   *  X_r->norm2(norms);
-   *  TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,0.5);
-   */
+    solver->setParameters( rcpFromRef(params) );
+    solver->symbolicFactorization().numericFactorization().solve();
+
+    // Check result of solve
+    Xhat.update(-SONE,X,SONE);
+    Array<Mag> errnrms(numVecs), normsB(numVecs), zeros(numVecs, MT::zero());
+    Xhat.norm2(errnrms());
+    B.norm2(normsB());
+    Mag maxBnrm = *std::max_element( normsB.begin(), normsB.end() );
+    TEST_COMPARE_FLOATING_ARRAYS( errnrms, zeros, maxBnrm );
+  }
 }
 
 
@@ -319,7 +334,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( Superlu, Solve, SCALAR, LO, GO )
   UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, ComplexFloat)
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)\
   typedef std::complex<double> ComplexDouble;\
-  UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, ComplexDouble) 
+  UNIT_TEST_GROUP_ORDINAL_SCALAR(LO, GO, ComplexDouble)
 #else
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_FLOAT(LO, GO)
 #  define UNIT_TEST_GROUP_ORDINAL_COMPLEX_DOUBLE(LO, GO)

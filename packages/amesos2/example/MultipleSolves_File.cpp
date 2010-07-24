@@ -1,7 +1,6 @@
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
-#include <Teuchos_oblackholestream.hpp>
 #include <Teuchos_Tuple.hpp>
 #include <Teuchos_VerboseObject.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
@@ -11,6 +10,7 @@
 #include <Tpetra_MultiVector.hpp>
 #include <Tpetra_Vector.hpp>
 #include <Tpetra_CrsMatrix.hpp>
+#include <Tpetra_Import.hpp>
 
 // I/O for Harwell-Boeing files
 #define HIDE_TPETRA_INOUT_IMPLEMENTATIONS
@@ -36,6 +36,8 @@ int main(int argc, char *argv[]) {
   typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
 
   using Tpetra::global_size_t;
+  using Tpetra::Map;
+  using Tpetra::Import;
   using Teuchos::tuple;
   using Teuchos::RCP;
   using Teuchos::rcp;
@@ -49,14 +51,12 @@ int main(int argc, char *argv[]) {
   Teuchos::RCP<Node>             node = platform.getNode();
   int myRank  = comm->getRank();
 
-  Teuchos::oblackholestream blackhole;
-  std::ostream &out = ( myRank == 0 ? std::cout : blackhole );
-  RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(out));
+  RCP<Teuchos::FancyOStream> fos = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
 
   bool printMatrix   = false;
   bool printSolution = false;
   bool printTiming   = false;
-  bool verbose = (myRank==0);
+  bool verbose       = false;
   std::string filename("bcsstk14.hb");
   Teuchos::CommandLineProcessor cmdp(false,true);
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
@@ -69,7 +69,8 @@ int main(int argc, char *argv[]) {
   }
 
   // Say hello
-  out << Amesos::version() << std::endl << std::endl;
+
+  if( myRank == 0 ) *fos << Amesos::version() << std::endl << std::endl;
 
   const size_t numVectors = 1;
 
@@ -77,19 +78,19 @@ int main(int argc, char *argv[]) {
 
   RCP<MAT> A;
   Tpetra::Utils::readHBMatrix(filename,comm,node,A);
-  if (printMatrix) {
+  if( printMatrix ){
     A->describe(*fos, Teuchos::VERB_EXTREME);
   }
-  else if (verbose) {
-    std::cout << std::endl << A->description() << std::endl << std::endl;
+  else if( verbose && myRank==0 ){
+    *fos << std::endl << A->description() << std::endl << std::endl;
   }
 
   // create a Map
   global_size_t nrows = A->getGlobalNumRows();
-  RCP<Tpetra::Map<LO,GO,Node> > map = rcp( new Tpetra::Map<LO,GO,Node>(nrows,0,comm) );
+  RCP<Map<LO,GO,Node> > map = rcp( new Map<LO,GO,Node>(nrows,0,comm) );
 
   // Create random X
-  RCP<MV> X = rcp(new MV(map,numVectors));
+  RCP<MV> X = rcp( new MV(map,numVectors) );
   X->randomize();
 
   /* Create B
@@ -107,34 +108,53 @@ int main(int argc, char *argv[]) {
   B->putScalar(10);
 
   // Constructor from Factory
-  RCP<Amesos::SolverBase> solver = Amesos::Factory<MAT,MV>::create("Superlu",A,X,B);
+  RCP<Amesos::SolverBase> solver;
+  try{
+    solver = Amesos::Factory<MAT,MV>::create("Superlu",A,X,B);
 
-  solver->symbolicFactorization().numericFactorization().solve();
+    solver->symbolicFactorization().numericFactorization().solve();
 
-  // change one of the matrix values and re-solve.
-  //
-  // Replace the lowest column index and lowest row index entry with "20"
-  A->replaceGlobalValues(
-    Teuchos::as<GO>(A->getRowMap()->getMinAllGlobalIndex()),
-    tuple<GO>(A->getColMap()->getMinAllGlobalIndex()),
-    tuple<Scalar>(20));
+    if( printSolution ){
+      // Print the solution
+      X->describe(*fos,Teuchos::VERB_EXTREME);
+    }
 
-  solver->numericFactorization().solve();
+    // change one of the matrix values and re-solve.
+    //
+    // Replace the lowest column index and lowest row index entry with "20"
+    A->replaceGlobalValues(
+      Teuchos::as<GO>(A->getRowMap()->getMinGlobalIndex()),
+      tuple<GO>(A->getColMap()->getMinGlobalIndex()),
+      tuple<Scalar>(20));
 
-  // change the RHS vector and re-solve.
-  B->replaceGlobalValue(numVectors/3,0,7);
-  B->replaceGlobalValue(numVectors/2,0,15);
+    solver->numericFactorization().solve();
 
-  solver->solve();
+    if( printSolution ){
+      // Print the solution
+      X->describe(*fos,Teuchos::VERB_EXTREME);
+    }
 
-  if( printSolution ){
-    // Print the solution
-    X->describe(*fos,Teuchos::VERB_EXTREME);
-  }
+    // change the RHS vector and re-solve.
+    B->randomize();
+    if( verbose ){
+      if( myRank == 0) *fos << "New RHS vector:" << std::endl;
+      B->describe(*fos,Teuchos::VERB_EXTREME);
+    }
 
-  if( printTiming ){
-    // Print some timing statistics
-    solver->printTiming(*fos);
+    solver->solve();
+
+    if( printSolution ){
+      // Print the solution
+      X->describe(*fos,Teuchos::VERB_EXTREME);
+    }
+
+    if( printTiming ){
+      // Print some timing statistics
+      solver->printTiming(*fos);
+    }
+
+  } catch (std::invalid_argument e){
+    *fos << "The solver does not support the matrix shape" << std::endl;
   }
 
   // We are done.

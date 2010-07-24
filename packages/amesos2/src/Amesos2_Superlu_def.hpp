@@ -82,12 +82,15 @@ Superlu<Matrix,Vector>::~Superlu( )
    */
   SLU::StatFree( &(data_.stat) ) ;
 
+
   // Storage is initialized in numericFactorization_impl()
   if ( this->getNumNumericFact() > 0 ){
     SLU::Destroy_SuperMatrix_Store( &(data_.A) );
 
-    SLU::Destroy_SuperNode_Matrix( &(data_.L) );
-    SLU::Destroy_CompCol_Matrix( &(data_.U) );
+    if ( this->status_.root_ ){       // only root allocated these SuperMatrices.
+      SLU::Destroy_SuperNode_Matrix( &(data_.L) );
+      SLU::Destroy_CompCol_Matrix( &(data_.U) );
+    }
   }
 
   // Storage is initialized in solve_impl()
@@ -124,7 +127,7 @@ Superlu<Matrix,Vector>::symbolicFactorization_impl()
 template <class Matrix, class Vector>
 int
 Superlu<Matrix,Vector>::numericFactorization_impl(){
-  int info;
+  int info = 0;
   if( !factorizationDone_ ){
     // First time factorization, factor from scratch
     data_.options.Fact = SLU::DOFACT;
@@ -189,14 +192,21 @@ Superlu<Matrix,Vector>::numericFactorization_impl(){
       // If symbolic structure has been changed, then we must factor from
       // scratch
       data_.options.Fact = SLU::DOFACT;
-      // Cleanup old L and U, Stores and other data will be allocated in gstrf
-      SLU::Destroy_SuperNode_Matrix( &(data_.L) );
-      SLU::Destroy_CompCol_Matrix( &(data_.U) );
+      // Cleanup old L and U, Stores and other data will be allocated in gstrf.
+      // Only rank 0 has valid pointers
+      if ( this->status_.root_ ){
+        SLU::Destroy_SuperNode_Matrix( &(data_.L) );
+        SLU::Destroy_CompCol_Matrix( &(data_.U) );
+      }
     }
   }
 
-  { // Do factorization
+  if ( this->status_.root_ ) { // Do factorization
     Teuchos::TimeMonitor numFactTimer(this->timers_.numFactTime_);
+
+    // std::cout << "nzvals_ : " << nzvals_.toString() << std::endl;
+    // std::cout << "rowind_ : " << rowind_.toString() << std::endl;
+    // std::cout << "colptr_ : " << colptr_.toString() << std::endl;
 
     FunctionMap<Amesos::Superlu,scalar_type>::gstrf(&(data_.options), &(data_.A),
       data_.relax, data_.panel_size, data_.etree.getRawPtr(), NULL, 0,
@@ -217,7 +227,7 @@ Superlu<Matrix,Vector>::numericFactorization_impl(){
   data_.options.Fact = SLU::FACTORED;
 
   /* All processes should return the same error code */
-  if( this->status_.numProcs_ != 1 ) Teuchos::broadcast(*(this->matrixA_->getComm()),0,&info);
+  Teuchos::broadcast(*(this->matrixA_->getComm()),0,&info);
   return(info);
 }
 
@@ -231,7 +241,7 @@ Superlu<Matrix,Vector>::solve_impl()
       std::runtime_error,
       "Numeric Factorization failed!");
   }
-  // Processor 0 sets up for Solve and calls SuperLU
+  // root sets up for Solve and calls SuperLU
 
   typedef typename MatrixAdapter<Matrix>::scalar_type scalar_type;
   typedef typename TypeMap<Amesos::Superlu,scalar_type>::type slu_type;
@@ -263,12 +273,18 @@ Superlu<Matrix,Vector>::solve_impl()
       this->multiVecB_.ptr(), Teuchos::ptrFromRef(data_.B),
       this->timers_.vecRedistTime_);
   }         // end block for conversion time
-  int ierr; // returned error code
+  int ierr = 0; // returned error code
 
   typedef typename TypeMap<Amesos::Superlu,scalar_type>::magnitude_type magnitude_type;
   magnitude_type rpg, rcond;
-  {
+  if ( this->status_.root_ ) {
     Teuchos::TimeMonitor solveTimer(this->timers_.solveTime_);
+
+    // std::cout << "nzvals_ : " << nzvals_.toString() << std::endl;
+    // std::cout << "rowind_ : " << rowind_.toString() << std::endl;
+    // std::cout << "colptr_ : " << colptr_.toString() << std::endl;
+    // std::cout << "B : " << bValues().toString() << std::endl;
+    // std::cout << "X : " << xValues().toString() << std::endl;
 
     FunctionMap<Amesos::Superlu,scalar_type>::gssvx(&(data_.options), &(data_.A),
       data_.perm_c.getRawPtr(), data_.perm_r.getRawPtr(), data_.etree.getRawPtr(),
@@ -276,16 +292,22 @@ Superlu<Matrix,Vector>::solve_impl()
       &(data_.U), NULL, 0, &(data_.B), &(data_.X), &rpg, &rcond,
       data_.ferr.getRawPtr(), data_.berr.getRawPtr(), &(data_.mem_usage),
       &(data_.stat), &ierr);
+
+    // std::cout << "B : " << bValues().toString() << std::endl;
+    // std::cout << "X : " << xValues().toString() << std::endl;
   } // end block for solve time
 
   /* Update X's global values */
   {
     Teuchos::TimeMonitor redistTimer(this->timers_.vecRedistTime_);
+    // broadcast solution to everyone
+    Teuchos::broadcast(*(this->matrixA_->getComm()),0,xValues());
+
     this->multiVecX_->globalize(xValues()); // operator() does conversion from ArrayRCP to ArrayView
   }
 
   /* All processes should return the same error code */
-  if( this->status_.numProcs_ != 1 ) Teuchos::broadcast(*(this->matrixA_->getComm()),0,&ierr);
+  Teuchos::broadcast(*(this->matrixA_->getComm()),0,&ierr);
   return(ierr);
 }
 
@@ -294,8 +316,10 @@ template <class Matrix, class Vector>
 bool
 Superlu<Matrix,Vector>::matrixShapeOK_impl() const
 {
-  // Superlu can handle square as well as rectangular matrices
-  return(true);
+  // The Superlu factorization routines can handle square as well as
+  // rectangular matrices, but Superlu can only apply the solve routines to
+  // square matrices, so we check the matrix for squareness.
+  return( this->matrixA_->getGlobalNumRows() == this->matrixA_->getGlobalNumCols() );
 }
 
 

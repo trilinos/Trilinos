@@ -20,31 +20,37 @@ void Status::setStatusParameters(
   // 0 - no output at all
   // 1 - output as specified by other parameters
   // 2 - all possible output
-  if( parameterList->isParameter("OutputLevel") )
+  if( parameterList->isParameter("OutputLevel") ){
     verbose_ = parameterList->get<int>("OutputLevel");
+  }
 
   // level of debug output:
   // 0 - no output at all
   // 1 - some debug output - set by some tests upon a test failure
   // >1 - more debug output (unused at this point)
-  if( parameterList->isParameter("DebugLevel") )
+  if( parameterList->isParameter("DebugLevel") ){
     debug_ = parameterList->get<int>("DebugLevel");
+  }
 
   // print some timing information (on process 0)
-  if( parameterList->isParameter("PrintTiming") )
+  if( parameterList->isParameter("PrintTiming") ){
     printTiming_ = parameterList->get<bool>("PrintTiming");
+  }
 
   // print some statistics (on process 0). Do not include timing
-  if( parameterList->isParameter("PrintStatus") )
+  if( parameterList->isParameter("PrintStatus") ){
     printStatus_ = parameterList->get<bool>("PrintStatus");
+  }
 
   // compute norms of some vectors
-  if( parameterList->isParameter("ComputeVectorNorms") )
+  if( parameterList->isParameter("ComputeVectorNorms") ){
     computeVectorNorms_ = parameterList->get<bool>("ComputeVectorNorms");
+  }
 
   // compute the true residual Ax-b after solution
-  if( parameterList->isParameter("ComputeTrueResidual") )
+  if( parameterList->isParameter("ComputeTrueResidual") ){
     computeTrueResidual_ = parameterList->get<bool>("ComputeTrueResidual");
+  }
 
 }
 

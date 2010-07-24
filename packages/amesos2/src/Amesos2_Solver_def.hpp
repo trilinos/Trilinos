@@ -51,6 +51,7 @@ Solver<ConcreteSolver,Matrix,Vector>::Solver(
   , multiVecX_(new MultiVecAdapter<Vector>(X))
   , multiVecB_(new MultiVecAdapter<Vector>(B))
   , globalNumNonZeros_(matrixA_->getGlobalNNZ())
+  , status_(matrixA_->getComm())
 {
   globalNumRows_     = matrixA_->getGlobalNumRows();
   globalNumCols_     = matrixA_->getGlobalNumCols();
@@ -60,6 +61,16 @@ Solver<ConcreteSolver,Matrix,Vector>::Solver(
     !matrixShapeOK(),
     std::invalid_argument,
     "Matrix shape inappropriate for the underlying solver");
+
+  TEST_FOR_EXCEPTION(
+    multiVecX_->getGlobalLength() != matrixA_->getGlobalNumRows(),
+    std::invalid_argument,
+    "LHS MultiVector must have length equal to the number of global rows in A");
+
+  TEST_FOR_EXCEPTION(
+    multiVecB_->getGlobalLength() != matrixA_->getGlobalNumRows(),
+    std::invalid_argument,
+    "RHS MultiVector must have length equal to the number of global rows in A");
 
   TEST_FOR_EXCEPTION(
     multiVecX_->getGlobalNumVectors() != multiVecB_->getGlobalNumVectors(),

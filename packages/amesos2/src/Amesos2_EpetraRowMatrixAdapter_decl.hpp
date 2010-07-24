@@ -173,8 +173,6 @@ public:
  *              a representation of the global matrix.  If \c true, then each
  *              processor will end up with a CRS representation of the matrix
  *              rows that it owns.
- * \param [in]  root Is the processor ID of the node that will end up with
- *              the CRS representation of the matrix.
  *
  * \exception std::length_error Thrown if \c nzval or \c colind is not
  * large enough to hold the global number of nonzero values.
@@ -190,8 +188,7 @@ public:
     const Teuchos::ArrayView<global_ordinal_type> colind,
     const Teuchos::ArrayView<global_size_type> rowptr,
     size_t& nnz,
-    bool local = false,
-    int root = 0);
+    bool local = false);
 
 
 /**
@@ -211,8 +208,6 @@ public:
  *              a representation of the global matrix.  If \c true, then each
  *              processor will end up with a CRS representation of the matrix
  *              rows that it owns.
- * \param [in]  root Is the processor ID of the node that will end up with
- *              the CRS representation of the matrix.
  *
  * \exception std::length_error Thrown if \c nzval or \c rowind is not
  * large enough to hold the global number of nonzero values.
@@ -228,8 +223,7 @@ public:
     const Teuchos::ArrayView<global_ordinal_type> rowind,
     const Teuchos::ArrayView<global_size_type> colptr,
     size_t& nnz,
-    bool local = false,
-    int root = 0);
+    bool local = false);
 
 
 /**
@@ -245,8 +239,7 @@ public:
     const Teuchos::ArrayView<scalar_type> nzval,
     const Teuchos::ArrayView<global_ordinal_type> colind,
     const Teuchos::ArrayView<global_size_type> rowptr,
-    size_t& nnz,
-    int root = 0);
+    size_t& nnz);
 
 
 /**
@@ -262,8 +255,7 @@ public:
     const Teuchos::ArrayView<scalar_type> nzval,
     const Teuchos::ArrayView<global_ordinal_type> rowind,
     const Teuchos::ArrayView<global_size_type> colptr,
-    size_t& nnz,
-    int root = 0);
+    size_t& nnz);
 
 
   /**
