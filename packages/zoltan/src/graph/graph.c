@@ -161,9 +161,9 @@ Zoltan_ZG_Build (ZZ* zz, ZG* graph, int local)
 #endif
 
   if (bipartite) {
-    int vertlno;
-    int limit;
-    int offset;
+/*  int vertlno; */
+/*  int limit; */
+/*  int offset; */
 
     graph->bipartite = 1;
     graph->fixed_vertices = graph->mtx.mtx.ybipart;
@@ -208,8 +208,6 @@ Zoltan_ZG_Export (ZZ* zz, const ZG* const graph, int *gvtx, int *nvtx,
 		  int **vtxdist, int **xadj, int **adjncy, int **adjproc,
 		  /* float **xwgt, */ float **ewgt, int **partialD2)
 {
-  int ierr = ZOLTAN_OK;
-
   AFFECT_NOT_NULL(gvtx, graph->mtx.mtx.globalY);
   AFFECT_NOT_NULL(nvtx, graph->mtx.mtx.nY);
   AFFECT_NOT_NULL(vtxdist, graph->mtx.dist_y);
