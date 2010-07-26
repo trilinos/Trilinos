@@ -9,7 +9,20 @@
 #ifndef IOSS_code_types_h
 #define IOSS_code_types_h
 
-#include <stk_util/parallel/Parallel.hpp>
+#if defined(STK_BUILT_IN_SIERRA)
+#define HAVE_MPI
+#else
+#include <Trios_config.h>
+#endif
+
+#if defined(HAVE_MPI)
+#include <mpi.h>
+#else
+#ifndef MPI_COMM_WORLD
+typedef int MPI_Comm;
+#define MPI_COMM_WORLD 0
+#endif
+#endif
 
 #include <complex>
 
