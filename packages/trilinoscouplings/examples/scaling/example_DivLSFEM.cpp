@@ -968,7 +968,7 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> bndyFaceJacobians(1,numFacePoints,spaceDim,spaceDim);
     FieldContainer<double> faceNorm(1,numFacePoints,spaceDim);
     FieldContainer<double> uDotNormal(1,numFacePoints);
-    FieldContainer<double> uFace(spaceDim);
+    FieldContainer<double> uFace(numFacePoints,spaceDim);
     FieldContainer<double> nodes(1, numNodesPerElem, spaceDim);
     int ibface=0;
 

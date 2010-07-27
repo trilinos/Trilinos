@@ -927,7 +927,7 @@ int main(int argc, char *argv[]) {
     FieldContainer<double> bndyEdgeJacobians(1,numEdgePoints,spaceDim,spaceDim);
     FieldContainer<double> edgeTan(1,numEdgePoints,spaceDim);
     FieldContainer<double> uDotTangent(numEdgePoints);
-    FieldContainer<double> uEdge(spaceDim);
+    FieldContainer<double> uEdge(numEdgePoints,spaceDim);
     FieldContainer<double> nodes(1, numNodesPerElem, spaceDim);
 
     int ibedge=0;
