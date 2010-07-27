@@ -57,6 +57,7 @@
 #include "Thyra_EpetraOperatorWrapper.hpp"
 #include "Thyra_EpetraLinearOp.hpp"
 
+
 using Teuchos::RCP;
 
 namespace Teko {
@@ -125,11 +126,8 @@ LinearOp SIMPLEPreconditionerFactory
      Hfact.initializeFromParameterList(BlkDiagList_);           
      LinearOp Hop=Hfact.buildPreconditionerOperator(matF,Hstate); 
 
-
-
-
-
-     // HAX for explicit construction 
+     // A hacky way to get a CrsMatrix out of the BDP.
+     // NTS: Should eventually add this functionality to the BDP proper.
 
      // Build CrsGraph
      int Nlb=BlkDiagList_.get("number of local blocks",0);
@@ -147,18 +145,8 @@ LinearOp SIMPLEPreconditionerFactory
      G->FillComplete();
      RCP<const Epetra_CrsGraph> Gg=rcp(G);
 
-
      // Probe H
-     /*     Teuchos::ParameterList probeList;
-
-     Prober prober(Gg,probeList,true);
-     Teuchos::RCP<Epetra_CrsMatrix> Hmat=rcp(new Epetra_CrsMatrix(Copy,*G));
-     prober.probe(*Hstate.BDP_,*Hmat);
-
-     // Wrap Hmat into H
-     H = Thyra::epetraLinearOp(Hmat);*/
      H=probe(Gg,Hop);
-
 
      buildExplicitSchurComplement = true;//NTS: Do I need this?
    }
