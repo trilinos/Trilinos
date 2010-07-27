@@ -103,7 +103,6 @@ Zoltan_Matrix_Remove_DupArcs(ZZ *zz, int size, Zoltan_Arc *arcs, float* pinwgt,
   int *perm;
   int *iperm;
   int index;
-  int prev_index;
 #ifdef CC_TIMERS
   double time;
 #endif
