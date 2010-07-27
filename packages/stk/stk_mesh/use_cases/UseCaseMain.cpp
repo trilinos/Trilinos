@@ -112,15 +112,16 @@ int main ( int argc, char * argv[] )
     status = status && local_status;
   }
 
-  bool result = -1;
+  int return_code = -1;
   if (status) {
-    result = 0;
+    return_code = 0;
+    std::cout << "End Result: TEST PASSED" << std::endl;
   }
-  std::cout << "End Result: TEST PASSED" << std::endl;
-  printStatus(status);
-  std::cout << std::endl;
+  else {
+    std::cout << "End Result: TEST FAILED" << std::endl;
+  }
 
   stk::parallel_machine_finalize();
 
-  return result;
+  return return_code;
 }

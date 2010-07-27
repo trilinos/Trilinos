@@ -217,7 +217,7 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
   // processes, but it fails with corrupt communication
   // with 10 or more processes
   const unsigned p_size = stk::parallel_machine_size( pm );
-  if ( 9 < p_size ) { return true; }
+  if ( 4 < p_size ) { return true; }
 
   //setup the mesh
   HexFixture3x3x3 fixture(pm);
@@ -266,6 +266,9 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
 
   skin_mesh( mesh, stk::mesh::Element, &skin_part);
 
+  // Re-fresh pointer to middle_element after mesh modification.
+  middle_element = mesh.get_entity(stk::mesh::Element,fixture.m_elems_id[1][1][1]);
+
   unsigned num_skin_entities = count_skin_entities(fixture);
 
   stk::all_reduce(pm, stk::ReduceSum<1>(&num_skin_entities));
@@ -274,7 +277,7 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
   //54 on the outside
   //6 on the inside attached to the entire mesh
   //6 on the inside attected to the element that was detached
-  bool correct_skin = num_skin_entities == 66;
+  bool correct_skin = ( num_skin_entities == 66 );
   bool correct_relations = true;
   bool correct_comm = true;
 
@@ -287,11 +290,11 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
       for (; relations.first != relations.second; ++relations.first) {
         stk::mesh::Entity * current_node = (relations.first->entity());
         //each node should be attached to only 1 element and 3 faces
-        correct_relations &= current_node->relations().size() == 4;
+        correct_relations &= ( current_node->relations().size() == 4 );
         //the entire closure of the element should exist on a single process
-        correct_comm      &= current_node->comm().size() == 0;
+        correct_comm      &= ( current_node->comm().size() == 0 );
       }
   }
 
-  return correct_skin && correct_relations && correct_comm;
+  return (correct_skin && correct_relations && correct_comm);
 }
