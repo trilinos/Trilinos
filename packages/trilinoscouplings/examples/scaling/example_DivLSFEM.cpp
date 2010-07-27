@@ -677,17 +677,6 @@ int main(int argc, char *argv[]) {
     Epetra_Map globalMapD(-1,numOwnedFaces,ownedFaceIds,0,Comm);
 
 
-   // Build the coordinate vectors for ML solver (including owned nodes only)
-    Epetra_Vector Nx(globalMapG), Ny(globalMapG),Nz(globalMapG);
-    for(int i=0,nlid=0;i<numNodes;i++)
-      if(nodeIsOwned[i]) {
-	Nx[nlid]=nodeCoordx[i];
-	Ny[nlid]=nodeCoordy[i];
-	Nz[nlid]=nodeCoordz[i];
-	nlid++;
-      }
-    
-
  // Print mesh size information
   if (MyPID == 0) {
     std::cout << " Number of Elements: " << numElemsGlobal << " \n";
@@ -753,6 +742,7 @@ int main(int argc, char *argv[]) {
     long long * sideSetIds = new long long [numSideSets];
     long long numSidesInSet;
     long long numDFinSet;
+    int numBndyFaces=0;
     im_ex_get_side_set_ids_l(id,sideSetIds);
     for (int i=0; i<numSideSets; i++) {
         im_ex_get_side_set_param_l(id,sideSetIds[i],&numSidesInSet,&numDFinSet);
@@ -763,6 +753,7 @@ int main(int argc, char *argv[]) {
           for (int j=0; j<numSidesInSet; j++) {
              int iface = sideSetSideList[j]-1;
              faceOnBoundary(elemToFace(sideSetElemList[j]-1,iface))=1;
+             numBndyFaces++;
              edgeOnBoundary(faceToEdge(elemToFace(sideSetElemList[j]-1,iface),0))=1;
              edgeOnBoundary(faceToEdge(elemToFace(sideSetElemList[j]-1,iface),1))=1;
              edgeOnBoundary(faceToEdge(elemToFace(sideSetElemList[j]-1,iface),2))=1;
@@ -775,11 +766,60 @@ int main(int argc, char *argv[]) {
 
     delete [] sideSetIds;
 
-#ifdef DUMP_DATA
-    EpetraExt::VectorToMatrixMarketFile("coordx.dat",Nx);
-    EpetraExt::VectorToMatrixMarketFile("coordy.dat",Ny);
-    EpetraExt::VectorToMatrixMarketFile("coordz.dat",Nz);
+#ifdef RANDOM_GRID
+/***********************************************************************************/
+/* This block of code will create a randomly perturbed mesh by jiggling the node
+   coordinates up to 1/4 of an edge length away from their initial location.
+         !!!NOTE: THIS WILL ONLY WORK CORRECTLY ON A SINGLE PROCESSOR!!!           */
+/***********************************************************************************/
 
+   // Container indicating whether a node is on the boundary (1-yes 0-no)
+    FieldContainer<int> nodeOnBoundary(numNodes);
+     for (int i=0; i<numEdges; i++) {
+        if (edgeOnBoundary(i)){
+           nodeOnBoundary(edgeToNode(i,0))=1;
+           nodeOnBoundary(edgeToNode(i,1))=1;
+        }
+     }
+
+     // Side length assuming an initially regular grid
+         double hx = nodeCoord(elemToNode(0,1),0)-nodeCoord(elemToNode(0,0),0);
+         double hy = nodeCoord(elemToNode(0,3),1)-nodeCoord(elemToNode(0,0),1);
+         double hz = nodeCoord(elemToNode(0,4),2)-nodeCoord(elemToNode(0,0),2);
+
+     // Loop over nodes
+       for (int inode = 0; inode < numNodes; inode++){
+         if (!nodeOnBoundary(inode) & nodeIsOwned[inode]) {
+           // random numbers between -1.0 and 1.0
+            double rx = 2.0 * (double)rand()/RAND_MAX - 1.0;
+            double ry = 2.0 * (double)rand()/RAND_MAX - 1.0;
+            double rz = 2.0 * (double)rand()/RAND_MAX - 1.0;
+           // limit variation to 1/4 edge length
+            nodeCoord(inode,0) = nodeCoord(inode,0) + 0.125 * hx * rx;
+            nodeCoord(inode,1) = nodeCoord(inode,1) + 0.125 * hy * ry;
+            nodeCoord(inode,2) = nodeCoord(inode,2) + 0.125 * hz * rz;
+            nodeCoordx[inode] = nodeCoord(inode,0);
+            nodeCoordy[inode] = nodeCoord(inode,1);
+            nodeCoordz[inode] = nodeCoord(inode,2);
+         }
+       }
+#endif
+
+  // Build the coordinate vectors for ML solver (including owned nodes only)
+    Epetra_Vector Nx(globalMapG), Ny(globalMapG),Nz(globalMapG);
+    for(int i=0,nlid=0;i<numNodes;i++)
+      if(nodeIsOwned[i]) {
+        Nx[nlid]=nodeCoordx[i];
+        Ny[nlid]=nodeCoordy[i];
+        Nz[nlid]=nodeCoordz[i];
+        nlid++;
+      }
+
+
+#ifdef DUMP_DATA
+    EpetraExt::VectorToMatrixMarketFile("coordx.dat",Nx,0,0,false);
+    EpetraExt::VectorToMatrixMarketFile("coordy.dat",Ny,0,0,false);
+    EpetraExt::VectorToMatrixMarketFile("coordz.dat",Nz,0,0,false);
 #endif
 
 
@@ -916,6 +956,72 @@ int main(int argc, char *argv[]) {
      hexHGradBasis.getValues(hexGVals, cubPoints, OPERATOR_VALUE);
 
 
+// **************************** INHOMOGENEOUS BC *****************************
+
+    typedef CellTools<double>  CellTools;
+    typedef FunctionSpaceTools fst;
+
+    FieldContainer<double> bndyFaceVal(numBndyFaces);
+    FieldContainer<int> bndyFaceToFace(numFaces);
+    FieldContainer<double> refFacePoints(numFacePoints,spaceDim);
+    FieldContainer<double> bndyFacePoints(1,numFacePoints,spaceDim);
+    FieldContainer<double> bndyFaceJacobians(1,numFacePoints,spaceDim,spaceDim);
+    FieldContainer<double> faceNorm(1,numFacePoints,spaceDim);
+    FieldContainer<double> uDotNormal(1,numFacePoints);
+    FieldContainer<double> uFace(spaceDim);
+    FieldContainer<double> nodes(1, numNodesPerElem, spaceDim);
+    int ibface=0;
+
+    // Evaluate normal at face quadrature points
+    for (int ielem=0; ielem<numElems; ielem++) {
+       for (int inode=0; inode<numNodesPerElem; inode++) {
+         nodes(0,inode,0) = nodeCoord(elemToNode(ielem,inode),0);
+         nodes(0,inode,1) = nodeCoord(elemToNode(ielem,inode),1);
+         nodes(0,inode,2) = nodeCoord(elemToNode(ielem,inode),2);
+       }
+       for (int iface=0; iface<numFacesPerElem; iface++){
+          if(faceOnBoundary(elemToFace(ielem,iface))){
+          // map evaluation points from reference face to reference cell
+             CellTools::mapToReferenceSubcell(refFacePoints,
+                                   paramGaussPoints,
+                                   2, iface, hex_8);
+
+          // calculate Jacobian
+             CellTools::setJacobian(bndyFaceJacobians, refFacePoints,
+                         nodes, hex_8);
+
+          // map evaluation points from reference cell to physical cell
+             CellTools::mapToPhysicalFrame(bndyFacePoints,
+                                refFacePoints,
+                                nodes, hex_8);
+
+          // Compute face normals
+             CellTools::getPhysicalFaceNormals(faceNorm,
+                                              bndyFaceJacobians,
+                                              iface, hex_8);
+
+          // evaluate exact solution and dot with normal
+           for(int nPt = 0; nPt < numFacePoints; nPt++){
+
+             double x = bndyFacePoints(0, nPt, 0);
+             double y = bndyFacePoints(0, nPt, 1);
+             double z = bndyFacePoints(0, nPt, 2);
+
+             evalu(uFace(nPt,0), uFace(nPt,1), uFace(nPt,2), x, y, z);
+             uDotNormal(0,nPt)=(uFace(nPt,0)*faceNorm(0,nPt,0)+uFace(nPt,1)*faceNorm(0,nPt,1)+uFace(nPt,2)*faceNorm(0,nPt,2));
+           }
+
+          // integrate
+           for(int nPt = 0; nPt < numFacePoints; nPt++){
+             bndyFaceVal(ibface)=bndyFaceVal(ibface)+uDotNormal(0,nPt)*paramGaussWeights(nPt);
+           }
+           bndyFaceToFace(elemToFace(ielem,iface))=ibface;
+           ibface++;
+         }
+       }
+    }
+
+
 // ******** LOOP OVER ELEMENTS TO CREATE LOCAL MASS and STIFFNESS MATRICES *************
 
 
@@ -924,8 +1030,6 @@ int main(int argc, char *argv[]) {
   }
 
  // Settings and data structures for mass and stiffness matrices
-    typedef CellTools<double>  CellTools;
-    typedef FunctionSpaceTools fst;
     int numCells = 1; 
 
    // Containers for nodes, edge and face signs 
@@ -1324,6 +1428,15 @@ int main(int argc, char *argv[]) {
      }
    }
 
+#ifdef DUMP_DATA
+  // Dump matrices without boundary condition corrections to disk
+   EpetraExt::RowMatrixToMatlabFile("mag_m2_0_matrix.dat",MassD);
+   EpetraExt::RowMatrixToMatlabFile("mag_k2_0_matrix.dat",StiffD);
+   EpetraExt::MultiVectorToMatrixMarketFile("mag_rhs2_clean.dat",rhsD,0,0,false);
+   fSignsout.close();
+#endif
+
+
   // Adjust matrices and rhs due to boundary conditions
      int numBCFaces=0;
      for (int i=0; i<numFaces; i++){
@@ -1331,24 +1444,55 @@ int main(int argc, char *argv[]) {
              numBCFaces++;
          }
       }
-      int * BCFaces = new int [numBCFaces];
-      int indbc=0;
-      int indOwned=0;
-      for (int i=0; i<numFaces; i++){
-        if (faceIsOwned[i]){
-          if (faceOnBoundary(i)){
-            BCFaces[indbc]=indOwned;
-            indbc++;
-            rhsD[0][indOwned]=0;
-           }
-          indOwned++;
-        } 
-      }
-      ML_Epetra::Apply_OAZToMatrix(BCFaces, numBCFaces, StiffD);
-      ML_Epetra::Apply_OAZToMatrix(BCFaces, numBCFaces, MassD);
+
+    // Vector for use in applying BCs
+     Epetra_MultiVector v(globalMapD,true);
+     v.PutScalar(0.0);
+
+   // Set v to boundary values on Dirichlet faces
+     int * BCFaces = new int [numBCFaces];
+     int indbc=0;
+     int indOwned=0;
+     for (int i=0; i<numFaces; i++){
+       if (faceIsOwned[i]){
+        if (faceOnBoundary(i)){
+           BCFaces[indbc]=indOwned;
+           indbc++;
+           v[0][indOwned]=bndyFaceVal(bndyFaceToFace(i));
+          }
+         indOwned++;
+        }
+     }
+
+   // Get the full matrix
+   ML_Epetra::ML_RefMaxwell_11_Operator MatrixD(StiffD,DCurl,MassCinv,MassD);
+
+  // Apply it to v
+   Epetra_MultiVector rhsDir(globalMapD,true);
+   MatrixD.Apply(v,rhsDir);
+
+   // Update right-hand side
+   rhsD.Update(-1.0,rhsDir,1.0);
+
+   // Update rhs values on Dirichlet edges
+     indbc=0;
+     indOwned=0;
+     for (int i=0; i<numFaces; i++){
+       if (faceIsOwned[i]){
+        if (faceOnBoundary(i)){
+           indbc++;
+           rhsD[0][indOwned]=bndyFaceVal(bndyFaceToFace(i));
+          }
+         indOwned++;
+        }
+     }
+
+   // Zero out rows and columns of stiffness and mass matrix corresponding to Dirichlet faces
+   //  and add one to diagonal.
+     ML_Epetra::Apply_OAZToMatrix(BCFaces, numBCFaces, StiffD);
+     ML_Epetra::Apply_OAZToMatrix(BCFaces, numBCFaces, MassD);
 
       delete [] BCFaces;
-
 
    // Build Face-Node Incidence Matrix
    Epetra_CrsMatrix DGrad1(DGrad);
@@ -1369,9 +1513,8 @@ int main(int argc, char *argv[]) {
    EpetraExt::RowMatrixToMatlabFile("mag_t0_matrix.dat",DGrad);
    EpetraExt::RowMatrixToMatlabFile("mag_t1_matrix.dat",DCurl);
    EpetraExt::RowMatrixToMatlabFile("mag_fn_matrix.dat",FaceNode);
-   EpetraExt::MultiVectorToMatrixMarketFile("rhs2_vector.dat",rhsD,0,0,false);
+   EpetraExt::MultiVectorToMatrixMarketFile("mag_rhs2.dat",rhsD,0,0,false);
    EpetraExt::VectorToMatrixMarketFile("diagc.dat",DiagC,0,0,false);
-
 
    fSignsout.close();
 #endif
@@ -1437,7 +1580,7 @@ int main(int argc, char *argv[]) {
 					 MassC,MassCinv,MassD,
 					 xh,rhsD,
 					 TotalErrorResidual, TotalErrorExactSol);
-#ifdef CALC_ERROR
+
     // ********  Calculate Error in Solution ***************
 
      double L2err = 0.0;
@@ -1447,23 +1590,13 @@ int main(int argc, char *argv[]) {
      double HDiverrTot = 0.0;
      double LinferrTot = 0.0;
 
-    FieldContainer<double> uCoeff(numFacesGlobal);
-
-  // Read in solution 
-    double tmp;
-    ifstream fin;
-    fin.open("divCoeff.dat");
-    if (fin.is_open()){
-      for (int i=0; i<numFacesGlobal; i++){
-         fin >> tmp;
-         uCoeff(i) = tmp;
-      }
-    }
-    else{
-      std::cout << "Cannot read input file: divCoeff.dat \n\n";
-      exit(1);
-    }
-    fin.close();
+#ifdef HAVE_MPI
+   // Import solution onto current processor
+     Epetra_Map  solnMap(numFacesGlobal, numFacesGlobal, 0, Comm);
+     Epetra_Import  solnImporter(solnMap, globalMapD);
+     Epetra_FEVector  uCoeff(solnMap);
+     uCoeff.Import(xh, solnImporter, Insert);
+#endif
 
    // Get cubature points and weights for error calc (may be different from previous)
      DefaultCubatureFactory<double>  cubFactoryErr;
@@ -1552,7 +1685,11 @@ int main(int argc, char *argv[]) {
           double divuApprox = 0.0;
           for (int i = 0; i < numFieldsD; i++){
              int rowIndex = globalFaceIds[elemToFace(k,i)];
-             double uh1 = uCoeff(rowIndex);
+#ifdef HAVE_MPI
+             double uh1 = uCoeff.Values()[rowIndex];
+#else
+             double uh1 = xh.Values()[rowIndex];
+#endif
              uApprox1 += uh1*uhDValsTrans(0,i,nPt,0)*hexFaceSigns(0,i);
              uApprox2 += uh1*uhDValsTrans(0,i,nPt,1)*hexFaceSigns(0,i);
              uApprox3 += uh1*uhDValsTrans(0,i,nPt,2)*hexFaceSigns(0,i);
@@ -1588,11 +1725,10 @@ int main(int argc, char *argv[]) {
 
 
   if (MyPID == 0) {
-    std::cout << "\n" << "L2 Error:  " << sqrt(L2err) <<"\n";
-    std::cout << "HDiv Error:  " << sqrt(HDiverr) <<"\n";
-    std::cout << "LInf Error:  " << Linferr <<"\n\n";
+    std::cout << "\n" << "L2 Error:  " << sqrt(L2errTot) <<"\n";
+    std::cout << "HDiv Error:  " << sqrt(HDiverrTot) <<"\n";
+    std::cout << "LInf Error:  " << LinferrTot <<"\n\n";
   }
-#endif
 
 
  // delete mesh
@@ -1874,6 +2010,11 @@ void TestMultiLevelPreconditioner_DivLSFEM(char ProblemType[],
   // accuracy check
   string msg = ProblemType;
   solution_test(msg,Operator11,*lhs,*rhs,xexact,Time,TotalErrorExactSol,TotalErrorResidual);
+
+#ifdef DUMP_DATA
+   EpetraExt::MultiVectorToMatrixMarketFile("mag_lhs2.dat",*lhs,0,0,false);
+#endif
+
 
   xh = *lhs;
   

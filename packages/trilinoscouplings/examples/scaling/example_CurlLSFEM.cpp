@@ -669,17 +669,6 @@ int main(int argc, char *argv[]) {
     Epetra_Map globalMapG(-1,ownedNodes,ownedGIDs,0,Comm);
     Epetra_Map globalMapC(-1,numOwnedEdges,ownedEdgeIds,0,Comm);
 
-    
-   // Build the coordinate vectors for ML solver (including owned nodes only)
-    Epetra_Vector Nx(globalMapG), Ny(globalMapG),Nz(globalMapG);
-    for(int i=0,nlid=0;i<numNodes;i++)
-      if(nodeIsOwned[i]) {
-	Nx[nlid]=nodeCoordx[i];
-	Ny[nlid]=nodeCoordy[i];
-	Nz[nlid]=nodeCoordz[i];
-	nlid++;
-      }
-    
 
  // Print mesh size information
   if (MyPID == 0) {
@@ -728,7 +717,6 @@ int main(int argc, char *argv[]) {
     e2nout.close();
 #endif
 
-
    // Container indicating whether a face is on the boundary (1-yes 0-no)
     FieldContainer<int> edgeOnBoundary(numEdges);
     FieldContainer<int> faceOnBoundary(numFaces);
@@ -770,6 +758,46 @@ int main(int argc, char *argv[]) {
            numEdgeOnBndy++;
         }
      }   
+
+
+#ifdef RANDOM_GRID
+/***********************************************************************************/
+/* This block of code will create a randomly perturbed mesh by jiggling the node
+   coordinates up to 1/4 of an edge length away from their initial location.
+         !!!NOTE: THIS WILL ONLY WORK CORRECTLY ON A SINGLE PROCESSOR!!!           */
+/***********************************************************************************/
+     // Side length assuming an initially regular grid
+         double hx = nodeCoord(elemToNode(0,1),0)-nodeCoord(elemToNode(0,0),0);
+         double hy = nodeCoord(elemToNode(0,3),1)-nodeCoord(elemToNode(0,0),1);
+         double hz = nodeCoord(elemToNode(0,4),2)-nodeCoord(elemToNode(0,0),2);
+
+     // Loop over nodes
+       for (int inode = 0; inode < numNodes; inode++){
+         if (!nodeOnBoundary(inode) & nodeIsOwned[inode]) {
+           // random numbers between -1.0 and 1.0
+            double rx = 2.0 * (double)rand()/RAND_MAX - 1.0;
+            double ry = 2.0 * (double)rand()/RAND_MAX - 1.0;
+            double rz = 2.0 * (double)rand()/RAND_MAX - 1.0;
+           // limit variation to 1/4 edge length
+            nodeCoord(inode,0) = nodeCoord(inode,0) + 0.125 * hx * rx;
+            nodeCoord(inode,1) = nodeCoord(inode,1) + 0.125 * hy * ry;
+            nodeCoord(inode,2) = nodeCoord(inode,2) + 0.125 * hz * rz;
+            nodeCoordx[inode] = nodeCoord(inode,0);
+            nodeCoordy[inode] = nodeCoord(inode,1);
+            nodeCoordz[inode] = nodeCoord(inode,2);
+         }
+       }
+#endif
+
+   // Build the coordinate vectors for ML solver (including owned nodes only)
+    Epetra_Vector Nx(globalMapG), Ny(globalMapG),Nz(globalMapG);
+    for(int i=0,nlid=0;i<numNodes;i++)
+      if(nodeIsOwned[i]) {
+	Nx[nlid]=nodeCoordx[i];
+	Ny[nlid]=nodeCoordy[i];
+	Nz[nlid]=nodeCoordz[i];
+	nlid++;
+      }
 
 
 // **************************** INCIDENCE MATRIX **************************************
@@ -845,6 +873,24 @@ int main(int argc, char *argv[]) {
     // Define storage for cubature points on workset faces
     hexFaceCubature -> getCubature(paramGaussPoints, paramGaussWeights);
 
+  // Get numerical integration points and weights for hexahedron edge
+     //         (needed for inhomogeneous boundary terms)
+
+    // Define topology of the edge parametrization domain as [-1,1]
+    CellTopology paramEdge(shards::getCellTopologyData<shards::Line<2> >() );
+
+    // Define cubature
+    DefaultCubatureFactory<double>  cubFactoryEdge;
+    Teuchos::RCP<Cubature<double> > hexEdgeCubature = cubFactoryEdge.create(paramEdge, 3);
+    int cubEdgeDim    = hexEdgeCubature -> getDimension();
+    int numEdgePoints = hexEdgeCubature -> getNumPoints();
+
+    // Define storage for cubature points and weights on [-1,1]
+    FieldContainer<double> paramEdgeWeights(numEdgePoints);
+    FieldContainer<double> paramEdgePoints(numEdgePoints,cubEdgeDim);
+
+    // Define storage for cubature points on workset faces
+    hexEdgeCubature -> getCubature(paramEdgePoints, paramEdgeWeights);
 
 // ************************************** BASIS ***************************************
 
@@ -868,6 +914,76 @@ int main(int argc, char *argv[]) {
      hexHCurlBasis.getValues(hexCurls, cubPoints, OPERATOR_CURL);
      hexHGradBasis.getValues(hexGVals, cubPoints, OPERATOR_VALUE);
 
+// *********************** INHOMOGENEOUS BC ***********************
+
+    typedef CellTools<double>  CellTools;
+    typedef FunctionSpaceTools fst;
+
+    FieldContainer<double> bndyEdgeVal(numEdgeOnBndy);
+    FieldContainer<int> bndyEdgeToEdge(numEdges);
+    FieldContainer<bool> bndyEdgeDone(numEdges);
+    FieldContainer<double> refEdgePoints(numEdgePoints,spaceDim);
+    FieldContainer<double> bndyEdgePoints(1,numEdgePoints,spaceDim);
+    FieldContainer<double> bndyEdgeJacobians(1,numEdgePoints,spaceDim,spaceDim);
+    FieldContainer<double> edgeTan(1,numEdgePoints,spaceDim);
+    FieldContainer<double> uDotTangent(numEdgePoints);
+    FieldContainer<double> uEdge(spaceDim);
+    FieldContainer<double> nodes(1, numNodesPerElem, spaceDim);
+
+    int ibedge=0;
+    // Evaluate tangent at edge quadrature points
+    for (int ielem=0; ielem<numElems; ielem++) {
+       for (int inode=0; inode<numNodesPerElem; inode++) {
+         nodes(0,inode,0) = nodeCoord(elemToNode(ielem,inode),0);
+         nodes(0,inode,1) = nodeCoord(elemToNode(ielem,inode),1);
+         nodes(0,inode,2) = nodeCoord(elemToNode(ielem,inode),2);
+       }
+       for (int iedge=0; iedge<numEdgesPerElem; iedge++){
+          if(edgeOnBoundary(elemToEdge(ielem,iedge)) && !bndyEdgeDone(elemToEdge(ielem,iedge))){
+
+          // map evaluation points from reference edge to reference cell
+             CellTools::mapToReferenceSubcell(refEdgePoints,
+                                   paramEdgePoints,
+                                   1, iedge, hex_8);
+
+          // calculate Jacobian
+             CellTools::setJacobian(bndyEdgeJacobians, refEdgePoints,
+                         nodes, hex_8);
+
+          // map evaluation points from reference cell to physical cell
+             CellTools::mapToPhysicalFrame(bndyEdgePoints,
+                                refEdgePoints,
+                                nodes, hex_8);
+
+          // Compute edge tangents
+             CellTools::getPhysicalEdgeTangents(edgeTan,
+                                              bndyEdgeJacobians,
+                                              iedge, hex_8);
+
+          // evaluate exact solution at edge center and dot with normal
+           for(int nPt = 0; nPt < numEdgePoints; nPt++){
+
+             double x = bndyEdgePoints(0, nPt, 0);
+             double y = bndyEdgePoints(0, nPt, 1);
+             double z = bndyEdgePoints(0, nPt, 2);
+
+             evalu(uEdge(nPt,0), uEdge(nPt,1), uEdge(nPt,2), x, y, z);
+             uDotTangent(nPt)=(uEdge(nPt,0)*edgeTan(0,nPt,0)+uEdge(nPt,1)*edgeTan(0,nPt,1)+uEdge(nPt,2)*edgeTan(0,nPt,2));
+           }
+
+          // integrate
+           for(int nPt = 0; nPt < numEdgePoints; nPt++){
+             bndyEdgeVal(ibedge)=bndyEdgeVal(ibedge)+uDotTangent(nPt)*paramEdgeWeights(nPt);
+           }
+
+           bndyEdgeToEdge(elemToEdge(ielem,iedge))=ibedge;
+           ibedge++;
+           bndyEdgeDone(elemToEdge(ielem,iedge))=1;
+         }
+       }
+    }
+
+
 
 // ******** LOOP OVER ELEMENTS TO CREATE LOCAL MASS and STIFFNESS MATRICES *************
 
@@ -877,8 +993,6 @@ int main(int argc, char *argv[]) {
   }
 
  // Settings and data structures for mass and stiffness matrices
-    typedef CellTools<double>  CellTools;
-    typedef FunctionSpaceTools fst;
     typedef ArrayTools art;
     int numCells = 1; 
 
@@ -1215,43 +1329,22 @@ int main(int argc, char *argv[]) {
     DGrad.GlobalAssemble(globalMapG,globalMapC); DGrad.FillComplete(MassG.RowMap(),MassC.RowMap()); 
 
 #ifdef DUMP_DATA
+   // Matrices and Vector before adjusting due to BCs
+   EpetraExt::RowMatrixToMatlabFile("mag_m1_0_matrix.dat",MassC);
+   EpetraExt::RowMatrixToMatlabFile("mag_k1_0_matrix.dat",StiffC);
+   EpetraExt::MultiVectorToMatrixMarketFile("mag_rhs1_clean.dat",rhsC,0,0,false);
+
     // Node Coordinates
-    EpetraExt::VectorToMatrixMarketFile("coords.y.dat",Ny);
-    EpetraExt::VectorToMatrixMarketFile("coords.z.dat",Nz);
+    EpetraExt::VectorToMatrixMarketFile("coordx.dat",Nx,0,0,false);
+    EpetraExt::VectorToMatrixMarketFile("coordy.dat",Ny,0,0,false);
+    EpetraExt::VectorToMatrixMarketFile("coordz.dat",Nz,0,0,false);
     
     // Edge Coordinates
-    EpetraExt::VectorToMatrixMarketFile("ecoords.x.dat",EDGE_X);
-    EpetraExt::VectorToMatrixMarketFile("ecoords.y.dat",EDGE_Y);
-    EpetraExt::VectorToMatrixMarketFile("ecoords.z.dat",EDGE_Z);     
+    EpetraExt::VectorToMatrixMarketFile("ecoordx.dat",EDGE_X);
+    EpetraExt::VectorToMatrixMarketFile("ecoordy.dat",EDGE_Y);
+    EpetraExt::VectorToMatrixMarketFile("ecoordz.dat",EDGE_Z);     
 #endif
 
-
-
-
-
-   // Adjust matrix due to Dirichlet boundary conditions
-    int numBCEdges=0;
-    for (int i=0; i<numEdges; i++){
-      if (edgeOnBoundary(i) && edgeIsOwned[i]){
-	numBCEdges++;
-      }
-    }
-    int * BCEdges = new int [numBCEdges];
-    int indbc=0;
-    int indOwned=0;
-    for (int i=0; i<numEdges; i++){
-      if (edgeIsOwned[i]){
-        if (edgeOnBoundary(i)){
-           BCEdges[indbc]=indOwned;
-	   indbc++;
-	   rhsC[0][indOwned]=0;
-        }
-        indOwned++;
-      }
-    }
-    ML_Epetra::Apply_OAZToMatrix(BCEdges, numBCEdges, StiffC);
-    
-    delete [] BCEdges;
   
    // Build the inverse diagonal for MassG
    Epetra_Vector DiagG(MassG.RowMap());
@@ -1259,13 +1352,13 @@ int main(int argc, char *argv[]) {
    MassG.Multiply(false,DiagG,DiagG);
    for(int i=0;i<DiagG.MyLength();i++) DiagG[i]=1.0/DiagG[i];
    Epetra_CrsMatrix MassGinv(Copy,MassG.RowMap(),MassG.RowMap(),1);
-   //   MassGinv.ReplaceDiagonalValues(DiagG);
    for(int i=0;i<DiagG.MyLength();i++) {
      int CID=MassG.GCID(i);
      MassGinv.InsertGlobalValues(MassG.GRID(i),1,&(DiagG[i]),&CID);
    }
    MassGinv.FillComplete();
    
+   // Zero out entries that correspond to boundary nodes
    for(int i=0;i<numNodes;i++) {
      if (nodeOnBoundary(i)){
       double val=0.0;
@@ -1273,6 +1366,70 @@ int main(int argc, char *argv[]) {
       MassGinv.ReplaceGlobalValues(index,1,&val,&index);
      }
    }
+
+   std::cout << "Adjust for boundary conditions... "<< "\n";
+
+  // Count of boundary edges
+    int numBCEdges=0;
+    for (int i=0; i<numEdges; i++){
+      if (edgeOnBoundary(i) && edgeIsOwned[i]){
+        numBCEdges++;
+      }
+    }
+    std::cout<< "numBCEdges " <<numBCEdges<<"\n";
+
+  // Vector for use in applying BCs
+   Epetra_MultiVector v(globalMapC,true);
+   v.PutScalar(0.0);
+
+   // Set v to boundary values on Dirichlet edges
+    int * BCEdges = new int [numBCEdges];
+    int indbc=0;
+    int indOwned=0;
+    for (int i=0; i<numEdges; i++){
+      if (edgeIsOwned[i]){
+        if (edgeOnBoundary(i)){
+           BCEdges[indbc]=indOwned;
+           indbc++;
+           v[0][indOwned]=bndyEdgeVal(bndyEdgeToEdge(i));
+        }
+        indOwned++;
+      }
+    }
+
+  // Get the full matrix
+   ML_Epetra::ML_RefMaxwell_11_Operator MatrixC(StiffC,DGrad,MassGinv,MassC);
+
+  // Apply it to v
+   Epetra_MultiVector rhsDir(globalMapC,true);
+   //rhsDir.PutScalar(0.0);
+   MatrixC.Apply(v,rhsDir);
+
+  // Update right-hand side
+   rhsC.Update(-1.0,rhsDir,1.0);
+
+
+   // Adjust rhs due to Dirichlet boundary conditions
+    indbc=0;
+    indOwned=0;
+    for (int i=0; i<numEdges; i++){
+      if (edgeIsOwned[i]){
+        if (edgeOnBoundary(i)){
+           indbc++;
+           rhsC[0][indOwned]=bndyEdgeVal(bndyEdgeToEdge(i));
+           rhsDir[0][indOwned]=0.0;
+        }
+        indOwned++;
+      }
+    }
+
+   // Zero out rows and columns of stiffness matrix corresponding to Dirichlet edges
+   //  and add one to diagonal.
+    ML_Epetra::Apply_OAZToMatrix(BCEdges, numBCEdges, StiffC);
+    std::cout<< "indbc " <<indbc<<"\n";
+
+    delete [] BCEdges;
+
 
    // Solve!
    Teuchos::ParameterList MLList,dummy;
@@ -1715,10 +1872,10 @@ void TestMultiLevelPreconditioner_CurlLSFEM(char ProblemType[],
    EpetraExt::RowMatrixToMatlabFile("mag_m0inv_matrix.dat",M0inv);
    EpetraExt::RowMatrixToMatlabFile("mag_m1_matrix.dat",M1);
    EpetraExt::RowMatrixToMatlabFile("mag_k1_matrix.dat",CurlCurl);
-   EpetraExt::RowMatrixToMatlabFile("mag_t_matrix.dat",D0);
-   EpetraExt::RowMatrixToMatlabFile("mag_t_clean_matrix.dat",D0clean);
-   EpetraExt::MultiVectorToMatrixMarketFile("mag_rhs.dat",*rhs,0,0,false);
-   EpetraExt::MultiVectorToMatrixMarketFile("mag_lhs.dat",*lhs,0,0,false);
+   EpetraExt::RowMatrixToMatlabFile("mag_t0_matrix.dat",D0);
+   EpetraExt::RowMatrixToMatlabFile("mag_t0_clean_matrix.dat",D0clean);
+   EpetraExt::MultiVectorToMatrixMarketFile("mag_rhs1.dat",*rhs,0,0,false);
+   EpetraExt::MultiVectorToMatrixMarketFile("mag_lhs1.dat",*lhs,0,0,false);
 #endif
 
     xh = *lhs;
