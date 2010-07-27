@@ -772,7 +772,7 @@ std::string getDiagonalName(const DiagonalType & dt);
   */
 DiagonalType getDiagonalType(std::string name);
 
-LinearOp probe(Teuchos::RCP<const Epetra_CrsGraph> &G, LinearOp & Op);
+LinearOp probe(Teuchos::RCP<const Epetra_CrsGraph> &G, const LinearOp & Op);
 
 } // end namespace Teko
 

@@ -1297,17 +1297,13 @@ DiagonalType getDiagonalType(std::string name)
 
 
 
-LinearOp probe(Teuchos::RCP<const Epetra_CrsGraph> &G, LinearOp & Op){
+LinearOp probe(Teuchos::RCP<const Epetra_CrsGraph> &G,const LinearOp & Op){
 #ifdef Teko_ENABLE_Isorropia
   Teuchos::ParameterList probeList;
   Prober prober(G,probeList,true);
   Teuchos::RCP<Epetra_CrsMatrix> Mat=rcp(new Epetra_CrsMatrix(Copy,*G));
-
   Teko::Epetra::EpetraOperatorWrapper Mwrap(Op);
   prober.probe(Mwrap,*Mat);
-
-  cout<<*Op<<endl;
-  cout<<*Mat<<endl;
   return Thyra::epetraLinearOp(Mat);    
 #else
   TEST_FOR_EXCEPTION(true,std::runtime_error,"Probe requires Isorropia");
