@@ -175,14 +175,12 @@ int EpetraExt_BlockDiagMatrix::Compute(){
 int EpetraExt_BlockDiagMatrix::ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const{
   int info;
   // Sanity Checks
-  if(X.NumVectors()!=Y.NumVectors())
+  int NumVectors=X.NumVectors();  
+  if(NumVectors!=Y.NumVectors())
     EPETRA_CHK_ERR(-1);
   if(!HasComputed_ && (ApplyMode_==AM_INVERT || ApplyMode_==AM_FACTOR))
     EPETRA_CHK_ERR(-2);
   
-  //NTS: Add multivector support
-  assert(X.NumVectors()==1);
-
   //NTS: MultiVector's MyLength and [] Operators are  "points" level operators
   //not a "block/element" level operators.
 
@@ -197,22 +195,22 @@ int EpetraExt_BlockDiagMatrix::ApplyInverse(const Epetra_MultiVector& X, Epetra_
       int Nb=blocksize[i];
       int vidx0=vlist[i];
       int xidx0=xlist[i];
-
-      if(Nb==1) {
-        // Optimize for size = 1
-        Y[0][xidx0]=Values_[vidx0]*X[0][xidx0];
-      }
-      else if(Nb==2){
-        // Optimize for size = 2
-        Y[0][xidx0  ]=Values_[vidx0  ]*X[0][xidx0] + Values_[vidx0+2]*X[0][xidx0+1];
-        Y[0][xidx0+1]=Values_[vidx0+1]*X[0][xidx0] + Values_[vidx0+3]*X[0][xidx0+1];
-      }
-      else{
-        // "Large" Block - Use BLAS
-        //void 	GEMV (const char TRANS, const int M, const int N, const double ALPHA, const double *A, const int LDA, const double *X, const double BETA, double *Y, const int INCX=1, const int INCY=1) const 
-        GEMV('N',Nb,Nb,1.0,&Values_[vidx0],Nb,&X[0][xidx0],0.0,&Y[0][xidx0]);
-      }
-            
+      for(int j=0;j<NumVectors;j++){	
+	if(Nb==1) {
+	  // Optimize for size = 1
+	  Y[j][xidx0]=Values_[vidx0]*X[j][xidx0];
+	}
+	else if(Nb==2){
+	  // Optimize for size = 2
+	  Y[j][xidx0  ]=Values_[vidx0  ]*X[j][xidx0] + Values_[vidx0+2]*X[j][xidx0+1];
+	  Y[j][xidx0+1]=Values_[vidx0+1]*X[j][xidx0] + Values_[vidx0+3]*X[j][xidx0+1];
+	}
+	else{
+	  // "Large" Block - Use BLAS
+	  //void 	GEMV (const char TRANS, const int M, const int N, const double ALPHA, const double *A, const int LDA, const double *X, const double BETA, double *Y, const int INCX=1, const int INCY=1) const 
+	  GEMV('N',Nb,Nb,1.0,&Values_[vidx0],Nb,&X[j][xidx0],0.0,&Y[j][xidx0]);
+	}
+      }   
     }
   }
   else{
@@ -222,21 +220,23 @@ int EpetraExt_BlockDiagMatrix::ApplyInverse(const Epetra_MultiVector& X, Epetra_
       int Nb=blocksize[i];
       int vidx0=vlist[i];
       int xidx0=xlist[i];      
-      if(Nb==1) {
-        // Optimize for size = 1 - use the inverse
-        Y[0][xidx0]=Values_[vidx0]*X[0][xidx0];
-      }
-      else if(Nb==2){
-        // Optimize for size = 2 - use the inverse
-        Y[0][xidx0  ]=Values_[vidx0  ]*X[0][xidx0] + Values_[vidx0+2]*X[0][xidx0+1];
-        Y[0][xidx0+1]=Values_[vidx0+1]*X[0][xidx0] + Values_[vidx0+3]*X[0][xidx0+1];
-      }
-      else{
-        // "Large" Block - use LAPACK
-        //    void 	GETRS (const char TRANS, const int N, const int NRHS, const double *A, const int LDA, const int *IPIV, double *X, const int LDX, int *INFO) const 
-        for(int j=0;j<Nb;j++) Y[0][xidx0+j]=X[0][xidx0+j];
-        LAPACK.GETRS('N',Nb,1,&Values_[vidx0],Nb,&Pivots_[xidx0],&Y[0][xidx0],Nb,&info);
-        if(info) EPETRA_CHK_ERR(info);
+      for(int j=0;j<NumVectors;j++){
+	if(Nb==1) {
+	  // Optimize for size = 1 - use the inverse
+	  Y[j][xidx0]=Values_[vidx0]*X[j][xidx0];
+	}
+	else if(Nb==2){
+	  // Optimize for size = 2 - use the inverse
+	  Y[j][xidx0  ]=Values_[vidx0  ]*X[j][xidx0] + Values_[vidx0+2]*X[j][xidx0+1];
+	  Y[j][xidx0+1]=Values_[vidx0+1]*X[j][xidx0] + Values_[vidx0+3]*X[j][xidx0+1];
+	}
+	else{
+	  // "Large" Block - use LAPACK
+	  //    void 	GETRS (const char TRANS, const int N, const int NRHS, const double *A, const int LDA, const int *IPIV, double *X, const int LDX, int *INFO) const 
+	  for(int k=0;k<Nb;k++) Y[j][xidx0+k]=X[j][xidx0+k];
+	  LAPACK.GETRS('N',Nb,1,&Values_[vidx0],Nb,&Pivots_[xidx0],&Y[j][xidx0],Nb,&info);
+	  if(info) EPETRA_CHK_ERR(info);
+	}
       }
     }    
   }  
