@@ -207,11 +207,11 @@ int Zoltan_Map_Destroy(ZZ *zz, ZOLTAN_MAP** map)
  * (Return ZOLTAN_OK, etc.)
  */
 
-int Zoltan_Map_Add(ZZ *zz, ZOLTAN_MAP* map, int *key, void *data) {
+int Zoltan_Map_Add(ZZ *zz, ZOLTAN_MAP* map, int *key, int data) {
   return (Zoltan_Map_Find_Add(zz, map, key, data, NULL));
 }
 
-int Zoltan_Map_Find_Add(ZZ *zz, ZOLTAN_MAP* map, int *key, void *datain, void **dataout)
+int Zoltan_Map_Find_Add(ZZ *zz, ZOLTAN_MAP* map, int *key, int datain, int *dataout)
 {
   char *yo = "Zoltan_Map_Add";
   int index, match, i;
@@ -285,18 +285,18 @@ int Zoltan_Map_Find_Add(ZZ *zz, ZOLTAN_MAP* map, int *key, void *datain, void **
 
 /*****************************************************************
  * Find the key in the map.  If found, the data pointer is set to
- * the key value.  If not found, the data pointer is set to NULL.
+ * the key value.  If not found, the data pointer is set to ZOLTAN_NOT_FOUND.
  * (Return ZOLTAN_OK, etc.)
  */
 
-int Zoltan_Map_Find(ZZ *zz, ZOLTAN_MAP* map, int *key, void **data)
+int Zoltan_Map_Find(ZZ *zz, ZOLTAN_MAP* map, int *key, int *data)
 {
   char *yo = "Zoltan_Map_Find";
   int index, match;
   ZOLTAN_ENTRY *element;
   ZOLTAN_ID_PTR zkey = (ZOLTAN_ID_PTR)key;
 
-  *data = NULL;
+  *data = ZOLTAN_NOT_FOUND;
 
   if (!map){
     ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Map specified does not exist\n");
@@ -336,18 +336,18 @@ int Zoltan_Map_Size(ZZ *zz, ZOLTAN_MAP* map)
  * Begin iterating through the key/value pairs.
  *
  * *key is set to point to the first key
- * *data is set to the pointer that is associated with the first key
+ * *data is set to the integer that is associated with the first key
  * (Return ZOLTAN_OK, etc)
  */
 
-int Zoltan_Map_First(ZZ *zz, ZOLTAN_MAP* map, int **key, void **data)
+int Zoltan_Map_First(ZZ *zz, ZOLTAN_MAP* map, int **key, int *data)
 {
   char *yo = "Zoltan_Map_First";
   ZOLTAN_ENTRY *entry = NULL;
   int i;
 
   *key = NULL;
-  *data = NULL;
+  *data = ZOLTAN_NOT_FOUND;
 
   if (map){
 
@@ -383,6 +383,10 @@ int Zoltan_Map_First(ZZ *zz, ZOLTAN_MAP* map, int **key, void **data)
       *data = entry->data;
     }
   }
+  else {
+    ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Invalid map\n");
+    return ZOLTAN_FATAL;
+  }
 
   return ZOLTAN_OK;
 }
@@ -391,20 +395,20 @@ int Zoltan_Map_First(ZZ *zz, ZOLTAN_MAP* map, int **key, void **data)
  * Return the next key/data pair.
  *
  * *key is set to point to the next key
- * *data is set to the pointer that is associated with that key
+ * *data is set to the integer that is associated with that key
  *
- * *key and *data are NULL if there are no more key/data pairs
+ * *key is NULL if there are no more key/data pairs; *data is ZOLTAN_NOT_FOUND
  *
  * (Return ZOLTAN_OK, etc)
  */
 
-int Zoltan_Map_Next(ZZ *zz, ZOLTAN_MAP* map, int **key, void **data)
+int Zoltan_Map_Next(ZZ *zz, ZOLTAN_MAP* map, int **key, int *data)
 {
   ZOLTAN_ENTRY *next = NULL;
   int i;
 
   *key = NULL;
-  *data = NULL;
+  *data = ZOLTAN_NOT_FOUND;
 
   if (!map){
     return ZOLTAN_OK;

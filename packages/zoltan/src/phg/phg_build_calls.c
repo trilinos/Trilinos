@@ -86,9 +86,8 @@ int nRequests;
 float *src, *dest;
 float *fromwgt, *towgt;
 
-int *indexptr;
 float weight_val;
-long int index;
+int index;
 int gnos[2];
 
 ZOLTAN_ID_PTR fromID, toID;
@@ -556,8 +555,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       if (map1 == NULL) goto End;
 
       for (i=0; i < zhg->nObj; i++){
-        indexptr = (int *)(i+1);
-        ierr = Zoltan_Map_Add(zz, map1, zhg->objGNO + i, indexptr);
+        ierr = Zoltan_Map_Add(zz, map1, zhg->objGNO + i, i);
         if (ierr != ZOLTAN_OK) goto End;
       }
 
@@ -586,11 +584,10 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       if (zhg->nObj && !zhg->numHEdges) MEMORY_ERROR;
 
       for (i=0; i < nRequests; i++){
-        ierr = Zoltan_Map_Find(zz, map1, recvIntBuf + i, (void*)&indexptr);
+        ierr = Zoltan_Map_Find(zz, map1, recvIntBuf + i, &index);
         if (ierr != ZOLTAN_OK) goto End;
-        if (!indexptr) FATAL_ERROR("Unexpected vertex global number received");
+        if (index == ZOLTAN_NOT_FOUND) FATAL_ERROR("Unexpected vertex global number received");
 
-        index = (long int)indexptr - 1;
         zhg->numHEdges[index]++;
       }
 
@@ -821,8 +818,7 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       for (j=0; j < zhg->Esize[i]; j++, k++){
          gnos[0] = zhg->objGNO[i];
          gnos[1] = zhg->pinGNO[k];
-         indexptr = (int *)(k+1);
-         ierr = Zoltan_Map_Add(zz, map2, gnos, indexptr);
+         ierr = Zoltan_Map_Add(zz, map2, gnos, k);
          if (ierr != ZOLTAN_OK) goto End;
       }
     }
@@ -856,13 +852,11 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
            cnt++;
          }
          else{
-           ierr = Zoltan_Map_Find(zz, map2, gnos, (void*)&indexptr);
+           ierr = Zoltan_Map_Find(zz, map2, gnos, &index);
            if (ierr != ZOLTAN_OK) goto End;
-
-           if (indexptr != NULL){
+           if (index != ZOLTAN_NOT_FOUND){
              if (ew_dim){
                /* this proc provided weights for [v0,v1] and [v1, v0] */
-               index = (long int)indexptr - 1;
                dest = wgts + k * ew_dim; 
                src = zhg->Ewgt + index * ew_dim;
                for (dim = 0; dim < ew_dim; dim++){
@@ -928,12 +922,9 @@ phg_GID_lookup       *lookup_myHshVtxs = NULL;
       gnos[0] = recvIntBuf[i*2];
       gnos[1] = recvIntBuf[i*2 + 1];
 
-      ierr = Zoltan_Map_Find(zz, map2, gnos, (void*)&indexptr);
+      ierr = Zoltan_Map_Find(zz, map2, gnos, &index);
       if (ierr != ZOLTAN_OK) goto End;
-
-      index = (long int)indexptr - 1;
-
-      if (indexptr){
+      if (index != ZOLTAN_NOT_FOUND){
         if (ew_dim){
           dest = sendFloatBuf + i * ew_dim; 
           src = zhg->Ewgt + index * ew_dim;
