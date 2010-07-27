@@ -30,7 +30,7 @@
 
 namespace {
 
-  unsigned count_skin_entities( HexFixture & fixture) {
+  unsigned count_skin_entities( HexFixture3x3x3 & fixture) {
 
     const unsigned mesh_rank = stk::mesh::Element;
 
@@ -220,7 +220,7 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
   if ( 9 < p_size ) { return true; }
 
   //setup the mesh
-  HexFixture fixture(pm);
+  HexFixture3x3x3 fixture(pm);
 
   stk::mesh::MetaData& meta_data = fixture.m_meta_data;
   stk::mesh::BulkData& mesh = fixture.m_bulk_data;
@@ -229,7 +229,8 @@ bool skinning_use_case_1(stk::ParallelMachine pm)
 
   stk::mesh::EntityVector entities_to_separate;
 
-  stk::mesh::Entity * middle_element = fixture.m_elems[1][1][1];
+
+  stk::mesh::Entity * middle_element = mesh.get_entity(stk::mesh::Element,fixture.m_elems_id[1][1][1]);
 
   //select the entity only if the current process in the owner
   if (middle_element != NULL && middle_element->owner_rank() == mesh.parallel_rank()) {
