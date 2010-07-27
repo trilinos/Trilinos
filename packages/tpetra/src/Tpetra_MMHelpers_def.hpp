@@ -26,16 +26,13 @@
 // ************************************************************************
 //@HEADER
 
+#ifndef TPETRA_MMHELPERS_DEF_HPP
+#define TPETRA_MMHELPERS_DEF_HPP
+
 #include "Teuchos_VerboseObject.hpp"
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_CrsMatrix.hpp"
-
-#ifndef TPETRA_MATRIXMATRIX_DEF_HPP
-#define TPETRA_MATRIXMATRIX_DEF_HPP
-
-#ifdef DOXYGEN_USE_ONLY
-//#include "Tpetra_MMHelpers_decl.hpp"
-#endif
+#include "Tpetra_MMHelpers_decl.hpp"
 
 /*! \file Tpetra_MMHelpers_def.hpp 
 
@@ -61,16 +58,11 @@ template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, cla
 void CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>::deleteContents()
 {
   numRows = 0;
-/*  delete [] numEntriesPerRow; numEntriesPerRow = NULL;
-  delete [] indices; indices = NULL;
-  delete [] values; values = NULL;
-  delete [] remote; remote = NULL;*/
   numEntriesPerRow.clear();
   indices.clear();
   values.clear();
   remote.clear();
   numRemote = 0;
-  //delete importMatrix;
   importMatrix.reset();
 }
 
@@ -95,7 +87,7 @@ int dumpCrsMatrixStruct(const CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdina
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatVec, class SpMatSlv>
-CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>::CrsWrapper_CrsMatrix(CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>& crsmatrix)
+CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>::CrsWrapper_CrsMatrix(Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> >& crsmatrix)
  : crsmat_(crsmatrix)
 {
 }
@@ -106,46 +98,47 @@ CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatS
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatVec, class SpMatSlv>
-const Map<LocalOrdinal, GlobalOrdinal, Node>&
+Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
 CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>::getRowMap() const
 {
-  return crsmat_.getRowMap();
+  return crsmat_->getRowMap();
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatVec, class SpMatSlv>
 bool CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>::isFillComplete()
 {
-  return crsmat_.isFillComplete();
+  return crsmat_->isFillComplete();
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatVec, class SpMatSlv>
-int
+void
 CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>::insertGlobalValues(GlobalOrdinal globalRow, const Teuchos::ArrayView<const GlobalOrdinal> &indices, const Teuchos::ArrayView<const Scalar> &values)
 {
-  return crsmat_.insertGlobalValues(globalRow, indices, values);
+  crsmat_->insertGlobalValues(globalRow, indices, values);
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatVec, class SpMatSlv>
-int
+void 
 CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>::sumIntoGlobalValues(GlobalOrdinal globalRow, const Teuchos::ArrayView<const GlobalOrdinal> &indices, const Teuchos::ArrayView<const Scalar> &values)
 {
-  return crsmat_.sumIntoGlobalValues(globalRow, indices, values);
+/*  std::cout << "summing" << std::endl;
+  std::cout << "  indices: " << indices << std::endl;
+  std::cout << "  values: " << values << std::endl;*/
+
+  crsmat_->sumIntoGlobalValues(globalRow, indices, values);
 }
 
 
 //------------------------------------
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CrsWrapper_GraphBuilder(const Map<LocalOrdinal, GlobalOrdinal, Node>& map)
+CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, GlobalOrdinal, Node>::CrsWrapper_GraphBuilder(const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& map)
  : graph_(),
    rowmap_(map),
    max_row_length_(0)
 {
-  //size_t num_rows = map.getNodeNumElements();
-  //int* rows = map.MyGlobalElements();
-  Teuchos::ArrayView<const GlobalOrdinal> rows= map.getNodeElementList();
+  Teuchos::ArrayView<const GlobalOrdinal> rows= map->getNodeElementList();
 
-  //for(int i=0; i<num_rows; ++i) {
   for(int i=0; i<rows.size(); ++i) {
     graph_[rows[i]] = new std::set<int>;
   }
@@ -170,17 +163,20 @@ bool CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, GlobalOrdinal, Node>::isFillC
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-int
+void
 CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, GlobalOrdinal, Node>::insertGlobalValues(GlobalOrdinal globalRow, const Teuchos::ArrayView<const GlobalOrdinal> &indices, const Teuchos::ArrayView<const Scalar> &values)
 {
+  /*std::cout << "inserting" << std::endl;
+  std::cout << "  indices: " << indices << std::endl;
+  std::cout << "  values: " << values << std::endl;*/
   typename std::map<GlobalOrdinal,std::set<GlobalOrdinal>*>::iterator
     iter = graph_.find(globalRow);
 
-  if (iter == graph_.end()) return(-1);
+  TEST_FOR_EXCEPTION(iter == graph_.end(), std::runtime_error,
+  Teuchos::typeName(*this) << "::insertGlobalValues could not find row " << globalRow << " in the graph. Super bummer man. Hope you figure it out.\n");
 
   std::set<GlobalOrdinal>& cols = *(iter->second);
 
-  //for(int i=0; i<NumEntries; ++i) {
   for(int i=0; i<indices.size(); ++i) {
     cols.insert(indices[i]);
   }
@@ -188,14 +184,14 @@ CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, GlobalOrdinal, Node>::insertGlobal
   global_size_t row_length = cols.size();
   if (row_length > max_row_length_) max_row_length_ = row_length;
 
-  return(0);
+  
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-int
+void
 CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, GlobalOrdinal, Node>::sumIntoGlobalValues(GlobalOrdinal globalRow, const Teuchos::ArrayView<const GlobalOrdinal> &indices, const Teuchos::ArrayView<const Scalar> &values)
 {
-  return insertGlobalValues(globalRow, indices, values);
+  insertGlobalValues(globalRow, indices, values);
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -207,15 +203,13 @@ CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, GlobalOrdinal, Node>::get_graph()
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatVec, class SpMatSlv>
 void insert_matrix_locations(CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, GlobalOrdinal, Node>& graphbuilder,
-                              CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>& C)
+  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> >& C)
 {
   global_size_t max_row_length = graphbuilder.get_max_row_length();
   if (max_row_length < 1) return;
 
   std::vector<GlobalOrdinal> indices(max_row_length);
-  //ArrayView<GlobalOrdinal> indices_ptr = &indices[0];
   std::vector<Scalar> zeros(max_row_length, 0.0);
-  //ArrayView<Scalar> zeros_ptr = &zeros[0];
 
   std::map<GlobalOrdinal,std::set<GlobalOrdinal>*>& graph = graphbuilder.get_graph();
 
@@ -224,16 +218,11 @@ void insert_matrix_locations(CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, Globa
 
   for(; iter!=iter_end; ++iter) {
     GlobalOrdinal row = iter->first;
-    std::set<GlobalOrdinal>& cols = *(iter->second);
-    global_size_t num_entries = cols.size();
+    //std::set<GlobalOrdinal>& cols = *(iter->second);
+    //global_size_t num_entries = cols.size();
 
-    /*std::set<GlobalOrdinal>::iterator
-      col_iter = cols.begin(), col_end = cols.end();
-    for(global_size_t j=0; col_iter!=col_end; ++col_iter, ++j) {
-      indices_ptr[j] = *col_iter;
-    }*/
 
-    C.insertGlobalValues(row, Teuchos::ArrayView<GlobalOrdinal>(indices), Teuchos::ArrayView<Scalar>(zeros));
+    C->insertGlobalValues(row, Teuchos::ArrayView<GlobalOrdinal>(indices), Teuchos::ArrayView<Scalar>(zeros));
   }
 }
 
@@ -260,4 +249,4 @@ void insert_matrix_locations(CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, Globa
   template class CrsWrapper_GraphBuilder< SCALAR , LO , GO , NODE >;
 
 }
-#endif // TPETRA_MATRIXMATRIX_DEF_HPP
+#endif // TPETRA_MMHELPERS_DEF_HPP

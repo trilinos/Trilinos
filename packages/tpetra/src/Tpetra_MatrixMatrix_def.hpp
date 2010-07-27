@@ -35,10 +35,10 @@
 #include "Tpetra_Util.hpp"
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_CrsMatrix.hpp"
-#include "Tpetra_MMHelpers.hpp"
+#include "Tpetra_MMHelpers_def.hpp"
 
 #ifdef DOXYGEN_USE_ONLY
-//#include "Tpetra_MMMultiply_decl.hpp"
+  //#include "Tpetra_MMMultiply_decl.hpp"
 #endif
 
 /*! \file Tpetra_MMMultiply_def.hpp 
@@ -48,7 +48,7 @@
 namespace Tpetra {
 
 template<class Scalar, class LocalOrdinal>
-double sparsedot(Teuchos::ArrayRCP<Scalar> u, Teuchos::ArrayRCP<LocalOrdinal> u_ind, 
+Scalar sparsedot(Teuchos::ArrayRCP<Scalar> u, Teuchos::ArrayRCP<LocalOrdinal> u_ind, 
      Teuchos::ArrayRCP<Scalar> v, Teuchos::ArrayRCP<LocalOrdinal> v_ind)
 {
   Scalar result = Teuchos::ScalarTraits<Scalar>::zero();
@@ -83,10 +83,11 @@ template<class Scalar,
   class SpMatVec, 
   class SpMatSlv>
 int mult_A_B(
-  Teuchos::RCP<CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > Aview, 
-  Teuchos::RCP<CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > Bview,
+  Teuchos::RCP<CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> >& Aview, 
+  Teuchos::RCP<CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> >& Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C)
 {
+
   LocalOrdinal C_firstCol = Bview->colMap->getMinLocalIndex();
   LocalOrdinal C_lastCol = Bview->colMap->getMaxLocalIndex();
 
@@ -138,10 +139,11 @@ int mult_A_B(
       continue;
     }
 
-    Teuchos::ArrayRCP<LocalOrdinal> Aindices_i = Aview->indices[i];
-    Teuchos::ArrayRCP<Scalar> Aval_i  = Aview->values[i];
+    Teuchos::ArrayRCP<const LocalOrdinal> Aindices_i = Aview->indices[i];
+    Teuchos::ArrayRCP<const Scalar> Aval_i  = Aview->values[i];
 
     GlobalOrdinal global_row = Aview->rowMap->getGlobalElement(i);
+
 
     //loop across the i-th row of A and for each corresponding row
     //in B, loop across colums and accumulate product
@@ -153,8 +155,8 @@ int mult_A_B(
       LocalOrdinal Ak = Bview->rowMap->getLocalElement(Aview->colMap->getGlobalElement(Aindices_i[k]));
       Scalar Aval = Aval_i[k];
 
-      Teuchos::ArrayRCP<LocalOrdinal> Bcol_inds = Bview->indices[Ak];
-      Teuchos::ArrayRCP<Scalar> Bvals_k = Bview->values[Ak];
+      Teuchos::ArrayRCP<const LocalOrdinal> Bcol_inds = Bview->indices[Ak];
+      Teuchos::ArrayRCP<const Scalar> Bvals_k = Bview->values[Ak];
 
       C_row_i_length = Teuchos::OrdinalTraits<size_t>::zero();
 
@@ -170,26 +172,24 @@ int mult_A_B(
           C_cols[C_row_i_length++] = bcols[Bcol_inds[j]];
         }
       }
+	  /*
+	  std::cout << "About to insert row: " << global_row << std::endl;
+	  Teuchos::ArrayView<const Scalar> C_row_iView = C_row_i.view(Teuchos::OrdinalTraits<size_t>::zero(), C_row_i_length);
+      typename Teuchos::ArrayView<const Scalar>::iterator it = C_row_iView.begin();
+      for(; it != C_row_iView.end(); ++it){
+        std::cout << *it << ", ";
+      }
+      std::cout << std::endl;*/
 
       //
       //Now put the C_row_i values into C.
       //
 
-      int err = C_filled ?
-        C.sumIntoGlobalValues(global_row, C_cols, C_row_i)
+      C_filled ?
+        C.sumIntoGlobalValues(global_row, C_cols.view(Teuchos::OrdinalTraits<size_t>::zero(), C_row_i_length), C_row_i.view(Teuchos::OrdinalTraits<size_t>::zero(), C_row_i_length))
         :
-        C.insertIntoGlobalValues(global_row, C_cols, C_row_i);
- 
-      if (err < 0) {
-        return(err);
-      }
-      if (err > 0) {
-        if (C_filled) {
-          //C is Filled, and doesn't
-          //have all the necessary nonzero locations.
-          return(err);
-        }
-      }
+        C.insertGlobalValues(global_row, C_cols.view(Teuchos::OrdinalTraits<size_t>::zero(), C_row_i_length), C_row_i.view(Teuchos::OrdinalTraits<size_t>::zero(), C_row_i_length));
+
     }
   }
 
@@ -208,8 +208,8 @@ template<
   class SpMatVec, 
   class SpMatSlv>
 int mult_A_Btrans(
-  Teuchos::RCP<CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > Aview, 
-  Teuchos::RCP<CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > Bview,
+  Teuchos::RCP<CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> >& Aview, 
+  Teuchos::RCP<CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> >& Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C)
 {
   size_t i, j, k;
@@ -240,7 +240,7 @@ int mult_A_Btrans(
   //int* bcols = iwork+maxlen*2;
   Teuchos::ArrayRCP<GlobalOrdinal> bcols = iwork+maxlen*2;
   //int* bgids = Bview.colMap->MyGlobalElements();
-  Teuchos::ArrayRCP<GlobalOrdinal> bgids = Bview->colMap->getNodeElementList();
+  Teuchos::ArrayView<const GlobalOrdinal> bgids = Bview->colMap->getNodeElementList();
   Teuchos::ArrayRCP<Scalar> bvals = Teuchos::ArrayRCP<Scalar>(maxlen*2);
   Teuchos::ArrayRCP<Scalar> avals = bvals+maxlen;
 
@@ -270,7 +270,7 @@ int mult_A_Btrans(
 
     size_t Blen_i = Bview->numEntriesPerRow[i];
     if (Blen_i < Teuchos::OrdinalTraits<size_t>::one()) continue;
-    Teuchos::ArrayRCP<LocalOrdinal> Bindices_i = Bview->indices[i];
+    Teuchos::ArrayRCP<const LocalOrdinal> Bindices_i = Bview->indices[i];
 
     if (Bview->remote[i]) {
       for(k=Teuchos::OrdinalTraits<size_t>::zero(); k<Blen_i; ++k) {
@@ -311,8 +311,8 @@ int mult_A_Btrans(
       continue;
     }
 
-    Teuchos::ArrayRCP<LocalOrdinal> Aindices_i = Aview->indices[i];
-    Teuchos::ArrayRCP<Scalar> Aval_i  = Aview->values[i];
+    Teuchos::ArrayRCP<const LocalOrdinal> Aindices_i = Aview->indices[i];
+    Teuchos::ArrayRCP<const Scalar> Aval_i  = Aview->values[i];
     size_t A_len_i = Aview->numEntriesPerRow[i];
     if (A_len_i < Teuchos::OrdinalTraits<size_t>::one()) {
       continue;
@@ -343,7 +343,7 @@ int mult_A_Btrans(
         continue;
       }
 
-      Teuchos::ArrayRCP<LocalOrdinal> Bindices_j = Bview->indices[j];
+      Teuchos::ArrayRCP<const LocalOrdinal> Bindices_j = Bview->indices[j];
       size_t B_len_j = Bview->numEntriesPerRow[j];
       if (B_len_j < Teuchos::OrdinalTraits<size_t>::one()) {
         continue;
@@ -385,34 +385,18 @@ int mult_A_Btrans(
       //util.Sort(true, Blen, Bind, 1, &bvals, 0, NULL);
       sort2(Bind.begin(), Bind.end(), bvals.begin());
 
-      double C_ij = sparsedot(avals, Aind, bvals, Bind );
+      Teuchos::ArrayRCP<Scalar> C_ij = Teuchos::ArrayRCP<Scalar>(1, sparsedot(avals, Aind, bvals, Bind ));
 
-      if (C_ij == Teuchos::ScalarTraits<Scalar>::zero()) {
+      if (C_ij[0] == Teuchos::ScalarTraits<Scalar>::zero()) {
         continue;
       }
-      int global_col = Bview->rowMap->GID(j);
+      Teuchos::ArrayRCP<GlobalOrdinal> global_col = Teuchos::ArrayRCP<GlobalOrdinal>(1, Bview->rowMap->getGlobalElement(j));
 
-      int err = C_filled ?
-        C.SumIntoGlobalValues(global_row, &global_col, &C_ij)
+      C_filled ?
+        C.sumIntoGlobalValues(global_row, global_col(), C_ij())
         :
-        C.InsertGlobalValues(global_row, &global_col, &C_ij);
+        C.insertGlobalValues(global_row, global_col(), C_ij());
 
-      if (err < 0) {
-        return(err);
-      }
-      if (err > 0) {
-        if (C_filled) {
-    //C.Filled()==true, and C doesn't have all the necessary nonzero
-          //locations, or global_row or global_col is out of range (less
-          //than 0 or non local).
-          std::cerr << "EpetraExt::MatrixMatrix::Multiply Warning: failed "
-            << "to insert value in result matrix at position "<<global_row
-            <<"," <<global_col<<", possibly because result matrix has a "
-            << "column-map that doesn't include column "<<global_col
-            <<" on this proc." <<std::endl;
-          return(err);
-        }
-      }
     }
   }
 
@@ -432,8 +416,8 @@ template<
   class SpMatVec, 
   class SpMatSlv>
 int mult_Atrans_B(
-  Teuchos::RCP<CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > Aview, 
-  Teuchos::RCP<CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > Bview,
+  Teuchos::RCP<CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> >& Aview, 
+  Teuchos::RCP<CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> >& Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>&  C)
 {
   LocalOrdinal C_firstCol = Bview->colMap->getMinLocalIndex();
@@ -469,22 +453,23 @@ int mult_Atrans_B(
   // Where C_i is the ith matrix update,
   //       A^T(:,i) is the ith column of A^T, and
   //       B(i,:) is the ith row of B.
+  // }
   //
 
   //dumpCrsMatrixStruct(Aview->;
   //dumpCrsMatrixStruct(Bview);
   //int localProc = Bview.colMap->Comm().MyPID();
-  int localProc = Bview->colMap->Comm().getRank();
+  int localProc = Bview->colMap->getComm()->getRank();
 
-  Teuchos::ArrayView<GlobalOrdinal> Arows = Aview->rowMap->getNodeElementList();
+  Teuchos::ArrayView<const GlobalOrdinal> Arows = Aview->rowMap->getNodeElementList();
 
   bool C_filled = C.isFillComplete();
 
   //loop over the rows of A (which are the columns of A^T).
   for(i=Teuchos::OrdinalTraits<size_t>::zero(); i<Aview->numRows; ++i) {
 
-    Teuchos::ArrayRCP<LocalOrdinal> Aindices_i = Aview->indices[i];
-    Teuchos::ArrayRCP<Scalar> Aval_i  = Aview->values[i];
+    Teuchos::ArrayRCP<const LocalOrdinal> Aindices_i = Aview->indices[i];
+    Teuchos::ArrayRCP<const Scalar> Aval_i  = Aview->values[i];
 
     //we'll need to get the row of B corresponding to Arows[i],
     //where Arows[i] is the GID of A's ith row.
@@ -493,8 +478,8 @@ int mult_Atrans_B(
       "mult_Atrans_B ERROR, proc "<<localProc<<" needs row "
      <<Arows[i]<<" of matrix B, but doesn't have it.");
 
-    Teuchos::ArrayRCP<LocalOrdinal> Bcol_inds = Bview->indices[Bi];
-    Teuchos::ArrayRCP<Scalar> Bvals_i = Bview->values[Bi];
+    Teuchos::ArrayRCP<const LocalOrdinal> Bcol_inds = Bview->indices[Bi];
+    Teuchos::ArrayRCP<const Scalar> Bvals_i = Bview->values[Bi];
 
     //for each column-index Aj in the i-th row of A, we'll update
     //global-row GID(Aj) of the result matrix C. In that row of C,
@@ -530,7 +515,7 @@ int mult_Atrans_B(
         global_row = Aview->colMap->getGlobalElement(Aj);
       }
 
-      if (!C.rowMap().isNodeGlobalElement(global_row)) {
+      if (!C.getRowMap()->isNodeGlobalElement(global_row)) {
         continue;
       }
 
@@ -542,20 +527,11 @@ int mult_Atrans_B(
       //Now add this row-update to C.
       //
 
-      int err = C_filled ?
-        C.sumIntoGlobalValues(global_row, C_colInds, C_row_i )
+      C_filled ?
+        C.sumIntoGlobalValues(global_row, C_colInds(), C_row_i() )
         :
-        C.InsertGlobalValues(global_row, C_colInds, C_row_i);
+        C.insertGlobalValues(global_row, C_colInds(), C_row_i());
 
-      if (err < 0) {
-        return(err);
-      }
-      if (err > 0) {
-        if (C_filled) {
-          //C is Filled, and doesn't have all the necessary nonzero locations.
-          return(err);
-        }
-      }
     }
   }
 
@@ -574,8 +550,8 @@ template<
   class SpMatVec, 
   class SpMatSlv>
 int mult_Atrans_Btrans(
-  Teuchos::RCP<CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > Aview, 
-  Teuchos::RCP<CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > Bview,
+  Teuchos::RCP<CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> >& Aview, 
+  Teuchos::RCP<CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> >& Bview,
   CrsWrapper<Scalar, LocalOrdinal, GlobalOrdinal, Node>& C)
 {
   LocalOrdinal C_firstCol = Aview->rowMap->getMinLocalIndex();
@@ -610,17 +586,17 @@ int mult_Atrans_Btrans(
   size_t i, j, k;
 
   for(j=Teuchos::OrdinalTraits<size_t>::zero(); j<C_numCols; ++j) {
-    C_col_j[j] = Teuchos::OrdinalTraits<Scalar>::zero();
+    C_col_j[j] = Teuchos::ScalarTraits<Scalar>::zero();
     C_inds[j] = Teuchos::OrdinalTraits<GlobalOrdinal>::invalid();
   }
 
-  Teuchos::ArrayView<GlobalOrdinal> A_col_inds = Aview->colMap->getNodeElementList();
-  Teuchos::ArrayView<GlobalOrdinal> A_col_inds_import = Aview->importColMap ?
+  Teuchos::ArrayView<const GlobalOrdinal> A_col_inds = Aview->colMap->getNodeElementList();
+  Teuchos::ArrayView<const GlobalOrdinal> A_col_inds_import = Aview->importColMap == Teuchos::null ?
     Aview->importColMap->getNodeElementList() 
 	:
 	Teuchos::null;
 
-  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > Crowmap = C.rowMap();
+  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > Crowmap = C.getRowMap();
 
   //To form C = A^T*B^T, we're going to execute this expression:
   //
@@ -630,14 +606,15 @@ int mult_Atrans_Btrans(
   //performing searches for column-indices, etc. In other words, we avoid
   //column-wise operations like the plague...
 
-  Teuchos::ArrayView<GlobalOrdinal> Brows = Bview->rowMap->getNodeElementList();
+  Teuchos::ArrayView<const GlobalOrdinal> Brows = Bview->rowMap->getNodeElementList();
 
   //loop over the rows of B
   for(j=Teuchos::OrdinalTraits<size_t>::zero(); j<Bview->numRows; ++j) {
-    Teuchos::ArrayRCP<LocalOrdinal> Bindices_j = Bview->indices[j];
-    Teuchos::ArrayRCP<Scalar> Bvals_j = Bview->values[j];
+    Teuchos::ArrayRCP<const LocalOrdinal> Bindices_j = Bview->indices[j];
+    Teuchos::ArrayRCP<const Scalar> Bvals_j = Bview->values[j];
 
-    GlobalOrdinal global_col = Brows[j];
+    //GlobalOrdinal global_col = Brows[j];
+    Teuchos::ArrayView<const GlobalOrdinal> global_col = Brows.view(j,1);
 
     //loop across columns in the j-th row of B and for each corresponding
     //row in A, loop across columns and accumulate product
@@ -664,8 +641,8 @@ int mult_Atrans_Btrans(
         continue;
       }
 
-      Teuchos::ArrayRCP<LocalOrdinal> Aindices_k = Aview->indices[ak];
-      Teuchos::ArrayRCP<Scalar> Avals_k = Aview->values[ak];
+      Teuchos::ArrayRCP<const LocalOrdinal> Aindices_k = Aview->indices[ak];
+      Teuchos::ArrayRCP<const Scalar> Avals_k = Aview->values[ak];
 
       size_t C_len = Teuchos::OrdinalTraits<size_t>::zero();
 
@@ -707,10 +684,12 @@ int mult_Atrans_Btrans(
   }*/
 
         try{
-          C.sumIntoGlobalValues(global_row, &global_col, &(C_col_j[i]));
+          //C.sumIntoGlobalValues(global_row, global_col, C_col_j[i]);
+          C.sumIntoGlobalValues(global_row, global_col, C_col_j.view(i,1));
         }
         catch(std::runtime_error){
-          C.insertIntoGlobalValues(global_row, &global_col, &(C_col_j[i]));
+          //C.insertGlobalValues(global_row, global_col, C_col_j[i]);
+          C.insertGlobalValues(global_row, global_col, C_col_j.view(i,1));
         }
       }
     }
@@ -730,9 +709,9 @@ template<
   class SpMatVec, 
   class SpMatSlv>
 int import_and_extract_views(
-  Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > M,
-  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > targetMap,
-  Teuchos::RCP<CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > Mview)
+  Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> >& M,
+  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& targetMap,
+  Teuchos::RCP<CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> >& Mview)
 {
   //The goal of this method is to populate the 'Mview' struct with views of the
   //rows of M, including all rows that correspond to elements in 'targetMap'.
@@ -743,18 +722,18 @@ int import_and_extract_views(
 
   Mview->deleteContents();
 
-  Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > Mrowmap = M->getRowMap();
+  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > Mrowmap = M->getRowMap();
 
   int numProcs = Mrowmap->getComm()->getSize();
 
   Mview->numRows = targetMap->getNodeNumElements();
 
-  Teuchos::ArrayView<GlobalOrdinal> Mrows = targetMap.getNodeElementList();
+  Teuchos::ArrayView<const GlobalOrdinal> Mrows = targetMap->getNodeElementList();
 
   if (Mview->numRows > Teuchos::OrdinalTraits<size_t>::zero()) {
     Mview->numEntriesPerRow = Teuchos::ArrayRCP<size_t>(Mview->numRows);
-    Mview->indices = Teuchos::ArrayRCP<Teuchos::ArrayRCP<LocalOrdinal> >(Mview->numRows);
-    Mview->indices = Teuchos::ArrayRCP<Teuchos::ArrayRCP<Scalar> >(Mview->numRows);
+    Mview->indices = Teuchos::ArrayRCP<Teuchos::ArrayRCP<const LocalOrdinal> >(Mview->numRows, Teuchos::null);
+    Mview->values = Teuchos::ArrayRCP<Teuchos::ArrayRCP<const Scalar> >(Mview->numRows, Teuchos::null);
     Mview->remote = Teuchos::ArrayRCP<bool>(Mview->numRows);
   }
 
@@ -762,18 +741,20 @@ int import_and_extract_views(
 
   size_t i;
   for(i=Teuchos::OrdinalTraits<size_t>::zero(); i<Mview->numRows; ++i) {
-    LocalOrdinal mlid = Mrowmap.getLocalElement(Mrows[i]);
+    LocalOrdinal mlid = Mrowmap->getLocalElement(Mrows[i]);
     if (mlid < Teuchos::OrdinalTraits<LocalOrdinal>::zero()) {
       Mview->remote[i] = true;
       ++Mview->numRemote;
     }
     else {
-      //EPETRA_CHK_ERR( M->ExtractMyRowView(mlid, Mview.numEntriesPerRow[i],
-  //         Mview.values[i], Mview.indices[i]) );
+  //    EPETRA_CHK_ERR( M->ExtractMyRowView(mlid, Mview.numEntriesPerRow[i],
+   //        Mview.values[i], Mview.indices[i]) );
       M->getLocalRowView(mlid, Mview->indices[i], Mview->values[i]);
+	  Mview->numEntriesPerRow[i] = Mview->indices[i].size();
       Mview->remote[i] = false;
     }
   }
+
 
   Mview->origRowMap = M->getRowMap();
   Mview->rowMap = targetMap;
@@ -800,13 +781,14 @@ int import_and_extract_views(
   //int globalMaxNumRemote = 0;
   global_size_t globalMaxNumRemote = Teuchos::OrdinalTraits<global_size_t>::zero();
   //Mrowmap.Comm().MaxAll(&Mview.numRemote, &globalMaxNumRemote, 1);
-  Teuchos::reduceAll(Mrowmap->getComm(), Teuchos::REDUCE_MAX, 1, Mview->numRemote, globalMaxNumRemote);
+  Teuchos::reduceAll(*(Mrowmap->getComm()) , Teuchos::REDUCE_MAX, 1, &Mview->numRemote, &globalMaxNumRemote);
 
   if(globalMaxNumRemote > Teuchos::OrdinalTraits<global_size_t>::zero()){
     //Create a map that describes the remote rows of M that we need.
 
     //int* MremoteRows = Mview.numRemote>0 ? new int[Mview.numRemote] : NULL;
     Teuchos::ArrayRCP<GlobalOrdinal> MremoteRows = Mview->numRemote>Teuchos::OrdinalTraits<global_size_t>::zero() ? Teuchos::ArrayRCP<GlobalOrdinal>(Mview->numRemote) : Teuchos::null;
+
     //int offset = 0;
     global_size_t offset = Teuchos::OrdinalTraits<global_size_t>::zero();
     for(i=0; i<Mview->numRows; ++i) {
@@ -817,7 +799,7 @@ int import_and_extract_views(
 
     //Epetra_Map MremoteRowMap(-1, Mview->numRemote, MremoteRows,
      //      Mrowmap.IndexBase(), Mrowmap.Comm());
-    Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > MremoteRowMap = Teuchos::rcp(new Map<LocalOrdinal, GlobalOrdinal, Node>(Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(), MremoteRows, Mrowmap->getIndexBase(), Mrowmap->getComm(), Mrowmap->getNode()));
+    Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > MremoteRowMap = Teuchos::rcp(new Map<LocalOrdinal, GlobalOrdinal, Node>(Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(), MremoteRows(), Mrowmap->getIndexBase(), Mrowmap->getComm(), Mrowmap->getNode()));
 
     //Create an importer with target-map MremoteRowMap and 
     //source-map Mrowmap.
@@ -829,19 +811,20 @@ int import_and_extract_views(
     Mview->importMatrix = Teuchos::rcp(new CrsMatrix<Scalar,LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>( MremoteRowMap, 1));
 
     //EPETRA_CHK_ERR( Mview.importMatrix->Import(M, importer, Insert) );
-    Mview->importMatrix->doImport(M, importer, INSERT);
+    Mview->importMatrix->doImport(*M, importer, INSERT);
 
     //EPETRA_CHK_ERR( Mview.importMatrix->FillComplete(M.DomainMap(), M.RangeMap()) );
-    Mview->importMatrix->fillComplete(M.DomainMap(), M.RangeMap());
+    Mview->importMatrix->fillComplete(M->getDomainMap(), M->getRangeMap());
 
     //Finally, use the freshly imported data to fill in the gaps in our views
     //of rows of M.
     for(i=Teuchos::OrdinalTraits<size_t>::zero(); i<Mview->numRows; ++i) {
       if (Mview->remote[i]) {
-        LocalOrdinal importLID = MremoteRowMap.getLocalElement(Mrows[i]);
+        LocalOrdinal importLID = MremoteRowMap->getLocalElement(Mrows[i]);
         Mview->importMatrix->getLocalRowView(importLID,
-        Mview->indices[i],
-        Mview->values[i]);
+          Mview->indices[i],
+          Mview->values[i]);
+		Mview->numEntriesPerRow[i] = Mview->indices[i].size();
       }
     }
 
@@ -856,22 +839,22 @@ int import_and_extract_views(
 template<class Ordinal, class GlobalOrdinal>
 int distribute_list(const Teuchos::RCP<const Teuchos::Comm<Ordinal> > comm,
   size_t lenSendList,
-  const Teuchos::ArrayRCP<GlobalOrdinal> sendList,
+  const Teuchos::ArrayRCP<GlobalOrdinal>& sendList,
   size_t& maxSendLen,
   Teuchos::ArrayRCP<GlobalOrdinal>& recvList)
 {
   maxSendLen = Teuchos::OrdinalTraits<size_t>::zero() ; 
   //Comm.MaxAll(&lenSendList, &maxSendLen, 1);
-  Teuchos::reduceAll(comm, Teuchos::REDUCE_MAX, Teuchos::OrdinalTraits<Ordinal>::one(), &lenSendList, &maxSendLen);
+  Teuchos::reduceAll(*comm, Teuchos::REDUCE_MAX, Teuchos::OrdinalTraits<Ordinal>::one(), &lenSendList, &maxSendLen);
   int numProcs = comm->getSize();
-  recvList = new int[numProcs*maxSendLen];
+  //recvList = new int[numProcs*maxSendLen];
   recvList = Teuchos::ArrayRCP<GlobalOrdinal>(numProcs*maxSendLen);
   Teuchos::ArrayRCP<GlobalOrdinal> send = Teuchos::ArrayRCP<GlobalOrdinal>(maxSendLen);
   for(size_t i=Teuchos::OrdinalTraits<size_t>::zero(); i<lenSendList; ++i) {
     send[i] = sendList[i];
   }
 
-  Teuchos::gatherAll(comm, maxSendLen, send, maxSendLen, recvList);
+  Teuchos::gatherAll(*comm, (Ordinal)maxSendLen, send.getRawPtr(), (Ordinal)maxSendLen, recvList.getRawPtr());
   //delete [] send;
 
   return(0);
@@ -881,7 +864,7 @@ template<
   class LocalOrdinal, 
   class GlobalOrdinal, 
   class Node>
-Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > 
+Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > 
 create_map_from_imported_rows(
   Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > map,
   size_t totalNumSend,
@@ -900,7 +883,7 @@ create_map_from_imported_rows(
   Teuchos::ArrayRCP<int> sendPIDs = totalNumSend>0 ? Teuchos::ArrayRCP<int>(totalNumSend) : Teuchos::null;
   int offset = 0;
   for(int i=0; i<numProcs; ++i) {
-    for(int j=0; j<numSendPerProc[i]; ++j) {
+    for(size_t j=0; j<numSendPerProc[i]; ++j) {
       sendPIDs[offset++] = i;
     }
   }
@@ -913,12 +896,14 @@ create_map_from_imported_rows(
 
   //char* c_recv_objs = numRecv>0 ? new char[numRecv*sizeof(int)] : NULL;
   Teuchos::ArrayRCP<GlobalOrdinal> recv_rows = 
-    numRecv>Teuchos::OrdinalTraits<GlobalOrdinal>::zero() ? Teuchos::ArrayRCP<GlobalOrdinal>(numRecv) : Teuchos::null;
+    numRecv>Teuchos::OrdinalTraits<size_t>::zero() ? Teuchos::ArrayRCP<GlobalOrdinal>(numRecv) : Teuchos::null;
   //int num_c_recv = numRecv*(int)sizeof(int);
 
   //err = distributor->Do(reinterpret_cast<char*>(sendRows),
       //(int)sizeof(int), num_c_recv, c_recv_objs);
-  distributor->doPostsAndWaits(sendRows, numRecv, recv_rows);
+  //ArrayView<GlobalOrdinal> sendRowsView = sendRows();
+
+  distributor->doPostsAndWaits(sendRows.getConst()(), numRecv, recv_rows());
   //assert( err == 0 );
 
   //int* recvRows = reinterpret_cast<int*>(c_recv_objs);
@@ -927,8 +912,8 @@ create_map_from_imported_rows(
   //Epetra_Map* import_rows = new Epetra_Map(-1, numRecv, recvRows,
    //          map->IndexBase(), map->Comm());
   Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > import_rows = 
-    rcp(new Map<LocalOrdinal, GlobalOrdinal, Node>(
-    Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(), recv_rows, map->getIndexBase(), map->getComm()));
+    Teuchos::rcp(new Map<LocalOrdinal, GlobalOrdinal, Node>(
+    Teuchos::OrdinalTraits<GlobalOrdinal>::invalid(), recv_rows(), map->getIndexBase(), map->getComm()));
 
   //delete [] c_recv_objs;
   //delete [] sendPIDs;
@@ -943,9 +928,9 @@ template<
   class GlobalOrdinal, 
   class Node>
 int form_map_union(
-  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > map1,
-  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > map2,
-  Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > mapunion)
+  const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > map1,
+  const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > map2,
+  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& mapunion)
 {
   //form the union of two maps
 
@@ -962,9 +947,9 @@ int form_map_union(
   }
 
   size_t map1_len = map1->getNodeNumElements();
-  Teuchos::ArrayView<GlobalOrdinal> map1_elements = map1->getNodeElementList();
+  Teuchos::ArrayView<const GlobalOrdinal> map1_elements = map1->getNodeElementList();
   size_t map2_len = map2->getNodeNumElements();
-  Teuchos::ArrayView<GlobalOrdinal> map2_elements = map2->getNodeElementList();
+  Teuchos::ArrayView<const GlobalOrdinal> map2_elements = map2->getNodeElementList();
 
   Teuchos::ArrayRCP<GlobalOrdinal> union_elements = Teuchos::ArrayRCP<GlobalOrdinal>(map1_len+map2_len);
 
@@ -1001,7 +986,7 @@ int form_map_union(
 
   //mapunion = new Epetra_Map(-1, union_offset, union_elements,
    //       map1->IndexBase(), map1->Comm());
-  mapunion = Teuchos::rcp(new Map<LocalOrdinal, GlobalOrdinal, Node>(Teuchos::OrdinalTraits<global_size_t>::invalid(), union_elements, map1->getIndexBase(), map1->getComm(), map1->getNode()));
+  mapunion = Teuchos::rcp(new Map<LocalOrdinal, GlobalOrdinal, Node>(Teuchos::OrdinalTraits<global_size_t>::invalid(), union_elements(), map1->getIndexBase(), map1->getComm(), map1->getNode()));
 
   //delete [] union_elements;
 
@@ -1015,10 +1000,10 @@ template<
   class Node, 
   class SpMatVec, 
   class SpMatSlv >
-Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> >
+Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
 find_rows_containing_cols(
   Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > M,
-  const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > colmap)
+  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > colmap)
 {
   //The goal of this function is to find all rows in the matrix M that contain
   //column-indices which are in 'colmap'. A map containing those rows is
@@ -1028,10 +1013,12 @@ find_rows_containing_cols(
   int localProc = colmap->getComm()->getRank();
 
   if (numProcs < 2) {
-    Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > result_map = Teuchos::null;
+    Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > result_map = Teuchos::null;
 
-    int err = form_map_union(M->getRowMap(), Teuchos::null,
-                             result_map);
+    int err = form_map_union(
+	  M->getRowMap(), 
+	  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >(Teuchos::null), 
+	  result_map);
     if (err != 0) {
       return(Teuchos::null);
     }
@@ -1049,23 +1036,25 @@ find_rows_containing_cols(
  // int* cols = &(iwork[iworkOffset]); iworkOffset += numCols;
   Teuchos::ArrayRCP<GlobalOrdinal> cols = Teuchos::ArrayRCP<GlobalOrdinal>(numCols + Teuchos::OrdinalTraits<size_t>::one());
   cols[0] = numCols;
-  &cols[1] = colmap->getNodeElementList();
+  ///cols[1] = colmap->getNodeElementList();
+  cols.view(1,numCols).assign(colmap->getNodeElementList());
 
   //cols are not necessarily sorted at this point, so we'll make sure
   //they are sorted.
   //Epetra_Util util;
   //util.Sort(true, numCols, &(cols[1]), 0, NULL, 0, NULL);
-  sort2(cols.begin(), cols.end(), Teuchos::null);
+  //sort2(cols.begin(), cols.end(), Teuchos::null);
+  std::sort(cols.begin(), cols.end());
 
 // int* all_proc_cols = NULL;
   Teuchos::ArrayRCP<GlobalOrdinal> all_proc_cols = Teuchos::null;
   
   size_t max_num_cols;
-  distribute_list(colmap->Comm(), numCols+Teuchos::OrdinalTraits<size_t>::one(), cols, max_num_cols, all_proc_cols);
+  distribute_list(colmap->getComm(), numCols+Teuchos::OrdinalTraits<size_t>::one(), cols, max_num_cols, all_proc_cols);
 
-  Teuchos::RCP<const CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > Mgraph = M.Graph();
-  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > Mrowmap = M.getRowMap();
-  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > Mcolmap = M.getColMap();
+  Teuchos::RCP<const CrsGraph<LocalOrdinal, GlobalOrdinal, Node> > Mgraph = M->getCrsGraph();
+  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > Mrowmap = M->getRowMap();
+  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > Mcolmap = M->getColMap();
   LocalOrdinal MminMyLID = Mrowmap->getMinLocalIndex();
 
   /*int* procNumCols = &(iwork[iworkOffset]); iworkOffset += numProcs;
@@ -1073,41 +1062,41 @@ find_rows_containing_cols(
   int* procRows_1D = &(iwork[iworkOffset]);
   int** procCols = new int*[numProcs];
   int** procRows = new int*[numProcs];*/
-  Teuchos::ArrayRCP<size_t> procNumCols = Teuchos::ArrayRCP<size_t>(numProcs);
-  Teuchos::ArrayRCP<size_t> procNumRows = Teuchos::ArrayRCP<size_t>(numProcs);
-  Teuchos::ArrayRCP<GlobalOrdinal> procRows_1D = Teuchos::ArrayRCP<GlobalOrdinal>(numProcs*MnumRows);
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> > procCols = Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> >(numProcs);
+  Teuchos::ArrayRCP<size_t> procNumCols(numProcs);
+  Teuchos::ArrayRCP<size_t> procNumRows(numProcs);
+  Teuchos::ArrayRCP<GlobalOrdinal> procRows_1D(numProcs*MnumRows);
+  Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> > procCols (numProcs);
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> > procRows = Teuchos::ArrayRCP<Teuchos::ArrayRCP<GlobalOrdinal> >(numProcs);
   int i, err;
   //int offset = 0;
   size_t offset = Teuchos::OrdinalTraits<size_t>::zero();
   for(i=0; i<numProcs; ++i) {
     procNumCols[i] = all_proc_cols[offset];
-    procCols[i] = &(all_proc_cols[offset+1]);
+    procCols[i] = all_proc_cols.persistingView(offset+1, max_num_cols);
     offset += max_num_cols;
 
     procNumRows[i] = Teuchos::OrdinalTraits<size_t>::zero();
-    procRows[i] = &(procRows_1D[i*MnumRows]);
+    procRows[i] = procRows_1D.persistingView(i*MnumRows, MnumRows);
   }
 
   Teuchos::ArrayRCP<const LocalOrdinal> Mindices;
 
   for(size_t row=Teuchos::OrdinalTraits<size_t>::zero(); row<MnumRows; ++row) {
     LocalOrdinal localRow = MminMyLID+row;
-    GlobalOrdinal globalRow = Mrowmap.getGlobalElement(localRow);
+    GlobalOrdinal globalRow = Mrowmap->getGlobalElement(localRow);
     //int MnumCols;
     //err = Mgraph.ExtractMyRowView(localRow, MnumCols, Mindices);
-    Mindices = Mgraph.getLocalRowView(localRow);
+    Mindices = Mgraph->getLocalRowView(localRow);
     /*if (err != 0) {
       cerr << "proc "<<localProc<<", error in Mgraph.ExtractMyRowView, row "
            <<localRow<<endl;
       return(NULL);
     }*/
 
-    for(size_t j=Teuchos::OrdinalTraits<size_t>::zero(); j<Mindices.size(); ++j) {
+    for(LocalOrdinal j=Teuchos::OrdinalTraits<size_t>::zero(); j<Mindices.size(); ++j) {
       GlobalOrdinal colGID = Mcolmap->getGlobalElement(Mindices[j]);
 
-      for(size_t p=0; p<numProcs; ++p) {
+      for(int p=0; p<numProcs; ++p) {
         if (p==localProc) continue;
 
         /*int insertPoint;
@@ -1142,12 +1131,12 @@ find_rows_containing_cols(
   /*Epetra_Map* recvd_rows =
     create_map_from_imported_rows(&Mrowmap, totalNumSend,
                                   procRows_1D, numProcs, procNumRows);*/
-  Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > recvd_rows = create_map_from_imported_rows(Mrowmap, totalNumSend, procRows_1D, numProcs, procNumRows);
-  Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > result_map = Teuchos::null;
+  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > recvd_rows = create_map_from_imported_rows(Mrowmap, totalNumSend, procRows_1D, numProcs, procNumRows);
+  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > result_map = Teuchos::null;
 
-  err = form_map_union(M.getRowMap(), recvd_rows, result_map);
+  err = form_map_union(M->getRowMap(), recvd_rows, result_map);
   if (err != 0) {
-    return(NULL);
+    return(Teuchos::null);
   }
 
   /*delete [] iwork;
@@ -1168,11 +1157,11 @@ template <
   class SpMatVec,
   class SpMatSlv >
 int MatrixMatrix::Multiply(
-  Teuchos::RCP<const CrsMatrix<LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > A,
+  Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > A,
   bool transposeA,
-  Teuchos::RCP<const CrsMatrix<LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > B,
+  Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > B,
   bool transposeB,
-  Teuchos::RCP<CrsMatrix<LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > C,
+  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > C,
   bool call_FillComplete_on_result)
 {
   //
@@ -1203,10 +1192,10 @@ int MatrixMatrix::Multiply(
   if (transposeA && transposeB)  scenario = 4;//A^T*B^T
 
   //now check size compatibility
-  int Aouter = transposeA ? A.getGlobalNumCols() : A.getGlobalNumRows();
-  int Bouter = transposeB ? B.getGlobalNumRows() : B.getGlobalNumCols();
-  int Ainner = transposeA ? A.getGlobalNumRows() : A.getGlobalNumCols();
-  int Binner = transposeB ? B.getGlobalNumCols() : B.getGlobalNumRows();
+  global_size_t Aouter = transposeA ? A->getGlobalNumCols() : A->getGlobalNumRows();
+  global_size_t Bouter = transposeB ? B->getGlobalNumRows() : B->getGlobalNumCols();
+  global_size_t Ainner = transposeA ? A->getGlobalNumRows() : A->getGlobalNumCols();
+  global_size_t Binner = transposeB ? B->getGlobalNumCols() : B->getGlobalNumRows();
   TEST_FOR_EXCEPTION(!A->isFillComplete(), std::runtime_error,
     "MatrixMatrix::Multiply: ERROR, inner dimensions of op(A) and op(B) "
     "must match for matrix-matrix product. op(A) is "
@@ -1216,9 +1205,9 @@ int MatrixMatrix::Multiply(
   //correct row-size. Don't check the number of columns because rectangular
   //matrices which were constructed with only one map can still end up
   //having the correct capacity and dimensions when filled.
-  TEST_FOR_EXCEPTION(Aouter > C.getGlobalNumRows(), std::runtime_error,
+  TEST_FOR_EXCEPTION(Aouter > C->getGlobalNumRows(), std::runtime_error,
     "MatrixMatrix::Multiply: ERROR, dimensions of result C must "
-    "match dimensions of op(A) * op(B). C has "<<C.getGlobalNumRows()
+    "match dimensions of op(A) * op(B). C has "<<C->getGlobalNumRows()
      << " rows, should have at least "<<Aouter << std::endl);
 
   //It doesn't matter whether C is already Filled or not. If it is already
@@ -1251,8 +1240,8 @@ int MatrixMatrix::Multiply(
 
   //Declare a couple of structs that will be used to hold views of the data
   //of A and B, to be used for fast access during the matrix-multiplication.
-  Teuchos::RCP<CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > Aview;
-  Teuchos::RCP<CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > Bview;
+  Teuchos::RCP<CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > Aview = Teuchos::rcp(new CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>);
+  Teuchos::RCP<CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > Bview = Teuchos::rcp(new CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv>);
 
   //const Epetra_Map* targetMap_A = rowmap_A;
   //const Epetra_Map* targetMap_B = rowmap_B;
@@ -1274,11 +1263,13 @@ int MatrixMatrix::Multiply(
   //EPETRA_CHK_ERR( import_and_extract_views(A, *targetMap_A, Aview) );
   import_and_extract_views(A, targetMap_A, Aview);
 
+    
+
   //We will also need local access to all rows of B that correspond to the
   //column-map of op(A).
   if (numProcs > 1) {
     //const Epetra_Map* colmap_op_A = NULL;
-    Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > colmap_op_A = Teuchos::null;
+    Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > colmap_op_A = Teuchos::null;
     if (transposeA) {
       colmap_op_A = targetMap_A;
     }
@@ -1302,10 +1293,11 @@ int MatrixMatrix::Multiply(
   //Now import any needed remote rows and populate the Bview struct.
   import_and_extract_views(B, targetMap_B, Bview);
 
+
   //If the result matrix C is not already FillComplete'd, we will do a
   //preprocessing step to create the nonzero structure, then call FillComplete,
-  if (!C.isFillComplete()) {
-    CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, GlobalOrdinal, Node> crsgraphbuilder(C.getRowMap());
+  if (!C->isFillComplete()) {
+    CrsWrapper_GraphBuilder<Scalar, LocalOrdinal, GlobalOrdinal, Node> crsgraphbuilder(C->getRowMap());
 
     //pass the graph-builder object to the multiplication kernel to fill in all
     //the nonzero positions that will be used in the result matrix.
@@ -1323,18 +1315,21 @@ int MatrixMatrix::Multiply(
     //now insert all of the nonzero positions into the result matrix.
     insert_matrix_locations(crsgraphbuilder, C);
 
-    if (call_FillComplete_on_result) {
+  /*  if (call_FillComplete_on_result) {
       Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > domainmap = transposeB ? B->getRangeMap() : B->getDomainMap();
 
       Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > rangemap = transposeA ? A->getDomainMap() : A->getRangeMap();
 
-      C.fillComplete(domainmap, rangemap);
+      C->fillComplete(domainmap, rangemap, DoNotOptimizeStorage);
       call_FillComplete_on_result = false;
-    }
+    }*/
   }
 
+  //Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
+  //C->describe(*out, Teuchos::VERB_EXTREME);
+
   //Pre-zero the result matrix:
-  C.setAllToScalar(Teuchos::ScalarTraits<Scalar>::zero());
+  //C->setAllToScalar(Teuchos::ScalarTraits<Scalar>::zero());
 
   //Now call the appropriate method to perform the actual multiplication.
 
@@ -1358,8 +1353,12 @@ int MatrixMatrix::Multiply(
     //op(B)==transpose(B), in which case the range-map of B will be used.
     //The range-map will be the range-map of A, unless
     //op(A)==transpose(A), in which case the domain-map of A will be used.
-    if (!C.isFillComplete()) {
-      C.FillComplete(transposeB ? B->getRangeMap() : B->getDomainMap(), transposeA ? A->getDomainMap() : B->getRangeMap());
+    if (!C->isFillComplete()) {
+      Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > domainmap = transposeB ? B->getRangeMap() : B->getDomainMap();
+
+      Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > rangemap = transposeA ? A->getDomainMap() : A->getRangeMap();
+      //C->fillComplete(transposeB ? B->getRangeMap() : B->getDomainMap(), transposeA ? A->getDomainMap() : B->getRangeMap());
+      C->fillComplete(domainmap, rangemap);
     }
   }
 
@@ -1559,9 +1558,16 @@ int MatrixMatrix::Add(const Epetra_CrsMatrix& A,
 // Must be expanded from within the Tpetra namespace!
 //
 
-#define TPETRA_MATRIXMATRIX_INSTANT(SCALAR,LO,GO,NODE) \
+#define TPETRA_MATRIXMATRIX_INSTANT(SCALAR,LO,GO,NODE,SPMATVEC,SPMATSLV) \
   \
-  template class MatrixMatrix< SCALAR , LO , GO , NODE >;
-
+  template<> \
+  int MatrixMatrix::Multiply( \
+  Teuchos::RCP<const CrsMatrix< SCALAR , LO , GO , NODE , SPMATVEC , SPMATSLV > >& A, \
+  bool transposeA, \
+  Teuchos::RCP<const CrsMatrix< SCALAR , LO , GO , NODE , SPMATVEC , SPMATSLV > >& B, \
+  bool transposeB, \
+  Teuchos::RCP<CrsMatrix< SCALAR , LO , GO , NODE , SPMATVEC , SPMATSLV > >& C, \
+  bool call_FillComplete_on_result)
 }
+
 #endif // TPETRA_MATRIXMATRIX_DEF_HPP

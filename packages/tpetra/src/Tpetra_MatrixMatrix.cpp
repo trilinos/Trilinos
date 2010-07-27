@@ -1,4 +1,4 @@
-#include "Tpetra_MatrixMatrix.hpp"
+/*#include "Tpetra_MatrixMatrix.hpp"
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
@@ -33,15 +33,23 @@ namespace Tpetra {
 #endif
 
 #if defined(HAVE_TPETRA_INST_DOUBLE)
-  TPETRA_MATRIXMATRIX_INSTANT(double,int,int,Kokkos::SerialNode)
+  typedef Kokkos::DefaultSparseMultiply<double, int, Kokkos::SerialNode> SerialSpMatVec;
+  typedef Kokkos::DefaultSparseSolve<double, int, Kokkos::SerialNode> SerialSpMatSlv;
+  TPETRA_MATRIXMATRIX_INSTANT(double,int,int,Kokkos::SerialNode, SerialSpMatVec, SerialSpMatSlv);
 #if defined(HAVE_KOKKOS_TBB)
-  TPETRA_MATRIXMATRIX_INSTANT(double,int,int,Kokkos::TBBNode)
+  typedef Kokkos::DefaultSparseMultiply<double, int, Kokkos::TBBNode> TBBSpMatVec;
+  typedef Kokkos::DefaultSparseSolve<double, int, Kokkos::TBBNode> TBBSpMatSlv;
+  TPETRA_MATRIXMATRIX_INSTANT(double,int,int,Kokkos::TBBNode, TBBSpMatVec, TBBSpMatSlv);
 #endif
 #if defined(HAVE_KOKKOS_THREADPOOL)
-    TPETRA_MATRIXMATRIX_INSTANT(double,int,int,Kokkos::TPINode)
+  typedef Kokkos::DefaultSparseMultiply<double, int, Kokkos::TPINode> TPISpMatVec;
+  typedef Kokkos::DefaultSparseSolve<double, int, Kokkos::TPINode> TPISpMatSlv;
+  TPETRA_MATRIXMATRIX_INSTANT(double,int,int,Kokkos::TPINode, TPISpMatVec, TPISpMatSlv);
 #endif
 #if defined(HAVE_KOKKOS_THRUST) && defined(HAVE_KOKKOS_CUDA_DOUBLE)
-    TPETRA_MATRIXMATRIX_INSTANT(double,int,int,Kokkos::ThrustGPUNode)
+  typedef Kokkos::DefaultSparseMultiply<double, int, Kokkos::ThrustGPUNode> ThrustGPUSpMatVec;
+  typedef Kokkos::DefaultSparseSolve<double, int, Kokkos::ThrustGPUNode> ThrustGPUSpMatSlv;
+  TPETRA_MATRIXMATRIX_INSTANT(double,int,int,Kokkos::ThrustGPUNode, ThrustGPUSpMatVec, ThrustGPUSpMatSlv);
 #endif
 #endif
 
@@ -76,4 +84,4 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION
+#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION*/
