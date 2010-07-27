@@ -662,7 +662,7 @@ C) Configuring (Makefile Generator)
 
 (*) Enabling extra external repositories with add-on packages:
 
-    -DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=<EXTRAREPO>
+    -DTrilinos_EXTRA_REPOSITORIES:STRING=<EXTRAREPO>
 
   Here, <EXTRAREPO> is the name of an extra external repository that has been
   cloned under the main 'Trilinos' source directory as:
@@ -674,7 +674,7 @@ C) Configuring (Makefile Generator)
     $ cd $TRILINOS_HOME_DIR
     $ eg clone software.sandia.gov:/space/git/preCopyrightTrilinos
     $ cd $BUILD_DIR
-    $ ./do-configure -DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=preCopyrightTrilinos
+    $ ./do-configure -DTrilinos_EXTRA_REPOSITORIES:STRING=preCopyrightTrilinos
 
   After that, all of the extra packages defined in <EXTRAREPO> will appear in
   the list of official Trilinos packages and you are free to enable any that
