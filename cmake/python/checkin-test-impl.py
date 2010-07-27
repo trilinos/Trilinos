@@ -143,9 +143,12 @@ This helps to make the tests run faster but still builds and runs the runtime
 debug checking code.  Therefore, you should not use the MPI_DEBUG configure
 options when building a debug version for yourself to do debugging.
 
+
 The following approximate steps are performed by this script:
 
+
 ----------------------------------------------------------------------------
+
 
 1) Check to see if the local repo is clean:
 
@@ -179,8 +182,10 @@ extra builds specified with --extra-builds):
   4.b) Build all configured code with 'make' (e.g. with -jN set through
   -j or --make-options).  (done if --build, --do-all, or --local-do-all is set.)
   
-  4.c) Run all tests for enabled packages.  (done if --test, --do-all, or
-  --local-do-all is set.)
+  4.c) Run all BASIC tests for enabled packages.  (done if --test, --do-all,
+  or --local-do-all is set.)
+
+    NOTE: By default, only Trilinos_TEST_CATEGORIES=BASIC tests are enabled.
   
   4.d) Analyze the results of the update, configure, build, and tests and send
   email about results.  (emails only sent out if --send-emails-to is not set
@@ -189,18 +194,21 @@ extra builds specified with --extra-builds):
 5) Do final pull, append test results to last commit message, and push (done
 if --push is set)
 
-  5.a) Do a final 'eg pull && eg rebase --against origin' (done if --pull or
-  --do-all is set)
+  5.a) Do a final 'eg pull && eg rebase --against origin/<current_branch>'
+  (done if --pull or --do-all is set)
 
-    NOTE: The final 'eg rebase --against origin' is required to avoid trival
-    merge commits that the Trilinos global get repo will reject on the push.
+    NOTE: The final 'eg rebase --against origin/<current_branch>' is required
+    to avoid trival merge commits that the Trilinos global get repo will
+    reject on the push.
   
   5.b) Amend commit message of the most recent commit with the summary of the
-  testing performed.  (done if --append-test-results (default) is set.)
+  testing performed.  (done if --append-test-results is set.)
   
   5.c) Push the local commits to the global repo.
 
+
 ----------------------------------------------------------------------------
+
 
 The recommended way to use this script is to create a new base CHECKIN test
 directory apart from your standard build directories such as with:
