@@ -111,7 +111,7 @@ namespace {
         STKUNIT_ASSERT_TRUE( entity_2 != NULL );
         STKUNIT_EXPECT_TRUE( 0 == entity_1->owner_rank() );
         STKUNIT_EXPECT_TRUE( 1 == entity_2->owner_rank() );
-      } 
+      }
       else {
         STKUNIT_EXPECT_TRUE( entity_1 == NULL );
         STKUNIT_EXPECT_TRUE( entity_2 == NULL );
@@ -162,7 +162,7 @@ namespace {
         STKUNIT_EXPECT_TRUE( 1 == entity_2->owner_rank() );
         STKUNIT_EXPECT_TRUE( 1 == entity_4->owner_rank() );
         STKUNIT_EXPECT_TRUE( 0 == entity_5->owner_rank() );
-      } 
+      }
       else if (p_rank == 1) {
         STKUNIT_ASSERT_TRUE( entity_1 != NULL );
         STKUNIT_ASSERT_TRUE( entity_2 != NULL );
@@ -174,7 +174,7 @@ namespace {
         STKUNIT_EXPECT_TRUE( 1 == entity_3->owner_rank() );
         STKUNIT_EXPECT_TRUE( 1 == entity_4->owner_rank() );
         STKUNIT_EXPECT_TRUE( 0 == entity_5->owner_rank() );
-      } 
+      }
       else {
         STKUNIT_EXPECT_TRUE( entity_1 == NULL );
         STKUNIT_EXPECT_TRUE( entity_2 == NULL );
@@ -188,5 +188,5 @@ namespace {
   {
   }
 
-}
+} // end namespace
 

@@ -82,6 +82,10 @@ template< class FieldType > struct EntityArray ;
 template< class FieldType > struct BucketArray ;
 template< class FieldType > struct FieldTraits ;
 
+
+typedef unsigned EntityRank ;
+typedef uint64_t EntityId ;
+
 //----------------------------------------------------------------------
 /** \addtogroup stk_mesh_bulk_data_parallel
  *  \{
