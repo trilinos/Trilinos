@@ -305,7 +305,9 @@ Zoltan_ZG_Register(ZZ* zz, ZG* graph, int* properties)
 			       1, graph->mtx.mtx.globalY/zz->Num_Proc, 0);
       CHECK_IERR;
       /* Hope a linear assignment will help a little */
-      Zoltan_DD_Set_Neighbor_Hash_Fn1(graph->mtx.mtx.ddY, graph->mtx.mtx.globalX/zz->Num_Proc);
+      if (graph->mtx.mtx.globalX/zz->Num_Proc)
+        Zoltan_DD_Set_Neighbor_Hash_Fn1(graph->mtx.mtx.ddY,
+                                        graph->mtx.mtx.globalX/zz->Num_Proc);
     }
     dd = graph->mtx.mtx.ddY;
   }
