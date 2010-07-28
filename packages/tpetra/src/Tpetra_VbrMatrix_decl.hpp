@@ -221,6 +221,16 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   */
   void setGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<GlobalOrdinal,Scalar>& blockEntry);
 
+  //!Copy the contents of the input block-entry into the matrix.
+  /*!
+    This method will throw an exception if fillComplete() has not yet been called,
+    or if the specified block-entry doesn't already exist in the matrix.
+
+    The coefficients of the specified block-entry will be
+    over-written (replaced) by the input block-entry.
+  */
+  void setLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, const Teuchos::SerialDenseMatrix<LocalOrdinal,Scalar>& blockEntry);
+
   //!Add the contents of the input block-entry into the matrix.
   /*!
     This method will create the specified block-entry if it doesn't already exist,
@@ -232,6 +242,16 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
     This method may be called any time (before or after fillComplete()).
   */
   void sumIntoGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<GlobalOrdinal,Scalar>& blockEntry);
+
+  //!Add the contents of the input block-entry into the matrix.
+  /*!
+    This method will throw an exception if fillComplete() has not yet been called,
+    or if the specified block-entry doesn't already exist in the matrix.
+
+    The contents of the input block-entry will be added to the values that are
+    already present in the matrix.
+  */
+  void sumIntoLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, const Teuchos::SerialDenseMatrix<LocalOrdinal,Scalar>& blockEntry);
 
   //!Copy the contents of the input block-entry into the matrix.
   /*!
@@ -245,6 +265,16 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   */
   void setGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry);
 
+  //!Copy the contents of the input block-entry into the matrix.
+  /*!
+    This method will throw an exception if fillComplete() has not yet been called,
+    or if the specified block-entry doesn't already exist in the matrix.
+
+    The coefficients for the specified block-entry will be
+    over-written (replaced) by the input block-entry.
+  */
+  void setLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry);
+
   //!Add the contents of the input block-entry into the matrix.
   /*!
     This method will create the specified block-entry if it doesn't already exist,
@@ -257,13 +287,31 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   */
   void sumIntoGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry);
 
+  //!Add the contents of the input block-entry into the matrix.
+  /*!
+    This method will throw an exception if fillComplete() has not yet been called,
+    or if the specified block-entry doesn't already exist in the matrix.
+
+    The contents of the input block-entry will be added to the values that are
+    already present in the matrix.
+  */
+  void sumIntoLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry);
+
   //@}
 
   //! @name Transformational Methods
   //@{
 
+  //! Transition the matrix to the packed, optimized-storage state.
+  /*!
+    This method also sets the domain and range maps.
+  */
   void fillComplete(const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockDomainMap, const Teuchos::RCP<const BlockMap<LocalOrdinal,GlobalOrdinal,Node> >& blockRangeMap);
 
+  //! Transition the matrix to the packed, optimized-storage state.
+  /*!
+    This method internally calls fillComplete(getBlockRowMap(),getBlockRowMap()).
+  */
   void fillComplete();
   //@}
 

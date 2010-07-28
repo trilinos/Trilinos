@@ -385,6 +385,8 @@ namespace {
           GO col = blk_rows[j];
           Teuchos::Array<Scalar> blkEntry(blockSize * blockSize, row+col+1);
           vbr->setGlobalBlockEntry(row, col, blockSize, blockSize, blockSize, blkEntry());
+          //setLocalBlockEntry should throw since fillComplete hasn't been called yet:
+          TEST_THROW(vbr->setLocalBlockEntry(i, j, blockSize, blockSize, blockSize, blkEntry()), std::runtime_error);
         }
       }
 
@@ -459,6 +461,15 @@ namespace {
         GO row = blk_rows[i];
         for(int j=0; j<blk_rows.size(); ++j) {
           GO col = blk_rows[j];
+          Teuchos::Array<Scalar> blkEntry(blockSize * blockSize, row+col+1);
+          vbr->sumIntoLocalBlockEntry(i, j, blockSize, blockSize, blockSize, blkEntry());
+        }
+      }
+
+      for(int i=0; i<blk_rows.size(); ++i) {
+        GO row = blk_rows[i];
+        for(int j=0; j<blk_rows.size(); ++j) {
+          GO col = blk_rows[j];
           LO numPtRows, numPtCols;
           Teuchos::ArrayRCP<const Scalar> blockEntry;
           vbr->getGlobalBlockEntryView(row, col, numPtRows, numPtCols, blockEntry);
@@ -467,7 +478,7 @@ namespace {
           vbr->getGlobalBlockEntryViewNonConst(row, col, numPtRows, numPtCols, nonconstblockEntry);
  
           Teuchos::SerialDenseMatrix<GO,Scalar> blk(blockSize,blockSize);
-          blk.putScalar(row+col+1+10.0);
+          blk.putScalar(2*(row+col+1)+10.0);
 
           Teuchos::ArrayRCP<const Scalar> blk_values(blk.values(), 0, blockSize*blockSize, false);
           TEST_COMPARE_FLOATING_ARRAYS( blockEntry, blk_values, 2*Teuchos::ScalarTraits<Scalar>::eps());

@@ -1,10 +1,5 @@
 
 Still need to do the following:
 
-1. add more data accessors/manipulators:
-  - set/sumInto for local block-entries
-
-2. constructor that takes a filled graph.
-
-3. testing, profiling and optimizing on large matrices
+1. testing, profiling and optimizing on large matrices
 

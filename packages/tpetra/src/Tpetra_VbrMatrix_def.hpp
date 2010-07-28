@@ -573,6 +573,22 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setGlobalBlockEnt
 //-------------------------------------------------------------------
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, const Teuchos::SerialDenseMatrix<LocalOrdinal,Scalar>& blockEntry)
+{
+  //first get an ArrayRCP for the internal storage for this block-entry:
+  Teuchos::ArrayRCP<Scalar> internalBlockEntry;
+  LocalOrdinal blkRowSize = blockEntry.numRows();
+  LocalOrdinal blkColSize = blockEntry.numCols();
+  getLocalBlockEntryViewNonConst(localBlockRow,localBlockCol, blkRowSize, blkColSize, internalBlockEntry);
+
+  //now copy the incoming block-entry into internal storage:
+  const Scalar* inputvalues = blockEntry.values();
+  set_array_values(internalBlockEntry, inputvalues, blkRowSize, blkColSize, blockEntry.stride(), REPLACE);
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void
 VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sumIntoGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, const Teuchos::SerialDenseMatrix<GlobalOrdinal,Scalar>& blockEntry)
 {
   //first get an ArrayRCP for the internal storage for this block-entry:
@@ -580,6 +596,22 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sumIntoGlobalBloc
   LocalOrdinal blkRowSize = blockEntry.numRows();
   LocalOrdinal blkColSize = blockEntry.numCols();
   getGlobalBlockEntryViewNonConst(globalBlockRow,globalBlockCol, blkRowSize, blkColSize, internalBlockEntry);
+
+  //now sum (add) the incoming block-entry into internal storage:
+  const Scalar* inputvalues = blockEntry.values();
+  set_array_values(internalBlockEntry, inputvalues, blkRowSize, blkColSize, blockEntry.stride(), ADD);
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sumIntoLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, const Teuchos::SerialDenseMatrix<LocalOrdinal,Scalar>& blockEntry)
+{
+  //first get an ArrayRCP for the internal storage for this block-entry:
+  Teuchos::ArrayRCP<Scalar> internalBlockEntry;
+  LocalOrdinal blkRowSize = blockEntry.numRows();
+  LocalOrdinal blkColSize = blockEntry.numCols();
+  getLocalBlockEntryViewNonConst(localBlockRow,localBlockCol, blkRowSize, blkColSize, internalBlockEntry);
 
   //now sum (add) the incoming block-entry into internal storage:
   const Scalar* inputvalues = blockEntry.values();
@@ -606,6 +638,23 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setGlobalBlockEnt
 //-------------------------------------------------------------------
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry)
+{
+  //first get an ArrayRCP for the internal storage for this block-entry:
+  Teuchos::ArrayRCP<Scalar> internalBlockEntry;
+  getLocalBlockEntryViewNonConst(localBlockRow,localBlockCol, blkRowSize, blkColSize, internalBlockEntry);
+
+  LocalOrdinal blk_size = blockEntry.size();
+  TEST_FOR_EXCEPTION(blkColSize*LDA > blk_size, std::runtime_error,
+    "Tpetra::VbrMatrix::setLocalBlockEntry ERROR, inconsistent block-entry sizes.");
+
+  //copy the incoming block-entry into internal storage:
+  set_array_values(internalBlockEntry, blockEntry, blkRowSize, blkColSize, LDA, REPLACE);
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void
 VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sumIntoGlobalBlockEntry(GlobalOrdinal globalBlockRow, GlobalOrdinal globalBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry)
 {
   //first get an ArrayRCP for the internal storage for this block-entry:
@@ -615,6 +664,23 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sumIntoGlobalBloc
   LocalOrdinal blk_size = blockEntry.size();
   TEST_FOR_EXCEPTION(blkColSize*LDA > blk_size, std::runtime_error,
     "Tpetra::VbrMatrix::setGlobalBlockEntry ERROR, inconsistent block-entry sizes.");
+
+  //copy the incoming block-entry into internal storage:
+  set_array_values(internalBlockEntry, blockEntry, blkRowSize, blkColSize, LDA, ADD);
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::sumIntoLocalBlockEntry(LocalOrdinal localBlockRow, LocalOrdinal localBlockCol, LocalOrdinal blkRowSize, LocalOrdinal blkColSize, LocalOrdinal LDA, const Teuchos::ArrayView<const Scalar>& blockEntry)
+{
+  //first get an ArrayRCP for the internal storage for this block-entry:
+  Teuchos::ArrayRCP<Scalar> internalBlockEntry;
+  getLocalBlockEntryViewNonConst(localBlockRow,localBlockCol, blkRowSize, blkColSize, internalBlockEntry);
+
+  LocalOrdinal blk_size = blockEntry.size();
+  TEST_FOR_EXCEPTION(blkColSize*LDA > blk_size, std::runtime_error,
+    "Tpetra::VbrMatrix::setLocalBlockEntry ERROR, inconsistent block-entry sizes.");
 
   //copy the incoming block-entry into internal storage:
   set_array_values(internalBlockEntry, blockEntry, blkRowSize, blkColSize, LDA, ADD);
