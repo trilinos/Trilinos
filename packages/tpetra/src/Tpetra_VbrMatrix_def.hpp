@@ -170,14 +170,26 @@ template<class DomainScalar, class RangeScalar>
 void
 VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& X, Teuchos::ETransp trans) const
 {
-  throw std::runtime_error("Tpetra::VbrMatrix::solve NOT YET AVAILABLE.");
+  if (trans == Teuchos::TRANS) {
+    throw std::runtime_error("Tpetra::VbrMatrix::solve ERROR, transpose not yet supported.");
+  }
+
+  TEST_FOR_EXCEPTION(X.isConstantStride() == false || Y.isConstantStride() == false, std::runtime_error,
+        "Tpetra::VbrMatrix::solve(X,Y): X and Y must be constant stride.");
+
   TEST_FOR_EXCEPTION(!isFillComplete(), std::runtime_error,
     "Tpetra::VbrMatrix::solve ERROR, solve may only be called after fillComplete has been called.");
+
+  TEST_FOR_EXCEPTION(constBlkGraph_->isUpperTriangular()==false && constBlkGraph_->isLowerTriangular()==false, std::runtime_error,
+    "Tpetra::VbrMatrix::solve ERROR, matrix must be either upper or lower triangular.");
 
   const Kokkos::MultiVector<RangeScalar,Node> *lclY = &Y.getLocalMV();
   Kokkos::MultiVector<DomainScalar,Node>      *lclX = &X.getLocalMVNonConst();
 
-  lclMatOps_.template solve<DomainScalar,RangeScalar>(trans,*lclY,*lclX);
+  Teuchos::EUplo triang = constBlkGraph_->isUpperTriangular() ? Teuchos::UPPER_TRI : Teuchos::LOWER_TRI;
+  Teuchos::EDiag diag = (constBlkGraph_->getNodeNumDiags() < constBlkGraph_->getNodeNumRows()) ? Teuchos::UNIT_DIAG : Teuchos::NON_UNIT_DIAG;
+
+  lclMatOps_.template solve<DomainScalar,RangeScalar>(trans,triang,diag, *lclY,*lclX);
 }
 
 //-------------------------------------------------------------------
@@ -229,6 +241,30 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::apply(
     this->template multiply<Scalar,Scalar>(X, Yref, trans, alpha, beta);
     if (importedVec_ != Teuchos::null) {
       Y.doExport(*importedVec_, *importer_, ADD);
+    }
+  }
+}
+
+//-------------------------------------------------------------------
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void
+VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyInverse(
+         const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
+               MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+               Teuchos::ETransp trans) const
+{
+  if (trans == Teuchos::NO_TRANS) {
+    updateImport(Y);
+    MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Xref = importedVec_ == Teuchos::null ? X : *importedVec_;
+    this->template solve<Scalar,Scalar>(Y, Xref, trans);
+  }
+  else if (trans == Teuchos::TRANS || trans == Teuchos::CONJ_TRANS) {
+    throw std::runtime_error("Tpetra::VbrMatrix::applyInverse ERROR, transpose not yet supported.");
+    updateImport(Y);
+    const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Yref = importedVec_ == Teuchos::null ? Y : *importedVec_;
+    this->template solve<Scalar,Scalar>(Yref, X, trans);
+    if (importedVec_ != Teuchos::null) {
+      X.doExport(*importedVec_, *importer_, ADD);
     }
   }
 }

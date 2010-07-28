@@ -139,6 +139,13 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
       the row map of the matrix.
 
       Both \c X and \c Y are required to have constant stride.
+
+      Note that transpose is not yet implemented. (trans==Teuchos::TRANS not allowed)
+
+      Note that if the diagonal block-entries are stored, they must be triangular.
+      I.e., the matrix structure must be block-triangular, and any diagonal blocks
+      must be "point"-triangular, meaning that coefficients on the "wrong" side of the
+      point-diagonal must be zero.
   */
   template <class DomainScalar, class RangeScalar>
       void solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> & Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, Teuchos::ETransp trans) const;
@@ -148,30 +155,40 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   //! @name Operator Methods
   //@{
 
-    //! Returns the Map associated with the domain of this operator.
-    /*! Note that this is a point-entry map, not a block-map.
-    */
-    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
+  //! Returns the Map associated with the domain of this operator.
+  /*! Note that this is a point-entry map, not a block-map.
+  */
+  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getDomainMap() const;
 
-    //! Returns the Map associated with the range of this operator, which must be compatible with Y.getMap().
-    /*! Note that this is a point-entry map, not a block-map.
-    */
-    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
+  //! Returns the Map associated with the range of this operator, which must be compatible with Y.getMap().
+  /*! Note that this is a point-entry map, not a block-map.
+  */
+  const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & getRangeMap() const;
 
-    //! \brief Computes the operator-multivector application.
-    /*! Loosely, performs \f$Y = \alpha \cdot A^{\textrm{trans}} \cdot X + \beta \cdot Y\f$. However, the details of operation
-        vary according to the values of \c alpha and \c beta. Specifically
-        - if <tt>beta == 0</tt>, apply() <b>must</b> overwrite \c Y, so that any values in \c Y (including NaNs) are ignored.
-        - if <tt>alpha == 0</tt>, apply() <b>may</b> short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
-     */
-    void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
-               MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
-               Teuchos::ETransp trans = Teuchos::NO_TRANS,
-               Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
-               Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
+  //! \brief Computes the operator-multivector application.
+  /*! Loosely, performs \f$Y = \alpha \cdot A^{\textrm{trans}} \cdot X + \beta \cdot Y\f$. However, the details of operation
+      vary according to the values of \c alpha and \c beta. Specifically
+      - if <tt>beta == 0</tt>, apply() <b>must</b> overwrite \c Y, so that any values in \c Y (including NaNs) are ignored.
+      - if <tt>alpha == 0</tt>, apply() <b>may</b> short-circuit the operator, so that any values in \c X (including NaNs) are ignored.
+   */
+  void apply(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+             MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &Y,
+             Teuchos::ETransp trans = Teuchos::NO_TRANS,
+             Scalar alpha = Teuchos::ScalarTraits<Scalar>::one(),
+             Scalar beta = Teuchos::ScalarTraits<Scalar>::zero()) const;
 
-    //! Indicates whether this operator supports applying the adjoint operator.
-    bool hasTransposeApply() const;
+  //! Triangular Solve -- Matrix must be triangular.
+  /*! Find X such that A*X = Y.
+      Both \c X and \c Y are required to have constant stride.
+ 
+      Note that transpose is not yet implemented. (trans==Teuchos::TRANS not allowed)
+  */
+  void applyInverse(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Y,
+                    MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,
+                    Teuchos::ETransp trans) const;
+
+  //! Indicates whether this operator supports applying the adjoint operator.
+  bool hasTransposeApply() const;
 
   //@}
 
