@@ -851,6 +851,78 @@ namespace {
     x_check = null;
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VbrMatrix, SolveTransposeUpperNonUnitDiag, Ordinal, Scalar, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+    typedef VbrMatrix<Scalar,Ordinal,Node>  VBR;
+    typedef MultiVector<Scalar,Node> MV;
+    typedef typename Node::size_t size_t;
+    // generate small 2x2 block matrix:
+    // [ 1  1    2  2 ]
+    // [ 0  2    2  2 ]
+    //
+    // [         3  4 ]
+    // [         0  4 ]
+
+    // allocate buffers
+    const size_t num_point_rows = 4;
+    const size_t num_block_rows = 2;
+    const size_t num_block_cols = 2;
+    const size_t num_block_nz = 3;
+    const size_t totalNNZ = 12;
+    ArrayRCP<Ordinal> rptr = node->template allocBuffer<Ordinal> (num_block_rows+1);
+    ArrayRCP<Ordinal> cptr = node->template allocBuffer<Ordinal> (num_block_cols+1);
+    ArrayRCP<size_t> bptr = node->template allocBuffer<size_t> (num_block_rows+1);
+    ArrayRCP<Ordinal> bindx = node->template allocBuffer<Ordinal>(num_block_nz);
+    ArrayRCP<Ordinal> indx = node->template allocBuffer<Ordinal>(num_block_nz+1);
+    ArrayRCP<Scalar>  vals = node->template allocBuffer<Scalar >(totalNNZ);
+    // fill the buffers on the host
+    {
+      ArrayRCP<Ordinal>  rptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_rows+1,rptr);
+      ArrayRCP<Ordinal>  cptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_cols+1,cptr);
+      ArrayRCP<size_t>  bptr_h = node->template viewBufferNonConst<size_t>(Kokkos::WriteOnly,num_block_rows+1,bptr);
+      ArrayRCP<Ordinal>  bindx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz,bindx);
+      ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz+1,indx);
+      ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(Kokkos::WriteOnly,totalNNZ,vals);
+
+      rptr_h[ 0] = 0; rptr_h[ 1] = 2; rptr_h[ 2] = 4;
+      cptr_h[ 0] = 0; cptr_h[ 1] = 2; cptr_h[ 2] = 4;
+      bptr_h[ 0] = 0; bptr_h[ 1] = 2; bptr_h[ 2] = 3;
+      bindx_h[0] = 0; bindx_h[1] = 1; bindx_h[2] = 1;
+      indx_h[ 0] = 0; indx_h[ 1] = 4; indx_h[ 2] = 8; indx_h[ 3] = 12;
+
+      vals_h[ 0] = 1; vals_h[ 1] = 0; vals_h[ 2] = 1; vals_h[ 3] = 2;
+      vals_h[ 4] = 2; vals_h[ 5] = 2; vals_h[ 6] = 2; vals_h[ 7] = 2;
+      vals_h[ 8] = 3; vals_h[ 9] = 0; vals_h[10] = 4; vals_h[11] = 4;
+    }
+    VBR A(num_block_rows,node);
+    A.setPackedValues(vals,rptr,cptr,bptr,bindx,indx);
+    DefaultBlockSparseOps<Scalar,Ordinal,Node> dbsm(node);
+    dbsm.initializeValues(A);
+
+    ArrayRCP<Scalar> xdat, ydat, x_check;
+    xdat = node->template allocBuffer<Scalar>(num_point_rows);
+    ydat = node->template allocBuffer<Scalar>(num_point_rows);
+    ydat[0] = 1;
+    ydat[1] = 3;
+    ydat[2] = 7;
+    ydat[3] = 12;
+    x_check = arcp<Scalar>(num_point_rows);
+    x_check[0] = 1;
+    x_check[1] = 1;
+    x_check[2] = 1;
+    x_check[3] = 1;
+    MV X(node), Y(node);
+    X.initializeValues( num_point_rows,1, xdat,num_point_rows);
+    Y.initializeValues( num_point_rows,1, ydat,num_point_rows);
+    dbsm.solve(Teuchos::TRANS, Teuchos::UPPER_TRI, Teuchos::NON_UNIT_DIAG, Y,X);
+    ArrayRCP<const Scalar> xview = node->template viewBuffer<Scalar>(num_point_rows,xdat);
+    TEST_COMPARE_FLOATING_ARRAYS(xview, x_check, Teuchos::ScalarTraits<Scalar>::zero());
+    xdat = null;
+    ydat = null;
+    x_check = null;
+  }
+
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VbrMatrix, SolveLowerNoDiag, Ordinal, Scalar, Node )
   {
     RCP<Node> node = getNode<Node>();
@@ -1067,6 +1139,78 @@ namespace {
     x_check = null;
   }
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( VbrMatrix, SolveTransposeLowerNonUnitDiag, Ordinal, Scalar, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+    typedef VbrMatrix<Scalar,Ordinal,Node>  VBR;
+    typedef MultiVector<Scalar,Node> MV;
+    typedef typename Node::size_t size_t;
+    // generate small 2x2 block matrix:
+    // [ 1  0         ]
+    // [ 1  2         ]
+    //
+    // [ 2  2    3  0 ]
+    // [ 2  2    4  4 ]
+
+    // allocate buffers
+    const size_t num_point_rows = 4;
+    const size_t num_block_rows = 2;
+    const size_t num_block_cols = 2;
+    const size_t num_block_nz = 3;
+    const size_t totalNNZ = 12;
+    ArrayRCP<Ordinal> rptr = node->template allocBuffer<Ordinal> (num_block_rows+1);
+    ArrayRCP<Ordinal> cptr = node->template allocBuffer<Ordinal> (num_block_cols+1);
+    ArrayRCP<size_t> bptr = node->template allocBuffer<size_t> (num_block_rows+1);
+    ArrayRCP<Ordinal> bindx = node->template allocBuffer<Ordinal>(num_block_nz);
+    ArrayRCP<Ordinal> indx = node->template allocBuffer<Ordinal>(num_block_nz+1);
+    ArrayRCP<Scalar>  vals = node->template allocBuffer<Scalar >(totalNNZ);
+    // fill the buffers on the host
+    {
+      ArrayRCP<Ordinal>  rptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_rows+1,rptr);
+      ArrayRCP<Ordinal>  cptr_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_cols+1,cptr);
+      ArrayRCP<size_t>  bptr_h = node->template viewBufferNonConst<size_t>(Kokkos::WriteOnly,num_block_rows+1,bptr);
+      ArrayRCP<Ordinal>  bindx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz,bindx);
+      ArrayRCP<Ordinal>  indx_h = node->template viewBufferNonConst<Ordinal>(Kokkos::WriteOnly,num_block_nz+1,indx);
+      ArrayRCP<Scalar>   vals_h = node->template viewBufferNonConst<Scalar >(Kokkos::WriteOnly,totalNNZ,vals);
+
+      rptr_h[ 0] = 0; rptr_h[ 1] = 2; rptr_h[ 2] = 4;
+      cptr_h[ 0] = 0; cptr_h[ 1] = 2; cptr_h[ 2] = 4;
+      bptr_h[ 0] = 0; bptr_h[ 1] = 1; bptr_h[ 2] = 3;
+      bindx_h[0] = 0; bindx_h[1] = 0; bindx_h[2] = 1;
+      indx_h[ 0] = 0; indx_h[ 1] = 4; indx_h[ 2] = 8; indx_h[ 3] = 12;
+
+      vals_h[ 0] = 1; vals_h[ 1] = 1; vals_h[ 2] = 0; vals_h[ 3] = 2;
+      vals_h[ 4] = 2; vals_h[ 5] = 2; vals_h[ 6] = 2; vals_h[ 7] = 2;
+      vals_h[ 8] = 3; vals_h[ 9] = 4; vals_h[10] = 0; vals_h[11] = 4;
+    }
+    VBR A(num_block_rows,node);
+    A.setPackedValues(vals,rptr,cptr,bptr,bindx,indx);
+    DefaultBlockSparseOps<Scalar,Ordinal,Node> dbsm(node);
+    dbsm.initializeValues(A);
+
+    ArrayRCP<Scalar> xdat, ydat, x_check;
+    xdat = node->template allocBuffer<Scalar>(num_point_rows);
+    ydat = node->template allocBuffer<Scalar>(num_point_rows);
+    ydat[0] = 6;
+    ydat[1] = 6;
+    ydat[2] = 7;
+    ydat[3] = 4;
+    x_check = arcp<Scalar>(num_point_rows);
+    x_check[0] = 1;
+    x_check[1] = 1;
+    x_check[2] = 1;
+    x_check[3] = 1;
+    MV X(node), Y(node);
+    X.initializeValues( num_point_rows,1, xdat,num_point_rows);
+    Y.initializeValues( num_point_rows,1, ydat,num_point_rows);
+    dbsm.solve(Teuchos::TRANS, Teuchos::LOWER_TRI, Teuchos::NON_UNIT_DIAG, Y,X);
+    ArrayRCP<const Scalar> xview = node->template viewBuffer<Scalar>(num_point_rows,xdat);
+    TEST_COMPARE_FLOATING_ARRAYS(xview, x_check, Teuchos::ScalarTraits<Scalar>::zero());
+    xdat = null;
+    ydat = null;
+    x_check = null;
+  }
+
 #define ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( VbrMatrix, SparseMultiply1, ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( VbrMatrix, SparseMultiply2, ORDINAL, SCALAR, NODE ) \
@@ -1076,9 +1220,11 @@ namespace {
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( VbrMatrix, SolveUpperNoDiag, ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( VbrMatrix, SolveUpperUnitDiag, ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( VbrMatrix, SolveUpperNonUnitDiag, ORDINAL, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( VbrMatrix, SolveTransposeUpperNonUnitDiag, ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( VbrMatrix, SolveLowerNoDiag, ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( VbrMatrix, SolveLowerUnitDiag, ORDINAL, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( VbrMatrix, SolveLowerNonUnitDiag, ORDINAL, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( VbrMatrix, SolveLowerNonUnitDiag, ORDINAL, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( VbrMatrix, SolveTransposeLowerNonUnitDiag, ORDINAL, SCALAR, NODE )
 
 #define UNIT_TEST_SERIALNODE(ORDINAL, SCALAR) \
       ALL_UNIT_TESTS_ORDINAL_SCALAR_NODE( ORDINAL, SCALAR, SerialNode )

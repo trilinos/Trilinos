@@ -316,9 +316,8 @@ namespace Kokkos {
                                 Teuchos::EDiag diag, 
                                 const MultiVector<DomainScalar,Node> &Y, 
                                 MultiVector<RangeScalar,Node> &X) const {
-    typedef DefaultBlockSparseSolveOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1;
-    TEST_FOR_EXCEPTION(trans==Teuchos::TRANS, std::runtime_error,
-        Teuchos::typeName(*this) << "::solve(): transpose not supported.");
+    typedef DefaultBlockSparseSolveOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  Op;
+    typedef DefaultBlockSparseTransposeSolveOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  OpT;
     TEST_FOR_EXCEPTION(valsInit_ == false, std::runtime_error,
         Teuchos::typeName(*this) << "::solve(): operation not fully initialized.");
     TEST_FOR_EXCEPT(X.getNumCols() != Y.getNumCols());
@@ -329,7 +328,7 @@ namespace Kokkos {
     }
     else if (isPacked_ == true) {
       if (trans == Teuchos::NO_TRANS) {
-        Op1 wdp;
+        Op wdp;
         rbh.begin();
         wdp.upper   = (triang == Teuchos::UPPER_TRI);
         wdp.unitDiag = (diag == Teuchos::UNIT_DIAG);
@@ -346,10 +345,27 @@ namespace Kokkos {
         wdp.ystride = Y.getStride();
         rbh.end();
         const size_t numRHS = X.getNumCols();
-        node_->template parallel_for<Op1>(0,numRHS,wdp);
+        node_->template parallel_for<Op>(0,numRHS,wdp);
       }
       else {
-        throw std::runtime_error("DefaultBlockSparseOps::solve ERROR, not implemented for transpose.");
+        OpT wdp;
+        rbh.begin();
+        wdp.upper   = (triang == Teuchos::UPPER_TRI);
+        wdp.unitDiag = (diag == Teuchos::UNIT_DIAG);
+        wdp.numBlockRows = numBlockRows_;
+        wdp.vals = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
+        wdp.rptr = rbh.template addConstBuffer<Ordinal>(pbuf_rptr_);
+        wdp.cptr = rbh.template addConstBuffer<Ordinal>(pbuf_cptr_);
+        wdp.bptr = rbh.template addConstBuffer<size_t>(pbuf_bptr_);
+        wdp.bindx= rbh.template addConstBuffer<Ordinal>(pbuf_bindx_);
+        wdp.indx = rbh.template addConstBuffer<Ordinal>(pbuf_indx_);
+        wdp.x    = rbh.template addNonConstBuffer<DomainScalar>(X.getValuesNonConst());
+        wdp.y    = rbh.template addConstBuffer<RangeScalar>(Y.getValues());
+        wdp.xstride = X.getStride();
+        wdp.ystride = Y.getStride();
+        rbh.end();
+        const size_t numRHS = X.getNumCols();
+        node_->template parallel_for<OpT>(0,numRHS,wdp);
       }
     }
     else {
