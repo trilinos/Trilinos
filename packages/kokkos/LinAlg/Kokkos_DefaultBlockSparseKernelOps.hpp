@@ -61,9 +61,60 @@ densematvec(Ordinal Nrows, Ordinal Ncols,
   }
 }
 
-/** Form dense transpose-matrix-vector product y = A*x */
+/** Form dense matrix-vector product y = A*x but skip the diagonal of A.
+(Used by the solve operation.) */
 template<class Scalar,class Ordinal,class DomainScalar,class RangeScalar>
 inline KERNEL_PREFIX void 
+densematvec_skipdiag(Ordinal N,
+                     Scalar alpha, const Scalar* A,
+                     const DomainScalar* x, RangeScalar* y)
+{
+  unsigned offset = 0;
+  for(Ordinal c=0; c<N; ++c) {
+    for(Ordinal r=0; r<N; ++r) {
+      if (r != c) {
+        y[r] += alpha*A[offset]*x[c];
+      }
+      ++offset;
+    }
+  }
+}
+
+/** Solve square dense upper-triangular matrix.
+    On entry y is the rhs, on exit y is the solution.
+*/
+template<class Scalar,class Ordinal,class RangeScalar>
+inline KERNEL_PREFIX void 
+solve_block_upper(Ordinal N, const Scalar* A, RangeScalar* y)
+{
+  int n = N;
+  for(int r=n-1; r>=0; --r) {
+    for(int c=n-1; c>r; --c) {
+      y[r] -= A[c*n+r]*y[c];
+    }
+    y[r] /= A[r*n+r];
+  }
+}
+
+/** Solve square dense lower-triangular matrix.
+    On entry y is the rhs, on exit y is the solution.
+*/
+template<class Scalar,class Ordinal,class RangeScalar>
+inline KERNEL_PREFIX void 
+solve_block_lower(Ordinal N, const Scalar* A, RangeScalar* y)
+{
+  int n = N;
+  for(int r=0; r<n; ++r) {
+    for(int c=0; c<r; ++c) {
+      y[r] -= A[c*n+r]*y[c];
+    }
+    y[r] /= A[r*n+r];
+  }
+}
+
+/** Form dense transpose-matrix-vector product y = A*x */
+template<class Scalar,class Ordinal,class DomainScalar,class RangeScalar>
+inline KERNEL_PREFIX void
 densematvec_trans(Ordinal Nrows, Ordinal Ncols,
                   Scalar alpha, const Scalar* A,
                   const DomainScalar* x, RangeScalar* y)
@@ -279,7 +330,7 @@ struct DefaultBlockSparseSolveOp1 {
     for(Ordinal ptrow=0; ptrow<numPointRows; ++ptrow) xvec[ptrow] = yvec[ptrow];
 
     for(size_t r = 0; r < numBlockRows; ++r) {
-      size_t row = upper ? numBlockRows-r-1 : r;
+      Ordinal row = upper ? numBlockRows-r-1 : r;
 
       const Ordinal numRowsInBlock = rptr[row+1]-rptr[row];
       DomainScalar* xx = &xvec[rptr[row]];
@@ -293,18 +344,29 @@ struct DefaultBlockSparseSolveOp1 {
         const Ordinal numColsInBlock = cptr[col+1]-cptr[col];
         const Scalar* A = &vals[indx[blk]];
         DomainScalar* yy = &xvec[cptr[col]];
-        // do the GEMV
-        if (numRowsInBlock == numColsInBlock) {
-          switch(numRowsInBlock) {
-            case 1: dense_matvec_1x1(-one, A, yy, xx); break;
-            case 2: dense_matvec_2x2(-one, A, yy, xx); break;
-            case 3: dense_matvec_3x3(-one, A, yy, xx); break;
-            case 4: dense_matvec_4x4(-one, A, yy, xx); break;
-            default: densematvec(numRowsInBlock, numColsInBlock, -one, A, yy, xx);
+        if (col==row) {
+          if (unitDiag) {
+            densematvec_skipdiag(numRowsInBlock, -one, A, yy, xx);
+          }
+          else {
+            if (upper) solve_block_upper(numRowsInBlock, A, xx);
+            else solve_block_lower(numRowsInBlock, A, xx);
           }
         }
         else {
-          densematvec(numRowsInBlock,numColsInBlock,-one,A,yy,xx);
+          // do the GEMV
+          if (numRowsInBlock == numColsInBlock) {
+            switch(numRowsInBlock) {
+              case 1: dense_matvec_1x1(-one, A, yy, xx); break;
+              case 2: dense_matvec_2x2(-one, A, yy, xx); break;
+              case 3: dense_matvec_3x3(-one, A, yy, xx); break;
+              case 4: dense_matvec_4x4(-one, A, yy, xx); break;
+              default: densematvec(numRowsInBlock, numColsInBlock, -one, A, yy, xx);
+            }
+          }
+          else {
+            densematvec(numRowsInBlock,numColsInBlock,-one,A,yy,xx);
+          }
         }
       }
     }

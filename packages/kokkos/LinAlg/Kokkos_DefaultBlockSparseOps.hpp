@@ -81,8 +81,7 @@ namespace Kokkos {
     //@{
 
     //! Initialize values of matrix, using Kokkos::VbrMatrix
-    void initializeValues(const VbrMatrix<Scalar,Ordinal,Node> &matrix,
-                          bool upper, bool unitDiag);
+    void initializeValues(const VbrMatrix<Scalar,Ordinal,Node> &matrix);
 
     //! Clear all matrix structure and values.
     void clear();
@@ -104,7 +103,8 @@ namespace Kokkos {
 
     //! Triangular solve: find x such that A*x=y, only if A is triangular.
     template <class DomainScalar, class RangeScalar>
-    void solve(Teuchos::ETransp trans, const MultiVector<DomainScalar,Node>& Y, MultiVector<RangeScalar,Node>& X) const;
+    void solve(Teuchos::ETransp trans, Teuchos::EUplo triang, Teuchos::EDiag diag,
+            const MultiVector<DomainScalar,Node>& Y, MultiVector<RangeScalar,Node>& X) const;
     //@}
 
   protected:
@@ -122,7 +122,6 @@ namespace Kokkos {
 
     size_t numBlockRows_;
     bool valsInit_, isPacked_, isEmpty_;
-    bool upper_, unitDiag_;
   };
 
   template<class Scalar, class Ordinal, class Node>
@@ -130,9 +129,7 @@ namespace Kokkos {
   : node_(node)
   , valsInit_(false)
   , isPacked_(false)
-  , isEmpty_(false)
-  , upper_(false)
-  , unitDiag_(false) {
+  , isEmpty_(false) {
   }
 
   template<class Scalar, class Ordinal, class Node>
@@ -140,7 +137,7 @@ namespace Kokkos {
   }
 
   template <class Scalar, class Ordinal, class Node>
-  void DefaultBlockSparseOps<Scalar,Ordinal,Node>::initializeValues(const VbrMatrix<Scalar,Ordinal,Node> &matrix, bool upper, bool unitDiag) {
+  void DefaultBlockSparseOps<Scalar,Ordinal,Node>::initializeValues(const VbrMatrix<Scalar,Ordinal,Node> &matrix) {
     using Teuchos::ArrayRCP;
     isEmpty_ = false;
     pbuf_vals1D_ = matrix.get_values();
@@ -152,8 +149,6 @@ namespace Kokkos {
     numBlockRows_ = matrix.getNumBlockRows();
     valsInit_ = true;
     isPacked_ = true;
-    upper_ = upper;
-    unitDiag_ = unitDiag;
   }
 
 
@@ -174,8 +169,6 @@ namespace Kokkos {
     valsInit_ = false;
     isPacked_ = false;
     isEmpty_  = false;
-    upper_ = false;
-    unitDiag_ = false;
   }
 
   template <class Scalar, class Ordinal, class Node>
@@ -319,6 +312,8 @@ namespace Kokkos {
   template <class DomainScalar, class RangeScalar>
   void DefaultBlockSparseOps<Scalar,Ordinal,Node>::solve(
                                 Teuchos::ETransp trans, 
+                                Teuchos::EUplo triang, 
+                                Teuchos::EDiag diag, 
                                 const MultiVector<DomainScalar,Node> &Y, 
                                 MultiVector<RangeScalar,Node> &X) const {
     typedef DefaultBlockSparseSolveOp1<Scalar,Ordinal,DomainScalar,RangeScalar>  Op1;
@@ -336,8 +331,8 @@ namespace Kokkos {
       if (trans == Teuchos::NO_TRANS) {
         Op1 wdp;
         rbh.begin();
-        wdp.upper   = upper_;
-        wdp.unitDiag = unitDiag_;
+        wdp.upper   = (triang == Teuchos::UPPER_TRI);
+        wdp.unitDiag = (diag == Teuchos::UNIT_DIAG);
         wdp.numBlockRows = numBlockRows_;
         wdp.vals = rbh.template addConstBuffer<Scalar>(pbuf_vals1D_);
         wdp.rptr = rbh.template addConstBuffer<Ordinal>(pbuf_rptr_);
