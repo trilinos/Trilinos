@@ -172,7 +172,7 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::solve(const Multi
 {
   throw std::runtime_error("Tpetra::VbrMatrix::solve NOT YET AVAILABLE.");
   TEST_FOR_EXCEPTION(!isFillComplete(), std::runtime_error,
-    "Tpetra::VbrMatrix::solve ERROR, multiply may only be called after fillComplete has been called.");
+    "Tpetra::VbrMatrix::solve ERROR, solve may only be called after fillComplete has been called.");
 
   const Kokkos::MultiVector<RangeScalar,Node> *lclY = &Y.getLocalMV();
   Kokkos::MultiVector<DomainScalar,Node>      *lclX = &X.getLocalMVNonConst();
@@ -746,7 +746,7 @@ void VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::fillLocalMat
   TEST_FOR_EXCEPTION(is_storage_optimized_ != true, std::runtime_error,
     "Tpetra::VbrMatrix::fillLocalMatrix ERROR, optimizeStorage is required to have already been called.");
 
-  lclMatOps_.initializeValues(lclMatrix_, false, false);
+  lclMatOps_.initializeValues(lclMatrix_);
 }
 
 //-------------------------------------------------------------------
