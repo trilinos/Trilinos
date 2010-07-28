@@ -360,6 +360,7 @@
   </SubProject>
   <SubProject name="STK">
     <Dependency name="Teuchos" type="LR"/>
+    <Dependency name="Trios" type="LR"/>
     <Dependency name="ThreadPool" type="LR"/>
     <Dependency name="Kokkos" type="ILO"/>
     <Dependency name="Epetra" type="ILR"/>
