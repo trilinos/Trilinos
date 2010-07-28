@@ -49,7 +49,7 @@ int Zoltan_DD_Set_Neighbor_Hash_Fn1 (
  Zoltan_DD_Directory *dd,          /* directory state information */
  int size)                         /* number of reserved GIDs per CPU */
    {
-   char *yo = "Zoltan_DD_Set_Hash_Fn1";
+   char *yo = "Zoltan_DD_Set_Neighbor_Hash_Fn1";
   struct dd_nh1_struct *hashdata;
 
    if (dd == NULL || size < 1)  {
