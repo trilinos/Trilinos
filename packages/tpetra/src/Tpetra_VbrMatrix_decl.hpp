@@ -140,8 +140,6 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
 
       Both \c X and \c Y are required to have constant stride.
 
-      Note that transpose is not yet implemented. (trans==Teuchos::TRANS not allowed)
-
       Note that if the diagonal block-entries are stored, they must be triangular.
       I.e., the matrix structure must be block-triangular, and any diagonal blocks
       must be "point"-triangular, meaning that coefficients on the "wrong" side of the
@@ -180,8 +178,6 @@ class VbrMatrix : public Tpetra::Operator<Scalar,LocalOrdinal,GlobalOrdinal,Node
   //! Triangular Solve -- Matrix must be triangular.
   /*! Find X such that A*X = Y.
       Both \c X and \c Y are required to have constant stride.
- 
-      Note that transpose is not yet implemented. (trans==Teuchos::TRANS not allowed)
   */
   void applyInverse(const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> & Y,
                     MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &X,

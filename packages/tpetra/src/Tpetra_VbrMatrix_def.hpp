@@ -170,10 +170,6 @@ template<class DomainScalar, class RangeScalar>
 void
 VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node>& Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node>& X, Teuchos::ETransp trans) const
 {
-  if (trans == Teuchos::TRANS) {
-    throw std::runtime_error("Tpetra::VbrMatrix::solve ERROR, transpose not yet supported.");
-  }
-
   TEST_FOR_EXCEPTION(X.isConstantStride() == false || Y.isConstantStride() == false, std::runtime_error,
         "Tpetra::VbrMatrix::solve(X,Y): X and Y must be constant stride.");
 
@@ -259,7 +255,6 @@ VbrMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::applyInverse(
     this->template solve<Scalar,Scalar>(Y, Xref, trans);
   }
   else if (trans == Teuchos::TRANS || trans == Teuchos::CONJ_TRANS) {
-    throw std::runtime_error("Tpetra::VbrMatrix::applyInverse ERROR, transpose not yet supported.");
     updateImport(Y);
     const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& Yref = importedVec_ == Teuchos::null ? Y : *importedVec_;
     this->template solve<Scalar,Scalar>(Yref, X, trans);
