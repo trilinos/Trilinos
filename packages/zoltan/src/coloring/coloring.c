@@ -258,7 +258,7 @@ int Zoltan_Color(
 
   /* BUILD THE GRAPH */
   /* Check that the user has allocated space for the return args. */
-  if (!color_exp)
+  if (num_obj && !color_exp)
       ZOLTAN_COLOR_ERROR(ZOLTAN_FATAL, "Output argument is NULL. Please allocate all required arrays before calling this routine.");
 
 #ifdef _DEBUG_TIMES
@@ -300,11 +300,11 @@ int Zoltan_Color(
 #endif
 
   /* Allocate color array. Local and D1 neighbor colors will be stored here. */
-  if (!(color = (int *) ZOLTAN_CALLOC(lastlno, sizeof(int))))
+  if (lastlno && !(color = (int *) ZOLTAN_CALLOC(lastlno, sizeof(int))))
       MEMORY_ERROR;
 
   if (coloring_problem == 'P') {
-      if (!(partialD2 = (int *) ZOLTAN_CALLOC(nvtx, sizeof(int))))
+      if (nvtx && !(partialD2 = (int *) ZOLTAN_CALLOC(nvtx, sizeof(int))))
 	  MEMORY_ERROR;
       for (i=0; i<nvtx; i++)
 	  partialD2[i] = 1; /* UVCUVC: TODO CHECK: We need to fill this from fixed vertex function
@@ -810,7 +810,7 @@ static int D2coloring(
     /* Memory allocation */
     isbound = (int *) ZOLTAN_MALLOC(nvtx * sizeof(int));
     visit = (int *) ZOLTAN_MALLOC((1+nvtx) * sizeof(int));
-    if (!isbound || !visit)
+    if ((nvtx && !isbound) || !visit)
 	MEMORY_ERROR;
 
     /* Start timer */
@@ -921,7 +921,7 @@ static int D2coloring(
     mark = (int *) ZOLTAN_MALLOC(gmaxcolor * sizeof(int));
     vmark = (int *) ZOLTAN_CALLOC(lastlno, sizeof(int));
     conflicts = (int *) ZOLTAN_MALLOC((1+nvtx) * sizeof(int));
-    if (!mark || !conflicts || !vmark)
+    if ((gmaxcolor && !mark) || !conflicts || (lastlno && !vmark))
 	MEMORY_ERROR;
     repliesF = (int *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
     repliesFx = (int *) ZOLTAN_MALLOC(zz->Num_Proc * sizeof(int));
@@ -954,7 +954,7 @@ static int D2coloring(
 	xforbiddenS[i] = (int *) ZOLTAN_MALLOC((ss+1) * sizeof(int));
 	forbsizeS[i] = (int)(ceil((double) xadj[nvtx] / (double) nvtx) * ss); /* size of forbidden color allocation for send buffer - init to avgDeg*ss */
 	forbiddenS[i] = (int *) ZOLTAN_MALLOC((forbsizeS[i] > 0 ? forbsizeS[i] : 1) * sizeof(int));
-	if (!newcolored[i] || !xforbidden[i] || !forbidden[i] || !xforbiddenS[i] || !forbiddenS[i])
+	if ((ss && !newcolored[i]) || !xforbidden[i] || !forbidden[i] || !xforbiddenS[i] || !forbiddenS[i])
 	    MEMORY_ERROR;
     }
     confChk = (int *) ZOLTAN_MALLOC(nvtx * sizeof(int)); /*the vertices to be checked in conflict detection */
@@ -962,7 +962,7 @@ static int D2coloring(
     seen = (int *) ZOLTAN_MALLOC(gmaxcolor * sizeof(int));
     where = (int *) ZOLTAN_MALLOC(gmaxcolor * sizeof(int));
     pwhere = (int *) ZOLTAN_MALLOC(gmaxcolor * sizeof(int));
-    if (!confChk || !wset || !seen || !where || !pwhere)
+    if ((nvtx && !confChk) || !wset || (gmaxcolor && (!seen || !where || !pwhere)))
 	MEMORY_ERROR;
 
     /* Wait for superstep size communication to end */
@@ -999,7 +999,7 @@ static int D2coloring(
     /* All processors generate the same random number corresponding
        to the same global vertex number */
     rand_key = (int *) ZOLTAN_MALLOC(sizeof(int) * lastlno);
-    if (!rand_key)
+    if (lastlno && !rand_key)
 	MEMORY_ERROR;
     for(i=0; i<lastlno; i++) {
 	Zoltan_Srand(Zoltan_G2LHash_L2G(hash, i), NULL);
