@@ -145,7 +145,7 @@ void BulkData::declare_relation( Entity & e_from ,
 
   assert_valid_relation( method , *this , e_from , e_to );
 
-  impl::EntityImpl::declare_relation( e_from, e_to, local_id, m_sync_count);
+  m_entity_repo.declare_relation( e_from, e_to, local_id, m_sync_count);
 
 
   PartVector add , empty ;
@@ -239,7 +239,7 @@ void BulkData::destroy_relation( Entity & e_from , Entity & e_to )
   }
 
   //delete relations from the entities
-  impl::EntityImpl::destroy_relation( e_from, e_to);
+  m_entity_repo.destroy_relation( e_from, e_to);
 
 }
 

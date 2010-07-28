@@ -147,6 +147,89 @@ void EntityRepository::destroy_later( Entity & e, Bucket* nil_bucket ) {
   e.m_entityImpl.log_deleted(); //important that this come last
 }
 
+void EntityRepository::change_entity_bucket( Bucket & b, Entity & e,
+                                             unsigned ordinal) {
+  const bool modified_parts = ! e.m_entityImpl.is_bucket_valid() ||
+                              ! b.equivalent( e.bucket() );
+  if ( modified_parts ) {
+    e.m_entityImpl.log_modified();
+  }
+  e.m_entityImpl.set_bucket_and_ordinal( &b, ordinal);
+}
+
+Bucket * EntityRepository::get_entity_bucket( Entity & e ) const
+{
+  // Note, this allows for returning NULL bucket
+  return e.m_entityImpl.bucket_ptr();
+}
+
+void EntityRepository::destroy_relation( Entity & e_from, Entity & e_to )
+{
+  const MetaData & meta_data =
+    e_from.m_entityImpl.bucket().mesh().mesh_meta_data();
+
+  bool caused_change_fwd = e_from.m_entityImpl.destroy_relation(e_to);
+
+  // Relationships should always be symmetrical
+  if ( caused_change_fwd ) {
+    bool caused_change_inv = e_to.m_entityImpl.destroy_relation(e_from);
+    if ( ! caused_change_inv ) {
+      std::ostringstream msg ;
+      msg << "destroy_relation( from "
+          << print_entity_key( msg , meta_data, e_from.key() )
+          << " , to "
+          << print_entity_key( msg , meta_data, e_to.key() )
+          << " ) FAILED"
+          << " Internal error - could not destroy inverse relation" ;
+      throw std::runtime_error( msg.str() );
+    }
+  }
+
+  if ( caused_change_fwd ) {
+    e_to.m_entityImpl.log_modified();
+    e_from.m_entityImpl.log_modified();
+  }
+}
+
+void EntityRepository::declare_relation( Entity & e_from,
+                                         Entity & e_to,
+                                         const unsigned local_id,
+                                         unsigned sync_count )
+{
+  const MetaData & meta_data =
+    e_from.m_entityImpl.bucket().mesh().mesh_meta_data();
+
+  bool caused_change_fwd =
+    e_from.m_entityImpl.declare_relation( e_to, local_id, sync_count);
+
+  // Relationships should always be symmetrical
+  if ( caused_change_fwd ) {
+
+    // the setup for the converse relationship works slightly differently
+    bool is_converse = true;
+    bool caused_change_inv =
+      e_to.m_entityImpl.declare_relation( e_from, local_id, sync_count,
+                                          is_converse );
+
+    if ( ! caused_change_inv ) {
+      std::ostringstream msg ;
+      msg << "declare_relation( from "
+          << print_entity_key( msg , meta_data, e_from.key() )
+          << " , to "
+          << print_entity_key( msg , meta_data, e_to.key() )
+          << " , id " << local_id
+          << " ) FAILED"
+          << " Internal error - could not create inverse relation" ;
+      throw std::runtime_error( msg.str() );
+    }
+  }
+
+  if ( caused_change_fwd ) {
+    e_to.m_entityImpl.log_modified();
+    e_from.m_entityImpl.log_modified();
+  }
+}
+
 } // namespace impl
 } // namespace mesh
 } // namespace stk

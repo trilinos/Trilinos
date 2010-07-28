@@ -49,8 +49,16 @@ class EntityRepository {
 
     bool insert_comm_info( Entity & e, const EntityCommInfo & comm_info) const;
 
-    inline void change_entity_bucket( Bucket & b, Entity & e, unsigned ordinal);
+    void change_entity_bucket( Bucket & b, Entity & e, unsigned ordinal);
+    Bucket * get_entity_bucket ( Entity & e ) const;
     void destroy_later( Entity & e, Bucket* nil_bucket );
+
+    void destroy_relation( Entity & e_from, Entity & e_to);
+
+    void declare_relation( Entity & e_from,
+                           Entity & e_to,
+                           const unsigned local_id,
+                           unsigned sync_count );
 
   private:
     void internal_expunge_entity( EntityMap::iterator i);
@@ -78,10 +86,6 @@ void EntityRepository::comm_clear( Entity & e) const {
 
 void EntityRepository::comm_clear_ghosting( Entity & e) const {
   e.m_entityImpl.comm_clear_ghosting();
-}
-
-void EntityRepository::change_entity_bucket( Bucket & b, Entity & e, unsigned ordinal) {
-  e.m_entityImpl.set_bucket_and_ordinal( &b, ordinal);
 }
 
 } // namespace impl

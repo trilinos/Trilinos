@@ -46,6 +46,53 @@ void Ghosting::receive_list( std::vector< Entity * > & v ) const
   }
 }
 
+std::ostream& Ghosting::operator<<(std::ostream& out) const
+{
+  out << "Ghosting object: name: " << name()
+      << ", ordinal: " << ordinal() << "\n";
+
+  out << "  Locally owned entities ghosted on other processors (send list):\n";
+
+  for ( std::vector<Entity*>::const_iterator
+        i =  m_mesh.entity_comm().begin() ;
+        i != m_mesh.entity_comm().end() ; ++i ){
+    Entity * const entity = *i ;
+    if ( entity->owner_rank() == m_mesh.parallel_rank() ) {
+      for ( PairIterEntityComm ec = entity->comm() ; ! ec.empty() ; ++ec ) {
+        if ( ec->ghost_id == m_ordinal ) {
+          out << "    ";
+          print_entity_key( out, m_mesh.mesh_meta_data(), entity->key() );
+          out << ", sending ghost to " << ec->proc << ", status is: "
+              << entity->log_query() << "\n";
+        }
+      }
+    }
+  }
+
+  out << "  Entities ghosted on this processor from the owner (recv list):\n";
+  for ( std::vector<Entity*>::const_iterator
+        i =  m_mesh.entity_comm().begin() ;
+        i != m_mesh.entity_comm().end() ; ++i ){
+    Entity * const entity = *i ;
+    if ( entity->owner_rank() != m_mesh.parallel_rank() ) {
+      for ( PairIterEntityComm ec = entity->comm() ; ! ec.empty() ; ++ec ) {
+        if ( ec->ghost_id == m_ordinal ) {
+          out << "    ";
+          print_entity_key( out, m_mesh.mesh_meta_data(), entity->key() );
+          out << ", owner of ghost is " << entity->owner_rank()
+              << ", status is: " << entity->log_query() << "\n";
+        }
+      }
+    }
+  }
+  return out;
+}
+
+std::ostream& operator<<(std::ostream& out, const Ghosting& rhs)
+{
+  return rhs.operator<<(out);
+}
+
 }
 }
 

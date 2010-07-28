@@ -29,8 +29,6 @@ ADD_SUBDIRECTORY(stk_util)
 
 ADD_SUBDIRECTORY(stk_mesh)
 
-ADD_SUBDIRECTORY(stk_io)
-
 ADD_SUBDIRECTORY(stk_linsys)
 
 ADD_SUBDIRECTORY(stk_transfer)

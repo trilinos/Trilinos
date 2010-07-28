@@ -48,16 +48,22 @@ public:
     assert(m_bucket); //don't want to return a reference to a null bucket
     return *m_bucket ;
   }
+  Bucket* bucket_ptr() const {
+    return m_bucket; // allow for NULL return value
+  }
   bool is_bucket_valid() const { return m_bucket != NULL; }
   unsigned bucket_ordinal() const { return m_bucket_ord ; }
   unsigned owner_rank() const { return m_owner_rank ; }
   size_t synchronized_count() const { return m_sync_count ; }
 
-  // Exposed in internal interface:
+  // The two relation methods below need to be called symmetically, ideally
+  // through EntityRepository which will enforce the symmetry.
 
-
-  static void declare_relation( Entity & e_from, Entity & e_to, const unsigned local_id, unsigned sync_count);
-  static void destroy_relation( Entity & e_from, Entity & e_to);
+  bool destroy_relation( Entity & e_to);
+  bool declare_relation( Entity & e_to,
+                         const unsigned local_id,
+                         unsigned sync_count,
+                         bool is_converse = false);
 
   // Communication info access:
   bool insert( const EntityCommInfo & );
@@ -69,17 +75,17 @@ public:
   void set_bucket_and_ordinal( Bucket * bucket, unsigned ordinal ) {
     m_bucket = bucket;
     m_bucket_ord = ordinal;
-    log_modified();
   }
 
   void set_owner_rank( unsigned owner_rank ) {
-    m_owner_rank = owner_rank;
-    log_modified();
+    if ( owner_rank != m_owner_rank ) {
+      m_owner_rank = owner_rank;
+      log_modified();
+    }
   }
 
   void set_sync_count( size_t sync_count ) {
     m_sync_count = sync_count;
-    log_modified();
   }
 
   // Change log access:

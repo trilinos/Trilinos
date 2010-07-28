@@ -354,8 +354,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyTrivialDestroyAllGhostings )
     ghosting.send_list( send_list );
     ghosting.receive_list( recv_list );
 
-    STKUNIT_ASSERT ( send_list.size() > 0u );
-    STKUNIT_ASSERT ( recv_list.size() > 0u );
+    STKUNIT_ASSERT ( ! send_list.empty()  );
+    STKUNIT_ASSERT ( ! recv_list.empty() );
   }
 
   bulk.modification_begin();
@@ -368,8 +368,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyTrivialDestroyAllGhostings )
     ghosting.send_list( send_list );
     ghosting.receive_list( recv_list );
 
-    STKUNIT_ASSERT_EQUAL ( send_list.size() , 0u );
-    STKUNIT_ASSERT_EQUAL ( recv_list.size() , 0u );
+    STKUNIT_ASSERT ( send_list.empty() );
+    STKUNIT_ASSERT ( recv_list.empty() );
   }
 }
 
