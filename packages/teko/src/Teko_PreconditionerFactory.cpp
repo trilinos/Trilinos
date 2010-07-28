@@ -57,6 +57,7 @@
 #include "Teko_IterativePreconditionerFactory.hpp"
 #include "Teko_DiagnosticPreconditionerFactory.hpp"
 #include "Teko_DiagonallyScaledPreconditionerFactory.hpp"
+#include "Teko_ProbingPreconditionerFactory.hpp"
 #include "NS/Teko_LSCPreconditionerFactory.hpp"
 #include "NS/Teko_SIMPLEPreconditionerFactory.hpp"
 
@@ -284,6 +285,9 @@ void PreconditionerFactory::initializePrecFactoryBuilder()
 
    clone = rcp(new AutoClone<DiagonallyScaledPreconditionerFactory>());
    precFactoryBuilder_.addClone("Diagonal Scaling",clone);
+
+   clone = rcp(new AutoClone<ProbingPreconditionerFactory>());
+   precFactoryBuilder_.addClone("Probing Preconditioner",clone);
 }
 
 void PreconditionerFactory::getPreconditionerFactoryNames(std::vector<std::string> & names)

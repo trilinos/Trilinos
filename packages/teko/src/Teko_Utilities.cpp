@@ -1295,8 +1295,6 @@ DiagonalType getDiagonalType(std::string name)
    return NotDiag;
 }
 
-
-
 LinearOp probe(Teuchos::RCP<const Epetra_CrsGraph> &G,const LinearOp & Op){
 #ifdef Teko_ENABLE_Isorropia
   Teuchos::ParameterList probeList;
@@ -1311,3 +1309,4 @@ LinearOp probe(Teuchos::RCP<const Epetra_CrsGraph> &G,const LinearOp & Op){
 }
 
 }
+
