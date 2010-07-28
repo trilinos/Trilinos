@@ -362,6 +362,8 @@ struct DefaultBlockSparseSolveOp1 {
     for(Ordinal ptrow=0; ptrow<numPointRows; ++ptrow) xvec[ptrow] = yvec[ptrow];
 
     for(size_t r = 0; r < numBlockRows; ++r) {
+      //if upper-triangular then loop from row N to 0 (bottom to top), but
+      //if lower-triangular then loop from 0 to N (top to bottom):
       Ordinal row = upper ? numBlockRows-r-1 : r;
 
       const Ordinal numRowsInBlock = rptr[row+1]-rptr[row];
@@ -369,6 +371,8 @@ struct DefaultBlockSparseSolveOp1 {
 
       // loop over the blocks in this row and do the multiplication
       for (size_t b=bptr[row]; b<bptr[row+1]; ++b) {
+        //if upper-triangular then loop right-to-left (backwards) across
+        //the row; but if lower-triangular then loop left-to-right:
         size_t blk = upper ? bptr[row+1]-(b-bptr[row])-1 : b;
 
         // get pointers into A and y
@@ -420,7 +424,7 @@ struct DefaultBlockSparseTransposeSolveOp1 {
   DomainScalar       *x;
   size_t xstride, ystride;
 
-  //find x such that A*x = y
+  //find x such that A^T*x = y
 
   inline KERNEL_PREFIX void execute(size_t i) {
     //solve for i-th vector of multivector
@@ -433,6 +437,9 @@ struct DefaultBlockSparseTransposeSolveOp1 {
     for(Ordinal ptrow=0; ptrow<numPointRows; ++ptrow) xvec[ptrow] = yvec[ptrow];
 
     for(size_t r = 0; r < numBlockRows; ++r) {
+      //for the transpose solve, if upper-triangular then
+      //loop from row 0 to row N, but if lower-triangular then
+      //loop from row N to row 0:
       Ordinal row = upper ? r : numBlockRows-r-1;
 
       const Ordinal numRowsInBlock = rptr[row+1]-rptr[row];
@@ -440,6 +447,9 @@ struct DefaultBlockSparseTransposeSolveOp1 {
 
       // loop over the blocks in this row and do the multiplication
       for (size_t b=bptr[row]; b<bptr[row+1]; ++b) {
+        //for the tranpose solve, if upper-triangular then loop
+        //left-to-right across the row, but if lower-triangular then
+        //loop right-to-left across the row:
         size_t blk = upper ? b : bptr[row+1]-(b-bptr[row])-1;
 
         // get pointers into A and y
