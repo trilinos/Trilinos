@@ -37,6 +37,16 @@ namespace Tpetra {
                  const Teuchos::RCP<Node> &node,
                  Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> > &A,
                  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap = Teuchos::null);
+    
+    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+    void
+	readMatrixMarketMatrix(const std::string &filename,
+	                       const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
+						   const Teuchos::RCP<Node> &node,
+                           Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> > &A,
+						   const bool transpose = false,
+                           Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap = Teuchos::null);
+	  
 
   } // end of Tpetra::Utils namespace
 } // end of Tpetra namespace

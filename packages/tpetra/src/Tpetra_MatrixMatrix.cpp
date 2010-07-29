@@ -1,4 +1,4 @@
-/*#include "Tpetra_MatrixMatrix.hpp"
+#include "Tpetra_MatrixMatrix.hpp"
 
 #ifdef HAVE_TPETRA_EXPLICIT_INSTANTIATION
 
@@ -84,4 +84,4 @@ namespace Tpetra {
 
 } // namespace Tpetra
 
-#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION*/
+#endif // HAVE_TPETRA_EXPLICIT_INSTANTIATION

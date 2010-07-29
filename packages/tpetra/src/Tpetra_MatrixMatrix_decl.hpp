@@ -113,11 +113,19 @@ static int Multiply(
              not already Filled, or if errors occur in putting values
              into B, etc.
      */
-    /*static int Add(Teuchos::RCP<const CrsMatrixType> A,
-                   bool transposeA,
-                   Scalar scalarA,
-                   Teuchos::RCP<CrsMatrixType> B,
-                   Scalar scalarB);*/
+  template <
+    class Scalar, 
+    class LocalOrdinal,
+    class GlobalOrdinal,
+    class Node,
+    class SpMatVec,
+    class SpMatSlv >
+  static int Add(
+    Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > A,
+    bool transposeA,
+    double scalarA,
+    Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > B,
+    double scalarB );
 
     /** Given CrsMatrix objects A and B, form the sum C = a*A + b*B
 
@@ -137,13 +145,33 @@ static int Multiply(
              not already Filled, or if errors occur in putting values
              into C, etc.
      */
-    /*static int Add(const CrsMatrixType& A,
-                   bool transposeA,
-                   Scalar scalarA,
-                   const CrsMatrixType& B,
-                   bool transposeB,
-                   Scalar scalarB,
-                   CrsMatrixType * & C);*/
+  template <
+    class Scalar, 
+    class LocalOrdinal,
+    class GlobalOrdinal,
+    class Node,
+    class SpMatVec,
+    class SpMatSlv >
+  static int Add(
+    Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > A,
+    bool transposeA,
+    Scalar scalarA,
+    Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > B,
+    bool transposeB,
+    Scalar scalarB,
+    Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > C);
+
+  template<
+    class Scalar,
+    class LocalOrdinal, 
+    class GlobalOrdinal, 
+    class Node, 
+    class SpMatVec, 
+    class SpMatSlv >
+  static Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
+  find_rows_containing_cols(
+    Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatVec, SpMatSlv> > M,
+    Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > colmap);
 
 };//class MatrixMatrix
 
@@ -159,7 +187,7 @@ template<class Scalar, class LocalOrdinal>
 Scalar sparsedot(Teuchos::ArrayRCP<Scalar> u, Teuchos::ArrayRCP<LocalOrdinal> u_ind, 
   Teuchos::ArrayRCP<Scalar> v, Teuchos::ArrayRCP<LocalOrdinal> v_ind);
 
-
 }
+
 #endif // TPETRA_MATRIXMATRIX_DECL_HPP
 
