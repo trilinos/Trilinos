@@ -56,6 +56,22 @@ ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_RAD_NO_USING_STDCC
   "Enable if the compiler is confused by std::sin, etc., within namespace"
   OFF )
 
+# Checks for C99 TR1 math functions such as acosh, asinh, atanh ...
+INCLUDE(CheckCXXSourceCompiles)
+SET(SOURCE_C99_TR1_CMATH
+  "
+#include <cmath>
+int main()
+{
+  double x = 1.0;
+  double y = std::acosh(x);
+  return 0;
+} 
+  "
+  )
+CHECK_CXX_SOURCE_COMPILES("${SOURCE_C99_TR1_CMATH}" 
+  HAS_C99_TR1_CMATH)
+
 #
 # C) Add the libraries, tests, and examples
 #
