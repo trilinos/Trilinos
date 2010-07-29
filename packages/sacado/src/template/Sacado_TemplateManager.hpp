@@ -79,14 +79,14 @@ namespace Sacado {
 
     template <typename BuilderOpT>
     struct BuildObject {
-      mutable std::vector< Teuchos::RCP<BaseT> >& objects;
+      std::vector< Teuchos::RCP<BaseT> >* objects;
       const BuilderOpT& builder;
       BuildObject(std::vector< Teuchos::RCP<BaseT> >& objects_,
                   const BuilderOpT& builder_) :
-        objects(objects_), builder(builder_) {}
+        objects(&objects_), builder(builder_) {}
       template <typename T> void operator()(T) const {
         int idx = mpl::find<TypeSeq,T>::value;
-        objects[idx] = builder.template build<T>();
+        (*objects)[idx] = builder.template build<T>();
       }
     };
 
