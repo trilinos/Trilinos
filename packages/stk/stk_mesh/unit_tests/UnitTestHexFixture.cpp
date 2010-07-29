@@ -111,10 +111,158 @@ namespace {
         STKUNIT_ASSERT_TRUE( entity_2 != NULL );
         STKUNIT_EXPECT_TRUE( 0 == entity_1->owner_rank() );
         STKUNIT_EXPECT_TRUE( 1 == entity_2->owner_rank() );
+      }
+      else {
+        STKUNIT_EXPECT_TRUE( entity_1 == NULL );
+        STKUNIT_EXPECT_TRUE( entity_2 == NULL );
+      }
+    }
+  }
+  STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_psizex1x1 )
+  {
+    // layout: p_size x 1 x 1 hex mesh
+    // elements:
+    // [ e_1, e_2, e_3, ..., e_n ] 
+    // processors:
+    // [ p_0, p_1, p_2, ..., p_{n-1} ]
+    //
+    const unsigned p_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+    const unsigned p_size = stk::parallel_machine_size(MPI_COMM_WORLD);
+    if (p_size == 4) {
+      const unsigned NX = 4;
+      //const unsigned NX = p_size;
+      const unsigned NY = 1;
+      const unsigned NZ = 1;
+      // map< processor, vector of element ids >
+      std::map<unsigned,std::vector<unsigned> > parallel_distribution;
+      for (unsigned p=0 ; p < p_size ; ++p) {
+        std::vector<unsigned> element_ids;
+        element_ids.push_back(p+1); // element id's start at 1
+        parallel_distribution[p] = element_ids; 
+      }
+      HexFixture<NX,NY,NZ> hf(MPI_COMM_WORLD,&parallel_distribution[p_rank]);
+      stk::mesh::BulkData & mesh = hf.m_bulk_data;
+      if (p_rank == 0) {
+        stk::mesh::Entity * entity_1 = mesh.get_entity(stk::mesh::Element,1);
+        stk::mesh::Entity * entity_2 = mesh.get_entity(stk::mesh::Element,2);
+        STKUNIT_ASSERT_TRUE( entity_1 != NULL );
+        STKUNIT_ASSERT_TRUE( entity_2 != NULL );
+        STKUNIT_EXPECT_TRUE( 0 == entity_1->owner_rank() );
+        STKUNIT_EXPECT_TRUE( 1 == entity_2->owner_rank() );
+      } 
+      else if (p_rank < p_size-1) {
+        stk::mesh::Entity * entity_im1 = mesh.get_entity(stk::mesh::Element,1+p_rank-1);
+        stk::mesh::Entity * entity_i = mesh.get_entity(stk::mesh::Element,1+p_rank);
+        stk::mesh::Entity * entity_ip1 = mesh.get_entity(stk::mesh::Element,1+p_rank+1);
+        STKUNIT_ASSERT_TRUE( entity_im1 != NULL );
+        STKUNIT_ASSERT_TRUE( entity_i != NULL );
+        STKUNIT_ASSERT_TRUE( entity_ip1 != NULL );
+        STKUNIT_EXPECT_TRUE( p_rank-1 == entity_im1->owner_rank() );
+        STKUNIT_EXPECT_TRUE( p_rank   == entity_i->owner_rank() );
+        STKUNIT_EXPECT_TRUE( p_rank+1 == entity_ip1->owner_rank() );
+      }
+      else if (p_rank == p_size-1) {
+        stk::mesh::Entity * entity_im1 = mesh.get_entity(stk::mesh::Element,1+p_rank-1);
+        stk::mesh::Entity * entity_i = mesh.get_entity(stk::mesh::Element,1+p_rank);
+        STKUNIT_ASSERT_TRUE( entity_im1 != NULL );
+        STKUNIT_ASSERT_TRUE( entity_i != NULL );
+        STKUNIT_EXPECT_TRUE( (p_rank-1) == entity_im1->owner_rank() );
+        STKUNIT_EXPECT_TRUE( p_rank == entity_i->owner_rank() );
+      } 
+      else { // invalid
+        STKUNIT_ASSERT_TRUE(false);
+      }
+    }
+  }
+  STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_4x2x1 )
+  {
+    // layout: 4x2x1 hex mesh
+    // elements:
+    // [ e_1, e_2, e_3, e_4 ] 
+    // [ e_5, e_6, e_7, e_8 ] 
+    // processors:
+    // [ p_0, p_1, p_1, p_1 ]
+    // [ p_1, p_0, p_1, p_1 ] 
+    //
+    const unsigned NX = 4;
+    const unsigned NY = 2;
+    const unsigned NZ = 1;
+    // map< processor, vector of element ids >
+    std::map<unsigned,std::vector<unsigned> > parallel_distribution;
+    {
+      std::vector<unsigned> element_ids;
+      element_ids.push_back(1);
+      element_ids.push_back(6);
+      parallel_distribution[0] = element_ids; // proc 0
+      element_ids.clear();
+      element_ids.push_back(2);
+      element_ids.push_back(3);
+      element_ids.push_back(4);
+      element_ids.push_back(5);
+      element_ids.push_back(7);
+      element_ids.push_back(8);
+      parallel_distribution[1] = element_ids; // proc 1
+    }
+    const unsigned p_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
+    const unsigned p_size = stk::parallel_machine_size(MPI_COMM_WORLD);
+    if (2 <= p_size) {
+      HexFixture<NX,NY,NZ> hf(MPI_COMM_WORLD,&parallel_distribution[p_rank]);
+      stk::mesh::BulkData & mesh = hf.m_bulk_data;
+      // Verify element_id 1 is owned by proc 0
+      // Verify element_id 2 is owned by proc 1
+      stk::mesh::Entity * entity_1 = mesh.get_entity(stk::mesh::Element,1);
+      stk::mesh::Entity * entity_2 = mesh.get_entity(stk::mesh::Element,2);
+      stk::mesh::Entity * entity_3 = mesh.get_entity(stk::mesh::Element,3);
+      stk::mesh::Entity * entity_4 = mesh.get_entity(stk::mesh::Element,4);
+      stk::mesh::Entity * entity_5 = mesh.get_entity(stk::mesh::Element,5);
+      stk::mesh::Entity * entity_6 = mesh.get_entity(stk::mesh::Element,6);
+      stk::mesh::Entity * entity_7 = mesh.get_entity(stk::mesh::Element,7);
+      stk::mesh::Entity * entity_8 = mesh.get_entity(stk::mesh::Element,8);
+      if (p_rank == 0) {
+        STKUNIT_ASSERT_TRUE( entity_1 != NULL );
+        STKUNIT_ASSERT_TRUE( entity_2 != NULL );
+        STKUNIT_ASSERT_TRUE( entity_3 != NULL );
+        STKUNIT_ASSERT_TRUE( entity_4 == NULL );
+        STKUNIT_ASSERT_TRUE( entity_5 != NULL );
+        STKUNIT_ASSERT_TRUE( entity_6 != NULL );
+        STKUNIT_ASSERT_TRUE( entity_7 != NULL );
+        STKUNIT_ASSERT_TRUE( entity_8 == NULL );
+        STKUNIT_EXPECT_TRUE( 0 == entity_1->owner_rank() );
+        STKUNIT_EXPECT_TRUE( 1 == entity_2->owner_rank() );
+        STKUNIT_EXPECT_TRUE( 1 == entity_3->owner_rank() );
+        //STKUNIT_EXPECT_TRUE( 1 == entity_4->owner_rank() );
+        STKUNIT_EXPECT_TRUE( 1 == entity_5->owner_rank() );
+        STKUNIT_EXPECT_TRUE( 0 == entity_6->owner_rank() );
+        STKUNIT_EXPECT_TRUE( 1 == entity_7->owner_rank() );
+        //STKUNIT_EXPECT_TRUE( 1 == entity_8->owner_rank() );
+      } 
+      else if (p_rank == 1) {
+        STKUNIT_ASSERT_TRUE( entity_1 != NULL );
+        STKUNIT_ASSERT_TRUE( entity_2 != NULL );
+        STKUNIT_ASSERT_TRUE( entity_3 != NULL );
+        STKUNIT_ASSERT_TRUE( entity_4 != NULL );
+        STKUNIT_ASSERT_TRUE( entity_5 != NULL );
+        STKUNIT_ASSERT_TRUE( entity_6 != NULL );
+        STKUNIT_ASSERT_TRUE( entity_7 != NULL );
+        STKUNIT_ASSERT_TRUE( entity_8 != NULL );
+        STKUNIT_EXPECT_TRUE( 0 == entity_1->owner_rank() );
+        STKUNIT_EXPECT_TRUE( 1 == entity_2->owner_rank() );
+        STKUNIT_EXPECT_TRUE( 1 == entity_3->owner_rank() );
+        STKUNIT_EXPECT_TRUE( 1 == entity_4->owner_rank() );
+        STKUNIT_EXPECT_TRUE( 1 == entity_5->owner_rank() );
+        STKUNIT_EXPECT_TRUE( 0 == entity_6->owner_rank() );
+        STKUNIT_EXPECT_TRUE( 1 == entity_7->owner_rank() );
+        STKUNIT_EXPECT_TRUE( 1 == entity_8->owner_rank() );
       } 
       else {
         STKUNIT_EXPECT_TRUE( entity_1 == NULL );
         STKUNIT_EXPECT_TRUE( entity_2 == NULL );
+        STKUNIT_EXPECT_TRUE( entity_3 == NULL );
+        STKUNIT_EXPECT_TRUE( entity_4 == NULL );
+        STKUNIT_EXPECT_TRUE( entity_5 == NULL );
+        STKUNIT_EXPECT_TRUE( entity_6 == NULL );
+        STKUNIT_EXPECT_TRUE( entity_7 == NULL );
+        STKUNIT_EXPECT_TRUE( entity_8 == NULL );
       }
     }
   }
@@ -162,7 +310,7 @@ namespace {
         STKUNIT_EXPECT_TRUE( 1 == entity_2->owner_rank() );
         STKUNIT_EXPECT_TRUE( 1 == entity_4->owner_rank() );
         STKUNIT_EXPECT_TRUE( 0 == entity_5->owner_rank() );
-      } 
+      }
       else if (p_rank == 1) {
         STKUNIT_ASSERT_TRUE( entity_1 != NULL );
         STKUNIT_ASSERT_TRUE( entity_2 != NULL );
@@ -174,7 +322,7 @@ namespace {
         STKUNIT_EXPECT_TRUE( 1 == entity_3->owner_rank() );
         STKUNIT_EXPECT_TRUE( 1 == entity_4->owner_rank() );
         STKUNIT_EXPECT_TRUE( 0 == entity_5->owner_rank() );
-      } 
+      }
       else {
         STKUNIT_EXPECT_TRUE( entity_1 == NULL );
         STKUNIT_EXPECT_TRUE( entity_2 == NULL );
@@ -188,5 +336,5 @@ namespace {
   {
   }
 
-}
+} // end namespace
 

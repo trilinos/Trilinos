@@ -9,8 +9,20 @@
 #ifndef stk_mesh_UseCase_Skinning_hpp
 #define stk_mesh_UseCase_Skinning_hpp
 
+#include <vector>
+
 #include <stk_util/parallel/Parallel.hpp>
 
+#include <stk_mesh/base/Types.hpp>
+
+
 bool skinning_use_case_1(stk::ParallelMachine pm);
+
+void separate_and_skin_mesh(
+    stk::mesh::MetaData & meta,
+    stk::mesh::BulkData & mesh,
+    stk::mesh::Part     & skin_part,
+    std::vector< stk::mesh::EntityId > elements_to_separate
+    );
 
 #endif
