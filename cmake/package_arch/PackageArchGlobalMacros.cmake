@@ -252,6 +252,8 @@ MACRO(PACKAGE_ARCH_PROCESS_TPLS_LISTS)
   PRINT_VAR(${PROJECT_NAME}_NUM_TPLS)
   MATH(EXPR ${PROJECT_NAME}_LAST_TPL_IDX "${${PROJECT_NAME}_NUM_TPLS}-1")
   
+  # 2010/07/28: rabartl: ToDo: You need to allow a mode where this can be
+  # appended to support the addition of extra TPLs defined in extra repos (bug 4877).
   SET(${PROJECT_NAME}_TPLS)
 
   FOREACH(TPL_IDX RANGE ${${PROJECT_NAME}_LAST_TPL_IDX})
@@ -485,6 +487,8 @@ MACRO(PACKAGE_ARCH_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
   
   # 1.b) Read the core TPLs dependencies
   
+  # 2010/07/28: rabartl: ToDo: read this from under
+  # ${PROJECT_NAME}_DEPS_HOME_DIR/cmake (bug 4877)
   IF (NOT ${PROJECT_NAME}_TPLS_FILE) # Allow testing override
     SET(${PROJECT_NAME}_TPLS_FILE "${PROJECT_NAME}TPLs")
   ENDIF()
@@ -538,6 +542,9 @@ MACRO(PACKAGE_ARCH_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
       PACKAGE_ARCH_PROCESS_PACKAGES_AND_DIRS_LISTS()
     ENDIF()
   ENDFOREACH()
+
+  # 2010/07/28: rabartl: ToDo: Above, you need to also read in extra TPLs as
+  # well to extend the system (bug 4877).
 
   #
   # 5) Read in the package dependencies again to now pick up all of the
@@ -610,6 +617,10 @@ MACRO(PACKAGE_ARCH_PROCESS_ENABLED_TPLS)
   FOREACH(TPL ${${PROJECT_NAME}_TPLS})
     IF (TPL_ENABLE_${TPL})
       MESSAGE(STATUS "Processing enabled TPL: ${TPL}")
+      # 2010/07/28: rabartl: ToDo: Change this you will need to add a file
+      # name 'FindTPL<TPL>.cmake' explicitly so that you can put in
+      # '../../someExtraRepo/cmake/TPLs/FindTPL<TP>.cmake' when reading
+      # extra TPLs from extra repos (bug 4877)
       INCLUDE(TPLs/FindTPL${TPL})
       ASSERT_DEFINED(TPL_${TPL}_INCLUDE_DIRS)
       ASSERT_DEFINED(TPL_${TPL}_LIBRARIES)
