@@ -8435,9 +8435,6 @@ ac_config_files="$ac_config_files Makefile src/Makefile src/driver/Makefile src/
 #		example/C/sparse_matrix/Makefile
 #		example/CPP/Makefile
 #		Utilities/Makefile
-#		ZoltanComponent/Makefile
-#		ZoltanComponent/CCA_Wrapper/Makefile
-#		ZoltanComponent/TestComponents/Makefile
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure

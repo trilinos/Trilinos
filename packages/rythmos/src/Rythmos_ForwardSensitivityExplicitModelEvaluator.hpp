@@ -505,7 +505,10 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::evalModelImpl(
   
   {
 #ifdef ENABLE_RYTHMOS_TIMERS
-    TEUCHOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityExplicitModelEvaluator::evalModel: computeMatrices");
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+        "Rythmos:ForwardSensitivityExplicitModelEvaluator::evalModel: computeMatrices",
+        Rythmos_FSEME
+        );
 #endif
     computeDerivativeMatrices(inArgs);
   }
@@ -540,14 +543,17 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::evalModelImpl(
   if(!is_null(F_sens)) {
 
 #ifdef ENABLE_RYTHMOS_TIMERS
-    TEUCHOS_FUNC_TIME_MONITOR("Rythmos:ForwardSensitivityExplicitModelEvaluator::evalModel: computeSens");
+    TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+        "Rythmos:ForwardSensitivityExplicitModelEvaluator::evalModel: computeSens",
+        Rythmos_FSEME
+        );
 #endif
     
     // Form the residual:  df/dx * S + df/dp
     // F_sens = df/dx * S
     Thyra::apply(
       *DfDx_, Thyra::NOTRANS,
-      *S, &*F_sens,
+      *S, F_sens.ptr(),
       ST::one(), ST::zero()
       );
     // F_sens += d(f)/d(p)
@@ -584,7 +590,7 @@ void ForwardSensitivityExplicitModelEvaluator<Scalar>::wrapNominalValuesAndBound
   // 2009/07/20: tscoffe/ccober:  This is the future.  We're going to use this
   // in a more general way, so we need legitimate nominal values now.
   RCP<VectorBase<Scalar> > s_bar_ic = Thyra::createMember(this->get_x_space());
-  Thyra::V_S(&*s_bar_ic,ST::zero());
+  Thyra::V_S(s_bar_ic.ptr(),ST::zero());
   nominalValues_.set_x(s_bar_ic);
 }
 

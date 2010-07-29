@@ -161,17 +161,17 @@ private:
 
 template <class Scalar>
 DampenedNewtonNonlinearSolver<Scalar>::DampenedNewtonNonlinearSolver(
-  const ScalarMag defaultTol
-  ,const int defaultMaxNewtonIterations
-  ,const bool useDampenedLineSearch
-  ,const Scalar armijoConstant
-  ,const int maxLineSearchIterations
+  const ScalarMag my_defaultTol
+  ,const int my_defaultMaxNewtonIterations
+  ,const bool my_useDampenedLineSearch
+  ,const Scalar my_armijoConstant
+  ,const int my_maxLineSearchIterations
   )
-  :defaultTol_(defaultTol)
-  ,defaultMaxNewtonIterations_(defaultMaxNewtonIterations)
-  ,useDampenedLineSearch_(useDampenedLineSearch)
-  ,armijoConstant_(armijoConstant)
-  ,maxLineSearchIterations_(maxLineSearchIterations)
+  :defaultTol_(my_defaultTol)
+  ,defaultMaxNewtonIterations_(my_defaultMaxNewtonIterations)
+  ,useDampenedLineSearch_(my_useDampenedLineSearch)
+  ,armijoConstant_(my_armijoConstant)
+  ,maxLineSearchIterations_(my_maxLineSearchIterations)
   ,J_is_current_(false)
 {}
 
@@ -308,7 +308,7 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
   RCP<VectorBase<Scalar> > dx = createMember(model_->get_x_space());
   RCP<VectorBase<Scalar> > x_new = createMember(model_->get_x_space());
   RCP<VectorBase<Scalar> > ee = createMember(model_->get_x_space());
-  V_S(&*ee,ST::zero());
+  V_S(ee.ptr(),ST::zero());
 
   // Get convergence criteria
   ScalarMag tol = this->defaultTol();
@@ -356,7 +356,7 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
       << "newton_iter="<<newtonIter<<": Check convergence: ||f|| = "
       << sqrt_phi << ( isConverged ? " <= " : " > " ) << "tol = " << tol << ( isConverged ? ", Converged!!!" : "" ) << endl;
     if(isConverged) {
-      if(x_inout != x.get()) assign( x_inout, *x ); // Assign the solution if we have to
+      if(x_inout != x.get()) assign( ptr(x_inout), *x ); // Assign the solution if we have to
       if(out.get() && showNewtonDetails) {
         *out << "\nWe have converged :-)\n"
              << "\n||x||inf = " << norm_inf(*x) << endl;
@@ -381,10 +381,10 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
     // Compute the newton step: dx = -inv(J)*f
     if(out.get() && showNewtonDetails) *out << "\nComputing the Newton step: dx = - inv(J)*f ...\n";
     if(out.get() && showNewtonIters) *out << "newton_iter="<<newtonIter<<": Computing Newton step ...\n";
-    assign( &*dx, ST::zero() ); // Initial guess for the linear solve
-    Thyra::solve(*J_,NOTRANS,*f,&*dx); // Solve: J*dx = f
-    Vt_S( &*dx, Scalar(-ST::one()) ); // dx *= -1.0
-    Vp_V( &*ee, *dx); // ee += dx
+    assign( dx.ptr(), ST::zero() ); // Initial guess for the linear solve
+    J_->solve(NOTRANS,*f,dx.ptr()); // Solve: J*dx = f
+    Vt_S( dx.ptr(), Scalar(-ST::one()) ); // dx *= -1.0
+    Vp_V( ee.ptr(), *dx); // ee += dx
     if(out.get() && showNewtonDetails) *out << "\n||dx||inf = " << norm_inf(*dx) << endl;
     if(out.get() && dumpAll) *out << "\ndy =\n" << *dx;
 
@@ -396,10 +396,10 @@ DampenedNewtonNonlinearSolver<Scalar>::solve(
     int lineSearchIter;
     ++num_residual_evals;
     for( lineSearchIter = 1; lineSearchIter <= maxLineSearchIterations(); ++lineSearchIter, ++num_residual_evals ) {
-      TEUCHOS_OSTAB;
+      TEUCHOS_OSTAB_DIFF(lineSearchIter);
       if(out.get() && showNewtonDetails) *out << "\n*** lineSearchIter = " << lineSearchIter << endl;
       // x_new = x + alpha*dx
-      assign( &*x_new, *x ); Vp_StV( &*x_new, alpha, *dx );
+      assign( x_new.ptr(), *x ); Vp_StV( x_new.ptr(), alpha, *dx );
       if(out.get() && showNewtonDetails) *out << "\n||x_new||inf = " << norm_inf(*x_new) << endl;
       if(out.get() && dumpAll) *out << "\nx_new =\n" << *x_new;
       // Compute the residual at the updated point
@@ -460,8 +460,8 @@ exit:
     if( out.get() && (showNewtonIters || showNewtonDetails)) *out << endl << oss.str() << endl;
   }
 
-  if(x_inout != x.get()) assign( x_inout, *x ); // Assign the final point
-  if(delta != NULL) assign( delta, *ee );
+  if(x_inout != x.get()) assign( ptr(x_inout), *x ); // Assign the final point
+  if(delta != NULL) assign( ptr(delta), *ee );
   current_x_ = x_inout->clone_v(); // Remember the final point
   J_is_current_ = newtonIter==1; // J is only current with x if initial point was converged!
 

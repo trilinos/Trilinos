@@ -149,7 +149,7 @@ TEUCHOS_UNIT_TEST( Rythmos_ForwardEulerStepper, restart ) {
 
         // Verify that x_restart == x_norestart
         RCP<VectorBase<double> > x_diff = createMember(x_restart->space());
-        V_VmV( &*x_diff, *x_norestart, *x_restart );
+        V_VmV( x_diff.ptr(), *x_norestart, *x_restart );
         double x_normDiff = norm(*x_diff);
         double tol = 1.0e-10;
         TEST_COMPARE( x_normDiff, <, tol );

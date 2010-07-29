@@ -62,7 +62,11 @@ XCOMM Imakefile for Nemesis libraries
 
 #define IHaveSubdirs
 
-#define PassDebugFlags	"CDEBUGFLAGS=$(CDEBUGFLAGS)"
+#define PassDebugFlags	"DEBUG=$(DEBUG)" \
+	                "CDEBUGFLAGS=$(CDEBUGFLAGS)" \
+	                "CXXDEBUGFLAGS=$(CXXDEBUGFLAGS)" \
+			"F90DEBUGFLAGS=$(F90DEBUGFLAGS)" \
+			"F77DEBUGFLAGS=$(F77DEBUGFLAGS)"
 
 #define ExtraOptions "CCOPTIONS=$(CCOPTIONS)"
 
@@ -93,9 +97,9 @@ OBJS = ${SRCS:.c=.o}
 LIBS = $(NETCDF) $(EXOIIV2C)
 
 #if Build64BitAccess == YES
-AllTarget(libnemIc.a libnemIf.a libnemIf32.a)
+AllTarget(libnemesis.a libnemIf.a libnemIf32.a)
 #else
-AllTarget(libnemIc.a libnemIf.a)
+AllTarget(libnemesis.a libnemIf.a)
 #endif
 
 InstallIncludeList(makeincludes,$(INCLIST1),$(INCDIR))
@@ -104,7 +108,7 @@ InstallIncludeList(install,$(INCLIST1),$(INCDIR))
 InstallSubdirIncludeList(makeincludes,forbind,$(INCLIST2),$(INCDIR))
 
 /* Directory for nemesis c library */
-NormalLibraryTarget(nemIc,$(OBJS))
+NormalLibraryTarget(nemesis,$(OBJS))
 
 /* Directory for nemesis fortran wrappers */
 NamedTargetSubdirs(libnemIf.a,forbind,"making nemIf ",PassDebugFlags ExtraOptions,libnemIf.a)
@@ -113,7 +117,8 @@ NamedTargetSubdirs(libnemIf.a,forbind,"making nemIf ",PassDebugFlags ExtraOption
 NamedTargetSubdirs(libnemIf32.a,forbind,"making nemIf32 ",PassDebugFlags ExtraOptions,libnemIf32.a)
 #endif
 
-InstallLibrary(nemIc,$(LIBDIR))
+InstallLibrary(nemesis,$(LIBDIR))
+InstallLibraryAlias(nemesis,nemIc,$(LIBDIR))
 InstallLibrary(nemIf,$(LIBDIR))
 
 #if Build64BitAccess == YES
@@ -121,7 +126,7 @@ InstallLibrary(nemIf32,$(LIBDIR))
 #endif
 
 #if Parallel
-InstallParallelLibrary(nemIc,$(PLIBDIR))
+InstallParallelLibrary(nemesis,$(PLIBDIR))
 InstallParallelLibrary(nemIf,$(PLIBDIR))
 
 #if Build64BitAccess == YES
@@ -134,11 +139,11 @@ InstallParallelLibrary(nemIf32,$(PLIBDIR))
 CTESTLIBS = $(EXOIIV2C) $(NETCDF) -lm
 FTESTLIBS = $(EXOIIV2FOR) $(EXOIIV2C) $(NETCDF) -lm
 
-test: libnemIc.a libnemIf.a ne_test.c forbind/ne_test.F
+test: libnemesis.a libnemIf.a ne_test.c forbind/ne_test.F
 	$(CC) -c $(CFLAGS) ne_test.c
-	$(CC) $(LDOPTIONS) -o ne_ctest ne_test.o libnemIc.a $(LIBPATH) $(CTESTLIBS)
+	$(CC) $(LDOPTIONS) -o ne_ctest ne_test.o libnemesis.a $(LIBPATH) $(CTESTLIBS)
 	$(FC) -c $(FFLAGS) $(STD_DEFINES) -I./forbind forbind/ne_test.F
-	$(FC) $(LDOPTIONS) -o ne_ftest ne_test.o libnemIf.a libnemIc.a $(LIBPATH) $(FTESTLIBS)
+	$(FC) $(LDOPTIONS) -o ne_ftest ne_test.o libnemIf.a libnemesis.a $(LIBPATH) $(FTESTLIBS)
 
 ExtraStuffToClean(ne_ctest ne_ftest ne_test.exoII  ne_test.nemI)
 

@@ -455,7 +455,7 @@ void write_exo_mesh(
   int IO_word_size=sizeof(realtyp);
   int exoid, err, num_dim, num_elem_blk, num_node_sets, num_side_sets;
   int i, j, t, index, loc_num_elements, loc_num_nodes, len_connect;
-  int *elem_map, *node_map, *domain_connect, *loc_connect;
+  int *elem_map = NULL, *node_map = NULL, *domain_connect = NULL, *loc_connect = NULL;
   int *elem_var_tab;
   int accum_num_elements = 0;
   int loc_node_size = -1;

@@ -452,7 +452,7 @@ public:
   int SetOwnership(bool ownership){ ownership_ = ownership; return(-1);};
 
   //! Sets use transpose (not implemented).
-  int SetUseTranspose(bool UseTranspose){return(-1);}
+  int SetUseTranspose(bool useTranspose){return(-1);}
 
   //! Returns the infinity norm (not implemented).
   double NormInf() const {return(0.0);};

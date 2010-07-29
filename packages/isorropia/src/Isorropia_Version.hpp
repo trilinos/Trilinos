@@ -32,11 +32,12 @@ USA
 #define _Isorropia_Version_hpp_
 
 #include "Isorropia_ConfigDefs.hpp"
+#include "Trilinos_version.h"
 
 namespace Isorropia {
 
         std::string Isorropia_Version() {
-                return("Isorropia in Trilinos 10.3");
+                return("Isorropia in Trilinos " TRILINOS_VERSION_STRING);
         }
 } // namespace Isorropia
 

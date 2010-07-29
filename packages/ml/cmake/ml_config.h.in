@@ -30,7 +30,7 @@
 #cmakedefine HAVE_CFUNC
 
 /* Define to 1 if you have the <inttypes.h> header file. */
-#cmakedefine HAVE_INTTYPES_H
+#cmakedefine HAVE_INTTYPES_H @HAVE_INTTYPES_H@
 
 /* Define if you have LAPACK library. */
 #cmakedefine HAVE_LAPACK
@@ -141,7 +141,7 @@
 #cmakedefine ML_MULTIPLE_RHS_BLOCK_FACTOR
 
 /* Define to 1 if you have the ANSI C header files. */
-#cmakedefine STDC_HEADERS
+#cmakedefine STDC_HEADERS @STDC_HEADERS@
 
 /* Define to `__inline__' or `__inline' if that's what the C compiler
    calls it, or to nothing if 'inline' is not supported under any name.  */

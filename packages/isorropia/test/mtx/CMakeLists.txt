@@ -29,6 +29,15 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  test_unsym
+  SOURCES test_unsym.cpp
+  DEPLIBS isorropia_test_utils
+  COMM serial mpi
+  ARGS
+    "--f=west0067.mtx"
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   test_simple_methods
   SOURCES test_simple_methods.cpp
   DEPLIBS isorropia_test_utils
@@ -49,6 +58,6 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 PACKAGE_COPY_FILES_TO_BINARY_DIR(TestCreateBalancedCopyCopyFiles
-  SOURCE_FILES simple.mtx simple_25X50.mtx simple_50X25.mtx small.mtx felix.mtx arrow100.mtx
+  SOURCE_FILES simple.mtx simple_25X50.mtx simple_50X25.mtx small.mtx felix.mtx arrow100.mtx west0067.mtx
   EXEDEPS test_balanced_copy
   )

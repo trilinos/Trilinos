@@ -244,7 +244,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
   int *edges_per_obj=NULL, *nbors_proc=NULL;
   int *num_boundary=NULL, *cuts=NULL;
   int *partNbors= NULL, *partCount=NULL;
-  int *key = NULL, *keyValue=NULL;
+  int *key = NULL, keyValue;
 
   float obj_edge_weights;
 
@@ -253,7 +253,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
   float *cut_wgt=NULL;
   float *part_sizes = NULL;
 
-  int partPair[2], dummyValue[2];
+  int partPair[2], dummyValue=0;
 
   ZOLTAN_GRAPH_EVAL localEval;
 
@@ -545,7 +545,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
 
       /* Zoltan_Map "iterator */
 
-      ierr = Zoltan_Map_First(zz, map, &key, (void*)&keyValue);
+      ierr = Zoltan_Map_First(zz, map, &key, &keyValue);
 
       if ( ((ierr == ZOLTAN_OK) && !key) ||  /* must be at least one pair */
            (ierr != ZOLTAN_OK)){
@@ -557,7 +557,7 @@ int Zoltan_LB_Eval_Graph(ZZ *zz, int print_stats, ZOLTAN_GRAPH_EVAL *graph)
         partNbors[num_parts++] = key[0];
         partNbors[num_parts++] = key[1];
 
-        ierr = Zoltan_Map_Next(zz, map, &key, (void*)&keyValue);
+        ierr = Zoltan_Map_Next(zz, map, &key, &keyValue);
   
         if (ierr != ZOLTAN_OK){
           ZOLTAN_PRINT_ERROR(zz->Proc, yo, "Error in Zoltan_Map_Next\n");

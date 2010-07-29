@@ -32,13 +32,11 @@
 // TODO: row-wise insertion of entries in globalAssemble() may be more efficient
 
 // TODO: add typeglobs: CrsMatrix<Scalar,typeglob>
-// TODO: combine LocalMatVec and LocalMatSolve
 // TODO: add template (template) parameter for nonlocal container (this will be part of typeglob)
 
 #include <Kokkos_DefaultNode.hpp>
+#include <Kokkos_DefaultKernels.hpp>
 #include <Kokkos_CrsMatrix.hpp>
-#include <Kokkos_DefaultSparseMultiply.hpp>
-#include <Kokkos_DefaultSparseSolve.hpp>
 
 #include <Teuchos_ScalarTraits.hpp>
 #include <Teuchos_OrdinalTraits.hpp>
@@ -100,8 +98,7 @@ namespace Tpetra {
             class LocalOrdinal  = int, 
             class GlobalOrdinal = LocalOrdinal, 
             class Node          = Kokkos::DefaultNode::DefaultNodeType, 
-            class LocalMatVec   = Kokkos::DefaultSparseMultiply<Scalar,LocalOrdinal,Node>, 
-            class LocalMatSolve = Kokkos::DefaultSparseSolve<Scalar,LocalOrdinal,Node> > 
+            class LocalMatOps   = typename Kokkos::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps >
   class CrsMatrix : public RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>,
                     public DistObject<char, LocalOrdinal,GlobalOrdinal,Node> {
     public:
@@ -109,8 +106,9 @@ namespace Tpetra {
       typedef LocalOrdinal  local_ordinal_type;
       typedef GlobalOrdinal global_ordinal_type;
       typedef Node          node_type;
-      typedef LocalMatVec   mat_vec_type;
-      typedef LocalMatSolve mat_solve_type;
+      // backwards compatibility defines both of these
+      typedef LocalMatOps   mat_vec_type;
+      typedef LocalMatOps   mat_solve_type;
 
       //! @name Constructor/Destructor Methods
       //@{ 
@@ -373,9 +371,6 @@ namespace Tpetra {
       /*! \c X is required to be post-imported, i.e., described by the column map of the matrix. \c Y is required to be pre-exported, i.e., described by the row map of the matrix.
 
           Both are required to have constant stride. However, unlike multiply(), it is permissible for <tt>&X == &Y</tt>. No runtime checking will be performed in a non-debug build.
-
-          If \c beta is equal to zero, the operation will enjoy overwrite semantics (\c Y will be overwritten with the result of the multiplication). Otherwise, the result of the multiplication
-          will be accumulated into \c Y.
        */
       template <class DomainScalar, class RangeScalar>
       void solve(const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Node> & Y, MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Node> &X, Teuchos::ETransp trans) const;
@@ -466,9 +461,9 @@ namespace Tpetra {
 
     private:
       // copy constructor disabled
-      CrsMatrix(const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> &Source);
+      CrsMatrix(const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> &Source);
       // operator= disabled
-      CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> & operator=(const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> &rhs);
+      CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> & operator=(const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> &rhs);
     protected:
 
       // useful typedefs
@@ -519,8 +514,7 @@ namespace Tpetra {
       Teuchos::RCP<      CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >     myGraph_;
 
       Kokkos::CrsMatrix<Scalar,Node> lclMatrix_;
-      LocalMatVec lclMatVec_;
-      LocalMatSolve lclMatSolve_;
+      LocalMatOps lclMatOps_;
 
       bool constructedWithOptimizedGraph_,
            fillComplete_;
@@ -540,7 +534,7 @@ namespace Tpetra {
 
       // a wrapper around multiply, for use in apply; it contains a non-owning RCP to *this, therefore, it is not allowed 
       // to persist past the destruction of *this. therefore, WE MAY NOT SHARE THIS POINTER.
-      Teuchos::RCP< const CrsMatrixMultiplyOp<Scalar,Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> > sameScalarMultiplyOp_;
+      Teuchos::RCP< const CrsMatrixMultiplyOp<Scalar,Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > sameScalarMultiplyOp_;
   }; // class CrsMatrix
 
 }

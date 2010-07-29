@@ -51,7 +51,7 @@ namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // forward declaration
-  template <class S, class LO, class GO, class N, class SpMatVec, class SpMatSlv>
+  template <class S, class LO, class GO, class N, class SpMatOps>
   class CrsMatrix;
 #endif
 
@@ -68,7 +68,7 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = Kokkos::DefaultNode::DefaultNodeType>
   class CrsGraph : public RowGraph<LocalOrdinal,GlobalOrdinal,Node>,
                    public DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Node> {
-    template <class S, class LO, class GO, class N, class SpMatVec, class SpMatSlv>
+    template <class S, class LO, class GO, class N, class SpMatOps>
     friend class CrsMatrix;
 
     public: 
@@ -286,6 +286,19 @@ namespace Tpetra {
        */
       Teuchos::ArrayRCP<const LocalOrdinal> getLocalRowView(LocalOrdinal LocalRow) const;
 
+      //! Get an ArrayRCP of the row-offsets.
+      /*! Returns Teuchos::null if optimizeStorage() hasn't been called.
+          Note also that this is a device-resident array. i.e., if GPU
+          computations are enabled, this array resides on the GPU.
+       */
+      Teuchos::ArrayRCP<const size_t> getNodeRowOffsets() const;
+
+      //! Get an ArrayRCP of the packed column-indices.
+      /*! Returns Teuchos::null if optimizeStorage() hasn't been called.
+          Note also that this is a device-resident array. i.e., if GPU
+          computations are enabled, this array resides on the GPU.
+       */
+      Teuchos::ArrayRCP<const LocalOrdinal> getNodePackedIndices() const;
       //@}
 
       //! @name Miscellaneous Query Methods

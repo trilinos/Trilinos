@@ -23,19 +23,19 @@ namespace Tpetra {
 
     void readHBMatDouble(const std::string &filename, int &M, int &N, int &nonzeros, std::string &Type, Teuchos::ArrayRCP<int> &colptr, Teuchos::ArrayRCP<int> &rowind, Teuchos::ArrayRCP<double> &val);
 
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
     void
     generateMatrix(const Teuchos::RCP<Teuchos::ParameterList> &plist,
                    const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
                    const Teuchos::RCP<Node> &node,
-                   Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> > &A);
+                   Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &A);
 
-    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>
+    template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
     void
     readHBMatrix(const std::string &filename, 
                  const Teuchos::RCP<const Teuchos::Comm<int> > &comm, 
                  const Teuchos::RCP<Node> &node,
-                 Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatVec,LocalMatSolve> > &A,
+                 Teuchos::RCP< Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > &A,
                  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap = Teuchos::null);
     
     template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatVec, class LocalMatSolve>

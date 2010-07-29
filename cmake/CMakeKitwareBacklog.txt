@@ -36,6 +36,18 @@ http://trilinos.sandia.gov/cdash/index.php?project=Trilinos&subproject=STK you
 see that it is being tested. 
 
 
+(*) [CTest, CDash] [P2] Append update results to every subproject build and
+send out emails to users who checked in code: Currently, CDash will only send
+emails to the subproject email lists (signed up for labels) but will not send
+out emails to the users who checked in (except for the first subproject built)
+... Now that there is the ability to go from a subproject build to the entire
+set of subprojects this is less important.  However, this would still be
+needed for correct CI email notification.  This would make the CI reporting
+100% robust in that everyone who pushed commits associated with a broken CI
+build would get emails.  Right now, Trilinos framework people have to globally
+monitor the CI builds and send emails notifying people of problems.
+
+
 (*) [CDash] [P3] Separate out coverage results for library code and
 for test/example code: Currently, our coverage shows lower coverage
 than it should due to some test code logic not getting tested always
@@ -66,20 +78,6 @@ would they should be 'Not Run'.  One way to address this is to add a new test
 property called something like EXEC_DEPENDENCIES that can be set to a list of
 command that must all exist when the test is run or the test will be marked as
 'Not Run' ... This should already be done (see the test property ???).
-
-
-(*) [CMake] [P4] Reduce the options shown in the default view of the CMake
-GUI, moving most options to the advanced area.  There are a lot of Trilinos
-options, and users could easily have trouble finding what they are looking
-for.  Really, CMake should support a grouping capability to group options
-hierarchically with the GUI allowing expansion and contraction of the
-categories of options shown.  One thing that would help a lot is if the CMake
-GUI would allow you to select "Grouped" view but turn "Advanced" options on
-and off.  Currently, the "Grouped" view shows all options including advanced
-options.  Then, in the Trilinos CMake system, we could avoid setting package
-specific options like PACKAGE_ENABLE_TESTS unless those packages were actually
-explicitly enabled.  Again though, to really organize all of these options we
-need the ability to hierarchically group options any way that we would like.
 
 
 (*) [CDash] [P4] Implement a tool that will go back in time and delete
@@ -139,9 +137,7 @@ results in a lot of extra manual work and allows defects to creep in very
 easily.  Some type of unit testing infrastructure of CTest/CDash needs to be
 devised that can automatically and strongly test important CTest/CDash
 behaviors and features.  We would like all new features implemented to be
-strongly tested with automated unit tests if feasible ... This is something
-Kitware shoudl be doing but we can't force them.  If we move to static
-versions of CTest/CDash then this becomes a non-issue.
+strongly tested with automated unit tests if feasible.
 
 - (2010/06/15) Kitware has now implemented a coverage tool for PHP that they
 are now using to test the coverage of CDash testing.  The coverage is
@@ -154,7 +150,7 @@ A.2) Prioritized Backlog Items that do *not* need changes in CMake/CTest/CDash:
 ---------------------------------------------------------------------------------
 
 
-(*) [CTest] [P2] EPIC Create a robust system to handle the overall testing
+(*) [CTest] [P2] [Epic] Create a robust system to handle the overall testing
 process driving different CTest scripts on a machine that has the following
 properties:
 
@@ -241,7 +237,7 @@ display the list of files without some work.  However, you might be able to
 use the idea of "measures" to list the files that need to be listed.
 
 
-(*) [CTest] [P4] Support of batch-style job queuing systems: With large scale
+(*) [CTest] [P4] Support of batch-style job queuing systems: With large-scale
 MPPs and even modest Linux clusters, a batch queuing system like PBS needs to
 be used to schedule and launch jobs.  It would be very useful if ctest could
 someone support tests that run in batch mode where a bunch of tests are queued
@@ -350,18 +346,6 @@ coverage tests and failed Dynamic Analysis tests: We need to be
 notified when 'Dynamic Analysis' tests don't run or don't finish.
 
 
-(*) [CTest, CDash] Append update results to every subproject build and send
-out emails to users who checked in code: Currently, CDash will only send
-emails to the subproject email lists (signed up for labels) but will not send
-out emails to the users who checked in (except for the first subproject built)
-... Now that there is the ability to go from a subproject build to the entire
-set of subprojects this is less important.  However, this would still be
-needed for correct CI email notification.  This would make the CI reporting
-100% robust in that everyone who pushed commits associated with a broken CI
-build would get emails.  Right now, Trilinos framework people have to globally
-monitor the CI builds and send emails notifying people of problems.
-
-
 
 B.2) Unprioritized Backlog Items that do *not* need changes in CMake/CTest/CDash:
 ---------------------------------------------------------------------------------
@@ -457,9 +441,9 @@ Workaround: Just add files slowly and re-run CMake each time to debug
 the problem.
 
 
-(*) [CTest] Add an optional summary section that will show the number
-of tests that passed and failed for each Trilinos package
-(i.e. subproject in current CTest lingo).  This output mike look like:
+(*) [CTest] Add an optional summary section that will show the number of tests
+that passed and failed for each Trilinos package (i.e. subproject in current
+CTest lingo).  This output might look like:
 
 =========================================================
 
@@ -550,6 +534,25 @@ bottom for package coverage numbers.
 
 D) Done:
 ---------
+
+
+(*) [CMake] [P4] Reduce the options shown in the default view of the CMake
+GUI, moving most options to the advanced area.  There are a lot of Trilinos
+options, and users could easily have trouble finding what they are looking
+for.  Really, CMake should support a grouping capability to group options
+hierarchically with the GUI allowing expansion and contraction of the
+categories of options shown.  One thing that would help a lot is if the CMake
+GUI would allow you to select "Grouped" view but turn "Advanced" options on
+and off.  Currently, the "Grouped" view shows all options including advanced
+options.  Then, in the Trilinos CMake system, we could avoid setting package
+specific options like PACKAGE_ENABLE_TESTS unless those packages were actually
+explicitly enabled.  Again though, to really organize all of these options we
+need the ability to hierarchically group options any way that we would
+like. ... With the changes Ross B. made to only add cache variables for
+packages that are actually enabled and since Kitware changed the CMake
+QT-based GUI in the 2.8.2 release to have seprate check boxes for "Grouped"
+and "Advanced", the options for Trilinos are now very manageable.  This
+problem is solved as far as I cam concerned.
 
 
 (*) [CTest, CDash] Support for the Git VC tool: We really only need built-in

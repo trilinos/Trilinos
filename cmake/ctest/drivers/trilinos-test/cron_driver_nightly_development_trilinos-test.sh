@@ -7,6 +7,7 @@ BASEDATADIR=/home/jmwille/TrilinosTestHarness
 DRIVER_SCRIPT_DIR=$BASEDIR/Trilinos/cmake/ctest/drivers/trilinos-test
 TRILINOS_REPOSITORY_LOCATION="software.sandia.gov:/space/git/Trilinos"
 
+export CTEST_TEST_TYPE=Experimental
 export CMAKE_LIBRARY_PATH="/home/trilinos/tpl/gcc4.1.2/exodusII_4.84/lib:/home/trilinos/tpl/gcc4.1.2/netcdf_4.0/lib"
 export CMAKE_INCLUDE_PATH="/home/trilinos/tpl/gcc4.1.2/exodusII_4.84/include:/home/trilinos/tpl/gcc4.1.2/netcdf_4.0/include"
 export TRILINOSDATADIRECTORY=$BASEDATADIR/TrilinosData

@@ -20,7 +20,18 @@ Date     | Package      | File(s)                         |Platform    | @sandia
          |              | _CubatureDirectTriDefault       |            |             | dimensioning arrays.                                                   
          |              |                                 |            |             |
 ---------|--------------|---------------------------------|------------| ------------|------------------------------------------------------------------------------
+06/23/10 | Intrepid     | Intrepid_CellTools.hpp          | PGI 7.1    | srkenno     | Part 2 of 6/17/10 fix - further protect the change with a #define that
+         |              | Intrepid_HGRAD_HEX_C1_FEMDef.hpp|            |             | must be set before this change becomes active to prevent code that uses
+         |              |                                 |            |             | PGI and Intrepid to no longer compile.  Now, users must also set
+         |              |                                 |            |             | USE_PGI_7_1_COMPILER_BUG_WORKAROUND in client code that includes Intrepid
+         |              |                                 |            |             | headers before this change becomes active.
          |              |                                 |            |             |
+---------|--------------|---------------------------------|------------| ------------|------------------------------------------------------------------------------
+06/25/10 | Intrepid     | Intrepid_CellTools.hpp          | PGI 7.1    | srkenno     | Part 3 of 6/17/10 fix - remove all references to PGI, etc. Protect XXXDef.hpp
+         |              | Intrepid_CellToolsDef.hpp       |            |             | with e.g. INTREPID_HGRAD_HEX_C1_FEMDEF_HPP which can be defined
+         |              | Intrepid_HGRAD_HEX_C1_FEM.hpp   |            |             | in all files that include Intrepid headers, and undefined in one .cpp
+         |              | Intrepid_HGRAD_HEX_C1_FEMDef.hpp|            |             | file to actually instantiate the templates.
+         |              |                                 |            |             | 
          |              |                                 |            |             |
          |              |                                 |            |             |
          |              |                                 |            |             |

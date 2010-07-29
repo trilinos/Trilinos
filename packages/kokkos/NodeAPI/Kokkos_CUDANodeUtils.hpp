@@ -25,15 +25,19 @@ namespace Kokkos {
   };
 
   //! \class CUDANodeCopyBackDeallocator
-  /*! \brief Allocates a segment of page-locked memory associated with CUDA
-      device memory; upon deallocation, performs a copy back of the allocated host
-      memory before the host memory is deallocated. */
+  /*! \brief Allocator/deallocator with host/device copy-back capability.
+  
+    Allocates a segment of page-locked memory associated with CUDA
+    device memory. Upon deallocation, performs a copy-back of the allocated host
+    memory before the host memory is deallocated. This copy-back is only performed
+    if the device buffer is still valid (i.e., it hasn't been deallocated).
+  */
   template <class T>
   class CUDANodeCopyBackDeallocator {
     public:
       CUDANodeCopyBackDeallocator(const Teuchos::ArrayRCP<T> &buffer, const Teuchos::RCP<CUDANodeMemoryModel> &node);
 
-      //! Allocate the buffer, returning a Teuchos::ArrayRCP of the requested type, with the 
+      //! Allocate the buffer, returning a Teuchos::ArrayRCP of the requested type, with a copy-back to GPU memory occurring at deallocation.
       Teuchos::ArrayRCP<T> alloc()const ;
 
       void free(void *ptr) const;

@@ -1,5 +1,5 @@
 <PackageDependencies>
-  <Package name="Teuchos" dir="../cmake/DependencyUnitTests/packages/teuchos">
+  <Package name="Teuchos" dir="teuchos">
     <LIB_REQUIRED_DEP_PACKAGES/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -13,7 +13,7 @@
       <Regression address="teuchos-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
-  <Package name="RTOp" dir="../cmake/DependencyUnitTests/packages/rtop">
+  <Package name="RTOp" dir="rtop">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -27,7 +27,7 @@
       <Regression address="rtop-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
-  <Package name="Epetra" dir="../cmake/DependencyUnitTests/packages/epetra">
+  <Package name="Epetra" dir="epetra">
     <LIB_REQUIRED_DEP_PACKAGES/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -41,7 +41,7 @@
       <Regression address="epetra-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
-  <Package name="Zoltan" dir="../cmake/DependencyUnitTests/packages/zoltan">
+  <Package name="Zoltan" dir="zoltan">
     <LIB_REQUIRED_DEP_PACKAGES/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -55,7 +55,7 @@
       <Regression address="zoltan-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
-  <Package name="Shards" dir="../cmake/DependencyUnitTests/packages/shards">
+  <Package name="Shards" dir="shards">
     <LIB_REQUIRED_DEP_PACKAGES/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -69,7 +69,7 @@
       <Regression address="shards-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
-  <Package name="Triutils" dir="../cmake/DependencyUnitTests/packages/triutils">
+  <Package name="Triutils" dir="triutils">
     <LIB_REQUIRED_DEP_PACKAGES value="Epetra"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -83,7 +83,7 @@
       <Regression address="triutils-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
-  <Package name="Tpetra" dir="../cmake/DependencyUnitTests/packages/tpetra">
+  <Package name="Tpetra" dir="tpetra">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -97,13 +97,13 @@
       <Regression address="tpetra-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
-  <Package name="EpetraExt" dir="../cmake/DependencyUnitTests/packages/epetraext">
+  <Package name="EpetraExt" dir="epetraext">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Triutils,Zoltan"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS/>
-    <LIB_OPTIONAL_DEP_TPLS value="ZoltanTpl,UMFPACK,AMD,PETSC"/>
+    <LIB_OPTIONAL_DEP_TPLS value="UMFPACK,AMD,PETSC"/>
     <TEST_REQUIRED_DEP_TPLS/>
     <TEST_OPTIONAL_DEP_TPLS/>
     <EmailAddresses>
@@ -111,7 +111,7 @@
       <Regression address="epetraext-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
-  <Package name="Stokhos" dir="../cmake/DependencyUnitTests/packages/stokhos">
+  <Package name="Stokhos" dir="stokhos">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -125,7 +125,7 @@
       <Regression address="stokhos-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
-  <Package name="Sacado" dir="../cmake/DependencyUnitTests/packages/sacado">
+  <Package name="Sacado" dir="sacado">
     <LIB_REQUIRED_DEP_PACKAGES/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Teuchos,Stokhos,Epetra,EpetraExt"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -139,7 +139,7 @@
       <Regression address="sacado-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
-  <Package name="Thyra" dir="../cmake/DependencyUnitTests/packages/thyra">
+  <Package name="Thyra" dir="thyra">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,RTOp"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -153,7 +153,7 @@
       <Regression address="thyra-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
-  <Package name="Isorropia" dir="../cmake/DependencyUnitTests/packages/isorropia">
+  <Package name="Isorropia" dir="isorropia">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra,Zoltan"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -167,7 +167,7 @@
       <Regression address="isorropia-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
-  <Package name="AztecOO" dir="../cmake/DependencyUnitTests/packages/aztecoo">
+  <Package name="AztecOO" dir="aztecoo">
     <LIB_REQUIRED_DEP_PACKAGES value="Epetra,Triutils"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Teuchos"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -181,7 +181,7 @@
       <Regression address="aztecoo-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
-  <Package name="Galeri" dir="../cmake/DependencyUnitTests/packages/galeri">
+  <Package name="Galeri" dir="galeri">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -195,7 +195,7 @@
       <Regression address="galeri-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
-  <Package name="Amesos" dir="../cmake/DependencyUnitTests/packages/amesos">
+  <Package name="Amesos" dir="amesos">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="EpetraExt"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -209,7 +209,7 @@
       <Regression address="amesos-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
-  <Package name="Intrepid" dir="../cmake/DependencyUnitTests/packages/intrepid">
+  <Package name="Intrepid" dir="intrepid">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Shards"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Sacado"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -223,7 +223,7 @@
       <Regression address="intrepid-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
-  <Package name="Ifpack" dir="../cmake/DependencyUnitTests/packages/ifpack">
+  <Package name="Ifpack" dir="ifpack">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Amesos,AztecOO"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -237,21 +237,21 @@
       <Regression address="ifpack-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
-  <Package name="ML" dir="../cmake/DependencyUnitTests/packages/ml">
+  <Package name="ML" dir="ml">
     <LIB_REQUIRED_DEP_PACKAGES/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Teuchos,Epetra,Zoltan,Galeri,Amesos,Ifpack,AztecOO,EpetraExt,Isorropia"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
     <TEST_OPTIONAL_DEP_PACKAGES/>
     <LIB_REQUIRED_DEP_TPLS value="BLAS,LAPACK"/>
-    <LIB_OPTIONAL_DEP_TPLS value="MPI,METIS,ParMETIS,ZoltanTpl,PETSC"/>
+    <LIB_OPTIONAL_DEP_TPLS value="MPI,METIS,ParMETIS,PETSC"/>
     <TEST_REQUIRED_DEP_TPLS/>
-    <TEST_OPTIONAL_DEP_TPLS value="METIS,ParMETIS,ZoltanTpl"/>
+    <TEST_OPTIONAL_DEP_TPLS value="METIS,ParMETIS"/>
     <EmailAddresses>
       <Checkin address="ml-checkins@software.sandia.gov"/>
       <Regression address="ml-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
-  <Package name="Belos" dir="../cmake/DependencyUnitTests/packages/belos">
+  <Package name="Belos" dir="belos">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Epetra"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Tpetra"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -265,7 +265,7 @@
       <Regression address="belos-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
-  <Package name="Stratimikos" dir="../cmake/DependencyUnitTests/packages/stratimikos">
+  <Package name="Stratimikos" dir="stratimikos">
     <LIB_REQUIRED_DEP_PACKAGES value="Thyra"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Amesos,AztecOO,Belos,Ifpack,ML"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -279,7 +279,7 @@
       <Regression address="stratimikos-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
-  <Package name="RBGen" dir="../cmake/DependencyUnitTests/packages/rbgen">
+  <Package name="RBGen" dir="rbgen">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos"/>
     <LIB_OPTIONAL_DEP_PACKAGES value="Epetra,EpetraExt"/>
     <TEST_REQUIRED_DEP_PACKAGES/>
@@ -293,7 +293,7 @@
       <Regression address="rbgen-regression@software.sandia.gov"/>
     </EmailAddresses>
   </Package>
-  <Package name="Phalanx" dir="../cmake/DependencyUnitTests/packages/phalanx">
+  <Package name="Phalanx" dir="phalanx">
     <LIB_REQUIRED_DEP_PACKAGES value="Teuchos,Shards,Sacado"/>
     <LIB_OPTIONAL_DEP_PACKAGES/>
     <TEST_REQUIRED_DEP_PACKAGES/>

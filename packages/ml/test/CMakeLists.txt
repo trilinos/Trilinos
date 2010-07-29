@@ -18,6 +18,7 @@ IF (${PACKAGE_NAME}_ENABLE_Galeri)
 
   IF (${PACKAGE_NAME}_ENABLE_Zoltan)
     ADD_SUBDIRECTORY(Zoltan)
+    ADD_SUBDIRECTORY(Zoltan_hypergraph)
   ENDIF()
 
 ENDIF()

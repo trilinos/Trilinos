@@ -173,7 +173,6 @@ bool Region::begin_mode(State new_state)
 	IOSS_ERROR(errmsg);
       }
 
-      success = false;
       break;
     default:
       {
@@ -182,7 +181,6 @@ bool Region::begin_mode(State new_state)
 	       << get_database()->get_filename();
 	IOSS_ERROR(errmsg);
       }
-      success = false;
     }
   }
   // Pass the 'begin state' message on to the database so it can do any

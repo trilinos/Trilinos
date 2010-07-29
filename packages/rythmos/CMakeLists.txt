@@ -7,7 +7,7 @@ INCLUDE(CombinedOption)
 # A) Define the package
 #
 
-PACKAGE(Rythmos)
+PACKAGE(Rythmos ENABLE_SHADOWING_WARNINGS CLEANED )
 
 #
 # B) Set up package-specific options

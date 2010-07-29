@@ -11,14 +11,6 @@
 #include <Ioss_Utils.h>
 #include <string>
 
-namespace {
-  const char *
-  get_product_name()
-  {
-    return "I/O System";
-  }
-}
-
 Ioss::DatabaseIO* Ioss::IOFactory::create(const std::string& type,
 					  const std::string& filename,
 					  Ioss::DatabaseUsage db_usage,

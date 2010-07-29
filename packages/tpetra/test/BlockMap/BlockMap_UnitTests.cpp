@@ -101,10 +101,10 @@ namespace {
     TEST_EQUALITY_CONST(blkmap.getNodeNumBlocks(), 2);
     TEST_EQUALITY_CONST(blkmap.getLocalBlockID(blkIDs[0]), blkLIDs[0]);
     TEST_EQUALITY_CONST(blkmap.getLocalBlockID(blkIDs[1]), blkLIDs[1]);
-    TEST_EQUALITY_CONST(blkmap.getBlockSize(blkLIDs[0]), blkSzs[0]);
-    TEST_EQUALITY_CONST(blkmap.getBlockSize(blkLIDs[1]), blkSzs[1]);
-    TEST_EQUALITY_CONST(blkmap.getFirstLocalPointInBlock(blkLIDs[0]), firstPt[0]);
-    TEST_EQUALITY_CONST(blkmap.getFirstLocalPointInBlock(blkLIDs[1]), firstPt[1]);
+    TEST_EQUALITY_CONST(blkmap.getLocalBlockSize(blkLIDs[0]), blkSzs[0]);
+    TEST_EQUALITY_CONST(blkmap.getLocalBlockSize(blkLIDs[1]), blkSzs[1]);
+    TEST_EQUALITY_CONST(blkmap.getFirstLocalPointInLocalBlock(blkLIDs[0]), firstPt[0]);
+    TEST_EQUALITY_CONST(blkmap.getFirstLocalPointInLocalBlock(blkLIDs[1]), firstPt[1]);
 
     // create the same BlockMap with a different constructor:
     BM blkmap2(numImages*2, blkSize, indexBase, comm);
@@ -112,10 +112,10 @@ namespace {
     TEST_EQUALITY_CONST(blkmap2.getNodeNumBlocks(), 2);
     TEST_EQUALITY_CONST(blkmap2.getLocalBlockID(blkIDs[0]), blkLIDs[0]);
     TEST_EQUALITY_CONST(blkmap2.getLocalBlockID(blkIDs[1]), blkLIDs[1]);
-    TEST_EQUALITY_CONST(blkmap2.getBlockSize(blkLIDs[0]), blkSzs[0]);
-    TEST_EQUALITY_CONST(blkmap2.getBlockSize(blkLIDs[1]), blkSzs[1]);
-    TEST_EQUALITY_CONST(blkmap2.getFirstLocalPointInBlock(blkLIDs[0]), firstPt[0]);
-    TEST_EQUALITY_CONST(blkmap2.getFirstLocalPointInBlock(blkLIDs[1]), firstPt[1]);
+    TEST_EQUALITY_CONST(blkmap2.getLocalBlockSize(blkLIDs[0]), blkSzs[0]);
+    TEST_EQUALITY_CONST(blkmap2.getLocalBlockSize(blkLIDs[1]), blkSzs[1]);
+    TEST_EQUALITY_CONST(blkmap2.getFirstLocalPointInLocalBlock(blkLIDs[0]), firstPt[0]);
+    TEST_EQUALITY_CONST(blkmap2.getFirstLocalPointInLocalBlock(blkLIDs[1]), firstPt[1]);
 
     //and this BlockMap should have the same point-map:
     const M& tmapref = *tmap;
@@ -156,10 +156,10 @@ namespace {
     TEST_EQUALITY_CONST(blkmap.getNodeNumBlocks(), 2);
     TEST_EQUALITY_CONST(blkmap.getLocalBlockID(blkIDs[0]), blkLIDs[0]);
     TEST_EQUALITY_CONST(blkmap.getLocalBlockID(blkIDs[1]), blkLIDs[1]);
-    TEST_EQUALITY_CONST(blkmap.getBlockSize(blkLIDs[0]), blkSzs[0]);
-    TEST_EQUALITY_CONST(blkmap.getBlockSize(blkLIDs[1]), blkSzs[1]);
-    TEST_EQUALITY_CONST(blkmap.getFirstLocalPointInBlock(blkLIDs[0]), firstPt[0]);
-    TEST_EQUALITY_CONST(blkmap.getFirstLocalPointInBlock(blkLIDs[1]), firstPt[1]);
+    TEST_EQUALITY_CONST(blkmap.getLocalBlockSize(blkLIDs[0]), blkSzs[0]);
+    TEST_EQUALITY_CONST(blkmap.getLocalBlockSize(blkLIDs[1]), blkSzs[1]);
+    TEST_EQUALITY_CONST(blkmap.getFirstLocalPointInLocalBlock(blkLIDs[0]), firstPt[0]);
+    TEST_EQUALITY_CONST(blkmap.getFirstLocalPointInLocalBlock(blkLIDs[1]), firstPt[1]);
 
     // create the same BlockMap with a different constructor:
     BM blkmap2(numImages*2, blkIDs(), points(), blkSzs(), indexBase, comm);
@@ -167,10 +167,10 @@ namespace {
     TEST_EQUALITY_CONST(blkmap2.getNodeNumBlocks(), 2);
     TEST_EQUALITY_CONST(blkmap2.getLocalBlockID(blkIDs[0]), blkLIDs[0]);
     TEST_EQUALITY_CONST(blkmap2.getLocalBlockID(blkIDs[1]), blkLIDs[1]);
-    TEST_EQUALITY_CONST(blkmap2.getBlockSize(blkLIDs[0]), blkSzs[0]);
-    TEST_EQUALITY_CONST(blkmap2.getBlockSize(blkLIDs[1]), blkSzs[1]);
-    TEST_EQUALITY_CONST(blkmap2.getFirstLocalPointInBlock(blkLIDs[0]), firstPt[0]);
-    TEST_EQUALITY_CONST(blkmap2.getFirstLocalPointInBlock(blkLIDs[1]), firstPt[1]);
+    TEST_EQUALITY_CONST(blkmap2.getLocalBlockSize(blkLIDs[0]), blkSzs[0]);
+    TEST_EQUALITY_CONST(blkmap2.getLocalBlockSize(blkLIDs[1]), blkSzs[1]);
+    TEST_EQUALITY_CONST(blkmap2.getFirstLocalPointInLocalBlock(blkLIDs[0]), firstPt[0]);
+    TEST_EQUALITY_CONST(blkmap2.getFirstLocalPointInLocalBlock(blkLIDs[1]), firstPt[1]);
 
     //and this BlockMap should have the same point-map:
     const M& tmapref = *tmap;

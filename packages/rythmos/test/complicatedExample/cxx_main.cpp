@@ -525,7 +525,7 @@ int main(int argc, char *argv[])
             // Create a non-const Thyra VectorBase to use as a temp vector
             RCP<Thyra::VectorBase<double> > vec_temp = stepStatusSlave.solution->clone_v();
             // Check that the solution matches exactly
-            Thyra::V_StVpStV<double>(&*vec_temp,1.0,*stepStatusMaster.solution,-1.0,*stepStatusSlave.solution);
+            Thyra::V_StVpStV<double>(vec_temp.ptr(),1.0,*stepStatusMaster.solution,-1.0,*stepStatusSlave.solution);
             double normSolutionDiff = Thyra::norm_inf<double>(*vec_temp);
             if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
               *out << "normSolutionDiff = " << normSolutionDiff << endl;
@@ -539,7 +539,7 @@ int main(int argc, char *argv[])
               RCP<const Thyra::VectorBase<double> >
                 master_x_dot = get_xdot(stepper,stepStatusMaster.time),
                 slave_x_dot = get_xdot(*stepperSlave_ptr,stepStatusSlave.time);
-              Thyra::V_VmV<double>(&*vec_temp,*master_x_dot,*slave_x_dot);
+              Thyra::V_VmV<double>(vec_temp.ptr(),*master_x_dot,*slave_x_dot);
               double normSolutionDotDiff = Thyra::norm_inf<double>(*vec_temp);
               if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
                 *out << "normSolutionDotDiff = " << normSolutionDotDiff << endl;

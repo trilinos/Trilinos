@@ -60,7 +60,8 @@ ModelEvaluatorInterface(
   alpha_prev(0),
   beta_prev(1),
   loca_param_vec(),
-  x_dot(NULL)
+  x_dot(NULL),
+  observer(Teuchos::null)
 {
   // Get parameter names
   Teuchos::RefCountPtr<const Teuchos::Array<std::string> > param_names =
@@ -244,6 +245,27 @@ setXdot(const Epetra_Vector& xdot_, const double time_)
   if (x_dot == NULL)
     x_dot = new Epetra_Vector(xdot_.Map());
   *x_dot = xdot_;
+}
+
+// *****************************************************************
+// *****************************************************************
+
+void
+LOCA::Epetra::ModelEvaluatorInterface::
+printSolution  (const Epetra_Vector  &x_, double conParam)
+{ 
+  if ( !observer.is_null() )
+     observer->observeSolution( x_ ); 
+}
+
+// *****************************************************************
+// *****************************************************************
+
+void
+LOCA::Epetra::ModelEvaluatorInterface::
+setObserver( const Teuchos::RCP<NOX::Epetra::Observer> & observer_ )
+{
+  observer = observer_;
 }
 
 // *****************************************************************

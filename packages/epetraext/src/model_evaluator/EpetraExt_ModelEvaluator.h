@@ -669,6 +669,20 @@ public:
     
     /** \brief Return true if the function or its derivatives are set. */
     bool funcOrDerivesAreSet(EOutArgsMembers arg) const;
+    
+    /** \brief Set that the evaluation as a whole failed.
+     *
+     * Note that this function is declared as <tt>const</tt> even through it
+     * technically changes the state of <tt>*this</tt> object.
+     */
+    void setFailed() const;
+    /** \brief Return if the evaluation failed or not.
+     *
+     * If the evaluation failed, no assumptions should be made at all about
+     * the state of the output objects.
+     */
+    bool isFailed() const;
+    
   protected:
     /** \brief . */
     void _setModelEvalDescription( const std::string &modelEvalDescription );
@@ -723,6 +737,7 @@ public:
     typedef Teuchos::Array<DerivativeSupport> supports_t;
     // data
     std::string modelEvalDescription_;
+    mutable bool isFailed_;
     bool supports_[NUM_E_OUT_ARGS_MEMBERS];
     supports_t supports_DfDp_; // Np
     supports_t supports_DgDx_dot_; // Ng

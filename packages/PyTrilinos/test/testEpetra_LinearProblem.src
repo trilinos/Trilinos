@@ -141,9 +141,8 @@ class EpetraLinearProblemTestCase(unittest.TestCase):
         "Test Epetra.LinearProblem copy constructor"
         lp = Epetra.LinearProblem(self.linProb)
         self.assertEqual(id(lp.GetMatrix()), id(self.linProb.GetMatrix()))
-        self.assertEqual(lp.GetLHS().array.data, self.linProb.GetLHS().array.data)
-        # This fails for NumProc >= 4 on some machines.  Why?
-        #self.assertEqual(lp.GetRHS().array.data, self.linProb.GetRHS().array.data)
+        self.failUnless((lp.GetLHS() == self.linProb.GetLHS()).all())
+        self.failUnless((lp.GetRHS() == self.linProb.GetRHS()).all())
 
     def testIsOperatorSymmetric(self):
         "Test Epetra.LinearProblem IsOperatorSymmetric/AssertSymmetric methods"

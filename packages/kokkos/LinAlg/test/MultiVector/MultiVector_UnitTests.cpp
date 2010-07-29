@@ -45,8 +45,6 @@ namespace {
 
   typedef Kokkos::DefaultNode::DefaultNodeType Node;
 
-  RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
-
   TEUCHOS_STATIC_SETUP()
   {
     Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
@@ -63,6 +61,7 @@ namespace {
   // check that default constructor zeros out, for both V and MV
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, DefaultConstructor, Scalar, Ordinal )
   {
+    RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
     MultiVector<Scalar,Node> A(node);
     TEST_EQUALITY_CONST(A.getNumRows(), 0);
     TEST_EQUALITY_CONST(A.getNumCols(), 0);
@@ -72,6 +71,7 @@ namespace {
   // check copy constructor
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, CopyConstructor, Scalar, Ordinal )
   {
+    RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
     MultiVector<Scalar,Node> A(node);
     ArrayRCP<Scalar> buf = A.getNode()->template allocBuffer<Scalar>(2*N);
     A.initializeValues(N,2,buf,N);
@@ -88,6 +88,7 @@ namespace {
   // check that non-default constructor honors given parameters
   TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( MultiVector, InitializeAndAccess, Scalar, Ordinal )
   {
+    RCP<Node> node = Kokkos::DefaultNode::getDefaultNode();
     MultiVector<Scalar,Node> A(node);
     ArrayRCP<Scalar> buf = A.getNode()->template allocBuffer<Scalar>(2*N);
     A.initializeValues(N,2,buf,N);
@@ -98,17 +99,17 @@ namespace {
     TEST_INEQUALITY(A.getValues(1), buf);
     buf = Teuchos::null;
   }
- 
- #define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
-       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, DefaultConstructor, SCALAR, ORDINAL ) \
-       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, CopyConstructor   , SCALAR, ORDINAL ) \
-       TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, InitializeAndAccess, SCALAR, ORDINAL )
- 
- #define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
-          UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, int) \
-          UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, float)
-      UNIT_TEST_GROUP_ORDINAL(int)
-      typedef short int ShortInt; UNIT_TEST_GROUP_ORDINAL(ShortInt)
- 
+
+
+#define UNIT_TEST_GROUP_ORDINAL_SCALAR( ORDINAL, SCALAR ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, DefaultConstructor, SCALAR, ORDINAL ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, CopyConstructor   , SCALAR, ORDINAL ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT( MultiVector, InitializeAndAccess, SCALAR, ORDINAL )
+
+#define UNIT_TEST_GROUP_ORDINAL( ORDINAL ) \
+  UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, int) \
+  UNIT_TEST_GROUP_ORDINAL_SCALAR(ORDINAL, float)
+  UNIT_TEST_GROUP_ORDINAL(int)
+    typedef short int ShortInt; UNIT_TEST_GROUP_ORDINAL(ShortInt)
+
 }
- 

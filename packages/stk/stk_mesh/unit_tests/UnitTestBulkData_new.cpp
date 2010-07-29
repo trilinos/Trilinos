@@ -12,11 +12,25 @@
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <unit_tests/UnitTestMesh.hpp>
 #include <unit_tests/UnitTestBoxMeshFixture.hpp>
-
+#include <stk_mesh/base/EntityComm.hpp>
 
 // UnitTestBulkData_new is the beginnings of a refactoring of the bulk
 // data unit test.  It relies on the UnitTestMesh fixture to rapidly
 // create a mesh for testing.
+
+
+void new_insert_transitive_closure( std::set<stk::mesh::EntityProc,stk::mesh::EntityLess> &  ,
+					 const stk::mesh::EntityProc & entry );
+void new_comm_sync_send_recv(
+   stk::mesh::BulkData & mesh ,
+   std::set< stk::mesh::EntityProc , stk::mesh::EntityLess > & new_send ,
+   std::set< stk::mesh::Entity * , stk::mesh::EntityLess > & new_recv );
+
+void new_comm_recv_to_send(
+  stk::mesh::BulkData & mesh ,
+  const std::set< stk::mesh::Entity * , stk::mesh::EntityLess > & new_recv ,
+        std::set< stk::mesh::EntityProc , stk::mesh::EntityLess > & new_send );
+
 
 STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyAssertOwnerDeletedEntity )
 {
@@ -340,8 +354,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyTrivialDestroyAllGhostings )
     ghosting.send_list( send_list );
     ghosting.receive_list( recv_list );
 
-    STKUNIT_ASSERT ( send_list.size() > 0u );
-    STKUNIT_ASSERT ( recv_list.size() > 0u );
+    STKUNIT_ASSERT ( ! send_list.empty()  );
+    STKUNIT_ASSERT ( ! recv_list.empty() );
   }
 
   bulk.modification_begin();
@@ -354,8 +368,8 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyTrivialDestroyAllGhostings )
     ghosting.send_list( send_list );
     ghosting.receive_list( recv_list );
 
-    STKUNIT_ASSERT_EQUAL ( send_list.size() , 0u );
-    STKUNIT_ASSERT_EQUAL ( recv_list.size() , 0u );
+    STKUNIT_ASSERT ( send_list.empty() );
+    STKUNIT_ASSERT ( recv_list.empty() );
   }
 }
 
@@ -549,4 +563,389 @@ STKUNIT_UNIT_TEST ( UnitTestBulkData_new , verifyBoxGhosting )
   }
   }
 }
+
+
+
+STKUNIT_UNIT_TEST ( UnitTestBulkData_new , testEntityComm )
+{
+  //Test on unpack_field_values in EntityComm.cpp
+  //code based on ../base/BulkDataGhosting.cpp
+  //Create a simple mesh. Add nodes one element and some parts.
+  
+  stk::mesh::MetaData meta ( stk::unit_test::get_entity_rank_names ( 3 ) );
+     
+  stk::mesh::Part & part_a = meta.declare_part( "block_a", 3 );
+  stk::mesh::set_cell_topology< shards::Tetrahedron<4>  >( part_a );
+  stk::mesh::Part & part_b = meta.declare_part( "block_b", 3 );
+  stk::mesh::set_cell_topology< shards::Tetrahedron<4>  >( part_b );
+  
+  stk::mesh::Part & part_a_0 = meta.declare_part( "block_a_0", 0 );
+  stk::mesh::set_cell_topology< shards::Tetrahedron<4>  >( part_a_0 );
+  stk::mesh::Part & part_b_0 = meta.declare_part( "block_b_0", 0 );
+  stk::mesh::set_cell_topology< shards::Tetrahedron<4>  >( part_b_0 );
+  
+  typedef stk::mesh::Field<double>  ScalarFieldType;
+  
+  ScalarFieldType & volume =
+     meta.declare_field < ScalarFieldType > ( "volume" , 4 );
+  ScalarFieldType & temperature =
+     meta.declare_field < ScalarFieldType > ( "temperature" , 4 );     
+  stk::mesh::Part  & universal     = meta.universal_part ();
+  put_field ( volume , 3 , universal );
+  put_field ( temperature , 3 , universal );
+  
+    
+  meta.commit();
+  
+	   
+  stk::mesh::PartVector    create_vector;
+  stk::mesh::PartVector    empty_vector;
+  create_vector.push_back ( &part_a );
+  create_vector.push_back ( &part_b );
+   
+  
+  stk::mesh::BulkData bulk ( meta , MPI_COMM_WORLD , 100 );
+  
+  bulk.modification_begin();
+
+  stk::mesh::Ghosting &ghosts = bulk.create_ghosting ( "Ghost 1" );
+
+  unsigned size2 = stk::parallel_machine_size( MPI_COMM_WORLD );
+  unsigned rank_count2 = stk::parallel_machine_rank( MPI_COMM_WORLD );
+  int new_id2 = size2 + rank_count2;
+
+  stk::mesh::Entity &elem2 = bulk.declare_entity ( 3 , new_id2+1 ,create_vector );
+  STKUNIT_ASSERT_EQUAL( elem2.bucket().member ( part_a ), true );
+
+    
+  unsigned size = stk::parallel_machine_size( MPI_COMM_WORLD );
+  unsigned rank_count = stk::parallel_machine_rank( MPI_COMM_WORLD );
+  
+    
+  int id_base = 0;
+  for ( id_base = 0 ; id_base < 99 ; ++id_base )
+  {
+    int new_id = size * id_base + rank_count;
+    stk::mesh::Entity &new_node = bulk.declare_entity( 0 , new_id+1 , empty_vector );
+    STKUNIT_ASSERT_EQUAL( new_node.bucket().member ( part_a_0 ), false );
+  } 
+  
+  
+  //Create a bucket of nodes for sending 
+     
+  std::vector<stk::mesh::EntityProc>  add_send;
+  
+  const std::vector<stk::mesh::Bucket*> & buckets = bulk.buckets( 0 );
+
+  std::vector<stk::mesh::Bucket*>::const_iterator cur_bucket;
+
+  cur_bucket = buckets.begin();
+   
+
+  unsigned send_rank = 0;
+  while ( cur_bucket != buckets.end() )
+  {
+    stk::mesh::Bucket::iterator cur_entity = (*cur_bucket)->begin();
+    while ( cur_entity != (*cur_bucket)->end() )
+    {
+      if ( cur_entity->owner_rank() == rank_count )
+      {
+        if ( send_rank == size ) send_rank = 0;
+        if ( send_rank != rank_count )
+          add_send.push_back ( std::make_pair ( &*cur_entity , send_rank ) );
+        send_rank++;
+      }
+      cur_entity++;
+    }
+    cur_bucket++;
+  }
+  
+ 
+  std::set< stk::mesh::EntityProc , stk::mesh::EntityLess > new_send ;
+  std::set< stk::mesh::Entity * ,   stk::mesh::EntityLess > new_recv ; 
+
+
+    //  Keep the closure of the remaining received ghosts.
+    //  Working from highest-to-lowest key (rank entity type)
+    //  results in insertion of the transitive closure.
+    //  Insertion will not invalidate the associative container's iterator.
+
+    for ( std::set< stk::mesh::Entity * , stk::mesh::EntityLess >::iterator
+          i = new_recv.end() ; i != new_recv.begin() ; ) {
+      --i ;
+
+      const unsigned erank = (*i)->entity_rank();
+
+      for ( stk::mesh::PairIterRelation
+            irel = (*i)->relations(); ! irel.empty() ; ++irel ) {
+        if ( irel->entity_rank() < erank &&
+             in_receive_ghost( ghosts , * irel->entity() ) ) {
+          new_recv.insert( irel->entity() );
+        }
+      }
+    }
+    
+  
+   
+   //  Initialize the new_send from the new_recv
+  new_comm_recv_to_send( bulk , new_recv , new_send );
+  
+  
+  //------------------------------------
+  // Add the specified entities and their closure to the send ghosting
+
+
+  for ( std::vector< stk::mesh::EntityProc >::const_iterator
+        i = add_send.begin() ; i != add_send.end() ; ++i ) {
+        new_insert_transitive_closure( new_send , *i );
+  }
+
+  // Synchronize the send and receive list.
+  // If the send list contains a not-owned entity
+  // inform the owner and receiver to ad that entity
+  // to their ghost send and receive lists.
+
+  new_comm_sync_send_recv( bulk , new_send , new_recv ); 
+         
+  
+   //------------------------------------
+  // Push newly ghosted entities to the receivers and update the comm list.
+  // Unpacking must proceed in entity-rank order so that higher ranking
+  // entities that have relations to lower ranking entities will have
+  // the lower ranking entities unpacked first.  The higher and lower
+  // ranking entities may be owned by different processes,
+  // as such unpacking must be performed in rank order.
+
+  //Start of CommAll section:
+  {
+
+    stk::CommAll comm( MPI_COMM_WORLD );
+
+    for ( std::set< stk::mesh::EntityProc , stk::mesh::EntityLess >::iterator
+          j = new_send.begin(); j != new_send.end() ; ++j ) {
+          stk::mesh::Entity & entity = * j->first ;      
+      if ( ! in_ghost( ghosts , entity , j->second ) ) {
+        // Not already being sent , must send it.
+        stk::CommBuffer & buf = comm.send_buffer( j->second );
+        buf.pack<unsigned>( entity.entity_rank() );
+        stk::mesh::pack_entity_info(  buf , entity );
+        stk::mesh::pack_field_values( buf , entity );
+      }
+    }
+    
+    
+    comm.allocate_buffers( size / 4 );
+
+    for ( std::set< stk::mesh::EntityProc , stk::mesh::EntityLess >::iterator
+          j = new_send.begin(); j != new_send.end() ; ++j ) {
+          stk::mesh::Entity & entity = * j->first ;      
+      if ( ! in_ghost( ghosts , entity , j->second ) ) {
+        // Not already being sent , must send it.
+        stk::CommBuffer & buf = comm.send_buffer( j->second );
+        buf.pack<unsigned>( entity.entity_rank() );
+        stk::mesh::pack_entity_info(  buf , entity );
+        stk::mesh::pack_field_values( buf , entity );
+
+      }
+    }  
+
+    
+    comm.communicate();
+
+    std::ostringstream error_msg ;
+ 
+    for ( unsigned rank = 0 ; rank < rank_count ; ++rank ) {
+      
+      for ( unsigned p = 0 ; p < size ; ++p ) {
+       
+        stk::CommBuffer & buf = comm.recv_buffer(p);
+	 
+        while ( buf.remaining() ) {
+	 
+          // Only unpack if of the current entity rank.
+          // If not the current entity rank, break the iteration
+          // until a subsequent entity rank iteration.
+          {
+            unsigned this_rank = ~0u ;
+            buf.peek<unsigned>( this_rank );
+            if ( this_rank != rank ) break ;
+
+            buf.unpack<unsigned>( this_rank );
+          }
+
+          // FIXME for Carol; the code below did not work with -np 4
+          //STKUNIT_ASSERT_EQUAL( stk::mesh::unpack_field_values( buf , elem2 , error_msg ), false);
+	  //std::cout << "Error message for unpack_field_values = " << error_msg.str() << std::endl ;
+
+        }
+      }
+      
+    } 
+    }//end of CommAll section
+
+  bulk.modification_end ();  
+  
+  
+}
+
+     
+void new_insert_transitive_closure( std::set<stk::mesh::EntityProc,stk::mesh::EntityLess> & new_send ,
+                                const stk::mesh::EntityProc & entry )
+{
+  // Do not insert if I can determine that this entity is already
+  // owned or shared by the receiving processor.
+
+  if ( entry.second != entry.first->owner_rank() &&
+       ! in_shared( * entry.first , entry.second ) ) {
+
+    std::pair< std::set<stk::mesh::EntityProc,stk::mesh::EntityLess>::iterator , bool >
+      result = new_send.insert( entry );
+
+    if ( result.second ) {
+      // A new insertion, must also insert the closure
+
+      const unsigned etype = entry.first->entity_rank();
+      stk::mesh::PairIterRelation irel  = entry.first->relations();
+
+      for ( ; ! irel.empty() ; ++irel ) {
+        if ( irel->entity_rank() < etype ) {
+          stk::mesh::EntityProc tmp( irel->entity() , entry.second );
+          new_insert_transitive_closure( new_send , tmp );
+        }
+      }
+    }
+  }
+}
+
+
+// Synchronize the send list to the receive list.
+
+void new_comm_sync_send_recv(
+  stk::mesh::BulkData & mesh ,
+  std::set< stk::mesh::EntityProc , stk::mesh::EntityLess > & new_send ,
+  std::set< stk::mesh::Entity * , stk::mesh::EntityLess > & new_recv )
+{
+  static const char method[] = "stk::mesh::BulkData::change_ghosting" ;
+  const unsigned parallel_rank = mesh.parallel_rank();
+  const unsigned parallel_size = mesh.parallel_size();
+
+  stk::CommAll all( mesh.parallel() );
+
+  // Communication sizing:
+
+  for ( std::set< stk::mesh::EntityProc , stk::mesh::EntityLess >::iterator
+        i = new_send.begin() ; i != new_send.end() ; ++i ) {
+    const unsigned owner = i->first->owner_rank();
+    all.send_buffer( i->second ).skip<stk::mesh::EntityKey>(2);
+    if ( owner != parallel_rank ) {
+      all.send_buffer( owner ).skip<stk::mesh::EntityKey>(2);
+    }
+  }
+
+  all.allocate_buffers( parallel_size / 4 , false /* Not symmetric */ );
+
+  // Communication packing (with message content comments):
+  for ( std::set< stk::mesh::EntityProc , stk::mesh::EntityLess >::iterator
+        i = new_send.begin() ; i != new_send.end() ; ) {
+    const unsigned owner = i->first->owner_rank();
+
+    // Inform receiver of ghosting, the receiver does not own
+    // and does not share this entity.
+    // The ghost either already exists or is a to-be-done new ghost.
+    // This status will be resolved on the final communication pass
+    // when new ghosts are packed and sent.
+
+    const stk::mesh::EntityKey &entity_key = i->first->key();
+    const uint64_t &proc = i->second;
+
+    all.send_buffer( i->second ).pack(entity_key).pack(proc);
+
+    if ( owner != parallel_rank ) {
+      // I am not the owner of this entity.
+      // Inform the owner of this ghosting need.
+      all.send_buffer( owner ).pack(entity_key).pack(proc);
+
+      // Erase it from my processor's ghosting responsibility:
+      // The iterator passed to the erase method will be invalidated.
+      std::set< stk::mesh::EntityProc , stk::mesh::EntityLess >::iterator jrem = i ; ++i ;
+      new_send.erase( jrem );
+    }
+    else {
+      ++i ;
+    }
+  }
+
+  all.communicate();
+
+  // Communication unpacking:
+  for ( unsigned p = 0 ; p < parallel_size ; ++p ) {
+    stk::CommBuffer & buf = all.recv_buffer(p);
+    while ( buf.remaining() ) {
+
+      stk::mesh::EntityKey entity_key;
+      uint64_t proc(0);
+
+      buf.unpack(entity_key).unpack(proc);
+
+      stk::mesh::Entity * const e = mesh.get_entity( entity_key );
+
+      if ( parallel_rank != proc ) {
+        //  Receiving a ghosting need for an entity I own.
+        //  Add it to my send list.
+        if ( e == NULL ) {
+          throw std::logic_error( std::string(method) );
+        }
+        stk::mesh::EntityProc tmp( e , proc );
+        new_send.insert( tmp );
+      }
+      else if ( e != NULL ) {
+        //  I am the receiver for this ghost.
+        //  If I already have it add it to the receive list,
+        //  otherwise don't worry about it - I will receive
+        //  it in the final new-ghosting communication.
+        new_recv.insert( e );
+      }
+    }
+  }
+}
+
+void new_comm_recv_to_send(
+  stk::mesh::BulkData & mesh ,
+  const std::set< stk::mesh::Entity * , stk::mesh::EntityLess > & new_recv ,
+        std::set< stk::mesh::EntityProc , stk::mesh::EntityLess > & new_send )
+{
+  static const char method[] = "stk::mesh::BulkData::change_ghosting" ;
+
+  const unsigned parallel_size = mesh.parallel_size();
+
+  stk::CommAll all( mesh.parallel() );
+
+  for ( std::set< stk::mesh::Entity * , stk::mesh::EntityLess >::const_iterator
+        i = new_recv.begin() ; i != new_recv.end() ; ++i ) {
+    const unsigned owner = (*i)->owner_rank();
+    all.send_buffer( owner ).skip<stk::mesh::EntityKey>(1);
+  }
+
+  all.allocate_buffers( parallel_size / 4 , false /* Not symmetric */ );
+
+  for ( std::set< stk::mesh::Entity * , stk::mesh::EntityLess >::const_iterator
+        i = new_recv.begin() ; i != new_recv.end() ; ++i ) {
+    const unsigned owner = (*i)->owner_rank();
+    const stk::mesh::EntityKey key = (*i)->key();
+    all.send_buffer( owner ).pack<stk::mesh::EntityKey>( & key , 1 );
+  }
+
+  all.communicate();
+
+  for ( unsigned p = 0 ; p < parallel_size ; ++p ) {
+    stk::CommBuffer & buf = all.recv_buffer(p);
+    while ( buf.remaining() ) {
+      stk::mesh::EntityKey key ;
+      buf.unpack<stk::mesh::EntityKey>( & key , 1 );
+      stk::mesh::EntityProc tmp( mesh.get_entity( entity_rank(key), entity_id(key) , method ) , p );
+      new_send.insert( tmp );
+    }
+  }
+}
+
 

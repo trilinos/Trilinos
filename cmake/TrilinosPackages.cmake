@@ -9,9 +9,9 @@ INCLUDE(PackageListHelpers)
 #   PS: Primary Stable Package
 #
 #     Primary Stable Packages have at least some Primary Stable Code which is
-#     expected to be fully tested before every checkin.  The default enable
-#     for PS packages is empty "" which allows the PS package to be enabled
-#     implicitly based on other criteria.  The option
+#     expected to be fully tested before every push to the global repo.  The
+#     default enable for PS packages is empty "" which allows the PS package
+#     to be enabled implicitly based on other criteria.  The option
 #     Trilinos_ENABLE_ALL_PACKAGES=ON will cause all PS packages to be enabled
 #     unless they are explicitly disabled.
 #
@@ -20,38 +20,39 @@ INCLUDE(PackageListHelpers)
 #     Secondary Stable Packages have no PS code or they would be classified as
 #     PS packages.  A package must be classified as SS if it has a required
 #     dependency on another SS package or SS TPL.  A package may also be
-#     declared SS to avoid requiring it to be tested before every checkin.
-#     For example, a package that does not provide any significant
-#     functionally like Didasko is classified as a SS package even through it
-#     could be classified as PS just based on its required package and TPL
-#     dependencies.  SS packages will have their default enables set to empty
-#     "".  This allows them to be enabled implicilty.  When
+#     declared SS to avoid requiring it to be tested before every push to the
+#     global repo.  For example, a package that does not provide any
+#     significant functionally like Didasko is classified as a SS package even
+#     through it could be classified as PS just based on its required package
+#     and TPL dependencies.  SS packages will have their default enables set
+#     to empty "".  This allows them to be enabled implicilty.  When
 #     Trilinos_ENABLE_ALL_PACKAGES=ON but
 #     Trilinos_ENABLE_SECONDARY_STABLE_CODE=OFF, the SS packages will not be
 #     enabled.  However, when Trilinos_ENABLE_ALL_PACKAGES=ON and
 #     Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON, then SS packages will be
 #     enabled if they are not explicitly disabled.  Packages that are SS but
-#     not PS must be disabled in precheckin testing.  However, SS packages are
-#     tested by the nightly testing process.
+#     not PS must be disabled in pre-push testing.  However, SS packages are
+#     tested by the post-push CI and nightly testing processes.
 #
 #   EX: Experimental Package
 #
 #     Experimental packages are those packages that contain no PS or SS
 #     code. The default enable for EX packages is always OFF which requires
 #     that they be explicitly enabled in order to be turned on. EX packages
-#     must be disabled in precheckin testring and are not tested as part of
-#     the nightly testing process.  However, package developers of EX pacakges
-#     are encouraged to set up their own nightly testing for ther EX packages.
-
+#     must be disabled in pre-push testring and are not tested as part of the
+#     post-push CI or nightly testing processes.  However, package developers
+#     of EX pacakges are encouraged to set up their own nightly testing for
+#     thier EX packages.
 #
-# NOTE: These packages must be listed in strictly assending order in
-# terms of package dependencies.  If you get the order wrong, then an
-# error message will be printed.
+# NOTE: These packages must be listed in strictly assending order in terms of
+# package dependencies.  If you get the order wrong, then an error message
+# will be printed during configuration with CMake.
 #
 
 SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   TrilinosFramework     ../cmake                       PS # Only tests, no libraries/capabilities!
   Teuchos               teuchos                        PS
+  Trios                 Trios                          SS # Depends on netcdf, optionally hdf5, xdmf
   ThreadPool            ThreadPool                     PS # Depends on ptheads system library
   Sacado                sacado                         PS
   RTOp                  rtop                           PS
@@ -76,12 +77,11 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Komplex               komplex                        PS
   ML                    ml                             PS
   Belos                 belos                          PS
-  Tifpack               tifpack                        SS
+  Tifpack               tifpack                        PS
   Stratimikos           stratimikos                    PS
   Meros                 meros                          SS
   FEI                   fei                            PS
   Anasazi               anasazi                        PS
-  Teko                  teko                           SS
   RBGen                 rbgen                          PS
   TriKota               TriKota                        SS
   STK                   stk                            SS # Depends on boost
@@ -97,7 +97,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Stokhos               stokhos                        SS
   Piro                  piro                           SS
   Sundance              Sundance                       SS # Could be PS based on deps (BUG: 4669)
-  CTrilinos             CTrilinos                      PS
+  CTrilinos             CTrilinos                      SS # Switched to SS to speed up checkin testing
   ForTrilinos           ForTrilinos                    EX
   PyTrilinos            PyTrilinos                     SS
   WebTrilinos           WebTrilinos                    EX # Should be SS
@@ -105,9 +105,6 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   NewPackage            new_package                    EX # Should be SS
   Optika		optika			       SS
   Mesquite              mesquite                       PS
-  Stalix                stalix                         EX
-  Lyno                  lyno                           EX
-  Trios                 Trios                          EX # Depends on netcdf, optionally hdf5, xdmf
   FEApp                 ../demos/FEApp                 SS # Capability demonstration package
   )
 
@@ -131,7 +128,7 @@ PACKAGE_DISABLE_ON_PLATFORMS(TriKota Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Pamgen Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(FEI Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(STK Windows)
+PACKAGE_DISABLE_ON_PLATFORMS(Trios Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Anasazi Windows)
-PACKAGE_DISABLE_ON_PLATFORMS(Teko Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Zoltan Windows)
 PACKAGE_DISABLE_ON_PLATFORMS(Isorropia Windows)

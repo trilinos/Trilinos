@@ -51,6 +51,8 @@
 #endif
 
 #include "Ifpack_Chebyshev.h"
+#include "Ifpack_IHSS.h"
+#include "Ifpack_SORa.h"
 
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_StringToIntMap.hpp"
@@ -101,6 +103,8 @@ const Ifpack::EPrecType Ifpack::precTypeValues[Ifpack::numPrecTypes] =
   ,SILU
 #endif
   ,CHEBYSHEV
+  ,IHSS
+  ,SORA
 };
 
 //==============================================================================
@@ -138,6 +142,8 @@ const char* Ifpack::precTypeNames[Ifpack::numPrecTypes] =
   ,"SILU"
 #endif
   ,"Chebyshev"
+  ,"IHSS"
+  ,"SORa"
 };
 
 //==============================================================================
@@ -175,6 +181,8 @@ const bool Ifpack::supportsUnsymmetric[Ifpack::numPrecTypes] =
   ,true // SuperLU's Supernodal ILUTP
 #endif
   ,false // CHEBYSHEV
+  ,true  // IHSS
+  ,true  // SORa
 };
 
 //==============================================================================
@@ -239,6 +247,12 @@ Ifpack_Preconditioner* Ifpack::Create(EPrecType PrecType,
 #endif
     case CHEBYSHEV:
       return(new Ifpack_Chebyshev(Matrix));
+#ifdef HAVE_IFPACK_EPETRAEXT
+    case IHSS:
+      return(new Ifpack_IHSS(Matrix));  
+    case SORA:
+      return(new Ifpack_SORa(Matrix));  
+#endif
     default:
       TEST_FOR_EXCEPT(true);
       // The only way to get here is if some code developer does a cast like

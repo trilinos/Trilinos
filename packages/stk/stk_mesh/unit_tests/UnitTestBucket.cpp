@@ -1,5 +1,5 @@
 /*------------------------------------------------------------------------*/
-/*                 Copyright 2010 Sandia Corporation.                     */
+/*         _        Copyright 2010 Sandia Corporation.                     */
 /*  Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive   */
 /*  license for use of this work by or on behalf of the U.S. Government.  */
 /*  Export of this program may require a license from the                 */
@@ -40,7 +40,7 @@
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Transaction.hpp>
 #include <stk_mesh/baseImpl/BucketImpl.hpp>
-
+#include <stk_mesh/base/Ghosting.hpp>
 
 STKUNIT_UNIT_TEST(UnitTestingOfBucket, testUnit)
 {
@@ -49,6 +49,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testUnit)
   stk::mesh::UnitTestBucket::testTopologyHelpers( MPI_COMM_WORLD );
   stk::mesh::UnitTestBucket::test_get_involved_parts( MPI_COMM_WORLD );
   stk::mesh::UnitTestBucket::testBucket2( MPI_COMM_WORLD );
+  stk::mesh::UnitTestBucket::test_EntityComm( MPI_COMM_WORLD );
 }
 
 //----------------------------------------------------------------------
@@ -190,6 +191,7 @@ void UnitTestBucket::testTopologyHelpers( ParallelMachine pm )
 
   stk::mesh::Part & part_B_3 = meta.declare_part( "B_3", Element);
 
+
   meta.commit();
 
   stk::mesh::BulkData bulk ( meta , pm , 100 );
@@ -204,7 +206,7 @@ void UnitTestBucket::testTopologyHelpers( ParallelMachine pm )
   bulk.modification_begin();
 
   int id_base = 0;
-  for ( id_base = 0 ; id_base < 93 ; ++id_base )
+  for ( id_base = 0 ; id_base < 92 ; ++id_base )
   {
     int new_id = size * id_base + rank;
     bulk.declare_entity( 0 , new_id+1 , add_part4 );
@@ -230,27 +232,6 @@ void UnitTestBucket::testTopologyHelpers( ParallelMachine pm )
 
   new_id = size * (++id_base) + rank;
   Entity & element3  = bulk.declare_entity( 3 , new_id+1 , add_part4 );
-
-  // More coverage obtained for assert_entity_owner in BulkData.cpp:
-  /*
-  stk::mesh::Entity &n = *bulk.buckets(1)[0]->begin();
-  {
-    int ok = 0 ;
-    try {
-      bulk.change_entity_parts ( n , add_part4 );
-    }
-    catch( const std::exception & x ) {
-      ok = 1 ;
-      std::cout << "UnitTestBucket CORRECTLY caught error for : "
-                << x.what()
-                << std::endl ;
-    }
-
-    if ( ! ok ) {
-      throw std::runtime_error("UnitTestBucket FAILED to catch error for change_entity_parts");
-    }
-  }
-  */
 
   // Coverage for get_cell_topology in TopologyHelpers.cpp
 
@@ -339,7 +320,7 @@ void UnitTestBucket::testTopologyHelpers( ParallelMachine pm )
     }
 
     if ( ! ok ) {
-      throw std::runtime_error("UnitTestBucket FAILED to catch error for get_cell_topology for declare_element_side, elem2");
+      throw std::runtime_error("UnitTestBucket FAILED to catch error for get_cell_topology for get_adjacent_entities, elem3");
     }
   }
 
@@ -362,12 +343,11 @@ void UnitTestBucket::testTopologyHelpers( ParallelMachine pm )
     }
 
     if ( ! ok ) {
-      throw std::runtime_error("UnitTestBucket FAILED to catch error for get_cell_topology for declare_element_side, elem2");
+      throw std::runtime_error("UnitTestBucket FAILED to catch error for get_cell_topology for get_adjacent_entities, elem3");
     }
   }
 
-  // Coverage for declare_element_side - line 129 in TopologyHelpers.cpp - "Cannot discern element topology"
-
+  // Coverage for declare_element_side - TopologyHelpers.cpp - "Cannot discern element topology"
   {
     int ok = 0 ;
     try {
@@ -386,6 +366,68 @@ void UnitTestBucket::testTopologyHelpers( ParallelMachine pm )
       throw std::runtime_error("UnitTestBucket FAILED to catch error for get_cell_topology for declare_element_side, elem4");
     }
   }
+  std::cout << "UnitTestBucket before - BulkData for elem" << std::endl;
+  // Coverage for verify_declare_element_side - in TopologyHelpers.cpp - "BulkData for 'elem' and 'side' are different"
+
+  {
+    int ok = 0 ;
+    try {
+      stk::mesh::MetaData meta2 (stk::unit_test::get_entity_rank_names ( 3 ));
+      stk::mesh::BulkData bulk2 ( meta2 , pm , 100 );
+      new_id = size * (++id_base) + rank;
+      stk::mesh::Entity &face = stk::mesh::declare_element_side( bulk2, 3, elem4, new_id+1, &partLeft_2 );      
+      stk::mesh::PairIterRelation rel = face.relations(stk::mesh::Node);
+    }
+    catch( const std::exception & x ) {
+      ok = 1 ;
+      std::cout << "UnitTestBucket CORRECTLY caught error for : "
+                << x.what()
+                << std::endl ;
+    }
+
+    if ( ! ok ) {
+      throw std::runtime_error("UnitTestBucket FAILED to catch error for verify_declare_element_side, elem4");
+    }
+  }
+  std::cout << "line before vdes" << std::endl ;
+  // Coverage for verify_declare_element_side - in TopologyHelpers.cpp - "No element topology found and cell side id exceeds..."
+
+   {
+    int ok = 0 ;
+    try {  
+
+      stk::mesh::EntityId elem_node[4];
+
+      elem_node[0] = 1;
+      elem_node[1] = 2;
+      elem_node[2] = 3 ;
+      elem_node[3] = 4 ;
+
+      stk::mesh::EntityId elem_id(size * (++id_base) + rank + 1);
+      stk::mesh::Entity& element = stk::mesh::declare_element(bulk, part_A_3, elem_id, elem_node );
+
+      new_id = size * (++id_base) + rank;
+
+      const CellTopologyData * const elem_top = get_cell_topology( element );
+
+      const unsigned nSideCount = elem_top->side_count + 10 ;
+
+      stk::mesh::Entity &face2 = stk::mesh::declare_element_side( bulk, new_id+1, element, nSideCount, &part_A_3 );
+
+      stk::mesh::PairIterRelation rel2 = face2.relations(stk::mesh::Node);  
+
+   }
+    catch( const std::exception & x ) {
+      ok = 1 ;
+      std::cout << "UnitTestBucket CORRECTLY caught error for : "
+                << x.what()
+                << std::endl ;
+    }
+
+    if ( ! ok ) {
+      throw std::runtime_error("UnitTestBucket FAILED to catch error for verify_declare_element_side, element4");
+    }
+    } 
 
   // Go all way the through declare_element_side - use new element
 
@@ -472,34 +514,18 @@ void UnitTestBucket::testTopologyHelpers( ParallelMachine pm )
 
   STKUNIT_ASSERT_EQUAL(localSide, -1);
 
-  //Checks line 310-311 in TopologyHelpers element_local_side_id(const Entity & elem, const std::vector<Entity*>& entity_nodes)
-
-  const CellTopologyData* celltopology = get_cell_topology(element);
-
-  unsigned subcell_rank = 1;
-  unsigned subcell_identifier = celltopology->subcell_count[subcell_rank] - 1;
-
-  unsigned num_nodes =  celltopology->subcell[subcell_rank][subcell_identifier].topology->node_count;
-
-  PairIterRelation relations = face2.relations(Node);
-
-  std::vector<Entity*> node_entities;
-
-  for (unsigned itr = 0; itr < num_nodes; ++itr) {
-    node_entities.push_back(relations[itr].entity());
-  }
-
-  /*
-  localSide = element_local_side_id ( face2, node_entities); //uninitialized memory access within node_entities!!
-
-  STKUNIT_ASSERT_EQUAL(localSide, -1);
-  */
-
-  //Checks line 337 in TopologyHelpers for element_local_side_id(const Entity & elem, const std::vector<Entity*>& entity_nodes)
+  //Coverage of TopologyHelpers for element_local_side_id(const Entity & elem, const std::vector<Entity*>& entity_nodes) with topology
 
   std::vector<Entity*> node_entities2;
 
   localSide = element_local_side_id ( element, node_entities2);
+
+  STKUNIT_ASSERT_EQUAL(localSide, -1);
+
+  //Coverage of TopologyHelpers element_local_side_id(const Entity & elem, const std::vector<Entity*>& entity_nodes) with topology is null
+  // Element, elem2, has NULL topology
+
+  localSide = element_local_side_id ( elem2, node_entities2);
 
   STKUNIT_ASSERT_EQUAL(localSide, -1);
 
@@ -842,6 +868,7 @@ void UnitTestBucket::generate_boxes(
           for ( ; ! iter.empty() && iter->proc != p ; ++iter );
           STKUNIT_ASSERT( ! iter.empty() );
 
+
           ++count_shared_node_pairs ;
         }
       }
@@ -1129,6 +1156,75 @@ void UnitTestBucket::testBucket2(ParallelMachine pm)
 
   STKUNIT_EXPECT_EQUAL( res, false );
   */
+}
+
+void UnitTestBucket::test_EntityComm( ParallelMachine pm )
+{
+  stk::mesh::MetaData meta ( stk::unit_test::get_entity_rank_names ( 3 ) );
+
+  stk::mesh::BulkData bulk ( meta , pm , 100 );
+  std::vector<stk::mesh::Part *>  add_part4;
+
+  std::cout << std::endl << "Bucket test line 0.1" << std::endl ;
+  stk::mesh::Part & partLeft_1 = meta.declare_part( "block_left_1", Element );
+  stk::mesh::set_cell_topology< shards::Tetrahedron<4>  >( partLeft_1 );
+  std::cout << std::endl << "Bucket test line 0.2" << std::endl;
+  meta.commit();
+
+  add_part4.push_back ( &partLeft_1 );
+
+  int  size , rank;
+  rank = stk::parallel_machine_rank( pm );
+  size = stk::parallel_machine_size( pm );
+  PartVector tmp(1);
+
+  bulk.modification_begin();
+  std::cout << std::endl << "Bucket test line 1" << std::endl ;
+  //int id_base = 0;
+  //int new_id = size * id_base + rank;
+  //  for ( id_base = 0 ; id_base < 93 ; ++id_base )
+  //  {
+  //   int new_id = size * id_base + rank;
+  //   bulk.declare_entity( 0 , new_id+1 , add_part4 );
+  //  }
+
+  bulk.modification_end();
+
+  /*  std::cout << std::endl << "Bucket test line 3" << std::endl ;
+  bool result = in_shared(elem);
+  if( result) {
+     STKUNIT_ASSERT_EQUAL( result , true );
+  }
+  std::cout << std::endl << "Bucket test line 4" << std::endl ;
+
+  result = in_receive_ghost(elem);
+  if( result) {
+     STKUNIT_ASSERT_EQUAL( result , true );
+  }
+
+    for ( unsigned p = 0 ; p < p_size ; ++p ) if ( p != p_rank ) {
+      std::cout << std::endl << "in relation h and p =" << p << std::endl ;
+    
+      STKUNIT_ASSERT_EQUAL( in_send_ghost( *elem , p ), false );
+      std::cout << std::endl << "in relation ii =" << std::endl 
+   }
+
+  std::cout << std::endl << "Bucket test line 5" << std::endl ;
+  result = in_send_ghost(elem);
+  if( result) {
+     STKUNIT_ASSERT_EQUAL( result , true );
+     } 
+
+  std::cout << std::endl << "Bucket test line 6" << std::endl ;
+
+  unsigned proc = rank;
+  unsigned procnew = rank+10;
+
+  result = in_shared(elem, proc);
+  if( result) {
+     STKUNIT_ASSERT_EQUAL( result , true );
+  }
+  std::cout << std::endl << "Bucket test line 7" << std::endl ;  */
 }
 
 //----------------------------------------------------------------------

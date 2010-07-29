@@ -44,6 +44,8 @@
     {bool success = true; TEUCHOS_TEST_ASSERT(!(A),std::cout,success); if (!success) throw 1;}
 #define STKUNIT_ASSERT_TRUE(A) STKUNIT_EXPECT_TRUE(A)
 #define STKUNIT_ASSERT_FALSE(A) STKUNIT_EXPECT_FALSE(A)
+#define STKUNIT_ASSERT_DOUBLE_EQ(A,B) \
+    {bool success = true; TEUCHOS_TEST_FLOATING_EQUALITY(B,A,std::cout,success); if (!success) throw 1;}
 
 
 #define STKUNIT_MAIN(argc,argv) \
@@ -129,6 +131,7 @@ int main(int argc, char ** argv) \
 #define STKUNIT_EXPECT_FALSE(A) EXPECT_FALSE(A)
 #define STKUNIT_ASSERT_TRUE(A) ASSERT_TRUE(A)
 #define STKUNIT_ASSERT_FALSE(A) ASSERT_FALSE(A)
+#define STKUNIT_ASSERT_DOUBLE_EQ(A,B) ASSERT_DOUBLE_EQ(A,B)
 
 #define STKUNIT_UNIT_TEST(testclass,testmethod) TEST(testclass,testmethod)
 

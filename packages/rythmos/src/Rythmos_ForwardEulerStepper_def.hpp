@@ -406,7 +406,7 @@ Scalar ForwardEulerStepper<Scalar>::takeStep(Scalar dt, StepSizeType flag)
   // solution_vector_old_ = solution_vector_
   Thyra::V_V(Teuchos::outArg(*solution_vector_old_),*solution_vector_);
   // solution_vector = solution_vector + dt*residual_vector
-  Thyra::Vp_StV(&*solution_vector_,dt,*residual_vector_); 
+  Thyra::Vp_StV(solution_vector_.ptr(),dt,*residual_vector_); 
   t_old_ = t_;
   t_ += dt;
   dt_ = dt;

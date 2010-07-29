@@ -20,8 +20,10 @@ namespace stk {
 namespace mesh {
 
 namespace impl {
+
 class EntityRepository;
 class BucketRepository;
+
 }
 
 /** \addtogroup stk_mesh_module
@@ -40,9 +42,19 @@ class BucketRepository;
  *  A given entity may reside on more than one processor;
  *  however, it is owned by exactly one of the processors
  *  on which it resides.
+ *
+ *  Note that an Entity's state comprises:
+ *   - existence - Whether this entity has been created and is not destroyed
+ *   - owner - The rank of the owning process
+ *   - part-membership - The set of parts this entity belongs to
+ *   - relations - Relationships between other Entities
+ *  When any of the above changes, the Entity's log state may change
  */
 class Entity {
 public:
+
+  /** \brief  Query the current state of the entity log */
+  EntityModificationLog log_query() const { return m_entityImpl.log_query(); }
 
   /** \brief  The rank of this entity. */
   EntityRank entity_rank() const { return m_entityImpl.entity_rank(); }
@@ -58,7 +70,7 @@ public:
   const EntityKey & key() const { return m_entityImpl.key(); }
 
   /** \brief  The bucket which holds this mesh entity's field data */
-  const Bucket & bucket() const { return m_entityImpl.bucket(); }
+  Bucket & bucket() const { return m_entityImpl.bucket(); }
 
   /** \brief  The ordinal for this entity within its bucket. */
   unsigned bucket_ordinal() const { return m_entityImpl.bucket_ordinal(); }
@@ -115,8 +127,7 @@ private:
 #ifndef DOXYGEN_COMPILE
   friend class impl::EntityRepository ;
   friend class impl::EntityImpl ;
-  friend class impl::BucketRepository ;
-  friend class BulkData ;
+
 #endif /* DOXYGEN_COMPILE */
 };
 

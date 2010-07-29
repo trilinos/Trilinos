@@ -280,9 +280,9 @@ void ImplicitRKStepper<Scalar>::setInitialCondition(
     x_dot_init = initialCondition.get_x_dot();
 
   if (!is_null(x_dot_init))
-    assign(&*x_dot_,*x_dot_init);
+    assign(x_dot_.ptr(),*x_dot_init);
   else
-    assign(&*x_dot_,ST::zero());
+    assign(x_dot_.ptr(),ST::zero());
   
   // t
 
@@ -343,7 +343,7 @@ Scalar ImplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
   // equation to be solved.
 
   // Set irkModel_ with x_old_, t_old_, and dt
-  V_V( &*x_old_, *x_ );
+  V_V( x_old_.ptr(), *x_ );
   Scalar current_dt = dt;
   Scalar t = timeRange_.upper();
 
@@ -351,7 +351,7 @@ Scalar ImplicitRKStepper<Scalar>::takeStep(Scalar dt, StepSizeType stepSizeType)
 
   // Set the guess for the stage derivatives to zero (unless we can think of
   // something better)
-  V_S( &*x_stage_bar_, ST::zero() );
+  V_S( Teuchos::rcp_dynamic_cast<Thyra::VectorBase<Scalar> >(x_stage_bar_).ptr(), ST::zero() );
 
   if (!isDirk_) { // General Implicit RK Case:
     RCP<ImplicitRKModelEvaluator<Scalar> > firkModel_ = 

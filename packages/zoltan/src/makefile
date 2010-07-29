@@ -724,12 +724,6 @@ zscript:
 	@echo "cd .." >> zoltan_script
 	@chmod +x zoltan_script
 
-# makefile target to compile ZoltanComponent. This assumesthat the CCA_SPEC_DIR and
-# DCCAFE_DIR definitions in Utilities/Config/Config.<arch> exist.
-
-zoltan_component : zoltan zdrive
-	cd ZoltanComponent ; ./configure --with-ZoltanArch=$(ZOLTAN_ARCH) ; make ; cd ..
-
 #
 ############################################################################
 #          UTILITY TARGETS
@@ -782,9 +776,6 @@ allclean:
 	 $(RM) -rf $$a/*; \
 	 done;
 	@cd Utilities; $(MAKE) allclean; cd .. ; 
-#	 if [ -d ZoltanComponent ]; \
-#	 then cd ZoltanComponent ; $(MAKE) clean ; cd .. ; \
-#	 fi;
 	 exit 0
 
 cleantest:

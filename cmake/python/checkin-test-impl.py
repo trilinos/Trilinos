@@ -11,9 +11,8 @@ usageHelp = r"""checkin-test.py [OPTIONS]
 
 This tool does checkin testing for Trilinos with CMake/CTest and can actually
 do the push itself using eg/git in a safe way.  In fact, it is recommended
-that you use this script to push since it will append the commit message with
-a summary of the builds and tests run with results.  It is recommended that
-you commit your local changes before running this script.
+that you use this script to push since it will amend the last commit message
+with a (minimal) summary of the builds and tests run with results.
 
 
 Quickstart:
@@ -22,33 +21,45 @@ Quickstart:
 In order to do a solid checkin, perform the following recommended workflow
 (different variations on this workflow are described below):
 
-1) Review the changes that you have made to make sure it is safe to push:
+1) Commit changes in the lcoal repo:
 
-  $ cd $TRILINOS_HOME
-  $ eg status                                # Look at state of working dir
-  $ eg diff --name-status origin             # Look at the files that have changed
-  $ eg log --oneline --name-status origin..  # [optional] Look at the local commits
+  # 1.a) See what files are changed, added new, etc. that need to be committed
+  # or stashed.
+  $ eg status
 
-  NOTE: If you see any files/directories that are listed as 'unknown' returned
-  from 'eg status', then you will need to do an 'eg add' to track them or add
-  them to the ignore list *before* you run the checkin-test.py script.  The eg
-  script will not allow you to push if there are new 'unknown' files or
-  uncommitted changes.
+  # 1.b) Stash the files you don't want to test/push (optional)
+  $ eg stash
 
-2) Commit the changes to the lcoal repo:
-
-  # Stage the files you want to commit (optional)
+  # 1.c) Stage the files you want to commit (optional)
   $ eg stage <files you want to commit>
 
-  # Create you local commits
+  # 1.d) Create your local commits
   $ eg commit -- SOMETHING
   $ eg commit -- SOMETHING_ELSE
   ...
 
-  # Stash the files you don't want to test/push (optional)
-  $ eg stash
+  NOTE: You can group your commits any way that you would like (see the basic
+  eg/git documentation).
 
-  NOTE: You can group your commits any way that you would like.
+  NOTE: If not installed on your system, the eg script can be found at
+  Trilinos/commonTools/git/eg.  Just add it to your path.
+
+2) Review the changes that you have made to make sure it is safe to push:
+
+  $ cd $TRILINOS_HOME
+  $ eg local-stat                  # Look at the full status of local repo
+  $ eg diff --name-status origin   # [Optional] Look at the files that have changed
+
+  NOTE: The command 'local-stat' is an alias that can be installed with the
+  script Trilinos/commonTools/git/git-config-alias.sh.  It is highly
+  recommended over just a raw 'eg status' or 'eg log' to review commits before
+  attempting to test/push commits.
+
+  NOTE: If you see any files/directories that are listed as 'unknown' returned
+  from 'eg local-stat', then you will need to do an 'eg add' to track them or
+  add them to the ignore list *before* you run the checkin-test.py script.
+  The eg script will not allow you to push if there are new 'unknown' files or
+  uncommitted changes.
 
 3) Set up the checkin base build directory (first time only):
 
@@ -65,6 +76,10 @@ In order to do a solid checkin, perform the following recommended workflow
   examples in the files:
 
     Trilinos/sampmleScripts/checkin-test-*
+
+  NOTE: You can set up a CHECKIN directory of any name in any location you
+  want.  If you create one outside of the main Trilinos source dir, then you
+  will not have to add the git exclude.
 
 4) Do the checkin build, test, and push:
 
@@ -128,9 +143,12 @@ This helps to make the tests run faster but still builds and runs the runtime
 debug checking code.  Therefore, you should not use the MPI_DEBUG configure
 options when building a debug version for yourself to do debugging.
 
+
 The following approximate steps are performed by this script:
 
+
 ----------------------------------------------------------------------------
+
 
 1) Check to see if the local repo is clean:
 
@@ -164,8 +182,10 @@ extra builds specified with --extra-builds):
   4.b) Build all configured code with 'make' (e.g. with -jN set through
   -j or --make-options).  (done if --build, --do-all, or --local-do-all is set.)
   
-  4.c) Run all tests for enabled packages.  (done if --test, --do-all, or
-  --local-do-all is set.)
+  4.c) Run all BASIC tests for enabled packages.  (done if --test, --do-all,
+  or --local-do-all is set.)
+
+    NOTE: By default, only Trilinos_TEST_CATEGORIES=BASIC tests are enabled.
   
   4.d) Analyze the results of the update, configure, build, and tests and send
   email about results.  (emails only sent out if --send-emails-to is not set
@@ -174,18 +194,21 @@ extra builds specified with --extra-builds):
 5) Do final pull, append test results to last commit message, and push (done
 if --push is set)
 
-  5.a) Do a final 'eg pull && eg rebase --against origin' (done if --pull or
-  --do-all is set)
+  5.a) Do a final 'eg pull && eg rebase --against origin/<current_branch>'
+  (done if --pull or --do-all is set)
 
-    NOTE: The final 'eg rebase --against origin' is required to avoid trival
-    merge commits that the Trilinos global get repo will reject on the push.
+    NOTE: The final 'eg rebase --against origin/<current_branch>' is required
+    to avoid trival merge commits that the Trilinos global get repo will
+    reject on the push.
   
   5.b) Amend commit message of the most recent commit with the summary of the
-  testing performed.  (done if --append-test-results (default) is set.)
+  testing performed.  (done if --append-test-results is set.)
   
   5.c) Push the local commits to the global repo.
 
+
 ----------------------------------------------------------------------------
+
 
 The recommended way to use this script is to create a new base CHECKIN test
 directory apart from your standard build directories such as with:

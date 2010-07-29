@@ -7250,7 +7250,7 @@ int ML_Smoother_HiptmairSubsmoother_Create(ML **ml_subproblem,
 
      ML_Gen_Smoother_Ifpack(*ml_subproblem, IfpackType,
                             *IfpackOverlap, 0, ML_PRESMOOTHER,
-                            IfpackList, Comm);
+                            IfpackList, Comm,0);
 #  endif
 
    } else {

@@ -399,9 +399,6 @@ AC_CONFIG_FILES([
 #		example/C/sparse_matrix/Makefile
 #		example/CPP/Makefile
 #		Utilities/Makefile
-#		ZoltanComponent/Makefile
-#		ZoltanComponent/CCA_Wrapper/Makefile
-#		ZoltanComponent/TestComponents/Makefile
 
 AC_OUTPUT()
 

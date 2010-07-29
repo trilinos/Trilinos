@@ -67,9 +67,6 @@
 <COL ALIGN=LEFT>
 <COL ALIGN=LEFT>
 <COL ALIGN=LEFT>
-<COL ALIGN=LEFT>
-<COL ALIGN=LEFT>
-<COL ALIGN=LEFT>
 
 <TR>
  <TD><b>Packages</b></TD>
@@ -129,18 +126,12 @@
  <TD><b>P54</b></TD>
  <TD><b>P55</b></TD>
  <TD><b>P56</b></TD>
- <TD><b>P57</b></TD>
- <TD><b>P58</b></TD>
- <TD><b>P59</b></TD>
  <TD><b>Packages</b></TD>
 </TR>
 
 <TR>
  <TD><b>P01) TrilinosFramework</b></TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -257,14 +248,11 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD><b>P02) Teuchos</b></TD>
 </TR>
 
 <TR>
- <TD><b>P03) ThreadPool</b></TD>
+ <TD><b>P03) Trios</b></TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>X</TD>
@@ -321,80 +309,12 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P03) ThreadPool</b></TD>
+ <TD><b>P03) Trios</b></TD>
 </TR>
 
 <TR>
- <TD><b>P04) Sacado</b></TD>
+ <TD><b>P04) ThreadPool</b></TD>
  <TD>.</TD>
- <TD>LO</TD>
- <TD>.</TD>
- <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P04) Sacado</b></TD>
-</TR>
-
-<TR>
- <TD><b>P05) RTOp</b></TD>
- <TD>.</TD>
- <TD>LR</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>X</TD>
@@ -450,15 +370,12 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P05) RTOp</b></TD>
+ <TD><b>P04) ThreadPool</b></TD>
 </TR>
 
 <TR>
- <TD><b>P06) Kokkos</b></TD>
+ <TD><b>P05) Sacado</b></TD>
  <TD>.</TD>
- <TD>LR</TD>
  <TD>LO</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -514,13 +431,134 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P06) Kokkos</b></TD>
+ <TD><b>P05) Sacado</b></TD>
 </TR>
 
 <TR>
- <TD><b>P07) Epetra</b></TD>
+ <TD><b>P06) RTOp</b></TD>
+ <TD>.</TD>
+ <TD>LR</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>X</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD><b>P06) RTOp</b></TD>
+</TR>
+
+<TR>
+ <TD><b>P07) Kokkos</b></TD>
+ <TD>.</TD>
+ <TD>LR</TD>
+ <TD>.</TD>
+ <TD>LO</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>X</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD><b>P07) Kokkos</b></TD>
+</TR>
+
+<TR>
+ <TD><b>P08) Epetra</b></TD>
+ <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -576,15 +614,12 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P07) Epetra</b></TD>
+ <TD><b>P08) Epetra</b></TD>
 </TR>
 
 <TR>
- <TD><b>P08) Zoltan</b></TD>
+ <TD><b>P09) Zoltan</b></TD>
+ <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -640,15 +675,11 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P08) Zoltan</b></TD>
+ <TD><b>P09) Zoltan</b></TD>
 </TR>
 
 <TR>
- <TD><b>P09) Shards</b></TD>
+ <TD><b>P10) Shards</b></TD>
  <TD>.</TD>
  <TD>TO</TD>
  <TD>.</TD>
@@ -657,6 +688,7 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
+ <TD>.</TD>
  <TD>X</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -704,15 +736,11 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P09) Shards</b></TD>
+ <TD><b>P10) Shards</b></TD>
 </TR>
 
 <TR>
- <TD><b>P10) GlobiPack</b></TD>
+ <TD><b>P11) GlobiPack</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
  <TD>.</TD>
@@ -722,6 +750,7 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
+ <TD>.</TD>
  <TD>X</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -768,15 +797,12 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P10) GlobiPack</b></TD>
+ <TD><b>P11) GlobiPack</b></TD>
 </TR>
 
 <TR>
- <TD><b>P11) Triutils</b></TD>
+ <TD><b>P12) Triutils</b></TD>
+ <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -832,17 +858,14 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P11) Triutils</b></TD>
+ <TD><b>P12) Triutils</b></TD>
 </TR>
 
 <TR>
- <TD><b>P12) Tpetra</b></TD>
+ <TD><b>P13) Tpetra</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -896,17 +919,14 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P12) Tpetra</b></TD>
+ <TD><b>P13) Tpetra</b></TD>
 </TR>
 
 <TR>
- <TD><b>P13) EpetraExt</b></TD>
+ <TD><b>P14) EpetraExt</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -960,17 +980,14 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P13) EpetraExt</b></TD>
+ <TD><b>P14) EpetraExt</b></TD>
 </TR>
 
 <TR>
- <TD><b>P14) Thyra</b></TD>
+ <TD><b>P15) Thyra</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>LR</TD>
@@ -1024,17 +1041,14 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P14) Thyra</b></TD>
+ <TD><b>P15) Thyra</b></TD>
 </TR>
 
 <TR>
- <TD><b>P15) OptiPack</b></TD>
+ <TD><b>P16) OptiPack</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>ILR</TD>
@@ -1088,17 +1102,14 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P15) OptiPack</b></TD>
+ <TD><b>P16) OptiPack</b></TD>
 </TR>
 
 <TR>
- <TD><b>P16) Isorropia</b></TD>
+ <TD><b>P17) Isorropia</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -1152,15 +1163,12 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P16) Isorropia</b></TD>
+ <TD><b>P17) Isorropia</b></TD>
 </TR>
 
 <TR>
- <TD><b>P17) Pliris</b></TD>
+ <TD><b>P18) Pliris</b></TD>
+ <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -1216,15 +1224,12 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P17) Pliris</b></TD>
+ <TD><b>P18) Pliris</b></TD>
 </TR>
 
 <TR>
- <TD><b>P18) Claps</b></TD>
+ <TD><b>P19) Claps</b></TD>
+ <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -1280,21 +1285,18 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P18) Claps</b></TD>
+ <TD><b>P19) Claps</b></TD>
 </TR>
 
 <TR>
- <TD><b>P19) AztecOO</b></TD>
+ <TD><b>P20) AztecOO</b></TD>
  <TD>.</TD>
  <TD>LO</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
+ <TD>.</TD>
  <TD>LR</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -1344,17 +1346,14 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P19) AztecOO</b></TD>
+ <TD><b>P20) AztecOO</b></TD>
 </TR>
 
 <TR>
- <TD><b>P20) Galeri</b></TD>
+ <TD><b>P21) Galeri</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -1408,17 +1407,14 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P20) Galeri</b></TD>
+ <TD><b>P21) Galeri</b></TD>
 </TR>
 
 <TR>
- <TD><b>P21) Amesos</b></TD>
+ <TD><b>P22) Amesos</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -1472,15 +1468,12 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P21) Amesos</b></TD>
+ <TD><b>P22) Amesos</b></TD>
 </TR>
 
 <TR>
- <TD><b>P22) Pamgen</b></TD>
+ <TD><b>P23) Pamgen</b></TD>
+ <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -1536,17 +1529,14 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P22) Pamgen</b></TD>
+ <TD><b>P23) Pamgen</b></TD>
 </TR>
 
 <TR>
- <TD><b>P23) Ifpack</b></TD>
+ <TD><b>P24) Ifpack</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -1600,17 +1590,14 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P23) Ifpack</b></TD>
+ <TD><b>P24) Ifpack</b></TD>
 </TR>
 
 <TR>
- <TD><b>P24) Komplex</b></TD>
+ <TD><b>P25) Komplex</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -1664,17 +1651,14 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P24) Komplex</b></TD>
+ <TD><b>P25) Komplex</b></TD>
 </TR>
 
 <TR>
- <TD><b>P25) ML</b></TD>
+ <TD><b>P26) ML</b></TD>
  <TD>.</TD>
  <TD>LO</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -1728,17 +1712,14 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P25) ML</b></TD>
+ <TD><b>P26) ML</b></TD>
 </TR>
 
 <TR>
- <TD><b>P26) Belos</b></TD>
+ <TD><b>P27) Belos</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -1792,17 +1773,14 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P26) Belos</b></TD>
+ <TD><b>P27) Belos</b></TD>
 </TR>
 
 <TR>
- <TD><b>P27) Tifpack</b></TD>
+ <TD><b>P28) Tifpack</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -1856,17 +1834,14 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P27) Tifpack</b></TD>
+ <TD><b>P28) Tifpack</b></TD>
 </TR>
 
 <TR>
- <TD><b>P28) Stratimikos</b></TD>
+ <TD><b>P29) Stratimikos</b></TD>
  <TD>.</TD>
  <TD>ILR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>ILR</TD>
@@ -1920,17 +1895,14 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P28) Stratimikos</b></TD>
+ <TD><b>P29) Stratimikos</b></TD>
 </TR>
 
 <TR>
- <TD><b>P29) Meros</b></TD>
+ <TD><b>P30) Meros</b></TD>
  <TD>.</TD>
  <TD>ILR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>ILR</TD>
@@ -1984,17 +1956,14 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P29) Meros</b></TD>
+ <TD><b>P30) Meros</b></TD>
 </TR>
 
 <TR>
- <TD><b>P30) FEI</b></TD>
+ <TD><b>P31) FEI</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -2048,17 +2017,14 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P30) FEI</b></TD>
+ <TD><b>P31) FEI</b></TD>
 </TR>
 
 <TR>
- <TD><b>P31) Anasazi</b></TD>
+ <TD><b>P32) Anasazi</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>ILO</TD>
@@ -2112,81 +2078,14 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P31) Anasazi</b></TD>
-</TR>
-
-<TR>
- <TD><b>P32) Teko</b></TD>
- <TD>.</TD>
- <TD>LR</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>ILR</TD>
- <TD>ILO</TD>
- <TD>LR</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>ILR</TD>
- <TD>ILO</TD>
- <TD>LR</TD>
- <TD>LR</TD>
- <TD>.</TD>
- <TD>LO</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>LR</TD>
- <TD>ILO</TD>
- <TD>LR</TD>
- <TD>.</TD>
- <TD>LR</TD>
- <TD>.</TD>
- <TD>LR</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>LR</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>LR</TD>
- <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P32) Teko</b></TD>
+ <TD><b>P32) Anasazi</b></TD>
 </TR>
 
 <TR>
  <TD><b>P33) RBGen</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>ILO</TD>
@@ -2216,11 +2115,7 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>LO</TD>
- <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -2251,6 +2146,7 @@
  <TD><b>P34) TriKota</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>ILR</TD>
@@ -2281,11 +2177,7 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -2316,6 +2208,7 @@
  <TD>.</TD>
  <TD>LR</TD>
  <TD>LR</TD>
+ <TD>LR</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>ILO</TD>
@@ -2343,14 +2236,10 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>LR</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -2380,6 +2269,7 @@
  <TD>.</TD>
  <TD>LR</TD>
  <TD>.</TD>
+ <TD>.</TD>
  <TD>LR</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -2399,7 +2289,6 @@
  <TD>.</TD>
  <TD>TO</TD>
  <TD>TO</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -2413,9 +2302,6 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -2443,6 +2329,7 @@
  <TD><b>P37) Phalanx</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ITO</TD>
  <TD>LR</TD>
  <TD>.</TD>
@@ -2467,7 +2354,6 @@
  <TD>.</TD>
  <TD>TO</TD>
  <TD>TO</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -2478,9 +2364,6 @@
  <TD>.</TD>
  <TD>TO</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -2561,9 +2444,6 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD><b>P38) Phdmesh</b></TD>
 </TR>
 
@@ -2571,6 +2451,7 @@
  <TD><b>P39) NOX</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>ILO</TD>
@@ -2606,11 +2487,7 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -2635,6 +2512,7 @@
  <TD><b>P40) Moertel</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -2671,11 +2549,7 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -2699,6 +2573,7 @@
  <TD><b>P41) TrilinosCouplings</b></TD>
  <TD>.</TD>
  <TD>ILO</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>ITO</TD>
  <TD>ILO</TD>
@@ -2728,7 +2603,6 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>ILO</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -2738,9 +2612,6 @@
  <TD>LO</TD>
  <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -2763,6 +2634,7 @@
  <TD><b>P42) Rythmos</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>TO</TD>
  <TD>ILR</TD>
@@ -2798,14 +2670,10 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
  <TD>TO</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -2827,6 +2695,7 @@
  <TD><b>P43) MOOCHO</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>LR</TD>
@@ -2865,12 +2734,8 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
  <TD>TO</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -2891,6 +2756,7 @@
  <TD><b>P44) Aristos</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -2931,11 +2797,7 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -2955,6 +2817,7 @@
  <TD><b>P45) Stokhos</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>LO</TD>
  <TD>ILO</TD>
@@ -2984,7 +2847,6 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>LO</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>LO</TD>
  <TD>.</TD>
@@ -2998,9 +2860,6 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -3019,6 +2878,7 @@
  <TD><b>P46) Piro</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>ILO</TD>
  <TD>ILR</TD>
@@ -3049,7 +2909,6 @@
  <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
- <TD>.</TD>
  <TD>LO</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -3063,9 +2922,6 @@
  <TD>.</TD>
  <TD>LO</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -3083,6 +2939,7 @@
  <TD><b>P47) Sundance</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>ILR</TD>
  <TD>ILR</TD>
@@ -3112,7 +2969,6 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>LR</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
@@ -3125,12 +2981,9 @@
  <TD>.</TD>
  <TD>LO</TD>
  <TD>.</TD>
- <TD>LR</TD>
+ <TD>LO</TD>
  <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -3151,6 +3004,7 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
+ <TD>.</TD>
  <TD>LR</TD>
  <TD>ILO</TD>
  <TD>.</TD>
@@ -3191,11 +3045,7 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -3215,6 +3065,7 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
+ <TD>.</TD>
  <TD>LR</TD>
  <TD>ILO</TD>
  <TD>.</TD>
@@ -3232,7 +3083,6 @@
  <TD>LO</TD>
  <TD>.</TD>
  <TD>LO</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -3258,9 +3108,6 @@
  <TD>.</TD>
  <TD>LR</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -3275,36 +3122,36 @@
  <TD><b>P50) PyTrilinos</b></TD>
  <TD>.</TD>
  <TD>LO</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>ILO</TD>
- <TD>ILO</TD>
- <TD>LO</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>LO</TD>
  <TD>ILO</TD>
  <TD>LO</TD>
  <TD>ILO</TD>
  <TD>.</TD>
+ <TD>.</TD>
+ <TD>LO</TD>
  <TD>ILO</TD>
- <TD>LO</TD>
- <TD>.</TD>
- <TD>LO</TD>
- <TD>LO</TD>
- <TD>LO</TD>
- <TD>.</TD>
- <TD>LO</TD>
- <TD>LO</TD>
  <TD>LO</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>ILO</TD>
+ <TD>LO</TD>
+ <TD>.</TD>
+ <TD>LO</TD>
+ <TD>LO</TD>
+ <TD>LO</TD>
+ <TD>.</TD>
+ <TD>LO</TD>
+ <TD>LO</TD>
+ <TD>LO</TD>
+ <TD>ILO</TD>
+ <TD>.</TD>
+ <TD>ILO</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>LO</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -3323,9 +3170,6 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -3339,6 +3183,7 @@
  <TD><b>P51) WebTrilinos</b></TD>
  <TD>.</TD>
  <TD>ITR</TD>
+ <TD>.</TD>
  <TD>ITO</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -3386,11 +3231,7 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -3403,21 +3244,22 @@
  <TD><b>P52) Didasko</b></TD>
  <TD>.</TD>
  <TD>TO</TD>
- <TD>ITO</TD>
- <TD>.</TD>
- <TD>ITO</TD>
- <TD>ITO</TD>
- <TD>TO</TD>
- <TD>ITO</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>TO</TD>
- <TD>TO</TD>
- <TD>TO</TD>
- <TD>ITO</TD>
  <TD>.</TD>
  <TD>ITO</TD>
  <TD>.</TD>
+ <TD>ITO</TD>
+ <TD>ITO</TD>
+ <TD>TO</TD>
+ <TD>TO</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>TO</TD>
+ <TD>TO</TD>
+ <TD>TO</TD>
+ <TD>ITO</TD>
+ <TD>.</TD>
+ <TD>ITO</TD>
+ <TD>.</TD>
  <TD>.</TD>
  <TD>TO</TD>
  <TD>TO</TD>
@@ -3432,7 +3274,6 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>TO</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -3453,9 +3294,6 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -3471,6 +3309,7 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
+ <TD>.</TD>
  <TD>LR</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -3516,11 +3355,7 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -3585,9 +3420,6 @@
  <TD>X</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD><b>P54) Optika</b></TD>
 </TR>
 
@@ -3649,208 +3481,14 @@
  <TD>.</TD>
  <TD>X</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD><b>P55) Mesquite</b></TD>
 </TR>
 
 <TR>
- <TD><b>P56) Stalix</b></TD>
- <TD>.</TD>
- <TD>LR</TD>
- <TD>ILO</TD>
- <TD>LR</TD>
- <TD>ILR</TD>
- <TD>ILR</TD>
- <TD>ILO</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>ILO</TD>
- <TD>LR</TD>
- <TD>ILO</TD>
- <TD>LR</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P56) Stalix</b></TD>
-</TR>
-
-<TR>
- <TD><b>P57) Lyno</b></TD>
- <TD>.</TD>
- <TD>LR</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>ILO</TD>
- <TD>ILO</TD>
- <TD>LR</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>ILO</TD>
- <TD>ILO</TD>
- <TD>LR</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>LO</TD>
- <TD>ILO</TD>
- <TD>LR</TD>
- <TD>.</TD>
- <TD>LO</TD>
- <TD>.</TD>
- <TD>LO</TD>
- <TD>LR</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>LR</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>LO</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P57) Lyno</b></TD>
-</TR>
-
-<TR>
- <TD><b>P58) Trios</b></TD>
- <TD>.</TD>
- <TD>ILO</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>ILO</TD>
- <TD>ILO</TD>
- <TD>ILO</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>ILO</TD>
- <TD>ILO</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>ILO</TD>
- <TD>ILO</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>LO</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>X</TD>
- <TD>.</TD>
- <TD><b>P58) Trios</b></TD>
-</TR>
-
-<TR>
- <TD><b>P59) FEApp</b></TD>
+ <TD><b>P56) FEApp</b></TD>
  <TD>.</TD>
  <TD>ILR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>LR</TD>
  <TD>ILO</TD>
@@ -3880,7 +3518,6 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>ILO</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
@@ -3904,11 +3541,8 @@
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>X</TD>
- <TD><b>P59) FEApp</b></TD>
+ <TD><b>P56) FEApp</b></TD>
 </TR>
 
 <TR>
@@ -3969,14 +3603,11 @@
  <TD><b>P54</b></TD>
  <TD><b>P55</b></TD>
  <TD><b>P56</b></TD>
- <TD><b>P57</b></TD>
- <TD><b>P58</b></TD>
- <TD><b>P59</b></TD>
  <TD><b>Packages</b></TD>
 </TR>
 </TABLE>
 
-<p><b>Packages:</b> P01) TrilinosFramework, P02) Teuchos, P03) ThreadPool, P04) Sacado, P05) RTOp, P06) Kokkos, P07) Epetra, P08) Zoltan, P09) Shards, P10) GlobiPack, P11) Triutils, P12) Tpetra, P13) EpetraExt, P14) Thyra, P15) OptiPack, P16) Isorropia, P17) Pliris, P18) Claps, P19) AztecOO, P20) Galeri, P21) Amesos, P22) Pamgen, P23) Ifpack, P24) Komplex, P25) ML, P26) Belos, P27) Tifpack, P28) Stratimikos, P29) Meros, P30) FEI, P31) Anasazi, P32) Teko, P33) RBGen, P34) TriKota, P35) STK, P36) Intrepid, P37) Phalanx, P38) Phdmesh, P39) NOX, P40) Moertel, P41) TrilinosCouplings, P42) Rythmos, P43) MOOCHO, P44) Aristos, P45) Stokhos, P46) Piro, P47) Sundance, P48) CTrilinos, P49) ForTrilinos, P50) PyTrilinos, P51) WebTrilinos, P52) Didasko, P53) NewPackage, P54) Optika, P55) Mesquite, P56) Stalix, P57) Lyno, P58) Trios, P59) FEApp</p>
+<p><b>Packages:</b> P01) TrilinosFramework, P02) Teuchos, P03) Trios, P04) ThreadPool, P05) Sacado, P06) RTOp, P07) Kokkos, P08) Epetra, P09) Zoltan, P10) Shards, P11) GlobiPack, P12) Triutils, P13) Tpetra, P14) EpetraExt, P15) Thyra, P16) OptiPack, P17) Isorropia, P18) Pliris, P19) Claps, P20) AztecOO, P21) Galeri, P22) Amesos, P23) Pamgen, P24) Ifpack, P25) Komplex, P26) ML, P27) Belos, P28) Tifpack, P29) Stratimikos, P30) Meros, P31) FEI, P32) Anasazi, P33) RBGen, P34) TriKota, P35) STK, P36) Intrepid, P37) Phalanx, P38) Phdmesh, P39) NOX, P40) Moertel, P41) TrilinosCouplings, P42) Rythmos, P43) MOOCHO, P44) Aristos, P45) Stokhos, P46) Piro, P47) Sundance, P48) CTrilinos, P49) ForTrilinos, P50) PyTrilinos, P51) WebTrilinos, P52) Didasko, P53) NewPackage, P54) Optika, P55) Mesquite, P56) FEApp</p>
 
 <p><b>Legend</b></p>
 
@@ -4062,9 +3693,6 @@ NOTE: When more than one type of dependency is present for any cell the final se
 <COL ALIGN=LEFT>
 <COL ALIGN=LEFT>
 <COL ALIGN=LEFT>
-<COL ALIGN=LEFT>
-<COL ALIGN=LEFT>
-<COL ALIGN=LEFT>
 
 <TR>
  <TD><b>Packages</b></TD>
@@ -4124,18 +3752,12 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD><b>P54</b></TD>
  <TD><b>P55</b></TD>
  <TD><b>P56</b></TD>
- <TD><b>P57</b></TD>
- <TD><b>P58</b></TD>
- <TD><b>P59</b></TD>
  <TD><b>Packages</b></TD>
 </TR>
 
 <TR>
  <TD><b>P01) TrilinosFramework</b></TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -4252,14 +3874,11 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD><b>P02) Teuchos</b></TD>
 </TR>
 
 <TR>
- <TD><b>P03) ThreadPool</b></TD>
+ <TD><b>P03) Trios</b></TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>X</TD>
@@ -4316,80 +3935,12 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P03) ThreadPool</b></TD>
+ <TD><b>P03) Trios</b></TD>
 </TR>
 
 <TR>
- <TD><b>P04) Sacado</b></TD>
+ <TD><b>P04) ThreadPool</b></TD>
  <TD>.</TD>
- <TD>LO</TD>
- <TD>.</TD>
- <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P04) Sacado</b></TD>
-</TR>
-
-<TR>
- <TD><b>P05) RTOp</b></TD>
- <TD>.</TD>
- <TD>LR</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>X</TD>
@@ -4445,15 +3996,12 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P05) RTOp</b></TD>
+ <TD><b>P04) ThreadPool</b></TD>
 </TR>
 
 <TR>
- <TD><b>P06) Kokkos</b></TD>
+ <TD><b>P05) Sacado</b></TD>
  <TD>.</TD>
- <TD>LR</TD>
  <TD>LO</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -4509,274 +4057,11 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P06) Kokkos</b></TD>
+ <TD><b>P05) Sacado</b></TD>
 </TR>
 
 <TR>
- <TD><b>P07) Epetra</b></TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P07) Epetra</b></TD>
-</TR>
-
-<TR>
- <TD><b>P08) Zoltan</b></TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P08) Zoltan</b></TD>
-</TR>
-
-<TR>
- <TD><b>P09) Shards</b></TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P09) Shards</b></TD>
-</TR>
-
-<TR>
- <TD><b>P10) GlobiPack</b></TD>
- <TD>.</TD>
- <TD>LR</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P10) GlobiPack</b></TD>
-</TR>
-
-<TR>
- <TD><b>P11) Triutils</b></TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
+ <TD><b>P06) RTOp</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
  <TD>.</TD>
@@ -4831,13 +4116,382 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD><b>P11) Triutils</b></TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD><b>P06) RTOp</b></TD>
 </TR>
 
 <TR>
- <TD><b>P12) Tpetra</b></TD>
+ <TD><b>P07) Kokkos</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
+ <TD>LO</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>X</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD><b>P07) Kokkos</b></TD>
+</TR>
+
+<TR>
+ <TD><b>P08) Epetra</b></TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>X</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD><b>P08) Epetra</b></TD>
+</TR>
+
+<TR>
+ <TD><b>P09) Zoltan</b></TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>X</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD><b>P09) Zoltan</b></TD>
+</TR>
+
+<TR>
+ <TD><b>P10) Shards</b></TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>X</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD><b>P10) Shards</b></TD>
+</TR>
+
+<TR>
+ <TD><b>P11) GlobiPack</b></TD>
+ <TD>.</TD>
+ <TD>LR</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>X</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD><b>P11) GlobiPack</b></TD>
+</TR>
+
+<TR>
+ <TD><b>P12) Triutils</b></TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>LR</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>X</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD><b>P12) Triutils</b></TD>
+</TR>
+
+<TR>
+ <TD><b>P13) Tpetra</b></TD>
+ <TD>.</TD>
+ <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -4891,17 +4545,14 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P12) Tpetra</b></TD>
+ <TD><b>P13) Tpetra</b></TD>
 </TR>
 
 <TR>
- <TD><b>P13) EpetraExt</b></TD>
+ <TD><b>P14) EpetraExt</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -4955,17 +4606,14 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P13) EpetraExt</b></TD>
+ <TD><b>P14) EpetraExt</b></TD>
 </TR>
 
 <TR>
- <TD><b>P14) Thyra</b></TD>
+ <TD><b>P15) Thyra</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>LR</TD>
@@ -5019,17 +4667,14 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P14) Thyra</b></TD>
+ <TD><b>P15) Thyra</b></TD>
 </TR>
 
 <TR>
- <TD><b>P15) OptiPack</b></TD>
+ <TD><b>P16) OptiPack</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>ILR</TD>
@@ -5083,17 +4728,14 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P15) OptiPack</b></TD>
+ <TD><b>P16) OptiPack</b></TD>
 </TR>
 
 <TR>
- <TD><b>P16) Isorropia</b></TD>
+ <TD><b>P17) Isorropia</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -5147,15 +4789,12 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P16) Isorropia</b></TD>
+ <TD><b>P17) Isorropia</b></TD>
 </TR>
 
 <TR>
- <TD><b>P17) Pliris</b></TD>
+ <TD><b>P18) Pliris</b></TD>
+ <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -5211,15 +4850,12 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P17) Pliris</b></TD>
+ <TD><b>P18) Pliris</b></TD>
 </TR>
 
 <TR>
- <TD><b>P18) Claps</b></TD>
+ <TD><b>P19) Claps</b></TD>
+ <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -5275,21 +4911,18 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P18) Claps</b></TD>
+ <TD><b>P19) Claps</b></TD>
 </TR>
 
 <TR>
- <TD><b>P19) AztecOO</b></TD>
+ <TD><b>P20) AztecOO</b></TD>
  <TD>.</TD>
  <TD>LO</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
+ <TD>.</TD>
  <TD>LR</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -5339,17 +4972,14 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P19) AztecOO</b></TD>
+ <TD><b>P20) AztecOO</b></TD>
 </TR>
 
 <TR>
- <TD><b>P20) Galeri</b></TD>
+ <TD><b>P21) Galeri</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -5403,17 +5033,14 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P20) Galeri</b></TD>
+ <TD><b>P21) Galeri</b></TD>
 </TR>
 
 <TR>
- <TD><b>P21) Amesos</b></TD>
+ <TD><b>P22) Amesos</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -5467,15 +5094,12 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P21) Amesos</b></TD>
+ <TD><b>P22) Amesos</b></TD>
 </TR>
 
 <TR>
- <TD><b>P22) Pamgen</b></TD>
+ <TD><b>P23) Pamgen</b></TD>
+ <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -5531,17 +5155,14 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P22) Pamgen</b></TD>
+ <TD><b>P23) Pamgen</b></TD>
 </TR>
 
 <TR>
- <TD><b>P23) Ifpack</b></TD>
+ <TD><b>P24) Ifpack</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -5595,17 +5216,14 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P23) Ifpack</b></TD>
+ <TD><b>P24) Ifpack</b></TD>
 </TR>
 
 <TR>
- <TD><b>P24) Komplex</b></TD>
+ <TD><b>P25) Komplex</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -5659,17 +5277,14 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P24) Komplex</b></TD>
+ <TD><b>P25) Komplex</b></TD>
 </TR>
 
 <TR>
- <TD><b>P25) ML</b></TD>
+ <TD><b>P26) ML</b></TD>
  <TD>.</TD>
  <TD>LO</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -5723,17 +5338,14 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P25) ML</b></TD>
+ <TD><b>P26) ML</b></TD>
 </TR>
 
 <TR>
- <TD><b>P26) Belos</b></TD>
+ <TD><b>P27) Belos</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -5787,17 +5399,14 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P26) Belos</b></TD>
+ <TD><b>P27) Belos</b></TD>
 </TR>
 
 <TR>
- <TD><b>P27) Tifpack</b></TD>
+ <TD><b>P28) Tifpack</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -5851,17 +5460,14 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P27) Tifpack</b></TD>
+ <TD><b>P28) Tifpack</b></TD>
 </TR>
 
 <TR>
- <TD><b>P28) Stratimikos</b></TD>
+ <TD><b>P29) Stratimikos</b></TD>
  <TD>.</TD>
  <TD>ILR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>ILR</TD>
@@ -5915,17 +5521,14 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P28) Stratimikos</b></TD>
+ <TD><b>P29) Stratimikos</b></TD>
 </TR>
 
 <TR>
- <TD><b>P29) Meros</b></TD>
+ <TD><b>P30) Meros</b></TD>
  <TD>.</TD>
  <TD>ILR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>ILR</TD>
@@ -5979,17 +5582,14 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P29) Meros</b></TD>
+ <TD><b>P30) Meros</b></TD>
 </TR>
 
 <TR>
- <TD><b>P30) FEI</b></TD>
+ <TD><b>P31) FEI</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -6043,17 +5643,14 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P30) FEI</b></TD>
+ <TD><b>P31) FEI</b></TD>
 </TR>
 
 <TR>
- <TD><b>P31) Anasazi</b></TD>
+ <TD><b>P32) Anasazi</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>ILO</TD>
@@ -6107,81 +5704,14 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P31) Anasazi</b></TD>
-</TR>
-
-<TR>
- <TD><b>P32) Teko</b></TD>
- <TD>.</TD>
- <TD>LR</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>ILR</TD>
- <TD>ILO</TD>
- <TD>LR</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>ILR</TD>
- <TD>ILO</TD>
- <TD>LR</TD>
- <TD>LR</TD>
- <TD>.</TD>
- <TD>LO</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>LR</TD>
- <TD>ILO</TD>
- <TD>LR</TD>
- <TD>.</TD>
- <TD>LR</TD>
- <TD>.</TD>
- <TD>LR</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>LR</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>LR</TD>
- <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P32) Teko</b></TD>
+ <TD><b>P32) Anasazi</b></TD>
 </TR>
 
 <TR>
  <TD><b>P33) RBGen</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>ILO</TD>
@@ -6211,11 +5741,7 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>LO</TD>
- <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -6246,6 +5772,7 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD><b>P34) TriKota</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>ILR</TD>
@@ -6276,11 +5803,7 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -6311,6 +5834,7 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>LR</TD>
  <TD>LR</TD>
+ <TD>LR</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>ILO</TD>
@@ -6338,14 +5862,10 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>LR</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -6375,13 +5895,13 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>LR</TD>
  <TD>.</TD>
- <TD>LR</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>LR</TD>
  <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>LR</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -6408,9 +5928,6 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -6439,13 +5956,13 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>LR</TD>
  <TD>.</TD>
- <TD>LR</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>LR</TD>
  <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>LR</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -6473,9 +5990,6 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -6556,9 +6070,6 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD><b>P38) Phdmesh</b></TD>
 </TR>
 
@@ -6566,17 +6077,18 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD><b>P39) NOX</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
- <TD>ILO</TD>
  <TD>.</TD>
  <TD>ILO</TD>
- <TD>ILO</TD>
- <TD>LO</TD>
- <TD>ILO</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>ILO</TD>
  <TD>ILO</TD>
  <TD>LO</TD>
+ <TD>ILO</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>ILO</TD>
+ <TD>ILO</TD>
+ <TD>LO</TD>
  <TD>LO</TD>
  <TD>.</TD>
  <TD>ILO</TD>
@@ -6595,7 +6107,6 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>LO</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -6603,9 +6114,6 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -6630,6 +6138,7 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD><b>P40) Moertel</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -6666,11 +6175,7 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -6694,17 +6199,18 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD><b>P41) TrilinosCouplings</b></TD>
  <TD>.</TD>
  <TD>ILO</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>ILO</TD>
- <TD>ILO</TD>
- <TD>ILO</TD>
- <TD>LO</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>ILO</TD>
  <TD>ILO</TD>
  <TD>LO</TD>
+ <TD>.</TD>
+ <TD>.</TD>
+ <TD>ILO</TD>
+ <TD>ILO</TD>
+ <TD>LO</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>LO</TD>
@@ -6723,7 +6229,6 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>ILO</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -6733,9 +6238,6 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>LO</TD>
  <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -6758,6 +6260,7 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD><b>P42) Rythmos</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>ILR</TD>
@@ -6796,11 +6299,7 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -6822,6 +6321,7 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD><b>P43) MOOCHO</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>LR</TD>
@@ -6861,11 +6361,7 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -6886,6 +6382,7 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD><b>P44) Aristos</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -6926,11 +6423,7 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -6950,6 +6443,7 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD><b>P45) Stokhos</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>LO</TD>
  <TD>ILO</TD>
@@ -6979,7 +6473,6 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>LO</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>LO</TD>
  <TD>.</TD>
@@ -6993,9 +6486,6 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -7014,6 +6504,7 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD><b>P46) Piro</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>ILO</TD>
  <TD>ILR</TD>
@@ -7044,7 +6535,6 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
- <TD>.</TD>
  <TD>LO</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -7058,9 +6548,6 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>LO</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -7078,6 +6565,7 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD><b>P47) Sundance</b></TD>
  <TD>.</TD>
  <TD>LR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>ILR</TD>
  <TD>ILR</TD>
@@ -7107,7 +6595,6 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>LR</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
@@ -7120,12 +6607,9 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>LO</TD>
  <TD>.</TD>
- <TD>LR</TD>
+ <TD>LO</TD>
  <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -7146,6 +6630,7 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
+ <TD>.</TD>
  <TD>LR</TD>
  <TD>ILO</TD>
  <TD>.</TD>
@@ -7186,11 +6671,7 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -7210,6 +6691,7 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
+ <TD>.</TD>
  <TD>LR</TD>
  <TD>ILO</TD>
  <TD>.</TD>
@@ -7227,7 +6709,6 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>LO</TD>
  <TD>.</TD>
  <TD>LO</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -7253,9 +6734,6 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>LR</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -7270,36 +6748,36 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD><b>P50) PyTrilinos</b></TD>
  <TD>.</TD>
  <TD>LO</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>ILO</TD>
- <TD>ILO</TD>
- <TD>LO</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>LO</TD>
  <TD>ILO</TD>
  <TD>LO</TD>
  <TD>ILO</TD>
  <TD>.</TD>
+ <TD>.</TD>
+ <TD>LO</TD>
  <TD>ILO</TD>
- <TD>LO</TD>
- <TD>.</TD>
- <TD>LO</TD>
- <TD>LO</TD>
- <TD>LO</TD>
- <TD>.</TD>
- <TD>LO</TD>
- <TD>LO</TD>
  <TD>LO</TD>
  <TD>ILO</TD>
  <TD>.</TD>
  <TD>ILO</TD>
+ <TD>LO</TD>
+ <TD>.</TD>
+ <TD>LO</TD>
+ <TD>LO</TD>
+ <TD>LO</TD>
+ <TD>.</TD>
+ <TD>LO</TD>
+ <TD>LO</TD>
+ <TD>LO</TD>
+ <TD>ILO</TD>
+ <TD>.</TD>
+ <TD>ILO</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>LO</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -7318,9 +6796,6 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -7388,9 +6863,6 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD><b>P51) WebTrilinos</b></TD>
 </TR>
 
@@ -7452,9 +6924,6 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD><b>P52) Didasko</b></TD>
 </TR>
 
@@ -7466,6 +6935,7 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
+ <TD>.</TD>
  <TD>LR</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -7511,11 +6981,7 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
  <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
@@ -7580,9 +7046,6 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>X</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD><b>P54) Optika</b></TD>
 </TR>
 
@@ -7644,208 +7107,14 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>X</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD><b>P55) Mesquite</b></TD>
 </TR>
 
 <TR>
- <TD><b>P56) Stalix</b></TD>
- <TD>.</TD>
- <TD>LR</TD>
- <TD>ILO</TD>
- <TD>LR</TD>
- <TD>ILR</TD>
- <TD>ILR</TD>
- <TD>ILO</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>ILO</TD>
- <TD>LR</TD>
- <TD>ILO</TD>
- <TD>LR</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P56) Stalix</b></TD>
-</TR>
-
-<TR>
- <TD><b>P57) Lyno</b></TD>
- <TD>.</TD>
- <TD>LR</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>ILO</TD>
- <TD>ILO</TD>
- <TD>LR</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>ILO</TD>
- <TD>ILO</TD>
- <TD>LR</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>LO</TD>
- <TD>ILO</TD>
- <TD>LR</TD>
- <TD>.</TD>
- <TD>LO</TD>
- <TD>.</TD>
- <TD>LO</TD>
- <TD>LR</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>LR</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>LO</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>X</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD><b>P57) Lyno</b></TD>
-</TR>
-
-<TR>
- <TD><b>P58) Trios</b></TD>
- <TD>.</TD>
- <TD>ILO</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>ILO</TD>
- <TD>ILO</TD>
- <TD>ILO</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>ILO</TD>
- <TD>ILO</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>ILO</TD>
- <TD>ILO</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>ILO</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>LO</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>X</TD>
- <TD>.</TD>
- <TD><b>P58) Trios</b></TD>
-</TR>
-
-<TR>
- <TD><b>P59) FEApp</b></TD>
+ <TD><b>P56) FEApp</b></TD>
  <TD>.</TD>
  <TD>ILR</TD>
+ <TD>.</TD>
  <TD>ILO</TD>
  <TD>LR</TD>
  <TD>ILO</TD>
@@ -7875,7 +7144,6 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>ILO</TD>
- <TD>.</TD>
  <TD>.</TD>
  <TD>ILO</TD>
  <TD>.</TD>
@@ -7899,11 +7167,8 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD>.</TD>
  <TD>.</TD>
  <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
- <TD>.</TD>
  <TD>X</TD>
- <TD><b>P59) FEApp</b></TD>
+ <TD><b>P56) FEApp</b></TD>
 </TR>
 
 <TR>
@@ -7964,14 +7229,11 @@ NOTE: When more than one type of dependency is present for any cell the final se
  <TD><b>P54</b></TD>
  <TD><b>P55</b></TD>
  <TD><b>P56</b></TD>
- <TD><b>P57</b></TD>
- <TD><b>P58</b></TD>
- <TD><b>P59</b></TD>
  <TD><b>Packages</b></TD>
 </TR>
 </TABLE>
 
-<p><b>Packages:</b> P01) TrilinosFramework, P02) Teuchos, P03) ThreadPool, P04) Sacado, P05) RTOp, P06) Kokkos, P07) Epetra, P08) Zoltan, P09) Shards, P10) GlobiPack, P11) Triutils, P12) Tpetra, P13) EpetraExt, P14) Thyra, P15) OptiPack, P16) Isorropia, P17) Pliris, P18) Claps, P19) AztecOO, P20) Galeri, P21) Amesos, P22) Pamgen, P23) Ifpack, P24) Komplex, P25) ML, P26) Belos, P27) Tifpack, P28) Stratimikos, P29) Meros, P30) FEI, P31) Anasazi, P32) Teko, P33) RBGen, P34) TriKota, P35) STK, P36) Intrepid, P37) Phalanx, P38) Phdmesh, P39) NOX, P40) Moertel, P41) TrilinosCouplings, P42) Rythmos, P43) MOOCHO, P44) Aristos, P45) Stokhos, P46) Piro, P47) Sundance, P48) CTrilinos, P49) ForTrilinos, P50) PyTrilinos, P51) WebTrilinos, P52) Didasko, P53) NewPackage, P54) Optika, P55) Mesquite, P56) Stalix, P57) Lyno, P58) Trios, P59) FEApp</p>
+<p><b>Packages:</b> P01) TrilinosFramework, P02) Teuchos, P03) Trios, P04) ThreadPool, P05) Sacado, P06) RTOp, P07) Kokkos, P08) Epetra, P09) Zoltan, P10) Shards, P11) GlobiPack, P12) Triutils, P13) Tpetra, P14) EpetraExt, P15) Thyra, P16) OptiPack, P17) Isorropia, P18) Pliris, P19) Claps, P20) AztecOO, P21) Galeri, P22) Amesos, P23) Pamgen, P24) Ifpack, P25) Komplex, P26) ML, P27) Belos, P28) Tifpack, P29) Stratimikos, P30) Meros, P31) FEI, P32) Anasazi, P33) RBGen, P34) TriKota, P35) STK, P36) Intrepid, P37) Phalanx, P38) Phdmesh, P39) NOX, P40) Moertel, P41) TrilinosCouplings, P42) Rythmos, P43) MOOCHO, P44) Aristos, P45) Stokhos, P46) Piro, P47) Sundance, P48) CTrilinos, P49) ForTrilinos, P50) PyTrilinos, P51) WebTrilinos, P52) Didasko, P53) NewPackage, P54) Optika, P55) Mesquite, P56) FEApp</p>
 
 <p><b>Legend</b></p>
 

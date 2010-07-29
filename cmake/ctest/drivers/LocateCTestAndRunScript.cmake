@@ -36,6 +36,7 @@ if(NOT EXISTS "${CTEST_EXE}")
 endif()
 
 message("CTEST_EXE='${CTEST_EXE}'")
+execute_process(COMMAND ${CTEST_EXE} --version)
 
 message("=========== variables ===========")
 message("binary_dir='${binary_dir}'")

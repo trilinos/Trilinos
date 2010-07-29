@@ -214,8 +214,8 @@ int ex_put_n_coord (int   exoid,
 
     /* write out the coordinates  */
     for (i=0; i<num_dim; i++) {
-      const void *coor;
-      char *which;
+      const void *coor = NULL;
+      char *which = NULL;
        
       start[0] = start_node_num;
       count[0] = num_nodes;

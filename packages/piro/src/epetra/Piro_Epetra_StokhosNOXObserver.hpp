@@ -31,7 +31,7 @@
 #ifndef PIRO_EPETRA_STOKHOSNOXOBSERVER
 #define PIRO_EPETRA_STOKHOSNOXOBSERVER
 
-#include "Piro_Epetra_NOXObserver.hpp"
+#include "NOX_Epetra_Observer.H"
 #include "EpetraExt_BlockVector.h"
 #include "Epetra_Map.h"
 #include "Teuchos_RCP.hpp"
@@ -39,11 +39,11 @@
 namespace Piro {
 namespace Epetra {
 
-class StokhosNOXObserver : public NOXObserver
+class StokhosNOXObserver : public NOX::Epetra::Observer
 {
 public:
   StokhosNOXObserver (
-         Teuchos::RCP<NOXObserver> noxObserver_,
+         Teuchos::RCP<NOX::Epetra::Observer> noxObserver_,
          const Epetra_Map& map_,
          const int sz_);
 
@@ -51,7 +51,7 @@ public:
 
 private:
 
-   Teuchos::RCP<NOXObserver> noxObserver;
+   Teuchos::RCP<NOX::Epetra::Observer> noxObserver;
    Epetra_Map map;
    const int numSGBlocks;
 };

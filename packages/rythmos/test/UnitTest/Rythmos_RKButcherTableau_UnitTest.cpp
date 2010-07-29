@@ -177,7 +177,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, assembleIRKState ) {
     double dt = 10.0;
     RCP<VectorBase<double> > x_base = createDefaultVector(N,5.0);
     RCP<ProductVectorBase<double> > x_stage_bar = createDefaultProductVector(numStages,N,6.0);
-    V_S(&*(x_stage_bar->getNonconstVectorBlock(1)),7.0);
+    V_S(x_stage_bar->getNonconstVectorBlock(1).ptr(),7.0);
     RCP<VectorBase<double> > x = createDefaultVector(N,8.0);
     assembleIRKState(stageIndex, A, dt, *x_base, *x_stage_bar, outArg(*x));
     // What should x be?
@@ -251,7 +251,7 @@ TEUCHOS_UNIT_TEST( Rythmos_RKButcherTableau, assembleIRKSolution ) {
     double dt = 10.0;
     RCP<VectorBase<double> > x_base = createDefaultVector(N,4.0);
     RCP<ProductVectorBase<double> > x_stage_bar = createDefaultProductVector(numStages,N,5.0);
-    V_S(&*(x_stage_bar->getNonconstVectorBlock(1)),6.0);
+    V_S(x_stage_bar->getNonconstVectorBlock(1).ptr(),6.0);
     RCP<VectorBase<double> > x = createDefaultVector(N,7.0);
     assembleIRKSolution(b, dt, *x_base, *x_stage_bar, outArg(*x));
     // What should x be?

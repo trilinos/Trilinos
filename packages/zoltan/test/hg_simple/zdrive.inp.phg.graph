@@ -1,0 +1,8 @@
+Decomposition Method 	= graph
+Zoltan Parameters       = lb_approach=partition
+Zoltan Parameters       = graph_package=phg
+Zoltan Parameters       = PHG_COARSENING_LIMIT = 1
+File Type		= matrixmarket
+File Name		= simple
+Parallel Disk Info	= number=0
+

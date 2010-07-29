@@ -78,21 +78,16 @@ preventing the importing of any installed PyTrilinos modules.  The
 verbosity option is used in all ``test`` scripts and optionally in any
 ``example`` scripts where it makes sense.
 
-Tests scripts use the ``setpath`` module, local to both ``test`` and
-``example`` directories, to set the python search path to find the
-local PyTrilinos modules.  Locally built modules are imported
-directly::
+Tests scripts use the ``from PyTrilinosImport`` function in the
+``testutil`` module, local to both ``test`` and ``example``
+directories, to control where the PyTrilinos modules are imported
+from.  The user controls this import location from the command line:
+``-t`` or ``--testharness`` indicates that the build directory should
+be used; otherwise an import from standard locations will be
+attempted.
 
-    import Teuchos
-    import Epetra
-
-while system-installed modules are imported like this::
-
-    from PyTrilinos import Teuchos
-    from PyTrilinos import Epetra
-
-the ``-t`` option is enforced in test scripts with the followning
-python code::
+This policy is enabled by code in each test/example script like the
+following::
 
     parser = OptionParser()
     parser.add_option("-t", "--testharness", action="store_true",
@@ -100,7 +95,13 @@ python code::
                       help="test local build modules; prevent loading system-installed modules")
     options,args = parser.parse_args()
     from testutil import fromPyTrilinosImport
-    Epetra = fromPyTrilinosImport('Epetra', options.testharness)
+    Teuchos = fromPyTrilinosImport('Teuchos', options.testharness)
+    Epetra  = fromPyTrilinosImport('Epetra' , options.testharness)
+
+If the user specifies ``-t`` or ``--testharness`` then
+``options.testharness`` will be True, else it will be False.  When
+``fromPyTrilinosImport()`` is called, the ``options.testharness``
+argument will determine where the import is read from.
 
 Test scripts shall run in both serial or parallel.  You may use
 either::

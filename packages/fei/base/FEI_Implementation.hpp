@@ -127,7 +127,8 @@ class FEI_Implementation : public FEI {
     */
    int initFields(int numFields, 
                   const int *fieldSizes, 
-                  const int *fieldIDs);
+                  const int *fieldIDs,
+                  const int *fieldTypes = NULL);
 
     /** Initialize the description of an element-block. This function informs
         the fei implementation of the defining characteristics for a block of

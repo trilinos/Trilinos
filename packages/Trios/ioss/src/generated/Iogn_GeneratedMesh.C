@@ -77,36 +77,6 @@ namespace Iogn {
       }
       rotmat[i][i] = 1.0;
     }
-
-    faceNodes[0][0] = 1;
-    faceNodes[0][1] = 2;
-    faceNodes[0][2] = 6;
-    faceNodes[0][3] = 5;
-
-    faceNodes[1][0] = 2;
-    faceNodes[1][1] = 3;
-    faceNodes[1][2] = 7;
-    faceNodes[1][3] = 6;
-
-    faceNodes[2][0] = 3;
-    faceNodes[2][1] = 4;
-    faceNodes[2][2] = 8;
-    faceNodes[2][3] = 7;
-
-    faceNodes[3][0] = 4;
-    faceNodes[3][1] = 1;
-    faceNodes[3][2] = 5;
-    faceNodes[3][3] = 8;
-
-    faceNodes[4][0] = 4;
-    faceNodes[4][1] = 3;
-    faceNodes[4][2] = 2;
-    faceNodes[4][3] = 1;
-
-    faceNodes[5][0] = 5;
-    faceNodes[5][1] = 6;
-    faceNodes[5][2] = 7;
-    faceNodes[5][3] = 8;
   }
 
   size_t GeneratedMesh::add_shell_block(ShellLocation loc)
@@ -329,13 +299,15 @@ namespace Iogn {
 
       else if (option[0] == "help") {
 	std::cerr << "\nValid Options for GeneratedMesh parameter string:\n"
-		  << "\tIxJxK -- specifies intervals; first option\n"
+		  << "\tIxJxK -- specifies intervals; must be first option. Ex: 4x10x12\n"
 		  << "\toffset:xoff, yoff, zoff\n"
 		  << "\tscale: xscl, yscl, zscl\n"
 		  << "\tzdecomp:n1,n2,n3,...,n#proc\n"
 		  << "\tbbox: xmin, ymin, zmin, xmax, ymax, zmax\n"
 		  << "\trotate: axis,angle,axis,angle,...\n"
-		  << "\tshell:xXyYzZ\n"
+		  << "\tshell:xXyYzZ (specifies which plane to apply shell)\n"
+	          << "\tnodeset:xXyXzZ (specifies which plane to apply nodeset)\n"
+	          << "\tsideset:xXyXzZ (specifies which plane to apply sideset)\n"
 		  << "\tshow -- show mesh parameters\n"
 		  << "\thelp -- show this list\n\n";
       }
@@ -1035,7 +1007,7 @@ namespace Iogn {
       if (myProcessor == processorCount-1) {
 	size_t offset = (numY+1) * (numX+1) * numZ;
 	for (size_t i=0; i < (numY+1) * (numX+1); i++) {
-	  nodes[i] = myStartZ * xp1yp1 + offset + i+1;
+	  nodes[i] = offset + i+1;
 	}
       }
       break;
@@ -1152,7 +1124,7 @@ namespace Iogn {
     int num_processors = 8;
     for (int proc = 0; proc < num_processors; proc++) {
 
-      stk::GeneratedMesh mesh(100, 125, 10*num_processors, num_processors, proc);
+      Iogn::GeneratedMesh mesh(100, 125, 10*num_processors, num_processors, proc);
 
       std::cerr << "Node Count (total)    = " << mesh.node_count() << "\n";
       std::cerr << "Node Count (proc)     = " << mesh.node_count_proc() << "\n";

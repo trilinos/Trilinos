@@ -6,6 +6,7 @@ ADD_SUBDIRECTORIES(
   CrsRiluk
   IC
   ILU
+  IHSS-SORa
   IlukGraph
   OverlappingRowMatrix
   PreconditionerFactory

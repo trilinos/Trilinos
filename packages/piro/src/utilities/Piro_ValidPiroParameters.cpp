@@ -35,7 +35,7 @@ Teuchos::RCP<const Teuchos::ParameterList>
 Piro::getValidPiroParameters()
 {
   Teuchos::RCP<Teuchos::ParameterList> validPL =
-     rcp(new Teuchos::ParameterList("Valid Piro Params"));;
+     Teuchos::rcp(new Teuchos::ParameterList("Valid Piro Params"));;
   validPL->sublist("NOX", false, "");
   validPL->sublist("LOCA", false, "");
   validPL->sublist("Rythmos", false, "");

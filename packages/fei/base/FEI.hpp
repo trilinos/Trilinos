@@ -208,7 +208,8 @@ class FEI {
     */
    virtual int initFields( int numFields,
                            const int *fieldSizes, 
-                           const int *fieldIDs ) = 0;
+                           const int *fieldIDs,
+                           const int *fieldTypes = NULL ) = 0;
                                 
     /** Initialize the description of an element-block. This function informs
         the fei implementation of the defining characteristics for a block of

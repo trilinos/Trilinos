@@ -205,13 +205,13 @@ NETCDF_LIB = -L$(NETCDF_LIB_DIR) -lnetcdf
 
 SUBDIRS = cbind/src forbind/src cbind/test forbind/test
 
-all:: libexoIIv2c.a libexoIIv2for.a
+all:: libexodus.a libexoIIv2for.a
 
-libexoIIv2c.a::
-	echo "making exoIIv2c in cbind/src"
-	(cd cbind/src &&  $(MAKE) $(MFLAGS) -f Makefile.standalone "AR=$(AR)" "CC=$(CC)" "CFLAGS=$(CFLAGS)" "RANLIB=$(RANLIB)" libexoIIv2c.a)
-	cp cbind/src/libexoIIv2c.a .
-	$(RANLIB) libexoIIv2c.a
+libexodus.a::
+	echo "making exodus in cbind/src"
+	(cd cbind/src &&  $(MAKE) $(MFLAGS) -f Makefile.standalone "AR=$(AR)" "CC=$(CC)" "CFLAGS=$(CFLAGS)" "RANLIB=$(RANLIB)" libexodus.a)
+	cp cbind/src/libexodus.a .
+	$(RANLIB) libexodus.a
 
 libexoIIv2for.a::
 	echo "making exoIIv2for in forbind/src"
@@ -220,7 +220,7 @@ libexoIIv2for.a::
 	$(RANLIB) libexoIIv2for.a
 
 check: test
-test:: libexoIIv2c.a libexoIIv2for.a
+test:: libexodus.a libexoIIv2for.a
 
 test::
 	echo "making test in cbind/test"

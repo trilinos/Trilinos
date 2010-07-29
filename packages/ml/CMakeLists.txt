@@ -13,15 +13,6 @@ PACKAGE(ML  DISABLE_CIRCULAR_REF_DETECTION_FAILURE)
 # B) Set up package-specific options
 #
 
-IF (${PACKAGE_NAME}_ENABLE_Zoltan AND ${PACKAGE_NAME}_ENABLE_ZoltanTpl)
-  MESSAGE( FATAL_ERROR
-        "\n***"
-        "\n*** ERROR:  You can not enable both the package Zoltan and the TPL ZoltanTpl at the same time!"
-        "\n***\n"
-        )
-ENDIF()
-
-
 IF (${PACKAGE_NAME}_ENABLE_Zoltan AND NOT ${PACKAGE_NAME}_ENABLE_MPI)
   MESSAGE(STATUS "  WARNING:  Setting ${PACKAGE_NAME}_ENABLE_Zoltan=OFF since ${PACKAGE_NAME}_ENABLE_MPI=OFF!")
   DUAL_SCOPE_SET(${PACKAGE_NAME}_ENABLE_Zoltan OFF)

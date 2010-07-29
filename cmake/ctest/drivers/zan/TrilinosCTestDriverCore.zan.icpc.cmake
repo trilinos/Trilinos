@@ -40,6 +40,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       "-DTPL_ENABLE_MPI:BOOL=ON"
       "-DMPI_BASE_DIR:PATH=/usr/local/openmpi-icc11"
       "-DCMAKE_LIBRARY_PATH:PATH=/usr/lib64"
+      "-DNetcdf_LIBRARY_DIRS=/home/bmpersc/lib/icpc-11.0/netcdf-4.0/lib"
+      "-DNetcdf_INCLUDE_DIRS=/home/bmpersc/lib/icpc-11.0/netcdf-4.0/include"
       "-DTPL_LAPACK_LIBRARIES:STRING=-L/opt/intel/11.0.074/mkl/lib/em64t/ -lmkl_lapack"
       "-DTPL_BLAS_LIBRARIES:STRING=-L/opt/intel/11.0.074/mkl/lib/em64t -L/opt/intel/11.0.074/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5"
       )
@@ -53,6 +55,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
       "-DCMAKE_Fortran_COMPILER:FILEPATH=/opt/intel/11.0.074/bin/intel64/ifort"
       "-DCMAKE_CXX_FLAGS:STRING=-diag-disable 597"
       "-DCMAKE_LIBRARY_PATH:PATH=/usr/lib64"
+      "-DNetcdf_LIBRARY_DIRS=/home/bmpersc/lib/icpc-11.0/netcdf-4.0/lib"
+      "-DNetcdf_INCLUDE_DIRS=/home/bmpersc/lib/icpc-11.0/netcdf-4.0/include"
       "-DTPL_LAPACK_LIBRARIES:STRING=-L/opt/intel/11.0.074/mkl/lib/em64t/ -lmkl_lapack"
       "-DTPL_BLAS_LIBRARIES:STRING=-L/opt/intel/11.0.074/mkl/lib/em64t -L/opt/intel/11.0.074/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread"
       )

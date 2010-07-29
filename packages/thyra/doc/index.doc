@@ -511,13 +511,17 @@ subclasses, may need to be templated on a local index (ordinal) type.
 <li><b>Dynamic memory management</b>
 
 All of the code in the %Thyra and related packages almost exclusively use the
-<tt>%Teuchos</tt> smart reference counted pointer class
-<tt>Teuchos::RCP</tt> to handle dynamically allocated memory with
-object-oriented programming.  %Thyra also rigorously uses the idioms described
-in <a
-href="../../../teuchos/doc/html/RefCountPtrBeginnersGuideSAND.pdf">this
-report</a> for passing object to and from functions that involve
-<tt>Teuchos::RCP</tt>.
+<tt>%Teuchos</tt> smart reference counted pointer class <tt>Teuchos::RCP</tt>
+to handle dynamically allocated memory with object-oriented programming.
+Other types used include <tt>Teuchos::Ptr</tt>, <tt>Teuchos::Array</tt>,
+<tt>Teuchos::ArrayRCP</tt>, <tt>Teuchos::ArrayView</tt>, and
+<tt>Teuchos::Tuple</tt>.  %Thyra rigorously uses idioms for these classes
+partially introduced in <a href="RefCountPtrBeginnersGuideSAND.pdf">RCP
+Beginner's Guide</a>, described in great detail in <a
+href="http://www.cs.sandia.gov/~rabartl/TeuchosMemoryManagementSAND.pdf">Teuchos
+C++ Memory Management Classes</a>, and summarized in <a
+href="ThyraCodingGuideLines.pdf">%Thyra Coding and Documentation
+Guidelines</a>.
 
 <li><b>Error (exception) handling</b>
 
@@ -538,7 +542,10 @@ always be enabled since a lot of errors will be caught that would be hard to
 diagnose otherwise.  Significant effort has gone into developing this error
 checking code and in the information that is embedded in the exception objects
 (all derived from <tt>std::exception</tt>) that are thrown when errors are
-detected.
+detected.  More detail about how to do debugging with Thyra related to memory
+management is described in <a
+href="http://www.cs.sandia.gov/~rabartl/TeuchosMemoryManagementSAND.pdf">Teuchos
+C++ Memory Management Classes</a>.
 
 </ul>
 
@@ -584,22 +591,28 @@ compiled for thyra.
 
 <ul>
 
-<li><b><a
-href="../../src/support/operator_vector/doc/html/ThyraOverview.pdf">A
-Overview of Thyra Operator/Vector interfaces [PDF]</a></b>
+<li><b><a href="ThyraOverview.pdf">A Overview of Thyra Operator/Vector
+interfaces [PDF]</a></b>
 
 This paper describes the basic principles that go into the design of the %Thyra
 Operator/Vector interface layer (and therefore also for the rest of %Thyra).
 
-<li><b><a
-href="../../../teuchos/doc/html/RefCountPtrBeginnersGuideSAND.pdf">
-Teuchos::RCP Beginner's Guide : An Introduction to the
-Trilinos Smart Reference-Counted Pointer Class for (Almost) Automatic
-Dynamic Memory Management in C++ [PDF]</a></b>
+<li><b><a href="RefCountPtrBeginnersGuideSAND.pdf"> Teuchos::RCP Beginner's
+Guide : An Introduction to the Trilinos Smart Reference-Counted Pointer Class
+for (Almost) Automatic Dynamic Memory Management in C++ [PDF]</a></b>
 
 This paper describes the basics of <tt>Teuchos::RCP</tt> and
 outlines a convention for passing objects to and from functions that
 all of the code in %Thyra adheres to.
+
+<li><b><a
+href="http://www.cs.sandia.gov/~rabartl/TeuchosMemoryManagementSAND.pdf">Teuchos
+C++ Memory Management Classes, Idioms, and Related Topics: The Complete
+Reference [PDF]</a></b>
+
+This document provides a complete discussion of the motivation, the design of,
+the idioms surrounding, and other important idioms related to the full set of
+Teuchos memory management classes that Thyra is based on.
 
 <li><b><a href="http://software.sandia.gov/RTOp/RTOpTOMS.pdf"> Vector
 Reduction/Transformation Operators [PDF]</a></b>
@@ -609,24 +622,21 @@ This paper describes the need for, and the basic design of,
 used C structs while the current <tt>%RTOpPack::%RTOpT</tt> is a fully
 templated C++ class implementation.
 
-<li><b><a
-href="../../src/support/operator_vector/doc/html/LinearAlgebraFunctionConvention.pdf">A
-Simple Convention for the Specification of Linear Algebra Function Prototypes
-in C++ [PDF]</a></b>
+<li><b><a href="LinearAlgebraFunctionConvention.pdf">A Simple Convention for
+the Specification of Linear Algebra Function Prototypes in C++ [PDF]</a></b>
 
 This short note describes a simple convention for writing function prototypes
 for linear algebra operations.  This convention is used in \ref
 Thyra_Op_Vec_VectorStdOpsAll_LA_names_grp "this set of functions", for
 instance.
 
-<li><b><a
-href="../../src/support/operator_vector/doc/html/ThyraCodingGuideLines.pdf">A
-%Thyra Coding and Documentation Guidelines (TCDG) [PDF]</a></b>
+<li><b><a href="ThyraCodingGuideLines.pdf">%Thyra Coding and Documentation
+Guidelines (TCDG) [PDF]</a></b>
 
 This document describes the coding and documentation guidelines used in the
 creation of %Thyra.
 
-<!-- ToDo: Put in a link to the Thyra paper at some point! -->
+<!-- ToDo: Put in a link to a real Thyra Journal paper at some point! -->
 
 </ul>
 

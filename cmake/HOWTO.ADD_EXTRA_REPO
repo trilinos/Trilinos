@@ -1,0 +1,73 @@
+-------------------------------------------------------------
+How to Add a New Extra External Repository to Trilinos
+-------------------------------------------------------------
+
+
+Last updated: 2010/07/27
+------------------------
+
+
+The Trilinos CMake build system supports the definition and use of an
+arbitrary number of extra external repositories that define add-on Trilinos
+packages.  This allows Trilinos to grow in an arbitrary way without having to
+actually add new packages to the main Trilinos repository.
+
+Anyone can define and use a new extra external Trilinos repository and extra
+packages.  However, to get the new repository and its contained packages
+packages integrated in to the Trilinos CI and Nightly testing processes, a
+single file needs to be modified (ExtraExternalRepositories.cmake).  The
+instructions here describe how to add a new extra external Trilinos repository
+that will be integrated in with the Trilinos testing system.
+
+Let <EXTRAREPO> represent the name of the extra external repo that you want to
+create where, for example, <EXTRAREPO> = preCopyrightTrilinos.
+
+
+1) Create an accessible git repository for the new extra external repo:
+
+Let the URL to this git repo be <EXTRAREPO_GITURL>.  Typically, this git repo
+should be created on the main Trilinos server under:
+
+   software.sandia.gov:/space/git/<EXTRAREPO>
+
+(e.g. software.sandia.gov:/space/git/preCopyrightTrilinos)
+
+NOTE: Make sure you set up this repository so that any Trilinos developer can
+at least clone the repository.  This can be done on software.sandia.gov, for
+example, by giving group ownership to the 'trilinos' group.
+
+NOTE: Extra repositories can be created on machines other that SSG and can be
+inaccessible to the average Trilinos developer but then the repository will
+have to be marked as 'EX' so that the typical Trilinos testing processes will
+not try to clone the repository.
+
+
+2) Add a new row to the file Trilinos/cmake/ExtraExternalRepositories.cmake:
+
+The last step adding official support for a new extra Trilinos git repo is to
+add a row to the file:
+
+   Trilinos/cmake/ExtraExternalRepositories.cmake
+
+The instructions in that file should provide all the details for how to do
+this.
+
+
+3) Add an ignore for the source directory in Trilinos/.gitinore
+
+Add the line:
+
+    /<EXTRAREPO>/
+
+to the file Trilinos/.gitignore (see preCopyrightTrilinos as an example).
+
+
+That's it!
+
+
+NOTE: If you don't want to integrate your new Trilinos git repo into the
+Trilinos CI and Nightly testing system then you don't have to change anything
+in the main Trilinos source repo (except for the change to the .gitinore
+file).  You only have to manually clone your repo in the main Trilinos source
+directory and pass in Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE to the
+configure line (see TrilinosCMakeQuickstart.txt).

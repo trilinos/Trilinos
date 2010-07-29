@@ -258,7 +258,8 @@ void fei::VectorSpace::setParameters(const fei::ParameterSet& paramset)
 //----------------------------------------------------------------------------
 void fei::VectorSpace::defineFields(int numFields,
                                     const int* fieldIDs,
-                                    const int* fieldSizes)
+                                    const int* fieldSizes,
+                                    const int* fieldTypes)
 {
   if (output_level_ >= fei::BRIEF_LOGS && output_stream_ != NULL) {
     FEI_OSTREAM& os = *output_stream_;
@@ -272,7 +273,12 @@ void fei::VectorSpace::defineFields(int numFields,
   for (int i=0; i<numFields; ++i) {
     fieldDatabase_.insert(std::pair<int,unsigned>(fieldIDs[i], fieldSizes[i]));
     if (fieldIDs[i] >= 0) {
-      fieldDofMap_.add_field(fieldIDs[i], fieldSizes[i]);
+      if (fieldTypes != NULL) {
+        fieldDofMap_.add_field(fieldIDs[i], fieldSizes[i], fieldTypes[i]);
+      }
+      else {
+        fieldDofMap_.add_field(fieldIDs[i], fieldSizes[i]);
+      }
     }
   }
 }
@@ -618,6 +624,10 @@ int fei::VectorSpace::initComplete()
     need_to_compute_shared_ids = true;
   }
 
+  int localNeedToCompute = need_to_compute_shared_ids ? 1 : 0;
+  int globalNeedToCompute = 0;
+  CHK_ERR( fei::GlobalMin(comm_, localNeedToCompute, globalNeedToCompute) );
+  need_to_compute_shared_ids = globalNeedToCompute==1 ? true : false;
   if (need_to_compute_shared_ids) {
     compute_shared_ids();
   }

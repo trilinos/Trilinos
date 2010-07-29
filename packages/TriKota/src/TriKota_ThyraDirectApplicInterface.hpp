@@ -81,8 +81,8 @@ private:
     Teuchos::RCP<Thyra::VectorBase<double> > model_g;
     Teuchos::RCP<Thyra::MultiVectorBase<double> > model_dgdp;
     Thyra::ModelEvaluatorBase::EDerivativeMultiVectorOrientation orientation;
-    int numParameters;
-    int numResponses;
+    unsigned int numParameters;
+    unsigned int numResponses;
     bool supportsSensitivities;
 };
 

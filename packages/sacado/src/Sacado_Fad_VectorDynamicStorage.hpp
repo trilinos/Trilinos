@@ -60,10 +60,10 @@ namespace Sacado {
       }
 
       //! Constructor with supplied memory
-      VectorDynamicStorage(const int sz, T* x, S* dx, const int stride,
+      VectorDynamicStorage(const int sz, T* x, S* dx_p, const int stride,
 			   bool zero_out) : 
 	v_(), owns_mem(false), sz_(sz), len_(sz), stride_(stride), 
-	val_(x), dx_(dx) {
+	val_(x), dx_(dx_p) {
 	if (zero_out)
 	  zero(dx_, sz_);
       }
@@ -130,7 +130,7 @@ namespace Sacado {
       }
 
       //! Set value/derivative array memory
-      void setMemory(int sz, T* x, S* dx, int stride) {
+      void setMemory(int sz, T* x, S* dx_p, int stride) {
 
 	// Destroy old memory
 	if (owns_mem) {
@@ -144,7 +144,7 @@ namespace Sacado {
 	len_ = sz;
 	stride_ = stride;
 	val_ = x;
-	dx_ = dx;
+	dx_ = dx_p;
       }
 
       //! Returns value

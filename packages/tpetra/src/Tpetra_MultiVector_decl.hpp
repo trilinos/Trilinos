@@ -145,13 +145,35 @@ namespace Tpetra {
     Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(const Teuchos::Range1D &colRng) const;
 
     //! Returns a const MultiVector with const views of selected columns.
-    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(Teuchos::ArrayView<const size_t> cols) const;
+    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subView(const Teuchos::ArrayView<const size_t> &cols) const;
 
     //! Returns a MultiVector with views of selected columns.
     Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewNonConst(const Teuchos::Range1D &colRng);
 
     //! Returns a MultiVector with views of selected columns.
-    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewNonConst(Teuchos::ArrayView<const size_t> cols);
+    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > subViewNonConst(const Teuchos::ArrayView<const size_t> &cols);
+
+    //! \brief Returns a const MultiVector view of a subset of rows.
+    /** 
+        Returns a const view of this MultiVector consisting of a subset of the rows, as specified by an offset and a sub-Map.
+
+        \param In subMap - The row map for the new MultiVector.
+        \param In offset - The offset into the data of <tt>(*this)</tt>.
+
+        \pre  <tt>subMap->getNodeNumElements() + offset < this->getLocalLength()</tt>
+     */
+    Teuchos::RCP<const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > offsetView(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap, size_t offset) const;
+
+    //! \brief Returns a non-const MultiVector view of a subset of rows.
+    /** 
+        Returns a non-const view of this MultiVector consisting of a subset of the rows, as specified by an offset and a sub-Map.
+
+        \param In subMap - The row map for the new MultiVector.
+        \param In offset - The offset into the data of <tt>(*this)</tt>.
+
+        \pre  <tt>subMap->getNodeNumElements() + offset < this->getLocalLength()</tt>
+     */
+    Teuchos::RCP<MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > offsetViewNonConst(const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap, size_t offset);
 
     //! Const Vector access function.
     Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > getVector(size_t j) const;

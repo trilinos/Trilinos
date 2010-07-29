@@ -3,6 +3,7 @@ INCLUDE(PackageAddExecutableAndTest)
 PACKAGE_ADD_EXECUTABLE(
  Utst_ioel
  SOURCES Utst_ioel.C
+ DEPLIBS Ionit
  COMM serial
 )
 
@@ -16,6 +17,7 @@ PACKAGE_ADD_TEST(
 PACKAGE_ADD_EXECUTABLE(
  Utst_superelement
  SOURCES Utst_superelement.C
+ DEPLIBS Ionit
  COMM serial
 )
 

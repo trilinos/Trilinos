@@ -8,7 +8,6 @@
 
   <ul>
   <li>\ref thyra_faq_rcp_important_sec
-  <li>\ref thyra_faq_rcp_amp_star_sec
   <li>\ref thyra_faq_rcp_everywhere_sec
   </ul>
 
@@ -36,30 +35,6 @@ see:
 "http://trilinos.sandia.gov/RefCountPtrBeginnersGuideSAND.pdf
 
 and click on: <tt>Teuchos::RCP</tt>
-
-\subsection thyra_faq_rcp_amp_star_sec Q: Do I really have to write &*ptr all the time?
-
-What are the benefits of &* vs. get()?
-
-<b>A:</b> There are two ways to get at the underlying raw pointer to an
-object that is wrapped in the RCP<C> object <tt>c_ptr</tt>:
-
-\code
-
-C *c_rptr1 = c_ptr.get(); // Unchecked, can be NULL
-C *c_rptr2 = &*c_ptr;     // Checked in debug build and will not return NULL
-\endcode
-
-You should use <tt>c_ptr.get()</tt> when it is okay for the pointer to be
-<tt>NULL</tt>.  On the other hand, you should use <tt>&*c_ptr</tt> when you
-don't want to allow the raw pointer to be <tt>NULL</tt>.  This is because the
-operator function Teuchos::RCP::operator*() will throw an exception if
-<tt>Teuchos::RCP::get()==NULL</tt> when the code is configured using
-<tt>--enable-teuchos-debug</tt>.
-
-For more information see Item 3 in Appendix B in 
-
-http://software.sandia.gov/Trilinos/RefCountPtrBeginnersGuideSAND.pdf
 
 \subsection thyra_faq_rcp_everywhere_sec Q: Should my code use RCP's everywhere?
 

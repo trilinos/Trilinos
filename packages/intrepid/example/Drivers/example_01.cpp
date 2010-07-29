@@ -1064,6 +1064,9 @@ int main(int argc, char *argv[]) {
    fSignsout.close();
 #endif
 
+
+   std::cout << "End Result: TEST PASSED\n";
+
  // reset format state of std::cout
  std::cout.copyfmt(oldFormatState);
  

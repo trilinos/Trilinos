@@ -11,6 +11,7 @@
 #include <stdexcept>
 
 #include <stk_mesh/baseImpl/BucketRepository.hpp>
+#include <stk_mesh/baseImpl/EntityRepository.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 
@@ -113,11 +114,14 @@ const FieldBase::Restriction & dimension( const FieldBase & field ,
 BucketRepository::BucketRepository(
     BulkData & mesh,
     unsigned bucket_capacity,
-    unsigned entity_rank_count)
+    unsigned entity_rank_count,
+    EntityRepository & entity_repo
+    )
   :m_mesh(mesh),
    m_bucket_capacity(bucket_capacity),
    m_buckets(entity_rank_count),
-   m_bucket_nil(NULL)
+   m_nil_bucket(NULL),
+   m_entity_repo(entity_repo)
 {
 }
 
@@ -142,7 +146,7 @@ BucketRepository::~BucketRepository()
     m_buckets.clear();
   } catch(...) {}
 
-  try { if ( m_bucket_nil ) destroy_bucket( m_bucket_nil ); } catch(...) {}
+  try { if ( m_nil_bucket ) destroy_bucket( m_nil_bucket ); } catch(...) {}
 }
 
 
@@ -201,10 +205,10 @@ void BucketRepository::destroy_bucket( Bucket * bucket )
 //
 //----------------------------------------------------------------------
 // The input part ordinals are complete and contain all supersets.
-Bucket *
+void
 BucketRepository::declare_nil_bucket()
 {
-  if (m_bucket_nil == NULL) {
+  if (m_nil_bucket == NULL) {
     unsigned field_count = m_mesh.mesh_meta_data().get_fields().size();
 
     //----------------------------------
@@ -257,10 +261,8 @@ BucketRepository::declare_nil_bucket()
 
     //----------------------------------
 
-    m_bucket_nil = bucket;
+    m_nil_bucket = bucket;
   }
-
-  return m_bucket_nil;
 }
 
 
@@ -497,6 +499,7 @@ const std::vector<Bucket*> & BucketRepository::buckets( unsigned type ) const
 
 //----------------------------------------------------------------------
 
+
 void BucketRepository::internal_sort_bucket_entities()
 {
   for ( unsigned entity_rank = 0 ;
@@ -566,18 +569,18 @@ void BucketRepository::internal_sort_bucket_entities()
             if ( current ) {
               // Move current entity to the vacant spot
               copy_fields( *ik_vacant , ie_vacant , b, i );
-              current->m_entityImpl.set_bucket_and_ordinal( ik_vacant, ie_vacant );
+              m_entity_repo.change_entity_bucket(*ik_vacant, *current, ie_vacant);
               ik_vacant->m_bucketImpl.replace_entity( ie_vacant , current ) ;
             }
 
             // Set the vacant spot to where the required entity is now.
-            ik_vacant = (*j)->m_entityImpl.get_bucket() ;
+            ik_vacant = & ((*j)->bucket()) ;
             ie_vacant = (*j)->bucket_ordinal() ;
             ik_vacant->m_bucketImpl.replace_entity( ie_vacant , NULL ) ;
 
             // Move required entity to the required spot
             copy_fields( b, i, *ik_vacant , ie_vacant );
-            (*j)->m_entityImpl.set_bucket_and_ordinal( & b, i );
+            m_entity_repo.change_entity_bucket( b, **j, i);
             b.m_bucketImpl.replace_entity( i, *j );
 
             change_this_family = true ;
@@ -623,7 +626,7 @@ void BucketRepository::remove_entity( Bucket * k , unsigned i )
     copy_fields( *k , i , *last , last->size() - 1 );
 
     k->m_bucketImpl.replace_entity(i, & entity ) ;
-    entity.m_entityImpl.set_bucket_and_ordinal( k, i );
+    m_entity_repo.change_entity_bucket( *k, entity, i);
 
     // Entity field data has relocated
 

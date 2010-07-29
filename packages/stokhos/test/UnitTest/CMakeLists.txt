@@ -18,6 +18,13 @@ PACKAGE_ADD_EXECUTABLE_AND_TEST(
   )
 
 PACKAGE_ADD_EXECUTABLE_AND_TEST(
+  JacobiBasisUnitTest
+  SOURCES Stokhos_JacobiBasisUnitTest.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  )
+
+PACKAGE_ADD_EXECUTABLE_AND_TEST(
   DerivExpansionUnitTest
   SOURCES Stokhos_DerivExpansionUnitTest.cpp
   COMM serial mpi

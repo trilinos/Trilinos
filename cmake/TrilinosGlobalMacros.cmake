@@ -74,6 +74,9 @@ FUNCTION(APPLY_TO_NO_AUTOTOOLS_PACKAGES FILE_NAME LIST_RETURN)
     /packages/trilinoscouplings
     /packages/triutils
   )
+
+  # 2010/07/21: rabart: The above list is not maintainable!  This must be
+  # built automatically!
   
   FOREACH(PACKAGE ${NON_AUTOTOOLS_PACKAGES})
     SET(LIST_RETURN_TMP ${LIST_RETURN_TMP} ${PACKAGE}/${FILE_NAME} ${PACKAGE}/\(.*/\)*${FILE_NAME})
@@ -82,11 +85,129 @@ FUNCTION(APPLY_TO_NO_AUTOTOOLS_PACKAGES FILE_NAME LIST_RETURN)
   SET(${LIST_RETURN} ${LIST_RETURN_TMP} PARENT_SCOPE)
 ENDFUNCTION()
 
+
+#
+# Macro that drives a Trilinos 'dashboard' target
+#
+
+MACRO(TRILINOS_ADD_DASHBOARD_TARGET)
+
+  IF (NOT (WIN32 AND NOT CYGWIN))
+  
+    # H.1) Enable all packages that are enabled and have tests enabled
+  
+    SET(Trilinos_ENABLED_PACKAGES_LIST)
+    SET(Trilinos_ENABLED_PACKAGES_CMAKE_ARG_LIST)
+    FOREACH(PACKAGE ${Trilinos_PACKAGES})
+      IF (Trilinos_ENABLE_${PACKAGE} AND ${PACKAGE}_ENABLE_TESTS)
+        IF (Trilinos_ENABLED_PACKAGES_LIST)
+          SET(Trilinos_ENABLED_PACKAGES_LIST
+            "${Trilinos_ENABLED_PACKAGES_LIST}\;${PACKAGE}") 
+        ELSE()
+          SET(Trilinos_ENABLED_PACKAGES_LIST "${PACKAGE}") 
+        ENDIF()
+        SET(Trilinos_ENABLED_PACKAGES_CMAKE_ARG_LIST
+          ${Trilinos_ENABLED_PACKAGES_CMAKE_ARG_LIST} -DTrilinos_ENABLE_${PACKAGE}=ON)
+      ENDIF()
+    ENDFOREACH()
+    #PRINT_VAR(Trilinos_ENABLED_PACKAGES_LIST)
+    
+    SET(EXPR_CMND_ARGS)
+    IF (Trilinos_ENABLE_COVERAGE_TESTING)
+      APPEND_SET(EXPR_CMND_ARGS "CTEST_DO_COVERAGE_TESTING=TRUE")
+    ENDIF()
+    APPEND_SET(EXPR_CMND_ARGS
+      ${PROJECT_NAME}_EXTRA_REPOSITORIES=${${PROJECT_NAME}_EXTRA_REPOSITORIES})
+  
+    # H.2) Add the custom target to enable all the packages with tests enabled
+    
+    ADD_CUSTOM_TARGET(dashboard
+  
+      VERBATIM
+    
+      # WARNING: The echoed command and the actual commands are duplicated!  You have to reproduce them!
+  
+      COMMAND echo
+      COMMAND echo "***************************************************"
+      COMMAND echo "*** Running incremental experimental dashboard ***" 
+      COMMAND echo "***************************************************"
+      COMMAND echo
+      COMMAND echo Trilinos_ENABLED_PACKAGES_LIST=${Trilinos_ENABLED_PACKAGES_LIST}
+      COMMAND echo
+  
+      COMMAND echo
+      COMMAND echo "***"
+      COMMAND echo "*** A) Clean out the list of packages"
+      COMMAND echo "***"
+      COMMAND echo
+      COMMAND echo Running: ${CMAKE_COMMAND} -DTrilinos_UNENABLE_ENABLED_PACKAGES:BOOL=TRUE
+        -DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=OFF ${TRILINOS_HOME_DIR}
+      COMMAND echo
+      COMMAND ${CMAKE_COMMAND} -DTrilinos_UNENABLE_ENABLED_PACKAGES:BOOL=TRUE
+        -DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=OFF ${TRILINOS_HOME_DIR}
+  
+      # NOTE: Above, if Trilinos_ENABLE_ALL_PACKAGES was set in CMakeCache.txt, then setting
+      # -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=OFF will turn it off in the cache.  Note that it will
+      # never be turned on again which means that the list of packages will be set explicitly below.
+    
+      COMMAND echo
+      COMMAND echo "***"
+      COMMAND echo "*** B) Run the dashboard command setting the list of packages"
+      COMMAND echo "***"
+      COMMAND echo
+      COMMAND echo Running: env ${EXPR_CMND_ARGS}
+        Trilinos_PACKAGES=${Trilinos_ENABLED_PACKAGES_LIST}
+        ${CMAKE_CTEST_COMMAND} -S
+          ${TRILINOS_HOME_DIR}/cmake/ctest/experimental_build_test.cmake
+      COMMAND echo
+      COMMAND env ${EXPR_CMND_ARGS}
+        Trilinos_PACKAGES=${Trilinos_ENABLED_PACKAGES_LIST}
+        ${CMAKE_CTEST_COMMAND} -S
+          ${TRILINOS_HOME_DIR}/cmake/ctest/experimental_build_test.cmake || echo
+  
+      # 2009/07/05: rabartl: Above, I added the ending '|| echo' to always make
+      # the command pass so that 'make will not stop and avoid this last command
+      # to set back the enabled packages.
+  
+      COMMAND echo
+      COMMAND echo "***"
+      COMMAND echo "*** C) Clean out the list of packages again to clean the cache file"
+      COMMAND echo "***"
+      COMMAND echo
+      COMMAND echo Running: ${CMAKE_COMMAND} -DTrilinos_UNENABLE_ENABLED_PACKAGES:BOOL=TRUE
+        -DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=OFF ${TRILINOS_HOME_DIR}
+      COMMAND echo
+      COMMAND ${CMAKE_COMMAND} -DTrilinos_UNENABLE_ENABLED_PACKAGES:BOOL=TRUE
+        -DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=OFF ${TRILINOS_HOME_DIR}
+    
+      COMMAND echo
+      COMMAND echo "***"
+      COMMAND echo "*** D) Reconfigure with the original package list"
+      COMMAND echo "***"
+      COMMAND echo
+      COMMAND echo Running: ${CMAKE_COMMAND} ${Trilinos_ENABLED_PACKAGES_CMAKE_ARG_LIST}
+        -DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON ${TRILINOS_HOME_DIR}
+      COMMAND echo
+      COMMAND ${CMAKE_COMMAND} ${Trilinos_ENABLED_PACKAGES_CMAKE_ARG_LIST}
+        -DTrilinos_ALLOW_NO_PACKAGES:BOOL=ON ${TRILINOS_HOME_DIR}
+  
+      COMMAND echo
+      COMMAND echo "See the results at http://trilinos.sandia.gov/cdash/index.php?project=Trilinos&display=project\#Experimental"
+      COMMAND echo
+   
+      )
+  
+  ENDIF()
+
+ENDMACRO()
+
+
 #
 # Macro that defines Trilinos packaging options:
 #
 
 MACRO(TRILINOS_DEFINE_PACKAGING)
+
   APPLY_TO_NO_AUTOTOOLS_PACKAGES("configure.ac" CONFIGURE_AC_LIST)
   APPLY_TO_NO_AUTOTOOLS_PACKAGES("configure"    CONFIGURE_LIST)
   APPLY_TO_NO_AUTOTOOLS_PACKAGES("Makefile.am"  MAKEFILE_AM_LIST)
@@ -94,7 +215,6 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
   APPLY_TO_NO_AUTOTOOLS_PACKAGES(".*.m4"        M4_LIST)
   APPLY_TO_NO_AUTOTOOLS_PACKAGES("bootstrap"    BOOTSTRAP_LIST)
   APPLY_TO_NO_AUTOTOOLS_PACKAGES("config/"      CONFIG_LIST)
- 
     
   SET(CPACK_SOURCE_IGNORE_FILES
     /.git/
@@ -118,6 +238,8 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
     /Trilinos/packages/lyno
     /Trilinos/packages/stalix
     /Trilinos/packages/teko
+    /Trilinos/packages/Trios
+    /Trilinos/demos/FEApp
     ${CONFIGURE_AC_LIST}
     ${CONFIGURE_LIST}
     ${MAKEFILE_AM_LIST}
@@ -578,6 +700,10 @@ MACRO(TRILINOS_DEFINE_PACKAGING)
     /Trilinos/packages/tifpack/src/Tifpack_Utils.cpp
     /Trilinos/packages/tifpack/src/Tifpack_Utils.hpp
   )
+
+  # 2010/07/21: rabartl: The above list *must* be broken down into the
+  # different Trilinos package CMakeLists.txt files.  It is unacceptable to
+  # have such a list on one place and is not automatically maintainable.
   
   IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
     MESSAGE("Exclude files when building source packages")

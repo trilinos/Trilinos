@@ -2,9 +2,9 @@
 #define PIROTEST_OBSERVESOLUTION_EPETRA
 
 
-#include "Piro_Epetra_NOXObserver.hpp"
+#include "NOX_Epetra_Observer.H"
 
-class ObserveSolution_Epetra : public Piro::Epetra::NOXObserver
+class ObserveSolution_Epetra : public NOX::Epetra::Observer
 {
 public:
    ObserveSolution_Epetra () {};

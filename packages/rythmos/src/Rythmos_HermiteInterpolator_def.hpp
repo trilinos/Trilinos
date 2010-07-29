@@ -121,8 +121,8 @@ void HermiteInterpolator<Scalar>::interpolate(
           Scalar tmp_t;
 
           // Compute numerical divided difference:
-          Thyra::Vt_S(&*xdot_temp,Scalar(ST::one()/dt));
-          Thyra::Vp_StV(&*xdot_temp,Scalar(-ST::one()/dt),*x0);
+          Thyra::Vt_S(xdot_temp.ptr(),Scalar(ST::one()/dt));
+          Thyra::Vp_StV(xdot_temp.ptr(),Scalar(-ST::one()/dt),*x0);
 
           // interpolate this point
           DataStore<Scalar> DS;
@@ -131,26 +131,26 @@ void HermiteInterpolator<Scalar>::interpolate(
           //  H_3(t) = x(t0) + xdot(t0)(t-t0) + ((x(t1)-x(t0))/(t1-t0) - xdot(t0))(t-t0)^2/(t1-t0)
           //           +(xdot(t1) - 2(x(t1)-x(t0))/(t1-t0) + xdot(t0))(t-t0)^2(t-t1)/(t1-t0)^2
           RCP<Thyra::VectorBase<Scalar> > x_vec = x0->clone_v(); 
-          Thyra::Vp_StV(&*x_vec,t_t0,*xdot0);
+          Thyra::Vp_StV(x_vec.ptr(),t_t0,*xdot0);
           tmp_t = t_t0*t_t0/dt;
-          Thyra::V_StVpStV(&*tmp_vec,tmp_t,*xdot_temp,Scalar(-ST::one()*tmp_t),*xdot0);
-          Thyra::Vp_V(&*x_vec,*tmp_vec);
+          Thyra::V_StVpStV(tmp_vec.ptr(),tmp_t,*xdot_temp,Scalar(-ST::one()*tmp_t),*xdot0);
+          Thyra::Vp_V(x_vec.ptr(),*tmp_vec);
           tmp_t = t_t0*t_t0*t_t1/dt2;
-          Thyra::V_StVpStV(&*tmp_vec,tmp_t,*xdot1,Scalar(-2*tmp_t),*xdot_temp);
-          Thyra::Vp_StV(&*tmp_vec,tmp_t,*xdot0);
-          Thyra::Vp_V(&*x_vec,*tmp_vec);
+          Thyra::V_StVpStV(tmp_vec.ptr(),tmp_t,*xdot1,Scalar(-2*tmp_t),*xdot_temp);
+          Thyra::Vp_StV(tmp_vec.ptr(),tmp_t,*xdot0);
+          Thyra::Vp_V(x_vec.ptr(),*tmp_vec);
           DS.x = x_vec;
 
           //  H_3'(t) =        xdot(t0) + 2*((x(t1)-x(t0))/(t1-t0) - xdot(t0))(t-t0)/(t1-t0)
           //           +(xdot(t1) - 2(x(t1)-x(t0))/(t1-t0) + xdot(t0))[2*(t-t0)(t-t1) + (t-t0)^2]/(t1-t0)^2
           RCP<Thyra::VectorBase<Scalar> > xdot_vec = xdot0->clone_v(); 
           tmp_t = t_t0/dt;
-          Thyra::Vp_StV(&*xdot_vec,Scalar(2*tmp_t),*xdot_temp);
-          Thyra::Vp_StV(&*xdot_vec,Scalar(-2*tmp_t),*xdot0);
+          Thyra::Vp_StV(xdot_vec.ptr(),Scalar(2*tmp_t),*xdot_temp);
+          Thyra::Vp_StV(xdot_vec.ptr(),Scalar(-2*tmp_t),*xdot0);
           tmp_t = Scalar((2*t_t0*t_t1+t_t0*t_t0)/dt2);
-          Thyra::V_StVpStV(&*tmp_vec,tmp_t,*xdot1,Scalar(-2*tmp_t),*xdot_temp);
-          Thyra::Vp_StV(&*tmp_vec,tmp_t,*xdot0);
-          Thyra::Vp_V(&*xdot_vec,*tmp_vec);
+          Thyra::V_StVpStV(tmp_vec.ptr(),tmp_t,*xdot1,Scalar(-2*tmp_t),*xdot_temp);
+          Thyra::Vp_StV(tmp_vec.ptr(),tmp_t,*xdot0);
+          Thyra::Vp_V(xdot_vec.ptr(),*tmp_vec);
           DS.xdot = xdot_vec;
           
           // Accuracy:

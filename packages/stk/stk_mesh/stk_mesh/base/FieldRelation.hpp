@@ -32,8 +32,8 @@ class FieldBase;
  *    has a pointer scalar type 'T *' AND
  *  - \ref stk::mesh::Field "field" <b> m_target </b>
  *    has a scalar type 'T' AND
- *  - \ref stk_mesh_field_data "field_data"( *m_root , e1 ) exits AND
- *  - \ref stk_mesh_field_data "field_data"( *m_target , e2 ) exits AND
+ *  - \ref stk_mesh_field_data "field_data"( *m_root , e1 ) exists AND
+ *  - \ref stk_mesh_field_data "field_data"( *m_target , e2 ) exists AND
  *  - \ref stk::mesh::Relation "relation" <b> rel </b> is in the domain of
  *    \ref stk_mesh_relation_stencil "relation stencil" <b> m_function </b>
  *

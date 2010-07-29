@@ -83,14 +83,14 @@ void ImplicitBDFStepperErrWtVecCalc<Scalar>::errWtVecSet(
       "Error, relTol and absTol cannot both be zero!\n"
       );
   Thyra::VectorBase<Scalar> &w = *weight;
-  Thyra::abs(&w,vector);
-  Vt_S(&w,relTol);
-  Vp_S(&w,absTol);
-  reciprocal(&w,w);
-  Vt_StV(&w,ST::one(),w); // We square w because of how weighted norm_2 is computed.
+  Thyra::abs(ptr(&w),vector);
+  Vt_S(ptr(&w),relTol);
+  Vp_S(ptr(&w),absTol);
+  reciprocal(ptr(&w),w);
+  Vt_StV(ptr(&w),ST::one(),w); // We square w because of how weighted norm_2 is computed.
   // divide by N to get RMS norm
   int N = vector.space()->dim();
-  Vt_S(&w,Scalar(1.0/N));
+  Vt_S(ptr(&w),Scalar(1.0/N));
   // Now you can compute WRMS norm as:
   // Scalar WRMSnorm = norm_2(w,y); // WRMS norm of y with respect to weights w.
 

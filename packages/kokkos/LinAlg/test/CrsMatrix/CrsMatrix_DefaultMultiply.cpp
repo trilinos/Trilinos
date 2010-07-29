@@ -35,7 +35,7 @@
 #include "Kokkos_MultiVector.hpp"
 #include "Kokkos_DefaultArithmetic.hpp"
 #include "Kokkos_CrsMatrix.hpp"
-#include "Kokkos_DefaultSparseMultiply.hpp"
+#include "Kokkos_DefaultSparseOps.hpp"
 #include "Kokkos_Version.hpp"
 
 #include "Kokkos_SerialNode.hpp"
@@ -55,7 +55,7 @@ namespace {
   using Kokkos::CrsMatrix;
   using Kokkos::CrsGraph;
   using Kokkos::DefaultArithmetic;
-  using Kokkos::DefaultSparseMultiply;
+  using Kokkos::DefaultSparseOps;
   using Kokkos::SerialNode;
   using Teuchos::ArrayRCP;
   using Teuchos::RCP;
@@ -191,13 +191,13 @@ namespace {
     }
     G.setPackedStructure(offsets, inds);
     A.setPackedValues(vals);
-    DefaultSparseMultiply<Scalar,Ordinal,Node> dsm(node);
+    DefaultSparseOps<Scalar,Ordinal,Node> dsm(node);
     Teuchos::DataAccess cv;
     cv = dsm.initializeStructure(G,Teuchos::View);
-    out << "DefaultSparseMultiply::initializeStructure<CrsGraph>(G,View) returned "
+    out << "DefaultSparseOps::initializeStructure<CrsGraph>(G,View) returned "
         << (cv == Teuchos::View ? "View" : "Copy") << endl;
     cv = dsm.initializeValues(A,Teuchos::View);
-    out << "DefaultSparseMultiply::initializeValues<CrsMatrix>(A,View) returned "
+    out << "DefaultSparseOps::initializeValues<CrsMatrix>(A,View) returned "
         << (cv == Teuchos::View ? "View" : "Copy") << endl;
 
     ArrayRCP<Scalar> xdat, axdat;

@@ -149,6 +149,7 @@ if ($package eq "PaToH") {
 $testcnt = 0;
 $failcnt = 0;
 $passcnt = 0;
+$purifyerrcnt = 0;
 
 ### For each zdrive.inp file, run the test.
 TEST:  foreach $file (@inpfiles) {
@@ -268,6 +269,18 @@ TEST:  foreach $file (@inpfiles) {
     print "Test $dirname:$testname PASSED\n";
     $passcnt++;
   }
+  ### look for purify errors in outerr file.
+  ### OK if didn't run under purify; it just won't find any errors.
+  open (ZOUTERR, "output/$zouterrfile") || die "cannot open output/$zouterrfile for purify check";
+  while (<ZOUTERR>) {
+    chomp;
+    @foo = grep(/ABR:|ABW:|BRK:|BSR:|BSW:|COR:|FMM:|FMR:|FMW:|FNH:|FUM:|IPR:|IPW:|MAF:|MIU:|MLK:|MRE:|MSE:|NPR:|NPW:|PLK:|SBR:|SBW:|SIG:|SOF:|UMC:|UMR:|WPF:|WPM:|WPN:|WPR:|WPW:|WPX:|ZPR:|ZPW:/, $_);
+    print LOG "     Purify error in $zouterrfile:  $_\n" foreach @foo;
+    print "     Purify error in $zouterrfile:  $_\n" foreach @foo;
+    $errcnt = @foo;
+    $purifyerrcnt += $errcnt;
+  }
+  close(ZOUTERR) || die "can't close $file: $!";
 
   $testcnt++;
 }
@@ -277,6 +290,10 @@ print "Test $dirname:  $passcnt out of $testcnt tests PASSED.\n";
 if ($failcnt > 0) {
   print LOG "Test $dirname:  $failcnt out of $testcnt tests FAILED.\n";
   print "Test $dirname:  $failcnt out of $testcnt tests FAILED.\n";
+}
+if ($purifyerrcnt) {
+  print LOG "Test $dirname:  $purifyerrcnt purify errors; test FAILED.\n";
+  print "Test $dirname:  $purifyerrcnt purify errors; test FAILED.\n";
 }
 $time = localtime;
 print LOG "$time\n";

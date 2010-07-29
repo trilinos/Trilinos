@@ -139,6 +139,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
   double IfpackLOF=List_.get("smoother: ifpack level-of-fill",0.);
   double IfpackRelThreshold=List_.get("smoother: ifpack relative threshold",1.);
   double IfpackAbsThreshold=List_.get("smoother: ifpack absolute threshold",0.);
+  int force_crs=List_.get("smoother: use ifpack crs wrapper",0);                      
 
   // Block Chebyshev parameters
   int cheby_nBlocks=List_.get("smoother: Block Chebyshev number of blocks",-1);
@@ -325,21 +326,21 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
           if(pre_or_post==ML_PRESMOOTHER || pre_or_post==ML_BOTH) {
             ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
                                    IfpackOverlap, currentLevel, ML_PRESMOOTHER,
-                                   (void*)&MyIfpackList,(void*)Comm_);
+                                   (void*)&MyIfpackList,(void*)Comm_,force_crs);
           }
           if(pre_or_post==ML_POSTSMOOTHER || pre_or_post==ML_BOTH) {
             ParameterList& BackwardSmoothingList_= MyIfpackList;
             BackwardSmoothingList_.set("relaxation: backward mode",true);        
             ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
                                  IfpackOverlap, currentLevel,  ML_POSTSMOOTHER,
-                                   (void*)&BackwardSmoothingList_,(void*)Comm_);
+                                   (void*)&BackwardSmoothingList_,(void*)Comm_,force_crs);
           }          
         }
         else{          
           ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
                                  IfpackOverlap, currentLevel, pre_or_post,
                                  //MyIfpackList,*Comm_);
-                                 (void*)&MyIfpackList,(void*)Comm_);
+                                 (void*)&MyIfpackList,(void*)Comm_,force_crs);
         }
       }
       else
@@ -392,7 +393,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
         MyIfpackList.set("relaxation: damping factor", Myomega);
         ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
                                IfpackOverlap, currentLevel, pre_or_post,
-                               (void*)&MyIfpackList,(void*)Comm_);
+                               (void*)&MyIfpackList,(void*)Comm_,force_crs);
       }
       else
 #endif
@@ -674,10 +675,9 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
                << ",abs. threshold=" << MyIfpackAT << endl;
         }
       }
-                       
       ML_Gen_Smoother_Ifpack(ml_, MyIfpackType.c_str(),
                              MyIfpackOverlap, currentLevel, pre_or_post,
-                             (void*)&IfpackList,(void*)Comm_);
+                             (void*)&IfpackList,(void*)Comm_,force_crs);
       
 #else
       cerr << ErrorMsg_ << "IFPACK not available." << endl
@@ -756,7 +756,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers()
       IFPACKList.set("chebyshev: degree", MyChebyshevPolyOrder);
            
       ML_Gen_Smoother_Ifpack(ml_, "Chebyshev", 0, currentLevel, 
-                             pre_or_post, (void*)&IFPACKList, (void*)Comm_);
+                             pre_or_post, (void*)&IFPACKList, (void*)Comm_,force_crs);
       
       if( verbose_ ) {
 	cout << msg << "lambda_min = " << this_A->lambda_min

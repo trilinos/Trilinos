@@ -86,11 +86,9 @@ Zoltan_Distribute_layout (ZZ *zz, const PHGComm * const inlayout,
 int Zoltan_Distribute_Origin(int edge_gno, int vtx_gno, void* data, int *part_y)
 {
   ZOLTAN_DIST_PART* part;
-  void *answer = NULL;
 
   part = (ZOLTAN_DIST_PART*) data;
-  Zoltan_Map_Find(part->zz, part->map, &edge_gno, (void**)&answer);
-  *part_y = (int)(long)answer;
+  Zoltan_Map_Find(part->zz, part->map, &edge_gno, part_y);
 
   return (*part_y);
 }
@@ -118,11 +116,9 @@ int Zoltan_Distribute_Cyclic(int edge_gno, int vtx_gno, void* data, int *part_y)
 int Zoltan_Distribute_Partition(int edge_gno, int vtx_gno, void* data, int *part_y)
 {
   ZOLTAN_DIST_PART* part;
-  void *answer;
 
   part = (ZOLTAN_DIST_PART*) data;
-  Zoltan_Map_Find(part->zz, part->map, &edge_gno, (void**)&answer);
-  *part_y = (int)(long)answer;
+  Zoltan_Map_Find(part->zz, part->map, &edge_gno, part_y);
 
   return ((int)floor((double)*part_y/((double)part->nPart/(double)part->nProc)));
 }
@@ -146,7 +142,7 @@ void* Zoltan_Distribute_Partition_Register(ZZ* zz, int size, int* yGNO, int *par
   }
 
   for (i = 0 ; i < size ; ++i ) {
-    Zoltan_Map_Add(dist->zz, dist->map, &yGNO[i], (void*)(long)part[i]);
+    Zoltan_Map_Add(dist->zz, dist->map, &yGNO[i], part[i]);
   }
 
   dist->nProc = nProc;
@@ -246,7 +242,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
 
   if ((outmat->mtx.nPins + outmat->mtx.nY >0) && (proclist == NULL || sendbuf == NULL)) MEMORY_ERROR;
 
-  wgtarray = (float*) ZOLTAN_MALLOC(outmat->mtx.nPins*outmat->mtx.pinwgtdim*sizeof(float));
+  wgtarray = (float*) ZOLTAN_MALLOC((outmat->mtx.nPins+outmat->mtx.nY)*outmat->mtx.pinwgtdim*sizeof(float));
 
   yGNO = outmat->mtx.yGNO;
   pinGNO = outmat->mtx.pinGNO;
@@ -279,9 +275,7 @@ Zoltan_Matrix2d_Distribute (ZZ* zz, Zoltan_matrix inmat, /* Cannot be const as w
         continue;
       sendbuf[cnt].GNO[0] = edge_gno;
       sendbuf[cnt].GNO[1] = -1;
-#ifdef HAVE_PURIFY
       memset(wgtarray+cnt*outmat->mtx.pinwgtdim, 0,outmat->mtx.pinwgtdim*sizeof(float));
-#endif
       cnt++;
     }
   }

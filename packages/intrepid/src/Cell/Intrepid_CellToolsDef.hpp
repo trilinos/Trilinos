@@ -33,6 +33,9 @@
     \brief  Definition file for the Intrepid::CellTools class.
     \author Created by P. Bochev and D. Ridzal.
 */
+#ifndef INTREPID_CELLTOOLSDEF_HPP
+#define INTREPID_CELLTOOLSDEF_HPP
+
 
 namespace Intrepid {
 
@@ -2677,3 +2680,4 @@ void CellTools<Scalar>::printWorksetSubcell(const ArrayCell &             cellWo
 
 
 } // namespace Intrepid
+#endif

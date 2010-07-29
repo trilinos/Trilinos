@@ -251,7 +251,7 @@ int main(int argc, char *argv[])
 
     RCP<Thyra::VectorBase<Scalar> > 
       x_bar = createMember(discretizedModel->get_x_space());
-    V_S( &*x_bar, 0.0 );
+    V_S( x_bar.ptr(), 0.0 );
 
     Thyra::SolveStatus<Scalar> solveStatus =
       Thyra::solve( nonlinearSolver, &*x_bar );

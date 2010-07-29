@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
       const RCP<Teuchos::ParameterList> piroParamsRCP = rcp(&piroParams, false);
 
 #ifdef Piro_ENABLE_NOX
-      RCP<Piro::Epetra::NOXObserver> observer = rcp(new ObserveSolution_Epetra());
+      RCP<NOX::Epetra::Observer> observer = rcp(new ObserveSolution_Epetra());
 
       if (solver=="NOX")
         piro = rcp(new Piro::Epetra::NOXSolver(piroParamsRCP, Model, observer));

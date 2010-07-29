@@ -192,7 +192,7 @@ NETCDF_LIB_DIR = ${ACCESS}/lib
 NETCDF_LIB = -L$(NETCDF_LIB_DIR) -lnetcdf
 
 EXODUS_LIB_DIR = ${ACCESS}/lib
-EXODUS_LIB = -L$(EXODUS_LIB_DIR) -lexoIIv2c
+EXODUS_LIB = -L$(EXODUS_LIB_DIR) -lexodus
 EXODUS_FLIB = -L$(EXODUS_LIB_DIR) -lexoIIv2for
 
 EXT_LIBS = $(EXODUS_LIB) $(NETCDF_LIB)
@@ -211,9 +211,9 @@ SRCS = ne_gcmp.c   ne_gebig.c  ne_gelcm.c  ne_gelm.c   ne_gelt.c   ne_gennm.c \
 
 OBJS = ${SRCS:.c=.o}
 
-all:: libnemIc.a libnemIf.a 
+all:: libnemesis.a libnemIf.a 
 
-libnemIc.a: $(OBJS)
+libnemesis.a: $(OBJS)
 	$(AR) $@ $?
 	$(RANLIB) $@
 
@@ -222,14 +222,14 @@ libnemIf.a:
 	cp forbind/libnemIf.a .
 
 check: test
-test:: ne_test.c libnemIc.a 
+test:: ne_test.c libnemesis.a 
 	$(CC) -c $(CFLAGS) ne_test.c
-	$(CC) $(CFLAGS) -o ne_ctest ne_test.o libnemIc.a $(EXT_LIBS) -lm
+	$(CC) $(CFLAGS) -o ne_ctest ne_test.o libnemesis.a $(EXT_LIBS) -lm
 	./ne_ctest
 
 test:: forbind/ne_test.f libnemIf.a
 	$(FC) -c $(FFLAGS) -I./forbind forbind/ne_test.f
-	$(FC) $(FFLAGS) -o ne_ftest ne_test.o libnemIf.a libnemIc.a $(EXT_FLIBS) $(EXT_LIBS) -lm
+	$(FC) $(FFLAGS) -o ne_ftest ne_test.o libnemIf.a libnemesis.a $(EXT_FLIBS) $(EXT_LIBS) -lm
 	./ne_ftest
 
 clean::

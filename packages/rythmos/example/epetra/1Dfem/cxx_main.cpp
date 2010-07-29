@@ -270,7 +270,6 @@ int main(int argc, char *argv[])
     Rythmos::StepperBase<double> &stepper = *stepper_ptr;
     stepper.setInitialCondition(model_ic);
 
-    Teuchos::RCP<Teuchos::FancyOStream> out = Teuchos::VerboseObjectBase::getDefaultOStream();
     if (outputLevel >= 3)
     {
       stepper.describe(*out,static_cast<Teuchos::EVerbosityLevel>(outputLevel));

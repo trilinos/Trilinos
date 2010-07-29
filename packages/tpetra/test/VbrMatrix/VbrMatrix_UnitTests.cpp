@@ -89,6 +89,7 @@ namespace {
 
   using Tpetra::BlockMap;
   using Tpetra::BlockMultiVector;
+  using Tpetra::BlockCrsGraph;
   using Tpetra::Operator;
   using Tpetra::VbrMatrix;
   using Tpetra::Import;
@@ -182,6 +183,17 @@ namespace {
   template <class Node>
   RCP<Node> getNode() {
     assert(false);
+  }
+
+  template<class Scalar,class Ordinal>
+  void zero_lower_triangle(Ordinal N, Teuchos::Array<Scalar>& A)
+  {
+    Scalar zero = Teuchos::ScalarTraits<Scalar>::zero();
+    for(Ordinal r=0; r<N; ++r) {
+      for(Ordinal c=0; c<r; ++c) {
+        A[c*N+r] = zero;
+      }
+    }
   }
 
   template <>
@@ -280,7 +292,7 @@ namespace {
     // create the matrix
     {
       RCP<MAT> vbr = rcp( new MAT(rowmap,maxEntriesPerRow,DynamicProfile) );
-      Teuchos::ArrayView<const GO> blk_rows = rowmap->getBlockIDs();
+      Teuchos::ArrayView<const GO> blk_rows = rowmap->getNodeBlockIDs();
       for(int i=0; i<blk_rows.size(); ++i) {
         GO row = blk_rows[i];
         for(int j=0; j<blk_rows.size(); ++j) {
@@ -329,7 +341,7 @@ namespace {
     // create the matrix
     {
       RCP<MAT> vbr = rcp( new MAT(rowmap,maxEntriesPerRow,DynamicProfile) );
-      Teuchos::ArrayView<const GO> blk_rows = rowmap->getBlockIDs();
+      Teuchos::ArrayView<const GO> blk_rows = rowmap->getNodeBlockIDs();
       for(int i=0; i<blk_rows.size(); ++i) {
         GO row = blk_rows[i];
         for(int j=0; j<blk_rows.size(); ++j) {
@@ -377,13 +389,15 @@ namespace {
     // create the matrix
     {
       RCP<MAT> vbr = rcp( new MAT(rowmap,maxEntriesPerRow,DynamicProfile) );
-      Teuchos::ArrayView<const GO> blk_rows = rowmap->getBlockIDs();
+      Teuchos::ArrayView<const GO> blk_rows = rowmap->getNodeBlockIDs();
       for(int i=0; i<blk_rows.size(); ++i) {
         GO row = blk_rows[i];
         for(int j=0; j<blk_rows.size(); ++j) {
           GO col = blk_rows[j];
           Teuchos::Array<Scalar> blkEntry(blockSize * blockSize, row+col+1);
           vbr->setGlobalBlockEntry(row, col, blockSize, blockSize, blockSize, blkEntry());
+          //setLocalBlockEntry should throw since fillComplete hasn't been called yet:
+          TEST_THROW(vbr->setLocalBlockEntry(i, j, blockSize, blockSize, blockSize, blkEntry()), std::runtime_error);
         }
       }
 
@@ -432,7 +446,7 @@ namespace {
     // create the matrix
     {
       RCP<MAT> vbr = rcp( new MAT(rowmap,maxEntriesPerRow,DynamicProfile) );
-      Teuchos::ArrayView<const GO> blk_rows = rowmap->getBlockIDs();
+      Teuchos::ArrayView<const GO> blk_rows = rowmap->getNodeBlockIDs();
       for(int i=0; i<blk_rows.size(); ++i) {
         GO row = blk_rows[i];
         for(int j=0; j<blk_rows.size(); ++j) {
@@ -458,6 +472,15 @@ namespace {
         GO row = blk_rows[i];
         for(int j=0; j<blk_rows.size(); ++j) {
           GO col = blk_rows[j];
+          Teuchos::Array<Scalar> blkEntry(blockSize * blockSize, row+col+1);
+          vbr->sumIntoLocalBlockEntry(i, j, blockSize, blockSize, blockSize, blkEntry());
+        }
+      }
+
+      for(int i=0; i<blk_rows.size(); ++i) {
+        GO row = blk_rows[i];
+        for(int j=0; j<blk_rows.size(); ++j) {
+          GO col = blk_rows[j];
           LO numPtRows, numPtCols;
           Teuchos::ArrayRCP<const Scalar> blockEntry;
           vbr->getGlobalBlockEntryView(row, col, numPtRows, numPtCols, blockEntry);
@@ -466,7 +489,7 @@ namespace {
           vbr->getGlobalBlockEntryViewNonConst(row, col, numPtRows, numPtCols, nonconstblockEntry);
  
           Teuchos::SerialDenseMatrix<GO,Scalar> blk(blockSize,blockSize);
-          blk.putScalar(row+col+1+10.0);
+          blk.putScalar(2*(row+col+1)+10.0);
 
           Teuchos::ArrayRCP<const Scalar> blk_values(blk.values(), 0, blockSize*blockSize, false);
           TEST_COMPARE_FLOATING_ARRAYS( blockEntry, blk_values, 2*Teuchos::ScalarTraits<Scalar>::eps());
@@ -505,7 +528,7 @@ namespace {
       bmv1->putScalar(1.0);
       ArrayRCP<Scalar> v3 = bmv3->get1dViewNonConst();
       RCP<MAT> vbr = rcp( new MAT(rowmap,maxEntriesPerRow,DynamicProfile) );
-      Teuchos::ArrayView<const GO> blk_rows = rowmap->getBlockIDs();
+      Teuchos::ArrayView<const GO> blk_rows = rowmap->getNodeBlockIDs();
       LO row_offset = 0;
       for(int i=0; i<blk_rows.size(); ++i) {
         Scalar val = 0;
@@ -523,6 +546,108 @@ namespace {
       vbr->apply(*bmv1, *bmv2);
       ArrayRCP<Scalar> v2 = bmv2->get1dViewNonConst();
       TEST_COMPARE_FLOATING_ARRAYS( v2, v3, 2*Teuchos::ScalarTraits<Scalar>::eps());
+    }
+  }
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( VbrMatrix, solveUpperNonUnit, LO, GO, Scalar, Node )
+  {
+    //This test builds a block-diagonal, upper-triangular matrix and tests the
+    //solve method.
+    RCP<Node> node = getNode<Node>();
+    typedef ScalarTraits<Scalar> ST;
+    typedef BlockMultiVector<Scalar,LO,GO,Node> BMV;
+    typedef VbrMatrix<Scalar,LO,GO,Node> MAT;
+    typedef typename ST::magnitudeType Mag;
+    typedef ScalarTraits<Mag> MT;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    GO indexBase = 0;
+    // create a Map
+    const size_t numLocalBlocks = 3;
+    const LO blockSize = 3;
+    const size_t maxEntriesPerRow = 3;
+    RCP<BlockMap<LO,GO,Node> > rowmap = rcp( new BlockMap<LO,GO,Node>(INVALID,numLocalBlocks,blockSize,indexBase,comm,node) );
+    // create the matrix
+    {
+      RCP<MAT> vbr = rcp( new MAT(rowmap,maxEntriesPerRow,DynamicProfile) );
+      Teuchos::ArrayView<const GO> blk_rows = rowmap->getNodeBlockIDs();
+      for(int i=0; i<blk_rows.size(); ++i) {
+        Scalar val = 0;
+        GO row = blk_rows[i];
+        for(int j=i; j<blk_rows.size(); ++j) {
+          GO col = blk_rows[j];
+          Teuchos::Array<Scalar> blkEntry(blockSize * blockSize, row+col+1);
+          if (row==col) zero_lower_triangle(blockSize, blkEntry);
+          val += (row+col+1)*blockSize;
+          vbr->setGlobalBlockEntry(row, col, blockSize, blockSize, blockSize, blkEntry());
+        }
+      }
+
+      vbr->fillComplete();
+
+      RCP<BMV> x = rcp(new BMV(rowmap, 1));
+      x->putScalar(1.0);
+      RCP<BMV> y = rcp(new BMV(rowmap, 1));
+      RCP<BMV> x2 = rcp(new BMV(rowmap, 1));
+
+      vbr->apply(*x, *y);
+      vbr->applyInverse(*y, *x2, Teuchos::NO_TRANS);
+      ArrayRCP<const Scalar> v_x = x->get1dView();
+      ArrayRCP<const Scalar> v_x2 = x2->get1dView();
+      TEST_COMPARE_FLOATING_ARRAYS( v_x, v_x2, 2*Teuchos::ScalarTraits<Scalar>::eps());
+    }
+  }
+
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( VbrMatrix, solveTransposeUpperNonUnit, LO, GO, Scalar, Node )
+  {
+    //This test builds a block-diagonal, upper-triangular matrix and tests the
+    //transpose-solve method.
+    RCP<Node> node = getNode<Node>();
+    typedef ScalarTraits<Scalar> ST;
+    typedef BlockMultiVector<Scalar,LO,GO,Node> BMV;
+    typedef VbrMatrix<Scalar,LO,GO,Node> MAT;
+    typedef typename ST::magnitudeType Mag;
+    typedef ScalarTraits<Mag> MT;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    GO indexBase = 0;
+    // create a Map
+    const size_t numLocalBlocks = 3;
+    const LO blockSize = 3;
+    const size_t maxEntriesPerRow = 3;
+    RCP<BlockMap<LO,GO,Node> > rowmap = rcp( new BlockMap<LO,GO,Node>(INVALID,numLocalBlocks,blockSize,indexBase,comm,node) );
+    // create the matrix
+    {
+      RCP<MAT> vbr = rcp( new MAT(rowmap,maxEntriesPerRow,DynamicProfile) );
+      Teuchos::ArrayView<const GO> blk_rows = rowmap->getNodeBlockIDs();
+      for(int i=0; i<blk_rows.size(); ++i) {
+        Scalar val = 0;
+        GO row = blk_rows[i];
+        for(int j=i; j<blk_rows.size(); ++j) {
+          GO col = blk_rows[j];
+          Teuchos::Array<Scalar> blkEntry(blockSize * blockSize, row+col+1);
+          if (row==col) zero_lower_triangle(blockSize, blkEntry);
+          val += (row+col+1)*blockSize;
+          vbr->setGlobalBlockEntry(row, col, blockSize, blockSize, blockSize, blkEntry());
+        }
+      }
+
+      vbr->fillComplete();
+
+      RCP<BMV> x = rcp(new BMV(rowmap, 1));
+      x->putScalar(1.0);
+      RCP<BMV> y = rcp(new BMV(rowmap, 1));
+      RCP<BMV> x2 = rcp(new BMV(rowmap, 1));
+
+      vbr->apply(*x, *y, Teuchos::TRANS);
+      vbr->applyInverse(*y, *x2, Teuchos::TRANS);
+      ArrayRCP<const Scalar> v_x = x->get1dView();
+      ArrayRCP<const Scalar> v_x2 = x2->get1dView();
+      TEST_COMPARE_FLOATING_ARRAYS( v_x, v_x2, 2*Teuchos::ScalarTraits<Scalar>::eps());
     }
   }
 
@@ -557,7 +682,7 @@ namespace {
     if (comm->getRank() != comm->getSize()-1) ++numLocalColBlocks;
     Array<GO> blockColIDs(numLocalColBlocks);
     typedef typename Array<GO>::size_type Tsize_t;
-    Teuchos::ArrayView<const GO> blk_rows = rowmap->getBlockIDs();
+    Teuchos::ArrayView<const GO> blk_rows = rowmap->getNodeBlockIDs();
     GO first_row = blk_rows[0];
     Tsize_t offset = 0;
     if (comm->getRank() != 0) {
@@ -593,7 +718,7 @@ namespace {
 
     vbr->fillComplete();
     RCP<const BlockMap<LO,GO,Node> > colmap = vbr->getBlockColMap();
-    ArrayView<const GO> blk_cols = colmap->getBlockIDs();
+    ArrayView<const GO> blk_cols = colmap->getNodeBlockIDs();
     TEST_EQUALITY(blk_cols.size(), blockColIDs.size());
     TEST_COMPARE_ARRAYS(blk_cols, blockColIDs() );
   }
@@ -631,7 +756,7 @@ namespace {
     if (comm->getRank() != comm->getSize()-1) ++numLocalColBlocks;
     Array<GO> blockColIDs(numLocalColBlocks);
     typedef typename Array<GO>::size_type Tsize_t;
-    Teuchos::ArrayView<const GO> blk_rows = rowmap->getBlockIDs();
+    Teuchos::ArrayView<const GO> blk_rows = rowmap->getNodeBlockIDs();
     GO first_row = blk_rows[0];
     Tsize_t offset = 0;
     if (comm->getRank() != 0) {
@@ -686,6 +811,93 @@ namespace {
   }
 
   ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( VbrMatrix, applyTransParallel, LO, GO, Scalar, Node )
+  {
+    //This test fills a (block-tri-diagonal) matrix such that in parallel the
+    //column-map should have an overlapping set of entries (i.e., different than
+    //the row-map), and verify that apply transpose works correctly. If the column-map
+    //has an overlapping set of entries, then apply must do an export of the y
+    //vector in order to get a correct result.
+
+    RCP<Node> node = getNode<Node>();
+    typedef ScalarTraits<Scalar> ST;
+    typedef BlockMultiVector<Scalar,LO,GO,Node> BMV;
+    typedef VbrMatrix<Scalar,LO,GO,Node> MAT;
+    typedef typename ST::magnitudeType Mag;
+    typedef ScalarTraits<Mag> MT;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    GO indexBase = 0;
+    // create a Map
+    const size_t numLocalBlocks = 2;
+    GO numGlobalBlocks = numLocalBlocks*comm->getSize();
+    const LO blockSize = 2;
+    const size_t maxEntriesPerRow = 3;
+    RCP<BlockMap<LO,GO,Node> > rowmap = rcp( new BlockMap<LO,GO,Node>(INVALID,numLocalBlocks,blockSize,indexBase,comm,node) );
+
+    //now set up the list of block-column-ids that we expect the
+    //column-map to contain after fillComplete:
+    size_t numLocalColBlocks = numLocalBlocks;
+    if (comm->getRank() != 0) ++numLocalColBlocks;
+    if (comm->getRank() != comm->getSize()-1) ++numLocalColBlocks;
+    Array<GO> blockColIDs(numLocalColBlocks);
+    typedef typename Array<GO>::size_type Tsize_t;
+    Teuchos::ArrayView<const GO> blk_rows = rowmap->getNodeBlockIDs();
+    GO first_row = blk_rows[0];
+    Tsize_t offset = 0;
+    if (comm->getRank() != 0) {
+      blockColIDs[offset++] = first_row - 1;
+    }
+    GO last_row = 0;
+    LO row_offset = 0;
+    for(LO i=0; i<blk_rows.size(); ++i) {
+      blockColIDs[offset++] = blk_rows[i];
+      last_row = blk_rows[i];
+    }
+    if (offset < blockColIDs.size()) blockColIDs[offset++] = last_row + 1;
+
+    RCP<BMV> bmv1 = rcp(new BMV(rowmap, 1));
+    RCP<BMV> bmv2 = rcp(new BMV(rowmap, 1));
+    RCP<BMV> bmv3 = rcp(new BMV(rowmap, 1));
+    bmv1->putScalar(1.0);
+    ArrayRCP<Scalar> v3 = bmv3->get1dViewNonConst();
+
+    // create the matrix
+    RCP<MAT> vbr = rcp( new MAT(rowmap,maxEntriesPerRow,DynamicProfile) );
+    for(int i=0; i<blk_rows.size(); ++i) {
+      Scalar val = 0;
+      GO row = blk_rows[i];
+      {
+        GO col = row;
+        Teuchos::Array<Scalar> blkEntry(blockSize * blockSize, row+col+1);
+        vbr->setGlobalBlockEntry(row, col, blockSize, blockSize, blockSize, blkEntry());
+        val += (row+col+1)*blockSize;
+      }
+      if (row > indexBase) {
+        GO col = row - 1;
+        Teuchos::Array<Scalar> blkEntry(blockSize * blockSize, row+col+1);
+        vbr->setGlobalBlockEntry(row, col, blockSize, blockSize, blockSize, blkEntry());
+        val += (row+col+1)*blockSize;
+      }
+      if (row < numGlobalBlocks-1) {
+        GO col = row + 1;
+        Teuchos::Array<Scalar> blkEntry(blockSize * blockSize, row+col+1);
+        vbr->setGlobalBlockEntry(row, col, blockSize, blockSize, blockSize, blkEntry());
+        val += (row+col+1)*blockSize;
+      }
+      for(int k=0; k<blockSize; ++k) v3[row_offset++] = val;
+    }
+
+    vbr->fillComplete();
+
+    vbr->apply(*bmv1, *bmv2, Teuchos::TRANS);
+
+    ArrayRCP<Scalar> v2 = bmv2->get1dViewNonConst();
+    TEST_COMPARE_FLOATING_ARRAYS( v2, v3, 2*Teuchos::ScalarTraits<Scalar>::eps());
+  }
+
+  ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( VbrMatrix, applyParallelMV, LO, GO, Scalar, Node )
   {
     //This test fills a (block-tri-diagonal) matrix such that in parallel the
@@ -719,7 +931,7 @@ namespace {
     if (comm->getRank() != comm->getSize()-1) ++numLocalColBlocks;
     Array<GO> blockColIDs(numLocalColBlocks);
     typedef typename Array<GO>::size_type Tsize_t;
-    Teuchos::ArrayView<const GO> blk_rows = rowmap->getBlockIDs();
+    Teuchos::ArrayView<const GO> blk_rows = rowmap->getNodeBlockIDs();
     GO first_row = blk_rows[0];
     Tsize_t offset = 0;
     if (comm->getRank() != 0) {
@@ -780,14 +992,124 @@ namespace {
     TEST_COMPARE_FLOATING_ARRAYS( v2, v3, 2*Teuchos::ScalarTraits<Scalar>::eps());
   }
 
+  ////
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( VbrMatrix, CtorBCrsGraph, LO, GO, Scalar, Node )
+  {
+    //This test creates a (block-tri-diagonal) matrix using a pre-filled
+    //BlockCrsGraph such that in parallel the column-map should have an
+    //overlapping set of entries (i.e., different than the row-map),
+    //and verify that apply works correctly. If the column-map
+    //has an overlapping set of entries, then apply must do an import of the x
+    //vector in order to get a correct result.
+
+    RCP<Node> node = getNode<Node>();
+    typedef ScalarTraits<Scalar> ST;
+    typedef BlockCrsGraph<LO,GO,Node> BGRAPH;
+    typedef BlockMultiVector<Scalar,LO,GO,Node> BMV;
+    typedef VbrMatrix<Scalar,LO,GO,Node> MAT;
+    typedef typename ST::magnitudeType Mag;
+    typedef ScalarTraits<Mag> MT;
+    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
+    // get a comm
+    RCP<const Comm<int> > comm = getDefaultComm();
+    GO indexBase = 0;
+    // create a Map
+    const size_t numLocalBlocks = 2;
+    GO maxGlobalBlock = numLocalBlocks*comm->getSize();
+    const LO blockSize = 2;
+    RCP<BlockMap<LO,GO,Node> > rowmap = rcp( new BlockMap<LO,GO,Node>(INVALID,numLocalBlocks,blockSize,indexBase,comm,node) );
+
+    //now set up the list of block-column-ids that we expect the
+    //column-map to contain after fillComplete:
+    size_t numLocalColBlocks = numLocalBlocks;
+    if (comm->getRank() != 0) ++numLocalColBlocks;
+    if (comm->getRank() != comm->getSize()-1) ++numLocalColBlocks;
+    Array<GO> blockColIDs(numLocalColBlocks);
+    typedef typename Array<GO>::size_type Tsize_t;
+    Teuchos::ArrayView<const GO> blk_rows = rowmap->getNodeBlockIDs();
+    GO first_row = blk_rows[0];
+    Tsize_t offset = 0;
+    if (comm->getRank() != 0) {
+      blockColIDs[offset++] = first_row - 1;
+    }
+    GO last_row = 0;
+    for(LO i=0; i<blk_rows.size(); ++i) {
+      blockColIDs[offset++] = blk_rows[i];
+      last_row = blk_rows[i];
+    }
+    if (offset < blockColIDs.size()) blockColIDs[offset++] = last_row + 1;
+
+    const size_t maxEntriesPerRow = 3;
+    // create and fill the graph
+    RCP<BGRAPH> bgrph = rcp( new BGRAPH(rowmap,maxEntriesPerRow,DynamicProfile) );
+    for(int i=0; i<blk_rows.size(); ++i) {
+      GO row = blk_rows[i];
+      {
+        GO col = row;
+        bgrph->insertGlobalIndices(row, Teuchos::arrayView(&col, 1));
+      }
+      if (row > indexBase) {
+        GO col = row - 1;
+        bgrph->insertGlobalIndices(row, Teuchos::arrayView(&col, 1));
+      }
+      if (row < maxGlobalBlock-1) {
+        GO col = row + 1;
+        bgrph->insertGlobalIndices(row, Teuchos::arrayView(&col, 1));
+      }
+    }
+
+    bgrph->fillComplete();
+
+    RCP<BMV> bmv3 = rcp(new BMV(rowmap, 1));
+    ArrayRCP<Scalar> v3 = bmv3->get1dViewNonConst();
+
+    // create and fill the matrix
+    RCP<MAT> vbr = rcp( new MAT(bgrph) );
+    LO row_offset = 0;
+    for(int i=0; i<blk_rows.size(); ++i) {
+      Scalar val = 0;
+      GO row = blk_rows[i];
+      {
+        GO col = row;
+        Teuchos::Array<Scalar> blkEntry(blockSize * blockSize, row+col+1);
+        vbr->setGlobalBlockEntry(row, col, blockSize, blockSize, blockSize, blkEntry());
+        val += (row+col+1)*blockSize;
+      }
+      if (row > indexBase) {
+        GO col = row - 1;
+        Teuchos::Array<Scalar> blkEntry(blockSize * blockSize, row+col+1);
+        vbr->setGlobalBlockEntry(row, col, blockSize, blockSize, blockSize, blkEntry());
+        val += (row+col+1)*blockSize;
+      }
+      if (row < maxGlobalBlock-1) {
+        GO col = row + 1;
+        Teuchos::Array<Scalar> blkEntry(blockSize * blockSize, row+col+1);
+        vbr->setGlobalBlockEntry(row, col, blockSize, blockSize, blockSize, blkEntry());
+        val += (row+col+1)*blockSize;
+      }
+      for(int k=0; k<blockSize; ++k) v3[row_offset++] = val;
+    }
+
+    vbr->fillComplete();
+
+    RCP<BMV> bmv1 = rcp(new BMV(rowmap, 1));
+    RCP<BMV> bmv2 = rcp(new BMV(rowmap, 1));
+    bmv1->putScalar(1.0);
+
+    vbr->apply(*bmv1, *bmv2);
+
+    ArrayRCP<Scalar> v2 = bmv2->get1dViewNonConst();
+    TEST_COMPARE_FLOATING_ARRAYS( v2, v3, 2*Teuchos::ScalarTraits<Scalar>::eps());
+  }
+
 // 
 // INSTANTIATIONS
 //
 
 
-  // Uncomment this for really fast development cycles but make sure to comment
-  // it back again before checking in so that we can test all the types.
-  // #define FAST_DEVELOPMENT_UNIT_TEST_BUILD
+// Uncomment this for really fast development cycles but make sure to comment
+// it back again before checking in so that we can test all the types.
+#define FAST_DEVELOPMENT_UNIT_TEST_BUILD
 
 typedef std::complex<float>  ComplexFloat;
 typedef std::complex<double> ComplexDouble;
@@ -799,9 +1121,13 @@ typedef std::complex<double> ComplexDouble;
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, SetAndGetBlockEntry3, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, putScalarAndSumInto1, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, applySimple, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, solveUpperNonUnit, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, solveTransposeUpperNonUnit, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, ColMap1, LO, GO, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, applyParallel, LO, GO, SCALAR, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, applyParallelMV, LO, GO, SCALAR, NODE )
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, applyTransParallel, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, applyParallelMV, LO, GO, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( VbrMatrix, CtorBCrsGraph, LO, GO, SCALAR, NODE )
 
 
 #define UNIT_TEST_SERIALNODE(LO, GO, SCALAR) \
@@ -884,7 +1210,7 @@ typedef std::complex<double> ComplexDouble;
   UNIT_TEST_DOUBLE(int, int)
 #endif
 
-#if !defined(FAST_DEVELOPMENT_BUILD)
+#if !defined(FAST_DEVELOPMENT_UNIT_TEST_BUILD)
 # if defined(HAVE_TPETRA_INST_FLOAT)
     UNIT_TEST_FLOAT(int, int)
 # endif 

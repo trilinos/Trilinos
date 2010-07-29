@@ -222,6 +222,9 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
     assert_is_destroyed( mesh.m_bulk_data.get_entity(0, mesh.m_node_ids[nNotOwned] ) );
     assert_is_destroyed( mesh.m_bulk_data.get_entity(1, node_edge_ids[0] ) );
     assert_is_destroyed( mesh.m_bulk_data.get_entity(1, node_edge_ids[1] ) );
+
+    // assert that no entities are shared or ghosted
+    STKUNIT_ASSERT( mesh.m_bulk_data.entity_comm().empty() );
   }
   //------------------------------
   if ( 1 < p_size ) { // With ghosting
@@ -271,6 +274,9 @@ void UnitTestBulkData::testDestroy_loop( ParallelMachine pm )
     assert_is_destroyed( mesh.m_bulk_data.get_entity(0, mesh.m_node_ids[ nOwned ] ) );
     assert_is_destroyed( mesh.m_bulk_data.get_entity(1, node_edge_ids[0] ) );
     assert_is_destroyed( mesh.m_bulk_data.get_entity(1, node_edge_ids[1] ) );
+
+    // assert that no entities are shared or ghosted
+    STKUNIT_ASSERT( mesh.m_bulk_data.entity_comm().empty() );
   }
 }
 

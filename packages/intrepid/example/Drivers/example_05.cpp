@@ -28,9 +28,13 @@
 // ************************************************************************
 // @HEADER
 
-/** \file   example_03.cpp
+/** \file   example_05.cpp
     \brief  Example building stiffness matrix and right hand side for a Poisson equation 
             using nodal (Hgrad) elements on squares.
+	    This uses higher order elements and builds a single reference stiffness matrix
+	    that is used for each element.
+	    The global matrix is constructed by specifying an upper bound on the number
+	    of nonzeros per row, but not preallocating the graph.
 
     \verbatim
              div grad u = f in Omega
@@ -52,7 +56,7 @@
      \verbatim
 
      ./Intrepid_example_Drivers_Example_05.exe N verbose
-
+        int deg             - polynomial degree
         int NX              - num intervals in x direction (assumed box domain, 0,1)
         int NY              - num intervals in x direction (assumed box domain, 0,1)
         verbose (optional)  - any character, indicates verbose output
@@ -60,7 +64,7 @@
      \endverbatim
 
     \remark Sample command line
-    \code   ./Intrepid_example_Drivers_Example_05.exe 10 10 \endcode
+    \code   ./Intrepid_example_Drivers_Example_05.exe 2 10 10 \endcode
 */
 
 // Intrepid includes
@@ -275,6 +279,7 @@ int main(int argc, char *argv[]) {
 
   // create the local-global mapping for higher order elements
   FieldContainer<int> ltgMapping(numElems,numFieldsG);
+  const int numDOF = (NX*deg+1)*(NY*deg+1);
   ielem=0;
   for (int j=0;j<NY;j++) {
     for (int i=0;i<NX;i++) {
@@ -334,10 +339,15 @@ int main(int argc, char *argv[]) {
   
   // Global arrays in Epetra format 
   Epetra_SerialComm Comm;
-  Epetra_Map globalMapG(numNodes, 0, Comm);
-  Epetra_FECrsMatrix StiffMatrix(Copy, globalMapG, numFieldsG);
-  Epetra_FEVector rhs(globalMapG);
+  Epetra_Map globalMapG(numDOF, 0, Comm);
+  Epetra_Time instantiateTimer(Comm);
+  Epetra_FECrsMatrix StiffMatrix(Copy, globalMapG, 4*numFieldsG);
+  const double instantiateTime = instantiateTimer.ElapsedTime();
+  std::cout << "Time to instantiate sparse matrix " << instantiateTime << "\n";
+  Epetra_FEVector u(globalMapG);
+  Epetra_FEVector Ku(globalMapG);
 
+  u.Random();
     
   // ************************** Compute element HGrad stiffness matrices *******************************  
   refQuadNodes(0,0,0) = 0.0;
@@ -368,61 +378,31 @@ int main(int argc, char *argv[]) {
   fst::integrate<double>(localStiffMatrix,
 			 quadGradsTransformed, quadGradsTransformedWeighted, COMP_BLAS);
 
-  std::cout << localStiffMatrix;
+
+  Epetra_Time assemblyTimer(Comm);
 
   // *** Element loop ***
-   for (int k=0; k<numElems; k++) {
-      // assemble into global matrix
-      for (int row = 0; row < numFieldsG; row++){
-        for (int col = 0; col < numFieldsG; col++){
-            int rowIndex = elemToNode(k,row);
-            int colIndex = elemToNode(k,col);
-            double val = localStiffMatrix(0,row,col);
-            StiffMatrix.InsertGlobalValues(1, &rowIndex, 1, &colIndex, &val);
-         }
-      }
+   for (int k=0; k<numElems; k++) 
+     {
+       // assemble into global matrix
+       StiffMatrix.InsertGlobalValues(numFieldsG,&ltgMapping(k,0),numFieldsG,&ltgMapping(k,0),&localStiffMatrix(0,0,0));
 
-      // ******************************* Build right hand side ************************************
-
-//       // transform integration points to physical points
-//        CellTools::mapToPhysicalFrame(physCubPoints, cubPoints, hexNodes, hex_8);
-
-//       // evaluate right hand side function at physical points
-//        for (int nPt = 0; nPt < numCubPoints; nPt++){
-
-//           double x = physCubPoints(0,nPt,0);
-//           double y = physCubPoints(0,nPt,1);
-//           double z = physCubPoints(0,nPt,2);
-
-//           rhsData(0,nPt) = evalDivGradu(x, y, z);
-//        }
-
-//      // transform basis values to physical coordinates 
-//       fst::HGRADtransformVALUE<double>(quadGValsTransformed, quadGVals);
-
-//      // multiply values with weighted measure
-//       fst::multiplyMeasure<double>(quadGValsTransformedWeighted,
-//                                    weightedMeasure, quadGValsTransformed);
-
-//      // integrate rhs term
-//       fst::integrate<double>(localRHS, rhsData, quadGValsTransformedWeighted, 
-//                              COMP_BLAS);
-
-//     // assemble into global vector
-//      for (int row = 0; row < numFieldsG; row++){
-//            int rowIndex = elemToNode(k,row);
-//            double val = -localRHS(0,row);
-//            rhs.SumIntoGlobalValues(1, &rowIndex, &val);
-//       }
-     
-   } // *** end element loop ***
+     }
 
 
   // Assemble global matrices
    StiffMatrix.GlobalAssemble(); StiffMatrix.FillComplete();
-//    rhs.GlobalAssemble();
 
+   double assembleTime = assemblyTimer.ElapsedTime();
+   std::cout << "Time to insert reference element matrix into global matrix: " << assembleTime << std::endl;
+   std::cout << "There are " << StiffMatrix.NumGlobalNonzeros() << " nonzeros in the matrix.\n";
+   std::cout << "There are " << numDOF << " global degrees of freedom.\n";
  
+   Epetra_Time multTimer(Comm);
+   StiffMatrix.Apply(u,Ku);
+   double multTime = multTimer.ElapsedTime();
+   std::cout << "Time to apply: " << multTime << std::endl;
+
 //    // Adjust stiffness matrix and rhs based on boundary conditions
 //    for (int row = 0; row<numNodes; row++){
 //        if (nodeOnBoundary(row)) {
@@ -441,11 +421,12 @@ int main(int argc, char *argv[]) {
 
 #ifdef DUMP_DATA
    // Dump matrices to disk
-   EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
-   EpetraExt::MultiVectorToMatrixMarketFile("rhs_vector.dat",rhs,0,0,false);
+//    EpetraExt::RowMatrixToMatlabFile("stiff_matrix.dat",StiffMatrix);
+//    EpetraExt::MultiVectorToMatrixMarketFile("rhs_vector.dat",rhs,0,0,false);
 #endif
 
-   
+   std::cout << "End Result: TEST PASSED\n";   
+
    // reset format state of std::cout
    std::cout.copyfmt(oldFormatState);
    

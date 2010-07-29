@@ -191,8 +191,8 @@ TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, copyVectors ) {
   InterpolationBuffer<double> ib;
   ib.addPoints(time_vec, v_vec, v_dot_vec);
 
-  Thyra::V_S(&*v, 4.0);
-  Thyra::V_S(&*v_dot, 5.0);
+  Thyra::V_S(v.ptr(), 4.0);
+  Thyra::V_S(v_dot.ptr(), 5.0);
 
   Array<RCP<const VectorBase<double> > > v_vec_out;
   Array<RCP<const VectorBase<double> > > v_dot_vec_out;
@@ -701,27 +701,29 @@ TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, addPoints_IBPolicy ) {
 }
 
 TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, getPoints ) {
-  int N = 5;
-  Array<double> time_vec;
-  Array<RCP<const VectorBase<double> > > x_vec;
-  Array<RCP<const VectorBase<double> > > xdot_vec;
-  for (int i=0 ; i<N ; ++i) {
-    RCP<VectorBase<double> > v = createDefaultVector(2,1.0+i*1.0);
-    RCP<VectorBase<double> > vdot = createDefaultVector(2,2.0+i*1.0);
-    time_vec.push_back(10.0+i*1.0);
-    x_vec.push_back(v);
-    xdot_vec.push_back(vdot);
+  {
+    int N = 5;
+    Array<double> time_vec;
+    Array<RCP<const VectorBase<double> > > x_vec;
+    Array<RCP<const VectorBase<double> > > xdot_vec;
+    for (int i=0 ; i<N ; ++i) {
+      RCP<VectorBase<double> > v = createDefaultVector(2,1.0+i*1.0);
+      RCP<VectorBase<double> > vdot = createDefaultVector(2,2.0+i*1.0);
+      time_vec.push_back(10.0+i*1.0);
+      x_vec.push_back(v);
+      xdot_vec.push_back(vdot);
+    }
+    RCP<InterpolationBuffer<double> > ib = interpolationBuffer<double>();
+    ib->setStorage(N);
+    ib->addPoints(
+        time_vec,
+        x_vec,
+        xdot_vec
+        );
+    TimeRange<double> tr = ib->getTimeRange();
+    TEST_EQUALITY_CONST( tr.lower(), 10.0 );
+    TEST_EQUALITY_CONST( tr.upper(), 14.0 );
   }
-  RCP<InterpolationBuffer<double> > ib = interpolationBuffer<double>();
-  ib->setStorage(N);
-  ib->addPoints(
-      time_vec,
-      x_vec,
-      xdot_vec
-      );
-  TimeRange<double> tr = ib->getTimeRange();
-  TEST_EQUALITY_CONST( tr.lower(), 10.0 );
-  TEST_EQUALITY_CONST( tr.upper(), 14.0 );
 
   // Case A.  1 point in buffer
   {
@@ -932,8 +934,8 @@ TEUCHOS_UNIT_TEST( Rythmos_InterpolationBuffer, add_get_points_1 ) {
     Array<double> accuracy_vec;
     time_vec.push_back(t);
     ib->getPoints(time_vec,&x_vec,&xdot_vec,&accuracy_vec);
-    RCP<const VectorBase<double> > x = x_vec[0];
-    RCP<VectorBase<double> > y = x->clone_v();
+    RCP<const VectorBase<double> > x0 = x_vec[0];
+    RCP<VectorBase<double> > y = x0->clone_v();
     TEST_ASSERT( !is_null(y) );
   }
 }

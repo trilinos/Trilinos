@@ -1,4 +1,6 @@
 
+INCLUDE(PackageArchConstants)
+INCLUDE(PackageArchProcessExtraExternalRepositoriesLists)
 INCLUDE(PackageArchProcessPackagesAndDirsLists)
 INCLUDE(PackageArchAdjustPackageEnables)
 INCLUDE(PackageArchSetupMPI)
@@ -13,6 +15,7 @@ INCLUDE(FindListElement)
 INCLUDE(GlobalNullSet)
 INCLUDE(PrintNonemptyVar)
 INCLUDE(PrintVar)
+INCLUDE(Split)
 INCLUDE(RemoveGlobalDuplicates)
 
 
@@ -83,7 +86,7 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
 
   ADVANCED_SET(${PROJECT_NAME}_VERBOSE_CONFIGURE OFF
     CACHE BOOL
-    "Make the Trilinos configure process verbose."
+    "Make the ${PROJECT_NAME} configure process verbose."
     )
   
   ADVANCED_SET(${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION OFF
@@ -152,6 +155,80 @@ MACRO(PACKAGE_ARCH_DEFINE_GLOBAL_OPTIONS)
 
   ADVANCED_SET(${PROJECT_NAME}_ENABLE_CIRCULAR_REF_DETECTION_FAILURE OFF CACHE BOOL
     "If test output complaining about circular references is found, then the test will fail." )
+
+  IF (WIN32 AND NOT CYGWIN)
+    SET(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES_DEFAULT FALSE)
+  ELSE()
+    SET(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES_DEFAULT TRUE)
+  ENDIF()
+  ADVANCED_SET(${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES
+    "${${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES_DEFAULT}"
+    CACHE BOOL
+    "Output any XML dependency files or not." )
+
+  # 2009/01/19: rabartl: Above: This file outputs just fine on MS Windows
+  # using MS Visual Studio but it causes the entire file to
+  # diff.  There must be something wrong with a newlines or something
+  # that is causing this.  If people are going to be doing real
+  # development work on MS Windows with MS Visual Studio, then we need
+  # to fix this so that the dependency files will get created and
+  # checked in correctly.  I will look into this later.
+
+  ADVANCED_SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/python/data/${${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME}"
+    CACHE STRING
+    "Output XML file containing ${PROJECT_NAME} dependenices used by tools (if not empty)." )
+  
+  IF(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE AND PYTHON_EXECUTABLE)
+    SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/python/data/${${PROJECT_NAME}_CDASH_SUBPROJECT_DEPS_XML_FILE_NAME}" )
+  ELSE()
+    SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT "")
+  ENDIF()
+  ADVANCED_SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE
+    "${${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT}"
+    CACHE STRING
+    "Output XML file used by CDash in ${PROJECT_NAME}-independent format (if not empty)." )
+  
+  IF(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE AND PYTHON_EXECUTABLE)
+    SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE_DEFAULT
+      "${CMAKE_CURRENT_SOURCE_DIR}/cmake/python/data/${${PROJECT_NAME}_PACKAGE_DEPS_TABLE_HTML_FILE_NAME}" )
+  ELSE()
+    SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE_DEFAULT "")
+  ENDIF()
+  ADVANCED_SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE
+    "${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE_DEFAULT}"
+    CACHE STRING
+    "HTML ${PROJECT_NAME} dependenices file that will be written to (if not empty)." )
+
+  ADVANCED_SET(${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR
+    "" CACHE PATH
+    "Output the full XML dependency files in the given directory." )
+
+  ADVANCED_SET(${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE
+    ""
+    CACHE STRING
+    "Type of testing to pull in extra respositories (Continuous, or Nightly)" )
+
+  SET(${PROJECT_NAME}_EXTRAREPOS_FILE
+    "${${PROJECT_NAME}_DEPS_HOME_DIR}/cmake/${${PROJECT_NAME}_EXTRA_EXTERNAL_REPOS_FILE_NAME}")
+
+  ADVANCED_SET(${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES
+    FALSE CACHE BOOL
+   "Set if to ignore missing extra repositories (or fail hard)" )
+
+  MESSAGE("")
+  MESSAGE("Reading the list of extra repositories from ${${PROJECT_NAME}_EXTRAREPOS_FILE}")
+  MESSAGE("")
+
+  INCLUDE(${${PROJECT_NAME}_EXTRAREPOS_FILE})
+  PACKAGE_ARCH_PROCESS_EXTRAREPOS_LISTS() # Sets ${PROJECT_NAME}_EXTRA_REPOSITORIES_DEFAULT
+
+  ADVANCED_SET(${PROJECT_NAME}_EXTRA_REPOSITORIES
+    "${${PROJECT_NAME}_EXTRA_REPOSITORIES_DEFAULT}"
+    CACHE STRING
+    "List of external repositories that contain extra ${PROJECT_NAME} packages."
+    )
   
   MARK_AS_ADVANCED(BUILD_TESTING)
   MARK_AS_ADVANCED(CMAKE_BACKWARDS_COMPATIBILITY)
@@ -175,6 +252,8 @@ MACRO(PACKAGE_ARCH_PROCESS_TPLS_LISTS)
   PRINT_VAR(${PROJECT_NAME}_NUM_TPLS)
   MATH(EXPR ${PROJECT_NAME}_LAST_TPL_IDX "${${PROJECT_NAME}_NUM_TPLS}-1")
   
+  # 2010/07/28: rabartl: ToDo: You need to allow a mode where this can be
+  # appended to support the addition of extra TPLs defined in extra repos (bug 4877).
   SET(${PROJECT_NAME}_TPLS)
 
   FOREACH(TPL_IDX RANGE ${${PROJECT_NAME}_LAST_TPL_IDX})
@@ -330,9 +409,235 @@ ENDFUNCTION()
 
 
 #
-# Set up the standard environment
+# Macro that ouptuts XML dependency files
 #
 
+MACRO(PACKAGE_ARCH_WRITE_XML_DEPENDENCY_FILES)
+  
+  #PRINT_VAR(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE)
+  IF (${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE)
+    IF (NOT IS_ABSOLUTE ${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE})
+      SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE
+        ${CMAKE_CURRENT_BINARY_DIR}/${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE})
+    ENDIF()
+    MESSAGE("" )
+    MESSAGE("Dumping the XML dependencies file ${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE} ..." )
+    PACKAGE_ARCH_DUMP_DEPS_XML_FILE()
+  ENDIF()
+  
+  #PRINT_VAR(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE)
+  IF (${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE AND ${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE)
+    IF (NOT IS_ABSOLUTE ${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE})
+      SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE
+        ${CMAKE_CURRENT_BINARY_DIR}/${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE})
+    ENDIF()
+    MESSAGE("" )
+    MESSAGE("Dumping the HTML dependencies webpage file ${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE} ..." )
+    EXECUTE_PROCESS(
+      COMMAND ${PYTHON_EXECUTABLE}
+        ${TRILINOS_HOME_DIR}/cmake/python/dump-package-dep-table.py
+        --input-xml-deps-file=${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE}
+        --output-html-deps-file=${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE} )
+  ENDIF()
+  
+  #PRINT_VAR(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE)
+  IF (${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE AND ${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE)
+    IF (NOT IS_ABSOLUTE ${${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE})
+      SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/${${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE})
+    ENDIF()
+    MESSAGE("" )
+    MESSAGE("Dumping the CDash XML dependencies file ${${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE} ..." )
+    EXECUTE_PROCESS(
+      COMMAND ${PYTHON_EXECUTABLE}
+        ${TRILINOS_HOME_DIR}/cmake/python/dump-cdash-deps-xml-file.py
+        --input-xml-deps-file=${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE}
+        --output-cdash-deps-xml-file=${${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE} )
+  ENDIF()
+
+ENDMACRO()
+
+
+#
+# Read in ${PROJECT_NAME} packages and TPLs, process dependencies, write XML files
+#
+# The reason that these steps are all jammed into one macro is so that the XML
+# dependencies of just the core ${PROJECT_NAME} packages can be processed, have the
+# XML files written, and then read in the extra set of packages and process
+# the dependencies again.
+#
+
+MACRO(PACKAGE_ARCH_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
+
+  #
+  # 1) Define the lists of all ${PROJECT_NAME} packages and TPLs
+  #
+  
+  # 1.a) Read the core ${PROJECT_NAME} packages
+
+  SET(${PROJECT_NAME}_PACKAGES_FILE "${${PROJECT_NAME}_DEPS_HOME_DIR}/cmake/${${PROJECT_NAME}_PACKAGES_FILE_NAME}")
+
+  MESSAGE("")
+  MESSAGE("Reading the list of packages from ${${PROJECT_NAME}_PACKAGES_FILE}")
+  MESSAGE("")
+  
+  INCLUDE(${${PROJECT_NAME}_PACKAGES_FILE})
+  
+  SET(APPEND_TO_PACKAGES_LIST FALSE)
+  PACKAGE_ARCH_PROCESS_PACKAGES_AND_DIRS_LISTS()
+  
+  # 1.b) Read the core TPLs dependencies
+  
+  # 2010/07/28: rabartl: ToDo: read this from under
+  # ${PROJECT_NAME}_DEPS_HOME_DIR/cmake (bug 4877)
+  IF (NOT ${PROJECT_NAME}_TPLS_FILE) # Allow testing override
+    SET(${PROJECT_NAME}_TPLS_FILE "${PROJECT_NAME}TPLs")
+  ENDIF()
+  
+  MESSAGE("")
+  MESSAGE("Reading the list of TPLs from ${${PROJECT_NAME}_TPLS_FILE}.cmake")
+  MESSAGE("")
+  
+  INCLUDE(${${PROJECT_NAME}_TPLS_FILE})
+  
+  PACKAGE_ARCH_PROCESS_TPLS_LISTS()
+    
+  #
+  # 2) Process the package and TPL dependencies
+  #
+  
+  PACKAGE_ARCH_READ_ALL_PACKAGE_DEPENDENCIES()
+
+  #
+  # 3) Write the XML dependency files for the core ${PROJECT_NAME} packages
+  #
+  
+  IF (${PROJECT_NAME}_OUTPUT_DEPENDENCY_FILES)
+    PACKAGE_ARCH_WRITE_XML_DEPENDENCY_FILES()
+  ENDIF()
+
+  #
+  # 4) Read in the list of externally defined packages in external
+  # repositories
+  #
+
+  # Allow list to be seprated by ',' instead of just by ';'.  This is needed
+  # by the unit test driver code
+  SPLIT("${${PROJECT_NAME}_EXTRA_REPOSITORIES}"  "," ${PROJECT_NAME}_EXTRA_REPOSITORIES)
+
+  FOREACH(EXTRA_REPO ${${PROJECT_NAME}_EXTRA_REPOSITORIES})
+    #PRINT_VAR(EXTRA_REPO)
+    SET(EXTRAREPO_FILE
+      "${${PROJECT_NAME}_DEPS_HOME_DIR}/${EXTRA_REPO}/${${PROJECT_NAME}_EXTRA_PACKAGES_FILE_NAME}")
+    MESSAGE("")
+    MESSAGE("Reading a list of extra packages from ${EXTRAREPO_FILE} ... ")
+    MESSAGE("")
+    IF (NOT EXISTS "${EXTRAREPO_FILE}" AND ${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
+      MESSAGE(
+        "\n***"
+        "\n** WARNING!  Ignoring missing extra repo '${EXTRAREPO_FILE}' on request!"
+        "\n***\n")
+    ELSE()
+      INCLUDE("${EXTRAREPO_FILE}")
+      SET(APPEND_TO_PACKAGES_LIST TRUE)
+      PACKAGE_ARCH_PROCESS_PACKAGES_AND_DIRS_LISTS()
+    ENDIF()
+  ENDFOREACH()
+
+  # 2010/07/28: rabartl: ToDo: Above, you need to also read in extra TPLs as
+  # well to extend the system (bug 4877).
+
+  #
+  # 5) Read in the package dependencies again to now pick up all of the
+  # defined packages (not just the core packages)
+  #
+
+  IF (${PROJECT_NAME}_EXTRA_REPOSITORIES)
+    PACKAGE_ARCH_READ_ALL_PACKAGE_DEPENDENCIES()
+  ENDIF()
+
+  #
+  # 6) Write out the XML dependency files again but this time for the full
+  # list in the build directory!
+  #
+
+  IF (${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR)
+    #MESSAGE("Printing dependencie files in ${${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR} ...")
+    SET(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE
+      "${${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR}/${${PROJECT_NAME}_PACKAGE_DEPS_XML_FILE_NAME}" )
+    IF(PYTHON_EXECUTABLE)
+      SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE
+        "${${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR}/${${PROJECT_NAME}_CDASH_SUBPROJECT_DEPS_XML_FILE_NAME}" )
+      SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE
+        "${${PROJECT_NAME}_OUTPUT_FULL_DEPENDENCY_FILES_IN_DIR}/${${PROJECT_NAME}_PACKAGE_DEPS_TABLE_HTML_FILE_NAME}" )
+    ELSE()
+      SET(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE "")
+      SET(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE "")
+    ENDIF()
+    PACKAGE_ARCH_WRITE_XML_DEPENDENCY_FILES()
+  ENDIF()
+
+ENDMACRO()
+
+
+#
+# Adjust package enable logic and print out before and after state
+#
+
+MACRO(PACKAGE_ARCH_ADJUST_AND_PRINT_PACKAGE_DEPENDENCIES)
+
+  PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
+    "\nExplicitly enabled packages on input (by user)" ON FALSE)
+  PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
+    "\nExplicitly disabled packages on input (by user or by default)" OFF FALSE)
+  PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
+    "\nExplicitly enabled TPLs on input (by user)" ON FALSE)
+  PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
+    "\nExplicitly disabled TPLs on input (by user or by default)" OFF FALSE)
+
+  SET(DO_PROCESS_MPI_ENABLES ON) # Should not be needed but CMake is not working!
+  PACKAGE_ARCH_ADJUST_PACKAGE_ENABLES(TRUE)
+
+  PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
+    "\nFinal set of enabled packages" ON FALSE)
+  PACKAGE_ARCH_PRINT_ENABLED_PACKAGE_LIST(
+    "\nFinal set of non-enabled packages" OFF TRUE)
+  PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
+    "\nFinal set of enabled TPLs" ON FALSE)
+  PACKAGE_ARCH_PRINT_ENABLED_TPL_LIST(
+    "\nFinal set of non-enabled TPLs" OFF TRUE)
+
+ENDMACRO()
+
+
+#
+# Macro that gathers information from enabled TPLs
+#
+
+MACRO(PACKAGE_ARCH_PROCESS_ENABLED_TPLS)
+  FOREACH(TPL ${${PROJECT_NAME}_TPLS})
+    IF (TPL_ENABLE_${TPL})
+      MESSAGE(STATUS "Processing enabled TPL: ${TPL}")
+      # 2010/07/28: rabartl: ToDo: Change this you will need to add a file
+      # name 'FindTPL<TPL>.cmake' explicitly so that you can put in
+      # '../../someExtraRepo/cmake/TPLs/FindTPL<TP>.cmake' when reading
+      # extra TPLs from extra repos (bug 4877)
+      INCLUDE(TPLs/FindTPL${TPL})
+      ASSERT_DEFINED(TPL_${TPL}_INCLUDE_DIRS)
+      ASSERT_DEFINED(TPL_${TPL}_LIBRARIES)
+      ASSERT_DEFINED(TPL_${TPL}_LIBRARY_DIRS)
+    ENDIF()
+  ENDFOREACH()
+ENDMACRO()
+
+
+#
+# Macros for setting up the standard environment
+#
+
+
+#
+# Pre-setup of the environment
+#
 
 MACRO(PACKAGE_ARCH_PRE_SETUP_ENV)
 
@@ -404,6 +709,10 @@ MACRO(PACKAGE_ARCH_PRE_SETUP_ENV)
 ENDMACRO()
 
 
+#
+# Post-setup of the environment
+#
+
 MACRO(PACKAGE_ARCH_POST_SETUP_ENV)
 
   # Set the hack library to get link options on
@@ -421,23 +730,6 @@ MACRO(PACKAGE_ARCH_POST_SETUP_ENV)
     TARGET_LINK_LIBRARIES(last_lib ${${PROJECT_NAME}_EXTRA_LINK_FLAGS})
   ENDIF()
 
-ENDMACRO()
-
-
-#
-# Macro that gathers information from enabled TPLs
-#
-
-MACRO(PACKAGE_ARCH_PROCESS_ENABLED_TPLS)
-  FOREACH(TPL ${${PROJECT_NAME}_TPLS})
-    IF (TPL_ENABLE_${TPL})
-      MESSAGE(STATUS "Processing enabled TPL: ${TPL}")
-      INCLUDE(TPLs/FindTPL${TPL})
-      ASSERT_DEFINED(TPL_${TPL}_INCLUDE_DIRS)
-      ASSERT_DEFINED(TPL_${TPL}_LIBRARIES)
-      ASSERT_DEFINED(TPL_${TPL}_LIBRARY_DIRS)
-    ENDIF()
-  ENDFOREACH()
 ENDMACRO()
 
 
@@ -521,7 +813,7 @@ ENDMACRO()
 #  The OUTPUT_VAre is set to ON or OFF based on the configure state. In
 #  development mode it will be set to ON only if SS code is enabled, 
 #  otherwise it is set to OFF. In release mode it is always set to ON.
-#  This allows some sections of Trilinos to be considered SS for 
+#  This allows some sections of PROJECT_NAME to be considered SS for 
 #  development mode reducing testing time, while still having important
 #  functionality available to users by default
 MACRO(PACKAGE_ARCH_SET_SS_FOR_DEV_MODE OUTPUT_VAR)

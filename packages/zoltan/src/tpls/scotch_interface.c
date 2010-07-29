@@ -396,8 +396,8 @@ int Zoltan_Scotch_Order(
 
   ierr = Zoltan_Postprocess_Graph (zz, l_gids, l_lids, &gr, NULL, NULL, NULL, &ord, NULL);
 
-  ZOLTAN_FREE(&l_gids);
-  ZOLTAN_FREE(&l_gids);
+  /* KDD WILL BE FREED IN Zoltan_Third_Exit ZOLTAN_FREE(&l_gids); */
+  ZOLTAN_FREE(&l_lids);
 
   /* Get a time here */
   if (get_times) times[3] = Zoltan_Time(zz->Timer);
@@ -711,7 +711,7 @@ int Zoltan_Scotch(
   }
 
   Zoltan_Third_Exit(&gr, NULL, &prt, &vsp, NULL, NULL);
-  ZOLTAN_FREE(&global_ids);
+  /* KDD ALREADY FREED BY Zoltan_Third_Exit ZOLTAN_FREE(&global_ids); */
   ZOLTAN_FREE(&local_ids);
 
   ZOLTAN_TRACE_EXIT(zz, yo);

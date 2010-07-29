@@ -140,8 +140,6 @@ Factory::create(const std::string& prec_type,
   typedef typename MatrixType::local_ordinal_type LocalOrdinal;
   typedef typename MatrixType::global_ordinal_type GlobalOrdinal;
   typedef typename MatrixType::node_type Node;
-  typedef typename MatrixType::mat_vec_type LocalMatVec;
-  typedef typename MatrixType::mat_solve_type LocalMatSolve;
   (void)overlap;
   Teuchos::RCP<Tifpack::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > prec;
 

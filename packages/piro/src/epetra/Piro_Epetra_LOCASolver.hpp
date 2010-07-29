@@ -41,6 +41,7 @@
 #include "LOCA_SaveEigenData_AbstractStrategy.H"
 
 #include <NOX_Epetra_MultiVector.H>
+#include <NOX_Epetra_Observer.H>
 
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
@@ -51,7 +52,6 @@ typedef int MPI_Comm;
 #endif
 
 #include "EpetraExt_ModelEvaluator.h"
-#include "Piro_Epetra_NOXObserver.hpp"
 
 /** \brief Epetra-based Model Evaluator subclass for Charon!
  *
@@ -76,8 +76,9 @@ class LOCASolver
   /** \brief Takes the number of elements in the discretization . */
   LOCASolver(Teuchos::RCP<Teuchos::ParameterList> piroParams,
             Teuchos::RCP<EpetraExt::ModelEvaluator> model,
-            Teuchos::RCP<NOXObserver> observer = Teuchos::null,
-            Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> saveEigData = Teuchos::null
+            Teuchos::RCP<NOX::Epetra::Observer> observer = Teuchos::null,
+            Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> saveEigData = Teuchos::null,
+            Teuchos::RCP<LOCA::StatusTest::Abstract> locaStatusTest_ = Teuchos::null
             );
 
 
@@ -100,7 +101,7 @@ class LOCASolver
   EpetraExt::ModelEvaluator::OutArgs createOutArgs() const;
   /** \brief . */
   void evalModel( const InArgs& inArgs, const OutArgs& outArgs ) const;
-
+  
   private:
   /** \brief . */
   Teuchos::RCP<const Epetra_Map> get_x_map() const;
@@ -116,14 +117,28 @@ class LOCASolver
   void setSolverParamDefaults(Teuchos::ParameterList* piroParams_);
 
   //@}
+  
+  
+  public:
+  
+  /** \brief \c const getter for the LOCA stepper. Can be used to retrieve statistics. */
+  Teuchos::RCP<const LOCA::Stepper> getLOCAStepper() const;
+  /** \brief Nonconst getter for the LOCA stepper. Can be used to adapt the stepper configuration while running. */
+  Teuchos::RCP<LOCA::Stepper> getLOCAStepperNonConst();
+  
+  /** \brief \c const getter for the \c LOCA::GlobalData object.*/
+  Teuchos::RCP<const LOCA::GlobalData> getGlobalData() const;
+  /** \brief Nonconst getter for the \c LOCA::GlobalData object.*/
+  Teuchos::RCP<LOCA::GlobalData> getGlobalDataNonConst();
 
   private:
 
    //These are set in the constructor and used in evalModel
    mutable Teuchos::RCP<Teuchos::ParameterList> piroParams;
    Teuchos::RCP<EpetraExt::ModelEvaluator> model;
-   Teuchos::RCP<NOXObserver> observer;
+   Teuchos::RCP<NOX::Epetra::Observer> observer;
    Teuchos::RCP<LOCA::SaveEigenData::AbstractStrategy> saveEigData;
+   Teuchos::RCP<LOCA::StatusTest::Abstract> locaStatusTest;
    NOX::Utils utils;
 
    Teuchos::RCP<LOCA::Stepper> stepper;

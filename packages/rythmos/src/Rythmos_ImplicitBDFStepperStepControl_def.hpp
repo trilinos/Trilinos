@@ -237,7 +237,7 @@ void ImplicitBDFStepperStepControl<Scalar>::initialize(const StepperBase<Scalar>
   if (is_null(errWtVec_)) {
     errWtVec_ = createMember(stepper.get_x_space());
   }
-  V_S(&*delta_,zero); 
+  V_S(delta_.ptr(),zero); 
 
   setStepControlState_(BEFORE_FIRST_STEP);
 
@@ -452,7 +452,7 @@ void ImplicitBDFStepperStepControl<Scalar>::completeStep(const StepperBase<Scala
     } else { // consider changing the order 
       const ImplicitBDFStepper<Scalar>& implicitBDFStepper = Teuchos::dyn_cast<const ImplicitBDFStepper<Scalar> >(stepper);
       const Thyra::VectorBase<Scalar>& xHistory = implicitBDFStepper.getxHistory(currentOrder_+1);
-      V_StVpStV(&*delta_,ST::one(),*ee_,Scalar(-ST::one()),xHistory);
+      V_StVpStV(delta_.ptr(),ST::one(),*ee_,Scalar(-ST::one()),xHistory);
       Tkp1_ = wRMSNorm_(*errWtVec_,*delta_);
       Ekp1_ = Tkp1_/(currentOrder_+2);
       if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
@@ -703,7 +703,7 @@ Scalar ImplicitBDFStepperStepControl<Scalar>::checkReduceOrder_(const StepperBas
   }
   if (currentOrder_>1) {
     const Thyra::VectorBase<Scalar>& xHistoryCur = implicitBDFStepper.getxHistory(currentOrder_);
-    V_VpV(&*delta_,xHistoryCur,*ee_);
+    V_VpV(delta_.ptr(),xHistoryCur,*ee_);
     Ekm1_ = sigma_[currentOrder_-1]*wRMSNorm_(*errWtVec_,*delta_);
     Tkm1_ = currentOrder_*Ekm1_;
     if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {
@@ -712,7 +712,7 @@ Scalar ImplicitBDFStepperStepControl<Scalar>::checkReduceOrder_(const StepperBas
     }
     if (currentOrder_>2) {
       const Thyra::VectorBase<Scalar>& xHistoryPrev = implicitBDFStepper.getxHistory(currentOrder_-1);
-      Vp_V(&*delta_,xHistoryPrev);
+      Vp_V(delta_.ptr(),xHistoryPrev);
       Ekm2_ = sigma_[currentOrder_-2]*wRMSNorm_(*errWtVec_,*delta_);
       Tkm2_ = (currentOrder_-1)*Ekm2_;
       if ( as<int>(verbLevel) >= as<int>(Teuchos::VERB_HIGH) ) {

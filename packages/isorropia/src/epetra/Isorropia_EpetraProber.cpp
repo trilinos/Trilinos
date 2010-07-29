@@ -140,6 +140,7 @@ int Prober::probe(const Epetra_Operator & op, Epetra_CrsMatrix & out_matrix)
   if(!has_colored) color();
   int Ncolors=colorer_->numColors();
   int N=out_matrix.NumMyRows();
+
   if(Ncolors==0) return -1;
 
   /* Allocs */
@@ -186,7 +187,7 @@ Teuchos::RCP<Epetra_CrsMatrix> Prober::probe(const Epetra_Operator & op)
   Teuchos::RCP<Epetra_CrsMatrix> out_matrix = Teuchos::rcp(new Epetra_CrsMatrix(Copy,*input_graph_));
   Teuchos::RCP<Epetra_CrsMatrix> null;
   int rv=probe(op,*out_matrix); 
-  if(rv) return out_matrix;
+  if(rv==0) return out_matrix;
   else return null;
 }
 ////////////////////////////////////////////////////////////////////////////////

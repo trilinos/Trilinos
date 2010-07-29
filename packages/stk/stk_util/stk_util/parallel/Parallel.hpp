@@ -82,6 +82,7 @@ inline void parallel_machine_finalize()
 // Some needed stubs
 #define MPI_Comm int
 #define MPI_COMM_WORLD 0
+#define MPI_COMM_SELF 0
 #define MPI_Barrier( a ) (void)a
 
 namespace stk {

@@ -3,6 +3,8 @@
 *.pyc
 \#*#
 .#*
+doxygen_entrydb_*.tmp
+doxygen_objdb_*.tmp
 /checkin_message
 /flat_headers/
 /TAGS

@@ -4,6 +4,16 @@
 /*
    In this file we define some constants to use as parameters to
    some fei functions.
+   These constants are primarily used as 'fieldType' arguments to
+   fei::VectorSpace::defineFields and FEI::initFields.
+   If defining a vector-field for displacement, use DISPLACEMENT. If
+   defining separate scalar fields for the components of displacement,
+   then use DISPLACEMENT_X, etc.
+   Most of the names below are self-explanatory. PRESSURE refers to either
+   a vector-field for pressure, a nodal pressure variable, or the constant
+   coefficient for a pressure field that is discontinuous in each element.
+   PRESSURE_X, PRESSURE_Y, and PRESSURE_Z refer to the X, Y, and Z coefficients
+   for a linearly varying pressure field defined separately in each element.
 */
 
 namespace fei {
@@ -21,10 +31,10 @@ const int VELOCITY_X       =  6;
 const int VELOCITY_Y       =  7;
 const int VELOCITY_Z       =  8;
 const int PRESSURE         =  9;
-const int PRESSURE_X       =  9;
-const int PRESSURE_Y       = 10;
-const int PRESSURE_Z       = 11;
-const int TEMPERATURE      = 12;
+const int PRESSURE_X       = 10;
+const int PRESSURE_Y       = 11;
+const int PRESSURE_Z       = 12;
+const int TEMPERATURE      = 13;
 
 const int UNKNOWN          = 20;
 

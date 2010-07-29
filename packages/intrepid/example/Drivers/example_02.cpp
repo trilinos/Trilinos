@@ -1075,6 +1075,8 @@ int main(int argc, char *argv[]) {
    EpetraExt::MultiVectorToMatrixMarketFile("mag_rhs2_vector.dat",rhsD,0,0,false);
 #endif
 
+   std::cout << "End Result: TEST PASSED\n";
+
  // reset format state of std::cout
  std::cout.copyfmt(oldFormatState);
  

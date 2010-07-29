@@ -69,6 +69,7 @@ APPEND_SET(HEADERS
     Kokkos_NodeHelpers.hpp
     Kokkos_NodeAPIConfigDefs.hpp
     Kokkos_NodeAPIVersion.hpp
+    Kokkos_NodeTrace.hpp
     Kokkos_SerialNode.hpp
     Kokkos_StandardNodeMemoryModel.hpp
   )

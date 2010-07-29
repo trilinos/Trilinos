@@ -1,86 +1,66 @@
-/*! \mainpage Trilinos/Kokkos: Core Kernels Package
-\htmlonly
-\endhtmlonly
+/*! 
+\mainpage Trilinos/Kokkos: Core Kernels Package
 
-\section intro Introduction
-Kokkos is a collection of the handful of sparse and dense kernels that determine the much
-of the performance for preconditioned Krylov methods.  In particular, it contains
-function class for sparse matrix vector multiplication and triangular solves, and also
-for dense kernels that are not part of the standard BLAS.  
+\section kokkos_intro Introduction
 
-The classes in this package
-are written in a way that they can be easily customized via inheritance, replacing only
-the small sections of code that are unique for a given platform or architectures.
-In this way we hope to provide optimal implementations of these algorithms for a broad
-set of platforms from scalar microprocessors to vector multiprocessors.
+%Kokkos provides two main capabilities for Trilinos. The first is an abstract
+programming interface (API) for handling memory and specify work for
+shared-memory parallel nodes (the %Kokkos Node API). The second is a collection
+of local (non-distributed) distributed linear algebra classes and the kernels
+needed to realized their functionality in parallel (the %Kokkos Linear Algebra kernels library).
 
-Kokkos is not intended as a user package, but to be incorporated into other packages that
-need high performance kernels.
+%Kokkos is typically not used in applications, but instead as a significant
+component in higher-level Trilinos packages, such as Tpetra. The functionality
+contained here-in has been put in the %Kokkos package in order to facilitate
+code re-use and ease experimentation for kernel researchers.
 
-\section startup Overview of Kokkos.
+\section kokkos_startup Overview of Kokkos.
 
-\subsection formulations Kokkos Classes
+\subsection kokkos_formulations Kokkos Classes
 
-Kokkos contains a number of classes.  They can be categorized as follows:
+%Kokkos contains a number of classes.  They can be categorized as follows:
 
-<ul> 
+<ul> <li> %Kokkos Node API
 
-<li> Abstract interfaces:
+  <ul><li> Nodes based on the Kokkos::CUDANodeMemoryModel: GPU nodes using the <a href="http://www.nvidia.com/object/cuda_home.html">NVIDIA/CUDA</a> graphic processing units (GPUs)
+     <ul><li>Kokkos::ThrustGPUNode provides parallel compute capability for  via the <a href="http://code.google.com/p/thrust/">Thrust library</a>.
+     </ul>
+  <li> Nodes based on the Kokkos::StandardNodeMemoryModel: Host-bound/CPU nodes using standard memory allocation.
+     <ul><li>Kokkos::SerialNode: provides a simple node, where all kernels are executed in serial.
+     <li>Kokkos::TBBNode: provides support for multi-core CPUs using <a href="http://www.threadingbuildingblocks.org/">Intel TBB</a> (requires third-party library TBB).
+     <li>Kokkos::TPINode: provides support for multi-core CPUs using Pthreads, via the ThreadPool package (requires ThreadPool and Pthreads TPL).
+     </ul>
+  </ul>
 
-<ol>
+<li> %Kokkos Linear Algebra Kernels Library
 
-<li> Kokkos::CisMatrix class:  The base class describing the functionality that Kokkos needs from
-a sparse matrix object.  The Kokkos::HbMatrix is a default implementation.
+  <ul><li> Data structures:
+  
+    <ol><li> Kokkos::CrsMatrix, Kokkos::CrsGraph class:  Classes providing the
+    storage structure for a row-oriented sparse matrix.
+  
+    <li> Kokkos::MultiVector class: A class providing the structure of a dense
+    multivector. Here, as throughout most of Trilinos, a "multivector" refers to a
+    collection of vectors, typically stored in a contiguous allocation of memory.
+  
+    </ol>
+  
+  <li> Arithmetic interfaces:
+  
+    <ol><li> Kokkos::DefaultArithmetic: Provides basic functionality for 
+    perfoming arithmetic of multivectors.
+  
+    <li> Kokkos::DefaultSparseMultiply, Kokkos::DefaultSparseSolve: Provides basic functionality for 
+    computing multiplication and solve of a sparse matrix against a multivector.
+  
+    </ol>
+  
+  </ul>
 
-<li> Kokkos::MultiVector class: The base class specifying the interface that 
-any multivector interfacing to Kokkos Operators classes must implement. The 
-Kokkos::DenseMultiVector is the default implementation.
-
-<li> Kokkos::Vector class: The base class specifying the interface that any 
-vector class interfacing to the Kokkos Operators classes must implement.  At 
-this time, the primary function provided by Kokkos::Vector is access to vector 
-data.  The Kokkos::DenseVector is the default implementation.
-
-<li> Kokkos::SparseOperation class: A virtual class that defines the interface 
-for sparse matrix operations.  Three reference classes implement the
-Kokkos::SparseOperation base class.
-
-<ol>
-
-<li> Kokkos::BaseSparseMultiply: Provides basic functionality for computing 
-sparse matrix times vector, or sparse matrix times multivector operations.
-
-<li> Kokkos::BaseSparseSolve: Provides basic functionality for computing 
-sparse triangular solves with one or more right-hand-side vectors. 
-
-<li> Kokkos::PackedSparseMultiply: Provides basic functionality for computing 
-sparse matrix times vector, or sparse matrix times multivector operations.
-
-</ol>
-
-<li> Kokkos::Permutation: Specifies the interface that any permutation class which is intended for use with the Kokkos::Vector and Kokkos::MultiVector classes must implement.  This class is most important as a way for a Kokkos::SparseOperation object to define a row, column or two-sided permutation of the matrix that presumably improves performance of the sparse operation.
-
-</ol>
-
-<li> Utility classes. 
-
-<ol>
-<li> Timing class: Kokkos::Time - Provides timing functions for the purposes of 
-     performance analysis.
-
-<li> Floating point operation class: Kokkos::Flops - Provides floating point operations (FLOPS)
-     counting and reporting functions for the purposes of performance analysis.  All
-     Kokkos computational
-     classes accumulate FLOP counts associated with the \e this object of the computations.
-
-<li> Kokkos::CompObject class: Supports the registration of a Kokkos::Flops 
-object with a Kokkos::SparseOperation object.
-</ol>
 </ul>
-     
 
-\subsection trilinos Trilinos and Kokkos
+\subsection tpetra_trilinos Trilinos and Kokkos
 
-Kokkos can be used as a stand-alone package.  However, it also provides functionality for Epetra and Tpetra.
+Kokkos can be used as a stand-alone package.  However, it also provides functionality for Tpetra and Tifpack.
 
 */

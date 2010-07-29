@@ -50,10 +50,7 @@ INPUT                  = index.doc ../src
 FILE_PATTERNS          = *.hpp *.cpp
 RECURSIVE              = NO
 EXCLUDE                = ../src/Tpetra_ImportExportData.hpp \
-                         ../src/Tpetra_ExplicitInstantiationHelpers.hpp \
-                         ../src/Tpetra_BlockMap_def.hpp \
-                         ../src/Tpetra_BlockMap_decl.hpp \
-                         ../src/Tpetra_BlockMap.cpp
+                         ../src/Tpetra_ExplicitInstantiationHelpers.hpp 
 EXCLUDE_PATTERNS       = *.x *.o *.out
 EXAMPLE_PATH           =  ../example/PowerMethod/Tpetra_Power_Method.cpp \
                           ../example/PowerMethod/Tpetra_Power_Method_From_File.cpp

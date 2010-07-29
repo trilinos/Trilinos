@@ -67,11 +67,14 @@ BulkData::BulkData( const MetaData & mesh_meta_data ,
                     ParallelMachine parallel ,
                     unsigned bucket_max_size )
   : m_entities_index( parallel, convert_entity_keys_to_spans(mesh_meta_data) ),
-    m_bucket_repository( *this, bucket_max_size, mesh_meta_data.entity_rank_count() ),
     m_entity_repo(),
+    m_bucket_repository(
+        *this, bucket_max_size,
+        mesh_meta_data.entity_rank_count(),
+        m_entity_repo
+        ),
     m_entity_comm(),
     m_ghosting(),
-    m_bucket_nil( NULL ),
 
     m_mesh_meta_data( mesh_meta_data ),
     m_parallel_machine( parallel ),
@@ -172,8 +175,7 @@ bool BulkData::modification_begin()
 
     m_meta_data_verified = true ;
 
-    m_bucket_nil =
-      m_bucket_repository.declare_nil_bucket();
+    m_bucket_repository.declare_nil_bucket();
   }
   else {
     ++m_sync_count ;
@@ -233,8 +235,8 @@ Entity & BulkData::declare_entity( EntityRank ent_type , EntityId ent_id ,
 
   if ( result.second ) {
     // A new application-created entity
-    result.first->m_entityImpl.set_owner_rank( m_parallel_rank );
-    result.first->m_entityImpl.set_sync_count( m_sync_count );
+    m_entity_repo.set_entity_owner_rank( *(result.first), m_parallel_rank);
+    m_entity_repo.set_entity_sync_count( *(result.first), m_sync_count);
   }
   else {
     // An existing entity, the owner must match.
@@ -449,8 +451,8 @@ void BulkData::internal_change_entity_parts(
   const PartVector & add_parts ,
   const PartVector & remove_parts )
 {
-  Bucket * const k_old = e.m_entityImpl.get_bucket() != m_bucket_nil
-                       ? e.m_entityImpl.get_bucket() : (Bucket *) NULL ;
+  Bucket * const k_old = m_entity_repo.get_entity_bucket( e );
+
   const unsigned i_old = e.bucket_ordinal() ;
 
   if ( k_old && k_old->member_all( add_parts ) &&
@@ -512,14 +514,14 @@ void BulkData::internal_change_entity_parts(
   }
 
   // Set the new bucket
-  e.m_entityImpl.set_bucket_and_ordinal( k_new, k_new->size() );
+  m_entity_repo.change_entity_bucket( *k_new, e, k_new->size() );
   m_bucket_repository.add_entity_to_bucket( e, *k_new );
 
   // If changing buckets then remove the entity from the bucket,
   if ( k_old ) { m_bucket_repository.remove_entity( k_old , i_old ); }
 
   // Update the change counter to the current cycle.
-  e.m_entityImpl.set_sync_count( m_sync_count );
+  m_entity_repo.set_entity_sync_count( e, m_sync_count );
 
   // Propagate part changes through the entity's relations.
 
@@ -565,7 +567,7 @@ bool BulkData::destroy_entity( Entity * & e )
     destroy_relation( entity , * entity.relations().back().entity() );
   }
 
-  m_bucket_repository.remove_entity( entity.m_entityImpl.get_bucket() , entity.bucket_ordinal() );
+  m_bucket_repository.remove_entity( &(entity.bucket()) , entity.bucket_ordinal() );
 
   // Set the bucket to 'bucket_nil' which:
   //   1) has no parts at all
@@ -575,10 +577,7 @@ bool BulkData::destroy_entity( Entity * & e )
   // This keeps the entity-bucket methods from catastrophically failing
   // with a bad bucket pointer.
 
-  entity.m_entityImpl.set_bucket_and_ordinal( m_bucket_nil, 0 );
-
-  // Record modification in the change log.
-  entity.m_entityImpl.log_modified();
+  m_entity_repo.destroy_later( entity, m_bucket_repository.get_nil_bucket() );
 
   // Add destroyed entity to the transaction
   // m_transaction_log.delete_entity ( *e );
@@ -619,8 +618,8 @@ void BulkData::generate_new_entities(const std::vector<size_t>& requests,
 
       if ( result.second ) {
         // A new application-created entity
-        result.first->m_entityImpl.set_owner_rank( m_parallel_rank );
-        result.first->m_entityImpl.set_sync_count( m_sync_count );
+        m_entity_repo.set_entity_owner_rank( *(result.first), m_parallel_rank);
+        m_entity_repo.set_entity_sync_count( *(result.first), m_sync_count);
       }
       else {
         //if an entity is declare with the declare_entity function in the same

@@ -87,7 +87,8 @@ int ne_put_cmap_params_cc(int  neid,
   size_t start[1], count[1];
   size_t ecnt_cmap, ncnt_cmap;
   int  nl_ecnt_cmap, nl_ncnt_cmap;
-  int *n_var_idx, *e_var_idx;
+  int *n_var_idx = NULL;
+  int *e_var_idx = NULL;
   int  nmstat;
 
   char    errmsg[MAX_ERR_LENGTH];

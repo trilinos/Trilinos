@@ -20,9 +20,9 @@ any well-defined types, and the use of automatic resource allocation.
 package. Functionality not included is either a consequence of different design
 motivations or of %Tpetra's status as a work in progress.
 
-\section startup Overview of Tpetra
+\section tpetra_startup Overview of Tpetra
 
-\subsection types Templated Types in Tpetra
+\subsection tpetra_templated_types Templated Types in Tpetra
 
 All of all classes in %Tpetra utilize templates, which allows the user to
 specify any type they want. In some cases, the choice of data type allows
@@ -57,7 +57,7 @@ particular invocation of the Tpetra::Distributor. This allows a single
 Tpetra::Distributor object (describing a particular communication pattern) to
 be used to communicate values of different type.
 
-\subsection formulations Tpetra Classes
+\subsection tpetra_formulations Tpetra Classes
 
 %Tpetra contains a number of classes. The primary parallel classes, employed by most users, are:
 
@@ -91,7 +91,7 @@ be used to communicate values of different type.
 
 </ol>
 
-\subsection trilinos Trilinos and Tpetra
+\subsection tpetra_trilinos Trilinos and Tpetra
 
 %Tpetra can be used mostly as a stand-alone package, with explicit dependencies on Teuchos and Kokkos. There are adapters allowing the 
 use of %Tpetra operators and multivectors in both the Belos linear solver package and the Anasazi eigensolver package.

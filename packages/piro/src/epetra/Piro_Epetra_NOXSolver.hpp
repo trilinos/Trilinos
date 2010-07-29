@@ -39,6 +39,7 @@
 #include "Epetra_LocalMap.h"
 #include "NOX_Epetra_ModelEvaluatorInterface.H"
 #include <NOX_Epetra_MultiVector.H>
+#include <NOX_Epetra_Observer.H>
 
 #ifdef HAVE_MPI
 #include "Epetra_MpiComm.h"
@@ -49,7 +50,6 @@ typedef int MPI_Comm;
 #endif
 
 #include "EpetraExt_ModelEvaluator.h"
-#include "Piro_Epetra_NOXObserver.hpp"
 
 /** \brief Epetra-based NOX Solver
  *
@@ -71,7 +71,7 @@ class NOXSolver
   /** \brief Takes the number of elements in the discretization . */
   NOXSolver(Teuchos::RCP<Teuchos::ParameterList> piroParams,
             Teuchos::RCP<EpetraExt::ModelEvaluator> model,
-            Teuchos::RCP<NOXObserver> observer = Teuchos::null
+            Teuchos::RCP<NOX::Epetra::Observer> observer = Teuchos::null
             );
 
 
@@ -116,7 +116,7 @@ class NOXSolver
    //These are set in the constructor and used in evalModel
    mutable Teuchos::RCP<Teuchos::ParameterList> piroParams;
    Teuchos::RCP<EpetraExt::ModelEvaluator> model;
-   Teuchos::RCP<NOXObserver> observer;
+   Teuchos::RCP<NOX::Epetra::Observer> observer;
    NOX::Utils utils;
 
    Teuchos::RCP<NOX::Solver::Generic> solver;
