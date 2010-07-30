@@ -1313,6 +1313,45 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  Scalar CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getNormInf() {
+    TEST_FOR_EXCEPTION(!isFillComplete(), std::runtime_error, "Matrix must be"
+	"fill complete in order to calculate Infinity Norm");
+
+	Vector x(getRangeMap()); // Need temp vector for row sums
+	Teuchos::ArrayRCP<Scalar> xp = x.get1dViewNonConst();
+	Teuchos::RCP<MultiVector> x_tmp = Teuchos::null;
+
+  // If we have a non-trivial exporter, we must export elements that are permuted or belong to other processors
+  if(getCrsGraph()->getExporter() != Teuchos::null) {
+    x_tmp = Teuchos::rcp(new Vector(RowMap())); // Create temporary import vector if needed
+    xp = x_tmp->get1dViewNonConst();
+  }
+  LocalOrdinal i, j;
+
+  for(i = 0; i < getNodeNumRows(); i++) {
+    xp[i] = 0.0;
+    size_t     NumEntries = getNumEntriesInLocalRow(i);
+	Teuchos::ArrayRCP<Scalar> RowValues;
+	getLocalRowCopy(i,Teuchos::null, RowValues);
+    for(j = 0; j < NumEntries; j++) 
+      xp[i] += std::abs(RowValues[j]);
+  }
+  if(getCrsGraph()->getExporter() != 0) {
+    x.putScalar(Teuchos::ScalarTraits<Scalar>::zero());
+    x.doExport(x_tmp, getCrsGraph()->getExporter(), ADD); // Fill x with Values from temp vector
+  }
+  x.MaxValue(&NormInf_); // Find max
+  if(x_tmp != 0) 
+    delete x_tmp;
+  UpdateFlops(NumGlobalNonzeros());
+  return(NormInf_);
+
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &dvec) const {
     TEST_FOR_EXCEPTION(isFillComplete() == false, std::runtime_error,
         Teuchos::typeName(*this) << ": cannot call getLocalDiagCopy() until fillComplete() has been called.");

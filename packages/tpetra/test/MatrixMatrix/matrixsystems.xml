@@ -1,0 +1,9 @@
+<ParameterList>
+	<ParameterList name="matrixsystem1">
+		<Parameter name="A" value="cdt_m.mtx"/>
+		<Parameter name="B" value="cdt_tce.mtx"/>
+		<Parameter name="C" value="cdt_d.mtx"/>
+		<Parameter name="TransA" value="false"/>
+		<Parameter name="TransB" value="true"/>
+	</ParameterList>
+</ParameterList>

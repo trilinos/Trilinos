@@ -865,7 +865,7 @@ Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >
 create_map_from_imported_rows(
   Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > map,
   size_t totalNumSend,
-  Teuchos::ArrayRCP<GlobalOrdinal> sendRows,
+  Teuchos::ArrayRCP<const GlobalOrdinal> sendRows,
   int numProcs,
   Teuchos::ArrayRCP<size_t> numSendPerProc)
 {
@@ -876,7 +876,7 @@ create_map_from_imported_rows(
   //received on the local processor.
 
   Teuchos::RCP<Distributor> distributor = rcp(new Distributor(map->getComm()));
-  Teuchos::ArrayRCP<int> sendPIDs = totalNumSend>0 ? Teuchos::ArrayRCP<int>(totalNumSend) : Teuchos::null;
+  Teuchos::Array<int> sendPIDs(totalNumSend);
   int offset = 0;
   for(int i=0; i<numProcs; ++i) {
     for(size_t j=0; j<numSendPerProc[i]; ++j) {
@@ -884,47 +884,17 @@ create_map_from_imported_rows(
     }
   }
 
-  
-
-  //int numRecv = 0;
-  //int err = distributor->CreateFromSends(totalNumSend, sendPIDs,
-      //     true, numRecv);
   size_t numRecv = 0;
   numRecv = distributor->createFromSends(sendPIDs());
 
-  //assert( err == 0 );
-
-  //char* c_recv_objs = numRecv>0 ? new char[numRecv*sizeof(int)] : NULL;
-  Teuchos::ArrayRCP<GlobalOrdinal> recv_rows = 
-    numRecv>Teuchos::OrdinalTraits<size_t>::zero() ? Teuchos::ArrayRCP<GlobalOrdinal>(numRecv, Teuchos::OrdinalTraits<GlobalOrdinal>::zero()) : Teuchos::null;
-  //int num_c_recv = numRecv*(int)sizeof(int);
-
-  //err = distributor->Do(reinterpret_cast<char*>(sendRows),
-      //(int)sizeof(int), num_c_recv, c_recv_objs);
-  //ArrayView<GlobalOrdinal> sendRowsView = sendRows();
-  /*Teuchos::ArrayView<const GlobalOrdinal> sendRowsView = sendRows.getConst().view(0,numRecv);
-  for(int i=0; i<sendRowsView.size(); ++i){
-    std::cout << map->getComm()->getRank() << " " << sendRowsView[i] << std::endl;
-  }*/
-  distributor->doPostsAndWaits(sendRows.getConst()(), numRecv, recv_rows());
-  for(int i =0; i< recv_rows.size(); ++i){
-    std::cout << recv_rows[i] << std::endl;
-  }
-  //assert( err == 0 );
-
-  //int* recvRows = reinterpret_cast<int*>(c_recv_objs);
+  Teuchos::Array<GlobalOrdinal> recv_rows(numRecv);
+  const size_t numpackets = 1;
+  distributor->doPostsAndWaits(sendRows(), numpackets, recv_rows());
 
   //Now create a map with the rows we've received from other processors.
-  //Epetra_Map* import_rows = new Epetra_Map(-1, numRecv, recvRows,
-   //          map->IndexBase(), map->Comm());
   Teuchos::RCP<Map<LocalOrdinal, GlobalOrdinal, Node> > import_rows = 
     Teuchos::rcp(new Map<LocalOrdinal, GlobalOrdinal, Node>(
     Teuchos::OrdinalTraits<global_size_t>::invalid(), recv_rows(), map->getIndexBase(), map->getComm()));
-
-  //delete [] c_recv_objs;
-  //delete [] sendPIDs;
-
-  //delete distributor;
 
   return( import_rows );
 }
@@ -990,11 +960,8 @@ int form_map_union(
     union_elements[union_offset++] = map2_elements[i];
   }
 
-  //mapunion = new Epetra_Map(-1, union_offset, union_elements,
-   //       map1->IndexBase(), map1->Comm());
   mapunion = Teuchos::rcp(new Map<LocalOrdinal, GlobalOrdinal, Node>(Teuchos::OrdinalTraits<global_size_t>::invalid(), union_elements(), map1->getIndexBase(), map1->getComm(), map1->getNode()));
 
-  //delete [] union_elements;
 
   return(0);
 }
@@ -1107,9 +1074,6 @@ MatrixMatrix::find_rows_containing_cols(
       for(int p=0; p<numProcs; ++p) {
         if (p==localProc) continue;
 
-        /*int insertPoint;
-        int foundOffset = Epetra_Util_binary_search(colGID, procCols[p],
-                                                    procNumCols[p], insertPoint);*/
         typename Teuchos::ArrayRCP<GlobalOrdinal>::const_iterator result = binary_serach(procCols[p].begin(), procCols[p].end(), colGID);      
         if (result != procCols[p].end()) {
           size_t numRowsP = procNumRows[p];
@@ -1138,21 +1102,12 @@ MatrixMatrix::find_rows_containing_cols(
   //Next we will do a sparse all-to-all communication to send the lists of rows
   //to the appropriate processors, and create a map with the rows we've received
   //from other processors.
-  /*Epetra_Map* recvd_rows =
-    create_map_from_imported_rows(&Mrowmap, totalNumSend,
-                                  procRows_1D, numProcs, procNumRows);*/
-  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > recvd_rows = create_map_from_imported_rows(Mrowmap, totalNumSend, procRows_1D, numProcs, procNumRows);
+  Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > recvd_rows = create_map_from_imported_rows(Mrowmap, totalNumSend, procRows_1D.getConst(), numProcs, procNumRows);
   Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > result_map = Teuchos::null;
   err = form_map_union(M->getRowMap(), recvd_rows, result_map);
   if (err != 0) {
     return(Teuchos::null);
   }
-
-  /*delete [] iwork;
-  delete [] procCols;
-  delete [] procRows;
-  delete [] all_proc_cols;
-  delete recvd_rows;*/
 
   return(result_map);
 }

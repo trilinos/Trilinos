@@ -1,6 +1,8 @@
 #include "Tpetra_MatrixMatrix.hpp"
+#include "Tpetra_MatrixIO.hpp"
 #include "Teuchos_DefaultComm.hpp"
 #include "Teuchos_CommandLineProcessor.hpp"
+#include "Teuchos_XMLParameterListHelpers.hpp"
 
 /*namespace Tpetra{
 extern
@@ -63,7 +65,7 @@ int read_matrix(
 */
 template<class Ordinal>
 int run_test(Teuchos::RCP<Teuchos::Comm<Ordinal> > Comm,
-  std::string matnamesFile,
+  Teuchos::ParameterList matrixSystem,
   bool result_mtx_to_file=false,
   bool verbose=false);
 
@@ -169,6 +171,15 @@ int main(int argc, char* argv[]) {
     std::cout << "test_find_rows returned err=="<<err<<std::endl;
     return(err);
   } 
+  Teuchos::RCP<Teuchos::ParameterList> matrixSystems = Teuchos::getParametersFromXmlFile(matnamesFile);
+  for(Teuchos::ParameterList::ConstIterator it = matrixSystems->begin(); it != matrixSystems->end(); ++it){
+	TEST_FOR_EXCEPTION(it->second.isList(), std::runtime_error, "All top level items in the matrix "
+	"file names list must be ParameterLists! In otherwords, you always need to have matricies "
+	"encapsulated within a matrixsystem");
+      
+    run_test(comm, matrixSystems->sublist(it->first), write_result_mtx, verbose);
+
+  }
 /*
   for(int i=0; i<numfiles; ++i) {
     err = run_test(comm, matnamesFile, write_result_mtx, verbose);
@@ -405,29 +416,19 @@ int read_input_file(Teuchos::RCP<const Teuchos::Comm<Odrinal> > Comm,
   return(0);
 }
 */
-/*
+
 template<class Ordinal>
 int run_test(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm,
-             std::string matnamesFile,
+             Teuchos::ParameterList& matrixSystem,
              bool result_mtx_to_file,
              bool verbose)
 {
-  char* A_file = NULL;
-  char AT[3]; AT[0] = '^'; AT[1] = 'T'; AT[2] = '\0';
-  char* B_file = NULL;
-  char BT[3]; BT[0] = '^'; BT[1] = 'T'; BT[2] = '\0';
-  char* C_file = NULL;
-  bool transA, transB;
+  std::string A_file = matrixSystem.get<std::string>("A");
+  std::string B_file = matrixSystem.get<std::string>("B");
+  std::string C_file = matrixSystem.get<std::string>("C");
+  bool AT = matrixSystem.get<bool>("TransA");
+  bool BT = matrixSystem.get<bool>("TransB");
 
-  int err = read_matrix_file_names(Comm, filename, A_file, transA,
-                                   B_file, transB, C_file);
-  if (err != 0) {
-    std::cout << "Error, read_matrix_file_names returned " << err << std::endl;
-    return(err);
-  }
-
-  if (!transA) AT[0] = '\0';
-  if (!transB) BT[0] = '\0';
 
   int localProc = Comm->getRank();
 
@@ -441,84 +442,29 @@ int run_test(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm,
   Teuchos::RCP<Tpetra::CrsMatrix<double,int> > C = Teuchos::null;
   Teuchos::RCP<Tpetra::CrsMatrix<double,int> > C_check = Teuchos::null;
 
-  Teuchos::RCP<Tpetra::Map<int> > A_row_map = Teuchos::null;
-  Teuchos::RCP<Tpetra::Map<int> > A_col_map = Teuchos::null;
-  Teuchos::RCP<Tpetra::Map<int> > A_range_map = Teuchos::null;
-  Teuchos::RCP<Tpetra::Map<int> > A_domain_map = Teuchos::null;
+  Tpetra::Utils::readMatrixMarketMatrix(A_file, Comm, Kokkos::DefaultNode::getDefaultNode(), A, false);
+  Tpetra::Utils::readMatrixMarketMatrix(B_file, Comm, Kokkos::DefaultNode::getDefaultNode(), B, false);
+  Tpetra::Utils::readMatrixMarketMatrix(C_file, Comm, Kokkos::DefaultNode::getDefaultNode(), C_check, false);
 
-  err = create_maps(Comm, A_file, A_row_map, A_col_map, A_range_map, A_domain_map);
-  if (err != 0) {
-    std::cout << "create_maps A returned err=="<<err<<std::endl;
-    return(err);
-  }
 
-  Teuchos::RCP<Tpetra::Map<int> > B_row_map = Teuchos::null;
-  Teuchos::RCP<Tpetra::Map<int> > B_col_map = Teuchos::null;
-  Teuchos::RCP<Tpetra::Map<int> > B_range_map = Teuchos::null;
-  Teuchos::RCP<Tpetra::Map<int> > B_domain_map = Teuchos::null;
-  err = create_maps(Comm, B_file, B_row_map, B_col_map, B_range_map, B_domain_map);
-  if (err != 0) {
-    std::cout << "create_maps B returned err=="<<err<<std::endl;
-    return(err);
-  }
+  Teuchos::RCP<const Tpetra::Map<int> > rowmap = AT ? A->getDomainMap() : A->getRowMap();
 
-  err = read_matrix(A_file, Comm, A_row_map, A_col_map,
-                    A_range_map, A_domain_map, A);
-  delete [] A_file;
-  if (err != 0) {
-    std::cout << "read_matrix A returned err=="<<err<<std::endl;
-    return(err);
-  }
+  C = Teuchos::rcp( new Tpetra::CrsMatrix<double,int>(rowmap, 1));
 
-  err = read_matrix(B_file, Comm, B_row_map, B_col_map,
-                    B_range_map, B_domain_map, B);
-  delete [] B_file;
-  if (err != 0) {
-    std::cout << "read_matrix B returned err=="<<err<<std::endl;
-    return(-1);
-  }
+  Teuchos::RCP<const Tpetra::CrsMatrix<double,int> > constA = A;
+  Teuchos::RCP<const Tpetra::CrsMatrix<double,int> > constB = B;
 
-  Teuchos::RCP<const Tpetra::Map<int> > rowmap = transA ? A->getDomainMap() : A->getRowMap();
-
-  C = Teuchos::rcp( Tpetra::CrsMatrix<double,int>(rowmap, 1));
-
-  err = Tpetra::MatrixMatrix::Multiply(A, transA, B, transB, C);
-  if (err != 0) {
-    std::cout << "err "<<err<<" from MatrixMatrix::Multiply"<<std::endl;
-    return(err);
-  }
+  Tpetra::MatrixMatrix::Multiply(constA, AT, constB, BT, C);
 
 //  std::cout << "A: " << *A << std::endl << "B: "<<*B<<std::endl<<"C: "<<*C<<std::endl;
   //if (result_mtx_to_file) {
    // EpetraExt::RowMatrixToMatrixMarketFile("result.mtx", *C);
   //}
 
-  Teuchos::RCP<Tpetra::Map<int> > Cck_row_map = NULL;
-  Teuchos::RCP<Tpetra::Map<int> > Cck_col_map = NULL;
-  Teuchos::RCP<Tpetra::Map<int> > Cck_range_map = NULL;
-  Teuchos::RCP<Tpetra::Map<int> > Cck_domain_map = NULL;
-  err = create_maps(Comm, C_file, Cck_row_map, Cck_col_map,
-                    Cck_range_map, Cck_domain_map);
-  if (err != 0) {
-    std::cout << "create_maps C returned err=="<<err<<std::endl;
-    return(err);
-  }
+  
+  Teuchos::RCP<const Tpetra::CrsMatrix<double,int> > constC = C;
 
-  err = read_matrix(C_file, Comm, Cck_row_map, Cck_col_map,
-                     Cck_range_map, Cck_domain_map, C_check);
-  delete [] C_file;
-  if (err != 0) {
-    std::cout << "read_matrix C returned err=="<<err<<std::endl;
-    return(-1);
-  }
-
-  err = EpetraExt::MatrixMatrix::Multiply(*A, transA, *B, transB, *C);
-  if (err != 0) {
-    std::cout << "err "<<err<<" from MatrixMatrix::Multiply"<<std::endl;
-    return(err);
-  }
-
-  EpetraExt::MatrixMatrix::Add(*C, false, -1.0, *C_check, 1.0);
+  Tpetra::MatrixMatrix::Add(constC, false, -1.0, C_check, 1.0);
 
   double inf_norm = C_check->NormInf();
 
@@ -538,7 +484,7 @@ int run_test(Teuchos::RCP<const Teuchos::Comm<Ordinal> > Comm,
 
   return(return_code);
 }
-
+/*
 template<class Ordinal>
 int read_matrix_file_names(Teuchos::RCP<Teuchos::Comm<Ordinal> > Comm,
                            const char* input_file_name,

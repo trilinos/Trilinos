@@ -172,6 +172,14 @@ namespace Tpetra {
       void scale(const Scalar &alpha);
 
       //@}
+	  
+	  //! @name Attribute Access Functions
+	  //@{
+
+	  //! \brief Returns the infinity norm of the global matrix.
+      Scalar getNormInf() const;
+
+	  //@}
 
       //! @name Transformational Methods
       //@{ 
