@@ -1080,7 +1080,7 @@ MatrixMatrix::find_rows_containing_cols(
   size_t offset = Teuchos::OrdinalTraits<size_t>::zero();
   for(i=0; i<numProcs; ++i) {
     procNumCols[i] = all_proc_cols[offset];
-    procCols[i] = all_proc_cols.persistingView(offset+1, max_num_cols);
+    procCols[i] = all_proc_cols.persistingView(offset+1, max_num_cols-1);
     offset += max_num_cols;
 
     procNumRows[i] = Teuchos::OrdinalTraits<size_t>::zero();
