@@ -29,15 +29,19 @@
 #include "Teuchos_XMLObject.hpp"
 #include "Teuchos_StrUtils.hpp"
 
-namespace Teuchos{
+
+namespace Teuchos {
+
 
 XMLObject::XMLObject(const std::string& tag)
   : ptr_(rcp(new XMLObjectImplem(tag)))
 {}
 
+
 XMLObject::XMLObject(XMLObjectImplem* ptr)
   : ptr_(rcp(ptr))
 {}
+
 
 XMLObject XMLObject::deepCopy() const
 {
@@ -48,12 +52,14 @@ XMLObject XMLObject::deepCopy() const
   return XMLObject(ptr_->deepCopy());
 }
 
+
 const std::string& XMLObject::getTag() const
 {
   TEST_FOR_EXCEPTION(is_null(ptr_), Teuchos::EmptyXMLError,
 		     "XMLObject::getTag: XMLObject is empty");
   return ptr_->getTag();
 }
+
 
 bool XMLObject::hasAttribute(const std::string& name) const 
 {
@@ -62,12 +68,14 @@ bool XMLObject::hasAttribute(const std::string& name) const
   return ptr_->hasAttribute(name);
 }
 
+
 const std::string& XMLObject::getAttribute(const std::string& name) const 
 {
   TEST_FOR_EXCEPTION(is_null(ptr_), Teuchos::EmptyXMLError,
 		     "XMLObject::getAttribute: XMLObject is empty");
   return ptr_->getAttribute(name);
 }
+
 
 const std::string& XMLObject::getRequired(const std::string& name) const 
 {
@@ -77,11 +85,13 @@ const std::string& XMLObject::getRequired(const std::string& name) const
   return getAttribute(name);
 }
 
+
 template<>
 bool XMLObject::getRequired<bool>(const std::string& name) const
 {
 	return getRequiredBool(name);
 }
+
 
 template<>
 int XMLObject::getRequired<int>(const std::string& name) const
@@ -89,17 +99,20 @@ int XMLObject::getRequired<int>(const std::string& name) const
 	return getRequiredInt(name);
 }
 
+
 template<>
 double XMLObject::getRequired<double>(const std::string& name) const
 {
 	return getRequiredDouble(name);
 }
 
+
 template<>
 std::string XMLObject::getRequired<std::string>(const std::string& name) const
 {
 	return getRequired(name);
 }
+
 
 bool XMLObject::getRequiredBool(const std::string& name) const
 {
@@ -124,6 +137,7 @@ bool XMLObject::getRequiredBool(const std::string& name) const
   return false; // -Wall
 }
 
+
 template<>
 void XMLObject::addAttribute<const std::string&>(
   const std::string& name, const std::string& value) const
@@ -133,12 +147,14 @@ void XMLObject::addAttribute<const std::string&>(
   ptr_->addAttribute(name, value);
 }
 
+
 int XMLObject::numChildren() const
 {
   TEST_FOR_EXCEPTION(is_null(ptr_), Teuchos::EmptyXMLError,
 		     "XMLObject::numChildren: XMLObject is empty");
   return ptr_->numChildren();
 }
+
 
 const XMLObject& XMLObject::getChild(int i) const
 {
@@ -147,12 +163,14 @@ const XMLObject& XMLObject::getChild(int i) const
   return ptr_->getChild(i);
 }
 
+
 int XMLObject::numContentLines() const
 {
   TEST_FOR_EXCEPTION(is_null(ptr_), Teuchos::EmptyXMLError,
 		     "XMLObject::numContentLines: XMLObject is empty");
   return ptr_->numContentLines();
 }
+
 
 const std::string& XMLObject::getContentLine(int i) const
 {
@@ -161,12 +179,14 @@ const std::string& XMLObject::getContentLine(int i) const
   return ptr_->getContentLine(i);
 }
 
+
 std::string XMLObject::toString() const
 {
   TEST_FOR_EXCEPTION(is_null(ptr_), Teuchos::EmptyXMLError,
 		     "XMLObject::toString: XMLObject is empty");
   return ptr_->toString();
 }
+
 
 void XMLObject::print(std::ostream& os, int indent) const
 {
@@ -175,12 +195,14 @@ void XMLObject::print(std::ostream& os, int indent) const
   ptr_->print(os, indent);
 }
 
+
 std::string XMLObject::header() const
 {
   TEST_FOR_EXCEPTION(is_null(ptr_), Teuchos::EmptyXMLError,
 		     "XMLObject::header: XMLObject is empty");
   return ptr_->header();
 }
+
 
 std::string XMLObject::terminatedHeader() const
 {
@@ -189,12 +211,14 @@ std::string XMLObject::terminatedHeader() const
   return ptr_->terminatedHeader();
 }
 
+
 std::string XMLObject::footer() const
 {
   TEST_FOR_EXCEPTION(is_null(ptr_), Teuchos::EmptyXMLError,
 		     "XMLObject::footer: XMLObject is empty");
   return ptr_->footer();
 }
+
 
 void XMLObject::checkTag(const std::string& expected) const 
 {
@@ -204,12 +228,14 @@ void XMLObject::checkTag(const std::string& expected) const
                      << getTag() << ">");
 }
 
+
 void XMLObject::addChild(const XMLObject& child)
 {
   TEST_FOR_EXCEPTION(is_null(ptr_), Teuchos::EmptyXMLError,
 		     "XMLObject::addChild: XMLObject is empty");
   ptr_->addChild(child);
 }
+
 
 void XMLObject::addContent(const std::string& contentLine)
 {
@@ -218,5 +244,5 @@ void XMLObject::addContent(const std::string& contentLine)
   ptr_->addContent(contentLine);
 }
 
-}
 
+} // namespace Teuchos

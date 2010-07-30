@@ -244,7 +244,7 @@ IF(${PACKAGE_NAME}_ENABLE_EXTENDED)
     Teuchos_StringInputStream.hpp
     Teuchos_StrUtils.hpp
     Teuchos_TreeBuildingXMLHandler.hpp
-	Teuchos_ValidatorMaps.hpp
+    Teuchos_ValidatorMaps.hpp
     Teuchos_ValidatorXMLConverter.hpp
     Teuchos_ValidatorXMLConverterDB.hpp
     Teuchos_XMLInputSource.hpp
@@ -264,15 +264,15 @@ IF(${PACKAGE_NAME}_ENABLE_EXTENDED)
     Teuchos_HashUtils.cpp
     Teuchos_Libxml2HandlerAdapter.cpp
     Teuchos_ParameterXMLFileReader.cpp
-	Teuchos_ParameterEntryXMLConverter.cpp
+    Teuchos_ParameterEntryXMLConverter.cpp
     Teuchos_StandardParameterEntryXMLConverters.cpp
-	Teuchos_StandardValidatorXMLConverters.cpp
+    Teuchos_StandardValidatorXMLConverters.cpp
     Teuchos_StrUtils.cpp
     Teuchos_StringInputSource.cpp
     Teuchos_StringInputStream.cpp
     Teuchos_TreeBuildingXMLHandler.cpp
-	Teuchos_ValidatorMaps.cpp
-	Teuchos_ValidatorXMLConverterDB.cpp
+    Teuchos_ValidatorMaps.cpp
+    Teuchos_ValidatorXMLConverterDB.cpp
     Teuchos_XMLInputSource.cpp
     Teuchos_XMLInputStream.cpp
     Teuchos_XMLObject.cpp

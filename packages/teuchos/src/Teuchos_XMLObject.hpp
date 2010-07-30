@@ -58,8 +58,7 @@ public:
   //! Construct using a node labeled by tag
   XMLObject(const std::string& tag);
 
-  /**
-   * \brief Construct with a pointer to the low-level representation. 
+  /** \brief Construct with a pointer to the low-level representation.
    *
    * This is used to allow construction of an XMLObject from the
    * XMLObjectImplem* return value of ExceptionBase::toXML().
@@ -115,12 +114,12 @@ public:
   T getWithDefault(const std::string& name, const T& defaultValue) const{
     if (hasAttribute(name)){
       return getRequired<T>(name);
-	}
-	else{
-	  return defaultValue;
-	}
+    }
+    else{
+      return defaultValue;
+    }
   }
-
+  
   //! Return the number of child nodes owned by this node
   int numChildren() const;
 
@@ -198,7 +197,9 @@ private:
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
+
 };
+
 
 template<>
 bool XMLObject::getRequired<bool>(const std::string& name) const;
@@ -215,23 +216,29 @@ std::string XMLObject::getRequired<std::string>(const std::string& name) const;
 template<>
 void XMLObject::addAttribute(const std::string& name, const std::string& value) const;
 
-/** \relates XMLObject 
-    \brief Write XMLObject to \c os stream 
-*/
+
+/** \brief Write XMLObject to \c os stream.
+ *
+ * \relates XMLObject
+ */
 inline std::ostream& operator<<(std::ostream& os, const XMLObject& xml)
 {
   xml.print(os, 0);
   return os;
 }
 
-/** \relates XMLObject 
-    \brief Write XMLObject to std::string 
-*/
+
+/** \brief Write XMLObject to std::string.
+ *
+ * \relates XMLObject 
+ */
 inline std::string toString(const XMLObject& xml)
 {
   return xml.toString();
 }
 
+
 } // namespace Teuchos
+
 
 #endif

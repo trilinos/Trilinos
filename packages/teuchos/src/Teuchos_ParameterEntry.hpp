@@ -191,14 +191,15 @@ public:
   /*! \brief Get the string that should be used as the tag name for all parameters when they are serialized
    * to xml.
    */
-  static const std::string& getTagName(){
-	static std::string tagName;
-	if(tagName==""){
-		tagName = "Parameter";
-	}
-	return tagName;
-  }
-
+  static const std::string& getTagName() 
+    {
+      static std::string tagName;
+      if (tagName=="") {
+        tagName = "Parameter";
+      }
+      return tagName;
+    }
+  
 
   //@}
   

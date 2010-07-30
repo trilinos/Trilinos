@@ -28,9 +28,13 @@
 
 #include "Teuchos_StandardValidatorXMLConverters.hpp"
 
+
 /*! \file Teuchos_StandardValidatorXMLConverters.hpp
 */
+
+
 namespace Teuchos {
+
 
 RCP<ParameterEntryValidator> AnyNumberValidatorXMLConverter::convertXML(
  const XMLObject& xmlObj, 
@@ -39,34 +43,48 @@ RCP<ParameterEntryValidator> AnyNumberValidatorXMLConverter::convertXML(
   AnyNumberParameterEntryValidator dummyValidator;
   TEST_FOR_EXCEPTION(xmlObj.getTag() != dummyValidator.getXMLTagName(), 
     std::runtime_error, 
-    "Cannot convert xmlObject to StringToIntegralValidator. Expected a " << dummyValidator.getXMLTagName() 
+    "Cannot convert xmlObject to StringToIntegralValidator. Expected a "
+    << dummyValidator.getXMLTagName() 
     << " tag but got a " << xmlObj.getTag() << "tag");
+  // 2010/07/30: rabartl: Replace the above with a more specific exception
+  // type and catch it in the unit test.
   AnyNumberParameterEntryValidator::AcceptedTypes acceptedTypes;
   acceptedTypes.allowInt(xmlObj.getRequiredBool(getAllowIntAttributeName()));
   acceptedTypes.allowDouble(xmlObj.getRequiredBool(getAllowDoubleAttributeName()));
   acceptedTypes.allowString(xmlObj.getRequiredBool(getAllowStringAttributeName()));
-  return rcp(new AnyNumberParameterEntryValidator(AnyNumberParameterEntryValidator::getPrefferedTypeStringEnum(xmlObj.getRequired(getPrefferedTypeAttributeName())), acceptedTypes));
+  return rcp(
+    new AnyNumberParameterEntryValidator(
+      AnyNumberParameterEntryValidator::getPrefferedTypeStringEnum(
+        xmlObj.getRequired(getPrefferedTypeAttributeName())), acceptedTypes));
 }
+
 
 XMLObject AnyNumberValidatorXMLConverter::convertValidator(
   const RCP<const ParameterEntryValidator> validator, 
   ValidatortoIDMap& validatorMap) const
 {
-  TEST_FOR_EXCEPTION(!isAppropriateConverter(validator), std::runtime_error, "An AnyNumberValidatorXMLConverter is not apporpriate for this type of validator.");
-  RCP<const AnyNumberParameterEntryValidator> convertedValidator = rcp_static_cast<const AnyNumberParameterEntryValidator>(validator);
+  TEST_FOR_EXCEPTION(!isAppropriateConverter(validator), std::runtime_error,
+    "An AnyNumberValidatorXMLConverter is not apporpriate for this type of validator.");
+  // 2010/07/30: rabartl: Replace the above with a more specific exception
+  // type and catch it in the unit test.
+  RCP<const AnyNumberParameterEntryValidator> convertedValidator =
+    rcp_static_cast<const AnyNumberParameterEntryValidator>(validator);
   XMLObject toReturn(validator->getXMLTagName());
   toReturn.addBool(getAllowIntAttributeName(), convertedValidator->isIntAllowed());
   toReturn.addBool(getAllowDoubleAttributeName(), convertedValidator->isDoubleAllowed());
   toReturn.addBool(getAllowStringAttributeName(), convertedValidator->isStringAllowed());
-  toReturn.addAttribute(getPrefferedTypeAttributeName(), convertedValidator->getPrefferedTypeString(convertedValidator->getPreferredType()));
+  toReturn.addAttribute(getPrefferedTypeAttributeName(),
+    convertedValidator->getPrefferedTypeString(convertedValidator->getPreferredType()));
   return toReturn;
 }
+
 
 bool AnyNumberValidatorXMLConverter::isAppropriateConverter(
 const RCP<const ParameterEntryValidator> validator) const
 {
-  return !(rcp_dynamic_cast<const AnyNumberParameterEntryValidator>(validator).is_null());
+  return nonnull(rcp_dynamic_cast<const AnyNumberParameterEntryValidator>(validator));
 }
+
 
 RCP<ParameterEntryValidator> FileNameValidatorXMLConverter::convertXML(
   const XMLObject& xmlObj, IDtoValidatorMap& validatorMap) const
@@ -74,27 +92,45 @@ RCP<ParameterEntryValidator> FileNameValidatorXMLConverter::convertXML(
   FileNameValidator dummyValidator;
   TEST_FOR_EXCEPTION(xmlObj.getTag() != dummyValidator.getXMLTagName(), 
     std::runtime_error, 
-    "Cannot convert xmlObject to StringToIntegralValidator. Expected a " << dummyValidator.getXMLTagName() 
+    "Cannot convert xmlObject to StringToIntegralValidator. Expected a "
+    << dummyValidator.getXMLTagName() 
     << " tag but got a " << xmlObj.getTag() << "tag");
-  return rcp(new FileNameValidator(xmlObj.getWithDefault<bool>(getFileMustExistAttributeName(), FileNameValidator::mustAlreadyExistDefault())));
+  // 2010/07/30: rabartl: Replace the above with a more specific exception
+  // type and catch it in the unit test.
+  return rcp(
+    new FileNameValidator(
+      xmlObj.getWithDefault<bool>(
+        getFileMustExistAttributeName(),
+        FileNameValidator::mustAlreadyExistDefault()
+        )
+      )
+    );
 }
+
 
 XMLObject FileNameValidatorXMLConverter::convertValidator(
   const RCP<const ParameterEntryValidator> validator, 
   ValidatortoIDMap& validatorMap) const
 {
-  TEST_FOR_EXCEPTION(!isAppropriateConverter(validator), std::runtime_error, "An FileNameValidatorXMLConverter is not apporpriate for this type of validator.");
-  RCP<const FileNameValidator> convertedValidator = rcp_static_cast<const FileNameValidator>(validator);
+  TEST_FOR_EXCEPTION(!isAppropriateConverter(validator),
+    std::runtime_error,
+    "An FileNameValidatorXMLConverter is not apporpriate for this type of validator.");
+  // 2010/07/30: rabartl: Replace the above with a more specific exception
+  // type and catch it in the unit test.
+  RCP<const FileNameValidator> convertedValidator =
+    rcp_static_cast<const FileNameValidator>(validator);
   XMLObject toReturn(validator->getXMLTagName());
   toReturn.addBool(getFileMustExistAttributeName(), convertedValidator->fileMustExist());
   return toReturn;
 }
 
+
 bool FileNameValidatorXMLConverter::isAppropriateConverter(
   const RCP<const ParameterEntryValidator> validator) const
 {
-  return !(rcp_dynamic_cast<const FileNameValidator>(validator).is_null());
+  return nonnull(rcp_dynamic_cast<const FileNameValidator>(validator));
 }
+
 
 RCP<ParameterEntryValidator> StringValidatorXMLConverter::convertXML(
   const XMLObject& xmlObj, IDtoValidatorMap& validatorMap) const
@@ -102,8 +138,11 @@ RCP<ParameterEntryValidator> StringValidatorXMLConverter::convertXML(
   StringValidator dummyValidator;
   TEST_FOR_EXCEPTION(xmlObj.getTag() != dummyValidator.getXMLTagName(), 
     std::runtime_error, 
-    "Cannot convert xmlObject to StringValidator. Expected a " << dummyValidator.getXMLTagName() 
+    "Cannot convert xmlObject to StringValidator. Expected a "
+    << dummyValidator.getXMLTagName() 
     << " tag but got a " << xmlObj.getTag() << "tag");
+  // 2010/07/30: rabartl: Replace the above with a more specific exception
+  // type and catch it in the unit test.
   if(xmlObj.numChildren()!=0){
     Array<std::string> strings(xmlObj.numChildren());
     for(int i=0; i<xmlObj.numChildren(); ++i){
@@ -119,14 +158,16 @@ RCP<ParameterEntryValidator> StringValidatorXMLConverter::convertXML(
   return rcp(new StringValidator());
 }
 
+
 XMLObject StringValidatorXMLConverter::convertValidator(
   const RCP<const ParameterEntryValidator> validator,
   ValidatortoIDMap& validatorMap) const
 {
-  TEST_FOR_EXCEPTION(
-    !isAppropriateConverter(validator), 
-	std::runtime_error, 
-	"An StringValidatorXMLConverter is not apporpriate for this type of validator.");
+  TEST_FOR_EXCEPTION(!isAppropriateConverter(validator), 
+    std::runtime_error, 
+    "An StringValidatorXMLConverter is not apporpriate for this type of validator.");
+  // 2010/07/30: rabartl: Replace the above with a more specific exception
+  // type and catch it in the unit test.
   XMLObject toReturn(validator->getXMLTagName());
   Array<std::string>::const_iterator it = validator->validStringValues()->begin();
   for(; it != validator->validStringValues()->end(); ++it){
@@ -137,33 +178,42 @@ XMLObject StringValidatorXMLConverter::convertValidator(
   return toReturn;
 }
 
+
 bool StringValidatorXMLConverter::isAppropriateConverter(
   const RCP<const ParameterEntryValidator> validator) const
 {
-  return !(rcp_dynamic_cast<const StringValidator>(validator).is_null());
+  return nonnull(rcp_dynamic_cast<const StringValidator>(validator));
 }
+
 
 RCP<ParameterEntryValidator> UnknownValidatorXMLConverter::convertXML(
   const XMLObject& xmlObj,
   IDtoValidatorMap& validatorMap) const
 {
-  throw std::runtime_error("Unknown xml tag. Can't convert to a Validator.");
+  TEST_FOR_EXCEPTION( true, std::runtime_error,
+    "Unknown xml tag. Can't convert to a Validator.");
   return Teuchos::null;
 }
+
 
 XMLObject UnknownValidatorXMLConverter::convertValidator(
   const RCP<const ParameterEntryValidator> validator, 
   ValidatortoIDMap& validatorMap) const
 {
-  throw std::runtime_error("Unknown validator. Convert to XML.");
+  TEST_FOR_EXCEPTION( true, std::runtime_error,
+    "Unknown validator. Convert to XML.");
   return NULL;
 }
+
 
 bool UnknownValidatorXMLConverter::isAppropriateConverter(
   const RCP<const ParameterEntryValidator> validator) const
 {
+  // 2010/07/30: rabartl: This function is never getting called!
+  TEST_FOR_EXCEPT(true);
   return true;
 }
 
-}
+
+} // namespace Teuchos
 
