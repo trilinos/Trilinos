@@ -271,16 +271,39 @@ TEST:  foreach $file (@inpfiles) {
   }
   ### look for purify errors in outerr file.
   ### OK if didn't run under purify; it just won't find any errors.
-  open (ZOUTERR, "output/$zouterrfile") || die "cannot open output/$zouterrfile for purify check";
+  open (ZOUTERR, "output/$zouterrfile") || print "cannot open output/$zouterrfile for purify check\n";
   while (<ZOUTERR>) {
     chomp;
     @foo = grep(/ABR:|ABW:|BRK:|BSR:|BSW:|COR:|FMM:|FMR:|FMW:|FNH:|FUM:|IPR:|IPW:|MAF:|MIU:|MLK:|MRE:|MSE:|NPR:|NPW:|PLK:|SBR:|SBW:|SIG:|SOF:|UMC:|UMR:|WPF:|WPM:|WPN:|WPR:|WPW:|WPX:|ZPR:|ZPW:/, $_);
-    print LOG "     Purify error in $zouterrfile:  $_\n" foreach @foo;
-    print "     Purify error in $zouterrfile:  $_\n" foreach @foo;
-    $errcnt = @foo;
-    $purifyerrcnt += $errcnt;
+    $nerr = @foo;
+    if ($nerr) {
+      # Check for errors from the third-party libraries.
+      # This check is really a hack, as it is very specific to certain errors
+      # and makes assumptions about what the output file looks like.
+      # A more general solution would be better.
+      $nparmerr = 0;
+      $nscotcherr = 0;
+      # Look ahead a few lines in the file to find ParMETIS or Scotch errors.
+      foreach $ii (1..4) {
+        $text = <ZOUTERR>;
+        chomp($text);
+        # ParMETIS has MLK in CheckInputs; we'll ignore it.
+        @parmerr = grep(/CheckInputs/, $text);
+        $nparmerr += @parmerr;
+        # Scotch has UMR in _SCOTCHhdgraphGather, called by hdgraphOrderNdFold2;
+        # we'll ignore it
+        @scotcherr = grep(/hdgraphOrderNdFold2/, $text);
+        $nscotcherr += @scotcherr;
+      }
+      if (!$nparmerr && !$nscotcherr) {
+        # There are purify errors that don't come from ParMETIS or Scotch.
+        print LOG "     Purify error in $zouterrfile:  $_\n" foreach @foo;
+        print "     Purify error in $zouterrfile:  $_\n" foreach @foo;
+        $purifyerrcnt += $nerr;
+      }
+    }
   }
-  close(ZOUTERR) || die "can't close $file: $!";
+  close(ZOUTERR);
 
   $testcnt++;
 }
