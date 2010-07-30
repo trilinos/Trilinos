@@ -38,7 +38,6 @@
 #include "EpetraExt_BlockVector.h"
 #include "Epetra_Operator.h"
 #include "Epetra_CrsMatrix.h"
-#include "EpetraExt_ModelEvaluator.h"
 
 namespace Stokhos {
 
@@ -92,18 +91,6 @@ namespace Stokhos {
    * will cause a compiler error if a clone is attempted.
    */
   class EpetraOperatorCloner {};
-
-  class EpetraDerivativeCloner {
-  public:
-    EpetraDerivativeCloner(const Epetra_BlockMap& map_, int num_vecs_) : 
-      map(&map_), num_vecs(num_vecs_) {}
-    Teuchos::RCP<EpetraExt::ModelEvaluator::Derivative> clone(int i) const {
-      return Teuchos::rcp(new EpetraExt::ModelEvaluator::Derivative(Teuchos::rcp(new Epetra_MultiVector(*map, num_vecs))));
-    }
-  protected:
-    const Epetra_BlockMap* map;
-    int num_vecs;
-  };
 
   //! Cloner for Epetra_CrsMatrix coefficients
   class EpetraCrsMatrixCloner {
@@ -253,42 +240,6 @@ namespace Stokhos {
 
   };
 
-  /*! 
-   * Specialization of VectorOrthogPolyTraits to 
-   * EpetraExt::ModelEvaluator::Derivative coefficients.
-   */
-  template <> 
-  class VectorOrthogPolyTraits<EpetraExt::ModelEvaluator::Derivative> {
-  public:
-    
-    //! Typename of values
-    typedef double value_type;
-
-    //! Typename of ordinals
-    typedef int ordinal_type;
-
-    //! Typename of cloner
-    typedef EpetraDerivativeCloner cloner_type;
-
-    //! Initialize vector
-    static void init(EpetraExt::ModelEvaluator::Derivative& vec, double val) {
-      vec.getMultiVector()->PutScalar(val); }
-
-    //! Update vector
-    static void update(EpetraExt::ModelEvaluator::Derivative& vec, double a, 
-		       const EpetraExt::ModelEvaluator::Derivative& x) {
-      vec.getMultiVector()->Update(a,*(x.getMultiVector()),1.0); 
-    }
-
-    //! Print vector
-    static std::ostream& print(std::ostream& os, 
-			       const EpetraExt::ModelEvaluator::Derivative& vec)
-      {
-	vec.getMultiVector()->Print(os);
-	return os;
-      }
-
-  };
 }
 
 #endif // STOKHOS_VECTORORTHOGPOLYTRAITSEPETRA_HPP

@@ -24,8 +24,8 @@
 #
 #     Tertiary Stable TPLs are those TPLs that are supported TPLs but can not
 #     be included in the set of SS TPLs because they may conflicit with other
-#     SS Code.  For example, METIS is listed as a TS package because it
-#     conflicts with ParMETIS which is declared as a SS TPL.
+#     SS Code.  For example, METIS is listed as a TS TPL because it conflicts
+#     with ParMETIS which is declared as a SS TPL.
 #
 #   EX: Experimental TPL
 #
